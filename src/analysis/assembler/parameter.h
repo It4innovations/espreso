@@ -214,8 +214,8 @@ struct OutputParameterIterator {
 	: inc(info.isconst[interval] ? 0 : info.increment(size, interval)), data((info.data->begin() + interval)->data()) { }
 
 	inline OutputParameterIterator& operator++() { data += inc; return *this; }
-	inline OutputParameterIterator& operator+=(const int rhs) { data += rhs*inc; return *this; }
-	inline OutputParameterIterator& operator+=(const size_t rhs) { data += rhs*inc; return *this; }
+	inline OutputParameterIterator& operator+=(const int rhs) { data += rhs * inc; return *this; }
+	inline OutputParameterIterator& operator+=(const size_t rhs) { data += rhs * inc; return *this; }
 	inline double& __restrict__ operator[](esint i) { return data[i]; }
 	inline const double& __restrict__ operator[](esint i) const { return data[i]; }
 };

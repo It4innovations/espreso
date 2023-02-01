@@ -93,59 +93,59 @@ void fill(int code, double *N, double *dN, double *w)
 	}
 }
 
-template <template <size_t, size_t, size_t, size_t> class Operator, class Module>
-void _baseFunction(Module &module)
-{
-	module.integration.N.resize();
-	module.integration.dN.resize();
-	module.integration.weight.resize();
-	{
-		int index = 0;
-		for (auto ei = info::mesh->elements->eintervals.begin(); ei != info::mesh->elements->eintervals.end(); ++ei, ++index) {
-			module.integration.N.update[index] = module.integration.dN.update[index] = module.integration.weight.update[index] = 0;
-
-			double *n = (module.integration.N.data->begin() + index)->data();
-			double *dn = (module.integration.dN.data->begin() + index)->data();
-			double *w = (module.integration.weight.data->begin() + index)->data();
-
-			fill<Module>(ei->code, n, dn, w);
-//			module.elementOps[index].emplace_back(instantiate<typename Module::NGP, SetBaseFunctions, Operator>(index, module.controller, module.integration.weight, module.integration.N, module.integration.dN));
-		}
-	}
-
-	for (size_t r = 0; r < info::mesh->boundaryRegions.size(); ++r) {
-		if (info::mesh->boundaryRegions[r]->dimension && info::mesh->boundaryRegions[r]->eintervals.size()) {
-			module.integration.boundary.N.regions[r].resize();
-			module.integration.boundary.dN.regions[r].resize();
-			module.integration.boundary.weight.regions[r].resize();
-
-			int index = 0;
-			for (auto ei = info::mesh->boundaryRegions[r]->eintervals.begin(); ei != info::mesh->boundaryRegions[r]->eintervals.end(); ++ei, ++index) {
-				module.integration.boundary.N.regions[r].update[index] = module.integration.boundary.dN.regions[r].update[index] = module.integration.boundary.weight.regions[r].update[index] = 0;
-
-				double *n = (module.integration.boundary.N.regions[r].data->begin() + index)->data();
-				double *dn = (module.integration.boundary.dN.regions[r].data->begin() + index)->data();
-				double *w = (module.integration.boundary.weight.regions[r].data->begin() + index)->data();
-
-				fill<Module>(ei->code, n, dn, w);
-			}
-		}
-	}
-}
+//template <template <size_t, size_t, size_t, size_t> class Operator, class Module>
+//void _baseFunction(Module &module)
+//{
+//	module.integration.N.resize();
+//	module.integration.dN.resize();
+//	module.integration.weight.resize();
+//	{
+//		int index = 0;
+//		for (auto ei = info::mesh->elements->eintervals.begin(); ei != info::mesh->elements->eintervals.end(); ++ei, ++index) {
+//			module.integration.N.update[index] = module.integration.dN.update[index] = module.integration.weight.update[index] = 0;
+//
+//			double *n = (module.integration.N.data->begin() + index)->data();
+//			double *dn = (module.integration.dN.data->begin() + index)->data();
+//			double *w = (module.integration.weight.data->begin() + index)->data();
+//
+//			fill<Module>(ei->code, n, dn, w);
+////			module.elementOps[index].emplace_back(instantiate<typename Module::NGP, SetBaseFunctions, Operator>(index, module.controller, module.integration.weight, module.integration.N, module.integration.dN));
+//		}
+//	}
+//
+//	for (size_t r = 0; r < info::mesh->boundaryRegions.size(); ++r) {
+//		if (info::mesh->boundaryRegions[r]->dimension && info::mesh->boundaryRegions[r]->eintervals.size()) {
+//			module.integration.boundary.N.regions[r].resize();
+//			module.integration.boundary.dN.regions[r].resize();
+//			module.integration.boundary.weight.regions[r].resize();
+//
+//			int index = 0;
+//			for (auto ei = info::mesh->boundaryRegions[r]->eintervals.begin(); ei != info::mesh->boundaryRegions[r]->eintervals.end(); ++ei, ++index) {
+//				module.integration.boundary.N.regions[r].update[index] = module.integration.boundary.dN.regions[r].update[index] = module.integration.boundary.weight.regions[r].update[index] = 0;
+//
+//				double *n = (module.integration.boundary.N.regions[r].data->begin() + index)->data();
+//				double *dn = (module.integration.boundary.dN.regions[r].data->begin() + index)->data();
+//				double *w = (module.integration.boundary.weight.regions[r].data->begin() + index)->data();
+//
+//				fill<Module>(ei->code, n, dn, w);
+//			}
+//		}
+//	}
+//}
 
 void baseFunction(HeatTransfer &module)
 {
-	_baseFunction<HeatTransferOperator>(module);
+//	_baseFunction<HeatTransferOperator>(module);
 }
 
 void baseFunction(Acoustic &module)
 {
-	_baseFunction<HeatTransferOperator>(module);
+//	_baseFunction<HeatTransferOperator>(module);
 }
 
 void baseFunction(StructuralMechanics &module)
 {
-	_baseFunction<HeatTransferOperator>(module);
+//	_baseFunction<HeatTransferOperator>(module);
 }
 
 template<> void fill<Element::CODE::POINT1>(size_t gps, double *N, double *dN, double *w)

@@ -35,12 +35,16 @@ struct ExternalExpression: ActionOperator, Physics {
 
 	void sisd(typename Physics::Element &element)
 	{
-
+		double results[gps];
+		evaluator->evalVector(gps, params, results);
+		for (size_t gp = 0; gp < gps; ++gp) {
+			this->setter(element, gp, 0, results[gp]);
+		}
+		move(SIMD::size);
 	}
 
 	void simd(typename Physics::Element &element)
 	{
-
 		double results[SIMD::size * gps];
 		evaluator->evalVector(SIMD::size * gps, params, results);
 		for (size_t gp = 0; gp < gps; ++gp) {

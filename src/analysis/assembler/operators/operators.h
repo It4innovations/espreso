@@ -67,6 +67,4 @@ void addFiller(StructuralMechanics &module, SteadyState &scheme);
 
 }
 
-#include "expression.hpp"
-
 #endif /* SRC_ANALYSIS_ASSEMBLER_OPERATORS_OPERATORS_H_ */

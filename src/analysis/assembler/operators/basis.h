@@ -11,52 +11,6 @@
 
 namespace espreso {
 
-template <int nodes, int gps, int ndim, int edim, class Physics>
-struct SetBaseFunctions: ActionOperator, Physics {
-	InputParameterIterator w, N, dN;
-
-	SetBaseFunctions(
-			int interval,
-			const ParameterData &w,
-			const ParameterData &N,
-			const ParameterData &dN)
-	: w(w, interval),
-	  N(N, interval, 0),
-	  dN(dN, interval, 0)
-	{
-
-	}
-
-	void sisd(typename Physics::Element &element)
-	{
-		for (int gp = 0; gp < gps; ++gp) {
-			element.w[gp] = w[gp];
-			for (int node = 0; node < nodes; ++node) {
-				element.N[gps * node + gp] = N[gps * node + gp];
-				for (int d = 0; d < edim; ++d) {
-					element.dN[edim * gps * node + gp * edim + d] = dN[edim * gps * node + gp * edim + d];
-				}
-			}
-		}
-	}
-
-	void simd(typename Physics::Element &element)
-	{
-		for (int s = 0; s < SIMD::size; ++s) {
-			for (int gp = 0; gp < gps; ++gp) {
-				element.w[SIMD::size * gp + s] = w[gp];
-				for (int node = 0; node < nodes; ++node) {
-					element.N[SIMD::size * (gps * node + gp) + s] = N[gps * node + gp];
-					for (int d = 0; d < edim; ++d) {
-						element.dN[SIMD::size * (edim * gps * node + gp * edim + d) + s] = dN[edim * gps * node + gp * edim + d];
-					}
-				}
-			}
-		}
-	}
-};
-
-
 template <Element::CODE code, int nodes, int gps, int edim> struct GaussPoints;
 
 template<>

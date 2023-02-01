@@ -20,7 +20,7 @@ struct ConductivityDiagonal<nodes, gps, 2, edim, Physics>: Conductivity, Physics
 
 	// [ KXX, KYY ]     [ KXX,  0  ]
 	// [ ---  --- ]  -> [  0   KYY ]
-	void sisd(typename Physics::Element &element)
+	void sisd(typename Physics::Element &element) const
 	{
 		for (size_t gpindex = 0; gpindex < gps; ++gpindex) {
 			element.ecf.conductivity[4 * gpindex + 3] = element.ecf.conductivity[4 * gpindex + 1];
@@ -28,7 +28,7 @@ struct ConductivityDiagonal<nodes, gps, 2, edim, Physics>: Conductivity, Physics
 		}
 	}
 
-	void simd(typename Physics::Element &element)
+	void simd(typename Physics::Element &element) const
 	{
 		for (size_t gpindex = 0; gpindex < gps; ++gpindex) {
 			store(element.ecf.conductivity + (4 * gpindex + 3) * SIMD::size, load(element.ecf.conductivity + (4 * gpindex + 1) * SIMD::size));

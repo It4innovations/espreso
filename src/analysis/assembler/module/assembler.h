@@ -33,11 +33,20 @@ public:
 	std::vector<std::vector<std::vector<ActionOperator*> > > boundaryOps, boundaryFiller, boundaryRes;
 
 protected:
-	double assemble();
-	virtual double instantiate(size_t interval, int code, const std::vector<ActionOperator*> &ops, esint elements) { return 0; }
-	template <template <size_t, size_t, size_t, size_t, size_t> class DataDescriptor, size_t nodes, size_t gps, size_t ndim, size_t edim, size_t etype> double loop(const std::vector<ActionOperator*> &ops, esint elements);
+	double assemble(ActionOperator::Action action);
+	virtual double instantiate(ActionOperator::Action action, size_t interval, int code, const std::vector<ActionOperator*> &ops, esint elements) { return 0; }
 
-	bool checkMaterialParameter(const std::string &material, const std::string &name, ECFExpression &settings);
+	template <template <size_t, size_t, size_t, size_t, size_t> class DataDescriptor, size_t nodes, size_t gps, size_t ndim, size_t edim, size_t etype>
+	double loop(ActionOperator::Action action, const std::vector<ActionOperator*> &ops, esint elements);
+
+	bool checkExpression(const std::string &name, ECFExpression &expression);
+	bool checkElementParameter(const std::string &name, std::map<std::string, ECFExpression> &settings);
+	bool checkElementParameter(const std::string &name, std::map<std::string, ECFExpressionVector> &settings);
+	bool checkBoundaryParameter(const std::string &name, std::map<std::string, ECFExpression> &settings);
+	bool checkBoundaryParameter(const std::string &name, std::map<std::string, ECFExpressionVector> &settings);
+
+	Evaluator* getEvaluator(size_t interval, std::map<std::string, ECFExpression> &settings);
+	Evaluator* getEvaluator(size_t interval, std::map<std::string, ECFExpressionVector> &settings, int dim);
 
 	void iterate();
 	void fill();

@@ -304,6 +304,7 @@ static void dirichlet(UniformNodesFETIPattern *pattern, std::map<std::string, EC
 
 void UniformNodesFETIPattern::set(std::map<std::string, ECFExpression> &settings, int dofs, DOFsDecomposition &decomposition, Matrix_Shape shape)
 {
+	this->dofs = dofs;
 	dirichlet(this, settings, dofs, decomposition);
 	fillDecomposition(this, dofs, decomposition);
 	for (esint domain = 0; domain < info::mesh->domains->size; ++domain) {

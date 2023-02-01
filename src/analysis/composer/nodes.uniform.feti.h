@@ -74,7 +74,13 @@ struct UniformNodesFETIPattern {
 			for (esint i = info::mesh->elements->eintervalsDistribution[domain], offset = 0; i < info::mesh->elements->eintervalsDistribution[domain + 1]; ++i) {
 				m->mapping.elements[i].data = m->domains[domain].vals;
 				m->mapping.elements[i].position = elements[domain].K.data() + offset;
-				offset += (info::mesh->elements->eintervals[i].end - info::mesh->elements->eintervals[i].begin) * Mesh::edata[info::mesh->elements->eintervals[i].code].nodes * Mesh::edata[info::mesh->elements->eintervals[i].code].nodes;
+				esint esize = dofs * Mesh::edata[info::mesh->elements->eintervals[i].code].nodes;
+				switch (m->domains[domain].shape) {
+				case Matrix_Shape::FULL: esize = esize * esize; break;
+				case Matrix_Shape::UPPER: esize = esize * (esize - 1) / 2 + esize; break;
+				case Matrix_Shape::LOWER: esize = esize * (esize - 1) / 2 + esize; break;
+				}
+				offset += (info::mesh->elements->eintervals[i].end - info::mesh->elements->eintervals[i].begin) * esize;
 			}
 		}
 		m->mapping.boundary.resize(info::mesh->boundaryRegions.size());
@@ -85,7 +91,13 @@ struct UniformNodesFETIPattern {
 					for (esint i = info::mesh->boundaryRegions[r]->eintervalsDistribution[domain], offset = 0; i < info::mesh->boundaryRegions[r]->eintervalsDistribution[domain + 1]; ++i) {
 						m->mapping.boundary[r][i].data = m->domains[domain].vals;
 						m->mapping.boundary[r][i].position = bregion[domain][r].K.data() + offset;
-						offset += (info::mesh->boundaryRegions[r]->eintervals[i].end - info::mesh->boundaryRegions[r]->eintervals[i].begin) * Mesh::edata[info::mesh->boundaryRegions[r]->eintervals[i].code].nodes * Mesh::edata[info::mesh->boundaryRegions[r]->eintervals[i].code].nodes;
+						esint esize = dofs * Mesh::edata[info::mesh->boundaryRegions[r]->eintervals[i].code].nodes;
+						switch (m->domains[domain].shape) {
+						case Matrix_Shape::FULL: esize = esize * esize; break;
+						case Matrix_Shape::UPPER: esize = esize * (esize - 1) / 2 + esize; break;
+						case Matrix_Shape::LOWER: esize = esize * (esize - 1) / 2 + esize; break;
+						}
+						offset += (info::mesh->boundaryRegions[r]->eintervals[i].end - info::mesh->boundaryRegions[r]->eintervals[i].begin) * esize;
 					}
 				}
 			}

@@ -43,14 +43,14 @@ Assembler::Assembler(PhysicsConfiguration &settings)
 	}
 }
 
-double Assembler::assemble()
+double Assembler::assemble(ActionOperator::Action action)
 {
 	double time = 0;
 	#pragma omp parallel for reduction(+:time)
 	for (int t = 0; t < info::env::threads; ++t) {
 		for (size_t d = info::mesh->domains->distribution[t]; d < info::mesh->domains->distribution[t + 1]; d++) {
 			for (esint i = info::mesh->elements->eintervalsDistribution[d]; i < info::mesh->elements->eintervalsDistribution[d + 1]; ++i) {
-				time += instantiate(i, info::mesh->elements->eintervals[i].code, elementOps[i], info::mesh->elements->eintervals[i].end - info::mesh->elements->eintervals[i].begin);
+				time += instantiate(action, i, info::mesh->elements->eintervals[i].code, elementOps[i], info::mesh->elements->eintervals[i].end - info::mesh->elements->eintervals[i].begin);
 			}
 		}
 	}
@@ -143,33 +143,33 @@ void Assembler::iterate()
 
 void Assembler::fill()
 {
-	for (size_t i = 0; i < info::mesh->elements->eintervals.size(); ++i) {
-		size_t elements = info::mesh->elements->eintervals[i].end - info::mesh->elements->eintervals[i].begin;
-		std::vector<InsertOperator*> ops; ops.reserve(elementFiller[i].size());
-		for (auto op = elementFiller[i].cbegin(); op != elementFiller[i].cend(); ++op) {
-			ops.push_back(dynamic_cast<InsertOperator*>(*op));
-		}
-		if (settings.simd && elements >= SIMD::size) {
-			esint chunks = elements / SIMD::size;
-			for (esint c = 0; c < chunks; ++c) {
-				for (auto op = ops.cbegin(); op != ops.cend(); ++op) {
-					(*op)->simd();
-				}
-			}
-			for (auto op = ops.cbegin(); op != ops.cend(); ++op) {
-				(*op)->peel(elements % SIMD::size);
-			}
-		} else {
-			for (esint c = 0; c < elements; ++c) {
-				for (auto op = ops.cbegin(); op != ops.cend(); ++op) {
-					(*op)->sisd();
-				}
-			}
-		}
-		for (auto op = ops.cbegin(); op != ops.cend(); ++op) {
-			(*op)->move(-elements);
-		}
-	}
+//	for (size_t i = 0; i < info::mesh->elements->eintervals.size(); ++i) {
+//		size_t elements = info::mesh->elements->eintervals[i].end - info::mesh->elements->eintervals[i].begin;
+//		std::vector<InsertOperator*> ops; ops.reserve(elementFiller[i].size());
+//		for (auto op = elementFiller[i].cbegin(); op != elementFiller[i].cend(); ++op) {
+//			ops.push_back(dynamic_cast<InsertOperator*>(*op));
+//		}
+//		if (settings.simd && elements >= SIMD::size) {
+//			esint chunks = elements / SIMD::size;
+//			for (esint c = 0; c < chunks; ++c) {
+//				for (auto op = ops.cbegin(); op != ops.cend(); ++op) {
+//					(*op)->simd();
+//				}
+//			}
+//			for (auto op = ops.cbegin(); op != ops.cend(); ++op) {
+//				(*op)->peel(elements % SIMD::size);
+//			}
+//		} else {
+//			for (esint c = 0; c < elements; ++c) {
+//				for (auto op = ops.cbegin(); op != ops.cend(); ++op) {
+//					(*op)->sisd();
+//				}
+//			}
+//		}
+//		for (auto op = ops.cbegin(); op != ops.cend(); ++op) {
+//			(*op)->move(-elements);
+//		}
+//	}
 
 	for (size_t r = 0; r < info::mesh->boundaryRegions.size(); ++r) {
 		if (info::mesh->boundaryRegions[r]->dimension) {
@@ -357,21 +357,115 @@ void Assembler::printMaterials(const std::map<std::string, std::string> &setting
 	}
 }
 
-bool Assembler::checkMaterialParameter(const std::string &material, const std::string &name, ECFExpression &settings)
+bool Assembler::checkExpression(const std::string &name, ECFExpression &expression)
 {
-	if (settings.evaluator == nullptr) {
-		if (!Variable::create(settings)) {
+	if (expression.evaluator == nullptr) {
+		if (!Variable::create(expression)) {
 			eslog::warning("   %18s:  %69s \n", name.c_str(), "INVALID EXPRESSION");
 			return false;
 		}
 	}
-	if (settings.evaluator->variables.size()) {
-		std::string params = Parser::join(", ", settings.evaluator->variables);
-		eslog::info("   %18s:  %69s \n", settings.evaluator->toString().c_str());
+	if (expression.evaluator->variables.size()) {
+		eslog::info("   %18s:  %69s \n", name.c_str(), expression.evaluator->toString().c_str());
 	} else {
-		eslog::info("   %18s:  %69g \n", name.c_str(), settings.evaluator->eval(Evaluator::Params()));
+		eslog::info("   %18s:  %69g \n", name.c_str(), expression.evaluator->eval(Evaluator::Params()));
 	}
 	return true;
+}
+
+bool Assembler::checkElementParameter(const std::string &name, std::map<std::string, ECFExpression> &settings)
+{
+	if (settings.size() == 1 && StringCompare::caseInsensitiveEq(settings.begin()->first, "ALL_ELEMENTS")) {
+		return checkExpression(name, settings.begin()->second);
+	} else {
+		eslog::info("  %s%*s \n", name.c_str(), 91 - name.size(), "");
+		for (auto region = info::mesh->elementsRegions.crbegin(); region != info::mesh->elementsRegions.crend(); ++region) {
+			auto it = settings.find((*region)->name);
+			if (it != settings.end()) {
+				if (!checkExpression(it->first, it->second)) { return false; }
+			}
+		}
+		eslog::info("  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  \n");
+	}
+	return true;
+}
+
+bool Assembler::checkElementParameter(const std::string &name, std::map<std::string, ECFExpressionVector> &settings)
+{
+	if (settings.size() == 1 && StringCompare::caseInsensitiveEq(settings.begin()->first, "ALL_ELEMENTS")) {
+		switch (info::mesh->dimension) {
+		case 2: return checkExpression(name + ".X", settings.begin()->second.x) && checkExpression(name + ".Y", settings.begin()->second.y);
+		case 3: return checkExpression(name + ".X", settings.begin()->second.x) && checkExpression(name + ".Y", settings.begin()->second.y) && checkExpression(name, settings.begin()->second.z);
+		}
+	} else {
+		eslog::info("  %s%*s \n", name.c_str(), 91 - name.size(), "");
+		for (auto region = info::mesh->elementsRegions.crbegin(); region != info::mesh->elementsRegions.crend(); ++region) {
+			auto it = settings.find((*region)->name);
+			if (it != settings.end()) {
+				switch (info::mesh->dimension) {
+				case 2: if (!checkExpression(it->first + ".X", it->second.x) || !checkExpression(it->first + ".Y", it->second.y)) { return false; } break;
+				case 3: if (!checkExpression(it->first + ".X", it->second.x) || !checkExpression(it->first + ".Y", it->second.y) || !checkExpression(it->first + ".Z", it->second.z)) { return false; } break;
+				}
+			}
+		}
+		eslog::info("  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  \n");
+	}
+	return true;
+}
+
+bool Assembler::checkBoundaryParameter(const std::string &name, std::map<std::string, ECFExpression> &settings)
+{
+	eslog::info("  %s%*s \n", name.c_str(), 91 - name.size(), "");
+	for (auto region = info::mesh->boundaryRegions.crbegin(); region != info::mesh->boundaryRegions.crend(); ++region) {
+		auto it = settings.find((*region)->name);
+		if (it != settings.end()) {
+			if (!checkExpression(it->first, it->second)) { return false; }
+		}
+	}
+	eslog::info("  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  \n");
+	return true;
+}
+
+bool Assembler::checkBoundaryParameter(const std::string &name, std::map<std::string, ECFExpressionVector> &settings)
+{
+	eslog::info("  %s%*s \n", name.c_str(), 91 - name.size(), "");
+	for (auto region = info::mesh->boundaryRegions.crbegin(); region != info::mesh->boundaryRegions.crend(); ++region) {
+		auto it = settings.find((*region)->name);
+		if (it != settings.end()) {
+			switch (info::mesh->dimension) {
+			case 2: if (!checkExpression(it->first + ".X", it->second.x) || !checkExpression(it->first + ".Y", it->second.y)) { return false; } break;
+			case 3: if (!checkExpression(it->first + ".X", it->second.x) || !checkExpression(it->first + ".Y", it->second.y) || !checkExpression(it->first + ".Z", it->second.z)) { return false; } break;
+			}
+		}
+	}
+	eslog::info("  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  \n");
+	return true;
+}
+
+Evaluator* Assembler::getEvaluator(size_t interval, std::map<std::string, ECFExpression> &settings)
+{
+	int region = info::mesh->elements->eintervals[interval].region;
+	auto it = settings.find(info::mesh->elementsRegions[region]->name);
+	if (it == settings.end()) {
+		it = settings.find(info::mesh->elementsRegions[0]->name);
+	}
+	if (it != settings.end()) {
+		return it->second.evaluator;
+	}
+	return nullptr;
+}
+
+Evaluator* Assembler::getEvaluator(size_t interval, std::map<std::string, ECFExpressionVector> &settings, int dim)
+{
+	int region = info::mesh->elements->eintervals[interval].region;
+	auto it = settings.find(info::mesh->elementsRegions[region]->name);
+	if (it == settings.end()) {
+		it = settings.find(info::mesh->elementsRegions[0]->name);
+	}
+	if (it != settings.end()) {
+		return it->second.data[dim].evaluator;
+	}
+	return nullptr;
 }
 
 bool Assembler::examineMaterialParameter(const std::string &material, const std::string &name, ECFExpression &settings, ExternalElementValue &externalValue, int dimension)

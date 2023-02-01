@@ -37,20 +37,11 @@ struct HeatTransferElementType {
 		SYMMETRIC_GENERAL    = 1,
 		ASYMMETRIC_ISOTROPIC = 2,
 		ASYMMETRIC_GENERAL   = 3,
+		FACE                 = 4,
+		EDGE                 = 5,
+		NODE                 = 6
 	};
 };
-
-inline void printElementData(const char* name, const double *values, size_t size)
-{
-	printf("%s", name);
-	for (size_t i = 0; i < size; ++i) {
-		if (i % SIMD::size == 0) {
-			printf("\n");
-		}
-		printf(" %+f", values[i]);
-	}
-	printf("\n");
-}
 
 template <size_t nodes, size_t gps, size_t ndim, size_t edim, size_t etype> struct HeatTransferDataDescriptor;
 
@@ -79,8 +70,8 @@ struct HeatTransferDataDescriptor<nodes, gps, 3, edim, HeatTransferElementType::
 		Element()
 		{
 			for (size_t gp = 0; gp < gps; ++gp) {
-				ecf.density[gp] = 1;
-				ecf.heatCapacity[gp] = 1;
+				ecf.density[gp].fill(1);
+				ecf.heatCapacity[gp].fill(1);
 			}
 		}
 	};
@@ -117,9 +108,9 @@ struct HeatTransferDataDescriptor<nodes, gps, 2, edim, HeatTransferElementType::
 		Element()
 		{
 			for (size_t gp = 0; gp < gps; ++gp) {
-				ecf.thickness[gp] = 1;
-				ecf.density[gp] = 1;
-				ecf.heatCapacity[gp] = 1;
+				ecf.thickness[gp].fill(1);
+				ecf.density[gp].fill(1);
+				ecf.heatCapacity[gp].fill(1);
 			}
 		}
 	};
@@ -156,12 +147,8 @@ struct HeatTransferDataDescriptor<nodes, gps, 3, edim, HeatTransferElementType::
 		Element()
 		{
 			for (size_t gp = 0; gp < gps; ++gp) {
-				std::fill(ecf.conductivity[gp], ecf.conductivity[gp] + 9, 1.);
-				std::fill(ecf.angle[gp], ecf.angle[gp] + 6, 0.);
-				ecf.density[gp] = 1;
-				ecf.heatCapacity[gp] = 1;
-
-				std::fill(conductivity[gp], conductivity[gp] + 9, 0.);
+				ecf.density[gp].fill(1);
+				ecf.heatCapacity[gp].fill(1);
 			}
 		}
 	};
@@ -200,14 +187,9 @@ struct HeatTransferDataDescriptor<nodes, gps, 2, edim, HeatTransferElementType::
 		Element()
 		{
 			for (size_t gp = 0; gp < gps; ++gp) {
-				ecf.thickness[gp] = 1;
-
-				std::fill(ecf.conductivity[gp], ecf.conductivity[gp] + 4, 0.);
-				std::fill(ecf.angle[gp], ecf.angle[gp] + 2, 0.);
-				ecf.density[gp] = 1;
-				ecf.heatCapacity[gp] = 1;
-
-				std::fill(conductivity[gp], conductivity[gp] + 4, 0.);
+				ecf.thickness[gp].fill(1);
+				ecf.density[gp].fill(1);
+				ecf.heatCapacity[gp].fill(1);
 			}
 		}
 	};
@@ -215,6 +197,26 @@ struct HeatTransferDataDescriptor<nodes, gps, 2, edim, HeatTransferElementType::
 	virtual void sisd(Element &element) =0;
 	virtual void simd(Element &element) =0;
 	virtual void peel(Element &element, size_t size) { simd(element); }
+};
+
+template <size_t nodes, size_t gps>
+struct HeatTransferDataDescriptor<nodes, gps, 3, 2, HeatTransferElementType::FACE> {
+
+};
+
+template <size_t nodes, size_t gps>
+struct HeatTransferDataDescriptor<nodes, gps, 3, 1, HeatTransferElementType::EDGE> {
+
+};
+
+template <size_t nodes, size_t gps>
+struct HeatTransferDataDescriptor<nodes, gps, 2, 1, HeatTransferElementType::EDGE> {
+
+};
+
+template <size_t ndim>
+struct HeatTransferDataDescriptor<1, 1, ndim, 0, HeatTransferElementType::NODE> {
+
 };
 
 }

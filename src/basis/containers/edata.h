@@ -23,6 +23,7 @@ public:
 	inline TData* end()                 { return   this->_end; }
 
 	inline const TData& operator[] (size_t n) const { return *(this->_begin + n); }
+	inline const TData& at(size_t n)          const { return *(this->_begin + n); }
 	inline const TData* data()                const { return   this->_begin; }
 
 	edata(TData *data, size_t begin, size_t end): _begin(data + begin), _end(data + end) {}

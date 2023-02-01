@@ -3,7 +3,7 @@
 #define SRC_ANALYSIS_ANALYSIS_HEAT_STEADYSTATE_LINEAR_H_
 
 #include "analysis.h"
-#include "analysis/assembler/module/heat.h"
+#include "analysis/assembler/module/heattransfer.h"
 #include "analysis/scheme/steadystate.h"
 #include "analysis/linearsystem/linearsystem.h"
 
@@ -25,7 +25,7 @@ public:
 	HeatTransferConfiguration &settings;
 	HeatTransferLoadStepConfiguration &configuration;
 
-	Heat assembler;
+	HeatTransfer assembler;
 	SteadyState scheme;
 
 	LinearSystem<double> *system;

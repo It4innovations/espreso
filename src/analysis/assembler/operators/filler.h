@@ -4,185 +4,118 @@
 
 #include "analysis/assembler/operator.h"
 #include "analysis/assembler/parameter.h"
+#include "math/physics/matrix_base.h"
 
 namespace espreso {
 
 struct MatrixFiller: ActionOperator {
-	MatrixFiller(int interval, const ParameterData &local, double *global, const esint *position)
-	: local(local, interval),
-	  global(global), position(position)
+	MatrixFiller(size_t interval, size_t dofs, ParameterData &local, Matrix_Base<double> *A)
+	: dofs(dofs),
+	  local(local, interval),
+	  global(A->mapping.elements[interval].data), position(A->mapping.elements[interval].position)
 	{
-
+		isconst = false;
+		action = ActionOperator::Action::FILL;
 	}
 
-	InputParameterIterator local;
+	size_t dofs;
+	OutputParameterIterator local;
 	double *global;
 	const esint *position;
-
-	void operator++()
-	{
-		// increment by operator()
-	}
 };
 
-template<size_t nodes, size_t gps, size_t dimension>
-struct MatrixUpperFiller: MatrixFiller, InsertOperator {
+template <size_t nodes, size_t gps, size_t ndim, size_t edim, size_t etype, class Physics>
+struct SymmetricMatricFiller: MatrixFiller, Physics {
 	using MatrixFiller::MatrixFiller;
 
 	void move(int n)
 	{
 		local += n;
-		position += n * ((nodes * dimension * (nodes * dimension - 1)) / 2 + nodes * dimension);
+		position += n * ((nodes * dofs * (nodes * dofs - 1)) / 2 + nodes * dofs);
 	}
 
-	void operator()()
+	void sisd(typename Physics::Element &element)
 	{
-		for (size_t r = 0; r < nodes * dimension; ++r, local.data += nodes * dimension) {
-			for (size_t c = r; c < nodes * dimension; ++c) {
-				global[*position++] += *(local.data + c);
+		for (size_t r = 0, i = 0; r < nodes * dofs; ++r) {
+			for (size_t c = r; c < nodes * dofs; ++c, ++i) {
+				global[position[i]] += *(local.data + r * nodes * dofs + c);
 			}
 		}
-	}
-
-	void sisd()
-	{
-		for (size_t r = 0, i = 0; r < nodes * dimension; ++r) {
-			for (size_t c = r; c < nodes * dimension; ++c, ++i) {
-				global[position[i]] += *(local.data + r * nodes * dimension + c);
-			}
-		}
+		std::fill(local.data, local.data + local.inc, 0.);
 		move(1);
 	}
 
-	void simd()
+	void simd(typename Physics::Element &element)
 	{
 		for (size_t s = 0, i = 0; s < SIMD::size; ++s) {
-			for (size_t r = 0; r < nodes * dimension; ++r) {
-				for (size_t c = r; c < nodes * dimension; ++c, ++i) {
-					global[position[i]] += *(local.data + (r * nodes * dimension + c) * SIMD::size + s);
+			for (size_t r = 0; r < nodes * dofs; ++r) {
+				for (size_t c = r; c < nodes * dofs; ++c, ++i) {
+					global[position[i]] += *(local.data + (r * nodes * dofs + c) * SIMD::size + s);
 				}
 			}
 		}
+		std::fill(local.data, local.data + SIMD::size * local.inc, 0.);
 		move(SIMD::size);
 	}
 
-	void peel(size_t size)
+	void peel(typename Physics::Element &element, size_t size)
 	{
 		for (size_t s = 0, i = 0; s < size; ++s) {
-			for (size_t r = 0; r < nodes * dimension; ++r) {
-				for (size_t c = r; c < nodes * dimension; ++c, ++i) {
-					global[position[i]] += *(local.data + (r * nodes * dimension + c) * SIMD::size + s);
+			for (size_t r = 0; r < nodes * dofs; ++r) {
+				for (size_t c = r; c < nodes * dofs; ++c, ++i) {
+					global[position[i]] += *(local.data + (r * nodes * dofs + c) * SIMD::size + s);
 				}
 			}
 		}
+		std::fill(local.data, local.data + size * local.inc, 0.);
 		move(size);
 	}
 };
 
-template<size_t nodes, size_t gps, size_t dimension>
-struct MatrixLowerFiller: MatrixFiller, InsertOperator {
+template <size_t nodes, size_t gps, size_t ndim, size_t edim, size_t etype, class Physics>
+struct GeneralMatricFiller: MatrixFiller, Physics {
 	using MatrixFiller::MatrixFiller;
 
 	void move(int n)
 	{
 		local += n;
-		position += n * ((nodes * dimension * (nodes * dimension - 1)) / 2 + nodes * dimension);
+		position += n * nodes * dofs * nodes * dofs;
 	}
 
-	void operator()()
+	void sisd(typename Physics::Element &element)
 	{
-		for (size_t r = 0; r < nodes * dimension; ++r, local.data += nodes * dimension) {
-			for (size_t c = 0; c <= r; ++c) {
-				global[*position++] += *(local.data + c);
+		for (size_t r = 0, i = 0; r < nodes * dofs; ++r) {
+			for (size_t c = 0; c < nodes * dofs; ++c, ++i) {
+				global[position[i]] += *(local.data + r * nodes * dofs + c);
 			}
 		}
-	}
-
-	void sisd()
-	{
-		for (size_t r = 0, i = 0; r < nodes * dimension; ++r) {
-			for (size_t c = 0; c <= r; ++c, ++i) {
-				global[position[i]] += *(local.data + r * nodes * dimension + c);
-			}
-		}
+		std::fill(local.data, local.data + local.inc, 0.);
 		move(1);
 	}
 
-	void simd()
+	void simd(typename Physics::Element &element)
 	{
 		for (size_t s = 0, i = 0; s < SIMD::size; ++s) {
-			for (size_t r = 0; r < nodes * dimension; ++r) {
-				for (size_t c = 0; c <= r; ++c, ++i) {
-					global[position[i]] += *(local.data + (r * nodes * dimension + c) * SIMD::size + s);
+			for (size_t r = 0; r < nodes * dofs; ++r) {
+				for (size_t c = 0; c < nodes * dofs; ++c, ++i) {
+					global[position[i]] += *(local.data + (r * nodes * dofs + c) * SIMD::size + s);
 				}
 			}
 		}
+		std::fill(local.data, local.data + SIMD::size * local.inc, 0.);
 		move(SIMD::size);
 	}
 
-	void peel(size_t size)
+	void peel(typename Physics::Element &element, size_t size)
 	{
 		for (size_t s = 0, i = 0; s < size; ++s) {
-			for (size_t r = 0; r < nodes * dimension; ++r) {
-				for (size_t c = 0; c <= r; ++c, ++i) {
-					global[position[i]] += *(local.data + (r * nodes * dimension + c) * SIMD::size + s);
+			for (size_t r = 0; r < nodes * dofs; ++r) {
+				for (size_t c = 0; c < nodes * dofs; ++c, ++i) {
+					global[position[i]] += *(local.data + (r * nodes * dofs + c) * SIMD::size + s);
 				}
 			}
 		}
-		move(size);
-	}
-};
-
-template<size_t nodes, size_t gps, size_t dimension>
-struct MatrixFullFiller: MatrixFiller, InsertOperator {
-	using MatrixFiller::MatrixFiller;
-
-	void move(int n)
-	{
-		local += n;
-		position += n * nodes * dimension * nodes * dimension;
-	}
-
-	void operator()()
-	{
-		for (size_t r = 0; r < nodes * dimension; ++r) {
-			for (size_t c = 0; c < nodes * dimension; ++c) {
-				global[*position++] += *local.data++;
-			}
-		}
-	}
-
-	void sisd()
-	{
-		for (size_t r = 0, i = 0; r < nodes * dimension; ++r) {
-			for (size_t c = 0; c < nodes * dimension; ++c, ++i) {
-				global[position[i]] += *(local.data + r * nodes * dimension + c);
-			}
-		}
-		move(1);
-	}
-
-	void simd()
-	{
-		for (size_t s = 0, i = 0; s < SIMD::size; ++s) {
-			for (size_t r = 0; r < nodes * dimension; ++r) {
-				for (size_t c = 0; c < nodes * dimension; ++c, ++i) {
-					global[position[i]] += *(local.data + (r * nodes * dimension + c) * SIMD::size + s);
-				}
-			}
-		}
-		move(SIMD::size);
-	}
-
-	void peel(size_t size)
-	{
-		for (size_t s = 0, i = 0; s < size; ++s) {
-			for (size_t r = 0; r < nodes * dimension; ++r) {
-				for (size_t c = 0; c < nodes * dimension; ++c, ++i) {
-					global[position[i]] += *(local.data + (r * nodes * dimension + c) * SIMD::size + s);
-				}
-			}
-		}
+		std::fill(local.data, local.data + size * local.inc, 0.);
 		move(size);
 	}
 };

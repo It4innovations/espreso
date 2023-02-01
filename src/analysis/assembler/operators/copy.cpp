@@ -81,36 +81,36 @@ void averageEnodesToNodes(const ParameterData &from, NodeData &to)
 
 void copyNodesToEnodes(HeatTransfer &module, const NodeData &from, ParameterData &to)
 {
-	module.controller.addInput(to, info::mesh->nodes->coordinates);
-	module.controller.prepare(to);
-	to.setUpdate(1);
-
-	for(size_t interval = 0; interval < info::mesh->elements->eintervals.size(); ++interval) {
-		auto procNodes = info::mesh->elements->nodes->cbegin() + info::mesh->elements->eintervals[interval].begin;
-		switch (from.dimension) {
-		case 1: module.elementRes[interval].emplace_back(instantiate<HeatTransfer::NGP, 1, CopyNodesToEnodes>(interval, module.controller, from, procNodes, to)); break;
-		case 2: module.elementRes[interval].emplace_back(instantiate<HeatTransfer::NGP, 2, CopyNodesToEnodes>(interval, module.controller, from, procNodes, to)); break;
-		case 3: module.elementRes[interval].emplace_back(instantiate<HeatTransfer::NGP, 3, CopyNodesToEnodes>(interval, module.controller, from, procNodes, to)); break;
-		default: eslog::globalerror("ESPRESO internal error: not-implemented dimension inside: copyNodesToEnodes\n");
-		}
-	}
+//	module.controller.addInput(to, info::mesh->nodes->coordinates);
+//	module.controller.prepare(to);
+//	to.setUpdate(1);
+//
+//	for(size_t interval = 0; interval < info::mesh->elements->eintervals.size(); ++interval) {
+//		auto procNodes = info::mesh->elements->nodes->cbegin() + info::mesh->elements->eintervals[interval].begin;
+//		switch (from.dimension) {
+//		case 1: module.elementRes[interval].emplace_back(instantiate<HeatTransfer::NGP, 1, CopyNodesToEnodes>(interval, module.controller, from, procNodes, to)); break;
+//		case 2: module.elementRes[interval].emplace_back(instantiate<HeatTransfer::NGP, 2, CopyNodesToEnodes>(interval, module.controller, from, procNodes, to)); break;
+//		case 3: module.elementRes[interval].emplace_back(instantiate<HeatTransfer::NGP, 3, CopyNodesToEnodes>(interval, module.controller, from, procNodes, to)); break;
+//		default: eslog::globalerror("ESPRESO internal error: not-implemented dimension inside: copyNodesToEnodes\n");
+//		}
+//	}
 }
 
 void copyNodesToBnodes(HeatTransfer &module, const NodeData &from, ParameterData &to, size_t region)
 {
-	module.controller.addInput(to, info::mesh->boundaryRegions[region]->elements);
-	module.controller.prepare(to);
-	to.setUpdate(1);
-
-	for(size_t interval = 0; interval < info::mesh->boundaryRegions[region]->eintervals.size(); ++interval) {
-		auto procNodes = info::mesh->boundaryRegions[region]->elements->cbegin() + info::mesh->boundaryRegions[region]->eintervals[interval].begin;
-		switch (from.dimension) {
-		case 1: module.elementRes[interval].emplace_back(instantiate<HeatTransfer::NGP, 1, CopyNodesToEnodes>(interval, module.controller, from, procNodes, to)); break;
-		case 2: module.elementRes[interval].emplace_back(instantiate<HeatTransfer::NGP, 2, CopyNodesToEnodes>(interval, module.controller, from, procNodes, to)); break;
-		case 3: module.elementRes[interval].emplace_back(instantiate<HeatTransfer::NGP, 3, CopyNodesToEnodes>(interval, module.controller, from, procNodes, to)); break;
-		default: eslog::globalerror("ESPRESO internal error: not-implemented dimension inside: copyNodesToEnodes\n");
-		}
-	}
+//	module.controller.addInput(to, info::mesh->boundaryRegions[region]->elements);
+//	module.controller.prepare(to);
+//	to.setUpdate(1);
+//
+//	for(size_t interval = 0; interval < info::mesh->boundaryRegions[region]->eintervals.size(); ++interval) {
+//		auto procNodes = info::mesh->boundaryRegions[region]->elements->cbegin() + info::mesh->boundaryRegions[region]->eintervals[interval].begin;
+//		switch (from.dimension) {
+//		case 1: module.elementRes[interval].emplace_back(instantiate<HeatTransfer::NGP, 1, CopyNodesToEnodes>(interval, module.controller, from, procNodes, to)); break;
+//		case 2: module.elementRes[interval].emplace_back(instantiate<HeatTransfer::NGP, 2, CopyNodesToEnodes>(interval, module.controller, from, procNodes, to)); break;
+//		case 3: module.elementRes[interval].emplace_back(instantiate<HeatTransfer::NGP, 3, CopyNodesToEnodes>(interval, module.controller, from, procNodes, to)); break;
+//		default: eslog::globalerror("ESPRESO internal error: not-implemented dimension inside: copyNodesToEnodes\n");
+//		}
+//	}
 }
 
 }
