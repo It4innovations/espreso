@@ -121,7 +121,7 @@ struct GeneralMatricFiller: MatrixFiller, Physics {
 };
 
 template<size_t nodes, size_t gps, size_t dimension>
-struct VectorFiller: public ActionOperator {
+struct VectorFiller: ActionOperator {
 	VectorFiller(int interval, const ParameterData &rhs, double *global, const esint *position)
 	: rhs(rhs, interval),
 	  global(global), position(position) {}
@@ -149,43 +149,74 @@ struct VectorFiller: public ActionOperator {
 	}
 };
 
-template<size_t nodes, size_t gps, size_t dimension>
-struct VectorSetter: public ActionOperator {
-	VectorSetter(int interval, const ParameterData &rhs, double *global, const esint *position, int filter)
-	: rhs(rhs, interval),
-	  global(global), position(position), filter(filter) {}
-
-	InputParameterIterator rhs;
-	int filter;
-	double *global;
-	const esint *position;
-
-	void operator++()
+// Setter never rewrite output since output is directly rewriten by expression
+template <size_t nodes, size_t gps, size_t ndim, size_t edim, size_t etype, class Physics, class Setter>
+struct VectorSetter: ActionOperator, Physics {
+	VectorSetter(size_t region, size_t interval, size_t dofs, Vector_Base<double> *v, const Setter &setter)
+	: dofs(dofs), dim(0),
+	  global(v->mapping.boundary[region][interval].data),
+	  position(v->mapping.boundary[region][interval].position),
+	  filter(v->mapping.boundary[region][interval].filter),
+	  setter(setter)
 	{
-		++rhs;
-	}
-
-	void move(int n)
-	{
-		rhs += n;
-		int dim = 0;
-		for (size_t d = 0; d < dimension; ++d) {
+		for (size_t d = 0; d < dofs; ++d) {
 			if (filter & (1 << d)) {
 				++dim;
 			}
 		}
+		isconst = false;
+		action = ActionOperator::Action::ASSEMBLE;
+	}
+
+	size_t dofs, dim;
+	double *global;
+	const esint *position;
+	int filter;
+	Setter setter;
+
+	void move(int n)
+	{
 		position += n * nodes * dim;
 	}
 
-	void operator()()
+	void sisd(typename Physics::Element &element)
 	{
-		for (size_t d = 0; d < dimension; ++d) {
-			for (size_t r = 0; r < nodes; ++r) {
+		for (size_t d = 0, i = 0; d < dofs; ++d) {
+			for (size_t n = 0; n < nodes; ++n, ++i) {
 				if (filter & (1 << d)) {
-					global[*position++] = rhs[r];
+					global[position[i]] = setter(element, n, d, 0);
 				}
 			}
 		}
+		move(1);
+	}
+
+	void simd(typename Physics::Element &element)
+	{
+		for (size_t s = 0, i = 0; s < SIMD::size; ++s) {
+			for (size_t d = 0; d < dofs; ++d) {
+				for (size_t n = 0; n < nodes; ++n, ++i) {
+					if (filter & (1 << d)) {
+						global[position[i]] = setter(element, n, d, s);
+					}
+				}
+			}
+		}
+		move(SIMD::size);
+	}
+
+	void peel(typename Physics::Element &element, size_t size)
+	{
+		for (size_t s = 0, i = 0; s < size; ++s) {
+			for (size_t d = 0; d < dofs; ++d) {
+				for (size_t n = 0; n < nodes; ++n, ++i) {
+					if (filter & (1 << d)) {
+						global[position[i]] = setter(element, n, d, s);
+					}
+				}
+			}
+		}
+		move(size);
 	}
 };
 

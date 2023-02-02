@@ -29,12 +29,13 @@ public:
 	PhysicsConfiguration &settings;
 	ParameterController controller;
 	std::vector<int> etype;
+	std::vector<std::vector<int> > btype;
 	std::vector<std::vector<ActionOperator*> > elementOps, elementFiller, elementRes;
 	std::vector<std::vector<std::vector<ActionOperator*> > > boundaryOps, boundaryFiller, boundaryRes;
 
 protected:
 	double assemble(ActionOperator::Action action);
-	virtual double instantiate(ActionOperator::Action action, size_t interval, int code, const std::vector<ActionOperator*> &ops, esint elements) { return 0; }
+	virtual double instantiate(ActionOperator::Action action, int code, int etype, const std::vector<ActionOperator*> &ops, esint elements) { return 0; }
 
 	template <template <size_t, size_t, size_t, size_t, size_t> class DataDescriptor, size_t nodes, size_t gps, size_t ndim, size_t edim, size_t etype>
 	double loop(ActionOperator::Action action, const std::vector<ActionOperator*> &ops, esint elements);

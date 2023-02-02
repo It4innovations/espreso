@@ -27,15 +27,18 @@ using namespace espreso;
 
 Assembler::Assembler(PhysicsConfiguration &settings)
 : settings(settings),
+  etype(info::mesh->elements->eintervals.size()), btype(info::mesh->boundaryRegions.size()),
   elementOps(info::mesh->elements->eintervals.size()), elementFiller(info::mesh->elements->eintervals.size()), elementRes(info::mesh->elements->eintervals.size()),
   boundaryOps(info::mesh->boundaryRegions.size()), boundaryFiller(info::mesh->boundaryRegions.size()), boundaryRes(info::mesh->boundaryRegions.size())
 {
 	for (size_t i = 0; i < info::mesh->boundaryRegions.size(); ++i) {
 		if (info::mesh->boundaryRegions[i]->dimension) {
+			btype[i].resize(info::mesh->boundaryRegions[i]->eintervals.size());
 			boundaryOps[i].resize(info::mesh->boundaryRegions[i]->eintervals.size());
 			boundaryFiller[i].resize(info::mesh->boundaryRegions[i]->eintervals.size());
 			boundaryRes[i].resize(info::mesh->boundaryRegions[i]->eintervals.size());
 		} else {
+			btype[i].resize(info::mesh->boundaryRegions[i]->nodes->threads());
 			boundaryOps[i].resize(info::mesh->boundaryRegions[i]->nodes->threads());
 			boundaryFiller[i].resize(info::mesh->boundaryRegions[i]->nodes->threads());
 			boundaryRes[i].resize(info::mesh->boundaryRegions[i]->nodes->threads());
@@ -50,7 +53,25 @@ double Assembler::assemble(ActionOperator::Action action)
 	for (int t = 0; t < info::env::threads; ++t) {
 		for (size_t d = info::mesh->domains->distribution[t]; d < info::mesh->domains->distribution[t + 1]; d++) {
 			for (esint i = info::mesh->elements->eintervalsDistribution[d]; i < info::mesh->elements->eintervalsDistribution[d + 1]; ++i) {
-				time += instantiate(action, i, info::mesh->elements->eintervals[i].code, elementOps[i], info::mesh->elements->eintervals[i].end - info::mesh->elements->eintervals[i].begin);
+				esint elements = info::mesh->elements->eintervals[i].end - info::mesh->elements->eintervals[i].begin;
+				time += instantiate(action, info::mesh->elements->eintervals[i].code, etype[i], elementOps[i], elements);
+			}
+		}
+	}
+
+	#pragma omp parallel for
+	for (int t = 0; t < info::env::threads; ++t) {
+		for (size_t d = info::mesh->domains->distribution[t]; d < info::mesh->domains->distribution[t + 1]; d++) {
+			for (size_t r = 0; r < info::mesh->boundaryRegions.size(); ++r) {
+				if (info::mesh->boundaryRegions[r]->dimension) {
+					for (esint i = info::mesh->boundaryRegions[r]->eintervalsDistribution[d]; i < info::mesh->boundaryRegions[r]->eintervalsDistribution[d + 1]; ++i) {
+						size_t elements = info::mesh->boundaryRegions[r]->eintervals[i].end - info::mesh->boundaryRegions[r]->eintervals[i].begin;
+						instantiate(action, info::mesh->boundaryRegions[r]->eintervals[i].code, btype[r][i], boundaryOps[r][i], elements);
+					}
+				} else {
+					size_t elements = info::mesh->boundaryRegions[r]->nodes->datatarray().size(t);
+					instantiate(action, static_cast<int>(Element::CODE::POINT1), btype[r][t], boundaryOps[r][t], elements);
+				}
 			}
 		}
 	}

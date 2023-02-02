@@ -9,12 +9,12 @@
 
 namespace espreso {
 
-template <size_t nodes, size_t gps, size_t ndim, size_t edim, size_t etype, class Physics, class Setter>
-struct ExternalExpression: ActionOperator, Physics {
-	ExternalExpression(int interval, Evaluator *evaluator, Setter &&setter)
+template <class Setter>
+struct ExternalExpression: ActionOperator {
+	ExternalExpression(int interval, Evaluator *evaluator, const Setter &setter)
 	: evaluator(evaluator),
 	  params(evaluator->params),
-	  setter(std::move(setter))
+	  setter(setter)
 	{
 		for (size_t i = 0; i < params.general.size(); ++i) {
 			params.general[i].variable->set(interval, params.general[i]);
@@ -29,30 +29,62 @@ struct ExternalExpression: ActionOperator, Physics {
 	void move(int n)
 	{
 		for (size_t i = 0; i < params.general.size(); ++i) {
-			params.general[i].val += n * gps * params.general[i].increment;
+			params.general[i].val += n * params.general[i].increment;
 		}
 	}
+};
+
+template <size_t nodes, size_t gps, size_t ndim, size_t edim, size_t etype, class Physics, class Setter>
+struct ExternalNodeExpression: ExternalExpression<Setter>, Physics {
+	using ExternalExpression<Setter>::ExternalExpression;
+
+	void sisd(typename Physics::Element &element)
+	{
+		double results[nodes];
+		this->evaluator->evalVector(nodes, this->params, results);
+		for (size_t n = 0; n < nodes; ++n) {
+			this->setter(element, n, 0, results[n]);
+		}
+		this->move(gps);
+	}
+
+	void simd(typename Physics::Element &element)
+	{
+		double results[SIMD::size * nodes];
+		this->evaluator->evalVector(SIMD::size * nodes, this->params, results);
+		for (size_t n = 0; n < nodes; ++n) {
+			for (size_t s = 0; s < SIMD::size; ++s) {
+				this->setter(element, n, s, results[nodes * s + n]); // TODO: check correct order
+			}
+		}
+		this->move(SIMD::size * nodes);
+	}
+};
+
+template <size_t nodes, size_t gps, size_t ndim, size_t edim, size_t etype, class Physics, class Setter>
+struct ExternalGPsExpression: ExternalExpression<Setter>, Physics {
+	using ExternalExpression<Setter>::ExternalExpression;
 
 	void sisd(typename Physics::Element &element)
 	{
 		double results[gps];
-		evaluator->evalVector(gps, params, results);
+		this->evaluator->evalVector(gps, this->params, results);
 		for (size_t gp = 0; gp < gps; ++gp) {
 			this->setter(element, gp, 0, results[gp]);
 		}
-		move(SIMD::size);
+		this->move(gps);
 	}
 
 	void simd(typename Physics::Element &element)
 	{
 		double results[SIMD::size * gps];
-		evaluator->evalVector(SIMD::size * gps, params, results);
+		this->evaluator->evalVector(SIMD::size * gps, this->params, results);
 		for (size_t gp = 0; gp < gps; ++gp) {
 			for (size_t s = 0; s < SIMD::size; ++s) {
 				this->setter(element, gp, s, results[gps * s + gp]); // TODO: check correct order
 			}
 		}
-		move(SIMD::size);
+		this->move(SIMD::size * gps);
 	}
 };
 

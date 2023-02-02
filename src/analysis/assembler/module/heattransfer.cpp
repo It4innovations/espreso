@@ -27,7 +27,7 @@
 #include <numeric>
 #include <algorithm>
 
-using namespace espreso;
+namespace espreso {
 
 NodeData* HeatTransfer::Results::temperature = nullptr;
 NodeData* HeatTransfer::Results::initialTemperature = nullptr;
@@ -82,7 +82,7 @@ bool HeatTransfer::initTemperature()
 
 	if (configuration.temperature.size()) {
 		correct &= checkBoundaryParameter("FIXED TEMPERATURE ON BOUNDARIES", configuration.temperature);
-//		fromExpression(*this, temperature.node, temperature.node.externalValues);
+		generateBoundaryExpression<ExternalNodeExpression>(boundaryOps, configuration.temperature, [] (auto &element, const size_t &gp, const size_t &s, const double &value) { element.temperature[0][s] = value; });
 	}
 
 //	if (settings.init_temp_respect_bc) {
@@ -144,7 +144,6 @@ void HeatTransfer::analyze()
 	validateRegionSettings("MATERIAL", settings.material_set);
 	validateRegionSettings("INITIAL TEMPERATURE", settings.initial_temperature);
 	validateRegionSettings("THICKNESS", settings.thickness);
-	etype.resize(info::mesh->elements->eintervals.size(), 0);
 	std::vector<int> cooToGP(info::mesh->elements->eintervals.size(), 0);
 
 	initParameters();
@@ -276,6 +275,14 @@ void HeatTransfer::analyze()
 			}
 		}
 
+		for (size_t r = 0; r < info::mesh->boundaryRegions.size(); ++r) {
+			switch (info::mesh->boundaryRegions[r]->dimension) {
+			case 0: std::fill(btype[r].begin(), btype[r].end(), HeatTransferElementType::NODE); break;
+			case 1: std::fill(btype[r].begin(), btype[r].end(), HeatTransferElementType::EDGE); break;
+			case 2: std::fill(btype[r].begin(), btype[r].end(), HeatTransferElementType::FACE); break;
+			}
+		}
+
 		eslog::info("  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  \n");
 		printMaterials(settings.material_set);
 		eslog::info(" ============================================================================================= \n");
@@ -292,7 +299,7 @@ void HeatTransfer::analyze()
 		}
 
 		if (info::mesh->dimension == 2 && getEvaluator(interval, settings.thickness)) {
-			elementOps[interval].push_back(generateExpression2D<ExternalExpression>(interval, etype[interval], getEvaluator(interval, settings.thickness),
+			elementOps[interval].push_back(generateExpression2D<ExternalGPsExpression>(interval, etype[interval], getEvaluator(interval, settings.thickness),
 					[] (auto &element, const size_t &gp, const size_t &s, const double &value) { element.ecf.thickness[gp][s] = value; }));
 		}
 
@@ -319,35 +326,35 @@ void HeatTransfer::analyze()
 				switch (mat->thermal_conductivity.model) {
 				case ThermalConductivityConfiguration::MODEL::ISOTROPIC: break;
 				case ThermalConductivityConfiguration::MODEL::DIAGONAL:
-					elementOps[interval].push_back(generateTypedExpression2D<ExternalExpression, HeatTransferElementType::SYMMETRIC_GENERAL>(interval, conductivity.get(0, 0).evaluator,
+					elementOps[interval].push_back(generateTypedExpression2D<ExternalGPsExpression, HeatTransferElementType::SYMMETRIC_GENERAL>(interval, conductivity.get(0, 0).evaluator,
 								[] (auto &element, const size_t &gp, const size_t &s, const double &value) { element.ecf.conductivity[gp][0][s] = value; }));
 					isconst &= elementOps[interval].back()->isconst;
-					elementOps[interval].push_back(generateTypedExpression2D<ExternalExpression, HeatTransferElementType::SYMMETRIC_GENERAL>(interval, conductivity.get(1, 1).evaluator,
+					elementOps[interval].push_back(generateTypedExpression2D<ExternalGPsExpression, HeatTransferElementType::SYMMETRIC_GENERAL>(interval, conductivity.get(1, 1).evaluator,
 								[] (auto &element, const size_t &gp, const size_t &s, const double &value) { element.ecf.conductivity[gp][3][s] = value; }));
 					isconst &= elementOps[interval].back()->isconst;
 					break;
 				case ThermalConductivityConfiguration::MODEL::SYMMETRIC:
-					elementOps[interval].push_back(generateTypedExpression2D<ExternalExpression, HeatTransferElementType::SYMMETRIC_GENERAL>(interval, conductivity.get(0, 0).evaluator,
+					elementOps[interval].push_back(generateTypedExpression2D<ExternalGPsExpression, HeatTransferElementType::SYMMETRIC_GENERAL>(interval, conductivity.get(0, 0).evaluator,
 								[] (auto &element, const size_t &gp, const size_t &s, const double &value) { element.ecf.conductivity[gp][0][s] = value; }));
 					isconst &= elementOps[interval].back()->isconst;
-					elementOps[interval].push_back(generateTypedExpression2D<ExternalExpression, HeatTransferElementType::SYMMETRIC_GENERAL>(interval, conductivity.get(1, 1).evaluator,
+					elementOps[interval].push_back(generateTypedExpression2D<ExternalGPsExpression, HeatTransferElementType::SYMMETRIC_GENERAL>(interval, conductivity.get(1, 1).evaluator,
 								[] (auto &element, const size_t &gp, const size_t &s, const double &value) { element.ecf.conductivity[gp][3][s] = value; }));
 					isconst &= elementOps[interval].back()->isconst;
-					elementOps[interval].push_back(generateTypedExpression2D<ExternalExpression, HeatTransferElementType::SYMMETRIC_GENERAL>(interval, conductivity.get(0, 1).evaluator,
+					elementOps[interval].push_back(generateTypedExpression2D<ExternalGPsExpression, HeatTransferElementType::SYMMETRIC_GENERAL>(interval, conductivity.get(0, 1).evaluator,
 									[] (auto &element, const size_t &gp, const size_t &s, const double &value) { element.ecf.conductivity[gp][1][s] = element.ecf.conductivity[gp][2][s] = value; }));
 					isconst &= elementOps[interval].back()->isconst;
 					break;
 				case ThermalConductivityConfiguration::MODEL::ANISOTROPIC:
-					elementOps[interval].push_back(generateTypedExpression2D<ExternalExpression, HeatTransferElementType::SYMMETRIC_GENERAL>(interval, conductivity.get(0, 0).evaluator,
+					elementOps[interval].push_back(generateTypedExpression2D<ExternalGPsExpression, HeatTransferElementType::SYMMETRIC_GENERAL>(interval, conductivity.get(0, 0).evaluator,
 								[] (auto &element, const size_t &gp, const size_t &s, const double &value) { element.ecf.conductivity[gp][0][s] = value; }));
 					isconst &= elementOps[interval].back()->isconst;
-					elementOps[interval].push_back(generateTypedExpression2D<ExternalExpression, HeatTransferElementType::SYMMETRIC_GENERAL>(interval, conductivity.get(0, 1).evaluator,
+					elementOps[interval].push_back(generateTypedExpression2D<ExternalGPsExpression, HeatTransferElementType::SYMMETRIC_GENERAL>(interval, conductivity.get(0, 1).evaluator,
 								[] (auto &element, const size_t &gp, const size_t &s, const double &value) { element.ecf.conductivity[gp][1][s] = value; }));
 					isconst &= elementOps[interval].back()->isconst;
-					elementOps[interval].push_back(generateTypedExpression2D<ExternalExpression, HeatTransferElementType::SYMMETRIC_GENERAL>(interval, conductivity.get(1, 0).evaluator,
+					elementOps[interval].push_back(generateTypedExpression2D<ExternalGPsExpression, HeatTransferElementType::SYMMETRIC_GENERAL>(interval, conductivity.get(1, 0).evaluator,
 								[] (auto &element, const size_t &gp, const size_t &s, const double &value) { element.ecf.conductivity[gp][2][s] = value; }));
 					isconst &= elementOps[interval].back()->isconst;
-					elementOps[interval].push_back(generateTypedExpression2D<ExternalExpression, HeatTransferElementType::SYMMETRIC_GENERAL>(interval, conductivity.get(1, 1).evaluator,
+					elementOps[interval].push_back(generateTypedExpression2D<ExternalGPsExpression, HeatTransferElementType::SYMMETRIC_GENERAL>(interval, conductivity.get(1, 1).evaluator,
 								[] (auto &element, const size_t &gp, const size_t &s, const double &value) { element.ecf.conductivity[gp][3][s] = value; }));
 					isconst &= elementOps[interval].back()->isconst;
 					break;
@@ -355,17 +362,17 @@ void HeatTransfer::analyze()
 
 				switch (mat->coordinate_system.type) {
 				case CoordinateSystemConfiguration::TYPE::CARTESIAN:
-					elementOps[interval].push_back(generateTypedExpression2D<ExternalExpression, HeatTransferElementType::SYMMETRIC_GENERAL>(interval, mat->coordinate_system.rotation.z.evaluator,
+					elementOps[interval].push_back(generateTypedExpression2D<ExternalGPsExpression, HeatTransferElementType::SYMMETRIC_GENERAL>(interval, mat->coordinate_system.rotation.z.evaluator,
 								[] (auto &element, const size_t &gp, const size_t &s, const double &value) { element.ecf.angle[gp][0][s] = value; }));
 					isconst &= elementOps[interval].back()->isconst;
 					elementOps[interval].push_back(generateElementTypedOperator2D<CoordinateSystemCartesian, HeatTransferElementType::SYMMETRIC_GENERAL>(interval));
 					elementOps[interval].back()->isconst &= isconst;
 					break;
 				case CoordinateSystemConfiguration::TYPE::CYLINDRICAL:
-					elementOps[interval].push_back(generateTypedExpression2D<ExternalExpression, HeatTransferElementType::SYMMETRIC_GENERAL>(interval, mat->coordinate_system.center.x.evaluator,
+					elementOps[interval].push_back(generateTypedExpression2D<ExternalGPsExpression, HeatTransferElementType::SYMMETRIC_GENERAL>(interval, mat->coordinate_system.center.x.evaluator,
 								[] (auto &element, const size_t &gp, const size_t &s, const double &value) { element.ecf.angle[gp][0][s] = value; }));
 					isconst &= elementOps[interval].back()->isconst;
-					elementOps[interval].push_back(generateTypedExpression2D<ExternalExpression, HeatTransferElementType::SYMMETRIC_GENERAL>(interval, mat->coordinate_system.center.y.evaluator,
+					elementOps[interval].push_back(generateTypedExpression2D<ExternalGPsExpression, HeatTransferElementType::SYMMETRIC_GENERAL>(interval, mat->coordinate_system.center.y.evaluator,
 								[] (auto &element, const size_t &gp, const size_t &s, const double &value) { element.ecf.angle[gp][1][s] = value; }));
 					isconst &= elementOps[interval].back()->isconst;
 					elementOps[interval].push_back(generateElementTypedOperator2D<CoordinateSystemCylindric, HeatTransferElementType::SYMMETRIC_GENERAL>(interval));
@@ -378,31 +385,31 @@ void HeatTransfer::analyze()
 			} else {
 				switch (mat->thermal_conductivity.model) {
 				case ThermalConductivityConfiguration::MODEL::ISOTROPIC:
-					elementOps[interval].push_back(generateTypedExpression2D<ExternalExpression, HeatTransferElementType::SYMMETRIC_ISOTROPIC>(interval, conductivity.get(0, 0).evaluator,
+					elementOps[interval].push_back(generateTypedExpression2D<ExternalGPsExpression, HeatTransferElementType::SYMMETRIC_ISOTROPIC>(interval, conductivity.get(0, 0).evaluator,
 								[] (auto &element, const size_t &gp, const size_t &s, const double &value) { element.conductivity[gp][s] = value; }));
 					break;
 				case ThermalConductivityConfiguration::MODEL::DIAGONAL:
-					elementOps[interval].push_back(generateTypedExpression2D<ExternalExpression, HeatTransferElementType::SYMMETRIC_GENERAL>(interval, conductivity.get(0, 0).evaluator,
+					elementOps[interval].push_back(generateTypedExpression2D<ExternalGPsExpression, HeatTransferElementType::SYMMETRIC_GENERAL>(interval, conductivity.get(0, 0).evaluator,
 								[] (auto &element, const size_t &gp, const size_t &s, const double &value) { element.conductivity[gp][0][s] = value; }));
-					elementOps[interval].push_back(generateTypedExpression2D<ExternalExpression, HeatTransferElementType::SYMMETRIC_GENERAL>(interval, conductivity.get(1, 1).evaluator,
+					elementOps[interval].push_back(generateTypedExpression2D<ExternalGPsExpression, HeatTransferElementType::SYMMETRIC_GENERAL>(interval, conductivity.get(1, 1).evaluator,
 								[] (auto &element, const size_t &gp, const size_t &s, const double &value) { element.conductivity[gp][3][s] = value; }));
 					break;
 				case ThermalConductivityConfiguration::MODEL::SYMMETRIC:
-					elementOps[interval].push_back(generateTypedExpression2D<ExternalExpression, HeatTransferElementType::SYMMETRIC_GENERAL>(interval, conductivity.get(0, 0).evaluator,
+					elementOps[interval].push_back(generateTypedExpression2D<ExternalGPsExpression, HeatTransferElementType::SYMMETRIC_GENERAL>(interval, conductivity.get(0, 0).evaluator,
 								[] (auto &element, const size_t &gp, const size_t &s, const double &value) { element.conductivity[gp][0][s] = value; }));
-					elementOps[interval].push_back(generateTypedExpression2D<ExternalExpression, HeatTransferElementType::SYMMETRIC_GENERAL>(interval, conductivity.get(1, 1).evaluator,
+					elementOps[interval].push_back(generateTypedExpression2D<ExternalGPsExpression, HeatTransferElementType::SYMMETRIC_GENERAL>(interval, conductivity.get(1, 1).evaluator,
 								[] (auto &element, const size_t &gp, const size_t &s, const double &value) { element.conductivity[gp][3][s] = value; }));
-					elementOps[interval].push_back(generateTypedExpression2D<ExternalExpression, HeatTransferElementType::SYMMETRIC_GENERAL>(interval, conductivity.get(0, 1).evaluator,
+					elementOps[interval].push_back(generateTypedExpression2D<ExternalGPsExpression, HeatTransferElementType::SYMMETRIC_GENERAL>(interval, conductivity.get(0, 1).evaluator,
 									[] (auto &element, const size_t &gp, const size_t &s, const double &value) { element.conductivity[gp][1][s] = element.conductivity[gp][2][s] = value; }));
 					break;
 				case ThermalConductivityConfiguration::MODEL::ANISOTROPIC:
-					elementOps[interval].push_back(generateTypedExpression2D<ExternalExpression, HeatTransferElementType::SYMMETRIC_GENERAL>(interval, conductivity.get(0, 0).evaluator,
+					elementOps[interval].push_back(generateTypedExpression2D<ExternalGPsExpression, HeatTransferElementType::SYMMETRIC_GENERAL>(interval, conductivity.get(0, 0).evaluator,
 								[] (auto &element, const size_t &gp, const size_t &s, const double &value) { element.conductivity[gp][0][s] = value; }));
-					elementOps[interval].push_back(generateTypedExpression2D<ExternalExpression, HeatTransferElementType::SYMMETRIC_GENERAL>(interval, conductivity.get(0, 1).evaluator,
+					elementOps[interval].push_back(generateTypedExpression2D<ExternalGPsExpression, HeatTransferElementType::SYMMETRIC_GENERAL>(interval, conductivity.get(0, 1).evaluator,
 								[] (auto &element, const size_t &gp, const size_t &s, const double &value) { element.conductivity[gp][1][s] = value; }));
-					elementOps[interval].push_back(generateTypedExpression2D<ExternalExpression, HeatTransferElementType::SYMMETRIC_GENERAL>(interval, conductivity.get(1, 0).evaluator,
+					elementOps[interval].push_back(generateTypedExpression2D<ExternalGPsExpression, HeatTransferElementType::SYMMETRIC_GENERAL>(interval, conductivity.get(1, 0).evaluator,
 								[] (auto &element, const size_t &gp, const size_t &s, const double &value) { element.conductivity[gp][2][s] = value; }));
-					elementOps[interval].push_back(generateTypedExpression2D<ExternalExpression, HeatTransferElementType::SYMMETRIC_GENERAL>(interval, conductivity.get(1, 1).evaluator,
+					elementOps[interval].push_back(generateTypedExpression2D<ExternalGPsExpression, HeatTransferElementType::SYMMETRIC_GENERAL>(interval, conductivity.get(1, 1).evaluator,
 								[] (auto &element, const size_t &gp, const size_t &s, const double &value) { element.conductivity[gp][3][s] = value; }));
 					break;
 				}
@@ -416,62 +423,62 @@ void HeatTransfer::analyze()
 				switch (mat->thermal_conductivity.model) {
 				case ThermalConductivityConfiguration::MODEL::ISOTROPIC: break;
 				case ThermalConductivityConfiguration::MODEL::DIAGONAL:
-					elementOps[interval].push_back(generateTypedExpression3D<ExternalExpression, HeatTransferElementType::SYMMETRIC_GENERAL>(interval, conductivity.get(0, 0).evaluator,
+					elementOps[interval].push_back(generateTypedExpression3D<ExternalGPsExpression, HeatTransferElementType::SYMMETRIC_GENERAL>(interval, conductivity.get(0, 0).evaluator,
 								[] (auto &element, const size_t &gp, const size_t &s, const double &value) { element.ecf.conductivity[gp][0][s] = value; }));
 					isconst &= elementOps[interval].back()->isconst;
-					elementOps[interval].push_back(generateTypedExpression3D<ExternalExpression, HeatTransferElementType::SYMMETRIC_GENERAL>(interval, conductivity.get(1, 1).evaluator,
+					elementOps[interval].push_back(generateTypedExpression3D<ExternalGPsExpression, HeatTransferElementType::SYMMETRIC_GENERAL>(interval, conductivity.get(1, 1).evaluator,
 								[] (auto &element, const size_t &gp, const size_t &s, const double &value) { element.ecf.conductivity[gp][4][s] = value; }));
 					isconst &= elementOps[interval].back()->isconst;
-					elementOps[interval].push_back(generateTypedExpression3D<ExternalExpression, HeatTransferElementType::SYMMETRIC_GENERAL>(interval, conductivity.get(2, 2).evaluator,
+					elementOps[interval].push_back(generateTypedExpression3D<ExternalGPsExpression, HeatTransferElementType::SYMMETRIC_GENERAL>(interval, conductivity.get(2, 2).evaluator,
 								[] (auto &element, const size_t &gp, const size_t &s, const double &value) { element.ecf.conductivity[gp][8][s] = value; }));
 					isconst &= elementOps[interval].back()->isconst;
 					break;
 				case ThermalConductivityConfiguration::MODEL::SYMMETRIC:
-					elementOps[interval].push_back(generateTypedExpression3D<ExternalExpression, HeatTransferElementType::SYMMETRIC_GENERAL>(interval, conductivity.get(0, 0).evaluator,
+					elementOps[interval].push_back(generateTypedExpression3D<ExternalGPsExpression, HeatTransferElementType::SYMMETRIC_GENERAL>(interval, conductivity.get(0, 0).evaluator,
 								[] (auto &element, const size_t &gp, const size_t &s, const double &value) { element.ecf.conductivity[gp][0][s] = value; }));
 					isconst &= elementOps[interval].back()->isconst;
-					elementOps[interval].push_back(generateTypedExpression3D<ExternalExpression, HeatTransferElementType::SYMMETRIC_GENERAL>(interval, conductivity.get(0, 1).evaluator,
+					elementOps[interval].push_back(generateTypedExpression3D<ExternalGPsExpression, HeatTransferElementType::SYMMETRIC_GENERAL>(interval, conductivity.get(0, 1).evaluator,
 								[] (auto &element, const size_t &gp, const size_t &s, const double &value) { element.ecf.conductivity[gp][1][s] = element.ecf.conductivity[gp][3][s] = value; }));
 					isconst &= elementOps[interval].back()->isconst;
-					elementOps[interval].push_back(generateTypedExpression3D<ExternalExpression, HeatTransferElementType::SYMMETRIC_GENERAL>(interval, conductivity.get(0, 2).evaluator,
+					elementOps[interval].push_back(generateTypedExpression3D<ExternalGPsExpression, HeatTransferElementType::SYMMETRIC_GENERAL>(interval, conductivity.get(0, 2).evaluator,
 								[] (auto &element, const size_t &gp, const size_t &s, const double &value) { element.ecf.conductivity[gp][2][s] = element.ecf.conductivity[gp][6][s] = value; }));
 					isconst &= elementOps[interval].back()->isconst;
-					elementOps[interval].push_back(generateTypedExpression3D<ExternalExpression, HeatTransferElementType::SYMMETRIC_GENERAL>(interval, conductivity.get(1, 1).evaluator,
+					elementOps[interval].push_back(generateTypedExpression3D<ExternalGPsExpression, HeatTransferElementType::SYMMETRIC_GENERAL>(interval, conductivity.get(1, 1).evaluator,
 								[] (auto &element, const size_t &gp, const size_t &s, const double &value) { element.ecf.conductivity[gp][4][s] = value; }));
 					isconst &= elementOps[interval].back()->isconst;
-					elementOps[interval].push_back(generateTypedExpression3D<ExternalExpression, HeatTransferElementType::SYMMETRIC_GENERAL>(interval, conductivity.get(1, 2).evaluator,
+					elementOps[interval].push_back(generateTypedExpression3D<ExternalGPsExpression, HeatTransferElementType::SYMMETRIC_GENERAL>(interval, conductivity.get(1, 2).evaluator,
 								[] (auto &element, const size_t &gp, const size_t &s, const double &value) { element.ecf.conductivity[gp][5][s] = element.ecf.conductivity[gp][7][s] = value; }));
 					isconst &= elementOps[interval].back()->isconst;
-					elementOps[interval].push_back(generateTypedExpression3D<ExternalExpression, HeatTransferElementType::SYMMETRIC_GENERAL>(interval, conductivity.get(2, 2).evaluator,
+					elementOps[interval].push_back(generateTypedExpression3D<ExternalGPsExpression, HeatTransferElementType::SYMMETRIC_GENERAL>(interval, conductivity.get(2, 2).evaluator,
 								[] (auto &element, const size_t &gp, const size_t &s, const double &value) { element.ecf.conductivity[gp][8][s] = value; }));
 					isconst &= elementOps[interval].back()->isconst;
 					break;
 				case ThermalConductivityConfiguration::MODEL::ANISOTROPIC:
-					elementOps[interval].push_back(generateTypedExpression3D<ExternalExpression, HeatTransferElementType::SYMMETRIC_GENERAL>(interval, conductivity.get(0, 0).evaluator,
+					elementOps[interval].push_back(generateTypedExpression3D<ExternalGPsExpression, HeatTransferElementType::SYMMETRIC_GENERAL>(interval, conductivity.get(0, 0).evaluator,
 								[] (auto &element, const size_t &gp, const size_t &s, const double &value) { element.ecf.conductivity[gp][0][s] = value; }));
 					isconst &= elementOps[interval].back()->isconst;
-					elementOps[interval].push_back(generateTypedExpression3D<ExternalExpression, HeatTransferElementType::SYMMETRIC_GENERAL>(interval, conductivity.get(0, 1).evaluator,
+					elementOps[interval].push_back(generateTypedExpression3D<ExternalGPsExpression, HeatTransferElementType::SYMMETRIC_GENERAL>(interval, conductivity.get(0, 1).evaluator,
 								[] (auto &element, const size_t &gp, const size_t &s, const double &value) { element.ecf.conductivity[gp][1][s] = value; }));
 					isconst &= elementOps[interval].back()->isconst;
-					elementOps[interval].push_back(generateTypedExpression3D<ExternalExpression, HeatTransferElementType::SYMMETRIC_GENERAL>(interval, conductivity.get(0, 2).evaluator,
+					elementOps[interval].push_back(generateTypedExpression3D<ExternalGPsExpression, HeatTransferElementType::SYMMETRIC_GENERAL>(interval, conductivity.get(0, 2).evaluator,
 								[] (auto &element, const size_t &gp, const size_t &s, const double &value) { element.ecf.conductivity[gp][2][s] = value; }));
 					isconst &= elementOps[interval].back()->isconst;
-					elementOps[interval].push_back(generateTypedExpression3D<ExternalExpression, HeatTransferElementType::SYMMETRIC_GENERAL>(interval, conductivity.get(1, 0).evaluator,
+					elementOps[interval].push_back(generateTypedExpression3D<ExternalGPsExpression, HeatTransferElementType::SYMMETRIC_GENERAL>(interval, conductivity.get(1, 0).evaluator,
 								[] (auto &element, const size_t &gp, const size_t &s, const double &value) { element.ecf.conductivity[gp][3][s] = value; }));
 					isconst &= elementOps[interval].back()->isconst;
-					elementOps[interval].push_back(generateTypedExpression3D<ExternalExpression, HeatTransferElementType::SYMMETRIC_GENERAL>(interval, conductivity.get(1, 1).evaluator,
+					elementOps[interval].push_back(generateTypedExpression3D<ExternalGPsExpression, HeatTransferElementType::SYMMETRIC_GENERAL>(interval, conductivity.get(1, 1).evaluator,
 								[] (auto &element, const size_t &gp, const size_t &s, const double &value) { element.ecf.conductivity[gp][4][s] = value; }));
 					isconst &= elementOps[interval].back()->isconst;
-					elementOps[interval].push_back(generateTypedExpression3D<ExternalExpression, HeatTransferElementType::SYMMETRIC_GENERAL>(interval, conductivity.get(1, 2).evaluator,
+					elementOps[interval].push_back(generateTypedExpression3D<ExternalGPsExpression, HeatTransferElementType::SYMMETRIC_GENERAL>(interval, conductivity.get(1, 2).evaluator,
 								[] (auto &element, const size_t &gp, const size_t &s, const double &value) { element.ecf.conductivity[gp][5][s] = value; }));
 					isconst &= elementOps[interval].back()->isconst;
-					elementOps[interval].push_back(generateTypedExpression3D<ExternalExpression, HeatTransferElementType::SYMMETRIC_GENERAL>(interval, conductivity.get(2, 0).evaluator,
+					elementOps[interval].push_back(generateTypedExpression3D<ExternalGPsExpression, HeatTransferElementType::SYMMETRIC_GENERAL>(interval, conductivity.get(2, 0).evaluator,
 								[] (auto &element, const size_t &gp, const size_t &s, const double &value) { element.ecf.conductivity[gp][6][s] = value; }));
 					isconst &= elementOps[interval].back()->isconst;
-					elementOps[interval].push_back(generateTypedExpression3D<ExternalExpression, HeatTransferElementType::SYMMETRIC_GENERAL>(interval, conductivity.get(2, 1).evaluator,
+					elementOps[interval].push_back(generateTypedExpression3D<ExternalGPsExpression, HeatTransferElementType::SYMMETRIC_GENERAL>(interval, conductivity.get(2, 1).evaluator,
 								[] (auto &element, const size_t &gp, const size_t &s, const double &value) { element.ecf.conductivity[gp][7][s] = value; }));
 					isconst &= elementOps[interval].back()->isconst;
-					elementOps[interval].push_back(generateTypedExpression3D<ExternalExpression, HeatTransferElementType::SYMMETRIC_GENERAL>(interval, conductivity.get(2, 2).evaluator,
+					elementOps[interval].push_back(generateTypedExpression3D<ExternalGPsExpression, HeatTransferElementType::SYMMETRIC_GENERAL>(interval, conductivity.get(2, 2).evaluator,
 								[] (auto &element, const size_t &gp, const size_t &s, const double &value) { element.ecf.conductivity[gp][8][s] = value; }));
 					isconst &= elementOps[interval].back()->isconst;
 					break;
@@ -479,36 +486,36 @@ void HeatTransfer::analyze()
 
 				switch (mat->coordinate_system.type) {
 				case CoordinateSystemConfiguration::TYPE::CARTESIAN:
-					elementOps[interval].push_back(generateTypedExpression3D<ExternalExpression, HeatTransferElementType::SYMMETRIC_GENERAL>(interval, mat->coordinate_system.rotation.x.evaluator,
+					elementOps[interval].push_back(generateTypedExpression3D<ExternalGPsExpression, HeatTransferElementType::SYMMETRIC_GENERAL>(interval, mat->coordinate_system.rotation.x.evaluator,
 								[] (auto &element, const size_t &gp, const size_t &s, const double &value) { element.ecf.angle[gp][0][s] = value; }));
 					isconst &= elementOps[interval].back()->isconst;
-					elementOps[interval].push_back(generateTypedExpression3D<ExternalExpression, HeatTransferElementType::SYMMETRIC_GENERAL>(interval, mat->coordinate_system.rotation.y.evaluator,
+					elementOps[interval].push_back(generateTypedExpression3D<ExternalGPsExpression, HeatTransferElementType::SYMMETRIC_GENERAL>(interval, mat->coordinate_system.rotation.y.evaluator,
 								[] (auto &element, const size_t &gp, const size_t &s, const double &value) { element.ecf.angle[gp][1][s] = value; }));
 					isconst &= elementOps[interval].back()->isconst;
-					elementOps[interval].push_back(generateTypedExpression3D<ExternalExpression, HeatTransferElementType::SYMMETRIC_GENERAL>(interval, mat->coordinate_system.rotation.z.evaluator,
+					elementOps[interval].push_back(generateTypedExpression3D<ExternalGPsExpression, HeatTransferElementType::SYMMETRIC_GENERAL>(interval, mat->coordinate_system.rotation.z.evaluator,
 								[] (auto &element, const size_t &gp, const size_t &s, const double &value) { element.ecf.angle[gp][2][s] = value; }));
 					isconst &= elementOps[interval].back()->isconst;
 					elementOps[interval].push_back(generateElementTypedOperator3D<CoordinateSystemCartesian, HeatTransferElementType::SYMMETRIC_GENERAL>(interval));
 					elementOps[interval].back()->isconst &= isconst;
 					break;
 				case CoordinateSystemConfiguration::TYPE::CYLINDRICAL:
-					elementOps[interval].push_back(generateTypedExpression3D<ExternalExpression, HeatTransferElementType::SYMMETRIC_GENERAL>(interval, mat->coordinate_system.center.x.evaluator,
+					elementOps[interval].push_back(generateTypedExpression3D<ExternalGPsExpression, HeatTransferElementType::SYMMETRIC_GENERAL>(interval, mat->coordinate_system.center.x.evaluator,
 								[] (auto &element, const size_t &gp, const size_t &s, const double &value) { element.ecf.angle[gp][0][s] = value; }));
 					isconst &= elementOps[interval].back()->isconst;
-					elementOps[interval].push_back(generateTypedExpression3D<ExternalExpression, HeatTransferElementType::SYMMETRIC_GENERAL>(interval, mat->coordinate_system.center.y.evaluator,
+					elementOps[interval].push_back(generateTypedExpression3D<ExternalGPsExpression, HeatTransferElementType::SYMMETRIC_GENERAL>(interval, mat->coordinate_system.center.y.evaluator,
 								[] (auto &element, const size_t &gp, const size_t &s, const double &value) { element.ecf.angle[gp][1][s] = value; }));
 					isconst &= elementOps[interval].back()->isconst;
 					elementOps[interval].push_back(generateElementTypedOperator3D<CoordinateSystemCylindric, HeatTransferElementType::SYMMETRIC_GENERAL>(interval));
 					elementOps[interval].back()->isconst &= isconst;
 					break;
 				case CoordinateSystemConfiguration::TYPE::SPHERICAL:
-					elementOps[interval].push_back(generateTypedExpression3D<ExternalExpression, HeatTransferElementType::SYMMETRIC_GENERAL>(interval, mat->coordinate_system.center.x.evaluator,
+					elementOps[interval].push_back(generateTypedExpression3D<ExternalGPsExpression, HeatTransferElementType::SYMMETRIC_GENERAL>(interval, mat->coordinate_system.center.x.evaluator,
 								[] (auto &element, const size_t &gp, const size_t &s, const double &value) { element.ecf.angle[gp][0][s] = value; }));
 					isconst &= elementOps[interval].back()->isconst;
-					elementOps[interval].push_back(generateTypedExpression3D<ExternalExpression, HeatTransferElementType::SYMMETRIC_GENERAL>(interval, mat->coordinate_system.center.y.evaluator,
+					elementOps[interval].push_back(generateTypedExpression3D<ExternalGPsExpression, HeatTransferElementType::SYMMETRIC_GENERAL>(interval, mat->coordinate_system.center.y.evaluator,
 								[] (auto &element, const size_t &gp, const size_t &s, const double &value) { element.ecf.angle[gp][1][s] = value; }));
 					isconst &= elementOps[interval].back()->isconst;
-					elementOps[interval].push_back(generateTypedExpression3D<ExternalExpression, HeatTransferElementType::SYMMETRIC_GENERAL>(interval, mat->coordinate_system.center.z.evaluator,
+					elementOps[interval].push_back(generateTypedExpression3D<ExternalGPsExpression, HeatTransferElementType::SYMMETRIC_GENERAL>(interval, mat->coordinate_system.center.z.evaluator,
 								[] (auto &element, const size_t &gp, const size_t &s, const double &value) { element.ecf.angle[gp][2][s] = value; }));
 					isconst &= elementOps[interval].back()->isconst;
 					elementOps[interval].push_back(generateElementTypedOperator3D<CoordinateSystemSpherical, HeatTransferElementType::SYMMETRIC_GENERAL>(interval));
@@ -521,49 +528,49 @@ void HeatTransfer::analyze()
 			} else {
 				switch (mat->thermal_conductivity.model) {
 				case ThermalConductivityConfiguration::MODEL::ISOTROPIC:
-					elementOps[interval].push_back(generateTypedExpression3D<ExternalExpression, HeatTransferElementType::SYMMETRIC_ISOTROPIC>(interval, conductivity.get(0, 0).evaluator,
+					elementOps[interval].push_back(generateTypedExpression3D<ExternalGPsExpression, HeatTransferElementType::SYMMETRIC_ISOTROPIC>(interval, conductivity.get(0, 0).evaluator,
 								[] (auto &element, const size_t &gp, const size_t &s, const double &value) { element.conductivity[gp][s] = value; }));
 					break;
 				case ThermalConductivityConfiguration::MODEL::DIAGONAL:
-					elementOps[interval].push_back(generateTypedExpression3D<ExternalExpression, HeatTransferElementType::SYMMETRIC_GENERAL>(interval, conductivity.get(0, 0).evaluator,
+					elementOps[interval].push_back(generateTypedExpression3D<ExternalGPsExpression, HeatTransferElementType::SYMMETRIC_GENERAL>(interval, conductivity.get(0, 0).evaluator,
 								[] (auto &element, const size_t &gp, const size_t &s, const double &value) { element.conductivity[gp][0][s] = value; }));
-					elementOps[interval].push_back(generateTypedExpression3D<ExternalExpression, HeatTransferElementType::SYMMETRIC_GENERAL>(interval, conductivity.get(1, 1).evaluator,
+					elementOps[interval].push_back(generateTypedExpression3D<ExternalGPsExpression, HeatTransferElementType::SYMMETRIC_GENERAL>(interval, conductivity.get(1, 1).evaluator,
 								[] (auto &element, const size_t &gp, const size_t &s, const double &value) { element.conductivity[gp][4][s] = value; }));
-					elementOps[interval].push_back(generateTypedExpression3D<ExternalExpression, HeatTransferElementType::SYMMETRIC_GENERAL>(interval, conductivity.get(2, 2).evaluator,
+					elementOps[interval].push_back(generateTypedExpression3D<ExternalGPsExpression, HeatTransferElementType::SYMMETRIC_GENERAL>(interval, conductivity.get(2, 2).evaluator,
 								[] (auto &element, const size_t &gp, const size_t &s, const double &value) { element.conductivity[gp][8][s] = value; }));
 					break;
 				case ThermalConductivityConfiguration::MODEL::SYMMETRIC:
-					elementOps[interval].push_back(generateTypedExpression3D<ExternalExpression, HeatTransferElementType::SYMMETRIC_GENERAL>(interval, conductivity.get(0, 0).evaluator,
+					elementOps[interval].push_back(generateTypedExpression3D<ExternalGPsExpression, HeatTransferElementType::SYMMETRIC_GENERAL>(interval, conductivity.get(0, 0).evaluator,
 								[] (auto &element, const size_t &gp, const size_t &s, const double &value) { element.conductivity[gp][0][s] = value; }));
-					elementOps[interval].push_back(generateTypedExpression3D<ExternalExpression, HeatTransferElementType::SYMMETRIC_GENERAL>(interval, conductivity.get(0, 1).evaluator,
+					elementOps[interval].push_back(generateTypedExpression3D<ExternalGPsExpression, HeatTransferElementType::SYMMETRIC_GENERAL>(interval, conductivity.get(0, 1).evaluator,
 								[] (auto &element, const size_t &gp, const size_t &s, const double &value) { element.conductivity[gp][1][s] = element.ecf.conductivity[gp][3][s] = value; }));
-					elementOps[interval].push_back(generateTypedExpression3D<ExternalExpression, HeatTransferElementType::SYMMETRIC_GENERAL>(interval, conductivity.get(0, 2).evaluator,
+					elementOps[interval].push_back(generateTypedExpression3D<ExternalGPsExpression, HeatTransferElementType::SYMMETRIC_GENERAL>(interval, conductivity.get(0, 2).evaluator,
 								[] (auto &element, const size_t &gp, const size_t &s, const double &value) { element.conductivity[gp][2][s] = element.ecf.conductivity[gp][6][s] = value; }));
-					elementOps[interval].push_back(generateTypedExpression3D<ExternalExpression, HeatTransferElementType::SYMMETRIC_GENERAL>(interval, conductivity.get(1, 1).evaluator,
+					elementOps[interval].push_back(generateTypedExpression3D<ExternalGPsExpression, HeatTransferElementType::SYMMETRIC_GENERAL>(interval, conductivity.get(1, 1).evaluator,
 								[] (auto &element, const size_t &gp, const size_t &s, const double &value) { element.conductivity[gp][4][s] = value; }));
-					elementOps[interval].push_back(generateTypedExpression3D<ExternalExpression, HeatTransferElementType::SYMMETRIC_GENERAL>(interval, conductivity.get(1, 2).evaluator,
+					elementOps[interval].push_back(generateTypedExpression3D<ExternalGPsExpression, HeatTransferElementType::SYMMETRIC_GENERAL>(interval, conductivity.get(1, 2).evaluator,
 								[] (auto &element, const size_t &gp, const size_t &s, const double &value) { element.conductivity[gp][5][s] = element.ecf.conductivity[gp][7][s] = value; }));
-					elementOps[interval].push_back(generateTypedExpression3D<ExternalExpression, HeatTransferElementType::SYMMETRIC_GENERAL>(interval, conductivity.get(2, 2).evaluator,
+					elementOps[interval].push_back(generateTypedExpression3D<ExternalGPsExpression, HeatTransferElementType::SYMMETRIC_GENERAL>(interval, conductivity.get(2, 2).evaluator,
 								[] (auto &element, const size_t &gp, const size_t &s, const double &value) { element.conductivity[gp][8][s] = value; }));
 					break;
 				case ThermalConductivityConfiguration::MODEL::ANISOTROPIC:
-					elementOps[interval].push_back(generateTypedExpression3D<ExternalExpression, HeatTransferElementType::SYMMETRIC_GENERAL>(interval, conductivity.get(0, 0).evaluator,
+					elementOps[interval].push_back(generateTypedExpression3D<ExternalGPsExpression, HeatTransferElementType::SYMMETRIC_GENERAL>(interval, conductivity.get(0, 0).evaluator,
 								[] (auto &element, const size_t &gp, const size_t &s, const double &value) { element.conductivity[gp][0][s] = value; }));
-					elementOps[interval].push_back(generateTypedExpression3D<ExternalExpression, HeatTransferElementType::SYMMETRIC_GENERAL>(interval, conductivity.get(0, 1).evaluator,
+					elementOps[interval].push_back(generateTypedExpression3D<ExternalGPsExpression, HeatTransferElementType::SYMMETRIC_GENERAL>(interval, conductivity.get(0, 1).evaluator,
 								[] (auto &element, const size_t &gp, const size_t &s, const double &value) { element.conductivity[gp][1][s] = value; }));
-					elementOps[interval].push_back(generateTypedExpression3D<ExternalExpression, HeatTransferElementType::SYMMETRIC_GENERAL>(interval, conductivity.get(0, 2).evaluator,
+					elementOps[interval].push_back(generateTypedExpression3D<ExternalGPsExpression, HeatTransferElementType::SYMMETRIC_GENERAL>(interval, conductivity.get(0, 2).evaluator,
 								[] (auto &element, const size_t &gp, const size_t &s, const double &value) { element.conductivity[gp][2][s] = value; }));
-					elementOps[interval].push_back(generateTypedExpression3D<ExternalExpression, HeatTransferElementType::SYMMETRIC_GENERAL>(interval, conductivity.get(1, 0).evaluator,
+					elementOps[interval].push_back(generateTypedExpression3D<ExternalGPsExpression, HeatTransferElementType::SYMMETRIC_GENERAL>(interval, conductivity.get(1, 0).evaluator,
 								[] (auto &element, const size_t &gp, const size_t &s, const double &value) { element.conductivity[gp][3][s] = value; }));
-					elementOps[interval].push_back(generateTypedExpression3D<ExternalExpression, HeatTransferElementType::SYMMETRIC_GENERAL>(interval, conductivity.get(1, 1).evaluator,
+					elementOps[interval].push_back(generateTypedExpression3D<ExternalGPsExpression, HeatTransferElementType::SYMMETRIC_GENERAL>(interval, conductivity.get(1, 1).evaluator,
 								[] (auto &element, const size_t &gp, const size_t &s, const double &value) { element.conductivity[gp][4][s] = value; }));
-					elementOps[interval].push_back(generateTypedExpression3D<ExternalExpression, HeatTransferElementType::SYMMETRIC_GENERAL>(interval, conductivity.get(1, 2).evaluator,
+					elementOps[interval].push_back(generateTypedExpression3D<ExternalGPsExpression, HeatTransferElementType::SYMMETRIC_GENERAL>(interval, conductivity.get(1, 2).evaluator,
 								[] (auto &element, const size_t &gp, const size_t &s, const double &value) { element.conductivity[gp][5][s] = value; }));
-					elementOps[interval].push_back(generateTypedExpression3D<ExternalExpression, HeatTransferElementType::SYMMETRIC_GENERAL>(interval, conductivity.get(2, 0).evaluator,
+					elementOps[interval].push_back(generateTypedExpression3D<ExternalGPsExpression, HeatTransferElementType::SYMMETRIC_GENERAL>(interval, conductivity.get(2, 0).evaluator,
 								[] (auto &element, const size_t &gp, const size_t &s, const double &value) { element.conductivity[gp][6][s] = value; }));
-					elementOps[interval].push_back(generateTypedExpression3D<ExternalExpression, HeatTransferElementType::SYMMETRIC_GENERAL>(interval, conductivity.get(2, 1).evaluator,
+					elementOps[interval].push_back(generateTypedExpression3D<ExternalGPsExpression, HeatTransferElementType::SYMMETRIC_GENERAL>(interval, conductivity.get(2, 1).evaluator,
 								[] (auto &element, const size_t &gp, const size_t &s, const double &value) { element.conductivity[gp][7][s] = value; }));
-					elementOps[interval].push_back(generateTypedExpression3D<ExternalExpression, HeatTransferElementType::SYMMETRIC_GENERAL>(interval, conductivity.get(2, 2).evaluator,
+					elementOps[interval].push_back(generateTypedExpression3D<ExternalGPsExpression, HeatTransferElementType::SYMMETRIC_GENERAL>(interval, conductivity.get(2, 2).evaluator,
 								[] (auto &element, const size_t &gp, const size_t &s, const double &value) { element.conductivity[gp][8][s] = value; }));
 					break;
 				}
@@ -615,6 +622,49 @@ void HeatTransfer::connect(SteadyState &scheme)
 	case Matrix_Shape::FULL:  generateElementOperators<GeneralMatricFiller>(etype, elementOps, 1, elements.stiffness, scheme.K); break;
 	case Matrix_Shape::UPPER: generateElementOperators<SymmetricMatricFiller>(etype, elementOps, 1, elements.stiffness, scheme.K); break;
 	}
+
+	for(size_t r = 0; r < info::mesh->boundaryRegions.size(); ++r) {
+		switch (info::mesh->dimension) {
+		case 2:
+			switch (info::mesh->boundaryRegions[r]->dimension) {
+			case 0:
+				for (size_t t = 0; t < info::mesh->boundaryRegions[r]->nodes->threads(); ++t) {
+					if (configuration.temperature.end() == configuration.temperature.find(info::mesh->boundaryRegions[r]->name)) {
+						// sector filler
+					} else {
+						if (boundaryOps[r][t].size()) {
+							boundaryOps[r][t].push_back(generateNodeSetter2D<VectorSetter>(r, t, 1, scheme.dirichlet,
+									[] (auto &element, const size_t &n, const size_t &dof, const size_t &s) -> double& { return element.temperature[n][s]; }));
+						}
+					}
+				}
+				break;
+			case 1:
+				break;
+			}
+			break;
+		case 3:
+			switch (info::mesh->boundaryRegions[r]->dimension) {
+			case 0:
+				for (size_t t = 0; t < info::mesh->boundaryRegions[r]->nodes->threads(); ++t) {
+					if (configuration.temperature.end() == configuration.temperature.find(info::mesh->boundaryRegions[r]->name)) {
+						// sector filler
+					} else {
+						if (boundaryOps[r][t].size()) {
+							boundaryOps[r][t].push_back(generateNodeSetter3D<VectorSetter>(r, t, 1, scheme.dirichlet,
+									[] (auto &element, const size_t &n, const size_t &dof, const size_t &s) -> double& { return element.temperature[n][s]; }));
+						}
+					}
+				}
+				break;
+			case 1:
+				break;
+			case 2:
+				break;
+			}
+			break;
+		}
+	}
 }
 
 void HeatTransfer::evaluate(SteadyState &scheme)
@@ -656,40 +706,105 @@ void HeatTransfer::updateSolution(SteadyState &scheme)
 //	temp.node.setUpdate(1);
 }
 
+template <>
+double HeatTransfer::instantiate2D<HeatTransferElementType::NODE>(ActionOperator::Action action, int code, const std::vector<ActionOperator*> &ops, esint elements)
+{
+	return loop<HeatTransferDataDescriptor, 1, HeatTransferGPC::POINT1, 2, 0, HeatTransferElementType::NODE>(action, ops, elements);
+}
+
+template <>
+double HeatTransfer::instantiate2D<HeatTransferElementType::EDGE>(ActionOperator::Action action, int code, const std::vector<ActionOperator*> &ops, esint elements)
+{
+	switch (code) {
+	case static_cast<size_t>(Element::CODE::LINE2): return loop<HeatTransferDataDescriptor, 2, HeatTransferGPC::LINE2, 2, 1, HeatTransferElementType::EDGE>(action, ops, elements); break;
+	case static_cast<size_t>(Element::CODE::LINE3): return loop<HeatTransferDataDescriptor, 3, HeatTransferGPC::LINE3, 2, 1, HeatTransferElementType::EDGE>(action, ops, elements); break;
+	default: return 0;
+	}
+}
+
 template <int etype>
-double HeatTransfer::typedInstance(ActionOperator::Action action, size_t interval, int code, const std::vector<ActionOperator*> &ops, esint elements)
+double HeatTransfer::instantiate2D(ActionOperator::Action action, int code, const std::vector<ActionOperator*> &ops, esint elements)
+{
+	switch (code) {
+	case static_cast<size_t>(Element::CODE::TRIANGLE3): return loop<HeatTransferDataDescriptor, 3, HeatTransferGPC::TRIANGLE3, 2, 2, etype>(action, ops, elements); break;
+	case static_cast<size_t>(Element::CODE::TRIANGLE6): return loop<HeatTransferDataDescriptor, 6, HeatTransferGPC::TRIANGLE6, 2, 2, etype>(action, ops, elements); break;
+	case static_cast<size_t>(Element::CODE::SQUARE4):   return loop<HeatTransferDataDescriptor, 4, HeatTransferGPC::SQUARE4  , 2, 2, etype>(action, ops, elements); break;
+	case static_cast<size_t>(Element::CODE::SQUARE8):   return loop<HeatTransferDataDescriptor, 8, HeatTransferGPC::SQUARE8  , 2, 2, etype>(action, ops, elements); break;
+	default: return 0;
+	}
+}
+
+template <>
+double HeatTransfer::instantiate3D<HeatTransferElementType::NODE>(ActionOperator::Action action, int code, const std::vector<ActionOperator*> &ops, esint elements)
+{
+	return loop<HeatTransferDataDescriptor, 1, HeatTransferGPC::POINT1, 3, 0, HeatTransferElementType::NODE>(action, ops, elements);
+}
+
+template <>
+double HeatTransfer::instantiate3D<HeatTransferElementType::EDGE>(ActionOperator::Action action, int code, const std::vector<ActionOperator*> &ops, esint elements)
+{
+	switch (code) {
+	case static_cast<size_t>(Element::CODE::LINE2): return loop<HeatTransferDataDescriptor, 2, HeatTransferGPC::LINE2, 3, 1, HeatTransferElementType::EDGE>(action, ops, elements); break;
+	case static_cast<size_t>(Element::CODE::LINE3): return loop<HeatTransferDataDescriptor, 3, HeatTransferGPC::LINE3, 3, 1, HeatTransferElementType::EDGE>(action, ops, elements); break;
+	default: return 0;
+	}
+}
+
+template <>
+double HeatTransfer::instantiate3D<HeatTransferElementType::FACE>(ActionOperator::Action action, int code, const std::vector<ActionOperator*> &ops, esint elements)
+{
+	switch (code) {
+	case static_cast<size_t>(Element::CODE::TRIANGLE3): return loop<HeatTransferDataDescriptor, 3, HeatTransferGPC::TRIANGLE3, 3, 2, HeatTransferElementType::FACE>(action, ops, elements); break;
+	case static_cast<size_t>(Element::CODE::TRIANGLE6): return loop<HeatTransferDataDescriptor, 6, HeatTransferGPC::TRIANGLE6, 3, 2, HeatTransferElementType::FACE>(action, ops, elements); break;
+	case static_cast<size_t>(Element::CODE::SQUARE4):   return loop<HeatTransferDataDescriptor, 4, HeatTransferGPC::SQUARE4  , 3, 2, HeatTransferElementType::FACE>(action, ops, elements); break;
+	case static_cast<size_t>(Element::CODE::SQUARE8):   return loop<HeatTransferDataDescriptor, 8, HeatTransferGPC::SQUARE8  , 3, 2, HeatTransferElementType::FACE>(action, ops, elements); break;
+	default: return 0;
+	}
+}
+
+template <int etype>
+double HeatTransfer::instantiate3D(ActionOperator::Action action, int code, const std::vector<ActionOperator*> &ops, esint elements)
+{
+	switch (code) {
+	case static_cast<size_t>(Element::CODE::TETRA4):    return loop<HeatTransferDataDescriptor,  4, HeatTransferGPC::TETRA4    , 3, 3, etype>(action, ops, elements); break;
+	case static_cast<size_t>(Element::CODE::TETRA10):   return loop<HeatTransferDataDescriptor, 10, HeatTransferGPC::TETRA10   , 3, 3, etype>(action, ops, elements); break;
+	case static_cast<size_t>(Element::CODE::PYRAMID5):  return loop<HeatTransferDataDescriptor,  5, HeatTransferGPC::PYRAMID5  , 3, 3, etype>(action, ops, elements); break;
+	case static_cast<size_t>(Element::CODE::PYRAMID13): return loop<HeatTransferDataDescriptor, 13, HeatTransferGPC::PYRAMID13 , 3, 3, etype>(action, ops, elements); break;
+	case static_cast<size_t>(Element::CODE::PRISMA6):   return loop<HeatTransferDataDescriptor,  6, HeatTransferGPC::PRISMA6   , 3, 3, etype>(action, ops, elements); break;
+	case static_cast<size_t>(Element::CODE::PRISMA15):  return loop<HeatTransferDataDescriptor, 15, HeatTransferGPC::PRISMA15  , 3, 3, etype>(action, ops, elements); break;
+	case static_cast<size_t>(Element::CODE::HEXA8):     return loop<HeatTransferDataDescriptor,  8, HeatTransferGPC::HEXA8     , 3, 3, etype>(action, ops, elements); break;
+	case static_cast<size_t>(Element::CODE::HEXA20):    return loop<HeatTransferDataDescriptor, 20, HeatTransferGPC::HEXA20    , 3, 3, etype>(action, ops, elements); break;
+	default: return 0;
+	}
+}
+
+double HeatTransfer::instantiate(ActionOperator::Action action, int code, int etype, const std::vector<ActionOperator*> &ops, esint elements)
 {
 	switch (info::mesh->dimension) {
 	case 2:
-		switch (code) {
-		case static_cast<size_t>(Element::CODE::TRIANGLE3): return loop<HeatTransferDataDescriptor, 3, HeatTransferGPC::TRIANGLE3, 2, 2, etype>(action, ops, elements); break;
-		case static_cast<size_t>(Element::CODE::TRIANGLE6): return loop<HeatTransferDataDescriptor, 6, HeatTransferGPC::TRIANGLE6, 2, 2, etype>(action, ops, elements); break;
-		case static_cast<size_t>(Element::CODE::SQUARE4):   return loop<HeatTransferDataDescriptor, 4, HeatTransferGPC::SQUARE4  , 2, 2, etype>(action, ops, elements); break;
-		case static_cast<size_t>(Element::CODE::SQUARE8):   return loop<HeatTransferDataDescriptor, 8, HeatTransferGPC::SQUARE8  , 2, 2, etype>(action, ops, elements); break;
+		switch (etype) {
+		// elements
+		case HeatTransferElementType::SYMMETRIC_ISOTROPIC: return instantiate2D<HeatTransferElementType::SYMMETRIC_ISOTROPIC>(action, code, ops, elements);
+		case HeatTransferElementType::SYMMETRIC_GENERAL:   return instantiate2D<HeatTransferElementType::SYMMETRIC_GENERAL  >(action, code, ops, elements);
+
+		// boundary
+		case HeatTransferElementType::EDGE: return instantiate2D<HeatTransferElementType::EDGE>(action, code, ops, elements);
+		case HeatTransferElementType::NODE: return instantiate2D<HeatTransferElementType::NODE>(action, code, ops, elements);
 		}
-		break;
 	case 3:
-		switch (code) {
-		case static_cast<size_t>(Element::CODE::TETRA4):    return loop<HeatTransferDataDescriptor,  4, HeatTransferGPC::TETRA4    , 3, 3, etype>(action, ops, elements); break;
-		case static_cast<size_t>(Element::CODE::TETRA10):   return loop<HeatTransferDataDescriptor, 10, HeatTransferGPC::TETRA10   , 3, 3, etype>(action, ops, elements); break;
-		case static_cast<size_t>(Element::CODE::PYRAMID5):  return loop<HeatTransferDataDescriptor,  5, HeatTransferGPC::PYRAMID5  , 3, 3, etype>(action, ops, elements); break;
-		case static_cast<size_t>(Element::CODE::PYRAMID13): return loop<HeatTransferDataDescriptor, 13, HeatTransferGPC::PYRAMID13 , 3, 3, etype>(action, ops, elements); break;
-		case static_cast<size_t>(Element::CODE::PRISMA6):   return loop<HeatTransferDataDescriptor,  6, HeatTransferGPC::PRISMA6   , 3, 3, etype>(action, ops, elements); break;
-		case static_cast<size_t>(Element::CODE::PRISMA15):  return loop<HeatTransferDataDescriptor, 15, HeatTransferGPC::PRISMA15  , 3, 3, etype>(action, ops, elements); break;
-		case static_cast<size_t>(Element::CODE::HEXA8):     return loop<HeatTransferDataDescriptor,  8, HeatTransferGPC::HEXA8     , 3, 3, etype>(action, ops, elements); break;
-		case static_cast<size_t>(Element::CODE::HEXA20):    return loop<HeatTransferDataDescriptor, 20, HeatTransferGPC::HEXA20    , 3, 3, etype>(action, ops, elements); break;
+		switch (etype) {
+		// elements
+		case HeatTransferElementType::SYMMETRIC_ISOTROPIC: return instantiate3D<HeatTransferElementType::SYMMETRIC_ISOTROPIC>(action, code, ops, elements);
+		case HeatTransferElementType::SYMMETRIC_GENERAL:   return instantiate3D<HeatTransferElementType::SYMMETRIC_GENERAL  >(action, code, ops, elements);
+
+		// boundary
+		case HeatTransferElementType::FACE: return instantiate3D<HeatTransferElementType::FACE>(action, code, ops, elements);
+		case HeatTransferElementType::EDGE: return instantiate3D<HeatTransferElementType::EDGE>(action, code, ops, elements);
+		case HeatTransferElementType::NODE: return instantiate3D<HeatTransferElementType::NODE>(action, code, ops, elements);
 		}
-		break;
 	}
 	return 0;
 }
 
-double HeatTransfer::instantiate(ActionOperator::Action action, size_t interval, int code, const std::vector<ActionOperator*> &ops, esint elements)
-{
-	switch (etype[interval]) {
-	case HeatTransferElementType::SYMMETRIC_ISOTROPIC: return typedInstance<HeatTransferElementType::SYMMETRIC_ISOTROPIC>(action, interval, code, ops, elements);
-	case HeatTransferElementType::SYMMETRIC_GENERAL:   return typedInstance<HeatTransferElementType::SYMMETRIC_GENERAL  >(action, interval, code, ops, elements);
-	}
-	return 0;
 }
 

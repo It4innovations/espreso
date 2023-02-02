@@ -8,7 +8,7 @@ namespace espreso {
 
 struct HeatTransferGPC {
 	enum: int {
-		POINT1    =  0,
+		POINT1    =  1,
 
 		LINE2     =  2,
 		LINE3     =  3,
@@ -201,22 +201,90 @@ struct HeatTransferDataDescriptor<nodes, gps, 2, edim, HeatTransferElementType::
 
 template <size_t nodes, size_t gps>
 struct HeatTransferDataDescriptor<nodes, gps, 3, 2, HeatTransferElementType::FACE> {
+	virtual ~HeatTransferDataDescriptor() {}
 
+	struct Element {
+		struct {
+
+		} ecf;
+
+		alignas(SIMD::size * sizeof(double)) SIMD temperature[nodes];
+
+		Element()
+		{
+
+		}
+	};
+
+	virtual void sisd(Element &element) =0;
+	virtual void simd(Element &element) =0;
+	virtual void peel(Element &element, size_t size) { simd(element); }
 };
 
 template <size_t nodes, size_t gps>
 struct HeatTransferDataDescriptor<nodes, gps, 3, 1, HeatTransferElementType::EDGE> {
+	virtual ~HeatTransferDataDescriptor() {}
 
+	struct Element {
+		struct {
+
+		} ecf;
+
+		alignas(SIMD::size * sizeof(double)) SIMD temperature[nodes];
+
+		Element()
+		{
+
+		}
+	};
+
+	virtual void sisd(Element &element) =0;
+	virtual void simd(Element &element) =0;
+	virtual void peel(Element &element, size_t size) { simd(element); }
 };
 
 template <size_t nodes, size_t gps>
 struct HeatTransferDataDescriptor<nodes, gps, 2, 1, HeatTransferElementType::EDGE> {
+	virtual ~HeatTransferDataDescriptor() {}
 
+	struct Element {
+		struct {
+
+		} ecf;
+
+		alignas(SIMD::size * sizeof(double)) SIMD temperature[nodes];
+
+		Element()
+		{
+
+		}
+	};
+
+	virtual void sisd(Element &element) =0;
+	virtual void simd(Element &element) =0;
+	virtual void peel(Element &element, size_t size) { simd(element); }
 };
 
 template <size_t ndim>
 struct HeatTransferDataDescriptor<1, 1, ndim, 0, HeatTransferElementType::NODE> {
+	virtual ~HeatTransferDataDescriptor() {}
 
+	struct Element {
+		struct {
+
+		} ecf;
+
+		alignas(SIMD::size * sizeof(double)) SIMD temperature[1];
+
+		Element()
+		{
+
+		}
+	};
+
+	virtual void sisd(Element &element) =0;
+	virtual void simd(Element &element) =0;
+	virtual void peel(Element &element, size_t size) { simd(element); }
 };
 
 }
