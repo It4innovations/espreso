@@ -267,7 +267,7 @@ void StructuralMechanics::analyze()
 
 void StructuralMechanics::connect(SteadyState &scheme)
 {
-	addFiller(*this, scheme);
+//	addFiller(*this, scheme);
 }
 
 void StructuralMechanics::evaluate(SteadyState &scheme)

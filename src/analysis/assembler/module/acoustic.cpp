@@ -145,7 +145,7 @@ void Acoustic::analyze()
 
 void Acoustic::connect(Harmonic &scheme)
 {
-	addFiller(*this, scheme);
+//	addFiller(*this, scheme);
 }
 
 void Acoustic::evaluate(Harmonic &scheme)

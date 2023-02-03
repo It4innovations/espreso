@@ -44,7 +44,6 @@ void stiffness(HeatTransfer &module);
 void RHS(HeatTransfer &module);
 void outputGradient(HeatTransfer &module);
 void outputFlux(HeatTransfer &module);
-void addFiller(HeatTransfer &module, SteadyState &scheme);
 
 
 void baseFunction(Acoustic &module);
@@ -54,7 +53,6 @@ void stiffness(Acoustic &module);
 void mass(Acoustic &module);
 void boundaryMass(Acoustic &module);
 void RHS(Acoustic &module);
-void addFiller(Acoustic &module, Harmonic &scheme);
 
 
 void baseFunction(StructuralMechanics &module);
@@ -63,7 +61,6 @@ void elementIntegration(StructuralMechanics &module);
 void elasticity(StructuralMechanics &module);
 void stiffness(StructuralMechanics &module);
 void RHS(StructuralMechanics &module);
-void addFiller(StructuralMechanics &module, SteadyState &scheme);
 
 }
 

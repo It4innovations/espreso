@@ -61,6 +61,9 @@ protected:
 
 	void volume();
 	size_t esize();
+
+private:
+	void generateConductivity();
 };
 
 }
