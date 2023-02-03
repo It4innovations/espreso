@@ -55,8 +55,9 @@ struct HeatTransferDataDescriptor<nodes, gps, 3, edim, HeatTransferElementType::
 			alignas(SIMD::size * sizeof(double)) SIMD heatCapacity[gps];
 		} ecf;
 
-		alignas(SIMD::size * sizeof(double)) SIMD coords[nodes][ndim];
-		alignas(SIMD::size * sizeof(double)) SIMD gpcoords[gps][ndim];
+		alignas(SIMD::size * sizeof(double)) SIMD temp[nodes];
+		alignas(SIMD::size * sizeof(double)) SIMD coords[nodes][3];
+		alignas(SIMD::size * sizeof(double)) SIMD gpcoords[gps][3];
 
 		alignas(SIMD::size * sizeof(double)) SIMD  w [gps];
 		alignas(SIMD::size * sizeof(double)) SIMD  N [gps][nodes];
@@ -93,8 +94,9 @@ struct HeatTransferDataDescriptor<nodes, gps, 2, edim, HeatTransferElementType::
 			alignas(SIMD::size * sizeof(double)) SIMD heatCapacity[gps];
 		} ecf;
 
-		alignas(SIMD::size * sizeof(double)) SIMD coords[nodes][ndim];
-		alignas(SIMD::size * sizeof(double)) SIMD gpcoords[gps][ndim];
+		alignas(SIMD::size * sizeof(double)) SIMD temp[nodes];
+		alignas(SIMD::size * sizeof(double)) SIMD coords[nodes][2];
+		alignas(SIMD::size * sizeof(double)) SIMD gpcoords[gps][2];
 
 		alignas(SIMD::size * sizeof(double)) SIMD  w [gps];
 		alignas(SIMD::size * sizeof(double)) SIMD  N [gps][nodes];
@@ -132,8 +134,9 @@ struct HeatTransferDataDescriptor<nodes, gps, 3, edim, HeatTransferElementType::
 			alignas(SIMD::size * sizeof(double)) SIMD heatCapacity[gps];
 		} ecf;
 
-		alignas(SIMD::size * sizeof(double)) SIMD coords[nodes][ndim];
-		alignas(SIMD::size * sizeof(double)) SIMD gpcoords[gps][ndim];
+		alignas(SIMD::size * sizeof(double)) SIMD temp[nodes];
+		alignas(SIMD::size * sizeof(double)) SIMD coords[nodes][3];
+		alignas(SIMD::size * sizeof(double)) SIMD gpcoords[gps][3];
 
 		alignas(SIMD::size * sizeof(double)) SIMD  w [gps];
 		alignas(SIMD::size * sizeof(double)) SIMD  N [gps][nodes];
@@ -172,6 +175,7 @@ struct HeatTransferDataDescriptor<nodes, gps, 2, edim, HeatTransferElementType::
 			alignas(SIMD::size * sizeof(double)) SIMD heatCapacity[gps];
 		} ecf;
 
+		alignas(SIMD::size * sizeof(double)) SIMD temp[nodes];
 		alignas(SIMD::size * sizeof(double)) SIMD coords[nodes][2];
 		alignas(SIMD::size * sizeof(double)) SIMD gpcoords[gps][2];
 

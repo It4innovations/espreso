@@ -10,6 +10,8 @@
 #include "analysis/assembler/operators/integration.h"
 #include "analysis/assembler/operators/heattransfer.stiffness.h"
 #include "analysis/assembler/operators/filler.h"
+#include "analysis/assembler/operators/gradient.h"
+#include "analysis/assembler/operators/flux.h"
 
 #include "basis/expression/variable.h"
 #include "esinfo/ecfinfo.h"
@@ -143,7 +145,6 @@ void HeatTransfer::analyze()
 	validateRegionSettings("MATERIAL", settings.material_set);
 	validateRegionSettings("INITIAL TEMPERATURE", settings.initial_temperature);
 	validateRegionSettings("THICKNESS", settings.thickness);
-	std::vector<int> cooToGP(info::mesh->elements->eintervals.size(), 0);
 
 	initParameters();
 
@@ -269,9 +270,6 @@ void HeatTransfer::analyze()
 			case ThermalConductivityConfiguration::MODEL::SYMMETRIC:   etype[interval] = HeatTransferElementType::SYMMETRIC_GENERAL  ; break;
 			case ThermalConductivityConfiguration::MODEL::ANISOTROPIC: etype[interval] = HeatTransferElementType::ASYMMETRIC_GENERAL ; break;
 			}
-			if (mat->coordinate_system.type != CoordinateSystemConfiguration::TYPE::CARTESIAN) {
-				cooToGP[interval] |= mat->thermal_conductivity.model != ThermalConductivityConfiguration::MODEL::ISOTROPIC;
-			}
 		}
 
 		for (size_t r = 0; r < info::mesh->boundaryRegions.size(); ++r) {
@@ -289,14 +287,9 @@ void HeatTransfer::analyze()
 
 	// we cannot generate functions since 'etype' is filled
 	generateBaseFunctions(etype, elementOps);
+	gatherInputs();
 
 	for(size_t interval = 0; interval < info::mesh->elements->eintervals.size(); ++interval) {
-		if (cooToGP[interval]) {
-			elementOps[interval].push_back(generateElementOperator<CoordinatesToElementNodesAndGPs>(interval, etype[interval], info::mesh->elements->nodes->cbegin()));
-		} else {
-			elementOps[interval].push_back(generateElementOperator<CoordinatesToElementNodes>(interval, etype[interval], info::mesh->elements->nodes->cbegin()));
-		}
-
 		if (info::mesh->dimension == 2 && getEvaluator(interval, settings.thickness)) {
 			elementOps[interval].push_back(generateExpression2D<ExternalGPsExpression>(interval, etype[interval], getEvaluator(interval, settings.thickness),
 					[] (auto &element, const size_t &gp, const size_t &s, const double &value) { element.ecf.thickness[gp][s] = value; }));
@@ -325,7 +318,13 @@ void HeatTransfer::analyze()
 //		fromExpression(*this, heatFlux.gp, heatFlux.gp.externalValues);
 //	}
 //	RHS(*this);
-//
+
+	if (Results::gradient != nullptr) {
+		generateElementOperators<TemperatureGradient>(etype, elementOps, Results::gradient);
+	}
+	if (Results::flux != nullptr) {
+		generateElementOperators<TemperatureFlux>(etype, elementOps, Results::flux);
+	}
 //	outputGradient(*this);
 //	outputFlux(*this);
 
@@ -375,8 +374,8 @@ size_t HeatTransfer::esize()
 
 void HeatTransfer::updateSolution(SteadyState &scheme)
 {
-//	scheme.x->storeTo(Results::temperature->data);
-//	results(); // do we need an update mechanism?
+	scheme.x->storeTo(Results::temperature->data);
+	assemble(ActionOperator::Action::SOLUTION);
 //	temp.node.setUpdate(1);
 }
 

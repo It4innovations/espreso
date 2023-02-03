@@ -801,6 +801,11 @@ struct GaussPoints<Element::CODE::HEXA20, 20, 8, 3> {
 template <Element::CODE code, int nodes, int gps, int edim, int etype, class Physics>
 struct Basis: ActionOperator, Physics {
 
+	Basis()
+	{
+		action = Action::ASSEMBLE | Action::SOLUTION;
+	}
+
 	void sisd(typename Physics::Element &element)
 	{
 		for (size_t gp = 0; gp < gps; ++gp) {

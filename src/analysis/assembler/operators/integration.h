@@ -13,7 +13,11 @@ template <size_t nodes, size_t gps, size_t ndim, size_t edim, size_t etype, clas
 template <size_t nodes, size_t gps, size_t edim, size_t etype, class Physics>
 struct Integration<nodes, gps, 2, edim, etype, Physics>: ActionOperator, Physics {
 
-	Integration(size_t interval) { isconst = false; }
+	Integration(size_t interval)
+	{
+		isconst = false;
+		action = Action::ASSEMBLE | Action::SOLUTION;
+	}
 
 	void sisd(typename Physics::Element &element)
 	{
@@ -80,7 +84,11 @@ struct Integration<nodes, gps, 2, edim, etype, Physics>: ActionOperator, Physics
 template <size_t nodes, size_t gps, size_t edim, size_t etype, class Physics>
 struct Integration<nodes, gps, 3, edim, etype, Physics>: ActionOperator, Physics {
 
-	Integration(size_t interval) { isconst = false; }
+	Integration(size_t interval)
+	{
+		isconst = false;
+		action = Action::ASSEMBLE | Action::SOLUTION;
+	}
 
 	void sisd(typename Physics::Element &element)
 	{
@@ -185,7 +193,11 @@ struct Integration<nodes, gps, 3, edim, etype, Physics>: ActionOperator, Physics
 template <size_t nodes, size_t gps, size_t ndim, size_t edim, size_t etype, class Physics>
 struct Volume: ActionOperator, Physics {
 	double &volume;
-	Volume(size_t interval, std::vector<double> &volume): volume(volume[interval]) { isconst = false; }
+	Volume(size_t interval, std::vector<double> &volume): volume(volume[interval])
+	{
+		isconst = false;
+		action = Action::ASSEMBLE;
+	}
 
 	void sisd(typename Physics::Element &element)
 	{

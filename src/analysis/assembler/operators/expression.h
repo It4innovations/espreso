@@ -20,6 +20,7 @@ struct ExternalExpression: ActionOperator {
 			params.general[i].variable->set(interval, params.general[i]);
 		}
 		isconst = evaluator->variables.size() == 0;
+		action = Action::ASSEMBLE | Action::SOLUTION;
 	}
 
 	Evaluator *evaluator;

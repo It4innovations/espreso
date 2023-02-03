@@ -48,6 +48,18 @@ Assembler::Assembler(PhysicsConfiguration &settings)
 
 double Assembler::assemble(ActionOperator::Action action)
 {
+	if (action == ActionOperator::Action::FILL) {
+		for (int t = 0; t < info::env::threads; ++t) {
+			for (size_t d = info::mesh->domains->distribution[t]; d < info::mesh->domains->distribution[t + 1]; d++) {
+				for (esint i = info::mesh->elements->eintervalsDistribution[d]; i < info::mesh->elements->eintervalsDistribution[d + 1]; ++i) {
+					esint elements = info::mesh->elements->eintervals[i].end - info::mesh->elements->eintervals[i].begin;
+					instantiate(action, info::mesh->elements->eintervals[i].code, etype[i], elementOps[i], elements);
+				}
+			}
+		}
+		return 0;
+	}
+
 	double time = 0;
 	#pragma omp parallel for reduction(+:time)
 	for (int t = 0; t < info::env::threads; ++t) {

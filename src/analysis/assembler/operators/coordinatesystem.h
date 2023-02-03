@@ -9,7 +9,10 @@
 namespace espreso {
 
 struct CoordinateSystem: ActionOperator {
-	CoordinateSystem(size_t interval) {}
+	CoordinateSystem(size_t interval)
+	{
+		action = Action::ASSEMBLE | Action::SOLUTION;
+	}
 };
 
 

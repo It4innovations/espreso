@@ -171,8 +171,8 @@ struct VectorSetter: ActionOperator, Physics {
 	size_t dofs, dim;
 	double *global;
 	const esint *position;
-	int filter;
-	Setter setter;
+	const int filter;
+	const Setter setter;
 
 	void move(int n)
 	{

@@ -17,16 +17,21 @@ using namespace espreso;
 template <template <size_t, size_t, size_t, size_t, size_t> class DataDescriptor, int nodes, int gps, int ndim, int edim, int etype>
 double simdloop(ActionOperator::Action action, const std::vector<ActionOperator*> &ops, esint elements)
 {
+	if (elements == 0) return 0;
 	typename DataDescriptor<nodes, gps, ndim, edim, etype>::Element element;
 	std::vector<DataDescriptor<nodes, gps, ndim, edim, etype>*> active; active.reserve(ops.size());
 
 	for (auto op = ops.cbegin(); op != ops.cend(); ++op) {
-		if ((*op)->action == action) {
-			if ((*op)->isconst) {
-				dynamic_cast<DataDescriptor<nodes, gps, ndim, edim, etype>*>(*op)->simd(element);
+		if ((*op)->action & action) {
+			if (elements > SIMD::size) {
+				if ((*op)->isconst) {
+					dynamic_cast<DataDescriptor<nodes, gps, ndim, edim, etype>*>(*op)->simd(element);
+				} else {
+					active.push_back(dynamic_cast<DataDescriptor<nodes, gps, ndim, edim, etype>*>(*op));
+					active.back()->simd(element);
+				}
 			} else {
-				active.push_back(dynamic_cast<DataDescriptor<nodes, gps, ndim, edim, etype>*>(*op));
-				active.back()->simd(element);
+				dynamic_cast<DataDescriptor<nodes, gps, ndim, edim, etype>*>(*op)->peel(element, elements);
 			}
 		}
 	}
@@ -47,9 +52,9 @@ double simdloop(ActionOperator::Action action, const std::vector<ActionOperator*
 	}
 
 	for (auto op = ops.cbegin(); op != ops.cend(); ++op) {
-		if ((*op)->action == action) {
+		if ((*op)->action & action) {
 			if ((*op)->isconst) {
-				(*op)->move(-(int)SIMD::size);
+				(*op)->move(-(int)std::min(elements, (esint)SIMD::size));
 			} else {
 				(*op)->move(-elements);
 			}

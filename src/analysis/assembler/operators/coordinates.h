@@ -13,11 +13,11 @@ namespace espreso {
 struct CopyCoordinates: ActionOperator {
 	serializededata<esint, esint>::const_iterator procNodes;
 
-	CopyCoordinates(int interval, serializededata<esint, esint>::const_iterator procNodes)
+	CopyCoordinates(size_t interval, serializededata<esint, esint>::const_iterator procNodes)
 	: procNodes(procNodes)
 	{
-		procNodes += info::mesh->elements->eintervals[interval].begin;
 		isconst = false;
+		action = Action::ASSEMBLE | Action::SOLUTION;
 	}
 
 	void move(int n)
@@ -137,7 +137,6 @@ struct CoordinatesToElementNodesAndGPs: CopyCoordinates, Physics {
 		}
 	}
 };
-
 
 }
 

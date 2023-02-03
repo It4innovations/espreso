@@ -63,6 +63,7 @@ protected:
 	size_t esize();
 
 private:
+	void gatherInputs();
 	void generateConductivity();
 };
 
