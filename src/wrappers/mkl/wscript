@@ -12,10 +12,11 @@ def configure(ctx):
     if ctx.options.intwidth == "64":
         libs.append("mkl_intel_ilp64")
     libs.append("mkl_core")
-    if ctx.options.cxx == "icpc":
-        libs.append("mkl_gnu_thread")
-    if ctx.options.cxx == "g++":
-        libs.append("mkl_gnu_thread")
+    # if ctx.options.cxx == "icpc":
+    #     libs.append("mkl_intel_thread")
+    # if ctx.options.cxx == "g++":
+    #     libs.append("mkl_gnu_thread")
+    libs.append("mkl_sequential")
 
     if ctx.link_cxx(name="mkl", header_name="mkl.h", libs=libs, root=ctx.options.mkl):
         ctx.env.append_unique("DEFINES_MKL", [("MKL_INT=int", "MKL_INT=long")[ctx.options.intwidth == "64"], "MKL_Complex8=std::complex<float>", "MKL_Complex16=std::complex<double>"])
