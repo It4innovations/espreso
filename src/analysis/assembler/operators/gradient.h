@@ -9,9 +9,10 @@
 namespace espreso {
 
 struct TemperatureGradientBase: ActionOperator {
-	TemperatureGradientBase(int interval, NamedData *gradient)
+	TemperatureGradientBase(size_t interval, NamedData *gradient)
 	: gradient(gradient->data.data() + info::mesh->dimension * info::mesh->elements->eintervals[interval].begin)
 	{
+		isconst = false;
 		action = Action::SOLUTION;
 	}
 
@@ -19,7 +20,7 @@ struct TemperatureGradientBase: ActionOperator {
 
 	void move(int n)
 	{
-		gradient += n * info::mesh->dimension;
+		gradient += n;
 	}
 };
 
@@ -42,11 +43,12 @@ struct TemperatureGradient<nodes, gps, 2, edim, etype, Physics>: TemperatureGrad
 		}
 		gradient[0] *= scale;
 		gradient[1] *= scale;
-		move(1);
+		move(2);
 	}
 
 	void simd(typename Physics::Element &element)
 	{
+		double * __restrict__ out = gradient;
 		SIMD g0 = zeros(), g1 = zeros();
 		for (size_t gp = 0; gp < gps; ++gp) {
 			for (size_t n = 0; n < nodes; ++n) {
@@ -58,14 +60,15 @@ struct TemperatureGradient<nodes, gps, 2, edim, etype, Physics>: TemperatureGrad
 		g0 = g0 * sscale;
 		g1 = g1 * sscale;
 		for (size_t s = 0; s < SIMD::size; ++s) {
-			gradient[2 * s + 0] = g0[s];
-			gradient[2 * s + 1] = g1[s];
+			out[2 * s + 0] = g0[s];
+			out[2 * s + 1] = g1[s];
 		}
-		move(SIMD::size);
+		move(2 * SIMD::size);
 	}
 
 	void peel(typename Physics::Element &element, size_t size)
 	{
+		double * __restrict__ out = gradient;
 		SIMD g0 = zeros(), g1 = zeros();
 		for (size_t gp = 0; gp < gps; ++gp) {
 			for (size_t n = 0; n < nodes; ++n) {
@@ -77,10 +80,10 @@ struct TemperatureGradient<nodes, gps, 2, edim, etype, Physics>: TemperatureGrad
 		g0 = g0 * sscale;
 		g1 = g1 * sscale;
 		for (size_t s = 0; s < size; ++s) {
-			gradient[2 * s + 0] = g0[s];
-			gradient[2 * s + 1] = g1[s];
+			out[2 * s + 0] = g0[s];
+			out[2 * s + 1] = g1[s];
 		}
-		move(size);
+		move(2 * size);
 	}
 };
 
@@ -103,11 +106,12 @@ struct TemperatureGradient<nodes, gps, 3, edim, etype, Physics>: TemperatureGrad
 		gradient[0] *= scale;
 		gradient[1] *= scale;
 		gradient[2] *= scale;
-		move(1);
+		move(3);
 	}
 
 	void simd(typename Physics::Element &element)
 	{
+		double * __restrict__ out = gradient;
 		SIMD g0 = zeros(), g1 = zeros(), g2 = zeros();
 		for (size_t gp = 0; gp < gps; ++gp) {
 			for (size_t n = 0; n < nodes; ++n) {
@@ -121,15 +125,16 @@ struct TemperatureGradient<nodes, gps, 3, edim, etype, Physics>: TemperatureGrad
 		g1 = g1 * sscale;
 		g2 = g2 * sscale;
 		for (size_t s = 0; s < SIMD::size; ++s) {
-			gradient[3 * s + 0] = g0[s];
-			gradient[3 * s + 1] = g1[s];
-			gradient[3 * s + 2] = g2[s];
+			out[3 * s + 0] = g0[s];
+			out[3 * s + 1] = g1[s];
+			out[3 * s + 2] = g2[s];
 		}
-		move(SIMD::size);
+		move(3 * SIMD::size);
 	}
 
 	void peel(typename Physics::Element &element, size_t size)
 	{
+		double * __restrict__ out = gradient;
 		SIMD g0 = zeros(), g1 = zeros(), g2 = zeros();
 		for (size_t gp = 0; gp < gps; ++gp) {
 			for (size_t n = 0; n < nodes; ++n) {
@@ -143,11 +148,11 @@ struct TemperatureGradient<nodes, gps, 3, edim, etype, Physics>: TemperatureGrad
 		g1 = g1 * sscale;
 		g2 = g2 * sscale;
 		for (size_t s = 0; s < size; ++s) {
-			gradient[3 * s + 0] = g0[s];
-			gradient[3 * s + 1] = g1[s];
-			gradient[3 * s + 2] = g2[s];
+			out[3 * s + 0] = g0[s];
+			out[3 * s + 1] = g1[s];
+			out[3 * s + 2] = g2[s];
 		}
-		move(size);
+		move(3 * size);
 	}
 };
 

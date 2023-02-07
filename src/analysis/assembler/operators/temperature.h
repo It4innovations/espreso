@@ -49,9 +49,7 @@ struct TemperatureToElementNodes: Temperature, Physics {
 	{
 		for (size_t s = 0; s < size; ++s, ++procNodes) {
 			for (size_t n = 0; n < nodes; ++n) {
-				for (size_t d = 0; d < ndim; ++d) {
-					element.temp[n][s] = source[procNodes->at(n)];
-				}
+				element.temp[n][s] = source[procNodes->at(n)];
 			}
 		}
 	}
@@ -102,13 +100,9 @@ struct TemperatureToElementNodesAndGPs: Temperature, Physics {
 			}
 		}
 		for (size_t gp = 0; gp < gps; ++gp) {
-			for (size_t d = 0; d < ndim; ++d) {
-				element.gptemp[gp] = zeros();
-			}
+			element.gptemp[gp] = zeros();
 			for (size_t n = 0; n < nodes; ++n) {
-				for (size_t d = 0; d < ndim; ++d) {
-					element.gptemp[gp] = element.gptemp[gp] + element.N[gp][n] * element.temp[n];
-				}
+				element.gptemp[gp] = element.gptemp[gp] + element.N[gp][n] * element.temp[n];
 			}
 		}
 	}

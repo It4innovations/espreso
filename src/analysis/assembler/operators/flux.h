@@ -10,9 +10,10 @@
 namespace espreso {
 
 struct TemperatureFluxBase: ActionOperator {
-	TemperatureFluxBase(int interval, NamedData *flux)
+	TemperatureFluxBase(size_t interval, NamedData *flux)
 	: flux(flux->data.data() + info::mesh->dimension * info::mesh->elements->eintervals[interval].begin)
 	{
+		isconst = false;
 		action = Action::SOLUTION;
 	}
 
@@ -20,7 +21,7 @@ struct TemperatureFluxBase: ActionOperator {
 
 	void move(int n)
 	{
-		flux += n * info::mesh->dimension;
+		flux += n;
 	}
 };
 
@@ -41,16 +42,17 @@ struct TemperatureFlux<nodes, gps, 2, edim, HeatTransferElementType::SYMMETRIC_I
 				f[0] += element.dND[gp][n][0] * element.temp[n];
 				f[1] += element.dND[gp][n][1] * element.temp[n];
 			}
-			flux[0] += f[0] * element.conductivity[gp][0];
-			flux[1] += f[1] * element.conductivity[gp][0];
+			flux[0] += f[0] * element.conductivity[gp];
+			flux[1] += f[1] * element.conductivity[gp];
 		}
 		flux[0] *= scale;
 		flux[1] *= scale;
-		move(1);
+		move(2);
 	}
 
 	void simd(typename Physics::Element &element)
 	{
+		double * __restrict__ out = flux;
 		SIMD f0 = zeros(), f1 = zeros();
 		for (size_t gp = 0; gp < gps; ++gp) {
 			SIMD fgp0 = zeros(), fgp1 = zeros();
@@ -58,21 +60,22 @@ struct TemperatureFlux<nodes, gps, 2, edim, HeatTransferElementType::SYMMETRIC_I
 				fgp0 = fgp0 + element.dND[gp][n][0] * element.temp[n];
 				fgp1 = fgp1 + element.dND[gp][n][1] * element.temp[n];
 			}
-			f0 = f0 + fgp0 * element.conductivity[gp][0];
-			f1 = f1 + fgp1 * element.conductivity[gp][0];
+			f0 = f0 + fgp0 * element.conductivity[gp];
+			f1 = f1 + fgp1 * element.conductivity[gp];
 		}
 		SIMD sscale; sscale.fill(scale);
 		f0 = f0 * sscale;
 		f1 = f1 * sscale;
 		for (size_t s = 0; s < SIMD::size; ++s) {
-			flux[2 * s + 0] = f0[s];
-			flux[2 * s + 1] = f1[s];
+			out[2 * s + 0] = f0[s];
+			out[2 * s + 1] = f1[s];
 		}
-		move(SIMD::size);
+		move(2 * SIMD::size);
 	}
 
 	void peel(typename Physics::Element &element, size_t size)
 	{
+		double * __restrict__ out = flux;
 		SIMD f0 = zeros(), f1 = zeros();
 		for (size_t gp = 0; gp < gps; ++gp) {
 			SIMD fgp0 = zeros(), fgp1 = zeros();
@@ -80,17 +83,17 @@ struct TemperatureFlux<nodes, gps, 2, edim, HeatTransferElementType::SYMMETRIC_I
 				fgp0 = fgp0 + element.dND[gp][n][0] * element.temp[n];
 				fgp1 = fgp1 + element.dND[gp][n][1] * element.temp[n];
 			}
-			f0 = f0 + fgp0 * element.conductivity[gp][0];
-			f1 = f1 + fgp1 * element.conductivity[gp][0];
+			f0 = f0 + fgp0 * element.conductivity[gp];
+			f1 = f1 + fgp1 * element.conductivity[gp];
 		}
 		SIMD sscale; sscale.fill(scale);
 		f0 = f0 * sscale;
 		f1 = f1 * sscale;
 		for (size_t s = 0; s <size; ++s) {
-			flux[2 * s + 0] = f0[s];
-			flux[2 * s + 1] = f1[s];
+			out[2 * s + 0] = f0[s];
+			out[2 * s + 1] = f1[s];
 		}
-		move(size);
+		move(2 * size);
 	}
 };
 
@@ -110,18 +113,19 @@ struct TemperatureFlux<nodes, gps, 3, edim, HeatTransferElementType::SYMMETRIC_I
 				f[1] += element.dND[gp][n][1] * element.temp[n];
 				f[2] += element.dND[gp][n][2] * element.temp[n];
 			}
-			flux[0] += f[0] * element.conductivity[gp][0];
-			flux[1] += f[1] * element.conductivity[gp][0];
-			flux[2] += f[2] * element.conductivity[gp][0];
+			flux[0] += f[0] * element.conductivity[gp];
+			flux[1] += f[1] * element.conductivity[gp];
+			flux[2] += f[2] * element.conductivity[gp];
 		}
 		flux[0] *= scale;
 		flux[1] *= scale;
 		flux[2] *= scale;
-		move(1);
+		move(3);
 	}
 
 	void simd(typename Physics::Element &element)
 	{
+		double * __restrict__ out = flux;
 		SIMD f0 = zeros(), f1 = zeros(), f2 = zeros();
 		for (size_t gp = 0; gp < gps; ++gp) {
 			SIMD fgp0 = zeros(), fgp1 = zeros(), fgp2 = zeros();
@@ -130,24 +134,25 @@ struct TemperatureFlux<nodes, gps, 3, edim, HeatTransferElementType::SYMMETRIC_I
 				fgp1 = fgp1 + element.dND[gp][n][1] * element.temp[n];
 				fgp2 = fgp2 + element.dND[gp][n][2] * element.temp[n];
 			}
-			f0 = f0 + fgp0 * element.conductivity[gp][0];
-			f1 = f1 + fgp1 * element.conductivity[gp][0];
-			f2 = f2 + fgp2 * element.conductivity[gp][0];
+			f0 = f0 + fgp0 * element.conductivity[gp];
+			f1 = f1 + fgp1 * element.conductivity[gp];
+			f2 = f2 + fgp2 * element.conductivity[gp];
 		}
 		SIMD sscale; sscale.fill(scale);
 		f0 = f0 * sscale;
 		f1 = f1 * sscale;
 		f2 = f2 * sscale;
 		for (size_t s = 0; s < SIMD::size; ++s) {
-			flux[3 * s + 0] = f0[s];
-			flux[3 * s + 1] = f1[s];
-			flux[3 * s + 2] = f2[s];
+			out[3 * s + 0] = f0[s];
+			out[3 * s + 1] = f1[s];
+			out[3 * s + 2] = f2[s];
 		}
-		move(SIMD::size);
+		move(3 * SIMD::size);
 	}
 
 	void peel(typename Physics::Element &element, size_t size)
 	{
+		double * __restrict__ out = flux;
 		SIMD f0 = zeros(), f1 = zeros(), f2 = zeros();
 		for (size_t gp = 0; gp < gps; ++gp) {
 			SIMD fgp0 = zeros(), fgp1 = zeros(), fgp2 = zeros();
@@ -156,20 +161,20 @@ struct TemperatureFlux<nodes, gps, 3, edim, HeatTransferElementType::SYMMETRIC_I
 				fgp1 = fgp1 + element.dND[gp][n][1] * element.temp[n];
 				fgp2 = fgp2 + element.dND[gp][n][2] * element.temp[n];
 			}
-			f0 = f0 + fgp0 * element.conductivity[gp][0];
-			f1 = f1 + fgp1 * element.conductivity[gp][0];
-			f2 = f2 + fgp2 * element.conductivity[gp][0];
+			f0 = f0 + fgp0 * element.conductivity[gp];
+			f1 = f1 + fgp1 * element.conductivity[gp];
+			f2 = f2 + fgp2 * element.conductivity[gp];
 		}
 		SIMD sscale; sscale.fill(scale);
 		f0 = f0 * sscale;
 		f1 = f1 * sscale;
 		f2 = f2 * sscale;
 		for (size_t s = 0; s < size; ++s) {
-			flux[3 * s + 0] = f0[s];
-			flux[3 * s + 1] = f1[s];
-			flux[3 * s + 2] = f2[s];
+			out[3 * s + 0] = f0[s];
+			out[3 * s + 1] = f1[s];
+			out[3 * s + 2] = f2[s];
 		}
-		move(size);
+		move(3 * size);
 	}
 };
 
@@ -188,16 +193,17 @@ struct TemperatureFlux<nodes, gps, 2, edim, etype, Physics>: TemperatureFluxBase
 				f[0] += element.dND[gp][n][0] * element.temp[n];
 				f[1] += element.dND[gp][n][1] * element.temp[n];
 			}
-			flux[0] += f[0] * element.conductivity[gp][0];
-			flux[1] += f[1] * element.conductivity[gp][0];
+			flux[0] += f[0] * element.conductivity[gp][0] + f[1] * element.conductivity[gp][1];
+			flux[1] += f[0] * element.conductivity[gp][2] + f[1] * element.conductivity[gp][3];
 		}
 		flux[0] *= scale;
 		flux[1] *= scale;
-		move(1);
+		move(2);
 	}
 
 	void simd(typename Physics::Element &element)
 	{
+		double * __restrict__ out = flux;
 		SIMD f0 = zeros(), f1 = zeros();
 		for (size_t gp = 0; gp < gps; ++gp) {
 			SIMD fgp0 = zeros(), fgp1 = zeros();
@@ -205,21 +211,22 @@ struct TemperatureFlux<nodes, gps, 2, edim, etype, Physics>: TemperatureFluxBase
 				fgp0 = fgp0 + element.dND[gp][n][0] * element.temp[n];
 				fgp1 = fgp1 + element.dND[gp][n][1] * element.temp[n];
 			}
-			f0 = f0 + fgp0 * element.conductivity[gp][0];
-			f1 = f1 + fgp1 * element.conductivity[gp][0];
+			f0 = f0 + fgp0 * element.conductivity[gp][0] + fgp1 * element.conductivity[gp][1];
+			f1 = f1 + fgp0 * element.conductivity[gp][2] + fgp1 * element.conductivity[gp][3];
 		}
 		SIMD sscale; sscale.fill(scale);
 		f0 = f0 * sscale;
 		f1 = f1 * sscale;
 		for (size_t s = 0; s < SIMD::size; ++s) {
-			flux[2 * s + 0] = f0[s];
-			flux[2 * s + 1] = f1[s];
+			out[2 * s + 0] = f0[s];
+			out[2 * s + 1] = f1[s];
 		}
-		move(SIMD::size);
+		move(2 * SIMD::size);
 	}
 
 	void peel(typename Physics::Element &element, size_t size)
 	{
+		double * __restrict__ out = flux;
 		SIMD f0 = zeros(), f1 = zeros();
 		for (size_t gp = 0; gp < gps; ++gp) {
 			SIMD fgp0 = zeros(), fgp1 = zeros();
@@ -227,17 +234,17 @@ struct TemperatureFlux<nodes, gps, 2, edim, etype, Physics>: TemperatureFluxBase
 				fgp0 = fgp0 + element.dND[gp][n][0] * element.temp[n];
 				fgp1 = fgp1 + element.dND[gp][n][1] * element.temp[n];
 			}
-			f0 = f0 + fgp0 * element.conductivity[gp][0];
-			f1 = f1 + fgp1 * element.conductivity[gp][0];
+			f0 = f0 + fgp0 * element.conductivity[gp][0] + fgp1 * element.conductivity[gp][1];
+			f1 = f1 + fgp0 * element.conductivity[gp][2] + fgp1 * element.conductivity[gp][3];
 		}
 		SIMD sscale; sscale.fill(scale);
 		f0 = f0 * sscale;
 		f1 = f1 * sscale;
 		for (size_t s = 0; s <size; ++s) {
-			flux[2 * s + 0] = f0[s];
-			flux[2 * s + 1] = f1[s];
+			out[2 * s + 0] = f0[s];
+			out[2 * s + 1] = f1[s];
 		}
-		move(size);
+		move(2 * size);
 	}
 };
 
@@ -257,18 +264,19 @@ struct TemperatureFlux<nodes, gps, 3, edim, etype, Physics>: TemperatureFluxBase
 				f[1] += element.dND[gp][n][1] * element.temp[n];
 				f[2] += element.dND[gp][n][2] * element.temp[n];
 			}
-			flux[0] += f[0] * element.conductivity[gp][0];
-			flux[1] += f[1] * element.conductivity[gp][0];
-			flux[2] += f[2] * element.conductivity[gp][0];
+			flux[0] += f[0] * element.conductivity[gp][0] + f[1] * element.conductivity[gp][1] + f[2] * element.conductivity[gp][2];
+			flux[1] += f[0] * element.conductivity[gp][3] + f[1] * element.conductivity[gp][4] + f[2] * element.conductivity[gp][5];
+			flux[2] += f[0] * element.conductivity[gp][6] + f[1] * element.conductivity[gp][7] + f[2] * element.conductivity[gp][8];
 		}
 		flux[0] *= scale;
 		flux[1] *= scale;
 		flux[2] *= scale;
-		move(1);
+		move(3);
 	}
 
 	void simd(typename Physics::Element &element)
 	{
+		double * __restrict__ out = flux;
 		SIMD f0 = zeros(), f1 = zeros(), f2 = zeros();
 		for (size_t gp = 0; gp < gps; ++gp) {
 			SIMD fgp0 = zeros(), fgp1 = zeros(), fgp2 = zeros();
@@ -277,24 +285,25 @@ struct TemperatureFlux<nodes, gps, 3, edim, etype, Physics>: TemperatureFluxBase
 				fgp1 = fgp1 + element.dND[gp][n][1] * element.temp[n];
 				fgp2 = fgp2 + element.dND[gp][n][2] * element.temp[n];
 			}
-			f0 = f0 + fgp0 * element.conductivity[gp][0];
-			f1 = f1 + fgp1 * element.conductivity[gp][0];
-			f2 = f2 + fgp2 * element.conductivity[gp][0];
+			f0 = f0 + fgp0 * element.conductivity[gp][0] + fgp1 * element.conductivity[gp][1] + fgp2 * element.conductivity[gp][2];
+			f1 = f1 + fgp0 * element.conductivity[gp][3] + fgp1 * element.conductivity[gp][4] + fgp2 * element.conductivity[gp][5];
+			f2 = f2 + fgp0 * element.conductivity[gp][6] + fgp1 * element.conductivity[gp][7] + fgp2 * element.conductivity[gp][8];
 		}
 		SIMD sscale; sscale.fill(scale);
 		f0 = f0 * sscale;
 		f1 = f1 * sscale;
 		f2 = f2 * sscale;
 		for (size_t s = 0; s < SIMD::size; ++s) {
-			flux[3 * s + 0] = f0[s];
-			flux[3 * s + 1] = f1[s];
-			flux[3 * s + 2] = f2[s];
+			out[3 * s + 0] = f0[s];
+			out[3 * s + 1] = f1[s];
+			out[3 * s + 2] = f2[s];
 		}
-		move(SIMD::size);
+		move(3 * SIMD::size);
 	}
 
 	void peel(typename Physics::Element &element, size_t size)
 	{
+		double * __restrict__ out = flux;
 		SIMD f0 = zeros(), f1 = zeros(), f2 = zeros();
 		for (size_t gp = 0; gp < gps; ++gp) {
 			SIMD fgp0 = zeros(), fgp1 = zeros(), fgp2 = zeros();
@@ -303,107 +312,23 @@ struct TemperatureFlux<nodes, gps, 3, edim, etype, Physics>: TemperatureFluxBase
 				fgp1 = fgp1 + element.dND[gp][n][1] * element.temp[n];
 				fgp2 = fgp2 + element.dND[gp][n][2] * element.temp[n];
 			}
-			f0 = f0 + fgp0 * element.conductivity[gp][0];
-			f1 = f1 + fgp1 * element.conductivity[gp][0];
-			f2 = f2 + fgp2 * element.conductivity[gp][0];
+			f0 = f0 + fgp0 * element.conductivity[gp][0] + fgp1 * element.conductivity[gp][1] + fgp2 * element.conductivity[gp][2];
+			f1 = f1 + fgp0 * element.conductivity[gp][3] + fgp1 * element.conductivity[gp][4] + fgp2 * element.conductivity[gp][5];
+			f2 = f2 + fgp0 * element.conductivity[gp][6] + fgp1 * element.conductivity[gp][7] + fgp2 * element.conductivity[gp][8];
 		}
 		SIMD sscale; sscale.fill(scale);
 		f0 = f0 * sscale;
 		f1 = f1 * sscale;
 		f2 = f2 * sscale;
 		for (size_t s = 0; s < size; ++s) {
-			flux[3 * s + 0] = f0[s];
-			flux[3 * s + 1] = f1[s];
-			flux[3 * s + 2] = f2[s];
+			out[3 * s + 0] = f0[s];
+			out[3 * s + 1] = f1[s];
+			out[3 * s + 2] = f2[s];
 		}
-		move(size);
+		move(3 * size);
 	}
 };
 
 }
-
-//#include "analysis/assembler/operator.h"
-//#include "analysis/assembler/parameter.h"
-//#include "analysis/assembler/math.hpp"
-//#include "esinfo/meshinfo.h"
-//#include "mesh/store/elementstore.h"
-//
-//namespace espreso {
-//
-//struct OutputFlux: public ActionOperator {
-//	OutputFlux(int interval, const ParameterData &dND, const ParameterData &temperature, const ParameterData &conductivity, NamedData *gradient)
-//	: dND(dND, interval),
-//	  temp(temperature, interval),
-//	  conductivity(conductivity, interval),
-//	  flux(gradient->data.data() + info::mesh->dimension * info::mesh->elements->eintervals[interval].begin)
-//	{
-//
-//	}
-//
-//	InputParameterIterator dND, temp, conductivity;
-//	double* flux;
-//
-//	void operator++()
-//	{
-//		++dND; ++temp; ++conductivity;
-//		flux += info::mesh->dimension;
-//	}
-//
-//	void move(int n)
-//	{
-//		dND += n; temp += n; conductivity += n;
-//		flux += n * info::mesh->dimension;
-//	}
-//};
-//
-//template<size_t nodes, size_t gps>
-//struct OutputFluxIsotropic2D: public OutputFlux {
-//	using OutputFlux::OutputFlux;
-//
-//	void operator()()
-//	{
-//		for (size_t gpindex = 0; gpindex < gps; ++gpindex) {
-//			ADDM2NMN1<nodes>(conductivity[gpindex] / gps, dND.data + 2 * nodes * gpindex, temp.data, flux);
-//		}
-//	}
-//};
-//
-//template<size_t nodes, size_t gps>
-//struct OutputFluxIsotropic3D: public OutputFlux {
-//	using OutputFlux::OutputFlux;
-//
-//	void operator()()
-//	{
-//		for (size_t gpindex = 0; gpindex < gps; ++gpindex) {
-//			ADDM2NMN1<nodes>(conductivity[gpindex] / gps, dND.data + 3 * nodes * gpindex, temp.data, flux);
-//		}
-//	}
-//};
-//
-//template<size_t nodes, size_t gps>
-//struct OutputFlux2D: public OutputFlux {
-//	using OutputFlux::OutputFlux;
-//
-//	void operator()()
-//	{
-//		for (size_t gpindex = 0; gpindex < gps; ++gpindex) {
-//			ADDM22M2NMN1<nodes>(1. / gps, conductivity.data + 4 * gpindex, dND.data + 2 * nodes * gpindex, temp.data, flux);
-//		}
-//	}
-//};
-//
-//template<size_t nodes, size_t gps>
-//struct OutputFlux3D: public OutputFlux {
-//	using OutputFlux::OutputFlux;
-//
-//	void operator()()
-//	{
-//		for (size_t gpindex = 0; gpindex < gps; ++gpindex) {
-//			ADDM33M3NMN1<nodes>(1. / gps, conductivity.data + 9 * gpindex, dND.data + 3 * nodes * gpindex, temp.data, flux);
-//		}
-//	}
-//};
-//
-//}
 
 #endif /* SRC_ANALYSIS_ASSEMBLER_OPERATORS_FLUX_H_ */

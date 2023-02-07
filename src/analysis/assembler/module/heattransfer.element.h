@@ -35,8 +35,8 @@ struct HeatTransferElementType {
 	enum: int {
 		SYMMETRIC_ISOTROPIC  = 0,
 		SYMMETRIC_GENERAL    = 1,
-		ASYMMETRIC_ISOTROPIC = 2,
-		ASYMMETRIC_GENERAL   = 3,
+//		ASYMMETRIC_ISOTROPIC = 2,
+//		ASYMMETRIC_GENERAL   = 3,
 		FACE                 = 4,
 		EDGE                 = 5,
 		NODE                 = 6
@@ -129,7 +129,7 @@ struct HeatTransferDataDescriptor<nodes, gps, 3, edim, HeatTransferElementType::
 	struct Element {
 		struct {
 			alignas(SIMD::size * sizeof(double)) SIMD conductivity[gps][9];
-			alignas(SIMD::size * sizeof(double)) SIMD angle       [gps][6];
+			alignas(SIMD::size * sizeof(double)) SIMD center      [gps][3]; // or rotation in the case of cartesion
 			alignas(SIMD::size * sizeof(double)) SIMD density     [gps];
 			alignas(SIMD::size * sizeof(double)) SIMD heatCapacity[gps];
 		} ecf;
@@ -145,6 +145,7 @@ struct HeatTransferDataDescriptor<nodes, gps, 3, edim, HeatTransferElementType::
 		alignas(SIMD::size * sizeof(double)) SIMD dND[gps][nodes][edim];
 		alignas(SIMD::size * sizeof(double)) SIMD det[gps];
 
+		alignas(SIMD::size * sizeof(double)) SIMD cossin      [gps][6];
 		alignas(SIMD::size * sizeof(double)) SIMD conductivity[gps][9];
 
 		Element()
@@ -170,7 +171,7 @@ struct HeatTransferDataDescriptor<nodes, gps, 2, edim, HeatTransferElementType::
 			alignas(SIMD::size * sizeof(double)) SIMD thickness[gps];
 
 			alignas(SIMD::size * sizeof(double)) SIMD conductivity[gps][4];
-			alignas(SIMD::size * sizeof(double)) SIMD angle       [gps][2];
+			alignas(SIMD::size * sizeof(double)) SIMD center      [gps][2]; // or rotation in the case of cartesion
 			alignas(SIMD::size * sizeof(double)) SIMD density     [gps];
 			alignas(SIMD::size * sizeof(double)) SIMD heatCapacity[gps];
 		} ecf;
@@ -186,6 +187,7 @@ struct HeatTransferDataDescriptor<nodes, gps, 2, edim, HeatTransferElementType::
 		alignas(SIMD::size * sizeof(double)) SIMD dND[gps][nodes][edim];
 		alignas(SIMD::size * sizeof(double)) SIMD det[gps];
 
+		alignas(SIMD::size * sizeof(double)) SIMD cossin      [gps][2];
 		alignas(SIMD::size * sizeof(double)) SIMD conductivity[gps][4];
 
 		Element()

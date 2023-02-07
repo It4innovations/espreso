@@ -30,19 +30,19 @@ struct CoordinateSystemCartesian<nodes, gps, 2, edim, etype, Physics>: Coordinat
 	void sisd(typename Physics::Element &element)
 	{
 		for (size_t gp = 0; gp < gps; ++gp) {
-			double angle = element.ecf.angle[gp][0];
-			element.ecf.angle[gp][0] = std::cos(M_PI * angle * straightAngleRec);
-			element.ecf.angle[gp][1] = std::sin(M_PI * angle * straightAngleRec);
+			double angle = element.ecf.center[gp][0];
+			element.cossin[gp][0] = std::cos(M_PI * angle * straightAngleRec);
+			element.cossin[gp][1] = std::sin(M_PI * angle * straightAngleRec);
 		}
 	}
 
 	void simd(typename Physics::Element &element)
 	{
 		for (size_t gp = 0; gp < gps; ++gp) {
-			SIMD angle = element.ecf.angle[gp][0];
+			SIMD angle = element.ecf.center[gp][0];
 			for (size_t s = 0; s < SIMD::size; ++s) {
-				element.ecf.angle[gp][0][s] = std::cos(M_PI * angle[s] * straightAngleRec);
-				element.ecf.angle[gp][1][s] = std::sin(M_PI * angle[s] * straightAngleRec);
+				element.cossin[gp][0][s] = std::cos(M_PI * angle[s] * straightAngleRec);
+				element.cossin[gp][1][s] = std::sin(M_PI * angle[s] * straightAngleRec);
 			}
 		}
 	}
@@ -57,31 +57,31 @@ struct CoordinateSystemCartesian<nodes, gps, 3, edim, etype, Physics>: Coordinat
 	void sisd(typename Physics::Element &element)
 	{
 		for (size_t gp = 0; gp < gps; ++gp) {
-			double angleX = element.ecf.angle[gp][0];
-			double angleY = element.ecf.angle[gp][1];
-			double angleZ = element.ecf.angle[gp][2];
-			element.ecf.angle[gp][0] = std::cos(M_PI * angleX * straightAngleRec);
-			element.ecf.angle[gp][1] = std::cos(M_PI * angleY * straightAngleRec);
-			element.ecf.angle[gp][2] = std::cos(M_PI * angleZ * straightAngleRec);
-			element.ecf.angle[gp][3] = std::sin(M_PI * angleX * straightAngleRec);
-			element.ecf.angle[gp][4] = std::sin(M_PI * angleY * straightAngleRec);
-			element.ecf.angle[gp][5] = std::sin(M_PI * angleZ * straightAngleRec);
+			double angleX = element.ecf.center[gp][0];
+			double angleY = element.ecf.center[gp][1];
+			double angleZ = element.ecf.center[gp][2];
+			element.cossin[gp][0] = std::cos(M_PI * angleX * straightAngleRec);
+			element.cossin[gp][1] = std::cos(M_PI * angleY * straightAngleRec);
+			element.cossin[gp][2] = std::cos(M_PI * angleZ * straightAngleRec);
+			element.cossin[gp][3] = std::sin(M_PI * angleX * straightAngleRec);
+			element.cossin[gp][4] = std::sin(M_PI * angleY * straightAngleRec);
+			element.cossin[gp][5] = std::sin(M_PI * angleZ * straightAngleRec);
 		}
 	}
 
 	void simd(typename Physics::Element &element)
 	{
 		for (size_t gp = 0; gp < gps; ++gp) {
-			SIMD angleX = element.ecf.angle[gp][0];
-			SIMD angleY = element.ecf.angle[gp][1];
-			SIMD angleZ = element.ecf.angle[gp][2];
+			SIMD angleX = element.ecf.center[gp][0];
+			SIMD angleY = element.ecf.center[gp][1];
+			SIMD angleZ = element.ecf.center[gp][2];
 			for (size_t s = 0; s < SIMD::size; ++s) {
-				element.ecf.angle[gp][0][s] = std::cos(M_PI * angleX[s] * straightAngleRec);
-				element.ecf.angle[gp][1][s] = std::cos(M_PI * angleY[s] * straightAngleRec);
-				element.ecf.angle[gp][2][s] = std::cos(M_PI * angleZ[s] * straightAngleRec);
-				element.ecf.angle[gp][3][s] = std::sin(M_PI * angleX[s] * straightAngleRec);
-				element.ecf.angle[gp][4][s] = std::sin(M_PI * angleY[s] * straightAngleRec);
-				element.ecf.angle[gp][5][s] = std::sin(M_PI * angleZ[s] * straightAngleRec);
+				element.cossin[gp][0][s] = std::cos(M_PI * angleX[s] * straightAngleRec);
+				element.cossin[gp][1][s] = std::cos(M_PI * angleY[s] * straightAngleRec);
+				element.cossin[gp][2][s] = std::cos(M_PI * angleZ[s] * straightAngleRec);
+				element.cossin[gp][3][s] = std::sin(M_PI * angleX[s] * straightAngleRec);
+				element.cossin[gp][4][s] = std::sin(M_PI * angleY[s] * straightAngleRec);
+				element.cossin[gp][5][s] = std::sin(M_PI * angleZ[s] * straightAngleRec);
 			}
 		}
 	}
@@ -100,11 +100,11 @@ struct CoordinateSystemCylindric<nodes, gps, 2, edim, etype, Physics>: Coordinat
 		for (size_t gp = 0; gp < gps; ++gp) {
 			double cooX =    element.gpcoords[gp][0];
 			double cooY =    element.gpcoords[gp][1];
-			double centerX = element.ecf.angle[gp][0];
-			double centerY = element.ecf.angle[gp][1];
+			double centerX = element.ecf.center[gp][0];
+			double centerY = element.ecf.center[gp][1];
 			double rot = std::atan2(cooY - centerY, cooX - centerX);
-			element.ecf.angle[gp][0] = std::cos(rot);
-			element.ecf.angle[gp][1] = std::sin(rot);
+			element.cossin[gp][0] = std::cos(rot);
+			element.cossin[gp][1] = std::sin(rot);
 		}
 	}
 
@@ -113,14 +113,14 @@ struct CoordinateSystemCylindric<nodes, gps, 2, edim, etype, Physics>: Coordinat
 		for (size_t gp = 0; gp < gps; ++gp) {
 			SIMD cooX =    element.gpcoords[gp][0];
 			SIMD cooY =    element.gpcoords[gp][1];
-			SIMD centerX = element.ecf.angle[gp][0];
-			SIMD centerY = element.ecf.angle[gp][1];
+			SIMD centerX = element.ecf.center[gp][0];
+			SIMD centerY = element.ecf.center[gp][1];
 			SIMD distanceX = cooX - centerX;
 			SIMD distanceY = cooY - centerY;
 			for (size_t s = 0; s < SIMD::size; ++s) {
 				double rot = std::atan2(distanceY[s], distanceX[s]);
-				element.ecf.angle[gp][0][s] = std::cos(rot);
-				element.ecf.angle[gp][1][s] = std::sin(rot);
+				element.cossin[gp][0][s] = std::cos(rot);
+				element.cossin[gp][1][s] = std::sin(rot);
 			}
 		}
 	}
@@ -139,15 +139,15 @@ struct CoordinateSystemCylindric<nodes, gps, 3, edim, etype, Physics>: Coordinat
 		for (size_t gp = 0; gp < gps; ++gp) {
 			double cooX =    element.gpcoords[gp][0];
 			double cooY =    element.gpcoords[gp][1];
-			double centerX = element.ecf.angle[gp][0];
-			double centerY = element.ecf.angle[gp][1];
+			double centerX = element.ecf.center[gp][0];
+			double centerY = element.ecf.center[gp][1];
 			double rot = std::atan2(cooY - centerY, cooX - centerX);
-			element.ecf.angle[gp][0] = 1;
-			element.ecf.angle[gp][1] = 1;
-			element.ecf.angle[gp][2] = std::cos(rot);
-			element.ecf.angle[gp][3] = 0;
-			element.ecf.angle[gp][4] = 0;
-			element.ecf.angle[gp][5] = std::sin(rot);
+			element.cossin[gp][0] = 1;
+			element.cossin[gp][1] = 1;
+			element.cossin[gp][2] = std::cos(rot);
+			element.cossin[gp][3] = 0;
+			element.cossin[gp][4] = 0;
+			element.cossin[gp][5] = std::sin(rot);
 		}
 	}
 
@@ -156,18 +156,18 @@ struct CoordinateSystemCylindric<nodes, gps, 3, edim, etype, Physics>: Coordinat
 		for (size_t gp = 0; gp < gps; ++gp) {
 			SIMD cooX =    element.gpcoords[gp][0];
 			SIMD cooY =    element.gpcoords[gp][1];
-			SIMD centerX = element.ecf.angle[gp][0];
-			SIMD centerY = element.ecf.angle[gp][1];
+			SIMD centerX = element.ecf.center[gp][0];
+			SIMD centerY = element.ecf.center[gp][1];
 			SIMD distanceX = cooX - centerX;
 			SIMD distanceY = cooY - centerY;
 			for (size_t s = 0; s < SIMD::size; ++s) {
 				double rot = std::atan2(distanceY[s], distanceX[s]);
-				element.ecf.angle[gp][0][s] = 1;
-				element.ecf.angle[gp][1][s] = 1;
-				element.ecf.angle[gp][2][s] = std::cos(rot);
-				element.ecf.angle[gp][3][s] = 0;
-				element.ecf.angle[gp][4][s] = 0;
-				element.ecf.angle[gp][5][s] = std::sin(rot);
+				element.cossin[gp][0][s] = 1;
+				element.cossin[gp][1][s] = 1;
+				element.cossin[gp][2][s] = std::cos(rot);
+				element.cossin[gp][3][s] = 0;
+				element.cossin[gp][4][s] = 0;
+				element.cossin[gp][5][s] = std::sin(rot);
 			}
 		}
 	}
@@ -184,37 +184,37 @@ struct CoordinateSystemSpherical<nodes, gps, 3, edim, etype, Physics>: Coordinat
 	void sisd(typename Physics::Element &element)
 	{
 		for (size_t gp = 0; gp < gps; ++gp) {
-			double x = element.gpcoords[gp][0] - element.ecf.angle[gp][0];
-			double y = element.gpcoords[gp][1] - element.ecf.angle[gp][1];
-			double z = element.gpcoords[gp][2] - element.ecf.angle[gp][2];
+			double x = element.gpcoords[gp][0] - element.ecf.center[gp][0];
+			double y = element.gpcoords[gp][1] - element.ecf.center[gp][1];
+			double z = element.gpcoords[gp][2] - element.ecf.center[gp][2];
 			double azimut = std::atan2(y, x);
 			double r = std::sqrt(x * x + y * y + z * z);
 			double elevation = r < 1e-15 ? 0 : std::atan2(std::sqrt(z * z + x * x), y);
-			element.ecf.angle[gp][0] = 1;
-			element.ecf.angle[gp][1] = std::cos(elevation);
-			element.ecf.angle[gp][2] = std::cos(azimut);
-			element.ecf.angle[gp][3] = 0;
-			element.ecf.angle[gp][4] = std::sin(elevation);
-			element.ecf.angle[gp][5] = std::sin(azimut);
+			element.cossin[gp][0] = 1;
+			element.cossin[gp][1] = std::cos(elevation);
+			element.cossin[gp][2] = std::cos(azimut);
+			element.cossin[gp][3] = 0;
+			element.cossin[gp][4] = std::sin(elevation);
+			element.cossin[gp][5] = std::sin(azimut);
 		}
 	}
 
 	void simd(typename Physics::Element &element)
 	{
 		for (size_t gp = 0; gp < gps; ++gp) {
-			SIMD x = element.gpcoords[gp][0] - element.ecf.angle[gp][0];
-			SIMD y = element.gpcoords[gp][1] - element.ecf.angle[gp][1];
-			SIMD z = element.gpcoords[gp][2] - element.ecf.angle[gp][2];
+			SIMD x = element.gpcoords[gp][0] - element.ecf.center[gp][0];
+			SIMD y = element.gpcoords[gp][1] - element.ecf.center[gp][1];
+			SIMD z = element.gpcoords[gp][2] - element.ecf.center[gp][2];
 			for (size_t s = 0; s < SIMD::size; ++s) {
 				double azimut = std::atan2(y[s], x[s]);
 				double r = std::sqrt(x[s] * x[s] + y[s] * y[s] + z[s] * z[s]);
 				double elevation = r < 1e-15 ? 0 : std::atan2(std::sqrt(z[s] * z[s] + x[s] * x[s]), y[s]);
-				element.ecf.angle[gp][0][s] = 1;
-				element.ecf.angle[gp][1][s] = std::cos(elevation);
-				element.ecf.angle[gp][2][s] = std::cos(azimut);
-				element.ecf.angle[gp][3][s] = 0;
-				element.ecf.angle[gp][4][s] = std::sin(elevation);
-				element.ecf.angle[gp][5][s] = std::sin(azimut);
+				element.cossin[gp][0][s] = 1;
+				element.cossin[gp][1][s] = std::cos(elevation);
+				element.cossin[gp][2][s] = std::cos(azimut);
+				element.cossin[gp][3][s] = 0;
+				element.cossin[gp][4][s] = std::sin(elevation);
+				element.cossin[gp][5][s] = std::sin(azimut);
 			}
 		}
 	}
@@ -234,8 +234,8 @@ struct CoordinateSystemApply<nodes, gps, 2, edim, etype, Physics>: CoordinateSys
 			double origin[4] = {
 					element.ecf.conductivity[gp][0], element.ecf.conductivity[gp][1],
 					element.ecf.conductivity[gp][2], element.ecf.conductivity[gp][3] };
-			double cos = element.ecf.angle[gp][0];
-			double sin = element.ecf.angle[gp][1];
+			double cos = element.cossin[gp][0];
+			double sin = element.cossin[gp][1];
 			element.conductivity[gp][0] = (cos * origin[0] - sin * origin[2]) * cos - (cos * origin[1] - sin * origin[3]) * sin;
 			element.conductivity[gp][1] = (cos * origin[0] - sin * origin[2]) * sin + (cos * origin[1] - sin * origin[3]) * cos;
 			element.conductivity[gp][2] = (sin * origin[0] + cos * origin[2]) * cos - (sin * origin[1] + cos * origin[3]) * sin;
@@ -250,8 +250,8 @@ struct CoordinateSystemApply<nodes, gps, 2, edim, etype, Physics>: CoordinateSys
 			SIMD origin1 = element.ecf.conductivity[gp][1];
 			SIMD origin2 = element.ecf.conductivity[gp][2];
 			SIMD origin3 = element.ecf.conductivity[gp][3];
-			SIMD cos = element.ecf.angle[gp][0];
-			SIMD sin = element.ecf.angle[gp][1];
+			SIMD cos = element.cossin[gp][0];
+			SIMD sin = element.cossin[gp][1];
 
 			element.conductivity[gp][0] = (cos * origin0 - sin * origin2) * cos - (cos * origin1 - sin * origin3) * sin;
 			element.conductivity[gp][1] = (cos * origin0 - sin * origin2) * sin + (cos * origin1 - sin * origin3) * cos;
@@ -268,8 +268,8 @@ struct CoordinateSystemApply<nodes, gps, 3, edim, etype, Physics>: CoordinateSys
 	void sisd(typename Physics::Element &element)
 	{
 		for (size_t gp = 0; gp < gps; ++gp) {
-			double cos[3] { element.ecf.angle[gp][0], element.ecf.angle[gp][1], element.ecf.angle[gp][2] };
-			double sin[3] { element.ecf.angle[gp][3], element.ecf.angle[gp][4], element.ecf.angle[gp][5] };
+			double cos[3] { element.cossin[gp][0], element.cossin[gp][1], element.cossin[gp][2] };
+			double sin[3] { element.cossin[gp][3], element.cossin[gp][4], element.cossin[gp][5] };
 			double t[3][3] {
 				{ cos[1] * cos[2]                           , cos[1] * sin[2]                           ,         -sin[1] },
 				{ cos[2] * sin[0] * sin[1] - cos[0] * sin[2], cos[0] * cos[2] + sin[0] * sin[1] * sin[2], cos[1] * sin[0] },
@@ -295,12 +295,12 @@ struct CoordinateSystemApply<nodes, gps, 3, edim, etype, Physics>: CoordinateSys
 	void simd(typename Physics::Element &element)
 	{
 		for (size_t gp = 0; gp < gps; ++gp) {
-			SIMD cos0 = element.ecf.angle[gp][0];
-			SIMD cos1 = element.ecf.angle[gp][1];
-			SIMD cos2 = element.ecf.angle[gp][2];
-			SIMD sin0 = element.ecf.angle[gp][3];
-			SIMD sin1 = element.ecf.angle[gp][4];
-			SIMD sin2 = element.ecf.angle[gp][5];
+			SIMD cos0 = element.cossin[gp][0];
+			SIMD cos1 = element.cossin[gp][1];
+			SIMD cos2 = element.cossin[gp][2];
+			SIMD sin0 = element.cossin[gp][3];
+			SIMD sin1 = element.cossin[gp][4];
+			SIMD sin2 = element.cossin[gp][5];
 
 			SIMD t00 = cos1 * cos2;
 			SIMD t01 = cos1 * sin2;
@@ -312,7 +312,7 @@ struct CoordinateSystemApply<nodes, gps, 3, edim, etype, Physics>: CoordinateSys
 			SIMD t21 = cos0 * sin1 * sin2 - cos2 * sin0;
 			SIMD t22 = cos0 * cos1;
 
-			SIMD origin0 = element.ecf.conductivity[gp][9];
+			SIMD origin0 = element.ecf.conductivity[gp][0];
 			SIMD origin1 = element.ecf.conductivity[gp][1];
 			SIMD origin2 = element.ecf.conductivity[gp][2];
 			SIMD origin3 = element.ecf.conductivity[gp][3];
