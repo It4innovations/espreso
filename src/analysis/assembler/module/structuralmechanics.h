@@ -3,6 +3,7 @@
 #define SRC_ANALYSIS_ASSEMBLER_MODULE_STRUCTURALMECHANICS_H_
 
 #include "assembler.h"
+#include "analysis/assembler/parameter.h"
 #include "config/ecf/physics/structuralmechanics.h"
 #include "config/holders/expression.h"
 #include "mesh/store/nodestore.h"

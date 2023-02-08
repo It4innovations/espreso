@@ -13,7 +13,6 @@ struct DataDescriptorElementSize: ActionOperator, Physics {
 		esize[interval] = (sizeof(typename Physics::Element));
 	}
 
-	void sisd(typename Physics::Element &element) {}
 	void simd(typename Physics::Element &element) {}
 };
 

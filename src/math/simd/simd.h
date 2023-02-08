@@ -24,11 +24,6 @@ struct SIMD
 	ALWAYS_INLINE SIMD(double value) noexcept: data(value) { }
 	ALWAYS_INLINE SIMD(const SIMD &other) noexcept: data(other.data) { }
 
-	ALWAYS_INLINE void fill(const double &value) noexcept
-	{
-		data[0] = value;
-	}
-
 	ALWAYS_INLINE operator double() const noexcept
 	{
 		return data[0];
@@ -73,6 +68,11 @@ struct SIMD
 
 	double data;
 };
+
+ALWAYS_INLINE const SIMD load1(const double &from) noexcept
+{
+	return from;
+}
 
 ALWAYS_INLINE const SIMD load(const double *from) noexcept
 {

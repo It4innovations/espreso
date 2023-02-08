@@ -10,8 +10,8 @@ namespace espreso {
 
 template <size_t nodes, size_t gps, size_t ndim, size_t edim, size_t etype, class Physics> struct Integration;
 
-template <size_t nodes, size_t gps, size_t edim, size_t etype, class Physics>
-struct Integration<nodes, gps, 2, edim, etype, Physics>: ActionOperator, Physics {
+template <size_t nodes, size_t gps, size_t etype, class Physics>
+struct Integration<nodes, gps, 2, 2, etype, Physics>: ActionOperator, Physics {
 
 	Integration(size_t interval)
 	{
@@ -81,8 +81,8 @@ struct Integration<nodes, gps, 2, edim, etype, Physics>: ActionOperator, Physics
 	}
 };
 
-template <size_t nodes, size_t gps, size_t edim, size_t etype, class Physics>
-struct Integration<nodes, gps, 3, edim, etype, Physics>: ActionOperator, Physics {
+template <size_t nodes, size_t gps, size_t etype, class Physics>
+struct Integration<nodes, gps, 3, 3, etype, Physics>: ActionOperator, Physics {
 
 	Integration(size_t interval)
 	{
@@ -190,20 +190,126 @@ struct Integration<nodes, gps, 3, edim, etype, Physics>: ActionOperator, Physics
 	}
 };
 
+template <size_t nodes, size_t gps, size_t etype, class Physics>
+struct Integration<nodes, gps, 3, 2, etype, Physics>: ActionOperator, Physics {
+
+	Integration(size_t region, size_t interval)
+	{
+		isconst = false;
+		action = Action::ASSEMBLE | Action::SOLUTION;
+	}
+
+	void simd(typename Physics::Element &element)
+	{
+		for (size_t gp = 0; gp < gps; ++gp) {
+			SIMD dND0, dND1, dND2, dND3, dND4, dND5;
+			for (size_t n = 0; n < nodes; ++n) {
+				SIMD coordsX = element.coords[n][0];
+				SIMD coordsY = element.coords[n][1];
+				SIMD coordsZ = element.coords[n][2];
+				SIMD dNX = element.dN[gp][n][0];
+				SIMD dNY = element.dN[gp][n][1];
+
+				dND0 = dND0 + dNX * coordsX;
+				dND1 = dND1 + dNX * coordsY;
+				dND2 = dND2 + dNX * coordsZ;
+				dND3 = dND3 + dNY * coordsX;
+				dND4 = dND4 + dNY * coordsY;
+				dND5 = dND5 + dNY * coordsZ;
+			}
+
+			SIMD x = dND1 * dND5 - dND2 * dND4;
+			SIMD y = dND2 * dND3 - dND0 * dND5;
+			SIMD z = dND0 * dND4 - dND1 * dND3;
+			SIMD res = x * x + y * y + z * z;
+			for (size_t s = 0; s < SIMD::size; ++s) {
+				element.det[gp][s] = std::sqrt(res[s]);
+			}
+		}
+	}
+};
+
+template <size_t nodes, size_t gps, size_t etype, class Physics>
+struct Integration<nodes, gps, 3, 1, etype, Physics>: ActionOperator, Physics {
+
+	Integration(size_t region, size_t interval)
+	{
+		isconst = false;
+		action = Action::ASSEMBLE | Action::SOLUTION;
+	}
+
+	void simd(typename Physics::Element &element)
+	{
+		for (size_t gp = 0; gp < gps; ++gp) {
+			SIMD dND0, dND1, dND2;
+			for (size_t n = 0; n < nodes; ++n) {
+				SIMD coordsX = element.coords[n][0];
+				SIMD coordsY = element.coords[n][1];
+				SIMD coordsZ = element.coords[n][2];
+				SIMD dNX = element.dN[gp][n][0];
+
+				dND0 = dND0 + dNX * coordsX;
+				dND1 = dND1 + dNX * coordsY;
+				dND2 = dND2 + dNX * coordsZ;
+			}
+
+			SIMD res = dND0 * dND0 + dND1 * dND1 + dND2 * dND2;
+			for (size_t s = 0; s < SIMD::size; ++s) {
+				element.det[gp][s] = std::sqrt(res[s]);
+			}
+		}
+	}
+};
+
+template <size_t nodes, size_t gps, size_t etype, class Physics>
+struct Integration<nodes, gps, 2, 1, etype, Physics>: ActionOperator, Physics {
+
+	Integration(size_t region, size_t interval)
+	{
+		isconst = false;
+		action = Action::ASSEMBLE | Action::SOLUTION;
+	}
+
+	void simd(typename Physics::Element &element)
+	{
+		for (size_t gp = 0; gp < gps; ++gp) {
+			SIMD dND0, dND1;
+			for (size_t n = 0; n < nodes; ++n) {
+				SIMD coordsX = element.coords[n][0];
+				SIMD coordsY = element.coords[n][1];
+				SIMD dNX = element.dN[gp][n][0];
+
+				dND0 = dND0 + dNX * coordsX;
+				dND1 = dND1 + dNX * coordsY;
+			}
+
+			SIMD res = dND0 * dND0 + dND1 * dND1;
+			for (size_t s = 0; s < SIMD::size; ++s) {
+				element.det[gp][s] = std::sqrt(res[s]);
+			}
+		}
+	}
+};
+
 template <size_t nodes, size_t gps, size_t ndim, size_t edim, size_t etype, class Physics>
 struct Volume: ActionOperator, Physics {
-	double &volume;
-	Volume(size_t interval, std::vector<double> &volume): volume(volume[interval])
+	double &volume, local;
+	Volume(size_t interval, std::vector<double> &volume): volume(volume[interval]), local(0)
 	{
 		isconst = false;
 		action = Action::ASSEMBLE;
 	}
 
-	void sisd(typename Physics::Element &element)
+	Volume(size_t region, size_t interval, std::vector<double> &volume): volume(volume[region]), local(0)
 	{
-		for (size_t gp = 0; gp < gps; ++gp) {
-			volume += element.det[gp] * element.w[gp];
-		}
+		isconst = false;
+		action = Action::ASSEMBLE;
+	}
+
+	~Volume()
+	{
+		#pragma omp critical
+		volume += local;
 	}
 
 	void simd(typename Physics::Element &element)
@@ -211,7 +317,7 @@ struct Volume: ActionOperator, Physics {
 		for (size_t gp = 0; gp < gps; ++gp) {
 			SIMD v = element.det[gp] * element.w[gp];
 			for (size_t s = 0; s < SIMD::size; ++s) {
-				volume += v[s];
+				local += v[s];
 			}
 		}
 	}
@@ -221,80 +327,8 @@ struct Volume: ActionOperator, Physics {
 		for (size_t gp = 0; gp < gps; ++gp) {
 			SIMD v = element.det[gp] * element.w[gp];
 			for (size_t s = 0; s < size; ++s) {
-				volume += v[s];
+				local += v[s];
 			}
-		}
-	}
-};
-
-struct BoundaryJacobian: public ActionOperator {
-	BoundaryJacobian(
-			int interval,
-			const ParameterData &coordinates,
-			const ParameterData &dN,
-			ParameterData &jacobian)
-	: coords(coordinates, interval),
-	  dN(dN, interval, 0),
-	  jacobian(jacobian, interval)
-	{ }
-
-	InputParameterIterator coords, dN;
-	OutputParameterIterator jacobian;
-
-	void operator++()
-	{
-		++coords;
-		++jacobian;
-	}
-
-	void move(int n)
-	{
-		coords += n;
-		jacobian += n;
-	}
-};
-
-template<size_t nodes, size_t gps>
-struct BoundaryFaceJacobian: public BoundaryJacobian {
-	using BoundaryJacobian::BoundaryJacobian;
-
-	void operator()()
-	{
-		for (size_t gpindex = 0; gpindex < gps; ++gpindex) {
-			double dND[6] = { 0, 0, 0, 0, 0, 0 };
-			M2NMN3<nodes>(1, dN.data + 2 * gpindex * nodes, coords.data, dND);
-			double x = dND[1] * dND[5] - dND[2] * dND[4];
-			double y = dND[2] * dND[3] - dND[0] * dND[5];
-			double z = dND[0] * dND[4] - dND[1] * dND[3];
-			jacobian[gpindex] = std::sqrt(x * x + y * y + z * z);
-		}
-	}
-};
-
-template<size_t nodes, size_t gps>
-struct BoundaryEdge3DJacobian: public BoundaryJacobian {
-	using BoundaryJacobian::BoundaryJacobian;
-
-	void operator()()
-	{
-		for (size_t gpindex = 0; gpindex < gps; ++gpindex) {
-			double dND[3] = { 0, 0, 0 };
-			M1NMN3<nodes>(1, dN.data + 1 * gpindex * nodes, coords.data, dND);
-			jacobian[gpindex] = std::sqrt(dND[0] * dND[0] + dND[1] * dND[1] + dND[2] * dND[2]);
-		}
-	}
-};
-
-template<size_t nodes, size_t gps>
-struct BoundaryEdge2DJacobian: public BoundaryJacobian {
-	using BoundaryJacobian::BoundaryJacobian;
-
-	void operator()()
-	{
-		for (size_t gpindex = 0; gpindex < gps; ++gpindex) {
-			double dND[2] = { 0, 0 };
-			M1NMN2<nodes>(1, dN.data + 1 * gpindex * nodes, coords.data, dND);
-			jacobian[gpindex] = std::sqrt(dND[0] * dND[0] + dND[1] * dND[1]);
 		}
 	}
 };

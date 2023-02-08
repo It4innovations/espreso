@@ -2,9 +2,6 @@
 #ifndef SRC_PHYSICS_ASSEMBLER_OPERATOR_H_
 #define SRC_PHYSICS_ASSEMBLER_OPERATOR_H_
 
-#include "esinfo/eslog.h"
-#include "math/simd/simd.h"
-
 namespace espreso {
 
 struct ActionOperator {

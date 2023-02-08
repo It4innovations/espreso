@@ -2,7 +2,6 @@
 #ifndef SRC_PHYSICS_ASSEMBLER_OPERATORS_GAUSSPOINTS_H_
 #define SRC_PHYSICS_ASSEMBLER_OPERATORS_GAUSSPOINTS_H_
 
-#include "analysis/assembler/operator.hpp"
 #include "analysis/assembler/parameter.h"
 #include "analysis/assembler/math.hpp"
 

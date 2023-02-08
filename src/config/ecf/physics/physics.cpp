@@ -60,12 +60,6 @@ espreso::PhysicsConfiguration::PhysicsConfiguration(DIMENSION dim, MaterialConfi
 			.setdatatype({ ECFDataType::BOOL })
 			.setform());
 
-	simd = true;
-	REGISTER(simd, ECFMetaData()
-			.setdescription({ "Assembler use intrinsic functions." })
-			.setdatatype({ ECFDataType::BOOL })
-			.setform());
-
 	ecfdescription->addSeparator()->metadata.noexport();
 
 	REGISTER(initial_temperature, ECFMetaData()

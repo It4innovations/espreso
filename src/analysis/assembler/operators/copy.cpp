@@ -1,7 +1,6 @@
 
 #include "copy.h"
 
-#include "analysis/assembler/operator.hpp"
 #include "analysis/assembler/module/heattransfer.h"
 #include "esinfo/eslog.h"
 #include "esinfo/meshinfo.h"

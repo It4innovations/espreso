@@ -8,165 +8,69 @@
 
 namespace espreso {
 
-template<size_t nodes, size_t gps>
-struct HeatRHS: public ActionOperator {
-	HeatRHS(int interval, const ParameterData &N, const ParameterData &weight, const ParameterData &J, const ParameterData &heatSource, ParameterData &rhs)
-	: N(N, interval),
-	  weight(weight, interval),
-	  J(J, interval),
-	  heatSource(heatSource, interval),
-	  rhs(rhs, interval)
-	{
-
-	}
-
-	InputParameterIterator N, weight, J;
-	InputParameterIterator heatSource;
+template <size_t nodes, size_t gps, size_t ndim, size_t edim, size_t etype, class Physics>
+struct HeatSource: ActionOperator, Physics {
 	OutputParameterIterator rhs;
 
-	void operator()()
+	HeatSource(size_t interval, ParameterData &rhs)
+	: rhs(rhs, interval)
 	{
-		for (size_t n = 0; n < nodes; ++n) {
-			for (size_t gpindex = 0; gpindex < gps; ++gpindex) {
-				rhs[n] += J[gpindex] * weight[gpindex] * heatSource[gpindex] * N[gpindex * nodes + n];
-			}
-		}
-	}
-
-	void operator++()
-	{
-		++weight; ++J;
-		++heatSource;
-		++rhs;
+		isconst = false;
+		action = Action::ASSEMBLE;
 	}
 
 	void move(int n)
 	{
-		weight += n; J += n;
-		heatSource += n;
 		rhs += n;
+	}
+
+	void simd(typename Physics::Element &element)
+	{
+		double * __restrict__ out = rhs.data;
+		for (size_t n = 0; n < nodes; ++n) {
+			SIMD heat = load(out + n * SIMD::size);
+			for (size_t gp = 0; gp < gps; ++gp) {
+				heat = heat + element.det[gp] * element.w[gp] * element.ecf.heatSource[gp] * element.N[gp][n];
+			}
+			store(out + n * SIMD::size, heat);
+		}
+		move(SIMD::size);
 	}
 };
 
-template<size_t nodes, size_t gps>
-struct HeatQ: public ActionOperator {
-	HeatQ(int interval, double area, const ParameterData &heatFlow, const ParameterData &heatFlux, const ParameterData &htc, const ParameterData &extTemp, ParameterData &q)
-	: area(area), heatFlow(heatFlow, interval),
-	  heatFlux(heatFlux, interval),
-	  htc(htc, interval), extTemp(extTemp, interval),
-	  q(q, interval)
-	{
-
-	}
-
-	void operator()()
-	{
-		for (size_t gpindex = 0; gpindex < gps; ++gpindex) {
-			q[gpindex] += heatFlow[gpindex] / area;
-			q[gpindex] += heatFlux[gpindex];
-			q[gpindex] += htc[gpindex] * extTemp[gpindex];
-		}
-	}
-
-	void operator++()
-	{
-		++heatFlow; ++heatFlux;
-		++htc; ++extTemp;
-		++q;
-	}
-
-	void move(int n)
-	{
-		heatFlow += n; heatFlux += n;
-		htc += n; extTemp += n;
-		q += n;
-	}
-
-	double area;
-	InputParameterIterator heatFlow, heatFlux, htc, extTemp;
-	OutputParameterIterator q;
-};
-
-template<size_t nodes, size_t gps>
-struct HeatRHS2D: public ActionOperator {
-	HeatRHS2D(int interval, const ParameterData &N, const ParameterData &weight, const ParameterData &J, const ParameterData &thickness, const ParameterData &q, ParameterData &rhs)
-	: N(N, interval),
-	  weight(weight, interval),
-	  J(J, interval),
-//	  thickness(thickness, interval), // TODO
-	  q(q, interval),
-	  rhs(rhs, interval)
-	{ }
-
-	InputParameterIterator N, weight, J;
-//	InputParameterIterator thickness;
-	InputParameterIterator q;
+template <size_t nodes, size_t gps, size_t ndim, size_t edim, size_t etype, class Physics>
+struct BoundaryHeat: ActionOperator, Physics {
 	OutputParameterIterator rhs;
+	const double area;
 
-	void operator()()
+	BoundaryHeat(size_t region, size_t interval, ParameterData &rhs)
+	: rhs(rhs, interval), area(1.0 / info::mesh->boundaryRegions[region]->area)
 	{
-		for (size_t n = 0; n < nodes; ++n) {
-			for (size_t gpindex = 0; gpindex < gps; ++gpindex) {
-				rhs[n] += J[gpindex] * weight[gpindex] * q[gpindex] * N[gpindex * nodes + n];
-//				rhs[n] += thickness[gpindex] * J[gpindex] * weight[gpindex] * q[gpindex] * N[gpindex * nodes + n];
-			}
-		}
-	}
-
-	void operator++()
-	{
-		++weight; ++J;
-//		++thickness;
-		++q;
-		++rhs;
+		isconst = false;
+		action = Action::ASSEMBLE;
 	}
 
 	void move(int n)
 	{
-		weight += n; J += n;
-//		thickness += n;
-		q += n;
 		rhs += n;
 	}
-};
 
-template<size_t nodes, size_t gps>
-struct HeatRHS3D: public ActionOperator {
-	HeatRHS3D(int interval, const ParameterData &N, const ParameterData &weight, const ParameterData &J, const ParameterData &q, ParameterData &rhs)
-	: N(N, interval),
-	  weight(weight, interval),
-	  J(J, interval),
-	  q(q, interval),
-	  rhs(rhs, interval)
+	void simd(typename Physics::Element &element)
 	{
-
-	}
-
-	InputParameterIterator N, weight, J;
-	InputParameterIterator q;
-	OutputParameterIterator rhs;
-
-	void operator()()
-	{
+		double * __restrict__ out = rhs.data;
 		for (size_t n = 0; n < nodes; ++n) {
-			for (size_t gpindex = 0; gpindex < gps; ++gpindex) {
-				rhs[n] += J[gpindex] * weight[gpindex] * q[gpindex] * N[gpindex * nodes + n];
+			SIMD heat = load(out + n * SIMD::size);
+			for (size_t gp = 0; gp < gps; ++gp) {
+				SIMD q;
+				q = q + element.ecf.heatFlow[gp] * load1(area);
+				q = q + element.ecf.heatFlux[gp];
+				q = q + element.ecf.htc[gp] * element.ecf.extTemp[gp];
+
+				heat = heat + q * element.det[gp] * element.w[gp] * element.N[gp][n];
 			}
+			store(out + n * SIMD::size, heat);
 		}
-	}
-
-	void operator++()
-	{
-		++weight; ++J;
-		++q;
-		++rhs;
-	}
-
-	void move(int n)
-	{
-		weight += n; J += n;
-		q += n;
-		rhs += n;
+		move(SIMD::size);
 	}
 };
 

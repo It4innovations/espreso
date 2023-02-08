@@ -5,8 +5,8 @@
 #include "analysis/assembler/operator.h"
 #include "basis/containers/serializededata.h"
 #include "esinfo/meshinfo.h"
+#include "math/simd/simd.h"
 #include "mesh/store/nodestore.h"
-#include "mesh/store/elementstore.h"
 
 namespace espreso {
 
@@ -14,6 +14,13 @@ struct CopyCoordinates: ActionOperator {
 	serializededata<esint, esint>::const_iterator procNodes;
 
 	CopyCoordinates(size_t interval, serializededata<esint, esint>::const_iterator procNodes)
+	: procNodes(procNodes)
+	{
+		isconst = false;
+		action = Action::ASSEMBLE | Action::SOLUTION;
+	}
+
+	CopyCoordinates(size_t region, size_t interval, serializededata<esint, esint>::const_iterator procNodes)
 	: procNodes(procNodes)
 	{
 		isconst = false;
@@ -29,18 +36,6 @@ struct CopyCoordinates: ActionOperator {
 template <size_t nodes, size_t gps, size_t ndim, size_t edim, size_t etype, class Physics>
 struct CoordinatesToElementNodes: CopyCoordinates, Physics {
 	using CopyCoordinates::CopyCoordinates;
-
-	//   element 0    element 1
-	// [xy xy xy xy][xy xy xy xy]..
-	void sisd(typename Physics::Element &element)
-	{
-		for (size_t n = 0; n < nodes; ++n) {
-			for (size_t d = 0; d < ndim; ++d) {
-				element.coords[n][d][0] = info::mesh->nodes->coordinates->datatarray()[procNodes->at(n)][d];
-			}
-		}
-		++procNodes;
-	}
 
 	//   element 0, 1           element 2, 3
 	// [xxyy xxyy xxyy xxyy][xxyy xxyy xxyy xxyy]
@@ -70,28 +65,6 @@ struct CoordinatesToElementNodes: CopyCoordinates, Physics {
 template <size_t nodes, size_t gps, size_t ndim, size_t edim, size_t etype, class Physics>
 struct CoordinatesToElementNodesAndGPs: CopyCoordinates, Physics {
 	using CopyCoordinates::CopyCoordinates;
-
-	//   element 0    element 1
-	// [xy xy xy xy][xy xy xy xy]..
-	void sisd(typename Physics::Element &element)
-	{
-		for (size_t n = 0; n < nodes; ++n) {
-			for (size_t d = 0; d < ndim; ++d) {
-				element.coords[n][d] = info::mesh->nodes->coordinates->datatarray()[procNodes->at(n)][d];
-			}
-		}
-		for (size_t gp = 0; gp < gps; ++gp) {
-			for (size_t d = 0; d < ndim; ++d) {
-				element.gpcoords[gp][d] = 0;
-			}
-			for (size_t n = 0; n < nodes; ++n) {
-				for (size_t d = 0; d < ndim; ++d) {
-					element.gpcoords[gp][d][0] += element.N[gp][n] * element.coords[n][d];
-				}
-			}
-		}
-		++procNodes;
-	}
 
 	//   element 0, 1           element 2, 3
 	// [xxyy xxyy xxyy xxyy][xxyy xxyy xxyy xxyy]

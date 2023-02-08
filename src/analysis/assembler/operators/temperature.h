@@ -28,14 +28,6 @@ template <size_t nodes, size_t gps, size_t ndim, size_t edim, size_t etype, clas
 struct TemperatureToElementNodes: Temperature, Physics {
 	using Temperature::Temperature;
 
-	void sisd(typename Physics::Element &element)
-	{
-		for (size_t n = 0; n < nodes; ++n) {
-			element.temp[n] = source[procNodes->at(n)];
-		}
-		++procNodes;
-	}
-
 	void simd(typename Physics::Element &element)
 	{
 		for (size_t s = 0; s < SIMD::size; ++s, ++procNodes) {
@@ -59,24 +51,6 @@ template <size_t nodes, size_t gps, size_t ndim, size_t edim, size_t etype, clas
 struct TemperatureToElementNodesAndGPs: Temperature, Physics {
 	using Temperature::Temperature;
 
-	//   element 0    element 1
-	// [xy xy xy xy][xy xy xy xy]..
-	void sisd(typename Physics::Element &element)
-	{
-		for (size_t n = 0; n < nodes; ++n) {
-			element.temp[n] = source[procNodes->at(n)];
-		}
-		for (size_t gp = 0; gp < gps; ++gp) {
-			element.gptemp[gp] = 0;
-			for (size_t n = 0; n < nodes; ++n) {
-				element.gptemp[gp][0] += element.N[gp][n] * element.temp[n];
-			}
-		}
-		++procNodes;
-	}
-
-	//   element 0, 1           element 2, 3
-	// [xxyy xxyy xxyy xxyy][xxyy xxyy xxyy xxyy]
 	void simd(typename Physics::Element &element)
 	{
 		for (size_t s = 0; s < SIMD::size; ++s, ++procNodes) {

@@ -5,6 +5,7 @@
 #include "analysis/assembler/operator.h"
 #include "analysis/assembler/parameter.h"
 #include "mesh/store/nodestore.h"
+#include "math/simd/simd.h"
 
 namespace espreso {
 

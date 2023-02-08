@@ -1,6 +1,5 @@
 
 #include "coordinatesystem.h"
-#include "conductivity.h"
 #include "analysis/assembler/module/heattransfer.h"
 #include "analysis/assembler/module/heattransfer.generator.h"
 

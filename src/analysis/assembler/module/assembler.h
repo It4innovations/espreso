@@ -2,7 +2,7 @@
 #ifndef SRC_ANALYSIS_ASSEMBLER_MODULE_ASSEMBLER_H_
 #define SRC_ANALYSIS_ASSEMBLER_MODULE_ASSEMBLER_H_
 
-#include "analysis/assembler/controller.h"
+#include "basis/evaluator/evaluator.h"
 #include "analysis/assembler/operator.h"
 #include "math/primitives/vector_sparse.h"
 
@@ -24,14 +24,16 @@ class Assembler
 {
 public:
 	Assembler(PhysicsConfiguration &settings);
-	virtual ~Assembler() {}
+	virtual ~Assembler();
+
+	static Evaluator* getEvaluator(size_t interval, std::map<std::string, ECFExpression> &settings);
+	static Evaluator* getEvaluator(size_t interval, std::map<std::string, ECFExpressionVector> &settings, int dim);
 
 	PhysicsConfiguration &settings;
-	ParameterController controller;
-	std::vector<int> etype;
+	std::vector<int> etype, bfilter;
 	std::vector<std::vector<int> > btype;
-	std::vector<std::vector<ActionOperator*> > elementOps, elementFiller, elementRes;
-	std::vector<std::vector<std::vector<ActionOperator*> > > boundaryOps, boundaryFiller, boundaryRes;
+	std::vector<std::vector<ActionOperator*> > elementOps;
+	std::vector<std::vector<std::vector<ActionOperator*> > > boundaryOps;
 
 protected:
 	double assemble(ActionOperator::Action action);
@@ -46,38 +48,12 @@ protected:
 	bool checkBoundaryParameter(const std::string &name, std::map<std::string, ECFExpression> &settings);
 	bool checkBoundaryParameter(const std::string &name, std::map<std::string, ECFExpressionVector> &settings);
 
-	Evaluator* getEvaluator(size_t interval, std::map<std::string, ECFExpression> &settings);
-	Evaluator* getEvaluator(size_t interval, std::map<std::string, ECFExpressionVector> &settings, int dim);
-
-	void iterate();
-	void fill();
-	void results();
-
 	void printElementVolume(std::vector<double> &volume);
 	void printBoundarySurface(std::vector<double> &surface);
-	void printParameterStats(ParameterData &parameter);
-	void printParameterStats(NamedData *data);
 
 	void printMaterials(const std::map<std::string, std::string> &settings);
 	template<typename Ttype>
 	void validateRegionSettings(const std::string &name, const std::map<std::string, Ttype> &settings);
-
-	bool examineMaterialParameter(const std::string &material, const std::string &name, ECFExpression &settings, ExternalElementValue &externalValue, int dimension);
-
-	template<class TSecond>
-	bool examineElementParameter(const std::string &name, std::map<std::string, TSecond> &settings, ExternalElementValue &externalValue, int dimension, std::function<ECFExpression*(TSecond &expr)> getExpr);
-	bool examineElementParameter(const std::string &name, std::map<std::string, ECFExpression> &settings, ExternalElementValue &externalValue);
-	bool examineElementParameter(const std::string &name, std::map<std::string, ECFExpressionVector> &settings, ExternalElementValue &externalValue, int dimension);
-
-	template<class TSecond>
-	bool examineBoundaryParameter(const std::string &name, std::map<std::string, TSecond> &settings, ExternalBoundaryValue &externalValue, int dimension, std::function<ECFExpression*(TSecond &expr)> getExpr);
-	bool examineBoundaryParameter(const std::string &name, std::map<std::string, ECFExpression> &settings, ExternalBoundaryValue &value);
-//	bool examineBoundaryParameter(const std::string &name, std::map<std::string, ConvectionConfiguration> &settings, ParametersConvection &convection);
-	bool examineBoundaryParameter(const std::string &name, std::map<std::string, ImpedanceConfiguration> &settings, ExternalBoundaryValue &impedance);
-	bool examineBoundaryParameter(const std::string &name, std::map<std::string, PointSourceConfiguration> &settings, ExternalBoundaryValue &point_source);
-
-	bool examineBoundaryParameter(const std::string &name, std::map<std::string, ECFExpressionVector> &settings, ExternalBoundaryValue &value, int dimension);
-	bool examineBoundaryParameter(const std::string &name, std::map<std::string, ECFExpressionOptionalVector> &settings, ExternalBoundaryValue &value, int dimension);
 };
 
 template <typename T>

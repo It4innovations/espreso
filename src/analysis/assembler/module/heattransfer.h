@@ -3,7 +3,7 @@
 #define SRC_ANALYSIS_ASSEMBLER_MODULE_HEATTRANSFER_H_
 
 #include "assembler.h"
-#include "parameter.h"
+#include "analysis/assembler/parameter.h"
 #include "config/ecf/physics/heattransfer.h"
 #include "config/holders/expression.h"
 #include "mesh/store/nodestore.h"

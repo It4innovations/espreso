@@ -51,33 +51,142 @@ static void generateBaseFunctions(const std::vector<int> &etype, std::vector<std
 	GaussPoints<Element::CODE::PRISMA15, 15, 9, 3>::set();
 	GaussPoints<Element::CODE::HEXA20, 20, 8, 3>::set();
 
-	for(size_t interval = 0; interval < info::mesh->elements->eintervals.size(); ++interval) {
+	for(size_t i = 0; i < info::mesh->elements->eintervals.size(); ++i) {
 		switch (info::mesh->dimension) {
 		case 2:
-			switch (etype[interval]) {
-			case HeatTransferElementType::SYMMETRIC_ISOTROPIC: generateBaseFunctions<2, HeatTransferElementType::SYMMETRIC_ISOTROPIC>(interval, ops); break;
-			case HeatTransferElementType::SYMMETRIC_GENERAL:   generateBaseFunctions<2, HeatTransferElementType::SYMMETRIC_GENERAL  >(interval, ops); break;
+			switch (etype[i]) {
+			case HeatTransferElementType::SYMMETRIC_ISOTROPIC: generateBaseFunctions<2, HeatTransferElementType::SYMMETRIC_ISOTROPIC>(i, ops); break;
+			case HeatTransferElementType::SYMMETRIC_GENERAL:   generateBaseFunctions<2, HeatTransferElementType::SYMMETRIC_GENERAL  >(i, ops); break;
 			} break;
 		case 3:
-			switch (etype[interval]) {
-			case HeatTransferElementType::SYMMETRIC_ISOTROPIC: generateBaseFunctions<3, HeatTransferElementType::SYMMETRIC_ISOTROPIC>(interval, ops); break;
-			case HeatTransferElementType::SYMMETRIC_GENERAL:   generateBaseFunctions<3, HeatTransferElementType::SYMMETRIC_GENERAL  >(interval, ops); break;
+			switch (etype[i]) {
+			case HeatTransferElementType::SYMMETRIC_ISOTROPIC: generateBaseFunctions<3, HeatTransferElementType::SYMMETRIC_ISOTROPIC>(i, ops); break;
+			case HeatTransferElementType::SYMMETRIC_GENERAL:   generateBaseFunctions<3, HeatTransferElementType::SYMMETRIC_GENERAL  >(i, ops); break;
 			} break;
 		}
 	}
 }
 
-template <template <size_t, size_t, size_t, size_t, size_t, class, class> class Expression, class Target, class Setter>
-static ActionOperator* generateNodeSetter2D(size_t region, size_t interval, size_t dofs, Target *target, const Setter &setter)
+static void generateBaseFunctions(const std::vector<int> &bfilter, std::vector<std::vector<std::vector<ActionOperator*> > > &ops)
 {
-	return new Expression< 1, HeatTransferGPC::POINT1, 2, 0, HeatTransferElementType::NODE, HeatTransferDataDescriptor< 1, HeatTransferGPC::POINT1, 2, 0, HeatTransferElementType::NODE>, Setter>(region, interval, dofs, target, setter);
+	for(size_t r = 0; r < info::mesh->boundaryRegions.size(); ++r) {
+		if (bfilter[r]) {
+			for (size_t i = 0; i < info::mesh->boundaryRegions[r]->eintervals.size(); ++i) {
+				switch (info::mesh->boundaryRegions[r]->dimension) {
+				case 2:
+					switch (static_cast<Element::CODE>(info::mesh->boundaryRegions[r]->eintervals[i].code)) {
+					case Element::CODE::TRIANGLE3: ops[r][i].push_back(new Basis<Element::CODE::TRIANGLE3,  3, HeatTransferGPC::TRIANGLE3, 2, HeatTransferElementType::FACE, HeatTransferDataDescriptor< 3, HeatTransferGPC::TRIANGLE3, 3, 2, HeatTransferElementType::FACE> >()); break;
+					case Element::CODE::TRIANGLE6: ops[r][i].push_back(new Basis<Element::CODE::TRIANGLE6,  6, HeatTransferGPC::TRIANGLE6, 2, HeatTransferElementType::FACE, HeatTransferDataDescriptor< 6, HeatTransferGPC::TRIANGLE6, 3, 2, HeatTransferElementType::FACE> >()); break;
+					case Element::CODE::SQUARE4  : ops[r][i].push_back(new Basis<Element::CODE::SQUARE4  ,  4, HeatTransferGPC::SQUARE4  , 2, HeatTransferElementType::FACE, HeatTransferDataDescriptor< 4, HeatTransferGPC::SQUARE4  , 3, 2, HeatTransferElementType::FACE> >()); break;
+					case Element::CODE::SQUARE8  : ops[r][i].push_back(new Basis<Element::CODE::SQUARE8  ,  8, HeatTransferGPC::SQUARE8  , 2, HeatTransferElementType::FACE, HeatTransferDataDescriptor< 8, HeatTransferGPC::SQUARE8  , 3, 2, HeatTransferElementType::FACE> >()); break;
+					}
+				break;
+				case 1:
+					switch (info::mesh->dimension) {
+					case 2:
+						switch (static_cast<Element::CODE>(info::mesh->boundaryRegions[r]->eintervals[i].code)) {
+						case Element::CODE::LINE2: ops[r][i].push_back(new Basis<Element::CODE::LINE2, 2, HeatTransferGPC::LINE2, 1, HeatTransferElementType::EDGE, HeatTransferDataDescriptor< 2, HeatTransferGPC::LINE2, 2, 1, HeatTransferElementType::EDGE> >()); break;
+						case Element::CODE::LINE3: ops[r][i].push_back(new Basis<Element::CODE::LINE3, 3, HeatTransferGPC::LINE3, 1, HeatTransferElementType::EDGE, HeatTransferDataDescriptor< 3, HeatTransferGPC::LINE3, 2, 1, HeatTransferElementType::EDGE> >()); break;
+						} break;
+					case 3:
+						switch (static_cast<Element::CODE>(info::mesh->boundaryRegions[r]->eintervals[i].code)) {
+						case Element::CODE::LINE2: ops[r][i].push_back(new Basis<Element::CODE::LINE2, 2, HeatTransferGPC::LINE2, 1, HeatTransferElementType::EDGE, HeatTransferDataDescriptor< 2, HeatTransferGPC::LINE2, 3, 1, HeatTransferElementType::EDGE> >()); break;
+						case Element::CODE::LINE3: ops[r][i].push_back(new Basis<Element::CODE::LINE3, 3, HeatTransferGPC::LINE3, 1, HeatTransferElementType::EDGE, HeatTransferDataDescriptor< 3, HeatTransferGPC::LINE3, 3, 1, HeatTransferElementType::EDGE> >()); break;
+						} break;
+					}
+					break;
+				}
+			}
+		}
+	}
 }
 
-template <template <size_t, size_t, size_t, size_t, size_t, class, class> class Expression, class Target, class Setter>
+template <template <size_t, size_t, size_t, size_t, size_t, class, class> class Filler, class Target, class Setter>
+static ActionOperator* generateNodeSetter2D(size_t region, size_t interval, size_t dofs, Target *target, const Setter &setter)
+{
+	return new Filler< 1, HeatTransferGPC::POINT1, 2, 0, HeatTransferElementType::NODE, HeatTransferDataDescriptor< 1, HeatTransferGPC::POINT1, 2, 0, HeatTransferElementType::NODE>, Setter>(region, interval, dofs, target, setter);
+}
+
+template <template <size_t, size_t, size_t, size_t, size_t, class, class> class Filler, class Target, class Setter>
 static ActionOperator* generateNodeSetter3D(size_t region, size_t interval, size_t dofs, Target *target, const Setter &setter)
 {
-	return new Expression< 1, HeatTransferGPC::POINT1, 3, 0, HeatTransferElementType::NODE, HeatTransferDataDescriptor< 1, HeatTransferGPC::POINT1, 3, 0, HeatTransferElementType::NODE>, Setter>(region, interval, dofs, target, setter);
+	return new Filler< 1, HeatTransferGPC::POINT1, 3, 0, HeatTransferElementType::NODE, HeatTransferDataDescriptor< 1, HeatTransferGPC::POINT1, 3, 0, HeatTransferElementType::NODE>, Setter>(region, interval, dofs, target, setter);
 }
+
+template <template <size_t, size_t, size_t, size_t, size_t, class, class> class Filler, class Target, class Setter>
+static ActionOperator* generateNodeSetter(size_t region, size_t interval, size_t dofs, Target *target, const Setter &setter)
+{
+	switch (info::mesh->dimension) {
+	case 2: return generateNodeSetter2D<Filler>(region, interval, dofs, target, setter);
+	case 3: return generateNodeSetter3D<Filler>(region, interval, dofs, target, setter);
+	}
+	return nullptr;
+}
+
+template <template <size_t, size_t, size_t, size_t, size_t, class> class Filler, class ... Args>
+static ActionOperator* generateNodeFiller2D(size_t region, size_t interval, size_t dofs, Args&& ... args)
+{
+	return new Filler< 1, HeatTransferGPC::POINT1, 2, 0, HeatTransferElementType::NODE, HeatTransferDataDescriptor< 1, HeatTransferGPC::POINT1, 2, 0, HeatTransferElementType::NODE>>(region, interval, dofs, std::forward<Args>(args)...);
+}
+
+template <template <size_t, size_t, size_t, size_t, size_t, class> class Filler, class ... Args>
+static ActionOperator* generateNodeFiller3D(size_t region, size_t interval, size_t dofs, Args&& ... args)
+{
+	return new Filler< 1, HeatTransferGPC::POINT1, 3, 0, HeatTransferElementType::NODE, HeatTransferDataDescriptor< 1, HeatTransferGPC::POINT1, 3, 0, HeatTransferElementType::NODE>>(region, interval, dofs, std::forward<Args>(args)...);
+}
+
+template <template <size_t, size_t, size_t, size_t, size_t, class> class Filler, class ... Args>
+static ActionOperator* generateNodeFiller(size_t region, size_t interval, size_t dofs, Args&& ... args)
+{
+	switch (info::mesh->dimension) {
+	case 2: return generateNodeFiller2D<Filler>(region, interval, dofs, std::forward<Args>(args)...);
+	case 3: return generateNodeFiller3D<Filler>(region, interval, dofs, std::forward<Args>(args)...);
+	}
+	return nullptr;
+}
+
+template <template <size_t, size_t, size_t, size_t, size_t, class> class Filler, class ... Args>
+static ActionOperator* generateEdgeFiller2D(size_t region, size_t interval, size_t dofs, Args&& ... args)
+{
+	switch (info::mesh->boundaryRegions[region]->eintervals[interval].code) {
+	case static_cast<int>(Element::CODE::LINE2): return new Filler< 2, HeatTransferGPC::LINE2, 2, 1, HeatTransferElementType::EDGE, HeatTransferDataDescriptor< 2, HeatTransferGPC::LINE2, 2, 1, HeatTransferElementType::EDGE> >(region, interval, dofs, std::forward<Args>(args)...);
+	case static_cast<int>(Element::CODE::LINE3): return new Filler< 3, HeatTransferGPC::LINE3, 2, 1, HeatTransferElementType::EDGE, HeatTransferDataDescriptor< 3, HeatTransferGPC::LINE3, 2, 1, HeatTransferElementType::EDGE> >(region, interval, dofs, std::forward<Args>(args)...);
+	default: return nullptr;
+	}
+}
+
+template <template <size_t, size_t, size_t, size_t, size_t, class> class Filler, class ... Args>
+static ActionOperator* generateEdgeFiller3D(size_t region, size_t interval, size_t dofs, Args&& ... args)
+{
+	switch (info::mesh->boundaryRegions[region]->eintervals[interval].code) {
+	case static_cast<int>(Element::CODE::LINE2): return new Filler< 2, HeatTransferGPC::LINE2, 3, 1, HeatTransferElementType::EDGE, HeatTransferDataDescriptor< 2, HeatTransferGPC::LINE2, 3, 1, HeatTransferElementType::EDGE> >(region, interval, dofs, std::forward<Args>(args)...);
+	case static_cast<int>(Element::CODE::LINE3): return new Filler< 3, HeatTransferGPC::LINE3, 3, 1, HeatTransferElementType::EDGE, HeatTransferDataDescriptor< 3, HeatTransferGPC::LINE3, 3, 1, HeatTransferElementType::EDGE> >(region, interval, dofs, std::forward<Args>(args)...);
+	default: return nullptr;
+	}
+}
+
+template <template <size_t, size_t, size_t, size_t, size_t, class> class Filler, class ... Args>
+static ActionOperator* generateEdgeFiller(size_t region, size_t interval, size_t dofs, Args&& ... args)
+{
+	switch (info::mesh->dimension) {
+	case 2: return generateEdgeFiller2D<Filler>(region, interval, dofs, std::forward<Args>(args)...);
+	case 3: return generateEdgeFiller3D<Filler>(region, interval, dofs, std::forward<Args>(args)...);
+	}
+	return nullptr;
+}
+
+template <template <size_t, size_t, size_t, size_t, size_t, class> class Filler, class ... Args>
+static ActionOperator* generateFaceFiller(size_t region, size_t interval, size_t dofs, Args&& ... args)
+{
+	switch (info::mesh->boundaryRegions[region]->eintervals[interval].code) {
+	case static_cast<int>(Element::CODE::TRIANGLE3): return new Filler< 3, HeatTransferGPC::TRIANGLE3, 3, 2, HeatTransferElementType::FACE, HeatTransferDataDescriptor< 3, HeatTransferGPC::TRIANGLE3, 3, 2, HeatTransferElementType::FACE> >(region, interval, dofs, std::forward<Args>(args)...);
+	case static_cast<int>(Element::CODE::TRIANGLE6): return new Filler< 6, HeatTransferGPC::TRIANGLE6, 3, 2, HeatTransferElementType::FACE, HeatTransferDataDescriptor< 6, HeatTransferGPC::TRIANGLE6, 3, 2, HeatTransferElementType::FACE> >(region, interval, dofs, std::forward<Args>(args)...);
+	case static_cast<int>(Element::CODE::SQUARE4  ): return new Filler< 4, HeatTransferGPC::SQUARE4  , 3, 2, HeatTransferElementType::FACE, HeatTransferDataDescriptor< 4, HeatTransferGPC::SQUARE4  , 3, 2, HeatTransferElementType::FACE> >(region, interval, dofs, std::forward<Args>(args)...);
+	case static_cast<int>(Element::CODE::SQUARE8  ): return new Filler< 8, HeatTransferGPC::SQUARE8  , 3, 2, HeatTransferElementType::FACE, HeatTransferDataDescriptor< 8, HeatTransferGPC::SQUARE8  , 3, 2, HeatTransferElementType::FACE> >(region, interval, dofs, std::forward<Args>(args)...);
+	default: return nullptr;
+	}
+}
+
 
 template <template <size_t, size_t, size_t, size_t, size_t, class, class> class Expression, class Setter>
 static ActionOperator* generateTypedExpressionNode2D(size_t region, size_t interval, Evaluator *evaluator, const Setter &setter)
@@ -192,6 +301,35 @@ static ActionOperator* generateExpression3D(size_t interval, int etype, Evaluato
 }
 
 template <template <size_t, size_t, size_t, size_t, size_t, class, class> class Expression, class Setter>
+static void generateElementExpression2D(const std::vector<int> &etype, std::vector<std::vector<ActionOperator*> > &ops, std::map<std::string, ECFExpression> &settings, const Setter &setter)
+{
+	for(size_t interval = 0; interval < info::mesh->elements->eintervals.size(); ++interval) {
+		if (Assembler::getEvaluator(interval, settings)) {
+			ops[interval].push_back(generateExpression2D<Expression>(interval, etype[interval], Assembler::getEvaluator(interval, settings), setter));
+		}
+	}
+}
+
+template <template <size_t, size_t, size_t, size_t, size_t, class, class> class Expression, class Setter>
+static void generateElementExpression3D(const std::vector<int> &etype, std::vector<std::vector<ActionOperator*> > &ops, std::map<std::string, ECFExpression> &settings, const Setter &setter)
+{
+	for(size_t interval = 0; interval < info::mesh->elements->eintervals.size(); ++interval) {
+		if (Assembler::getEvaluator(interval, settings)) {
+			ops[interval].push_back(generateExpression3D<Expression>(interval, etype[interval], Assembler::getEvaluator(interval, settings), setter));
+		}
+	}
+}
+
+template <template <size_t, size_t, size_t, size_t, size_t, class, class> class Expression, class Setter>
+static void generateElementExpression(const std::vector<int> &etype, std::vector<std::vector<ActionOperator*> > &ops, std::map<std::string, ECFExpression> &settings, const Setter &setter)
+{
+	switch (info::mesh->dimension) {
+	case 2: generateElementExpression2D<Expression>(etype, ops, settings, setter); break;
+	case 3: generateElementExpression3D<Expression>(etype, ops, settings, setter); break;
+	}
+}
+
+template <template <size_t, size_t, size_t, size_t, size_t, class, class> class Expression, class Setter>
 static void generateBoundaryExpression(std::vector<std::vector<std::vector<ActionOperator*> > > &ops, std::map<std::string, ECFExpression> &settings, const Setter &setter)
 {
 	for(size_t r = 0; r < info::mesh->boundaryRegions.size(); ++r) {
@@ -293,10 +431,82 @@ static void generateElementOperators(const std::vector<int> &etype, std::vector<
 	}
 }
 
+template <template <size_t, size_t, size_t, size_t, size_t, class> class Operator, class ... Args>
+static ActionOperator* generateBoundaryEdge2DOperator(size_t region, size_t interval, Args&& ... args)
+{
+	switch (info::mesh->boundaryRegions[region]->eintervals[interval].code) {
+	case static_cast<int>(Element::CODE::LINE2): return new Operator< 2, HeatTransferGPC::LINE2, 2, 1, HeatTransferElementType::EDGE, HeatTransferDataDescriptor< 2, HeatTransferGPC::LINE2, 2, 1, HeatTransferElementType::EDGE> >(region, interval, std::forward<Args>(args)...);
+	case static_cast<int>(Element::CODE::LINE3): return new Operator< 3, HeatTransferGPC::LINE3, 2, 1, HeatTransferElementType::EDGE, HeatTransferDataDescriptor< 3, HeatTransferGPC::LINE3, 2, 1, HeatTransferElementType::EDGE> >(region, interval, std::forward<Args>(args)...);
+	default: return nullptr;
+	}
+}
+
+template <template <size_t, size_t, size_t, size_t, size_t, class> class Operator, class ... Args>
+static ActionOperator* generateBoundaryEdge3DOperator(size_t region, size_t interval, Args&& ... args)
+{
+	switch (info::mesh->boundaryRegions[region]->eintervals[interval].code) {
+	case static_cast<int>(Element::CODE::LINE2): return new Operator< 2, HeatTransferGPC::LINE2, 3, 1, HeatTransferElementType::EDGE, HeatTransferDataDescriptor< 2, HeatTransferGPC::LINE2, 3, 1, HeatTransferElementType::EDGE> >(region, interval, std::forward<Args>(args)...);
+	case static_cast<int>(Element::CODE::LINE3): return new Operator< 3, HeatTransferGPC::LINE3, 3, 1, HeatTransferElementType::EDGE, HeatTransferDataDescriptor< 3, HeatTransferGPC::LINE3, 3, 1, HeatTransferElementType::EDGE> >(region, interval, std::forward<Args>(args)...);
+	default: return nullptr;
+	}
+}
+
+template <template <size_t, size_t, size_t, size_t, size_t, class> class Operator, class ... Args>
+static ActionOperator* generateBoundaryFaceOperator(size_t region, size_t interval, Args&& ... args)
+{
+	switch (info::mesh->boundaryRegions[region]->eintervals[interval].code) {
+	case static_cast<int>(Element::CODE::TRIANGLE3): return new Operator< 3, HeatTransferGPC::TRIANGLE3, 3, 2, HeatTransferElementType::FACE, HeatTransferDataDescriptor< 3, HeatTransferGPC::TRIANGLE3, 3, 2, HeatTransferElementType::FACE> >(region, interval, std::forward<Args>(args)...);
+	case static_cast<int>(Element::CODE::TRIANGLE6): return new Operator< 6, HeatTransferGPC::TRIANGLE6, 3, 2, HeatTransferElementType::FACE, HeatTransferDataDescriptor< 6, HeatTransferGPC::TRIANGLE6, 3, 2, HeatTransferElementType::FACE> >(region, interval, std::forward<Args>(args)...);
+	case static_cast<int>(Element::CODE::SQUARE4  ): return new Operator< 4, HeatTransferGPC::SQUARE4  , 3, 2, HeatTransferElementType::FACE, HeatTransferDataDescriptor< 4, HeatTransferGPC::SQUARE4  , 3, 2, HeatTransferElementType::FACE> >(region, interval, std::forward<Args>(args)...);
+	case static_cast<int>(Element::CODE::SQUARE8  ): return new Operator< 8, HeatTransferGPC::SQUARE8  , 3, 2, HeatTransferElementType::FACE, HeatTransferDataDescriptor< 8, HeatTransferGPC::SQUARE8  , 3, 2, HeatTransferElementType::FACE> >(region, interval, std::forward<Args>(args)...);
+	default: return nullptr;
+	}
+}
+
+template <template <size_t, size_t, size_t, size_t, size_t, class> class Operator, class ... Args>
+static ActionOperator* generateBoundaryOperator(size_t region, size_t interval, Args&& ... args)
+{
+	if (info::mesh->boundaryRegions[region]->dimension == 1) {
+		switch (info::mesh->dimension) {
+		case 2: return generateBoundaryEdge2DOperator<Operator>(region, interval, std::forward<Args>(args)...);
+		case 3: return generateBoundaryEdge3DOperator<Operator>(region, interval, std::forward<Args>(args)...);
+		}
+	}
+	if (info::mesh->boundaryRegions[region]->dimension == 2) {
+		return generateBoundaryFaceOperator<Operator>(region, interval, std::forward<Args>(args)...);
+	}
+	return nullptr;
+}
+
+template <template <size_t, size_t, size_t, size_t, size_t, class> class Operator, class ... Args>
+static void generateBoundaryOperators(const std::vector<int> &bfilter, std::vector<std::vector<std::vector<ActionOperator*> > > &ops, Args&& ... args)
+{
+	for(size_t r = 0; r < info::mesh->boundaryRegions.size(); ++r) {
+		if (bfilter[r]) {
+			for (size_t i = 0; i < info::mesh->boundaryRegions[r]->eintervals.size(); ++i) {
+				ops[r][i].push_back(generateBoundaryOperator<Operator>(r, i, std::forward<Args>(args)...));
+			}
+		}
+	}
+}
+
 static void dropLastOperators(std::vector<std::vector<ActionOperator*> > &ops)
 {
-	for(size_t interval = 0; interval < info::mesh->elements->eintervals.size(); ++interval) {
-		ops[interval].pop_back();
+	for(size_t i = 0; i < info::mesh->elements->eintervals.size(); ++i) {
+		delete ops[i].back();
+		ops[i].pop_back();
+	}
+}
+
+static void dropLastOperators(const std::vector<int> &bfilter, std::vector<std::vector<std::vector<ActionOperator*> > > &ops)
+{
+	for(size_t r = 0; r < info::mesh->boundaryRegions.size(); ++r) {
+		if (bfilter[r]) {
+			for (size_t i = 0; i < info::mesh->boundaryRegions[r]->eintervals.size(); ++i) {
+				delete ops[r][i].back();
+				ops[r][i].pop_back();
+			}
+		}
 	}
 }
 

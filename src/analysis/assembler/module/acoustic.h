@@ -3,6 +3,7 @@
 #define SRC_ANALYSIS_ASSEMBLER_MODULE_ACOUSTIC_H_
 
 #include "assembler.h"
+#include "analysis/assembler/parameter.h"
 #include "config/ecf/physics/acoustic.h"
 #include "mesh/store/nodestore.h"
 #include "mesh/store/elementstore.h"

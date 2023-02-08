@@ -154,6 +154,9 @@ int ElementParameterData::increment(PerElementSize size, int interval) const
 
 void BoundaryParameterData::resize(double init)
 {
+	size_t alignment = 64;
+	size_t simd = SIMD::size;
+
 	if (data) {
 		delete data;
 	}
@@ -162,26 +165,39 @@ void BoundaryParameterData::resize(double init)
 		data = new serializededata<esint, double>({ 0, 0 }, tarray<double>(0, 0, init));
 		return;
 	}
-	if (info::mesh->boundaryRegions[region]->dimension == 0) {
-		esint dimension = size.n * std::pow(info::mesh->dimension, size.ndimension);
-		if (isconst[0]) {
-			data = new serializededata<esint, double>(dimension, tarray<double>(info::env::threads, info::env::threads * dimension, init));
-		} else {
-			data = new serializededata<esint, double>(dimension, tarray<double>(info::mesh->boundaryRegions[region]->nodes->datatarray().distribution(), dimension, init));
-		}
-		return;
-	}
 	std::vector<std::vector<esint> > distribution(info::env::threads);
 
 	distribution[0].push_back(0);
 	esint sum = 0;
 	for (int t = 0; t < info::env::threads; ++t) {
 		for (size_t d = info::mesh->domains->distribution[t]; d < info::mesh->domains->distribution[t + 1]; d++) {
-			for (esint i = info::mesh->boundaryRegions[region]->eintervalsDistribution[d]; i < info::mesh->boundaryRegions[region]->eintervalsDistribution[d + 1]; ++i) {
-				esint isize = increment(i);
-				if (!isconst[i]) {
-					isize *= info::mesh->boundaryRegions[region]->eintervals[i].end - info::mesh->boundaryRegions[region]->eintervals[i].begin;
+			esint isize = 0;
+			if (info::mesh->boundaryRegions[region]->dimension == 0) {
+				isize = size.n * std::pow(info::mesh->dimension, size.ndimension);
+				if (isconst[0]) {
+					isize *= simd;
+				} else {
+					size_t elements = info::mesh->boundaryRegions[region]->nodes->datatarray().size(t);
+					if (elements % simd) {
+						elements += simd - (elements % simd);
+					}
+					isize *= elements;
 				}
+			} else {
+				for (esint i = info::mesh->boundaryRegions[region]->eintervalsDistribution[d]; i < info::mesh->boundaryRegions[region]->eintervalsDistribution[d + 1]; ++i) {
+					isize = increment(i);
+					if (isconst[i]) {
+						isize *= simd;
+					} else {
+						size_t elements = info::mesh->boundaryRegions[region]->eintervals[i].end - info::mesh->boundaryRegions[region]->eintervals[i].begin;
+						if (elements % simd) {
+							elements += simd - (elements % simd);
+						}
+						isize *= elements;
+					}
+				}
+			}
+			if (isize) {
 				distribution[t].push_back(isize + sum);
 				sum += isize;
 			}
@@ -198,7 +214,7 @@ void BoundaryParameterData::resize(double init)
 	}
 	datadistribution.push_back(sum);
 
-	data = new serializededata<esint, double>(distribution, tarray<double>(datadistribution, 1, init));
+	data = new serializededata<esint, double>(distribution, tarray<double>(datadistribution, 1, init, alignment));
 }
 
 void BoundaryParameterData::resizeAligned(size_t alignment, double init)

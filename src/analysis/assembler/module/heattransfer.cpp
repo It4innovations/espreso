@@ -8,6 +8,7 @@
 #include "analysis/assembler/operators/coordinates.h"
 #include "analysis/assembler/operators/expression.h"
 #include "analysis/assembler/operators/integration.h"
+#include "analysis/assembler/operators/heattransfer.forces.h"
 #include "analysis/assembler/operators/heattransfer.stiffness.h"
 #include "analysis/assembler/operators/filler.h"
 #include "analysis/assembler/operators/gradient.h"
@@ -21,8 +22,6 @@
 #include "mesh/store/nodestore.h"
 #include "mesh/store/boundaryregionstore.h"
 
-#include "analysis/assembler/operator.h"
-#include "analysis/assembler/operators/operators.h"
 #include "analysis/scheme/steadystate.h"
 
 #include <numeric>
@@ -39,7 +38,20 @@ ElementData* HeatTransfer::Results::flux = nullptr;
 HeatTransfer::HeatTransfer(HeatTransfer *previous, HeatTransferConfiguration &settings, HeatTransferLoadStepConfiguration &configuration)
 : Assembler(settings), settings(settings), configuration(configuration)
 {
-
+	elements.stiffness.setConstness(false);
+	elements.stiffness.resize();
+	elements.rhs.setConstness(false);
+	elements.rhs.resize();
+	for (size_t r = 0; r < info::mesh->boundaryRegions.size(); ++r) {
+		elements.boundary.rhs.regions[r].setConstness(false);
+		elements.boundary.rhs.regions[r].resize();
+		if (configuration.heat_flow.end() != configuration.heat_flow.find(info::mesh->boundaryRegions[r]->name)) {
+			bfilter[r] = 1;
+		}
+		if (configuration.heat_flux.end() != configuration.heat_flux.find(info::mesh->boundaryRegions[r]->name)) {
+			bfilter[r] = 1;
+		}
+	}
 }
 
 void HeatTransfer::initParameters()
@@ -83,7 +95,7 @@ bool HeatTransfer::initTemperature()
 
 	if (configuration.temperature.size()) {
 		correct &= checkBoundaryParameter("FIXED TEMPERATURE ON BOUNDARIES", configuration.temperature);
-		generateBoundaryExpression<ExternalNodeExpression>(boundaryOps, configuration.temperature, [] (auto &element, const size_t &gp, const size_t &s, const double &value) { element.temperature[0][s] = value; });
+		generateBoundaryExpression<ExternalNodeExpression>(boundaryOps, configuration.temperature, [] (auto &element, const size_t &n, const size_t &s, const double &value) { element.temperature[n][s] = value; });
 	}
 
 //	if (settings.init_temp_respect_bc) {
@@ -287,37 +299,40 @@ void HeatTransfer::analyze()
 
 	// we cannot generate functions since 'etype' is filled
 	generateBaseFunctions(etype, elementOps);
+	generateBaseFunctions(bfilter, boundaryOps);
 	gatherInputs();
 
-	for(size_t interval = 0; interval < info::mesh->elements->eintervals.size(); ++interval) {
-		if (info::mesh->dimension == 2 && getEvaluator(interval, settings.thickness)) {
-			elementOps[interval].push_back(generateExpression2D<ExternalGPsExpression>(interval, etype[interval], getEvaluator(interval, settings.thickness),
-					[] (auto &element, const size_t &gp, const size_t &s, const double &value) { element.ecf.thickness[gp][s] = value; }));
-		}
+	if (info::mesh->dimension == 2) {
+		generateElementExpression2D<ExternalGPsExpression>(etype, elementOps, settings.thickness, [] (auto &element, const size_t &gp, const size_t &s, const double &value) { element.ecf.thickness[gp][s] = value; });
 	}
 	generateConductivity();
 	generateElementOperators<Integration>(etype, elementOps);
-//	volume();
+	generateBoundaryOperators<Integration>(bfilter, boundaryOps);
+	volume();
 
 //	gradient.xi.resize(1);
 //	controller.prepare(gradient.xi);
-	elements.stiffness.setConstness(false);
-	elements.stiffness.resize();
 	generateElementOperators<HeatTransferStiffness>(etype, elementOps, elements.stiffness);
-
-//	if (configuration.heat_source.size()) {
-//		correct &= examineElementParameter("HEAT SOURCE", configuration.heat_source, heatSource.gp.externalValues);
-//		fromExpression(*this, heatSource.gp, heatSource.gp.externalValues);
-//	}
-//	if (configuration.heat_flow.size()) {
-//		correct &= examineBoundaryParameter("HEAT FLOW", configuration.heat_flow, heatFlow.gp.externalValues);
-//		fromExpression(*this, heatFlow.gp, heatFlow.gp.externalValues);
-//	}
-//	if (configuration.heat_flux.size()) {
-//		correct &= examineBoundaryParameter("HEAT FLUX", configuration.heat_flux, heatFlux.gp.externalValues);
-//		fromExpression(*this, heatFlux.gp, heatFlux.gp.externalValues);
-//	}
-//	RHS(*this);
+	if (configuration.heat_source.size()) {
+		correct &= checkElementParameter("HEAT SOURCE", configuration.heat_source);
+		generateElementExpression<ExternalGPsExpression>(etype, elementOps, configuration.heat_source, [] (auto &element, const size_t &gp, const size_t &s, const double &value) { element.ecf.heatSource[gp][s] = value; });
+		generateElementOperators<HeatSource>(etype, elementOps, elements.rhs);
+	}
+	if (configuration.heat_flow.size()) {
+		correct &= checkBoundaryParameter("HEAT FLOW", configuration.heat_flow);
+		generateBoundaryExpression<ExternalGPsExpression>(boundaryOps, configuration.heat_flow, [] (auto &element, const size_t &gp, const size_t &s, const double &value) { element.ecf.heatFlow[gp][s] = value; });
+	}
+	if (configuration.heat_flux.size()) {
+		correct &= checkBoundaryParameter("HEAT FLUX", configuration.heat_flux);
+		generateBoundaryExpression<ExternalGPsExpression>(boundaryOps, configuration.heat_flux, [] (auto &element, const size_t &gp, const size_t &s, const double &value) { element.ecf.heatFlux[gp][s] = value; });
+	}
+	for(size_t r = 0; r < info::mesh->boundaryRegions.size(); ++r) {
+		if (bfilter[r]) {
+			for (size_t i = 0; i < info::mesh->boundaryRegions[r]->eintervals.size(); ++i) {
+				boundaryOps[r][i].push_back(generateBoundaryOperator<BoundaryHeat>(r, i, elements.boundary.rhs.regions[r]));
+			}
+		}
+	}
 
 	if (Results::gradient != nullptr) {
 		generateElementOperators<TemperatureGradient>(etype, elementOps, Results::gradient);
@@ -325,8 +340,6 @@ void HeatTransfer::analyze()
 	if (Results::flux != nullptr) {
 		generateElementOperators<TemperatureFlux>(etype, elementOps, Results::flux);
 	}
-//	outputGradient(*this);
-//	outputFlux(*this);
 
 	eslog::info("  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  \n");
 	eslog::info("  SIMD SIZE                                                                                 %lu \n", SIMD::size);
@@ -340,6 +353,45 @@ void HeatTransfer::analyze()
 	eslog::info(" ============================================================================================= \n");
 }
 
+void HeatTransfer::connect(SteadyState &scheme)
+{
+	switch (scheme.K->shape) {
+	case Matrix_Shape::FULL:  generateElementOperators<GeneralMatricFiller>(etype, elementOps, 1, elements.stiffness, scheme.K); break;
+	case Matrix_Shape::UPPER: generateElementOperators<SymmetricMatricFiller>(etype, elementOps, 1, elements.stiffness, scheme.K); break;
+	}
+
+	generateElementOperators<VectorFiller>(etype, elementOps, 1, elements.rhs, scheme.f);
+
+	for(size_t r = 0; r < info::mesh->boundaryRegions.size(); ++r) {
+		if (configuration.temperature.end() == configuration.temperature.find(info::mesh->boundaryRegions[r]->name)) {
+			if (bfilter[r]) {
+				switch (info::mesh->boundaryRegions[r]->dimension) {
+				case 0:
+					for (size_t t = 0; t < info::mesh->boundaryRegions[r]->nodes->threads(); ++t) {
+						boundaryOps[r][t].push_back(generateNodeFiller<VectorFiller>(r, t, 1, elements.rhs, scheme.f));
+					}
+					break;
+				case 1:
+					for (size_t i = 0; i < info::mesh->boundaryRegions[r]->eintervals.size(); ++i) {
+						boundaryOps[r][i].push_back(generateEdgeFiller<VectorFiller>(r, i, 1, elements.boundary.rhs.regions[r], scheme.f));
+					}
+					break;
+				case 2:
+					for (size_t i = 0; i < info::mesh->boundaryRegions[r]->eintervals.size(); ++i) {
+						boundaryOps[r][i].push_back(generateFaceFiller<VectorFiller>(r, i, 1, elements.boundary.rhs.regions[r], scheme.f));
+					}
+					break;
+				}
+			}
+		} else {
+			// DIRICHLET
+			for (size_t t = 0; t < info::mesh->boundaryRegions[r]->nodes->threads(); ++t) {
+				boundaryOps[r][t].push_back(generateNodeSetter<VectorSetter>(r, t, 1, scheme.dirichlet, [] (auto &element, const size_t &n, const size_t &dof, const size_t &s) { return element.temperature[n][s]; }));
+			}
+		}
+	}
+}
+
 void HeatTransfer::evaluate(SteadyState &scheme)
 {
 	reset(scheme.K, scheme.f, scheme.dirichlet);
@@ -350,13 +402,17 @@ void HeatTransfer::evaluate(SteadyState &scheme)
 
 void HeatTransfer::volume()
 {
-	std::vector<double> volume(info::mesh->elements->eintervals.size());
+	std::vector<double> evolume(info::mesh->elements->eintervals.size());
+	std::vector<double> bvolume(info::mesh->boundaryRegions.size());
 
-	generateElementOperators<Volume>(etype, elementOps, volume);
+	generateElementOperators<Volume>(etype, elementOps, evolume);
+	generateBoundaryOperators<Volume>(bfilter, boundaryOps, bvolume);
 	assemble(ActionOperator::Action::ASSEMBLE);
-	printElementVolume(volume);
-//	printBoundarySurface();
 	dropLastOperators(elementOps);
+	dropLastOperators(bfilter, boundaryOps);
+
+	printElementVolume(evolume);
+	printBoundarySurface(bvolume);
 }
 
 size_t HeatTransfer::esize()

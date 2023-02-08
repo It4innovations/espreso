@@ -31,19 +31,6 @@ template <size_t nodes, size_t gps, size_t edim, class Physics>
 struct HeatTransferStiffness<nodes, gps, 2, edim, HeatTransferElementType::SYMMETRIC_ISOTROPIC, Physics>: HeatTransferStiffnessBase, Physics {
 	using HeatTransferStiffnessBase::HeatTransferStiffnessBase;
 
-	void sisd(typename Physics::Element &element)
-	{
-		for (size_t gp = 0; gp < gps; ++gp) {
-			double scale = element.ecf.thickness[gp] * element.det[gp] * element.w[gp] * element.conductivity[gp];
-			for (size_t n = 0; n < nodes; ++n) {
-				for (size_t m = 0; m < nodes; ++m) {
-					stiffness[n * nodes + m] += scale * (element.dND[gp][n][0] * element.dND[gp][m][0] + element.dND[gp][n][1] * element.dND[gp][m][1]);
-				}
-			}
-		}
-		move(1);
-	}
-
 	void simd(typename Physics::Element &element)
 	{
 		double * __restrict__ out = stiffness.data;
@@ -68,22 +55,6 @@ struct HeatTransferStiffness<nodes, gps, 2, edim, HeatTransferElementType::SYMME
 template <size_t nodes, size_t gps, size_t edim, class Physics>
 struct HeatTransferStiffness<nodes, gps, 3, edim, HeatTransferElementType::SYMMETRIC_ISOTROPIC, Physics>: HeatTransferStiffnessBase, Physics {
 	using HeatTransferStiffnessBase::HeatTransferStiffnessBase;
-
-	void sisd(typename Physics::Element &element)
-	{
-		for (size_t gp = 0; gp < gps; ++gp) {
-			double scale = element.det[gp] * element.w[gp] * element.conductivity[gp];
-			for (size_t n = 0; n < nodes; ++n) {
-				for (size_t m = 0; m < nodes; ++m) {
-					stiffness[n * nodes + m] += scale * (
-							element.dND[gp][n][0] * element.dND[gp][m][0] +
-							element.dND[gp][n][1] * element.dND[gp][m][1] +
-							element.dND[gp][n][2] * element.dND[gp][m][2]);
-				}
-			}
-		}
-		move(1);
-	}
 
 	void simd(typename Physics::Element &element)
 	{
@@ -113,21 +84,6 @@ template <size_t nodes, size_t gps, size_t edim, class Physics>
 struct HeatTransferStiffness<nodes, gps, 2, edim, HeatTransferElementType::SYMMETRIC_GENERAL, Physics>: HeatTransferStiffnessBase, Physics {
 	using HeatTransferStiffnessBase::HeatTransferStiffnessBase;
 
-	void sisd(typename Physics::Element &element)
-	{
-		for (size_t gp = 0; gp < gps; ++gp) {
-			double scale = element.ecf.thickness[gp] * element.det[gp] * element.w[gp];
-			for (size_t n = 0; n < nodes; ++n) {
-				double a = element.dND[gp][n][0] * element.conductivity[gp][0] + element.dND[gp][n][1] * element.conductivity[gp][2];
-				double b = element.dND[gp][n][0] * element.conductivity[gp][1] + element.dND[gp][n][1] * element.conductivity[gp][3];
-				for (size_t m = 0; m < nodes; ++m) {
-					stiffness[n * nodes + m] += scale * (a * element.dND[gp][m][0] + b * element.dND[gp][m][1]);
-				}
-			}
-		}
-		move(1);
-	}
-
 	void simd(typename Physics::Element &element)
 	{
 		double * __restrict__ out = stiffness.data;
@@ -156,22 +112,6 @@ struct HeatTransferStiffness<nodes, gps, 2, edim, HeatTransferElementType::SYMME
 template <size_t nodes, size_t gps, size_t edim, class Physics>
 struct HeatTransferStiffness<nodes, gps, 3, edim, HeatTransferElementType::SYMMETRIC_GENERAL, Physics>: HeatTransferStiffnessBase, Physics {
 	using HeatTransferStiffnessBase::HeatTransferStiffnessBase;
-
-	void sisd(typename Physics::Element &element)
-	{
-		for (size_t gp = 0; gp < gps; ++gp) {
-			double scale = element.det[gp] * element.w[gp];
-			for (size_t n = 0; n < nodes; ++n) {
-				double a = element.dND[gp][n][0] * element.conductivity[gp][0] + element.dND[gp][n][1] * element.conductivity[gp][3] + element.dND[gp][n][2] * element.conductivity[gp][6];
-				double b = element.dND[gp][n][0] * element.conductivity[gp][1] + element.dND[gp][n][1] * element.conductivity[gp][4] + element.dND[gp][n][2] * element.conductivity[gp][7];
-				double c = element.dND[gp][n][0] * element.conductivity[gp][2] + element.dND[gp][n][1] * element.conductivity[gp][5] + element.dND[gp][n][2] * element.conductivity[gp][8];
-				for (size_t m = 0; m < nodes; ++m) {
-					stiffness[n * nodes + m] += scale * (a * element.dND[gp][m][0] + b * element.dND[gp][m][1] + c * element.dND[gp][m][2]);
-				}
-			}
-		}
-		move(1);
-	}
 
 	void simd(typename Physics::Element &element)
 	{
