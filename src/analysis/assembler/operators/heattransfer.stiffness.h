@@ -35,7 +35,7 @@ struct HeatTransferStiffness<nodes, gps, 2, edim, HeatTransferElementType::SYMME
 	{
 		double * __restrict__ out = stiffness.data;
 		for (size_t gp = 0; gp < gps; ++gp) {
-			SIMD scale = element.ecf.thickness[gp] * element.det[gp] * element.w[gp] * element.conductivity[gp];
+			SIMD scale = element.ecf.thickness[gp] * element.det[gp] * load1(element.w[gp]) * element.conductivity[gp];
 			for (size_t n = 0; n < nodes; ++n) {
 				SIMD nx = element.dND[gp][n][0];
 				SIMD ny = element.dND[gp][n][1];
@@ -60,7 +60,7 @@ struct HeatTransferStiffness<nodes, gps, 3, edim, HeatTransferElementType::SYMME
 	{
 		double * __restrict__ out = stiffness.data;
 		for (size_t gp = 0; gp < gps; ++gp) {
-			SIMD scale = element.det[gp] * element.w[gp] * element.conductivity[gp];
+			SIMD scale = element.det[gp] * load1(element.w[gp]) * element.conductivity[gp];
 			for (size_t n = 0; n < nodes; ++n) {
 				SIMD nx = element.dND[gp][n][0];
 				SIMD ny = element.dND[gp][n][1];
@@ -90,7 +90,7 @@ struct HeatTransferStiffness<nodes, gps, 2, edim, HeatTransferElementType::SYMME
 		for (size_t gp = 0; gp < gps; ++gp) {
 			SIMD c00 = element.conductivity[gp][0], c01 = element.conductivity[gp][2];
 			SIMD c10 = element.conductivity[gp][1], c11 = element.conductivity[gp][3];
-			SIMD scale = element.ecf.thickness[gp] * element.det[gp] * element.w[gp];
+			SIMD scale = element.ecf.thickness[gp] * element.det[gp] * load1(element.w[gp]);
 			for (size_t n = 0; n < nodes; ++n) {
 				SIMD nx = element.dND[gp][n][0];
 				SIMD ny = element.dND[gp][n][1];
@@ -117,7 +117,7 @@ struct HeatTransferStiffness<nodes, gps, 3, edim, HeatTransferElementType::SYMME
 	{
 		double * __restrict__ out = stiffness.data;
 		for (size_t gp = 0; gp < gps; ++gp) {
-			SIMD scale = element.det[gp] * element.w[gp];
+			SIMD scale = element.det[gp] * load1(element.w[gp]);
 			SIMD c00 = element.conductivity[gp][0], c01 = element.conductivity[gp][3], c02 = element.conductivity[gp][6];
 			SIMD c10 = element.conductivity[gp][1], c11 = element.conductivity[gp][4], c12 = element.conductivity[gp][7];
 			SIMD c20 = element.conductivity[gp][2], c21 = element.conductivity[gp][5], c22 = element.conductivity[gp][8];

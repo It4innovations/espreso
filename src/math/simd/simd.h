@@ -24,22 +24,6 @@ struct SIMD
 	ALWAYS_INLINE SIMD(double value) noexcept: data(value) { }
 	ALWAYS_INLINE SIMD(const SIMD &other) noexcept: data(other.data) { }
 
-	ALWAYS_INLINE operator double() const noexcept
-	{
-		return data[0];
-	}
-
-	ALWAYS_INLINE operator double*() noexcept
-	{
-		return reinterpret_cast<double*>(&data);
-	}
-
-	ALWAYS_INLINE SIMD& operator=(const double &value) noexcept
-	{
-		data[0] = value;
-		return *this;
-	}
-
 	ALWAYS_INLINE SIMD& operator=(const SIMD &other) noexcept
 	{
 		data = other.data;
@@ -51,9 +35,9 @@ struct SIMD
 		return reinterpret_cast<double*>(&data)[i];
 	}
 
-	ALWAYS_INLINE double operator[](size_t i) const noexcept
+	ALWAYS_INLINE const double& operator[](size_t i) const noexcept
 	{
-		return data;
+		return reinterpret_cast<const double*>(&data)[i];
 	}
 
 	ALWAYS_INLINE double operator- () const noexcept

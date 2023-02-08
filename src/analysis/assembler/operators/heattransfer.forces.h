@@ -30,7 +30,7 @@ struct HeatSource: ActionOperator, Physics {
 		for (size_t n = 0; n < nodes; ++n) {
 			SIMD heat = load(out + n * SIMD::size);
 			for (size_t gp = 0; gp < gps; ++gp) {
-				heat = heat + element.det[gp] * element.w[gp] * element.ecf.heatSource[gp] * element.N[gp][n];
+				heat = heat + element.ecf.heatSource[gp] * element.det[gp] * load1(element.w[gp]) * load1(element.N[gp][n]);
 			}
 			store(out + n * SIMD::size, heat);
 		}
@@ -66,7 +66,7 @@ struct BoundaryHeat: ActionOperator, Physics {
 				q = q + element.ecf.heatFlux[gp];
 				q = q + element.ecf.htc[gp] * element.ecf.extTemp[gp];
 
-				heat = heat + q * element.det[gp] * element.w[gp] * element.N[gp][n];
+				heat = heat + q * element.det[gp] * load1(element.w[gp]) * load1(element.N[gp][n]);
 			}
 			store(out + n * SIMD::size, heat);
 		}

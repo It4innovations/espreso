@@ -19,32 +19,6 @@ struct Integration<nodes, gps, 2, 2, etype, Physics>: ActionOperator, Physics {
 		action = Action::ASSEMBLE | Action::SOLUTION;
 	}
 
-	void sisd(typename Physics::Element &element)
-	{
-		for (size_t gp = 0; gp < gps; ++gp) {
-			double jacobian[4] = { 0, 0, 0, 0 }, inv[4];
-
-			for (size_t n = 0; n < nodes; ++n) {
-				jacobian[0] += element.dN[gp][n][0] * element.coords[n][0];
-				jacobian[1] += element.dN[gp][n][0] * element.coords[n][1];
-				jacobian[2] += element.dN[gp][n][1] * element.coords[n][0];
-				jacobian[3] += element.dN[gp][n][1] * element.coords[n][1];
-			}
-
-			element.det[gp] = jacobian[0] * jacobian[3] - jacobian[1] * jacobian[2];
-			double detJx = 1 / element.det[gp];
-			inv[0] =   detJx * jacobian[3];
-			inv[1] = - detJx * jacobian[1];
-			inv[2] = - detJx * jacobian[2];
-			inv[3] =   detJx * jacobian[0];
-
-			for (size_t n = 0; n < nodes; ++n) {
-				element.dND[gp][n][0] = inv[0] * element.dN[gp][n][0] + inv[1] * element.dN[gp][n][1];
-				element.dND[gp][n][1] = inv[2] * element.dN[gp][n][0] + inv[3] * element.dN[gp][n][1];
-			}
-		}
-	}
-
 	void simd(typename Physics::Element &element)
 	{
 		for (size_t gp = 0; gp < gps; ++gp) {
@@ -53,8 +27,8 @@ struct Integration<nodes, gps, 2, 2, etype, Physics>: ActionOperator, Physics {
 			for (size_t n = 0; n < nodes; ++n) {
 				SIMD coordsX = element.coords[n][0];
 				SIMD coordsY = element.coords[n][1];
-				SIMD dNX = element.dN[gp][n][0];
-				SIMD dNY = element.dN[gp][n][1];
+				SIMD dNX = load1(element.dN[gp][n][0]);
+				SIMD dNY = load1(element.dN[gp][n][1]);
 
 				jacobian0 = jacobian0 + dNX * coordsX;
 				jacobian1 = jacobian1 + dNX * coordsY;
@@ -62,18 +36,17 @@ struct Integration<nodes, gps, 2, 2, etype, Physics>: ActionOperator, Physics {
 				jacobian3 = jacobian3 + dNY * coordsY;
 			}
 
-			SIMD determinant = jacobian0 * jacobian3 - jacobian1 * jacobian2;
-			store(element.det[gp], determinant);
+			element.det[gp] = jacobian0 * jacobian3 - jacobian1 * jacobian2;
 
-			SIMD detJx = ones() / determinant;
+			SIMD detJx = ones() / element.det[gp];
 			SIMD inv0 =  detJx * jacobian3;
 			SIMD inv1 = -detJx * jacobian1;
 			SIMD inv2 = -detJx * jacobian2;
 			SIMD inv3 =  detJx * jacobian0;
 
 			for (size_t n = 0; n < nodes; ++n) {
-				SIMD dNX = load(element.dN[gp][n][0]);
-				SIMD dNY = load(element.dN[gp][n][1]);
+				SIMD dNX = load1(element.dN[gp][n][0]);
+				SIMD dNY = load1(element.dN[gp][n][1]);
 				element.dND[gp][n][0] = inv0 * dNX + inv1 * dNY;
 				element.dND[gp][n][1] = inv2 * dNX + inv3 * dNY;
 			}
@@ -90,49 +63,6 @@ struct Integration<nodes, gps, 3, 3, etype, Physics>: ActionOperator, Physics {
 		action = Action::ASSEMBLE | Action::SOLUTION;
 	}
 
-	void sisd(typename Physics::Element &element)
-	{
-		for (size_t gp = 0; gp < gps; ++gp) {
-			double jacobian[9] = { 0, 0, 0, 0, 0, 0, 0, 0, 0 }, inv[9];
-
-			for (size_t n = 0; n < nodes; ++n) {
-				jacobian[0] += element.dN[gp][n][0] * element.coords[n][0];
-				jacobian[1] += element.dN[gp][n][0] * element.coords[n][1];
-				jacobian[2] += element.dN[gp][n][0] * element.coords[n][2];
-				jacobian[3] += element.dN[gp][n][1] * element.coords[n][0];
-				jacobian[4] += element.dN[gp][n][1] * element.coords[n][1];
-				jacobian[5] += element.dN[gp][n][1] * element.coords[n][2];
-				jacobian[6] += element.dN[gp][n][2] * element.coords[n][0];
-				jacobian[7] += element.dN[gp][n][2] * element.coords[n][1];
-				jacobian[8] += element.dN[gp][n][2] * element.coords[n][2];
-			}
-			element.det[gp] =
-					+ jacobian[0] * jacobian[4] * jacobian[8]
-					+ jacobian[1] * jacobian[5] * jacobian[6]
-					+ jacobian[2] * jacobian[3] * jacobian[7]
-					- jacobian[2] * jacobian[4] * jacobian[6]
-					- jacobian[1] * jacobian[3] * jacobian[8]
-					- jacobian[0] * jacobian[5] * jacobian[7];
-
-			double detJx = 1 / element.det[gp];
-			inv[0] = detJx * ( jacobian[8] * jacobian[4] - jacobian[7] * jacobian[5]);
-			inv[1] = detJx * (-jacobian[8] * jacobian[1] + jacobian[7] * jacobian[2]);
-			inv[2] = detJx * ( jacobian[5] * jacobian[1] - jacobian[4] * jacobian[2]);
-			inv[3] = detJx * (-jacobian[8] * jacobian[3] + jacobian[6] * jacobian[5]);
-			inv[4] = detJx * ( jacobian[8] * jacobian[0] - jacobian[6] * jacobian[2]);
-			inv[5] = detJx * (-jacobian[5] * jacobian[0] + jacobian[3] * jacobian[2]);
-			inv[6] = detJx * ( jacobian[7] * jacobian[3] - jacobian[6] * jacobian[4]);
-			inv[7] = detJx * (-jacobian[7] * jacobian[0] + jacobian[6] * jacobian[1]);
-			inv[8] = detJx * ( jacobian[4] * jacobian[0] - jacobian[3] * jacobian[1]);
-
-			for (size_t n = 0; n < nodes; ++n) {
-				element.dND[gp][n][0] = inv[0] * element.dN[gp][n][0] + inv[1] * element.dN[gp][n][1] + inv[2] * element.dN[gp][n][2];
-				element.dND[gp][n][1] = inv[3] * element.dN[gp][n][0] + inv[4] * element.dN[gp][n][1] + inv[5] * element.dN[gp][n][2];
-				element.dND[gp][n][2] = inv[6] * element.dN[gp][n][0] + inv[7] * element.dN[gp][n][1] + inv[8] * element.dN[gp][n][2];
-			}
-		}
-	}
-
 	void simd(typename Physics::Element &element)
 	{
 		for (size_t gp = 0; gp < gps; ++gp) {
@@ -143,9 +73,9 @@ struct Integration<nodes, gps, 3, 3, etype, Physics>: ActionOperator, Physics {
 				SIMD coordsX = element.coords[n][0];
 				SIMD coordsY = element.coords[n][1];
 				SIMD coordsZ = element.coords[n][2];
-				SIMD dNX = element.dN[gp][n][0];
-				SIMD dNY = element.dN[gp][n][1];
-				SIMD dNZ = element.dN[gp][n][2];
+				SIMD dNX = load1(element.dN[gp][n][0]);
+				SIMD dNY = load1(element.dN[gp][n][1]);
+				SIMD dNZ = load1(element.dN[gp][n][2]);
 
 				jacobian0 = jacobian0 + dNX * coordsX;
 				jacobian1 = jacobian1 + dNX * coordsY;
@@ -158,16 +88,15 @@ struct Integration<nodes, gps, 3, 3, etype, Physics>: ActionOperator, Physics {
 				jacobian8 = jacobian8 + dNZ * coordsZ;
 			}
 
-			SIMD determinant =
+			element.det[gp] =
 					+ jacobian0 * jacobian4 * jacobian8
 					+ jacobian1 * jacobian5 * jacobian6
 					+ jacobian2 * jacobian3 * jacobian7
 					- jacobian2 * jacobian4 * jacobian6
 					- jacobian1 * jacobian3 * jacobian8
 					- jacobian0 * jacobian5 * jacobian7;
-			store(element.det[gp], determinant);
 
-			SIMD detJx = ones() / determinant;
+			SIMD detJx = ones() / element.det[gp];
 			SIMD inv0 = detJx * ( jacobian8 * jacobian4 - jacobian7 * jacobian5);
 			SIMD inv1 = detJx * (-jacobian8 * jacobian1 + jacobian7 * jacobian2);
 			SIMD inv2 = detJx * ( jacobian5 * jacobian1 - jacobian4 * jacobian2);
@@ -179,9 +108,9 @@ struct Integration<nodes, gps, 3, 3, etype, Physics>: ActionOperator, Physics {
 			SIMD inv8 = detJx * ( jacobian4 * jacobian0 - jacobian3 * jacobian1);
 
 			for (size_t n = 0; n < nodes; ++n) {
-				SIMD dNX = element.dN[gp][n][0];
-				SIMD dNY = element.dN[gp][n][1];
-				SIMD dNZ = element.dN[gp][n][2];
+				SIMD dNX = load1(element.dN[gp][n][0]);
+				SIMD dNY = load1(element.dN[gp][n][1]);
+				SIMD dNZ = load1(element.dN[gp][n][2]);
 				element.dND[gp][n][0] = inv0 * dNX + inv1 * dNY + inv2 * dNZ;
 				element.dND[gp][n][1] = inv3 * dNX + inv4 * dNY + inv5 * dNZ;
 				element.dND[gp][n][2] = inv6 * dNX + inv7 * dNY + inv8 * dNZ;
@@ -207,8 +136,8 @@ struct Integration<nodes, gps, 3, 2, etype, Physics>: ActionOperator, Physics {
 				SIMD coordsX = element.coords[n][0];
 				SIMD coordsY = element.coords[n][1];
 				SIMD coordsZ = element.coords[n][2];
-				SIMD dNX = element.dN[gp][n][0];
-				SIMD dNY = element.dN[gp][n][1];
+				SIMD dNX = load1(element.dN[gp][n][0]);
+				SIMD dNY = load1(element.dN[gp][n][1]);
 
 				dND0 = dND0 + dNX * coordsX;
 				dND1 = dND1 + dNX * coordsY;
@@ -246,7 +175,7 @@ struct Integration<nodes, gps, 3, 1, etype, Physics>: ActionOperator, Physics {
 				SIMD coordsX = element.coords[n][0];
 				SIMD coordsY = element.coords[n][1];
 				SIMD coordsZ = element.coords[n][2];
-				SIMD dNX = element.dN[gp][n][0];
+				SIMD dNX = load1(element.dN[gp][n][0]);
 
 				dND0 = dND0 + dNX * coordsX;
 				dND1 = dND1 + dNX * coordsY;
@@ -277,7 +206,7 @@ struct Integration<nodes, gps, 2, 1, etype, Physics>: ActionOperator, Physics {
 			for (size_t n = 0; n < nodes; ++n) {
 				SIMD coordsX = element.coords[n][0];
 				SIMD coordsY = element.coords[n][1];
-				SIMD dNX = element.dN[gp][n][0];
+				SIMD dNX = load1(element.dN[gp][n][0]);
 
 				dND0 = dND0 + dNX * coordsX;
 				dND1 = dND1 + dNX * coordsY;
@@ -315,18 +244,8 @@ struct Volume: ActionOperator, Physics {
 	void simd(typename Physics::Element &element)
 	{
 		for (size_t gp = 0; gp < gps; ++gp) {
-			SIMD v = element.det[gp] * element.w[gp];
+			SIMD v = element.det[gp] * load1(element.w[gp]);
 			for (size_t s = 0; s < SIMD::size; ++s) {
-				local += v[s];
-			}
-		}
-	}
-
-	void peel(typename Physics::Element &element, size_t size)
-	{
-		for (size_t gp = 0; gp < gps; ++gp) {
-			SIMD v = element.det[gp] * element.w[gp];
-			for (size_t s = 0; s < size; ++s) {
 				local += v[s];
 			}
 		}

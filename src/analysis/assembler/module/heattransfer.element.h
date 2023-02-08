@@ -60,9 +60,9 @@ struct HeatTransferDataDescriptor<nodes, gps, 3, edim, HeatTransferElementType::
 		alignas(SIMD::size * sizeof(double)) SIMD coords[nodes][3];
 		alignas(SIMD::size * sizeof(double)) SIMD gpcoords[gps][3];
 
-		alignas(SIMD::size * sizeof(double)) SIMD  w [gps];
-		alignas(SIMD::size * sizeof(double)) SIMD  N [gps][nodes];
-		alignas(SIMD::size * sizeof(double)) SIMD dN [gps][nodes][edim];
+		alignas(SIMD::size * sizeof(double)) double  w [gps];
+		alignas(SIMD::size * sizeof(double)) double  N [gps][nodes];
+		alignas(SIMD::size * sizeof(double)) double dN [gps][nodes][edim];
 
 		alignas(SIMD::size * sizeof(double)) SIMD dND[gps][nodes][edim];
 		alignas(SIMD::size * sizeof(double)) SIMD det[gps];
@@ -99,9 +99,9 @@ struct HeatTransferDataDescriptor<nodes, gps, 2, edim, HeatTransferElementType::
 		alignas(SIMD::size * sizeof(double)) SIMD coords[nodes][2];
 		alignas(SIMD::size * sizeof(double)) SIMD gpcoords[gps][2];
 
-		alignas(SIMD::size * sizeof(double)) SIMD  w [gps];
-		alignas(SIMD::size * sizeof(double)) SIMD  N [gps][nodes];
-		alignas(SIMD::size * sizeof(double)) SIMD dN [gps][nodes][edim];
+		alignas(SIMD::size * sizeof(double)) double  w [gps];
+		alignas(SIMD::size * sizeof(double)) double  N [gps][nodes];
+		alignas(SIMD::size * sizeof(double)) double dN [gps][nodes][edim];
 
 		alignas(SIMD::size * sizeof(double)) SIMD dND[gps][nodes][edim];
 		alignas(SIMD::size * sizeof(double)) SIMD det[gps];
@@ -139,9 +139,9 @@ struct HeatTransferDataDescriptor<nodes, gps, 3, edim, HeatTransferElementType::
 		alignas(SIMD::size * sizeof(double)) SIMD coords[nodes][3];
 		alignas(SIMD::size * sizeof(double)) SIMD gpcoords[gps][3];
 
-		alignas(SIMD::size * sizeof(double)) SIMD  w [gps];
-		alignas(SIMD::size * sizeof(double)) SIMD  N [gps][nodes];
-		alignas(SIMD::size * sizeof(double)) SIMD dN [gps][nodes][edim];
+		alignas(SIMD::size * sizeof(double)) double  w [gps];
+		alignas(SIMD::size * sizeof(double)) double  N [gps][nodes];
+		alignas(SIMD::size * sizeof(double)) double dN [gps][nodes][edim];
 
 		alignas(SIMD::size * sizeof(double)) SIMD dND[gps][nodes][edim];
 		alignas(SIMD::size * sizeof(double)) SIMD det[gps];
@@ -181,9 +181,9 @@ struct HeatTransferDataDescriptor<nodes, gps, 2, edim, HeatTransferElementType::
 		alignas(SIMD::size * sizeof(double)) SIMD coords[nodes][2];
 		alignas(SIMD::size * sizeof(double)) SIMD gpcoords[gps][2];
 
-		alignas(SIMD::size * sizeof(double)) SIMD  w [gps];
-		alignas(SIMD::size * sizeof(double)) SIMD  N [gps][nodes];
-		alignas(SIMD::size * sizeof(double)) SIMD dN [gps][nodes][edim];
+		alignas(SIMD::size * sizeof(double)) double  w [gps];
+		alignas(SIMD::size * sizeof(double)) double  N [gps][nodes];
+		alignas(SIMD::size * sizeof(double)) double dN [gps][nodes][edim];
 
 		alignas(SIMD::size * sizeof(double)) SIMD dND[gps][nodes][edim];
 		alignas(SIMD::size * sizeof(double)) SIMD det[gps];
@@ -219,9 +219,10 @@ struct HeatTransferDataDescriptor<nodes, gps, 3, 2, HeatTransferElementType::FAC
 
 		alignas(SIMD::size * sizeof(double)) SIMD coords[nodes][3];
 
-		alignas(SIMD::size * sizeof(double)) SIMD  w [gps];
-		alignas(SIMD::size * sizeof(double)) SIMD  N [gps][nodes];
-		alignas(SIMD::size * sizeof(double)) SIMD dN [gps][nodes][2];
+		alignas(SIMD::size * sizeof(double)) double  w [gps];
+		alignas(SIMD::size * sizeof(double)) double  N [gps][nodes];
+		alignas(SIMD::size * sizeof(double)) double dN [gps][nodes][2];
+
 		alignas(SIMD::size * sizeof(double)) SIMD det[gps];
 
 		alignas(SIMD::size * sizeof(double)) SIMD temperature[nodes];
@@ -250,9 +251,10 @@ struct HeatTransferDataDescriptor<nodes, gps, ndim, 1, HeatTransferElementType::
 
 		alignas(SIMD::size * sizeof(double)) SIMD coords[nodes][ndim];
 
-		alignas(SIMD::size * sizeof(double)) SIMD  w [gps];
-		alignas(SIMD::size * sizeof(double)) SIMD  N [gps][nodes];
-		alignas(SIMD::size * sizeof(double)) SIMD dN [gps][nodes][1];
+		alignas(SIMD::size * sizeof(double)) double  w [gps];
+		alignas(SIMD::size * sizeof(double)) double  N [gps][nodes];
+		alignas(SIMD::size * sizeof(double)) double dN [gps][nodes][1];
+
 		alignas(SIMD::size * sizeof(double)) SIMD det[gps];
 
 		alignas(SIMD::size * sizeof(double)) SIMD temperature[nodes];

@@ -806,7 +806,7 @@ struct Basis: ActionOperator, Physics {
 		action = Action::ASSEMBLE | Action::SOLUTION;
 	}
 
-	void sisd(typename Physics::Element &element)
+	void simd(typename Physics::Element &element)
 	{
 		for (size_t gp = 0; gp < gps; ++gp) {
 			element.w[gp] = GaussPoints<code, nodes, gps, edim>::w[gp];
@@ -814,21 +814,6 @@ struct Basis: ActionOperator, Physics {
 				element.N[gp][n] = GaussPoints<code, nodes, gps, edim>::N[gp * nodes + n];
 				for (size_t d = 0; d < edim; ++d) {
 					element.dN[gp][n][d] = GaussPoints<code, nodes, gps, edim>::dN[gp * edim * nodes + d * nodes + n];
-				}
-			}
-		}
-	}
-
-	void simd(typename Physics::Element &element)
-	{
-		for (size_t s = 0; s < SIMD::size; ++s) {
-			for (size_t gp = 0; gp < gps; ++gp) {
-				element.w[gp][s] = GaussPoints<code, nodes, gps, edim>::w[gp];
-				for (size_t n = 0; n < nodes; ++n) {
-					element.N[gp][n][s] = GaussPoints<code, nodes, gps, edim>::N[gp * nodes + n];
-					for (size_t d = 0; d < edim; ++d) {
-						element.dN[gp][n][d][s] = GaussPoints<code, nodes, gps, edim>::dN[gp * edim * nodes + d * nodes + n];
-					}
 				}
 			}
 		}

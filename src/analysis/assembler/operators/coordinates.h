@@ -83,7 +83,7 @@ struct CoordinatesToElementNodesAndGPs: CopyCoordinates, Physics {
 			}
 			for (size_t n = 0; n < nodes; ++n) {
 				for (size_t d = 0; d < ndim; ++d) {
-					element.gpcoords[gp][d] = element.gpcoords[gp][d] + element.N[gp][n] * element.coords[n][d];
+					element.gpcoords[gp][d] = element.gpcoords[gp][d] + load1(element.N[gp][n]) * element.coords[n][d];
 				}
 			}
 		}
@@ -104,7 +104,7 @@ struct CoordinatesToElementNodesAndGPs: CopyCoordinates, Physics {
 			}
 			for (size_t n = 0; n < nodes; ++n) {
 				for (size_t d = 0; d < ndim; ++d) {
-					element.gpcoords[gp][d] = element.gpcoords[gp][d] + element.N[gp][n] * element.coords[n][d];
+					element.gpcoords[gp][d] = element.gpcoords[gp][d] + load1(element.N[gp][n]) * element.coords[n][d];
 				}
 			}
 		}

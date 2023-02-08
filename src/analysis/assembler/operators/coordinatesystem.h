@@ -26,13 +26,15 @@ template <size_t nodes, size_t gps, size_t edim, size_t etype, class Physics>
 struct CoordinateSystemCartesian<nodes, gps, 2, edim, etype, Physics>: CoordinateSystem, Physics {
 	using CoordinateSystem::CoordinateSystem;
 
+	constexpr static double straightAngleRec = 1.0 / 180;
+
 	void simd(typename Physics::Element &element)
 	{
 		for (size_t gp = 0; gp < gps; ++gp) {
 			SIMD angle = element.ecf.center[gp][0];
 			for (size_t s = 0; s < SIMD::size; ++s) {
-				element.cossin[gp][0][s] = std::cos(M_PI * angle[s] * load1(1.0 / 180));
-				element.cossin[gp][1][s] = std::sin(M_PI * angle[s] * load1(1.0 / 180));
+				element.cossin[gp][0][s] = std::cos(M_PI * angle[s] * straightAngleRec);
+				element.cossin[gp][1][s] = std::sin(M_PI * angle[s] * straightAngleRec);
 			}
 		}
 	}
@@ -42,6 +44,8 @@ template <size_t nodes, size_t gps, size_t edim, size_t etype, class Physics>
 struct CoordinateSystemCartesian<nodes, gps, 3, edim, etype, Physics>: CoordinateSystem, Physics {
 	using CoordinateSystem::CoordinateSystem;
 
+	constexpr static double straightAngleRec = 1.0 / 180;
+
 	void simd(typename Physics::Element &element)
 	{
 		for (size_t gp = 0; gp < gps; ++gp) {
@@ -49,12 +53,12 @@ struct CoordinateSystemCartesian<nodes, gps, 3, edim, etype, Physics>: Coordinat
 			SIMD angleY = element.ecf.center[gp][1];
 			SIMD angleZ = element.ecf.center[gp][2];
 			for (size_t s = 0; s < SIMD::size; ++s) {
-				element.cossin[gp][0][s] = std::cos(M_PI * angleX[s] * load1(1.0 / 180));
-				element.cossin[gp][1][s] = std::cos(M_PI * angleY[s] * load1(1.0 / 180));
-				element.cossin[gp][2][s] = std::cos(M_PI * angleZ[s] * load1(1.0 / 180));
-				element.cossin[gp][3][s] = std::sin(M_PI * angleX[s] * load1(1.0 / 180));
-				element.cossin[gp][4][s] = std::sin(M_PI * angleY[s] * load1(1.0 / 180));
-				element.cossin[gp][5][s] = std::sin(M_PI * angleZ[s] * load1(1.0 / 180));
+				element.cossin[gp][0][s] = std::cos(M_PI * angleX[s] * straightAngleRec);
+				element.cossin[gp][1][s] = std::cos(M_PI * angleY[s] * straightAngleRec);
+				element.cossin[gp][2][s] = std::cos(M_PI * angleZ[s] * straightAngleRec);
+				element.cossin[gp][3][s] = std::sin(M_PI * angleX[s] * straightAngleRec);
+				element.cossin[gp][4][s] = std::sin(M_PI * angleY[s] * straightAngleRec);
+				element.cossin[gp][5][s] = std::sin(M_PI * angleZ[s] * straightAngleRec);
 			}
 		}
 	}
