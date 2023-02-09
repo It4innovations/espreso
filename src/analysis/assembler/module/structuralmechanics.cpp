@@ -1,6 +1,16 @@
 
 #include "structuralmechanics.h"
+#include "structuralmechanics.generator.h"
 #include "assembler.hpp"
+
+#include "analysis/assembler/operators/info.h"
+#include "analysis/assembler/operators/basis.h"
+#include "analysis/assembler/operators/coordinates.h"
+#include "analysis/assembler/operators/expression.h"
+#include "analysis/assembler/operators/integration.h"
+#include "analysis/assembler/operators/structuralmechanics.f.h"
+#include "analysis/assembler/operators/structuralmechanics.K.h"
+#include "analysis/assembler/operators/filler.h"
 
 #include "basis/expression/variable.h"
 #include "esinfo/ecfinfo.h"
@@ -15,16 +25,24 @@
 #include <numeric>
 #include <algorithm>
 
-#include "basis/utilities/print.h"
-
-using namespace espreso;
+namespace espreso {
 
 NodeData* StructuralMechanics::Results::displacement = nullptr;
 
 StructuralMechanics::StructuralMechanics(StructuralMechanics *previous, StructuralMechanicsConfiguration &settings, StructuralMechanicsLoadStepConfiguration &configuration)
 : Assembler(settings), settings(settings), configuration(configuration)
 {
-
+	elements.stiffness.setConstness(false);
+	elements.stiffness.resize();
+	elements.rhs.setConstness(false);
+	elements.rhs.resize();
+	for (size_t r = 0; r < info::mesh->boundaryRegions.size(); ++r) {
+		elements.boundary.rhs.regions[r].setConstness(false);
+		elements.boundary.rhs.regions[r].resize();
+		if (configuration.normal_pressure.end() != configuration.normal_pressure.find(info::mesh->boundaryRegions[r]->name)) {
+			bfilter[r] = 1;
+		}
+	}
 }
 
 void StructuralMechanics::initParameters()
@@ -39,68 +57,16 @@ void StructuralMechanics::initParameters()
 	}
 }
 
-bool StructuralMechanics::initTemperature()
+bool StructuralMechanics::initDisplacement()
 {
-	// This code has to solve problem that initial temperature is set to elements regions, but we need it in nodes
-	// 1. settings -> nodeInitialTemperature
-	// 2. nodeInitialTemperature -> initialTemperature (here we average values)
-	// 3. Dirichlet -> initialTemperature (if 'init_temp_respect_bc')
-	// 4. initialTemperature -> nodeInitialTemperature (TODO: check the correction with TB)
-	/////////////////////////////////////////////////////////////////////////////////////////////////////////////
-
 	bool correct = true;
 
-//	if (configuration.temperature.size()) {
-//		correct &= examineBoundaryParameter("FIXED TEMPERATURE ON BOUNDARIES", configuration.temperature, temperature.node.externalValues);
-//		fromExpression(*this, temperature.node, temperature.node.externalValues);
-//	}
-//
-//	if (settings.init_temp_respect_bc) {
-//		temp.initial.node.setConstness(false);
-//	}
-//	examineElementParameter("INITIAL TEMPERATURE", settings.initial_temperature, temp.initial.node.externalValues);
-//	fromExpression(*this, temp.initial.node, temp.initial.node.externalValues);
-//	_evaluate();
-//
-////	for (auto it = configuration.temperature.begin(); it != configuration.temperature.end(); ++it) {
-////		StructuralMechanics::insertParameters(it->second.evaluator);
-////	}
-////
-////	temp.initial.node.builder->buildAndExecute(*this);
-//
-//	averageEnodesToNodes(temp.initial.node, *ParametersTemperature::Initial::output);
-//	ParametersTemperature::output->data = ParametersTemperature::Initial::output->data;
-//
-////	if (info::mesh->dimension == 2 && info::ecf->heat_transfer_2d.init_temp_respect_bc) {
-////		CopyBoundaryRegionsSettingToNodes(configuration.temperature, *ParametersTemperature::Initial::output, "SET INITIAL TEMPERATURE ACCORDING TO DIRICHLET").buildAndExecute(*this);
-////	}
-////	if (info::mesh->dimension == 3 && info::ecf->heat_transfer_3d.init_temp_respect_bc) {
-////		CopyBoundaryRegionsSettingToNodes(configuration.temperature, *ParametersTemperature::Initial::output, "SET INITIAL TEMPERATURE ACCORDING TO DIRICHLET").buildAndExecute(*this);
-////	}
-////	CopyNodesToElementsNodes(*ParametersTemperature::Initial::output, temp.initial.node, "COPY INITIAL TEMPERATURE TO ELEMENTS NODES").buildAndExecute(*this);
-////	CopyNodesToBoundaryNodes(*ParametersTemperature::Initial::output, temp.initial.boundary.node, "COPY INITIAL TEMPERATURE TO BOUNDARY NODES").buildAndExecute(*this);
-////	ElementsGaussPointsBuilder<1>(integration.N, temp.initial.node, temp.initial.gp, "INTEGRATE INITIAL TEMPERATURE INTO ELEMENTS GAUSS POINTS").buildAndExecute(*this);
-////	BoundaryGaussPointsBuilder<1>(integration.boundary.N, temp.initial.boundary.node, temp.initial.boundary.gp, "INTEGRATE INITIAL TEMPERATURE INTO BOUNDARY GAUSS POINTS").buildAndExecute(*this);
-//
-//	if (Variable::list.egps.find("TEMPERATURE") != Variable::list.egps.end() || ParametersGradient::output) {
-//		copyNodesToEnodes(*this, *ParametersTemperature::output, temp.node);
-//	}
-//
-//	if (Variable::list.egps.find("TEMPERATURE") != Variable::list.egps.end()) {
-//		moveEnodesToGPs(*this, temp.node, temp.gp, 1);
-//		Variable::list.egps["TEMPERATURE"] = new ParameterVariable(temp.gp.data, temp.gp.isconst, temp.gp.update, 0, 1);
-//	}
-
-
-
-//	ParametersTemperature::output->data = ParametersTemperature::Initial::output->data;
-//	CopyElementParameters(temp.initial.node, temp.node, "COPY INITIAL TEMPERATURE TO ELEMENT NODES").buildAndExecute(*this);
-//	builders.push_back(new CopyNodesToElementsNodes(*ParametersTemperature::output, temp.node, "COPY TEMPERATURE TO ELEMENTS NODES"));
-//	builders.push_back(new ElementsGaussPointsBuilder<1>(integration.N, temp.node, temp.gp, "INTEGRATE TEMPERATURE INTO ELEMENTS GAUSS POINTS"));
-//	builders.push_back(new CopyNodesToBoundaryNodes(*ParametersTemperature::output, temp.boundary.node, "COPY TEMPERATURE TO BOUNDARY NODES"));
-//	builders.push_back(new BoundaryGaussPointsBuilder<1>(integration.boundary.N, temp.boundary.node, temp.boundary.gp, "INTEGRATE TEMPERATURE INTO BOUNDARY GAUSS POINTS"));
-
-//	results();
+	if (configuration.displacement.size()) {
+		correct &= checkBoundaryParameter("FIXED DISPLACEMENT", configuration.displacement);
+		generateBoundaryExpression<ExternalNodeExpression>(boundaryOps, configuration.displacement, 0, [] (auto &element, const size_t &n, const size_t &s, const double &value) { element.displacement[n][0][s] = value; });
+		generateBoundaryExpression<ExternalNodeExpression>(boundaryOps, configuration.displacement, 1, [] (auto &element, const size_t &n, const size_t &s, const double &value) { element.displacement[n][1][s] = value; });
+		generateBoundaryExpression<ExternalNodeExpression>(boundaryOps, configuration.displacement, 2, [] (auto &element, const size_t &n, const size_t &s, const double &value) { element.displacement[n][2][s] = value; });
+	}
 	return correct;
 }
 
@@ -108,147 +74,175 @@ void StructuralMechanics::analyze()
 {
 	double start = eslog::time();
 	eslog::info("\n ============================================================================================= \n");
-//	initNames();
 
+	validateRegionSettings("MATERIAL", settings.material_set);
+	validateRegionSettings("INITIAL TEMPERATURE", settings.initial_temperature);
+	validateRegionSettings("THICKNESS", settings.thickness);
+
+	initParameters();
+
+	eslog::info(" ============================================================================================= \n");
 	bool correct = true;
+	correct &= initDisplacement();
 
-//	validateRegionSettings("MATERIAL", settings.material_set);
-//	validateRegionSettings("INITIAL TEMPERATURE", settings.initial_temperature);
-//	validateRegionSettings("THICKNESS", settings.thickness);
-//
-//	initParameters();
-//
-//	baseFunction(*this);
-//	elementCoordinates(*this);
-//	elementIntegration(*this);
-//
-//	_evaluate(); // fill coordinates, compute determinants
-////	printElementVolume(integration.weight, integration.jacobiDeterminant);
-////	printBoundarySurface(integration.boundary.weight, integration.boundary.jacobian);
-//	eslog::info(" ============================================================================================= \n");
-//
-//	correct &= initTemperature();
-//
-//	if (step::step.loadstep == 0) {
-//		///////////////////////////////////// Set materials and check if there is not any incorrect region intersection
-//		///////////////////////////////////////////////////////////////////////////////////////////////////////////////
-//		eslog::info("\n  MATERIALS                                                                                    \n");
-//		eslog::info(" --------------------------------------------------------------------------------------------- \n");
-//		for (size_t i = 0; i < info::mesh->materials.size(); ++i) {
-//			eslog::info(" --- %s ---%*s \n", info::mesh->materials[i]->name.c_str(), 84 - info::mesh->materials[i]->name.size(), "");
-//			MaterialConfiguration *mat = info::mesh->materials[i];
-//
-//			switch (mat->material_model) {
-//			case MaterialConfiguration::MATERIAL_MODEL::LINEAR_ELASTIC:
-//				eslog::info("                                                                               LINEAR ELASTIC \n");
-//				if (info::mesh->dimension == 2) {
-//					switch (settings.element_behaviour) {
-//					case StructuralMechanicsConfiguration::ELEMENT_BEHAVIOUR::PLANE_STRAIN:
-//						eslog::info("     ELEMENT BEHAVIOR:                                                           PLANE STRAIN \n");
-//						break;
-//					case StructuralMechanicsConfiguration::ELEMENT_BEHAVIOUR::PLANE_STRESS:
-//						eslog::info("     ELEMENT BEHAVIOR:                                                           PLANE STRESS \n");
-//						break;
-//					case StructuralMechanicsConfiguration::ELEMENT_BEHAVIOUR::PLANE_STRESS_WITH_THICKNESS:
-//						eslog::info("     ELEMENT BEHAVIOR:                                            PLANE STRESS WITH THICKNESS \n");
-//						correct &= examineElementParameter("THICKNESS", settings.thickness, thickness.gp.externalValues);
-//						fromExpression(*this, thickness.gp, thickness.gp.externalValues);
-//						break;
-//					case StructuralMechanicsConfiguration::ELEMENT_BEHAVIOUR::AXISYMMETRIC:
-//						eslog::info("     ELEMENT BEHAVIOR:                                                           AXISYMMETRIC \n");
-//						correct &= examineElementParameter("THICKNESS", settings.thickness, thickness.gp.externalValues);
-//						fromExpression(*this, thickness.gp, thickness.gp.externalValues);
-//						break;
-//					}
-//				}
-//				eslog::info("                                                                                               \n");
-//
-//				switch (mat->linear_elastic_properties.model) {
-//				case LinearElasticPropertiesConfiguration::MODEL::ISOTROPIC:
-//					eslog::info("                MODEL:                                                              ISOTROPIC \n");
-//					correct &= examineMaterialParameter(mat->name, "EX", mat->linear_elastic_properties.young_modulus.get(0, 0), material.model.isoYoungModulus.externalValues, 0);
-//					correct &= examineMaterialParameter(mat->name, "mi", mat->linear_elastic_properties.poisson_ratio.get(0, 0), material.model.isoPoissonRatio.externalValues, 0);
-//					break;
-//				case LinearElasticPropertiesConfiguration::MODEL::ORTHOTROPIC:
-//					eslog::info("                MODEL:                                                            ORTHOTROPIC \n");
-//					break;
-//				case LinearElasticPropertiesConfiguration::MODEL::ANISOTROPIC:
-//					eslog::info("                MODEL:                                                            ANISOTROPIC \n");
-//					break;
-//				}
-//				break;
-//			case MaterialConfiguration::MATERIAL_MODEL::HYPER_ELASTIC:
-//				eslog::info("                                                                                HYPER ELASTIC \n");
-//				break;
-//			}
-//			eslog::info("                                                                                               \n");
-//
-//			correct &= examineMaterialParameter(mat->name, "DENSITY", mat->density, material.density.externalValues, 0);
-//		}
-//
-////		fromExpression(*this, cooSystem.cartesian2D, cooSystem.cartesian2D.externalValues);
-////		fromExpression(*this, cooSystem.cartesian3D, cooSystem.cartesian3D.externalValues);
-//
-//		fromExpression(*this, material.model.isoYoungModulus, material.model.isoYoungModulus.externalValues);
-//		fromExpression(*this, material.model.isoPoissonRatio, material.model.isoPoissonRatio.externalValues);
-//		fromExpression(*this, material.model.youngModulus, material.model.youngModulus.externalValues);
-//		fromExpression(*this, material.model.poissonRatio, material.model.poissonRatio.externalValues);
-//		fromExpression(*this, material.model.shearModulus, material.model.shearModulus.externalValues);
-//		fromExpression(*this, material.model.anisotropic3D, material.model.anisotropic3D.externalValues);
-//
-//		fromExpression(*this, material.density, material.density.externalValues);
-//
-//		eslog::info("  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  \n");
-//		printMaterials(settings.material_set);
-//
-//		elasticity(*this);
-//
-//		eslog::info(" ============================================================================================= \n");
-//	}
-//
-//	stiffness(*this);
-//
-//	if (configuration.acceleration.size()) {
-//		correct &= examineElementParameter("ACCELERATION.X", configuration.acceleration, acceleration.gp.externalValues, 0);
-//		correct &= examineElementParameter("ACCELERATION.Y", configuration.acceleration, acceleration.gp.externalValues, 1);
-//		if (info::mesh->dimension == 3) {
-//			correct &= examineElementParameter("ACCELERATION.Z", configuration.acceleration, acceleration.gp.externalValues, 2);
-//		}
-//		fromExpression(*this, acceleration.gp, acceleration.gp.externalValues);
-//	}
-//
-//	if (configuration.angular_velocity.size()) {
-//		switch (info::mesh->dimension) {
-//		case 3:
-//			correct &= examineElementParameter("ANGULAR_VELOCITY.X", configuration.angular_velocity, angularVevocity.gp.externalValues, 0);
-//			correct &= examineElementParameter("ANGULAR_VELOCITY.Y", configuration.angular_velocity, angularVevocity.gp.externalValues, 1);
-//			correct &= examineElementParameter("ANGULAR_VELOCITY.Z", configuration.angular_velocity, angularVevocity.gp.externalValues, 2);
-//			break;
-//		case 2:
-//			switch (settings.element_behaviour) {
-//			case StructuralMechanicsConfiguration::ELEMENT_BEHAVIOUR::PLANE_STRAIN:
-//			case StructuralMechanicsConfiguration::ELEMENT_BEHAVIOUR::PLANE_STRESS:
-//			case StructuralMechanicsConfiguration::ELEMENT_BEHAVIOUR::PLANE_STRESS_WITH_THICKNESS:
-//				correct &= examineElementParameter("ANGULAR_VELOCITY.Z", configuration.angular_velocity, angularVevocity.gp.externalValues, 2);
-//				break;
-//			case StructuralMechanicsConfiguration::ELEMENT_BEHAVIOUR::AXISYMMETRIC:
-//				correct &= examineElementParameter("ANGULAR_VELOCITY.Y", configuration.angular_velocity, angularVevocity.gp.externalValues, 1);
-//				break;
-//			}
-//		}
-//
-//		fromExpression(*this, angularVevocity.gp, angularVevocity.gp.externalValues);
-//	}
-//
-//	if (configuration.displacement.size()) {
-//		correct &= examineBoundaryParameter("DISPLACEMENT.X", configuration.displacement, displacement.node.externalValues, 0);
-//		correct &= examineBoundaryParameter("DISPLACEMENT.Y", configuration.displacement, displacement.node.externalValues, 1);
-//		if (info::mesh->dimension == 3) {
-//			correct &= examineBoundaryParameter("DISPLACEMENT.Z", configuration.displacement, displacement.node.externalValues, 2);
-//		}
-//		fromExpression(*this, displacement.node, displacement.node.externalValues);
-//	}
-//
+	if (step::step.loadstep == 0) {
+		///////////////////////////////////// Set materials and check if there is not any incorrect region intersection
+		///////////////////////////////////////////////////////////////////////////////////////////////////////////////
+		eslog::info("\n  MATERIALS                                                                                    \n");
+		eslog::info(" --------------------------------------------------------------------------------------------- \n");
+		for (size_t i = 0; i < info::mesh->materials.size(); ++i) {
+			eslog::info(" --- %s ---%*s \n", info::mesh->materials[i]->name.c_str(), 84 - info::mesh->materials[i]->name.size(), "");
+			MaterialConfiguration *mat = info::mesh->materials[i];
+
+			switch (mat->material_model) {
+			case MaterialConfiguration::MATERIAL_MODEL::LINEAR_ELASTIC:
+				eslog::info("                                                                               LINEAR ELASTIC \n");
+				if (info::mesh->dimension == 2) {
+					switch (settings.element_behaviour) {
+					case StructuralMechanicsConfiguration::ELEMENT_BEHAVIOUR::PLANE_STRAIN:
+						eslog::info("     ELEMENT BEHAVIOR:                                                           PLANE STRAIN \n");
+						break;
+					case StructuralMechanicsConfiguration::ELEMENT_BEHAVIOUR::PLANE_STRESS:
+						eslog::info("     ELEMENT BEHAVIOR:                                                           PLANE STRESS \n");
+						break;
+					case StructuralMechanicsConfiguration::ELEMENT_BEHAVIOUR::PLANE_STRESS_WITH_THICKNESS:
+						eslog::info("     ELEMENT BEHAVIOR:                                            PLANE STRESS WITH THICKNESS \n");
+						correct &= checkElementParameter("THICKNESS", settings.thickness);
+						break;
+					case StructuralMechanicsConfiguration::ELEMENT_BEHAVIOUR::AXISYMMETRIC:
+						eslog::info("     ELEMENT BEHAVIOR:                                                           AXISYMMETRIC \n");
+						correct &= checkElementParameter("THICKNESS", settings.thickness);
+						break;
+					}
+				}
+				eslog::info("                                                                                               \n");
+
+				correct &= checkExpression("DENSITY", mat->density);
+				correct &= checkExpression("HEAT CAPACITY", mat->heat_capacity);
+				eslog::info("                                                                                               \n");
+
+				switch (mat->linear_elastic_properties.model) {
+				case LinearElasticPropertiesConfiguration::MODEL::ISOTROPIC:
+					eslog::info("                MODEL:                                                              ISOTROPIC \n");
+					correct &= checkExpression("EX", mat->linear_elastic_properties.young_modulus.get(0, 0));
+					correct &= checkExpression("MI", mat->linear_elastic_properties.poisson_ratio.get(0, 0));
+					break;
+				case LinearElasticPropertiesConfiguration::MODEL::ORTHOTROPIC:
+					eslog::info("                MODEL:                                                            ORTHOTROPIC \n");
+					break;
+				case LinearElasticPropertiesConfiguration::MODEL::ANISOTROPIC:
+					eslog::info("                MODEL:                                                            ANISOTROPIC \n");
+					break;
+				}
+				break;
+			case MaterialConfiguration::MATERIAL_MODEL::HYPER_ELASTIC:
+				eslog::info("                                                                                HYPER ELASTIC \n");
+				break;
+			}
+			eslog::info("                                                                                               \n");
+		}
+
+		switch (info::mesh->dimension) {
+		case 2:
+			if (settings.element_behaviour == StructuralMechanicsConfiguration::ELEMENT_BEHAVIOUR::AXISYMMETRIC) {
+				std::fill(etype.begin(), etype.end(), StructuralMechanicsElementType::SYMMETRIC_PLANE_AXISYMMETRIC);
+			} else {
+				std::fill(etype.begin(), etype.end(), StructuralMechanicsElementType::SYMMETRIC_PLANE);
+			}
+			break;
+		case 3:
+			std::fill(etype.begin(), etype.end(), StructuralMechanicsElementType::SYMMETRIC_VOLUME);
+			break;
+		}
+
+		for (size_t r = 0; r < info::mesh->boundaryRegions.size(); ++r) {
+			switch (info::mesh->boundaryRegions[r]->dimension) {
+			case 0: std::fill(btype[r].begin(), btype[r].end(), StructuralMechanicsElementType::NODE); break;
+			case 1: std::fill(btype[r].begin(), btype[r].end(), StructuralMechanicsElementType::EDGE); break;
+			case 2: std::fill(btype[r].begin(), btype[r].end(), StructuralMechanicsElementType::FACE); break;
+			}
+		}
+
+		eslog::info("  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  \n");
+		printMaterials(settings.material_set);
+		eslog::info(" ============================================================================================= \n");
+	}
+
+	generateBaseFunctions(etype, elementOps);
+	generateBaseFunctions(bfilter, boundaryOps);
+
+	for(size_t i = 0; i < info::mesh->elements->eintervals.size(); ++i) {
+		auto procNodes = info::mesh->elements->nodes->cbegin() + info::mesh->elements->eintervals[i].begin;
+		bool cooToGPs = settings.element_behaviour == StructuralMechanicsConfiguration::ELEMENT_BEHAVIOUR::AXISYMMETRIC;
+
+		if (getEvaluator(i, configuration.angular_velocity, 0) || getEvaluator(i, configuration.angular_velocity, 1) || getEvaluator(i, configuration.angular_velocity, 2)) {
+			cooToGPs = true;
+		}
+
+		if (cooToGPs) {
+			elementOps[i].push_back(generateElementOperator<CoordinatesToElementNodesAndGPs>(i, etype[i], procNodes));
+		} else {
+			elementOps[i].push_back(generateElementOperator<CoordinatesToElementNodes>(i, etype[i], procNodes));
+		}
+	}
+
+	for(size_t r = 0; r < info::mesh->boundaryRegions.size(); ++r) {
+		if (bfilter[r]) {
+			if (info::mesh->boundaryRegions[r]->dimension) {
+				for(size_t i = 0; i < info::mesh->boundaryRegions[r]->eintervals.size(); ++i) {
+					auto procNodes = info::mesh->boundaryRegions[r]->elements->cbegin() + info::mesh->boundaryRegions[r]->eintervals[i].begin;
+					boundaryOps[r][i].push_back(generateBoundaryOperator<CoordinatesToElementNodes>(r, i, procNodes));
+				}
+			}
+		}
+	}
+
+	if (info::mesh->dimension == 2) {
+		generateElementExpression2D<ExternalGPsExpression>(etype, elementOps, settings.thickness, [] (auto &element, const size_t &gp, const size_t &s, const double &value) { element.ecf.thickness[gp][s] = value; });
+	}
+
+	generateElasticity();
+	generateElementOperators<Integration>(etype, elementOps);
+	generateBoundaryOperators<Integration>(bfilter, boundaryOps);
+	volume();
+
+	generateElementOperators<StructuralMechanicsStiffness>(etype, elementOps, elements.stiffness);
+
+	if (configuration.acceleration.size()) {
+		correct &= checkElementParameter("ACCELERATION", configuration.acceleration);
+		generateElementExpression<ExternalGPsExpression>(etype, elementOps, configuration.acceleration, 0, [] (auto &element, const size_t &gp, const size_t &s, const double &value) { element.ecf.acceleration[gp][0][s] = value; });
+		generateElementExpression<ExternalGPsExpression>(etype, elementOps, configuration.acceleration, 1, [] (auto &element, const size_t &gp, const size_t &s, const double &value) { element.ecf.acceleration[gp][1][s] = value; });
+		if (info::mesh->dimension == 3) {
+			generateElementExpression<ExternalGPsExpression>(etype, elementOps, configuration.acceleration, 2, [] (auto &element, const size_t &gp, const size_t &s, const double &value) { element.ecf.acceleration[gp][2][s] = value; });
+		}
+		generateElementOperators<Acceleration>(etype, elementOps, elements.rhs);
+	}
+
+	if (configuration.angular_velocity.size()) {
+		switch (info::mesh->dimension) {
+		case 3:
+			correct &= checkElementParameter("ANGULAR_VELOCITY", configuration.angular_velocity);
+			generateElementExpression3D<ExternalGPsExpression>(etype, elementOps, configuration.angular_velocity, 0, [] (auto &element, const size_t &gp, const size_t &s, const double &value) { element.ecf.angularVelocity[gp][0][s] = value; });
+			generateElementExpression3D<ExternalGPsExpression>(etype, elementOps, configuration.angular_velocity, 1, [] (auto &element, const size_t &gp, const size_t &s, const double &value) { element.ecf.angularVelocity[gp][1][s] = value; });
+			generateElementExpression3D<ExternalGPsExpression>(etype, elementOps, configuration.angular_velocity, 2, [] (auto &element, const size_t &gp, const size_t &s, const double &value) { element.ecf.angularVelocity[gp][2][s] = value; });
+			break;
+		case 2:
+			switch (settings.element_behaviour) {
+			case StructuralMechanicsConfiguration::ELEMENT_BEHAVIOUR::PLANE_STRAIN:
+			case StructuralMechanicsConfiguration::ELEMENT_BEHAVIOUR::PLANE_STRESS:
+			case StructuralMechanicsConfiguration::ELEMENT_BEHAVIOUR::PLANE_STRESS_WITH_THICKNESS:
+				correct &= checkElementParameter("ANGULAR_VELOCITY.Z", configuration.angular_velocity, 2);
+				generateElementExpression2D<ExternalGPsExpression>(etype, elementOps, configuration.angular_velocity, 2, [] (auto &element, const size_t &gp, const size_t &s, const double &value) { element.ecf.angularVelocity[gp][s] = value; });
+				break;
+			case StructuralMechanicsConfiguration::ELEMENT_BEHAVIOUR::AXISYMMETRIC:
+				correct &= checkElementParameter("ANGULAR_VELOCITY.Y", configuration.angular_velocity, 1);
+				generateElementExpression2D<ExternalGPsExpression>(etype, elementOps, configuration.angular_velocity, 1, [] (auto &element, const size_t &gp, const size_t &s, const double &value) { element.ecf.angularVelocity[gp][s] = value; });
+				break;
+			}
+		}
+		generateElementOperators<AngularVelocity>(etype, elementOps, elements.rhs);
+	}
+
 //	if (configuration.normal_pressure.size()) {
 //		correct &= examineBoundaryParameter("NORMAL PRESSURE", configuration.normal_pressure, normalPressure.gp.externalValues);
 //		fromExpression(*this, normalPressure.gp, normalPressure.gp.externalValues);
@@ -266,157 +260,183 @@ void StructuralMechanics::analyze()
 
 void StructuralMechanics::connect(SteadyState &scheme)
 {
-//	addFiller(*this, scheme);
+	switch (scheme.K->shape) {
+	case Matrix_Shape::FULL:  generateElementOperators<GeneralMatricFiller>(etype, elementOps, info::mesh->dimension, elements.stiffness, scheme.K); break;
+	case Matrix_Shape::UPPER: generateElementOperators<SymmetricMatricFiller>(etype, elementOps, info::mesh->dimension, elements.stiffness, scheme.K); break;
+	}
+
+	generateElementOperators<VectorFiller>(etype, elementOps, info::mesh->dimension, elements.rhs, scheme.f);
+
+	for(size_t r = 0; r < info::mesh->boundaryRegions.size(); ++r) {
+		if (configuration.displacement.end() == configuration.displacement.find(info::mesh->boundaryRegions[r]->name)) {
+//			if (bfilter[r]) {
+//				switch (info::mesh->boundaryRegions[r]->dimension) {
+//				case 0:
+//					for (size_t t = 0; t < info::mesh->boundaryRegions[r]->nodes->threads(); ++t) {
+//						boundaryOps[r][t].push_back(generateNodeFiller<VectorFiller>(r, t, 1, elements.rhs, scheme.f));
+//					}
+//					break;
+//				case 1:
+//					for (size_t i = 0; i < info::mesh->boundaryRegions[r]->eintervals.size(); ++i) {
+//						boundaryOps[r][i].push_back(generateEdgeFiller<VectorFiller>(r, i, 1, elements.boundary.rhs.regions[r], scheme.f));
+//					}
+//					break;
+//				case 2:
+//					for (size_t i = 0; i < info::mesh->boundaryRegions[r]->eintervals.size(); ++i) {
+//						boundaryOps[r][i].push_back(generateFaceFiller<VectorFiller>(r, i, 1, elements.boundary.rhs.regions[r], scheme.f));
+//					}
+//					break;
+//				}
+//			}
+		} else {
+			// DIRICHLET
+			for (size_t t = 0; t < info::mesh->boundaryRegions[r]->nodes->threads(); ++t) {
+				boundaryOps[r][t].push_back(generateNodeSetter<VectorSetter>(r, t, info::mesh->dimension, scheme.dirichlet, [] (auto &element, const size_t &n, const size_t &dof, const size_t &s) { return element.displacement[n][dof][s]; }));
+			}
+		}
+	}
 }
 
 void StructuralMechanics::evaluate(SteadyState &scheme)
 {
-//	controller.setUpdate();
 	reset(scheme.K, scheme.f, scheme.dirichlet);
-//	printVersions();
-//	iterate();
-//	fill();
+	eslog::info("       = SIMD LOOP                                                      %12.8f s = \n", assemble(ActionOperator::Action::ASSEMBLE));
+	eslog::info("       = FILL MATRICES                                                  %12.8f s = \n", assemble(ActionOperator::Action::FILL));
 	update(scheme.K, scheme.f);
-//	controller.resetUpdate();
 }
 
-void StructuralMechanics::_evaluate()
+void StructuralMechanics::volume()
 {
-//	controller.setUpdate();
-//	iterate();
-//	controller.resetUpdate();
+	std::vector<double> evolume(info::mesh->elements->eintervals.size());
+	std::vector<double> bvolume(info::mesh->boundaryRegions.size());
+
+	generateElementOperators<Volume>(etype, elementOps, evolume);
+	generateBoundaryOperators<Volume>(bfilter, boundaryOps, bvolume);
+	assemble(ActionOperator::Action::ASSEMBLE);
+	dropLastOperators(elementOps);
+	dropLastOperators(bfilter, boundaryOps);
+
+	printElementVolume(evolume);
+	printBoundarySurface(bvolume);
+}
+
+size_t StructuralMechanics::esize()
+{
+	size_t max = 0;
+	std::vector<size_t> esize(info::mesh->elements->eintervals.size());
+
+	generateElementOperators<DataDescriptorElementSize>(etype, elementOps, esize);
+	for (size_t i = 0; i < elementOps.size(); ++i) {
+		max = std::max(max, esize[i]);
+	}
+	dropLastOperators(elementOps);
+	return max;
 }
 
 void StructuralMechanics::updateSolution(SteadyState &scheme)
 {
 	scheme.x->storeTo(Results::displacement->data);
-//	results(); // do we need an update mechanism?
+	assemble(ActionOperator::Action::SOLUTION);
 }
 
-void StructuralMechanics::initNames()
+template <>
+double StructuralMechanics::instantiate2D<StructuralMechanicsElementType::NODE>(ActionOperator::Action action, int code, const std::vector<ActionOperator*> &ops, esint elements)
 {
-	integration.weight.name = "integration.weight";
-	integration.N.name = "integration.N";
-	integration.dN.name = "integration.dN";
-	integration.dND.name = "integration.dND";
-	integration.jacobiDeterminant.name = "integration.jacobiDeterminant";
-	integration.jacobiInversion.name = "integration.jacobiInversion";
+	return loop<StructuralMechanicsDataDescriptor, 1, StructuralMechanicsGPC::POINT1, 2, 0, StructuralMechanicsElementType::NODE>(action, ops, elements);
+}
 
-	coords.node.name = "coords.node";
-	coords.gp.name = "coords.gp";
-
-	thickness.gp.name = "thickness.gp";
-
-	cooSystem.cartesian2D.name = "cooSystem.cartesian2D";
-	cooSystem.cartesian3D.name = "cooSystem.cartesian3D";
-
-	material.model.isoPoissonRatio.name = "material.model.isoPoissonRatio";
-	material.model.isoYoungModulus.name = "material.model.isoYoungModulus";
-	material.model.poissonRatio.name = "material.model.poissonRatio";
-	material.model.youngModulus.name = "material.model.youngModulus";
-	material.model.shearModulus.name = "material.model.shearModulus";
-	material.model.anisotropic3D.name = "material.model.anisotropic3D";
-
-	material.density.name = "material.density";
-	material.mass.name = "material.mass";
-
-	material.elasticityPlane.name = "material.elasticityPlane";
-	material.elasticityAxisymm.name = "material.elasticityAxisymm";
-	material.elasticity3D.name = "material.elasticity3D";
-
-//	temp.initial.node.name = "temp.initial.node";
-//	temp.initial.gp.name = "temp.initial.gp";
-//	temp.node.name = "temp.node";
-//	temp.gp.name = "temp.gp";
-//
-//	translationMotions.gp.name = "translationMotions.gp";
-//	translationMotions.stiffness.name = "translationMotions.stiffness";
-//	translationMotions.rhs.name = "translationMotions.rhs";
-//
-//	heatSource.gp.name = "heatSource.gp";
-
-	elements.stiffness.name = "elements.stiffness";
-//	elements.mass.name = "elements.mass";
-	elements.rhs.name = "elements.rhs";
-
-	acceleration.gp.name = "acceleration";
-	angularVevocity.gp.name = "angularVevocity";
-
-	for (size_t r = 0; r < info::mesh->boundaryRegions.size(); ++r) {
-		integration.boundary.N.regions[r].name = info::mesh->boundaryRegions[r]->name + "::integration.boundary.N";
-		integration.boundary.dN.regions[r].name = info::mesh->boundaryRegions[r]->name + "::integration.boundary.dN";
-		integration.boundary.normal.regions[r].name = info::mesh->boundaryRegions[r]->name + "::integration.boundary.normal";
-		integration.boundary.weight.regions[r].name = info::mesh->boundaryRegions[r]->name + "::integration.boundary.weight";
-		integration.boundary.jacobian.regions[r].name = info::mesh->boundaryRegions[r]->name + "::integration.boundary.jacobian";
-
-		coords.boundary.node.regions[r].name = info::mesh->boundaryRegions[r]->name + "::coords.boundary.node";
-		coords.boundary.gp.regions[r].name = info::mesh->boundaryRegions[r]->name + "::coords.boundary.gp";
-
-		normalPressure.gp.regions[r].name = info::mesh->boundaryRegions[r]->name + "::normalPressure.gp";
-		displacement.node.regions[r].name = info::mesh->boundaryRegions[r]->name + "::displacement.node";
-
-		elements.boundary.stiffness.regions[r].name = info::mesh->boundaryRegions[r]->name + "::stiffness";
-		elements.boundary.rhs.regions[r].name = info::mesh->boundaryRegions[r]->name + "::rhs";
+template <>
+double StructuralMechanics::instantiate2D<StructuralMechanicsElementType::EDGE>(ActionOperator::Action action, int code, const std::vector<ActionOperator*> &ops, esint elements)
+{
+	switch (code) {
+	case static_cast<size_t>(Element::CODE::LINE2): return loop<StructuralMechanicsDataDescriptor, 2, StructuralMechanicsGPC::LINE2, 2, 1, StructuralMechanicsElementType::EDGE>(action, ops, elements); break;
+	case static_cast<size_t>(Element::CODE::LINE3): return loop<StructuralMechanicsDataDescriptor, 3, StructuralMechanicsGPC::LINE3, 2, 1, StructuralMechanicsElementType::EDGE>(action, ops, elements); break;
+	default: return 0;
 	}
 }
 
-void StructuralMechanics::printVersions()
+template <int etype>
+double StructuralMechanics::instantiate2D(ActionOperator::Action action, int code, const std::vector<ActionOperator*> &ops, esint elements)
 {
-//	printParameterStats(integration.weight);
-//	printParameterStats(integration.N);
-//	printParameterStats(integration.dN);
-//	printParameterStats(integration.dND);
-//	printParameterStats(integration.jacobiDeterminant);
-//	printParameterStats(integration.jacobiInversion);
-//
-//	printParameterStats(coords.node);
-//	printParameterStats(coords.gp);
-//
-//	printParameterStats(thickness.gp);
-//
-//	printParameterStats(cooSystem.cartesian2D);
-//	printParameterStats(cooSystem.cartesian3D);
-//
-//	printParameterStats(material.model.isoPoissonRatio);
-//	printParameterStats(material.model.isoYoungModulus);
-//	printParameterStats(material.model.poissonRatio);
-//	printParameterStats(material.model.youngModulus);
-//	printParameterStats(material.model.shearModulus);
-//	printParameterStats(material.model.anisotropic3D);
-//
-//	printParameterStats(material.density);
-//	printParameterStats(material.mass);
-//
-//	printParameterStats(material.elasticityPlane);
-//	printParameterStats(material.elasticityAxisymm);
-//	printParameterStats(material.elasticity3D);
-//
-//	printParameterStats(elements.stiffness);
-////	printParameterStats("elements.mass", elements.mass);
-//	printParameterStats(elements.rhs);
-//
-//	printParameterStats(acceleration.gp);
-//	printParameterStats(angularVevocity.gp);
-//
-//	for (size_t r = 0; r < info::mesh->boundaryRegions.size(); ++r) {
-//		printf("REGION: %s\n", info::mesh->boundaryRegions[r]->name.c_str());
-//
-//		printParameterStats(integration.boundary.N.regions[r]);
-//		printParameterStats(integration.boundary.dN.regions[r]);
-//		printParameterStats(integration.boundary.normal.regions[r]);
-//		printParameterStats(integration.boundary.weight.regions[r]);
-//		printParameterStats(integration.boundary.jacobian.regions[r]);
-//
-//		printParameterStats(coords.boundary.node.regions[r]);
-//		printParameterStats(coords.boundary.gp.regions[r]);
-//
-//		printParameterStats(normalPressure.gp.regions[r]);
-//		printParameterStats(displacement.node.regions[r]);
-//
-//		printParameterStats(elements.boundary.stiffness.regions[r]);
-//		printParameterStats(elements.boundary.rhs.regions[r]);
-//	}
+	switch (code) {
+	case static_cast<size_t>(Element::CODE::TRIANGLE3): return loop<StructuralMechanicsDataDescriptor, 3, StructuralMechanicsGPC::TRIANGLE3, 2, 2, etype>(action, ops, elements); break;
+	case static_cast<size_t>(Element::CODE::TRIANGLE6): return loop<StructuralMechanicsDataDescriptor, 6, StructuralMechanicsGPC::TRIANGLE6, 2, 2, etype>(action, ops, elements); break;
+	case static_cast<size_t>(Element::CODE::SQUARE4):   return loop<StructuralMechanicsDataDescriptor, 4, StructuralMechanicsGPC::SQUARE4  , 2, 2, etype>(action, ops, elements); break;
+	case static_cast<size_t>(Element::CODE::SQUARE8):   return loop<StructuralMechanicsDataDescriptor, 8, StructuralMechanicsGPC::SQUARE8  , 2, 2, etype>(action, ops, elements); break;
+	default: return 0;
+	}
 }
 
+template <>
+double StructuralMechanics::instantiate3D<StructuralMechanicsElementType::NODE>(ActionOperator::Action action, int code, const std::vector<ActionOperator*> &ops, esint elements)
+{
+	return loop<StructuralMechanicsDataDescriptor, 1, StructuralMechanicsGPC::POINT1, 3, 0, StructuralMechanicsElementType::NODE>(action, ops, elements);
+}
 
+template <>
+double StructuralMechanics::instantiate3D<StructuralMechanicsElementType::EDGE>(ActionOperator::Action action, int code, const std::vector<ActionOperator*> &ops, esint elements)
+{
+	switch (code) {
+	case static_cast<size_t>(Element::CODE::LINE2): return loop<StructuralMechanicsDataDescriptor, 2, StructuralMechanicsGPC::LINE2, 3, 1, StructuralMechanicsElementType::EDGE>(action, ops, elements); break;
+	case static_cast<size_t>(Element::CODE::LINE3): return loop<StructuralMechanicsDataDescriptor, 3, StructuralMechanicsGPC::LINE3, 3, 1, StructuralMechanicsElementType::EDGE>(action, ops, elements); break;
+	default: return 0;
+	}
+}
+
+template <>
+double StructuralMechanics::instantiate3D<StructuralMechanicsElementType::FACE>(ActionOperator::Action action, int code, const std::vector<ActionOperator*> &ops, esint elements)
+{
+	switch (code) {
+	case static_cast<size_t>(Element::CODE::TRIANGLE3): return loop<StructuralMechanicsDataDescriptor, 3, StructuralMechanicsGPC::TRIANGLE3, 3, 2, StructuralMechanicsElementType::FACE>(action, ops, elements); break;
+	case static_cast<size_t>(Element::CODE::TRIANGLE6): return loop<StructuralMechanicsDataDescriptor, 6, StructuralMechanicsGPC::TRIANGLE6, 3, 2, StructuralMechanicsElementType::FACE>(action, ops, elements); break;
+	case static_cast<size_t>(Element::CODE::SQUARE4):   return loop<StructuralMechanicsDataDescriptor, 4, StructuralMechanicsGPC::SQUARE4  , 3, 2, StructuralMechanicsElementType::FACE>(action, ops, elements); break;
+	case static_cast<size_t>(Element::CODE::SQUARE8):   return loop<StructuralMechanicsDataDescriptor, 8, StructuralMechanicsGPC::SQUARE8  , 3, 2, StructuralMechanicsElementType::FACE>(action, ops, elements); break;
+	default: return 0;
+	}
+}
+
+template <int etype>
+double StructuralMechanics::instantiate3D(ActionOperator::Action action, int code, const std::vector<ActionOperator*> &ops, esint elements)
+{
+	switch (code) {
+	case static_cast<size_t>(Element::CODE::TETRA4):    return loop<StructuralMechanicsDataDescriptor,  4, StructuralMechanicsGPC::TETRA4    , 3, 3, etype>(action, ops, elements); break;
+	case static_cast<size_t>(Element::CODE::TETRA10):   return loop<StructuralMechanicsDataDescriptor, 10, StructuralMechanicsGPC::TETRA10   , 3, 3, etype>(action, ops, elements); break;
+	case static_cast<size_t>(Element::CODE::PYRAMID5):  return loop<StructuralMechanicsDataDescriptor,  5, StructuralMechanicsGPC::PYRAMID5  , 3, 3, etype>(action, ops, elements); break;
+	case static_cast<size_t>(Element::CODE::PYRAMID13): return loop<StructuralMechanicsDataDescriptor, 13, StructuralMechanicsGPC::PYRAMID13 , 3, 3, etype>(action, ops, elements); break;
+	case static_cast<size_t>(Element::CODE::PRISMA6):   return loop<StructuralMechanicsDataDescriptor,  6, StructuralMechanicsGPC::PRISMA6   , 3, 3, etype>(action, ops, elements); break;
+	case static_cast<size_t>(Element::CODE::PRISMA15):  return loop<StructuralMechanicsDataDescriptor, 15, StructuralMechanicsGPC::PRISMA15  , 3, 3, etype>(action, ops, elements); break;
+	case static_cast<size_t>(Element::CODE::HEXA8):     return loop<StructuralMechanicsDataDescriptor,  8, StructuralMechanicsGPC::HEXA8     , 3, 3, etype>(action, ops, elements); break;
+	case static_cast<size_t>(Element::CODE::HEXA20):    return loop<StructuralMechanicsDataDescriptor, 20, StructuralMechanicsGPC::HEXA20    , 3, 3, etype>(action, ops, elements); break;
+	default: return 0;
+	}
+}
+
+double StructuralMechanics::instantiate(ActionOperator::Action action, int code, int etype, const std::vector<ActionOperator*> &ops, esint elements)
+{
+	switch (info::mesh->dimension) {
+	case 2:
+		switch (etype) {
+		// elements
+		case StructuralMechanicsElementType::SYMMETRIC_PLANE             : return instantiate2D<StructuralMechanicsElementType::SYMMETRIC_PLANE             >(action, code, ops, elements);
+		case StructuralMechanicsElementType::SYMMETRIC_PLANE_AXISYMMETRIC: return instantiate2D<StructuralMechanicsElementType::SYMMETRIC_PLANE_AXISYMMETRIC>(action, code, ops, elements);
+
+		// boundary
+		case StructuralMechanicsElementType::EDGE: return instantiate2D<StructuralMechanicsElementType::EDGE>(action, code, ops, elements);
+		case StructuralMechanicsElementType::NODE: return instantiate2D<StructuralMechanicsElementType::NODE>(action, code, ops, elements);
+		}
+	case 3:
+		switch (etype) {
+		// elements
+		case StructuralMechanicsElementType::SYMMETRIC_VOLUME: return instantiate3D<StructuralMechanicsElementType::SYMMETRIC_VOLUME>(action, code, ops, elements);
+
+		// boundary
+		case StructuralMechanicsElementType::FACE: return instantiate3D<StructuralMechanicsElementType::FACE>(action, code, ops, elements);
+		case StructuralMechanicsElementType::EDGE: return instantiate3D<StructuralMechanicsElementType::EDGE>(action, code, ops, elements);
+		case StructuralMechanicsElementType::NODE: return instantiate3D<StructuralMechanicsElementType::NODE>(action, code, ops, elements);
+		}
+	}
+	return 0;
+}
+
+}
 

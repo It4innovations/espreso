@@ -3,8 +3,6 @@
 #define SRC_ANALYSIS_ASSEMBLER_OPERATORS_HEATTRANSFER_F_H_
 
 #include "analysis/assembler/operator.h"
-#include "analysis/assembler/parameter.h"
-#include "analysis/assembler/math.hpp"
 
 namespace espreso {
 

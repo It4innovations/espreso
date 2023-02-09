@@ -3,108 +3,157 @@
 #define SRC_ANALYSIS_ASSEMBLER_OPERATORS_ELASTICITY_H_
 
 #include "analysis/assembler/operator.h"
-#include "analysis/assembler/parameter.h"
+#include "math/simd/simd.h"
 
 namespace espreso {
 
-struct ElasticMaterial: public ActionOperator {
-	ElasticMaterial(int interval, const ParameterData &youngModulus, const ParameterData &poissonRatio, const ParameterData &shearModulus, ParameterData &elasticity)
-	: youngModulus(youngModulus, interval),
-	  poissonRatio(poissonRatio, interval),
-	  shearModulus(shearModulus, interval),
-	  elasticity(elasticity, interval)
-	{
+template <size_t nodes, size_t gps, size_t ndim, size_t edim, size_t etype, class Physics>
+struct ElasticityIsotropicPlaneStrain: ActionOperator, Physics {
 
+	ElasticityIsotropicPlaneStrain(size_t interval)
+	{
+		action = Action::ASSEMBLE;
 	}
 
-	InputParameterIterator youngModulus, poissonRatio, shearModulus;
-	OutputParameterIterator elasticity;
-
-	void operator++()
+	void simd(typename Physics::Element &element)
 	{
-		++youngModulus; ++poissonRatio; ++shearModulus;
-		++elasticity;
-	}
-
-	void move(int n)
-	{
-		youngModulus += n; poissonRatio += n; shearModulus += n;
-		elasticity += n;
-	}
-};
-
-template<size_t nodes, size_t gps>
-struct ElasticityIsotropicPlaneStrain: public ElasticMaterial {
-	using ElasticMaterial::ElasticMaterial;
-
-	void operator()()
-	{
-		for (size_t gpindex = 0; gpindex < gps; ++gpindex) {
-			double ex = youngModulus[gpindex];
-			double mi = poissonRatio[gpindex];
-			double k = ex * (1 - mi) / ((1 + mi) * (1 - 2 * mi));
-			int ogp = 9 * gpindex;
-			elasticity[ogp + 0] = k;                   elasticity[ogp + 1] = k * (mi / (1 - mi)); elasticity[ogp + 2] = 0;
-			elasticity[ogp + 3] = k * (mi / (1 - mi)); elasticity[ogp + 4] = k;                   elasticity[ogp + 5] = 0;
-			elasticity[ogp + 6] = 0;                   elasticity[ogp + 7] = 0;                   elasticity[ogp + 8] = k * ((1 - 2 * mi) / (2 * (1 - mi)));
+		for (size_t gp = 0; gp < gps; ++gp) {
+			SIMD ex = element.ecf.youngModulus[gp];
+			SIMD mi = element.ecf.poissonRatio[gp];
+			SIMD C1 = load1(1.);
+			SIMD C2 = load1(2.);
+			SIMD k = ex * (C1 - mi) / ((C1 + mi) * (C1 - C2 * mi));
+			element.elasticity[gp][0] = k;
+			element.elasticity[gp][1] = k * (mi / (C1 - mi));
+			element.elasticity[gp][2] = zeros();
+			element.elasticity[gp][3] = k * (mi / (C1 - mi));
+			element.elasticity[gp][4] = k;
+			element.elasticity[gp][5] = zeros();
+			element.elasticity[gp][6] = zeros();
+			element.elasticity[gp][7] = zeros();
+			element.elasticity[gp][8] = k * ((C1 - C2 * mi) / (C2 * (C1 - mi)));
 		}
 	}
 };
 
-template<size_t nodes, size_t gps>
-struct ElasticityIsotropicPlaneStress: public ElasticMaterial {
-	using ElasticMaterial::ElasticMaterial;
+template <size_t nodes, size_t gps, size_t ndim, size_t edim, size_t etype, class Physics>
+struct ElasticityIsotropicPlaneStress: ActionOperator, Physics {
 
-	void operator()()
+	ElasticityIsotropicPlaneStress(size_t interval)
 	{
-		for (size_t gpindex = 0; gpindex < gps; ++gpindex) {
-			double ex = youngModulus[gpindex];
-			double mi = poissonRatio[gpindex];
-			double k = ex / (1 - mi * mi);
-			int ogp = 9 * gpindex;
-			elasticity[ogp + 0] = k;      elasticity[ogp + 1] = k * mi; elasticity[ogp + 2] = 0;
-			elasticity[ogp + 3] = k * mi; elasticity[ogp + 4] = k;      elasticity[ogp + 5] = 0;
-			elasticity[ogp + 6] = 0;      elasticity[ogp + 7] = 0;      elasticity[ogp + 8] = k * ((1 -  mi) / 2);
+		action = Action::ASSEMBLE;
+	}
+
+	void simd(typename Physics::Element &element)
+	{
+		for (size_t gp = 0; gp < gps; ++gp) {
+			SIMD ex = element.ecf.youngModulus[gp];
+			SIMD mi = element.ecf.poissonRatio[gp];
+			SIMD C1 = load1(1.);
+			SIMD C2 = load1(.5);
+			SIMD k = ex / (C1 - mi * mi);
+			element.elasticity[gp][0] = k;
+			element.elasticity[gp][1] = k * mi;
+			element.elasticity[gp][2] = zeros();
+			element.elasticity[gp][3] = k * mi;
+			element.elasticity[gp][4] = k;
+			element.elasticity[gp][5] = zeros();
+			element.elasticity[gp][6] = zeros();
+			element.elasticity[gp][7] = zeros();
+			element.elasticity[gp][8] = k * ((C1 -  mi) * C2);
 		}
 	}
 };
 
-template<size_t nodes, size_t gps>
-struct ElasticityIsotropicAxisymmetric: public ElasticMaterial {
-	using ElasticMaterial::ElasticMaterial;
+template <size_t nodes, size_t gps, size_t ndim, size_t edim, size_t etype, class Physics>
+struct ElasticityIsotropicPlaneAxisymmetric: ActionOperator, Physics {
 
-	void operator()()
+	ElasticityIsotropicPlaneAxisymmetric(size_t interval)
 	{
-		for (size_t gpindex = 0; gpindex < gps; ++gpindex) {
-			double ex = youngModulus[gpindex];
-			double mi = poissonRatio[gpindex];
-			double k = ex * (1 - mi) / ((1 + mi) * (1 - 2 * mi));
-			int ogp = 16 * gpindex;
-			elasticity[ogp +  0] = k;                   elasticity[ogp +  1] = k * (mi / (1 - mi)); elasticity[ogp +  2] = 0;                                   elasticity[ogp +  3] = k * (mi / (1 - mi));
-			elasticity[ogp +  4] = k * (mi / (1 - mi)); elasticity[ogp +  5] = k;                   elasticity[ogp +  6] = 0;                                   elasticity[ogp +  7] = k * (mi / (1 - mi));
-			elasticity[ogp +  8] = 0;                   elasticity[ogp +  9] = 0;                   elasticity[ogp + 10] = k * ((1 - 2 * mi) / (2 * (1 - mi))); elasticity[ogp + 11] = 0;
-			elasticity[ogp + 12] = k * (mi / (1 - mi)); elasticity[ogp + 13] = k * (mi / (1 - mi)); elasticity[ogp + 14] = 0;                                   elasticity[ogp + 15] = k;
+		action = Action::ASSEMBLE;
+	}
+
+	void simd(typename Physics::Element &element)
+	{
+		for (size_t gp = 0; gp < gps; ++gp) {
+			SIMD ex = element.ecf.youngModulus[gp];
+			SIMD mi = element.ecf.poissonRatio[gp];
+			SIMD C1 = load1(1.);
+			SIMD C2 = load1(2.);
+			SIMD k = ex * (C1 - mi) / ((C1 + mi) * (C1 - C2 * mi));
+			element.elasticity[gp][ 0] = k;
+			element.elasticity[gp][ 1] = k * (mi / (C1 - mi));
+			element.elasticity[gp][ 2] = zeros();
+			element.elasticity[gp][ 3] = k * (mi / (C1 - mi));
+			element.elasticity[gp][ 4] = k * (mi / (C1 - mi));
+			element.elasticity[gp][ 5] = k;
+			element.elasticity[gp][ 6] = zeros();
+			element.elasticity[gp][ 7] = k * (mi / (C1 - mi));
+			element.elasticity[gp][ 8] = zeros();
+			element.elasticity[gp][ 9] = zeros();
+			element.elasticity[gp][10] = k * ((C1 - C2 * mi) / (C2 * (C1 - mi)));
+			element.elasticity[gp][11] = zeros();
+			element.elasticity[gp][12] = k * (mi / (C1 - mi));
+			element.elasticity[gp][13] = k * (mi / (C1 - mi));
+			element.elasticity[gp][14] = zeros();
+			element.elasticity[gp][15] = k;
 		}
 	}
 };
 
-template<size_t nodes, size_t gps>
-struct ElasticityIsotropic3D: public ElasticMaterial {
-	using ElasticMaterial::ElasticMaterial;
+template <size_t nodes, size_t gps, size_t ndim, size_t edim, size_t etype, class Physics>
+struct ElasticityIsotropicVolume: ActionOperator, Physics {
 
-	void operator()()
+	ElasticityIsotropicVolume(size_t interval)
 	{
-		for (size_t gpindex = 0; gpindex < gps; ++gpindex) {
-			double ex = youngModulus[gpindex];
-			double mi = poissonRatio[gpindex];
-			double ee = ex / ((1 + mi) * (1 - 2 * mi));
-			int ogp = 36 * gpindex;
-			elasticity[ogp +  0] = ee * (1.0 - mi); elasticity[ogp +  1] = ee * mi;         elasticity[ogp +  2] = ee * mi;         elasticity[ogp +  3] = 0;               elasticity[ogp +  4] = 0;               elasticity[ogp +  5] = 0;
-			elasticity[ogp +  6] = ee * mi;         elasticity[ogp +  7] = ee * (1.0 - mi); elasticity[ogp +  8] = ee * mi;         elasticity[ogp +  9] = 0;               elasticity[ogp + 10] = 0;               elasticity[ogp + 11] = 0;
-			elasticity[ogp + 12] = ee * mi;         elasticity[ogp + 13] = ee * mi;         elasticity[ogp + 14] = ee * (1.0 - mi); elasticity[ogp + 15] = 0;               elasticity[ogp + 16] = 0;               elasticity[ogp + 17] = 0;
-			elasticity[ogp + 18] = 0;               elasticity[ogp + 19] = 0;               elasticity[ogp + 20] = 0;               elasticity[ogp + 21] = ee * (0.5 - mi); elasticity[ogp + 22] = 0;               elasticity[ogp + 23] = 0;
-			elasticity[ogp + 24] = 0;               elasticity[ogp + 25] = 0;               elasticity[ogp + 26] = 0;               elasticity[ogp + 27] = 0;               elasticity[ogp + 28] = ee * (0.5 - mi); elasticity[ogp + 29] = 0;
-			elasticity[ogp + 30] = 0;               elasticity[ogp + 31] = 0;               elasticity[ogp + 32] = 0;               elasticity[ogp + 33] = 0;               elasticity[ogp + 34] = 0;               elasticity[ogp + 35] = ee * (0.5 - mi);
+		action = Action::ASSEMBLE;
+	}
+
+	void simd(typename Physics::Element &element)
+	{
+		for (size_t gp = 0; gp < gps; ++gp) {
+			SIMD ex = element.ecf.youngModulus[gp];
+			SIMD mi = element.ecf.poissonRatio[gp];
+			SIMD C05 = load1(.5);
+			SIMD C1 = load1(1.);
+			SIMD C2 = load1(2.);
+			SIMD ee = ex / ((C1 + mi) * (C1 - C2 * mi));
+			element.elasticity[gp][ 0] = ee * (C1 - mi);
+			element.elasticity[gp][ 1] = ee * mi;
+			element.elasticity[gp][ 2] = ee * mi;
+			element.elasticity[gp][ 3] = zeros();
+			element.elasticity[gp][ 4] = zeros();
+			element.elasticity[gp][ 5] = zeros();
+			element.elasticity[gp][ 6] = ee * mi;
+			element.elasticity[gp][ 7] = ee * (C1 - mi);
+			element.elasticity[gp][ 8] = ee * mi;
+			element.elasticity[gp][ 9] = zeros();
+			element.elasticity[gp][10] = zeros();
+			element.elasticity[gp][11] = zeros();
+			element.elasticity[gp][12] = ee * mi;
+			element.elasticity[gp][13] = ee * mi;
+			element.elasticity[gp][14] = ee * (C1 - mi);
+			element.elasticity[gp][15] = zeros();
+			element.elasticity[gp][16] = zeros();
+			element.elasticity[gp][17] = zeros();
+			element.elasticity[gp][18] = zeros();
+			element.elasticity[gp][19] = zeros();
+			element.elasticity[gp][20] = zeros();
+			element.elasticity[gp][21] = ee * (C05 - mi);
+			element.elasticity[gp][22] = zeros();
+			element.elasticity[gp][23] = zeros();
+			element.elasticity[gp][24] = zeros();
+			element.elasticity[gp][25] = zeros();
+			element.elasticity[gp][26] = zeros();
+			element.elasticity[gp][27] = zeros();
+			element.elasticity[gp][28] = ee * (C05 - mi);
+			element.elasticity[gp][29] = zeros();
+			element.elasticity[gp][30] = zeros();
+			element.elasticity[gp][31] = zeros();
+			element.elasticity[gp][32] = zeros();
+			element.elasticity[gp][33] = zeros();
+			element.elasticity[gp][34] = zeros();
+			element.elasticity[gp][35] = ee * (C05 - mi);
 		}
 	}
 };

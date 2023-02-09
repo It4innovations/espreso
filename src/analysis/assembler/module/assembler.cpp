@@ -206,8 +206,8 @@ bool Assembler::checkElementParameter(const std::string &name, std::map<std::str
 {
 	if (settings.size() == 1 && StringCompare::caseInsensitiveEq(settings.begin()->first, "ALL_ELEMENTS")) {
 		switch (info::mesh->dimension) {
-		case 2: return checkExpression(name + ".X", settings.begin()->second.x) && checkExpression(name + ".Y", settings.begin()->second.y);
-		case 3: return checkExpression(name + ".X", settings.begin()->second.x) && checkExpression(name + ".Y", settings.begin()->second.y) && checkExpression(name, settings.begin()->second.z);
+		case 2: if (!checkExpression(name + ".X", settings.begin()->second.x) || !checkExpression(name + ".Y", settings.begin()->second.y)) { return false; } break;
+		case 3: if (!checkExpression(name + ".X", settings.begin()->second.x) || !checkExpression(name + ".Y", settings.begin()->second.y) || !checkExpression(name + ".Z", settings.begin()->second.z)) { return false; } break;
 		}
 	} else {
 		eslog::info("  %s%*s \n", name.c_str(), 91 - name.size(), "");
@@ -218,6 +218,23 @@ bool Assembler::checkElementParameter(const std::string &name, std::map<std::str
 				case 2: if (!checkExpression(it->first + ".X", it->second.x) || !checkExpression(it->first + ".Y", it->second.y)) { return false; } break;
 				case 3: if (!checkExpression(it->first + ".X", it->second.x) || !checkExpression(it->first + ".Y", it->second.y) || !checkExpression(it->first + ".Z", it->second.z)) { return false; } break;
 				}
+			}
+		}
+	}
+	eslog::info("  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  \n");
+	return true;
+}
+
+bool Assembler::checkElementParameter(const std::string &name, std::map<std::string, ECFExpressionVector> &settings, int dim)
+{
+	if (settings.size() == 1 && StringCompare::caseInsensitiveEq(settings.begin()->first, "ALL_ELEMENTS")) {
+		return checkExpression(name, settings.begin()->second.data[dim]);
+	} else {
+		eslog::info("  %s%*s \n", name.c_str(), 91 - name.size(), "");
+		for (auto region = info::mesh->elementsRegions.crbegin(); region != info::mesh->elementsRegions.crend(); ++region) {
+			auto it = settings.find((*region)->name);
+			if (it != settings.end()) {
+				return checkExpression(name, it->second.data[dim]);
 			}
 		}
 		eslog::info("  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  \n");
@@ -247,6 +264,22 @@ bool Assembler::checkBoundaryParameter(const std::string &name, std::map<std::st
 			switch (info::mesh->dimension) {
 			case 2: if (!checkExpression(it->first + ".X", it->second.x) || !checkExpression(it->first + ".Y", it->second.y)) { return false; } break;
 			case 3: if (!checkExpression(it->first + ".X", it->second.x) || !checkExpression(it->first + ".Y", it->second.y) || !checkExpression(it->first + ".Z", it->second.z)) { return false; } break;
+			}
+		}
+	}
+	eslog::info("  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  \n");
+	return true;
+}
+
+bool Assembler::checkBoundaryParameter(const std::string &name, std::map<std::string, ECFExpressionOptionalVector> &settings)
+{
+	eslog::info("  %s%*s \n", name.c_str(), 91 - name.size(), "");
+	for (auto region = info::mesh->boundaryRegions.crbegin(); region != info::mesh->boundaryRegions.crend(); ++region) {
+		auto it = settings.find((*region)->name);
+		if (it != settings.end()) {
+			switch (info::mesh->dimension) {
+			case 2: if ((it->second.x.isset && !checkExpression(it->first + ".X", it->second.x)) || (it->second.y.isset && !checkExpression(it->first + ".Y", it->second.y))) { return false; } break;
+			case 3: if ((it->second.x.isset && !checkExpression(it->first + ".X", it->second.x)) || (it->second.y.isset && !checkExpression(it->first + ".Y", it->second.y)) || (it->second.z.isset && !checkExpression(it->first + ".Z", it->second.z))) { return false; } break;
 			}
 		}
 	}

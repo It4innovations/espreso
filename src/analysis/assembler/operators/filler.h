@@ -135,8 +135,10 @@ struct VectorFiller: ActionOperator, Physics {
 	void simd(typename Physics::Element &element)
 	{
 		for (size_t s = 0, i = 0; s < SIMD::size; ++s) {
-			for (size_t n = 0; n < nodes * dofs; ++n, ++i) {
-				global[position[i]] += *(local.data + n * SIMD::size + s);
+			for (size_t d = 0; d < dofs; ++d) {
+				for (size_t n = 0; n < nodes; ++n, ++i) {
+					global[position[i]] += *(local.data + (d * nodes + n) * SIMD::size + s);
+				}
 			}
 		}
 		std::fill(local.data, local.data + SIMD::size * local.inc, 0.);
@@ -146,8 +148,10 @@ struct VectorFiller: ActionOperator, Physics {
 	void peel(typename Physics::Element &element, size_t size)
 	{
 		for (size_t s = 0, i = 0; s < size; ++s) {
-			for (size_t n = 0; n < nodes * dofs; ++n, ++i) {
-				global[position[i]] += *(local.data + n * SIMD::size + s);
+			for (size_t d = 0; d < dofs; ++d) {
+				for (size_t n = 0; n < nodes; ++n, ++i) {
+					global[position[i]] += *(local.data + (d * nodes + n) * SIMD::size + s);
+				}
 			}
 		}
 		std::fill(local.data, local.data + SIMD::size * local.inc, 0.);

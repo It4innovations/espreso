@@ -45,8 +45,10 @@ protected:
 	bool checkExpression(const std::string &name, ECFExpression &expression);
 	bool checkElementParameter(const std::string &name, std::map<std::string, ECFExpression> &settings);
 	bool checkElementParameter(const std::string &name, std::map<std::string, ECFExpressionVector> &settings);
+	bool checkElementParameter(const std::string &name, std::map<std::string, ECFExpressionVector> &settings, int dim);
 	bool checkBoundaryParameter(const std::string &name, std::map<std::string, ECFExpression> &settings);
 	bool checkBoundaryParameter(const std::string &name, std::map<std::string, ECFExpressionVector> &settings);
+	bool checkBoundaryParameter(const std::string &name, std::map<std::string, ECFExpressionOptionalVector> &settings);
 
 	void printElementVolume(std::vector<double> &volume);
 	void printBoundarySurface(std::vector<double> &surface);
