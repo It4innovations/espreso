@@ -78,25 +78,29 @@ struct ElasticityIsotropicPlaneAxisymmetric: ActionOperator, Physics {
 		for (size_t gp = 0; gp < gps; ++gp) {
 			SIMD ex = element.ecf.youngModulus[gp];
 			SIMD mi = element.ecf.poissonRatio[gp];
+			SIMD C05 = load1(.5);
 			SIMD C1 = load1(1.);
 			SIMD C2 = load1(2.);
-			SIMD k = ex * (C1 - mi) / ((C1 + mi) * (C1 - C2 * mi));
-			element.elasticity[gp][ 0] = k;
-			element.elasticity[gp][ 1] = k * (mi / (C1 - mi));
-			element.elasticity[gp][ 2] = zeros();
-			element.elasticity[gp][ 3] = k * (mi / (C1 - mi));
-			element.elasticity[gp][ 4] = k * (mi / (C1 - mi));
-			element.elasticity[gp][ 5] = k;
-			element.elasticity[gp][ 6] = zeros();
-			element.elasticity[gp][ 7] = k * (mi / (C1 - mi));
-			element.elasticity[gp][ 8] = zeros();
-			element.elasticity[gp][ 9] = zeros();
-			element.elasticity[gp][10] = k * ((C1 - C2 * mi) / (C2 * (C1 - mi)));
+			SIMD k = ex / ((C1 + mi) * (C1 - C2 * mi));
+			element.elasticity[gp][ 0] = k * (C1 - mi);
+			element.elasticity[gp][ 1] = k * mi;
+			element.elasticity[gp][ 2] = k * mi;
+			element.elasticity[gp][ 3] = zeros();
+
+			element.elasticity[gp][ 4] = k * mi;
+			element.elasticity[gp][ 5] = k * (C1 - mi);
+			element.elasticity[gp][ 6] = k * mi;
+			element.elasticity[gp][ 7] = zeros();
+
+			element.elasticity[gp][ 8] = k * mi;
+			element.elasticity[gp][ 9] = k * mi;
+			element.elasticity[gp][10] = k * (C1 - mi);
 			element.elasticity[gp][11] = zeros();
-			element.elasticity[gp][12] = k * (mi / (C1 - mi));
-			element.elasticity[gp][13] = k * (mi / (C1 - mi));
+
+			element.elasticity[gp][12] = zeros();
+			element.elasticity[gp][13] = zeros();
 			element.elasticity[gp][14] = zeros();
-			element.elasticity[gp][15] = k;
+			element.elasticity[gp][15] = k * (C1 - C2 * mi) * C05;
 		}
 	}
 };

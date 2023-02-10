@@ -66,10 +66,13 @@ static void generateBaseFunctions(const std::vector<int> &etype, std::vector<std
 	}
 }
 
-static void generateBaseFunctions(const std::vector<int> &bfilter, std::vector<std::vector<std::vector<ActionOperator*> > > &ops)
+static void generateBaseFunctions(int axisymmetric, const std::vector<int> &bfilter, std::vector<std::vector<std::vector<ActionOperator*> > > &ops)
 {
 	for(size_t r = 0; r < info::mesh->boundaryRegions.size(); ++r) {
 		if (bfilter[r]) {
+			if (axisymmetric) {
+
+			}
 			for (size_t i = 0; i < info::mesh->boundaryRegions[r]->eintervals.size(); ++i) {
 				switch (info::mesh->boundaryRegions[r]->dimension) {
 				case 2:
@@ -83,10 +86,18 @@ static void generateBaseFunctions(const std::vector<int> &bfilter, std::vector<s
 				case 1:
 					switch (info::mesh->dimension) {
 					case 2:
-						switch (static_cast<Element::CODE>(info::mesh->boundaryRegions[r]->eintervals[i].code)) {
-						case Element::CODE::LINE2: ops[r][i].push_back(new Basis<Element::CODE::LINE2, 2, StructuralMechanicsGPC::LINE2, 1, StructuralMechanicsElementType::EDGE, StructuralMechanicsDataDescriptor< 2, StructuralMechanicsGPC::LINE2, 2, 1, StructuralMechanicsElementType::EDGE> >()); break;
-						case Element::CODE::LINE3: ops[r][i].push_back(new Basis<Element::CODE::LINE3, 3, StructuralMechanicsGPC::LINE3, 1, StructuralMechanicsElementType::EDGE, StructuralMechanicsDataDescriptor< 3, StructuralMechanicsGPC::LINE3, 2, 1, StructuralMechanicsElementType::EDGE> >()); break;
-						} break;
+						if (axisymmetric) {
+							switch (static_cast<Element::CODE>(info::mesh->boundaryRegions[r]->eintervals[i].code)) {
+							case Element::CODE::LINE2: ops[r][i].push_back(new Basis<Element::CODE::LINE2, 2, StructuralMechanicsGPC::LINE2, 1, StructuralMechanicsElementType::EDGE_AXISYMMETRIC, StructuralMechanicsDataDescriptor< 2, StructuralMechanicsGPC::LINE2, 2, 1, StructuralMechanicsElementType::EDGE_AXISYMMETRIC> >()); break;
+							case Element::CODE::LINE3: ops[r][i].push_back(new Basis<Element::CODE::LINE3, 3, StructuralMechanicsGPC::LINE3, 1, StructuralMechanicsElementType::EDGE_AXISYMMETRIC, StructuralMechanicsDataDescriptor< 3, StructuralMechanicsGPC::LINE3, 2, 1, StructuralMechanicsElementType::EDGE_AXISYMMETRIC> >()); break;
+							}
+						} else {
+							switch (static_cast<Element::CODE>(info::mesh->boundaryRegions[r]->eintervals[i].code)) {
+							case Element::CODE::LINE2: ops[r][i].push_back(new Basis<Element::CODE::LINE2, 2, StructuralMechanicsGPC::LINE2, 1, StructuralMechanicsElementType::EDGE, StructuralMechanicsDataDescriptor< 2, StructuralMechanicsGPC::LINE2, 2, 1, StructuralMechanicsElementType::EDGE> >()); break;
+							case Element::CODE::LINE3: ops[r][i].push_back(new Basis<Element::CODE::LINE3, 3, StructuralMechanicsGPC::LINE3, 1, StructuralMechanicsElementType::EDGE, StructuralMechanicsDataDescriptor< 3, StructuralMechanicsGPC::LINE3, 2, 1, StructuralMechanicsElementType::EDGE> >()); break;
+							}
+						}
+						break;
 					case 3:
 						switch (static_cast<Element::CODE>(info::mesh->boundaryRegions[r]->eintervals[i].code)) {
 						case Element::CODE::LINE2: ops[r][i].push_back(new Basis<Element::CODE::LINE2, 2, StructuralMechanicsGPC::LINE2, 1, StructuralMechanicsElementType::EDGE, StructuralMechanicsDataDescriptor< 2, StructuralMechanicsGPC::LINE2, 3, 1, StructuralMechanicsElementType::EDGE> >()); break;
@@ -125,13 +136,13 @@ static ActionOperator* generateNodeSetter(size_t region, size_t interval, size_t
 template <template <size_t, size_t, size_t, size_t, size_t, class> class Filler, class ... Args>
 static ActionOperator* generateNodeFiller2D(size_t region, size_t interval, size_t dofs, Args&& ... args)
 {
-	return new Filler< 1, StructuralMechanicsGPC::POINT1, 2, 0, StructuralMechanicsElementType::NODE, StructuralMechanicsDataDescriptor< 1, StructuralMechanicsGPC::POINT1, 2, 0, StructuralMechanicsElementType::NODE>>(region, interval, dofs, std::forward<Args>(args)...);
+	return new Filler< 1, StructuralMechanicsGPC::POINT1, 2, 0, StructuralMechanicsElementType::NODE, StructuralMechanicsDataDescriptor< 1, StructuralMechanicsGPC::POINT1, 2, 0, StructuralMechanicsElementType::NODE> >(region, interval, dofs, std::forward<Args>(args)...);
 }
 
 template <template <size_t, size_t, size_t, size_t, size_t, class> class Filler, class ... Args>
 static ActionOperator* generateNodeFiller3D(size_t region, size_t interval, size_t dofs, Args&& ... args)
 {
-	return new Filler< 1, StructuralMechanicsGPC::POINT1, 3, 0, StructuralMechanicsElementType::NODE, StructuralMechanicsDataDescriptor< 1, StructuralMechanicsGPC::POINT1, 3, 0, StructuralMechanicsElementType::NODE>>(region, interval, dofs, std::forward<Args>(args)...);
+	return new Filler< 1, StructuralMechanicsGPC::POINT1, 3, 0, StructuralMechanicsElementType::NODE, StructuralMechanicsDataDescriptor< 1, StructuralMechanicsGPC::POINT1, 3, 0, StructuralMechanicsElementType::NODE> >(region, interval, dofs, std::forward<Args>(args)...);
 }
 
 template <template <size_t, size_t, size_t, size_t, size_t, class> class Filler, class ... Args>
@@ -155,6 +166,16 @@ static ActionOperator* generateEdgeFiller2D(size_t region, size_t interval, size
 }
 
 template <template <size_t, size_t, size_t, size_t, size_t, class> class Filler, class ... Args>
+static ActionOperator* generateEdgeFiller2DAxisymmetric(size_t region, size_t interval, size_t dofs, Args&& ... args)
+{
+	switch (info::mesh->boundaryRegions[region]->eintervals[interval].code) {
+	case static_cast<int>(Element::CODE::LINE2): return new Filler< 2, StructuralMechanicsGPC::LINE2, 2, 1, StructuralMechanicsElementType::EDGE_AXISYMMETRIC, StructuralMechanicsDataDescriptor< 2, StructuralMechanicsGPC::LINE2, 2, 1, StructuralMechanicsElementType::EDGE_AXISYMMETRIC> >(region, interval, dofs, std::forward<Args>(args)...);
+	case static_cast<int>(Element::CODE::LINE3): return new Filler< 3, StructuralMechanicsGPC::LINE3, 2, 1, StructuralMechanicsElementType::EDGE_AXISYMMETRIC, StructuralMechanicsDataDescriptor< 3, StructuralMechanicsGPC::LINE3, 2, 1, StructuralMechanicsElementType::EDGE_AXISYMMETRIC> >(region, interval, dofs, std::forward<Args>(args)...);
+	default: return nullptr;
+	}
+}
+
+template <template <size_t, size_t, size_t, size_t, size_t, class> class Filler, class ... Args>
 static ActionOperator* generateEdgeFiller3D(size_t region, size_t interval, size_t dofs, Args&& ... args)
 {
 	switch (info::mesh->boundaryRegions[region]->eintervals[interval].code) {
@@ -165,8 +186,11 @@ static ActionOperator* generateEdgeFiller3D(size_t region, size_t interval, size
 }
 
 template <template <size_t, size_t, size_t, size_t, size_t, class> class Filler, class ... Args>
-static ActionOperator* generateEdgeFiller(size_t region, size_t interval, size_t dofs, Args&& ... args)
+static ActionOperator* generateEdgeFiller(int axisymmetric, size_t region, size_t interval, size_t dofs, Args&& ... args)
 {
+	if (axisymmetric) {
+		return generateEdgeFiller2DAxisymmetric<Filler>(region, interval, dofs, std::forward<Args>(args)...);
+	}
 	switch (info::mesh->dimension) {
 	case 2: return generateEdgeFiller2D<Filler>(region, interval, dofs, std::forward<Args>(args)...);
 	case 3: return generateEdgeFiller3D<Filler>(region, interval, dofs, std::forward<Args>(args)...);
@@ -199,6 +223,16 @@ static ActionOperator* generateTypedExpressionEdge2D(size_t region, size_t inter
 	switch (info::mesh->boundaryRegions[region]->eintervals[interval].code) {
 	case static_cast<int>(Element::CODE::LINE2): return new Expression< 2, StructuralMechanicsGPC::LINE2, 2, 1, StructuralMechanicsElementType::EDGE, StructuralMechanicsDataDescriptor< 2, StructuralMechanicsGPC::LINE2, 2, 1, StructuralMechanicsElementType::EDGE>, Setter>(interval, evaluator, setter);
 	case static_cast<int>(Element::CODE::LINE3): return new Expression< 3, StructuralMechanicsGPC::LINE3, 2, 1, StructuralMechanicsElementType::EDGE, StructuralMechanicsDataDescriptor< 3, StructuralMechanicsGPC::LINE3, 2, 1, StructuralMechanicsElementType::EDGE>, Setter>(interval, evaluator, setter);
+	default: return nullptr;
+	}
+}
+
+template <template <size_t, size_t, size_t, size_t, size_t, class, class> class Expression, class Setter>
+static ActionOperator* generateTypedExpressionEdge2DAxisymmetric(size_t region, size_t interval, Evaluator *evaluator, const Setter &setter)
+{
+	switch (info::mesh->boundaryRegions[region]->eintervals[interval].code) {
+	case static_cast<int>(Element::CODE::LINE2): return new Expression< 2, StructuralMechanicsGPC::LINE2, 2, 1, StructuralMechanicsElementType::EDGE_AXISYMMETRIC, StructuralMechanicsDataDescriptor< 2, StructuralMechanicsGPC::LINE2, 2, 1, StructuralMechanicsElementType::EDGE_AXISYMMETRIC>, Setter>(interval, evaluator, setter);
+	case static_cast<int>(Element::CODE::LINE3): return new Expression< 3, StructuralMechanicsGPC::LINE3, 2, 1, StructuralMechanicsElementType::EDGE_AXISYMMETRIC, StructuralMechanicsDataDescriptor< 3, StructuralMechanicsGPC::LINE3, 2, 1, StructuralMechanicsElementType::EDGE_AXISYMMETRIC>, Setter>(interval, evaluator, setter);
 	default: return nullptr;
 	}
 }
@@ -366,7 +400,7 @@ static void generateElementExpression(const std::vector<int> &etype, std::vector
 }
 
 template <template <size_t, size_t, size_t, size_t, size_t, class, class> class Expression, class Setter>
-static void generateBoundaryExpression(size_t region, std::vector<std::vector<std::vector<ActionOperator*> > > &ops, Evaluator* evaluator, const Setter &setter)
+static void generateBoundaryExpression(int axisymmetric, size_t region, std::vector<std::vector<std::vector<ActionOperator*> > > &ops, Evaluator* evaluator, const Setter &setter)
 {
 	switch (info::mesh->dimension) {
 	case 2:
@@ -377,8 +411,14 @@ static void generateBoundaryExpression(size_t region, std::vector<std::vector<st
 			}
 			break;
 		case 1:
-			for (size_t interval = 0; interval < info::mesh->boundaryRegions[region]->eintervals.size(); ++interval) {
-				ops[region][interval].push_back(generateTypedExpressionEdge2D<Expression>(region, interval, evaluator, setter));
+			if (axisymmetric) {
+				for (size_t interval = 0; interval < info::mesh->boundaryRegions[region]->eintervals.size(); ++interval) {
+					ops[region][interval].push_back(generateTypedExpressionEdge2DAxisymmetric<Expression>(region, interval, evaluator, setter));
+				}
+			} else {
+				for (size_t interval = 0; interval < info::mesh->boundaryRegions[region]->eintervals.size(); ++interval) {
+					ops[region][interval].push_back(generateTypedExpressionEdge2D<Expression>(region, interval, evaluator, setter));
+				}
 			}
 			break;
 		}
@@ -406,34 +446,34 @@ static void generateBoundaryExpression(size_t region, std::vector<std::vector<st
 }
 
 template <template <size_t, size_t, size_t, size_t, size_t, class, class> class Expression, class Setter>
-static void generateBoundaryExpression(std::vector<std::vector<std::vector<ActionOperator*> > > &ops, std::map<std::string, ECFExpression> &settings, const Setter &setter)
+static void generateBoundaryExpression(int axisymmetric, std::vector<std::vector<std::vector<ActionOperator*> > > &ops, std::map<std::string, ECFExpression> &settings, const Setter &setter)
 {
 	for(size_t r = 0; r < info::mesh->boundaryRegions.size(); ++r) {
 		auto it = settings.find(info::mesh->boundaryRegions[r]->name);
 		if (it != settings.end()) {
-			generateBoundaryExpression<Expression>(r, ops, it->second.evaluator, setter);
+			generateBoundaryExpression<Expression>(axisymmetric, r, ops, it->second.evaluator, setter);
 		}
 	}
 }
 
 template <template <size_t, size_t, size_t, size_t, size_t, class, class> class Expression, class Setter>
-static void generateBoundaryExpression(std::vector<std::vector<std::vector<ActionOperator*> > > &ops, std::map<std::string, ECFExpressionVector> &settings, int dim, const Setter &setter)
+static void generateBoundaryExpression(int axisymmetric, std::vector<std::vector<std::vector<ActionOperator*> > > &ops, std::map<std::string, ECFExpressionVector> &settings, int dim, const Setter &setter)
 {
 	for(size_t r = 0; r < info::mesh->boundaryRegions.size(); ++r) {
 		auto it = settings.find(info::mesh->boundaryRegions[r]->name);
 		if (it != settings.end()) {
-			generateBoundaryExpression<Expression>(r, ops, it->second.data[dim].evaluator, setter);
+			generateBoundaryExpression<Expression>(axisymmetric, r, ops, it->second.data[dim].evaluator, setter);
 		}
 	}
 }
 
 template <template <size_t, size_t, size_t, size_t, size_t, class, class> class Expression, class Setter>
-static void generateBoundaryExpression(std::vector<std::vector<std::vector<ActionOperator*> > > &ops, std::map<std::string, ECFExpressionOptionalVector> &settings, int dim, const Setter &setter)
+static void generateBoundaryExpression(int axisymmetric, std::vector<std::vector<std::vector<ActionOperator*> > > &ops, std::map<std::string, ECFExpressionOptionalVector> &settings, int dim, const Setter &setter)
 {
 	for(size_t r = 0; r < info::mesh->boundaryRegions.size(); ++r) {
 		auto it = settings.find(info::mesh->boundaryRegions[r]->name);
 		if (it != settings.end() && it->second.data[dim].isset) {
-			generateBoundaryExpression<Expression>(r, ops, it->second.data[dim].evaluator, setter);
+			generateBoundaryExpression<Expression>(axisymmetric, r, ops, it->second.data[dim].evaluator, setter);
 		}
 	}
 }
@@ -524,6 +564,16 @@ static ActionOperator* generateBoundaryEdge2DOperator(size_t region, size_t inte
 }
 
 template <template <size_t, size_t, size_t, size_t, size_t, class> class Operator, class ... Args>
+static ActionOperator* generateBoundaryEdge2DAxisymmetricOperator(size_t region, size_t interval, Args&& ... args)
+{
+	switch (info::mesh->boundaryRegions[region]->eintervals[interval].code) {
+	case static_cast<int>(Element::CODE::LINE2): return new Operator< 2, StructuralMechanicsGPC::LINE2, 2, 1, StructuralMechanicsElementType::EDGE_AXISYMMETRIC, StructuralMechanicsDataDescriptor< 2, StructuralMechanicsGPC::LINE2, 2, 1, StructuralMechanicsElementType::EDGE_AXISYMMETRIC> >(region, interval, std::forward<Args>(args)...);
+	case static_cast<int>(Element::CODE::LINE3): return new Operator< 3, StructuralMechanicsGPC::LINE3, 2, 1, StructuralMechanicsElementType::EDGE_AXISYMMETRIC, StructuralMechanicsDataDescriptor< 3, StructuralMechanicsGPC::LINE3, 2, 1, StructuralMechanicsElementType::EDGE_AXISYMMETRIC> >(region, interval, std::forward<Args>(args)...);
+	default: return nullptr;
+	}
+}
+
+template <template <size_t, size_t, size_t, size_t, size_t, class> class Operator, class ... Args>
 static ActionOperator* generateBoundaryEdge3DOperator(size_t region, size_t interval, Args&& ... args)
 {
 	switch (info::mesh->boundaryRegions[region]->eintervals[interval].code) {
@@ -546,8 +596,11 @@ static ActionOperator* generateBoundaryFaceOperator(size_t region, size_t interv
 }
 
 template <template <size_t, size_t, size_t, size_t, size_t, class> class Operator, class ... Args>
-static ActionOperator* generateBoundaryOperator(size_t region, size_t interval, Args&& ... args)
+static ActionOperator* generateBoundaryOperator(int axisymmetric, size_t region, size_t interval, Args&& ... args)
 {
+	if (axisymmetric) {
+		return generateBoundaryEdge2DAxisymmetricOperator<Operator>(region, interval, std::forward<Args>(args)...);
+	}
 	if (info::mesh->boundaryRegions[region]->dimension == 1) {
 		switch (info::mesh->dimension) {
 		case 2: return generateBoundaryEdge2DOperator<Operator>(region, interval, std::forward<Args>(args)...);
@@ -561,12 +614,12 @@ static ActionOperator* generateBoundaryOperator(size_t region, size_t interval, 
 }
 
 template <template <size_t, size_t, size_t, size_t, size_t, class> class Operator, class ... Args>
-static void generateBoundaryOperators(const std::vector<int> &bfilter, std::vector<std::vector<std::vector<ActionOperator*> > > &ops, Args&& ... args)
+static void generateBoundaryOperators(int axisymmetric, const std::vector<int> &bfilter, std::vector<std::vector<std::vector<ActionOperator*> > > &ops, Args&& ... args)
 {
 	for(size_t r = 0; r < info::mesh->boundaryRegions.size(); ++r) {
 		if (bfilter[r]) {
 			for (size_t i = 0; i < info::mesh->boundaryRegions[r]->eintervals.size(); ++i) {
-				ops[r][i].push_back(generateBoundaryOperator<Operator>(r, i, std::forward<Args>(args)...));
+				ops[r][i].push_back(generateBoundaryOperator<Operator>(axisymmetric, r, i, std::forward<Args>(args)...));
 			}
 		}
 	}

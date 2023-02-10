@@ -193,8 +193,8 @@ struct VectorSetter: ActionOperator, Physics {
 	{
 		for (size_t s = 0, i = 0; s < SIMD::size; ++s) {
 			for (size_t d = 0; d < dofs; ++d) {
-				for (size_t n = 0; n < nodes; ++n, ++i) {
-					if (filter & (1 << d)) {
+				if (filter & (1 << d)) {
+					for (size_t n = 0; n < nodes; ++n, ++i) {
 						global[position[i]] = setter(element, n, d, s);
 					}
 				}
@@ -207,8 +207,8 @@ struct VectorSetter: ActionOperator, Physics {
 	{
 		for (size_t s = 0, i = 0; s < size; ++s) {
 			for (size_t d = 0; d < dofs; ++d) {
-				for (size_t n = 0; n < nodes; ++n, ++i) {
-					if (filter & (1 << d)) {
+				if (filter & (1 << d)) {
+					for (size_t n = 0; n < nodes; ++n, ++i) {
 						global[position[i]] = setter(element, n, d, s);
 					}
 				}

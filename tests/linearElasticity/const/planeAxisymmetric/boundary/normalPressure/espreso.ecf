@@ -36,8 +36,8 @@ GENERATOR {
     }
 
     EDGES {
-      Y1   <0 , 100> <100 , 100> <0 , 0>;
-      X1   <100 , 100> <0 , 100> <0 , 0>;
+      Y1   <40 , 60> <100 , 100> <0 , 0>;
+      X1   <100 , 100> <40 , 60> <0 , 0>;
     }
 
     ELEMENT_TYPE           [ARG0];
@@ -99,13 +99,15 @@ STRUCTURAL_MECHANICS_2D {
       }
 
       DISPLACEMENT {
-        Y0   { Y 0; }
-        X0   { X 0; }
+        X0   { X 0; Y 0; }
+      }
+
+      ANGULAR_VELOCITY {
+        ALL_ELEMENTS   { Y 10; };
       }
 
       NORMAL_PRESSURE {
-        Y1  70 * 2.1E11 / 5200;
-        X1  70 * 2.1E11 / 5200;
+        X1        1e11;
       }
     }
   }

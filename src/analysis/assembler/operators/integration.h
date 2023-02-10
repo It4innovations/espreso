@@ -220,6 +220,115 @@ struct Integration<nodes, gps, 2, 1, etype, Physics>: ActionOperator, Physics {
 	}
 };
 
+template <size_t nodes, size_t gps, size_t ndim, size_t edim, size_t etype, class Physics> struct IntegrationWithNormal;
+
+template <size_t nodes, size_t gps, size_t etype, class Physics>
+struct IntegrationWithNormal<nodes, gps, 3, 2, etype, Physics>: ActionOperator, Physics {
+
+	IntegrationWithNormal(size_t region, size_t interval)
+	{
+		isconst = false;
+		action = Action::ASSEMBLE | Action::SOLUTION;
+	}
+
+	void simd(typename Physics::Element &element)
+	{
+		for (size_t gp = 0; gp < gps; ++gp) {
+			SIMD dND0, dND1, dND2, dND3, dND4, dND5;
+			for (size_t n = 0; n < nodes; ++n) {
+				SIMD coordsX = element.coords[n][0];
+				SIMD coordsY = element.coords[n][1];
+				SIMD coordsZ = element.coords[n][2];
+				SIMD dNX = load1(element.dN[gp][n][0]);
+				SIMD dNY = load1(element.dN[gp][n][1]);
+
+				dND0 = dND0 + dNX * coordsX;
+				dND1 = dND1 + dNX * coordsY;
+				dND2 = dND2 + dNX * coordsZ;
+				dND3 = dND3 + dNY * coordsX;
+				dND4 = dND4 + dNY * coordsY;
+				dND5 = dND5 + dNY * coordsZ;
+			}
+
+			SIMD x = dND1 * dND5 - dND2 * dND4;
+			SIMD y = dND2 * dND3 - dND0 * dND5;
+			SIMD z = dND0 * dND4 - dND1 * dND3;
+			SIMD res = x * x + y * y + z * z;
+			for (size_t s = 0; s < SIMD::size; ++s) {
+				element.det[gp][s] = std::sqrt(res[s]);
+			}
+			element.normal[gp][0] = x / element.det[gp];
+			element.normal[gp][1] = y / element.det[gp];
+			element.normal[gp][2] = z / element.det[gp];
+		}
+	}
+};
+
+template <size_t nodes, size_t gps, size_t etype, class Physics>
+struct IntegrationWithNormal<nodes, gps, 3, 1, etype, Physics>: ActionOperator, Physics {
+
+	IntegrationWithNormal(size_t region, size_t interval)
+	{
+		isconst = false;
+		action = Action::ASSEMBLE | Action::SOLUTION;
+	}
+
+	void simd(typename Physics::Element &element)
+	{
+		for (size_t gp = 0; gp < gps; ++gp) {
+			SIMD dND0, dND1, dND2;
+			for (size_t n = 0; n < nodes; ++n) {
+				SIMD coordsX = element.coords[n][0];
+				SIMD coordsY = element.coords[n][1];
+				SIMD coordsZ = element.coords[n][2];
+				SIMD dNX = load1(element.dN[gp][n][0]);
+
+				dND0 = dND0 + dNX * coordsX;
+				dND1 = dND1 + dNX * coordsY;
+				dND2 = dND2 + dNX * coordsZ;
+			}
+
+			SIMD res = dND0 * dND0 + dND1 * dND1 + dND2 * dND2;
+			for (size_t s = 0; s < SIMD::size; ++s) {
+				element.det[gp][s] = std::sqrt(res[s]);
+			}
+			// TODO: how to do it?
+		}
+	}
+};
+
+template <size_t nodes, size_t gps, size_t etype, class Physics>
+struct IntegrationWithNormal<nodes, gps, 2, 1, etype, Physics>: ActionOperator, Physics {
+
+	IntegrationWithNormal(size_t region, size_t interval)
+	{
+		isconst = false;
+		action = Action::ASSEMBLE | Action::SOLUTION;
+	}
+
+	void simd(typename Physics::Element &element)
+	{
+		for (size_t gp = 0; gp < gps; ++gp) {
+			SIMD dND0, dND1;
+			for (size_t n = 0; n < nodes; ++n) {
+				SIMD coordsX = element.coords[n][0];
+				SIMD coordsY = element.coords[n][1];
+				SIMD dNX = load1(element.dN[gp][n][0]);
+
+				dND0 = dND0 + dNX * coordsX;
+				dND1 = dND1 + dNX * coordsY;
+			}
+
+			SIMD res = dND0 * dND0 + dND1 * dND1;
+			for (size_t s = 0; s < SIMD::size; ++s) {
+				element.det[gp][s] = std::sqrt(res[s]);
+			}
+			element.normal[gp][0] = -dND1 / element.det[gp];
+			element.normal[gp][1] =  dND0 / element.det[gp];
+		}
+	}
+};
+
 template <size_t nodes, size_t gps, size_t ndim, size_t edim, size_t etype, class Physics>
 struct Volume: ActionOperator, Physics {
 	double &volume, local;
@@ -248,72 +357,6 @@ struct Volume: ActionOperator, Physics {
 			for (size_t s = 0; s < SIMD::size; ++s) {
 				local += v[s];
 			}
-		}
-	}
-};
-
-struct BoundaryNormal: public ActionOperator {
-	BoundaryNormal(
-			int interval,
-			const ParameterData &coordinates,
-			const ParameterData &dN,
-			ParameterData &jacobian,
-			ParameterData &normal)
-	: coords(coordinates, interval),
-	  dN(dN, interval, 0),
-	  jacobian(jacobian, interval),
-	  normal(normal, interval)
-	{ }
-
-	InputParameterIterator coords, dN;
-	OutputParameterIterator jacobian, normal;
-
-	void operator++()
-	{
-		++coords;
-		++jacobian; ++normal;
-	}
-
-	void move(int n)
-	{
-		coords += n;
-		jacobian += n;
-		normal += n;
-	}
-};
-
-template<size_t nodes, size_t gps>
-struct BoundaryFaceNormal: public BoundaryNormal {
-	using BoundaryNormal::BoundaryNormal;
-
-	void operator()()
-	{
-		for (size_t gpindex = 0; gpindex < gps; ++gpindex) {
-			double dND[6] = { 0, 0, 0, 0, 0, 0 };
-			M2NMN3<nodes>(1, dN.data + 2 * gpindex * nodes, coords.data, dND);
-			double x = dND[1] * dND[5] - dND[2] * dND[4];
-			double y = dND[2] * dND[3] - dND[0] * dND[5];
-			double z = dND[0] * dND[4] - dND[1] * dND[3];
-			jacobian[gpindex] = std::sqrt(x * x + y * y + z * z);
-			normal[3 * gpindex + 0] = x / jacobian[gpindex];
-			normal[3 * gpindex + 1] = y / jacobian[gpindex];
-			normal[3 * gpindex + 2] = z / jacobian[gpindex];
-		}
-	}
-};
-
-template<size_t nodes, size_t gps>
-struct BoundaryEdge2DNormal: public BoundaryNormal {
-	using BoundaryNormal::BoundaryNormal;
-
-	void operator()()
-	{
-		for (size_t gpindex = 0; gpindex < gps; ++gpindex) {
-			double dND[2] = { 0, 0 };
-			M1NMN2<nodes>(1, dN.data + 1 * gpindex * nodes, coords.data, dND);
-			jacobian[gpindex] = std::sqrt(dND[0] * dND[0] + dND[1] * dND[1]);
-			normal[2 * gpindex + 0] = -dND[1] / jacobian[gpindex];
-			normal[2 * gpindex + 1] =  dND[0] / jacobian[gpindex];
 		}
 	}
 };

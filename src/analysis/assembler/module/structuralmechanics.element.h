@@ -38,7 +38,8 @@ struct StructuralMechanicsElementType {
 		SYMMETRIC_VOLUME             = 2,
 		FACE                         = 4,
 		EDGE                         = 5,
-		NODE                         = 6
+		EDGE_AXISYMMETRIC            = 6,
+		NODE                         = 7
 	};
 };
 
@@ -179,16 +180,18 @@ struct StructuralMechanicsDataDescriptor<nodes, gps, 3, 2, StructuralMechanicsEl
 
 	struct Element {
 		struct {
-
+			alignas(SIMD::size * sizeof(double)) SIMD normalPressure[gps];
 		} ecf;
 
 		alignas(SIMD::size * sizeof(double)) SIMD coords[nodes][3];
+		alignas(SIMD::size * sizeof(double)) SIMD gpcoords[gps][ndim];
 
 		alignas(SIMD::size * sizeof(double)) double  w [gps];
 		alignas(SIMD::size * sizeof(double)) double  N [gps][nodes];
 		alignas(SIMD::size * sizeof(double)) double dN [gps][nodes][2];
 
 		alignas(SIMD::size * sizeof(double)) SIMD det[gps];
+		alignas(SIMD::size * sizeof(double)) SIMD normal[gps][3];
 
 		alignas(SIMD::size * sizeof(double)) SIMD displacement[nodes][ndim];
 
@@ -208,16 +211,49 @@ struct StructuralMechanicsDataDescriptor<nodes, gps, ndim, 1, StructuralMechanic
 
 	struct Element {
 		struct {
-
+			alignas(SIMD::size * sizeof(double)) SIMD normalPressure[gps];
 		} ecf;
 
 		alignas(SIMD::size * sizeof(double)) SIMD coords[nodes][ndim];
+		alignas(SIMD::size * sizeof(double)) SIMD gpcoords[gps][ndim];
 
 		alignas(SIMD::size * sizeof(double)) double  w [gps];
 		alignas(SIMD::size * sizeof(double)) double  N [gps][nodes];
 		alignas(SIMD::size * sizeof(double)) double dN [gps][nodes][1];
 
 		alignas(SIMD::size * sizeof(double)) SIMD det[gps];
+		alignas(SIMD::size * sizeof(double)) SIMD normal[gps][ndim];
+
+		alignas(SIMD::size * sizeof(double)) SIMD displacement[nodes][ndim];
+
+		Element()
+		{
+
+		}
+	};
+
+	virtual void simd(Element &element) =0;
+	virtual void peel(Element &element, size_t size) { simd(element); }
+};
+
+template <size_t nodes, size_t ndim, size_t gps>
+struct StructuralMechanicsDataDescriptor<nodes, gps, ndim, 1, StructuralMechanicsElementType::EDGE_AXISYMMETRIC> {
+	virtual ~StructuralMechanicsDataDescriptor() {}
+
+	struct Element {
+		struct {
+			alignas(SIMD::size * sizeof(double)) SIMD normalPressure[gps];
+		} ecf;
+
+		alignas(SIMD::size * sizeof(double)) SIMD coords[nodes][ndim];
+		alignas(SIMD::size * sizeof(double)) SIMD gpcoords[gps][ndim];
+
+		alignas(SIMD::size * sizeof(double)) double  w [gps];
+		alignas(SIMD::size * sizeof(double)) double  N [gps][nodes];
+		alignas(SIMD::size * sizeof(double)) double dN [gps][nodes][1];
+
+		alignas(SIMD::size * sizeof(double)) SIMD det[gps];
+		alignas(SIMD::size * sizeof(double)) SIMD normal[gps][ndim];
 
 		alignas(SIMD::size * sizeof(double)) SIMD displacement[nodes][ndim];
 
@@ -237,10 +273,11 @@ struct StructuralMechanicsDataDescriptor<1, 1, ndim, 0, StructuralMechanicsEleme
 
 	struct Element {
 		struct {
-
+			alignas(SIMD::size * sizeof(double)) SIMD normalPressure[1];
 		} ecf;
 
 		alignas(SIMD::size * sizeof(double)) SIMD coords[1][ndim];
+		alignas(SIMD::size * sizeof(double)) SIMD gpcoords[1][ndim];
 
 		alignas(SIMD::size * sizeof(double)) SIMD displacement[1][ndim];
 

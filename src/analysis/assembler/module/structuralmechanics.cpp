@@ -32,6 +32,8 @@ NodeData* StructuralMechanics::Results::displacement = nullptr;
 StructuralMechanics::StructuralMechanics(StructuralMechanics *previous, StructuralMechanicsConfiguration &settings, StructuralMechanicsLoadStepConfiguration &configuration)
 : Assembler(settings), settings(settings), configuration(configuration)
 {
+	axisymmetric = settings.element_behaviour == StructuralMechanicsConfiguration::ELEMENT_BEHAVIOUR::AXISYMMETRIC;
+
 	elements.stiffness.setConstness(false);
 	elements.stiffness.resize();
 	elements.rhs.setConstness(false);
@@ -63,9 +65,9 @@ bool StructuralMechanics::initDisplacement()
 
 	if (configuration.displacement.size()) {
 		correct &= checkBoundaryParameter("FIXED DISPLACEMENT", configuration.displacement);
-		generateBoundaryExpression<ExternalNodeExpression>(boundaryOps, configuration.displacement, 0, [] (auto &element, const size_t &n, const size_t &s, const double &value) { element.displacement[n][0][s] = value; });
-		generateBoundaryExpression<ExternalNodeExpression>(boundaryOps, configuration.displacement, 1, [] (auto &element, const size_t &n, const size_t &s, const double &value) { element.displacement[n][1][s] = value; });
-		generateBoundaryExpression<ExternalNodeExpression>(boundaryOps, configuration.displacement, 2, [] (auto &element, const size_t &n, const size_t &s, const double &value) { element.displacement[n][2][s] = value; });
+		generateBoundaryExpression<ExternalNodeExpression>(axisymmetric, boundaryOps, configuration.displacement, 0, [] (auto &element, const size_t &n, const size_t &s, const double &value) { element.displacement[n][0][s] = value; });
+		generateBoundaryExpression<ExternalNodeExpression>(axisymmetric, boundaryOps, configuration.displacement, 1, [] (auto &element, const size_t &n, const size_t &s, const double &value) { element.displacement[n][1][s] = value; });
+		generateBoundaryExpression<ExternalNodeExpression>(axisymmetric, boundaryOps, configuration.displacement, 2, [] (auto &element, const size_t &n, const size_t &s, const double &value) { element.displacement[n][2][s] = value; });
 	}
 	return correct;
 }
@@ -169,7 +171,7 @@ void StructuralMechanics::analyze()
 	}
 
 	generateBaseFunctions(etype, elementOps);
-	generateBaseFunctions(bfilter, boundaryOps);
+	generateBaseFunctions(axisymmetric, bfilter, boundaryOps);
 
 	for(size_t i = 0; i < info::mesh->elements->eintervals.size(); ++i) {
 		auto procNodes = info::mesh->elements->nodes->cbegin() + info::mesh->elements->eintervals[i].begin;
@@ -188,10 +190,15 @@ void StructuralMechanics::analyze()
 
 	for(size_t r = 0; r < info::mesh->boundaryRegions.size(); ++r) {
 		if (bfilter[r]) {
+			bool cooToGPs = settings.element_behaviour == StructuralMechanicsConfiguration::ELEMENT_BEHAVIOUR::AXISYMMETRIC;
 			if (info::mesh->boundaryRegions[r]->dimension) {
 				for(size_t i = 0; i < info::mesh->boundaryRegions[r]->eintervals.size(); ++i) {
 					auto procNodes = info::mesh->boundaryRegions[r]->elements->cbegin() + info::mesh->boundaryRegions[r]->eintervals[i].begin;
-					boundaryOps[r][i].push_back(generateBoundaryOperator<CoordinatesToElementNodes>(r, i, procNodes));
+					if (cooToGPs) {
+						boundaryOps[r][i].push_back(generateBoundaryOperator<CoordinatesToElementNodesAndGPs>(axisymmetric, r, i, procNodes));
+					} else {
+						boundaryOps[r][i].push_back(generateBoundaryOperator<CoordinatesToElementNodes>(axisymmetric, r, i, procNodes));
+					}
 				}
 			}
 		}
@@ -203,7 +210,11 @@ void StructuralMechanics::analyze()
 
 	generateElasticity();
 	generateElementOperators<Integration>(etype, elementOps);
-	generateBoundaryOperators<Integration>(bfilter, boundaryOps);
+	if (configuration.normal_pressure.size()) {
+		generateBoundaryOperators<IntegrationWithNormal>(axisymmetric, bfilter, boundaryOps);
+	} else {
+		generateBoundaryOperators<Integration>(axisymmetric, bfilter, boundaryOps);
+	}
 	volume();
 
 	generateElementOperators<StructuralMechanicsStiffness>(etype, elementOps, elements.stiffness);
@@ -243,11 +254,17 @@ void StructuralMechanics::analyze()
 		generateElementOperators<AngularVelocity>(etype, elementOps, elements.rhs);
 	}
 
-//	if (configuration.normal_pressure.size()) {
-//		correct &= examineBoundaryParameter("NORMAL PRESSURE", configuration.normal_pressure, normalPressure.gp.externalValues);
-//		fromExpression(*this, normalPressure.gp, normalPressure.gp.externalValues);
-//	}
-//	RHS(*this);
+	if (configuration.normal_pressure.size()) {
+		correct &= checkBoundaryParameter("NORMAL PRESSUR", configuration.normal_pressure);
+		generateBoundaryExpression<ExternalGPsExpression>(axisymmetric, boundaryOps, configuration.normal_pressure, [] (auto &element, const size_t &gp, const size_t &s, const double &value) { element.ecf.normalPressure[gp][s] = value; });
+	}
+	for(size_t r = 0; r < info::mesh->boundaryRegions.size(); ++r) {
+		if (bfilter[r]) {
+			for (size_t i = 0; i < info::mesh->boundaryRegions[r]->eintervals.size(); ++i) {
+				boundaryOps[r][i].push_back(generateBoundaryOperator<NormalPressure>(axisymmetric, r, i, elements.boundary.rhs.regions[r]));
+			}
+		}
+	}
 
 	eslog::info("  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  \n");
 	if (correct) {
@@ -269,25 +286,25 @@ void StructuralMechanics::connect(SteadyState &scheme)
 
 	for(size_t r = 0; r < info::mesh->boundaryRegions.size(); ++r) {
 		if (configuration.displacement.end() == configuration.displacement.find(info::mesh->boundaryRegions[r]->name)) {
-//			if (bfilter[r]) {
-//				switch (info::mesh->boundaryRegions[r]->dimension) {
-//				case 0:
-//					for (size_t t = 0; t < info::mesh->boundaryRegions[r]->nodes->threads(); ++t) {
-//						boundaryOps[r][t].push_back(generateNodeFiller<VectorFiller>(r, t, 1, elements.rhs, scheme.f));
-//					}
-//					break;
-//				case 1:
-//					for (size_t i = 0; i < info::mesh->boundaryRegions[r]->eintervals.size(); ++i) {
-//						boundaryOps[r][i].push_back(generateEdgeFiller<VectorFiller>(r, i, 1, elements.boundary.rhs.regions[r], scheme.f));
-//					}
-//					break;
-//				case 2:
-//					for (size_t i = 0; i < info::mesh->boundaryRegions[r]->eintervals.size(); ++i) {
-//						boundaryOps[r][i].push_back(generateFaceFiller<VectorFiller>(r, i, 1, elements.boundary.rhs.regions[r], scheme.f));
-//					}
-//					break;
-//				}
-//			}
+			if (bfilter[r]) {
+				switch (info::mesh->boundaryRegions[r]->dimension) {
+				case 0:
+					for (size_t t = 0; t < info::mesh->boundaryRegions[r]->nodes->threads(); ++t) {
+						boundaryOps[r][t].push_back(generateNodeFiller<VectorFiller>(r, t, info::mesh->dimension, elements.rhs, scheme.f));
+					}
+					break;
+				case 1:
+					for (size_t i = 0; i < info::mesh->boundaryRegions[r]->eintervals.size(); ++i) {
+						boundaryOps[r][i].push_back(generateEdgeFiller<VectorFiller>(axisymmetric, r, i, info::mesh->dimension, elements.boundary.rhs.regions[r], scheme.f));
+					}
+					break;
+				case 2:
+					for (size_t i = 0; i < info::mesh->boundaryRegions[r]->eintervals.size(); ++i) {
+						boundaryOps[r][i].push_back(generateFaceFiller<VectorFiller>(r, i, info::mesh->dimension, elements.boundary.rhs.regions[r], scheme.f));
+					}
+					break;
+				}
+			}
 		} else {
 			// DIRICHLET
 			for (size_t t = 0; t < info::mesh->boundaryRegions[r]->nodes->threads(); ++t) {
@@ -311,7 +328,7 @@ void StructuralMechanics::volume()
 	std::vector<double> bvolume(info::mesh->boundaryRegions.size());
 
 	generateElementOperators<Volume>(etype, elementOps, evolume);
-	generateBoundaryOperators<Volume>(bfilter, boundaryOps, bvolume);
+	generateBoundaryOperators<Volume>(axisymmetric, bfilter, boundaryOps, bvolume);
 	assemble(ActionOperator::Action::ASSEMBLE);
 	dropLastOperators(elementOps);
 	dropLastOperators(bfilter, boundaryOps);
@@ -351,6 +368,16 @@ double StructuralMechanics::instantiate2D<StructuralMechanicsElementType::EDGE>(
 	switch (code) {
 	case static_cast<size_t>(Element::CODE::LINE2): return loop<StructuralMechanicsDataDescriptor, 2, StructuralMechanicsGPC::LINE2, 2, 1, StructuralMechanicsElementType::EDGE>(action, ops, elements); break;
 	case static_cast<size_t>(Element::CODE::LINE3): return loop<StructuralMechanicsDataDescriptor, 3, StructuralMechanicsGPC::LINE3, 2, 1, StructuralMechanicsElementType::EDGE>(action, ops, elements); break;
+	default: return 0;
+	}
+}
+
+template <>
+double StructuralMechanics::instantiate2D<StructuralMechanicsElementType::EDGE_AXISYMMETRIC>(ActionOperator::Action action, int code, const std::vector<ActionOperator*> &ops, esint elements)
+{
+	switch (code) {
+	case static_cast<size_t>(Element::CODE::LINE2): return loop<StructuralMechanicsDataDescriptor, 2, StructuralMechanicsGPC::LINE2, 2, 1, StructuralMechanicsElementType::EDGE_AXISYMMETRIC>(action, ops, elements); break;
+	case static_cast<size_t>(Element::CODE::LINE3): return loop<StructuralMechanicsDataDescriptor, 3, StructuralMechanicsGPC::LINE3, 2, 1, StructuralMechanicsElementType::EDGE_AXISYMMETRIC>(action, ops, elements); break;
 	default: return 0;
 	}
 }
@@ -421,7 +448,12 @@ double StructuralMechanics::instantiate(ActionOperator::Action action, int code,
 		case StructuralMechanicsElementType::SYMMETRIC_PLANE_AXISYMMETRIC: return instantiate2D<StructuralMechanicsElementType::SYMMETRIC_PLANE_AXISYMMETRIC>(action, code, ops, elements);
 
 		// boundary
-		case StructuralMechanicsElementType::EDGE: return instantiate2D<StructuralMechanicsElementType::EDGE>(action, code, ops, elements);
+		case StructuralMechanicsElementType::EDGE:
+			if (axisymmetric) {
+				return instantiate2D<StructuralMechanicsElementType::EDGE_AXISYMMETRIC>(action, code, ops, elements);
+			} else {
+				return instantiate2D<StructuralMechanicsElementType::EDGE>(action, code, ops, elements);
+			}
 		case StructuralMechanicsElementType::NODE: return instantiate2D<StructuralMechanicsElementType::NODE>(action, code, ops, elements);
 		}
 	case 3:

@@ -52,6 +52,8 @@ public:
 	};
 
 protected:
+	int axisymmetric;
+
 	template <int etype> double instantiate2D(ActionOperator::Action action, int code, const std::vector<ActionOperator*> &ops, esint elements);
 	template <int etype> double instantiate3D(ActionOperator::Action action, int code, const std::vector<ActionOperator*> &ops, esint elements);
 	double instantiate(ActionOperator::Action action, int code, int etype, const std::vector<ActionOperator*> &ops, esint elements);
