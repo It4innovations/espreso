@@ -12,7 +12,7 @@ namespace espreso {
 struct HeatTransferCoordinateSystem: ActionOperator {
 	HeatTransferCoordinateSystem(size_t interval)
 	{
-		action = Action::ASSEMBLE | Action::SOLUTION;
+		action = Action::ASSEMBLE | Action::REASSEMBLE | Action::SOLUTION;
 	}
 };
 

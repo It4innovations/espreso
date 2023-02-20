@@ -60,6 +60,12 @@ espreso::PhysicsConfiguration::PhysicsConfiguration(DIMENSION dim, MaterialConfi
 			.setdatatype({ ECFDataType::BOOL })
 			.setform());
 
+	reassembling_optimization = true;
+	REGISTER(reassembling_optimization, ECFMetaData()
+			.setdescription({ "Store computed values for improving reassembling times in the cost of the memory." })
+			.setdatatype({ ECFDataType::BOOL })
+			.setform());
+
 	ecfdescription->addSeparator()->metadata.noexport();
 
 	REGISTER(initial_temperature, ECFMetaData()

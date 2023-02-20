@@ -16,7 +16,7 @@ struct Acceleration<nodes, gps, 2, 2, StructuralMechanicsElementType::SYMMETRIC_
 	: rhs(rhs, interval)
 	{
 		isconst = false;
-		action = Action::ASSEMBLE;
+		action = Action::ASSEMBLE | Action::REASSEMBLE;
 	}
 
 	void move(int n)
@@ -50,7 +50,7 @@ struct Acceleration<nodes, gps, 2, 2, StructuralMechanicsElementType::SYMMETRIC_
 	: rhs(rhs, interval)
 	{
 		isconst = false;
-		action = Action::ASSEMBLE;
+		action = Action::ASSEMBLE | Action::REASSEMBLE;
 	}
 
 	void move(int n)
@@ -84,7 +84,7 @@ struct Acceleration<nodes, gps, 3, 3, StructuralMechanicsElementType::SYMMETRIC_
 	: rhs(rhs, interval)
 	{
 		isconst = false;
-		action = Action::ASSEMBLE;
+		action = Action::ASSEMBLE | Action::REASSEMBLE;
 	}
 
 	void move(int n)
@@ -123,7 +123,7 @@ struct AngularVelocity<nodes, gps, 2, 2, StructuralMechanicsElementType::SYMMETR
 	: rhs(rhs, interval)
 	{
 		isconst = false;
-		action = Action::ASSEMBLE;
+		action = Action::ASSEMBLE | Action::REASSEMBLE;
 	}
 
 	void move(int n)
@@ -157,7 +157,7 @@ struct AngularVelocity<nodes, gps, 2, 2, StructuralMechanicsElementType::SYMMETR
 	: rhs(rhs, interval)
 	{
 		isconst = false;
-		action = Action::ASSEMBLE;
+		action = Action::ASSEMBLE | Action::REASSEMBLE;
 	}
 
 	void move(int n)
@@ -188,7 +188,7 @@ struct AngularVelocity<nodes, gps, 3, 3, StructuralMechanicsElementType::SYMMETR
 	: rhs(rhs, interval)
 	{
 		isconst = false;
-		action = Action::ASSEMBLE;
+		action = Action::ASSEMBLE | Action::REASSEMBLE;
 	}
 
 	void move(int n)
@@ -230,7 +230,7 @@ struct NormalPressure<nodes, gps, 2, 1, StructuralMechanicsElementType::EDGE, Ph
 	: rhs(rhs, interval)
 	{
 		isconst = false;
-		action = Action::ASSEMBLE;
+		action = Action::ASSEMBLE | Action::REASSEMBLE;
 	}
 
 	void move(int n)
@@ -264,7 +264,7 @@ struct NormalPressure<nodes, gps, 2, 1, StructuralMechanicsElementType::EDGE_AXI
 	: rhs(rhs, interval)
 	{
 		isconst = false;
-		action = Action::ASSEMBLE;
+		action = Action::ASSEMBLE | Action::REASSEMBLE;
 	}
 
 	void move(int n)
@@ -298,7 +298,7 @@ struct NormalPressure<nodes, gps, 3, 2, StructuralMechanicsElementType::FACE, Ph
 	: rhs(rhs, interval)
 	{
 		isconst = false;
-		action = Action::ASSEMBLE;
+		action = Action::ASSEMBLE | Action::REASSEMBLE;
 	}
 
 	void move(int n)
@@ -335,7 +335,7 @@ struct NormalPressure<nodes, gps, 3, 1, StructuralMechanicsElementType::EDGE, Ph
 	: rhs(rhs, interval)
 	{
 		isconst = false;
-		action = Action::ASSEMBLE;
+		action = Action::ASSEMBLE | Action::REASSEMBLE;
 	}
 
 	void move(int n)

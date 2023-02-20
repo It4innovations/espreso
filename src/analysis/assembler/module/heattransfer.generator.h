@@ -6,6 +6,7 @@
 #include "analysis/assembler/operator.h"
 #include "analysis/assembler/operators/basis.h"
 #include "analysis/assembler/operators/expression.h"
+#include "analysis/assembler/operators/storage.h"
 
 #include "esinfo/meshinfo.h"
 #include "mesh/store/elementstore.h"
@@ -487,6 +488,108 @@ static void generateBoundaryOperators(const std::vector<int> &bfilter, std::vect
 				ops[r][i].push_back(generateBoundaryOperator<Operator>(r, i, std::forward<Args>(args)...));
 			}
 		}
+	}
+}
+
+template <int etype, class Size, class Parameter>
+static void addTypedElementStorage2D(std::vector<ActionOperator*> &ops, size_t interval, const Size &size, const Parameter &parameter)
+{
+	constexpr size_t ndim = 2, edim = 2;
+	size_t elements = info::mesh->elements->eintervals[interval].end - info::mesh->elements->eintervals[interval].begin;
+	switch (info::mesh->elements->eintervals[interval].code) {
+	case static_cast<int>(Element::CODE::TRIANGLE3): {
+		typename HeatTransferDataDescriptor< 3, HeatTransferGPC::TRIANGLE3, ndim, edim, etype>::Element element;
+		auto store = new StorageStore< 3, HeatTransferGPC::TRIANGLE3, ndim, edim, etype, HeatTransferDataDescriptor< 3, HeatTransferGPC::TRIANGLE3, ndim, edim, etype>, Parameter>(interval, ops.back(), elements, size(element), parameter);
+		auto load  = new StorageLoad < 3, HeatTransferGPC::TRIANGLE3, ndim, edim, etype, HeatTransferDataDescriptor< 3, HeatTransferGPC::TRIANGLE3, ndim, edim, etype>, Parameter>(interval, store, parameter);
+		ops.push_back(store);
+		ops.push_back(load);
+	} break;
+	case static_cast<int>(Element::CODE::TRIANGLE6): {
+		typename HeatTransferDataDescriptor< 6, HeatTransferGPC::TRIANGLE6, ndim, edim, etype>::Element element;
+		auto store = new StorageStore< 6, HeatTransferGPC::TRIANGLE6, ndim, edim, etype, HeatTransferDataDescriptor< 6, HeatTransferGPC::TRIANGLE6, ndim, edim, etype>, Parameter>(interval, ops.back(), elements, size(element), parameter);
+		auto load  = new StorageLoad < 6, HeatTransferGPC::TRIANGLE6, ndim, edim, etype, HeatTransferDataDescriptor< 6, HeatTransferGPC::TRIANGLE6, ndim, edim, etype>, Parameter>(interval, store, parameter);
+		ops.push_back(store);
+		ops.push_back(load);
+	} break;
+	case static_cast<int>(Element::CODE::SQUARE4): {
+		typename HeatTransferDataDescriptor< 4, HeatTransferGPC::SQUARE4,   ndim, edim, etype>::Element element;
+		auto store = new StorageStore< 4, HeatTransferGPC::SQUARE4  , ndim, edim, etype, HeatTransferDataDescriptor< 4, HeatTransferGPC::SQUARE4,   ndim, edim, etype>, Parameter>(interval, ops.back(), elements, size(element), parameter);
+		auto load  = new StorageLoad < 4, HeatTransferGPC::SQUARE4  , ndim, edim, etype, HeatTransferDataDescriptor< 4, HeatTransferGPC::SQUARE4,   ndim, edim, etype>, Parameter>(interval, store, parameter);
+		ops.push_back(store);
+		ops.push_back(load);
+	} break;
+	case static_cast<int>(Element::CODE::SQUARE8): {
+		typename HeatTransferDataDescriptor< 8, HeatTransferGPC::SQUARE8,   ndim, edim, etype>::Element element;
+		auto store = new StorageStore< 8, HeatTransferGPC::SQUARE8  , ndim, edim, etype, HeatTransferDataDescriptor< 8, HeatTransferGPC::SQUARE8,   ndim, edim, etype>, Parameter>(interval, ops.back(), elements, size(element), parameter);
+		auto load  = new StorageLoad < 8, HeatTransferGPC::SQUARE8  , ndim, edim, etype, HeatTransferDataDescriptor< 8, HeatTransferGPC::SQUARE8,   ndim, edim, etype>, Parameter>(interval, store, parameter);
+		ops.push_back(store);
+		ops.push_back(load);
+	} break;
+	}
+}
+
+template <int etype, class Size, class Parameter>
+static void addTypedElementStorage3D(std::vector<ActionOperator*> &ops, size_t interval, const Size &size, const Parameter &parameter)
+{
+	constexpr size_t ndim = 3, edim = 3;
+	size_t elements = info::mesh->elements->eintervals[interval].end - info::mesh->elements->eintervals[interval].begin;
+	switch (info::mesh->elements->eintervals[interval].code) {
+	case static_cast<int>(Element::CODE::TETRA4): {
+		typename HeatTransferDataDescriptor< 4, HeatTransferGPC::TETRA4, ndim, edim, etype>::Element element;
+		auto store = new StorageStore< 4, HeatTransferGPC::TETRA4, ndim, edim, etype, HeatTransferDataDescriptor< 4, HeatTransferGPC::TETRA4, ndim, edim, etype>, Parameter>(interval, ops.back(), elements, size(element), parameter);
+		auto load  = new StorageLoad < 4, HeatTransferGPC::TETRA4, ndim, edim, etype, HeatTransferDataDescriptor< 4, HeatTransferGPC::TETRA4, ndim, edim, etype>, Parameter>(interval, store, parameter);
+		ops.push_back(store);
+		ops.push_back(load);
+	} break;
+	case static_cast<int>(Element::CODE::TETRA10): {
+		typename HeatTransferDataDescriptor<10, HeatTransferGPC::TETRA10, ndim, edim, etype>::Element element;
+		auto store = new StorageStore<10, HeatTransferGPC::TETRA10, ndim, edim, etype, HeatTransferDataDescriptor<10, HeatTransferGPC::TETRA10, ndim, edim, etype>, Parameter>(interval, ops.back(), elements, size(element), parameter);
+		auto load  = new StorageLoad <10, HeatTransferGPC::TETRA10, ndim, edim, etype, HeatTransferDataDescriptor<10, HeatTransferGPC::TETRA10, ndim, edim, etype>, Parameter>(interval, store, parameter);
+		ops.push_back(store);
+		ops.push_back(load);
+	} break;
+	case static_cast<int>(Element::CODE::PYRAMID5): {
+		typename HeatTransferDataDescriptor< 5, HeatTransferGPC::PYRAMID5, ndim, edim, etype>::Element element;
+		auto store = new StorageStore< 5, HeatTransferGPC::PYRAMID5, ndim, edim, etype, HeatTransferDataDescriptor< 5, HeatTransferGPC::PYRAMID5, ndim, edim, etype>, Parameter>(interval, ops.back(), elements, size(element), parameter);
+		auto load  = new StorageLoad < 5, HeatTransferGPC::PYRAMID5, ndim, edim, etype, HeatTransferDataDescriptor< 5, HeatTransferGPC::PYRAMID5, ndim, edim, etype>, Parameter>(interval, store, parameter);
+		ops.push_back(store);
+		ops.push_back(load);
+	} break;
+	case static_cast<int>(Element::CODE::PYRAMID13): {
+		typename HeatTransferDataDescriptor<13, HeatTransferGPC::PYRAMID13, ndim, edim, etype>::Element element;
+		auto store = new StorageStore<13, HeatTransferGPC::PYRAMID13, ndim, edim, etype, HeatTransferDataDescriptor<13, HeatTransferGPC::PYRAMID13, ndim, edim, etype>, Parameter>(interval, ops.back(), elements, size(element), parameter);
+		auto load  = new StorageLoad <13, HeatTransferGPC::PYRAMID13, ndim, edim, etype, HeatTransferDataDescriptor<13, HeatTransferGPC::PYRAMID13, ndim, edim, etype>, Parameter>(interval, store, parameter);
+		ops.push_back(store);
+		ops.push_back(load);
+	} break;
+	case static_cast<int>(Element::CODE::PRISMA6): {
+		typename HeatTransferDataDescriptor< 6, HeatTransferGPC::PRISMA6, ndim, edim, etype>::Element element;
+		auto store = new StorageStore< 6, HeatTransferGPC::PRISMA6, ndim, edim, etype, HeatTransferDataDescriptor< 6, HeatTransferGPC::PRISMA6, ndim, edim, etype>, Parameter>(interval, ops.back(), elements, size(element), parameter);
+		auto load  = new StorageLoad < 6, HeatTransferGPC::PRISMA6, ndim, edim, etype, HeatTransferDataDescriptor< 6, HeatTransferGPC::PRISMA6, ndim, edim, etype>, Parameter>(interval, store, parameter);
+		ops.push_back(store);
+		ops.push_back(load);
+	} break;
+	case static_cast<int>(Element::CODE::PRISMA15): {
+		typename HeatTransferDataDescriptor<15, HeatTransferGPC::PRISMA15, ndim, edim, etype>::Element element;
+		auto store = new StorageStore<15, HeatTransferGPC::PRISMA15, ndim, edim, etype, HeatTransferDataDescriptor<15, HeatTransferGPC::PRISMA15, ndim, edim, etype>, Parameter>(interval, ops.back(), elements, size(element), parameter);
+		auto load  = new StorageLoad <15, HeatTransferGPC::PRISMA15, ndim, edim, etype, HeatTransferDataDescriptor<15, HeatTransferGPC::PRISMA15, ndim, edim, etype>, Parameter>(interval, store, parameter);
+		ops.push_back(store);
+		ops.push_back(load);
+	} break;
+	case static_cast<int>(Element::CODE::HEXA8): {
+		typename HeatTransferDataDescriptor< 8, HeatTransferGPC::HEXA8, ndim, edim, etype>::Element element;
+		auto store = new StorageStore< 8, HeatTransferGPC::HEXA8, ndim, edim, etype, HeatTransferDataDescriptor< 8, HeatTransferGPC::HEXA8, ndim, edim, etype>, Parameter>(interval, ops.back(), elements, size(element), parameter);
+		auto load  = new StorageLoad < 8, HeatTransferGPC::HEXA8, ndim, edim, etype, HeatTransferDataDescriptor< 8, HeatTransferGPC::HEXA8, ndim, edim, etype>, Parameter>(interval, store, parameter);
+		ops.push_back(store);
+		ops.push_back(load);
+	} break;
+	case static_cast<int>(Element::CODE::HEXA20): {
+		typename HeatTransferDataDescriptor<20, HeatTransferGPC::HEXA20, ndim, edim, etype>::Element element;
+		auto store = new StorageStore<20, HeatTransferGPC::HEXA20, ndim, edim, etype, HeatTransferDataDescriptor<20, HeatTransferGPC::HEXA20, ndim, edim, etype>, Parameter>(interval, ops.back(), elements, size(element), parameter);
+		auto load  = new StorageLoad <20, HeatTransferGPC::HEXA20, ndim, edim, etype, HeatTransferDataDescriptor<20, HeatTransferGPC::HEXA20, ndim, edim, etype>, Parameter>(interval, store, parameter);
+		ops.push_back(store);
+		ops.push_back(load);
+	} break;
 	}
 }
 

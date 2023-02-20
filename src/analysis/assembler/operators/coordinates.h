@@ -17,7 +17,7 @@ struct CopyCoordinates: ActionOperator {
 	: procNodes(procNodes)
 	{
 		isconst = false;
-		action = Action::ASSEMBLE | Action::SOLUTION;
+		action = Action::ASSEMBLE | Action::REASSEMBLE | Action::SOLUTION;
 	}
 
 	CopyCoordinates(size_t region, size_t interval, serializededata<esint, esint>::const_iterator procNodes)

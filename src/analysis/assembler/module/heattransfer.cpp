@@ -426,7 +426,8 @@ void HeatTransfer::connect(SteadyState &scheme)
 void HeatTransfer::evaluate(SteadyState &scheme)
 {
 	reset(scheme.K, scheme.f, scheme.dirichlet);
-	eslog::info("       = SIMD LOOP                                                      %12.8f s = \n", assemble(ActionOperator::Action::ASSEMBLE));
+	eslog::info("       = SIMD LOOP ASSEMBLE                                             %12.8f s = \n", assemble(ActionOperator::Action::ASSEMBLE));
+	eslog::info("       = SIMD LOOP REASSEMBLE                                           %12.8f s = \n", assemble(ActionOperator::Action::REASSEMBLE));
 	eslog::info("       = FILL MATRICES                                                  %12.8f s = \n", assemble(ActionOperator::Action::FILL));
 	update(scheme.K, scheme.f);
 }

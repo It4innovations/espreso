@@ -175,7 +175,7 @@ struct VectorSetter: ActionOperator, Physics {
 			}
 		}
 		isconst = false;
-		action = ActionOperator::Action::ASSEMBLE;
+		action = ActionOperator::Action::ASSEMBLE | Action::REASSEMBLE;
 	}
 
 	size_t dofs, dim;

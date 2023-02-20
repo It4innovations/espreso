@@ -16,7 +16,7 @@ struct Integration<nodes, gps, 2, 2, etype, Physics>: ActionOperator, Physics {
 	Integration(size_t interval)
 	{
 		isconst = false;
-		action = Action::ASSEMBLE | Action::SOLUTION;
+		action = Action::ASSEMBLE | Action::REASSEMBLE | Action::SOLUTION;
 	}
 
 	void simd(typename Physics::Element &element)
@@ -228,7 +228,7 @@ struct IntegrationWithNormal<nodes, gps, 3, 2, etype, Physics>: ActionOperator, 
 	IntegrationWithNormal(size_t region, size_t interval)
 	{
 		isconst = false;
-		action = Action::ASSEMBLE | Action::SOLUTION;
+		action = Action::ASSEMBLE | Action::REASSEMBLE | Action::SOLUTION;
 	}
 
 	void simd(typename Physics::Element &element)
@@ -303,7 +303,7 @@ struct IntegrationWithNormal<nodes, gps, 2, 1, etype, Physics>: ActionOperator, 
 	IntegrationWithNormal(size_t region, size_t interval)
 	{
 		isconst = false;
-		action = Action::ASSEMBLE | Action::SOLUTION;
+		action = Action::ASSEMBLE | Action::REASSEMBLE | Action::SOLUTION;
 	}
 
 	void simd(typename Physics::Element &element)
@@ -335,13 +335,13 @@ struct Volume: ActionOperator, Physics {
 	Volume(size_t interval, std::vector<double> &volume): volume(volume[interval]), local(0)
 	{
 		isconst = false;
-		action = Action::ASSEMBLE;
+		action = Action::ASSEMBLE | Action::REASSEMBLE;
 	}
 
 	Volume(size_t region, size_t interval, std::vector<double> &volume): volume(volume[region]), local(0)
 	{
 		isconst = false;
-		action = Action::ASSEMBLE;
+		action = Action::ASSEMBLE | Action::REASSEMBLE;
 	}
 
 	~Volume()

@@ -93,6 +93,9 @@ void HeatTransfer::generateConductivity()
 					elementOps[interval].back()->isconst &= isconst;
 					break;
 				}
+				if (settings.reassembling_optimization) {
+					addTypedElementStorage2D<HeatTransferElementType::SYMMETRIC_GENERAL>(elementOps[interval], interval, [] (auto &element) { return sizeof(element.cossin); }, [] (auto &element) { return element.cossin; });
+				}
 				isconst &= elementOps[interval].back()->isconst;
 				elementOps[interval].push_back(generateElementTypedOperator2D<HeatTransferCoordinateSystemApply, HeatTransferElementType::SYMMETRIC_GENERAL>(interval));
 				elementOps[interval].back()->isconst &= isconst;
@@ -235,6 +238,9 @@ void HeatTransfer::generateConductivity()
 					elementOps[interval].push_back(generateElementTypedOperator3D<HeatTransferCoordinateSystemSpherical, HeatTransferElementType::SYMMETRIC_GENERAL>(interval));
 					elementOps[interval].back()->isconst &= isconst;
 					break;
+				}
+				if (settings.reassembling_optimization) {
+					addTypedElementStorage3D<HeatTransferElementType::SYMMETRIC_GENERAL>(elementOps[interval], interval, [] (auto &element) { return sizeof(element.cossin); }, [] (auto &element) { return element.cossin; });
 				}
 				isconst &= elementOps[interval].back()->isconst;
 				elementOps[interval].push_back(generateElementTypedOperator3D<HeatTransferCoordinateSystemApply, HeatTransferElementType::SYMMETRIC_GENERAL>(interval));

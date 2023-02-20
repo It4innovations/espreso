@@ -12,7 +12,7 @@ namespace espreso {
 struct ElasticityCoordinateSystem: ActionOperator {
 	ElasticityCoordinateSystem(size_t interval)
 	{
-		action = Action::ASSEMBLE;
+		action = Action::ASSEMBLE | Action::REASSEMBLE;
 	}
 };
 

@@ -14,7 +14,7 @@ struct HeatSource: ActionOperator, Physics {
 	: rhs(rhs, interval)
 	{
 		isconst = false;
-		action = Action::ASSEMBLE;
+		action = Action::ASSEMBLE | Action::REASSEMBLE;
 	}
 
 	void move(int n)
@@ -45,7 +45,7 @@ struct BoundaryHeat: ActionOperator, Physics {
 	: rhs(rhs, interval), area(1.0 / info::mesh->boundaryRegions[region]->area)
 	{
 		isconst = false;
-		action = Action::ASSEMBLE;
+		action = Action::ASSEMBLE | Action::REASSEMBLE;
 	}
 
 	void move(int n)

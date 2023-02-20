@@ -11,7 +11,7 @@ namespace espreso {
 
 template <class Setter>
 struct ExternalExpression: ActionOperator {
-	ExternalExpression(int interval, Evaluator *evaluator, const Setter &setter)
+	ExternalExpression(size_t interval, Evaluator *evaluator, const Setter &setter)
 	: evaluator(evaluator),
 	  params(evaluator->params),
 	  setter(setter)
@@ -20,7 +20,7 @@ struct ExternalExpression: ActionOperator {
 			params.general[i].variable->set(interval, params.general[i]);
 		}
 		isconst = evaluator->variables.size() == 0;
-		action = Action::ASSEMBLE | Action::SOLUTION;
+		action = Action::ASSEMBLE | Action::REASSEMBLE | Action::SOLUTION;
 	}
 
 	Evaluator *evaluator;

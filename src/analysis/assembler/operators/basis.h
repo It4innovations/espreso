@@ -803,7 +803,7 @@ struct Basis: ActionOperator, Physics {
 
 	Basis()
 	{
-		action = Action::ASSEMBLE | Action::SOLUTION;
+		action = Action::ASSEMBLE | Action::REASSEMBLE | Action::SOLUTION;
 	}
 
 	void simd(typename Physics::Element &element)

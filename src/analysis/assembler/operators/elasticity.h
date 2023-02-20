@@ -14,7 +14,7 @@ struct ElasticityIsotropicPlaneStrain: ActionOperator, Physics {
 
 	ElasticityIsotropicPlaneStrain(size_t interval)
 	{
-		action = Action::ASSEMBLE;
+		action = Action::ASSEMBLE | Action::REASSEMBLE;
 	}
 
 	void simd(typename Physics::Element &element)

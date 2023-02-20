@@ -13,7 +13,7 @@ struct HeatTransferStiffnessBase: public ActionOperator {
 	: stiffness(stiffness, interval)
 	{
 		isconst = false;
-		action = Action::ASSEMBLE;
+		action = Action::ASSEMBLE | Action::REASSEMBLE;
 	}
 
 	void move(int n)
