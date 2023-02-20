@@ -54,70 +54,70 @@ public:
 	AcousticConfiguration &settings;
 	AcousticLoadStepConfiguration &configuration;
 
-	struct ParametersAcousticPressure {
-		ElementParameter<enodes> node;
-		ElementGPsExternalParameter<egps> gp;
+//	struct ParametersAcousticPressure {
+//		ElementParameter<enodes> node;
+//		ElementGPsExternalParameter<egps> gp;
+//
+//		struct {
+//			ElementGPsExternalParameter<enodes> node;
+//			ElementGPsExternalParameter<egps> gp;
+//		} initial;
+//	} acoustic_pressure;
+//
+//	struct {
+//		ElementParameter<egps> weight;
+//		ElementParameter<enodes * egps> N;
+//		ElementParameter<edim * enodes * egps> dN;
+//
+//		ElementParameter<egps> jacobiDeterminant;
+//		ElementParameter<ndim * ndim * egps> jacobiInversion;
+//		ElementParameter<edim * enodes * egps> dND;
+//
+//		struct {
+//			BoundaryParameter<egps> weight;
+//			BoundaryParameter<enodes * egps> N;
+//			BoundaryParameter<edim * enodes * egps> dN;
+//
+//			BoundaryParameter<egps> jacobian;
+//		} boundary;
+//	} integration;
+//
+//	struct {
+//		ElementParameter<ndim * enodes> node;
+//		ElementParameter<ndim * egps> gp;
+//		struct {
+//			BoundaryParameter<ndim * enodes> node;
+//			BoundaryParameter<ndim * egps> gp;
+//		} boundary;
+//	} coords;
 
-		struct {
-			ElementGPsExternalParameter<enodes> node;
-			ElementGPsExternalParameter<egps> gp;
-		} initial;
-	} acoustic_pressure;
+//	struct {
+//		BoundaryExternalParameter<enodes> node;
+//	} pressure;
+//
+//	struct {
+//		BoundaryExternalParameter<egps> gp;
+//	} normalAcceleration, impedance, q, proj_acceleration;
+//
+//	struct {
+//		BoundaryExternalParameter<ndim * egps> gp;
+//	} acceleration, normals;
+//
+//	struct {
+//		ElementGPsExternalParameter<egps> density, speed_of_sound;
+//	} material;
+//
+//	struct {
+//		BoundaryExternalParameter<enodes> node;
+//	} pointSource;
 
-	struct {
-		ElementParameter<egps> weight;
-		ElementParameter<enodes * egps> N;
-		ElementParameter<edim * enodes * egps> dN;
-
-		ElementParameter<egps> jacobiDeterminant;
-		ElementParameter<ndim * ndim * egps> jacobiInversion;
-		ElementParameter<edim * enodes * egps> dND;
-
-		struct {
-			BoundaryParameter<egps> weight;
-			BoundaryParameter<enodes * egps> N;
-			BoundaryParameter<edim * enodes * egps> dN;
-
-			BoundaryParameter<egps> jacobian;
-		} boundary;
-	} integration;
-
-	struct {
-		ElementParameter<ndim * enodes> node;
-		ElementParameter<ndim * egps> gp;
-		struct {
-			BoundaryParameter<ndim * enodes> node;
-			BoundaryParameter<ndim * egps> gp;
-		} boundary;
-	} coords;
-
-	struct {
-		BoundaryExternalParameter<enodes> node;
-	} pressure;
-
-	struct {
-		BoundaryExternalParameter<egps> gp;
-	} normalAcceleration, impedance, q, proj_acceleration;
-
-	struct {
-		BoundaryExternalParameter<ndim * egps> gp;
-	} acceleration, normals;
-
-	struct {
-		ElementGPsExternalParameter<egps> density, speed_of_sound;
-	} material;
-
-	struct {
-		BoundaryExternalParameter<enodes> node;
-	} pointSource;
-
-	struct {
-		ElementGPsExternalParameter<egps> gp;
-	} monopoleSource;
-
-	struct {
-		ElementGPsExternalParameter<ndim * egps> gp;
-	} dipoleSource;
+//	struct {
+//		ElementGPsExternalParameter<egps> gp;
+//	} monopoleSource;
+//
+//	struct {
+//		ElementGPsExternalParameter<ndim * egps> gp;
+//	} dipoleSource;
 
 	struct {
 		ElementParameter<enodes * enodes> stiffness;

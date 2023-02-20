@@ -2,17 +2,12 @@
 #ifndef SRC_PHYSICS_ASSEMBLER_PARAMETER_H_
 #define SRC_PHYSICS_ASSEMBLER_PARAMETER_H_
 
-#include "basis/containers/point.h"
 #include "basis/containers/serializededata.h"
-#include "mesh/store/nameddata.h"
 
 #include <vector>
 #include <algorithm>
 
 namespace espreso {
-
-class Evaluator;
-class ECFExpression;
 
 enum ElementSizeMask: int {
 	ndim   = 1 << 6,
@@ -35,13 +30,6 @@ struct PerElementSize {
 	bool operator!=(const PerElementSize &other) const { return !(*this == other); }
 };
 
-template <class Settings>
-struct ParameterSettings {
-	std::vector<const Settings*> settings;
-
-	ParameterSettings(int intervals): settings(intervals, NULL) {}
-};
-
 struct ParameterData {
 	PerElementSize size;
 	serializededata<esint, double>* data;
@@ -49,29 +37,14 @@ struct ParameterData {
 	ParameterData(PerElementSize mask, int intervals);
 
 	void setConstness(bool constness);
-	void setUpdate(int value);
 
 	virtual int increment(int interval) const =0;
 	virtual int increment(PerElementSize size, int interval) const =0;
 	virtual void resize(double init = .0) =0;
 	virtual ~ParameterData();
 
-	std::string name;
-	std::vector<int> isconst, update;
+	std::vector<int> isconst;
 };
-
-struct ExternalElementValue {
-	int dimension;
-	std::vector<Evaluator*> evaluator;
-
-	ExternalElementValue(ParameterData &parameter);
-
-protected:
-	ExternalElementValue(int dimension): dimension(dimension) {}
-};
-
-struct ExternalElementGPsValue: public ExternalElementValue { using ExternalElementValue::ExternalElementValue; };
-struct ExternalElementNodesValue: public ExternalElementValue { using ExternalElementValue::ExternalElementValue; };
 
 struct ElementParameterData: public ParameterData {
 	ElementParameterData(PerElementSize mask);
@@ -85,36 +58,6 @@ struct ElementParameterData: public ParameterData {
 template<int mask>
 struct ElementParameter: public ElementParameterData {
 	ElementParameter(): ElementParameterData(static_cast<ElementSizeMask>(mask)) { }
-};
-
-template<int mask>
-struct ElementGPsExternalParameter: public ElementParameter<mask> {
-	ExternalElementGPsValue externalValues;
-
-	ElementGPsExternalParameter(): externalValues(*this)
-	{
-		std::fill(this->update.begin(), this->update.end(), -1);
-	}
-
-	bool isSet()
-	{
-		return std::any_of(this->update.cbegin(), this->update.cend(), [] (int i) { return i != -1; });
-	}
-
-	bool isSet(size_t interval)
-	{
-		return this->update[interval] != -1;
-	}
-};
-
-template<int mask>
-struct ElementNodesExternalParameter: public ElementParameter<mask> {
-	ExternalElementNodesValue externalValues;
-
-	ElementNodesExternalParameter(): externalValues(*this)
-	{
-		std::fill(this->update.begin(), this->update.end(), false);
-	}
 };
 
 struct BoundaryParameterData: public ParameterData {
@@ -148,46 +91,11 @@ struct BoundaryParameterPack {
 	PerElementSize size;
 };
 
-struct ExternalBoundaryValue: public ExternalElementValue { // the same as ExternalElementValue but array is array of regions
-	ExternalBoundaryValue(BoundaryParameterPack &parameter);
-};
-
 template<int mask>
 struct BoundaryParameter: public BoundaryParameterPack {
 	BoundaryParameter(): BoundaryParameterPack(static_cast<ElementSizeMask>(mask)) { }
 };
 
-template<int mask>
-struct BoundaryExternalParameter: public BoundaryParameter<mask> {
-	ExternalBoundaryValue externalValues;
-
-	BoundaryExternalParameter(): externalValues(*this) { }
-};
-
-template <class Settings>
-struct BoundaryParameterSettings: public ParameterSettings<Settings> {
-	BoundaryParameterSettings(int region): ParameterSettings<Settings>(1), region(region) {}
-
-	int region;
-};
-
-template <class Settings>
-struct BoundarySettingsPack {
-	std::vector<BoundaryParameterSettings<Settings> > regions;
-
-	BoundarySettingsPack()
-	{
-		regions.reserve(BoundaryParameterData::regions());
-		for (int r = 0; r < BoundaryParameterData::regions(); ++r) {
-			regions.emplace_back(BoundaryParameterSettings<Settings>(r));
-		}
-	}
-};
-
-template<class Settings>
-struct BoundarySettings: public BoundarySettingsPack<Settings> {
-	BoundarySettings(): BoundarySettingsPack<Settings>() { }
-};
 
 struct InputParameterIterator {
 	const int inc;
