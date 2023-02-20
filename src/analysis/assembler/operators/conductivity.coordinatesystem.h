@@ -9,22 +9,22 @@
 
 namespace espreso {
 
-struct CoordinateSystem: ActionOperator {
-	CoordinateSystem(size_t interval)
+struct HeatTransferCoordinateSystem: ActionOperator {
+	HeatTransferCoordinateSystem(size_t interval)
 	{
 		action = Action::ASSEMBLE | Action::SOLUTION;
 	}
 };
 
 
-template <size_t nodes, size_t gps, size_t ndim, size_t edim, size_t etype, class Physics> struct CoordinateSystemCartesian;
-template <size_t nodes, size_t gps, size_t ndim, size_t edim, size_t etype, class Physics> struct CoordinateSystemCylindric;
-template <size_t nodes, size_t gps, size_t ndim, size_t edim, size_t etype, class Physics> struct CoordinateSystemSpherical;
-template <size_t nodes, size_t gps, size_t ndim, size_t edim, size_t etype, class Physics> struct CoordinateSystemApply;
+template <size_t nodes, size_t gps, size_t ndim, size_t edim, size_t etype, class Physics> struct HeatTransferCoordinateSystemCartesian;
+template <size_t nodes, size_t gps, size_t ndim, size_t edim, size_t etype, class Physics> struct HeatTransferCoordinateSystemCylindric;
+template <size_t nodes, size_t gps, size_t ndim, size_t edim, size_t etype, class Physics> struct HeatTransferCoordinateSystemSpherical;
+template <size_t nodes, size_t gps, size_t ndim, size_t edim, size_t etype, class Physics> struct HeatTransferCoordinateSystemApply;
 
 template <size_t nodes, size_t gps, size_t edim, size_t etype, class Physics>
-struct CoordinateSystemCartesian<nodes, gps, 2, edim, etype, Physics>: CoordinateSystem, Physics {
-	using CoordinateSystem::CoordinateSystem;
+struct HeatTransferCoordinateSystemCartesian<nodes, gps, 2, edim, etype, Physics>: HeatTransferCoordinateSystem, Physics {
+	using HeatTransferCoordinateSystem::HeatTransferCoordinateSystem;
 
 	constexpr static double straightAngleRec = 1.0 / 180;
 
@@ -41,8 +41,8 @@ struct CoordinateSystemCartesian<nodes, gps, 2, edim, etype, Physics>: Coordinat
 };
 
 template <size_t nodes, size_t gps, size_t edim, size_t etype, class Physics>
-struct CoordinateSystemCartesian<nodes, gps, 3, edim, etype, Physics>: CoordinateSystem, Physics {
-	using CoordinateSystem::CoordinateSystem;
+struct HeatTransferCoordinateSystemCartesian<nodes, gps, 3, edim, etype, Physics>: HeatTransferCoordinateSystem, Physics {
+	using HeatTransferCoordinateSystem::HeatTransferCoordinateSystem;
 
 	constexpr static double straightAngleRec = 1.0 / 180;
 
@@ -65,9 +65,9 @@ struct CoordinateSystemCartesian<nodes, gps, 3, edim, etype, Physics>: Coordinat
 };
 
 template <size_t nodes, size_t gps, size_t edim, size_t etype, class Physics>
-struct CoordinateSystemCylindric<nodes, gps, 2, edim, etype, Physics>: CoordinateSystem, Physics {
+struct HeatTransferCoordinateSystemCylindric<nodes, gps, 2, edim, etype, Physics>: HeatTransferCoordinateSystem, Physics {
 
-	CoordinateSystemCylindric(size_t interval): CoordinateSystem(interval)
+	HeatTransferCoordinateSystemCylindric(size_t interval): HeatTransferCoordinateSystem(interval)
 	{
 		isconst = false;
 	}
@@ -91,9 +91,9 @@ struct CoordinateSystemCylindric<nodes, gps, 2, edim, etype, Physics>: Coordinat
 };
 
 template <size_t nodes, size_t gps, size_t edim, size_t etype, class Physics>
-struct CoordinateSystemCylindric<nodes, gps, 3, edim, etype, Physics>: CoordinateSystem, Physics {
+struct HeatTransferCoordinateSystemCylindric<nodes, gps, 3, edim, etype, Physics>: HeatTransferCoordinateSystem, Physics {
 
-	CoordinateSystemCylindric(size_t interval): CoordinateSystem(interval)
+	HeatTransferCoordinateSystemCylindric(size_t interval): HeatTransferCoordinateSystem(interval)
 	{
 		isconst = false;
 	}
@@ -121,9 +121,9 @@ struct CoordinateSystemCylindric<nodes, gps, 3, edim, etype, Physics>: Coordinat
 };
 
 template <size_t nodes, size_t gps, size_t edim, size_t etype, class Physics>
-struct CoordinateSystemSpherical<nodes, gps, 3, edim, etype, Physics>: CoordinateSystem, Physics {
+struct HeatTransferCoordinateSystemSpherical<nodes, gps, 3, edim, etype, Physics>: HeatTransferCoordinateSystem, Physics {
 
-	CoordinateSystemSpherical(size_t interval): CoordinateSystem(interval)
+	HeatTransferCoordinateSystemSpherical(size_t interval): HeatTransferCoordinateSystem(interval)
 	{
 		isconst = false;
 	}
@@ -150,8 +150,8 @@ struct CoordinateSystemSpherical<nodes, gps, 3, edim, etype, Physics>: Coordinat
 };
 
 template <size_t nodes, size_t gps, size_t edim, size_t etype, class Physics>
-struct CoordinateSystemApply<nodes, gps, 2, edim, etype, Physics>: CoordinateSystem, Physics {
-	using CoordinateSystem::CoordinateSystem;
+struct HeatTransferCoordinateSystemApply<nodes, gps, 2, edim, etype, Physics>: HeatTransferCoordinateSystem, Physics {
+	using HeatTransferCoordinateSystem::HeatTransferCoordinateSystem;
 
 	// |cos , -sin| |c[0] , c[2]| | cos , sin|
 	// |sin ,  cos| |c[3] , c[1]| |-sin , cos|
@@ -177,8 +177,8 @@ struct CoordinateSystemApply<nodes, gps, 2, edim, etype, Physics>: CoordinateSys
 };
 
 template <size_t nodes, size_t gps, size_t edim, size_t etype, class Physics>
-struct CoordinateSystemApply<nodes, gps, 3, edim, etype, Physics>: CoordinateSystem, Physics {
-	using CoordinateSystem::CoordinateSystem;
+struct HeatTransferCoordinateSystemApply<nodes, gps, 3, edim, etype, Physics>: HeatTransferCoordinateSystem, Physics {
+	using HeatTransferCoordinateSystem::HeatTransferCoordinateSystem;
 
 	void simd(typename Physics::Element &element)
 	{

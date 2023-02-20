@@ -96,6 +96,43 @@ void StructuralMechanics::analyze()
 			eslog::info(" --- %s ---%*s \n", info::mesh->materials[i]->name.c_str(), 84 - info::mesh->materials[i]->name.size(), "");
 			MaterialConfiguration *mat = info::mesh->materials[i];
 
+			switch (mat->coordinate_system.type) {
+			case CoordinateSystemConfiguration::TYPE::CARTESIAN:
+				eslog::info("    COORDINATE SYSTEM:                                                              CARTESIAN \n");
+				if (info::mesh->dimension == 2) {
+					correct &= checkExpression("ROTATION.Z", mat->coordinate_system.rotation.z);
+				}
+				if (info::mesh->dimension == 3) {
+					correct &= checkExpression("ROTATION.X", mat->coordinate_system.rotation.x);
+					correct &= checkExpression("ROTATION.Y", mat->coordinate_system.rotation.y);
+					correct &= checkExpression("ROTATION.Z", mat->coordinate_system.rotation.z);
+				}
+				break;
+			case CoordinateSystemConfiguration::TYPE::SPHERICAL:
+				if (info::mesh->dimension == 2) {
+					eslog::error("HEAT TRANSFER 2D does not support SPHERICAL coordinate system.\n");
+				}
+				if (info::mesh->dimension == 3) {
+					eslog::info("    COORDINATE SYSTEM:                                                              SPHERICAL \n");
+					correct &= checkExpression("CENTER.X", mat->coordinate_system.center.x);
+					correct &= checkExpression("CENTER.Y", mat->coordinate_system.center.y);
+					correct &= checkExpression("CENTER.Z", mat->coordinate_system.center.z);
+				}
+				break;
+			case CoordinateSystemConfiguration::TYPE::CYLINDRICAL:
+				eslog::info("    COORDINATE SYSTEM:                                                            CYLINDRICAL \n");
+				if (info::mesh->dimension == 2) {
+					correct &= checkExpression("CENTER.X", mat->coordinate_system.center.x);
+					correct &= checkExpression("CENTER.Y", mat->coordinate_system.center.y);
+				}
+				if (info::mesh->dimension == 3) {
+					correct &= checkExpression("CENTER.X", mat->coordinate_system.center.x);
+					correct &= checkExpression("CENTER.Y", mat->coordinate_system.center.y);
+				}
+				break;
+			}
+			eslog::info("                                                                                               \n");
+
 			switch (mat->material_model) {
 			case MaterialConfiguration::MATERIAL_MODEL::LINEAR_ELASTIC:
 				eslog::info("                                                                               LINEAR ELASTIC \n");
@@ -131,6 +168,15 @@ void StructuralMechanics::analyze()
 					break;
 				case LinearElasticPropertiesConfiguration::MODEL::ORTHOTROPIC:
 					eslog::info("                MODEL:                                                            ORTHOTROPIC \n");
+					correct &= checkExpression("EX", mat->linear_elastic_properties.young_modulus.get(0, 0));
+					correct &= checkExpression("EY", mat->linear_elastic_properties.young_modulus.get(1, 1));
+					correct &= checkExpression("EZ", mat->linear_elastic_properties.young_modulus.get(2, 2));
+					correct &= checkExpression("MIXY", mat->linear_elastic_properties.poisson_ratio.get(0, 0));
+					correct &= checkExpression("MIXZ", mat->linear_elastic_properties.poisson_ratio.get(1, 1));
+					correct &= checkExpression("MIYZ", mat->linear_elastic_properties.poisson_ratio.get(2, 2));
+					correct &= checkExpression("GXY", mat->linear_elastic_properties.shear_modulus.get(0, 0));
+					correct &= checkExpression("GXZ", mat->linear_elastic_properties.shear_modulus.get(1, 1));
+					correct &= checkExpression("GYZ", mat->linear_elastic_properties.shear_modulus.get(2, 2));
 					break;
 				case LinearElasticPropertiesConfiguration::MODEL::ANISOTROPIC:
 					eslog::info("                MODEL:                                                            ANISOTROPIC \n");

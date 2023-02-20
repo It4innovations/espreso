@@ -1,0 +1,146 @@
+# ESPRESO Configuration File
+
+DEFAULT_ARGS {
+  0    HEXA8;
+
+  1        2;
+  2        2;
+  3        1;
+
+  4        2;
+  5        2;
+  6        2;
+
+  7        4;
+  8        4;
+  9        8;
+
+  10 MKLPDSS;
+}
+
+INPUT_TYPE              GENERATOR;
+PHYSICS   STRUCTURAL_MECHANICS_3D;
+
+GENERATOR {
+  SHAPE   GRID;
+
+  GRID {
+    START_X                     0;
+    START_Y                     0;
+    START_Z                     0;
+
+    LENGTH_X                    1;
+    LENGTH_Y                    1;
+    LENGTH_Z                    9;
+
+    PROJECTION_X      10 * (X + 1) * cos(Y * PI / 2);
+    PROJECTION_Y      10 * (X + 1) * sin(Y * PI / 2);
+
+    NODES {
+      X0   <0 , 0> <0 , 1> <0 , 9>;
+      Y0   <0 , 1> <0 , 0> <0 , 9>;
+      Y1   <0 , 1> <1 , 1> <0 , 9>;
+    }
+
+    ELEMENT_TYPE          [ARG0];
+
+    CLUSTERS_X            [ARG1];
+    CLUSTERS_Y            [ARG2];
+    CLUSTERS_Z            [ARG3];
+
+    DOMAINS_X             [ARG4];
+    DOMAINS_Y             [ARG5];
+    DOMAINS_Z             [ARG6];
+
+    ELEMENTS_X            [ARG7];
+    ELEMENTS_Y            [ARG8];
+    ELEMENTS_Z            [ARG9];
+  }
+}
+
+STRUCTURAL_MECHANICS_3D {
+  LOAD_STEPS   1;
+
+  MATERIALS {
+    1 {
+      COORDINATE_SYSTEM {
+        TYPE        CYLINDRICAL;
+        CENTER     { X 0; Y 0; }
+      }
+
+      DENS   7850;
+      CP        1;
+
+      LINEAR_ELASTIC_PROPERTIES {
+        MODEL   ORTHOTROPIC;
+
+        EX         2.0E10;
+        EY         7.0E10;
+        EZ         1.0E10;
+
+        MIXY          0.3;
+        MIXZ          0.3;
+        MIYZ          0.3;
+
+        GXY        8.1E10;
+        GXZ        8.1E10;
+        GYZ        8.1E10;
+      }
+    }
+  }
+
+  MATERIAL_SET {
+    ALL_ELEMENTS   1;
+  }
+
+  LOAD_STEPS_SETTINGS {
+    1 {
+      DURATION_TIME     1;
+      TYPE   STEADY_STATE;
+      MODE         LINEAR;
+      SOLVER      [ARG10];
+
+      FETI {
+        METHOD          TOTAL_FETI;
+        PRECONDITIONER      LUMPED;
+        ITERATIVE_SOLVER       PCG;
+        REGULARIZATION   ALGEBRAIC;
+      }
+
+      DISPLACEMENT {
+        X0   { X 0; Y 0; Z 0; }
+        Y0   { Y 0; }
+        Y1   { X 0; } 
+      }
+
+      ANGULAR_VELOCITY {
+        ALL_ELEMENTS   { Z 1000; };
+      }
+    }
+  }
+}
+
+OUTPUT {
+  RESULTS_STORE_FREQUENCY    EVERY_SUBSTEP;
+  MONITORS_STORE_FREQUENCY   EVERY_SUBSTEP;
+
+  MONITORING {
+    1 {
+      REGION        ALL_NODES;
+      STATISTICS          MIN;
+      PROPERTY   DISPLACEMENT;
+    }
+
+    2 {
+      REGION        ALL_NODES;
+      STATISTICS          MAX;
+      PROPERTY   DISPLACEMENT;
+    }
+
+    3 {
+      REGION                 X0;
+      STATISTICS            MAX;
+      PROPERTY     DISPLACEMENT;
+    }
+  }
+}

@@ -79,7 +79,7 @@ void HeatTransfer::generateConductivity()
 					elementOps[interval].push_back(generateTypedExpression2D<ExternalGPsExpression, HeatTransferElementType::SYMMETRIC_GENERAL>(interval, mat->coordinate_system.rotation.z.evaluator,
 								[] (auto &element, const size_t &gp, const size_t &s, const double &value) { element.ecf.center[gp][0][s] = value; }));
 					isconst &= elementOps[interval].back()->isconst;
-					elementOps[interval].push_back(generateElementTypedOperator2D<CoordinateSystemCartesian, HeatTransferElementType::SYMMETRIC_GENERAL>(interval));
+					elementOps[interval].push_back(generateElementTypedOperator2D<HeatTransferCoordinateSystemCartesian, HeatTransferElementType::SYMMETRIC_GENERAL>(interval));
 					elementOps[interval].back()->isconst &= isconst;
 					break;
 				case CoordinateSystemConfiguration::TYPE::CYLINDRICAL:
@@ -89,12 +89,12 @@ void HeatTransfer::generateConductivity()
 					elementOps[interval].push_back(generateTypedExpression2D<ExternalGPsExpression, HeatTransferElementType::SYMMETRIC_GENERAL>(interval, mat->coordinate_system.center.y.evaluator,
 								[] (auto &element, const size_t &gp, const size_t &s, const double &value) { element.ecf.center[gp][1][s] = value; }));
 					isconst &= elementOps[interval].back()->isconst;
-					elementOps[interval].push_back(generateElementTypedOperator2D<CoordinateSystemCylindric, HeatTransferElementType::SYMMETRIC_GENERAL>(interval));
+					elementOps[interval].push_back(generateElementTypedOperator2D<HeatTransferCoordinateSystemCylindric, HeatTransferElementType::SYMMETRIC_GENERAL>(interval));
 					elementOps[interval].back()->isconst &= isconst;
 					break;
 				}
 				isconst &= elementOps[interval].back()->isconst;
-				elementOps[interval].push_back(generateElementTypedOperator2D<CoordinateSystemApply, HeatTransferElementType::SYMMETRIC_GENERAL>(interval));
+				elementOps[interval].push_back(generateElementTypedOperator2D<HeatTransferCoordinateSystemApply, HeatTransferElementType::SYMMETRIC_GENERAL>(interval));
 				elementOps[interval].back()->isconst &= isconst;
 			} else {
 				switch (mat->thermal_conductivity.model) {
@@ -209,7 +209,7 @@ void HeatTransfer::generateConductivity()
 					elementOps[interval].push_back(generateTypedExpression3D<ExternalGPsExpression, HeatTransferElementType::SYMMETRIC_GENERAL>(interval, mat->coordinate_system.rotation.z.evaluator,
 								[] (auto &element, const size_t &gp, const size_t &s, const double &value) { element.ecf.center[gp][2][s] = value; }));
 					isconst &= elementOps[interval].back()->isconst;
-					elementOps[interval].push_back(generateElementTypedOperator3D<CoordinateSystemCartesian, HeatTransferElementType::SYMMETRIC_GENERAL>(interval));
+					elementOps[interval].push_back(generateElementTypedOperator3D<HeatTransferCoordinateSystemCartesian, HeatTransferElementType::SYMMETRIC_GENERAL>(interval));
 					elementOps[interval].back()->isconst &= isconst;
 					break;
 				case CoordinateSystemConfiguration::TYPE::CYLINDRICAL:
@@ -219,7 +219,7 @@ void HeatTransfer::generateConductivity()
 					elementOps[interval].push_back(generateTypedExpression3D<ExternalGPsExpression, HeatTransferElementType::SYMMETRIC_GENERAL>(interval, mat->coordinate_system.center.y.evaluator,
 								[] (auto &element, const size_t &gp, const size_t &s, const double &value) { element.ecf.center[gp][1][s] = value; }));
 					isconst &= elementOps[interval].back()->isconst;
-					elementOps[interval].push_back(generateElementTypedOperator3D<CoordinateSystemCylindric, HeatTransferElementType::SYMMETRIC_GENERAL>(interval));
+					elementOps[interval].push_back(generateElementTypedOperator3D<HeatTransferCoordinateSystemCylindric, HeatTransferElementType::SYMMETRIC_GENERAL>(interval));
 					elementOps[interval].back()->isconst &= isconst;
 					break;
 				case CoordinateSystemConfiguration::TYPE::SPHERICAL:
@@ -232,12 +232,12 @@ void HeatTransfer::generateConductivity()
 					elementOps[interval].push_back(generateTypedExpression3D<ExternalGPsExpression, HeatTransferElementType::SYMMETRIC_GENERAL>(interval, mat->coordinate_system.center.z.evaluator,
 								[] (auto &element, const size_t &gp, const size_t &s, const double &value) { element.ecf.center[gp][2][s] = value; }));
 					isconst &= elementOps[interval].back()->isconst;
-					elementOps[interval].push_back(generateElementTypedOperator3D<CoordinateSystemSpherical, HeatTransferElementType::SYMMETRIC_GENERAL>(interval));
+					elementOps[interval].push_back(generateElementTypedOperator3D<HeatTransferCoordinateSystemSpherical, HeatTransferElementType::SYMMETRIC_GENERAL>(interval));
 					elementOps[interval].back()->isconst &= isconst;
 					break;
 				}
 				isconst &= elementOps[interval].back()->isconst;
-				elementOps[interval].push_back(generateElementTypedOperator3D<CoordinateSystemApply, HeatTransferElementType::SYMMETRIC_GENERAL>(interval));
+				elementOps[interval].push_back(generateElementTypedOperator3D<HeatTransferCoordinateSystemApply, HeatTransferElementType::SYMMETRIC_GENERAL>(interval));
 				elementOps[interval].back()->isconst &= isconst;
 			} else {
 				switch (mat->thermal_conductivity.model) {

@@ -55,6 +55,7 @@ struct StructuralMechanicsDataDescriptor<nodes, gps, 2, edim, StructuralMechanic
 
 			alignas(SIMD::size * sizeof(double)) SIMD youngModulus[gps];
 			alignas(SIMD::size * sizeof(double)) SIMD poissonRatio[gps];
+			alignas(SIMD::size * sizeof(double)) SIMD elasticity  [gps][9];
 
 			alignas(SIMD::size * sizeof(double)) SIMD density     [gps];
 			alignas(SIMD::size * sizeof(double)) SIMD heatCapacity[gps];
@@ -99,6 +100,7 @@ struct StructuralMechanicsDataDescriptor<nodes, gps, 2, edim, StructuralMechanic
 
 			alignas(SIMD::size * sizeof(double)) SIMD youngModulus[gps];
 			alignas(SIMD::size * sizeof(double)) SIMD poissonRatio[gps];
+			alignas(SIMD::size * sizeof(double)) SIMD elasticity  [gps][16];
 
 			alignas(SIMD::size * sizeof(double)) SIMD density     [gps];
 			alignas(SIMD::size * sizeof(double)) SIMD heatCapacity[gps];
@@ -139,8 +141,11 @@ struct StructuralMechanicsDataDescriptor<nodes, gps, 3, edim, StructuralMechanic
 
 	struct Element {
 		struct {
-			alignas(SIMD::size * sizeof(double)) SIMD youngModulus[gps];
-			alignas(SIMD::size * sizeof(double)) SIMD poissonRatio[gps];
+			alignas(SIMD::size * sizeof(double)) SIMD youngModulus[gps][3];
+			alignas(SIMD::size * sizeof(double)) SIMD poissonRatio[gps][3];
+			alignas(SIMD::size * sizeof(double)) SIMD shearModulus[gps][3];
+			alignas(SIMD::size * sizeof(double)) SIMD center      [gps][3]; // or rotation in the case of cartesion
+			alignas(SIMD::size * sizeof(double)) SIMD elasticity  [gps][36];
 
 			alignas(SIMD::size * sizeof(double)) SIMD density     [gps];
 			alignas(SIMD::size * sizeof(double)) SIMD heatCapacity[gps];
@@ -159,6 +164,7 @@ struct StructuralMechanicsDataDescriptor<nodes, gps, 3, edim, StructuralMechanic
 		alignas(SIMD::size * sizeof(double)) SIMD dND[gps][nodes][edim];
 		alignas(SIMD::size * sizeof(double)) SIMD det[gps];
 
+		alignas(SIMD::size * sizeof(double)) SIMD cossin    [gps][12];
 		alignas(SIMD::size * sizeof(double)) SIMD elasticity[gps][36];
 
 		Element()
