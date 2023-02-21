@@ -7,6 +7,7 @@
 #include "analysis/assembler/operators/basis.h"
 #include "analysis/assembler/operators/coordinates.h"
 #include "analysis/assembler/operators/temperature.h"
+#include "analysis/assembler/operators/advection.h"
 #include "analysis/assembler/operators/expression.h"
 #include "analysis/assembler/operators/integration.h"
 #include "analysis/assembler/operators/heattransfer.f.h"
@@ -275,13 +276,25 @@ void HeatTransfer::analyze()
 			eslog::info("                                                                                               \n");
 		}
 
-		for(size_t interval = 0; interval < info::mesh->elements->eintervals.size(); ++interval) {
-			const MaterialConfiguration *mat = info::mesh->materials[info::mesh->elements->eintervals[interval].material];
-			switch (mat->thermal_conductivity.model) {
-			case ThermalConductivityConfiguration::MODEL::ISOTROPIC:   etype[interval] = HeatTransferElementType::SYMMETRIC_ISOTROPIC; break;
-			case ThermalConductivityConfiguration::MODEL::DIAGONAL:    etype[interval] = HeatTransferElementType::SYMMETRIC_GENERAL  ; break;
-			case ThermalConductivityConfiguration::MODEL::SYMMETRIC:   etype[interval] = HeatTransferElementType::SYMMETRIC_GENERAL  ; break;
-			case ThermalConductivityConfiguration::MODEL::ANISOTROPIC: etype[interval] = HeatTransferElementType::SYMMETRIC_GENERAL  ; break;
+		if (configuration.translation_motions.size()) {
+			for(size_t interval = 0; interval < info::mesh->elements->eintervals.size(); ++interval) {
+				const MaterialConfiguration *mat = info::mesh->materials[info::mesh->elements->eintervals[interval].material];
+				switch (mat->thermal_conductivity.model) {
+				case ThermalConductivityConfiguration::MODEL::ISOTROPIC:   etype[interval] = HeatTransferElementType::ASYMMETRIC_ISOTROPIC; break;
+				case ThermalConductivityConfiguration::MODEL::DIAGONAL:    etype[interval] = HeatTransferElementType::ASYMMETRIC_GENERAL  ; break;
+				case ThermalConductivityConfiguration::MODEL::SYMMETRIC:   etype[interval] = HeatTransferElementType::ASYMMETRIC_GENERAL  ; break;
+				case ThermalConductivityConfiguration::MODEL::ANISOTROPIC: etype[interval] = HeatTransferElementType::ASYMMETRIC_GENERAL  ; break;
+				}
+			}
+		} else {
+			for(size_t interval = 0; interval < info::mesh->elements->eintervals.size(); ++interval) {
+				const MaterialConfiguration *mat = info::mesh->materials[info::mesh->elements->eintervals[interval].material];
+				switch (mat->thermal_conductivity.model) {
+				case ThermalConductivityConfiguration::MODEL::ISOTROPIC:   etype[interval] = HeatTransferElementType::SYMMETRIC_ISOTROPIC ; break;
+				case ThermalConductivityConfiguration::MODEL::DIAGONAL:    etype[interval] = HeatTransferElementType::SYMMETRIC_GENERAL   ; break;
+				case ThermalConductivityConfiguration::MODEL::SYMMETRIC:   etype[interval] = HeatTransferElementType::SYMMETRIC_GENERAL   ; break;
+				case ThermalConductivityConfiguration::MODEL::ANISOTROPIC: etype[interval] = HeatTransferElementType::ASYMMETRIC_GENERAL  ; break;
+				}
 			}
 		}
 
@@ -348,6 +361,15 @@ void HeatTransfer::analyze()
 		correct &= checkElementParameter("HEAT SOURCE", configuration.heat_source);
 		generateElementExpression<ExternalGPsExpression>(etype, elementOps, configuration.heat_source, [] (auto &element, const size_t &gp, const size_t &s, const double &value) { element.ecf.heatSource[gp][s] = value; });
 		generateElementOperators<HeatSource>(etype, elementOps, elements.rhs);
+	}
+	if (configuration.translation_motions.size()) {
+		correct &= checkElementParameter("TRANSLATION MOTIONS", configuration.translation_motions);
+		generateElementTypedExpression<ExternalGPsExpression, HeatTransferElementType::ASYMMETRIC_GENERAL>(elementOps, configuration.translation_motions, 0, [] (auto &element, const size_t &gp, const size_t &s, const double &value) { element.ecf.advection[gp][0][s] = value; });
+		generateElementTypedExpression<ExternalGPsExpression, HeatTransferElementType::ASYMMETRIC_GENERAL>(elementOps, configuration.translation_motions, 1, [] (auto &element, const size_t &gp, const size_t &s, const double &value) { element.ecf.advection[gp][0][s] = value; });
+		if (info::mesh->dimension == 3) {
+			generateElementTypedExpression<ExternalGPsExpression, HeatTransferElementType::ASYMMETRIC_GENERAL>(elementOps, configuration.translation_motions, 2, [] (auto &element, const size_t &gp, const size_t &s, const double &value) { element.ecf.advection[gp][0][s] = value; });
+		}
+		generateElementOperators<Advection>(etype, elementOps);
 	}
 	if (configuration.heat_flow.size()) {
 		correct &= checkBoundaryParameter("HEAT FLOW", configuration.heat_flow);
@@ -545,8 +567,10 @@ double HeatTransfer::instantiate(ActionOperator::Action action, int code, int et
 	case 2:
 		switch (etype) {
 		// elements
-		case HeatTransferElementType::SYMMETRIC_ISOTROPIC: return instantiate2D<HeatTransferElementType::SYMMETRIC_ISOTROPIC>(action, code, ops, elements);
-		case HeatTransferElementType::SYMMETRIC_GENERAL:   return instantiate2D<HeatTransferElementType::SYMMETRIC_GENERAL  >(action, code, ops, elements);
+		case HeatTransferElementType::SYMMETRIC_ISOTROPIC : return instantiate2D<HeatTransferElementType::SYMMETRIC_ISOTROPIC >(action, code, ops, elements);
+		case HeatTransferElementType::SYMMETRIC_GENERAL   : return instantiate2D<HeatTransferElementType::SYMMETRIC_GENERAL   >(action, code, ops, elements);
+		case HeatTransferElementType::ASYMMETRIC_ISOTROPIC: return instantiate2D<HeatTransferElementType::ASYMMETRIC_ISOTROPIC>(action, code, ops, elements);
+		case HeatTransferElementType::ASYMMETRIC_GENERAL  : return instantiate2D<HeatTransferElementType::ASYMMETRIC_GENERAL  >(action, code, ops, elements);
 
 		// boundary
 		case HeatTransferElementType::EDGE: return instantiate2D<HeatTransferElementType::EDGE>(action, code, ops, elements);
@@ -555,8 +579,10 @@ double HeatTransfer::instantiate(ActionOperator::Action action, int code, int et
 	case 3:
 		switch (etype) {
 		// elements
-		case HeatTransferElementType::SYMMETRIC_ISOTROPIC: return instantiate3D<HeatTransferElementType::SYMMETRIC_ISOTROPIC>(action, code, ops, elements);
-		case HeatTransferElementType::SYMMETRIC_GENERAL:   return instantiate3D<HeatTransferElementType::SYMMETRIC_GENERAL  >(action, code, ops, elements);
+		case HeatTransferElementType::SYMMETRIC_ISOTROPIC : return instantiate3D<HeatTransferElementType::SYMMETRIC_ISOTROPIC >(action, code, ops, elements);
+		case HeatTransferElementType::SYMMETRIC_GENERAL   : return instantiate3D<HeatTransferElementType::SYMMETRIC_GENERAL   >(action, code, ops, elements);
+		case HeatTransferElementType::ASYMMETRIC_ISOTROPIC: return instantiate3D<HeatTransferElementType::ASYMMETRIC_ISOTROPIC>(action, code, ops, elements);
+		case HeatTransferElementType::ASYMMETRIC_GENERAL  : return instantiate3D<HeatTransferElementType::ASYMMETRIC_GENERAL  >(action, code, ops, elements);
 
 		// boundary
 		case HeatTransferElementType::FACE: return instantiate3D<HeatTransferElementType::FACE>(action, code, ops, elements);

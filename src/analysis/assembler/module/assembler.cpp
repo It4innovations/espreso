@@ -173,14 +173,14 @@ bool Assembler::checkExpression(const std::string &name, ECFExpression &expressi
 {
 	if (expression.evaluator == nullptr) {
 		if (!Variable::create(expression)) {
-			eslog::warning("   %18s:  %69s \n", name.c_str(), "INVALID EXPRESSION");
+			eslog::warning("   %25s:  %62s \n", name.c_str(), "INVALID EXPRESSION");
 			return false;
 		}
 	}
 	if (expression.evaluator->variables.size()) {
-		eslog::info("   %18s:  %69s \n", name.c_str(), expression.evaluator->toString().c_str());
+		eslog::info("   %25s:  %62s \n", name.c_str(), expression.evaluator->toString().c_str());
 	} else {
-		eslog::info("   %18s:  %69g \n", name.c_str(), expression.evaluator->eval(Evaluator::Params()));
+		eslog::info("   %25s:  %62g \n", name.c_str(), expression.evaluator->eval(Evaluator::Params()));
 	}
 	return true;
 }

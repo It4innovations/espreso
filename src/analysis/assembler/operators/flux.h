@@ -137,6 +137,116 @@ struct TemperatureFlux<nodes, gps, 3, edim, HeatTransferElementType::SYMMETRIC_I
 	}
 };
 
+template <size_t nodes, size_t gps, size_t edim, class Physics>
+struct TemperatureFlux<nodes, gps, 2, edim, HeatTransferElementType::ASYMMETRIC_ISOTROPIC, Physics>: TemperatureFluxBase, Physics {
+	using TemperatureFluxBase::TemperatureFluxBase;
+
+	void simd(typename Physics::Element &element)
+	{
+		double * __restrict__ out = flux;
+		SIMD f0 = zeros(), f1 = zeros();
+		for (size_t gp = 0; gp < gps; ++gp) {
+			SIMD fgp0 = zeros(), fgp1 = zeros();
+			for (size_t n = 0; n < nodes; ++n) {
+				fgp0 = fgp0 + element.dND[gp][n][0] * element.temp[n];
+				fgp1 = fgp1 + element.dND[gp][n][1] * element.temp[n];
+			}
+			f0 = f0 + fgp0 * element.conductivity[gp];
+			f1 = f1 + fgp1 * element.conductivity[gp];
+		}
+		SIMD scale = load1(1. / gps);
+		f0 = f0 * scale;
+		f1 = f1 * scale;
+		for (size_t s = 0; s < SIMD::size; ++s) {
+			out[2 * s + 0] = f0[s];
+			out[2 * s + 1] = f1[s];
+		}
+		move(2 * SIMD::size);
+	}
+
+	void peel(typename Physics::Element &element, size_t size)
+	{
+		double * __restrict__ out = flux;
+		SIMD f0 = zeros(), f1 = zeros();
+		for (size_t gp = 0; gp < gps; ++gp) {
+			SIMD fgp0 = zeros(), fgp1 = zeros();
+			for (size_t n = 0; n < nodes; ++n) {
+				fgp0 = fgp0 + element.dND[gp][n][0] * element.temp[n];
+				fgp1 = fgp1 + element.dND[gp][n][1] * element.temp[n];
+			}
+			f0 = f0 + fgp0 * element.conductivity[gp];
+			f1 = f1 + fgp1 * element.conductivity[gp];
+		}
+		SIMD scale = load1(1. / gps);
+		f0 = f0 * scale;
+		f1 = f1 * scale;
+		for (size_t s = 0; s <size; ++s) {
+			out[2 * s + 0] = f0[s];
+			out[2 * s + 1] = f1[s];
+		}
+		move(2 * size);
+	}
+};
+
+template <size_t nodes, size_t gps, size_t edim, class Physics>
+struct TemperatureFlux<nodes, gps, 3, edim, HeatTransferElementType::ASYMMETRIC_ISOTROPIC, Physics>: TemperatureFluxBase, Physics {
+	using TemperatureFluxBase::TemperatureFluxBase;
+
+	void simd(typename Physics::Element &element)
+	{
+		double * __restrict__ out = flux;
+		SIMD f0 = zeros(), f1 = zeros(), f2 = zeros();
+		for (size_t gp = 0; gp < gps; ++gp) {
+			SIMD fgp0 = zeros(), fgp1 = zeros(), fgp2 = zeros();
+			for (size_t n = 0; n < nodes; ++n) {
+				fgp0 = fgp0 + element.dND[gp][n][0] * element.temp[n];
+				fgp1 = fgp1 + element.dND[gp][n][1] * element.temp[n];
+				fgp2 = fgp2 + element.dND[gp][n][2] * element.temp[n];
+			}
+			f0 = f0 + fgp0 * element.conductivity[gp];
+			f1 = f1 + fgp1 * element.conductivity[gp];
+			f2 = f2 + fgp2 * element.conductivity[gp];
+		}
+		SIMD scale = load1(1. / gps);
+		f0 = f0 * scale;
+		f1 = f1 * scale;
+		f2 = f2 * scale;
+		for (size_t s = 0; s < SIMD::size; ++s) {
+			out[3 * s + 0] = f0[s];
+			out[3 * s + 1] = f1[s];
+			out[3 * s + 2] = f2[s];
+		}
+		move(3 * SIMD::size);
+	}
+
+	void peel(typename Physics::Element &element, size_t size)
+	{
+		double * __restrict__ out = flux;
+		SIMD f0 = zeros(), f1 = zeros(), f2 = zeros();
+		for (size_t gp = 0; gp < gps; ++gp) {
+			SIMD fgp0 = zeros(), fgp1 = zeros(), fgp2 = zeros();
+			for (size_t n = 0; n < nodes; ++n) {
+				fgp0 = fgp0 + element.dND[gp][n][0] * element.temp[n];
+				fgp1 = fgp1 + element.dND[gp][n][1] * element.temp[n];
+				fgp2 = fgp2 + element.dND[gp][n][2] * element.temp[n];
+			}
+			f0 = f0 + fgp0 * element.conductivity[gp];
+			f1 = f1 + fgp1 * element.conductivity[gp];
+			f2 = f2 + fgp2 * element.conductivity[gp];
+		}
+		SIMD scale = load1(1. / gps);
+		f0 = f0 * scale;
+		f1 = f1 * scale;
+		f2 = f2 * scale;
+		for (size_t s = 0; s < size; ++s) {
+			out[3 * s + 0] = f0[s];
+			out[3 * s + 1] = f1[s];
+			out[3 * s + 2] = f2[s];
+		}
+		move(3 * size);
+	}
+};
+
 template <size_t nodes, size_t gps, size_t edim, size_t etype, class Physics>
 struct TemperatureFlux<nodes, gps, 2, edim, etype, Physics>: TemperatureFluxBase, Physics {
 	using TemperatureFluxBase::TemperatureFluxBase;

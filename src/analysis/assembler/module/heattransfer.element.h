@@ -35,8 +35,8 @@ struct HeatTransferElementType {
 	enum: int {
 		SYMMETRIC_ISOTROPIC  = 0,
 		SYMMETRIC_GENERAL    = 1,
-//		ASYMMETRIC_ISOTROPIC = 2,
-//		ASYMMETRIC_GENERAL   = 3,
+		ASYMMETRIC_ISOTROPIC = 2,
+		ASYMMETRIC_GENERAL   = 3,
 		FACE                 = 4,
 		EDGE                 = 5,
 		NODE                 = 6
@@ -175,6 +175,170 @@ struct HeatTransferDataDescriptor<nodes, gps, 2, edim, HeatTransferElementType::
 			alignas(SIMD::size * sizeof(double)) SIMD density     [gps];
 			alignas(SIMD::size * sizeof(double)) SIMD heatCapacity[gps];
 			alignas(SIMD::size * sizeof(double)) SIMD heatSource  [gps];
+		} ecf;
+
+		alignas(SIMD::size * sizeof(double)) SIMD temp[nodes];
+		alignas(SIMD::size * sizeof(double)) SIMD coords[nodes][2];
+		alignas(SIMD::size * sizeof(double)) SIMD gpcoords[gps][2];
+
+		alignas(SIMD::size * sizeof(double)) double  w [gps];
+		alignas(SIMD::size * sizeof(double)) double  N [gps][nodes];
+		alignas(SIMD::size * sizeof(double)) double dN [gps][nodes][edim];
+
+		alignas(SIMD::size * sizeof(double)) SIMD dND[gps][nodes][edim];
+		alignas(SIMD::size * sizeof(double)) SIMD det[gps];
+
+		alignas(SIMD::size * sizeof(double)) SIMD cossin      [gps][2];
+		alignas(SIMD::size * sizeof(double)) SIMD conductivity[gps][4];
+
+		Element()
+		{
+			for (size_t gp = 0; gp < gps; ++gp) {
+				ecf.thickness[gp] = load1(1);
+				ecf.density[gp] = load1(1);
+				ecf.heatCapacity[gp] = load1(1);
+			}
+		}
+	};
+
+	virtual void simd(Element &element) =0;
+	virtual void peel(Element &element, size_t size) { simd(element); }
+};
+
+template <size_t nodes, size_t gps, size_t edim>
+struct HeatTransferDataDescriptor<nodes, gps, 3, edim, HeatTransferElementType::ASYMMETRIC_ISOTROPIC> {
+	virtual ~HeatTransferDataDescriptor() {}
+
+	struct Element {
+		struct {
+			alignas(SIMD::size * sizeof(double)) SIMD density     [gps];
+			alignas(SIMD::size * sizeof(double)) SIMD heatCapacity[gps];
+			alignas(SIMD::size * sizeof(double)) SIMD heatSource  [gps];
+			alignas(SIMD::size * sizeof(double)) SIMD advection   [gps][3];
+		} ecf;
+
+		alignas(SIMD::size * sizeof(double)) SIMD temp[nodes];
+		alignas(SIMD::size * sizeof(double)) SIMD coords[nodes][3];
+		alignas(SIMD::size * sizeof(double)) SIMD gpcoords[gps][3];
+
+		alignas(SIMD::size * sizeof(double)) double  w [gps];
+		alignas(SIMD::size * sizeof(double)) double  N [gps][nodes];
+		alignas(SIMD::size * sizeof(double)) double dN [gps][nodes][edim];
+
+		alignas(SIMD::size * sizeof(double)) SIMD dND[gps][nodes][edim];
+		alignas(SIMD::size * sizeof(double)) SIMD det[gps];
+
+		alignas(SIMD::size * sizeof(double)) SIMD conductivity[gps];
+
+		Element()
+		{
+			for (size_t gp = 0; gp < gps; ++gp) {
+				ecf.density[gp] = load1(1);
+				ecf.heatCapacity[gp] = load1(1);
+			}
+		}
+	};
+
+	virtual void simd(Element &element) =0;
+	virtual void peel(Element &element, size_t size) { simd(element); }
+};
+
+template <size_t nodes, size_t gps, size_t edim>
+struct HeatTransferDataDescriptor<nodes, gps, 2, edim, HeatTransferElementType::ASYMMETRIC_ISOTROPIC> {
+	virtual ~HeatTransferDataDescriptor() {}
+
+	struct Element {
+		struct {
+			alignas(SIMD::size * sizeof(double)) SIMD thickness[gps];
+
+			alignas(SIMD::size * sizeof(double)) SIMD density     [gps];
+			alignas(SIMD::size * sizeof(double)) SIMD heatCapacity[gps];
+			alignas(SIMD::size * sizeof(double)) SIMD heatSource  [gps];
+			alignas(SIMD::size * sizeof(double)) SIMD advection   [gps][2];
+		} ecf;
+
+		alignas(SIMD::size * sizeof(double)) SIMD temp[nodes];
+		alignas(SIMD::size * sizeof(double)) SIMD coords[nodes][2];
+		alignas(SIMD::size * sizeof(double)) SIMD gpcoords[gps][2];
+
+		alignas(SIMD::size * sizeof(double)) double  w [gps];
+		alignas(SIMD::size * sizeof(double)) double  N [gps][nodes];
+		alignas(SIMD::size * sizeof(double)) double dN [gps][nodes][edim];
+
+		alignas(SIMD::size * sizeof(double)) SIMD dND[gps][nodes][edim];
+		alignas(SIMD::size * sizeof(double)) SIMD det[gps];
+
+		alignas(SIMD::size * sizeof(double)) SIMD conductivity[gps];
+
+		Element()
+		{
+			for (size_t gp = 0; gp < gps; ++gp) {
+				ecf.thickness[gp] = load1(1);
+				ecf.density[gp] = load1(1);
+				ecf.heatCapacity[gp] = load1(1);
+			}
+		}
+	};
+
+	virtual void simd(Element &element) =0;
+	virtual void peel(Element &element, size_t size) { simd(element); }
+};
+
+template <size_t nodes, size_t gps, size_t edim>
+struct HeatTransferDataDescriptor<nodes, gps, 3, edim, HeatTransferElementType::ASYMMETRIC_GENERAL> {
+	virtual ~HeatTransferDataDescriptor() {}
+
+	struct Element {
+		struct {
+			alignas(SIMD::size * sizeof(double)) SIMD conductivity[gps][9];
+			alignas(SIMD::size * sizeof(double)) SIMD center      [gps][3]; // or rotation in the case of cartesion
+			alignas(SIMD::size * sizeof(double)) SIMD density     [gps];
+			alignas(SIMD::size * sizeof(double)) SIMD heatCapacity[gps];
+			alignas(SIMD::size * sizeof(double)) SIMD heatSource  [gps];
+			alignas(SIMD::size * sizeof(double)) SIMD advection   [gps][3];
+		} ecf;
+
+		alignas(SIMD::size * sizeof(double)) SIMD temp[nodes];
+		alignas(SIMD::size * sizeof(double)) SIMD coords[nodes][3];
+		alignas(SIMD::size * sizeof(double)) SIMD gpcoords[gps][3];
+
+		alignas(SIMD::size * sizeof(double)) double  w [gps];
+		alignas(SIMD::size * sizeof(double)) double  N [gps][nodes];
+		alignas(SIMD::size * sizeof(double)) double dN [gps][nodes][edim];
+
+		alignas(SIMD::size * sizeof(double)) SIMD dND[gps][nodes][edim];
+		alignas(SIMD::size * sizeof(double)) SIMD det[gps];
+
+		alignas(SIMD::size * sizeof(double)) SIMD cossin      [gps][6];
+		alignas(SIMD::size * sizeof(double)) SIMD conductivity[gps][9];
+
+		Element()
+		{
+			for (size_t gp = 0; gp < gps; ++gp) {
+				ecf.density[gp] = load1(1);
+				ecf.heatCapacity[gp] = load1(1);
+			}
+		}
+	};
+
+	virtual void simd(Element &element) =0;
+	virtual void peel(Element &element, size_t size) { simd(element); }
+};
+
+template <size_t nodes, size_t gps, size_t edim>
+struct HeatTransferDataDescriptor<nodes, gps, 2, edim, HeatTransferElementType::ASYMMETRIC_GENERAL> {
+	virtual ~HeatTransferDataDescriptor() {}
+
+	struct Element {
+		struct {
+			alignas(SIMD::size * sizeof(double)) SIMD thickness[gps];
+
+			alignas(SIMD::size * sizeof(double)) SIMD conductivity[gps][4];
+			alignas(SIMD::size * sizeof(double)) SIMD center      [gps][2]; // or rotation in the case of cartesion
+			alignas(SIMD::size * sizeof(double)) SIMD density     [gps];
+			alignas(SIMD::size * sizeof(double)) SIMD heatCapacity[gps];
+			alignas(SIMD::size * sizeof(double)) SIMD heatSource  [gps];
+			alignas(SIMD::size * sizeof(double)) SIMD advection   [gps][2];
 		} ecf;
 
 		alignas(SIMD::size * sizeof(double)) SIMD temp[nodes];

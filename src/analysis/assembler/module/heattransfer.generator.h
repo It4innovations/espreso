@@ -56,13 +56,17 @@ static void generateBaseFunctions(const std::vector<int> &etype, std::vector<std
 		switch (info::mesh->dimension) {
 		case 2:
 			switch (etype[i]) {
-			case HeatTransferElementType::SYMMETRIC_ISOTROPIC: generateBaseFunctions<2, HeatTransferElementType::SYMMETRIC_ISOTROPIC>(i, ops); break;
-			case HeatTransferElementType::SYMMETRIC_GENERAL:   generateBaseFunctions<2, HeatTransferElementType::SYMMETRIC_GENERAL  >(i, ops); break;
+			case HeatTransferElementType::SYMMETRIC_ISOTROPIC : generateBaseFunctions<2, HeatTransferElementType::SYMMETRIC_ISOTROPIC >(i, ops); break;
+			case HeatTransferElementType::SYMMETRIC_GENERAL   : generateBaseFunctions<2, HeatTransferElementType::SYMMETRIC_GENERAL   >(i, ops); break;
+			case HeatTransferElementType::ASYMMETRIC_ISOTROPIC: generateBaseFunctions<2, HeatTransferElementType::ASYMMETRIC_ISOTROPIC>(i, ops); break;
+			case HeatTransferElementType::ASYMMETRIC_GENERAL  : generateBaseFunctions<2, HeatTransferElementType::ASYMMETRIC_GENERAL  >(i, ops); break;
 			} break;
 		case 3:
 			switch (etype[i]) {
-			case HeatTransferElementType::SYMMETRIC_ISOTROPIC: generateBaseFunctions<3, HeatTransferElementType::SYMMETRIC_ISOTROPIC>(i, ops); break;
-			case HeatTransferElementType::SYMMETRIC_GENERAL:   generateBaseFunctions<3, HeatTransferElementType::SYMMETRIC_GENERAL  >(i, ops); break;
+			case HeatTransferElementType::SYMMETRIC_ISOTROPIC : generateBaseFunctions<3, HeatTransferElementType::SYMMETRIC_ISOTROPIC >(i, ops); break;
+			case HeatTransferElementType::SYMMETRIC_GENERAL   : generateBaseFunctions<3, HeatTransferElementType::SYMMETRIC_GENERAL   >(i, ops); break;
+			case HeatTransferElementType::ASYMMETRIC_ISOTROPIC: generateBaseFunctions<3, HeatTransferElementType::ASYMMETRIC_ISOTROPIC>(i, ops); break;
+			case HeatTransferElementType::ASYMMETRIC_GENERAL  : generateBaseFunctions<3, HeatTransferElementType::ASYMMETRIC_GENERAL  >(i, ops); break;
 			} break;
 		}
 	}
@@ -244,7 +248,6 @@ static ActionOperator* generateTypedExpression2D(size_t interval, Evaluator *eva
 	default: return nullptr;
 	}
 }
-
 template <template <size_t, size_t, size_t, size_t, size_t, class, class> class Expression, int etype, class Setter>
 static ActionOperator* generateTypedExpression3D(size_t interval, Evaluator *evaluator, const Setter &setter)
 {
@@ -275,8 +278,10 @@ template <template <size_t, size_t, size_t, size_t, size_t, class, class> class 
 static ActionOperator* generateExpression(size_t interval, int etype, Evaluator *evaluator, const Setter &setter)
 {
 	switch (etype) {
-	case HeatTransferElementType::SYMMETRIC_ISOTROPIC: return generateTypedExpression<Expression, HeatTransferElementType::SYMMETRIC_ISOTROPIC>(interval, evaluator, setter);
-	case HeatTransferElementType::SYMMETRIC_GENERAL:   return generateTypedExpression<Expression, HeatTransferElementType::SYMMETRIC_GENERAL  >(interval, evaluator, setter);
+	case HeatTransferElementType::SYMMETRIC_ISOTROPIC : return generateTypedExpression<Expression, HeatTransferElementType::SYMMETRIC_ISOTROPIC >(interval, evaluator, setter);
+	case HeatTransferElementType::SYMMETRIC_GENERAL   : return generateTypedExpression<Expression, HeatTransferElementType::SYMMETRIC_GENERAL   >(interval, evaluator, setter);
+	case HeatTransferElementType::ASYMMETRIC_ISOTROPIC: return generateTypedExpression<Expression, HeatTransferElementType::ASYMMETRIC_ISOTROPIC>(interval, evaluator, setter);
+	case HeatTransferElementType::ASYMMETRIC_GENERAL  : return generateTypedExpression<Expression, HeatTransferElementType::ASYMMETRIC_GENERAL  >(interval, evaluator, setter);
 	}
 	return nullptr;
 }
@@ -285,8 +290,30 @@ template <template <size_t, size_t, size_t, size_t, size_t, class, class> class 
 static ActionOperator* generateExpression2D(size_t interval, int etype, Evaluator *evaluator, const Setter &setter)
 {
 	switch (etype) {
-	case HeatTransferElementType::SYMMETRIC_ISOTROPIC: return generateTypedExpression2D<Expression, HeatTransferElementType::SYMMETRIC_ISOTROPIC>(interval, evaluator, setter);
-	case HeatTransferElementType::SYMMETRIC_GENERAL:   return generateTypedExpression2D<Expression, HeatTransferElementType::SYMMETRIC_GENERAL  >(interval, evaluator, setter);
+	case HeatTransferElementType::SYMMETRIC_ISOTROPIC : return generateTypedExpression2D<Expression, HeatTransferElementType::SYMMETRIC_ISOTROPIC >(interval, evaluator, setter);
+	case HeatTransferElementType::SYMMETRIC_GENERAL   : return generateTypedExpression2D<Expression, HeatTransferElementType::SYMMETRIC_GENERAL   >(interval, evaluator, setter);
+	case HeatTransferElementType::ASYMMETRIC_ISOTROPIC: return generateTypedExpression2D<Expression, HeatTransferElementType::ASYMMETRIC_ISOTROPIC>(interval, evaluator, setter);
+	case HeatTransferElementType::ASYMMETRIC_GENERAL  : return generateTypedExpression2D<Expression, HeatTransferElementType::ASYMMETRIC_GENERAL  >(interval, evaluator, setter);
+	}
+	return nullptr;
+}
+
+template <template <size_t, size_t, size_t, size_t, size_t, class, class> class Expression, class Setter>
+static ActionOperator* generateIsotropicTypeExpression2D(size_t interval, int etype, Evaluator *evaluator, const Setter &setter)
+{
+	switch (etype) {
+	case HeatTransferElementType::SYMMETRIC_ISOTROPIC : return generateTypedExpression2D<Expression, HeatTransferElementType::SYMMETRIC_ISOTROPIC >(interval, evaluator, setter);
+	case HeatTransferElementType::ASYMMETRIC_ISOTROPIC: return generateTypedExpression2D<Expression, HeatTransferElementType::ASYMMETRIC_ISOTROPIC>(interval, evaluator, setter);
+	}
+	return nullptr;
+}
+
+template <template <size_t, size_t, size_t, size_t, size_t, class, class> class Expression, class Setter>
+static ActionOperator* generateGeneralTypeExpression2D(size_t interval, int etype, Evaluator *evaluator, const Setter &setter)
+{
+	switch (etype) {
+	case HeatTransferElementType::SYMMETRIC_GENERAL   : return generateTypedExpression2D<Expression, HeatTransferElementType::SYMMETRIC_GENERAL   >(interval, evaluator, setter);
+	case HeatTransferElementType::ASYMMETRIC_GENERAL  : return generateTypedExpression2D<Expression, HeatTransferElementType::ASYMMETRIC_GENERAL  >(interval, evaluator, setter);
 	}
 	return nullptr;
 }
@@ -295,8 +322,30 @@ template <template <size_t, size_t, size_t, size_t, size_t, class, class> class 
 static ActionOperator* generateExpression3D(size_t interval, int etype, Evaluator *evaluator, const Setter &setter)
 {
 	switch (etype) {
-	case HeatTransferElementType::SYMMETRIC_ISOTROPIC: return generateTypedExpression3D<Expression, HeatTransferElementType::SYMMETRIC_ISOTROPIC>(interval, evaluator, setter);
-	case HeatTransferElementType::SYMMETRIC_GENERAL:   return generateTypedExpression3D<Expression, HeatTransferElementType::SYMMETRIC_GENERAL  >(interval, evaluator, setter);
+	case HeatTransferElementType::SYMMETRIC_ISOTROPIC : return generateTypedExpression3D<Expression, HeatTransferElementType::SYMMETRIC_ISOTROPIC >(interval, evaluator, setter);
+	case HeatTransferElementType::SYMMETRIC_GENERAL   : return generateTypedExpression3D<Expression, HeatTransferElementType::SYMMETRIC_GENERAL   >(interval, evaluator, setter);
+	case HeatTransferElementType::ASYMMETRIC_ISOTROPIC: return generateTypedExpression3D<Expression, HeatTransferElementType::ASYMMETRIC_ISOTROPIC>(interval, evaluator, setter);
+	case HeatTransferElementType::ASYMMETRIC_GENERAL  : return generateTypedExpression3D<Expression, HeatTransferElementType::ASYMMETRIC_GENERAL  >(interval, evaluator, setter);
+	}
+	return nullptr;
+}
+
+template <template <size_t, size_t, size_t, size_t, size_t, class, class> class Expression, class Setter>
+static ActionOperator* generateIsotropicTypeExpression3D(size_t interval, int etype, Evaluator *evaluator, const Setter &setter)
+{
+	switch (etype) {
+	case HeatTransferElementType::SYMMETRIC_ISOTROPIC : return generateTypedExpression3D<Expression, HeatTransferElementType::SYMMETRIC_ISOTROPIC >(interval, evaluator, setter);
+	case HeatTransferElementType::ASYMMETRIC_ISOTROPIC: return generateTypedExpression3D<Expression, HeatTransferElementType::ASYMMETRIC_ISOTROPIC>(interval, evaluator, setter);
+	}
+	return nullptr;
+}
+
+template <template <size_t, size_t, size_t, size_t, size_t, class, class> class Expression, class Setter>
+static ActionOperator* generateGeneralTypeExpression3D(size_t interval, int etype, Evaluator *evaluator, const Setter &setter)
+{
+	switch (etype) {
+	case HeatTransferElementType::SYMMETRIC_GENERAL   : return generateTypedExpression3D<Expression, HeatTransferElementType::SYMMETRIC_GENERAL   >(interval, evaluator, setter);
+	case HeatTransferElementType::ASYMMETRIC_GENERAL  : return generateTypedExpression3D<Expression, HeatTransferElementType::ASYMMETRIC_GENERAL  >(interval, evaluator, setter);
 	}
 	return nullptr;
 }
@@ -327,6 +376,45 @@ static void generateElementExpression(const std::vector<int> &etype, std::vector
 	switch (info::mesh->dimension) {
 	case 2: generateElementExpression2D<Expression>(etype, ops, settings, setter); break;
 	case 3: generateElementExpression3D<Expression>(etype, ops, settings, setter); break;
+	}
+}
+
+template <template <size_t, size_t, size_t, size_t, size_t, class, class> class Expression, class Setter>
+static void generateElementExpression2D(const std::vector<int> &etype, std::vector<std::vector<ActionOperator*> > &ops, std::map<std::string, ECFExpressionVector> &settings, int dimension, const Setter &setter)
+{
+	for(size_t interval = 0; interval < info::mesh->elements->eintervals.size(); ++interval) {
+		if (Assembler::getEvaluator(interval, settings, dimension)) {
+			ops[interval].push_back(generateExpression2D<Expression>(interval, etype[interval], Assembler::getEvaluator(interval, settings, dimension), setter));
+		}
+	}
+}
+
+template <template <size_t, size_t, size_t, size_t, size_t, class, class> class Expression, class Setter>
+static void generateElementExpression3D(const std::vector<int> &etype, std::vector<std::vector<ActionOperator*> > &ops, std::map<std::string, ECFExpressionVector> &settings, int dimension, const Setter &setter)
+{
+	for(size_t interval = 0; interval < info::mesh->elements->eintervals.size(); ++interval) {
+		if (Assembler::getEvaluator(interval, settings, dimension)) {
+			ops[interval].push_back(generateExpression3D<Expression>(interval, etype[interval], Assembler::getEvaluator(interval, settings, dimension), setter));
+		}
+	}
+}
+
+template <template <size_t, size_t, size_t, size_t, size_t, class, class> class Expression, class Setter>
+static void generateElementExpression(const std::vector<int> &etype, std::vector<std::vector<ActionOperator*> > &ops, std::map<std::string, ECFExpressionVector> &settings, int dimension, const Setter &setter)
+{
+	switch (info::mesh->dimension) {
+	case 2: generateElementExpression2D<Expression>(etype, ops, settings, dimension, setter); break;
+	case 3: generateElementExpression3D<Expression>(etype, ops, settings, dimension, setter); break;
+	}
+}
+
+template <template <size_t, size_t, size_t, size_t, size_t, class, class> class Expression, int etype, class Setter>
+static void generateElementTypedExpression(std::vector<std::vector<ActionOperator*> > &ops, std::map<std::string, ECFExpressionVector> &settings, int dimension, const Setter &setter)
+{
+	for(size_t interval = 0; interval < info::mesh->elements->eintervals.size(); ++interval) {
+		if (Assembler::getEvaluator(interval, settings, dimension)) {
+			ops[interval].push_back(generateTypedExpression<Expression, etype>(interval, Assembler::getEvaluator(interval, settings, dimension), setter));
+		}
 	}
 }
 
@@ -418,8 +506,40 @@ template <template <size_t, size_t, size_t, size_t, size_t, class> class Operato
 static ActionOperator* generateElementOperator(size_t interval, int etype, Args&& ... args)
 {
 	switch (etype) {
-	case HeatTransferElementType::SYMMETRIC_ISOTROPIC: return generateElementTypedOperator<Operator, HeatTransferElementType::SYMMETRIC_ISOTROPIC, Args...>(interval, std::forward<Args>(args)...);
-	case HeatTransferElementType::SYMMETRIC_GENERAL:   return generateElementTypedOperator<Operator, HeatTransferElementType::SYMMETRIC_GENERAL  , Args...>(interval, std::forward<Args>(args)...);
+	case HeatTransferElementType::SYMMETRIC_ISOTROPIC : return generateElementTypedOperator<Operator, HeatTransferElementType::SYMMETRIC_ISOTROPIC , Args...>(interval, std::forward<Args>(args)...);
+	case HeatTransferElementType::SYMMETRIC_GENERAL   : return generateElementTypedOperator<Operator, HeatTransferElementType::SYMMETRIC_GENERAL   , Args...>(interval, std::forward<Args>(args)...);
+	case HeatTransferElementType::ASYMMETRIC_ISOTROPIC: return generateElementTypedOperator<Operator, HeatTransferElementType::ASYMMETRIC_ISOTROPIC, Args...>(interval, std::forward<Args>(args)...);
+	case HeatTransferElementType::ASYMMETRIC_GENERAL  : return generateElementTypedOperator<Operator, HeatTransferElementType::ASYMMETRIC_GENERAL  , Args...>(interval, std::forward<Args>(args)...);
+	}
+	return nullptr;
+}
+
+template <template <size_t, size_t, size_t, size_t, size_t, class> class Operator, class ... Args>
+static ActionOperator* generateElementIsotropicTypeOperator(size_t interval, int etype, Args&& ... args)
+{
+	switch (etype) {
+	case HeatTransferElementType::SYMMETRIC_ISOTROPIC : return generateElementTypedOperator<Operator, HeatTransferElementType::SYMMETRIC_ISOTROPIC , Args...>(interval, std::forward<Args>(args)...);
+	case HeatTransferElementType::ASYMMETRIC_ISOTROPIC: return generateElementTypedOperator<Operator, HeatTransferElementType::ASYMMETRIC_ISOTROPIC, Args...>(interval, std::forward<Args>(args)...);
+	}
+	return nullptr;
+}
+
+template <template <size_t, size_t, size_t, size_t, size_t, class> class Operator, class ... Args>
+static ActionOperator* generateElementGeneralTypeOperator(size_t interval, int etype, Args&& ... args)
+{
+	switch (etype) {
+	case HeatTransferElementType::SYMMETRIC_GENERAL   : return generateElementTypedOperator<Operator, HeatTransferElementType::SYMMETRIC_GENERAL   , Args...>(interval, std::forward<Args>(args)...);
+	case HeatTransferElementType::ASYMMETRIC_GENERAL  : return generateElementTypedOperator<Operator, HeatTransferElementType::ASYMMETRIC_GENERAL  , Args...>(interval, std::forward<Args>(args)...);
+	}
+	return nullptr;
+}
+
+template <template <size_t, size_t, size_t, size_t, size_t, class> class Operator, class ... Args>
+static ActionOperator* generateElementGeneralTypeOperator3D(size_t interval, int etype, Args&& ... args)
+{
+	switch (etype) {
+	case HeatTransferElementType::SYMMETRIC_GENERAL   : return generateElementTypedOperator3D<Operator, HeatTransferElementType::SYMMETRIC_GENERAL   , Args...>(interval, std::forward<Args>(args)...);
+	case HeatTransferElementType::ASYMMETRIC_GENERAL  : return generateElementTypedOperator3D<Operator, HeatTransferElementType::ASYMMETRIC_GENERAL  , Args...>(interval, std::forward<Args>(args)...);
 	}
 	return nullptr;
 }
@@ -590,6 +710,24 @@ static void addTypedElementStorage3D(std::vector<ActionOperator*> &ops, size_t i
 		ops.push_back(store);
 		ops.push_back(load);
 	} break;
+	}
+}
+
+template <class Size, class Parameter>
+static void addGeneralTypeElementStorage2D(std::vector<ActionOperator*> &ops, size_t interval, int etype, const Size &size, const Parameter &parameter)
+{
+	switch (etype) {
+	case HeatTransferElementType::SYMMETRIC_GENERAL : addTypedElementStorage2D<HeatTransferElementType::SYMMETRIC_GENERAL , Size, Parameter>(ops, interval, size, parameter); break;
+	case HeatTransferElementType::ASYMMETRIC_GENERAL: addTypedElementStorage2D<HeatTransferElementType::ASYMMETRIC_GENERAL, Size, Parameter>(ops, interval, size, parameter); break;
+	}
+}
+
+template <class Size, class Parameter>
+static void addGeneralTypeElementStorage3D(std::vector<ActionOperator*> &ops, size_t interval, int etype, const Size &size, const Parameter &parameter)
+{
+	switch (etype) {
+	case HeatTransferElementType::SYMMETRIC_GENERAL : addTypedElementStorage3D<HeatTransferElementType::SYMMETRIC_GENERAL , Size, Parameter>(ops, interval, size, parameter); break;
+	case HeatTransferElementType::ASYMMETRIC_GENERAL: addTypedElementStorage3D<HeatTransferElementType::ASYMMETRIC_GENERAL, Size, Parameter>(ops, interval, size, parameter); break;
 	}
 }
 
