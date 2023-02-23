@@ -103,5 +103,28 @@ ALWAYS_INLINE SIMD negate(const SIMD& value) noexcept
 	return -value.data;
 }
 
+ALWAYS_INLINE SIMD sqrt(const SIMD& value) noexcept
+{
+	return std::sqrt(value.data);
+}
+
+ALWAYS_INLINE SIMD rsqrt14(const SIMD& v) noexcept
+{
+	if (v.data > .0) {
+		return 1. / std::sqrt(v.data);
+	}
+	return 0;
+}
+
+ALWAYS_INLINE SIMD positive_guarded_recip(const SIMD& v) noexcept // TODO: improve it
+{
+	return v.data > 0. ? 1. / v.data : 0.;
+}
+
+ALWAYS_INLINE SIMD max(const SIMD& v1, const SIMD& v2) noexcept
+{
+	return std::max(v1.data, v2.data);
+}
+
 #endif // default SIMD with single double
 #endif /* SRC_MATH_SIMD_SIMD_H_ */

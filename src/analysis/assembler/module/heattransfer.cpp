@@ -354,6 +354,16 @@ void HeatTransfer::analyze()
 	generateBoundaryOperators<Integration>(bfilter, boundaryOps);
 	volume();
 
+	if (configuration.translation_motions.size()) { // it updates conductivity
+		correct &= checkElementParameter("TRANSLATION MOTIONS", configuration.translation_motions);
+		generateElementAsymmetricTypeExpression<ExternalGPsExpression>(etype, elementOps, configuration.translation_motions, 0, [] (auto &element, const size_t &gp, const size_t &s, const double &value) { element.ecf.advection[gp][0][s] = value; });
+		generateElementAsymmetricTypeExpression<ExternalGPsExpression>(etype, elementOps, configuration.translation_motions, 1, [] (auto &element, const size_t &gp, const size_t &s, const double &value) { element.ecf.advection[gp][1][s] = value; });
+		if (info::mesh->dimension == 3) {
+			generateElementAsymmetricTypeExpression<ExternalGPsExpression>(etype, elementOps, configuration.translation_motions, 2, [] (auto &element, const size_t &gp, const size_t &s, const double &value) { element.ecf.advection[gp][2][s] = value; });
+		}
+		generateElementAsymmetricOperators<Advection>(etype, elementOps, elements.stiffness);
+	}
+
 //	gradient.xi.resize(1);
 //	controller.prepare(gradient.xi);
 	generateElementOperators<HeatTransferStiffness>(etype, elementOps, elements.stiffness);
@@ -361,15 +371,6 @@ void HeatTransfer::analyze()
 		correct &= checkElementParameter("HEAT SOURCE", configuration.heat_source);
 		generateElementExpression<ExternalGPsExpression>(etype, elementOps, configuration.heat_source, [] (auto &element, const size_t &gp, const size_t &s, const double &value) { element.ecf.heatSource[gp][s] = value; });
 		generateElementOperators<HeatSource>(etype, elementOps, elements.rhs);
-	}
-	if (configuration.translation_motions.size()) {
-		correct &= checkElementParameter("TRANSLATION MOTIONS", configuration.translation_motions);
-		generateElementTypedExpression<ExternalGPsExpression, HeatTransferElementType::ASYMMETRIC_GENERAL>(elementOps, configuration.translation_motions, 0, [] (auto &element, const size_t &gp, const size_t &s, const double &value) { element.ecf.advection[gp][0][s] = value; });
-		generateElementTypedExpression<ExternalGPsExpression, HeatTransferElementType::ASYMMETRIC_GENERAL>(elementOps, configuration.translation_motions, 1, [] (auto &element, const size_t &gp, const size_t &s, const double &value) { element.ecf.advection[gp][0][s] = value; });
-		if (info::mesh->dimension == 3) {
-			generateElementTypedExpression<ExternalGPsExpression, HeatTransferElementType::ASYMMETRIC_GENERAL>(elementOps, configuration.translation_motions, 2, [] (auto &element, const size_t &gp, const size_t &s, const double &value) { element.ecf.advection[gp][0][s] = value; });
-		}
-		generateElementOperators<Advection>(etype, elementOps);
 	}
 	if (configuration.heat_flow.size()) {
 		correct &= checkBoundaryParameter("HEAT FLOW", configuration.heat_flow);

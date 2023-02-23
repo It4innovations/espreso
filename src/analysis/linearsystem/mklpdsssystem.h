@@ -173,6 +173,9 @@ template <> struct MKLPDSSSystem<HeatSteadyStateLinear>: public MKLPDSSSystemDat
 				assembler.A.type = solver.A.type = Matrix_Type::REAL_STRUCTURALLY_SYMMETRIC;
 			}
 		}
+		if (analysis->configuration.translation_motions.size()) {
+			assembler.A.type = solver.A.type = Matrix_Type::REAL_STRUCTURALLY_SYMMETRIC;
+		}
 
 		assembler.pattern.set(analysis->configuration.temperature, 1, solver.distribution);
 		_fillDirect(this);

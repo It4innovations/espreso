@@ -51,7 +51,7 @@ struct SIMD
 
 ALWAYS_INLINE const SIMD load1(const double &from) noexcept
 {
-	return _mm512_set1_pd(&from);
+	return _mm512_set1_pd(from);
 }
 
 ALWAYS_INLINE const SIMD load(const double *from) noexcept
@@ -98,5 +98,37 @@ ALWAYS_INLINE SIMD negate(const SIMD& value) noexcept
 	__m512i tmp = _mm512_set_epi32(1<<31, 0, 1<<31, 0, 1<<31, 0, 1<<31, 0, 1<<31, 0, 1<<31, 0, 1<<31, 0, 1<<31, 0);
 	return _mm512_xor_pd(value.data, reinterpret_cast<__m512d>(tmp));
 }
+
+ALWAYS_INLINE SIMD sqrt(const SIMD& value) noexcept
+{
+	return _mm512_sqrt_pd(value.data);
+}
+
+ALWAYS_INLINE SIMD rsqrt14(const SIMD& v) noexcept
+{
+	__m512d zero = { 1e-14, 1e-14, 1e-14, 1e-14, 1e-14, 1e-14, 1e-14, 1e-14 };
+	__mmask8 mask = _mm512_cmp_pd_mask(zero, v.data, _CMP_NLT_UQ);
+	return _mm512_maskz_rsqrt14_pd(mask, v.data);
+}
+
+ALWAYS_INLINE SIMD positive_guarded_recip(const SIMD& v) noexcept // TODO: improve it
+{
+	return __m512d{
+		v.data[0] > 0. ? 1. / v.data[0] : 0.,
+		v.data[1] > 0. ? 1. / v.data[1] : 0.,
+		v.data[2] > 0. ? 1. / v.data[2] : 0.,
+		v.data[3] > 0. ? 1. / v.data[3] : 0.,
+		v.data[4] > 0. ? 1. / v.data[4] : 0.,
+		v.data[5] > 0. ? 1. / v.data[5] : 0.,
+		v.data[6] > 0. ? 1. / v.data[6] : 0.,
+		v.data[7] > 0. ? 1. / v.data[7] : 0.
+	};
+}
+
+ALWAYS_INLINE SIMD max(const SIMD& v1, const SIMD& v2) noexcept
+{
+	return _mm512_max_pd(v1.data, v2.data);
+}
+
 #endif // __AVX__
 #endif /* SRC_MATH_SIMD_SIMD_AVX_H_ */

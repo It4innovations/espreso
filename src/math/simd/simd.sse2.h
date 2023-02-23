@@ -9,6 +9,8 @@
 #include <cstddef>
 #include <immintrin.h>
 
+#include <cstdio>
+
 struct SIMD
 {
 	enum: size_t {
@@ -99,6 +101,33 @@ ALWAYS_INLINE SIMD negate(const SIMD& value) noexcept
 {
 	__m128i tmp = _mm_set_epi32(1<<31, 0, 1<<31, 0);
 	return _mm_xor_pd(value.data, reinterpret_cast<__m128d>(tmp));
+}
+
+ALWAYS_INLINE SIMD sqrt(const SIMD& value) noexcept
+{
+	return _mm_sqrt_pd(value.data);
+}
+
+ALWAYS_INLINE SIMD rsqrt14(const SIMD& v) noexcept // TODO: improve it
+{
+	__m128d sqrt = _mm_sqrt_pd(v.data);
+	return __m128d{
+		v.data[0] > 0. ? 1. / sqrt[0] : 0.,
+		v.data[1] > 0. ? 1. / sqrt[1] : 0.
+	};
+}
+
+ALWAYS_INLINE SIMD positive_guarded_recip(const SIMD& v) noexcept // TODO: improve it
+{
+	return __m128d{
+		v.data[0] > 0. ? 1. / v.data[0] : 0.,
+		v.data[1] > 0. ? 1. / v.data[1] : 0.
+	};
+}
+
+ALWAYS_INLINE SIMD max(const SIMD& v1, const SIMD& v2) noexcept
+{
+	return _mm_max_pd(v1.data, v2.data);
 }
 
 #endif // __SSE2__

@@ -98,5 +98,38 @@ ALWAYS_INLINE SIMD negate(const SIMD& value) noexcept
 	__m256i tmp = _mm256_set_epi32(1<<31, 0, 1<<31, 0, 1<<31, 0, 1<<31, 0);
 	return _mm256_xor_pd(value.data, reinterpret_cast<__m256d>(tmp));
 }
+
+ALWAYS_INLINE SIMD sqrt(const SIMD& value) noexcept
+{
+	return _mm256_sqrt_pd(value.data);
+}
+
+ALWAYS_INLINE SIMD rsqrt14(const SIMD& v) noexcept
+{
+	__m256d sqrt = _mm256_sqrt_pd(v.data);
+	return __m256d{
+		v.data[0] > 0. ? sqrt[0] : 0.,
+		v.data[1] > 0. ? sqrt[1] : 0.,
+		v.data[2] > 0. ? sqrt[2] : 0.,
+		v.data[3] > 0. ? sqrt[3] : 0.
+	};
+}
+
+ALWAYS_INLINE SIMD positive_guarded_recip(const SIMD& v) noexcept // TODO: improve it
+{
+	return __m256d{
+		v.data[0] > 0. ? 1. / v.data[0] : 0.,
+		v.data[1] > 0. ? 1. / v.data[1] : 0.,
+		v.data[2] > 0. ? 1. / v.data[2] : 0.,
+		v.data[3] > 0. ? 1. / v.data[3] : 0.
+	};
+}
+
+ALWAYS_INLINE SIMD max(const SIMD& v1, const SIMD& v2) noexcept
+{
+	return _mm256_max_pd(v1.data, v2.data);
+}
+
+
 #endif // __AVX__
 #endif /* SRC_MATH_SIMD_SIMD_AVX_H_ */
