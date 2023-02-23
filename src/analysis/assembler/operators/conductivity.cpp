@@ -26,6 +26,8 @@ void HeatTransfer::generateConductivity()
 			}
 		}
 
+		isconst &= configuration.translation_motions.size() == 0 || settings.sigma == 0;
+
 		elementOps[interval].push_back(generateExpression<ExternalGPsExpression>(interval, etype[interval], mat->density.evaluator,
 					[] (auto &element, const size_t &gp, const size_t &s, const double &value) { element.ecf.density[gp][s] = value; }));
 		elementOps[interval].push_back(generateExpression<ExternalGPsExpression>(interval, etype[interval], mat->heat_capacity.evaluator,

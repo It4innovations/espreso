@@ -57,6 +57,8 @@ struct Advection<nodes, gps, ndim, edim, HeatTransferElementType::ASYMMETRIC_ISO
 			SIMD tau = max(SIMD(), C1 - Pe);
 			SIMD adv = C05 * he * tau * urnorm;
 
+			// element.conductivity[gp] = element.conductivity[gp] + element.ecf.sigma * he * unorm;
+
 			for (size_t n = 0; n < nodes; ++n) {
 				SIMD scale = element.det[gp] * load1(element.w[gp]) * (load1(element.N[gp][n]) + adv * be[n]);
 				for (size_t m = 0; m < nodes; ++m) {
@@ -101,6 +103,10 @@ struct Advection<nodes, gps, ndim, edim, HeatTransferElementType::ASYMMETRIC_GEN
 			SIMD Pe = C2 * element.conductivity[gp][0] * rhe * urnorm;
 			SIMD tau = max(SIMD(), C1 - Pe);
 			SIMD adv = C05 * he * tau * urnorm;
+
+			for (size_t d = 0; d < ndim; ++d) {
+				// element.conductivity[gp][d * ndim + d] = element.conductivity[gp][d * ndim + d] + element.ecf.sigma * he * unorm;
+			}
 
 			for (size_t n = 0; n < nodes; ++n) {
 				SIMD scale = element.det[gp] * load1(element.w[gp]) * (load1(element.N[gp][n]) + adv * be[n]);
