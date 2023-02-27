@@ -3,6 +3,7 @@
 #define SRC_ANALYSIS_ASSEMBLER_OPERATORS_ELASTICITY_COORDINATESYSTEM_H_
 
 #include "analysis/assembler/operator.h"
+#include "analysis/assembler/module/structuralmechanics.element.h"
 #include "math/simd/simd.h"
 
 #include <cmath>
@@ -171,8 +172,18 @@ struct ElasticityCoordinateSystemSpherical<nodes, gps, 3, edim, etype, Physics>:
 	}
 };
 
-template <size_t nodes, size_t gps, size_t edim, size_t etype, class Physics>
-struct ElasticityCoordinateSystemCopy<nodes, gps, 2, edim, etype, Physics>: ElasticityCoordinateSystem, Physics {
+template <size_t nodes, size_t gps, size_t edim, class Physics>
+struct ElasticityCoordinateSystemCopy<nodes, gps, 2, edim, StructuralMechanicsElementType::SYMMETRIC_PLANE, Physics>: ElasticityCoordinateSystem, Physics {
+	using ElasticityCoordinateSystem::ElasticityCoordinateSystem;
+
+	void simd(typename Physics::Element &element)
+	{
+		memcpy(element.elasticity, element.ecf.elasticity, sizeof(double) * SIMD::size * gps * 9);
+	}
+};
+
+template <size_t nodes, size_t gps, size_t edim, class Physics>
+struct ElasticityCoordinateSystemCopy<nodes, gps, 2, edim, StructuralMechanicsElementType::SYMMETRIC_PLANE_AXISYMMETRIC, Physics>: ElasticityCoordinateSystem, Physics {
 	using ElasticityCoordinateSystem::ElasticityCoordinateSystem;
 
 	void simd(typename Physics::Element &element)
@@ -180,6 +191,7 @@ struct ElasticityCoordinateSystemCopy<nodes, gps, 2, edim, etype, Physics>: Elas
 		memcpy(element.elasticity, element.ecf.elasticity, sizeof(double) * SIMD::size * gps * 16);
 	}
 };
+
 
 template <size_t nodes, size_t gps, size_t edim, size_t etype, class Physics>
 struct ElasticityCoordinateSystemCopy<nodes, gps, 3, edim, etype, Physics>: ElasticityCoordinateSystem, Physics {

@@ -43,7 +43,7 @@ struct ElasticityIsotropicPlaneStress: ActionOperator, Physics {
 
 	ElasticityIsotropicPlaneStress(size_t interval)
 	{
-		action = Action::ASSEMBLE;
+		action = Action::ASSEMBLE | Action::REASSEMBLE;
 	}
 
 	void simd(typename Physics::Element &element)
@@ -72,7 +72,7 @@ struct ElasticityIsotropicPlaneAxisymmetric: ActionOperator, Physics {
 
 	ElasticityIsotropicPlaneAxisymmetric(size_t interval)
 	{
-		action = Action::ASSEMBLE;
+		action = Action::ASSEMBLE | Action::REASSEMBLE;
 	}
 
 	void simd(typename Physics::Element &element)
@@ -112,7 +112,7 @@ struct ElasticityIsotropicVolume: ActionOperator, Physics {
 
 	ElasticityIsotropicVolume(size_t interval)
 	{
-		action = Action::ASSEMBLE;
+		action = Action::ASSEMBLE | Action::REASSEMBLE;
 	}
 
 	void simd(typename Physics::Element &element)
@@ -169,7 +169,7 @@ struct ElasticityOrthotropicVolume: ActionOperator, Physics {
 
 	ElasticityOrthotropicVolume(size_t interval)
 	{
-		action = Action::ASSEMBLE;
+		action = Action::ASSEMBLE | Action::REASSEMBLE;
 	}
 
 	void simd(typename Physics::Element &element)

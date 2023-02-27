@@ -13,7 +13,7 @@
 
 namespace espreso {
 
-template <int ndim, int etype>
+template <size_t ndim, int etype>
 static void generateBaseFunctions(size_t interval, std::vector<std::vector<ActionOperator*> > &ops)
 {
 	switch (static_cast<Element::CODE>(info::mesh->elements->eintervals[interval].code)) {
@@ -36,20 +36,20 @@ static void generateBaseFunctions(size_t interval, std::vector<std::vector<Actio
 
 static void generateBaseFunctions(const std::vector<int> &etype, std::vector<std::vector<ActionOperator*> > &ops)
 {
-	GaussPoints<Element::CODE::LINE2, 2, 2, 1>::set();
-	GaussPoints<Element::CODE::TRIANGLE3, 3, 6, 2>::set();
-	GaussPoints<Element::CODE::SQUARE4, 4, 4, 2>::set();
-	GaussPoints<Element::CODE::TETRA4, 4, 4, 3>::set();
-	GaussPoints<Element::CODE::PYRAMID5, 5, 8, 3>::set();
-	GaussPoints<Element::CODE::PRISMA6, 6, 9, 3>::set();
-	GaussPoints<Element::CODE::HEXA8, 8, 8, 3>::set();
-	GaussPoints<Element::CODE::LINE3, 3, 3, 1>::set();
-	GaussPoints<Element::CODE::TRIANGLE6, 6, 6, 2>::set();
-	GaussPoints<Element::CODE::SQUARE8, 8, 9, 2>::set();
-	GaussPoints<Element::CODE::TETRA10, 10, 15, 3>::set();
-	GaussPoints<Element::CODE::PYRAMID13, 13, 14, 3>::set();
-	GaussPoints<Element::CODE::PRISMA15, 15, 9, 3>::set();
-	GaussPoints<Element::CODE::HEXA20, 20, 8, 3>::set();
+	GaussPoints<Element::CODE::LINE2    ,  2, StructuralMechanicsGPC::LINE2    , 1>::set();
+	GaussPoints<Element::CODE::TRIANGLE3,  3, StructuralMechanicsGPC::TRIANGLE3, 2>::set();
+	GaussPoints<Element::CODE::SQUARE4  ,  4, StructuralMechanicsGPC::SQUARE4  , 2>::set();
+	GaussPoints<Element::CODE::TETRA4   ,  4, StructuralMechanicsGPC::TETRA4   , 3>::set();
+	GaussPoints<Element::CODE::PYRAMID5 ,  5, StructuralMechanicsGPC::PYRAMID5 , 3>::set();
+	GaussPoints<Element::CODE::PRISMA6  ,  6, StructuralMechanicsGPC::PRISMA6  , 3>::set();
+	GaussPoints<Element::CODE::HEXA8    ,  8, StructuralMechanicsGPC::HEXA8    , 3>::set();
+	GaussPoints<Element::CODE::LINE3    ,  3, StructuralMechanicsGPC::LINE3    , 1>::set();
+	GaussPoints<Element::CODE::TRIANGLE6,  6, StructuralMechanicsGPC::TRIANGLE6, 2>::set();
+	GaussPoints<Element::CODE::SQUARE8  ,  8, StructuralMechanicsGPC::SQUARE8  , 2>::set();
+	GaussPoints<Element::CODE::TETRA10  , 10, StructuralMechanicsGPC::TETRA10  , 3>::set();
+	GaussPoints<Element::CODE::PYRAMID13, 13, StructuralMechanicsGPC::PYRAMID13, 3>::set();
+	GaussPoints<Element::CODE::PRISMA15 , 15, StructuralMechanicsGPC::PRISMA15 , 3>::set();
+	GaussPoints<Element::CODE::HEXA20   , 20, StructuralMechanicsGPC::HEXA20   , 3>::set();
 
 	for(size_t i = 0; i < info::mesh->elements->eintervals.size(); ++i) {
 		switch (info::mesh->dimension) {

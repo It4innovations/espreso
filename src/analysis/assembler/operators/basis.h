@@ -3,15 +3,14 @@
 #define SRC_ANALYSIS_ASSEMBLER_OPERATORS_BASIS_H_
 
 #include "analysis/assembler/operator.h"
-#include "analysis/assembler/parameter.h"
-#include "analysis/assembler/math.hpp"
 #include "mesh/element.h"
 
+#include <cmath>
 #include <vector>
 
 namespace espreso {
 
-template <Element::CODE code, int nodes, int gps, int edim> struct GaussPoints;
+template <Element::CODE code, size_t nodes, size_t gps, size_t edim> struct GaussPoints;
 
 template<>
 struct GaussPoints<Element::CODE::LINE2, 2, 2, 1> {
@@ -798,7 +797,7 @@ struct GaussPoints<Element::CODE::HEXA20, 20, 8, 3> {
 
 };
 
-template <Element::CODE code, int nodes, int gps, int edim, int etype, class Physics>
+template <Element::CODE code, size_t nodes, size_t gps, size_t edim, size_t etype, class Physics>
 struct Basis: ActionOperator, Physics {
 
 	Basis()

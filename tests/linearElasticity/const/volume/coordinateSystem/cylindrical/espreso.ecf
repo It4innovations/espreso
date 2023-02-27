@@ -110,7 +110,7 @@ STRUCTURAL_MECHANICS_3D {
       DISPLACEMENT {
         X0   { X 0; Y 0; Z 0; }
         Y0   { Y 0; }
-        Y1   { X 0; } 
+        Y1   { X 0; }
       }
 
       ANGULAR_VELOCITY {
@@ -127,7 +127,7 @@ OUTPUT {
   MONITORING {
     1 {
       REGION        ALL_NODES;
-      STATISTICS          MIN;
+      STATISTICS          AVG;
       PROPERTY   DISPLACEMENT;
     }
 
@@ -138,9 +138,9 @@ OUTPUT {
     }
 
     3 {
-      REGION                 X0;
-      STATISTICS            MAX;
-      PROPERTY     DISPLACEMENT;
+      REGION               X0;
+      STATISTICS          MAX;
+      PROPERTY   DISPLACEMENT;
     }
   }
 }

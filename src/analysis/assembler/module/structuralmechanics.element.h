@@ -33,13 +33,13 @@ struct StructuralMechanicsGPC {
 
 struct StructuralMechanicsElementType {
 	enum: int {
-		SYMMETRIC_PLANE              = 0,
-		SYMMETRIC_PLANE_AXISYMMETRIC = 1,
-		SYMMETRIC_VOLUME             = 2,
-		FACE                         = 4,
-		EDGE                         = 5,
-		EDGE_AXISYMMETRIC            = 6,
-		NODE                         = 7
+		SYMMETRIC_PLANE              = 10,
+		SYMMETRIC_PLANE_AXISYMMETRIC = 11,
+		SYMMETRIC_VOLUME             = 12,
+		FACE                         = 14,
+		EDGE                         = 15,
+		EDGE_AXISYMMETRIC            = 16,
+		NODE                         = 17
 	};
 };
 
@@ -190,7 +190,7 @@ struct StructuralMechanicsDataDescriptor<nodes, gps, 3, 2, StructuralMechanicsEl
 		} ecf;
 
 		alignas(SIMD::size * sizeof(double)) SIMD coords[nodes][3];
-		alignas(SIMD::size * sizeof(double)) SIMD gpcoords[gps][ndim];
+		alignas(SIMD::size * sizeof(double)) SIMD gpcoords[gps][3];
 
 		alignas(SIMD::size * sizeof(double)) double  w [gps];
 		alignas(SIMD::size * sizeof(double)) double  N [gps][nodes];
@@ -199,7 +199,7 @@ struct StructuralMechanicsDataDescriptor<nodes, gps, 3, 2, StructuralMechanicsEl
 		alignas(SIMD::size * sizeof(double)) SIMD det[gps];
 		alignas(SIMD::size * sizeof(double)) SIMD normal[gps][3];
 
-		alignas(SIMD::size * sizeof(double)) SIMD displacement[nodes][ndim];
+		alignas(SIMD::size * sizeof(double)) SIMD displacement[nodes][3];
 
 		Element()
 		{

@@ -301,7 +301,7 @@ void StructuralMechanics::analyze()
 	}
 
 	if (configuration.normal_pressure.size()) {
-		correct &= checkBoundaryParameter("NORMAL PRESSUR", configuration.normal_pressure);
+		correct &= checkBoundaryParameter("NORMAL PRESSURE", configuration.normal_pressure);
 		generateBoundaryExpression<ExternalGPsExpression>(axisymmetric, boundaryOps, configuration.normal_pressure, [] (auto &element, const size_t &gp, const size_t &s, const double &value) { element.ecf.normalPressure[gp][s] = value; });
 	}
 	for(size_t r = 0; r < info::mesh->boundaryRegions.size(); ++r) {
