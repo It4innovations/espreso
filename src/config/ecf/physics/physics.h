@@ -33,6 +33,12 @@ struct PhysicsConfiguration: public ECFDescription {
 		BEM
 	};
 
+	enum class LOOP {
+		INHERITANCE,
+		OPERATORS,
+		MANUAL
+	};
+
 	int load_steps;
 
 	// TODO: case insensitive compare
@@ -47,6 +53,7 @@ struct PhysicsConfiguration: public ECFDescription {
 	std::map<std::string, ECFExpression> initial_temperature, thickness;
 
 	bool contact_interfaces, reassembling_optimization;
+	LOOP loop;
 
 	PhysicsConfiguration(DIMENSION dim, MaterialConfiguration::PHYSICAL_MODEL physicalModel);
 };

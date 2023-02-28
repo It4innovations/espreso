@@ -29,7 +29,8 @@ Assembler::Assembler(PhysicsConfiguration &settings)
 : settings(settings),
   etype(info::mesh->elements->eintervals.size()), bfilter(info::mesh->boundaryRegions.size()), btype(info::mesh->boundaryRegions.size()),
   elementOps(info::mesh->elements->eintervals.size()),
-  boundaryOps(info::mesh->boundaryRegions.size())
+  boundaryOps(info::mesh->boundaryRegions.size()),
+  K(nullptr)
 {
 	for (size_t i = 0; i < info::mesh->boundaryRegions.size(); ++i) {
 		if (info::mesh->boundaryRegions[i]->dimension) {
@@ -66,7 +67,7 @@ double Assembler::assemble(ActionOperator::Action action)
 			for (size_t d = info::mesh->domains->distribution[t]; d < info::mesh->domains->distribution[t + 1]; d++) {
 				for (esint i = info::mesh->elements->eintervalsDistribution[d]; i < info::mesh->elements->eintervalsDistribution[d + 1]; ++i) {
 					esint elements = info::mesh->elements->eintervals[i].end - info::mesh->elements->eintervals[i].begin;
-					time += instantiate(action, info::mesh->elements->eintervals[i].code, etype[i], elementOps[i], elements);
+					time += instantiate(action, info::mesh->elements->eintervals[i].code, etype[i], elementOps[i], i, elements);
 				}
 			}
 		}
@@ -77,11 +78,11 @@ double Assembler::assemble(ActionOperator::Action action)
 					if (info::mesh->boundaryRegions[r]->dimension) {
 						for (esint i = info::mesh->boundaryRegions[r]->eintervalsDistribution[d]; i < info::mesh->boundaryRegions[r]->eintervalsDistribution[d + 1]; ++i) {
 							size_t elements = info::mesh->boundaryRegions[r]->eintervals[i].end - info::mesh->boundaryRegions[r]->eintervals[i].begin;
-							instantiate(action, info::mesh->boundaryRegions[r]->eintervals[i].code, btype[r][i], boundaryOps[r][i], elements);
+							instantiate(action, info::mesh->boundaryRegions[r]->eintervals[i].code, btype[r][i], boundaryOps[r][i], i, elements);
 						}
 					} else {
 						size_t elements = info::mesh->boundaryRegions[r]->nodes->datatarray().size(t);
-						instantiate(action, static_cast<int>(Element::CODE::POINT1), btype[r][t], boundaryOps[r][t], elements);
+						instantiate(action, static_cast<int>(Element::CODE::POINT1), btype[r][t], boundaryOps[r][t], r, elements);
 					}
 				}
 			}
@@ -92,7 +93,7 @@ double Assembler::assemble(ActionOperator::Action action)
 			for (size_t d = info::mesh->domains->distribution[t]; d < info::mesh->domains->distribution[t + 1]; d++) {
 				for (esint i = info::mesh->elements->eintervalsDistribution[d]; i < info::mesh->elements->eintervalsDistribution[d + 1]; ++i) {
 					esint elements = info::mesh->elements->eintervals[i].end - info::mesh->elements->eintervals[i].begin;
-					time += instantiate(action, info::mesh->elements->eintervals[i].code, etype[i], elementOps[i], elements);
+					time += instantiate(action, info::mesh->elements->eintervals[i].code, etype[i], elementOps[i], i, elements);
 				}
 			}
 		}
@@ -104,11 +105,11 @@ double Assembler::assemble(ActionOperator::Action action)
 					if (info::mesh->boundaryRegions[r]->dimension) {
 						for (esint i = info::mesh->boundaryRegions[r]->eintervalsDistribution[d]; i < info::mesh->boundaryRegions[r]->eintervalsDistribution[d + 1]; ++i) {
 							size_t elements = info::mesh->boundaryRegions[r]->eintervals[i].end - info::mesh->boundaryRegions[r]->eintervals[i].begin;
-							instantiate(action, info::mesh->boundaryRegions[r]->eintervals[i].code, btype[r][i], boundaryOps[r][i], elements);
+							instantiate(action, info::mesh->boundaryRegions[r]->eintervals[i].code, btype[r][i], boundaryOps[r][i], i, elements);
 						}
 					} else {
 						size_t elements = info::mesh->boundaryRegions[r]->nodes->datatarray().size(t);
-						instantiate(action, static_cast<int>(Element::CODE::POINT1), btype[r][t], boundaryOps[r][t], elements);
+						instantiate(action, static_cast<int>(Element::CODE::POINT1), btype[r][t], boundaryOps[r][t], t, elements);
 					}
 				}
 			}

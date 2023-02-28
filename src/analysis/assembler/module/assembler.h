@@ -6,6 +6,8 @@
 #include "analysis/assembler/operator.h"
 #include "math/primitives/vector_sparse.h"
 
+#include "analysis/scheme/steadystate.h"
+
 #include <vector>
 #include <map>
 #include <functional>
@@ -37,7 +39,7 @@ public:
 
 protected:
 	double assemble(ActionOperator::Action action);
-	virtual double instantiate(ActionOperator::Action action, int code, int etype, const std::vector<ActionOperator*> &ops, esint elements) { return 0; }
+	virtual double instantiate(ActionOperator::Action action, int code, int etype, const std::vector<ActionOperator*> &ops, size_t interval, esint elements) { return 0; }
 
 	template <template <size_t, size_t, size_t, size_t, size_t> class DataDescriptor, size_t nodes, size_t gps, size_t ndim, size_t edim, size_t etype>
 	double loop(ActionOperator::Action action, const std::vector<ActionOperator*> &ops, esint elements);
@@ -56,6 +58,9 @@ protected:
 	void printMaterials(const std::map<std::string, std::string> &settings);
 	template<typename Ttype>
 	void validateRegionSettings(const std::string &name, const std::map<std::string, Ttype> &settings);
+
+	// TODO: remove
+	Matrix_Base<double> *K;
 };
 
 template <typename T>

@@ -409,6 +409,7 @@ void HeatTransfer::analyze()
 
 void HeatTransfer::connect(SteadyState &scheme)
 {
+	this->K = scheme.K;
 	switch (scheme.K->shape) {
 	case Matrix_Shape::FULL:  generateElementOperators<GeneralMatricFiller>(etype, elementOps, 1, elements.stiffness, scheme.K); break;
 	case Matrix_Shape::UPPER: generateElementOperators<SymmetricMatricFiller>(etype, elementOps, 1, elements.stiffness, scheme.K); break;
@@ -491,14 +492,172 @@ void HeatTransfer::updateSolution(SteadyState &scheme)
 //	temp.node.setUpdate(1);
 }
 
+template <template <size_t, size_t, size_t, size_t, size_t> class DataDescriptor, size_t nodes, size_t gps, size_t ndim, size_t edim, size_t etype>
+double HeatTransfer::operatorsloop(ActionOperator::Action action, const std::vector<ActionOperator*> &ops, size_t interval, esint elements)
+{
+	if (this->K == nullptr) {
+		return loop<HeatTransferDataDescriptor, nodes, gps, ndim, edim, etype>(action, ops, elements);
+	}
+	if (elements == 0) return 0;
+	typename DataDescriptor<nodes, gps, ndim, edim, etype>::Element element;
+
+	for (auto op = ops.cbegin(); op != ops.cend(); ++op) {
+		if ((*op)->action & action) {
+			if (elements > SIMD::size) {
+				dynamic_cast<DataDescriptor<nodes, gps, ndim, edim, etype>*>(*op)->simd(element);
+			} else {
+				dynamic_cast<DataDescriptor<nodes, gps, ndim, edim, etype>*>(*op)->peel(element, elements);
+			}
+		}
+	}
+
+	auto procNodes = info::mesh->elements->nodes->cbegin() + info::mesh->elements->eintervals[interval].begin;
+	CoordinatesToElementNodes<nodes, gps, ndim, edim, etype, DataDescriptor<nodes, gps, ndim, edim, etype> > coo(interval, procNodes);
+	TemperatureToElementNodes<nodes, gps, ndim, edim, etype, DataDescriptor<nodes, gps, ndim, edim, etype> > temp(interval, procNodes, Results::temperature->data.data());
+	Integration<nodes, gps, ndim, edim, etype, DataDescriptor<nodes, gps, ndim, edim, etype> > integration(interval);
+	HeatTransferStiffness<nodes, gps, ndim, edim, etype, DataDescriptor<nodes, gps, ndim, edim, etype> > stiffness(interval, this->elements.stiffness);
+
+	SymmetricMatricFiller<nodes, gps, ndim, edim, etype, DataDescriptor<nodes, gps, ndim, edim, etype> > symFiller(interval, 1, this->elements.stiffness, this->K);
+	GeneralMatricFiller<nodes, gps, ndim, edim, etype, DataDescriptor<nodes, gps, ndim, edim, etype> > asymFiller(interval, 1, this->elements.stiffness, this->K);
+
+	TemperatureGradient<nodes, gps, ndim, edim, etype, DataDescriptor<nodes, gps, ndim, edim, etype> > gradient(interval, Results::gradient);
+	TemperatureFlux<nodes, gps, ndim, edim, etype, DataDescriptor<nodes, gps, ndim, edim, etype> > flux(interval, Results::flux);
+
+	coo.move(SIMD::size);
+	temp.move(SIMD::size);
+	stiffness.move(SIMD::size);
+	symFiller.move(SIMD::size);
+
+	gradient.move(ndim * SIMD::size);
+	flux.move(ndim * SIMD::size);
+
+	const MaterialConfiguration *mat = info::mesh->materials[info::mesh->elements->eintervals[interval].material];
+	bool constConductivity = true, rotateConductivity = mat->thermal_conductivity.model != ThermalConductivityConfiguration::MODEL::ISOTROPIC;
+	if (mat->thermal_conductivity.model != ThermalConductivityConfiguration::MODEL::ISOTROPIC) {
+		if (mat->coordinate_system.type == CoordinateSystemConfiguration::TYPE::CARTESIAN) {
+			if (ndim == 2) {
+				rotateConductivity &= mat->coordinate_system.rotation.z.isset;
+			}
+			if (ndim == 3) {
+				rotateConductivity &= mat->coordinate_system.rotation.x.isset | mat->coordinate_system.rotation.y.isset | mat->coordinate_system.rotation.z.isset;
+			}
+		}
+	}
+
+	bool computeK = action == ActionOperator::ASSEMBLE || action == ActionOperator::REASSEMBLE;
+	bool computeGradient = info::ecf->output.results_selection.gradient;
+	bool computeFlux = info::ecf->output.results_selection.flux;
+	bool getTemp = action == ActionOperator::SOLUTION && (computeGradient || computeFlux);
+	bool isSymmetric = mat->thermal_conductivity.model != ThermalConductivityConfiguration::MODEL::ANISOTROPIC && (configuration.translation_motions.size() == 0 || settings.sigma == 0);
+
+	double start = eslog::time();
+	esint chunks = elements / SIMD::size;
+	for (esint c = 1; c < chunks; ++c) {
+		coo.simd(element);
+		integration.simd(element);
+		if (getTemp) {
+			temp.simd(element);
+		}
+		if (!constConductivity) {
+
+		}
+		if (!rotateConductivity) {
+
+		}
+		if (computeK) {
+			stiffness.simd(element);
+		}
+		if (action == ActionOperator::FILL) {
+			if (isSymmetric) {
+				symFiller.simd(element);
+			} else {
+				asymFiller.simd(element);
+			}
+		}
+		if (computeGradient) {
+			gradient.simd(element);
+		}
+		if (computeFlux) {
+			flux.simd(element);
+		}
+	}
+	double end = eslog::time();
+
+	if (elements % SIMD::size) {
+		eslog::error("peel loop is not supported\n");
+		// peel is never needed
+	}
+
+	for (auto op = ops.cbegin(); op != ops.cend(); ++op) {
+		if ((*op)->action & action) {
+			if ((*op)->isconst) {
+				(*op)->move(-(int)std::min(elements, (esint)SIMD::size));
+			} else {
+				(*op)->move(-(esint)SIMD::size);
+			}
+		}
+	}
+	return end - start;
+}
+
+template <template <size_t, size_t, size_t, size_t, size_t> class DataDescriptor, size_t nodes, size_t gps, size_t ndim, size_t edim, size_t etype>
+double HeatTransfer::manualloop(ActionOperator::Action action, const std::vector<ActionOperator*> &ops, size_t interval, esint elements)
+{
+	eslog::info("       = LOOP TYPE                                                           MANUAL = \n");
+	if (elements == 0) return 0;
+	typename DataDescriptor<nodes, gps, ndim, edim, etype>::Element element;
+	std::vector<DataDescriptor<nodes, gps, ndim, edim, etype>*> active; active.reserve(ops.size());
+
+	for (auto op = ops.cbegin(); op != ops.cend(); ++op) {
+		if ((*op)->action & action) {
+			if (elements > SIMD::size) {
+				if ((*op)->isconst) {
+					dynamic_cast<DataDescriptor<nodes, gps, ndim, edim, etype>*>(*op)->simd(element);
+				} else {
+					active.push_back(dynamic_cast<DataDescriptor<nodes, gps, ndim, edim, etype>*>(*op));
+					active.back()->simd(element);
+				}
+			} else {
+				dynamic_cast<DataDescriptor<nodes, gps, ndim, edim, etype>*>(*op)->peel(element, elements);
+			}
+		}
+	}
+
+	double start = eslog::time();
+	esint chunks = elements / SIMD::size;
+	for (esint c = 1; c < chunks; ++c) {
+		for (auto op = active.cbegin(); op != active.cend(); ++op) {
+			(*op)->simd(element);
+		}
+	}
+	double end = eslog::time();
+
+	if (elements % SIMD::size) {
+		for (auto op = active.cbegin(); op != active.cend(); ++op) {
+			(*op)->peel(element, elements % SIMD::size);
+		}
+	}
+
+	for (auto op = ops.cbegin(); op != ops.cend(); ++op) {
+		if ((*op)->action & action) {
+			if ((*op)->isconst) {
+				(*op)->move(-(int)std::min(elements, (esint)SIMD::size));
+			} else {
+				(*op)->move(-elements);
+			}
+		}
+	}
+	return end - start;
+}
+
 template <>
-double HeatTransfer::instantiate2D<HeatTransferElementType::NODE>(ActionOperator::Action action, int code, const std::vector<ActionOperator*> &ops, esint elements)
+double HeatTransfer::instantiate2D<HeatTransferElementType::NODE>(ActionOperator::Action action, int code, const std::vector<ActionOperator*> &ops, size_t interval, esint elements)
 {
 	return loop<HeatTransferDataDescriptor, 1, HeatTransferGPC::POINT1, 2, 0, HeatTransferElementType::NODE>(action, ops, elements);
 }
 
 template <>
-double HeatTransfer::instantiate2D<HeatTransferElementType::EDGE>(ActionOperator::Action action, int code, const std::vector<ActionOperator*> &ops, esint elements)
+double HeatTransfer::instantiate2D<HeatTransferElementType::EDGE>(ActionOperator::Action action, int code, const std::vector<ActionOperator*> &ops, size_t interval, esint elements)
 {
 	switch (code) {
 	case static_cast<size_t>(Element::CODE::LINE2): return loop<HeatTransferDataDescriptor, 2, HeatTransferGPC::LINE2, 2, 1, HeatTransferElementType::EDGE>(action, ops, elements); break;
@@ -508,25 +667,45 @@ double HeatTransfer::instantiate2D<HeatTransferElementType::EDGE>(ActionOperator
 }
 
 template <int etype>
-double HeatTransfer::instantiate2D(ActionOperator::Action action, int code, const std::vector<ActionOperator*> &ops, esint elements)
+double HeatTransfer::instantiate2D(ActionOperator::Action action, int code, const std::vector<ActionOperator*> &ops, size_t interval, esint elements)
 {
-	switch (code) {
-	case static_cast<size_t>(Element::CODE::TRIANGLE3): return loop<HeatTransferDataDescriptor, 3, HeatTransferGPC::TRIANGLE3, 2, 2, etype>(action, ops, elements); break;
-	case static_cast<size_t>(Element::CODE::TRIANGLE6): return loop<HeatTransferDataDescriptor, 6, HeatTransferGPC::TRIANGLE6, 2, 2, etype>(action, ops, elements); break;
-	case static_cast<size_t>(Element::CODE::SQUARE4):   return loop<HeatTransferDataDescriptor, 4, HeatTransferGPC::SQUARE4  , 2, 2, etype>(action, ops, elements); break;
-	case static_cast<size_t>(Element::CODE::SQUARE8):   return loop<HeatTransferDataDescriptor, 8, HeatTransferGPC::SQUARE8  , 2, 2, etype>(action, ops, elements); break;
-	default: return 0;
+	switch (settings.loop) {
+	case PhysicsConfiguration::LOOP::INHERITANCE:
+		switch (code) {
+		case static_cast<size_t>(Element::CODE::TRIANGLE3): return loop<HeatTransferDataDescriptor, 3, HeatTransferGPC::TRIANGLE3, 2, 2, etype>(action, ops, elements); break;
+		case static_cast<size_t>(Element::CODE::TRIANGLE6): return loop<HeatTransferDataDescriptor, 6, HeatTransferGPC::TRIANGLE6, 2, 2, etype>(action, ops, elements); break;
+		case static_cast<size_t>(Element::CODE::SQUARE4):   return loop<HeatTransferDataDescriptor, 4, HeatTransferGPC::SQUARE4  , 2, 2, etype>(action, ops, elements); break;
+		case static_cast<size_t>(Element::CODE::SQUARE8):   return loop<HeatTransferDataDescriptor, 8, HeatTransferGPC::SQUARE8  , 2, 2, etype>(action, ops, elements); break;
+		default: return 0;
+		};
+	case PhysicsConfiguration::LOOP::OPERATORS:
+		switch (code) {
+		case static_cast<size_t>(Element::CODE::TRIANGLE3): return operatorsloop<HeatTransferDataDescriptor, 3, HeatTransferGPC::TRIANGLE3, 2, 2, etype>(action, ops, interval, elements); break;
+		case static_cast<size_t>(Element::CODE::TRIANGLE6): return operatorsloop<HeatTransferDataDescriptor, 6, HeatTransferGPC::TRIANGLE6, 2, 2, etype>(action, ops, interval, elements); break;
+		case static_cast<size_t>(Element::CODE::SQUARE4):   return operatorsloop<HeatTransferDataDescriptor, 4, HeatTransferGPC::SQUARE4  , 2, 2, etype>(action, ops, interval, elements); break;
+		case static_cast<size_t>(Element::CODE::SQUARE8):   return operatorsloop<HeatTransferDataDescriptor, 8, HeatTransferGPC::SQUARE8  , 2, 2, etype>(action, ops, interval, elements); break;
+		default: return 0;
+		};
+	case PhysicsConfiguration::LOOP::MANUAL:
+		switch (code) {
+		case static_cast<size_t>(Element::CODE::TRIANGLE3): return manualloop<HeatTransferDataDescriptor, 3, HeatTransferGPC::TRIANGLE3, 2, 2, etype>(action, ops, interval, elements); break;
+		case static_cast<size_t>(Element::CODE::TRIANGLE6): return manualloop<HeatTransferDataDescriptor, 6, HeatTransferGPC::TRIANGLE6, 2, 2, etype>(action, ops, interval, elements); break;
+		case static_cast<size_t>(Element::CODE::SQUARE4):   return manualloop<HeatTransferDataDescriptor, 4, HeatTransferGPC::SQUARE4  , 2, 2, etype>(action, ops, interval, elements); break;
+		case static_cast<size_t>(Element::CODE::SQUARE8):   return manualloop<HeatTransferDataDescriptor, 8, HeatTransferGPC::SQUARE8  , 2, 2, etype>(action, ops, interval, elements); break;
+		default: return 0;
+		};
 	}
+	return 0;
 }
 
 template <>
-double HeatTransfer::instantiate3D<HeatTransferElementType::NODE>(ActionOperator::Action action, int code, const std::vector<ActionOperator*> &ops, esint elements)
+double HeatTransfer::instantiate3D<HeatTransferElementType::NODE>(ActionOperator::Action action, int code, const std::vector<ActionOperator*> &ops, size_t interval, esint elements)
 {
 	return loop<HeatTransferDataDescriptor, 1, HeatTransferGPC::POINT1, 3, 0, HeatTransferElementType::NODE>(action, ops, elements);
 }
 
 template <>
-double HeatTransfer::instantiate3D<HeatTransferElementType::EDGE>(ActionOperator::Action action, int code, const std::vector<ActionOperator*> &ops, esint elements)
+double HeatTransfer::instantiate3D<HeatTransferElementType::EDGE>(ActionOperator::Action action, int code, const std::vector<ActionOperator*> &ops, size_t interval, esint elements)
 {
 	switch (code) {
 	case static_cast<size_t>(Element::CODE::LINE2): return loop<HeatTransferDataDescriptor, 2, HeatTransferGPC::LINE2, 3, 1, HeatTransferElementType::EDGE>(action, ops, elements); break;
@@ -536,7 +715,7 @@ double HeatTransfer::instantiate3D<HeatTransferElementType::EDGE>(ActionOperator
 }
 
 template <>
-double HeatTransfer::instantiate3D<HeatTransferElementType::FACE>(ActionOperator::Action action, int code, const std::vector<ActionOperator*> &ops, esint elements)
+double HeatTransfer::instantiate3D<HeatTransferElementType::FACE>(ActionOperator::Action action, int code, const std::vector<ActionOperator*> &ops, size_t interval, esint elements)
 {
 	switch (code) {
 	case static_cast<size_t>(Element::CODE::TRIANGLE3): return loop<HeatTransferDataDescriptor, 3, HeatTransferGPC::TRIANGLE3, 3, 2, HeatTransferElementType::FACE>(action, ops, elements); break;
@@ -548,48 +727,76 @@ double HeatTransfer::instantiate3D<HeatTransferElementType::FACE>(ActionOperator
 }
 
 template <int etype>
-double HeatTransfer::instantiate3D(ActionOperator::Action action, int code, const std::vector<ActionOperator*> &ops, esint elements)
+double HeatTransfer::instantiate3D(ActionOperator::Action action, int code, const std::vector<ActionOperator*> &ops, size_t interval, esint elements)
 {
-	switch (code) {
-	case static_cast<size_t>(Element::CODE::TETRA4):    return loop<HeatTransferDataDescriptor,  4, HeatTransferGPC::TETRA4    , 3, 3, etype>(action, ops, elements); break;
-	case static_cast<size_t>(Element::CODE::TETRA10):   return loop<HeatTransferDataDescriptor, 10, HeatTransferGPC::TETRA10   , 3, 3, etype>(action, ops, elements); break;
-	case static_cast<size_t>(Element::CODE::PYRAMID5):  return loop<HeatTransferDataDescriptor,  5, HeatTransferGPC::PYRAMID5  , 3, 3, etype>(action, ops, elements); break;
-	case static_cast<size_t>(Element::CODE::PYRAMID13): return loop<HeatTransferDataDescriptor, 13, HeatTransferGPC::PYRAMID13 , 3, 3, etype>(action, ops, elements); break;
-	case static_cast<size_t>(Element::CODE::PRISMA6):   return loop<HeatTransferDataDescriptor,  6, HeatTransferGPC::PRISMA6   , 3, 3, etype>(action, ops, elements); break;
-	case static_cast<size_t>(Element::CODE::PRISMA15):  return loop<HeatTransferDataDescriptor, 15, HeatTransferGPC::PRISMA15  , 3, 3, etype>(action, ops, elements); break;
-	case static_cast<size_t>(Element::CODE::HEXA8):     return loop<HeatTransferDataDescriptor,  8, HeatTransferGPC::HEXA8     , 3, 3, etype>(action, ops, elements); break;
-	case static_cast<size_t>(Element::CODE::HEXA20):    return loop<HeatTransferDataDescriptor, 20, HeatTransferGPC::HEXA20    , 3, 3, etype>(action, ops, elements); break;
-	default: return 0;
+	switch (settings.loop) {
+	case PhysicsConfiguration::LOOP::INHERITANCE:
+		switch (code) {
+		case static_cast<size_t>(Element::CODE::TETRA4):    return loop<HeatTransferDataDescriptor,  4, HeatTransferGPC::TETRA4    , 3, 3, etype>(action, ops, elements); break;
+		case static_cast<size_t>(Element::CODE::TETRA10):   return loop<HeatTransferDataDescriptor, 10, HeatTransferGPC::TETRA10   , 3, 3, etype>(action, ops, elements); break;
+		case static_cast<size_t>(Element::CODE::PYRAMID5):  return loop<HeatTransferDataDescriptor,  5, HeatTransferGPC::PYRAMID5  , 3, 3, etype>(action, ops, elements); break;
+		case static_cast<size_t>(Element::CODE::PYRAMID13): return loop<HeatTransferDataDescriptor, 13, HeatTransferGPC::PYRAMID13 , 3, 3, etype>(action, ops, elements); break;
+		case static_cast<size_t>(Element::CODE::PRISMA6):   return loop<HeatTransferDataDescriptor,  6, HeatTransferGPC::PRISMA6   , 3, 3, etype>(action, ops, elements); break;
+		case static_cast<size_t>(Element::CODE::PRISMA15):  return loop<HeatTransferDataDescriptor, 15, HeatTransferGPC::PRISMA15  , 3, 3, etype>(action, ops, elements); break;
+		case static_cast<size_t>(Element::CODE::HEXA8):     return loop<HeatTransferDataDescriptor,  8, HeatTransferGPC::HEXA8     , 3, 3, etype>(action, ops, elements); break;
+		case static_cast<size_t>(Element::CODE::HEXA20):    return loop<HeatTransferDataDescriptor, 20, HeatTransferGPC::HEXA20    , 3, 3, etype>(action, ops, elements); break;
+		default: return 0;
+		};
+	case PhysicsConfiguration::LOOP::OPERATORS:
+		switch (code) {
+		case static_cast<size_t>(Element::CODE::TETRA4):    return operatorsloop<HeatTransferDataDescriptor,  4, HeatTransferGPC::TETRA4    , 3, 3, etype>(action, ops, interval, elements); break;
+		case static_cast<size_t>(Element::CODE::TETRA10):   return operatorsloop<HeatTransferDataDescriptor, 10, HeatTransferGPC::TETRA10   , 3, 3, etype>(action, ops, interval, elements); break;
+		case static_cast<size_t>(Element::CODE::PYRAMID5):  return operatorsloop<HeatTransferDataDescriptor,  5, HeatTransferGPC::PYRAMID5  , 3, 3, etype>(action, ops, interval, elements); break;
+		case static_cast<size_t>(Element::CODE::PYRAMID13): return operatorsloop<HeatTransferDataDescriptor, 13, HeatTransferGPC::PYRAMID13 , 3, 3, etype>(action, ops, interval, elements); break;
+		case static_cast<size_t>(Element::CODE::PRISMA6):   return operatorsloop<HeatTransferDataDescriptor,  6, HeatTransferGPC::PRISMA6   , 3, 3, etype>(action, ops, interval, elements); break;
+		case static_cast<size_t>(Element::CODE::PRISMA15):  return operatorsloop<HeatTransferDataDescriptor, 15, HeatTransferGPC::PRISMA15  , 3, 3, etype>(action, ops, interval, elements); break;
+		case static_cast<size_t>(Element::CODE::HEXA8):     return operatorsloop<HeatTransferDataDescriptor,  8, HeatTransferGPC::HEXA8     , 3, 3, etype>(action, ops, interval, elements); break;
+		case static_cast<size_t>(Element::CODE::HEXA20):    return operatorsloop<HeatTransferDataDescriptor, 20, HeatTransferGPC::HEXA20    , 3, 3, etype>(action, ops, interval, elements); break;
+		default: return 0;
+		};
+	case PhysicsConfiguration::LOOP::MANUAL:
+		switch (code) {
+		case static_cast<size_t>(Element::CODE::TETRA4):    return manualloop<HeatTransferDataDescriptor,  4, HeatTransferGPC::TETRA4    , 3, 3, etype>(action, ops, interval, elements); break;
+		case static_cast<size_t>(Element::CODE::TETRA10):   return manualloop<HeatTransferDataDescriptor, 10, HeatTransferGPC::TETRA10   , 3, 3, etype>(action, ops, interval, elements); break;
+		case static_cast<size_t>(Element::CODE::PYRAMID5):  return manualloop<HeatTransferDataDescriptor,  5, HeatTransferGPC::PYRAMID5  , 3, 3, etype>(action, ops, interval, elements); break;
+		case static_cast<size_t>(Element::CODE::PYRAMID13): return manualloop<HeatTransferDataDescriptor, 13, HeatTransferGPC::PYRAMID13 , 3, 3, etype>(action, ops, interval, elements); break;
+		case static_cast<size_t>(Element::CODE::PRISMA6):   return manualloop<HeatTransferDataDescriptor,  6, HeatTransferGPC::PRISMA6   , 3, 3, etype>(action, ops, interval, elements); break;
+		case static_cast<size_t>(Element::CODE::PRISMA15):  return manualloop<HeatTransferDataDescriptor, 15, HeatTransferGPC::PRISMA15  , 3, 3, etype>(action, ops, interval, elements); break;
+		case static_cast<size_t>(Element::CODE::HEXA8):     return manualloop<HeatTransferDataDescriptor,  8, HeatTransferGPC::HEXA8     , 3, 3, etype>(action, ops, interval, elements); break;
+		case static_cast<size_t>(Element::CODE::HEXA20):    return manualloop<HeatTransferDataDescriptor, 20, HeatTransferGPC::HEXA20    , 3, 3, etype>(action, ops, interval, elements); break;
+		default: return 0;
+		};
 	}
+	return 0;
 }
 
-double HeatTransfer::instantiate(ActionOperator::Action action, int code, int etype, const std::vector<ActionOperator*> &ops, esint elements)
+double HeatTransfer::instantiate(ActionOperator::Action action, int code, int etype, const std::vector<ActionOperator*> &ops, size_t interval, esint elements)
 {
 	switch (info::mesh->dimension) {
 	case 2:
 		switch (etype) {
 		// elements
-		case HeatTransferElementType::SYMMETRIC_ISOTROPIC : return instantiate2D<HeatTransferElementType::SYMMETRIC_ISOTROPIC >(action, code, ops, elements);
-		case HeatTransferElementType::SYMMETRIC_GENERAL   : return instantiate2D<HeatTransferElementType::SYMMETRIC_GENERAL   >(action, code, ops, elements);
-		case HeatTransferElementType::ASYMMETRIC_ISOTROPIC: return instantiate2D<HeatTransferElementType::ASYMMETRIC_ISOTROPIC>(action, code, ops, elements);
-		case HeatTransferElementType::ASYMMETRIC_GENERAL  : return instantiate2D<HeatTransferElementType::ASYMMETRIC_GENERAL  >(action, code, ops, elements);
+		case HeatTransferElementType::SYMMETRIC_ISOTROPIC : return instantiate2D<HeatTransferElementType::SYMMETRIC_ISOTROPIC >(action, code, ops, interval, elements);
+		case HeatTransferElementType::SYMMETRIC_GENERAL   : return instantiate2D<HeatTransferElementType::SYMMETRIC_GENERAL   >(action, code, ops, interval, elements);
+		case HeatTransferElementType::ASYMMETRIC_ISOTROPIC: return instantiate2D<HeatTransferElementType::ASYMMETRIC_ISOTROPIC>(action, code, ops, interval, elements);
+		case HeatTransferElementType::ASYMMETRIC_GENERAL  : return instantiate2D<HeatTransferElementType::ASYMMETRIC_GENERAL  >(action, code, ops, interval, elements);
 
 		// boundary
-		case HeatTransferElementType::EDGE: return instantiate2D<HeatTransferElementType::EDGE>(action, code, ops, elements);
-		case HeatTransferElementType::NODE: return instantiate2D<HeatTransferElementType::NODE>(action, code, ops, elements);
+		case HeatTransferElementType::EDGE: return instantiate2D<HeatTransferElementType::EDGE>(action, code, ops, interval, elements);
+		case HeatTransferElementType::NODE: return instantiate2D<HeatTransferElementType::NODE>(action, code, ops, interval, elements);
 		}
 	case 3:
 		switch (etype) {
 		// elements
-		case HeatTransferElementType::SYMMETRIC_ISOTROPIC : return instantiate3D<HeatTransferElementType::SYMMETRIC_ISOTROPIC >(action, code, ops, elements);
-		case HeatTransferElementType::SYMMETRIC_GENERAL   : return instantiate3D<HeatTransferElementType::SYMMETRIC_GENERAL   >(action, code, ops, elements);
-		case HeatTransferElementType::ASYMMETRIC_ISOTROPIC: return instantiate3D<HeatTransferElementType::ASYMMETRIC_ISOTROPIC>(action, code, ops, elements);
-		case HeatTransferElementType::ASYMMETRIC_GENERAL  : return instantiate3D<HeatTransferElementType::ASYMMETRIC_GENERAL  >(action, code, ops, elements);
+		case HeatTransferElementType::SYMMETRIC_ISOTROPIC : return instantiate3D<HeatTransferElementType::SYMMETRIC_ISOTROPIC >(action, code, ops, interval, elements);
+		case HeatTransferElementType::SYMMETRIC_GENERAL   : return instantiate3D<HeatTransferElementType::SYMMETRIC_GENERAL   >(action, code, ops, interval, elements);
+		case HeatTransferElementType::ASYMMETRIC_ISOTROPIC: return instantiate3D<HeatTransferElementType::ASYMMETRIC_ISOTROPIC>(action, code, ops, interval, elements);
+		case HeatTransferElementType::ASYMMETRIC_GENERAL  : return instantiate3D<HeatTransferElementType::ASYMMETRIC_GENERAL  >(action, code, ops, interval, elements);
 
 		// boundary
-		case HeatTransferElementType::FACE: return instantiate3D<HeatTransferElementType::FACE>(action, code, ops, elements);
-		case HeatTransferElementType::EDGE: return instantiate3D<HeatTransferElementType::EDGE>(action, code, ops, elements);
-		case HeatTransferElementType::NODE: return instantiate3D<HeatTransferElementType::NODE>(action, code, ops, elements);
+		case HeatTransferElementType::FACE: return instantiate3D<HeatTransferElementType::FACE>(action, code, ops, interval, elements);
+		case HeatTransferElementType::EDGE: return instantiate3D<HeatTransferElementType::EDGE>(action, code, ops, interval, elements);
+		case HeatTransferElementType::NODE: return instantiate3D<HeatTransferElementType::NODE>(action, code, ops, interval, elements);
 		}
 	}
 	return 0;

@@ -61,7 +61,7 @@ struct TemperatureToElementNodesAndGPs: Temperature, Physics {
 		for (size_t gp = 0; gp < gps; ++gp) {
 			element.gptemp[gp] = zeros();
 			for (size_t n = 0; n < nodes; ++n) {
-				element.gpcoords[gp] = element.gptemp[gp] + load1(element.N[gp][n]) * element.temp[n];
+				element.gptemp[gp] = element.gptemp[gp] + load1(element.N[gp][n]) * element.temp[n];
 			}
 		}
 	}
