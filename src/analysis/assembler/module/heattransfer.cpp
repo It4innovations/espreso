@@ -10,6 +10,7 @@
 #include "analysis/assembler/operators/advection.h"
 #include "analysis/assembler/operators/expression.h"
 #include "analysis/assembler/operators/integration.h"
+#include "analysis/assembler/operators/conductivity.coordinatesystem.h"
 #include "analysis/assembler/operators/heattransfer.f.h"
 #include "analysis/assembler/operators/heattransfer.K.h"
 #include "analysis/assembler/operators/filler.h"
@@ -410,6 +411,7 @@ void HeatTransfer::analyze()
 void HeatTransfer::connect(SteadyState &scheme)
 {
 	this->K = scheme.K;
+	this->f = scheme.f;
 	switch (scheme.K->shape) {
 	case Matrix_Shape::FULL:  generateElementOperators<GeneralMatricFiller>(etype, elementOps, 1, elements.stiffness, scheme.K); break;
 	case Matrix_Shape::UPPER: generateElementOperators<SymmetricMatricFiller>(etype, elementOps, 1, elements.stiffness, scheme.K); break;
@@ -493,6 +495,672 @@ void HeatTransfer::updateSolution(SteadyState &scheme)
 }
 
 template <template <size_t, size_t, size_t, size_t, size_t> class DataDescriptor, size_t nodes, size_t gps, size_t ndim, size_t edim, size_t etype>
+struct updateConductivity {
+	void operator()(typename DataDescriptor<nodes, gps, ndim, edim, etype>::Element &element, const MaterialConfiguration *mat)
+	{
+
+	}
+};
+
+template <template <size_t, size_t, size_t, size_t, size_t> class DataDescriptor, size_t nodes, size_t gps, size_t ndim, size_t edim>
+struct updateConductivity<DataDescriptor, nodes, gps, ndim, edim, HeatTransferElementType::SYMMETRIC_ISOTROPIC> {
+	void operator()(typename DataDescriptor<nodes, gps, ndim, edim, HeatTransferElementType::SYMMETRIC_ISOTROPIC>::Element &element, const MaterialConfiguration *mat)
+	{
+		double results[SIMD::size * gps];
+		mat->thermal_conductivity.values.get(0, 0).evaluator->evalVector(SIMD::size * gps, Evaluator::Params(), results);
+		for (size_t gp = 0; gp < gps; ++gp) {
+			for (size_t s = 0; s < SIMD::size; ++s) {
+				element.conductivity[gp][s] = results[gps * s + gp];
+			}
+		}
+	}
+};
+
+template <template <size_t, size_t, size_t, size_t, size_t> class DataDescriptor, size_t nodes, size_t gps, size_t edim>
+struct updateConductivity<DataDescriptor, nodes, gps, 2, edim, HeatTransferElementType::SYMMETRIC_GENERAL> {
+	void operator()(typename DataDescriptor<nodes, gps, 2, edim, HeatTransferElementType::SYMMETRIC_GENERAL>::Element &element, const MaterialConfiguration *mat)
+	{
+		double results[SIMD::size * gps];
+		switch (mat->thermal_conductivity.model) {
+		case ThermalConductivityConfiguration::MODEL::ISOTROPIC:
+		case ThermalConductivityConfiguration::MODEL::ANISOTROPIC:
+			break;
+		case ThermalConductivityConfiguration::MODEL::DIAGONAL:
+			mat->thermal_conductivity.values.get(0, 0).evaluator->evalVector(SIMD::size * gps, Evaluator::Params(), results);
+			for (size_t gp = 0; gp < gps; ++gp) {
+				for (size_t s = 0; s < SIMD::size; ++s) {
+					element.ecf.conductivity[gp][0][s] = results[gps * s + gp];
+				}
+			}
+			mat->thermal_conductivity.values.get(1, 1).evaluator->evalVector(SIMD::size * gps, Evaluator::Params(), results);
+			for (size_t gp = 0; gp < gps; ++gp) {
+				for (size_t s = 0; s < SIMD::size; ++s) {
+					element.ecf.conductivity[gp][3][s] = results[gps * s + gp];
+				}
+			}
+			/* no break */
+		case ThermalConductivityConfiguration::MODEL::SYMMETRIC:
+			mat->thermal_conductivity.values.get(0, 1).evaluator->evalVector(SIMD::size * gps, Evaluator::Params(), results);
+			for (size_t gp = 0; gp < gps; ++gp) {
+				for (size_t s = 0; s < SIMD::size; ++s) {
+					element.ecf.conductivity[gp][1][s] = results[gps * s + gp];
+					element.ecf.conductivity[gp][2][s] = results[gps * s + gp];
+				}
+			}
+		}
+	}
+};
+
+template <template <size_t, size_t, size_t, size_t, size_t> class DataDescriptor, size_t nodes, size_t gps, size_t edim>
+struct updateConductivity<DataDescriptor, nodes, gps, 3, edim, HeatTransferElementType::SYMMETRIC_GENERAL> {
+	void operator()(typename DataDescriptor<nodes, gps, 3, edim, HeatTransferElementType::SYMMETRIC_GENERAL>::Element &element, const MaterialConfiguration *mat)
+	{
+		double results[SIMD::size * gps];
+		switch (mat->thermal_conductivity.model) {
+		case ThermalConductivityConfiguration::MODEL::ISOTROPIC:
+		case ThermalConductivityConfiguration::MODEL::ANISOTROPIC:
+			break;
+		case ThermalConductivityConfiguration::MODEL::DIAGONAL:
+			mat->thermal_conductivity.values.get(0, 0).evaluator->evalVector(SIMD::size * gps, Evaluator::Params(), results);
+			for (size_t gp = 0; gp < gps; ++gp) {
+				for (size_t s = 0; s < SIMD::size; ++s) {
+					element.ecf.conductivity[gp][0][s] = results[gps * s + gp];
+				}
+			}
+			mat->thermal_conductivity.values.get(1, 1).evaluator->evalVector(SIMD::size * gps, Evaluator::Params(), results);
+			for (size_t gp = 0; gp < gps; ++gp) {
+				for (size_t s = 0; s < SIMD::size; ++s) {
+					element.ecf.conductivity[gp][4][s] = results[gps * s + gp];
+				}
+			}
+			mat->thermal_conductivity.values.get(2, 2).evaluator->evalVector(SIMD::size * gps, Evaluator::Params(), results);
+			for (size_t gp = 0; gp < gps; ++gp) {
+				for (size_t s = 0; s < SIMD::size; ++s) {
+					element.ecf.conductivity[gp][8][s] = results[gps * s + gp];
+				}
+			}
+			/* no break */
+		case ThermalConductivityConfiguration::MODEL::SYMMETRIC:
+			mat->thermal_conductivity.values.get(0, 1).evaluator->evalVector(SIMD::size * gps, Evaluator::Params(), results);
+			for (size_t gp = 0; gp < gps; ++gp) {
+				for (size_t s = 0; s < SIMD::size; ++s) {
+					element.ecf.conductivity[gp][1][s] = results[gps * s + gp];
+					element.ecf.conductivity[gp][3][s] = results[gps * s + gp];
+				}
+			}
+			mat->thermal_conductivity.values.get(0, 2).evaluator->evalVector(SIMD::size * gps, Evaluator::Params(), results);
+			for (size_t gp = 0; gp < gps; ++gp) {
+				for (size_t s = 0; s < SIMD::size; ++s) {
+					element.ecf.conductivity[gp][2][s] = results[gps * s + gp];
+					element.ecf.conductivity[gp][6][s] = results[gps * s + gp];
+				}
+			}
+			mat->thermal_conductivity.values.get(1, 2).evaluator->evalVector(SIMD::size * gps, Evaluator::Params(), results);
+			for (size_t gp = 0; gp < gps; ++gp) {
+				for (size_t s = 0; s < SIMD::size; ++s) {
+					element.ecf.conductivity[gp][5][s] = results[gps * s + gp];
+					element.ecf.conductivity[gp][7][s] = results[gps * s + gp];
+				}
+			}
+		}
+	}
+};
+
+template <template <size_t, size_t, size_t, size_t, size_t> class DataDescriptor, size_t nodes, size_t gps, size_t ndim, size_t edim>
+struct updateConductivity<DataDescriptor, nodes, gps, ndim, edim, HeatTransferElementType::ASYMMETRIC_ISOTROPIC> {
+	void operator()(typename DataDescriptor<nodes, gps, ndim, edim, HeatTransferElementType::ASYMMETRIC_ISOTROPIC>::Element &element, const MaterialConfiguration *mat)
+	{
+		double results[SIMD::size * gps];
+		mat->thermal_conductivity.values.get(0, 0).evaluator->evalVector(SIMD::size * gps, Evaluator::Params(), results);
+		for (size_t gp = 0; gp < gps; ++gp) {
+			for (size_t s = 0; s < SIMD::size; ++s) {
+				element.conductivity[gp][s] = results[gps * s + gp];
+			}
+		}
+	}
+};
+
+template <template <size_t, size_t, size_t, size_t, size_t> class DataDescriptor, size_t nodes, size_t gps, size_t edim>
+struct updateConductivity<DataDescriptor, nodes, gps, 2, edim, HeatTransferElementType::ASYMMETRIC_GENERAL> {
+	void operator()(typename DataDescriptor<nodes, gps, 2, edim, HeatTransferElementType::ASYMMETRIC_GENERAL>::Element &element, const MaterialConfiguration *mat)
+	{
+		double results[SIMD::size * gps];
+		switch (mat->thermal_conductivity.model) {
+		case ThermalConductivityConfiguration::MODEL::ISOTROPIC:
+		case ThermalConductivityConfiguration::MODEL::ANISOTROPIC:
+			mat->thermal_conductivity.values.get(0, 0).evaluator->evalVector(SIMD::size * gps, Evaluator::Params(), results);
+			for (size_t gp = 0; gp < gps; ++gp) {
+				for (size_t s = 0; s < SIMD::size; ++s) {
+					element.ecf.conductivity[gp][0][s] = results[gps * s + gp];
+				}
+			}
+			mat->thermal_conductivity.values.get(1, 1).evaluator->evalVector(SIMD::size * gps, Evaluator::Params(), results);
+			for (size_t gp = 0; gp < gps; ++gp) {
+				for (size_t s = 0; s < SIMD::size; ++s) {
+					element.ecf.conductivity[gp][3][s] = results[gps * s + gp];
+				}
+			}
+			mat->thermal_conductivity.values.get(0, 1).evaluator->evalVector(SIMD::size * gps, Evaluator::Params(), results);
+			for (size_t gp = 0; gp < gps; ++gp) {
+				for (size_t s = 0; s < SIMD::size; ++s) {
+					element.ecf.conductivity[gp][1][s] = results[gps * s + gp];
+				}
+			}
+			mat->thermal_conductivity.values.get(1, 0).evaluator->evalVector(SIMD::size * gps, Evaluator::Params(), results);
+			for (size_t gp = 0; gp < gps; ++gp) {
+				for (size_t s = 0; s < SIMD::size; ++s) {
+					element.ecf.conductivity[gp][2][s] = results[gps * s + gp];
+				}
+			}
+			break;
+		case ThermalConductivityConfiguration::MODEL::DIAGONAL:
+			mat->thermal_conductivity.values.get(0, 0).evaluator->evalVector(SIMD::size * gps, Evaluator::Params(), results);
+			for (size_t gp = 0; gp < gps; ++gp) {
+				for (size_t s = 0; s < SIMD::size; ++s) {
+					element.ecf.conductivity[gp][0][s] = results[gps * s + gp];
+				}
+			}
+			mat->thermal_conductivity.values.get(1, 1).evaluator->evalVector(SIMD::size * gps, Evaluator::Params(), results);
+			for (size_t gp = 0; gp < gps; ++gp) {
+				for (size_t s = 0; s < SIMD::size; ++s) {
+					element.ecf.conductivity[gp][3][s] = results[gps * s + gp];
+				}
+			}
+			/* no break */
+		case ThermalConductivityConfiguration::MODEL::SYMMETRIC:
+			mat->thermal_conductivity.values.get(0, 1).evaluator->evalVector(SIMD::size * gps, Evaluator::Params(), results);
+			for (size_t gp = 0; gp < gps; ++gp) {
+				for (size_t s = 0; s < SIMD::size; ++s) {
+					element.ecf.conductivity[gp][1][s] = results[gps * s + gp];
+					element.ecf.conductivity[gp][2][s] = results[gps * s + gp];
+				}
+			}
+		}
+	}
+};
+
+template <template <size_t, size_t, size_t, size_t, size_t> class DataDescriptor, size_t nodes, size_t gps, size_t edim>
+struct updateConductivity<DataDescriptor, nodes, gps, 3, edim, HeatTransferElementType::ASYMMETRIC_GENERAL> {
+	void operator()(typename DataDescriptor<nodes, gps, 3, edim, HeatTransferElementType::ASYMMETRIC_GENERAL>::Element &element, const MaterialConfiguration *mat)
+	{
+		double results[SIMD::size * gps];
+		switch (mat->thermal_conductivity.model) {
+		case ThermalConductivityConfiguration::MODEL::ISOTROPIC:
+		case ThermalConductivityConfiguration::MODEL::ANISOTROPIC:
+			mat->thermal_conductivity.values.get(0, 0).evaluator->evalVector(SIMD::size * gps, Evaluator::Params(), results);
+			for (size_t gp = 0; gp < gps; ++gp) {
+				for (size_t s = 0; s < SIMD::size; ++s) {
+					element.ecf.conductivity[gp][0][s] = results[gps * s + gp];
+				}
+			}
+			mat->thermal_conductivity.values.get(1, 1).evaluator->evalVector(SIMD::size * gps, Evaluator::Params(), results);
+			for (size_t gp = 0; gp < gps; ++gp) {
+				for (size_t s = 0; s < SIMD::size; ++s) {
+					element.ecf.conductivity[gp][4][s] = results[gps * s + gp];
+				}
+			}
+			mat->thermal_conductivity.values.get(2, 2).evaluator->evalVector(SIMD::size * gps, Evaluator::Params(), results);
+			for (size_t gp = 0; gp < gps; ++gp) {
+				for (size_t s = 0; s < SIMD::size; ++s) {
+					element.ecf.conductivity[gp][8][s] = results[gps * s + gp];
+				}
+			}
+			mat->thermal_conductivity.values.get(0, 1).evaluator->evalVector(SIMD::size * gps, Evaluator::Params(), results);
+			for (size_t gp = 0; gp < gps; ++gp) {
+				for (size_t s = 0; s < SIMD::size; ++s) {
+					element.ecf.conductivity[gp][1][s] = results[gps * s + gp];
+				}
+			}
+			mat->thermal_conductivity.values.get(0, 2).evaluator->evalVector(SIMD::size * gps, Evaluator::Params(), results);
+			for (size_t gp = 0; gp < gps; ++gp) {
+				for (size_t s = 0; s < SIMD::size; ++s) {
+					element.ecf.conductivity[gp][2][s] = results[gps * s + gp];
+				}
+			}
+			mat->thermal_conductivity.values.get(1, 2).evaluator->evalVector(SIMD::size * gps, Evaluator::Params(), results);
+			for (size_t gp = 0; gp < gps; ++gp) {
+				for (size_t s = 0; s < SIMD::size; ++s) {
+					element.ecf.conductivity[gp][5][s] = results[gps * s + gp];
+				}
+			}
+			mat->thermal_conductivity.values.get(1, 0).evaluator->evalVector(SIMD::size * gps, Evaluator::Params(), results);
+			for (size_t gp = 0; gp < gps; ++gp) {
+				for (size_t s = 0; s < SIMD::size; ++s) {
+					element.ecf.conductivity[gp][3][s] = results[gps * s + gp];
+				}
+			}
+			mat->thermal_conductivity.values.get(2, 0).evaluator->evalVector(SIMD::size * gps, Evaluator::Params(), results);
+			for (size_t gp = 0; gp < gps; ++gp) {
+				for (size_t s = 0; s < SIMD::size; ++s) {
+					element.ecf.conductivity[gp][6][s] = results[gps * s + gp];
+				}
+			}
+			mat->thermal_conductivity.values.get(2, 1).evaluator->evalVector(SIMD::size * gps, Evaluator::Params(), results);
+			for (size_t gp = 0; gp < gps; ++gp) {
+				for (size_t s = 0; s < SIMD::size; ++s) {
+					element.ecf.conductivity[gp][7][s] = results[gps * s + gp];
+				}
+			}
+			break;
+		case ThermalConductivityConfiguration::MODEL::DIAGONAL:
+			mat->thermal_conductivity.values.get(0, 0).evaluator->evalVector(SIMD::size * gps, Evaluator::Params(), results);
+			for (size_t gp = 0; gp < gps; ++gp) {
+				for (size_t s = 0; s < SIMD::size; ++s) {
+					element.ecf.conductivity[gp][0][s] = results[gps * s + gp];
+				}
+			}
+			mat->thermal_conductivity.values.get(1, 1).evaluator->evalVector(SIMD::size * gps, Evaluator::Params(), results);
+			for (size_t gp = 0; gp < gps; ++gp) {
+				for (size_t s = 0; s < SIMD::size; ++s) {
+					element.ecf.conductivity[gp][4][s] = results[gps * s + gp];
+				}
+			}
+			mat->thermal_conductivity.values.get(2, 2).evaluator->evalVector(SIMD::size * gps, Evaluator::Params(), results);
+			for (size_t gp = 0; gp < gps; ++gp) {
+				for (size_t s = 0; s < SIMD::size; ++s) {
+					element.ecf.conductivity[gp][8][s] = results[gps * s + gp];
+				}
+			}
+			/* no break */
+		case ThermalConductivityConfiguration::MODEL::SYMMETRIC:
+			mat->thermal_conductivity.values.get(0, 1).evaluator->evalVector(SIMD::size * gps, Evaluator::Params(), results);
+			for (size_t gp = 0; gp < gps; ++gp) {
+				for (size_t s = 0; s < SIMD::size; ++s) {
+					element.ecf.conductivity[gp][1][s] = results[gps * s + gp];
+					element.ecf.conductivity[gp][3][s] = results[gps * s + gp];
+				}
+			}
+			mat->thermal_conductivity.values.get(0, 2).evaluator->evalVector(SIMD::size * gps, Evaluator::Params(), results);
+			for (size_t gp = 0; gp < gps; ++gp) {
+				for (size_t s = 0; s < SIMD::size; ++s) {
+					element.ecf.conductivity[gp][2][s] = results[gps * s + gp];
+					element.ecf.conductivity[gp][6][s] = results[gps * s + gp];
+				}
+			}
+			mat->thermal_conductivity.values.get(1, 2).evaluator->evalVector(SIMD::size * gps, Evaluator::Params(), results);
+			for (size_t gp = 0; gp < gps; ++gp) {
+				for (size_t s = 0; s < SIMD::size; ++s) {
+					element.ecf.conductivity[gp][5][s] = results[gps * s + gp];
+					element.ecf.conductivity[gp][7][s] = results[gps * s + gp];
+				}
+			}
+		}
+	}
+};
+
+template <template <size_t, size_t, size_t, size_t, size_t> class DataDescriptor, size_t nodes, size_t gps, size_t ndim, size_t edim, size_t etype>
+struct updateRotation {
+	void operator()(typename DataDescriptor<nodes, gps, ndim, edim, etype>::Element &element, const MaterialConfiguration *mat)
+	{
+
+	}
+};
+
+template <template <size_t, size_t, size_t, size_t, size_t> class DataDescriptor, size_t nodes, size_t gps, size_t ndim, size_t edim>
+struct updateRotation<DataDescriptor, nodes, gps, ndim, edim, HeatTransferElementType::SYMMETRIC_ISOTROPIC> {
+	void operator()(typename DataDescriptor<nodes, gps, ndim, edim, HeatTransferElementType::SYMMETRIC_ISOTROPIC>::Element &element, const MaterialConfiguration *mat)
+	{
+
+	}
+};
+
+template <template <size_t, size_t, size_t, size_t, size_t> class DataDescriptor, size_t nodes, size_t gps, size_t ndim, size_t edim>
+struct updateRotation<DataDescriptor, nodes, gps, ndim, edim, HeatTransferElementType::ASYMMETRIC_ISOTROPIC> {
+	void operator()(typename DataDescriptor<nodes, gps, ndim, edim, HeatTransferElementType::ASYMMETRIC_ISOTROPIC>::Element &element, const MaterialConfiguration *mat)
+	{
+
+	}
+};
+
+template <template <size_t, size_t, size_t, size_t, size_t> class DataDescriptor, size_t nodes, size_t gps, size_t edim>
+struct updateRotation<DataDescriptor, nodes, gps, 2, edim, HeatTransferElementType::SYMMETRIC_GENERAL> {
+	void operator()(typename DataDescriptor<nodes, gps, 2, edim, HeatTransferElementType::SYMMETRIC_GENERAL>::Element &element, const MaterialConfiguration *mat)
+	{
+		double results[SIMD::size * gps];
+		switch (mat->coordinate_system.type) {
+		case CoordinateSystemConfiguration::TYPE::CARTESIAN:
+			mat->coordinate_system.rotation.z.evaluator->evalVector(SIMD::size * gps, Evaluator::Params(), results);
+			for (size_t gp = 0; gp < gps; ++gp) {
+				for (size_t s = 0; s < SIMD::size; ++s) {
+					element.ecf.center[gp][0][s] = results[gps * s + gp];
+				}
+			}
+			break;
+		case CoordinateSystemConfiguration::TYPE::CYLINDRICAL:
+			mat->coordinate_system.center.x.evaluator->evalVector(SIMD::size * gps, Evaluator::Params(), results);
+			for (size_t gp = 0; gp < gps; ++gp) {
+				for (size_t s = 0; s < SIMD::size; ++s) {
+					element.ecf.center[gp][0][s] = results[gps * s + gp];
+				}
+			}
+			mat->coordinate_system.center.y.evaluator->evalVector(SIMD::size * gps, Evaluator::Params(), results);
+			for (size_t gp = 0; gp < gps; ++gp) {
+				for (size_t s = 0; s < SIMD::size; ++s) {
+					element.ecf.center[gp][1][s] = results[gps * s + gp];
+				}
+			}
+			break;
+		case CoordinateSystemConfiguration::TYPE::SPHERICAL:
+			break;
+		}
+	}
+};
+
+template <template <size_t, size_t, size_t, size_t, size_t> class DataDescriptor, size_t nodes, size_t gps, size_t edim>
+struct updateRotation<DataDescriptor, nodes, gps, 2, edim, HeatTransferElementType::ASYMMETRIC_GENERAL> {
+	void operator()(typename DataDescriptor<nodes, gps, 2, edim, HeatTransferElementType::ASYMMETRIC_GENERAL>::Element &element, const MaterialConfiguration *mat)
+	{
+		double results[SIMD::size * gps];
+		switch (mat->coordinate_system.type) {
+		case CoordinateSystemConfiguration::TYPE::CARTESIAN:
+			mat->coordinate_system.rotation.z.evaluator->evalVector(SIMD::size * gps, Evaluator::Params(), results);
+			for (size_t gp = 0; gp < gps; ++gp) {
+				for (size_t s = 0; s < SIMD::size; ++s) {
+					element.ecf.center[gp][0][s] = results[gps * s + gp];
+				}
+			}
+			break;
+		case CoordinateSystemConfiguration::TYPE::CYLINDRICAL:
+			mat->coordinate_system.center.x.evaluator->evalVector(SIMD::size * gps, Evaluator::Params(), results);
+			for (size_t gp = 0; gp < gps; ++gp) {
+				for (size_t s = 0; s < SIMD::size; ++s) {
+					element.ecf.center[gp][0][s] = results[gps * s + gp];
+				}
+			}
+			mat->coordinate_system.center.y.evaluator->evalVector(SIMD::size * gps, Evaluator::Params(), results);
+			for (size_t gp = 0; gp < gps; ++gp) {
+				for (size_t s = 0; s < SIMD::size; ++s) {
+					element.ecf.center[gp][1][s] = results[gps * s + gp];
+				}
+			}
+			break;
+		case CoordinateSystemConfiguration::TYPE::SPHERICAL:
+			break;
+		}
+	}
+};
+
+template <template <size_t, size_t, size_t, size_t, size_t> class DataDescriptor, size_t nodes, size_t gps, size_t edim>
+struct updateRotation<DataDescriptor, nodes, gps, 3, edim, HeatTransferElementType::SYMMETRIC_GENERAL> {
+	void operator()(typename DataDescriptor<nodes, gps, 3, edim, HeatTransferElementType::SYMMETRIC_GENERAL>::Element &element, const MaterialConfiguration *mat)
+	{
+		double results[SIMD::size * gps];
+		switch (mat->coordinate_system.type) {
+		case CoordinateSystemConfiguration::TYPE::CARTESIAN:
+			mat->coordinate_system.rotation.x.evaluator->evalVector(SIMD::size * gps, Evaluator::Params(), results);
+			for (size_t gp = 0; gp < gps; ++gp) {
+				for (size_t s = 0; s < SIMD::size; ++s) {
+					element.ecf.center[gp][0][s] = results[gps * s + gp];
+				}
+			}
+			mat->coordinate_system.rotation.y.evaluator->evalVector(SIMD::size * gps, Evaluator::Params(), results);
+			for (size_t gp = 0; gp < gps; ++gp) {
+				for (size_t s = 0; s < SIMD::size; ++s) {
+					element.ecf.center[gp][1][s] = results[gps * s + gp];
+				}
+			}
+			mat->coordinate_system.rotation.z.evaluator->evalVector(SIMD::size * gps, Evaluator::Params(), results);
+			for (size_t gp = 0; gp < gps; ++gp) {
+				for (size_t s = 0; s < SIMD::size; ++s) {
+					element.ecf.center[gp][2][s] = results[gps * s + gp];
+				}
+			}
+			break;
+		case CoordinateSystemConfiguration::TYPE::CYLINDRICAL:
+			mat->coordinate_system.center.x.evaluator->evalVector(SIMD::size * gps, Evaluator::Params(), results);
+			for (size_t gp = 0; gp < gps; ++gp) {
+				for (size_t s = 0; s < SIMD::size; ++s) {
+					element.ecf.center[gp][0][s] = results[gps * s + gp];
+				}
+			}
+			mat->coordinate_system.center.y.evaluator->evalVector(SIMD::size * gps, Evaluator::Params(), results);
+			for (size_t gp = 0; gp < gps; ++gp) {
+				for (size_t s = 0; s < SIMD::size; ++s) {
+					element.ecf.center[gp][1][s] = results[gps * s + gp];
+				}
+			}
+			break;
+		case CoordinateSystemConfiguration::TYPE::SPHERICAL:
+			mat->coordinate_system.center.x.evaluator->evalVector(SIMD::size * gps, Evaluator::Params(), results);
+			for (size_t gp = 0; gp < gps; ++gp) {
+				for (size_t s = 0; s < SIMD::size; ++s) {
+					element.ecf.center[gp][0][s] = results[gps * s + gp];
+				}
+			}
+			mat->coordinate_system.center.y.evaluator->evalVector(SIMD::size * gps, Evaluator::Params(), results);
+			for (size_t gp = 0; gp < gps; ++gp) {
+				for (size_t s = 0; s < SIMD::size; ++s) {
+					element.ecf.center[gp][1][s] = results[gps * s + gp];
+				}
+			}
+			mat->coordinate_system.center.z.evaluator->evalVector(SIMD::size * gps, Evaluator::Params(), results);
+			for (size_t gp = 0; gp < gps; ++gp) {
+				for (size_t s = 0; s < SIMD::size; ++s) {
+					element.ecf.center[gp][2][s] = results[gps * s + gp];
+				}
+			}
+			break;
+		}
+	}
+};
+
+template <template <size_t, size_t, size_t, size_t, size_t> class DataDescriptor, size_t nodes, size_t gps, size_t edim>
+struct updateRotation<DataDescriptor, nodes, gps, 3, edim, HeatTransferElementType::ASYMMETRIC_GENERAL> {
+	void operator()(typename DataDescriptor<nodes, gps, 3, edim, HeatTransferElementType::ASYMMETRIC_GENERAL>::Element &element, const MaterialConfiguration *mat)
+	{
+		double results[SIMD::size * gps];
+		switch (mat->coordinate_system.type) {
+		case CoordinateSystemConfiguration::TYPE::CARTESIAN:
+			mat->coordinate_system.rotation.x.evaluator->evalVector(SIMD::size * gps, Evaluator::Params(), results);
+			for (size_t gp = 0; gp < gps; ++gp) {
+				for (size_t s = 0; s < SIMD::size; ++s) {
+					element.ecf.center[gp][0][s] = results[gps * s + gp];
+				}
+			}
+			mat->coordinate_system.rotation.y.evaluator->evalVector(SIMD::size * gps, Evaluator::Params(), results);
+			for (size_t gp = 0; gp < gps; ++gp) {
+				for (size_t s = 0; s < SIMD::size; ++s) {
+					element.ecf.center[gp][1][s] = results[gps * s + gp];
+				}
+			}
+			mat->coordinate_system.rotation.z.evaluator->evalVector(SIMD::size * gps, Evaluator::Params(), results);
+			for (size_t gp = 0; gp < gps; ++gp) {
+				for (size_t s = 0; s < SIMD::size; ++s) {
+					element.ecf.center[gp][2][s] = results[gps * s + gp];
+				}
+			}
+			break;
+		case CoordinateSystemConfiguration::TYPE::CYLINDRICAL:
+			mat->coordinate_system.center.x.evaluator->evalVector(SIMD::size * gps, Evaluator::Params(), results);
+			for (size_t gp = 0; gp < gps; ++gp) {
+				for (size_t s = 0; s < SIMD::size; ++s) {
+					element.ecf.center[gp][0][s] = results[gps * s + gp];
+				}
+			}
+			mat->coordinate_system.center.y.evaluator->evalVector(SIMD::size * gps, Evaluator::Params(), results);
+			for (size_t gp = 0; gp < gps; ++gp) {
+				for (size_t s = 0; s < SIMD::size; ++s) {
+					element.ecf.center[gp][1][s] = results[gps * s + gp];
+				}
+			}
+			break;
+		case CoordinateSystemConfiguration::TYPE::SPHERICAL:
+			mat->coordinate_system.center.x.evaluator->evalVector(SIMD::size * gps, Evaluator::Params(), results);
+			for (size_t gp = 0; gp < gps; ++gp) {
+				for (size_t s = 0; s < SIMD::size; ++s) {
+					element.ecf.center[gp][0][s] = results[gps * s + gp];
+				}
+			}
+			mat->coordinate_system.center.y.evaluator->evalVector(SIMD::size * gps, Evaluator::Params(), results);
+			for (size_t gp = 0; gp < gps; ++gp) {
+				for (size_t s = 0; s < SIMD::size; ++s) {
+					element.ecf.center[gp][1][s] = results[gps * s + gp];
+				}
+			}
+			mat->coordinate_system.center.z.evaluator->evalVector(SIMD::size * gps, Evaluator::Params(), results);
+			for (size_t gp = 0; gp < gps; ++gp) {
+				for (size_t s = 0; s < SIMD::size; ++s) {
+					element.ecf.center[gp][2][s] = results[gps * s + gp];
+				}
+			}
+			break;
+		}
+	}
+};
+
+template <template <size_t, size_t, size_t, size_t, size_t> class DataDescriptor, size_t nodes, size_t gps, size_t ndim, size_t edim, size_t etype>
+struct applyRotation {
+	void operator()(typename DataDescriptor<nodes, gps, ndim, edim, etype>::Element &element, const MaterialConfiguration *mat)
+	{
+
+	}
+};
+
+template <template <size_t, size_t, size_t, size_t, size_t> class DataDescriptor, size_t nodes, size_t gps, size_t ndim, size_t edim>
+struct applyRotation<DataDescriptor, nodes, gps, ndim, edim, HeatTransferElementType::SYMMETRIC_ISOTROPIC> {
+
+	applyRotation(size_t interval) {}
+
+	void operator()(typename DataDescriptor<nodes, gps, ndim, edim, HeatTransferElementType::SYMMETRIC_ISOTROPIC>::Element &element, const MaterialConfiguration *mat)
+	{
+
+	}
+};
+
+template <template <size_t, size_t, size_t, size_t, size_t> class DataDescriptor, size_t nodes, size_t gps, size_t ndim, size_t edim>
+struct applyRotation<DataDescriptor, nodes, gps, ndim, edim, HeatTransferElementType::ASYMMETRIC_ISOTROPIC> {
+
+	applyRotation(size_t interval) {}
+
+	void operator()(typename DataDescriptor<nodes, gps, ndim, edim, HeatTransferElementType::ASYMMETRIC_ISOTROPIC>::Element &element, const MaterialConfiguration *mat)
+	{
+
+	}
+};
+
+template <template <size_t, size_t, size_t, size_t, size_t> class DataDescriptor, size_t nodes, size_t gps, size_t edim>
+struct applyRotation<DataDescriptor, nodes, gps, 3, edim, HeatTransferElementType::SYMMETRIC_GENERAL> {
+	HeatTransferCoordinateSystemCartesian<nodes, gps, 3, edim, HeatTransferElementType::SYMMETRIC_GENERAL, DataDescriptor<nodes, gps, 3, edim, HeatTransferElementType::SYMMETRIC_GENERAL> > rotationCartesian;
+	HeatTransferCoordinateSystemCylindric<nodes, gps, 3, edim, HeatTransferElementType::SYMMETRIC_GENERAL, DataDescriptor<nodes, gps, 3, edim, HeatTransferElementType::SYMMETRIC_GENERAL> > rotationCylindric;
+	HeatTransferCoordinateSystemSpherical<nodes, gps, 3, edim, HeatTransferElementType::SYMMETRIC_GENERAL, DataDescriptor<nodes, gps, 3, edim, HeatTransferElementType::SYMMETRIC_GENERAL> > rotationSpherical;
+	HeatTransferCoordinateSystemApply    <nodes, gps, 3, edim, HeatTransferElementType::SYMMETRIC_GENERAL, DataDescriptor<nodes, gps, 3, edim, HeatTransferElementType::SYMMETRIC_GENERAL> > apply;
+
+	applyRotation(size_t interval): rotationCartesian(interval), rotationCylindric(interval), rotationSpherical(interval), apply(interval) {}
+
+	void operator()(typename DataDescriptor<nodes, gps, 3, edim, HeatTransferElementType::SYMMETRIC_GENERAL>::Element &element, const MaterialConfiguration *mat)
+	{
+		switch (mat->coordinate_system.type) {
+		case CoordinateSystemConfiguration::TYPE::CARTESIAN  : rotationCartesian.simd(element); break;
+		case CoordinateSystemConfiguration::TYPE::CYLINDRICAL: rotationCylindric.simd(element); break;
+		case CoordinateSystemConfiguration::TYPE::SPHERICAL  : rotationSpherical.simd(element); break;
+		}
+		apply.simd(element);
+	}
+};
+
+template <template <size_t, size_t, size_t, size_t, size_t> class DataDescriptor, size_t nodes, size_t gps, size_t edim>
+struct applyRotation<DataDescriptor, nodes, gps, 2, edim, HeatTransferElementType::SYMMETRIC_GENERAL> {
+	HeatTransferCoordinateSystemCartesian<nodes, gps, 2, edim, HeatTransferElementType::SYMMETRIC_GENERAL, DataDescriptor<nodes, gps, 2, edim, HeatTransferElementType::SYMMETRIC_GENERAL> > rotationCartesian;
+	HeatTransferCoordinateSystemCylindric<nodes, gps, 2, edim, HeatTransferElementType::SYMMETRIC_GENERAL, DataDescriptor<nodes, gps, 2, edim, HeatTransferElementType::SYMMETRIC_GENERAL> > rotationCylindric;
+	HeatTransferCoordinateSystemApply    <nodes, gps, 2, edim, HeatTransferElementType::SYMMETRIC_GENERAL, DataDescriptor<nodes, gps, 2, edim, HeatTransferElementType::SYMMETRIC_GENERAL> > apply;
+
+	applyRotation(size_t interval): rotationCartesian(interval), rotationCylindric(interval), apply(interval) {}
+
+	void operator()(typename DataDescriptor<nodes, gps, 2, edim, HeatTransferElementType::SYMMETRIC_GENERAL>::Element &element, const MaterialConfiguration *mat)
+	{
+		switch (mat->coordinate_system.type) {
+		case CoordinateSystemConfiguration::TYPE::CARTESIAN  : rotationCartesian.simd(element); break;
+		case CoordinateSystemConfiguration::TYPE::CYLINDRICAL: rotationCylindric.simd(element); break;
+		}
+		apply.simd(element);
+	}
+};
+
+template <template <size_t, size_t, size_t, size_t, size_t> class DataDescriptor, size_t nodes, size_t gps, size_t edim>
+struct applyRotation<DataDescriptor, nodes, gps, 3, edim, HeatTransferElementType::ASYMMETRIC_GENERAL> {
+	HeatTransferCoordinateSystemCartesian<nodes, gps, 3, edim, HeatTransferElementType::ASYMMETRIC_GENERAL, DataDescriptor<nodes, gps, 3, edim, HeatTransferElementType::ASYMMETRIC_GENERAL> > rotationCartesian;
+	HeatTransferCoordinateSystemCylindric<nodes, gps, 3, edim, HeatTransferElementType::ASYMMETRIC_GENERAL, DataDescriptor<nodes, gps, 3, edim, HeatTransferElementType::ASYMMETRIC_GENERAL> > rotationCylindric;
+	HeatTransferCoordinateSystemSpherical<nodes, gps, 3, edim, HeatTransferElementType::ASYMMETRIC_GENERAL, DataDescriptor<nodes, gps, 3, edim, HeatTransferElementType::ASYMMETRIC_GENERAL> > rotationSpherical;
+
+	applyRotation(size_t interval): rotationCartesian(interval), rotationCylindric(interval), rotationSpherical(interval) {}
+
+	void operator()(typename DataDescriptor<nodes, gps, 3, edim, HeatTransferElementType::ASYMMETRIC_GENERAL>::Element &element, const MaterialConfiguration *mat)
+	{
+		switch (mat->coordinate_system.type) {
+		case CoordinateSystemConfiguration::TYPE::CARTESIAN  : rotationCartesian.simd(element); break;
+		case CoordinateSystemConfiguration::TYPE::CYLINDRICAL: rotationCylindric.simd(element); break;
+		case CoordinateSystemConfiguration::TYPE::SPHERICAL  : rotationSpherical.simd(element); break;
+		}
+	}
+};
+
+template <template <size_t, size_t, size_t, size_t, size_t> class DataDescriptor, size_t nodes, size_t gps, size_t edim>
+struct applyRotation<DataDescriptor, nodes, gps, 2, edim, HeatTransferElementType::ASYMMETRIC_GENERAL> {
+	HeatTransferCoordinateSystemCartesian<nodes, gps, 2, edim, HeatTransferElementType::ASYMMETRIC_GENERAL, DataDescriptor<nodes, gps, 2, edim, HeatTransferElementType::ASYMMETRIC_GENERAL> > rotationCartesian;
+	HeatTransferCoordinateSystemCylindric<nodes, gps, 2, edim, HeatTransferElementType::ASYMMETRIC_GENERAL, DataDescriptor<nodes, gps, 2, edim, HeatTransferElementType::ASYMMETRIC_GENERAL> > rotationCylindric;
+
+	applyRotation(size_t interval): rotationCartesian(interval), rotationCylindric(interval) {}
+
+	void operator()(typename DataDescriptor<nodes, gps, 2, edim, HeatTransferElementType::ASYMMETRIC_GENERAL>::Element &element, const MaterialConfiguration *mat)
+	{
+		switch (mat->coordinate_system.type) {
+		case CoordinateSystemConfiguration::TYPE::CARTESIAN  : rotationCartesian.simd(element); break;
+		case CoordinateSystemConfiguration::TYPE::CYLINDRICAL: rotationCylindric.simd(element); break;
+		}
+	}
+};
+
+template <template <size_t, size_t, size_t, size_t, size_t> class DataDescriptor, size_t nodes, size_t gps, size_t ndim, size_t edim, size_t etype>
+struct updateHeatSource {
+	void operator()(typename DataDescriptor<nodes, gps, ndim, edim, etype>::Element &element, Evaluator* evaluator)
+	{
+		double results[SIMD::size * gps];
+		evaluator->evalVector(SIMD::size * gps, Evaluator::Params(), results);
+		for (size_t gp = 0; gp < gps; ++gp) {
+			for (size_t s = 0; s < SIMD::size; ++s) {
+				element.ecf.heatSource[gp][s] = results[gps * s + gp];
+			}
+		}
+	}
+};
+
+template <template <size_t, size_t, size_t, size_t, size_t> class DataDescriptor, size_t nodes, size_t gps, size_t ndim, size_t edim, size_t etype>
+struct updateTranslationMotion {
+	void operator()(typename DataDescriptor<nodes, gps, ndim, edim, etype>::Element &element, Evaluator* evaluator)
+	{
+
+	}
+};
+
+template <template <size_t, size_t, size_t, size_t, size_t> class DataDescriptor, size_t nodes, size_t gps, size_t ndim, size_t edim>
+struct updateTranslationMotion<DataDescriptor, nodes, gps, ndim, edim, HeatTransferElementType::ASYMMETRIC_ISOTROPIC> {
+	void operator()(typename DataDescriptor<nodes, gps, ndim, edim, HeatTransferElementType::ASYMMETRIC_ISOTROPIC>::Element &element, Evaluator* evaluator)
+	{
+		double results[SIMD::size * gps];
+		evaluator->evalVector(SIMD::size * gps, Evaluator::Params(), results);
+		for (size_t gp = 0; gp < gps; ++gp) {
+			for (size_t s = 0; s < SIMD::size; ++s) {
+				element.ecf.advection[gp][0][s] = results[gps * s + gp];
+			}
+		}
+	}
+};
+
+template <template <size_t, size_t, size_t, size_t, size_t> class DataDescriptor, size_t nodes, size_t gps, size_t ndim, size_t edim>
+struct updateTranslationMotion<DataDescriptor, nodes, gps, ndim, edim, HeatTransferElementType::ASYMMETRIC_GENERAL> {
+	void operator()(typename DataDescriptor<nodes, gps, ndim, edim, HeatTransferElementType::ASYMMETRIC_GENERAL>::Element &element, Evaluator* evaluator)
+	{
+		double results[SIMD::size * gps];
+		evaluator->evalVector(SIMD::size * gps, Evaluator::Params(), results);
+		for (size_t gp = 0; gp < gps; ++gp) {
+			for (size_t s = 0; s < SIMD::size; ++s) {
+				element.ecf.advection[gp][0][s] = results[gps * s + gp];
+			}
+		}
+	}
+};
+
+template <template <size_t, size_t, size_t, size_t, size_t> class DataDescriptor, size_t nodes, size_t gps, size_t ndim, size_t edim, size_t etype>
 double HeatTransfer::operatorsloop(ActionOperator::Action action, const std::vector<ActionOperator*> &ops, size_t interval, esint elements)
 {
 	if (this->K == nullptr) {
@@ -513,26 +1181,42 @@ double HeatTransfer::operatorsloop(ActionOperator::Action action, const std::vec
 
 	auto procNodes = info::mesh->elements->nodes->cbegin() + info::mesh->elements->eintervals[interval].begin;
 	CoordinatesToElementNodes<nodes, gps, ndim, edim, etype, DataDescriptor<nodes, gps, ndim, edim, etype> > coo(interval, procNodes);
+	CoordinatesToElementNodesAndGPs<nodes, gps, ndim, edim, etype, DataDescriptor<nodes, gps, ndim, edim, etype> > cooAndGps(interval, procNodes);
 	TemperatureToElementNodes<nodes, gps, ndim, edim, etype, DataDescriptor<nodes, gps, ndim, edim, etype> > temp(interval, procNodes, Results::temperature->data.data());
 	Integration<nodes, gps, ndim, edim, etype, DataDescriptor<nodes, gps, ndim, edim, etype> > integration(interval);
 	HeatTransferStiffness<nodes, gps, ndim, edim, etype, DataDescriptor<nodes, gps, ndim, edim, etype> > stiffness(interval, this->elements.stiffness);
+	HeatSource<nodes, gps, ndim, edim, etype, DataDescriptor<nodes, gps, ndim, edim, etype> > heatSource(interval, this->elements.rhs);
+	Advection<nodes, gps, ndim, edim, etype, DataDescriptor<nodes, gps, ndim, edim, etype> > advection(interval, this->elements.stiffness);
 
-	SymmetricMatricFiller<nodes, gps, ndim, edim, etype, DataDescriptor<nodes, gps, ndim, edim, etype> > symFiller(interval, 1, this->elements.stiffness, this->K);
-	GeneralMatricFiller<nodes, gps, ndim, edim, etype, DataDescriptor<nodes, gps, ndim, edim, etype> > asymFiller(interval, 1, this->elements.stiffness, this->K);
+	applyRotation<DataDescriptor, nodes, gps, ndim, edim, etype> rotation(interval);
+	updateHeatSource<DataDescriptor, nodes, gps, ndim, edim, etype> updateHS;
+	updateTranslationMotion<DataDescriptor, nodes, gps, ndim, edim, etype> updateTM;
+
+	SymmetricMatricFiller<nodes, gps, ndim, edim, etype, DataDescriptor<nodes, gps, ndim, edim, etype> > upperFiller(interval, 1, this->elements.stiffness, this->K);
+	GeneralMatricFiller<nodes, gps, ndim, edim, etype, DataDescriptor<nodes, gps, ndim, edim, etype> > fullFiller(interval, 1, this->elements.stiffness, this->K);
+	VectorFiller<nodes, gps, ndim, edim, etype, DataDescriptor<nodes, gps, ndim, edim, etype> > rhsFiller(interval, 1, this->elements.rhs, this->f);
 
 	TemperatureGradient<nodes, gps, ndim, edim, etype, DataDescriptor<nodes, gps, ndim, edim, etype> > gradient(interval, Results::gradient);
 	TemperatureFlux<nodes, gps, ndim, edim, etype, DataDescriptor<nodes, gps, ndim, edim, etype> > flux(interval, Results::flux);
 
 	coo.move(SIMD::size);
+	cooAndGps.move(SIMD::size);
 	temp.move(SIMD::size);
 	stiffness.move(SIMD::size);
-	symFiller.move(SIMD::size);
+	advection.move(SIMD::size);
+	upperFiller.move(SIMD::size);
+	fullFiller.move(SIMD::size);
+	rhsFiller.move(SIMD::size);
+	heatSource.move(SIMD::size);
 
 	gradient.move(ndim * SIMD::size);
 	flux.move(ndim * SIMD::size);
 
 	const MaterialConfiguration *mat = info::mesh->materials[info::mesh->elements->eintervals[interval].material];
-	bool constConductivity = true, rotateConductivity = mat->thermal_conductivity.model != ThermalConductivityConfiguration::MODEL::ISOTROPIC;
+	bool rotateConductivity = mat->thermal_conductivity.model != ThermalConductivityConfiguration::MODEL::ISOTROPIC;
+	// it is dirty hack just to be sure that compiler must assume both variants (currently settings.sigma = 0 and diffusion_split = false)
+	bool constConductivity = !settings.diffusion_split;
+	bool constRotation = settings.sigma == 0;
 	if (mat->thermal_conductivity.model != ThermalConductivityConfiguration::MODEL::ISOTROPIC) {
 		if (mat->coordinate_system.type == CoordinateSystemConfiguration::TYPE::CARTESIAN) {
 			if (ndim == 2) {
@@ -544,35 +1228,76 @@ double HeatTransfer::operatorsloop(ActionOperator::Action action, const std::vec
 		}
 	}
 
+	bool hasHeatSource = false;
+	bool constHeatSource = true;
+	auto heatSourceEval = configuration.heat_source.find(info::mesh->elementsRegions[info::mesh->elements->eintervals[interval].region]->name);
+	if (heatSourceEval != configuration.heat_source.end()) {
+		hasHeatSource = true;
+		constHeatSource = heatSourceEval->second.evaluator->params.general.size() == 0;
+	}
+
+	bool hasAdvection = false;
+	bool constAdvection = true;
+	auto advectionEval = configuration.translation_motions.find(info::mesh->elementsRegions[info::mesh->elements->eintervals[interval].region]->name);
+	if (advectionEval != configuration.translation_motions.end()) {
+		hasAdvection = true;
+		constAdvection = advectionEval->second.x.evaluator->params.general.size() == 0 && advectionEval->second.y.evaluator->params.general.size() == 0 && advectionEval->second.z.evaluator->params.general.size() == 0;
+	}
+
+	bool cooToGP = mat->coordinate_system.type != CoordinateSystemConfiguration::TYPE::CARTESIAN;
 	bool computeK = action == ActionOperator::ASSEMBLE || action == ActionOperator::REASSEMBLE;
-	bool computeGradient = info::ecf->output.results_selection.gradient;
-	bool computeFlux = info::ecf->output.results_selection.flux;
-	bool getTemp = action == ActionOperator::SOLUTION && (computeGradient || computeFlux);
-	bool isSymmetric = mat->thermal_conductivity.model != ThermalConductivityConfiguration::MODEL::ANISOTROPIC && (configuration.translation_motions.size() == 0 || settings.sigma == 0);
+	bool computeGradient = action == ActionOperator::SOLUTION && info::ecf->output.results_selection.gradient;
+	bool computeFlux = action == ActionOperator::SOLUTION && info::ecf->output.results_selection.flux;
+	bool computeConductivity = computeK | computeFlux;
+	bool getTemp = computeGradient || computeFlux;
+	bool isfullMatrix = this->K->shape == Matrix_Shape::FULL;
 
 	double start = eslog::time();
 	esint chunks = elements / SIMD::size;
 	for (esint c = 1; c < chunks; ++c) {
-		coo.simd(element);
+		if (cooToGP) {
+			cooAndGps.simd(element);
+		} else {
+			coo.simd(element);
+		}
 		integration.simd(element);
 		if (getTemp) {
 			temp.simd(element);
 		}
-		if (!constConductivity) {
-
+		if (computeConductivity) {
+			if (!constConductivity) {
+				updateConductivity<DataDescriptor, nodes, gps, ndim, edim, etype>()(element, mat);
+			}
+			if (rotateConductivity) {
+				if (!constRotation) {
+					updateRotation<DataDescriptor, nodes, gps, ndim, edim, etype>()(element, mat);
+				}
+				rotation(element, mat);
+			}
 		}
-		if (!rotateConductivity) {
 
-		}
 		if (computeK) {
+			if (hasAdvection) {
+				if (!constAdvection) {
+					updateTM(element, advectionEval->second.x.evaluator);
+				}
+				advection.simd(element);
+			}
 			stiffness.simd(element);
+			if (hasHeatSource) {
+				if (!constHeatSource) {
+					updateHS(element, heatSourceEval->second.evaluator);
+				}
+				heatSource.simd(element);
+			}
 		}
 		if (action == ActionOperator::FILL) {
-			if (isSymmetric) {
-				symFiller.simd(element);
+			if (isfullMatrix) {
+				fullFiller.simd(element);
 			} else {
-				asymFiller.simd(element);
+				upperFiller.simd(element);
 			}
+			rhsFiller.simd(element);
 		}
 		if (computeGradient) {
 			gradient.simd(element);

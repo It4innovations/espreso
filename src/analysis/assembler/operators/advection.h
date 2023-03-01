@@ -26,6 +26,26 @@ struct AdvectionBase: ActionOperator {
 template <size_t nodes, size_t gps, size_t ndim, size_t edim, size_t etype, class Physics> struct Advection;
 
 template <size_t nodes, size_t gps, size_t ndim, size_t edim, class Physics>
+struct Advection<nodes, gps, ndim, edim, HeatTransferElementType::SYMMETRIC_ISOTROPIC, Physics>: AdvectionBase, Physics {
+	using AdvectionBase::AdvectionBase;
+
+	void simd(typename Physics::Element &element)
+	{
+
+	}
+};
+
+template <size_t nodes, size_t gps, size_t ndim, size_t edim, class Physics>
+struct Advection<nodes, gps, ndim, edim, HeatTransferElementType::SYMMETRIC_GENERAL, Physics>: AdvectionBase, Physics {
+	using AdvectionBase::AdvectionBase;
+
+	void simd(typename Physics::Element &element)
+	{
+
+	}
+};
+
+template <size_t nodes, size_t gps, size_t ndim, size_t edim, class Physics>
 struct Advection<nodes, gps, ndim, edim, HeatTransferElementType::ASYMMETRIC_ISOTROPIC, Physics>: AdvectionBase, Physics {
 	using AdvectionBase::AdvectionBase;
 

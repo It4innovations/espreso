@@ -30,7 +30,7 @@ Assembler::Assembler(PhysicsConfiguration &settings)
   etype(info::mesh->elements->eintervals.size()), bfilter(info::mesh->boundaryRegions.size()), btype(info::mesh->boundaryRegions.size()),
   elementOps(info::mesh->elements->eintervals.size()),
   boundaryOps(info::mesh->boundaryRegions.size()),
-  K(nullptr)
+  K(nullptr), f(nullptr)
 {
 	for (size_t i = 0; i < info::mesh->boundaryRegions.size(); ++i) {
 		if (info::mesh->boundaryRegions[i]->dimension) {

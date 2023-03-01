@@ -61,6 +61,7 @@ protected:
 
 	// TODO: remove
 	Matrix_Base<double> *K;
+	Vector_Base<double> *f;
 };
 
 template <typename T>
