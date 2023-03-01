@@ -21,6 +21,7 @@
 #include "mesh/store/boundaryregionstore.h"
 
 #include "analysis/scheme/steadystate.h"
+#include "math/physics/matrix_distributed.h"
 
 #include <numeric>
 #include <algorithm>
@@ -368,6 +369,21 @@ void StructuralMechanics::evaluate(SteadyState &scheme)
 	update(scheme.K, scheme.f);
 }
 
+void StructuralMechanics::dryrun()
+{
+	if (this->K == nullptr) {
+		this->K = new Matrix_Distributed<Matrix_CSR, double>();
+		this->K->mapping.elements.resize(info::mesh->elements->eintervals.size());
+
+		this->f = new Vector_Distributed<Vector_Dense, double>();
+		this->f->mapping.elements.resize(info::mesh->elements->eintervals.size());
+	}
+
+	eslog::info("       = SIMD LOOP ASSEMBLE                                             %12.8f s = \n", assemble(ActionOperator::Action::ASSEMBLE));
+	eslog::info("       = SIMD LOOP REASSEMBLE                                           %12.8f s = \n", assemble(ActionOperator::Action::REASSEMBLE));
+}
+
+
 void StructuralMechanics::volume()
 {
 	std::vector<double> evolume(info::mesh->elements->eintervals.size());
@@ -523,8 +539,8 @@ double StructuralMechanics::instantiate2D<StructuralMechanicsElementType::EDGE_A
 template <int etype>
 double StructuralMechanics::instantiate2D(ActionOperator::Action action, int code, const std::vector<ActionOperator*> &ops, size_t interval, esint elements)
 {
-	switch (settings.loop) {
-	case PhysicsConfiguration::LOOP::INHERITANCE:
+	switch (info::ecf->loop) {
+	case ECF::LOOP::INHERITANCE:
 		switch (code) {
 		case static_cast<size_t>(Element::CODE::TRIANGLE3): return loop<StructuralMechanicsDataDescriptor, 3, StructuralMechanicsGPC::TRIANGLE3, 2, 2, etype>(action, ops, elements); break;
 		case static_cast<size_t>(Element::CODE::TRIANGLE6): return loop<StructuralMechanicsDataDescriptor, 6, StructuralMechanicsGPC::TRIANGLE6, 2, 2, etype>(action, ops, elements); break;
@@ -532,7 +548,7 @@ double StructuralMechanics::instantiate2D(ActionOperator::Action action, int cod
 		case static_cast<size_t>(Element::CODE::SQUARE8):   return loop<StructuralMechanicsDataDescriptor, 8, StructuralMechanicsGPC::SQUARE8  , 2, 2, etype>(action, ops, elements); break;
 		default: return 0;
 		};
-	case PhysicsConfiguration::LOOP::OPERATORS:
+	case ECF::LOOP::OPERATORS:
 		switch (code) {
 		case static_cast<size_t>(Element::CODE::TRIANGLE3): return operatorsloop<StructuralMechanicsDataDescriptor, 3, StructuralMechanicsGPC::TRIANGLE3, 2, 2, etype>(action, ops, interval, elements); break;
 		case static_cast<size_t>(Element::CODE::TRIANGLE6): return operatorsloop<StructuralMechanicsDataDescriptor, 6, StructuralMechanicsGPC::TRIANGLE6, 2, 2, etype>(action, ops, interval, elements); break;
@@ -540,7 +556,7 @@ double StructuralMechanics::instantiate2D(ActionOperator::Action action, int cod
 		case static_cast<size_t>(Element::CODE::SQUARE8):   return operatorsloop<StructuralMechanicsDataDescriptor, 8, StructuralMechanicsGPC::SQUARE8  , 2, 2, etype>(action, ops, interval, elements); break;
 		default: return 0;
 		};
-	case PhysicsConfiguration::LOOP::MANUAL:
+	case ECF::LOOP::MANUAL:
 		switch (code) {
 		case static_cast<size_t>(Element::CODE::TRIANGLE3): return manualloop<StructuralMechanicsDataDescriptor, 3, StructuralMechanicsGPC::TRIANGLE3, 2, 2, etype>(action, ops, interval, elements); break;
 		case static_cast<size_t>(Element::CODE::TRIANGLE6): return manualloop<StructuralMechanicsDataDescriptor, 6, StructuralMechanicsGPC::TRIANGLE6, 2, 2, etype>(action, ops, interval, elements); break;
@@ -583,8 +599,8 @@ double StructuralMechanics::instantiate3D<StructuralMechanicsElementType::FACE>(
 template <int etype>
 double StructuralMechanics::instantiate3D(ActionOperator::Action action, int code, const std::vector<ActionOperator*> &ops, size_t interval, esint elements)
 {
-	switch (settings.loop) {
-	case PhysicsConfiguration::LOOP::INHERITANCE:
+	switch (info::ecf->loop) {
+	case ECF::LOOP::INHERITANCE:
 		switch (code) {
 		case static_cast<size_t>(Element::CODE::TETRA4):    return loop<StructuralMechanicsDataDescriptor,  4, StructuralMechanicsGPC::TETRA4    , 3, 3, etype>(action, ops, elements); break;
 		case static_cast<size_t>(Element::CODE::TETRA10):   return loop<StructuralMechanicsDataDescriptor, 10, StructuralMechanicsGPC::TETRA10   , 3, 3, etype>(action, ops, elements); break;
@@ -596,7 +612,7 @@ double StructuralMechanics::instantiate3D(ActionOperator::Action action, int cod
 		case static_cast<size_t>(Element::CODE::HEXA20):    return loop<StructuralMechanicsDataDescriptor, 20, StructuralMechanicsGPC::HEXA20    , 3, 3, etype>(action, ops, elements); break;
 		default: return 0;
 		}
-	case PhysicsConfiguration::LOOP::OPERATORS:
+	case ECF::LOOP::OPERATORS:
 		switch (code) {
 		case static_cast<size_t>(Element::CODE::TETRA4):    return operatorsloop<StructuralMechanicsDataDescriptor,  4, StructuralMechanicsGPC::TETRA4    , 3, 3, etype>(action, ops, interval, elements); break;
 		case static_cast<size_t>(Element::CODE::TETRA10):   return operatorsloop<StructuralMechanicsDataDescriptor, 10, StructuralMechanicsGPC::TETRA10   , 3, 3, etype>(action, ops, interval, elements); break;
@@ -608,7 +624,7 @@ double StructuralMechanics::instantiate3D(ActionOperator::Action action, int cod
 		case static_cast<size_t>(Element::CODE::HEXA20):    return operatorsloop<StructuralMechanicsDataDescriptor, 20, StructuralMechanicsGPC::HEXA20    , 3, 3, etype>(action, ops, interval, elements); break;
 		default: return 0;
 		}
-	case PhysicsConfiguration::LOOP::MANUAL:
+	case ECF::LOOP::MANUAL:
 		switch (code) {
 		case static_cast<size_t>(Element::CODE::TETRA4):    return manualloop<StructuralMechanicsDataDescriptor,  4, StructuralMechanicsGPC::TETRA4    , 3, 3, etype>(action, ops, interval, elements); break;
 		case static_cast<size_t>(Element::CODE::TETRA10):   return manualloop<StructuralMechanicsDataDescriptor, 10, StructuralMechanicsGPC::TETRA10   , 3, 3, etype>(action, ops, interval, elements); break;

@@ -26,6 +26,7 @@
 #include "mesh/store/boundaryregionstore.h"
 
 #include "analysis/scheme/steadystate.h"
+#include "math/physics/matrix_distributed.h"
 
 #include <numeric>
 #include <algorithm>
@@ -457,6 +458,19 @@ void HeatTransfer::evaluate(SteadyState &scheme)
 	eslog::info("       = SIMD LOOP REASSEMBLE                                           %12.8f s = \n", assemble(ActionOperator::Action::REASSEMBLE));
 	eslog::info("       = FILL MATRICES                                                  %12.8f s = \n", assemble(ActionOperator::Action::FILL));
 	update(scheme.K, scheme.f);
+}
+
+void HeatTransfer::dryrun()
+{
+	if (this->K == nullptr) {
+		this->K = new Matrix_Distributed<Matrix_CSR, double>();
+		this->K->mapping.elements.resize(info::mesh->elements->eintervals.size());
+
+		this->f = new Vector_Distributed<Vector_Dense, double>();
+		this->f->mapping.elements.resize(info::mesh->elements->eintervals.size());
+	}
+	eslog::info("       = SIMD LOOP ASSEMBLE                                             %12.8f s = \n", assemble(ActionOperator::Action::ASSEMBLE));
+	eslog::info("       = SIMD LOOP REASSEMBLE                                           %12.8f s = \n", assemble(ActionOperator::Action::REASSEMBLE));
 }
 
 void HeatTransfer::volume()
@@ -1394,8 +1408,8 @@ double HeatTransfer::instantiate2D<HeatTransferElementType::EDGE>(ActionOperator
 template <int etype>
 double HeatTransfer::instantiate2D(ActionOperator::Action action, int code, const std::vector<ActionOperator*> &ops, size_t interval, esint elements)
 {
-	switch (settings.loop) {
-	case PhysicsConfiguration::LOOP::INHERITANCE:
+	switch (info::ecf->loop) {
+	case ECF::LOOP::INHERITANCE:
 		switch (code) {
 		case static_cast<size_t>(Element::CODE::TRIANGLE3): return loop<HeatTransferDataDescriptor, 3, HeatTransferGPC::TRIANGLE3, 2, 2, etype>(action, ops, elements); break;
 		case static_cast<size_t>(Element::CODE::TRIANGLE6): return loop<HeatTransferDataDescriptor, 6, HeatTransferGPC::TRIANGLE6, 2, 2, etype>(action, ops, elements); break;
@@ -1403,7 +1417,7 @@ double HeatTransfer::instantiate2D(ActionOperator::Action action, int code, cons
 		case static_cast<size_t>(Element::CODE::SQUARE8):   return loop<HeatTransferDataDescriptor, 8, HeatTransferGPC::SQUARE8  , 2, 2, etype>(action, ops, elements); break;
 		default: return 0;
 		};
-	case PhysicsConfiguration::LOOP::OPERATORS:
+	case ECF::LOOP::OPERATORS:
 		switch (code) {
 		case static_cast<size_t>(Element::CODE::TRIANGLE3): return operatorsloop<HeatTransferDataDescriptor, 3, HeatTransferGPC::TRIANGLE3, 2, 2, etype>(action, ops, interval, elements); break;
 		case static_cast<size_t>(Element::CODE::TRIANGLE6): return operatorsloop<HeatTransferDataDescriptor, 6, HeatTransferGPC::TRIANGLE6, 2, 2, etype>(action, ops, interval, elements); break;
@@ -1411,7 +1425,7 @@ double HeatTransfer::instantiate2D(ActionOperator::Action action, int code, cons
 		case static_cast<size_t>(Element::CODE::SQUARE8):   return operatorsloop<HeatTransferDataDescriptor, 8, HeatTransferGPC::SQUARE8  , 2, 2, etype>(action, ops, interval, elements); break;
 		default: return 0;
 		};
-	case PhysicsConfiguration::LOOP::MANUAL:
+	case ECF::LOOP::MANUAL:
 		switch (code) {
 		case static_cast<size_t>(Element::CODE::TRIANGLE3): return manualloop<HeatTransferDataDescriptor, 3, HeatTransferGPC::TRIANGLE3, 2, 2, etype>(action, ops, interval, elements); break;
 		case static_cast<size_t>(Element::CODE::TRIANGLE6): return manualloop<HeatTransferDataDescriptor, 6, HeatTransferGPC::TRIANGLE6, 2, 2, etype>(action, ops, interval, elements); break;
@@ -1454,8 +1468,8 @@ double HeatTransfer::instantiate3D<HeatTransferElementType::FACE>(ActionOperator
 template <int etype>
 double HeatTransfer::instantiate3D(ActionOperator::Action action, int code, const std::vector<ActionOperator*> &ops, size_t interval, esint elements)
 {
-	switch (settings.loop) {
-	case PhysicsConfiguration::LOOP::INHERITANCE:
+	switch (info::ecf->loop) {
+	case ECF::LOOP::INHERITANCE:
 		switch (code) {
 		case static_cast<size_t>(Element::CODE::TETRA4):    return loop<HeatTransferDataDescriptor,  4, HeatTransferGPC::TETRA4    , 3, 3, etype>(action, ops, elements); break;
 		case static_cast<size_t>(Element::CODE::TETRA10):   return loop<HeatTransferDataDescriptor, 10, HeatTransferGPC::TETRA10   , 3, 3, etype>(action, ops, elements); break;
@@ -1467,7 +1481,7 @@ double HeatTransfer::instantiate3D(ActionOperator::Action action, int code, cons
 		case static_cast<size_t>(Element::CODE::HEXA20):    return loop<HeatTransferDataDescriptor, 20, HeatTransferGPC::HEXA20    , 3, 3, etype>(action, ops, elements); break;
 		default: return 0;
 		};
-	case PhysicsConfiguration::LOOP::OPERATORS:
+	case ECF::LOOP::OPERATORS:
 		switch (code) {
 		case static_cast<size_t>(Element::CODE::TETRA4):    return operatorsloop<HeatTransferDataDescriptor,  4, HeatTransferGPC::TETRA4    , 3, 3, etype>(action, ops, interval, elements); break;
 		case static_cast<size_t>(Element::CODE::TETRA10):   return operatorsloop<HeatTransferDataDescriptor, 10, HeatTransferGPC::TETRA10   , 3, 3, etype>(action, ops, interval, elements); break;
@@ -1479,7 +1493,7 @@ double HeatTransfer::instantiate3D(ActionOperator::Action action, int code, cons
 		case static_cast<size_t>(Element::CODE::HEXA20):    return operatorsloop<HeatTransferDataDescriptor, 20, HeatTransferGPC::HEXA20    , 3, 3, etype>(action, ops, interval, elements); break;
 		default: return 0;
 		};
-	case PhysicsConfiguration::LOOP::MANUAL:
+	case ECF::LOOP::MANUAL:
 		switch (code) {
 		case static_cast<size_t>(Element::CODE::TETRA4):    return manualloop<HeatTransferDataDescriptor,  4, HeatTransferGPC::TETRA4    , 3, 3, etype>(action, ops, interval, elements); break;
 		case static_cast<size_t>(Element::CODE::TETRA10):   return manualloop<HeatTransferDataDescriptor, 10, HeatTransferGPC::TETRA10   , 3, 3, etype>(action, ops, interval, elements); break;

@@ -66,15 +66,6 @@ espreso::PhysicsConfiguration::PhysicsConfiguration(DIMENSION dim, MaterialConfi
 			.setdatatype({ ECFDataType::BOOL })
 			.setform());
 
-	loop = LOOP::OPERATORS;
-	REGISTER(loop, ECFMetaData()
-			.setdescription({ "Data interpolation" })
-			.setdatatype({ ECFDataType::OPTION })
-			.addoption(ECFOption().setname("INHERITANCE").setdescription("Operator inheritance."))
-			.addoption(ECFOption().setname("OPERATORS").setdescription("Operators with if statements."))
-			.addoption(ECFOption().setname("MANUAL").setdescription("Manually optimized operators."))
-			.setform());
-
 	ecfdescription->addSeparator()->metadata.noexport();
 
 	REGISTER(initial_temperature, ECFMetaData()

@@ -72,6 +72,13 @@ struct ECF: public ECFDescription {
 
 	MeshMorphing mesh_morphing;
 
+	bool dryrun;
+
+	enum class LOOP {
+		INHERITANCE,
+		OPERATORS,
+		MANUAL
+	} loop;
 	PhysicsConfiguration::TYPE physics;
 	ThermoElasticityConfiguration thermo_elasticity_2d;
 	ThermoElasticityConfiguration thermo_elasticity_3d;

@@ -13,6 +13,8 @@ struct Analysis {
 
 	virtual void analyze() =0;
 	virtual void run(step::Step &step) =0;
+
+	virtual void dryrun() {}
 };
 
 }
