@@ -103,9 +103,9 @@ void _store(const Matrix_Dense<T> &A, const char* file)
 
 	os.precision(15);
 	os << std::showpos;
-	for (esint r = 0; r < A.nrows; r++) {
-		for (esint c = 0; c < A.ncols; c++) {
-			os << std::setw(25) << std::scientific << A.vals[r * A.ncols + c];
+	for (esint r = 0, i = 0; r < A.nrows; r++) {
+		for (esint c = A.shape == Matrix_Shape::FULL ? 0 : r; c < A.ncols; c++, i++) {
+			os << std::setw(25) << std::scientific << A.vals[i];
 		}
 		os << "\n";
 	}
