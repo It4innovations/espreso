@@ -1,8 +1,7 @@
-ml intel/2020b
-ml ParMETIS/4.0.3-intel-2020b
-ml HDF5/1.10.6-intel-2020b-parallel
-ml Valgrind/3.16.1-intel-2020b
+ml intel/2022a
+ml PAPI/6.0.0.1-GCCcore-10.3.0
+ml Python/3.10.4-GCCcore-11.3.0
 
+# export LD_LIBRARY_PATH+=:/home/xkadlu01/Code/espreso_measure_me/build
 export MPICXX=mpiicpc
 export CXX=icpc
-export LANG=C

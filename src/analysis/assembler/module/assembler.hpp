@@ -13,6 +13,11 @@
 #include "mesh/store/domainstore.h"
 
 using namespace espreso;
+#ifndef __SSC_MARK
+#define __SSC_MARK(tag)                                                       \
+	__asm__ __volatile__("movl %0, %%ebx; .byte 0x64, 0x67, 0x90 " ::"i"(tag) \
+						 : "%ebx")
+#endif
 
 template <template <size_t, size_t, size_t, size_t, size_t> class DataDescriptor, size_t nodes, size_t gps, size_t ndim, size_t edim, size_t etype>
 double Assembler::loop(ActionOperator::Action action, const std::vector<ActionOperator*> &ops, esint elements)
@@ -37,12 +42,14 @@ double Assembler::loop(ActionOperator::Action action, const std::vector<ActionOp
 	}
 
 	double start = eslog::time();
+	__SSC_MARK(0xFACE);
 	esint chunks = elements / SIMD::size;
 	for (esint c = 1; c < chunks; ++c) {
 		for (auto op = active.cbegin(); op != active.cend(); ++op) {
 			(*op)->simd(element);
 		}
 	}
+	__SSC_MARK(0xDEAD);
 	double end = eslog::time();
 
 	if (elements % SIMD::size) {

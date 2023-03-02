@@ -23,6 +23,8 @@
 #include <algorithm>
 #include <numeric>
 
+#include <iostream>
+
 using namespace espreso;
 
 Assembler::Assembler(PhysicsConfiguration &settings)
@@ -71,6 +73,7 @@ double Assembler::assemble(ActionOperator::Action action)
 				}
 			}
 		}
+		std::cout<<"SCALING: "<<time<<std::endl;
 
 		for (int t = 0; t < info::env::threads; ++t) {
 			for (size_t d = info::mesh->domains->distribution[t]; d < info::mesh->domains->distribution[t + 1]; d++) {
@@ -88,6 +91,7 @@ double Assembler::assemble(ActionOperator::Action action)
 			}
 		}
 	} else {
+		
 		#pragma omp parallel for reduction(+:time)
 		for (int t = 0; t < info::env::threads; ++t) {
 			for (size_t d = info::mesh->domains->distribution[t]; d < info::mesh->domains->distribution[t + 1]; d++) {
@@ -97,7 +101,7 @@ double Assembler::assemble(ActionOperator::Action action)
 				}
 			}
 		}
-
+		std::cout<<"SCALING2: "<<time<<std::endl;
 		#pragma omp parallel for
 		for (int t = 0; t < info::env::threads; ++t) {
 			for (size_t d = info::mesh->domains->distribution[t]; d < info::mesh->domains->distribution[t + 1]; d++) {
