@@ -61,19 +61,19 @@ Assembler::~Assembler()
 	}
 }
 
-double Assembler::assemble(ActionOperator::Action action)
+Assembler::measurements Assembler::assemble(ActionOperator::Action action)
 {
-	double time = 0;
+	Assembler::measurements times = {0.0, 0.0};
 	if (action & ActionOperator::Action::FILL) {
 		for (int t = 0; t < info::env::threads; ++t) {
 			for (size_t d = info::mesh->domains->distribution[t]; d < info::mesh->domains->distribution[t + 1]; d++) {
 				for (esint i = info::mesh->elements->eintervalsDistribution[d]; i < info::mesh->elements->eintervalsDistribution[d + 1]; ++i) {
 					esint elements = info::mesh->elements->eintervals[i].end - info::mesh->elements->eintervals[i].begin;
-					time += instantiate(action, info::mesh->elements->eintervals[i].code, etype[i], elementOps[i], i, elements);
+					times += instantiate(action, info::mesh->elements->eintervals[i].code, etype[i], elementOps[i], i, elements);
 				}
 			}
 		}
-		std::cout<<"SCALING: "<<time<<std::endl;
+		// std::cout<<"SCALING: "<<time<<std::endl;
 
 		for (int t = 0; t < info::env::threads; ++t) {
 			for (size_t d = info::mesh->domains->distribution[t]; d < info::mesh->domains->distribution[t + 1]; d++) {
@@ -92,16 +92,16 @@ double Assembler::assemble(ActionOperator::Action action)
 		}
 	} else {
 		
-		#pragma omp parallel for reduction(+:time)
+		#pragma omp parallel for reduction(+:times)
 		for (int t = 0; t < info::env::threads; ++t) {
 			for (size_t d = info::mesh->domains->distribution[t]; d < info::mesh->domains->distribution[t + 1]; d++) {
 				for (esint i = info::mesh->elements->eintervalsDistribution[d]; i < info::mesh->elements->eintervalsDistribution[d + 1]; ++i) {
 					esint elements = info::mesh->elements->eintervals[i].end - info::mesh->elements->eintervals[i].begin;
-					time += instantiate(action, info::mesh->elements->eintervals[i].code, etype[i], elementOps[i], i, elements);
+					times += instantiate(action, info::mesh->elements->eintervals[i].code, etype[i], elementOps[i], i, elements);
 				}
 			}
 		}
-		std::cout<<"SCALING2: "<<time<<std::endl;
+		// std::cout<<"SCALING2: "<<time<<std::endl;
 		#pragma omp parallel for
 		for (int t = 0; t < info::env::threads; ++t) {
 			for (size_t d = info::mesh->domains->distribution[t]; d < info::mesh->domains->distribution[t + 1]; d++) {
@@ -120,7 +120,8 @@ double Assembler::assemble(ActionOperator::Action action)
 		}
 	}
 
-	return time / info::mesh->elements->eintervals.size();
+	// return time / info::mesh->elements->eintervals.size();
+	return times;
 }
 
 void Assembler::printElementVolume(std::vector<double> &volume)

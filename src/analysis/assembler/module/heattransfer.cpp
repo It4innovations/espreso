@@ -469,8 +469,24 @@ void HeatTransfer::dryrun()
 		this->f = new Vector_Distributed<Vector_Dense, double>();
 		this->f->mapping.elements.resize(info::mesh->elements->eintervals.size());
 	}
-	eslog::info("       = SIMD LOOP ASSEMBLE                                             %12.8f s = \n", assemble(ActionOperator::Action::ASSEMBLE));
-	eslog::info("       = SIMD LOOP REASSEMBLE                                           %12.8f s = \n", assemble(ActionOperator::Action::REASSEMBLE));
+	Assembler::measurements reassemble_time = {0.0, 0.0};
+	Assembler::measurements   assemble_time = {0.0, 0.0};
+	int numreps = 10;
+	for(int reps = 0; reps < numreps; reps++) {
+		  assemble_time += assemble(ActionOperator::Action::ASSEMBLE);
+		reassemble_time += assemble(ActionOperator::Action::REASSEMBLE);
+	}
+
+	  assemble_time.coreTime /= static_cast<double>(numreps);
+	reassemble_time.coreTime /= static_cast<double>(numreps);
+
+	  assemble_time.preprocessTime /= static_cast<double>(numreps);
+	reassemble_time.preprocessTime /= static_cast<double>(numreps);
+
+	eslog::info("       = SIMD LOOP ASSEMBLE                                             %12.8f s = \n",   assemble_time.preprocessTime);
+	eslog::info("       = SIMD LOOP ASSEMBLE                                             %12.8f s = \n",   assemble_time.coreTime);
+	eslog::info("       = SIMD LOOP REASSEMBLE                                           %12.8f s = \n", reassemble_time.preprocessTime);
+	eslog::info("       = SIMD LOOP REASSEMBLE                                           %12.8f s = \n", reassemble_time.coreTime);
 }
 
 void HeatTransfer::volume()
@@ -1175,12 +1191,14 @@ struct updateTranslationMotion<DataDescriptor, nodes, gps, ndim, edim, HeatTrans
 };
 
 template <template <size_t, size_t, size_t, size_t, size_t> class DataDescriptor, size_t nodes, size_t gps, size_t ndim, size_t edim, size_t etype>
-double HeatTransfer::operatorsloop(ActionOperator::Action action, const std::vector<ActionOperator*> &ops, size_t interval, esint elements)
+Assembler::measurements HeatTransfer::operatorsloop(ActionOperator::Action action, const std::vector<ActionOperator*> &ops, size_t interval, esint elements)
 {
+	double initStart, initEnd;
+	initStart = eslog::time();
 	if (this->K == nullptr) {
 		return loop<HeatTransferDataDescriptor, nodes, gps, ndim, edim, etype>(action, ops, elements);
 	}
-	if (elements == 0) return 0;
+	if (elements == 0) return {0.0, 0.0};
 	typename DataDescriptor<nodes, gps, ndim, edim, etype>::Element element;
 
 	for (auto op = ops.cbegin(); op != ops.cend(); ++op) {
@@ -1265,62 +1283,131 @@ double HeatTransfer::operatorsloop(ActionOperator::Action action, const std::vec
 	bool computeConductivity = computeK | computeFlux;
 	bool getTemp = computeGradient || computeFlux;
 	bool isfullMatrix = this->K->shape == Matrix_Shape::FULL;
+	
+	initEnd = eslog::time();
+	double start, end;
 
-	double start = eslog::time();
-	esint chunks = elements / SIMD::size;
-	for (esint c = 1; c < chunks; ++c) {
-		if (cooToGP) {
-			cooAndGps.simd(element);
-		} else {
-			coo.simd(element);
-		}
-		integration.simd(element);
-		if (getTemp) {
-			temp.simd(element);
-		}
-		if (computeConductivity) {
-			if (!constConductivity) {
-				updateConductivity<DataDescriptor, nodes, gps, ndim, edim, etype>()(element, mat);
-			}
-			if (rotateConductivity) {
-				if (!constRotation) {
-					updateRotation<DataDescriptor, nodes, gps, ndim, edim, etype>()(element, mat);
-				}
-				rotation(element, mat);
-			}
-		}
-
-		if (computeK) {
-			if (hasAdvection) {
-				if (!constAdvection) {
-					updateTM(element, advectionEval->second.x.evaluator);
-				}
-				advection.simd(element);
-			}
-			stiffness.simd(element);
-			if (hasHeatSource) {
-				if (!constHeatSource) {
-					updateHS(element, heatSourceEval->second.evaluator);
-				}
-				heatSource.simd(element);
-			}
-		}
-		if (action == ActionOperator::FILL) {
-			if (isfullMatrix) {
-				fullFiller.simd(element);
+	if(action == ActionOperator::ASSEMBLE)
+	{
+		start = eslog::time();
+		__SSC_MARK(0xFACE);
+		esint chunks = elements / SIMD::size;
+		for (esint c = 1; c < chunks; ++c) {
+			if (cooToGP) {
+				cooAndGps.simd(element);
 			} else {
-				upperFiller.simd(element);
+				coo.simd(element);
 			}
-			rhsFiller.simd(element);
+			integration.simd(element);
+			if (getTemp) {
+				temp.simd(element);
+			}
+			if (computeConductivity) {
+				if (!constConductivity) {
+					updateConductivity<DataDescriptor, nodes, gps, ndim, edim, etype>()(element, mat);
+				}
+				if (rotateConductivity) {
+					if (!constRotation) {
+						updateRotation<DataDescriptor, nodes, gps, ndim, edim, etype>()(element, mat);
+					}
+					rotation(element, mat);
+				}
+			}
+
+			if (computeK) {
+				if (hasAdvection) {
+					if (!constAdvection) {
+						updateTM(element, advectionEval->second.x.evaluator);
+					}
+					advection.simd(element);
+				}
+				stiffness.simd(element);
+				if (hasHeatSource) {
+					if (!constHeatSource) {
+						updateHS(element, heatSourceEval->second.evaluator);
+					}
+					heatSource.simd(element);
+				}
+			}
+			if (action == ActionOperator::FILL) {
+				if (isfullMatrix) {
+					fullFiller.simd(element);
+				} else {
+					upperFiller.simd(element);
+				}
+				rhsFiller.simd(element);
+			}
+			if (computeGradient) {
+				gradient.simd(element);
+			}
+			if (computeFlux) {
+				flux.simd(element);
+			}
 		}
-		if (computeGradient) {
-			gradient.simd(element);
-		}
-		if (computeFlux) {
-			flux.simd(element);
-		}
+		__SSC_MARK(0xDEAD);
+		end = eslog::time();
 	}
-	double end = eslog::time();
+
+	if(action == ActionOperator::REASSEMBLE)
+	{
+		start = eslog::time();
+		__SSC_MARK(0xCAFE);
+		esint chunks = elements / SIMD::size;
+		for (esint c = 1; c < chunks; ++c) {
+			if (cooToGP) {
+				cooAndGps.simd(element);
+			} else {
+				coo.simd(element);
+			}
+			integration.simd(element);
+			if (getTemp) {
+				temp.simd(element);
+			}
+			if (computeConductivity) {
+				if (!constConductivity) {
+					updateConductivity<DataDescriptor, nodes, gps, ndim, edim, etype>()(element, mat);
+				}
+				if (rotateConductivity) {
+					if (!constRotation) {
+						updateRotation<DataDescriptor, nodes, gps, ndim, edim, etype>()(element, mat);
+					}
+					rotation(element, mat);
+				}
+			}
+
+			if (computeK) {
+				if (hasAdvection) {
+					if (!constAdvection) {
+						updateTM(element, advectionEval->second.x.evaluator);
+					}
+					advection.simd(element);
+				}
+				stiffness.simd(element);
+				if (hasHeatSource) {
+					if (!constHeatSource) {
+						updateHS(element, heatSourceEval->second.evaluator);
+					}
+					heatSource.simd(element);
+				}
+			}
+			if (action == ActionOperator::FILL) {
+				if (isfullMatrix) {
+					fullFiller.simd(element);
+				} else {
+					upperFiller.simd(element);
+				}
+				rhsFiller.simd(element);
+			}
+			if (computeGradient) {
+				gradient.simd(element);
+			}
+			if (computeFlux) {
+				flux.simd(element);
+			}
+		}
+		__SSC_MARK(0xFADE);
+		end = eslog::time();
+	}
 
 	if (elements % SIMD::size) {
 		eslog::error("peel loop is not supported\n");
@@ -1336,14 +1423,16 @@ double HeatTransfer::operatorsloop(ActionOperator::Action action, const std::vec
 			}
 		}
 	}
-	return end - start;
+	return {initEnd - initStart,  end - start};
 }
 
 template <template <size_t, size_t, size_t, size_t, size_t> class DataDescriptor, size_t nodes, size_t gps, size_t ndim, size_t edim, size_t etype>
-double HeatTransfer::manualloop(ActionOperator::Action action, const std::vector<ActionOperator*> &ops, size_t interval, esint elements)
+Assembler::measurements HeatTransfer::manualloop(ActionOperator::Action action, const std::vector<ActionOperator*> &ops, size_t interval, esint elements)
 {
 	eslog::info("       = LOOP TYPE                                                           MANUAL = \n");
-	if (elements == 0) return 0;
+	if (elements == 0) return {0.0, 0.0};
+	double initStart, initEnd;
+	initStart = eslog::time();
 	typename DataDescriptor<nodes, gps, ndim, edim, etype>::Element element;
 	std::vector<DataDescriptor<nodes, gps, ndim, edim, etype>*> active; active.reserve(ops.size());
 
@@ -1361,15 +1450,37 @@ double HeatTransfer::manualloop(ActionOperator::Action action, const std::vector
 			}
 		}
 	}
+	initEnd = eslog::time();
 
-	double start = eslog::time();
-	esint chunks = elements / SIMD::size;
-	for (esint c = 1; c < chunks; ++c) {
-		for (auto op = active.cbegin(); op != active.cend(); ++op) {
-			(*op)->simd(element);
+	double start, end;
+	if(action == ActionOperator::ASSEMBLE)
+	{
+		start = eslog::time();
+		__SSC_MARK(0xFACE);
+		esint chunks = elements / SIMD::size;
+		for (esint c = 1; c < chunks; ++c) {
+			for (auto op = active.cbegin(); op != active.cend(); ++op) {
+				(*op)->simd(element);
+			}
 		}
+		__SSC_MARK(0xDEAD);
+		end = eslog::time();
 	}
-	double end = eslog::time();
+
+	if(action == ActionOperator::REASSEMBLE)
+	{
+		start = eslog::time();
+		__SSC_MARK(0xCAFE);
+		esint chunks = elements / SIMD::size;
+		for (esint c = 1; c < chunks; ++c) {
+			for (auto op = active.cbegin(); op != active.cend(); ++op) {
+				(*op)->simd(element);
+			}
+		}
+		__SSC_MARK(0xFADE);
+		end = eslog::time();
+	}
+	
 
 	if (elements % SIMD::size) {
 		for (auto op = active.cbegin(); op != active.cend(); ++op) {
@@ -1386,27 +1497,27 @@ double HeatTransfer::manualloop(ActionOperator::Action action, const std::vector
 			}
 		}
 	}
-	return end - start;
+	return {initEnd - initStart, end - start};
 }
 
 template <>
-double HeatTransfer::instantiate2D<HeatTransferElementType::NODE>(ActionOperator::Action action, int code, const std::vector<ActionOperator*> &ops, size_t interval, esint elements)
+Assembler::measurements HeatTransfer::instantiate2D<HeatTransferElementType::NODE>(ActionOperator::Action action, int code, const std::vector<ActionOperator*> &ops, size_t interval, esint elements)
 {
 	return loop<HeatTransferDataDescriptor, 1, HeatTransferGPC::POINT1, 2, 0, HeatTransferElementType::NODE>(action, ops, elements);
 }
 
 template <>
-double HeatTransfer::instantiate2D<HeatTransferElementType::EDGE>(ActionOperator::Action action, int code, const std::vector<ActionOperator*> &ops, size_t interval, esint elements)
+Assembler::measurements HeatTransfer::instantiate2D<HeatTransferElementType::EDGE>(ActionOperator::Action action, int code, const std::vector<ActionOperator*> &ops, size_t interval, esint elements)
 {
 	switch (code) {
 	case static_cast<size_t>(Element::CODE::LINE2): return loop<HeatTransferDataDescriptor, 2, HeatTransferGPC::LINE2, 2, 1, HeatTransferElementType::EDGE>(action, ops, elements); break;
 	case static_cast<size_t>(Element::CODE::LINE3): return loop<HeatTransferDataDescriptor, 3, HeatTransferGPC::LINE3, 2, 1, HeatTransferElementType::EDGE>(action, ops, elements); break;
-	default: return 0;
+	default: return {0.0, 0.0};
 	}
 }
 
 template <int etype>
-double HeatTransfer::instantiate2D(ActionOperator::Action action, int code, const std::vector<ActionOperator*> &ops, size_t interval, esint elements)
+Assembler::measurements HeatTransfer::instantiate2D(ActionOperator::Action action, int code, const std::vector<ActionOperator*> &ops, size_t interval, esint elements)
 {
 	switch (info::ecf->loop) {
 	case ECF::LOOP::INHERITANCE:
@@ -1415,7 +1526,7 @@ double HeatTransfer::instantiate2D(ActionOperator::Action action, int code, cons
 		case static_cast<size_t>(Element::CODE::TRIANGLE6): return loop<HeatTransferDataDescriptor, 6, HeatTransferGPC::TRIANGLE6, 2, 2, etype>(action, ops, elements); break;
 		case static_cast<size_t>(Element::CODE::SQUARE4):   return loop<HeatTransferDataDescriptor, 4, HeatTransferGPC::SQUARE4  , 2, 2, etype>(action, ops, elements); break;
 		case static_cast<size_t>(Element::CODE::SQUARE8):   return loop<HeatTransferDataDescriptor, 8, HeatTransferGPC::SQUARE8  , 2, 2, etype>(action, ops, elements); break;
-		default: return 0;
+		default: return {0.0, 0.0};
 		};
 	case ECF::LOOP::OPERATORS:
 		switch (code) {
@@ -1423,7 +1534,7 @@ double HeatTransfer::instantiate2D(ActionOperator::Action action, int code, cons
 		case static_cast<size_t>(Element::CODE::TRIANGLE6): return operatorsloop<HeatTransferDataDescriptor, 6, HeatTransferGPC::TRIANGLE6, 2, 2, etype>(action, ops, interval, elements); break;
 		case static_cast<size_t>(Element::CODE::SQUARE4):   return operatorsloop<HeatTransferDataDescriptor, 4, HeatTransferGPC::SQUARE4  , 2, 2, etype>(action, ops, interval, elements); break;
 		case static_cast<size_t>(Element::CODE::SQUARE8):   return operatorsloop<HeatTransferDataDescriptor, 8, HeatTransferGPC::SQUARE8  , 2, 2, etype>(action, ops, interval, elements); break;
-		default: return 0;
+		default: return {0.0, 0.0};
 		};
 	case ECF::LOOP::MANUAL:
 		switch (code) {
@@ -1431,42 +1542,42 @@ double HeatTransfer::instantiate2D(ActionOperator::Action action, int code, cons
 		case static_cast<size_t>(Element::CODE::TRIANGLE6): return manualloop<HeatTransferDataDescriptor, 6, HeatTransferGPC::TRIANGLE6, 2, 2, etype>(action, ops, interval, elements); break;
 		case static_cast<size_t>(Element::CODE::SQUARE4):   return manualloop<HeatTransferDataDescriptor, 4, HeatTransferGPC::SQUARE4  , 2, 2, etype>(action, ops, interval, elements); break;
 		case static_cast<size_t>(Element::CODE::SQUARE8):   return manualloop<HeatTransferDataDescriptor, 8, HeatTransferGPC::SQUARE8  , 2, 2, etype>(action, ops, interval, elements); break;
-		default: return 0;
+		default: return {0.0, 0.0};
 		};
 	}
-	return 0;
+	return {0.0, 0.0};
 }
 
 template <>
-double HeatTransfer::instantiate3D<HeatTransferElementType::NODE>(ActionOperator::Action action, int code, const std::vector<ActionOperator*> &ops, size_t interval, esint elements)
+Assembler::measurements HeatTransfer::instantiate3D<HeatTransferElementType::NODE>(ActionOperator::Action action, int code, const std::vector<ActionOperator*> &ops, size_t interval, esint elements)
 {
 	return loop<HeatTransferDataDescriptor, 1, HeatTransferGPC::POINT1, 3, 0, HeatTransferElementType::NODE>(action, ops, elements);
 }
 
 template <>
-double HeatTransfer::instantiate3D<HeatTransferElementType::EDGE>(ActionOperator::Action action, int code, const std::vector<ActionOperator*> &ops, size_t interval, esint elements)
+Assembler::measurements HeatTransfer::instantiate3D<HeatTransferElementType::EDGE>(ActionOperator::Action action, int code, const std::vector<ActionOperator*> &ops, size_t interval, esint elements)
 {
 	switch (code) {
 	case static_cast<size_t>(Element::CODE::LINE2): return loop<HeatTransferDataDescriptor, 2, HeatTransferGPC::LINE2, 3, 1, HeatTransferElementType::EDGE>(action, ops, elements); break;
 	case static_cast<size_t>(Element::CODE::LINE3): return loop<HeatTransferDataDescriptor, 3, HeatTransferGPC::LINE3, 3, 1, HeatTransferElementType::EDGE>(action, ops, elements); break;
-	default: return 0;
+	default: return {0.0, 0.0};
 	}
 }
 
 template <>
-double HeatTransfer::instantiate3D<HeatTransferElementType::FACE>(ActionOperator::Action action, int code, const std::vector<ActionOperator*> &ops, size_t interval, esint elements)
+Assembler::measurements HeatTransfer::instantiate3D<HeatTransferElementType::FACE>(ActionOperator::Action action, int code, const std::vector<ActionOperator*> &ops, size_t interval, esint elements)
 {
 	switch (code) {
 	case static_cast<size_t>(Element::CODE::TRIANGLE3): return loop<HeatTransferDataDescriptor, 3, HeatTransferGPC::TRIANGLE3, 3, 2, HeatTransferElementType::FACE>(action, ops, elements); break;
 	case static_cast<size_t>(Element::CODE::TRIANGLE6): return loop<HeatTransferDataDescriptor, 6, HeatTransferGPC::TRIANGLE6, 3, 2, HeatTransferElementType::FACE>(action, ops, elements); break;
 	case static_cast<size_t>(Element::CODE::SQUARE4):   return loop<HeatTransferDataDescriptor, 4, HeatTransferGPC::SQUARE4  , 3, 2, HeatTransferElementType::FACE>(action, ops, elements); break;
 	case static_cast<size_t>(Element::CODE::SQUARE8):   return loop<HeatTransferDataDescriptor, 8, HeatTransferGPC::SQUARE8  , 3, 2, HeatTransferElementType::FACE>(action, ops, elements); break;
-	default: return 0;
+	default: return {0.0, 0.0};
 	}
 }
 
 template <int etype>
-double HeatTransfer::instantiate3D(ActionOperator::Action action, int code, const std::vector<ActionOperator*> &ops, size_t interval, esint elements)
+Assembler::measurements HeatTransfer::instantiate3D(ActionOperator::Action action, int code, const std::vector<ActionOperator*> &ops, size_t interval, esint elements)
 {
 	switch (info::ecf->loop) {
 	case ECF::LOOP::INHERITANCE:
@@ -1479,7 +1590,7 @@ double HeatTransfer::instantiate3D(ActionOperator::Action action, int code, cons
 		case static_cast<size_t>(Element::CODE::PRISMA15):  return loop<HeatTransferDataDescriptor, 15, HeatTransferGPC::PRISMA15  , 3, 3, etype>(action, ops, elements); break;
 		case static_cast<size_t>(Element::CODE::HEXA8):     return loop<HeatTransferDataDescriptor,  8, HeatTransferGPC::HEXA8     , 3, 3, etype>(action, ops, elements); break;
 		case static_cast<size_t>(Element::CODE::HEXA20):    return loop<HeatTransferDataDescriptor, 20, HeatTransferGPC::HEXA20    , 3, 3, etype>(action, ops, elements); break;
-		default: return 0;
+		default: return {0.0, 0.0};
 		};
 	case ECF::LOOP::OPERATORS:
 		switch (code) {
@@ -1491,7 +1602,7 @@ double HeatTransfer::instantiate3D(ActionOperator::Action action, int code, cons
 		case static_cast<size_t>(Element::CODE::PRISMA15):  return operatorsloop<HeatTransferDataDescriptor, 15, HeatTransferGPC::PRISMA15  , 3, 3, etype>(action, ops, interval, elements); break;
 		case static_cast<size_t>(Element::CODE::HEXA8):     return operatorsloop<HeatTransferDataDescriptor,  8, HeatTransferGPC::HEXA8     , 3, 3, etype>(action, ops, interval, elements); break;
 		case static_cast<size_t>(Element::CODE::HEXA20):    return operatorsloop<HeatTransferDataDescriptor, 20, HeatTransferGPC::HEXA20    , 3, 3, etype>(action, ops, interval, elements); break;
-		default: return 0;
+		default: return {0.0, 0.0};
 		};
 	case ECF::LOOP::MANUAL:
 		switch (code) {
@@ -1503,13 +1614,13 @@ double HeatTransfer::instantiate3D(ActionOperator::Action action, int code, cons
 		case static_cast<size_t>(Element::CODE::PRISMA15):  return manualloop<HeatTransferDataDescriptor, 15, HeatTransferGPC::PRISMA15  , 3, 3, etype>(action, ops, interval, elements); break;
 		case static_cast<size_t>(Element::CODE::HEXA8):     return manualloop<HeatTransferDataDescriptor,  8, HeatTransferGPC::HEXA8     , 3, 3, etype>(action, ops, interval, elements); break;
 		case static_cast<size_t>(Element::CODE::HEXA20):    return manualloop<HeatTransferDataDescriptor, 20, HeatTransferGPC::HEXA20    , 3, 3, etype>(action, ops, interval, elements); break;
-		default: return 0;
+		default: return {0.0, 0.0};
 		};
 	}
-	return 0;
+	return {0.0, 0.0};
 }
 
-double HeatTransfer::instantiate(ActionOperator::Action action, int code, int etype, const std::vector<ActionOperator*> &ops, size_t interval, esint elements)
+Assembler::measurements HeatTransfer::instantiate(ActionOperator::Action action, int code, int etype, const std::vector<ActionOperator*> &ops, size_t interval, esint elements)
 {
 	switch (info::mesh->dimension) {
 	case 2:
@@ -1538,7 +1649,7 @@ double HeatTransfer::instantiate(ActionOperator::Action action, int code, int et
 		case HeatTransferElementType::NODE: return instantiate3D<HeatTransferElementType::NODE>(action, code, ops, interval, elements);
 		}
 	}
-	return 0;
+	return {0.0, 0.0};
 }
 
 }

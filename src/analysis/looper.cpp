@@ -70,8 +70,8 @@ void Looper::run()
 	if (info::ecf->dryrun) {
 		analysis->analyze();
 		analysis->dryrun();
-		analysis->dryrun();
-		analysis->dryrun();
+		// analysis->dryrun();
+		// analysis->dryrun();
 		eslog::checkpointln("SIMULATION: ASSEMBLER TESTED");
 	} else {
 		analysis->analyze();

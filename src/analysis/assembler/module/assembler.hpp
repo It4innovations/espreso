@@ -20,12 +20,13 @@ using namespace espreso;
 #endif
 
 template <template <size_t, size_t, size_t, size_t, size_t> class DataDescriptor, size_t nodes, size_t gps, size_t ndim, size_t edim, size_t etype>
-double Assembler::loop(ActionOperator::Action action, const std::vector<ActionOperator*> &ops, esint elements)
+Assembler::measurements Assembler::loop(ActionOperator::Action action, const std::vector<ActionOperator*> &ops, esint elements)
 {
-	if (elements == 0) return 0;
+	double initStart, initEnd;
+	if (elements == 0) return {0.0, 0.0};
+	initStart = eslog::time();
 	typename DataDescriptor<nodes, gps, ndim, edim, etype>::Element element;
 	std::vector<DataDescriptor<nodes, gps, ndim, edim, etype>*> active; active.reserve(ops.size());
-
 	for (auto op = ops.cbegin(); op != ops.cend(); ++op) {
 		if ((*op)->action & action) {
 			if (elements > SIMD::size) {
@@ -40,17 +41,37 @@ double Assembler::loop(ActionOperator::Action action, const std::vector<ActionOp
 			}
 		}
 	}
+	initEnd = eslog::time();
 
-	double start = eslog::time();
-	__SSC_MARK(0xFACE);
-	esint chunks = elements / SIMD::size;
-	for (esint c = 1; c < chunks; ++c) {
-		for (auto op = active.cbegin(); op != active.cend(); ++op) {
-			(*op)->simd(element);
+	double start, end;
+
+	if (action == ActionOperator::Action::ASSEMBLE)
+	{
+		start = eslog::time();
+		__SSC_MARK(0xFACE);
+		esint chunks = elements / SIMD::size;
+		for (esint c = 1; c < chunks; ++c) {
+			for (auto op = active.cbegin(); op != active.cend(); ++op) {
+				(*op)->simd(element);
+			}
 		}
+		__SSC_MARK(0xDEAD);
+		end = eslog::time();
 	}
-	__SSC_MARK(0xDEAD);
-	double end = eslog::time();
+	if (action == ActionOperator::Action::REASSEMBLE)
+	{
+		start = eslog::time();
+		__SSC_MARK(0xCAFE);
+		esint chunks = elements / SIMD::size;
+		for (esint c = 1; c < chunks; ++c) {
+			for (auto op = active.cbegin(); op != active.cend(); ++op) {
+				(*op)->simd(element);
+			}
+		}
+		__SSC_MARK(0xFADE);
+		end = eslog::time();
+	}
+	
 
 	if (elements % SIMD::size) {
 		for (auto op = active.cbegin(); op != active.cend(); ++op) {
@@ -67,7 +88,7 @@ double Assembler::loop(ActionOperator::Action action, const std::vector<ActionOp
 			}
 		}
 	}
-	return end - start;
+	return {initEnd - initStart, end - start};
 }
 
 template<typename Ttype>

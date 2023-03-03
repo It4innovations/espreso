@@ -56,14 +56,14 @@ public:
 protected:
 	int axisymmetric;
 
-	template <int etype> double instantiate2D(ActionOperator::Action action, int code, const std::vector<ActionOperator*> &ops, size_t interval, esint elements);
-	template <int etype> double instantiate3D(ActionOperator::Action action, int code, const std::vector<ActionOperator*> &ops, size_t interval, esint elements);
-	double instantiate(ActionOperator::Action action, int code, int etype, const std::vector<ActionOperator*> &ops, size_t interval, esint elements);
+	template <int etype> Assembler::measurements instantiate2D(ActionOperator::Action action, int code, const std::vector<ActionOperator*> &ops, size_t interval, esint elements);
+	template <int etype> Assembler::measurements instantiate3D(ActionOperator::Action action, int code, const std::vector<ActionOperator*> &ops, size_t interval, esint elements);
+	Assembler::measurements instantiate(ActionOperator::Action action, int code, int etype, const std::vector<ActionOperator*> &ops, size_t interval, esint elements);
 
 	template <template <size_t, size_t, size_t, size_t, size_t> class DataDescriptor, size_t nodes, size_t gps, size_t ndim, size_t edim, size_t etype>
-	double operatorsloop(ActionOperator::Action action, const std::vector<ActionOperator*> &ops, size_t interval, esint elements);
+	Assembler::measurements operatorsloop(ActionOperator::Action action, const std::vector<ActionOperator*> &ops, size_t interval, esint elements);
 	template <template <size_t, size_t, size_t, size_t, size_t> class DataDescriptor, size_t nodes, size_t gps, size_t ndim, size_t edim, size_t etype>
-	double manualloop(ActionOperator::Action action, const std::vector<ActionOperator*> &ops, size_t interval, esint elements);
+	Assembler::measurements manualloop(ActionOperator::Action action, const std::vector<ActionOperator*> &ops, size_t interval, esint elements);
 
 	bool initDisplacement();
 	void initParameters();
