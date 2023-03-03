@@ -20,7 +20,7 @@ function cleanup_freq_barbora_cn {
 function start_freq_barbora_cn {
     echo "MERIC BARBORA CPU"
     source /mnt/proj3/open-18-15/meric_barbora/set_env 
-    $MERIC_ROOT/tools/energyMeasureStart -c 1600000000 -u 2400000000 -e RAPL
+    $MERIC_ROOT/tools/energyMeasureStart -c 1600000000 -e RAPL #-u 2400000000 -e RAPL
     sleep 5 
 }
 
@@ -49,7 +49,7 @@ function cleanup_freq_barbora_acn {
 function start_freq_barbora_acn {
     echo "MERIC BARBORA GPU"
     source /mnt/proj3/open-18-15/meric_barbora/set_env 
-    $MERIC_ROOT/tools/energyMeasureStart -c 1600000000 -u 2400000000 -e RAPL
+    $MERIC_ROOT/tools/energyMeasureStart -c 1700000000 -e RAPL #-u 2400000000 -e RAPL
     sleep 5 
 }
 
@@ -69,7 +69,6 @@ function cleanup_freq_karolina_cn {
 	echo "========= REVERTING TIMING TO DEFAULT ==========="
 
 	source /mnt/proj3/open-18-15/meric_karolina/set_env_cn
-    export LD_LIBRARY_PATH+=:${ESMI_HOME}e_smi/lib/
 
 	$MERIC_ROOT/tools/energyMeasureStop
 
@@ -79,9 +78,8 @@ function cleanup_freq_karolina_cn {
 function start_freq_karolina_cn {
     echo "MERIC KAROLINA CPU"
     source /mnt/proj3/open-18-15/meric_karolina/set_env_cn
-    export LD_LIBRARY_PATH+=:${ESMI_HOME}e_smi/lib/
 
-    $MERIC_ROOT/tools/energyMeasureStart -c 1600000000 -u 2400000000
+    $MERIC_ROOT/tools/energyMeasureStart -c 2600000000 # -u 2400000000
     sleep 5 
 }
 
@@ -91,7 +89,6 @@ function finish_freq_karolina_cn {
     echo "========= REVERTING TIMING TO DEFAULT ==========="
 
 	source /mnt/proj3/open-18-15/meric_karolina/set_env_cn
-    export LD_LIBRARY_PATH+=:${ESMI_HOME}e_smi/lib/
 
 	$MERIC_ROOT/tools/energyMeasureStop
 }
@@ -111,7 +108,7 @@ function cleanup_freq_karolina_acn {
 function start_freq_karolina_acn {
     echo "MERIC KAROLINA GPU"
     source /mnt/proj3/open-18-15/meric_karolina/set_env_acn 
-    $MERIC_ROOT/tools/energyMeasureStart -c 1600000000 -u 2400000000
+    $MERIC_ROOT/tools/energyMeasureStart -c 2600000000 # -u 2400000000
     sleep 5 
 }
 

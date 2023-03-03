@@ -78,14 +78,14 @@ declare -a elements_i2D=("16" "16" "16" "16")
 declare -a elements_j2D=("16" "16" "16" "16")
 
 declare -a COMPILERS=("INTEL" "GCC")
-
+declare -a TYPES=("INHERITANCE" "OPERATORS")
 
 # get length of an array
 elements3D_len=${#elements3D[@]}
 elements2D_len=${#elements2D[@]}
 
 output_file=SC_paper_data_${1}_${2}_${NODE}_${COMPILER}_${VERSION_STRING}.csv
-echo "${CSV_HEADER}" > $output_file
+echo "cluster;compiler;task;element;decomposition;dim;threads;impl;WRITE AI; READ AI; OVERALL AI; SUM WRITE AI; SUM READ AI; SUM OVERALL AI" > $output_file
 
 for COMPILER in "${COMPILERS[@]}"
 do
@@ -148,13 +148,15 @@ do
 
             echo "Testing $task Decomposition into $i x $j x $k elements"
             # use for loop to read all values and indexes
+            for TYPE in "${TYPES[@]}"
+            do
+                ./build/espreso -c $task ${elements3D[$eid]} 1 1 1  1 1 ${THREADS}  $i $j $k --DRYRUN=1 --LOOP=${TYPE}  > opt3D.tmp
+                rm -r ./results
 
-            ./build/espreso -c $task ${elements3D[$eid]} 1 1 1  1 1 ${THREADS}  $i $j $k > opt3D.tmp
-            rm -r ./results
-
-            cat opt3D.tmp | grep -a SCALING: > res.tmp
-            echo "$1;$2;$COMPILER;$task;${elements3D[$eid]};${i}x${j}x${k};3D;$THREADS;$(sed  -r  's/.*[^0-9]+\ ([0-9]+\.*[0-9]*)[^0-9]*/\1/'  res.tmp | sed  -z 's/\n/;/g;s/;$/\n/')" >> $output_file
-            rm opt3D.tmp res.tmp
+                cat opt3D.tmp | grep -a SCALING: > res.tmp
+                echo "$1;$2;$COMPILER;$task;${elements3D[$eid]};${i}x${j}x${k};3D;$THREADS;${TYPE};$(sed  -r  's/.*[^0-9]+\ ([0-9]+\.*[0-9]*)[^0-9]*/\1/'  res.tmp | sed  -z 's/\n/;/g;s/;$/\n/')" >> $output_file
+                rm opt3D.tmp res.tmp
+            done
         done
     done
 
@@ -168,14 +170,16 @@ do
 
             echo "Testing $task Decomposition into 1 x $i x $j elements"
             # use for loop to read all values and indexes
+            for TYPE in "${TYPES[@]}"
+            do
+                ./build/espreso -c $task ${elements2D[$eid]} 1 1  1 ${THREADS}  $i $j --DRYRUN=1 --LOOP=${TYPE}  > opt2D.tmp
+                rm -r ./results
 
-            ./build/espreso -c $task ${elements2D[$eid]} 1 1  1 ${THREADS}  $i $j > opt2D.tmp
-            rm -r ./results
 
-
-            cat opt2D.tmp | grep -a SCALING: > res.tmp
-            echo "$1;$2;$COMPILER;$task;${elements2D[$eid]};${i}x${j};2D;$THREADS;$(sed  -r  's/.*[^0-9]+\ ([0-9]+\.*[0-9]*)[^0-9]*/\1/'  res.tmp | sed  -z 's/\n/;/g;s/;$/\n/')" >> $output_file
-            rm opt2D.tmp res.tmp
+                cat opt2D.tmp | grep -a SCALING: > res.tmp
+                echo "$1;$2;$COMPILER;$task;${elements2D[$eid]};${i}x${j};2D;$THREADS;${TYPE};$(sed  -r  's/.*[^0-9]+\ ([0-9]+\.*[0-9]*)[^0-9]*/\1/'  res.tmp | sed  -z 's/\n/;/g;s/;$/\n/')" >> $output_file
+                rm opt2D.tmp res.tmp
+            done
         done
     done
 done

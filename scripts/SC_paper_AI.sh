@@ -6,6 +6,7 @@
 
 source /mnt/proj3/open-18-15/xkadlu01/espreso/scripts/utils.sh
 
+SDE_HOME=/home/xkadlu01/Installs/sde-external-9.7.0-2022-05-09-lin/
 
 NODE=$(uname -n | cut -d '.' -f 1)
 VERSION_STRING=$(date +"%Y-%m-%d_%Hh%Mm%Ss")
@@ -46,6 +47,7 @@ declare -a elements_j2D=("16" "16" "16" "16")
 
 declare -a COMPILERS=("INTEL" "GCC")
 declare -a CLUSTERS=("barbora" "karolina")
+declare -a TYPES=("INHERITANCE" "OPERATORS")
 
 
 # get length of an array
@@ -53,7 +55,7 @@ elements3D_len=${#elements3D[@]}
 elements2D_len=${#elements2D[@]}
 
 output_file=SC_paper_data_AI_${NODE}_${VERSION_STRING}.csv
-echo "cluster;compiler;task;element;decomposition;dim;threads;WRITE AI; READ AI; OVERALL AI; SUM WRITE AI; SUM READ AI; SUM OVERALL AI" > $output_file
+echo "cluster;compiler;task;element;decomposition;dim;threads;impl;action;WRITE AI; READ AI; OVERALL AI; SUM WRITE AI; SUM READ AI; SUM OVERALL AI" > $output_file
 
 for CLUSTER in "${CLUSTERS[@]}"
 do
@@ -98,16 +100,29 @@ do
 
                 echo "Testing $task Decomposition into $i x $j x $k elements"
                 # use for loop to read all values and indexes
+                for TYPE in "${TYPES[@]}"
+                do
 
-                cd $SCR/SDE-testbed
-                ./getAIonSection.sh "../prebuild/${CLUSTER}/${COMPILER}/espreso -c ../${task} ${elements3D[$eid]} 1 1 1  1 1 ${THREADS}  $i $j $k"  >/dev/null 2>../AI.tmp
-                rm -r ./results
-                rm sde-dyn*
-                rm sde-mix*
-                cd $SCR
+                    cd $SCR/SDE-testbed
+                    ${SDE_HOME}/sde64 -iform -mix -dyn_mask_profile -start_ssc_mark FACE:repeat -stop_ssc_mark DEAD:repeat -- ../prebuild/${CLUSTER}/${COMPILER}/espreso -c ../${task} ${elements3D[$eid]} 1 1 1  1 1 ${THREADS}  $i $j $k --DRYRUN=1 --LOOP=${TYPE}  >/dev/null 2>../AI.tmp
+                    ./intel_sde_flops.py 1>&2
+                    rm -r ./results
+                    rm sde-dyn*
+                    rm sde-mix*
+                    cd $SCR
 
-                echo "$CLUSTER;$COMPILER;$task;${elements3D[$eid]};${i}x${j}x${k};3D;$THREADS;$(sed -n 's/.*\((approx\.): \)\(.*\)\((EXPERIMENTAL)\)/\2/p' AI.tmp |  sed  -z 's/\n/;/g;s/;$/\n/')" >> $output_file
+                    echo "$CLUSTER;$COMPILER;$task;${elements3D[$eid]};${i}x${j}x${k};3D;$THREADS;${TYPE};ASSEMBLE;$(sed -n 's/.*\((approx\.): \)\(.*\)\((EXPERIMENTAL)\)/\2/p' AI.tmp |  sed  -z 's/\n/;/g;s/;$/\n/')" >> $output_file
 
+                    cd $SCR/SDE-testbed
+                    ${SDE_HOME}/sde64 -iform -mix -dyn_mask_profile -start_ssc_mark CAFE:repeat -stop_ssc_mark FADE:repeat -- ../prebuild/${CLUSTER}/${COMPILER}/espreso -c ../${task} ${elements3D[$eid]} 1 1 1  1 1 ${THREADS}  $i $j $k --DRYRUN=1 --LOOP=${TYPE}  >/dev/null 2>../AI.tmp
+                    ./intel_sde_flops.py 1>&2
+                    rm -r ./results
+                    rm sde-dyn*
+                    rm sde-mix*
+                    cd $SCR
+
+                    echo "$CLUSTER;$COMPILER;$task;${elements3D[$eid]};${i}x${j}x${k};3D;$THREADS;${TYPE};RE-ASSEMBLE;$(sed -n 's/.*\((approx\.): \)\(.*\)\((EXPERIMENTAL)\)/\2/p' AI.tmp |  sed  -z 's/\n/;/g;s/;$/\n/')" >> $output_file
+                done
             done
         done
 
@@ -121,16 +136,28 @@ do
 
                 echo "Testing $task Decomposition into 1 x $i x $j elements"
                 # use for loop to read all values and indexes
+                for TYPE in "${TYPES[@]}"
+                do
+                    cd $SCR/SDE-testbed
+                    ${SDE_HOME}/sde64 -iform -mix -dyn_mask_profile -start_ssc_mark FACE:repeat -stop_ssc_mark DEAD:repeat -- ../prebuild/${CLUSTER}/${COMPILER}/espreso -c ../${task} ${elements2D[$eid]} 1 1  1 ${THREADS}  $i $j --DRYRUN=1 --LOOP=${TYPE} >/dev/null 2>../AI.tmp
+                    ./intel_sde_flops.py 1>&2
+                    rm -r ./results
+                    rm sde-dyn*
+                    rm sde-mix*
+                    cd $SCR
 
-                cd $SCR/SDE-testbed
-                ./getAIonSection.sh "../prebuild/${CLUSTER}/${COMPILER}/espreso -c ../${task} ${elements2D[$eid]} 1 1  1 ${THREADS}  $i $j"  >/dev/null 2>../AI.tmp
-                rm -r ./results
-                rm sde-dyn*
-                rm sde-mix*
-                cd $SCR
+                    echo "$CLUSTER;$COMPILER;$task;${elements2D[$eid]};${i}x${j};2D;$THREADS;${TYPE};ASSEMBLE;$(sed -n 's/.*\((approx\.): \)\(.*\)\((EXPERIMENTAL)\)/\2/p' AI.tmp |  sed  -z 's/\n/;/g;s/;$/\n/')" >> $output_file
 
+                    cd $SCR/SDE-testbed
+                    ${SDE_HOME}/sde64 -iform -mix -dyn_mask_profile -start_ssc_mark CAFE:repeat -stop_ssc_mark FADE:repeat -- ../prebuild/${CLUSTER}/${COMPILER}/espreso -c ../${task} ${elements2D[$eid]} 1 1  1 ${THREADS}  $i $j --DRYRUN=1 --LOOP=${TYPE} >/dev/null 2>../AI.tmp
+                    ./intel_sde_flops.py 1>&2
+                    rm -r ./results
+                    rm sde-dyn*
+                    rm sde-mix*
+                    cd $SCR
 
-                echo "$CLUSTER;$COMPILER;$task;${elements2D[$eid]};${i}x${j};2D;$THREADS;$(sed -n 's/.*\((approx\.): \)\(.*\)\((EXPERIMENTAL)\)/\2/p' AI.tmp |  sed  -z 's/\n/;/g;s/;$/\n/')" >> $output_file
+                    echo "$CLUSTER;$COMPILER;$task;${elements2D[$eid]};${i}x${j};2D;$THREADS;${TYPE};RE-ASSEMBLE;$(sed -n 's/.*\((approx\.): \)\(.*\)\((EXPERIMENTAL)\)/\2/p' AI.tmp |  sed  -z 's/\n/;/g;s/;$/\n/')" >> $output_file
+                done
             done
         done
     done
