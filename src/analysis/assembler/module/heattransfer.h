@@ -15,6 +15,10 @@
 #include <cstddef>
 #include <map>
 
+// #include "heattransfer.element.h"
+
+#include <type_traits>
+
 namespace espreso {
 
 struct HeatTransferConfiguration;
@@ -23,6 +27,17 @@ struct SteadyState;
 
 class HeatTransfer: public Assembler
 {
+	struct TransferElementType {
+		enum: int {
+			SYMMETRIC_ISOTROPIC  = 0,
+			SYMMETRIC_GENERAL    = 1,
+			ASYMMETRIC_ISOTROPIC = 2,
+			ASYMMETRIC_GENERAL   = 3,
+			FACE                 = 4,
+			EDGE                 = 5,
+			NODE                 = 6
+		};
+	};
 public:
 	HeatTransfer(HeatTransfer *previous, HeatTransferConfiguration &settings, HeatTransferLoadStepConfiguration &configuration);
 
@@ -60,8 +75,62 @@ protected:
 
 	template <template <size_t, size_t, size_t, size_t, size_t> class DataDescriptor, size_t nodes, size_t gps, size_t ndim, size_t edim, size_t etype>
 	Assembler::measurements operatorsloop(ActionOperator::Action action, const std::vector<ActionOperator*> &ops, size_t interval, esint elements);
-	template <template <size_t, size_t, size_t, size_t, size_t> class DataDescriptor, size_t nodes, size_t gps, size_t ndim, size_t edim, size_t etype>
-	Assembler::measurements manualloop(ActionOperator::Action action, const std::vector<ActionOperator*> &ops, size_t interval, esint elements);
+	
+	template <template <size_t, size_t, size_t, size_t, size_t> class DataDescriptor, size_t nodes, size_t gps, size_t ndim, size_t edim, size_t ETYPE>
+	Assembler::measurements manualloop(ActionOperator::Action action, const std::vector<ActionOperator*> &ops, size_t interval, esint elements,
+		typename std::enable_if<
+			ndim == 2 &&
+			ETYPE == TransferElementType::SYMMETRIC_ISOTROPIC, int>::type* = 0
+	);
+
+	template <template <size_t, size_t, size_t, size_t, size_t> class DataDescriptor, size_t nodes, size_t gps, size_t ndim, size_t edim, size_t ETYPE>
+	Assembler::measurements manualloop(ActionOperator::Action action, const std::vector<ActionOperator*> &ops, size_t interval, esint elements,
+		typename std::enable_if<
+			ndim == 2 &&
+			ETYPE == TransferElementType::SYMMETRIC_GENERAL, int>::type* = 0
+	);
+
+	template <template <size_t, size_t, size_t, size_t, size_t> class DataDescriptor, size_t nodes, size_t gps, size_t ndim, size_t edim, size_t ETYPE>
+	Assembler::measurements manualloop(ActionOperator::Action action, const std::vector<ActionOperator*> &ops, size_t interval, esint elements,
+		typename std::enable_if<
+			ndim == 2 &&
+			ETYPE == TransferElementType::ASYMMETRIC_ISOTROPIC, int>::type* = 0
+	);
+
+	template <template <size_t, size_t, size_t, size_t, size_t> class DataDescriptor, size_t nodes, size_t gps, size_t ndim, size_t edim, size_t ETYPE>
+	Assembler::measurements manualloop(ActionOperator::Action action, const std::vector<ActionOperator*> &ops, size_t interval, esint elements,
+		typename std::enable_if<
+			ndim == 2 &&
+			ETYPE == TransferElementType::ASYMMETRIC_GENERAL, int>::type* = 0
+	);
+	
+	template <template <size_t, size_t, size_t, size_t, size_t> class DataDescriptor, size_t nodes, size_t gps, size_t ndim, size_t edim, size_t ETYPE>
+	Assembler::measurements manualloop(ActionOperator::Action action, const std::vector<ActionOperator*> &ops, size_t interval, esint elements,
+		typename std::enable_if<
+			ndim == 3 &&
+			ETYPE == TransferElementType::SYMMETRIC_ISOTROPIC, int>::type* = 0
+	);
+
+	template <template <size_t, size_t, size_t, size_t, size_t> class DataDescriptor, size_t nodes, size_t gps, size_t ndim, size_t edim, size_t ETYPE>
+	Assembler::measurements manualloop(ActionOperator::Action action, const std::vector<ActionOperator*> &ops, size_t interval, esint elements,
+		typename std::enable_if<
+			ndim == 3 &&
+			ETYPE == TransferElementType::SYMMETRIC_GENERAL, int>::type* = 0
+	);
+
+	template <template <size_t, size_t, size_t, size_t, size_t> class DataDescriptor, size_t nodes, size_t gps, size_t ndim, size_t edim, size_t ETYPE>
+	Assembler::measurements manualloop(ActionOperator::Action action, const std::vector<ActionOperator*> &ops, size_t interval, esint elements,
+		typename std::enable_if<
+			ndim == 3 &&
+			ETYPE == TransferElementType::ASYMMETRIC_ISOTROPIC, int>::type* = 0
+	);
+
+	template <template <size_t, size_t, size_t, size_t, size_t> class DataDescriptor, size_t nodes, size_t gps, size_t ndim, size_t edim, size_t ETYPE>
+	Assembler::measurements manualloop(ActionOperator::Action action, const std::vector<ActionOperator*> &ops, size_t interval, esint elements,
+		typename std::enable_if<
+			ndim == 3 &&
+			ETYPE == TransferElementType::ASYMMETRIC_GENERAL, int>::type* = 0
+	);
 
 	bool initTemperature();
 	void initParameters();
