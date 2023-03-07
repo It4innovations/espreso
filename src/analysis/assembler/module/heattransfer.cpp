@@ -1444,6 +1444,10 @@ Assembler::measurements HeatTransfer::manualloop(ActionOperator::Action action, 
 		// std::cout<<"K IS NULL"<<std::endl;
 		return loop<HeatTransferDataDescriptor, nodes, gps, ndim, edim, ETYPE>(action, ops, elements);
 	}
+	if (action == ActionOperator::FILL)
+	{
+		return operatorsloop<DataDescriptor, nodes, gps, ndim, edim, ETYPE>(action, ops, interval, elements);
+	}
 	if (elements == 0) return {0.0, 0.0};
 	
 	typename DataDescriptor<nodes, gps, ndim, edim, ETYPE>::Element element;
@@ -1546,7 +1550,7 @@ Assembler::measurements HeatTransfer::manualloop(ActionOperator::Action action, 
 
 	OutputParameterIterator stiffness(this->elements.stiffness, interval);
 
-	if((action == ActionOperator::VOID) || (action == ActionOperator::SOLUTION) || (action == ActionOperator::FILL))
+	if((action == ActionOperator::VOID) || (action == ActionOperator::SOLUTION))
 	{
 		std::cout<<"UNSUPPOERTED ACTION"<<std::endl;
 		return {0.0, 0.0};
@@ -1755,6 +1759,10 @@ Assembler::measurements HeatTransfer::manualloop(ActionOperator::Action action, 
 	if (this->K == nullptr) {
 		// std::cout<<"K IS NULL"<<std::endl;
 		return loop<HeatTransferDataDescriptor, nodes, gps, ndim, edim, ETYPE>(action, ops, elements);
+	}
+	if (action == ActionOperator::FILL)
+	{
+		return operatorsloop<DataDescriptor, nodes, gps, ndim, edim, ETYPE>(action, ops, interval, elements);
 	}
 	if (elements == 0) return {0.0, 0.0};
 	
@@ -2287,6 +2295,10 @@ Assembler::measurements HeatTransfer::manualloop(ActionOperator::Action action, 
 		std::cout<<"K IS NULL"<<std::endl;
 		return loop<HeatTransferDataDescriptor, nodes, gps, ndim, edim, ETYPE>(action, ops, elements);
 	}
+	if (action == ActionOperator::FILL)
+	{
+		return operatorsloop<DataDescriptor, nodes, gps, ndim, edim, ETYPE>(action, ops, interval, elements);
+	}
 	if (elements == 0) return {0.0, 0.0};
 	
 	typename DataDescriptor<nodes, gps, ndim, edim, ETYPE>::Element element;
@@ -2625,6 +2637,10 @@ Assembler::measurements HeatTransfer::manualloop(ActionOperator::Action action, 
 		std::cout<<"K IS NULL"<<std::endl;
 		return loop<HeatTransferDataDescriptor, nodes, gps, ndim, edim, ETYPE>(action, ops, elements);
 	}
+	if (action == ActionOperator::FILL)
+	{
+		return operatorsloop<DataDescriptor, nodes, gps, ndim, edim, ETYPE>(action, ops, interval, elements);
+	}
 	if (elements == 0) return {0.0, 0.0};
 	
 	typename DataDescriptor<nodes, gps, ndim, edim, ETYPE>::Element element;
@@ -2959,6 +2975,10 @@ Assembler::measurements HeatTransfer::manualloop(ActionOperator::Action action, 
 	if (this->K == nullptr) {
 		std::cout<<"K IS NULL"<<std::endl;
 		return loop<HeatTransferDataDescriptor, nodes, gps, ndim, edim, ETYPE>(action, ops, elements);
+	}
+	if (action == ActionOperator::FILL)
+	{
+		return operatorsloop<DataDescriptor, nodes, gps, ndim, edim, ETYPE>(action, ops, interval, elements);
 	}
 	if (elements == 0) return {0.0, 0.0};
 	
@@ -3817,6 +3837,10 @@ Assembler::measurements HeatTransfer::manualloop(ActionOperator::Action action, 
 	if (this->K == nullptr) {
 		// std::cout<<"K IS NULL"<<std::endl;
 		return loop<HeatTransferDataDescriptor, nodes, gps, ndim, edim, ETYPE>(action, ops, elements);
+	}
+	if (action == ActionOperator::FILL)
+	{
+		return operatorsloop<DataDescriptor, nodes, gps, ndim, edim, ETYPE>(action, ops, interval, elements);
 	}
 	if (elements == 0) return {0.0, 0.0};
 	
