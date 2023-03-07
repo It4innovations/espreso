@@ -480,6 +480,18 @@ Assembler::measurements StructuralMechanics::operatorsloop(ActionOperator::Actio
 		end = eslog::time();
 	}
 
+	if (action != ActionOperator::Action::REASSEMBLE && action != ActionOperator::Action::ASSEMBLE)
+	{
+		start = eslog::time();
+		__SSC_MARK(0xCAFE);
+		esint chunks = elements / SIMD::size;
+		for (esint c = 1; c < chunks; ++c) {
+
+		}
+		__SSC_MARK(0xDADE);
+		end = eslog::time();
+	}
+
 	if (elements % SIMD::size) {
 		// peel is never needed
 	}

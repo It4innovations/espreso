@@ -71,7 +71,17 @@ Assembler::measurements Assembler::loop(ActionOperator::Action action, const std
 		__SSC_MARK(0xFADE);
 		end = eslog::time();
 	}
-	
+	if((action != ActionOperator::REASSEMBLE) && (action != ActionOperator::ASSEMBLE))
+	{
+		start = eslog::time();
+		esint chunks = elements / SIMD::size;
+		for (esint c = 1; c < chunks; ++c) {
+			for (auto op = active.cbegin(); op != active.cend(); ++op) {
+				(*op)->simd(element);
+			}
+		}
+		end = eslog::time();
+	}
 
 	if (elements % SIMD::size) {
 		for (auto op = active.cbegin(); op != active.cend(); ++op) {
