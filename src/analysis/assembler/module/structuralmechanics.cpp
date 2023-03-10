@@ -324,6 +324,8 @@ void StructuralMechanics::analyze()
 
 void StructuralMechanics::connect(SteadyState &scheme)
 {
+	this->K = scheme.K;
+	this->f = scheme.f;
 	switch (scheme.K->shape) {
 	case Matrix_Shape::FULL:  generateElementOperators<GeneralMatricFiller>(etype, elementOps, info::mesh->dimension, elements.stiffness, scheme.K); break;
 	case Matrix_Shape::UPPER: generateElementOperators<SymmetricMatricFiller>(etype, elementOps, info::mesh->dimension, elements.stiffness, scheme.K); break;
@@ -434,12 +436,59 @@ void StructuralMechanics::updateSolution(SteadyState &scheme)
 }
 
 template <template <size_t, size_t, size_t, size_t, size_t> class DataDescriptor, size_t nodes, size_t gps, size_t ndim, size_t edim, size_t etype>
-Assembler::measurements StructuralMechanics::operatorsloop(ActionOperator::Action action, const std::vector<ActionOperator*> &ops, size_t interval, esint elements)
+struct updateAcceleration {
+	void operator()(typename DataDescriptor<nodes, gps, ndim, edim, etype>::Element &element, Evaluator* evaluator)
+	{
+		double results[SIMD::size * gps];
+		evaluator->evalVector(SIMD::size * gps, Evaluator::Params(), results);
+		for (size_t gp = 0; gp < gps; ++gp) {
+			for (size_t s = 0; s < SIMD::size; ++s) {
+				element.ecf.acceleration[gp][0][s] = results[gps * s + gp];
+			}
+		}
+	}
+};
+
+template <template <size_t, size_t, size_t, size_t, size_t> class DataDescriptor, size_t nodes, size_t gps, size_t ndim, size_t edim, size_t etype> struct updateVelocity;
+
+template <template <size_t, size_t, size_t, size_t, size_t> class DataDescriptor, size_t nodes, size_t gps, size_t edim, size_t etype>
+struct updateVelocity<DataDescriptor, nodes, gps, 2, edim, etype> {
+	void operator()(typename DataDescriptor<nodes, gps, 2, edim, etype>::Element &element, Evaluator* evaluator)
+	{
+		double results[SIMD::size * gps];
+		evaluator->evalVector(SIMD::size * gps, Evaluator::Params(), results);
+		for (size_t gp = 0; gp < gps; ++gp) {
+			for (size_t s = 0; s < SIMD::size; ++s) {
+				element.ecf.angularVelocity[gp][s] = results[gps * s + gp];
+			}
+		}
+	}
+};
+
+template <template <size_t, size_t, size_t, size_t, size_t> class DataDescriptor, size_t nodes, size_t gps, size_t edim, size_t etype>
+struct updateVelocity<DataDescriptor, nodes, gps, 3, edim, etype> {
+	void operator()(typename DataDescriptor<nodes, gps, 3, edim, etype>::Element &element, Evaluator* evaluator)
+	{
+		double results[SIMD::size * gps];
+		evaluator->evalVector(SIMD::size * gps, Evaluator::Params(), results);
+		for (size_t gp = 0; gp < gps; ++gp) {
+			for (size_t s = 0; s < SIMD::size; ++s) {
+				element.ecf.angularVelocity[gp][0][s] = results[gps * s + gp];
+			}
+		}
+	}
+};
+
+template <template <size_t, size_t, size_t, size_t, size_t> class DataDescriptor, size_t nodes, size_t gps, size_t ndim, size_t edim, size_t etype>
+Assembler::measurements StructuralMechanics::conditionsloop(ActionOperator::Action action, const std::vector<ActionOperator*> &ops, size_t interval, esint elements)
 {
 	double initStart, initEnd;
 	initStart = eslog::time();
-	eslog::info("       = LOOP TYPE                                                         OPERATORS = \n");
-	if (elements == 0) return {0.0, 0.0};
+	if (this->K == nullptr) {
+		return loop<StructuralMechanicsDataDescriptor, nodes, gps, ndim, edim, etype>(action, ops, elements);
+	}
+	if (elements == 0) return { .0, .0 };
+
 	typename DataDescriptor<nodes, gps, ndim, edim, etype>::Element element;
 
 	for (auto op = ops.cbegin(); op != ops.cend(); ++op) {
@@ -451,9 +500,81 @@ Assembler::measurements StructuralMechanics::operatorsloop(ActionOperator::Actio
 			}
 		}
 	}
-	initEnd = eslog::time();
-//	CoordinatesToElementNodes<nodes, gps, ndim, edim, etype, DataDescriptor<nodes, gps, ndim, edim, etype> > coo(interval);
 
+	auto procNodes = info::mesh->elements->nodes->cbegin() + info::mesh->elements->eintervals[interval].begin;
+	CoordinatesToElementNodes<nodes, gps, ndim, edim, etype, DataDescriptor<nodes, gps, ndim, edim, etype> > coo(interval, procNodes);
+	CoordinatesToElementNodesAndGPs<nodes, gps, ndim, edim, etype, DataDescriptor<nodes, gps, ndim, edim, etype> > cooAndGps(interval, procNodes);
+	Integration<nodes, gps, ndim, edim, etype, DataDescriptor<nodes, gps, ndim, edim, etype> > integration(interval);
+	StructuralMechanicsStiffness<nodes, gps, ndim, edim, etype, DataDescriptor<nodes, gps, ndim, edim, etype> > stiffness(interval, this->elements.stiffness);
+	Acceleration<nodes, gps, ndim, edim, etype, DataDescriptor<nodes, gps, ndim, edim, etype> > acceleration(interval, this->elements.rhs);
+	AngularVelocity<nodes, gps, ndim, edim, etype, DataDescriptor<nodes, gps, ndim, edim, etype> > velocity(interval, this->elements.rhs);
+
+//	applyRotation<DataDescriptor, nodes, gps, ndim, edim, etype> rotation(interval);
+	updateAcceleration<DataDescriptor, nodes, gps, ndim, edim, etype> updateAcc;
+	updateVelocity<DataDescriptor, nodes, gps, ndim, edim, etype> updateVelocity;
+
+	SymmetricMatricFiller<nodes, gps, ndim, edim, etype, DataDescriptor<nodes, gps, ndim, edim, etype> > upperFiller(interval, ndim, this->elements.stiffness, this->K);
+	GeneralMatricFiller<nodes, gps, ndim, edim, etype, DataDescriptor<nodes, gps, ndim, edim, etype> > fullFiller(interval, ndim, this->elements.stiffness, this->K);
+	VectorFiller<nodes, gps, ndim, edim, etype, DataDescriptor<nodes, gps, ndim, edim, etype> > rhsFiller(interval, ndim, this->elements.rhs, this->f);
+
+//	TemperatureGradient<nodes, gps, ndim, edim, etype, DataDescriptor<nodes, gps, ndim, edim, etype> > gradient(interval, Results::gradient);
+//	TemperatureFlux<nodes, gps, ndim, edim, etype, DataDescriptor<nodes, gps, ndim, edim, etype> > flux(interval, Results::flux);
+
+	coo.move(SIMD::size);
+	cooAndGps.move(SIMD::size);
+//	temp.move(SIMD::size);
+	stiffness.move(SIMD::size);
+	acceleration.move(SIMD::size);
+	velocity.move(SIMD::size);
+	upperFiller.move(SIMD::size);
+	fullFiller.move(SIMD::size);
+	rhsFiller.move(SIMD::size);
+//	heatSource.move(SIMD::size);
+
+//	gradient.move(ndim * SIMD::size);
+//	flux.move(ndim * SIMD::size);
+
+	const MaterialConfiguration *mat = info::mesh->materials[info::mesh->elements->eintervals[interval].material];
+	bool rotateConductivity = mat->thermal_conductivity.model != ThermalConductivityConfiguration::MODEL::ISOTROPIC;
+	// it is dirty hack just to be sure that compiler must assume both variants (currently settings.sigma = 0 and diffusion_split = false)
+//	bool constConductivity = !settings.diffusion_split;
+//	bool constRotation = settings.sigma == 0;
+//	if (mat->thermal_conductivity.model != ThermalConductivityConfiguration::MODEL::ISOTROPIC) {
+//		if (mat->coordinate_system.type == CoordinateSystemConfiguration::TYPE::CARTESIAN) {
+//			if (ndim == 2) {
+//				rotateConductivity &= mat->coordinate_system.rotation.z.isset;
+//			}
+//			if (ndim == 3) {
+//				rotateConductivity &= mat->coordinate_system.rotation.x.isset | mat->coordinate_system.rotation.y.isset | mat->coordinate_system.rotation.z.isset;
+//			}
+//		}
+//	}
+
+	bool hasAcceleration = false;
+	bool constAcceleration = true;
+	auto AccelerationEval = configuration.acceleration.find(info::mesh->elementsRegions[info::mesh->elements->eintervals[interval].region]->name);
+	if (AccelerationEval != configuration.acceleration.end()) {
+		hasAcceleration = true;
+		constAcceleration = AccelerationEval->second.x.evaluator->params.general.size() == 0 && AccelerationEval->second.y.evaluator->params.general.size() == 0 && AccelerationEval->second.z.evaluator->params.general.size() == 0;
+	}
+
+	bool hasVelocity = false;
+	bool constVelocity = true;
+	auto VelocityEval = configuration.acceleration.find(info::mesh->elementsRegions[info::mesh->elements->eintervals[interval].region]->name);
+	if (AccelerationEval != configuration.acceleration.end()) {
+		hasAcceleration = true;
+		constAcceleration = AccelerationEval->second.x.evaluator->params.general.size() == 0 && AccelerationEval->second.y.evaluator->params.general.size() == 0 && AccelerationEval->second.z.evaluator->params.general.size() == 0;
+	}
+
+	bool cooToGP = mat->coordinate_system.type != CoordinateSystemConfiguration::TYPE::CARTESIAN;
+	bool computeK = action == ActionOperator::ASSEMBLE || action == ActionOperator::REASSEMBLE;
+	bool computeGradient = action == ActionOperator::SOLUTION && info::ecf->output.results_selection.gradient;
+	bool computeFlux = action == ActionOperator::SOLUTION && info::ecf->output.results_selection.flux;
+	bool computeConductivity = computeK | computeFlux;
+	bool getTemp = computeGradient || computeFlux;
+	bool isfullMatrix = this->K->shape == Matrix_Shape::FULL;
+
+	initEnd = eslog::time();
 	double start, end;
 
 	if (action == ActionOperator::Action::ASSEMBLE)
@@ -492,7 +613,50 @@ Assembler::measurements StructuralMechanics::operatorsloop(ActionOperator::Actio
 		end = eslog::time();
 	}
 
+	esint chunks = elements / SIMD::size;
+	for (esint c = 1; c < chunks; ++c) {
+		if (cooToGP) {
+			cooAndGps.simd(element);
+		} else {
+			coo.simd(element);
+		}
+		integration.simd(element);
+//		if (getTemp) {
+//			temp.simd(element);
+//		}
+		if (computeConductivity) {
+//			if (!constConductivity) {
+//				updateConductivity<DataDescriptor, nodes, gps, ndim, edim, etype>()(element, mat);
+//			}
+//			if (rotateConductivity) {
+//				if (!constRotation) {
+//					updateRotation<DataDescriptor, nodes, gps, ndim, edim, etype>()(element, mat);
+//				}
+//				rotation(element, mat);
+//			}
+		}
+
+		if (computeK) {
+			stiffness.simd(element);
+			if (hasAcceleration) {
+				if (!constAcceleration) {
+					updateAcc(element, AccelerationEval->second.x.evaluator);
+				}
+				acceleration.simd(element);
+			}
+		}
+		if (action == ActionOperator::FILL) {
+			if (isfullMatrix) {
+				fullFiller.simd(element);
+			} else {
+				upperFiller.simd(element);
+			}
+			rhsFiller.simd(element);
+		}
+	}
+
 	if (elements % SIMD::size) {
+		eslog::error("peel loop is not supported\n");
 		// peel is never needed
 	}
 
@@ -501,7 +665,7 @@ Assembler::measurements StructuralMechanics::operatorsloop(ActionOperator::Actio
 			if ((*op)->isconst) {
 				(*op)->move(-(int)std::min(elements, (esint)SIMD::size));
 			} else {
-				(*op)->move(-elements);
+				(*op)->move(-(esint)SIMD::size);
 			}
 		}
 	}
@@ -589,33 +753,13 @@ Assembler::measurements StructuralMechanics::instantiate2D<StructuralMechanicsEl
 template <int etype>
 Assembler::measurements StructuralMechanics::instantiate2D(ActionOperator::Action action, int code, const std::vector<ActionOperator*> &ops, size_t interval, esint elements)
 {
-	switch (info::ecf->loop) {
-	case ECF::LOOP::INHERITANCE:
-		switch (code) {
-		case static_cast<size_t>(Element::CODE::TRIANGLE3): return loop<StructuralMechanicsDataDescriptor, 3, StructuralMechanicsGPC::TRIANGLE3, 2, 2, etype>(action, ops, elements); break;
-		case static_cast<size_t>(Element::CODE::TRIANGLE6): return loop<StructuralMechanicsDataDescriptor, 6, StructuralMechanicsGPC::TRIANGLE6, 2, 2, etype>(action, ops, elements); break;
-		case static_cast<size_t>(Element::CODE::SQUARE4):   return loop<StructuralMechanicsDataDescriptor, 4, StructuralMechanicsGPC::SQUARE4  , 2, 2, etype>(action, ops, elements); break;
-		case static_cast<size_t>(Element::CODE::SQUARE8):   return loop<StructuralMechanicsDataDescriptor, 8, StructuralMechanicsGPC::SQUARE8  , 2, 2, etype>(action, ops, elements); break;
-		default: return {0.0, 0.0};
-		};
-	case ECF::LOOP::OPERATORS:
-		switch (code) {
-		case static_cast<size_t>(Element::CODE::TRIANGLE3): return operatorsloop<StructuralMechanicsDataDescriptor, 3, StructuralMechanicsGPC::TRIANGLE3, 2, 2, etype>(action, ops, interval, elements); break;
-		case static_cast<size_t>(Element::CODE::TRIANGLE6): return operatorsloop<StructuralMechanicsDataDescriptor, 6, StructuralMechanicsGPC::TRIANGLE6, 2, 2, etype>(action, ops, interval, elements); break;
-		case static_cast<size_t>(Element::CODE::SQUARE4):   return operatorsloop<StructuralMechanicsDataDescriptor, 4, StructuralMechanicsGPC::SQUARE4  , 2, 2, etype>(action, ops, interval, elements); break;
-		case static_cast<size_t>(Element::CODE::SQUARE8):   return operatorsloop<StructuralMechanicsDataDescriptor, 8, StructuralMechanicsGPC::SQUARE8  , 2, 2, etype>(action, ops, interval, elements); break;
-		default: return {0.0, 0.0};
-		};
-	case ECF::LOOP::MANUAL:
-		switch (code) {
-		case static_cast<size_t>(Element::CODE::TRIANGLE3): return manualloop<StructuralMechanicsDataDescriptor, 3, StructuralMechanicsGPC::TRIANGLE3, 2, 2, etype>(action, ops, interval, elements); break;
-		case static_cast<size_t>(Element::CODE::TRIANGLE6): return manualloop<StructuralMechanicsDataDescriptor, 6, StructuralMechanicsGPC::TRIANGLE6, 2, 2, etype>(action, ops, interval, elements); break;
-		case static_cast<size_t>(Element::CODE::SQUARE4):   return manualloop<StructuralMechanicsDataDescriptor, 4, StructuralMechanicsGPC::SQUARE4  , 2, 2, etype>(action, ops, interval, elements); break;
-		case static_cast<size_t>(Element::CODE::SQUARE8):   return manualloop<StructuralMechanicsDataDescriptor, 8, StructuralMechanicsGPC::SQUARE8  , 2, 2, etype>(action, ops, interval, elements); break;
-		default: return {0.0, 0.0};
-		};
+	switch (code) {
+	case static_cast<size_t>(Element::CODE::TRIANGLE3): return loop<StructuralMechanicsDataDescriptor, 3, StructuralMechanicsGPC::TRIANGLE3, 2, 2, etype>(action, ops, elements); break;
+	case static_cast<size_t>(Element::CODE::TRIANGLE6): return loop<StructuralMechanicsDataDescriptor, 6, StructuralMechanicsGPC::TRIANGLE6, 2, 2, etype>(action, ops, elements); break;
+	case static_cast<size_t>(Element::CODE::SQUARE4):   return loop<StructuralMechanicsDataDescriptor, 4, StructuralMechanicsGPC::SQUARE4  , 2, 2, etype>(action, ops, elements); break;
+	case static_cast<size_t>(Element::CODE::SQUARE8):   return loop<StructuralMechanicsDataDescriptor, 8, StructuralMechanicsGPC::SQUARE8  , 2, 2, etype>(action, ops, elements); break;
+	default: return {0.0, 0.0};
 	}
-	return {0.0, 0.0};
 }
 
 template <>
@@ -649,45 +793,17 @@ Assembler::measurements StructuralMechanics::instantiate3D<StructuralMechanicsEl
 template <int etype>
 Assembler::measurements StructuralMechanics::instantiate3D(ActionOperator::Action action, int code, const std::vector<ActionOperator*> &ops, size_t interval, esint elements)
 {
-	switch (info::ecf->loop) {
-	case ECF::LOOP::INHERITANCE:
-		switch (code) {
-		case static_cast<size_t>(Element::CODE::TETRA4):    return loop<StructuralMechanicsDataDescriptor,  4, StructuralMechanicsGPC::TETRA4    , 3, 3, etype>(action, ops, elements); break;
-		case static_cast<size_t>(Element::CODE::TETRA10):   return loop<StructuralMechanicsDataDescriptor, 10, StructuralMechanicsGPC::TETRA10   , 3, 3, etype>(action, ops, elements); break;
-		case static_cast<size_t>(Element::CODE::PYRAMID5):  return loop<StructuralMechanicsDataDescriptor,  5, StructuralMechanicsGPC::PYRAMID5  , 3, 3, etype>(action, ops, elements); break;
-		case static_cast<size_t>(Element::CODE::PYRAMID13): return loop<StructuralMechanicsDataDescriptor, 13, StructuralMechanicsGPC::PYRAMID13 , 3, 3, etype>(action, ops, elements); break;
-		case static_cast<size_t>(Element::CODE::PRISMA6):   return loop<StructuralMechanicsDataDescriptor,  6, StructuralMechanicsGPC::PRISMA6   , 3, 3, etype>(action, ops, elements); break;
-		case static_cast<size_t>(Element::CODE::PRISMA15):  return loop<StructuralMechanicsDataDescriptor, 15, StructuralMechanicsGPC::PRISMA15  , 3, 3, etype>(action, ops, elements); break;
-		case static_cast<size_t>(Element::CODE::HEXA8):     return loop<StructuralMechanicsDataDescriptor,  8, StructuralMechanicsGPC::HEXA8     , 3, 3, etype>(action, ops, elements); break;
-		case static_cast<size_t>(Element::CODE::HEXA20):    return loop<StructuralMechanicsDataDescriptor, 20, StructuralMechanicsGPC::HEXA20    , 3, 3, etype>(action, ops, elements); break;
-		default: return {0.0, 0.0};
-		}
-	case ECF::LOOP::OPERATORS:
-		switch (code) {
-		case static_cast<size_t>(Element::CODE::TETRA4):    return operatorsloop<StructuralMechanicsDataDescriptor,  4, StructuralMechanicsGPC::TETRA4    , 3, 3, etype>(action, ops, interval, elements); break;
-		case static_cast<size_t>(Element::CODE::TETRA10):   return operatorsloop<StructuralMechanicsDataDescriptor, 10, StructuralMechanicsGPC::TETRA10   , 3, 3, etype>(action, ops, interval, elements); break;
-		case static_cast<size_t>(Element::CODE::PYRAMID5):  return operatorsloop<StructuralMechanicsDataDescriptor,  5, StructuralMechanicsGPC::PYRAMID5  , 3, 3, etype>(action, ops, interval, elements); break;
-		case static_cast<size_t>(Element::CODE::PYRAMID13): return operatorsloop<StructuralMechanicsDataDescriptor, 13, StructuralMechanicsGPC::PYRAMID13 , 3, 3, etype>(action, ops, interval, elements); break;
-		case static_cast<size_t>(Element::CODE::PRISMA6):   return operatorsloop<StructuralMechanicsDataDescriptor,  6, StructuralMechanicsGPC::PRISMA6   , 3, 3, etype>(action, ops, interval, elements); break;
-		case static_cast<size_t>(Element::CODE::PRISMA15):  return operatorsloop<StructuralMechanicsDataDescriptor, 15, StructuralMechanicsGPC::PRISMA15  , 3, 3, etype>(action, ops, interval, elements); break;
-		case static_cast<size_t>(Element::CODE::HEXA8):     return operatorsloop<StructuralMechanicsDataDescriptor,  8, StructuralMechanicsGPC::HEXA8     , 3, 3, etype>(action, ops, interval, elements); break;
-		case static_cast<size_t>(Element::CODE::HEXA20):    return operatorsloop<StructuralMechanicsDataDescriptor, 20, StructuralMechanicsGPC::HEXA20    , 3, 3, etype>(action, ops, interval, elements); break;
-		default: return {0.0, 0.0};
-		}
-	case ECF::LOOP::MANUAL:
-		switch (code) {
-		case static_cast<size_t>(Element::CODE::TETRA4):    return manualloop<StructuralMechanicsDataDescriptor,  4, StructuralMechanicsGPC::TETRA4    , 3, 3, etype>(action, ops, interval, elements); break;
-		case static_cast<size_t>(Element::CODE::TETRA10):   return manualloop<StructuralMechanicsDataDescriptor, 10, StructuralMechanicsGPC::TETRA10   , 3, 3, etype>(action, ops, interval, elements); break;
-		case static_cast<size_t>(Element::CODE::PYRAMID5):  return manualloop<StructuralMechanicsDataDescriptor,  5, StructuralMechanicsGPC::PYRAMID5  , 3, 3, etype>(action, ops, interval, elements); break;
-		case static_cast<size_t>(Element::CODE::PYRAMID13): return manualloop<StructuralMechanicsDataDescriptor, 13, StructuralMechanicsGPC::PYRAMID13 , 3, 3, etype>(action, ops, interval, elements); break;
-		case static_cast<size_t>(Element::CODE::PRISMA6):   return manualloop<StructuralMechanicsDataDescriptor,  6, StructuralMechanicsGPC::PRISMA6   , 3, 3, etype>(action, ops, interval, elements); break;
-		case static_cast<size_t>(Element::CODE::PRISMA15):  return manualloop<StructuralMechanicsDataDescriptor, 15, StructuralMechanicsGPC::PRISMA15  , 3, 3, etype>(action, ops, interval, elements); break;
-		case static_cast<size_t>(Element::CODE::HEXA8):     return manualloop<StructuralMechanicsDataDescriptor,  8, StructuralMechanicsGPC::HEXA8     , 3, 3, etype>(action, ops, interval, elements); break;
-		case static_cast<size_t>(Element::CODE::HEXA20):    return manualloop<StructuralMechanicsDataDescriptor, 20, StructuralMechanicsGPC::HEXA20    , 3, 3, etype>(action, ops, interval, elements); break;
-		default: return {0.0, 0.0};
-		}
+	switch (code) {
+	case static_cast<size_t>(Element::CODE::TETRA4):    return loop<StructuralMechanicsDataDescriptor,  4, StructuralMechanicsGPC::TETRA4    , 3, 3, etype>(action, ops, elements); break;
+	case static_cast<size_t>(Element::CODE::TETRA10):   return loop<StructuralMechanicsDataDescriptor, 10, StructuralMechanicsGPC::TETRA10   , 3, 3, etype>(action, ops, elements); break;
+	case static_cast<size_t>(Element::CODE::PYRAMID5):  return loop<StructuralMechanicsDataDescriptor,  5, StructuralMechanicsGPC::PYRAMID5  , 3, 3, etype>(action, ops, elements); break;
+	case static_cast<size_t>(Element::CODE::PYRAMID13): return loop<StructuralMechanicsDataDescriptor, 13, StructuralMechanicsGPC::PYRAMID13 , 3, 3, etype>(action, ops, elements); break;
+	case static_cast<size_t>(Element::CODE::PRISMA6):   return loop<StructuralMechanicsDataDescriptor,  6, StructuralMechanicsGPC::PRISMA6   , 3, 3, etype>(action, ops, elements); break;
+	case static_cast<size_t>(Element::CODE::PRISMA15):  return loop<StructuralMechanicsDataDescriptor, 15, StructuralMechanicsGPC::PRISMA15  , 3, 3, etype>(action, ops, elements); break;
+	case static_cast<size_t>(Element::CODE::HEXA8):     return loop<StructuralMechanicsDataDescriptor,  8, StructuralMechanicsGPC::HEXA8     , 3, 3, etype>(action, ops, elements); break;
+	case static_cast<size_t>(Element::CODE::HEXA20):    return loop<StructuralMechanicsDataDescriptor, 20, StructuralMechanicsGPC::HEXA20    , 3, 3, etype>(action, ops, elements); break;
+	default: return {0.0, 0.0};
 	}
-	return {0.0, 0.0};
 }
 
 Assembler::measurements StructuralMechanics::instantiate(ActionOperator::Action action, int code, int etype, const std::vector<ActionOperator*> &ops, size_t interval, esint elements)

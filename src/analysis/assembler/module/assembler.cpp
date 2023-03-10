@@ -73,7 +73,6 @@ Assembler::measurements Assembler::assemble(ActionOperator::Action action)
 				}
 			}
 		}
-		// std::cout<<"SCALING: "<<time<<std::endl;
 
 		for (int t = 0; t < info::env::threads; ++t) {
 			for (size_t d = info::mesh->domains->distribution[t]; d < info::mesh->domains->distribution[t + 1]; d++) {
@@ -91,17 +90,19 @@ Assembler::measurements Assembler::assemble(ActionOperator::Action action)
 			}
 		}
 	} else {
-		
 		#pragma omp parallel for reduction(+:times)
 		for (int t = 0; t < info::env::threads; ++t) {
 			for (size_t d = info::mesh->domains->distribution[t]; d < info::mesh->domains->distribution[t + 1]; d++) {
 				for (esint i = info::mesh->elements->eintervalsDistribution[d]; i < info::mesh->elements->eintervalsDistribution[d + 1]; ++i) {
 					esint elements = info::mesh->elements->eintervals[i].end - info::mesh->elements->eintervals[i].begin;
-					times += instantiate(action, info::mesh->elements->eintervals[i].code, etype[i], elementOps[i], i, elements);
+					switch (info::ecf->loop) {
+					case ECF::LOOP::INHERITANCE: times += instantiate          (action, info::mesh->elements->eintervals[i].code, etype[i], elementOps[i], i, elements); break;
+					case ECF::LOOP::CONDITIONS : times += instantiateConditions(action, info::mesh->elements->eintervals[i].code, etype[i], elementOps[i], i, elements); break;
+					case ECF::LOOP::MANUAL     : times += instantiateManual    (action, info::mesh->elements->eintervals[i].code, etype[i], elementOps[i], i, elements); break;
+					}
 				}
 			}
 		}
-		// std::cout<<"SCALING2: "<<time<<std::endl;
 		#pragma omp parallel for
 		for (int t = 0; t < info::env::threads; ++t) {
 			for (size_t d = info::mesh->domains->distribution[t]; d < info::mesh->domains->distribution[t + 1]; d++) {
@@ -120,7 +121,6 @@ Assembler::measurements Assembler::assemble(ActionOperator::Action action)
 		}
 	}
 
-	// return time / info::mesh->elements->eintervals.size();
 	return times;
 }
 

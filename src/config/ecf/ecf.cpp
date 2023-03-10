@@ -148,12 +148,12 @@ void ECF::_init()
 			.setdescription({ "Just for testing assembler" })
 			.setdatatype({ ECFDataType::BOOL }));
 
-	loop = LOOP::OPERATORS;
+	loop = LOOP::INHERITANCE;
 	REGISTER(loop, ECFMetaData()
 			.setdescription({ "Data interpolation" })
 			.setdatatype({ ECFDataType::OPTION })
 			.addoption(ECFOption().setname("INHERITANCE").setdescription("Operator inheritance."))
-			.addoption(ECFOption().setname("OPERATORS").setdescription("Operators with if statements."))
+			.addoption(ECFOption().setname("CONDITIONS").setdescription("Operators with if statements."))
 			.addoption(ECFOption().setname("MANUAL").setdescription("Manually optimized operators.")));
 
 	physics = PhysicsConfiguration::TYPE::HEAT_TRANSFER_3D;

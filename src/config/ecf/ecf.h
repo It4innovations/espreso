@@ -76,7 +76,7 @@ struct ECF: public ECFDescription {
 
 	enum class LOOP {
 		INHERITANCE,
-		OPERATORS,
+		CONDITIONS,
 		MANUAL
 	} loop;
 	PhysicsConfiguration::TYPE physics;

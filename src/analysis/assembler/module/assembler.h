@@ -25,7 +25,6 @@ struct PhysicsConfiguration;
 class Assembler
 {
 public:
-	
 	struct measurements
 	{
 		double preprocessTime;
@@ -47,8 +46,8 @@ public:
 	};
 
 #pragma omp declare reduction(+ : measurements : \
-    omp_out += omp_in) \
-    initializer (omp_priv={0.0, 0.0})
+	omp_out += omp_in) \
+	initializer (omp_priv={0.0, 0.0})
 
 	Assembler(PhysicsConfiguration &settings);
 	virtual ~Assembler();
@@ -64,7 +63,9 @@ public:
 
 protected:
 	measurements assemble(ActionOperator::Action action);
-	virtual measurements instantiate(ActionOperator::Action action, int code, int etype, const std::vector<ActionOperator*> &ops, size_t interval, esint elements) { return {0.0, 0.0}; }
+	virtual measurements instantiate           (ActionOperator::Action action, int code, int etype, const std::vector<ActionOperator*> &ops, size_t interval, esint elements) =0;
+	virtual measurements instantiateConditions (ActionOperator::Action action, int code, int etype, const std::vector<ActionOperator*> &ops, size_t interval, esint elements) =0;
+	virtual measurements instantiateManual     (ActionOperator::Action action, int code, int etype, const std::vector<ActionOperator*> &ops, size_t interval, esint elements) =0;
 
 	template <template <size_t, size_t, size_t, size_t, size_t> class DataDescriptor, size_t nodes, size_t gps, size_t ndim, size_t edim, size_t etype>
 	measurements loop(ActionOperator::Action action, const std::vector<ActionOperator*> &ops, esint elements);
