@@ -548,7 +548,7 @@ struct updateRotation<DataDescriptor, nodes, gps, 3, edim, HeatTransferElementTy
 };
 
 template <template <size_t, size_t, size_t, size_t, size_t> class DataDescriptor, size_t nodes, size_t gps, size_t ndim, size_t edim, size_t etype>
-struct applyRotation {
+struct updateCosSin {
 	void operator()(typename DataDescriptor<nodes, gps, ndim, edim, etype>::Element &element, const MaterialConfiguration *mat)
 	{
 
@@ -556,9 +556,9 @@ struct applyRotation {
 };
 
 template <template <size_t, size_t, size_t, size_t, size_t> class DataDescriptor, size_t nodes, size_t gps, size_t ndim, size_t edim>
-struct applyRotation<DataDescriptor, nodes, gps, ndim, edim, HeatTransferElementType::SYMMETRIC_ISOTROPIC> {
+struct updateCosSin<DataDescriptor, nodes, gps, ndim, edim, HeatTransferElementType::SYMMETRIC_ISOTROPIC> {
 
-	applyRotation(size_t interval) {}
+	updateCosSin(size_t interval) {}
 
 	void operator()(typename DataDescriptor<nodes, gps, ndim, edim, HeatTransferElementType::SYMMETRIC_ISOTROPIC>::Element &element, const MaterialConfiguration *mat)
 	{
@@ -567,9 +567,9 @@ struct applyRotation<DataDescriptor, nodes, gps, ndim, edim, HeatTransferElement
 };
 
 template <template <size_t, size_t, size_t, size_t, size_t> class DataDescriptor, size_t nodes, size_t gps, size_t ndim, size_t edim>
-struct applyRotation<DataDescriptor, nodes, gps, ndim, edim, HeatTransferElementType::ASYMMETRIC_ISOTROPIC> {
+struct updateCosSin<DataDescriptor, nodes, gps, ndim, edim, HeatTransferElementType::ASYMMETRIC_ISOTROPIC> {
 
-	applyRotation(size_t interval) {}
+	updateCosSin(size_t interval) {}
 
 	void operator()(typename DataDescriptor<nodes, gps, ndim, edim, HeatTransferElementType::ASYMMETRIC_ISOTROPIC>::Element &element, const MaterialConfiguration *mat)
 	{
@@ -578,13 +578,12 @@ struct applyRotation<DataDescriptor, nodes, gps, ndim, edim, HeatTransferElement
 };
 
 template <template <size_t, size_t, size_t, size_t, size_t> class DataDescriptor, size_t nodes, size_t gps, size_t edim>
-struct applyRotation<DataDescriptor, nodes, gps, 3, edim, HeatTransferElementType::SYMMETRIC_GENERAL> {
+struct updateCosSin<DataDescriptor, nodes, gps, 3, edim, HeatTransferElementType::SYMMETRIC_GENERAL> {
 	HeatTransferCoordinateSystemCartesian<nodes, gps, 3, edim, HeatTransferElementType::SYMMETRIC_GENERAL, DataDescriptor<nodes, gps, 3, edim, HeatTransferElementType::SYMMETRIC_GENERAL> > rotationCartesian;
 	HeatTransferCoordinateSystemCylindric<nodes, gps, 3, edim, HeatTransferElementType::SYMMETRIC_GENERAL, DataDescriptor<nodes, gps, 3, edim, HeatTransferElementType::SYMMETRIC_GENERAL> > rotationCylindric;
 	HeatTransferCoordinateSystemSpherical<nodes, gps, 3, edim, HeatTransferElementType::SYMMETRIC_GENERAL, DataDescriptor<nodes, gps, 3, edim, HeatTransferElementType::SYMMETRIC_GENERAL> > rotationSpherical;
-	HeatTransferCoordinateSystemApply    <nodes, gps, 3, edim, HeatTransferElementType::SYMMETRIC_GENERAL, DataDescriptor<nodes, gps, 3, edim, HeatTransferElementType::SYMMETRIC_GENERAL> > apply;
 
-	applyRotation(size_t interval): rotationCartesian(interval), rotationCylindric(interval), rotationSpherical(interval), apply(interval) {}
+	updateCosSin(size_t interval): rotationCartesian(interval), rotationCylindric(interval), rotationSpherical(interval) {}
 
 	void operator()(typename DataDescriptor<nodes, gps, 3, edim, HeatTransferElementType::SYMMETRIC_GENERAL>::Element &element, const MaterialConfiguration *mat)
 	{
@@ -593,17 +592,15 @@ struct applyRotation<DataDescriptor, nodes, gps, 3, edim, HeatTransferElementTyp
 		case CoordinateSystemConfiguration::TYPE::CYLINDRICAL: rotationCylindric.simd(element); break;
 		case CoordinateSystemConfiguration::TYPE::SPHERICAL  : rotationSpherical.simd(element); break;
 		}
-		apply.simd(element);
 	}
 };
 
 template <template <size_t, size_t, size_t, size_t, size_t> class DataDescriptor, size_t nodes, size_t gps, size_t edim>
-struct applyRotation<DataDescriptor, nodes, gps, 2, edim, HeatTransferElementType::SYMMETRIC_GENERAL> {
+struct updateCosSin<DataDescriptor, nodes, gps, 2, edim, HeatTransferElementType::SYMMETRIC_GENERAL> {
 	HeatTransferCoordinateSystemCartesian<nodes, gps, 2, edim, HeatTransferElementType::SYMMETRIC_GENERAL, DataDescriptor<nodes, gps, 2, edim, HeatTransferElementType::SYMMETRIC_GENERAL> > rotationCartesian;
 	HeatTransferCoordinateSystemCylindric<nodes, gps, 2, edim, HeatTransferElementType::SYMMETRIC_GENERAL, DataDescriptor<nodes, gps, 2, edim, HeatTransferElementType::SYMMETRIC_GENERAL> > rotationCylindric;
-	HeatTransferCoordinateSystemApply    <nodes, gps, 2, edim, HeatTransferElementType::SYMMETRIC_GENERAL, DataDescriptor<nodes, gps, 2, edim, HeatTransferElementType::SYMMETRIC_GENERAL> > apply;
 
-	applyRotation(size_t interval): rotationCartesian(interval), rotationCylindric(interval), apply(interval) {}
+	updateCosSin(size_t interval): rotationCartesian(interval), rotationCylindric(interval) {}
 
 	void operator()(typename DataDescriptor<nodes, gps, 2, edim, HeatTransferElementType::SYMMETRIC_GENERAL>::Element &element, const MaterialConfiguration *mat)
 	{
@@ -611,17 +608,16 @@ struct applyRotation<DataDescriptor, nodes, gps, 2, edim, HeatTransferElementTyp
 		case CoordinateSystemConfiguration::TYPE::CARTESIAN  : rotationCartesian.simd(element); break;
 		case CoordinateSystemConfiguration::TYPE::CYLINDRICAL: rotationCylindric.simd(element); break;
 		}
-		apply.simd(element);
 	}
 };
 
 template <template <size_t, size_t, size_t, size_t, size_t> class DataDescriptor, size_t nodes, size_t gps, size_t edim>
-struct applyRotation<DataDescriptor, nodes, gps, 3, edim, HeatTransferElementType::ASYMMETRIC_GENERAL> {
+struct updateCosSin<DataDescriptor, nodes, gps, 3, edim, HeatTransferElementType::ASYMMETRIC_GENERAL> {
 	HeatTransferCoordinateSystemCartesian<nodes, gps, 3, edim, HeatTransferElementType::ASYMMETRIC_GENERAL, DataDescriptor<nodes, gps, 3, edim, HeatTransferElementType::ASYMMETRIC_GENERAL> > rotationCartesian;
 	HeatTransferCoordinateSystemCylindric<nodes, gps, 3, edim, HeatTransferElementType::ASYMMETRIC_GENERAL, DataDescriptor<nodes, gps, 3, edim, HeatTransferElementType::ASYMMETRIC_GENERAL> > rotationCylindric;
 	HeatTransferCoordinateSystemSpherical<nodes, gps, 3, edim, HeatTransferElementType::ASYMMETRIC_GENERAL, DataDescriptor<nodes, gps, 3, edim, HeatTransferElementType::ASYMMETRIC_GENERAL> > rotationSpherical;
 
-	applyRotation(size_t interval): rotationCartesian(interval), rotationCylindric(interval), rotationSpherical(interval) {}
+	updateCosSin(size_t interval): rotationCartesian(interval), rotationCylindric(interval), rotationSpherical(interval) {}
 
 	void operator()(typename DataDescriptor<nodes, gps, 3, edim, HeatTransferElementType::ASYMMETRIC_GENERAL>::Element &element, const MaterialConfiguration *mat)
 	{
@@ -634,11 +630,11 @@ struct applyRotation<DataDescriptor, nodes, gps, 3, edim, HeatTransferElementTyp
 };
 
 template <template <size_t, size_t, size_t, size_t, size_t> class DataDescriptor, size_t nodes, size_t gps, size_t edim>
-struct applyRotation<DataDescriptor, nodes, gps, 2, edim, HeatTransferElementType::ASYMMETRIC_GENERAL> {
+struct updateCosSin<DataDescriptor, nodes, gps, 2, edim, HeatTransferElementType::ASYMMETRIC_GENERAL> {
 	HeatTransferCoordinateSystemCartesian<nodes, gps, 2, edim, HeatTransferElementType::ASYMMETRIC_GENERAL, DataDescriptor<nodes, gps, 2, edim, HeatTransferElementType::ASYMMETRIC_GENERAL> > rotationCartesian;
 	HeatTransferCoordinateSystemCylindric<nodes, gps, 2, edim, HeatTransferElementType::ASYMMETRIC_GENERAL, DataDescriptor<nodes, gps, 2, edim, HeatTransferElementType::ASYMMETRIC_GENERAL> > rotationCylindric;
 
-	applyRotation(size_t interval): rotationCartesian(interval), rotationCylindric(interval) {}
+	updateCosSin(size_t interval): rotationCartesian(interval), rotationCylindric(interval) {}
 
 	void operator()(typename DataDescriptor<nodes, gps, 2, edim, HeatTransferElementType::ASYMMETRIC_GENERAL>::Element &element, const MaterialConfiguration *mat)
 	{
@@ -646,6 +642,61 @@ struct applyRotation<DataDescriptor, nodes, gps, 2, edim, HeatTransferElementTyp
 		case CoordinateSystemConfiguration::TYPE::CARTESIAN  : rotationCartesian.simd(element); break;
 		case CoordinateSystemConfiguration::TYPE::CYLINDRICAL: rotationCylindric.simd(element); break;
 		}
+	}
+};
+
+template <template <size_t, size_t, size_t, size_t, size_t> class DataDescriptor, size_t nodes, size_t gps, size_t ndim, size_t edim, size_t etype>
+struct applyRotation {
+	void operator()(typename DataDescriptor<nodes, gps, ndim, edim, etype>::Element &element)
+	{
+
+	}
+};
+
+template <template <size_t, size_t, size_t, size_t, size_t> class DataDescriptor, size_t nodes, size_t gps, size_t ndim, size_t edim>
+struct applyRotation<DataDescriptor, nodes, gps, ndim, edim, HeatTransferElementType::SYMMETRIC_ISOTROPIC> {
+
+	applyRotation(size_t interval) {}
+
+	void operator()(typename DataDescriptor<nodes, gps, ndim, edim, HeatTransferElementType::SYMMETRIC_ISOTROPIC>::Element &element)
+	{
+
+	}
+};
+
+template <template <size_t, size_t, size_t, size_t, size_t> class DataDescriptor, size_t nodes, size_t gps, size_t ndim, size_t edim>
+struct applyRotation<DataDescriptor, nodes, gps, ndim, edim, HeatTransferElementType::ASYMMETRIC_ISOTROPIC> {
+
+	applyRotation(size_t interval) {}
+
+	void operator()(typename DataDescriptor<nodes, gps, ndim, edim, HeatTransferElementType::ASYMMETRIC_ISOTROPIC>::Element &element)
+	{
+
+	}
+};
+
+template <template <size_t, size_t, size_t, size_t, size_t> class DataDescriptor, size_t nodes, size_t gps, size_t ndim, size_t edim>
+struct applyRotation<DataDescriptor, nodes, gps, ndim, edim, HeatTransferElementType::SYMMETRIC_GENERAL> {
+	HeatTransferCoordinateSystemApply <nodes, gps, ndim, edim, HeatTransferElementType::SYMMETRIC_GENERAL, DataDescriptor<nodes, gps, ndim, edim, HeatTransferElementType::SYMMETRIC_GENERAL> > apply;
+
+	applyRotation(size_t interval): apply(interval) {}
+
+	void operator()(typename DataDescriptor<nodes, gps, ndim, edim, HeatTransferElementType::SYMMETRIC_GENERAL>::Element &element)
+	{
+		apply.simd(element);
+	}
+};
+
+
+template <template <size_t, size_t, size_t, size_t, size_t> class DataDescriptor, size_t nodes, size_t gps, size_t ndim, size_t edim>
+struct applyRotation<DataDescriptor, nodes, gps, ndim, edim, HeatTransferElementType::ASYMMETRIC_GENERAL> {
+	HeatTransferCoordinateSystemApply <nodes, gps, ndim, edim, HeatTransferElementType::ASYMMETRIC_GENERAL, DataDescriptor<nodes, gps, ndim, edim, HeatTransferElementType::ASYMMETRIC_GENERAL> > apply;
+
+	applyRotation(size_t interval): apply(interval) {}
+
+	void operator()(typename DataDescriptor<nodes, gps, ndim, edim, HeatTransferElementType::ASYMMETRIC_GENERAL>::Element &element)
+	{
+		apply.simd(element);
 	}
 };
 
@@ -700,14 +751,178 @@ struct updateTranslationMotion<DataDescriptor, nodes, gps, ndim, edim, HeatTrans
 };
 
 template <template <size_t, size_t, size_t, size_t, size_t> class DataDescriptor, size_t nodes, size_t gps, size_t ndim, size_t edim, size_t etype>
+struct storeCosSin {
+
+	storeCosSin(std::vector<double> &storage, size_t elements) {}
+
+	void operator()(typename DataDescriptor<nodes, gps, ndim, edim, etype>::Element &element)
+	{
+
+	}
+};
+
+template <template <size_t, size_t, size_t, size_t, size_t> class DataDescriptor, size_t nodes, size_t gps, size_t edim>
+struct storeCosSin<DataDescriptor, nodes, gps, 2, edim, HeatTransferElementType::SYMMETRIC_GENERAL> {
+
+	std::vector<double> &storage;
+	double* iterator;
+	storeCosSin(std::vector<double> &storage, size_t elements): storage(storage)
+	{
+		storage.resize(2 * elements * gps * SIMD::size);
+		iterator = storage.data();
+	}
+
+	void operator()(typename DataDescriptor<nodes, gps, 2, edim, HeatTransferElementType::SYMMETRIC_GENERAL>::Element &element)
+	{
+		memcpy(iterator, element.cossin, 2 * gps * SIMD::size * sizeof(double));
+		iterator += 2 * gps * SIMD::size;
+	}
+};
+
+template <template <size_t, size_t, size_t, size_t, size_t> class DataDescriptor, size_t nodes, size_t gps, size_t edim>
+struct storeCosSin<DataDescriptor, nodes, gps, 3, edim, HeatTransferElementType::SYMMETRIC_GENERAL> {
+
+	std::vector<double> &storage;
+	double* iterator;
+	storeCosSin(std::vector<double> &storage, size_t elements): storage(storage)
+	{
+		storage.resize(6 * elements * gps * SIMD::size);
+		iterator = storage.data();
+	}
+
+	void operator()(typename DataDescriptor<nodes, gps, 3, edim, HeatTransferElementType::SYMMETRIC_GENERAL>::Element &element)
+	{
+		memcpy(iterator, element.cossin, 6 * gps * SIMD::size * sizeof(double));
+		iterator += 6 * gps * SIMD::size;
+	}
+};
+
+template <template <size_t, size_t, size_t, size_t, size_t> class DataDescriptor, size_t nodes, size_t gps, size_t edim>
+struct storeCosSin<DataDescriptor, nodes, gps, 2, edim, HeatTransferElementType::ASYMMETRIC_GENERAL> {
+
+	std::vector<double> &storage;
+	double* iterator;
+	storeCosSin(std::vector<double> &storage, size_t elements): storage(storage)
+	{
+		storage.resize(2 * elements * gps * SIMD::size);
+		iterator = storage.data();
+	}
+
+	void operator()(typename DataDescriptor<nodes, gps, 2, edim, HeatTransferElementType::ASYMMETRIC_GENERAL>::Element &element)
+	{
+		memcpy(iterator, element.cossin, 2 * gps * SIMD::size * sizeof(double));
+		iterator += 2 * gps * SIMD::size;
+	}
+};
+
+template <template <size_t, size_t, size_t, size_t, size_t> class DataDescriptor, size_t nodes, size_t gps, size_t edim>
+struct storeCosSin<DataDescriptor, nodes, gps, 3, edim, HeatTransferElementType::ASYMMETRIC_GENERAL> {
+
+	std::vector<double> &storage;
+	double* iterator;
+	storeCosSin(std::vector<double> &storage, size_t elements): storage(storage)
+	{
+		storage.resize(6 * elements * gps * SIMD::size);
+		iterator = storage.data();
+	}
+
+	void operator()(typename DataDescriptor<nodes, gps, 3, edim, HeatTransferElementType::ASYMMETRIC_GENERAL>::Element &element)
+	{
+		memcpy(iterator, element.cossin, 6 * gps * SIMD::size * sizeof(double));
+		iterator += 6 * gps * SIMD::size;
+	}
+};
+
+template <template <size_t, size_t, size_t, size_t, size_t> class DataDescriptor, size_t nodes, size_t gps, size_t ndim, size_t edim, size_t etype>
+struct loadCosSin {
+
+	loadCosSin(std::vector<double> &storage) {}
+
+	void operator()(typename DataDescriptor<nodes, gps, ndim, edim, etype>::Element &element)
+	{
+
+	}
+};
+
+template <template <size_t, size_t, size_t, size_t, size_t> class DataDescriptor, size_t nodes, size_t gps, size_t edim>
+struct loadCosSin<DataDescriptor, nodes, gps, 2, edim, HeatTransferElementType::SYMMETRIC_GENERAL> {
+
+	std::vector<double> &storage;
+	double* iterator;
+	loadCosSin(std::vector<double> &storage): storage(storage)
+	{
+		iterator = storage.data();
+	}
+
+	void operator()(typename DataDescriptor<nodes, gps, 2, edim, HeatTransferElementType::SYMMETRIC_GENERAL>::Element &element)
+	{
+		memcpy(element.cossin, iterator, 2 * gps * SIMD::size * sizeof(double));
+		iterator += 2 * gps * SIMD::size;
+	}
+};
+
+template <template <size_t, size_t, size_t, size_t, size_t> class DataDescriptor, size_t nodes, size_t gps, size_t edim>
+struct loadCosSin<DataDescriptor, nodes, gps, 3, edim, HeatTransferElementType::SYMMETRIC_GENERAL> {
+
+	std::vector<double> &storage;
+	double* iterator;
+	loadCosSin(std::vector<double> &storage): storage(storage)
+	{
+		iterator = storage.data();
+	}
+
+	void operator()(typename DataDescriptor<nodes, gps, 3, edim, HeatTransferElementType::SYMMETRIC_GENERAL>::Element &element)
+	{
+		memcpy(element.cossin, iterator, 6 * gps * SIMD::size * sizeof(double));
+		iterator += 6 * gps * SIMD::size;
+	}
+};
+
+template <template <size_t, size_t, size_t, size_t, size_t> class DataDescriptor, size_t nodes, size_t gps, size_t edim>
+struct loadCosSin<DataDescriptor, nodes, gps, 2, edim, HeatTransferElementType::ASYMMETRIC_GENERAL> {
+
+	std::vector<double> &storage;
+	double* iterator;
+	loadCosSin(std::vector<double> &storage): storage(storage)
+	{
+		iterator = storage.data();
+	}
+
+	void operator()(typename DataDescriptor<nodes, gps, 2, edim, HeatTransferElementType::ASYMMETRIC_GENERAL>::Element &element)
+	{
+		memcpy(element.cossin, iterator, 2 * gps * SIMD::size * sizeof(double));
+		iterator += 2 * gps * SIMD::size;
+	}
+};
+
+template <template <size_t, size_t, size_t, size_t, size_t> class DataDescriptor, size_t nodes, size_t gps, size_t edim>
+struct loadCosSin<DataDescriptor, nodes, gps, 3, edim, HeatTransferElementType::ASYMMETRIC_GENERAL> {
+
+	std::vector<double> &storage;
+	double* iterator;
+	loadCosSin(std::vector<double> &storage): storage(storage)
+	{
+		iterator = storage.data();
+	}
+
+	void operator()(typename DataDescriptor<nodes, gps, 3, edim, HeatTransferElementType::ASYMMETRIC_GENERAL>::Element &element)
+	{
+		memcpy(element.cossin, iterator, 6 * gps * SIMD::size * sizeof(double));
+		iterator += 6 * gps * SIMD::size;
+	}
+};
+
+
+template <template <size_t, size_t, size_t, size_t, size_t> class DataDescriptor, size_t nodes, size_t gps, size_t ndim, size_t edim, size_t etype>
 Assembler::measurements HeatTransfer::conditionsloop(ActionOperator::Action action, const std::vector<ActionOperator*> &ops, size_t interval, esint elements)
 {
-	double initStart, initEnd;
-	initStart = eslog::time();
 	if (this->K == nullptr) {
 		return loop<HeatTransferDataDescriptor, nodes, gps, ndim, edim, etype>(action, ops, elements);
 	}
 	if (elements == 0) return {0.0, 0.0};
+
+	double initStart = eslog::time();
+
 	typename DataDescriptor<nodes, gps, ndim, edim, etype>::Element element;
 
 	for (auto op = ops.cbegin(); op != ops.cend(); ++op) {
@@ -729,6 +944,9 @@ Assembler::measurements HeatTransfer::conditionsloop(ActionOperator::Action acti
 	HeatSource<nodes, gps, ndim, edim, etype, DataDescriptor<nodes, gps, ndim, edim, etype> > heatSource(interval, this->elements.rhs);
 	Advection<nodes, gps, ndim, edim, etype, DataDescriptor<nodes, gps, ndim, edim, etype> > advection(interval, this->elements.stiffness);
 
+	updateCosSin<DataDescriptor, nodes, gps, ndim, edim, etype> cossin(interval);
+	storeCosSin<DataDescriptor, nodes, gps, ndim, edim, etype> storecossin(cossin_conditions[interval], elements);
+	loadCosSin<DataDescriptor, nodes, gps, ndim, edim, etype> loadcossin(cossin_conditions[interval]);
 	applyRotation<DataDescriptor, nodes, gps, ndim, edim, etype> rotation(interval);
 	updateHeatSource<DataDescriptor, nodes, gps, ndim, edim, etype> updateHS;
 	updateTranslationMotion<DataDescriptor, nodes, gps, ndim, edim, etype> updateTM;
@@ -740,34 +958,27 @@ Assembler::measurements HeatTransfer::conditionsloop(ActionOperator::Action acti
 	TemperatureGradient<nodes, gps, ndim, edim, etype, DataDescriptor<nodes, gps, ndim, edim, etype> > gradient(interval, Results::gradient);
 	TemperatureFlux<nodes, gps, ndim, edim, etype, DataDescriptor<nodes, gps, ndim, edim, etype> > flux(interval, Results::flux);
 
-	coo.move(SIMD::size);
-	cooAndGps.move(SIMD::size);
-	temp.move(SIMD::size);
-	stiffness.move(SIMD::size);
-	advection.move(SIMD::size);
-	upperFiller.move(SIMD::size);
-	fullFiller.move(SIMD::size);
-	rhsFiller.move(SIMD::size);
-	heatSource.move(SIMD::size);
-
-	gradient.move(ndim * SIMD::size);
-	flux.move(ndim * SIMD::size);
-
 	const MaterialConfiguration *mat = info::mesh->materials[info::mesh->elements->eintervals[interval].material];
 	bool rotateConductivity = mat->thermal_conductivity.model != ThermalConductivityConfiguration::MODEL::ISOTROPIC;
+	bool constCosSin = mat->coordinate_system.type == CoordinateSystemConfiguration::TYPE::CARTESIAN;
 	// it is dirty hack just to be sure that compiler must assume both variants (currently settings.sigma = 0 and diffusion_split = false)
 	bool constConductivity = !settings.diffusion_split;
 	bool constRotation = settings.sigma == 0;
 	if (mat->thermal_conductivity.model != ThermalConductivityConfiguration::MODEL::ISOTROPIC) {
 		if (mat->coordinate_system.type == CoordinateSystemConfiguration::TYPE::CARTESIAN) {
 			if (ndim == 2) {
-				rotateConductivity &= mat->coordinate_system.rotation.z.isset;
+				rotateConductivity &= mat->coordinate_system.rotation.z.parameters.size();
 			}
 			if (ndim == 3) {
-				rotateConductivity &= mat->coordinate_system.rotation.x.isset | mat->coordinate_system.rotation.y.isset | mat->coordinate_system.rotation.z.isset;
+				rotateConductivity &= mat->coordinate_system.rotation.x.parameters.size() | mat->coordinate_system.rotation.y.parameters.size() | mat->coordinate_system.rotation.z.parameters.size();
 			}
 		}
 	}
+	if (info::ecf->always_update_conductivity) { // TODO
+		constConductivity = false;
+	}
+	bool storeCosSin = settings.reassembling_optimization && action == ActionOperator::ASSEMBLE;
+	bool loadCosSin  = settings.reassembling_optimization && action != ActionOperator::ASSEMBLE;
 
 	bool hasHeatSource = false;
 	bool constHeatSource = true;
@@ -793,205 +1004,143 @@ Assembler::measurements HeatTransfer::conditionsloop(ActionOperator::Action acti
 	bool getTemp = computeGradient || computeFlux;
 	bool isfullMatrix = this->K->shape == Matrix_Shape::FULL;
 
-	initEnd = eslog::time();
-	double start, end;
+	esint chunks = elements / SIMD::size;
+	double init = eslog::time() - initStart;
 
-	if(action == ActionOperator::ASSEMBLE)
-	{
-		start = eslog::time();
-		__SSC_MARK(0xFACE);
-		esint chunks = elements / SIMD::size;
-		for (esint c = 1; c < chunks; ++c) {
-			if (cooToGP) {
-				cooAndGps.simd(element);
-			} else {
-				coo.simd(element);
-			}
-			integration.simd(element);
-			if (getTemp) {
-				temp.simd(element);
-			}
-			if (computeConductivity) {
-				if (!constConductivity) {
-					updateConductivity<DataDescriptor, nodes, gps, ndim, edim, etype>()(element, mat);
-				}
-				if (rotateConductivity) {
-					if (!constRotation) {
-						updateRotation<DataDescriptor, nodes, gps, ndim, edim, etype>()(element, mat);
-					}
-					rotation(element, mat);
-				}
-			}
-
-			if (computeK) {
-				if (hasAdvection) {
-					if (!constAdvection) {
-						updateTM(element, advectionEval->second.x.evaluator);
-					}
-					advection.simd(element);
-				}
-				stiffness.simd(element);
-				if (hasHeatSource) {
-					if (!constHeatSource) {
-						updateHS(element, heatSourceEval->second.evaluator);
-					}
-					heatSource.simd(element);
-				}
-			}
-			if (action == ActionOperator::FILL) {
-				if (isfullMatrix) {
-					fullFiller.simd(element);
-				} else {
-					upperFiller.simd(element);
-				}
-				rhsFiller.simd(element);
-			}
-			if (computeGradient) {
-				gradient.simd(element);
-			}
-			if (computeFlux) {
-				flux.simd(element);
-			}
+	if (cooToGP) {
+		cooAndGps.move(SIMD::size);
+	} else {
+		coo.move(SIMD::size);
+	}
+	if (getTemp) {
+		temp.move(SIMD::size);
+	}
+	if (computeK) {
+		stiffness.move(SIMD::size);
+		if (hasHeatSource) {
+			heatSource.move(SIMD::size);
 		}
-		__SSC_MARK(0xDEAD);
-		end = eslog::time();
+	}
+	if (hasAdvection) {
+		advection.move(SIMD::size);
+	}
+	if (computeGradient) {
+		gradient.move(SIMD::size);
+	}
+	if (computeFlux) {
+		flux.move(SIMD::size);
 	}
 
-	if(action == ActionOperator::REASSEMBLE)
-	{
-		start = eslog::time();
-		__SSC_MARK(0xCAFE);
-		esint chunks = elements / SIMD::size;
-		for (esint c = 1; c < chunks; ++c) {
-			if (cooToGP) {
-				cooAndGps.simd(element);
-			} else {
-				coo.simd(element);
-			}
-			integration.simd(element);
-			if (getTemp) {
-				temp.simd(element);
-			}
-			if (computeConductivity) {
-				if (!constConductivity) {
-					updateConductivity<DataDescriptor, nodes, gps, ndim, edim, etype>()(element, mat);
-				}
-				if (rotateConductivity) {
-					if (!constRotation) {
-						updateRotation<DataDescriptor, nodes, gps, ndim, edim, etype>()(element, mat);
-					}
-					rotation(element, mat);
-				}
-			}
+	if (settings.reassembling_optimization && action == ActionOperator::ASSEMBLE) {
 
-			if (computeK) {
-				if (hasAdvection) {
-					if (!constAdvection) {
-						updateTM(element, advectionEval->second.x.evaluator);
-					}
-					advection.simd(element);
-				}
-				stiffness.simd(element);
-				if (hasHeatSource) {
-					if (!constHeatSource) {
-						updateHS(element, heatSourceEval->second.evaluator);
-					}
-					heatSource.simd(element);
-				}
-			}
-			if (action == ActionOperator::FILL) {
-				if (isfullMatrix) {
-					fullFiller.simd(element);
-				} else {
-					upperFiller.simd(element);
-				}
-				rhsFiller.simd(element);
-			}
-			if (computeGradient) {
-				gradient.simd(element);
-			}
-			if (computeFlux) {
-				flux.simd(element);
-			}
-		}
-		__SSC_MARK(0xFADE);
-		end = eslog::time();
 	}
 
-	if((action != ActionOperator::REASSEMBLE) && (action != ActionOperator::ASSEMBLE))
-	{
-		start = eslog::time();
-		esint chunks = elements / SIMD::size;
-		for (esint c = 1; c < chunks; ++c) {
-			if (cooToGP) {
-				cooAndGps.simd(element);
-			} else {
-				coo.simd(element);
+	double start = eslog::time();
+	switch (action) {
+	case ActionOperator::ASSEMBLE  : __SSC_MARK(0xFACE); break;
+	case ActionOperator::REASSEMBLE: __SSC_MARK(0xCAFE); break;
+	case ActionOperator::SOLUTION  : __SSC_MARK(0xCAFE); break; // TODO
+	default:
+		eslog::error("unsupported action\n");
+	}
+	for (esint c = 1; c < chunks; ++c) {
+		if (cooToGP) {
+			cooAndGps.simd(element);
+//			printf(" cooAndGps");
+		} else {
+			coo.simd(element);
+//			printf(" coo");
+		}
+		integration.simd(element);
+//		printf(" integration");
+		if (getTemp) {
+			temp.simd(element);
+//			printf(" temp");
+		}
+		if (computeConductivity) {
+			if (!constConductivity) {
+				updateConductivity<DataDescriptor, nodes, gps, ndim, edim, etype>()(element, mat);
+//				printf(" updateConductivity");
 			}
-			integration.simd(element);
-			if (getTemp) {
-				temp.simd(element);
-			}
-			if (computeConductivity) {
-				if (!constConductivity) {
-					updateConductivity<DataDescriptor, nodes, gps, ndim, edim, etype>()(element, mat);
+			if (rotateConductivity) {
+				if (!constRotation) {
+					updateRotation<DataDescriptor, nodes, gps, ndim, edim, etype>()(element, mat);
+//					printf(" updateRotation");
 				}
-				if (rotateConductivity) {
-					if (!constRotation) {
-						updateRotation<DataDescriptor, nodes, gps, ndim, edim, etype>()(element, mat);
+				if (!constCosSin) {
+					if (loadCosSin) {
+//						printf(" loadCosSin");
+						loadcossin(element);
+					} else {
+//						printf(" updateCosSin");
+						cossin(element, mat);
 					}
-					rotation(element, mat);
-				}
-			}
-
-			if (computeK) {
-				if (hasAdvection) {
-					if (!constAdvection) {
-						updateTM(element, advectionEval->second.x.evaluator);
+					if (storeCosSin) {
+//						printf(" storeCosSin");
+						storecossin(element);
 					}
-					advection.simd(element);
 				}
-				stiffness.simd(element);
-				if (hasHeatSource) {
-					if (!constHeatSource) {
-						updateHS(element, heatSourceEval->second.evaluator);
-					}
-					heatSource.simd(element);
-				}
-			}
-			if (action == ActionOperator::FILL) {
-				if (isfullMatrix) {
-					fullFiller.simd(element);
-				} else {
-					upperFiller.simd(element);
-				}
-				rhsFiller.simd(element);
-			}
-			if (computeGradient) {
-				gradient.simd(element);
-			}
-			if (computeFlux) {
-				flux.simd(element);
+				rotation(element);
+//				printf(" rotation");
 			}
 		}
-		end = eslog::time();
+
+		if (computeK) {
+			if (hasAdvection) {
+				if (!constAdvection) {
+					updateTM(element, advectionEval->second.x.evaluator);
+//					printf(" updateTM");
+				}
+				advection.simd(element);
+//				printf(" advection");
+			}
+			stiffness.simd(element);
+//			printf(" stiffness");
+			if (hasHeatSource) {
+				if (!constHeatSource) {
+					updateHS(element, heatSourceEval->second.evaluator);
+//					printf(" updateHS");
+				}
+				heatSource.simd(element);
+//				printf(" heatSource");
+			}
+		}
+		if (computeGradient) {
+			gradient.simd(element);
+//			printf(" gradient");
+		}
+		if (computeFlux) {
+			flux.simd(element);
+//			printf(" flux");
+		}
+//		printf("\n");
 	}
+
+	switch (action) {
+	case ActionOperator::ASSEMBLE  : __SSC_MARK(0xDEAD); break;
+	case ActionOperator::REASSEMBLE: __SSC_MARK(0xFADE); break;
+	case ActionOperator::SOLUTION  : __SSC_MARK(0xFADE); break; // TODO
+	default:
+		eslog::error("unsupported action\n");
+	}
+	double loop = eslog::time() - start;
 
 	if (elements % SIMD::size) {
 		eslog::error("peel loop is not supported\n");
 		// peel is never needed
 	}
 
+	// move operators that was used for initialization only
 	for (auto op = ops.cbegin(); op != ops.cend(); ++op) {
 		if ((*op)->action & action) {
 			if ((*op)->isconst) {
-				(*op)->move(-(int)std::min(elements, (esint)SIMD::size));
+				(*op)->move(-std::min(elements, (esint)SIMD::size));
 			} else {
 				(*op)->move(-(esint)SIMD::size);
 			}
 		}
 	}
-	return {initEnd - initStart,  end - start};
+	return { init, loop };
 }
 
 template <int etype>

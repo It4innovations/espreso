@@ -147,6 +147,14 @@ void ECF::_init()
 	REGISTER(dryrun, ECFMetaData()
 			.setdescription({ "Just for testing assembler" })
 			.setdatatype({ ECFDataType::BOOL }));
+	simple_output = false;
+	REGISTER(simple_output, ECFMetaData()
+			.setdescription({ "Compute solution independent on conductivity and elasticity." })
+			.setdatatype({ ECFDataType::BOOL }));
+	always_update_conductivity = false;
+	REGISTER(always_update_conductivity, ECFMetaData()
+			.setdescription({ "Always call update conductivity function." })
+			.setdatatype({ ECFDataType::BOOL }));
 
 	loop = LOOP::INHERITANCE;
 	REGISTER(loop, ECFMetaData()

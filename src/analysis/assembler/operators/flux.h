@@ -18,11 +18,6 @@ struct TemperatureFluxBase: ActionOperator {
 	}
 
 	double* flux;
-
-	void move(int n)
-	{
-		flux += n;
-	}
 };
 
 template <size_t nodes, size_t gps, size_t ndim, size_t edim, size_t etype, class Physics> struct TemperatureFlux;
@@ -31,6 +26,11 @@ template <size_t nodes, size_t gps, size_t edim, class Physics>
 struct TemperatureFlux<nodes, gps, 2, edim, HeatTransferElementType::SYMMETRIC_ISOTROPIC, Physics>: TemperatureFluxBase, Physics {
 	using TemperatureFluxBase::TemperatureFluxBase;
 
+	void move(int n)
+	{
+		flux += 2 * n;
+	}
+
 	void simd(typename Physics::Element &element)
 	{
 		double * __restrict__ out = flux;
@@ -51,7 +51,7 @@ struct TemperatureFlux<nodes, gps, 2, edim, HeatTransferElementType::SYMMETRIC_I
 			out[2 * s + 0] = f0[s];
 			out[2 * s + 1] = f1[s];
 		}
-		move(2 * SIMD::size);
+		move(SIMD::size);
 	}
 
 	void peel(typename Physics::Element &element, size_t size)
@@ -74,7 +74,7 @@ struct TemperatureFlux<nodes, gps, 2, edim, HeatTransferElementType::SYMMETRIC_I
 			out[2 * s + 0] = f0[s];
 			out[2 * s + 1] = f1[s];
 		}
-		move(2 * size);
+		move(size);
 	}
 };
 
@@ -82,6 +82,11 @@ template <size_t nodes, size_t gps, size_t edim, class Physics>
 struct TemperatureFlux<nodes, gps, 3, edim, HeatTransferElementType::SYMMETRIC_ISOTROPIC, Physics>: TemperatureFluxBase, Physics {
 	using TemperatureFluxBase::TemperatureFluxBase;
 
+	void move(int n)
+	{
+		flux += 3 * n;
+	}
+
 	void simd(typename Physics::Element &element)
 	{
 		double * __restrict__ out = flux;
@@ -106,7 +111,7 @@ struct TemperatureFlux<nodes, gps, 3, edim, HeatTransferElementType::SYMMETRIC_I
 			out[3 * s + 1] = f1[s];
 			out[3 * s + 2] = f2[s];
 		}
-		move(3 * SIMD::size);
+		move(SIMD::size);
 	}
 
 	void peel(typename Physics::Element &element, size_t size)
@@ -133,7 +138,7 @@ struct TemperatureFlux<nodes, gps, 3, edim, HeatTransferElementType::SYMMETRIC_I
 			out[3 * s + 1] = f1[s];
 			out[3 * s + 2] = f2[s];
 		}
-		move(3 * size);
+		move(size);
 	}
 };
 
@@ -141,6 +146,11 @@ template <size_t nodes, size_t gps, size_t edim, class Physics>
 struct TemperatureFlux<nodes, gps, 2, edim, HeatTransferElementType::ASYMMETRIC_ISOTROPIC, Physics>: TemperatureFluxBase, Physics {
 	using TemperatureFluxBase::TemperatureFluxBase;
 
+	void move(int n)
+	{
+		flux += 2 * n;
+	}
+
 	void simd(typename Physics::Element &element)
 	{
 		double * __restrict__ out = flux;
@@ -161,7 +171,7 @@ struct TemperatureFlux<nodes, gps, 2, edim, HeatTransferElementType::ASYMMETRIC_
 			out[2 * s + 0] = f0[s];
 			out[2 * s + 1] = f1[s];
 		}
-		move(2 * SIMD::size);
+		move(SIMD::size);
 	}
 
 	void peel(typename Physics::Element &element, size_t size)
@@ -184,7 +194,7 @@ struct TemperatureFlux<nodes, gps, 2, edim, HeatTransferElementType::ASYMMETRIC_
 			out[2 * s + 0] = f0[s];
 			out[2 * s + 1] = f1[s];
 		}
-		move(2 * size);
+		move(size);
 	}
 };
 
@@ -192,6 +202,11 @@ template <size_t nodes, size_t gps, size_t edim, class Physics>
 struct TemperatureFlux<nodes, gps, 3, edim, HeatTransferElementType::ASYMMETRIC_ISOTROPIC, Physics>: TemperatureFluxBase, Physics {
 	using TemperatureFluxBase::TemperatureFluxBase;
 
+	void move(int n)
+	{
+		flux += 3 * n;
+	}
+
 	void simd(typename Physics::Element &element)
 	{
 		double * __restrict__ out = flux;
@@ -216,7 +231,7 @@ struct TemperatureFlux<nodes, gps, 3, edim, HeatTransferElementType::ASYMMETRIC_
 			out[3 * s + 1] = f1[s];
 			out[3 * s + 2] = f2[s];
 		}
-		move(3 * SIMD::size);
+		move(SIMD::size);
 	}
 
 	void peel(typename Physics::Element &element, size_t size)
@@ -243,13 +258,18 @@ struct TemperatureFlux<nodes, gps, 3, edim, HeatTransferElementType::ASYMMETRIC_
 			out[3 * s + 1] = f1[s];
 			out[3 * s + 2] = f2[s];
 		}
-		move(3 * size);
+		move(size);
 	}
 };
 
 template <size_t nodes, size_t gps, size_t edim, size_t etype, class Physics>
 struct TemperatureFlux<nodes, gps, 2, edim, etype, Physics>: TemperatureFluxBase, Physics {
 	using TemperatureFluxBase::TemperatureFluxBase;
+
+	void move(int n)
+	{
+		flux += 2 * n;
+	}
 
 	void simd(typename Physics::Element &element)
 	{
@@ -271,7 +291,7 @@ struct TemperatureFlux<nodes, gps, 2, edim, etype, Physics>: TemperatureFluxBase
 			out[2 * s + 0] = f0[s];
 			out[2 * s + 1] = f1[s];
 		}
-		move(2 * SIMD::size);
+		move(SIMD::size);
 	}
 
 	void peel(typename Physics::Element &element, size_t size)
@@ -294,13 +314,18 @@ struct TemperatureFlux<nodes, gps, 2, edim, etype, Physics>: TemperatureFluxBase
 			out[2 * s + 0] = f0[s];
 			out[2 * s + 1] = f1[s];
 		}
-		move(2 * size);
+		move(size);
 	}
 };
 
 template <size_t nodes, size_t gps, size_t edim, size_t etype, class Physics>
 struct TemperatureFlux<nodes, gps, 3, edim, etype, Physics>: TemperatureFluxBase, Physics {
 	using TemperatureFluxBase::TemperatureFluxBase;
+
+	void move(int n)
+	{
+		flux += 3 * n;
+	}
 
 	void simd(typename Physics::Element &element)
 	{
@@ -326,7 +351,7 @@ struct TemperatureFlux<nodes, gps, 3, edim, etype, Physics>: TemperatureFluxBase
 			out[3 * s + 1] = f1[s];
 			out[3 * s + 2] = f2[s];
 		}
-		move(3 * SIMD::size);
+		move(SIMD::size);
 	}
 
 	void peel(typename Physics::Element &element, size_t size)
@@ -353,7 +378,7 @@ struct TemperatureFlux<nodes, gps, 3, edim, etype, Physics>: TemperatureFluxBase
 			out[3 * s + 1] = f1[s];
 			out[3 * s + 2] = f2[s];
 		}
-		move(3 * size);
+		move(size);
 	}
 };
 

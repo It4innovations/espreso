@@ -22,9 +22,8 @@ using namespace espreso;
 template <template <size_t, size_t, size_t, size_t, size_t> class DataDescriptor, size_t nodes, size_t gps, size_t ndim, size_t edim, size_t etype>
 Assembler::measurements Assembler::loop(ActionOperator::Action action, const std::vector<ActionOperator*> &ops, esint elements)
 {
-	double initStart, initEnd;
 	if (elements == 0) return {0.0, 0.0};
-	initStart = eslog::time();
+	double initStart = eslog::time();
 	typename DataDescriptor<nodes, gps, ndim, edim, etype>::Element element;
 	std::vector<DataDescriptor<nodes, gps, ndim, edim, etype>*> active; active.reserve(ops.size());
 	for (auto op = ops.cbegin(); op != ops.cend(); ++op) {
@@ -41,47 +40,28 @@ Assembler::measurements Assembler::loop(ActionOperator::Action action, const std
 			}
 		}
 	}
-	initEnd = eslog::time();
+	double init = eslog::time() - initStart;
 
-	double start, end;
-
-	if (action == ActionOperator::Action::ASSEMBLE)
-	{
-		start = eslog::time();
-		__SSC_MARK(0xFACE);
-		esint chunks = elements / SIMD::size;
-		for (esint c = 1; c < chunks; ++c) {
-			for (auto op = active.cbegin(); op != active.cend(); ++op) {
-				(*op)->simd(element);
-			}
-		}
-		__SSC_MARK(0xDEAD);
-		end = eslog::time();
+	double start = eslog::time();
+	switch (action) {
+	case ActionOperator::ASSEMBLE  : __SSC_MARK(0xFACE); break;
+	case ActionOperator::REASSEMBLE: __SSC_MARK(0xCAFE); break;
+	case ActionOperator::SOLUTION  : __SSC_MARK(0xCAFE); break; // TODO
+	default: break;
 	}
-	if (action == ActionOperator::Action::REASSEMBLE)
-	{
-		start = eslog::time();
-		__SSC_MARK(0xCAFE);
-		esint chunks = elements / SIMD::size;
-		for (esint c = 1; c < chunks; ++c) {
-			for (auto op = active.cbegin(); op != active.cend(); ++op) {
-				(*op)->simd(element);
-			}
+	esint chunks = elements / SIMD::size;
+	for (esint c = 1; c < chunks; ++c) {
+		for (auto op = active.cbegin(); op != active.cend(); ++op) {
+			(*op)->simd(element);
 		}
-		__SSC_MARK(0xFADE);
-		end = eslog::time();
 	}
-	if((action != ActionOperator::REASSEMBLE) && (action != ActionOperator::ASSEMBLE))
-	{
-		start = eslog::time();
-		esint chunks = elements / SIMD::size;
-		for (esint c = 1; c < chunks; ++c) {
-			for (auto op = active.cbegin(); op != active.cend(); ++op) {
-				(*op)->simd(element);
-			}
-		}
-		end = eslog::time();
+	switch (action) {
+	case ActionOperator::ASSEMBLE  : __SSC_MARK(0xDEAD); break;
+	case ActionOperator::REASSEMBLE: __SSC_MARK(0xFADE); break;
+	case ActionOperator::SOLUTION  : __SSC_MARK(0xFADE); break; // TODO
+	default: break;
 	}
+	double loop = eslog::time() - start;
 
 	if (elements % SIMD::size) {
 		for (auto op = active.cbegin(); op != active.cend(); ++op) {
@@ -98,7 +78,7 @@ Assembler::measurements Assembler::loop(ActionOperator::Action action, const std
 			}
 		}
 	}
-	return {initEnd - initStart, end - start};
+	return { init, loop };
 }
 
 template<typename Ttype>

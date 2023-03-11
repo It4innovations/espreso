@@ -72,7 +72,7 @@ struct ECF: public ECFDescription {
 
 	MeshMorphing mesh_morphing;
 
-	bool dryrun;
+	bool dryrun, simple_output, always_update_conductivity;
 
 	enum class LOOP {
 		INHERITANCE,

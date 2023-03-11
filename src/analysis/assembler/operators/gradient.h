@@ -17,11 +17,6 @@ struct TemperatureGradientBase: ActionOperator {
 	}
 
 	double* gradient;
-
-	void move(int n)
-	{
-		gradient += n;
-	}
 };
 
 template <size_t nodes, size_t gps, size_t ndim, size_t edim, size_t etype, class Physics> struct TemperatureGradient;
@@ -30,6 +25,11 @@ template <size_t nodes, size_t gps, size_t edim, size_t etype, class Physics>
 struct TemperatureGradient<nodes, gps, 2, edim, etype, Physics>: TemperatureGradientBase, Physics {
 	using TemperatureGradientBase::TemperatureGradientBase;
 
+	void move(int n)
+	{
+		gradient += 2 * n;
+	}
+
 	void simd(typename Physics::Element &element)
 	{
 		double * __restrict__ out = gradient;
@@ -47,7 +47,7 @@ struct TemperatureGradient<nodes, gps, 2, edim, etype, Physics>: TemperatureGrad
 			out[2 * s + 0] = g0[s];
 			out[2 * s + 1] = g1[s];
 		}
-		move(2 * SIMD::size);
+		move(SIMD::size);
 	}
 
 	void peel(typename Physics::Element &element, size_t size)
@@ -67,7 +67,7 @@ struct TemperatureGradient<nodes, gps, 2, edim, etype, Physics>: TemperatureGrad
 			out[2 * s + 0] = g0[s];
 			out[2 * s + 1] = g1[s];
 		}
-		move(2 * size);
+		move(size);
 	}
 };
 
@@ -75,6 +75,11 @@ template <size_t nodes, size_t gps, size_t edim, size_t etype, class Physics>
 struct TemperatureGradient<nodes, gps, 3, edim, etype, Physics>: TemperatureGradientBase, Physics {
 	using TemperatureGradientBase::TemperatureGradientBase;
 
+	void move(int n)
+	{
+		gradient += 3 * n;
+	}
+
 	void simd(typename Physics::Element &element)
 	{
 		double * __restrict__ out = gradient;
@@ -95,7 +100,7 @@ struct TemperatureGradient<nodes, gps, 3, edim, etype, Physics>: TemperatureGrad
 			out[3 * s + 1] = g1[s];
 			out[3 * s + 2] = g2[s];
 		}
-		move(3 * SIMD::size);
+		move(SIMD::size);
 	}
 
 	void peel(typename Physics::Element &element, size_t size)
@@ -118,7 +123,7 @@ struct TemperatureGradient<nodes, gps, 3, edim, etype, Physics>: TemperatureGrad
 			out[3 * s + 1] = g1[s];
 			out[3 * s + 2] = g2[s];
 		}
-		move(3 * size);
+		move(size);
 	}
 };
 

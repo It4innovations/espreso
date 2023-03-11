@@ -56,6 +56,7 @@ HeatTransfer::HeatTransfer(HeatTransfer *previous, HeatTransferConfiguration &se
 			bfilter[r] = 1;
 		}
 	}
+	cossin_conditions.resize(info::mesh->elements->eintervals.size());
 }
 
 void HeatTransfer::initParameters()
@@ -467,24 +468,31 @@ void HeatTransfer::dryrun()
 		this->f = new Vector_Distributed<Vector_Dense, double>();
 		this->f->mapping.elements.resize(info::mesh->elements->eintervals.size());
 	}
+	info::ecf->output.results_selection.flux = !info::ecf->simple_output;
 	Assembler::measurements reassemble_time = {0.0, 0.0};
 	Assembler::measurements   assemble_time = {0.0, 0.0};
-	int numreps = 10;
+	Assembler::measurements   solution_time = {0.0, 0.0};
+	int numreps = 1;
 	for(int reps = 0; reps < numreps; reps++) {
 		assemble_time += assemble(ActionOperator::Action::ASSEMBLE);
 		reassemble_time += assemble(ActionOperator::Action::REASSEMBLE);
+		solution_time += assemble(ActionOperator::Action::SOLUTION);
 	}
 
 	assemble_time.coreTime /= static_cast<double>(numreps);
 	reassemble_time.coreTime /= static_cast<double>(numreps);
+	solution_time.coreTime /= static_cast<double>(numreps);
 
 	assemble_time.preprocessTime /= static_cast<double>(numreps);
 	reassemble_time.preprocessTime /= static_cast<double>(numreps);
+	solution_time.preprocessTime /= static_cast<double>(numreps);
 
 	eslog::info("       = SIMD LOOP ASSEMBLE                                             %12.8f s = \n",   assemble_time.preprocessTime);
 	eslog::info("       = SIMD LOOP ASSEMBLE                                             %12.8f s = \n",   assemble_time.coreTime);
 	eslog::info("       = SIMD LOOP REASSEMBLE                                           %12.8f s = \n", reassemble_time.preprocessTime);
 	eslog::info("       = SIMD LOOP REASSEMBLE                                           %12.8f s = \n", reassemble_time.coreTime);
+	eslog::info("       = SIMD LOOP SOLUTION                                             %12.8f s = \n", solution_time.preprocessTime);
+	eslog::info("       = SIMD LOOP SOLUTION                                             %12.8f s = \n", solution_time.coreTime);
 }
 
 void HeatTransfer::volume()
