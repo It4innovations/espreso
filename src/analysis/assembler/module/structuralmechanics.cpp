@@ -46,6 +46,7 @@ StructuralMechanics::StructuralMechanics(StructuralMechanics *previous, Structur
 			bfilter[r] = 1;
 		}
 	}
+	cossin_conditions.resize(info::mesh->elements->eintervals.size());
 }
 
 void StructuralMechanics::initParameters()
@@ -382,22 +383,28 @@ void StructuralMechanics::dryrun()
 	}
 	Assembler::measurements reassemble_time = {0.0, 0.0};
 	Assembler::measurements   assemble_time = {0.0, 0.0};
-	int numreps = 10;
+	Assembler::measurements   solution_time = {0.0, 0.0};
+	int numreps = 1;
 	for(int reps = 0; reps < numreps; reps++) {
-		  assemble_time += assemble(ActionOperator::Action::ASSEMBLE);
+		assemble_time   += assemble(ActionOperator::Action::ASSEMBLE);
 		reassemble_time += assemble(ActionOperator::Action::REASSEMBLE);
+		solution_time   += assemble(ActionOperator::Action::SOLUTION);
 	}
 
-	  assemble_time.coreTime /= static_cast<double>(numreps);
+	assemble_time.coreTime   /= static_cast<double>(numreps);
 	reassemble_time.coreTime /= static_cast<double>(numreps);
+	solution_time.coreTime   /= static_cast<double>(numreps);
 
-	  assemble_time.preprocessTime /= static_cast<double>(numreps);
+	assemble_time.preprocessTime   /= static_cast<double>(numreps);
 	reassemble_time.preprocessTime /= static_cast<double>(numreps);
+	solution_time.preprocessTime   /= static_cast<double>(numreps);
 
 	eslog::info("       = SIMD LOOP ASSEMBLE                                             %12.8f s = \n",   assemble_time.preprocessTime);
 	eslog::info("       = SIMD LOOP ASSEMBLE                                             %12.8f s = \n",   assemble_time.coreTime);
 	eslog::info("       = SIMD LOOP REASSEMBLE                                           %12.8f s = \n", reassemble_time.preprocessTime);
 	eslog::info("       = SIMD LOOP REASSEMBLE                                           %12.8f s = \n", reassemble_time.coreTime);
+	eslog::info("       = SIMD LOOP SOLUTION                                             %12.8f s = \n",   solution_time.preprocessTime);
+	eslog::info("       = SIMD LOOP SOLUTION                                             %12.8f s = \n",   solution_time.coreTime);
 }
 
 
@@ -433,295 +440,6 @@ void StructuralMechanics::updateSolution(SteadyState &scheme)
 {
 	scheme.x->storeTo(Results::displacement->data);
 	assemble(ActionOperator::Action::SOLUTION);
-}
-
-template <template <size_t, size_t, size_t, size_t, size_t> class DataDescriptor, size_t nodes, size_t gps, size_t ndim, size_t edim, size_t etype>
-struct updateAcceleration {
-	void operator()(typename DataDescriptor<nodes, gps, ndim, edim, etype>::Element &element, Evaluator* evaluator)
-	{
-		double results[SIMD::size * gps];
-		evaluator->evalVector(SIMD::size * gps, Evaluator::Params(), results);
-		for (size_t gp = 0; gp < gps; ++gp) {
-			for (size_t s = 0; s < SIMD::size; ++s) {
-				element.ecf.acceleration[gp][0][s] = results[gps * s + gp];
-			}
-		}
-	}
-};
-
-template <template <size_t, size_t, size_t, size_t, size_t> class DataDescriptor, size_t nodes, size_t gps, size_t ndim, size_t edim, size_t etype> struct updateVelocity;
-
-template <template <size_t, size_t, size_t, size_t, size_t> class DataDescriptor, size_t nodes, size_t gps, size_t edim, size_t etype>
-struct updateVelocity<DataDescriptor, nodes, gps, 2, edim, etype> {
-	void operator()(typename DataDescriptor<nodes, gps, 2, edim, etype>::Element &element, Evaluator* evaluator)
-	{
-		double results[SIMD::size * gps];
-		evaluator->evalVector(SIMD::size * gps, Evaluator::Params(), results);
-		for (size_t gp = 0; gp < gps; ++gp) {
-			for (size_t s = 0; s < SIMD::size; ++s) {
-				element.ecf.angularVelocity[gp][s] = results[gps * s + gp];
-			}
-		}
-	}
-};
-
-template <template <size_t, size_t, size_t, size_t, size_t> class DataDescriptor, size_t nodes, size_t gps, size_t edim, size_t etype>
-struct updateVelocity<DataDescriptor, nodes, gps, 3, edim, etype> {
-	void operator()(typename DataDescriptor<nodes, gps, 3, edim, etype>::Element &element, Evaluator* evaluator)
-	{
-		double results[SIMD::size * gps];
-		evaluator->evalVector(SIMD::size * gps, Evaluator::Params(), results);
-		for (size_t gp = 0; gp < gps; ++gp) {
-			for (size_t s = 0; s < SIMD::size; ++s) {
-				element.ecf.angularVelocity[gp][0][s] = results[gps * s + gp];
-			}
-		}
-	}
-};
-
-template <template <size_t, size_t, size_t, size_t, size_t> class DataDescriptor, size_t nodes, size_t gps, size_t ndim, size_t edim, size_t etype>
-Assembler::measurements StructuralMechanics::conditionsloop(ActionOperator::Action action, const std::vector<ActionOperator*> &ops, size_t interval, esint elements)
-{
-	double initStart, initEnd;
-	initStart = eslog::time();
-	if (this->K == nullptr) {
-		return loop<StructuralMechanicsDataDescriptor, nodes, gps, ndim, edim, etype>(action, ops, elements);
-	}
-	if (elements == 0) return { .0, .0 };
-
-	typename DataDescriptor<nodes, gps, ndim, edim, etype>::Element element;
-
-	for (auto op = ops.cbegin(); op != ops.cend(); ++op) {
-		if ((*op)->action & action) {
-			if (elements > SIMD::size) {
-				dynamic_cast<DataDescriptor<nodes, gps, ndim, edim, etype>*>(*op)->simd(element);
-			} else {
-				dynamic_cast<DataDescriptor<nodes, gps, ndim, edim, etype>*>(*op)->peel(element, elements);
-			}
-		}
-	}
-
-	auto procNodes = info::mesh->elements->nodes->cbegin() + info::mesh->elements->eintervals[interval].begin;
-	CoordinatesToElementNodes<nodes, gps, ndim, edim, etype, DataDescriptor<nodes, gps, ndim, edim, etype> > coo(interval, procNodes);
-	CoordinatesToElementNodesAndGPs<nodes, gps, ndim, edim, etype, DataDescriptor<nodes, gps, ndim, edim, etype> > cooAndGps(interval, procNodes);
-	Integration<nodes, gps, ndim, edim, etype, DataDescriptor<nodes, gps, ndim, edim, etype> > integration(interval);
-	StructuralMechanicsStiffness<nodes, gps, ndim, edim, etype, DataDescriptor<nodes, gps, ndim, edim, etype> > stiffness(interval, this->elements.stiffness);
-	Acceleration<nodes, gps, ndim, edim, etype, DataDescriptor<nodes, gps, ndim, edim, etype> > acceleration(interval, this->elements.rhs);
-	AngularVelocity<nodes, gps, ndim, edim, etype, DataDescriptor<nodes, gps, ndim, edim, etype> > velocity(interval, this->elements.rhs);
-
-//	applyRotation<DataDescriptor, nodes, gps, ndim, edim, etype> rotation(interval);
-	updateAcceleration<DataDescriptor, nodes, gps, ndim, edim, etype> updateAcc;
-	updateVelocity<DataDescriptor, nodes, gps, ndim, edim, etype> updateVelocity;
-
-	SymmetricMatricFiller<nodes, gps, ndim, edim, etype, DataDescriptor<nodes, gps, ndim, edim, etype> > upperFiller(interval, ndim, this->elements.stiffness, this->K);
-	GeneralMatricFiller<nodes, gps, ndim, edim, etype, DataDescriptor<nodes, gps, ndim, edim, etype> > fullFiller(interval, ndim, this->elements.stiffness, this->K);
-	VectorFiller<nodes, gps, ndim, edim, etype, DataDescriptor<nodes, gps, ndim, edim, etype> > rhsFiller(interval, ndim, this->elements.rhs, this->f);
-
-//	TemperatureGradient<nodes, gps, ndim, edim, etype, DataDescriptor<nodes, gps, ndim, edim, etype> > gradient(interval, Results::gradient);
-//	TemperatureFlux<nodes, gps, ndim, edim, etype, DataDescriptor<nodes, gps, ndim, edim, etype> > flux(interval, Results::flux);
-
-	coo.move(SIMD::size);
-	cooAndGps.move(SIMD::size);
-//	temp.move(SIMD::size);
-	stiffness.move(SIMD::size);
-	acceleration.move(SIMD::size);
-	velocity.move(SIMD::size);
-	upperFiller.move(SIMD::size);
-	fullFiller.move(SIMD::size);
-	rhsFiller.move(SIMD::size);
-//	heatSource.move(SIMD::size);
-
-//	gradient.move(ndim * SIMD::size);
-//	flux.move(ndim * SIMD::size);
-
-	const MaterialConfiguration *mat = info::mesh->materials[info::mesh->elements->eintervals[interval].material];
-	bool rotateConductivity = mat->thermal_conductivity.model != ThermalConductivityConfiguration::MODEL::ISOTROPIC;
-	// it is dirty hack just to be sure that compiler must assume both variants (currently settings.sigma = 0 and diffusion_split = false)
-//	bool constConductivity = !settings.diffusion_split;
-//	bool constRotation = settings.sigma == 0;
-//	if (mat->thermal_conductivity.model != ThermalConductivityConfiguration::MODEL::ISOTROPIC) {
-//		if (mat->coordinate_system.type == CoordinateSystemConfiguration::TYPE::CARTESIAN) {
-//			if (ndim == 2) {
-//				rotateConductivity &= mat->coordinate_system.rotation.z.isset;
-//			}
-//			if (ndim == 3) {
-//				rotateConductivity &= mat->coordinate_system.rotation.x.isset | mat->coordinate_system.rotation.y.isset | mat->coordinate_system.rotation.z.isset;
-//			}
-//		}
-//	}
-
-	bool hasAcceleration = false;
-	bool constAcceleration = true;
-	auto AccelerationEval = configuration.acceleration.find(info::mesh->elementsRegions[info::mesh->elements->eintervals[interval].region]->name);
-	if (AccelerationEval != configuration.acceleration.end()) {
-		hasAcceleration = true;
-		constAcceleration = AccelerationEval->second.x.evaluator->params.general.size() == 0 && AccelerationEval->second.y.evaluator->params.general.size() == 0 && AccelerationEval->second.z.evaluator->params.general.size() == 0;
-	}
-
-	bool hasVelocity = false;
-	bool constVelocity = true;
-	auto VelocityEval = configuration.acceleration.find(info::mesh->elementsRegions[info::mesh->elements->eintervals[interval].region]->name);
-	if (AccelerationEval != configuration.acceleration.end()) {
-		hasAcceleration = true;
-		constAcceleration = AccelerationEval->second.x.evaluator->params.general.size() == 0 && AccelerationEval->second.y.evaluator->params.general.size() == 0 && AccelerationEval->second.z.evaluator->params.general.size() == 0;
-	}
-
-	bool cooToGP = mat->coordinate_system.type != CoordinateSystemConfiguration::TYPE::CARTESIAN;
-	bool computeK = action == ActionOperator::ASSEMBLE || action == ActionOperator::REASSEMBLE;
-	bool computeGradient = action == ActionOperator::SOLUTION && info::ecf->output.results_selection.gradient;
-	bool computeFlux = action == ActionOperator::SOLUTION && info::ecf->output.results_selection.flux;
-	bool computeConductivity = computeK | computeFlux;
-	bool getTemp = computeGradient || computeFlux;
-	bool isfullMatrix = this->K->shape == Matrix_Shape::FULL;
-
-	initEnd = eslog::time();
-	double start, end;
-
-	if (action == ActionOperator::Action::ASSEMBLE)
-	{
-		start = eslog::time();
-		__SSC_MARK(0xFACE);
-		esint chunks = elements / SIMD::size;
-		for (esint c = 1; c < chunks; ++c) {
-
-		}
-		__SSC_MARK(0xDEAD);
-		end = eslog::time();
-	}
-
-	if (action == ActionOperator::Action::REASSEMBLE)
-	{
-		start = eslog::time();
-		__SSC_MARK(0xCAFE);
-		esint chunks = elements / SIMD::size;
-		for (esint c = 1; c < chunks; ++c) {
-
-		}
-		__SSC_MARK(0xDADE);
-		end = eslog::time();
-	}
-
-	if (action != ActionOperator::Action::REASSEMBLE && action != ActionOperator::Action::ASSEMBLE)
-	{
-		start = eslog::time();
-		__SSC_MARK(0xCAFE);
-		esint chunks = elements / SIMD::size;
-		for (esint c = 1; c < chunks; ++c) {
-
-		}
-		__SSC_MARK(0xDADE);
-		end = eslog::time();
-	}
-
-	esint chunks = elements / SIMD::size;
-	for (esint c = 1; c < chunks; ++c) {
-		if (cooToGP) {
-			cooAndGps.simd(element);
-		} else {
-			coo.simd(element);
-		}
-		integration.simd(element);
-//		if (getTemp) {
-//			temp.simd(element);
-//		}
-		if (computeConductivity) {
-//			if (!constConductivity) {
-//				updateConductivity<DataDescriptor, nodes, gps, ndim, edim, etype>()(element, mat);
-//			}
-//			if (rotateConductivity) {
-//				if (!constRotation) {
-//					updateRotation<DataDescriptor, nodes, gps, ndim, edim, etype>()(element, mat);
-//				}
-//				rotation(element, mat);
-//			}
-		}
-
-		if (computeK) {
-			stiffness.simd(element);
-			if (hasAcceleration) {
-				if (!constAcceleration) {
-					updateAcc(element, AccelerationEval->second.x.evaluator);
-				}
-				acceleration.simd(element);
-			}
-		}
-		if (action == ActionOperator::FILL) {
-			if (isfullMatrix) {
-				fullFiller.simd(element);
-			} else {
-				upperFiller.simd(element);
-			}
-			rhsFiller.simd(element);
-		}
-	}
-
-	if (elements % SIMD::size) {
-		eslog::error("peel loop is not supported\n");
-		// peel is never needed
-	}
-
-	for (auto op = ops.cbegin(); op != ops.cend(); ++op) {
-		if ((*op)->action & action) {
-			if ((*op)->isconst) {
-				(*op)->move(-(int)std::min(elements, (esint)SIMD::size));
-			} else {
-				(*op)->move(-(esint)SIMD::size);
-			}
-		}
-	}
-	return {initEnd - initStart, end - start};
-}
-
-template <template <size_t, size_t, size_t, size_t, size_t> class DataDescriptor, size_t nodes, size_t gps, size_t ndim, size_t edim, size_t etype>
-Assembler::measurements StructuralMechanics::manualloop(ActionOperator::Action action, const std::vector<ActionOperator*> &ops, size_t interval, esint elements)
-{
-	double initStart, initEnd;
-	eslog::info("       = LOOP TYPE                                                            MANUAL = \n");
-	if (elements == 0) return {0.0, 0.0};
-	initStart = eslog::time();
-	typename DataDescriptor<nodes, gps, ndim, edim, etype>::Element element;
-	std::vector<DataDescriptor<nodes, gps, ndim, edim, etype>*> active; active.reserve(ops.size());
-
-	for (auto op = ops.cbegin(); op != ops.cend(); ++op) {
-		if ((*op)->action & action) {
-			if (elements > SIMD::size) {
-				if ((*op)->isconst) {
-					dynamic_cast<DataDescriptor<nodes, gps, ndim, edim, etype>*>(*op)->simd(element);
-				} else {
-					active.push_back(dynamic_cast<DataDescriptor<nodes, gps, ndim, edim, etype>*>(*op));
-					active.back()->simd(element);
-				}
-			} else {
-				dynamic_cast<DataDescriptor<nodes, gps, ndim, edim, etype>*>(*op)->peel(element, elements);
-			}
-		}
-	}
-	initEnd = eslog::time();
-	double start = eslog::time();
-	esint chunks = elements / SIMD::size;
-	for (esint c = 1; c < chunks; ++c) {
-		for (auto op = active.cbegin(); op != active.cend(); ++op) {
-			(*op)->simd(element);
-		}
-	}
-	double end = eslog::time();
-
-	if (elements % SIMD::size) {
-		for (auto op = active.cbegin(); op != active.cend(); ++op) {
-			(*op)->peel(element, elements % SIMD::size);
-		}
-	}
-
-	for (auto op = ops.cbegin(); op != ops.cend(); ++op) {
-		if ((*op)->action & action) {
-			if ((*op)->isconst) {
-				(*op)->move(-(int)std::min(elements, (esint)SIMD::size));
-			} else {
-				(*op)->move(-elements);
-			}
-		}
-	}
-	return {initEnd - initStart, end - start};
 }
 
 template <>

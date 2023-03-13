@@ -80,6 +80,7 @@ protected:
 	void volume();
 	size_t esize();
 
+	std::vector<std::vector<double> > cossin_conditions;
 private:
 	void generateElasticity();
 };

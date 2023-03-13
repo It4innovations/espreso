@@ -24,7 +24,7 @@ struct CopyCoordinates: ActionOperator {
 	: procNodes(procNodes)
 	{
 		isconst = false;
-		action = Action::ASSEMBLE | Action::SOLUTION;
+		action = Action::ASSEMBLE | Action::REASSEMBLE;
 	}
 
 	void move(int n)

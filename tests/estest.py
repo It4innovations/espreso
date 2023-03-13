@@ -66,11 +66,6 @@ class ESPRESOTest:
 
         p = _popen()
         output, error = p.communicate()
-
-        if p.returncode: # if the program is killed try to run it again
-            p = _popen()
-            output, error = p.communicate()
-
         return (output.decode(), error.decode())
 
     @staticmethod

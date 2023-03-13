@@ -12,6 +12,8 @@ using namespace espreso;
 void HeatTransfer::generateConductivity()
 {
 	for(size_t interval = 0; interval < info::mesh->elements->eintervals.size(); ++interval) {
+		size_t opsize = elementOps[interval].size();
+
 		const MaterialConfiguration *mat = info::mesh->materials[info::mesh->elements->eintervals[interval].material];
 
 		bool isconst = true, rotate = mat->thermal_conductivity.model != ThermalConductivityConfiguration::MODEL::ISOTROPIC;
@@ -92,7 +94,7 @@ void HeatTransfer::generateConductivity()
 								[] (auto &element, const size_t &gp, const size_t &s, const double &value) { element.ecf.center[gp][1][s] = value; }));
 					isconst &= elementOps[interval].back()->isconst;
 					elementOps[interval].push_back(generateElementGeneralTypeOperator<HeatTransferCoordinateSystemCylindric>(interval, etype[interval]));
-					elementOps[interval].back()->isconst &= isconst;
+					isconst &= elementOps[interval].back()->isconst;
 					break;
 				}
 				if (settings.reassembling_optimization) {
@@ -225,7 +227,7 @@ void HeatTransfer::generateConductivity()
 								[] (auto &element, const size_t &gp, const size_t &s, const double &value) { element.ecf.center[gp][1][s] = value; }));
 					isconst &= elementOps[interval].back()->isconst;
 					elementOps[interval].push_back(generateElementGeneralTypeOperator<HeatTransferCoordinateSystemCylindric>(interval, etype[interval]));
-					elementOps[interval].back()->isconst &= isconst;
+					isconst &= elementOps[interval].back()->isconst;
 					break;
 				case CoordinateSystemConfiguration::TYPE::SPHERICAL:
 					elementOps[interval].push_back(generateGeneralTypeExpression3D<ExternalGPsExpression>(interval, etype[interval], mat->coordinate_system.center.x.evaluator,
@@ -238,13 +240,12 @@ void HeatTransfer::generateConductivity()
 								[] (auto &element, const size_t &gp, const size_t &s, const double &value) { element.ecf.center[gp][2][s] = value; }));
 					isconst &= elementOps[interval].back()->isconst;
 					elementOps[interval].push_back(generateElementGeneralTypeOperator3D<HeatTransferCoordinateSystemSpherical>(interval, etype[interval]));
-					elementOps[interval].back()->isconst &= isconst;
+					isconst &= elementOps[interval].back()->isconst;
 					break;
 				}
 				if (settings.reassembling_optimization) {
 					addGeneralTypeElementStorage3D(elementOps[interval], interval, etype[interval], [] (auto &element) { return sizeof(element.cossin); }, [] (auto &element) { return element.cossin; });
 				}
-				isconst &= elementOps[interval].back()->isconst;
 				elementOps[interval].push_back(generateElementGeneralTypeOperator<HeatTransferCoordinateSystemApply>(interval, etype[interval]));
 				elementOps[interval].back()->isconst &= isconst;
 			} else {
@@ -298,6 +299,11 @@ void HeatTransfer::generateConductivity()
 				}
 			}
 			break;
+		}
+		if (Results::flux == nullptr) {
+			for (size_t i = opsize; i < elementOps[interval].size(); ++i) {
+				ActionOperator::removeSolution(elementOps[interval][i]->action);
+			}
 		}
 	}
 }

@@ -912,6 +912,35 @@ struct loadCosSin<DataDescriptor, nodes, gps, 3, edim, HeatTransferElementType::
 	}
 };
 
+template <template <size_t, size_t, size_t, size_t, size_t> class DataDescriptor, size_t nodes, size_t gps, size_t ndim, size_t edim, size_t etype>
+struct updateThickness {
+	void operator()(typename DataDescriptor<nodes, gps, ndim, edim, etype>::Element &element, Evaluator* evaluator)
+	{
+
+	}
+};
+
+template <template <size_t, size_t, size_t, size_t, size_t> class DataDescriptor, size_t nodes, size_t gps, size_t edim, size_t etype>
+struct updateThickness<DataDescriptor, nodes, gps, 2, edim, etype> {
+	void operator()(typename DataDescriptor<nodes, gps, 2, edim, etype>::Element &element, Evaluator* evaluator)
+	{
+		double results[SIMD::size * gps];
+		evaluator->evalVector(SIMD::size * gps, Evaluator::Params(), results);
+		for (size_t gp = 0; gp < gps; ++gp) {
+			for (size_t s = 0; s < SIMD::size; ++s) {
+				element.ecf.thickness[gp][s] = results[gps * s + gp];
+			}
+		}
+	}
+};
+
+template <template <size_t, size_t, size_t, size_t, size_t> class DataDescriptor, size_t nodes, size_t gps, size_t edim, size_t etype>
+struct updateThickness<DataDescriptor, nodes, gps, 3, edim, etype> {
+	void operator()(typename DataDescriptor<nodes, gps, 3, edim, etype>::Element &element, Evaluator* evaluator)
+	{
+
+	}
+};
 
 template <template <size_t, size_t, size_t, size_t, size_t> class DataDescriptor, size_t nodes, size_t gps, size_t ndim, size_t edim, size_t etype>
 Assembler::measurements HeatTransfer::conditionsloop(ActionOperator::Action action, const std::vector<ActionOperator*> &ops, size_t interval, esint elements)
@@ -950,10 +979,7 @@ Assembler::measurements HeatTransfer::conditionsloop(ActionOperator::Action acti
 	applyRotation<DataDescriptor, nodes, gps, ndim, edim, etype> rotation(interval);
 	updateHeatSource<DataDescriptor, nodes, gps, ndim, edim, etype> updateHS;
 	updateTranslationMotion<DataDescriptor, nodes, gps, ndim, edim, etype> updateTM;
-
-	SymmetricMatricFiller<nodes, gps, ndim, edim, etype, DataDescriptor<nodes, gps, ndim, edim, etype> > upperFiller(interval, 1, this->elements.stiffness, this->K);
-	GeneralMatricFiller<nodes, gps, ndim, edim, etype, DataDescriptor<nodes, gps, ndim, edim, etype> > fullFiller(interval, 1, this->elements.stiffness, this->K);
-	VectorFiller<nodes, gps, ndim, edim, etype, DataDescriptor<nodes, gps, ndim, edim, etype> > rhsFiller(interval, 1, this->elements.rhs, this->f);
+	updateThickness<DataDescriptor, nodes, gps, ndim, edim, etype> updateThickness;
 
 	TemperatureGradient<nodes, gps, ndim, edim, etype, DataDescriptor<nodes, gps, ndim, edim, etype> > gradient(interval, Results::gradient);
 	TemperatureFlux<nodes, gps, ndim, edim, etype, DataDescriptor<nodes, gps, ndim, edim, etype> > flux(interval, Results::flux);
@@ -996,13 +1022,18 @@ Assembler::measurements HeatTransfer::conditionsloop(ActionOperator::Action acti
 		constAdvection = advectionEval->second.x.evaluator->params.general.size() == 0 && advectionEval->second.y.evaluator->params.general.size() == 0 && advectionEval->second.z.evaluator->params.general.size() == 0;
 	}
 
+	bool constThickness = true;
+	auto thicknessEval = settings.thickness.find(info::mesh->elementsRegions[info::mesh->elements->eintervals[interval].region]->name);
+	if (thicknessEval != settings.thickness.end()) {
+		constThickness = thicknessEval->second.evaluator->params.general.size() == 0;
+	}
+
 	bool cooToGP = mat->coordinate_system.type != CoordinateSystemConfiguration::TYPE::CARTESIAN;
 	bool computeK = action == ActionOperator::ASSEMBLE || action == ActionOperator::REASSEMBLE;
 	bool computeGradient = action == ActionOperator::SOLUTION && info::ecf->output.results_selection.gradient;
 	bool computeFlux = action == ActionOperator::SOLUTION && info::ecf->output.results_selection.flux;
 	bool computeConductivity = computeK | computeFlux;
 	bool getTemp = computeGradient || computeFlux;
-	bool isfullMatrix = this->K->shape == Matrix_Shape::FULL;
 
 	esint chunks = elements / SIMD::size;
 	double init = eslog::time() - initStart;
@@ -1031,10 +1062,6 @@ Assembler::measurements HeatTransfer::conditionsloop(ActionOperator::Action acti
 		flux.move(SIMD::size);
 	}
 
-	if (settings.reassembling_optimization && action == ActionOperator::ASSEMBLE) {
-
-	}
-
 	double start = eslog::time();
 	switch (action) {
 	case ActionOperator::ASSEMBLE  : __SSC_MARK(0xFACE); break;
@@ -1051,6 +1078,11 @@ Assembler::measurements HeatTransfer::conditionsloop(ActionOperator::Action acti
 			coo.simd(element);
 //			printf(" coo");
 		}
+		if (!constThickness) {
+			updateThickness(element, thicknessEval->second.evaluator);
+//			printf(" thickness");
+		}
+
 		integration.simd(element);
 //		printf(" integration");
 		if (getTemp) {

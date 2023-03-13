@@ -33,13 +33,13 @@ struct StructuralMechanicsGPC {
 
 struct StructuralMechanicsElementType {
 	enum: int {
-		SYMMETRIC_PLANE              = 10,
-		SYMMETRIC_PLANE_AXISYMMETRIC = 11,
-		SYMMETRIC_VOLUME             = 12,
-		FACE                         = 14,
-		EDGE                         = 15,
-		EDGE_AXISYMMETRIC            = 16,
-		NODE                         = 17
+		SYMMETRIC_PLANE              = 0,
+		SYMMETRIC_PLANE_AXISYMMETRIC = 1,
+		SYMMETRIC_VOLUME             = 2,
+		FACE                         = 4,
+		EDGE                         = 5,
+		EDGE_AXISYMMETRIC            = 6,
+		NODE                         = 7
 	};
 };
 
@@ -55,6 +55,7 @@ struct StructuralMechanicsDataDescriptor<nodes, gps, 2, edim, StructuralMechanic
 
 			alignas(SIMD::size * sizeof(double)) SIMD youngModulus[gps];
 			alignas(SIMD::size * sizeof(double)) SIMD poissonRatio[gps];
+			alignas(SIMD::size * sizeof(double)) SIMD center      [gps][2]; // or rotation in the case of cartesion
 			alignas(SIMD::size * sizeof(double)) SIMD elasticity  [gps][9];
 
 			alignas(SIMD::size * sizeof(double)) SIMD density     [gps];
@@ -74,6 +75,7 @@ struct StructuralMechanicsDataDescriptor<nodes, gps, 2, edim, StructuralMechanic
 		alignas(SIMD::size * sizeof(double)) SIMD dND[gps][nodes][edim];
 		alignas(SIMD::size * sizeof(double)) SIMD det[gps];
 
+		alignas(SIMD::size * sizeof(double)) SIMD cossin    [gps][4];
 		alignas(SIMD::size * sizeof(double)) SIMD elasticity[gps][9];
 
 		Element()
@@ -100,6 +102,7 @@ struct StructuralMechanicsDataDescriptor<nodes, gps, 2, edim, StructuralMechanic
 
 			alignas(SIMD::size * sizeof(double)) SIMD youngModulus[gps];
 			alignas(SIMD::size * sizeof(double)) SIMD poissonRatio[gps];
+			alignas(SIMD::size * sizeof(double)) SIMD center      [gps][2]; // or rotation in the case of cartesion
 			alignas(SIMD::size * sizeof(double)) SIMD elasticity  [gps][16];
 
 			alignas(SIMD::size * sizeof(double)) SIMD density     [gps];
@@ -119,6 +122,7 @@ struct StructuralMechanicsDataDescriptor<nodes, gps, 2, edim, StructuralMechanic
 		alignas(SIMD::size * sizeof(double)) SIMD dND[gps][nodes][edim];
 		alignas(SIMD::size * sizeof(double)) SIMD det[gps];
 
+		alignas(SIMD::size * sizeof(double)) SIMD cossin    [gps][4];
 		alignas(SIMD::size * sizeof(double)) SIMD elasticity[gps][16];
 
 		Element()

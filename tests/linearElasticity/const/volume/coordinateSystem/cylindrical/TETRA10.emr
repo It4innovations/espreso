@@ -2,4 +2,4 @@
 loadstep ;  substep ;         time ;  DISPLACEMENT  ;  DISPLACEMENT  ;  DISPLACEMENT  ;
          ;          ;              ;    <AVERAGE>   ;      <MAX>     ;      <MAX>     ;
 
-       1 ;        1 ;     1.000000 ;   6.600681e+01 ;   1.516743e+02 ;   0.000000e+00 ; 
+       1 ;        1 ;     1.000000 ;   7.261383e+01 ;   1.525931e+02 ;   0.000000e+00 ; 

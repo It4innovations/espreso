@@ -13,6 +13,8 @@ struct ActionOperator {
 		SOLUTION   = 1 << 4
 	};
 
+	static inline void removeSolution(Action &action);
+
 	int isconst, update;
 	Action action;
 
@@ -26,6 +28,8 @@ inline ActionOperator::Action  operator| (ActionOperator::Action  a1, ActionOper
 inline ActionOperator::Action  operator& (ActionOperator::Action  a1, ActionOperator::Action a2) { return static_cast<ActionOperator::Action>(static_cast<int>(a1) & static_cast<int>(a2)); }
 inline ActionOperator::Action& operator|=(ActionOperator::Action &a1, ActionOperator::Action a2) { a1 = a1 | a2; return a1; }
 inline ActionOperator::Action& operator&=(ActionOperator::Action &a1, ActionOperator::Action a2) { a1 = a1 & a2; return a1; }
+
+inline void ActionOperator::removeSolution(Action &action) { action &= Action::ASSEMBLE | Action::REASSEMBLE | Action::FILL; }
 
 }
 

@@ -15,6 +15,7 @@ namespace espreso {
 void StructuralMechanics::generateElasticity()
 {
 	for(size_t interval = 0; interval < info::mesh->elements->eintervals.size(); ++interval) {
+		size_t opsize = elementOps[interval].size();
 		const MaterialConfiguration *mat = info::mesh->materials[info::mesh->elements->eintervals[interval].material];
 
 		bool isconst = true, rotate = mat->linear_elastic_properties.model != LinearElasticPropertiesConfiguration::MODEL::ISOTROPIC;
@@ -168,7 +169,7 @@ void StructuralMechanics::generateElasticity()
 								[] (auto &element, const size_t &gp, const size_t &s, const double &value) { element.ecf.center[gp][1][s] = value; }));
 					isconst &= elementOps[interval].back()->isconst;
 					elementOps[interval].push_back(generateElementOperator3D<ElasticityCoordinateSystemCylindric>(interval, etype[interval]));
-					elementOps[interval].back()->isconst &= isconst;
+					isconst &= elementOps[interval].back()->isconst;
 					break;
 				case CoordinateSystemConfiguration::TYPE::SPHERICAL:
 					elementOps[interval].push_back(generateExpression3D<ExternalGPsExpression>(interval, etype[interval], mat->coordinate_system.center.x.evaluator,
@@ -181,7 +182,7 @@ void StructuralMechanics::generateElasticity()
 								[] (auto &element, const size_t &gp, const size_t &s, const double &value) { element.ecf.center[gp][2][s] = value; }));
 					isconst &= elementOps[interval].back()->isconst;
 					elementOps[interval].push_back(generateElementOperator3D<ElasticityCoordinateSystemSpherical>(interval, etype[interval]));
-					elementOps[interval].back()->isconst &= isconst;
+					isconst &= elementOps[interval].back()->isconst;
 					break;
 				}
 				elementOps[interval].push_back(generateElementOperator3D<ElasticityCoordinateSystemApply>(interval, etype[interval]));
@@ -192,7 +193,11 @@ void StructuralMechanics::generateElasticity()
 			}
 			break;
 		}
-
+		if (true) {
+			for (size_t i = opsize; i < elementOps[interval].size(); ++i) {
+				elementOps[interval][i]->action &= ActionOperator::ASSEMBLE | ActionOperator::REASSEMBLE;
+			}
+		}
 	}
 }
 

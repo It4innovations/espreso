@@ -398,6 +398,14 @@ void HeatTransfer::analyze()
 		generateElementOperators<TemperatureFlux>(etype, elementOps, Results::flux);
 	}
 
+	for(size_t i = 0; i < info::mesh->elements->eintervals.size(); ++i) {
+		if (Results::gradient == nullptr && Results::flux == nullptr) {
+			for (size_t j = 0; j < elementOps[i].size(); ++j) {
+				ActionOperator::removeSolution(elementOps[i][j]->action);
+			}
+		}
+	}
+
 	eslog::info("  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  \n");
 	eslog::info("  SIMD SIZE                                                                                 %lu \n", SIMD::size);
 	eslog::info("  MAX ELEMENT SIZE                                                                   %6lu B \n", esize());
@@ -474,8 +482,11 @@ void HeatTransfer::dryrun()
 	Assembler::measurements   solution_time = {0.0, 0.0};
 	int numreps = 1;
 	for(int reps = 0; reps < numreps; reps++) {
+		printf("assemble\n");
 		assemble_time += assemble(ActionOperator::Action::ASSEMBLE);
+		printf("reassemble\n");
 		reassemble_time += assemble(ActionOperator::Action::REASSEMBLE);
+		printf("solution\n");
 		solution_time += assemble(ActionOperator::Action::SOLUTION);
 	}
 

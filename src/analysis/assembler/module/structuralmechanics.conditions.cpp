@@ -6,6 +6,8 @@
 #include "analysis/assembler/operators/info.h"
 #include "analysis/assembler/operators/basis.h"
 #include "analysis/assembler/operators/coordinates.h"
+#include "analysis/assembler/operators/elasticity.h"
+#include "analysis/assembler/operators/elasticity.coordinatesystem.h"
 #include "analysis/assembler/operators/expression.h"
 #include "analysis/assembler/operators/integration.h"
 #include "analysis/assembler/operators/structuralmechanics.f.h"
@@ -29,6 +31,306 @@
 namespace espreso {
 
 template <template <size_t, size_t, size_t, size_t, size_t> class DataDescriptor, size_t nodes, size_t gps, size_t ndim, size_t edim, size_t etype>
+struct updateElasticity {
+	void operator()(typename DataDescriptor<nodes, gps, ndim, edim, etype>::Element &element, const MaterialConfiguration *mat)
+	{
+
+	}
+};
+
+template <template <size_t, size_t, size_t, size_t, size_t> class DataDescriptor, size_t nodes, size_t gps, size_t edim, size_t etype>
+struct updateElasticity<DataDescriptor, nodes, gps, 2, edim, etype> {
+	void operator()(typename DataDescriptor<nodes, gps, 2, edim, etype>::Element &element, const MaterialConfiguration *mat)
+	{
+		double results[SIMD::size * gps];
+		switch (mat->linear_elastic_properties.model) {
+		case LinearElasticPropertiesConfiguration::MODEL::ISOTROPIC:
+			mat->linear_elastic_properties.young_modulus.get(0, 0).evaluator->evalVector(SIMD::size * gps, Evaluator::Params(), results);
+			for (size_t gp = 0; gp < gps; ++gp) {
+				for (size_t s = 0; s < SIMD::size; ++s) {
+					element.ecf.youngModulus[gp][s] = results[gps * s + gp];
+				}
+			}
+			mat->linear_elastic_properties.poisson_ratio.get(0, 0).evaluator->evalVector(SIMD::size * gps, Evaluator::Params(), results);
+			for (size_t gp = 0; gp < gps; ++gp) {
+				for (size_t s = 0; s < SIMD::size; ++s) {
+					element.ecf.poissonRatio[gp][s] = results[gps * s + gp];
+				}
+			}
+			break;
+		case LinearElasticPropertiesConfiguration::MODEL::ORTHOTROPIC:
+			break;
+		case LinearElasticPropertiesConfiguration::MODEL::ANISOTROPIC:
+			break;
+		}
+	}
+};
+
+template <template <size_t, size_t, size_t, size_t, size_t> class DataDescriptor, size_t nodes, size_t gps, size_t edim>
+struct updateElasticity<DataDescriptor, nodes, gps, 3, edim, StructuralMechanicsElementType::SYMMETRIC_VOLUME> {
+	void operator()(typename DataDescriptor<nodes, gps, 3, edim, StructuralMechanicsElementType::SYMMETRIC_VOLUME>::Element &element, const MaterialConfiguration *mat)
+	{
+		double results[SIMD::size * gps];
+		switch (mat->linear_elastic_properties.model) {
+		case LinearElasticPropertiesConfiguration::MODEL::ISOTROPIC:
+			mat->linear_elastic_properties.young_modulus.get(0, 0).evaluator->evalVector(SIMD::size * gps, Evaluator::Params(), results);
+			for (size_t gp = 0; gp < gps; ++gp) {
+				for (size_t s = 0; s < SIMD::size; ++s) {
+					element.ecf.youngModulus[gp][0][s] = results[gps * s + gp];
+				}
+			}
+			mat->linear_elastic_properties.poisson_ratio.get(0, 0).evaluator->evalVector(SIMD::size * gps, Evaluator::Params(), results);
+			for (size_t gp = 0; gp < gps; ++gp) {
+				for (size_t s = 0; s < SIMD::size; ++s) {
+					element.ecf.poissonRatio[gp][0][s] = results[gps * s + gp];
+				}
+			}
+			break;
+		case LinearElasticPropertiesConfiguration::MODEL::ORTHOTROPIC:
+			mat->linear_elastic_properties.young_modulus.get(0, 0).evaluator->evalVector(SIMD::size * gps, Evaluator::Params(), results);
+			for (size_t gp = 0; gp < gps; ++gp) {
+				for (size_t s = 0; s < SIMD::size; ++s) {
+					element.ecf.youngModulus[gp][0][s] = results[gps * s + gp];
+				}
+			}
+			mat->linear_elastic_properties.young_modulus.get(1, 1).evaluator->evalVector(SIMD::size * gps, Evaluator::Params(), results);
+			for (size_t gp = 0; gp < gps; ++gp) {
+				for (size_t s = 0; s < SIMD::size; ++s) {
+					element.ecf.youngModulus[gp][1][s] = results[gps * s + gp];
+				}
+			}
+			mat->linear_elastic_properties.young_modulus.get(2, 2).evaluator->evalVector(SIMD::size * gps, Evaluator::Params(), results);
+			for (size_t gp = 0; gp < gps; ++gp) {
+				for (size_t s = 0; s < SIMD::size; ++s) {
+					element.ecf.youngModulus[gp][2][s] = results[gps * s + gp];
+				}
+			}
+			mat->linear_elastic_properties.poisson_ratio.get(0, 0).evaluator->evalVector(SIMD::size * gps, Evaluator::Params(), results);
+			for (size_t gp = 0; gp < gps; ++gp) {
+				for (size_t s = 0; s < SIMD::size; ++s) {
+					element.ecf.poissonRatio[gp][0][s] = results[gps * s + gp];
+				}
+			}
+			mat->linear_elastic_properties.poisson_ratio.get(1, 1).evaluator->evalVector(SIMD::size * gps, Evaluator::Params(), results);
+			for (size_t gp = 0; gp < gps; ++gp) {
+				for (size_t s = 0; s < SIMD::size; ++s) {
+					element.ecf.poissonRatio[gp][1][s] = results[gps * s + gp];
+				}
+			}
+			mat->linear_elastic_properties.poisson_ratio.get(1, 1).evaluator->evalVector(SIMD::size * gps, Evaluator::Params(), results);
+			for (size_t gp = 0; gp < gps; ++gp) {
+				for (size_t s = 0; s < SIMD::size; ++s) {
+					element.ecf.poissonRatio[gp][2][s] = results[gps * s + gp];
+				}
+			}
+			mat->linear_elastic_properties.shear_modulus.get(0, 0).evaluator->evalVector(SIMD::size * gps, Evaluator::Params(), results);
+			for (size_t gp = 0; gp < gps; ++gp) {
+				for (size_t s = 0; s < SIMD::size; ++s) {
+					element.ecf.shearModulus[gp][0][s] = results[gps * s + gp];
+				}
+			}
+			mat->linear_elastic_properties.shear_modulus.get(1, 1).evaluator->evalVector(SIMD::size * gps, Evaluator::Params(), results);
+			for (size_t gp = 0; gp < gps; ++gp) {
+				for (size_t s = 0; s < SIMD::size; ++s) {
+					element.ecf.shearModulus[gp][1][s] = results[gps * s + gp];
+				}
+			}
+			mat->linear_elastic_properties.shear_modulus.get(1, 1).evaluator->evalVector(SIMD::size * gps, Evaluator::Params(), results);
+			for (size_t gp = 0; gp < gps; ++gp) {
+				for (size_t s = 0; s < SIMD::size; ++s) {
+					element.ecf.shearModulus[gp][2][s] = results[gps * s + gp];
+				}
+			}
+			break;
+		case LinearElasticPropertiesConfiguration::MODEL::ANISOTROPIC:
+			break;
+		}
+	}
+};
+
+template <template <size_t, size_t, size_t, size_t, size_t> class DataDescriptor, size_t nodes, size_t gps, size_t ndim, size_t edim, size_t etype>
+struct updateRotation {
+	void operator()(typename DataDescriptor<nodes, gps, ndim, edim, etype>::Element &element, const MaterialConfiguration *mat)
+	{
+
+	}
+};
+
+template <template <size_t, size_t, size_t, size_t, size_t> class DataDescriptor, size_t nodes, size_t gps, size_t edim, size_t etype>
+struct updateRotation<DataDescriptor, nodes, gps, 2, edim, etype> {
+	void operator()(typename DataDescriptor<nodes, gps, 2, edim, etype>::Element &element, const MaterialConfiguration *mat)
+	{
+		double results[SIMD::size * gps];
+		switch (mat->coordinate_system.type) {
+		case CoordinateSystemConfiguration::TYPE::CARTESIAN:
+			mat->coordinate_system.rotation.z.evaluator->evalVector(SIMD::size * gps, Evaluator::Params(), results);
+			for (size_t gp = 0; gp < gps; ++gp) {
+				for (size_t s = 0; s < SIMD::size; ++s) {
+					element.ecf.center[gp][0][s] = results[gps * s + gp];
+				}
+			}
+			break;
+		case CoordinateSystemConfiguration::TYPE::CYLINDRICAL:
+			mat->coordinate_system.center.x.evaluator->evalVector(SIMD::size * gps, Evaluator::Params(), results);
+			for (size_t gp = 0; gp < gps; ++gp) {
+				for (size_t s = 0; s < SIMD::size; ++s) {
+					element.ecf.center[gp][0][s] = results[gps * s + gp];
+				}
+			}
+			mat->coordinate_system.center.y.evaluator->evalVector(SIMD::size * gps, Evaluator::Params(), results);
+			for (size_t gp = 0; gp < gps; ++gp) {
+				for (size_t s = 0; s < SIMD::size; ++s) {
+					element.ecf.center[gp][1][s] = results[gps * s + gp];
+				}
+			}
+			break;
+		case CoordinateSystemConfiguration::TYPE::SPHERICAL:
+			break;
+		}
+	}
+};
+
+template <template <size_t, size_t, size_t, size_t, size_t> class DataDescriptor, size_t nodes, size_t gps, size_t edim, size_t etype>
+struct updateRotation<DataDescriptor, nodes, gps, 3, edim, etype> {
+	void operator()(typename DataDescriptor<nodes, gps, 3, edim, etype>::Element &element, const MaterialConfiguration *mat)
+	{
+		double results[SIMD::size * gps];
+		switch (mat->coordinate_system.type) {
+		case CoordinateSystemConfiguration::TYPE::CARTESIAN:
+			mat->coordinate_system.rotation.x.evaluator->evalVector(SIMD::size * gps, Evaluator::Params(), results);
+			for (size_t gp = 0; gp < gps; ++gp) {
+				for (size_t s = 0; s < SIMD::size; ++s) {
+					element.ecf.center[gp][0][s] = results[gps * s + gp];
+				}
+			}
+			mat->coordinate_system.rotation.y.evaluator->evalVector(SIMD::size * gps, Evaluator::Params(), results);
+			for (size_t gp = 0; gp < gps; ++gp) {
+				for (size_t s = 0; s < SIMD::size; ++s) {
+					element.ecf.center[gp][1][s] = results[gps * s + gp];
+				}
+			}
+			mat->coordinate_system.rotation.z.evaluator->evalVector(SIMD::size * gps, Evaluator::Params(), results);
+			for (size_t gp = 0; gp < gps; ++gp) {
+				for (size_t s = 0; s < SIMD::size; ++s) {
+					element.ecf.center[gp][2][s] = results[gps * s + gp];
+				}
+			}
+			break;
+		case CoordinateSystemConfiguration::TYPE::CYLINDRICAL:
+			mat->coordinate_system.center.x.evaluator->evalVector(SIMD::size * gps, Evaluator::Params(), results);
+			for (size_t gp = 0; gp < gps; ++gp) {
+				for (size_t s = 0; s < SIMD::size; ++s) {
+					element.ecf.center[gp][0][s] = results[gps * s + gp];
+				}
+			}
+			mat->coordinate_system.center.y.evaluator->evalVector(SIMD::size * gps, Evaluator::Params(), results);
+			for (size_t gp = 0; gp < gps; ++gp) {
+				for (size_t s = 0; s < SIMD::size; ++s) {
+					element.ecf.center[gp][1][s] = results[gps * s + gp];
+				}
+			}
+			break;
+		case CoordinateSystemConfiguration::TYPE::SPHERICAL:
+			mat->coordinate_system.center.x.evaluator->evalVector(SIMD::size * gps, Evaluator::Params(), results);
+			for (size_t gp = 0; gp < gps; ++gp) {
+				for (size_t s = 0; s < SIMD::size; ++s) {
+					element.ecf.center[gp][0][s] = results[gps * s + gp];
+				}
+			}
+			mat->coordinate_system.center.y.evaluator->evalVector(SIMD::size * gps, Evaluator::Params(), results);
+			for (size_t gp = 0; gp < gps; ++gp) {
+				for (size_t s = 0; s < SIMD::size; ++s) {
+					element.ecf.center[gp][1][s] = results[gps * s + gp];
+				}
+			}
+			mat->coordinate_system.center.z.evaluator->evalVector(SIMD::size * gps, Evaluator::Params(), results);
+			for (size_t gp = 0; gp < gps; ++gp) {
+				for (size_t s = 0; s < SIMD::size; ++s) {
+					element.ecf.center[gp][2][s] = results[gps * s + gp];
+				}
+			}
+			break;
+		}
+	}
+};
+
+template <template <size_t, size_t, size_t, size_t, size_t> class DataDescriptor, size_t nodes, size_t gps, size_t ndim, size_t edim, size_t etype>
+struct updateCosSin {
+	void operator()(typename DataDescriptor<nodes, gps, ndim, edim, etype>::Element &element, const MaterialConfiguration *mat)
+	{
+
+	}
+};
+
+template <template <size_t, size_t, size_t, size_t, size_t> class DataDescriptor, size_t nodes, size_t gps, size_t edim, size_t etype>
+struct updateCosSin<DataDescriptor, nodes, gps, 3, edim, etype> {
+	ElasticityCoordinateSystemCartesian<nodes, gps, 3, edim, etype, DataDescriptor<nodes, gps, 3, edim, etype> > rotationCartesian;
+	ElasticityCoordinateSystemCylindric<nodes, gps, 3, edim, etype, DataDescriptor<nodes, gps, 3, edim, etype> > rotationCylindric;
+	ElasticityCoordinateSystemSpherical<nodes, gps, 3, edim, etype, DataDescriptor<nodes, gps, 3, edim, etype> > rotationSpherical;
+
+	updateCosSin(size_t interval): rotationCartesian(interval), rotationCylindric(interval), rotationSpherical(interval) {}
+
+	void operator()(typename DataDescriptor<nodes, gps, 3, edim, etype>::Element &element, const MaterialConfiguration *mat)
+	{
+		switch (mat->coordinate_system.type) {
+		case CoordinateSystemConfiguration::TYPE::CARTESIAN  : rotationCartesian.simd(element); break;
+		case CoordinateSystemConfiguration::TYPE::CYLINDRICAL: rotationCylindric.simd(element); break;
+		case CoordinateSystemConfiguration::TYPE::SPHERICAL  : rotationSpherical.simd(element); break;
+		}
+	}
+};
+
+template <template <size_t, size_t, size_t, size_t, size_t> class DataDescriptor, size_t nodes, size_t gps, size_t edim, size_t etype>
+struct updateCosSin<DataDescriptor, nodes, gps, 2, edim, etype> {
+	ElasticityCoordinateSystemCartesian<nodes, gps, 2, edim, etype, DataDescriptor<nodes, gps, 2, edim, etype> > rotationCartesian;
+	ElasticityCoordinateSystemCylindric<nodes, gps, 2, edim, etype, DataDescriptor<nodes, gps, 2, edim, etype> > rotationCylindric;
+
+	updateCosSin(size_t interval): rotationCartesian(interval), rotationCylindric(interval) {}
+
+	void operator()(typename DataDescriptor<nodes, gps, 2, edim, etype>::Element &element, const MaterialConfiguration *mat)
+	{
+		switch (mat->coordinate_system.type) {
+		case CoordinateSystemConfiguration::TYPE::CARTESIAN  : rotationCartesian.simd(element); break;
+		case CoordinateSystemConfiguration::TYPE::CYLINDRICAL: rotationCylindric.simd(element); break;
+		}
+	}
+};
+
+template <template <size_t, size_t, size_t, size_t, size_t> class DataDescriptor, size_t nodes, size_t gps, size_t ndim, size_t edim, size_t etype>
+struct applyRotation {
+	void operator()(typename DataDescriptor<nodes, gps, ndim, edim, etype>::Element &element)
+	{
+
+	}
+};
+
+template <template <size_t, size_t, size_t, size_t, size_t> class DataDescriptor, size_t nodes, size_t gps, size_t edim, size_t etype>
+struct applyRotation<DataDescriptor, nodes, gps, 2, edim, etype> {
+	ElasticityCoordinateSystemApply <nodes, gps, 2, edim, etype, DataDescriptor<nodes, gps, 2, edim, etype> > apply;
+
+	applyRotation(size_t interval): apply(interval) {}
+
+	void operator()(typename DataDescriptor<nodes, gps, 2, edim, etype>::Element &element)
+	{
+		apply.simd(element);
+	}
+};
+
+
+template <template <size_t, size_t, size_t, size_t, size_t> class DataDescriptor, size_t nodes, size_t gps, size_t edim, size_t etype>
+struct applyRotation<DataDescriptor, nodes, gps, 3, edim, etype> {
+	ElasticityCoordinateSystemApply <nodes, gps, 3, edim, etype, DataDescriptor<nodes, gps, 3, edim, etype> > apply;
+
+	applyRotation(size_t interval): apply(interval) {}
+
+	void operator()(typename DataDescriptor<nodes, gps, 3, edim, etype>::Element &element)
+	{
+		apply.simd(element);
+	}
+};
+
+
+template <template <size_t, size_t, size_t, size_t, size_t> class DataDescriptor, size_t nodes, size_t gps, size_t ndim, size_t edim, size_t etype>
 struct updateAcceleration {
 	void operator()(typename DataDescriptor<nodes, gps, ndim, edim, etype>::Element &element, Evaluator* evaluator)
 	{
@@ -39,6 +341,98 @@ struct updateAcceleration {
 				element.ecf.acceleration[gp][0][s] = results[gps * s + gp];
 			}
 		}
+	}
+};
+
+template <template <size_t, size_t, size_t, size_t, size_t> class DataDescriptor, size_t nodes, size_t gps, size_t ndim, size_t edim, size_t etype>
+struct storeCosSin {
+
+	storeCosSin(std::vector<double> &storage, size_t elements) {}
+
+	void operator()(typename DataDescriptor<nodes, gps, ndim, edim, etype>::Element &element)
+	{
+
+	}
+};
+
+template <template <size_t, size_t, size_t, size_t, size_t> class DataDescriptor, size_t nodes, size_t gps, size_t edim, size_t etype>
+struct storeCosSin<DataDescriptor, nodes, gps, 2, edim, etype> {
+
+	std::vector<double> &storage;
+	double* iterator;
+	storeCosSin(std::vector<double> &storage, size_t elements): storage(storage)
+	{
+		storage.resize(4 * elements * gps * SIMD::size);
+		iterator = storage.data();
+	}
+
+	void operator()(typename DataDescriptor<nodes, gps, 2, edim, etype>::Element &element)
+	{
+		memcpy(iterator, element.cossin, 4 * gps * SIMD::size * sizeof(double));
+		iterator += 4 * gps * SIMD::size;
+	}
+};
+
+template <template <size_t, size_t, size_t, size_t, size_t> class DataDescriptor, size_t nodes, size_t gps, size_t edim, size_t etype>
+struct storeCosSin<DataDescriptor, nodes, gps, 3, edim, etype> {
+
+	std::vector<double> &storage;
+	double* iterator;
+	storeCosSin(std::vector<double> &storage, size_t elements): storage(storage)
+	{
+		storage.resize(12 * elements * gps * SIMD::size);
+		iterator = storage.data();
+	}
+
+	void operator()(typename DataDescriptor<nodes, gps, 3, edim, etype>::Element &element)
+	{
+		memcpy(iterator, element.cossin, 12 * gps * SIMD::size * sizeof(double));
+		iterator += 12 * gps * SIMD::size;
+	}
+};
+
+template <template <size_t, size_t, size_t, size_t, size_t> class DataDescriptor, size_t nodes, size_t gps, size_t ndim, size_t edim, size_t etype>
+struct loadCosSin {
+
+	loadCosSin(std::vector<double> &storage) {}
+
+	void operator()(typename DataDescriptor<nodes, gps, ndim, edim, etype>::Element &element)
+	{
+
+	}
+};
+
+template <template <size_t, size_t, size_t, size_t, size_t> class DataDescriptor, size_t nodes, size_t gps, size_t edim, size_t etype>
+struct loadCosSin<DataDescriptor, nodes, gps, 2, edim, etype> {
+
+	std::vector<double> &storage;
+	double* iterator;
+	loadCosSin(std::vector<double> &storage): storage(storage)
+	{
+		iterator = storage.data();
+	}
+
+	void operator()(typename DataDescriptor<nodes, gps, 2, edim, etype>::Element &element)
+	{
+		memcpy(element.cossin, iterator, 4 * gps * SIMD::size * sizeof(double));
+		iterator += 4 * gps * SIMD::size;
+	}
+};
+
+template <template <size_t, size_t, size_t, size_t, size_t> class DataDescriptor, size_t nodes, size_t gps, size_t edim, size_t etype>
+struct loadCosSin<DataDescriptor, nodes, gps, 3, edim, etype> {
+
+	std::vector<double> &storage;
+	double* iterator;
+	loadCosSin(std::vector<double> &storage): storage(storage)
+	{
+		iterator = storage.data();
+	}
+
+	void operator()(typename DataDescriptor<nodes, gps, 3, edim, etype>::Element &element)
+	{
+		memcpy(element.cossin, iterator, 12 * gps * SIMD::size * sizeof(double));
+		iterator += 12 * gps * SIMD::size;
 	}
 };
 
@@ -73,14 +467,44 @@ struct updateVelocity<DataDescriptor, nodes, gps, 3, edim, etype> {
 };
 
 template <template <size_t, size_t, size_t, size_t, size_t> class DataDescriptor, size_t nodes, size_t gps, size_t ndim, size_t edim, size_t etype>
+struct updateThickness {
+	void operator()(typename DataDescriptor<nodes, gps, ndim, edim, etype>::Element &element, Evaluator* evaluator)
+	{
+
+	}
+};
+
+template <template <size_t, size_t, size_t, size_t, size_t> class DataDescriptor, size_t nodes, size_t gps, size_t edim, size_t etype>
+struct updateThickness<DataDescriptor, nodes, gps, 2, edim, etype> {
+	void operator()(typename DataDescriptor<nodes, gps, 2, edim, etype>::Element &element, Evaluator* evaluator)
+	{
+		double results[SIMD::size * gps];
+		evaluator->evalVector(SIMD::size * gps, Evaluator::Params(), results);
+		for (size_t gp = 0; gp < gps; ++gp) {
+			for (size_t s = 0; s < SIMD::size; ++s) {
+				element.ecf.thickness[gp][s] = results[gps * s + gp];
+			}
+		}
+	}
+};
+
+template <template <size_t, size_t, size_t, size_t, size_t> class DataDescriptor, size_t nodes, size_t gps, size_t edim, size_t etype>
+struct updateThickness<DataDescriptor, nodes, gps, 3, edim, etype> {
+	void operator()(typename DataDescriptor<nodes, gps, 3, edim, etype>::Element &element, Evaluator* evaluator)
+	{
+
+	}
+};
+
+template <template <size_t, size_t, size_t, size_t, size_t> class DataDescriptor, size_t nodes, size_t gps, size_t ndim, size_t edim, size_t etype>
 Assembler::measurements StructuralMechanics::conditionsloop(ActionOperator::Action action, const std::vector<ActionOperator*> &ops, size_t interval, esint elements)
 {
-	double initStart, initEnd;
-	initStart = eslog::time();
 	if (this->K == nullptr) {
 		return loop<StructuralMechanicsDataDescriptor, nodes, gps, ndim, edim, etype>(action, ops, elements);
 	}
 	if (elements == 0) return { .0, .0 };
+
+	double initStart = eslog::time();
 
 	typename DataDescriptor<nodes, gps, ndim, edim, etype>::Element element;
 
@@ -102,46 +526,42 @@ Assembler::measurements StructuralMechanics::conditionsloop(ActionOperator::Acti
 	Acceleration<nodes, gps, ndim, edim, etype, DataDescriptor<nodes, gps, ndim, edim, etype> > acceleration(interval, this->elements.rhs);
 	AngularVelocity<nodes, gps, ndim, edim, etype, DataDescriptor<nodes, gps, ndim, edim, etype> > velocity(interval, this->elements.rhs);
 
-//	applyRotation<DataDescriptor, nodes, gps, ndim, edim, etype> rotation(interval);
+	updateCosSin<DataDescriptor, nodes, gps, ndim, edim, etype> cossin(interval);
+	storeCosSin<DataDescriptor, nodes, gps, ndim, edim, etype> storecossin(cossin_conditions[interval], elements);
+	loadCosSin<DataDescriptor, nodes, gps, ndim, edim, etype> loadcossin(cossin_conditions[interval]);
+	applyRotation<DataDescriptor, nodes, gps, ndim, edim, etype> rotation(interval);
 	updateAcceleration<DataDescriptor, nodes, gps, ndim, edim, etype> updateAcc;
 	updateVelocity<DataDescriptor, nodes, gps, ndim, edim, etype> updateVelocity;
-
-	SymmetricMatricFiller<nodes, gps, ndim, edim, etype, DataDescriptor<nodes, gps, ndim, edim, etype> > upperFiller(interval, ndim, this->elements.stiffness, this->K);
-	GeneralMatricFiller<nodes, gps, ndim, edim, etype, DataDescriptor<nodes, gps, ndim, edim, etype> > fullFiller(interval, ndim, this->elements.stiffness, this->K);
-	VectorFiller<nodes, gps, ndim, edim, etype, DataDescriptor<nodes, gps, ndim, edim, etype> > rhsFiller(interval, ndim, this->elements.rhs, this->f);
+	updateThickness<DataDescriptor, nodes, gps, ndim, edim, etype> updateThickness;
 
 //	TemperatureGradient<nodes, gps, ndim, edim, etype, DataDescriptor<nodes, gps, ndim, edim, etype> > gradient(interval, Results::gradient);
 //	TemperatureFlux<nodes, gps, ndim, edim, etype, DataDescriptor<nodes, gps, ndim, edim, etype> > flux(interval, Results::flux);
-
-	coo.move(SIMD::size);
-	cooAndGps.move(SIMD::size);
-//	temp.move(SIMD::size);
-	stiffness.move(SIMD::size);
-	acceleration.move(SIMD::size);
-	velocity.move(SIMD::size);
-	upperFiller.move(SIMD::size);
-	fullFiller.move(SIMD::size);
-	rhsFiller.move(SIMD::size);
-//	heatSource.move(SIMD::size);
 
 //	gradient.move(ndim * SIMD::size);
 //	flux.move(ndim * SIMD::size);
 
 	const MaterialConfiguration *mat = info::mesh->materials[info::mesh->elements->eintervals[interval].material];
-	bool rotateConductivity = mat->thermal_conductivity.model != ThermalConductivityConfiguration::MODEL::ISOTROPIC;
+	bool rotateElasticity = mat->linear_elastic_properties.model != LinearElasticPropertiesConfiguration::MODEL::ISOTROPIC;
+	bool constCosSin = mat->coordinate_system.type == CoordinateSystemConfiguration::TYPE::CARTESIAN;
 	// it is dirty hack just to be sure that compiler must assume both variants (currently settings.sigma = 0 and diffusion_split = false)
-//	bool constConductivity = !settings.diffusion_split;
-//	bool constRotation = settings.sigma == 0;
-//	if (mat->thermal_conductivity.model != ThermalConductivityConfiguration::MODEL::ISOTROPIC) {
-//		if (mat->coordinate_system.type == CoordinateSystemConfiguration::TYPE::CARTESIAN) {
-//			if (ndim == 2) {
-//				rotateConductivity &= mat->coordinate_system.rotation.z.isset;
-//			}
-//			if (ndim == 3) {
-//				rotateConductivity &= mat->coordinate_system.rotation.x.isset | mat->coordinate_system.rotation.y.isset | mat->coordinate_system.rotation.z.isset;
-//			}
-//		}
-//	}
+	bool constElasticity = !settings.contact_interfaces;
+	bool constRotation = settings.load_steps == 1;
+	if (mat->linear_elastic_properties.model != LinearElasticPropertiesConfiguration::MODEL::ISOTROPIC) {
+		if (mat->coordinate_system.type == CoordinateSystemConfiguration::TYPE::CARTESIAN) {
+			if (ndim == 2) {
+				rotateElasticity &= mat->coordinate_system.rotation.z.isset;
+			}
+			if (ndim == 3) {
+				rotateElasticity &= mat->coordinate_system.rotation.x.isset | mat->coordinate_system.rotation.y.isset | mat->coordinate_system.rotation.z.isset;
+			}
+		}
+	}
+
+	if (info::ecf->always_update_conductivity) { // TODO
+		constElasticity = false;
+	}
+	bool storeCosSin = settings.reassembling_optimization && action == ActionOperator::ASSEMBLE;
+	bool loadCosSin  = settings.reassembling_optimization && action != ActionOperator::ASSEMBLE;
 
 	bool hasAcceleration = false;
 	bool constAcceleration = true;
@@ -153,100 +573,127 @@ Assembler::measurements StructuralMechanics::conditionsloop(ActionOperator::Acti
 
 	bool hasVelocity = false;
 	bool constVelocity = true;
-	auto VelocityEval = configuration.acceleration.find(info::mesh->elementsRegions[info::mesh->elements->eintervals[interval].region]->name);
-	if (AccelerationEval != configuration.acceleration.end()) {
-		hasAcceleration = true;
-		constAcceleration = AccelerationEval->second.x.evaluator->params.general.size() == 0 && AccelerationEval->second.y.evaluator->params.general.size() == 0 && AccelerationEval->second.z.evaluator->params.general.size() == 0;
+	auto VelocityEval = configuration.angular_velocity.find(info::mesh->elementsRegions[info::mesh->elements->eintervals[interval].region]->name);
+	if (VelocityEval != configuration.angular_velocity.end()) {
+		hasVelocity = true;
+		constVelocity = VelocityEval->second.x.evaluator->params.general.size() == 0 && VelocityEval->second.y.evaluator->params.general.size() == 0 && VelocityEval->second.z.evaluator->params.general.size() == 0;
 	}
 
-	bool cooToGP = mat->coordinate_system.type != CoordinateSystemConfiguration::TYPE::CARTESIAN;
+	bool constThickness = true;
+	auto thicknessEval = settings.thickness.find(info::mesh->elementsRegions[info::mesh->elements->eintervals[interval].region]->name);
+	if (thicknessEval != settings.thickness.end()) {
+		constThickness = thicknessEval->second.evaluator->params.general.size() == 0;
+	}
+
+	bool cooToGP = mat->coordinate_system.type != CoordinateSystemConfiguration::TYPE::CARTESIAN || hasVelocity || axisymmetric;
 	bool computeK = action == ActionOperator::ASSEMBLE || action == ActionOperator::REASSEMBLE;
 	bool computeGradient = action == ActionOperator::SOLUTION && info::ecf->output.results_selection.gradient;
 	bool computeFlux = action == ActionOperator::SOLUTION && info::ecf->output.results_selection.flux;
-	bool computeConductivity = computeK | computeFlux;
-	bool getTemp = computeGradient || computeFlux;
-	bool isfullMatrix = this->K->shape == Matrix_Shape::FULL;
-
-	initEnd = eslog::time();
-	double start, end;
-
-	if (action == ActionOperator::Action::ASSEMBLE)
-	{
-		start = eslog::time();
-		__SSC_MARK(0xFACE);
-		esint chunks = elements / SIMD::size;
-		for (esint c = 1; c < chunks; ++c) {
-
-		}
-		__SSC_MARK(0xDEAD);
-		end = eslog::time();
-	}
-
-	if (action == ActionOperator::Action::REASSEMBLE)
-	{
-		start = eslog::time();
-		__SSC_MARK(0xCAFE);
-		esint chunks = elements / SIMD::size;
-		for (esint c = 1; c < chunks; ++c) {
-
-		}
-		__SSC_MARK(0xDADE);
-		end = eslog::time();
-	}
-
-	if (action != ActionOperator::Action::REASSEMBLE && action != ActionOperator::Action::ASSEMBLE)
-	{
-		start = eslog::time();
-		__SSC_MARK(0xCAFE);
-		esint chunks = elements / SIMD::size;
-		for (esint c = 1; c < chunks; ++c) {
-
-		}
-		__SSC_MARK(0xDADE);
-		end = eslog::time();
-	}
+	bool computeElasticity = computeK;
 
 	esint chunks = elements / SIMD::size;
+	double init = eslog::time() - initStart;
+
+	if (cooToGP) {
+		cooAndGps.move(SIMD::size);
+	} else {
+		coo.move(SIMD::size);
+	}
+	if (computeK) {
+		stiffness.move(SIMD::size);
+		if (hasAcceleration) {
+			acceleration.move(SIMD::size);
+		}
+		if (hasVelocity) {
+			velocity.move(SIMD::size);
+		}
+	}
+
+	double start = eslog::time();
+	switch (action) {
+	case ActionOperator::ASSEMBLE  : __SSC_MARK(0xFACE); break;
+	case ActionOperator::REASSEMBLE: __SSC_MARK(0xCAFE); break;
+	case ActionOperator::SOLUTION  : __SSC_MARK(0xCAFE); break; // TODO
+	default:
+		eslog::error("unsupported action\n");
+	}
 	for (esint c = 1; c < chunks; ++c) {
 		if (cooToGP) {
 			cooAndGps.simd(element);
+//			printf(" cooAndGps");
 		} else {
 			coo.simd(element);
+//			printf(" coo");
+		}
+		if (!constThickness) {
+			updateThickness(element, thicknessEval->second.evaluator);
+//			printf(" thickness");
 		}
 		integration.simd(element);
+//		printf(" integration");
 //		if (getTemp) {
 //			temp.simd(element);
 //		}
-		if (computeConductivity) {
-//			if (!constConductivity) {
-//				updateConductivity<DataDescriptor, nodes, gps, ndim, edim, etype>()(element, mat);
-//			}
-//			if (rotateConductivity) {
-//				if (!constRotation) {
-//					updateRotation<DataDescriptor, nodes, gps, ndim, edim, etype>()(element, mat);
-//				}
-//				rotation(element, mat);
-//			}
+
+		if (computeElasticity) {
+			if (!constElasticity) {
+				updateElasticity<DataDescriptor, nodes, gps, ndim, edim, etype>()(element, mat);
+//				printf(" updateConductivity");
+			}
+			if (rotateElasticity) {
+				if (!constRotation) {
+					updateRotation<DataDescriptor, nodes, gps, ndim, edim, etype>()(element, mat);
+//					printf(" updateRotation");
+				}
+				if (!constCosSin) {
+					if (loadCosSin) {
+//						printf(" loadCosSin");
+						loadcossin(element);
+					} else {
+//						printf(" updateCosSin");
+						cossin(element, mat);
+					}
+					if (storeCosSin) {
+//						printf(" storeCosSin");
+						storecossin(element);
+					}
+				}
+				rotation(element);
+//				printf(" rotation");
+			}
 		}
 
 		if (computeK) {
 			stiffness.simd(element);
+//			printf(" stiffness");
 			if (hasAcceleration) {
 				if (!constAcceleration) {
 					updateAcc(element, AccelerationEval->second.x.evaluator);
+//					printf(" updateAcc");
 				}
 				acceleration.simd(element);
+//				printf(" acc");
+			}
+			if (hasVelocity) {
+				if (!constVelocity) {
+					updateVelocity(element, VelocityEval->second.x.evaluator);
+//					printf(" updateVel");
+				}
+				velocity.simd(element);
+//				printf(" velocity");
 			}
 		}
-		if (action == ActionOperator::FILL) {
-			if (isfullMatrix) {
-				fullFiller.simd(element);
-			} else {
-				upperFiller.simd(element);
-			}
-			rhsFiller.simd(element);
-		}
+//		printf("\n");
 	}
+
+	switch (action) {
+	case ActionOperator::ASSEMBLE  : __SSC_MARK(0xDEAD); break;
+	case ActionOperator::REASSEMBLE: __SSC_MARK(0xFADE); break;
+	case ActionOperator::SOLUTION  : __SSC_MARK(0xFADE); break; // TODO
+	default:
+		eslog::error("unsupported action\n");
+	}
+	double loop = eslog::time() - start;
 
 	if (elements % SIMD::size) {
 		eslog::error("peel loop is not supported\n");
@@ -262,7 +709,7 @@ Assembler::measurements StructuralMechanics::conditionsloop(ActionOperator::Acti
 			}
 		}
 	}
-	return {initEnd - initStart, end - start};
+	return { init, loop };
 }
 
 template <int etype>
