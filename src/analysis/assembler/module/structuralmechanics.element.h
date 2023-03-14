@@ -65,6 +65,7 @@ struct StructuralMechanicsDataDescriptor<nodes, gps, 2, edim, StructuralMechanic
 			alignas(SIMD::size * sizeof(double)) SIMD angularVelocity[gps];
 		} ecf;
 
+		alignas(SIMD::size * sizeof(double)) SIMD displacement[nodes][2];
 		alignas(SIMD::size * sizeof(double)) SIMD coords[nodes][2];
 		alignas(SIMD::size * sizeof(double)) SIMD gpcoords[gps][2];
 
@@ -112,6 +113,7 @@ struct StructuralMechanicsDataDescriptor<nodes, gps, 2, edim, StructuralMechanic
 			alignas(SIMD::size * sizeof(double)) SIMD angularVelocity[gps];
 		} ecf;
 
+		alignas(SIMD::size * sizeof(double)) SIMD displacement[nodes][2];
 		alignas(SIMD::size * sizeof(double)) SIMD coords[nodes][2];
 		alignas(SIMD::size * sizeof(double)) SIMD gpcoords[gps][2];
 
@@ -158,6 +160,7 @@ struct StructuralMechanicsDataDescriptor<nodes, gps, 3, edim, StructuralMechanic
 			alignas(SIMD::size * sizeof(double)) SIMD angularVelocity[gps][3];
 		} ecf;
 
+		alignas(SIMD::size * sizeof(double)) SIMD displacement[nodes][3];
 		alignas(SIMD::size * sizeof(double)) SIMD coords[nodes][3];
 		alignas(SIMD::size * sizeof(double)) SIMD gpcoords[gps][3];
 

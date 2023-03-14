@@ -7,6 +7,7 @@
 #include "basis/utilities/inline.h"
 
 #include <cstddef>
+#include <cmath>
 #include <immintrin.h>
 
 #include <cstdio>
@@ -128,6 +129,22 @@ ALWAYS_INLINE SIMD positive_guarded_recip(const SIMD& v) noexcept // TODO: impro
 ALWAYS_INLINE SIMD max(const SIMD& v1, const SIMD& v2) noexcept
 {
 	return _mm_max_pd(v1.data, v2.data);
+}
+
+ALWAYS_INLINE SIMD cos(const SIMD& value) noexcept
+{
+	return __m128d{
+		std::cos(value.data[0]),
+		std::cos(value.data[1])
+	};
+}
+
+ALWAYS_INLINE SIMD acos(const SIMD& value) noexcept
+{
+	return __m128d{
+		std::acos(value.data[0]),
+		std::acos(value.data[1])
+	};
 }
 
 #endif // __SSE2__

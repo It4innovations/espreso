@@ -126,5 +126,15 @@ ALWAYS_INLINE SIMD max(const SIMD& v1, const SIMD& v2) noexcept
 	return std::max(v1.data, v2.data);
 }
 
+ALWAYS_INLINE SIMD cos(const SIMD& v) noexcept
+{
+	return std::cos(v.data);
+}
+
+ALWAYS_INLINE SIMD acos(const SIMD& v) noexcept
+{
+	return std::acos(v.data);
+}
+
 #endif // default SIMD with single double
 #endif /* SRC_MATH_SIMD_SIMD_H_ */

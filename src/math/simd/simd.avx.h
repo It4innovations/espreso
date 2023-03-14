@@ -7,6 +7,7 @@
 #include "basis/utilities/inline.h"
 
 #include <cstddef>
+#include <cmath>
 #include <immintrin.h>
 
 struct SIMD
@@ -130,6 +131,25 @@ ALWAYS_INLINE SIMD max(const SIMD& v1, const SIMD& v2) noexcept
 	return _mm256_max_pd(v1.data, v2.data);
 }
 
+ALWAYS_INLINE SIMD cos(const SIMD& value) noexcept
+{
+	return __m256d{
+		std::cos(value.data[0]),
+		std::cos(value.data[1]),
+		std::cos(value.data[2]),
+		std::cos(value.data[3])
+	};
+}
+
+ALWAYS_INLINE SIMD acos(const SIMD& value) noexcept
+{
+	return __m256d{
+		std::acos(value.data[0]),
+		std::acos(value.data[1]),
+		std::acos(value.data[2]),
+		std::acos(value.data[3])
+	};
+}
 
 #endif // __AVX__
 #endif /* SRC_MATH_SIMD_SIMD_AVX_H_ */

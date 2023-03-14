@@ -51,6 +51,7 @@ public:
 
 	struct Results {
 		static NodeData *displacement;
+		static ElementData *principalStress, *componentStress, *vonMisesStress;
 	};
 
 protected:

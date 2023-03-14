@@ -193,9 +193,9 @@ void StructuralMechanics::generateElasticity()
 			}
 			break;
 		}
-		if (true) {
+		if (Results::principalStress == nullptr) {
 			for (size_t i = opsize; i < elementOps[interval].size(); ++i) {
-				elementOps[interval][i]->action &= ActionOperator::ASSEMBLE | ActionOperator::REASSEMBLE;
+				ActionOperator::removeSolution(elementOps[interval][i]->action);
 			}
 		}
 	}

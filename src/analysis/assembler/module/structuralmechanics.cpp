@@ -6,11 +6,13 @@
 #include "analysis/assembler/operators/info.h"
 #include "analysis/assembler/operators/basis.h"
 #include "analysis/assembler/operators/coordinates.h"
+#include "analysis/assembler/operators/displacement.h"
 #include "analysis/assembler/operators/expression.h"
 #include "analysis/assembler/operators/integration.h"
 #include "analysis/assembler/operators/structuralmechanics.f.h"
 #include "analysis/assembler/operators/structuralmechanics.K.h"
 #include "analysis/assembler/operators/filler.h"
+#include "analysis/assembler/operators/stress.h"
 
 #include "basis/expression/variable.h"
 #include "esinfo/ecfinfo.h"
@@ -29,6 +31,9 @@
 namespace espreso {
 
 NodeData* StructuralMechanics::Results::displacement = nullptr;
+ElementData* StructuralMechanics::Results::principalStress = nullptr;
+ElementData* StructuralMechanics::Results::componentStress = nullptr;
+ElementData* StructuralMechanics::Results::vonMisesStress = nullptr;
 
 StructuralMechanics::StructuralMechanics(StructuralMechanics *previous, StructuralMechanicsConfiguration &settings, StructuralMechanicsLoadStepConfiguration &configuration)
 : Assembler(settings), settings(settings), configuration(configuration)
@@ -58,6 +63,11 @@ void StructuralMechanics::initParameters()
 		if (info::mesh->dimension == 3) {
 			Variable::list.node["DISPLACEMENT_Z"] = new OutputVariable(Results::displacement, 2, info::mesh->dimension);
 		}
+	}
+	if (info::ecf->output.results_selection.stress && Results::principalStress == nullptr) {
+		Results::principalStress = info::mesh->elements->appendData(info::mesh->dimension    , NamedData::DataType::NUMBERED   , "PRINCIPAL_STRESS");
+		Results::componentStress = info::mesh->elements->appendData(info::mesh->dimension * 2, NamedData::DataType::TENSOR_SYMM, "COMPONENT_STRESS");
+		Results::vonMisesStress  = info::mesh->elements->appendData(                        1, NamedData::DataType::SCALAR     , "VON_MISES_STRESS");
 	}
 }
 
@@ -234,6 +244,10 @@ void StructuralMechanics::analyze()
 		} else {
 			elementOps[i].push_back(generateElementOperator<CoordinatesToElementNodes>(i, etype[i], procNodes));
 		}
+
+		if (Results::principalStress != nullptr) {
+			elementOps[i].push_back(generateElementOperator<DisplacementToElementNodes>(i, etype[i], procNodes, Results::displacement->data.data()));
+		}
 	}
 
 	for(size_t r = 0; r < info::mesh->boundaryRegions.size(); ++r) {
@@ -314,6 +328,22 @@ void StructuralMechanics::analyze()
 		}
 	}
 
+	if (Results::principalStress != nullptr) {
+		generateElementOperators<Stress>(etype, elementOps, Results::principalStress, Results::componentStress, Results::vonMisesStress);
+	}
+
+	for(size_t i = 0; i < info::mesh->elements->eintervals.size(); ++i) {
+		if (Results::principalStress == nullptr) {
+			for (size_t j = 0; j < elementOps[i].size(); ++j) {
+				ActionOperator::removeSolution(elementOps[i][j]->action);
+			}
+		}
+	}
+
+
+	eslog::info("  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  \n");
+	eslog::info("  SIMD SIZE                                                                                 %lu \n", SIMD::size);
+	eslog::info("  MAX ELEMENT SIZE                                                                   %6lu B \n", esize());
 	eslog::info("  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  \n");
 	if (correct) {
 		eslog::info("  PHYSICS CONFIGURED                                                               %8.3f s \n", eslog::time() - start);
