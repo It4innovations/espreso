@@ -27,8 +27,6 @@ template <size_t nodes, size_t gps, size_t edim, size_t etype, class Physics>
 struct Stress<nodes, gps, 2, edim, etype, Physics>: StressBase, Physics {
 	using StressBase::StressBase;
 
-	constexpr static double gpsRec = 1.0 / gps;
-
 	void move(int n)
 	{
 		principalStress += 2 * n;

@@ -6,12 +6,14 @@
 #include "analysis/assembler/operators/info.h"
 #include "analysis/assembler/operators/basis.h"
 #include "analysis/assembler/operators/coordinates.h"
+#include "analysis/assembler/operators/displacement.h"
 #include "analysis/assembler/operators/elasticity.h"
 #include "analysis/assembler/operators/elasticity.coordinatesystem.h"
 #include "analysis/assembler/operators/expression.h"
 #include "analysis/assembler/operators/integration.h"
 #include "analysis/assembler/operators/structuralmechanics.f.h"
 #include "analysis/assembler/operators/structuralmechanics.K.h"
+#include "analysis/assembler/operators/stress.h"
 #include "analysis/assembler/operators/filler.h"
 
 #include "basis/expression/variable.h"
@@ -521,6 +523,7 @@ Assembler::measurements StructuralMechanics::conditionsloop(ActionOperator::Acti
 	auto procNodes = info::mesh->elements->nodes->cbegin() + info::mesh->elements->eintervals[interval].begin;
 	CoordinatesToElementNodes<nodes, gps, ndim, edim, etype, DataDescriptor<nodes, gps, ndim, edim, etype> > coo(interval, procNodes);
 	CoordinatesToElementNodesAndGPs<nodes, gps, ndim, edim, etype, DataDescriptor<nodes, gps, ndim, edim, etype> > cooAndGps(interval, procNodes);
+	DisplacementToElementNodes<nodes, gps, ndim, edim, etype, DataDescriptor<nodes, gps, ndim, edim, etype> > displacement(interval, procNodes, Results::displacement->data.data());
 	Integration<nodes, gps, ndim, edim, etype, DataDescriptor<nodes, gps, ndim, edim, etype> > integration(interval);
 	StructuralMechanicsStiffness<nodes, gps, ndim, edim, etype, DataDescriptor<nodes, gps, ndim, edim, etype> > stiffness(interval, this->elements.stiffness);
 	Acceleration<nodes, gps, ndim, edim, etype, DataDescriptor<nodes, gps, ndim, edim, etype> > acceleration(interval, this->elements.rhs);
@@ -534,11 +537,7 @@ Assembler::measurements StructuralMechanics::conditionsloop(ActionOperator::Acti
 	updateVelocity<DataDescriptor, nodes, gps, ndim, edim, etype> updateVelocity;
 	updateThickness<DataDescriptor, nodes, gps, ndim, edim, etype> updateThickness;
 
-//	TemperatureGradient<nodes, gps, ndim, edim, etype, DataDescriptor<nodes, gps, ndim, edim, etype> > gradient(interval, Results::gradient);
-//	TemperatureFlux<nodes, gps, ndim, edim, etype, DataDescriptor<nodes, gps, ndim, edim, etype> > flux(interval, Results::flux);
-
-//	gradient.move(ndim * SIMD::size);
-//	flux.move(ndim * SIMD::size);
+	Stress<nodes, gps, ndim, edim, etype, DataDescriptor<nodes, gps, ndim, edim, etype> > stress(interval, Results::principalStress, Results::componentStress, Results::vonMisesStress);
 
 	const MaterialConfiguration *mat = info::mesh->materials[info::mesh->elements->eintervals[interval].material];
 	bool rotateElasticity = mat->linear_elastic_properties.model != LinearElasticPropertiesConfiguration::MODEL::ISOTROPIC;
@@ -587,9 +586,9 @@ Assembler::measurements StructuralMechanics::conditionsloop(ActionOperator::Acti
 
 	bool cooToGP = mat->coordinate_system.type != CoordinateSystemConfiguration::TYPE::CARTESIAN || hasVelocity || axisymmetric;
 	bool computeK = action == ActionOperator::ASSEMBLE || action == ActionOperator::REASSEMBLE;
-	bool computeGradient = action == ActionOperator::SOLUTION && info::ecf->output.results_selection.gradient;
-	bool computeFlux = action == ActionOperator::SOLUTION && info::ecf->output.results_selection.flux;
-	bool computeElasticity = computeK;
+	bool computeStress = action == ActionOperator::SOLUTION && info::ecf->output.results_selection.stress;
+	bool computeElasticity = computeK | computeStress;
+	bool getDisplacement = computeStress;
 
 	esint chunks = elements / SIMD::size;
 	double init = eslog::time() - initStart;
@@ -599,6 +598,9 @@ Assembler::measurements StructuralMechanics::conditionsloop(ActionOperator::Acti
 	} else {
 		coo.move(SIMD::size);
 	}
+	if (getDisplacement) {
+		displacement.move(SIMD::size);
+	}
 	if (computeK) {
 		stiffness.move(SIMD::size);
 		if (hasAcceleration) {
@@ -607,6 +609,9 @@ Assembler::measurements StructuralMechanics::conditionsloop(ActionOperator::Acti
 		if (hasVelocity) {
 			velocity.move(SIMD::size);
 		}
+	}
+	if (computeStress) {
+		stress.move(SIMD::size);
 	}
 
 	double start = eslog::time();
@@ -624,6 +629,10 @@ Assembler::measurements StructuralMechanics::conditionsloop(ActionOperator::Acti
 		} else {
 			coo.simd(element);
 //			printf(" coo");
+		}
+		if (getDisplacement) {
+			displacement.simd(element);
+//			printf(" displacement");
 		}
 		if (!constThickness) {
 			updateThickness(element, thicknessEval->second.evaluator);
@@ -682,6 +691,10 @@ Assembler::measurements StructuralMechanics::conditionsloop(ActionOperator::Acti
 				velocity.simd(element);
 //				printf(" velocity");
 			}
+		}
+		if (computeStress) {
+			stress.simd(element);
+//			printf(" stress");
 		}
 //		printf("\n");
 	}
