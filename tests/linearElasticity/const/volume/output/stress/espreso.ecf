@@ -25,21 +25,16 @@ GENERATOR {
   SHAPE   GRID;
 
   GRID {
-    START_X                     0;
-    START_Y                     0;
-    START_Z                     0;
+    START_X                    0;
+    START_Y                    0;
+    START_Z                    0;
 
-    LENGTH_X                    1;
-    LENGTH_Y                    1;
-    LENGTH_Z                    9;
-
-    PROJECTION_X      10 * (X + 1) * cos(Y * PI / 2);
-    PROJECTION_Y      10 * (X + 1) * sin(Y * PI / 2);
+    LENGTH_X                 100;
+    LENGTH_Y                 100;
+    LENGTH_Z                 100;
 
     NODES {
-      X0   <0 , 0> <0 , 1> <0 , 9>;
-      Y0   <0 , 1> <0 , 0> <0 , 9>;
-      Y1   <0 , 1> <1 , 1> <0 , 9>;
+      Z0   <0 , 100> <0 , 100> <0 , 0>;
     }
 
     ELEMENT_TYPE          [ARG0];
@@ -63,28 +58,19 @@ STRUCTURAL_MECHANICS_3D {
 
   MATERIALS {
     1 {
-      COORDINATE_SYSTEM {
-        TYPE        CYLINDRICAL;
-        CENTER     { X 0; Y 0; }
-      }
 
       DENS   7850;
       CP        1;
 
       LINEAR_ELASTIC_PROPERTIES {
-        MODEL   ORTHOTROPIC;
-
-        EX         2.0E10;
-        EY         7.0E10;
-        EZ         1.0E10;
+        MODEL   ISOTROPIC;
 
         MIXY          0.3;
-        MIXZ          0.3;
-        MIYZ          0.3;
+        EX          2.1E9;
+      }
 
-        GXY        8.1E10;
-        GXZ        8.1E10;
-        GYZ        8.1E10;
+      THERMAL_EXPANSION {
+        TEX             0;
       }
     }
   }
@@ -98,23 +84,22 @@ STRUCTURAL_MECHANICS_3D {
       DURATION_TIME     1;
       TYPE   STEADY_STATE;
       MODE         LINEAR;
-      SOLVER      [ARG10];
+      SOLVER       [ARG10];
 
       FETI {
         METHOD          TOTAL_FETI;
-        PRECONDITIONER      LUMPED;
+        PRECONDITIONER   DIRICHLET;
         ITERATIVE_SOLVER       PCG;
-        REGULARIZATION   ALGEBRAIC;
+        REGULARIZATION    ANALYTIC;
+        B0_TYPE            KERNELS;
       }
 
       DISPLACEMENT {
-        X0   { X 0; Y 0; Z 0; }
-        Y0   { Y 0; }
-        Y1   { X 0; }
+        Z0   { X 0 ; Y 0 ; Z 0; }
       }
 
-      ANGULAR_VELOCITY {
-        ALL_ELEMENTS   { Z 1000; };
+      ACCELERATION {
+        ALL_ELEMENTS   { Z 9.8066; };
       }
     }
   }
@@ -124,25 +109,43 @@ OUTPUT {
   RESULTS_STORE_FREQUENCY    EVERY_SUBSTEP;
   MONITORS_STORE_FREQUENCY   EVERY_SUBSTEP;
 
-  STORE_RESULTS         ALL;
+  STORE_RESULTS              ALL;
 
   MONITORING {
     1 {
-      REGION        ALL_NODES;
-      STATISTICS          AVG;
-      PROPERTY   DISPLACEMENT;
+      REGION           ALL_NODES;
+      STATISTICS             MIN;
+      PROPERTY      DISPLACEMENT;
     }
 
     2 {
-      REGION        ALL_NODES;
-      STATISTICS          MAX;
-      PROPERTY   DISPLACEMENT;
+      REGION           ALL_NODES;
+      STATISTICS             MAX;
+      PROPERTY      DISPLACEMENT;
     }
 
     3 {
-      REGION               X0;
-      STATISTICS          MAX;
-      PROPERTY   DISPLACEMENT;
+      REGION           ALL_NODES;
+      STATISTICS             AVG;
+      PROPERTY      DISPLACEMENT;
+    }
+
+    4 {
+      REGION        ALL_ELEMENTS;
+      STATISTICS             MIN;
+      PROPERTY  VON_MISES_STRESS;
+    }
+
+    5 {
+      REGION        ALL_ELEMENTS;
+      STATISTICS             MAX;
+      PROPERTY  VON_MISES_STRESS;
+    }
+
+    6 {
+      REGION        ALL_ELEMENTS;
+      STATISTICS             AVG;
+      PROPERTY  VON_MISES_STRESS;
     }
   }
 }
