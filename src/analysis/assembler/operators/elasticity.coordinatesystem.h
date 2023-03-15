@@ -178,7 +178,7 @@ struct ElasticityCoordinateSystemCopy<nodes, gps, 2, edim, StructuralMechanicsEl
 
 	void simd(typename Physics::Element &element)
 	{
-		memcpy(element.elasticity, element.ecf.elasticity, sizeof(double) * SIMD::size * gps * 9);
+		memcpy(element.elasticity, element.ecf.elasticity, sizeof(double) * SIMD::size * gps * 6);
 	}
 };
 
@@ -188,7 +188,7 @@ struct ElasticityCoordinateSystemCopy<nodes, gps, 2, edim, StructuralMechanicsEl
 
 	void simd(typename Physics::Element &element)
 	{
-		memcpy(element.elasticity, element.ecf.elasticity, sizeof(double) * SIMD::size * gps * 16);
+		memcpy(element.elasticity, element.ecf.elasticity, sizeof(double) * SIMD::size * gps * 10);
 	}
 };
 
@@ -199,7 +199,7 @@ struct ElasticityCoordinateSystemCopy<nodes, gps, 3, edim, etype, Physics>: Elas
 
 	void simd(typename Physics::Element &element)
 	{
-		memcpy(element.elasticity, element.ecf.elasticity, sizeof(double) * SIMD::size * gps * 36);
+		memcpy(element.elasticity, element.ecf.elasticity, sizeof(double) * SIMD::size * gps * 21);
 	}
 };
 
@@ -273,47 +273,17 @@ struct ElasticityCoordinateSystemApply<nodes, gps, 3, edim, etype, Physics>: Ela
 			SIMD T55 = -C05 * sin2x * sin2z + cos2x * cos2z * cosy - sin2x * sin2z * cosy * cosy * C05;
 
 			SIMD e00 = element.ecf.elasticity[gp][ 0];
-			SIMD e01 = element.ecf.elasticity[gp][ 1];
-			SIMD e02 = element.ecf.elasticity[gp][ 2];
-			SIMD e03 = element.ecf.elasticity[gp][ 3];
-			SIMD e04 = element.ecf.elasticity[gp][ 4];
-			SIMD e05 = element.ecf.elasticity[gp][ 5];
-			SIMD e10 = element.ecf.elasticity[gp][ 6];
-			SIMD e11 = element.ecf.elasticity[gp][ 7];
-			SIMD e12 = element.ecf.elasticity[gp][ 8];
-			SIMD e13 = element.ecf.elasticity[gp][ 9];
-			SIMD e14 = element.ecf.elasticity[gp][10];
-			SIMD e15 = element.ecf.elasticity[gp][11];
-			SIMD e20 = element.ecf.elasticity[gp][12];
-			SIMD e21 = element.ecf.elasticity[gp][13];
-			SIMD e22 = element.ecf.elasticity[gp][14];
-			SIMD e23 = element.ecf.elasticity[gp][15];
-			SIMD e24 = element.ecf.elasticity[gp][16];
-			SIMD e25 = element.ecf.elasticity[gp][17];
-			SIMD e30 = element.ecf.elasticity[gp][18];
-			SIMD e31 = element.ecf.elasticity[gp][19];
-			SIMD e32 = element.ecf.elasticity[gp][20];
-			SIMD e33 = element.ecf.elasticity[gp][21];
-			SIMD e34 = element.ecf.elasticity[gp][22];
-			SIMD e35 = element.ecf.elasticity[gp][23];
-			SIMD e40 = element.ecf.elasticity[gp][24];
-			SIMD e41 = element.ecf.elasticity[gp][25];
-			SIMD e42 = element.ecf.elasticity[gp][26];
-			SIMD e43 = element.ecf.elasticity[gp][27];
-			SIMD e44 = element.ecf.elasticity[gp][28];
-			SIMD e45 = element.ecf.elasticity[gp][29];
-			SIMD e50 = element.ecf.elasticity[gp][30];
-			SIMD e51 = element.ecf.elasticity[gp][31];
-			SIMD e52 = element.ecf.elasticity[gp][32];
-			SIMD e53 = element.ecf.elasticity[gp][33];
-			SIMD e54 = element.ecf.elasticity[gp][34];
-			SIMD e55 = element.ecf.elasticity[gp][35];
+			SIMD e01 = element.ecf.elasticity[gp][ 1], e11 = element.ecf.elasticity[gp][ 6];
+			SIMD e02 = element.ecf.elasticity[gp][ 2], e12 = element.ecf.elasticity[gp][ 7], e22 = element.ecf.elasticity[gp][11];
+			SIMD e03 = element.ecf.elasticity[gp][ 3], e13 = element.ecf.elasticity[gp][ 8], e23 = element.ecf.elasticity[gp][12], e33 = element.ecf.elasticity[gp][15];
+			SIMD e04 = element.ecf.elasticity[gp][ 4], e14 = element.ecf.elasticity[gp][ 9], e24 = element.ecf.elasticity[gp][13], e34 = element.ecf.elasticity[gp][16], e44 = element.ecf.elasticity[gp][18];
+			SIMD e05 = element.ecf.elasticity[gp][ 5], e15 = element.ecf.elasticity[gp][10], e25 = element.ecf.elasticity[gp][14], e35 = element.ecf.elasticity[gp][17], e45 = element.ecf.elasticity[gp][19], e55 = element.ecf.elasticity[gp][20];
 
-			SIMD a = T00 * e00 + T01 * e10 + T02 * e20 + T03 * e30 + T04 * e40 + T05 * e50;
-			SIMD b = T00 * e01 + T01 * e11 + T02 * e21 + T03 * e31 + T04 * e41 + T05 * e51;
-			SIMD c = T00 * e02 + T01 * e12 + T02 * e22 + T03 * e32 + T04 * e42 + T05 * e52;
-			SIMD d = T00 * e03 + T01 * e13 + T02 * e23 + T03 * e33 + T04 * e43 + T05 * e53;
-			SIMD e = T00 * e04 + T01 * e14 + T02 * e24 + T03 * e34 + T04 * e44 + T05 * e54;
+			SIMD a = T00 * e00 + T01 * e01 + T02 * e02 + T03 * e03 + T04 * e04 + T05 * e05;
+			SIMD b = T00 * e01 + T01 * e11 + T02 * e12 + T03 * e13 + T04 * e14 + T05 * e15;
+			SIMD c = T00 * e02 + T01 * e12 + T02 * e22 + T03 * e23 + T04 * e24 + T05 * e25;
+			SIMD d = T00 * e03 + T01 * e13 + T02 * e23 + T03 * e33 + T04 * e34 + T05 * e35;
+			SIMD e = T00 * e04 + T01 * e14 + T02 * e24 + T03 * e34 + T04 * e44 + T05 * e45;
 			SIMD f = T00 * e05 + T01 * e15 + T02 * e25 + T03 * e35 + T04 * e45 + T05 * e55;
 			element.elasticity[gp][ 0] = a * T00 + b * T01 + c * T02 + d * T03 + e * T04 + f * T05;
 			element.elasticity[gp][ 1] = a * T10 + b * T11 + c * T12 + d * T13 + e * T14 + f * T15;
@@ -322,70 +292,55 @@ struct ElasticityCoordinateSystemApply<nodes, gps, 3, edim, etype, Physics>: Ela
 			element.elasticity[gp][ 4] = a * T40 + b * T41 + c * T42 + d * T43 + e * T44 + f * T45;
 			element.elasticity[gp][ 5] = a * T50 + b * T51 + c * T52 + d * T53 + e * T54 + f * T55;
 
-			a = T10 * e00 + T11 * e10 + T12 * e20 + T13 * e30 + T14 * e40 + T15 * e50;
-			b = T10 * e01 + T11 * e11 + T12 * e21 + T13 * e31 + T14 * e41 + T15 * e51;
-			c = T10 * e02 + T11 * e12 + T12 * e22 + T13 * e32 + T14 * e42 + T15 * e52;
-			d = T10 * e03 + T11 * e13 + T12 * e23 + T13 * e33 + T14 * e43 + T15 * e53;
-			e = T10 * e04 + T11 * e14 + T12 * e24 + T13 * e34 + T14 * e44 + T15 * e54;
+			a = T10 * e00 + T11 * e01 + T12 * e02 + T13 * e03 + T14 * e04 + T15 * e05;
+			b = T10 * e01 + T11 * e11 + T12 * e12 + T13 * e13 + T14 * e14 + T15 * e15;
+			c = T10 * e02 + T11 * e12 + T12 * e22 + T13 * e23 + T14 * e24 + T15 * e25;
+			d = T10 * e03 + T11 * e13 + T12 * e23 + T13 * e33 + T14 * e34 + T15 * e35;
+			e = T10 * e04 + T11 * e14 + T12 * e24 + T13 * e34 + T14 * e44 + T15 * e45;
 			f = T10 * e05 + T11 * e15 + T12 * e25 + T13 * e35 + T14 * e45 + T15 * e55;
-			element.elasticity[gp][ 6] = a * T00 + b * T01 + c * T02 + d * T03 + e * T04 + f * T05;
-			element.elasticity[gp][ 7] = a * T10 + b * T11 + c * T12 + d * T13 + e * T14 + f * T15;
-			element.elasticity[gp][ 8] = a * T20 + b * T21 + c * T22 + d * T23 + e * T24 + f * T25;
-			element.elasticity[gp][ 9] = a * T30 + b * T31 + c * T32 + d * T33 + e * T34 + f * T35;
-			element.elasticity[gp][10] = a * T40 + b * T41 + c * T42 + d * T43 + e * T44 + f * T45;
-			element.elasticity[gp][11] = a * T50 + b * T51 + c * T52 + d * T53 + e * T54 + f * T55;
+			element.elasticity[gp][ 6] = a * T10 + b * T11 + c * T12 + d * T13 + e * T14 + f * T15;
+			element.elasticity[gp][ 7] = a * T20 + b * T21 + c * T22 + d * T23 + e * T24 + f * T25;
+			element.elasticity[gp][ 8] = a * T30 + b * T31 + c * T32 + d * T33 + e * T34 + f * T35;
+			element.elasticity[gp][ 9] = a * T40 + b * T41 + c * T42 + d * T43 + e * T44 + f * T45;
+			element.elasticity[gp][10] = a * T50 + b * T51 + c * T52 + d * T53 + e * T54 + f * T55;
 
-			a = T20 * e00 + T21 * e10 + T22 * e20 + T23 * e30 + T24 * e40 + T25 * e50;
-			b = T20 * e01 + T21 * e11 + T22 * e21 + T23 * e31 + T24 * e41 + T25 * e51;
-			c = T20 * e02 + T21 * e12 + T22 * e22 + T23 * e32 + T24 * e42 + T25 * e52;
-			d = T20 * e03 + T21 * e13 + T22 * e23 + T23 * e33 + T24 * e43 + T25 * e53;
-			e = T20 * e04 + T21 * e14 + T22 * e24 + T23 * e34 + T24 * e44 + T25 * e54;
+			a = T20 * e00 + T21 * e01 + T22 * e02 + T23 * e03 + T24 * e04 + T25 * e05;
+			b = T20 * e01 + T21 * e11 + T22 * e12 + T23 * e13 + T24 * e14 + T25 * e15;
+			c = T20 * e02 + T21 * e12 + T22 * e22 + T23 * e23 + T24 * e24 + T25 * e25;
+			d = T20 * e03 + T21 * e13 + T22 * e23 + T23 * e33 + T24 * e34 + T25 * e35;
+			e = T20 * e04 + T21 * e14 + T22 * e24 + T23 * e34 + T24 * e44 + T25 * e45;
 			f = T20 * e05 + T21 * e15 + T22 * e25 + T23 * e35 + T24 * e45 + T25 * e55;
-			element.elasticity[gp][12] = a * T00 + b * T01 + c * T02 + d * T03 + e * T04 + f * T05;
-			element.elasticity[gp][13] = a * T10 + b * T11 + c * T12 + d * T13 + e * T14 + f * T15;
-			element.elasticity[gp][14] = a * T20 + b * T21 + c * T22 + d * T23 + e * T24 + f * T25;
+			element.elasticity[gp][11] = a * T20 + b * T21 + c * T22 + d * T23 + e * T24 + f * T25;
+			element.elasticity[gp][12] = a * T30 + b * T31 + c * T32 + d * T33 + e * T34 + f * T35;
+			element.elasticity[gp][13] = a * T40 + b * T41 + c * T42 + d * T43 + e * T44 + f * T45;
+			element.elasticity[gp][14] = a * T50 + b * T51 + c * T52 + d * T53 + e * T54 + f * T55;
+
+			a = T30 * e00 + T31 * e01 + T32 * e02 + T33 * e03 + T34 * e04 + T35 * e05;
+			b = T30 * e01 + T31 * e11 + T32 * e12 + T33 * e13 + T34 * e14 + T35 * e15;
+			c = T30 * e02 + T31 * e12 + T32 * e22 + T33 * e23 + T34 * e24 + T35 * e25;
+			d = T30 * e03 + T31 * e13 + T32 * e23 + T33 * e33 + T34 * e34 + T35 * e35;
+			e = T30 * e04 + T31 * e14 + T32 * e24 + T33 * e34 + T34 * e44 + T35 * e45;
+			f = T30 * e05 + T31 * e15 + T32 * e25 + T33 * e35 + T34 * e45 + T35 * e55;
 			element.elasticity[gp][15] = a * T30 + b * T31 + c * T32 + d * T33 + e * T34 + f * T35;
 			element.elasticity[gp][16] = a * T40 + b * T41 + c * T42 + d * T43 + e * T44 + f * T45;
 			element.elasticity[gp][17] = a * T50 + b * T51 + c * T52 + d * T53 + e * T54 + f * T55;
 
-			a = T30 * e00 + T31 * e10 + T32 * e20 + T33 * e30 + T34 * e40 + T35 * e50;
-			b = T30 * e01 + T31 * e11 + T32 * e21 + T33 * e31 + T34 * e41 + T35 * e51;
-			c = T30 * e02 + T31 * e12 + T32 * e22 + T33 * e32 + T34 * e42 + T35 * e52;
-			d = T30 * e03 + T31 * e13 + T32 * e23 + T33 * e33 + T34 * e43 + T35 * e53;
-			e = T30 * e04 + T31 * e14 + T32 * e24 + T33 * e34 + T34 * e44 + T35 * e54;
-			f = T30 * e05 + T31 * e15 + T32 * e25 + T33 * e35 + T34 * e45 + T35 * e55;
-			element.elasticity[gp][18] = a * T00 + b * T01 + c * T02 + d * T03 + e * T04 + f * T05;
-			element.elasticity[gp][19] = a * T10 + b * T11 + c * T12 + d * T13 + e * T14 + f * T15;
-			element.elasticity[gp][20] = a * T20 + b * T21 + c * T22 + d * T23 + e * T24 + f * T25;
-			element.elasticity[gp][21] = a * T30 + b * T31 + c * T32 + d * T33 + e * T34 + f * T35;
-			element.elasticity[gp][22] = a * T40 + b * T41 + c * T42 + d * T43 + e * T44 + f * T45;
-			element.elasticity[gp][23] = a * T50 + b * T51 + c * T52 + d * T53 + e * T54 + f * T55;
-
-			a = T40 * e00 + T41 * e10 + T42 * e20 + T43 * e30 + T44 * e40 + T45 * e50;
-			b = T40 * e01 + T41 * e11 + T42 * e21 + T43 * e31 + T44 * e41 + T45 * e51;
-			c = T40 * e02 + T41 * e12 + T42 * e22 + T43 * e32 + T44 * e42 + T45 * e52;
-			d = T40 * e03 + T41 * e13 + T42 * e23 + T43 * e33 + T44 * e43 + T45 * e53;
-			e = T40 * e04 + T41 * e14 + T42 * e24 + T43 * e34 + T44 * e44 + T45 * e54;
+			a = T40 * e00 + T41 * e01 + T42 * e02 + T43 * e03 + T44 * e04 + T45 * e05;
+			b = T40 * e01 + T41 * e11 + T42 * e12 + T43 * e13 + T44 * e14 + T45 * e15;
+			c = T40 * e02 + T41 * e12 + T42 * e22 + T43 * e23 + T44 * e24 + T45 * e25;
+			d = T40 * e03 + T41 * e13 + T42 * e23 + T43 * e33 + T44 * e34 + T45 * e35;
+			e = T40 * e04 + T41 * e14 + T42 * e24 + T43 * e34 + T44 * e44 + T45 * e45;
 			f = T40 * e05 + T41 * e15 + T42 * e25 + T43 * e35 + T44 * e45 + T45 * e55;
-			element.elasticity[gp][24] = a * T00 + b * T01 + c * T02 + d * T03 + e * T04 + f * T05;
-			element.elasticity[gp][25] = a * T10 + b * T11 + c * T12 + d * T13 + e * T14 + f * T15;
-			element.elasticity[gp][26] = a * T20 + b * T21 + c * T22 + d * T23 + e * T24 + f * T25;
-			element.elasticity[gp][27] = a * T30 + b * T31 + c * T32 + d * T33 + e * T34 + f * T35;
-			element.elasticity[gp][28] = a * T40 + b * T41 + c * T42 + d * T43 + e * T44 + f * T45;
-			element.elasticity[gp][29] = a * T50 + b * T51 + c * T52 + d * T53 + e * T54 + f * T55;
+			element.elasticity[gp][18] = a * T40 + b * T41 + c * T42 + d * T43 + e * T44 + f * T45;
+			element.elasticity[gp][19] = a * T50 + b * T51 + c * T52 + d * T53 + e * T54 + f * T55;
 
-			a = T50 * e00 + T51 * e10 + T52 * e20 + T53 * e30 + T54 * e40 + T55 * e50;
-			b = T50 * e01 + T51 * e11 + T52 * e21 + T53 * e31 + T54 * e41 + T55 * e51;
-			c = T50 * e02 + T51 * e12 + T52 * e22 + T53 * e32 + T54 * e42 + T55 * e52;
-			d = T50 * e03 + T51 * e13 + T52 * e23 + T53 * e33 + T54 * e43 + T55 * e53;
-			e = T50 * e04 + T51 * e14 + T52 * e24 + T53 * e34 + T54 * e44 + T55 * e54;
+			a = T50 * e00 + T51 * e01 + T52 * e02 + T53 * e03 + T54 * e04 + T55 * e05;
+			b = T50 * e01 + T51 * e11 + T52 * e12 + T53 * e13 + T54 * e14 + T55 * e15;
+			c = T50 * e02 + T51 * e12 + T52 * e22 + T53 * e23 + T54 * e24 + T55 * e25;
+			d = T50 * e03 + T51 * e13 + T52 * e23 + T53 * e33 + T54 * e34 + T55 * e35;
+			e = T50 * e04 + T51 * e14 + T52 * e24 + T53 * e34 + T54 * e44 + T55 * e45;
 			f = T50 * e05 + T51 * e15 + T52 * e25 + T53 * e35 + T54 * e45 + T55 * e55;
-			element.elasticity[gp][30] = a * T00 + b * T01 + c * T02 + d * T03 + e * T04 + f * T05;
-			element.elasticity[gp][31] = a * T10 + b * T11 + c * T12 + d * T13 + e * T14 + f * T15;
-			element.elasticity[gp][32] = a * T20 + b * T21 + c * T22 + d * T23 + e * T24 + f * T25;
-			element.elasticity[gp][33] = a * T30 + b * T31 + c * T32 + d * T33 + e * T34 + f * T35;
-			element.elasticity[gp][34] = a * T40 + b * T41 + c * T42 + d * T43 + e * T44 + f * T45;
-			element.elasticity[gp][35] = a * T50 + b * T51 + c * T52 + d * T53 + e * T54 + f * T55;
+			element.elasticity[gp][20] = a * T50 + b * T51 + c * T52 + d * T53 + e * T54 + f * T55;
 		}
 	}
 };

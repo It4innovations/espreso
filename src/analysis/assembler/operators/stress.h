@@ -68,12 +68,12 @@ struct Stress<nodes, gps, 3, edim, etype, Physics>: StressBase, Physics {
 	{
 		SIMD CuB0, CuB1, CuB2, CuB3, CuB4, CuB5;
 		for (size_t gp = 0; gp < gps; ++gp) {
-			SIMD c00 = element.elasticity[gp][0], c10 = element.elasticity[gp][ 6], c20 = element.elasticity[gp][12]; SIMD c30 = element.elasticity[gp][18], c40 = element.elasticity[gp][24], c50 = element.elasticity[gp][30];
-			SIMD c01 = element.elasticity[gp][1], c11 = element.elasticity[gp][ 7], c21 = element.elasticity[gp][13]; SIMD c31 = element.elasticity[gp][19], c41 = element.elasticity[gp][25], c51 = element.elasticity[gp][31];
-			SIMD c02 = element.elasticity[gp][2], c12 = element.elasticity[gp][ 8], c22 = element.elasticity[gp][14]; SIMD c32 = element.elasticity[gp][20], c42 = element.elasticity[gp][26], c52 = element.elasticity[gp][32];
-			SIMD c03 = element.elasticity[gp][3], c13 = element.elasticity[gp][ 9], c23 = element.elasticity[gp][15]; SIMD c33 = element.elasticity[gp][21], c43 = element.elasticity[gp][27], c53 = element.elasticity[gp][33];
-			SIMD c04 = element.elasticity[gp][4], c14 = element.elasticity[gp][10], c24 = element.elasticity[gp][16]; SIMD c34 = element.elasticity[gp][22], c44 = element.elasticity[gp][28], c54 = element.elasticity[gp][34];
-			SIMD c05 = element.elasticity[gp][5], c15 = element.elasticity[gp][11], c25 = element.elasticity[gp][17]; SIMD c35 = element.elasticity[gp][23], c45 = element.elasticity[gp][29], c55 = element.elasticity[gp][35];
+			SIMD c00 = element.elasticity[gp][0];
+			SIMD c01 = element.elasticity[gp][1], c11 = element.elasticity[gp][ 6];
+			SIMD c02 = element.elasticity[gp][2], c12 = element.elasticity[gp][ 7], c22 = element.elasticity[gp][11];
+			SIMD c03 = element.elasticity[gp][3], c13 = element.elasticity[gp][ 8], c23 = element.elasticity[gp][12], c33 = element.elasticity[gp][15];
+			SIMD c04 = element.elasticity[gp][4], c14 = element.elasticity[gp][ 9], c24 = element.elasticity[gp][13], c34 = element.elasticity[gp][16], c44 = element.elasticity[gp][18];
+			SIMD c05 = element.elasticity[gp][5], c15 = element.elasticity[gp][10], c25 = element.elasticity[gp][14], c35 = element.elasticity[gp][17], c45 = element.elasticity[gp][19], c55 = element.elasticity[gp][20];
 
 			SIMD uB0, uB1, uB2, uB3, uB4, uB5;
 			for (size_t n = 0; n < nodes; ++n) {
@@ -92,11 +92,11 @@ struct Stress<nodes, gps, 3, edim, etype, Physics>: StressBase, Physics {
 				uB5 = uB5 + dNDz * dx + dNDx * dz;
 			}
 			CuB0 = CuB0 + uB0 * c00 + uB1 * c01 + uB2 * c02 + uB3 * c03 + uB4 * c04 + uB5 * c05;
-			CuB1 = CuB1 + uB0 * c10 + uB1 * c11 + uB2 * c12 + uB3 * c13 + uB4 * c14 + uB5 * c15;
-			CuB2 = CuB2 + uB0 * c20 + uB1 * c21 + uB2 * c22 + uB3 * c23 + uB4 * c24 + uB5 * c25;
-			CuB3 = CuB3 + uB0 * c30 + uB1 * c31 + uB2 * c32 + uB3 * c33 + uB4 * c34 + uB5 * c35;
-			CuB4 = CuB4 + uB0 * c40 + uB1 * c41 + uB2 * c42 + uB3 * c43 + uB4 * c44 + uB5 * c45;
-			CuB5 = CuB5 + uB0 * c50 + uB1 * c51 + uB2 * c52 + uB3 * c53 + uB4 * c54 + uB5 * c55;
+			CuB1 = CuB1 + uB0 * c01 + uB1 * c11 + uB2 * c12 + uB3 * c13 + uB4 * c14 + uB5 * c15;
+			CuB2 = CuB2 + uB0 * c02 + uB1 * c12 + uB2 * c22 + uB3 * c23 + uB4 * c24 + uB5 * c25;
+			CuB3 = CuB3 + uB0 * c03 + uB1 * c13 + uB2 * c23 + uB3 * c33 + uB4 * c34 + uB5 * c35;
+			CuB4 = CuB4 + uB0 * c04 + uB1 * c14 + uB2 * c24 + uB3 * c34 + uB4 * c44 + uB5 * c45;
+			CuB5 = CuB5 + uB0 * c05 + uB1 * c15 + uB2 * c25 + uB3 * c35 + uB4 * c45 + uB5 * c55;
 		}
 
 		SIMD scale = load1(1.0 / gps);

@@ -37,27 +37,51 @@ struct SymmetricMatricFiller: MatrixFiller, Physics {
 
 	void simd(typename Physics::Element &element)
 	{
-		for (size_t s = 0, i = 0; s < SIMD::size; ++s) {
-			for (size_t r = 0; r < nodes * dofs; ++r) {
-				for (size_t c = r; c < nodes * dofs; ++c, ++i) {
-					global[position[i]] += *(local.data + (r * nodes * dofs + c) * SIMD::size + s);
+		peel(element, SIMD::size);
+	}
+
+	void peel(typename Physics::Element &element, size_t size)
+	{
+		for (size_t s = 0, i = 0; s < size; ++s) {
+			for (size_t r = 0, j = 0; r < nodes * dofs; ++r) {
+				for (size_t c = r; c < nodes * dofs; ++c, ++i, ++j) {
+					global[position[i]] += *(local.data + j * SIMD::size + s);
 				}
 			}
 		}
 		std::fill(local.data, local.data + SIMD::size * local.inc, 0.);
-		move(SIMD::size);
+		move(size);
+	}
+};
+
+template <size_t nodes, size_t gps, size_t ndim, size_t edim, size_t etype, class Physics>
+struct SymmetricToFullMatricFiller: MatrixFiller, Physics {
+	using MatrixFiller::MatrixFiller;
+
+	void move(int n)
+	{
+		local += n;
+		position += n * nodes * dofs * nodes * dofs;
+	}
+
+	void simd(typename Physics::Element &element)
+	{
+		peel(element, SIMD::size);
 	}
 
 	void peel(typename Physics::Element &element, size_t size)
 	{
 		for (size_t s = 0, i = 0; s < size; ++s) {
 			for (size_t r = 0; r < nodes * dofs; ++r) {
+				for (size_t c = 0; c < r; ++c, ++i) {
+					global[position[i]] += *(local.data + (c * nodes * dofs + r - ((c + 1) * c / 2)) * SIMD::size + s);
+				}
 				for (size_t c = r; c < nodes * dofs; ++c, ++i) {
-					global[position[i]] += *(local.data + (r * nodes * dofs + c) * SIMD::size + s);
+					global[position[i]] += *(local.data + (r * nodes * dofs + c - ((r + 1) * r / 2)) * SIMD::size + s);
 				}
 			}
 		}
-		std::fill(local.data, local.data + size * local.inc, 0.);
+		std::fill(local.data, local.data + SIMD::size * local.inc, 0.);
 		move(size);
 	}
 };
@@ -74,15 +98,7 @@ struct GeneralMatricFiller: MatrixFiller, Physics {
 
 	void simd(typename Physics::Element &element)
 	{
-		for (size_t s = 0, i = 0; s < SIMD::size; ++s) {
-			for (size_t r = 0; r < nodes * dofs; ++r) {
-				for (size_t c = 0; c < nodes * dofs; ++c, ++i) {
-					global[position[i]] += *(local.data + (r * nodes * dofs + c) * SIMD::size + s);
-				}
-			}
-		}
-		std::fill(local.data, local.data + SIMD::size * local.inc, 0.);
-		move(SIMD::size);
+		peel(element, SIMD::size);
 	}
 
 	void peel(typename Physics::Element &element, size_t size)
@@ -134,15 +150,7 @@ struct VectorFiller: ActionOperator, Physics {
 
 	void simd(typename Physics::Element &element)
 	{
-		for (size_t s = 0, i = 0; s < SIMD::size; ++s) {
-			for (size_t d = 0; d < dofs; ++d) {
-				for (size_t n = 0; n < nodes; ++n, ++i) {
-					global[position[i]] += *(local.data + (d * nodes + n) * SIMD::size + s);
-				}
-			}
-		}
-		std::fill(local.data, local.data + SIMD::size * local.inc, 0.);
-		move(SIMD::size);
+		peel(element, SIMD::size);
 	}
 
 	void peel(typename Physics::Element &element, size_t size)
@@ -191,16 +199,7 @@ struct VectorSetter: ActionOperator, Physics {
 
 	void simd(typename Physics::Element &element)
 	{
-		for (size_t s = 0, i = 0; s < SIMD::size; ++s) {
-			for (size_t d = 0; d < dofs; ++d) {
-				if (filter & (1 << d)) {
-					for (size_t n = 0; n < nodes; ++n, ++i) {
-						global[position[i]] = setter(element, n, d, s);
-					}
-				}
-			}
-		}
-		move(SIMD::size);
+		peel(element, SIMD::size);
 	}
 
 	void peel(typename Physics::Element &element, size_t size)

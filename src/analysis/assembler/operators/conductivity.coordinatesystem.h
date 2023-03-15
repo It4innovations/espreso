@@ -3,6 +3,7 @@
 #define SRC_ANALYSIS_ASSEMBLER_OPERATORS_CONDUCTIVITY_COORDINATESYSTEM_H_
 
 #include "analysis/assembler/operator.h"
+#include "analysis/assembler/module/heattransfer.element.h"
 #include "math/simd/simd.h"
 
 #include <cmath>
@@ -149,8 +150,8 @@ struct HeatTransferCoordinateSystemSpherical<nodes, gps, 3, edim, etype, Physics
 	}
 };
 
-template <size_t nodes, size_t gps, size_t edim, size_t etype, class Physics>
-struct HeatTransferCoordinateSystemApply<nodes, gps, 2, edim, etype, Physics>: HeatTransferCoordinateSystem, Physics {
+template <size_t nodes, size_t gps, size_t edim, class Physics>
+struct HeatTransferCoordinateSystemApply<nodes, gps, 2, edim, HeatTransferElementType::SYMMETRIC_GENERAL, Physics>: HeatTransferCoordinateSystem, Physics {
 	using HeatTransferCoordinateSystem::HeatTransferCoordinateSystem;
 
 	// |cos , -sin| |c[0] , c[2]| | cos , sin|
@@ -161,23 +162,45 @@ struct HeatTransferCoordinateSystemApply<nodes, gps, 2, edim, etype, Physics>: H
 	void simd(typename Physics::Element &element)
 	{
 		for (size_t gp = 0; gp < gps; ++gp) {
-			SIMD origin0 = element.ecf.conductivity[gp][0];
-			SIMD origin1 = element.ecf.conductivity[gp][1];
-			SIMD origin2 = element.ecf.conductivity[gp][2];
-			SIMD origin3 = element.ecf.conductivity[gp][3];
+			SIMD c00 = element.ecf.conductivity[gp][0];
+			SIMD c01 = element.ecf.conductivity[gp][1], c11 = element.ecf.conductivity[gp][2];
 			SIMD cos = element.cossin[gp][0];
 			SIMD sin = element.cossin[gp][1];
 
-			element.conductivity[gp][0] = (cos * origin0 - sin * origin2) * cos - (cos * origin1 - sin * origin3) * sin;
-			element.conductivity[gp][1] = (cos * origin0 - sin * origin2) * sin + (cos * origin1 - sin * origin3) * cos;
-			element.conductivity[gp][2] = (sin * origin0 + cos * origin2) * cos - (sin * origin1 + cos * origin3) * sin;
-			element.conductivity[gp][3] = (sin * origin0 + cos * origin2) * sin + (sin * origin1 + cos * origin3) * cos;
+			element.conductivity[gp][0] = (cos * c00 - sin * c01) * cos - (cos * c01 - sin * c11) * sin;
+			element.conductivity[gp][1] = (cos * c00 - sin * c01) * sin + (cos * c01 - sin * c11) * cos;
+			element.conductivity[gp][2] = (sin * c00 + cos * c01) * sin + (sin * c01 + cos * c11) * cos;
 		}
 	}
 };
 
-template <size_t nodes, size_t gps, size_t edim, size_t etype, class Physics>
-struct HeatTransferCoordinateSystemApply<nodes, gps, 3, edim, etype, Physics>: HeatTransferCoordinateSystem, Physics {
+template <size_t nodes, size_t gps, size_t edim, class Physics>
+struct HeatTransferCoordinateSystemApply<nodes, gps, 2, edim, HeatTransferElementType::ASYMMETRIC_GENERAL, Physics>: HeatTransferCoordinateSystem, Physics {
+	using HeatTransferCoordinateSystem::HeatTransferCoordinateSystem;
+
+	// |cos , -sin| |c[0] , c[2]| | cos , sin|
+	// |sin ,  cos| |c[3] , c[1]| |-sin , cos|
+	// |cos * c[0] - sin * c[3] , cos * c[2] - sin * c[1]|  | cos , sin|
+	// |sin * c[0] + cos * c[3] , sin * c[2] + cos * c[1]|  |-sin , cos|
+
+	void simd(typename Physics::Element &element)
+	{
+		for (size_t gp = 0; gp < gps; ++gp) {
+			SIMD c00 = element.ecf.conductivity[gp][0], c10 = element.ecf.conductivity[gp][2];
+			SIMD c01 = element.ecf.conductivity[gp][1], c11 = element.ecf.conductivity[gp][3];
+			SIMD cos = element.cossin[gp][0];
+			SIMD sin = element.cossin[gp][1];
+
+			element.conductivity[gp][0] = (cos * c00 - sin * c10) * cos - (cos * c01 - sin * c11) * sin;
+			element.conductivity[gp][1] = (cos * c00 - sin * c10) * sin + (cos * c01 - sin * c11) * cos;
+			element.conductivity[gp][2] = (sin * c00 + cos * c10) * cos - (sin * c01 + cos * c11) * sin;
+			element.conductivity[gp][3] = (sin * c00 + cos * c10) * sin + (sin * c01 + cos * c11) * cos;
+		}
+	}
+};
+
+template <size_t nodes, size_t gps, size_t edim, class Physics>
+struct HeatTransferCoordinateSystemApply<nodes, gps, 3, edim, HeatTransferElementType::SYMMETRIC_GENERAL, Physics>: HeatTransferCoordinateSystem, Physics {
 	using HeatTransferCoordinateSystem::HeatTransferCoordinateSystem;
 
 	void simd(typename Physics::Element &element)
@@ -200,33 +223,76 @@ struct HeatTransferCoordinateSystemApply<nodes, gps, 3, edim, etype, Physics>: H
 			SIMD t21 = cos0 * sin1 * sin2 - cos2 * sin0;
 			SIMD t22 = cos0 * cos1;
 
-			SIMD origin0 = element.ecf.conductivity[gp][0];
-			SIMD origin1 = element.ecf.conductivity[gp][1];
-			SIMD origin2 = element.ecf.conductivity[gp][2];
-			SIMD origin3 = element.ecf.conductivity[gp][3];
-			SIMD origin4 = element.ecf.conductivity[gp][4];
-			SIMD origin5 = element.ecf.conductivity[gp][5];
-			SIMD origin6 = element.ecf.conductivity[gp][6];
-			SIMD origin7 = element.ecf.conductivity[gp][7];
-			SIMD origin8 = element.ecf.conductivity[gp][8];
+			SIMD c00 = element.ecf.conductivity[gp][0];
+			SIMD c01 = element.ecf.conductivity[gp][1], c11 = element.ecf.conductivity[gp][3];
+			SIMD c02 = element.ecf.conductivity[gp][2], c12 = element.ecf.conductivity[gp][4], c22 = element.ecf.conductivity[gp][5];
 
-			SIMD a = t00 * origin0 + t10 * origin3 + t20 * origin6;
-			SIMD b = t00 * origin1 + t10 * origin4 + t20 * origin7;
-			SIMD c = t00 * origin2 + t10 * origin5 + t20 * origin8;
+			SIMD a = t00 * c00 + t10 * c01 + t20 * c02;
+			SIMD b = t00 * c01 + t10 * c11 + t20 * c12;
+			SIMD c = t00 * c02 + t10 * c12 + t20 * c22;
 			element.conductivity[gp][0] = a * t00 + b * t10 + c * t20;
 			element.conductivity[gp][1] = a * t01 + b * t11 + c * t21;
 			element.conductivity[gp][2] = a * t02 + b * t12 + c * t22;
 
-			a = t01 * origin0 + t11 * origin3 + t21 * origin6;
-			b = t01 * origin1 + t11 * origin4 + t21 * origin7;
-			c = t01 * origin2 + t11 * origin5 + t21 * origin8;
+			a = t01 * c00 + t11 * c01 + t21 * c02;
+			b = t01 * c01 + t11 * c11 + t21 * c12;
+			c = t01 * c02 + t11 * c12 + t21 * c22;
+			element.conductivity[gp][3] = a * t01 + b * t11 + c * t21;
+			element.conductivity[gp][4] = a * t02 + b * t12 + c * t22;
+
+			a = t02 * c00 + t12 * c01 + t22 * c02;
+			b = t02 * c01 + t12 * c11 + t22 * c12;
+			c = t02 * c02 + t12 * c12 + t22 * c22;
+			element.conductivity[gp][5] = a * t02 + b * t12 + c * t22;
+		}
+	}
+};
+
+template <size_t nodes, size_t gps, size_t edim, class Physics>
+struct HeatTransferCoordinateSystemApply<nodes, gps, 3, edim, HeatTransferElementType::ASYMMETRIC_GENERAL, Physics>: HeatTransferCoordinateSystem, Physics {
+	using HeatTransferCoordinateSystem::HeatTransferCoordinateSystem;
+
+	void simd(typename Physics::Element &element)
+	{
+		for (size_t gp = 0; gp < gps; ++gp) {
+			SIMD cos0 = element.cossin[gp][0];
+			SIMD cos1 = element.cossin[gp][1];
+			SIMD cos2 = element.cossin[gp][2];
+			SIMD sin0 = element.cossin[gp][3];
+			SIMD sin1 = element.cossin[gp][4];
+			SIMD sin2 = element.cossin[gp][5];
+
+			SIMD t00 = cos1 * cos2;
+			SIMD t01 = cos1 * sin2;
+			SIMD t02 = -sin1;
+			SIMD t10 = cos2 * sin0 * sin1 - cos0 * sin2;
+			SIMD t11 = cos0 * cos2 + sin0 * sin1 * sin2;
+			SIMD t12 = cos1 * sin0;
+			SIMD t20 = sin0 * sin2 + cos0 * cos2 * sin1;
+			SIMD t21 = cos0 * sin1 * sin2 - cos2 * sin0;
+			SIMD t22 = cos0 * cos1;
+
+			SIMD c00 = element.ecf.conductivity[gp][0], c10 = element.ecf.conductivity[gp][3], c20 = element.ecf.conductivity[gp][6];
+			SIMD c01 = element.ecf.conductivity[gp][1], c11 = element.ecf.conductivity[gp][4], c21 = element.ecf.conductivity[gp][7];
+			SIMD c02 = element.ecf.conductivity[gp][2], c12 = element.ecf.conductivity[gp][5], c22 = element.ecf.conductivity[gp][8];
+
+			SIMD a = t00 * c00 + t10 * c10 + t20 * c20;
+			SIMD b = t00 * c01 + t10 * c11 + t20 * c21;
+			SIMD c = t00 * c02 + t10 * c12 + t20 * c22;
+			element.conductivity[gp][0] = a * t00 + b * t10 + c * t20;
+			element.conductivity[gp][1] = a * t01 + b * t11 + c * t21;
+			element.conductivity[gp][2] = a * t02 + b * t12 + c * t22;
+
+			a = t01 * c00 + t11 * c10 + t21 * c20;
+			b = t01 * c01 + t11 * c11 + t21 * c21;
+			c = t01 * c02 + t11 * c12 + t21 * c22;
 			element.conductivity[gp][3] = a * t00 + b * t10 + c * t20;
 			element.conductivity[gp][4] = a * t01 + b * t11 + c * t21;
 			element.conductivity[gp][5] = a * t02 + b * t12 + c * t22;
 
-			a = t02 * origin0 + t12 * origin3 + t22 * origin6;
-			b = t02 * origin1 + t12 * origin4 + t22 * origin7;
-			c = t02 * origin2 + t12 * origin5 + t22 * origin8;
+			a = t02 * c00 + t12 * c10 + t22 * c20;
+			b = t02 * c01 + t12 * c11 + t22 * c21;
+			c = t02 * c02 + t12 * c12 + t22 * c22;
 			element.conductivity[gp][6] = a * t00 + b * t10 + c * t20;
 			element.conductivity[gp][7] = a * t01 + b * t11 + c * t21;
 			element.conductivity[gp][8] = a * t02 + b * t12 + c * t22;

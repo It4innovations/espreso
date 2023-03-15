@@ -19,6 +19,9 @@ struct ElasticityIsotropicPlaneStrain: ActionOperator, Physics {
 
 	void simd(typename Physics::Element &element)
 	{
+		// 0 1 2  0 1 2
+		// 3 4 5    3 4
+		// 6 7 8      5
 		for (size_t gp = 0; gp < gps; ++gp) {
 			SIMD ex = element.ecf.youngModulus[gp];
 			SIMD mi = element.ecf.poissonRatio[gp];
@@ -28,12 +31,9 @@ struct ElasticityIsotropicPlaneStrain: ActionOperator, Physics {
 			element.ecf.elasticity[gp][0] = k;
 			element.ecf.elasticity[gp][1] = k * (mi / (C1 - mi));
 			element.ecf.elasticity[gp][2] = zeros();
-			element.ecf.elasticity[gp][3] = k * (mi / (C1 - mi));
-			element.ecf.elasticity[gp][4] = k;
-			element.ecf.elasticity[gp][5] = zeros();
-			element.ecf.elasticity[gp][6] = zeros();
-			element.ecf.elasticity[gp][7] = zeros();
-			element.ecf.elasticity[gp][8] = k * ((C1 - C2 * mi) / (C2 * (C1 - mi)));
+			element.ecf.elasticity[gp][3] = k;
+			element.ecf.elasticity[gp][4] = zeros();
+			element.ecf.elasticity[gp][5] = k * ((C1 - C2 * mi) / (C2 * (C1 - mi)));
 		}
 	}
 };
@@ -48,6 +48,9 @@ struct ElasticityIsotropicPlaneStress: ActionOperator, Physics {
 
 	void simd(typename Physics::Element &element)
 	{
+		// 0 1 2  0 1 2
+		// 3 4 5    3 4
+		// 6 7 8      5
 		for (size_t gp = 0; gp < gps; ++gp) {
 			SIMD ex = element.ecf.youngModulus[gp];
 			SIMD mi = element.ecf.poissonRatio[gp];
@@ -57,12 +60,9 @@ struct ElasticityIsotropicPlaneStress: ActionOperator, Physics {
 			element.ecf.elasticity[gp][0] = k;
 			element.ecf.elasticity[gp][1] = k * mi;
 			element.ecf.elasticity[gp][2] = zeros();
-			element.ecf.elasticity[gp][3] = k * mi;
-			element.ecf.elasticity[gp][4] = k;
-			element.ecf.elasticity[gp][5] = zeros();
-			element.ecf.elasticity[gp][6] = zeros();
-			element.ecf.elasticity[gp][7] = zeros();
-			element.ecf.elasticity[gp][8] = k * ((C1 -  mi) * C2);
+			element.ecf.elasticity[gp][3] = k;
+			element.ecf.elasticity[gp][4] = zeros();
+			element.ecf.elasticity[gp][5] = k * ((C1 -  mi) * C2);
 		}
 	}
 };
@@ -77,6 +77,10 @@ struct ElasticityIsotropicPlaneAxisymmetric: ActionOperator, Physics {
 
 	void simd(typename Physics::Element &element)
 	{
+		//  0  1  2  3   0  1  2  3
+		//  4  5  6  7      4  5  6
+		//  8  9 10 11         7  8
+		// 12 13 14 15            9
 		for (size_t gp = 0; gp < gps; ++gp) {
 			SIMD ex = element.ecf.youngModulus[gp];
 			SIMD mi = element.ecf.poissonRatio[gp];
@@ -84,25 +88,19 @@ struct ElasticityIsotropicPlaneAxisymmetric: ActionOperator, Physics {
 			SIMD C1 = load1(1.);
 			SIMD C2 = load1(2.);
 			SIMD k = ex / ((C1 + mi) * (C1 - C2 * mi));
-			element.ecf.elasticity[gp][ 0] = k * (C1 - mi);
-			element.ecf.elasticity[gp][ 1] = k * mi;
-			element.ecf.elasticity[gp][ 2] = k * mi;
-			element.ecf.elasticity[gp][ 3] = zeros();
+			element.ecf.elasticity[gp][0] = k * (C1 - mi);
+			element.ecf.elasticity[gp][1] = k * mi;
+			element.ecf.elasticity[gp][2] = k * mi;
+			element.ecf.elasticity[gp][3] = zeros();
 
-			element.ecf.elasticity[gp][ 4] = k * mi;
-			element.ecf.elasticity[gp][ 5] = k * (C1 - mi);
-			element.ecf.elasticity[gp][ 6] = k * mi;
-			element.ecf.elasticity[gp][ 7] = zeros();
+			element.ecf.elasticity[gp][4] = k * (C1 - mi);
+			element.ecf.elasticity[gp][5] = k * mi;
+			element.ecf.elasticity[gp][6] = zeros();
 
-			element.ecf.elasticity[gp][ 8] = k * mi;
-			element.ecf.elasticity[gp][ 9] = k * mi;
-			element.ecf.elasticity[gp][10] = k * (C1 - mi);
-			element.ecf.elasticity[gp][11] = zeros();
+			element.ecf.elasticity[gp][7] = k * (C1 - mi);
+			element.ecf.elasticity[gp][8] = zeros();
 
-			element.ecf.elasticity[gp][12] = zeros();
-			element.ecf.elasticity[gp][13] = zeros();
-			element.ecf.elasticity[gp][14] = zeros();
-			element.ecf.elasticity[gp][15] = k * (C1 - C2 * mi) * C05;
+			element.ecf.elasticity[gp][9] = k * (C1 - C2 * mi) * C05;
 		}
 	}
 };
@@ -117,6 +115,12 @@ struct ElasticityIsotropicVolume: ActionOperator, Physics {
 
 	void simd(typename Physics::Element &element)
 	{
+		//  0  1  2  3  4  5
+		//  6  7  8  9 10 11
+		// 12 13 14 15 16 17
+		// 18 19 20 21 22 23
+		// 24 25 26 27 28 29
+		// 30 31 32 33 34 35
 		for (size_t gp = 0; gp < gps; ++gp) {
 			SIMD ex = element.ecf.youngModulus[gp][0];
 			SIMD mi = element.ecf.poissonRatio[gp][0];
@@ -130,36 +134,26 @@ struct ElasticityIsotropicVolume: ActionOperator, Physics {
 			element.ecf.elasticity[gp][ 3] = zeros();
 			element.ecf.elasticity[gp][ 4] = zeros();
 			element.ecf.elasticity[gp][ 5] = zeros();
-			element.ecf.elasticity[gp][ 6] = ee * mi;
-			element.ecf.elasticity[gp][ 7] = ee * (C1 - mi);
-			element.ecf.elasticity[gp][ 8] = ee * mi;
+
+			element.ecf.elasticity[gp][ 6] = ee * (C1 - mi);
+			element.ecf.elasticity[gp][ 7] = ee * mi;
+			element.ecf.elasticity[gp][ 8] = zeros();
 			element.ecf.elasticity[gp][ 9] = zeros();
 			element.ecf.elasticity[gp][10] = zeros();
-			element.ecf.elasticity[gp][11] = zeros();
-			element.ecf.elasticity[gp][12] = ee * mi;
-			element.ecf.elasticity[gp][13] = ee * mi;
-			element.ecf.elasticity[gp][14] = ee * (C1 - mi);
-			element.ecf.elasticity[gp][15] = zeros();
+
+			element.ecf.elasticity[gp][11] = ee * (C1 - mi);
+			element.ecf.elasticity[gp][12] = zeros();
+			element.ecf.elasticity[gp][13] = zeros();
+			element.ecf.elasticity[gp][14] = zeros();
+
+			element.ecf.elasticity[gp][15] = ee * (C05 - mi);
 			element.ecf.elasticity[gp][16] = zeros();
 			element.ecf.elasticity[gp][17] = zeros();
-			element.ecf.elasticity[gp][18] = zeros();
+
+			element.ecf.elasticity[gp][18] = ee * (C05 - mi);
 			element.ecf.elasticity[gp][19] = zeros();
-			element.ecf.elasticity[gp][20] = zeros();
-			element.ecf.elasticity[gp][21] = ee * (C05 - mi);
-			element.ecf.elasticity[gp][22] = zeros();
-			element.ecf.elasticity[gp][23] = zeros();
-			element.ecf.elasticity[gp][24] = zeros();
-			element.ecf.elasticity[gp][25] = zeros();
-			element.ecf.elasticity[gp][26] = zeros();
-			element.ecf.elasticity[gp][27] = zeros();
-			element.ecf.elasticity[gp][28] = ee * (C05 - mi);
-			element.ecf.elasticity[gp][29] = zeros();
-			element.ecf.elasticity[gp][30] = zeros();
-			element.ecf.elasticity[gp][31] = zeros();
-			element.ecf.elasticity[gp][32] = zeros();
-			element.ecf.elasticity[gp][33] = zeros();
-			element.ecf.elasticity[gp][34] = zeros();
-			element.ecf.elasticity[gp][35] = ee * (C05 - mi);
+
+			element.ecf.elasticity[gp][20] = ee * (C05 - mi);
 		}
 	}
 };
@@ -174,6 +168,12 @@ struct ElasticityOrthotropicVolume: ActionOperator, Physics {
 
 	void simd(typename Physics::Element &element)
 	{
+		//  0  1  2  3  4  5
+		//  6  7  8  9 10 11
+		// 12 13 14 15 16 17
+		// 18 19 20 21 22 23
+		// 24 25 26 27 28 29
+		// 30 31 32 33 34 35
 		for (size_t gp = 0; gp < gps; ++gp) {
 			SIMD ex = element.ecf.youngModulus[gp][0];
 			SIMD ey = element.ecf.youngModulus[gp][1];
@@ -206,40 +206,25 @@ struct ElasticityOrthotropicVolume: ActionOperator, Physics {
 			element.ecf.elasticity[gp][ 4] = zeros();
 			element.ecf.elasticity[gp][ 5] = zeros();
 
-			element.ecf.elasticity[gp][ 6] = dxy;
-			element.ecf.elasticity[gp][ 7] = dyy;
-			element.ecf.elasticity[gp][ 8] = dyz;
+			element.ecf.elasticity[gp][ 6] = dyy;
+			element.ecf.elasticity[gp][ 7] = dyz;
+			element.ecf.elasticity[gp][ 8] = zeros();
 			element.ecf.elasticity[gp][ 9] = zeros();
 			element.ecf.elasticity[gp][10] = zeros();
-			element.ecf.elasticity[gp][11] = zeros();
 
-			element.ecf.elasticity[gp][12] = dxz;
-			element.ecf.elasticity[gp][13] = dyz;
-			element.ecf.elasticity[gp][14] = dzz;
-			element.ecf.elasticity[gp][15] = zeros();
+			element.ecf.elasticity[gp][11] = dzz;
+			element.ecf.elasticity[gp][12] = zeros();
+			element.ecf.elasticity[gp][13] = zeros();
+			element.ecf.elasticity[gp][14] = zeros();
+
+			element.ecf.elasticity[gp][15] = gx;
 			element.ecf.elasticity[gp][16] = zeros();
 			element.ecf.elasticity[gp][17] = zeros();
 
-			element.ecf.elasticity[gp][18] = zeros();
+			element.ecf.elasticity[gp][18] = gy;
 			element.ecf.elasticity[gp][19] = zeros();
-			element.ecf.elasticity[gp][20] = zeros();
-			element.ecf.elasticity[gp][21] = gx;
-			element.ecf.elasticity[gp][22] = zeros();
-			element.ecf.elasticity[gp][23] = zeros();
 
-			element.ecf.elasticity[gp][24] = zeros();
-			element.ecf.elasticity[gp][25] = zeros();
-			element.ecf.elasticity[gp][26] = zeros();
-			element.ecf.elasticity[gp][27] = zeros();
-			element.ecf.elasticity[gp][28] = gy;
-			element.ecf.elasticity[gp][29] = zeros();
-
-			element.ecf.elasticity[gp][30] = zeros();
-			element.ecf.elasticity[gp][31] = zeros();
-			element.ecf.elasticity[gp][32] = zeros();
-			element.ecf.elasticity[gp][33] = zeros();
-			element.ecf.elasticity[gp][34] = zeros();
-			element.ecf.elasticity[gp][35] = gz;
+			element.ecf.elasticity[gp][20] = gz;
 		}
 	}
 };

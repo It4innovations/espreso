@@ -423,7 +423,19 @@ void HeatTransfer::connect(SteadyState &scheme)
 	this->K = scheme.K;
 	this->f = scheme.f;
 	switch (scheme.K->shape) {
-	case Matrix_Shape::FULL:  generateElementOperators<GeneralMatricFiller>(etype, elementOps, 1, elements.stiffness, scheme.K); break;
+	case Matrix_Shape::FULL:
+		for(size_t i = 0; i < info::mesh->elements->eintervals.size(); ++i) {
+			switch (etype[i]) {
+			case HeatTransferElementType::SYMMETRIC_ISOTROPIC:
+			case HeatTransferElementType::SYMMETRIC_GENERAL:
+				elementOps[i].push_back(generateElementOperator<SymmetricToFullMatricFiller>(i, etype[i], 1, elements.stiffness, scheme.K)); break;
+				break;
+			default:
+				elementOps[i].push_back(generateElementOperator<GeneralMatricFiller>(i, etype[i], 1, elements.stiffness, scheme.K)); break;
+				break;
+			}
+		}
+		break;
 	case Matrix_Shape::UPPER: generateElementOperators<SymmetricMatricFiller>(etype, elementOps, 1, elements.stiffness, scheme.K); break;
 	}
 

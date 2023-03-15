@@ -358,7 +358,20 @@ void StructuralMechanics::connect(SteadyState &scheme)
 	this->K = scheme.K;
 	this->f = scheme.f;
 	switch (scheme.K->shape) {
-	case Matrix_Shape::FULL:  generateElementOperators<GeneralMatricFiller>(etype, elementOps, info::mesh->dimension, elements.stiffness, scheme.K); break;
+	case Matrix_Shape::FULL:
+		for(size_t i = 0; i < info::mesh->elements->eintervals.size(); ++i) {
+			switch (etype[i]) {
+			case StructuralMechanicsElementType::SYMMETRIC_PLANE:
+			case StructuralMechanicsElementType::SYMMETRIC_PLANE_AXISYMMETRIC:
+			case StructuralMechanicsElementType::SYMMETRIC_VOLUME:
+				elementOps[i].push_back(generateElementOperator<SymmetricToFullMatricFiller>(i, etype[i], info::mesh->dimension, elements.stiffness, scheme.K)); break;
+				break;
+			default:
+				elementOps[i].push_back(generateElementOperator<GeneralMatricFiller>(i, etype[i], info::mesh->dimension, elements.stiffness, scheme.K)); break;
+				break;
+			}
+		}
+		break;
 	case Matrix_Shape::UPPER: generateElementOperators<SymmetricMatricFiller>(etype, elementOps, info::mesh->dimension, elements.stiffness, scheme.K); break;
 	}
 
