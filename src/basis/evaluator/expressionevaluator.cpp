@@ -6,7 +6,6 @@ using namespace espreso;
 
 ExpressionEvaluator::ExpressionEvaluator(const std::string &expression)
 {
-	parameters.resize(info::env::threads);
 	_expression.resize(info::env::threads);
 	#pragma omp parallel for
 	for (int t = 0; t < info::env::threads; t++) {

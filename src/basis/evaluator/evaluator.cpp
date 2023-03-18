@@ -2,6 +2,8 @@
 #include "evaluator.h"
 #include "constevaluator.h"
 #include "expressionevaluator.h"
+#include "basis/utilities/parser.h"
+#include "esinfo/envinfo.h"
 
 #include "wrappers/exprtk/exprtk.h"
 
@@ -41,3 +43,18 @@ Evaluator* Evaluator::create(const std::string &expression)
 	}
 }
 
+Evaluator::Evaluator()
+: parameters(info::env::threads, { EvaluatorParameter("dummy") })
+{
+
+}
+
+double& Evaluator::getParameter(const std::string &name, int t)
+{
+	for (size_t i = 0; i < parameters[t].size(); ++i) {
+		if (StringCompare::caseInsensitiveEq(parameters[t][i].name, name)) {
+			return parameters[t][i].value;
+		}
+	}
+	return parameters[t][0].value; // return dummy value
+}

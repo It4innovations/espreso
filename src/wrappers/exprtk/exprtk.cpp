@@ -32,33 +32,37 @@ template <typename, typename> struct Sequence
 
 bool Exprtk::check(const std::string &expression, std::vector<EvaluatorParameter> &variables)
 {
+	Sequence<std::string, std::string::allocator_type> sequence(variables);
+
 	exprtk::symbol_table<double> symbol_table;
 	exprtk::expression<double> expr;
 	exprtk::parser<double> parser;
 
-	Sequence<std::string, std::string::allocator_type> sequence(variables);
+	symbol_table.add_constants();
 	exprtk::collect_variables(expression, sequence);
 	for (size_t i = 0; i < variables.size(); i++) {
-		symbol_table.add_variable(variables[i].name, variables[i].value);
+		if (!symbol_table.symbol_exists(variables[i].name)) {
+			symbol_table.add_variable(variables[i].name, variables[i].value);
+		}
 	}
 
-	symbol_table.add_constants();
 	expr.register_symbol_table(symbol_table);
-
 	return parser.compile(expression, expr);
 }
 
 Exprtk::Exprtk(const std::string &expression, std::vector<EvaluatorParameter> &variables)
 {
-	_exprtk = new ExprtkData();
-
 	Sequence<std::string, std::string::allocator_type> sequence(variables);
-	exprtk::collect_variables(expression, sequence);
 
-	for (size_t i = 0; i < variables.size(); i++) {
-		_exprtk->symbol_table.add_variable(variables[i].name, variables[i].value);
-	}
+	_exprtk = new ExprtkData();
 	_exprtk->symbol_table.add_constants();
+
+	exprtk::collect_variables(expression, _exprtk->symbol_table, sequence);
+	for (size_t i = 0; i < variables.size(); i++) {
+		if (!_exprtk->symbol_table.symbol_exists(variables[i].name)) {
+			_exprtk->symbol_table.add_variable(variables[i].name, variables[i].value);
+		}
+	}
 	_exprtk->expression.register_symbol_table(_exprtk->symbol_table);
 
 	exprtk::parser<double> parser;

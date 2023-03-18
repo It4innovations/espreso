@@ -21,6 +21,7 @@
 #include "input/parsers/meshgenerator/elements/3D/hexahedron20.h"
 
 #include "basis/containers/point.h"
+#include "basis/evaluator/evaluator.h"
 #include "basis/utilities/utils.h"
 #include "esinfo/eslog.h"
 #include "config/ecf/input/block.h"
@@ -87,16 +88,16 @@ void BlockGenerator::coordinates(MeshBuilder &mesh)
 	Triple<double> step = (_block.end - _block.start) / Triple<double>(nodes.x, nodes.y, nodes.z).steps();
 
 	mesh.coordinates.reserve(nodes.mul());
-	std::vector<double> p;
+	double &xx = _block.projection_x->getX(), &xy = _block.projection_x->getY(), &xz = _block.projection_x->getZ();
+	double &yx = _block.projection_y->getX(), &yy = _block.projection_y->getY(), &yz = _block.projection_y->getZ();
+	double &zx = _block.projection_z->getX(), &zy = _block.projection_z->getY(), &zz = _block.projection_z->getZ();
 	for (size_t z = 0; z < nodes.z; z++) {
 		for (size_t y = 0; y < nodes.y; y++) {
 			for (size_t x = 0; x < nodes.x; x++) {
-				p = {
-						MeshGenerator::precision * (_block.start.x + x * step.x),
-						MeshGenerator::precision * (_block.start.y + y * step.y),
-						MeshGenerator::precision * (_block.start.z + z * step.z)};
-//				mesh.coordinates.push_back(Point(_block.projection.x(p), _block.projection.y(p), _block.projection.z(p)));
-				mesh.coordinates.push_back(Point(p[0], p[1], p[2]));
+				xx = yx = zx = MeshGenerator::precision * (_block.start.x + x * step.x);
+				xy = yy = zy = MeshGenerator::precision * (_block.start.y + y * step.y);
+				xz = yz = zz = MeshGenerator::precision * (_block.start.z + z * step.z);
+				mesh.coordinates.push_back(Point(_block.projection_x->evaluate(), _block.projection_y->evaluate(), _block.projection_z->evaluate()));
 			}
 		}
 	}

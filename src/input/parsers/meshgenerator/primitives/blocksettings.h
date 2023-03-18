@@ -9,6 +9,7 @@
 namespace espreso {
 
 struct BlockGeneratorConfiguration;
+class Evaluator;
 
 struct BlockSettings {
 
@@ -20,6 +21,8 @@ struct BlockSettings {
 	Triple<size_t> elements;
 
 	Triple<int> start, end;
+
+	Evaluator *projection_x, *projection_y, *projection_z;
 };
 
 }

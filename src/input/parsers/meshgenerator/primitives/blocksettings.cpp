@@ -17,6 +17,10 @@ BlockSettings::BlockSettings(const BlockGeneratorConfiguration &configuration)
 			(esint)std::round((configuration.start_x.evaluator->evaluate() + configuration.length_x.evaluator->evaluate()) / (.1 * MeshGenerator::precision)) / 10,
 			(esint)std::round((configuration.start_y.evaluator->evaluate() + configuration.length_y.evaluator->evaluate()) / (.1 * MeshGenerator::precision)) / 10,
 			(esint)std::round((configuration.start_z.evaluator->evaluate() + configuration.length_z.evaluator->evaluate()) / (.1 * MeshGenerator::precision)) / 10);
+
+	projection_x = configuration.projection_x.evaluator;
+	projection_y = configuration.projection_y.evaluator;
+	projection_z = configuration.projection_z.evaluator;
 }
 
 size_t BlockSettings::preferedDomains(const BlockGeneratorConfiguration &configuration)

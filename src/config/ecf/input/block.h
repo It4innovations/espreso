@@ -18,7 +18,6 @@ struct BlockGeneratorConfiguration: public ECFDescription {
 	ECFExpression length_x, length_y, length_z;
 
 	ECFExpression projection_x, projection_y, projection_z;
-	ECFExpression rotation_x, rotation_y, rotation_z;
 
 	size_t domains_x, domains_y, domains_z;
 	size_t elements_x, elements_y, elements_z;

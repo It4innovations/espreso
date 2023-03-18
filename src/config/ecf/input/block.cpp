@@ -8,7 +8,6 @@ espreso::BlockGeneratorConfiguration::BlockGeneratorConfiguration()
 	element_type = GENERATOR_ELEMENT_TYPE::HEXA8;
 	start_x.value = start_y.value = start_z.value = "0";
 	length_x.value = length_y.value = length_z.value = "1";
-	rotation_x.value = rotation_y.value = rotation_z.value = "0";
 	projection_x.value = "x";
 	projection_y.value = "y";
 	projection_z.value = "z";
@@ -59,20 +58,6 @@ espreso::BlockGeneratorConfiguration::BlockGeneratorConfiguration()
 	REGISTER(projection_z, ECFMetaData()
 			.setdescription({ "Projection of z-coordinate of generated GRID." })
 			.setvariables({ "Z" })
-			.setdatatype({ ECFDataType::EXPRESSION }));
-
-	ecfdescription->addSpace();
-
-	REGISTER(rotation_x, ECFMetaData()
-			.setdescription({ "Rotation of x-coordinate of generated GRID." })
-			.setdatatype({ ECFDataType::EXPRESSION }));
-
-	REGISTER(rotation_y, ECFMetaData()
-			.setdescription({ "Rotation of y-coordinate of generated GRID." })
-			.setdatatype({ ECFDataType::EXPRESSION }));
-
-	REGISTER(rotation_z, ECFMetaData()
-			.setdescription({ "Rotation of z-coordinate of generated GRID." })
 			.setdatatype({ ECFDataType::EXPRESSION }));
 
 	ecfdescription->addSeparator();
