@@ -210,19 +210,32 @@ static ActionOperator* generateFaceFiller(size_t region, size_t interval, size_t
 	}
 }
 
+static int getThread(size_t interval)
+{
+	return info::mesh->elements->eintervals[interval].thread;
+}
+
+static int getThread(size_t region, size_t interval)
+{
+	if (info::mesh->boundaryRegions[region]->dimension) {
+		return info::mesh->boundaryRegions[region]->eintervals[interval].thread;
+	} else {
+		return interval;
+	}
+}
 
 template <template <size_t, size_t, size_t, size_t, size_t, class, class> class Expression, class Setter>
 static ActionOperator* generateTypedExpressionNode2D(size_t region, size_t interval, Evaluator *evaluator, const Setter &setter)
 {
-	return new Expression< 1, StructuralMechanicsGPC::POINT1, 2, 0, StructuralMechanicsElementType::NODE, StructuralMechanicsDataDescriptor< 1, StructuralMechanicsGPC::POINT1, 2, 0, StructuralMechanicsElementType::NODE>, Setter>(interval, evaluator, setter);
+	return new Expression< 1, StructuralMechanicsGPC::POINT1, 2, 0, StructuralMechanicsElementType::NODE, StructuralMechanicsDataDescriptor< 1, StructuralMechanicsGPC::POINT1, 2, 0, StructuralMechanicsElementType::NODE>, Setter>(getThread(region, interval), interval, evaluator, setter);
 }
 
 template <template <size_t, size_t, size_t, size_t, size_t, class, class> class Expression, class Setter>
 static ActionOperator* generateTypedExpressionEdge2D(size_t region, size_t interval, Evaluator *evaluator, const Setter &setter)
 {
 	switch (info::mesh->boundaryRegions[region]->eintervals[interval].code) {
-	case static_cast<int>(Element::CODE::LINE2): return new Expression< 2, StructuralMechanicsGPC::LINE2, 2, 1, StructuralMechanicsElementType::EDGE, StructuralMechanicsDataDescriptor< 2, StructuralMechanicsGPC::LINE2, 2, 1, StructuralMechanicsElementType::EDGE>, Setter>(interval, evaluator, setter);
-	case static_cast<int>(Element::CODE::LINE3): return new Expression< 3, StructuralMechanicsGPC::LINE3, 2, 1, StructuralMechanicsElementType::EDGE, StructuralMechanicsDataDescriptor< 3, StructuralMechanicsGPC::LINE3, 2, 1, StructuralMechanicsElementType::EDGE>, Setter>(interval, evaluator, setter);
+	case static_cast<int>(Element::CODE::LINE2): return new Expression< 2, StructuralMechanicsGPC::LINE2, 2, 1, StructuralMechanicsElementType::EDGE, StructuralMechanicsDataDescriptor< 2, StructuralMechanicsGPC::LINE2, 2, 1, StructuralMechanicsElementType::EDGE>, Setter>(getThread(region, interval), interval, evaluator, setter);
+	case static_cast<int>(Element::CODE::LINE3): return new Expression< 3, StructuralMechanicsGPC::LINE3, 2, 1, StructuralMechanicsElementType::EDGE, StructuralMechanicsDataDescriptor< 3, StructuralMechanicsGPC::LINE3, 2, 1, StructuralMechanicsElementType::EDGE>, Setter>(getThread(region, interval), interval, evaluator, setter);
 	default: return nullptr;
 	}
 }
@@ -231,8 +244,8 @@ template <template <size_t, size_t, size_t, size_t, size_t, class, class> class 
 static ActionOperator* generateTypedExpressionEdge2DAxisymmetric(size_t region, size_t interval, Evaluator *evaluator, const Setter &setter)
 {
 	switch (info::mesh->boundaryRegions[region]->eintervals[interval].code) {
-	case static_cast<int>(Element::CODE::LINE2): return new Expression< 2, StructuralMechanicsGPC::LINE2, 2, 1, StructuralMechanicsElementType::EDGE_AXISYMMETRIC, StructuralMechanicsDataDescriptor< 2, StructuralMechanicsGPC::LINE2, 2, 1, StructuralMechanicsElementType::EDGE_AXISYMMETRIC>, Setter>(interval, evaluator, setter);
-	case static_cast<int>(Element::CODE::LINE3): return new Expression< 3, StructuralMechanicsGPC::LINE3, 2, 1, StructuralMechanicsElementType::EDGE_AXISYMMETRIC, StructuralMechanicsDataDescriptor< 3, StructuralMechanicsGPC::LINE3, 2, 1, StructuralMechanicsElementType::EDGE_AXISYMMETRIC>, Setter>(interval, evaluator, setter);
+	case static_cast<int>(Element::CODE::LINE2): return new Expression< 2, StructuralMechanicsGPC::LINE2, 2, 1, StructuralMechanicsElementType::EDGE_AXISYMMETRIC, StructuralMechanicsDataDescriptor< 2, StructuralMechanicsGPC::LINE2, 2, 1, StructuralMechanicsElementType::EDGE_AXISYMMETRIC>, Setter>(getThread(region, interval), interval, evaluator, setter);
+	case static_cast<int>(Element::CODE::LINE3): return new Expression< 3, StructuralMechanicsGPC::LINE3, 2, 1, StructuralMechanicsElementType::EDGE_AXISYMMETRIC, StructuralMechanicsDataDescriptor< 3, StructuralMechanicsGPC::LINE3, 2, 1, StructuralMechanicsElementType::EDGE_AXISYMMETRIC>, Setter>(getThread(region, interval), interval, evaluator, setter);
 	default: return nullptr;
 	}
 }
@@ -240,15 +253,15 @@ static ActionOperator* generateTypedExpressionEdge2DAxisymmetric(size_t region, 
 template <template <size_t, size_t, size_t, size_t, size_t, class, class> class Expression, class Setter>
 static ActionOperator* generateTypedExpressionNode3D(size_t region, size_t interval, Evaluator *evaluator, const Setter &setter)
 {
-	return new Expression< 1, StructuralMechanicsGPC::POINT1, 3, 0, StructuralMechanicsElementType::NODE, StructuralMechanicsDataDescriptor< 1, StructuralMechanicsGPC::POINT1, 3, 0, StructuralMechanicsElementType::NODE>, Setter>(interval, evaluator, setter);
+	return new Expression< 1, StructuralMechanicsGPC::POINT1, 3, 0, StructuralMechanicsElementType::NODE, StructuralMechanicsDataDescriptor< 1, StructuralMechanicsGPC::POINT1, 3, 0, StructuralMechanicsElementType::NODE>, Setter>(getThread(region, interval), interval, evaluator, setter);
 }
 
 template <template <size_t, size_t, size_t, size_t, size_t, class, class> class Expression, class Setter>
 static ActionOperator* generateTypedExpressionEdge3D(size_t region, size_t interval, Evaluator *evaluator, const Setter &setter)
 {
 	switch (info::mesh->boundaryRegions[region]->eintervals[interval].code) {
-	case static_cast<int>(Element::CODE::LINE2): return new Expression< 2, StructuralMechanicsGPC::LINE2, 3, 1, StructuralMechanicsElementType::EDGE, StructuralMechanicsDataDescriptor< 2, StructuralMechanicsGPC::LINE2, 3, 1, StructuralMechanicsElementType::EDGE>, Setter>(interval, evaluator, setter);
-	case static_cast<int>(Element::CODE::LINE3): return new Expression< 3, StructuralMechanicsGPC::LINE3, 3, 1, StructuralMechanicsElementType::EDGE, StructuralMechanicsDataDescriptor< 3, StructuralMechanicsGPC::LINE3, 3, 1, StructuralMechanicsElementType::EDGE>, Setter>(interval, evaluator, setter);
+	case static_cast<int>(Element::CODE::LINE2): return new Expression< 2, StructuralMechanicsGPC::LINE2, 3, 1, StructuralMechanicsElementType::EDGE, StructuralMechanicsDataDescriptor< 2, StructuralMechanicsGPC::LINE2, 3, 1, StructuralMechanicsElementType::EDGE>, Setter>(getThread(region, interval), interval, evaluator, setter);
+	case static_cast<int>(Element::CODE::LINE3): return new Expression< 3, StructuralMechanicsGPC::LINE3, 3, 1, StructuralMechanicsElementType::EDGE, StructuralMechanicsDataDescriptor< 3, StructuralMechanicsGPC::LINE3, 3, 1, StructuralMechanicsElementType::EDGE>, Setter>(getThread(region, interval), interval, evaluator, setter);
 	default: return nullptr;
 	}
 }
@@ -257,10 +270,10 @@ template <template <size_t, size_t, size_t, size_t, size_t, class, class> class 
 static ActionOperator* generateTypedExpressionFace3D(size_t region, size_t interval, Evaluator *evaluator, const Setter &setter)
 {
 	switch (info::mesh->boundaryRegions[region]->eintervals[interval].code) {
-	case static_cast<int>(Element::CODE::TRIANGLE3): return new Expression< 3, StructuralMechanicsGPC::TRIANGLE3, 3, 2, StructuralMechanicsElementType::FACE, StructuralMechanicsDataDescriptor< 3, StructuralMechanicsGPC::TRIANGLE3, 3, 2, StructuralMechanicsElementType::FACE>, Setter>(interval, evaluator, setter);
-	case static_cast<int>(Element::CODE::TRIANGLE6): return new Expression< 6, StructuralMechanicsGPC::TRIANGLE6, 3, 2, StructuralMechanicsElementType::FACE, StructuralMechanicsDataDescriptor< 6, StructuralMechanicsGPC::TRIANGLE6, 3, 2, StructuralMechanicsElementType::FACE>, Setter>(interval, evaluator, setter);
-	case static_cast<int>(Element::CODE::SQUARE4  ): return new Expression< 4, StructuralMechanicsGPC::SQUARE4  , 3, 2, StructuralMechanicsElementType::FACE, StructuralMechanicsDataDescriptor< 4, StructuralMechanicsGPC::SQUARE4  , 3, 2, StructuralMechanicsElementType::FACE>, Setter>(interval, evaluator, setter);
-	case static_cast<int>(Element::CODE::SQUARE8  ): return new Expression< 8, StructuralMechanicsGPC::SQUARE8  , 3, 2, StructuralMechanicsElementType::FACE, StructuralMechanicsDataDescriptor< 8, StructuralMechanicsGPC::SQUARE8  , 3, 2, StructuralMechanicsElementType::FACE>, Setter>(interval, evaluator, setter);
+	case static_cast<int>(Element::CODE::TRIANGLE3): return new Expression< 3, StructuralMechanicsGPC::TRIANGLE3, 3, 2, StructuralMechanicsElementType::FACE, StructuralMechanicsDataDescriptor< 3, StructuralMechanicsGPC::TRIANGLE3, 3, 2, StructuralMechanicsElementType::FACE>, Setter>(getThread(region, interval), interval, evaluator, setter);
+	case static_cast<int>(Element::CODE::TRIANGLE6): return new Expression< 6, StructuralMechanicsGPC::TRIANGLE6, 3, 2, StructuralMechanicsElementType::FACE, StructuralMechanicsDataDescriptor< 6, StructuralMechanicsGPC::TRIANGLE6, 3, 2, StructuralMechanicsElementType::FACE>, Setter>(getThread(region, interval), interval, evaluator, setter);
+	case static_cast<int>(Element::CODE::SQUARE4  ): return new Expression< 4, StructuralMechanicsGPC::SQUARE4  , 3, 2, StructuralMechanicsElementType::FACE, StructuralMechanicsDataDescriptor< 4, StructuralMechanicsGPC::SQUARE4  , 3, 2, StructuralMechanicsElementType::FACE>, Setter>(getThread(region, interval), interval, evaluator, setter);
+	case static_cast<int>(Element::CODE::SQUARE8  ): return new Expression< 8, StructuralMechanicsGPC::SQUARE8  , 3, 2, StructuralMechanicsElementType::FACE, StructuralMechanicsDataDescriptor< 8, StructuralMechanicsGPC::SQUARE8  , 3, 2, StructuralMechanicsElementType::FACE>, Setter>(getThread(region, interval), interval, evaluator, setter);
 	default: return nullptr;
 	}
 }
@@ -269,10 +282,10 @@ template <template <size_t, size_t, size_t, size_t, size_t, class, class> class 
 static ActionOperator* generateTypedExpression2D(size_t interval, Evaluator *evaluator, const Setter &setter)
 {
 	switch (info::mesh->elements->eintervals[interval].code) {
-	case static_cast<int>(Element::CODE::TRIANGLE3): return new Expression< 3, StructuralMechanicsGPC::TRIANGLE3, 2, 2, etype, StructuralMechanicsDataDescriptor< 3, StructuralMechanicsGPC::TRIANGLE3, 2, 2, etype>, Setter>(interval, evaluator, setter);
-	case static_cast<int>(Element::CODE::TRIANGLE6): return new Expression< 6, StructuralMechanicsGPC::TRIANGLE6, 2, 2, etype, StructuralMechanicsDataDescriptor< 6, StructuralMechanicsGPC::TRIANGLE6, 2, 2, etype>, Setter>(interval, evaluator, setter);
-	case static_cast<int>(Element::CODE::SQUARE4  ): return new Expression< 4, StructuralMechanicsGPC::SQUARE4  , 2, 2, etype, StructuralMechanicsDataDescriptor< 4, StructuralMechanicsGPC::SQUARE4  , 2, 2, etype>, Setter>(interval, evaluator, setter);
-	case static_cast<int>(Element::CODE::SQUARE8  ): return new Expression< 8, StructuralMechanicsGPC::SQUARE8  , 2, 2, etype, StructuralMechanicsDataDescriptor< 8, StructuralMechanicsGPC::SQUARE8  , 2, 2, etype>, Setter>(interval, evaluator, setter);
+	case static_cast<int>(Element::CODE::TRIANGLE3): return new Expression< 3, StructuralMechanicsGPC::TRIANGLE3, 2, 2, etype, StructuralMechanicsDataDescriptor< 3, StructuralMechanicsGPC::TRIANGLE3, 2, 2, etype>, Setter>(getThread(interval), interval, evaluator, setter);
+	case static_cast<int>(Element::CODE::TRIANGLE6): return new Expression< 6, StructuralMechanicsGPC::TRIANGLE6, 2, 2, etype, StructuralMechanicsDataDescriptor< 6, StructuralMechanicsGPC::TRIANGLE6, 2, 2, etype>, Setter>(getThread(interval), interval, evaluator, setter);
+	case static_cast<int>(Element::CODE::SQUARE4  ): return new Expression< 4, StructuralMechanicsGPC::SQUARE4  , 2, 2, etype, StructuralMechanicsDataDescriptor< 4, StructuralMechanicsGPC::SQUARE4  , 2, 2, etype>, Setter>(getThread(interval), interval, evaluator, setter);
+	case static_cast<int>(Element::CODE::SQUARE8  ): return new Expression< 8, StructuralMechanicsGPC::SQUARE8  , 2, 2, etype, StructuralMechanicsDataDescriptor< 8, StructuralMechanicsGPC::SQUARE8  , 2, 2, etype>, Setter>(getThread(interval), interval, evaluator, setter);
 	default: return nullptr;
 	}
 }
@@ -281,14 +294,14 @@ template <template <size_t, size_t, size_t, size_t, size_t, class, class> class 
 static ActionOperator* generateTypedExpression3D(size_t interval, Evaluator *evaluator, const Setter &setter)
 {
 	switch (info::mesh->elements->eintervals[interval].code) {
-	case static_cast<int>(Element::CODE::TETRA4   ): return new Expression< 4, StructuralMechanicsGPC::TETRA4   , 3, 3, etype, StructuralMechanicsDataDescriptor< 4, StructuralMechanicsGPC::TETRA4   , 3, 3, etype>, Setter>(interval, evaluator, setter);
-	case static_cast<int>(Element::CODE::TETRA10  ): return new Expression<10, StructuralMechanicsGPC::TETRA10  , 3, 3, etype, StructuralMechanicsDataDescriptor<10, StructuralMechanicsGPC::TETRA10  , 3, 3, etype>, Setter>(interval, evaluator, setter);
-	case static_cast<int>(Element::CODE::PYRAMID5 ): return new Expression< 5, StructuralMechanicsGPC::PYRAMID5 , 3, 3, etype, StructuralMechanicsDataDescriptor< 5, StructuralMechanicsGPC::PYRAMID5 , 3, 3, etype>, Setter>(interval, evaluator, setter);
-	case static_cast<int>(Element::CODE::PYRAMID13): return new Expression<13, StructuralMechanicsGPC::PYRAMID13, 3, 3, etype, StructuralMechanicsDataDescriptor<13, StructuralMechanicsGPC::PYRAMID13, 3, 3, etype>, Setter>(interval, evaluator, setter);
-	case static_cast<int>(Element::CODE::PRISMA6  ): return new Expression< 6, StructuralMechanicsGPC::PRISMA6  , 3, 3, etype, StructuralMechanicsDataDescriptor< 6, StructuralMechanicsGPC::PRISMA6  , 3, 3, etype>, Setter>(interval, evaluator, setter);
-	case static_cast<int>(Element::CODE::PRISMA15 ): return new Expression<15, StructuralMechanicsGPC::PRISMA15 , 3, 3, etype, StructuralMechanicsDataDescriptor<15, StructuralMechanicsGPC::PRISMA15 , 3, 3, etype>, Setter>(interval, evaluator, setter);
-	case static_cast<int>(Element::CODE::HEXA8    ): return new Expression< 8, StructuralMechanicsGPC::HEXA8    , 3, 3, etype, StructuralMechanicsDataDescriptor< 8, StructuralMechanicsGPC::HEXA8    , 3, 3, etype>, Setter>(interval, evaluator, setter);
-	case static_cast<int>(Element::CODE::HEXA20   ): return new Expression<20, StructuralMechanicsGPC::HEXA20   , 3, 3, etype, StructuralMechanicsDataDescriptor<20, StructuralMechanicsGPC::HEXA20   , 3, 3, etype>, Setter>(interval, evaluator, setter);
+	case static_cast<int>(Element::CODE::TETRA4   ): return new Expression< 4, StructuralMechanicsGPC::TETRA4   , 3, 3, etype, StructuralMechanicsDataDescriptor< 4, StructuralMechanicsGPC::TETRA4   , 3, 3, etype>, Setter>(getThread(interval), interval, evaluator, setter);
+	case static_cast<int>(Element::CODE::TETRA10  ): return new Expression<10, StructuralMechanicsGPC::TETRA10  , 3, 3, etype, StructuralMechanicsDataDescriptor<10, StructuralMechanicsGPC::TETRA10  , 3, 3, etype>, Setter>(getThread(interval), interval, evaluator, setter);
+	case static_cast<int>(Element::CODE::PYRAMID5 ): return new Expression< 5, StructuralMechanicsGPC::PYRAMID5 , 3, 3, etype, StructuralMechanicsDataDescriptor< 5, StructuralMechanicsGPC::PYRAMID5 , 3, 3, etype>, Setter>(getThread(interval), interval, evaluator, setter);
+	case static_cast<int>(Element::CODE::PYRAMID13): return new Expression<13, StructuralMechanicsGPC::PYRAMID13, 3, 3, etype, StructuralMechanicsDataDescriptor<13, StructuralMechanicsGPC::PYRAMID13, 3, 3, etype>, Setter>(getThread(interval), interval, evaluator, setter);
+	case static_cast<int>(Element::CODE::PRISMA6  ): return new Expression< 6, StructuralMechanicsGPC::PRISMA6  , 3, 3, etype, StructuralMechanicsDataDescriptor< 6, StructuralMechanicsGPC::PRISMA6  , 3, 3, etype>, Setter>(getThread(interval), interval, evaluator, setter);
+	case static_cast<int>(Element::CODE::PRISMA15 ): return new Expression<15, StructuralMechanicsGPC::PRISMA15 , 3, 3, etype, StructuralMechanicsDataDescriptor<15, StructuralMechanicsGPC::PRISMA15 , 3, 3, etype>, Setter>(getThread(interval), interval, evaluator, setter);
+	case static_cast<int>(Element::CODE::HEXA8    ): return new Expression< 8, StructuralMechanicsGPC::HEXA8    , 3, 3, etype, StructuralMechanicsDataDescriptor< 8, StructuralMechanicsGPC::HEXA8    , 3, 3, etype>, Setter>(getThread(interval), interval, evaluator, setter);
+	case static_cast<int>(Element::CODE::HEXA20   ): return new Expression<20, StructuralMechanicsGPC::HEXA20   , 3, 3, etype, StructuralMechanicsDataDescriptor<20, StructuralMechanicsGPC::HEXA20   , 3, 3, etype>, Setter>(getThread(interval), interval, evaluator, setter);
 	default: return nullptr;
 	}
 }

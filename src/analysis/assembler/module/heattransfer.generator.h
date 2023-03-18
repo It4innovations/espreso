@@ -192,19 +192,32 @@ static ActionOperator* generateFaceFiller(size_t region, size_t interval, size_t
 	}
 }
 
+static int getThread(size_t interval)
+{
+	return info::mesh->elements->eintervals[interval].thread;
+}
+
+static int getThread(size_t region, size_t interval)
+{
+	if (info::mesh->boundaryRegions[region]->dimension) {
+		return info::mesh->boundaryRegions[region]->eintervals[interval].thread;
+	} else {
+		return interval;
+	}
+}
 
 template <template <size_t, size_t, size_t, size_t, size_t, class, class> class Expression, class Setter>
 static ActionOperator* generateTypedExpressionNode2D(size_t region, size_t interval, Evaluator *evaluator, const Setter &setter)
 {
-	return new Expression< 1, HeatTransferGPC::POINT1, 2, 0, HeatTransferElementType::NODE, HeatTransferDataDescriptor< 1, HeatTransferGPC::POINT1, 2, 0, HeatTransferElementType::NODE>, Setter>(interval, evaluator, setter);
+	return new Expression< 1, HeatTransferGPC::POINT1, 2, 0, HeatTransferElementType::NODE, HeatTransferDataDescriptor< 1, HeatTransferGPC::POINT1, 2, 0, HeatTransferElementType::NODE>, Setter>(getThread(region, interval), interval, evaluator, setter);
 }
 
 template <template <size_t, size_t, size_t, size_t, size_t, class, class> class Expression, class Setter>
 static ActionOperator* generateTypedExpressionEdge2D(size_t region, size_t interval, Evaluator *evaluator, const Setter &setter)
 {
 	switch (info::mesh->boundaryRegions[region]->eintervals[interval].code) {
-	case static_cast<int>(Element::CODE::LINE2): return new Expression< 2, HeatTransferGPC::LINE2, 2, 1, HeatTransferElementType::EDGE, HeatTransferDataDescriptor< 2, HeatTransferGPC::LINE2, 2, 1, HeatTransferElementType::EDGE>, Setter>(interval, evaluator, setter);
-	case static_cast<int>(Element::CODE::LINE3): return new Expression< 3, HeatTransferGPC::LINE3, 2, 1, HeatTransferElementType::EDGE, HeatTransferDataDescriptor< 3, HeatTransferGPC::LINE3, 2, 1, HeatTransferElementType::EDGE>, Setter>(interval, evaluator, setter);
+	case static_cast<int>(Element::CODE::LINE2): return new Expression< 2, HeatTransferGPC::LINE2, 2, 1, HeatTransferElementType::EDGE, HeatTransferDataDescriptor< 2, HeatTransferGPC::LINE2, 2, 1, HeatTransferElementType::EDGE>, Setter>(getThread(region, interval), interval, evaluator, setter);
+	case static_cast<int>(Element::CODE::LINE3): return new Expression< 3, HeatTransferGPC::LINE3, 2, 1, HeatTransferElementType::EDGE, HeatTransferDataDescriptor< 3, HeatTransferGPC::LINE3, 2, 1, HeatTransferElementType::EDGE>, Setter>(getThread(region, interval), interval, evaluator, setter);
 	default: return nullptr;
 	}
 }
@@ -212,15 +225,15 @@ static ActionOperator* generateTypedExpressionEdge2D(size_t region, size_t inter
 template <template <size_t, size_t, size_t, size_t, size_t, class, class> class Expression, class Setter>
 static ActionOperator* generateTypedExpressionNode3D(size_t region, size_t interval, Evaluator *evaluator, const Setter &setter)
 {
-	return new Expression< 1, HeatTransferGPC::POINT1, 3, 0, HeatTransferElementType::NODE, HeatTransferDataDescriptor< 1, HeatTransferGPC::POINT1, 3, 0, HeatTransferElementType::NODE>, Setter>(interval, evaluator, setter);
+	return new Expression< 1, HeatTransferGPC::POINT1, 3, 0, HeatTransferElementType::NODE, HeatTransferDataDescriptor< 1, HeatTransferGPC::POINT1, 3, 0, HeatTransferElementType::NODE>, Setter>(getThread(region, interval), interval, evaluator, setter);
 }
 
 template <template <size_t, size_t, size_t, size_t, size_t, class, class> class Expression, class Setter>
 static ActionOperator* generateTypedExpressionEdge3D(size_t region, size_t interval, Evaluator *evaluator, const Setter &setter)
 {
 	switch (info::mesh->boundaryRegions[region]->eintervals[interval].code) {
-	case static_cast<int>(Element::CODE::LINE2): return new Expression< 2, HeatTransferGPC::LINE2, 3, 1, HeatTransferElementType::EDGE, HeatTransferDataDescriptor< 2, HeatTransferGPC::LINE2, 3, 1, HeatTransferElementType::EDGE>, Setter>(interval, evaluator, setter);
-	case static_cast<int>(Element::CODE::LINE3): return new Expression< 3, HeatTransferGPC::LINE3, 3, 1, HeatTransferElementType::EDGE, HeatTransferDataDescriptor< 3, HeatTransferGPC::LINE3, 3, 1, HeatTransferElementType::EDGE>, Setter>(interval, evaluator, setter);
+	case static_cast<int>(Element::CODE::LINE2): return new Expression< 2, HeatTransferGPC::LINE2, 3, 1, HeatTransferElementType::EDGE, HeatTransferDataDescriptor< 2, HeatTransferGPC::LINE2, 3, 1, HeatTransferElementType::EDGE>, Setter>(getThread(region, interval), interval, evaluator, setter);
+	case static_cast<int>(Element::CODE::LINE3): return new Expression< 3, HeatTransferGPC::LINE3, 3, 1, HeatTransferElementType::EDGE, HeatTransferDataDescriptor< 3, HeatTransferGPC::LINE3, 3, 1, HeatTransferElementType::EDGE>, Setter>(getThread(region, interval), interval, evaluator, setter);
 	default: return nullptr;
 	}
 }
@@ -229,10 +242,10 @@ template <template <size_t, size_t, size_t, size_t, size_t, class, class> class 
 static ActionOperator* generateTypedExpressionFace3D(size_t region, size_t interval, Evaluator *evaluator, const Setter &setter)
 {
 	switch (info::mesh->boundaryRegions[region]->eintervals[interval].code) {
-	case static_cast<int>(Element::CODE::TRIANGLE3): return new Expression< 3, HeatTransferGPC::TRIANGLE3, 3, 2, HeatTransferElementType::FACE, HeatTransferDataDescriptor< 3, HeatTransferGPC::TRIANGLE3, 3, 2, HeatTransferElementType::FACE>, Setter>(interval, evaluator, setter);
-	case static_cast<int>(Element::CODE::TRIANGLE6): return new Expression< 6, HeatTransferGPC::TRIANGLE6, 3, 2, HeatTransferElementType::FACE, HeatTransferDataDescriptor< 6, HeatTransferGPC::TRIANGLE6, 3, 2, HeatTransferElementType::FACE>, Setter>(interval, evaluator, setter);
-	case static_cast<int>(Element::CODE::SQUARE4  ): return new Expression< 4, HeatTransferGPC::SQUARE4  , 3, 2, HeatTransferElementType::FACE, HeatTransferDataDescriptor< 4, HeatTransferGPC::SQUARE4  , 3, 2, HeatTransferElementType::FACE>, Setter>(interval, evaluator, setter);
-	case static_cast<int>(Element::CODE::SQUARE8  ): return new Expression< 8, HeatTransferGPC::SQUARE8  , 3, 2, HeatTransferElementType::FACE, HeatTransferDataDescriptor< 8, HeatTransferGPC::SQUARE8  , 3, 2, HeatTransferElementType::FACE>, Setter>(interval, evaluator, setter);
+	case static_cast<int>(Element::CODE::TRIANGLE3): return new Expression< 3, HeatTransferGPC::TRIANGLE3, 3, 2, HeatTransferElementType::FACE, HeatTransferDataDescriptor< 3, HeatTransferGPC::TRIANGLE3, 3, 2, HeatTransferElementType::FACE>, Setter>(getThread(region, interval), interval, evaluator, setter);
+	case static_cast<int>(Element::CODE::TRIANGLE6): return new Expression< 6, HeatTransferGPC::TRIANGLE6, 3, 2, HeatTransferElementType::FACE, HeatTransferDataDescriptor< 6, HeatTransferGPC::TRIANGLE6, 3, 2, HeatTransferElementType::FACE>, Setter>(getThread(region, interval), interval, evaluator, setter);
+	case static_cast<int>(Element::CODE::SQUARE4  ): return new Expression< 4, HeatTransferGPC::SQUARE4  , 3, 2, HeatTransferElementType::FACE, HeatTransferDataDescriptor< 4, HeatTransferGPC::SQUARE4  , 3, 2, HeatTransferElementType::FACE>, Setter>(getThread(region, interval), interval, evaluator, setter);
+	case static_cast<int>(Element::CODE::SQUARE8  ): return new Expression< 8, HeatTransferGPC::SQUARE8  , 3, 2, HeatTransferElementType::FACE, HeatTransferDataDescriptor< 8, HeatTransferGPC::SQUARE8  , 3, 2, HeatTransferElementType::FACE>, Setter>(getThread(region, interval), interval, evaluator, setter);
 	default: return nullptr;
 	}
 }
@@ -241,10 +254,10 @@ template <template <size_t, size_t, size_t, size_t, size_t, class, class> class 
 static ActionOperator* generateTypedExpression2D(size_t interval, Evaluator *evaluator, const Setter &setter)
 {
 	switch (info::mesh->elements->eintervals[interval].code) {
-	case static_cast<int>(Element::CODE::TRIANGLE3): return new Expression< 3, HeatTransferGPC::TRIANGLE3, 2, 2, etype, HeatTransferDataDescriptor< 3, HeatTransferGPC::TRIANGLE3, 2, 2, etype>, Setter>(interval, evaluator, setter);
-	case static_cast<int>(Element::CODE::TRIANGLE6): return new Expression< 6, HeatTransferGPC::TRIANGLE6, 2, 2, etype, HeatTransferDataDescriptor< 6, HeatTransferGPC::TRIANGLE6, 2, 2, etype>, Setter>(interval, evaluator, setter);
-	case static_cast<int>(Element::CODE::SQUARE4  ): return new Expression< 4, HeatTransferGPC::SQUARE4  , 2, 2, etype, HeatTransferDataDescriptor< 4, HeatTransferGPC::SQUARE4  , 2, 2, etype>, Setter>(interval, evaluator, setter);
-	case static_cast<int>(Element::CODE::SQUARE8  ): return new Expression< 8, HeatTransferGPC::SQUARE8  , 2, 2, etype, HeatTransferDataDescriptor< 8, HeatTransferGPC::SQUARE8  , 2, 2, etype>, Setter>(interval, evaluator, setter);
+	case static_cast<int>(Element::CODE::TRIANGLE3): return new Expression< 3, HeatTransferGPC::TRIANGLE3, 2, 2, etype, HeatTransferDataDescriptor< 3, HeatTransferGPC::TRIANGLE3, 2, 2, etype>, Setter>(getThread(interval), interval, evaluator, setter);
+	case static_cast<int>(Element::CODE::TRIANGLE6): return new Expression< 6, HeatTransferGPC::TRIANGLE6, 2, 2, etype, HeatTransferDataDescriptor< 6, HeatTransferGPC::TRIANGLE6, 2, 2, etype>, Setter>(getThread(interval), interval, evaluator, setter);
+	case static_cast<int>(Element::CODE::SQUARE4  ): return new Expression< 4, HeatTransferGPC::SQUARE4  , 2, 2, etype, HeatTransferDataDescriptor< 4, HeatTransferGPC::SQUARE4  , 2, 2, etype>, Setter>(getThread(interval), interval, evaluator, setter);
+	case static_cast<int>(Element::CODE::SQUARE8  ): return new Expression< 8, HeatTransferGPC::SQUARE8  , 2, 2, etype, HeatTransferDataDescriptor< 8, HeatTransferGPC::SQUARE8  , 2, 2, etype>, Setter>(getThread(interval), interval, evaluator, setter);
 	default: return nullptr;
 	}
 }
@@ -252,14 +265,14 @@ template <template <size_t, size_t, size_t, size_t, size_t, class, class> class 
 static ActionOperator* generateTypedExpression3D(size_t interval, Evaluator *evaluator, const Setter &setter)
 {
 	switch (info::mesh->elements->eintervals[interval].code) {
-	case static_cast<int>(Element::CODE::TETRA4   ): return new Expression< 4, HeatTransferGPC::TETRA4   , 3, 3, etype, HeatTransferDataDescriptor< 4, HeatTransferGPC::TETRA4   , 3, 3, etype>, Setter>(interval, evaluator, setter);
-	case static_cast<int>(Element::CODE::TETRA10  ): return new Expression<10, HeatTransferGPC::TETRA10  , 3, 3, etype, HeatTransferDataDescriptor<10, HeatTransferGPC::TETRA10  , 3, 3, etype>, Setter>(interval, evaluator, setter);
-	case static_cast<int>(Element::CODE::PYRAMID5 ): return new Expression< 5, HeatTransferGPC::PYRAMID5 , 3, 3, etype, HeatTransferDataDescriptor< 5, HeatTransferGPC::PYRAMID5 , 3, 3, etype>, Setter>(interval, evaluator, setter);
-	case static_cast<int>(Element::CODE::PYRAMID13): return new Expression<13, HeatTransferGPC::PYRAMID13, 3, 3, etype, HeatTransferDataDescriptor<13, HeatTransferGPC::PYRAMID13, 3, 3, etype>, Setter>(interval, evaluator, setter);
-	case static_cast<int>(Element::CODE::PRISMA6  ): return new Expression< 6, HeatTransferGPC::PRISMA6  , 3, 3, etype, HeatTransferDataDescriptor< 6, HeatTransferGPC::PRISMA6  , 3, 3, etype>, Setter>(interval, evaluator, setter);
-	case static_cast<int>(Element::CODE::PRISMA15 ): return new Expression<15, HeatTransferGPC::PRISMA15 , 3, 3, etype, HeatTransferDataDescriptor<15, HeatTransferGPC::PRISMA15 , 3, 3, etype>, Setter>(interval, evaluator, setter);
-	case static_cast<int>(Element::CODE::HEXA8    ): return new Expression< 8, HeatTransferGPC::HEXA8    , 3, 3, etype, HeatTransferDataDescriptor< 8, HeatTransferGPC::HEXA8    , 3, 3, etype>, Setter>(interval, evaluator, setter);
-	case static_cast<int>(Element::CODE::HEXA20   ): return new Expression<20, HeatTransferGPC::HEXA20   , 3, 3, etype, HeatTransferDataDescriptor<20, HeatTransferGPC::HEXA20   , 3, 3, etype>, Setter>(interval, evaluator, setter);
+	case static_cast<int>(Element::CODE::TETRA4   ): return new Expression< 4, HeatTransferGPC::TETRA4   , 3, 3, etype, HeatTransferDataDescriptor< 4, HeatTransferGPC::TETRA4   , 3, 3, etype>, Setter>(getThread(interval), interval, evaluator, setter);
+	case static_cast<int>(Element::CODE::TETRA10  ): return new Expression<10, HeatTransferGPC::TETRA10  , 3, 3, etype, HeatTransferDataDescriptor<10, HeatTransferGPC::TETRA10  , 3, 3, etype>, Setter>(getThread(interval), interval, evaluator, setter);
+	case static_cast<int>(Element::CODE::PYRAMID5 ): return new Expression< 5, HeatTransferGPC::PYRAMID5 , 3, 3, etype, HeatTransferDataDescriptor< 5, HeatTransferGPC::PYRAMID5 , 3, 3, etype>, Setter>(getThread(interval), interval, evaluator, setter);
+	case static_cast<int>(Element::CODE::PYRAMID13): return new Expression<13, HeatTransferGPC::PYRAMID13, 3, 3, etype, HeatTransferDataDescriptor<13, HeatTransferGPC::PYRAMID13, 3, 3, etype>, Setter>(getThread(interval), interval, evaluator, setter);
+	case static_cast<int>(Element::CODE::PRISMA6  ): return new Expression< 6, HeatTransferGPC::PRISMA6  , 3, 3, etype, HeatTransferDataDescriptor< 6, HeatTransferGPC::PRISMA6  , 3, 3, etype>, Setter>(getThread(interval), interval, evaluator, setter);
+	case static_cast<int>(Element::CODE::PRISMA15 ): return new Expression<15, HeatTransferGPC::PRISMA15 , 3, 3, etype, HeatTransferDataDescriptor<15, HeatTransferGPC::PRISMA15 , 3, 3, etype>, Setter>(getThread(interval), interval, evaluator, setter);
+	case static_cast<int>(Element::CODE::HEXA8    ): return new Expression< 8, HeatTransferGPC::HEXA8    , 3, 3, etype, HeatTransferDataDescriptor< 8, HeatTransferGPC::HEXA8    , 3, 3, etype>, Setter>(getThread(interval), interval, evaluator, setter);
+	case static_cast<int>(Element::CODE::HEXA20   ): return new Expression<20, HeatTransferGPC::HEXA20   , 3, 3, etype, HeatTransferDataDescriptor<20, HeatTransferGPC::HEXA20   , 3, 3, etype>, Setter>(getThread(interval), interval, evaluator, setter);
 	default: return nullptr;
 	}
 }
@@ -548,6 +561,18 @@ static ActionOperator* generateElementOperator(size_t interval, int etype, Args&
 }
 
 template <template <size_t, size_t, size_t, size_t, size_t, class> class Operator, class ... Args>
+static ActionOperator* generateElementOperator2D(size_t interval, int etype, Args&& ... args)
+{
+	switch (etype) {
+	case HeatTransferElementType::SYMMETRIC_ISOTROPIC : return generateElementTypedOperator2D<Operator, HeatTransferElementType::SYMMETRIC_ISOTROPIC , Args...>(interval, std::forward<Args>(args)...);
+	case HeatTransferElementType::SYMMETRIC_GENERAL   : return generateElementTypedOperator2D<Operator, HeatTransferElementType::SYMMETRIC_GENERAL   , Args...>(interval, std::forward<Args>(args)...);
+	case HeatTransferElementType::ASYMMETRIC_ISOTROPIC: return generateElementTypedOperator2D<Operator, HeatTransferElementType::ASYMMETRIC_ISOTROPIC, Args...>(interval, std::forward<Args>(args)...);
+	case HeatTransferElementType::ASYMMETRIC_GENERAL  : return generateElementTypedOperator2D<Operator, HeatTransferElementType::ASYMMETRIC_GENERAL  , Args...>(interval, std::forward<Args>(args)...);
+	}
+	return nullptr;
+}
+
+template <template <size_t, size_t, size_t, size_t, size_t, class> class Operator, class ... Args>
 static ActionOperator* generateElementAsymmetricOperator(size_t interval, int etype, Args&& ... args)
 {
 	switch (etype) {
@@ -604,6 +629,18 @@ static void generateElementAsymmetricOperators(const std::vector<int> &etype, st
 }
 
 template <template <size_t, size_t, size_t, size_t, size_t, class> class Operator, class ... Args>
+static ActionOperator* generateBoundaryNode2DOperator(size_t region, size_t interval, Args&& ... args)
+{
+	return new Operator< 1, HeatTransferGPC::POINT1, 2, 0, HeatTransferElementType::NODE, HeatTransferDataDescriptor< 1, HeatTransferGPC::POINT1, 2, 0, HeatTransferElementType::NODE> >(region, interval, std::forward<Args>(args)...);
+}
+
+template <template <size_t, size_t, size_t, size_t, size_t, class> class Operator, class ... Args>
+static ActionOperator* generateBoundaryNode3DOperator(size_t region, size_t interval, Args&& ... args)
+{
+	return new Operator< 1, HeatTransferGPC::POINT1, 3, 0, HeatTransferElementType::NODE, HeatTransferDataDescriptor< 1, HeatTransferGPC::POINT1, 3, 0, HeatTransferElementType::NODE> >(region, interval, std::forward<Args>(args)...);
+}
+
+template <template <size_t, size_t, size_t, size_t, size_t, class> class Operator, class ... Args>
 static ActionOperator* generateBoundaryEdge2DOperator(size_t region, size_t interval, Args&& ... args)
 {
 	switch (info::mesh->boundaryRegions[region]->eintervals[interval].code) {
@@ -649,6 +686,19 @@ static ActionOperator* generateBoundaryOperator(size_t region, size_t interval, 
 	}
 	return nullptr;
 }
+
+template <template <size_t, size_t, size_t, size_t, size_t, class> class Operator, class ... Args>
+static ActionOperator* generateBoundaryNodeOperator(size_t region, size_t interval, Args&& ... args)
+{
+	if (info::mesh->boundaryRegions[region]->dimension == 0) {
+		switch (info::mesh->dimension) {
+		case 2: return generateBoundaryNode2DOperator<Operator>(region, interval, std::forward<Args>(args)...);
+		case 3: return generateBoundaryNode3DOperator<Operator>(region, interval, std::forward<Args>(args)...);
+		}
+	}
+	return nullptr;
+}
+
 
 template <template <size_t, size_t, size_t, size_t, size_t, class> class Operator, class ... Args>
 static void generateBoundaryOperators(const std::vector<int> &bfilter, std::vector<std::vector<std::vector<ActionOperator*> > > &ops, Args&& ... args)
@@ -794,7 +844,7 @@ static void dropLastOperators(const std::vector<int> &bfilter, std::vector<std::
 {
 	for(size_t r = 0; r < info::mesh->boundaryRegions.size(); ++r) {
 		if (bfilter[r]) {
-			for (size_t i = 0; i < info::mesh->boundaryRegions[r]->eintervals.size(); ++i) {
+			for (size_t i = 0; i < ops[r].size(); ++i) {
 				delete ops[r][i].back();
 				ops[r][i].pop_back();
 			}

@@ -15,7 +15,7 @@ struct Temperature: ActionOperator {
 	: procNodes(procNodes), source(source)
 	{
 		isconst = false;
-		action = Action::SOLUTION;
+		action = Action::ASSEMBLE | Action::REASSEMBLE | Action::SOLUTION;
 	}
 
 	void move(int n)

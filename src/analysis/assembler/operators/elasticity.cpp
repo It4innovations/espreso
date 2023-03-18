@@ -30,9 +30,9 @@ void StructuralMechanics::generateElasticity()
 			}
 		}
 
-		elementOps[interval].push_back(generateExpression<ExternalGPsExpression>(interval, etype[interval], mat->density.evaluator,
+		elementOps[interval].push_back(generateExpression<ExternalGpsExpressionWithCoordinates>(interval, etype[interval], mat->density.evaluator,
 					[] (auto &element, const size_t &gp, const size_t &s, const double &value) { element.ecf.density[gp][s] = value; }));
-		elementOps[interval].push_back(generateExpression<ExternalGPsExpression>(interval, etype[interval], mat->heat_capacity.evaluator,
+		elementOps[interval].push_back(generateExpression<ExternalGpsExpressionWithCoordinates>(interval, etype[interval], mat->heat_capacity.evaluator,
 					[] (auto &element, const size_t &gp, const size_t &s, const double &value) { element.ecf.heatCapacity[gp][s] = value; }));
 
 		const LinearElasticPropertiesConfiguration &le = mat->linear_elastic_properties;
@@ -40,10 +40,10 @@ void StructuralMechanics::generateElasticity()
 		case 2:
 			switch (mat->linear_elastic_properties.model) {
 			case LinearElasticPropertiesConfiguration::MODEL::ISOTROPIC:
-				elementOps[interval].push_back(generateExpression2D<ExternalGPsExpression>(interval, etype[interval], le.young_modulus.get(0, 0).evaluator,
+				elementOps[interval].push_back(generateExpression2D<ExternalGpsExpressionWithCoordinates>(interval, etype[interval], le.young_modulus.get(0, 0).evaluator,
 							[] (auto &element, const size_t &gp, const size_t &s, const double &value) { element.ecf.youngModulus[gp][s] = value; }));
 				isconst &= elementOps[interval].back()->isconst;
-				elementOps[interval].push_back(generateExpression2D<ExternalGPsExpression>(interval, etype[interval], le.poisson_ratio.get(0, 0).evaluator,
+				elementOps[interval].push_back(generateExpression2D<ExternalGpsExpressionWithCoordinates>(interval, etype[interval], le.poisson_ratio.get(0, 0).evaluator,
 							[] (auto &element, const size_t &gp, const size_t &s, const double &value) { element.ecf.poissonRatio[gp][s] = value; }));
 				isconst &= elementOps[interval].back()->isconst;
 				break;
@@ -71,17 +71,17 @@ void StructuralMechanics::generateElasticity()
 			if (rotate) {
 				switch (mat->coordinate_system.type) {
 				case CoordinateSystemConfiguration::TYPE::CARTESIAN:
-//					elementOps[interval].push_back(generateExpression2D<ExternalGPsExpression>(interval, etype[interval], mat->coordinate_system.rotation.z.evaluator,
+//					elementOps[interval].push_back(generateExpression2D<ExternalGpsExpressionWithCoordinates>(interval, etype[interval], mat->coordinate_system.rotation.z.evaluator,
 //								[] (auto &element, const size_t &gp, const size_t &s, const double &value) { element.ecf.center[gp][0][s] = value; }));
 //					isconst &= elementOps[interval].back()->isconst;
 //					elementOps[interval].push_back(generateElementOperator2D<CoordinateSystemCartesian>(interval, etype[interval]));
 //					elementOps[interval].back()->isconst &= isconst;
 					break;
 				case CoordinateSystemConfiguration::TYPE::CYLINDRICAL:
-//					elementOps[interval].push_back(generateExpression2D<ExternalGPsExpression>(interval, etype[interval], mat->coordinate_system.center.x.evaluator,
+//					elementOps[interval].push_back(generateExpression2D<ExternalGpsExpressionWithCoordinates>(interval, etype[interval], mat->coordinate_system.center.x.evaluator,
 //								[] (auto &element, const size_t &gp, const size_t &s, const double &value) { element.ecf.center[gp][0][s] = value; }));
 //					isconst &= elementOps[interval].back()->isconst;
-//					elementOps[interval].push_back(generateExpression2D<ExternalGPsExpression>(interval, etype[interval], mat->coordinate_system.center.y.evaluator,
+//					elementOps[interval].push_back(generateExpression2D<ExternalGpsExpressionWithCoordinates>(interval, etype[interval], mat->coordinate_system.center.y.evaluator,
 //								[] (auto &element, const size_t &gp, const size_t &s, const double &value) { element.ecf.center[gp][1][s] = value; }));
 //					isconst &= elementOps[interval].back()->isconst;
 //					elementOps[interval].push_back(generateElementOperator2D<CoordinateSystemCylindric>(interval, etype[interval]));
@@ -100,10 +100,10 @@ void StructuralMechanics::generateElasticity()
 		case 3:
 			switch (mat->linear_elastic_properties.model) {
 			case LinearElasticPropertiesConfiguration::MODEL::ISOTROPIC:
-				elementOps[interval].push_back(generateExpression3D<ExternalGPsExpression>(interval, etype[interval], le.young_modulus.get(0, 0).evaluator,
+				elementOps[interval].push_back(generateExpression3D<ExternalGpsExpressionWithCoordinates>(interval, etype[interval], le.young_modulus.get(0, 0).evaluator,
 							[] (auto &element, const size_t &gp, const size_t &s, const double &value) { element.ecf.youngModulus[gp][0][s] = value; }));
 				isconst &= elementOps[interval].back()->isconst;
-				elementOps[interval].push_back(generateExpression3D<ExternalGPsExpression>(interval, etype[interval], le.poisson_ratio.get(0, 0).evaluator,
+				elementOps[interval].push_back(generateExpression3D<ExternalGpsExpressionWithCoordinates>(interval, etype[interval], le.poisson_ratio.get(0, 0).evaluator,
 							[] (auto &element, const size_t &gp, const size_t &s, const double &value) { element.ecf.poissonRatio[gp][0][s] = value; }));
 				isconst &= elementOps[interval].back()->isconst;
 
@@ -111,31 +111,31 @@ void StructuralMechanics::generateElasticity()
 				elementOps[interval].back()->isconst &= isconst;
 				break;
 			case LinearElasticPropertiesConfiguration::MODEL::ORTHOTROPIC:
-				elementOps[interval].push_back(generateExpression3D<ExternalGPsExpression>(interval, etype[interval], le.young_modulus.get(0, 0).evaluator,
+				elementOps[interval].push_back(generateExpression3D<ExternalGpsExpressionWithCoordinates>(interval, etype[interval], le.young_modulus.get(0, 0).evaluator,
 							[] (auto &element, const size_t &gp, const size_t &s, const double &value) { element.ecf.youngModulus[gp][0][s] = value; }));
 				isconst &= elementOps[interval].back()->isconst;
-				elementOps[interval].push_back(generateExpression3D<ExternalGPsExpression>(interval, etype[interval], le.young_modulus.get(1, 1).evaluator,
+				elementOps[interval].push_back(generateExpression3D<ExternalGpsExpressionWithCoordinates>(interval, etype[interval], le.young_modulus.get(1, 1).evaluator,
 							[] (auto &element, const size_t &gp, const size_t &s, const double &value) { element.ecf.youngModulus[gp][1][s] = value; }));
 				isconst &= elementOps[interval].back()->isconst;
-				elementOps[interval].push_back(generateExpression3D<ExternalGPsExpression>(interval, etype[interval], le.young_modulus.get(2, 2).evaluator,
+				elementOps[interval].push_back(generateExpression3D<ExternalGpsExpressionWithCoordinates>(interval, etype[interval], le.young_modulus.get(2, 2).evaluator,
 							[] (auto &element, const size_t &gp, const size_t &s, const double &value) { element.ecf.youngModulus[gp][2][s] = value; }));
 				isconst &= elementOps[interval].back()->isconst;
-				elementOps[interval].push_back(generateExpression3D<ExternalGPsExpression>(interval, etype[interval], le.poisson_ratio.get(0, 0).evaluator,
+				elementOps[interval].push_back(generateExpression3D<ExternalGpsExpressionWithCoordinates>(interval, etype[interval], le.poisson_ratio.get(0, 0).evaluator,
 							[] (auto &element, const size_t &gp, const size_t &s, const double &value) { element.ecf.poissonRatio[gp][0][s] = value; }));
 				isconst &= elementOps[interval].back()->isconst;
-				elementOps[interval].push_back(generateExpression3D<ExternalGPsExpression>(interval, etype[interval], le.poisson_ratio.get(1, 1).evaluator,
+				elementOps[interval].push_back(generateExpression3D<ExternalGpsExpressionWithCoordinates>(interval, etype[interval], le.poisson_ratio.get(1, 1).evaluator,
 							[] (auto &element, const size_t &gp, const size_t &s, const double &value) { element.ecf.poissonRatio[gp][1][s] = value; }));
 				isconst &= elementOps[interval].back()->isconst;
-				elementOps[interval].push_back(generateExpression3D<ExternalGPsExpression>(interval, etype[interval], le.poisson_ratio.get(2, 2).evaluator,
+				elementOps[interval].push_back(generateExpression3D<ExternalGpsExpressionWithCoordinates>(interval, etype[interval], le.poisson_ratio.get(2, 2).evaluator,
 							[] (auto &element, const size_t &gp, const size_t &s, const double &value) { element.ecf.poissonRatio[gp][2][s] = value; }));
 				isconst &= elementOps[interval].back()->isconst;
-				elementOps[interval].push_back(generateExpression3D<ExternalGPsExpression>(interval, etype[interval], le.shear_modulus.get(0, 0).evaluator,
+				elementOps[interval].push_back(generateExpression3D<ExternalGpsExpressionWithCoordinates>(interval, etype[interval], le.shear_modulus.get(0, 0).evaluator,
 							[] (auto &element, const size_t &gp, const size_t &s, const double &value) { element.ecf.shearModulus[gp][0][s] = value; }));
 				isconst &= elementOps[interval].back()->isconst;
-				elementOps[interval].push_back(generateExpression3D<ExternalGPsExpression>(interval, etype[interval], le.shear_modulus.get(1, 1).evaluator,
+				elementOps[interval].push_back(generateExpression3D<ExternalGpsExpressionWithCoordinates>(interval, etype[interval], le.shear_modulus.get(1, 1).evaluator,
 							[] (auto &element, const size_t &gp, const size_t &s, const double &value) { element.ecf.shearModulus[gp][1][s] = value; }));
 				isconst &= elementOps[interval].back()->isconst;
-				elementOps[interval].push_back(generateExpression3D<ExternalGPsExpression>(interval, etype[interval], le.shear_modulus.get(2, 2).evaluator,
+				elementOps[interval].push_back(generateExpression3D<ExternalGpsExpressionWithCoordinates>(interval, etype[interval], le.shear_modulus.get(2, 2).evaluator,
 							[] (auto &element, const size_t &gp, const size_t &s, const double &value) { element.ecf.shearModulus[gp][2][s] = value; }));
 				isconst &= elementOps[interval].back()->isconst;
 
@@ -149,36 +149,36 @@ void StructuralMechanics::generateElasticity()
 			if (rotate) {
 				switch (mat->coordinate_system.type) {
 				case CoordinateSystemConfiguration::TYPE::CARTESIAN:
-					elementOps[interval].push_back(generateExpression3D<ExternalGPsExpression>(interval, etype[interval], mat->coordinate_system.rotation.x.evaluator,
+					elementOps[interval].push_back(generateExpression3D<ExternalGpsExpressionWithCoordinates>(interval, etype[interval], mat->coordinate_system.rotation.x.evaluator,
 								[] (auto &element, const size_t &gp, const size_t &s, const double &value) { element.ecf.center[gp][0][s] = value; }));
 					isconst &= elementOps[interval].back()->isconst;
-					elementOps[interval].push_back(generateExpression3D<ExternalGPsExpression>(interval, etype[interval], mat->coordinate_system.rotation.y.evaluator,
+					elementOps[interval].push_back(generateExpression3D<ExternalGpsExpressionWithCoordinates>(interval, etype[interval], mat->coordinate_system.rotation.y.evaluator,
 								[] (auto &element, const size_t &gp, const size_t &s, const double &value) { element.ecf.center[gp][1][s] = value; }));
 					isconst &= elementOps[interval].back()->isconst;
-					elementOps[interval].push_back(generateExpression3D<ExternalGPsExpression>(interval, etype[interval], mat->coordinate_system.rotation.z.evaluator,
+					elementOps[interval].push_back(generateExpression3D<ExternalGpsExpressionWithCoordinates>(interval, etype[interval], mat->coordinate_system.rotation.z.evaluator,
 								[] (auto &element, const size_t &gp, const size_t &s, const double &value) { element.ecf.center[gp][2][s] = value; }));
 					isconst &= elementOps[interval].back()->isconst;
 					elementOps[interval].push_back(generateElementOperator3D<ElasticityCoordinateSystemCartesian>(interval, etype[interval]));
 					elementOps[interval].back()->isconst &= isconst;
 					break;
 				case CoordinateSystemConfiguration::TYPE::CYLINDRICAL:
-					elementOps[interval].push_back(generateExpression3D<ExternalGPsExpression>(interval, etype[interval], mat->coordinate_system.center.x.evaluator,
+					elementOps[interval].push_back(generateExpression3D<ExternalGpsExpressionWithCoordinates>(interval, etype[interval], mat->coordinate_system.center.x.evaluator,
 								[] (auto &element, const size_t &gp, const size_t &s, const double &value) { element.ecf.center[gp][0][s] = value; }));
 					isconst &= elementOps[interval].back()->isconst;
-					elementOps[interval].push_back(generateExpression3D<ExternalGPsExpression>(interval, etype[interval], mat->coordinate_system.center.y.evaluator,
+					elementOps[interval].push_back(generateExpression3D<ExternalGpsExpressionWithCoordinates>(interval, etype[interval], mat->coordinate_system.center.y.evaluator,
 								[] (auto &element, const size_t &gp, const size_t &s, const double &value) { element.ecf.center[gp][1][s] = value; }));
 					isconst &= elementOps[interval].back()->isconst;
 					elementOps[interval].push_back(generateElementOperator3D<ElasticityCoordinateSystemCylindric>(interval, etype[interval]));
 					isconst &= elementOps[interval].back()->isconst;
 					break;
 				case CoordinateSystemConfiguration::TYPE::SPHERICAL:
-					elementOps[interval].push_back(generateExpression3D<ExternalGPsExpression>(interval, etype[interval], mat->coordinate_system.center.x.evaluator,
+					elementOps[interval].push_back(generateExpression3D<ExternalGpsExpressionWithCoordinates>(interval, etype[interval], mat->coordinate_system.center.x.evaluator,
 								[] (auto &element, const size_t &gp, const size_t &s, const double &value) { element.ecf.center[gp][0][s] = value; }));
 					isconst &= elementOps[interval].back()->isconst;
-					elementOps[interval].push_back(generateExpression3D<ExternalGPsExpression>(interval, etype[interval], mat->coordinate_system.center.y.evaluator,
+					elementOps[interval].push_back(generateExpression3D<ExternalGpsExpressionWithCoordinates>(interval, etype[interval], mat->coordinate_system.center.y.evaluator,
 								[] (auto &element, const size_t &gp, const size_t &s, const double &value) { element.ecf.center[gp][1][s] = value; }));
 					isconst &= elementOps[interval].back()->isconst;
-					elementOps[interval].push_back(generateExpression3D<ExternalGPsExpression>(interval, etype[interval], mat->coordinate_system.center.z.evaluator,
+					elementOps[interval].push_back(generateExpression3D<ExternalGpsExpressionWithCoordinates>(interval, etype[interval], mat->coordinate_system.center.z.evaluator,
 								[] (auto &element, const size_t &gp, const size_t &s, const double &value) { element.ecf.center[gp][2][s] = value; }));
 					isconst &= elementOps[interval].back()->isconst;
 					elementOps[interval].push_back(generateElementOperator3D<ElasticityCoordinateSystemSpherical>(interval, etype[interval]));

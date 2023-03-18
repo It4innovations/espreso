@@ -64,7 +64,7 @@ public:
 	} elements;
 
 	struct Results {
-		static NodeData *temperature, *initialTemperature;
+		static NodeData *temperature, *initialTemperature, *thickness;
 		static ElementData *translationMotion, *gradient, *flux;
 	};
 
@@ -141,9 +141,9 @@ protected:
 			ETYPE == TransferElementType::ASYMMETRIC_GENERAL, int>::type* = 0
 	);
 
-	bool initTemperature();
 	void initParameters();
 
+	void initTemperatureAndThickness();
 	void volume();
 	size_t esize();
 

@@ -261,7 +261,7 @@ void StructuralMechanics::analyze()
 	}
 
 	if (info::mesh->dimension == 2) {
-		generateElementExpression2D<ExternalGPsExpression>(etype, elementOps, settings.thickness, [] (auto &element, const size_t &gp, const size_t &s, const double &value) { element.ecf.thickness[gp][s] = value; });
+		generateElementExpression2D<ExternalGpsExpressionWithCoordinates>(etype, elementOps, settings.thickness, [] (auto &element, const size_t &gp, const size_t &s, const double &value) { element.ecf.thickness[gp][s] = value; });
 	}
 
 	generateElasticity();
@@ -277,10 +277,10 @@ void StructuralMechanics::analyze()
 
 	if (configuration.acceleration.size()) {
 		correct &= checkElementParameter("ACCELERATION", configuration.acceleration);
-		generateElementExpression<ExternalGPsExpression>(etype, elementOps, configuration.acceleration, 0, [] (auto &element, const size_t &gp, const size_t &s, const double &value) { element.ecf.acceleration[gp][0][s] = value; });
-		generateElementExpression<ExternalGPsExpression>(etype, elementOps, configuration.acceleration, 1, [] (auto &element, const size_t &gp, const size_t &s, const double &value) { element.ecf.acceleration[gp][1][s] = value; });
+		generateElementExpression<ExternalGpsExpressionWithCoordinates>(etype, elementOps, configuration.acceleration, 0, [] (auto &element, const size_t &gp, const size_t &s, const double &value) { element.ecf.acceleration[gp][0][s] = value; });
+		generateElementExpression<ExternalGpsExpressionWithCoordinates>(etype, elementOps, configuration.acceleration, 1, [] (auto &element, const size_t &gp, const size_t &s, const double &value) { element.ecf.acceleration[gp][1][s] = value; });
 		if (info::mesh->dimension == 3) {
-			generateElementExpression<ExternalGPsExpression>(etype, elementOps, configuration.acceleration, 2, [] (auto &element, const size_t &gp, const size_t &s, const double &value) { element.ecf.acceleration[gp][2][s] = value; });
+			generateElementExpression<ExternalGpsExpressionWithCoordinates>(etype, elementOps, configuration.acceleration, 2, [] (auto &element, const size_t &gp, const size_t &s, const double &value) { element.ecf.acceleration[gp][2][s] = value; });
 		}
 		generateElementOperators<Acceleration>(etype, elementOps, elements.rhs);
 	}
@@ -289,9 +289,9 @@ void StructuralMechanics::analyze()
 		switch (info::mesh->dimension) {
 		case 3:
 			correct &= checkElementParameter("ANGULAR_VELOCITY", configuration.angular_velocity);
-			generateElementExpression3D<ExternalGPsExpression>(etype, elementOps, configuration.angular_velocity, 0, [] (auto &element, const size_t &gp, const size_t &s, const double &value) { element.ecf.angularVelocity[gp][0][s] = value; });
-			generateElementExpression3D<ExternalGPsExpression>(etype, elementOps, configuration.angular_velocity, 1, [] (auto &element, const size_t &gp, const size_t &s, const double &value) { element.ecf.angularVelocity[gp][1][s] = value; });
-			generateElementExpression3D<ExternalGPsExpression>(etype, elementOps, configuration.angular_velocity, 2, [] (auto &element, const size_t &gp, const size_t &s, const double &value) { element.ecf.angularVelocity[gp][2][s] = value; });
+			generateElementExpression3D<ExternalGpsExpressionWithCoordinates>(etype, elementOps, configuration.angular_velocity, 0, [] (auto &element, const size_t &gp, const size_t &s, const double &value) { element.ecf.angularVelocity[gp][0][s] = value; });
+			generateElementExpression3D<ExternalGpsExpressionWithCoordinates>(etype, elementOps, configuration.angular_velocity, 1, [] (auto &element, const size_t &gp, const size_t &s, const double &value) { element.ecf.angularVelocity[gp][1][s] = value; });
+			generateElementExpression3D<ExternalGpsExpressionWithCoordinates>(etype, elementOps, configuration.angular_velocity, 2, [] (auto &element, const size_t &gp, const size_t &s, const double &value) { element.ecf.angularVelocity[gp][2][s] = value; });
 			break;
 		case 2:
 			switch (settings.element_behaviour) {
@@ -299,11 +299,11 @@ void StructuralMechanics::analyze()
 			case StructuralMechanicsConfiguration::ELEMENT_BEHAVIOUR::PLANE_STRESS:
 			case StructuralMechanicsConfiguration::ELEMENT_BEHAVIOUR::PLANE_STRESS_WITH_THICKNESS:
 				correct &= checkElementParameter("ANGULAR_VELOCITY.Z", configuration.angular_velocity, 2);
-				generateElementExpression2D<ExternalGPsExpression>(etype, elementOps, configuration.angular_velocity, 2, [] (auto &element, const size_t &gp, const size_t &s, const double &value) { element.ecf.angularVelocity[gp][s] = value; });
+				generateElementExpression2D<ExternalGpsExpressionWithCoordinates>(etype, elementOps, configuration.angular_velocity, 2, [] (auto &element, const size_t &gp, const size_t &s, const double &value) { element.ecf.angularVelocity[gp][s] = value; });
 				break;
 			case StructuralMechanicsConfiguration::ELEMENT_BEHAVIOUR::AXISYMMETRIC:
 				correct &= checkElementParameter("ANGULAR_VELOCITY.Y", configuration.angular_velocity, 1);
-				generateElementExpression2D<ExternalGPsExpression>(etype, elementOps, configuration.angular_velocity, 1, [] (auto &element, const size_t &gp, const size_t &s, const double &value) { element.ecf.angularVelocity[gp][s] = value; });
+				generateElementExpression2D<ExternalGpsExpressionWithCoordinates>(etype, elementOps, configuration.angular_velocity, 1, [] (auto &element, const size_t &gp, const size_t &s, const double &value) { element.ecf.angularVelocity[gp][s] = value; });
 				break;
 			}
 		}
@@ -312,7 +312,7 @@ void StructuralMechanics::analyze()
 
 	if (configuration.normal_pressure.size()) {
 		correct &= checkBoundaryParameter("NORMAL PRESSURE", configuration.normal_pressure);
-		generateBoundaryExpression<ExternalGPsExpression>(axisymmetric, boundaryOps, configuration.normal_pressure, [] (auto &element, const size_t &gp, const size_t &s, const double &value) { element.ecf.normalPressure[gp][s] = value; });
+		generateBoundaryExpression<ExternalGpsExpressionWithCoordinates>(axisymmetric, boundaryOps, configuration.normal_pressure, [] (auto &element, const size_t &gp, const size_t &s, const double &value) { element.ecf.normalPressure[gp][s] = value; });
 	}
 	for(size_t r = 0; r < info::mesh->boundaryRegions.size(); ++r) {
 		if (bfilter[r]) {

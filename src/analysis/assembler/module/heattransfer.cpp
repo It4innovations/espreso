@@ -7,6 +7,8 @@
 #include "analysis/assembler/operators/basis.h"
 #include "analysis/assembler/operators/coordinates.h"
 #include "analysis/assembler/operators/temperature.h"
+#include "analysis/assembler/operators/initialtemperature.h"
+#include "analysis/assembler/operators/thickness.h"
 #include "analysis/assembler/operators/advection.h"
 #include "analysis/assembler/operators/expression.h"
 #include "analysis/assembler/operators/integration.h"
@@ -34,6 +36,7 @@ namespace espreso {
 
 NodeData* HeatTransfer::Results::temperature = nullptr;
 NodeData* HeatTransfer::Results::initialTemperature = nullptr;
+NodeData* HeatTransfer::Results::thickness = nullptr;
 ElementData* HeatTransfer::Results::translationMotion = nullptr;
 ElementData* HeatTransfer::Results::gradient = nullptr;
 ElementData* HeatTransfer::Results::flux = nullptr;
@@ -54,17 +57,23 @@ HeatTransfer::HeatTransfer(HeatTransfer *previous, HeatTransferConfiguration &se
 		if (configuration.heat_flux.end() != configuration.heat_flux.find(info::mesh->boundaryRegions[r]->name)) {
 			bfilter[r] = 1;
 		}
+		if (configuration.temperature.end() != configuration.temperature.find(info::mesh->boundaryRegions[r]->name)) {
+			bfilter[r] = 1;
+		}
 	}
 	cossin_conditions.resize(info::mesh->elements->eintervals.size());
 }
 
 void HeatTransfer::initParameters()
 {
+	if (Results::temperature == nullptr) {
+		Results::temperature = info::mesh->nodes->appendData(1, NamedData::DataType::SCALAR, "TEMPERATURE");
+	}
 	if (Results::initialTemperature == nullptr) {
 		Results::initialTemperature = info::mesh->nodes->appendData(1, NamedData::DataType::SCALAR, "INITIAL_TEMPERATURE");
 	}
-	if (Results::temperature == nullptr) {
-		Results::temperature = info::mesh->nodes->appendData(1, NamedData::DataType::SCALAR, "TEMPERATURE");
+	if (Results::thickness == nullptr && info::mesh->dimension == 2) {
+		Results::thickness = info::mesh->nodes->appendData(1, NamedData::DataType::SCALAR, "THICKNESS");
 	}
 	if (info::ecf->output.results_selection.translation_motions && Results::translationMotion == nullptr) {
 		Results::translationMotion = info::mesh->elements->appendData(info::mesh->dimension, NamedData::DataType::VECTOR, "TRANSLATION_MOTION");
@@ -75,73 +84,6 @@ void HeatTransfer::initParameters()
 	if (info::ecf->output.results_selection.flux && Results::flux == nullptr) {
 		Results::flux = info::mesh->elements->appendData(info::mesh->dimension, NamedData::DataType::VECTOR, "FLUX");
 	}
-}
-
-bool HeatTransfer::initTemperature()
-{
-	// This code has to solve problem that initial temperature is set to elements regions, but we need it in nodes
-	// 1. settings -> nodeInitialTemperature
-	// 2. nodeInitialTemperature -> initialTemperature (here we average values)
-	// 3. Dirichlet -> initialTemperature (if 'init_temp_respect_bc')
-	// 4. initialTemperature -> nodeInitialTemperature (TODO: check the correction with TB)
-	/////////////////////////////////////////////////////////////////////////////////////////////////////////////
-
-	bool correct = true;
-
-	if (configuration.temperature.size()) {
-		correct &= checkBoundaryParameter("FIXED TEMPERATURE ON BOUNDARIES", configuration.temperature);
-		generateBoundaryExpression<ExternalNodeExpression>(boundaryOps, configuration.temperature, [] (auto &element, const size_t &n, const size_t &s, const double &value) { element.temperature[n][s] = value; });
-	}
-
-//	if (settings.init_temp_respect_bc) {
-//		temp.initial.node.setConstness(false);
-//	}
-//	examineElementParameter("INITIAL TEMPERATURE", settings.initial_temperature, temp.initial.node.externalValues);
-//	// TODO: fix
-////	fromExpression(*this, temp.initial.node, temp.initial.node.externalValues);
-//	_evaluate();
-//
-////	for (auto it = configuration.temperature.begin(); it != configuration.temperature.end(); ++it) {
-////		HeatTransfer::insertParameters(it->second.evaluator);
-////	}
-////
-////	temp.initial.node.builder->buildAndExecute(*this);
-//
-//	// TODO: fix
-////	averageEnodesToNodes(temp.initial.node, *Results::initialTemperature);
-////	Results::temperature->data = Results::initialTemperature->data;
-//
-////	if (info::mesh->dimension == 2 && info::ecf->heat_transfer_2d.init_temp_respect_bc) {
-////		CopyBoundaryRegionsSettingToNodes(configuration.temperature, *ParametersTemperature::Initial::output, "SET INITIAL TEMPERATURE ACCORDING TO DIRICHLET").buildAndExecute(*this);
-////	}
-////	if (info::mesh->dimension == 3 && info::ecf->heat_transfer_3d.init_temp_respect_bc) {
-////		CopyBoundaryRegionsSettingToNodes(configuration.temperature, *ParametersTemperature::Initial::output, "SET INITIAL TEMPERATURE ACCORDING TO DIRICHLET").buildAndExecute(*this);
-////	}
-////	CopyNodesToElementsNodes(*ParametersTemperature::Initial::output, temp.initial.node, "COPY INITIAL TEMPERATURE TO ELEMENTS NODES").buildAndExecute(*this);
-////	CopyNodesToBoundaryNodes(*ParametersTemperature::Initial::output, temp.initial.boundary.node, "COPY INITIAL TEMPERATURE TO BOUNDARY NODES").buildAndExecute(*this);
-////	ElementsGaussPointsBuilder<1>(integration.N, temp.initial.node, temp.initial.gp, "INTEGRATE INITIAL TEMPERATURE INTO ELEMENTS GAUSS POINTS").buildAndExecute(*this);
-////	BoundaryGaussPointsBuilder<1>(integration.boundary.N, temp.initial.boundary.node, temp.initial.boundary.gp, "INTEGRATE INITIAL TEMPERATURE INTO BOUNDARY GAUSS POINTS").buildAndExecute(*this);
-//
-//	if (Variable::list.egps.find("TEMPERATURE") != Variable::list.egps.end() || Results::gradient) {
-//		copyNodesToEnodes(*this, *Results::temperature, temp.node);
-//	}
-//
-//	if (Variable::list.egps.find("TEMPERATURE") != Variable::list.egps.end()) {
-//		moveEnodesToGPs(*this, temp.node, temp.gp, 1);
-//		Variable::list.egps["TEMPERATURE"] = new ParameterVariable(temp.gp.data, temp.gp.isconst, temp.gp.update, 0, 1);
-//	}
-//
-//
-//
-////	ParametersTemperature::output->data = ParametersTemperature::Initial::output->data;
-////	CopyElementParameters(temp.initial.node, temp.node, "COPY INITIAL TEMPERATURE TO ELEMENT NODES").buildAndExecute(*this);
-////	builders.push_back(new CopyNodesToElementsNodes(*ParametersTemperature::output, temp.node, "COPY TEMPERATURE TO ELEMENTS NODES"));
-////	builders.push_back(new ElementsGaussPointsBuilder<1>(integration.N, temp.node, temp.gp, "INTEGRATE TEMPERATURE INTO ELEMENTS GAUSS POINTS"));
-////	builders.push_back(new CopyNodesToBoundaryNodes(*ParametersTemperature::output, temp.boundary.node, "COPY TEMPERATURE TO BOUNDARY NODES"));
-////	builders.push_back(new BoundaryGaussPointsBuilder<1>(integration.boundary.N, temp.boundary.node, temp.boundary.gp, "INTEGRATE TEMPERATURE INTO BOUNDARY GAUSS POINTS"));
-//
-//	results();
-	return correct;
 }
 
 void HeatTransfer::analyze()
@@ -157,7 +99,14 @@ void HeatTransfer::analyze()
 
 	eslog::info(" ============================================================================================= \n");
 	bool correct = true;
-	correct &= initTemperature();
+
+	if (configuration.temperature.size()) {
+		correct &= checkBoundaryParameter("FIXED TEMPERATURE ON BOUNDARIES", configuration.temperature);
+	}
+
+	if (settings.initial_temperature.size()) {
+		correct &= checkElementParameter("INITIAL TEMPERATURE", settings.initial_temperature);
+	}
 
 	if (step::step.loadstep == 0) {
 		if (info::mesh->dimension == 2) {
@@ -322,10 +271,6 @@ void HeatTransfer::analyze()
 		} else {
 			elementOps[i].push_back(generateElementOperator<CoordinatesToElementNodes>(i, etype[i], procNodes));
 		}
-
-		if (Results::gradient != nullptr || Results::flux != nullptr) {
-			elementOps[i].push_back(generateElementOperator<TemperatureToElementNodes>(i, etype[i], procNodes, Results::temperature->data.data()));
-		}
 	}
 
 	for(size_t r = 0; r < info::mesh->boundaryRegions.size(); ++r) {
@@ -335,24 +280,71 @@ void HeatTransfer::analyze()
 					auto procNodes = info::mesh->boundaryRegions[r]->elements->cbegin() + info::mesh->boundaryRegions[r]->eintervals[i].begin;
 					boundaryOps[r][i].push_back(generateBoundaryOperator<CoordinatesToElementNodes>(r, i, procNodes));
 				}
+			} else {
+				for(size_t t = 0; t < info::mesh->boundaryRegions[r]->nodes->threads(); ++t) {
+					auto procNodes = info::mesh->boundaryRegions[r]->nodes->cbegin(t);
+					boundaryOps[r][t].push_back(generateBoundaryNodeOperator<CoordinatesToElementNodes>(r, t, procNodes));
+				}
 			}
 		}
 	}
 
 	if (info::mesh->dimension == 2) {
-		generateElementExpression2D<ExternalGPsExpression>(etype, elementOps, settings.thickness, [] (auto &element, const size_t &gp, const size_t &s, const double &value) { element.ecf.thickness[gp][s] = value; });
+		generateElementExpression2D<ExternalGpsExpressionWithCoordinates>(etype, elementOps, settings.thickness, [] (auto &element, const size_t &gp, const size_t &s, const double &value) { element.ecf.thickness[gp][s] = value; });
+	}
+
+	initTemperatureAndThickness();
+
+	for(size_t r = 0; r < info::mesh->boundaryRegions.size(); ++r) {
+		if (bfilter[r]) {
+			if (info::mesh->boundaryRegions[r]->dimension) {
+				for(size_t i = 0; i < info::mesh->boundaryRegions[r]->eintervals.size(); ++i) {
+					auto procNodes = info::mesh->boundaryRegions[r]->elements->cbegin() + info::mesh->boundaryRegions[r]->eintervals[i].begin;
+					boundaryOps[r][i].push_back(generateBoundaryEdge2DOperator<ThicknessToElementNodes>(r, i, procNodes, Results::thickness->data.data()));
+				}
+			} else {
+				for(size_t t = 0; t < info::mesh->boundaryRegions[r]->nodes->threads(); ++t) {
+					auto procNodes = info::mesh->boundaryRegions[r]->nodes->cbegin(t);
+					boundaryOps[r][t].push_back(generateBoundaryNode2DOperator<ThicknessToElementNodes>(r, t, procNodes, Results::thickness->data.data()));
+				}
+			}
+		}
+	}
+
+	for(size_t i = 0; i < info::mesh->elements->eintervals.size(); ++i) {
+		auto procNodes = info::mesh->elements->nodes->cbegin() + info::mesh->elements->eintervals[i].begin;
+		bool tempToGPs = false;
+
+		const MaterialConfiguration *mat = info::mesh->materials[info::mesh->elements->eintervals[i].material];
+		for (size_t v = 0; !tempToGPs && v < mat->thermal_conductivity.values.size * mat->thermal_conductivity.values.size; ++v) {
+			if (mat->thermal_conductivity.values.values[v].evaluator) {
+				tempToGPs |= mat->thermal_conductivity.values.values[v].evaluator->needTemperature(info::mesh->elements->eintervals[i].thread);
+			}
+		}
+		if (tempToGPs) {
+			elementOps[i].push_back(generateElementOperator<TemperatureToElementNodesAndGPs>(i, etype[i], procNodes, Results::temperature->data.data()));
+		} else {
+			if (Results::gradient != nullptr || Results::flux != nullptr) {
+				elementOps[i].push_back(generateElementOperator<TemperatureToElementNodes>(i, etype[i], procNodes, Results::temperature->data.data()));
+				elementOps[i].back()->action = ActionOperator::SOLUTION;
+			}
+		}
 	}
 	generateConductivity();
 	generateElementOperators<Integration>(etype, elementOps);
 	generateBoundaryOperators<Integration>(bfilter, boundaryOps);
 	volume();
 
+	if (configuration.temperature.size()) {
+		generateBoundaryExpression<ExternalNodeExpressionWithCoordinates>(boundaryOps, configuration.temperature, [] (auto &element, const size_t &n, const size_t &s, const double &value) { element.temp[n][s] = value; });
+	}
+
 	if (configuration.translation_motions.size()) { // it updates conductivity
 		correct &= checkElementParameter("TRANSLATION MOTIONS", configuration.translation_motions);
-		generateElementAsymmetricTypeExpression<ExternalGPsExpression>(etype, elementOps, configuration.translation_motions, 0, [] (auto &element, const size_t &gp, const size_t &s, const double &value) { element.ecf.advection[gp][0][s] = value; });
-		generateElementAsymmetricTypeExpression<ExternalGPsExpression>(etype, elementOps, configuration.translation_motions, 1, [] (auto &element, const size_t &gp, const size_t &s, const double &value) { element.ecf.advection[gp][1][s] = value; });
+		generateElementAsymmetricTypeExpression<ExternalGpsExpressionWithCoordinates>(etype, elementOps, configuration.translation_motions, 0, [] (auto &element, const size_t &gp, const size_t &s, const double &value) { element.ecf.advection[gp][0][s] = value; });
+		generateElementAsymmetricTypeExpression<ExternalGpsExpressionWithCoordinates>(etype, elementOps, configuration.translation_motions, 1, [] (auto &element, const size_t &gp, const size_t &s, const double &value) { element.ecf.advection[gp][1][s] = value; });
 		if (info::mesh->dimension == 3) {
-			generateElementAsymmetricTypeExpression<ExternalGPsExpression>(etype, elementOps, configuration.translation_motions, 2, [] (auto &element, const size_t &gp, const size_t &s, const double &value) { element.ecf.advection[gp][2][s] = value; });
+			generateElementAsymmetricTypeExpression<ExternalGpsExpressionWithCoordinates>(etype, elementOps, configuration.translation_motions, 2, [] (auto &element, const size_t &gp, const size_t &s, const double &value) { element.ecf.advection[gp][2][s] = value; });
 		}
 		generateElementAsymmetricOperators<Advection>(etype, elementOps, elements.stiffness);
 	}
@@ -362,16 +354,16 @@ void HeatTransfer::analyze()
 	generateElementOperators<HeatTransferStiffness>(etype, elementOps, elements.stiffness);
 	if (configuration.heat_source.size()) {
 		correct &= checkElementParameter("HEAT SOURCE", configuration.heat_source);
-		generateElementExpression<ExternalGPsExpression>(etype, elementOps, configuration.heat_source, [] (auto &element, const size_t &gp, const size_t &s, const double &value) { element.ecf.heatSource[gp][s] = value; });
+		generateElementExpression<ExternalGpsExpressionWithCoordinates>(etype, elementOps, configuration.heat_source, [] (auto &element, const size_t &gp, const size_t &s, const double &value) { element.ecf.heatSource[gp][s] = value; });
 		generateElementOperators<HeatSource>(etype, elementOps, elements.rhs);
 	}
 	if (configuration.heat_flow.size()) {
 		correct &= checkBoundaryParameter("HEAT FLOW", configuration.heat_flow);
-		generateBoundaryExpression<ExternalGPsExpression>(boundaryOps, configuration.heat_flow, [] (auto &element, const size_t &gp, const size_t &s, const double &value) { element.ecf.heatFlow[gp][s] = value; });
+		generateBoundaryExpression<ExternalGpsExpressionWithCoordinates>(boundaryOps, configuration.heat_flow, [] (auto &element, const size_t &gp, const size_t &s, const double &value) { element.ecf.heatFlow[gp][s] = value; });
 	}
 	if (configuration.heat_flux.size()) {
 		correct &= checkBoundaryParameter("HEAT FLUX", configuration.heat_flux);
-		generateBoundaryExpression<ExternalGPsExpression>(boundaryOps, configuration.heat_flux, [] (auto &element, const size_t &gp, const size_t &s, const double &value) { element.ecf.heatFlux[gp][s] = value; });
+		generateBoundaryExpression<ExternalGpsExpressionWithCoordinates>(boundaryOps, configuration.heat_flux, [] (auto &element, const size_t &gp, const size_t &s, const double &value) { element.ecf.heatFlux[gp][s] = value; });
 	}
 	for(size_t r = 0; r < info::mesh->boundaryRegions.size(); ++r) {
 		if (bfilter[r]) {
@@ -455,7 +447,7 @@ void HeatTransfer::connect(SteadyState &scheme)
 		} else {
 			// DIRICHLET
 			for (size_t t = 0; t < info::mesh->boundaryRegions[r]->nodes->threads(); ++t) {
-				boundaryOps[r][t].push_back(generateNodeSetter<VectorSetter>(r, t, 1, scheme.dirichlet, [] (auto &element, const size_t &n, const size_t &dof, const size_t &s) { return element.temperature[n][s]; }));
+				boundaryOps[r][t].push_back(generateNodeSetter<VectorSetter>(r, t, 1, scheme.dirichlet, [] (auto &element, const size_t &n, const size_t &dof, const size_t &s) { return element.temp[n][s]; }));
 			}
 		}
 	}
@@ -506,6 +498,49 @@ void HeatTransfer::dryrun()
 	eslog::info("       = SIMD LOOP REASSEMBLE                                           %12.8f s = \n", reassemble_time.coreTime);
 	eslog::info("       = SIMD LOOP SOLUTION                                             %12.8f s = \n", solution_time.preprocessTime);
 	eslog::info("       = SIMD LOOP SOLUTION                                             %12.8f s = \n", solution_time.coreTime);
+}
+
+void HeatTransfer::initTemperatureAndThickness()
+{
+	generateElementExpression<ExternalNodeExpressionWithCoordinates>(etype, elementOps, settings.initial_temperature, [] (auto &element, const size_t &n, const size_t &s, const double &value) { element.temp[n][s] = value; });
+	for(size_t i = 0; i < info::mesh->elements->eintervals.size(); ++i) {
+		auto procNodes = info::mesh->elements->nodes->cbegin() + info::mesh->elements->eintervals[i].begin;
+		elementOps[i].push_back(generateElementOperator<InitialTemperatureToNodes>(i, etype[i], procNodes, Results::initialTemperature->data.data()));
+		if (info::mesh->dimension == 2) {
+			elementOps[i].push_back(generateElementOperator2D<ThicknessToNodes>(i, etype[i], procNodes, Results::thickness->data.data()));
+		}
+	}
+	std::vector<int> bcfilter(info::mesh->boundaryRegions.size(), 0);
+	if (settings.init_temp_respect_bc) {
+		auto setter = [] (auto &element, const size_t &n, const size_t &s, const double &value) { element.temp[n][s] = value; };
+
+		for(size_t r = 0; r < info::mesh->boundaryRegions.size(); ++r) {
+			auto it = configuration.temperature.find(info::mesh->boundaryRegions[r]->name);
+			if (it != configuration.temperature.end()) {
+				bcfilter[r] = 1;
+				for (size_t t = 0; t < info::mesh->boundaryRegions[r]->nodes->threads(); ++t) {
+					auto procNodes = info::mesh->boundaryRegions[r]->nodes->cbegin(t);
+					switch (info::mesh->dimension) {
+					case 2: boundaryOps[r][t].push_back(generateTypedExpressionNode2D<ExternalNodeExpressionWithCoordinates>(r, t, it->second.evaluator, setter)); break;
+					case 3: boundaryOps[r][t].push_back(generateTypedExpressionNode3D<ExternalNodeExpressionWithCoordinates>(r, t, it->second.evaluator, setter)); break;
+					}
+					boundaryOps[r][t].push_back(generateBoundaryNodeOperator<InitialTemperatureToNodes>(r, t, procNodes, Results::initialTemperature->data.data()));
+				}
+			}
+		}
+	}
+	assemble(ActionOperator::Action::ASSEMBLE);
+	Results::temperature->data = Results::initialTemperature->data;
+
+	dropLastOperators(elementOps);
+	dropLastOperators(elementOps);
+	if (info::mesh->dimension == 2) {
+		dropLastOperators(elementOps);
+	}
+	if (settings.init_temp_respect_bc) {
+		dropLastOperators(bcfilter, boundaryOps);
+		dropLastOperators(bcfilter, boundaryOps);
+	}
 }
 
 void HeatTransfer::volume()

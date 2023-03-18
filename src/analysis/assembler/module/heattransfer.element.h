@@ -57,6 +57,7 @@ struct HeatTransferDataDescriptor<nodes, gps, 3, edim, HeatTransferElementType::
 		} ecf;
 
 		alignas(SIMD::size * sizeof(double)) SIMD temp[nodes];
+		alignas(SIMD::size * sizeof(double)) SIMD gptemp[gps];
 		alignas(SIMD::size * sizeof(double)) SIMD coords[nodes][3];
 		alignas(SIMD::size * sizeof(double)) SIMD gpcoords[gps][3];
 
@@ -96,6 +97,7 @@ struct HeatTransferDataDescriptor<nodes, gps, 2, edim, HeatTransferElementType::
 		} ecf;
 
 		alignas(SIMD::size * sizeof(double)) SIMD temp[nodes];
+		alignas(SIMD::size * sizeof(double)) SIMD gptemp[gps];
 		alignas(SIMD::size * sizeof(double)) SIMD coords[nodes][2];
 		alignas(SIMD::size * sizeof(double)) SIMD gpcoords[gps][2];
 
@@ -136,6 +138,7 @@ struct HeatTransferDataDescriptor<nodes, gps, 3, edim, HeatTransferElementType::
 		} ecf;
 
 		alignas(SIMD::size * sizeof(double)) SIMD temp[nodes];
+		alignas(SIMD::size * sizeof(double)) SIMD gptemp[gps];
 		alignas(SIMD::size * sizeof(double)) SIMD coords[nodes][3];
 		alignas(SIMD::size * sizeof(double)) SIMD gpcoords[gps][3];
 
@@ -178,6 +181,7 @@ struct HeatTransferDataDescriptor<nodes, gps, 2, edim, HeatTransferElementType::
 		} ecf;
 
 		alignas(SIMD::size * sizeof(double)) SIMD temp[nodes];
+		alignas(SIMD::size * sizeof(double)) SIMD gptemp[gps];
 		alignas(SIMD::size * sizeof(double)) SIMD coords[nodes][2];
 		alignas(SIMD::size * sizeof(double)) SIMD gpcoords[gps][2];
 
@@ -218,6 +222,7 @@ struct HeatTransferDataDescriptor<nodes, gps, 3, edim, HeatTransferElementType::
 		} ecf;
 
 		alignas(SIMD::size * sizeof(double)) SIMD temp[nodes];
+		alignas(SIMD::size * sizeof(double)) SIMD gptemp[gps];
 		alignas(SIMD::size * sizeof(double)) SIMD coords[nodes][3];
 		alignas(SIMD::size * sizeof(double)) SIMD gpcoords[gps][3];
 
@@ -258,6 +263,7 @@ struct HeatTransferDataDescriptor<nodes, gps, 2, edim, HeatTransferElementType::
 		} ecf;
 
 		alignas(SIMD::size * sizeof(double)) SIMD temp[nodes];
+		alignas(SIMD::size * sizeof(double)) SIMD gptemp[gps];
 		alignas(SIMD::size * sizeof(double)) SIMD coords[nodes][2];
 		alignas(SIMD::size * sizeof(double)) SIMD gpcoords[gps][2];
 
@@ -299,6 +305,7 @@ struct HeatTransferDataDescriptor<nodes, gps, 3, edim, HeatTransferElementType::
 		} ecf;
 
 		alignas(SIMD::size * sizeof(double)) SIMD temp[nodes];
+		alignas(SIMD::size * sizeof(double)) SIMD gptemp[gps];
 		alignas(SIMD::size * sizeof(double)) SIMD coords[nodes][3];
 		alignas(SIMD::size * sizeof(double)) SIMD gpcoords[gps][3];
 
@@ -342,6 +349,7 @@ struct HeatTransferDataDescriptor<nodes, gps, 2, edim, HeatTransferElementType::
 		} ecf;
 
 		alignas(SIMD::size * sizeof(double)) SIMD temp[nodes];
+		alignas(SIMD::size * sizeof(double)) SIMD gptemp[gps];
 		alignas(SIMD::size * sizeof(double)) SIMD coords[nodes][2];
 		alignas(SIMD::size * sizeof(double)) SIMD gpcoords[gps][2];
 
@@ -381,15 +389,15 @@ struct HeatTransferDataDescriptor<nodes, gps, 3, 2, HeatTransferElementType::FAC
 			alignas(SIMD::size * sizeof(double)) SIMD extTemp [gps];
 		} ecf;
 
+		alignas(SIMD::size * sizeof(double)) SIMD temp[nodes];
 		alignas(SIMD::size * sizeof(double)) SIMD coords[nodes][3];
+		alignas(SIMD::size * sizeof(double)) SIMD gpcoords[gps][3];
 
 		alignas(SIMD::size * sizeof(double)) double  w [gps];
 		alignas(SIMD::size * sizeof(double)) double  N [gps][nodes];
 		alignas(SIMD::size * sizeof(double)) double dN [gps][nodes][2];
 
 		alignas(SIMD::size * sizeof(double)) SIMD det[gps];
-
-		alignas(SIMD::size * sizeof(double)) SIMD temperature[nodes];
 
 		Element()
 		{
@@ -401,8 +409,8 @@ struct HeatTransferDataDescriptor<nodes, gps, 3, 2, HeatTransferElementType::FAC
 	virtual void peel(Element &element, size_t size) { simd(element); }
 };
 
-template <size_t nodes, size_t ndim, size_t gps>
-struct HeatTransferDataDescriptor<nodes, gps, ndim, 1, HeatTransferElementType::EDGE> {
+template <size_t nodes, size_t gps>
+struct HeatTransferDataDescriptor<nodes, gps, 3, 1, HeatTransferElementType::EDGE> {
 	virtual ~HeatTransferDataDescriptor() {}
 
 	struct Element {
@@ -413,15 +421,15 @@ struct HeatTransferDataDescriptor<nodes, gps, ndim, 1, HeatTransferElementType::
 			alignas(SIMD::size * sizeof(double)) SIMD extTemp [gps];
 		} ecf;
 
-		alignas(SIMD::size * sizeof(double)) SIMD coords[nodes][ndim];
+		alignas(SIMD::size * sizeof(double)) SIMD temp[nodes];
+		alignas(SIMD::size * sizeof(double)) SIMD coords[nodes][3];
+		alignas(SIMD::size * sizeof(double)) SIMD gpcoords[gps][3];
 
 		alignas(SIMD::size * sizeof(double)) double  w [gps];
 		alignas(SIMD::size * sizeof(double)) double  N [gps][nodes];
 		alignas(SIMD::size * sizeof(double)) double dN [gps][nodes][1];
 
 		alignas(SIMD::size * sizeof(double)) SIMD det[gps];
-
-		alignas(SIMD::size * sizeof(double)) SIMD temperature[nodes];
 
 		Element()
 		{
@@ -433,8 +441,41 @@ struct HeatTransferDataDescriptor<nodes, gps, ndim, 1, HeatTransferElementType::
 	virtual void peel(Element &element, size_t size) { simd(element); }
 };
 
-template <size_t ndim>
-struct HeatTransferDataDescriptor<1, 1, ndim, 0, HeatTransferElementType::NODE> {
+template <size_t nodes, size_t gps>
+struct HeatTransferDataDescriptor<nodes, gps, 2, 1, HeatTransferElementType::EDGE> {
+	virtual ~HeatTransferDataDescriptor() {}
+
+	struct Element {
+		struct {
+			alignas(SIMD::size * sizeof(double)) SIMD heatFlow[gps];
+			alignas(SIMD::size * sizeof(double)) SIMD heatFlux[gps];
+			alignas(SIMD::size * sizeof(double)) SIMD htc     [gps];
+			alignas(SIMD::size * sizeof(double)) SIMD extTemp [gps];
+		} ecf;
+
+		alignas(SIMD::size * sizeof(double)) SIMD thickness[gps];
+		alignas(SIMD::size * sizeof(double)) SIMD temp[nodes];
+		alignas(SIMD::size * sizeof(double)) SIMD coords[nodes][2];
+		alignas(SIMD::size * sizeof(double)) SIMD gpcoords[gps][2];
+
+		alignas(SIMD::size * sizeof(double)) double  w [gps];
+		alignas(SIMD::size * sizeof(double)) double  N [gps][nodes];
+		alignas(SIMD::size * sizeof(double)) double dN [gps][nodes][1];
+
+		alignas(SIMD::size * sizeof(double)) SIMD det[gps];
+
+		Element()
+		{
+
+		}
+	};
+
+	virtual void simd(Element &element) =0;
+	virtual void peel(Element &element, size_t size) { simd(element); }
+};
+
+template <>
+struct HeatTransferDataDescriptor<1, 1, 3, 0, HeatTransferElementType::NODE> {
 	virtual ~HeatTransferDataDescriptor() {}
 
 	struct Element {
@@ -445,9 +486,8 @@ struct HeatTransferDataDescriptor<1, 1, ndim, 0, HeatTransferElementType::NODE> 
 			alignas(SIMD::size * sizeof(double)) SIMD extTemp [1];
 		} ecf;
 
-		alignas(SIMD::size * sizeof(double)) SIMD coords[1][ndim];
-
-		alignas(SIMD::size * sizeof(double)) SIMD temperature[1];
+		alignas(SIMD::size * sizeof(double)) SIMD temp[1];
+		alignas(SIMD::size * sizeof(double)) SIMD coords[1][3];
 
 		Element()
 		{
@@ -458,6 +498,88 @@ struct HeatTransferDataDescriptor<1, 1, ndim, 0, HeatTransferElementType::NODE> 
 	virtual void simd(Element &element) =0;
 	virtual void peel(Element &element, size_t size) { simd(element); }
 };
+
+template <>
+struct HeatTransferDataDescriptor<1, 1, 2, 0, HeatTransferElementType::NODE> {
+	virtual ~HeatTransferDataDescriptor() {}
+
+	struct Element {
+		struct {
+			alignas(SIMD::size * sizeof(double)) SIMD heatFlow[1];
+			alignas(SIMD::size * sizeof(double)) SIMD heatFlux[1];
+			alignas(SIMD::size * sizeof(double)) SIMD htc     [1];
+			alignas(SIMD::size * sizeof(double)) SIMD extTemp [1];
+		} ecf;
+
+		alignas(SIMD::size * sizeof(double)) SIMD thickness[1];
+		alignas(SIMD::size * sizeof(double)) SIMD temp[1];
+		alignas(SIMD::size * sizeof(double)) SIMD coords[1][2];
+
+		Element()
+		{
+
+		}
+	};
+
+	virtual void simd(Element &element) =0;
+	virtual void peel(Element &element, size_t size) { simd(element); }
+};
+
+template <typename Element>
+inline void setTemperature(Element &element, const size_t &n, const size_t &s, double &temperature)
+{
+	temperature = element.temp[n][s];
+}
+
+template <typename Element>
+inline void setGPTemperature(Element &element, const size_t &gp, const size_t &s, double &temperature)
+{
+	temperature = element.gptemp[gp][s];
+}
+
+template <typename Element>
+inline void setCoordinates(Element &element, const size_t &n, const size_t &s, double &coordinate_x, double &coordinate_y)
+{
+	coordinate_x = element.coords[n][0][s];
+	coordinate_y = element.coords[n][1][s];
+}
+
+template <typename Element>
+inline void setCoordinates(Element &element, const size_t &n, const size_t &s, double &coordinate_x, double &coordinate_y, double &coordinate_z)
+{
+	coordinate_x = element.coords[n][0][s];
+	coordinate_y = element.coords[n][1][s];
+	coordinate_z = element.coords[n][2][s];
+}
+
+template <typename Element>
+inline void setGPCoordinates(Element &element, const size_t &gp, const size_t &s, double &coordinate_x, double &coordinate_y)
+{
+	coordinate_x = element.gpcoords[gp][0][s];
+	coordinate_y = element.gpcoords[gp][1][s];
+}
+
+template <>
+inline void setGPCoordinates<HeatTransferDataDescriptor<1, 1, 2, 0, HeatTransferElementType::NODE>::Element>(HeatTransferDataDescriptor<1, 1, 2, 0, HeatTransferElementType::NODE>::Element &element, const size_t &gp, const size_t &s, double &coordinate_x, double &coordinate_y)
+{
+	coordinate_x = element.coords[gp][0][s];
+	coordinate_y = element.coords[gp][1][s];
+}
+
+template <typename Element>
+inline void setGPCoordinates(Element &element, const size_t &gp, const size_t &s, double &coordinate_x, double &coordinate_y, double &coordinate_z)
+{
+	coordinate_x = element.gpcoords[gp][0][s];
+	coordinate_y = element.gpcoords[gp][1][s];
+	coordinate_z = element.gpcoords[gp][2][s];
+}
+template <>
+inline void setGPCoordinates<HeatTransferDataDescriptor<1, 1, 3, 0, HeatTransferElementType::NODE>::Element>(HeatTransferDataDescriptor<1, 1, 3, 0, HeatTransferElementType::NODE>::Element &element, const size_t &gp, const size_t &s, double &coordinate_x, double &coordinate_y, double &coordinate_z)
+{
+	coordinate_x = element.coords[gp][0][s];
+	coordinate_y = element.coords[gp][1][s];
+	coordinate_z = element.coords[gp][2][s];
+}
 
 }
 

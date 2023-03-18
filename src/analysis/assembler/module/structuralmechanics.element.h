@@ -290,7 +290,6 @@ struct StructuralMechanicsDataDescriptor<1, 1, ndim, 0, StructuralMechanicsEleme
 		} ecf;
 
 		alignas(SIMD::size * sizeof(double)) SIMD coords[1][ndim];
-		alignas(SIMD::size * sizeof(double)) SIMD gpcoords[1][ndim];
 
 		alignas(SIMD::size * sizeof(double)) SIMD displacement[1][ndim];
 
@@ -303,6 +302,51 @@ struct StructuralMechanicsDataDescriptor<1, 1, ndim, 0, StructuralMechanicsEleme
 	virtual void simd(Element &element) =0;
 	virtual void peel(Element &element, size_t size) { simd(element); }
 };
+
+template <typename Element>
+inline void setCoordinates(Element &element, const size_t &gp, const size_t &s, double &coordinate_x, double &coordinate_y)
+{
+	coordinate_x = element.coords[gp][0][s];
+	coordinate_y = element.coords[gp][1][s];
+}
+
+template <typename Element>
+inline void setCoordinates(Element &element, const size_t &gp, const size_t &s, double &coordinate_x, double &coordinate_y, double &coordinate_z)
+{
+	coordinate_x = element.coords[gp][0][s];
+	coordinate_y = element.coords[gp][1][s];
+	coordinate_z = element.coords[gp][2][s];
+}
+
+template <typename Element>
+inline void setGPCoordinates(Element &element, const size_t &gp, const size_t &s, double &coordinate_x, double &coordinate_y)
+{
+	coordinate_x = element.gpcoords[gp][0][s];
+	coordinate_y = element.gpcoords[gp][1][s];
+}
+
+template <>
+inline void setGPCoordinates<StructuralMechanicsDataDescriptor<1, 1, 2, 0, StructuralMechanicsElementType::NODE>::Element>(StructuralMechanicsDataDescriptor<1, 1, 2, 0, StructuralMechanicsElementType::NODE>::Element &element, const size_t &gp, const size_t &s, double &coordinate_x, double &coordinate_y)
+{
+	coordinate_x = element.coords[gp][0][s];
+	coordinate_y = element.coords[gp][1][s];
+}
+
+template <typename Element>
+inline void setGPCoordinates(Element &element, const size_t &gp, const size_t &s, double &coordinate_x, double &coordinate_y, double &coordinate_z)
+{
+	coordinate_x = element.gpcoords[gp][0][s];
+	coordinate_y = element.gpcoords[gp][1][s];
+	coordinate_z = element.gpcoords[gp][2][s];
+}
+
+template <>
+inline void setGPCoordinates<StructuralMechanicsDataDescriptor<1, 1, 3, 0, StructuralMechanicsElementType::NODE>::Element>(StructuralMechanicsDataDescriptor<1, 1, 3, 0, StructuralMechanicsElementType::NODE>::Element &element, const size_t &gp, const size_t &s, double &coordinate_x, double &coordinate_y, double &coordinate_z)
+{
+	coordinate_x = element.coords[gp][0][s];
+	coordinate_y = element.coords[gp][1][s];
+	coordinate_z = element.coords[gp][2][s];
+}
 
 }
 

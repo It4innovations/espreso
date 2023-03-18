@@ -33,6 +33,25 @@ Assembler::Assembler(PhysicsConfiguration &settings)
   boundaryOps(info::mesh->boundaryRegions.size()),
   K(nullptr), f(nullptr)
 {
+	for (int t = 0; t < info::env::threads; ++t) {
+		for (size_t d = info::mesh->domains->distribution[t]; d < info::mesh->domains->distribution[t + 1]; d++) {
+			for (esint i = info::mesh->elements->eintervalsDistribution[d]; i < info::mesh->elements->eintervalsDistribution[d + 1]; ++i) {
+				info::mesh->elements->eintervals[i].thread = t;
+			}
+		}
+	}
+	for (int t = 0; t < info::env::threads; ++t) {
+		for (size_t d = info::mesh->domains->distribution[t]; d < info::mesh->domains->distribution[t + 1]; d++) {
+			for (size_t r = 0; r < info::mesh->boundaryRegions.size(); ++r) {
+				if (info::mesh->boundaryRegions[r]->dimension) {
+					for (esint i = info::mesh->boundaryRegions[r]->eintervalsDistribution[d]; i < info::mesh->boundaryRegions[r]->eintervalsDistribution[d + 1]; ++i) {
+						info::mesh->boundaryRegions[r]->eintervals[i].thread = t;
+					}
+				}
+			}
+		}
+	}
+
 	for (size_t i = 0; i < info::mesh->boundaryRegions.size(); ++i) {
 		if (info::mesh->boundaryRegions[i]->dimension) {
 			btype[i].resize(info::mesh->boundaryRegions[i]->eintervals.size());
