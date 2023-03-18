@@ -4,7 +4,6 @@
 #include "composition/gridgenerator.h"
 #include "composition/gridsetgenerator.h"
 #include "composition/gridtowergenerator.h"
-#include "composition/spheregenerator.h"
 #include "basis/logging/profiler.h"
 #include "wrappers/mpi/communication.h"
 #include "config/ecf/input/generator.h"
@@ -40,10 +39,6 @@ void MeshGenerator::load()
 	case INPUT_GENERATOR_SHAPE::GRID_TOWER:
 		GridTowerGenerator::generate(_configuration.grid_tower, *this);
 		info::mesh->preferedDomains = BlockSettings::preferedDomains(_configuration.grid_tower.grids.at(GridTowerGenerator::gridIndex(_configuration.grid_tower)));
-		break;
-	case INPUT_GENERATOR_SHAPE::SPHERE:
-		SphereGenerator::generate(_configuration.sphere, *this);
-		info::mesh->preferedDomains = BlockSettings::preferedDomains(_configuration.sphere);
 		break;
 	default:
 		eslog::globalerror("Not implemented mesh generator shape.\n");

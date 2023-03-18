@@ -1,7 +1,6 @@
 
 #include "assembler.h"
 
-#include "basis/expression/variable.h"
 #include "basis/utilities/parser.h"
 #include "esinfo/ecfinfo.h"
 #include "esinfo/eslog.hpp"
@@ -11,6 +10,7 @@
 #include "mesh/store/elementsregionstore.h"
 #include "mesh/store/boundaryregionstore.h"
 #include "mesh/store/domainstore.h"
+#include "math/simd/simd.h"
 
 using namespace espreso;
 #ifndef __SSC_MARK

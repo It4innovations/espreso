@@ -72,15 +72,13 @@ espreso::PhysicsConfiguration::PhysicsConfiguration(DIMENSION dim, MaterialConfi
 			.setdatatype({ ECFDataType::ELEMENTS_REGION, ECFDataType::EXPRESSION })
 			.setdescription({ "The name of a region.", "Initial temperature" })
 			.setpattern({ "MY_REGION", "273.15" })
-			.setdynamic(),
-			"273.15", ECFExpression::Scope::EGPS);
+			.setdynamic());
 
 	if (dimension == DIMENSION::D2) {
 		REGISTER(thickness, ECFMetaData()
 				.setdatatype({ ECFDataType::ELEMENTS_REGION, ECFDataType::EXPRESSION })
 				.setdescription({ "The name of a region.", "Thickness" })
 				.setpattern({ "MY_REGION", "1" })
-				.setdynamic(),
-				"1", ECFExpression::Scope::EGPS);
+				.setdynamic());
 	}
 }

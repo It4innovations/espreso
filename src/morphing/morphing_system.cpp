@@ -709,7 +709,8 @@ void MorphingMatrix::transformPoint(
 		auto Pr = rPoints[i];
 		this->transform_point(Pr);
 		
-		double R = configuration.function.evaluator->evaluate((Pr - Po).length());
+		eslog::error("set R = (Pr - Po).length()");
+		double R = configuration.function.evaluator->evaluate();
 
 		point_to_morph.x += R * coefficients[i ];
 		point_to_morph.y += R * coefficients[i + n];

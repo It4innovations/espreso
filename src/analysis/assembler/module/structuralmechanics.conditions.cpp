@@ -16,7 +16,6 @@
 #include "analysis/assembler/operators/stress.h"
 #include "analysis/assembler/operators/filler.h"
 
-#include "basis/expression/variable.h"
 #include "esinfo/ecfinfo.h"
 #include "esinfo/eslog.hpp"
 #include "esinfo/envinfo.h"
@@ -47,13 +46,17 @@ struct updateElasticity<DataDescriptor, nodes, gps, 2, edim, etype> {
 		double results[SIMD::size * gps];
 		switch (mat->linear_elastic_properties.model) {
 		case LinearElasticPropertiesConfiguration::MODEL::ISOTROPIC:
-			mat->linear_elastic_properties.young_modulus.get(0, 0).evaluator->evalVector(SIMD::size * gps, Evaluator::Params(), results);
+			for (size_t v = 0; v < SIMD::size * gps; ++v) {
+				results[v] = mat->linear_elastic_properties.young_modulus.get(0, 0).evaluator->evaluate();
+			}
 			for (size_t gp = 0; gp < gps; ++gp) {
 				for (size_t s = 0; s < SIMD::size; ++s) {
 					element.ecf.youngModulus[gp][s] = results[gps * s + gp];
 				}
 			}
-			mat->linear_elastic_properties.poisson_ratio.get(0, 0).evaluator->evalVector(SIMD::size * gps, Evaluator::Params(), results);
+			for (size_t v = 0; v < SIMD::size * gps; ++v) {
+				results[v] = mat->linear_elastic_properties.poisson_ratio.get(0, 0).evaluator->evaluate();
+			}
 			for (size_t gp = 0; gp < gps; ++gp) {
 				for (size_t s = 0; s < SIMD::size; ++s) {
 					element.ecf.poissonRatio[gp][s] = results[gps * s + gp];
@@ -75,13 +78,17 @@ struct updateElasticity<DataDescriptor, nodes, gps, 3, edim, StructuralMechanics
 		double results[SIMD::size * gps];
 		switch (mat->linear_elastic_properties.model) {
 		case LinearElasticPropertiesConfiguration::MODEL::ISOTROPIC:
-			mat->linear_elastic_properties.young_modulus.get(0, 0).evaluator->evalVector(SIMD::size * gps, Evaluator::Params(), results);
+			for (size_t v = 0; v < SIMD::size * gps; ++v) {
+				results[v] = mat->linear_elastic_properties.young_modulus.get(0, 0).evaluator->evaluate();
+			}
 			for (size_t gp = 0; gp < gps; ++gp) {
 				for (size_t s = 0; s < SIMD::size; ++s) {
 					element.ecf.youngModulus[gp][0][s] = results[gps * s + gp];
 				}
 			}
-			mat->linear_elastic_properties.poisson_ratio.get(0, 0).evaluator->evalVector(SIMD::size * gps, Evaluator::Params(), results);
+			for (size_t v = 0; v < SIMD::size * gps; ++v) {
+				results[v] = mat->linear_elastic_properties.poisson_ratio.get(0, 0).evaluator->evaluate();
+			}
 			for (size_t gp = 0; gp < gps; ++gp) {
 				for (size_t s = 0; s < SIMD::size; ++s) {
 					element.ecf.poissonRatio[gp][0][s] = results[gps * s + gp];
@@ -89,55 +96,73 @@ struct updateElasticity<DataDescriptor, nodes, gps, 3, edim, StructuralMechanics
 			}
 			break;
 		case LinearElasticPropertiesConfiguration::MODEL::ORTHOTROPIC:
-			mat->linear_elastic_properties.young_modulus.get(0, 0).evaluator->evalVector(SIMD::size * gps, Evaluator::Params(), results);
+			for (size_t v = 0; v < SIMD::size * gps; ++v) {
+				results[v] = mat->linear_elastic_properties.young_modulus.get(0, 0).evaluator->evaluate();
+			}
 			for (size_t gp = 0; gp < gps; ++gp) {
 				for (size_t s = 0; s < SIMD::size; ++s) {
 					element.ecf.youngModulus[gp][0][s] = results[gps * s + gp];
 				}
 			}
-			mat->linear_elastic_properties.young_modulus.get(1, 1).evaluator->evalVector(SIMD::size * gps, Evaluator::Params(), results);
+			for (size_t v = 0; v < SIMD::size * gps; ++v) {
+				results[v] = mat->linear_elastic_properties.young_modulus.get(1, 1).evaluator->evaluate();
+			}
 			for (size_t gp = 0; gp < gps; ++gp) {
 				for (size_t s = 0; s < SIMD::size; ++s) {
 					element.ecf.youngModulus[gp][1][s] = results[gps * s + gp];
 				}
 			}
-			mat->linear_elastic_properties.young_modulus.get(2, 2).evaluator->evalVector(SIMD::size * gps, Evaluator::Params(), results);
+			for (size_t v = 0; v < SIMD::size * gps; ++v) {
+				results[v] = mat->linear_elastic_properties.young_modulus.get(2, 2).evaluator->evaluate();
+			}
 			for (size_t gp = 0; gp < gps; ++gp) {
 				for (size_t s = 0; s < SIMD::size; ++s) {
 					element.ecf.youngModulus[gp][2][s] = results[gps * s + gp];
 				}
 			}
-			mat->linear_elastic_properties.poisson_ratio.get(0, 0).evaluator->evalVector(SIMD::size * gps, Evaluator::Params(), results);
+			for (size_t v = 0; v < SIMD::size * gps; ++v) {
+				results[v] = mat->linear_elastic_properties.poisson_ratio.get(0, 0).evaluator->evaluate();
+			}
 			for (size_t gp = 0; gp < gps; ++gp) {
 				for (size_t s = 0; s < SIMD::size; ++s) {
 					element.ecf.poissonRatio[gp][0][s] = results[gps * s + gp];
 				}
 			}
-			mat->linear_elastic_properties.poisson_ratio.get(1, 1).evaluator->evalVector(SIMD::size * gps, Evaluator::Params(), results);
+			for (size_t v = 0; v < SIMD::size * gps; ++v) {
+				results[v] = mat->linear_elastic_properties.poisson_ratio.get(1, 1).evaluator->evaluate();
+			}
 			for (size_t gp = 0; gp < gps; ++gp) {
 				for (size_t s = 0; s < SIMD::size; ++s) {
 					element.ecf.poissonRatio[gp][1][s] = results[gps * s + gp];
 				}
 			}
-			mat->linear_elastic_properties.poisson_ratio.get(1, 1).evaluator->evalVector(SIMD::size * gps, Evaluator::Params(), results);
+			for (size_t v = 0; v < SIMD::size * gps; ++v) {
+				results[v] = mat->linear_elastic_properties.poisson_ratio.get(1, 1).evaluator->evaluate();
+			}
 			for (size_t gp = 0; gp < gps; ++gp) {
 				for (size_t s = 0; s < SIMD::size; ++s) {
 					element.ecf.poissonRatio[gp][2][s] = results[gps * s + gp];
 				}
 			}
-			mat->linear_elastic_properties.shear_modulus.get(0, 0).evaluator->evalVector(SIMD::size * gps, Evaluator::Params(), results);
+			for (size_t v = 0; v < SIMD::size * gps; ++v) {
+				results[v] = mat->linear_elastic_properties.shear_modulus.get(0, 0).evaluator->evaluate();
+			}
 			for (size_t gp = 0; gp < gps; ++gp) {
 				for (size_t s = 0; s < SIMD::size; ++s) {
 					element.ecf.shearModulus[gp][0][s] = results[gps * s + gp];
 				}
 			}
-			mat->linear_elastic_properties.shear_modulus.get(1, 1).evaluator->evalVector(SIMD::size * gps, Evaluator::Params(), results);
+			for (size_t v = 0; v < SIMD::size * gps; ++v) {
+				results[v] = mat->linear_elastic_properties.shear_modulus.get(1, 1).evaluator->evaluate();
+			}
 			for (size_t gp = 0; gp < gps; ++gp) {
 				for (size_t s = 0; s < SIMD::size; ++s) {
 					element.ecf.shearModulus[gp][1][s] = results[gps * s + gp];
 				}
 			}
-			mat->linear_elastic_properties.shear_modulus.get(1, 1).evaluator->evalVector(SIMD::size * gps, Evaluator::Params(), results);
+			for (size_t v = 0; v < SIMD::size * gps; ++v) {
+				results[v] = mat->linear_elastic_properties.shear_modulus.get(1, 1).evaluator->evaluate();
+			}
 			for (size_t gp = 0; gp < gps; ++gp) {
 				for (size_t s = 0; s < SIMD::size; ++s) {
 					element.ecf.shearModulus[gp][2][s] = results[gps * s + gp];
@@ -165,7 +190,9 @@ struct updateRotation<DataDescriptor, nodes, gps, 2, edim, etype> {
 		double results[SIMD::size * gps];
 		switch (mat->coordinate_system.type) {
 		case CoordinateSystemConfiguration::TYPE::CARTESIAN:
-			mat->coordinate_system.rotation.z.evaluator->evalVector(SIMD::size * gps, Evaluator::Params(), results);
+			for (size_t v = 0; v < SIMD::size * gps; ++v) {
+				results[v] = mat->coordinate_system.rotation.z.evaluator->evaluate();
+			}
 			for (size_t gp = 0; gp < gps; ++gp) {
 				for (size_t s = 0; s < SIMD::size; ++s) {
 					element.ecf.center[gp][0][s] = results[gps * s + gp];
@@ -173,13 +200,17 @@ struct updateRotation<DataDescriptor, nodes, gps, 2, edim, etype> {
 			}
 			break;
 		case CoordinateSystemConfiguration::TYPE::CYLINDRICAL:
-			mat->coordinate_system.center.x.evaluator->evalVector(SIMD::size * gps, Evaluator::Params(), results);
+			for (size_t v = 0; v < SIMD::size * gps; ++v) {
+				results[v] = mat->coordinate_system.center.x.evaluator->evaluate();
+			}
 			for (size_t gp = 0; gp < gps; ++gp) {
 				for (size_t s = 0; s < SIMD::size; ++s) {
 					element.ecf.center[gp][0][s] = results[gps * s + gp];
 				}
 			}
-			mat->coordinate_system.center.y.evaluator->evalVector(SIMD::size * gps, Evaluator::Params(), results);
+			for (size_t v = 0; v < SIMD::size * gps; ++v) {
+				results[v] = mat->coordinate_system.center.y.evaluator->evaluate();
+			}
 			for (size_t gp = 0; gp < gps; ++gp) {
 				for (size_t s = 0; s < SIMD::size; ++s) {
 					element.ecf.center[gp][1][s] = results[gps * s + gp];
@@ -199,19 +230,25 @@ struct updateRotation<DataDescriptor, nodes, gps, 3, edim, etype> {
 		double results[SIMD::size * gps];
 		switch (mat->coordinate_system.type) {
 		case CoordinateSystemConfiguration::TYPE::CARTESIAN:
-			mat->coordinate_system.rotation.x.evaluator->evalVector(SIMD::size * gps, Evaluator::Params(), results);
+			for (size_t v = 0; v < SIMD::size * gps; ++v) {
+				results[v] = mat->coordinate_system.rotation.x.evaluator->evaluate();
+			}
 			for (size_t gp = 0; gp < gps; ++gp) {
 				for (size_t s = 0; s < SIMD::size; ++s) {
 					element.ecf.center[gp][0][s] = results[gps * s + gp];
 				}
 			}
-			mat->coordinate_system.rotation.y.evaluator->evalVector(SIMD::size * gps, Evaluator::Params(), results);
+			for (size_t v = 0; v < SIMD::size * gps; ++v) {
+				results[v] = mat->coordinate_system.rotation.y.evaluator->evaluate();
+			}
 			for (size_t gp = 0; gp < gps; ++gp) {
 				for (size_t s = 0; s < SIMD::size; ++s) {
 					element.ecf.center[gp][1][s] = results[gps * s + gp];
 				}
 			}
-			mat->coordinate_system.rotation.z.evaluator->evalVector(SIMD::size * gps, Evaluator::Params(), results);
+			for (size_t v = 0; v < SIMD::size * gps; ++v) {
+				results[v] = mat->coordinate_system.rotation.z.evaluator->evaluate();
+			}
 			for (size_t gp = 0; gp < gps; ++gp) {
 				for (size_t s = 0; s < SIMD::size; ++s) {
 					element.ecf.center[gp][2][s] = results[gps * s + gp];
@@ -219,13 +256,17 @@ struct updateRotation<DataDescriptor, nodes, gps, 3, edim, etype> {
 			}
 			break;
 		case CoordinateSystemConfiguration::TYPE::CYLINDRICAL:
-			mat->coordinate_system.center.x.evaluator->evalVector(SIMD::size * gps, Evaluator::Params(), results);
+			for (size_t v = 0; v < SIMD::size * gps; ++v) {
+				results[v] = mat->coordinate_system.center.x.evaluator->evaluate();
+			}
 			for (size_t gp = 0; gp < gps; ++gp) {
 				for (size_t s = 0; s < SIMD::size; ++s) {
 					element.ecf.center[gp][0][s] = results[gps * s + gp];
 				}
 			}
-			mat->coordinate_system.center.y.evaluator->evalVector(SIMD::size * gps, Evaluator::Params(), results);
+			for (size_t v = 0; v < SIMD::size * gps; ++v) {
+				results[v] = mat->coordinate_system.center.y.evaluator->evaluate();
+			}
 			for (size_t gp = 0; gp < gps; ++gp) {
 				for (size_t s = 0; s < SIMD::size; ++s) {
 					element.ecf.center[gp][1][s] = results[gps * s + gp];
@@ -233,19 +274,25 @@ struct updateRotation<DataDescriptor, nodes, gps, 3, edim, etype> {
 			}
 			break;
 		case CoordinateSystemConfiguration::TYPE::SPHERICAL:
-			mat->coordinate_system.center.x.evaluator->evalVector(SIMD::size * gps, Evaluator::Params(), results);
+			for (size_t v = 0; v < SIMD::size * gps; ++v) {
+				results[v] = mat->coordinate_system.center.x.evaluator->evaluate();
+			}
 			for (size_t gp = 0; gp < gps; ++gp) {
 				for (size_t s = 0; s < SIMD::size; ++s) {
 					element.ecf.center[gp][0][s] = results[gps * s + gp];
 				}
 			}
-			mat->coordinate_system.center.y.evaluator->evalVector(SIMD::size * gps, Evaluator::Params(), results);
+			for (size_t v = 0; v < SIMD::size * gps; ++v) {
+				results[v] = mat->coordinate_system.center.y.evaluator->evaluate();
+			}
 			for (size_t gp = 0; gp < gps; ++gp) {
 				for (size_t s = 0; s < SIMD::size; ++s) {
 					element.ecf.center[gp][1][s] = results[gps * s + gp];
 				}
 			}
-			mat->coordinate_system.center.z.evaluator->evalVector(SIMD::size * gps, Evaluator::Params(), results);
+			for (size_t v = 0; v < SIMD::size * gps; ++v) {
+				results[v] = mat->coordinate_system.center.z.evaluator->evaluate();
+			}
 			for (size_t gp = 0; gp < gps; ++gp) {
 				for (size_t s = 0; s < SIMD::size; ++s) {
 					element.ecf.center[gp][2][s] = results[gps * s + gp];
@@ -337,7 +384,9 @@ struct updateAcceleration {
 	void operator()(typename DataDescriptor<nodes, gps, ndim, edim, etype>::Element &element, Evaluator* evaluator)
 	{
 		double results[SIMD::size * gps];
-		evaluator->evalVector(SIMD::size * gps, Evaluator::Params(), results);
+		for (size_t v = 0; v < SIMD::size * gps; ++v) {
+			results[v] = evaluator->evaluate();
+		}
 		for (size_t gp = 0; gp < gps; ++gp) {
 			for (size_t s = 0; s < SIMD::size; ++s) {
 				element.ecf.acceleration[gp][0][s] = results[gps * s + gp];
@@ -445,7 +494,9 @@ struct updateVelocity<DataDescriptor, nodes, gps, 2, edim, etype> {
 	void operator()(typename DataDescriptor<nodes, gps, 2, edim, etype>::Element &element, Evaluator* evaluator)
 	{
 		double results[SIMD::size * gps];
-		evaluator->evalVector(SIMD::size * gps, Evaluator::Params(), results);
+		for (size_t v = 0; v < SIMD::size * gps; ++v) {
+			results[v] = evaluator->evaluate();
+		}
 		for (size_t gp = 0; gp < gps; ++gp) {
 			for (size_t s = 0; s < SIMD::size; ++s) {
 				element.ecf.angularVelocity[gp][s] = results[gps * s + gp];
@@ -459,7 +510,9 @@ struct updateVelocity<DataDescriptor, nodes, gps, 3, edim, etype> {
 	void operator()(typename DataDescriptor<nodes, gps, 3, edim, etype>::Element &element, Evaluator* evaluator)
 	{
 		double results[SIMD::size * gps];
-		evaluator->evalVector(SIMD::size * gps, Evaluator::Params(), results);
+		for (size_t v = 0; v < SIMD::size * gps; ++v) {
+			results[v] = evaluator->evaluate();
+		}
 		for (size_t gp = 0; gp < gps; ++gp) {
 			for (size_t s = 0; s < SIMD::size; ++s) {
 				element.ecf.angularVelocity[gp][0][s] = results[gps * s + gp];
@@ -481,7 +534,9 @@ struct updateThickness<DataDescriptor, nodes, gps, 2, edim, etype> {
 	void operator()(typename DataDescriptor<nodes, gps, 2, edim, etype>::Element &element, Evaluator* evaluator)
 	{
 		double results[SIMD::size * gps];
-		evaluator->evalVector(SIMD::size * gps, Evaluator::Params(), results);
+		for (size_t v = 0; v < SIMD::size * gps; ++v) {
+			results[v] = evaluator->evaluate();
+		}
 		for (size_t gp = 0; gp < gps; ++gp) {
 			for (size_t s = 0; s < SIMD::size; ++s) {
 				element.ecf.thickness[gp][s] = results[gps * s + gp];
@@ -567,7 +622,7 @@ Assembler::measurements StructuralMechanics::conditionsloop(ActionOperator::Acti
 	auto AccelerationEval = configuration.acceleration.find(info::mesh->elementsRegions[info::mesh->elements->eintervals[interval].region]->name);
 	if (AccelerationEval != configuration.acceleration.end()) {
 		hasAcceleration = true;
-		constAcceleration = AccelerationEval->second.x.evaluator->params.general.size() == 0 && AccelerationEval->second.y.evaluator->params.general.size() == 0 && AccelerationEval->second.z.evaluator->params.general.size() == 0;
+		constAcceleration = AccelerationEval->second.x.evaluator != nullptr && AccelerationEval->second.y.evaluator != nullptr && AccelerationEval->second.z.evaluator != nullptr;
 	}
 
 	bool hasVelocity = false;
@@ -575,13 +630,13 @@ Assembler::measurements StructuralMechanics::conditionsloop(ActionOperator::Acti
 	auto VelocityEval = configuration.angular_velocity.find(info::mesh->elementsRegions[info::mesh->elements->eintervals[interval].region]->name);
 	if (VelocityEval != configuration.angular_velocity.end()) {
 		hasVelocity = true;
-		constVelocity = VelocityEval->second.x.evaluator->params.general.size() == 0 && VelocityEval->second.y.evaluator->params.general.size() == 0 && VelocityEval->second.z.evaluator->params.general.size() == 0;
+		constVelocity = VelocityEval->second.x.evaluator != nullptr && VelocityEval->second.y.evaluator != nullptr && VelocityEval->second.z.evaluator != nullptr;
 	}
 
 	bool constThickness = true;
 	auto thicknessEval = settings.thickness.find(info::mesh->elementsRegions[info::mesh->elements->eintervals[interval].region]->name);
 	if (thicknessEval != settings.thickness.end()) {
-		constThickness = thicknessEval->second.evaluator->params.general.size() == 0;
+		constThickness = thicknessEval->second.evaluator != nullptr;
 	}
 
 	bool cooToGP = mat->coordinate_system.type != CoordinateSystemConfiguration::TYPE::CARTESIAN || hasVelocity || axisymmetric;

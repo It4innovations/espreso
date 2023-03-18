@@ -5,10 +5,6 @@
 using namespace espreso;
 
 ConvectionConfiguration::ConvectionConfiguration()
-: heat_transfer_coefficient(ECFExpression::Scope::BGPS), external_temperature(ECFExpression::Scope::BGPS),
-  wall_height(ECFExpression::Scope::BGPS), tilt_angle(ECFExpression::Scope::BGPS), diameter(ECFExpression::Scope::BGPS), plate_length(ECFExpression::Scope::BGPS),
-  fluid_velocity(ECFExpression::Scope::BGPS), plate_distance(ECFExpression::Scope::BGPS), length(ECFExpression::Scope::BGPS), experimental_constant(ECFExpression::Scope::BGPS),
-  volume_fraction(ECFExpression::Scope::BGPS), absolute_pressure(ECFExpression::Scope::BGPS)
 {
 	type = TYPE::USER;
 	REGISTER(type, ECFMetaData()
@@ -87,7 +83,6 @@ ConvectionConfiguration::ConvectionConfiguration()
 }
 
 RadiationConfiguration::RadiationConfiguration()
-: emissivity(ECFExpression::Scope::BGPS), external_temperature(ECFExpression::Scope::BGPS)
 {
 	REGISTER(emissivity, ECFMetaData()
 			.setdescription({ "Emissivity" })
@@ -98,9 +93,6 @@ RadiationConfiguration::RadiationConfiguration()
 }
 
 BioHeatSourceConfiguration::BioHeatSourceConfiguration()
-: arteriar_blood_temperature(ECFExpression::Scope::EGPS), blood_specific_heat(ECFExpression::Scope::EGPS), blood_density(ECFExpression::Scope::EGPS),
-  metabolic_heat_source(ECFExpression::Scope::EGPS), blood_perfusion(ECFExpression::Scope::EGPS), reference_temperature(ECFExpression::Scope::EGPS),
-  physical_activity_scatter_factor(ECFExpression::Scope::EGPS), mu(ECFExpression::Scope::EGPS)
 {
 	REGISTER(arteriar_blood_temperature, ECFMetaData()
 		.setdescription({ "Arteriar blood temperature." })
@@ -161,33 +153,29 @@ HeatTransferLoadStepConfiguration::HeatTransferLoadStepConfiguration(DIMENSION *
 			.setdescription({ "The name of a region.", "Temperature" })
 			.setdatatype({ ECFDataType::BOUNDARY_REGION, ECFDataType::EXPRESSION })
 			.setpattern({ "MY_REGION", "273.15" })
-			.setdynamic(),
-			ECFExpression::Scope::BNODES);
+			.setdynamic());
 	REGISTER(heat_source, ECFMetaData()
 			.setdescription({ "The name of a region.", "Heat source" })
 			.setdatatype({ ECFDataType::ELEMENTS_REGION, ECFDataType::EXPRESSION })
 			.setpattern({ "MY_REGION", "273.15" })
-			.setdynamic(),
-			ECFExpression::Scope::EGPS);
+			.setdynamic());
 	REGISTER(translation_motions, ECFMetaData()
 			.setdescription({ "The name of a region.", "Translation motion" })
 			.setdatatype({ ECFDataType::ELEMENTS_REGION })
 			.setpattern({ "MY_REGION" })
 			.setdynamic(),
-			D, "0", ECFExpression::Scope::BGPS);
+			D);
 
 	REGISTER(heat_flux, ECFMetaData()
 			.setdescription({ "The name of a region.", "Heat flux" })
 			.setdatatype({ ECFDataType::BOUNDARY_REGION, ECFDataType::EXPRESSION })
 			.setpattern({ "MY_REGION", "500" })
-			.setdynamic(),
-			ECFExpression::Scope::BGPS);
+			.setdynamic());
 	REGISTER(heat_flow, ECFMetaData()
 			.setdescription({ "The name of a region.", "Heat flow" })
 			.setdatatype({ ECFDataType::BOUNDARY_REGION, ECFDataType::EXPRESSION })
 			.setpattern({ "MY_REGION", "500" })
-			.setdynamic(),
-			ECFExpression::Scope::BGPS);
+			.setdynamic());
 
 	REGISTER(bio_heat, ECFMetaData()
 			.setdescription({ "The name of a region.", "Bio heat" })

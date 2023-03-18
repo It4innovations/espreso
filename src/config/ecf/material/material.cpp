@@ -8,7 +8,7 @@ using namespace espreso;
 
 MaterialBaseConfiguration::MaterialBaseConfiguration(DIMENSION *D, PHYSICAL_MODEL physicalModel, bool *phase_change)
 : physical_model(physicalModel), material_model(MATERIAL_MODEL::LINEAR_ELASTIC),
-  coordinate_system(D), density(ECFExpression::Scope::EGPS), speed_of_sound(ECFExpression::Scope::EGPS), heat_capacity(ECFExpression::Scope::EGPS),
+  coordinate_system(D),
   linear_elastic_properties(D), hyper_elastic_properties(D), thermal_expansion(D),
   thermal_conductivity(D),
   _phase_change(phase_change)
@@ -162,26 +162,26 @@ MaterialConfiguration::MaterialConfiguration(DIMENSION *D, PHYSICAL_MODEL physic
 			.addconstraint(ECFCondition(phase_change, ECFCondition::EQUALS, true)),
 			D, physical_model, &phase_change);
 
-	auto removePhaseConstraints = [&] (ECFParameter* object) {
-		ECFObject* obj = static_cast<ECFObject*>(object);
-		obj->forEachParameters([&] (ECFParameter* p){
-			if (p->metadata.condition->isset())
-			{
-				if (p->metadata.condition->match(&phase_change))
-				{
-					p->metadata.removeconstraint();
-				}
-			}
-		}, true, false, true);
-	};
-	ECFParameter* ph = ecfdescription->getParameter(&phases)->getParameter("1");
-	ph->metadata.name = "Phase 1";
-	ph->metadata.removeconstraint();
-	ph->metadata.setcollapsed();
-	removePhaseConstraints(ph);
-	ph = ecfdescription->getParameter(&phases)->getParameter("2");
-	ph->metadata.name = "Phase 2";
-	ph->metadata.removeconstraint();
-	ph->metadata.setcollapsed();
-	removePhaseConstraints(ph);
+//	auto removePhaseConstraints = [&] (ECFParameter* object) {
+//		ECFObject* obj = static_cast<ECFObject*>(object);
+//		obj->forEachParameters([&] (ECFParameter* p){
+//			if (p->metadata.condition->isset())
+//			{
+//				if (p->metadata.condition->match(&phase_change))
+//				{
+//					p->metadata.removeconstraint();
+//				}
+//			}
+//		}, true, false, true);
+//	};
+//	ECFParameter* ph = ecfdescription->getParameter(&phases)->getParameter("1");
+//	ph->metadata.name = "Phase 1";
+//	ph->metadata.removeconstraint();
+//	ph->metadata.setcollapsed();
+//	removePhaseConstraints(ph);
+//	ph = ecfdescription->getParameter(&phases)->getParameter("2");
+//	ph->metadata.name = "Phase 2";
+//	ph->metadata.removeconstraint();
+//	ph->metadata.setcollapsed();
+//	removePhaseConstraints(ph);
 }

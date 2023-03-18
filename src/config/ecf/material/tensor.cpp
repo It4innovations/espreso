@@ -4,7 +4,7 @@
 using namespace espreso;
 
 TensorConfiguration::TensorConfiguration(size_t size)
-: size(size), values(size * size, ECFExpression(ECFExpression::Scope::EGPS))
+: size(size), values(size * size)
 {
 
 }

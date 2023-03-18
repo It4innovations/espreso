@@ -6,9 +6,9 @@
 
 espreso::RBFTargetTransformationConfiguration::RBFTargetTransformationConfiguration(ECF *ECF)
 : dimension(DIMENSION::D3),
-  offset(ECFExpression::Scope::NODE),
-  scaling(&dimension, "1", ECFExpression::Scope::NODE),
-  translation(&dimension, "0", ECFExpression::Scope::NODE),
+  offset(),
+  scaling(&dimension),
+  translation(&dimension),
   coordinate_system(&dimension),
   override(true),
   _ECF(ECF)
@@ -62,40 +62,39 @@ espreso::RBFTargetTransformationConfiguration::RBFTargetTransformationConfigurat
 }
 
 espreso::RBFTargetConfiguration::RBFTargetConfiguration(ECF *ECF)
-: function("R", ECFExpression::Scope::GLOBAL),
-  external_ffd(ECF)
+: external_ffd(ECF)
 {
-
 	solver_precision = 1e-5;
 	REGISTER(solver_precision, ECFMetaData()
 		.setdescription({ "Solver requested precision." })
 		.setdatatype({ ECFDataType::FLOAT }));
 		
 	solver_max_iter = 600;
-		REGISTER(solver_max_iter, ECFMetaData()
-			.setdescription({ "Solver requested maximum number of iterations." })
-			.setdatatype({ ECFDataType::POSITIVE_INTEGER }));
+	REGISTER(solver_max_iter, ECFMetaData()
+		.setdescription({ "Solver requested maximum number of iterations." })
+		.setdatatype({ ECFDataType::POSITIVE_INTEGER }));
 
 	polynomial_regularization_degree = 0;
-		REGISTER(polynomial_regularization_degree, ECFMetaData()
-			.setdescription({ "Morphing degree of the regularization polynomial." })
-			.setdatatype({ ECFDataType::POSITIVE_INTEGER }));
+	REGISTER(polynomial_regularization_degree, ECFMetaData()
+		.setdescription({ "Morphing degree of the regularization polynomial." })
+		.setdatatype({ ECFDataType::POSITIVE_INTEGER }));
 
 	use_transform_translate = false;
-		REGISTER(use_transform_translate, ECFMetaData()
-			.setdescription({ "Morphing auto-translate referential points to the point-cloud centroid." })
-			.setdatatype({ ECFDataType::BOOL }));
+	REGISTER(use_transform_translate, ECFMetaData()
+		.setdescription({ "Morphing auto-translate referential points to the point-cloud centroid." })
+		.setdatatype({ ECFDataType::BOOL }));
 
 	use_transform_scale = false;
-		REGISTER(use_transform_scale, ECFMetaData()
-			.setdescription({ "Morphing auto-rescale referential points and displacements." })
-			.setdatatype({ ECFDataType::BOOL }));
+	REGISTER(use_transform_scale, ECFMetaData()
+		.setdescription({ "Morphing auto-rescale referential points and displacements." })
+		.setdatatype({ ECFDataType::BOOL }));
 
 	use_transform_rotate = false;
-		REGISTER(use_transform_rotate, ECFMetaData()
-			.setdescription({ "Morphing auto-rotate referential points and displacements." })
-			.setdatatype({ ECFDataType::BOOL }));
+	REGISTER(use_transform_rotate, ECFMetaData()
+		.setdescription({ "Morphing auto-rotate referential points and displacements." })
+		.setdatatype({ ECFDataType::BOOL }));
 
+	function.value = "R";
 	REGISTER(function, ECFMetaData()
 		.setdescription({ "Radial basis function." })
 		.setdatatype({ ECFDataType::EXPRESSION }));

@@ -14,15 +14,7 @@ class TableInterpolationEvaluator: public Evaluator {
 public:
 	TableInterpolationEvaluator(const std::vector<std::pair<double, double> > &table);
 
-	Evaluator* copy() const { return new TableInterpolationEvaluator(*this); }
-
-	void evalVectorInc(esint size, esint increment, const Params &params, double *results) const;
-	void evalFilteredInc(esint size, esint increment, const esint *elements, const esint *distribution, const Params &params, double *results) const;
-	void evalSelectedSparseInc(esint size, esint increment, const esint *selection, const Params &params, double *results) const;
-	void evalSelectedDenseInc(esint size, esint increment, const esint *selection, const Params &params, double *results) const;
-
-	std::string getEXPRTKForm() const;
-	std::string toString() const { return "TABLE"; }
+	double evaluate() const;
 
 protected:
 	std::vector<std::pair<double, double> > _table;

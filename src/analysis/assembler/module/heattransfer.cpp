@@ -17,7 +17,6 @@
 #include "analysis/assembler/operators/gradient.h"
 #include "analysis/assembler/operators/flux.h"
 
-#include "basis/expression/variable.h"
 #include "esinfo/ecfinfo.h"
 #include "esinfo/eslog.hpp"
 #include "esinfo/envinfo.h"
@@ -63,18 +62,9 @@ void HeatTransfer::initParameters()
 {
 	if (Results::initialTemperature == nullptr) {
 		Results::initialTemperature = info::mesh->nodes->appendData(1, NamedData::DataType::SCALAR, "INITIAL_TEMPERATURE");
-
-		Variable::list.node["INITIAL_TEMPERATURE"] = new OutputVariable(Results::initialTemperature, 0, 1);
-		for (auto it = settings.initial_temperature.begin(); it != settings.initial_temperature.end(); ++it) {
-			it->second.scope = ECFExpression::Scope::ENODES;
-			for (auto p = it->second.parameters.begin(); p != it->second.parameters.end(); ++p) {
-				Variable::list.enodes.insert(std::make_pair(*p, nullptr));
-			}
-		}
 	}
 	if (Results::temperature == nullptr) {
 		Results::temperature = info::mesh->nodes->appendData(1, NamedData::DataType::SCALAR, "TEMPERATURE");
-		Variable::list.node["TEMPERATURE"] = new OutputVariable(Results::temperature, 0, 1);
 	}
 	if (info::ecf->output.results_selection.translation_motions && Results::translationMotion == nullptr) {
 		Results::translationMotion = info::mesh->elements->appendData(info::mesh->dimension, NamedData::DataType::VECTOR, "TRANSLATION_MOTION");

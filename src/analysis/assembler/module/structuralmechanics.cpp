@@ -14,7 +14,6 @@
 #include "analysis/assembler/operators/filler.h"
 #include "analysis/assembler/operators/stress.h"
 
-#include "basis/expression/variable.h"
 #include "esinfo/ecfinfo.h"
 #include "esinfo/eslog.hpp"
 #include "esinfo/envinfo.h"
@@ -58,11 +57,6 @@ void StructuralMechanics::initParameters()
 {
 	if (Results::displacement == nullptr) {
 		Results::displacement = info::mesh->nodes->appendData(info::mesh->dimension, NamedData::DataType::VECTOR, "DISPLACEMENT");
-		Variable::list.node["DISPLACEMENT_X"] = new OutputVariable(Results::displacement, 0, info::mesh->dimension);
-		Variable::list.node["DISPLACEMENT_Y"] = new OutputVariable(Results::displacement, 1, info::mesh->dimension);
-		if (info::mesh->dimension == 3) {
-			Variable::list.node["DISPLACEMENT_Z"] = new OutputVariable(Results::displacement, 2, info::mesh->dimension);
-		}
 	}
 	if (info::ecf->output.results_selection.stress && Results::principalStress == nullptr) {
 		Results::principalStress = info::mesh->elements->appendData(info::mesh->dimension    , NamedData::DataType::NUMBERED   , "PRINCIPAL_STRESS");

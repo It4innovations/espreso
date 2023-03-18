@@ -19,7 +19,8 @@ FullRankBlock::FullRankBlock(const Cluster *L, const Cluster *R, const RBFTarget
 	
 	for(esint r = 0; r < this->nrows; ++r){
 		for(esint c = 0; c < this->ncols; ++c){
-			v = configuration.function.evaluator->evaluate((L->getPoint(r) - R->getPoint(c)).length());
+			eslog::error("set R = (L->getPoint(r) - R->getPoint(c)).length()");
+			v = configuration.function.evaluator->evaluate();
 			this->data.push_back(v);
 		}
 	}
@@ -285,7 +286,8 @@ void LowRankBlock::generateBlocksExplicit(const Cluster *L, const Cluster *R, do
 	double ref_norm_init = 0.0f;
 	for(esint r = 0; r < this->nrows; ++r){
 		for(esint c = 0; c < this->ncols; ++c){
-			v = configuration.function.evaluator->evaluate((L->getPoint(r) - R->getPoint(c)).length());
+			eslog::error("set R = (L->getPoint(r) - R->getPoint(c)).length()");
+			v = configuration.function.evaluator->evaluate();
 			data_full.push_back(v);
 			ref_norm_init += v * v;
 		}
@@ -478,7 +480,8 @@ void LowRankBlock::generateBlocksImplicit(const Cluster *L, const Cluster *R, do
 					cross_row->at(c) = 0.0f;
 				}
 				else{
-					cross_row->at(c) = configuration.function.evaluator->evaluate((L->getPoint(cross_row_idx) - R->getPoint(c)).length());
+					eslog::error("set R = (L->getPoint(cross_row_idx) - R->getPoint(c)).length()");
+					cross_row->at(c) = configuration.function.evaluator->evaluate();
 				}
 		}
 		for( esint i = 0; i < this->rank; ++i){
@@ -518,7 +521,8 @@ void LowRankBlock::generateBlocksImplicit(const Cluster *L, const Cluster *R, do
 				cross_col->at(r) = 0.0f;
 			}
 			else{
-				cross_col->at(r) = configuration.function.evaluator->evaluate((L->getPoint(r) - R->getPoint(cross_col_idx)).length());
+				eslog::error("set R = (L->getPoint(r) - R->getPoint(cross_col_idx)).length()");
+				cross_col->at(r) = configuration.function.evaluator->evaluate();
 			}
 		}
 		

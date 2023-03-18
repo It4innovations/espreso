@@ -117,6 +117,7 @@ def build(ctx):
     ctx.build_checker(ctx.path.ant_glob('src/esinfo/**/*.cpp'), "esinfo", [ "INFO" ])
     ctx.build_checker(ctx.path.ant_glob('src/config/**/*.cpp'), "config")
     ctx.build_checker(ctx.path.ant_glob('src/basis/**/*.cpp'), "basis")
+    ctx.build_checker(ctx.path.ant_glob('src/wrappers/exprtk/**/*.cpp'), "wexprtk")
     ctx.build_checker(ctx.path.ant_glob('src/wrappers/mpi/**/*.cpp'), "wmpi")
     ctx.build_checker(ctx.path.ant_glob('src/wrappers/papi/**/*.cpp'), "wpapi", [ "PAPI" ])
 
@@ -348,6 +349,7 @@ def recurse(ctx):
     ctx.recurse("src/wrappers/wsmp")
 
     """ Other """
+    ctx.recurse("src/wrappers/exprtk")
     ctx.recurse("src/wrappers/pthread")
     ctx.recurse("src/wrappers/hdf5")
     ctx.recurse("src/wrappers/gmsh")

@@ -4,16 +4,14 @@
 #include "config/configuration.hpp"
 
 espreso::BlockGeneratorConfiguration::BlockGeneratorConfiguration()
-: start_x(ECFExpression::Scope::ENODES), start_y(ECFExpression::Scope::ENODES), start_z(ECFExpression::Scope::ENODES),
-  length_x(ECFExpression::Scope::ENODES), length_y(ECFExpression::Scope::ENODES), length_z(ECFExpression::Scope::ENODES)
 {
 	element_type = GENERATOR_ELEMENT_TYPE::HEXA8;
 	start_x.value = start_y.value = start_z.value = "0";
 	length_x.value = length_y.value = length_z.value = "1";
-	rotation_x = rotation_y = rotation_z = "0";
-	projection_x = "x";
-	projection_y = "y";
-	projection_z = "z";
+	rotation_x.value = rotation_y.value = rotation_z.value = "0";
+	projection_x.value = "x";
+	projection_y.value = "y";
+	projection_z.value = "z";
 
 	domains_x = domains_y = domains_z = 2;
 	elements_x = elements_y = elements_z = 5;

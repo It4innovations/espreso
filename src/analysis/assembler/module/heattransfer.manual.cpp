@@ -17,7 +17,6 @@
 #include "analysis/assembler/operators/gradient.h"
 #include "analysis/assembler/operators/flux.h"
 
-#include "basis/expression/variable.h"
 #include "esinfo/ecfinfo.h"
 #include "esinfo/eslog.hpp"
 #include "esinfo/envinfo.h"
@@ -100,7 +99,7 @@ Assembler::measurements HeatTransfer::manualloop(ActionOperator::Action action, 
 	auto heatSourceEval = configuration.heat_source.find(info::mesh->elementsRegions[info::mesh->elements->eintervals[interval].region]->name);
 	if (heatSourceEval != configuration.heat_source.end()) {
 		hasHeatSource = true;
-		constHeatSource = heatSourceEval->second.evaluator->params.general.size() == 0;
+		constHeatSource = heatSourceEval->second.evaluator != nullptr;
 	}
 
 	bool hasAdvection = false;
@@ -108,7 +107,7 @@ Assembler::measurements HeatTransfer::manualloop(ActionOperator::Action action, 
 	auto advectionEval = configuration.translation_motions.find(info::mesh->elementsRegions[info::mesh->elements->eintervals[interval].region]->name);
 	if (advectionEval != configuration.translation_motions.end()) {
 		hasAdvection = true;
-		constAdvection = advectionEval->second.x.evaluator->params.general.size() == 0 && advectionEval->second.y.evaluator->params.general.size() == 0 && advectionEval->second.z.evaluator->params.general.size() == 0;
+		constAdvection = advectionEval->second.x.evaluator != nullptr && advectionEval->second.y.evaluator != nullptr && advectionEval->second.z.evaluator != nullptr;
 	}
 
 	bool cooToGP = mat->coordinate_system.type != CoordinateSystemConfiguration::TYPE::CARTESIAN;
@@ -338,7 +337,7 @@ Assembler::measurements HeatTransfer::manualloop(ActionOperator::Action action, 
 	auto heatSourceEval = configuration.heat_source.find(info::mesh->elementsRegions[info::mesh->elements->eintervals[interval].region]->name);
 	if (heatSourceEval != configuration.heat_source.end()) {
 		hasHeatSource = true;
-		constHeatSource = heatSourceEval->second.evaluator->params.general.size() == 0;
+		constHeatSource = heatSourceEval->second.evaluator != nullptr;
 	}
 
 	bool hasAdvection = false;
@@ -346,7 +345,7 @@ Assembler::measurements HeatTransfer::manualloop(ActionOperator::Action action, 
 	auto advectionEval = configuration.translation_motions.find(info::mesh->elementsRegions[info::mesh->elements->eintervals[interval].region]->name);
 	if (advectionEval != configuration.translation_motions.end()) {
 		hasAdvection = true;
-		constAdvection = advectionEval->second.x.evaluator->params.general.size() == 0 && advectionEval->second.y.evaluator->params.general.size() == 0 && advectionEval->second.z.evaluator->params.general.size() == 0;
+		constAdvection = advectionEval->second.x.evaluator != nullptr && advectionEval->second.y.evaluator != nullptr && advectionEval->second.z.evaluator != nullptr;
 	}
 
 	bool cooToGP = mat->coordinate_system.type != CoordinateSystemConfiguration::TYPE::CARTESIAN;
@@ -818,7 +817,7 @@ Assembler::measurements HeatTransfer::manualloop(ActionOperator::Action action, 
 	auto heatSourceEval = configuration.heat_source.find(info::mesh->elementsRegions[info::mesh->elements->eintervals[interval].region]->name);
 	if (heatSourceEval != configuration.heat_source.end()) {
 		hasHeatSource = true;
-		constHeatSource = heatSourceEval->second.evaluator->params.general.size() == 0;
+		constHeatSource = heatSourceEval->second.evaluator != nullptr;
 	}
 
 	bool hasAdvection = false;
@@ -826,7 +825,7 @@ Assembler::measurements HeatTransfer::manualloop(ActionOperator::Action action, 
 	auto advectionEval = configuration.translation_motions.find(info::mesh->elementsRegions[info::mesh->elements->eintervals[interval].region]->name);
 	if (advectionEval != configuration.translation_motions.end()) {
 		hasAdvection = true;
-		constAdvection = advectionEval->second.x.evaluator->params.general.size() == 0 && advectionEval->second.y.evaluator->params.general.size() == 0 && advectionEval->second.z.evaluator->params.general.size() == 0;
+		constAdvection = advectionEval->second.x.evaluator != nullptr && advectionEval->second.y.evaluator != nullptr && advectionEval->second.z.evaluator != nullptr;
 	}
 
 	bool cooToGP = mat->coordinate_system.type != CoordinateSystemConfiguration::TYPE::CARTESIAN;
@@ -1078,7 +1077,7 @@ Assembler::measurements HeatTransfer::manualloop(ActionOperator::Action action, 
 	auto heatSourceEval = configuration.heat_source.find(info::mesh->elementsRegions[info::mesh->elements->eintervals[interval].region]->name);
 	if (heatSourceEval != configuration.heat_source.end()) {
 		hasHeatSource = true;
-		constHeatSource = heatSourceEval->second.evaluator->params.general.size() == 0;
+		constHeatSource = heatSourceEval->second.evaluator != nullptr;
 	}
 
 	bool hasAdvection = false;
@@ -1086,7 +1085,7 @@ Assembler::measurements HeatTransfer::manualloop(ActionOperator::Action action, 
 	auto advectionEval = configuration.translation_motions.find(info::mesh->elementsRegions[info::mesh->elements->eintervals[interval].region]->name);
 	if (advectionEval != configuration.translation_motions.end()) {
 		hasAdvection = true;
-		constAdvection = advectionEval->second.x.evaluator->params.general.size() == 0 && advectionEval->second.y.evaluator->params.general.size() == 0 && advectionEval->second.z.evaluator->params.general.size() == 0;
+		constAdvection = advectionEval->second.x.evaluator != nullptr && advectionEval->second.y.evaluator != nullptr && advectionEval->second.z.evaluator != nullptr;
 	}
 
 	bool cooToGP = mat->coordinate_system.type != CoordinateSystemConfiguration::TYPE::CARTESIAN;
@@ -1460,7 +1459,7 @@ Assembler::measurements HeatTransfer::manualloop(ActionOperator::Action action, 
 	auto heatSourceEval = configuration.heat_source.find(info::mesh->elementsRegions[info::mesh->elements->eintervals[interval].region]->name);
 	if (heatSourceEval != configuration.heat_source.end()) {
 		hasHeatSource = true;
-		constHeatSource = heatSourceEval->second.evaluator->params.general.size() == 0;
+		constHeatSource = heatSourceEval->second.evaluator != nullptr;
 	}
 
 	bool hasAdvection = false;
@@ -1468,7 +1467,7 @@ Assembler::measurements HeatTransfer::manualloop(ActionOperator::Action action, 
 	auto advectionEval = configuration.translation_motions.find(info::mesh->elementsRegions[info::mesh->elements->eintervals[interval].region]->name);
 	if (advectionEval != configuration.translation_motions.end()) {
 		hasAdvection = true;
-		constAdvection = advectionEval->second.x.evaluator->params.general.size() == 0 && advectionEval->second.y.evaluator->params.general.size() == 0 && advectionEval->second.z.evaluator->params.general.size() == 0;
+		constAdvection = advectionEval->second.x.evaluator != nullptr && advectionEval->second.y.evaluator != nullptr && advectionEval->second.z.evaluator != nullptr;
 	}
 
 	bool cooToGP = mat->coordinate_system.type != CoordinateSystemConfiguration::TYPE::CARTESIAN;
@@ -2282,7 +2281,7 @@ Assembler::measurements HeatTransfer::manualloop(ActionOperator::Action action, 
 	auto heatSourceEval = configuration.heat_source.find(info::mesh->elementsRegions[info::mesh->elements->eintervals[interval].region]->name);
 	if (heatSourceEval != configuration.heat_source.end()) {
 		hasHeatSource = true;
-		constHeatSource = heatSourceEval->second.evaluator->params.general.size() == 0;
+		constHeatSource = heatSourceEval->second.evaluator != nullptr;
 	}
 
 	bool hasAdvection = false;
@@ -2290,7 +2289,7 @@ Assembler::measurements HeatTransfer::manualloop(ActionOperator::Action action, 
 	auto advectionEval = configuration.translation_motions.find(info::mesh->elementsRegions[info::mesh->elements->eintervals[interval].region]->name);
 	if (advectionEval != configuration.translation_motions.end()) {
 		hasAdvection = true;
-		constAdvection = advectionEval->second.x.evaluator->params.general.size() == 0 && advectionEval->second.y.evaluator->params.general.size() == 0 && advectionEval->second.z.evaluator->params.general.size() == 0;
+		constAdvection = advectionEval->second.x.evaluator != nullptr && advectionEval->second.y.evaluator != nullptr && advectionEval->second.z.evaluator != nullptr;
 	}
 
 	bool cooToGP = mat->coordinate_system.type != CoordinateSystemConfiguration::TYPE::CARTESIAN;

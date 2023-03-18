@@ -3,7 +3,6 @@
 #include "acoustic.real.linear.h"
 
 #include "analysis/linearsystem/linearsystem.hpp"
-#include "basis/expression/variable.h"
 #include "esinfo/eslog.hpp"
 #include "esinfo/meshinfo.h"
 #include "esinfo/stepinfo.h"
@@ -27,7 +26,6 @@ void AcousticRealLinear::analyze()
 	eslog::info(" == PHYSICS                                                                        ACOUSTIC == \n");
 	eslog::info(" ============================================================================================= \n");
 
-	Variable::list.global.insert(std::make_pair("FREQUENCY", new FrequencyVariable(frequency)));
 	assembler.analyze();
 	info::mesh->output->updateMonitors(step::TYPE::FREQUENCY);
 }

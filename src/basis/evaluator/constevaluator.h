@@ -11,26 +11,10 @@ class ConstEvaluator: public Evaluator {
 public:
 	ConstEvaluator(double value): _value(value) {}
 
-	virtual Evaluator* copy() const { return new ConstEvaluator(*this); }
-
-	void evalVectorInc(esint size, esint increment, const Params &params, double *results) const;
-	void evalVectorSimdInc(esint size, esint increment, const Params &params, double *results) const;
-	void evalFilteredInc(esint size, esint increment, const esint *elements, const esint *distribution, const Params &params, double *results) const;
-
-	void evalSelectedSparseInc(esint size, esint increment, const esint *selection, const Params &params, double *results) const
-	{
-		evalVectorInc(size, increment, params, results);
-	}
-
-	void evalSelectedDenseInc(esint size, esint increment, const esint *selection, const Params &params, double *results) const;
-
-	double evaluate(double r) const { return _value; }
-
-	std::string getEXPRTKForm() const { return std::to_string(_value); }
-	std::string toString() const { return std::to_string(_value); }
+	double evaluate() const { return _value; }
 
 protected:
-	double _value;
+	const double _value;
 };
 
 }

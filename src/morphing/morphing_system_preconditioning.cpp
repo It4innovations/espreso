@@ -153,7 +153,8 @@ void MorphingMatrixPreconditioner::updateInverseRow(
 	esint l = 0, k = 0;
 	this->sparse_system_mem[0] = 0.0f;
 	for(int r = 1; r < this->nrows; ++r){
-		this->sparse_system_mem[l++] = configuration.function.evaluator->evaluate((p - sparse_points[r-1]).length());
+		eslog::error("set evaluator: R = (p - sparse_points[r-1]).length()");
+		this->sparse_system_mem[l++] = configuration.function.evaluator->evaluate();
 		
 		for(int c = 1; c <= r; ++c){
 			this->sparse_system_mem[l++] = this->sparse_system[k++];
@@ -196,7 +197,8 @@ void MorphingMatrixPreconditioner::prepareMatrixSparse(
     size_t idx = 0;
     for (size_t r = 0; r < rows - 1; r++) {
         for(size_t c = 0; c <= r; c++) {
-            this->sparse_system[idx++] = configuration.function.evaluator->evaluate((sparse_points[r] - sparse_points[c]).length());
+        	eslog::error("set evaluator: R = (sparse_points[r] - sparse_points[c]).length()");
+            this->sparse_system[idx++] = configuration.function.evaluator->evaluate();
         }
     }
 	

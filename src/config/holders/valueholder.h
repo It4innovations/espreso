@@ -5,6 +5,7 @@
 #include "expression.h"
 #include "range.h"
 #include "config/configuration.h"
+#include "basis/evaluator/evaluator.h"
 #include "basis/utilities/parser.h"
 #include <sstream>
 
@@ -43,7 +44,8 @@ inline ECFValueHolder<ECFExpression>::ECFValueHolder(ECFExpression &value)
 : value(value)
 {
 	if (value.value.size()) {
-		value.createEvaluator();
+		value.evaluator = Evaluator::create(value.value);
+		value.isset = true;
 	}
 }
 
@@ -76,8 +78,8 @@ template <>
 inline bool ECFValueHolder<ECFExpression>::_setValue(const std::string &value)
 {
 	this->value.value = Parser::uppercase(value);
+	this->value.evaluator = Evaluator::create(value);
 	this->value.isset = true;
-	this->value.createEvaluator();
 	// expression validity is checked later
 	//	return this->value.evaluator != NULL;
 	return true;

@@ -59,40 +59,40 @@ BlockBorder::BlockBorder(const std::string &interval, const BlockGeneratorConfig
 		ss2 >> _end[i];
 
 		if (StringCompare::caseInsensitiveEq(Parser::strip(bounds[0]), "START_X")) {
-			_start[i] = block.start_x.evaluator->eval();
+			_start[i] = block.start_x.evaluator->evaluate();
 		}
 		if (StringCompare::caseInsensitiveEq(Parser::strip(bounds[0]), "START_Y")) {
-			_start[i] = block.start_y.evaluator->eval();
+			_start[i] = block.start_y.evaluator->evaluate();
 		}
 		if (StringCompare::caseInsensitiveEq(Parser::strip(bounds[0]), "START_Z")) {
-			_start[i] = block.start_z.evaluator->eval();
+			_start[i] = block.start_z.evaluator->evaluate();
 		}
 		if (StringCompare::caseInsensitiveEq(Parser::strip(bounds[0]), "LENGTH_X")) {
-			_start[i] = block.length_x.evaluator->eval();
+			_start[i] = block.length_x.evaluator->evaluate();
 		}
 		if (StringCompare::caseInsensitiveEq(Parser::strip(bounds[0]), "LENGTH_Y")) {
-			_start[i] = block.length_y.evaluator->eval();
+			_start[i] = block.length_y.evaluator->evaluate();
 		}
 		if (StringCompare::caseInsensitiveEq(Parser::strip(bounds[0]), "LENGTH_Z")) {
-			_start[i] = block.length_z.evaluator->eval();
+			_start[i] = block.length_z.evaluator->evaluate();
 		}
 		if (StringCompare::caseInsensitiveEq(Parser::strip(bounds[1]), "START_X")) {
-			_end[i] = block.start_x.evaluator->eval();
+			_end[i] = block.start_x.evaluator->evaluate();
 		}
 		if (StringCompare::caseInsensitiveEq(Parser::strip(bounds[1]), "START_Y")) {
-			_end[i] = block.start_y.evaluator->eval();
+			_end[i] = block.start_y.evaluator->evaluate();
 		}
 		if (StringCompare::caseInsensitiveEq(Parser::strip(bounds[1]), "START_Z")) {
-			_end[i] = block.start_z.evaluator->eval();
+			_end[i] = block.start_z.evaluator->evaluate();
 		}
 		if (StringCompare::caseInsensitiveEq(Parser::strip(bounds[1]), "LENGTH_X")) {
-			_end[i] = block.length_x.evaluator->eval();
+			_end[i] = block.length_x.evaluator->evaluate();
 		}
 		if (StringCompare::caseInsensitiveEq(Parser::strip(bounds[1]), "LENGTH_Y")) {
-			_end[i] = block.length_y.evaluator->eval();
+			_end[i] = block.length_y.evaluator->evaluate();
 		}
 		if (StringCompare::caseInsensitiveEq(Parser::strip(bounds[1]), "LENGTH_Z")) {
-			_end[i] = block.length_z.evaluator->eval();
+			_end[i] = block.length_z.evaluator->evaluate();
 		}
 	}
 

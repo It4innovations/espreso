@@ -2,9 +2,7 @@
 #include "assembler.hpp"
 
 #include "analysis/assembler/operators/expression.h"
-#include "basis/evaluator/expressionevaluator.h"
-#include "basis/expression/expression.h"
-#include "basis/expression/variable.h"
+#include "basis/evaluator/evaluator.h"
 #include "basis/utilities/parser.h"
 #include "basis/utilities/utils.h"
 #include "config/holders/expression.h"
@@ -19,6 +17,7 @@
 #include "mesh/store/boundaryregionstore.h"
 
 #include "wrappers/mpi/communication.h"
+#include "wrappers/exprtk/exprtk.h"
 
 #include <algorithm>
 #include <numeric>
@@ -178,15 +177,16 @@ void Assembler::printMaterials(const std::map<std::string, std::string> &setting
 bool Assembler::checkExpression(const std::string &name, ECFExpression &expression)
 {
 	if (expression.evaluator == nullptr) {
-		if (!Variable::create(expression)) {
+		if (Exprtk::check(expression.value)) {
 			eslog::warning("   %25s:  %62s \n", name.c_str(), "INVALID EXPRESSION");
 			return false;
 		}
+		expression.evaluator = Evaluator::create(expression.value);
 	}
-	if (expression.evaluator->variables.size()) {
-		eslog::info("   %25s:  %62s \n", name.c_str(), expression.evaluator->toString().c_str());
+	if (expression.evaluator->parameters.size()) {
+		eslog::info("   %25s:  %62s \n", name.c_str(), expression.value.c_str());
 	} else {
-		eslog::info("   %25s:  %62g \n", name.c_str(), expression.evaluator->eval(Evaluator::Params()));
+		eslog::info("   %25s:  %62g \n", name.c_str(), expression.evaluator->evaluate());
 	}
 	return true;
 }

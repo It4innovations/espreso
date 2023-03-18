@@ -20,7 +20,6 @@ AcousticGlobalSettings::AcousticGlobalSettings(ECFObject *ecfdescription)
 }
 
 ImpedanceConfiguration::ImpedanceConfiguration()
-: impedance(ECFExpression::Scope::BGPS)
 {
 	REGISTER(impedance, ECFMetaData()
 			.setdescription({ "Impedance value" })
@@ -28,12 +27,6 @@ ImpedanceConfiguration::ImpedanceConfiguration()
 }
 
 PointSourceConfiguration::PointSourceConfiguration()
-: volume_flow(ECFExpression::Scope::BGPS),
-  phase(ECFExpression::Scope::BGPS),
-  reference_intensity(ECFExpression::Scope::BGPS),
-  distance_from_source(ECFExpression::Scope::BGPS),
-  reference_power(ECFExpression::Scope::BGPS),
-  source_amplitude(ECFExpression::Scope::BGPS)
 {
 	type = TYPE::USER;
 	REGISTER(type, ECFMetaData()
@@ -82,35 +75,32 @@ AcousticLoadStepConfiguration::AcousticLoadStepConfiguration(DIMENSION *D)
 			.setdescription({ "The name of a region.", "Monopole source" })
 			.setdatatype({ ECFDataType::ELEMENTS_REGION, ECFDataType::EXPRESSION })
 			.setpattern({ "MY_REGION", "273.15" })
-			.setdynamic(),
-			ECFExpression::Scope::EGPS);
+			.setdynamic());
 
 	REGISTER(dipole_source, ECFMetaData()
 			.setdescription({ "The name of a region.", "Dipole source." })
 			.setdatatype({ ECFDataType::ELEMENTS_REGION })
 			.setpattern({ "MY_REGION" }),
-			D, ECFExpression::Scope::EGPS);
+			D);
 
 	REGISTER(acoustic_pressure, ECFMetaData()
 			.setdescription({ "The name of a region.", "Pressure" })
 			.setdatatype({ ECFDataType::BOUNDARY_REGION, ECFDataType::EXPRESSION })
 			.setpattern({ "MY_REGION", "0" })
-			.setdynamic(),
-			ECFExpression::Scope::BGPS);
+			.setdynamic());
 
 	REGISTER(normal_acceleration, ECFMetaData()
 			.setdescription({ "The name of a region.", "Normal Acceleration" })
 			.setdatatype({ ECFDataType::BOUNDARY_REGION, ECFDataType::EXPRESSION })
 			.setpattern({ "MY_REGION", "0" })
-			.setdynamic(),
-			ECFExpression::Scope::BGPS);
+			.setdynamic());
 
 	REGISTER(acceleration, ECFMetaData()
 			.setdescription({ "The name of a region.", "Acceleration" })
 			.setdatatype({ ECFDataType::BOUNDARY_REGION })
 			.setpattern({ "MY_REGION" })
 			.setdynamic(),
-			D, ECFExpression::Scope::BGPS);
+			D);
 
 	REGISTER(impedance, ECFMetaData()
 			.setdescription({ "The name of a region.", "Impedance" })

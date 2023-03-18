@@ -2,8 +2,6 @@
 #include "acoustic.h"
 #include "assembler.hpp"
 
-#include "basis/expression/variable.h"
-
 #include "esinfo/ecfinfo.h"
 #include "esinfo/eslog.hpp"
 #include "esinfo/meshinfo.h"
@@ -33,11 +31,11 @@ void Acoustic::initParameters()
 {
 	if (Results::initialPressure == nullptr) {
 		Results::initialPressure = info::mesh->nodes->appendData(1, NamedData::DataType::SCALAR, "INITIAL_ACOUSTIC_PRESSURE");
-		Variable::list.node["INITIAL_ACOUSTIC_PRESSURE"] = new OutputVariable(Results::initialPressure, 0, 1);
+//		Variable::list.node["INITIAL_ACOUSTIC_PRESSURE"] = new OutputVariable(Results::initialPressure, 0, 1);
 	}
 	if (Results::pressure == nullptr) {
 		Results::pressure = info::mesh->nodes->appendData(1, NamedData::DataType::SCALAR, "ACOUSTIC_PRESSURE");
-		Variable::list.node["ACOUSTIC_PRESSURE"] = new OutputVariable(Results::pressure, 0, 1);
+//		Variable::list.node["ACOUSTIC_PRESSURE"] = new OutputVariable(Results::pressure, 0, 1);
 	}
 }
 

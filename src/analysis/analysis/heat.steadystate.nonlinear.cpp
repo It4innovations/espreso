@@ -3,7 +3,6 @@
 #include "heat.steadystate.nonlinear.h"
 
 #include "analysis/linearsystem/linearsystem.hpp"
-#include "basis/expression/variable.h"
 #include "config/ecf/physics/heattransfer.h"
 #include "esinfo/meshinfo.h"
 #include "esinfo/eslog.hpp"
@@ -36,7 +35,6 @@ void HeatSteadyStateNonLinear::analyze()
 	eslog::info(" == PHYSICS                                                                   HEAT TRANSFER == \n");
 	eslog::info(" ============================================================================================= \n");
 
-	Variable::list.global.insert(std::make_pair("TIME", new TimeVariable(time)));
 	assembler.analyze();
 	info::mesh->output->updateMonitors(step::TYPE::TIME);
 }

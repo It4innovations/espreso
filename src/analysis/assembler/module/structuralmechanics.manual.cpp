@@ -12,7 +12,6 @@
 #include "analysis/assembler/operators/structuralmechanics.K.h"
 #include "analysis/assembler/operators/filler.h"
 
-#include "basis/expression/variable.h"
 #include "esinfo/ecfinfo.h"
 #include "esinfo/eslog.hpp"
 #include "esinfo/envinfo.h"

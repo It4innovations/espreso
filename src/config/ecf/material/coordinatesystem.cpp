@@ -7,7 +7,7 @@
 using namespace espreso;
 
 CoordinateSystemConfiguration::CoordinateSystemConfiguration(DIMENSION *D)
-: dimension(D), rotation(dimension, "0", ECFExpression::Scope::EGPS), center(dimension, "0", ECFExpression::Scope::EGPS)
+: dimension(D), rotation(dimension), center(dimension)
 {
 	type = TYPE::CARTESIAN;
 

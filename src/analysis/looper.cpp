@@ -7,8 +7,6 @@
 #include "analysis/heat.steadystate.nonlinear.h"
 #include "analysis/elasticity.steadystate.linear.h"
 
-#include "basis/expression/expression.h"
-#include "basis/expression/variable.h"
 #include "basis/utilities/parser.h"
 #include "esinfo/ecfinfo.h"
 #include "esinfo/eslog.h"
@@ -21,7 +19,6 @@ using namespace espreso;
 void Looper::run()
 {
 	eslog::startln("ESPRESO: SIMULATION STARTED", "SIMULATION");
-	Variable::gather(info::mesh->boundaryRegions.size());
 
 //	for (auto range = info::ecf->ranges.begin(); range != info::ecf->ranges.end(); ++range) {
 //
@@ -80,6 +77,5 @@ void Looper::run()
 	}
 
 	delete analysis;
-	Variable::clear();
 	eslog::endln("SIMULATION: DATA CLEARED");
 }

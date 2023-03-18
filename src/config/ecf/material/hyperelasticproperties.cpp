@@ -4,12 +4,7 @@
 
 espreso::HyperElasticPropertiesConfiguration::HyperElasticPropertiesConfiguration(DIMENSION *D)
 : model(MODEL::NEO_HOOKEN_CMP),
-  dimension(D),
-  E(ECFExpression::Scope::EGPS), mi(ECFExpression::Scope::EGPS),
-  d(ECFExpression::Scope::EGPS), G(ECFExpression::Scope::EGPS), lambdaL(ECFExpression::Scope::EGPS),
-  C10(ECFExpression::Scope::EGPS), C01(ECFExpression::Scope::EGPS), C11(ECFExpression::Scope::EGPS),
-  C02(ECFExpression::Scope::EGPS), C20(ECFExpression::Scope::EGPS), C30(ECFExpression::Scope::EGPS),
-  C21(ECFExpression::Scope::EGPS), C12(ECFExpression::Scope::EGPS), C03(ECFExpression::Scope::EGPS)
+  dimension(D)
 {
 	REGISTER(model, ECFMetaData()
 			.setdescription({ "Material model." })
