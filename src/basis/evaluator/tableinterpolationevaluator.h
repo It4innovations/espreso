@@ -14,7 +14,7 @@ class TableInterpolationEvaluator: public Evaluator {
 public:
 	TableInterpolationEvaluator(const std::vector<std::pair<double, double> > &table);
 
-	double evaluate() const;
+	double evaluate(int t) const;
 
 protected:
 	std::vector<std::pair<double, double> > _table;

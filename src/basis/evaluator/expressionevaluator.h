@@ -21,10 +21,9 @@ public:
 	ExpressionEvaluator(const std::string &expression);
 	~ExpressionEvaluator();
 
-	double evaluate() const
+	double evaluate(int t) const
 	{
-		int thread = omp_get_thread_num();
-		return _expression[thread]->evaluate();
+		return _expression[t]->evaluate();
 	}
 
 protected:

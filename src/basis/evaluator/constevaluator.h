@@ -11,7 +11,7 @@ class ConstEvaluator: public Evaluator {
 public:
 	ConstEvaluator(double value): _value(value) {}
 
-	double evaluate() const { return _value; }
+	double evaluate(int t) const { return _value; }
 
 protected:
 	const double _value;

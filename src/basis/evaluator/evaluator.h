@@ -13,9 +13,9 @@ public:
 	static Evaluator* create(const std::string &expression);
 
 	virtual ~Evaluator() {};
-	virtual double evaluate() const { return 0; }
+	virtual double evaluate(int t = 0) const { return 0; }
 
-	std::vector<EvaluatorParameter> parameters;
+	std::vector<std::vector<EvaluatorParameter> > parameters;
 };
 
 }

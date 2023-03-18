@@ -13,7 +13,7 @@ TableInterpolationEvaluator::TableInterpolationEvaluator(const std::vector<std::
 	}
 }
 
-double TableInterpolationEvaluator::evaluate() const
+double TableInterpolationEvaluator::evaluate(int t) const
 {
 //	for (esint i = 0; i < size; ++i) {
 //		if (params._temp[i] < _table[0].first) {
