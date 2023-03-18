@@ -15,7 +15,7 @@ struct StorageStore: ActionOperator, Physics {
 	: parameter(parameter),
 	  size(size),
 	  inc(op->isconst ? 0 : size / sizeof(double) / SIMD::size),
-	  data(op->isconst ? size / sizeof(double) : elements * size / sizeof(double) / SIMD::size),
+	  data(op->isconst ? size / sizeof(double) : elements * size / sizeof(double) / SIMD::size + size / sizeof(double)),
 	  iterator(data.data())
 	{
 		isconst = op->isconst;
