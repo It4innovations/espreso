@@ -4,7 +4,6 @@
 
 #include "analysis/assembler/operator.h"
 #include "analysis/assembler/parameter.h"
-#include "analysis/assembler/math.hpp"
 
 #include <iostream>
 #include <complex>
@@ -61,7 +60,7 @@ struct AcousticDipole2D: public AcousticDipole {
 		std::fill(dipole.data, dipole.data + dipole.inc, 0);
 
 		for (size_t gpindex = 0; gpindex < gps; ++gpindex) {
-			ADDM12M2N<nodes>(determinant[gpindex] * weight[gpindex] / density[gpindex], q.data + 2 * gpindex, dND.data + gpindex * nodes * 2, dipole.data);
+//			ADDM12M2N<nodes>(determinant[gpindex] * weight[gpindex] / density[gpindex], q.data + 2 * gpindex, dND.data + gpindex * nodes * 2, dipole.data);
 		}
 	}
 };
@@ -75,7 +74,7 @@ struct AcousticDipole3D: public AcousticDipole {
 		std::fill(dipole.data, dipole.data + dipole.inc, 0);
 
 		for (size_t gpindex = 0; gpindex < gps; ++gpindex) {
-			ADDM13M3N<nodes>(determinant[gpindex] * weight[gpindex] / density[gpindex], q.data + 3 * gpindex, dND.data + gpindex * nodes * 3, dipole.data);
+//			ADDM13M3N<nodes>(determinant[gpindex] * weight[gpindex] / density[gpindex], q.data + 3 * gpindex, dND.data + gpindex * nodes * 3, dipole.data);
 		}
 	}
 };
@@ -323,7 +322,7 @@ struct AcousticsBoundaryMass: public ActionOperator {
 	{
 		std::fill(boundaryMass.data, boundaryMass.data + boundaryMass.inc, 0);
 		for (size_t gpindex = 0; gpindex < gps; ++gpindex) {
-			ADDMN1M1N<nodes>(determinant[gpindex] * weight[gpindex] / impedance[gpindex], N.data + nodes * gpindex, boundaryMass.data);
+//			ADDMN1M1N<nodes>(determinant[gpindex] * weight[gpindex] / impedance[gpindex], N.data + nodes * gpindex, boundaryMass.data);
 		}
 	}
 };

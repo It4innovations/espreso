@@ -4,7 +4,6 @@
 
 #include "analysis/assembler/operator.h"
 #include "analysis/assembler/parameter.h"
-#include "analysis/assembler/math.hpp"
 
 #include <iostream>
 #include <complex>
@@ -62,7 +61,7 @@ struct Stiffness2DAcoustic: public AcousticStiffness {
 	{
 		std::fill(stiffness.data, stiffness.data + stiffness.inc, 0);
 		for (size_t gpindex = 0; gpindex < gps; ++gpindex) {
-			ADDMN2M2N<nodes>(determinant[gpindex] * weight[gpindex] / density[gpindex], dND.data + 2 * nodes * gpindex, stiffness.data);
+//			ADDMN2M2N<nodes>(determinant[gpindex] * weight[gpindex] / density[gpindex], dND.data + 2 * nodes * gpindex, stiffness.data);
 		}
 	}
 };
@@ -75,7 +74,7 @@ struct Stiffness3DAcoustic: public AcousticStiffness {
 	{
 		std::fill(stiffness.data, stiffness.data + stiffness.inc, 0);
 		for (size_t gpindex = 0; gpindex < gps; ++gpindex) {
-			ADDMN3M3N<nodes>(determinant[gpindex] * weight[gpindex] / density[gpindex], dND.data + 3 * nodes * gpindex, stiffness.data);
+//			ADDMN3M3N<nodes>(determinant[gpindex] * weight[gpindex] / density[gpindex], dND.data + 3 * nodes * gpindex, stiffness.data);
 		}
 	}
 };
@@ -121,7 +120,7 @@ struct AcousticMass: public ActionOperator {
 	{
 		std::fill(mass.data, mass.data + mass.inc, 0);
 		for (size_t gpindex = 0; gpindex < gps; ++gpindex) {
-			ADDMN1M1N<nodes>(determinant[gpindex] * weight[gpindex] / (density[gpindex] * speed_of_sound[gpindex] * speed_of_sound[gpindex]), N.data + nodes * gpindex, mass.data);
+//			ADDMN1M1N<nodes>(determinant[gpindex] * weight[gpindex] / (density[gpindex] * speed_of_sound[gpindex] * speed_of_sound[gpindex]), N.data + nodes * gpindex, mass.data);
 		}
 	}
 };

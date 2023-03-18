@@ -7,7 +7,6 @@
 #include "esinfo/meshinfo.h"
 #include "mesh/store/elementstore.h"
 #include "mesh/store/boundaryregionstore.h"
-#include "analysis/assembler/operators/boundarynormals.h"
 
 #include <iostream>
 

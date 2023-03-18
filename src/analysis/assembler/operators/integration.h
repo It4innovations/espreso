@@ -5,7 +5,6 @@
 #include "analysis/assembler/operator.h"
 #include "analysis/assembler/module/heattransfer.h"
 #include "analysis/assembler/parameter.h"
-#include "analysis/assembler/math.hpp"
 
 namespace espreso {
 
