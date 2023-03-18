@@ -453,8 +453,9 @@ void HeatTransfer::connect(SteadyState &scheme)
 	}
 }
 
-void HeatTransfer::evaluate(SteadyState &scheme)
+void HeatTransfer::evaluate(SteadyState &scheme, step::Time &time)
 {
+	setTime(time.current);
 	reset(scheme.K, scheme.f, scheme.dirichlet);
 	eslog::info("       = SIMD LOOP ASSEMBLE                                             %12.8f s = \n", assemble(ActionOperator::Action::ASSEMBLE));
 	eslog::info("       = FILL MATRICES                                                  %12.8f s = \n", assemble(ActionOperator::Action::FILL));

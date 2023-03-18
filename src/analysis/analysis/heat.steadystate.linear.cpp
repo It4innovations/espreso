@@ -67,7 +67,7 @@ void HeatSteadyStateLinear::run(step::Step &step)
 	eslog::info(" = LOAD STEP %2d                                                              TIME %10.4f = \n", step::step.loadstep + 1, time.current);
 	eslog::info(" = ----------------------------------------------------------------------------------------- = \n");
 	double start = eslog::time();
-	assembler.evaluate(scheme);
+	assembler.evaluate(scheme, time);
 	eslog::checkpointln("SIMULATION: PHYSICS ASSEMBLED");
 	scheme.composeSystem(step, system);
 	eslog::info("       = ----------------------------------------------------------------------------- = \n");

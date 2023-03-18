@@ -20,6 +20,16 @@ struct ExternalExpression: ActionOperator {
 	Evaluator *evaluator;
 	Setter setter;
 	const int thread;
+
+	void setTime(double time, int t)
+	{
+		evaluator->getTime(t) = time;
+	}
+
+	void setFrequency(double frequency, int t)
+	{
+		evaluator->getFrequency(t) = frequency;
+	}
 };
 
 template <size_t nodes, size_t gps, size_t ndim, size_t edim, size_t etype, class Physics, class Setter>

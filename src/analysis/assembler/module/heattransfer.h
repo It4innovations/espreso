@@ -44,7 +44,7 @@ public:
 	void analyze();
 
 	void connect(SteadyState &scheme);
-	void evaluate(SteadyState &scheme);
+	void evaluate(SteadyState &scheme, step::Time &time);
 	void updateSolution(SteadyState &scheme);
 
 	void dryrun();

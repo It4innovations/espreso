@@ -79,6 +79,26 @@ Assembler::~Assembler()
 	}
 }
 
+void Assembler::setTime(double time)
+{
+	for (size_t i = 0; i < elementOps.size(); ++i) {
+		for (size_t j = 0; j < elementOps[i].size(); ++j) {
+			elementOps[i][j]->setTime(time, info::mesh->elements->eintervals[i].thread);
+		}
+	}
+	for (size_t r = 0; r < boundaryOps.size(); ++r) {
+		for (size_t i = 0; i < boundaryOps[r].size(); ++i) {
+			for (size_t j = 0; j < boundaryOps[r][i].size(); ++j) {
+				if (info::mesh->boundaryRegions[r]->dimension) {
+					boundaryOps[r][i][j]->setTime(time, info::mesh->boundaryRegions[r]->eintervals[i].thread);
+				} else {
+					boundaryOps[r][i][j]->setTime(time, i);
+				}
+			}
+		}
+	}
+}
+
 Assembler::measurements Assembler::assemble(ActionOperator::Action action)
 {
 	Assembler::measurements times = {0.0, 0.0};

@@ -74,7 +74,7 @@ bool NewtonRaphson::run(step::Step &step, step::Time &time, HeatTransfer &assemb
 
 	double start = eslog::time();
 	step.iteration = 0;
-	assembler.evaluate(scheme);
+	assembler.evaluate(scheme, time);
 	scheme.composeSystem(step, system);
 	eslog::info("      == ----------------------------------------------------------------------------- == \n");
 	eslog::info("      == SYSTEM ASSEMBLY                                                    %8.3f s = \n", eslog::time() - start);
@@ -94,7 +94,7 @@ bool NewtonRaphson::run(step::Step &step, step::Time &time, HeatTransfer &assemb
 
 		start = eslog::time();
 		U->copy(system->solver.x);
-		assembler.evaluate(scheme);
+		assembler.evaluate(scheme, time);
 		scheme.composeSystem(step, system);
 
 		system->solver.A->apply(1, system->solver.x, 0, R);

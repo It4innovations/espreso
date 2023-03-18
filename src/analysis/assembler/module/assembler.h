@@ -62,6 +62,7 @@ public:
 	std::vector<std::vector<std::vector<ActionOperator*> > > boundaryOps;
 
 protected:
+	void setTime(double time);
 	measurements assemble(ActionOperator::Action action);
 	virtual measurements instantiate           (ActionOperator::Action action, int code, int etype, const std::vector<ActionOperator*> &ops, size_t interval, esint elements) =0;
 	virtual measurements instantiateConditions (ActionOperator::Action action, int code, int etype, const std::vector<ActionOperator*> &ops, size_t interval, esint elements) =0;

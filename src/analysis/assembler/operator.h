@@ -21,6 +21,8 @@ struct ActionOperator {
 	ActionOperator(): isconst(1), update(1), action(Action::VOID) {}
 	virtual ~ActionOperator() {}
 
+	virtual void setTime(double time, int t) {};
+	virtual void setFrequency(double frequency, int t) {};
 	virtual void move(int n) {};
 };
 
