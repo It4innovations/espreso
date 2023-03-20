@@ -1110,10 +1110,10 @@ Assembler::measurements HeatTransfer::conditionsloop(ActionOperator::Action acti
 	if (mat->thermal_conductivity.model != ThermalConductivityConfiguration::MODEL::ISOTROPIC) {
 		if (mat->coordinate_system.type == CoordinateSystemConfiguration::TYPE::CARTESIAN) {
 			if (ndim == 2) {
-				rotateConductivity &= mat->coordinate_system.rotation.z.evaluator->parameters.size();
+				rotateConductivity &= mat->coordinate_system.rotation.z.evaluator->parameters.size() > 1;
 			}
 			if (ndim == 3) {
-				rotateConductivity &= mat->coordinate_system.rotation.x.evaluator->parameters.size() | mat->coordinate_system.rotation.y.evaluator->parameters.size() | mat->coordinate_system.rotation.z.evaluator->parameters.size();
+				rotateConductivity &= mat->coordinate_system.rotation.x.evaluator->parameters.size() > 1 | mat->coordinate_system.rotation.y.evaluator->parameters.size() > 1 | mat->coordinate_system.rotation.z.evaluator->parameters.size() > 1;
 			}
 		}
 	}
