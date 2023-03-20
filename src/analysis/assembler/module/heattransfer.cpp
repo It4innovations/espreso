@@ -593,7 +593,7 @@ Assembler::measurements HeatTransfer::instantiate2D<HeatTransferElementType::EDG
 	switch (code) {
 	case static_cast<size_t>(Element::CODE::LINE2): return loop<HeatTransferDataDescriptor, 2, HeatTransferGPC::LINE2, 2, 1, HeatTransferElementType::EDGE>(action, ops, elements); break;
 	case static_cast<size_t>(Element::CODE::LINE3): return loop<HeatTransferDataDescriptor, 3, HeatTransferGPC::LINE3, 2, 1, HeatTransferElementType::EDGE>(action, ops, elements); break;
-	default: return {0.0, 0.0};
+	default: return measurements();
 	}
 }
 
@@ -605,7 +605,7 @@ Assembler::measurements HeatTransfer::instantiate2D(ActionOperator::Action actio
 	case static_cast<size_t>(Element::CODE::TRIANGLE6): return loop<HeatTransferDataDescriptor, 6, HeatTransferGPC::TRIANGLE6, 2, 2, etype>(action, ops, elements); break;
 	case static_cast<size_t>(Element::CODE::SQUARE4):   return loop<HeatTransferDataDescriptor, 4, HeatTransferGPC::SQUARE4  , 2, 2, etype>(action, ops, elements); break;
 	case static_cast<size_t>(Element::CODE::SQUARE8):   return loop<HeatTransferDataDescriptor, 8, HeatTransferGPC::SQUARE8  , 2, 2, etype>(action, ops, elements); break;
-	default: return { .0, .0 };
+	default: return measurements();
 	};
 }
 
@@ -621,7 +621,7 @@ Assembler::measurements HeatTransfer::instantiate3D<HeatTransferElementType::EDG
 	switch (code) {
 	case static_cast<size_t>(Element::CODE::LINE2): return loop<HeatTransferDataDescriptor, 2, HeatTransferGPC::LINE2, 3, 1, HeatTransferElementType::EDGE>(action, ops, elements); break;
 	case static_cast<size_t>(Element::CODE::LINE3): return loop<HeatTransferDataDescriptor, 3, HeatTransferGPC::LINE3, 3, 1, HeatTransferElementType::EDGE>(action, ops, elements); break;
-	default: return {0.0, 0.0};
+	default: return measurements();
 	}
 }
 
@@ -633,7 +633,7 @@ Assembler::measurements HeatTransfer::instantiate3D<HeatTransferElementType::FAC
 	case static_cast<size_t>(Element::CODE::TRIANGLE6): return loop<HeatTransferDataDescriptor, 6, HeatTransferGPC::TRIANGLE6, 3, 2, HeatTransferElementType::FACE>(action, ops, elements); break;
 	case static_cast<size_t>(Element::CODE::SQUARE4):   return loop<HeatTransferDataDescriptor, 4, HeatTransferGPC::SQUARE4  , 3, 2, HeatTransferElementType::FACE>(action, ops, elements); break;
 	case static_cast<size_t>(Element::CODE::SQUARE8):   return loop<HeatTransferDataDescriptor, 8, HeatTransferGPC::SQUARE8  , 3, 2, HeatTransferElementType::FACE>(action, ops, elements); break;
-	default: return {0.0, 0.0};
+	default: return measurements();
 	}
 }
 
@@ -649,7 +649,7 @@ Assembler::measurements HeatTransfer::instantiate3D(ActionOperator::Action actio
 	case static_cast<size_t>(Element::CODE::PRISMA15):  return loop<HeatTransferDataDescriptor, 15, HeatTransferGPC::PRISMA15  , 3, 3, etype>(action, ops, elements); break;
 	case static_cast<size_t>(Element::CODE::HEXA8):     return loop<HeatTransferDataDescriptor,  8, HeatTransferGPC::HEXA8     , 3, 3, etype>(action, ops, elements); break;
 	case static_cast<size_t>(Element::CODE::HEXA20):    return loop<HeatTransferDataDescriptor, 20, HeatTransferGPC::HEXA20    , 3, 3, etype>(action, ops, elements); break;
-	default: return { .0, .0 };
+	default: return measurements();
 	};
 }
 
@@ -682,7 +682,7 @@ Assembler::measurements HeatTransfer::instantiate(ActionOperator::Action action,
 		case HeatTransferElementType::NODE: return instantiate3D<HeatTransferElementType::NODE>(action, code, ops, interval, elements);
 		}
 	}
-	return {0.0, 0.0};
+	return measurements();
 }
 
 }

@@ -22,7 +22,7 @@ using namespace espreso;
 template <template <size_t, size_t, size_t, size_t, size_t> class DataDescriptor, size_t nodes, size_t gps, size_t ndim, size_t edim, size_t etype>
 Assembler::measurements Assembler::loop(ActionOperator::Action action, const std::vector<ActionOperator*> &ops, esint elements)
 {
-	if (elements == 0) return {0.0, 0.0};
+	if (elements == 0) return measurements();
 	double initStart = eslog::time();
 	typename DataDescriptor<nodes, gps, ndim, edim, etype>::Element element;
 	std::vector<DataDescriptor<nodes, gps, ndim, edim, etype>*> active; active.reserve(ops.size());
@@ -78,7 +78,7 @@ Assembler::measurements Assembler::loop(ActionOperator::Action action, const std
 			}
 		}
 	}
-	return { init, loop };
+	return measurements(init, loop);
 }
 
 template<typename Ttype>

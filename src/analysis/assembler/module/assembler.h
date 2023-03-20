@@ -30,6 +30,14 @@ public:
 		double preprocessTime;
 		double coreTime;
 
+		measurements(): 
+			preprocessTime(0.0), 
+			coreTime(0.0) {}
+
+		measurements(double preprocessTime, double coreTime): 
+			preprocessTime(preprocessTime), 
+			coreTime(coreTime) {}
+
 		measurements& operator+= (const measurements& rhs)
 		{
 			preprocessTime += rhs.preprocessTime;
@@ -39,15 +47,15 @@ public:
 
 		measurements operator+ (const measurements& rhs)
 		{
-			return {
+			return measurements(
 				preprocessTime + rhs.preprocessTime,
-				coreTime + rhs.coreTime};
+				coreTime + rhs.coreTime);
 		}
 	};
 
 #pragma omp declare reduction(+ : measurements : \
 	omp_out += omp_in) \
-	initializer (omp_priv={0.0, 0.0})
+	initializer (omp_priv=measurements())
 
 	Assembler(PhysicsConfiguration &settings);
 	virtual ~Assembler();

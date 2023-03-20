@@ -55,7 +55,7 @@ Assembler::measurements HeatTransfer::manualloop(ActionOperator::Action action, 
 	{
 		return conditionsloop<DataDescriptor, nodes, gps, ndim, edim, ETYPE>(action, ops, interval, elements);
 	}
-	if (elements == 0) return {0.0, 0.0};
+	if (elements == 0) return measurements();
 
 	typename DataDescriptor<nodes, gps, ndim, edim, ETYPE>::Element element;
 	std::vector<DataDescriptor<nodes, gps, ndim, edim, ETYPE>*> active; active.reserve(ops.size());
@@ -126,7 +126,7 @@ Assembler::measurements HeatTransfer::manualloop(ActionOperator::Action action, 
 	if((action == ActionOperator::VOID) || (action == ActionOperator::SOLUTION))
 	{
 		std::cout<<"UNSUPPOERTED ACTION"<<std::endl;
-		return {0.0, 0.0};
+		return measurements();
 	}
 
 	if( hasAdvection ||
@@ -134,25 +134,15 @@ Assembler::measurements HeatTransfer::manualloop(ActionOperator::Action action, 
 		getTemp)
 	{
 		std::cout<<"UNSUPPORTED OPERATOR"<<std::endl;
-		return {0.0, 0.0};
+		return measurements();
 	}
 
 	if (!constRotation || !constConductivity)
 	{
 		std::cout<<"NON-CONST ROTATION OR CONDUCTIVITY"<<std::endl;
-		return {0.0, 0.0};
+		return measurements();
 	}
 
-	if (ETYPE == HeatTransferElementType::ASYMMETRIC_ISOTROPIC)
-	{
-		std::cout<<"WRONG ELEMENT TYPE "<<ETYPE<<std::endl;
-		return {0.0, 0.0};
-	}
-	bool symmetric = true;
-	if (ETYPE == HeatTransferElementType::ASYMMETRIC_GENERAL)
-	{
-		symmetric = false;
-	}
 
 	// std::cout<<"ELEMENT TYPE IS "<<ETYPE<<std::endl;
 
@@ -166,7 +156,7 @@ Assembler::measurements HeatTransfer::manualloop(ActionOperator::Action action, 
 	double start, end;
 	if((action == ActionOperator::ASSEMBLE) || (action == ActionOperator::REASSEMBLE))
 	{
-		if(!cooToGP && !rotateConductivity && isIsotropic && (ETYPE == HeatTransferElementType::SYMMETRIC_ISOTROPIC))
+		if(!cooToGP && !rotateConductivity && isIsotropic)
 		{
 			start = eslog::time();
 			// std::cout<<"CARTESIAN ISOTROPIC NO ROTATION -- ISOTROPIC2D"<<std::endl;
@@ -223,15 +213,16 @@ Assembler::measurements HeatTransfer::manualloop(ActionOperator::Action action, 
 				double * __restrict__ out = stiffness.data;
 				for (size_t gp = 0; gp < gps; ++gp) {
 					SIMD scale = element.ecf.thickness[gp] * element.det[gp] * load1(element.w[gp]) * element.conductivity[gp];
-					for (size_t n = 0; n < nodes; ++n) {
+					for (size_t n = 0, i = 0; n < nodes; ++n) {
 						SIMD nx = element.dND[gp][n][0];
 						SIMD ny = element.dND[gp][n][1];
-						for (size_t m = 0; m < nodes; ++m) {
+						for (size_t m = n; m < nodes; ++m, ++i) {
 							SIMD mx = element.dND[gp][m][0];
 							SIMD my = element.dND[gp][m][1];
-							SIMD res = load(out + (n * nodes + m) * SIMD::size);
+
+							SIMD res = load(out + i * SIMD::size);
 							res = res + scale * (nx * mx + ny * my);
-							store(out + (n * nodes + m) * SIMD::size, res);
+							store(out + i * SIMD::size, res);
 						}
 					}
 				}
@@ -268,7 +259,7 @@ Assembler::measurements HeatTransfer::manualloop(ActionOperator::Action action, 
 			}
 		}
 	}
-	return {initEnd - initStart, end - start};
+	return measurements(initEnd - initStart, end - start);
 }
 
 template <template <size_t, size_t, size_t, size_t, size_t> class DataDescriptor, size_t nodes, size_t gps, size_t ndim, size_t edim, size_t ETYPE>
@@ -293,7 +284,7 @@ Assembler::measurements HeatTransfer::manualloop(ActionOperator::Action action, 
 	{
 		return conditionsloop<DataDescriptor, nodes, gps, ndim, edim, ETYPE>(action, ops, interval, elements);
 	}
-	if (elements == 0) return {0.0, 0.0};
+	if (elements == 0) return measurements();
 
 	typename DataDescriptor<nodes, gps, ndim, edim, ETYPE>::Element element;
 	std::vector<DataDescriptor<nodes, gps, ndim, edim, ETYPE>*> active; active.reserve(ops.size());
@@ -364,7 +355,7 @@ Assembler::measurements HeatTransfer::manualloop(ActionOperator::Action action, 
 	if((action == ActionOperator::VOID) || (action == ActionOperator::SOLUTION) || (action == ActionOperator::FILL))
 	{
 		std::cout<<"UNSUPPOERTED ACTION"<<std::endl;
-		return {0.0, 0.0};
+		return measurements();
 	}
 
 	if( hasAdvection ||
@@ -372,25 +363,15 @@ Assembler::measurements HeatTransfer::manualloop(ActionOperator::Action action, 
 		getTemp)
 	{
 		std::cout<<"UNSUPPORTED OPERATOR"<<std::endl;
-		return {0.0, 0.0};
+		return measurements();
 	}
 
 	if (!constRotation || !constConductivity)
 	{
 		std::cout<<"NON-CONST ROTATION OR CONDUCTIVITY"<<std::endl;
-		return {0.0, 0.0};
+		return measurements();
 	}
 
-	if (ETYPE == HeatTransferElementType::ASYMMETRIC_ISOTROPIC)
-	{
-		std::cout<<"WRONG ELEMENT TYPE "<<ETYPE<<std::endl;
-		return {0.0, 0.0};
-	}
-	bool symmetric = true;
-	if (ETYPE == HeatTransferElementType::ASYMMETRIC_GENERAL)
-	{
-		symmetric = false;
-	}
 
 	// std::cout<<"ELEMENT TYPE IS "<<ETYPE<<std::endl;
 
@@ -404,7 +385,7 @@ Assembler::measurements HeatTransfer::manualloop(ActionOperator::Action action, 
 	double start, end;
 	if((action == ActionOperator::ASSEMBLE) || (action == ActionOperator::REASSEMBLE))
 	{
-		if(!cooToGP && !rotateConductivity && !isIsotropic  && (ETYPE == HeatTransferElementType::SYMMETRIC_GENERAL))
+		if(!cooToGP && !rotateConductivity)
 		{
 			start = eslog::time();
 			// std::cout<<"CARTESIAN NON-ISOTROPIC NO ROTATION -- DIAGONAL2D"<<std::endl;
@@ -460,20 +441,21 @@ Assembler::measurements HeatTransfer::manualloop(ActionOperator::Action action, 
 
 				double * __restrict__ out = stiffness.data;
 				for (size_t gp = 0; gp < gps; ++gp) {
-					SIMD c00 = element.conductivity[gp][0], c01 = element.conductivity[gp][2];
-					SIMD c10 = element.conductivity[gp][1], c11 = element.conductivity[gp][3];
+					SIMD c00 = element.conductivity[gp][0];
+					SIMD c10 = element.conductivity[gp][1], c11 = element.conductivity[gp][2];
 					SIMD scale = element.ecf.thickness[gp] * element.det[gp] * load1(element.w[gp]);
-					for (size_t n = 0; n < nodes; ++n) {
+					for (size_t n = 0, i = 0; n < nodes; ++n) {
 						SIMD nx = element.dND[gp][n][0];
 						SIMD ny = element.dND[gp][n][1];
-						SIMD a = nx * c00 + ny * c01;
+						SIMD a = nx * c00 + ny * c10;
 						SIMD b = nx * c10 + ny * c11;
-						for (size_t m = 0; m < nodes; ++m) {
+						for (size_t m = n; m < nodes; ++m, ++i) {
 							SIMD mx = element.dND[gp][m][0];
 							SIMD my = element.dND[gp][m][1];
-							SIMD res = load(out + (n * nodes + m) * SIMD::size);
+
+							SIMD res = load(out + i * SIMD::size);
 							res = res + scale * (a * mx + b * my);
-							store(out + (n * nodes + m) * SIMD::size, res);
+							store(out + i * SIMD::size, res);
 						}
 					}
 				}
@@ -489,7 +471,7 @@ Assembler::measurements HeatTransfer::manualloop(ActionOperator::Action action, 
 			}
 			end = eslog::time();
 		}
-		if(!cooToGP && rotateConductivity && symmetric && (ETYPE == HeatTransferElementType::SYMMETRIC_GENERAL))
+		if(!cooToGP && rotateConductivity)
 		{
 			start = eslog::time();
 			// std::cout<<"CARTESIAN NON-ISOTROPIC YES ROTATION SYMETRIC -- SYMMETRIC2D,CARTESIAN2D"<<std::endl;
@@ -552,35 +534,33 @@ Assembler::measurements HeatTransfer::manualloop(ActionOperator::Action action, 
 				}
 
 				for (size_t gp = 0; gp < gps; ++gp) {
-					SIMD origin0 = element.ecf.conductivity[gp][0];
-					SIMD origin1 = element.ecf.conductivity[gp][1];
-					SIMD origin2 = element.ecf.conductivity[gp][2];
-					SIMD origin3 = element.ecf.conductivity[gp][3];
+					SIMD c00 = element.ecf.conductivity[gp][0];
+					SIMD c01 = element.ecf.conductivity[gp][1], c11 = element.ecf.conductivity[gp][2];
 					SIMD cos = element.cossin[gp][0];
 					SIMD sin = element.cossin[gp][1];
 
-					element.conductivity[gp][0] = (cos * origin0 - sin * origin2) * cos - (cos * origin1 - sin * origin3) * sin;
-					element.conductivity[gp][1] = (cos * origin0 - sin * origin2) * sin + (cos * origin1 - sin * origin3) * cos;
-					element.conductivity[gp][2] = (sin * origin0 + cos * origin2) * cos - (sin * origin1 + cos * origin3) * sin;
-					element.conductivity[gp][3] = (sin * origin0 + cos * origin2) * sin + (sin * origin1 + cos * origin3) * cos;
+					element.conductivity[gp][0] = (cos * c00 - sin * c01) * cos - (cos * c01 - sin * c11) * sin;
+					element.conductivity[gp][1] = (cos * c00 - sin * c01) * sin + (cos * c01 - sin * c11) * cos;
+					element.conductivity[gp][2] = (sin * c00 + cos * c01) * sin + (sin * c01 + cos * c11) * cos;
 				}
 
 				double * __restrict__ out = stiffness.data;
 				for (size_t gp = 0; gp < gps; ++gp) {
-					SIMD c00 = element.conductivity[gp][0], c01 = element.conductivity[gp][2];
-					SIMD c10 = element.conductivity[gp][1], c11 = element.conductivity[gp][3];
+					SIMD c00 = element.conductivity[gp][0];
+					SIMD c10 = element.conductivity[gp][1], c11 = element.conductivity[gp][2];
 					SIMD scale = element.ecf.thickness[gp] * element.det[gp] * load1(element.w[gp]);
-					for (size_t n = 0; n < nodes; ++n) {
+					for (size_t n = 0, i = 0; n < nodes; ++n) {
 						SIMD nx = element.dND[gp][n][0];
 						SIMD ny = element.dND[gp][n][1];
-						SIMD a = nx * c00 + ny * c01;
+						SIMD a = nx * c00 + ny * c10;
 						SIMD b = nx * c10 + ny * c11;
-						for (size_t m = 0; m < nodes; ++m) {
+						for (size_t m = n; m < nodes; ++m, ++i) {
 							SIMD mx = element.dND[gp][m][0];
 							SIMD my = element.dND[gp][m][1];
-							SIMD res = load(out + (n * nodes + m) * SIMD::size);
+
+							SIMD res = load(out + i * SIMD::size);
 							res = res + scale * (a * mx + b * my);
-							store(out + (n * nodes + m) * SIMD::size, res);
+							store(out + i * SIMD::size, res);
 						}
 					}
 				}
@@ -597,7 +577,7 @@ Assembler::measurements HeatTransfer::manualloop(ActionOperator::Action action, 
 			}
 			end = eslog::time();
 		}
-		if(cooToGP && rotateConductivity && symmetric && (ETYPE == HeatTransferElementType::SYMMETRIC_GENERAL))
+		if(cooToGP && rotateConductivity)
 			{
 				start = eslog::time();
 				// std::cout<<"NON-CARTESIAN NON-ISOTROPIC YES ROTATION SYMMETRIC -- CYLINDRICAL2D"<<std::endl;
@@ -677,35 +657,33 @@ Assembler::measurements HeatTransfer::manualloop(ActionOperator::Action action, 
 					}
 
 					for (size_t gp = 0; gp < gps; ++gp) {
-						SIMD origin0 = element.ecf.conductivity[gp][0];
-						SIMD origin1 = element.ecf.conductivity[gp][1];
-						SIMD origin2 = element.ecf.conductivity[gp][2];
-						SIMD origin3 = element.ecf.conductivity[gp][3];
+						SIMD c00 = element.ecf.conductivity[gp][0];
+						SIMD c01 = element.ecf.conductivity[gp][1], c11 = element.ecf.conductivity[gp][2];
 						SIMD cos = element.cossin[gp][0];
 						SIMD sin = element.cossin[gp][1];
 
-						element.conductivity[gp][0] = (cos * origin0 - sin * origin2) * cos - (cos * origin1 - sin * origin3) * sin;
-						element.conductivity[gp][1] = (cos * origin0 - sin * origin2) * sin + (cos * origin1 - sin * origin3) * cos;
-						element.conductivity[gp][2] = (sin * origin0 + cos * origin2) * cos - (sin * origin1 + cos * origin3) * sin;
-						element.conductivity[gp][3] = (sin * origin0 + cos * origin2) * sin + (sin * origin1 + cos * origin3) * cos;
+						element.conductivity[gp][0] = (cos * c00 - sin * c01) * cos - (cos * c01 - sin * c11) * sin;
+						element.conductivity[gp][1] = (cos * c00 - sin * c01) * sin + (cos * c01 - sin * c11) * cos;
+						element.conductivity[gp][2] = (sin * c00 + cos * c01) * sin + (sin * c01 + cos * c11) * cos;
 					}
 
 					double * __restrict__ out = stiffness.data;
 					for (size_t gp = 0; gp < gps; ++gp) {
-						SIMD c00 = element.conductivity[gp][0], c01 = element.conductivity[gp][2];
-						SIMD c10 = element.conductivity[gp][1], c11 = element.conductivity[gp][3];
+						SIMD c00 = element.conductivity[gp][0];
+						SIMD c10 = element.conductivity[gp][1], c11 = element.conductivity[gp][2];
 						SIMD scale = element.ecf.thickness[gp] * element.det[gp] * load1(element.w[gp]);
-						for (size_t n = 0; n < nodes; ++n) {
+						for (size_t n = 0, i = 0; n < nodes; ++n) {
 							SIMD nx = element.dND[gp][n][0];
 							SIMD ny = element.dND[gp][n][1];
-							SIMD a = nx * c00 + ny * c01;
+							SIMD a = nx * c00 + ny * c10;
 							SIMD b = nx * c10 + ny * c11;
-							for (size_t m = 0; m < nodes; ++m) {
+							for (size_t m = n; m < nodes; ++m, ++i) {
 								SIMD mx = element.dND[gp][m][0];
 								SIMD my = element.dND[gp][m][1];
-								SIMD res = load(out + (n * nodes + m) * SIMD::size);
+
+								SIMD res = load(out + i * SIMD::size);
 								res = res + scale * (a * mx + b * my);
-								store(out + (n * nodes + m) * SIMD::size, res);
+								store(out + i * SIMD::size, res);
 							}
 						}
 					}
@@ -738,7 +716,7 @@ Assembler::measurements HeatTransfer::manualloop(ActionOperator::Action action, 
 			}
 		}
 	}
-	return {initEnd - initStart, end - start};
+	return measurements(initEnd - initStart, end - start);
 }
 
 template <template <size_t, size_t, size_t, size_t, size_t> class DataDescriptor, size_t nodes, size_t gps, size_t ndim, size_t edim, size_t ETYPE>
@@ -748,7 +726,7 @@ Assembler::measurements HeatTransfer::manualloop(ActionOperator::Action action, 
 		ETYPE == TransferElementType::ASYMMETRIC_ISOTROPIC, int>::type*
 )
 {
-	return {0.0, 0.0};
+	return measurements();
 }
 
 template <template <size_t, size_t, size_t, size_t, size_t> class DataDescriptor, size_t nodes, size_t gps, size_t ndim, size_t edim, size_t ETYPE>
@@ -773,7 +751,7 @@ Assembler::measurements HeatTransfer::manualloop(ActionOperator::Action action, 
 	{
 		return conditionsloop<DataDescriptor, nodes, gps, ndim, edim, ETYPE>(action, ops, interval, elements);
 	}
-	if (elements == 0) return {0.0, 0.0};
+	if (elements == 0) return measurements();
 
 	typename DataDescriptor<nodes, gps, ndim, edim, ETYPE>::Element element;
 	std::vector<DataDescriptor<nodes, gps, ndim, edim, ETYPE>*> active; active.reserve(ops.size());
@@ -844,7 +822,7 @@ Assembler::measurements HeatTransfer::manualloop(ActionOperator::Action action, 
 	if((action == ActionOperator::VOID) || (action == ActionOperator::SOLUTION) || (action == ActionOperator::FILL))
 	{
 		std::cout<<"UNSUPPOERTED ACTION"<<std::endl;
-		return {0.0, 0.0};
+		return measurements();
 	}
 
 	if( hasAdvection ||
@@ -852,25 +830,15 @@ Assembler::measurements HeatTransfer::manualloop(ActionOperator::Action action, 
 		getTemp)
 	{
 		std::cout<<"UNSUPPORTED OPERATOR"<<std::endl;
-		return {0.0, 0.0};
+		return measurements();
 	}
 
 	if (!constRotation || !constConductivity)
 	{
 		std::cout<<"NON-CONST ROTATION OR CONDUCTIVITY"<<std::endl;
-		return {0.0, 0.0};
+		return measurements();
 	}
 
-	if (ETYPE == HeatTransferElementType::ASYMMETRIC_ISOTROPIC)
-	{
-		std::cout<<"WRONG ELEMENT TYPE "<<ETYPE<<std::endl;
-		return {0.0, 0.0};
-	}
-	bool symmetric = true;
-	if (ETYPE == HeatTransferElementType::ASYMMETRIC_GENERAL)
-	{
-		symmetric = false;
-	}
 
 	// std::cout<<"ELEMENT TYPE IS "<<ETYPE<<std::endl;
 
@@ -884,7 +852,7 @@ Assembler::measurements HeatTransfer::manualloop(ActionOperator::Action action, 
 	double start, end;
 	if((action == ActionOperator::ASSEMBLE) || (action == ActionOperator::REASSEMBLE))
 	{
-		if(!cooToGP && rotateConductivity && !symmetric && (ETYPE == HeatTransferElementType::ASYMMETRIC_GENERAL))
+		if(!cooToGP && rotateConductivity)
 		{
 			start = eslog::time();
 			// std::cout<<"CARTESIAN NON-ISOTROPIC YES ROTATION NON-SYMETRIC -- ANISOTROPIC2D"<<std::endl;
@@ -1008,7 +976,7 @@ Assembler::measurements HeatTransfer::manualloop(ActionOperator::Action action, 
 			}
 		}
 	}
-	return {initEnd - initStart, end - start};
+	return measurements(initEnd - initStart, end - start);
 }
 
 template <template <size_t, size_t, size_t, size_t, size_t> class DataDescriptor, size_t nodes, size_t gps, size_t ndim, size_t edim, size_t ETYPE>
@@ -1033,7 +1001,7 @@ Assembler::measurements HeatTransfer::manualloop(ActionOperator::Action action, 
 	{
 		return conditionsloop<DataDescriptor, nodes, gps, ndim, edim, ETYPE>(action, ops, interval, elements);
 	}
-	if (elements == 0) return {0.0, 0.0};
+	if (elements == 0) return measurements();
 
 	typename DataDescriptor<nodes, gps, ndim, edim, ETYPE>::Element element;
 	std::vector<DataDescriptor<nodes, gps, ndim, edim, ETYPE>*> active; active.reserve(ops.size());
@@ -1104,7 +1072,7 @@ Assembler::measurements HeatTransfer::manualloop(ActionOperator::Action action, 
 	if((action == ActionOperator::VOID) || (action == ActionOperator::SOLUTION) || (action == ActionOperator::FILL))
 	{
 		std::cout<<"UNSUPPOERTED ACTION"<<std::endl;
-		return {0.0, 0.0};
+		return measurements();
 	}
 
 	if( hasAdvection ||
@@ -1112,24 +1080,13 @@ Assembler::measurements HeatTransfer::manualloop(ActionOperator::Action action, 
 		getTemp)
 	{
 		std::cout<<"UNSUPPORTED OPERATOR"<<std::endl;
-		return {0.0, 0.0};
+		return measurements();
 	}
 
 	if (!constRotation || !constConductivity)
 	{
 		std::cout<<"NON-CONST ROTATION OR CONDUCTIVITY"<<std::endl;
-		return {0.0, 0.0};
-	}
-
-	if (ETYPE == HeatTransferElementType::ASYMMETRIC_ISOTROPIC)
-	{
-		std::cout<<"WRONG ELEMENT TYPE "<<ETYPE<<std::endl;
-		return {0.0, 0.0};
-	}
-	bool symmetric = true;
-	if (ETYPE == HeatTransferElementType::ASYMMETRIC_GENERAL)
-	{
-		symmetric = false;
+		return measurements();
 	}
 
 	// std::cout<<"ELEMENT TYPE IS "<<ETYPE<<std::endl;
@@ -1144,7 +1101,7 @@ Assembler::measurements HeatTransfer::manualloop(ActionOperator::Action action, 
 	double start, end;
 	if((action == ActionOperator::ASSEMBLE) || (action == ActionOperator::REASSEMBLE))
 	{
-		if(!cooToGP && !rotateConductivity && isIsotropic && (ETYPE == HeatTransferElementType::SYMMETRIC_ISOTROPIC))
+		if(!cooToGP && !rotateConductivity && isIsotropic)
 		{
 			start = eslog::time();
 			// std::cout<<"CARTESIAN ISOTROPIC NO ROTATION -- ISOTROPIC3D"<<std::endl;
@@ -1222,18 +1179,18 @@ Assembler::measurements HeatTransfer::manualloop(ActionOperator::Action action, 
 				double * __restrict__ out = stiffness.data;
 				for (size_t gp = 0; gp < gps; ++gp) {
 					SIMD scale = element.det[gp] * load1(element.w[gp]) * element.conductivity[gp];
-					for (size_t n = 0; n < nodes; ++n) {
+					for (size_t n = 0, i = 0; n < nodes; ++n) {
 						SIMD nx = element.dND[gp][n][0];
 						SIMD ny = element.dND[gp][n][1];
 						SIMD nz = element.dND[gp][n][2];
-						for (size_t m = 0; m < nodes; ++m) {
+						for (size_t m = n; m < nodes; ++m, ++i) {
 							SIMD mx = element.dND[gp][m][0];
 							SIMD my = element.dND[gp][m][1];
 							SIMD mz = element.dND[gp][m][2];
-							SIMD res = load(out + (n * nodes + m) * SIMD::size);
 
+							SIMD res = load(out + i * SIMD::size);
 							res = res + scale * (nx * mx + ny * my + nz * mz);
-							store(out + (n * nodes + m) * SIMD::size, res);
+							store(out + i * SIMD::size, res);
 						}
 					}
 				}
@@ -1390,7 +1347,7 @@ Assembler::measurements HeatTransfer::manualloop(ActionOperator::Action action, 
 			}
 		}
 	}
-	return {initEnd - initStart, end - start};
+	return measurements(initEnd - initStart, end - start);
 }
 
 template <template <size_t, size_t, size_t, size_t, size_t> class DataDescriptor, size_t nodes, size_t gps, size_t ndim, size_t edim, size_t ETYPE>
@@ -1415,7 +1372,7 @@ Assembler::measurements HeatTransfer::manualloop(ActionOperator::Action action, 
 	{
 		return conditionsloop<DataDescriptor, nodes, gps, ndim, edim, ETYPE>(action, ops, interval, elements);
 	}
-	if (elements == 0) return {0.0, 0.0};
+	if (elements == 0) return measurements();
 
 	typename DataDescriptor<nodes, gps, ndim, edim, ETYPE>::Element element;
 	std::vector<DataDescriptor<nodes, gps, ndim, edim, ETYPE>*> active; active.reserve(ops.size());
@@ -1486,7 +1443,7 @@ Assembler::measurements HeatTransfer::manualloop(ActionOperator::Action action, 
 	if((action == ActionOperator::VOID) || (action == ActionOperator::SOLUTION) || (action == ActionOperator::FILL))
 	{
 		std::cout<<"UNSUPPOERTED ACTION"<<std::endl;
-		return {0.0, 0.0};
+		return measurements();
 	}
 
 	if( hasAdvection ||
@@ -1494,24 +1451,13 @@ Assembler::measurements HeatTransfer::manualloop(ActionOperator::Action action, 
 		getTemp)
 	{
 		std::cout<<"UNSUPPORTED OPERATOR"<<std::endl;
-		return {0.0, 0.0};
+		return measurements();
 	}
 
 	if (!constRotation || !constConductivity)
 	{
 		std::cout<<"NON-CONST ROTATION OR CONDUCTIVITY"<<std::endl;
-		return {0.0, 0.0};
-	}
-
-	if (ETYPE == HeatTransferElementType::ASYMMETRIC_ISOTROPIC)
-	{
-		std::cout<<"WRONG ELEMENT TYPE "<<ETYPE<<std::endl;
-		return {0.0, 0.0};
-	}
-	bool symmetric = true;
-	if (ETYPE == HeatTransferElementType::ASYMMETRIC_GENERAL)
-	{
-		symmetric = false;
+		return measurements();
 	}
 
 	// std::cout<<"ELEMENT TYPE IS "<<ETYPE<<std::endl;
@@ -1527,7 +1473,7 @@ Assembler::measurements HeatTransfer::manualloop(ActionOperator::Action action, 
 	if((action == ActionOperator::ASSEMBLE) || (action == ActionOperator::REASSEMBLE))
 	{
 
-		if(!cooToGP && !rotateConductivity && !isIsotropic && (ETYPE == HeatTransferElementType::SYMMETRIC_GENERAL))
+		if(!cooToGP && !rotateConductivity && !isIsotropic)
 		{
 			start = eslog::time();
 			// std::cout<<"CARTESIAN NON-ISOTROPIC NO ROTATION -- DIAGONAL3D"<<std::endl;
@@ -1605,23 +1551,24 @@ Assembler::measurements HeatTransfer::manualloop(ActionOperator::Action action, 
 				double * __restrict__ out = stiffness.data;
 				for (size_t gp = 0; gp < gps; ++gp) {
 					SIMD scale = element.det[gp] * load1(element.w[gp]);
-					SIMD c00 = element.conductivity[gp][0], c01 = element.conductivity[gp][3], c02 = element.conductivity[gp][6];
-					SIMD c10 = element.conductivity[gp][1], c11 = element.conductivity[gp][4], c12 = element.conductivity[gp][7];
-					SIMD c20 = element.conductivity[gp][2], c21 = element.conductivity[gp][5], c22 = element.conductivity[gp][8];
-					for (size_t n = 0; n < nodes; ++n) {
+					SIMD c00 = element.conductivity[gp][0];
+					SIMD c10 = element.conductivity[gp][1], c11 = element.conductivity[gp][3];
+					SIMD c20 = element.conductivity[gp][2], c21 = element.conductivity[gp][4], c22 = element.conductivity[gp][5];
+					for (size_t n = 0, i = 0; n < nodes; ++n) {
 						SIMD nx = element.dND[gp][n][0];
 						SIMD ny = element.dND[gp][n][1];
 						SIMD nz = element.dND[gp][n][2];
-						SIMD a = nx * c00 + ny * c01 + nz * c02;
-						SIMD b = nx * c10 + ny * c11 + nz * c12;
+						SIMD a = nx * c00 + ny * c10 + nz * c20;
+						SIMD b = nx * c10 + ny * c11 + nz * c21;
 						SIMD c = nx * c20 + ny * c21 + nz * c22;
-						for (size_t m = 0; m < nodes; ++m) {
+						for (size_t m = n; m < nodes; ++m, ++i) {
 							SIMD mx = element.dND[gp][m][0];
 							SIMD my = element.dND[gp][m][1];
 							SIMD mz = element.dND[gp][m][2];
-							SIMD res = load(out + (n * nodes + m) * SIMD::size);
+
+							SIMD res = load(out + i * SIMD::size);
 							res = res + scale * (a * mx + b * my + c * mz);
-							store(out + (n * nodes + m) * SIMD::size, res);
+							store(out + i * SIMD::size, res);
 						}
 					}
 				}
@@ -1637,7 +1584,7 @@ Assembler::measurements HeatTransfer::manualloop(ActionOperator::Action action, 
 			}
 			end = eslog::time();
 		}
-		if(!cooToGP && rotateConductivity && symmetric && (ETYPE == HeatTransferElementType::SYMMETRIC_GENERAL))
+		if(!cooToGP && rotateConductivity)
 		{
 			start = eslog::time();
 			// std::cout<<"CARTESIAN NON-ISOTROPIC YES ROTATION SYMETRIC -- SYMMETRIC3D,CARTESIAN3D"<<std::endl;
@@ -1744,58 +1691,50 @@ Assembler::measurements HeatTransfer::manualloop(ActionOperator::Action action, 
 					SIMD t21 = cos0 * sin1 * sin2 - cos2 * sin0;
 					SIMD t22 = cos0 * cos1;
 
-					SIMD origin0 = element.ecf.conductivity[gp][0];
-					SIMD origin1 = element.ecf.conductivity[gp][1];
-					SIMD origin2 = element.ecf.conductivity[gp][2];
-					SIMD origin3 = element.ecf.conductivity[gp][3];
-					SIMD origin4 = element.ecf.conductivity[gp][4];
-					SIMD origin5 = element.ecf.conductivity[gp][5];
-					SIMD origin6 = element.ecf.conductivity[gp][6];
-					SIMD origin7 = element.ecf.conductivity[gp][7];
-					SIMD origin8 = element.ecf.conductivity[gp][8];
+					SIMD c00 = element.ecf.conductivity[gp][0];
+					SIMD c01 = element.ecf.conductivity[gp][1], c11 = element.ecf.conductivity[gp][3];
+					SIMD c02 = element.ecf.conductivity[gp][2], c12 = element.ecf.conductivity[gp][4], c22 = element.ecf.conductivity[gp][5];
 
-					SIMD a = t00 * origin0 + t10 * origin3 + t20 * origin6;
-					SIMD b = t00 * origin1 + t10 * origin4 + t20 * origin7;
-					SIMD c = t00 * origin2 + t10 * origin5 + t20 * origin8;
+					SIMD a = t00 * c00 + t10 * c01 + t20 * c02;
+					SIMD b = t00 * c01 + t10 * c11 + t20 * c12;
+					SIMD c = t00 * c02 + t10 * c12 + t20 * c22;
 					element.conductivity[gp][0] = a * t00 + b * t10 + c * t20;
 					element.conductivity[gp][1] = a * t01 + b * t11 + c * t21;
 					element.conductivity[gp][2] = a * t02 + b * t12 + c * t22;
 
-					a = t01 * origin0 + t11 * origin3 + t21 * origin6;
-					b = t01 * origin1 + t11 * origin4 + t21 * origin7;
-					c = t01 * origin2 + t11 * origin5 + t21 * origin8;
-					element.conductivity[gp][3] = a * t00 + b * t10 + c * t20;
-					element.conductivity[gp][4] = a * t01 + b * t11 + c * t21;
-					element.conductivity[gp][5] = a * t02 + b * t12 + c * t22;
+					a = t01 * c00 + t11 * c01 + t21 * c02;
+					b = t01 * c01 + t11 * c11 + t21 * c12;
+					c = t01 * c02 + t11 * c12 + t21 * c22;
+					element.conductivity[gp][3] = a * t01 + b * t11 + c * t21;
+					element.conductivity[gp][4] = a * t02 + b * t12 + c * t22;
 
-					a = t02 * origin0 + t12 * origin3 + t22 * origin6;
-					b = t02 * origin1 + t12 * origin4 + t22 * origin7;
-					c = t02 * origin2 + t12 * origin5 + t22 * origin8;
-					element.conductivity[gp][6] = a * t00 + b * t10 + c * t20;
-					element.conductivity[gp][7] = a * t01 + b * t11 + c * t21;
-					element.conductivity[gp][8] = a * t02 + b * t12 + c * t22;
+					a = t02 * c00 + t12 * c01 + t22 * c02;
+					b = t02 * c01 + t12 * c11 + t22 * c12;
+					c = t02 * c02 + t12 * c12 + t22 * c22;
+					element.conductivity[gp][5] = a * t02 + b * t12 + c * t22;
 				}
 				//stiffness symmetric non-isotropic
 				double * __restrict__ out = stiffness.data;
 				for (size_t gp = 0; gp < gps; ++gp) {
 					SIMD scale = element.det[gp] * load1(element.w[gp]);
-					SIMD c00 = element.conductivity[gp][0], c01 = element.conductivity[gp][3], c02 = element.conductivity[gp][6];
-					SIMD c10 = element.conductivity[gp][1], c11 = element.conductivity[gp][4], c12 = element.conductivity[gp][7];
-					SIMD c20 = element.conductivity[gp][2], c21 = element.conductivity[gp][5], c22 = element.conductivity[gp][8];
-					for (size_t n = 0; n < nodes; ++n) {
+					SIMD c00 = element.conductivity[gp][0];
+					SIMD c10 = element.conductivity[gp][1], c11 = element.conductivity[gp][3];
+					SIMD c20 = element.conductivity[gp][2], c21 = element.conductivity[gp][4], c22 = element.conductivity[gp][5];
+					for (size_t n = 0, i = 0; n < nodes; ++n) {
 						SIMD nx = element.dND[gp][n][0];
 						SIMD ny = element.dND[gp][n][1];
 						SIMD nz = element.dND[gp][n][2];
-						SIMD a = nx * c00 + ny * c01 + nz * c02;
-						SIMD b = nx * c10 + ny * c11 + nz * c12;
+						SIMD a = nx * c00 + ny * c10 + nz * c20;
+						SIMD b = nx * c10 + ny * c11 + nz * c21;
 						SIMD c = nx * c20 + ny * c21 + nz * c22;
-						for (size_t m = 0; m < nodes; ++m) {
+						for (size_t m = n; m < nodes; ++m, ++i) {
 							SIMD mx = element.dND[gp][m][0];
 							SIMD my = element.dND[gp][m][1];
 							SIMD mz = element.dND[gp][m][2];
-							SIMD res = load(out + (n * nodes + m) * SIMD::size);
+
+							SIMD res = load(out + i * SIMD::size);
 							res = res + scale * (a * mx + b * my + c * mz);
-							store(out + (n * nodes + m) * SIMD::size, res);
+							store(out + i * SIMD::size, res);
 						}
 					}
 				}
@@ -1811,7 +1750,7 @@ Assembler::measurements HeatTransfer::manualloop(ActionOperator::Action action, 
 			}
 			end = eslog::time();
 		}
-		if(cooToGP && rotateConductivity && symmetric && !isSpherical && (ETYPE == HeatTransferElementType::SYMMETRIC_GENERAL))
+		if(cooToGP && rotateConductivity && !isSpherical)
 		{
 			start = eslog::time();
 			// std::cout<<"NON-CARTESIAN NON-ISOTROPIC YES ROTATION SYMMETRIC NON-SPHERICAL -- CYLINDRICAL3D"<<std::endl;
@@ -1932,58 +1871,50 @@ Assembler::measurements HeatTransfer::manualloop(ActionOperator::Action action, 
 					SIMD t21 = cos0 * sin1 * sin2 - cos2 * sin0;
 					SIMD t22 = cos0 * cos1;
 
-					SIMD origin0 = element.ecf.conductivity[gp][0];
-					SIMD origin1 = element.ecf.conductivity[gp][1];
-					SIMD origin2 = element.ecf.conductivity[gp][2];
-					SIMD origin3 = element.ecf.conductivity[gp][3];
-					SIMD origin4 = element.ecf.conductivity[gp][4];
-					SIMD origin5 = element.ecf.conductivity[gp][5];
-					SIMD origin6 = element.ecf.conductivity[gp][6];
-					SIMD origin7 = element.ecf.conductivity[gp][7];
-					SIMD origin8 = element.ecf.conductivity[gp][8];
+					SIMD c00 = element.ecf.conductivity[gp][0];
+					SIMD c01 = element.ecf.conductivity[gp][1], c11 = element.ecf.conductivity[gp][3];
+					SIMD c02 = element.ecf.conductivity[gp][2], c12 = element.ecf.conductivity[gp][4], c22 = element.ecf.conductivity[gp][5];
 
-					SIMD a = t00 * origin0 + t10 * origin3 + t20 * origin6;
-					SIMD b = t00 * origin1 + t10 * origin4 + t20 * origin7;
-					SIMD c = t00 * origin2 + t10 * origin5 + t20 * origin8;
+					SIMD a = t00 * c00 + t10 * c01 + t20 * c02;
+					SIMD b = t00 * c01 + t10 * c11 + t20 * c12;
+					SIMD c = t00 * c02 + t10 * c12 + t20 * c22;
 					element.conductivity[gp][0] = a * t00 + b * t10 + c * t20;
 					element.conductivity[gp][1] = a * t01 + b * t11 + c * t21;
 					element.conductivity[gp][2] = a * t02 + b * t12 + c * t22;
 
-					a = t01 * origin0 + t11 * origin3 + t21 * origin6;
-					b = t01 * origin1 + t11 * origin4 + t21 * origin7;
-					c = t01 * origin2 + t11 * origin5 + t21 * origin8;
-					element.conductivity[gp][3] = a * t00 + b * t10 + c * t20;
-					element.conductivity[gp][4] = a * t01 + b * t11 + c * t21;
-					element.conductivity[gp][5] = a * t02 + b * t12 + c * t22;
+					a = t01 * c00 + t11 * c01 + t21 * c02;
+					b = t01 * c01 + t11 * c11 + t21 * c12;
+					c = t01 * c02 + t11 * c12 + t21 * c22;
+					element.conductivity[gp][3] = a * t01 + b * t11 + c * t21;
+					element.conductivity[gp][4] = a * t02 + b * t12 + c * t22;
 
-					a = t02 * origin0 + t12 * origin3 + t22 * origin6;
-					b = t02 * origin1 + t12 * origin4 + t22 * origin7;
-					c = t02 * origin2 + t12 * origin5 + t22 * origin8;
-					element.conductivity[gp][6] = a * t00 + b * t10 + c * t20;
-					element.conductivity[gp][7] = a * t01 + b * t11 + c * t21;
-					element.conductivity[gp][8] = a * t02 + b * t12 + c * t22;
+					a = t02 * c00 + t12 * c01 + t22 * c02;
+					b = t02 * c01 + t12 * c11 + t22 * c12;
+					c = t02 * c02 + t12 * c12 + t22 * c22;
+					element.conductivity[gp][5] = a * t02 + b * t12 + c * t22;
 				}
 				//stiffness symmetric non-isotropic
 				double * __restrict__ out = stiffness.data;
 				for (size_t gp = 0; gp < gps; ++gp) {
 					SIMD scale = element.det[gp] * load1(element.w[gp]);
-					SIMD c00 = element.conductivity[gp][0], c01 = element.conductivity[gp][3], c02 = element.conductivity[gp][6];
-					SIMD c10 = element.conductivity[gp][1], c11 = element.conductivity[gp][4], c12 = element.conductivity[gp][7];
-					SIMD c20 = element.conductivity[gp][2], c21 = element.conductivity[gp][5], c22 = element.conductivity[gp][8];
-					for (size_t n = 0; n < nodes; ++n) {
+					SIMD c00 = element.conductivity[gp][0];
+					SIMD c10 = element.conductivity[gp][1], c11 = element.conductivity[gp][3];
+					SIMD c20 = element.conductivity[gp][2], c21 = element.conductivity[gp][4], c22 = element.conductivity[gp][5];
+					for (size_t n = 0, i = 0; n < nodes; ++n) {
 						SIMD nx = element.dND[gp][n][0];
 						SIMD ny = element.dND[gp][n][1];
 						SIMD nz = element.dND[gp][n][2];
-						SIMD a = nx * c00 + ny * c01 + nz * c02;
-						SIMD b = nx * c10 + ny * c11 + nz * c12;
+						SIMD a = nx * c00 + ny * c10 + nz * c20;
+						SIMD b = nx * c10 + ny * c11 + nz * c21;
 						SIMD c = nx * c20 + ny * c21 + nz * c22;
-						for (size_t m = 0; m < nodes; ++m) {
+						for (size_t m = n; m < nodes; ++m, ++i) {
 							SIMD mx = element.dND[gp][m][0];
 							SIMD my = element.dND[gp][m][1];
 							SIMD mz = element.dND[gp][m][2];
-							SIMD res = load(out + (n * nodes + m) * SIMD::size);
+
+							SIMD res = load(out + i * SIMD::size);
 							res = res + scale * (a * mx + b * my + c * mz);
-							store(out + (n * nodes + m) * SIMD::size, res);
+							store(out + i * SIMD::size, res);
 						}
 					}
 				}
@@ -2000,7 +1931,7 @@ Assembler::measurements HeatTransfer::manualloop(ActionOperator::Action action, 
 			end = eslog::time();
 		}
 
-		if(cooToGP && rotateConductivity && symmetric && isSpherical && (ETYPE == HeatTransferElementType::SYMMETRIC_GENERAL))
+		if(cooToGP && rotateConductivity && isSpherical)
 		{
 			start = eslog::time();
 			// std::cout<<"NON-CARTESIAN NON-ISOTROPIC YES ROTATION SYMMETRIC SPHERICAL -- SPHERICAL3D"<<std::endl;
@@ -2120,58 +2051,50 @@ Assembler::measurements HeatTransfer::manualloop(ActionOperator::Action action, 
 					SIMD t21 = cos0 * sin1 * sin2 - cos2 * sin0;
 					SIMD t22 = cos0 * cos1;
 
-					SIMD origin0 = element.ecf.conductivity[gp][0];
-					SIMD origin1 = element.ecf.conductivity[gp][1];
-					SIMD origin2 = element.ecf.conductivity[gp][2];
-					SIMD origin3 = element.ecf.conductivity[gp][3];
-					SIMD origin4 = element.ecf.conductivity[gp][4];
-					SIMD origin5 = element.ecf.conductivity[gp][5];
-					SIMD origin6 = element.ecf.conductivity[gp][6];
-					SIMD origin7 = element.ecf.conductivity[gp][7];
-					SIMD origin8 = element.ecf.conductivity[gp][8];
+					SIMD c00 = element.ecf.conductivity[gp][0];
+					SIMD c01 = element.ecf.conductivity[gp][1], c11 = element.ecf.conductivity[gp][3];
+					SIMD c02 = element.ecf.conductivity[gp][2], c12 = element.ecf.conductivity[gp][4], c22 = element.ecf.conductivity[gp][5];
 
-					SIMD a = t00 * origin0 + t10 * origin3 + t20 * origin6;
-					SIMD b = t00 * origin1 + t10 * origin4 + t20 * origin7;
-					SIMD c = t00 * origin2 + t10 * origin5 + t20 * origin8;
+					SIMD a = t00 * c00 + t10 * c01 + t20 * c02;
+					SIMD b = t00 * c01 + t10 * c11 + t20 * c12;
+					SIMD c = t00 * c02 + t10 * c12 + t20 * c22;
 					element.conductivity[gp][0] = a * t00 + b * t10 + c * t20;
 					element.conductivity[gp][1] = a * t01 + b * t11 + c * t21;
 					element.conductivity[gp][2] = a * t02 + b * t12 + c * t22;
 
-					a = t01 * origin0 + t11 * origin3 + t21 * origin6;
-					b = t01 * origin1 + t11 * origin4 + t21 * origin7;
-					c = t01 * origin2 + t11 * origin5 + t21 * origin8;
-					element.conductivity[gp][3] = a * t00 + b * t10 + c * t20;
-					element.conductivity[gp][4] = a * t01 + b * t11 + c * t21;
-					element.conductivity[gp][5] = a * t02 + b * t12 + c * t22;
+					a = t01 * c00 + t11 * c01 + t21 * c02;
+					b = t01 * c01 + t11 * c11 + t21 * c12;
+					c = t01 * c02 + t11 * c12 + t21 * c22;
+					element.conductivity[gp][3] = a * t01 + b * t11 + c * t21;
+					element.conductivity[gp][4] = a * t02 + b * t12 + c * t22;
 
-					a = t02 * origin0 + t12 * origin3 + t22 * origin6;
-					b = t02 * origin1 + t12 * origin4 + t22 * origin7;
-					c = t02 * origin2 + t12 * origin5 + t22 * origin8;
-					element.conductivity[gp][6] = a * t00 + b * t10 + c * t20;
-					element.conductivity[gp][7] = a * t01 + b * t11 + c * t21;
-					element.conductivity[gp][8] = a * t02 + b * t12 + c * t22;
+					a = t02 * c00 + t12 * c01 + t22 * c02;
+					b = t02 * c01 + t12 * c11 + t22 * c12;
+					c = t02 * c02 + t12 * c12 + t22 * c22;
+					element.conductivity[gp][5] = a * t02 + b * t12 + c * t22;
 				}
 				//stiffness symmetric non-isotropic
 				double * __restrict__ out = stiffness.data;
 				for (size_t gp = 0; gp < gps; ++gp) {
 					SIMD scale = element.det[gp] * load1(element.w[gp]);
-					SIMD c00 = element.conductivity[gp][0], c01 = element.conductivity[gp][3], c02 = element.conductivity[gp][6];
-					SIMD c10 = element.conductivity[gp][1], c11 = element.conductivity[gp][4], c12 = element.conductivity[gp][7];
-					SIMD c20 = element.conductivity[gp][2], c21 = element.conductivity[gp][5], c22 = element.conductivity[gp][8];
-					for (size_t n = 0; n < nodes; ++n) {
+					SIMD c00 = element.conductivity[gp][0];
+					SIMD c10 = element.conductivity[gp][1], c11 = element.conductivity[gp][3];
+					SIMD c20 = element.conductivity[gp][2], c21 = element.conductivity[gp][4], c22 = element.conductivity[gp][5];
+					for (size_t n = 0, i = 0; n < nodes; ++n) {
 						SIMD nx = element.dND[gp][n][0];
 						SIMD ny = element.dND[gp][n][1];
 						SIMD nz = element.dND[gp][n][2];
-						SIMD a = nx * c00 + ny * c01 + nz * c02;
-						SIMD b = nx * c10 + ny * c11 + nz * c12;
+						SIMD a = nx * c00 + ny * c10 + nz * c20;
+						SIMD b = nx * c10 + ny * c11 + nz * c21;
 						SIMD c = nx * c20 + ny * c21 + nz * c22;
-						for (size_t m = 0; m < nodes; ++m) {
+						for (size_t m = n; m < nodes; ++m, ++i) {
 							SIMD mx = element.dND[gp][m][0];
 							SIMD my = element.dND[gp][m][1];
 							SIMD mz = element.dND[gp][m][2];
-							SIMD res = load(out + (n * nodes + m) * SIMD::size);
+
+							SIMD res = load(out + i * SIMD::size);
 							res = res + scale * (a * mx + b * my + c * mz);
-							store(out + (n * nodes + m) * SIMD::size, res);
+							store(out + i * SIMD::size, res);
 						}
 					}
 				}
@@ -2203,7 +2126,7 @@ Assembler::measurements HeatTransfer::manualloop(ActionOperator::Action action, 
 			}
 		}
 	}
-	return {initEnd - initStart, end - start};
+	return measurements(initEnd - initStart, end - start);
 }
 
 template <template <size_t, size_t, size_t, size_t, size_t> class DataDescriptor, size_t nodes, size_t gps, size_t ndim, size_t edim, size_t ETYPE>
@@ -2213,7 +2136,7 @@ Assembler::measurements HeatTransfer::manualloop(ActionOperator::Action action, 
 		ETYPE == TransferElementType::ASYMMETRIC_ISOTROPIC, int>::type*
 )
 {
-	return {0.0, 0.0};
+	return measurements();
 }
 
 template <template <size_t, size_t, size_t, size_t, size_t> class DataDescriptor, size_t nodes, size_t gps, size_t ndim, size_t edim, size_t ETYPE>
@@ -2238,7 +2161,7 @@ Assembler::measurements HeatTransfer::manualloop(ActionOperator::Action action, 
 	{
 		return conditionsloop<DataDescriptor, nodes, gps, ndim, edim, ETYPE>(action, ops, interval, elements);
 	}
-	if (elements == 0) return {0.0, 0.0};
+	if (elements == 0) return measurements();
 
 	typename DataDescriptor<nodes, gps, ndim, edim, ETYPE>::Element element;
 	std::vector<DataDescriptor<nodes, gps, ndim, edim, ETYPE>*> active; active.reserve(ops.size());
@@ -2308,7 +2231,7 @@ Assembler::measurements HeatTransfer::manualloop(ActionOperator::Action action, 
 	if((action == ActionOperator::VOID) || (action == ActionOperator::SOLUTION) || (action == ActionOperator::FILL))
 	{
 		std::cout<<"UNSUPPOERTED ACTION"<<std::endl;
-		return {0.0, 0.0};
+		return measurements();
 	}
 
 	if( hasAdvection ||
@@ -2316,24 +2239,13 @@ Assembler::measurements HeatTransfer::manualloop(ActionOperator::Action action, 
 		getTemp)
 	{
 		std::cout<<"UNSUPPORTED OPERATOR"<<std::endl;
-		return {0.0, 0.0};
+		return measurements();
 	}
 
 	if (!constRotation || !constConductivity)
 	{
 		std::cout<<"NON-CONST ROTATION OR CONDUCTIVITY"<<std::endl;
-		return {0.0, 0.0};
-	}
-
-	if (ETYPE == HeatTransferElementType::ASYMMETRIC_ISOTROPIC)
-	{
-		std::cout<<"WRONG ELEMENT TYPE "<<ETYPE<<std::endl;
-		return {0.0, 0.0};
-	}
-	bool symmetric = true;
-	if (ETYPE == HeatTransferElementType::ASYMMETRIC_GENERAL)
-	{
-		symmetric = false;
+		return measurements();
 	}
 
 	// std::cout<<"ELEMENT TYPE IS "<<ETYPE<<std::endl;
@@ -2348,7 +2260,7 @@ Assembler::measurements HeatTransfer::manualloop(ActionOperator::Action action, 
 	double start, end;
 	if((action == ActionOperator::ASSEMBLE) || (action == ActionOperator::REASSEMBLE))
 	{
-		if(!cooToGP && rotateConductivity && !symmetric && (ETYPE == HeatTransferElementType::ASYMMETRIC_GENERAL))
+		if(!cooToGP && rotateConductivity)
 			{
 				start = eslog::time();
 				// std::cout<<"CARTESIAN NON-ISOTROPIC YES ROTATION NON-SYMETRIC -- ANISOTROPIC3D"<<std::endl;
@@ -2601,7 +2513,7 @@ Assembler::measurements HeatTransfer::manualloop(ActionOperator::Action action, 
 			}
 		}
 	}
-	return {initEnd - initStart, end - start};
+	return measurements(initEnd - initStart, end - start);
 }
 
 template <int etype>
@@ -2612,7 +2524,7 @@ Assembler::measurements HeatTransfer::instantiateManual2D(ActionOperator::Action
 	case static_cast<size_t>(Element::CODE::TRIANGLE6): return manualloop<HeatTransferDataDescriptor, 6, HeatTransferGPC::TRIANGLE6, 2, 2, etype>(action, ops, interval, elements); break;
 	case static_cast<size_t>(Element::CODE::SQUARE4):   return manualloop<HeatTransferDataDescriptor, 4, HeatTransferGPC::SQUARE4  , 2, 2, etype>(action, ops, interval, elements); break;
 	case static_cast<size_t>(Element::CODE::SQUARE8):   return manualloop<HeatTransferDataDescriptor, 8, HeatTransferGPC::SQUARE8  , 2, 2, etype>(action, ops, interval, elements); break;
-	default: return { .0, .0 };
+	default: return measurements();
 	};
 }
 
@@ -2628,7 +2540,7 @@ Assembler::measurements HeatTransfer::instantiateManual3D(ActionOperator::Action
 	case static_cast<size_t>(Element::CODE::PRISMA15):  return manualloop<HeatTransferDataDescriptor, 15, HeatTransferGPC::PRISMA15  , 3, 3, etype>(action, ops, interval, elements); break;
 	case static_cast<size_t>(Element::CODE::HEXA8):     return manualloop<HeatTransferDataDescriptor,  8, HeatTransferGPC::HEXA8     , 3, 3, etype>(action, ops, interval, elements); break;
 	case static_cast<size_t>(Element::CODE::HEXA20):    return manualloop<HeatTransferDataDescriptor, 20, HeatTransferGPC::HEXA20    , 3, 3, etype>(action, ops, interval, elements); break;
-	default: return { .0, .0 };
+	default: return measurements();
 	};
 }
 
@@ -2652,7 +2564,7 @@ Assembler::measurements HeatTransfer::instantiateManual(ActionOperator::Action a
 		case HeatTransferElementType::ASYMMETRIC_GENERAL  : return instantiateManual3D<HeatTransferElementType::ASYMMETRIC_GENERAL  >(action, code, ops, interval, elements);
 		}
 	}
-	return {0.0, 0.0};
+	return measurements();
 }
 
 

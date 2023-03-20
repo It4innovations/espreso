@@ -747,7 +747,7 @@ static double convectionHTC(
 
 				convectionMaterialParameters(convection, csize, coordinates, time, temp, T_AVG, rho, dynamic_viscosity, dynamic_viscosity_T, heat_capacity, thermal_conductivity);
 				htc = C * 0.424 * pow((pow(thermal_conductivity,3.0) * rho * g * (958.35 - rho) * (2257600 + 0.4 * heat_capacity * (temp - (27.952 * log(press) - 222.5304))))/( dynamic_viscosity* (temp - ( 27.952 * log(press) - 222.5304 ) ) * pow( 0.06/(g*( 958.35 - rho )) ,0.5)) ,0.25);
-				VFRAC = convection.volume_fraction.evaluator->eval(params);;
+				VFRAC = convection.volume_fraction.evaluator->eval(params);
 
 				ConvectionConfiguration convectionAIR;
 				convectionAIR.fluid = ConvectionConfiguration::FLUID::AIR;
@@ -792,7 +792,7 @@ static double convectionHTC(
 
 				convectionMaterialParameters(convection, csize, coordinates, time, temp, T_AVG, rho, dynamic_viscosity, dynamic_viscosity_T, heat_capacity, thermal_conductivity);
 				htc = C * 0.424 * pow((pow(thermal_conductivity,3.0) * rho * g * (958.35 - rho) * (2257600 + 0.4 * heat_capacity * (temp - (27.952 * log(press) - 222.5304))))/( dynamic_viscosity* (temp - ( 27.952 * log(press) - 222.5304 ) ) * pow( 0.06/(g*( 958.35 - rho )) ,0.5)) ,0.25);
-				VFRAC = convection.volume_fraction.evaluator->eval(params);;
+				VFRAC = convection.volume_fraction.evaluator->eval(params);
 
 				ConvectionConfiguration convectionAIR;
 				convectionAIR.fluid = ConvectionConfiguration::FLUID::AIR;

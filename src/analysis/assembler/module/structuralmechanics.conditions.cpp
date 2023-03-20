@@ -559,7 +559,7 @@ Assembler::measurements StructuralMechanics::conditionsloop(ActionOperator::Acti
 	if (this->K == nullptr) {
 		return loop<StructuralMechanicsDataDescriptor, nodes, gps, ndim, edim, etype>(action, ops, elements);
 	}
-	if (elements == 0) return { .0, .0 };
+	if (elements == 0) return measurements();
 
 	double initStart = eslog::time();
 
@@ -777,7 +777,7 @@ Assembler::measurements StructuralMechanics::conditionsloop(ActionOperator::Acti
 			}
 		}
 	}
-	return { init, loop };
+	return measurements(init, loop);
 }
 
 template <int etype>
@@ -788,7 +788,7 @@ Assembler::measurements StructuralMechanics::instantiateConditions2D(ActionOpera
 	case static_cast<size_t>(Element::CODE::TRIANGLE6): return conditionsloop<StructuralMechanicsDataDescriptor, 6, StructuralMechanicsGPC::TRIANGLE6, 2, 2, etype>(action, ops, interval, elements); break;
 	case static_cast<size_t>(Element::CODE::SQUARE4):   return conditionsloop<StructuralMechanicsDataDescriptor, 4, StructuralMechanicsGPC::SQUARE4  , 2, 2, etype>(action, ops, interval, elements); break;
 	case static_cast<size_t>(Element::CODE::SQUARE8):   return conditionsloop<StructuralMechanicsDataDescriptor, 8, StructuralMechanicsGPC::SQUARE8  , 2, 2, etype>(action, ops, interval, elements); break;
-	default: return {0.0, 0.0};
+	default: return measurements();
 	}
 }
 
@@ -804,7 +804,7 @@ Assembler::measurements StructuralMechanics::instantiateConditions3D(ActionOpera
 	case static_cast<size_t>(Element::CODE::PRISMA15):  return conditionsloop<StructuralMechanicsDataDescriptor, 15, StructuralMechanicsGPC::PRISMA15  , 3, 3, etype>(action, ops, interval, elements); break;
 	case static_cast<size_t>(Element::CODE::HEXA8):     return conditionsloop<StructuralMechanicsDataDescriptor,  8, StructuralMechanicsGPC::HEXA8     , 3, 3, etype>(action, ops, interval, elements); break;
 	case static_cast<size_t>(Element::CODE::HEXA20):    return conditionsloop<StructuralMechanicsDataDescriptor, 20, StructuralMechanicsGPC::HEXA20    , 3, 3, etype>(action, ops, interval, elements); break;
-	default: return {0.0, 0.0};
+	default: return measurements();
 	}
 }
 
@@ -823,7 +823,7 @@ Assembler::measurements StructuralMechanics::instantiateConditions(ActionOperato
 		case StructuralMechanicsElementType::SYMMETRIC_VOLUME: return instantiateConditions3D<StructuralMechanicsElementType::SYMMETRIC_VOLUME>(action, code, ops, interval, elements);
 		}
 	}
-	return {0.0, 0.0};
+	return measurements();
 }
 
 }

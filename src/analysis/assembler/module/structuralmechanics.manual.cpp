@@ -32,7 +32,7 @@ Assembler::measurements StructuralMechanics::manualloop(ActionOperator::Action a
 {
 	double initStart, initEnd;
 	eslog::info("       = LOOP TYPE                                                            MANUAL = \n");
-	if (elements == 0) return {0.0, 0.0};
+	if (elements == 0) return measurements();
 	initStart = eslog::time();
 	typename DataDescriptor<nodes, gps, ndim, edim, etype>::Element element;
 	std::vector<DataDescriptor<nodes, gps, ndim, edim, etype>*> active; active.reserve(ops.size());
@@ -87,7 +87,7 @@ Assembler::measurements StructuralMechanics::instantiateManual2D(ActionOperator:
 	case static_cast<size_t>(Element::CODE::TRIANGLE6): return manualloop<StructuralMechanicsDataDescriptor, 6, StructuralMechanicsGPC::TRIANGLE6, 2, 2, etype>(action, ops, interval, elements); break;
 	case static_cast<size_t>(Element::CODE::SQUARE4):   return manualloop<StructuralMechanicsDataDescriptor, 4, StructuralMechanicsGPC::SQUARE4  , 2, 2, etype>(action, ops, interval, elements); break;
 	case static_cast<size_t>(Element::CODE::SQUARE8):   return manualloop<StructuralMechanicsDataDescriptor, 8, StructuralMechanicsGPC::SQUARE8  , 2, 2, etype>(action, ops, interval, elements); break;
-	default: return {0.0, 0.0};
+	default: return measurements();
 	}
 }
 
@@ -103,7 +103,7 @@ Assembler::measurements StructuralMechanics::instantiateManual3D(ActionOperator:
 	case static_cast<size_t>(Element::CODE::PRISMA15):  return manualloop<StructuralMechanicsDataDescriptor, 15, StructuralMechanicsGPC::PRISMA15  , 3, 3, etype>(action, ops, interval, elements); break;
 	case static_cast<size_t>(Element::CODE::HEXA8):     return manualloop<StructuralMechanicsDataDescriptor,  8, StructuralMechanicsGPC::HEXA8     , 3, 3, etype>(action, ops, interval, elements); break;
 	case static_cast<size_t>(Element::CODE::HEXA20):    return manualloop<StructuralMechanicsDataDescriptor, 20, StructuralMechanicsGPC::HEXA20    , 3, 3, etype>(action, ops, interval, elements); break;
-	default: return {0.0, 0.0};
+	default: return measurements();
 	}
 }
 
@@ -122,7 +122,7 @@ Assembler::measurements StructuralMechanics::instantiateManual(ActionOperator::A
 		case StructuralMechanicsElementType::SYMMETRIC_VOLUME: return instantiateManual3D<StructuralMechanicsElementType::SYMMETRIC_VOLUME>(action, code, ops, interval, elements);
 		}
 	}
-	return {0.0, 0.0};
+	return measurements();
 }
 
 }

@@ -312,7 +312,7 @@ void FETI4ICreateInstance(
 	matrix->mesh.elements->nodes = new serializededata<esint, esint>(ndist, nodes);
 	matrix->mesh.elements->stiffness = new serializededata<esint, double>(sdist, stiffness);
 
-	matrix->mesh.elements->distribution.process.offset = matrix->mesh.elements->epointers->datatarray().size();;
+	matrix->mesh.elements->distribution.process.offset = matrix->mesh.elements->epointers->datatarray().size();
 	matrix->mesh.elements->distribution.process.size = matrix->mesh.elements->epointers->datatarray().size();
 	matrix->mesh.elements->distribution.process.next = matrix->mesh.elements->distribution.process.offset + matrix->mesh.elements->distribution.process.size;
 	matrix->mesh.elements->distribution.process.totalSize = Communication::exscan(matrix->mesh.elements->distribution.process.offset);

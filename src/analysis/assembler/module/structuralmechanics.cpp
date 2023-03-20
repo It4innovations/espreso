@@ -491,7 +491,7 @@ Assembler::measurements StructuralMechanics::instantiate2D<StructuralMechanicsEl
 	switch (code) {
 	case static_cast<size_t>(Element::CODE::LINE2): return loop<StructuralMechanicsDataDescriptor, 2, StructuralMechanicsGPC::LINE2, 2, 1, StructuralMechanicsElementType::EDGE>(action, ops,elements); break;
 	case static_cast<size_t>(Element::CODE::LINE3): return loop<StructuralMechanicsDataDescriptor, 3, StructuralMechanicsGPC::LINE3, 2, 1, StructuralMechanicsElementType::EDGE>(action, ops,elements); break;
-	default: return {0.0, 0.0};
+	default: return measurements();
 	}
 }
 
@@ -501,7 +501,7 @@ Assembler::measurements StructuralMechanics::instantiate2D<StructuralMechanicsEl
 	switch (code) {
 	case static_cast<size_t>(Element::CODE::LINE2): return loop<StructuralMechanicsDataDescriptor, 2, StructuralMechanicsGPC::LINE2, 2, 1, StructuralMechanicsElementType::EDGE_AXISYMMETRIC>(action, ops, elements); break;
 	case static_cast<size_t>(Element::CODE::LINE3): return loop<StructuralMechanicsDataDescriptor, 3, StructuralMechanicsGPC::LINE3, 2, 1, StructuralMechanicsElementType::EDGE_AXISYMMETRIC>(action, ops, elements); break;
-	default: return {0.0, 0.0};
+	default: return measurements();
 	}
 }
 
@@ -513,7 +513,7 @@ Assembler::measurements StructuralMechanics::instantiate2D(ActionOperator::Actio
 	case static_cast<size_t>(Element::CODE::TRIANGLE6): return loop<StructuralMechanicsDataDescriptor, 6, StructuralMechanicsGPC::TRIANGLE6, 2, 2, etype>(action, ops, elements); break;
 	case static_cast<size_t>(Element::CODE::SQUARE4):   return loop<StructuralMechanicsDataDescriptor, 4, StructuralMechanicsGPC::SQUARE4  , 2, 2, etype>(action, ops, elements); break;
 	case static_cast<size_t>(Element::CODE::SQUARE8):   return loop<StructuralMechanicsDataDescriptor, 8, StructuralMechanicsGPC::SQUARE8  , 2, 2, etype>(action, ops, elements); break;
-	default: return {0.0, 0.0};
+	default: return measurements();
 	}
 }
 
@@ -529,7 +529,7 @@ Assembler::measurements StructuralMechanics::instantiate3D<StructuralMechanicsEl
 	switch (code) {
 	case static_cast<size_t>(Element::CODE::LINE2): return loop<StructuralMechanicsDataDescriptor, 2, StructuralMechanicsGPC::LINE2, 3, 1, StructuralMechanicsElementType::EDGE>(action, ops, elements); break;
 	case static_cast<size_t>(Element::CODE::LINE3): return loop<StructuralMechanicsDataDescriptor, 3, StructuralMechanicsGPC::LINE3, 3, 1, StructuralMechanicsElementType::EDGE>(action, ops, elements); break;
-	default: return {0.0, 0.0};
+	default: return measurements();
 	};
 }
 
@@ -541,7 +541,7 @@ Assembler::measurements StructuralMechanics::instantiate3D<StructuralMechanicsEl
 	case static_cast<size_t>(Element::CODE::TRIANGLE6): return loop<StructuralMechanicsDataDescriptor, 6, StructuralMechanicsGPC::TRIANGLE6, 3, 2, StructuralMechanicsElementType::FACE>(action, ops, elements); break;
 	case static_cast<size_t>(Element::CODE::SQUARE4):   return loop<StructuralMechanicsDataDescriptor, 4, StructuralMechanicsGPC::SQUARE4  , 3, 2, StructuralMechanicsElementType::FACE>(action, ops, elements); break;
 	case static_cast<size_t>(Element::CODE::SQUARE8):   return loop<StructuralMechanicsDataDescriptor, 8, StructuralMechanicsGPC::SQUARE8  , 3, 2, StructuralMechanicsElementType::FACE>(action, ops, elements); break;
-	default: return {0.0, 0.0};
+	default: return measurements();
 	}
 }
 
@@ -557,7 +557,7 @@ Assembler::measurements StructuralMechanics::instantiate3D(ActionOperator::Actio
 	case static_cast<size_t>(Element::CODE::PRISMA15):  return loop<StructuralMechanicsDataDescriptor, 15, StructuralMechanicsGPC::PRISMA15  , 3, 3, etype>(action, ops, elements); break;
 	case static_cast<size_t>(Element::CODE::HEXA8):     return loop<StructuralMechanicsDataDescriptor,  8, StructuralMechanicsGPC::HEXA8     , 3, 3, etype>(action, ops, elements); break;
 	case static_cast<size_t>(Element::CODE::HEXA20):    return loop<StructuralMechanicsDataDescriptor, 20, StructuralMechanicsGPC::HEXA20    , 3, 3, etype>(action, ops, elements); break;
-	default: return {0.0, 0.0};
+	default: return measurements();
 	}
 }
 
@@ -590,7 +590,7 @@ Assembler::measurements StructuralMechanics::instantiate(ActionOperator::Action 
 		case StructuralMechanicsElementType::NODE: return instantiate3D<StructuralMechanicsElementType::NODE>(action, code, ops, interval, elements);
 		}
 	}
-	return {0.0, 0.0};
+	return measurements();
 }
 
 }

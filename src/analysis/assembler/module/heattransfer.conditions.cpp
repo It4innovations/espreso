@@ -1065,7 +1065,7 @@ Assembler::measurements HeatTransfer::conditionsloop(ActionOperator::Action acti
 	if (this->K == nullptr) {
 		return loop<HeatTransferDataDescriptor, nodes, gps, ndim, edim, etype>(action, ops, elements);
 	}
-	if (elements == 0) return {0.0, 0.0};
+	if (elements == 0) return measurements();
 
 	double initStart = eslog::time();
 
@@ -1289,7 +1289,7 @@ Assembler::measurements HeatTransfer::conditionsloop(ActionOperator::Action acti
 			}
 		}
 	}
-	return { init, loop };
+	return measurements(init, loop);
 }
 
 template <int etype>
@@ -1300,7 +1300,7 @@ Assembler::measurements HeatTransfer::instantiateConditions2D(ActionOperator::Ac
 	case static_cast<size_t>(Element::CODE::TRIANGLE6): return conditionsloop<HeatTransferDataDescriptor, 6, HeatTransferGPC::TRIANGLE6, 2, 2, etype>(action, ops, interval, elements); break;
 	case static_cast<size_t>(Element::CODE::SQUARE4):   return conditionsloop<HeatTransferDataDescriptor, 4, HeatTransferGPC::SQUARE4  , 2, 2, etype>(action, ops, interval, elements); break;
 	case static_cast<size_t>(Element::CODE::SQUARE8):   return conditionsloop<HeatTransferDataDescriptor, 8, HeatTransferGPC::SQUARE8  , 2, 2, etype>(action, ops, interval, elements); break;
-	default: return { .0, .0 };
+	default: return measurements();
 	};
 }
 
@@ -1316,7 +1316,7 @@ Assembler::measurements HeatTransfer::instantiateConditions3D(ActionOperator::Ac
 	case static_cast<size_t>(Element::CODE::PRISMA15):  return conditionsloop<HeatTransferDataDescriptor, 15, HeatTransferGPC::PRISMA15  , 3, 3, etype>(action, ops, interval, elements); break;
 	case static_cast<size_t>(Element::CODE::HEXA8):     return conditionsloop<HeatTransferDataDescriptor,  8, HeatTransferGPC::HEXA8     , 3, 3, etype>(action, ops, interval, elements); break;
 	case static_cast<size_t>(Element::CODE::HEXA20):    return conditionsloop<HeatTransferDataDescriptor, 20, HeatTransferGPC::HEXA20    , 3, 3, etype>(action, ops, interval, elements); break;
-	default: return { .0, .0 };
+	default: return measurements();
 	};
 }
 
@@ -1340,7 +1340,7 @@ Assembler::measurements HeatTransfer::instantiateConditions(ActionOperator::Acti
 		case HeatTransferElementType::ASYMMETRIC_GENERAL  : return instantiateConditions3D<HeatTransferElementType::ASYMMETRIC_GENERAL  >(action, code, ops, interval, elements);
 		}
 	}
-	return {0.0, 0.0};
+	return measurements();
 }
 
 }
