@@ -295,17 +295,19 @@ void HeatTransfer::analyze()
 
 	initTemperatureAndThickness();
 
-	for(size_t r = 0; r < info::mesh->boundaryRegions.size(); ++r) {
-		if (bfilter[r]) {
-			if (info::mesh->boundaryRegions[r]->dimension) {
-				for(size_t i = 0; i < info::mesh->boundaryRegions[r]->eintervals.size(); ++i) {
-					auto procNodes = info::mesh->boundaryRegions[r]->elements->cbegin() + info::mesh->boundaryRegions[r]->eintervals[i].begin;
-					boundaryOps[r][i].push_back(generateBoundaryEdge2DOperator<ThicknessToElementNodes>(r, i, procNodes, Results::thickness->data.data()));
-				}
-			} else {
-				for(size_t t = 0; t < info::mesh->boundaryRegions[r]->nodes->threads(); ++t) {
-					auto procNodes = info::mesh->boundaryRegions[r]->nodes->cbegin(t);
-					boundaryOps[r][t].push_back(generateBoundaryNode2DOperator<ThicknessToElementNodes>(r, t, procNodes, Results::thickness->data.data()));
+	if (info::mesh->dimension == 2) {
+		for(size_t r = 0; r < info::mesh->boundaryRegions.size(); ++r) {
+			if (bfilter[r]) {
+				if (info::mesh->boundaryRegions[r]->dimension) {
+					for(size_t i = 0; i < info::mesh->boundaryRegions[r]->eintervals.size(); ++i) {
+						auto procNodes = info::mesh->boundaryRegions[r]->elements->cbegin() + info::mesh->boundaryRegions[r]->eintervals[i].begin;
+						boundaryOps[r][i].push_back(generateBoundaryEdge2DOperator<ThicknessToElementNodes>(r, i, procNodes, Results::thickness->data.data()));
+					}
+				} else {
+					for(size_t t = 0; t < info::mesh->boundaryRegions[r]->nodes->threads(); ++t) {
+						auto procNodes = info::mesh->boundaryRegions[r]->nodes->cbegin(t);
+						boundaryOps[r][t].push_back(generateBoundaryNode2DOperator<ThicknessToElementNodes>(r, t, procNodes, Results::thickness->data.data()));
+					}
 				}
 			}
 		}
