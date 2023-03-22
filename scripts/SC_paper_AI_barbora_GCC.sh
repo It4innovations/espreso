@@ -1,8 +1,11 @@
 #!/bin/bash
 #PBS -q qcpu
-#PBS -N espreso_ai
+#PBS -N espreso_ai_barbora_GCC
 #PBS -l select=1:ncpus=36,walltime=24:00:00,msr=1.4.0
 #PBS -A OPEN-22-7
+
+CLUSTER=barbora
+COMPILER=GCC
 
 a=$(date +%s)
 
@@ -77,8 +80,8 @@ declare -a elements2D=("TRIANGLE3" "SQUARE4" "TRIANGLE6" "SQUARE8")
 declare -a elements_i2D=("16" "16" "16" "16")
 declare -a elements_j2D=("16" "16" "16" "16")
 
-declare -a COMPILERS=("INTEL" "GCC")
-declare -a CLUSTERS=("barbora" "karolina")
+# declare -a COMPILERS=("INTEL" "GCC")
+# declare -a CLUSTERS=("barbora" "karolina")
 declare -a TYPES=("INHERITANCE" "CONDITIONS")
 
 
@@ -89,10 +92,10 @@ elements2D_len=${#elements2D[@]}
 output_file=SC_paper_data_AI_${NODE}_${VERSION_STRING}.csv
 echo "cluster;compiler;task;element;decomposition;dim;threads;impl;action;WRITE AI; READ AI; OVERALL AI; SUM WRITE AI; SUM READ AI; SUM OVERALL AI; UMSKD SP FLOP; MSKD SP FLOP; UMSKD DP FLOP; MSKD DP FLOP; SUM SP FLOP; SUM DP FLOP; FMA; SUM FMA" > $output_file
 
-for CLUSTER in "${CLUSTERS[@]}"
-do
-    for COMPILER in "${COMPILERS[@]}"
-    do
+# for CLUSTER in "${CLUSTERS[@]}"
+# do
+#     for COMPILER in "${COMPILERS[@]}"
+#     do
         if [ "$COMPILER" = "INTEL" ]
         then
             ml purge
@@ -213,8 +216,8 @@ do
                 done
             done
         done
-    done
-done
+#     done
+# done
 
 b=$(date +%s)
 diff=$((b-a))

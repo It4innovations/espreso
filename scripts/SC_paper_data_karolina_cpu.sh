@@ -1,12 +1,15 @@
 #!/bin/bash
 
+SERVER=karolina
+NODETYPE=cpu
+
 a=$(date +%s)
 
 source /mnt/proj3/open-18-15/xkadlu01/espreso/scripts/utils.sh
 
-if [ "$1" = "barbora" ]
+if [ "$SERVER" = "barbora" ]
 then
-    if [ "$2" = "cpu" ]
+    if [ "$NODETYPE" = "cpu" ]
     then
         trap 'cleanup_freq_barbora_cn' TERM
         trap 'cleanup_freq_barbora_cn' INT
@@ -15,7 +18,7 @@ then
         trap 'cleanup_freq_barbora_acn' INT
     fi
 else
-    if [ "$2" = "cpu" ]
+    if [ "$NODETYPE" = "cpu" ]
     then
         trap 'cleanup_freq_karolina_cn' TERM
         trap 'cleanup_freq_karolina_cn' INT
@@ -37,16 +40,16 @@ echo "Start copiyng"
 cp -r /mnt/proj3/open-18-15/xkadlu01/espreso/{env,tests,src,include,waf,wscript} ./
 echo "End   copiyng"
 
-if [ "$1" = "barbora" ]
+if [ "$SERVER" = "barbora" ]
 then
-    if [ "$2" = "cpu" ]
+    if [ "$NODETYPE" = "cpu" ]
     then
         start_freq_barbora_cn
     else
         start_freq_barbora_acn
     fi
 else
-    if [ "$2" = "cpu" ]
+    if [ "$NODETYPE" = "cpu" ]
     then
         start_freq_karolina_cn
     else
@@ -70,15 +73,15 @@ declare -a tasks2D=("tests/heatTransfer/const/conductivity/isotropic2D/espreso.e
                     "tests/heatTransfer/const/conductivity/symmetric2D/espreso.ecf"
                     "tests/heatTransfer/const/coordinateSystem/cartesian2D/espreso.ecf"
                     "tests/heatTransfer/const/conductivity/anisotropic2D/espreso.ecf"
-                    "tests/heatTransfer/const/coordinateSystem/cylindric2D/espreso.ecf"
-                    "tests/heatTransfer/const/element/heatSource2D/espreso.ecf"
+                    "tests/heatTransfer/const/coordinateSystem/cylindrical2D/espreso.ecf"
+                    "tests/heatTransfer/const/elements/heatSource2D/espreso.ecf"
                     "tests/heatTransfer/const/advection/conductivity/isotropic2D/espreso.ecf"
                     "tests/heatTransfer/const/advection/conductivity/diagonal2D/espreso.ecf"
-                    "tests/linearElasticity/const/planeAxisymmtric/elements/acceleration/espreso.ecf"
+                    "tests/linearElasticity/const/planeAxisymmetric/elements/acceleration/espreso.ecf"
                     "tests/linearElasticity/const/planeStrain/elements/acceleration/espreso.ecf"
                     "tests/linearElasticity/const/planeStress/elements/acceleration/espreso.ecf"
                     "tests/linearElasticity/const/planeStressWithThickness/elements/acceleration/espreso.ecf"
-                    "tests/linearElasticity/const/planeAxisymmtric/elements/angularVelocity/espreso.ecf"
+                    "tests/linearElasticity/const/planeAxisymmetric/elements/angularVelocity/espreso.ecf"
                     "tests/linearElasticity/const/planeStrain/elements/angularVelocity/espreso.ecf"
                     "tests/linearElasticity/const/planeStress/elements/angularVelocity/espreso.ecf"
                     "tests/linearElasticity/const/planeStressWithThickness/elements/angularVelocity/espreso.ecf")
@@ -90,26 +93,26 @@ declare -a tasks3D=("tests/heatTransfer/const/conductivity/isotropic3D/espreso.e
                     "tests/heatTransfer/const/conductivity/symmetric3D/espreso.ecf"
                     "tests/heatTransfer/const/coordinateSystem/cartesian3D/espreso.ecf"
                     "tests/heatTransfer/const/conductivity/anisotropic3D/espreso.ecf"
-                    "tests/heatTransfer/const/coordinateSystem/cylindric3D/espreso.ecf"
+                    "tests/heatTransfer/const/coordinateSystem/cylindrical3D/espreso.ecf"
                     "tests/heatTransfer/const/coordinateSystem/spherical3D/espreso.ecf"
-                    "tests/heatTransfer/const/element/heatSource3D/espreso.ecf"
+                    "tests/heatTransfer/const/elements/heatSource3D/espreso.ecf"
                     "tests/heatTransfer/const/advection/conductivity/isotropic3D/espreso.ecf"
                     "tests/heatTransfer/const/advection/conductivity/diagonal3D/espreso.ecf"
-                    "tests/linearElasticity/const/volume/elements/acceleration/espreso.ecf"
-                    "tests/linearElasticity/const/volume/elements/angularVelocityZ/espreso.ecf"
-                    "tests/linearElasticity/const/volume/elasticity/otrhotropic/espreso.ecf"
-                    "tests/linearElasticity/const/volume/coordinateSystem/cartesion/espreso.ecf"
-                    "tests/linearElasticity/const/volume/coordinateSystem/cylindric/espreso.ecf"
+                    "tests/linearElasticity/const/volume/element/acceleration/espreso.ecf"
+                    "tests/linearElasticity/const/volume/element/angularVelocityZ/espreso.ecf"
+                    "tests/linearElasticity/const/volume/elasticity/orthotropic/espreso.ecf"
+                    "tests/linearElasticity/const/volume/coordinateSystem/cartesian/espreso.ecf"
+                    "tests/linearElasticity/const/volume/coordinateSystem/cylindrical/espreso.ecf"
                     "tests/linearElasticity/const/volume/output/stress/espreso.ecf")
 
 declare -a elements3D=("TETRA4" "PYRAMID5" "PRISMA6" "HEXA8" "TETRA10"  "PYRAMID13"  "PRISMA15"  "HEXA20")
-declare -a elements_i3D=("100" "50"  "100" "100" "50" "20" "100" "100")
-declare -a elements_j3D=("100" "100" "100" "100" "50" "50" "50" "50")
-declare -a elements_k3D=("100" "100" "100" "100" "50" "50" "50" "50")
+declare -a elements_i3D=("20" "20" "20" "20" "20" "10" "50" "50")
+declare -a elements_j3D=("20" "20" "50" "50" "20" "20" "20" "20")
+declare -a elements_k3D=("50" "50" "50" "50" "20" "20" "20" "20")
 
 declare -a elements2D=("TRIANGLE3" "SQUARE4" "TRIANGLE6" "SQUARE8")
-declare -a elements_i2D=("2000" "1000" "2000" "1000")
-declare -a elements_j2D=("2000" "2000" "4000" "2000")
+declare -a elements_i2D=("300" "400" "200" "200")
+declare -a elements_j2D=("400" "400" "200" "400")
 
 declare -a COMPILERS=("INTEL" "GCC")
 declare -a TYPES=("INHERITANCE" "CONDITIONS")
@@ -118,7 +121,7 @@ declare -a TYPES=("INHERITANCE" "CONDITIONS")
 elements3D_len=${#elements3D[@]}
 elements2D_len=${#elements2D[@]}
 
-output_file=SC_paper_data_${1}_${2}_${NODE}_${COMPILER}_${VERSION_STRING}.csv
+output_file=SC_paper_data_karolina_cpu_${NODE}_${COMPILER}_${VERSION_STRING}.csv
 echo "cluster;compiler;task;element;decomposition;dim;threads;impl;WRITE AI; READ AI; OVERALL AI; SUM WRITE AI; SUM READ AI; SUM OVERALL AI" > $output_file
 
 for COMPILER in "${COMPILERS[@]}"
@@ -126,7 +129,7 @@ do
     if [ "$COMPILER" = "INTEL" ]
     then
         ml purge
-        if [ "$1" = "barbora" ]
+        if [ "$SERVER" = "barbora" ]
         then
             source env/modules.barbora.icpc
         else
@@ -137,7 +140,7 @@ do
     elif [ "$COMPILER" = "GCC" ]
     then
         ml purge
-        if [ "$1" = "barbora" ]
+        if [ "$SERVER" = "barbora" ]
         then
             source env/modules.barbora.gcc
         else
@@ -157,13 +160,13 @@ do
 
     ./waf configure "$FLAGS"
     ./waf
-    if [ $1 = "karolina" ]
+    if [ $SERVER = "karolina" ]
     then
         THREADS=64
         DOMAINS2D="8 8"
         DOMAINS3D="4 4 4"
     else
-        if [ $2 = "cpu" ]
+        if [ $NODETYPE = "cpu" ]
         then
             THREADS=18
             DOMAINS2D="3 6"
@@ -194,7 +197,7 @@ do
                 rm -r ./results
 
                 cat opt3D.tmp | grep -a SCALING: > res.tmp
-                echo "$1;$2;$COMPILER;$task;${elements3D[$eid]};${i}x${j}x${k};3D;$THREADS;${TYPE};$(sed  -r  's/.*[^0-9]+\ ([0-9]+\.*[0-9]*)[^0-9]*/\1/'  res.tmp | sed  -z 's/\n/;/g;s/;$/\n/')" >> $output_file
+                echo "$SERVER;$NODETYPE;$COMPILER;$task;${elements3D[$eid]};${i}x${j}x${k};3D;$THREADS;${TYPE};$(sed  -r  's/.*[^0-9]+\ ([0-9]+\.*[0-9]*)[^0-9]*/\1/'  res.tmp | sed  -z 's/\n/;/g;s/;$/\n/')" >> $output_file
                 rm opt3D.tmp res.tmp
             done
         done
@@ -217,7 +220,7 @@ do
 
 
                 cat opt2D.tmp | grep -a SCALING: > res.tmp
-                echo "$1;$2;$COMPILER;$task;${elements2D[$eid]};${i}x${j};2D;$THREADS;${TYPE};$(sed  -r  's/.*[^0-9]+\ ([0-9]+\.*[0-9]*)[^0-9]*/\1/'  res.tmp | sed  -z 's/\n/;/g;s/;$/\n/')" >> $output_file
+                echo "$SERVER;$NODETYPE;$COMPILER;$task;${elements2D[$eid]};${i}x${j};2D;$THREADS;${TYPE};$(sed  -r  's/.*[^0-9]+\ ([0-9]+\.*[0-9]*)[^0-9]*/\1/'  res.tmp | sed  -z 's/\n/;/g;s/;$/\n/')" >> $output_file
                 rm opt2D.tmp res.tmp
             done
         done
@@ -235,16 +238,16 @@ echo ${DURATION} >> $output_file
 
 cp $output_file  /mnt/proj3/open-18-15/xkadlu01/espreso/
 
-if [ "$1" = "barbora" ]
+if [ "$SERVER" = "barbora" ]
 then
-    if [ "$2" = "cpu" ]
+    if [ "$NODETYPE" = "cpu" ]
     then
         finish_freq_barbora_cn
     else
         finish_freq_barbora_acn
     fi
 else
-    if [ "$2" = "cpu" ]
+    if [ "$NODETYPE" = "cpu" ]
     then
         finish_freq_karolina_cn
     else
