@@ -27,6 +27,8 @@
 #include <numeric>
 #include <algorithm>
 
+#include <iostream>
+
 namespace espreso {
 
 NodeData* StructuralMechanics::Results::displacement = nullptr;
@@ -418,10 +420,10 @@ void StructuralMechanics::dryrun()
 		this->f = new Vector_Distributed<Vector_Dense, double>();
 		this->f->mapping.elements.resize(info::mesh->elements->eintervals.size());
 	}
-	Assembler::measurements reassemble_time = {0.0, 0.0};
-	Assembler::measurements   assemble_time = {0.0, 0.0};
-	Assembler::measurements   solution_time = {0.0, 0.0};
-	int numreps = 1;
+	Assembler::measurements reassemble_time = Assembler::measurements();
+	Assembler::measurements   assemble_time = Assembler::measurements();
+	Assembler::measurements   solution_time = Assembler::measurements();
+	int numreps = 10;
 	for(int reps = 0; reps < numreps; reps++) {
 		assemble_time   += assemble(ActionOperator::Action::ASSEMBLE);
 		reassemble_time += assemble(ActionOperator::Action::REASSEMBLE);
@@ -437,11 +439,17 @@ void StructuralMechanics::dryrun()
 	solution_time.preprocessTime   /= static_cast<double>(numreps);
 
 	eslog::info("       = SIMD LOOP ASSEMBLE                                             %12.8f s = \n",   assemble_time.preprocessTime);
+	std::cout<<"SCALING: "<<assemble_time.preprocessTime<<std::endl;
 	eslog::info("       = SIMD LOOP ASSEMBLE                                             %12.8f s = \n",   assemble_time.coreTime);
+	std::cout<<"SCALING: "<<assemble_time.coreTime<<std::endl;
 	eslog::info("       = SIMD LOOP REASSEMBLE                                           %12.8f s = \n", reassemble_time.preprocessTime);
+	std::cout<<"SCALING: "<<reassemble_time.preprocessTime<<std::endl;
 	eslog::info("       = SIMD LOOP REASSEMBLE                                           %12.8f s = \n", reassemble_time.coreTime);
-	eslog::info("       = SIMD LOOP SOLUTION                                             %12.8f s = \n",   solution_time.preprocessTime);
-	eslog::info("       = SIMD LOOP SOLUTION                                             %12.8f s = \n",   solution_time.coreTime);
+	std::cout<<"SCALING: "<<reassemble_time.coreTime<<std::endl;
+	eslog::info("       = SIMD LOOP SOLUTION                                             %12.8f s = \n", solution_time.preprocessTime);
+	std::cout<<"SCALING: "<<solution_time.preprocessTime<<std::endl;
+	eslog::info("       = SIMD LOOP SOLUTION                                             %12.8f s = \n", solution_time.coreTime);
+	std::cout<<"SCALING: "<<solution_time.coreTime<<std::endl;
 }
 
 

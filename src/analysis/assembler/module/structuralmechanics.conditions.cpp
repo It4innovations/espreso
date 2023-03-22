@@ -673,7 +673,7 @@ Assembler::measurements StructuralMechanics::conditionsloop(ActionOperator::Acti
 	switch (action) {
 	case ActionOperator::ASSEMBLE  : __SSC_MARK(0xFACE); break;
 	case ActionOperator::REASSEMBLE: __SSC_MARK(0xCAFE); break;
-	case ActionOperator::SOLUTION  : __SSC_MARK(0xCAFE); break; // TODO
+	case ActionOperator::SOLUTION  : __SSC_MARK(0xFEED); break; // TODO
 	default:
 		eslog::error("unsupported action\n");
 	}
@@ -757,7 +757,7 @@ Assembler::measurements StructuralMechanics::conditionsloop(ActionOperator::Acti
 	switch (action) {
 	case ActionOperator::ASSEMBLE  : __SSC_MARK(0xDEAD); break;
 	case ActionOperator::REASSEMBLE: __SSC_MARK(0xFADE); break;
-	case ActionOperator::SOLUTION  : __SSC_MARK(0xFADE); break; // TODO
+	case ActionOperator::SOLUTION  : __SSC_MARK(0xBEED); break; // TODO
 	default:
 		eslog::error("unsupported action\n");
 	}

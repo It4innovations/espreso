@@ -32,6 +32,7 @@
 #include <numeric>
 #include <algorithm>
 
+#include <iostream>
 namespace espreso {
 
 NodeData* HeatTransfer::Results::temperature = nullptr;
@@ -474,16 +475,16 @@ void HeatTransfer::dryrun()
 		this->f->mapping.elements.resize(info::mesh->elements->eintervals.size());
 	}
 	info::ecf->output.results_selection.flux = !info::ecf->simple_output;
-	Assembler::measurements reassemble_time = {0.0, 0.0};
-	Assembler::measurements   assemble_time = {0.0, 0.0};
-	Assembler::measurements   solution_time = {0.0, 0.0};
-	int numreps = 1;
+	Assembler::measurements reassemble_time = Assembler::measurements();
+	Assembler::measurements   assemble_time = Assembler::measurements();
+	Assembler::measurements   solution_time = Assembler::measurements();
+	int numreps = 10;
 	for(int reps = 0; reps < numreps; reps++) {
-		printf("assemble\n");
+		// printf("assemble\n");
 		assemble_time += assemble(ActionOperator::Action::ASSEMBLE);
-		printf("reassemble\n");
+		// printf("reassemble\n");
 		reassemble_time += assemble(ActionOperator::Action::REASSEMBLE);
-		printf("solution\n");
+		// printf("solution\n");
 		solution_time += assemble(ActionOperator::Action::SOLUTION);
 	}
 
@@ -496,11 +497,17 @@ void HeatTransfer::dryrun()
 	solution_time.preprocessTime /= static_cast<double>(numreps);
 
 	eslog::info("       = SIMD LOOP ASSEMBLE                                             %12.8f s = \n",   assemble_time.preprocessTime);
+	std::cout<<"SCALING: "<<assemble_time.preprocessTime<<std::endl;
 	eslog::info("       = SIMD LOOP ASSEMBLE                                             %12.8f s = \n",   assemble_time.coreTime);
+	std::cout<<"SCALING: "<<assemble_time.coreTime<<std::endl;
 	eslog::info("       = SIMD LOOP REASSEMBLE                                           %12.8f s = \n", reassemble_time.preprocessTime);
+	std::cout<<"SCALING: "<<reassemble_time.preprocessTime<<std::endl;
 	eslog::info("       = SIMD LOOP REASSEMBLE                                           %12.8f s = \n", reassemble_time.coreTime);
+	std::cout<<"SCALING: "<<reassemble_time.coreTime<<std::endl;
 	eslog::info("       = SIMD LOOP SOLUTION                                             %12.8f s = \n", solution_time.preprocessTime);
+	std::cout<<"SCALING: "<<solution_time.preprocessTime<<std::endl;
 	eslog::info("       = SIMD LOOP SOLUTION                                             %12.8f s = \n", solution_time.coreTime);
+	std::cout<<"SCALING: "<<solution_time.coreTime<<std::endl;
 }
 
 void HeatTransfer::initTemperatureAndThickness()

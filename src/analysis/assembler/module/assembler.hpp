@@ -46,7 +46,7 @@ Assembler::measurements Assembler::loop(ActionOperator::Action action, const std
 	switch (action) {
 	case ActionOperator::ASSEMBLE  : __SSC_MARK(0xFACE); break;
 	case ActionOperator::REASSEMBLE: __SSC_MARK(0xCAFE); break;
-	case ActionOperator::SOLUTION  : __SSC_MARK(0xCAFE); break; // TODO
+	case ActionOperator::SOLUTION  : __SSC_MARK(0xFEED); break; // TODO
 	default: break;
 	}
 	esint chunks = elements / SIMD::size;
@@ -58,7 +58,7 @@ Assembler::measurements Assembler::loop(ActionOperator::Action action, const std
 	switch (action) {
 	case ActionOperator::ASSEMBLE  : __SSC_MARK(0xDEAD); break;
 	case ActionOperator::REASSEMBLE: __SSC_MARK(0xFADE); break;
-	case ActionOperator::SOLUTION  : __SSC_MARK(0xFADE); break; // TODO
+	case ActionOperator::SOLUTION  : __SSC_MARK(0xBEED); break; // TODO
 	default: break;
 	}
 	double loop = eslog::time() - start;
