@@ -106,13 +106,13 @@ declare -a tasks3D=("tests/heatTransfer/const/conductivity/isotropic3D/espreso.e
                     "tests/linearElasticity/const/volume/output/stress/espreso.ecf")
 
 declare -a elements3D=("TETRA4" "PYRAMID5" "PRISMA6" "HEXA8" "TETRA10"  "PYRAMID13"  "PRISMA15"  "HEXA20")
-declare -a elements_i3D=("20" "20" "20" "20" "20" "10" "50" "50")
-declare -a elements_j3D=("20" "20" "50" "50" "20" "20" "20" "20")
-declare -a elements_k3D=("50" "50" "50" "50" "20" "20" "20" "20")
+declare -a elements_i3D=("20"      "20"      "20"     "20"     "10"        "10"        "20"        "20")
+declare -a elements_j3D=("20"      "20"      "50"     "50"     "20"        "10"        "20"        "20")
+declare -a elements_k3D=("50"      "50"      "50"     "50"     "20"        "20"        "20"        "20")
 
 declare -a elements2D=("TRIANGLE3" "SQUARE4" "TRIANGLE6" "SQUARE8")
-declare -a elements_i2D=("300" "400" "200" "200")
-declare -a elements_j2D=("400" "400" "200" "400")
+declare -a elements_i2D=("300"      "400"       "200"      "200")
+declare -a elements_j2D=("400"      "400"       "200"      "400")
 
 declare -a COMPILERS=("INTEL" "GCC")
 declare -a TYPES=("INHERITANCE" "CONDITIONS")
