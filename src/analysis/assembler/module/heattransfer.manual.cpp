@@ -581,6 +581,10 @@ Assembler::measurements HeatTransfer::manualloop(ActionOperator::Action action, 
 				__SSC_MARK(0xCAFE);
 			}
 				esint chunks = elements / SIMD::size;
+				std::vector<double> &storage = cossin_conditions[interval];
+				double* iterator;
+				storage.resize(2 * elements * gps * SIMD::size);
+				iterator = storage.data();
 				for (esint c = 1; c < chunks; ++c) {
 					// cooToGP.simd(element);
 					for (size_t s = 0; s < SIMD::size; ++s, ++procNodes) {
@@ -639,13 +643,15 @@ Assembler::measurements HeatTransfer::manualloop(ActionOperator::Action action, 
 						SIMD centerY = element.ecf.center[gp][1];
 						SIMD distanceX = cooX - centerX;
 						SIMD distanceY = cooY - centerY;
-						SIMD cos;
-						SIMD sin;
+						SIMD cossin[2];
 						for (size_t s = 0; s < SIMD::size; ++s) {
 							double rot = std::atan2(distanceY[s], distanceX[s]);
-							cos[s] = std::cos(rot);
-							sin[s] = std::sin(rot);
+							cossin[0][s] = std::cos(rot);
+							cossin[1][s] = std::sin(rot);
 						}
+
+						memcpy(iterator, cossin, 2 * SIMD::size * sizeof(double));
+						iterator += 2 * SIMD::size;
 
 						SIMD ic00 = element.ecf.conductivity[gp][0];
 						SIMD ic10 = element.ecf.conductivity[gp][1], ic11 = element.ecf.conductivity[gp][2];
@@ -653,9 +659,9 @@ Assembler::measurements HeatTransfer::manualloop(ActionOperator::Action action, 
 						SIMD c00;
 						SIMD c10, c11;
 
-						c00 = (cos * ic00 - sin * ic10) * cos - (cos * ic10 - sin * ic11) * sin;
-						c10 = (cos * ic00 - sin * ic10) * sin + (cos * ic10 - sin * ic11) * cos;
-						c11 = (sin * ic00 + cos * ic10) * sin + (sin * ic10 + cos * ic11) * cos;
+						c00 = (cossin[0] * ic00 - cossin[1] * ic10) * cossin[0] - (cossin[0] * ic10 - cossin[1] * ic11) * cossin[1];
+						c10 = (cossin[0] * ic00 - cossin[1] * ic10) * cossin[1] + (cossin[0] * ic10 - cossin[1] * ic11) * cossin[0];
+						c11 = (cossin[1] * ic00 + cossin[0] * ic10) * cossin[1] + (cossin[1] * ic10 + cossin[0] * ic11) * cossin[0];
 
 						SIMD scale = element.ecf.thickness[gp] * determinant * load1(element.w[gp]);
 						for (size_t n = 0, i = 0; n < nodes; ++n) {
@@ -1612,6 +1618,10 @@ Assembler::measurements HeatTransfer::manualloop(ActionOperator::Action action, 
 				__SSC_MARK(0xCAFE);
 			}
 			esint chunks = elements / SIMD::size;
+			std::vector<double> &storage = cossin_conditions[interval];
+			double* iterator;
+			storage.resize(6 * elements * gps * SIMD::size);
+			iterator = storage.data();
 			for (esint c = 1; c < chunks; ++c) {
 				// cooToGP.simd(element);
 				for (size_t s = 0; s < SIMD::size; ++s, ++procNodes) {
@@ -1691,32 +1701,30 @@ Assembler::measurements HeatTransfer::manualloop(ActionOperator::Action action, 
 					SIMD centerY = element.ecf.center[gp][1];
 					SIMD distanceX = cooX - centerX;
 					SIMD distanceY = cooY - centerY;
-					SIMD cos0;
-					SIMD cos1;
-					SIMD cos2;
-					SIMD sin0;
-					SIMD sin1;
-					SIMD sin2;
+					SIMD cossin[6];
 					for (size_t s = 0; s < SIMD::size; ++s) {
 						double rot = std::atan2(distanceY[s], distanceX[s]);
-						cos0[s] = 1;
-						cos1[s] = 1;
-						cos2[s] = std::cos(rot);
-						sin0[s] = 0;
-						sin1[s] = 0;
-						sin2[s] = std::sin(rot);
+						cossin[0][s] = 1;
+						cossin[1][s] = 1;
+						cossin[2][s] = std::cos(rot);
+						cossin[3][s] = 0;
+						cossin[4][s] = 0;
+						cossin[5][s] = std::sin(rot);
 					}
-					//rotate cylindrical
+					
+					memcpy(iterator, cossin, 6 * SIMD::size * sizeof(double));
+					iterator += 6 * SIMD::size;
 
-					SIMD t00 = cos1 * cos2;
-					SIMD t01 = cos1 * sin2;
-					SIMD t02 = -sin1;
-					SIMD t10 = cos2 * sin0 * sin1 - cos0 * sin2;
-					SIMD t11 = cos0 * cos2 + sin0 * sin1 * sin2;
-					SIMD t12 = cos1 * sin0;
-					SIMD t20 = sin0 * sin2 + cos0 * cos2 * sin1;
-					SIMD t21 = cos0 * sin1 * sin2 - cos2 * sin0;
-					SIMD t22 = cos0 * cos1;
+					//rotate cylindrical
+					SIMD t00 = cossin[1] * cossin[2];
+					SIMD t01 = cossin[1] * cossin[5];
+					SIMD t02 = -cossin[4];
+					SIMD t10 = cossin[2] * cossin[3] * cossin[4] - cossin[0] * cossin[5];
+					SIMD t11 = cossin[0] * cossin[2] + cossin[3] * cossin[4] * cossin[5];
+					SIMD t12 = cossin[1] * cossin[3];
+					SIMD t20 = cossin[3] * cossin[5] + cossin[0] * cossin[2] * cossin[4];
+					SIMD t21 = cossin[0] * cossin[4] * cossin[5] - cossin[2] * cossin[3];
+					SIMD t22 = cossin[0] * cossin[1];
 
 					SIMD ic00 = element.ecf.conductivity[gp][0];
 					SIMD ic10 = element.ecf.conductivity[gp][1], ic11 = element.ecf.conductivity[gp][3];
@@ -1791,6 +1799,10 @@ Assembler::measurements HeatTransfer::manualloop(ActionOperator::Action action, 
 				__SSC_MARK(0xCAFE);
 			}
 			esint chunks = elements / SIMD::size;
+			std::vector<double> &storage = cossin_conditions[interval];
+			double* iterator;
+			storage.resize(6 * elements * gps * SIMD::size);
+			iterator = storage.data();
 			for (esint c = 1; c < chunks; ++c) {
 			// 	// cooToGP.simd(element);
 				for (size_t s = 0; s < SIMD::size; ++s, ++procNodes) {
@@ -1866,35 +1878,34 @@ Assembler::measurements HeatTransfer::manualloop(ActionOperator::Action action, 
 					SIMD x = element.gpcoords[gp][0] - element.ecf.center[gp][0];
 					SIMD y = element.gpcoords[gp][1] - element.ecf.center[gp][1];
 					SIMD z = element.gpcoords[gp][2] - element.ecf.center[gp][2];
-					SIMD cos0;
-					SIMD cos1;
-					SIMD cos2;
-					SIMD sin0;
-					SIMD sin1;
-					SIMD sin2;
+					SIMD cossin[6];
+
 					for (size_t s = 0; s < SIMD::size; ++s) {
 						double azimut = std::atan2(y[s], x[s]);
 						double r = std::sqrt(x[s] * x[s] + y[s] * y[s] + z[s] * z[s]);
 						double elevation = r < 1e-15 ? 0 : std::atan2(std::sqrt(z[s] * z[s] + x[s] * x[s]), y[s]);
-						cos0[s] = 1;
-						cos1[s] = std::cos(elevation);
-						cos2[s] = std::cos(azimut);
-						sin0[s] = 0;
-						sin1[s] = std::sin(elevation);
-						sin2[s] = std::sin(azimut);
+						cossin[0][s] = 1;
+						cossin[1][s] = std::cos(elevation);
+						cossin[2][s] = std::cos(azimut);
+						cossin[3][s] = 0;
+						cossin[4][s] = std::sin(elevation);
+						cossin[5][s] = std::sin(azimut);
 					}
+					
+					memcpy(iterator, cossin, 6 * SIMD::size * sizeof(double));
+					iterator += 6 * SIMD::size;
 					
 					//rotate spherical
 
-					SIMD t00 = cos1 * cos2;
-					SIMD t01 = cos1 * sin2;
-					SIMD t02 = -sin1;
-					SIMD t10 = cos2 * sin0 * sin1 - cos0 * sin2;
-					SIMD t11 = cos0 * cos2 + sin0 * sin1 * sin2;
-					SIMD t12 = cos1 * sin0;
-					SIMD t20 = sin0 * sin2 + cos0 * cos2 * sin1;
-					SIMD t21 = cos0 * sin1 * sin2 - cos2 * sin0;
-					SIMD t22 = cos0 * cos1;
+					SIMD t00 = cossin[1] * cossin[2];
+					SIMD t01 = cossin[1] * cossin[5];
+					SIMD t02 = -cossin[4];
+					SIMD t10 = cossin[2] * cossin[3] * cossin[4] - cossin[0] * cossin[5];
+					SIMD t11 = cossin[0] * cossin[2] + cossin[3] * cossin[4] * cossin[5];
+					SIMD t12 = cossin[1] * cossin[3];
+					SIMD t20 = cossin[3] * cossin[5] + cossin[0] * cossin[2] * cossin[4];
+					SIMD t21 = cossin[0] * cossin[4] * cossin[5] - cossin[2] * cossin[3];
+					SIMD t22 = cossin[0] * cossin[1];
 
 					SIMD ic00 = element.ecf.conductivity[gp][0];
 					SIMD ic10 = element.ecf.conductivity[gp][1], ic11 = element.ecf.conductivity[gp][3];
