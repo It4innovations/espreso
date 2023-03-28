@@ -46,7 +46,7 @@ Assembler::measurements HeatTransfer::manualloop(ActionOperator::Action action, 
 	constexpr static double straightAngleRec = 1.0 / 180;
 
 	initStart = eslog::time();
-	eslog::info("       = LOOP TYPE                                                           MANUAL = \n");
+	// eslog::info("       = LOOP TYPE                                                           MANUAL = \n");
 
 	if (this->K == nullptr) {
 		return loop<HeatTransferDataDescriptor, nodes, gps, ndim, edim, ETYPE>(action, ops, elements);
@@ -272,7 +272,7 @@ Assembler::measurements HeatTransfer::manualloop(ActionOperator::Action action, 
 	constexpr static double straightAngleRec = 1.0 / 180;
 
 	initStart = eslog::time();
-	eslog::info("       = LOOP TYPE                                                           MANUAL = \n");
+	// eslog::info("       = LOOP TYPE                                                           MANUAL = \n");
 
 	if (this->K == nullptr) {
 		// std::cout<<"K IS NULL"<<std::endl;
@@ -468,6 +468,13 @@ Assembler::measurements HeatTransfer::manualloop(ActionOperator::Action action, 
 		}
 		if(!cooToGP && rotateConductivity)
 		{
+			SIMD angle = element.ecf.center[0][0];
+			SIMD cos;
+			SIMD sin;
+			for (size_t s = 0; s < SIMD::size; ++s) {
+				cos[s] = std::cos(M_PI * angle[s] * straightAngleRec);
+				sin[s] = std::sin(M_PI * angle[s] * straightAngleRec);
+			}//TODO: only 1 gp of 1 el
 			start = eslog::time();
 			// std::cout<<"CARTESIAN NON-ISOTROPIC YES ROTATION SYMETRIC -- SYMMETRIC2D,CARTESIAN2D"<<std::endl;
 			if (action == ActionOperator::ASSEMBLE)
@@ -520,13 +527,6 @@ Assembler::measurements HeatTransfer::manualloop(ActionOperator::Action action, 
 						element.dND[gp][n][1] = inv2 * dNX + inv3 * dNY;
 					}
 
-					SIMD angle = element.ecf.center[gp][0];
-					SIMD cos;
-					SIMD sin;
-					for (size_t s = 0; s < SIMD::size; ++s) {
-						cos[s] = std::cos(M_PI * angle[s] * straightAngleRec);
-						sin[s] = std::sin(M_PI * angle[s] * straightAngleRec);
-					}
 
 					SIMD ic00 = element.ecf.conductivity[gp][0];
 					SIMD ic10 = element.ecf.conductivity[gp][1], ic11 = element.ecf.conductivity[gp][2];
@@ -570,21 +570,22 @@ Assembler::measurements HeatTransfer::manualloop(ActionOperator::Action action, 
 		}
 		if(cooToGP && rotateConductivity)
 			{
-				start = eslog::time();
-				// std::cout<<"NON-CARTESIAN NON-ISOTROPIC YES ROTATION SYMMETRIC -- CYLINDRICAL2D"<<std::endl;
-				if (action == ActionOperator::ASSEMBLE)
-			{
-				__SSC_MARK(0xFACE);
-			}
-			if (action == ActionOperator::REASSEMBLE)
-			{
-				__SSC_MARK(0xCAFE);
-			}
 				esint chunks = elements / SIMD::size;
 				std::vector<double> &storage = cossin_conditions[interval];
 				double* iterator;
 				storage.resize(2 * elements * gps * SIMD::size);
 				iterator = storage.data();
+
+				start = eslog::time();
+				// std::cout<<"NON-CARTESIAN NON-ISOTROPIC YES ROTATION SYMMETRIC -- CYLINDRICAL2D"<<std::endl;
+				if (action == ActionOperator::ASSEMBLE)
+				{
+					__SSC_MARK(0xFACE);
+				}
+				if (action == ActionOperator::REASSEMBLE)
+				{
+					__SSC_MARK(0xCAFE);
+				}
 				for (esint c = 1; c < chunks; ++c) {
 					// cooToGP.simd(element);
 					for (size_t s = 0; s < SIMD::size; ++s, ++procNodes) {
@@ -733,7 +734,7 @@ Assembler::measurements HeatTransfer::manualloop(ActionOperator::Action action, 
 	constexpr static double straightAngleRec = 1.0 / 180;
 
 	initStart = eslog::time();
-	eslog::info("       = LOOP TYPE                                                           MANUAL = \n");
+	// eslog::info("       = LOOP TYPE                                                           MANUAL = \n");
 
 	if (this->K == nullptr) {
 		std::cout<<"K IS NULL"<<std::endl;
@@ -846,6 +847,13 @@ Assembler::measurements HeatTransfer::manualloop(ActionOperator::Action action, 
 	{
 		if(!cooToGP && rotateConductivity)
 		{
+			SIMD angle = element.ecf.center[0][0];
+			SIMD cos;
+			SIMD sin;
+			for (size_t s = 0; s < SIMD::size; ++s) {
+				cos[s] = std::cos(M_PI * angle[s] * straightAngleRec);
+				sin[s] = std::sin(M_PI * angle[s] * straightAngleRec);
+			}
 			start = eslog::time();
 			// std::cout<<"CARTESIAN NON-ISOTROPIC YES ROTATION NON-SYMETRIC -- ANISOTROPIC2D"<<std::endl;
 			if (action == ActionOperator::ASSEMBLE)
@@ -896,14 +904,6 @@ Assembler::measurements HeatTransfer::manualloop(ActionOperator::Action action, 
 						SIMD dNY = load1(element.dN[gp][n][1]);
 						element.dND[gp][n][0] = inv0 * dNX + inv1 * dNY;
 						element.dND[gp][n][1] = inv2 * dNX + inv3 * dNY;
-					}
-
-					SIMD angle = element.ecf.center[gp][0];
-					SIMD cos;
-					SIMD sin;
-					for (size_t s = 0; s < SIMD::size; ++s) {
-						cos[s] = std::cos(M_PI * angle[s] * straightAngleRec);
-						sin[s] = std::sin(M_PI * angle[s] * straightAngleRec);
 					}
 
 					SIMD origin0 = element.ecf.conductivity[gp][0];
@@ -977,7 +977,7 @@ Assembler::measurements HeatTransfer::manualloop(ActionOperator::Action action, 
 	constexpr static double straightAngleRec = 1.0 / 180;
 
 	initStart = eslog::time();
-	eslog::info("       = LOOP TYPE                                                           MANUAL = \n");
+	// eslog::info("       = LOOP TYPE                                                           MANUAL = \n");
 
 	if (this->K == nullptr) {
 		std::cout<<"K IS NULL"<<std::endl;
@@ -1223,7 +1223,7 @@ Assembler::measurements HeatTransfer::manualloop(ActionOperator::Action action, 
 	constexpr static double straightAngleRec = 1.0 / 180;
 
 	initStart = eslog::time();
-	eslog::info("       = LOOP TYPE                                                           MANUAL = \n");
+	// eslog::info("       = LOOP TYPE                                                           MANUAL = \n");
 
 	if (this->K == nullptr) {
 		std::cout<<"K IS NULL"<<std::endl;
@@ -1446,6 +1446,24 @@ Assembler::measurements HeatTransfer::manualloop(ActionOperator::Action action, 
 		}
 		if(!cooToGP && rotateConductivity)
 		{
+			SIMD angleX = element.ecf.center[0][0];
+			SIMD angleY = element.ecf.center[0][1];
+			SIMD angleZ = element.ecf.center[0][2];
+			SIMD cos0;
+			SIMD cos1;
+			SIMD cos2;
+			SIMD sin0;
+			SIMD sin1;
+			SIMD sin2;
+
+			for (size_t s = 0; s < SIMD::size; ++s) {
+				cos0[s] = std::cos(M_PI * angleX[s] * straightAngleRec);
+				cos1[s] = std::cos(M_PI * angleY[s] * straightAngleRec);
+				cos2[s] = std::cos(M_PI * angleZ[s] * straightAngleRec);
+				sin0[s] = std::sin(M_PI * angleX[s] * straightAngleRec);
+				sin1[s] = std::sin(M_PI * angleY[s] * straightAngleRec);
+				sin2[s] = std::sin(M_PI * angleZ[s] * straightAngleRec);
+			}//TODO only 1ce for 1 gp and 1 el
 			start = eslog::time();
 			// std::cout<<"CARTESIAN NON-ISOTROPIC YES ROTATION SYMETRIC -- SYMMETRIC3D,CARTESIAN3D"<<std::endl;
 			if (action == ActionOperator::ASSEMBLE)
@@ -1519,25 +1537,6 @@ Assembler::measurements HeatTransfer::manualloop(ActionOperator::Action action, 
 						element.dND[gp][n][2] = inv6 * dNX + inv7 * dNY + inv8 * dNZ;
 					}
 
-					SIMD angleX = element.ecf.center[gp][0];
-					SIMD angleY = element.ecf.center[gp][1];
-					SIMD angleZ = element.ecf.center[gp][2];
-					SIMD cos0;
-					SIMD cos1;
-					SIMD cos2;
-					SIMD sin0;
-					SIMD sin1;
-					SIMD sin2;
-
-					for (size_t s = 0; s < SIMD::size; ++s) {
-						cos0[s] = std::cos(M_PI * angleX[s] * straightAngleRec);
-						cos1[s] = std::cos(M_PI * angleY[s] * straightAngleRec);
-						cos2[s] = std::cos(M_PI * angleZ[s] * straightAngleRec);
-						sin0[s] = std::sin(M_PI * angleX[s] * straightAngleRec);
-						sin1[s] = std::sin(M_PI * angleY[s] * straightAngleRec);
-						sin2[s] = std::sin(M_PI * angleZ[s] * straightAngleRec);
-					}
-
 					SIMD t00 = cos1 * cos2;
 					SIMD t01 = cos1 * sin2;
 					SIMD t02 = -sin1;
@@ -1607,6 +1606,12 @@ Assembler::measurements HeatTransfer::manualloop(ActionOperator::Action action, 
 		}
 		if(cooToGP && rotateConductivity && !isSpherical)
 		{
+			esint chunks = elements / SIMD::size;
+			std::vector<double> &storage = cossin_conditions[interval];
+			double* iterator;
+			storage.resize(6 * elements * gps * SIMD::size);
+			iterator = storage.data();
+			
 			start = eslog::time();
 			// std::cout<<"NON-CARTESIAN NON-ISOTROPIC YES ROTATION SYMMETRIC NON-SPHERICAL -- CYLINDRICAL3D"<<std::endl;
 			if (action == ActionOperator::ASSEMBLE)
@@ -1617,11 +1622,6 @@ Assembler::measurements HeatTransfer::manualloop(ActionOperator::Action action, 
 			{
 				__SSC_MARK(0xCAFE);
 			}
-			esint chunks = elements / SIMD::size;
-			std::vector<double> &storage = cossin_conditions[interval];
-			double* iterator;
-			storage.resize(6 * elements * gps * SIMD::size);
-			iterator = storage.data();
 			for (esint c = 1; c < chunks; ++c) {
 				// cooToGP.simd(element);
 				for (size_t s = 0; s < SIMD::size; ++s, ++procNodes) {
@@ -1788,6 +1788,12 @@ Assembler::measurements HeatTransfer::manualloop(ActionOperator::Action action, 
 
 		if(cooToGP && rotateConductivity && isSpherical)
 		{
+			esint chunks = elements / SIMD::size;
+			std::vector<double> &storage = cossin_conditions[interval];
+			double* iterator;
+			storage.resize(6 * elements * gps * SIMD::size);
+			iterator = storage.data();
+
 			start = eslog::time();
 			// std::cout<<"NON-CARTESIAN NON-ISOTROPIC YES ROTATION SYMMETRIC SPHERICAL -- SPHERICAL3D"<<std::endl;
 			if (action == ActionOperator::ASSEMBLE)
@@ -1798,11 +1804,6 @@ Assembler::measurements HeatTransfer::manualloop(ActionOperator::Action action, 
 			{
 				__SSC_MARK(0xCAFE);
 			}
-			esint chunks = elements / SIMD::size;
-			std::vector<double> &storage = cossin_conditions[interval];
-			double* iterator;
-			storage.resize(6 * elements * gps * SIMD::size);
-			iterator = storage.data();
 			for (esint c = 1; c < chunks; ++c) {
 			// 	// cooToGP.simd(element);
 				for (size_t s = 0; s < SIMD::size; ++s, ++procNodes) {
@@ -2007,7 +2008,7 @@ Assembler::measurements HeatTransfer::manualloop(ActionOperator::Action action, 
 	constexpr static double straightAngleRec = 1.0 / 180;
 
 	initStart = eslog::time();
-	eslog::info("       = LOOP TYPE                                                           MANUAL = \n");
+	// eslog::info("       = LOOP TYPE                                                           MANUAL = \n");
 
 	if (this->K == nullptr) {
 		// std::cout<<"K IS NULL"<<std::endl;
@@ -2118,6 +2119,24 @@ Assembler::measurements HeatTransfer::manualloop(ActionOperator::Action action, 
 	{
 		if(!cooToGP && rotateConductivity)
 		{
+			// cartesian
+			SIMD angleX = element.ecf.center[0][0];
+			SIMD angleY = element.ecf.center[0][1];
+			SIMD angleZ = element.ecf.center[0][2];
+			SIMD cos0;
+			SIMD cos1;
+			SIMD cos2;
+			SIMD sin0;
+			SIMD sin1;
+			SIMD sin2;
+			for (size_t s = 0; s < SIMD::size; ++s) {
+				cos0[s] = std::cos(M_PI * angleX[s] * straightAngleRec);
+				cos1[s] = std::cos(M_PI * angleY[s] * straightAngleRec);
+				cos2[s] = std::cos(M_PI * angleZ[s] * straightAngleRec);
+				sin0[s] = std::sin(M_PI * angleX[s] * straightAngleRec);
+				sin1[s] = std::sin(M_PI * angleY[s] * straightAngleRec);
+				sin2[s] = std::sin(M_PI * angleZ[s] * straightAngleRec);
+			}
 			start = eslog::time();
 			// std::cout<<"CARTESIAN NON-ISOTROPIC YES ROTATION NON-SYMETRIC -- ANISOTROPIC3D"<<std::endl;
 			if (action == ActionOperator::ASSEMBLE)
@@ -2189,24 +2208,6 @@ Assembler::measurements HeatTransfer::manualloop(ActionOperator::Action action, 
 						element.dND[gp][n][0] = inv0 * dNX + inv1 * dNY + inv2 * dNZ;
 						element.dND[gp][n][1] = inv3 * dNX + inv4 * dNY + inv5 * dNZ;
 						element.dND[gp][n][2] = inv6 * dNX + inv7 * dNY + inv8 * dNZ;
-					}
-					// cartesian
-					SIMD angleX = element.ecf.center[gp][0];
-					SIMD angleY = element.ecf.center[gp][1];
-					SIMD angleZ = element.ecf.center[gp][2];
-					SIMD cos0;
-					SIMD cos1;
-					SIMD cos2;
-					SIMD sin0;
-					SIMD sin1;
-					SIMD sin2;
-					for (size_t s = 0; s < SIMD::size; ++s) {
-						cos0[s] = std::cos(M_PI * angleX[s] * straightAngleRec);
-						cos1[s] = std::cos(M_PI * angleY[s] * straightAngleRec);
-						cos2[s] = std::cos(M_PI * angleZ[s] * straightAngleRec);
-						sin0[s] = std::sin(M_PI * angleX[s] * straightAngleRec);
-						sin1[s] = std::sin(M_PI * angleY[s] * straightAngleRec);
-						sin2[s] = std::sin(M_PI * angleZ[s] * straightAngleRec);
 					}
 
 					SIMD t00 = cos1 * cos2;
