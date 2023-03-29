@@ -24,6 +24,17 @@ struct SteadyState;
 class StructuralMechanics: public Assembler
 {
 public:
+	struct StructuralElementType {
+		enum: int {
+			SYMMETRIC_PLANE              = 0,
+			SYMMETRIC_PLANE_AXISYMMETRIC = 1,
+			SYMMETRIC_VOLUME             = 2,
+			FACE                         = 4,
+			EDGE                         = 5,
+			EDGE_AXISYMMETRIC            = 6,
+			NODE                         = 7
+		};
+	};
 	StructuralMechanics(StructuralMechanics *previous, StructuralMechanicsConfiguration &settings, StructuralMechanicsLoadStepConfiguration &configuration);
 
 	void analyze();
@@ -72,8 +83,19 @@ protected:
 	template <template <size_t, size_t, size_t, size_t, size_t> class DataDescriptor, size_t nodes, size_t gps, size_t ndim, size_t edim, size_t etype>
 	Assembler::measurements conditionsloop(ActionOperator::Action action, const std::vector<ActionOperator*> &ops, size_t interval, esint elements);
 
-	template <template <size_t, size_t, size_t, size_t, size_t> class DataDescriptor, size_t nodes, size_t gps, size_t ndim, size_t edim, size_t etype>
-	Assembler::measurements manualloop(ActionOperator::Action action, const std::vector<ActionOperator*> &ops, size_t interval, esint elements);
+	template <template <size_t, size_t, size_t, size_t, size_t> class DataDescriptor, size_t nodes, size_t gps, size_t ndim, size_t edim, size_t ETYPE>
+	Assembler::measurements manualloop(ActionOperator::Action action, const std::vector<ActionOperator*> &ops, size_t interval, esint elements,
+	typename std::enable_if<!
+			(ndim == 2 &&
+			edim == 2 &&
+			ETYPE == StructuralElementType::SYMMETRIC_PLANE), int>::type* = 0);
+
+	template <template <size_t, size_t, size_t, size_t, size_t> class DataDescriptor, size_t nodes, size_t gps, size_t ndim, size_t edim, size_t ETYPE>
+	Assembler::measurements manualloop(ActionOperator::Action action, const std::vector<ActionOperator*> &ops, size_t interval, esint elements,
+	typename std::enable_if<
+			ndim == 2 &&
+			edim == 2 &&
+			ETYPE == StructuralElementType::SYMMETRIC_PLANE, int>::type* = 0);
 
 	bool initDisplacement();
 	void initParameters();

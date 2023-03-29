@@ -680,78 +680,78 @@ Assembler::measurements StructuralMechanics::conditionsloop(ActionOperator::Acti
 	for (esint c = 1; c < chunks; ++c) {
 		if (cooToGP) {
 			cooAndGps.simd(element);
-//			printf(" cooAndGps");
+			// printf(" cooAndGps");
 		} else {
 			coo.simd(element);
-//			printf(" coo");
+			// printf(" coo");
 		}
 		if (getDisplacement) {
 			displacement.simd(element);
-//			printf(" displacement");
+			// printf(" displacement");
 		}
 		if (!constThickness) {
 			updateThickness(element, thicknessEval->second.evaluator);
-//			printf(" thickness");
+			// printf(" thickness");
 		}
 		integration.simd(element);
-//		printf(" integration");
-//		if (getTemp) {
-//			temp.simd(element);
-//		}
+		// printf(" integration");
+		// if (getTemp) {
+		// 	temp.simd(element);
+		// }
 
 		if (computeElasticity) {
 			if (!constElasticity) {
 				updateElasticity<DataDescriptor, nodes, gps, ndim, edim, etype>()(element, mat);
-//				printf(" updateConductivity");
+				// printf(" updateConductivity");
 			}
 			if (rotateElasticity) {
 				if (!constRotation) {
 					updateRotation<DataDescriptor, nodes, gps, ndim, edim, etype>()(element, mat);
-//					printf(" updateRotation");
+					// printf(" updateRotation");
 				}
 				if (!constCosSin) {
 					if (loadCosSin) {
-//						printf(" loadCosSin");
+						// printf(" loadCosSin");
 						loadcossin(element);
 					} else {
-//						printf(" updateCosSin");
+						// printf(" updateCosSin");
 						cossin(element, mat);
 					}
 					if (storeCosSin) {
-//						printf(" storeCosSin");
+						// printf(" storeCosSin");
 						storecossin(element);
 					}
 				}
 				rotation(element);
-//				printf(" rotation");
+				// printf(" rotation");
 			}
 		}
 
 		if (computeK) {
 			stiffness.simd(element);
-//			printf(" stiffness");
+			// printf(" stiffness");
 			if (hasAcceleration) {
 				if (!constAcceleration) {
 					updateAcc(element, AccelerationEval->second.x.evaluator);
-//					printf(" updateAcc");
+					// printf(" updateAcc");
 				}
 				acceleration.simd(element);
-//				printf(" acc");
+				// printf(" acc");
 			}
 			if (hasVelocity) {
 				if (!constVelocity) {
 					updateVelocity(element, VelocityEval->second.x.evaluator);
-//					printf(" updateVel");
+					// printf(" updateVel");
 				}
 				velocity.simd(element);
-//				printf(" velocity");
+				// printf(" velocity");
 			}
 		}
 		if (computeStress) {
 			stress.simd(element);
-//			printf(" stress");
+			// printf(" stress");
 		}
-//		printf("\n");
+		// printf("\n");
 	}
 
 	switch (action) {
