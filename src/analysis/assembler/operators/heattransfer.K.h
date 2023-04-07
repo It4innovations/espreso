@@ -7,6 +7,8 @@
 namespace espreso {
 
 struct HeatTransferStiffnessBase: public ActionOperator {
+	const char* name() const { return "HeatTransferStiffnessBase"; }
+
 	OutputParameterIterator stiffness;
 
 	HeatTransferStiffnessBase(size_t interval, ParameterData &stiffness)

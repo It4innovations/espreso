@@ -51,6 +51,12 @@ public:
 				preprocessTime + rhs.preprocessTime,
 				coreTime + rhs.coreTime);
 		}
+		measurements& operator/=(double value)
+		{
+			preprocessTime /= value;
+			coreTime /= value;
+			return *this;
+		}
 	};
 
 #pragma omp declare reduction(+ : measurements : \
@@ -62,6 +68,9 @@ public:
 
 	static Evaluator* getEvaluator(size_t interval, std::map<std::string, ECFExpression> &settings);
 	static Evaluator* getEvaluator(size_t interval, std::map<std::string, ECFExpressionVector> &settings, int dim);
+
+	virtual size_t esize() =0;
+	void dryrun();
 
 	PhysicsConfiguration &settings;
 	std::vector<int> etype, bfilter;

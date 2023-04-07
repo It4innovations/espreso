@@ -11,6 +11,7 @@
 namespace espreso {
 
 struct HeatTransferCoordinateSystem: ActionOperator {
+	const char* name() const { return "HeatTransferCoordinateSystem"; }
 	HeatTransferCoordinateSystem(size_t interval)
 	{
 		action = Action::ASSEMBLE | Action::REASSEMBLE | Action::SOLUTION;

@@ -8,6 +8,8 @@
 namespace espreso {
 
 struct Thickness: ActionOperator {
+	const char* name() const { return "Thickness"; }
+
 	serializededata<esint, esint>::const_iterator procNodes;
 	double *target;
 

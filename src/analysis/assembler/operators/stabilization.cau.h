@@ -8,6 +8,8 @@
 namespace espreso {
 
 struct Stabilization: ActionOperator {
+	const char* name() const { return "Stabilization"; }
+
 	Stabilization(size_t interval)
 	{
 		isconst = false;

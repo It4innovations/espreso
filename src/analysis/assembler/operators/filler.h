@@ -10,6 +10,8 @@
 namespace espreso {
 
 struct MatrixFiller: ActionOperator {
+	const char* name() const { return "MatrixFiller"; }
+
 	MatrixFiller(size_t interval, size_t dofs, ParameterData &local, Matrix_Base<double> *A)
 	: dofs(dofs),
 	  local(local, interval),
@@ -117,6 +119,8 @@ struct GeneralMatricFiller: MatrixFiller, Physics {
 
 template <size_t nodes, size_t gps, size_t ndim, size_t edim, size_t etype, class Physics>
 struct VectorFiller: ActionOperator, Physics {
+	const char* name() const { return "VectorFiller"; }
+
 	VectorFiller(size_t interval, size_t dofs, ParameterData &local, Vector_Base<double> *v)
 	: dofs(dofs),
 	  local(local, interval),
@@ -170,6 +174,8 @@ struct VectorFiller: ActionOperator, Physics {
 // Setter never rewrite output since output is directly rewriten by expression
 template <size_t nodes, size_t gps, size_t ndim, size_t edim, size_t etype, class Physics, class Setter>
 struct VectorSetter: ActionOperator, Physics {
+	const char* name() const { return "VectorSetter"; }
+
 	VectorSetter(size_t region, size_t interval, size_t dofs, Vector_Base<double> *v, const Setter &setter)
 	: dofs(dofs), dim(0),
 	  global(v->mapping.boundary[region][interval].data),

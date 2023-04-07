@@ -10,6 +10,8 @@ namespace espreso {
 
 template <class Setter>
 struct ExternalExpression: ActionOperator {
+	const char* name() const { return evaluator->expression(); }
+
 	ExternalExpression(int thread, size_t interval, Evaluator *evaluator, const Setter &setter)
 	: evaluator(evaluator), setter(setter), thread(thread)
 	{

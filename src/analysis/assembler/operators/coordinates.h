@@ -11,6 +11,8 @@
 namespace espreso {
 
 struct CopyCoordinates: ActionOperator {
+	const char* name() const { return "CopyCoordinates"; }
+
 	serializededata<esint, esint>::const_iterator procNodes;
 
 	CopyCoordinates(size_t interval, serializededata<esint, esint>::const_iterator procNodes)

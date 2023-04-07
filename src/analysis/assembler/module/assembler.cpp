@@ -10,6 +10,7 @@
 #include "esinfo/envinfo.h"
 #include "esinfo/eslog.hpp"
 #include "esinfo/meshinfo.h"
+#include "math/physics/matrix_distributed.h"
 #include "mesh/store/domainstore.h"
 #include "mesh/store/nodestore.h"
 #include "mesh/store/elementstore.h"
@@ -107,14 +108,14 @@ Assembler::measurements Assembler::assemble(ActionOperator::Action action)
 			for (size_t d = info::mesh->domains->distribution[t]; d < info::mesh->domains->distribution[t + 1]; d++) {
 				for (esint i = info::mesh->elements->eintervalsDistribution[d]; i < info::mesh->elements->eintervalsDistribution[d + 1]; ++i) {
 					esint elements = info::mesh->elements->eintervals[i].end - info::mesh->elements->eintervals[i].begin;
-					times += instantiate(action, info::mesh->elements->eintervals[i].code, etype[i], elementOps[i], i, elements);
+					instantiate(action, info::mesh->elements->eintervals[i].code, etype[i], elementOps[i], i, elements);
 				}
 			}
 		}
 
 		for (int t = 0; t < info::env::threads; ++t) {
 			for (size_t d = info::mesh->domains->distribution[t]; d < info::mesh->domains->distribution[t + 1]; d++) {
-				for (size_t r = 0; r < info::mesh->boundaryRegions.size(); ++r) {
+				for (size_t r = 1; r < info::mesh->boundaryRegions.size(); ++r) {
 					if (info::mesh->boundaryRegions[r]->dimension) {
 						for (esint i = info::mesh->boundaryRegions[r]->eintervalsDistribution[d]; i < info::mesh->boundaryRegions[r]->eintervalsDistribution[d + 1]; ++i) {
 							size_t elements = info::mesh->boundaryRegions[r]->eintervals[i].end - info::mesh->boundaryRegions[r]->eintervals[i].begin;
@@ -144,7 +145,7 @@ Assembler::measurements Assembler::assemble(ActionOperator::Action action)
 		#pragma omp parallel for
 		for (int t = 0; t < info::env::threads; ++t) {
 			for (size_t d = info::mesh->domains->distribution[t]; d < info::mesh->domains->distribution[t + 1]; d++) {
-				for (size_t r = 0; r < info::mesh->boundaryRegions.size(); ++r) {
+				for (size_t r = 1; r < info::mesh->boundaryRegions.size(); ++r) {
 					if (info::mesh->boundaryRegions[r]->dimension) {
 						for (esint i = info::mesh->boundaryRegions[r]->eintervalsDistribution[d]; i < info::mesh->boundaryRegions[r]->eintervalsDistribution[d + 1]; ++i) {
 							size_t elements = info::mesh->boundaryRegions[r]->eintervals[i].end - info::mesh->boundaryRegions[r]->eintervals[i].begin;
@@ -160,6 +161,119 @@ Assembler::measurements Assembler::assemble(ActionOperator::Action action)
 	}
 
 	return times;
+}
+
+void Assembler::dryrun()
+{
+	if (K == nullptr) {
+		K = new Matrix_Distributed<Matrix_CSR, double>();
+		K->mapping.elements.resize(info::mesh->elements->eintervals.size());
+
+		f = new Vector_Distributed<Vector_Dense, double>();
+		f->mapping.elements.resize(info::mesh->elements->eintervals.size());
+	}
+	info::ecf->output.results_selection.flux = !info::ecf->simple_output;
+	Assembler::measurements reassemble_time_dyn = Assembler::measurements();
+	Assembler::measurements   assemble_time_dyn = Assembler::measurements();
+	Assembler::measurements   solution_time_dyn = Assembler::measurements();
+	Assembler::measurements reassemble_time_con = Assembler::measurements();
+	Assembler::measurements   assemble_time_con = Assembler::measurements();
+	Assembler::measurements   solution_time_con = Assembler::measurements();
+	Assembler::measurements reassemble_time_opt = Assembler::measurements();
+	Assembler::measurements   assemble_time_opt = Assembler::measurements();
+//	Assembler::measurements   solution_time_opt = Assembler::measurements();
+	int numreps = info::ecf->dryrun;
+	for(int reps = 0; reps < numreps; reps++) {
+		info::ecf->loop = ECF::LOOP::INHERITANCE;
+		assemble_time_dyn   += assemble(ActionOperator::Action::ASSEMBLE);
+		reassemble_time_dyn += assemble(ActionOperator::Action::REASSEMBLE);
+//		solution_time_dyn   += assemble(ActionOperator::Action::SOLUTION);
+
+		info::ecf->loop = ECF::LOOP::CONDITIONS;
+		assemble_time_con   += assemble(ActionOperator::Action::ASSEMBLE);
+		reassemble_time_con += assemble(ActionOperator::Action::REASSEMBLE);
+//		solution_time_con   += assemble(ActionOperator::Action::SOLUTION);
+
+		info::ecf->loop = ECF::LOOP::MANUAL;
+		assemble_time_opt   += assemble(ActionOperator::Action::ASSEMBLE);
+		reassemble_time_opt += assemble(ActionOperator::Action::REASSEMBLE);
+//		solution_time_opt   += assemble(ActionOperator::Action::SOLUTION);
+	}
+
+	assemble_time_dyn /= numreps;
+	assemble_time_con /= numreps;
+	assemble_time_opt /= numreps;
+	reassemble_time_dyn /= numreps;
+	reassemble_time_con /= numreps;
+	reassemble_time_opt /= numreps;
+	solution_time_dyn /= numreps;
+	solution_time_con /= numreps;
+//	solution_time_opt /= numreps;
+
+	eslog::info(" = ========================================================================================= = \n");
+	eslog::info(" = DRY RUN                                                                                   = \n");
+	eslog::info(" = -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  = \n");
+	eslog::info(" = SIMD SIZE                                                                            %4lu = \n", SIMD::size);
+	eslog::info(" = MAX ELEMENT SIZE                                                                 %6lu B = \n", esize());
+	eslog::info(" = -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  = \n");
+	size_t constop = 0, assembleop = 0, reassembleop = 0, solutionop = 0;
+	for (size_t i = 0; i < elementOps[0].size(); ++i) {
+		if (elementOps[0][i]->isconst) ++constop;
+		if (elementOps[0][i]->action & ActionOperator::ASSEMBLE) ++assembleop;
+		if (elementOps[0][i]->action & ActionOperator::REASSEMBLE) ++reassembleop;
+		if (elementOps[0][i]->action & ActionOperator::SOLUTION) ++solutionop;
+		eslog::info(" = %35s                    %5s %8s %10s %8s = \n",
+				elementOps[0][i]->name(),
+				elementOps[0][i]->isconst                             ? "CONST" : "",
+				elementOps[0][i]->action & ActionOperator::ASSEMBLE   ? "ASSEMBLE" : "",
+				elementOps[0][i]->action & ActionOperator::REASSEMBLE ? "REASSEMBLE" : "",
+				elementOps[0][i]->action & ActionOperator::SOLUTION   ? "SOLUTION" : "");
+	}
+	eslog::info(" = -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  = \n");
+	eslog::info(" = OPERATORS CONST                                                                      %4lu = \n", constop);
+	eslog::info(" = OPERATORS ASSEMBLE                                                                   %4lu = \n", assembleop);
+	eslog::info(" = OPERATORS REASSEMBLE                                                                 %4lu = \n", reassembleop);
+	eslog::info(" = OPERATORS SOLUTION                                                                   %4lu = \n", solutionop);
+	eslog::info(" = OPERATORS TOTAL                                                                      %4lu = \n", elementOps[0].size());
+	eslog::info(" = -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  = \n");
+	eslog::info(" = PRE-PROCESS ASSEMBLE    [DYN]                                                %12e = \n", assemble_time_dyn.preprocessTime);
+	eslog::info(" = PRE-PROCESS ASSEMBLE    [CON]                                                %12e = \n", assemble_time_con.preprocessTime);
+	eslog::info(" = PRE-PROCESS ASSEMBLE    [OPT]                                                %12e = \n", assemble_time_opt.preprocessTime);
+	eslog::info(" = PRE-PROCESS REASSEMBLE  [DYN]                                                %12e = \n", reassemble_time_dyn.preprocessTime);
+	eslog::info(" = PRE-PROCESS REASSEMBLE  [CON]                                                %12e = \n", reassemble_time_con.preprocessTime);
+	eslog::info(" = PRE-PROCESS REASSEMBLE  [OPT]                                                %12e = \n", reassemble_time_opt.preprocessTime);
+	eslog::info(" = PRE-PROCESS SOLUTION    [DYN]                                                %12e = \n", solution_time_dyn.preprocessTime);
+	eslog::info(" = PRE-PROCESS SOLUTION    [CON]                                                %12e = \n", solution_time_con.preprocessTime);
+	eslog::info(" = PRE-PROCESS SOLUTION    [OPT]                                                       - - - = \n"); //, solution_time_opt.preprocessTime);
+	eslog::info(" =                                                                                           = \n");
+	eslog::info(" = CORE-TIME ASSEMBLE      [DYN]                                                %12e = \n", assemble_time_dyn.coreTime);
+	eslog::info(" = CORE-TIME ASSEMBLE      [CON]                                                %12e = \n", assemble_time_con.coreTime);
+	eslog::info(" = CORE-TIME ASSEMBLE      [OPT]                                                %12e = \n", assemble_time_opt.coreTime);
+	eslog::info(" = CORE-TIME REASSEMBLE    [DYN]                                                %12e = \n", reassemble_time_dyn.coreTime);
+	eslog::info(" = CORE-TIME REASSEMBLE    [CON]                                                %12e = \n", reassemble_time_con.coreTime);
+	eslog::info(" = CORE-TIME REASSEMBLE    [OPT]                                                %12e = \n", reassemble_time_opt.coreTime);
+	eslog::info(" = CORE-TIME SOLUTION      [DYN]                                                %12e = \n", solution_time_dyn.coreTime);
+	eslog::info(" = CORE-TIME SOLUTION      [CON]                                                %12e = \n", solution_time_con.coreTime);
+	eslog::info(" = CORE-TIME SOLUTION      [OPT]                                                       - - - = \n"); // solution_time_opt.coreTime);
+	eslog::info(" =                                                                                           = \n");
+	eslog::info(" = ELEMENTS TOTAL                                                               %12lu = \n", info::mesh->elements->distribution.process.size);
+	eslog::info(" = -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  = \n");
+	eslog::info(" = ELEMENT-TIME ASSEMBLE   [DYN]                                                %12e = \n", assemble_time_dyn.coreTime   / info::mesh->elements->distribution.process.size);
+	eslog::info(" = ELEMENT-TIME ASSEMBLE   [CON]                                                %12e = \n", assemble_time_con.coreTime   / info::mesh->elements->distribution.process.size);
+	eslog::info(" = ELEMENT-TIME ASSEMBLE   [OPT]                                                %12e = \n", assemble_time_opt.coreTime   / info::mesh->elements->distribution.process.size);
+	eslog::info(" =                                                                                           = \n");
+	eslog::info(" = ELEMENT-TIME REASSEMBLE [DYN]                                                %12e = \n", reassemble_time_dyn.coreTime / info::mesh->elements->distribution.process.size);
+	eslog::info(" = ELEMENT-TIME REASSEMBLE [CON]                                                %12e = \n", reassemble_time_con.coreTime / info::mesh->elements->distribution.process.size);
+	eslog::info(" = ELEMENT-TIME REASSEMBLE [OPT]                                                %12e = \n", reassemble_time_opt.coreTime / info::mesh->elements->distribution.process.size);
+	eslog::info(" =                                                                                           = \n");
+	eslog::info(" = ELEMENT-TIME SOLUTION   [DYN]                                                %12e = \n", solution_time_dyn.coreTime   / info::mesh->elements->distribution.process.size);
+	eslog::info(" = ELEMENT-TIME SOLUTION   [CON]                                                %12e = \n", solution_time_con.coreTime   / info::mesh->elements->distribution.process.size);
+	eslog::info(" = ELEMENT-TIME SOLUTION   [OPT]                                                       - - - = \n"); //, solution_time_opt.coreTime   / info::mesh->elements->distribution.process.size);
+	eslog::info(" = ========================================================================================= = \n");
+	eslog::info(" = DYNAMIC POLYMORPHISM / CONDITIONS                                            %12e = \n", assemble_time_dyn.coreTime / assemble_time_con.coreTime);
+	eslog::info(" = DYNAMIC POLYMORPHISM / OPT                                                   %12e = \n", assemble_time_dyn.coreTime / assemble_time_opt.coreTime);
+	eslog::info(" =           CONDITIONS / OPT                                                   %12e = \n", assemble_time_con.coreTime / assemble_time_opt.coreTime);
+	eslog::info(" = ========================================================================================= = \n");
 }
 
 void Assembler::printElementVolume(std::vector<double> &volume)

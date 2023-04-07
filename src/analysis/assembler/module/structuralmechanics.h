@@ -43,8 +43,6 @@ public:
 	void evaluate(SteadyState &scheme);
 	void updateSolution(SteadyState &scheme);
 
-	void dryrun();
-
 	StructuralMechanicsConfiguration &settings;
 	StructuralMechanicsLoadStepConfiguration &configuration;
 

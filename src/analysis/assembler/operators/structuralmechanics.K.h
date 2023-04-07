@@ -9,6 +9,8 @@ namespace espreso {
 template <size_t nodes, size_t gps, size_t ndim, size_t edim, size_t etype, class Physics> struct HeatTransferStiffness;
 
 struct StructuralMechanicsStiffnessBase: public ActionOperator {
+	const char* name() const { return "StructuralMechanicsStiffnessBase"; }
+
 	OutputParameterIterator stiffness;
 
 	StructuralMechanicsStiffnessBase(size_t interval, ParameterData &stiffness)

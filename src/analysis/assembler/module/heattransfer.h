@@ -12,10 +12,24 @@
 #include "math/primitives/matrix_info.h"
 #include "math/physics/matrix_base.h"
 
+//#include "analysis/assembler/operators/basis.h"
+//#include "analysis/assembler/operators/initialtemperature.h"
+//#include "analysis/assembler/operators/thickness.h"
+//#include "analysis/assembler/operators/coordinates.h"
+//#include "analysis/assembler/operators/temperature.h"
+//#include "analysis/assembler/operators/integration.h"
+//#include "analysis/assembler/operators/expression.h"
+//#include "analysis/assembler/operators/advection.h"
+//#include "analysis/assembler/operators/stabilization.cau.h"
+//#include "analysis/assembler/operators/storage.h"
+//#include "analysis/assembler/operators/conductivity.coordinatesystem.h"
+//#include "analysis/assembler/operators/heattransfer.f.h"
+//#include "analysis/assembler/operators/heattransfer.K.h"
+//#include "analysis/assembler/operators/flux.h"
+//#include "analysis/assembler/operators/gradient.h"
+
 #include <cstddef>
 #include <map>
-
-// #include "heattransfer.element.h"
 
 #include <type_traits>
 
@@ -38,6 +52,10 @@ class HeatTransfer: public Assembler
 			NODE                 = 6
 		};
 	};
+
+	struct Operators {
+
+	};
 public:
 	HeatTransfer(HeatTransfer *previous, HeatTransferConfiguration &settings, HeatTransferLoadStepConfiguration &configuration);
 
@@ -46,8 +64,6 @@ public:
 	void connect(SteadyState &scheme);
 	void evaluate(SteadyState &scheme, step::Time &time);
 	void updateSolution(SteadyState &scheme);
-
-	void dryrun();
 
 	HeatTransferConfiguration &settings;
 	HeatTransferLoadStepConfiguration &configuration;

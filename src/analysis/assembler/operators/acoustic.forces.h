@@ -11,6 +11,8 @@
 namespace espreso {
 
 struct AcousticDipole: public ActionOperator {
+	const char* name() const { return "AcousticDipole"; }
+
 	AcousticDipole(
 			int interval,
 			const ParameterData &dND,
@@ -81,6 +83,8 @@ struct AcousticDipole3D: public AcousticDipole {
 
 template <size_t nodes, size_t gps>
 struct AcousticQ: public ActionOperator {
+	const char* name() const { return "AcousticQ"; }
+
 	AcousticQ(int interval, double area, const ParameterData &g,  ParameterData &impedance, ParameterData &q)
 	: area(area),
 	  g(g, interval),
@@ -117,6 +121,7 @@ struct AcousticQ: public ActionOperator {
 
 template <size_t nodes, size_t gps>
 struct AcousticAcceleration2D: public ActionOperator {
+	const char* name() const { return "AcousticAcceleration2D"; }
 
 	InputParameterIterator N, weight, J;
 	InputParameterIterator normals, acceleration_vector;
@@ -161,6 +166,7 @@ struct AcousticAcceleration2D: public ActionOperator {
 
 template <size_t nodes, size_t gps>
 struct AcousticAcceleration3D: public ActionOperator {
+	const char* name() const { return "AcousticAcceleration3D"; }
 
 	InputParameterIterator N, weight, J;
 	InputParameterIterator normals, acceleration_vector;
@@ -205,6 +211,8 @@ struct AcousticAcceleration3D: public ActionOperator {
 
 template <size_t nodes, size_t gps>
 struct AcousticRHS2D: public ActionOperator {
+	const char* name() const { return "AcousticRHS2D"; }
+
 	AcousticRHS2D(int interval, const ParameterData &N, const ParameterData &weight, const ParameterData &J, const ParameterData &q, ParameterData &rhs)
 	: N(N, interval),
 	  weight(weight, interval),
@@ -244,6 +252,8 @@ struct AcousticRHS2D: public ActionOperator {
 
 template <size_t nodes, size_t gps>
 struct AcousticRHS3D: public ActionOperator {
+	const char* name() const { return "AcousticRHS3D"; }
+
 	AcousticRHS3D(int interval, const ParameterData &N, const ParameterData &weight, const ParameterData &J, const ParameterData &q, ParameterData &rhs)
 	: N(N, interval),
 	  weight(weight, interval),
@@ -285,6 +295,8 @@ struct AcousticRHS3D: public ActionOperator {
 
 template <size_t nodes, size_t gps>
 struct AcousticsBoundaryMass: public ActionOperator {
+	const char* name() const { return "AcousticsBoundaryMass"; }
+
 	InputParameterIterator N, weight, determinant, impedance;
 	OutputParameterIterator boundaryMass;
 
@@ -329,6 +341,8 @@ struct AcousticsBoundaryMass: public ActionOperator {
 
 template <size_t nodes>
 struct AcousticsPointSource_Flow: public ActionOperator {
+	const char* name() const { return "AcousticsPointSource_Flow"; }
+
 	InputParameterIterator flowRate, phase;
 	OutputParameterIterator sourceAmplitude;
 

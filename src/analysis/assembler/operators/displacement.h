@@ -8,6 +8,8 @@
 namespace espreso {
 
 struct Displacement: ActionOperator {
+	const char* name() const { return "Displacement"; }
+
 	serializededata<esint, esint>::const_iterator procNodes;
 	const double * const source;
 

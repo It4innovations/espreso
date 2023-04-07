@@ -10,6 +10,8 @@ template <size_t nodes, size_t gps, size_t ndim, size_t edim, size_t etype, clas
 
 template <size_t nodes, size_t gps, class Physics>
 struct Acceleration<nodes, gps, 2, 2, StructuralMechanicsElementType::SYMMETRIC_PLANE, Physics>: ActionOperator, Physics {
+	const char* name() const { return "Acceleration"; }
+
 	OutputParameterIterator rhs;
 
 	Acceleration(size_t interval, ParameterData &rhs)
@@ -44,6 +46,8 @@ struct Acceleration<nodes, gps, 2, 2, StructuralMechanicsElementType::SYMMETRIC_
 
 template <size_t nodes, size_t gps, class Physics>
 struct Acceleration<nodes, gps, 2, 2, StructuralMechanicsElementType::SYMMETRIC_PLANE_AXISYMMETRIC, Physics>: ActionOperator, Physics {
+	const char* name() const { return "Acceleration"; }
+
 	OutputParameterIterator rhs;
 
 	Acceleration(size_t interval, ParameterData &rhs)
@@ -78,6 +82,8 @@ struct Acceleration<nodes, gps, 2, 2, StructuralMechanicsElementType::SYMMETRIC_
 
 template <size_t nodes, size_t gps, class Physics>
 struct Acceleration<nodes, gps, 3, 3, StructuralMechanicsElementType::SYMMETRIC_VOLUME, Physics>: ActionOperator, Physics {
+	const char* name() const { return "Acceleration"; }
+
 	OutputParameterIterator rhs;
 
 	Acceleration(size_t interval, ParameterData &rhs)
@@ -117,6 +123,8 @@ template <size_t nodes, size_t gps, size_t ndim, size_t edim, size_t etype, clas
 
 template <size_t nodes, size_t gps, class Physics>
 struct AngularVelocity<nodes, gps, 2, 2, StructuralMechanicsElementType::SYMMETRIC_PLANE, Physics>: ActionOperator, Physics {
+	const char* name() const { return "AngularVelocity"; }
+
 	OutputParameterIterator rhs;
 
 	AngularVelocity(size_t interval, ParameterData &rhs)
@@ -151,6 +159,8 @@ struct AngularVelocity<nodes, gps, 2, 2, StructuralMechanicsElementType::SYMMETR
 
 template <size_t nodes, size_t gps, class Physics>
 struct AngularVelocity<nodes, gps, 2, 2, StructuralMechanicsElementType::SYMMETRIC_PLANE_AXISYMMETRIC, Physics>: ActionOperator, Physics {
+	const char* name() const { return "AngularVelocity"; }
+
 	OutputParameterIterator rhs;
 
 	AngularVelocity(size_t interval, ParameterData &rhs)
@@ -182,6 +192,8 @@ struct AngularVelocity<nodes, gps, 2, 2, StructuralMechanicsElementType::SYMMETR
 
 template <size_t nodes, size_t gps, class Physics>
 struct AngularVelocity<nodes, gps, 3, 3, StructuralMechanicsElementType::SYMMETRIC_VOLUME, Physics>: ActionOperator, Physics {
+	const char* name() const { return "AngularVelocity"; }
+
 	OutputParameterIterator rhs;
 
 	AngularVelocity(size_t interval, ParameterData &rhs)
@@ -224,6 +236,8 @@ template <size_t nodes, size_t gps, size_t ndim, size_t edim, size_t etype, clas
 
 template <size_t nodes, size_t gps, class Physics>
 struct NormalPressure<nodes, gps, 2, 1, StructuralMechanicsElementType::EDGE, Physics>: ActionOperator, Physics {
+	const char* name() const { return "NormalPressure"; }
+
 	OutputParameterIterator rhs;
 
 	NormalPressure(size_t region, size_t interval, ParameterData &rhs)
@@ -258,6 +272,8 @@ struct NormalPressure<nodes, gps, 2, 1, StructuralMechanicsElementType::EDGE, Ph
 
 template <size_t nodes, size_t gps, class Physics>
 struct NormalPressure<nodes, gps, 2, 1, StructuralMechanicsElementType::EDGE_AXISYMMETRIC, Physics>: ActionOperator, Physics {
+	const char* name() const { return "NormalPressure"; }
+
 	OutputParameterIterator rhs;
 
 	NormalPressure(size_t region, size_t interval, ParameterData &rhs)
@@ -292,6 +308,8 @@ struct NormalPressure<nodes, gps, 2, 1, StructuralMechanicsElementType::EDGE_AXI
 
 template <size_t nodes, size_t gps, class Physics>
 struct NormalPressure<nodes, gps, 3, 2, StructuralMechanicsElementType::FACE, Physics>: ActionOperator, Physics {
+	const char* name() const { return "NormalPressure"; }
+
 	OutputParameterIterator rhs;
 
 	NormalPressure(size_t region, size_t interval, ParameterData &rhs)
@@ -329,6 +347,8 @@ struct NormalPressure<nodes, gps, 3, 2, StructuralMechanicsElementType::FACE, Ph
 
 template <size_t nodes, size_t gps, class Physics>
 struct NormalPressure<nodes, gps, 3, 1, StructuralMechanicsElementType::EDGE, Physics>: ActionOperator, Physics {
+	const char* name() const { return "NormalPressure"; }
+
 	OutputParameterIterator rhs;
 
 	NormalPressure(size_t region, size_t interval, ParameterData &rhs)

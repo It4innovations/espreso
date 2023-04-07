@@ -11,6 +11,8 @@ namespace espreso {
 
 template <size_t nodes, size_t gps, size_t ndim, size_t edim, size_t etype, class Physics, class Parameter>
 struct StorageStore: ActionOperator, Physics {
+	const char* name() const { return "StorageStore"; }
+
 	StorageStore(size_t interval, ActionOperator *op, size_t elements, size_t size, const Parameter &parameter)
 	: parameter(parameter),
 	  size(size),
@@ -42,6 +44,8 @@ struct StorageStore: ActionOperator, Physics {
 
 template <size_t nodes, size_t gps, size_t ndim, size_t edim, size_t etype, class Physics, class Parameter>
 struct StorageLoad: ActionOperator, Physics {
+	const char* name() const { return "StorageLoad"; }
+
 	StorageLoad(size_t interval, StorageStore<nodes, gps, ndim, edim, etype, Physics, Parameter> *store, const Parameter &parameter)
 	: parameter(parameter),
 	  size(store->size),

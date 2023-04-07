@@ -8,6 +8,8 @@
 namespace espreso {
 
 struct Temperature: ActionOperator {
+	const char* name() const { return "Temperature"; }
+
 	serializededata<esint, esint>::const_iterator procNodes;
 	const double * const source;
 

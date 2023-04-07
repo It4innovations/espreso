@@ -143,10 +143,10 @@ void ECF::_init()
 	REGISTER(mesh_morphing, ECFMetaData()
 			.setdescription({ "Settings for mesh morphing." }));
 
-	dryrun = false;
+	dryrun = 0;
 	REGISTER(dryrun, ECFMetaData()
 			.setdescription({ "Just for testing assembler" })
-			.setdatatype({ ECFDataType::BOOL }));
+			.setdatatype({ ECFDataType::NONNEGATIVE_INTEGER }));
 	simple_output = false;
 	REGISTER(simple_output, ECFMetaData()
 			.setdescription({ "Compute solution independent on conductivity and elasticity." })

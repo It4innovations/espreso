@@ -8,6 +8,8 @@
 namespace espreso {
 
 struct AdvectionBase: ActionOperator {
+	const char* name() const { return "Advection"; }
+
 	OutputParameterIterator stiffness;
 
 	AdvectionBase(size_t interval, ParameterData &stiffness)

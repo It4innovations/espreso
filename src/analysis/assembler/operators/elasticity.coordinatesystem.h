@@ -11,6 +11,8 @@
 namespace espreso {
 
 struct ElasticityCoordinateSystem: ActionOperator {
+	const char* name() const { return "ElasticityCoordinateSystem"; }
+
 	ElasticityCoordinateSystem(size_t interval)
 	{
 		action = Action::ASSEMBLE | Action::REASSEMBLE | Action::SOLUTION;

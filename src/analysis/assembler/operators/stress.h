@@ -9,6 +9,8 @@
 namespace espreso {
 
 struct StressBase: ActionOperator {
+	const char* name() const { return "StressBase"; }
+
 	StressBase(size_t interval, NamedData *principalStress, NamedData *componentStress, NamedData *vonMisesStress)
 	: principalStress(principalStress->data.data() + info::mesh->dimension * info::mesh->elements->eintervals[interval].begin),
 	  componentStress(componentStress->data.data() + 2 * info::mesh->dimension * info::mesh->elements->eintervals[interval].begin),

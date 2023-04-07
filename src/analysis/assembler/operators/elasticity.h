@@ -11,6 +11,7 @@ namespace espreso {
 
 template <size_t nodes, size_t gps, size_t ndim, size_t edim, size_t etype, class Physics>
 struct ElasticityIsotropicPlaneStrain: ActionOperator, Physics {
+	const char* name() const { return "ElasticityIsotropicPlaneStrain"; }
 
 	ElasticityIsotropicPlaneStrain(size_t interval)
 	{
@@ -40,6 +41,7 @@ struct ElasticityIsotropicPlaneStrain: ActionOperator, Physics {
 
 template <size_t nodes, size_t gps, size_t ndim, size_t edim, size_t etype, class Physics>
 struct ElasticityIsotropicPlaneStress: ActionOperator, Physics {
+	const char* name() const { return "ElasticityIsotropicPlaneStress"; }
 
 	ElasticityIsotropicPlaneStress(size_t interval)
 	{
@@ -69,6 +71,7 @@ struct ElasticityIsotropicPlaneStress: ActionOperator, Physics {
 
 template <size_t nodes, size_t gps, size_t ndim, size_t edim, size_t etype, class Physics>
 struct ElasticityIsotropicPlaneAxisymmetric: ActionOperator, Physics {
+	const char* name() const { return "ElasticityIsotropicPlaneAxisymmetric"; }
 
 	ElasticityIsotropicPlaneAxisymmetric(size_t interval)
 	{
@@ -107,6 +110,7 @@ struct ElasticityIsotropicPlaneAxisymmetric: ActionOperator, Physics {
 
 template <size_t nodes, size_t gps, size_t ndim, size_t edim, size_t etype, class Physics>
 struct ElasticityIsotropicVolume: ActionOperator, Physics {
+	const char* name() const { return "ElasticityIsotropicVolume"; }
 
 	ElasticityIsotropicVolume(size_t interval)
 	{
@@ -160,6 +164,7 @@ struct ElasticityIsotropicVolume: ActionOperator, Physics {
 
 template <size_t nodes, size_t gps, size_t ndim, size_t edim, size_t etype, class Physics>
 struct ElasticityOrthotropicVolume: ActionOperator, Physics {
+	const char* name() const { return "ElasticityOrthotropicVolume"; }
 
 	ElasticityOrthotropicVolume(size_t interval)
 	{

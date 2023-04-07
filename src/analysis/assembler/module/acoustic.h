@@ -144,6 +144,8 @@ public:
 	};
 protected:
 	void initParameters();
+
+	size_t esize() { return 0; }
 };
 
 }

@@ -8,6 +8,8 @@ namespace espreso {
 
 template <size_t nodes, size_t gps, size_t ndim, size_t edim, size_t etype, class Physics>
 struct HeatSource: ActionOperator, Physics {
+	const char* name() const { return "HeatSource"; }
+
 	OutputParameterIterator rhs;
 
 	HeatSource(size_t interval, ParameterData &rhs)
@@ -40,6 +42,8 @@ template <size_t nodes, size_t gps, size_t ndim, size_t edim, size_t etype, clas
 
 template <size_t nodes, size_t gps, size_t edim, size_t etype, class Physics>
 struct BoundaryHeat<nodes, gps, 3, edim, etype, Physics>: ActionOperator, Physics {
+	const char* name() const { return "BoundaryHeat"; }
+
 	OutputParameterIterator rhs;
 	const double area;
 
@@ -76,6 +80,8 @@ struct BoundaryHeat<nodes, gps, 3, edim, etype, Physics>: ActionOperator, Physic
 
 template <size_t nodes, size_t gps, size_t edim, size_t etype, class Physics>
 struct BoundaryHeat<nodes, gps, 2, edim, etype, Physics>: ActionOperator, Physics {
+	const char* name() const { return "BoundaryHeat"; }
+
 	OutputParameterIterator rhs;
 	const double area;
 

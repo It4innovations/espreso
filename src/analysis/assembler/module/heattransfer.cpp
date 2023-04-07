@@ -465,51 +465,6 @@ void HeatTransfer::evaluate(SteadyState &scheme, step::Time &time)
 	update(scheme.K, scheme.f);
 }
 
-void HeatTransfer::dryrun()
-{
-	if (this->K == nullptr) {
-		this->K = new Matrix_Distributed<Matrix_CSR, double>();
-		this->K->mapping.elements.resize(info::mesh->elements->eintervals.size());
-
-		this->f = new Vector_Distributed<Vector_Dense, double>();
-		this->f->mapping.elements.resize(info::mesh->elements->eintervals.size());
-	}
-	info::ecf->output.results_selection.flux = !info::ecf->simple_output;
-	Assembler::measurements reassemble_time = Assembler::measurements();
-	Assembler::measurements   assemble_time = Assembler::measurements();
-	Assembler::measurements   solution_time = Assembler::measurements();
-	int numreps = 10;
-	for(int reps = 0; reps < numreps; reps++) {
-		// printf("assemble\n");
-		assemble_time += assemble(ActionOperator::Action::ASSEMBLE);
-		// printf("reassemble\n");
-		reassemble_time += assemble(ActionOperator::Action::REASSEMBLE);
-		// printf("solution\n");
-		solution_time += assemble(ActionOperator::Action::SOLUTION);
-	}
-
-	assemble_time.coreTime /= static_cast<double>(numreps);
-	reassemble_time.coreTime /= static_cast<double>(numreps);
-	solution_time.coreTime /= static_cast<double>(numreps);
-
-	assemble_time.preprocessTime /= static_cast<double>(numreps);
-	reassemble_time.preprocessTime /= static_cast<double>(numreps);
-	solution_time.preprocessTime /= static_cast<double>(numreps);
-
-	eslog::info("       = SIMD LOOP ASSEMBLE                                             %12.8f s = \n",   assemble_time.preprocessTime);
-	std::cout<<"SCALING: "<<assemble_time.preprocessTime<<std::endl;
-	eslog::info("       = SIMD LOOP ASSEMBLE                                             %12.8f s = \n",   assemble_time.coreTime);
-	std::cout<<"SCALING: "<<assemble_time.coreTime<<std::endl;
-	eslog::info("       = SIMD LOOP REASSEMBLE                                           %12.8f s = \n", reassemble_time.preprocessTime);
-	std::cout<<"SCALING: "<<reassemble_time.preprocessTime<<std::endl;
-	eslog::info("       = SIMD LOOP REASSEMBLE                                           %12.8f s = \n", reassemble_time.coreTime);
-	std::cout<<"SCALING: "<<reassemble_time.coreTime<<std::endl;
-	eslog::info("       = SIMD LOOP SOLUTION                                             %12.8f s = \n", solution_time.preprocessTime);
-	std::cout<<"SCALING: "<<solution_time.preprocessTime<<std::endl;
-	eslog::info("       = SIMD LOOP SOLUTION                                             %12.8f s = \n", solution_time.coreTime);
-	std::cout<<"SCALING: "<<solution_time.coreTime<<std::endl;
-}
-
 void HeatTransfer::initTemperatureAndThickness()
 {
 	generateElementExpression<ExternalNodeExpressionWithCoordinates>(etype, elementOps, settings.initial_temperature, [] (auto &element, const size_t &n, const size_t &s, const double &value) { element.temp[n][s] = value; });

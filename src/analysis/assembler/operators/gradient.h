@@ -9,6 +9,8 @@
 namespace espreso {
 
 struct TemperatureGradientBase: ActionOperator {
+	const char* name() const { return "TemperatureGradientBase"; }
+
 	TemperatureGradientBase(size_t interval, NamedData *gradient)
 	: gradient(gradient->data.data() + info::mesh->dimension * info::mesh->elements->eintervals[interval].begin)
 	{

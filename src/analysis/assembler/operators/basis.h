@@ -799,6 +799,7 @@ struct GaussPoints<Element::CODE::HEXA20, 20, 8, 3> {
 
 template <Element::CODE code, size_t nodes, size_t gps, size_t edim, size_t etype, class Physics>
 struct Basis: ActionOperator, Physics {
+	const char* name() const { return "Basis"; }
 
 	Basis()
 	{

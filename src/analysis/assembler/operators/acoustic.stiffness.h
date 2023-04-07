@@ -11,6 +11,8 @@
 namespace espreso {
 
 struct AcousticStiffness: public ActionOperator {
+	const char* name() const { return "AcousticStiffness"; }
+
 	AcousticStiffness(
 			int interval,
 			const ParameterData &dND,
@@ -81,6 +83,8 @@ struct Stiffness3DAcoustic: public AcousticStiffness {
 
 template <size_t nodes, size_t gps>
 struct AcousticMass: public ActionOperator {
+	const char* name() const { return "AcousticMass"; }
+
 	InputParameterIterator N, weight, determinant, density, speed_of_sound;
 	OutputParameterIterator mass;
 

@@ -16,6 +16,7 @@ public:
 
 	double evaluate(int t) const;
 
+	const char* expression() const { return "TABLE"; }
 protected:
 	std::vector<std::pair<double, double> > _table;
 };

@@ -8,6 +8,8 @@ namespace espreso {
 
 template <size_t nodes, size_t gps, size_t ndim, size_t edim, size_t etype, class Physics>
 struct DataDescriptorElementSize: ActionOperator, Physics {
+	const char* name() const { return "DataDescriptorElementSize"; }
+
 	DataDescriptorElementSize(size_t interval, std::vector<size_t> &esize)
 	{
 		esize[interval] = (sizeof(typename Physics::Element));

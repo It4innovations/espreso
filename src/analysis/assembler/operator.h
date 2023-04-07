@@ -24,6 +24,8 @@ struct ActionOperator {
 	virtual void setTime(double time, int t) {};
 	virtual void setFrequency(double frequency, int t) {};
 	virtual void move(int n) {};
+
+	virtual const char* name() const =0;
 };
 
 inline ActionOperator::Action  operator| (ActionOperator::Action  a1, ActionOperator::Action a2) { return static_cast<ActionOperator::Action>(static_cast<int>(a1) | static_cast<int>(a2)); }

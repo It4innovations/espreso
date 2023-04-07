@@ -12,6 +12,7 @@ template <size_t nodes, size_t gps, size_t ndim, size_t edim, size_t etype, clas
 
 template <size_t nodes, size_t gps, size_t etype, class Physics>
 struct Integration<nodes, gps, 2, 2, etype, Physics>: ActionOperator, Physics {
+	const char* name() const { return "Integration"; }
 
 	Integration(size_t interval)
 	{
@@ -56,6 +57,7 @@ struct Integration<nodes, gps, 2, 2, etype, Physics>: ActionOperator, Physics {
 
 template <size_t nodes, size_t gps, size_t etype, class Physics>
 struct Integration<nodes, gps, 3, 3, etype, Physics>: ActionOperator, Physics {
+	const char* name() const { return "Integration"; }
 
 	Integration(size_t interval)
 	{
@@ -121,6 +123,7 @@ struct Integration<nodes, gps, 3, 3, etype, Physics>: ActionOperator, Physics {
 
 template <size_t nodes, size_t gps, size_t etype, class Physics>
 struct Integration<nodes, gps, 3, 2, etype, Physics>: ActionOperator, Physics {
+	const char* name() const { return "Integration"; }
 
 	Integration(size_t region, size_t interval)
 	{
@@ -160,6 +163,7 @@ struct Integration<nodes, gps, 3, 2, etype, Physics>: ActionOperator, Physics {
 
 template <size_t nodes, size_t gps, size_t etype, class Physics>
 struct Integration<nodes, gps, 3, 1, etype, Physics>: ActionOperator, Physics {
+	const char* name() const { return "Integration"; }
 
 	Integration(size_t region, size_t interval)
 	{
@@ -192,6 +196,7 @@ struct Integration<nodes, gps, 3, 1, etype, Physics>: ActionOperator, Physics {
 
 template <size_t nodes, size_t gps, size_t etype, class Physics>
 struct Integration<nodes, gps, 2, 1, etype, Physics>: ActionOperator, Physics {
+	const char* name() const { return "Integration"; }
 
 	Integration(size_t region, size_t interval)
 	{
@@ -224,6 +229,7 @@ template <size_t nodes, size_t gps, size_t ndim, size_t edim, size_t etype, clas
 
 template <size_t nodes, size_t gps, size_t etype, class Physics>
 struct IntegrationWithNormal<nodes, gps, 3, 2, etype, Physics>: ActionOperator, Physics {
+	const char* name() const { return "IntegrationWithNormal"; }
 
 	IntegrationWithNormal(size_t region, size_t interval)
 	{
@@ -266,6 +272,7 @@ struct IntegrationWithNormal<nodes, gps, 3, 2, etype, Physics>: ActionOperator, 
 
 template <size_t nodes, size_t gps, size_t etype, class Physics>
 struct IntegrationWithNormal<nodes, gps, 3, 1, etype, Physics>: ActionOperator, Physics {
+	const char* name() const { return "IntegrationWithNormal"; }
 
 	IntegrationWithNormal(size_t region, size_t interval)
 	{
@@ -299,6 +306,7 @@ struct IntegrationWithNormal<nodes, gps, 3, 1, etype, Physics>: ActionOperator, 
 
 template <size_t nodes, size_t gps, size_t etype, class Physics>
 struct IntegrationWithNormal<nodes, gps, 2, 1, etype, Physics>: ActionOperator, Physics {
+	const char* name() const { return "IntegrationWithNormal"; }
 
 	IntegrationWithNormal(size_t region, size_t interval)
 	{
@@ -331,6 +339,8 @@ struct IntegrationWithNormal<nodes, gps, 2, 1, etype, Physics>: ActionOperator, 
 
 template <size_t nodes, size_t gps, size_t ndim, size_t edim, size_t etype, class Physics>
 struct Volume: ActionOperator, Physics {
+	const char* name() const { return "Volume"; }
+
 	double &volume, local;
 	Volume(size_t interval, std::vector<double> &volume): volume(volume[interval]), local(0)
 	{

@@ -10,6 +10,8 @@
 namespace espreso {
 
 struct TemperatureFluxBase: ActionOperator {
+	const char* name() const { return "TemperatureFluxBase"; }
+
 	TemperatureFluxBase(size_t interval, NamedData *flux)
 	: flux(flux->data.data() + info::mesh->dimension * info::mesh->elements->eintervals[interval].begin)
 	{

@@ -34,6 +34,7 @@ public:
 	bool needCoordinates(int t = 0) { return &getCoordinateX(t) != &parameters[t].front().value && &getCoordinateY(t) != &parameters[t].front().value && &getCoordinateZ(t) != &parameters[t].front().value; }
 
 	std::vector<std::vector<EvaluatorParameter> > parameters;
+	virtual const char* expression() const { return "null"; }
 };
 
 }

@@ -46,7 +46,6 @@ Assembler::measurements HeatTransfer::manualloop(ActionOperator::Action action, 
 	constexpr static double straightAngleRec = 1.0 / 180;
 
 	initStart = eslog::time();
-	// eslog::info("       = LOOP TYPE                                                           MANUAL = \n");
 
 	if (this->K == nullptr) {
 		return loop<HeatTransferDataDescriptor, nodes, gps, ndim, edim, ETYPE>(action, ops, elements);
@@ -238,10 +237,6 @@ Assembler::measurements HeatTransfer::manualloop(ActionOperator::Action action, 
 			end = eslog::time();
 		}
 	}
-
-
-
-
 
 	if (elements % SIMD::size) {
 		eslog::error("peel loop is not supported\n");

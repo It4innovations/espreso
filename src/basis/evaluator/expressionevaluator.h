@@ -26,7 +26,10 @@ public:
 		return _expression[t]->evaluate();
 	}
 
+	const char* expression() const { return _expr; }
+
 protected:
+	const char* _expr;
 	std::vector<Exprtk*> _expression;
 };
 
