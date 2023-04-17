@@ -10,6 +10,7 @@
 #include "basis/containers/point.h"
 #include "basis/containers/serializededata.h"
 #include "basis/utilities/packing.h"
+#include "math/simd/simd.h"
 
 using namespace espreso;
 
@@ -350,6 +351,7 @@ ElementData* ElementStore::appendData(int dimension, NamedData::DataType datatyp
 {
 	this->data.push_back(new ElementData(dimension, datatype, name));
 	data.back()->restriction = restriction;
+	data.back()->data.reserve((distribution.process.size + SIMD::size) * dimension);
 	data.back()->data.resize(distribution.process.size * dimension);
 	return this->data.back();
 }

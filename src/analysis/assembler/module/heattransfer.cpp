@@ -63,6 +63,7 @@ HeatTransfer::HeatTransfer(HeatTransfer *previous, HeatTransferConfiguration &se
 		}
 	}
 	cossin_conditions.resize(info::mesh->elements->eintervals.size());
+	subkernels.resize(info::mesh->elements->eintervals.size());
 }
 
 void HeatTransfer::initParameters()
@@ -254,6 +255,8 @@ void HeatTransfer::analyze()
 		eslog::info(" ============================================================================================= \n");
 	}
 
+	analyzeHybrid();
+
 	// we cannot generate functions since 'etype' is filled
 	generateBaseFunctions(etype, elementOps);
 	generateBaseFunctions(bfilter, boundaryOps);
@@ -401,6 +404,44 @@ void HeatTransfer::analyze()
 		eslog::globalerror("  PHYSICS CONFIGURATION FAILED                                                         \n");
 	}
 	eslog::info(" ============================================================================================= \n");
+}
+
+void HeatTransfer::analyzeHybrid()
+{
+	for(size_t i = 0; i < info::mesh->elements->eintervals.size(); ++i) {
+		const MaterialConfiguration *mat = info::mesh->materials[info::mesh->elements->eintervals[i].material];
+		bool advection = configuration.translation_motions.size() && settings.sigma > 0;
+		bool rotated = mat->coordinate_system.isRotated() && mat->thermal_conductivity.model != ThermalConductivityConfiguration::MODEL::ISOTROPIC;
+		bool cartesian = mat->coordinate_system.type == CoordinateSystemConfiguration::TYPE::CARTESIAN;
+		bool gpcoo = mat->thermal_conductivity.needCoordinates();
+		bool gptemp = mat->thermal_conductivity.needTemperature();
+
+		subkernels[i].coordinates.activate(info::mesh->elements->nodes->cbegin() + info::mesh->elements->eintervals[i].begin, info::mesh->elements->nodes->cend(), !cartesian || gpcoo);
+		subkernels[i].conductivity.activate(&mat->thermal_conductivity, !rotated && !advection);
+		if (rotated) {
+			subkernels[i].translation.activate(mat->coordinate_system, subkernels[i].conductivity.isconst && !advection);
+		}
+		subkernels[i].advection.activate(getExpression(i, configuration.translation_motions), (elements.stiffness.data->begin() + i)->data());
+
+		subkernels[i].K.activate((elements.stiffness.data->begin() + i)->data());
+		if (Results::gradient != nullptr) {
+			subkernels[i].gradient.activate(i, Results::gradient);
+		}
+		if (Results::flux != nullptr) {
+			subkernels[i].flux.activate(i, Results::flux);
+			subkernels[i].conductivity.action |= ActionOperator::Action::SOLUTION;
+			subkernels[i].translation.action |= ActionOperator::Action::SOLUTION;
+		}
+
+		if (Results::gradient != nullptr || Results::flux != nullptr || gptemp) {
+			subkernels[i].temperature.activate(info::mesh->elements->nodes->cbegin() + info::mesh->elements->eintervals[i].begin, info::mesh->elements->nodes->cend(), Results::temperature->data.data(), gptemp);
+			if (!gptemp) {
+				subkernels[i].temperature.action = ActionOperator::SOLUTION;
+			}
+		}
+	}
+
+	assemble(ActionOperator::PREPROCESS);
 }
 
 void HeatTransfer::connect(SteadyState &scheme)

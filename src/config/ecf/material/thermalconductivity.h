@@ -22,6 +22,9 @@ struct ThermalConductivityConfiguration: public ECFDescription {
 	TensorConfiguration values;
 
 	ThermalConductivityConfiguration(DIMENSION *D);
+
+	bool needCoordinates() const;
+	bool needTemperature() const;
 };
 
 }

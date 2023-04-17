@@ -78,7 +78,8 @@ struct ECF: public ECFDescription {
 	enum class LOOP {
 		INHERITANCE,
 		CONDITIONS,
-		MANUAL
+		MANUAL,
+		HYBRID
 	} loop;
 	PhysicsConfiguration::TYPE physics;
 	ThermoElasticityConfiguration thermo_elasticity_2d;

@@ -66,6 +66,8 @@ public:
 	Assembler(PhysicsConfiguration &settings);
 	virtual ~Assembler();
 
+	static ECFExpression* getExpression(size_t interval, std::map<std::string, ECFExpression> &settings);
+	static ECFExpressionVector* getExpression(size_t interval, std::map<std::string, ECFExpressionVector> &settings);
 	static Evaluator* getEvaluator(size_t interval, std::map<std::string, ECFExpression> &settings);
 	static Evaluator* getEvaluator(size_t interval, std::map<std::string, ECFExpressionVector> &settings, int dim);
 
@@ -84,6 +86,7 @@ protected:
 	virtual measurements instantiate           (ActionOperator::Action action, int code, int etype, const std::vector<ActionOperator*> &ops, size_t interval, esint elements) =0;
 	virtual measurements instantiateConditions (ActionOperator::Action action, int code, int etype, const std::vector<ActionOperator*> &ops, size_t interval, esint elements) =0;
 	virtual measurements instantiateManual     (ActionOperator::Action action, int code, int etype, const std::vector<ActionOperator*> &ops, size_t interval, esint elements) =0;
+	virtual measurements instantiateHybrid     (ActionOperator::Action action, int code, int etype, const std::vector<ActionOperator*> &ops, size_t interval, esint elements) =0;
 
 	template <template <size_t, size_t, size_t, size_t, size_t> class DataDescriptor, size_t nodes, size_t gps, size_t ndim, size_t edim, size_t etype>
 	measurements loop(ActionOperator::Action action, const std::vector<ActionOperator*> &ops, esint elements);

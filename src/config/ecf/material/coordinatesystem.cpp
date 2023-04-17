@@ -40,5 +40,17 @@ CoordinateSystemConfiguration::CoordinateSystemConfiguration(DIMENSION *D)
 }
 
 
+bool CoordinateSystemConfiguration::isRotated() const
+{
+	if (type == TYPE::CARTESIAN) {
+		switch (*dimension) {
+		case DIMENSION::D2: return rotation.z.isset;
+		case DIMENSION::D3: return rotation.x.isset | rotation.y.isset | rotation.z.isset;
+		default: return false;
+		}
+	}
+	return true;
+}
+
 
 

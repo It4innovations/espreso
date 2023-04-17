@@ -51,6 +51,7 @@ struct HeatTransferDataDescriptor<nodes, gps, 3, edim, HeatTransferElementType::
 
 	struct Element {
 		struct {
+			alignas(SIMD::size * sizeof(double)) SIMD conductivity[gps];
 			alignas(SIMD::size * sizeof(double)) SIMD density     [gps];
 			alignas(SIMD::size * sizeof(double)) SIMD heatCapacity[gps];
 			alignas(SIMD::size * sizeof(double)) SIMD heatSource  [gps];
@@ -91,6 +92,7 @@ struct HeatTransferDataDescriptor<nodes, gps, 2, edim, HeatTransferElementType::
 		struct {
 			alignas(SIMD::size * sizeof(double)) SIMD thickness[gps];
 
+			alignas(SIMD::size * sizeof(double)) SIMD conductivity[gps];
 			alignas(SIMD::size * sizeof(double)) SIMD density     [gps];
 			alignas(SIMD::size * sizeof(double)) SIMD heatCapacity[gps];
 			alignas(SIMD::size * sizeof(double)) SIMD heatSource  [gps];
@@ -215,6 +217,7 @@ struct HeatTransferDataDescriptor<nodes, gps, 3, edim, HeatTransferElementType::
 
 	struct Element {
 		struct {
+			alignas(SIMD::size * sizeof(double)) SIMD conductivity[gps];
 			alignas(SIMD::size * sizeof(double)) SIMD density     [gps];
 			alignas(SIMD::size * sizeof(double)) SIMD heatCapacity[gps];
 			alignas(SIMD::size * sizeof(double)) SIMD heatSource  [gps];
@@ -256,6 +259,7 @@ struct HeatTransferDataDescriptor<nodes, gps, 2, edim, HeatTransferElementType::
 		struct {
 			alignas(SIMD::size * sizeof(double)) SIMD thickness[gps];
 
+			alignas(SIMD::size * sizeof(double)) SIMD conductivity[gps];
 			alignas(SIMD::size * sizeof(double)) SIMD density     [gps];
 			alignas(SIMD::size * sizeof(double)) SIMD heatCapacity[gps];
 			alignas(SIMD::size * sizeof(double)) SIMD heatSource  [gps];

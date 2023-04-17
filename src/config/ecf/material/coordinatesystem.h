@@ -24,6 +24,8 @@ struct CoordinateSystemConfiguration: public ECFDescription {
 	ECFExpressionVector center;
 
 	CoordinateSystemConfiguration(DIMENSION *D);
+
+	bool isRotated() const;
 };
 
 

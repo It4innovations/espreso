@@ -73,3 +73,23 @@ espreso::ThermalConductivityConfiguration::ThermalConductivityConfiguration(DIME
 			.allowonly([&] () { return model == MODEL::ANISOTROPIC && *dimension == DIMENSION::D3; })
 			.addconstraint(ECFCondition(model, ECFCondition::EQUALS, MODEL::ANISOTROPIC)));
 }
+
+bool espreso::ThermalConductivityConfiguration::needCoordinates() const
+{
+	for (size_t i = 0; i < values.values.size(); ++i) {
+		if (values.values[i].evaluator && values.values[i].evaluator->needCoordinates()) {
+			return true;
+		}
+	}
+	return false;
+}
+
+bool espreso::ThermalConductivityConfiguration::needTemperature() const
+{
+	for (size_t i = 0; i < values.values.size(); ++i) {
+		if (values.values[i].evaluator && values.values[i].evaluator->needTemperature()) {
+			return true;
+		}
+	}
+	return false;
+}

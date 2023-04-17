@@ -12,21 +12,8 @@
 #include "math/primitives/matrix_info.h"
 #include "math/physics/matrix_base.h"
 
-//#include "analysis/assembler/operators/basis.h"
-//#include "analysis/assembler/operators/initialtemperature.h"
-//#include "analysis/assembler/operators/thickness.h"
-//#include "analysis/assembler/operators/coordinates.h"
-//#include "analysis/assembler/operators/temperature.h"
-//#include "analysis/assembler/operators/integration.h"
-//#include "analysis/assembler/operators/expression.h"
-//#include "analysis/assembler/operators/advection.h"
-//#include "analysis/assembler/operators/stabilization.cau.h"
-//#include "analysis/assembler/operators/storage.h"
-//#include "analysis/assembler/operators/conductivity.coordinatesystem.h"
-//#include "analysis/assembler/operators/heattransfer.f.h"
-//#include "analysis/assembler/operators/heattransfer.K.h"
-//#include "analysis/assembler/operators/flux.h"
-//#include "analysis/assembler/operators/gradient.h"
+#include "analysis/assembler/subkernel/subkernels.h"
+#include "analysis/assembler/subkernel/heattransfer/subkernels.h"
 
 #include <cstddef>
 #include <map>
@@ -53,13 +40,27 @@ class HeatTransfer: public Assembler
 		};
 	};
 
-	struct Operators {
-
-	};
 public:
+	struct SubKernels {
+		BasisKernel basis;
+		CopyCoordinatesKernel coordinates;
+		TemperatureKernel temperature;
+		IntegrationKernel integration;
+		ConductivityKernel conductivity;
+		HeatTransferCoordinateSystemKernel translation;
+		AdvectionKernel advection;
+		HeatTransferMatrixKernel K;
+
+		TemperatureGradientKernel gradient;
+		TemperatureFluxKernel flux;
+
+		std::vector<ExternalExpressionKernel*> expressions;
+	};
+
 	HeatTransfer(HeatTransfer *previous, HeatTransferConfiguration &settings, HeatTransferLoadStepConfiguration &configuration);
 
 	void analyze();
+	void analyzeHybrid();
 
 	void connect(SteadyState &scheme);
 	void evaluate(SteadyState &scheme, step::Time &time);
@@ -98,9 +99,18 @@ protected:
 	Assembler::measurements instantiateManual(ActionOperator::Action action, int code, int etype, const std::vector<ActionOperator*> &ops, size_t interval, esint elements);
 
 
+	template <int etype> Assembler::measurements instantiateHybrid2D(ActionOperator::Action action, int code, const std::vector<ActionOperator*> &ops, size_t interval, esint elements);
+	template <int etype> Assembler::measurements instantiateHybrid3D(ActionOperator::Action action, int code, const std::vector<ActionOperator*> &ops, size_t interval, esint elements);
+	Assembler::measurements instantiateHybrid(ActionOperator::Action action, int code, int etype, const std::vector<ActionOperator*> &ops, size_t interval, esint elements);
+
 	template <template <size_t, size_t, size_t, size_t, size_t> class DataDescriptor, size_t nodes, size_t gps, size_t ndim, size_t edim, size_t etype>
 	Assembler::measurements conditionsloop(ActionOperator::Action action, const std::vector<ActionOperator*> &ops, size_t interval, esint elements);
 	
+	template <template <size_t, size_t, size_t, size_t, size_t> class DataDescriptor, Element::CODE code, size_t nodes, size_t gps, size_t ndim, size_t edim, size_t etype>
+	Assembler::measurements hybridloop(ActionOperator::Action action, const std::vector<ActionOperator*> &ops, size_t interval, esint elements);
+	template <template <size_t, size_t, size_t, size_t, size_t> class DataDescriptor, size_t nodes, size_t gps, size_t ndim, size_t edim, size_t etype>
+	Assembler::measurements hybridpreprocess(const std::vector<ActionOperator*> &ops, size_t interval, esint elements);
+
 	template <template <size_t, size_t, size_t, size_t, size_t> class DataDescriptor, size_t nodes, size_t gps, size_t ndim, size_t edim, size_t ETYPE>
 	Assembler::measurements manualloop(ActionOperator::Action action, const std::vector<ActionOperator*> &ops, size_t interval, esint elements,
 		typename std::enable_if<
@@ -164,6 +174,7 @@ protected:
 	size_t esize();
 
 	std::vector<std::vector<double> > cossin_conditions;
+	std::vector<SubKernels> subkernels;
 private:
 	void generateConductivity();
 };

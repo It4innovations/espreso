@@ -30,6 +30,7 @@ public:
 
 	double& getTemperature(int t = 0) { return getParameter("TEMPERATURE", t); }
 
+	bool isConst() const { return parameters.front().size() == 1; }
 	bool needTemperature(int t = 0) { return &getTemperature(t) != &parameters[t].front().value; }
 	bool needCoordinates(int t = 0) { return &getCoordinateX(t) != &parameters[t].front().value && &getCoordinateY(t) != &parameters[t].front().value && &getCoordinateZ(t) != &parameters[t].front().value; }
 

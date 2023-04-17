@@ -50,6 +50,7 @@ public:
 	measurements instantiate           (ActionOperator::Action action, int code, int etype, const std::vector<ActionOperator*> &ops, size_t interval, esint elements) { return measurements(); }
 	measurements instantiateConditions (ActionOperator::Action action, int code, int etype, const std::vector<ActionOperator*> &ops, size_t interval, esint elements) { return measurements(); }
 	measurements instantiateManual     (ActionOperator::Action action, int code, int etype, const std::vector<ActionOperator*> &ops, size_t interval, esint elements) { return measurements(); }
+	measurements instantiateHybrid     (ActionOperator::Action action, int code, int etype, const std::vector<ActionOperator*> &ops, size_t interval, esint elements) { return measurements(); }
 
 	void connect(Harmonic &scheme);
 	void evaluate(Harmonic &scheme);

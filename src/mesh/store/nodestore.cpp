@@ -11,6 +11,7 @@
 #include "basis/containers/point.h"
 #include "basis/containers/serializededata.h"
 #include "basis/utilities/packing.h"
+#include "math/simd/simd.h"
 
 using namespace espreso;
 
@@ -272,6 +273,7 @@ NodeData* NodeStore::appendData(int dimension, NamedData::DataType datatype, con
 {
 	data.push_back(new NodeData(dimension, datatype, name));
 	data.back()->restriction = restriction;
+	data.back()->data.reserve(dimension * (size + SIMD::size));
 	data.back()->data.resize(dimension * size);
 	return data.back();
 }

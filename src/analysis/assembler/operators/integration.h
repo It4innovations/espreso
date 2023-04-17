@@ -3,7 +3,6 @@
 #define SRC_PHYSICS_ASSEMBLER_OPERATORS_INTEGRATION_H_
 
 #include "analysis/assembler/operator.h"
-#include "analysis/assembler/module/heattransfer.h"
 #include "analysis/assembler/parameter.h"
 
 namespace espreso {

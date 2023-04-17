@@ -138,6 +138,7 @@ Assembler::measurements Assembler::assemble(ActionOperator::Action action)
 					case ECF::LOOP::INHERITANCE: times += instantiate          (action, info::mesh->elements->eintervals[i].code, etype[i], elementOps[i], i, elements); break;
 					case ECF::LOOP::CONDITIONS : times += instantiateConditions(action, info::mesh->elements->eintervals[i].code, etype[i], elementOps[i], i, elements); break;
 					case ECF::LOOP::MANUAL     : times += instantiateManual    (action, info::mesh->elements->eintervals[i].code, etype[i], elementOps[i], i, elements); break;
+					case ECF::LOOP::HYBRID     : times += instantiateHybrid    (action, info::mesh->elements->eintervals[i].code, etype[i], elementOps[i], i, elements); break;
 					}
 				}
 			}
@@ -444,6 +445,26 @@ bool Assembler::checkBoundaryParameter(const std::string &name, std::map<std::st
 	}
 	eslog::info("  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  \n");
 	return true;
+}
+
+ECFExpression* Assembler::getExpression(size_t interval, std::map<std::string, ECFExpression> &settings)
+{
+	int region = info::mesh->elements->eintervals[interval].region;
+	auto it = settings.find(info::mesh->elementsRegions[region]->name);
+	if (it == settings.end()) {
+		it = settings.find(info::mesh->elementsRegions[0]->name);
+	}
+	return it != settings.end() ? &it->second : nullptr;
+}
+
+ECFExpressionVector* Assembler::getExpression(size_t interval, std::map<std::string, ECFExpressionVector> &settings)
+{
+	int region = info::mesh->elements->eintervals[interval].region;
+	auto it = settings.find(info::mesh->elementsRegions[region]->name);
+	if (it == settings.end()) {
+		it = settings.find(info::mesh->elementsRegions[0]->name);
+	}
+	return it != settings.end() ? &it->second : nullptr;
 }
 
 Evaluator* Assembler::getEvaluator(size_t interval, std::map<std::string, ECFExpression> &settings)
