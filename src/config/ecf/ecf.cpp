@@ -156,15 +156,6 @@ void ECF::_init()
 			.setdescription({ "Always call update conductivity function." })
 			.setdatatype({ ECFDataType::BOOL }));
 
-	loop = LOOP::HYBRID;
-	REGISTER(loop, ECFMetaData()
-			.setdescription({ "Data interpolation" })
-			.setdatatype({ ECFDataType::OPTION })
-			.addoption(ECFOption().setname("INHERITANCE").setdescription("Operator inheritance."))
-			.addoption(ECFOption().setname("CONDITIONS").setdescription("Operators with if statements."))
-			.addoption(ECFOption().setname("MANUAL").setdescription("Manually optimized operators."))
-			.addoption(ECFOption().setname("HYBRID").setdescription("Combined inheritance and conditions.")));
-
 	physics = PhysicsConfiguration::TYPE::HEAT_TRANSFER_3D;
 	REGISTER(physics, ECFMetaData()
 			.setdescription({ "Physics" })

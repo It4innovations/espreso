@@ -38,11 +38,6 @@ void HeatSteadyStateLinear::analyze()
 	info::mesh->output->updateMonitors(step::TYPE::TIME);
 }
 
-void HeatSteadyStateLinear::dryrun()
-{
-	assembler.dryrun();
-}
-
 void HeatSteadyStateLinear::run(step::Step &step)
 {
 	initSystem(system, this);

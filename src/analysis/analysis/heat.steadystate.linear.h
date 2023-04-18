@@ -21,8 +21,6 @@ public:
 	void analyze();
 	void run(step::Step &step);
 
-	void dryrun();
-
 	step::Time time;
 	HeatTransferConfiguration &settings;
 	HeatTransferLoadStepConfiguration &configuration;

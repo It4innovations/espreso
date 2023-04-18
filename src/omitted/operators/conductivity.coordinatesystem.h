@@ -1,46 +1,36 @@
 
-#ifndef SRC_ANALYSIS_ASSEMBLER_SUBKERNEL_HEATTRANSFER_COORDINATESYSTEM_H_
-#define SRC_ANALYSIS_ASSEMBLER_SUBKERNEL_HEATTRANSFER_COORDINATESYSTEM_H_
+#ifndef SRC_ANALYSIS_ASSEMBLER_OPERATORS_CONDUCTIVITY_COORDINATESYSTEM_H_
+#define SRC_ANALYSIS_ASSEMBLER_OPERATORS_CONDUCTIVITY_COORDINATESYSTEM_H_
 
-#include "subkernels.h"
+#include <analysis/assembler/subkernel/operator.h>
+#include "analysis/assembler/module/heattransfer.element.h"
+#include "math/simd/simd.h"
+
 #include <cmath>
 
 namespace espreso {
 
-struct HeatTransferCoordinateSystem: SubKernel {
-	const char* name() const { return "HeatTransferCoordinateSystemKernel"; }
-
-	const CoordinateSystemConfiguration *cooSystem;
-	CoordinateSystemConfiguration::TYPE type;
-
-	HeatTransferCoordinateSystem()
-	: cooSystem(nullptr), type(CoordinateSystemConfiguration::TYPE::CARTESIAN)
+struct HeatTransferCoordinateSystem: ActionOperator {
+	const char* name() const { return "HeatTransferCoordinateSystem"; }
+	HeatTransferCoordinateSystem(size_t interval)
 	{
-		action = Assembler::ASSEMBLE | Assembler::REASSEMBLE;
-	}
-
-	void activate(const CoordinateSystemConfiguration &cooSystem, int isconst)
-	{
-		this->cooSystem = &cooSystem;
-		this->type = cooSystem.type;
-		this->isconst = isconst;
-		isactive = 1;
-		switch (this->type) {
-		case CoordinateSystemConfiguration::TYPE::CYLINDRICAL: this->isconst = 0; break;
-		case CoordinateSystemConfiguration::TYPE::SPHERICAL:   this->isconst = 0; break;
-		}
+		action = Action::ASSEMBLE | Action::REASSEMBLE | Action::SOLUTION;
 	}
 };
 
-template <size_t gps, size_t ndim, class Physics> struct HeatTransferCoordinateSystemCartesian;
-template <size_t gps, size_t ndim, class Physics> struct HeatTransferCoordinateSystemCylindric;
 
-template <size_t gps, class Physics>
-struct HeatTransferCoordinateSystemCartesian<gps, 2, Physics> {
+template <size_t nodes, size_t gps, size_t ndim, size_t edim, size_t etype, class Physics> struct HeatTransferCoordinateSystemCartesian;
+template <size_t nodes, size_t gps, size_t ndim, size_t edim, size_t etype, class Physics> struct HeatTransferCoordinateSystemCylindric;
+template <size_t nodes, size_t gps, size_t ndim, size_t edim, size_t etype, class Physics> struct HeatTransferCoordinateSystemSpherical;
+template <size_t nodes, size_t gps, size_t ndim, size_t edim, size_t etype, class Physics> struct HeatTransferCoordinateSystemApply;
+
+template <size_t nodes, size_t gps, size_t edim, size_t etype, class Physics>
+struct HeatTransferCoordinateSystemCartesian<nodes, gps, 2, edim, etype, Physics>: HeatTransferCoordinateSystem, Physics {
+	using HeatTransferCoordinateSystem::HeatTransferCoordinateSystem;
 
 	constexpr static double straightAngleRec = 1.0 / 180;
 
-	static void simd(typename Physics::Element &element)
+	void simd(typename Physics::Element &element)
 	{
 		for (size_t gp = 0; gp < gps; ++gp) {
 			SIMD angle = element.ecf.center[gp][0];
@@ -52,12 +42,13 @@ struct HeatTransferCoordinateSystemCartesian<gps, 2, Physics> {
 	}
 };
 
-template <size_t gps, class Physics>
-struct HeatTransferCoordinateSystemCartesian<gps, 3, Physics> {
+template <size_t nodes, size_t gps, size_t edim, size_t etype, class Physics>
+struct HeatTransferCoordinateSystemCartesian<nodes, gps, 3, edim, etype, Physics>: HeatTransferCoordinateSystem, Physics {
+	using HeatTransferCoordinateSystem::HeatTransferCoordinateSystem;
 
 	constexpr static double straightAngleRec = 1.0 / 180;
 
-	static void simd(typename Physics::Element &element)
+	void simd(typename Physics::Element &element)
 	{
 		for (size_t gp = 0; gp < gps; ++gp) {
 			SIMD angleX = element.ecf.center[gp][0];
@@ -75,10 +66,15 @@ struct HeatTransferCoordinateSystemCartesian<gps, 3, Physics> {
 	}
 };
 
-template <size_t gps, class Physics>
-struct HeatTransferCoordinateSystemCylindric<gps, 2, Physics> {
+template <size_t nodes, size_t gps, size_t edim, size_t etype, class Physics>
+struct HeatTransferCoordinateSystemCylindric<nodes, gps, 2, edim, etype, Physics>: HeatTransferCoordinateSystem, Physics {
 
-	static void simd(typename Physics::Element &element)
+	HeatTransferCoordinateSystemCylindric(size_t interval): HeatTransferCoordinateSystem(interval)
+	{
+		isconst = false;
+	}
+
+	void simd(typename Physics::Element &element)
 	{
 		for (size_t gp = 0; gp < gps; ++gp) {
 			SIMD cooX =    element.gpcoords[gp][0];
@@ -96,10 +92,15 @@ struct HeatTransferCoordinateSystemCylindric<gps, 2, Physics> {
 	}
 };
 
-template <size_t gps, class Physics>
-struct HeatTransferCoordinateSystemCylindric<gps, 3, Physics> {
+template <size_t nodes, size_t gps, size_t edim, size_t etype, class Physics>
+struct HeatTransferCoordinateSystemCylindric<nodes, gps, 3, edim, etype, Physics>: HeatTransferCoordinateSystem, Physics {
 
-	static void simd(typename Physics::Element &element)
+	HeatTransferCoordinateSystemCylindric(size_t interval): HeatTransferCoordinateSystem(interval)
+	{
+		isconst = false;
+	}
+
+	void simd(typename Physics::Element &element)
 	{
 		for (size_t gp = 0; gp < gps; ++gp) {
 			SIMD cooX =    element.gpcoords[gp][0];
@@ -121,10 +122,15 @@ struct HeatTransferCoordinateSystemCylindric<gps, 3, Physics> {
 	}
 };
 
-template <size_t gps, class Physics>
-struct HeatTransferCoordinateSystemSpherical {
+template <size_t nodes, size_t gps, size_t edim, size_t etype, class Physics>
+struct HeatTransferCoordinateSystemSpherical<nodes, gps, 3, edim, etype, Physics>: HeatTransferCoordinateSystem, Physics {
 
-	static void simd(typename Physics::Element &element)
+	HeatTransferCoordinateSystemSpherical(size_t interval): HeatTransferCoordinateSystem(interval)
+	{
+		isconst = false;
+	}
+
+	void simd(typename Physics::Element &element)
 	{
 		for (size_t gp = 0; gp < gps; ++gp) {
 			SIMD x = element.gpcoords[gp][0] - element.ecf.center[gp][0];
@@ -145,15 +151,9 @@ struct HeatTransferCoordinateSystemSpherical {
 	}
 };
 
-template <size_t gps, size_t ndim, size_t etype, class Physics> struct HeatTransferCoordinateSystemKernel: HeatTransferCoordinateSystem, Physics {
-	HeatTransferCoordinateSystemKernel(const HeatTransferCoordinateSystem &base): HeatTransferCoordinateSystem(base) {}
-
-	void simd(typename Physics::Element &element) {}
-};
-
-template <size_t gps, class Physics>
-struct HeatTransferCoordinateSystemKernel<gps, 2, HeatTransferElementType::SYMMETRIC_GENERAL, Physics>: HeatTransferCoordinateSystem, Physics {
-	HeatTransferCoordinateSystemKernel(const HeatTransferCoordinateSystem &base): HeatTransferCoordinateSystem(base) {}
+template <size_t nodes, size_t gps, size_t edim, class Physics>
+struct HeatTransferCoordinateSystemApply<nodes, gps, 2, edim, HeatTransferElementType::SYMMETRIC_GENERAL, Physics>: HeatTransferCoordinateSystem, Physics {
+	using HeatTransferCoordinateSystem::HeatTransferCoordinateSystem;
 
 	// |cos , -sin| |c[0] , c[2]| | cos , sin|
 	// |sin ,  cos| |c[3] , c[1]| |-sin , cos|
@@ -162,11 +162,6 @@ struct HeatTransferCoordinateSystemKernel<gps, 2, HeatTransferElementType::SYMME
 
 	void simd(typename Physics::Element &element)
 	{
-		switch (type) {
-		case CoordinateSystemConfiguration::TYPE::CARTESIAN:   HeatTransferCoordinateSystemCartesian<gps, 2, Physics>::simd(element); break;
-		case CoordinateSystemConfiguration::TYPE::CYLINDRICAL: HeatTransferCoordinateSystemCylindric<gps, 2, Physics>::simd(element); break;
-		}
-
 		for (size_t gp = 0; gp < gps; ++gp) {
 			SIMD c00 = element.ecf.conductivity[gp][0];
 			SIMD c01 = element.ecf.conductivity[gp][1], c11 = element.ecf.conductivity[gp][2];
@@ -180,9 +175,9 @@ struct HeatTransferCoordinateSystemKernel<gps, 2, HeatTransferElementType::SYMME
 	}
 };
 
-template <size_t gps, class Physics>
-struct HeatTransferCoordinateSystemKernel<gps, 2, HeatTransferElementType::ASYMMETRIC_GENERAL, Physics>: HeatTransferCoordinateSystem, Physics {
-	HeatTransferCoordinateSystemKernel(const HeatTransferCoordinateSystem &base): HeatTransferCoordinateSystem(base) {}
+template <size_t nodes, size_t gps, size_t edim, class Physics>
+struct HeatTransferCoordinateSystemApply<nodes, gps, 2, edim, HeatTransferElementType::ASYMMETRIC_GENERAL, Physics>: HeatTransferCoordinateSystem, Physics {
+	using HeatTransferCoordinateSystem::HeatTransferCoordinateSystem;
 
 	// |cos , -sin| |c[0] , c[2]| | cos , sin|
 	// |sin ,  cos| |c[3] , c[1]| |-sin , cos|
@@ -191,11 +186,6 @@ struct HeatTransferCoordinateSystemKernel<gps, 2, HeatTransferElementType::ASYMM
 
 	void simd(typename Physics::Element &element)
 	{
-		switch (type) {
-		case CoordinateSystemConfiguration::TYPE::CARTESIAN:   HeatTransferCoordinateSystemCartesian<gps, 2, Physics>::simd(element); break;
-		case CoordinateSystemConfiguration::TYPE::CYLINDRICAL: HeatTransferCoordinateSystemCylindric<gps, 2, Physics>::simd(element); break;
-		}
-
 		for (size_t gp = 0; gp < gps; ++gp) {
 			SIMD c00 = element.ecf.conductivity[gp][0], c10 = element.ecf.conductivity[gp][2];
 			SIMD c01 = element.ecf.conductivity[gp][1], c11 = element.ecf.conductivity[gp][3];
@@ -210,18 +200,12 @@ struct HeatTransferCoordinateSystemKernel<gps, 2, HeatTransferElementType::ASYMM
 	}
 };
 
-template <size_t gps, class Physics>
-struct HeatTransferCoordinateSystemKernel<gps, 3, HeatTransferElementType::SYMMETRIC_GENERAL, Physics>: HeatTransferCoordinateSystem, Physics {
-	HeatTransferCoordinateSystemKernel(const HeatTransferCoordinateSystem &base): HeatTransferCoordinateSystem(base) {}
+template <size_t nodes, size_t gps, size_t edim, class Physics>
+struct HeatTransferCoordinateSystemApply<nodes, gps, 3, edim, HeatTransferElementType::SYMMETRIC_GENERAL, Physics>: HeatTransferCoordinateSystem, Physics {
+	using HeatTransferCoordinateSystem::HeatTransferCoordinateSystem;
 
 	void simd(typename Physics::Element &element)
 	{
-		switch (type) {
-		case CoordinateSystemConfiguration::TYPE::CARTESIAN:   HeatTransferCoordinateSystemCartesian<gps, 3, Physics>::simd(element); break;
-		case CoordinateSystemConfiguration::TYPE::CYLINDRICAL: HeatTransferCoordinateSystemCylindric<gps, 3, Physics>::simd(element); break;
-		case CoordinateSystemConfiguration::TYPE::SPHERICAL:   HeatTransferCoordinateSystemSpherical<gps, Physics>::simd(element); break;
-		}
-
 		for (size_t gp = 0; gp < gps; ++gp) {
 			SIMD cos0 = element.cossin[gp][0];
 			SIMD cos1 = element.cossin[gp][1];
@@ -265,18 +249,12 @@ struct HeatTransferCoordinateSystemKernel<gps, 3, HeatTransferElementType::SYMME
 	}
 };
 
-template <size_t gps, class Physics>
-struct HeatTransferCoordinateSystemKernel<gps, 3, HeatTransferElementType::ASYMMETRIC_GENERAL, Physics>: HeatTransferCoordinateSystem, Physics {
-	HeatTransferCoordinateSystemKernel(const HeatTransferCoordinateSystem &base): HeatTransferCoordinateSystem(base) {}
+template <size_t nodes, size_t gps, size_t edim, class Physics>
+struct HeatTransferCoordinateSystemApply<nodes, gps, 3, edim, HeatTransferElementType::ASYMMETRIC_GENERAL, Physics>: HeatTransferCoordinateSystem, Physics {
+	using HeatTransferCoordinateSystem::HeatTransferCoordinateSystem;
 
 	void simd(typename Physics::Element &element)
 	{
-		switch (type) {
-		case CoordinateSystemConfiguration::TYPE::CARTESIAN:   HeatTransferCoordinateSystemCartesian<gps, 3, Physics>::simd(element); break;
-		case CoordinateSystemConfiguration::TYPE::CYLINDRICAL: HeatTransferCoordinateSystemCylindric<gps, 3, Physics>::simd(element); break;
-		case CoordinateSystemConfiguration::TYPE::SPHERICAL:   HeatTransferCoordinateSystemSpherical<gps, Physics>::simd(element); break;
-		}
-
 		for (size_t gp = 0; gp < gps; ++gp) {
 			SIMD cos0 = element.cossin[gp][0];
 			SIMD cos1 = element.cossin[gp][1];
@@ -325,4 +303,4 @@ struct HeatTransferCoordinateSystemKernel<gps, 3, HeatTransferElementType::ASYMM
 
 }
 
-#endif /* SRC_ANALYSIS_ASSEMBLER_SUBKERNEL_HEATTRANSFER_COORDINATESYSTEM_H_ */
+#endif /* SRC_ANALYSIS_ASSEMBLER_OPERATORS_CONDUCTIVITY_COORDINATESYSTEM_H_ */

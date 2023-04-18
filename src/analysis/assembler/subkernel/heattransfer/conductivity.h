@@ -6,12 +6,33 @@
 
 namespace espreso {
 
-template <size_t gps, size_t ndim, size_t etype, class Physics> struct ConductivitySubKernel;
+struct Conductivity: SubKernel {
+	const char* name() const { return "ConductivityKernel"; }
+
+	Conductivity()
+	: conductivity(nullptr), direct(true)
+	{
+		action = Assembler::ASSEMBLE | Assembler::REASSEMBLE;
+	}
+
+	void activate(const ThermalConductivityConfiguration *conductivity, bool direct)
+	{
+		this->conductivity = conductivity;
+		this->direct = direct;
+		this->isactive = 1;
+	}
+
+	const ThermalConductivityConfiguration *conductivity;
+	bool direct;
+};
+
+template <size_t gps, size_t ndim, size_t etype, class Physics> struct ConductivityKernel;
 
 template <size_t gps, size_t ndim, class Physics>
-struct ConductivitySubKernel<gps, ndim, HeatTransferElementType::SYMMETRIC_ISOTROPIC, Physics>: ConductivityKernel, Physics {
-	ConductivitySubKernel(const ConductivityKernel &base)
-	: ConductivityKernel(base), kxx(this->conductivity->values.get(0, 0).evaluator)
+struct ConductivityKernel<gps, ndim, HeatTransferElementType::SYMMETRIC_ISOTROPIC, Physics>: Conductivity, Physics {
+	ConductivityKernel(const Conductivity &base)
+	: Conductivity(base),
+	  kxx(this->conductivity->values.get(0, 0).evaluator)
 	{
 		isconst = kxx->isConst();
 	}
@@ -37,9 +58,10 @@ struct ConductivitySubKernel<gps, ndim, HeatTransferElementType::SYMMETRIC_ISOTR
 };
 
 template <size_t gps, size_t ndim, class Physics>
-struct ConductivitySubKernel<gps, ndim, HeatTransferElementType::ASYMMETRIC_ISOTROPIC, Physics>: ConductivityKernel, Physics {
-	ConductivitySubKernel(const ConductivityKernel &base)
-	: ConductivityKernel(base), kxx(this->conductivity->values.get(0, 0).evaluator)
+struct ConductivityKernel<gps, ndim, HeatTransferElementType::ASYMMETRIC_ISOTROPIC, Physics>: Conductivity, Physics {
+	ConductivityKernel(const Conductivity &base)
+	: Conductivity(base),
+	  kxx(this->conductivity->values.get(0, 0).evaluator)
 	{
 		isconst = kxx->isConst();
 	}
@@ -65,9 +87,9 @@ struct ConductivitySubKernel<gps, ndim, HeatTransferElementType::ASYMMETRIC_ISOT
 };
 
 template <size_t gps, class Physics>
-struct ConductivitySubKernel<gps, 2, HeatTransferElementType::SYMMETRIC_GENERAL, Physics>: ConductivityKernel, Physics {
-	ConductivitySubKernel(const ConductivityKernel &base)
-	: ConductivityKernel(base),
+struct ConductivityKernel<gps, 2, HeatTransferElementType::SYMMETRIC_GENERAL, Physics>: Conductivity, Physics {
+	ConductivityKernel(const Conductivity &base)
+	: Conductivity(base),
 	  kxx(this->conductivity->values.get(0, 0).evaluator),
 	  kxy(this->conductivity->values.get(0, 1).evaluator),
 	  kyy(this->conductivity->values.get(1, 1).evaluator)
@@ -100,9 +122,9 @@ struct ConductivitySubKernel<gps, 2, HeatTransferElementType::SYMMETRIC_GENERAL,
 };
 
 template <size_t gps, class Physics>
-struct ConductivitySubKernel<gps, 3, HeatTransferElementType::SYMMETRIC_GENERAL, Physics>: ConductivityKernel, Physics {
-	ConductivitySubKernel(const ConductivityKernel &base)
-	: ConductivityKernel(base),
+struct ConductivityKernel<gps, 3, HeatTransferElementType::SYMMETRIC_GENERAL, Physics>: Conductivity, Physics {
+	ConductivityKernel(const Conductivity &base)
+	: Conductivity(base),
 	  kxx(this->conductivity->values.get(0, 0).evaluator),
 	  kxy(this->conductivity->values.get(0, 1).evaluator),
 	  kxz(this->conductivity->values.get(0, 2).evaluator),
@@ -146,9 +168,9 @@ struct ConductivitySubKernel<gps, 3, HeatTransferElementType::SYMMETRIC_GENERAL,
 };
 
 template <size_t gps, class Physics>
-struct ConductivitySubKernel<gps, 2, HeatTransferElementType::ASYMMETRIC_GENERAL, Physics>: ConductivityKernel, Physics {
-	ConductivitySubKernel(const ConductivityKernel &base)
-	: ConductivityKernel(base),
+struct ConductivityKernel<gps, 2, HeatTransferElementType::ASYMMETRIC_GENERAL, Physics>: Conductivity, Physics {
+	ConductivityKernel(const Conductivity &base)
+	: Conductivity(base),
 	  kxx(this->conductivity->values.get(0, 0).evaluator),
 	  kxy(this->conductivity->values.get(0, 1).evaluator),
 	  kyx(this->conductivity->values.get(1, 0).evaluator),
@@ -187,9 +209,9 @@ struct ConductivitySubKernel<gps, 2, HeatTransferElementType::ASYMMETRIC_GENERAL
 };
 
 template <size_t gps, class Physics>
-struct ConductivitySubKernel<gps, 3, HeatTransferElementType::ASYMMETRIC_GENERAL, Physics>: ConductivityKernel, Physics {
-	ConductivitySubKernel(const ConductivityKernel &base)
-	: ConductivityKernel(base),
+struct ConductivityKernel<gps, 3, HeatTransferElementType::ASYMMETRIC_GENERAL, Physics>: Conductivity, Physics {
+	ConductivityKernel(const Conductivity &base)
+	: Conductivity(base),
 	  kxx(this->conductivity->values.get(0, 0).evaluator),
 	  kxy(this->conductivity->values.get(0, 1).evaluator),
 	  kxz(this->conductivity->values.get(0, 2).evaluator),

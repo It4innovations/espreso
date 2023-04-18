@@ -43,6 +43,38 @@ struct HeatTransferElementType {
 	};
 };
 
+template <size_t gps, size_t ndim, enum ThermalConductivityConfiguration::MODEL> struct HeatTransferConductivity;
+
+template <size_t gps, size_t ndim> struct HeatTransferConductivity<gps, ndim, ThermalConductivityConfiguration::MODEL::ISOTROPIC> {
+	alignas(SIMD::size * sizeof(double)) SIMD conductivity[gps];
+};
+
+template <size_t gps, size_t ndim> struct HeatTransferConductivity<gps, ndim, ThermalConductivityConfiguration::MODEL::DIAGONAL> {
+	alignas(SIMD::size * sizeof(double)) SIMD conductivity[gps][ndim];
+};
+
+template <size_t gps> struct HeatTransferConductivity<gps, 2, ThermalConductivityConfiguration::MODEL::SYMMETRIC> {
+	alignas(SIMD::size * sizeof(double)) SIMD conductivity[gps][3];
+};
+
+template <size_t gps> struct HeatTransferConductivity<gps, 3, ThermalConductivityConfiguration::MODEL::SYMMETRIC> {
+	alignas(SIMD::size * sizeof(double)) SIMD conductivity[gps][6];
+};
+
+template <size_t gps> struct HeatTransferConductivity<gps, 3, ThermalConductivityConfiguration::MODEL::ANISOTROPIC> {
+	alignas(SIMD::size * sizeof(double)) SIMD conductivity[gps][ndim * ndim];
+};
+
+template <size_t gps, size_t ndim> struct HeatTransferElementParameters;
+
+template <size_t gps> struct HeatTransferElementParameters<gps, 2> {
+	alignas(SIMD::size * sizeof(double)) SIMD thickness   [gps];
+	alignas(SIMD::size * sizeof(double)) SIMD density     [gps];
+	alignas(SIMD::size * sizeof(double)) SIMD heatCapacity[gps];
+	alignas(SIMD::size * sizeof(double)) SIMD heatSource  [gps];
+	alignas(SIMD::size * sizeof(double)) SIMD advection   [gps][2];
+};
+
 template <size_t nodes, size_t gps, size_t ndim, size_t edim, size_t etype> struct HeatTransferDataDescriptor;
 
 template <size_t nodes, size_t gps, size_t edim>

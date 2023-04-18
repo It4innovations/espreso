@@ -12,8 +12,17 @@
 #include "math/primitives/matrix_info.h"
 #include "math/physics/matrix_base.h"
 
-#include "analysis/assembler/subkernel/subkernels.h"
-#include "analysis/assembler/subkernel/heattransfer/subkernels.h"
+#include "analysis/assembler/subkernel/basis.h"
+#include "analysis/assembler/subkernel/coordinates.h"
+#include "analysis/assembler/subkernel/temperature.h"
+#include "analysis/assembler/subkernel/integration.h"
+#include "analysis/assembler/subkernel/expression.h"
+#include "analysis/assembler/subkernel/heattransfer/conductivity.h"
+#include "analysis/assembler/subkernel/heattransfer/coordinatesystem.h"
+#include "analysis/assembler/subkernel/heattransfer/advection.h"
+#include "analysis/assembler/subkernel/heattransfer/matrix.h"
+#include "analysis/assembler/subkernel/heattransfer/flux.h"
+#include "analysis/assembler/subkernel/heattransfer/gradient.h"
 
 #include <cstddef>
 #include <map>
@@ -42,25 +51,28 @@ class HeatTransfer: public Assembler
 
 public:
 	struct SubKernels {
-		BasisKernel basis;
-		CopyCoordinatesKernel coordinates;
-		TemperatureKernel temperature;
-		IntegrationKernel integration;
-		ConductivityKernel conductivity;
-		HeatTransferCoordinateSystemKernel translation;
-		AdvectionKernel advection;
-		HeatTransferMatrixKernel K;
+		int code;
+		size_t etype;
+		esint elements;
 
-		TemperatureGradientKernel gradient;
-		TemperatureFluxKernel flux;
+		Basis basis;
+		Coordinates coordinates;
+		Temperature temperature;
+		Integration integration;
+		Conductivity conductivity;
+		HeatTransferCoordinateSystem translation;
+		Advection advection;
+		HeatTransferMatrix K;
 
-		std::vector<ExternalExpressionKernel*> expressions;
+		TemperatureGradient gradient;
+		TemperatureFlux flux;
+
+		std::vector<ExternalExpression*> expressions;
 	};
 
 	HeatTransfer(HeatTransfer *previous, HeatTransferConfiguration &settings, HeatTransferLoadStepConfiguration &configuration);
 
 	void analyze();
-	void analyzeHybrid();
 
 	void connect(SteadyState &scheme);
 	void evaluate(SteadyState &scheme, step::Time &time);
@@ -86,86 +98,16 @@ public:
 	};
 
 protected:
-	template <int etype> Assembler::measurements instantiate2D(ActionOperator::Action action, int code, const std::vector<ActionOperator*> &ops, size_t interval, esint elements);
-	template <int etype> Assembler::measurements instantiate3D(ActionOperator::Action action, int code, const std::vector<ActionOperator*> &ops, size_t interval, esint elements);
-	Assembler::measurements instantiate(ActionOperator::Action action, int code, int etype, const std::vector<ActionOperator*> &ops, size_t interval, esint elements);
+	void run(Action action, size_t interval);
 
-	template <int etype> Assembler::measurements instantiateConditions2D(ActionOperator::Action action, int code, const std::vector<ActionOperator*> &ops, size_t interval, esint elements);
-	template <int etype> Assembler::measurements instantiateConditions3D(ActionOperator::Action action, int code, const std::vector<ActionOperator*> &ops, size_t interval, esint elements);
-	Assembler::measurements instantiateConditions(ActionOperator::Action action, int code, int etype, const std::vector<ActionOperator*> &ops, size_t interval, esint elements);
+	template <int etype> void instantiate2D(Action action, size_t interval);
+	template <int etype> void instantiate3D(Action action, size_t interval);
 
-	template <int etype> Assembler::measurements instantiateManual2D(ActionOperator::Action action, int code, const std::vector<ActionOperator*> &ops, size_t interval, esint elements);
-	template <int etype> Assembler::measurements instantiateManual3D(ActionOperator::Action action, int code, const std::vector<ActionOperator*> &ops, size_t interval, esint elements);
-	Assembler::measurements instantiateManual(ActionOperator::Action action, int code, int etype, const std::vector<ActionOperator*> &ops, size_t interval, esint elements);
-
-
-	template <int etype> Assembler::measurements instantiateHybrid2D(ActionOperator::Action action, int code, const std::vector<ActionOperator*> &ops, size_t interval, esint elements);
-	template <int etype> Assembler::measurements instantiateHybrid3D(ActionOperator::Action action, int code, const std::vector<ActionOperator*> &ops, size_t interval, esint elements);
-	Assembler::measurements instantiateHybrid(ActionOperator::Action action, int code, int etype, const std::vector<ActionOperator*> &ops, size_t interval, esint elements);
-
-	template <template <size_t, size_t, size_t, size_t, size_t> class DataDescriptor, size_t nodes, size_t gps, size_t ndim, size_t edim, size_t etype>
-	Assembler::measurements conditionsloop(ActionOperator::Action action, const std::vector<ActionOperator*> &ops, size_t interval, esint elements);
-	
 	template <template <size_t, size_t, size_t, size_t, size_t> class DataDescriptor, Element::CODE code, size_t nodes, size_t gps, size_t ndim, size_t edim, size_t etype>
-	Assembler::measurements hybridloop(ActionOperator::Action action, const std::vector<ActionOperator*> &ops, size_t interval, esint elements);
+	void hybridloop(Action action, size_t interval);
+
 	template <template <size_t, size_t, size_t, size_t, size_t> class DataDescriptor, size_t nodes, size_t gps, size_t ndim, size_t edim, size_t etype>
-	Assembler::measurements hybridpreprocess(const std::vector<ActionOperator*> &ops, size_t interval, esint elements);
-
-	template <template <size_t, size_t, size_t, size_t, size_t> class DataDescriptor, size_t nodes, size_t gps, size_t ndim, size_t edim, size_t ETYPE>
-	Assembler::measurements manualloop(ActionOperator::Action action, const std::vector<ActionOperator*> &ops, size_t interval, esint elements,
-		typename std::enable_if<
-			ndim == 2 &&
-			ETYPE == TransferElementType::SYMMETRIC_ISOTROPIC, int>::type* = 0
-	);
-
-	template <template <size_t, size_t, size_t, size_t, size_t> class DataDescriptor, size_t nodes, size_t gps, size_t ndim, size_t edim, size_t ETYPE>
-	Assembler::measurements manualloop(ActionOperator::Action action, const std::vector<ActionOperator*> &ops, size_t interval, esint elements,
-		typename std::enable_if<
-			ndim == 2 &&
-			ETYPE == TransferElementType::SYMMETRIC_GENERAL, int>::type* = 0
-	);
-
-	template <template <size_t, size_t, size_t, size_t, size_t> class DataDescriptor, size_t nodes, size_t gps, size_t ndim, size_t edim, size_t ETYPE>
-	Assembler::measurements manualloop(ActionOperator::Action action, const std::vector<ActionOperator*> &ops, size_t interval, esint elements,
-		typename std::enable_if<
-			ndim == 2 &&
-			ETYPE == TransferElementType::ASYMMETRIC_ISOTROPIC, int>::type* = 0
-	);
-
-	template <template <size_t, size_t, size_t, size_t, size_t> class DataDescriptor, size_t nodes, size_t gps, size_t ndim, size_t edim, size_t ETYPE>
-	Assembler::measurements manualloop(ActionOperator::Action action, const std::vector<ActionOperator*> &ops, size_t interval, esint elements,
-		typename std::enable_if<
-			ndim == 2 &&
-			ETYPE == TransferElementType::ASYMMETRIC_GENERAL, int>::type* = 0
-	);
-	
-	template <template <size_t, size_t, size_t, size_t, size_t> class DataDescriptor, size_t nodes, size_t gps, size_t ndim, size_t edim, size_t ETYPE>
-	Assembler::measurements manualloop(ActionOperator::Action action, const std::vector<ActionOperator*> &ops, size_t interval, esint elements,
-		typename std::enable_if<
-			ndim == 3 &&
-			ETYPE == TransferElementType::SYMMETRIC_ISOTROPIC, int>::type* = 0
-	);
-
-	template <template <size_t, size_t, size_t, size_t, size_t> class DataDescriptor, size_t nodes, size_t gps, size_t ndim, size_t edim, size_t ETYPE>
-	Assembler::measurements manualloop(ActionOperator::Action action, const std::vector<ActionOperator*> &ops, size_t interval, esint elements,
-		typename std::enable_if<
-			ndim == 3 &&
-			ETYPE == TransferElementType::SYMMETRIC_GENERAL, int>::type* = 0
-	);
-
-	template <template <size_t, size_t, size_t, size_t, size_t> class DataDescriptor, size_t nodes, size_t gps, size_t ndim, size_t edim, size_t ETYPE>
-	Assembler::measurements manualloop(ActionOperator::Action action, const std::vector<ActionOperator*> &ops, size_t interval, esint elements,
-		typename std::enable_if<
-			ndim == 3 &&
-			ETYPE == TransferElementType::ASYMMETRIC_ISOTROPIC, int>::type* = 0
-	);
-
-	template <template <size_t, size_t, size_t, size_t, size_t> class DataDescriptor, size_t nodes, size_t gps, size_t ndim, size_t edim, size_t ETYPE>
-	Assembler::measurements manualloop(ActionOperator::Action action, const std::vector<ActionOperator*> &ops, size_t interval, esint elements,
-		typename std::enable_if<
-			ndim == 3 &&
-			ETYPE == TransferElementType::ASYMMETRIC_GENERAL, int>::type* = 0
-	);
+	void hybridpreprocess(size_t interval);
 
 	void initParameters();
 

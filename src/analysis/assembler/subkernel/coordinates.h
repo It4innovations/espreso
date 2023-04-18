@@ -2,15 +2,38 @@
 #ifndef SRC_ANALYSIS_ASSEMBLER_SUBKERNEL_COORDINATES_H_
 #define SRC_ANALYSIS_ASSEMBLER_SUBKERNEL_COORDINATES_H_
 
-#include "subkernels.h"
+#include "subkernel.h"
 #include "esinfo/meshinfo.h"
 #include "mesh/store/nodestore.h"
 
 namespace espreso {
 
+struct Coordinates: SubKernel {
+	const char* name() const { return "Coordinates"; }
+
+	serializededata<esint, esint>::const_iterator enodes, end;
+	bool toGPs;
+
+	Coordinates()
+	: enodes(info::mesh->elements->nodes->cbegin()),
+	  end(info::mesh->elements->nodes->cend()),
+	  toGPs(false)
+	{
+		isconst = false;
+		action = Assembler::ASSEMBLE | Assembler::REASSEMBLE | Assembler::SOLUTION;
+	}
+
+	void activate(serializededata<esint, esint>::const_iterator enodes, serializededata<esint, esint>::const_iterator end, bool toGPs)
+	{
+		this->enodes = enodes;
+		this->end = end;
+		this->toGPs = toGPs;
+	}
+};
+
 template <size_t nodes, size_t gps, size_t ndim, class Physics>
-struct CoordinatesKernelToElementNodes: CopyCoordinatesKernel, Physics {
-	CoordinatesKernelToElementNodes(const CopyCoordinatesKernel &base): CopyCoordinatesKernel(base) {}
+struct CoordinatesKernel: Coordinates, Physics {
+	CoordinatesKernel(const Coordinates &base): Coordinates(base) {}
 
 	void simd(typename Physics::Element &element)
 	{

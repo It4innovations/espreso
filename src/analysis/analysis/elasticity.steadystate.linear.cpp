@@ -38,11 +38,6 @@ void ElasticitySteadyStateLinear::analyze()
 	info::mesh->output->updateMonitors(step::TYPE::TIME);
 }
 
-void ElasticitySteadyStateLinear::dryrun()
-{
-	assembler.dryrun();
-}
-
 void ElasticitySteadyStateLinear::run(step::Step &step)
 {
 	initSystem(system, this);

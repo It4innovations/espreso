@@ -75,12 +75,6 @@ struct ECF: public ECFDescription {
 	bool simple_output, always_update_conductivity;
 	size_t dryrun;
 
-	enum class LOOP {
-		INHERITANCE,
-		CONDITIONS,
-		MANUAL,
-		HYBRID
-	} loop;
 	PhysicsConfiguration::TYPE physics;
 	ThermoElasticityConfiguration thermo_elasticity_2d;
 	ThermoElasticityConfiguration thermo_elasticity_3d;

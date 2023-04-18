@@ -1,41 +1,38 @@
 
-#ifndef SRC_ANALYSIS_ASSEMBLER_SUBKERNEL_HEATTRANSFER_MATRIX_H_
-#define SRC_ANALYSIS_ASSEMBLER_SUBKERNEL_HEATTRANSFER_MATRIX_H_
+#ifndef SRC_ANALYSIS_ASSEMBLER_OPERATORS_HEATTRANSFER_K_H_
+#define SRC_ANALYSIS_ASSEMBLER_OPERATORS_HEATTRANSFER_K_H_
 
-#include "subkernels.h"
+#include <analysis/assembler/subkernel/operator.h>
 
 namespace espreso {
 
-struct HeatTransferMatrix: public SubKernel {
-	const char* name() const { return "HeatTransferMatrixKernel"; }
+struct HeatTransferStiffnessBase: public ActionOperator {
+	const char* name() const { return "HeatTransferStiffnessBase"; }
 
-	double *K;
+	OutputParameterIterator stiffness;
 
-	HeatTransferMatrix()
-	: K(nullptr)
+	HeatTransferStiffnessBase(size_t interval, ParameterData &stiffness)
+	: stiffness(stiffness, interval)
 	{
 		isconst = false;
-		action = Assembler::ASSEMBLE | Assembler::REASSEMBLE;
+		action = Action::ASSEMBLE | Action::REASSEMBLE;
 	}
 
-	void activate(double *K)
+	void move(int n)
 	{
-		isactive = 1;
-		this->K = K;
+		stiffness += n;
 	}
 };
 
-template <size_t nodes, size_t gps, size_t ndim, size_t etype, class Physics> struct HeatTransferMatrixKernel;
+template <size_t nodes, size_t gps, size_t ndim, size_t edim, size_t etype, class Physics> struct HeatTransferStiffness;
 
-template <size_t nodes, size_t gps, class Physics>
-struct HeatTransferMatrixKernel<nodes, gps, 2, HeatTransferElementType::SYMMETRIC_ISOTROPIC, Physics>: HeatTransferMatrix, Physics {
-	HeatTransferMatrixKernel(const HeatTransferMatrix &base): HeatTransferMatrix(base) {}
-
-	void move(int n) { K += n * nodes * nodes; }
+template <size_t nodes, size_t gps, size_t edim, class Physics>
+struct HeatTransferStiffness<nodes, gps, 2, edim, HeatTransferElementType::SYMMETRIC_ISOTROPIC, Physics>: HeatTransferStiffnessBase, Physics {
+	using HeatTransferStiffnessBase::HeatTransferStiffnessBase;
 
 	void simd(typename Physics::Element &element)
 	{
-		double * __restrict__ out = K;
+		double * __restrict__ out = stiffness.data;
 		for (size_t gp = 0; gp < gps; ++gp) {
 			SIMD scale = element.ecf.thickness[gp] * element.det[gp] * load1(element.w[gp]) * element.conductivity[gp];
 			for (size_t n = 0, i = 0; n < nodes; ++n) {
@@ -55,15 +52,13 @@ struct HeatTransferMatrixKernel<nodes, gps, 2, HeatTransferElementType::SYMMETRI
 	}
 };
 
-template <size_t nodes, size_t gps, class Physics>
-struct HeatTransferMatrixKernel<nodes, gps, 3, HeatTransferElementType::SYMMETRIC_ISOTROPIC, Physics>: HeatTransferMatrix, Physics {
-	HeatTransferMatrixKernel(const HeatTransferMatrix &base): HeatTransferMatrix(base) {}
-
-	void move(int n) { K += n * nodes * nodes; }
+template <size_t nodes, size_t gps, size_t edim, class Physics>
+struct HeatTransferStiffness<nodes, gps, 3, edim, HeatTransferElementType::SYMMETRIC_ISOTROPIC, Physics>: HeatTransferStiffnessBase, Physics {
+	using HeatTransferStiffnessBase::HeatTransferStiffnessBase;
 
 	void simd(typename Physics::Element &element)
 	{
-		double * __restrict__ out = K;
+		double * __restrict__ out = stiffness.data;
 		for (size_t gp = 0; gp < gps; ++gp) {
 			SIMD scale = element.det[gp] * load1(element.w[gp]) * element.conductivity[gp];
 			for (size_t n = 0, i = 0; n < nodes; ++n) {
@@ -85,16 +80,13 @@ struct HeatTransferMatrixKernel<nodes, gps, 3, HeatTransferElementType::SYMMETRI
 	}
 };
 
-
-template <size_t nodes, size_t gps, class Physics>
-struct HeatTransferMatrixKernel<nodes, gps, 2, HeatTransferElementType::SYMMETRIC_GENERAL, Physics>: HeatTransferMatrix, Physics {
-	HeatTransferMatrixKernel(const HeatTransferMatrix &base): HeatTransferMatrix(base) {}
-
-	void move(int n) { K += n * nodes * nodes; }
+template <size_t nodes, size_t gps, size_t edim, class Physics>
+struct HeatTransferStiffness<nodes, gps, 2, edim, HeatTransferElementType::SYMMETRIC_GENERAL, Physics>: HeatTransferStiffnessBase, Physics {
+	using HeatTransferStiffnessBase::HeatTransferStiffnessBase;
 
 	void simd(typename Physics::Element &element)
 	{
-		double * __restrict__ out = K;
+		double * __restrict__ out = stiffness.data;
 		for (size_t gp = 0; gp < gps; ++gp) {
 			SIMD c00 = element.conductivity[gp][0];
 			SIMD c10 = element.conductivity[gp][1], c11 = element.conductivity[gp][2];
@@ -118,15 +110,13 @@ struct HeatTransferMatrixKernel<nodes, gps, 2, HeatTransferElementType::SYMMETRI
 	}
 };
 
-template <size_t nodes, size_t gps, class Physics>
-struct HeatTransferMatrixKernel<nodes, gps, 3, HeatTransferElementType::SYMMETRIC_GENERAL, Physics>: HeatTransferMatrix, Physics {
-	HeatTransferMatrixKernel(const HeatTransferMatrix &base): HeatTransferMatrix(base) {}
-
-	void move(int n) { K += n * nodes * nodes; }
+template <size_t nodes, size_t gps, size_t edim, class Physics>
+struct HeatTransferStiffness<nodes, gps, 3, edim, HeatTransferElementType::SYMMETRIC_GENERAL, Physics>: HeatTransferStiffnessBase, Physics {
+	using HeatTransferStiffnessBase::HeatTransferStiffnessBase;
 
 	void simd(typename Physics::Element &element)
 	{
-		double * __restrict__ out = K;
+		double * __restrict__ out = stiffness.data;
 		for (size_t gp = 0; gp < gps; ++gp) {
 			SIMD scale = element.det[gp] * load1(element.w[gp]);
 			SIMD c00 = element.conductivity[gp][0];
@@ -154,15 +144,13 @@ struct HeatTransferMatrixKernel<nodes, gps, 3, HeatTransferElementType::SYMMETRI
 	}
 };
 
-template <size_t nodes, size_t gps, class Physics>
-struct HeatTransferMatrixKernel<nodes, gps, 2, HeatTransferElementType::ASYMMETRIC_ISOTROPIC, Physics>: HeatTransferMatrix, Physics {
-	HeatTransferMatrixKernel(const HeatTransferMatrix &base): HeatTransferMatrix(base) {}
-
-	void move(int n) { K += n * nodes * nodes; }
+template <size_t nodes, size_t gps, size_t edim, class Physics>
+struct HeatTransferStiffness<nodes, gps, 2, edim, HeatTransferElementType::ASYMMETRIC_ISOTROPIC, Physics>: HeatTransferStiffnessBase, Physics {
+	using HeatTransferStiffnessBase::HeatTransferStiffnessBase;
 
 	void simd(typename Physics::Element &element)
 	{
-		double * __restrict__ out = K;
+		double * __restrict__ out = stiffness.data;
 		for (size_t gp = 0; gp < gps; ++gp) {
 			SIMD scale = element.ecf.thickness[gp] * element.det[gp] * load1(element.w[gp]) * element.conductivity[gp];
 			for (size_t n = 0; n < nodes; ++n) {
@@ -182,15 +170,13 @@ struct HeatTransferMatrixKernel<nodes, gps, 2, HeatTransferElementType::ASYMMETR
 	}
 };
 
-template <size_t nodes, size_t gps, class Physics>
-struct HeatTransferMatrixKernel<nodes, gps, 3, HeatTransferElementType::ASYMMETRIC_ISOTROPIC, Physics>: HeatTransferMatrix, Physics {
-	HeatTransferMatrixKernel(const HeatTransferMatrix &base): HeatTransferMatrix(base) {}
-
-	void move(int n) { K += n * nodes * nodes; }
+template <size_t nodes, size_t gps, size_t edim, class Physics>
+struct HeatTransferStiffness<nodes, gps, 3, edim, HeatTransferElementType::ASYMMETRIC_ISOTROPIC, Physics>: HeatTransferStiffnessBase, Physics {
+	using HeatTransferStiffnessBase::HeatTransferStiffnessBase;
 
 	void simd(typename Physics::Element &element)
 	{
-		double * __restrict__ out = K;
+		double * __restrict__ out = stiffness.data;
 		for (size_t gp = 0; gp < gps; ++gp) {
 			SIMD scale = element.det[gp] * load1(element.w[gp]) * element.conductivity[gp];
 			for (size_t n = 0; n < nodes; ++n) {
@@ -212,15 +198,13 @@ struct HeatTransferMatrixKernel<nodes, gps, 3, HeatTransferElementType::ASYMMETR
 	}
 };
 
-template <size_t nodes, size_t gps, class Physics>
-struct HeatTransferMatrixKernel<nodes, gps, 2, HeatTransferElementType::ASYMMETRIC_GENERAL, Physics>: HeatTransferMatrix, Physics {
-	HeatTransferMatrixKernel(const HeatTransferMatrix &base): HeatTransferMatrix(base) {}
-
-	void move(int n) { K += n * nodes * nodes; }
+template <size_t nodes, size_t gps, size_t edim, class Physics>
+struct HeatTransferStiffness<nodes, gps, 2, edim, HeatTransferElementType::ASYMMETRIC_GENERAL, Physics>: HeatTransferStiffnessBase, Physics {
+	using HeatTransferStiffnessBase::HeatTransferStiffnessBase;
 
 	void simd(typename Physics::Element &element)
 	{
-		double * __restrict__ out = K;
+		double * __restrict__ out = stiffness.data;
 		for (size_t gp = 0; gp < gps; ++gp) {
 			SIMD c00 = element.conductivity[gp][0], c01 = element.conductivity[gp][2];
 			SIMD c10 = element.conductivity[gp][1], c11 = element.conductivity[gp][3];
@@ -243,15 +227,13 @@ struct HeatTransferMatrixKernel<nodes, gps, 2, HeatTransferElementType::ASYMMETR
 	}
 };
 
-template <size_t nodes, size_t gps, class Physics>
-struct HeatTransferMatrixKernel<nodes, gps, 3, HeatTransferElementType::ASYMMETRIC_GENERAL, Physics>: HeatTransferMatrix, Physics {
-	HeatTransferMatrixKernel(const HeatTransferMatrix &base): HeatTransferMatrix(base) {}
-
-	void move(int n) { K += n * nodes * nodes; }
+template <size_t nodes, size_t gps, size_t edim, class Physics>
+struct HeatTransferStiffness<nodes, gps, 3, edim, HeatTransferElementType::ASYMMETRIC_GENERAL, Physics>: HeatTransferStiffnessBase, Physics {
+	using HeatTransferStiffnessBase::HeatTransferStiffnessBase;
 
 	void simd(typename Physics::Element &element)
 	{
-		double * __restrict__ out = K;
+		double * __restrict__ out = stiffness.data;
 		for (size_t gp = 0; gp < gps; ++gp) {
 			SIMD scale = element.det[gp] * load1(element.w[gp]);
 			SIMD c00 = element.conductivity[gp][0], c01 = element.conductivity[gp][3], c02 = element.conductivity[gp][6];
@@ -280,6 +262,4 @@ struct HeatTransferMatrixKernel<nodes, gps, 3, HeatTransferElementType::ASYMMETR
 
 }
 
-
-
-#endif /* SRC_ANALYSIS_ASSEMBLER_SUBKERNEL_HEATTRANSFER_MATRIX_H_ */
+#endif /* SRC_ANALYSIS_ASSEMBLER_OPERATORS_HEATTRANSFER_K_H_ */

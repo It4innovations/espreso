@@ -64,17 +64,9 @@ void Looper::run()
 		break;
 	}
 
-	if (info::ecf->dryrun) {
-		analysis->analyze();
-		analysis->dryrun();
-		// analysis->dryrun();
-		// analysis->dryrun();
-		eslog::checkpointln("SIMULATION: ASSEMBLER TESTED");
-	} else {
-		analysis->analyze();
-		eslog::checkpointln("SIMULATION: PHYSICS ANALYSED");
-		analysis->run(step);
-	}
+	analysis->analyze();
+	eslog::checkpointln("SIMULATION: PHYSICS ANALYSED");
+	analysis->run(step);
 
 	delete analysis;
 	eslog::endln("SIMULATION: DATA CLEARED");

@@ -2,15 +2,26 @@
 #ifndef SRC_PHYSICS_ASSEMBLER_OPERATORS_INTEGRATION_H_
 #define SRC_PHYSICS_ASSEMBLER_OPERATORS_INTEGRATION_H_
 
-#include "subkernels.h"
+#include "subkernel.h"
 
 namespace espreso {
 
-template <size_t nodes, size_t gps, size_t ndim, size_t edim, class Physics> struct IntegrationSubKernel;
+struct Integration: SubKernel {
+	const char* name() const { return "Integration"; }
+
+	Integration()
+	{
+		isconst = false;
+		action = Assembler::ASSEMBLE | Assembler::REASSEMBLE | Assembler::SOLUTION;
+	}
+};
+
+
+template <size_t nodes, size_t gps, size_t ndim, size_t edim, class Physics> struct IntegrationKernel;
 
 template <size_t nodes, size_t gps, class Physics>
-struct IntegrationSubKernel<nodes, gps, 2, 2, Physics>: IntegrationKernel, Physics {
-	IntegrationSubKernel(const IntegrationKernel &base): IntegrationKernel(base) {}
+struct IntegrationKernel<nodes, gps, 2, 2, Physics>: Integration, Physics {
+	IntegrationKernel(const Integration &base): Integration(base) {}
 
 	void simd(typename Physics::Element &element)
 	{
@@ -48,8 +59,8 @@ struct IntegrationSubKernel<nodes, gps, 2, 2, Physics>: IntegrationKernel, Physi
 };
 
 template <size_t nodes, size_t gps, class Physics>
-struct IntegrationSubKernel<nodes, gps, 3, 3, Physics>: IntegrationKernel, Physics {
-	IntegrationSubKernel(const IntegrationKernel &base): IntegrationKernel(base) {}
+struct IntegrationKernel<nodes, gps, 3, 3, Physics>: Integration, Physics {
+	IntegrationKernel(const Integration &base): Integration(base) {}
 
 	void simd(typename Physics::Element &element)
 	{

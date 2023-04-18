@@ -1,51 +1,110 @@
 
-#ifndef SRC_ANALYSIS_ASSEMBLER_SUBKERNEL_BASIS_H_
-#define SRC_ANALYSIS_ASSEMBLER_SUBKERNEL_BASIS_H_
-
-#include "subkernel.h"
+#include <omitted/operators/basis.h>
+#include "analysis/assembler/module/acoustic.h"
+#include "analysis/assembler/module/heattransfer.h"
+#include "analysis/assembler/module/structuralmechanics.h"
+#include "esinfo/meshinfo.h"
 #include "mesh/element.h"
+#include "mesh/store/elementstore.h"
+#include "mesh/store/boundaryregionstore.h"
 
 namespace espreso {
 
-struct Basis: SubKernel {
-	const char* name() const { return "Basis"; }
+double GaussPoints<Element::CODE::LINE2, 2, 2, 1>::w[];
+double GaussPoints<Element::CODE::LINE2, 2, 2, 1>::N[];
+double GaussPoints<Element::CODE::LINE2, 2, 2, 1>::dN[];
 
-	Basis()
-	{
-		action = Assembler::ASSEMBLE | Assembler::REASSEMBLE | Assembler::SOLUTION;
+double GaussPoints<Element::CODE::TRIANGLE3, 3, 6, 2>::w[];
+double GaussPoints<Element::CODE::TRIANGLE3, 3, 6, 2>::N[];
+double GaussPoints<Element::CODE::TRIANGLE3, 3, 6, 2>::dN[];
+
+double GaussPoints<Element::CODE::SQUARE4, 4, 4, 2>::w[];
+double GaussPoints<Element::CODE::SQUARE4, 4, 4, 2>::N[];
+double GaussPoints<Element::CODE::SQUARE4, 4, 4, 2>::dN[];
+
+double GaussPoints<Element::CODE::TETRA4, 4, 4, 3>::w[];
+double GaussPoints<Element::CODE::TETRA4, 4, 4, 3>::N[];
+double GaussPoints<Element::CODE::TETRA4, 4, 4, 3>::dN[];
+
+double GaussPoints<Element::CODE::PYRAMID5, 5, 8, 3>::w[];
+double GaussPoints<Element::CODE::PYRAMID5, 5, 8, 3>::N[];
+double GaussPoints<Element::CODE::PYRAMID5, 5, 8, 3>::dN[];
+
+double GaussPoints<Element::CODE::PRISMA6, 6, 9, 3>::w[];
+double GaussPoints<Element::CODE::PRISMA6, 6, 9, 3>::N[];
+double GaussPoints<Element::CODE::PRISMA6, 6, 9, 3>::dN[];
+
+double GaussPoints<Element::CODE::HEXA8, 8, 8, 3>::w[];
+double GaussPoints<Element::CODE::HEXA8, 8, 8, 3>::N[];
+double GaussPoints<Element::CODE::HEXA8, 8, 8, 3>::dN[];
+
+double GaussPoints<Element::CODE::LINE3, 3, 3, 1>::w[];
+double GaussPoints<Element::CODE::LINE3, 3, 3, 1>::N[];
+double GaussPoints<Element::CODE::LINE3, 3, 3, 1>::dN[];
+
+double GaussPoints<Element::CODE::TRIANGLE6, 6, 6, 2>::w[];
+double GaussPoints<Element::CODE::TRIANGLE6, 6, 6, 2>::N[];
+double GaussPoints<Element::CODE::TRIANGLE6, 6, 6, 2>::dN[];
+
+double GaussPoints<Element::CODE::SQUARE8, 8, 9, 2>::w[];
+double GaussPoints<Element::CODE::SQUARE8, 8, 9, 2>::N[];
+double GaussPoints<Element::CODE::SQUARE8, 8, 9, 2>::dN[];
+
+double GaussPoints<Element::CODE::TETRA10, 10, 15, 3>::w[];
+double GaussPoints<Element::CODE::TETRA10, 10, 15, 3>::N[];
+double GaussPoints<Element::CODE::TETRA10, 10, 15, 3>::dN[];
+
+double GaussPoints<Element::CODE::PYRAMID13, 13, 14, 3>::w[];
+double GaussPoints<Element::CODE::PYRAMID13, 13, 14, 3>::N[];
+double GaussPoints<Element::CODE::PYRAMID13, 13, 14, 3>::dN[];
+
+double GaussPoints<Element::CODE::PRISMA15, 15, 9, 3>::w[];
+double GaussPoints<Element::CODE::PRISMA15, 15, 9, 3>::N[];
+double GaussPoints<Element::CODE::PRISMA15, 15, 9, 3>::dN[];
+
+double GaussPoints<Element::CODE::HEXA20, 20, 8, 3>::w[];
+double GaussPoints<Element::CODE::HEXA20, 20, 8, 3>::N[];
+double GaussPoints<Element::CODE::HEXA20, 20, 8, 3>::dN[];
+
+template<Element::CODE code> void fill(size_t gps, double *N, double *dN, double *w);
+
+template <class Module>
+void fill(int code, double *N, double *dN, double *w)
+{
+	switch ((Element::CODE)code) {
+	case Element::CODE::POINT1:    fill<Element::CODE::POINT1>   (Module::NGP::POINT1   , N, dN, w); break;
+	case Element::CODE::LINE2:     fill<Element::CODE::LINE2>    (Module::NGP::LINE2    , N, dN, w); break;
+	case Element::CODE::TRIANGLE3: fill<Element::CODE::TRIANGLE3>(Module::NGP::TRIANGLE3, N, dN, w); break;
+	case Element::CODE::SQUARE4:   fill<Element::CODE::SQUARE4>  (Module::NGP::SQUARE4  , N, dN, w); break;
+	case Element::CODE::TETRA4:    fill<Element::CODE::TETRA4>   (Module::NGP::TETRA4   , N, dN, w); break;
+	case Element::CODE::PYRAMID5:  fill<Element::CODE::PYRAMID5> (Module::NGP::PYRAMID5 , N, dN, w); break;
+	case Element::CODE::PRISMA6:   fill<Element::CODE::PRISMA6>  (Module::NGP::PRISMA6  , N, dN, w); break;
+	case Element::CODE::HEXA8:     fill<Element::CODE::HEXA8>    (Module::NGP::HEXA8    , N, dN, w); break;
+	case Element::CODE::LINE3:     fill<Element::CODE::LINE3>    (Module::NGP::LINE3    , N, dN, w); break;
+	case Element::CODE::TRIANGLE6: fill<Element::CODE::TRIANGLE6>(Module::NGP::TRIANGLE6, N, dN, w); break;
+	case Element::CODE::SQUARE8:   fill<Element::CODE::SQUARE8>  (Module::NGP::SQUARE8  , N, dN, w); break;
+	case Element::CODE::TETRA10:   fill<Element::CODE::TETRA10>  (Module::NGP::TETRA10  , N, dN, w); break;
+	case Element::CODE::PYRAMID13: fill<Element::CODE::PYRAMID13>(Module::NGP::PYRAMID13, N, dN, w); break;
+	case Element::CODE::PRISMA15:  fill<Element::CODE::PRISMA15> (Module::NGP::PRISMA15 , N, dN, w); break;
+	case Element::CODE::HEXA20:    fill<Element::CODE::HEXA20>   (Module::NGP::HEXA20   , N, dN, w); break;
+	default: break;
 	}
-};
+}
 
-template <Element::CODE code, size_t nodes, size_t gps, size_t edim> struct GaussPoints;
+template<> void fill<Element::CODE::POINT1>(size_t gps, double *N, double *dN, double *w)
+{
 
-template <Element::CODE code, size_t nodes, size_t gps, size_t edim, class Physics>
-struct BasisKernel: Basis, Physics {
-	BasisKernel(const Basis &base): Basis(base) { }
+}
 
-	void simd(typename Physics::Element &element)
-	{
-		for (size_t gp = 0; gp < gps; ++gp) {
-			element.w[gp] = GaussPoints<code, nodes, gps, edim>::w[gp];
-			for (size_t n = 0; n < nodes; ++n) {
-				element.N[gp][n] = GaussPoints<code, nodes, gps, edim>::N[gp * nodes + n];
-				for (size_t d = 0; d < edim; ++d) {
-					element.dN[gp][n][d] = GaussPoints<code, nodes, gps, edim>::dN[gp * edim * nodes + d * nodes + n];
-				}
-			}
-		}
-	}
-};
+template<> void fill<Element::CODE::LINE2>(size_t gps, double *N, double *dN, double *w)
+{
+	size_t nodes = 2;
 
-template<>
-struct GaussPoints<Element::CODE::LINE2, 2, 2, 1> {
-
-	constexpr static int nodes = 2, gps = 2, edim = 1;
-	static double w[gps], N[gps * nodes], dN[gps * nodes * edim];
-
-	static void set()
-	{
+	switch (gps) {
+	case 2: {
 		double s[2] = { 1 / sqrt(3), -1 / sqrt(3) };
-		for (int gp = 0; gp < gps; gp++) {
+
+		for (size_t gp = 0; gp < gps; gp++) {
 			w[gp] = 1;
 
 			N[gp * nodes + 0] = (1 - s[gp]) * 0.5;
@@ -54,17 +113,16 @@ struct GaussPoints<Element::CODE::LINE2, 2, 2, 1> {
 			dN[gp * nodes + 0] = -0.5;
 			dN[gp * nodes + 1] =  0.5;
 		}
+	} break;
 	}
-};
+}
 
-template<>
-struct GaussPoints<Element::CODE::TRIANGLE3, 3, 6, 2> {
+template<> void fill<Element::CODE::TRIANGLE3>(size_t gps, double *N, double *dN, double *w)
+{
+	size_t nodes = 3;
 
-	constexpr static int nodes = 3, gps = 6, edim = 2;
-	static double w[gps], N[gps * nodes], dN[gps * nodes * edim];
-
-	static void set()
-	{
+	switch (gps) {
+	case 6: {
 		double s[6] = { 0.445948490915965, 0.445948490915965, 0.108103018168070, 0.091576213509771, 0.091576213509771, 0.816847572980459 };
 		double t[6] = { 0.445948490915965, 0.108103018168070, 0.445948490915965, 0.091576213509771, 0.816847572980459, 0.091576213509771 };
 
@@ -74,35 +132,34 @@ struct GaussPoints<Element::CODE::TRIANGLE3, 3, 6, 2> {
 		w[3] = 0.054975871827661;
 		w[4] = 0.054975871827661;
 		w[5] = 0.054975871827661;
-		for (int gp = 0; gp < gps; gp++) {
+		for (size_t gp = 0; gp < gps; gp++) {
 			N[gp * nodes + 0] = 1 - s[gp] - t[gp];
 			N[gp * nodes + 1] = s[gp];
 			N[gp * nodes + 2] = t[gp];
 
-			dN[edim * gp * nodes + 0 * nodes + 0] = -1;
-			dN[edim * gp * nodes + 0 * nodes + 1] =  1;
-			dN[edim * gp * nodes + 0 * nodes + 2] =  0;
+			dN[2 * gp * nodes + 0 * nodes + 0] = -1;
+			dN[2 * gp * nodes + 0 * nodes + 1] =  1;
+			dN[2 * gp * nodes + 0 * nodes + 2] =  0;
 
-			dN[edim * gp * nodes + 1 * nodes + 0] = -1;
-			dN[edim * gp * nodes + 1 * nodes + 1] =  0;
-			dN[edim * gp * nodes + 1 * nodes + 2] =  1;
+			dN[2 * gp * nodes + 1 * nodes + 0] = -1;
+			dN[2 * gp * nodes + 1 * nodes + 1] =  0;
+			dN[2 * gp * nodes + 1 * nodes + 2] =  1;
 		}
+	} break;
 	}
-};
+}
 
-template<>
-struct GaussPoints<Element::CODE::SQUARE4, 4, 4, 2> {
+template<> void fill<Element::CODE::SQUARE4>(size_t gps, double *N, double *dN, double *w)
+{
+	size_t nodes = 4;
 
-	constexpr static int nodes = 4, gps = 4, edim = 2;
-	static double w[gps], N[gps * nodes], dN[gps * nodes * edim];
-
-	static void set()
-	{
+	switch (gps) {
+	case 4: {
 		double CsQ_scale = 0.577350269189626;
 		double s[4] = { -CsQ_scale,  CsQ_scale,  CsQ_scale, -CsQ_scale };
 		double t[4] = { -CsQ_scale, -CsQ_scale,  CsQ_scale,  CsQ_scale };
 
-		for (int gp = 0; gp < gps; gp++) {
+		for (size_t gp = 0; gp < gps; gp++) {
 			w[gp] = 1;
 
 			N[gp * nodes + 0] = 0.25 * (1 - s[gp]) * (1 - t[gp]);
@@ -110,32 +167,31 @@ struct GaussPoints<Element::CODE::SQUARE4, 4, 4, 2> {
 			N[gp * nodes + 2] = 0.25 * (s[gp] + 1) * (t[gp] + 1);
 			N[gp * nodes + 3] = 0.25 * (1 - s[gp]) * (t[gp] + 1);
 
-			dN[edim * gp * nodes + 0 * nodes + 0] = 0.25 * ( t[gp] - 1);
-			dN[edim * gp * nodes + 0 * nodes + 1] = 0.25 * (-t[gp] + 1);
-			dN[edim * gp * nodes + 0 * nodes + 2] = 0.25 * ( t[gp] + 1);
-			dN[edim * gp * nodes + 0 * nodes + 3] = 0.25 * (-t[gp] - 1);
+			dN[2 * gp * nodes + 0 * nodes + 0] = 0.25 * ( t[gp] - 1);
+			dN[2 * gp * nodes + 0 * nodes + 1] = 0.25 * (-t[gp] + 1);
+			dN[2 * gp * nodes + 0 * nodes + 2] = 0.25 * ( t[gp] + 1);
+			dN[2 * gp * nodes + 0 * nodes + 3] = 0.25 * (-t[gp] - 1);
 
-			dN[edim * gp * nodes + 1 * nodes + 0] = 0.25 * ( s[gp] - 1);
-			dN[edim * gp * nodes + 1 * nodes + 1] = 0.25 * (-s[gp] - 1);
-			dN[edim * gp * nodes + 1 * nodes + 2] = 0.25 * ( s[gp] + 1);
-			dN[edim * gp * nodes + 1 * nodes + 3] = 0.25 * (-s[gp] + 1);
+			dN[2 * gp * nodes + 1 * nodes + 0] = 0.25 * ( s[gp] - 1);
+			dN[2 * gp * nodes + 1 * nodes + 1] = 0.25 * (-s[gp] - 1);
+			dN[2 * gp * nodes + 1 * nodes + 2] = 0.25 * ( s[gp] + 1);
+			dN[2 * gp * nodes + 1 * nodes + 3] = 0.25 * (-s[gp] + 1);
 		}
+	} break;
 	}
-};
+}
 
-template<>
-struct GaussPoints<Element::CODE::TETRA4, 4, 4, 3> {
+template<> void fill<Element::CODE::TETRA4>(size_t gps, double *N, double *dN, double *w)
+{
+	size_t nodes = 4;
 
-	constexpr static int nodes = 4, gps = 4, edim = 3;
-	static double w[gps], N[gps * nodes], dN[gps * nodes * edim];
-
-	static void set()
-	{
+	switch (gps) {
+	case 4: {
 		double r[4] = { 0.5854101966249685, 0.1381966011250105, 0.1381966011250105, 0.1381966011250105 };
 		double s[4] = { 0.1381966011250105, 0.1381966011250105, 0.1381966011250105, 0.5854101966249685 };
 		double t[4] = { 0.1381966011250105, 0.1381966011250105, 0.5854101966249685, 0.1381966011250105 };
 
-		for (int gp = 0; gp < gps; gp++) {
+		for (size_t gp = 0; gp < gps; gp++) {
 			w[gp] = 1.0 / 24.0;
 
 			N[gp * nodes + 0] = r[gp];
@@ -158,23 +214,22 @@ struct GaussPoints<Element::CODE::TETRA4, 4, 4, 3> {
 			dN[3 * gp * nodes + 2 * nodes + 2] =  0.0;
 			dN[3 * gp * nodes + 2 * nodes + 3] = -1.0;
 		}
+	} break;
 	}
-};
+}
 
-template<>
-struct GaussPoints<Element::CODE::PYRAMID5, 5, 8, 3> {
+template<> void fill<Element::CODE::PYRAMID5>(size_t gps, double *N, double *dN, double *w)
+{
+	size_t nodes = 5;
 
-	constexpr static int nodes = 5, gps = 8, edim = 3;
-	static double w[gps], N[gps * nodes], dN[gps * nodes * edim];
-
-	static void set()
-	{
+	switch (gps) {
+	case 8: {
 		double v = 0.577350269189625953;
 		double r[8] = {  v,  v,  v,  v, -v, -v, -v, -v };
 		double s[8] = { -v, -v,  v,  v, -v, -v,  v,  v };
 		double t[8] = { -v,  v, -v,  v, -v,  v, -v,  v };
 
-		for (int gp = 0; gp < gps; gp++) {
+		for (size_t gp = 0; gp < gps; gp++) {
 			w[gp] = 1;
 
 			N[gp * nodes + 0] = 0.125 * ((1 - r[gp]) * (1 - s[gp]) * (1 - t[gp]));
@@ -201,17 +256,16 @@ struct GaussPoints<Element::CODE::PYRAMID5, 5, 8, 3> {
 			dN[3 * gp * nodes + 2 * nodes + 3] = 0.125 * (-(1. - r[gp]) * (1. + s[gp]));
 			dN[3 * gp * nodes + 2 * nodes + 4] = 0.125 * (4.0);
 		}
+	} break;
 	}
-};
+}
 
-template<>
-struct GaussPoints<Element::CODE::PRISMA6, 6, 9, 3> {
+template<> void fill<Element::CODE::PRISMA6>(size_t gps, double *N, double *dN, double *w)
+{
+	size_t nodes = 6;
 
-	constexpr static int nodes = 6, gps = 9, edim = 3;
-	static double w[gps], N[gps * nodes], dN[gps * nodes * edim];
-
-	static void set()
-	{
+	switch (gps) {
+	case 9: {
 		double v1 = 1.0 / 6.0;
 		double v2 = 4.0 / 6.0;
 		double v3 = sqrt(3.0 / 5.0);
@@ -229,7 +283,7 @@ struct GaussPoints<Element::CODE::PRISMA6, 6, 9, 3> {
 		w[6] = 5.0 / 54.0;
 		w[7] = 5.0 / 54.0;
 		w[8] = 5.0 / 54.0;
-		for (int gp = 0; gp < gps; gp++) {
+		for (size_t gp = 0; gp < gps; gp++) {
 			N[gp * nodes + 0] = 0.5 * ((1.0 - t[gp]) * (1.0 - r[gp] - s[gp]));
 			N[gp * nodes + 1] = 0.5 * ((1.0 - t[gp]) * r[gp]);
 			N[gp * nodes + 2] = 0.5 * ((1.0 - t[gp]) * s[gp]);
@@ -258,20 +312,19 @@ struct GaussPoints<Element::CODE::PRISMA6, 6, 9, 3> {
 			dN[3 * gp * nodes + 2 * nodes + 4] =  r[gp] / 2.0;
 			dN[3 * gp * nodes + 2 * nodes + 5] =                s[gp] / 2.0;
 		}
+	} break;
 	}
-};
+}
 
-template<>
-struct GaussPoints<Element::CODE::HEXA8, 8, 8, 3> {
+template<> void fill<Element::CODE::HEXA8>(size_t gps, double *N, double *dN, double *w)
+{
+	size_t nodes = 8;
 
-	constexpr static int nodes = 8, gps = 8, edim = 3;
-	static double w[gps], N[gps * nodes], dN[gps * nodes * edim];
-
-	static void set()
-	{
+	switch (gps) {
+	case 8: {
 		double CsQ_scale = 1 / std::sqrt(3);
 
-		for (int gp = 0; gp < gps; gp++) {
+		for (size_t gp = 0; gp < gps; gp++) {
 			double r = (gp & 4) ? CsQ_scale : -CsQ_scale;
 			double s = (gp & 2) ? CsQ_scale : -CsQ_scale;
 			double t = (gp & 1) ? CsQ_scale : -CsQ_scale;
@@ -314,23 +367,22 @@ struct GaussPoints<Element::CODE::HEXA8, 8, 8, 3> {
 			dN[3 * gp * nodes + 2 * nodes + 6] = 0.125 * ( (1 + r) * (1 + s));
 			dN[3 * gp * nodes + 2 * nodes + 7] = 0.125 * ( (1 - r) * (1 + s));
 		}
+	} break;
 	}
-};
+}
 
-template<>
-struct GaussPoints<Element::CODE::LINE3, 3, 3, 1> {
+template<> void fill<Element::CODE::LINE3>(size_t gps, double *N, double *dN, double *w)
+{
+	size_t nodes = 3;
 
-	constexpr static int nodes = 3, gps = 3, edim = 1;
-	static double w[gps], N[gps * nodes], dN[gps * nodes * edim];
-
-	static void set()
-	{
+	switch (gps) {
+	case 3: {
 		double s[3] = { -sqrt(3 / 5.0), 0, sqrt(3 / 5.0) };
 
 		w[0] = 5/9.0;
 		w[1] = 8/9.0;
 		w[2] = 5/9.0;
-		for (int gp = 0; gp < gps; gp++) {
+		for (size_t gp = 0; gp < gps; gp++) {
 			N[gp * nodes + 0] = 0.5 * (s[gp] - 1) * s[gp];
 			N[gp * nodes + 1] = 0.5 * (s[gp] + 1) * s[gp];
 			N[gp * nodes + 2] = 1 - s[gp] * s[gp];
@@ -339,17 +391,16 @@ struct GaussPoints<Element::CODE::LINE3, 3, 3, 1> {
 			dN[gp * nodes + 1] = s[gp] + 0.5;
 			dN[gp * nodes + 2] = -2 * s[gp];;
 		}
+	} break;
 	}
-};
+}
 
-template<>
-struct GaussPoints<Element::CODE::TRIANGLE6, 6, 6, 2> {
+template<> void fill<Element::CODE::TRIANGLE6>(size_t gps, double *N, double *dN, double *w)
+{
+	size_t nodes = 6;
 
-	constexpr static int nodes = 6, gps = 6, edim = 2;
-	static double w[gps], N[gps * nodes], dN[gps * nodes * edim];
-
-	static void set()
-	{
+	switch (gps) {
+	case 6: {
 		double s[6] = { 0.091576213509771, 0.816847572980459, 0.091576213509771, 0.445948490915965, 0.108103018168070, 0.445948490915965 };
 		double t[6] = { 0.091576213509771, 0.091576213509771, 0.816847572980459, 0.445948490915965, 0.445948490915965, 0.108103018168070 };
 
@@ -359,7 +410,7 @@ struct GaussPoints<Element::CODE::TRIANGLE6, 6, 6, 2> {
 		w[3] = 0.223381589678011 / 2.0;
 		w[4] = 0.223381589678011 / 2.0;
 		w[5] = 0.223381589678011 / 2.0;
-		for (int gp = 0; gp < gps; gp++) {
+		for (size_t gp = 0; gp < gps; gp++) {
 			N[gp * nodes + 0] = (1.0 - s[gp] - t[gp]) * (1.0 - 2.0 * (s[gp] + t[gp]));
 			N[gp * nodes + 1] = -(s[gp]) * (1.0 - 2.0 * s[gp]);
 			N[gp * nodes + 2] = -(t[gp]) * (1.0 - 2.0 * t[gp]);
@@ -381,17 +432,16 @@ struct GaussPoints<Element::CODE::TRIANGLE6, 6, 6, 2> {
 			dN[2 * gp * nodes + 1 * nodes + 4] = 4.0 * s[gp];
 			dN[2 * gp * nodes + 1 * nodes + 5] = 4.0 - 4.0 * s[gp] - 8.0 * t[gp];
 		}
+	} break;
 	}
-};
+}
 
-template<>
-struct GaussPoints<Element::CODE::SQUARE8, 8, 9, 2> {
+template<> void fill<Element::CODE::SQUARE8>(size_t gps, double *N, double *dN, double *w)
+{
+	size_t nodes = 8;
 
-	constexpr static int nodes = 8, gps = 9, edim = 2;
-	static double w[gps], N[gps * nodes], dN[gps * nodes * edim];
-
-	static void set()
-	{
+	switch (gps) {
+	case 9: {
 		double v = sqrt(0.6);
 		double s[9] = { -v,  v,  v, -v,  0,  v,  0, -v, 0 };
 		double t[9] = { -v, -v,  v,  v, -v,  0,  v,  0, 0 };
@@ -405,7 +455,7 @@ struct GaussPoints<Element::CODE::SQUARE8, 8, 9, 2> {
 		w[6] = 40.0 / 81.0;
 		w[7] = 40.0 / 81.0;
 		w[8] = 64.0 / 81.0;
-		for (int gp = 0; gp < gps; gp++) {
+		for (size_t gp = 0; gp < gps; gp++) {
 			N[gp * nodes + 0] = -.25 * (s[gp] - 1) * (t[gp] - 1) * (s[gp] + t[gp] + 1);
 			N[gp * nodes + 1] =  .25 * (t[gp] - 1) * (-s[gp] * s[gp] + t[gp] * s[gp] + t[gp] + 1);
 			N[gp * nodes + 2] =  .25 * (s[gp] + 1) * (t[gp] + 1) * (s[gp] + t[gp] - 1);
@@ -433,17 +483,16 @@ struct GaussPoints<Element::CODE::SQUARE8, 8, 9, 2> {
 			dN[2 * gp * nodes + 1 * nodes + 6] = .5 - s[gp] * s[gp] * .5;
 			dN[2 * gp * nodes + 1 * nodes + 7] = t[gp] * (s[gp] - 1);
 		}
+	} break;
 	}
-};
+}
 
-template<>
-struct GaussPoints<Element::CODE::TETRA10, 10, 15, 3> {
+template<> void fill<Element::CODE::TETRA10>(size_t gps, double *N, double *dN, double *w)
+{
+	size_t nodes = 10;
 
-	constexpr static int nodes = 10, gps = 15, edim = 3;
-	static double w[gps], N[gps * nodes], dN[gps * nodes * edim];
-
-	static void set()
-	{
+	switch (gps) {
+	case 15: {
 		double r[15] = {
 				0.2500000000000000, 0.0000000000000000, 0.3333333333333333, 0.3333333333333333,
 				0.3333333333333333, 0.7272727272727273, 0.0909090909090909, 0.0909090909090909,
@@ -475,7 +524,7 @@ struct GaussPoints<Element::CODE::TETRA10, 10, 15, 3> {
 		w[12] = 0.010949141561386;
 		w[13] = 0.010949141561386;
 		w[14] = 0.010949141561386;
-		for (int gp = 0; gp < gps; gp++) {
+		for (size_t gp = 0; gp < gps; gp++) {
 			N[gp * nodes + 0] = r[gp] * (2.0 * r[gp] - 1.0);
 			N[gp * nodes + 1] = s[gp] * (2.0 * s[gp] - 1.0);
 			N[gp * nodes + 2] = t[gp] * (2.0 * t[gp] - 1.0);
@@ -520,17 +569,16 @@ struct GaussPoints<Element::CODE::TETRA10, 10, 15, 3> {
 			dN[3 * gp * nodes + 2 * nodes + 8] = -4.0 * r[gp] - 8.0 * s[gp] - 4.0 * t[gp] + 4.0;
 			dN[3 * gp * nodes + 2 * nodes + 9] = -4.0 * t[gp];
 		}
+	} break;
 	}
-};
+}
 
-template<>
-struct GaussPoints<Element::CODE::PYRAMID13, 13, 14, 3> {
+template<> void fill<Element::CODE::PYRAMID13>(size_t gps, double *N, double *dN, double *w)
+{
+	size_t nodes = 13;
 
-	constexpr static int nodes = 13, gps = 14, edim = 3;
-	static double w[gps], N[gps * nodes], dN[gps * nodes * edim];
-
-	static void set()
-	{
+	switch (gps) {
+	case 14: {
 		double v1 = 0.758786910639329015;
 		double v2 = 0.795822425754222018;
 		double v3 = 0;
@@ -552,7 +600,7 @@ struct GaussPoints<Element::CODE::PYRAMID13, 13, 14, 3> {
 		w[11] = 0.886426592797784;
 		w[12] = 0.886426592797784;
 		w[13] = 0.886426592797784;
-		for (int gp = 0; gp < gps; gp++) {
+		for (size_t gp = 0; gp < gps; gp++) {
 			double r = _r[gp];
 			double s = _s[gp];
 			double t = _t[gp];
@@ -613,17 +661,16 @@ struct GaussPoints<Element::CODE::PYRAMID13, 13, 14, 3> {
 			dN[3 * gp * nodes + 2 * nodes + 11] = -((t / 2.0 - 0.5) * (r + s + r * s + 1.0)) / 2.0 - ((t / 2.0 + 0.5) * (r + s + r * s + 1.0)) / 2.0;
 			dN[3 * gp * nodes + 2 * nodes + 12] =  ((t / 2.0 - 0.5) * (r - s + r * s - 1.0)) / 2.0 + ((t / 2.0 + 0.5) * (r - s + r * s - 1.0)) / 2.0;
 		}
+	} break;
 	}
-};
+}
 
-template<>
-struct GaussPoints<Element::CODE::PRISMA15, 15, 9, 3> {
+template<> void fill<Element::CODE::PRISMA15>(size_t gps, double *N, double *dN, double *w)
+{
+	size_t nodes = 15;
 
-	constexpr static int nodes = 15, gps = 9, edim = 3;
-	static double w[gps], N[gps * nodes], dN[gps * nodes * edim];
-
-	static void set()
-	{
+	switch (gps) {
+	case 9: {
 		double v1 = 1.0 / 6.0;
 		double v2 = 4.0 / 6.0;
 		double v3 = sqrt(3.0 / 5.0);
@@ -641,7 +688,7 @@ struct GaussPoints<Element::CODE::PRISMA15, 15, 9, 3> {
 		w[ 6] = 5.0 / 54.0;
 		w[ 7] = 5.0 / 54.0;
 		w[ 8] = 5.0 / 54.0;
-		for (int gp = 0; gp < gps; gp++) {
+		for (size_t gp = 0; gp < gps; gp++) {
 			double r = _r[gp];
 			double s = _s[gp];
 			double t = _t[gp];
@@ -710,22 +757,22 @@ struct GaussPoints<Element::CODE::PRISMA15, 15, 9, 3> {
 			dN[3 * gp * nodes + 2 * nodes + 13] =  (-2.0) * r * t;
 			dN[3 * gp * nodes + 2 * nodes + 14] =  (-2.0) * s * t;
 		}
+	} break;
 	}
-};
+}
 
-template<>
-struct GaussPoints<Element::CODE::HEXA20, 20, 8, 3> {
-	constexpr static int nodes = 20, gps = 8, edim = 3;
-	static double w[gps], N[gps * nodes], dN[gps * nodes * edim];
+template<> void fill<Element::CODE::HEXA20>(size_t gps, double *N, double *dN, double *w)
+{
+	size_t nodes = 20;
 
-	static void set()
-	{
+	switch (gps) {
+	case 8: {
 		double v = 0.577350269189625953;
 		double _r[8] = {  v,  v,  v,  v, -v, -v, -v, -v };
 		double _s[8] = { -v, -v,  v,  v, -v, -v,  v,  v };
 		double _t[8] = { -v,  v, -v,  v, -v,  v, -v,  v };
 
-		for (int gp = 0; gp < gps; gp++) {
+		for (size_t gp = 0; gp < gps; gp++) {
 			double r = _r[gp];
 			double s = _s[gp];
 			double t = _t[gp];
@@ -816,10 +863,10 @@ struct GaussPoints<Element::CODE::HEXA20, 20, 8, 3> {
 			dN[3 * gp * nodes + 2 * nodes + 18] =  -(t * (r + 1.0) * (s + 1.0)) / 2.0;
 			dN[3 * gp * nodes + 2 * nodes + 19] =   (t * (r - 1.0) * (s + 1.0)) / 2.0;
 		}
+	} break;
 	}
-};
-
+}
 
 }
 
-#endif /* SRC_ANALYSIS_ASSEMBLER_SUBKERNEL_BASIS_H_ */
+

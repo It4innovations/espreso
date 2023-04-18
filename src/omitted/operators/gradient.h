@@ -1,36 +1,31 @@
 
-#ifndef SRC_ANALYSIS_ASSEMBLER_SUBKERNEL_HEATTRANSFER_GRADIENT_H_
-#define SRC_ANALYSIS_ASSEMBLER_SUBKERNEL_HEATTRANSFER_GRADIENT_H_
+#ifndef SRC_ANALYSIS_ASSEMBLER_OPERATORS_GRADIENT_H_
+#define SRC_ANALYSIS_ASSEMBLER_OPERATORS_GRADIENT_H_
 
-#include "subkernels.h"
+#include <analysis/assembler/subkernel/operator.h>
+#include "esinfo/meshinfo.h"
+#include "mesh/store/elementstore.h"
 
 namespace espreso {
 
-struct TemperatureGradient: SubKernel {
-	const char* name() const { return "TemperatureGradientKernel"; }
+struct TemperatureGradientBase: ActionOperator {
+	const char* name() const { return "TemperatureGradientBase"; }
 
-	double* gradient;
-
-	TemperatureGradient()
-	: gradient(nullptr)
+	TemperatureGradientBase(size_t interval, NamedData *gradient)
+	: gradient(gradient->data.data() + info::mesh->dimension * info::mesh->elements->eintervals[interval].begin)
 	{
 		isconst = false;
-		action = Assembler::SOLUTION;
+		action = Action::SOLUTION;
 	}
 
-	void activate(size_t interval, NamedData *gradient)
-	{
-		this->gradient = gradient->data.data() + info::mesh->dimension * info::mesh->elements->eintervals[interval].begin;
-		isactive = 1;
-	}
+	double* gradient;
 };
 
+template <size_t nodes, size_t gps, size_t ndim, size_t edim, size_t etype, class Physics> struct TemperatureGradient;
 
-template <size_t nodes, size_t gps, size_t ndim, class Physics> struct TemperatureGradientKernel;
-
-template <size_t nodes, size_t gps, class Physics>
-struct TemperatureGradientKernel<nodes, gps, 2, Physics>: TemperatureGradient, Physics {
-	TemperatureGradientKernel(const TemperatureGradient &base): TemperatureGradient(base) {}
+template <size_t nodes, size_t gps, size_t edim, size_t etype, class Physics>
+struct TemperatureGradient<nodes, gps, 2, edim, etype, Physics>: TemperatureGradientBase, Physics {
+	using TemperatureGradientBase::TemperatureGradientBase;
 
 	void move(int n)
 	{
@@ -63,9 +58,9 @@ struct TemperatureGradientKernel<nodes, gps, 2, Physics>: TemperatureGradient, P
 	}
 };
 
-template <size_t nodes, size_t gps, class Physics>
-struct TemperatureGradientKernel<nodes, gps, 3, Physics>: TemperatureGradient, Physics {
-	TemperatureGradientKernel(const TemperatureGradient &base): TemperatureGradient(base) {}
+template <size_t nodes, size_t gps, size_t edim, size_t etype, class Physics>
+struct TemperatureGradient<nodes, gps, 3, edim, etype, Physics>: TemperatureGradientBase, Physics {
+	using TemperatureGradientBase::TemperatureGradientBase;
 
 	void move(int n)
 	{
@@ -103,4 +98,4 @@ struct TemperatureGradientKernel<nodes, gps, 3, Physics>: TemperatureGradient, P
 
 }
 
-#endif /* SRC_ANALYSIS_ASSEMBLER_SUBKERNEL_HEATTRANSFER_GRADIENT_H_ */
+#endif /* SRC_ANALYSIS_ASSEMBLER_OPERATORS_GRADIENT_H_ */

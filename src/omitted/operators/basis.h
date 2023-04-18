@@ -1,40 +1,15 @@
 
-#ifndef SRC_ANALYSIS_ASSEMBLER_SUBKERNEL_BASIS_H_
-#define SRC_ANALYSIS_ASSEMBLER_SUBKERNEL_BASIS_H_
+#ifndef SRC_ANALYSIS_ASSEMBLER_OPERATORS_BASIS_H_
+#define SRC_ANALYSIS_ASSEMBLER_OPERATORS_BASIS_H_
 
-#include "subkernel.h"
 #include "mesh/element.h"
+
+#include <cmath>
+#include <vector>
 
 namespace espreso {
 
-struct Basis: SubKernel {
-	const char* name() const { return "Basis"; }
-
-	Basis()
-	{
-		action = Assembler::ASSEMBLE | Assembler::REASSEMBLE | Assembler::SOLUTION;
-	}
-};
-
 template <Element::CODE code, size_t nodes, size_t gps, size_t edim> struct GaussPoints;
-
-template <Element::CODE code, size_t nodes, size_t gps, size_t edim, class Physics>
-struct BasisKernel: Basis, Physics {
-	BasisKernel(const Basis &base): Basis(base) { }
-
-	void simd(typename Physics::Element &element)
-	{
-		for (size_t gp = 0; gp < gps; ++gp) {
-			element.w[gp] = GaussPoints<code, nodes, gps, edim>::w[gp];
-			for (size_t n = 0; n < nodes; ++n) {
-				element.N[gp][n] = GaussPoints<code, nodes, gps, edim>::N[gp * nodes + n];
-				for (size_t d = 0; d < edim; ++d) {
-					element.dN[gp][n][d] = GaussPoints<code, nodes, gps, edim>::dN[gp * edim * nodes + d * nodes + n];
-				}
-			}
-		}
-	}
-};
 
 template<>
 struct GaussPoints<Element::CODE::LINE2, 2, 2, 1> {
@@ -715,6 +690,7 @@ struct GaussPoints<Element::CODE::PRISMA15, 15, 9, 3> {
 
 template<>
 struct GaussPoints<Element::CODE::HEXA20, 20, 8, 3> {
+
 	constexpr static int nodes = 20, gps = 8, edim = 3;
 	static double w[gps], N[gps * nodes], dN[gps * nodes * edim];
 
@@ -817,9 +793,33 @@ struct GaussPoints<Element::CODE::HEXA20, 20, 8, 3> {
 			dN[3 * gp * nodes + 2 * nodes + 19] =   (t * (r - 1.0) * (s + 1.0)) / 2.0;
 		}
 	}
+
+};
+
+template <Element::CODE code, size_t nodes, size_t gps, size_t edim, size_t etype, class Physics>
+struct Basis: ActionOperator, Physics {
+	const char* name() const { return "Basis"; }
+
+	Basis()
+	{
+		action = Action::ASSEMBLE | Action::REASSEMBLE | Action::SOLUTION;
+	}
+
+	void simd(typename Physics::Element &element)
+	{
+		for (size_t gp = 0; gp < gps; ++gp) {
+			element.w[gp] = GaussPoints<code, nodes, gps, edim>::w[gp];
+			for (size_t n = 0; n < nodes; ++n) {
+				element.N[gp][n] = GaussPoints<code, nodes, gps, edim>::N[gp * nodes + n];
+				for (size_t d = 0; d < edim; ++d) {
+					element.dN[gp][n][d] = GaussPoints<code, nodes, gps, edim>::dN[gp * edim * nodes + d * nodes + n];
+				}
+			}
+		}
+	}
 };
 
 
 }
 
-#endif /* SRC_ANALYSIS_ASSEMBLER_SUBKERNEL_BASIS_H_ */
+#endif /* SRC_ANALYSIS_ASSEMBLER_OPERATORS_BASIS_H_ */

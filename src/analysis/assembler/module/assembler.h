@@ -3,7 +3,6 @@
 #define SRC_ANALYSIS_ASSEMBLER_MODULE_ASSEMBLER_H_
 
 #include "basis/evaluator/evaluator.h"
-#include "analysis/assembler/operator.h"
 #include "math/primitives/vector_sparse.h"
 
 #include "analysis/scheme/steadystate.h"
@@ -25,43 +24,14 @@ struct PhysicsConfiguration;
 class Assembler
 {
 public:
-	struct measurements
-	{
-		double preprocessTime;
-		double coreTime;
-
-		measurements(): 
-			preprocessTime(0.0), 
-			coreTime(0.0) {}
-
-		measurements(double preprocessTime, double coreTime): 
-			preprocessTime(preprocessTime), 
-			coreTime(coreTime) {}
-
-		measurements& operator+= (const measurements& rhs)
-		{
-			preprocessTime += rhs.preprocessTime;
-			coreTime       += rhs.coreTime;
-			return *this;
-		}
-
-		measurements operator+ (const measurements& rhs)
-		{
-			return measurements(
-				preprocessTime + rhs.preprocessTime,
-				coreTime + rhs.coreTime);
-		}
-		measurements& operator/=(double value)
-		{
-			preprocessTime /= value;
-			coreTime /= value;
-			return *this;
-		}
+	enum Action: int {
+		VOID       = 1 << 0,
+		ASSEMBLE   = 1 << 1,
+		REASSEMBLE = 1 << 2,
+		FILL       = 1 << 3,
+		SOLUTION   = 1 << 4,
+		PREPROCESS = 1 << 5
 	};
-
-#pragma omp declare reduction(+ : measurements : \
-	omp_out += omp_in) \
-	initializer (omp_priv=measurements())
 
 	Assembler(PhysicsConfiguration &settings);
 	virtual ~Assembler();
@@ -71,25 +41,12 @@ public:
 	static Evaluator* getEvaluator(size_t interval, std::map<std::string, ECFExpression> &settings);
 	static Evaluator* getEvaluator(size_t interval, std::map<std::string, ECFExpressionVector> &settings, int dim);
 
-	virtual size_t esize() =0;
-	void dryrun();
-
 	PhysicsConfiguration &settings;
-	std::vector<int> etype, bfilter;
-	std::vector<std::vector<int> > btype;
-	std::vector<std::vector<ActionOperator*> > elementOps;
-	std::vector<std::vector<std::vector<ActionOperator*> > > boundaryOps;
 
 protected:
 	void setTime(double time);
-	measurements assemble(ActionOperator::Action action);
-	virtual measurements instantiate           (ActionOperator::Action action, int code, int etype, const std::vector<ActionOperator*> &ops, size_t interval, esint elements) =0;
-	virtual measurements instantiateConditions (ActionOperator::Action action, int code, int etype, const std::vector<ActionOperator*> &ops, size_t interval, esint elements) =0;
-	virtual measurements instantiateManual     (ActionOperator::Action action, int code, int etype, const std::vector<ActionOperator*> &ops, size_t interval, esint elements) =0;
-	virtual measurements instantiateHybrid     (ActionOperator::Action action, int code, int etype, const std::vector<ActionOperator*> &ops, size_t interval, esint elements) =0;
-
-	template <template <size_t, size_t, size_t, size_t, size_t> class DataDescriptor, size_t nodes, size_t gps, size_t ndim, size_t edim, size_t etype>
-	measurements loop(ActionOperator::Action action, const std::vector<ActionOperator*> &ops, esint elements);
+	void assemble(Action action);
+	virtual void run(Action action, size_t interval) =0;
 
 	bool checkExpression(const std::string &name, ECFExpression &expression);
 	bool checkElementParameter(const std::string &name, std::map<std::string, ECFExpression> &settings);
@@ -105,11 +62,12 @@ protected:
 	void printMaterials(const std::map<std::string, std::string> &settings);
 	template<typename Ttype>
 	void validateRegionSettings(const std::string &name, const std::map<std::string, Ttype> &settings);
-
-	// TODO: remove
-	Matrix_Base<double> *K;
-	Vector_Base<double> *f;
 };
+
+inline Assembler::Action  operator| (Assembler::Action  a1, Assembler::Action a2) { return static_cast<Assembler::Action>(static_cast<int>(a1) | static_cast<int>(a2)); }
+inline Assembler::Action  operator& (Assembler::Action  a1, Assembler::Action a2) { return static_cast<Assembler::Action>(static_cast<int>(a1) & static_cast<int>(a2)); }
+inline Assembler::Action& operator|=(Assembler::Action &a1, Assembler::Action a2) { a1 = a1 | a2; return a1; }
+inline Assembler::Action& operator&=(Assembler::Action &a1, Assembler::Action a2) { a1 = a1 & a2; return a1; }
 
 template <typename T>
 static void reset(T *t)

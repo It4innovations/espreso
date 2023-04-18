@@ -1,39 +1,35 @@
 
-#ifndef SRC_ANALYSIS_ASSEMBLER_SUBKERNEL_HEATTRANSFER_ADVECTION_H_
-#define SRC_ANALYSIS_ASSEMBLER_SUBKERNEL_HEATTRANSFER_ADVECTION_H_
+#ifndef SRC_ANALYSIS_ASSEMBLER_OPERATORS_ADVECTION_H_
+#define SRC_ANALYSIS_ASSEMBLER_OPERATORS_ADVECTION_H_
 
-#include "subkernels.h"
+#include <analysis/assembler/subkernel/operator.h>
+#include "math/simd/simd.h"
 
 namespace espreso {
 
-struct Advection: SubKernel {
+struct AdvectionBase: ActionOperator {
 	const char* name() const { return "Advection"; }
 
-	ECFExpressionVector *expression;
-	double *K;
+	OutputParameterIterator stiffness;
 
-	Advection()
-	: expression(nullptr), K(nullptr)
+	AdvectionBase(size_t interval, ParameterData &stiffness)
+	: stiffness(stiffness, interval)
 	{
 		isconst = false;
-		action = Assembler::ASSEMBLE | Assembler::REASSEMBLE;
+		action = Action::ASSEMBLE | Action::REASSEMBLE;
 	}
 
-	void activate(ECFExpressionVector *expression, double *K)
+	void move(int n)
 	{
-		this->expression = expression;
-		this->K = K;
-		if (this->expression) {
-			isactive = 1;
-		}
+		stiffness += n;
 	}
 };
 
-template <size_t nodes, size_t gps, size_t ndim, size_t etype, class Physics> struct AdvectionKernel;
+template <size_t nodes, size_t gps, size_t ndim, size_t edim, size_t etype, class Physics> struct Advection;
 
-template <size_t nodes, size_t gps, size_t ndim, class Physics>
-struct AdvectionKernel<nodes, gps, ndim, HeatTransferElementType::SYMMETRIC_ISOTROPIC, Physics>: Advection, Physics {
-	AdvectionKernel(const Advection &base): Advection(base) {}
+template <size_t nodes, size_t gps, size_t ndim, size_t edim, class Physics>
+struct Advection<nodes, gps, ndim, edim, HeatTransferElementType::SYMMETRIC_ISOTROPIC, Physics>: AdvectionBase, Physics {
+	using AdvectionBase::AdvectionBase;
 
 	void simd(typename Physics::Element &element)
 	{
@@ -41,9 +37,9 @@ struct AdvectionKernel<nodes, gps, ndim, HeatTransferElementType::SYMMETRIC_ISOT
 	}
 };
 
-template <size_t nodes, size_t gps, size_t ndim, class Physics>
-struct AdvectionKernel<nodes, gps, ndim, HeatTransferElementType::SYMMETRIC_GENERAL, Physics>: Advection, Physics {
-	AdvectionKernel(const Advection &base): Advection(base) {}
+template <size_t nodes, size_t gps, size_t ndim, size_t edim, class Physics>
+struct Advection<nodes, gps, ndim, edim, HeatTransferElementType::SYMMETRIC_GENERAL, Physics>: AdvectionBase, Physics {
+	using AdvectionBase::AdvectionBase;
 
 	void simd(typename Physics::Element &element)
 	{
@@ -51,13 +47,13 @@ struct AdvectionKernel<nodes, gps, ndim, HeatTransferElementType::SYMMETRIC_GENE
 	}
 };
 
-template <size_t nodes, size_t gps, size_t ndim, class Physics>
-struct AdvectionKernel<nodes, gps, ndim, HeatTransferElementType::ASYMMETRIC_ISOTROPIC, Physics>: Advection, Physics {
-	AdvectionKernel(const Advection &base): Advection(base) {}
+template <size_t nodes, size_t gps, size_t ndim, size_t edim, class Physics>
+struct Advection<nodes, gps, ndim, edim, HeatTransferElementType::ASYMMETRIC_ISOTROPIC, Physics>: AdvectionBase, Physics {
+	using AdvectionBase::AdvectionBase;
 
 	void simd(typename Physics::Element &element)
 	{
-		double * __restrict__ out = K;
+		double * __restrict__ out = stiffness.data;
 		for (size_t gp = 0; gp < gps; ++gp) {
 			SIMD usq, besq, be[nodes];
 			for (size_t d = 0; d < ndim; ++d) {
@@ -94,17 +90,17 @@ struct AdvectionKernel<nodes, gps, ndim, HeatTransferElementType::ASYMMETRIC_ISO
 				}
 			}
 		}
-		K += SIMD::size * nodes * nodes;
+		move(SIMD::size);
 	}
 };
 
-template <size_t nodes, size_t gps, size_t ndim, class Physics>
-struct AdvectionKernel<nodes, gps, ndim, HeatTransferElementType::ASYMMETRIC_GENERAL, Physics>: Advection, Physics {
-	AdvectionKernel(const Advection &base): Advection(base) {}
+template <size_t nodes, size_t gps, size_t ndim, size_t edim, class Physics>
+struct Advection<nodes, gps, ndim, edim, HeatTransferElementType::ASYMMETRIC_GENERAL, Physics>: AdvectionBase, Physics {
+	using AdvectionBase::AdvectionBase;
 
 	void simd(typename Physics::Element &element)
 	{
-		double * __restrict__ out = K;
+		double * __restrict__ out = stiffness.data;
 		for (size_t gp = 0; gp < gps; ++gp) {
 			SIMD usq, besq, be[nodes];
 			for (size_t d = 0; d < ndim; ++d) {
@@ -143,12 +139,11 @@ struct AdvectionKernel<nodes, gps, ndim, HeatTransferElementType::ASYMMETRIC_GEN
 				}
 			}
 		}
-		K += SIMD::size * nodes * nodes;
+		move(SIMD::size);
 	}
 };
 
 }
 
 
-
-#endif /* SRC_ANALYSIS_ASSEMBLER_SUBKERNEL_HEATTRANSFER_ADVECTION_H_ */
+#endif /* SRC_ANALYSIS_ASSEMBLER_OPERATORS_ADVECTION_H_ */
