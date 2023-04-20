@@ -67,12 +67,10 @@ protected:
 	int axisymmetric;
 
 	void run(Action action, size_t interval) { }
+	void run(Action action, size_t region, size_t interval) { }
 
 	bool initDisplacement();
 	void initParameters();
-
-	void volume();
-	size_t esize();
 
 	std::vector<std::vector<double> > cossin_conditions;
 private:

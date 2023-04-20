@@ -327,7 +327,7 @@ void StructuralMechanics::analyze()
 
 	eslog::info("  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  \n");
 	eslog::info("  SIMD SIZE                                                                                 %lu \n", SIMD::size);
-	eslog::info("  MAX ELEMENT SIZE                                                                   %6lu B \n", esize());
+//	eslog::info("  MAX ELEMENT SIZE                                                                   %6lu B \n", esize());
 	eslog::info("  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  \n");
 	if (correct) {
 		eslog::info("  PHYSICS CONFIGURED                                                               %8.3f s \n", eslog::time() - start);
@@ -397,34 +397,6 @@ void StructuralMechanics::evaluate(SteadyState &scheme)
 	assemble(Action::ASSEMBLE);
 	assemble(Action::FILL);
 	update(scheme.K, scheme.f);
-}
-
-void StructuralMechanics::volume()
-{
-//	std::vector<double> evolume(info::mesh->elements->eintervals.size());
-//	std::vector<double> bvolume(info::mesh->boundaryRegions.size());
-//
-//	generateElementOperators<Volume>(etype, elementOps, evolume);
-//	generateBoundaryOperators<Volume>(axisymmetric, bfilter, boundaryOps, bvolume);
-//	assemble(ActionOperator::Action::ASSEMBLE);
-//	dropLastOperators(elementOps);
-//	dropLastOperators(bfilter, boundaryOps);
-//
-//	printElementVolume(evolume);
-//	printBoundarySurface(bvolume);
-}
-
-size_t StructuralMechanics::esize()
-{
-	size_t max = 0;
-//	std::vector<size_t> esize(info::mesh->elements->eintervals.size());
-//
-//	generateElementOperators<DataDescriptorElementSize>(etype, elementOps, esize);
-//	for (size_t i = 0; i < elementOps.size(); ++i) {
-//		max = std::max(max, esize[i]);
-//	}
-//	dropLastOperators(elementOps);
-	return max;
 }
 
 void StructuralMechanics::updateSolution(SteadyState &scheme)

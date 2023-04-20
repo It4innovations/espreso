@@ -47,8 +47,6 @@ public:
 
 	void analyze();
 
-	void run(Action action, size_t interval) { }
-
 	void connect(Harmonic &scheme);
 	void evaluate(Harmonic &scheme);
 	void updateSolution(Harmonic &scheme);
@@ -141,9 +139,10 @@ public:
 		static NodeData *pressure, *initialPressure;
 	};
 protected:
-	void initParameters();
+	void run(Action action, size_t interval) { }
+	void run(Action action, size_t region, size_t interval) { }
 
-	size_t esize() { return 0; }
+	void initParameters();
 };
 
 }

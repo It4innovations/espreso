@@ -65,27 +65,24 @@ void Assembler::assemble(Action action)
 		for (int t = 0; t < info::env::threads; ++t) {
 			for (size_t d = info::mesh->domains->distribution[t]; d < info::mesh->domains->distribution[t + 1]; d++) {
 				for (esint i = info::mesh->elements->eintervalsDistribution[d]; i < info::mesh->elements->eintervalsDistribution[d + 1]; ++i) {
-					esint elements = info::mesh->elements->eintervals[i].end - info::mesh->elements->eintervals[i].begin;
 					run(action, i);
 				}
 			}
 		}
 
-//		for (int t = 0; t < info::env::threads; ++t) {
-//			for (size_t d = info::mesh->domains->distribution[t]; d < info::mesh->domains->distribution[t + 1]; d++) {
-//				for (size_t r = 1; r < info::mesh->boundaryRegions.size(); ++r) {
-//					if (info::mesh->boundaryRegions[r]->dimension) {
-//						for (esint i = info::mesh->boundaryRegions[r]->eintervalsDistribution[d]; i < info::mesh->boundaryRegions[r]->eintervalsDistribution[d + 1]; ++i) {
-//							size_t elements = info::mesh->boundaryRegions[r]->eintervals[i].end - info::mesh->boundaryRegions[r]->eintervals[i].begin;
-//							instantiate(action, info::mesh->boundaryRegions[r]->eintervals[i].code, btype[r][i], boundaryOps[r][i], i, elements);
-//						}
-//					} else {
-//						size_t elements = info::mesh->boundaryRegions[r]->nodes->datatarray().size(t);
-//						instantiate(action, static_cast<int>(Element::CODE::POINT1), btype[r][t], boundaryOps[r][t], r, elements);
-//					}
-//				}
-//			}
-//		}
+		for (int t = 0; t < info::env::threads; ++t) {
+			for (size_t r = 1; r < info::mesh->boundaryRegions.size(); ++r) {
+				if (info::mesh->boundaryRegions[r]->dimension) {
+					for (size_t d = info::mesh->domains->distribution[t]; d < info::mesh->domains->distribution[t + 1]; d++) {
+						for (esint i = info::mesh->boundaryRegions[r]->eintervalsDistribution[d]; i < info::mesh->boundaryRegions[r]->eintervalsDistribution[d + 1]; ++i) {
+							run(action, r, i);
+						}
+					}
+				} else {
+					run(action, r, t);
+				}
+			}
+		}
 	} else {
 		#pragma omp parallel for
 		for (int t = 0; t < info::env::threads; ++t) {
@@ -95,22 +92,20 @@ void Assembler::assemble(Action action)
 				}
 			}
 		}
-//		#pragma omp parallel for
-//		for (int t = 0; t < info::env::threads; ++t) {
-//			for (size_t d = info::mesh->domains->distribution[t]; d < info::mesh->domains->distribution[t + 1]; d++) {
-//				for (size_t r = 1; r < info::mesh->boundaryRegions.size(); ++r) {
-//					if (info::mesh->boundaryRegions[r]->dimension) {
-//						for (esint i = info::mesh->boundaryRegions[r]->eintervalsDistribution[d]; i < info::mesh->boundaryRegions[r]->eintervalsDistribution[d + 1]; ++i) {
-//							size_t elements = info::mesh->boundaryRegions[r]->eintervals[i].end - info::mesh->boundaryRegions[r]->eintervals[i].begin;
-//							instantiate(action, info::mesh->boundaryRegions[r]->eintervals[i].code, btype[r][i], boundaryOps[r][i], i, elements);
-//						}
-//					} else {
-//						size_t elements = info::mesh->boundaryRegions[r]->nodes->datatarray().size(t);
-//						instantiate(action, static_cast<int>(Element::CODE::POINT1), btype[r][t], boundaryOps[r][t], t, elements);
-//					}
-//				}
-//			}
-//		}
+		#pragma omp parallel for
+		for (int t = 0; t < info::env::threads; ++t) {
+			for (size_t r = 1; r < info::mesh->boundaryRegions.size(); ++r) {
+				if (info::mesh->boundaryRegions[r]->dimension) {
+					for (size_t d = info::mesh->domains->distribution[t]; d < info::mesh->domains->distribution[t + 1]; d++) {
+						for (esint i = info::mesh->boundaryRegions[r]->eintervalsDistribution[d]; i < info::mesh->boundaryRegions[r]->eintervalsDistribution[d + 1]; ++i) {
+							run(action, r, i);
+						}
+					}
+				} else {
+					run(action, r, t);
+				}
+			}
+		}
 	}
 }
 

@@ -18,11 +18,11 @@ struct Basis: SubKernel {
 
 template <Element::CODE code, size_t nodes, size_t gps, size_t edim> struct GaussPoints;
 
-template <Element::CODE code, size_t nodes, size_t gps, size_t edim, class Physics>
-struct BasisKernel: Basis, Physics {
+template <Element::CODE code, size_t nodes, size_t gps, size_t edim>
+struct BasisKernel: Basis {
 	BasisKernel(const Basis &base): Basis(base) { }
 
-	void simd(typename Physics::Element &element)
+	void simd(ElementIntegration<nodes, gps, edim> &element)
 	{
 		for (size_t gp = 0; gp < gps; ++gp) {
 			element.w[gp] = GaussPoints<code, nodes, gps, edim>::w[gp];

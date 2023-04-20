@@ -47,6 +47,7 @@ protected:
 	void setTime(double time);
 	void assemble(Action action);
 	virtual void run(Action action, size_t interval) =0;
+	virtual void run(Action action, size_t region, size_t interval) =0;
 
 	bool checkExpression(const std::string &name, ECFExpression &expression);
 	bool checkElementParameter(const std::string &name, std::map<std::string, ECFExpression> &settings);

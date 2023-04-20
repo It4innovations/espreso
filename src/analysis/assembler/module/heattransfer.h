@@ -13,10 +13,12 @@
 #include "math/physics/matrix_base.h"
 
 #include "analysis/assembler/subkernel/basis.h"
+#include "analysis/assembler/subkernel/thickness.h"
 #include "analysis/assembler/subkernel/coordinates.h"
 #include "analysis/assembler/subkernel/temperature.h"
 #include "analysis/assembler/subkernel/integration.h"
 #include "analysis/assembler/subkernel/expression.h"
+#include "analysis/assembler/subkernel/filler.h"
 #include "analysis/assembler/subkernel/heattransfer/conductivity.h"
 #include "analysis/assembler/subkernel/heattransfer/coordinatesystem.h"
 #include "analysis/assembler/subkernel/heattransfer/advection.h"
@@ -37,37 +39,50 @@ struct SteadyState;
 
 class HeatTransfer: public Assembler
 {
-	struct TransferElementType {
-		enum: int {
-			SYMMETRIC_ISOTROPIC  = 0,
-			SYMMETRIC_GENERAL    = 1,
-			ASYMMETRIC_ISOTROPIC = 2,
-			ASYMMETRIC_GENERAL   = 3,
-			FACE                 = 4,
-			EDGE                 = 5,
-			NODE                 = 6
-		};
-	};
-
 public:
 	struct SubKernels {
 		int code;
-		size_t etype;
-		esint elements;
+		size_t elements, chunks;
+
+		size_t esize;
+		double volume;
 
 		Basis basis;
+		Thickness thickness;
 		Coordinates coordinates;
 		Temperature temperature;
 		Integration integration;
 		Conductivity conductivity;
-		HeatTransferCoordinateSystem translation;
+		HeatTransferCoordinateSystem coosystem;
 		Advection advection;
 		HeatTransferMatrix K;
 
 		TemperatureGradient gradient;
 		TemperatureFlux flux;
 
-		std::vector<ExternalExpression*> expressions;
+		DataFiller Kfiller, RHSfiller;
+
+		std::vector<ExternalEvaluator*> expressions;
+	};
+
+	struct BoundarySubKernels {
+		int code;
+		size_t elements, chunks;
+		size_t type;  // 0 - void, 1 - dirichlet, 2 - neumann
+
+		size_t esize;
+		double volume;
+
+		Basis basis;
+		Thickness thickness;
+		Coordinates coordinates;
+		Integration integration;
+
+		ExternalExpression temperature;
+
+		DataFiller RHSfiller, dirichlet;
+
+		std::vector<ExternalEvaluator*> expressions;
 	};
 
 	HeatTransfer(HeatTransfer *previous, HeatTransferConfiguration &settings, HeatTransferLoadStepConfiguration &configuration);
@@ -99,26 +114,10 @@ public:
 
 protected:
 	void run(Action action, size_t interval);
+	void run(Action action, size_t region, size_t interval);
 
-	template <int etype> void instantiate2D(Action action, size_t interval);
-	template <int etype> void instantiate3D(Action action, size_t interval);
-
-	template <template <size_t, size_t, size_t, size_t, size_t> class DataDescriptor, Element::CODE code, size_t nodes, size_t gps, size_t ndim, size_t edim, size_t etype>
-	void hybridloop(Action action, size_t interval);
-
-	template <template <size_t, size_t, size_t, size_t, size_t> class DataDescriptor, size_t nodes, size_t gps, size_t ndim, size_t edim, size_t etype>
-	void hybridpreprocess(size_t interval);
-
-	void initParameters();
-
-	void initTemperatureAndThickness();
-	void volume();
-	size_t esize();
-
-	std::vector<std::vector<double> > cossin_conditions;
 	std::vector<SubKernels> subkernels;
-private:
-	void generateConductivity();
+	std::vector<std::vector<BoundarySubKernels> > boundary;
 };
 
 }

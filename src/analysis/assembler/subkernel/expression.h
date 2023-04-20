@@ -8,10 +8,27 @@
 
 namespace espreso {
 
-struct ExternalExpression: SubKernel {
+struct ExternalExpression {
+	const char* name() const { return expression->value.c_str(); }
+
+	ECFExpression *expression;
+
+	ExternalExpression()
+	: expression(nullptr)
+	{
+
+	}
+
+	void activate(ECFExpression &expression)
+	{
+		this->expression = &expression;
+	}
+};
+
+struct ExternalEvaluator: SubKernel {
 	const char* name() const { return evaluator->expression(); }
 
-	ExternalExpression(Evaluator *evaluator)
+	ExternalEvaluator(Evaluator *evaluator)
 	: evaluator(evaluator)
 	{
 		isconst = evaluator->isConst();
@@ -32,12 +49,12 @@ struct ExternalExpression: SubKernel {
 };
 
 template <size_t gps, class Physics>
-struct ExternalGPsExpression: ExternalExpression, Physics {
+struct ExternalGPsExpression: ExternalEvaluator, Physics {
 
 	std::function<void(typename Physics::Element&, size_t&, size_t&, double)> setter;
 
 	ExternalGPsExpression(Evaluator *evaluator, const std::function<void(typename Physics::Element&, size_t&, size_t&, double)> &setter)
-	: ExternalExpression(evaluator), setter(setter)
+	: ExternalEvaluator(evaluator), setter(setter)
 	{
 
 	}
@@ -47,6 +64,27 @@ struct ExternalGPsExpression: ExternalExpression, Physics {
 		for (size_t gp = 0; gp < gps; ++gp) {
 			for (size_t s = 0; s < SIMD::size; ++s) {
 				setter(element, gp, s, this->evaluator->evaluate());
+			}
+		}
+	}
+};
+
+template <size_t nodes, class Physics>
+struct ExternalNodeExpression: ExternalEvaluator, Physics {
+
+	std::function<void(typename Physics::Element&, size_t&, size_t&, double)> setter;
+
+	ExternalNodeExpression(Evaluator *evaluator, const std::function<void(typename Physics::Element&, size_t&, size_t&, double)> &setter)
+	: ExternalEvaluator(evaluator), setter(setter)
+	{
+
+	}
+
+	void simd(typename Physics::Element &element)
+	{
+		for (size_t n = 0; n < nodes; ++n) {
+			for (size_t s = 0; s < SIMD::size; ++s) {
+				setter(element, n, s, this->evaluator->evaluate());
 			}
 		}
 	}

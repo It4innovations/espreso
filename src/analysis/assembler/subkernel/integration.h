@@ -20,7 +20,7 @@ struct Integration: SubKernel {
 template <size_t nodes, size_t gps, size_t ndim, size_t edim, class Physics> struct IntegrationKernel;
 
 template <size_t nodes, size_t gps, class Physics>
-struct IntegrationKernel<nodes, gps, 2, 2, Physics>: Integration, Physics {
+struct IntegrationKernel<nodes, gps, 2, 2, Physics>: Integration {
 	IntegrationKernel(const Integration &base): Integration(base) {}
 
 	void simd(typename Physics::Element &element)
@@ -59,7 +59,7 @@ struct IntegrationKernel<nodes, gps, 2, 2, Physics>: Integration, Physics {
 };
 
 template <size_t nodes, size_t gps, class Physics>
-struct IntegrationKernel<nodes, gps, 3, 3, Physics>: Integration, Physics {
+struct IntegrationKernel<nodes, gps, 3, 3, Physics>: Integration {
 	IntegrationKernel(const Integration &base): Integration(base) {}
 
 	void simd(typename Physics::Element &element)
