@@ -189,3 +189,54 @@ espreso::LinearElasticPropertiesConfiguration::LinearElasticPropertiesConfigurat
 			.allowonly([&] () { return model == MODEL::ANISOTROPIC; }));
 }
 
+bool espreso::LinearElasticPropertiesConfiguration::needCoordinates() const
+{
+	for (size_t i = 0; i < poisson_ratio.values.size(); ++i) {
+		if (poisson_ratio.values[i].evaluator && poisson_ratio.values[i].evaluator->needCoordinates()) {
+			return true;
+		}
+	}
+	for (size_t i = 0; i < young_modulus.values.size(); ++i) {
+		if (poisson_ratio.values[i].evaluator && poisson_ratio.values[i].evaluator->needCoordinates()) {
+			return true;
+		}
+	}
+	for (size_t i = 0; i < shear_modulus.values.size(); ++i) {
+		if (poisson_ratio.values[i].evaluator && poisson_ratio.values[i].evaluator->needCoordinates()) {
+			return true;
+		}
+	}
+	for (size_t i = 0; i < anisotropic.values.size(); ++i) {
+		if (anisotropic.values[i].evaluator && anisotropic.values[i].evaluator->needCoordinates()) {
+			return true;
+		}
+	}
+
+	return false;
+}
+
+bool espreso::LinearElasticPropertiesConfiguration::needTemperature() const
+{
+	for (size_t i = 0; i < poisson_ratio.values.size(); ++i) {
+		if (poisson_ratio.values[i].evaluator && poisson_ratio.values[i].evaluator->needTemperature()) {
+			return true;
+		}
+	}
+	for (size_t i = 0; i < young_modulus.values.size(); ++i) {
+		if (young_modulus.values[i].evaluator && young_modulus.values[i].evaluator->needTemperature()) {
+			return true;
+		}
+	}
+	for (size_t i = 0; i < shear_modulus.values.size(); ++i) {
+		if (shear_modulus.values[i].evaluator && shear_modulus.values[i].evaluator->needTemperature()) {
+			return true;
+		}
+	}
+	for (size_t i = 0; i < anisotropic.values.size(); ++i) {
+		if (anisotropic.values[i].evaluator && anisotropic.values[i].evaluator->needTemperature()) {
+			return true;
+		}
+	}
+	return false;
+}
+

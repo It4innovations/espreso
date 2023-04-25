@@ -2,7 +2,7 @@
 #ifndef SRC_ANALYSIS_ASSEMBLER_SUBKERNEL_HEATTRANSFER_GRADIENT_H_
 #define SRC_ANALYSIS_ASSEMBLER_SUBKERNEL_HEATTRANSFER_GRADIENT_H_
 
-#include "subkernels.h"
+#include "subkernel.h"
 
 namespace espreso {
 

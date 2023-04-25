@@ -38,6 +38,9 @@ public:
 
 	static ECFExpression* getExpression(size_t interval, std::map<std::string, ECFExpression> &settings);
 	static ECFExpressionVector* getExpression(size_t interval, std::map<std::string, ECFExpressionVector> &settings);
+	static ECFExpression* getExpression(const std::string &name, std::map<std::string, ECFExpression> &settings);
+	static ECFExpressionVector* getExpression(const std::string &name, std::map<std::string, ECFExpressionVector> &settings);
+
 	static Evaluator* getEvaluator(size_t interval, std::map<std::string, ECFExpression> &settings);
 	static Evaluator* getEvaluator(size_t interval, std::map<std::string, ECFExpressionVector> &settings, int dim);
 

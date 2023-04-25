@@ -25,6 +25,23 @@ struct ExternalExpression {
 	}
 };
 
+struct ExternalExpressionVector {
+	const char* name() const { return "ExternalExpressionVector"; }
+
+	ECFExpressionVector *expression;
+
+	ExternalExpressionVector()
+	: expression(nullptr)
+	{
+
+	}
+
+	void activate(ECFExpressionVector &expression)
+	{
+		this->expression = &expression;
+	}
+};
+
 struct ExternalEvaluator: SubKernel {
 	const char* name() const { return evaluator->expression(); }
 

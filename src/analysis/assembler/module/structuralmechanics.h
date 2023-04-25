@@ -12,6 +12,19 @@
 #include "math/primitives/matrix_info.h"
 #include "math/physics/matrix_base.h"
 
+#include "analysis/assembler/subkernel/basis.h"
+#include "analysis/assembler/subkernel/thickness.h"
+#include "analysis/assembler/subkernel/coordinates.h"
+#include "analysis/assembler/subkernel/material.h"
+#include "analysis/assembler/subkernel/temperature.h"
+#include "analysis/assembler/subkernel/integration.h"
+#include "analysis/assembler/subkernel/expression.h"
+#include "analysis/assembler/subkernel/filler.h"
+#include "analysis/assembler/subkernel/structuralmechanics/coordinatesystem.h"
+#include "analysis/assembler/subkernel/structuralmechanics/elasticity.h"
+#include "analysis/assembler/subkernel/structuralmechanics/matrix.h"
+#include "analysis/assembler/subkernel/structuralmechanics/rhs.h"
+
 #include <cstddef>
 #include <map>
 
@@ -24,17 +37,49 @@ struct SteadyState;
 class StructuralMechanics: public Assembler
 {
 public:
-	struct StructuralElementType {
-		enum: int {
-			SYMMETRIC_PLANE              = 0,
-			SYMMETRIC_PLANE_AXISYMMETRIC = 1,
-			SYMMETRIC_VOLUME             = 2,
-			FACE                         = 4,
-			EDGE                         = 5,
-			EDGE_AXISYMMETRIC            = 6,
-			NODE                         = 7
-		};
+	struct SubKernels {
+		int code;
+		size_t elements, chunks;
+
+		size_t esize;
+		double volume;
+
+		Basis basis;
+		Thickness thickness;
+		Material material;
+		Coordinates coordinates;
+		Temperature temperature;
+		Integration integration;
+		Elasticity elasticity;
+		StructuralMechanicsCoordinateSystem coosystem;
+		StructuralMechanicsMatrix K;
+		StructuralMechanicsRHS acceleration, angularVelocity;
+
+		DataFiller Kfiller, RHSfiller;
+
+		std::vector<ExternalEvaluator*> expressions;
 	};
+
+	struct BoundarySubKernels {
+		int code;
+		size_t elements, chunks;
+
+		size_t esize;
+		double surface;
+
+		Basis basis;
+		Thickness thickness;
+		Coordinates coordinates;
+		Integration integration;
+
+		ExternalExpressionVector displacement;
+		StructuralMechanicsRHS normalPressure;
+
+		DataFiller RHSfiller, dirichlet;
+
+		std::vector<ExternalEvaluator*> expressions;
+	};
+
 	StructuralMechanics(StructuralMechanics *previous, StructuralMechanicsConfiguration &settings, StructuralMechanicsLoadStepConfiguration &configuration);
 
 	void analyze();
@@ -59,22 +104,16 @@ public:
 	} elements;
 
 	struct Results {
-		static NodeData *displacement;
+		static NodeData *displacement, *thickness;
 		static ElementData *principalStress, *componentStress, *vonMisesStress;
 	};
 
 protected:
-	int axisymmetric;
+	void run(Action action, size_t interval);
+	void run(Action action, size_t region, size_t interval);
 
-	void run(Action action, size_t interval) { }
-	void run(Action action, size_t region, size_t interval) { }
-
-	bool initDisplacement();
-	void initParameters();
-
-	std::vector<std::vector<double> > cossin_conditions;
-private:
-	void generateElasticity();
+	std::vector<SubKernels> subkernels;
+	std::vector<std::vector<BoundarySubKernels> > boundary;
 };
 
 }

@@ -132,17 +132,16 @@ struct VectorSetterKernel: DataFiller, Physics {
 	{
 		size_t size = nodes * dofs;
 		size_t count = std::min((size_t)SIMD::size, elements);
-		for (size_t s = 0, i = 0; s < count; ++s) {
-			for (size_t d = 0, j = 0; d < dofs; ++d) {
+		for (size_t s = 0; s < count; ++s) {
+			for (size_t d = 0; d < dofs; ++d) {
 				if (filter & (1 << d)) {
-					for (size_t n = 0; n < nodes; ++n, ++i) {
-						global[position[i]] = setter(element, n, d, s);
+					for (size_t n = 0; n < nodes; ++n) {
+						global[*position++] = setter(element, n, d, s);
 					}
 				}
 			}
 		}
 		local += count * size;
-		position += count * size;
 		elements -= count;
 	}
 };

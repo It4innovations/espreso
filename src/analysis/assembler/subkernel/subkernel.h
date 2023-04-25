@@ -23,8 +23,6 @@ struct SubKernel {
 	{
 		isactive = guard && isactive && (this->action & action);
 	}
-
-	virtual const char* name() const =0;
 };
 
 template <size_t nodes, size_t gps, size_t ndim> struct ElementCoordinates {
@@ -37,6 +35,10 @@ template <size_t nodes, size_t gps> struct ElementTemperature {
 	alignas(SIMD::size * sizeof(double)) SIMD gptemp[gps];
 };
 
+template <size_t nodes, size_t ndim> struct ElementDisplacement {
+	alignas(SIMD::size * sizeof(double)) SIMD displacement[nodes][ndim];
+};
+
 template <size_t nodes, size_t gps, size_t edim> struct ElementIntegration {
 	alignas(SIMD::size * sizeof(double)) double  w[gps];
 	alignas(SIMD::size * sizeof(double)) double  N[gps][nodes];
@@ -44,6 +46,10 @@ template <size_t nodes, size_t gps, size_t edim> struct ElementIntegration {
 
 	alignas(SIMD::size * sizeof(double)) SIMD dND[gps][nodes][edim];
 	alignas(SIMD::size * sizeof(double)) SIMD det[gps];
+};
+
+template <size_t gps, size_t ndim> struct BondaryNormal {
+	alignas(SIMD::size * sizeof(double)) SIMD normal[gps][ndim];
 };
 
 }

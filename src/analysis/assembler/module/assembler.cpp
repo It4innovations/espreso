@@ -299,6 +299,18 @@ ECFExpressionVector* Assembler::getExpression(size_t interval, std::map<std::str
 	return it != settings.end() ? &it->second : nullptr;
 }
 
+ECFExpression* Assembler::getExpression(const std::string &name, std::map<std::string, ECFExpression> &settings)
+{
+	auto it = settings.find(name);
+	return it != settings.end() ? &it->second : nullptr;
+}
+
+ECFExpressionVector* Assembler::getExpression(const std::string &name, std::map<std::string, ECFExpressionVector> &settings)
+{
+	auto it = settings.find(name);
+	return it != settings.end() ? &it->second : nullptr;
+}
+
 Evaluator* Assembler::getEvaluator(size_t interval, std::map<std::string, ECFExpression> &settings)
 {
 	int region = info::mesh->elements->eintervals[interval].region;

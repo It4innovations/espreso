@@ -42,26 +42,16 @@ template <size_t gps, size_t ndim> struct HeatTransferConductivity<gps, ndim, Th
 	alignas(SIMD::size * sizeof(double)) SIMD conductivity[gps][ndim];
 };
 
-template <size_t gps> struct HeatTransferConductivity<gps, 2, ThermalConductivityConfiguration::MODEL::SYMMETRIC> {
-	alignas(SIMD::size * sizeof(double)) SIMD conductivity[gps][3];
-};
-
-template <size_t gps> struct HeatTransferConductivity<gps, 3, ThermalConductivityConfiguration::MODEL::SYMMETRIC> {
-	alignas(SIMD::size * sizeof(double)) SIMD conductivity[gps][6];
+template <size_t gps, size_t ndim> struct HeatTransferConductivity<gps, ndim, ThermalConductivityConfiguration::MODEL::SYMMETRIC> {
+	alignas(SIMD::size * sizeof(double)) SIMD conductivity[gps][3 * (ndim - 1)];
 };
 
 template <size_t gps, size_t ndim> struct HeatTransferConductivity<gps, ndim, ThermalConductivityConfiguration::MODEL::ANISOTROPIC> {
 	alignas(SIMD::size * sizeof(double)) SIMD conductivity[gps][ndim * ndim];
 };
 
-template <size_t gps, size_t ndim> struct HeatTransferRotation;
-
-template <size_t gps> struct HeatTransferRotation<gps, 2> {
-	alignas(SIMD::size * sizeof(double)) SIMD center[gps][2];
-};
-
-template <size_t gps> struct HeatTransferRotation<gps, 3> {
-	alignas(SIMD::size * sizeof(double)) SIMD center[gps][3];
+template <size_t gps, size_t ndim> struct HeatTransferRotation {
+	alignas(SIMD::size * sizeof(double)) SIMD center[gps][ndim];
 };
 
 template <size_t gps, size_t ndim, enum ThermalConductivityConfiguration::MODEL ecfmodel> struct HeatTransferRotationMatrix {
@@ -71,16 +61,6 @@ template <size_t gps, size_t ndim, enum ThermalConductivityConfiguration::MODEL 
 template <size_t gps, size_t ndim> struct HeatTransferRotationMatrix<gps, ndim, ThermalConductivityConfiguration::MODEL::ISOTROPIC> {
 
 };
-
-template <size_t nodes, size_t gps, size_t edim> struct HeatTransferElementIntegration {
-	alignas(SIMD::size * sizeof(double)) double  w[gps];
-	alignas(SIMD::size * sizeof(double)) double  N[gps][nodes];
-	alignas(SIMD::size * sizeof(double)) double dN[gps][nodes][edim];
-
-	alignas(SIMD::size * sizeof(double)) SIMD dND[gps][nodes][edim];
-	alignas(SIMD::size * sizeof(double)) SIMD det[gps];
-};
-
 
 template <size_t gps, size_t ndim> struct HeatTransferElementParameters;
 
@@ -156,7 +136,6 @@ template <size_t nodes, size_t gps, size_t ndim, size_t edim> struct HeatTransfe
 
 	virtual void simd(Element &element) =0;
 };
-
 
 }
 

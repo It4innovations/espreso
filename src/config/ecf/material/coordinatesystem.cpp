@@ -44,8 +44,12 @@ bool CoordinateSystemConfiguration::isRotated() const
 {
 	if (type == TYPE::CARTESIAN) {
 		switch (*dimension) {
-		case DIMENSION::D2: return rotation.z.isset;
-		case DIMENSION::D3: return rotation.x.isset | rotation.y.isset | rotation.z.isset;
+		case DIMENSION::D2: return rotation.z.isset && rotation.z.evaluator->evaluate() != 0;
+		case DIMENSION::D3:
+			return
+				(rotation.x.isset && rotation.x.evaluator->evaluate() != 0) |
+				(rotation.y.isset && rotation.y.evaluator->evaluate() != 0) |
+				(rotation.z.isset && rotation.z.evaluator->evaluate() != 0);
 		default: return false;
 		}
 	}

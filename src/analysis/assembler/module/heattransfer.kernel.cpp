@@ -475,19 +475,19 @@ void fill(const HeatTransfer::SubKernels &subkernels)
 	}
 }
 
-template <Element::CODE code, size_t nodes, size_t gps, size_t ndim, size_t edim, enum ThermalConductivityConfiguration::MODEL ecfmodel, enum ThermalConductivityConfiguration::MODEL model>
+template <Element::CODE code, size_t nodes, size_t gps, size_t ndim, size_t edim>
 void preprocess(HeatTransfer::BoundarySubKernels &subkernels)
 {
 
 }
 
-template <Element::CODE code, size_t nodes, size_t gps, size_t ndim, size_t edim, enum ThermalConductivityConfiguration::MODEL ecfmodel, enum ThermalConductivityConfiguration::MODEL model>
+template <Element::CODE code, size_t nodes, size_t gps, size_t ndim, size_t edim>
 void compute(const HeatTransfer::BoundarySubKernels &subkernels, Assembler::Action action)
 {
 
 }
 
-template <Element::CODE code, size_t nodes, size_t gps, size_t ndim, size_t edim, enum ThermalConductivityConfiguration::MODEL ecfmodel, enum ThermalConductivityConfiguration::MODEL model>
+template <Element::CODE code, size_t nodes, size_t gps, size_t ndim, size_t edim>
 void fill(const HeatTransfer::BoundarySubKernels &subkernels)
 {
 

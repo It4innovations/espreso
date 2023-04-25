@@ -35,8 +35,6 @@ HeatTransfer::HeatTransfer(HeatTransfer *previous, HeatTransferConfiguration &se
 	for (size_t r = 0; r < info::mesh->boundaryRegions.size(); ++r) {
 		elements.boundary.rhs.regions[r].setConstness(false);
 		elements.boundary.rhs.regions[r].resize();
-		elements.boundary.dirichlet.regions[r].setConstness(false);
-		elements.boundary.dirichlet.regions[r].resize();
 	}
 
 	subkernels.resize(info::mesh->elements->eintervals.size());
@@ -157,7 +155,7 @@ void HeatTransfer::analyze()
 				break;
 			case CoordinateSystemConfiguration::TYPE::SPHERICAL:
 				if (info::mesh->dimension == 2) {
-					eslog::error("HEAT TRANSFER 2D does not support SPHERICAL coordinate system.\n");
+					eslog::error("SPHERICAL coordinate system is not supported in 2D.\n");
 				}
 				if (info::mesh->dimension == 3) {
 					eslog::info("    COORDINATE SYSTEM:                                                              SPHERICAL \n");

@@ -2,7 +2,8 @@
 #ifndef SRC_ANALYSIS_ASSEMBLER_SUBKERNEL_HEATTRANSFER_CONDUCTIVITY_H_
 #define SRC_ANALYSIS_ASSEMBLER_SUBKERNEL_HEATTRANSFER_CONDUCTIVITY_H_
 
-#include "subkernels.h"
+#include "subkernel.h"
+#include "config/ecf/material/thermalconductivity.h"
 
 namespace espreso {
 

@@ -26,6 +26,9 @@ struct LinearElasticPropertiesConfiguration: public ECFDescription {
 	TensorConfiguration anisotropic;
 
 	LinearElasticPropertiesConfiguration(DIMENSION *D);
+
+	bool needCoordinates() const;
+	bool needTemperature() const;
 };
 
 }

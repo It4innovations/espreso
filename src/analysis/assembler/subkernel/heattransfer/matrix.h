@@ -2,7 +2,7 @@
 #ifndef SRC_ANALYSIS_ASSEMBLER_SUBKERNEL_HEATTRANSFER_MATRIX_H_
 #define SRC_ANALYSIS_ASSEMBLER_SUBKERNEL_HEATTRANSFER_MATRIX_H_
 
-#include "subkernels.h"
+#include "subkernel.h"
 
 namespace espreso {
 
@@ -23,6 +23,19 @@ struct HeatTransferMatrix: public SubKernel {
 	{
 		this->K = K;
 		this->isactive = 1;
+	}
+
+	inline void toFull(const size_t &nodes)
+	{
+		double * __restrict__ out = K;
+		if (shape == Matrix_Shape::FULL) {
+			for (size_t n = 0; n < nodes; ++n) {
+				for (size_t m = n + 1; m < nodes; ++m) {
+					SIMD res = load(out + (n * nodes + m) * SIMD::size);
+					store(out + (m * nodes + n) * SIMD::size, res);
+				}
+			}
+		}
 	}
 };
 
@@ -50,14 +63,7 @@ struct HeatTransferMatrixKernel<nodes, gps, 2, ThermalConductivityConfiguration:
 				}
 			}
 		}
-		if (shape == Matrix_Shape::FULL) {
-			for (size_t n = 0; n < nodes; ++n) {
-				for (size_t m = n + 1; m < nodes; ++m) {
-					SIMD res = load(out + (n * nodes + m) * SIMD::size);
-					store(out + (m * nodes + n) * SIMD::size, res);
-				}
-			}
-		}
+		toFull(nodes);
 		K += SIMD::size * nodes * nodes;
 	}
 };
@@ -86,14 +92,7 @@ struct HeatTransferMatrixKernel<nodes, gps, 3, ThermalConductivityConfiguration:
 				}
 			}
 		}
-		if (shape == Matrix_Shape::FULL) {
-			for (size_t n = 0; n < nodes; ++n) {
-				for (size_t m = n + 1; m < nodes; ++m) {
-					SIMD res = load(out + (n * nodes + m) * SIMD::size);
-					store(out + (m * nodes + n) * SIMD::size, res);
-				}
-			}
-		}
+		toFull(nodes);
 		K += SIMD::size * nodes * nodes;
 	}
 };
@@ -122,14 +121,7 @@ struct HeatTransferMatrixKernel<nodes, gps, 2, ThermalConductivityConfiguration:
 				}
 			}
 		}
-		if (shape == Matrix_Shape::FULL) {
-			for (size_t n = 0; n < nodes; ++n) {
-				for (size_t m = n + 1; m < nodes; ++m) {
-					SIMD res = load(out + (n * nodes + m) * SIMD::size);
-					store(out + (m * nodes + n) * SIMD::size, res);
-				}
-			}
-		}
+		toFull(nodes);
 		K += SIMD::size * nodes * nodes;
 	}
 };
@@ -161,14 +153,7 @@ struct HeatTransferMatrixKernel<nodes, gps, 3, ThermalConductivityConfiguration:
 				}
 			}
 		}
-		if (shape == Matrix_Shape::FULL) {
-			for (size_t n = 0; n < nodes; ++n) {
-				for (size_t m = n + 1; m < nodes; ++m) {
-					SIMD res = load(out + (n * nodes + m) * SIMD::size);
-					store(out + (m * nodes + n) * SIMD::size, res);
-				}
-			}
-		}
+		toFull(nodes);
 		K += SIMD::size * nodes * nodes;
 	}
 };
@@ -199,14 +184,7 @@ struct HeatTransferMatrixKernel<nodes, gps, 2, ThermalConductivityConfiguration:
 				}
 			}
 		}
-		if (shape == Matrix_Shape::FULL) {
-			for (size_t n = 0; n < nodes; ++n) {
-				for (size_t m = n + 1; m < nodes; ++m) {
-					SIMD res = load(out + (n * nodes + m) * SIMD::size);
-					store(out + (m * nodes + n) * SIMD::size, res);
-				}
-			}
-		}
+		toFull(nodes);
 		K += SIMD::size * nodes * nodes;
 	}
 };
@@ -241,14 +219,7 @@ struct HeatTransferMatrixKernel<nodes, gps, 3, ThermalConductivityConfiguration:
 				}
 			}
 		}
-		if (shape == Matrix_Shape::FULL) {
-			for (size_t n = 0; n < nodes; ++n) {
-				for (size_t m = n + 1; m < nodes; ++m) {
-					SIMD res = load(out + (n * nodes + m) * SIMD::size);
-					store(out + (m * nodes + n) * SIMD::size, res);
-				}
-			}
-		}
+		toFull(nodes);
 		K += SIMD::size * nodes * nodes;
 	}
 };
