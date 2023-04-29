@@ -1,4 +1,5 @@
 
+#include <analysis/solver.h>
 #include "esinfo/eslog.hpp"
 #include "esinfo/stepinfo.h"
 #include "esinfo/envinfo.h"
@@ -19,7 +20,6 @@
 #include "mesh/mesh.h"
 #include "output/output.h"
 
-#include "analysis/looper.h"
 
 using namespace espreso;
 
@@ -94,7 +94,7 @@ int main(int argc, char **argv)
 		eslog::endln("ESPRESO: DATABASE CONVERTED");
 	} else {
 		profiler::syncstart("physical_solver");
-		Looper looper;
+		Solver looper;
 		looper.run();
 		profiler::syncend("physical_solver");
 		eslog::endln("ESPRESO: SIMULATION FINISHED");

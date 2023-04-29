@@ -166,36 +166,39 @@ void StructuralMechanics::analyze()
 			}
 			eslog::info("                                                                                               \n");
 
-			switch (mat->material_model) {
-			case MaterialConfiguration::MATERIAL_MODEL::LINEAR_ELASTIC:
-				eslog::info("                                                                               LINEAR ELASTIC \n");
-				if (info::mesh->dimension == 2) {
-					switch (settings.element_behaviour) {
-					case StructuralMechanicsConfiguration::ELEMENT_BEHAVIOUR::PLANE_STRAIN:
-						eslog::info("     ELEMENT BEHAVIOR:                                                           PLANE STRAIN \n");
-						break;
-					case StructuralMechanicsConfiguration::ELEMENT_BEHAVIOUR::PLANE_STRESS:
-						eslog::info("     ELEMENT BEHAVIOR:                                                           PLANE STRESS \n");
-						break;
-					case StructuralMechanicsConfiguration::ELEMENT_BEHAVIOUR::PLANE_STRESS_WITH_THICKNESS:
-						eslog::info("     ELEMENT BEHAVIOR:                                            PLANE STRESS WITH THICKNESS \n");
-						correct &= checkElementParameter("THICKNESS", settings.thickness);
-						break;
-					case StructuralMechanicsConfiguration::ELEMENT_BEHAVIOUR::AXISYMMETRIC:
-						eslog::info("     ELEMENT BEHAVIOR:                                                           AXISYMMETRIC \n");
-						correct &= checkElementParameter("THICKNESS", settings.thickness);
-						break;
-					}
+			if (info::mesh->dimension == 2) {
+				switch (settings.element_behaviour) {
+				case StructuralMechanicsConfiguration::ELEMENT_BEHAVIOUR::PLANE_STRAIN:
+					eslog::info("     ELEMENT BEHAVIOR:                                                           PLANE STRAIN \n");
+					break;
+				case StructuralMechanicsConfiguration::ELEMENT_BEHAVIOUR::PLANE_STRESS:
+					eslog::info("     ELEMENT BEHAVIOR:                                                           PLANE STRESS \n");
+					break;
+				case StructuralMechanicsConfiguration::ELEMENT_BEHAVIOUR::PLANE_STRESS_WITH_THICKNESS:
+					eslog::info("     ELEMENT BEHAVIOR:                                            PLANE STRESS WITH THICKNESS \n");
+					correct &= checkElementParameter("THICKNESS", settings.thickness);
+					break;
+				case StructuralMechanicsConfiguration::ELEMENT_BEHAVIOUR::AXISYMMETRIC:
+					eslog::info("     ELEMENT BEHAVIOR:                                                           AXISYMMETRIC \n");
+					correct &= checkElementParameter("THICKNESS", settings.thickness);
+					break;
 				}
 				eslog::info("                                                                                               \n");
+			}
 
-				correct &= checkExpression("DENSITY", mat->density);
-				correct &= checkExpression("HEAT CAPACITY", mat->heat_capacity);
+			correct &= checkExpression("DENSITY", mat->density);
+			correct &= checkExpression("HEAT CAPACITY", mat->heat_capacity);
+			eslog::info("                                                                                               \n");
+
+			switch (mat->material_model) {
+			case MaterialConfiguration::MATERIAL_MODEL::PLASTICITY:
+				eslog::info("     PLASTICITY MODEL:                                                               ISOTROPIC \n");
 				eslog::info("                                                                                               \n");
-
+				/* no break */
+			case MaterialConfiguration::MATERIAL_MODEL::LINEAR_ELASTIC:
 				switch (mat->linear_elastic_properties.model) {
 				case LinearElasticPropertiesConfiguration::MODEL::ISOTROPIC:
-					eslog::info("                MODEL:                                                              ISOTROPIC \n");
+					eslog::info(" LINEAR ELASTIC MODEL:                                                              ISOTROPIC \n");
 					correct &= checkExpression("EX", mat->linear_elastic_properties.young_modulus.get(0, 0));
 					correct &= checkExpression("MI", mat->linear_elastic_properties.poisson_ratio.get(0, 0));
 					break;
@@ -265,14 +268,28 @@ void StructuralMechanics::analyze()
 			subkernels[i].thickness.activate(getExpression(i, settings.thickness), info::mesh->elements->nodes->cbegin() + eoffset, info::mesh->elements->nodes->cend(), Results::thickness->data.data());
 		}
 
+		if (Results::principalStress) {
+			subkernels[i].stress.activate(i, Results::principalStress, Results::componentStress, Results::vonMisesStress);
+			subkernels[i].displacement.activate(info::mesh->elements->nodes->cbegin() + info::mesh->elements->eintervals[i].begin, info::mesh->elements->nodes->cend(), Results::displacement->data.data(), false);
+			subkernels[i].elasticity.action |= Assembler::SOLUTION;
+		}
+
 		subkernels[i].coordinates.activate(info::mesh->elements->nodes->cbegin() + info::mesh->elements->eintervals[i].begin, info::mesh->elements->nodes->cend(), !cartesian || gpcoo);
 		subkernels[i].elasticity.activate(settings.element_behaviour, &mat->linear_elastic_properties, rotated);
+		if (mat->material_model == MaterialBaseConfiguration::MATERIAL_MODEL::PLASTICITY) {
+			subkernels[i].elasticity.indirect = true;
+			subkernels[i].plasticity.activate(settings.element_behaviour, &mat->plasticity_properties);
+			subkernels[i].displacement.activate(info::mesh->elements->nodes->cbegin() + info::mesh->elements->eintervals[i].begin, info::mesh->elements->nodes->cend(), Results::displacement->data.data(), true);
+		}
 		subkernels[i].coosystem.activate(mat->coordinate_system, subkernels[i].elasticity.isconst, rotated);
 		subkernels[i].material.activate(mat);
 
 		subkernels[i].K.activate((elements.stiffness.data->begin() + i)->data());
 		subkernels[i].acceleration.activate(getExpression(i, configuration.acceleration), (elements.rhs.data->begin() + i)->data());
 		subkernels[i].angularVelocity.activate(getExpression(i, configuration.angular_velocity), (elements.rhs.data->begin() + i)->data());
+		if (Results::principalStress) {
+			subkernels[i].stress.activate(i, Results::principalStress, Results::componentStress, Results::vonMisesStress);
+		}
 	}
 
 	for(size_t r = 1; r < info::mesh->boundaryRegions.size(); ++r) {
@@ -349,8 +366,9 @@ void StructuralMechanics::connect(SteadyState &scheme)
 	}
 }
 
-void StructuralMechanics::evaluate(SteadyState &scheme)
+void StructuralMechanics::evaluate(SteadyState &scheme, step::Time &time)
 {
+	setTime(time.current);
 	reset(scheme.K, scheme.f, scheme.dirichlet);
 	assemble(Action::ASSEMBLE);
 	assemble(Action::FILL);

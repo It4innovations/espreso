@@ -4,6 +4,7 @@
 
 #include "coordinatesystem.h"
 #include "linearelasticproperties.h"
+#include "plasticityproperties.h"
 #include "hyperelasticproperties.h"
 #include "thermalexpansion.h"
 #include "thermalconductivity.h"
@@ -22,6 +23,7 @@ struct MaterialBaseConfiguration: public ECFDescription {
 
 	enum class MATERIAL_MODEL {
 		LINEAR_ELASTIC,
+		PLASTICITY,
 		HYPER_ELASTIC
 	};
 
@@ -34,6 +36,7 @@ struct MaterialBaseConfiguration: public ECFDescription {
 	ECFExpression speed_of_sound;
 	ECFExpression heat_capacity;
 	LinearElasticPropertiesConfiguration linear_elastic_properties;
+	PlasticityPropertiesConfiguration plasticity_properties;
 	HyperElasticPropertiesConfiguration hyper_elastic_properties;
 	ThermalExpansionConfiguration thermal_expansion;
 	ThermalConductivityConfiguration thermal_conductivity;

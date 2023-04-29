@@ -1,6 +1,6 @@
 
-#ifndef SRC_ANALYSIS_SOLVER_NEWTONRAPHSON_H_
-#define SRC_ANALYSIS_SOLVER_NEWTONRAPHSON_H_
+#ifndef SRC_ANALYSIS_NONLINEARITY_NEWTONRAPHSON_H_
+#define SRC_ANALYSIS_NONLINEARITY_NEWTONRAPHSON_H_
 
 #include "analysis/linearsystem/linearsystem.h"
 
@@ -13,6 +13,7 @@ template<typename T> struct Matrix_Base;
 
 class NonLinearSolverConfiguration;
 class HeatTransfer;
+class StructuralMechanics;
 class SteadyState;
 
 class NewtonRaphson {
@@ -23,9 +24,11 @@ public:
 
 	void init(LinearSystem<double> *system);
 	bool run(step::Step &step, step::Time &time, HeatTransfer &assembler, SteadyState &scheme, LinearSystem<double> *system);
+	bool run(step::Step &step, step::Time &time, StructuralMechanics &assembler, SteadyState &scheme, LinearSystem<double> *system);
 
 protected:
 	bool checkTemp(step::Step &step, HeatTransfer &assembler, SteadyState &scheme, LinearSystem<double> *system);
+	bool checkDisplacement(step::Step &step, StructuralMechanics &assembler, SteadyState &scheme, LinearSystem<double> *system);
 
 	NonLinearSolverConfiguration &configuration;
 
@@ -35,4 +38,4 @@ protected:
 }
 
 
-#endif /* SRC_ANALYSIS_SOLVER_NEWTONRAPHSON_H_ */
+#endif /* SRC_ANALYSIS_NONLINEARITY_NEWTONRAPHSON_H_ */

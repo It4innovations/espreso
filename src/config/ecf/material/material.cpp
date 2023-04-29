@@ -9,7 +9,7 @@ using namespace espreso;
 MaterialBaseConfiguration::MaterialBaseConfiguration(DIMENSION *D, PHYSICAL_MODEL physicalModel, bool *phase_change)
 : physical_model(physicalModel), material_model(MATERIAL_MODEL::LINEAR_ELASTIC),
   coordinate_system(D),
-  linear_elastic_properties(D), hyper_elastic_properties(D), thermal_expansion(D),
+  linear_elastic_properties(D), plasticity_properties(D), hyper_elastic_properties(D), thermal_expansion(D),
   thermal_conductivity(D),
   _phase_change(phase_change)
 {
@@ -54,6 +54,14 @@ MaterialBaseConfiguration::MaterialBaseConfiguration(DIMENSION *D, PHYSICAL_MODE
 						(physical_model & PHYSICAL_MODEL::STRUCTURAL_MECHANICS) &&
 						(material_model == MATERIAL_MODEL::LINEAR_ELASTIC); })
 				.addconstraint(ECFCondition(*_phase_change, ECFCondition::EQUALS, false) & ECFCondition(material_model, ECFCondition::EQUALS, MATERIAL_MODEL::LINEAR_ELASTIC)));
+
+		REGISTER(plasticity_properties, ECFMetaData()
+						.setdescription({ "Plasticity" })
+						.allowonly([&] () { return
+								(_phase_change == NULL || !*_phase_change) &&
+								(physical_model & PHYSICAL_MODEL::STRUCTURAL_MECHANICS) &&
+								(material_model == MATERIAL_MODEL::PLASTICITY); })
+						.addconstraint(ECFCondition(*_phase_change, ECFCondition::EQUALS, false) & ECFCondition(material_model, ECFCondition::EQUALS, MATERIAL_MODEL::LINEAR_ELASTIC)));
 
 		REGISTER(hyper_elastic_properties, ECFMetaData()
 				.setdescription({ "Hyper elasticity" })
@@ -111,6 +119,8 @@ MaterialConfiguration::MaterialConfiguration(DIMENSION *D, PHYSICAL_MODEL physic
 				.setdescription({ "Material model" })
 				.setdatatype({ ECFDataType::OPTION })
 				.addoption(ECFOption().setname("LINEAR_ELASTIC").setdescription("Linear elastic model.")
+						.allowonly([&] () { return physicalModel & PHYSICAL_MODEL::STRUCTURAL_MECHANICS; }))
+				.addoption(ECFOption().setname("PLASTICITY").setdescription("Plasticity model.")
 						.allowonly([&] () { return physicalModel & PHYSICAL_MODEL::STRUCTURAL_MECHANICS; }))
 				.addoption(ECFOption().setname("HYPER_ELASTIC").setdescription("Hyper elastic model.")
 						.allowonly([&] () { return physicalModel & PHYSICAL_MODEL::STRUCTURAL_MECHANICS; })));

@@ -146,6 +146,13 @@ template <size_t gps, class Physics> struct ElasticityKernel<gps, 2, ElasticityM
 template <size_t gps, class Physics> struct ElasticityKernel<gps, 3, ElasticityModel::ORTHOTROPIC, Physics>: Elasticity, Physics {
 	ElasticityKernel(const Elasticity &base): Elasticity(base) {}
 
+	// C
+	// 0 1 2 _ _ _
+	//   3 4 _ _ _
+	//     5 _ _ _
+	//       6 _ _
+	//         7 _
+	//           8
 	void simd(typename Physics::Element &element)
 	{
 		for (size_t gp = 0; gp < gps; ++gp) {
@@ -205,8 +212,7 @@ template <size_t gps, class Physics> struct ElasticityKernel<gps, 3, ElasticityM
 
 	}
 };
+
 }
-
-
 
 #endif /* SRC_ANALYSIS_ASSEMBLER_SUBKERNEL_STRUCTURALMECHANICS_ELASTICITY_H_ */

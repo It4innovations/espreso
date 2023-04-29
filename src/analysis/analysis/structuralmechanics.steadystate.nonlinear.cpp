@@ -1,6 +1,7 @@
 
+
 #include "analysis.h"
-#include "elasticity.steadystate.linear.h"
+#include "structuralmechanics.steadystate.nonlinear.h"
 
 #include "analysis/linearsystem/linearsystem.hpp"
 #include "config/ecf/physics/structuralmechanics.h"
@@ -14,23 +15,23 @@
 
 using namespace espreso;
 
-ElasticitySteadyStateLinear::ElasticitySteadyStateLinear(StructuralMechanicsConfiguration &settings, StructuralMechanicsLoadStepConfiguration &configuration)
-: settings(settings), configuration(configuration), assembler{nullptr, settings, configuration}, scheme{}, system{}
+StructuralMechanicsSteadyStateNonLinear::StructuralMechanicsSteadyStateNonLinear(StructuralMechanicsConfiguration &settings, StructuralMechanicsLoadStepConfiguration &configuration)
+: settings(settings), configuration(configuration), assembler{nullptr, settings, configuration}, solver(configuration.nonlinear_solver), scheme{}, system{}
 {
 
 }
 
-ElasticitySteadyStateLinear::~ElasticitySteadyStateLinear()
+StructuralMechanicsSteadyStateNonLinear::~StructuralMechanicsSteadyStateNonLinear()
 {
 	if (system) {
 		delete system;
 	}
 }
 
-void ElasticitySteadyStateLinear::analyze()
+void StructuralMechanicsSteadyStateNonLinear::analyze()
 {
 	eslog::info("\n ============================================================================================= \n");
-	eslog::info(" == ANALYSIS                                                            LINEAR STEADY STATE == \n");
+	eslog::info(" == ANALYSIS                                                        PLASTICITY STEADY STATE == \n");
 	eslog::info(" == PHYSICS                                                            STRUCTURAL MECHANICS == \n");
 	eslog::info(" ============================================================================================= \n");
 
@@ -38,7 +39,7 @@ void ElasticitySteadyStateLinear::analyze()
 	info::mesh->output->updateMonitors(step::TYPE::TIME);
 }
 
-void ElasticitySteadyStateLinear::run(step::Step &step)
+void StructuralMechanicsSteadyStateNonLinear::run(step::Step &step)
 {
 	initSystem(system, this);
 	eslog::checkpointln("SIMULATION: LINEAR SYSTEM BUILT");
@@ -61,25 +62,7 @@ void ElasticitySteadyStateLinear::run(step::Step &step)
 	eslog::info(" ============================================================================================= \n");
 	eslog::info(" = LOAD STEP %2d                                                              TIME %10.4f = \n", step::step.loadstep + 1, time.current);
 	eslog::info(" = ----------------------------------------------------------------------------------------- = \n");
-	double start = eslog::time();
-	assembler.evaluate(scheme);
-	eslog::checkpointln("SIMULATION: PHYSICS ASSEMBLED");
-	scheme.composeSystem(step, system);
-	eslog::info("       = ----------------------------------------------------------------------------- = \n");
-	eslog::info("       = SYSTEM ASSEMBLY                                                    %8.3f s = \n", eslog::time() - start);
 
-	system->update(step);
-	eslog::checkpointln("SIMULATION: LINEAR SYSTEM UPDATED");
-	system->solve(step);
-	eslog::checkpointln("SIMULATION: LINEAR SYSTEM SOLVED");
-
-	double solution = eslog::time();
-	scheme.extractSolution(step, system);
-	assembler.updateSolution(scheme);
+	solver.run(step, time, assembler, scheme, system);
 	info::mesh->output->updateSolution(step, time);
-	eslog::info("       = PROCESS SOLUTION                                                   %8.3f s = \n", eslog::time() - solution);
-	eslog::info("       = ----------------------------------------------------------------------------- = \n");
-
-	eslog::info(" ====================================================================== solved in %8.3f s = \n\n", eslog::time() - start);
-	eslog::checkpointln("SIMULATION: SOLUTION PROCESSED");
 }

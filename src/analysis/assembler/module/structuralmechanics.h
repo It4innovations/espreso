@@ -21,9 +21,12 @@
 #include "analysis/assembler/subkernel/expression.h"
 #include "analysis/assembler/subkernel/filler.h"
 #include "analysis/assembler/subkernel/structuralmechanics/coordinatesystem.h"
+#include "analysis/assembler/subkernel/structuralmechanics/displacement.h"
 #include "analysis/assembler/subkernel/structuralmechanics/elasticity.h"
+#include "analysis/assembler/subkernel/structuralmechanics/plasticity.h"
 #include "analysis/assembler/subkernel/structuralmechanics/matrix.h"
 #include "analysis/assembler/subkernel/structuralmechanics/rhs.h"
+#include "analysis/assembler/subkernel/structuralmechanics/stress.h"
 
 #include <cstddef>
 #include <map>
@@ -48,12 +51,15 @@ public:
 		Thickness thickness;
 		Material material;
 		Coordinates coordinates;
+		Displacement displacement;
 		Temperature temperature;
 		Integration integration;
 		Elasticity elasticity;
+		Plasticity plasticity;
 		StructuralMechanicsCoordinateSystem coosystem;
 		StructuralMechanicsMatrix K;
 		StructuralMechanicsRHS acceleration, angularVelocity;
+		Stress stress;
 
 		DataFiller Kfiller, RHSfiller;
 
@@ -85,7 +91,7 @@ public:
 	void analyze();
 
 	void connect(SteadyState &scheme);
-	void evaluate(SteadyState &scheme);
+	void evaluate(SteadyState &scheme, step::Time &time);
 	void updateSolution(SteadyState &scheme);
 
 	StructuralMechanicsConfiguration &settings;

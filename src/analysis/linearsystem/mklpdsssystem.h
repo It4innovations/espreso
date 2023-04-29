@@ -7,7 +7,8 @@
 #include "analysis/analysis/heat.steadystate.nonlinear.h"
 #include "analysis/analysis/acoustic.real.linear.h"
 #include "analysis/analysis/acoustic.complex.linear.h"
-#include "analysis/analysis/elasticity.steadystate.linear.h"
+#include "analysis/analysis/structuralmechanics.steadystate.linear.h"
+#include "analysis/analysis/structuralmechanics.steadystate.nonlinear.h"
 
 #include "analysis/composer/nodes.uniform.distributed.h"
 #include "basis/utilities/sysutils.h"
@@ -231,9 +232,20 @@ template <> struct MKLPDSSSystem<AcousticComplexLinear>: public MKLPDSSSystemDat
 	}
 };
 
-template <> struct MKLPDSSSystem<ElasticitySteadyStateLinear>: public MKLPDSSSystemData<double, double> {
+template <> struct MKLPDSSSystem<StructuralMechanicsSteadyStateLinear>: public MKLPDSSSystemData<double, double> {
 
-	MKLPDSSSystem(ElasticitySteadyStateLinear *analysis)
+	MKLPDSSSystem(StructuralMechanicsSteadyStateLinear *analysis)
+	: MKLPDSSSystemData(analysis->configuration.mklpdss)
+	{
+		assembler.A.type = solver.A.type = Matrix_Type::REAL_SYMMETRIC_POSITIVE_DEFINITE;
+		assembler.pattern.set(analysis->configuration.displacement, info::mesh->dimension, solver.distribution);
+		_fillDirect(this);
+	}
+};
+
+template <> struct MKLPDSSSystem<StructuralMechanicsSteadyStateNonLinear>: public MKLPDSSSystemData<double, double> {
+
+	MKLPDSSSystem(StructuralMechanicsSteadyStateNonLinear *analysis)
 	: MKLPDSSSystemData(analysis->configuration.mklpdss)
 	{
 		assembler.A.type = solver.A.type = Matrix_Type::REAL_SYMMETRIC_POSITIVE_DEFINITE;

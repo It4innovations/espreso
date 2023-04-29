@@ -126,11 +126,18 @@ template <size_t gps, size_t ndim, ElasticityModel model> struct ElasticityParam
 	alignas(SIMD::size * sizeof(double)) SIMD youngModulus[gps][ndim];
 	alignas(SIMD::size * sizeof(double)) SIMD poissonRatio[gps][ndim];
 	alignas(SIMD::size * sizeof(double)) SIMD shearModulus[gps][ndim];
+
+	alignas(SIMD::size * sizeof(double)) SIMD kinematic   [gps][6];
+	alignas(SIMD::size * sizeof(double)) SIMD Y           [gps];
 };
 
 template <size_t gps, size_t ndim> struct ElasticityParameters<gps, ndim, ElasticityModel::ISOTROPIC> {
 	alignas(SIMD::size * sizeof(double)) SIMD youngModulus[gps];
 	alignas(SIMD::size * sizeof(double)) SIMD poissonRatio[gps];
+	alignas(SIMD::size * sizeof(double)) SIMD shearModulus[gps];
+
+	alignas(SIMD::size * sizeof(double)) SIMD kinematic   [gps][6];
+	alignas(SIMD::size * sizeof(double)) SIMD Y           [gps];
 };
 
 template <size_t gps, size_t ndim> struct StructuralMechanicsBoundaryParameters;
@@ -159,6 +166,7 @@ template <size_t nodes, size_t gps, size_t ndim, size_t edim, enum Behaviour beh
 			ElementCoordinates<nodes, gps, ndim>,
 			ElementTemperature<nodes, gps>,
 			ElementIntegration<nodes, gps, edim>,
+			ElementDisplacement<nodes, gps, edim>,
 			StructuralElasticity<gps, ndim, behaviour, model>,
 			ElasticityRotationMatrix<gps, ndim>
 	{
@@ -181,7 +189,7 @@ template <size_t nodes, size_t gps, size_t ndim, size_t edim> struct StructuralM
 	struct Element:
 			ElementCoordinates<nodes, gps, ndim>,
 			ElementTemperature<nodes, gps>,
-			ElementDisplacement<nodes, ndim>,
+			ElementDisplacement<nodes, gps, ndim>,
 			ElementIntegration<nodes, gps, edim>,
 			BondaryNormal<gps, ndim>
 	{

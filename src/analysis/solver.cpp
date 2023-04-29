@@ -1,11 +1,11 @@
 
-#include "looper.h"
-
+#include "solver.h"
 #include "analysis/acoustic.real.linear.h"
 #include "analysis/acoustic.complex.linear.h"
 #include "analysis/heat.steadystate.linear.h"
 #include "analysis/heat.steadystate.nonlinear.h"
-#include "analysis/elasticity.steadystate.linear.h"
+#include "analysis/structuralmechanics.steadystate.linear.h"
+#include "analysis/structuralmechanics.steadystate.nonlinear.h"
 
 #include "basis/utilities/parser.h"
 #include "esinfo/ecfinfo.h"
@@ -16,7 +16,7 @@
 
 using namespace espreso;
 
-void Looper::run()
+void Solver::run()
 {
 	eslog::startln("ESPRESO: SIMULATION STARTED", "SIMULATION");
 
@@ -54,12 +54,13 @@ void Looper::run()
 		break;
 	case PhysicsConfiguration::TYPE::STRUCTURAL_MECHANICS_2D:
 		switch (info::ecf->structural_mechanics_2d.load_steps_settings.at(1).mode) {
-		case LoadStepSolverConfiguration::MODE::LINEAR: analysis = new ElasticitySteadyStateLinear(info::ecf->structural_mechanics_2d, info::ecf->structural_mechanics_2d.load_steps_settings.at(1)); break;
+		case LoadStepSolverConfiguration::MODE::LINEAR: analysis = new StructuralMechanicsSteadyStateLinear(info::ecf->structural_mechanics_2d, info::ecf->structural_mechanics_2d.load_steps_settings.at(1)); break;
 		}
 		break;
 	case PhysicsConfiguration::TYPE::STRUCTURAL_MECHANICS_3D:
 		switch (info::ecf->structural_mechanics_3d.load_steps_settings.at(1).mode) {
-		case LoadStepSolverConfiguration::MODE::LINEAR: analysis = new ElasticitySteadyStateLinear(info::ecf->structural_mechanics_3d, info::ecf->structural_mechanics_3d.load_steps_settings.at(1)); break;
+		case LoadStepSolverConfiguration::MODE::LINEAR: analysis = new StructuralMechanicsSteadyStateLinear(info::ecf->structural_mechanics_3d, info::ecf->structural_mechanics_3d.load_steps_settings.at(1)); break;
+		case LoadStepSolverConfiguration::MODE::NONLINEAR: analysis = new StructuralMechanicsSteadyStateNonLinear(info::ecf->structural_mechanics_3d, info::ecf->structural_mechanics_3d.load_steps_settings.at(1)); break;
 		}
 		break;
 	}

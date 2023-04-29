@@ -5,8 +5,8 @@
 #include "analysis.h"
 #include "analysis/assembler/module/heattransfer.h"
 #include "analysis/scheme/steadystate.h"
-#include "analysis/solver/newtonraphson.h"
 #include "analysis/linearsystem/linearsystem.h"
+#include "analysis/nonlinearity/newtonraphson.h"
 
 namespace espreso {
 
