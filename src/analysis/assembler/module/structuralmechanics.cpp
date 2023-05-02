@@ -350,18 +350,17 @@ void StructuralMechanics::connect(SteadyState &scheme)
 	}
 
 	for(size_t r = 1; r < info::mesh->boundaryRegions.size(); ++r) {
-		switch (info::mesh->boundaryRegions[r]->dimension) {
-		case 0:
-			for (size_t t = 0; t < info::mesh->boundaryRegions[r]->nodes->threads(); ++t) {
-				boundary[r][t].dirichlet.activate(r, t, info::mesh->dimension, boundary[r][t].elements, nullptr, scheme.dirichlet);
-			}
-			break;
-		case 1:
-		case 2:
+		if (info::mesh->boundaryRegions[r]->dimension > 0) {
 			for (size_t i = 0; i < info::mesh->boundaryRegions[r]->eintervals.size(); ++i) {
 				boundary[r][i].RHSfiller.activate(r, i, info::mesh->dimension, boundary[r][i].elements, (elements.boundary.rhs.regions[r].data->begin() + i)->data(), scheme.f);
 			}
-			break;
+		}
+	}
+
+	for (auto it = configuration.displacement.begin(); it != configuration.displacement.end(); ++it) {
+		size_t r = info::mesh->bregionIndex(it->first);
+		for (size_t t = 0; t < info::mesh->boundaryRegions[r]->nodes->threads(); ++t) {
+			boundary[r][t].dirichlet.activate(r, t, info::mesh->dimension, boundary[r][t].elements, nullptr, scheme.dirichlet);
 		}
 	}
 }
