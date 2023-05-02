@@ -68,10 +68,9 @@ public:
 	struct BoundarySubKernels {
 		int code;
 		size_t elements, chunks;
-		size_t type;  // 0 - void, 1 - dirichlet, 2 - neumann
 
 		size_t esize;
-		double volume;
+		double surface;
 
 		Basis basis;
 		Thickness thickness;

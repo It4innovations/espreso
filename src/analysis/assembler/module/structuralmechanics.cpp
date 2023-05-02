@@ -296,7 +296,7 @@ void StructuralMechanics::analyze()
 		const BoundaryRegionStore *region = info::mesh->boundaryRegions[r];
 		if (info::mesh->boundaryRegions[r]->dimension) {
 			for(size_t i = 0; i < info::mesh->boundaryRegions[r]->eintervals.size(); ++i) {
-				boundary[r][i].coordinates.activate(region->elements->cbegin() + region->eintervals[i].begin, region->elements->cend(), false);
+				boundary[r][i].coordinates.activate(region->elements->cbegin() + region->eintervals[i].begin, region->elements->cend(), settings.element_behaviour == StructuralMechanicsGlobalSettings::ELEMENT_BEHAVIOUR::AXISYMMETRIC);
 				boundary[r][i].normalPressure.activate(getExpression(info::mesh->boundaryRegions[r]->name, configuration.normal_pressure), (elements.boundary.rhs.regions[r].data->begin() + i)->data());
 				boundary[r][i].integration.withNormal = boundary[r][i].normalPressure.isactive;
 			}
@@ -350,7 +350,7 @@ void StructuralMechanics::connect(SteadyState &scheme)
 	}
 
 	for(size_t r = 1; r < info::mesh->boundaryRegions.size(); ++r) {
-		if (info::mesh->boundaryRegions[r]->dimension > 0) {
+		if (info::mesh->boundaryRegions[r]->dimension) {
 			for (size_t i = 0; i < info::mesh->boundaryRegions[r]->eintervals.size(); ++i) {
 				boundary[r][i].RHSfiller.activate(r, i, info::mesh->dimension, boundary[r][i].elements, (elements.boundary.rhs.regions[r].data->begin() + i)->data(), scheme.f);
 			}

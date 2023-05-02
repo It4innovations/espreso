@@ -303,13 +303,18 @@ void HeatTransfer::analyze()
 
 	assemble(Action::PREPROCESS);
 	size_t esize = 0;
-	std::vector<double> evolume(subkernels.size());
+	std::vector<double> volume(subkernels.size()), surface(boundary.size());
 	for (size_t i = 0; i < subkernels.size(); ++i) {
 		esize = std::max(subkernels[i].esize, esize);
-		evolume[i] = subkernels[i].volume;
+		volume[i] = subkernels[i].volume;
 	}
-	printElementVolume(evolume);
-//	printBoundarySurface(bvolume);
+	for (size_t r = 1; r < boundary.size(); ++r) {
+		for (size_t i = 0; i < boundary[r].size(); ++i) {
+			surface[r] += boundary[r][i].surface;
+		}
+	}
+	printElementVolume(volume);
+	printBoundarySurface(surface);
 
 	eslog::info("  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  \n");
 	eslog::info("  SIMD SIZE                                                                                 %lu \n", SIMD::size);

@@ -51,7 +51,7 @@ void preprocess(StructuralMechanics::BoundarySubKernels &subkernels)
 	}
 }
 
-template <Element::CODE code, size_t nodes, size_t gps, size_t ndim, size_t edim>
+template <Element::CODE code, size_t nodes, size_t gps, size_t ndim, size_t edim, enum Behaviour behaviour>
 void compute(StructuralMechanics::BoundarySubKernels &subkernels, Assembler::Action action)
 {
 	typedef StructuralMechanicsBoundaryDescriptor<nodes, gps, ndim, edim> Physics;
@@ -61,7 +61,7 @@ void compute(StructuralMechanics::BoundarySubKernels &subkernels, Assembler::Act
 	CoordinatesKernel<nodes, gps, ndim, Physics> coordinates(subkernels.coordinates);
 	ThicknessToNodes<nodes, ndim, Physics> thickness(subkernels.thickness);
 	IntegrationKernel<nodes, gps, ndim, edim, Physics> integration(subkernels.integration);
-	NormalPressureKernel<nodes, gps, ndim, edim, Physics> normalPressure(subkernels.normalPressure);
+	NormalPressureKernel<nodes, gps, ndim, edim, behaviour, Physics> normalPressure(subkernels.normalPressure);
 
 	std::vector<ExternalGPsExpression<gps, Physics>*> nonconst;
 	for (size_t i = 0; i < subkernels.expressions.size(); ++i) {
@@ -165,53 +165,61 @@ void dirichlet(const StructuralMechanics::BoundarySubKernels &subkernels)
 	}
 }
 
-template <Element::CODE code, size_t nodes, size_t gps, size_t ndim, size_t edim>
+template <Element::CODE code, size_t nodes, size_t gps, size_t ndim, size_t edim, enum Behaviour behaviour>
 void runAction(StructuralMechanics::BoundarySubKernels &subkernels, Assembler::Action action)
 {
 	switch (action) {
 	case Assembler::Action::PREPROCESS: preprocess<code, nodes, gps, ndim, edim>(subkernels); break;
 	case Assembler::Action::FILL: fill<code, nodes, gps, ndim, edim>(subkernels); break;
-	default: compute<code, nodes, gps, ndim, edim>(subkernels, action); break;
+	default: compute<code, nodes, gps, ndim, edim, behaviour>(subkernels, action); break;
 	}
 }
 
 
-template <size_t ndim, size_t edim> void addBC(StructuralMechanics::BoundarySubKernels &subkernels, Assembler::Action action);
+template <size_t ndim, size_t edim> void addBC(StructuralMechanics::BoundarySubKernels &subkernels, Assembler::Action action, Behaviour behaviour);
 
-template <> void addBC<2, 1>(StructuralMechanics::BoundarySubKernels &subkernels, Assembler::Action action)
+template <> void addBC<2, 1>(StructuralMechanics::BoundarySubKernels &subkernels, Assembler::Action action, Behaviour behaviour)
 {
-	switch (subkernels.code) {
-	case static_cast<size_t>(Element::CODE::LINE2): runAction<Element::CODE::LINE2, 2, StructuralMechanicsGPC::LINE2, 2, 1>(subkernels, action); break;
-	case static_cast<size_t>(Element::CODE::LINE3): runAction<Element::CODE::LINE3, 3, StructuralMechanicsGPC::LINE3, 2, 1>(subkernels, action); break;
+	if (behaviour == Behaviour::PLANE) {
+		switch (subkernels.code) {
+		case static_cast<size_t>(Element::CODE::LINE2): runAction<Element::CODE::LINE2, 2, StructuralMechanicsGPC::LINE2, 2, 1, Behaviour::PLANE>(subkernels, action); break;
+		case static_cast<size_t>(Element::CODE::LINE3): runAction<Element::CODE::LINE3, 3, StructuralMechanicsGPC::LINE3, 2, 1, Behaviour::PLANE>(subkernels, action); break;
+		}
+	}
+	if (behaviour == Behaviour::AXISYMMETRIC) {
+		switch (subkernels.code) {
+		case static_cast<size_t>(Element::CODE::LINE2): runAction<Element::CODE::LINE2, 2, StructuralMechanicsGPC::LINE2, 2, 1, Behaviour::AXISYMMETRIC>(subkernels, action); break;
+		case static_cast<size_t>(Element::CODE::LINE3): runAction<Element::CODE::LINE3, 3, StructuralMechanicsGPC::LINE3, 2, 1, Behaviour::AXISYMMETRIC>(subkernels, action); break;
+		}
 	}
 }
 
-template <> void addBC<2, 0>(StructuralMechanics::BoundarySubKernels &subkernels, Assembler::Action action)
+template <> void addBC<2, 0>(StructuralMechanics::BoundarySubKernels &subkernels, Assembler::Action action, Behaviour behaviour)
 {
 	switch (action) {
 	case Assembler::Action::PREPROCESS: initDirichlet<2>(subkernels); break;
 	case Assembler::Action::ASSEMBLE: case Assembler::Action::REASSEMBLE: dirichlet<2>(subkernels); break;
 	}
 }
-template <> void addBC<3, 2>(StructuralMechanics::BoundarySubKernels &subkernels, Assembler::Action action)
+template <> void addBC<3, 2>(StructuralMechanics::BoundarySubKernels &subkernels, Assembler::Action action, Behaviour behaviour)
 {
 	switch (subkernels.code) {
-	case static_cast<size_t>(Element::CODE::TRIANGLE3): runAction<Element::CODE::TRIANGLE3, 3, StructuralMechanicsGPC::TRIANGLE3, 3, 2>(subkernels, action); break;
-	case static_cast<size_t>(Element::CODE::TRIANGLE6): runAction<Element::CODE::TRIANGLE6, 6, StructuralMechanicsGPC::TRIANGLE6, 3, 2>(subkernels, action); break;
-	case static_cast<size_t>(Element::CODE::SQUARE4  ): runAction<Element::CODE::SQUARE4  , 4, StructuralMechanicsGPC::SQUARE4  , 3, 2>(subkernels, action); break;
-	case static_cast<size_t>(Element::CODE::SQUARE8  ): runAction<Element::CODE::SQUARE8  , 8, StructuralMechanicsGPC::SQUARE8  , 3, 2>(subkernels, action); break;
+	case static_cast<size_t>(Element::CODE::TRIANGLE3): runAction<Element::CODE::TRIANGLE3, 3, StructuralMechanicsGPC::TRIANGLE3, 3, 2, Behaviour::VOLUME>(subkernels, action); break;
+	case static_cast<size_t>(Element::CODE::TRIANGLE6): runAction<Element::CODE::TRIANGLE6, 6, StructuralMechanicsGPC::TRIANGLE6, 3, 2, Behaviour::VOLUME>(subkernels, action); break;
+	case static_cast<size_t>(Element::CODE::SQUARE4  ): runAction<Element::CODE::SQUARE4  , 4, StructuralMechanicsGPC::SQUARE4  , 3, 2, Behaviour::VOLUME>(subkernels, action); break;
+	case static_cast<size_t>(Element::CODE::SQUARE8  ): runAction<Element::CODE::SQUARE8  , 8, StructuralMechanicsGPC::SQUARE8  , 3, 2, Behaviour::VOLUME>(subkernels, action); break;
 	}
 }
 
-template <> void addBC<3, 1>(StructuralMechanics::BoundarySubKernels &subkernels, Assembler::Action action)
+template <> void addBC<3, 1>(StructuralMechanics::BoundarySubKernels &subkernels, Assembler::Action action, Behaviour behaviour)
 {
 	switch (subkernels.code) {
-	case static_cast<size_t>(Element::CODE::LINE2): runAction<Element::CODE::LINE2, 2, StructuralMechanicsGPC::LINE2, 3, 1>(subkernels, action); break;
-	case static_cast<size_t>(Element::CODE::LINE3): runAction<Element::CODE::LINE3, 3, StructuralMechanicsGPC::LINE3, 3, 1>(subkernels, action); break;
+	case static_cast<size_t>(Element::CODE::LINE2): runAction<Element::CODE::LINE2, 2, StructuralMechanicsGPC::LINE2, 3, 1, Behaviour::VOLUME>(subkernels, action); break;
+	case static_cast<size_t>(Element::CODE::LINE3): runAction<Element::CODE::LINE3, 3, StructuralMechanicsGPC::LINE3, 3, 1, Behaviour::VOLUME>(subkernels, action); break;
 	}
 }
 
-template <> void addBC<3, 0>(StructuralMechanics::BoundarySubKernels &subkernels, Assembler::Action action)
+template <> void addBC<3, 0>(StructuralMechanics::BoundarySubKernels &subkernels, Assembler::Action action, Behaviour behaviour)
 {
 	switch (action) {
 	case Assembler::Action::PREPROCESS: initDirichlet<3>(subkernels); break;
@@ -221,17 +229,22 @@ template <> void addBC<3, 0>(StructuralMechanics::BoundarySubKernels &subkernels
 
 void StructuralMechanics::runBoundary(Action action, size_t region, size_t interval)
 {
+	Behaviour behaviour = Behaviour::PLANE;
+	if (settings.element_behaviour == StructuralMechanicsConfiguration::ELEMENT_BEHAVIOUR::AXISYMMETRIC) {
+		behaviour = Behaviour::AXISYMMETRIC;
+	}
+
 	switch (info::mesh->dimension) {
 	case 2:
 		switch (info::mesh->boundaryRegions[region]->dimension) {
-		case 0: addBC<2, 0>(boundary[region][interval], action); break;
-		case 1: addBC<2, 1>(boundary[region][interval], action); break;
+		case 0: addBC<2, 0>(boundary[region][interval], action, behaviour); break;
+		case 1: addBC<2, 1>(boundary[region][interval], action, behaviour); break;
 		} break;
 	case 3:
 		switch (info::mesh->boundaryRegions[region]->dimension) {
-		case 0: addBC<3, 0>(boundary[region][interval], action); break;
-		case 1: addBC<3, 1>(boundary[region][interval], action); break;
-		case 2: addBC<3, 2>(boundary[region][interval], action); break;
+		case 0: addBC<3, 0>(boundary[region][interval], action, behaviour); break;
+		case 1: addBC<3, 1>(boundary[region][interval], action, behaviour); break;
+		case 2: addBC<3, 2>(boundary[region][interval], action, behaviour); break;
 		} break;
 	}
 }
