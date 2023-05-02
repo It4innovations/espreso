@@ -260,6 +260,7 @@ void HeatTransfer::analyze()
 		subkernels[i].coordinates.activate(info::mesh->elements->nodes->cbegin() + info::mesh->elements->eintervals[i].begin, info::mesh->elements->nodes->cend(), !cartesian || gpcoo);
 		subkernels[i].conductivity.activate(&mat->thermal_conductivity, rotated || indirect);
 		subkernels[i].coosystem.activate(mat->coordinate_system, subkernels[i].conductivity.isconst && !indirect, rotated);
+		subkernels[i].heatSource.activate(getExpression(i, configuration.heat_source), (elements.rhs.data->begin() + i)->data());
 		subkernels[i].advection.activate(getExpression(i, configuration.translation_motions), (elements.stiffness.data->begin() + i)->data(), settings.sigma);
 
 		subkernels[i].K.activate((elements.stiffness.data->begin() + i)->data());
@@ -285,7 +286,21 @@ void HeatTransfer::analyze()
 		const BoundaryRegionStore *region = info::mesh->boundaryRegions[r];
 		if (info::mesh->boundaryRegions[r]->dimension) {
 			for(size_t i = 0; i < info::mesh->boundaryRegions[r]->eintervals.size(); ++i) {
+				if (info::mesh->dimension == 2) {
+					boundary[r][i].thickness.activate(region->elements->cbegin() + region->eintervals[i].begin, region->elements->cend(), Results::thickness->data.data());
+				}
 				boundary[r][i].coordinates.activate(region->elements->cbegin() + region->eintervals[i].begin, region->elements->cend(), false);
+				boundary[r][i].heatFlow.activate(getExpression(info::mesh->boundaryRegions[r]->name, configuration.heat_flow), nullptr);
+				boundary[r][i].heatFlux.activate(getExpression(info::mesh->boundaryRegions[r]->name, configuration.heat_flux), nullptr);
+
+				auto convection = configuration.convection.find(info::mesh->boundaryRegions[r]->name);
+				if (convection != configuration.convection.end()) {
+					boundary[r][i].htc.activate(&convection->second.heat_transfer_coefficient, nullptr);
+					boundary[r][i].externalTemperature.activate(&convection->second.external_temperature, nullptr);
+				}
+				if (boundary[r][i].heatFlow.isactive | boundary[r][i].heatFlux.isactive | boundary[r][i].htc.isactive) {
+					boundary[r][i].externalHeat.activate(boundary[r][i].surface, (elements.boundary.rhs.regions[r].data->begin() + i)->data());
+				}
 			}
 		} else {
 			for(size_t t = 0; t < info::mesh->boundaryRegions[r]->nodes->threads(); ++t) {
@@ -312,6 +327,9 @@ void HeatTransfer::analyze()
 		for (size_t i = 0; i < boundary[r].size(); ++i) {
 			surface[r] += boundary[r][i].surface;
 		}
+		for (size_t i = 0; i < boundary[r].size(); ++i) {
+			boundary[r][i].surface = surface[r];
+		}
 	}
 	printElementVolume(volume);
 	printBoundarySurface(surface);
@@ -331,23 +349,21 @@ void HeatTransfer::connect(SteadyState &scheme)
 {
 	for(size_t i = 0; i < info::mesh->elements->eintervals.size(); ++i) {
 		subkernels[i].Kfiller.activate(i, 1, subkernels[i].elements, (elements.stiffness.data->begin() + i)->data(), scheme.K);
-		subkernels[i].RHSfiller.activate(i, 1, subkernels[i].elements, (elements.stiffness.data->begin() + i)->data(), scheme.f);
+		subkernels[i].RHSfiller.activate(i, 1, subkernels[i].elements, (elements.rhs.data->begin() + i)->data(), scheme.f);
 		subkernels[i].K.shape = scheme.K->shape;
 	}
 
 	for(size_t r = 1; r < info::mesh->boundaryRegions.size(); ++r) {
-		switch (info::mesh->boundaryRegions[r]->dimension) {
-		case 0:
-			for (size_t t = 0; t < info::mesh->boundaryRegions[r]->nodes->threads(); ++t) {
-				boundary[r][t].dirichlet.activate(r, t, 1, boundary[r][t].elements, nullptr, scheme.dirichlet);
-			}
-			break;
-		case 1:
-		case 2:
+		if (info::mesh->boundaryRegions[r]->dimension) {
 			for (size_t i = 0; i < info::mesh->boundaryRegions[r]->eintervals.size(); ++i) {
 				boundary[r][i].RHSfiller.activate(r, i, 1, boundary[r][i].elements, (elements.boundary.rhs.regions[r].data->begin() + i)->data(), scheme.f);
 			}
-			break;
+		}
+	}
+	for (auto it = configuration.temperature.begin(); it != configuration.temperature.end(); ++it) {
+		size_t r = info::mesh->bregionIndex(it->first);
+		for (size_t t = 0; t < info::mesh->boundaryRegions[r]->nodes->threads(); ++t) {
+			boundary[r][t].dirichlet.activate(r, t, 1, boundary[r][t].elements, nullptr, scheme.dirichlet);
 		}
 	}
 }

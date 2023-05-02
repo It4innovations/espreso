@@ -2,15 +2,15 @@
 #ifndef SRC_ANALYSIS_ASSEMBLER_SUBKERNEL_STRUCTURALMECHANICS_NORMALPRESSURE_H_
 #define SRC_ANALYSIS_ASSEMBLER_SUBKERNEL_STRUCTURALMECHANICS_NORMALPRESSURE_H_
 
-#include "rhs.h"
+#include "analysis/assembler/subkernel/boundarycondition.h"
 
 namespace espreso {
 
 template <size_t nodes, size_t gps, size_t ndim, size_t edim, enum Behaviour behavour, class Physics> struct NormalPressureKernel;
 
 template <size_t nodes, size_t gps, class Physics>
-struct NormalPressureKernel<nodes, gps, 2, 1, Behaviour::PLANE, Physics>: StructuralMechanicsRHS, Physics {
-	NormalPressureKernel(const StructuralMechanicsRHS &base): StructuralMechanicsRHS(base) {}
+struct NormalPressureKernel<nodes, gps, 2, 1, Behaviour::PLANE, Physics>: BoundaryCondition, Physics {
+	NormalPressureKernel(const BoundaryCondition &base): BoundaryCondition(base) {}
 
 	void simd(typename Physics::Element &element)
 	{
@@ -31,8 +31,8 @@ struct NormalPressureKernel<nodes, gps, 2, 1, Behaviour::PLANE, Physics>: Struct
 };
 
 template <size_t nodes, size_t gps, class Physics>
-struct NormalPressureKernel<nodes, gps, 2, 1, Behaviour::AXISYMMETRIC, Physics>: StructuralMechanicsRHS, Physics {
-	NormalPressureKernel(const StructuralMechanicsRHS &base): StructuralMechanicsRHS(base) {}
+struct NormalPressureKernel<nodes, gps, 2, 1, Behaviour::AXISYMMETRIC, Physics>: BoundaryCondition, Physics {
+	NormalPressureKernel(const BoundaryCondition &base): BoundaryCondition(base) {}
 
 	void simd(typename Physics::Element &element)
 	{
@@ -53,8 +53,8 @@ struct NormalPressureKernel<nodes, gps, 2, 1, Behaviour::AXISYMMETRIC, Physics>:
 };
 
 template <size_t nodes, size_t gps, class Physics>
-struct NormalPressureKernel<nodes, gps, 3, 2, Behaviour::VOLUME, Physics>: StructuralMechanicsRHS, Physics {
-	NormalPressureKernel(const StructuralMechanicsRHS &base): StructuralMechanicsRHS(base) {}
+struct NormalPressureKernel<nodes, gps, 3, 2, Behaviour::VOLUME, Physics>: BoundaryCondition, Physics {
+	NormalPressureKernel(const BoundaryCondition &base): BoundaryCondition(base) {}
 
 	void simd(typename Physics::Element &element)
 	{
@@ -78,8 +78,8 @@ struct NormalPressureKernel<nodes, gps, 3, 2, Behaviour::VOLUME, Physics>: Struc
 };
 
 template <size_t nodes, size_t gps, class Physics>
-struct NormalPressureKernel<nodes, gps, 3, 1, Behaviour::VOLUME, Physics>: StructuralMechanicsRHS, Physics {
-	NormalPressureKernel(const StructuralMechanicsRHS &base): StructuralMechanicsRHS(base) {}
+struct NormalPressureKernel<nodes, gps, 3, 1, Behaviour::VOLUME, Physics>: BoundaryCondition, Physics {
+	NormalPressureKernel(const BoundaryCondition &base): BoundaryCondition(base) {}
 
 	void simd(typename Physics::Element &element)
 	{

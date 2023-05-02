@@ -4,6 +4,7 @@
 
 #include "analysis/assembler/module/heattransfer.h"
 #include "analysis/assembler/module/assembler.hpp"
+#include "analysis/assembler/subkernel/heattransfer/heatsource.h"
 
 #include "esinfo/ecfinfo.h"
 #include "esinfo/eslog.hpp"
@@ -26,6 +27,7 @@ void compute(const HeatTransfer::SubKernels &subkernels, Assembler::Action actio
 	TemperatureKernel<nodes, gps, Physics> temperature(subkernels.temperature);
 	IntegrationKernel<nodes, gps, ndim, edim, Physics> integration(subkernels.integration);
 	HeatTransferCoordinateSystemKernel<gps, ndim, ecfmodel, model, Physics> coosystem(subkernels.coosystem);
+	HeatSourceKernel<nodes, gps, ndim, Physics> heatSource(subkernels.heatSource);
 //	AdvectionKernel<nodes, gps, ndim, etype, Physics> advection(subkernels[interval].advection);
 	HeatTransferMatrixKernel<nodes, gps, ndim, model, Physics> K(subkernels.K);
 	TemperatureGradientKernel<nodes, gps, ndim, Physics> gradient(subkernels.gradient);
@@ -48,6 +50,7 @@ void compute(const HeatTransfer::SubKernels &subkernels, Assembler::Action actio
 	thickness.setActiveness(action);
 	temperature.setActiveness(action);
 	coosystem.setActiveness(action);
+	heatSource.setActiveness(action);
 //	advection.setActiveness(action);
 	K.setActiveness(action);
 	gradient.setActiveness(action);
@@ -70,6 +73,9 @@ void compute(const HeatTransfer::SubKernels &subkernels, Assembler::Action actio
 		if (coosystem.isactive) {
 			coosystem.simd(element);
 //			if (c == 0) printf("coosystem ");
+		}
+		if (heatSource.isactive) {
+			heatSource.simd(element);
 		}
 //		if (advection.isactive) {
 //			advection.simd(element);

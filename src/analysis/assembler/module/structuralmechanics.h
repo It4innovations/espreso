@@ -13,6 +13,7 @@
 #include "math/physics/matrix_base.h"
 
 #include "analysis/assembler/subkernel/basis.h"
+#include "analysis/assembler/subkernel/boundarycondition.h"
 #include "analysis/assembler/subkernel/thickness.h"
 #include "analysis/assembler/subkernel/coordinates.h"
 #include "analysis/assembler/subkernel/material.h"
@@ -25,7 +26,6 @@
 #include "analysis/assembler/subkernel/structuralmechanics/elasticity.h"
 #include "analysis/assembler/subkernel/structuralmechanics/plasticity.h"
 #include "analysis/assembler/subkernel/structuralmechanics/matrix.h"
-#include "analysis/assembler/subkernel/structuralmechanics/rhs.h"
 #include "analysis/assembler/subkernel/structuralmechanics/stress.h"
 
 #include <cstddef>
@@ -58,7 +58,7 @@ public:
 		Plasticity plasticity;
 		StructuralMechanicsCoordinateSystem coosystem;
 		StructuralMechanicsMatrix K;
-		StructuralMechanicsRHS acceleration, angularVelocity;
+		BoundaryCondition acceleration, angularVelocity;
 		Stress stress;
 
 		DataFiller Kfiller, RHSfiller;
@@ -79,7 +79,7 @@ public:
 		Integration integration;
 
 		ExternalExpressionVector displacement;
-		StructuralMechanicsRHS normalPressure;
+		BoundaryCondition normalPressure;
 
 		DataFiller RHSfiller, dirichlet;
 

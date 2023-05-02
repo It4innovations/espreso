@@ -2,15 +2,15 @@
 #ifndef SRC_ANALYSIS_ASSEMBLER_SUBKERNEL_STRUCTURALMECHANICS_ACCELERATION_H_
 #define SRC_ANALYSIS_ASSEMBLER_SUBKERNEL_STRUCTURALMECHANICS_ACCELERATION_H_
 
-#include "rhs.h"
+#include "analysis/assembler/subkernel/boundarycondition.h"
 
 namespace espreso {
 
 template <size_t nodes, size_t gps, enum Behaviour behaviour, class Physics> struct AccelerationKernel;
 
 template <size_t nodes, size_t gps, class Physics>
-struct AccelerationKernel<nodes, gps, Behaviour::PLANE, Physics>: StructuralMechanicsRHS, Physics {
-	AccelerationKernel(const StructuralMechanicsRHS &base): StructuralMechanicsRHS(base) {}
+struct AccelerationKernel<nodes, gps, Behaviour::PLANE, Physics>: BoundaryCondition, Physics {
+	AccelerationKernel(const BoundaryCondition &base): BoundaryCondition(base) {}
 
 	void simd(typename Physics::Element &element)
 	{
@@ -31,8 +31,8 @@ struct AccelerationKernel<nodes, gps, Behaviour::PLANE, Physics>: StructuralMech
 };
 
 template <size_t nodes, size_t gps, class Physics>
-struct AccelerationKernel<nodes, gps, Behaviour::AXISYMMETRIC, Physics>: StructuralMechanicsRHS, Physics {
-	AccelerationKernel(const StructuralMechanicsRHS &base): StructuralMechanicsRHS(base) {}
+struct AccelerationKernel<nodes, gps, Behaviour::AXISYMMETRIC, Physics>: BoundaryCondition, Physics {
+	AccelerationKernel(const BoundaryCondition &base): BoundaryCondition(base) {}
 
 	void simd(typename Physics::Element &element)
 	{
@@ -53,8 +53,8 @@ struct AccelerationKernel<nodes, gps, Behaviour::AXISYMMETRIC, Physics>: Structu
 };
 
 template <size_t nodes, size_t gps, class Physics>
-struct AccelerationKernel<nodes, gps, Behaviour::VOLUME, Physics>: StructuralMechanicsRHS, Physics {
-	AccelerationKernel(const StructuralMechanicsRHS &base): StructuralMechanicsRHS(base) {}
+struct AccelerationKernel<nodes, gps, Behaviour::VOLUME, Physics>: BoundaryCondition, Physics {
+	AccelerationKernel(const BoundaryCondition &base): BoundaryCondition(base) {}
 
 	void simd(typename Physics::Element &element)
 	{

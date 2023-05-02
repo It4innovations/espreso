@@ -2,15 +2,15 @@
 #ifndef SRC_ANALYSIS_ASSEMBLER_SUBKERNEL_STRUCTURALMECHANICS_ANGULARVELOCITY_H_
 #define SRC_ANALYSIS_ASSEMBLER_SUBKERNEL_STRUCTURALMECHANICS_ANGULARVELOCITY_H_
 
-#include "rhs.h"
+#include "analysis/assembler/subkernel/boundarycondition.h"
 
 namespace espreso {
 
 template <size_t nodes, size_t gps, enum Behaviour behaviour, class Physics> struct AngularVelocityKernel;
 
 template <size_t nodes, size_t gps, class Physics>
-struct AngularVelocityKernel<nodes, gps, Behaviour::PLANE, Physics>: StructuralMechanicsRHS, Physics {
-	AngularVelocityKernel(const StructuralMechanicsRHS &base): StructuralMechanicsRHS(base) {}
+struct AngularVelocityKernel<nodes, gps, Behaviour::PLANE, Physics>: BoundaryCondition, Physics {
+	AngularVelocityKernel(const BoundaryCondition &base): BoundaryCondition(base) {}
 
 	void simd(typename Physics::Element &element)
 	{
@@ -31,8 +31,8 @@ struct AngularVelocityKernel<nodes, gps, Behaviour::PLANE, Physics>: StructuralM
 };
 
 template <size_t nodes, size_t gps, class Physics>
-struct AngularVelocityKernel<nodes, gps, Behaviour::AXISYMMETRIC, Physics>: StructuralMechanicsRHS, Physics {
-	AngularVelocityKernel(const StructuralMechanicsRHS &base): StructuralMechanicsRHS(base) {}
+struct AngularVelocityKernel<nodes, gps, Behaviour::AXISYMMETRIC, Physics>: BoundaryCondition, Physics {
+	AngularVelocityKernel(const BoundaryCondition &base): BoundaryCondition(base) {}
 
 	void simd(typename Physics::Element &element)
 	{
@@ -50,8 +50,8 @@ struct AngularVelocityKernel<nodes, gps, Behaviour::AXISYMMETRIC, Physics>: Stru
 };
 
 template <size_t nodes, size_t gps, class Physics>
-struct AngularVelocityKernel<nodes, gps, Behaviour::VOLUME, Physics>: StructuralMechanicsRHS, Physics {
-	AngularVelocityKernel(const StructuralMechanicsRHS &base): StructuralMechanicsRHS(base) {}
+struct AngularVelocityKernel<nodes, gps, Behaviour::VOLUME, Physics>: BoundaryCondition, Physics {
+	AngularVelocityKernel(const BoundaryCondition &base): BoundaryCondition(base) {}
 
 	void simd(typename Physics::Element &element)
 	{

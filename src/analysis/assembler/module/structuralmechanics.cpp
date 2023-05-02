@@ -325,6 +325,9 @@ void StructuralMechanics::analyze()
 		for (size_t i = 0; i < boundary[r].size(); ++i) {
 			surface[r] += boundary[r][i].surface;
 		}
+		for (size_t i = 0; i < boundary[r].size(); ++i) {
+			boundary[r][i].surface = surface[r];
+		}
 	}
 	printElementVolume(volume);
 	printBoundarySurface(surface);
@@ -356,7 +359,6 @@ void StructuralMechanics::connect(SteadyState &scheme)
 			}
 		}
 	}
-
 	for (auto it = configuration.displacement.begin(); it != configuration.displacement.end(); ++it) {
 		size_t r = info::mesh->bregionIndex(it->first);
 		for (size_t t = 0; t < info::mesh->boundaryRegions[r]->nodes->threads(); ++t) {

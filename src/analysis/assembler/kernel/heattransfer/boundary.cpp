@@ -1,6 +1,7 @@
 
 #include "analysis/assembler/module/heattransfer.h"
 #include "analysis/assembler/module/assembler.hpp"
+#include "analysis/assembler/subkernel/heattransfer/externalheat.h"
 
 #include "esinfo/ecfinfo.h"
 #include "esinfo/eslog.hpp"
@@ -20,19 +21,103 @@ namespace espreso {
 template <Element::CODE code, size_t nodes, size_t gps, size_t ndim, size_t edim>
 void preprocess(HeatTransfer::BoundarySubKernels &subkernels)
 {
+	typedef HeatTransferBoundaryDescriptor<nodes, gps, ndim, edim> Physics;
+	typename Physics::Element element;
+	if (subkernels.heatFlow.expression) {
+		subkernels.expressions.push_back(new ExternalGPsExpression<gps, Physics>(
+				subkernels.heatFlow.expression->evaluator,
+				[] (typename Physics::Element &element, size_t &gp, size_t &s, double value) { element.ecf.heatFlow[gp][s] = value; }));
+	}
+	if (subkernels.heatFlux.expression) {
+		subkernels.expressions.push_back(new ExternalGPsExpression<gps, Physics>(
+				subkernels.heatFlux.expression->evaluator,
+				[] (typename Physics::Element &element, size_t &gp, size_t &s, double value) { element.ecf.heatFlux[gp][s] = value; }));
+	}
 
+	if (subkernels.htc.expression) {
+		subkernels.expressions.push_back(new ExternalGPsExpression<gps, Physics>(
+				subkernels.htc.expression->evaluator,
+				[] (typename Physics::Element &element, size_t &gp, size_t &s, double value) { element.ecf.htc[gp][s] = value; }));
+	}
+	if (subkernels.externalTemperature.expression) {
+		subkernels.expressions.push_back(new ExternalGPsExpression<gps, Physics>(
+				subkernels.externalTemperature.expression->evaluator,
+				[] (typename Physics::Element &element, size_t &gp, size_t &s, double value) { element.ecf.extTemp[gp][s] = value; }));
+	}
+
+	BasisKernel<code, nodes, gps, edim> basis(subkernels.basis);
+	CoordinatesKernel<nodes, gps, ndim, Physics> coordinates(subkernels.coordinates);
+	IntegrationKernel<nodes, gps, ndim, edim, Physics> integration(subkernels.integration);
+
+	basis.simd(element);
+	SIMD surface;
+	for (esint c = 0; c < subkernels.chunks; ++c) {
+		coordinates.simd(element);
+		integration.simd(element);
+		for (size_t gp = 0; gp < gps; ++gp) {
+			surface = surface + element.det[gp] * load1(element.w[gp]);
+		}
+	}
+
+	subkernels.esize = sizeof(typename Physics::Element);
+	for (size_t s = 0; s < SIMD::size; ++s) {
+		subkernels.surface += surface[s];
+	}
 }
 
 template <Element::CODE code, size_t nodes, size_t gps, size_t ndim, size_t edim>
 void compute(const HeatTransfer::BoundarySubKernels &subkernels, Assembler::Action action)
 {
+	typedef HeatTransferBoundaryDescriptor<nodes, gps, ndim, edim> Physics;
+	typename Physics::Element element;
 
+	BasisKernel<code, nodes, gps, edim> basis(subkernels.basis);
+	CoordinatesKernel<nodes, gps, ndim, Physics> coordinates(subkernels.coordinates);
+	ThicknessFromNodes<nodes, ndim, Physics> thickness(subkernels.thickness);
+	IntegrationKernel<nodes, gps, ndim, edim, Physics> integration(subkernels.integration);
+	ExternalHeatKernel<nodes, gps, ndim, Physics> externalHeat(subkernels.externalHeat);
+
+	std::vector<ExternalGPsExpression<gps, Physics>*> nonconst;
+	for (size_t i = 0; i < subkernels.expressions.size(); ++i) {
+		if (subkernels.expressions[i]->evaluator->isConst()) {
+			dynamic_cast<ExternalGPsExpression<gps, Physics>*>(subkernels.expressions[i])->simd(element);
+		} else {
+			nonconst.push_back(dynamic_cast<ExternalGPsExpression<gps, Physics>*>(subkernels.expressions[i]));
+		}
+	}
+
+	basis.simd(element);
+	thickness.setActiveness(action);
+
+	for (esint c = 0; c < subkernels.chunks; ++c) {
+		coordinates.simd(element);
+//		if (c == 0) printf("coordinates ");
+		if (thickness.isactive) {
+			thickness.simd(element);
+//			if (c == 0) printf("thickness ");
+		}
+		integration.simd(element);
+//		if (c == 0) printf("integration ");
+		if (externalHeat.isactive) {
+			externalHeat.simd(element);
+//			if (c == 0) printf("heat ");
+		}
+	}
 }
 
 template <Element::CODE code, size_t nodes, size_t gps, size_t ndim, size_t edim>
 void fill(const HeatTransfer::BoundarySubKernels &subkernels)
 {
+	typedef HeatTransferBoundaryDescriptor<nodes, gps, ndim, edim> Physics;
+	typename Physics::Element element;
 
+	VectorFillerKernel<nodes, Physics> RHS(subkernels.RHSfiller);
+
+	for (esint c = 0; c < subkernels.chunks; ++c) {
+		if (RHS.isactive) {
+			RHS.simd(element);
+		}
+	}
 }
 
 template <size_t ndim>
@@ -87,7 +172,10 @@ template <size_t ndim, size_t edim> void addBC(HeatTransfer::BoundarySubKernels 
 
 template <> void addBC<2, 1>(HeatTransfer::BoundarySubKernels &subkernels, Assembler::Action action)
 {
-
+	switch (subkernels.code) {
+	case static_cast<size_t>(Element::CODE::LINE2): runAction<Element::CODE::LINE2, 2, HeatTransferGPC::LINE2, 2, 1>(subkernels, action); break;
+	case static_cast<size_t>(Element::CODE::LINE3): runAction<Element::CODE::LINE3, 3, HeatTransferGPC::LINE3, 2, 1>(subkernels, action); break;
+	}
 }
 
 template <> void addBC<2, 0>(HeatTransfer::BoundarySubKernels &subkernels, Assembler::Action action)
@@ -99,12 +187,20 @@ template <> void addBC<2, 0>(HeatTransfer::BoundarySubKernels &subkernels, Assem
 }
 template <> void addBC<3, 2>(HeatTransfer::BoundarySubKernels &subkernels, Assembler::Action action)
 {
-
+	switch (subkernels.code) {
+	case static_cast<size_t>(Element::CODE::TRIANGLE3): runAction<Element::CODE::TRIANGLE3, 3, HeatTransferGPC::TRIANGLE3, 3, 2>(subkernels, action); break;
+	case static_cast<size_t>(Element::CODE::TRIANGLE6): runAction<Element::CODE::TRIANGLE6, 6, HeatTransferGPC::TRIANGLE6, 3, 2>(subkernels, action); break;
+	case static_cast<size_t>(Element::CODE::SQUARE4  ): runAction<Element::CODE::SQUARE4  , 4, HeatTransferGPC::SQUARE4  , 3, 2>(subkernels, action); break;
+	case static_cast<size_t>(Element::CODE::SQUARE8  ): runAction<Element::CODE::SQUARE8  , 8, HeatTransferGPC::SQUARE8  , 3, 2>(subkernels, action); break;
+	}
 }
 
 template <> void addBC<3, 1>(HeatTransfer::BoundarySubKernels &subkernels, Assembler::Action action)
 {
-
+	switch (subkernels.code) {
+	case static_cast<size_t>(Element::CODE::LINE2): runAction<Element::CODE::LINE2, 2, HeatTransferGPC::LINE2, 3, 1>(subkernels, action); break;
+	case static_cast<size_t>(Element::CODE::LINE3): runAction<Element::CODE::LINE3, 3, HeatTransferGPC::LINE3, 3, 1>(subkernels, action); break;
+	}
 }
 
 template <> void addBC<3, 0>(HeatTransfer::BoundarySubKernels &subkernels, Assembler::Action action)

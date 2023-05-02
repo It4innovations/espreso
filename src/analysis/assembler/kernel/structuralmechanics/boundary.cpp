@@ -59,7 +59,7 @@ void compute(StructuralMechanics::BoundarySubKernels &subkernels, Assembler::Act
 
 	BasisKernel<code, nodes, gps, edim> basis(subkernels.basis);
 	CoordinatesKernel<nodes, gps, ndim, Physics> coordinates(subkernels.coordinates);
-	ThicknessToNodes<nodes, ndim, Physics> thickness(subkernels.thickness);
+	ThicknessFromNodes<nodes, ndim, Physics> thickness(subkernels.thickness);
 	IntegrationKernel<nodes, gps, ndim, edim, Physics> integration(subkernels.integration);
 	NormalPressureKernel<nodes, gps, ndim, edim, behaviour, Physics> normalPressure(subkernels.normalPressure);
 

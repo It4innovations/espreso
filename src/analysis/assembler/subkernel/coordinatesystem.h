@@ -68,8 +68,8 @@ struct CoordinateSystemCylindric<gps, 2, multiplicity, Physics> {
 			for (size_t s = 0; s < SIMD::size; ++s) {
 				double rot = std::atan2(distanceY[s], distanceX[s]);
 				for (size_t m = 1; m <= multiplicity; ++m) {
-					element.cossin[gp][(m - 1) * 2 + 0][s] = std::cos(2 * rot);
-					element.cossin[gp][(m - 1) * 2 + 1][s] = std::sin(2 * rot);
+					element.cossin[gp][(m - 1) * 2 + 0][s] = std::cos(m * rot);
+					element.cossin[gp][(m - 1) * 2 + 1][s] = std::sin(m * rot);
 				}
 			}
 		}

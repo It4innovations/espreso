@@ -128,7 +128,7 @@ OutputConfiguration::OutputConfiguration(const ECF *root)
 			.addoption(ECFOption().setname("STL_SURFACE").setdescription("Surface of bodies in STL format."))
 			.addoption(ECFOption().setname("NETGEN").setdescription("Netgen neutral format (only for tetrahedral meshes).")));
 
-	mode = MODE::PTHREAD;
+	mode = MODE::SYNC;
 	REGISTER(mode, ECFMetaData()
 			.setdescription({ "ASYNC library mode" })
 			.setdatatype({ ECFDataType::OPTION })

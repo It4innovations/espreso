@@ -13,6 +13,7 @@
 #include "math/physics/matrix_base.h"
 
 #include "analysis/assembler/subkernel/basis.h"
+#include "analysis/assembler/subkernel/boundarycondition.h"
 #include "analysis/assembler/subkernel/thickness.h"
 #include "analysis/assembler/subkernel/coordinates.h"
 #include "analysis/assembler/subkernel/temperature.h"
@@ -21,6 +22,7 @@
 #include "analysis/assembler/subkernel/filler.h"
 #include "analysis/assembler/subkernel/heattransfer/conductivity.h"
 #include "analysis/assembler/subkernel/heattransfer/coordinatesystem.h"
+#include "analysis/assembler/subkernel/heattransfer/externalheat.h"
 #include "analysis/assembler/subkernel/heattransfer/advection.h"
 #include "analysis/assembler/subkernel/heattransfer/matrix.h"
 #include "analysis/assembler/subkernel/heattransfer/flux.h"
@@ -55,6 +57,7 @@ public:
 		Conductivity conductivity;
 		HeatTransferCoordinateSystem coosystem;
 		Advection advection;
+		BoundaryCondition heatSource;
 		HeatTransferMatrix K;
 
 		TemperatureGradient gradient;
@@ -78,6 +81,8 @@ public:
 		Integration integration;
 
 		ExternalExpression temperature;
+		BoundaryCondition heatFlux, heatFlow, htc, externalTemperature;
+		ExternalHeat externalHeat;
 
 		DataFiller RHSfiller, dirichlet;
 

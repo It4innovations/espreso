@@ -125,7 +125,8 @@ template <size_t nodes, size_t gps, size_t ndim, size_t edim> struct HeatTransfe
 	struct Element:
 			ElementCoordinates<nodes, gps, ndim>,
 			ElementTemperature<nodes, gps>,
-			ElementIntegration<nodes, gps, edim>
+			ElementIntegration<nodes, gps, edim>,
+			BondaryNormal<gps, ndim>
 	{
 		struct ECF:
 				HeatTransferBoundaryParameters<gps, ndim>

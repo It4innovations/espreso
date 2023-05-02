@@ -32,8 +32,16 @@ struct Thickness: SubKernel {
 		this->end = end;
 		this->target = target;
 		if (this->expression) {
-			isactive = 1;
+			this->isactive = 1;
 		}
+	}
+
+	void activate(serializededata<esint, esint>::const_iterator enodes, serializededata<esint, esint>::const_iterator end, double * target)
+	{
+		this->enodes = enodes;
+		this->end = end;
+		this->target = target;
+		this->isactive = 1;
 	}
 };
 
@@ -57,6 +65,33 @@ struct ThicknessToNodes<nodes, 2, Physics>: Thickness, Physics {
 template <size_t nodes, class Physics>
 struct ThicknessToNodes<nodes, 3, Physics>: Thickness, Physics {
 	ThicknessToNodes(const Thickness &base): Thickness(base) {}
+
+	void simd(typename Physics::Element &element)
+	{
+
+	}
+};
+
+template <size_t nodes, size_t ndim, class Physics> struct ThicknessFromNodes;
+
+template <size_t nodes, class Physics>
+struct ThicknessFromNodes<nodes, 2, Physics>: Thickness, Physics {
+	ThicknessFromNodes(const Thickness &base): Thickness(base) {}
+
+	void simd(typename Physics::Element &element)
+	{
+		for (size_t s = 0; s < SIMD::size; ++s, ++enodes) {
+			if (enodes == end) break;
+			for (size_t n = 0; n < nodes; ++n) {
+				element.ecf.thickness[n][s] = target[enodes->at(n)];
+			}
+		}
+	}
+};
+
+template <size_t nodes, class Physics>
+struct ThicknessFromNodes<nodes, 3, Physics>: Thickness, Physics {
+	ThicknessFromNodes(const Thickness &base): Thickness(base) {}
 
 	void simd(typename Physics::Element &element)
 	{

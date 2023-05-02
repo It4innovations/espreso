@@ -348,6 +348,12 @@ void preprocess(HeatTransfer::SubKernels &subkernels)
 		SetAdvection<gps, ndim, Physics>::analyze(subkernels);
 	}
 
+	if (subkernels.heatSource.isactive) {
+		subkernels.expressions.push_back(new ExternalGPsExpression<gps, Physics>(
+				subkernels.heatSource.expression->evaluator,
+				[] (typename Physics::Element &element, size_t &gp, size_t &s, double value) { element.ecf.heatSource[gp][s] = value; }));
+	}
+
 	BasisKernel<code, nodes, gps, edim> basis(subkernels.basis);
 	CoordinatesKernel<nodes, gps, ndim, Physics> coordinates(subkernels.coordinates);
 	IntegrationKernel<nodes, gps, ndim, edim, Physics> integration(subkernels.integration);
