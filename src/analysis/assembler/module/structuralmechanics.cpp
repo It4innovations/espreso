@@ -366,6 +366,34 @@ void StructuralMechanics::connect(SteadyState &scheme)
 	}
 }
 
+void StructuralMechanics::run(Action action, size_t interval)
+{
+	switch (action) {
+	case Action::PREPROCESS:
+	case Action::FILL:
+		runPreprocess(action, interval);
+		break;
+	default:
+		switch (info::mesh->dimension) {
+		case 3: runVolume(action, interval); break;
+		case 2:
+			switch (settings.element_behaviour) {
+			case StructuralMechanicsGlobalSettings::ELEMENT_BEHAVIOUR::PLANE_STRAIN:
+			case StructuralMechanicsGlobalSettings::ELEMENT_BEHAVIOUR::PLANE_STRESS:
+			case StructuralMechanicsGlobalSettings::ELEMENT_BEHAVIOUR::PLANE_STRESS_WITH_THICKNESS:
+				runPlane(action, interval); break;
+			case StructuralMechanicsGlobalSettings::ELEMENT_BEHAVIOUR::AXISYMMETRIC:
+				runAxisymmetric(action, interval); break;
+			}
+		}
+	}
+}
+
+void StructuralMechanics::run(Action action, size_t region, size_t interval)
+{
+	runBoundary(action, region, interval);
+}
+
 void StructuralMechanics::evaluate(SteadyState &scheme, step::Time &time)
 {
 	setTime(time.current);

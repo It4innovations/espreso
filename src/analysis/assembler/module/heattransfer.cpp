@@ -347,6 +347,26 @@ void HeatTransfer::connect(SteadyState &scheme)
 	}
 }
 
+void HeatTransfer::run(Action action, size_t interval)
+{
+	switch (action) {
+	case Action::PREPROCESS:
+	case Action::FILL:
+		runPreprocess(action, interval);
+		break;
+	default:
+		switch (info::mesh->dimension) {
+		case 3: runVolume(action, interval); break;
+		case 2: runPlane(action, interval); break;
+		}
+	}
+}
+
+void HeatTransfer::run(Action action, size_t region, size_t interval)
+{
+	runBoundary(action, region, interval);
+}
+
 void HeatTransfer::evaluate(SteadyState &scheme, step::Time &time)
 {
 	setTime(time.current);

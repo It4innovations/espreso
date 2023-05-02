@@ -1,5 +1,5 @@
 
-#include "heattransfer.h"
+#include "analysis/assembler/module/heattransfer.h"
 #include "analysis/assembler/module/assembler.hpp"
 
 #include "esinfo/ecfinfo.h"
@@ -370,82 +370,6 @@ void preprocess(HeatTransfer::SubKernels &subkernels)
 }
 
 template <Element::CODE code, size_t nodes, size_t gps, size_t ndim, size_t edim, enum ThermalConductivityConfiguration::MODEL ecfmodel, enum ThermalConductivityConfiguration::MODEL model>
-void compute(const HeatTransfer::SubKernels &subkernels, Assembler::Action action)
-{
-	typedef HeatTransferElementDescriptor<nodes, gps, ndim, edim, ecfmodel, model> Physics;
-	typename Physics::Element element;
-
-	BasisKernel<code, nodes, gps, edim> basis(subkernels.basis);
-	CoordinatesKernel<nodes, gps, ndim, Physics> coordinates(subkernels.coordinates);
-	ThicknessToNodes<nodes, ndim, Physics> thickness(subkernels.thickness);
-	TemperatureKernel<nodes, gps, Physics> temperature(subkernels.temperature);
-	IntegrationKernel<nodes, gps, ndim, edim, Physics> integration(subkernels.integration);
-	HeatTransferCoordinateSystemKernel<gps, ndim, ecfmodel, model, Physics> coosystem(subkernels.coosystem);
-//	AdvectionKernel<nodes, gps, ndim, etype, Physics> advection(subkernels[interval].advection);
-	HeatTransferMatrixKernel<nodes, gps, ndim, model, Physics> K(subkernels.K);
-	TemperatureGradientKernel<nodes, gps, ndim, Physics> gradient(subkernels.gradient);
-	TemperatureFluxKernel<nodes, gps, ndim, model, Physics> flux(subkernels.flux);
-
-	std::vector<ExternalGPsExpression<gps, Physics>*> nonconst;
-	for (size_t i = 0; i < subkernels.expressions.size(); ++i) {
-		if (subkernels.expressions[i]->evaluator->isConst()) {
-			dynamic_cast<ExternalGPsExpression<gps, Physics>*>(subkernels.expressions[i])->simd(element);
-		} else {
-			nonconst.push_back(dynamic_cast<ExternalGPsExpression<gps, Physics>*>(subkernels.expressions[i]));
-		}
-	}
-
-	basis.simd(element);
-	if (coosystem.isactive) {
-		coosystem.simd(element);
-	}
-
-	thickness.setActiveness(action);
-	temperature.setActiveness(action);
-	coosystem.setActiveness(action);
-//	advection.setActiveness(action);
-	K.setActiveness(action);
-	gradient.setActiveness(action);
-	flux.setActiveness(action);
-
-//	printf("sub-kernels: ");
-	for (esint c = 0; c < subkernels.chunks; ++c) {
-		coordinates.simd(element);
-//		if (c == 0) printf("coordinates ");
-		if (temperature.isactive) {
-			temperature.simd(element);
-//			if (c == 0) printf("temp ");
-		}
-		if (thickness.isactive) {
-			thickness.simd(element);
-//			if (c == 0) printf("thickness ");
-		}
-		integration.simd(element);
-//		if (c == 0) printf("integrate ");
-		if (coosystem.isactive) {
-			coosystem.simd(element);
-//			if (c == 0) printf("coosystem ");
-		}
-//		if (advection.isactive) {
-//			advection.simd(element);
-//		}
-		if (K.isactive) {
-			K.simd(element);
-//			if (c == 0) printf("K ");
-		}
-		if (gradient.isactive) {
-			gradient.simd(element);
-//			if (c == 0) printf("gradient ");
-		}
-		if (flux.isactive) {
-			flux.simd(element);
-//			if (c == 0) printf("flux ");
-		}
-	}
-//	printf("\n");
-}
-
-template <Element::CODE code, size_t nodes, size_t gps, size_t ndim, size_t edim, enum ThermalConductivityConfiguration::MODEL ecfmodel, enum ThermalConductivityConfiguration::MODEL model>
 void fill(const HeatTransfer::SubKernels &subkernels)
 {
 	typedef HeatTransferElementDescriptor<nodes, gps, ndim, edim, ecfmodel, model> Physics;
@@ -471,53 +395,9 @@ void preprocess(HeatTransfer::BoundarySubKernels &subkernels)
 }
 
 template <Element::CODE code, size_t nodes, size_t gps, size_t ndim, size_t edim>
-void compute(const HeatTransfer::BoundarySubKernels &subkernels, Assembler::Action action)
-{
-
-}
-
-template <Element::CODE code, size_t nodes, size_t gps, size_t ndim, size_t edim>
 void fill(const HeatTransfer::BoundarySubKernels &subkernels)
 {
 
-}
-
-template <size_t ndim>
-void initDirichlet(HeatTransfer::BoundarySubKernels &subkernels)
-{
-	typedef HeatTransferBoundaryDescriptor<1, 1, ndim, 0> Physics;
-	if (subkernels.temperature.expression) {
-		subkernels.expressions.push_back(new ExternalNodeExpression<1, Physics>(
-				subkernels.temperature.expression->evaluator,
-				[] (typename Physics::Element &element, size_t &gp, size_t &s, double value) { element.temp[0][s] = value; }));
-	}
-}
-
-template <size_t ndim>
-void dirichlet(const HeatTransfer::BoundarySubKernels &subkernels)
-{
-	typedef HeatTransferBoundaryDescriptor<1, 1, ndim, 0> Physics;
-	typename Physics::Element element;
-
-	CoordinatesKernel<1, 1, ndim, Physics> coordinates(subkernels.coordinates);
-	VectorSetterKernel<1, Physics> set(subkernels.dirichlet, [] (auto &element, size_t &n, size_t &d, size_t &s) { return element.temp[n][s]; });
-
-	std::vector<ExternalNodeExpression<1, Physics>*> nonconst;
-	for (size_t i = 0; i < subkernels.expressions.size(); ++i) {
-		if (subkernels.expressions[i]->evaluator->isConst()) {
-			dynamic_cast<ExternalNodeExpression<1, Physics>*>(subkernels.expressions[i])->simd(element);
-		} else {
-			nonconst.push_back(dynamic_cast<ExternalNodeExpression<1, Physics>*>(subkernels.expressions[i]));
-		}
-	}
-
-	for (esint c = 0; c < subkernels.chunks; ++c) {
-		coordinates.simd(element);
-		for (size_t i = 0; i < nonconst.size(); ++i) {
-			nonconst[i]->simd(element);
-		}
-		set.simd(element);
-	}
 }
 
 template <Element::CODE code, size_t nodes, size_t gps, size_t ndim, size_t edim, enum ThermalConductivityConfiguration::MODEL ecfmodel, enum ThermalConductivityConfiguration::MODEL model>
@@ -526,7 +406,6 @@ void runAction(HeatTransfer::SubKernels &subkernels, Assembler::Action action)
 	switch (action) {
 	case Assembler::Action::PREPROCESS: preprocess<code, nodes, gps, ndim, edim, ecfmodel, model>(subkernels); break;
 	case Assembler::Action::FILL: fill<code, nodes, gps, ndim, edim, ecfmodel, model>(subkernels); break;
-	default: compute<code, nodes, gps, ndim, edim, ecfmodel, model>(subkernels, action); break;
 	}
 }
 
@@ -536,7 +415,6 @@ void runAction(HeatTransfer::BoundarySubKernels &subkernels, Assembler::Action a
 	switch (action) {
 	case Assembler::Action::PREPROCESS: preprocess<code, nodes, gps, ndim, edim>(subkernels); break;
 	case Assembler::Action::FILL: fill<code, nodes, gps, ndim, edim>(subkernels); break;
-	default: compute<code, nodes, gps, ndim, edim>(subkernels, action); break;
 	}
 }
 
@@ -594,60 +472,11 @@ template <> void runElement<3>(HeatTransfer::SubKernels &subkernels, Assembler::
 	}
 }
 
-template <size_t ndim, size_t edim> void runBoundary(HeatTransfer::BoundarySubKernels &subkernels, Assembler::Action action);
-
-template <> void runBoundary<2, 1>(HeatTransfer::BoundarySubKernels &subkernels, Assembler::Action action)
-{
-
-}
-
-template <> void runBoundary<2, 0>(HeatTransfer::BoundarySubKernels &subkernels, Assembler::Action action)
-{
-	switch (action) {
-	case Assembler::Action::PREPROCESS: initDirichlet<2>(subkernels); break;
-	case Assembler::Action::ASSEMBLE: case Assembler::Action::REASSEMBLE: dirichlet<2>(subkernels); break;
-	}
-}
-template <> void runBoundary<3, 2>(HeatTransfer::BoundarySubKernels &subkernels, Assembler::Action action)
-{
-
-}
-
-template <> void runBoundary<3, 1>(HeatTransfer::BoundarySubKernels &subkernels, Assembler::Action action)
-{
-
-}
-
-template <> void runBoundary<3, 0>(HeatTransfer::BoundarySubKernels &subkernels, Assembler::Action action)
-{
-	switch (action) {
-	case Assembler::Action::PREPROCESS: initDirichlet<3>(subkernels); break;
-	case Assembler::Action::ASSEMBLE: case Assembler::Action::REASSEMBLE: dirichlet<3>(subkernels); break;
-	}
-}
-
-void HeatTransfer::run(Action action, size_t interval)
+void HeatTransfer::runPreprocess(Action action, size_t interval)
 {
 	switch (info::mesh->dimension) {
 	case 2: runElement<2>(subkernels[interval], action); break;
 	case 3: runElement<3>(subkernels[interval], action); break;
-	}
-}
-
-void HeatTransfer::run(Action action, size_t region, size_t interval)
-{
-	switch (info::mesh->dimension) {
-	case 2:
-		switch (info::mesh->boundaryRegions[region]->dimension) {
-		case 0: runBoundary<2, 0>(boundary[region][interval], action); break;
-		case 1: runBoundary<2, 1>(boundary[region][interval], action); break;
-		} break;
-	case 3:
-		switch (info::mesh->boundaryRegions[region]->dimension) {
-		case 0: runBoundary<3, 0>(boundary[region][interval], action); break;
-		case 1: runBoundary<3, 1>(boundary[region][interval], action); break;
-		case 2: runBoundary<3, 2>(boundary[region][interval], action); break;
-		} break;
 	}
 }
 
