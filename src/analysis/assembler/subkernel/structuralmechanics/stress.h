@@ -23,8 +23,8 @@ struct Stress: SubKernel {
 	void activate(size_t interval, NamedData *principalStress, NamedData *componentStress, NamedData *vonMisesStress)
 	{
 		this->principalStress = principalStress->data.data() + info::mesh->dimension * info::mesh->elements->eintervals[interval].begin;
-		this->componentStress = componentStress->data.data() + info::mesh->dimension * info::mesh->elements->eintervals[interval].begin;
-		this->vonMisesStress = vonMisesStress->data.data() + info::mesh->dimension * info::mesh->elements->eintervals[interval].begin;
+		this->componentStress = componentStress->data.data() + 2 * info::mesh->dimension * info::mesh->elements->eintervals[interval].begin;
+		this->vonMisesStress = vonMisesStress->data.data() + info::mesh->elements->eintervals[interval].begin;
 		this->vonMisesStressEnd = vonMisesStress->data.data() + vonMisesStress->data.size();
 		isactive = 1;
 	}
