@@ -11,6 +11,8 @@ struct PlasticityPropertiesConfiguration: public ECFDescription {
 
 	DIMENSION *dimension;
 
+	ECFExpression initial_yield_stress, isotropic_hardening, kinematic_hardening;
+
 	PlasticityPropertiesConfiguration(DIMENSION *D);
 };
 

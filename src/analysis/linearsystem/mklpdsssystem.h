@@ -194,6 +194,9 @@ template <> struct MKLPDSSSystem<HeatSteadyStateNonLinear>: public MKLPDSSSystem
 				assembler.A.type = solver.A.type = Matrix_Type::REAL_STRUCTURALLY_SYMMETRIC;
 			}
 		}
+		if (analysis->configuration.translation_motions.size()) {
+			assembler.A.type = solver.A.type = Matrix_Type::REAL_STRUCTURALLY_SYMMETRIC;
+		}
 
 		assembler.pattern.set(analysis->configuration.temperature, 1, solver.distribution);
 		_fillDirect(this);
@@ -251,6 +254,7 @@ template <> struct MKLPDSSSystem<StructuralMechanicsSteadyStateNonLinear>: publi
 		assembler.A.type = solver.A.type = Matrix_Type::REAL_SYMMETRIC_POSITIVE_DEFINITE;
 		assembler.pattern.set(analysis->configuration.displacement, info::mesh->dimension, solver.distribution);
 		_fillDirect(this);
+		solver.A.initApply();
 	}
 };
 

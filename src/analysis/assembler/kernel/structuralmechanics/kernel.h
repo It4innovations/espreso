@@ -28,7 +28,7 @@ void compute(StructuralMechanics::SubKernels &subkernels, Assembler::Action acti
 	IntegrationKernel<nodes, gps, ndim, edim, Physics> integration(subkernels.integration);
 	DisplacementKernel<nodes, gps, ndim, Physics> displacement(subkernels.displacement);
 	ElasticityKernel<gps, ndim, ecfmodel, Physics> elasticity(subkernels.elasticity);
-	PlasticityKernel<gps, ndim, ecfmodel, Physics> plasticity(subkernels.plasticity);
+	PlasticityKernel<nodes, gps, ndim, ecfmodel, Physics> plasticity(subkernels.plasticity);
 	StructuralMechanicsCoordinateSystemKernel<gps, ndim, ecfmodel, model, Physics> coosystem(subkernels.coosystem);
 	StructuralMechanicsStiffness<nodes, gps, ndim, behaviour, model, Physics> K(subkernels.K);
 	AccelerationKernel<nodes, gps, behaviour, Physics> acceleration(subkernels.acceleration);

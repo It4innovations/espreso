@@ -29,15 +29,15 @@ GENERATOR {
     START_Y                    0;
     START_Z                    0;
 
-    LENGTH_X            0.006413;
-    LENGTH_Y            0.006413;
-    LENGTH_Z            0.053334;
+    LENGTH_X           0.0032065;
+    LENGTH_Y           0.0032065;
+    LENGTH_Z           0.0266667;
 
     NODES {
-      X0   <0 , 0> <0 , 0.006413> <0 , 0.053334>;
-      Y0   <0 , 0.006413> <0 , 0> <0 , 0.053334>;
-      Z0   <0 , 0.006413> <0 , 0.006413> <0 , 0>;
-      Z1   <0 , 0.006413> <0 , 0.006413> <0.053334 , 0.053334>;
+      X0   <0 ,         0> <0 , 0.0032065> <0         , 0.0266667>;
+      Y0   <0 , 0.0032065> <0 ,         0> <0         , 0.0266667>;
+      Z0   <0 , 0.0032065> <0 , 0.0032065> <0         ,        0>;
+      Z1   <0 , 0.0032065> <0 , 0.0032065> <0.0266667 , 0.0266667>;
     }
 
     ELEMENT_TYPE          [ARG0];
@@ -61,7 +61,7 @@ STRUCTURAL_MECHANICS_3D {
 
   MATERIALS {
     1 {
-#      MATERIAL_MODEL  PLASTICITY;
+      MATERIAL_MODEL  PLASTICITY;
 
       DENS   7850;
       CP        1;
@@ -69,12 +69,14 @@ STRUCTURAL_MECHANICS_3D {
       LINEAR_ELASTIC_PROPERTIES {
         MODEL   ISOTROPIC;
 
-        MIXY          0.3;
-        EX          2.1E9;
+        MIXY         0.29;
+        EX        206.9E9;
       }
 
       PLASTICITY_PROPERTIES {
-
+        INITIAL_YIELD_STRESS     450E3;
+        ISOTROPIC_HARDENING          0;
+        KINEMATIC_HARDENING       15E6;
       }
 
       THERMAL_EXPANSION {
@@ -91,8 +93,8 @@ STRUCTURAL_MECHANICS_3D {
     1 {
       DURATION_TIME     1;
       TYPE   STEADY_STATE;
-      MODE         LINEAR;
-      SOLVER       [ARG10];
+      MODE      NONLINEAR;
+      SOLVER      [ARG10];
 
       FETI {
         METHOD          TOTAL_FETI;
@@ -106,7 +108,7 @@ STRUCTURAL_MECHANICS_3D {
         X0   { X 0; }
         Y0   { Y 0; }
         Z0   { Z 0; }
-        Z1   { Z 0.007; }
+        Z1   { X 0; Y 0; Z 0.007; }
       }
     }
   }

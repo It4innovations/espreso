@@ -42,7 +42,7 @@ void StructuralMechanicsSteadyStateNonLinear::analyze()
 void StructuralMechanicsSteadyStateNonLinear::run(step::Step &step)
 {
 	initSystem(system, this);
-	eslog::checkpointln("SIMULATION: LINEAR SYSTEM BUILT");
+	solver.init(system);
 	scheme.init(system);
 	assembler.connect(scheme);
 	scheme.setTime(time, configuration.duration_time);

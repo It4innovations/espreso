@@ -112,6 +112,7 @@ public:
 	struct Results {
 		static NodeData *displacement, *thickness;
 		static ElementData *principalStress, *componentStress, *vonMisesStress;
+		static ElementData *isPlastized;
 	};
 
 protected:

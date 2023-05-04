@@ -28,8 +28,9 @@ void compute(const HeatTransfer::SubKernels &subkernels, Assembler::Action actio
 	IntegrationKernel<nodes, gps, ndim, edim, Physics> integration(subkernels.integration);
 	HeatTransferCoordinateSystemKernel<gps, ndim, ecfmodel, model, Physics> coosystem(subkernels.coosystem);
 	HeatSourceKernel<nodes, gps, ndim, Physics> heatSource(subkernels.heatSource);
-//	AdvectionKernel<nodes, gps, ndim, etype, Physics> advection(subkernels[interval].advection);
+	AdvectionKernel<nodes, gps, ndim, model, Physics> advection(subkernels.advection);
 	HeatTransferMatrixKernel<nodes, gps, ndim, model, Physics> K(subkernels.K);
+	AdvectionMatrix<nodes, gps, ndim, model, Physics> advK(subkernels.advection);
 	TemperatureGradientKernel<nodes, gps, ndim, Physics> gradient(subkernels.gradient);
 	TemperatureFluxKernel<nodes, gps, ndim, model, Physics> flux(subkernels.flux);
 
@@ -51,8 +52,9 @@ void compute(const HeatTransfer::SubKernels &subkernels, Assembler::Action actio
 	temperature.setActiveness(action);
 	coosystem.setActiveness(action);
 	heatSource.setActiveness(action);
-//	advection.setActiveness(action);
+	advection.setActiveness(action);
 	K.setActiveness(action);
+	advK.setActiveness(action);
 	gradient.setActiveness(action);
 	flux.setActiveness(action);
 
@@ -76,13 +78,19 @@ void compute(const HeatTransfer::SubKernels &subkernels, Assembler::Action actio
 		}
 		if (heatSource.isactive) {
 			heatSource.simd(element);
+//			if (c == 0) printf("heatSource ");
 		}
-//		if (advection.isactive) {
-//			advection.simd(element);
-//		}
+		if (advection.isactive) {
+			advection.simd(element);
+//			if (c == 0) printf("advection ");
+		}
 		if (K.isactive) {
 			K.simd(element);
 //			if (c == 0) printf("K ");
+		}
+		if (advK.isactive) {
+			advK.simd(element);
+//			if (c == 0) printf("advK ");
 		}
 		if (gradient.isactive) {
 			gradient.simd(element);
@@ -94,6 +102,29 @@ void compute(const HeatTransfer::SubKernels &subkernels, Assembler::Action actio
 		}
 	}
 //	printf("\n");
+}
+
+template <Element::CODE code, size_t nodes, size_t gps, size_t ndim, size_t edim>
+void runConductivity(HeatTransfer::SubKernels &subkernels, Assembler::Action action)
+{
+	switch (subkernels.conductivity.conductivity->model) {
+	case ThermalConductivityConfiguration::MODEL::ISOTROPIC:
+		compute<code, nodes, gps, ndim, edim, ThermalConductivityConfiguration::MODEL::ISOTROPIC, ThermalConductivityConfiguration::MODEL::ISOTROPIC>(subkernels, action);
+		break;
+	case ThermalConductivityConfiguration::MODEL::DIAGONAL:
+		if (subkernels.coosystem.rotated) {
+			compute<code, nodes, gps, ndim, edim, ThermalConductivityConfiguration::MODEL::DIAGONAL, ThermalConductivityConfiguration::MODEL::SYMMETRIC>(subkernels, action);
+		} else {
+			compute<code, nodes, gps, ndim, edim, ThermalConductivityConfiguration::MODEL::DIAGONAL, ThermalConductivityConfiguration::MODEL::DIAGONAL>(subkernels, action);
+		}
+		break;
+	case ThermalConductivityConfiguration::MODEL::SYMMETRIC:
+		compute<code, nodes, gps, ndim, edim, ThermalConductivityConfiguration::MODEL::SYMMETRIC, ThermalConductivityConfiguration::MODEL::SYMMETRIC>(subkernels, action);
+		break;
+	case ThermalConductivityConfiguration::MODEL::ANISOTROPIC:
+		compute<code, nodes, gps, ndim, edim, ThermalConductivityConfiguration::MODEL::ANISOTROPIC, ThermalConductivityConfiguration::MODEL::ANISOTROPIC>(subkernels, action);
+		break;
+	}
 }
 
 }

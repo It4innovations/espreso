@@ -151,5 +151,15 @@ ALWAYS_INLINE SIMD acos(const SIMD& value) noexcept
 	};
 }
 
+ALWAYS_INLINE SIMD ispositive(const SIMD& v) noexcept
+{
+	return __m256d{
+		v.data[0] > 0.0 ? 1.0 : 0.0,
+		v.data[1] > 0.0 ? 1.0 : 0.0,
+		v.data[2] > 0.0 ? 1.0 : 0.0,
+		v.data[3] > 0.0 ? 1.0 : 0.0
+	};
+}
+
 #endif // __AVX__
 #endif /* SRC_MATH_SIMD_SIMD_AVX_H_ */

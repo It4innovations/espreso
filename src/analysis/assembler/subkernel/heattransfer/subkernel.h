@@ -62,6 +62,11 @@ template <size_t gps, size_t ndim> struct HeatTransferRotationMatrix<gps, ndim, 
 
 };
 
+template <size_t nodes, size_t gps> struct HeatTransferAdvection {
+	alignas(SIMD::size * sizeof(double)) SIMD advection[gps];
+	alignas(SIMD::size * sizeof(double)) SIMD be[gps][nodes];
+};
+
 template <size_t gps, size_t ndim> struct HeatTransferElementParameters;
 
 template <size_t gps> struct HeatTransferElementParameters<gps, 2> {
@@ -105,7 +110,8 @@ template <size_t nodes, size_t gps, size_t ndim, size_t edim, enum ThermalConduc
 			ElementTemperature<nodes, gps>,
 			ElementIntegration<nodes, gps, edim>,
 			HeatTransferConductivity<gps, ndim, model>,
-			HeatTransferRotationMatrix<gps, ndim, ecfmodel>
+			HeatTransferRotationMatrix<gps, ndim, ecfmodel>,
+			HeatTransferAdvection<nodes, gps>
 	{
 		struct ECF:
 				HeatTransferConductivity<gps, ndim, ecfmodel>,

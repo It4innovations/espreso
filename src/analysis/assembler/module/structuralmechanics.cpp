@@ -24,6 +24,7 @@ NodeData* StructuralMechanics::Results::thickness = nullptr;
 ElementData* StructuralMechanics::Results::principalStress = nullptr;
 ElementData* StructuralMechanics::Results::componentStress = nullptr;
 ElementData* StructuralMechanics::Results::vonMisesStress = nullptr;
+ElementData* StructuralMechanics::Results::isPlastized = nullptr;
 
 StructuralMechanics::StructuralMechanics(StructuralMechanics *previous, StructuralMechanicsConfiguration &settings, StructuralMechanicsLoadStepConfiguration &configuration)
 : Assembler(settings), settings(settings), configuration(configuration)
@@ -111,6 +112,15 @@ void StructuralMechanics::analyze()
 		Results::vonMisesStress  = info::mesh->elements->appendData(                        1, NamedData::DataType::SCALAR     , "VON_MISES_STRESS");
 	}
 
+	for (size_t i = 0; i < info::mesh->materials.size(); ++i) {
+		if (info::mesh->materials[i]->material_model == MaterialConfiguration::MATERIAL_MODEL::PLASTICITY) {
+			if (Results::isPlastized == nullptr) {
+				Results::isPlastized = info::mesh->elements->appendData(1, NamedData::DataType::SCALAR, "IS_PLASTIZED");
+			}
+		}
+	}
+
+
 	eslog::info(" ============================================================================================= \n");
 	bool correct = true;
 	if (configuration.displacement.size()) {
@@ -193,6 +203,10 @@ void StructuralMechanics::analyze()
 			switch (mat->material_model) {
 			case MaterialConfiguration::MATERIAL_MODEL::PLASTICITY:
 				eslog::info("     PLASTICITY MODEL:                                                               ISOTROPIC \n");
+				eslog::info("                                                                                               \n");
+				correct &= checkExpression("INITIAL_YIELD_STRESS", mat->plasticity_properties.initial_yield_stress);
+				correct &= checkExpression("ISOTROPIC_HARDENING", mat->plasticity_properties.isotropic_hardening);
+				correct &= checkExpression("KINEMATIC_HARDENING", mat->plasticity_properties.kinematic_hardening);
 				eslog::info("                                                                                               \n");
 				/* no break */
 			case MaterialConfiguration::MATERIAL_MODEL::LINEAR_ELASTIC:
@@ -278,7 +292,7 @@ void StructuralMechanics::analyze()
 		subkernels[i].elasticity.activate(settings.element_behaviour, &mat->linear_elastic_properties, rotated);
 		if (mat->material_model == MaterialBaseConfiguration::MATERIAL_MODEL::PLASTICITY) {
 			subkernels[i].elasticity.indirect = true;
-			subkernels[i].plasticity.activate(settings.element_behaviour, &mat->plasticity_properties);
+			subkernels[i].plasticity.activate(i, settings.element_behaviour, &mat->plasticity_properties, Results::isPlastized, (elements.rhs.data->begin() + i)->data());
 			subkernels[i].displacement.activate(info::mesh->elements->nodes->cbegin() + info::mesh->elements->eintervals[i].begin, info::mesh->elements->nodes->cend(), Results::displacement->data.data(), true);
 		}
 		subkernels[i].coosystem.activate(mat->coordinate_system, subkernels[i].elasticity.isconst, rotated);

@@ -29,7 +29,7 @@ template <size_t nodes, size_t gps, size_t ndim, class Physics> struct ExternalH
 
 template <size_t nodes, size_t gps, class Physics>
 struct ExternalHeatKernel<nodes, gps, 2, Physics>: ExternalHeat, Physics {
-	ExternalHeatKernel(const ExternalHeat &base): ExternalHeat(base) {}
+	ExternalHeatKernel(const ExternalHeat &base): ExternalHeat(base) { area = 1 / base.area; }
 
 	void simd(typename Physics::Element &element)
 	{
@@ -46,7 +46,7 @@ struct ExternalHeatKernel<nodes, gps, 2, Physics>: ExternalHeat, Physics {
 			}
 			store(out + n * SIMD::size, heat);
 		}
-		rhs += 2 * SIMD::size;
+		rhs += nodes * SIMD::size;
 	}
 };
 
@@ -69,7 +69,7 @@ struct ExternalHeatKernel<nodes, gps, 3, Physics>: ExternalHeat, Physics {
 			}
 			store(out + n * SIMD::size, heat);
 		}
-		rhs += 3 * SIMD::size;
+		rhs += nodes * SIMD::size;
 	}
 };
 

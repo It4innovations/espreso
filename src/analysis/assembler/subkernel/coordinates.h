@@ -38,10 +38,18 @@ struct CoordinatesKernel: Coordinates, Physics {
 	void simd(typename Physics::Element &element)
 	{
 		for (size_t s = 0; s < SIMD::size; ++s, ++enodes) {
-			if (enodes == end) break;
-			for (size_t n = 0; n < nodes; ++n) {
-				for (size_t d = 0; d < ndim; ++d) {
-					element.coords[n][d][s] = info::mesh->nodes->coordinates->datatarray()[enodes->at(n)][d];
+			if (enodes == end) {
+				for (size_t n = 0; n < nodes; ++n) {
+					for (size_t d = 0; d < ndim; ++d) {
+						element.coords[n][d][s] = 0;
+					}
+				}
+				break;
+			} else {
+				for (size_t n = 0; n < nodes; ++n) {
+					for (size_t d = 0; d < ndim; ++d) {
+						element.coords[n][d][s] = info::mesh->nodes->coordinates->datatarray()[enodes->at(n)][d];
+					}
 				}
 			}
 		}

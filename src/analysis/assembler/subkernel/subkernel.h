@@ -37,7 +37,7 @@ template <size_t nodes, size_t gps> struct ElementTemperature {
 
 template <size_t nodes, size_t gps, size_t ndim> struct ElementDisplacement {
 	alignas(SIMD::size * sizeof(double)) SIMD displacement[nodes][ndim];
-	alignas(SIMD::size * sizeof(double)) SIMD dispTensor[gps][ndim * ndim / 2];
+	alignas(SIMD::size * sizeof(double)) SIMD smallStrainTensor[gps][ndim + (ndim * ndim - ndim) / 2];
 };
 
 template <size_t nodes, size_t gps, size_t edim> struct ElementIntegration {

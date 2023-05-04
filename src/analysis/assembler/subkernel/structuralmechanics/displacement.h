@@ -9,23 +9,23 @@ namespace espreso {
 struct Displacement: SubKernel {
 	serializededata<esint, esint>::const_iterator enodes, end;
 	const double * source;
-	bool toGPs;
+	bool smallStrainTensor;
 
 	Displacement()
 	: enodes(info::mesh->elements->nodes->cbegin()),
 	  end(info::mesh->elements->nodes->cend()),
-	  source(nullptr), toGPs(false)
+	  source(nullptr), smallStrainTensor(false)
 	{
 		isconst = false;
 		action = Assembler::ASSEMBLE | Assembler::REASSEMBLE | Assembler::SOLUTION;
 	}
 
-	void activate(serializededata<esint, esint>::const_iterator enodes, serializededata<esint, esint>::const_iterator end, const double * source, bool toGPs)
+	void activate(serializededata<esint, esint>::const_iterator enodes, serializededata<esint, esint>::const_iterator end, const double * source, bool smallStrainTensor)
 	{
 		this->enodes = enodes;
 		this->end = end;
 		this->source = source;
-		this->toGPs = toGPs;
+		this->smallStrainTensor = smallStrainTensor;
 		this->isactive = 1;
 	}
 };
@@ -34,9 +34,12 @@ template <size_t nodes, size_t gps, size_t ndim, class Physics>
 struct DisplacementKernel: Displacement, Physics {
 	DisplacementKernel(const Displacement &base): Displacement(base) {}
 
-	// B = dX  0  0 dY  0 dZ
-	//      0 dY  0 dX dZ  0
-	//      0  0 dZ  0 dY dX
+	// B = dX  0  0    disp = x
+	//      0 dY  0           y
+	//      0  0 dZ           z
+	//     dY dX  0
+	//      0 dZ dY
+	//     dZ  0 dX
 	void simd(typename Physics::Element &element)
 	{
 		for (size_t s = 0; s < SIMD::size; ++s, ++enodes) {
@@ -47,27 +50,27 @@ struct DisplacementKernel: Displacement, Physics {
 				}
 			}
 		}
-		if (toGPs) {
+		if (smallStrainTensor) {
 			for (size_t gp = 0; gp < gps; ++gp) {
-				element.dispTensor[gp][0] = zeros();
-				element.dispTensor[gp][1] = zeros();
-				element.dispTensor[gp][2] = zeros();
-				element.dispTensor[gp][3] = zeros();
-				element.dispTensor[gp][4] = zeros();
-				element.dispTensor[gp][5] = zeros();
+				element.smallStrainTensor[gp][0] = zeros();
+				element.smallStrainTensor[gp][1] = zeros();
+				element.smallStrainTensor[gp][2] = zeros();
+				element.smallStrainTensor[gp][3] = zeros();
+				element.smallStrainTensor[gp][4] = zeros();
+				element.smallStrainTensor[gp][5] = zeros();
 				for (size_t n = 0; n < nodes; ++n) {
-					element.dispTensor[gp][0] = element.dispTensor[gp][0] + element.dND[gps][n][0] * element.displacement[n][0];
-					element.dispTensor[gp][1] = element.dispTensor[gp][1] + element.dND[gps][n][1] * element.displacement[n][1];
-					element.dispTensor[gp][2] = element.dispTensor[gp][2] + element.dND[gps][n][2] * element.displacement[n][2];
+					element.smallStrainTensor[gp][0] = element.smallStrainTensor[gp][0] + element.dND[gp][n][0] * element.displacement[n][0];
+					element.smallStrainTensor[gp][1] = element.smallStrainTensor[gp][1] + element.dND[gp][n][1] * element.displacement[n][1];
+					element.smallStrainTensor[gp][2] = element.smallStrainTensor[gp][2] + element.dND[gp][n][2] * element.displacement[n][2];
 
-					element.dispTensor[gp][3] = element.dispTensor[gp][3] + element.dND[gps][n][1] * element.displacement[n][0];
-					element.dispTensor[gp][3] = element.dispTensor[gp][3] + element.dND[gps][n][0] * element.displacement[n][1];
+					element.smallStrainTensor[gp][3] = element.smallStrainTensor[gp][3] + element.dND[gp][n][1] * element.displacement[n][0];
+					element.smallStrainTensor[gp][3] = element.smallStrainTensor[gp][3] + element.dND[gp][n][0] * element.displacement[n][1];
 
-					element.dispTensor[gp][4] = element.dispTensor[gp][4] + element.dND[gps][n][2] * element.displacement[n][1];
-					element.dispTensor[gp][4] = element.dispTensor[gp][4] + element.dND[gps][n][1] * element.displacement[n][2];
+					element.smallStrainTensor[gp][4] = element.smallStrainTensor[gp][4] + element.dND[gp][n][2] * element.displacement[n][1];
+					element.smallStrainTensor[gp][4] = element.smallStrainTensor[gp][4] + element.dND[gp][n][1] * element.displacement[n][2];
 
-					element.dispTensor[gp][5] = element.dispTensor[gp][5] + element.dND[gps][n][2] * element.displacement[n][0];
-					element.dispTensor[gp][5] = element.dispTensor[gp][5] + element.dND[gps][n][0] * element.displacement[n][2];
+					element.smallStrainTensor[gp][5] = element.smallStrainTensor[gp][5] + element.dND[gp][n][2] * element.displacement[n][0];
+					element.smallStrainTensor[gp][5] = element.smallStrainTensor[gp][5] + element.dND[gp][n][0] * element.displacement[n][2];
 				}
 			}
 		}

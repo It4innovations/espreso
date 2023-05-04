@@ -15,6 +15,7 @@
 #include "analysis/assembler/subkernel/basis.h"
 #include "analysis/assembler/subkernel/boundarycondition.h"
 #include "analysis/assembler/subkernel/thickness.h"
+#include "analysis/assembler/subkernel/material.h"
 #include "analysis/assembler/subkernel/coordinates.h"
 #include "analysis/assembler/subkernel/temperature.h"
 #include "analysis/assembler/subkernel/integration.h"
@@ -51,6 +52,7 @@ public:
 
 		Basis basis;
 		Thickness thickness;
+		Material material;
 		Coordinates coordinates;
 		Temperature temperature;
 		Integration integration;

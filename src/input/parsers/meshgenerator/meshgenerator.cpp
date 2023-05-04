@@ -15,7 +15,7 @@
 
 using namespace espreso;
 
-double MeshGenerator::precision = 1e-4;
+double MeshGenerator::precision = 1e-7;
 
 MeshGenerator::MeshGenerator(const InputGeneratorConfiguration &configuration)
 : MeshBuilder(MeshBuilder::TYPE::GENERATED),

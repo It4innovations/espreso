@@ -136,5 +136,9 @@ ALWAYS_INLINE SIMD acos(const SIMD& v) noexcept
 	return std::acos(v.data);
 }
 
+ALWAYS_INLINE SIMD ispositive(const SIMD& v) noexcept
+{
+	return v.data > 0.0 ? 1.0 : 0.0;
+}
 #endif // default SIMD with single double
 #endif /* SRC_MATH_SIMD_SIMD_H_ */

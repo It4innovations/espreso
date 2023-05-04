@@ -31,54 +31,6 @@ void NewtonRaphson::init(LinearSystem<double> *system)
 	system->solver.A->commit();
 }
 
-bool NewtonRaphson::checkTemp(step::Step &step, HeatTransfer &assembler, SteadyState &scheme, LinearSystem<double> *system)
-{
-	double solution = eslog::time();
-	double solutionNumerator = system->solver.x->norm();
-	system->solver.x->add(1, U);
-	scheme.extractSolution(step, system);
-
-	double solutionDenominator = std::max(system->solver.x->norm(), 1e-3);
-	double norm = solutionNumerator / solutionDenominator;
-
-	eslog::info("      == PROCESS SOLUTION                                                   %8.3f s == \n", eslog::time() - solution);
-	eslog::info("      == ----------------------------------------------------------------------------- == \n");
-
-	if (norm > configuration.requested_first_residual) {
-		eslog::info("      == TEMPERATURE NORM, CRITERIA                          %.5e / %.5e == \n", solutionNumerator, solutionDenominator * configuration.requested_first_residual);
-	} else {
-		eslog::info("      == TEMPERATURE NORM, CRITERIA [CONVERGED]              %.5e / %.5e == \n", solutionNumerator, solutionDenominator * configuration.requested_first_residual);
-	}
-
-	assembler.updateSolution(scheme);
-	return !(norm > configuration.requested_first_residual);
-}
-
-
-bool NewtonRaphson::checkDisplacement(step::Step &step, StructuralMechanics &assembler, SteadyState &scheme, LinearSystem<double> *system)
-{
-	double solution = eslog::time();
-	double solutionNumerator = system->solver.x->norm();
-	system->solver.x->add(1, U);
-	scheme.extractSolution(step, system);
-
-	double solutionDenominator = std::max(system->solver.x->norm(), 1e-3);
-	double norm = solutionNumerator / solutionDenominator;
-
-	eslog::info("      == PROCESS SOLUTION                                                   %8.3f s == \n", eslog::time() - solution);
-	eslog::info("      == ----------------------------------------------------------------------------- == \n");
-
-	if (norm > configuration.requested_first_residual) {
-		eslog::info("      == DISPLACEMENT NORM, CRITERIA                         %.5e / %.5e == \n", solutionNumerator, solutionDenominator * configuration.requested_first_residual);
-	} else {
-		eslog::info("      == DISPLACEMENT NORM, CRITERIA [CONVERGED]             %.5e / %.5e == \n", solutionNumerator, solutionDenominator * configuration.requested_first_residual);
-	}
-
-	assembler.updateSolution(scheme);
-	return !(norm > configuration.requested_first_residual);
-}
-
-
 bool NewtonRaphson::run(step::Step &step, step::Time &time, HeatTransfer &assembler, SteadyState &scheme, LinearSystem<double> *system)
 {
 	eslog::info("      =================================================================================== \n");
@@ -145,6 +97,29 @@ bool NewtonRaphson::run(step::Step &step, step::Time &time, HeatTransfer &assemb
 	}
 
 	return true;
+}
+
+bool NewtonRaphson::checkTemp(step::Step &step, HeatTransfer &assembler, SteadyState &scheme, LinearSystem<double> *system)
+{
+	double solution = eslog::time();
+	double solutionNumerator = system->solver.x->norm();
+	system->solver.x->add(1, U);
+	scheme.extractSolution(step, system);
+
+	double solutionDenominator = std::max(system->solver.x->norm(), 1e-3);
+	double norm = solutionNumerator / solutionDenominator;
+
+	eslog::info("      == PROCESS SOLUTION                                                   %8.3f s == \n", eslog::time() - solution);
+	eslog::info("      == ----------------------------------------------------------------------------- == \n");
+
+	if (norm > configuration.requested_first_residual) {
+		eslog::info("      == TEMPERATURE NORM, CRITERIA                          %.5e / %.5e == \n", solutionNumerator, solutionDenominator * configuration.requested_first_residual);
+	} else {
+		eslog::info("      == TEMPERATURE NORM, CRITERIA [CONVERGED]              %.5e / %.5e == \n", solutionNumerator, solutionDenominator * configuration.requested_first_residual);
+	}
+
+	assembler.updateSolution(scheme);
+	return !(norm > configuration.requested_first_residual);
 }
 
 bool NewtonRaphson::run(step::Step &step, step::Time &time, StructuralMechanics &assembler, SteadyState &scheme, LinearSystem<double> *system)
@@ -214,3 +189,27 @@ bool NewtonRaphson::run(step::Step &step, step::Time &time, StructuralMechanics 
 
 	return true;
 }
+
+bool NewtonRaphson::checkDisplacement(step::Step &step, StructuralMechanics &assembler, SteadyState &scheme, LinearSystem<double> *system)
+{
+	double solution = eslog::time();
+	double solutionNumerator = system->solver.x->norm();
+	system->solver.x->add(1, U);
+	scheme.extractSolution(step, system);
+
+	double solutionDenominator = std::max(system->solver.x->norm(), 1e-3);
+	double norm = solutionNumerator / solutionDenominator;
+
+	eslog::info("      == PROCESS SOLUTION                                                   %8.3f s == \n", eslog::time() - solution);
+	eslog::info("      == ----------------------------------------------------------------------------- == \n");
+
+	if (norm > configuration.requested_first_residual) {
+		eslog::info("      == DISPLACEMENT NORM, CRITERIA                         %.5e / %.5e == \n", solutionNumerator, solutionDenominator * configuration.requested_first_residual);
+	} else {
+		eslog::info("      == DISPLACEMENT NORM, CRITERIA [CONVERGED]             %.5e / %.5e == \n", solutionNumerator, solutionDenominator * configuration.requested_first_residual);
+	}
+
+	assembler.updateSolution(scheme);
+	return !(norm > configuration.requested_first_residual);
+}
+

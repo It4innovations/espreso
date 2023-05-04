@@ -298,6 +298,18 @@ template <size_t gps, class Physics> struct SetThickness<gps, 2, Physics> {
 	}
 };
 
+template <size_t gps, class Physics> struct SetMaterial {
+	static void analyze(HeatTransfer::SubKernels &subkernels)
+	{
+		subkernels.expressions.push_back(new ExternalGPsExpression<gps, Physics>(
+				subkernels.material.configuration->density.evaluator,
+				[] (typename Physics::Element &element, size_t &gp, size_t &s, double value) { element.ecf.density[gp][s] = value; }));
+		subkernels.expressions.push_back(new ExternalGPsExpression<gps, Physics>(
+					subkernels.material.configuration->heat_capacity.evaluator,
+					[] (typename Physics::Element &element, size_t &gp, size_t &s, double value) { element.ecf.heatCapacity[gp][s] = value; }));
+	}
+};
+
 template <size_t gps, size_t ndim, class Physics> struct SetAdvection;
 
 template <size_t gps, class Physics> struct SetAdvection<gps, 2, Physics> {
@@ -336,6 +348,7 @@ void preprocess(HeatTransfer::SubKernels &subkernels)
 {
 	typedef HeatTransferElementDescriptor<nodes, gps, ndim, edim, ecfmodel, model> Physics;
 	SetThickness<gps, ndim, Physics>::analyze(subkernels);
+	SetMaterial<gps, Physics>::analyze(subkernels);
 	if (subkernels.conductivity.indirect) {
 		SetConductivity<gps, ndim, ecfmodel, false, Physics>::analyze(subkernels);
 	} else {
@@ -425,15 +438,11 @@ void runAction(HeatTransfer::BoundarySubKernels &subkernels, Assembler::Action a
 }
 
 template <Element::CODE code, size_t nodes, size_t gps, size_t ndim, size_t edim>
-void runConductivity(HeatTransfer::SubKernels &subkernels, Assembler::Action action)
+void conductivity(HeatTransfer::SubKernels &subkernels, Assembler::Action action)
 {
 	switch (subkernels.conductivity.conductivity->model) {
 	case ThermalConductivityConfiguration::MODEL::ISOTROPIC:
-		if (subkernels.advection.isactive) {
-			runAction<code, nodes, gps, ndim, edim, ThermalConductivityConfiguration::MODEL::ISOTROPIC, ThermalConductivityConfiguration::MODEL::DIAGONAL>(subkernels, action);
-		} else {
-			runAction<code, nodes, gps, ndim, edim, ThermalConductivityConfiguration::MODEL::ISOTROPIC, ThermalConductivityConfiguration::MODEL::ISOTROPIC>(subkernels, action);
-		}
+		runAction<code, nodes, gps, ndim, edim, ThermalConductivityConfiguration::MODEL::ISOTROPIC, ThermalConductivityConfiguration::MODEL::ISOTROPIC>(subkernels, action);
 		break;
 	case ThermalConductivityConfiguration::MODEL::DIAGONAL:
 		if (subkernels.coosystem.rotated) {
@@ -457,24 +466,24 @@ template <> void runElement<2>(HeatTransfer::SubKernels &subkernels, Assembler::
 
 {
 	switch (subkernels.code) {
-	case static_cast<size_t>(Element::CODE::TRIANGLE3): runConductivity<Element::CODE::TRIANGLE3, 3, HeatTransferGPC::TRIANGLE3, 2, 2>(subkernels, action); break;
-	case static_cast<size_t>(Element::CODE::TRIANGLE6): runConductivity<Element::CODE::TRIANGLE6, 6, HeatTransferGPC::TRIANGLE6, 2, 2>(subkernels, action); break;
-	case static_cast<size_t>(Element::CODE::SQUARE4  ): runConductivity<Element::CODE::SQUARE4  , 4, HeatTransferGPC::SQUARE4  , 2, 2>(subkernels, action); break;
-	case static_cast<size_t>(Element::CODE::SQUARE8  ): runConductivity<Element::CODE::SQUARE8  , 8, HeatTransferGPC::SQUARE8  , 2, 2>(subkernels, action); break;
+	case static_cast<size_t>(Element::CODE::TRIANGLE3): conductivity<Element::CODE::TRIANGLE3, 3, HeatTransferGPC::TRIANGLE3, 2, 2>(subkernels, action); break;
+	case static_cast<size_t>(Element::CODE::TRIANGLE6): conductivity<Element::CODE::TRIANGLE6, 6, HeatTransferGPC::TRIANGLE6, 2, 2>(subkernels, action); break;
+	case static_cast<size_t>(Element::CODE::SQUARE4  ): conductivity<Element::CODE::SQUARE4  , 4, HeatTransferGPC::SQUARE4  , 2, 2>(subkernels, action); break;
+	case static_cast<size_t>(Element::CODE::SQUARE8  ): conductivity<Element::CODE::SQUARE8  , 8, HeatTransferGPC::SQUARE8  , 2, 2>(subkernels, action); break;
 	}
 }
 
 template <> void runElement<3>(HeatTransfer::SubKernels &subkernels, Assembler::Action action)
 {
 	switch (subkernels.code) {
-	case static_cast<size_t>(Element::CODE::TETRA4   ): runConductivity<Element::CODE::TETRA4   ,  4, HeatTransferGPC::TETRA4    , 3, 3>(subkernels, action); break;
-	case static_cast<size_t>(Element::CODE::TETRA10  ): runConductivity<Element::CODE::TETRA10  , 10, HeatTransferGPC::TETRA10   , 3, 3>(subkernels, action); break;
-	case static_cast<size_t>(Element::CODE::PYRAMID5 ): runConductivity<Element::CODE::PYRAMID5 ,  5, HeatTransferGPC::PYRAMID5  , 3, 3>(subkernels, action); break;
-	case static_cast<size_t>(Element::CODE::PYRAMID13): runConductivity<Element::CODE::PYRAMID13, 13, HeatTransferGPC::PYRAMID13 , 3, 3>(subkernels, action); break;
-	case static_cast<size_t>(Element::CODE::PRISMA6  ): runConductivity<Element::CODE::PRISMA6  ,  6, HeatTransferGPC::PRISMA6   , 3, 3>(subkernels, action); break;
-	case static_cast<size_t>(Element::CODE::PRISMA15 ): runConductivity<Element::CODE::PRISMA15 , 15, HeatTransferGPC::PRISMA15  , 3, 3>(subkernels, action); break;
-	case static_cast<size_t>(Element::CODE::HEXA8    ): runConductivity<Element::CODE::HEXA8    ,  8, HeatTransferGPC::HEXA8     , 3, 3>(subkernels, action); break;
-	case static_cast<size_t>(Element::CODE::HEXA20   ): runConductivity<Element::CODE::HEXA20   , 20, HeatTransferGPC::HEXA20    , 3, 3>(subkernels, action); break;
+	case static_cast<size_t>(Element::CODE::TETRA4   ): conductivity<Element::CODE::TETRA4   ,  4, HeatTransferGPC::TETRA4    , 3, 3>(subkernels, action); break;
+	case static_cast<size_t>(Element::CODE::TETRA10  ): conductivity<Element::CODE::TETRA10  , 10, HeatTransferGPC::TETRA10   , 3, 3>(subkernels, action); break;
+	case static_cast<size_t>(Element::CODE::PYRAMID5 ): conductivity<Element::CODE::PYRAMID5 ,  5, HeatTransferGPC::PYRAMID5  , 3, 3>(subkernels, action); break;
+	case static_cast<size_t>(Element::CODE::PYRAMID13): conductivity<Element::CODE::PYRAMID13, 13, HeatTransferGPC::PYRAMID13 , 3, 3>(subkernels, action); break;
+	case static_cast<size_t>(Element::CODE::PRISMA6  ): conductivity<Element::CODE::PRISMA6  ,  6, HeatTransferGPC::PRISMA6   , 3, 3>(subkernels, action); break;
+	case static_cast<size_t>(Element::CODE::PRISMA15 ): conductivity<Element::CODE::PRISMA15 , 15, HeatTransferGPC::PRISMA15  , 3, 3>(subkernels, action); break;
+	case static_cast<size_t>(Element::CODE::HEXA8    ): conductivity<Element::CODE::HEXA8    ,  8, HeatTransferGPC::HEXA8     , 3, 3>(subkernels, action); break;
+	case static_cast<size_t>(Element::CODE::HEXA20   ): conductivity<Element::CODE::HEXA20   , 20, HeatTransferGPC::HEXA20    , 3, 3>(subkernels, action); break;
 	}
 }
 

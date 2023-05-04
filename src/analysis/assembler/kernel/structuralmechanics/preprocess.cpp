@@ -290,9 +290,17 @@ void preprocess(StructuralMechanics::SubKernels &subkernels)
 	}
 	SetPlasticity<gps, ndim, Physics>::analyze(subkernels);
 	if (subkernels.plasticity.isactive) {
-		subkernels.plasticity.scale.resize(gps * subkernels.chunks * SIMD::size);
-		subkernels.plasticity.eps.resize(gps * subkernels.chunks * SIMD::size * 6);
-		subkernels.plasticity.xi.resize(gps * subkernels.chunks * SIMD::size);
+		subkernels.expressions.push_back(new ExternalGPsExpression<gps, Physics>(
+				subkernels.plasticity.configuration->initial_yield_stress.evaluator,
+				[] (typename Physics::Element &element, size_t &gp, size_t &s, double value) { element.ecf.initialYieldStress[gp][s] = value; }));
+		subkernels.expressions.push_back(new ExternalGPsExpression<gps, Physics>(
+				subkernels.plasticity.configuration->isotropic_hardening.evaluator,
+				[] (typename Physics::Element &element, size_t &gp, size_t &s, double value) { element.ecf.isotropicHardening[gp][s] = value; }));
+		subkernels.expressions.push_back(new ExternalGPsExpression<gps, Physics>(
+				subkernels.plasticity.configuration->kinematic_hardening.evaluator,
+				[] (typename Physics::Element &element, size_t &gp, size_t &s, double value) { element.ecf.kinematicHardening[gp][s] = value; }));
+		subkernels.plasticity.smallStrainTensorPlastic.resize(gps * subkernels.chunks * SIMD::size * 6);
+		subkernels.plasticity.xi.resize(gps * subkernels.chunks * SIMD::size * 6);
 	}
 	SetAcceleration<gps, ndim, Physics>::analyze(subkernels);
 	SetAngularVelocity<gps, ndim, behaviour, Physics>::analyze(subkernels);

@@ -256,8 +256,9 @@ void HeatTransfer::analyze()
 		if (info::mesh->dimension == 2) {
 			subkernels[i].thickness.activate(getExpression(i, settings.thickness), info::mesh->elements->nodes->cbegin() + eoffset, info::mesh->elements->nodes->cend(), Results::thickness->data.data());
 		}
+		subkernels[i].material.activate(mat);
 
-		subkernels[i].coordinates.activate(info::mesh->elements->nodes->cbegin() + info::mesh->elements->eintervals[i].begin, info::mesh->elements->nodes->cend(), !cartesian || gpcoo);
+		subkernels[i].coordinates.activate(info::mesh->elements->nodes->cbegin() + eoffset, info::mesh->elements->nodes->cend(), !cartesian || gpcoo);
 		subkernels[i].conductivity.activate(&mat->thermal_conductivity, rotated || indirect);
 		subkernels[i].coosystem.activate(mat->coordinate_system, subkernels[i].conductivity.isconst && !indirect, rotated);
 		subkernels[i].heatSource.activate(getExpression(i, configuration.heat_source), (elements.rhs.data->begin() + i)->data());
@@ -327,12 +328,14 @@ void HeatTransfer::analyze()
 		for (size_t i = 0; i < boundary[r].size(); ++i) {
 			surface[r] += boundary[r][i].surface;
 		}
-		for (size_t i = 0; i < boundary[r].size(); ++i) {
-			boundary[r][i].surface = surface[r];
-		}
 	}
 	printElementVolume(volume);
 	printBoundarySurface(surface);
+	for (size_t r = 1; r < boundary.size(); ++r) {
+		for (size_t i = 0; i < boundary[r].size(); ++i) {
+			boundary[r][i].surface = boundary[r][i].externalHeat.area = surface[r];
+		}
+	}
 
 	eslog::info("  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  \n");
 	eslog::info("  SIMD SIZE                                                                                 %lu \n", SIMD::size);

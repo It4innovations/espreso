@@ -126,18 +126,20 @@ template <size_t gps, size_t ndim, ElasticityModel model> struct ElasticityParam
 	alignas(SIMD::size * sizeof(double)) SIMD youngModulus[gps][ndim];
 	alignas(SIMD::size * sizeof(double)) SIMD poissonRatio[gps][ndim];
 	alignas(SIMD::size * sizeof(double)) SIMD shearModulus[gps][ndim];
-
-	alignas(SIMD::size * sizeof(double)) SIMD kinematic   [gps][6];
-	alignas(SIMD::size * sizeof(double)) SIMD Y           [gps];
 };
 
 template <size_t gps, size_t ndim> struct ElasticityParameters<gps, ndim, ElasticityModel::ISOTROPIC> {
 	alignas(SIMD::size * sizeof(double)) SIMD youngModulus[gps];
 	alignas(SIMD::size * sizeof(double)) SIMD poissonRatio[gps];
 	alignas(SIMD::size * sizeof(double)) SIMD shearModulus[gps];
+};
 
-	alignas(SIMD::size * sizeof(double)) SIMD kinematic   [gps][6];
-	alignas(SIMD::size * sizeof(double)) SIMD Y           [gps];
+template <size_t gps, size_t ndim> struct PlasticityParameters {
+	alignas(SIMD::size * sizeof(double)) SIMD initialYieldStress[gps];
+	alignas(SIMD::size * sizeof(double)) SIMD isotropicHardening[gps];
+	alignas(SIMD::size * sizeof(double)) SIMD kinematicHardening[gps];
+
+	alignas(SIMD::size * sizeof(double)) SIMD sigma[gps];
 };
 
 template <size_t gps, size_t ndim> struct StructuralMechanicsBoundaryParameters;
@@ -174,7 +176,8 @@ template <size_t nodes, size_t gps, size_t ndim, size_t edim, enum Behaviour beh
 				StructuralElasticity<gps, ndim, behaviour, ecfmodel>,
 				ElasticityRotation<gps, ndim>,
 				StructuralMechanicsElementParameters<gps, ndim>,
-				ElasticityParameters<gps, ndim, ecfmodel>
+				ElasticityParameters<gps, ndim, ecfmodel>,
+				PlasticityParameters<gps, ndim>
 		{
 
 		} ecf;
