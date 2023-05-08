@@ -33,6 +33,8 @@ StructuralMechanics::StructuralMechanics(StructuralMechanics *previous, Structur
 	elements.stiffness.resize();
 	elements.rhs.setConstness(false);
 	elements.rhs.resize();
+	elements.nrhs.setConstness(false);
+	elements.nrhs.resize();
 	for (size_t r = 0; r < info::mesh->boundaryRegions.size(); ++r) {
 		elements.boundary.rhs.regions[r].setConstness(false);
 		elements.boundary.rhs.regions[r].resize();
@@ -292,7 +294,7 @@ void StructuralMechanics::analyze()
 		subkernels[i].elasticity.activate(settings.element_behaviour, &mat->linear_elastic_properties, rotated);
 		if (mat->material_model == MaterialBaseConfiguration::MATERIAL_MODEL::PLASTICITY) {
 			subkernels[i].elasticity.indirect = true;
-			subkernels[i].plasticity.activate(i, settings.element_behaviour, &mat->plasticity_properties, Results::isPlastized, (elements.rhs.data->begin() + i)->data());
+			subkernels[i].plasticity.activate(i, settings.element_behaviour, &mat->plasticity_properties, Results::isPlastized, (elements.nrhs.data->begin() + i)->data());
 			subkernels[i].displacement.activate(info::mesh->elements->nodes->cbegin() + info::mesh->elements->eintervals[i].begin, info::mesh->elements->nodes->cend(), Results::displacement->data.data(), true);
 		}
 		subkernels[i].coosystem.activate(mat->coordinate_system, subkernels[i].elasticity.isconst, rotated);
@@ -358,27 +360,44 @@ void StructuralMechanics::analyze()
 	eslog::info(" ============================================================================================= \n");
 }
 
-void StructuralMechanics::connect(SteadyState &scheme)
+void StructuralMechanics::connect(Matrix_Base<double> *K, Matrix_Base<double> *M, Matrix_Base<double> *C, Vector_Base<double> *f, Vector_Base<double> *nf, Vector_Base<double> *x, Vector_Base<double> *dirichlet)
 {
 	for(size_t i = 0; i < info::mesh->elements->eintervals.size(); ++i) {
-		subkernels[i].Kfiller.activate(i, info::mesh->dimension, subkernels[i].elements, (elements.stiffness.data->begin() + i)->data(), scheme.K);
-		subkernels[i].RHSfiller.activate(i, info::mesh->dimension, subkernels[i].elements, (elements.rhs.data->begin() + i)->data(), scheme.f);
-		subkernels[i].K.shape = scheme.K->shape;
+		subkernels[i].Kfiller.activate(i, info::mesh->dimension, subkernels[i].elements, (elements.stiffness.data->begin() + i)->data(), K);
+		subkernels[i].K.shape = K->shape;
+
+		subkernels[i].RHSfiller.activate(i, info::mesh->dimension, subkernels[i].elements, (elements.rhs.data->begin() + i)->data(), f);
+		subkernels[i].nRHSfiller.activate(i, info::mesh->dimension, subkernels[i].elements, (elements.nrhs.data->begin() + i)->data(), nf);
 	}
 
 	for(size_t r = 1; r < info::mesh->boundaryRegions.size(); ++r) {
 		if (info::mesh->boundaryRegions[r]->dimension) {
 			for (size_t i = 0; i < info::mesh->boundaryRegions[r]->eintervals.size(); ++i) {
-				boundary[r][i].RHSfiller.activate(r, i, info::mesh->dimension, boundary[r][i].elements, (elements.boundary.rhs.regions[r].data->begin() + i)->data(), scheme.f);
+				boundary[r][i].RHSfiller.activate(r, i, info::mesh->dimension, boundary[r][i].elements, (elements.boundary.rhs.regions[r].data->begin() + i)->data(), f);
 			}
 		}
 	}
 	for (auto it = configuration.displacement.begin(); it != configuration.displacement.end(); ++it) {
 		size_t r = info::mesh->bregionIndex(it->first);
 		for (size_t t = 0; t < info::mesh->boundaryRegions[r]->nodes->threads(); ++t) {
-			boundary[r][t].dirichlet.activate(r, t, info::mesh->dimension, boundary[r][t].elements, nullptr, scheme.dirichlet);
+			boundary[r][t].dirichlet.activate(r, t, info::mesh->dimension, boundary[r][t].elements, nullptr, dirichlet);
 		}
 	}
+}
+
+void StructuralMechanics::evaluate(step::Time &time, double k, Matrix_Base<double> *K, double m, Matrix_Base<double> *M, double c, Matrix_Base<double> *C, Vector_Base<double> *f, Vector_Base<double> *nf, Vector_Base<double> *dirichlet)
+{
+	setTime(time.current);
+	reset(K, M, C, f, nf, dirichlet);
+	assemble(Action::ASSEMBLE);
+	assemble(Action::FILL);
+	update(K, M, C, f, nf, dirichlet);
+}
+
+void StructuralMechanics::updateSolution(SteadyState &scheme)
+{
+	scheme.x->storeTo(Results::displacement->data);
+	assemble(Action::SOLUTION);
 }
 
 void StructuralMechanics::run(Action action, size_t interval)
@@ -407,21 +426,6 @@ void StructuralMechanics::run(Action action, size_t interval)
 void StructuralMechanics::run(Action action, size_t region, size_t interval)
 {
 	runBoundary(action, region, interval);
-}
-
-void StructuralMechanics::evaluate(SteadyState &scheme, step::Time &time)
-{
-	setTime(time.current);
-	reset(scheme.K, scheme.f, scheme.dirichlet);
-	assemble(Action::ASSEMBLE);
-	assemble(Action::FILL);
-	update(scheme.K, scheme.f);
-}
-
-void StructuralMechanics::updateSolution(SteadyState &scheme)
-{
-	scheme.x->storeTo(Results::displacement->data);
-	assemble(Action::SOLUTION);
 }
 
 }

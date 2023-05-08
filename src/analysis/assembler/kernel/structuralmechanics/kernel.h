@@ -52,6 +52,7 @@ void compute(StructuralMechanics::SubKernels &subkernels, Assembler::Action acti
 	thickness.setActiveness(action);
 	temperature.setActiveness(action);
 	elasticity.setActiveness(action);
+	plasticity.setActiveness(action);
 	coosystem.setActiveness(action);
 	displacement.setActiveness(action);
 	K.setActiveness(action);

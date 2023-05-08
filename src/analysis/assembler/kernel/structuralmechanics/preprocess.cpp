@@ -333,7 +333,7 @@ void fill(StructuralMechanics::SubKernels &subkernels)
 	typename Physics::Element element;
 
 	MatricFillerKernel<nodes, Physics> K(subkernels.Kfiller);
-	VectorFillerKernel<nodes, Physics> RHS(subkernels.RHSfiller);
+	VectorFillerKernel<nodes, Physics> RHS(subkernels.RHSfiller), nRHS(subkernels.nRHSfiller);
 
 	for (esint c = 0; c < subkernels.chunks; ++c) {
 		if (K.isactive) {
@@ -341,6 +341,9 @@ void fill(StructuralMechanics::SubKernels &subkernels)
 		}
 		if (RHS.isactive) {
 			RHS.simd(element);
+		}
+		if (nRHS.isactive) {
+			nRHS.simd(element);
 		}
 	}
 }

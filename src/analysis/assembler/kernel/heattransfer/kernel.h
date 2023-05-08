@@ -29,7 +29,7 @@ void compute(const HeatTransfer::SubKernels &subkernels, Assembler::Action actio
 	HeatTransferCoordinateSystemKernel<gps, ndim, ecfmodel, model, Physics> coosystem(subkernels.coosystem);
 	HeatSourceKernel<nodes, gps, ndim, Physics> heatSource(subkernels.heatSource);
 	AdvectionKernel<nodes, gps, ndim, model, Physics> advection(subkernels.advection);
-	HeatTransferMatrixKernel<nodes, gps, ndim, model, Physics> K(subkernels.K);
+	HeatTransferMatrixKernel<nodes, gps, ndim, model, Physics> K(subkernels.K), M(subkernels.M);
 	AdvectionMatrix<nodes, gps, ndim, model, Physics> advK(subkernels.advection);
 	TemperatureGradientKernel<nodes, gps, ndim, Physics> gradient(subkernels.gradient);
 	TemperatureFluxKernel<nodes, gps, ndim, model, Physics> flux(subkernels.flux);
@@ -54,6 +54,7 @@ void compute(const HeatTransfer::SubKernels &subkernels, Assembler::Action actio
 	heatSource.setActiveness(action);
 	advection.setActiveness(action);
 	K.setActiveness(action);
+	M.setActiveness(action);
 	advK.setActiveness(action);
 	gradient.setActiveness(action);
 	flux.setActiveness(action);

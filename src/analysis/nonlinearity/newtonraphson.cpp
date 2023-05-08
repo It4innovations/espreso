@@ -27,7 +27,7 @@ NewtonRaphson::~NewtonRaphson()
 void NewtonRaphson::init(LinearSystem<double> *system)
 {
 	U = system->solver.x->copyPattern();
-	R = system->solver.x->copyPattern();
+	system->setMapping(R = system->solver.x->copyPattern());
 	system->solver.A->commit();
 }
 
@@ -74,7 +74,7 @@ bool NewtonRaphson::run(step::Step &step, step::Time &time, HeatTransfer &assemb
 		assembler.evaluate(scheme, time);
 		scheme.composeSystem(step, system);
 
-		system->solver.A->apply(1, system->solver.x, 0, R);
+//		system->solver.A->apply(1, system->solver.x, 0, R);
 		system->solver.b->add(-1, R);
 
 		// why not to set dirichlet to 0 for all iterations??
@@ -142,7 +142,7 @@ bool NewtonRaphson::run(step::Step &step, step::Time &time, StructuralMechanics 
 
 	double start = eslog::time();
 	step.iteration = 0;
-	assembler.evaluate(scheme, time);
+	assembler.evaluate(time, 1, scheme.K, 0, nullptr, 0, nullptr, scheme.f, nullptr, scheme.dirichlet);
 	scheme.composeSystem(step, system);
 	eslog::info("      == ----------------------------------------------------------------------------- == \n");
 	eslog::info("      == SYSTEM ASSEMBLY                                                    %8.3f s = \n", eslog::time() - start);
@@ -162,10 +162,10 @@ bool NewtonRaphson::run(step::Step &step, step::Time &time, StructuralMechanics 
 
 		start = eslog::time();
 		U->copy(system->solver.x);
-		assembler.evaluate(scheme, time);
+		assembler.evaluate(time, 1, scheme.K, 0, nullptr, 0, nullptr, scheme.f, R, scheme.dirichlet);
 		scheme.composeSystem(step, system);
 
-		system->solver.A->apply(1, system->solver.x, 0, R);
+//		system->solver.A->apply(1, system->solver.x, 0, R);
 		system->solver.b->add(-1, R);
 
 		// why not to set dirichlet to 0 for all iterations??

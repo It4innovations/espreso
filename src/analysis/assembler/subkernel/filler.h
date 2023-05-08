@@ -25,6 +25,9 @@ struct DataFiller: SubKernel {
 
 	void activate(size_t interval, size_t dofs, size_t elements, double *local, Matrix_Base<double> *A)
 	{
+		if (A == nullptr) {
+			return;
+		}
 		this->dofs = dofs;
 		this->elements = elements;
 		this->local = local;
@@ -36,6 +39,9 @@ struct DataFiller: SubKernel {
 
 	void activate(size_t interval, size_t dofs, size_t elements, double *local, Vector_Base<double> *A)
 	{
+		if (A == nullptr) {
+			return;
+		}
 		this->dofs = dofs;
 		this->elements = elements;
 		this->local = local;
@@ -46,6 +52,9 @@ struct DataFiller: SubKernel {
 
 	void activate(size_t region, size_t interval, size_t dofs, size_t elements, double *local, Vector_Base<double> *A)
 	{
+		if (A == nullptr) {
+			return;
+		}
 		this->dofs = dofs;
 		this->filter = A->mapping.boundary[region][interval].filter;
 		this->elements = elements;

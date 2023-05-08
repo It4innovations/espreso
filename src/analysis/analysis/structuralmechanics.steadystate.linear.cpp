@@ -43,7 +43,7 @@ void StructuralMechanicsSteadyStateLinear::run(step::Step &step)
 	initSystem(system, this);
 	eslog::checkpointln("SIMULATION: LINEAR SYSTEM BUILT");
 	scheme.init(system);
-	assembler.connect(scheme);
+	assembler.connect(scheme.K, nullptr, nullptr, scheme.f, nullptr, scheme.x, scheme.dirichlet);
 	scheme.setTime(time, configuration.duration_time);
 	if (MPITools::node->rank == 0) {
 		info::system::memory::physics = info::system::memoryAvail();
@@ -62,7 +62,7 @@ void StructuralMechanicsSteadyStateLinear::run(step::Step &step)
 	eslog::info(" = LOAD STEP %2d                                                              TIME %10.4f = \n", step::step.loadstep + 1, time.current);
 	eslog::info(" = ----------------------------------------------------------------------------------------- = \n");
 	double start = eslog::time();
-	assembler.evaluate(scheme, time);
+	assembler.evaluate(time, 1, scheme.K, 0, nullptr, 0, nullptr, scheme.f, nullptr, scheme.dirichlet);
 	eslog::checkpointln("SIMULATION: PHYSICS ASSEMBLED");
 	scheme.composeSystem(step, system);
 	eslog::info("       = ----------------------------------------------------------------------------- = \n");

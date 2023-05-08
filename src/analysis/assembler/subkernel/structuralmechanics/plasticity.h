@@ -11,12 +11,12 @@ namespace espreso {
 struct Plasticity: SubKernel {
 	Plasticity()
 	: behaviour(StructuralMechanicsConfiguration::ELEMENT_BEHAVIOUR::PLANE_STRAIN), configuration(nullptr),
-	  isPlastized(nullptr), isPlastizedEnd(nullptr), rhs(nullptr)
+	  isPlastized(nullptr), isPlastizedEnd(nullptr), nrhs(nullptr)
 	{
-		action = Assembler::ASSEMBLE | Assembler::REASSEMBLE | Assembler::SOLUTION;
+		action = Assembler::ASSEMBLE | Assembler::REASSEMBLE;
 	}
 
-	void activate(size_t interval, StructuralMechanicsConfiguration::ELEMENT_BEHAVIOUR behaviour, const PlasticityPropertiesConfiguration *configuration, NamedData *isPlastized, double *rhs)
+	void activate(size_t interval, StructuralMechanicsConfiguration::ELEMENT_BEHAVIOUR behaviour, const PlasticityPropertiesConfiguration *configuration, NamedData *isPlastized, double *nrhs)
 	{
 		this->behaviour = behaviour;
 		this->configuration = configuration;
@@ -24,13 +24,13 @@ struct Plasticity: SubKernel {
 		this->isactive = true;
 		this->isPlastized = isPlastized->data.data() + info::mesh->elements->eintervals[interval].begin;
 		this->isPlastizedEnd = isPlastized->data.data() + isPlastized->data.size();
-		this->rhs = rhs;
+		this->nrhs = nrhs;
 	}
 
 	StructuralMechanicsConfiguration::ELEMENT_BEHAVIOUR behaviour;
 	const PlasticityPropertiesConfiguration *configuration;
 	double *isPlastized, *isPlastizedEnd;
-	double *rhs;
+	double *nrhs;
 
 	std::vector<double> smallStrainTensorPlastic, xi;
 };
@@ -132,7 +132,7 @@ template <size_t nodes, size_t gps, class Physics> struct PlasticityKernel<nodes
 
 		double * __restrict__ smallStrainTensorPlastic = this->smallStrainTensorPlastic;
 		double * __restrict__ xi = this->xi;
-		double * __restrict__ out = rhs;
+		double * __restrict__ nrhs = this->nrhs;
 		for (size_t gp = 0; gp < gps; ++gp) {
 			SIMD shearModulus = element.ecf.elasticity[gp][2];
 
@@ -232,17 +232,18 @@ template <size_t nodes, size_t gps, class Physics> struct PlasticityKernel<nodes
 			//      0  0 dZ  0 dY dX
 			SIMD scale = element.det[gp] * load1(element.w[gp]);
 			for (size_t n = 0; n < nodes; ++n) {
-				SIMD fx = load(out + (0 * nodes + n) * SIMD::size);
-				SIMD fy = load(out + (1 * nodes + n) * SIMD::size);
-				SIMD fz = load(out + (2 * nodes + n) * SIMD::size);
+				SIMD fx = load(nrhs + (0 * nodes + n) * SIMD::size);
+				SIMD fy = load(nrhs + (1 * nodes + n) * SIMD::size);
+				SIMD fz = load(nrhs + (2 * nodes + n) * SIMD::size);
 				fx = fx + scale * (element.dND[gp][n][0] * sigma0 + element.dND[gp][n][1] * sigma3 + element.dND[gp][n][2] * sigma5);
 				fy = fy + scale * (element.dND[gp][n][1] * sigma1 + element.dND[gp][n][0] * sigma3 + element.dND[gp][n][2] * sigma4);
 				fz = fz + scale * (element.dND[gp][n][2] * sigma2 + element.dND[gp][n][1] * sigma4 + element.dND[gp][n][0] * sigma5);
-				store(out + (0 * nodes + n) * SIMD::size, fx);
-				store(out + (1 * nodes + n) * SIMD::size, fy);
-				store(out + (2 * nodes + n) * SIMD::size, fz);
+				store(nrhs + (0 * nodes + n) * SIMD::size, fx);
+				store(nrhs + (1 * nodes + n) * SIMD::size, fy);
+				store(nrhs + (2 * nodes + n) * SIMD::size, fz);
 			}
 		}
+		this->nrhs += SIMD::size * 3 * nodes;
 	}
 };
 

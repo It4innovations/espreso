@@ -348,25 +348,28 @@ void HeatTransfer::analyze()
 	}
 	eslog::info(" ============================================================================================= \n");
 }
-void HeatTransfer::connect(SteadyState &scheme)
+
+void HeatTransfer::connect(Matrix_Base<double> *K, Matrix_Base<double> *M, Vector_Base<double> *f, Vector_Base<double> *nf, Vector_Base<double> *x, Vector_Base<double> *dirichlet)
 {
 	for(size_t i = 0; i < info::mesh->elements->eintervals.size(); ++i) {
-		subkernels[i].Kfiller.activate(i, 1, subkernels[i].elements, (elements.stiffness.data->begin() + i)->data(), scheme.K);
-		subkernels[i].RHSfiller.activate(i, 1, subkernels[i].elements, (elements.rhs.data->begin() + i)->data(), scheme.f);
-		subkernels[i].K.shape = scheme.K->shape;
+		subkernels[i].Kfiller.activate(i, 1, subkernels[i].elements, (elements.stiffness.data->begin() + i)->data(), K);
+		subkernels[i].Mfiller.activate(i, 1, subkernels[i].elements, (elements.stiffness.data->begin() + i)->data(), M);
+		subkernels[i].RHSfiller.activate(i, 1, subkernels[i].elements, (elements.rhs.data->begin() + i)->data(), f);
+		subkernels[i].nRHSfiller.activate(i, 1, subkernels[i].elements, (elements.rhs.data->begin() + i)->data(), nf);
+		subkernels[i].K.shape = K->shape;
 	}
 
 	for(size_t r = 1; r < info::mesh->boundaryRegions.size(); ++r) {
 		if (info::mesh->boundaryRegions[r]->dimension) {
 			for (size_t i = 0; i < info::mesh->boundaryRegions[r]->eintervals.size(); ++i) {
-				boundary[r][i].RHSfiller.activate(r, i, 1, boundary[r][i].elements, (elements.boundary.rhs.regions[r].data->begin() + i)->data(), scheme.f);
+				boundary[r][i].RHSfiller.activate(r, i, 1, boundary[r][i].elements, (elements.boundary.rhs.regions[r].data->begin() + i)->data(), f);
 			}
 		}
 	}
 	for (auto it = configuration.temperature.begin(); it != configuration.temperature.end(); ++it) {
 		size_t r = info::mesh->bregionIndex(it->first);
 		for (size_t t = 0; t < info::mesh->boundaryRegions[r]->nodes->threads(); ++t) {
-			boundary[r][t].dirichlet.activate(r, t, 1, boundary[r][t].elements, nullptr, scheme.dirichlet);
+			boundary[r][t].dirichlet.activate(r, t, 1, boundary[r][t].elements, nullptr, dirichlet);
 		}
 	}
 }

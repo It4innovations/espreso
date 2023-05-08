@@ -36,7 +36,7 @@ GENERATOR {
     NODES {
       X0   <0 ,         0> <0 , 0.0032065> <0         , 0.0266667>;
       Y0   <0 , 0.0032065> <0 ,         0> <0         , 0.0266667>;
-      Z0   <0 , 0.0032065> <0 , 0.0032065> <0         ,        0>;
+      Z0   <0 , 0.0032065> <0 , 0.0032065> <0         ,         0>;
       Z1   <0 , 0.0032065> <0 , 0.0032065> <0.0266667 , 0.0266667>;
     }
 
@@ -102,6 +102,11 @@ STRUCTURAL_MECHANICS_3D {
         ITERATIVE_SOLVER       PCG;
         REGULARIZATION    ANALYTIC;
         B0_TYPE            KERNELS;
+      }
+
+      NONLINEAR_SOLVER {
+        MAX_ITERATIONS  5;
+        REQUESTED_DISPLACEMENT_RESIDUAL  1e-12;
       }
 
       DISPLACEMENT {

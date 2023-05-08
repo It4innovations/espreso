@@ -60,12 +60,12 @@ public:
 		HeatTransferCoordinateSystem coosystem;
 		Advection advection;
 		BoundaryCondition heatSource;
-		HeatTransferMatrix K;
+		HeatTransferMatrix K, M;
 
 		TemperatureGradient gradient;
 		TemperatureFlux flux;
 
-		DataFiller Kfiller, RHSfiller;
+		DataFiller Kfiller, Mfiller, RHSfiller, nRHSfiller;
 
 		std::vector<ExternalEvaluator*> expressions;
 	};
@@ -95,7 +95,7 @@ public:
 
 	void analyze();
 
-	void connect(SteadyState &scheme);
+	void connect(Matrix_Base<double> *K, Matrix_Base<double> *M, Vector_Base<double> *f, Vector_Base<double> *nf, Vector_Base<double> *x, Vector_Base<double> *dirichlet);
 	void evaluate(SteadyState &scheme, step::Time &time);
 	void updateSolution(SteadyState &scheme);
 

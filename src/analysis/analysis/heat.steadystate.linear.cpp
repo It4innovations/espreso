@@ -43,7 +43,7 @@ void HeatSteadyStateLinear::run(step::Step &step)
 	initSystem(system, this);
 	eslog::checkpointln("SIMULATION: LINEAR SYSTEM BUILT");
 	scheme.init(system);
-	assembler.connect(scheme);
+	assembler.connect(scheme.K, nullptr, scheme.f, nullptr, scheme.x, scheme.dirichlet);
 	scheme.setTime(time, configuration.duration_time);
 	if (MPITools::node->rank == 0) {
 		info::system::memory::physics = info::system::memoryAvail();

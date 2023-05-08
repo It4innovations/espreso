@@ -394,15 +394,21 @@ void fill(const HeatTransfer::SubKernels &subkernels)
 	typedef HeatTransferElementDescriptor<nodes, gps, ndim, edim, ecfmodel, model> Physics;
 	typename Physics::Element element;
 
-	MatricFillerKernel<nodes, Physics> K(subkernels.Kfiller);
-	VectorFillerKernel<nodes, Physics> RHS(subkernels.RHSfiller);
+	MatricFillerKernel<nodes, Physics> K(subkernels.Kfiller), M(subkernels.Mfiller);
+	VectorFillerKernel<nodes, Physics> RHS(subkernels.RHSfiller), nRHS(subkernels.nRHSfiller);
 
 	for (esint c = 0; c < subkernels.chunks; ++c) {
 		if (K.isactive) {
 			K.simd(element);
 		}
+		if (M.isactive) {
+			M.simd(element);
+		}
 		if (RHS.isactive) {
 			RHS.simd(element);
+		}
+		if (nRHS.isactive) {
+			nRHS.simd(element);
 		}
 	}
 }

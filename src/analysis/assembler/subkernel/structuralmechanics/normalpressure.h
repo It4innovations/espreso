@@ -87,7 +87,6 @@ struct NormalPressureKernel<nodes, gps, 3, 1, Behaviour::VOLUME, Physics>: Bound
 	}
 };
 
-
 }
 
 #endif /* SRC_ANALYSIS_ASSEMBLER_SUBKERNEL_STRUCTURALMECHANICS_NORMALPRESSURE_H_ */

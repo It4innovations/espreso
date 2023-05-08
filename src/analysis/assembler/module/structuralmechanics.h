@@ -61,7 +61,7 @@ public:
 		BoundaryCondition acceleration, angularVelocity;
 		Stress stress;
 
-		DataFiller Kfiller, RHSfiller;
+		DataFiller Kfiller, RHSfiller, nRHSfiller;
 
 		std::vector<ExternalEvaluator*> expressions;
 	};
@@ -90,8 +90,8 @@ public:
 
 	void analyze();
 
-	void connect(SteadyState &scheme);
-	void evaluate(SteadyState &scheme, step::Time &time);
+	void connect(Matrix_Base<double> *K, Matrix_Base<double> *M, Matrix_Base<double> *C, Vector_Base<double> *f, Vector_Base<double> *nf, Vector_Base<double> *x, Vector_Base<double> *dirichlet);
+	void evaluate(step::Time &time, double k, Matrix_Base<double> *K, double m, Matrix_Base<double> *M, double c, Matrix_Base<double> *C, Vector_Base<double> *f, Vector_Base<double> *nf, Vector_Base<double> *dirichlet);
 	void updateSolution(SteadyState &scheme);
 
 	StructuralMechanicsConfiguration &settings;
@@ -100,7 +100,7 @@ public:
 	struct ParametersElements {
 		ElementParameter<ndim * enodes * ndim * enodes> stiffness;
 //		ElementParameter<ndim * enodes * ndim * enodes> mass;
-		ElementParameter<ndim * enodes> rhs;
+		ElementParameter<ndim * enodes> rhs, nrhs;
 
 		struct {
 			BoundaryParameter<ndim * enodes * ndim * enodes> stiffness;
