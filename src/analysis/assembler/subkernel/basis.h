@@ -12,7 +12,7 @@ struct Basis: SubKernel {
 
 	Basis()
 	{
-		action = Assembler::ASSEMBLE | Assembler::REASSEMBLE | Assembler::SOLUTION;
+		action = Assembler::ASSEMBLE | Assembler::REASSEMBLE | Assembler::ITERATION | Assembler::SOLUTION;
 	}
 };
 

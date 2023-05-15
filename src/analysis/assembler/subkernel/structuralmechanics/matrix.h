@@ -16,7 +16,7 @@ struct StructuralMechanicsMatrix: public SubKernel {
 	: K(nullptr), shape(Matrix_Shape::LOWER)
 	{
 		isconst = false;
-		action = Assembler::ASSEMBLE | Assembler::REASSEMBLE;
+		action = Assembler::ASSEMBLE | Assembler::REASSEMBLE | Assembler::ITERATION;
 	}
 
 	void activate(double *K)

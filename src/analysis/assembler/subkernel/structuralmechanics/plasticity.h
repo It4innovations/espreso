@@ -13,7 +13,7 @@ struct Plasticity: SubKernel {
 	: behaviour(StructuralMechanicsConfiguration::ELEMENT_BEHAVIOUR::PLANE_STRAIN), configuration(nullptr),
 	  isPlastized(nullptr), isPlastizedEnd(nullptr), nrhs(nullptr)
 	{
-		action = Assembler::ASSEMBLE | Assembler::REASSEMBLE;
+		action = Assembler::ASSEMBLE | Assembler::REASSEMBLE | Assembler::ITERATION | Assembler::SOLUTION;
 	}
 
 	void activate(size_t interval, StructuralMechanicsConfiguration::ELEMENT_BEHAVIOUR behaviour, const PlasticityPropertiesConfiguration *configuration, NamedData *isPlastized, double *nrhs)
@@ -35,10 +35,33 @@ struct Plasticity: SubKernel {
 	std::vector<double> smallStrainTensorPlastic, xi;
 };
 
-template <size_t nodes, size_t gps, size_t ndim, enum ElasticityModel model, class Physics> struct PlasticityKernel: Plasticity, Physics {
-	PlasticityKernel(Plasticity &base): Plasticity(base), smallStrainTensorPlastic(base.smallStrainTensorPlastic.data()), xi(base.xi.data()) {}
+struct PlasticityStorage: Plasticity {
+
+	PlasticityStorage(Plasticity &base, Assembler::Action action)
+	: Plasticity(base),
+	  smallStrainTensorPlastic(base.smallStrainTensorPlastic.data()),
+	  xi(base.xi.data()),
+	  save(action == Assembler::SOLUTION)
+	{
+		if (isactive) {
+			size_t elements = base.smallStrainTensorPlastic.size() / 6;
+
+			size_t size = sizeof(double) * (elements + 1);
+			void *_smallStrainTensorPlastic = static_cast<void*>(smallStrainTensorPlastic);
+			smallStrainTensorPlastic = static_cast<double*>(std::align(SIMD::size * sizeof(double), elements * sizeof(double), _smallStrainTensorPlastic, size));
+
+			size = sizeof(double) * (elements + 1);
+			void *_xi = static_cast<void*>(xi);
+			xi = static_cast<double*>(std::align(SIMD::size * sizeof(double), elements * sizeof(double), _xi, size));
+		}
+	}
 
 	double *smallStrainTensorPlastic, *xi;
+	bool save;
+};
+
+template <size_t nodes, size_t gps, size_t ndim, enum ElasticityModel model, class Physics> struct PlasticityKernel: PlasticityStorage, Physics {
+	PlasticityKernel(Plasticity &base, Assembler::Action action): PlasticityStorage(base, action) {}
 
 	void simd(typename Physics::Element &element)
 	{
@@ -46,12 +69,9 @@ template <size_t nodes, size_t gps, size_t ndim, enum ElasticityModel model, cla
 	}
 };
 
-template <size_t nodes, size_t gps, class Physics> struct PlasticityKernel<nodes, gps, 3, ElasticityModel::ISOTROPIC, Physics>: Plasticity, Physics {
-	PlasticityKernel(Plasticity &base)
-	: Plasticity(base), smallStrainTensorPlastic(base.smallStrainTensorPlastic.data()), xi(base.xi.data()),
-	  csqr32(std::sqrt(3./2)), crsqr32(1/csqr32), csqrt6(std::sqrt(6.)) {}
+template <size_t nodes, size_t gps, class Physics> struct PlasticityKernel<nodes, gps, 3, ElasticityModel::ISOTROPIC, Physics>: PlasticityStorage, Physics {
+	PlasticityKernel(Plasticity &base, Assembler::Action action): PlasticityStorage(base, action), csqr32(std::sqrt(3./2)), crsqr32(1/csqr32), csqrt6(std::sqrt(6.)) {}
 
-	double *smallStrainTensorPlastic, *xi;
 	double csqr32, crsqr32, csqrt6;
 
 //	function [C_el,C_pla,sigma,plas] = radial_return_small(eps_, plasticity, material)
@@ -129,6 +149,7 @@ template <size_t nodes, size_t gps, class Physics> struct PlasticityKernel<nodes
 		SIMD csqr32 = load1(this->csqr32);
 		SIMD crsqr32 = load1(this->crsqr32);
 		SIMD csqrt6 = load1(this->csqrt6);
+		size_t size = std::min((size_t)SIMD::size, (size_t)(isPlastizedEnd - isPlastized));
 
 		double * __restrict__ smallStrainTensorPlastic = this->smallStrainTensorPlastic;
 		double * __restrict__ xi = this->xi;
@@ -242,8 +263,29 @@ template <size_t nodes, size_t gps, class Physics> struct PlasticityKernel<nodes
 				store(nrhs + (1 * nodes + n) * SIMD::size, fy);
 				store(nrhs + (2 * nodes + n) * SIMD::size, fz);
 			}
+
+			if (this->save) {
+				double * __restrict__ isPlastized = this->isPlastized;
+				for (size_t s = 0; s < size; ++s) {
+					isPlastized[s] += std::max(isPlastized[s], pl[s]);
+				}
+				store(smallStrainTensorPlastic + (6 * gp + 0) * SIMD::size, csqr32 * eta_tr0 * Dgamma);
+				store(smallStrainTensorPlastic + (6 * gp + 1) * SIMD::size, csqr32 * eta_tr1 * Dgamma);
+				store(smallStrainTensorPlastic + (6 * gp + 2) * SIMD::size, csqr32 * eta_tr2 * Dgamma);
+				store(smallStrainTensorPlastic + (6 * gp + 3) * SIMD::size, csqr32 * eta_tr3 * Dgamma * c2);
+				store(smallStrainTensorPlastic + (6 * gp + 4) * SIMD::size, csqr32 * eta_tr4 * Dgamma * c2);
+				store(smallStrainTensorPlastic + (6 * gp + 5) * SIMD::size, csqr32 * eta_tr5 * Dgamma * c2);
+				store(xi + (6 * gp + 0) * SIMD::size, crsqr32 * element.ecf.kinematicHardening[gp] * eta_tr0 * Dgamma);
+				store(xi + (6 * gp + 1) * SIMD::size, crsqr32 * element.ecf.kinematicHardening[gp] * eta_tr1 * Dgamma);
+				store(xi + (6 * gp + 2) * SIMD::size, crsqr32 * element.ecf.kinematicHardening[gp] * eta_tr2 * Dgamma);
+				store(xi + (6 * gp + 3) * SIMD::size, crsqr32 * element.ecf.kinematicHardening[gp] * eta_tr3 * Dgamma * c2);
+				store(xi + (6 * gp + 4) * SIMD::size, crsqr32 * element.ecf.kinematicHardening[gp] * eta_tr4 * Dgamma * c2);
+				store(xi + (6 * gp + 5) * SIMD::size, crsqr32 * element.ecf.kinematicHardening[gp] * eta_tr5 * Dgamma * c2);
+			}
 		}
 		this->nrhs += SIMD::size * 3 * nodes;
+		this->smallStrainTensorPlastic += SIMD::size * 6 * gps;
+		this->xi += SIMD::size * 6 * gps;
 	}
 };
 

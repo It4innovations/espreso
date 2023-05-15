@@ -299,8 +299,8 @@ void preprocess(StructuralMechanics::SubKernels &subkernels)
 		subkernels.expressions.push_back(new ExternalGPsExpression<gps, Physics>(
 				subkernels.plasticity.configuration->kinematic_hardening.evaluator,
 				[] (typename Physics::Element &element, size_t &gp, size_t &s, double value) { element.ecf.kinematicHardening[gp][s] = value; }));
-		subkernels.plasticity.smallStrainTensorPlastic.resize(gps * subkernels.chunks * SIMD::size * 6);
-		subkernels.plasticity.xi.resize(gps * subkernels.chunks * SIMD::size * 6);
+		subkernels.plasticity.smallStrainTensorPlastic.resize(gps * (subkernels.chunks + 1) * SIMD::size * 6);
+		subkernels.plasticity.xi.resize(gps * (subkernels.chunks + 1) * SIMD::size * 6 + SIMD::size);
 	}
 	SetAcceleration<gps, ndim, Physics>::analyze(subkernels);
 	SetAngularVelocity<gps, ndim, behaviour, Physics>::analyze(subkernels);

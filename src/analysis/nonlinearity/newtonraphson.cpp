@@ -142,7 +142,7 @@ bool NewtonRaphson::run(step::Step &step, step::Time &time, StructuralMechanics 
 
 	double start = eslog::time();
 	step.iteration = 0;
-	assembler.evaluate(time, 1, scheme.K, 0, nullptr, 0, nullptr, scheme.f, nullptr, scheme.dirichlet);
+	assembler.evaluate(time, scheme.K, nullptr, nullptr, scheme.f, nullptr, scheme.dirichlet);
 	scheme.composeSystem(step, system);
 	eslog::info("      == ----------------------------------------------------------------------------- == \n");
 	eslog::info("      == SYSTEM ASSEMBLY                                                    %8.3f s = \n", eslog::time() - start);
@@ -152,7 +152,7 @@ bool NewtonRaphson::run(step::Step &step, step::Time &time, StructuralMechanics 
 
 	double solution = eslog::time();
 	scheme.extractSolution(step, system);
-	assembler.updateSolution(scheme);
+	assembler.updateSolution(scheme.x);
 	eslog::info("      == PROCESS SOLUTION                                                   %8.3f s == \n", eslog::time() - solution);
 	eslog::info("      == ----------------------------------------------------------------------------- == \n");
 
@@ -162,7 +162,7 @@ bool NewtonRaphson::run(step::Step &step, step::Time &time, StructuralMechanics 
 
 		start = eslog::time();
 		U->copy(system->solver.x);
-		assembler.evaluate(time, 1, scheme.K, 0, nullptr, 0, nullptr, scheme.f, R, scheme.dirichlet);
+		assembler.evaluate(time, scheme.K, nullptr, nullptr, scheme.f, R, scheme.dirichlet);
 		scheme.composeSystem(step, system);
 
 //		system->solver.A->apply(1, system->solver.x, 0, R);
@@ -205,11 +205,12 @@ bool NewtonRaphson::checkDisplacement(step::Step &step, StructuralMechanics &ass
 
 	if (norm > configuration.requested_first_residual) {
 		eslog::info("      == DISPLACEMENT NORM, CRITERIA                         %.5e / %.5e == \n", solutionNumerator, solutionDenominator * configuration.requested_first_residual);
+		assembler.nextIteration(scheme.x);
 	} else {
 		eslog::info("      == DISPLACEMENT NORM, CRITERIA [CONVERGED]             %.5e / %.5e == \n", solutionNumerator, solutionDenominator * configuration.requested_first_residual);
+		assembler.updateSolution(scheme.x);
 	}
 
-	assembler.updateSolution(scheme);
 	return !(norm > configuration.requested_first_residual);
 }
 

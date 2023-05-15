@@ -12,7 +12,7 @@ struct Integration: SubKernel {
 	Integration(): withNormal(false)
 	{
 		isconst = false;
-		action = Assembler::ASSEMBLE | Assembler::REASSEMBLE | Assembler::SOLUTION;
+		action = Assembler::ASSEMBLE | Assembler::REASSEMBLE | Assembler::ITERATION | Assembler::SOLUTION;
 	}
 };
 

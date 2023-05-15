@@ -22,7 +22,7 @@ struct Thickness: SubKernel {
 	  target(nullptr)
 	{
 		isconst = false;
-		action = Assembler::ASSEMBLE;
+		action = Assembler::ASSEMBLE | Assembler::REASSEMBLE | Assembler::ITERATION | Assembler::SOLUTION;
 	}
 
 	void activate(ECFExpression *expression, serializededata<esint, esint>::const_iterator enodes, serializededata<esint, esint>::const_iterator end, double * target)

@@ -17,7 +17,7 @@ struct Displacement: SubKernel {
 	  source(nullptr), smallStrainTensor(false)
 	{
 		isconst = false;
-		action = Assembler::ASSEMBLE | Assembler::REASSEMBLE | Assembler::SOLUTION;
+		action = Assembler::ASSEMBLE | Assembler::REASSEMBLE | Assembler::ITERATION | Assembler::SOLUTION;
 	}
 
 	void activate(serializededata<esint, esint>::const_iterator enodes, serializededata<esint, esint>::const_iterator end, const double * source, bool smallStrainTensor)

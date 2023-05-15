@@ -30,7 +30,8 @@ public:
 		REASSEMBLE = 1 << 2,
 		FILL       = 1 << 3,
 		SOLUTION   = 1 << 4,
-		PREPROCESS = 1 << 5
+		ITERATION  = 1 << 5,
+		PREPROCESS = 1 << 6
 	};
 
 	Assembler(PhysicsConfiguration &settings);

@@ -15,7 +15,7 @@ struct BoundaryCondition: public SubKernel {
 	: expression(nullptr), expressionVector(nullptr), rhs(nullptr)
 	{
 		isconst = false;
-		action = Assembler::ASSEMBLE | Assembler::REASSEMBLE;
+		action = Assembler::ASSEMBLE | Assembler::REASSEMBLE | Assembler::ITERATION;
 	}
 
 	void activate(ECFExpressionVector *expressionVector, double *rhs)

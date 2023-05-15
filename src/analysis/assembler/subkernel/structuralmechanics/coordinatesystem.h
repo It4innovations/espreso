@@ -17,7 +17,7 @@ struct StructuralMechanicsCoordinateSystem: SubKernel {
 	StructuralMechanicsCoordinateSystem()
 	: configuration(nullptr), type(CoordinateSystemConfiguration::TYPE::CARTESIAN), rotated(false)
 	{
-		action = Assembler::ASSEMBLE | Assembler::REASSEMBLE;
+		action = Assembler::ASSEMBLE | Assembler::REASSEMBLE | Assembler::ITERATION;
 	}
 
 	void activate(const CoordinateSystemConfiguration &configuration, bool isconst, bool rotated)

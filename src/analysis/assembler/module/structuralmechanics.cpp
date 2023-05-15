@@ -360,7 +360,7 @@ void StructuralMechanics::analyze()
 	eslog::info(" ============================================================================================= \n");
 }
 
-void StructuralMechanics::connect(Matrix_Base<double> *K, Matrix_Base<double> *M, Matrix_Base<double> *C, Vector_Base<double> *f, Vector_Base<double> *nf, Vector_Base<double> *x, Vector_Base<double> *dirichlet)
+void StructuralMechanics::connect(Matrix_Base<double> *K, Matrix_Base<double> *M, Matrix_Base<double> *C, Vector_Base<double> *f, Vector_Base<double> *nf, Vector_Base<double> *dirichlet)
 {
 	for(size_t i = 0; i < info::mesh->elements->eintervals.size(); ++i) {
 		subkernels[i].Kfiller.activate(i, info::mesh->dimension, subkernels[i].elements, (elements.stiffness.data->begin() + i)->data(), K);
@@ -385,7 +385,7 @@ void StructuralMechanics::connect(Matrix_Base<double> *K, Matrix_Base<double> *M
 	}
 }
 
-void StructuralMechanics::evaluate(step::Time &time, double k, Matrix_Base<double> *K, double m, Matrix_Base<double> *M, double c, Matrix_Base<double> *C, Vector_Base<double> *f, Vector_Base<double> *nf, Vector_Base<double> *dirichlet)
+void StructuralMechanics::evaluate(step::Time &time, Matrix_Base<double> *K, Matrix_Base<double> *M, Matrix_Base<double> *C, Vector_Base<double> *f, Vector_Base<double> *nf, Vector_Base<double> *dirichlet)
 {
 	setTime(time.current);
 	reset(K, M, C, f, nf, dirichlet);
@@ -394,10 +394,16 @@ void StructuralMechanics::evaluate(step::Time &time, double k, Matrix_Base<doubl
 	update(K, M, C, f, nf, dirichlet);
 }
 
-void StructuralMechanics::updateSolution(SteadyState &scheme)
+void StructuralMechanics::updateSolution(Vector_Base<double> *x)
 {
-	scheme.x->storeTo(Results::displacement->data);
+	x->storeTo(Results::displacement->data);
 	assemble(Action::SOLUTION);
+}
+
+void StructuralMechanics::nextIteration(Vector_Base<double> *x)
+{
+	x->storeTo(Results::displacement->data);
+	assemble(Action::ITERATION);
 }
 
 void StructuralMechanics::run(Action action, size_t interval)

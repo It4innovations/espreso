@@ -44,7 +44,7 @@ void StructuralMechanicsSteadyStateNonLinear::run(step::Step &step)
 	initSystem(system, this);
 	solver.init(system);
 	scheme.init(system);
-	assembler.connect(scheme.K, nullptr, nullptr, scheme.f, solver.R, scheme.x, scheme.dirichlet);
+	assembler.connect(scheme.K, nullptr, nullptr, scheme.f, solver.R, scheme.dirichlet);
 	scheme.setTime(time, configuration.duration_time);
 	if (MPITools::node->rank == 0) {
 		info::system::memory::physics = info::system::memoryAvail();

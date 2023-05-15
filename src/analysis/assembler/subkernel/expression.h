@@ -49,7 +49,7 @@ struct ExternalEvaluator: SubKernel {
 	: evaluator(evaluator)
 	{
 		isconst = evaluator->isConst();
-		action = Assembler::ASSEMBLE | Assembler::REASSEMBLE | Assembler::SOLUTION;
+		action = Assembler::ASSEMBLE | Assembler::REASSEMBLE | Assembler::ITERATION | Assembler::SOLUTION;
 	}
 
 	Evaluator *evaluator;

@@ -12,7 +12,7 @@ struct Elasticity: SubKernel {
 	Elasticity()
 	: behaviour(StructuralMechanicsConfiguration::ELEMENT_BEHAVIOUR::PLANE_STRAIN), configuration(nullptr), indirect(false)
 	{
-		action = Assembler::ASSEMBLE | Assembler::REASSEMBLE;
+		action = Assembler::ASSEMBLE | Assembler::REASSEMBLE | Assembler::ITERATION;
 		isactive = true;
 	}
 
