@@ -1,14 +1,14 @@
 
-#ifndef SRC_MATH_SIMD_SIMD_SSE2_H_
-#define SRC_MATH_SIMD_SIMD_SSE2_H_
+#ifndef SRC_MATH_SIMD_SIMD_SVE_H_
+#define SRC_MATH_SIMD_SIMD_SVE_H_
 
-#if defined(__SSE2__)
+#if defined(__ARM_FEATURE_SVE)
 
 #include "basis/utilities/inline.h"
 
 #include <cstddef>
 #include <cmath>
-#include <immintrin.h>
+#include <arm_sve.h>
 
 struct SIMD
 {
@@ -153,5 +153,7 @@ ALWAYS_INLINE SIMD ispositive(const SIMD& v) noexcept
 	};
 }
 
-#endif // __SSE2__
-#endif /* SRC_MATH_SIMD_SIMD_SSE2_H_ */
+
+
+#endif /* __ARM_FEATURE_SVE */
+#endif /* SRC_MATH_SIMD_SIMD_SVE_H_ */

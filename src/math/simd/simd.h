@@ -8,11 +8,14 @@
 #include "simd.avx.h"
 #elif !defined(SIMD_OFF) && defined(__SSE2__)
 #include "simd.sse2.h"
+#elif !defined(SIMD_OFF) && defined(__ARM_FEATURE_SVE)
+#include "simd.sve.h"
 #else
 
 #include "basis/utilities/inline.h"
 
 #include <cstddef>
+#include <cmath>
 
 struct SIMD
 {
