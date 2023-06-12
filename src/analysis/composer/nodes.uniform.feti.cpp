@@ -3,6 +3,7 @@
 #include "ij.h"
 
 #include "basis/containers/serializededata.h"
+#include "basis/containers/allocators.h"
 #include "basis/utilities/utils.h"
 #include "esinfo/envinfo.h"
 #include "esinfo/eslog.h"
@@ -15,8 +16,6 @@
 #include "wrappers/mpi/communication.h"
 
 #include <numeric>
-
-#include "basis/utilities/print.h"
 
 using namespace espreso;
 
@@ -121,144 +120,118 @@ void fillDecomposition(UniformNodesFETIPattern *pattern, int dofs, DOFsDecomposi
 
 void buildPattern(UniformNodesFETIPattern *pattern, int dofs, DOFsDecomposition &decomposition, Matrix_Shape shape, int domain)
 {
-	auto sizeTriangle = [] (int size) {
-		return (size * size - size) / 2 + size;
-	};
-
-	auto sizeFull = [] (int size) {
-		return size * size;
-	};
-
-	auto fillUpper = [] (IJ* &target, const esint *begin, const esint *end) {
-		for (auto row = begin, colbegin = begin; row != end; ++row, ++colbegin) {
-			for (auto col = colbegin; col != end; ++col, ++target) {
-				if (*row <= *col) {
-					target->row = *row;
-					target->column = *col;
-				} else {
-					target->row = *col;
-					target->column = *row;
-				}
-			}
-		}
-	};
-
-	auto fillLower = [] (IJ* &target, const esint *begin, const esint *end) {
-		for (auto row = begin, colbegin = begin; row != end; ++row, ++colbegin) {
-			for (auto col = colbegin; col != end; ++col, ++target) {
-				if (*row <= *col) {
-					target->row = *col;
-					target->column = *row;
-				} else {
-					target->row = *row;
-					target->column = *col;
-				}
-			}
-		}
-	};
-
-	auto fillFull = [] (IJ* &target, const esint *begin, const esint *end) {
-		for (auto row = begin; row != end; ++row) {
-			for (auto col = begin; col != end; ++col, ++target) {
-				target->row = *row;
-				target->column = *col;
-			}
-		}
-	};
-
-	std::function<int(int)> size;
-	std::function<void(IJ*&, const esint*, const esint*)> fill;
-
-	switch (shape) {
-	case Matrix_Shape::FULL: size = sizeFull; fill = fillFull; break;
-	case Matrix_Shape::UPPER: size = sizeTriangle; fill = fillUpper; break;
-	case Matrix_Shape::LOWER: size = sizeTriangle; fill = fillLower; break;
-	}
-
 	auto ebegin = info::mesh->elements->nodes->cbegin() + info::mesh->domains->elements[domain];
 	auto eend = info::mesh->elements->nodes->cbegin() + info::mesh->domains->elements[domain + 1];
 
-	esint Ksize = 0, RHSsize = 0;
-	for (auto e = ebegin; e != eend; ++e) {
-		RHSsize += e->size() * dofs;
-		Ksize += size(e->size() * dofs);
-	}
-
-	std::vector<IJ> KPattern(Ksize);
-	std::vector<esint> RHSPattern(RHSsize);
-
-	IJ *Koffset = KPattern.data();
-	esint *RHSoffset = RHSPattern.data();
-
-	for (auto e = ebegin; e != eend; ++e) {
-		esint *_RHS = RHSoffset;
-		for (int dof = 0; dof < dofs; ++dof) {
-			for (auto n = e->begin(); n != e->end(); ++n, ++RHSoffset) {
-				auto DOFs = (decomposition.dmap->begin() + (*n * dofs + dof))->begin();
-				while (DOFs->domain != domain + info::mesh->domains->offset) {
-					++DOFs;
-				}
-				*RHSoffset = DOFs->index;
+	size_t domainSize = 0, ni = 0;
+	std::vector<esint> imap(info::mesh->nodes->size, -1);
+	for (auto dmap = decomposition.dmap->cbegin(); dmap != decomposition.dmap->cend(); ++dmap, ++ni) {
+		for (auto di = dmap->begin(); di != dmap->end(); ++di) {
+			if (di->domain == domain + decomposition.dbegin) {
+				++domainSize; imap[ni] = di->index;
 			}
 		}
-		fill(Koffset, _RHS, RHSoffset);
 	}
 
-	std::vector<IJ> KData = KPattern;
-	std::vector<esint> RHSData = RHSPattern;
+	std::vector<esint> begin(domainSize + 1, 1); // add diagonal
+	for (auto enodes = ebegin; enodes != eend; ++enodes) {
+		for (auto n = enodes->begin(); n != enodes->end(); ++n) {
+			begin[imap[*n]] += enodes->size() - 1; // do not count diagonal
+		}
+	}
+	utils::sizesToOffsets(begin);
 
-	utils::sortAndRemoveDuplicates(KPattern);
-	utils::sortAndRemoveDuplicates(RHSPattern);
-
-	pattern->elements[domain].row.reserve(KPattern.size());
-	pattern->elements[domain].column.reserve(KPattern.size());
-	pattern->elements[domain].K.reserve(KData.size());
-	pattern->elements[domain].f.reserve(RHSData.size());
-
-	for (size_t i = 0; i < KPattern.size(); ++i) {
-		pattern->elements[domain].row.push_back(KPattern[i].row);
-		pattern->elements[domain].column.push_back(KPattern[i].column);
+	std::vector<esint> end = begin;
+	std::vector<esint, initless_allocator<esint> > indices(begin.back());
+	for (size_t n = 0; n < domainSize; ++n) {
+		indices[end[n]++] = n; // diagonal
 	}
 
-	for (size_t i = 0; i < KData.size(); ++i) {
-		pattern->elements[domain].K.push_back(std::lower_bound(KPattern.begin(), KPattern.end(), KData[i]) - KPattern.begin());
+	size_t dataSize = domainSize;
+	for (auto enodes = ebegin; enodes != eend; ++enodes) {
+		for (auto from = enodes->begin(); from != enodes->end(); ++from) {
+			for (auto to = enodes->begin(); to != enodes->end(); ++to) {
+				if (*from != *to) {
+					if (shape == Matrix_Shape::FULL || imap[*from] < imap[*to]) {
+						++dataSize; indices[end[imap[*from]]++] = imap[*to];
+					}
+				}
+			}
+		}
 	}
-	for (size_t i = 0; i < RHSData.size(); ++i) {
-		pattern->elements[domain].f.push_back(std::lower_bound(RHSPattern.begin(), RHSPattern.end(), RHSData[i]) - RHSPattern.begin());
+
+	size_t patternSize = 0;
+	std::vector<esint> ioffset(domainSize);
+	for (esint n = 0; n < domainSize; ++n) {
+		std::sort(indices.begin() + begin[n], indices.begin() + end[n]);
+		esint unique = begin[n];
+		for (auto i = begin[n] + 1; i < end[n]; ++i) {
+			if (indices[unique] != indices[i]) {
+				indices[++unique] = indices[i];
+			}
+		}
+		end[n] = unique + 1;
+		ioffset[n] = patternSize;
+		patternSize += end[n] - begin[n];
+	}
+
+	pattern->elements[domain].row.reserve(patternSize);
+	pattern->elements[domain].column.reserve(patternSize);
+	for (esint r = 0, ii = 0; r < domainSize; ++r) {
+		for (esint c = begin[r]; c < end[r]; ++c) {
+			pattern->elements[domain].row.push_back(r);
+			pattern->elements[domain].column.push_back(indices[c]);
+		}
+	}
+
+	pattern->elements[domain].K.reserve(dataSize);
+	pattern->elements[domain].f.reserve(dataSize);
+	std::vector<esint> local(20);
+	for (auto enodes = ebegin; enodes != eend; ++enodes) {
+		local.clear();
+		for (auto from = enodes->begin(); from != enodes->end(); ++from) {
+			if (shape == Matrix_Shape::FULL) {
+				esint offset = begin[imap[*from]];
+				for (auto to = enodes->begin(); to != enodes->end(); ++to) {
+					esint coffset = 0;
+					while (indices[offset + coffset] < imap[*to]) ++coffset;
+					pattern->elements[domain].K.push_back(ioffset[imap[*from]] + coffset);
+				}
+			} else {
+				for (auto to = from; to != enodes->end(); ++to) {
+					esint min = std::min(imap[*from], imap[*to]), max = std::max(imap[*from], imap[*to]);
+					esint offset = begin[min], coffset = 0;
+					while (indices[offset + coffset] < max) ++coffset;
+					pattern->elements[domain].K.push_back(ioffset[min] + coffset);
+				}
+			}
+			pattern->elements[domain].f.push_back(imap[*from]);
+		}
 	}
 
 	pattern->bregion[domain].resize(info::mesh->boundaryRegions.size());
 	std::vector<esint> belement(dofs * 8);
 	for (size_t r = 1; r < info::mesh->boundaryRegions.size(); ++r) {
 		if (info::mesh->boundaryRegions[r]->dimension) {
-			Ksize = 0; RHSsize = 0;
 			for (esint i = info::mesh->boundaryRegions[r]->eintervalsDistribution[domain]; i < info::mesh->boundaryRegions[r]->eintervalsDistribution[domain + 1]; ++i) {
 				auto element = info::mesh->boundaryRegions[r]->elements->cbegin() + info::mesh->boundaryRegions[r]->eintervals[i].begin;
 				for (esint e = info::mesh->boundaryRegions[r]->eintervals[i].begin; e < info::mesh->boundaryRegions[r]->eintervals[i].end; ++e, ++element) {
-					RHSsize += element->size() * dofs;
-					Ksize += size(element->size() * dofs);
-				}
-			}
-			pattern->bregion[domain][r].f.reserve(RHSsize);
-			pattern->bregion[domain][r].K.reserve(Ksize);
-
-			for (esint i = info::mesh->boundaryRegions[r]->eintervalsDistribution[domain]; i < info::mesh->boundaryRegions[r]->eintervalsDistribution[domain + 1]; ++i) {
-				auto element = info::mesh->boundaryRegions[r]->elements->cbegin() + info::mesh->boundaryRegions[r]->eintervals[i].begin;
-				for (esint e = info::mesh->boundaryRegions[r]->eintervals[i].begin; e < info::mesh->boundaryRegions[r]->eintervals[i].end; ++e, ++element) {
-					belement.clear();
-					for (int dof = 0; dof < dofs; ++dof) {
-						for (auto n = element->begin(); n != element->end(); ++n) {
-							auto DOFs = (decomposition.dmap->begin() + (*n * dofs + dof))->begin();
-							while (DOFs->domain != domain + info::mesh->domains->offset) {
-								++DOFs;
+					for (auto from = element->begin(); from != element->end(); ++from) {
+						pattern->bregion[domain][r].f.push_back(imap[*from]);
+						if (shape == Matrix_Shape::FULL) {
+							esint offset = begin[imap[*from]];
+							for (auto to = element->begin(); to != element->end(); ++to) {
+								esint coffset = 0;
+								while (indices[offset + coffset] < imap[*to]) ++coffset;
+								pattern->bregion[domain][r].K.push_back(ioffset[imap[*from]] + coffset);
 							}
-							belement.push_back(DOFs->index);
-						}
-					}
-					for (size_t i = 0; i < belement.size(); ++i) {
-						pattern->bregion[domain][r].f.push_back(std::lower_bound(RHSPattern.begin(), RHSPattern.end(), belement[i]) - RHSPattern.begin());
-						for (size_t j = 0; j < belement.size(); ++j) {
-							pattern->bregion[domain][r].K.push_back(std::lower_bound(KPattern.begin(), KPattern.end(), IJ{belement[i], belement[j]}) - KPattern.begin());
+						} else {
+							for (auto to = from; to != element->end(); ++to) {
+								esint min = std::min(imap[*from], imap[*to]), max = std::max(imap[*from], imap[*to]);
+								esint offset = begin[min], coffset = 0;
+								while (indices[offset + coffset] < max) ++coffset;
+								pattern->bregion[domain][r].K.push_back(ioffset[min] + coffset);
+							}
 						}
 					}
 				}
@@ -307,6 +280,7 @@ void UniformNodesFETIPattern::set(std::map<std::string, ECFExpression> &settings
 	this->dofs = dofs;
 	dirichlet(this, settings, dofs, decomposition);
 	fillDecomposition(this, dofs, decomposition);
+	#pragma omp parallel for
 	for (esint domain = 0; domain < info::mesh->domains->size; ++domain) {
 		buildPattern(this, dofs, decomposition, shape, domain);
 	}
