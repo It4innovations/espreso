@@ -3,10 +3,8 @@
 #define SRC_ANALYSIS_ANALYSIS_PLASTICITY_STEADYSTATE_H_
 
 #include "analysis.h"
-#include "analysis/scheme/steadystate.h"
 #include "analysis/linearsystem/linearsystem.h"
 #include "analysis/assembler/module/structuralmechanics.h"
-#include "analysis/nonlinearity/newtonraphson.h"
 
 namespace espreso {
 
@@ -27,10 +25,17 @@ public:
 	StructuralMechanicsLoadStepConfiguration &configuration;
 
 	StructuralMechanics assembler;
-	NewtonRaphson solver;
-	SteadyState scheme;
+
+	Matrix_Base<double> *K;
+	Vector_Base<double> *U, *R, *f, *x, *dirichlet;
 
 	LinearSystem<double> *system;
+
+protected:
+	bool checkDisplacement(step::Step &step);
+
+	void storeSystem(step::Step &step);
+	void storeSolution(step::Step &step);
 };
 
 }

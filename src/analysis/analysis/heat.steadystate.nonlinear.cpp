@@ -15,7 +15,7 @@
 using namespace espreso;
 
 HeatSteadyStateNonLinear::HeatSteadyStateNonLinear(HeatTransferConfiguration &settings, HeatTransferLoadStepConfiguration &configuration)
-: settings(settings), configuration(configuration), assembler{nullptr, settings, configuration}, solver(configuration.nonlinear_solver), scheme{}, system{}
+: settings(settings), configuration(configuration), assembler{nullptr, settings, configuration}, K{}, U{}, R{}, f{}, x{}, dirichlet{}, system{}
 
 {
 
@@ -23,9 +23,13 @@ HeatSteadyStateNonLinear::HeatSteadyStateNonLinear(HeatTransferConfiguration &se
 
 HeatSteadyStateNonLinear::~HeatSteadyStateNonLinear()
 {
-	if (system) {
-		delete system;
-	}
+	if (system) { delete system; }
+	if (K) { delete K; }
+	if (U) { delete U; }
+	if (R) { delete R; }
+	if (f) { delete f; }
+	if (x) { delete x; }
+	if (dirichlet) { delete dirichlet; }
 }
 
 void HeatSteadyStateNonLinear::analyze()
@@ -42,10 +46,23 @@ void HeatSteadyStateNonLinear::analyze()
 void HeatSteadyStateNonLinear::run(step::Step &step)
 {
 	initSystem(system, this);
-	solver.init(system);
-	scheme.init(system);
-	assembler.connect(scheme.K, nullptr, scheme.f, nullptr, scheme.x, scheme.dirichlet);
-	scheme.setTime(time, configuration.duration_time);
+	eslog::checkpointln("SIMULATION: LINEAR SYSTEM BUILT");
+
+	system->setMapping(K = system->assembler.A->copyPattern());
+	system->setMapping(R = system->solver.x->copyPattern());
+	system->setMapping(f = system->assembler.b->copyPattern());
+	system->setMapping(x = system->assembler.x->copyPattern());
+	system->setDirichletMapping(dirichlet = system->assembler.dirichlet->copyPattern());
+	U = system->solver.x->copyPattern();
+	system->solver.A->commit();
+
+	assembler.connect(K, nullptr, f, R, dirichlet);
+
+	time.shift = configuration.duration_time;
+	time.start = 0;
+	time.current = configuration.duration_time;
+	time.final = configuration.duration_time;
+
 	if (MPITools::node->rank == 0) {
 		info::system::memory::physics = info::system::memoryAvail();
 	}
@@ -61,10 +78,109 @@ void HeatSteadyStateNonLinear::run(step::Step &step)
 	eslog::info(" ============================================================================================= \n");
 	eslog::info(" = LOAD STEP %2d                                                              TIME %10.4f = \n", step::step.loadstep + 1, time.current);
 	eslog::info(" = ----------------------------------------------------------------------------------------- = \n");
+	eslog::info("      =================================================================================== \n");
+	eslog::info("      ==  NEWTON RAPHSON CONVERGENCE CRITERIA                                          == \n");
+	if (configuration.nonlinear_solver.check_first_residual) {
+		eslog::info("      ==  - TEMPERATURE RESIDUAL                                                  TRUE == \n");
+	} else {
+		eslog::info("      ==  - TEMPERATURE RESIDUAL                                                 FALSE == \n");
+	}
+	if (configuration.nonlinear_solver.check_second_residual) {
+		eslog::info("      ==  - HEAT RESIDUAL                                                         TRUE == \n");
+	} else {
+		eslog::info("      ==  - HEAT RESIDUAL                                                        FALSE == \n");
+	}
+	eslog::info("      =================================================================================== \n");
 
-	solver.run(step, time, assembler, scheme, system);
+	eslog::info("      ==                                                                  INITIAL STEP ==     \n");
+
+	double start = eslog::time();
+	step.iteration = 0;
+	assembler.evaluate(time, K, nullptr, f, nullptr, dirichlet);
+	storeSystem(step);
+	system->solver.A->copy(K);
+	system->solver.b->copy(f);
+	system->solver.dirichlet->copy(dirichlet);
+	eslog::info("      == ----------------------------------------------------------------------------- == \n");
+	eslog::info("      == SYSTEM ASSEMBLY                                                    %8.3f s = \n", eslog::time() - start);
+
+	system->update(step);
+	system->solve(step);
+
+	double solution = eslog::time();
+	x->copy(system->solver.x);
+	storeSolution(step);
+	assembler.updateSolution(x);
+	eslog::info("      == PROCESS SOLUTION                                                   %8.3f s == \n", eslog::time() - solution);
+	eslog::info("      == ----------------------------------------------------------------------------- == \n");
+
+	// iterations
+	while (step.iteration++ < configuration.nonlinear_solver.max_iterations) {
+		eslog::info("\n      ==                                                    %3d. EQUILIBRIUM ITERATION == \n", step.iteration);
+
+		start = eslog::time();
+		U->copy(system->solver.x);
+		assembler.evaluate(time, K, nullptr, f, R, dirichlet);
+		storeSystem(step);
+		system->solver.A->copy(K);
+		system->solver.b->copy(f);
+		system->solver.b->add(-1, R);
+		system->solver.dirichlet->copy(dirichlet);
+		system->solver.dirichlet->add(-1, U);
+
+		eslog::info("      == ----------------------------------------------------------------------------- == \n");
+		eslog::info("      == SYSTEM ASSEMBLY                                                    %8.3f s == \n", eslog::time() - start);
+
+		system->update(step);
+		system->solve(step);
+
+		if (checkTemp(step)) {
+			break;
+		}
+	}
 	info::mesh->output->updateSolution(step, time);
 }
 
+bool HeatSteadyStateNonLinear::checkTemp(step::Step &step)
+{
+	double solution = eslog::time();
+	double solutionNumerator = system->solver.x->norm();
+	system->solver.x->add(1, U);
+	x->copy(system->solver.x);
+
+	double solutionDenominator = std::max(system->solver.x->norm(), 1e-3);
+	double norm = solutionNumerator / solutionDenominator;
+
+	eslog::info("      == PROCESS SOLUTION                                                   %8.3f s == \n", eslog::time() - solution);
+	eslog::info("      == ----------------------------------------------------------------------------- == \n");
+
+	if (norm > configuration.nonlinear_solver.requested_first_residual) {
+		eslog::info("      == TEMPERATURE NORM, CRITERIA                          %.5e / %.5e == \n", solutionNumerator, solutionDenominator * configuration.nonlinear_solver.requested_first_residual);
+	} else {
+		eslog::info("      == TEMPERATURE NORM, CRITERIA [CONVERGED]              %.5e / %.5e == \n", solutionNumerator, solutionDenominator * configuration.nonlinear_solver.requested_first_residual);
+	}
+
+	assembler.updateSolution(x);
+	return !(norm > configuration.nonlinear_solver.requested_first_residual);
+}
+
+void HeatSteadyStateNonLinear::storeSystem(step::Step &step)
+{
+	if (info::ecf->output.print_matrices) {
+		eslog::storedata(" STORE: scheme/{K, R, f}\n");
+		K->store(utils::filename(utils::debugDirectory(step) + "/scheme", "K").c_str());
+		R->store(utils::filename(utils::debugDirectory(step) + "/scheme", "R").c_str());
+		f->store(utils::filename(utils::debugDirectory(step) + "/scheme", "f").c_str());
+		dirichlet->store(utils::filename(utils::debugDirectory(step) + "/scheme", "dirichlet").c_str());
+	}
+}
+
+void HeatSteadyStateNonLinear::storeSolution(step::Step &step)
+{
+	if (info::ecf->output.print_matrices) {
+		eslog::storedata(" STORE: scheme/{x}\n");
+		x->store(utils::filename(utils::debugDirectory(step) + "/scheme", "x").c_str());
+	}
+}
 
 

@@ -3,7 +3,6 @@
 #define SRC_ANALYSIS_ANALYSIS_ELASTICITY_STEADYSTATE_LINEAR_H_
 
 #include "analysis.h"
-#include "analysis/scheme/steadystate.h"
 #include "analysis/linearsystem/linearsystem.h"
 #include "analysis/assembler/module/structuralmechanics.h"
 
@@ -26,9 +25,15 @@ public:
 	StructuralMechanicsLoadStepConfiguration &configuration;
 
 	StructuralMechanics assembler;
-	SteadyState scheme;
+
+	Matrix_Base<double> *K;
+	Vector_Base<double> *f, *x, *dirichlet;
 
 	LinearSystem<double> *system;
+
+protected:
+	void storeSystem(step::Step &step);
+	void storeSolution(step::Step &step);
 };
 
 }

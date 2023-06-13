@@ -5,8 +5,6 @@
 #include "basis/evaluator/evaluator.h"
 #include "math/primitives/vector_sparse.h"
 
-#include "analysis/scheme/steadystate.h"
-
 #include <vector>
 #include <map>
 #include <functional>

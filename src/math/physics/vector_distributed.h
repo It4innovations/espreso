@@ -52,6 +52,7 @@ public:
 
 	void copy(const Vector_Base<T> *in)
 	{
+		this->touched = true;
 		in->copyTo(static_cast<Vector_Distributed<Vector, T>*>(this));
 	}
 

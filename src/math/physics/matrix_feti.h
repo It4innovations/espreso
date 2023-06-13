@@ -102,6 +102,7 @@ public:
 
 	void copy(const Matrix_Base<T> *in)
 	{
+		this->touched = true;
 		in->copyTo(static_cast<Matrix_FETI<Matrix, T>*>(this));
 	}
 

@@ -63,6 +63,7 @@ public:
 
 	void copy(const Matrix_Base<T> *in)
 	{
+		this->touched = true;
 		in->copyTo(static_cast<Matrix_Distributed<Matrix, T>*>(this));
 	}
 

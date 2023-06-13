@@ -9,7 +9,6 @@
 #include "mesh/store/nodestore.h"
 #include "mesh/store/boundaryregionstore.h"
 
-#include "analysis/scheme/steadystate.h"
 #include "math/physics/matrix_distributed.h"
 
 #include <numeric>
@@ -349,7 +348,7 @@ void HeatTransfer::analyze()
 	eslog::info(" ============================================================================================= \n");
 }
 
-void HeatTransfer::connect(Matrix_Base<double> *K, Matrix_Base<double> *M, Vector_Base<double> *f, Vector_Base<double> *nf, Vector_Base<double> *x, Vector_Base<double> *dirichlet)
+void HeatTransfer::connect(Matrix_Base<double> *K, Matrix_Base<double> *M, Vector_Base<double> *f, Vector_Base<double> *nf, Vector_Base<double> *dirichlet)
 {
 	for(size_t i = 0; i < info::mesh->elements->eintervals.size(); ++i) {
 		subkernels[i].Kfiller.activate(i, 1, subkernels[i].elements, (elements.stiffness.data->begin() + i)->data(), K);
@@ -394,18 +393,18 @@ void HeatTransfer::run(Action action, size_t region, size_t interval)
 	runBoundary(action, region, interval);
 }
 
-void HeatTransfer::evaluate(SteadyState &scheme, step::Time &time)
+void HeatTransfer::evaluate(step::Time &time, Matrix_Base<double> *K, Matrix_Base<double> *M, Vector_Base<double> *f, Vector_Base<double> *nf, Vector_Base<double> *dirichlet)
 {
 	setTime(time.current);
-	reset(scheme.K, scheme.f, scheme.dirichlet);
+	reset(K, f, dirichlet);
 	assemble(Action::ASSEMBLE);
 	assemble(Action::FILL);
-	update(scheme.K, scheme.f);
+	update(K, f);
 }
 
-void HeatTransfer::updateSolution(SteadyState &scheme)
+void HeatTransfer::updateSolution(Vector_Base<double> *x)
 {
-	scheme.x->storeTo(Results::temperature->data);
+	x->storeTo(Results::temperature->data);
 	assemble(Action::SOLUTION);
 }
 

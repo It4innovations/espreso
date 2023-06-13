@@ -4,14 +4,13 @@
 
 #include "analysis.h"
 #include "analysis/assembler/module/heattransfer.h"
-#include "analysis/scheme/steadystate.h"
 #include "analysis/linearsystem/linearsystem.h"
-#include "analysis/nonlinearity/newtonraphson.h"
 
 namespace espreso {
 
 struct HeatTransferConfiguration;
 struct HeatTransferLoadStepConfiguration;
+struct NonLinearSolverConfiguration;
 
 class HeatSteadyStateNonLinear: public Analysis {
 
@@ -27,10 +26,17 @@ public:
 	HeatTransferLoadStepConfiguration &configuration;
 
 	HeatTransfer assembler;
-	NewtonRaphson solver;
-	SteadyState scheme;
+
+	Matrix_Base<double> *K;
+	Vector_Base<double> *U, *R, *f, *x, *dirichlet;
 
 	LinearSystem<double> *system;
+
+protected:
+	bool checkTemp(step::Step &step);
+
+	void storeSystem(step::Step &step);
+	void storeSolution(step::Step &step);
 };
 
 }

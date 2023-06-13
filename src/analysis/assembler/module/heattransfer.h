@@ -95,9 +95,9 @@ public:
 
 	void analyze();
 
-	void connect(Matrix_Base<double> *K, Matrix_Base<double> *M, Vector_Base<double> *f, Vector_Base<double> *nf, Vector_Base<double> *x, Vector_Base<double> *dirichlet);
-	void evaluate(SteadyState &scheme, step::Time &time);
-	void updateSolution(SteadyState &scheme);
+	void connect(Matrix_Base<double> *K, Matrix_Base<double> *M, Vector_Base<double> *f, Vector_Base<double> *nf, Vector_Base<double> *dirichlet);
+	void evaluate(step::Time &time, Matrix_Base<double> *K, Matrix_Base<double> *M, Vector_Base<double> *f, Vector_Base<double> *nf, Vector_Base<double> *dirichlet);
+	void updateSolution(Vector_Base<double> *x);
 
 	HeatTransferConfiguration &settings;
 	HeatTransferLoadStepConfiguration &configuration;

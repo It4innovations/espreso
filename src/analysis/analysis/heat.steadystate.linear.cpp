@@ -15,16 +15,18 @@
 using namespace espreso;
 
 HeatSteadyStateLinear::HeatSteadyStateLinear(HeatTransferConfiguration &settings, HeatTransferLoadStepConfiguration &configuration)
-: settings(settings), configuration(configuration), assembler{nullptr, settings, configuration}, scheme{}, system{}
+: settings(settings), configuration(configuration), assembler{nullptr, settings, configuration}, K{}, f{}, x{}, dirichlet{}, system{}
 {
 
 }
 
 HeatSteadyStateLinear::~HeatSteadyStateLinear()
 {
-	if (system) {
-		delete system;
-	}
+	if (system) { delete system; }
+	if (K) { delete K; }
+	if (f) { delete f; }
+	if (x) { delete x; }
+	if (dirichlet) { delete dirichlet; }
 }
 
 void HeatSteadyStateLinear::analyze()
@@ -42,9 +44,18 @@ void HeatSteadyStateLinear::run(step::Step &step)
 {
 	initSystem(system, this);
 	eslog::checkpointln("SIMULATION: LINEAR SYSTEM BUILT");
-	scheme.init(system);
-	assembler.connect(scheme.K, nullptr, scheme.f, nullptr, scheme.x, scheme.dirichlet);
-	scheme.setTime(time, configuration.duration_time);
+
+	system->setMapping(K = system->assembler.A->copyPattern());
+	system->setMapping(f = system->assembler.b->copyPattern());
+	system->setMapping(x = system->assembler.x->copyPattern());
+	system->setDirichletMapping(dirichlet = system->assembler.dirichlet->copyPattern());
+	assembler.connect(K, nullptr, f, nullptr, dirichlet);
+
+	time.shift = configuration.duration_time;
+	time.start = 0;
+	time.current = configuration.duration_time;
+	time.final = configuration.duration_time;
+
 	if (MPITools::node->rank == 0) {
 		info::system::memory::physics = info::system::memoryAvail();
 	}
@@ -62,9 +73,14 @@ void HeatSteadyStateLinear::run(step::Step &step)
 	eslog::info(" = LOAD STEP %2d                                                              TIME %10.4f = \n", step::step.loadstep + 1, time.current);
 	eslog::info(" = ----------------------------------------------------------------------------------------- = \n");
 	double start = eslog::time();
-	assembler.evaluate(scheme, time);
+	assembler.evaluate(time, K, nullptr, f, nullptr, dirichlet);
 	eslog::checkpointln("SIMULATION: PHYSICS ASSEMBLED");
-	scheme.composeSystem(step, system);
+	storeSystem(step);
+
+	system->solver.A->copy(K);
+	system->solver.b->copy(f);
+	system->solver.dirichlet->copy(dirichlet);
+
 	eslog::info("       = ----------------------------------------------------------------------------- = \n");
 	eslog::info("       = SYSTEM ASSEMBLY                                                    %8.3f s = \n", eslog::time() - start);
 
@@ -72,10 +88,11 @@ void HeatSteadyStateLinear::run(step::Step &step)
 	eslog::checkpointln("SIMULATION: LINEAR SYSTEM UPDATED");
 	system->solve(step);
 	eslog::checkpointln("SIMULATION: LINEAR SYSTEM SOLVED");
-
 	double solution = eslog::time();
-	scheme.extractSolution(step, system);
-	assembler.updateSolution(scheme);
+
+	x->copy(system->solver.x);
+	storeSolution(step);
+	assembler.updateSolution(x);
 	info::mesh->output->updateSolution(step, time);
 	eslog::info("       = PROCESS SOLUTION                                                   %8.3f s = \n", eslog::time() - solution);
 	eslog::info("       = ----------------------------------------------------------------------------- = \n");
@@ -84,4 +101,21 @@ void HeatSteadyStateLinear::run(step::Step &step)
 	eslog::checkpointln("SIMULATION: SOLUTION PROCESSED");
 }
 
+void HeatSteadyStateLinear::storeSystem(step::Step &step)
+{
+	if (info::ecf->output.print_matrices) {
+		eslog::storedata(" STORE: scheme/{K, f}\n");
+		K->store(utils::filename(utils::debugDirectory(step) + "/scheme", "K").c_str());
+		f->store(utils::filename(utils::debugDirectory(step) + "/scheme", "f").c_str());
+		dirichlet->store(utils::filename(utils::debugDirectory(step) + "/scheme", "dirichlet").c_str());
+	}
+}
+
+void HeatSteadyStateLinear::storeSolution(step::Step &step)
+{
+	if (info::ecf->output.print_matrices) {
+		eslog::storedata(" STORE: scheme/{x}\n");
+		x->store(utils::filename(utils::debugDirectory(step) + "/scheme", "x").c_str());
+	}
+}
 

@@ -10,7 +10,6 @@
 #include "mesh/store/nodestore.h"
 #include "mesh/store/boundaryregionstore.h"
 
-#include "analysis/scheme/steadystate.h"
 #include "math/physics/matrix_distributed.h"
 
 #include <numeric>

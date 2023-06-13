@@ -4,7 +4,6 @@
 
 #include "analysis.h"
 #include "analysis/assembler/module/heattransfer.h"
-#include "analysis/scheme/steadystate.h"
 #include "analysis/linearsystem/linearsystem.h"
 
 namespace espreso {
@@ -26,9 +25,15 @@ public:
 	HeatTransferLoadStepConfiguration &configuration;
 
 	HeatTransfer assembler;
-	SteadyState scheme;
+
+	Matrix_Base<double> *K;
+	Vector_Base<double> *f, *x, *dirichlet;
 
 	LinearSystem<double> *system;
+
+protected:
+	void storeSystem(step::Step &step);
+	void storeSolution(step::Step &step);
 };
 
 }
