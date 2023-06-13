@@ -10,14 +10,23 @@
 #include <cmath>
 #include <arm_sve.h>
 
+#if __ARM_FEATURE_SVE_BITS==0
+#error "Set __ARM_FEATURE_SVE_BITS"
+#endif
+
+typedef svfloat64_t __sved __attribute__((arm_sve_vector_bits(512)));
+typedef svbool_t    __svep __attribute__((arm_sve_vector_bits(512)));
+
 struct SIMD
 {
+	static __svep mask;
+
 	enum: size_t {
-		size = 2U
+		size = __ARM_FEATURE_SVE_BITS / 64
 	};
 
-	ALWAYS_INLINE SIMD() noexcept: data(_mm_setzero_pd()) { }
-	ALWAYS_INLINE SIMD(__m128d value) noexcept: data(value) { }
+	ALWAYS_INLINE SIMD() noexcept: data(svdup_n_f64(0.0)) { }
+	ALWAYS_INLINE SIMD(__sved value) noexcept: data(value) { }
 	ALWAYS_INLINE SIMD(const SIMD &other) noexcept: data(other.data) { }
 
 	ALWAYS_INLINE SIMD& operator=(const SIMD &other) noexcept
@@ -39,8 +48,7 @@ struct SIMD
 
 	ALWAYS_INLINE SIMD operator- () const noexcept
 	{
-		__m128i tmp = _mm_set_epi32(1<<31, 0, 1<<31, 0);
-		return _mm_xor_pd(data, reinterpret_cast<__m128d>(tmp));
+		return svneg_f64_x(mask, data);
 	}
 
 	ALWAYS_INLINE SIMD operator+ () const noexcept
@@ -48,109 +56,108 @@ struct SIMD
 		return data;
 	}
 
-	__m128d data;
+	__sved data;
 };
 
 ALWAYS_INLINE const SIMD load1(const double &from) noexcept
 {
-	return _mm_load1_pd(&from);
+	return svdup_n_f64(from);
 }
 
 ALWAYS_INLINE const SIMD load(const double *from) noexcept
 {
-	return _mm_load_pd(from);
+	return svld1_f64(SIMD::mask, from);
 }
 
 ALWAYS_INLINE void store(double *to, const SIMD& value) noexcept
 {
-	_mm_store_pd(to, value.data);
+	svst1_f64(SIMD::mask, to, value.data);
 }
 
 ALWAYS_INLINE const SIMD operator+(const SIMD& v1, const SIMD& v2) noexcept
 {
-	return _mm_add_pd(v1.data, v2.data);
+	return svadd_f64_x(SIMD::mask, v1.data, v2.data);
 }
 
 ALWAYS_INLINE const SIMD operator*(const SIMD& v1, const SIMD& v2) noexcept
 {
-	return _mm_mul_pd(v1.data, v2.data);
+	return svmul_f64_x(SIMD::mask, v1.data, v2.data);
 }
 
 ALWAYS_INLINE const SIMD operator-(const SIMD& v1, const SIMD& v2) noexcept
 {
-	return _mm_sub_pd(v1.data, v2.data);
+	return svsub_f64_x(SIMD::mask, v1.data, v2.data);
 }
 
 ALWAYS_INLINE const SIMD operator/(const SIMD& v1, const SIMD& v2) noexcept
 {
-	return _mm_div_pd(v1.data, v2.data);
+	return svdiv_f64_x(SIMD::mask, v1.data, v2.data);
 }
 
 ALWAYS_INLINE SIMD zeros() noexcept
 {
-	return _mm_setzero_pd();
+	return svdup_n_f64(0.0);
 }
 
 ALWAYS_INLINE SIMD ones() noexcept
 {
-	return _mm_set1_pd(1.0);
+	return svdup_n_f64(1.0);
 }
 
 ALWAYS_INLINE SIMD negate(const SIMD& value) noexcept
 {
-	__m128i tmp = _mm_set_epi32(1<<31, 0, 1<<31, 0);
-	return _mm_xor_pd(value.data, reinterpret_cast<__m128d>(tmp));
+	return svneg_f64_x(SIMD::mask, value.data);
 }
 
 ALWAYS_INLINE SIMD sqrt(const SIMD& value) noexcept
 {
-	return _mm_sqrt_pd(value.data);
+	return svsqrt_f64_x(SIMD::mask, value.data);
 }
 
-ALWAYS_INLINE SIMD rsqrt14(const SIMD& v) noexcept // TODO: improve it
+ALWAYS_INLINE SIMD rsqrt14(const SIMD& value) noexcept // TODO: improve it
 {
-	__m128d sqrt = _mm_sqrt_pd(v.data);
-	return __m128d{
-		v.data[0] > 0. ? 1. / sqrt[0] : 0.,
-		v.data[1] > 0. ? 1. / sqrt[1] : 0.
-	};
+	return svrsqrte_f64(value.data);
 }
 
-ALWAYS_INLINE SIMD positive_guarded_recip(const SIMD& v) noexcept // TODO: improve it
+ALWAYS_INLINE SIMD positive_guarded_recip(const SIMD& value) noexcept // TODO: improve it
 {
-	return __m128d{
-		v.data[0] > 0. ? 1. / v.data[0] : 0.,
-		v.data[1] > 0. ? 1. / v.data[1] : 0.
-	};
+	return svrsqrte_f64(value.data);
+//	return __sved{
+//		v.data[0] > 0. ? 1. / v.data[0] : 0.,
+//		v.data[1] > 0. ? 1. / v.data[1] : 0.
+//	};
 }
 
 ALWAYS_INLINE SIMD max(const SIMD& v1, const SIMD& v2) noexcept
 {
-	return _mm_max_pd(v1.data, v2.data);
+	return svmax_f64_x(SIMD::mask, v1.data, v2.data);
 }
 
 ALWAYS_INLINE SIMD cos(const SIMD& value) noexcept
 {
-	return __m128d{
-		std::cos(value.data[0]),
-		std::cos(value.data[1])
-	};
+	return __sved{};
+//	return __sved{
+//		std::cos(value.data[0]),
+//		std::cos(value.data[1])
+//	};
 }
 
 ALWAYS_INLINE SIMD acos(const SIMD& value) noexcept
 {
-	return __m128d{
-		std::acos(value.data[0]),
-		std::acos(value.data[1])
-	};
+	return __sved{};
+//	return __sved{
+//		std::acos(value.data[0]),
+//		std::acos(value.data[1])
+//	};
 }
 
 ALWAYS_INLINE SIMD ispositive(const SIMD& v) noexcept
 {
-	return __m128d{
-		v.data[0] > 0.0 ? 1.0 : 0.0,
-		v.data[1] > 0.0 ? 1.0 : 0.0
-	};
+	return __sved{};
+//	return __sved{
+//		v.data[0] > 0.0 ? 1.0 : 0.0,
+//		v.data[1] > 0.0 ? 1.0 : 0.0
+//	};
 }
 
 

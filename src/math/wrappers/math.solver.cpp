@@ -11,6 +11,11 @@
 namespace espreso {
 namespace math {
 
+const char* sparseSolver()
+{
+	return "NONE";
+}
+
 template <>
 void initSolver(Matrix_CSR<double> &A)
 {
@@ -72,19 +77,6 @@ void solve(const Matrix_CSR<std::complex<double> > &A, Matrix_Dense<std::complex
 }
 
 template <>
-void computeSC(const Matrix_CSR<double> &m, Matrix_Dense<double> &sc)
-{
-        eslog::error("Implement Schur complement via SuiteSparse.\n");
-}
-
-template <>
-void computeSC(const Matrix_CSR<std::complex<double> > &m, Matrix_Dense<std::complex<double> > &sc)
-{
-        eslog::error("Implement Schur complement via SuiteSparse.\n");
-}
-
-
-template <>
 void freeSolver(Matrix_CSR<double> &A)
 {
 
@@ -111,13 +103,13 @@ void freeFactor(Matrix_CSC<std::complex<double> > &m)
 template <>
 SolverInfo getSolverInfo(const Matrix_CSR<double> &m)
 {
-
+	return SolverInfo{};
 }
 
 template <>
 SolverInfo getSolverInfo(const Matrix_CSR<std::complex<double> > &m)
 {
-
+	return SolverInfo{};
 }
 
 bool provideFactors()
@@ -143,7 +135,7 @@ void computeSC(const Matrix_CSR<std::complex<double> > &m, Matrix_Dense<std::com
 }
 
 template <>
-void getFactors(const Matrix_CSR<double> &m, Matrix_CSC<T> &L, Matrix_CSC<T> &U, Vector_Dense<int> &p)
+void getFactors(const Matrix_CSR<double> &m, Matrix_CSC<double> &L, Matrix_CSC<double> &U, Vector_Dense<int> &p)
 {
 	eslog::error("calling of empty sparse solver wrapper.\n");
 }
