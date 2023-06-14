@@ -1,6 +1,6 @@
 
-#include "analysis/linearsystem/mklpdsssystem.h"
-#include "directsolver.h"
+#include "mklpdsssystem.h"
+#include "directsystem.h"
 
 void espreso::setDirichlet(Matrix_Distributed<Matrix_CSR, double> &A, Vector_Distributed<Vector_Dense, double> &b, const Vector_Sparse<double> &dirichlet, const DOFsDistribution &distribution)
 {
@@ -11,4 +11,6 @@ void espreso::setDirichlet(Matrix_Distributed<Matrix_CSR, std::complex<double>> 
 {
 	_setDirichlet<std::complex<double> >(A, b, dirichlet, distribution);
 }
+
+
 

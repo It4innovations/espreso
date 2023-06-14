@@ -4,7 +4,6 @@
 
 #include "analysis.h"
 #include "analysis/assembler/module/acoustic.h"
-#include "analysis/scheme/harmonic.complex.h"
 #include "analysis/linearsystem/linearsystem.h"
 
 #include <complex>
@@ -27,9 +26,17 @@ public:
 	AcousticLoadStepConfiguration &configuration;
 
 	Acoustic assembler;
-	HarmonicComplex scheme;
+
+	Matrix_Base<double> *K, *M, *C;
+	struct {
+		Vector_Base<double> *f, *x, *dirichlet;
+	} re, im;
 
 	LinearSystem<double, std::complex<double> > *system;
+
+protected:
+	void storeSystem(step::Step &step);
+	void storeSolution(step::Step &step);
 };
 
 }

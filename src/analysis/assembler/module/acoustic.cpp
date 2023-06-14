@@ -6,8 +6,6 @@
 #include "esinfo/eslog.hpp"
 #include "esinfo/meshinfo.h"
 
-#include "analysis/scheme/harmonic.h"
-
 #include "mesh/store/elementstore.h"
 #include "mesh/store/nodestore.h"
 #include "mesh/store/domainstore.h"
@@ -140,22 +138,37 @@ void Acoustic::analyze()
 	eslog::info(" ============================================================================================= \n");
 }
 
-void Acoustic::connect(Harmonic &scheme)
+void Acoustic::connect(Matrix_Base<double> *K, Matrix_Base<double> *M, Matrix_Base<double> *C, Vector_Base<double> *ref, Vector_Base<double> *imf, Vector_Base<double> *renf, Vector_Base<double> *imnf, Vector_Base<double> *dirichlet)
 {
-//	addFiller(*this, scheme);
+
 }
 
-void Acoustic::evaluate(Harmonic &scheme)
+void Acoustic::evaluate(step::Frequency &frequency, Matrix_Base<double> *K, Matrix_Base<double> *M, Matrix_Base<double> *C, Vector_Base<double> *ref, Vector_Base<double> *imf, Vector_Base<double> *renf, Vector_Base<double> *imnf, Vector_Base<double> *dirichlet)
 {
-//	controller.setUpdate();
-	reset(scheme.K, scheme.M, scheme.C, scheme.re.f, scheme.im.f, scheme.re.dirichlet, scheme.im.dirichlet);
-//	iterate();
-//	fill();
-	update(scheme.K, scheme.M, scheme.C, scheme.re.f, scheme.im.f, scheme.re.dirichlet, scheme.im.dirichlet);
-//	controller.resetUpdate();
+
 }
 
-void Acoustic::updateSolution(Harmonic &scheme)
+void Acoustic::updateSolution(Vector_Base<double> *rex, Vector_Base<double> *imx)
 {
-	scheme.re.x->storeTo(Results::pressure->data);
+
 }
+
+//void Acoustic::connect(Harmonic &scheme)
+//{
+////	addFiller(*this, scheme);
+//}
+//
+//void Acoustic::evaluate(Harmonic &scheme)
+//{
+////	controller.setUpdate();
+//	reset(scheme.K, scheme.M, scheme.C, scheme.re.f, scheme.im.f, scheme.re.dirichlet, scheme.im.dirichlet);
+////	iterate();
+////	fill();
+//	update(scheme.K, scheme.M, scheme.C, scheme.re.f, scheme.im.f, scheme.re.dirichlet, scheme.im.dirichlet);
+////	controller.resetUpdate();
+//}
+//
+//void Acoustic::updateSolution(Harmonic &scheme)
+//{
+//	scheme.re.x->storeTo(Results::pressure->data);
+//}

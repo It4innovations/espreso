@@ -2,7 +2,8 @@
 #include "analysis.h"
 #include "heat.steadystate.nonlinear.h"
 
-#include "analysis/linearsystem/linearsystem.hpp"
+#include "analysis/linearsystem/feti/fetisystem.h"
+#include "analysis/linearsystem/direct/mklpdsssystem.h"
 #include "config/ecf/physics/heattransfer.h"
 #include "esinfo/meshinfo.h"
 #include "esinfo/eslog.hpp"
@@ -45,7 +46,14 @@ void HeatSteadyStateNonLinear::analyze()
 
 void HeatSteadyStateNonLinear::run(step::Step &step)
 {
-	initSystem(system, this);
+	switch (configuration.solver) {
+	case LoadStepSolverConfiguration::SOLVER::FETI:    system = new FETISystem<HeatSteadyStateNonLinear>(this); break;
+	case LoadStepSolverConfiguration::SOLVER::HYPRE:   break;
+	case LoadStepSolverConfiguration::SOLVER::MKLPDSS: system = new MKLPDSSSystem<HeatSteadyStateNonLinear>(this); break;
+	case LoadStepSolverConfiguration::SOLVER::PARDISO: break;
+	case LoadStepSolverConfiguration::SOLVER::SUPERLU: break;
+	case LoadStepSolverConfiguration::SOLVER::WSMP:    break;
+	}
 	eslog::checkpointln("SIMULATION: LINEAR SYSTEM BUILT");
 
 	system->setMapping(K = system->assembler.A->copyPattern());

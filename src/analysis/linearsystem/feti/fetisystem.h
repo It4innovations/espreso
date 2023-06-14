@@ -1,8 +1,8 @@
 
-#ifndef SRC_ANALYSIS_LINEARSOLVER_FETISOLVER_H_
-#define SRC_ANALYSIS_LINEARSOLVER_FETISOLVER_H_
+#ifndef SRC_ANALYSIS_LINEARSYSTEM_FETI_FETISYSTEM_H_
+#define SRC_ANALYSIS_LINEARSYSTEM_FETI_FETISYSTEM_H_
 
-#include "linearsystem.h"
+#include "analysis/linearsystem/linearsystem.h"
 #include "analysis/analysis/heat.steadystate.linear.h"
 #include "analysis/analysis/heat.steadystate.nonlinear.h"
 #include "analysis/analysis/acoustic.real.linear.h"
@@ -351,4 +351,6 @@ template <> struct FETISystem<AcousticComplexLinear>: public FETISystemData<doub
 
 }
 
-#endif /* SRC_ANALYSIS_LINEARSOLVER_FETISOLVER_H_ */
+
+
+#endif /* SRC_ANALYSIS_LINEARSYSTEM_FETI_FETISYSTEM_H_ */

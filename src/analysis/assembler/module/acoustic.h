@@ -47,9 +47,9 @@ public:
 
 	void analyze();
 
-	void connect(Harmonic &scheme);
-	void evaluate(Harmonic &scheme);
-	void updateSolution(Harmonic &scheme);
+	void connect(Matrix_Base<double> *K, Matrix_Base<double> *M, Matrix_Base<double> *C, Vector_Base<double> *ref, Vector_Base<double> *imf, Vector_Base<double> *renf, Vector_Base<double> *imnf, Vector_Base<double> *dirichlet);
+	void evaluate(step::Frequency &frequency, Matrix_Base<double> *K, Matrix_Base<double> *M, Matrix_Base<double> *C, Vector_Base<double> *ref, Vector_Base<double> *imf, Vector_Base<double> *renf, Vector_Base<double> *imnf, Vector_Base<double> *dirichlet);
+	void updateSolution(Vector_Base<double> *rex, Vector_Base<double> *imx);
 
 	AcousticConfiguration &settings;
 	AcousticLoadStepConfiguration &configuration;

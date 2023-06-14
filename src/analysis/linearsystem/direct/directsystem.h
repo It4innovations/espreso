@@ -1,6 +1,6 @@
 
-#ifndef SRC_ANALYSIS_LINEARSYSTEM_UTILS_DIRECTSOLVER_H_
-#define SRC_ANALYSIS_LINEARSYSTEM_UTILS_DIRECTSOLVER_H_
+#ifndef SRC_ANALYSIS_LINEARSYSTEM_DIRECT_DIRECTSYSTEM_H_
+#define SRC_ANALYSIS_LINEARSYSTEM_DIRECT_DIRECTSYSTEM_H_
 
 #include "esinfo/eslog.h"
 #include "wrappers/mpi/communication.h"
@@ -94,4 +94,4 @@ void _setDirichlet(Matrix_Distributed<Matrix_CSR, T> &A, Vector_Distributed<Vect
 	}
 }
 
-#endif /* SRC_ANALYSIS_LINEARSYSTEM_UTILS_DIRECTSOLVER_H_ */
+#endif /* SRC_ANALYSIS_LINEARSYSTEM_DIRECT_DIRECTSYSTEM_H_ */

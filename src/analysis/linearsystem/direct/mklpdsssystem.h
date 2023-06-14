@@ -1,16 +1,16 @@
 
-#ifndef SRC_ANALYSIS_LINEARSOLVER_MKLPDSSSOLVER_H_
-#define SRC_ANALYSIS_LINEARSOLVER_MKLPDSSSOLVER_H_
+#ifndef SRC_ANALYSIS_LINEARSYSTEM_DIRECT_MKLPDSSSYSTEM_H_
+#define SRC_ANALYSIS_LINEARSYSTEM_DIRECT_MKLPDSSSYSTEM_H_
 
-#include "linearsystem.h"
+#include "analysis/linearsystem/linearsystem.h"
 #include "analysis/analysis/heat.steadystate.linear.h"
 #include "analysis/analysis/heat.steadystate.nonlinear.h"
 #include "analysis/analysis/acoustic.real.linear.h"
 #include "analysis/analysis/acoustic.complex.linear.h"
 #include "analysis/analysis/structuralmechanics.steadystate.linear.h"
 #include "analysis/analysis/structuralmechanics.steadystate.nonlinear.h"
-
 #include "analysis/composer/nodes.uniform.distributed.h"
+
 #include "basis/utilities/sysutils.h"
 #include "config/ecf/linearsolver/mklpdss.h"
 #include "esinfo/ecfinfo.h"
@@ -89,7 +89,7 @@ struct MKLPDSSSystemData: public LinearSystem<Assembler, Solver> {
 			Data_Synchronization<Vector_Dense, Type> b;
 		} sync;
 	};
-	
+
 	Data<Assembler> assembler;
 	Data<Solver> solver;
 
@@ -263,4 +263,4 @@ void setDirichlet(Matrix_Distributed<Matrix_CSR, std::complex<double>> &A, Vecto
 
 }
 
-#endif /* SRC_ANALYSIS_LINEARSOLVER_MKLPDSSSOLVER_H_ */
+#endif /* SRC_ANALYSIS_LINEARSYSTEM_DIRECT_MKLPDSSSYSTEM_H_ */

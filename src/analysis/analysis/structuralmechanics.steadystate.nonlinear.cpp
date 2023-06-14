@@ -3,7 +3,8 @@
 #include "analysis.h"
 #include "structuralmechanics.steadystate.nonlinear.h"
 
-#include "analysis/linearsystem/linearsystem.hpp"
+#include "analysis/linearsystem/feti/fetisystem.h"
+#include "analysis/linearsystem/direct/mklpdsssystem.h"
 #include "config/ecf/physics/structuralmechanics.h"
 #include "esinfo/meshinfo.h"
 #include "esinfo/eslog.hpp"
@@ -45,7 +46,14 @@ void StructuralMechanicsSteadyStateNonLinear::analyze()
 
 void StructuralMechanicsSteadyStateNonLinear::run(step::Step &step)
 {
-	initSystem(system, this);
+	switch (configuration.solver) {
+	case LoadStepSolverConfiguration::SOLVER::FETI:    system = new FETISystem<StructuralMechanicsSteadyStateNonLinear>(this); break;
+	case LoadStepSolverConfiguration::SOLVER::HYPRE:   break;
+	case LoadStepSolverConfiguration::SOLVER::MKLPDSS: system = new MKLPDSSSystem<StructuralMechanicsSteadyStateNonLinear>(this); break;
+	case LoadStepSolverConfiguration::SOLVER::PARDISO: break;
+	case LoadStepSolverConfiguration::SOLVER::SUPERLU: break;
+	case LoadStepSolverConfiguration::SOLVER::WSMP:    break;
+	}
 	system->setMapping(K = system->assembler.A->copyPattern());
 	system->setMapping(R = system->solver.x->copyPattern());
 	system->setMapping(f = system->assembler.b->copyPattern());

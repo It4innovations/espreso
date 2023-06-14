@@ -1,5 +1,5 @@
 
-#include "analysis/linearsystem/fetisystem.h"
+#include "fetisystem.h"
 #include "basis/containers/allocators.h"
 #include "basis/utilities/utils.h"
 #include "esinfo/meshinfo.h"
