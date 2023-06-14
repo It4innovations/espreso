@@ -61,10 +61,7 @@ class ESPRESOTest:
             program.append("--OUTPUT::RESULTS_STORE_FREQUENCY=NEVER")
             program.append("--OUTPUT::MODE=SYNC")
 
-        def _popen():
-            return subprocess.Popen(program, stdout=subprocess.PIPE, stderr=subprocess.PIPE, cwd=ESPRESOTest.path, env=ESPRESOTest.env)
-
-        p = _popen()
+        p = subprocess.Popen(program, stdout=subprocess.PIPE, stderr=subprocess.PIPE, cwd=ESPRESOTest.path, env=ESPRESOTest.env)
         output, error = p.communicate()
         return (output.decode(), error.decode())
 

@@ -18,7 +18,7 @@ namespace system {
 	};
 
 	struct CPUInfo {
-		char modelName[200];
+		char modelName[200] = "UNKNOWN";
 		int sockets = 0;
 		int cores;
 		bool hyperthreading = 0;
