@@ -13,6 +13,9 @@ def configure(ctx):
     ctx.env.intwidth = ctx.options.intwidth
     ctx.env.mode = ctx.options.mode
 
+    if ctx.options.cxx == "icpc" or ctx.options.cxx == "icx":
+        ctx.options.flavor = "intel"
+
     """ Set compilers """
     ctx.find_program(ctx.options.mpicxx, var="MPICXX")
     if ctx.env.with_gui:
@@ -27,8 +30,8 @@ def configure(ctx):
         ctx.env.append_unique("CXXFLAGS", [ "-fopenmp" ])
         ctx.env.append_unique("LINKFLAGS", [ "-fopenmp" ])
     if ctx.options.flavor == "intel":
-        ctx.env.append_unique("CXXFLAGS", [ "-qopenmp" ])
-        ctx.env.append_unique("LINKFLAGS", [ "-qopenmp" ])
+        ctx.env.append_unique("CXXFLAGS", [ "-qopenmp", "-diag-disable=10441" ])
+        ctx.env.append_unique("LINKFLAGS", [ "-qopenmp", "-diag-disable=10441" ])
     if ctx.options.flavor == "fujitsu":
         ctx.env.append_unique("CXXFLAGS", [ "-march=armv8.2-a+sve", "-Kfast", "-KA64FX", "-KSVE", "-Kopenmp", "-SSL2" ])
         ctx.env.append_unique("LINKFLAGS", [ "-march=armv8.2-a+sve", "-Kfast", "-KA64FX", "-KSVE", "-Kopenmp", "-SSL2" ])

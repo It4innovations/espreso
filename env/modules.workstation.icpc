@@ -1,0 +1,7 @@
+. /opt/intel/oneapi/setvars.sh
+export CXX=icpc
+export MPICXX=mpiicpc
+
+export CPATH=/home/mec059/tools/ParMETIS-intel/include:$CPATH
+export LIBRARY_PATH=/home/mec059/tools/ParMETIS-intel/build/Linux-x86_64/libparmetis/:$LIBRARY_PATH
+export LD_LIBRARY_PATH=/home/mec059/tools/ParMETIS-intel/build/Linux-x86_64/libparmetis/:$LD_LIBRARY_PATH
