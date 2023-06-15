@@ -1,6 +1,5 @@
 
-#include "nodes.uniform.feti.h"
-#include "ij.h"
+#include "pattern.nodes.uniform.h"
 
 #include "basis/containers/serializededata.h"
 #include "basis/containers/allocators.h"
@@ -19,18 +18,18 @@
 
 using namespace espreso;
 
-UniformNodesFETIPattern::UniformNodesFETIPattern()
+PatternNodesUniformFETI::PatternNodesUniformFETI()
 : dofs(0)
 {
 
 }
 
-UniformNodesFETIPattern::~UniformNodesFETIPattern()
+PatternNodesUniformFETI::~PatternNodesUniformFETI()
 {
 
 }
 
-void fillDecomposition(UniformNodesFETIPattern *pattern, int dofs, DOFsDecomposition &decomposition)
+void fillDecomposition(PatternNodesUniformFETI *pattern, int dofs, DOFsDecomposition &decomposition)
 {
 	pattern->elements.resize(info::mesh->domains->size);
 	pattern->bregion.resize(info::mesh->domains->size);
@@ -118,7 +117,7 @@ void fillDecomposition(UniformNodesFETIPattern *pattern, int dofs, DOFsDecomposi
 	}
 }
 
-void buildPattern(UniformNodesFETIPattern *pattern, int dofs, DOFsDecomposition &decomposition, Matrix_Shape shape, int domain)
+void buildPattern(PatternNodesUniformFETI *pattern, int dofs, DOFsDecomposition &decomposition, Matrix_Shape shape, int domain)
 {
 	auto ebegin = info::mesh->elements->nodes->cbegin() + info::mesh->domains->elements[domain];
 	auto eend = info::mesh->elements->nodes->cbegin() + info::mesh->domains->elements[domain + 1];
@@ -210,7 +209,6 @@ void buildPattern(UniformNodesFETIPattern *pattern, int dofs, DOFsDecomposition 
 	}
 
 	pattern->bregion[domain].resize(info::mesh->boundaryRegions.size());
-	std::vector<esint> belement(dofs * 8);
 	for (size_t r = 1; r < info::mesh->boundaryRegions.size(); ++r) {
 		if (info::mesh->boundaryRegions[r]->dimension) {
 			for (esint i = info::mesh->boundaryRegions[r]->eintervalsDistribution[domain]; i < info::mesh->boundaryRegions[r]->eintervalsDistribution[domain + 1]; ++i) {
@@ -252,7 +250,7 @@ void buildPattern(UniformNodesFETIPattern *pattern, int dofs, DOFsDecomposition 
 	}
 }
 
-static void dirichlet(UniformNodesFETIPattern *pattern, std::map<std::string, ECFExpression> &settings, int dofs, DOFsDecomposition &decomposition)
+static void dirichlet(PatternNodesUniformFETI *pattern, std::map<std::string, ECFExpression> &settings, int dofs, DOFsDecomposition &decomposition)
 {
 	pattern->dirichletInfo.resize(info::mesh->boundaryRegions.size());
 	for (size_t r = 1; r < info::mesh->boundaryRegions.size(); ++r) {
@@ -275,7 +273,7 @@ static void dirichlet(UniformNodesFETIPattern *pattern, std::map<std::string, EC
 	}
 }
 
-void UniformNodesFETIPattern::set(std::map<std::string, ECFExpression> &settings, int dofs, DOFsDecomposition &decomposition, Matrix_Shape shape)
+void PatternNodesUniformFETI::set(std::map<std::string, ECFExpression> &settings, int dofs, DOFsDecomposition &decomposition, Matrix_Shape shape)
 {
 	this->dofs = dofs;
 	dirichlet(this, settings, dofs, decomposition);
@@ -286,7 +284,7 @@ void UniformNodesFETIPattern::set(std::map<std::string, ECFExpression> &settings
 	}
 }
 
-void UniformNodesFETIPattern::fillCSR(esint *rows, esint *cols, esint domain)
+void PatternNodesUniformFETI::fillCSR(esint *rows, esint *cols, esint domain)
 {
 	rows[0] = Indexing::CSR;
 	cols[0] = elements[domain].column.front() + Indexing::CSR;

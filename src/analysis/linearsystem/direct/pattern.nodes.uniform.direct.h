@@ -2,8 +2,6 @@
 #ifndef SRC_ANALYSIS_COMPOSER_NODES_UNIFORM_DISTRIBUTED_H_
 #define SRC_ANALYSIS_COMPOSER_NODES_UNIFORM_DISTRIBUTED_H_
 
-#include "elementmapping.h"
-
 #include "basis/containers/serializededata.h"
 #include "esinfo/meshinfo.h"
 #include "config/holders/expression.h"
@@ -17,12 +15,13 @@
 #include "math/physics/matrix_distributed.h"
 #include "math/utils/distributed/distribution.h"
 #include "math/utils/distributed/synchronization.h"
+#include "math/utils/mapping.h"
 
 #include <vector>
 
 namespace espreso {
 
-struct UniformNodesDistributedPattern {
+struct PatternNodesUniformDirect {
 
 	struct RegionInfo {
 		esint nrows = 0, ncols = 0, dirichlet = 0;
@@ -30,8 +29,8 @@ struct UniformNodesDistributedPattern {
 		std::vector<esint> A, b, indices; // local permutations
 	};
 
-	UniformNodesDistributedPattern();
-	~UniformNodesDistributedPattern();
+	PatternNodesUniformDirect();
+	~PatternNodesUniformDirect();
 
 	void set(std::map<std::string, ECFExpression> &settings, int dofs, DOFsDistribution &distribution);
 	void set(std::map<std::string, ECFExpressionOptionalVector> &settings, int dofs, DOFsDistribution &distribution);

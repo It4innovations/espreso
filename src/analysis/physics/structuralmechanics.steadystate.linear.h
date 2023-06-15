@@ -2,7 +2,7 @@
 #ifndef SRC_ANALYSIS_ANALYSIS_ELASTICITY_STEADYSTATE_LINEAR_H_
 #define SRC_ANALYSIS_ANALYSIS_ELASTICITY_STEADYSTATE_LINEAR_H_
 
-#include "analysis.h"
+#include "analysis/physics/physics.h"
 #include "analysis/linearsystem/linearsystem.h"
 #include "analysis/assembler/module/structuralmechanics.h"
 
@@ -11,7 +11,7 @@ namespace espreso {
 struct StructuralMechanicsConfiguration;
 struct StructuralMechanicsLoadStepConfiguration;
 
-class StructuralMechanicsSteadyStateLinear: public Analysis {
+class StructuralMechanicsSteadyStateLinear: public Physics {
 
 public:
 	StructuralMechanicsSteadyStateLinear(StructuralMechanicsConfiguration &settings, StructuralMechanicsLoadStepConfiguration &configuration);

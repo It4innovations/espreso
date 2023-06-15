@@ -8,8 +8,8 @@ namespace espreso {
 
 namespace step { struct Step; }
 
-struct Analysis {
-	virtual ~Analysis() {}
+struct Physics {
+	virtual ~Physics() {}
 
 	virtual void analyze() =0;
 	virtual void run(step::Step &step) =0;

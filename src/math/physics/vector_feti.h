@@ -2,11 +2,10 @@
 #ifndef SRC_MATH2_GENERALIZATION_VECTOR_FETI_H_
 #define SRC_MATH2_GENERALIZATION_VECTOR_FETI_H_
 
+#include <math/utils/feti/decomposition.h>
 #include "vector_base.h"
 #include "esinfo/eslog.h"
 #include "math/physics/math.physics.h"
-#include "math/utils/decomposed/decomposition.h"
-
 #include <vector>
 
 namespace espreso {

@@ -1,6 +1,6 @@
 
-#include "analysis.h"
-#include "acoustic.complex.linear.h"
+#include <analysis/physics/physics.h>
+#include "acoustic.real.linear.h"
 
 #include "analysis/linearsystem/feti/fetisystem.h"
 #include "analysis/linearsystem/direct/mklpdsssystem.h"
@@ -14,16 +14,16 @@
 
 using namespace espreso;
 
-AcousticComplexLinear::AcousticComplexLinear(AcousticConfiguration &settings, AcousticLoadStepConfiguration &configuration)
+AcousticRealLinear::AcousticRealLinear(AcousticConfiguration &settings, AcousticLoadStepConfiguration &configuration)
 : settings(settings), configuration(configuration), assembler{nullptr, settings, configuration}, K{}, M{}, C{}, re{}, im{}, system{}
 {
 
 }
 
-void AcousticComplexLinear::analyze()
+void AcousticRealLinear::analyze()
 {
 	eslog::info("\n ============================================================================================= \n");
-	eslog::info(" == ANALYSIS                                                               HARMONIC COMPLEX == \n");
+	eslog::info(" == ANALYSIS                                                                  HARMONIC REAL == \n");
 	eslog::info(" == PHYSICS                                                                        ACOUSTIC == \n");
 	eslog::info(" ============================================================================================= \n");
 
@@ -31,12 +31,12 @@ void AcousticComplexLinear::analyze()
 	info::mesh->output->updateMonitors(step::TYPE::FREQUENCY);
 }
 
-void AcousticComplexLinear::run(step::Step &step)
+void AcousticRealLinear::run(step::Step &step)
 {
 	switch (configuration.solver) {
-	case LoadStepSolverConfiguration::SOLVER::FETI:    system = new FETISystem<AcousticComplexLinear>(this); break;
+	case LoadStepSolverConfiguration::SOLVER::FETI:    system = new FETISystem<AcousticRealLinear>(this); break;
 	case LoadStepSolverConfiguration::SOLVER::HYPRE:   break;
-	case LoadStepSolverConfiguration::SOLVER::MKLPDSS: system = new MKLPDSSSystem<AcousticComplexLinear>(this); break;
+	case LoadStepSolverConfiguration::SOLVER::MKLPDSS: system = new MKLPDSSSystem<AcousticRealLinear>(this); break;
 	case LoadStepSolverConfiguration::SOLVER::PARDISO: break;
 	case LoadStepSolverConfiguration::SOLVER::SUPERLU: break;
 	case LoadStepSolverConfiguration::SOLVER::WSMP:    break;
@@ -79,7 +79,6 @@ void AcousticComplexLinear::run(step::Step &step)
 			frequency.current = frequency.final;
 		}
 		frequency.angular = 2 * M_PI * frequency.current;
-
 		eslog::info(" ============================================================================================= \n");
 		eslog::info(" = LOAD STEP %2d                                                         FREQUENCY %10.4f = \n", step::step.loadstep + 1, frequency.current);
 		eslog::info(" = ----------------------------------------------------------------------------------------- = \n");
@@ -87,31 +86,38 @@ void AcousticComplexLinear::run(step::Step &step)
 		assembler.evaluate(frequency, K, M, C, re.f, im.f, nullptr, nullptr, re.dirichlet);
 		storeSystem(step);
 
-		// A = K - omega^2 * M + iC
+		// A = [
+		// K - omega^2 * M                -iC
+		//              iC    K - omega^2 * M
+		// ]
 		system->solver.A->touched = true;
-		system->solver.A->set(std::complex<double>(0, 0));
-		system->solver.A->copyReal(K);
-		system->solver.A->addReal(-frequency.angular * frequency.angular, M);
-		system->solver.A->addImag(frequency.angular, C);
+		system->solver.A->set(0);
+		system->solver.A->copySliced(K, 0, 0, 1, 2);
+		system->solver.A->copySliced(K, 1, 1, 1, 2);
+		system->solver.A->addSliced(-frequency.angular * frequency.angular, M, 0, 0, 1, 2);
+		system->solver.A->addSliced(-frequency.angular * frequency.angular, M, 1, 1, 1, 2);
+
+		system->solver.A->addSliced(-frequency.angular, C, 0, 1, 1, 2);
+		system->solver.A->addSliced( frequency.angular, C, 1, 0, 1, 2);
 
 		system->solver.b->touched = true;
-		system->solver.b->copyReal(re.f);
-		system->solver.b->copyImag(im.f);
+		system->solver.b->set(0);
+		system->solver.b->copySliced(re.f, 0, 1, 2);
+		system->solver.b->copySliced(im.f, 1, 1, 2);
 
 		system->solver.dirichlet->touched = true;
-		system->solver.dirichlet->set(std::complex<double>(0, 0));
-		system->solver.dirichlet->copyReal(re.dirichlet);
-		system->solver.dirichlet->copyImag(im.dirichlet);
+		system->solver.dirichlet->set(0);
+		system->solver.dirichlet->copySliced(re.dirichlet, 0, 1, 2);
+		system->solver.dirichlet->copySliced(im.dirichlet, 1, 1, 2);
 
 		eslog::info("       = ----------------------------------------------------------------------------- = \n");
 		eslog::info("       = SYSTEM ASSEMBLY                                                    %8.3f s = \n", eslog::time() - start);
-
 		system->update(step);
 		system->solve(step);
 
 		double solution = eslog::time();
-		system->solver.x->copyRealTo(re.x);
-		system->solver.x->copyImagTo(im.x);
+		re.x->copySliced(system->solver.x, 0, 1, 2);
+		im.x->copySliced(system->solver.x, 1, 1, 2);
 		assembler.updateSolution(re.x, im.x);
 		info::mesh->output->updateSolution(step, frequency);
 		eslog::info("       = PROCESS SOLUTION                                                   %8.3f s = \n", eslog::time() - solution);
@@ -121,7 +127,7 @@ void AcousticComplexLinear::run(step::Step &step)
 	}
 }
 
-void AcousticComplexLinear::storeSystem(step::Step &step)
+void AcousticRealLinear::storeSystem(step::Step &step)
 {
 	if (info::ecf->output.print_matrices) {
 		eslog::storedata(" STORE: scheme/{K, M, C, f.re, f.im, dirichlet.re, dirichlet.im}\n");
@@ -135,7 +141,7 @@ void AcousticComplexLinear::storeSystem(step::Step &step)
 	}
 }
 
-void AcousticComplexLinear::storeSolution(step::Step &step)
+void AcousticRealLinear::storeSolution(step::Step &step)
 {
 	if (info::ecf->output.print_matrices) {
 		eslog::storedata(" STORE: scheme/{x.re, x.im}\n");

@@ -1,5 +1,5 @@
 
-#include <analysis/solver.h>
+#include "analysis/analysis.h"
 #include "esinfo/eslog.hpp"
 #include "esinfo/stepinfo.h"
 #include "esinfo/envinfo.h"
@@ -94,7 +94,7 @@ int main(int argc, char **argv)
 		eslog::endln("ESPRESO: DATABASE CONVERTED");
 	} else {
 		profiler::syncstart("physical_solver");
-		Solver looper;
+		Analysis looper;
 		looper.run();
 		profiler::syncend("physical_solver");
 		eslog::endln("ESPRESO: SIMULATION FINISHED");

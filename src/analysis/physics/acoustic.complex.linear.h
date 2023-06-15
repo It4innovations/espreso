@@ -1,20 +1,22 @@
 
-#ifndef SRC_ANALYSIS_ANALYSIS_ACOUSTIC_REAL_LINEAR_H_
-#define SRC_ANALYSIS_ANALYSIS_ACOUSTIC_REAL_LINEAR_H_
+#ifndef SRC_ANALYSIS_ANALYSIS_ACOUSTIC_COMPLEX_LINEAR_H_
+#define SRC_ANALYSIS_ANALYSIS_ACOUSTIC_COMPLEX_LINEAR_H_
 
-#include "analysis.h"
+#include "analysis/physics/physics.h"
 #include "analysis/assembler/module/acoustic.h"
 #include "analysis/linearsystem/linearsystem.h"
 
+#include <complex>
+
 namespace espreso {
 
-struct AcousticGlobalSettings;
+struct AcousticConfiguration;
 struct AcousticLoadStepConfiguration;
 
-class AcousticRealLinear: public Analysis {
+class AcousticComplexLinear: public Physics {
 
 public:
-	AcousticRealLinear(AcousticConfiguration &settings, AcousticLoadStepConfiguration &configuration);
+	AcousticComplexLinear(AcousticConfiguration &settings, AcousticLoadStepConfiguration &configuration);
 
 	void analyze();
 	void run(step::Step &step);
@@ -30,7 +32,7 @@ public:
 		Vector_Base<double> *f, *x, *dirichlet;
 	} re, im;
 
-	LinearSystem<double> *system;
+	LinearSystem<double, std::complex<double> > *system;
 
 protected:
 	void storeSystem(step::Step &step);
@@ -42,4 +44,5 @@ protected:
 
 
 
-#endif /* SRC_ANALYSIS_ANALYSIS_ACOUSTIC_REAL_LINEAR_H_ */
+
+#endif /* SRC_ANALYSIS_ANALYSIS_ACOUSTIC_COMPLEX_LINEAR_H_ */

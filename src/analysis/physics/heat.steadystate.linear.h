@@ -1,8 +1,8 @@
 
-#ifndef SRC_ANALYSIS_ANALYSIS_HEAT_STEADYSTATE_NONLINEAR_H_
-#define SRC_ANALYSIS_ANALYSIS_HEAT_STEADYSTATE_NONLINEAR_H_
+#ifndef SRC_ANALYSIS_ANALYSIS_HEAT_STEADYSTATE_LINEAR_H_
+#define SRC_ANALYSIS_ANALYSIS_HEAT_STEADYSTATE_LINEAR_H_
 
-#include "analysis.h"
+#include "analysis/physics/physics.h"
 #include "analysis/assembler/module/heattransfer.h"
 #include "analysis/linearsystem/linearsystem.h"
 
@@ -10,13 +10,12 @@ namespace espreso {
 
 struct HeatTransferConfiguration;
 struct HeatTransferLoadStepConfiguration;
-struct NonLinearSolverConfiguration;
 
-class HeatSteadyStateNonLinear: public Analysis {
+class HeatSteadyStateLinear: public Physics {
 
 public:
-	HeatSteadyStateNonLinear(HeatTransferConfiguration &settings, HeatTransferLoadStepConfiguration &configuration);
-	~HeatSteadyStateNonLinear();
+	HeatSteadyStateLinear(HeatTransferConfiguration &settings, HeatTransferLoadStepConfiguration &configuration);
+	~HeatSteadyStateLinear();
 
 	void analyze();
 	void run(step::Step &step);
@@ -28,17 +27,15 @@ public:
 	HeatTransfer assembler;
 
 	Matrix_Base<double> *K;
-	Vector_Base<double> *U, *R, *f, *x, *dirichlet;
+	Vector_Base<double> *f, *x, *dirichlet;
 
 	LinearSystem<double> *system;
 
 protected:
-	bool checkTemp(step::Step &step);
-
 	void storeSystem(step::Step &step);
 	void storeSolution(step::Step &step);
 };
 
 }
 
-#endif /* SRC_ANALYSIS_ANALYSIS_HEAT_STEADYSTATE_NONLINEAR_H_ */
+#endif /* SRC_ANALYSIS_ANALYSIS_HEAT_STEADYSTATE_LINEAR_H_ */

@@ -1,7 +1,6 @@
 
-#include "nodes.uniform.distributed.h"
-#include "ij.h"
-
+#include <analysis/linearsystem/direct/pattern.nodes.uniform.direct.h>
+#include "basis/containers/allocators.h"
 #include "basis/containers/serializededata.h"
 #include "basis/utilities/utils.h"
 #include "esinfo/envinfo.h"
@@ -16,148 +15,122 @@
 
 using namespace espreso;
 
-UniformNodesDistributedPattern::UniformNodesDistributedPattern()
+PatternNodesUniformDirect::PatternNodesUniformDirect()
 : dofs(0)
 {
 
 }
 
-UniformNodesDistributedPattern::~UniformNodesDistributedPattern()
+PatternNodesUniformDirect::~PatternNodesUniformDirect()
 {
 
 }
 
-void buildPattern(UniformNodesDistributedPattern *pattern, int dofs, DOFsDistribution &distribution)
+void buildPattern(PatternNodesUniformDirect *pattern, int dofs, DOFsDistribution &distribution)
 {
 	double start = eslog::time();
 	eslog::info(" == LINEAR SYSTEM                                                               DISTRIBUTED == \n");
 	eslog::info(" == DOFS PER NODE                                                                         %d == \n", dofs);
 
 	pattern->dofs = dofs;
-	auto size = [] (int size) {
-		return size * size;
-	};
-
-	auto fill = [] (IJ* &target, const esint *begin, const esint *end) {
-		for (auto row = begin; row != end; ++row) {
-			for (auto col = begin; col != end; ++col, ++target) {
-				target->row = *row;
-				target->column = *col;
-			}
+	std::vector<esint> begin(info::mesh->nodes->size + 1, 1); // add diagonal
+	for (auto enodes = info::mesh->elements->nodes->cbegin(); enodes != info::mesh->elements->nodes->cend(); ++enodes) {
+		for (auto n = enodes->begin(); n != enodes->end(); ++n) {
+			begin[*n] += enodes->size() - 1; // do not count diagonal
 		}
-	};
-
-	esint Asize = 0, RHSsize = 0;
-	for (auto e = info::mesh->elements->nodes->cbegin(); e != info::mesh->elements->nodes->cend(); ++e) {
-		RHSsize += e->size() * dofs;
-		Asize += size(e->size() * dofs);
+	}
+	utils::sizesToOffsets(begin);
+	std::vector<esint> end = begin;
+	std::vector<esint, initless_allocator<esint> > indices(begin.back());
+	for (esint n = 0; n < info::mesh->nodes->size; ++n) {
+		indices[end[n]++] = info::mesh->nodes->uniqInfo.position[n]; // diagonal
 	}
 
-	std::vector<IJ> APattern(Asize);
-	std::vector<esint> RHSPattern(RHSsize);
-
-	IJ *Aoffset = APattern.data();
-	esint *RHSoffset = RHSPattern.data();
-
-	for (auto e = info::mesh->elements->nodes->cbegin(); e != info::mesh->elements->nodes->cend(); ++e) {
-		esint *_RHS = RHSoffset;
-		for (int dof = 0; dof < dofs; ++dof) {
-			for (auto n = e->begin(); n != e->end(); ++n, ++RHSoffset) {
-				*RHSoffset = info::mesh->nodes->uniqInfo.position[*n] * dofs + dof;
-			}
-		}
-		fill(Aoffset, _RHS, RHSoffset);
-	}
-
-	std::vector<IJ> AData = APattern;
-	std::vector<esint> RHSData = RHSPattern;
-
-	utils::sortAndRemoveDuplicates(APattern);
-	utils::sortAndRemoveDuplicates(RHSPattern);
-
-	// send halo rows to the holder process
-	std::vector<std::vector<IJ> > sPatter(info::mesh->neighbors.size()), rPatter(info::mesh->neighbors.size());
-	size_t max_halo = std::lower_bound(APattern.begin(), APattern.end(), dofs * info::mesh->nodes->uniqInfo.nhalo + 1, [] (const IJ &ij, esint i) { return ij.row < i; }) - APattern.begin();
-	for (size_t n = 0; n < info::mesh->neighbors.size(); ++n) {
-		sPatter[n].reserve(max_halo);
-	}
-
-	auto ranks = info::mesh->nodes->ranks->cbegin();
-	auto begin = APattern.begin(), end = begin;
-	for (esint n = 0; n < info::mesh->nodes->uniqInfo.nhalo; ++n, ++ranks, begin = end) {
-		while (begin->row + dofs > (++end)->row);
-		auto neigh = info::mesh->neighbors.begin();
-		for (auto r = ranks->begin(); r != ranks->end(); ++r) {
-			if (*r != info::mpi::rank) {
-				while (*neigh < *r) { ++neigh; }
-				sPatter[neigh - info::mesh->neighbors.begin()].insert(sPatter[neigh - info::mesh->neighbors.begin()].end(), begin, end);
+	for (auto enodes = info::mesh->elements->nodes->cbegin(); enodes != info::mesh->elements->nodes->cend(); ++enodes) {
+		for (auto from = enodes->begin(); from != enodes->end(); ++from) {
+			for (auto to = enodes->begin(); to != enodes->end(); ++to) {
+				if (*from != *to) {
+					indices[end[*from]++] = info::mesh->nodes->uniqInfo.position[*to];
+				}
 			}
 		}
 	}
 
-	if (!Communication::receiveUpperUnknownSize(sPatter, rPatter, info::mesh->neighbors)) {
-		eslog::internalFailure("exchange K pattern.\n");
+	size_t count = 0;
+	#pragma omp parallel for reduction(+:count)
+	for (esint n = 0; n < info::mesh->nodes->size; ++n) {
+		std::sort(indices.begin() + begin[n], indices.begin() + end[n]);
+		esint unique = begin[n];
+		for (auto i = begin[n] + 1; i < end[n]; ++i) {
+			if (indices[unique] != indices[i]) {
+				indices[++unique] = indices[i];
+			}
+		}
+		end[n] = unique + 1;
+		count += end[n] - begin[n];
 	}
-
-	for (size_t n = 0; n < info::mesh->neighbors.size(); ++n) {
-		APattern.insert(APattern.end(), rPatter[n].begin(), rPatter[n].end());
-	}
-	utils::sortAndRemoveDuplicates(APattern);
+	count *= dofs * dofs;
+	eslog::info(" == NON-ZERO VALUES                                                          %14lu == \n", count);
 
 	pattern->elements.nrows = dofs * (info::mesh->nodes->uniqInfo.nhalo + info::mesh->nodes->uniqInfo.size);
 	pattern->elements.ncols = dofs * info::mesh->nodes->uniqInfo.totalSize;
-	pattern->elements.row.reserve(APattern.size());
-	pattern->elements.column.reserve(APattern.size());
-	pattern->elements.A.reserve(AData.size());
-	pattern->elements.b.reserve(RHSData.size());
+	pattern->elements.row.reserve(count);
+	pattern->elements.column.reserve(count);
+	pattern->elements.A.reserve(dofs * dofs * indices.size());
+	pattern->elements.b.reserve(dofs * info::mesh->elements->nodes->datatarray().size());
 
-	for (size_t i = 0; i < APattern.size(); ++i) {
-		pattern->elements.row.push_back(APattern[i].row);
-		pattern->elements.column.push_back(APattern[i].column);
-	}
-
-	for (size_t i = 0; i < AData.size(); ++i) {
-		pattern->elements.A.push_back(std::lower_bound(APattern.begin(), APattern.end(), AData[i]) - APattern.begin());
-	}
-	for (size_t i = 0; i < RHSData.size(); ++i) {
-		pattern->elements.b.push_back(std::lower_bound(RHSPattern.begin(), RHSPattern.end(), RHSData[i]) - RHSPattern.begin());
-	}
-
-	std::vector<esint> belement(dofs * 8);
-	for (size_t r = 1; r < info::mesh->boundaryRegions.size(); ++r) {
-		if (info::mesh->boundaryRegions[r]->dimension) {
-
-			Asize = 0; RHSsize = 0;
-			for (auto e = info::mesh->boundaryRegions[r]->elements->cbegin(); e != info::mesh->boundaryRegions[r]->elements->cend(); ++e) {
-				RHSsize += e->size() * dofs;
-				Asize += size(e->size() * dofs);
+	std::vector<esint, initless_allocator<esint> > offset;
+	offset.reserve(info::mesh->nodes->size);
+	for (esint n = 0, size = 0; n < info::mesh->nodes->size; ++n) {
+		offset.push_back(size);
+		for (int r = 0; r < dofs; ++r) {
+			for (auto i = begin[n]; i < end[n]; ++i) {
+				for (int c = 0; c < dofs; ++c) {
+					pattern->elements.row.push_back(n * dofs + r);
+					pattern->elements.column.push_back(indices[i] * dofs + c);
+				}
 			}
-			pattern->bregion[r].b.reserve(RHSsize);
-			pattern->bregion[r].A.reserve(Asize);
-
-			for (auto e = info::mesh->boundaryRegions[r]->elements->cbegin(); e != info::mesh->boundaryRegions[r]->elements->cend(); ++e) {
-				belement.clear();
-				for (int dof = 0; dof < dofs; ++dof) {
-					for (auto n = e->begin(); n != e->end(); ++n) {
-						belement.push_back(info::mesh->nodes->uniqInfo.position[*n] * dofs + dof);
+		}
+		size += dofs * dofs * (end[n] - begin[n]);
+	}
+	for (auto enodes = info::mesh->elements->nodes->cbegin(); enodes != info::mesh->elements->nodes->cend(); ++enodes) {
+		for (int rd = 0; rd < dofs; ++rd) {
+			for (auto from = enodes->begin(); from != enodes->end(); ++from) {
+				auto ibegin = indices.begin() + begin[*from];
+				auto iend = indices.begin() + end[*from];
+				esint roffset = offset[*from] + rd * dofs * (iend - ibegin);
+				for (int cd = 0; cd < dofs; ++cd) {
+					for (auto to = enodes->begin(); to != enodes->end(); ++to) {
+						pattern->elements.A.push_back(roffset + dofs * (std::lower_bound(ibegin, iend, *to) - ibegin) + cd);
 					}
 				}
-				for (size_t i = 0; i < belement.size(); ++i) {
-					pattern->bregion[r].b.push_back(std::lower_bound(RHSPattern.begin(), RHSPattern.end(), belement[i]) - RHSPattern.begin());
-					for (size_t j = 0; j < belement.size(); ++j) {
-						pattern->bregion[r].A.push_back(std::lower_bound(APattern.begin(), APattern.end(), IJ{belement[i], belement[j]}) - APattern.begin());
+				pattern->elements.b.push_back(info::mesh->nodes->uniqInfo.position[*from] * dofs + rd);
+			}
+		}
+	}
+
+	for (size_t r = 1; r < info::mesh->boundaryRegions.size(); ++r) {
+		if (info::mesh->boundaryRegions[r]->dimension) {
+			for (auto e = info::mesh->boundaryRegions[r]->elements->cbegin(); e != info::mesh->boundaryRegions[r]->elements->cend(); ++e) {
+				for (int rd = 0; rd < dofs; ++rd) {
+					for (auto from = e->begin(); from != e->end(); ++from) {
+						auto ibegin = indices.begin() + begin[*from];
+						auto iend = indices.begin() + end[*from];
+						esint roffset = offset[*from] + rd * dofs * (iend - ibegin);
+						for (int cd = 0; cd < dofs; ++cd) {
+							for (auto to = e->begin(); to != e->end(); ++to) {
+								pattern->bregion[r].A.push_back(roffset + dofs * (std::lower_bound(ibegin, iend, *to) - ibegin) + cd);
+							}
+						}
+						pattern->bregion[r].b.push_back(info::mesh->nodes->uniqInfo.position[*from] * dofs + rd);
 					}
 				}
 			}
 		} else {
 			pattern->bregion[r].b.reserve(info::mesh->boundaryRegions[r]->nodes->datatarray().size());
 			for (auto n = info::mesh->boundaryRegions[r]->nodes->datatarray().cbegin(); n != info::mesh->boundaryRegions[r]->nodes->datatarray().end(); ++n) {
-				belement.clear();
-				for (int dof = 0; dof < dofs; ++dof) {
-					belement.push_back(info::mesh->nodes->uniqInfo.position[*n] * dofs + dof);
-				}
-				for (size_t i = 0; i < belement.size(); ++i) {
-					pattern->bregion[r].b.push_back(std::lower_bound(RHSPattern.begin(), RHSPattern.end(), belement[i]) - RHSPattern.begin());
+				for (int rd = 0; rd < dofs; ++rd) {
+					pattern->bregion[r].b.push_back(info::mesh->nodes->uniqInfo.position[*n] * dofs + rd);
 				}
 			}
 		}
@@ -185,15 +158,16 @@ void buildPattern(UniformNodesDistributedPattern *pattern, int dofs, DOFsDistrib
 	size_t nonzeros[2] = { pattern->elements.row.size(), pattern->bregion[0].b.size() };
 	Communication::allReduce(&nonzeros, NULL, 2, MPITools::getType<size_t>().mpitype, MPI_SUM);
 
+
 	eslog::info(" == DIRICHLET SIZE                                                           %14lu == \n", nonzeros[1]);
 	eslog::info(" == LINEAR SYSTEM SIZE                                                       %14d == \n", distribution.totalSize);
 	eslog::info(" == NON-ZERO VALUES                                                          %14lu == \n", nonzeros[0]);
-	eslog::info(" == NON-ZERO FILL-IN RATIO                                                         %7.4f\% == \n", 100.0 * nonzeros[0] / distribution.totalSize / distribution.totalSize);
+	eslog::info(" == NON-ZERO FILL-IN RATIO                                                         %7.4f%% == \n", 100.0 * nonzeros[0] / distribution.totalSize / distribution.totalSize);
 	eslog::info(" == COMPOSITION RUNTIME                                                          %8.3f s == \n", eslog::time() - start);
 	eslog::info(" ============================================================================================= \n");
 }
 
-static void dirichlet(UniformNodesDistributedPattern *pattern, std::map<std::string, ECFExpression> &settings, int dofs)
+static void dirichlet(PatternNodesUniformDirect *pattern, std::map<std::string, ECFExpression> &settings, int dofs)
 {
 	std::vector<esint> indices;
 	pattern->bregion.resize(info::mesh->boundaryRegions.size());
@@ -222,7 +196,7 @@ static void dirichlet(UniformNodesDistributedPattern *pattern, std::map<std::str
 	}
 }
 
-static void dirichlet(UniformNodesDistributedPattern *pattern, std::map<std::string, ECFExpressionOptionalVector> &settings, int dofs)
+static void dirichlet(PatternNodesUniformDirect *pattern, std::map<std::string, ECFExpressionOptionalVector> &settings, int dofs)
 {
 	std::vector<esint> indices;
 	pattern->bregion.resize(info::mesh->boundaryRegions.size());
@@ -256,19 +230,19 @@ static void dirichlet(UniformNodesDistributedPattern *pattern, std::map<std::str
 	}
 }
 
-void UniformNodesDistributedPattern::set(std::map<std::string, ECFExpression> &settings, int dofs, DOFsDistribution &distribution)
+void PatternNodesUniformDirect::set(std::map<std::string, ECFExpression> &settings, int dofs, DOFsDistribution &distribution)
 {
 	dirichlet(this, settings, dofs);
 	buildPattern(this, dofs, distribution);
 }
 
-void UniformNodesDistributedPattern::set(std::map<std::string, ECFExpressionOptionalVector> &settings, int dofs, DOFsDistribution &distribution)
+void PatternNodesUniformDirect::set(std::map<std::string, ECFExpressionOptionalVector> &settings, int dofs, DOFsDistribution &distribution)
 {
 	dirichlet(this, settings, dofs);
 	buildPattern(this, dofs, distribution);
 }
 
-void UniformNodesDistributedPattern::fillCSR(esint *rows, esint *cols)
+void PatternNodesUniformDirect::fillCSR(esint *rows, esint *cols)
 {
 	rows[0] = Indexing::CSR;
 	cols[0] = elements.column.front() + Indexing::CSR;

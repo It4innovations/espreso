@@ -1,6 +1,6 @@
 
 
-#include "analysis.h"
+#include <analysis/physics/physics.h>
 #include "structuralmechanics.steadystate.nonlinear.h"
 
 #include "analysis/linearsystem/feti/fetisystem.h"

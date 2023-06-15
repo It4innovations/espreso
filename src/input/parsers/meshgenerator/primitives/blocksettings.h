@@ -20,7 +20,7 @@ struct BlockSettings {
 	Triple<size_t> domains;
 	Triple<size_t> elements;
 
-	Triple<int> start, end;
+	Triple<long> start, end;
 
 	Evaluator *projection_x, *projection_y, *projection_z;
 };

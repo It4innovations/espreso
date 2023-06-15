@@ -2,8 +2,6 @@
 #ifndef SRC_ANALYSIS_COMPOSER_NODES_UNIFORM_FETI_H_
 #define SRC_ANALYSIS_COMPOSER_NODES_UNIFORM_FETI_H_
 
-#include "elementmapping.h"
-
 #include "basis/containers/serializededata.h"
 #include "esinfo/meshinfo.h"
 #include "config/holders/expression.h"
@@ -17,11 +15,12 @@
 #include "math/physics/vector_distributed.h"
 #include "math/physics/vector_feti.h"
 #include "math/physics/matrix_feti.h"
-#include "math/utils/decomposed/decomposition.h"
+#include "math/utils/mapping.h"
+#include "math/utils/feti/decomposition.h"
 
 namespace espreso {
 
-struct UniformNodesFETIPattern {
+struct PatternNodesUniformFETI {
 
 	struct RegionInfo {
 		esint size = 0, dirichlet = 0;
@@ -29,8 +28,8 @@ struct UniformNodesFETIPattern {
 		std::vector<esint> K, f, indices; // local permutations
 	};
 
-	UniformNodesFETIPattern();
-	~UniformNodesFETIPattern();
+	PatternNodesUniformFETI();
+	~PatternNodesUniformFETI();
 
 	void set(std::map<std::string, ECFExpression> &settings, int dofs, DOFsDecomposition &decomposition, Matrix_Shape shape);
 

@@ -3,14 +3,14 @@
 #define SRC_ANALYSIS_LINEARSYSTEM_FETI_FETISYSTEM_H_
 
 #include "analysis/linearsystem/linearsystem.h"
-#include "analysis/analysis/heat.steadystate.linear.h"
-#include "analysis/analysis/heat.steadystate.nonlinear.h"
-#include "analysis/analysis/acoustic.real.linear.h"
-#include "analysis/analysis/acoustic.complex.linear.h"
-#include "analysis/analysis/structuralmechanics.steadystate.linear.h"
-#include "analysis/analysis/structuralmechanics.steadystate.nonlinear.h"
+#include "analysis/physics/heat.steadystate.linear.h"
+#include "analysis/physics/heat.steadystate.nonlinear.h"
+#include "analysis/physics/acoustic.real.linear.h"
+#include "analysis/physics/acoustic.complex.linear.h"
+#include "analysis/physics/structuralmechanics.steadystate.linear.h"
+#include "analysis/physics/structuralmechanics.steadystate.nonlinear.h"
 
-#include "analysis/composer/nodes.uniform.feti.h"
+#include "pattern.nodes.uniform.h"
 #include "feti/feti.h"
 #include "basis/utilities/sysutils.h"
 #include "esinfo/ecfinfo.h"
@@ -55,7 +55,7 @@ struct FETISystemData: public LinearSystem<Assembler, Solver> {
 
 	template <typename Type>
 	struct Data {
-		UniformNodesFETIPattern pattern;
+		PatternNodesUniformFETI pattern;
 
 		Matrix_FETI<Matrix_CSR, Type> K;
 		Vector_FETI<Vector_Dense, Type> x, f;

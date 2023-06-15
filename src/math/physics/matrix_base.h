@@ -5,7 +5,7 @@
 #include "vector_base.h"
 #include "math/primitives/matrix_info.h"
 
-#include "analysis/composer/elementmapping.h"
+#include "math/utils/mapping.h"
 
 #include <complex>
 
@@ -53,7 +53,7 @@ public:
 
 	Matrix_Type type;
 	Matrix_Shape shape;
-	ElementMapping<T> mapping;
+	Mapping<T> mapping;
 	bool touched;
 };
 

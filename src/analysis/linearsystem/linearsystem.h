@@ -2,7 +2,6 @@
 #ifndef SRC_ANALYSIS_LINEARSOLVER_LINEARSOLVER_H_
 #define SRC_ANALYSIS_LINEARSOLVER_LINEARSOLVER_H_
 
-#include "analysis/composer/elementmapping.h"
 #include "config/ecf/physics/physicssolver/loadstep.h"
 #include "math/math.h"
 #include "math/physics/matrix_base.h"

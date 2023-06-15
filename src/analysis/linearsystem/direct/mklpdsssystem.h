@@ -2,15 +2,14 @@
 #ifndef SRC_ANALYSIS_LINEARSYSTEM_DIRECT_MKLPDSSSYSTEM_H_
 #define SRC_ANALYSIS_LINEARSYSTEM_DIRECT_MKLPDSSSYSTEM_H_
 
+#include <analysis/linearsystem/direct/pattern.nodes.uniform.direct.h>
 #include "analysis/linearsystem/linearsystem.h"
-#include "analysis/analysis/heat.steadystate.linear.h"
-#include "analysis/analysis/heat.steadystate.nonlinear.h"
-#include "analysis/analysis/acoustic.real.linear.h"
-#include "analysis/analysis/acoustic.complex.linear.h"
-#include "analysis/analysis/structuralmechanics.steadystate.linear.h"
-#include "analysis/analysis/structuralmechanics.steadystate.nonlinear.h"
-#include "analysis/composer/nodes.uniform.distributed.h"
-
+#include "analysis/physics/heat.steadystate.linear.h"
+#include "analysis/physics/heat.steadystate.nonlinear.h"
+#include "analysis/physics/acoustic.real.linear.h"
+#include "analysis/physics/acoustic.complex.linear.h"
+#include "analysis/physics/structuralmechanics.steadystate.linear.h"
+#include "analysis/physics/structuralmechanics.steadystate.nonlinear.h"
 #include "basis/utilities/sysutils.h"
 #include "config/ecf/linearsolver/mklpdss.h"
 #include "esinfo/ecfinfo.h"
@@ -77,7 +76,7 @@ struct MKLPDSSSystemData: public LinearSystem<Assembler, Solver> {
 
 	template <typename Type>
 	struct Data {
-		UniformNodesDistributedPattern pattern;
+		PatternNodesUniformDirect pattern;
 
 		Matrix_Distributed<Matrix_CSR, Type> A;
 		Vector_Distributed<Vector_Dense, Type> x, b;

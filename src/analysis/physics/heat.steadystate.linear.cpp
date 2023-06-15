@@ -1,10 +1,10 @@
 
-#include "analysis.h"
-#include "structuralmechanics.steadystate.linear.h"
+#include <analysis/physics/physics.h>
+#include "heat.steadystate.linear.h"
 
 #include "analysis/linearsystem/feti/fetisystem.h"
 #include "analysis/linearsystem/direct/mklpdsssystem.h"
-#include "config/ecf/physics/structuralmechanics.h"
+#include "config/ecf/physics/heattransfer.h"
 #include "esinfo/meshinfo.h"
 #include "esinfo/eslog.hpp"
 #include "esinfo/systeminfo.h"
@@ -15,13 +15,13 @@
 
 using namespace espreso;
 
-StructuralMechanicsSteadyStateLinear::StructuralMechanicsSteadyStateLinear(StructuralMechanicsConfiguration &settings, StructuralMechanicsLoadStepConfiguration &configuration)
+HeatSteadyStateLinear::HeatSteadyStateLinear(HeatTransferConfiguration &settings, HeatTransferLoadStepConfiguration &configuration)
 : settings(settings), configuration(configuration), assembler{nullptr, settings, configuration}, K{}, f{}, x{}, dirichlet{}, system{}
 {
 
 }
 
-StructuralMechanicsSteadyStateLinear::~StructuralMechanicsSteadyStateLinear()
+HeatSteadyStateLinear::~HeatSteadyStateLinear()
 {
 	if (system) { delete system; }
 	if (K) { delete K; }
@@ -30,34 +30,35 @@ StructuralMechanicsSteadyStateLinear::~StructuralMechanicsSteadyStateLinear()
 	if (dirichlet) { delete dirichlet; }
 }
 
-void StructuralMechanicsSteadyStateLinear::analyze()
+void HeatSteadyStateLinear::analyze()
 {
 	eslog::info("\n ============================================================================================= \n");
 	eslog::info(" == ANALYSIS                                                            LINEAR STEADY STATE == \n");
-	eslog::info(" == PHYSICS                                                            STRUCTURAL MECHANICS == \n");
+	eslog::info(" == PHYSICS                                                                   HEAT TRANSFER == \n");
 	eslog::info(" ============================================================================================= \n");
 
 	assembler.analyze();
 	info::mesh->output->updateMonitors(step::TYPE::TIME);
 }
 
-void StructuralMechanicsSteadyStateLinear::run(step::Step &step)
+void HeatSteadyStateLinear::run(step::Step &step)
 {
 	switch (configuration.solver) {
-	case LoadStepSolverConfiguration::SOLVER::FETI:    system = new FETISystem<StructuralMechanicsSteadyStateLinear>(this); break;
+	case LoadStepSolverConfiguration::SOLVER::FETI:    system = new FETISystem<HeatSteadyStateLinear>(this); break;
 	case LoadStepSolverConfiguration::SOLVER::HYPRE:   break;
-	case LoadStepSolverConfiguration::SOLVER::MKLPDSS: system = new MKLPDSSSystem<StructuralMechanicsSteadyStateLinear>(this); break;
+	case LoadStepSolverConfiguration::SOLVER::MKLPDSS: system = new MKLPDSSSystem<HeatSteadyStateLinear>(this); break;
 	case LoadStepSolverConfiguration::SOLVER::PARDISO: break;
 	case LoadStepSolverConfiguration::SOLVER::SUPERLU: break;
 	case LoadStepSolverConfiguration::SOLVER::WSMP:    break;
 	}
+
 	eslog::checkpointln("SIMULATION: LINEAR SYSTEM BUILT");
 
 	system->setMapping(K = system->assembler.A->copyPattern());
 	system->setMapping(f = system->assembler.b->copyPattern());
 	system->setMapping(x = system->assembler.x->copyPattern());
 	system->setDirichletMapping(dirichlet = system->assembler.dirichlet->copyPattern());
-	assembler.connect(K, nullptr, nullptr, f, nullptr, dirichlet);
+	assembler.connect(K, nullptr, f, nullptr, dirichlet);
 
 	time.shift = configuration.duration_time;
 	time.start = 0;
@@ -81,13 +82,14 @@ void StructuralMechanicsSteadyStateLinear::run(step::Step &step)
 	eslog::info(" = LOAD STEP %2d                                                              TIME %10.4f = \n", step::step.loadstep + 1, time.current);
 	eslog::info(" = ----------------------------------------------------------------------------------------- = \n");
 	double start = eslog::time();
-	assembler.evaluate(time, K, nullptr, nullptr, f, nullptr, dirichlet);
+	assembler.evaluate(time, K, nullptr, f, nullptr, dirichlet);
 	eslog::checkpointln("SIMULATION: PHYSICS ASSEMBLED");
 	storeSystem(step);
 
 	system->solver.A->copy(K);
 	system->solver.b->copy(f);
 	system->solver.dirichlet->copy(dirichlet);
+
 	eslog::info("       = ----------------------------------------------------------------------------- = \n");
 	eslog::info("       = SYSTEM ASSEMBLY                                                    %8.3f s = \n", eslog::time() - start);
 
@@ -95,8 +97,8 @@ void StructuralMechanicsSteadyStateLinear::run(step::Step &step)
 	eslog::checkpointln("SIMULATION: LINEAR SYSTEM UPDATED");
 	system->solve(step);
 	eslog::checkpointln("SIMULATION: LINEAR SYSTEM SOLVED");
-
 	double solution = eslog::time();
+
 	x->copy(system->solver.x);
 	storeSolution(step);
 	assembler.updateSolution(x);
@@ -108,7 +110,7 @@ void StructuralMechanicsSteadyStateLinear::run(step::Step &step)
 	eslog::checkpointln("SIMULATION: SOLUTION PROCESSED");
 }
 
-void StructuralMechanicsSteadyStateLinear::storeSystem(step::Step &step)
+void HeatSteadyStateLinear::storeSystem(step::Step &step)
 {
 	if (info::ecf->output.print_matrices) {
 		eslog::storedata(" STORE: scheme/{K, f}\n");
@@ -118,10 +120,11 @@ void StructuralMechanicsSteadyStateLinear::storeSystem(step::Step &step)
 	}
 }
 
-void StructuralMechanicsSteadyStateLinear::storeSolution(step::Step &step)
+void HeatSteadyStateLinear::storeSolution(step::Step &step)
 {
 	if (info::ecf->output.print_matrices) {
 		eslog::storedata(" STORE: scheme/{x}\n");
 		x->store(utils::filename(utils::debugDirectory(step) + "/scheme", "x").c_str());
 	}
 }
+

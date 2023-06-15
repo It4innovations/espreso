@@ -1,5 +1,5 @@
 
-#include "analysis.h"
+#include <analysis/physics/physics.h>
 #include "heat.steadystate.nonlinear.h"
 
 #include "analysis/linearsystem/feti/fetisystem.h"

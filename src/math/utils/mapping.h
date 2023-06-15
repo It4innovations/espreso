@@ -1,6 +1,6 @@
 
-#ifndef SRC_ANALYSIS_COMPOSER_ELEMENTMAPPING_H_
-#define SRC_ANALYSIS_COMPOSER_ELEMENTMAPPING_H_
+#ifndef SRC_ANALYSIS_COMPOSER_MAPPING_H_
+#define SRC_ANALYSIS_COMPOSER_MAPPING_H_
 
 #include <cstddef>
 #include <vector>
@@ -8,7 +8,7 @@
 namespace espreso {
 
 template <typename T>
-struct ElementMapping {
+struct Mapping {
 
 	struct Map {
 		int filter;
@@ -24,4 +24,4 @@ struct ElementMapping {
 
 }
 
-#endif /* SRC_ANALYSIS_COMPOSER_ELEMENTMAPPING_H_ */
+#endif /* SRC_ANALYSIS_COMPOSER_MAPPING_H_ */

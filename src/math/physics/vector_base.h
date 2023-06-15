@@ -2,7 +2,7 @@
 #ifndef SRC_MATH2_GENERALIZATION_VECTOR_BASE_H_
 #define SRC_MATH2_GENERALIZATION_VECTOR_BASE_H_
 
-#include "analysis/composer/elementmapping.h"
+#include "math/utils/mapping.h"
 
 #include <complex>
 #include <vector>
@@ -47,7 +47,7 @@ public:
 	virtual void addTo(const T &alpha, Vector_FETI<Vector_Dense , T> *a) const =0;
 	virtual void addTo(const T &alpha, Vector_FETI<Vector_Sparse, T> *a) const =0;
 
-	ElementMapping<T> mapping;
+	Mapping<T> mapping;
 	bool touched;
 };
 

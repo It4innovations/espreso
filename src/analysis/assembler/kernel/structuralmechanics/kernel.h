@@ -4,6 +4,7 @@
 
 #include "analysis/assembler/module/structuralmechanics.h"
 #include "analysis/assembler/module/assembler.hpp"
+#include "analysis/assembler/subkernel/thickness.h"
 #include "analysis/assembler/subkernel/structuralmechanics/acceleration.h"
 #include "analysis/assembler/subkernel/structuralmechanics/angularvelocity.h"
 #include "analysis/assembler/subkernel/structuralmechanics/normalpressure.h"
