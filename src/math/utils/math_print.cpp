@@ -124,9 +124,9 @@ void _store(const Matrix_CSR<T> &A, const char* file, esint offset = 0)
 	os << std::showpos;
 	for (esint r = 0; r < A.nrows; r++) {
 		for (esint c = A.rows[r]; c < A.rows[r + 1]; c++) {
-			os << std::setw(6) << offset + r + A.rows[0] << " ";
-			os << std::setw(6) << A.cols[c - A.rows[0]] << " ";
-			os << std::setw(25) << std::scientific << A.vals[c - A.rows[0]] << "\n";
+			os << std::setw(6) << offset + r + Indexing::CSR << " ";
+			os << std::setw(6) << A.cols[c - Indexing::CSR] << " ";
+			os << std::setw(25) << std::scientific << A.vals[c - Indexing::CSR] << "\n";
 		}
 	}
 }

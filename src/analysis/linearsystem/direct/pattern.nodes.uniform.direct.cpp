@@ -33,12 +33,42 @@ void buildPattern(PatternNodesUniformDirect *pattern, int dofs, DOFsDistribution
 	eslog::info(" == DOFS PER NODE                                                                         %d == \n", dofs);
 
 	pattern->dofs = dofs;
+	std::vector<std::vector<esint> > sSize(info::mesh->neighbors.size()), rSize(info::mesh->neighbors.size());
 	std::vector<esint> begin(info::mesh->nodes->size + 1, 1); // add diagonal
 	for (auto enodes = info::mesh->elements->nodes->cbegin(); enodes != info::mesh->elements->nodes->cend(); ++enodes) {
 		for (auto n = enodes->begin(); n != enodes->end(); ++n) {
 			begin[*n] += enodes->size() - 1; // do not count diagonal
 		}
 	}
+
+	auto ranks = info::mesh->nodes->ranks->cbegin();
+	for (esint n = 0; n < info::mesh->nodes->size; ++n, ++ranks) {
+		auto neigh = info::mesh->neighbors.begin();
+		for (auto r = ranks->begin(); r != ranks->end(); ++r) {
+			if (*r != info::mpi::rank) {
+				while (*neigh < *r) { ++neigh; }
+				sSize[neigh - info::mesh->neighbors.begin()].push_back(begin[n] - 1);
+			}
+		}
+	}
+
+	if (!Communication::exchangeUnknownSize(sSize, rSize, info::mesh->neighbors)) {
+		eslog::internalFailure("send size of node intervals.\n");
+	}
+	sSize.clear();
+
+	ranks = info::mesh->nodes->ranks->cbegin();
+	std::vector<esint> rIndex(info::mesh->neighbors.size());
+	for (esint n = 0; n < info::mesh->nodes->size; ++n, ++ranks) {
+		auto neigh = info::mesh->neighbors.begin();
+		for (auto r = ranks->begin(); r != ranks->end(); ++r) {
+			if (*r != info::mpi::rank) {
+				while (*neigh < *r) { ++neigh; }
+				begin[n] += rSize[neigh - info::mesh->neighbors.begin()][rIndex[neigh - info::mesh->neighbors.begin()]++];
+			}
+		}
+	}
+
 	utils::sizesToOffsets(begin);
 	std::vector<esint> end = begin;
 	std::vector<esint, initless_allocator<esint> > indices(begin.back());
@@ -52,6 +82,42 @@ void buildPattern(PatternNodesUniformDirect *pattern, int dofs, DOFsDistribution
 				if (*from != *to) {
 					indices[end[*from]++] = info::mesh->nodes->uniqInfo.position[*to];
 				}
+			}
+		}
+	}
+
+	std::vector<std::vector<esint> > sIndices(info::mesh->neighbors.size()), rIndices(info::mesh->neighbors.size());
+	ranks = info::mesh->nodes->ranks->cbegin();
+	for (esint n = 0; n < info::mesh->nodes->size; ++n, ++ranks) {
+		auto neigh = info::mesh->neighbors.begin();
+		for (auto r = ranks->begin(); r != ranks->end(); ++r) {
+			if (*r != info::mpi::rank) {
+				while (*neigh < *r) { ++neigh; }
+				for (auto i = begin[n] + 1; i < end[n]; ++i) {
+					sIndices[neigh - info::mesh->neighbors.begin()].push_back(indices[i]);
+				}
+			}
+		}
+	}
+
+	if (!Communication::exchangeUnknownSize(sIndices, rIndices, info::mesh->neighbors)) {
+		eslog::internalFailure("send size of node intervals.\n");
+	}
+	sIndices.clear();
+
+	ranks = info::mesh->nodes->ranks->cbegin();
+	std::fill(rIndex.begin(), rIndex.end(), 0);
+	std::vector<esint> rDataIndex(info::mesh->neighbors.size());
+	for (esint n = 0; n < info::mesh->nodes->size; ++n, ++ranks) {
+		auto neigh = info::mesh->neighbors.begin();
+		for (auto r = ranks->begin(); r != ranks->end(); ++r) {
+			if (*r != info::mpi::rank) {
+				while (*neigh < *r) { ++neigh; }
+				size_t nn = neigh - info::mesh->neighbors.begin();
+				for (auto i = 0; i < rSize[nn][rIndex[nn]]; ++i) {
+					indices[end[n]++] = rIndices[nn][rDataIndex[nn]++];
+				}
+				++rIndex[nn];
 			}
 		}
 	}
@@ -86,7 +152,7 @@ void buildPattern(PatternNodesUniformDirect *pattern, int dofs, DOFsDistribution
 		for (int r = 0; r < dofs; ++r) {
 			for (auto i = begin[n]; i < end[n]; ++i) {
 				for (int c = 0; c < dofs; ++c) {
-					pattern->elements.row.push_back(n * dofs + r);
+					pattern->elements.row.push_back(info::mesh->nodes->uniqInfo.position[n] * dofs + r);
 					pattern->elements.column.push_back(indices[i] * dofs + c);
 				}
 			}
@@ -101,10 +167,10 @@ void buildPattern(PatternNodesUniformDirect *pattern, int dofs, DOFsDistribution
 				esint roffset = offset[*from] + rd * dofs * (iend - ibegin);
 				for (int cd = 0; cd < dofs; ++cd) {
 					for (auto to = enodes->begin(); to != enodes->end(); ++to) {
-						pattern->elements.A.push_back(roffset + dofs * (std::lower_bound(ibegin, iend, *to) - ibegin) + cd);
+						pattern->elements.A.push_back(roffset + dofs * (std::lower_bound(ibegin, iend, info::mesh->nodes->uniqInfo.position[*to]) - ibegin) + cd);
 					}
 				}
-				pattern->elements.b.push_back(info::mesh->nodes->uniqInfo.position[*from] * dofs + rd);
+				pattern->elements.b.push_back(*from * dofs + rd);
 			}
 		}
 	}
@@ -119,10 +185,10 @@ void buildPattern(PatternNodesUniformDirect *pattern, int dofs, DOFsDistribution
 						esint roffset = offset[*from] + rd * dofs * (iend - ibegin);
 						for (int cd = 0; cd < dofs; ++cd) {
 							for (auto to = e->begin(); to != e->end(); ++to) {
-								pattern->bregion[r].A.push_back(roffset + dofs * (std::lower_bound(ibegin, iend, *to) - ibegin) + cd);
+								pattern->bregion[r].A.push_back(roffset + dofs * (std::lower_bound(ibegin, iend, info::mesh->nodes->uniqInfo.position[*to]) - ibegin) + cd);
 							}
 						}
-						pattern->bregion[r].b.push_back(info::mesh->nodes->uniqInfo.position[*from] * dofs + rd);
+						pattern->bregion[r].b.push_back(*from * dofs + rd);
 					}
 				}
 			}
@@ -130,7 +196,7 @@ void buildPattern(PatternNodesUniformDirect *pattern, int dofs, DOFsDistribution
 			pattern->bregion[r].b.reserve(info::mesh->boundaryRegions[r]->nodes->datatarray().size());
 			for (auto n = info::mesh->boundaryRegions[r]->nodes->datatarray().cbegin(); n != info::mesh->boundaryRegions[r]->nodes->datatarray().end(); ++n) {
 				for (int rd = 0; rd < dofs; ++rd) {
-					pattern->bregion[r].b.push_back(info::mesh->nodes->uniqInfo.position[*n] * dofs + rd);
+					pattern->bregion[r].b.push_back(*n * dofs + rd);
 				}
 			}
 		}
