@@ -1,6 +1,6 @@
 
 #include "analysis/assembler/module/structuralmechanics.h"
-#include "analysis/assembler/module/assembler.hpp"
+#include "analysis/assembler/module/assembler.h"
 #include "analysis/assembler/subkernel/structuralmechanics/acceleration.h"
 #include "analysis/assembler/subkernel/structuralmechanics/angularvelocity.h"
 #include "analysis/assembler/subkernel/structuralmechanics/normalpressure.h"
@@ -20,7 +20,7 @@
 namespace espreso {
 
 template <Element::CODE code, size_t nodes, size_t gps, size_t ndim, size_t edim>
-void preprocess(StructuralMechanics::BoundarySubKernels &subkernels)
+void preprocess(StructuralMechanicsBoundarySubKernelsList &subkernels)
 {
 	typedef StructuralMechanicsBoundaryDescriptor<nodes, gps, ndim, edim> Physics;
 	typename Physics::Element element;
@@ -51,7 +51,7 @@ void preprocess(StructuralMechanics::BoundarySubKernels &subkernels)
 }
 
 template <Element::CODE code, size_t nodes, size_t gps, size_t ndim, size_t edim, enum Behaviour behaviour>
-void compute(StructuralMechanics::BoundarySubKernels &subkernels, Assembler::Action action)
+void compute(StructuralMechanicsBoundarySubKernelsList &subkernels, Assembler::Action action)
 {
 	typedef StructuralMechanicsBoundaryDescriptor<nodes, gps, ndim, edim> Physics;
 	typename Physics::Element element;
@@ -90,7 +90,7 @@ void compute(StructuralMechanics::BoundarySubKernels &subkernels, Assembler::Act
 }
 
 template <Element::CODE code, size_t nodes, size_t gps, size_t ndim, size_t edim>
-void fill(const StructuralMechanics::BoundarySubKernels &subkernels)
+void fill(const StructuralMechanicsBoundarySubKernelsList &subkernels)
 {
 	typedef StructuralMechanicsBoundaryDescriptor<nodes, gps, ndim, edim> Physics;
 	typename Physics::Element element;
@@ -104,10 +104,10 @@ void fill(const StructuralMechanics::BoundarySubKernels &subkernels)
 	}
 }
 
-template <size_t ndim> void initDirichlet(StructuralMechanics::BoundarySubKernels &subkernels);
+template <size_t ndim> void initDirichlet(StructuralMechanicsBoundarySubKernelsList &subkernels);
 
 template <>
-void initDirichlet<2>(StructuralMechanics::BoundarySubKernels &subkernels)
+void initDirichlet<2>(StructuralMechanicsBoundarySubKernelsList &subkernels)
 {
 	typedef StructuralMechanicsBoundaryDescriptor<1, 1, 2, 0> Physics;
 	if (subkernels.displacement.expression) {
@@ -121,7 +121,7 @@ void initDirichlet<2>(StructuralMechanics::BoundarySubKernels &subkernels)
 }
 
 template <>
-void initDirichlet<3>(StructuralMechanics::BoundarySubKernels &subkernels)
+void initDirichlet<3>(StructuralMechanicsBoundarySubKernelsList &subkernels)
 {
 	typedef StructuralMechanicsBoundaryDescriptor<1, 1, 3, 0> Physics;
 	if (subkernels.displacement.expression) {
@@ -138,7 +138,7 @@ void initDirichlet<3>(StructuralMechanics::BoundarySubKernels &subkernels)
 }
 
 template <size_t ndim>
-void dirichlet(const StructuralMechanics::BoundarySubKernels &subkernels)
+void dirichlet(const StructuralMechanicsBoundarySubKernelsList &subkernels)
 {
 	typedef StructuralMechanicsBoundaryDescriptor<1, 1, ndim, 0> Physics;
 	typename Physics::Element element;
@@ -165,7 +165,7 @@ void dirichlet(const StructuralMechanics::BoundarySubKernels &subkernels)
 }
 
 template <Element::CODE code, size_t nodes, size_t gps, size_t ndim, size_t edim, enum Behaviour behaviour>
-void runAction(StructuralMechanics::BoundarySubKernels &subkernels, Assembler::Action action)
+void runAction(StructuralMechanicsBoundarySubKernelsList &subkernels, Assembler::Action action)
 {
 	switch (action) {
 	case Assembler::Action::PREPROCESS: preprocess<code, nodes, gps, ndim, edim>(subkernels); break;
@@ -175,9 +175,9 @@ void runAction(StructuralMechanics::BoundarySubKernels &subkernels, Assembler::A
 }
 
 
-template <size_t ndim, size_t edim> void addBC(StructuralMechanics::BoundarySubKernels &subkernels, Assembler::Action action, Behaviour behaviour);
+template <size_t ndim, size_t edim> void addBC(StructuralMechanicsBoundarySubKernelsList &subkernels, Assembler::Action action, Behaviour behaviour);
 
-template <> void addBC<2, 1>(StructuralMechanics::BoundarySubKernels &subkernels, Assembler::Action action, Behaviour behaviour)
+template <> void addBC<2, 1>(StructuralMechanicsBoundarySubKernelsList &subkernels, Assembler::Action action, Behaviour behaviour)
 {
 	if (behaviour == Behaviour::PLANE) {
 		switch (subkernels.code) {
@@ -193,14 +193,14 @@ template <> void addBC<2, 1>(StructuralMechanics::BoundarySubKernels &subkernels
 	}
 }
 
-template <> void addBC<2, 0>(StructuralMechanics::BoundarySubKernels &subkernels, Assembler::Action action, Behaviour behaviour)
+template <> void addBC<2, 0>(StructuralMechanicsBoundarySubKernelsList &subkernels, Assembler::Action action, Behaviour behaviour)
 {
 	switch (action) {
 	case Assembler::Action::PREPROCESS: initDirichlet<2>(subkernels); break;
 	case Assembler::Action::ASSEMBLE: case Assembler::Action::REASSEMBLE: dirichlet<2>(subkernels); break;
 	}
 }
-template <> void addBC<3, 2>(StructuralMechanics::BoundarySubKernels &subkernels, Assembler::Action action, Behaviour behaviour)
+template <> void addBC<3, 2>(StructuralMechanicsBoundarySubKernelsList &subkernels, Assembler::Action action, Behaviour behaviour)
 {
 	switch (subkernels.code) {
 	case static_cast<size_t>(Element::CODE::TRIANGLE3): runAction<Element::CODE::TRIANGLE3, 3, StructuralMechanicsGPC::TRIANGLE3, 3, 2, Behaviour::VOLUME>(subkernels, action); break;
@@ -210,7 +210,7 @@ template <> void addBC<3, 2>(StructuralMechanics::BoundarySubKernels &subkernels
 	}
 }
 
-template <> void addBC<3, 1>(StructuralMechanics::BoundarySubKernels &subkernels, Assembler::Action action, Behaviour behaviour)
+template <> void addBC<3, 1>(StructuralMechanicsBoundarySubKernelsList &subkernels, Assembler::Action action, Behaviour behaviour)
 {
 	switch (subkernels.code) {
 	case static_cast<size_t>(Element::CODE::LINE2): runAction<Element::CODE::LINE2, 2, StructuralMechanicsGPC::LINE2, 3, 1, Behaviour::VOLUME>(subkernels, action); break;
@@ -218,7 +218,7 @@ template <> void addBC<3, 1>(StructuralMechanics::BoundarySubKernels &subkernels
 	}
 }
 
-template <> void addBC<3, 0>(StructuralMechanics::BoundarySubKernels &subkernels, Assembler::Action action, Behaviour behaviour)
+template <> void addBC<3, 0>(StructuralMechanicsBoundarySubKernelsList &subkernels, Assembler::Action action, Behaviour behaviour)
 {
 	switch (action) {
 	case Assembler::Action::PREPROCESS: initDirichlet<3>(subkernels); break;

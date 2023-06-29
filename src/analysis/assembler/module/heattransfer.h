@@ -12,22 +12,8 @@
 #include "math/primitives/matrix_info.h"
 #include "math/physics/matrix_base.h"
 
-#include "analysis/assembler/subkernel/basis.h"
-#include "analysis/assembler/subkernel/boundarycondition.h"
-#include "analysis/assembler/subkernel/thickness.h"
-#include "analysis/assembler/subkernel/material.h"
-#include "analysis/assembler/subkernel/coordinates.h"
-#include "analysis/assembler/subkernel/temperature.h"
-#include "analysis/assembler/subkernel/integration.h"
-#include "analysis/assembler/subkernel/expression.h"
-#include "analysis/assembler/subkernel/filler.h"
-#include "analysis/assembler/subkernel/heattransfer/conductivity.h"
-#include "analysis/assembler/subkernel/heattransfer/coordinatesystem.h"
-#include "analysis/assembler/subkernel/heattransfer/externalheat.h"
-#include "analysis/assembler/subkernel/heattransfer/advection.h"
-#include "analysis/assembler/subkernel/heattransfer/matrix.h"
-#include "analysis/assembler/subkernel/heattransfer/flux.h"
-#include "analysis/assembler/subkernel/heattransfer/gradient.h"
+#include "analysis/assembler/kernel/heattransfer/subkernellist.h"
+
 
 #include <cstddef>
 #include <map>
@@ -43,54 +29,6 @@ struct SteadyState;
 class HeatTransfer: public Assembler
 {
 public:
-	struct SubKernels {
-		int code;
-		size_t elements, chunks;
-
-		size_t esize;
-		double volume;
-
-		Basis basis;
-		Thickness thickness;
-		Material material;
-		Coordinates coordinates;
-		Temperature temperature;
-		Integration integration;
-		Conductivity conductivity;
-		HeatTransferCoordinateSystem coosystem;
-		Advection advection;
-		BoundaryCondition heatSource;
-		HeatTransferMatrix K, M;
-
-		TemperatureGradient gradient;
-		TemperatureFlux flux;
-
-		DataFiller Kfiller, Mfiller, RHSfiller, nRHSfiller;
-
-		std::vector<ExternalEvaluator*> expressions;
-	};
-
-	struct BoundarySubKernels {
-		int code;
-		size_t elements, chunks;
-
-		size_t esize;
-		double surface;
-
-		Basis basis;
-		Thickness thickness;
-		Coordinates coordinates;
-		Integration integration;
-
-		ExternalExpression temperature;
-		BoundaryCondition heatFlux, heatFlow, htc, externalTemperature;
-		ExternalHeat externalHeat;
-
-		DataFiller RHSfiller, dirichlet;
-
-		std::vector<ExternalEvaluator*> expressions;
-	};
-
 	HeatTransfer(HeatTransfer *previous, HeatTransferConfiguration &settings, HeatTransferLoadStepConfiguration &configuration);
 
 	void analyze();
@@ -128,8 +66,8 @@ protected:
 	void runPreprocess(Action action, size_t interval);
 	void runBoundary(Action action, size_t region, size_t interval);
 
-	std::vector<SubKernels> subkernels;
-	std::vector<std::vector<BoundarySubKernels> > boundary;
+	std::vector<HeatTransferSubKernelsList> subkernels;
+	std::vector<std::vector<HeatTransferBoundarySubKernelsList> > boundary;
 };
 
 }

@@ -5,15 +5,6 @@
 #include "analysis/assembler/subkernel/structuralmechanics/angularvelocity.h"
 #include "analysis/assembler/subkernel/structuralmechanics/normalpressure.h"
 
-#include "esinfo/ecfinfo.h"
-#include "esinfo/eslog.hpp"
-#include "esinfo/envinfo.h"
-#include "esinfo/meshinfo.h"
-#include "mesh/store/nodestore.h"
-#include "mesh/store/boundaryregionstore.h"
-
-#include "math/physics/matrix_distributed.h"
-
 #include <numeric>
 #include <algorithm>
 
@@ -22,7 +13,7 @@ namespace espreso {
 template <size_t gps, size_t ndim, enum ElasticityModel model, class Physics> struct SetElasticity;
 
 template <size_t gps, size_t ndim, class Physics> struct SetElasticity<gps, ndim, ElasticityModel::ISOTROPIC, Physics> {
-	static void analyze(StructuralMechanics::SubKernels &subkernels)
+	static void analyze(StructuralMechanicsSubKernelsList &subkernels)
 	{
 		subkernels.expressions.push_back(new ExternalGPsExpression<gps, Physics>(
 				subkernels.elasticity.configuration->young_modulus.get(0, 0).evaluator,
@@ -34,7 +25,7 @@ template <size_t gps, size_t ndim, class Physics> struct SetElasticity<gps, ndim
 };
 
 template <size_t gps, class Physics> struct SetElasticity<gps, 2, ElasticityModel::ORTHOTROPIC, Physics> {
-	static void analyze(StructuralMechanics::SubKernels &subkernels)
+	static void analyze(StructuralMechanicsSubKernelsList &subkernels)
 	{
 		subkernels.expressions.push_back(new ExternalGPsExpression<gps, Physics>(
 				subkernels.elasticity.configuration->young_modulus.get(0, 0).evaluator,
@@ -60,7 +51,7 @@ template <size_t gps, class Physics> struct SetElasticity<gps, 2, ElasticityMode
 };
 
 template <size_t gps, class Physics> struct SetElasticity<gps, 3, ElasticityModel::ORTHOTROPIC, Physics> {
-	static void analyze(StructuralMechanics::SubKernels &subkernels)
+	static void analyze(StructuralMechanicsSubKernelsList &subkernels)
 	{
 		subkernels.expressions.push_back(new ExternalGPsExpression<gps, Physics>(
 				subkernels.elasticity.configuration->young_modulus.get(0, 0).evaluator,
@@ -95,21 +86,21 @@ template <size_t gps, class Physics> struct SetElasticity<gps, 3, ElasticityMode
 };
 
 template <size_t gps, class Physics> struct SetElasticity<gps, 2, ElasticityModel::ANISOTROPIC, Physics> {
-	static void analyze(StructuralMechanics::SubKernels &subkernels)
+	static void analyze(StructuralMechanicsSubKernelsList &subkernels)
 	{
 		// TODO
 	}
 };
 
 template <size_t gps, class Physics> struct SetElasticity<gps, 3, ElasticityModel::ANISOTROPIC, Physics> {
-	static void analyze(StructuralMechanics::SubKernels &subkernels)
+	static void analyze(StructuralMechanicsSubKernelsList &subkernels)
 	{
 		// TODO
 	}
 };
 
 template <size_t gps, size_t ndim, class Physics> struct SetPlasticity {
-	static void analyze(StructuralMechanics::SubKernels &subkernels)
+	static void analyze(StructuralMechanicsSubKernelsList &subkernels)
 	{
 		// TODO
 	}
@@ -118,7 +109,7 @@ template <size_t gps, size_t ndim, class Physics> struct SetPlasticity {
 template <size_t gps, size_t ndim, class Physics> struct SetTranslation;
 
 template <size_t gps, class Physics> struct SetTranslation<gps, 2, Physics> {
-	static void analyze(StructuralMechanics::SubKernels &subkernels)
+	static void analyze(StructuralMechanicsSubKernelsList &subkernels)
 	{
 		if (subkernels.coosystem.configuration) {
 			switch (subkernels.coosystem.type) {
@@ -141,7 +132,7 @@ template <size_t gps, class Physics> struct SetTranslation<gps, 2, Physics> {
 };
 
 template <size_t gps, class Physics> struct SetTranslation<gps, 3, Physics> {
-	static void analyze(StructuralMechanics::SubKernels &subkernels)
+	static void analyze(StructuralMechanicsSubKernelsList &subkernels)
 	{
 		if (subkernels.coosystem.configuration) {
 			switch (subkernels.coosystem.type) {
@@ -174,14 +165,14 @@ template <size_t gps, class Physics> struct SetTranslation<gps, 3, Physics> {
 };
 
 template <size_t gps, size_t ndim, class Physics> struct SetThickness {
-	static void analyze(StructuralMechanics::SubKernels &subkernels)
+	static void analyze(StructuralMechanicsSubKernelsList &subkernels)
 	{
 
 	}
 };
 
 template <size_t gps, class Physics> struct SetThickness<gps, 2, Physics> {
-	static void analyze(StructuralMechanics::SubKernels &subkernels)
+	static void analyze(StructuralMechanicsSubKernelsList &subkernels)
 	{
 		if (subkernels.thickness.isactive) {
 			subkernels.expressions.push_back(new ExternalGPsExpression<gps, Physics>(
@@ -192,7 +183,7 @@ template <size_t gps, class Physics> struct SetThickness<gps, 2, Physics> {
 };
 
 template <size_t gps, class Physics> struct SetMaterial {
-	static void analyze(StructuralMechanics::SubKernels &subkernels)
+	static void analyze(StructuralMechanicsSubKernelsList &subkernels)
 	{
 		subkernels.expressions.push_back(new ExternalGPsExpression<gps, Physics>(
 				subkernels.material.configuration->density.evaluator,
@@ -206,7 +197,7 @@ template <size_t gps, class Physics> struct SetMaterial {
 template <size_t gps, size_t ndim, class Physics> struct SetAcceleration;
 
 template <size_t gps, class Physics> struct SetAcceleration<gps, 2, Physics> {
-	static void analyze(StructuralMechanics::SubKernels &subkernels)
+	static void analyze(StructuralMechanicsSubKernelsList &subkernels)
 	{
 		if (subkernels.acceleration.isactive) {
 			subkernels.expressions.push_back(new ExternalGPsExpression<gps, Physics>(
@@ -220,7 +211,7 @@ template <size_t gps, class Physics> struct SetAcceleration<gps, 2, Physics> {
 };
 
 template <size_t gps, class Physics> struct SetAcceleration<gps, 3, Physics> {
-	static void analyze(StructuralMechanics::SubKernels &subkernels)
+	static void analyze(StructuralMechanicsSubKernelsList &subkernels)
 	{
 		if (subkernels.acceleration.isactive) {
 			subkernels.expressions.push_back(new ExternalGPsExpression<gps, Physics>(
@@ -239,7 +230,7 @@ template <size_t gps, class Physics> struct SetAcceleration<gps, 3, Physics> {
 template <size_t gps, size_t ndim, enum Behaviour behaviour, class Physics> struct SetAngularVelocity;
 
 template <size_t gps, class Physics> struct SetAngularVelocity<gps, 2, Behaviour::PLANE, Physics> {
-	static void analyze(StructuralMechanics::SubKernels &subkernels)
+	static void analyze(StructuralMechanicsSubKernelsList &subkernels)
 	{
 		if (subkernels.angularVelocity.isactive) {
 			subkernels.expressions.push_back(new ExternalGPsExpression<gps, Physics>(
@@ -250,7 +241,7 @@ template <size_t gps, class Physics> struct SetAngularVelocity<gps, 2, Behaviour
 };
 
 template <size_t gps, class Physics> struct SetAngularVelocity<gps, 2, Behaviour::AXISYMMETRIC, Physics> {
-	static void analyze(StructuralMechanics::SubKernels &subkernels)
+	static void analyze(StructuralMechanicsSubKernelsList &subkernels)
 	{
 		if (subkernels.angularVelocity.isactive) {
 			subkernels.expressions.push_back(new ExternalGPsExpression<gps, Physics>(
@@ -261,7 +252,7 @@ template <size_t gps, class Physics> struct SetAngularVelocity<gps, 2, Behaviour
 };
 
 template <size_t gps, class Physics> struct SetAngularVelocity<gps, 3, Behaviour::VOLUME, Physics> {
-	static void analyze(StructuralMechanics::SubKernels &subkernels)
+	static void analyze(StructuralMechanicsSubKernelsList &subkernels)
 	{
 		if (subkernels.angularVelocity.isactive) {
 			subkernels.expressions.push_back(new ExternalGPsExpression<gps, Physics>(
@@ -278,7 +269,7 @@ template <size_t gps, class Physics> struct SetAngularVelocity<gps, 3, Behaviour
 };
 
 template <Element::CODE code, size_t nodes, size_t gps, size_t ndim, size_t edim, enum Behaviour behaviour, enum ElasticityModel ecfmodel, enum ElasticityModel model>
-void preprocess(StructuralMechanics::SubKernels &subkernels)
+void preprocess(StructuralMechanicsSubKernelsList &subkernels)
 {
 	typedef StructuralMechanicsElementDescriptor<nodes, gps, ndim, edim, behaviour, ecfmodel, model> Physics;
 	SetThickness<gps, ndim, Physics>::analyze(subkernels);
@@ -326,7 +317,7 @@ void preprocess(StructuralMechanics::SubKernels &subkernels)
 }
 
 template <Element::CODE code, size_t nodes, size_t gps, size_t ndim, size_t edim, enum Behaviour behaviour, enum ElasticityModel ecfmodel, enum ElasticityModel model>
-void fill(StructuralMechanics::SubKernels &subkernels)
+void fill(StructuralMechanicsSubKernelsList &subkernels)
 {
 	typedef StructuralMechanicsElementDescriptor<nodes, gps, ndim, edim, behaviour, ecfmodel, model> Physics;
 	typename Physics::Element element;
@@ -348,7 +339,7 @@ void fill(StructuralMechanics::SubKernels &subkernels)
 }
 
 template <Element::CODE code, size_t nodes, size_t gps, size_t ndim, size_t edim, Behaviour behaviour, enum ElasticityModel ecfmodel, enum ElasticityModel model>
-void runAction(StructuralMechanics::SubKernels &subkernels, Assembler::Action action)
+void runAction(StructuralMechanicsSubKernelsList &subkernels, Assembler::Action action)
 {
 	switch (action) {
 	case Assembler::Action::PREPROCESS: preprocess<code, nodes, gps, ndim, edim, behaviour, ecfmodel, model>(subkernels); break;
@@ -357,7 +348,7 @@ void runAction(StructuralMechanics::SubKernels &subkernels, Assembler::Action ac
 }
 
 template <Element::CODE code, size_t nodes, size_t gps, size_t ndim, size_t edim>
-void runAction(StructuralMechanics::BoundarySubKernels &subkernels, Assembler::Action action)
+void runAction(StructuralMechanicsBoundarySubKernelsList &subkernels, Assembler::Action action)
 {
 	switch (action) {
 	case Assembler::Action::PREPROCESS: preprocess<code, nodes, gps, ndim, edim>(subkernels); break;
@@ -366,7 +357,7 @@ void runAction(StructuralMechanics::BoundarySubKernels &subkernels, Assembler::A
 }
 
 template <Element::CODE code, size_t nodes, size_t gps, size_t ndim, size_t edim, enum Behaviour behaviour>
-void runElasticity(StructuralMechanics::SubKernels &subkernels, Assembler::Action action)
+void runElasticity(StructuralMechanicsSubKernelsList &subkernels, Assembler::Action action)
 {
 	switch (subkernels.elasticity.configuration->model) {
 	case LinearElasticPropertiesConfiguration::MODEL::ISOTROPIC:
@@ -390,7 +381,7 @@ void runElasticity(StructuralMechanics::SubKernels &subkernels, Assembler::Actio
 }
 
 template <enum Behaviour behaviour>
-static void runElement2D(StructuralMechanics::SubKernels &subkernels, Assembler::Action action)
+static void runElement2D(StructuralMechanicsSubKernelsList &subkernels, Assembler::Action action)
 {
 	switch (subkernels.code) {
 	case static_cast<size_t>(Element::CODE::TRIANGLE3): runElasticity<Element::CODE::TRIANGLE3, 3, StructuralMechanicsGPC::TRIANGLE3, 2, 2, behaviour>(subkernels, action); break;
@@ -400,7 +391,7 @@ static void runElement2D(StructuralMechanics::SubKernels &subkernels, Assembler:
 	}
 }
 
-static void runElement3D(StructuralMechanics::SubKernels &subkernels, Assembler::Action action)
+static void runElement3D(StructuralMechanicsSubKernelsList &subkernels, Assembler::Action action)
 {
 	switch (subkernels.code) {
 	case static_cast<size_t>(Element::CODE::TETRA4   ): runElasticity<Element::CODE::TETRA4   ,  4, StructuralMechanicsGPC::TETRA4    , 3, 3, Behaviour::VOLUME>(subkernels, action); break;

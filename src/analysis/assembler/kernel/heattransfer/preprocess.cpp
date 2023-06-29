@@ -1,25 +1,12 @@
 
 #include "analysis/assembler/module/heattransfer.h"
-#include "analysis/assembler/module/assembler.hpp"
-
-#include "esinfo/ecfinfo.h"
-#include "esinfo/eslog.hpp"
-#include "esinfo/envinfo.h"
-#include "esinfo/meshinfo.h"
-#include "mesh/store/nodestore.h"
-#include "mesh/store/boundaryregionstore.h"
-
-#include "math/physics/matrix_distributed.h"
-
-#include <numeric>
-#include <algorithm>
 
 namespace espreso {
 
 template <size_t gps, size_t ndim, enum ThermalConductivityConfiguration::MODEL model, bool direct, class Physics> struct SetConductivity;
 
 template <size_t gps, size_t ndim, bool direct, class Physics> struct SetConductivity<gps, ndim, ThermalConductivityConfiguration::MODEL::ISOTROPIC, direct, Physics> {
-	static void analyze(HeatTransfer::SubKernels &subkernels)
+	static void analyze(HeatTransferSubKernelsList &subkernels)
 	{
 		Evaluator *kxx = subkernels.conductivity.conductivity->values.get(0, 0).evaluator;
 		if (direct) {
@@ -33,7 +20,7 @@ template <size_t gps, size_t ndim, bool direct, class Physics> struct SetConduct
 };
 
 template <size_t gps, bool direct, class Physics> struct SetConductivity<gps, 2, ThermalConductivityConfiguration::MODEL::DIAGONAL, direct, Physics> {
-	static void analyze(HeatTransfer::SubKernels &subkernels)
+	static void analyze(HeatTransferSubKernelsList &subkernels)
 	{
 		Evaluator *kxx = subkernels.conductivity.conductivity->values.get(0, 0).evaluator;
 		Evaluator *kyy = subkernels.conductivity.conductivity->values.get(1, 1).evaluator;
@@ -52,7 +39,7 @@ template <size_t gps, bool direct, class Physics> struct SetConductivity<gps, 2,
 };
 
 template <size_t gps, bool direct, class Physics> struct SetConductivity<gps, 3, ThermalConductivityConfiguration::MODEL::DIAGONAL, direct, Physics> {
-	static void analyze(HeatTransfer::SubKernels &subkernels)
+	static void analyze(HeatTransferSubKernelsList &subkernels)
 	{
 		Evaluator *kxx = subkernels.conductivity.conductivity->values.get(0, 0).evaluator;
 		Evaluator *kyy = subkernels.conductivity.conductivity->values.get(1, 1).evaluator;
@@ -76,7 +63,7 @@ template <size_t gps, bool direct, class Physics> struct SetConductivity<gps, 3,
 };
 
 template <size_t gps, bool direct, class Physics> struct SetConductivity<gps, 2, ThermalConductivityConfiguration::MODEL::SYMMETRIC, direct, Physics> {
-	static void analyze(HeatTransfer::SubKernels &subkernels)
+	static void analyze(HeatTransferSubKernelsList &subkernels)
 	{
 		Evaluator *kxx = subkernels.conductivity.conductivity->values.get(0, 0).evaluator;
 		Evaluator *kxy = subkernels.conductivity.conductivity->values.get(0, 1).evaluator;
@@ -100,7 +87,7 @@ template <size_t gps, bool direct, class Physics> struct SetConductivity<gps, 2,
 };
 
 template <size_t gps, bool direct, class Physics> struct SetConductivity<gps, 3, ThermalConductivityConfiguration::MODEL::SYMMETRIC, direct, Physics> {
-	static void analyze(HeatTransfer::SubKernels &subkernels)
+	static void analyze(HeatTransferSubKernelsList &subkernels)
 	{
 		Evaluator *kxx = subkernels.conductivity.conductivity->values.get(0, 0).evaluator;
 		Evaluator *kxy = subkernels.conductivity.conductivity->values.get(0, 1).evaluator;
@@ -139,7 +126,7 @@ template <size_t gps, bool direct, class Physics> struct SetConductivity<gps, 3,
 };
 
 template <size_t gps, bool direct, class Physics> struct SetConductivity<gps, 2, ThermalConductivityConfiguration::MODEL::ANISOTROPIC, direct, Physics> {
-	static void analyze(HeatTransfer::SubKernels &subkernels)
+	static void analyze(HeatTransferSubKernelsList &subkernels)
 	{
 		Evaluator *kxx = subkernels.conductivity.conductivity->values.get(0, 0).evaluator;
 		Evaluator *kxy = subkernels.conductivity.conductivity->values.get(0, 1).evaluator;
@@ -168,7 +155,7 @@ template <size_t gps, bool direct, class Physics> struct SetConductivity<gps, 2,
 };
 
 template <size_t gps, bool direct, class Physics> struct SetConductivity<gps, 3, ThermalConductivityConfiguration::MODEL::ANISOTROPIC, direct, Physics> {
-	static void analyze(HeatTransfer::SubKernels &subkernels)
+	static void analyze(HeatTransferSubKernelsList &subkernels)
 	{
 		Evaluator *kxx = subkernels.conductivity.conductivity->values.get(0, 0).evaluator;
 		Evaluator *kxy = subkernels.conductivity.conductivity->values.get(0, 1).evaluator;
@@ -224,7 +211,7 @@ template <size_t gps, bool direct, class Physics> struct SetConductivity<gps, 3,
 template <size_t gps, size_t ndim, class Physics> struct SetTranslation;
 
 template <size_t gps, class Physics> struct SetTranslation<gps, 2, Physics> {
-	static void analyze(HeatTransfer::SubKernels &subkernels)
+	static void analyze(HeatTransferSubKernelsList &subkernels)
 	{
 		if (subkernels.coosystem.configuration) {
 			switch (subkernels.coosystem.type) {
@@ -247,7 +234,7 @@ template <size_t gps, class Physics> struct SetTranslation<gps, 2, Physics> {
 };
 
 template <size_t gps, class Physics> struct SetTranslation<gps, 3, Physics> {
-	static void analyze(HeatTransfer::SubKernels &subkernels)
+	static void analyze(HeatTransferSubKernelsList &subkernels)
 	{
 		if (subkernels.coosystem.configuration) {
 			switch (subkernels.coosystem.type) {
@@ -280,14 +267,14 @@ template <size_t gps, class Physics> struct SetTranslation<gps, 3, Physics> {
 };
 
 template <size_t gps, size_t ndim, class Physics> struct SetThickness {
-	static void analyze(HeatTransfer::SubKernels &subkernels)
+	static void analyze(HeatTransferSubKernelsList &subkernels)
 	{
 
 	}
 };
 
 template <size_t gps, class Physics> struct SetThickness<gps, 2, Physics> {
-	static void analyze(HeatTransfer::SubKernels &subkernels)
+	static void analyze(HeatTransferSubKernelsList &subkernels)
 	{
 		if (subkernels.thickness.isactive) {
 			subkernels.expressions.push_back(new ExternalGPsExpression<gps, Physics>(
@@ -298,7 +285,7 @@ template <size_t gps, class Physics> struct SetThickness<gps, 2, Physics> {
 };
 
 template <size_t gps, class Physics> struct SetMaterial {
-	static void analyze(HeatTransfer::SubKernels &subkernels)
+	static void analyze(HeatTransferSubKernelsList &subkernels)
 	{
 		subkernels.expressions.push_back(new ExternalGPsExpression<gps, Physics>(
 				subkernels.material.configuration->density.evaluator,
@@ -312,7 +299,7 @@ template <size_t gps, class Physics> struct SetMaterial {
 template <size_t gps, size_t ndim, class Physics> struct SetAdvection;
 
 template <size_t gps, class Physics> struct SetAdvection<gps, 2, Physics> {
-	static void analyze(HeatTransfer::SubKernels &subkernels)
+	static void analyze(HeatTransferSubKernelsList &subkernels)
 	{
 		if (subkernels.advection.isactive) {
 			subkernels.expressions.push_back(new ExternalGPsExpression<gps, Physics>(
@@ -326,7 +313,7 @@ template <size_t gps, class Physics> struct SetAdvection<gps, 2, Physics> {
 };
 
 template <size_t gps, class Physics> struct SetAdvection<gps, 3, Physics> {
-	static void analyze(HeatTransfer::SubKernels &subkernels)
+	static void analyze(HeatTransferSubKernelsList &subkernels)
 	{
 		if (subkernels.advection.expression) {
 			subkernels.expressions.push_back(new ExternalGPsExpression<gps, Physics>(
@@ -343,7 +330,7 @@ template <size_t gps, class Physics> struct SetAdvection<gps, 3, Physics> {
 };
 
 template <Element::CODE code, size_t nodes, size_t gps, size_t ndim, size_t edim, enum ThermalConductivityConfiguration::MODEL ecfmodel, enum ThermalConductivityConfiguration::MODEL model>
-void preprocess(HeatTransfer::SubKernels &subkernels)
+void preprocess(HeatTransferSubKernelsList &subkernels)
 {
 	typedef HeatTransferElementDescriptor<nodes, gps, ndim, edim, ecfmodel, model> Physics;
 	SetThickness<gps, ndim, Physics>::analyze(subkernels);
@@ -388,7 +375,7 @@ void preprocess(HeatTransfer::SubKernels &subkernels)
 }
 
 template <Element::CODE code, size_t nodes, size_t gps, size_t ndim, size_t edim, enum ThermalConductivityConfiguration::MODEL ecfmodel, enum ThermalConductivityConfiguration::MODEL model>
-void fill(const HeatTransfer::SubKernels &subkernels)
+void fill(const HeatTransferSubKernelsList &subkernels)
 {
 	typedef HeatTransferElementDescriptor<nodes, gps, ndim, edim, ecfmodel, model> Physics;
 	typename Physics::Element element;
@@ -413,19 +400,19 @@ void fill(const HeatTransfer::SubKernels &subkernels)
 }
 
 template <Element::CODE code, size_t nodes, size_t gps, size_t ndim, size_t edim>
-void preprocess(HeatTransfer::BoundarySubKernels &subkernels)
+void preprocess(HeatTransferBoundarySubKernelsList &subkernels)
 {
 
 }
 
 template <Element::CODE code, size_t nodes, size_t gps, size_t ndim, size_t edim>
-void fill(const HeatTransfer::BoundarySubKernels &subkernels)
+void fill(const HeatTransferBoundarySubKernelsList &subkernels)
 {
 
 }
 
 template <Element::CODE code, size_t nodes, size_t gps, size_t ndim, size_t edim, enum ThermalConductivityConfiguration::MODEL ecfmodel, enum ThermalConductivityConfiguration::MODEL model>
-void runAction(HeatTransfer::SubKernels &subkernels, Assembler::Action action)
+void runAction(HeatTransferSubKernelsList &subkernels, Assembler::Action action)
 {
 	switch (action) {
 	case Assembler::Action::PREPROCESS: preprocess<code, nodes, gps, ndim, edim, ecfmodel, model>(subkernels); break;
@@ -434,7 +421,7 @@ void runAction(HeatTransfer::SubKernels &subkernels, Assembler::Action action)
 }
 
 template <Element::CODE code, size_t nodes, size_t gps, size_t ndim, size_t edim>
-void runAction(HeatTransfer::BoundarySubKernels &subkernels, Assembler::Action action)
+void runAction(HeatTransferBoundarySubKernelsList &subkernels, Assembler::Action action)
 {
 	switch (action) {
 	case Assembler::Action::PREPROCESS: preprocess<code, nodes, gps, ndim, edim>(subkernels); break;
@@ -443,7 +430,7 @@ void runAction(HeatTransfer::BoundarySubKernels &subkernels, Assembler::Action a
 }
 
 template <Element::CODE code, size_t nodes, size_t gps, size_t ndim, size_t edim>
-void conductivity(HeatTransfer::SubKernels &subkernels, Assembler::Action action)
+void conductivity(HeatTransferSubKernelsList &subkernels, Assembler::Action action)
 {
 	switch (subkernels.conductivity.conductivity->model) {
 	case ThermalConductivityConfiguration::MODEL::ISOTROPIC:
@@ -465,9 +452,9 @@ void conductivity(HeatTransfer::SubKernels &subkernels, Assembler::Action action
 	}
 }
 
-template <size_t ndim> void runElement(HeatTransfer::SubKernels &subkernels, Assembler::Action action);
+template <size_t ndim> void runElement(HeatTransferSubKernelsList &subkernels, Assembler::Action action);
 
-template <> void runElement<2>(HeatTransfer::SubKernels &subkernels, Assembler::Action action)
+template <> void runElement<2>(HeatTransferSubKernelsList &subkernels, Assembler::Action action)
 
 {
 	switch (subkernels.code) {
@@ -478,7 +465,7 @@ template <> void runElement<2>(HeatTransfer::SubKernels &subkernels, Assembler::
 	}
 }
 
-template <> void runElement<3>(HeatTransfer::SubKernels &subkernels, Assembler::Action action)
+template <> void runElement<3>(HeatTransferSubKernelsList &subkernels, Assembler::Action action)
 {
 	switch (subkernels.code) {
 	case static_cast<size_t>(Element::CODE::TETRA4   ): conductivity<Element::CODE::TETRA4   ,  4, HeatTransferGPC::TETRA4    , 3, 3>(subkernels, action); break;

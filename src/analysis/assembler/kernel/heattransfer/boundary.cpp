@@ -18,7 +18,7 @@
 namespace espreso {
 
 template <Element::CODE code, size_t nodes, size_t gps, size_t ndim, size_t edim>
-void preprocess(HeatTransfer::BoundarySubKernels &subkernels)
+void preprocess(HeatTransferBoundarySubKernelsList &subkernels)
 {
 	typedef HeatTransferBoundaryDescriptor<nodes, gps, ndim, edim> Physics;
 	typename Physics::Element element;
@@ -65,7 +65,7 @@ void preprocess(HeatTransfer::BoundarySubKernels &subkernels)
 }
 
 template <Element::CODE code, size_t nodes, size_t gps, size_t ndim, size_t edim>
-void compute(const HeatTransfer::BoundarySubKernels &subkernels, Assembler::Action action)
+void compute(const HeatTransferBoundarySubKernelsList &subkernels, Assembler::Action action)
 {
 	typedef HeatTransferBoundaryDescriptor<nodes, gps, ndim, edim> Physics;
 	typename Physics::Element element;
@@ -105,7 +105,7 @@ void compute(const HeatTransfer::BoundarySubKernels &subkernels, Assembler::Acti
 }
 
 template <Element::CODE code, size_t nodes, size_t gps, size_t ndim, size_t edim>
-void fill(const HeatTransfer::BoundarySubKernels &subkernels)
+void fill(const HeatTransferBoundarySubKernelsList &subkernels)
 {
 	typedef HeatTransferBoundaryDescriptor<nodes, gps, ndim, edim> Physics;
 	typename Physics::Element element;
@@ -120,7 +120,7 @@ void fill(const HeatTransfer::BoundarySubKernels &subkernels)
 }
 
 template <size_t ndim>
-void initDirichlet(HeatTransfer::BoundarySubKernels &subkernels)
+void initDirichlet(HeatTransferBoundarySubKernelsList &subkernels)
 {
 	typedef HeatTransferBoundaryDescriptor<1, 1, ndim, 0> Physics;
 	if (subkernels.temperature.expression) {
@@ -131,7 +131,7 @@ void initDirichlet(HeatTransfer::BoundarySubKernels &subkernels)
 }
 
 template <size_t ndim>
-void dirichlet(const HeatTransfer::BoundarySubKernels &subkernels)
+void dirichlet(const HeatTransferBoundarySubKernelsList &subkernels)
 {
 	typedef HeatTransferBoundaryDescriptor<1, 1, ndim, 0> Physics;
 	typename Physics::Element element;
@@ -158,7 +158,7 @@ void dirichlet(const HeatTransfer::BoundarySubKernels &subkernels)
 }
 
 template <Element::CODE code, size_t nodes, size_t gps, size_t ndim, size_t edim>
-void runAction(HeatTransfer::BoundarySubKernels &subkernels, Assembler::Action action)
+void runAction(HeatTransferBoundarySubKernelsList &subkernels, Assembler::Action action)
 {
 	switch (action) {
 	case Assembler::Action::PREPROCESS: preprocess<code, nodes, gps, ndim, edim>(subkernels); break;
@@ -167,9 +167,9 @@ void runAction(HeatTransfer::BoundarySubKernels &subkernels, Assembler::Action a
 	}
 }
 
-template <size_t ndim, size_t edim> void addBC(HeatTransfer::BoundarySubKernels &subkernels, Assembler::Action action);
+template <size_t ndim, size_t edim> void addBC(HeatTransferBoundarySubKernelsList &subkernels, Assembler::Action action);
 
-template <> void addBC<2, 1>(HeatTransfer::BoundarySubKernels &subkernels, Assembler::Action action)
+template <> void addBC<2, 1>(HeatTransferBoundarySubKernelsList &subkernels, Assembler::Action action)
 {
 	switch (subkernels.code) {
 	case static_cast<size_t>(Element::CODE::LINE2): runAction<Element::CODE::LINE2, 2, HeatTransferGPC::LINE2, 2, 1>(subkernels, action); break;
@@ -177,14 +177,14 @@ template <> void addBC<2, 1>(HeatTransfer::BoundarySubKernels &subkernels, Assem
 	}
 }
 
-template <> void addBC<2, 0>(HeatTransfer::BoundarySubKernels &subkernels, Assembler::Action action)
+template <> void addBC<2, 0>(HeatTransferBoundarySubKernelsList &subkernels, Assembler::Action action)
 {
 	switch (action) {
 	case Assembler::Action::PREPROCESS: initDirichlet<2>(subkernels); break;
 	case Assembler::Action::ASSEMBLE: case Assembler::Action::REASSEMBLE: dirichlet<2>(subkernels); break;
 	}
 }
-template <> void addBC<3, 2>(HeatTransfer::BoundarySubKernels &subkernels, Assembler::Action action)
+template <> void addBC<3, 2>(HeatTransferBoundarySubKernelsList &subkernels, Assembler::Action action)
 {
 	switch (subkernels.code) {
 	case static_cast<size_t>(Element::CODE::TRIANGLE3): runAction<Element::CODE::TRIANGLE3, 3, HeatTransferGPC::TRIANGLE3, 3, 2>(subkernels, action); break;
@@ -194,7 +194,7 @@ template <> void addBC<3, 2>(HeatTransfer::BoundarySubKernels &subkernels, Assem
 	}
 }
 
-template <> void addBC<3, 1>(HeatTransfer::BoundarySubKernels &subkernels, Assembler::Action action)
+template <> void addBC<3, 1>(HeatTransferBoundarySubKernelsList &subkernels, Assembler::Action action)
 {
 	switch (subkernels.code) {
 	case static_cast<size_t>(Element::CODE::LINE2): runAction<Element::CODE::LINE2, 2, HeatTransferGPC::LINE2, 3, 1>(subkernels, action); break;
@@ -202,7 +202,7 @@ template <> void addBC<3, 1>(HeatTransfer::BoundarySubKernels &subkernels, Assem
 	}
 }
 
-template <> void addBC<3, 0>(HeatTransfer::BoundarySubKernels &subkernels, Assembler::Action action)
+template <> void addBC<3, 0>(HeatTransferBoundarySubKernelsList &subkernels, Assembler::Action action)
 {
 	switch (action) {
 	case Assembler::Action::PREPROCESS: initDirichlet<3>(subkernels); break;

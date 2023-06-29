@@ -2,8 +2,8 @@
 #ifndef SRC_ANALYSIS_ASSEMBLER_KERNEL_HEATTRANSFER_KERNEL_H_
 #define SRC_ANALYSIS_ASSEMBLER_KERNEL_HEATTRANSFER_KERNEL_H_
 
-#include "analysis/assembler/module/heattransfer.h"
 #include "analysis/assembler/module/assembler.hpp"
+#include "analysis/assembler/kernel/heattransfer/subkernellist.h"
 #include "analysis/assembler/subkernel/heattransfer/heatsource.h"
 
 #include "esinfo/ecfinfo.h"
@@ -16,7 +16,7 @@
 namespace espreso {
 
 template <Element::CODE code, size_t nodes, size_t gps, size_t ndim, size_t edim, enum ThermalConductivityConfiguration::MODEL ecfmodel, enum ThermalConductivityConfiguration::MODEL model>
-void compute(const HeatTransfer::SubKernels &subkernels, Assembler::Action action)
+void compute(const HeatTransferSubKernelsList &subkernels, Assembler::Action action)
 {
 	typedef HeatTransferElementDescriptor<nodes, gps, ndim, edim, ecfmodel, model> Physics;
 	typename Physics::Element element;
@@ -106,7 +106,7 @@ void compute(const HeatTransfer::SubKernels &subkernels, Assembler::Action actio
 }
 
 template <Element::CODE code, size_t nodes, size_t gps, size_t ndim, size_t edim>
-void runConductivity(HeatTransfer::SubKernels &subkernels, Assembler::Action action)
+void runConductivity(HeatTransferSubKernelsList &subkernels, Assembler::Action action)
 {
 	switch (subkernels.conductivity.conductivity->model) {
 	case ThermalConductivityConfiguration::MODEL::ISOTROPIC:

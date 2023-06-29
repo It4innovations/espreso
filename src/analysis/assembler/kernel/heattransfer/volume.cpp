@@ -1,5 +1,6 @@
 
 #include "kernel.h"
+#include "analysis/assembler/module/heattransfer.h"
 
 namespace espreso {
 

@@ -3,6 +3,9 @@
 #define SRC_ANALYSIS_ASSEMBLER_SUBKERNEL_FILLER_H_
 
 #include "subkernel.h"
+#include "math/primitives/matrix_info.h"
+#include "math/physics/matrix_base.h"
+#include "math/physics/vector_base.h"
 
 namespace espreso {
 

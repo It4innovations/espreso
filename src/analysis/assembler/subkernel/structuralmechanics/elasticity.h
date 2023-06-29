@@ -3,6 +3,7 @@
 #define SRC_ANALYSIS_ASSEMBLER_SUBKERNEL_STRUCTURALMECHANICS_ELASTICITY_H_
 
 #include "subkernel.h"
+#include "config/ecf/physics/structuralmechanics.h"
 
 namespace espreso {
 

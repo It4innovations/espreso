@@ -3,6 +3,7 @@
 #define SRC_ANALYSIS_ASSEMBLER_SUBKERNEL_STRUCTURALMECHANICS_ACCELERATION_H_
 
 #include "analysis/assembler/subkernel/boundarycondition.h"
+#include "analysis/assembler/subkernel/structuralmechanics/subkernel.h"
 
 namespace espreso {
 

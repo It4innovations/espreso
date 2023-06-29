@@ -1,10 +1,11 @@
 
 #include "kernel.h"
+#include "analysis/assembler/module/structuralmechanics.h"
 
 namespace espreso {
 
 template <Element::CODE code, size_t nodes, size_t gps, size_t ndim, size_t edim, enum Behaviour behaviour>
-void runPlaneElasticity(StructuralMechanics::SubKernels &subkernels, Assembler::Action action)
+void runPlaneElasticity(StructuralMechanicsSubKernelsList &subkernels, Assembler::Action action)
 {
 	switch (subkernels.elasticity.configuration->model) {
 	case LinearElasticPropertiesConfiguration::MODEL::ISOTROPIC:

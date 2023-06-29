@@ -2,22 +2,17 @@
 #ifndef SRC_ANALYSIS_ASSEMBLER_KERNEL_STRUCTURALMECHANICS_KERNEL_H_
 #define SRC_ANALYSIS_ASSEMBLER_KERNEL_STRUCTURALMECHANICS_KERNEL_H_
 
-#include "analysis/assembler/module/structuralmechanics.h"
-#include "analysis/assembler/module/assembler.hpp"
+#include "analysis/assembler/module/assembler.h"
 #include "analysis/assembler/subkernel/thickness.h"
 #include "analysis/assembler/subkernel/structuralmechanics/acceleration.h"
 #include "analysis/assembler/subkernel/structuralmechanics/angularvelocity.h"
 #include "analysis/assembler/subkernel/structuralmechanics/normalpressure.h"
-
-#include "esinfo/ecfinfo.h"
-#include "esinfo/eslog.hpp"
-#include "esinfo/envinfo.h"
-#include "esinfo/meshinfo.h"
+#include "analysis/assembler/kernel/structuralmechanics/subkernellist.h"
 
 namespace espreso {
 
 template <Element::CODE code, size_t nodes, size_t gps, size_t ndim, size_t edim, enum Behaviour behaviour, enum ElasticityModel ecfmodel, enum ElasticityModel model>
-void compute(StructuralMechanics::SubKernels &subkernels, Assembler::Action action)
+void compute(StructuralMechanicsSubKernelsList &subkernels, Assembler::Action action)
 {
 	typedef StructuralMechanicsElementDescriptor<nodes, gps, ndim, edim, behaviour, ecfmodel, model> Physics;
 	typename Physics::Element element;

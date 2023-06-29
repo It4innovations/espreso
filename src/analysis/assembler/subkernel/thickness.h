@@ -5,6 +5,7 @@
 #include "subkernel.h"
 #include "basis/containers/serializededata.h"
 #include "esinfo/meshinfo.h"
+#include "mesh/store/elementstore.h"
 
 namespace espreso {
 
