@@ -6,8 +6,6 @@
 
 namespace espreso {
 
-struct Matrix_IJV_External_Representation;
-
 template <typename T>
 struct _Matrix_IJV {
 	esint nrows, ncols, nnz, *rows, *cols;
@@ -18,12 +16,12 @@ template <typename T>
 class Matrix_IJV: public _Matrix_IJV<T>
 {
 public:
-	Matrix_IJV(): _Matrix_IJV<T>{}, type{Matrix_Type::REAL_NONSYMMETRIC}, shape{Matrix_Shape::FULL}, _spblas{nullptr}, _allocated{}
+	Matrix_IJV(): _Matrix_IJV<T>{}, type{Matrix_Type::REAL_NONSYMMETRIC}, shape{Matrix_Shape::FULL}, _allocated{}
 	{
 
 	}
 
-	Matrix_IJV(const Matrix_IJV &other): _Matrix_IJV<T>{}, type{Matrix_Type::REAL_NONSYMMETRIC}, shape{Matrix_Shape::FULL}, _spblas{nullptr}, _allocated{}
+	Matrix_IJV(const Matrix_IJV &other): _Matrix_IJV<T>{}, type{Matrix_Type::REAL_NONSYMMETRIC}, shape{Matrix_Shape::FULL}, _allocated{}
 	{
 		this->type = other.type;
 		this->shape = other.shape;
@@ -36,7 +34,7 @@ public:
 		}
 	}
 
-	Matrix_IJV(Matrix_IJV &&other): _Matrix_IJV<T>{}, type{Matrix_Type::REAL_NONSYMMETRIC}, shape{Matrix_Shape::FULL}, _spblas{nullptr}, _allocated{}
+	Matrix_IJV(Matrix_IJV &&other): _Matrix_IJV<T>{}, type{Matrix_Type::REAL_NONSYMMETRIC}, shape{Matrix_Shape::FULL}, _allocated{}
 	{
 		this->type = other.type;
 		this->shape = other.shape;
@@ -93,7 +91,6 @@ public:
 
 	Matrix_Type type;
 	Matrix_Shape shape;
-	Matrix_IJV_External_Representation *_spblas;
 
 protected:
 	template <typename Type>

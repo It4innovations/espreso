@@ -9,6 +9,7 @@ libs_solvers=[ "mkl", "pardiso", "suitesparse" ]
 def configure(ctx):
     ctx.env.with_gui = ctx.options.with_gui
     ctx.env.static = ctx.options.static
+    ctx.test_dict = types.MethodType(test_dict, ctx)
     ctx.link_cxx = types.MethodType(link_cxx, ctx)
     ctx.env.intwidth = ctx.options.intwidth
     ctx.env.mode = ctx.options.mode
@@ -62,6 +63,9 @@ def configure(ctx):
 
     """ Recurse to third party libraries wrappers"""
     recurse(ctx)
+    if ctx.options.use_spblas == "suitesparse" or ctx.options.use_solver == "suitesparse":
+        ctx.options.use_spblas = "suitesparse"
+        ctx.options.use_solver = "suitesparse"
     ctx.options.use_blas = set_libs(ctx, libs_blas, ctx.options.use_blas)
     ctx.options.use_spblas = set_libs(ctx, libs_spblas, ctx.options.use_spblas)
     ctx.options.use_lapack = set_libs(ctx, libs_lapack, ctx.options.use_lapack)
@@ -411,6 +415,14 @@ def info(ctx):
         ("solver", ctx.env.use_solver)
         ]
     print("_".join(map(lambda setting: "{}-{}".format(setting[0], setting[1]), parameters)))
+
+def test_dict(self, name):
+    test = dict()
+    test["msg"] = "Checking for " + name
+    test["define_name"] = ""
+    test["defines"] = "HAVE_" + name.upper()
+    test["name"] = test["uselib_store"] = name.upper()
+    return test
 
 def link_cxx(self, *k, **kw):
     includes = []

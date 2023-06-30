@@ -3,6 +3,7 @@
 #define SRC_FETI_PRECONDITIONER_LUMPED_H_
 
 #include "preconditioner.h"
+#include "math/wrappers/math.spblas.h"
 
 namespace espreso {
 
@@ -17,7 +18,9 @@ public:
 
 	void apply(const Vector_Dual<T> &x, Vector_Dual<T> &y);
 
+	Matrix_FETI<Matrix_CSR, T> *K;
 	std::vector<Vector_Dense<T> > Btx, KBtx;
+	std::vector<SpBLAS<T, Matrix_CSR> > KSpBlas;
 };
 
 }

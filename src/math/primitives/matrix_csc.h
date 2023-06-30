@@ -6,7 +6,6 @@
 
 namespace espreso {
 
-struct Matrix_CSC_External_Representation;
 struct Matrix_CSC_Solver;
 
 template <typename T>
@@ -19,12 +18,12 @@ template <typename T>
 class Matrix_CSC: public _Matrix_CSC<T>
 {
 public:
-	Matrix_CSC(): _Matrix_CSC<T>{}, type{Matrix_Type::REAL_STRUCTURALLY_SYMMETRIC}, shape{Matrix_Shape::FULL}, _spblas{nullptr}, _solver{nullptr}, _allocated{}
+	Matrix_CSC(): _Matrix_CSC<T>{}, type{Matrix_Type::REAL_STRUCTURALLY_SYMMETRIC}, shape{Matrix_Shape::FULL}, _solver{nullptr}, _allocated{}
 	{
 
 	}
 
-	Matrix_CSC(const Matrix_CSC &other): _Matrix_CSC<T>{}, type{Matrix_Type::REAL_STRUCTURALLY_SYMMETRIC}, shape{Matrix_Shape::FULL}, _spblas{nullptr}, _solver{nullptr}, _allocated{}
+	Matrix_CSC(const Matrix_CSC &other): _Matrix_CSC<T>{}, type{Matrix_Type::REAL_STRUCTURALLY_SYMMETRIC}, shape{Matrix_Shape::FULL}, _solver{nullptr}, _allocated{}
 	{
 		type = other.type;
 		shape = other.shape;
@@ -39,11 +38,10 @@ public:
 		}
 	}
 
-	Matrix_CSC(Matrix_CSC &&other): _Matrix_CSC<T>{}, type{Matrix_Type::REAL_STRUCTURALLY_SYMMETRIC}, shape{Matrix_Shape::FULL}, _spblas{nullptr}, _allocated{}
+	Matrix_CSC(Matrix_CSC &&other): _Matrix_CSC<T>{}, type{Matrix_Type::REAL_STRUCTURALLY_SYMMETRIC}, shape{Matrix_Shape::FULL}, _allocated{}
 	{
 		type = other.type;
 		shape = other.shape;
-		swap(_spblas, other._spblas);
 		swap(*this, other);
 		swap(_allocated, other._allocated);
 	}
@@ -107,7 +105,6 @@ public:
 
 	Matrix_Type type;
 	Matrix_Shape shape;
-	Matrix_CSC_External_Representation *_spblas;
 	Matrix_CSC_Solver *_solver;
 	_Matrix_CSC<T> _allocated;
 

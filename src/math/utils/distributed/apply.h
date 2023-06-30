@@ -3,6 +3,7 @@
 #define SRC_MATH2_UTILS_DISTRIBUTED_APPLY_H_
 
 #include "math/primitives/matrix_csr.h"
+#include "math/wrappers/math.spblas.h"
 
 #include <vector>
 
@@ -23,6 +24,8 @@ struct Data_Apply<Matrix_CSR, T> {
 	std::vector<int> neighbors;
 	std::vector<esint> nDOF;
 	esint offset;
+
+	SpBLAS<T, Matrix_CSR> spblas;
 
 	Data_Apply<Matrix_CSR, T>& operator=(const Data_Apply<Matrix_CSR, T> &other)
 	{

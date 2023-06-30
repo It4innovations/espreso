@@ -8,120 +8,47 @@
 #include <type_traits>
 #include <vector>
 
+namespace espreso {
+
 #ifndef HAVE_MKL
 #ifndef HAVE_SUITESPARSE
 
-namespace espreso {
-namespace math {
 
-template <>
-void commit(Matrix_Dense<double> &x)
+
+template <typename T, template <typename> class Matrix>
+SpBLAS<T, Matrix>::SpBLAS()
+: matrix{}, _spblas{}
 {
 
 }
 
-template <>
-void commit(Matrix_Dense<std::complex<double> > &x)
+template <typename T, template <typename> class Matrix>
+SpBLAS<T, Matrix>::~SpBLAS()
 {
 
 }
 
-template <>
-void commit(Matrix_CSR<double> &x)
+template <typename T, template <typename> class Matrix>
+SpBLAS<T, Matrix>::SpBLAS(const Matrix<T> &a)
+: matrix{}, _spblas{}
 {
 
 }
 
-template <>
-void commit(Matrix_CSR<std::complex<double> > &x)
+template <typename T, template <typename> class Matrix>
+void SpBLAS<T, Matrix>::commit(const Matrix<T> &a)
 {
 
 }
 
-template <>
-void commit(Matrix_IJV<double> &x)
-{
-
-}
-
-template <>
-void commit(Matrix_IJV<std::complex<double> > &x)
-{
-
-}
-
-template <>
-void free(Matrix_Dense<double> &x)
-{
-
-}
-
-template <>
-void free(Matrix_Dense<std::complex<double> > &x)
-{
-
-}
-
-template <>
-void free(Matrix_CSR<double> &x)
-{
-
-}
-
-template <>
-void free(Matrix_CSR<std::complex<double> > &x)
-{
-
-}
-
-template <>
-void free(Matrix_IJV<double> &x)
-{
-
-}
-
-template <>
-void free(Matrix_IJV<std::complex<double> > &x)
-{
-
-}
-
-
-template <>
-void apply(Vector_Dense<double> &y, const double &alpha, const Matrix_CSR<double> &a, const double &beta, const Vector_Dense<double> &x)
+template <typename T, template <typename> class Matrix>
+void SpBLAS<T, Matrix>::apply(Vector_Dense<T> &y, const T &alpha, const T &beta, const Vector_Dense<T> &x)
 {
 	eslog::error("calling of empty SpBLAS wrapper.\n");
-}
-
-template <>
-void apply(Vector_Dense<std::complex<double> > &y, const std::complex<double> &alpha, const Matrix_CSR<std::complex<double> > &a, const std::complex<double> &beta, const Vector_Dense<std::complex<double> > &x)
-{
-	eslog::error("calling of empty SpBLAS wrapper.\n");
-}
-
-template <>
-void apply(Vector_Dense<double> &y, const double &alpha, const Matrix_IJV<double> &a, const double &beta, const Vector_Dense<double> &x)
-{
-	eslog::error("calling of empty SpBLAS wrapper.\n");
-}
-
-template <>
-void apply(Vector_Dense<std::complex<double> > &y, const std::complex<double> &alpha, const Matrix_IJV<std::complex<double> > &a, const std::complex<double> &beta, const Vector_Dense<std::complex<double> > &x)
-{
-	eslog::error("calling of empty SpBLAS wrapper.\n");
-}
-
-
-}
 }
 
 #endif
 #endif
-
-
-
-namespace espreso {
-namespace math {
 
 template<Matrix_Shape Shape>
 static esint denseMatCalcIndexRowMajor(esint r, esint c, esint ncols)
@@ -129,6 +56,7 @@ static esint denseMatCalcIndexRowMajor(esint r, esint c, esint ncols)
 	if constexpr(Shape == Matrix_Shape::LOWER) { return r * ncols + (r * (r - 1) / 2)     + c; }
 	if constexpr(Shape == Matrix_Shape::FULL)  { return r * ncols                         + c; }
 	if constexpr(Shape == Matrix_Shape::UPPER) { return r * ncols - (r * (r - 1) / 2) - r + c; }
+	return 0;
 }
 
 template <typename T, bool DoTrans, bool DoConj, Matrix_Symmetry OutSymmetry, Matrix_Shape InShape, Matrix_Shape OutShape>
@@ -340,7 +268,20 @@ static void _submatrix(const Matrix_CSR<T> &input, Matrix_CSR<T> &output, esint 
 }
 
 
-template <typename T> void submatrix(const Matrix_CSR<T> &input, Matrix_Dense<T> &output, esint start_row, esint end_row, esint start_col, esint end_col, bool trans, bool conj, bool output_force_full)
+template <typename T, template <typename> class Matrix>
+void SpBLAS<T, Matrix>::submatrix(Matrix_Dense<T> &output, esint start_row, esint end_row, esint start_col, esint end_col, bool trans, bool conj, bool output_force_full)
+{
+	submatrix(*matrix, output, start_row, end_row, start_col, end_col, trans, conj, output_force_full);
+}
+
+template <typename T, template <typename> class Matrix>
+void SpBLAS<T, Matrix>::submatrix(Matrix_CSR<T> &output, esint start_row, esint end_row, esint start_col, esint end_col, bool trans, bool conj, bool output_force_full)
+{
+	submatrix(*matrix, output, start_row, end_row, start_col, end_col, trans, conj, output_force_full);
+}
+
+template <typename T, template <typename> class Matrix>
+void SpBLAS<T, Matrix>::submatrix(const Matrix_CSR<T> &input, Matrix_Dense<T> &output, esint start_row, esint end_row, esint start_col, esint end_col, bool trans, bool conj, bool output_force_full)
 {
 	esint out_rows = end_row - start_row;
 	esint out_cols = end_col - start_col;
@@ -359,11 +300,12 @@ template <typename T> void submatrix(const Matrix_CSR<T> &input, Matrix_Dense<T>
 	_submatrix<T>(input, output, start_row, end_row, start_col, end_col, out_shape, in_shape, out_symmetry, conj, trans);
 }
 
-template <typename T> void submatrix(const Matrix_CSR<T> &input, Matrix_CSR<T> &output, esint start_row, esint end_row, esint start_col, esint end_col, bool trans, bool conj, bool output_force_full)
+template <typename T, template <typename> class Matrix>
+void SpBLAS<T, Matrix>::submatrix(const Matrix_CSR<T> &input, Matrix_CSR<T> &output, esint start_row, esint end_row, esint start_col, esint end_col, bool trans, bool conj, bool output_force_full)
 {
 	if(trans) {
 		eslog::error("Submatrix CSR->CSR: transposition is not supported.\n");
-	}	
+	}
 	if(output_force_full) {
 		eslog::error("Submatrix CSR->CSR: forcing full output matrices is not supported.\n");
 	}
@@ -376,11 +318,7 @@ template <typename T> void submatrix(const Matrix_CSR<T> &input, Matrix_CSR<T> &
 	}
 }
 
-template void submatrix<double>(const Matrix_CSR<double> &, Matrix_Dense<double> &, esint, esint, esint, esint, bool, bool, bool);
-template void submatrix<double>(const Matrix_CSR<double> &, Matrix_CSR<double> &,   esint, esint, esint, esint, bool, bool, bool);
-template void submatrix<std::complex<double>>(const Matrix_CSR<std::complex<double>> &, Matrix_Dense<std::complex<double>> &, esint, esint, esint, esint, bool, bool, bool);
-template void submatrix<std::complex<double>>(const Matrix_CSR<std::complex<double>> &, Matrix_CSR<std::complex<double>> &,   esint, esint, esint, esint, bool, bool, bool);
+template class SpBLAS<double, Matrix_CSR>;
+template class SpBLAS<std::complex<double>, Matrix_CSR>;
 
-
-}
 }

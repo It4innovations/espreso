@@ -25,15 +25,15 @@ dwarf = {
 
 def configure(ctx):
     backward = ctx.test_dict("backward-cpp")
-    
-    def test(name, lib):  
+
+    def test(name, lib):
         ctx.env.stash()
         test = ctx.test_dict(name)
         test.update(lib)
         status = ctx.check_cxx(**test)
         ctx.env.revert()
         return status
-    
+
     if test("dw", dw):
         backward.update(dw)
         ctx.check_cxx(**backward)

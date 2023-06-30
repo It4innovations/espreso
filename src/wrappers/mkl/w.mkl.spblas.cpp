@@ -10,15 +10,9 @@
 
 namespace espreso {
 
-struct Matrix_CSR_External_Representation {
+struct Matrix_SpBLAS_External_Representation {
 	sparse_matrix_t inspector;
 };
-
-struct Matrix_IJV_External_Representation {
-	sparse_matrix_t inspector;
-};
-
-namespace math {
 
 static void checkStatus(sparse_status_t status)
 {
@@ -30,124 +24,88 @@ static void checkStatus(sparse_status_t status)
 	case SPARSE_STATUS_EXECUTION_FAILED: eslog::error("MKL SPARSE_STATUS_EXECUTION_FAILED\n"); break;
 	case SPARSE_STATUS_INTERNAL_ERROR: eslog::error("MKL SPARSE_STATUS_INTERNAL_ERROR\n"); break;
 	case SPARSE_STATUS_NOT_SUPPORTED: eslog::error("MKL SPARSE_STATUS_NOT_SUPPORTED\n"); break;
+}
+}
+
+template <typename T, template <typename> class Matrix>
+SpBLAS<T, Matrix>::SpBLAS()
+: matrix{}, _spblas{}
+{
+
+}
+
+template <typename T, template <typename> class Matrix>
+SpBLAS<T, Matrix>::~SpBLAS()
+{
+	if (_spblas) {
+		checkStatus(mkl_sparse_destroy(_spblas->inspector));
 	}
 }
 
 template <>
-void commit(Matrix_Dense<double> &x)
+SpBLAS<double, Matrix_CSR>::SpBLAS(const Matrix_CSR<double> &a)
+: matrix(&a)
 {
-
-}
-
-template <>
-void commit(Matrix_Dense<std::complex<double> > &x)
-{
-
-}
-
-template <>
-void commit(Matrix_CSR<double> &x)
-{
-	x._spblas = new Matrix_CSR_External_Representation();
-	if (x.nnz) {
+	_spblas = new Matrix_SpBLAS_External_Representation();
+	if (matrix->nnz) {
 		switch (Indexing::CSR) {
-		case 0: checkStatus(mkl_sparse_d_create_csr(&x._spblas->inspector, SPARSE_INDEX_BASE_ZERO, x.nrows, x.ncols, x.rows, x.rows + 1, x.cols, x.vals)); break;
-		case 1: checkStatus(mkl_sparse_d_create_csr(&x._spblas->inspector, SPARSE_INDEX_BASE_ONE, x.nrows, x.ncols, x.rows, x.rows + 1, x.cols, x.vals)); break;
-		}
-
-	}
-}
-
-template <>
-void commit(Matrix_CSR<std::complex<double> > &x)
-{
-	x._spblas = new Matrix_CSR_External_Representation();
-	if (x.nnz) {
-		switch (Indexing::CSR) {
-		case 0: checkStatus(mkl_sparse_z_create_csr(&x._spblas->inspector, SPARSE_INDEX_BASE_ZERO, x.nrows, x.ncols, x.rows, x.rows + 1, x.cols, x.vals)); break;
-		case 1: checkStatus(mkl_sparse_z_create_csr(&x._spblas->inspector, SPARSE_INDEX_BASE_ONE, x.nrows, x.ncols, x.rows, x.rows + 1, x.cols, x.vals)); break;
+		case 0: checkStatus(mkl_sparse_d_create_csr(&_spblas->inspector, SPARSE_INDEX_BASE_ZERO, matrix->nrows, matrix->ncols, matrix->rows, matrix->rows + 1, matrix->cols, matrix->vals)); break;
+		case 1: checkStatus(mkl_sparse_d_create_csr(&_spblas->inspector, SPARSE_INDEX_BASE_ONE, matrix->nrows, matrix->ncols, matrix->rows, matrix->rows + 1, matrix->cols, matrix->vals)); break;
 		}
 	}
 }
 
 template <>
-void commit(Matrix_IJV<double> &x)
+SpBLAS<std::complex<double>, Matrix_CSR>::SpBLAS(const Matrix_CSR<std::complex<double> > &a)
+: matrix(&a)
 {
-	x._spblas = new Matrix_IJV_External_Representation();
-	if (x.nnz) {
+	_spblas = new Matrix_SpBLAS_External_Representation();
+	if (matrix->nnz) {
 		switch (Indexing::CSR) {
-		case 0: checkStatus(mkl_sparse_d_create_coo(&x._spblas->inspector, SPARSE_INDEX_BASE_ZERO, x.nrows, x.ncols, x.nnz, x.rows, x.cols, x.vals)); break;
-		case 1: checkStatus(mkl_sparse_d_create_coo(&x._spblas->inspector, SPARSE_INDEX_BASE_ONE, x.nrows, x.ncols, x.nnz, x.rows, x.cols, x.vals)); break;
+		case 0: checkStatus(mkl_sparse_z_create_csr(&_spblas->inspector, SPARSE_INDEX_BASE_ZERO, matrix->nrows, matrix->ncols, matrix->rows, matrix->rows + 1, matrix->cols, matrix->vals)); break;
+		case 1: checkStatus(mkl_sparse_z_create_csr(&_spblas->inspector, SPARSE_INDEX_BASE_ONE, matrix->nrows, matrix->ncols, matrix->rows, matrix->rows + 1, matrix->cols, matrix->vals)); break;
 		}
 	}
 }
 
 template <>
-void commit(Matrix_IJV<std::complex<double> > &x)
+void SpBLAS<double, Matrix_CSR>::commit(const Matrix_CSR<double> &a)
 {
-	x._spblas = new Matrix_IJV_External_Representation();
-	if (x.nnz) {
+	matrix = &a;
+	if (_spblas) {
+		checkStatus(mkl_sparse_destroy(_spblas->inspector));
+	}
+	_spblas = new Matrix_SpBLAS_External_Representation();
+	if (matrix->nnz) {
 		switch (Indexing::CSR) {
-		case 0: checkStatus(mkl_sparse_z_create_coo(&x._spblas->inspector, SPARSE_INDEX_BASE_ZERO, x.nrows, x.ncols, x.nnz, x.rows, x.cols, x.vals)); break;
-		case 1: checkStatus(mkl_sparse_z_create_coo(&x._spblas->inspector, SPARSE_INDEX_BASE_ONE, x.nrows, x.ncols, x.nnz, x.rows, x.cols, x.vals)); break;
+		case 0: checkStatus(mkl_sparse_d_create_csr(&_spblas->inspector, SPARSE_INDEX_BASE_ZERO, matrix->nrows, matrix->ncols, matrix->rows, matrix->rows + 1, matrix->cols, matrix->vals)); break;
+		case 1: checkStatus(mkl_sparse_d_create_csr(&_spblas->inspector, SPARSE_INDEX_BASE_ONE, matrix->nrows, matrix->ncols, matrix->rows, matrix->rows + 1, matrix->cols, matrix->vals)); break;
 		}
 	}
 }
 
 template <>
-void free(Matrix_Dense<double> &x)
+void SpBLAS<std::complex<double>, Matrix_CSR>::commit(const Matrix_CSR<std::complex<double> > &a)
 {
-
-}
-
-template <>
-void free(Matrix_Dense<std::complex<double> > &x)
-{
-
-}
-
-template <>
-void free(Matrix_CSR<double> &x)
-{
-	if (x._spblas) {
-		checkStatus(mkl_sparse_destroy(x._spblas->inspector));
-		x._spblas = nullptr;
+	matrix = &a;
+	if (_spblas) {
+		checkStatus(mkl_sparse_destroy(_spblas->inspector));
 	}
-}
-
-template <>
-void free(Matrix_CSR<std::complex<double> > &x)
-{
-	if (x._spblas) {
-		checkStatus(mkl_sparse_destroy(x._spblas->inspector));
-		x._spblas = nullptr;
-	}
-}
-
-template <>
-void free(Matrix_IJV<double> &x)
-{
-	if (x._spblas) {
-		checkStatus(mkl_sparse_destroy(x._spblas->inspector));
-		x._spblas = nullptr;
-	}
-}
-
-template <>
-void free(Matrix_IJV<std::complex<double> > &x)
-{
-	if (x._spblas) {
-		checkStatus(mkl_sparse_destroy(x._spblas->inspector));
-		x._spblas = nullptr;
+	_spblas = new Matrix_SpBLAS_External_Representation();
+	if (matrix->nnz) {
+		switch (Indexing::CSR) {
+		case 0: checkStatus(mkl_sparse_z_create_csr(&_spblas->inspector, SPARSE_INDEX_BASE_ZERO, matrix->nrows, matrix->ncols, matrix->rows, matrix->rows + 1, matrix->cols, matrix->vals)); break;
+		case 1: checkStatus(mkl_sparse_z_create_csr(&_spblas->inspector, SPARSE_INDEX_BASE_ONE, matrix->nrows, matrix->ncols, matrix->rows, matrix->rows + 1, matrix->cols, matrix->vals)); break;
+		}
 	}
 }
 
 
 template <>
-void apply(Vector_Dense<double> &y, const double &alpha, const Matrix_CSR<double> &a, const double &beta, const Vector_Dense<double> &x)
+void SpBLAS<double, Matrix_CSR>::apply(Vector_Dense<double> &y, const double &alpha, const double &beta, const Vector_Dense<double> &x)
 {
 	matrix_descr descr;
-	switch (a.type) {
+	switch (matrix->type) {
 	case Matrix_Type::REAL_SYMMETRIC_POSITIVE_DEFINITE:
 	case Matrix_Type::REAL_SYMMETRIC_INDEFINITE:
 	case Matrix_Type::COMPLEX_HERMITIAN_POSITIVE_DEFINITE:
@@ -163,20 +121,20 @@ void apply(Vector_Dense<double> &y, const double &alpha, const Matrix_CSR<double
 		break;
 	}
 
-	switch (a.shape) {
+	switch (matrix->shape) {
 	case Matrix_Shape::FULL : descr.mode = SPARSE_FILL_MODE_FULL; break;
 	case Matrix_Shape::UPPER: descr.mode = SPARSE_FILL_MODE_UPPER; break;
 	case Matrix_Shape::LOWER: descr.mode = SPARSE_FILL_MODE_LOWER; break;
 	}
 	descr.diag = SPARSE_DIAG_NON_UNIT;
-	checkStatus(mkl_sparse_d_mv(SPARSE_OPERATION_NON_TRANSPOSE, alpha, a._spblas->inspector, descr, x.vals, beta, y.vals));
+	checkStatus(mkl_sparse_d_mv(SPARSE_OPERATION_NON_TRANSPOSE, alpha, _spblas->inspector, descr, x.vals, beta, y.vals));
 }
 
 template <>
-void apply(Vector_Dense<std::complex<double> > &y, const std::complex<double> &alpha, const Matrix_CSR<std::complex<double> > &a, const std::complex<double> &beta, const Vector_Dense<std::complex<double> > &x)
+void SpBLAS<std::complex<double>, Matrix_CSR>::apply(Vector_Dense<std::complex<double>> &y, const std::complex<double> &alpha, const std::complex<double> &beta, const Vector_Dense<std::complex<double>> &x)
 {
 	matrix_descr descr;
-	switch (a.type) {
+	switch (matrix->type) {
 	case Matrix_Type::REAL_SYMMETRIC_POSITIVE_DEFINITE:
 	case Matrix_Type::REAL_SYMMETRIC_INDEFINITE:
 	case Matrix_Type::COMPLEX_HERMITIAN_POSITIVE_DEFINITE:
@@ -192,75 +150,18 @@ void apply(Vector_Dense<std::complex<double> > &y, const std::complex<double> &a
 		break;
 	}
 
-	switch (a.shape) {
+	switch (matrix->shape) {
 	case Matrix_Shape::FULL : descr.mode = SPARSE_FILL_MODE_FULL; break;
 	case Matrix_Shape::UPPER: descr.mode = SPARSE_FILL_MODE_UPPER; break;
 	case Matrix_Shape::LOWER: descr.mode = SPARSE_FILL_MODE_LOWER; break;
 	}
 	descr.diag = SPARSE_DIAG_NON_UNIT;
-	checkStatus(mkl_sparse_z_mv(SPARSE_OPERATION_NON_TRANSPOSE, alpha, a._spblas->inspector, descr, x.vals, beta, y.vals));
+	checkStatus(mkl_sparse_z_mv(SPARSE_OPERATION_NON_TRANSPOSE, alpha, _spblas->inspector, descr, x.vals, beta, y.vals));
 }
 
-template <>
-void apply(Vector_Dense<double> &y, const double &alpha, const Matrix_IJV<double> &a, const double &beta, const Vector_Dense<double> &x)
-{
-	matrix_descr descr;
-	switch (a.type) {
-	case Matrix_Type::REAL_SYMMETRIC_POSITIVE_DEFINITE:
-	case Matrix_Type::REAL_SYMMETRIC_INDEFINITE:
-	case Matrix_Type::COMPLEX_HERMITIAN_POSITIVE_DEFINITE:
-	case Matrix_Type::COMPLEX_HERMITIAN_INDEFINITE:
-	case Matrix_Type::COMPLEX_SYMMETRIC:
-		descr.type = SPARSE_MATRIX_TYPE_SYMMETRIC;
-		break;
-	case Matrix_Type::REAL_STRUCTURALLY_SYMMETRIC:
-	case Matrix_Type::REAL_NONSYMMETRIC:
-	case Matrix_Type::COMPLEX_STRUCTURALLY_SYMMETRIC:
-	case Matrix_Type::COMPLEX_NONSYMMETRIC:
-		descr.type = SPARSE_MATRIX_TYPE_GENERAL;
-		break;
-	}
+template class SpBLAS<double, Matrix_CSR>;
+template class SpBLAS<std::complex<double>, Matrix_CSR>;
 
-	switch (a.shape) {
-	case Matrix_Shape::FULL : descr.mode = SPARSE_FILL_MODE_FULL; break;
-	case Matrix_Shape::UPPER: descr.mode = SPARSE_FILL_MODE_UPPER; break;
-	case Matrix_Shape::LOWER: descr.mode = SPARSE_FILL_MODE_LOWER; break;
-	}
-	descr.diag = SPARSE_DIAG_NON_UNIT;
-	checkStatus(mkl_sparse_d_mv(SPARSE_OPERATION_NON_TRANSPOSE, alpha, a._spblas->inspector, descr, x.vals, beta, y.vals));
-}
-
-template <>
-void apply(Vector_Dense<std::complex<double> > &y, const std::complex<double> &alpha, const Matrix_IJV<std::complex<double> > &a, const std::complex<double> &beta, const Vector_Dense<std::complex<double> > &x)
-{
-	matrix_descr descr;
-	switch (a.type) {
-	case Matrix_Type::REAL_SYMMETRIC_POSITIVE_DEFINITE:
-	case Matrix_Type::REAL_SYMMETRIC_INDEFINITE:
-	case Matrix_Type::COMPLEX_HERMITIAN_POSITIVE_DEFINITE:
-	case Matrix_Type::COMPLEX_HERMITIAN_INDEFINITE:
-	case Matrix_Type::COMPLEX_SYMMETRIC:
-		descr.type = SPARSE_MATRIX_TYPE_SYMMETRIC;
-		break;
-	case Matrix_Type::REAL_STRUCTURALLY_SYMMETRIC:
-	case Matrix_Type::REAL_NONSYMMETRIC:
-	case Matrix_Type::COMPLEX_STRUCTURALLY_SYMMETRIC:
-	case Matrix_Type::COMPLEX_NONSYMMETRIC:
-		descr.type = SPARSE_MATRIX_TYPE_GENERAL;
-		break;
-	}
-
-	switch (a.shape) {
-	case Matrix_Shape::FULL : descr.mode = SPARSE_FILL_MODE_FULL; break;
-	case Matrix_Shape::UPPER: descr.mode = SPARSE_FILL_MODE_UPPER; break;
-	case Matrix_Shape::LOWER: descr.mode = SPARSE_FILL_MODE_LOWER; break;
-	}
-	descr.diag = SPARSE_DIAG_NON_UNIT;
-	checkStatus(mkl_sparse_z_mv(SPARSE_OPERATION_NON_TRANSPOSE, alpha, a._spblas->inspector, descr, x.vals, beta, y.vals));
-}
-
-
-}
 }
 
 #endif

@@ -129,7 +129,7 @@ template <typename T>
 void _commit(Data_Apply<Matrix_CSR, T> *data, Matrix_Distributed<Matrix_CSR, T> &m)
 {
 	data->m.vals = m.cluster.vals + m.cluster.rows[m.distribution->halo.size()] - Indexing::CSR;
-	math::commit(data->m);
+	data->spblas.commit(data->m);
 }
 
 template <typename T>
@@ -153,7 +153,7 @@ void _apply(Data_Apply<Matrix_CSR, T> *data, Vector_Distributed<Vector_Dense, T>
 	Vector_Dense<T> v;
 	v.size = data->m.nrows;
 	v.vals = y->cluster.vals + y->distribution->halo.size();
-	math::apply(v, alpha, data->m, beta, data->v);
+	data->spblas.apply(v, alpha, beta, data->v);
 	y->scatter();
 }
 

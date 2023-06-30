@@ -18,10 +18,11 @@ class Matrix_FETI_Common: public Matrix_Base<T> {
 public:
 	void commit()
 	{
-		#pragma omp parallel for
-		for (size_t d = 0; d < this->domains.size(); ++d) {
-			math::commit(this->domains[d]);
-		}
+//		spblas.resize(this->domains.size());
+//		#pragma omp parallel for
+//		for (size_t d = 0; d < this->domains.size(); ++d) {
+//			spblas.commit(this->domains[d]);
+//		}
 	}
 
 	void combine(const Matrix_FETI<Matrix, T> &A, const Matrix_FETI<Matrix, T> &B)

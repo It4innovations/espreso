@@ -7,8 +7,6 @@
 
 namespace espreso {
 
-struct Matrix_Dense_External_Representation;
-
 template <typename T>
 struct _Matrix_Dense {
 	esint nrows, ncols, nnz;
@@ -19,12 +17,12 @@ template <typename T>
 class Matrix_Dense: public _Matrix_Dense<T>
 {
 public:
-	Matrix_Dense(): _Matrix_Dense<T>{}, type{Matrix_Type::REAL_STRUCTURALLY_SYMMETRIC}, shape{Matrix_Shape::FULL}, _external{nullptr}, _allocated{}
+	Matrix_Dense(): _Matrix_Dense<T>{}, type{Matrix_Type::REAL_STRUCTURALLY_SYMMETRIC}, shape{Matrix_Shape::FULL}, _allocated{}
 	{
 
 	}
 
-	Matrix_Dense(const Matrix_Dense &other): _Matrix_Dense<T>{}, _external{nullptr}, _allocated{}
+	Matrix_Dense(const Matrix_Dense &other): _Matrix_Dense<T>{}, _allocated{}
 	{
 		this->type = other.type;
 		this->shape = other.shape;
@@ -39,7 +37,6 @@ public:
 	{
 		this->type = other.type;
 		this->shape = other.shape;
-		swap(this->_external, other._external);
 		swap(*this, other);
 		swap(_allocated, other._allocated);
 	}
@@ -101,7 +98,6 @@ public:
 	Matrix_Type type;
 	Matrix_Shape shape;
 	Slice submatrix[2];
-	Matrix_Dense_External_Representation *_external;
 
 protected:
 	template <typename Type>

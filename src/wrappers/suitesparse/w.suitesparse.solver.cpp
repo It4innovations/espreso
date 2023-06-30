@@ -206,10 +206,10 @@ void computeSC(const Matrix_CSR<T> &A, Matrix_Dense<T> &sc)
 		Matrix_CSR<T> A21t_sp; // = A12c_sp
 		Matrix_Dense<T> A22t_dn;
 		Matrix_Dense<T> A12t_dn;
-		submatrix<T>(A, A11_sp, 0, size_A11, 0, size_A11);
-		submatrix<T>(A, A21t_sp, 0, size_A11, size_A11, size, false, true); // = A12c_sp
-		submatrix<T>(A, A22t_dn, size_A11, size, size_A11, size, true, false, true);
-		submatrix<T>(A, A12t_dn, 0, size_A11, size_A11, size, true, false, true);
+		SpBLAS<T, Matrix_CSR>::submatrix(A, A11_sp, 0, size_A11, 0, size_A11);
+		SpBLAS<T, Matrix_CSR>::submatrix(A, A21t_sp, 0, size_A11, size_A11, size, false, true); // = A12c_sp
+		SpBLAS<T, Matrix_CSR>::submatrix(A, A22t_dn, size_A11, size, size_A11, size, true, false, true);
+		SpBLAS<T, Matrix_CSR>::submatrix(A, A12t_dn, 0, size_A11, size_A11, size, true, false, true);
 
 		cholmod_common &cm_common = A._solver->cholmod.common;
 		cholmod_sparse *cm_A11_sp = new cholmod_sparse();
