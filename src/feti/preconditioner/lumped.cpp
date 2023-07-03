@@ -6,7 +6,11 @@
 
 namespace espreso {
 
-template <typename T> Lumped<T>::Lumped(FETI<T> *feti)
+template struct Lumped<double>;
+template struct Lumped<std::complex<double> >;
+
+template <typename T>
+Lumped<T>::Lumped(FETI<T> *feti)
 : Preconditioner<T>(feti), K(feti->K)
 {
 	Btx.resize(K->domains.size());
@@ -24,12 +28,14 @@ template <typename T> Lumped<T>::Lumped(FETI<T> *feti)
 
 }
 
-template <typename T> Lumped<T>::~Lumped()
+template <typename T>
+Lumped<T>::~Lumped()
 {
 
 }
 
-template <typename T> void Lumped<T>::info()
+template <typename T>
+void Lumped<T>::info()
 {
 	if (this->feti->configuration.exhaustive_info) {
 		eslog::info(" = LUMPED PRECONDITIONER PROPERTIES                                                          = \n");
@@ -38,12 +44,14 @@ template <typename T> void Lumped<T>::info()
 	}
 }
 
-template <typename T> void Lumped<T>::update()
+template <typename T>
+void Lumped<T>::update()
 {
 
 }
 
-template <typename T> void Lumped<T>::apply(const Vector_Dual<T> &x, Vector_Dual<T> &y)
+template <typename T> void
+Lumped<T>::apply(const Vector_Dual<T> &x, Vector_Dual<T> &y)
 {
 	#pragma omp parallel for
 	for (size_t d = 0; d < K->domains.size(); ++d) {
@@ -52,8 +60,5 @@ template <typename T> void Lumped<T>::apply(const Vector_Dual<T> &x, Vector_Dual
 	}
 	applyB(this->feti, KBtx, y);
 }
-
-template class Lumped<double>;
-template class Lumped<std::complex<double> >;
 
 }

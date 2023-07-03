@@ -18,12 +18,12 @@ template <typename T>
 class Matrix_CSR: public _Matrix_CSR<T>
 {
 public:
-	Matrix_CSR(): _Matrix_CSR<T>{}, type{Matrix_Type::REAL_STRUCTURALLY_SYMMETRIC}, shape{Matrix_Shape::FULL}, _solver{nullptr}, _allocated{}
+	Matrix_CSR(): _Matrix_CSR<T>{}, type{Matrix_Type::REAL_STRUCTURALLY_SYMMETRIC}, shape{Matrix_Shape::FULL}, _allocated{}
 	{
 
 	}
 
-	Matrix_CSR(const Matrix_CSR &other): _Matrix_CSR<T>{}, type{Matrix_Type::REAL_STRUCTURALLY_SYMMETRIC}, shape{Matrix_Shape::FULL}, _solver{nullptr}, _allocated{}
+	Matrix_CSR(const Matrix_CSR &other): _Matrix_CSR<T>{}, type{Matrix_Type::REAL_STRUCTURALLY_SYMMETRIC}, shape{Matrix_Shape::FULL}, _allocated{}
 	{
 		type = other.type;
 		shape = other.shape;
@@ -43,7 +43,6 @@ public:
 		swap(*static_cast<_Matrix_CSR<T>*>(this), *static_cast<_Matrix_CSR<T>*>(&other));
 		type = other.type;
 		shape = other.shape;
-		swap(_solver, other._solver);
 		swap(_allocated, other._allocated);
 	}
 
@@ -106,7 +105,6 @@ public:
 
 	Matrix_Type type;
 	Matrix_Shape shape;
-	Matrix_CSR_Solver *_solver;
 	_Matrix_CSR<T> _allocated;
 
 protected:

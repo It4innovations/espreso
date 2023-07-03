@@ -31,6 +31,8 @@ struct SpBLAS {
 	static void submatrix(const Matrix_CSR<T> &input, Matrix_CSR<T>   &output, esint start_row, esint end_row, esint start_col, esint end_col, bool trans = false, bool conj = false, bool output_force_full = false);
 
 	const Matrix<T> *matrix;
+
+private:
 	Matrix_SpBLAS_External_Representation *_spblas;
 };
 

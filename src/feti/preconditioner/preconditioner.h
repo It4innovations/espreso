@@ -8,8 +8,7 @@
 namespace espreso {
 
 template <typename T>
-class Preconditioner {
-public:
+struct Preconditioner {
 	static Preconditioner<T>* set(FETI<T> *feti);
 
 	Preconditioner(FETI<T> *feti): feti(feti) {}
@@ -21,6 +20,7 @@ public:
 	// y = S * x
 	virtual void apply(const Vector_Dual<T> &x, Vector_Dual<T> &y) =0;
 
+protected:
 	FETI<T> *feti;
 };
 

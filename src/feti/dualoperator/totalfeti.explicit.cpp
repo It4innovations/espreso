@@ -83,7 +83,7 @@ void TotalFETIExplicit<T>::update()
 			for (esint c = L->domain[d].B1.rows[r]; c < L->domain[d].B1.rows[r + 1]; ++c) {
 				Bt.vals[L->domain[d].B1.cols[c]] = L->domain[d].B1.vals[c];
 			}
-			math::solve(this->Kplus[d], Bt, KplusBt, this->sparsity);
+			this->KSolver[d].solve(Bt, KplusBt, this->sparsity);
 
 			for (esint fr = 0; fr < L->domain[d].B1.nrows; ++fr) {
 				this->F[d].vals[fr * L->domain[d].B1.nrows + r] = 0;

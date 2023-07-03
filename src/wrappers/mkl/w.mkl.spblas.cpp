@@ -10,6 +10,9 @@
 
 namespace espreso {
 
+template class SpBLAS<double, Matrix_CSR>;
+template class SpBLAS<std::complex<double>, Matrix_CSR>;
+
 struct Matrix_SpBLAS_External_Representation {
 	sparse_matrix_t inspector;
 };
@@ -42,30 +45,11 @@ SpBLAS<T, Matrix>::~SpBLAS()
 	}
 }
 
-template <>
-SpBLAS<double, Matrix_CSR>::SpBLAS(const Matrix_CSR<double> &a)
-: matrix(&a)
+template <typename T, template <typename> class Matrix>
+SpBLAS<T, Matrix>::SpBLAS(const Matrix<T> &a)
+: matrix{}, _spblas{}
 {
-	_spblas = new Matrix_SpBLAS_External_Representation();
-	if (matrix->nnz) {
-		switch (Indexing::CSR) {
-		case 0: checkStatus(mkl_sparse_d_create_csr(&_spblas->inspector, SPARSE_INDEX_BASE_ZERO, matrix->nrows, matrix->ncols, matrix->rows, matrix->rows + 1, matrix->cols, matrix->vals)); break;
-		case 1: checkStatus(mkl_sparse_d_create_csr(&_spblas->inspector, SPARSE_INDEX_BASE_ONE, matrix->nrows, matrix->ncols, matrix->rows, matrix->rows + 1, matrix->cols, matrix->vals)); break;
-		}
-	}
-}
-
-template <>
-SpBLAS<std::complex<double>, Matrix_CSR>::SpBLAS(const Matrix_CSR<std::complex<double> > &a)
-: matrix(&a)
-{
-	_spblas = new Matrix_SpBLAS_External_Representation();
-	if (matrix->nnz) {
-		switch (Indexing::CSR) {
-		case 0: checkStatus(mkl_sparse_z_create_csr(&_spblas->inspector, SPARSE_INDEX_BASE_ZERO, matrix->nrows, matrix->ncols, matrix->rows, matrix->rows + 1, matrix->cols, matrix->vals)); break;
-		case 1: checkStatus(mkl_sparse_z_create_csr(&_spblas->inspector, SPARSE_INDEX_BASE_ONE, matrix->nrows, matrix->ncols, matrix->rows, matrix->rows + 1, matrix->cols, matrix->vals)); break;
-		}
-	}
+	commit(a);
 }
 
 template <>
@@ -158,9 +142,6 @@ void SpBLAS<std::complex<double>, Matrix_CSR>::apply(Vector_Dense<std::complex<d
 	descr.diag = SPARSE_DIAG_NON_UNIT;
 	checkStatus(mkl_sparse_z_mv(SPARSE_OPERATION_NON_TRANSPOSE, alpha, _spblas->inspector, descr, x.vals, beta, y.vals));
 }
-
-template class SpBLAS<double, Matrix_CSR>;
-template class SpBLAS<std::complex<double>, Matrix_CSR>;
 
 }
 

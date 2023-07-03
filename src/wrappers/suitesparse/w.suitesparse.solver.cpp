@@ -12,7 +12,10 @@
 
 namespace espreso {
 
-struct Matrix_CSR_Solver {
+template class DirectSolver<double, Matrix_CSR>;
+template class DirectSolver<std::complex<double>, Matrix_CSR>;
+
+struct Matrix_Solver_External_Representation {
 	struct CHOLMOD {
 		cholmod_sparse *A;
 		cholmod_dense *b;
@@ -25,193 +28,196 @@ struct Matrix_CSR_Solver {
 	} cholmod;
 };
 
-struct Matrix_CSC_Solver: public Matrix_CSR_Solver {};
-
-namespace math {
-
-const char* sparseSolver()
+template <typename T, template <typename> class Matrix>
+const char* DirectSolver<T, Matrix>::name()
 {
 	return "SUITE SPARSE";
 }
 
-template <>
-void initSolver(Matrix_CSR<double> &A)
-{
-	A._solver = new Matrix_CSR_Solver();
-	switch (A.type) {
-	case Matrix_Type::REAL_SYMMETRIC_POSITIVE_DEFINITE:
-	case Matrix_Type::COMPLEX_HERMITIAN_POSITIVE_DEFINITE:
-		_start<esint>(A._solver->cholmod.common); break;
-	default:
-		break; // UMFPACK
-	}
-}
-
-template <>
-void initSolver(Matrix_CSR<std::complex<double> > &A)
-{
-	A._solver = new Matrix_CSR_Solver();
-	switch (A.type) {
-	case Matrix_Type::REAL_SYMMETRIC_POSITIVE_DEFINITE:
-	case Matrix_Type::COMPLEX_HERMITIAN_POSITIVE_DEFINITE:
-		_start<esint>(A._solver->cholmod.common); break;
-	default:
-		break; // UMFPACK
-	}
-}
-
-template <>
-void symbolicFactorization(const Matrix_CSR<double> &A, esint fixedSuffix)
-{
-	switch (A.type) {
-	case Matrix_Type::REAL_SYMMETRIC_POSITIVE_DEFINITE:
-	case Matrix_Type::COMPLEX_HERMITIAN_POSITIVE_DEFINITE:
-		set(A._solver->cholmod.A, A);
-		_analyze<esint>(A._solver->cholmod.L, A._solver->cholmod.A, A._solver->cholmod.common);
-		break;
-	default:
-		break; // UMFPACK
-	}
-}
-
-template <>
-void symbolicFactorization(const Matrix_CSR<std::complex<double> > &A, esint fixedSuffix)
-{
-	switch (A.type) {
-	case Matrix_Type::REAL_SYMMETRIC_POSITIVE_DEFINITE:
-	case Matrix_Type::COMPLEX_HERMITIAN_POSITIVE_DEFINITE:
-		set(A._solver->cholmod.A, A);
-		_analyze<esint>(A._solver->cholmod.L, A._solver->cholmod.A, A._solver->cholmod.common);
-		break;
-	default:
-		break; // UMFPACK
-	}
-}
-
-template <>
-void numericalFactorization(const Matrix_CSR<double> &A)
-{
-	switch (A.type) {
-	case Matrix_Type::REAL_SYMMETRIC_POSITIVE_DEFINITE:
-	case Matrix_Type::COMPLEX_HERMITIAN_POSITIVE_DEFINITE:
-		update(A._solver->cholmod.A, A);
-		_factorize<esint>(A._solver->cholmod.L, A._solver->cholmod.A, A._solver->cholmod.common);
-		break;
-	default:
-		break; // UMFPACK
-	}
-}
-
-template <>
-void numericalFactorization(const Matrix_CSR<std::complex<double> > &A)
-{
-	switch (A.type) {
-	case Matrix_Type::REAL_SYMMETRIC_POSITIVE_DEFINITE:
-	case Matrix_Type::COMPLEX_HERMITIAN_POSITIVE_DEFINITE:
-		update(A._solver->cholmod.A, A);
-		_factorize<esint>(A._solver->cholmod.L, A._solver->cholmod.A, A._solver->cholmod.common);
-		break;
-	default:
-		break; // UMFPACK
-	}
-}
-
-template <>
-void solve(const Matrix_CSR<double> &A, Vector_Dense<double> &b, Vector_Dense<double> &x, VectorSparsity sparsity)
-{
-	switch (A.type) {
-	case Matrix_Type::REAL_SYMMETRIC_POSITIVE_DEFINITE:
-	case Matrix_Type::COMPLEX_HERMITIAN_POSITIVE_DEFINITE:
-		update(A._solver->cholmod.b, b);
-		cholmod_dense *_x;
-		_solve<esint>(_x, A._solver->cholmod.L, A._solver->cholmod.b, A._solver->cholmod.common);
-		extract(_x, A._solver->cholmod.common, x);
-		break;
-	default:
-		break; // UMFPACK
-	}
-}
-
-template <>
-void solve(const Matrix_CSR<double> &A, Matrix_Dense<double> &b, Matrix_Dense<double> &x, VectorSparsity sparsity)
-{
-	switch (A.type) {
-	case Matrix_Type::REAL_SYMMETRIC_POSITIVE_DEFINITE:
-	case Matrix_Type::COMPLEX_HERMITIAN_POSITIVE_DEFINITE:
-		update(A._solver->cholmod.b, b);
-		cholmod_dense *_x;
-		_solve<esint>(_x, A._solver->cholmod.L, A._solver->cholmod.b, A._solver->cholmod.common);
-		extract(_x, A._solver->cholmod.common, x);
-		break;
-	default:
-		break; // UMFPACK
-	}
-}
-
-template <>
-void solve(const Matrix_CSR<std::complex<double> > &A, Vector_Dense<std::complex<double> > &b, Vector_Dense<std::complex<double> > &x, VectorSparsity sparsity)
-{
-	switch (A.type) {
-	case Matrix_Type::REAL_SYMMETRIC_POSITIVE_DEFINITE:
-	case Matrix_Type::COMPLEX_HERMITIAN_POSITIVE_DEFINITE:
-		update(A._solver->cholmod.b, b);
-		cholmod_dense *_x;
-		_solve<esint>(_x, A._solver->cholmod.L, A._solver->cholmod.b, A._solver->cholmod.common);
-		extract(_x, A._solver->cholmod.common, x);
-		break;
-	default:
-		break; // UMFPACK
-	}
-}
-
-template <>
-void solve(const Matrix_CSR<std::complex<double> > &A, Matrix_Dense<std::complex<double> > &b, Matrix_Dense<std::complex<double> > &x, VectorSparsity sparsity)
-{
-	switch (A.type) {
-	case Matrix_Type::REAL_SYMMETRIC_POSITIVE_DEFINITE:
-	case Matrix_Type::COMPLEX_HERMITIAN_POSITIVE_DEFINITE:
-		update(A._solver->cholmod.b, b);
-		cholmod_dense *_x;
-		_solve<esint>(_x, A._solver->cholmod.L, A._solver->cholmod.b, A._solver->cholmod.common);
-		extract(_x, A._solver->cholmod.common, x);
-		break;
-	default:
-		break; // UMFPACK
-	}
-}
-
-bool provideSC()
+template <typename T, template <typename> class Matrix>
+bool DirectSolver<T, Matrix>::provideFactors()
 {
 	return true;
 }
 
-template <typename T>
-void computeSC(const Matrix_CSR<T> &A, Matrix_Dense<T> &sc)
+template <typename T, template <typename> class Matrix>
+bool DirectSolver<T, Matrix>::provideSC()
+{
+	// manually computed
+	return true;
+}
+
+template <typename T, template <typename> class Matrix>
+DirectSolver<T, Matrix>::DirectSolver()
+: matrix{}, rows{}, nnzA{}, nnzL{}, memoryL{}, _solver{nullptr}
+{
+
+}
+
+template <typename T, template <typename> class Matrix>
+DirectSolver<T, Matrix>::~DirectSolver()
+{
+	if (_solver) {
+		switch (matrix->type) {
+		case Matrix_Type::REAL_SYMMETRIC_POSITIVE_DEFINITE:
+		case Matrix_Type::COMPLEX_HERMITIAN_POSITIVE_DEFINITE:
+			_free<esint>(_solver->cholmod.L, _solver->cholmod.common);
+			_finish<esint>(_solver->cholmod.common);
+			break;
+		default:
+			break; // UMFPACK
+		}
+		delete _solver;
+	}
+}
+
+template <typename T, template <typename> class Matrix>
+DirectSolver<T, Matrix>::DirectSolver(const Matrix<T> &a)
+: matrix{}, rows{}, nnzA{}, nnzL{}, memoryL{}, _solver{nullptr}
+{
+	commit(a);
+}
+
+template <typename T, template <typename> class Matrix>
+void DirectSolver<T, Matrix>::commit(const Matrix<T> &a)
+{
+	matrix = &a;
+	_solver = new Matrix_Solver_External_Representation();
+	switch (matrix->type) {
+	case Matrix_Type::REAL_SYMMETRIC_POSITIVE_DEFINITE:
+	case Matrix_Type::COMPLEX_HERMITIAN_POSITIVE_DEFINITE:
+		_start<esint>(_solver->cholmod.common); break;
+	default:
+		break; // UMFPACK
+	}
+}
+
+template <typename T, template <typename> class Matrix>
+void DirectSolver<T, Matrix>::symbolicFactorization(int fixedSuffix)
+{
+	switch (matrix->type) {
+	case Matrix_Type::REAL_SYMMETRIC_POSITIVE_DEFINITE:
+	case Matrix_Type::COMPLEX_HERMITIAN_POSITIVE_DEFINITE:
+		set(_solver->cholmod.A, *matrix);
+		_analyze<esint>(_solver->cholmod.L, _solver->cholmod.A, _solver->cholmod.common);
+		break;
+	default:
+		break; // UMFPACK
+	}
+	rows = matrix->nrows;
+	nnzA = matrix->nnz;
+	switch (matrix->type) {
+	case Matrix_Type::REAL_SYMMETRIC_POSITIVE_DEFINITE:
+	case Matrix_Type::COMPLEX_HERMITIAN_POSITIVE_DEFINITE:
+		nnzL = _solver->cholmod.common.lnz;
+		memoryL = _solver->cholmod.common.memory_inuse;
+		break;
+	default:
+		nnzL = 0;
+		break; // UMFPACK
+	}
+}
+
+template <typename T, template <typename> class Matrix>
+void DirectSolver<T, Matrix>::numericalFactorization()
+{
+	switch (matrix->type) {
+	case Matrix_Type::REAL_SYMMETRIC_POSITIVE_DEFINITE:
+	case Matrix_Type::COMPLEX_HERMITIAN_POSITIVE_DEFINITE:
+		update(_solver->cholmod.A, *matrix);
+		_factorize<esint>(_solver->cholmod.L, _solver->cholmod.A, _solver->cholmod.common);
+		break;
+	default:
+		break; // UMFPACK
+	}
+}
+
+template <typename T, template <typename> class Matrix>
+void DirectSolver<T, Matrix>::solve(Vector_Dense<T> &rhs, Vector_Dense<T> &solution, int sparsity)
+{
+	switch (matrix->type) {
+	case Matrix_Type::REAL_SYMMETRIC_POSITIVE_DEFINITE:
+	case Matrix_Type::COMPLEX_HERMITIAN_POSITIVE_DEFINITE:
+		update(_solver->cholmod.b, rhs);
+		cholmod_dense *_x;
+		_solve<esint>(_x, _solver->cholmod.L, _solver->cholmod.b, _solver->cholmod.common);
+		extract(_x, _solver->cholmod.common, solution);
+		break;
+	default:
+		break; // UMFPACK
+	}
+}
+
+template <typename T, template <typename> class Matrix>
+void DirectSolver<T, Matrix>::solve(Matrix_Dense<T> &rhs, Matrix_Dense<T> &solution, int sparsity)
+{
+	switch (matrix->type) {
+	case Matrix_Type::REAL_SYMMETRIC_POSITIVE_DEFINITE:
+	case Matrix_Type::COMPLEX_HERMITIAN_POSITIVE_DEFINITE:
+		update(_solver->cholmod.b, rhs);
+		cholmod_dense *_x;
+		_solve<esint>(_x, _solver->cholmod.L, _solver->cholmod.b, _solver->cholmod.common);
+		extract(_x, _solver->cholmod.common, solution);
+		break;
+	default:
+		break; // UMFPACK
+	}
+}
+
+template <typename T, template <typename> class Matrix>
+void DirectSolver<T, Matrix>::getFactors(Matrix_CSC<T> &L, Matrix_CSC<T> &U, Vector_Dense<int> &p)
+{
+	switch (matrix->type) {
+	case Matrix_Type::REAL_SYMMETRIC_POSITIVE_DEFINITE:
+	case Matrix_Type::COMPLEX_HERMITIAN_POSITIVE_DEFINITE: {
+		auto Lsolver = Matrix_Solver_External_Representation();
+		Lsolver.cholmod.common = _solver->cholmod.common;
+		cholmod_factor *copy;
+		_copyFactor<esint>(_solver->cholmod.L, copy, _solver->cholmod.common);
+		_factorToSparse<esint>(copy, Lsolver.cholmod.A, Lsolver.cholmod.common);
+		_free<esint>(copy, _solver->cholmod.common);
+		L.nrows = Lsolver.cholmod.A->nrow;
+		L.ncols = Lsolver.cholmod.A->ncol;
+		L.nnz = Lsolver.cholmod.A->nzmax;
+		L.rows = (esint*)Lsolver.cholmod.A->p;
+		L.cols = (esint*)Lsolver.cholmod.A->i;
+		L.vals = (T*)Lsolver.cholmod.A->x;
+		L.type = matrix->type;
+		L.shape = Matrix_Shape::LOWER;
+//		p.size = L.nrows;
+//		p.vals = (esint*)A._solver->cholmod.L->Perm;
+	} break;
+	default:
+		break; // UMFPACK
+	}
+}
+
+template <typename T, template <typename> class Matrix>
+void DirectSolver<T, Matrix>::getSC(Matrix_Dense<T> &sc)
 {
 	// computes the schur complement S = A22 - A21 * A11^{-1} * A12, where A = [A11, A12; A21, A22]
-
-	switch(A.type) {
+	switch(matrix->type) {
 	case Matrix_Type::REAL_SYMMETRIC_POSITIVE_DEFINITE:
 	case Matrix_Type::COMPLEX_HERMITIAN_POSITIVE_DEFINITE:
 	{
-		if(A.shape != Matrix_Shape::UPPER) {
+		if(matrix->shape != Matrix_Shape::UPPER) {
 			eslog::error("Implement Schur complement for non-upper csr matrices.\n");
 		}
 
 		esint size_sc = sc.nrows;
-		esint size = A.nrows;
+		esint size = matrix->nrows;
 		esint size_A11 = size - size_sc;
 
 		Matrix_CSR<T> A11_sp;
 		Matrix_CSR<T> A21t_sp; // = A12c_sp
 		Matrix_Dense<T> A22t_dn;
 		Matrix_Dense<T> A12t_dn;
-		SpBLAS<T, Matrix_CSR>::submatrix(A, A11_sp, 0, size_A11, 0, size_A11);
-		SpBLAS<T, Matrix_CSR>::submatrix(A, A21t_sp, 0, size_A11, size_A11, size, false, true); // = A12c_sp
-		SpBLAS<T, Matrix_CSR>::submatrix(A, A22t_dn, size_A11, size, size_A11, size, true, false, true);
-		SpBLAS<T, Matrix_CSR>::submatrix(A, A12t_dn, 0, size_A11, size_A11, size, true, false, true);
+		SpBLAS<T, Matrix_CSR>::submatrix(*matrix, A11_sp, 0, size_A11, 0, size_A11);
+		SpBLAS<T, Matrix_CSR>::submatrix(*matrix, A21t_sp, 0, size_A11, size_A11, size, false, true); // = A12c_sp
+		SpBLAS<T, Matrix_CSR>::submatrix(*matrix, A22t_dn, size_A11, size, size_A11, size, true, false, true);
+		SpBLAS<T, Matrix_CSR>::submatrix(*matrix, A12t_dn, 0, size_A11, size_A11, size, true, false, true);
 
-		cholmod_common &cm_common = A._solver->cholmod.common;
+		cholmod_common &cm_common = _solver->cholmod.common;
 		cholmod_sparse *cm_A11_sp = new cholmod_sparse();
 		cholmod_sparse *cm_A21_sp = new cholmod_sparse();
 		cholmod_dense *cm_A22_dn = new cholmod_dense();
@@ -257,160 +263,6 @@ void computeSC(const Matrix_CSR<T> &A, Matrix_Dense<T> &sc)
 	}
 }
 
-template void computeSC<double>(const Matrix_CSR<double> &A, Matrix_Dense<double> &sc);
-template void computeSC<std::complex<double>>(const Matrix_CSR<std::complex<double>> &A, Matrix_Dense<std::complex<double>> &sc);
-
-template <>
-void freeSolver(Matrix_CSR<double> &A)
-{
-	switch (A.type) {
-	case Matrix_Type::REAL_SYMMETRIC_POSITIVE_DEFINITE:
-	case Matrix_Type::COMPLEX_HERMITIAN_POSITIVE_DEFINITE:
-		_free<esint>(A._solver->cholmod.L, A._solver->cholmod.common);
-		_finish<esint>(A._solver->cholmod.common);
-		break;
-	default:
-		break; // UMFPACK
-	}
-	delete A._solver;
-}
-
-template <>
-void freeSolver(Matrix_CSR<std::complex<double> > &A)
-{
-	switch (A.type) {
-	case Matrix_Type::REAL_SYMMETRIC_POSITIVE_DEFINITE:
-	case Matrix_Type::COMPLEX_HERMITIAN_POSITIVE_DEFINITE:
-		_free<esint>(A._solver->cholmod.L, A._solver->cholmod.common);
-		_finish<esint>(A._solver->cholmod.common);
-		break;
-	default:
-		break; // UMFPACK
-	}
-	delete A._solver;
-}
-
-template<typename T>
-static void _info(SolverInfo &info, const Matrix_CSR<T> &A)
-{
-	info.rows = A.nrows;
-	info.nnzA = A.nnz;
-	switch (A.type) {
-	case Matrix_Type::REAL_SYMMETRIC_POSITIVE_DEFINITE:
-	case Matrix_Type::COMPLEX_HERMITIAN_POSITIVE_DEFINITE:
-		info.nnzL = A._solver->cholmod.common.lnz;
-		info.memoryL = A._solver->cholmod.common.memory_inuse;
-		break;
-	default:
-		info.nnzL = 0;
-		break; // UMFPACK
-	}
-}
-
-template <>
-SolverInfo getSolverInfo(const Matrix_CSR<double> &A)
-{
-	SolverInfo info;
-	_info(info, A);
-	return info;
-}
-
-template <>
-SolverInfo getSolverInfo(const Matrix_CSR<std::complex<double> > &A)
-{
-	SolverInfo info;
-	_info(info, A);
-	return info;
-}
-
-bool provideFactors()
-{
-	return true;
-}
-
-template <>
-void getFactors(const Matrix_CSR<double> &A, Matrix_CSC<double> &L, Matrix_CSC<double> &U, Vector_Dense<int> &p)
-{
-	switch (A.type) {
-	case Matrix_Type::REAL_SYMMETRIC_POSITIVE_DEFINITE:
-	case Matrix_Type::COMPLEX_HERMITIAN_POSITIVE_DEFINITE:
-		L._solver = new Matrix_CSC_Solver();
-		L._solver->cholmod.common = A._solver->cholmod.common;
-		cholmod_factor *copy;
-		_copyFactor<esint>(A._solver->cholmod.L, copy, A._solver->cholmod.common);
-		_factorToSparse<esint>(copy, L._solver->cholmod.A, L._solver->cholmod.common);
-		_free<esint>(copy, A._solver->cholmod.common);
-		L.nrows = L._solver->cholmod.A->nrow;
-		L.ncols = L._solver->cholmod.A->ncol;
-		L.nnz = L._solver->cholmod.A->nzmax;
-		L.rows = (esint*)L._solver->cholmod.A->p;
-		L.cols = (esint*)L._solver->cholmod.A->i;
-		L.vals = (double*)L._solver->cholmod.A->x;
-		L.type = A.type;
-		L.shape = Matrix_Shape::LOWER;
-//		p.size = L.nrows;
-//		p.vals = (esint*)A._solver->cholmod.L->Perm;
-		break;
-	default:
-		break; // UMFPACK
-	}
-}
-
-template <>
-void getFactors(const Matrix_CSR<std::complex<double> > &A, Matrix_CSC<std::complex<double> > &L, Matrix_CSC<std::complex<double> > &U, Vector_Dense<int> &p)
-{
-	switch (A.type) {
-	case Matrix_Type::REAL_SYMMETRIC_POSITIVE_DEFINITE:
-	case Matrix_Type::COMPLEX_HERMITIAN_POSITIVE_DEFINITE:
-		L._solver = new Matrix_CSC_Solver();
-//		L._solver->cholmod.common = A._solver->cholmod.common;
-
-		_factorToSparse<esint>(A._solver->cholmod.L, L._solver->cholmod.A, A._solver->cholmod.common);
-		L.nrows = L._solver->cholmod.A->nrow;
-		L.ncols = L._solver->cholmod.A->ncol;
-		L.nnz = L._solver->cholmod.A->nzmax;
-		L.rows = (esint*)L._solver->cholmod.A->p;
-		L.cols = (esint*)L._solver->cholmod.A->i;
-		L.vals = (std::complex<double>*)L._solver->cholmod.A->z;
-		L.type = A.type;
-		L.shape = Matrix_Shape::LOWER;
-		p.size = L.nrows;
-		p.vals = (esint*)A._solver->cholmod.L->Perm;
-		break;
-	default:
-		break; // UMFPACK
-	}
-}
-
-template <>
-void freeFactor(Matrix_CSC<double> &L)
-{
-	switch (L.type) {
-	case Matrix_Type::REAL_SYMMETRIC_POSITIVE_DEFINITE:
-	case Matrix_Type::COMPLEX_HERMITIAN_POSITIVE_DEFINITE:
-		_free<esint>(L._solver->cholmod.A, L._solver->cholmod.common);
-		delete L._solver;
-		break;
-	default:
-		break; // UMFPACK
-	}
-}
-
-template <>
-void freeFactor(Matrix_CSC<std::complex<double> > &L)
-{
-	switch (L.type) {
-	case Matrix_Type::REAL_SYMMETRIC_POSITIVE_DEFINITE:
-	case Matrix_Type::COMPLEX_HERMITIAN_POSITIVE_DEFINITE:
-		_free<esint>(L._solver->cholmod.A, L._solver->cholmod.common);
-		delete L._solver;
-		break;
-	default:
-		break; // UMFPACK
-	}
-}
-
-}
 }
 
 #endif

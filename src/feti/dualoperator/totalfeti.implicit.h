@@ -3,6 +3,7 @@
 #define SRC_FETI_DUALOPERATOR_TOTALFETI_IMPLICIT_H_
 
 #include "dualoperator.h"
+#include "math/wrappers/math.solver.h"
 
 namespace espreso {
 
@@ -40,7 +41,8 @@ protected:
 
 	std::vector<Matrix_CSR<T> > Kplus;
 	std::vector<Vector_Dense<T> > Btx, KplusBtx;
-	math::VectorSparsity sparsity;
+	std::vector<DirectSolver<T, Matrix_CSR> > KSolver;
+	int sparsity;
 };
 
 }

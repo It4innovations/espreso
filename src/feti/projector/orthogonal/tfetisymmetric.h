@@ -23,8 +23,7 @@ namespace espreso {
  */
 
 template <typename T>
-class OrthogonalTFETISymmetric: public Projector<T> {
-public:
+struct OrthogonalTFETISymmetric: public Projector<T> {
 	OrthogonalTFETISymmetric(FETI<T> *feti);
 	~OrthogonalTFETISymmetric();
 
@@ -34,6 +33,21 @@ public:
 	void apply(const Vector_Dual<T> &x, Vector_Dual<T> &y);
 	void applyGtInvGGt(const Vector_Kernel<T> &x, Vector_Dual<T> &y);
 	void applyRInvGGtG(const Vector_Dual<T> &x, Vector_FETI<Vector_Dense, T> &y);
+
+protected:
+	void _setG();
+	void _setSparseGGt();
+	void _setDenseGGt();
+	void _updateG();
+	void _updateSparseGGt();
+	void _updateDenseGGt();
+
+	void _applyG(const Vector_Dual<T> &in, Vector_Kernel<T> &out);
+	void _applyInvGGt(const Vector_Kernel<T> &in, Vector_Dense<T> &out);
+	void _applyGt(const Vector_Dense<T> &in, const T &alpha, Vector_Dual<T> &out);
+	void _applyR(const Vector_Dense<T> &in, Vector_FETI<Vector_Dense, T> &out);
+
+	void _print();
 
 	Matrix_CSR<T> G, GGt;
 	Matrix_Dense<T> invGGt;
@@ -46,6 +60,7 @@ public:
 	std::vector<std::pair<esint, esint> > Goffset; // offset to G for each LMAL
 	std::vector<std::vector<std::pair<esint, esint> > > nKernels; // n, offset
 	std::vector<std::vector<T> > sBuffer, rBuffer;
+	DirectSolver<T, Matrix_CSR> GGtSolver;
 };
 
 }

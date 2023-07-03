@@ -38,7 +38,7 @@ template <typename T>
 void _info(const FETI<T> *feti)
 {
 	eslog::info(" = ----------------------------------------------------------------------------------------- = \n");
-	eslog::info(" = EXTERNAL LINEAR SOLVER %*s = \n", 66, math::sparseSolver());
+	eslog::info(" = EXTERNAL LINEAR SOLVER %*s = \n", 66, DirectSolver<T, Matrix_CSR>::name());
 	eslog::info(" = ----------------------------------------------------------------------------------------- = \n");
 	feti->iterativeSolver->info();
 	feti->projector->info();

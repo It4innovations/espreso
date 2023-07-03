@@ -9,7 +9,9 @@
 
 namespace espreso {
 
-struct DualOperatorInfo: public math::SolverInfo {
+struct DualOperatorInfo {
+	size_t rows, nnzA, nnzL;
+	size_t memoryL;
 	size_t dualA, surfaceA;
 };
 

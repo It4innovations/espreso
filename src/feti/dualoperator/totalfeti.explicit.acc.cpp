@@ -54,7 +54,7 @@ void TotalFETIExplicitAcc<T>::update()
 
 	#pragma omp parallel for
 	for (size_t d = 0; d < this->feti->K->domains.size(); ++d) {
-		math::getFactors(this->Kplus[d], this->L[d], this->U[d], this->p[d]);
+		this->KSolver[d].getFactors(this->L[d], this->U[d], this->p[d]);
 		switch (this->Kplus[d].type) {
 		case Matrix_Type::REAL_SYMMETRIC_POSITIVE_DEFINITE:
 		case Matrix_Type::COMPLEX_HERMITIAN_POSITIVE_DEFINITE:
@@ -65,9 +65,6 @@ void TotalFETIExplicitAcc<T>::update()
 			// TODO: implement non-symmetric case
 			break;
 		}
-
-		math::freeFactor(this->L[d]); // ?
-//		math::freeFactor(this->U[d]);
 	}
 }
 

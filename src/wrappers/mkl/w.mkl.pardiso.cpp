@@ -11,24 +11,27 @@
 
 namespace espreso {
 
+template class DirectSolver<double, Matrix_CSR>;
+template class DirectSolver<std::complex<double>, Matrix_CSR>;
+
 struct Matrix_CSR_Solver: public PARDISOParameters { };
 
-namespace math {
+struct Matrix_Solver_External_Representation: PARDISOParameters { };
 
 template<typename T>
-bool _callPardiso(esint phase, const Matrix_CSR<T> &m, esint nrhs, T *rhs, T *solution)
+bool _callPardiso(esint phase, const Matrix_CSR<T> &m, Matrix_Solver_External_Representation *solver, esint nrhs, T *rhs, T *solution)
 {
-	m._solver->phase = phase;
+	solver->phase = phase;
 	pardiso(
-			m._solver->pt, &m._solver->maxfct, &m._solver->mnum,
-			&m._solver->mtype,
-			&m._solver->phase,
+			solver->pt, &solver->maxfct, &solver->mnum,
+			&solver->mtype,
+			&solver->phase,
 			&m.nrows, m.vals, m.rows, m.cols,
-			m._solver->perm, &nrhs, m._solver->iparm, &m._solver->msglvl,
+			solver->perm, &nrhs, solver->iparm, &solver->msglvl,
 			rhs, solution,
-			&m._solver->error);
+			&solver->error);
 
-	switch (m._solver->error) {
+	switch (solver->error) {
 	case   0: break;
 	case  -1: eslog::error("MKL PARDISO: input inconsistent.\n"); break;
 	case  -2: eslog::error("MKL PARDISO: not enough memory.\n"); break;
@@ -45,130 +48,134 @@ bool _callPardiso(esint phase, const Matrix_CSR<T> &m, esint nrhs, T *rhs, T *so
 	case -13: eslog::error("MKL PARDISO: interrupted by the (user-defined) mkl_progress function.\n"); break;
 	case -15: eslog::error("MKL PARDISO: internal error which can appear for iparm[23]=10 and iparm[12]=1. Try switch matching off (set iparm[12]=0 and rerun.\n"); break;
 	}
-	return m._solver->error == 0;
+	return solver->error == 0;
 }
 
-const char* sparseSolver()
+template <typename T, template <typename> class Matrix>
+const char* DirectSolver<T, Matrix>::name()
 {
 	return "MKL PARDISO";
 }
 
-template <>
-void initSolver(Matrix_CSR<double> &m)
+template <typename T, template <typename> class Matrix>
+bool DirectSolver<T, Matrix>::provideFactors()
 {
-	m._solver = new Matrix_CSR_Solver();
-	m._solver->mtype = _pardisoType(m);
-	pardisoinit(m._solver->pt, &m._solver->mtype, m._solver->iparm);
-	m._solver->iparm[0] = 1;			/* No solver default */
-	m._solver->iparm[1] = 2;			/* Fill-in reordering from METIS */
-	m._solver->iparm[9] = 13;			/* Perturb the pivot elements with 1E-13 */
+	return false;
 }
 
-template <>
-void initSolver(Matrix_CSR<std::complex<double> > &m)
+template <typename T, template <typename> class Matrix>
+bool DirectSolver<T, Matrix>::provideSC()
 {
-	m._solver = new Matrix_CSR_Solver();
-	m._solver->mtype = _pardisoType(m);
-	pardisoinit(m._solver->pt, &m._solver->mtype, m._solver->iparm);
-	m._solver->iparm[0] = 1;			/* No solver default */
-	m._solver->iparm[1] = 2;			/* Fill-in reordering from METIS */
-	m._solver->iparm[9] = 13;			/* Perturb the pivot elements with 1E-13 */
+	return true;
 }
 
-template <>
-void symbolicFactorization(const Matrix_CSR<double> &m, esint fixedSuffix)
+template <typename T, template <typename> class Matrix>
+DirectSolver<T, Matrix>::DirectSolver()
+: matrix{}, rows{}, nnzA{}, nnzL{}, memoryL{}, _solver{nullptr}
+{
+
+}
+
+template <typename T, template <typename> class Matrix>
+DirectSolver<T, Matrix>::~DirectSolver()
+{
+	if (_solver) {
+		_callPardiso<T>(-1, *matrix, _solver, 0, nullptr, nullptr);
+		delete _solver;
+	}
+}
+
+template <typename T, template <typename> class Matrix>
+DirectSolver<T, Matrix>::DirectSolver(const Matrix<T> &a)
+: matrix{}, rows{}, nnzA{}, nnzL{}, memoryL{}, _solver{nullptr}
+{
+	commit(a);
+}
+
+template <typename T, template <typename> class Matrix>
+void DirectSolver<T, Matrix>::commit(const Matrix<T> &a)
+{
+	matrix = &a;
+	_solver = new Matrix_Solver_External_Representation();
+	_solver->mtype = _pardisoType(*matrix);
+	pardisoinit(_solver->pt, &_solver->mtype, _solver->iparm);
+	_solver->iparm[0] = 1;			/* No solver default */
+	_solver->iparm[1] = 2;			/* Fill-in reordering from METIS */
+	_solver->iparm[9] = 13;			/* Perturb the pivot elements with 1E-13 */
+}
+
+template <typename T, template <typename> class Matrix>
+void DirectSolver<T, Matrix>::symbolicFactorization(int fixedSuffix)
 {
 	if (fixedSuffix) {
-		m._solver->iparm[30] = 1;
-		m._solver->perm = new esint[m.nrows];
-		for (esint i = 0          ; i < fixedSuffix; ++i) { m._solver->perm[i] = 0; }
-		for (esint i = fixedSuffix; i < m.nrows    ; ++i) { m._solver->perm[i] = 1; }
+		_solver->iparm[30] = 1;
+		_solver->perm = new esint[matrix->nrows];
+		for (esint i = 0          ; i < fixedSuffix;   ++i) { _solver->perm[i] = 0; }
+		for (esint i = fixedSuffix; i < matrix->nrows; ++i) { _solver->perm[i] = 1; }
 	}
 
-	_callPardiso<double>(11, m, 0, nullptr, nullptr);
+	_callPardiso<T>(11, *matrix, _solver, 0, nullptr, nullptr);
+	rows = matrix->nrows;
+	nnzA = matrix->nnz;
+	memoryL = 1024 * (_solver->iparm[15] + _solver->iparm[16]);
+	nnzL = _solver->iparm[17];
 }
 
-template <>
-void symbolicFactorization(const Matrix_CSR<std::complex<double> > &m, esint fixedSuffix)
+template <typename T, template <typename> class Matrix>
+void DirectSolver<T, Matrix>::numericalFactorization()
 {
-	if (fixedSuffix) {
-		m._solver->iparm[30] = 1;
-		m._solver->perm = new esint[m.nrows];
-		for (esint i = 0          ; i < fixedSuffix; ++i) { m._solver->perm[i] = 0; }
-		for (esint i = fixedSuffix; i < m.nrows    ; ++i) { m._solver->perm[i] = 1; }
-	}
-
-	_callPardiso<std::complex<double> >(11, m, 0, nullptr, nullptr);
-}
-
-template <>
-void numericalFactorization(const Matrix_CSR<double> &m)
-{
-	_callPardiso<double>(22, m, 0, nullptr, nullptr);
-}
-
-template <>
-void numericalFactorization(const Matrix_CSR<std::complex<double> > &m)
-{
-	_callPardiso<std::complex<double> >(22, m, 0, nullptr, nullptr);
+	_callPardiso<T>(22, *matrix, _solver, 0, nullptr, nullptr);
 }
 
 // https://www.intel.com/content/www/us/en/develop/documentation/onemkl-developer-reference-c/top/sparse-solver-routines/onemkl-pardiso-parallel-direct-sparse-solver-iface/pardiso-iparm-parameter.html
-int _sparsity(VectorSparsity sparsity)
+template <typename T, template <typename> class Matrix>
+inline int _sparsity(int sparsity)
 {
-	if (sparsity == (VectorSparsity::SPARSE_RHS | VectorSparsity::SPARSE_SOLUTION)) {
+	if (sparsity == (DirectSolver<T, Matrix>::VectorSparsity::SPARSE_RHS | DirectSolver<T, Matrix>::VectorSparsity::SPARSE_SOLUTION)) {
 		return 1;
 	}
-	if (sparsity == VectorSparsity::SPARSE_RHS) {
+	if (sparsity == DirectSolver<T, Matrix>::VectorSparsity::SPARSE_RHS) {
 		return 2;
 	}
-	if (sparsity == VectorSparsity::SPARSE_RHS) {
+	if (sparsity == DirectSolver<T, Matrix>::VectorSparsity::SPARSE_RHS) {
 		return 3;
 	}
 	return 0;
 }
 
-template <>
-void solve(const Matrix_CSR<double> &m, Vector_Dense<double> &rhs, Vector_Dense<double> &solution, VectorSparsity sparsity)
+template <typename T, template <typename> class Matrix>
+void DirectSolver<T, Matrix>::solve(Vector_Dense<T> &rhs, Vector_Dense<T> &solution, int sparsity)
 {
-	m._solver->iparm[30] = _sparsity(sparsity);
-	_callPardiso<double>(33, m, 1, rhs.vals, solution.vals);
+	_solver->iparm[30] = _sparsity<T, Matrix>(sparsity);
+	_callPardiso<T>(33, *matrix, _solver, 1, rhs.vals, solution.vals);
 }
 
-template <>
-void solve(const Matrix_CSR<double> &m, Matrix_Dense<double> &rhs, Matrix_Dense<double> &solution, VectorSparsity sparsity)
+template <typename T, template <typename> class Matrix>
+void DirectSolver<T, Matrix>::solve(Matrix_Dense<T> &rhs, Matrix_Dense<T> &solution, int sparsity)
 {
-	m._solver->iparm[30] = _sparsity(sparsity);
-	_callPardiso<double>(33, m, rhs.nrows, rhs.vals, solution.vals);
+	_solver->iparm[30] = _sparsity<T, Matrix>(sparsity);
+	_callPardiso<T>(33, *matrix, _solver, rhs.nrows, rhs.vals, solution.vals);
 }
 
-template <>
-void solve(const Matrix_CSR<std::complex<double> > &m, Vector_Dense<std::complex<double> > &rhs, Vector_Dense<std::complex<double> > &solution, VectorSparsity sparsity)
+template <typename T, template <typename> class Matrix>
+void DirectSolver<T, Matrix>::getFactors(Matrix_CSC<T> &L, Matrix_CSC<T> &U, Vector_Dense<int> &p)
 {
-	m._solver->iparm[30] = _sparsity(sparsity);
-	_callPardiso<std::complex<double> >(33, m, 1, rhs.vals, solution.vals);
+	eslog::error("MKL PARDISO does not provide factors.\n");
 }
 
-template <>
-void solve(const Matrix_CSR<std::complex<double> > &m, Matrix_Dense<std::complex<double> > &rhs, Matrix_Dense<std::complex<double> > &solution, VectorSparsity sparsity)
-{
-	m._solver->iparm[30] = _sparsity(sparsity);
-	_callPardiso<std::complex<double> >(33, m, rhs.nrows, rhs.vals, solution.vals);
-}
-
-template <typename T>
-void _computeSC(const Matrix_CSR<T> &m, Matrix_Dense<T> &sc)
+template <typename T, template <typename> class Matrix>
+void DirectSolver<T, Matrix>::getSC(Matrix_Dense<T> &sc)
 {
 	Matrix_Dense<T> full; full.resize(sc.nrows, sc.nrows);
-	Vector_Dense<esint> perm; perm.resize(m.nrows);
-	for (esint i = 0                 ; i < m.nrows - sc.nrows; ++i) { perm.vals[i] = 0; }
-	for (esint i = m.nrows - sc.nrows; i < m.nrows           ; ++i) { perm.vals[i] = 1; }
+	Vector_Dense<esint> perm; perm.resize(matrix->nrows);
+	for (esint i = 0                       ; i < matrix->nrows - sc.nrows; ++i) { perm.vals[i] = 0; }
+	for (esint i = matrix->nrows - sc.nrows; i < matrix->nrows           ; ++i) { perm.vals[i] = 1; }
 
-	m._solver->iparm[35] = 1;
-	std::swap(m._solver->perm, perm.vals);
-	_callPardiso<T>(12, m, 0, nullptr, full.vals);
-	std::swap(m._solver->perm, perm.vals);
-	m._solver->iparm[35] = 0;
+	_solver->iparm[35] = 1;
+	std::swap(_solver->perm, perm.vals);
+	_callPardiso<T>(12, *matrix, _solver, 0, nullptr, full.vals);
+	std::swap(_solver->perm, perm.vals);
+	_solver->iparm[35] = 0;
 
 	for (esint r = 0, i = 0; r < full.nrows; ++r) {
 		for (esint c = r; c < full.ncols; ++c, ++i) {
@@ -177,92 +184,6 @@ void _computeSC(const Matrix_CSR<T> &m, Matrix_Dense<T> &sc)
 	}
 }
 
-bool provideSC()
-{
-	return true;
-}
-
-template <>
-void computeSC(const Matrix_CSR<double> &m, Matrix_Dense<double> &sc)
-{
-	_computeSC(m, sc);
-}
-
-template <>
-void computeSC(const Matrix_CSR<std::complex<double> > &m, Matrix_Dense<std::complex<double> > &sc)
-{
-	_computeSC(m, sc);
-}
-
-template <>
-void freeSolver(Matrix_CSR<double> &x)
-{
-	_callPardiso<double>(-1, x, 0, nullptr, nullptr);
-	delete x._solver;
-}
-
-template <>
-void freeSolver(Matrix_CSR<std::complex<double> > &x)
-{
-	_callPardiso<std::complex<double> >(-1, x, 0, nullptr, nullptr);
-	delete x._solver;
-}
-
-template<typename T>
-static void _info(SolverInfo &info, const Matrix_CSR<T> &A)
-{
-	info.rows = A.nrows;
-	info.nnzA = A.nnz;
-	info.memoryL = 1024 * (A._solver->iparm[15] + A._solver->iparm[16]);
-	info.nnzL = A._solver->iparm[17];
-}
-
-template <>
-SolverInfo getSolverInfo(const Matrix_CSR<double> &A)
-{
-	SolverInfo info;
-	_info(info, A);
-	return info;
-}
-
-template <>
-SolverInfo getSolverInfo(const Matrix_CSR<std::complex<double> > &A)
-{
-	SolverInfo info;
-	_info(info, A);
-	return info;
-}
-
-bool provideFactors()
-{
-	return false;
-}
-
-template <>
-void getFactors(const Matrix_CSR<double> &A, Matrix_CSC<double> &L, Matrix_CSC<double> &U, Vector_Dense<int> &p)
-{
-	eslog::error("MKL PARDISO does not provide factors.\n");
-}
-
-template <>
-void getFactors(const Matrix_CSR<std::complex<double> > &A, Matrix_CSC<std::complex<double> > &L, Matrix_CSC<std::complex<double> > &U, Vector_Dense<int> &p)
-{
-	eslog::error("MKL PARDISO does not provide factors.\n");
-}
-
-template <>
-void freeFactor(Matrix_CSC<double> &L)
-{
-
-}
-
-template <>
-void freeFactor(Matrix_CSC<std::complex<double> > &L)
-{
-
-}
-
-}
 }
 
 #endif

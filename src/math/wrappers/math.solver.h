@@ -11,40 +11,45 @@
 #include <cstddef>
 
 namespace espreso {
-namespace math {
 
-	enum VectorSparsity {
-		DENSE           = 0,
-		SPARSE_RHS      = 1 << 0,
-		SPARSE_SOLUTION = 1 << 1
+struct Matrix_Solver_External_Representation;
+
+template <typename T, template <typename> class Matrix>
+struct DirectSolver {
+	struct VectorSparsity {
+		static const int DENSE           = 0;
+		static const int SPARSE_RHS      = 1 << 0;
+		static const int SPARSE_SOLUTION = 2 << 0;
 	};
 
-	struct SolverInfo {
-		size_t rows, nnzA, nnzL;
-		size_t memoryL;
-	};
+	static const char* name();
+	static bool provideFactors();
+	static bool provideSC();
 
-	const char* sparseSolver();
+	DirectSolver();
+	DirectSolver(const Matrix<T> &a);
+	~DirectSolver();
 
-	template <typename T> void initSolver(Matrix_CSR<T> &m);
+	void commit(const Matrix<T> &a);
 
-	template <typename T> void symbolicFactorization(const Matrix_CSR<T> &m, esint fixedSuffix = 0); // do not permute suffix
-	template <typename T> void numericalFactorization(const Matrix_CSR<T> &m);
-	template <typename T> void solve(const Matrix_CSR<T> &m, Vector_Dense<T> &rhs, Vector_Dense<T> &solution, VectorSparsity sparsity = VectorSparsity::DENSE);
-	template <typename T> void solve(const Matrix_CSR<T> &m, Matrix_Dense<T> &rhs, Matrix_Dense<T> &solution, VectorSparsity sparsity = VectorSparsity::DENSE);
+	void symbolicFactorization(int fixedSuffix = 0); // do not permute suffix
+	void numericalFactorization();
 
-	bool provideFactors();
-	bool provideSC();
+	void solve(Vector_Dense<T> &rhs, Vector_Dense<T> &solution, int sparsity = VectorSparsity::DENSE);
+	void solve(Matrix_Dense<T> &rhs, Matrix_Dense<T> &solution, int sparsity = VectorSparsity::DENSE);
 
-	template <typename T> SolverInfo getSolverInfo(const Matrix_CSR<T> &m);
-	template <typename T> void getFactors(const Matrix_CSR<T> &m, Matrix_CSC<T> &L, Matrix_CSC<T> &U, Vector_Dense<int> &p);
-	template <typename T> void computeSC(const Matrix_CSR<T> &m, Matrix_Dense<T> &sc);
+	void getFactors(Matrix_CSC<T> &L, Matrix_CSC<T> &U, Vector_Dense<int> &p);
+	void getSC(Matrix_Dense<T> &sc);
 
-	template <typename T> void freeSolver(Matrix_CSR<T> &m);
-	template <typename T> void freeFactor(Matrix_CSC<T> &m);
+	const Matrix<T> *matrix;
 
-inline VectorSparsity operator|(const VectorSparsity &s1, const VectorSparsity &s2) { return (VectorSparsity)((int)s1 | (int)s2); }
-}
+	size_t rows, nnzA, nnzL;
+	size_t memoryL;
+
+private:
+	Matrix_Solver_External_Representation *_solver;
+};
+
 }
 
 #endif /* SRC_MATH_WRAPPERS_MATH_SOLVER_H_ */

@@ -18,12 +18,12 @@ template <typename T>
 class Matrix_CSC: public _Matrix_CSC<T>
 {
 public:
-	Matrix_CSC(): _Matrix_CSC<T>{}, type{Matrix_Type::REAL_STRUCTURALLY_SYMMETRIC}, shape{Matrix_Shape::FULL}, _solver{nullptr}, _allocated{}
+	Matrix_CSC(): _Matrix_CSC<T>{}, type{Matrix_Type::REAL_STRUCTURALLY_SYMMETRIC}, shape{Matrix_Shape::FULL}, _allocated{}
 	{
 
 	}
 
-	Matrix_CSC(const Matrix_CSC &other): _Matrix_CSC<T>{}, type{Matrix_Type::REAL_STRUCTURALLY_SYMMETRIC}, shape{Matrix_Shape::FULL}, _solver{nullptr}, _allocated{}
+	Matrix_CSC(const Matrix_CSC &other): _Matrix_CSC<T>{}, type{Matrix_Type::REAL_STRUCTURALLY_SYMMETRIC}, shape{Matrix_Shape::FULL}, _allocated{}
 	{
 		type = other.type;
 		shape = other.shape;
@@ -105,7 +105,6 @@ public:
 
 	Matrix_Type type;
 	Matrix_Shape shape;
-	Matrix_CSC_Solver *_solver;
 	_Matrix_CSC<T> _allocated;
 
 protected:

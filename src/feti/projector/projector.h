@@ -10,8 +10,7 @@
 namespace espreso {
 
 template <typename T>
-class Projector {
-public:
+struct Projector {
 	static Projector<T>* set(FETI<T> *feti);
 
 	Projector(FETI<T> *feti): feti(feti) {}
@@ -24,9 +23,10 @@ public:
 	virtual void applyGtInvGGt(const Vector_Kernel<T> &x, Vector_Dual<T> &y) =0;
 	virtual void applyRInvGGtG(const Vector_Dual<T> &x, Vector_FETI<Vector_Dense, T> &y) =0;
 
-	FETI<T> *feti;
-
 	Vector_Kernel<T> e;
+
+protected:
+	FETI<T> *feti;
 };
 
 }

@@ -5,7 +5,6 @@
 #include "math/math.h"
 
 namespace espreso {
-namespace math {
 
 template<typename T>
 int _pardisoType(const Matrix_CSR<T> &x)
@@ -24,7 +23,6 @@ int _pardisoType(const Matrix_CSR<T> &x)
 	return 0;
 }
 
-}
 }
 
 

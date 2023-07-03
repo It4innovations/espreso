@@ -23,7 +23,7 @@ static DualOperator<T>* _set(FETI<T> *feti)
 		dual = new TotalFETIExplicit<T>(feti);
 		break;
 	case FETIConfiguration::METHOD::ACCELERATED_TFETI:
-		if (math::provideFactors()) {
+		if (DirectSolver<T, Matrix_CSR>::provideFactors()) {
 			eslog::info(" = DUAL OPERATOR                                                      ACCELERATED TOTAL FETI = \n");
 			dual = new TotalFETIExplicitAcc<T>(feti);
 		} else {

@@ -7,8 +7,7 @@
 namespace espreso {
 
 template <typename T>
-class Dirichlet: public Preconditioner<T> {
-public:
+struct Dirichlet: public Preconditioner<T> {
 	Dirichlet(FETI<T> *feti);
 	~Dirichlet();
 
@@ -17,8 +16,12 @@ public:
 
 	void apply(const Vector_Dual<T> &x, Vector_Dual<T> &y);
 
+protected:
+	void _print();
+
 	std::vector<Vector_Dense<T> > Btx, KBtx;
 	std::vector<Matrix_Dense<T> > sc;
+	std::vector<DirectSolver<T, Matrix_CSR> > Ksolver;
 };
 
 }

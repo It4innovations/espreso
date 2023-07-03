@@ -8,8 +8,11 @@
 
 namespace espreso {
 
+template struct Preconditioner<double>;
+template struct Preconditioner<std::complex<double> >;
+
 template <typename T>
-static Preconditioner<T>* _set(FETI<T> *feti)
+Preconditioner<T>* Preconditioner<T>::set(FETI<T> *feti)
 {
 	switch (feti->configuration.preconditioner) {
 	case FETIConfiguration::PRECONDITIONER::NONE:
@@ -29,8 +32,5 @@ static Preconditioner<T>* _set(FETI<T> *feti)
 	default: return nullptr;
 	}
 }
-
-template <> Preconditioner<double>* Preconditioner<double>::set(FETI<double> *feti) { return _set<double>(feti); }
-template <> Preconditioner<std::complex<double> >* Preconditioner<std::complex<double> >::set(FETI<std::complex<double> > *feti) { return _set<std::complex<double> >(feti); }
 
 }
