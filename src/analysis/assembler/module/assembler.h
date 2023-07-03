@@ -46,7 +46,6 @@ public:
 	PhysicsConfiguration &settings;
 
 protected:
-	void setTime(double time);
 	void assemble(Action action);
 	virtual void run(Action action, size_t interval) =0;
 	virtual void run(Action action, size_t region, size_t interval) =0;

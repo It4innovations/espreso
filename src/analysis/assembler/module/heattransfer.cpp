@@ -395,7 +395,6 @@ void HeatTransfer::run(Action action, size_t region, size_t interval)
 
 void HeatTransfer::evaluate(step::Time &time, Matrix_Base<double> *K, Matrix_Base<double> *M, Vector_Base<double> *f, Vector_Base<double> *nf, Vector_Base<double> *dirichlet)
 {
-	setTime(time.current);
 	reset(K, f, dirichlet);
 	assemble(Action::ASSEMBLE);
 	assemble(Action::FILL);

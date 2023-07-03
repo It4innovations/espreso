@@ -67,6 +67,8 @@ void Analysis::run()
 
 	physics->analyze();
 	eslog::checkpointln("SIMULATION: PHYSICS ANALYSED");
+	step.loadstep = 0;
+	step.loadsteps = 1;
 	physics->run(step);
 
 	delete physics;

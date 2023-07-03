@@ -31,7 +31,7 @@ public:
 	void analyze();
 
 	void connect(Matrix_Base<double> *K, Matrix_Base<double> *M, Matrix_Base<double> *C, Vector_Base<double> *f, Vector_Base<double> *nf, Vector_Base<double> *dirichlet);
-	void evaluate(step::Time &time, Matrix_Base<double> *K, Matrix_Base<double> *M, Matrix_Base<double> *C, Vector_Base<double> *f, Vector_Base<double> *nf, Vector_Base<double> *dirichlet);
+	void evaluate(const step::Step &step, const step::Time &time, Matrix_Base<double> *K, Matrix_Base<double> *M, Matrix_Base<double> *C, Vector_Base<double> *f, Vector_Base<double> *nf, Vector_Base<double> *dirichlet);
 	void updateSolution(Vector_Base<double> *x);
 	void nextIteration(Vector_Base<double> *x);
 

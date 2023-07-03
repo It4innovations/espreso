@@ -267,7 +267,7 @@ template <size_t nodes, size_t gps, class Physics> struct PlasticityKernel<nodes
 			if (this->save) {
 				double * __restrict__ isPlastized = this->isPlastized;
 				for (size_t s = 0; s < size; ++s) {
-					isPlastized[s] += std::max(isPlastized[s], pl[s]);
+					isPlastized[s] = pl[s];
 				}
 				store(smallStrainTensorPlastic + (6 * gp + 0) * SIMD::size, csqr32 * eta_tr0 * Dgamma);
 				store(smallStrainTensorPlastic + (6 * gp + 1) * SIMD::size, csqr32 * eta_tr1 * Dgamma);
@@ -286,6 +286,7 @@ template <size_t nodes, size_t gps, class Physics> struct PlasticityKernel<nodes
 		this->nrhs += SIMD::size * 3 * nodes;
 		this->smallStrainTensorPlastic += SIMD::size * 6 * gps;
 		this->xi += SIMD::size * 6 * gps;
+		this->isPlastized += SIMD::size;
 	}
 };
 

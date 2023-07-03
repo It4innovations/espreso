@@ -42,6 +42,9 @@ void StructuralMechanicsSteadyStateNonLinear::analyze()
 
 	assembler.analyze();
 	info::mesh->output->updateMonitors(step::TYPE::TIME);
+	if (configuration.nonlinear_solver.stepping == NonLinearSolverConfiguration::STEPPINGG::FALSE) {
+		configuration.nonlinear_solver.substeps = 1;
+	}
 }
 
 void StructuralMechanicsSteadyStateNonLinear::run(step::Step &step)
@@ -64,11 +67,6 @@ void StructuralMechanicsSteadyStateNonLinear::run(step::Step &step)
 
 	assembler.connect(K, nullptr, nullptr, f, R, dirichlet);
 
-	time.shift = configuration.duration_time;
-	time.start = 0;
-	time.current = configuration.duration_time;
-	time.final = configuration.duration_time;
-
 	if (MPITools::node->rank == 0) {
 		info::system::memory::physics = info::system::memoryAvail();
 	}
@@ -77,6 +75,10 @@ void StructuralMechanicsSteadyStateNonLinear::run(step::Step &step)
 
 	eslog::info("\n ============================================================================================= \n");
 	eslog::info(" = RUN THE SOLVER                                                DURATION TIME: %10.4f s = \n", configuration.duration_time);
+	eslog::info(" = ----------------------------------------------------------------------------------------- = \n");
+	eslog::info(" = MODE                                                                           NON-LINEAR = \n");
+	eslog::info(" = NUMBER OF SUBSTEPS                                                             %10d = \n", configuration.nonlinear_solver.substeps);
+	eslog::info(" = MAX ITERATIONS                                                                 %10d = \n", configuration.nonlinear_solver.max_iterations);
 	eslog::info(" = ----------------------------------------------------------------------------------------- = \n");
 	system->set(step);
 	eslog::info(" ============================================================================================= \n\n");
@@ -97,55 +99,70 @@ void StructuralMechanicsSteadyStateNonLinear::run(step::Step &step)
 	} else {
 		eslog::info("      ==  - STRESS RESIDUAL                                                      FALSE == \n");
 	}
-	eslog::info("      =================================================================================== \n");
+	eslog::info("      =================================================================================== \n\n");
 
-	eslog::info("      ==                                                                  INITIAL STEP ==     \n");
+	time.start = 0;
+	time.shift = configuration.duration_time / configuration.nonlinear_solver.substeps;
+	time.final = configuration.duration_time;
+	step.substeps = configuration.nonlinear_solver.substeps;
+	for (step.substep = 0; step.substep < configuration.nonlinear_solver.substeps; ++step.substep) {
+		if (configuration.nonlinear_solver.substeps > 1) {
+			eslog::info("      ==  SUBSTEP                                                           %10d ==     \n", step.substep + 1);
+			eslog::info("      =================================================================================== \n");
+		}
+		eslog::info("      ==                                                                  INITIAL STEP ==     \n");
 
-	double start = eslog::time();
-	step.iteration = 0;
-	assembler.evaluate(time, K, nullptr, nullptr, f, nullptr, dirichlet);
-	storeSystem(step);
-	system->solver.A->copy(K);
-	system->solver.b->copy(f);
-	system->solver.dirichlet->copy(dirichlet);
-	eslog::info("      == ----------------------------------------------------------------------------- == \n");
-	eslog::info("      == SYSTEM ASSEMBLY                                                    %8.3f s = \n", eslog::time() - start);
+		double start = eslog::time();
+		step.iteration = 0;
+		time.current = (step.substep + 1) * time.shift;
+		if (step.substep + 1 == configuration.nonlinear_solver.substeps) {
+			time.current = time.final;
+		}
 
-	system->update(step);
-	system->solve(step);
-
-	double solution = eslog::time();
-	x->copy(system->solver.x);
-	storeSolution(step);
-	assembler.updateSolution(x);
-	eslog::info("      == PROCESS SOLUTION                                                   %8.3f s == \n", eslog::time() - solution);
-	eslog::info("      == ----------------------------------------------------------------------------- == \n");
-
-	// iterations
-	while (step.iteration++ < configuration.nonlinear_solver.max_iterations) {
-		eslog::info("\n      ==                                                    %3d. EQUILIBRIUM ITERATION == \n", step.iteration);
-
-		start = eslog::time();
-		U->copy(system->solver.x);
-		assembler.evaluate(time, K, nullptr, nullptr, f, R, dirichlet);
+		assembler.evaluate(step, time, K, nullptr, nullptr, f, nullptr, dirichlet);
 		storeSystem(step);
 		system->solver.A->copy(K);
 		system->solver.b->copy(f);
-		system->solver.b->add(-1, R);
 		system->solver.dirichlet->copy(dirichlet);
-		system->solver.dirichlet->add(-1, U);
-
 		eslog::info("      == ----------------------------------------------------------------------------- == \n");
-		eslog::info("      == SYSTEM ASSEMBLY                                                    %8.3f s == \n", eslog::time() - start);
+		eslog::info("      == SYSTEM ASSEMBLY                                                    %8.3f s = \n", eslog::time() - start);
 
 		system->update(step);
 		system->solve(step);
 
-		if (checkDisplacement(step)) {
-			break;
+		double solution = eslog::time();
+		x->copy(system->solver.x);
+		storeSolution(step);
+		assembler.updateSolution(x);
+		eslog::info("      == PROCESS SOLUTION                                                   %8.3f s == \n", eslog::time() - solution);
+		eslog::info("      == ----------------------------------------------------------------------------- == \n");
+
+		// iterations
+		while (step.iteration++ < configuration.nonlinear_solver.max_iterations) {
+			eslog::info("\n      ==                                                    %3d. EQUILIBRIUM ITERATION == \n", step.iteration);
+
+			start = eslog::time();
+			U->copy(system->solver.x);
+			assembler.evaluate(step, time, K, nullptr, nullptr, f, R, dirichlet);
+			storeSystem(step);
+			system->solver.A->copy(K);
+			system->solver.b->copy(f);
+			system->solver.b->add(-1, R);
+			system->solver.dirichlet->copy(dirichlet);
+			system->solver.dirichlet->add(-1, U);
+
+			eslog::info("      == ----------------------------------------------------------------------------- == \n");
+			eslog::info("      == SYSTEM ASSEMBLY                                                    %8.3f s == \n", eslog::time() - start);
+
+			system->update(step);
+			system->solve(step);
+
+			if (checkDisplacement(step)) {
+				break;
+			}
 		}
+		info::mesh->output->updateSolution(step, time);
 	}
-	info::mesh->output->updateSolution(step, time);
 }
 
 bool StructuralMechanicsSteadyStateNonLinear::checkDisplacement(step::Step &step)
@@ -164,12 +181,13 @@ bool StructuralMechanicsSteadyStateNonLinear::checkDisplacement(step::Step &step
 	if (norm > configuration.nonlinear_solver.requested_first_residual) {
 		eslog::info("      == DISPLACEMENT NORM, CRITERIA                         %.5e / %.5e == \n", solutionNumerator, solutionDenominator * configuration.nonlinear_solver.requested_first_residual);
 		assembler.nextIteration(x);
+		return false;
 	} else {
 		eslog::info("      == DISPLACEMENT NORM, CRITERIA [CONVERGED]             %.5e / %.5e == \n", solutionNumerator, solutionDenominator * configuration.nonlinear_solver.requested_first_residual);
+		eslog::info("      =================================================================================== \n\n");
 		assembler.updateSolution(x);
+		return true;
 	}
-
-	return !(norm > configuration.nonlinear_solver.requested_first_residual);
 }
 
 void StructuralMechanicsSteadyStateNonLinear::storeSystem(step::Step &step)

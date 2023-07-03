@@ -384,9 +384,28 @@ void StructuralMechanics::connect(Matrix_Base<double> *K, Matrix_Base<double> *M
 	}
 }
 
-void StructuralMechanics::evaluate(step::Time &time, Matrix_Base<double> *K, Matrix_Base<double> *M, Matrix_Base<double> *C, Vector_Base<double> *f, Vector_Base<double> *nf, Vector_Base<double> *dirichlet)
+void StructuralMechanics::evaluate(const step::Step &step, const step::Time &time, Matrix_Base<double> *K, Matrix_Base<double> *M, Matrix_Base<double> *C, Vector_Base<double> *f, Vector_Base<double> *nf, Vector_Base<double> *dirichlet)
 {
-	setTime(time.current);
+	for (size_t i = 0; i < subkernels.size(); ++i) {
+		for (size_t e = 0; e < subkernels[i].expressions.size(); ++e) {
+			#pragma omp parallel for
+			for (size_t t = 0; t < info::env::threads; ++t) {
+				subkernels[i].expressions[e]->evaluator->getSubstep(t) = (step.substep + 1) / (double)step.substeps;
+				subkernels[i].expressions[e]->evaluator->getTime(t) = time.current;
+			}
+		}
+	}
+	for (size_t i = 0; i < boundary.size(); ++i) {
+		for (size_t j = 0; j < boundary[i].size(); ++j) {
+			for (size_t e = 0; e < boundary[i][j].expressions.size(); ++e) {
+				#pragma omp parallel for
+				for (size_t t = 0; t < info::env::threads; ++t) {
+					boundary[i][j].expressions[e]->evaluator->getSubstep(t) = (step.substep + 1) / (double)step.substeps;
+					boundary[i][j].expressions[e]->evaluator->getTime(t) = time.current;
+				}
+			}
+		}
+	}
 	reset(K, M, C, f, nf, dirichlet);
 	assemble(Action::ASSEMBLE);
 	assemble(Action::FILL);

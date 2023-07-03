@@ -18,6 +18,7 @@ public:
 
 	double& getParameter(const std::string &name, int t = 0);
 
+	double& getSubstep(int t = 0)     { return getParameter("SUBSTEP", t); }
 	double& getTime(int t = 0)        { return getParameter("TIME", t); }
 	double& getFrequency(int t = 0)   { return getParameter("FREQUENCY", t); }
 

@@ -54,11 +54,6 @@ Assembler::~Assembler()
 
 }
 
-void Assembler::setTime(double time)
-{
-
-}
-
 void Assembler::assemble(Action action)
 {
 	if (action & Action::FILL) {

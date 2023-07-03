@@ -59,6 +59,8 @@ void StructuralMechanicsSteadyStateLinear::run(step::Step &step)
 	system->setDirichletMapping(dirichlet = system->assembler.dirichlet->copyPattern());
 	assembler.connect(K, nullptr, nullptr, f, nullptr, dirichlet);
 
+	step.substep = 0;
+	step.substeps = 1;
 	time.shift = configuration.duration_time;
 	time.start = 0;
 	time.current = configuration.duration_time;
@@ -81,7 +83,7 @@ void StructuralMechanicsSteadyStateLinear::run(step::Step &step)
 	eslog::info(" = LOAD STEP %2d                                                              TIME %10.4f = \n", step::step.loadstep + 1, time.current);
 	eslog::info(" = ----------------------------------------------------------------------------------------- = \n");
 	double start = eslog::time();
-	assembler.evaluate(time, K, nullptr, nullptr, f, nullptr, dirichlet);
+	assembler.evaluate(step, time, K, nullptr, nullptr, f, nullptr, dirichlet);
 	eslog::checkpointln("SIMULATION: PHYSICS ASSEMBLED");
 	storeSystem(step);
 

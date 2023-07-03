@@ -15,9 +15,9 @@ inline TYPE operator|(TYPE t1, TYPE t2) { return static_cast<TYPE>(static_cast<i
 inline TYPE operator&(TYPE t1, TYPE t2) { return static_cast<TYPE>(static_cast<int>(t1) & static_cast<int>(t2)); }
 
 struct Step {
-	int loadstep = 0;
-	int substep = 0;
-	int iteration = 0;
+	int loadstep = 0, loadsteps = 1;
+	int substep = 0, substeps = 1;
+	int iteration = 0, iterations = 1;
 
 	TYPE type = TYPE::TIME;
 } extern step, outstep;
