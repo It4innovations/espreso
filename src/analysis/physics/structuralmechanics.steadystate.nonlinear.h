@@ -3,8 +3,9 @@
 #define SRC_ANALYSIS_ANALYSIS_PLASTICITY_STEADYSTATE_H_
 
 #include "analysis/physics/physics.h"
-#include "analysis/linearsystem/linearsystem.h"
 #include "analysis/assembler/module/structuralmechanics.h"
+#include "analysis/builder/builder.h"
+#include "analysis/linearsystem/linearsystem.h"
 
 namespace espreso {
 
@@ -29,7 +30,8 @@ public:
 	Matrix_Base<double> *K;
 	Vector_Base<double> *U, *R, *f, *x, *dirichlet;
 
-	LinearSystem<double> *system;
+	SparseMatrixBuilder<double> *builder;
+	LinearSystemSolver<double> *solver;
 
 protected:
 	bool checkDisplacement(step::Step &step);

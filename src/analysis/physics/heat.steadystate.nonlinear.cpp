@@ -1,9 +1,10 @@
 
-#include <analysis/physics/physics.h>
+#include "physics.h"
 #include "heat.steadystate.nonlinear.h"
 
-#include "analysis/linearsystem/feti/fetisystem.h"
-#include "analysis/linearsystem/direct/mklpdsssystem.h"
+#include "analysis/builder/uniformbuilder.direct.h"
+#include "analysis/builder/uniformbuilder.feti.h"
+#include "analysis/linearsystem/mklpdsssolver.h"
 #include "config/ecf/physics/heattransfer.h"
 #include "esinfo/meshinfo.h"
 #include "esinfo/eslog.hpp"
@@ -16,7 +17,7 @@
 using namespace espreso;
 
 HeatSteadyStateNonLinear::HeatSteadyStateNonLinear(HeatTransferConfiguration &settings, HeatTransferLoadStepConfiguration &configuration)
-: settings(settings), configuration(configuration), assembler{nullptr, settings, configuration}, K{}, U{}, R{}, f{}, x{}, dirichlet{}, system{}
+: settings(settings), configuration(configuration), assembler{nullptr, settings, configuration}, K{}, U{}, R{}, f{}, x{}, dirichlet{}, builder{}, solver{}
 
 {
 
@@ -24,13 +25,14 @@ HeatSteadyStateNonLinear::HeatSteadyStateNonLinear(HeatTransferConfiguration &se
 
 HeatSteadyStateNonLinear::~HeatSteadyStateNonLinear()
 {
-	if (system) { delete system; }
 	if (K) { delete K; }
 	if (U) { delete U; }
 	if (R) { delete R; }
 	if (f) { delete f; }
 	if (x) { delete x; }
 	if (dirichlet) { delete dirichlet; }
+	if (builder) { delete builder; }
+	if (solver) { delete solver; }
 }
 
 void HeatSteadyStateNonLinear::analyze()
@@ -42,34 +44,61 @@ void HeatSteadyStateNonLinear::analyze()
 
 	assembler.analyze();
 	info::mesh->output->updateMonitors(step::TYPE::TIME);
-}
 
-void HeatSteadyStateNonLinear::run(step::Step &step)
-{
+	Matrix_Shape shape = Matrix_Shape::UPPER;
+	Matrix_Type type = Matrix_Type::REAL_SYMMETRIC_POSITIVE_DEFINITE;
+	for (auto mat = settings.material_set.begin(); mat != settings.material_set.end(); ++mat) {
+		if (settings.materials.find(mat->second)->second.thermal_conductivity.model == ThermalConductivityConfiguration::MODEL::ANISOTROPIC) {
+			shape = Matrix_Shape::FULL;
+			Matrix_Type type = Matrix_Type::REAL_STRUCTURALLY_SYMMETRIC;
+		}
+	}
+	if (configuration.translation_motions.size()) {
+		shape = Matrix_Shape::FULL;
+		type = Matrix_Type::REAL_STRUCTURALLY_SYMMETRIC;
+	}
+
 	switch (configuration.solver) {
-	case LoadStepSolverConfiguration::SOLVER::FETI:    system = new FETISystem<HeatSteadyStateNonLinear>(this); break;
+	case LoadStepSolverConfiguration::SOLVER::FETI:
+		builder = new UniformBuilderFETI<double>(configuration.temperature, 1, shape);
+		break;
 	case LoadStepSolverConfiguration::SOLVER::HYPRE:   break;
-	case LoadStepSolverConfiguration::SOLVER::MKLPDSS: system = new MKLPDSSSystem<HeatSteadyStateNonLinear>(this); break;
+	case LoadStepSolverConfiguration::SOLVER::MKLPDSS:
+		builder = new UniformBuilderDirect<double>(configuration.temperature, 1, shape);
+		solver = new MKLPDSSLinearSystemSolver<double>(configuration.mklpdss);
+		break;
 	case LoadStepSolverConfiguration::SOLVER::PARDISO: break;
 	case LoadStepSolverConfiguration::SOLVER::SUPERLU: break;
 	case LoadStepSolverConfiguration::SOLVER::WSMP:    break;
 	}
+
+	builder->fillMatrix(solver->A, type, shape);
+	builder->fillVector(solver->b);
+	builder->fillVector(solver->x);
+	builder->fillDirichlet(solver->dirichlet);
+
+	K = solver->A->copyPattern();
+	R = solver->b->copyPattern();
+	U = solver->b->copyPattern();
+	f = solver->b->copyPattern();
+	x = solver->x->copyPattern();
+	dirichlet = solver->dirichlet->copyPattern();
+
+	builder->fillMatrixMap(K);
+	builder->fillVectorMap(R);
+	builder->fillVectorMap(f);
+	builder->fillDirichletMap(dirichlet);
 	eslog::checkpointln("SIMULATION: LINEAR SYSTEM BUILT");
+}
 
-	system->setMapping(K = system->assembler.A->copyPattern());
-	system->setMapping(R = system->solver.x->copyPattern());
-	system->setMapping(f = system->assembler.b->copyPattern());
-	system->setMapping(x = system->assembler.x->copyPattern());
-	system->setDirichletMapping(dirichlet = system->assembler.dirichlet->copyPattern());
-	U = system->solver.x->copyPattern();
-	system->solver.A->commit();
-
-	assembler.connect(K, nullptr, f, R, dirichlet);
-
+void HeatSteadyStateNonLinear::run(step::Step &step)
+{
 	time.shift = configuration.duration_time;
 	time.start = 0;
 	time.current = configuration.duration_time;
 	time.final = configuration.duration_time;
+
+	assembler.connect(K, nullptr, f, R, dirichlet);
 
 	if (MPITools::node->rank == 0) {
 		info::system::memory::physics = info::system::memoryAvail();
@@ -80,7 +109,7 @@ void HeatSteadyStateNonLinear::run(step::Step &step)
 	eslog::info("\n ============================================================================================= \n");
 	eslog::info(" = RUN THE SOLVER                                                DURATION TIME: %10.4f s = \n", configuration.duration_time);
 	eslog::info(" = ----------------------------------------------------------------------------------------- = \n");
-	system->set(step);
+	solver->set(step);
 	eslog::info(" ============================================================================================= \n\n");
 
 	eslog::info(" ============================================================================================= \n");
@@ -106,17 +135,17 @@ void HeatSteadyStateNonLinear::run(step::Step &step)
 	step.iteration = 0;
 	assembler.evaluate(time, K, nullptr, f, nullptr, dirichlet);
 	storeSystem(step);
-	system->solver.A->copy(K);
-	system->solver.b->copy(f);
-	system->solver.dirichlet->copy(dirichlet);
+	solver->A->copy(K);
+	solver->b->copy(f);
+	solver->dirichlet->copy(dirichlet);
 	eslog::info("      == ----------------------------------------------------------------------------- == \n");
 	eslog::info("      == SYSTEM ASSEMBLY                                                    %8.3f s = \n", eslog::time() - start);
 
-	system->update(step);
-	system->solve(step);
+	solver->update(step);
+	solver->solve(step);
 
 	double solution = eslog::time();
-	x->copy(system->solver.x);
+	x->copy(solver->x);
 	storeSolution(step);
 	assembler.updateSolution(x);
 	eslog::info("      == PROCESS SOLUTION                                                   %8.3f s == \n", eslog::time() - solution);
@@ -127,20 +156,20 @@ void HeatSteadyStateNonLinear::run(step::Step &step)
 		eslog::info("\n      ==                                                    %3d. EQUILIBRIUM ITERATION == \n", step.iteration);
 
 		start = eslog::time();
-		U->copy(system->solver.x);
+		U->copy(solver->x);
 		assembler.evaluate(time, K, nullptr, f, R, dirichlet);
 		storeSystem(step);
-		system->solver.A->copy(K);
-		system->solver.b->copy(f);
-		system->solver.b->add(-1, R);
-		system->solver.dirichlet->copy(dirichlet);
-		system->solver.dirichlet->add(-1, U);
+		solver->A->copy(K);
+		solver->b->copy(f);
+		solver->b->add(-1, R);
+		solver->dirichlet->copy(dirichlet);
+		solver->dirichlet->add(-1, U);
 
 		eslog::info("      == ----------------------------------------------------------------------------- == \n");
 		eslog::info("      == SYSTEM ASSEMBLY                                                    %8.3f s == \n", eslog::time() - start);
 
-		system->update(step);
-		system->solve(step);
+		solver->update(step);
+		solver->solve(step);
 
 		if (checkTemp(step)) {
 			break;
@@ -152,11 +181,11 @@ void HeatSteadyStateNonLinear::run(step::Step &step)
 bool HeatSteadyStateNonLinear::checkTemp(step::Step &step)
 {
 	double solution = eslog::time();
-	double solutionNumerator = system->solver.x->norm();
-	system->solver.x->add(1, U);
-	x->copy(system->solver.x);
+	double solutionNumerator = solver->x->norm();
+	solver->x->add(1, U);
+	x->copy(solver->x);
 
-	double solutionDenominator = std::max(system->solver.x->norm(), 1e-3);
+	double solutionDenominator = std::max(solver->x->norm(), 1e-3);
 	double norm = solutionNumerator / solutionDenominator;
 
 	eslog::info("      == PROCESS SOLUTION                                                   %8.3f s == \n", eslog::time() - solution);

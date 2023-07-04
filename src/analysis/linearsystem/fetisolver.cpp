@@ -1,19 +1,19 @@
 
-#include "fetisystem.h"
-#include "basis/containers/allocators.h"
-#include "basis/utilities/utils.h"
-#include "esinfo/meshinfo.h"
-#include "math/physics/matrix_feti.h"
-#include "math/primitives/matrix_dense.h"
-#include "mesh/store/domainstore.h"
+#include "fetisolver.h"
 
-#include <algorithm>
+#include "basis/containers/allocators.h"
+#include "analysis/physics/heat.steadystate.linear.h"
+#include "analysis/physics/heat.steadystate.nonlinear.h"
+
 #include <numeric>
 
 namespace espreso {
 
+template struct FETILinearSystemSolver<double, HeatSteadyStateLinear>;
+template struct FETILinearSystemSolver<double, HeatSteadyStateNonLinear>;
+
 template <typename T>
-void _composeEqualityConstraints(const Matrix_FETI<Matrix_CSR, T> &K, const Vector_Distributed<Vector_Sparse, T> &dirichlet, typename FETI<T>::EqualityConstraints &eq, bool redundantLagrange)
+static void _setEqualityConstraints(const Matrix_FETI<Matrix_CSR, T> &K, const Vector_Distributed<Vector_Sparse, T> &dirichlet, typename FETI<T>::EqualityConstraints &eq, bool redundantLagrange)
 {
 	struct HasDirichlet {
 		esint index = 0;
@@ -170,7 +170,7 @@ void _composeEqualityConstraints(const Matrix_FETI<Matrix_CSR, T> &K, const Vect
 }
 
 template <typename T>
-void _evaluateEqualityConstraints(const Matrix_FETI<Matrix_CSR, T> &K, const Vector_Distributed<Vector_Sparse, T> &dirichlet, typename FETI<T>::EqualityConstraints &eq, bool redundantLagrange)
+static void _updateEqualityConstraints(const Matrix_FETI<Matrix_CSR, T> &K, const Vector_Distributed<Vector_Sparse, T> &dirichlet, typename FETI<T>::EqualityConstraints &eq, bool redundantLagrange)
 {
 	// TODO: store Dirichlet directly to 'c'
 	math::set(eq.c, T{0});
@@ -194,42 +194,116 @@ void _evaluateEqualityConstraints(const Matrix_FETI<Matrix_CSR, T> &K, const Vec
 	}
 }
 
-void composeHeatTransferKernel(const Matrix_CSR<double> &K, Matrix_Dense<double> &R, Matrix_CSR<double> &RegMat)
+template <typename T, class Physics>
+void FETILinearSystemSolver<T, Physics>::setEqualityConstraints(step::Step &step)
 {
-	R.resize(K.nrows, 1);
-	R.type = Matrix_Type::REAL_NONSYMMETRIC;
-	R.shape = Matrix_Shape::FULL;
-
-	RegMat.resize(K.nrows, K.ncols, 1);
-	RegMat.type = K.type;
-	RegMat.shape = K.shape;
-
-	RegMat.rows[0] = RegMat.cols[0] = Indexing::CSR;
-	std::fill(RegMat.rows + 1, RegMat.rows + RegMat.nrows + 1, RegMat.rows[0] + 1);
+	_setEqualityConstraints(feti.K, dirichlet, feti.equalityConstraints, true);
 }
 
-void evaluateHeatTransferKernel(const Matrix_CSR<double> &K, Matrix_Dense<double> &R, Matrix_CSR<double> &RegMat)
+template <typename T, class Physics>
+void FETILinearSystemSolver<T, Physics>::updateEqualityConstraints(step::Step &step)
 {
-	RegMat.vals[0] = math::getDiagonalMax(K);
-	math::set(R, 1.0 / std::sqrt(K.nrows));
+	_updateEqualityConstraints(feti.K, dirichlet, feti.equalityConstraints, true);
+	if (info::ecf->output.print_matrices) {
+		eslog::storedata(" STORE: system/{B1, B1c, B1Duplication, D2C, LMAP}\n");
+		math::store(feti.equalityConstraints.c, utils::filename(utils::debugDirectory(step) + "/system", "B1c").c_str());
+		for (size_t d = 0; d < feti.equalityConstraints.domain.size(); ++d) {
+			math::store(feti.equalityConstraints.domain[d].B1, utils::filename(utils::debugDirectory(step) + "/system", "B1" + std::to_string(d)).c_str());
+			math::store(feti.equalityConstraints.domain[d].duplication, utils::filename(utils::debugDirectory(step) + "/system", "B1Duplication" + std::to_string(d)).c_str());
+			math::store(feti.equalityConstraints.domain[d].D2C, utils::filename(utils::debugDirectory(step) + "/system", "D2C" + std::to_string(d)).c_str());
+			math::store(feti.equalityConstraints.lmap, utils::filename(utils::debugDirectory(step) + "/system", "LMAP").c_str());
+		}
+	}
+}
 
-//	if (solver.configuration.method != FETIConfiguration::METHOD::HYBRID_FETI) { // N1 orthogonal for whole cluster
-//		esint crows = 0;
-//		for (esint dd = 0; dd < info::mesh->domains->size; dd++) {
-//			if (info::mesh->domains->cluster[d] == info::mesh->domains->cluster[dd]) {
-//				crows += solver.A.domains[dd].nrows;
-//			}
+template <typename T, class Physics> struct AnalyticKernel {
+	static void set(const Matrix_CSR<double> &K, Matrix_Dense<double> &R, Matrix_CSR<double> &RegMat)
+	{
+
+	}
+
+	static void update(const Matrix_CSR<double> &K, Matrix_Dense<double> &R, Matrix_CSR<double> &RegMat)
+	{
+
+	}
+};
+
+template <typename T>
+struct AnalyticKernel<T, HeatSteadyStateLinear>
+{
+	static void set(const Matrix_CSR<double> &K, Matrix_Dense<double> &R, Matrix_CSR<double> &RegMat)
+	{
+		R.resize(K.nrows, 1);
+		R.type = Matrix_Type::REAL_NONSYMMETRIC;
+		R.shape = Matrix_Shape::FULL;
+
+		RegMat.resize(K.nrows, K.ncols, 1);
+		RegMat.type = K.type;
+		RegMat.shape = K.shape;
+
+		RegMat.rows[0] = RegMat.cols[0] = Indexing::CSR;
+		std::fill(RegMat.rows + 1, RegMat.rows + RegMat.nrows + 1, RegMat.rows[0] + 1);
+	}
+
+	static void update(const Matrix_CSR<double> &K, Matrix_Dense<double> &R, Matrix_CSR<double> &RegMat)
+	{
+		RegMat.vals[0] = math::getDiagonalMax(K);
+		math::set(R, 1.0 / std::sqrt(K.nrows));
+	}
+};
+
+template <typename T>
+struct AnalyticKernel<T, HeatSteadyStateNonLinear>
+{
+	static void set(const Matrix_CSR<double> &K, Matrix_Dense<double> &R, Matrix_CSR<double> &RegMat)
+	{
+		AnalyticKernel<T, HeatSteadyStateLinear>::set(K, R, RegMat);
+	}
+
+	static void update(const Matrix_CSR<double> &K, Matrix_Dense<double> &R, Matrix_CSR<double> &RegMat)
+	{
+		AnalyticKernel<T, HeatSteadyStateLinear>::update(K, R, RegMat);
+	}
+};
+
+template <typename T, class Physics>
+void FETILinearSystemSolver<T, Physics>::setKernel(step::Step &step)
+{
+	eslog::info(" = REGULARIZATION                                                                   ANALYTIC = \n");
+	feti.regularization.R1.domains.resize(feti.K.domains.size());
+	feti.regularization.R2.domains.resize(feti.K.domains.size());
+	feti.regularization.RegMat.domains.resize(feti.K.domains.size());
+
+	feti.regularization.RegMat.type = feti.K.type;
+	feti.regularization.RegMat.shape = feti.K.shape;
+	#pragma omp parallel for
+	for (size_t d = 0; d < feti.K.domains.size(); ++d) {
+		// TODO: some domains can be without kernel
+		AnalyticKernel<T, Physics>::set(feti.K.domains[d], feti.regularization.R1.domains[d], feti.regularization.RegMat.domains[d]);
+//		switch (feti.configuration.regularization) {
+//		case FETIConfiguration::REGULARIZATION::ANALYTIC: AnalyticKernel<T, Physics>::set(K.domains[d], regularization.R1.domains[d], regularization.RegMat.domains[d]); break;
+//		case FETIConfiguration::REGULARIZATION::ALGEBRAIC: break;
 //		}
-//		math::fill(solver.N1.domains[d], 1.0 / std::sqrt(crows));
-//	} else {
-//		math::fill(solver.N1.domains[d], 1.0 / std::sqrt(solver.A.domains[d].nrows));
-//	}
+	}
 }
 
-template <> void composeEqualityConstraints(const Matrix_FETI<Matrix_CSR, double> &K, const Vector_Distributed<Vector_Sparse, double> &dirichlet, FETI<double>::EqualityConstraints &equalityConstraints, bool redundantLagrange) { _composeEqualityConstraints(K, dirichlet, equalityConstraints, redundantLagrange); }
-template <> void composeEqualityConstraints(const Matrix_FETI<Matrix_CSR, std::complex<double> > &K, const Vector_Distributed<Vector_Sparse, std::complex<double> > &dirichlet, FETI<std::complex<double> >::EqualityConstraints &equalityConstraints, bool redundantLagrange) { _composeEqualityConstraints(K, dirichlet, equalityConstraints, redundantLagrange); }
-
-template <> void evaluateEqualityConstraints(const Matrix_FETI<Matrix_CSR, double> &K, const Vector_Distributed<Vector_Sparse, double> &dirichlet, FETI<double>::EqualityConstraints &equalityConstraints, bool redundantLagrange) { _evaluateEqualityConstraints(K, dirichlet, equalityConstraints, redundantLagrange); }
-template <> void evaluateEqualityConstraints(const Matrix_FETI<Matrix_CSR, std::complex<double> > &K, const Vector_Distributed<Vector_Sparse, std::complex<double> > &dirichlet, FETI<std::complex<double> >::EqualityConstraints &equalityConstraints, bool redundantLagrange) { _evaluateEqualityConstraints(K, dirichlet, equalityConstraints, redundantLagrange); }
+template <typename T, class Physics>
+void FETILinearSystemSolver<T, Physics>::updateKernel(step::Step &step)
+{
+	#pragma omp parallel for
+	for (size_t d = 0; d < feti.K.domains.size(); ++d) {
+		AnalyticKernel<T, Physics>::update(feti.K.domains[d], feti.regularization.R1.domains[d], feti.regularization.RegMat.domains[d]);
+//		switch (feti.configuration.regularization) {
+//		case FETIConfiguration::REGULARIZATION::ANALYTIC: AnalyticKernel<T, Physics>::update(K.domains[d], regularization.R1.domains[d], regularization.RegMat.domains[d]); break;
+//		case FETIConfiguration::REGULARIZATION::ALGEBRAIC: break;
+//		}
+	}
+	if (info::ecf->output.print_matrices) {
+		eslog::storedata(" STORE: system/{R, RegMat}\n");
+		math::store(feti.regularization.R1, utils::filename(utils::debugDirectory(step) + "/system", "R").c_str());
+		math::store(feti.regularization.RegMat, utils::filename(utils::debugDirectory(step) + "/system", "RegMat").c_str());
+	}
+}
 
 }
+

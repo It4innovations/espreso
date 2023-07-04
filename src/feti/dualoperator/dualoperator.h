@@ -18,14 +18,14 @@ struct DualOperatorInfo {
 template <typename T>
 class DualOperator {
 public:
-	static DualOperator<T>* set(FETI<T> *feti);
+	static DualOperator<T>* set(FETI<T> &feti, const step::Step &step);
 
-	DualOperator(FETI<T> *feti): feti(feti) {}
+	DualOperator(FETI<T> &feti): feti(feti) {}
 	virtual ~DualOperator() {}
 
 	virtual void info() =0;
-	virtual void set() =0;
-	virtual void update() =0;
+	virtual void set(const step::Step &step) =0;
+	virtual void update(const step::Step &step) =0;
 
 	// y = F * x
 	virtual void apply(const Vector_Dual<T> &x, Vector_Dual<T> &y) =0;
@@ -33,7 +33,7 @@ public:
 	// y = K+(f - Bt * x)
 	virtual void toPrimal(const Vector_Dual<T> &x, Vector_FETI<Vector_Dense, T> &y) =0;
 
-	FETI<T> *feti;
+	FETI<T> &feti;
 
 	Vector_Dual<T> d;
 };

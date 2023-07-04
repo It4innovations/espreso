@@ -10,6 +10,9 @@
 
 namespace espreso {
 
+template class PCPG<double>;
+template class PCPG<std::complex<double> >;
+
 // initialization
 // l_0: L => Gt * inv(GGt) * e
 // r_0: L => d - F * lambda_0
@@ -27,10 +30,10 @@ namespace espreso {
 //   p_k+1: L => y_k+1 + beta_k * p_k
 
 template <typename T>
-static void _info(PCPG<T> *solver)
+void PCPG<T>::info()
 {
 	eslog::info(" = PRECONDITIONED CONJUGATE PROJECTED GRADIENT SETTINGS                                      = \n");
-	switch (solver->feti->configuration.stopping_criterion) {
+	switch (feti.configuration.stopping_criterion) {
 	case FETIConfiguration::STOPPING_CRITERION::RELATIVE:
 		eslog::info(" =   STOPPING CRITERION                                                             RELATIVE = \n");
 		break;
@@ -41,41 +44,35 @@ static void _info(PCPG<T> *solver)
 		eslog::info(" =   STOPPING CRITERION                                                               ARIOLI = \n");
 		break;
 	}
-	eslog::info(" =   PRECISION                                                                      %.2e = \n", solver->feti->configuration.precision);
-	if (solver->feti->configuration.max_iterations == 0) {
+	eslog::info(" =   PRECISION                                                                      %.2e = \n", feti.configuration.precision);
+	if (feti.configuration.max_iterations == 0) {
 		eslog::info(" =   MAX_ITERATIONS                                                                     AUTO = \n");
 	} else {
-		eslog::info(" =   MAX_ITERATIONS                                                                  %7d = \n", solver->feti->configuration.max_iterations);
+		eslog::info(" =   MAX_ITERATIONS                                                                  %7d = \n", feti.configuration.max_iterations);
 	}
 	eslog::info(" = ----------------------------------------------------------------------------------------- = \n");
 }
 
 template <typename T>
-static void _set(PCPG<T> *solver)
+PCPG<T>::PCPG(FETI<T> &feti)
+: IterativeSolver<T>(feti)
 {
-	solver->l.resize();
-	solver->r.resize();
-	solver->w.resize();
-	solver->y.resize();
-	solver->z.resize();
-	solver->p.resize();
+	l.resize();
+	r.resize();
+	w.resize();
+	y.resize();
+	z.resize();
+	p.resize();
 
-	solver->x.resize();
-	solver->Fp.resize();
+	x.resize();
+	Fp.resize();
 }
 
-
-template <> PCPG<double>::PCPG(FETI<double> *feti): IterativeSolver<double>(feti) { _set<double>(this); }
-template <> PCPG<std::complex<double> >::PCPG(FETI<std::complex<double> > *feti): IterativeSolver<std::complex<double> >(feti) { _set<std::complex<double> >(this); }
-
-template <> void PCPG<double>::info() { _info<double>(this); }
-template <> void PCPG<std::complex<double> >::info() { _info<std::complex<double> >(this); }
-
-template <> void PCPG<double>::solve(IterativeSolverInfo &info)
+template <> void PCPG<double>::solve(const step::Step &step, IterativeSolverInfo &info)
 {
-	DualOperator<double> *F = feti->dualOperator;
-	Projector<double> *P = feti->projector;
-	Preconditioner<double> *S = feti->preconditioner;
+	DualOperator<double> *F = feti.dualOperator;
+	Projector<double> *P = feti.projector;
+	Preconditioner<double> *S = feti.preconditioner;
 
 	P->applyGtInvGGt(P->e, l);             // l = Gt * inv(GGt) * e
 
@@ -91,7 +88,7 @@ template <> void PCPG<double>::solve(IterativeSolverInfo &info)
 	l.copyTo(x);                           // x = l
 
 	double yw = y.dot(w);
-	setInfo(info, feti->configuration, yw);
+	setInfo(info, feti.configuration, yw);
 
 	eslog::checkpointln("FETI: CPG INITIALIZATION");
 	eslog::startln("PCPG: ITERATIONS STARTED", "pcpg");
@@ -128,7 +125,7 @@ template <> void PCPG<double>::solve(IterativeSolverInfo &info)
 		y.add(beta, p); y.swap(p);
 		eslog::accumulatedln("pcpg: update p");
 
-		updateInfo(info, feti->configuration, yw, 0, 0);
+		updateInfo(info, feti.configuration, yw, 0, 0);
 		yw = _yw; // keep yw for the next iteration
 		eslog::accumulatedln("pcpg: check criteria");
 	}
@@ -139,7 +136,7 @@ template <> void PCPG<double>::solve(IterativeSolverInfo &info)
 	eslog::info("       = ----------------------------------------------------------------------------- = \n");
 }
 
-template <> void PCPG<std::complex<double> >::solve(IterativeSolverInfo &info)
+template <> void PCPG<std::complex<double> >::solve(const step::Step &step, IterativeSolverInfo &info)
 {
 
 }

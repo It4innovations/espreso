@@ -4,7 +4,7 @@
 
 #include "analysis/physics/physics.h"
 #include "analysis/assembler/module/acoustic.h"
-#include "analysis/linearsystem/linearsystem.h"
+//#include "analysis/linearsystem/linearsystem.h"
 
 #include <complex>
 
@@ -32,7 +32,7 @@ public:
 		Vector_Base<double> *f, *x, *dirichlet;
 	} re, im;
 
-	LinearSystem<double, std::complex<double> > *system;
+//	LinearSystem<double, std::complex<double> > *system;
 
 protected:
 	void storeSystem(step::Step &step);

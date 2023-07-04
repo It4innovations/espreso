@@ -4,7 +4,7 @@
 
 #include "analysis/physics/physics.h"
 #include "analysis/assembler/module/acoustic.h"
-#include "analysis/linearsystem/linearsystem.h"
+//#include "analysis/linearsystem/linearsystem.h"
 
 namespace espreso {
 
@@ -30,7 +30,7 @@ public:
 		Vector_Base<double> *f, *x, *dirichlet;
 	} re, im;
 
-	LinearSystem<double> *system;
+//	LinearSystem<double> *system;
 
 protected:
 	void storeSystem(step::Step &step);

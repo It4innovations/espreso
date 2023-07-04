@@ -2,38 +2,25 @@
 #ifndef SRC_ANALYSIS_LINEARSOLVER_LINEARSOLVER_H_
 #define SRC_ANALYSIS_LINEARSOLVER_LINEARSOLVER_H_
 
-#include "config/ecf/physics/physicssolver/loadstep.h"
-#include "math/math.h"
 #include "math/physics/matrix_base.h"
+#include "math/physics/vector_base.h"
 
 namespace espreso {
 
 namespace step { struct Step; }
 
-template <typename Assembler, typename Solver = Assembler>
-struct LinearSystem {
+template <typename T>
+struct LinearSystemSolver {
 
-	template <typename Type>
-	struct System {
-		Matrix_Base<Type> *A;
-		Vector_Base<Type> *x, *b, *dirichlet;
-	};
-
-	virtual void setMapping(Matrix_Base<Assembler> *A) const =0;
-	virtual void setMapping(Vector_Base<Assembler> *x) const =0;
-	virtual void setDirichletMapping(Vector_Base<Assembler> *x) const =0;
-
-	virtual ~LinearSystem() {}
+	virtual ~LinearSystemSolver() {}
 
 	virtual void set(step::Step &step) =0;
 	virtual void update(step::Step &step) =0;
 	virtual bool solve(step::Step &step) =0;
 
-	System<Assembler> assembler;
-	System<Solver> solver;
+	Matrix_Base<T> *A;
+	Vector_Base<T> *x, *b, *dirichlet;
 };
-
-
 
 }
 

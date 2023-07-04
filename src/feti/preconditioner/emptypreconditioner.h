@@ -9,10 +9,10 @@ namespace espreso {
 template <typename T>
 class EmptyPreconditioner: public Preconditioner<T> {
 public:
-	EmptyPreconditioner(FETI<T> *feti): Preconditioner<T>(feti) {}
+	EmptyPreconditioner(FETI<T> &feti): Preconditioner<T>(feti) {}
 
 	void info() {}
-	void update() {}
+	void update(const step::Step &step) {}
 
 	void apply(const Vector_Dual<T> &x, Vector_Dual<T> &y) {}
 };

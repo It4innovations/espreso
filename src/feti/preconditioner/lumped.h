@@ -9,16 +9,16 @@ namespace espreso {
 
 template <typename T>
 struct Lumped: public Preconditioner<T> {
-	Lumped(FETI<T> *feti);
+	Lumped(FETI<T> &feti);
 	~Lumped();
 
 	void info();
-	void update();
+	void update(const step::Step &step);
 
 	void apply(const Vector_Dual<T> &x, Vector_Dual<T> &y);
 
 protected:
-	Matrix_FETI<Matrix_CSR, T> *K;
+	using Preconditioner<T>::feti;
 	std::vector<Vector_Dense<T> > Btx, KBtx;
 	std::vector<SpBLAS<T, Matrix_CSR> > KSpBlas;
 };

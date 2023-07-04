@@ -9,6 +9,9 @@
 
 namespace espreso {
 
+template class CPG<double>;
+template class CPG<std::complex<double> >;
+
 // https://digital.library.unt.edu/ark:/67531/metadc739671/m2/1/high_res_d/792775.pdf
 // page 12
 
@@ -27,19 +30,24 @@ namespace espreso {
 //   p_k+1: L => w_k+1 + beta_k * p_k
 
 template <typename T>
-static void _print(const char *name, const IterativeSolverInfo &info, const step::Step *step, const Vector_Dual<T> &v)
+CPG<T>::CPG(FETI<T> &feti)
+: IterativeSolver<T>(feti)
 {
-	if (info::ecf->output.print_matrices > 1) {
-		eslog::storedata(" STORE: feti/cpg/{%s%s}\n", name, std::to_string(info.iterations).c_str());
-		math::store(v, utils::filename(utils::debugDirectory(*step) + "/feti/cpg", std::string(name) + std::to_string(info.iterations)).c_str());
-	}
+	l.resize();
+	r.resize();
+	w.resize();
+	p.resize();
+//	r0.resize();
+
+	x.resize();
+	Fp.resize();
 }
 
 template <typename T>
-static void _info(CPG<T> *solver)
+void CPG<T>::info()
 {
 	eslog::info(" = CONJUGATE PROJECTED GRADIENT SETTINGS                                                     = \n");
-	switch (solver->feti->configuration.stopping_criterion) {
+	switch (feti.configuration.stopping_criterion) {
 	case FETIConfiguration::STOPPING_CRITERION::RELATIVE:
 		eslog::info(" =   STOPPING CRITERION                                                             RELATIVE = \n");
 		break;
@@ -50,38 +58,28 @@ static void _info(CPG<T> *solver)
 		eslog::info(" =   STOPPING CRITERION                                                               ARIOLI = \n");
 		break;
 	}
-	eslog::info(" =   PRECISION                                                                      %.2e = \n", solver->feti->configuration.precision);
-	if (solver->feti->configuration.max_iterations == 0) {
+	eslog::info(" =   PRECISION                                                                      %.2e = \n", feti.configuration.precision);
+	if (feti.configuration.max_iterations == 0) {
 		eslog::info(" =   MAX_ITERATIONS                                                                     AUTO = \n");
 	} else {
-		eslog::info(" =   MAX_ITERATIONS                                                                  %7d = \n", solver->feti->configuration.max_iterations);
+		eslog::info(" =   MAX_ITERATIONS                                                                  %7d = \n", feti.configuration.max_iterations);
 	}
 	eslog::info(" = ----------------------------------------------------------------------------------------- = \n");
 }
 
 template <typename T>
-static void _set(CPG<T> *solver)
+static void _print(const char *name, const IterativeSolverInfo &info, const step::Step &step, const Vector_Dual<T> &v)
 {
-	solver->l.resize();
-	solver->r.resize();
-	solver->w.resize();
-	solver->p.resize();
-//	solver->r0.resize();
-
-	solver->x.resize();
-	solver->Fp.resize();
+	if (info::ecf->output.print_matrices > 1) {
+		eslog::storedata(" STORE: feti/cpg/{%s%s}\n", name, std::to_string(info.iterations).c_str());
+		math::store(v, utils::filename(utils::debugDirectory(step) + "/feti/cpg", std::string(name) + std::to_string(info.iterations)).c_str());
+	}
 }
 
-template <> CPG<double>::CPG(FETI<double> *feti): IterativeSolver<double>(feti) { _set<double>(this); }
-template <> CPG<std::complex<double> >::CPG(FETI<std::complex<double> > *feti): IterativeSolver<std::complex<double> >(feti) { _set<std::complex<double> >(this); }
-
-template <> void CPG<double>::info() { _info<double>(this); }
-template <> void CPG<std::complex<double> >::info() { _info<std::complex<double> >(this); }
-
-template <> void CPG<double>::solve(IterativeSolverInfo &info)
+template <> void CPG<double>::solve(const step::Step &step, IterativeSolverInfo &info)
 {
-	DualOperator<double> *F = feti->dualOperator;
-	Projector<double> *P = feti->projector;
+	DualOperator<double> *F = feti.dualOperator;
+	Projector<double> *P = feti.projector;
 
 	P->applyGtInvGGt(P->e, l);             // l = Gt * inv(GGt) * e
 
@@ -95,12 +93,12 @@ template <> void CPG<double>::solve(IterativeSolverInfo &info)
 
 //	r.copyTo(r0);
 //	double rho = F->d.dot(l), rr, r0x;
-	_print("p", info, this->feti->step, p);
-	_print("x", info, this->feti->step, x);
-	_print("r", info, this->feti->step, r);
+	_print("p", info, step, p);
+	_print("x", info, step, x);
+	_print("r", info, step, r);
 
 	double ww = w.dot();
-	setInfo(info, feti->configuration, ww);
+	setInfo(info, feti.configuration, ww);
 
 	eslog::checkpointln("FETI: CPG INITIALIZATION");
 	eslog::startln("CPG: ITERATIONS STARTED", "cpg");
@@ -109,13 +107,13 @@ template <> void CPG<double>::solve(IterativeSolverInfo &info)
 		eslog::accumulatedln("cpg: apply F");       // gamma = (w, w) / (p, F * p)
 		double pFp = p.dot(Fp), gamma = ww / pFp;   //
 		eslog::accumulatedln("cpg: dot(p, Fp)");    //
-		_print("Fp", info, this->feti->step, Fp);
+		_print("Fp", info, step, Fp);
 
 		x.add(gamma, p);                            // x = x + gamma * p
 		r.add(-gamma, Fp);                          // r = r - gamma * F * p
 		eslog::accumulatedln("cpg: update x, r");   //
-		_print("x", info, this->feti->step, x);
-		_print("r", info, this->feti->step, r);
+		_print("x", info, step, x);
+		_print("r", info, step, r);
 
 		P->apply(r, w);                             // w = P * r
 		eslog::accumulatedln("cpg: apply P");       //
@@ -124,12 +122,12 @@ template <> void CPG<double>::solve(IterativeSolverInfo &info)
 		eslog::accumulatedln("cpg: dot(w, w)");     //
 		w.add(beta, p); w.swap(p);                  // p = w + beta * p  (w is not used anymore)
 		eslog::accumulatedln("cpg: update p");      //
-		_print("p", info, this->feti->step, p);
+		_print("p", info, step, p);
 
 //		rr = r.dot(), r0x = r0.dot(x);
 //		eslog::accumulatedln("cpg: dot(r, r), dot(r0, x)");
 
-		updateInfo(info, feti->configuration, ww, 0, 0);
+		updateInfo(info, feti.configuration, ww, 0, 0);
 		ww = _ww; // keep ww for the next iteration
 		eslog::accumulatedln("cpg: check criteria");
 	}
@@ -140,7 +138,7 @@ template <> void CPG<double>::solve(IterativeSolverInfo &info)
 	eslog::info("       = ----------------------------------------------------------------------------- = \n");
 }
 
-template <> void CPG<std::complex<double> >::solve(IterativeSolverInfo &info)
+template <> void CPG<std::complex<double> >::solve(const step::Step &step, IterativeSolverInfo &info)
 {
 
 }

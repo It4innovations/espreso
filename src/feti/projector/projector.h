@@ -11,13 +11,13 @@ namespace espreso {
 
 template <typename T>
 struct Projector {
-	static Projector<T>* set(FETI<T> *feti);
+	static Projector<T>* set(FETI<T> &feti, const step::Step &step);
 
-	Projector(FETI<T> *feti): feti(feti) {}
+	Projector(FETI<T> &feti): feti(feti) {}
 	virtual ~Projector() {}
 
 	virtual void info() =0;
-	virtual void update() =0;
+	virtual void update(const step::Step &step) =0;
 
 	virtual void apply(const Vector_Dual<T> &x, Vector_Dual<T> &y) =0;
 	virtual void applyGtInvGGt(const Vector_Kernel<T> &x, Vector_Dual<T> &y) =0;
@@ -26,7 +26,7 @@ struct Projector {
 	Vector_Kernel<T> e;
 
 protected:
-	FETI<T> *feti;
+	FETI<T> &feti;
 };
 
 }

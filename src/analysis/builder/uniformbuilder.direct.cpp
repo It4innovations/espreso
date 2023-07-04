@@ -1,5 +1,7 @@
 
-#include <analysis/linearsystem/direct/pattern.nodes.uniform.direct.h>
+#include "uniformbuilder.direct.h"
+
+#include "basis/containers/serializededata.h"
 #include "basis/containers/allocators.h"
 #include "basis/containers/serializededata.h"
 #include "basis/utilities/utils.h"
@@ -8,31 +10,89 @@
 #include "esinfo/meshinfo.h"
 
 #include "mesh/store/elementstore.h"
-#include "mesh/store/domainstore.h"
+#include "mesh/store/boundaryregionstore.h"
 #include "mesh/store/nodestore.h"
 
 #include "wrappers/mpi/communication.h"
 
 using namespace espreso;
 
-PatternNodesUniformDirect::PatternNodesUniformDirect()
-: dofs(0)
+UniformBuilderDirectPattern::UniformBuilderDirectPattern(std::map<std::string, ECFExpression> &dirichlet, int dofs, Matrix_Shape shape) // always full
+{
+	std::vector<esint> indices;
+	bregion.resize(info::mesh->boundaryRegions.size());
+	for (size_t r = 1; r < info::mesh->boundaryRegions.size(); ++r) {
+		const BoundaryRegionStore *region = info::mesh->boundaryRegions[r];
+		if (dirichlet.find(region->name) != dirichlet.end()) {
+			bregion[r].dirichlet = 1;
+		}
+	}
+
+	for (size_t r = 1; r < info::mesh->boundaryRegions.size(); ++r) {
+		const BoundaryRegionStore *region = info::mesh->boundaryRegions[r];
+		if (bregion[r].dirichlet) {
+			for (auto n = region->nodes->datatarray().cbegin(); n != region->nodes->datatarray().cend(); ++n) {
+				for (int d = 0; d < dofs; ++d) {
+					indices.push_back(*n * dofs + d);
+				}
+			}
+		}
+	}
+	bregion[0].b = indices; // use the first region to store indices permutation;
+	utils::sortAndRemoveDuplicates(indices);
+	bregion[0].indices = indices;
+	for (size_t i = 0; i < bregion[0].b.size(); ++i) {
+		bregion[0].b[i] = std::lower_bound(indices.begin(), indices.end(), bregion[0].b[i]) - indices.begin();
+	}
+	buildPattern(dofs);
+}
+
+UniformBuilderDirectPattern::UniformBuilderDirectPattern(std::map<std::string, ECFExpressionOptionalVector> &dirichlet, int dofs, Matrix_Shape shape) // always full
+{
+	std::vector<esint> indices;
+	bregion.resize(info::mesh->boundaryRegions.size());
+	for (size_t r = 1; r < info::mesh->boundaryRegions.size(); ++r) {
+		const BoundaryRegionStore *region = info::mesh->boundaryRegions[r];
+		auto expr = dirichlet.find(region->name);
+		if (expr != dirichlet.end()) {
+			for (int d = 0; d < dofs; ++d) {
+				if (expr->second.data[d].isset) {
+					bregion[r].dirichlet += 1 << d;
+				}
+			}
+		}
+	}
+
+	for (size_t r = 1; r < info::mesh->boundaryRegions.size(); ++r) {
+		const BoundaryRegionStore *region = info::mesh->boundaryRegions[r];
+		for (auto n = region->nodes->datatarray().cbegin(); n != region->nodes->datatarray().cend(); ++n) {
+			for (int d = 0; d < dofs; ++d) {
+				if (bregion[r].dirichlet & (1 << d)) {
+					indices.push_back(*n * dofs + d);
+				}
+			}
+		}
+	}
+	bregion[0].b = indices; // use the first region to store indices permutation;
+	utils::sortAndRemoveDuplicates(indices);
+	bregion[0].indices = indices;
+	for (size_t i = 0; i < bregion[0].b.size(); ++i) {
+		bregion[0].b[i] = std::lower_bound(indices.begin(), indices.end(), bregion[0].b[i]) - indices.begin();
+	}
+	buildPattern(dofs);
+}
+
+UniformBuilderDirectPattern::~UniformBuilderDirectPattern()
 {
 
 }
 
-PatternNodesUniformDirect::~PatternNodesUniformDirect()
-{
-
-}
-
-void buildPattern(PatternNodesUniformDirect *pattern, int dofs, DOFsDistribution &distribution)
+void UniformBuilderDirectPattern::buildPattern(int dofs)
 {
 	double start = eslog::time();
 	eslog::info(" == LINEAR SYSTEM                                                               DISTRIBUTED == \n");
 	eslog::info(" == DOFS PER NODE                                                                         %d == \n", dofs);
 
-	pattern->dofs = dofs;
 	std::vector<std::vector<esint> > sSize(info::mesh->neighbors.size()), rSize(info::mesh->neighbors.size());
 	std::vector<esint> begin(info::mesh->nodes->size + 1, 1); // add diagonal
 	for (auto enodes = info::mesh->elements->nodes->cbegin(); enodes != info::mesh->elements->nodes->cend(); ++enodes) {
@@ -138,12 +198,12 @@ void buildPattern(PatternNodesUniformDirect *pattern, int dofs, DOFsDistribution
 	count *= dofs * dofs;
 	eslog::info(" == NON-ZERO VALUES                                                          %14lu == \n", count);
 
-	pattern->elements.nrows = dofs * (info::mesh->nodes->uniqInfo.nhalo + info::mesh->nodes->uniqInfo.size);
-	pattern->elements.ncols = dofs * info::mesh->nodes->uniqInfo.totalSize;
-	pattern->elements.row.reserve(count);
-	pattern->elements.column.reserve(count);
-	pattern->elements.A.reserve(dofs * dofs * indices.size());
-	pattern->elements.b.reserve(dofs * info::mesh->elements->nodes->datatarray().size());
+	elements.nrows = dofs * (info::mesh->nodes->uniqInfo.nhalo + info::mesh->nodes->uniqInfo.size);
+	elements.ncols = dofs * info::mesh->nodes->uniqInfo.totalSize;
+	elements.row.reserve(count);
+	elements.column.reserve(count);
+	elements.A.reserve(dofs * dofs * indices.size());
+	elements.b.reserve(dofs * info::mesh->elements->nodes->datatarray().size());
 
 	std::vector<esint, initless_allocator<esint> > offset;
 	offset.reserve(info::mesh->nodes->size);
@@ -152,8 +212,8 @@ void buildPattern(PatternNodesUniformDirect *pattern, int dofs, DOFsDistribution
 		for (int r = 0; r < dofs; ++r) {
 			for (auto i = begin[n]; i < end[n]; ++i) {
 				for (int c = 0; c < dofs; ++c) {
-					pattern->elements.row.push_back(info::mesh->nodes->uniqInfo.position[n] * dofs + r);
-					pattern->elements.column.push_back(indices[i] * dofs + c);
+					elements.row.push_back(info::mesh->nodes->uniqInfo.position[n] * dofs + r);
+					elements.column.push_back(indices[i] * dofs + c);
 				}
 			}
 		}
@@ -167,10 +227,10 @@ void buildPattern(PatternNodesUniformDirect *pattern, int dofs, DOFsDistribution
 				esint roffset = offset[*from] + rd * dofs * (iend - ibegin);
 				for (int cd = 0; cd < dofs; ++cd) {
 					for (auto to = enodes->begin(); to != enodes->end(); ++to) {
-						pattern->elements.A.push_back(roffset + dofs * (std::lower_bound(ibegin, iend, info::mesh->nodes->uniqInfo.position[*to]) - ibegin) + cd);
+						elements.A.push_back(roffset + dofs * (std::lower_bound(ibegin, iend, info::mesh->nodes->uniqInfo.position[*to]) - ibegin) + cd);
 					}
 				}
-				pattern->elements.b.push_back(*from * dofs + rd);
+				elements.b.push_back(*from * dofs + rd);
 			}
 		}
 	}
@@ -185,18 +245,18 @@ void buildPattern(PatternNodesUniformDirect *pattern, int dofs, DOFsDistribution
 						esint roffset = offset[*from] + rd * dofs * (iend - ibegin);
 						for (int cd = 0; cd < dofs; ++cd) {
 							for (auto to = e->begin(); to != e->end(); ++to) {
-								pattern->bregion[r].A.push_back(roffset + dofs * (std::lower_bound(ibegin, iend, info::mesh->nodes->uniqInfo.position[*to]) - ibegin) + cd);
+								bregion[r].A.push_back(roffset + dofs * (std::lower_bound(ibegin, iend, info::mesh->nodes->uniqInfo.position[*to]) - ibegin) + cd);
 							}
 						}
-						pattern->bregion[r].b.push_back(*from * dofs + rd);
+						bregion[r].b.push_back(*from * dofs + rd);
 					}
 				}
 			}
 		} else {
-			pattern->bregion[r].b.reserve(info::mesh->boundaryRegions[r]->nodes->datatarray().size());
+			bregion[r].b.reserve(info::mesh->boundaryRegions[r]->nodes->datatarray().size());
 			for (auto n = info::mesh->boundaryRegions[r]->nodes->datatarray().cbegin(); n != info::mesh->boundaryRegions[r]->nodes->datatarray().end(); ++n) {
 				for (int rd = 0; rd < dofs; ++rd) {
-					pattern->bregion[r].b.push_back(*n * dofs + rd);
+					bregion[r].b.push_back(*n * dofs + rd);
 				}
 			}
 		}
@@ -221,7 +281,7 @@ void buildPattern(PatternNodesUniformDirect *pattern, int dofs, DOFsDistribution
 		eslog::internalFailure("cannot exchange matrix distribution info.\n");
 	}
 
-	size_t nonzeros[2] = { pattern->elements.row.size(), pattern->bregion[0].b.size() };
+	size_t nonzeros[2] = { elements.row.size(), bregion[0].b.size() };
 	Communication::allReduce(&nonzeros, NULL, 2, MPITools::getType<size_t>().mpitype, MPI_SUM);
 
 
@@ -233,91 +293,3 @@ void buildPattern(PatternNodesUniformDirect *pattern, int dofs, DOFsDistribution
 	eslog::info(" ============================================================================================= \n");
 }
 
-static void dirichlet(PatternNodesUniformDirect *pattern, std::map<std::string, ECFExpression> &settings, int dofs)
-{
-	std::vector<esint> indices;
-	pattern->bregion.resize(info::mesh->boundaryRegions.size());
-	for (size_t r = 1; r < info::mesh->boundaryRegions.size(); ++r) {
-		const BoundaryRegionStore *region = info::mesh->boundaryRegions[r];
-		if (settings.find(region->name) != settings.end()) {
-			pattern->bregion[r].dirichlet = 1;
-		}
-	}
-
-	for (size_t r = 1; r < info::mesh->boundaryRegions.size(); ++r) {
-		const BoundaryRegionStore *region = info::mesh->boundaryRegions[r];
-		if (pattern->bregion[r].dirichlet) {
-			for (auto n = region->nodes->datatarray().cbegin(); n != region->nodes->datatarray().cend(); ++n) {
-				for (int d = 0; d < dofs; ++d) {
-					indices.push_back(*n * dofs + d);
-				}
-			}
-		}
-	}
-	pattern->bregion[0].b = indices; // use the first region to store indices permutation;
-	utils::sortAndRemoveDuplicates(indices);
-	pattern->bregion[0].indices = indices;
-	for (size_t i = 0; i < pattern->bregion[0].b.size(); ++i) {
-		pattern->bregion[0].b[i] = std::lower_bound(indices.begin(), indices.end(), pattern->bregion[0].b[i]) - indices.begin();
-	}
-}
-
-static void dirichlet(PatternNodesUniformDirect *pattern, std::map<std::string, ECFExpressionOptionalVector> &settings, int dofs)
-{
-	std::vector<esint> indices;
-	pattern->bregion.resize(info::mesh->boundaryRegions.size());
-	for (size_t r = 1; r < info::mesh->boundaryRegions.size(); ++r) {
-		const BoundaryRegionStore *region = info::mesh->boundaryRegions[r];
-		auto expr = settings.find(region->name);
-		if (expr != settings.end()) {
-			for (int d = 0; d < dofs; ++d) {
-				if (expr->second.data[d].isset) {
-					pattern->bregion[r].dirichlet += 1 << d;
-				}
-			}
-		}
-	}
-
-	for (size_t r = 1; r < info::mesh->boundaryRegions.size(); ++r) {
-		const BoundaryRegionStore *region = info::mesh->boundaryRegions[r];
-		for (auto n = region->nodes->datatarray().cbegin(); n != region->nodes->datatarray().cend(); ++n) {
-			for (int d = 0; d < dofs; ++d) {
-				if (pattern->bregion[r].dirichlet & (1 << d)) {
-					indices.push_back(*n * dofs + d);
-				}
-			}
-		}
-	}
-	pattern->bregion[0].b = indices; // use the first region to store indices permutation;
-	utils::sortAndRemoveDuplicates(indices);
-	pattern->bregion[0].indices = indices;
-	for (size_t i = 0; i < pattern->bregion[0].b.size(); ++i) {
-		pattern->bregion[0].b[i] = std::lower_bound(indices.begin(), indices.end(), pattern->bregion[0].b[i]) - indices.begin();
-	}
-}
-
-void PatternNodesUniformDirect::set(std::map<std::string, ECFExpression> &settings, int dofs, DOFsDistribution &distribution)
-{
-	dirichlet(this, settings, dofs);
-	buildPattern(this, dofs, distribution);
-}
-
-void PatternNodesUniformDirect::set(std::map<std::string, ECFExpressionOptionalVector> &settings, int dofs, DOFsDistribution &distribution)
-{
-	dirichlet(this, settings, dofs);
-	buildPattern(this, dofs, distribution);
-}
-
-void PatternNodesUniformDirect::fillCSR(esint *rows, esint *cols)
-{
-	rows[0] = Indexing::CSR;
-	cols[0] = elements.column.front() + Indexing::CSR;
-	size_t r = 1;
-	for (size_t c = 1; c < elements.column.size(); ++c) {
-		cols[c] = elements.column[c] + Indexing::CSR;
-		if (elements.row[c] != elements.row[c - 1]) {
-			rows[r++] = c + Indexing::CSR;
-		}
-	}
-	rows[r] = elements.column.size() + Indexing::CSR;
-}

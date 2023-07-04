@@ -24,11 +24,11 @@ namespace espreso {
 
 template <typename T>
 struct OrthogonalTFETISymmetric: public Projector<T> {
-	OrthogonalTFETISymmetric(FETI<T> *feti);
+	OrthogonalTFETISymmetric(FETI<T> &feti);
 	~OrthogonalTFETISymmetric();
 
 	void info();
-	void update();
+	void update(const step::Step &step);
 
 	void apply(const Vector_Dual<T> &x, Vector_Dual<T> &y);
 	void applyGtInvGGt(const Vector_Kernel<T> &x, Vector_Dual<T> &y);
@@ -47,7 +47,10 @@ protected:
 	void _applyGt(const Vector_Dense<T> &in, const T &alpha, Vector_Dual<T> &out);
 	void _applyR(const Vector_Dense<T> &in, Vector_FETI<Vector_Dense, T> &out);
 
-	void _print();
+	void _print(const step::Step &step);
+
+	using Projector<T>::feti;
+	using Projector<T>::e;
 
 	Matrix_CSR<T> G, GGt;
 	Matrix_Dense<T> invGGt;

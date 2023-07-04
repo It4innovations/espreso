@@ -15,12 +15,15 @@
 
 namespace espreso {
 
+template class IterativeSolver<double>;
+template class IterativeSolver<std::complex<double> >;
+
 template <typename T>
-static IterativeSolver<T>* _set(FETI<T> *feti)
+IterativeSolver<T>* IterativeSolver<T>::set(FETI<T> &feti, const step::Step &step)
 {
-	switch (feti->configuration.iterative_solver) {
+	switch (feti.configuration.iterative_solver) {
 	case FETIConfiguration::ITERATIVE_SOLVER::PCG:
-		if (feti->configuration.preconditioner == FETIConfiguration::PRECONDITIONER::NONE) {
+		if (feti.configuration.preconditioner == FETIConfiguration::PRECONDITIONER::NONE) {
 			eslog::info(" = ITERATIVE SOLVER                                             CONJUGATE PROJECTED GRADIENT = \n");
 			return new CPG<T>(feti);
 		} else {
@@ -29,7 +32,7 @@ static IterativeSolver<T>* _set(FETI<T> *feti)
 		}
 	case FETIConfiguration::ITERATIVE_SOLVER::pipePCG:
 	case FETIConfiguration::ITERATIVE_SOLVER::orthogonalPCG:
-		if (feti->configuration.preconditioner == FETIConfiguration::PRECONDITIONER::NONE) {
+		if (feti.configuration.preconditioner == FETIConfiguration::PRECONDITIONER::NONE) {
 			eslog::info(" = ITERATIVE SOLVER                      CONJUGATE PROJECTED GRADIENT WITH ORTHOGONALIZATION = \n");
 			return new OrthogonalizedCPG<T>(feti);
 		} else {
@@ -47,21 +50,22 @@ static IterativeSolver<T>* _set(FETI<T> *feti)
 }
 
 template <typename T>
-void _reconstructSolution(IterativeSolver<T> *solver, const Vector_Dual<T> &l, const Vector_Dual<T> &r)
+void IterativeSolver<T>::reconstructSolution(const Vector_Dual<T> &l, const Vector_Dual<T> &r)
 {
-	Projector<T> *P = solver->feti->projector;
-	DualOperator<T> *F = solver->feti->dualOperator;
+	Projector<T> *P = feti.projector;
+	DualOperator<T> *F = feti.dualOperator;
 
-	F->toPrimal(l, solver->iKfBtL);
-	P->applyRInvGGtG(r, solver->Ra);
+	F->toPrimal(l, iKfBtL);
+	P->applyRInvGGtG(r, Ra);
 	#pragma omp parallel for
-	for (size_t d = 0; d < solver->feti->K->domains.size(); ++d) {
-		math::copy(solver->feti->x->domains[d], solver->iKfBtL.domains[d]);
-		math::add(solver->feti->x->domains[d], T{1}, solver->Ra.domains[d]);
+	for (size_t d = 0; d < feti.K.domains.size(); ++d) {
+		math::copy(feti.x.domains[d], iKfBtL.domains[d]);
+		math::add(feti.x.domains[d], T{1}, Ra.domains[d]);
 	}
 }
 
-template <> void IterativeSolver<double>::setInfo(IterativeSolverInfo &info, const FETIConfiguration &configuration, const double &ww)
+template <>
+void IterativeSolver<double>::setInfo(IterativeSolverInfo &info, const FETIConfiguration &configuration, const double &ww)
 {
 	eslog::info("       = ----------------------------------------------------------------------------- = \n");
 	eslog::info("       - ITERATION     RELATIVE NORM      ABSOLUTE NORM      ARIOLI NORM      TIME [s] - \n");
@@ -87,7 +91,16 @@ template <> void IterativeSolver<double>::setInfo(IterativeSolverInfo &info, con
 	info.stagnation.buffer.resize(configuration.max_stagnation, info.norm.dual.criteria);
 }
 
-template <> void IterativeSolver<double>::updateInfo(IterativeSolverInfo &info, const FETIConfiguration &configuration, const double &ww, const double &psi, const double &ry)
+template <>
+void IterativeSolver<std::complex<double> >::setInfo(IterativeSolverInfo &info, const FETIConfiguration &configuration, const std::complex<double> &ww)
+{
+	eslog::info("       = ----------------------------------------------------------------------------- = \n");
+	eslog::info("       - ITERATION     RELATIVE NORM      ABSOLUTE NORM      ARIOLI NORM      TIME [s] - \n");
+	eslog::info("       - ----------------------------------------------------------------------------- - \n");
+}
+
+template <>
+void IterativeSolver<double>::updateInfo(IterativeSolverInfo &info, const FETIConfiguration &configuration, const double &ww, const double &psi, const double &ry)
 {
 //	info.norm.dual.ksi += psi;
 	info.norm.dual.absolute = std::sqrt(ww);
@@ -108,7 +121,7 @@ template <> void IterativeSolver<double>::updateInfo(IterativeSolverInfo &info, 
 		info.converged = true;
 	}
 
-	if (info.iterations == feti->configuration.max_iterations && !info.converged) {
+	if (info.iterations == feti.configuration.max_iterations && !info.converged) {
 		info.error = IterativeSolverInfo::ERROR::MAX_ITERATIONS_REACHED;
 		info.converged = true;
 	}
@@ -118,7 +131,7 @@ template <> void IterativeSolver<double>::updateInfo(IterativeSolverInfo &info, 
 		info.converged = true;
 	}
 
-	if (info.converged || (info.iterations - 1) % feti->configuration.print_iteration == 0) {
+	if (info.converged || (info.iterations - 1) % feti.configuration.print_iteration == 0) {
 		eslog::info("       - %9d        %9.4e         %9.4e        %9.4e      %7.2e - \n", info.iterations, info.norm.dual.relative, info.norm.dual.absolute, info.norm.dual.arioli, eslog::time() - info.time.current);
 	}
 	if (info.converged) {
@@ -130,22 +143,10 @@ template <> void IterativeSolver<double>::updateInfo(IterativeSolverInfo &info, 
 	info.time.current = eslog::time();
 }
 
-template <> void IterativeSolver<std::complex<double> >::setInfo(IterativeSolverInfo &info, const FETIConfiguration &configuration, const std::complex<double> &ww)
-{
-	eslog::info("       = ----------------------------------------------------------------------------- = \n");
-	eslog::info("       - ITERATION     RELATIVE NORM      ABSOLUTE NORM      ARIOLI NORM      TIME [s] - \n");
-	eslog::info("       - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - \n");
-}
-
-template <> void IterativeSolver<std::complex<double> >::updateInfo(IterativeSolverInfo &info, const FETIConfiguration &configuration, const std::complex<double> &ww, const std::complex<double> &psi, const std::complex<double> &ry)
+template <>
+void IterativeSolver<std::complex<double> >::updateInfo(IterativeSolverInfo &info, const FETIConfiguration &configuration, const std::complex<double> &ww, const std::complex<double> &psi, const std::complex<double> &ry)
 {
 
 }
-
-template <> IterativeSolver<double>* IterativeSolver<double>::set(FETI<double> *feti) { return _set<double>(feti); }
-template <> IterativeSolver<std::complex<double> >* IterativeSolver<std::complex<double> >::set(FETI<std::complex<double> > *feti) { return _set<std::complex<double> >(feti); }
-
-template <> void IterativeSolver<double>::reconstructSolution(const Vector_Dual<double> &l, const Vector_Dual<double> &r) { return _reconstructSolution<double>(this, l, r); }
-template <> void IterativeSolver<std::complex<double> >::reconstructSolution(const Vector_Dual<std::complex<double> > &l, const Vector_Dual<std::complex<double> > &r) { return _reconstructSolution<std::complex<double> >(this, l, r); }
 
 }

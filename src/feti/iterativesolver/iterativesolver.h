@@ -42,30 +42,30 @@ struct IterativeSolverInfo {
 template <typename T>
 class IterativeSolver {
 public:
-	static IterativeSolver<T>* set(FETI<T> *feti);
+	static IterativeSolver<T>* set(FETI<T> &feti, const step::Step &step);
 
-	IterativeSolver(FETI<T> *feti): feti(feti)
+	IterativeSolver(FETI<T> &feti): feti(feti)
 	{
-		iKfBtL.domains.resize(feti->K->domains.size());
-		Ra.domains.resize(feti->K->domains.size());
+		iKfBtL.domains.resize(feti.K.domains.size());
+		Ra.domains.resize(feti.K.domains.size());
 
 		#pragma omp parallel for
-		for (size_t d = 0; d < feti->K->domains.size(); ++d) {
-			iKfBtL.domains[d].resize(feti->K->domains[d].nrows);
-			Ra.domains[d].resize(feti->K->domains[d].nrows);
+		for (size_t d = 0; d < feti.K.domains.size(); ++d) {
+			iKfBtL.domains[d].resize(feti.K.domains[d].nrows);
+			Ra.domains[d].resize(feti.K.domains[d].nrows);
 		}
 	}
 
 	virtual ~IterativeSolver() {}
 
 	virtual void info() =0;
-	virtual void solve(IterativeSolverInfo &info) =0;
+	virtual void solve(const step::Step &step, IterativeSolverInfo &info) =0;
 
 	void setInfo(IterativeSolverInfo &info, const FETIConfiguration &configuration, const T &ww);
 	void updateInfo(IterativeSolverInfo &info, const FETIConfiguration &configuration, const T &ww, const T &psi, const T &ry);
 	void reconstructSolution(const Vector_Dual<T> &l, const Vector_Dual<T> &r);
 
-	FETI<T> *feti;
+	FETI<T> &feti;
 
 	Vector_FETI<Vector_Dense, T> iKfBtL, Ra;
 };

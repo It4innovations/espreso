@@ -12,7 +12,7 @@ template class TotalFETIExplicitAcc<double>;
 template class TotalFETIExplicitAcc<std::complex<double> >;
 
 template <typename T>
-TotalFETIExplicitAcc<T>::TotalFETIExplicitAcc(FETI<T> *feti)
+TotalFETIExplicitAcc<T>::TotalFETIExplicitAcc(FETI<T> &feti)
 : TotalFETIExplicit<T>(feti)
 {
 
@@ -36,30 +36,28 @@ void TotalFETIExplicitAcc<T>::info()
 }
 
 template <typename T>
-void TotalFETIExplicitAcc<T>::set()
+void TotalFETIExplicitAcc<T>::set(const step::Step &step)
 {
-	TotalFETIExplicit<T>::set();
+	TotalFETIExplicit<T>::set(step);
 
-	L.resize(this->feti->K->domains.size());
-	U.resize(this->feti->K->domains.size());
-	p.resize(this->feti->K->domains.size());
+	L.resize(feti.K.domains.size());
+	U.resize(feti.K.domains.size());
+	p.resize(feti.K.domains.size());
 }
 
 template <typename T>
-void TotalFETIExplicitAcc<T>::update()
+void TotalFETIExplicitAcc<T>::update(const step::Step &step)
 {
-	TotalFETIExplicit<T>::update();
-
-	const typename FETI<T>::EqualityConstraints *L = this->feti->equalityConstraints;
+	TotalFETIExplicit<T>::update(step);
 
 	#pragma omp parallel for
-	for (size_t d = 0; d < this->feti->K->domains.size(); ++d) {
-		this->KSolver[d].getFactors(this->L[d], this->U[d], this->p[d]);
-		switch (this->Kplus[d].type) {
+	for (size_t d = 0; d < feti.K.domains.size(); ++d) {
+		KSolver[d].getFactors(L[d], U[d], p[d]);
+		switch (Kplus[d].type) {
 		case Matrix_Type::REAL_SYMMETRIC_POSITIVE_DEFINITE:
 		case Matrix_Type::COMPLEX_HERMITIAN_POSITIVE_DEFINITE:
 			// TODO: copy factors to ACC, solve, ...
-			// results should be equal to this->F[d]
+			// results should be equal to F[d]
 			break;
 		default:
 			// TODO: implement non-symmetric case

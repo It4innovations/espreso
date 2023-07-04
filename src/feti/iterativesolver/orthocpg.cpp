@@ -8,6 +8,10 @@
 
 namespace espreso {
 
+template class OrthogonalizedCPG<double>;
+template class OrthogonalizedCPG<std::complex<double> >;
+
+
 // https://digital.library.unt.edu/ark:/67531/metadc739671/m2/1/high_res_d/792775.pdf
 // page 14
 
@@ -26,10 +30,25 @@ namespace espreso {
 //   p_k+1: L => w_k+1 - SUM{0->i}[ ((w_k+1, F * p_i) / (p_i, F * p_i)) * p_i ]
 
 template <typename T>
-static void _info(OrthogonalizedCPG<T> *solver)
+OrthogonalizedCPG<T>::OrthogonalizedCPG(FETI<T> &feti)
+: IterativeSolver<T>(feti)
+{
+	l.resize();
+	r.resize();
+	w.resize();
+	x.resize();
+
+	pi.resize();
+	Fpi.resize();
+	wFp.reserve(pi.initial_space);
+	pFp.reserve(pi.initial_space);
+}
+
+template <typename T>
+void OrthogonalizedCPG<T>::info()
 {
 	eslog::info(" = ORTHOGONAL CONJUGATE PROJECTED GRADIENT SETTINGS                                          = \n");
-	switch (solver->feti->configuration.stopping_criterion) {
+	switch (feti.configuration.stopping_criterion) {
 	case FETIConfiguration::STOPPING_CRITERION::RELATIVE:
 		eslog::info(" =   STOPPING CRITERION                                                             RELATIVE = \n");
 		break;
@@ -40,39 +59,19 @@ static void _info(OrthogonalizedCPG<T> *solver)
 		eslog::info(" =   STOPPING CRITERION                                                               ARIOLI = \n");
 		break;
 	}
-	eslog::info(" =   PRECISION                                                                      %.2e = \n", solver->feti->configuration.precision);
-	if (solver->feti->configuration.max_iterations == 0) {
+	eslog::info(" =   PRECISION                                                                      %.2e = \n", feti.configuration.precision);
+	if (feti.configuration.max_iterations == 0) {
 		eslog::info(" =   MAX_ITERATIONS                                                                     AUTO = \n");
 	} else {
-		eslog::info(" =   MAX_ITERATIONS                                                                  %7d = \n", solver->feti->configuration.max_iterations);
+		eslog::info(" =   MAX_ITERATIONS                                                                  %7d = \n", feti.configuration.max_iterations);
 	}
 	eslog::info(" = ----------------------------------------------------------------------------------------- = \n");
 }
 
-template <typename T>
-static void _set(OrthogonalizedCPG<T> *solver)
+template <> void OrthogonalizedCPG<double>::solve(const step::Step &step, IterativeSolverInfo &info)
 {
-	solver->l.resize();
-	solver->r.resize();
-	solver->w.resize();
-	solver->x.resize();
-
-	solver->pi.resize();
-	solver->Fpi.resize();
-	solver->wFp.reserve(solver->pi.initial_space);
-	solver->pFp.reserve(solver->pi.initial_space);
-}
-
-template <> OrthogonalizedCPG<double>::OrthogonalizedCPG(FETI<double> *feti): IterativeSolver<double>(feti) { _set<double>(this); }
-template <> OrthogonalizedCPG<std::complex<double> >::OrthogonalizedCPG(FETI<std::complex<double> > *feti): IterativeSolver<std::complex<double> >(feti) { _set<std::complex<double> >(this); }
-
-template <> void OrthogonalizedCPG<double>::info() { _info<double>(this); }
-template <> void OrthogonalizedCPG<std::complex<double> >::info() { _info<std::complex<double> >(this); }
-
-template <> void OrthogonalizedCPG<double>::solve(IterativeSolverInfo &info)
-{
-	DualOperator<double> *F = feti->dualOperator;
-	Projector<double> *P = feti->projector;
+	DualOperator<double> *F = feti.dualOperator;
+	Projector<double> *P = feti.projector;
 
 	Vector_Dual<double> p, Fp;
 	pi.next(p);
@@ -90,7 +89,7 @@ template <> void OrthogonalizedCPG<double>::solve(IterativeSolverInfo &info)
 	l.copyTo(x);                           // x = l
 
 	double ww = w.dot();
-	setInfo(info, feti->configuration, ww);
+	setInfo(info, feti.configuration, ww);
 
 	eslog::checkpointln("FETI: CPG INITIALIZATION");
 	eslog::startln("ORTHOGONAL CPG: ITERATIONS STARTED", "orthocpg");
@@ -124,7 +123,7 @@ template <> void OrthogonalizedCPG<double>::solve(IterativeSolverInfo &info)
 		math::add(p, 1., w);
 		eslog::accumulatedln("orthocpg: orthogonalization");
 
-		updateInfo(info, feti->configuration, ww, 0, 0);
+		updateInfo(info, feti.configuration, ww, 0, 0);
 		ww = w.dot();
 		eslog::accumulatedln("orthocpg: check criteria");
 	}
@@ -135,7 +134,7 @@ template <> void OrthogonalizedCPG<double>::solve(IterativeSolverInfo &info)
 	eslog::info("       = ----------------------------------------------------------------------------- = \n");
 }
 
-template <> void OrthogonalizedCPG<std::complex<double> >::solve(IterativeSolverInfo &info)
+template <> void OrthogonalizedCPG<std::complex<double> >::solve(const step::Step &step, IterativeSolverInfo &info)
 {
 
 }

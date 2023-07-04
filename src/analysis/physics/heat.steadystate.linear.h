@@ -4,6 +4,7 @@
 
 #include "analysis/physics/physics.h"
 #include "analysis/assembler/module/heattransfer.h"
+#include "analysis/builder/builder.h"
 #include "analysis/linearsystem/linearsystem.h"
 
 namespace espreso {
@@ -29,7 +30,8 @@ public:
 	Matrix_Base<double> *K;
 	Vector_Base<double> *f, *x, *dirichlet;
 
-	LinearSystem<double> *system;
+	SparseMatrixBuilder<double> *builder;
+	LinearSystemSolver<double> *solver;
 
 protected:
 	void storeSystem(step::Step &step);

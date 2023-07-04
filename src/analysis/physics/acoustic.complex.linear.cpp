@@ -1,9 +1,9 @@
 
-#include <analysis/physics/physics.h>
+#include "physics.h"
 #include "acoustic.complex.linear.h"
 
-#include "analysis/linearsystem/feti/fetisystem.h"
-#include "analysis/linearsystem/direct/mklpdsssystem.h"
+#include "basis/utilities/sysutils.h"
+#include "esinfo/ecfinfo.h"
 #include "esinfo/eslog.hpp"
 #include "esinfo/meshinfo.h"
 #include "esinfo/stepinfo.h"
@@ -15,7 +15,7 @@
 using namespace espreso;
 
 AcousticComplexLinear::AcousticComplexLinear(AcousticConfiguration &settings, AcousticLoadStepConfiguration &configuration)
-: settings(settings), configuration(configuration), assembler{nullptr, settings, configuration}, K{}, M{}, C{}, re{}, im{}, system{}
+: settings(settings), configuration(configuration), assembler{nullptr, settings, configuration}, K{}, M{}, C{}, re{}, im{}
 {
 
 }
@@ -33,25 +33,25 @@ void AcousticComplexLinear::analyze()
 
 void AcousticComplexLinear::run(step::Step &step)
 {
-	switch (configuration.solver) {
-	case LoadStepSolverConfiguration::SOLVER::FETI:    system = new FETISystem<AcousticComplexLinear>(this); break;
-	case LoadStepSolverConfiguration::SOLVER::HYPRE:   break;
-	case LoadStepSolverConfiguration::SOLVER::MKLPDSS: system = new MKLPDSSSystem<AcousticComplexLinear>(this); break;
-	case LoadStepSolverConfiguration::SOLVER::PARDISO: break;
-	case LoadStepSolverConfiguration::SOLVER::SUPERLU: break;
-	case LoadStepSolverConfiguration::SOLVER::WSMP:    break;
-	}
+//	switch (configuration.solver) {
+//	case LoadStepSolverConfiguration::SOLVER::FETI:    system = new FETISystem<AcousticComplexLinear>(this); break;
+//	case LoadStepSolverConfiguration::SOLVER::HYPRE:   break;
+//	case LoadStepSolverConfiguration::SOLVER::MKLPDSS: system = new MKLPDSSSystem<AcousticComplexLinear>(this); break;
+//	case LoadStepSolverConfiguration::SOLVER::PARDISO: break;
+//	case LoadStepSolverConfiguration::SOLVER::SUPERLU: break;
+//	case LoadStepSolverConfiguration::SOLVER::WSMP:    break;
+//	}
 
 	eslog::checkpointln("SIMULATION: LINEAR SYSTEM BUILT");
-	system->setMapping(K = system->assembler.A->copyPattern());
-	system->setMapping(M = system->assembler.A->copyPattern());
-	system->setMapping(C = system->assembler.A->copyPattern());
-	system->setMapping(re.f = system->assembler.b->copyPattern());
-	system->setMapping(im.f = system->assembler.b->copyPattern());
-	system->setMapping(re.x = system->assembler.b->copyPattern());
-	system->setMapping(im.x = system->assembler.b->copyPattern());
-	system->setDirichletMapping(re.dirichlet = system->assembler.dirichlet->copyPattern());
-	system->setDirichletMapping(im.dirichlet = system->assembler.dirichlet->copyPattern());
+//	system->setMapping(K = system->assembler.A->copyPattern());
+//	system->setMapping(M = system->assembler.A->copyPattern());
+//	system->setMapping(C = system->assembler.A->copyPattern());
+//	system->setMapping(re.f = system->assembler.b->copyPattern());
+//	system->setMapping(im.f = system->assembler.b->copyPattern());
+//	system->setMapping(re.x = system->assembler.b->copyPattern());
+//	system->setMapping(im.x = system->assembler.b->copyPattern());
+//	system->setDirichletMapping(re.dirichlet = system->assembler.dirichlet->copyPattern());
+//	system->setDirichletMapping(im.dirichlet = system->assembler.dirichlet->copyPattern());
 
 	assembler.connect(K, M, C, re.f, im.f, nullptr, nullptr, re.dirichlet);
 	frequency.shift = (configuration.harmonic_solver.max_frequency - configuration.harmonic_solver.min_frequency) / configuration.harmonic_solver.num_samples;
@@ -69,7 +69,7 @@ void AcousticComplexLinear::run(step::Step &step)
 	eslog::info("\n ============================================================================================= \n");
 	eslog::info(" = RUN THE SOLVER                       FREQUENCY: MIN %10.4f, MAX %10.4f, STEPS %3d = \n", configuration.harmonic_solver.min_frequency, configuration.harmonic_solver.max_frequency, configuration.harmonic_solver.num_samples);
 	eslog::info(" = ----------------------------------------------------------------------------------------- = \n");
-	system->set(step);
+//	system->set(step);
 	eslog::info(" ============================================================================================= \n\n");
 
 	while (frequency.current != frequency.final) {
@@ -88,30 +88,30 @@ void AcousticComplexLinear::run(step::Step &step)
 		storeSystem(step);
 
 		// A = K - omega^2 * M + iC
-		system->solver.A->touched = true;
-		system->solver.A->set(std::complex<double>(0, 0));
-		system->solver.A->copyReal(K);
-		system->solver.A->addReal(-frequency.angular * frequency.angular, M);
-		system->solver.A->addImag(frequency.angular, C);
-
-		system->solver.b->touched = true;
-		system->solver.b->copyReal(re.f);
-		system->solver.b->copyImag(im.f);
-
-		system->solver.dirichlet->touched = true;
-		system->solver.dirichlet->set(std::complex<double>(0, 0));
-		system->solver.dirichlet->copyReal(re.dirichlet);
-		system->solver.dirichlet->copyImag(im.dirichlet);
+//		system->solver.A->touched = true;
+//		system->solver.A->set(std::complex<double>(0, 0));
+//		system->solver.A->copyReal(K);
+//		system->solver.A->addReal(-frequency.angular * frequency.angular, M);
+//		system->solver.A->addImag(frequency.angular, C);
+//
+//		system->solver.b->touched = true;
+//		system->solver.b->copyReal(re.f);
+//		system->solver.b->copyImag(im.f);
+//
+//		system->solver.dirichlet->touched = true;
+//		system->solver.dirichlet->set(std::complex<double>(0, 0));
+//		system->solver.dirichlet->copyReal(re.dirichlet);
+//		system->solver.dirichlet->copyImag(im.dirichlet);
 
 		eslog::info("       = ----------------------------------------------------------------------------- = \n");
 		eslog::info("       = SYSTEM ASSEMBLY                                                    %8.3f s = \n", eslog::time() - start);
 
-		system->update(step);
-		system->solve(step);
+//		system->update(step);
+//		system->solve(step);
 
 		double solution = eslog::time();
-		system->solver.x->copyRealTo(re.x);
-		system->solver.x->copyImagTo(im.x);
+//		system->solver.x->copyRealTo(re.x);
+//		system->solver.x->copyImagTo(im.x);
 		assembler.updateSolution(re.x, im.x);
 		info::mesh->output->updateSolution(step, frequency);
 		eslog::info("       = PROCESS SOLUTION                                                   %8.3f s = \n", eslog::time() - solution);

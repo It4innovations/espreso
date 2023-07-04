@@ -14,22 +14,22 @@ template struct Dirichlet<double>;
 template struct Dirichlet<std::complex<double> >;
 
 template <typename T>
-Dirichlet<T>::Dirichlet(FETI<T> *feti)
+Dirichlet<T>::Dirichlet(FETI<T> &feti)
 : Preconditioner<T>(feti)
 {
-	Btx.resize(this->feti->K->domains.size());
-	KBtx.resize(this->feti->K->domains.size());
-	sc.resize(this->feti->K->domains.size());
-	Ksolver.resize(this->feti->K->domains.size());
+	Btx.resize(feti.K.domains.size());
+	KBtx.resize(feti.K.domains.size());
+	sc.resize(feti.K.domains.size());
+	Ksolver.resize(feti.K.domains.size());
 
 	#pragma omp parallel for
-	for (size_t d = 0; d < this->feti->K->domains.size(); ++d) {
-		Ksolver[d].commit(this->feti->K->domains[d]);
-		Btx[d].resize(this->feti->K->domains[d].nrows);
-		KBtx[d].resize(this->feti->K->domains[d].nrows);
+	for (size_t d = 0; d < feti.K.domains.size(); ++d) {
+		Ksolver[d].commit(feti.K.domains[d]);
+		Btx[d].resize(feti.K.domains[d].nrows);
+		KBtx[d].resize(feti.K.domains[d].nrows);
 		sc[d].shape = Matrix_Shape::UPPER;
 
-		const typename FETI<T>::EqualityConstraints::Domain &L = this->feti->equalityConstraints->domain[d];
+		const typename FETI<T>::EqualityConstraints::Domain &L = feti.equalityConstraints.domain[d];
 		esint sc_size = L.B1.ncols - *std::min_element(L.B1.cols, L.B1.cols + L.B1.nnz);
 		sc[d].resize(sc_size, sc_size);
 	}
@@ -46,43 +46,43 @@ Dirichlet<T>::~Dirichlet()
 template <typename T>
 void Dirichlet<T>::info()
 {
-	if (this->feti->configuration.exhaustive_info) {
+	if (feti.configuration.exhaustive_info) {
 		eslog::info(" = DIRICHLET PRECONDITIONER PROPERTIES                                                       = \n");
 		eslog::info(" = ----------------------------------------------------------------------------------------- = \n");
 	}
 }
 
 template <typename T>
-void Dirichlet<T>::update()
+void Dirichlet<T>::update(const step::Step &step)
 {
 	#pragma omp parallel for
-	for (size_t d = 0; d < this->feti->K->domains.size(); ++d) {
+	for (size_t d = 0; d < feti.K.domains.size(); ++d) {
 		Ksolver[d].getSC(sc[d]);
 	}
-	_print();
+	_print(step);
 }
 
 template <typename T>
 void Dirichlet<T>::apply(const Vector_Dual<T> &x, Vector_Dual<T> &y)
 {
 	#pragma omp parallel for
-	for (size_t d = 0; d < this->feti->K->domains.size(); ++d) {
-		applyBt(this->feti, d, x, Btx[d]);
+	for (size_t d = 0; d < feti.K.domains.size(); ++d) {
+		applyBt(feti, d, x, Btx[d]);
 		Vector_Dense<T> _y, _x;
 		_y.vals = KBtx[d].vals + KBtx[d].size - sc[d].nrows;
 		_x.vals = Btx[d].vals + Btx[d].size - sc[d].nrows;
 		math::apply(_y, T{1}, sc[d], T{0}, _x);
 	}
-	applyB(this->feti, KBtx, y);
+	applyB(feti, KBtx, y);
 }
 
 template <typename T>
-void Dirichlet<T>::_print()
+void Dirichlet<T>::_print(const step::Step &step)
 {
 	if (info::ecf->output.print_matrices) {
 		eslog::storedata(" STORE: feti/preconditioner/{Dirichlet}\n");
-		for (size_t d = 0; d < this->feti->K->domains.size(); ++d) {
-			math::store(sc[d], utils::filename(utils::debugDirectory(*this->feti->step) + "/feti/precondition", (std::string("Dirichlet") + std::to_string(d)).c_str()).c_str());
+		for (size_t d = 0; d < feti.K.domains.size(); ++d) {
+			math::store(sc[d], utils::filename(utils::debugDirectory(step) + "/feti/precondition", (std::string("Dirichlet") + std::to_string(d)).c_str()).c_str());
 		}
 	}
 }

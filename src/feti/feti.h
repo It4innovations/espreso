@@ -19,9 +19,7 @@ template <typename T> class Projector;
 template <typename T> class DualOperator;
 
 template<typename T>
-class FETI {
-
-public:
+struct FETI {
 	struct SystemInfo {
 		esint domains, clusters;
 		esint R1offset, R2offset;
@@ -51,25 +49,22 @@ public:
 		Vector_Dense<T> c;
 	};
 
-	FETI(FETIConfiguration &configuration): configuration(configuration) {}
+	FETI(FETIConfiguration &configuration);
 	~FETI();
 
 	void info() const;
 
-	bool set(const step::Step &step, Matrix_FETI<Matrix_CSR, T> &K, Regularization &regularization, EqualityConstraints &equalityConstraints);
-	bool update(const step::Step &step, Matrix_FETI<Matrix_CSR, T> &K, Vector_FETI<Vector_Dense, T> &f);
-	bool solve(const step::Step &step, Vector_FETI<Vector_Dense, T> &x);
+	bool set(const step::Step &step);
+	bool update(const step::Step &step);
+	bool solve(const step::Step &step);
 
 	FETIConfiguration &configuration;
 	SystemInfo sinfo;
 
-	const step::Step *step = nullptr;
-	Matrix_FETI<Matrix_CSR, T> *K = nullptr;
-	Regularization *regularization = nullptr;
-	EqualityConstraints *equalityConstraints = nullptr;
-
-	Vector_FETI<Vector_Dense, T> *f = nullptr;
-	Vector_FETI<Vector_Dense, T> *x = nullptr;
+	Matrix_FETI<Matrix_CSR, T> K;
+	Vector_FETI<Vector_Dense, T> f, x;
+	Regularization regularization;
+	EqualityConstraints equalityConstraints;
 
 	IterativeSolver<T> *iterativeSolver = nullptr;
 	Preconditioner<T> *preconditioner = nullptr;

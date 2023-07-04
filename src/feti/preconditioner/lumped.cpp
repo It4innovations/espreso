@@ -10,22 +10,21 @@ template struct Lumped<double>;
 template struct Lumped<std::complex<double> >;
 
 template <typename T>
-Lumped<T>::Lumped(FETI<T> *feti)
-: Preconditioner<T>(feti), K(feti->K)
+Lumped<T>::Lumped(FETI<T> &feti)
+: Preconditioner<T>(feti)
 {
-	Btx.resize(K->domains.size());
-	KBtx.resize(K->domains.size());
-	KSpBlas.resize(K->domains.size());
+	Btx.resize(feti.K.domains.size());
+	KBtx.resize(feti.K.domains.size());
+	KSpBlas.resize(feti.K.domains.size());
 
 	#pragma omp parallel for
-	for (size_t d = 0; d < K->domains.size(); ++d) {
-		KSpBlas[d].commit(K->domains[d]);
-		Btx[d].resize(K->domains[d].nrows);
-		KBtx[d].resize(K->domains[d].nrows);
+	for (size_t d = 0; d < feti.K.domains.size(); ++d) {
+		KSpBlas[d].commit(feti.K.domains[d]);
+		Btx[d].resize(feti.K.domains[d].nrows);
+		KBtx[d].resize(feti.K.domains[d].nrows);
 	}
 
 	eslog::checkpointln("FETI: SET LUMPED PRECONDITIONER");
-
 }
 
 template <typename T>
@@ -37,7 +36,7 @@ Lumped<T>::~Lumped()
 template <typename T>
 void Lumped<T>::info()
 {
-	if (this->feti->configuration.exhaustive_info) {
+	if (feti.configuration.exhaustive_info) {
 		eslog::info(" = LUMPED PRECONDITIONER PROPERTIES                                                          = \n");
 
 		eslog::info(" = ----------------------------------------------------------------------------------------- = \n");
@@ -45,7 +44,7 @@ void Lumped<T>::info()
 }
 
 template <typename T>
-void Lumped<T>::update()
+void Lumped<T>::update(const step::Step &step)
 {
 
 }
@@ -54,11 +53,11 @@ template <typename T> void
 Lumped<T>::apply(const Vector_Dual<T> &x, Vector_Dual<T> &y)
 {
 	#pragma omp parallel for
-	for (size_t d = 0; d < K->domains.size(); ++d) {
-		applyBt(this->feti, d, x, Btx[d]);
+	for (size_t d = 0; d < feti.K.domains.size(); ++d) {
+		applyBt(feti, d, x, Btx[d]);
 		KSpBlas[d].apply(KBtx[d], T{1}, T{0}, Btx[d]);
 	}
-	applyB(this->feti, KBtx, y);
+	applyB(feti, KBtx, y);
 }
 
 }

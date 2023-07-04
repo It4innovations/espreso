@@ -8,11 +8,13 @@
 
 namespace espreso {
 
+template class DualOperator<double>;
+
 template<typename T>
-static DualOperator<T>* _set(FETI<T> *feti)
+DualOperator<T>* DualOperator<T>::set(FETI<T> &feti, const step::Step &step)
 {
 	DualOperator<T>* dual = nullptr;
-	switch (feti->configuration.method) {
+	switch (feti.configuration.method) {
 	case FETIConfiguration::METHOD::TOTAL_FETI:
 	case FETIConfiguration::METHOD::IMPLICIT_TFETI:
 		eslog::info(" = DUAL OPERATOR                                                         IMPLICIT TOTAL FETI = \n");
@@ -34,12 +36,8 @@ static DualOperator<T>* _set(FETI<T> *feti)
 		break;
 	default: break;;
 	}
-	dual->set();
+	dual->set(step);
 	return dual;
 }
-
-template <> DualOperator<double>* DualOperator<double>::set(FETI<double> *feti) { return _set<double>(feti); }
-template <> DualOperator<std::complex<double> >* DualOperator<std::complex<double> >::set(FETI<std::complex<double> > *feti) { return _set<std::complex<double> >(feti); }
-
 
 }

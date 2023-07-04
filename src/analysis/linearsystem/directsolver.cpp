@@ -1,11 +1,11 @@
 
-#ifndef SRC_ANALYSIS_LINEARSYSTEM_DIRECT_DIRECTSYSTEM_H_
-#define SRC_ANALYSIS_LINEARSYSTEM_DIRECT_DIRECTSYSTEM_H_
+#include "directsolver.h"
 
-#include "esinfo/eslog.h"
-#include "wrappers/mpi/communication.h"
+#include "esinfo/meshinfo.h"
 
 using namespace espreso;
+
+template struct DirectLinearSystemSolver<double>;
 
 template <typename T>
 struct __Dirichlet__ {
@@ -14,45 +14,45 @@ struct __Dirichlet__ {
 };
 
 template <typename T>
-void _setDirichlet(Matrix_Distributed<Matrix_CSR, T> &A, Vector_Distributed<Vector_Dense, T> &b, const Vector_Sparse<T> &dirichlet, const DOFsDistribution &distribution)
+void DirectLinearSystemSolver<T>::setDirichlet()
 {
 	std::vector<__Dirichlet__<T> > tosend;
 
-	esint nhalo = distribution.halo.size();
+	esint nhalo = A.distribution->halo.size();
 	auto getrow = [&] (esint dof) {
 		esint row = -1;
-		if (distribution.begin <= dof && dof < distribution.end) {
-			row = dof - distribution.begin + nhalo;
+		if (A.distribution->begin <= dof && dof < A.distribution->end) {
+			row = dof - A.distribution->begin + nhalo;
 		} else {
-			auto inhalo = std::lower_bound(distribution.halo.begin(), distribution.halo.end(), dof);
-			if (inhalo != distribution.halo.end() && *inhalo == dof) {
-				row = inhalo - distribution.halo.begin();
+			auto inhalo = std::lower_bound(A.distribution->halo.begin(), A.distribution->halo.end(), dof);
+			if (inhalo != A.distribution->halo.end() && *inhalo == dof) {
+				row = inhalo - A.distribution->halo.begin();
 			}
 		}
 		return row;
 	};
 
-	for (esint i = 0; i < dirichlet.nnz; ++i) {
-		b.cluster.vals[dirichlet.indices[i]] = dirichlet.vals[i];
+	for (esint i = 0; i < dirichlet.cluster.nnz; ++i) {
+		b.cluster.vals[dirichlet.cluster.indices[i]] = dirichlet.cluster.vals[i];
 		esint col = 0;
-		if (dirichlet.indices[i] < nhalo) {
-			col = distribution.halo[dirichlet.indices[i]] + 1;
+		if (dirichlet.cluster.indices[i] < nhalo) {
+			col = A.distribution->halo[dirichlet.cluster.indices[i]] + 1;
 		} else {
-			col = distribution.begin + dirichlet.indices[i] - nhalo + 1;
+			col = A.distribution->begin + dirichlet.cluster.indices[i] - nhalo + 1;
 		}
-		for (esint j = A.cluster.rows[dirichlet.indices[i]]; j < A.cluster.rows[dirichlet.indices[i] + 1]; j++) {
+		for (esint j = A.cluster.rows[dirichlet.cluster.indices[i]]; j < A.cluster.rows[dirichlet.cluster.indices[i] + 1]; j++) {
 			if (A.cluster.cols[j - 1] == col) {
 				A.cluster.vals[j - 1] = 1;
 			} else {
 				A.cluster.vals[j - 1] = 0;
 				esint row = getrow(A.cluster.cols[j - 1] - 1);
-				if (row != -1 && !std::binary_search(dirichlet.indices, dirichlet.indices + dirichlet.nnz, row)) {
+				if (row != -1 && !std::binary_search(dirichlet.cluster.indices, dirichlet.cluster.indices + dirichlet.cluster.nnz, row)) {
 					for (esint c = A.cluster.rows[row]; c < A.cluster.rows[row + 1]; c++) {
 						if (A.cluster.cols[c - 1] == col) {
 							if (row < nhalo) {
-								tosend.push_back({A.cluster.vals[c - 1] * b.cluster.vals[dirichlet.indices[i]], A.cluster.cols[j - 1] - 1, A.cluster.cols[c - 1] - 1});
+								tosend.push_back({A.cluster.vals[c - 1] * b.cluster.vals[dirichlet.cluster.indices[i]], A.cluster.cols[j - 1] - 1, A.cluster.cols[c - 1] - 1});
 							}
-							b.cluster.vals[row] -= A.cluster.vals[c - 1] * b.cluster.vals[dirichlet.indices[i]];
+							b.cluster.vals[row] -= A.cluster.vals[c - 1] * b.cluster.vals[dirichlet.cluster.indices[i]];
 							A.cluster.vals[c - 1] = 0;
 						}
 					}
@@ -72,7 +72,7 @@ void _setDirichlet(Matrix_Distributed<Matrix_CSR, T> &A, Vector_Distributed<Vect
 
 	std::vector<std::vector<__Dirichlet__<T>> > sBuffer(info::mesh->neighbors.size()), rBuffer(info::mesh->neighbors.size());
 	for (size_t n = 0, i = 0; n < info::mesh->neighbors.size(); n++) {
-		while (i < tosend.size() && tosend[i].row < distribution.neighDOF[n + 1]) {
+		while (i < tosend.size() && tosend[i].row < A.distribution->neighDOF[n + 1]) {
 			sBuffer[n].push_back(tosend[i++]);
 		}
 	}
@@ -94,4 +94,4 @@ void _setDirichlet(Matrix_Distributed<Matrix_CSR, T> &A, Vector_Distributed<Vect
 	}
 }
 
-#endif /* SRC_ANALYSIS_LINEARSYSTEM_DIRECT_DIRECTSYSTEM_H_ */
+

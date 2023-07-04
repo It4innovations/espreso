@@ -22,12 +22,12 @@ namespace espreso {
 template <typename T>
 class TotalFETIImplicit: public DualOperator<T> {
 public:
-	TotalFETIImplicit(FETI<T> *feti);
+	TotalFETIImplicit(FETI<T> &feti);
 	~TotalFETIImplicit();
 
 	void info();
-	void set();
-	void update();
+	void set(const step::Step &step);
+	void update(const step::Step &step);
 
 	// y = B * K+ * Bt * x
 	void apply(const Vector_Dual<T> &x, Vector_Dual<T> &y);
@@ -37,8 +37,10 @@ public:
 protected:
 	void reduceInfo(DualOperatorInfo &sum, DualOperatorInfo &min, DualOperatorInfo &max);
 	void printInfo(DualOperatorInfo &sum, DualOperatorInfo &min, DualOperatorInfo &max);
-	void printMatrices();
+	void print(const step::Step &step);
 
+	using DualOperator<T>::feti;
+	using DualOperator<T>::d;
 	std::vector<Matrix_CSR<T> > Kplus;
 	std::vector<Vector_Dense<T> > Btx, KplusBtx;
 	std::vector<DirectSolver<T, Matrix_CSR> > KSolver;

@@ -12,9 +12,9 @@ template struct Preconditioner<double>;
 template struct Preconditioner<std::complex<double> >;
 
 template <typename T>
-Preconditioner<T>* Preconditioner<T>::set(FETI<T> *feti)
+Preconditioner<T>* Preconditioner<T>::set(FETI<T> &feti, const step::Step &step)
 {
-	switch (feti->configuration.preconditioner) {
+	switch (feti.configuration.preconditioner) {
 	case FETIConfiguration::PRECONDITIONER::NONE:
 		eslog::info(" = PRECONDITIONER                                                                       NONE = \n");
 		return new EmptyPreconditioner<T>(feti);
