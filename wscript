@@ -222,6 +222,7 @@ def options(opt):
     opt.compiler.add_option("--cxxflags",
         action="store",
         type="string",
+        metavar="CXXFLAGS",
         default="",
         help="C++ compiler flags (space separated list)")
 
