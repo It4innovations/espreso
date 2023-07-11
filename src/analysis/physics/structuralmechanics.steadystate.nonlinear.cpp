@@ -77,6 +77,7 @@ void StructuralMechanicsSteadyStateNonLinear::analyze()
 
 	builder->fillMatrixMap(K);
 	builder->fillVectorMap(f);
+	builder->fillVectorMap(R);
 	builder->fillDirichletMap(dirichlet);
 	eslog::checkpointln("SIMULATION: LINEAR SYSTEM BUILT");
 }
