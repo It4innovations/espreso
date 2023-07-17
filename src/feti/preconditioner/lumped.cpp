@@ -19,7 +19,7 @@ Lumped<T>::Lumped(FETI<T> &feti)
 
 	#pragma omp parallel for
 	for (size_t d = 0; d < feti.K.domains.size(); ++d) {
-		KSpBlas[d].commit(feti.K.domains[d]);
+		KSpBlas[d].insert(feti.K.domains[d]);
 		Btx[d].resize(feti.K.domains[d].nrows);
 		KBtx[d].resize(feti.K.domains[d].nrows);
 	}

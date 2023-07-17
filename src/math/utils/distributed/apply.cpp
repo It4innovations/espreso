@@ -129,7 +129,7 @@ template <typename T>
 void _commit(Data_Apply<Matrix_CSR, T> *data, Matrix_Distributed<Matrix_CSR, T> &m)
 {
 	data->m.vals = m.cluster.vals + m.cluster.rows[m.distribution->halo.size()] - Indexing::CSR;
-	data->spblas.commit(data->m);
+	data->spblas.insert(data->m);
 }
 
 template <typename T>

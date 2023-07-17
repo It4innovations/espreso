@@ -1,9 +1,9 @@
 
-#include <analysis/physics/physics.h>
 #include "structuralmechanics.steadystate.linear.h"
 
 #include "analysis/builder/uniformbuilder.direct.h"
 #include "analysis/builder/uniformbuilder.feti.h"
+#include "analysis/linearsystem/fetisolver.h"
 #include "analysis/linearsystem/mklpdsssolver.h"
 #include "config/ecf/physics/structuralmechanics.h"
 #include "esinfo/meshinfo.h"
@@ -48,6 +48,7 @@ void StructuralMechanicsSteadyStateLinear::analyze()
 	switch (configuration.solver) {
 	case LoadStepSolverConfiguration::SOLVER::FETI:
 		builder = new UniformBuilderFETI<double>(configuration.displacement, info::mesh->dimension, shape);
+		solver = new FETILinearSystemSolver<double, StructuralMechanicsSteadyStateLinear>(configuration.feti);
 		break;
 	case LoadStepSolverConfiguration::SOLVER::HYPRE:   break;
 	case LoadStepSolverConfiguration::SOLVER::MKLPDSS:

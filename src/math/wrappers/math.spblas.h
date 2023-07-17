@@ -18,10 +18,18 @@ struct SpBLAS {
 	SpBLAS(const Matrix<T> &a);
 	~SpBLAS();
 
-	void commit(const Matrix<T> &a);
+	void insert(const Matrix<T> &a);
+	void insertTransposed(const Matrix<T> &a);
+
+	void extractUpper(Matrix<T> &a);
 
 	// y = alpha * A * x + beta * y
 	void apply(Vector_Dense<T> &y, const T &alpha, const T &beta, const Vector_Dense<T> &x);
+
+	// C = A * B
+	void multiply(SpBLAS<T, Matrix> &A, SpBLAS<T, Matrix> &B);
+
+	void transposeTo(SpBLAS<T, Matrix> &A);
 
 	// input = output[start_row:end_row, start_col:end_col]. Start inclusive, end exclusive
 	void submatrix(Matrix_Dense<T> &output, esint start_row, esint end_row, esint start_col, esint end_col, bool trans = false, bool conj = false, bool output_force_full = false);

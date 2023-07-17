@@ -82,6 +82,21 @@ template <typename T, template <typename> class Matrix>
 void DirectSolver<T, Matrix>::commit(const Matrix<T> &a)
 {
 	matrix = &a;
+	if (_solver) { delete _solver; }
+	_solver = new Matrix_Solver_External_Representation();
+	switch (matrix->type) {
+	case Matrix_Type::REAL_SYMMETRIC_POSITIVE_DEFINITE:
+	case Matrix_Type::COMPLEX_HERMITIAN_POSITIVE_DEFINITE:
+		_start<esint>(_solver->cholmod.common); break;
+	default:
+		break; // UMFPACK
+	}
+}
+
+template <typename T, template <typename> class Matrix>
+void DirectSolver<T, Matrix>::commit(SpBLAS<T, Matrix> &spblas)
+{
+	if (_solver) { delete _solver; }
 	_solver = new Matrix_Solver_External_Representation();
 	switch (matrix->type) {
 	case Matrix_Type::REAL_SYMMETRIC_POSITIVE_DEFINITE:
@@ -98,7 +113,7 @@ void DirectSolver<T, Matrix>::symbolicFactorization(int fixedSuffix)
 	switch (matrix->type) {
 	case Matrix_Type::REAL_SYMMETRIC_POSITIVE_DEFINITE:
 	case Matrix_Type::COMPLEX_HERMITIAN_POSITIVE_DEFINITE:
-		set(_solver->cholmod.A, *matrix);
+		setSymmetric(_solver->cholmod.A, *matrix);
 		_analyze<esint>(_solver->cholmod.L, _solver->cholmod.A, _solver->cholmod.common);
 		break;
 	default:
@@ -124,7 +139,7 @@ void DirectSolver<T, Matrix>::numericalFactorization()
 	switch (matrix->type) {
 	case Matrix_Type::REAL_SYMMETRIC_POSITIVE_DEFINITE:
 	case Matrix_Type::COMPLEX_HERMITIAN_POSITIVE_DEFINITE:
-		update(_solver->cholmod.A, *matrix);
+		updateSymmetric(_solver->cholmod.A, *matrix);
 		_factorize<esint>(_solver->cholmod.L, _solver->cholmod.A, _solver->cholmod.common);
 		break;
 	default:
@@ -225,10 +240,10 @@ void DirectSolver<T, Matrix>::getSC(Matrix_Dense<T> &sc)
 		cholmod_factor *cm_L;
 		cholmod_dense *cm_A11iA12_dn;
 
-		set(cm_A11_sp, A11_sp);
-		update(cm_A11_sp, A11_sp);
-		set(cm_A21_sp, A21t_sp);
-		update(cm_A21_sp, A21t_sp);
+		setSymmetric(cm_A11_sp, A11_sp);
+		updateSymmetric(cm_A11_sp, A11_sp);
+		setSymmetric(cm_A21_sp, A21t_sp);
+		updateSymmetric(cm_A21_sp, A21t_sp);
 		update(cm_A22_dn, A22t_dn);
 		update(cm_A12_dn, A12t_dn);
 

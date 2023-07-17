@@ -25,6 +25,12 @@ void copy(const esint size, std::complex<double> *x, const esint incX, const std
 }
 
 template <>
+void scale(const esint size, const float &alpha, float *x, const esint incX)
+{
+	cblas_sscal(size, alpha, x, incX);
+}
+
+template <>
 void scale(const esint size, const double &alpha, double *x, const esint incX)
 {
 	cblas_dscal(size, alpha, x, incX);
@@ -60,6 +66,12 @@ std::complex<double> dot(const esint size, const std::complex<double> *x, const 
 	std::complex<double> dot = 0;
 //	return cblas_cdotu_sub(size, x, incX, y, incY, &dot);
 	return dot;
+}
+
+template <>
+float norm(const esint size, const float *x, const esint incX)
+{
+	return cblas_snrm2(size, x, incX);
 }
 
 template <>

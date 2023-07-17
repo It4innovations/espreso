@@ -7,6 +7,7 @@
 #include "math/primitives/matrix_dense.h"
 #include "math/primitives/matrix_csr.h"
 #include "math/primitives/matrix_csc.h"
+#include "math.spblas.h"
 
 #include <cstddef>
 
@@ -31,6 +32,7 @@ struct DirectSolver {
 	~DirectSolver();
 
 	void commit(const Matrix<T> &a);
+	void commit(SpBLAS<T, Matrix> &spblas);
 
 	void symbolicFactorization(int fixedSuffix = 0); // do not permute suffix
 	void numericalFactorization();

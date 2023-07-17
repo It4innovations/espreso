@@ -11,6 +11,7 @@
 
 namespace espreso {
 
+template class SpBLAS<float, Matrix_CSR>;
 template class SpBLAS<double, Matrix_CSR>;
 template class SpBLAS<std::complex<double>, Matrix_CSR>;
 
@@ -46,12 +47,12 @@ SpBLAS<T, Matrix>::SpBLAS(const Matrix<T> &a)
 {
 	_spblas = new Matrix_SpBLAS_External_Representation();
 	_start<esint>(_spblas->common);
-	set(_spblas->A, *matrix);
-	update(_spblas->A, *matrix);
+	setSymmetric(_spblas->A, *matrix);
+	updateSymmetric(_spblas->A, *matrix);
 }
 
 template <typename T, template <typename> class Matrix>
-void SpBLAS<T, Matrix>::commit(const Matrix<T> &a)
+void SpBLAS<T, Matrix>::insert(const Matrix<T> &a)
 {
 	matrix = &a;
 	if (_spblas) {
@@ -60,8 +61,42 @@ void SpBLAS<T, Matrix>::commit(const Matrix<T> &a)
 	}
 	_spblas = new Matrix_SpBLAS_External_Representation();
 	_start<esint>(_spblas->common);
-	set(_spblas->A, *matrix);
-	update(_spblas->A, *matrix);
+	if (a.shape == Matrix_Shape::FULL) {
+		setAsymmetric(_spblas->A, _spblas->common, *matrix);
+		matrix = nullptr;
+	} else {
+		setSymmetric(_spblas->A, *matrix);
+		updateSymmetric(_spblas->A, *matrix);
+	}
+}
+
+template <typename T, template <typename> class Matrix>
+void SpBLAS<T, Matrix>::insertTransposed(const Matrix<T> &a)
+{
+	if (_spblas) {
+		_finish<esint>(_spblas->common);
+		delete _spblas;
+	}
+	_spblas = new Matrix_SpBLAS_External_Representation();
+	_start<esint>(_spblas->common);
+	setSymmetric(_spblas->A, a);
+	updateSymmetric(_spblas->A, a);
+}
+
+template <typename T, template <typename> class Matrix>
+void SpBLAS<T, Matrix>::extractUpper(Matrix<T> &a)
+{
+	_extractUpper(_spblas->A, _spblas->common, a);
+}
+
+template <>
+void SpBLAS<float, Matrix_CSR>::apply(Vector_Dense<float> &y, const float &alpha, const float &beta, const Vector_Dense<float> &x)
+{
+	update(_spblas->X, x);
+	update(_spblas->Y, y);
+	_spblas->alpha[0] = alpha;
+	_spblas->beta[0] = beta;
+	_apply<esint>(_spblas->Y, _spblas->A, _spblas->X, _spblas->alpha, _spblas->beta, _spblas->common);
 }
 
 template <>
@@ -84,6 +119,43 @@ void SpBLAS<std::complex<double>, Matrix_CSR>::apply(Vector_Dense<std::complex<d
 	_spblas->beta[0] = beta.real();
 	_spblas->beta[1] = beta.imag();
 	_apply<esint>(_spblas->Y, _spblas->A, _spblas->X, _spblas->alpha, _spblas->beta, _spblas->common);
+}
+
+template <typename T, template <typename> class Matrix>
+void SpBLAS<T, Matrix>::transposeTo(SpBLAS<T, Matrix> &A)
+{
+	if (A._spblas) {
+		_finish<esint>(A._spblas->common);
+		delete _spblas;
+	}
+	A._spblas = new Matrix_SpBLAS_External_Representation();
+	_start<esint>(A._spblas->common);
+	_transpose<esint>(_spblas->A, A._spblas->A, _spblas->common);
+	A.matrix = nullptr;
+}
+
+template <>
+void SpBLAS<float, Matrix_CSR>::multiply(SpBLAS<float, Matrix_CSR> &A, SpBLAS<float, Matrix_CSR> &B)
+{
+	if (_spblas) {
+		_finish<esint>(_spblas->common);
+		delete _spblas;
+	}
+	_spblas = new Matrix_SpBLAS_External_Representation();
+	_start<esint>(_spblas->common);
+	_multiply<esint>(A._spblas->A, B._spblas->A, _spblas->A, _spblas->common);
+}
+
+template <>
+void SpBLAS<double, Matrix_CSR>::multiply(SpBLAS<double, Matrix_CSR> &A, SpBLAS<double, Matrix_CSR> &B)
+{
+	if (_spblas) {
+		_finish<esint>(_spblas->common);
+		delete _spblas;
+	}
+	_spblas = new Matrix_SpBLAS_External_Representation();
+	_start<esint>(_spblas->common);
+	_multiply<esint>(A._spblas->A, B._spblas->A, _spblas->A, _spblas->common);
 }
 
 }

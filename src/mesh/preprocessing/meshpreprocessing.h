@@ -25,6 +25,7 @@ struct BodyStore;
 struct ClusterStore;
 struct ElementsInterval;
 struct ElementsDistributionInfo;
+struct FETIDataStore;
 template <typename TEBoundaries, typename TEData> class serializededata;
 
 namespace mesh {
@@ -115,8 +116,6 @@ void permuteElements(ElementStore *elements, NodeStore *nodes, DomainStore *doma
 // methods for clustered and decomposed mesh
 //  - all data are computed
 // ================================================================================================
-
-void addFixPoints(const serializededata<esint, esint>* elements, esint begin, esint end, const serializededata<esint, Element*>* epointers, std::vector<esint> &fixPoints);
 
 void computeDomainDual(NodeStore *nodes, ElementStore *elements, DomainStore *domains, std::vector<int> &neighbors, std::vector<int> &neighborsWithMe);
 void computeClustersDistribution(DomainStore *domains, ClusterStore *clusters);

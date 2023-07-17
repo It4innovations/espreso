@@ -47,6 +47,18 @@ void SpBLAS<T, Matrix>::apply(Vector_Dense<T> &y, const T &alpha, const T &beta,
 	eslog::error("calling of empty SpBLAS wrapper.\n");
 }
 
+template <typename T, template <typename> class Matrix>
+void SpBLAS<T, Matrix>::transpose()
+{
+	eslog::error("calling of empty SpBLAS wrapper.\n");
+}
+
+template <typename T, template <typename> class Matrix>
+void SpBLAS<T, Matrix>::multiply(SpBLAS<T, Matrix> &A, SpBLAS<T, Matrix> &B)
+{
+	eslog::error("calling of empty SpBLAS wrapper.\n");
+}
+
 #endif
 #endif
 

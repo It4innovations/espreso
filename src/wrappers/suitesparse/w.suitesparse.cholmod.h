@@ -14,6 +14,10 @@ template <typename T> inline void _start(cholmod_common &common);
 template <> inline void _start<int>(cholmod_common &common) { cholmod_start(&common); }
 template <> inline void _start<long>(cholmod_common &common) { cholmod_l_start(&common); }
 
+template <typename T> inline void _copy(cholmod_sparse* A, cholmod_sparse* &AC, int stype, int mode, cholmod_common &common);
+template <> inline void _copy<int>(cholmod_sparse* A, cholmod_sparse* &AC, int stype, int mode, cholmod_common &common) { AC = cholmod_copy(A, stype, mode, &common); }
+template <> inline void _copy<long>(cholmod_sparse* A, cholmod_sparse* &AC, int stype, int mode, cholmod_common &common) { AC = cholmod_l_copy(A, stype, mode, &common); }
+
 template <typename T> inline void _analyze(cholmod_factor* &L, cholmod_sparse* A, cholmod_common &common);
 template <> inline void _analyze<int>(cholmod_factor* &L, cholmod_sparse* A, cholmod_common &common) { A->itype = CHOLMOD_INT; L = cholmod_analyze(A, &common); }
 template <> inline void _analyze<long>(cholmod_factor* &L, cholmod_sparse* A, cholmod_common &common) { A->itype = CHOLMOD_LONG; L = cholmod_l_analyze(A, &common); }
@@ -29,6 +33,14 @@ template <> inline void _solve<long>(cholmod_dense* &x, cholmod_factor *L, cholm
 template <typename T> inline void _apply(cholmod_dense* Y, cholmod_sparse* A, cholmod_dense *X, double alpha[2], double beta[2], cholmod_common &common);
 template <> inline void _apply<int>(cholmod_dense* Y, cholmod_sparse* A, cholmod_dense *X, double alpha[2], double beta[2], cholmod_common &common) { cholmod_sdmult(A, 0, alpha, beta, X, Y, &common); }
 template <> inline void _apply<long>(cholmod_dense* Y, cholmod_sparse* A, cholmod_dense *X, double alpha[2], double beta[2], cholmod_common &common) { cholmod_l_sdmult(A, 0, alpha, beta, X, Y, &common); }
+
+template <typename T> inline void _transpose(cholmod_sparse* A, cholmod_sparse* &At, cholmod_common &common);
+template <> inline void _transpose<int>(cholmod_sparse* A, cholmod_sparse* &At, cholmod_common &common) { At = cholmod_transpose(A, 1, &common); }
+template <> inline void _transpose<long>(cholmod_sparse* A, cholmod_sparse* &At, cholmod_common &common) { At = cholmod_l_transpose(A, 1, &common); }
+
+template <typename T> inline void _multiply(cholmod_sparse* A, cholmod_sparse* B, cholmod_sparse* &C, cholmod_common &common);
+template <> inline void _multiply<int>(cholmod_sparse* A, cholmod_sparse* B, cholmod_sparse* &C, cholmod_common &common) { C = cholmod_ssmult(A, B, 1, true, true, &common); }
+template <> inline void _multiply<long>(cholmod_sparse* A, cholmod_sparse* B, cholmod_sparse* &C, cholmod_common &common) { C = cholmod_l_ssmult(A, B, 1, true, true, &common); }
 
 template <typename T> inline void _factorToSparse(cholmod_factor *L, cholmod_sparse* &A, cholmod_common &common);
 template <> inline void _factorToSparse<int>(cholmod_factor *L, cholmod_sparse* &A, cholmod_common &common) { A = cholmod_factor_to_sparse(L, &common); }
@@ -51,10 +63,12 @@ template <> inline void _free<int, cholmod_factor>(cholmod_factor* &object, chol
 template <> inline void _free<long, cholmod_factor>(cholmod_factor* &object, cholmod_common &common) { cholmod_l_free_factor(&object, &common); }
 
 template <typename T> constexpr int _getCholmodXtype();
+template <> constexpr int _getCholmodXtype<float>() { return CHOLMOD_REAL; }
 template <> constexpr int _getCholmodXtype<double>() { return CHOLMOD_REAL; }
 template <> constexpr int _getCholmodXtype<std::complex<double>>() { return CHOLMOD_COMPLEX; }
 
 template <typename T> constexpr int _getCholmodDtype();
+template <> constexpr int _getCholmodDtype<float>() { return CHOLMOD_SINGLE; }
 template <> constexpr int _getCholmodDtype<double>() { return CHOLMOD_DOUBLE; }
 template <> constexpr int _getCholmodDtype<std::complex<double>>() { return CHOLMOD_DOUBLE; }
 
@@ -74,10 +88,10 @@ constexpr int _getCholmodStype(Matrix_Shape shape)
 }
 
 template <typename T>
-static inline void set(cholmod_sparse* &A, const Matrix_CSR<T> &M)
+static inline void setSymmetric(cholmod_sparse* &A, const Matrix_CSR<T> &M)
 {
 	if (!A) A = new cholmod_sparse();
-	A->nrow = M.ncols; // CSR -> CSC, therefore transposed. JUST array-transposed. NOT conjugate-transposed
+	A->nrow = M.ncols; // CSR -> CSC, it works only for symmetric matrices
 	A->ncol = M.nrows;
 	A->nzmax = M.nnz;
 
@@ -93,7 +107,31 @@ static inline void set(cholmod_sparse* &A, const Matrix_CSR<T> &M)
 }
 
 template <typename T>
-static inline void update(cholmod_sparse *A, const Matrix_CSR<T> &M)
+static inline void setAsymmetric(cholmod_sparse* &A, cholmod_common &common, const Matrix_CSR<T> &M)
+{
+	if (A) delete A;
+	cholmod_sparse* At = new cholmod_sparse();
+	At->nrow = M.ncols;
+	At->ncol = M.nrows;
+	At->nzmax = M.nnz;
+
+	At->p = M.rows;
+	At->i = M.cols;
+	At->x = M.vals;
+
+	At->stype = (-1) * _getCholmodStype(M.shape); // (-1)* <=> CSR -> CSC
+	At->xtype = _getCholmodXtype<T>();
+	At->dtype = _getCholmodDtype<T>();
+	At->sorted = 1;
+	At->packed = 1;
+
+	// CSR -> CSC
+	_transpose<esint>(At, A, common);
+	delete At;
+}
+
+template <typename T>
+static inline void updateSymmetric(cholmod_sparse *A, const Matrix_CSR<T> &M)
 {
 	A->x = M.vals;
 	A->xtype = _getCholmodXtype<T>();
@@ -123,6 +161,20 @@ static inline void update(cholmod_dense* &A, const Vector_Dense<T> &v)
 	A->x = v.vals;
 	A->xtype = _getCholmodXtype<T>();
 	A->dtype = _getCholmodDtype<T>();
+}
+
+template <typename T>
+static inline void _extractUpper(cholmod_sparse* &A, cholmod_common &common, Matrix_CSR<T> &M)
+{
+	cholmod_sparse* upA;
+	_copy<esint>(A, upA, -1, 1, common); // CSC -> CSR
+	M.shape = Matrix_Shape::UPPER;
+	M.type = Matrix_Type::REAL_SYMMETRIC_INDEFINITE;
+	M.resize(upA->ncol, upA->nrow, upA->nzmax);
+	std::copy((esint*)upA->p, (esint*)upA->p + M.nrows + 1, M.rows);
+	std::copy((esint*)upA->i, (esint*)upA->i + M.nnz, M.cols);
+	std::copy((T*)upA->x, (T*)upA->x + M.nnz, M.vals);
+	delete upA;
 }
 
 template <typename T>
