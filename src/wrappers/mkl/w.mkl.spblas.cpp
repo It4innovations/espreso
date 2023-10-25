@@ -46,21 +46,10 @@ SpBLAS<T, Matrix>::~SpBLAS()
 	}
 }
 
-template <typename T, template <typename> class Matrix>
-SpBLAS<T, Matrix>::SpBLAS(const Matrix<T> &a)
-: matrix{}, _spblas{}
-{
-	commit(a);
-}
+template <typename T, template <typename> class Matrix> void create(const Matrix<T> *matrix, Matrix_SpBLAS_External_Representation *_spblas);
 
-template <>
-void SpBLAS<float, Matrix_CSR>::commit(const Matrix_CSR<float> &a)
+template <> void create<float, Matrix_CSR>(const Matrix_CSR<float> *matrix, Matrix_SpBLAS_External_Representation *_spblas)
 {
-	matrix = &a;
-	if (_spblas) {
-		checkStatus(mkl_sparse_destroy(_spblas->inspector));
-	}
-	_spblas = new Matrix_SpBLAS_External_Representation();
 	if (matrix->nnz) {
 		switch (Indexing::CSR) {
 		case 0: checkStatus(mkl_sparse_s_create_csr(&_spblas->inspector, SPARSE_INDEX_BASE_ZERO, matrix->nrows, matrix->ncols, matrix->rows, matrix->rows + 1, matrix->cols, matrix->vals)); break;
@@ -69,14 +58,8 @@ void SpBLAS<float, Matrix_CSR>::commit(const Matrix_CSR<float> &a)
 	}
 }
 
-template <>
-void SpBLAS<double, Matrix_CSR>::commit(const Matrix_CSR<double> &a)
+template <> void create<double, Matrix_CSR>(const Matrix_CSR<double> *matrix, Matrix_SpBLAS_External_Representation *_spblas)
 {
-	matrix = &a;
-	if (_spblas) {
-		checkStatus(mkl_sparse_destroy(_spblas->inspector));
-	}
-	_spblas = new Matrix_SpBLAS_External_Representation();
 	if (matrix->nnz) {
 		switch (Indexing::CSR) {
 		case 0: checkStatus(mkl_sparse_d_create_csr(&_spblas->inspector, SPARSE_INDEX_BASE_ZERO, matrix->nrows, matrix->ncols, matrix->rows, matrix->rows + 1, matrix->cols, matrix->vals)); break;
@@ -85,14 +68,8 @@ void SpBLAS<double, Matrix_CSR>::commit(const Matrix_CSR<double> &a)
 	}
 }
 
-template <>
-void SpBLAS<std::complex<double>, Matrix_CSR>::commit(const Matrix_CSR<std::complex<double> > &a)
+template <> void create<std::complex<double>, Matrix_CSR>(const Matrix_CSR<std::complex<double> > *matrix, Matrix_SpBLAS_External_Representation *_spblas)
 {
-	matrix = &a;
-	if (_spblas) {
-		checkStatus(mkl_sparse_destroy(_spblas->inspector));
-	}
-	_spblas = new Matrix_SpBLAS_External_Representation();
 	if (matrix->nnz) {
 		switch (Indexing::CSR) {
 		case 0: checkStatus(mkl_sparse_z_create_csr(&_spblas->inspector, SPARSE_INDEX_BASE_ZERO, matrix->nrows, matrix->ncols, matrix->rows, matrix->rows + 1, matrix->cols, matrix->vals)); break;
@@ -100,6 +77,36 @@ void SpBLAS<std::complex<double>, Matrix_CSR>::commit(const Matrix_CSR<std::comp
 		}
 	}
 }
+
+template <typename T, template <typename> class Matrix>
+SpBLAS<T, Matrix>::SpBLAS(const Matrix<T> &a)
+: matrix{&a}, _spblas{}
+{
+	if (_spblas) {
+		checkStatus(mkl_sparse_destroy(_spblas->inspector));
+	}
+	_spblas = new Matrix_SpBLAS_External_Representation();
+	create(matrix, _spblas);
+}
+
+template <typename T, template <typename> class Matrix>
+void SpBLAS<T, Matrix>::insert(const Matrix<T> &a)
+{
+	eslog::error("MKL SpBLAS: call empty function.\n");
+}
+
+template <typename T, template <typename> class Matrix>
+void SpBLAS<T, Matrix>::insertTransposed(const Matrix<T> &a)
+{
+	eslog::error("MKL SpBLAS: call empty function.\n");
+}
+
+template <typename T, template <typename> class Matrix>
+void SpBLAS<T, Matrix>::extractUpper(Matrix<T> &a)
+{
+	eslog::error("MKL SpBLAS: call empty function.\n");
+}
+
 
 static void setDescription(matrix_descr &descr, Matrix_Type type, Matrix_Shape shape)
 {
@@ -151,6 +158,24 @@ void SpBLAS<std::complex<double>, Matrix_CSR>::apply(Vector_Dense<std::complex<d
 		setDescription(descr, matrix->type, matrix->shape);
 		descr.diag = SPARSE_DIAG_NON_UNIT;
 	checkStatus(mkl_sparse_z_mv(SPARSE_OPERATION_NON_TRANSPOSE, alpha, _spblas->inspector, descr, x.vals, beta, y.vals));
+}
+
+template <typename T, template <typename> class Matrix>
+void SpBLAS<T, Matrix>::transposeTo(SpBLAS<T, Matrix> &A)
+{
+	eslog::error("MKL SpBLAS: call empty function.\n");
+}
+
+template <>
+void SpBLAS<float, Matrix_CSR>::multiply(SpBLAS<float, Matrix_CSR> &A, SpBLAS<float, Matrix_CSR> &B)
+{
+	eslog::error("MKL SpBLAS: call empty function.\n");
+}
+
+template <>
+void SpBLAS<double, Matrix_CSR>::multiply(SpBLAS<double, Matrix_CSR> &A, SpBLAS<double, Matrix_CSR> &B)
+{
+	eslog::error("MKL SpBLAS: call empty function.\n");
 }
 
 }
