@@ -197,6 +197,8 @@ const char* simd()
 	return "SSE2";
 #elif defined(__SSE__)
 	return "SSE2";
+#elif defined(__ARM_FEATURE_SVE)
+	return "SVE";
 #else
 	return "UNKNOWN";
 #endif
