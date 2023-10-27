@@ -5,6 +5,7 @@
 #include "analysis/builder/uniformbuilder.direct.h"
 #include "analysis/builder/uniformbuilder.feti.h"
 #include "analysis/linearsystem/mklpdsssolver.h"
+#include "analysis/linearsystem/fetisolver.h"
 #include "config/ecf/physics/heattransfer.h"
 #include "esinfo/meshinfo.h"
 #include "esinfo/eslog.hpp"
@@ -61,6 +62,7 @@ void HeatSteadyStateNonLinear::analyze()
 	switch (configuration.solver) {
 	case LoadStepSolverConfiguration::SOLVER::FETI:
 		builder = new UniformBuilderFETI<double>(configuration.temperature, 1, shape);
+		solver = new FETILinearSystemSolver<double, HeatSteadyStateNonLinear>(configuration.feti);
 		break;
 	case LoadStepSolverConfiguration::SOLVER::HYPRE:   break;
 	case LoadStepSolverConfiguration::SOLVER::MKLPDSS:

@@ -78,8 +78,6 @@ void StructuralMechanicsSteadyStateLinear::analyze()
 
 void StructuralMechanicsSteadyStateLinear::run(step::Step &step)
 {
-
-
 	step.substep = 0;
 	step.substeps = 1;
 	time.shift = configuration.duration_time;
