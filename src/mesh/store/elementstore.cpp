@@ -10,7 +10,7 @@
 #include "basis/containers/point.h"
 #include "basis/containers/serializededata.h"
 #include "basis/utilities/packing.h"
-#include "math/simd/simd.h"
+#include "wrappers/simd/simd.h"
 
 using namespace espreso;
 

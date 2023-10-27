@@ -1,0 +1,36 @@
+
+def options(opt):
+    libraries = ["openmpi", "intelmpi", "mpich"]
+    opt.compiler.add_option("--mpi-lib",
+        action="store",
+        metavar=libraries,
+        choices=libraries,
+        help="Set the MPI library version. Use this option when the auto-detection mechanism fails.")
+
+def configure(ctx):
+    # Check SIMD instruction set
+    code = '''
+        #include <cstdio>
+        int main() {
+        #if !defined(SIMD_OFF) && defined(__AVX512F__) && defined(__AVX512DQ__)
+        printf("AVX512");
+        #elif !defined(SIMD_OFF) && defined(__AVX__)
+        printf("AVX");
+        #elif !defined(SIMD_OFF) && defined(__SSE2__)
+        printf("SSE2");
+        #elif !defined(SIMD_OFF) && defined(__ARM_FEATURE_SVE)
+        printf("SVE");
+        #else
+        printf("NONE");
+        #endif
+        return 0;
+        }
+    '''
+
+    ctx.env.SIMD = ctx.check_cxx(
+        mandatory   = False,
+        msg         = 'Checking for SIMD intrinsics',
+        fragment    = code,
+        define_ret  = True,
+        execute     = True,
+        okmsg       = lambda ret: str(ret["success"]))

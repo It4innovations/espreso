@@ -3,7 +3,7 @@
 #define SRC_ANALYSIS_ASSEMBLER_SUBKERNEL_SUBKERNEL_H_
 
 #include "analysis/assembler/module/assembler.h"
-#include "math/simd/simd.h"
+#include "wrappers/simd/simd.h"
 
 namespace espreso {
 

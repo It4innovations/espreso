@@ -10,7 +10,7 @@
 #include "mesh/store/elementsregionstore.h"
 #include "mesh/store/boundaryregionstore.h"
 #include "mesh/store/domainstore.h"
-#include "math/simd/simd.h"
+#include "wrappers/simd/simd.h"
 
 using namespace espreso;
 
