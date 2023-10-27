@@ -27,6 +27,26 @@ def configure(ctx):
         }
     '''
 
+    svesize = '''
+        #include <cstdio>
+        #include <arm_sve.h>
+        int main(int argc, char **argv)
+        {
+            printf("%d", __ARM_FEATURE_SVE_BITS);
+            return 0;
+        }
+    '''
+
+    svefixed = '''
+        #include <arm_sve.h>
+        typedef svfloat64_t VEC __attribute__((arm_sve_vector_bits(512)));
+        int main(int argc, char **argv)
+        {
+            struct { VEC vec; } value;
+            return 0;
+        }
+    '''
+
     ctx.env.SIMD = ctx.check_cxx(
         mandatory   = False,
         msg         = 'Checking for SIMD intrinsics',
@@ -34,3 +54,22 @@ def configure(ctx):
         define_ret  = True,
         execute     = True,
         okmsg       = lambda ret: str(ret["success"]))
+
+    if ctx.env.SIMD == "SVE":
+        size = ctx.check_cxx(
+            msg         = 'Checking for SVE vector length',
+            fragment    = svesize,
+            define_ret  = True,
+            execute     = True,
+            okmsg       = lambda ret: str(ret["success"]))
+        ctx.env.append_unique("CXXFLAGS", [ "-msve-vector-bits="+size ])
+
+        fixedsize = ctx.check_cxx(
+            msg         = 'Checking for SVE of fixed size',
+            mandatory   = False,
+            fragment    = svefixed)
+
+        if fixedsize:
+            ctx.env.append_unique("CXXFLAGS", [ "-DSIMD_ARM_SVE_GENERAL" ])
+        else:
+            ctx.env.append_unique("CXXFLAGS", [ "-DSIMD_ARM_SVE_ARRAY" + size ])

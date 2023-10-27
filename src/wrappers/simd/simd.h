@@ -8,8 +8,10 @@
 #include "simd.avx.h"
 #elif !defined(SIMD_OFF) && defined(__SSE2__)
 #include "simd.sse2.h"
-#elif !defined(SIMD_OFF) && defined(__ARM_FEATURE_SVE)
+#elif !defined(SIMD_OFF) && defined(__ARM_FEATURE_SVE) && defined(SIMD_ARM_SVE_GENERAL)
 #include "simd.sve.h"
+#elif !defined(SIMD_OFF) && defined(__ARM_FEATURE_SVE) && defined(SIMD_ARM_SVE_ARRAY512)
+#include "simd.sve.array512.h"
 #else
 
 #include "basis/utilities/inline.h"

@@ -34,7 +34,7 @@ def configure(ctx):
         ctx.env.append_unique("CXXFLAGS", [ "-qopenmp", "-diag-disable=10441" ])
         ctx.env.append_unique("LINKFLAGS", [ "-qopenmp", "-diag-disable=10441" ])
     if ctx.options.flavor == "fujitsu":
-        ctx.env.append_unique("CXXFLAGS", [ "-march=armv8.2-a+sve", "-Kfast", "-KA64FX", "-KSVE", "-Kopenmp", "-SSL2" ])
+        ctx.env.append_unique("CXXFLAGS", [ "-march=armv8.2-a+sve", "-D__ARM_FEATURE_SVE_BITS=512", "-Kfast", "-KA64FX", "-KSVE", "-Kopenmp", "-SSL2" ])
         ctx.env.append_unique("LINKFLAGS", [ "-march=armv8.2-a+sve", "-Kfast", "-KA64FX", "-KSVE", "-Kopenmp", "-SSL2" ])
 
     if ctx.options.intwidth == "32":
@@ -151,6 +151,7 @@ def build(ctx):
     ctx.build_espreso(ctx.path.ant_glob('src/morphing/**/*.cpp'), "devel")
     ctx.build_espreso(ctx.path.ant_glob('src/math/**/*.cpp'), "math", [ "MKL", "PARDISO", "SUITESPARSE", "CBLAS", "OPENBLAS", "SSLBLAS" ])
     ctx.build_espreso(ctx.path.ant_glob('src/autoopt/**/*.cpp'), "autoopt")
+    ctx.build_espreso(ctx.path.ant_glob('src/wrappers/simd/**/*.cpp'), "simd")
     ctx.build_espreso(ctx.path.ant_glob('src/wrappers/cblas/**/*.cpp'), "wcblas", [ "CBLAS" ])
     ctx.build_espreso(ctx.path.ant_glob('src/wrappers/openblas/**/*.cpp'), "wopenblas", [ "OPENBLAS" ])
     ctx.build_espreso(ctx.path.ant_glob('src/wrappers/sslblas/**/*.cpp'), "wsslblas", [ "SSLBLAS" ])
