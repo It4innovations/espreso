@@ -90,6 +90,9 @@ void compute(const HeatTransferBoundarySubKernelsList &subkernels, Assembler::Ac
 
 	for (esint c = 0; c < subkernels.chunks; ++c) {
 		coordinates.simd(element);
+		for (size_t i = 0; i < nonconst.size(); ++i) {
+			nonconst[i]->simd(element);
+		}
 //		if (c == 0) printf("coordinates ");
 		if (thickness.isactive) {
 			thickness.simd(element);

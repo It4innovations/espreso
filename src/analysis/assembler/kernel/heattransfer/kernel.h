@@ -67,6 +67,9 @@ void compute(const HeatTransferSubKernelsList &subkernels, Assembler::Action act
 			temperature.simd(element);
 //			if (c == 0) printf("temp ");
 		}
+		for (size_t i = 0; i < nonconst.size(); ++i) {
+			nonconst[i]->simd(element);
+		}
 		if (thickness.isactive) {
 			thickness.simd(element);
 //			if (c == 0) printf("thickness ");

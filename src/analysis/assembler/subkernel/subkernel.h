@@ -53,6 +53,9 @@ template <size_t nodes, size_t gps, size_t ndim> struct ElementCoordinates {
 template <size_t nodes, size_t gps> struct ElementTemperature {
 	alignas(SIMD::size * sizeof(double)) SIMD temp[nodes];
 	alignas(SIMD::size * sizeof(double)) SIMD gptemp[gps];
+
+	void setTemperatureNode(size_t n , size_t s, double &temperature) { temperature = temp[ n][s]; }
+	void setTemperatureGP  (size_t gp, size_t s, double &temperature) { temperature = temp[gp][s]; }
 };
 
 template <size_t nodes, size_t gps, size_t ndim> struct ElementDisplacement {
