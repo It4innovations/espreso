@@ -605,20 +605,22 @@ void Mesh::partitiate(int ndomains)
 	profiler::synccheckpoint("arrange_boundary_regions");
 	eslog::checkpointln("MESH: BOUNDARY REGIONS ARRANGED");
 
-	mesh::setMaterialsToRegions(elements, elementsRegions, materials, info::ecf->getPhysics()->material_set);
+	if (!info::ecf->input.convert_database) {
+		mesh::setMaterialsToRegions(elements, elementsRegions, materials, info::ecf->getPhysics()->material_set);
 
-	if (_withFETI) {
-		mesh::computeNodeDomainDistribution(elements, nodes, domains, neighborsWithMe);
-		mesh::computeLocalIndices(elements, domains);
-		profiler::synccheckpoint("preprocess_domains");
-		eslog::checkpointln("MESH: ELEMENTS DOMAIN INDICES COMPUTED");
-	}
+		if (_withFETI) {
+			mesh::computeNodeDomainDistribution(elements, nodes, domains, neighborsWithMe);
+			mesh::computeLocalIndices(elements, domains);
+			profiler::synccheckpoint("preprocess_domains");
+			eslog::checkpointln("MESH: ELEMENTS DOMAIN INDICES COMPUTED");
+		}
 
-	if (_withBEM) {
-		mesh::computeDomainsSurface(nodes, elements, domains, domainsSurface, neighbors);
-		mesh::triangularizeDomainSurface(nodes, elements, domains, domainsSurface, neighbors);
-		profiler::synccheckpoint("preprocess_surface");
-		eslog::checkpointln("MESH: DOMAIN SURFACE COMPUTED");
+		if (_withBEM) {
+			mesh::computeDomainsSurface(nodes, elements, domains, domainsSurface, neighbors);
+			mesh::triangularizeDomainSurface(nodes, elements, domains, domainsSurface, neighbors);
+			profiler::synccheckpoint("preprocess_surface");
+			eslog::checkpointln("MESH: DOMAIN SURFACE COMPUTED");
+		}
 	}
 }
 
