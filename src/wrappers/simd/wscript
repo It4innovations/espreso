@@ -62,7 +62,8 @@ def configure(ctx):
             define_ret  = True,
             execute     = True,
             okmsg       = lambda ret: str(ret["success"]))
-        ctx.env.append_unique("CXXFLAGS", [ "-msve-vector-bits="+size ])
+        if ctx.options.flavor != "fujitsu":
+            ctx.env.append_unique("CXXFLAGS", [ "-msve-vector-bits="+size ])
 
         fixedsize = ctx.check_cxx(
             msg         = 'Checking for SVE of fixed size',
