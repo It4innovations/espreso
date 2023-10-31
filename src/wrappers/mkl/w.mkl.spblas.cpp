@@ -82,9 +82,6 @@ template <typename T, template <typename> class Matrix>
 SpBLAS<T, Matrix>::SpBLAS(const Matrix<T> &a)
 : matrix{&a}, _spblas{}
 {
-	if (_spblas) {
-		checkStatus(mkl_sparse_destroy(_spblas->inspector));
-	}
 	_spblas = new Matrix_SpBLAS_External_Representation();
 	create(matrix, _spblas);
 }
@@ -92,7 +89,12 @@ SpBLAS<T, Matrix>::SpBLAS(const Matrix<T> &a)
 template <typename T, template <typename> class Matrix>
 void SpBLAS<T, Matrix>::insert(const Matrix<T> &a)
 {
-	eslog::error("MKL SpBLAS: call empty function.\n");
+	matrix = &a;
+	if (_spblas) {
+		checkStatus(mkl_sparse_destroy(_spblas->inspector));
+	}
+	_spblas = new Matrix_SpBLAS_External_Representation();
+	create(matrix, _spblas);
 }
 
 template <typename T, template <typename> class Matrix>
