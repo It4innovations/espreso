@@ -19,8 +19,6 @@ typedef svbool_t    __svep __attribute__((arm_sve_vector_bits(512)));
 
 struct SIMD
 {
-	static __svep mask;
-
 	enum: size_t {
 		size = __ARM_FEATURE_SVE_BITS / 64
 	};
@@ -48,7 +46,7 @@ struct SIMD
 
 	ALWAYS_INLINE SIMD operator- () const noexcept
 	{
-		return svneg_f64_x(mask, data);
+		return svneg_f64_x(svptrue_b64(), data);
 	}
 
 	ALWAYS_INLINE SIMD operator+ () const noexcept
@@ -66,32 +64,32 @@ ALWAYS_INLINE const SIMD load1(const double &from) noexcept
 
 ALWAYS_INLINE const SIMD load(const double *from) noexcept
 {
-	return svld1_f64(SIMD::mask, from);
+	return svld1_f64(svptrue_b64(), from);
 }
 
 ALWAYS_INLINE void store(double *to, const SIMD& value) noexcept
 {
-	svst1_f64(SIMD::mask, to, value.data);
+	svst1_f64(svptrue_b64(), to, value.data);
 }
 
 ALWAYS_INLINE const SIMD operator+(const SIMD& v1, const SIMD& v2) noexcept
 {
-	return svadd_f64_x(SIMD::mask, v1.data, v2.data);
+	return svadd_f64_x(svptrue_b64(), v1.data, v2.data);
 }
 
 ALWAYS_INLINE const SIMD operator*(const SIMD& v1, const SIMD& v2) noexcept
 {
-	return svmul_f64_x(SIMD::mask, v1.data, v2.data);
+	return svmul_f64_x(svptrue_b64(), v1.data, v2.data);
 }
 
 ALWAYS_INLINE const SIMD operator-(const SIMD& v1, const SIMD& v2) noexcept
 {
-	return svsub_f64_x(SIMD::mask, v1.data, v2.data);
+	return svsub_f64_x(svptrue_b64(), v1.data, v2.data);
 }
 
 ALWAYS_INLINE const SIMD operator/(const SIMD& v1, const SIMD& v2) noexcept
 {
-	return svdiv_f64_x(SIMD::mask, v1.data, v2.data);
+	return svdiv_f64_x(svptrue_b64(), v1.data, v2.data);
 }
 
 ALWAYS_INLINE SIMD zeros() noexcept
@@ -106,12 +104,12 @@ ALWAYS_INLINE SIMD ones() noexcept
 
 ALWAYS_INLINE SIMD negate(const SIMD& value) noexcept
 {
-	return svneg_f64_x(SIMD::mask, value.data);
+	return svneg_f64_x(svptrue_b64(), value.data);
 }
 
 ALWAYS_INLINE SIMD sqrt(const SIMD& value) noexcept
 {
-	return svsqrt_f64_x(SIMD::mask, value.data);
+	return svsqrt_f64_x(svptrue_b64(), value.data);
 }
 
 ALWAYS_INLINE SIMD rsqrt14(const SIMD& value) noexcept // TODO: improve it
@@ -130,7 +128,7 @@ ALWAYS_INLINE SIMD positive_guarded_recip(const SIMD& value) noexcept // TODO: i
 
 ALWAYS_INLINE SIMD max(const SIMD& v1, const SIMD& v2) noexcept
 {
-	return svmax_f64_x(SIMD::mask, v1.data, v2.data);
+	return svmax_f64_x(svptrue_b64(), v1.data, v2.data);
 }
 
 ALWAYS_INLINE SIMD cos(const SIMD& value) noexcept

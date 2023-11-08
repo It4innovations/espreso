@@ -1,13 +1,20 @@
 
 def options(opt):
-    libraries = ["openmpi", "intelmpi", "mpich"]
-    opt.compiler.add_option("--mpi-lib",
+    opt.compiler.add_option("--arch",
         action="store",
-        metavar=libraries,
-        choices=libraries,
-        help="Set the MPI library version. Use this option when the auto-detection mechanism fails.")
+        choices=["native", "a64fx"],
+        default="native",
+        help="Set vectorized instruction set.")
 
 def configure(ctx):
+    if ctx.options.arch == "native":
+        ctx.env.append_unique("CXXFLAGS", [ "-march=native" ])
+    if ctx.options.arch == "a64fx":
+        if ctx.options.flavor == "fujitsu":
+            ctx.env.append_unique("CXXFLAGS", [ "-march=armv8.2-a+sve", "-D__ARM_FEATURE_SVE_BITS=512", "-KSVE", "-KA64FX", "-Kfast" ])
+        else:
+            ctx.env.append_unique("CXXFLAGS", [ "-mcpu=a64fx", "-msve-vector-bits=512" ])
+
     # Check SIMD instruction set
     code = '''
         #include <cstdio>
@@ -62,8 +69,6 @@ def configure(ctx):
             define_ret  = True,
             execute     = True,
             okmsg       = lambda ret: str(ret["success"]))
-        if ctx.options.flavor != "fujitsu":
-            ctx.env.append_unique("CXXFLAGS", [ "-msve-vector-bits="+size ])
 
         fixedsize = ctx.check_cxx(
             msg         = 'Checking for SVE of fixed size',

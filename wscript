@@ -34,8 +34,8 @@ def configure(ctx):
         ctx.env.append_unique("CXXFLAGS", [ "-qopenmp", "-diag-disable=10441" ])
         ctx.env.append_unique("LINKFLAGS", [ "-qopenmp", "-diag-disable=10441" ])
     if ctx.options.flavor == "fujitsu":
-        ctx.env.append_unique("CXXFLAGS", [ "-march=armv8.2-a+sve", "-D__ARM_FEATURE_SVE_BITS=512", "-Kfast", "-KA64FX", "-KSVE", "-Kopenmp", "-SSL2" ])
-        ctx.env.append_unique("LINKFLAGS", [ "-march=armv8.2-a+sve", "-Kfast", "-KA64FX", "-KSVE", "-Kopenmp", "-SSL2" ])
+        ctx.env.append_unique("CXXFLAGS" , [ "-Kopenmp", "-SSL2" ])
+        ctx.env.append_unique("LINKFLAGS", [ "-Kopenmp", "-SSL2" ])
 
     if ctx.options.intwidth == "32":
         ctx.env.append_unique("DEFINES", [ "esint=int" ])
