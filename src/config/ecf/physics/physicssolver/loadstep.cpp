@@ -159,7 +159,8 @@ LoadStepSolverConfiguration::LoadStepSolverConfiguration()
 			.addoption(ECFOption().setname("MKLPDSS").setdescription("Use parallel direct sparse solver from MKL (PARDISO)."))
 			.addoption(ECFOption().setname("PARDISO").setdescription("Use PARDISO original library."))
 			.addoption(ECFOption().setname("SUPERLU").setdescription("Use SuperLU_DIST."))
-			.addoption(ECFOption().setname("WSMP").setdescription("Use Watson Sparse Matrix Package.")));
+			.addoption(ECFOption().setname("WSMP").setdescription("Use Watson Sparse Matrix Package."))
+			.addoption(ECFOption().setname("NONE").setdescription("Dry run just with assembler.")));
 
 	REGISTER(topology_optimization_settings, ECFMetaData()
 			.setdescription({ "Topology optimization settings." })

@@ -112,7 +112,8 @@ struct LoadStepSolverConfiguration: public ECFDescription {
 		MKLPDSS,
 		PARDISO,
 		SUPERLU,
-		WSMP
+		WSMP,
+		NONE
 	};
 
 	double duration_time;

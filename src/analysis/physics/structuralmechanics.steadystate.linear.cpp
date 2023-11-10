@@ -5,6 +5,7 @@
 #include "analysis/builder/uniformbuilder.feti.h"
 #include "analysis/linearsystem/fetisolver.h"
 #include "analysis/linearsystem/mklpdsssolver.h"
+#include "analysis/linearsystem/empty.h"
 #include "config/ecf/physics/structuralmechanics.h"
 #include "esinfo/meshinfo.h"
 #include "esinfo/eslog.hpp"
@@ -58,6 +59,9 @@ void StructuralMechanicsSteadyStateLinear::analyze()
 	case LoadStepSolverConfiguration::SOLVER::PARDISO: break;
 	case LoadStepSolverConfiguration::SOLVER::SUPERLU: break;
 	case LoadStepSolverConfiguration::SOLVER::WSMP:    break;
+	case LoadStepSolverConfiguration::SOLVER::NONE:
+		builder = new UniformBuilderDirect<double>(configuration.temperature, 1, shape);
+		solver = new EmptySystemSolver<double>();
 	}
 
 	builder->fillMatrix(solver->A, type, shape);
