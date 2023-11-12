@@ -293,6 +293,10 @@ def settings(ctx):
     ctx.msg("                               LINKFLAGS", ctx.env.LINKFLAGS)
     ctx.msg("                               int width", ctx.env.intwidth)
     ctx.msg("                                    SIMD", ctx.env.SIMD)
+    if ctx.options.simd_off:
+        ctx.msg("                          assembler SIMD", "AUTO")
+    else:
+        ctx.msg("                          assembler SIMD", ctx.env.SIMD)
     ctx.msg("                                    mode", ctx.env.mode)
     ctx.msg("                                    BLAS", ctx.env.use_blas)
     ctx.msg("                                  SpBLAS", ctx.env.use_spblas)

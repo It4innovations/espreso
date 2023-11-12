@@ -19,13 +19,13 @@ def configure(ctx):
     code = '''
         #include <cstdio>
         int main() {
-        #if !defined(SIMD_OFF) && defined(__AVX512F__) && defined(__AVX512DQ__)
+        #if defined(__AVX512F__) && defined(__AVX512DQ__)
         printf("AVX512");
-        #elif !defined(SIMD_OFF) && defined(__AVX__)
+        #elif defined(__AVX__)
         printf("AVX");
-        #elif !defined(SIMD_OFF) && defined(__SSE2__)
+        #elif defined(__SSE2__)
         printf("SSE2");
-        #elif !defined(SIMD_OFF) && defined(__ARM_FEATURE_SVE)
+        #elif defined(__ARM_FEATURE_SVE)
         printf("SVE");
         #else
         printf("NONE");
