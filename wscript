@@ -26,6 +26,9 @@ def configure(ctx):
         ctx.load(ctx.options.cxx)
     ctx.env.CXX = ctx.env.LINK_CXX = ctx.env.MPICXX
 
+    if ctx.options.static:
+        ctx.env.append_unique("LIB", [ "dl" ])
+
     """ Set default compilers flags"""
     if ctx.options.flavor == "gnu":
         ctx.env.append_unique("CXXFLAGS", [ "-fopenmp" ])
