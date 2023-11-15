@@ -126,7 +126,7 @@ void computeNodeDomainDistribution(ElementStore *elements, NodeStore *nodes, Dom
 void computeLocalIndices(ElementStore *elements, DomainStore *domains);
 
 void computeElementIntervals(const DomainStore *domains, ElementStore *elements);
-void setMaterialsToRegions(ElementStore *elements, const std::vector<ElementsRegionStore*> &elementsRegions, const std::vector<MaterialConfiguration*> materials, const std::map<std::string, std::string> &material_set);
+void setMaterialsToRegions(ElementStore *elements, const std::vector<ElementsRegionStore*> &elementsRegions, const std::vector<MaterialConfiguration*> &materials, const std::map<std::string, std::string> &material_set);
 
 void computeRegionsElementIntervals(const ElementStore *elements, std::vector<ElementsRegionStore*> &elementsRegions);
 void computeRegionsBoundaryIntervals(const ElementStore *elements, const DomainStore *domains, std::vector<BoundaryRegionStore*> &boundaryRegions, std::vector<ContactInterfaceStore*> &contactInterfaces);

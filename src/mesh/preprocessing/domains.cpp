@@ -49,6 +49,7 @@ void computeElementIntervals(const DomainStore *domains, ElementStore *elements)
 			for (esint e = domains->elements[d] + 1; e < domains->elements[d + 1]; ++e) {
 				if (elements->epointers->datatarray()[e]->code != elements->epointers->datatarray()[e - 1]->code) {
 					iboundaries[t].push_back(e);
+					continue;
 				}
 				if (memcmp(elements->regions->datatarray().data() + e * elements->regions->edataSize(), elements->regions->datatarray().data() + (e - 1) * elements->regions->edataSize(), sizeof(esint) * elements->regions->edataSize())) {
 					iboundaries[t].push_back(e);
@@ -62,7 +63,7 @@ void computeElementIntervals(const DomainStore *domains, ElementStore *elements)
 	auto addregions = [&] (esint i) {
 		auto regs = (elements->regions->begin() + i)->data();
 		std::vector<int> regions;
-		for (size_t r = 1; r < elements->regions->edataSize() * sizeof(esint); ++r) {
+		for (size_t r = 1; r < elements->regions->edataSize() * sizeof(esint) * 8; ++r) {
 			esint maskOffset = r / (8 * sizeof(esint));
 			esint bit = 1 << (r % (8 * sizeof(esint)));
 			if (regs[maskOffset] & bit) {
@@ -79,6 +80,7 @@ void computeElementIntervals(const DomainStore *domains, ElementStore *elements)
 			elements->eintervals.back().region = -1;
 			elements->eintervals.back().regions = regions;
 		}
+
 	};
 
 	elements->eintervals.clear();
@@ -104,7 +106,7 @@ void computeElementIntervals(const DomainStore *domains, ElementStore *elements)
 	eslog::checkpointln("MESH: ELEMENTS INTERVALS COMPUTED");
 }
 
-void setMaterialsToRegions(ElementStore *elements, const std::vector<ElementsRegionStore*> &elementsRegions, const std::vector<MaterialConfiguration*> materials, const std::map<std::string, std::string> &material_set)
+void setMaterialsToRegions(ElementStore *elements, const std::vector<ElementsRegionStore*> &elementsRegions, const std::vector<MaterialConfiguration*> &materials, const std::map<std::string, std::string> &material_set)
 {
 	for (auto ei = elements->eintervals.begin(); ei != elements->eintervals.end(); ++ei) {
 		int region = ei->region;
