@@ -32,25 +32,25 @@ void TotalFETIImplicit<T>::reduceInfo(DualOperatorInfo &sum, DualOperatorInfo &m
 	sum.nnzA = sum.nnzL = sum.memoryL = sum.rows = sum.dualA = sum.surfaceA = 0;
 	min.nnzA = min.nnzL = min.memoryL = min.rows = min.dualA = min.surfaceA = INT32_MAX;
 	max.nnzA = max.nnzL = max.memoryL = max.rows = max.dualA = max.surfaceA = 0;
-	for (size_t d = 0; d < feti.K.domains.size(); ++d) {
-		size_t dualA = L.domain[d].B1.nrows;
-		size_t surfaceA = Kplus[d].nrows - *std::min_element(L.domain[d].B1.cols, L.domain[d].B1.cols + L.domain[d].B1.nnz);
-		min.rows = std::min(min.rows, KSolver[d].rows);
-		min.nnzA = std::min(min.nnzA, KSolver[d].nnzA);
-		min.nnzL = std::min(min.nnzL, KSolver[d].nnzL);
-		min.memoryL = std::min(min.memoryL, KSolver[d].memoryL);
+	for (size_t di = 0; di < feti.K.domains.size(); ++di) {
+		size_t dualA = L.domain[di].B1.nrows;
+		size_t surfaceA = Kplus[di].nrows - *std::min_element(L.domain[di].B1.cols, L.domain[di].B1.cols + L.domain[di].B1.nnz);
+		min.rows = std::min(min.rows, KSolver[di].rows);
+		min.nnzA = std::min(min.nnzA, KSolver[di].nnzA);
+		min.nnzL = std::min(min.nnzL, KSolver[di].nnzL);
+		min.memoryL = std::min(min.memoryL, KSolver[di].memoryL);
 		min.dualA = std::min(min.dualA, dualA);
 		min.surfaceA = std::min(min.surfaceA, surfaceA);
-		max.rows = std::max(max.rows, KSolver[d].rows);
-		max.nnzA = std::max(max.nnzA, KSolver[d].nnzA);
-		max.nnzL = std::max(max.nnzL, KSolver[d].nnzL);
-		max.memoryL = std::max(max.memoryL, KSolver[d].memoryL);
+		max.rows = std::max(max.rows, KSolver[di].rows);
+		max.nnzA = std::max(max.nnzA, KSolver[di].nnzA);
+		max.nnzL = std::max(max.nnzL, KSolver[di].nnzL);
+		max.memoryL = std::max(max.memoryL, KSolver[di].memoryL);
 		max.dualA = std::max(max.dualA, dualA);
 		max.surfaceA = std::max(max.surfaceA, surfaceA);
-		sum.rows += KSolver[d].rows;
-		sum.nnzA += KSolver[d].nnzA;
-		sum.nnzL += KSolver[d].nnzL;
-		sum.memoryL += KSolver[d].memoryL;
+		sum.rows += KSolver[di].rows;
+		sum.nnzA += KSolver[di].nnzA;
+		sum.nnzL += KSolver[di].nnzL;
+		sum.memoryL += KSolver[di].memoryL;
 		sum.dualA += dualA;
 		sum.surfaceA += surfaceA;
 	}
@@ -108,26 +108,26 @@ void TotalFETIImplicit<T>::set(const step::Step &step)
 	KSolver.resize(feti.K.domains.size());
 
 	#pragma omp parallel for
-	for (size_t d = 0; d < feti.K.domains.size(); ++d) {
-		Kplus[d].type = feti.K.domains[d].type;
-		Kplus[d].shape = feti.K.domains[d].shape;
-		math::combine(Kplus[d], feti.K.domains[d], feti.regularization.RegMat.domains[d]);
-		Btx[d].resize(feti.K.domains[d].nrows);
-		KplusBtx[d].resize(feti.K.domains[d].nrows);
-		math::set(Btx[d], T{0});
+	for (size_t di = 0; di < feti.K.domains.size(); ++di) {
+		Kplus[di].type = feti.K.domains[di].type;
+		Kplus[di].shape = feti.K.domains[di].shape;
+		math::combine(Kplus[di], feti.K.domains[di], feti.regularization.RegMat.domains[di]);
+		Btx[di].resize(feti.K.domains[di].nrows);
+		KplusBtx[di].resize(feti.K.domains[di].nrows);
+		math::set(Btx[di], T{0});
 	}
 	eslog::checkpointln("FETI: SET TOTAL-FETI OPERATOR");
 
 	#pragma omp parallel for
-	for (size_t d = 0; d < feti.K.domains.size(); ++d) {
-		KSolver[d].commit(Kplus[d]);
+	for (size_t di = 0; di < feti.K.domains.size(); ++di) {
+		KSolver[di].commit(Kplus[di]);
 
 		esint suffix = 0;
 		if (sparsity != DirectSolver<T, Matrix_CSR>::VectorSparsity::DENSE) {
-			suffix = *std::min_element(L.domain[d].B1.cols, L.domain[d].B1.cols + L.domain[d].B1.nnz);
+			suffix = *std::min_element(L.domain[di].B1.cols, L.domain[di].B1.cols + L.domain[di].B1.nnz);
 		}
 
-		KSolver[d].symbolicFactorization(suffix);
+		KSolver[di].symbolicFactorization(suffix);
 	}
 	eslog::checkpointln("FETI: TFETI SYMBOLIC FACTORIZATION");
 }
@@ -136,19 +136,19 @@ template <typename T>
 void TotalFETIImplicit<T>::update(const step::Step &step)
 {
 	#pragma omp parallel for
-	for (size_t d = 0; d < feti.K.domains.size(); ++d) {
-		math::sumCombined(Kplus[d], T{1}, feti.K.domains[d], feti.regularization.RegMat.domains[d]);
+	for (size_t di = 0; di < feti.K.domains.size(); ++di) {
+		math::sumCombined(Kplus[di], T{1}, feti.K.domains[di], feti.regularization.RegMat.domains[di]);
 	}
 	eslog::checkpointln("FETI: UPDATE TOTAL-FETI OPERATOR");
 	#pragma omp parallel for
-	for (size_t d = 0; d < feti.K.domains.size(); ++d) {
-		KSolver[d].numericalFactorization();
+	for (size_t di = 0; di < feti.K.domains.size(); ++di) {
+		KSolver[di].numericalFactorization();
 	}
 	eslog::checkpointln("FETI: TFETI NUMERICAL FACTORIZATION");
 
 	#pragma omp parallel for
-	for (size_t d = 0; d < feti.K.domains.size(); ++d) {
-		KSolver[d].solve(feti.f.domains[d], KplusBtx[d], sparsity);
+	for (size_t di = 0; di < feti.K.domains.size(); ++di) {
+		KSolver[di].solve(feti.f.domains[di], KplusBtx[di], sparsity);
 	}
 	applyB(feti, KplusBtx, d);
 	d.add(T{-1}, feti.equalityConstraints.c);
@@ -162,9 +162,9 @@ template <typename T>
 void TotalFETIImplicit<T>::apply(const Vector_Dual<T> &x, Vector_Dual<T> &y)
 {
 	#pragma omp parallel for
-	for (size_t d = 0; d < feti.K.domains.size(); ++d) {
-		applyBt(feti, d, x, Btx[d]);
-		KSolver[d].solve(Btx[d], KplusBtx[d], sparsity);
+	for (size_t di = 0; di < feti.K.domains.size(); ++di) {
+		applyBt(feti, di, x, Btx[di]);
+		KSolver[di].solve(Btx[di], KplusBtx[di], sparsity);
 	}
 	applyB(feti, KplusBtx, y);
 }
@@ -173,11 +173,11 @@ template <typename T>
 void TotalFETIImplicit<T>::toPrimal(const Vector_Dual<T> &x, Vector_FETI<Vector_Dense, T> &y)
 {
 	#pragma omp parallel for
-	for (size_t d = 0; d < feti.K.domains.size(); ++d) {
-		applyBt(feti, d, x, Btx[d]);
-		math::copy(KplusBtx[d], feti.f.domains[d]);
-		math::add(KplusBtx[d], T{-1}, Btx[d]);
-		KSolver[d].solve(KplusBtx[d], y.domains[d]);
+	for (size_t di = 0; di < feti.K.domains.size(); ++di) {
+		applyBt(feti, di, x, Btx[di]);
+		math::copy(KplusBtx[di], feti.f.domains[di]);
+		math::add(KplusBtx[di], T{-1}, Btx[di]);
+		KSolver[di].solve(KplusBtx[di], y.domains[di]);
 	}
 }
 
@@ -186,8 +186,8 @@ void TotalFETIImplicit<T>::print(const step::Step &step)
 {
 	if (info::ecf->output.print_matrices) {
 		eslog::storedata(" STORE: feti/dualop/{Kplus}\n");
-		for (size_t d = 0; d < feti.K.domains.size(); ++d) {
-			math::store(Kplus[d], utils::filename(utils::debugDirectory(step) + "/feti/dualop", (std::string("Kplus") + std::to_string(d)).c_str()).c_str());
+		for (size_t di = 0; di < feti.K.domains.size(); ++di) {
+			math::store(Kplus[di], utils::filename(utils::debugDirectory(step) + "/feti/dualop", (std::string("Kplus") + std::to_string(di)).c_str()).c_str());
 		}
 		math::store(d, utils::filename(utils::debugDirectory(step) + "/feti/dualop", "d").c_str());
 	}
