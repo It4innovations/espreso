@@ -25,6 +25,7 @@ struct CoordinateSystemConfiguration: public ECFDescription {
 
 	CoordinateSystemConfiguration(DIMENSION *D);
 
+	bool isConst() const;
 	bool isRotated() const;
 };
 

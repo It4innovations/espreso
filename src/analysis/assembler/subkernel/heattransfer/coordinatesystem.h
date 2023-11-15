@@ -27,10 +27,6 @@ struct HeatTransferCoordinateSystem: SubKernel {
 		this->isconst = isconst;
 		this->rotated = rotated;
 		this->isactive = 1;
-		switch (this->type) {
-		case CoordinateSystemConfiguration::TYPE::CYLINDRICAL: this->isconst = 0; break;
-		case CoordinateSystemConfiguration::TYPE::SPHERICAL:   this->isconst = 0; break;
-		}
 	}
 };
 

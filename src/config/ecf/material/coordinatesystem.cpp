@@ -39,6 +39,20 @@ CoordinateSystemConfiguration::CoordinateSystemConfiguration(DIMENSION *D)
 			.addconstraint(ECFCondition(type, ECFCondition::EQUALS, TYPE::CARTESIAN)));
 }
 
+bool CoordinateSystemConfiguration::isConst() const
+{
+	if (type == TYPE::CARTESIAN) {
+		switch (*dimension) {
+		case DIMENSION::D2: return rotation.z.evaluator->isConst();
+		case DIMENSION::D3: return rotation.z.evaluator->isConst() && rotation.y.evaluator->isConst() && rotation.x.evaluator->isConst();
+		}
+	}
+	switch (*dimension) {
+	case DIMENSION::D2: return center.x.evaluator->isConst() && center.y.evaluator->isConst();
+	case DIMENSION::D3: return center.x.evaluator->isConst() && center.y.evaluator->isConst() && center.z.evaluator->isConst();
+	}
+	return true;
+}
 
 bool CoordinateSystemConfiguration::isRotated() const
 {

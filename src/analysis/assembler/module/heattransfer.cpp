@@ -259,7 +259,9 @@ void HeatTransfer::analyze()
 
 		subkernels[i].coordinates.activate(info::mesh->elements->nodes->cbegin() + eoffset, info::mesh->elements->nodes->cend(), !cartesian || gpcoo);
 		subkernels[i].conductivity.activate(&mat->thermal_conductivity, rotated || indirect);
-		subkernels[i].coosystem.activate(mat->coordinate_system, subkernels[i].conductivity.isconst && !indirect, rotated);
+		if (indirect || rotated) {
+			subkernels[i].coosystem.activate(mat->coordinate_system, mat->coordinate_system.isConst(), rotated);
+		}
 		subkernels[i].heatSource.activate(getExpression(i, configuration.heat_source), (elements.rhs.data->begin() + i)->data());
 		subkernels[i].advection.activate(getExpression(i, configuration.translation_motions), (elements.stiffness.data->begin() + i)->data(), settings.sigma);
 
