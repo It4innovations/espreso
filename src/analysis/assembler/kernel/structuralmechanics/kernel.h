@@ -42,7 +42,10 @@ void compute(StructuralMechanicsSubKernelsList &subkernels, Assembler::Action ac
 
 	basis.simd(element);
 	if (coosystem.isactive) {
+		auto tmp = coosystem.isconst;
+		coosystem.isconst = false;
 		coosystem.simd(element);
+		coosystem.isconst = tmp;
 	}
 
 	thickness.setActiveness(action);

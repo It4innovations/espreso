@@ -129,6 +129,32 @@ struct CoordinateSystemSpherical {
 	}
 };
 
+template <size_t gps, size_t ndim, size_t multiplicity, class Physics> struct CoordinateSystem;
+
+template <size_t gps, size_t multiplicity, class Physics> struct CoordinateSystem<gps, 2, multiplicity, Physics> {
+
+	static void simd(typename Physics::Element &element, CoordinateSystemConfiguration::TYPE type, int isconst)
+	{
+		switch (type) {
+		case CoordinateSystemConfiguration::TYPE::CARTESIAN:   if (!isconst) CoordinateSystemCartesian<gps, 2, multiplicity, Physics>::simd(element); break;
+		case CoordinateSystemConfiguration::TYPE::CYLINDRICAL:               CoordinateSystemCylindric<gps, 2, multiplicity, Physics>::simd(element); break;
+		}
+	}
+};
+
+template <size_t gps, size_t multiplicity, class Physics> struct CoordinateSystem<gps, 3, multiplicity, Physics> {
+
+	static void simd(typename Physics::Element &element, CoordinateSystemConfiguration::TYPE type, int isconst)
+	{
+		switch (type) {
+		case CoordinateSystemConfiguration::TYPE::CARTESIAN:   if (!isconst) CoordinateSystemCartesian<gps, 3, multiplicity, Physics>::simd(element); break;
+		case CoordinateSystemConfiguration::TYPE::CYLINDRICAL:               CoordinateSystemCylindric<gps, 3, multiplicity, Physics>::simd(element); break;
+		case CoordinateSystemConfiguration::TYPE::SPHERICAL:                 CoordinateSystemSpherical<gps,    multiplicity, Physics>::simd(element); break;
+		}
+	}
+};
+
+
 }
 
 #endif /* SRC_ANALYSIS_ASSEMBLER_SUBKERNEL_COORDINATESYSTEM_H_ */

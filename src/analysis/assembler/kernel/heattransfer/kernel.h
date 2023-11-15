@@ -44,8 +44,11 @@ void compute(const HeatTransferSubKernelsList &subkernels, Assembler::Action act
 	}
 
 	basis.simd(element);
-	if (coosystem.isactive) {
+	if (coosystem.isactive) { // compute constant cartesian rotation
+		auto tmp = coosystem.isconst;
+		coosystem.isconst = false;
 		coosystem.simd(element);
+		coosystem.isconst = tmp;
 	}
 
 	thickness.setActiveness(action);

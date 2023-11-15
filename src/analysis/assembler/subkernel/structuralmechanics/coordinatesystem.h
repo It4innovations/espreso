@@ -90,10 +90,7 @@ template <size_t gps, class Physics> struct StructuralMechanicsCoordinateSystemK
 
 	void simd(typename Physics::Element &element)
 	{
-		switch (type) { // always rotated coordinate system
-		case CoordinateSystemConfiguration::TYPE::CARTESIAN:   CoordinateSystemCartesian<gps, 2, 2, Physics>::simd(element); break;
-		case CoordinateSystemConfiguration::TYPE::CYLINDRICAL: CoordinateSystemCylindric<gps, 2, 2, Physics>::simd(element); break;
-		}
+		CoordinateSystem<gps, 2, 2, Physics>::simd(element, type, isconst);
 //		for (size_t gp = 0; gp < gps; ++gp) {
 //			SIMD c00 = element.ecf.conductivity[gp][0];
 //			SIMD c11 = element.ecf.conductivity[gp][1];
@@ -113,10 +110,9 @@ template <size_t gps, class Physics> struct StructuralMechanicsCoordinateSystemK
 	void simd(typename Physics::Element &element)
 	{
 		SIMD C05 = load1(0.5);
+		CoordinateSystem<gps, 3, 2, Physics>::simd(element, type, isconst);
 		switch (type) { // always rotated coordinate system
 		case CoordinateSystemConfiguration::TYPE::CARTESIAN:
-			CoordinateSystemCartesian<gps, 3, 2, Physics>::simd(element);
-
 			for (size_t gp = 0; gp < gps; ++gp) {
 				SIMD cosx  = element.cossin[gp][ 0];
 				SIMD cosy  = element.cossin[gp][ 1];
@@ -239,8 +235,6 @@ template <size_t gps, class Physics> struct StructuralMechanicsCoordinateSystemK
 				element.elasticity[gp][20] = a * T50 + b * T51 + c * T52 + d * T53 + e * T54 + f * T55;
 			} break;
 		case CoordinateSystemConfiguration::TYPE::CYLINDRICAL:
-			CoordinateSystemCylindric<gps, 3, 2, Physics>::simd(element);
-
 			for (size_t gp = 0; gp < gps; ++gp) {
 				SIMD cosz  = element.cossin[gp][ 2];
 				SIMD sinz  = element.cossin[gp][ 5];
@@ -317,8 +311,6 @@ template <size_t gps, class Physics> struct StructuralMechanicsCoordinateSystemK
 				element.elasticity[gp][20] = a * T50 + b * T51                               + f * T55;
 			} break;
 		case CoordinateSystemConfiguration::TYPE::SPHERICAL:
-			CoordinateSystemSpherical<gps, 2, Physics>::simd(element);
-
 			for (size_t gp = 0; gp < gps; ++gp) {
 				SIMD cosx  = element.cossin[gp][ 0];
 				SIMD cosy  = element.cossin[gp][ 1];
@@ -458,11 +450,7 @@ template <size_t gps, class Physics> struct StructuralMechanicsCoordinateSystemK
 	void simd(typename Physics::Element &element)
 	{
 		if (rotated) {
-			switch (type) { // always rotated coordinate system
-			case CoordinateSystemConfiguration::TYPE::CARTESIAN:   CoordinateSystemCartesian<gps, 3, 2, Physics>::simd(element); break;
-			case CoordinateSystemConfiguration::TYPE::CYLINDRICAL: CoordinateSystemCylindric<gps, 3, 2, Physics>::simd(element); break;
-			case CoordinateSystemConfiguration::TYPE::SPHERICAL:   CoordinateSystemSpherical<gps, 2, Physics>::simd(element); break;
-			}
+			CoordinateSystem<gps, 3, 2, Physics>::simd(element, type, isconst);
 
 			SIMD C05 = load1(0.5);
 			for (size_t gp = 0; gp < gps; ++gp) {

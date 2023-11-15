@@ -82,10 +82,7 @@ template <size_t gps, class Physics> struct HeatTransferCoordinateSystemKernel<g
 
 	void simd(typename Physics::Element &element)
 	{
-		switch (type) { // always rotated coordinate system
-		case CoordinateSystemConfiguration::TYPE::CARTESIAN:   CoordinateSystemCartesian<gps, 2, 1, Physics>::simd(element); break;
-		case CoordinateSystemConfiguration::TYPE::CYLINDRICAL: CoordinateSystemCylindric<gps, 2, 1, Physics>::simd(element); break;
-		}
+		CoordinateSystem<gps, 2, 1, Physics>::simd(element, type, isconst);
 		for (size_t gp = 0; gp < gps; ++gp) {
 			SIMD c00 = element.ecf.conductivity[gp][0];
 			SIMD c11 = element.ecf.conductivity[gp][1];
@@ -104,11 +101,7 @@ template <size_t gps, class Physics> struct HeatTransferCoordinateSystemKernel<g
 
 	void simd(typename Physics::Element &element)
 	{
-		switch (type) { // always rotated coordinate system
-		case CoordinateSystemConfiguration::TYPE::CARTESIAN:   CoordinateSystemCartesian<gps, 3, 1, Physics>::simd(element); break;
-		case CoordinateSystemConfiguration::TYPE::CYLINDRICAL: CoordinateSystemCylindric<gps, 3, 1, Physics>::simd(element); break;
-		case CoordinateSystemConfiguration::TYPE::SPHERICAL:   CoordinateSystemSpherical<gps,    1, Physics>::simd(element); break;
-		}
+		CoordinateSystem<gps, 3, 1, Physics>::simd(element, type, isconst);
 		for (size_t gp = 0; gp < gps; ++gp) {
 			SIMD cos0 = element.cossin[gp][0];
 			SIMD cos1 = element.cossin[gp][1];
@@ -152,10 +145,7 @@ template <size_t gps, class Physics> struct HeatTransferCoordinateSystemKernel<g
 	void simd(typename Physics::Element &element)
 	{
 		if (rotated) {
-			switch (type) { // always rotated coordinate system
-			case CoordinateSystemConfiguration::TYPE::CARTESIAN:   CoordinateSystemCartesian<gps, 2, 1, Physics>::simd(element); break;
-			case CoordinateSystemConfiguration::TYPE::CYLINDRICAL: CoordinateSystemCylindric<gps, 2, 1, Physics>::simd(element); break;
-			}
+			CoordinateSystem<gps, 2, 1, Physics>::simd(element, type, isconst);
 			for (size_t gp = 0; gp < gps; ++gp) {
 				SIMD c00 = element.ecf.conductivity[gp][0];
 				SIMD c01 = element.ecf.conductivity[gp][1], c11 = element.ecf.conductivity[gp][2];
@@ -182,11 +172,7 @@ template <size_t gps, class Physics> struct HeatTransferCoordinateSystemKernel<g
 	void simd(typename Physics::Element &element)
 	{
 		if (rotated) {
-			switch (type) { // always rotated coordinate system
-			case CoordinateSystemConfiguration::TYPE::CARTESIAN:   CoordinateSystemCartesian<gps, 3, 1, Physics>::simd(element); break;
-			case CoordinateSystemConfiguration::TYPE::CYLINDRICAL: CoordinateSystemCylindric<gps, 3, 1, Physics>::simd(element); break;
-			case CoordinateSystemConfiguration::TYPE::SPHERICAL:   CoordinateSystemSpherical<gps,    1, Physics>::simd(element); break;
-			}
+			CoordinateSystem<gps, 3, 1, Physics>::simd(element, type, isconst);
 			for (size_t gp = 0; gp < gps; ++gp) {
 				SIMD cos0 = element.cossin[gp][0];
 				SIMD cos1 = element.cossin[gp][1];
@@ -243,11 +229,7 @@ template <size_t gps, class Physics> struct HeatTransferCoordinateSystemKernel<g
 	void simd(typename Physics::Element &element)
 	{
 		if (rotated) {
-			switch (type) {
-			case CoordinateSystemConfiguration::TYPE::CARTESIAN:   CoordinateSystemCartesian<gps, 2, 1, Physics>::simd(element); break;
-			case CoordinateSystemConfiguration::TYPE::CYLINDRICAL: CoordinateSystemCylindric<gps, 2, 1, Physics>::simd(element); break;
-			}
-
+			CoordinateSystem<gps, 2, 1, Physics>::simd(element, type, isconst);
 			for (size_t gp = 0; gp < gps; ++gp) {
 				SIMD c00 = element.ecf.conductivity[gp][0], c10 = element.ecf.conductivity[gp][2];
 				SIMD c01 = element.ecf.conductivity[gp][1], c11 = element.ecf.conductivity[gp][3];
@@ -275,12 +257,7 @@ template <size_t gps, class Physics> struct HeatTransferCoordinateSystemKernel<g
 	void simd(typename Physics::Element &element)
 	{
 		if (rotated) {
-			switch (type) {
-			case CoordinateSystemConfiguration::TYPE::CARTESIAN:   CoordinateSystemCartesian<gps, 3, 1, Physics>::simd(element); break;
-			case CoordinateSystemConfiguration::TYPE::CYLINDRICAL: CoordinateSystemCylindric<gps, 3, 1, Physics>::simd(element); break;
-			case CoordinateSystemConfiguration::TYPE::SPHERICAL:   CoordinateSystemSpherical<gps,    1, Physics>::simd(element); break;
-			}
-
+			CoordinateSystem<gps, 3, 1, Physics>::simd(element, type, isconst);
 			for (size_t gp = 0; gp < gps; ++gp) {
 				SIMD cos0 = element.cossin[gp][0];
 				SIMD cos1 = element.cossin[gp][1];
