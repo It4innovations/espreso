@@ -63,7 +63,7 @@ void compute(const HeatTransferSubKernelsList &subkernels, Assembler::Action act
 	flux.setActiveness(action);
 
 //	printf("sub-kernels: ");
-	for (esint c = 0; c < subkernels.chunks; ++c) {
+	for (size_t c = 0; c < subkernels.chunks; ++c) {
 		coordinates.simd(element);
 //		if (c == 0) printf("coordinates ");
 		if (temperature.isactive) {

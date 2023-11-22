@@ -50,7 +50,7 @@ void preprocess(HeatTransferBoundarySubKernelsList &subkernels)
 
 	basis.simd(element);
 	SIMD surface;
-	for (esint c = 0; c < subkernels.chunks; ++c) {
+	for (size_t c = 0; c < subkernels.chunks; ++c) {
 		coordinates.simd(element);
 		integration.simd(element);
 		for (size_t gp = 0; gp < gps; ++gp) {
@@ -88,7 +88,7 @@ void compute(const HeatTransferBoundarySubKernelsList &subkernels, Assembler::Ac
 	basis.simd(element);
 	thickness.setActiveness(action);
 
-	for (esint c = 0; c < subkernels.chunks; ++c) {
+	for (size_t c = 0; c < subkernels.chunks; ++c) {
 		coordinates.simd(element);
 		for (size_t i = 0; i < nonconst.size(); ++i) {
 			nonconst[i]->simd(element);
@@ -115,7 +115,7 @@ void fill(const HeatTransferBoundarySubKernelsList &subkernels)
 
 	VectorFillerKernel<nodes, Physics> RHS(subkernels.RHSfiller);
 
-	for (esint c = 0; c < subkernels.chunks; ++c) {
+	for (size_t c = 0; c < subkernels.chunks; ++c) {
 		if (RHS.isactive) {
 			RHS.simd(element);
 		}
@@ -151,7 +151,7 @@ void dirichlet(const HeatTransferBoundarySubKernelsList &subkernels)
 		}
 	}
 
-	for (esint c = 0; c < subkernels.chunks; ++c) {
+	for (size_t c = 0; c < subkernels.chunks; ++c) {
 		coordinates.simd(element);
 		for (size_t i = 0; i < nonconst.size(); ++i) {
 			nonconst[i]->simd(element);
@@ -184,7 +184,9 @@ template <> void addBC<2, 0>(HeatTransferBoundarySubKernelsList &subkernels, Ass
 {
 	switch (action) {
 	case Assembler::Action::PREPROCESS: initDirichlet<2>(subkernels); break;
-	case Assembler::Action::ASSEMBLE: case Assembler::Action::REASSEMBLE: dirichlet<2>(subkernels); break;
+	case Assembler::Action::ASSEMBLE:
+	case Assembler::Action::REASSEMBLE: dirichlet<2>(subkernels); break;
+	default: break;
 	}
 }
 template <> void addBC<3, 2>(HeatTransferBoundarySubKernelsList &subkernels, Assembler::Action action)
@@ -209,7 +211,9 @@ template <> void addBC<3, 0>(HeatTransferBoundarySubKernelsList &subkernels, Ass
 {
 	switch (action) {
 	case Assembler::Action::PREPROCESS: initDirichlet<3>(subkernels); break;
-	case Assembler::Action::ASSEMBLE: case Assembler::Action::REASSEMBLE: dirichlet<3>(subkernels); break;
+	case Assembler::Action::ASSEMBLE:
+	case Assembler::Action::REASSEMBLE: dirichlet<3>(subkernels); break;
+	default: break;
 	}
 }
 

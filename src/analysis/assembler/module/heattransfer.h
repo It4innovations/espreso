@@ -60,9 +60,9 @@ protected:
 	void run(Action action, size_t interval);
 	void run(Action action, size_t region, size_t interval);
 
-	void runPlane(Action action, size_t interval);
-	void runAxisymmetric(Action action, size_t interval);
-	void runVolume(Action action, size_t interval);
+
+	template <Element::CODE code> void runGroup(Action action, size_t interval);
+
 	void runPreprocess(Action action, size_t interval);
 	void runBoundary(Action action, size_t region, size_t interval);
 

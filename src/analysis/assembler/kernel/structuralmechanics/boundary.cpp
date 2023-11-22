@@ -36,7 +36,7 @@ void preprocess(StructuralMechanicsBoundarySubKernelsList &subkernels)
 
 	basis.simd(element);
 	SIMD surface;
-	for (esint c = 0; c < subkernels.chunks; ++c) {
+	for (size_t c = 0; c < subkernels.chunks; ++c) {
 		coordinates.simd(element);
 		integration.simd(element);
 		for (size_t gp = 0; gp < gps; ++gp) {
@@ -75,7 +75,7 @@ void compute(StructuralMechanicsBoundarySubKernelsList &subkernels, Assembler::A
 	thickness.setActiveness(action);
 	normalPressure.setActiveness(action);
 
-	for (esint c = 0; c < subkernels.chunks; ++c) {
+	for (size_t c = 0; c < subkernels.chunks; ++c) {
 		coordinates.simd(element);
 //		if (c == 0) printf("coordinates ");
 		if (thickness.isactive) {
@@ -97,7 +97,7 @@ void fill(const StructuralMechanicsBoundarySubKernelsList &subkernels)
 
 	VectorFillerKernel<nodes, Physics> RHS(subkernels.RHSfiller);
 
-	for (esint c = 0; c < subkernels.chunks; ++c) {
+	for (size_t c = 0; c < subkernels.chunks; ++c) {
 		if (RHS.isactive) {
 			RHS.simd(element);
 		}
@@ -155,7 +155,7 @@ void dirichlet(const StructuralMechanicsBoundarySubKernelsList &subkernels)
 		}
 	}
 
-	for (esint c = 0; c < subkernels.chunks; ++c) {
+	for (size_t c = 0; c < subkernels.chunks; ++c) {
 		coordinates.simd(element);
 		for (size_t i = 0; i < nonconst.size(); ++i) {
 			nonconst[i]->simd(element);
@@ -198,6 +198,7 @@ template <> void addBC<2, 0>(StructuralMechanicsBoundarySubKernelsList &subkerne
 	switch (action) {
 	case Assembler::Action::PREPROCESS: initDirichlet<2>(subkernels); break;
 	case Assembler::Action::ASSEMBLE: case Assembler::Action::REASSEMBLE: dirichlet<2>(subkernels); break;
+	default: break;
 	}
 }
 template <> void addBC<3, 2>(StructuralMechanicsBoundarySubKernelsList &subkernels, Assembler::Action action, Behaviour behaviour)
@@ -223,6 +224,7 @@ template <> void addBC<3, 0>(StructuralMechanicsBoundarySubKernelsList &subkerne
 	switch (action) {
 	case Assembler::Action::PREPROCESS: initDirichlet<3>(subkernels); break;
 	case Assembler::Action::ASSEMBLE: case Assembler::Action::REASSEMBLE: dirichlet<3>(subkernels); break;
+	default: break;
 	}
 }
 

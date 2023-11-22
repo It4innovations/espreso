@@ -50,7 +50,7 @@ def configure(ctx):
     if ctx.options.simd_off:
         ctx.env.append_unique("DEFINES", [ "SIMD_OFF" ])
 
-    ctx.env.append_unique("CXXFLAGS", [ "-std=c++17" ])
+    ctx.env.append_unique("CXXFLAGS", [ "-std=c++17", "-Wall" ])
     ctx.env.append_unique("CXXFLAGS", ctx.options.cxxflags.split())
     if ctx.options.mode == "release":
         ctx.env.append_unique("CXXFLAGS", [ "-O3", "-g" ])

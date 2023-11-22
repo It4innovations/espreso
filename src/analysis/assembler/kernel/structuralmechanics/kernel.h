@@ -60,7 +60,7 @@ void compute(StructuralMechanicsSubKernelsList &subkernels, Assembler::Action ac
 	stress.setActiveness(action);
 
 //	printf("sub-kernels: ");
-	for (esint c = 0; c < subkernels.chunks; ++c) {
+	for (size_t c = 0; c < subkernels.chunks; ++c) {
 		coordinates.simd(element);
 //		if (c == 0) printf("coordinates ");
 		if (temperature.isactive) {
@@ -105,6 +105,30 @@ void compute(StructuralMechanicsSubKernelsList &subkernels, Assembler::Action ac
 		}
 	}
 //	printf("\n");
+}
+
+template <Element::CODE code, size_t nodes, size_t gps, size_t ndim, size_t edim, enum Behaviour behaviour>
+void runElasticity(StructuralMechanicsSubKernelsList &subkernels, Assembler::Action action)
+{
+	switch (subkernels.elasticity.configuration->model) {
+	case LinearElasticPropertiesConfiguration::MODEL::ISOTROPIC:
+		if (subkernels.coosystem.rotated || subkernels.plasticity.isactive) {
+			compute<code, nodes, gps, ndim, edim, behaviour, ElasticityModel::ISOTROPIC, ElasticityModel::SYMMETRIC>(subkernels, action);
+		} else {
+			compute<code, nodes, gps, ndim, edim, behaviour, ElasticityModel::ISOTROPIC, ElasticityModel::ISOTROPIC>(subkernels, action);
+		}
+		break;
+	case LinearElasticPropertiesConfiguration::MODEL::ORTHOTROPIC:
+		if (subkernels.coosystem.rotated) {
+			compute<code, nodes, gps, ndim, edim, behaviour, ElasticityModel::ORTHOTROPIC, ElasticityModel::SYMMETRIC>(subkernels, action);
+		} else {
+			compute<code, nodes, gps, ndim, edim, behaviour, ElasticityModel::ORTHOTROPIC, ElasticityModel::ORTHOTROPIC>(subkernels, action);
+		}
+		break;
+	case LinearElasticPropertiesConfiguration::MODEL::ANISOTROPIC:
+		compute<code, nodes, gps, ndim, edim, behaviour, ElasticityModel::ANISOTROPIC, ElasticityModel::ANISOTROPIC>(subkernels, action);
+		break;
+	}
 }
 
 }

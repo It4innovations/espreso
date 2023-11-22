@@ -72,6 +72,11 @@ template <size_t nodes, size_t gps, size_t edim> struct ElementIntegration {
 	alignas(SIMD::size * sizeof(double)) SIMD det[gps];
 };
 
+template <size_t nodes, size_t gps> struct ElementIntegration<nodes, gps, 0> {
+	alignas(SIMD::size * sizeof(double)) double  w[gps];
+	alignas(SIMD::size * sizeof(double)) double  N[gps][nodes];
+};
+
 template <size_t gps, size_t ndim> struct BondaryNormal {
 	alignas(SIMD::size * sizeof(double)) SIMD normal[gps][ndim];
 };

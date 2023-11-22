@@ -58,7 +58,6 @@ HeatTransfer::HeatTransfer(HeatTransfer *previous, HeatTransferConfiguration &se
 			for (size_t r = 1; r < info::mesh->boundaryRegions.size(); ++r) {
 				if (info::mesh->boundaryRegions[r]->dimension) {
 					for (esint i = info::mesh->boundaryRegions[r]->eintervalsDistribution[d]; i < info::mesh->boundaryRegions[r]->eintervalsDistribution[d + 1]; ++i) {
-						size_t elements = info::mesh->boundaryRegions[r]->eintervals[i].end - info::mesh->boundaryRegions[r]->eintervals[i].begin;
 						boundary[r][i].code = info::mesh->boundaryRegions[r]->eintervals[i].code;
 						boundary[r][i].elements = info::mesh->boundaryRegions[r]->eintervals[i].end - info::mesh->boundaryRegions[r]->eintervals[i].begin;
 						boundary[r][i].chunks = boundary[r][i].elements / SIMD::size + (boundary[r][i].elements % SIMD::size ? 1 : 0);
@@ -383,9 +382,19 @@ void HeatTransfer::run(Action action, size_t interval)
 		runPreprocess(action, interval);
 		break;
 	default:
-		switch (info::mesh->dimension) {
-		case 3: runVolume(action, interval); break;
-		case 2: runPlane(action, interval); break;
+		switch (subkernels[interval].code) {
+		case static_cast<size_t>(Element::CODE::TRIANGLE3): runGroup<Element::CODE::TRIANGLE3>(action, interval); break;
+		case static_cast<size_t>(Element::CODE::TRIANGLE6): runGroup<Element::CODE::TRIANGLE6>(action, interval); break;
+		case static_cast<size_t>(Element::CODE::SQUARE4  ): runGroup<Element::CODE::SQUARE4  >(action, interval); break;
+		case static_cast<size_t>(Element::CODE::SQUARE8  ): runGroup<Element::CODE::SQUARE8  >(action, interval); break;
+		case static_cast<size_t>(Element::CODE::TETRA4   ): runGroup<Element::CODE::TETRA4   >(action, interval); break;
+		case static_cast<size_t>(Element::CODE::TETRA10  ): runGroup<Element::CODE::TETRA10  >(action, interval); break;
+		case static_cast<size_t>(Element::CODE::PYRAMID5 ): runGroup<Element::CODE::PYRAMID5 >(action, interval); break;
+		case static_cast<size_t>(Element::CODE::PYRAMID13): runGroup<Element::CODE::PYRAMID13>(action, interval); break;
+		case static_cast<size_t>(Element::CODE::PRISMA6  ): runGroup<Element::CODE::PRISMA6  >(action, interval); break;
+		case static_cast<size_t>(Element::CODE::PRISMA15 ): runGroup<Element::CODE::PRISMA15 >(action, interval); break;
+		case static_cast<size_t>(Element::CODE::HEXA8    ): runGroup<Element::CODE::HEXA8    >(action, interval); break;
+		case static_cast<size_t>(Element::CODE::HEXA20   ): runGroup<Element::CODE::HEXA20   >(action, interval); break;
 		}
 	}
 }

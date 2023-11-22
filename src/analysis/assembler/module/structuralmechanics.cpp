@@ -61,7 +61,6 @@ StructuralMechanics::StructuralMechanics(StructuralMechanics *previous, Structur
 			for (size_t r = 1; r < info::mesh->boundaryRegions.size(); ++r) {
 				if (info::mesh->boundaryRegions[r]->dimension) {
 					for (esint i = info::mesh->boundaryRegions[r]->eintervalsDistribution[d]; i < info::mesh->boundaryRegions[r]->eintervalsDistribution[d + 1]; ++i) {
-						size_t elements = info::mesh->boundaryRegions[r]->eintervals[i].end - info::mesh->boundaryRegions[r]->eintervals[i].begin;
 						boundary[r][i].code = info::mesh->boundaryRegions[r]->eintervals[i].code;
 						boundary[r][i].elements = info::mesh->boundaryRegions[r]->eintervals[i].end - info::mesh->boundaryRegions[r]->eintervals[i].begin;
 						boundary[r][i].chunks = boundary[r][i].elements / SIMD::size + (boundary[r][i].elements % SIMD::size ? 1 : 0);
@@ -276,7 +275,7 @@ void StructuralMechanics::analyze()
 		bool gpcoo = mat->linear_elastic_properties.needCoordinates() || getExpression(i, configuration.angular_velocity);
 		gpcoo |= settings.element_behaviour == StructuralMechanicsGlobalSettings::ELEMENT_BEHAVIOUR::AXISYMMETRIC;
 		gpcoo |= mat->coordinate_system.type != CoordinateSystemConfiguration::TYPE::CARTESIAN;
-		bool gptemp = mat->linear_elastic_properties.needTemperature();
+//		bool gptemp = mat->linear_elastic_properties.needTemperature();
 		esint eoffset = info::mesh->elements->eintervals[i].begin;
 
 		if (info::mesh->dimension == 2) {
@@ -389,7 +388,7 @@ void StructuralMechanics::evaluate(const step::Step &step, const step::Time &tim
 	for (size_t i = 0; i < subkernels.size(); ++i) {
 		for (size_t e = 0; e < subkernels[i].expressions.size(); ++e) {
 			#pragma omp parallel for
-			for (size_t t = 0; t < info::env::threads; ++t) {
+			for (int t = 0; t < info::env::threads; ++t) {
 				subkernels[i].expressions[e]->evaluator->getSubstep(t) = (step.substep + 1) / (double)step.substeps;
 				subkernels[i].expressions[e]->evaluator->getTime(t) = time.current;
 			}
@@ -399,7 +398,7 @@ void StructuralMechanics::evaluate(const step::Step &step, const step::Time &tim
 		for (size_t j = 0; j < boundary[i].size(); ++j) {
 			for (size_t e = 0; e < boundary[i][j].expressions.size(); ++e) {
 				#pragma omp parallel for
-				for (size_t t = 0; t < info::env::threads; ++t) {
+				for (int t = 0; t < info::env::threads; ++t) {
 					boundary[i][j].expressions[e]->evaluator->getSubstep(t) = (step.substep + 1) / (double)step.substeps;
 					boundary[i][j].expressions[e]->evaluator->getTime(t) = time.current;
 				}
@@ -432,17 +431,19 @@ void StructuralMechanics::run(Action action, size_t interval)
 		runPreprocess(action, interval);
 		break;
 	default:
-		switch (info::mesh->dimension) {
-		case 3: runVolume(action, interval); break;
-		case 2:
-			switch (settings.element_behaviour) {
-			case StructuralMechanicsGlobalSettings::ELEMENT_BEHAVIOUR::PLANE_STRAIN:
-			case StructuralMechanicsGlobalSettings::ELEMENT_BEHAVIOUR::PLANE_STRESS:
-			case StructuralMechanicsGlobalSettings::ELEMENT_BEHAVIOUR::PLANE_STRESS_WITH_THICKNESS:
-				runPlane(action, interval); break;
-			case StructuralMechanicsGlobalSettings::ELEMENT_BEHAVIOUR::AXISYMMETRIC:
-				runAxisymmetric(action, interval); break;
-			}
+		switch (subkernels[interval].code) {
+		case static_cast<size_t>(Element::CODE::TRIANGLE3): runGroup<Element::CODE::TRIANGLE3>(action, interval, settings.element_behaviour); break;
+		case static_cast<size_t>(Element::CODE::TRIANGLE6): runGroup<Element::CODE::TRIANGLE6>(action, interval, settings.element_behaviour); break;
+		case static_cast<size_t>(Element::CODE::SQUARE4  ): runGroup<Element::CODE::SQUARE4  >(action, interval, settings.element_behaviour); break;
+		case static_cast<size_t>(Element::CODE::SQUARE8  ): runGroup<Element::CODE::SQUARE8  >(action, interval, settings.element_behaviour); break;
+		case static_cast<size_t>(Element::CODE::TETRA4   ): runGroup<Element::CODE::TETRA4   >(action, interval, settings.element_behaviour); break;
+		case static_cast<size_t>(Element::CODE::TETRA10  ): runGroup<Element::CODE::TETRA10  >(action, interval, settings.element_behaviour); break;
+		case static_cast<size_t>(Element::CODE::PYRAMID5 ): runGroup<Element::CODE::PYRAMID5 >(action, interval, settings.element_behaviour); break;
+		case static_cast<size_t>(Element::CODE::PYRAMID13): runGroup<Element::CODE::PYRAMID13>(action, interval, settings.element_behaviour); break;
+		case static_cast<size_t>(Element::CODE::PRISMA6  ): runGroup<Element::CODE::PRISMA6  >(action, interval, settings.element_behaviour); break;
+		case static_cast<size_t>(Element::CODE::PRISMA15 ): runGroup<Element::CODE::PRISMA15 >(action, interval, settings.element_behaviour); break;
+		case static_cast<size_t>(Element::CODE::HEXA8    ): runGroup<Element::CODE::HEXA8    >(action, interval, settings.element_behaviour); break;
+		case static_cast<size_t>(Element::CODE::HEXA20   ): runGroup<Element::CODE::HEXA20   >(action, interval, settings.element_behaviour); break;
 		}
 	}
 }

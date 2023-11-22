@@ -28,6 +28,7 @@ struct StructuralMechanicsCoordinateSystem: SubKernel {
 		this->rotated = rotated;
 		this->isactive = 1;
 		switch (this->type) {
+		case CoordinateSystemConfiguration::TYPE::CARTESIAN:                      break;
 		case CoordinateSystemConfiguration::TYPE::CYLINDRICAL: this->isconst = 0; break;
 		case CoordinateSystemConfiguration::TYPE::SPHERICAL:   this->isconst = 0; break;
 		}
@@ -504,11 +505,11 @@ template <size_t gps, class Physics> struct StructuralMechanicsCoordinateSystemK
 				SIMD T54 = cos2z * cosx * siny - sin2y * sin2z * sinx * C05;
 				SIMD T55 = -C05 * sin2x * sin2z + cos2x * cos2z * cosy - sin2x * sin2z * cosy * cosy * C05;
 
-				SIMD e00 = element.elasticity[gp][0], e10 = element.elasticity[gp][ 6], e20 = element.elasticity[gp][12], e30 = element.elasticity[gp][18], e40 = element.elasticity[gp][24], e50 = element.elasticity[gp][30];
-				SIMD e01 = element.elasticity[gp][1], e11 = element.elasticity[gp][ 7], e21 = element.elasticity[gp][13], e31 = element.elasticity[gp][19], e41 = element.elasticity[gp][25], e51 = element.elasticity[gp][31];
-				SIMD e02 = element.elasticity[gp][2], e12 = element.elasticity[gp][ 8], e22 = element.elasticity[gp][14], e32 = element.elasticity[gp][20], e42 = element.elasticity[gp][26], e52 = element.elasticity[gp][32];
-				SIMD e03 = element.elasticity[gp][3], e13 = element.elasticity[gp][ 9], e23 = element.elasticity[gp][15], e33 = element.elasticity[gp][21], e43 = element.elasticity[gp][27], e53 = element.elasticity[gp][33];
-				SIMD e04 = element.elasticity[gp][4], e14 = element.elasticity[gp][10], e24 = element.elasticity[gp][16], e34 = element.elasticity[gp][22], e44 = element.elasticity[gp][28], e54 = element.elasticity[gp][34];
+				SIMD e00 = element.elasticity[gp][0];
+				SIMD e01 = element.elasticity[gp][1], e11 = element.elasticity[gp][ 7];
+				SIMD e02 = element.elasticity[gp][2], e12 = element.elasticity[gp][ 8], e22 = element.elasticity[gp][14];
+				SIMD e03 = element.elasticity[gp][3], e13 = element.elasticity[gp][ 9], e23 = element.elasticity[gp][15], e33 = element.elasticity[gp][21];
+				SIMD e04 = element.elasticity[gp][4], e14 = element.elasticity[gp][10], e24 = element.elasticity[gp][16], e34 = element.elasticity[gp][22], e44 = element.elasticity[gp][28];
 				SIMD e05 = element.elasticity[gp][5], e15 = element.elasticity[gp][11], e25 = element.elasticity[gp][17], e35 = element.elasticity[gp][23], e45 = element.elasticity[gp][29], e55 = element.elasticity[gp][35];
 
 				SIMD a = T00 * e00 + T01 * e01 + T02 * e02 + T03 * e03 + T04 * e04 + T05 * e05;

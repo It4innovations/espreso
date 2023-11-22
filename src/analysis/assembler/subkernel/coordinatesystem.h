@@ -138,6 +138,7 @@ template <size_t gps, size_t multiplicity, class Physics> struct CoordinateSyste
 		switch (type) {
 		case CoordinateSystemConfiguration::TYPE::CARTESIAN:   if (!isconst) CoordinateSystemCartesian<gps, 2, multiplicity, Physics>::simd(element); break;
 		case CoordinateSystemConfiguration::TYPE::CYLINDRICAL:               CoordinateSystemCylindric<gps, 2, multiplicity, Physics>::simd(element); break;
+		case CoordinateSystemConfiguration::TYPE::SPHERICAL:                                                                                          break;
 		}
 	}
 };

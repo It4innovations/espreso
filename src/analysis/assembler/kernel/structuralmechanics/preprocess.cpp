@@ -126,6 +126,7 @@ template <size_t gps, class Physics> struct SetTranslation<gps, 2, Physics> {
 						subkernels.coosystem.configuration->center.y.evaluator,
 						[] (typename Physics::Element &element, size_t &gp, size_t &s, double value) { element.ecf.center[gp][1][s] = value; }));
 				break;
+			case CoordinateSystemConfiguration::TYPE::SPHERICAL: break;
 			}
 		}
 	}
@@ -302,7 +303,7 @@ void preprocess(StructuralMechanicsSubKernelsList &subkernels)
 	typename Physics::Element element;
 	basis.simd(element);
 	SIMD volume;
-	for (esint c = 0; c < subkernels.chunks; ++c) {
+	for (size_t c = 0; c < subkernels.chunks; ++c) {
 		coordinates.simd(element);
 		integration.simd(element);
 		for (size_t gp = 0; gp < gps; ++gp) {
@@ -325,7 +326,7 @@ void fill(StructuralMechanicsSubKernelsList &subkernels)
 	MatricFillerKernel<nodes, Physics> K(subkernels.Kfiller);
 	VectorFillerKernel<nodes, Physics> RHS(subkernels.RHSfiller), nRHS(subkernels.nRHSfiller);
 
-	for (esint c = 0; c < subkernels.chunks; ++c) {
+	for (size_t c = 0; c < subkernels.chunks; ++c) {
 		if (K.isactive) {
 			K.simd(element);
 		}
@@ -344,6 +345,7 @@ void runAction(StructuralMechanicsSubKernelsList &subkernels, Assembler::Action 
 	switch (action) {
 	case Assembler::Action::PREPROCESS: preprocess<code, nodes, gps, ndim, edim, behaviour, ecfmodel, model>(subkernels); break;
 	case Assembler::Action::FILL: fill<code, nodes, gps, ndim, edim, behaviour, ecfmodel, model>(subkernels); break;
+	default: break;
 	}
 }
 
@@ -353,6 +355,7 @@ void runAction(StructuralMechanicsBoundarySubKernelsList &subkernels, Assembler:
 	switch (action) {
 	case Assembler::Action::PREPROCESS: preprocess<code, nodes, gps, ndim, edim>(subkernels); break;
 	case Assembler::Action::FILL: fill<code, nodes, gps, ndim, edim>(subkernels); break;
+	default: break;
 	}
 }
 

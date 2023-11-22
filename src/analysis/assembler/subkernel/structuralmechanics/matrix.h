@@ -358,7 +358,6 @@ struct StructuralMechanicsStiffness<nodes, gps, 3, Behaviour::VOLUME, Elasticity
 					store(out + ((n + nodes) * size + m + nodes) * SIMD::size, yy);
 				}
 				for (size_t m = 0; m < nodes; ++m) {
-					SIMD mx = element.dND[gp][m][0];
 					SIMD my = element.dND[gp][m][1];
 					SIMD mz = element.dND[gp][m][2];
 					SIMD c = ny * c12;
@@ -503,16 +502,16 @@ struct StructuralMechanicsStiffness<nodes, gps, 3, Behaviour::VOLUME, Elasticity
 	//      a  b  c  d  e  f
 	void simd(typename Physics::Element &element)
 	{
-		double * __restrict__ out = K;
-		constexpr size_t size = 3 * nodes;
-		for (size_t gp = 0; gp < gps; ++gp) {
-			SIMD scale = element.det[gp] * load1(element.w[gp]);
-			SIMD c00 = element.elasticity[gp][0], c10 = element.elasticity[gp][ 6], c20 = element.elasticity[gp][12], c30 = element.elasticity[gp][18], c40 = element.elasticity[gp][24], c50 = element.elasticity[gp][30];
-			SIMD c01 = element.elasticity[gp][1], c11 = element.elasticity[gp][ 7], c21 = element.elasticity[gp][13], c31 = element.elasticity[gp][19], c41 = element.elasticity[gp][25], c51 = element.elasticity[gp][31];
-			SIMD c02 = element.elasticity[gp][2], c12 = element.elasticity[gp][ 8], c22 = element.elasticity[gp][14], c32 = element.elasticity[gp][20], c42 = element.elasticity[gp][26], c52 = element.elasticity[gp][32];
-			SIMD c03 = element.elasticity[gp][3], c13 = element.elasticity[gp][ 9], c23 = element.elasticity[gp][15], c33 = element.elasticity[gp][21], c43 = element.elasticity[gp][27], c53 = element.elasticity[gp][33];
-			SIMD c04 = element.elasticity[gp][4], c14 = element.elasticity[gp][10], c24 = element.elasticity[gp][16], c34 = element.elasticity[gp][22], c44 = element.elasticity[gp][28], c54 = element.elasticity[gp][34];
-			SIMD c05 = element.elasticity[gp][5], c15 = element.elasticity[gp][11], c25 = element.elasticity[gp][17], c35 = element.elasticity[gp][23], c45 = element.elasticity[gp][29], c55 = element.elasticity[gp][35];
+//		double * __restrict__ out = K;
+//		constexpr size_t size = 3 * nodes;
+//		for (size_t gp = 0; gp < gps; ++gp) {
+//			SIMD scale = element.det[gp] * load1(element.w[gp]);
+//			SIMD c00 = element.elasticity[gp][0], c10 = element.elasticity[gp][ 6], c20 = element.elasticity[gp][12], c30 = element.elasticity[gp][18], c40 = element.elasticity[gp][24], c50 = element.elasticity[gp][30];
+//			SIMD c01 = element.elasticity[gp][1], c11 = element.elasticity[gp][ 7], c21 = element.elasticity[gp][13], c31 = element.elasticity[gp][19], c41 = element.elasticity[gp][25], c51 = element.elasticity[gp][31];
+//			SIMD c02 = element.elasticity[gp][2], c12 = element.elasticity[gp][ 8], c22 = element.elasticity[gp][14], c32 = element.elasticity[gp][20], c42 = element.elasticity[gp][26], c52 = element.elasticity[gp][32];
+//			SIMD c03 = element.elasticity[gp][3], c13 = element.elasticity[gp][ 9], c23 = element.elasticity[gp][15], c33 = element.elasticity[gp][21], c43 = element.elasticity[gp][27], c53 = element.elasticity[gp][33];
+//			SIMD c04 = element.elasticity[gp][4], c14 = element.elasticity[gp][10], c24 = element.elasticity[gp][16], c34 = element.elasticity[gp][22], c44 = element.elasticity[gp][28], c54 = element.elasticity[gp][34];
+//			SIMD c05 = element.elasticity[gp][5], c15 = element.elasticity[gp][11], c25 = element.elasticity[gp][17], c35 = element.elasticity[gp][23], c45 = element.elasticity[gp][29], c55 = element.elasticity[gp][35];
 //			for (size_t n = 0; n < nodes; ++n) {
 //				SIMD nx = element.dND[gp][n][0];
 //				SIMD ny = element.dND[gp][n][1];
@@ -586,8 +585,8 @@ struct StructuralMechanicsStiffness<nodes, gps, 3, Behaviour::VOLUME, Elasticity
 //					store(out + ((n + nodes * 2) * size + m + nodes * 2) * SIMD::size, zz);
 //				}
 //			}
-		}
-		K += SIMD::size * 3 * nodes * 3 * nodes;
+//		}
+//		K += SIMD::size * 3 * nodes * 3 * nodes;
 	}
 };
 
