@@ -6,9 +6,6 @@
 
 namespace espreso {
 
-template struct Lumped<double>;
-template struct Lumped<std::complex<double> >;
-
 template <typename T>
 Lumped<T>::Lumped(FETI<T> &feti)
 : Preconditioner<T>(feti)
@@ -59,5 +56,8 @@ Lumped<T>::apply(const Vector_Dual<T> &x, Vector_Dual<T> &y)
 	}
 	applyB(feti, KBtx, y);
 }
+
+template struct Lumped<double>;
+template struct Lumped<std::complex<double> >;
 
 }

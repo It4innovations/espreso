@@ -9,9 +9,6 @@
 
 namespace espreso {
 
-template class CPG<double>;
-template class CPG<std::complex<double> >;
-
 // https://digital.library.unt.edu/ark:/67531/metadc739671/m2/1/high_res_d/792775.pdf
 // page 12
 
@@ -142,6 +139,9 @@ template <> void CPG<std::complex<double> >::solve(const step::Step &step, Itera
 {
 
 }
+
+template class CPG<double>;
+template class CPG<std::complex<double> >;
 
 }
 

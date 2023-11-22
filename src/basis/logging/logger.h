@@ -40,7 +40,7 @@ protected:
 #define __ES__FORALL(fnc, header, call)        \
 	template<class Logger, class... Other>     \
 	typename                                   \
-	std::enable_if<sizeof...(Other)>::type     \
+	std::enable_if<(sizeof...(Other) > 0)>::type     \
 	fnc(header)                                \
 	{                                          \
 		fnc<Logger>(call);                     \
@@ -73,7 +73,7 @@ private:
 	}
 
 	template<class TSearch, class Logger, class... Other>
-	typename std::enable_if<sizeof...(Other)>::type
+	typename std::enable_if<(sizeof...(Other) > 0)>::type
 	search(VerboseArg* &logger)
 	{
 		search<TSearch, Logger>(logger);

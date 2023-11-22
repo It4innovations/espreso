@@ -12,11 +12,6 @@
 
 namespace espreso {
 
-template struct FETILinearSystemSolver<double, HeatSteadyStateLinear>;
-template struct FETILinearSystemSolver<double, HeatSteadyStateNonLinear>;
-template struct FETILinearSystemSolver<double, StructuralMechanicsSteadyStateLinear>;
-template struct FETILinearSystemSolver<double, StructuralMechanicsSteadyStateNonLinear>;
-
 template <typename T, class Physics> struct RegularizationSelector { };
 
 template <typename T> struct RegularizationSelector<T, HeatSteadyStateLinear> {
@@ -110,6 +105,11 @@ bool FETILinearSystemSolver<T, Physics>::solve(step::Step &step)
 	eslog::endln("FETI: LINEAR SYSTEM SOLVED");
 	return false;
 }
+
+template struct FETILinearSystemSolver<double, HeatSteadyStateLinear>;
+template struct FETILinearSystemSolver<double, HeatSteadyStateNonLinear>;
+template struct FETILinearSystemSolver<double, StructuralMechanicsSteadyStateLinear>;
+template struct FETILinearSystemSolver<double, StructuralMechanicsSteadyStateNonLinear>;
 
 }
 

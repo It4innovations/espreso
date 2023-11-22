@@ -11,8 +11,6 @@
 
 namespace espreso {
 
-template struct FETI<double>;
-
 template <typename T>
 FETI<T>::FETI(FETIConfiguration &configuration)
 : configuration(configuration)
@@ -119,5 +117,7 @@ bool FETI<T>::solve(const step::Step &step)
 	eslog::info("       = ----------------------------------------------------------------------------- = \n");
 	return true;
 }
+
+template struct FETI<double>;
 
 }

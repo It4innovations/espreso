@@ -1,0 +1,12 @@
+ml LUMI/23.03 ParMETIS/4.0.3-cpeCray-23.03 buildtools/23.03 cray-libsci/23.02.1.1
+
+export SCI_ROOT=/opt/cray/pe/libsci/23.02.1.1/CRAY/9.0/x86_64/
+
+export CPATH=$CPATH:$LAPACK_ROOT/include:~/tools/SuiteSparse/include:$SCI_ROOT/include
+export LIBRARY_PATH=$LIBRARY_PATH:$LAPACK_ROOT/lib64:~/tools/SuiteSparse/lib:$SCI_ROOT/lib
+export LD_LIBRARY_PATH=$LD_LIBRARY_PATH:$LAPACK_ROOT/lib64:~/tools/SuiteSparse/lib:$SCI_ROOT/lib
+
+export LD_LIBRARY_PATH=$LD_LIBRARY_PATH:~/projects/espreso/build
+
+export MPICXX=mpic++
+export CXX=clang++

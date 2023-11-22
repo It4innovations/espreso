@@ -8,9 +8,6 @@
 
 namespace espreso {
 
-template class TotalFETIExplicitAcc<double>;
-template class TotalFETIExplicitAcc<std::complex<double> >;
-
 template <typename T>
 TotalFETIExplicitAcc<T>::TotalFETIExplicitAcc(FETI<T> &feti)
 : TotalFETIExplicit<T>(feti)
@@ -77,5 +74,8 @@ void TotalFETIExplicitAcc<T>::toPrimal(const Vector_Dual<T> &x, Vector_FETI<Vect
 {
 	TotalFETIExplicit<T>::toPrimal(x, y);
 }
+
+template class TotalFETIExplicitAcc<double>;
+template class TotalFETIExplicitAcc<std::complex<double> >;
 
 }

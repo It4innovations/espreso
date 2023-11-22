@@ -12,9 +12,6 @@
 
 namespace espreso {
 
-template class DirectSolver<double, Matrix_CSR>;
-template class DirectSolver<std::complex<double>, Matrix_CSR>;
-
 struct Matrix_Solver_External_Representation {
 	struct CHOLMOD {
 		cholmod_sparse *A;
@@ -277,6 +274,9 @@ void DirectSolver<T, Matrix>::getSC(Matrix_Dense<T> &sc)
 		break; // UMFPACK
 	}
 }
+
+template class DirectSolver<double, Matrix_CSR>;
+template class DirectSolver<std::complex<double>, Matrix_CSR>;
 
 }
 

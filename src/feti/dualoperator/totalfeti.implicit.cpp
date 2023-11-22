@@ -8,9 +8,6 @@
 
 namespace espreso {
 
-template class TotalFETIImplicit<double>;
-template class TotalFETIImplicit<std::complex<double> >;
-
 template <typename T>
 TotalFETIImplicit<T>::TotalFETIImplicit(FETI<T> &feti)
 : DualOperator<T>(feti), sparsity(DirectSolver<T, Matrix_CSR>::VectorSparsity::DENSE)
@@ -192,5 +189,8 @@ void TotalFETIImplicit<T>::print(const step::Step &step)
 		math::store(d, utils::filename(utils::debugDirectory(step) + "/feti/dualop", "d").c_str());
 	}
 }
+
+template class TotalFETIImplicit<double>;
+template class TotalFETIImplicit<std::complex<double> >;
 
 }

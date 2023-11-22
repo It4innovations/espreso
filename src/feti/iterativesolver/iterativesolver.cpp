@@ -15,9 +15,6 @@
 
 namespace espreso {
 
-template class IterativeSolver<double>;
-template class IterativeSolver<std::complex<double> >;
-
 template <typename T>
 IterativeSolver<T>* IterativeSolver<T>::set(FETI<T> &feti, const step::Step &step)
 {
@@ -148,5 +145,8 @@ void IterativeSolver<std::complex<double> >::updateInfo(IterativeSolverInfo &inf
 {
 
 }
+
+template class IterativeSolver<double>;
+template class IterativeSolver<std::complex<double> >;
 
 }

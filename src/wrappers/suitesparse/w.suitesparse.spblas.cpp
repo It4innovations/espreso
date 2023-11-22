@@ -11,10 +11,6 @@
 
 namespace espreso {
 
-template class SpBLAS<float, Matrix_CSR>;
-template class SpBLAS<double, Matrix_CSR>;
-template class SpBLAS<std::complex<double>, Matrix_CSR>;
-
 struct Matrix_SpBLAS_External_Representation {
 	cholmod_sparse *A;
 	cholmod_dense *X, *Y;
@@ -157,6 +153,10 @@ void SpBLAS<double, Matrix_CSR>::multiply(SpBLAS<double, Matrix_CSR> &A, SpBLAS<
 	_start<esint>(_spblas->common);
 	_multiply<esint>(A._spblas->A, B._spblas->A, _spblas->A, _spblas->common);
 }
+
+template class SpBLAS<float, Matrix_CSR>;
+template class SpBLAS<double, Matrix_CSR>;
+template class SpBLAS<std::complex<double>, Matrix_CSR>;
 
 }
 

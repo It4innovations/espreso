@@ -4,9 +4,6 @@
 
 namespace espreso {
 
-template struct Projector<double>;
-template struct Projector<std::complex<double> >;
-
 template <typename T>
 Projector<T>* Projector<T>::set(FETI<T> &feti, const step::Step &step)
 {
@@ -15,5 +12,8 @@ Projector<T>* Projector<T>::set(FETI<T> &feti, const step::Step &step)
 		return new OrthogonalTFETISymmetric<T>(feti);
 //	}
 }
+
+template struct Projector<double>;
+template struct Projector<std::complex<double> >;
 
 }

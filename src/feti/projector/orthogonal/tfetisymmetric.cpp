@@ -12,9 +12,6 @@
 
 namespace espreso {
 
-template struct OrthogonalTFETISymmetric<double>;
-template struct OrthogonalTFETISymmetric<std::complex<double> >;
-
 template<typename T>
 OrthogonalTFETISymmetric<T>::OrthogonalTFETISymmetric(FETI<T> &feti)
 : Projector<T>(feti)
@@ -478,6 +475,9 @@ void OrthogonalTFETISymmetric<T>::_print(const step::Step &step)
 		math::store(invGGt, utils::filename(utils::debugDirectory(step) + "/feti/projector", "invGGt").c_str());
 	}
 }
+
+template struct OrthogonalTFETISymmetric<double>;
+template struct OrthogonalTFETISymmetric<std::complex<double> >;
 
 }
 

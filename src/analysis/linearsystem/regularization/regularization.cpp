@@ -3,8 +3,6 @@
 
 namespace espreso {
 
-template struct Regularization<double>;
-
 template <typename T>
 void Regularization<T>::set(step::Step &step)
 {
@@ -36,6 +34,8 @@ void Regularization<T>::updateAlgebraic()
 {
 
 }
+
+template struct Regularization<double>;
 
 }
 

@@ -10,9 +10,6 @@
 
 namespace espreso {
 
-template struct Dirichlet<double>;
-template struct Dirichlet<std::complex<double> >;
-
 template <typename T>
 Dirichlet<T>::Dirichlet(FETI<T> &feti)
 : Preconditioner<T>(feti)
@@ -86,5 +83,8 @@ void Dirichlet<T>::_print(const step::Step &step)
 		}
 	}
 }
+
+template struct Dirichlet<double>;
+template struct Dirichlet<std::complex<double> >;
 
 }

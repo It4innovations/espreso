@@ -8,8 +8,6 @@
 
 namespace espreso {
 
-template class DualOperator<double>;
-
 template<typename T>
 DualOperator<T>* DualOperator<T>::set(FETI<T> &feti, const step::Step &step)
 {
@@ -39,5 +37,7 @@ DualOperator<T>* DualOperator<T>::set(FETI<T> &feti, const step::Step &step)
 	dual->set(step);
 	return dual;
 }
+
+template class DualOperator<double>;
 
 }

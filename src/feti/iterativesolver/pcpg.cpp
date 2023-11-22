@@ -10,9 +10,6 @@
 
 namespace espreso {
 
-template class PCPG<double>;
-template class PCPG<std::complex<double> >;
-
 // initialization
 // l_0: L => Gt * inv(GGt) * e
 // r_0: L => d - F * lambda_0
@@ -140,6 +137,9 @@ template <> void PCPG<std::complex<double> >::solve(const step::Step &step, Iter
 {
 
 }
+
+template class PCPG<double>;
+template class PCPG<std::complex<double> >;
 
 }
 

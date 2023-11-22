@@ -6,9 +6,6 @@
 
 namespace espreso {
 
-template struct WeightFunction<double>;
-template struct WeightFunction<std::complex<double> >;
-
 template <typename T>
 WeightFunction<T>::WeightFunction(FETI<T> &feti)
 : Preconditioner<T>(feti)
@@ -47,5 +44,8 @@ void WeightFunction<T>::apply(const Vector_Dual<T> &x, Vector_Dual<T> &y)
 	}
 	applyB(feti, Btx, y);
 }
+
+template struct WeightFunction<double>;
+template struct WeightFunction<std::complex<double> >;
 
 }

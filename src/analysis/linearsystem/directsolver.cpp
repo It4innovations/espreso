@@ -3,9 +3,7 @@
 
 #include "esinfo/meshinfo.h"
 
-using namespace espreso;
-
-template struct DirectLinearSystemSolver<double>;
+namespace espreso {
 
 template <typename T>
 struct __Dirichlet__ {
@@ -94,4 +92,6 @@ void DirectLinearSystemSolver<T>::setDirichlet()
 	}
 }
 
+template struct DirectLinearSystemSolver<double>;
 
+}
