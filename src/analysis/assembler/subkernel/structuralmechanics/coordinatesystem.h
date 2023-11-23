@@ -80,7 +80,7 @@ template <size_t gps, class Physics> struct StructuralMechanicsCoordinateSystemK
 	{
 		for (size_t gp = 0; gp < gps; ++gp) {
 			for (size_t i = 0; i < 9; ++i) {
-				element.elasticity[gps][i] = element.ecf.elasticity[gps][i];
+				element.elasticity[gp][i] = element.ecf.elasticity[gp][i];
 			}
 		}
 	}
@@ -438,7 +438,7 @@ template <size_t gps, class Physics> struct StructuralMechanicsCoordinateSystemK
 		} else {
 			for (size_t gp = 0; gp < gps; ++gp) {
 				for (size_t i = 0; i < 9; ++i) {
-					element.elasticity[gps][i] = element.ecf.elasticity[gps][i];
+					element.elasticity[gp][i] = element.ecf.elasticity[gp][i];
 				}
 			}
 		}
@@ -593,7 +593,7 @@ template <size_t gps, class Physics> struct StructuralMechanicsCoordinateSystemK
 		} else {
 			for (size_t gp = 0; gp < gps; ++gp) {
 				for (size_t i = 0; i < 36; ++i) {
-					element.elasticity[gps][i] = element.ecf.elasticity[gps][i];
+					element.elasticity[gp][i] = element.ecf.elasticity[gp][i];
 				}
 			}
 		}

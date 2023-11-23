@@ -60,7 +60,7 @@ struct PlasticityStorage: Plasticity {
 	bool save;
 };
 
-template <size_t nodes, size_t gps, size_t ndim, enum ElasticityModel model, class Physics> struct PlasticityKernel: PlasticityStorage, Physics {
+template <size_t nodes, size_t gps, size_t ndim, enum ElasticityModel ecfmodel, enum ElasticityModel model, class Physics> struct PlasticityKernel: PlasticityStorage, Physics {
 	PlasticityKernel(Plasticity &base, Assembler::Action action): PlasticityStorage(base, action) {}
 
 	void simd(typename Physics::Element &element)
@@ -69,7 +69,7 @@ template <size_t nodes, size_t gps, size_t ndim, enum ElasticityModel model, cla
 	}
 };
 
-template <size_t nodes, size_t gps, class Physics> struct PlasticityKernel<nodes, gps, 3, ElasticityModel::ISOTROPIC, Physics>: PlasticityStorage, Physics {
+template <size_t nodes, size_t gps, class Physics> struct PlasticityKernel<nodes, gps, 3, ElasticityModel::ISOTROPIC, ElasticityModel::SYMMETRIC, Physics>: PlasticityStorage, Physics {
 	PlasticityKernel(Plasticity &base, Assembler::Action action): PlasticityStorage(base, action), csqr32(std::sqrt(3./2)), crsqr32(1/csqr32), csqrt6(std::sqrt(6.)) {}
 
 	double csqr32, crsqr32, csqrt6;

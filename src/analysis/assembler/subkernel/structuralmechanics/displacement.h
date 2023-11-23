@@ -30,8 +30,10 @@ struct Displacement: SubKernel {
 	}
 };
 
-template <size_t nodes, size_t gps, size_t ndim, class Physics>
-struct DisplacementKernel: Displacement, Physics {
+template <size_t nodes, size_t gps, size_t ndim, class Physics> struct DisplacementKernel;
+
+template <size_t nodes, size_t gps, class Physics>
+struct DisplacementKernel<nodes, gps, 3, Physics>: Displacement, Physics {
 	DisplacementKernel(const Displacement &base): Displacement(base) {}
 
 	// B = dX  0  0    disp = x
@@ -45,9 +47,9 @@ struct DisplacementKernel: Displacement, Physics {
 		for (size_t s = 0; s < SIMD::size; ++s, ++enodes) {
 			if (enodes == end) break;
 			for (size_t n = 0; n < nodes; ++n) {
-				for (size_t d = 0; d < ndim; ++d) {
-					element.displacement[n][d][s] = source[ndim * enodes->at(n) + d];
-				}
+				element.displacement[n][0][s] = source[3 * enodes->at(n) + 0];
+				element.displacement[n][1][s] = source[3 * enodes->at(n) + 1];
+				element.displacement[n][2][s] = source[3 * enodes->at(n) + 2];
 			}
 		}
 		if (smallStrainTensor) {
@@ -75,6 +77,39 @@ struct DisplacementKernel: Displacement, Physics {
 			}
 		}
 	}
+};
+
+template <size_t nodes, size_t gps, class Physics>
+struct DisplacementKernel<nodes, gps, 2, Physics>: Displacement, Physics {
+        DisplacementKernel(const Displacement &base): Displacement(base) {}
+
+        // B = dX  0    disp = x
+        //      0 dY           y
+        //     dY dX
+        void simd(typename Physics::Element &element)
+        {
+                for (size_t s = 0; s < SIMD::size; ++s, ++enodes) {
+                        if (enodes == end) break;
+                        for (size_t n = 0; n < nodes; ++n) {
+				element.displacement[n][0][s] = source[2 * enodes->at(n) + 0];
+				element.displacement[n][1][s] = source[2 * enodes->at(n) + 1];
+                        }
+                }
+                if (smallStrainTensor) {
+                        for (size_t gp = 0; gp < gps; ++gp) {
+                                element.smallStrainTensor[gp][0] = zeros();
+                                element.smallStrainTensor[gp][1] = zeros();
+                                element.smallStrainTensor[gp][2] = zeros();
+                                for (size_t n = 0; n < nodes; ++n) {
+                                        element.smallStrainTensor[gp][0] = element.smallStrainTensor[gp][0] + element.dND[gp][n][0] * element.displacement[n][0];
+                                        element.smallStrainTensor[gp][1] = element.smallStrainTensor[gp][1] + element.dND[gp][n][1] * element.displacement[n][1];
+
+                                        element.smallStrainTensor[gp][2] = element.smallStrainTensor[gp][2] + element.dND[gp][n][1] * element.displacement[n][0];
+                                        element.smallStrainTensor[gp][2] = element.smallStrainTensor[gp][2] + element.dND[gp][n][0] * element.displacement[n][1];
+                                }
+                        }
+                }
+        }
 };
 
 }

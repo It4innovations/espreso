@@ -42,7 +42,7 @@ template <size_t gps, class Physics> struct HeatTransferCoordinateSystemKernel<g
 	void simd(typename Physics::Element &element)
 	{
 		for (size_t gp = 0; gp < gps; ++gp) {
-			element.conductivity[gps][0] = element.ecf.conductivity[gps][0];
+			element.conductivity[gp][0] = element.ecf.conductivity[gp][0];
 		}
 	}
 };
@@ -54,7 +54,7 @@ template <size_t gps, size_t ndim, class Physics> struct HeatTransferCoordinateS
 	{
 		for (size_t gp = 0; gp < gps; ++gp) {
 			for (size_t d = 0; d < ndim; ++d) {
-				element.conductivity[gps][d] = element.ecf.conductivity[gps][0];
+				element.conductivity[gp][d] = element.ecf.conductivity[gp][0];
 			}
 		}
 	}
@@ -67,7 +67,7 @@ template <size_t gps, size_t ndim, class Physics> struct HeatTransferCoordinateS
 	{
 		for (size_t gp = 0; gp < gps; ++gp) {
 			for (size_t d = 0; d < ndim; ++d) {
-				element.conductivity[gps][d] = element.ecf.conductivity[gps][d];
+				element.conductivity[gp][d] = element.ecf.conductivity[gp][d];
 			}
 		}
 	}
@@ -155,7 +155,7 @@ template <size_t gps, class Physics> struct HeatTransferCoordinateSystemKernel<g
 		} else {
 			for (size_t gp = 0; gp < gps; ++gp) {
 				for (size_t i = 0; i < 3; ++i) {
-					element.conductivity[gps][i] = element.ecf.conductivity[gps][i];
+					element.conductivity[gp][i] = element.ecf.conductivity[gp][i];
 				}
 			}
 		}
@@ -212,7 +212,7 @@ template <size_t gps, class Physics> struct HeatTransferCoordinateSystemKernel<g
 		} else {
 			for (size_t gp = 0; gp < gps; ++gp) {
 				for (size_t i = 0; i < 6; ++i) {
-					element.conductivity[gps][i] = element.ecf.conductivity[gps][i];
+					element.conductivity[gp][i] = element.ecf.conductivity[gp][i];
 				}
 			}
 		}
@@ -240,7 +240,7 @@ template <size_t gps, class Physics> struct HeatTransferCoordinateSystemKernel<g
 		} else {
 			for (size_t gp = 0; gp < gps; ++gp) {
 				for (size_t i = 0; i < 4; ++i) {
-					element.conductivity[gps][i] = element.ecf.conductivity[gps][i];
+					element.conductivity[gp][i] = element.ecf.conductivity[gp][i];
 				}
 			}
 		}
@@ -300,7 +300,7 @@ template <size_t gps, class Physics> struct HeatTransferCoordinateSystemKernel<g
 		} else {
 			for (size_t gp = 0; gp < gps; ++gp) {
 				for (size_t i = 0; i < 9; ++i) {
-					element.conductivity[gps][i] = element.ecf.conductivity[gps][i];
+					element.conductivity[gp][i] = element.ecf.conductivity[gp][i];
 				}
 			}
 		}

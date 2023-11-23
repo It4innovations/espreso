@@ -9,7 +9,7 @@ template <size_t gps, size_t ndim, bool direct, class Physics> struct SetConduct
 	static void analyze(HeatTransferSubKernelsList &subkernels)
 	{
 		Evaluator *kxx = subkernels.conductivity.conductivity->values.get(0, 0).evaluator;
-		if (direct) {
+		if constexpr(direct) {
 			subkernels.expressions.push_back(new ExternalGPsExpression<gps, Physics>(
 				kxx, [] (typename Physics::Element &element, size_t &gp, size_t &s, double value) { element.conductivity[gp][0][s] = value; }));
 		} else {
@@ -24,7 +24,7 @@ template <size_t gps, bool direct, class Physics> struct SetConductivity<gps, 2,
 	{
 		Evaluator *kxx = subkernels.conductivity.conductivity->values.get(0, 0).evaluator;
 		Evaluator *kyy = subkernels.conductivity.conductivity->values.get(1, 1).evaluator;
-		if (direct) {
+		if constexpr(direct) {
 			subkernels.expressions.push_back(new ExternalGPsExpression<gps, Physics>(
 				kxx, [] (typename Physics::Element &element, size_t &gp, size_t &s, double value) { element.conductivity[gp][0][s] = value; }));
 			subkernels.expressions.push_back(new ExternalGPsExpression<gps, Physics>(
@@ -44,7 +44,7 @@ template <size_t gps, bool direct, class Physics> struct SetConductivity<gps, 3,
 		Evaluator *kxx = subkernels.conductivity.conductivity->values.get(0, 0).evaluator;
 		Evaluator *kyy = subkernels.conductivity.conductivity->values.get(1, 1).evaluator;
 		Evaluator *kzz = subkernels.conductivity.conductivity->values.get(2, 2).evaluator;
-		if (direct) {
+		if constexpr(direct) {
 			subkernels.expressions.push_back(new ExternalGPsExpression<gps, Physics>(
 				kxx, [] (typename Physics::Element &element, size_t &gp, size_t &s, double value) { element.conductivity[gp][0][s] = value; }));
 			subkernels.expressions.push_back(new ExternalGPsExpression<gps, Physics>(
@@ -68,7 +68,7 @@ template <size_t gps, bool direct, class Physics> struct SetConductivity<gps, 2,
 		Evaluator *kxx = subkernels.conductivity.conductivity->values.get(0, 0).evaluator;
 		Evaluator *kxy = subkernels.conductivity.conductivity->values.get(0, 1).evaluator;
 		Evaluator *kyy = subkernels.conductivity.conductivity->values.get(1, 1).evaluator;
-		if (direct) {
+		if constexpr(direct) {
 			subkernels.expressions.push_back(new ExternalGPsExpression<gps, Physics>(
 				kxx, [] (typename Physics::Element &element, size_t &gp, size_t &s, double value) { element.conductivity[gp][0][s] = value; }));
 			subkernels.expressions.push_back(new ExternalGPsExpression<gps, Physics>(
@@ -95,7 +95,7 @@ template <size_t gps, bool direct, class Physics> struct SetConductivity<gps, 3,
 		Evaluator *kyy = subkernels.conductivity.conductivity->values.get(1, 1).evaluator;
 		Evaluator *kyz = subkernels.conductivity.conductivity->values.get(1, 2).evaluator;
 		Evaluator *kzz = subkernels.conductivity.conductivity->values.get(2, 2).evaluator;
-		if (direct) {
+		if constexpr(direct) {
 			subkernels.expressions.push_back(new ExternalGPsExpression<gps, Physics>(
 				kxx, [] (typename Physics::Element &element, size_t &gp, size_t &s, double value) { element.conductivity[gp][0][s] = value; }));
 			subkernels.expressions.push_back(new ExternalGPsExpression<gps, Physics>(
@@ -132,7 +132,7 @@ template <size_t gps, bool direct, class Physics> struct SetConductivity<gps, 2,
 		Evaluator *kxy = subkernels.conductivity.conductivity->values.get(0, 1).evaluator;
 		Evaluator *kyx = subkernels.conductivity.conductivity->values.get(1, 0).evaluator;
 		Evaluator *kyy = subkernels.conductivity.conductivity->values.get(1, 1).evaluator;
-		if (direct) {
+		if constexpr(direct) {
 			subkernels.expressions.push_back(new ExternalGPsExpression<gps, Physics>(
 				kxx, [] (typename Physics::Element &element, size_t &gp, size_t &s, double value) { element.conductivity[gp][0][s] = value; }));
 			subkernels.expressions.push_back(new ExternalGPsExpression<gps, Physics>(
@@ -166,7 +166,7 @@ template <size_t gps, bool direct, class Physics> struct SetConductivity<gps, 3,
 		Evaluator *kzx = subkernels.conductivity.conductivity->values.get(2, 0).evaluator;
 		Evaluator *kzy = subkernels.conductivity.conductivity->values.get(2, 1).evaluator;
 		Evaluator *kzz = subkernels.conductivity.conductivity->values.get(2, 2).evaluator;
-		if (direct) {
+		if constexpr(direct) {
 			subkernels.expressions.push_back(new ExternalGPsExpression<gps, Physics>(
 				kxx, [] (typename Physics::Element &element, size_t &gp, size_t &s, double value) { element.conductivity[gp][0][s] = value; }));
 			subkernels.expressions.push_back(new ExternalGPsExpression<gps, Physics>(
