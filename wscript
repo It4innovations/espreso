@@ -154,7 +154,7 @@ def build(ctx):
     ctx.build_espreso(ctx.path.ant_glob('src/analysis/**/*.cpp'), "analysis")
 #     ctx.build_espreso(ctx.path.ant_glob('src/physics/**/*.cpp'), "physics")
     ctx.build_espreso(ctx.path.ant_glob('src/morphing/**/*.cpp'), "devel")
-    ctx.build_espreso(ctx.path.ant_glob('src/math/**/*.cpp'), "math", [ "MKL", "PARDISO", "SUITESPARSE", "CBLAS", "OPENBLAS", "SSLBLAS" ])
+    ctx.build_espreso(ctx.path.ant_glob('src/math/**/*.cpp'), "math", [ "MKL", "PARDISO", "SUITESPARSE", "CBLAS", "OPENBLAS", "SSLBLAS", "ROCM" ])
     ctx.build_espreso(ctx.path.ant_glob('src/autoopt/**/*.cpp'), "autoopt")
     ctx.build_espreso(ctx.path.ant_glob('src/wrappers/simd/**/*.cpp'), "simd")
     ctx.build_espreso(ctx.path.ant_glob('src/wrappers/cblas/**/*.cpp'), "wcblas", [ "CBLAS" ])
@@ -176,7 +176,7 @@ def build(ctx):
 
     ctx.env = ctx.all_envs["target"]
     if ctx.env.CXX:
-        ctx.build_espreso(ctx.path.ant_glob('src/wrappers/rocm/**/*.cpp'), "wcrocm")
+        ctx.build_espreso(ctx.path.ant_glob('src/wrappers/rocm/**/*.cpp'), "wrocm", [ "ROCM" ])
     ctx.env = ctx.all_envs["host"]
 #         if ctx.env.NVCC:
 #             ctx.build_espreso(ctx.path.ant_glob('src/feti/specific/acc/**/*.cu'), "cudakernels", [ "CUDA" ])

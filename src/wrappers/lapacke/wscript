@@ -3,4 +3,4 @@ def options(opt):
     opt.math.add_option("--lapacke", action="store", type="string", metavar="LAPACKE_ROOT", default="", help="Path to LAPACKE root directory.")
 
 def configure(ctx):
-    ctx.link_cxx(name="lapacke", header_name=["lapacke.h"], libs=["lapacke"])
+    ctx.link_cxx(name="lapacke", header_name=["lapacke.h"], libs=["sci_cray"])

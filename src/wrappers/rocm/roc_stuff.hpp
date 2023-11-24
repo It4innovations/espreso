@@ -1,5 +1,5 @@
 
-
+#pragma once
 
 #ifdef MY_ROC
 
@@ -15,6 +15,8 @@
 #include "my_common.hpp"
 #include "matrices.hpp"
 #include "cbmba.hpp"
+
+namespace {
 
 
 #ifndef CHECK
@@ -61,6 +63,8 @@ rocsparse_datatype rocsparse_data_type()
 {
     if constexpr(std::is_same_v<T, float>)  return rocsparse_datatype_f32_r;
     if constexpr(std::is_same_v<T, double>) return rocsparse_datatype_f64_r;
+}
+
 }
 
 #include "hip_stuff_common.hpp"

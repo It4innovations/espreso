@@ -1,4 +1,6 @@
 
+#pragma once
+
 #include <cstdio>
 #include <algorithm>
 #include <numeric>
@@ -8,6 +10,8 @@
 #include <stdexcept>
 
 #include "my_timer.hpp"
+
+namespace espreso {
 
 template<typename T, typename I, template<typename> typename A = my_stdallocator_wrapper>
 class MatrixCSR
@@ -1510,4 +1514,6 @@ static void my_sc_compute_boundaries(std::vector<I> * sc_boundary_idxs_, std::ve
 
     // printf("SC boundaries:"); for(size_t i = 0; i < sc_boundary_idxs.size(); i++) printf(" %lld", (long long)sc_boundary_idxs[i]); printf("\n");
     // printf("SC sizes:"); for(size_t i = 0; i < sc_sizes.size(); i++) printf(" %lld", (long long)sc_sizes[i]); printf("\n");
+}
+
 }

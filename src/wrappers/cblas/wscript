@@ -3,4 +3,4 @@ def options(opt):
     opt.math.add_option("--cblas", action="store", type="string", metavar="CBLAS_ROOT", default="", help="Path to CBLAS root directory.")
 
 def configure(ctx):
-    ctx.link_cxx(name="cblas", header_name=["cblas.h"], libs=["blas"])
+    ctx.link_cxx(name="cblas", header_name=["cblas.h"], libs=["sci_cray"])

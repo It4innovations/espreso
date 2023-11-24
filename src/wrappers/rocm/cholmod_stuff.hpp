@@ -8,6 +8,8 @@ extern "C" {
 
 #include "matrices.hpp"
 
+namespace espreso {
+
 template<typename I>
 void my_cholmod_start(cholmod_common * common)
 {
@@ -91,7 +93,7 @@ void my_cholmod_start_and_init(cholmod_common ** cm_common, char ordering = 'M')
     common->nthreads_max = 1;
     common->nmethods = 1;
     common->method[0].ordering = (ordering == 'A' ? CHOLMOD_AMD : (ordering == 'M' ? CHOLMOD_METIS : CHOLMOD_NATURAL));
-    common->dtype = (std::is_same_v<T,double>) ? (CHOLMOD_DOUBLE) : (CHOLMOD_SINGLE);
+//    common->dtype = (std::is_same_v<T,double>) ? (CHOLMOD_DOUBLE) : (CHOLMOD_SINGLE);
     common->itype = (std::is_same_v<I,int64_t>) ? (CHOLMOD_LONG) : (CHOLMOD_INT);
     common->supernodal = CHOLMOD_SUPERNODAL;
 }
@@ -252,4 +254,6 @@ void print_matrix(const cholmod_dense & M, const char * name)
         printf("\n");
     }
     fflush(stdout);
+}
+
 }

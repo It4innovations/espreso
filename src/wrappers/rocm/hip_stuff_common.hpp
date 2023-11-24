@@ -1,4 +1,6 @@
 
+#pragma once
+
 #if defined(MY_HIP) || defined(MY_ROC)
 
 #include <cstdio>
@@ -17,7 +19,7 @@
 
 
 
-
+namespace espreso {
 
 template<typename T>
 class my_hipd_allocator
@@ -382,6 +384,6 @@ void hip_malloc_max_memory(char ** memory, size_t * memory_size_B)
     throw std::runtime_error("could not allocate any memory");
 }
 
-
+}
 
 #endif

@@ -7,8 +7,9 @@
 #include <algorithm>
 
 #ifdef HAVE_ROCM
+#define MY_ROC
 
-//#include "my_common.hpp"
+#include "my_common.hpp"
 #include "matrices.hpp"
 #include "roc_stuff.hpp"
 #include "hip_stuff_common.hpp"
@@ -639,67 +640,105 @@ void my_dual_operator_cluster<T,I>::destroy()
    void destroy();
  */
 
+template <typename T>
+struct Acc_FETI_Dual_Operator {
+	my_dual_operator_cluster<T, int> dual;
+
+	Acc_FETI_Dual_Operator(): dual("___PPMS_MMS_") {}
+};
+
+template <>
+AccFETIDualOperator<double, Matrix_CSR>::AccFETIDualOperator()
+: _acc(nullptr)
+{
+	_acc = new Acc_FETI_Dual_Operator<double>();
+}
+
+
+template <>
+AccFETIDualOperator<double, Matrix_CSR>::~AccFETIDualOperator()
+{
+	_acc->dual.destroy();
+}
+
+template <>
+void AccFETIDualOperator<double, Matrix_CSR>::set(const std::vector<Matrix_CSR<double> > &K, const std::vector<Matrix_CSR<double> > &B)
+{
+	std::vector<MatrixCSR<double,int> > _K, _B;
+	_K.resize(K.size());
+	for (size_t di = 0; di < K.size(); ++di) {
+		printf("%lu %d %d %d\n", di, K[di].nrows, K[di].ncols, K[di].nnz);
+		_K[di].resize(K[di].nrows, K[di].ncols, K[di].nnz, false);
+		_K[di].rowptrs = K[di].rows;
+		_K[di].colidxs = K[di].cols;
+		_K[di].vals = K[di].vals;
+
+		printf("%lu %d %d %d\n", di, B[di].nrows, B[di].ncols, B[di].nnz);
+		_B[di].resize(B[di].nrows, B[di].ncols, B[di].nnz, false);
+		_B[di].rowptrs = B[di].rows;
+		_B[di].colidxs = B[di].cols;
+		_B[di].vals = B[di].vals;
+	}
+	_acc->dual.set(_K, _B);
+}
+
+template <>
+void AccFETIDualOperator<double, Matrix_CSR>::update(const std::vector<Matrix_CSR<double> > &K)
+{
+	std::vector<MatrixCSR<double,int> > _K;
+	_K.resize(K.size());
+	for (size_t di = 0; di < K.size(); ++di) {
+		_K[di].resize(K[di].nrows, K[di].ncols, K[di].nnz, false);
+		_K[di].rowptrs = K[di].rows;
+		_K[di].colidxs = K[di].cols;
+		_K[di].vals = K[di].vals;
+	}
+
+	_acc->dual.update(_K);
+}
+
+template <>
+void AccFETIDualOperator<double, Matrix_CSR>::apply(const Vector_Dual<double> &x, Vector_Dual<double> &y, const std::vector<std::vector<int> > & D2C)
+{
+	MatrixDense<double, int> _x, _y;
+	_x.resize(x.size, 1, -1, false);
+	_x.vals = x.vals;
+	_y.resize(y.size, 1, -1, false);
+	_y.vals = y.vals;
+	_acc->dual.apply(_x, _y, D2C);
+}
+
 template <typename T, template <typename> class Matrix>
 AccFETIDualOperator<T, Matrix>::AccFETIDualOperator()
 : _acc(nullptr)
 {
-	_acc = new my_dual_operator_cluster<double, int>("___PPMS_MMS_");
 }
 
 
 template <typename T, template <typename> class Matrix>
 AccFETIDualOperator<T, Matrix>::~AccFETIDualOperator()
 {
-	_acc->destroy();
 }
 
 template <typename T, template <typename> class Matrix>
-void AccFETIDualOperator<T, Matrix>::set(const std::vector<Matrix_CSR<T> > &K, const std::vector<Matrix_CSR<T> > &B)
+void AccFETIDualOperator<T, Matrix>::set(const std::vector<Matrix<T> > &K, const std::vector<Matrix<T> > &B)
 {
-	std::vector<MatrixCSR<T,int> > _K, _B;
-	_K.resize(K.size());
-	for (size_t di = 0; di < K.size(); ++di) {
-		_K[di].resize(K[di].nrows, K[di].ncols, K[di].nnz, false);
-		_K[di].rowptrs = K[di].rows;
-		_K[di].colidxs = K[di].cols;
-		_K[di].vals = K[di].vals;
-
-		_B[di].resize(B[di].nrows, B[di].ncols, B[di].nnz, false);
-		_B[di].rowptrs = B[di].rows;
-		_B[di].colidxs = B[di].cols;
-		_B[di].vals = B[di].vals;
-	}
-	_acc->set(_K, _B);
 }
 
 template <typename T, template <typename> class Matrix>
-void AccFETIDualOperator<T, Matrix>::update(const std::vector<Matrix_CSR<T> > &K)
+void AccFETIDualOperator<T, Matrix>::update(const std::vector<Matrix<T> > &K)
 {
-	std::vector<MatrixCSR<T,int> > _K;
-	_K.resize(K.size());
-	for (size_t di = 0; di < K.size(); ++di) {
-		_K[di].resize(K[di].nrows, K[di].ncols, K[di].nnz, false);
-		_K[di].rowptrs = K[di].rows;
-		_K[di].colidxs = K[di].cols;
-		_K[di].vals = K[di].vals;
-	}
-
-	_acc->update(_K);
 }
 
 template <typename T, template <typename> class Matrix>
 void AccFETIDualOperator<T, Matrix>::apply(const Vector_Dual<T> &x, Vector_Dual<T> &y, const std::vector<std::vector<int> > & D2C)
 {
-	MatrixDense<T, int> _x, _y;
-	_x.resize(x.size, 1, -1, false);
-	_x.vals = x.vals;
-	_y.resize(y.size, 1, -1, false);
-	_y.vals = y.vals;
-	_acc->apply(_x, _y, D2C);
-}
-
 }
 
 template struct AccFETIDualOperator<double, Matrix_CSR>;
+template struct AccFETIDualOperator<std::complex<double>, Matrix_CSR>;
+
+}
+
 
 #endif
