@@ -1,5 +1,5 @@
 
-import sys, os, logging, subprocess, types
+import sys, os, logging, subprocess, types, copy
 
 libs_blas=[ "cblas", "openblas", "sslblas", "mkl" ]
 libs_spblas=[ "mkl", "suitesparse" ]
@@ -7,6 +7,7 @@ libs_lapack=[ "mkl", "lapacke", "ssllapack" ]
 libs_solvers=[ "mkl", "pardiso", "suitesparse" ]
 
 def configure(ctx):
+    ctx.setenv("host")
     ctx.env.with_gui = ctx.options.with_gui
     ctx.env.static = ctx.options.static
     ctx.test_dict = types.MethodType(test_dict, ctx)
@@ -88,6 +89,7 @@ def configure(ctx):
     settings(ctx)
 
 def build(ctx):
+    ctx.env = ctx.all_envs["host"]
     ctx.env.append_unique("DEFINES_INFO", [ '__ESCOMMIT__=\"{0}\"'.format(get_commit()) ])
     ctx.env.append_unique("DEFINES_INFO", [ '__ESCXX__=\"{0}\"'.format(ctx.env.CXX[0]) ])
     ctx.env.append_unique("DEFINES_INFO", [ '__ESBUILDPATH__=\"{0}\"'.format(ctx.bldnode.abspath()) ])
@@ -171,6 +173,11 @@ def build(ctx):
     ctx.build_espreso(ctx.path.ant_glob('src/wrappers/suitesparse/**/*.cpp'), "wsuitesparse", [ "SUITESPARSE" ])
 #     ctx.build_espreso(ctx.path.ant_glob('src/wrappers/bem/**/*.cpp'), "wbem", [ "BEM" ])
     ctx.build_espreso(ctx.path.ant_glob('src/wrappers/nvtx/**/*.cpp'), "wnvtx", [ "NVTX" ])
+
+    ctx.env = ctx.all_envs["target"]
+    if ctx.env.CXX:
+        ctx.build_espreso(ctx.path.ant_glob('src/wrappers/rocm/**/*.cpp'), "wcrocm")
+    ctx.env = ctx.all_envs["host"]
 #         if ctx.env.NVCC:
 #             ctx.build_espreso(ctx.path.ant_glob('src/feti/specific/acc/**/*.cu'), "cudakernels", [ "CUDA" ])
 #         ctx.build_espreso(feti, "feti", [ "SOLVER", "PARDISO", "MKL" ])
@@ -338,6 +345,9 @@ def print_available(ctx):
 
 """ Recurse to third party libraries wrappers"""
 def recurse(ctx):
+    """ Accelerators """
+    ctx.recurse("src/wrappers/rocm")
+
     """ MPI library """
     ctx.recurse("src/wrappers/mpi")
 
@@ -413,6 +423,11 @@ def show(ctx):
     settings(ctx)
 
 def env(ctx):
+    print(" -- HOST -- ")
+    ctx.env = ctx.all_envs["host"]
+    print(ctx.env)
+    ctx.env = ctx.all_envs["target"]
+    print(" -- TARGET -- ")
     print(ctx.env)
 
 def info(ctx):

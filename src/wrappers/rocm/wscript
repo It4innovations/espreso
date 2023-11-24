@@ -1,0 +1,10 @@
+
+def options(opt):
+    pass
+
+def configure(ctx):
+    ctx.setenv("target")
+    ctx.env.CXX = ctx.find_program("hipcc", mandatory=False)
+    if ctx.env.CXX:
+        ctx.load(ctx.options.cxx)
+    ctx.setenv("host")
