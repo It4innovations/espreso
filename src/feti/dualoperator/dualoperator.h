@@ -34,7 +34,6 @@ public:
 	virtual void toPrimal(const Vector_Dual<T> &x, Vector_FETI<Vector_Dense, T> &y) =0;
 
 	FETI<T> &feti;
-
 	Vector_Dual<T> d;
 };
 

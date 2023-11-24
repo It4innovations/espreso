@@ -2,7 +2,8 @@
 #ifndef SRC_FETI_DUALOPERATOR_TOTALFETI_EXPLICIT_H_
 #define SRC_FETI_DUALOPERATOR_TOTALFETI_EXPLICIT_H_
 
-#include "totalfeti.implicit.h"
+#include "dualoperator.h"
+#include "math/wrappers/math.solver.h"
 
 namespace espreso {
 
@@ -19,7 +20,7 @@ namespace espreso {
  */
 
 template <typename T>
-class TotalFETIExplicit: public TotalFETIImplicit<T> {
+class TotalFETIExplicit: public DualOperator<T> {
 public:
 	TotalFETIExplicit(FETI<T> &feti);
 	~TotalFETIExplicit();
@@ -34,12 +35,14 @@ public:
 	void toPrimal(const Vector_Dual<T> &x, Vector_FETI<Vector_Dense, T> &y);
 
 protected:
-	void printMatrices();
+	void print(const step::Step &step);
 
 	using DualOperator<T>::feti;
 	using DualOperator<T>::d;
-	using TotalFETIImplicit<T>::KSolver;
-	using TotalFETIImplicit<T>::sparsity;
+
+	std::vector<Matrix_CSR<T> > Kplus;
+	std::vector<Vector_Dense<T> > Btx, KplusBtx;
+	std::vector<DirectSolver<T, Matrix_CSR> > KSolver;
 
 	std::vector<Matrix_Dense<T> > F;
 	std::vector<Vector_Dense<T> > in, out;

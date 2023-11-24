@@ -4,6 +4,8 @@
 
 #include "esinfo/envinfo.h"
 #include "math/primitives/vector_dense.h"
+#include "math/feti/lmap.h"
+#include "math/wrappers/math.blas.h"
 #include "wrappers/mpi/communication.h"
 
 #include <vector>

@@ -3,6 +3,7 @@
 #define SRC_FETI_DUALOPERATOR_TOTALFETI_EXPLICIT_ACC_H_
 
 #include "totalfeti.explicit.h"
+#include "math/wrappers/math.acc.feti.dual.h"
 
 namespace espreso {
 
@@ -19,7 +20,7 @@ namespace espreso {
  */
 
 template <typename T>
-class TotalFETIExplicitAcc: public TotalFETIExplicit<T> {
+class TotalFETIExplicitAcc: public DualOperator<T> {
 public:
 	TotalFETIExplicitAcc(FETI<T> &feti);
 	~TotalFETIExplicitAcc();
@@ -34,13 +35,14 @@ public:
 	void toPrimal(const Vector_Dual<T> &x, Vector_FETI<Vector_Dense, T> &y);
 
 protected:
+	void print(const step::Step &step);
+
 	using DualOperator<T>::feti;
 	using DualOperator<T>::d;
-	using TotalFETIImplicit<T>::Kplus;
-	using TotalFETIImplicit<T>::KSolver;
 
-	std::vector<Matrix_CSC<T> > L, U;
-	std::vector<Vector_Dense<int> > p;
+	std::vector<Matrix_CSR<T> > Kplus;
+
+	AccFETIDualOperator<T, Matrix_CSR> acc;
 };
 
 }

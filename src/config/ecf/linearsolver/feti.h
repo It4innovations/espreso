@@ -23,6 +23,12 @@ struct FETIConfiguration: public ECFDescription {
 		ACCELERATED_TFETI
 	};
 
+	enum class DUAL_OPERATOR {
+		IMPLICIT = 0,
+		EXPLICIT,
+		EXPLICIT_GPU,
+	};
+
 	enum class ITERATIVE_SOLVER {
 		PCG = 0,
 		pipePCG,
@@ -134,6 +140,7 @@ struct FETIConfiguration: public ECFDescription {
 	size_t num_directions;
 
 	METHOD method;
+	DUAL_OPERATOR dual_operator;
 	ITERATIVE_SOLVER iterative_solver;
 	PRECONDITIONER preconditioner;
 	REGULARIZATION regularization;

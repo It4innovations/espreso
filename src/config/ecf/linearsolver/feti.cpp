@@ -15,6 +15,14 @@ espreso::FETIConfiguration::FETIConfiguration()
 			.addoption(ECFOption().setname("EXPLICIT_TFETI").setdescription("Fx = (B * K+ * B') * x"))
 			.addoption(ECFOption().setname("ACCELERATED_TFETI").setdescription("Fx = (B * K+ * B') * x on accelerator")));
 
+	dual_operator = DUAL_OPERATOR::IMPLICIT;
+	REGISTER(dual_operator, ECFMetaData()
+			.setdescription({ "Type" })
+			.setdatatype({ ECFDataType::OPTION })
+			.addoption(ECFOption().setname("IMPLICIT").setdescription("Implicit F with sparse direct solver."))
+			.addoption(ECFOption().setname("EXPLICIT").setdescription("Explicit F with BLAS."))
+			.addoption(ECFOption().setname("EXPLICIT_GPU").setdescription("Explicit F with BLAS on GPU.")));
+
 	preconditioner = PRECONDITIONER::DIRICHLET;
 	REGISTER(preconditioner, ECFMetaData()
 			.setdescription({ "Preconditioner" })

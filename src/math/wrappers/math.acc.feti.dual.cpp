@@ -22,6 +22,24 @@ AccFETIDualOperator<T, Matrix>::~AccFETIDualOperator()
 
 }
 
+template <typename T, template <typename> class Matrix>
+void AccFETIDualOperator<T, Matrix>::set(const std::vector<Matrix_CSR<T> > &K, const std::vector<Matrix_CSR<T> > &B)
+{
+
+}
+
+template <typename T, template <typename> class Matrix>
+void AccFETIDualOperator<T, Matrix>::update(const std::vector<Matrix_CSR<T> > &K)
+{
+
+}
+
+template <typename T, template <typename> class Matrix>
+void AccFETIDualOperator<T, Matrix>::apply(const Vector_Dual<T> &x, Vector_Dual<T> &y)
+{
+
+}
+
 #endif
 
 template struct AccFETIDualOperator<double, Matrix_CSR>;
