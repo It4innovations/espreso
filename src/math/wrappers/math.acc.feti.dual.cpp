@@ -35,7 +35,7 @@ void AccFETIDualOperator<T, Matrix>::update(const std::vector<Matrix_CSR<T> > &K
 }
 
 template <typename T, template <typename> class Matrix>
-void AccFETIDualOperator<T, Matrix>::apply(const Vector_Dual<T> &x, Vector_Dual<T> &y)
+void AccFETIDualOperator<T, Matrix>::apply(const Vector_Dual<T> &x, Vector_Dual<T> &y, const std::vector<std::vector<int> > & D2C)
 {
 
 }

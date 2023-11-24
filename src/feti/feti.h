@@ -36,7 +36,7 @@ struct FETI {
 	struct EqualityConstraints {
 		struct Domain {
 			esint nhalo;
-			std::vector<esint> D2C;
+			std::vector<int> D2C;
 
 			Matrix_CSR<T> B1;
 			Vector_Dense<T> duplication;
@@ -44,7 +44,7 @@ struct FETI {
 
 		esint global, nhalo, paired, local, nn;
 		std::vector<LMAP> lmap;
-		std::vector<esint> ordered;
+		std::vector<int> ordered;
 		std::vector<Domain> domain;
 		Vector_Dense<T> c;
 	};

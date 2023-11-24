@@ -24,7 +24,7 @@ struct AccFETIDualOperator {
 
 	void set(const std::vector<Matrix_CSR<T> > &K, const std::vector<Matrix_CSR<T> > &B);
 	void update(const std::vector<Matrix_CSR<T> > &K);
-	void apply(const Vector_Dual<T> &x, Vector_Dual<T> &y);
+	void apply(const Vector_Dual<T> &x, Vector_Dual<T> &y, const std::vector<std::vector<int> > & D2C);
 
 private:
 	Acc_FETI_Dual_Operator *_acc;

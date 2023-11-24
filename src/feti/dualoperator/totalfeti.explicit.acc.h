@@ -41,6 +41,8 @@ protected:
 	using DualOperator<T>::d;
 
 	std::vector<Matrix_CSR<T> > Kplus;
+	std::vector<Matrix_CSR<T> > B1;
+	std::vector<std::vector<int> > D2C;
 
 	AccFETIDualOperator<T, Matrix_CSR> acc;
 };

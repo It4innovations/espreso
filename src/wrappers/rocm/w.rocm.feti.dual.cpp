@@ -632,36 +632,70 @@ void my_dual_operator_cluster<T,I>::destroy()
     stage = 0;
 }
 
+/*
+ * void set(const std::vector<MatrixCSR<T,I>> & Kregs, const std::vector<MatrixCSR<T,I>> & Bs);
+   void update(const std::vector<MatrixCSR<T,I>> & Kregs);
+   void apply(MatrixDense<T,I> & y_cluster, const MatrixDense<T,I> & x_cluster, const std::vector<std::vector<I>> & domain_to_cluster_maps);
+   void destroy();
+ */
+
 template <typename T, template <typename> class Matrix>
 AccFETIDualOperator<T, Matrix>::AccFETIDualOperator()
 : _acc(nullptr)
 {
-
+	_acc = new my_dual_operator_cluster<double, int>("___PPMS_MMS_");
 }
 
 
 template <typename T, template <typename> class Matrix>
 AccFETIDualOperator<T, Matrix>::~AccFETIDualOperator()
 {
-
+	_acc->destroy();
 }
 
 template <typename T, template <typename> class Matrix>
 void AccFETIDualOperator<T, Matrix>::set(const std::vector<Matrix_CSR<T> > &K, const std::vector<Matrix_CSR<T> > &B)
 {
+	std::vector<MatrixCSR<T,int> > _K, _B;
+	_K.resize(K.size());
+	for (size_t di = 0; di < K.size(); ++di) {
+		_K[di].resize(K[di].nrows, K[di].ncols, K[di].nnz, false);
+		_K[di].rowptrs = K[di].rows;
+		_K[di].colidxs = K[di].cols;
+		_K[di].vals = K[di].vals;
 
+		_B[di].resize(B[di].nrows, B[di].ncols, B[di].nnz, false);
+		_B[di].rowptrs = B[di].rows;
+		_B[di].colidxs = B[di].cols;
+		_B[di].vals = B[di].vals;
+	}
+	_acc->set(_K, _B);
 }
 
 template <typename T, template <typename> class Matrix>
 void AccFETIDualOperator<T, Matrix>::update(const std::vector<Matrix_CSR<T> > &K)
 {
+	std::vector<MatrixCSR<T,int> > _K;
+	_K.resize(K.size());
+	for (size_t di = 0; di < K.size(); ++di) {
+		_K[di].resize(K[di].nrows, K[di].ncols, K[di].nnz, false);
+		_K[di].rowptrs = K[di].rows;
+		_K[di].colidxs = K[di].cols;
+		_K[di].vals = K[di].vals;
+	}
 
+	_acc->update(_K);
 }
 
 template <typename T, template <typename> class Matrix>
-void AccFETIDualOperator<T, Matrix>::apply(const Vector_Dual<T> &x, Vector_Dual<T> &y)
+void AccFETIDualOperator<T, Matrix>::apply(const Vector_Dual<T> &x, Vector_Dual<T> &y, const std::vector<std::vector<int> > & D2C)
 {
-
+	MatrixDense<T, int> _x, _y;
+	_x.resize(x.size, 1, -1, false);
+	_x.vals = x.vals;
+	_y.resize(y.size, 1, -1, false);
+	_y.vals = y.vals;
+	_acc->apply(_x, _y, D2C);
 }
 
 }

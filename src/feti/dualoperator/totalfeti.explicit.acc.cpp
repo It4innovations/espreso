@@ -46,9 +46,11 @@ void TotalFETIExplicitAcc<T>::info()
 template <typename T>
 void TotalFETIExplicitAcc<T>::set(const step::Step &step)
 {
-//	const typename FETI<T>::EqualityConstraints &L = feti.equalityConstraints;
+	const typename FETI<T>::EqualityConstraints &L = feti.equalityConstraints;
 
 	Kplus.resize(feti.K.domains.size());
+	B1.resize(feti.K.domains.size());
+	D2C.resize(feti.K.domains.size());
 	d.resize();
 
 	#pragma omp parallel for
@@ -56,10 +58,12 @@ void TotalFETIExplicitAcc<T>::set(const step::Step &step)
 		Kplus[di].type = feti.K.domains[di].type;
 		Kplus[di].shape = feti.K.domains[di].shape;
 		math::combine(Kplus[di], feti.K.domains[di], feti.regularization.RegMat.domains[di]);
+		B1[di].shallowCopy(L.domain[di].B1);
+		D2C[di] = L.domain[di].D2C;
 	}
 	eslog::checkpointln("FETI: SET TOTAL-FETI OPERATOR");
 
-//	acc.set(Kplus, L.B1);
+	acc.set(Kplus, B1);
 	eslog::checkpointln("FETI: TFETI SET ACC");
 }
 
@@ -89,7 +93,7 @@ void TotalFETIExplicitAcc<T>::update(const step::Step &step)
 template <typename T>
 void TotalFETIExplicitAcc<T>::apply(const Vector_Dual<T> &x, Vector_Dual<T> &y)
 {
-	acc.apply(x, y);
+	acc.apply(x, y, D2C);
 }
 
 template <typename T>
