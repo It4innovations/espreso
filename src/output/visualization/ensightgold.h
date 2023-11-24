@@ -10,8 +10,8 @@
 
 namespace espreso {
 
-class ElementsRegionStore;
-class ElementsInterval;
+struct ElementsRegionStore;
+struct ElementsInterval;
 
 class EnSightGold: public Visualization {
 

@@ -1,5 +1,5 @@
 
-#include <math/wrappers/math.acc.feti.dual.h>
+#include "math.acc.feti.dual.h"
 #include "esinfo/eslog.h"
 
 #include <complex>
@@ -24,7 +24,7 @@ AccFETIDualOperator<T, Matrix>::~AccFETIDualOperator()
 
 #endif
 
-template class AccFETIDualOperator<double, Matrix_CSR>;
-template class AccFETIDualOperator<std::complex<double>, Matrix_CSR>;
+template struct AccFETIDualOperator<double, Matrix_CSR>;
+template struct AccFETIDualOperator<std::complex<double>, Matrix_CSR>;
 
 }

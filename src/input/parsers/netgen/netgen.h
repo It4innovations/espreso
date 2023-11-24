@@ -6,7 +6,7 @@
 
 namespace espreso {
 
-class InputConfiguration;
+struct InputConfiguration;
 
 class NetgenNeutralLoader: public MeshBuilder {
 public:

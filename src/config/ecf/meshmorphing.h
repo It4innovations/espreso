@@ -8,7 +8,7 @@
 
 namespace espreso {
 
-class ECF;
+struct ECF;
 
 enum class MORPHING_TYPE {
 	NONE = 0,

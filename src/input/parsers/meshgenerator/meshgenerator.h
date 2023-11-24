@@ -8,7 +8,7 @@
 
 namespace espreso {
 
-class InputGeneratorConfiguration;
+struct InputGeneratorConfiguration;
 class Mesh;
 
 class MeshGenerator: public MeshBuilder {

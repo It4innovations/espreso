@@ -9,9 +9,9 @@
 
 namespace espreso {
 
-class RegionStore;
-class ElementsRegionStore;
-class BoundaryRegionStore;
+struct RegionStore;
+struct ElementsRegionStore;
+struct BoundaryRegionStore;
 
 class VTKLegacy: public Visualization {
 public:

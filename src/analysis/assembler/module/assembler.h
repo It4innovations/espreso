@@ -14,7 +14,7 @@ namespace espreso {
 struct ECFExpression;
 struct ECFExpressionVector;
 struct ECFExpressionOptionalVector;
-class ConvectionConfiguration;
+struct ConvectionConfiguration;
 struct ImpedanceConfiguration;
 struct PointSourceConfiguration;
 struct PhysicsConfiguration;

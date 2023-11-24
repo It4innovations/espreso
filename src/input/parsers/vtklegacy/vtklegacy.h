@@ -6,7 +6,7 @@
 
 namespace espreso {
 
-class InputConfiguration;
+struct InputConfiguration;
 
 class VTKLegacyLoader: public MeshBuilder {
 public:

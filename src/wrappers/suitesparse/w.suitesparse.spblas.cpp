@@ -154,9 +154,9 @@ void SpBLAS<double, Matrix_CSR>::multiply(SpBLAS<double, Matrix_CSR> &A, SpBLAS<
 	_multiply<esint>(A._spblas->A, B._spblas->A, _spblas->A, _spblas->common);
 }
 
-template class SpBLAS<float, Matrix_CSR>;
-template class SpBLAS<double, Matrix_CSR>;
-template class SpBLAS<std::complex<double>, Matrix_CSR>;
+template struct SpBLAS<float, Matrix_CSR>;
+template struct SpBLAS<double, Matrix_CSR>;
+template struct SpBLAS<std::complex<double>, Matrix_CSR>;
 
 }
 

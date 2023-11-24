@@ -21,10 +21,10 @@ namespace espreso
 {
 
 namespace Ui {
-class ECFObjectWidget;
+struct ECFObjectWidget;
 }
 
-class ECFObjectWidget : public QWidget,
+struct ECFObjectWidget : public QWidget,
         public IValidatableObject, public ISavableObject
 {
     Q_OBJECT

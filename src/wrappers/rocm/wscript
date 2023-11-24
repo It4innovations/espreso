@@ -7,4 +7,8 @@ def configure(ctx):
     ctx.env.CXX = ctx.find_program("hipcc", mandatory=False)
     if ctx.env.CXX:
         ctx.load(ctx.options.cxx)
+        ctx.env.append_unique("INCLUDES", ctx.all_envs["host"].INCLUDES)
+        ctx.env.append_unique("DEFINES" , ctx.all_envs["host"].DEFINES)
+        ctx.env.append_unique("CXXFLAGS" , ctx.all_envs["host"].CXXFLAGS)
+        ctx.env.append_unique("LINKFLAGS" , ctx.all_envs["host"].LINKFLAGS)
     ctx.setenv("host")

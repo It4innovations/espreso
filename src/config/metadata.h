@@ -11,7 +11,7 @@ namespace espreso {
 struct TensorConfiguration;
 struct ECFAbstractCondition;
 
-enum class ECFDataType {
+enum struct ECFDataType {
 	BOOL,
 	STRING,
 	RANGE,
@@ -77,7 +77,7 @@ struct Unit {
 	Unit& add(UnitLibrary unit, int exponent);
 };
 
-enum class ECFGUIType {
+enum struct ECFGUIType {
 	GROUP_BLOCK,
 	GROUP_COLLAPSED,
 	STATIC,

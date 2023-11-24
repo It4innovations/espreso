@@ -649,6 +649,6 @@ AccFETIDualOperator<T, Matrix>::~AccFETIDualOperator()
 
 }
 
-template class AccFETIDualOperator<double, Matrix_CSR>;
+template struct AccFETIDualOperator<double, Matrix_CSR>;
 
 #endif

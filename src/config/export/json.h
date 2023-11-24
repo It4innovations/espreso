@@ -5,7 +5,7 @@
 
 namespace espreso
 {
-class ECFJSONExport
+struct ECFJSONExport
 {
 public:
 	ECFJSONExport(ECFObject* obj,

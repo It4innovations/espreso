@@ -6,7 +6,7 @@
 
 namespace espreso {
 
-class ECFParameter;
+struct ECFParameter;
 
 struct GeneralValue {
 	virtual bool equal(const void *data) const { return true; }
@@ -50,7 +50,7 @@ inline std::string GeneralValueHolder<bool>::tostring() const
 }
 
 
-class ECFAbstractCondition
+struct ECFAbstractCondition
 {
 
 public:
@@ -69,7 +69,7 @@ public:
 	virtual ~ECFAbstractCondition() {}
 };
 
-class ECFFalseCondition : public ECFAbstractCondition
+struct ECFFalseCondition : public ECFAbstractCondition
 {
 
 public:
@@ -86,7 +86,7 @@ public:
 	virtual ECFAbstractCondition* copy() const { return new ECFFalseCondition(); }
 };
 
-class ECFCondition : public ECFAbstractCondition
+struct ECFCondition : public ECFAbstractCondition
 {
 protected:
 	const void *parameter;
@@ -144,7 +144,7 @@ public:
 	virtual ~ECFCondition() { delete value; }
 };
 
-class ECFConditionPair : public ECFAbstractCondition
+struct ECFConditionPair : public ECFAbstractCondition
 {
 protected:
 	ECFAbstractCondition* left;

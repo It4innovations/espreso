@@ -16,7 +16,7 @@ struct EnvironmentConfiguration;
 struct OutputConfiguration;
 struct VerboseArg;
 
-class ECFReader {
+struct ECFReader {
 
 public:
 	static void read(

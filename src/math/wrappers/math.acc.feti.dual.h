@@ -7,7 +7,6 @@
 #include "math/primitives/matrix_dense.h"
 #include "math/primitives/matrix_csr.h"
 #include "math/primitives/matrix_csc.h"
-#include "math.spblas.h"
 
 #include <cstddef>
 

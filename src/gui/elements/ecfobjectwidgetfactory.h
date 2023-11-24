@@ -8,7 +8,7 @@
 namespace espreso
 {
 
-class ECFObjectWidgetFactory
+struct ECFObjectWidgetFactory
 {
 public:
     virtual ~ECFObjectWidgetFactory() {}

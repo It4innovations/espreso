@@ -11,7 +11,7 @@ namespace espreso
 {
 
 class EvolutionAlgorithm;
-class AutoOptimizationConfiguration;
+struct AutoOptimizationConfiguration;
 
 class ParameterManager
 {

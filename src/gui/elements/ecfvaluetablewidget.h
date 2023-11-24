@@ -16,10 +16,10 @@ namespace espreso
 {
 
 namespace Ui {
-class ECFValueTableWidget;
+struct ECFValueTableWidget;
 }
 
-class ECFValueTableWidget : public QWidget,
+struct ECFValueTableWidget : public QWidget,
         public IValidatableObject,
         public ISavableObject
 {

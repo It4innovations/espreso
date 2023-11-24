@@ -10,7 +10,7 @@
 namespace espreso
 {
 
-class ECFParameterTreeDelegate: public QItemDelegate
+struct ECFParameterTreeDelegate: public QItemDelegate
 {
     Q_OBJECT
 

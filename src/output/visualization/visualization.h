@@ -7,7 +7,7 @@
 
 namespace espreso {
 
-class NamedData;
+struct NamedData;
 
 class Visualization: public OutputWriter {
 

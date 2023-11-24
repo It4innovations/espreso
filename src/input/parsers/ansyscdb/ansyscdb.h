@@ -10,7 +10,7 @@
 
 namespace espreso {
 
-class InputConfiguration;
+struct InputConfiguration;
 
 struct NBlock;
 struct EBlock;

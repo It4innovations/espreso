@@ -11,7 +11,7 @@
 
 namespace espreso {
 
-class InputConfiguration;
+struct InputConfiguration;
 class Mesh;
 struct OpenFOAMSet;
 

@@ -14,8 +14,8 @@
 namespace espreso {
 
 template <typename T> class IterativeSolver;
-template <typename T> class Preconditioner;
-template <typename T> class Projector;
+template <typename T> struct Preconditioner;
+template <typename T> struct Projector;
 template <typename T> class DualOperator;
 
 template<typename T>

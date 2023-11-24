@@ -12,7 +12,7 @@
 namespace espreso
 {
 
-class ECFObjectTreeWidget : public QWidget
+struct ECFObjectTreeWidget : public QWidget
 {
     Q_OBJECT
 

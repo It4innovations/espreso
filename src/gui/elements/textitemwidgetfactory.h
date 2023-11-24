@@ -16,7 +16,7 @@
 namespace espreso
 {
 
-class ECFParameter;
+struct ECFParameter;
 
 class TextItemWidgetFactory
 {

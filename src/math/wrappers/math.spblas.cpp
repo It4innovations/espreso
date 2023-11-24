@@ -330,7 +330,7 @@ void SpBLAS<T, Matrix>::submatrix(const Matrix_CSR<T> &input, Matrix_CSR<T> &out
 	}
 }
 
-template class SpBLAS<double, Matrix_CSR>;
-template class SpBLAS<std::complex<double>, Matrix_CSR>;
+template struct SpBLAS<double, Matrix_CSR>;
+template struct SpBLAS<std::complex<double>, Matrix_CSR>;
 
 }

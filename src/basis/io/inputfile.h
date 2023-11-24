@@ -14,7 +14,7 @@ struct MPISubset;
 struct MPIGroup;
 
 struct InputFile {
-	friend class InputFilePack;
+	friend struct InputFilePack;
 
 	InputFile();
 

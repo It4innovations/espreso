@@ -10,9 +10,9 @@
 
 namespace espreso {
 
-template class SpBLAS<float, Matrix_CSR>;
-template class SpBLAS<double, Matrix_CSR>;
-template class SpBLAS<std::complex<double>, Matrix_CSR>;
+template struct SpBLAS<float, Matrix_CSR>;
+template struct SpBLAS<double, Matrix_CSR>;
+template struct SpBLAS<std::complex<double>, Matrix_CSR>;
 
 struct Matrix_SpBLAS_External_Representation {
 	sparse_matrix_t inspector;

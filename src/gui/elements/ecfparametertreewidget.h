@@ -18,10 +18,10 @@
 namespace espreso {
 
 namespace Ui {
-class ECFParameterTreeWidget;
+struct ECFParameterTreeWidget;
 }
 
-class ECFParameterTreeWidget : public QWidget,
+struct ECFParameterTreeWidget : public QWidget,
         public IValidatableObject,
         public ISavableObject
 {

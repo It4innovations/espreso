@@ -12,7 +12,7 @@
 namespace espreso {
 
 struct ProcessesReduction;
-class SpaceFillingCurve;
+struct SpaceFillingCurve;
 
 class MPIOperations {
 	friend class MPITools;
@@ -50,7 +50,7 @@ struct MPIGroup {
 	void split(int color, int key);
 };
 
-class MPISubset {
+struct MPISubset {
 	friend class MPITools;
 
 public:

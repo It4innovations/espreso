@@ -11,8 +11,8 @@
 
 namespace espreso {
 
-template class DirectSolver<double, Matrix_CSR>;
-template class DirectSolver<std::complex<double>, Matrix_CSR>;
+template struct DirectSolver<double, Matrix_CSR>;
+template struct DirectSolver<std::complex<double>, Matrix_CSR>;
 
 struct Matrix_CSR_Solver: public PARDISOParameters { };
 
