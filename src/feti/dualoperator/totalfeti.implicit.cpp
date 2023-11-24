@@ -5,6 +5,7 @@
 #include "basis/utilities/sysutils.h"
 #include "esinfo/eslog.hpp"
 #include "esinfo/ecfinfo.h"
+#include "wrappers/mpi/communication.h"
 
 namespace espreso {
 

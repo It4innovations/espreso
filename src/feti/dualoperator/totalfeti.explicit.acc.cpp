@@ -46,7 +46,7 @@ void TotalFETIExplicitAcc<T>::info()
 template <typename T>
 void TotalFETIExplicitAcc<T>::set(const step::Step &step)
 {
-	const typename FETI<T>::EqualityConstraints &L = feti.equalityConstraints;
+//	const typename FETI<T>::EqualityConstraints &L = feti.equalityConstraints;
 
 	Kplus.resize(feti.K.domains.size());
 	d.resize();
