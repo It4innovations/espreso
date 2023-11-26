@@ -9,8 +9,8 @@ def configure(ctx):
         ctx.load(ctx.options.cxx)
         ctx.env.CXX = hipcc
         ctx.env.LINK_CXX = hipcc
+        ctx.link_cxx(name="ROCm", libs=["rocblas", "rocsparse"])
         ctx.all_envs["host"].append_unique("DEFINES_ROCM", "HAVE_ROCM")
-        ctx.all_envs["target"].append_unique("DEFINES_ROCM", "HAVE_ROCM")
         ctx.env.append_unique("INCLUDES", ctx.all_envs["host"].INCLUDES)
         ctx.env.append_unique("DEFINES" , ctx.all_envs["host"].DEFINES)
         ctx.env.append_unique("CXXFLAGS" , ctx.all_envs["host"].CXXFLAGS)

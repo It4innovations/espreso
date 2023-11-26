@@ -8,6 +8,7 @@
 
 #ifdef HAVE_ROCM
 #define MY_ROC
+#define MY_OLD_HIP
 
 #include "my_common.hpp"
 #include "matrices.hpp"
