@@ -666,6 +666,7 @@ void AccFETIDualOperator<double, Matrix_CSR>::set(const std::vector<Matrix_CSR<d
 {
 	std::vector<MatrixCSR<double,int> > _K, _B;
 	_K.resize(K.size());
+	_B.resize(B.size());
 	for (size_t di = 0; di < K.size(); ++di) {
 		printf("%lu %d %d %d\n", di, K[di].nrows, K[di].ncols, K[di].nnz);
 		_K[di].resize(K[di].nrows, K[di].ncols, K[di].nnz, false);
