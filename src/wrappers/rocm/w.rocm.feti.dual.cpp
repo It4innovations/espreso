@@ -40,7 +40,7 @@ public:
     my_dual_operator_cluster & operator=(my_dual_operator_cluster && other) = delete;
     ~my_dual_operator_cluster();
 public:
-    void set(const std::vector<MatrixCSR<T,I>> & Kregs, const std::vector<MatrixCSR<T,I>> & Bs);
+    void set(const std::vector<MatrixCSR<T,I>> & Kregs, const std::vector<MatrixCSR<T,I>> & Bs, int rank);
     void update(const std::vector<MatrixCSR<T,I>> & Kregs);
     void apply(MatrixDense<T,I> & y_cluster, const MatrixDense<T,I> & x_cluster, const std::vector<std::vector<I>> & domain_to_cluster_maps);
     void destroy();
@@ -109,7 +109,7 @@ my_dual_operator_cluster<T,I>::~my_dual_operator_cluster()
 }
 
 template<typename T, typename I>
-void my_dual_operator_cluster<T,I>::set(const std::vector<MatrixCSR<T,I>> & Kregs, const std::vector<MatrixCSR<T,I>> & Bs)
+void my_dual_operator_cluster<T,I>::set(const std::vector<MatrixCSR<T,I>> & Kregs, const std::vector<MatrixCSR<T,I>> & Bs, int rank)
 {
     if(stage != 0) throw std::runtime_error("invalid stage when calling set");
 
@@ -137,12 +137,12 @@ void my_dual_operator_cluster<T,I>::set(const std::vector<MatrixCSR<T,I>> & Kreg
 
     // set the appropriate gpu closest to the used cores
     {
-        int mpi_rank = 0; // todo mpi
+        // int mpi_rank = 0; // todo mpi
         // todo check if mpi_size == n_gpus or mpi_size == 1
         // btw, always using 1 gpu per mpi process
         #pragma omp parallel
         {
-            CHECK(hipSetDevice(rank_gpu_map[mpi_rank]));
+            CHECK(hipSetDevice(rank_gpu_map[rank]));
         }
     }
 
@@ -649,8 +649,8 @@ struct Acc_FETI_Dual_Operator {
 };
 
 template <>
-AccFETIDualOperator<double, Matrix_CSR>::AccFETIDualOperator()
-: _acc(nullptr)
+AccFETIDualOperator<double, Matrix_CSR>::AccFETIDualOperator(int rank)
+: rank(rank), _acc(nullptr)
 {
 	_acc = new Acc_FETI_Dual_Operator<double>();
 }
@@ -681,7 +681,7 @@ void AccFETIDualOperator<double, Matrix_CSR>::set(const std::vector<Matrix_CSR<d
 		_B[di].colidxs = B[di].cols;
 		_B[di].vals = B[di].vals;
 	}
-	_acc->dual.set(_K, _B);
+	_acc->dual.set(_K, _B, rank);
 }
 
 template <>
@@ -711,8 +711,8 @@ void AccFETIDualOperator<double, Matrix_CSR>::apply(const Vector_Dual<double> &x
 }
 
 template <typename T, template <typename> class Matrix>
-AccFETIDualOperator<T, Matrix>::AccFETIDualOperator()
-: _acc(nullptr)
+AccFETIDualOperator<T, Matrix>::AccFETIDualOperator(int rank)
+: rank(rank), _acc(nullptr)
 {
 }
 

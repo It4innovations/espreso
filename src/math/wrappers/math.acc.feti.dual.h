@@ -20,7 +20,7 @@ struct Acc_FETI_Dual_Operator;
 template <typename T, template <typename> class Matrix>
 struct AccFETIDualOperator {
 
-	AccFETIDualOperator();
+	AccFETIDualOperator(int rank);
 	~AccFETIDualOperator();
 
 	void set(const std::vector<Matrix<T> > &K, const std::vector<Matrix<T> > &B);
@@ -28,6 +28,7 @@ struct AccFETIDualOperator {
 	void apply(const Vector_Dual<T> &x, Vector_Dual<T> &y, const std::vector<std::vector<int> > & D2C);
 
 private:
+	int rank;
 	Acc_FETI_Dual_Operator<T> *_acc;
 };
 

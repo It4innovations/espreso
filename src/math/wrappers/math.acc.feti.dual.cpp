@@ -9,8 +9,8 @@ namespace espreso {
 #ifndef HAVE_ROCM
 
 template <typename T, template <typename> class Matrix>
-AccFETIDualOperator<T, Matrix>::AccFETIDualOperator()
-: _acc(nullptr)
+AccFETIDualOperator<T, Matrix>::AccFETIDualOperator(int rank)
+: rank(rank), _acc(nullptr)
 {
 	eslog::error("calling of empty AccFETIDualOperator wrapper.\n");
 }

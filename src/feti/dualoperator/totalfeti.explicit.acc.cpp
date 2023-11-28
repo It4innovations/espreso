@@ -5,12 +5,13 @@
 #include "basis/utilities/sysutils.h"
 #include "esinfo/eslog.hpp"
 #include "esinfo/ecfinfo.h"
+#include "esinfo/mpiinfo.h"
 
 namespace espreso {
 
 template <typename T>
 TotalFETIExplicitAcc<T>::TotalFETIExplicitAcc(FETI<T> &feti)
-: DualOperator<T>(feti)
+: DualOperator<T>(feti), acc(info::mpi::rank)
 {
 
 }
