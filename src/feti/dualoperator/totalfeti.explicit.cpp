@@ -116,24 +116,59 @@ void TotalFETIExplicit<T>::update(const step::Step &step)
 	eslog::checkpointln("FETI: COMPUTE DUAL RHS [d]");
 
 	const typename FETI<T>::EqualityConstraints &L = feti.equalityConstraints;
-	
-	#pragma omp parallel for
-	for (size_t d = 0; d < feti.K.domains.size(); ++d) {
-		Vector_Dense<T> KplusBt, Bt;
-		KplusBt.resize(L.domain[d].B1.ncols);
-		Bt.resize(L.domain[d].B1.ncols);
 
-		for (esint r = 0; r < L.domain[d].B1.nrows; ++r) {
-			math::set(Bt, T{0});
-			for (esint c = L.domain[d].B1.rows[r]; c < L.domain[d].B1.rows[r + 1]; ++c) {
-				Bt.vals[L.domain[d].B1.cols[c]] = L.domain[d].B1.vals[c];
+	bool perLambda = false;
+
+	if (perLambda) {
+		#pragma omp parallel for
+		for (size_t d = 0; d < feti.K.domains.size(); ++d) {
+			Vector_Dense<T> KplusBt, Bt;
+			KplusBt.resize(L.domain[d].B1.ncols);
+			Bt.resize(L.domain[d].B1.ncols);
+
+			for (esint r = 0; r < L.domain[d].B1.nrows; ++r) {
+				math::set(Bt, T{0});
+				for (esint c = L.domain[d].B1.rows[r]; c < L.domain[d].B1.rows[r + 1]; ++c) {
+					Bt.vals[L.domain[d].B1.cols[c]] = L.domain[d].B1.vals[c];
+				}
+				KSolver[d].solve(Bt, KplusBt);
+
+				for (esint fr = 0; fr < L.domain[d].B1.nrows; ++fr) {
+					F[d].vals[fr * L.domain[d].B1.nrows + r] = 0;
+					for (esint fc = L.domain[d].B1.rows[fr]; fc < L.domain[d].B1.rows[fr + 1]; ++fc) {
+						F[d].vals[fr * L.domain[d].B1.nrows + r] += L.domain[d].B1.vals[fc] * KplusBt.vals[L.domain[d].B1.cols[fc]];
+					}
+				}
+			}
+		}
+	} else {
+		#pragma omp parallel for
+		for (size_t d = 0; d < feti.K.domains.size(); ++d) {
+			Matrix_Dense<T> KplusBt, Bt;
+			KplusBt.resize(L.domain[d].B1.nrows, L.domain[d].B1.ncols);
+			Bt.resize(L.domain[d].B1.nrows, L.domain[d].B1.ncols);
+
+			for (esint r = 0; r < L.domain[d].B1.nrows; ++r) {
+				esint cc = 0;
+				for (esint c = L.domain[d].B1.rows[r]; c < L.domain[d].B1.rows[r + 1]; ++c, ++cc) {
+					while (cc < L.domain[d].B1.cols[c]) {
+						Bt.vals[r * Bt.ncols + cc] = 0;
+						++cc;
+					}
+					Bt.vals[r * Bt.ncols + cc] = L.domain[d].B1.vals[c];
+				}
+				while (cc < Bt.ncols) {
+					Bt.vals[r * Bt.ncols + cc] = 0;
+					++cc;
+				}
 			}
 			KSolver[d].solve(Bt, KplusBt);
-
-			for (esint fr = 0; fr < L.domain[d].B1.nrows; ++fr) {
-				F[d].vals[fr * L.domain[d].B1.nrows + r] = 0;
-				for (esint fc = L.domain[d].B1.rows[fr]; fc < L.domain[d].B1.rows[fr + 1]; ++fc) {
-					F[d].vals[fr * L.domain[d].B1.nrows + r] += L.domain[d].B1.vals[fc] * KplusBt.vals[L.domain[d].B1.cols[fc]];
+			for (esint r = 0; r < L.domain[d].B1.nrows; ++r) {
+				for (esint lr = 0; lr < L.domain[d].B1.nrows; ++lr) {
+					F[d].vals[lr * L.domain[d].B1.nrows + r] = 0;
+					for (esint lc = L.domain[d].B1.rows[lr]; lc < L.domain[d].B1.rows[lr + 1]; ++lc) {
+						F[d].vals[lr * F[d].ncols + r] += L.domain[d].B1.vals[lc] * KplusBt.vals[r * KplusBt.ncols + L.domain[d].B1.cols[lc]];
+					}
 				}
 			}
 		}
