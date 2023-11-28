@@ -1,0 +1,7 @@
+import os
+
+def options(opt):
+    opt.math.add_option("--blas_libraries", action="store", type="string", default=os.getenv("BLAS_LIBRARIES") or "cblas", help="List of BLAS libraries.")
+
+def configure(ctx):
+    ctx.check_cxx(mandatory=False, msg="Checking for 'cblas'", okmsg=ctx.options.blas_libraries, define_name="CBLAS", header_name="cblas.h", lib=ctx.options.blas_libraries, uselib_store="CBLAS")

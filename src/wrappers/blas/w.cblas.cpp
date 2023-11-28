@@ -4,8 +4,8 @@
 
 #include <complex>
 
-#ifdef HAVE_SSLBLAS
-#ifdef USE_BLAS_SSLBLAS
+#ifdef HAVE_CBLAS
+#ifdef USE_BLAS_CBLAS
 #include "cblas.h"
 
 namespace espreso {
@@ -90,14 +90,14 @@ void apply(Vector_Dense<double> &y, const double &alpha, const Matrix_Dense<doub
 	rows.evaluate(a.nrows); cols.evaluate(a.ncols);
 	if (a.shape == Matrix_Shape::FULL) {
 		double *vals = a.vals + rows.start * a.ncols + cols.start;
-		cblas_dgemv(CBLAS_LAYOUT::CblasRowMajor, CBLAS_TRANSPOSE::CblasNoTrans, rows.end - rows.start, cols.end - cols.start, alpha, vals, a.ncols, x.vals, 1, beta, y.vals, 1);
+		cblas_dgemv(CblasRowMajor, CblasNoTrans, rows.end - rows.start, cols.end - cols.start, alpha, vals, a.ncols, x.vals, 1, beta, y.vals, 1);
 	} else {
 		if (rows.start != cols.start || rows.end != cols.end) {
 			eslog::error("cannot apply non-square slice to a packed matrix.\n");
 		}
 		double *vals = a.vals + rows.start * a.ncols + cols.start - (rows.start) * (rows.end - rows.start + 1) / 2;
-		CBLAS_UPLO uplo = a.shape == Matrix_Shape::UPPER ? CBLAS_UPLO::CblasUpper : CBLAS_UPLO::CblasLower;
-		cblas_dspmv(CBLAS_LAYOUT::CblasRowMajor, uplo, rows.end - rows.start, alpha, vals, x.vals, 1, beta, y.vals, 1);
+		CBLAS_UPLO uplo = a.shape == Matrix_Shape::UPPER ? CblasUpper : CblasLower;
+		cblas_dspmv(CblasRowMajor, uplo, rows.end - rows.start, alpha, vals, x.vals, 1, beta, y.vals, 1);
 	}
 }
 
@@ -111,7 +111,7 @@ void apply(Vector_Dense<std::complex<double> > &y, const std::complex<double> &a
 	rows.evaluate(a.nrows); cols.evaluate(a.ncols);
 	if (a.shape == Matrix_Shape::FULL) {
 		std::complex<double> *vals = a.vals + rows.start * a.ncols + cols.start;
-		cblas_zgemv(CBLAS_LAYOUT::CblasRowMajor, CBLAS_TRANSPOSE::CblasNoTrans, a.nrows, a.ncols, &alpha, vals, a.ncols, x.vals, 1, &beta, y.vals, 1);
+		cblas_zgemv(CblasRowMajor, CblasNoTrans, a.nrows, a.ncols, &alpha, vals, a.ncols, x.vals, 1, &beta, y.vals, 1);
 	} else {
 		eslog::error("not implemented BLAS routine.\n");
 	}
@@ -127,14 +127,13 @@ void applyT(Vector_Dense<double> &y, const double &alpha, const Matrix_Dense<dou
 	rows.evaluate(a.nrows); cols.evaluate(a.ncols);
 	if (a.shape == Matrix_Shape::FULL) {
 		double *vals = a.vals + rows.start * a.ncols + cols.start;
-		cblas_dgemv(CBLAS_LAYOUT::CblasRowMajor, CBLAS_TRANSPOSE::CblasTrans, rows.end - rows.start, cols.end - cols.start, alpha, vals, a.ncols, x.vals, 1, beta, y.vals, 1);
+		cblas_dgemv(CblasRowMajor, CblasTrans, rows.end - rows.start, cols.end - cols.start, alpha, vals, a.ncols, x.vals, 1, beta, y.vals, 1);
 	} else {
 		if (rows.start != cols.start || rows.end != cols.end) {
 			eslog::error("cannot apply non-square slice to a packed matrix.\n");
 		}
 		double *vals = a.vals + rows.start * a.ncols + cols.start - (rows.start) * (rows.end - rows.start + 1) / 2;
-		CBLAS_UPLO uplo = a.shape == Matrix_Shape::UPPER ? CBLAS_UPLO::CblasUpper : CBLAS_UPLO::CblasLower;
-		cblas_dspmv(CBLAS_LAYOUT::CblasRowMajor, uplo, rows.end - rows.start, alpha, vals, x.vals, 1, beta, y.vals, 1);
+		cblas_dspmv(CblasRowMajor, a.shape == Matrix_Shape::UPPER ? CblasUpper : CblasLower, rows.end - rows.start, alpha, vals, x.vals, 1, beta, y.vals, 1);
 	}
 }
 
@@ -148,7 +147,7 @@ void applyT(Vector_Dense<std::complex<double> > &y, const std::complex<double> &
 	rows.evaluate(a.nrows); cols.evaluate(a.ncols);
 	if (a.shape == Matrix_Shape::FULL) {
 		std::complex<double> *vals = a.vals + rows.start * a.ncols + cols.start;
-		cblas_zgemv(CBLAS_LAYOUT::CblasRowMajor, CBLAS_TRANSPOSE::CblasTrans, a.nrows, a.ncols, &alpha, vals, a.ncols, x.vals, 1, &beta, y.vals, 1);
+		cblas_zgemv(CblasRowMajor, CblasTrans, a.nrows, a.ncols, &alpha, vals, a.ncols, x.vals, 1, &beta, y.vals, 1);
 	} else {
 		eslog::error("not implemented BLAS routine.\n");
 	}

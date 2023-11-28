@@ -1,9 +1,0 @@
-
-def options(opt):
-    pass
-
-def configure(ctx):
-    if ctx.options.flavor == "fujitsu":
-        ctx.link_cxx(name="sslblas", header_name=["cblas.h"])
-    else:
-        ctx.link_cxx(name="sslblas", header_name=["cblas.h"], libs=["fjlapacksve", "fj90f", "fj90i", "fj90f", "fj90rt", "fjsrcinfo", "elf", "m", "pthread"])

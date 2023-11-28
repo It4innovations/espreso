@@ -1,9 +1,9 @@
 
 import sys, os, logging, subprocess, types, copy
 
-libs_blas=[ "cblas", "openblas", "sslblas", "mkl" ]
+libs_blas=[ "mkl", "cblas" ]
 libs_spblas=[ "mkl", "suitesparse" ]
-libs_lapack=[ "mkl", "lapacke", "ssllapack" ]
+libs_lapack=[ "mkl", "lapacke", ]
 libs_solvers=[ "mkl", "pardiso", "suitesparse" ]
 
 def configure(ctx):
@@ -328,7 +328,7 @@ def settings(ctx):
 
 def print_available(ctx):
     def _print(msg, libs):
-        libs = [lib for lib in libs if "HAVE_" + lib.upper() in ctx.env["DEFINES_" + lib.upper()]]
+        libs = [lib for lib in libs if ctx.env["HAVE_" + lib.upper()]]
         ctx.start_msg(msg)
         ctx.end_msg("[ " + ", ".join(libs) + " ]", color="BLUE")
         return len(libs)
@@ -348,9 +348,6 @@ def recurse(ctx):
     """ Accelerators """
     ctx.recurse("src/wrappers/rocm")
 
-    """ MPI library """
-    ctx.recurse("src/wrappers/mpi")
-
     """ Graph partition tools """
     ctx.recurse("src/wrappers/metis")
     ctx.recurse("src/wrappers/parmetis")
@@ -359,11 +356,8 @@ def recurse(ctx):
     ctx.recurse("src/wrappers/kahip")
 
     """ Math libraries"""
-    ctx.recurse("src/wrappers/cblas")
-    ctx.recurse("src/wrappers/openblas")
-    ctx.recurse("src/wrappers/sslblas")
-    ctx.recurse("src/wrappers/lapacke")
-    ctx.recurse("src/wrappers/ssllapack")
+    ctx.recurse("src/wrappers/blas")
+    ctx.recurse("src/wrappers/lapack")
     ctx.recurse("src/wrappers/pardiso")
     ctx.recurse("src/wrappers/mkl")
     ctx.recurse("src/wrappers/suitesparse")
@@ -420,6 +414,7 @@ class GetInfo(BuildContext):
 def show(ctx):
     ctx.logger = logging.getLogger('show')
     ctx.logger.handlers = Logs.log_handler()
+    ctx.env = ctx.all_envs["host"]
     settings(ctx)
 
 def env(ctx):
@@ -429,18 +424,6 @@ def env(ctx):
     ctx.env = ctx.all_envs["target"]
     print(" -- TARGET -- ")
     print(ctx.env)
-
-def info(ctx):
-    parameters = [
-        ("commit", get_commit()),
-        ("int_width", ctx.env.intwidth),
-        ("mode", ctx.env.mode),
-        ("BLAS", ctx.env.use_blas),
-        ("SpBLAS", ctx.env.use_spblas),
-        ("LAPACK", ctx.env.use_lapack),
-        ("solver", ctx.env.use_solver)
-        ]
-    print("_".join(map(lambda setting: "{}-{}".format(setting[0], setting[1]), parameters)))
 
 def test_dict(self, name):
     test = dict()
