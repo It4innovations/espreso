@@ -23,13 +23,13 @@ AccFETIDualOperator<T, Matrix>::~AccFETIDualOperator()
 }
 
 template <typename T, template <typename> class Matrix>
-void AccFETIDualOperator<T, Matrix>::set(const std::vector<Matrix_CSR<T> > &K, const std::vector<Matrix_CSR<T> > &B)
+void AccFETIDualOperator<T, Matrix>::set(const std::vector<Matrix<T> > &K, const std::vector<Matrix<T> > &B)
 {
 
 }
 
 template <typename T, template <typename> class Matrix>
-void AccFETIDualOperator<T, Matrix>::update(const std::vector<Matrix_CSR<T> > &K)
+void AccFETIDualOperator<T, Matrix>::update(const std::vector<Matrix<T> > &K)
 {
 
 }
