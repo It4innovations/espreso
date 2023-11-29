@@ -4,8 +4,8 @@
 
 #include <complex>
 
-#ifdef HAVE_CBLAS
-#ifdef USE_BLAS_CBLAS
+#ifndef MKL
+#ifdef CBLAS
 #include "cblas.h"
 
 namespace espreso {

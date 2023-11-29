@@ -4,150 +4,101 @@
 
 #include <complex>
 
-#ifndef HAVE_MKL
-#ifndef HAVE_PARDISO
-#ifndef HAVE_SUITESPARSE
+#ifndef MKL
+#ifndef PARDISO
+#ifndef SUITESPARSE
 
 namespace espreso {
-namespace math {
 
-const char* sparseSolver()
+template <typename T, template <typename> class Matrix>
+const char* DirectSolver<T, Matrix>::name()
 {
 	return "NONE";
 }
 
-template <>
-void initSolver(Matrix_CSR<double> &A)
+template <typename T, template <typename> class Matrix>
+bool DirectSolver<T, Matrix>::provideFactors()
 {
-
+        return false;
 }
 
-template <>
-void initSolver(Matrix_CSR<std::complex<double> > &A)
+template <typename T, template <typename> class Matrix>
+bool DirectSolver<T, Matrix>::provideSC()
 {
-
+        return false;
 }
 
-template <>
-void symbolicFactorization(const Matrix_CSR<double> &A, esint fixedSuffix)
-{
-
-}
-
-template <>
-void symbolicFactorization(const Matrix_CSR<std::complex<double> > &A, esint fixedSuffix)
-{
-
-}
-
-template <>
-void numericalFactorization(const Matrix_CSR<double> &A)
-{
-
-}
-
-template <>
-void numericalFactorization(const Matrix_CSR<std::complex<double> > &A)
-{
-
-}
-
-template <>
-void solve(const Matrix_CSR<double> &A, Vector_Dense<double> &b, Vector_Dense<double> &x, VectorSparsity sparsity)
-{
-
-}
-
-template <>
-void solve(const Matrix_CSR<double> &A, Matrix_Dense<double> &b, Matrix_Dense<double> &x, VectorSparsity sparsity)
-{
-
-}
-
-template <>
-void solve(const Matrix_CSR<std::complex<double> > &A, Vector_Dense<std::complex<double> > &b, Vector_Dense<std::complex<double> > &x, VectorSparsity sparsity)
+template <typename T, template <typename> class Matrix>
+DirectSolver<T, Matrix>::DirectSolver()
+: matrix{}, rows{}, nnzA{}, nnzL{}, memoryL{}, _solver{nullptr}
 {
 	eslog::error("calling of empty sparse solver wrapper.\n");
 }
 
-template <>
-void solve(const Matrix_CSR<std::complex<double> > &A, Matrix_Dense<std::complex<double> > &b, Matrix_Dense<std::complex<double> > &x, VectorSparsity sparsity)
+template <typename T, template <typename> class Matrix>
+DirectSolver<T, Matrix>::DirectSolver(const Matrix<T> &a)
+: matrix{}, rows{}, nnzA{}, nnzL{}, memoryL{}, _solver{nullptr}
 {
 	eslog::error("calling of empty sparse solver wrapper.\n");
 }
 
-template <>
-void freeSolver(Matrix_CSR<double> &A)
+template <typename T, template <typename> class Matrix>
+DirectSolver<T, Matrix>::~DirectSolver()
 {
 
 }
 
-template <>
-void freeSolver(Matrix_CSR<std::complex<double> > &A)
+template <typename T, template <typename> class Matrix>
+void DirectSolver<T, Matrix>::commit(const Matrix<T> &a)
 {
 
 }
 
-template <>
-void freeFactor(Matrix_CSC<double> &m)
+template <typename T, template <typename> class Matrix>
+void DirectSolver<T, Matrix>::commit(SpBLAS<T, Matrix> &spblas)
 {
 
 }
 
-template <>
-void freeFactor(Matrix_CSC<std::complex<double> > &m)
+template <typename T, template <typename> class Matrix>
+void DirectSolver<T, Matrix>::symbolicFactorization(esint fixedSuffix)
 {
 
 }
 
-template <>
-SolverInfo getSolverInfo(const Matrix_CSR<double> &m)
-{
-	return SolverInfo{};
-}
-
-template <>
-SolverInfo getSolverInfo(const Matrix_CSR<std::complex<double> > &m)
-{
-	return SolverInfo{};
-}
-
-bool provideFactors()
-{
-	return false;
-}
-
-bool provideSC()
-{
-	return false;
-}
-
-template <>
-void computeSC(const Matrix_CSR<double> &m, Matrix_Dense<double> &sc)
+template <typename T, template <typename> class Matrix>
+void DirectSolver<T, Matrix>::numericalFactorization()
 {
 
 }
 
-template <>
-void computeSC(const Matrix_CSR<std::complex<double> > &m, Matrix_Dense<std::complex<double> > &sc)
+template <typename T, template <typename> class Matrix>
+void DirectSolver<T, Matrix>::solve(Vector_Dense<T> &rhs, Vector_Dense<T> &solution, int sparsity)
 {
 
 }
 
-template <>
-void getFactors(const Matrix_CSR<double> &m, Matrix_CSC<double> &L, Matrix_CSC<double> &U, Vector_Dense<int> &p)
+template <typename T, template <typename> class Matrix>
+void DirectSolver<T, Matrix>::solve(Matrix_Dense<T> &rhs, Matrix_Dense<T> &solution, int sparsity)
+{
+
+}
+
+template <typename T, template <typename> class Matrix>
+void DirectSolver<T, Matrix>::getSC(Matrix_Dense<T> &sc)
+{
+
+}
+
+template <typename T, template <typename> class Matrix>
+void DirectSolver<T, Matrix>::getFactors(Matrix_CSC<T> &L, Matrix_CSC<T> &U, Vector_Dense<int> &p)
 {
 	eslog::error("calling of empty sparse solver wrapper.\n");
 }
 
-template <>
-void getFactors(const Matrix_CSR<std::complex<double> > &m, Matrix_CSC<std::complex<double> > &L, Matrix_CSC<std::complex<double> > &U, Vector_Dense<int> &p)
-{
-	eslog::error("calling of empty sparse solver wrapper.\n");
-}
+template struct DirectSolver<double, Matrix_CSR>;
+template struct DirectSolver<std::complex<double>, Matrix_CSR>;
 
-
-}
 }
 
 #endif

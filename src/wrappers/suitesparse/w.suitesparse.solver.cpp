@@ -4,8 +4,8 @@
 
 #include <complex>
 
-#ifdef HAVE_SUITESPARSE
-#ifdef USE_SOLVER_SUITESPARSE
+#ifndef MKL
+#ifdef SUITESPARSE
 
 #include "wrappers/suitesparse/w.suitesparse.cholmod.h"
 #include "math/wrappers/math.spblas.h"

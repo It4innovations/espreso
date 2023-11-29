@@ -4,8 +4,7 @@
 
 #include <complex>
 
-#ifdef HAVE_MKL
-#ifdef USE_SPBLAS_MKL
+#ifdef MKL
 #include "mkl_spblas.h"
 
 namespace espreso {
@@ -182,5 +181,4 @@ void SpBLAS<double, Matrix_CSR>::multiply(SpBLAS<double, Matrix_CSR> &A, SpBLAS<
 
 }
 
-#endif
 #endif

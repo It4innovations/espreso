@@ -4,8 +4,7 @@
 
 #include <complex>
 
-#ifdef HAVE_SUITESPARSE
-#ifdef USE_SPBLAS_SUITESPARSE
+#ifdef SUITESPARSE
 
 #include "wrappers/suitesparse/w.suitesparse.cholmod.h"
 
@@ -160,5 +159,4 @@ template struct SpBLAS<std::complex<double>, Matrix_CSR>;
 
 }
 
-#endif
 #endif

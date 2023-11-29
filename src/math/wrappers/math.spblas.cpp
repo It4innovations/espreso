@@ -36,7 +36,19 @@ SpBLAS<T, Matrix>::SpBLAS(const Matrix<T> &a)
 }
 
 template <typename T, template <typename> class Matrix>
-void SpBLAS<T, Matrix>::commit(const Matrix<T> &a)
+void SpBLAS<T, Matrix>::insert(const Matrix<T> &a)
+{
+
+}
+
+template <typename T, template <typename> class Matrix>
+void SpBLAS<T, Matrix>::insertTransposed(const Matrix<T> &a)
+{
+
+}
+
+template <typename T, template <typename> class Matrix>
+void SpBLAS<T, Matrix>::extractUpper(Matrix<T> &a)
 {
 
 }
@@ -48,9 +60,9 @@ void SpBLAS<T, Matrix>::apply(Vector_Dense<T> &y, const T &alpha, const T &beta,
 }
 
 template <typename T, template <typename> class Matrix>
-void SpBLAS<T, Matrix>::transpose()
+void SpBLAS<T, Matrix>::transposeTo(SpBLAS<T, Matrix> &A)
 {
-	eslog::error("calling of empty SpBLAS wrapper.\n");
+
 }
 
 template <typename T, template <typename> class Matrix>
@@ -330,6 +342,7 @@ void SpBLAS<T, Matrix>::submatrix(const Matrix_CSR<T> &input, Matrix_CSR<T> &out
 	}
 }
 
+template struct SpBLAS<float, Matrix_CSR>;
 template struct SpBLAS<double, Matrix_CSR>;
 template struct SpBLAS<std::complex<double>, Matrix_CSR>;
 

@@ -3,8 +3,7 @@
 #include "math/math.h"
 #include "esinfo/eslog.h"
 
-#ifdef HAVE_MKL
-#ifdef USE_LAPACK_MKL
+#ifdef MKL
 #include "mkl_lapacke.h"
 
 namespace espreso {
@@ -65,5 +64,4 @@ namespace math {
 }
 }
 
-#endif
 #endif

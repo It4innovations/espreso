@@ -4,8 +4,7 @@
 
 #include <complex>
 
-#ifdef HAVE_MKL
-#ifdef USE_BLAS_MKL
+#ifdef MKL
 #include "mkl_blas.h"
 #include "mkl_cblas.h"
 
@@ -157,7 +156,6 @@ void applyT(Vector_Dense<std::complex<double> > &y, const std::complex<double> &
 }
 }
 
-#endif
 #endif
 
 

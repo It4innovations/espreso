@@ -9,7 +9,7 @@
 #include <vector>
 #include <complex>
 
-#ifdef HAVE_MKLPDSS
+#ifdef HAVE_MKL_PDSS
 #include "mkl_cluster_sparse_solver.h"
 
 namespace espreso {

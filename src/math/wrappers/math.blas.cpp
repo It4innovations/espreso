@@ -4,10 +4,8 @@
 
 #include <complex>
 
-#ifndef HAVE_MKL
-#ifndef HAVE_CBLAS
-#ifndef HAVE_OPENBLAS
-#ifndef HAVE_SSLBLAS
+#ifndef MKL
+#ifndef CBLAS
 
 namespace espreso {
 namespace math {
@@ -22,6 +20,12 @@ template <>
 void copy(const esint size, std::complex<double> *x, const esint incX, const std::complex<double> *y, const esint incY)
 {
 	eslog::error("calling of empty BLAS wrapper.\n");
+}
+
+template <>
+void scale(const esint size, const float &alpha, float *x, const esint incX)
+{
+        eslog::error("calling of empty BLAS wrapper.\n");
 }
 
 template <>
@@ -63,6 +67,13 @@ std::complex<double> dot(const esint size, const std::complex<double> *x, const 
 }
 
 template <>
+float norm(const esint size, const float *x, const esint incX)
+{
+        eslog::error("calling of empty BLAS wrapper.\n");
+        return 0;
+}
+
+template <>
 double norm(const esint size, const double *x, const esint incX)
 {
 	eslog::error("calling of empty BLAS wrapper.\n");
@@ -96,8 +107,6 @@ void applyT(Vector_Dense<std::complex<double> > &y, const std::complex<double> &
 }
 }
 
-#endif
-#endif
 #endif
 #endif
 

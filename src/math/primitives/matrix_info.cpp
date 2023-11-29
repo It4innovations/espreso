@@ -3,7 +3,7 @@
 
 namespace espreso {
 
-#ifdef USE_SOLVER_SUITESPARSE
+#ifdef SUITESPARSE
 const int Indexing::CSR = 0;
 #else
 const int Indexing::CSR = 1;

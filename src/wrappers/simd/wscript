@@ -2,8 +2,7 @@
 def options(opt):
     opt.compiler.add_option("--arch",
         action="store",
-        choices=["native", "a64fx"],
-        default="native",
+        type="string",
         help="Set vectorized instruction set.")
 
 def configure(ctx):
@@ -79,3 +78,7 @@ def configure(ctx):
             ctx.env.append_unique("CXXFLAGS", [ "-DSIMD_ARM_SVE_GENERAL" ])
         else:
             ctx.env.append_unique("CXXFLAGS", [ "-DSIMD_ARM_SVE_ARRAY" + size ])
+
+    ctx.env.SIMD_ASSEMBLER = ctx.env.SIMD
+    if ctx.options.simd_off:
+        ctx.env.SIMD_ASSEMBLER = "AUTO"

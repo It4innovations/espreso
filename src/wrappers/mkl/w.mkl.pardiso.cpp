@@ -2,8 +2,7 @@
 #include "math/math.h"
 #include "esinfo/eslog.h"
 
-#ifdef HAVE_MKL
-#ifdef USE_SOLVER_MKL
+#ifdef MKL
 
 #include "wrappers/pardiso/w.pardiso.type.h"
 #include "wrappers/pardiso/w.pardiso.h"
@@ -187,4 +186,3 @@ void DirectSolver<T, Matrix>::getSC(Matrix_Dense<T> &sc)
 }
 
 #endif
-#endif // HAVE_MKL
