@@ -140,10 +140,9 @@ void my_dual_operator_cluster<T,I>::set(const std::vector<MatrixCSR<T,I>> & Kreg
         // int mpi_rank = 0; // todo mpi
         // todo check if mpi_size == n_gpus or mpi_size == 1
         // btw, always using 1 gpu per mpi process
-	printf("%d -> %d\n", rank, rank_gpu_map[rank]);
         #pragma omp parallel
         {
-            CHECK(hipSetDevice(rank_gpu_map[rank]));
+            CHECK(hipSetDevice(rank_gpu_map[rank % 8]));
         }
     }
 
