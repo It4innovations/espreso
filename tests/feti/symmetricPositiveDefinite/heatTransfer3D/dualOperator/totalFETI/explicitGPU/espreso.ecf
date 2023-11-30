@@ -1,20 +1,23 @@
 # ESPRESO Configuration File
 
 DEFAULT_ARGS {
-  0     SQUARE4;
+  0       HEXA8;
 
   1           2;
   2           2;
+  3           1;
 
-  3           2;
   4           2;
+  5           2;
+  6           2;
 
-  5          20;
-  6          20;
+  7           4;
+  8           4;
+  9           8;
 }
 
 INPUT_TYPE            GENERATOR;
-PHYSICS        HEAT_TRANSFER_2D;
+PHYSICS        HEAT_TRANSFER_3D;
 
 GENERATOR {
   SHAPE   GRID;
@@ -25,8 +28,8 @@ GENERATOR {
     LENGTH_Z                   1;
 
     NODES {
-      BOTTOM   <1 , 1> <0 , 1> <0 , 0>;
-      TOP      <0 , 0> <0 , 1> <0 , 0>;
+      BOTTOM   <1 , 1> <0 , 1> <0 , 1>;
+      TOP      <0 , 0> <0 , 1> <0 , 1>;
     }
 
     ELEMENT_TYPE          [ARG0];
@@ -37,19 +40,19 @@ GENERATOR {
 
     CLUSTERS_X            [ARG1];
     CLUSTERS_Y            [ARG2];
-    CLUSTERS_Z                 1;
+    CLUSTERS_Z            [ARG3];
 
-    DOMAINS_X             [ARG3];
-    DOMAINS_Y             [ARG4];
-    DOMAINS_Z                  1;
+    DOMAINS_X             [ARG4];
+    DOMAINS_Y             [ARG5];
+    DOMAINS_Z             [ARG6];
 
-    ELEMENTS_X            [ARG5];
-    ELEMENTS_Y            [ARG6];
-    ELEMENTS_Z                 1;
+    ELEMENTS_X            [ARG7];
+    ELEMENTS_Y            [ARG8];
+    ELEMENTS_Z            [ARG9];
   }
 }
 
-HEAT_TRANSFER_2D {
+HEAT_TRANSFER_3D {
   LOAD_STEPS        1;
 
   MATERIALS {
@@ -70,10 +73,6 @@ HEAT_TRANSFER_2D {
     ALL_ELEMENTS   200;
   }
 
-  THICKNESS {
-    ALL_ELEMENTS  1;
-  }
-
   LOAD_STEPS_SETTINGS {
     1 {
       DURATION_TIME     1;
@@ -83,7 +82,7 @@ HEAT_TRANSFER_2D {
 
       FETI {
         METHOD          TOTAL_FETI;
-        DUAL_OPERATOR     EXPLICIT;
+        DUAL_OPERATOR EXPLICIT_GPU;
         PRECONDITIONER        NONE;
         PRECISION            1E-09;
         ITERATIVE_SOLVER       PCG;
