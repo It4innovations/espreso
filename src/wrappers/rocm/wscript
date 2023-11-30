@@ -3,16 +3,6 @@ def options(opt):
     pass
 
 def configure(ctx):
-    ctx.setenv("target")
-    hipcc = ctx.find_program("hipcc", mandatory=False)
-    if hipcc:
-        ctx.load(ctx.options.cxx)
-        ctx.env.CXX = hipcc
-        ctx.env.LINK_CXX = hipcc
-        ctx.link_cxx(name="ROCm", libs=["rocblas", "rocsparse"])
-        ctx.all_envs["host"].append_unique("DEFINES_ROCM", "HAVE_ROCM")
-        ctx.env.append_unique("INCLUDES", ctx.all_envs["host"].INCLUDES)
-        ctx.env.append_unique("DEFINES" , ctx.all_envs["host"].DEFINES)
-        ctx.env.append_unique("CXXFLAGS" , ctx.all_envs["host"].CXXFLAGS)
-        ctx.env.append_unique("LINKFLAGS" , ctx.all_envs["host"].LINKFLAGS)
-    ctx.setenv("host")
+    headers = [ "hip/hip_runtime.h", "rocblas.h", "rocsparse.h" ]
+    libs = [ "rocblas", "rocsparse" ]
+    ctx.check_cxx(mandatory=False, msg="Checking for 'rocm'", okmsg=" ".join(libs), define_name="ROCM", header_name=headers, lib=libs, uselib_store="ROCM")

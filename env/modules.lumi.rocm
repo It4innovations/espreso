@@ -1,0 +1,13 @@
+module use /pfs/lustrep2/projappl/project_462000125/samantao-public/mymodules 
+ml LUMI/23.03 rocm/5.4.3 partition/G
+
+export LIBSCI_ROOT=/opt/cray/pe/libsci/23.02.1.1/AOCC/2.0/x86_64/
+
+export CPATH=$CPATH:$CRAY_MPICH_DIR/include:$SUITESPARSE_ROOT/include:$LIBSCI_ROOT/include
+export LIBRARY_PATH=$LIBRARY_PATH:$CRAY_MPICH_DIR/lib:$SUITESPARSE_ROOT/lib:$LIBSCI_ROOT/lib
+export LD_LIBRARY_PATH=$LD_LIBRARY_PATH:$CRAY_MPICH_DIR/lib:$SUITESPARSE_ROOT/lib:$LIBSCI_ROOT/lib
+
+export CXX=hipcc
+export LIBRARIES=mpich
+export BLAS_LIBRARIES=sci_aocc_mp
+export LAPACK_LIBRARIES=sci_aocc_mp

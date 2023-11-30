@@ -6,7 +6,7 @@
 #include <vector>
 #include <algorithm>
 
-#ifdef HAVE_ROCM
+#ifdef ROCM
 #define MY_ROC
 #define MY_OLD_HIP
 
@@ -140,6 +140,7 @@ void my_dual_operator_cluster<T,I>::set(const std::vector<MatrixCSR<T,I>> & Kreg
         // int mpi_rank = 0; // todo mpi
         // todo check if mpi_size == n_gpus or mpi_size == 1
         // btw, always using 1 gpu per mpi process
+	printf("%d -> %d\n", rank, rank_gpu_map[rank]);
         #pragma omp parallel
         {
             CHECK(hipSetDevice(rank_gpu_map[rank]));
@@ -199,7 +200,6 @@ void my_dual_operator_cluster<T,I>::set(const std::vector<MatrixCSR<T,I>> & Kreg
             cm_factors[d] = my_cholmod_analyze<I>(&cm_Kreg, cm_commons[d]);
 
             n_nz_factor = my_cholmod_factor_get_nnz<I>(cm_factors[d]);
-            if(d == 0) printf("Factor: %llux%llu, %llu non-zeros\n", (long long unsigned)n_dofs_domain, (long long unsigned)n_dofs_domain, (long long unsigned)n_nz_factor);
         }
 
         // init cuda stream and libraries
@@ -669,13 +669,11 @@ void AccFETIDualOperator<double, Matrix_CSR>::set(const std::vector<Matrix_CSR<d
 	_K.resize(K.size());
 	_B.resize(B.size());
 	for (size_t di = 0; di < K.size(); ++di) {
-		printf("%lu %d %d %d\n", di, K[di].nrows, K[di].ncols, K[di].nnz);
 		_K[di].resize(K[di].nrows, K[di].ncols, K[di].nnz, false);
 		_K[di].rowptrs = K[di].rows;
 		_K[di].colidxs = K[di].cols;
 		_K[di].vals = K[di].vals;
 
-		printf("%lu %d %d %d\n", di, B[di].nrows, B[di].ncols, B[di].nnz);
 		_B[di].resize(B[di].nrows, B[di].ncols, B[di].nnz, false);
 		_B[di].rowptrs = B[di].rows;
 		_B[di].colidxs = B[di].cols;
@@ -707,7 +705,7 @@ void AccFETIDualOperator<double, Matrix_CSR>::apply(const Vector_Dual<double> &x
 	_x.vals = x.vals;
 	_y.resize(y.size, 1, -1, false);
 	_y.vals = y.vals;
-	_acc->dual.apply(_x, _y, D2C);
+	_acc->dual.apply(_y, _x, D2C);
 }
 
 template <typename T, template <typename> class Matrix>

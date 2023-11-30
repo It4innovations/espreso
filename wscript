@@ -132,6 +132,7 @@ def build(ctx):
     ctx.build_espreso(ctx.path.ant_glob('src/morphing/**/*.cpp'), "devel")
     ctx.build_espreso(ctx.path.ant_glob('src/math/**/*.cpp'), "math")
     ctx.build_espreso(ctx.path.ant_glob('src/autoopt/**/*.cpp'), "autoopt")
+    ctx.build_espreso(ctx.path.ant_glob('src/feti/**/*.cpp'), "feti")
     ctx.build_espreso(ctx.path.ant_glob('src/wrappers/simd/**/*.cpp'), "simd")
     ctx.build_espreso(ctx.path.ant_glob('src/wrappers/blas/**/*.cpp'), "wcblas", [ "CBLAS" ])
     ctx.build_espreso(ctx.path.ant_glob('src/wrappers/lapack/**/*.cpp'), "wlapack", [ "LAPACK" ])
@@ -146,17 +147,9 @@ def build(ctx):
     ctx.build_espreso(ctx.path.ant_glob('src/wrappers/suitesparse/**/*.cpp'), "wsuitesparse", [ "SUITESPARSE" ])
 #     ctx.build_espreso(ctx.path.ant_glob('src/wrappers/bem/**/*.cpp'), "wbem", [ "BEM" ])
     ctx.build_espreso(ctx.path.ant_glob('src/wrappers/nvtx/**/*.cpp'), "wnvtx", [ "NVTX" ])
+    ctx.build_espreso(ctx.path.ant_glob('src/wrappers/rocm/**/*.cpp'), "wrocm", [ "ROCM" ])
 
-#    ctx.env = ctx.all_envs["target"]
-#    if ctx.env.CXX:
-#        ctx.build_espreso(ctx.path.ant_glob('src/wrappers/rocm/**/*.cpp'), "wrocm", [ "ROCM" ])
-#    ctx.env = ctx.all_envs["host"]
-#         if ctx.env.NVCC:
-#             ctx.build_espreso(ctx.path.ant_glob('src/feti/specific/acc/**/*.cu'), "cudakernels", [ "CUDA" ])
-#         ctx.build_espreso(feti, "feti", [ "SOLVER", "PARDISO", "MKL" ])
-    ctx.build_espreso(ctx.path.ant_glob('src/feti/**/*.cpp'), "feti")
-
-    ctx.program(source="src/app/ecfchecker.cpp", target="ecfchecker", use=ctx.checker)
+    ctx.program(source="src/app/ecfchecker.cpp", target="ecfchecker", use=ctx.checker, stlib=ctx.options.stlibs, lib=ctx.options.libs)
     ctx.program(source="src/app/mesio.cpp", target="mesio", use=ctx.checker + ctx.mesio, stlib=ctx.options.stlibs, lib=ctx.options.libs)
     ctx.program(source="src/app/espreso.cpp",target="espreso", rpath=["$ORIGIN/"], use=ctx.checker + ctx.mesio + ctx.espreso, stlib=ctx.options.stlibs, lib=ctx.options.libs)
 
@@ -222,7 +215,7 @@ def options(opt):
     opt.compiler.add_option("--libs",
         action="store",
         type="string",
-        default="",
+        default=os.getenv("LIBRARIES"),
         help="Additional dynamic libraries")
 
     opt.compiler.add_option("--intwidth",
@@ -276,11 +269,12 @@ def settings(ctx):
     libsmsg("                        LAPACK libraries", [ "mkl", "lapack" ])
     libsmsg("                          sparse solvers", [ "mkl", "suitesparse" ])
     libsmsg("              distributed sparse solvers", [ "mkl_pdss", "hypre", "superlu", "wsmp" ])
+    libsmsg("                           GPU libraries", [ "rocm" ])
 
 """ Recurse to third party libraries wrappers"""
 def recurse(ctx):
     """ Accelerators """
-#    ctx.recurse("src/wrappers/rocm")
+    ctx.recurse("src/wrappers/rocm")
 
     """ Graph partition tools """
     ctx.recurse("src/wrappers/metis")

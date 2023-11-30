@@ -6,7 +6,7 @@
 
 namespace espreso {
 
-#ifndef HAVE_ROCM
+#ifndef ROCM
 
 template <typename T, template <typename> class Matrix>
 AccFETIDualOperator<T, Matrix>::AccFETIDualOperator(int rank)

@@ -41,10 +41,13 @@ protected:
 	using DualOperator<T>::d;
 
 	std::vector<Matrix_CSR<T> > Kplus;
+	std::vector<Vector_Dense<T> > Btx, KplusBtx;
+	std::vector<DirectSolver<T, Matrix_CSR> > KSolver;
+
 	std::vector<Matrix_CSR<T> > B1;
 	std::vector<std::vector<int> > D2C;
-
 	AccFETIDualOperator<T, Matrix_CSR> acc;
+
 };
 
 }
