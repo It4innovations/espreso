@@ -186,6 +186,8 @@ void DirectSolver<T, Matrix>::getFactors(Matrix_CSC<T> &L, Matrix_CSC<T> &U, Vec
 		Lsolver.cholmod.common = _solver->cholmod.common;
 		cholmod_factor *copy;
 		_copyFactor<esint>(_solver->cholmod.L, copy, _solver->cholmod.common);
+		p.resize(copy->n);
+		memcpy(p.vals, copy->Perm, p.size * sizeof(int));
 		_factorToSparse<esint>(copy, Lsolver.cholmod.A, Lsolver.cholmod.common);
 		_free<esint>(copy, _solver->cholmod.common);
 		L.nrows = Lsolver.cholmod.A->nrow;
@@ -196,8 +198,6 @@ void DirectSolver<T, Matrix>::getFactors(Matrix_CSC<T> &L, Matrix_CSC<T> &U, Vec
 		L.vals = (T*)Lsolver.cholmod.A->x;
 		L.type = matrix->type;
 		L.shape = Matrix_Shape::LOWER;
-//		p.size = L.nrows;
-//		p.vals = (esint*)A._solver->cholmod.L->Perm;
 	} break;
 	default:
 		break; // UMFPACK
