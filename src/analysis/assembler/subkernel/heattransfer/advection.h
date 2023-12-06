@@ -59,7 +59,7 @@ template <size_t ndim, class Physics> struct UpdateConductivity<ndim, ThermalCon
 template <size_t ndim, class Physics> struct UpdateConductivity<ndim, ThermalConductivityConfiguration::MODEL::ANISOTROPIC, Physics> {
 	static void update(typename Physics::Element &element, size_t gp, SIMD stabilization)
 	{
-		for (size_t d = 0, i = 0; d < ndim; i += ++d + ndim) {
+		for (size_t d = 0, i = 0; d < ndim; i += ndim, ++d) {
 			element.conductivity[gp][i] = element.conductivity[gp][i] + stabilization;
 		}
 	}
