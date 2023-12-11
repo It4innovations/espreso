@@ -1,8 +1,10 @@
 
 def options(opt):
-    opt.math.add_option("--mkl", action="store", type="string", metavar="MKL_ROOT", default="", help="Path to MKL.")
+    opt.math.add_option("--skip-mkl", action="store_true", default=False, help="Skip search for MKL library.")
 
 def configure(ctx):
+    if (ctx.options.skip_mkl):
+        return
     # currently it seems that there is a bug in OpenMP version (use gomp + gnu_threads)
     libs = []
     if ctx.options.cxx == "icpc":
