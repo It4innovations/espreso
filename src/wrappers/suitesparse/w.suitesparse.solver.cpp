@@ -4,8 +4,8 @@
 
 #include <complex>
 
-#ifndef MKL
-#ifdef SUITESPARSE
+#ifndef HAVE_MKL
+#ifdef HAVE_SUITESPARSE
 
 #include "wrappers/suitesparse/w.suitesparse.cholmod.h"
 #include "math/wrappers/math.spblas.h"

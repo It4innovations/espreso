@@ -4,9 +4,9 @@
 
 #include <complex>
 
-#ifndef MKL
-#ifndef PARDISO
-#ifndef SUITESPARSE
+#ifndef HAVE_MKL
+#ifndef HAVE_PARDISO
+#ifndef HAVE_SUITESPARSE
 
 namespace espreso {
 

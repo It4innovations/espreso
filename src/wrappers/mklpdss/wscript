@@ -16,4 +16,4 @@ def configure(ctx):
 
     if "HAVE_MKL" in ctx.env:
         ctx.env.append_unique("SHLIB_MARKER", "-Wl,--no-as-needed")
-        ctx.check_cxx(mandatory=False, msg="Checking for 'mkl pdss'", okmsg=lib, define_name="MKL_PDSS", header_name="complex mkl_cluster_sparse_solver.h", lib=lib, use="MKL", uselib_store="MKL_PDSS")
+        ctx.check_cxx(mandatory=False, msg="Checking for 'mklpdss'", okmsg=lib, define_name="HAVE_MKLPDSS", header_name="complex mkl_cluster_sparse_solver.h", lib=lib, use="MKL", uselib_store="MKLPDSS")

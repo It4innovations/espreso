@@ -3,7 +3,7 @@
 #include "math/math.h"
 #include "esinfo/eslog.h"
 
-#ifdef MKL
+#ifdef HAVE_MKL
 #include "mkl_lapacke.h"
 
 namespace espreso {

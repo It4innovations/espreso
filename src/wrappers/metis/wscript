@@ -1,8 +1,9 @@
 
 def options(opt):
-    opt.decomposers.add_option("--metis", action="store", type="string", metavar="METIS_ROOT", default="", help="Path to METIS root directory.")
+    opt.decomposers.add_option("--skip-metis", action="store_true", default=False, help="Skip search for Metis library.")
 
 def configure(ctx):
-    ctx.link_cxx(
-        name="metis", header_name="metis.h", libs=["metis"], root=ctx.options.metis,
-        fragment="return IDXTYPEWIDTH != {0};".format(ctx.options.intwidth))
+    if (ctx.options.skip_metis):
+        return
+    fragment = "#include \"metis.h\"\nint main(int argc, char** argv) {{ return IDXTYPEWIDTH != {0}; }}\n".format(ctx.options.intwidth)
+    ctx.check_cxx(mandatory=False, msg="Checking for 'metis'", okmsg="metis", define_name="HAVE_METIS", header_name="metis.h", lib="metis", fragment=fragment, uselib_store="METIS")

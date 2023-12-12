@@ -2,7 +2,7 @@
 #include "math/math.h"
 #include "esinfo/eslog.h"
 
-#ifdef MKL
+#ifdef HAVE_MKL
 
 #include "wrappers/pardiso/w.pardiso.type.h"
 #include "wrappers/pardiso/w.pardiso.h"

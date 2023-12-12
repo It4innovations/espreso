@@ -1,7 +1,9 @@
 
 def options(opt):
-    opt.solvers.add_option("--hypre", action="store", type="string", metavar="HYPRE_ROOT", default="", help="Path to HYPRE solver.")
+    opt.solvers.add_option("--skip-hypre", action="store_true", default=False, help="Skip search for Hypre library.")
 
 def configure(ctx):
+    if (ctx.options.skip_hypre):
+        return
     if int(ctx.options.intwidth) == 32:
-        ctx.link_cxx(name="hypre", header_name="HYPRE.h", libs=["HYPRE"], root=ctx.options.hypre)
+        ctx.check_cxx(mandatory=False, msg="Checking for 'hypre'", okmsg="hypre", define_name="HAVE_HYPRE", header_name="HYPRE.h", lib="hypre", uselib_store="HYPRE")

@@ -1,7 +1,9 @@
 
 def options(opt):
-    opt.solvers.add_option("--superlu", action="store", type="string", metavar="SUPERLU_ROOT", default="", help="Path to Super LU (distributed) library.")
+    opt.solvers.add_option("--skip-superlu", action="store_true", default=False, help="Skip search for SuperLU library.")
 
 def configure(ctx):
+    if (ctx.options.skip_superlu):
+        return
     if int(ctx.options.intwidth) == 32:
-        ctx.link_cxx(name="superlu", header_name="superlu_ddefs.h superlu_dist_config.h util_dist.h", libs=["superlu_dist"], root=ctx.options.superlu)
+        ctx.check_cxx(mandatory=False, msg="Checking for 'superlu'", okmsg="superlu_dist", define_name="HAVE_SUPERLU", header_name="superlu_ddefs.h superlu_dist_config.h util_dist.h", lib="superlu_dist", uselib_store="SUPERLU")

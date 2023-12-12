@@ -1,8 +1,7 @@
 
 def options(opt):
-    opt.decomposers.add_option("--scotch", action="store", type="string", metavar="SCOTCH_ROOT", default="", help="Path to Scotch root directory.")
+    opt.decomposers.add_option("--skip-scotch", action="store_true", default=False, help="Skip search for Scotch library.")
 
 def configure(ctx):
-    ctx.link_cxx(
-        name="scotch", header_name="cstdio cstdint scotch.h", libs=["scotch", "scotcherr"], root=ctx.options.scotch,
-        fragment="return sizeof(SCOTCH_Num) != sizeof(esint);")
+    fragment = "#include \"scotch.h\"\nint main(int argc, char** argv) {{ return sizeof(SCOTCH_Num) != sizeof(esint); }}\n"
+    ctx.check_cxx(mandatory=False, msg="Checking for 'scotch'", okmsg="scotch", define_name="HAVE_SCOTCH", header_name="cstdio cstdint scotch.h", lib="scotch scotcherr", fragment=fragment, uselib_store="SCOTCH")

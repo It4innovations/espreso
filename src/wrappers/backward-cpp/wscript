@@ -3,47 +3,30 @@ def options(opt):
     pass
 
 dw = {
-    "mandatory": False,
-    "header_name": ["dwarf.h", "elfutils/libdw.h", "elfutils/libdwfl.h"],
+    "header": ["dwarf.h", "elfutils/libdw.h", "elfutils/libdwfl.h"],
     "lib": ["dw"],
-    "defines": ["HAVE_BACKWARD", "BACKWARD_HAS_DW"]
+    "defines": ["BACKWARD_HAS_DW"]
 }
 
 bdf = {
-    "mandatory": False,
-    "header_name": ["bfd.h"],
+    "header": ["bfd.h"],
     "lib": ["bfd"],
-    "defines": ["HAVE_BACKWARD", "BACKWARD_HAS_BFD"]
+    "defines": ["BACKWARD_HAS_BFD"]
 }
 
 dwarf = {
-    "mandatory": False,
-    "header_name": ["dwarf.h", "libdwarf.h", "libelf.h"],
+    "header": ["dwarf.h", "libdwarf.h", "libelf.h"],
     "lib": ["dwarf", "bfd"],
-    "defines": ["HAVE_BACKWARD", "BACKWARD_HAS_DWARF"]
+    "defines": ["BACKWARD_HAS_DWARF"]
 }
 
 def configure(ctx):
-    backward = ctx.test_dict("backward-cpp")
-
-    def test(name, lib):
-        ctx.env.stash()
-        test = ctx.test_dict(name)
-        test.update(lib)
-        status = ctx.check_cxx(**test)
-        ctx.env.revert()
-        return status
-
-    if test("dw", dw):
-        backward.update(dw)
-        ctx.check_cxx(**backward)
-    elif test("dwarf", dwarf):
-        backward.update(dwarf)
-        ctx.check_cxx(**backward)
-    elif test("bdf", bdf):
-        backward.update(bdf)
-        ctx.check_cxx(**backward)
+    if ctx.check_cxx(mandatory=False, msg="Checking for 'backward + dw'", okmsg=" ".join(dw["lib"]), define_name="HAVE_BACKWARD", header_name=dw["header"], lib=dw["lib"], uselib_store="BACKWARD"):
+        ctx.env.append_unique("DEFINES", dw["defines"])
+    elif ctx.check_cxx(mandatory=False, msg="Checking for 'backward + dwarf'", okmsg=" ".join(dwarf["lib"]), define_name="HAVE_BACKWARD", header_name=dwarf["header"], lib=dwarf["lib"], uselib_store="BACKWARD"):
+        ctx.env.append_unique("DEFINES", dwdwarf["defines"])
+    elif ctx.check_cxx(mandatory=False, msg="Checking for 'backward + bdf'", okmsg=" ".join(bdf["lib"]), define_name="HAVE_BACKWARD", header_name=bdf["header"], lib=bdf["lib"], uselib_store="BACKWARD"):
+        ctx.env.append_unique("DEFINES", bdf["defines"])
     else:
-        backward["defines"] = ["HAVE_BACKWARD"]
-        ctx.check_cxx(**backward)
+        ctx.check_cxx(mandatory=False, msg="Checking for 'backward'", okmsg="backward", define_name="HAVE_BACKWARD", uselib_store="BACKWARD")
 

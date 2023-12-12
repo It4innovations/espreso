@@ -4,8 +4,8 @@
 
 #include <complex>
 
-#ifndef MKL
-#ifndef CBLAS
+#ifndef HAVE_MKL
+#ifndef HAVE_CBLAS
 
 namespace espreso {
 namespace math {

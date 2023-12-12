@@ -1,8 +1,10 @@
 
 def options(opt):
-    opt.solvers.add_option("--wsmp", action="store", type="string", metavar="WSMP_LIB", default="", help="Path to WSMP library.")
+    opt.solvers.add_option("--skip-wsmp", action="store_true", default=False, help="Skip search for WSMP library.")
 
 def configure(ctx):
+    if (ctx.options.skip_wsmp):
+        return
     libs = [ "pwsmp64" ]
     if ctx.options.cxx == "icpc":
         libs.append("ifcore")
@@ -10,4 +12,4 @@ def configure(ctx):
         libs.append("gfortran")
         libs.append("pthread")
 
-    ctx.link_cxx(name="wsmp", libs=libs, root=ctx.options.wsmp)
+    ctx.check_cxx(mandatory=False, msg="Checking for 'wpsm'", okmsg=" ".join(libs), define_name="HAVE_WPSM", header_name="wsmp.h", lib=libs, uselib_store="WPSM")

@@ -1,7 +1,9 @@
 
 def options(opt):
-    opt.solvers.add_option("--pardiso", action="store", type="string", metavar="PARDISO_LIB", default="", help="Path to PARDISO library (libpardiso.so).")
+    opt.solvers.add_option("--skip-pardiso", action="store_true", default=False, help="Skip search for Pardiso library.")
 
 def configure(ctx):
+    if (ctx.options.skip_pardiso):
+        return
     if int(ctx.options.intwidth) == 32:
-        ctx.link_cxx(name="pardiso", libs=["pardiso", "gfortran", "gomp"], root=ctx.options.pardiso)
+        ctx.check_cxx(mandatory=False, msg="Checking for 'pardiso'", okmsg="pardiso", define_name="HAVE_PARDISO", header_name="pardiso.h", lib="pardiso gfortran gomp", uselib_store="PARDISO")

@@ -3,28 +3,29 @@ def options(opt):
     opt.other.add_option("--cuda-arch", action="store", type="string", help="CUDA architecture.")
 
 def configure(ctx):
-    if ctx.link_cxx(name="cuda", header_name=["cuda_runtime_api.h", "cuda_runtime.h", "cusparse_v2.h", "cusolverSp.h", "cusolverSp_LOWLEVEL_PREVIEW.h"], libs=["cublas", "cudart", "cusparse", "cusolver"]):
-        ctx.env.NVCC = ctx.find_program("nvcc")
-
-        if ctx.options.cuda_arch:
-            arch = "-arch=" + ctx.options.cuda_arch
-            ctx.msg("CUDA architecture version", ctx.options.cuda_arch)
-        else:
-            arch = ctx.check_cxx(fragment='''
-                    #include "cuda_runtime_api.h"
-                    #include <cstdio>
-                    int main() { cudaDeviceProp prop; prop.major = prop.minor = 0; cudaGetDeviceProperties(&prop, 0); if (prop.major != 0) printf("%d%d", prop.major, prop.minor); return 0; }''',
-                lib         = "cudart",
-                execute     = True,
-                define_ret  = True,
-                mandatory   = False,
-                msg         = "Checking for 'cuda' architecture",
-                errmsg      = "default",
-                okmsg       = lambda ret: "sm_" + str(ret["success"]))
-
-            if arch:
-                arch = "-arch=sm_" + arch
-            else:
-                arch = ""
-
-        ctx.env.NVCCFLAGS = [ "-dw", "-lineinfo", arch, "--use_fast_math", "-std=c++11", "-O3", "-Xcompiler", "-fPIC" ]
+    pass
+    # if ctx.link_cxx(name="cuda", header_name=["cuda_runtime_api.h", "cuda_runtime.h", "cusparse_v2.h", "cusolverSp.h", "cusolverSp_LOWLEVEL_PREVIEW.h"], libs=["cublas", "cudart", "cusparse", "cusolver"]):
+    #     ctx.env.NVCC = ctx.find_program("nvcc")
+    #
+    #     if ctx.options.cuda_arch:
+    #         arch = "-arch=" + ctx.options.cuda_arch
+    #         ctx.msg("CUDA architecture version", ctx.options.cuda_arch)
+    #     else:
+    #         arch = ctx.check_cxx(fragment='''
+    #                 #include "cuda_runtime_api.h"
+    #                 #include <cstdio>
+    #                 int main() { cudaDeviceProp prop; prop.major = prop.minor = 0; cudaGetDeviceProperties(&prop, 0); if (prop.major != 0) printf("%d%d", prop.major, prop.minor); return 0; }''',
+    #             lib         = "cudart",
+    #             execute     = True,
+    #             define_ret  = True,
+    #             mandatory   = False,
+    #             msg         = "Checking for 'cuda' architecture",
+    #             errmsg      = "default",
+    #             okmsg       = lambda ret: "sm_" + str(ret["success"]))
+    #
+    #         if arch:
+    #             arch = "-arch=sm_" + arch
+    #         else:
+    #             arch = ""
+    #
+    #     ctx.env.NVCCFLAGS = [ "-dw", "-lineinfo", arch, "--use_fast_math", "-std=c++11", "-O3", "-Xcompiler", "-fPIC" ]

@@ -2,4 +2,4 @@ def options(opt):
     pass
 
 def configure(ctx):
-    ctx.link_cxx(name="PAPI", header_name="papi.h", libs=["papi"])
+    ctx.check_cxx(mandatory=False, msg="Checking for 'papi'", okmsg="papi", define_name="HAVE_PAPI", header_name="papi.h", lib="papi", uselib_store="PAPI")

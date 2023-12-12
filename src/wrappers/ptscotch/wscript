@@ -1,7 +1,9 @@
 
 def options(opt):
-    opt.decomposers.add_option("--ptscotch", action="store", type="string", metavar="SCOTCH_ROOT", default="", help="Path to PT-Scotch root directory.")
+    opt.decomposers.add_option("--skip-ptscotch", action="store_true", default=False, help="Skip search for PT-Scotch library.")
 
 def configure(ctx):
-    if "HAVE_SCOTCH" in ctx.env.DEFINES_SCOTCH:
-        ctx.link_cxx(name="ptscotch", header_name="mpi.h ptscotch.h", libs=["ptscotch", "scotch", "scotcherr"], root=ctx.options.ptscotch)
+    if (ctx.options.skip_ptscotch):
+        return
+    if "HAVE_SCOTCH" in ctx.env:
+        ctx.check_cxx(mandatory=False, msg="Checking for 'pt-scotch'", okmsg="ptscotch", define_name="HAVE_PTSCOTCH", header_name="mpi.h ptscotch.h", lib="ptscotch scotch scotcherr", uselib_store="PTSCOTCH")

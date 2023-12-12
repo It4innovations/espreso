@@ -4,7 +4,7 @@
 
 #include <complex>
 
-#ifdef MKL
+#ifdef HAVE_MKL
 #include "mkl_spblas.h"
 
 namespace espreso {

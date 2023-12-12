@@ -2,16 +2,6 @@
 import sys, os, logging, subprocess, types, copy
 
 def configure(ctx):
-    ctx.env.with_gui = ctx.options.with_gui
-    ctx.env.static = ctx.options.static
-    ctx.test_dict = types.MethodType(test_dict, ctx)
-    ctx.link_cxx = types.MethodType(link_cxx, ctx)
-    ctx.env.intwidth = ctx.options.intwidth
-    ctx.env.mode = ctx.options.mode
-
-    if ctx.options.cxx == "icpc" or ctx.options.cxx == "icx":
-        ctx.options.flavor = "intel"
-
     """ Set compilers """
     if ctx.env.with_gui:
         ctx.env["COMPILER_CXX"] = ctx.env["CXX"]
@@ -60,9 +50,8 @@ def configure(ctx):
     """ Recurse to third party libraries wrappers"""
     recurse(ctx)
 
-    if ctx.options.with_nvtx:
-        ctx.env.append_unique("CXXFLAGS", [ "-DUSE_NVTX" ]) # NVTX profiling tags
-
+    ctx.env.intwidth = ctx.options.intwidth
+    ctx.env.mode = ctx.options.mode
     settings(ctx)
 
 def build(ctx):
@@ -106,7 +95,7 @@ def build(ctx):
     ctx.build_checker(ctx.path.ant_glob('src/config/**/*.cpp'), "config")
     ctx.build_checker(ctx.path.ant_glob('src/basis/**/*.cpp'), "basis")
     ctx.build_checker(ctx.path.ant_glob('src/wrappers/exprtk/**/*.cpp'), "wexprtk")
-    ctx.build_checker(ctx.path.ant_glob('src/wrappers/backward-cpp/**/*.cpp'), "wbackward", [ "BACKWARD-CPP" ])
+    ctx.build_checker(ctx.path.ant_glob('src/wrappers/backward-cpp/**/*.cpp'), "wbackward", [ "BACKWARD" ])
     ctx.build_checker(ctx.path.ant_glob('src/wrappers/mpi/**/*.cpp'), "wmpi")
     ctx.build_checker(ctx.path.ant_glob('src/wrappers/papi/**/*.cpp'), "wpapi", [ "PAPI" ])
 
@@ -139,11 +128,10 @@ def build(ctx):
     ctx.build_espreso(ctx.path.ant_glob('src/wrappers/mkl/**/*.cpp'), "wmkl", [ "MKL" ])
     ctx.build_espreso(ctx.path.ant_glob('src/wrappers/cuda/**/*.cpp'), "wcuda", [ "CUDA" ])
 #     ctx.build_espreso(ctx.path.ant_glob('src/wrappers/hypre/**/*.cpp'), "whypre", [ "HYPRE" ])
-    ctx.build_espreso(ctx.path.ant_glob('src/wrappers/mklpdss/**/*.cpp'), "wmklpdss", [ "MKL_PDSS", "MKL" ])
+    ctx.build_espreso(ctx.path.ant_glob('src/wrappers/mklpdss/**/*.cpp'), "wmklpdss", [ "MKLPDSS", "MKL" ])
 #     ctx.build_espreso(ctx.path.ant_glob('src/wrappers/pardiso/**/*.cpp'), "wpardiso", [ "PARDISO" ])
 #     ctx.build_espreso(ctx.path.ant_glob('src/wrappers/superlu/**/*.cpp'), "wsuperlu", [ "SUPERLU" ])
 #     ctx.build_espreso(ctx.path.ant_glob('src/wrappers/wsmp/**/*.cpp'), "wwsmp", [ "WSMP" ])
-    ctx.build_espreso(ctx.path.ant_glob('src/wrappers/csparse/**/*.cpp'), "wcsparse", [ "CSPARSE" ])
     ctx.build_espreso(ctx.path.ant_glob('src/wrappers/suitesparse/**/*.cpp'), "wsuitesparse", [ "SUITESPARSE" ])
 #     ctx.build_espreso(ctx.path.ant_glob('src/wrappers/bem/**/*.cpp'), "wbem", [ "BEM" ])
     ctx.build_espreso(ctx.path.ant_glob('src/wrappers/nvtx/**/*.cpp'), "wnvtx", [ "NVTX" ])
@@ -184,13 +172,6 @@ def options(opt):
         metavar="CXX",
         default=os.getenv("CXX") or [ "mpic++" ],
         help="Command to be used for compilation.")
-
-    opt.compiler.add_option("--compiler",
-        action="store",
-        type="string",
-        metavar="COMPILER",
-        default=os.getenv("COMPILER") or [ "c++" ],
-        help="Compiler to be used, e.g., c++ or icpc.")
 
     opt.compiler.add_option("--cxxflags",
         action="store",
@@ -268,13 +249,14 @@ def settings(ctx):
     libsmsg("                        SpBLAS libraries", [ "mkl", "suitesparse" ])
     libsmsg("                        LAPACK libraries", [ "mkl", "lapack" ])
     libsmsg("                          sparse solvers", [ "mkl", "suitesparse" ])
-    libsmsg("              distributed sparse solvers", [ "mkl_pdss", "hypre", "superlu", "wsmp" ])
+    libsmsg("              distributed sparse solvers", [ "mklpdss", "hypre", "superlu", "wsmp" ])
     libsmsg("                           GPU libraries", [ "rocm" ])
 
 """ Recurse to third party libraries wrappers"""
 def recurse(ctx):
     """ Accelerators """
     ctx.recurse("src/wrappers/rocm")
+    ctx.recurse("src/wrappers/cuda")
 
     """ Graph partition tools """
     ctx.recurse("src/wrappers/metis")
@@ -289,8 +271,6 @@ def recurse(ctx):
     ctx.recurse("src/wrappers/pardiso")
     ctx.recurse("src/wrappers/mkl")
     ctx.recurse("src/wrappers/suitesparse")
-    ctx.recurse("src/wrappers/cuda")
-    ctx.recurse("src/wrappers/csparse")
 
     """ Solvers """
     ctx.recurse("src/wrappers/mklpdss")
@@ -304,11 +284,11 @@ def recurse(ctx):
     ctx.recurse("src/wrappers/backward-cpp")
     ctx.recurse("src/wrappers/pthread")
     ctx.recurse("src/wrappers/hdf5")
-    ctx.recurse("src/wrappers/gmsh")
-    ctx.recurse("src/wrappers/nglib")
-    ctx.recurse("src/wrappers/bem")
-    ctx.recurse("src/wrappers/catalyst")
-    ctx.recurse("src/wrappers/nvtx")
+    # ctx.recurse("src/wrappers/gmsh")
+    # ctx.recurse("src/wrappers/nglib")
+    # ctx.recurse("src/wrappers/bem")
+    # ctx.recurse("src/wrappers/catalyst")
+    # ctx.recurse("src/wrappers/nvtx")
     ctx.recurse("src/wrappers/papi")
 
 def get_commit():
@@ -342,62 +322,6 @@ def show(ctx):
 
 def env(ctx):
     print(ctx.env)
-
-def test_dict(self, name):
-    test = dict()
-    test["msg"] = "Checking for " + name
-    test["define_name"] = ""
-    test["defines"] = "HAVE_" + name.upper()
-    test["name"] = test["uselib_store"] = name.upper()
-    return test
-
-def link_cxx(self, *k, **kw):
-    includes = []
-    libpath = []
-    if "root" in kw and os.path.isdir(kw["root"]):
-        includes = [ os.path.join(kw["root"], dir) for dir in os.listdir(kw["root"]) if dir.startswith("include") ]
-        libpath = [ os.path.join(kw["root"], dir) for dir in os.listdir(kw["root"]) if dir.startswith("lib") ]
-
-    general = dict(uselib_store=kw["name"].upper(), mandatory=False)
-    if "mandatory" in kw:
-        general["mandatory"] = kw["mandatory"]
-    if "use" in kw:
-        general["use"] = kw["use"]
-
-    header = dict()
-    self.env.stash()
-    if "header_name" in kw:
-        header = dict(header_name=kw["header_name"], define_name="", includes=includes)
-        header.update(general)
-        header["msg"] = "Checking for '{0}' header".format(kw["name"])
-        if not self.check_cxx(**header):
-            self.env.revert()
-            return False
-
-        if "fragment" in kw:
-            test = dict(execute=True)
-            test.update(header)
-            inc = [ "#include <{0}>\n".format(h) for h in kw["header_name"].split() ]
-            test["fragment"] = "{0}int main(int argc, char** argv) {{ {1} }}\n".format("".join(inc), kw["fragment"])
-            test["msg"] = "Checking for '{0}' settings".format(kw["name"])
-            if not self.check_cxx(**test):
-                self.env.revert()
-                return False
-
-    if "libs" in kw:
-        libs = dict(stlib=kw["libs"], libpath=libpath, msg="Checking for '{0}' library".format(kw["name"]))
-        libs.update(general)
-        libs.update(header)
-        libs["msg"] = "Checking for '{0}' library".format(kw["name"])
-        if not self.options.static or not self.check_cxx(**libs):
-            libs["lib"] = libs["stlib"]
-            libs.pop("stlib")
-            if not self.check_cxx(**libs):
-                self.env.revert()
-                return False
-
-    self.env.append_unique("DEFINES_"+kw["name"].upper(), "HAVE_" + kw["name"].upper())
-    return True
 
 from waflib.TaskGen import after_method, feature
 @feature('cxx')

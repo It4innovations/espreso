@@ -1,7 +1,9 @@
 
 def options(opt):
-    opt.decomposers.add_option("--parmetis", action="store", type="string", metavar="PARMETIS_ROOT", default="", help="Path to ParMETIS root directory.")
+    opt.decomposers.add_option("--skip-parmetis", action="store_true", default=False, help="Skip search for ParMetis library.")
 
 def configure(ctx):
-    if "HAVE_METIS" in ctx.env.DEFINES_METIS:
-        ctx.link_cxx(name="parmetis", header_name="parmetis.h", libs=["parmetis"], root=ctx.options.parmetis)
+    if (ctx.options.skip_parmetis):
+        return
+    if "HAVE_METIS" in ctx.env:
+        ctx.check_cxx(mandatory=False, msg="Checking for 'parmetis'", okmsg="parmetis", define_name="HAVE_PARMETIS", header_name="parmetis.h", lib="parmetis", uselib_store="PARMETIS")

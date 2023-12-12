@@ -5,4 +5,4 @@ def options(opt):
 def configure(ctx):
     headers = "cholmod.h"
     libs = ["cholmod"]
-    ctx.check_cxx(mandatory=False, msg="Checking for 'suitesparse'", okmsg=" ".join(libs), define_name="SUITESPARSE", header_name=headers, lib=libs, uselib_store="SUITESPARSE")
+    ctx.check_cxx(mandatory=False, msg="Checking for 'suitesparse'", okmsg=" ".join(libs), define_name="HAVE_SUITESPARSE", header_name=headers, lib=libs, uselib_store="SUITESPARSE")

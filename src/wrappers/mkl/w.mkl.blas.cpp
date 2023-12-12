@@ -4,7 +4,7 @@
 
 #include <complex>
 
-#ifdef MKL
+#ifdef HAVE_MKL
 #include "mkl_blas.h"
 #include "mkl_cblas.h"
 

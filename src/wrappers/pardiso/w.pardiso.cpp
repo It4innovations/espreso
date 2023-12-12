@@ -5,8 +5,8 @@
 #include "esinfo/eslog.h"
 #include "esinfo/envinfo.h"
 
+#ifndef HAVE_MKL
 #ifdef HAVE_PARDISO
-#ifdef USE_SOLVER_PARDISO
 
 //extern "C" {
 //void pardisoinit(void*, int*, int*, int*, double*, int*);
