@@ -13,12 +13,16 @@ def configure(ctx):
         ctx.env.append_unique("LIB", [ "dl" ])
 
     """ Set default compilers flags"""
-    if ctx.options.flavor == "gnu":
+    if ctx.env.COMPILER_CXX == "g++":
         ctx.env.append_unique("CXXFLAGS", [ "-fopenmp" ])
         ctx.env.append_unique("LINKFLAGS", [ "-fopenmp" ])
-    if ctx.options.flavor == "intel":
+    if ctx.env.COMPILER_CXX == "icpc":
         ctx.env.append_unique("CXXFLAGS", [ "-qopenmp", "-diag-disable=10441" ])
         ctx.env.append_unique("LINKFLAGS", [ "-qopenmp", "-diag-disable=10441" ])
+    if ctx.env.COMPILER_CXX == "clang++":
+        ctx.env.append_unique("CXXFLAGS", [ "-fopenmp" ])
+        ctx.env.append_unique("LINKFLAGS", [ "-fopenmp" ])
+
     if ctx.options.flavor == "fujitsu":
         ctx.env.append_unique("CXXFLAGS" , [ "-Kopenmp", "-SSL2" ])
         ctx.env.append_unique("LINKFLAGS", [ "-Kopenmp", "-SSL2" ])
