@@ -52,7 +52,7 @@ void HeatSteadyStateNonLinear::analyze()
 	for (auto mat = settings.material_set.begin(); mat != settings.material_set.end(); ++mat) {
 		if (settings.materials.find(mat->second)->second.thermal_conductivity.model == ThermalConductivityConfiguration::MODEL::ANISOTROPIC) {
 			shape = Matrix_Shape::FULL;
-			Matrix_Type type = Matrix_Type::REAL_STRUCTURALLY_SYMMETRIC;
+			type = Matrix_Type::REAL_STRUCTURALLY_SYMMETRIC;
 		}
 	}
 	if (configuration.translation_motions.size()) {
