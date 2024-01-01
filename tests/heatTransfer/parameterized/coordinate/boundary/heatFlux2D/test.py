@@ -20,7 +20,7 @@ class Assembler(unittest.TestCase):
 def run(etype):
     ESPRESOTest.args[0] = etype
     ESPRESOTest.run()
-    ESPRESOTest.compare_emr("espreso.emr")
+    ESPRESOTest.compare_emr(".".join([etype, "emr"]))
 
 run.assembler = 1
 run.correcness = 1

@@ -3,7 +3,7 @@
 #define SRC_ANALYSIS_ANALYSIS_ACOUSTIC_REAL_LINEAR_H_
 
 #include "analysis/physics/physics.h"
-#include "analysis/assembler/module/acoustic.h"
+#include "analysis/assembler/acoustic.h"
 //#include "analysis/linearsystem/linearsystem.h"
 
 namespace espreso {

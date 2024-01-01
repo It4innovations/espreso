@@ -3,7 +3,7 @@
 #define SRC_ANALYSIS_ANALYSIS_ELASTICITY_STEADYSTATE_LINEAR_H_
 
 #include "analysis/physics/physics.h"
-#include "analysis/assembler/module/structuralmechanics.h"
+#include "analysis/assembler/structuralmechanics.h"
 #include "analysis/builder/builder.h"
 #include "analysis/linearsystem/linearsystem.h"
 

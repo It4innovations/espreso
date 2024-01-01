@@ -98,6 +98,10 @@ class ESPRESOTest:
         if not os.path.isfile(emr):
             ESPRESOTest.raise_error("Missing monitoring report '{0}'.".format(emr))
 
+        if not os.path.isfile(os.path.join(ESPRESOTest.path, preset)):
+            shutil.copy(emr, os.path.join(ESPRESOTest.path, preset))
+            ESPRESOTest.raise_error("Monitoring report '{0}' created.".format(preset))
+
         table1 = create_table(os.path.join(ESPRESOTest.path, preset))
         table2 = create_table(emr)
 

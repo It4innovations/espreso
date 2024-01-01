@@ -27,8 +27,11 @@ GENERATOR {
     LENGTH_Z                   1;
 
     NODES {
-      BOTTOM   <1 , 1> <0 , 1> <0 , 0>;
       TOP      <0 , 0> <0 , 1> <0 , 0>;
+    }
+
+    EDGES {
+      BOTTOM   <1 , 1> <0 , 1> <0 , 0>;
     }
 
     ELEMENT_TYPE          [ARG0];

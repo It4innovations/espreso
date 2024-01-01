@@ -96,7 +96,7 @@ HEAT_TRANSFER_2D {
       }
 
       HEAT_FLUX {
-        BOTTOM   300;
+        BOTTOM   300 + 300 * 4 * (COORDINATE_Y - 0.5) * (COORDINATE_Y - 0.5);;
       }
     }
   }
