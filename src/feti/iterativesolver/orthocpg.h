@@ -3,7 +3,7 @@
 #define SRC_FETI_ITERATIVESOLVER_ORTHOCPG_H_
 
 #include "iterativesolver.h"
-#include "math/feti/matrix_dual_orthogonal.h"
+#include "feti/common/matrix_dual_orthogonal.h"
 
 namespace espreso {
 

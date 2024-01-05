@@ -20,12 +20,9 @@ OrthogonalTFETISymmetric<T>::OrthogonalTFETISymmetric(FETI<T> &feti)
 	Gx.resize();
 	iGGtGx.resize(feti.sinfo.R1size);
 
+	_computeDualGraph();
 	_setG();
-	if (feti.equalityConstraints.global) {
-		_setDenseGGt();
-	} else {
-		_setSparseGGt();
-	}
+	_setGGt();
 }
 
 template<typename T>
@@ -40,9 +37,9 @@ void OrthogonalTFETISymmetric<T>::info()
 	esint nnz = 2 * (GGt.nnz - GGt.nrows) + GGt.nrows;
 
 	eslog::info(" = ORTHOGONAL PROJECTOR PROPERTIES                                                           = \n");
-	eslog::info(" =   GGT ROWS                                                                      %9d = \n", GGtSolver.rows);
+	eslog::info(" =   GGT ROWS                                                                      %9d = \n", GGt.nrows);
 	eslog::info(" =   GGT NNZ                                                                       %9d = \n", nnz);
-	eslog::info(" =   GGT FACTORS NNZ                                                               %9d = \n", GGtSolver.nnzL);
+//	eslog::info(" =   GGT FACTORS NNZ                                                               %9d = \n", GGtSolver.nnzL);
 	if (feti.configuration.exhaustive_info) {
 		// PPt = eye
 	}
@@ -58,7 +55,7 @@ void OrthogonalTFETISymmetric<T>::update(const step::Step &step)
 	for (size_t d = 0; d < R.R1.domains.size(); ++d) {
 		Vector_Dense<T> _e;
 		_e.size = R.R1.domains[d].ncols;
-		_e.vals = e.vals + Roffset[d] + Vector_Kernel<T>::offset;
+		_e.vals = e.vals + d;
 		Matrix_Dense<T> _Rt;
 		_Rt.nrows = R.R1.domains[d].ncols;
 		_Rt.ncols = R.R1.domains[d].nrows;
@@ -69,11 +66,7 @@ void OrthogonalTFETISymmetric<T>::update(const step::Step &step)
 	eslog::checkpointln("FETI: COMPUTE DUAL RHS [e]");
 
 	_updateG();
-	if (feti.equalityConstraints.global) {
-		_updateDenseGGt();
-	} else {
-		_updateSparseGGt();
-	}
+	_updateGGt();
 
 	_print(step);
 }
@@ -135,7 +128,6 @@ void OrthogonalTFETISymmetric<T>::_applyInvGGt(const Vector_Kernel<T> &in, Vecto
 	}
 }
 
-// TODO: threaded implementation: utilize properties of B of gluing two domains
 template<typename T>
 void OrthogonalTFETISymmetric<T>::_applyGt(const Vector_Dense<T> &in, const T &alpha, Vector_Dual<T> &out)
 {
@@ -154,26 +146,33 @@ void OrthogonalTFETISymmetric<T>::_applyR(const Vector_Dense<T> &in, Vector_FETI
 	for (size_t d = 0; d < out.domains.size(); ++d) {
 		Vector_Dense<T> y;
 		y.size = feti.regularization.R1.domains[d].ncols;
-		y.vals = in.vals + Roffset[d];
+		y.vals = in.vals + d;
 
 		math::apply(out.domains[d], T{1}, feti.regularization.R1.domains[d], T{0}, y);
 	}
 }
 
-struct LMAPSize {
-	LMAPSize(std::vector<LMAP>::const_iterator end, esint lambdas): end(end), lambdas(lambdas) { }
+template<typename T>
+void OrthogonalTFETISymmetric<T>::_computeDualGraph()
+{
+	const Matrix_FETI<Matrix_CSR, T> &K = feti.K;
+	const typename FETI<T>::EqualityConstraints &eq = feti.equalityConstraints;
 
-	int operator()(std::vector<LMAP>::const_iterator it) {
-		std::vector<LMAP>::const_iterator next = it + 1;
-		if (next != end) {
-			return next->offset - it->offset;
+	dualGraph.resize(K.domains.size());
+	for (size_t i = 0; i < eq.cmap.size(); ) {
+		esint domains = eq.cmap[i + 1];
+		for (esint d1 = 0; d1 < domains; ++d1) {
+			for (esint d2 = 0; d2 < domains; ++d2) {
+				dualGraph[eq.cmap[i + 2 + d1] - K.decomposition->dbegin].push_back(eq.cmap[i + 2 + d2]);
+			}
 		}
-		return lambdas - it->offset;
+		i += eq.cmap[i + 1] + 2;
 	}
 
-	std::vector<LMAP>::const_iterator end;
-	esint lambdas;
-};
+	for (size_t d = 0; d < K.domains.size(); ++d) {
+		utils::sortAndRemoveDuplicates(dualGraph[d]);
+	}
+}
 
 template<typename T>
 void OrthogonalTFETISymmetric<T>::_setG()
@@ -181,179 +180,29 @@ void OrthogonalTFETISymmetric<T>::_setG()
 	// G is stored with 0-based in indexing
 	const Matrix_FETI<Matrix_CSR, T> &K = feti.K;
 	const typename FETI<T>::Regularization &R = feti.regularization;
-	const typename FETI<T>::EqualityConstraints &L = feti.equalityConstraints;
+	const typename FETI<T>::EqualityConstraints &eq = feti.equalityConstraints;
 
-	esint nrows = 0;
-	Roffset.resize(K.domains.size());
+	esint Grows = 0, Gnnz = 0;
 	for (size_t d = 0; d < K.domains.size(); ++d) {
-		Roffset[d] = nrows;
-		nrows += R.R1.domains[d].ncols;
+		Grows += R.R1.domains[d].ncols;
+		Gnnz += R.R1.domains[d].ncols * eq.domain[d].D2C.size();
 	}
-	G.resize(nrows, feti.sinfo.lambdasLocal, 0);
-	math::set(G.nrows + 1, G.rows, 1, 0);
 
-	LMAPSize lsize(L.lmap.cend(), feti.sinfo.lambdasLocal);
-	for (auto map = L.lmap.cbegin(); map != L.lmap.cend(); ++map) {
-		auto add = [&] (esint domain) {
-			domain -= K.decomposition->dbegin;
-			esint kernels = R.R1.domains[domain].ncols;
-			esint cols = lsize(map);
-			for (esint k = 0; k < kernels; ++k) {
-				G.rows[Roffset[domain] + k] += cols;
-			}
-		};
-
-		if (map->neigh == LMAP::DIRICHLET) {
-			add(map->from);
-		} else {
-			if (K.decomposition->ismy(map->from)) {
-				add(map->from);
-			}
-			if (K.decomposition->ismy(map->to)) {
-				add(map->to);
+	Gt.resize(Grows, feti.sinfo.lambdasLocal, Gnnz);
+	Gt.rows[0] = 0;
+	for (size_t d = 0, ri = 0; d < K.domains.size(); ++d) {
+		for (esint r = 0; r < R.R1.domains[d].ncols; ++r, ++ri) {
+			Gt.rows[ri + 1] = Gt.rows[ri] + eq.domain[d].B1.nrows;
+			for (esint c = 0; c < eq.domain[d].B1.nrows; ++c) {
+				Gt.cols[Gt.rows[ri] + c] = eq.domain[d].D2C[c];
 			}
 		}
 	}
-	utils::sizesToOffsets(G.rows, G.rows + G.nrows + 1);
-	G.resize(nrows, feti.sinfo.lambdasLocal, G.rows[G.nrows]);
 
-	std::vector<esint> rpointer(G.nrows);
-	Goffset.reserve(L.lmap.size());
-	for (auto map = L.lmap.cbegin(); map != L.lmap.cend(); ++map) {
-		auto add = [&] (esint domain) {
-			domain -= K.decomposition->dbegin;
-			esint kernels = R.R1.domains[domain].ncols;
-			esint cols = lsize(map);
-			for (esint k = 0; k < kernels; ++k) {
-				for (esint c = 0, r = Roffset[domain] + k; c < cols; ++c) {
-					G.cols[G.rows[r] + rpointer[r]++] = map->offset + c;
-				}
-			}
-		};
-
-		Goffset.push_back(std::make_pair(-1, -1));
-		if (map->neigh == LMAP::DIRICHLET) {
-			add(map->from);
-			Goffset.back().first = rpointer[Roffset[map->from - K.decomposition->dbegin]];
-		} else {
-			if (K.decomposition->ismy(map->from)) {
-				Goffset.back().first = rpointer[Roffset[map->from - K.decomposition->dbegin]];
-				add(map->from);
-			}
-			if (K.decomposition->ismy(map->to)) {
-				Goffset.back().second = rpointer[Roffset[map->to - K.decomposition->dbegin]];
-				add(map->to);
-			}
-		}
-	}
+	G.shallowCopy(Gt);
+	G.nrows = Grows;
+	G.nnz = Gnnz;
 	eslog::checkpointln("FETI: SET G");
-}
-
-template<typename T>
-void OrthogonalTFETISymmetric<T>::_setSparseGGt()
-{
-	const Matrix_FETI<Matrix_CSR, T> &K = feti.K;
-	const typename FETI<T>::Regularization &R = feti.regularization;
-	const typename FETI<T>::EqualityConstraints &L = feti.equalityConstraints;
-	const int IDX = Indexing::CSR;
-
-	nKernels.resize(K.decomposition->neighbors.size());
-	sBuffer.resize(K.decomposition->neighbors.size());
-	rBuffer.resize(K.decomposition->neighbors.size());
-
-	LMAPSize lsize(L.lmap.cend(), feti.sinfo.lambdasLocal);
-	std::vector<std::vector<std::pair<esint, esint> > > kernels(K.decomposition->neighbors.size());
-	std::vector<esint> nsize(K.decomposition->neighbors.size());
-	for (auto p = L.ordered.begin(); p != L.ordered.end(); ++p) {
-		if (L.lmap[*p].from < K.decomposition->dbegin) { // halo
-			kernels[L.lmap[*p].neigh].push_back(std::make_pair(R.R1.domains[L.lmap[*p].to - K.decomposition->dbegin].ncols, feti.sinfo.R1offset + Roffset[L.lmap[*p].to - K.decomposition->dbegin]));
-			nsize[L.lmap[*p].neigh] += lsize(L.lmap.cbegin() + *p) * R.R1.domains[L.lmap[*p].to - K.decomposition->dbegin].ncols;
-		}
-		if (K.decomposition->dend <= L.lmap[*p].to) { // holder
-			nKernels[L.lmap[*p].neigh].push_back(std::make_pair(-1, L.lmap[*p].from));
-		}
-	}
-
-	if (!Communication::receiveUpperKnownSize(kernels, nKernels, K.decomposition->neighbors)) {
-		eslog::error("cannot exchange kernels sizes.\n");
-	}
-
-	GGtOffset = G.nrows;
-	std::vector<esint> noffset(K.decomposition->neighbors.size());
-	for (auto p = L.ordered.begin(); p != L.ordered.end(); ++p) {
-		if (K.decomposition->dend <= L.lmap[*p].to) { // holder
-			GGtOffset += R.R1.domains[L.lmap[*p].from - K.decomposition->dbegin].ncols * nKernels[L.lmap[*p].neigh][noffset[L.lmap[*p].neigh]++].first;
-		}
-		if (L.lmap[*p].neigh == LMAP::LOCAL) {
-			GGtOffset += R.R1.domains[L.lmap[*p].from - K.decomposition->dbegin].ncols * R.R1.domains[L.lmap[*p].to - K.decomposition->dbegin].ncols;
-		}
-	}
-	GGtSize = GGtOffset;
-	Communication::exscan(&GGtOffset, nullptr, 1, MPITools::getType(GGtOffset).mpitype, MPI_SUM);
-	if (info::mpi::rank == 0) {
-		GGtOffset = 0;
-	}
-	esint nnz = GGtOffset + GGtSize;
-	Communication::broadcast(&nnz, 1, MPITools::getType(nnz).mpitype, info::mpi::size - 1);
-	GGt.resize(feti.sinfo.R1totalSize, feti.sinfo.R1totalSize, nnz);
-
-	esint GGtOffsetIterator = GGtOffset;
-	GGt.rows[0] = IDX;
-	std::fill(noffset.begin(), noffset.end(), 0);
-	for (size_t d = 0, i = 0, r = feti.sinfo.R1offset + 1; d < K.domains.size(); ++d) {
-		while (i < L.ordered.size() && L.lmap[L.ordered[i]].from - K.decomposition->dbegin < (esint)d) { ++i; }
-		for (esint k = 0; k < R.R1.domains[d].ncols; ++k, ++r) {
-			size_t j = i;
-			GGt.cols[GGtOffsetIterator++] = feti.sinfo.R1offset + Roffset[d] + IDX; // diagonal is always filled
-			while (j < L.ordered.size() && L.lmap[L.ordered[j]].from - K.decomposition->dbegin == (esint)d) {
-				auto next = L.lmap.cbegin() + L.ordered[j];
-				if (next->neigh == LMAP::LOCAL) {
-					for (esint c = 0; c < R.R1.domains[next->to - K.decomposition->dbegin].ncols; ++c) {
-						GGt.cols[GGtOffsetIterator++] = feti.sinfo.R1offset + Roffset[next->to - K.decomposition->dbegin] + c + IDX;
-					}
-				} else if (next->neigh != LMAP::DIRICHLET) {
-					for (esint c = 0; c < nKernels[next->neigh][noffset[next->neigh]].first; ++c) {
-						GGt.cols[GGtOffsetIterator++] = nKernels[next->neigh][noffset[next->neigh]].second + c + IDX;
-					}
-					nsize[next->neigh] += lsize(next) * nKernels[next->neigh][noffset[next->neigh]].first;
-					++noffset[next->neigh];
-				}
-				++j;
-			}
-			GGt.rows[r] = GGtOffsetIterator + IDX;
-		}
-	}
-
-	for (size_t n = 0; n < K.decomposition->neighbors.size(); ++n) {
-		if (K.decomposition->neighbors[n] < info::mpi::rank) {
-			sBuffer[n].resize(nsize[n]);
-		} else {
-			rBuffer[n].resize(nsize[n]);
-		}
-	}
-
-	if (!Communication::allGatherInplace(GGt.rows, feti.sinfo.R1offset + 1, G.nrows)) {
-		eslog::error("cannot gather GGt rows.\n");
-	}
-	if (!Communication::allGatherInplace(GGt.cols, GGtOffset, GGtSize)) {
-		eslog::error("cannot gather GGt cols.\n");
-	}
-
-	eslog::checkpointln("FETI: GATHER GGT INDICES");
-
-	GGt.shape = Matrix_Shape::UPPER;
-	GGt.type = Matrix_Type::REAL_SYMMETRIC_POSITIVE_DEFINITE;
-	GGtSolver.commit(GGt);
-	GGtSolver.symbolicFactorization();
-
-	invGGt.resize(G.nrows, GGt.ncols);
-	eslog::checkpointln("FETI: GGT SYMBOLIC FACTORIZATION");
-}
-
-template<typename T>
-void OrthogonalTFETISymmetric<T>::_setDenseGGt()
-{
-
 }
 
 template<typename T>
@@ -364,9 +213,8 @@ void OrthogonalTFETISymmetric<T>::_updateG()
 	const typename FETI<T>::Regularization &R = feti.regularization;
 	const typename FETI<T>::EqualityConstraints &L = feti.equalityConstraints;
 
-	#pragma omp parallel for
-	for (size_t d = 0; d < K.domains.size(); ++d) {
-		for (esint k = 0, r = Roffset[d]; k < R.R1.domains[d].ncols; ++k, ++r) {
+	for (size_t d = 0, r = 0; d < K.domains.size(); ++d) {
+		for (esint k = 0; k < R.R1.domains[d].ncols; ++k, ++r) {
 			for (esint c = 0; c < L.domain[d].B1.nrows; ++c) {
 				G.vals[G.rows[r] + c] = 0;
 				for (esint i = L.domain[d].B1.rows[c]; i < L.domain[d].B1.rows[c + 1]; ++i) {
@@ -379,74 +227,83 @@ void OrthogonalTFETISymmetric<T>::_updateG()
 }
 
 template<typename T>
-void OrthogonalTFETISymmetric<T>::_updateSparseGGt()
+void OrthogonalTFETISymmetric<T>::_setGGt()
 {
 	const Matrix_FETI<Matrix_CSR, T> &K = feti.K;
-	const typename FETI<T>::Regularization &R = feti.regularization;
-	const typename FETI<T>::EqualityConstraints &L = feti.equalityConstraints;
+	const int IDX = Indexing::CSR;
 
-	for (size_t n = 0; n < sBuffer.size(); ++n) {
-		sBuffer[n].clear();
+	GGtDataOffset = 0;
+	for (size_t d = 0; d < dualGraph.size(); ++d) {
+		for (size_t i = 0; i < dualGraph[d].size(); ++i) {
+			if (K.decomposition->dbegin + (esint)d <= dualGraph[d][i]) {
+				++GGtDataOffset;
+			}
+		}
 	}
+	GGtOffset = G.nrows;
+	GGtSize = Communication::exscan(GGtOffset);
+	GGtNnz = Communication::exscan(GGtDataOffset);
 
-	LMAPSize lsize(L.lmap.cend(), feti.sinfo.lambdasLocal);
-	for (auto p = L.ordered.begin(); p != L.ordered.end(); ++p) {
-		if (L.lmap[*p].from < K.decomposition->dbegin) { // halo
-			esint r = Roffset[L.lmap[*p].to - K.decomposition->dbegin];
-			esint size = lsize(L.lmap.cbegin() + *p);
-			for (esint k = 0; k < R.R1.domains[L.lmap[*p].to - K.decomposition->dbegin].ncols; ++k) {
-				esint rbegin = G.rows[r + k] + Goffset[*p].second;
-				sBuffer[L.lmap[*p].neigh].insert(sBuffer[L.lmap[*p].neigh].end(), G.vals + rbegin, G.vals + rbegin + size);
+	GGt.resize(GGtSize, GGtSize, GGtNnz);
+	GGt.shape = Matrix_Shape::UPPER;
+	GGt.type = Matrix_Type::REAL_SYMMETRIC_POSITIVE_DEFINITE;
+	GGt.rows[0] = IDX;
+	GGt.rows[GGtOffset] = GGtDataOffset + IDX;
+	for (size_t d = 0; d < dualGraph.size(); ++d) {
+		GGt.rows[GGtOffset + d + 1] = GGt.rows[GGtOffset + d];
+		for (size_t i = 0, c = GGt.rows[GGtOffset + d] - IDX; i < dualGraph[d].size(); ++i) {
+			if (K.decomposition->dbegin + (esint)d <= dualGraph[d][i]) {
+				GGt.cols[c++] = dualGraph[d][i] + IDX;
+				++GGt.rows[GGtOffset + d + 1];
 			}
 		}
 	}
 
-	if (!Communication::receiveUpperKnownSize(sBuffer, rBuffer, K.decomposition->neighbors)) {
-		eslog::error("cannot exchange G values.\n");
+	if (!Communication::allGatherInplace(GGt.rows, feti.sinfo.R1offset + 1, G.nrows)) {
+		eslog::error("cannot gather GGt rows.\n");
+	}
+	if (!Communication::allGatherInplace(GGt.cols, GGtOffset, GGtSize)) {
+		eslog::error("cannot gather GGt cols.\n");
 	}
 
-	esint GGtOffsetIterator = GGtOffset;
-	std::vector<esint> noffset(K.decomposition->neighbors.size()), npointer(K.decomposition->neighbors.size());
-	for (size_t d = 0, i = 0, r = 0; d < K.domains.size(); ++d) {
-		while (i < L.ordered.size() && L.lmap[L.ordered[i]].from - K.decomposition->dbegin < (esint)d) { ++i; }
-		for (esint k = 0; k < R.R1.domains[d].ncols; ++k, ++r) {
-			auto mult = [] (const T *a, const T *b, esint size) {
-				T sum = 0;
-				for (esint i = 0; i < size; ++i) {
-					sum += a[i] * b[i];
-				}
-				return sum;
-			};
+	invGGt.resize(G.nrows, GGtSize);
+	eslog::checkpointln("FETI: SET GGT");
+}
 
-			size_t j = i;
-			GGt.vals[GGtOffsetIterator++] = mult(G.vals + G.rows[r], G.vals + G.rows[r], G.rows[r + 1] - G.rows[r]);
-			while (j < L.ordered.size() && L.lmap[L.ordered[j]].from - K.decomposition->dbegin == (esint)d) {
-				esint fbegin = G.rows[r + k] + Goffset[L.ordered[j]].first;
-				auto next = L.lmap.cbegin() + L.ordered[j];
-				if (next->neigh == LMAP::LOCAL) {
-					esint to = next->to - K.decomposition->dbegin, size = lsize(next);
-					for (esint c = 0; c < R.R1.domains[to].ncols; ++c) {
-						esint tbegin = G.rows[Roffset[to] + c] + Goffset[L.ordered[j]].second;
-						GGt.vals[GGtOffsetIterator++] = mult(G.vals + fbegin, G.vals + tbegin, size);
-					}
-				} else if (next->neigh != LMAP::DIRICHLET) {
-					esint size = lsize(next);
-					for (esint c = 0; c < nKernels[next->neigh][noffset[next->neigh]].first; ++c) {
-						GGt.vals[GGtOffsetIterator++] = mult(G.vals + fbegin, rBuffer[next->neigh].data() + npointer[next->neigh], size);
-						npointer[next->neigh] += size;
+template<typename T>
+void OrthogonalTFETISymmetric<T>::_updateGGt()
+{
+	const Matrix_FETI<Matrix_CSR, T> &K = feti.K;
+	const int IDX = Indexing::CSR;
+
+	for (size_t d = 0; d < dualGraph.size(); ++d) {
+		for (size_t i = 0, c = GGt.rows[GGtOffset + d] - IDX; i < dualGraph[d].size(); ++i) {
+			if (K.decomposition->dbegin + (esint)d <= dualGraph[d][i]) {
+				GGt.vals[++c - 1] = 0;
+				esint k1 = G.rows[d], ke1 = G.rows[d + 1];
+				esint k2 = G.rows[dualGraph[d][i]], ke2 = G.rows[dualGraph[d][i] + 1];
+				while (k1 < ke1 && k2 < ke2) {
+					while (k1 < ke1 && G.cols[k1] < G.cols[k2]) { ++k1; };
+					while (k2 < ke2 && G.cols[k2] < G.cols[k1]) { ++k2; };
+					if (k1 < ke1 && k2 < ke2 && G.cols[k1] == G.cols[k2]) {
+						GGt.vals[c - 1] += G.vals[k1++] * G.vals[k2++];
 					}
 				}
-				++j;
 			}
 		}
 	}
+
 
 	if (!Communication::allGatherInplace(GGt.vals, GGtOffset, GGtSize)) {
 		eslog::error("cannot gather GGt vals.\n");
 	}
 	eslog::checkpointln("FETI: GATHER GGT VALUES");
+
+	DirectSolver<T, Matrix_CSR> GGtSolver;
+	GGtSolver.commit(GGt);
+	GGtSolver.symbolicFactorization();
 	GGtSolver.numericalFactorization();
-	eslog::checkpointln("FETI: GGT NUMERICAL FACTORIZATION");
+	eslog::checkpointln("FETI: GGT FACTORIZATION");
 
 	Matrix_Dense<T> eye;
 	eye.resize(G.nrows, feti.sinfo.R1totalSize);
@@ -456,12 +313,6 @@ void OrthogonalTFETISymmetric<T>::_updateSparseGGt()
 	}
 	GGtSolver.solve(eye, invGGt);
 	eslog::checkpointln("FETI: COMPUTE GGT INVERSE");
-}
-
-template<typename T>
-void OrthogonalTFETISymmetric<T>::_updateDenseGGt()
-{
-
 }
 
 template<typename T>

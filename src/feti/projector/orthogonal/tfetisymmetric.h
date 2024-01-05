@@ -35,12 +35,11 @@ struct OrthogonalTFETISymmetric: public Projector<T> {
 	void applyRInvGGtG(const Vector_Dual<T> &x, Vector_FETI<Vector_Dense, T> &y);
 
 protected:
+	void _computeDualGraph();
 	void _setG();
-	void _setSparseGGt();
-	void _setDenseGGt();
+	void _setGGt();
 	void _updateG();
-	void _updateSparseGGt();
-	void _updateDenseGGt();
+	void _updateGGt();
 
 	void _applyG(const Vector_Dual<T> &in, Vector_Kernel<T> &out);
 	void _applyInvGGt(const Vector_Kernel<T> &in, Vector_Dense<T> &out);
@@ -52,18 +51,18 @@ protected:
 	using Projector<T>::feti;
 	using Projector<T>::e;
 
-	Matrix_CSR<T> G, GGt;
+	Matrix_CSR<T> G, Gt, GGt;
 	Matrix_Dense<T> invGGt;
 
 	Vector_Kernel<T> Gx; // we need whole vector
 	Vector_Dense<T> iGGtGx; // only local part is sufficient
 
-	size_t GGtOffset, GGtSize;
-	std::vector<esint> Roffset;
-	std::vector<std::pair<esint, esint> > Goffset; // offset to G for each LMAL
-	std::vector<std::vector<std::pair<esint, esint> > > nKernels; // n, offset
-	std::vector<std::vector<T> > sBuffer, rBuffer;
-	DirectSolver<T, Matrix_CSR> GGtSolver;
+	size_t GGtOffset, GGtSize, GGtDataOffset, GGtNnz;
+
+	std::vector<std::vector<esint> > dualGraph;
+
+//	struct DomainInfo { esint domain, localOffset, globalOffset, kernels, size; };
+//	std::unordered_map<esint, DomainInfo> domainInfo;
 };
 
 }

@@ -2,8 +2,8 @@
 #ifndef SRC_FETI_COMMON_APPLYB_H_
 #define SRC_FETI_COMMON_APPLYB_H_
 
+#include "vector_dual.h"
 #include "feti/feti.h"
-#include "math/feti/vector_dual.h"
 
 namespace espreso {
 

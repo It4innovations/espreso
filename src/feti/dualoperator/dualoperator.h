@@ -3,7 +3,7 @@
 #define SRC_FETI_DUALOPERATOR_DUALOPERATOR_H_
 
 #include "feti/feti.h"
-#include "math/feti/vector_dual.h"
+#include "feti/common/vector_dual.h"
 
 #include <vector>
 

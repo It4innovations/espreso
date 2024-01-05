@@ -1,9 +1,8 @@
 
 #include "math/math.h"
 #include "math/primitives/vector_dense.h"
-#include "math/feti/lmap.h"
-#include "math/feti/vector_dual.h"
-#include "math/feti/vector_kernel.h"
+#include "feti/common/vector_dual.h"
+#include "feti/common/vector_kernel.h"
 #include "math/physics/vector_distributed.h"
 #include "math/physics/vector_feti.h"
 #include "math/physics/matrix_distributed.h"
@@ -217,19 +216,6 @@ void store(const std::vector<std::vector<esint> > &v, const char* file)
 {
 	for (size_t d = 0; d < v.size(); ++d) {
 		store(v[d], (std::string(file) + std::to_string(d)).c_str());
-	}
-}
-
-template <>
-void store(const std::vector<LMAP> &lmap, const char* file)
-{
-	std::ofstream os(std::string(file) + ".txt");
-	for (auto l = lmap.cbegin(); l != lmap.cend(); ++l) {
-		if (l->neigh < 0) {
-			os << std::setw(4) << l->offset << ": " << l->from << "->" << l->to << "\n";
-		} else {
-			os << std::setw(4) << l->offset << ": " << l->from << "->" << l->to << "::" << info::mesh->neighbors[l->neigh] << "\n";
-		}
 	}
 }
 

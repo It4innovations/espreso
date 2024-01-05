@@ -84,7 +84,8 @@ void FETILinearSystemSolver<T, Physics>::update(step::Step &step)
 			math::store(feti.equalityConstraints.domain[d].B1, utils::filename(utils::debugDirectory(step) + "/system", "B1" + std::to_string(d)).c_str());
 			math::store(feti.equalityConstraints.domain[d].duplication, utils::filename(utils::debugDirectory(step) + "/system", "B1Duplication" + std::to_string(d)).c_str());
 			math::store(feti.equalityConstraints.domain[d].D2C, utils::filename(utils::debugDirectory(step) + "/system", "D2C" + std::to_string(d)).c_str());
-			math::store(feti.equalityConstraints.lmap, utils::filename(utils::debugDirectory(step) + "/system", "LMAP").c_str());
+//			math::store(feti.equalityConstraints.lmap, utils::filename(utils::debugDirectory(step) + "/system", "LMAP").c_str());
+//			math::store(feti.equalityConstraints.lmmap, utils::filename(utils::debugDirectory(step) + "/system", "LMAP").c_str());
 		}
 	}
 	eslog::endln("FETI: LINEAR SYSTEM UPDATED");

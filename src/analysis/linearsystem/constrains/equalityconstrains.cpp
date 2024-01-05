@@ -13,186 +13,143 @@ template <typename T>
 void EqualityConstrains<T>::set(step::Step &step, const Vector_Distributed<Vector_Sparse, T> &dirichlet)
 {
 	typename FETI<T>::EqualityConstraints &eq = feti.equalityConstraints;
-	bool redundantLagrange = true;
-
-	struct HasDirichlet {
-		esint index = 0;
-		const Vector_Distributed<Vector_Sparse, T> &dirichlet;
-
-		HasDirichlet(const Vector_Distributed<Vector_Sparse, T> &dirichlet): dirichlet(dirichlet) {}
-
-		bool operator()(esint dof) {
-			while (index < dirichlet.cluster.nnz && dirichlet.cluster.indices[index] < dof) { ++index; }
-			return (index < dirichlet.cluster.nnz && dirichlet.cluster.indices[index] == dof);
-		}
-	};
-
-	eq.global = eq.nhalo = eq.paired = eq.nn = eq.local = 0;
 	eq.domain.resize(feti.K.domains.size());
 
+	size_t maxMultiplicity = 2;
 	std::vector<std::vector<esint> > COLS(feti.K.domains.size()), D2C(feti.K.domains.size());
 	std::vector<std::vector<T> > VALS(feti.K.domains.size());
-	std::vector<std::vector<esint, initless_allocator<esint> > > dpermutation(feti.K.domains.size());
 
-	if (redundantLagrange && feti.K.decomposition->sharedDOFs.size()) {
-		int local = feti.K.decomposition->neighbors.size(); // we need to sort them at the end
-		HasDirichlet hasDirichlet(dirichlet);
-		struct __map__ { int from, to, offset, neigh; };
-		std::vector<__map__> lmap;
+	struct __lambda__ { int dof, size; };
+	std::vector<__lambda__> permutation;
 
-		auto map = feti.K.decomposition->dmap->cbegin();
-		for (size_t n = 0, prev = 0; n < feti.K.decomposition->sharedDOFs.size(); prev = feti.K.decomposition->sharedDOFs[n++]) {
-			map += feti.K.decomposition->sharedDOFs[n] - prev;
-			if (hasDirichlet(feti.K.decomposition->sharedDOFs[n])) { continue; } // DOFs with Dirichlet are not glued
-
-			for (auto di1 = map->begin(); di1 != map->end(); ++di1) {
-				for (auto di2 = di1 + 1; di2 != map->end(); ++di2) {
-					if (feti.K.decomposition->ismy(di1->domain) || feti.K.decomposition->ismy(di2->domain)) {
-
-						lmap.push_back({ di1->domain, di2->domain, eq.paired, local });
-						if (feti.K.decomposition->ismy(di1->domain)) {
-							D2C[di1->domain - feti.K.decomposition->dbegin].push_back(eq.paired);
-							COLS[di1->domain - feti.K.decomposition->dbegin].push_back(di1->index);
-							VALS[di1->domain - feti.K.decomposition->dbegin].push_back(1);
-						} else {
-							lmap.back().neigh = feti.K.decomposition->noffset(di1->domain);
-						}
-						if (feti.K.decomposition->ismy(di2->domain)) {
-							D2C[di2->domain - feti.K.decomposition->dbegin].push_back(eq.paired);
-							COLS[di2->domain - feti.K.decomposition->dbegin].push_back(di2->index);
-							VALS[di2->domain - feti.K.decomposition->dbegin].push_back(-1);
-						} else {
-							lmap.back().neigh = feti.K.decomposition->noffset(di2->domain);
-						}
-						++eq.paired;
-					}
-				}
-			}
-		}
-
-		std::vector<esint, initless_allocator<esint> > permutation(lmap.size()), backpermutation(lmap.size());
-		std::iota(permutation.begin(), permutation.end(), 0);
-		std::sort(permutation.begin(), permutation.end(), [&] (esint i, esint j) {
-			if (lmap[i].neigh != lmap[j].neigh) {
-				return lmap[i].neigh < lmap[j].neigh;
-			}
-			if (lmap[i].from == lmap[j].from) {
-				if (lmap[i].to == lmap[j].to) {
-					return lmap[i].offset < lmap[j].offset;
-				}
-				return lmap[i].to < lmap[j].to;
-			}
-			return lmap[i].from < lmap[j].from;
-		});
-
-		eq.lmap.push_back({ lmap[*permutation.begin()].from, lmap[*permutation.begin()].to, 0, lmap[*permutation.begin()].neigh == local ? LMAP::LOCAL : lmap[*permutation.begin()].neigh });
-		eq.nhalo = feti.K.decomposition->dbegin <= eq.lmap.back().from ? 0L : permutation.size();
-		for (auto p = permutation.begin(); p != permutation.end(); ++p) {
-			esint offset = backpermutation[*p] = p - permutation.begin();
-			if (eq.lmap.back().from != lmap[*p].from || eq.lmap.back().to != lmap[*p].to) {
-				eq.lmap.push_back({ lmap[*p].from, lmap[*p].to, offset, lmap[*p].neigh == local ? LMAP::LOCAL : lmap[*p].neigh });
-				if (feti.K.decomposition->dbegin <= eq.lmap.back().from) {
-					eq.nhalo = std::min(eq.nhalo, offset);
-				}
-			}
-		}
-
-		#pragma omp parallel for
-		for (size_t d = 0; d < feti.K.domains.size(); ++d) {
-			dpermutation[d].resize(COLS[d].size());
-			std::iota(dpermutation[d].begin(), dpermutation[d].end(), 0);
-			std::sort(dpermutation[d].begin(), dpermutation[d].end(), [&] (esint i, esint j) {
-				return backpermutation[D2C[d][i]] < backpermutation[D2C[d][j]];
-			});
-			eq.domain[d].D2C.reserve(dpermutation[d].size());
-			for (auto p = dpermutation[d].begin(); p != dpermutation[d].end(); ++p) {
-				eq.domain[d].D2C.push_back(backpermutation[D2C[d][*p]]);
-			}
-		}
-	}
-
-	if (dirichlet.cluster.nnz) {
-		auto map = feti.K.decomposition->dmap->cbegin();
-		for (esint i = 0, prev = 0; i < dirichlet.cluster.nnz; prev = dirichlet.cluster.indices[i++]) {
-			map += dirichlet.cluster.indices[i] - prev;
-			for (auto di = map->begin(); di != map->end(); ++di) {
+	esint dindex = 0, dof = 0;
+	for (auto dmap = feti.K.decomposition->dmap->cbegin(); dmap != feti.K.decomposition->dmap->cend(); ++dmap, ++dof) {
+		while (dindex < dirichlet.cluster.nnz && dirichlet.cluster.indices[dindex] < dof) { ++dindex; }
+		if (dindex < dirichlet.cluster.nnz && dirichlet.cluster.indices[dindex] == dof) {
+			for (auto di = dmap->begin(); di != dmap->end(); ++di) {
 				if (feti.K.decomposition->ismy(di->domain)) {
 					COLS[di->domain - feti.K.decomposition->dbegin].push_back(di->index);
 					VALS[di->domain - feti.K.decomposition->dbegin].push_back(1);
-					++eq.local;
+				}
+			}
+		} else {
+			maxMultiplicity = std::max(maxMultiplicity, dmap->size());
+			for (size_t i = 1; i < dmap->size(); ++i) {
+				permutation.push_back(__lambda__{ dof, (int)i + 1 });
+			}
+		}
+	}
+
+	std::sort(permutation.begin(), permutation.end(), [&] (const __lambda__ &i, const __lambda__ &j) {
+		auto imap = feti.K.decomposition->dmap->cbegin() + i.dof;
+		auto jmap = feti.K.decomposition->dmap->cbegin() + j.dof;
+		int size = std::min(i.size, j.size);
+		for (int k = 0; k < size; ++k) {
+			if (imap->at(k) != jmap->at(k)) { return imap->at(k) < jmap->at(k); }
+		}
+		if (i.size != j.size) {
+			return i.size < j.size;
+		} else {
+			return i.dof < j.dof;
+		}
+	});
+
+	Matrix_Dense<double> lambdas;
+	lambdas.resize(maxMultiplicity - 1, maxMultiplicity);
+	math::set(lambdas.nrows * lambdas.ncols, lambdas.vals, 1, T{0});
+	for (esint r = 0, nc = 1; r < lambdas.nrows; ++r, ++nc) {
+		double scale = std::sqrt(1 + (double)nc / (nc * nc));
+		for (esint c = 0; c < nc; ++c) {
+			lambdas.vals[r * maxMultiplicity + c] = scale / (nc + 1);
+		}
+		lambdas.vals[r * maxMultiplicity + nc] = -scale * nc / (nc + 1);
+	}
+
+	esint lambda = 0;
+	for (size_t d = 0; d < feti.K.domains.size(); ++d) {
+		for (size_t i = 0; i < COLS[d].size(); ++i) {
+			D2C[d].push_back(lambda++);
+		}
+		eq.cmap.push_back(COLS[d].size());
+		eq.cmap.push_back(1);
+		eq.cmap.push_back(feti.K.decomposition->dbegin + d);
+	}
+	eq.dirichlet = eq.nhalo = lambda;
+
+	for (size_t i = 0, prev = eq.cmap.size(); i < permutation.size(); ++i, ++lambda) {
+		auto dmap = feti.K.decomposition->dmap->cbegin() + permutation[i].dof;
+		size_t cbegin = eq.cmap.size();
+		eq.cmap.push_back(1);
+		eq.cmap.push_back(permutation[i].size);
+		if (dmap->at(0).domain < feti.K.decomposition->dbegin) {
+			eq.nhalo = lambda;
+		}
+		for (int c = 0, r = permutation[i].size - 2; c < permutation[i].size; ++c) {
+			eq.cmap.push_back(dmap->at(c).domain);
+			if (feti.K.decomposition->ismy(dmap->at(c).domain)) {
+				D2C [dmap->at(c).domain - feti.K.decomposition->dbegin].push_back(lambda);
+				COLS[dmap->at(c).domain - feti.K.decomposition->dbegin].push_back(dmap->at(c).index);
+				VALS[dmap->at(c).domain - feti.K.decomposition->dbegin].push_back(lambdas.vals[r * maxMultiplicity + c]);
+			}
+		}
+		if (eq.cmap[prev + 1] == eq.cmap[cbegin + 1]) { // domains sizes
+			if (std::equal(eq.cmap.cbegin() + cbegin + 1, eq.cmap.cend(), eq.cmap.cbegin() + prev + 1)) {
+				if (prev != cbegin) {
+					++eq.cmap[prev];
+					eq.cmap.resize(cbegin);
 				}
 			}
 		}
 	}
-	eq.c.resize(eq.paired + eq.local);
-	std::vector<esint> doffset(feti.K.domains.size());
-	for (esint d = 0, offset = eq.paired; d < (esint)feti.K.domains.size(); ++d) {
-		if (COLS[d].size() != dpermutation[d].size()) {
-			eq.lmap.push_back({ feti.K.decomposition->dbegin + d, feti.K.decomposition->dbegin + d, offset, LMAP::DIRICHLET });
-			doffset[d] = offset;
-			offset += COLS[d].size() - dpermutation[d].size();
-		}
-	}
-	#pragma omp parallel for
-	for (size_t d = 0; d < feti.K.domains.size(); ++d) {
-		for (size_t i = dpermutation[d].size(), j = 0; i < COLS[d].size(); ++i) {
-			eq.domain[d].D2C.push_back(doffset[d] + j++);
-		}
-	}
+	eq.size = lambda;
 
 	#pragma omp parallel for
 	for (size_t d = 0; d < feti.K.domains.size(); ++d) {
 		eq.domain[d].B1.resize(COLS[d].size(), feti.K.domains[d].nrows, COLS[d].size());
-		eq.domain[d].duplication.resize(COLS[d].size());
-		math::set(eq.domain[d].duplication, T{.5});
-
 		std::iota(eq.domain[d].B1.rows, eq.domain[d].B1.rows + COLS[d].size() + 1, 0); // B1 is indexed from 0
-		for (size_t i = 0; i < dpermutation[d].size(); ++i) {
-			eq.domain[d].B1.cols[i] = COLS[d][dpermutation[d][i]];
-			eq.domain[d].B1.vals[i] = VALS[d][dpermutation[d][i]];
-		}
-		for (size_t i = dpermutation[d].size(); i < COLS[d].size(); ++i) {
-			eq.domain[d].B1.cols[i] = COLS[d][i];
-			eq.domain[d].B1.vals[i] = 1;
-		}
+		std::copy(COLS[d].begin(), COLS[d].end(), eq.domain[d].B1.cols);
+		std::copy(VALS[d].begin(), VALS[d].end(), eq.domain[d].B1.vals);
+		eq.domain[d].D2C = D2C[d];
 	}
 
-	eq.ordered.reserve(eq.lmap.size());
-	for (size_t i = 0; i < eq.lmap.size(); ++i) {
-		eq.ordered.push_back(i);
-	}
-	std::sort(eq.ordered.begin(), eq.ordered.end(), [&] (esint i, esint j) {
-		if (eq.lmap[i].from == eq.lmap[j].from) {
-			return eq.lmap[i].to < eq.lmap[j].to;
-		}
-		return eq.lmap[i].from < eq.lmap[j].from;
-	});
+	eq.c.resize(eq.size);
+//
+//	for (size_t i = 0; i < eq.cmap.size(); ) {
+//		printf("%dx:", eq.cmap[i]);
+//		for (esint d = 0; d < eq.cmap[i + 1]; ++d) {
+//			printf(" %d", eq.cmap[i + 2 + d]);
+//		}
+//		printf("\n");
+//		i += eq.cmap[i + 1] + 2;
+//	}
 }
 
 template <typename T>
 void EqualityConstrains<T>::update(step::Step &step, const Vector_Distributed<Vector_Sparse, T> &dirichlet)
 {
 	typename FETI<T>::EqualityConstraints &eq = feti.equalityConstraints;
-	bool redundantLagrange = true;
 
-	// TODO: store Dirichlet directly to 'c'
 	math::set(eq.c, T{0});
+	std::vector<esint> dindex(feti.K.domains.size());
+
+	for (size_t i = 0, index = 0; i < eq.cmap.size(); ) {
+		dindex[eq.cmap[i + 2] - feti.K.decomposition->dbegin] = index;
+		index += eq.cmap[i];
+		if ((esint)index == eq.dirichlet) {
+			break;
+		}
+		i += eq.cmap[i + 1] + 2;
+	}
+
 	if (dirichlet.cluster.nnz) {
-		std::vector<std::vector<T> > C(feti.K.domains.size());
 		auto map = feti.K.decomposition->dmap->cbegin();
 		for (esint i = 0, prev = 0; i < dirichlet.cluster.nnz; prev = dirichlet.cluster.indices[i++]) {
 			map += dirichlet.cluster.indices[i] - prev;
 			for (auto di = map->begin(); di != map->end(); ++di) {
 				if (feti.K.decomposition->ismy(di->domain)) {
-					C[di->domain - feti.K.decomposition->dbegin].push_back(dirichlet.cluster.vals[i]);
-					++eq.local;
+					eq.c.vals[dindex[di->domain - feti.K.decomposition->dbegin]++] = dirichlet.cluster.vals[i];
 				}
 			}
-		}
-		std::vector<esint> doffset(feti.K.domains.size());
-		for (esint d = 0, offset = eq.paired; d < (esint)feti.K.domains.size(); ++d) {
-			std::copy(C[d].begin(), C[d].end(), eq.c.vals + offset);
-			offset += C[d].size();
 		}
 	}
 }

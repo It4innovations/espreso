@@ -39,8 +39,8 @@ bool FETI<T>::set(const step::Step &step)
 		sinfo.R1size = offset[0] = size[2] += regularization.R1.domains[d].ncols;
 		sinfo.R2size = offset[1] = size[3] += regularization.R2.domains[d].ncols;
 	}
-	sinfo.lambdasLocal = equalityConstraints.global + equalityConstraints.paired + equalityConstraints.local + equalityConstraints.nn;
-	size[4] = sinfo.lambdasLocal - equalityConstraints.nhalo;
+	sinfo.lambdasLocal = equalityConstraints.size;
+	size[4] = sinfo.lambdasLocal - equalityConstraints.nhalo + equalityConstraints.dirichlet;
 
 	Communication::exscan(offset, NULL, 2, MPITools::getType<esint>().mpitype, MPI_SUM);
 	Communication::allReduce(size, NULL, 5, MPITools::getType<esint>().mpitype, MPI_SUM);
@@ -51,7 +51,7 @@ bool FETI<T>::set(const step::Step &step)
 	sinfo.R1offset = info::mpi::rank ? offset[0] : 0;
 	sinfo.R2offset = info::mpi::rank ? offset[1] : 0;
 
-	Vector_Dual<T>::set(equalityConstraints.nhalo, sinfo.lambdasLocal, equalityConstraints.lmap, K.decomposition->neighbors);
+	Vector_Dual<T>::set(equalityConstraints.dirichlet, equalityConstraints.nhalo, equalityConstraints.cmap, *K.decomposition);
 	Vector_Kernel<T>::set(sinfo.R1offset, sinfo.R1size, sinfo.R1totalSize);
 
 	eslog::checkpointln("FETI: SET INFO");

@@ -9,7 +9,9 @@
 #include "math/primitives/matrix_csr.h"
 #include "math/physics/matrix_feti.h"
 #include "math/physics/vector_feti.h"
-#include "math/feti/lmap.h"
+
+#include <map>
+#include <set>
 
 namespace espreso {
 
@@ -42,9 +44,9 @@ struct FETI {
 			Vector_Dense<T> duplication;
 		};
 
-		esint global, nhalo, paired, local, nn;
-		std::vector<LMAP> lmap;
-		std::vector<int> ordered;
+		std::vector<esint> cmap; // size, ndomains <d0, d1, ..., dn>; size, ndomains <>; ...;
+
+		esint dirichlet, nhalo, size;
 		std::vector<Domain> domain;
 		Vector_Dense<T> c;
 	};

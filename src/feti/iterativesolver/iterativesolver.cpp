@@ -7,7 +7,7 @@
 #include "feti/projector/projector.h"
 #include "feti/dualoperator/dualoperator.h"
 
-#include "math/feti/vector_kernel.h"
+#include "feti/common/vector_kernel.h"
 
 #include "esinfo/eslog.hpp"
 
