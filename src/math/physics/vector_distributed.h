@@ -63,7 +63,7 @@ public:
 
 	T norm()
 	{
-		T dot = math::dot(cluster.size - distribution->halo.size(), cluster.vals + distribution->halo.size(), 1, cluster.vals + distribution->halo.size(), 1);
+		T dot = math::blas::dot(cluster.size - distribution->halo.size(), cluster.vals + distribution->halo.size(), 1, cluster.vals + distribution->halo.size(), 1);
 		Communication::allReduce(&dot, NULL, 1, MPI_DOUBLE, MPI_SUM);
 		return std::sqrt(dot);
 	}

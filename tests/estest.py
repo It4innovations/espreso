@@ -81,7 +81,7 @@ class ESPRESOTest:
     @staticmethod
     def compare_emr(preset):
         def compare(v1, v2):
-            if v1 != v2 and abs(float(v1) - float(v2)) > 1e-4 and abs((float(v1) - float(v2)) / float(v1)) > 1e-3:
+            if v1 != v2 and abs(float(v1) - float(v2)) > 1e-4 and abs((float(v1) - float(v2)) / float(v2)) > 1e-3:
                 error = "various monitored results:\n"
                 error += "  region={0}".format(table1[0][column])
                 error += ", property={0}".format(table1[1][column])
@@ -94,6 +94,7 @@ class ESPRESOTest:
         def create_table(emr):
             return [ [ value.strip() for value in line.split(";") ] for line in open(emr, "r").readlines() if len(line.strip()) ]
 
+        preset = preset.strip()
         emr = os.path.join(ESPRESOTest.path, "results", "last", ESPRESOTest.ecf.replace(".ecf", ".emr"))
         if not os.path.isfile(emr):
             ESPRESOTest.raise_error("Missing monitoring report '{0}'.".format(emr))

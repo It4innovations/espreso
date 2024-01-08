@@ -48,7 +48,7 @@ void StructuralMechanicsSteadyStateLinear::analyze()
 
 	switch (configuration.solver) {
 	case LoadStepSolverConfiguration::SOLVER::FETI:
-		builder = new UniformBuilderFETI<double>(configuration.displacement, info::mesh->dimension, shape);
+		builder = new UniformBuilderFETI<double>(configuration.feti, configuration.displacement, info::mesh->dimension, shape);
 		solver = new FETILinearSystemSolver<double, StructuralMechanicsSteadyStateLinear>(configuration.feti);
 		break;
 	case LoadStepSolverConfiguration::SOLVER::HYPRE:   break;

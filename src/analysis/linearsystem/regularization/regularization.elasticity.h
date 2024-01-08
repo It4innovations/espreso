@@ -19,6 +19,7 @@ protected:
 	void set3D(esint domain);
 
 	using Regularization<T>::feti;
+	std::vector<Matrix_Dense<T> > NtNNtN;
 };
 
 }

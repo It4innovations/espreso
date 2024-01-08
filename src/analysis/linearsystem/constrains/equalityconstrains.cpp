@@ -23,29 +23,31 @@ void EqualityConstrains<T>::set(step::Step &step, const Vector_Distributed<Vecto
 	std::vector<__lambda__> permutation;
 
 	esint dindex = 0, dof = 0;
-	for (auto dmap = feti.K.decomposition->dmap->cbegin(); dmap != feti.K.decomposition->dmap->cend(); ++dmap, ++dof) {
+	for (auto dmap = feti.decomposition->dmap->cbegin(); dmap != feti.decomposition->dmap->cend(); ++dmap, ++dof) {
 		while (dindex < dirichlet.cluster.nnz && dirichlet.cluster.indices[dindex] < dof) { ++dindex; }
 		if (dindex < dirichlet.cluster.nnz && dirichlet.cluster.indices[dindex] == dof) {
 			for (auto di = dmap->begin(); di != dmap->end(); ++di) {
-				if (feti.K.decomposition->ismy(di->domain)) {
-					COLS[di->domain - feti.K.decomposition->dbegin].push_back(di->index);
-					VALS[di->domain - feti.K.decomposition->dbegin].push_back(1);
+				if (feti.decomposition->ismy(di->domain)) {
+					COLS[di->domain - feti.decomposition->dbegin].push_back(di->index);
+					VALS[di->domain - feti.decomposition->dbegin].push_back(1);
 				}
 			}
 		} else {
 			maxMultiplicity = std::max(maxMultiplicity, dmap->size());
-			for (size_t i = 1; i < dmap->size(); ++i) {
+			size_t i = 0;
+			while (i < dmap->size() && !feti.decomposition->ismy(dmap->at(i).domain)) { ++i; }
+			for (i = std::max(i, 1UL); i < dmap->size(); ++i) {
 				permutation.push_back(__lambda__{ dof, (int)i + 1 });
 			}
 		}
 	}
 
 	std::sort(permutation.begin(), permutation.end(), [&] (const __lambda__ &i, const __lambda__ &j) {
-		auto imap = feti.K.decomposition->dmap->cbegin() + i.dof;
-		auto jmap = feti.K.decomposition->dmap->cbegin() + j.dof;
+		auto imap = feti.decomposition->dmap->cbegin() + i.dof;
+		auto jmap = feti.decomposition->dmap->cbegin() + j.dof;
 		int size = std::min(i.size, j.size);
 		for (int k = 0; k < size; ++k) {
-			if (imap->at(k) != jmap->at(k)) { return imap->at(k) < jmap->at(k); }
+			if (imap->at(k).domain != jmap->at(k).domain) { return imap->at(k).domain < jmap->at(k).domain; }
 		}
 		if (i.size != j.size) {
 			return i.size < j.size;
@@ -72,24 +74,24 @@ void EqualityConstrains<T>::set(step::Step &step, const Vector_Distributed<Vecto
 		}
 		eq.cmap.push_back(COLS[d].size());
 		eq.cmap.push_back(1);
-		eq.cmap.push_back(feti.K.decomposition->dbegin + d);
+		eq.cmap.push_back(feti.decomposition->dbegin + d);
 	}
 	eq.dirichlet = eq.nhalo = lambda;
 
 	for (size_t i = 0, prev = eq.cmap.size(); i < permutation.size(); ++i, ++lambda) {
-		auto dmap = feti.K.decomposition->dmap->cbegin() + permutation[i].dof;
+		auto dmap = feti.decomposition->dmap->cbegin() + permutation[i].dof;
 		size_t cbegin = eq.cmap.size();
 		eq.cmap.push_back(1);
 		eq.cmap.push_back(permutation[i].size);
-		if (dmap->at(0).domain < feti.K.decomposition->dbegin) {
-			eq.nhalo = lambda;
+		if (dmap->at(0).domain < feti.decomposition->dbegin) {
+			eq.nhalo = lambda + 1;
 		}
 		for (int c = 0, r = permutation[i].size - 2; c < permutation[i].size; ++c) {
 			eq.cmap.push_back(dmap->at(c).domain);
-			if (feti.K.decomposition->ismy(dmap->at(c).domain)) {
-				D2C [dmap->at(c).domain - feti.K.decomposition->dbegin].push_back(lambda);
-				COLS[dmap->at(c).domain - feti.K.decomposition->dbegin].push_back(dmap->at(c).index);
-				VALS[dmap->at(c).domain - feti.K.decomposition->dbegin].push_back(lambdas.vals[r * maxMultiplicity + c]);
+			if (feti.decomposition->ismy(dmap->at(c).domain)) {
+				D2C [dmap->at(c).domain - feti.decomposition->dbegin].push_back(lambda);
+				COLS[dmap->at(c).domain - feti.decomposition->dbegin].push_back(dmap->at(c).index);
+				VALS[dmap->at(c).domain - feti.decomposition->dbegin].push_back(lambdas.vals[r * maxMultiplicity + c]);
 			}
 		}
 		if (eq.cmap[prev + 1] == eq.cmap[cbegin + 1]) { // domains sizes
@@ -133,7 +135,7 @@ void EqualityConstrains<T>::update(step::Step &step, const Vector_Distributed<Ve
 	std::vector<esint> dindex(feti.K.domains.size());
 
 	for (size_t i = 0, index = 0; i < eq.cmap.size(); ) {
-		dindex[eq.cmap[i + 2] - feti.K.decomposition->dbegin] = index;
+		dindex[eq.cmap[i + 2] - feti.decomposition->dbegin] = index;
 		index += eq.cmap[i];
 		if ((esint)index == eq.dirichlet) {
 			break;
@@ -142,12 +144,12 @@ void EqualityConstrains<T>::update(step::Step &step, const Vector_Distributed<Ve
 	}
 
 	if (dirichlet.cluster.nnz) {
-		auto map = feti.K.decomposition->dmap->cbegin();
+		auto map = feti.decomposition->dmap->cbegin();
 		for (esint i = 0, prev = 0; i < dirichlet.cluster.nnz; prev = dirichlet.cluster.indices[i++]) {
 			map += dirichlet.cluster.indices[i] - prev;
 			for (auto di = map->begin(); di != map->end(); ++di) {
-				if (feti.K.decomposition->ismy(di->domain)) {
-					eq.c.vals[dindex[di->domain - feti.K.decomposition->dbegin]++] = dirichlet.cluster.vals[i];
+				if (feti.decomposition->ismy(di->domain)) {
+					eq.c.vals[dindex[di->domain - feti.decomposition->dbegin]++] = dirichlet.cluster.vals[i];
 				}
 			}
 		}

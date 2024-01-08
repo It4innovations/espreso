@@ -139,9 +139,9 @@ struct IntegrationKernel<nodes, 3, 2>: Integration {
 			dND5 = dND5 + dNY * coordsZ;
 		}
 
-		SIMD x = dND1 * dND5 - dND2 * dND4;
-		SIMD y = dND2 * dND3 - dND0 * dND5;
-		SIMD z = dND0 * dND4 - dND1 * dND3;
+		SIMD x = dND4 * dND2 - dND5 * dND1;
+		SIMD y = dND5 * dND0 - dND3 * dND2;
+		SIMD z = dND3 * dND1 - dND4 * dND0;
 		SIMD res = x * x + y * y + z * z;
 		for (size_t s = 0; s < SIMD::size; ++s) {
 			element.det[s] = std::sqrt(res[s]);

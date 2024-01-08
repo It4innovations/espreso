@@ -15,7 +15,7 @@ DEFAULT_ARGS {
   8        4;
   9        8;
 
-  10 MKLPDSS;
+  10    FETI;
 }
 
 INPUT_TYPE              GENERATOR;
@@ -102,9 +102,10 @@ STRUCTURAL_MECHANICS_3D {
 
       FETI {
         METHOD          TOTAL_FETI;
-        PRECONDITIONER      LUMPED;
+        PRECONDITIONER   DIRICHLET;
         ITERATIVE_SOLVER       PCG;
         REGULARIZATION   ALGEBRAIC;
+        PRECISION             1e-7;
       }
 
       DISPLACEMENT {

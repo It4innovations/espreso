@@ -53,6 +53,7 @@ template <typename T, class Physics>
 void FETILinearSystemSolver<T, Physics>::set(step::Step &step)
 {
 	eslog::startln("FETI: SETTING LINEAR SYSTEM", "FETI[SET]");
+	feti.decomposition = feti.K.decomposition;
 	equalityConstrains->set(step, dirichlet);
 	eslog::checkpointln("FETI: SET B1");
 	regularization->set(step);
@@ -70,7 +71,6 @@ void FETILinearSystemSolver<T, Physics>::update(step::Step &step)
 	eslog::checkpointln("FETI: UPDATE B1");
 	regularization->update(step);
 	eslog::checkpointln("FETI: UPDATE KERNELS");
-	feti.update(step);
 	if (info::ecf->output.print_matrices) {
 		eslog::storedata(" STORE: system/{K, f, R, RegMat}\n");
 		math::store(feti.K, utils::filename(utils::debugDirectory(step) + "/system", "K").c_str());
@@ -88,6 +88,7 @@ void FETILinearSystemSolver<T, Physics>::update(step::Step &step)
 //			math::store(feti.equalityConstraints.lmmap, utils::filename(utils::debugDirectory(step) + "/system", "LMAP").c_str());
 		}
 	}
+	feti.update(step);
 	eslog::endln("FETI: LINEAR SYSTEM UPDATED");
 }
 

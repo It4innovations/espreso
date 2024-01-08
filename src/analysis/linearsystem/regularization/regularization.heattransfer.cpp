@@ -14,7 +14,7 @@ void RegularizationHeatTransfer<T>::setAnalytic()
 		Matrix_Dense<T> &R = feti.regularization.R1.domains[d];
 		Matrix_CSR<T> &RegMat = feti.regularization.RegMat.domains[d];
 
-		R.resize(K.nrows, 1);
+		R.resize(1, K.nrows);
 		R.type = Matrix_Type::REAL_NONSYMMETRIC;
 		R.shape = Matrix_Shape::FULL;
 
@@ -36,10 +36,12 @@ void RegularizationHeatTransfer<T>::updateAnalytic()
 		Matrix_Dense<T> &R = feti.regularization.R1.domains[d];
 		Matrix_CSR<T> &RegMat = feti.regularization.RegMat.domains[d];
 
-		RegMat.vals[0] = math::getDiagonalMax(K);
+		RegMat.vals[0] = 0;
+		for (esint r = 0; r < K.nrows; ++r) {
+			RegMat.vals[0] = std::max(RegMat.vals[0], K.vals[K.rows[r] - Indexing::CSR]);
+		}
 		math::set(R, 1.0 / std::sqrt(K.nrows));
 	}
-
 }
 
 }

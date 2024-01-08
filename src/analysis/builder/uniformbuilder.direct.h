@@ -116,7 +116,7 @@ struct UniformBuilderDirect: UniformBuilderDirectPattern, SparseMatrixBuilder<T>
 						++nsize;
 					}
 				}
-				_v->mapping.boundary[r].resize(info::mesh->boundaryRegions[r]->nodes->threads());
+				_v->mapping.boundary[r].resize(region->nodes->threads());
 				for (size_t t = 0; t < _v->mapping.boundary[r].size(); ++t) {
 					_v->mapping.boundary[r][t].filter = bregion[r].dirichlet;
 					_v->mapping.boundary[r][t].data = _v->cluster.vals;

@@ -38,7 +38,7 @@ SpBLAS<T, Matrix>::~SpBLAS()
 }
 
 template <typename T, template <typename> class Matrix>
-SpBLAS<T, Matrix>::SpBLAS(const Matrix<T> &a)
+SpBLAS<T, Matrix>::SpBLAS(Matrix<T> &a)
 : matrix(&a)
 {
 	_spblas = new Matrix_SpBLAS_External_Representation();
@@ -48,7 +48,7 @@ SpBLAS<T, Matrix>::SpBLAS(const Matrix<T> &a)
 }
 
 template <typename T, template <typename> class Matrix>
-void SpBLAS<T, Matrix>::insert(const Matrix<T> &a)
+void SpBLAS<T, Matrix>::insert(Matrix<T> &a)
 {
 	matrix = &a;
 	if (_spblas) {
@@ -67,7 +67,7 @@ void SpBLAS<T, Matrix>::insert(const Matrix<T> &a)
 }
 
 template <typename T, template <typename> class Matrix>
-void SpBLAS<T, Matrix>::insertTransposed(const Matrix<T> &a)
+void SpBLAS<T, Matrix>::insertTransposed(Matrix<T> &a)
 {
 	if (_spblas) {
 		_finish<esint>(_spblas->common);

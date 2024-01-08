@@ -2,4 +2,4 @@
 loadstep ;  substep ;         time ;  TEMPERATURE  ;  TEMPERATURE  ;    GRADIENT    ;      FLUX      ;   TEMPERATURE  ;
          ;          ;              ;     <MAX>     ;     <MIN>     ;      <MAX>     ;      <MAX>     ;    <AVERAGE>   ;
 
-       1 ;        1 ;     1.000000 ;  1.000000e+02 ;  3.000000e+02 ;   8.875160e+02 ;   2.775511e+03 ;   2.492543e+02 ; 
+       1 ;        1 ;     1.000000 ;  1.000000e+02 ;  3.000000e+02 ;   7.003933e+02 ;   1.335195e+04 ;   2.334749e+02 ; 

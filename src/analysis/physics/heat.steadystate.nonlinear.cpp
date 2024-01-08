@@ -62,7 +62,7 @@ void HeatSteadyStateNonLinear::analyze()
 
 	switch (configuration.solver) {
 	case LoadStepSolverConfiguration::SOLVER::FETI:
-		builder = new UniformBuilderFETI<double>(configuration.temperature, 1, shape);
+		builder = new UniformBuilderFETI<double>(configuration.feti, configuration.temperature, 1, shape);
 		solver = new FETILinearSystemSolver<double, HeatSteadyStateNonLinear>(configuration.feti);
 		break;
 	case LoadStepSolverConfiguration::SOLVER::HYPRE:   break;

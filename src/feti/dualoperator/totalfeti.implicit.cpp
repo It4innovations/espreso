@@ -137,9 +137,17 @@ void TotalFETIImplicit<T>::update(const step::Step &step)
 	for (size_t di = 0; di < feti.K.domains.size(); ++di) {
 		math::sumCombined(Kplus[di], T{1}, feti.K.domains[di], feti.regularization.RegMat.domains[di]);
 	}
+	if (info::ecf->output.print_matrices) {
+		eslog::storedata(" STORE: feti/dualop/{Kplus}\n");
+		for (size_t di = 0; di < feti.K.domains.size(); ++di) {
+			math::store(Kplus[di], utils::filename(utils::debugDirectory(step) + "/feti/dualop", (std::string("Kplus") + std::to_string(di)).c_str()).c_str());
+		}
+	}
 	eslog::checkpointln("FETI: UPDATE TOTAL-FETI OPERATOR");
+
 	#pragma omp parallel for
 	for (size_t di = 0; di < feti.K.domains.size(); ++di) {
+		printf("%lu\n", di);
 		KSolver[di].numericalFactorization();
 	}
 	eslog::checkpointln("FETI: TFETI NUMERICAL FACTORIZATION");
@@ -151,8 +159,10 @@ void TotalFETIImplicit<T>::update(const step::Step &step)
 	applyB(feti, KplusBtx, d);
 	d.add(T{-1}, feti.equalityConstraints.c);
 	eslog::checkpointln("FETI: COMPUTE DUAL RHS [d]");
-
-	print(step);
+	if (info::ecf->output.print_matrices) {
+		eslog::storedata(" STORE: feti/dualop/{d}\n");
+		math::store(d, utils::filename(utils::debugDirectory(step) + "/feti/dualop", "d").c_str());
+	}
 }
 
 
@@ -176,18 +186,6 @@ void TotalFETIImplicit<T>::toPrimal(const Vector_Dual<T> &x, Vector_FETI<Vector_
 		math::copy(KplusBtx[di], feti.f.domains[di]);
 		math::add(KplusBtx[di], T{-1}, Btx[di]);
 		KSolver[di].solve(KplusBtx[di], y.domains[di]);
-	}
-}
-
-template <typename T>
-void TotalFETIImplicit<T>::print(const step::Step &step)
-{
-	if (info::ecf->output.print_matrices) {
-		eslog::storedata(" STORE: feti/dualop/{Kplus}\n");
-		for (size_t di = 0; di < feti.K.domains.size(); ++di) {
-			math::store(Kplus[di], utils::filename(utils::debugDirectory(step) + "/feti/dualop", (std::string("Kplus") + std::to_string(di)).c_str()).c_str());
-		}
-		math::store(d, utils::filename(utils::debugDirectory(step) + "/feti/dualop", "d").c_str());
 	}
 }
 

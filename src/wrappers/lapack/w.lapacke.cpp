@@ -10,8 +10,9 @@
 
 namespace espreso {
 namespace math {
+namespace lapack {
 
-
+}
 }
 }
 

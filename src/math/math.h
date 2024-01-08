@@ -34,6 +34,30 @@ namespace math { // interface to wrappers
 namespace espreso {
 namespace math {
 
+	template <typename T> void copy(Vector_Dense<T>  &x, const Vector_Dense<T>  &y) { blas::copy(x.size           , x.vals, 1, y.vals, 1); }
+	template <typename T> void copy(Vector_Sparse<T> &x, const Vector_Sparse<T> &y) { blas::copy(x.nnz            , x.vals, 1, y.vals, 1); }
+	template <typename T> void copy(Matrix_Dense<T>  &x, const Matrix_Dense<T>  &y) { blas::copy(x.nrows * x.ncols, x.vals, 1, y.vals, 1); }
+	template <typename T> void copy(Matrix_CSR<T>    &x, const Matrix_CSR<T>    &y) { blas::copy(x.nnz            , x.vals, 1, y.vals, 1); }
+	template <typename T> void copy(Matrix_IJV<T>    &x, const Matrix_IJV<T>    &y) { blas::copy(x.nnz            , x.vals, 1, y.vals, 1); }
+
+	template <typename T> void scale(const T &alpha, Vector_Dense<T>  &x) { blas::scale(x.size           , alpha, x.vals, 1); }
+	template <typename T> void scale(const T &alpha, Vector_Sparse<T> &x) { blas::scale(x.nnz            , alpha, x.vals, 1); }
+	template <typename T> void scale(const T &alpha, Matrix_Dense<T>  &x) { blas::scale(x.nrows * x.ncols, alpha, x.vals, 1); }
+	template <typename T> void scale(const T &alpha, Matrix_CSR<T>    &x) { blas::scale(x.nnz            , alpha, x.vals, 1); }
+	template <typename T> void scale(const T &alpha, Matrix_IJV<T>    &x) { blas::scale(x.nnz            , alpha, x.vals, 1); }
+
+	template <typename T> void add(Vector_Dense<T>  &x, const T &alpha, const Vector_Dense<T>  &y) { blas::add(x.size           , x.vals, 1, alpha, y.vals, 1); }
+	template <typename T> void add(Vector_Sparse<T> &x, const T &alpha, const Vector_Sparse<T> &y) { blas::add(x.nnz            , x.vals, 1, alpha, y.vals, 1); }
+	template <typename T> void add(Matrix_Dense<T>  &x, const T &alpha, const Matrix_Dense<T>  &y) { blas::add(x.nrows * x.ncols, x.vals, 1, alpha, y.vals, 1); }
+	template <typename T> void add(Matrix_CSR<T>    &x, const T &alpha, const Matrix_CSR<T>    &y) { blas::add(x.nnz            , x.vals, 1, alpha, y.vals, 1); }
+	template <typename T> void add(Matrix_IJV<T>    &x, const T &alpha, const Matrix_IJV<T>    &y) { blas::add(x.nnz            , x.vals, 1, alpha, y.vals, 1); }
+
+	template <typename T> T dot(const Vector_Dense<T>  &x, const Vector_Dense<T>  &y) { return blas::dot(x.size, x.vals, 1, y.vals, 1); }
+	template <typename T> T dot(const Vector_Sparse<T> &x, const Vector_Sparse<T> &y) { return blas::dot(x.nnz , x.vals, 1, y.vals, 1); }
+
+	template <typename T> T norm(const Vector_Dense<T>  &x) { return blas::norm(x.size, x.vals, 1); }
+	template <typename T> T norm(const Vector_Sparse<T> &x) { return blas::norm(x.nnz , x.vals, 1); }
+
 	template <typename T> void set(Vector_Dense<T>  &x, const T &value) { set(x.size           , x.vals, 1, value); }
 	template <typename T> void set(Vector_Sparse<T> &x, const T &value) { set(x.nnz            , x.vals, 1, value); }
 	template <typename T> void set(Matrix_Dense<T>  &x, const T &value) { set(x.nrows * x.ncols, x.vals, 1, value); }
@@ -103,11 +127,14 @@ namespace math {
 			esint *eB = B.cols + B.rows[r + 1] - Indexing::CSR;
 			esint *bC = C.cols + C.rows[r    ] - Indexing::CSR;
 			esint *eC = C.cols + C.rows[r + 1] - Indexing::CSR;
+			T      *a = A.vals + A.rows[r    ] - Indexing::CSR;
+			T      *b = B.vals + B.rows[r    ] - Indexing::CSR;
+			T      *c = C.vals + C.rows[r    ] - Indexing::CSR;
 			while (bC != eC) {
-				C.vals[bC - C.cols] = 0;
-				if (bA != eA && *bC == *bA) { C.vals[bC - C.cols] += A.vals[bA++ - A.cols]; }
-				if (bB != eB && *bC == *bB) { C.vals[bC - C.cols] += B.vals[bB++ - B.cols]; }
-				++bC;
+				*c = 0;
+				if (bA != eA && *bC == *bA) { *c += *a++; ++bA; }
+				if (bB != eB && *bC == *bB) { *c += *b++; ++bB; }
+				++bC; ++c;
 			}
 		}
 	}
@@ -138,13 +165,10 @@ namespace math {
 	{
 		for (esint r = 0; r < m.nrows; ++r) {
 			for (esint rr = 0; rr < r; ++rr) {
-				double scale = math::dot(m.ncols, m.vals + rr * m.ncols, 1, m.vals + r * m.ncols, 1) / math::dot(m.ncols, m.vals + rr * m.ncols, 1, m.vals + rr * m.ncols, 1);
-				for (esint i = 0; i < m.ncols; ++i) {
-					m.vals[r * m.ncols + i] += -scale * m.vals[rr * m.ncols + i];
-				}
-//				math::add(m.ncols, m.vals + r * m.ncols, 1, -scale, m.vals + rr * m.ncols, 1);
+				T scale = math::blas::dot(m.ncols, m.vals + rr * m.ncols, 1, m.vals + r * m.ncols, 1) / math::blas::dot(m.ncols, m.vals + rr * m.ncols, 1, m.vals + rr * m.ncols, 1);
+				math::blas::add(m.ncols, m.vals + r * m.ncols, 1, -scale, m.vals + rr * m.ncols, 1);
 			}
-			math::scale(m.ncols, 1. / math::norm(m.ncols, m.vals + r * m.ncols, 1), m.vals + r * m.ncols, 1);
+			math::blas::scale(m.ncols, T{1.} / math::blas::norm(m.ncols, m.vals + r * m.ncols, 1), m.vals + r * m.ncols, 1);
 		}
 	}
 

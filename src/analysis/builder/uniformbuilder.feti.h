@@ -23,8 +23,8 @@ struct UniformBuilderFETIPattern {
 		std::vector<esint> K, f, indices; // local permutations
 	};
 
-	UniformBuilderFETIPattern(std::map<std::string, ECFExpression> &dirichlet, int dofs, Matrix_Shape shape);
-	UniformBuilderFETIPattern(std::map<std::string, ECFExpressionOptionalVector> &dirichlet, int dofs, Matrix_Shape shape);
+	UniformBuilderFETIPattern(FETIConfiguration &feti, std::map<std::string, ECFExpression> &dirichlet, int dofs, Matrix_Shape shape);
+	UniformBuilderFETIPattern(FETIConfiguration &feti, std::map<std::string, ECFExpressionOptionalVector> &dirichlet, int dofs, Matrix_Shape shape);
 	~UniformBuilderFETIPattern();
 
 protected:
@@ -34,21 +34,21 @@ protected:
 	std::vector<RegionInfo> dirichletInfo;
 
 private:
-	void fillDecomposition(int dofs);
+	void fillDecomposition(FETIConfiguration &feti, int dofs);
 	void buildPattern(int dofs, Matrix_Shape shape, int domain);
 };
 
 template <typename T>
 struct UniformBuilderFETI: UniformBuilderFETIPattern, SparseMatrixBuilder<T> {
 
-	UniformBuilderFETI(std::map<std::string, ECFExpression> &dirichlet, int dofs, Matrix_Shape shape)
-	: UniformBuilderFETIPattern(dirichlet, dofs, shape), SparseMatrixBuilder<T>(dofs)
+	UniformBuilderFETI(FETIConfiguration &feti, std::map<std::string, ECFExpression> &dirichlet, int dofs, Matrix_Shape shape)
+	: UniformBuilderFETIPattern(feti, dirichlet, dofs, shape), SparseMatrixBuilder<T>(dofs)
 	{
 
 	}
 
-	UniformBuilderFETI(std::map<std::string, ECFExpressionOptionalVector> &dirichlet, int dofs, Matrix_Shape shape)
-	: UniformBuilderFETIPattern(dirichlet, dofs, shape), SparseMatrixBuilder<T>(dofs)
+	UniformBuilderFETI(FETIConfiguration &feti, std::map<std::string, ECFExpressionOptionalVector> &dirichlet, int dofs, Matrix_Shape shape)
+	: UniformBuilderFETIPattern(feti, dirichlet, dofs, shape), SparseMatrixBuilder<T>(dofs)
 	{
 
 	}
@@ -109,11 +109,18 @@ struct UniformBuilderFETI: UniformBuilderFETIPattern, SparseMatrixBuilder<T> {
 		for (size_t r = 1, offset = 0; r < info::mesh->boundaryRegions.size(); ++r) {
 			const BoundaryRegionStore *region = info::mesh->boundaryRegions[r];
 			if (dirichletInfo[r].dirichlet) {
-				_v->mapping.boundary[r].resize(info::mesh->boundaryRegions[r]->nodes->threads());
+				int nsize = 0;
+				for (int d = 0; d < this->dofs; ++d) {
+					if (dirichletInfo[r].dirichlet & (1 << d)) {
+						++nsize;
+					}
+				}
+				_v->mapping.boundary[r].resize(region->nodes->threads());
 				for (size_t t = 0; t < _v->mapping.boundary[r].size(); ++t) {
+					_v->mapping.boundary[r][t].filter = dirichletInfo[r].dirichlet;
 					_v->mapping.boundary[r][t].data = _v->cluster.vals;
 					_v->mapping.boundary[r][t].position = dirichletInfo[0].f.data() + offset;
-					offset += region->nodes->datatarray().size(t);
+					offset += region->nodes->datatarray().size(t) * nsize;
 				}
 			}
 		}

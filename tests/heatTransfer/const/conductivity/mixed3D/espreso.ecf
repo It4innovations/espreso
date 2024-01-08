@@ -15,7 +15,7 @@ DEFAULT_ARGS {
   8           4;
   9           8;
 
- 10     MKLPDSS;
+ 10        FETI;
 }
 
 INPUT_TYPE            GENERATOR;
@@ -80,7 +80,7 @@ HEAT_TRANSFER_3D {
       THERMAL_CONDUCTIVITY {
         MODEL     ISOTROPIC;
 
-        KXX             100;
+        KXX              10;
       }
     }
   }
@@ -107,7 +107,6 @@ HEAT_TRANSFER_3D {
         PRECISION            1E-09;
         ITERATIVE_SOLVER       PCG;
         REGULARIZATION   ALGEBRAIC;
-        MAX_ITERATIONS         100;
       }
 
       TEMPERATURE {

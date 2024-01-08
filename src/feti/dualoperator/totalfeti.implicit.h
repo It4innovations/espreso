@@ -37,7 +37,6 @@ public:
 protected:
 	void reduceInfo(DualOperatorInfo &sum, DualOperatorInfo &min, DualOperatorInfo &max);
 	void printInfo(DualOperatorInfo &sum, DualOperatorInfo &min, DualOperatorInfo &max);
-	void print(const step::Step &step);
 
 	using DualOperator<T>::feti;
 	using DualOperator<T>::d;

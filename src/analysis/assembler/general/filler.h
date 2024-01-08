@@ -126,8 +126,8 @@ struct RHSFillerKernel: DataFiller {
 		size_t size = nodes * dofs;
 		size_t count = std::min((size_t)SIMD::size, elements);
 		for (size_t s = 0, i = 0; s < count; ++s) {
-			for (size_t r = 0, j = 0; r < size; ++r, ++i, ++j) {
-				out[position[i]] += element.f[j][s];
+			for (size_t r = 0; r < size; ++r, ++i) {
+				out[position[i]] += element.f[r][s];
 			}
 		}
 		position += count * size;

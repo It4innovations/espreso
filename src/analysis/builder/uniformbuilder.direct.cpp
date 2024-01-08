@@ -200,8 +200,8 @@ void UniformBuilderDirectPattern::buildPattern(int dofs)
 
 	elements.nrows = dofs * (info::mesh->nodes->uniqInfo.nhalo + info::mesh->nodes->uniqInfo.size);
 	elements.ncols = dofs * info::mesh->nodes->uniqInfo.totalSize;
-	elements.row.reserve(count);
-	elements.column.reserve(count);
+	elements.row.reserve(dofs * count);
+	elements.column.reserve(dofs * count);
 	elements.A.reserve(dofs * dofs * indices.size());
 	elements.b.reserve(dofs * info::mesh->elements->nodes->datatarray().size());
 

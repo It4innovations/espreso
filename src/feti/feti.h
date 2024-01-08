@@ -63,6 +63,7 @@ struct FETI {
 	FETIConfiguration &configuration;
 	SystemInfo sinfo;
 
+	DOFsDecomposition *decomposition;
 	Matrix_FETI<Matrix_CSR, T> K;
 	Vector_FETI<Vector_Dense, T> f, x;
 	Regularization regularization;

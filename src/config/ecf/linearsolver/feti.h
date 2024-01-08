@@ -23,6 +23,11 @@ struct FETIConfiguration: public ECFDescription {
 		ACCELERATED_TFETI
 	};
 
+	enum class ORDERING {
+		ORDERED = 0,
+		NATURAL = 1
+	};
+
 	enum class DUAL_OPERATOR {
 		IMPLICIT = 0,
 		EXPLICIT,
@@ -140,6 +145,7 @@ struct FETIConfiguration: public ECFDescription {
 	size_t num_directions;
 
 	METHOD method;
+	ORDERING ordering;
 	DUAL_OPERATOR dual_operator;
 	ITERATIVE_SOLVER iterative_solver;
 	PRECONDITIONER preconditioner;

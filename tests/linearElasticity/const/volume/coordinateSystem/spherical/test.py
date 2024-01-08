@@ -25,4 +25,5 @@ def run(etype):
 run.assembler = 1
 run.correcness = 1
 run.generator = 1
+run.feti = 1
 run.invalid = 1

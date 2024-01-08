@@ -120,7 +120,7 @@ def build(ctx):
     ctx.lib(source="src/api/wrapper.mesio.cpp", target="mesioapi", includes="include", use=ctx.checker + ctx.mesio + ["API"], stlib=ctx.options.stlibs, lib=ctx.options.libs)
     ctx.program(source=["src/api/api.mesio.cpp"], target="test.mesio", includes="include", use=ctx.checker + ctx.mesio + ["API", "mesioapi"], stlib=ctx.options.stlibs, lib=ctx.options.libs)
 
-    ctx.build_espreso(ctx.path.ant_glob('src/analysis/**/*.cpp'), "analysis")
+    ctx.build_espreso(ctx.path.ant_glob('src/analysis/**/*.cpp'), "analysis", [ "LAPACK" ])
 #     ctx.build_espreso(ctx.path.ant_glob('src/physics/**/*.cpp'), "physics")
     ctx.build_espreso(ctx.path.ant_glob('src/morphing/**/*.cpp'), "devel")
     ctx.build_espreso(ctx.path.ant_glob('src/math/**/*.cpp'), "math")

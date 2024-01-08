@@ -29,28 +29,28 @@ void Vector_Dual<T>::set(esint dirichlet, esint nhalo, const std::vector<esint> 
 		Vector_Dual<T>::nmap.push_back(Vector_Dual<T>::size + lambdas);
 		size_t ncounter = Vector_Dual<T>::nmap.size();
 		Vector_Dual<T>::nmap.push_back(0); // neighbors
+		esint last = -1;
 		for (esint d = 0; d < domains; ++d) {
-			esint neigh = decomposition.noffset(cmap[2 + i + d]);
-			if (neigh != info::mpi::rank) {
-				if (d == 0 || Vector_Dual<T>::nmap.back() < neigh) {
+			if (!decomposition.ismy(cmap[2 + i + d])) {
+				esint neigh = decomposition.noffset(cmap[2 + i + d]);
+				if (last < neigh) {
 					Vector_Dual<T>::nmap.push_back(neigh);
 					Vector_Dual<T>::nmap[ncounter]++;
+					size[neigh] += lambdas;
+					last = neigh;
 				}
-				size[neigh] += lambdas;
 			}
 		}
 		if (Vector_Dual<T>::nmap[ncounter] == 0) {
-			Vector_Dual<T>::nmap.pop_back();
-			Vector_Dual<T>::nmap.pop_back();
-			Vector_Dual<T>::nmap.pop_back();
+			Vector_Dual<T>::nmap.resize(Vector_Dual<T>::nmap.size() - 3);
 		}
 		Vector_Dual<T>::size += lambdas;
 		i += cmap[i + 1] + 2;
 	}
 
 	for (size_t i = 0; i < Vector_Dual<T>::neighbors.size(); ++i) {
-		Vector_Dual<T>::sBuffer[i].reserve(size[i]);
-		Vector_Dual<T>::rBuffer[i].reserve(size[i]);
+		Vector_Dual<T>::sBuffer[i].resize(size[i]);
+		Vector_Dual<T>::rBuffer[i].resize(size[i]);
 	}
 }
 
@@ -64,21 +64,23 @@ template <typename T>
 void Vector_Dual<T>::synchronize()
 {
 	std::vector<esint> offset(sBuffer.size());
-	for (size_t i = 0; i < nmap.size(); ++i) {
+	for (size_t i = 0; i < nmap.size();) {
 		for (esint n = 0; n < nmap[i + 2]; ++n) {
 			esint ni = nmap[i + 3 + n];
 			std::copy(this->vals + nmap[i], this->vals + nmap[i + 1], sBuffer[ni].data() + offset[ni]);
 			offset[ni] += nmap[i + 1] - nmap[i];
 		}
+		i += nmap[i + 2] + 3;
 	}
 	Communication::exchangeKnownSize(sBuffer, rBuffer, neighbors);
 	std::fill(offset.begin(), offset.end(), 0);
-	for (size_t i = 0; i < nmap.size(); ++i) {
+	for (size_t i = 0; i < nmap.size();) {
 		for (esint n = 0; n < nmap[i + 2]; ++n) {
 			esint ni = nmap[i + 3 + n];
-			math::add<T>(nmap[i + 1] - nmap[i], this->vals + nmap[i], 1, 1, rBuffer[ni].data() + offset[ni], 1);
+			math::blas::add<T>(nmap[i + 1] - nmap[i], this->vals + nmap[i], 1, 1, rBuffer[ni].data() + offset[ni], 1);
 			offset[ni] += nmap[i + 1] - nmap[i];
 		}
+		i += nmap[i + 2] + 3;
 	}
 }
 

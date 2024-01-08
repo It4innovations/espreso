@@ -185,7 +185,7 @@ void TotalFETIExplicit<T>::apply(const Vector_Dual<T> &x, Vector_Dual<T> &y)
 	#pragma omp parallel for
 	for (size_t d = 0; d < feti.K.domains.size(); ++d) {
 		extractDomain(feti, d, x, in[d]);
-		math::apply(out[d], T{1}, F[d], T{0}, in[d]);
+		math::blas::apply(out[d], T{1}, F[d], T{0}, in[d]);
 	}
 	insertDomains(feti, out, y);
 }

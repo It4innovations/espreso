@@ -10,6 +10,7 @@
 
 namespace espreso {
 namespace math {
+namespace blas {
 
 template <>
 void copy(const esint size, double *x, const esint incX, const double *y, const esint incY)
@@ -153,6 +154,7 @@ void applyT(Vector_Dense<std::complex<double> > &y, const std::complex<double> &
 	}
 }
 
+}
 }
 }
 

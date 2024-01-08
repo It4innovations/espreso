@@ -68,7 +68,7 @@ void Dirichlet<T>::apply(const Vector_Dual<T> &x, Vector_Dual<T> &y)
 		Vector_Dense<T> _y, _x;
 		_y.vals = KBtx[d].vals + KBtx[d].size - sc[d].nrows;
 		_x.vals = Btx[d].vals + Btx[d].size - sc[d].nrows;
-		math::apply(_y, T{1}, sc[d], T{0}, _x);
+		math::blas::apply(_y, T{1}, sc[d], T{0}, _x);
 	}
 	applyB(feti, KBtx, y);
 }

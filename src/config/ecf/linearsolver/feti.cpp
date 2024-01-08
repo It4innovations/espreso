@@ -15,6 +15,13 @@ espreso::FETIConfiguration::FETIConfiguration()
 			.addoption(ECFOption().setname("EXPLICIT_TFETI").setdescription("Fx = (B * K+ * B') * x"))
 			.addoption(ECFOption().setname("ACCELERATED_TFETI").setdescription("Fx = (B * K+ * B') * x on accelerator")));
 
+	ordering = ORDERING::ORDERED;
+	REGISTER(ordering, ECFMetaData()
+			.setdescription({ "Type" })
+			.setdatatype({ ECFDataType::OPTION })
+			.addoption(ECFOption().setname("ORDERED").setdescription("DOFs: inner, dirichlet, lambdas"))
+			.addoption(ECFOption().setname("NATURAL").setdescription("DOFs: according to indices")));
+
 	dual_operator = DUAL_OPERATOR::IMPLICIT;
 	REGISTER(dual_operator, ECFMetaData()
 			.setdescription({ "Type" })
