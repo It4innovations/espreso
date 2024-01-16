@@ -14,7 +14,7 @@ class Assembler(unittest.TestCase):
         ESPRESOTest.clean()
 
     def test_correctness(self):
-        for etype in [ "SQUARE4", "SQUARE8", "TRIANGLE3", "TRIANGLE6" ]:
+        for etype in [ "  SQUARE4", "  SQUARE8", "TRIANGLE3", "TRIANGLE6" ]:
             yield run, etype
 
 def run(etype):
