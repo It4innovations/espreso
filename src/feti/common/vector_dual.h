@@ -11,7 +11,7 @@ namespace espreso {
 struct DOFsDecomposition;
 
 template <typename T>
-struct Vector_Dual: public Vector_Dense<T> {
+struct Vector_Dual: public Vector_Dense<T, int> {
 
 	template <typename Type> friend struct Matrix_Dual_Orthogonal;
 
@@ -19,12 +19,12 @@ struct Vector_Dual: public Vector_Dense<T> {
 
 	void resize();
 	void synchronize();
-	void copyTo(Vector_Dense<T> &to) const;
-	void copyToWithoutHalo(Vector_Dense<T> &to) const;
+	void copyTo(Vector_Dense<T, int> &to) const;
+	void copyToWithoutHalo(Vector_Dense<T, int> &to) const;
 	void scale(const T &alpha);
-	void add(const T &alpha, const Vector_Dense<T> &other);
+	void add(const T &alpha, const Vector_Dense<T, int> &other);
 
-	double dot(const Vector_Dense<T> &other) const;
+	double dot(const Vector_Dense<T, int> &other) const;
 	double dot() const;
 
 protected:

@@ -13,7 +13,7 @@
 namespace espreso {
 
 template <typename T>
-struct Matrix_Dual_Orthogonal: public Matrix_Dense<T> {
+struct Matrix_Dual_Orthogonal: public Matrix_Dense<T, int> {
 
 	enum: size_t {
 		initial_space = 32

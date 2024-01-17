@@ -179,7 +179,7 @@ static void getFixPoints(std::vector<esint> &fixPoints, int domain)
 			M.vals = vals.data();
 			in.vals = x.data();
 			out.vals = y.data();
-			SpBLAS<float, Matrix_CSR> spblas(M);
+			SpBLAS<Matrix_CSR, float> spblas(M);
 
 			float last_l = pids[p].size(), l = 1;
 			while (fabs((l - last_l) / l) > 1e-6) {

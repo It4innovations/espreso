@@ -1,34 +1,35 @@
 
-#include "matrix_csr.h"
-
 #ifndef SRC_MATH_PRIMITIVES_MATRIX_CSC_H_
 #define SRC_MATH_PRIMITIVES_MATRIX_CSC_H_
+
+#include "matrix_csr.h"
+#include "basis/containers/allocators.h"
 
 namespace espreso {
 
 struct Matrix_CSC_Solver;
 
-template <typename T>
+template <typename T, typename I>
 struct _Matrix_CSC {
-	esint nrows, ncols, nnz, *rows, *cols;
+	I nrows, ncols, nnz, *rows, *cols;
 	T *vals;
 };
 
-template <typename T>
-class Matrix_CSC: public _Matrix_CSC<T>
+template <typename T, typename I = int, template<typename> typename A = cpu_allocator>
+class Matrix_CSC: public _Matrix_CSC<T, I>
 {
 public:
-	Matrix_CSC(): _Matrix_CSC<T>{}, type{Matrix_Type::REAL_STRUCTURALLY_SYMMETRIC}, shape{Matrix_Shape::FULL}, _allocated{}
+	Matrix_CSC(): _Matrix_CSC<T, I>{}, type{Matrix_Type::REAL_STRUCTURALLY_SYMMETRIC}, shape{Matrix_Shape::FULL}, _allocated{}
 	{
 
 	}
 
-	Matrix_CSC(const Matrix_CSC &other): _Matrix_CSC<T>{}, type{Matrix_Type::REAL_STRUCTURALLY_SYMMETRIC}, shape{Matrix_Shape::FULL}, _allocated{}
+	Matrix_CSC(const Matrix_CSC &other): _Matrix_CSC<T, I>{}, type{Matrix_Type::REAL_STRUCTURALLY_SYMMETRIC}, shape{Matrix_Shape::FULL}, _allocated{}
 	{
 		type = other.type;
 		shape = other.shape;
 		realloc(_allocated, other.nrows, other.ncols, other.nnz);
-		_Matrix_CSC<T>::operator=(_allocated);
+		_Matrix_CSC<T, I>::operator=(_allocated);
 		for (esint i = 0; i <= other.nrows; ++i) {
 			this->rows[i] = other.rows[i];
 		}
@@ -38,7 +39,7 @@ public:
 		}
 	}
 
-	Matrix_CSC(Matrix_CSC &&other): _Matrix_CSC<T>{}, type{Matrix_Type::REAL_STRUCTURALLY_SYMMETRIC}, shape{Matrix_Shape::FULL}, _allocated{}
+	Matrix_CSC(Matrix_CSC &&other): _Matrix_CSC<T, I>{}, type{Matrix_Type::REAL_STRUCTURALLY_SYMMETRIC}, shape{Matrix_Shape::FULL}, _allocated{}
 	{
 		type = other.type;
 		shape = other.shape;
@@ -51,7 +52,7 @@ public:
 //		type = other.type;
 //		shape = other.shape;
 //		realloc(_allocated, other.nrows, other.ncols, other.nnz);
-//		_Matrix_CSC<T>::operator=(_allocated);
+//		_Matrix_CSC<T, I>::operator=(_allocated);
 //		for (esint i = 0; i <= other.nrows; ++i) {
 //			this->rows[i] = other.rows[i];
 //		}
@@ -80,7 +81,7 @@ public:
 	void resize(esint nrows, esint ncols, esint nnz)
 	{
 		realloc(_allocated, nrows, ncols, nnz);
-		_Matrix_CSC<T>::operator=(_allocated);
+		_Matrix_CSC<T, I>::operator=(_allocated);
 	}
 
 	void resize(const Matrix_CSC &other)
@@ -91,7 +92,7 @@ public:
 	void pattern(const Matrix_CSC &other)
 	{
 		realloc(_allocated, other);
-		_Matrix_CSC<T>::operator=(_allocated);
+		_Matrix_CSC<T, I>::operator=(_allocated);
 		this->rows = other.rows;
 		this->cols = other.cols;
 	}
@@ -100,12 +101,12 @@ public:
 	{
 		type = other.type;
 		shape = other.shape;
-		_Matrix_CSC<T>::operator=(other);
+		_Matrix_CSC<T, I>::operator=(other);
 	}
 
 	Matrix_Type type;
 	Matrix_Shape shape;
-	_Matrix_CSC<T> _allocated;
+	_Matrix_CSC<T, I> _allocated;
 
 protected:
 	template <typename Type>
@@ -114,7 +115,7 @@ protected:
 		Type tmp = v; v = u; u = tmp;
 	}
 
-	void swap(_Matrix_CSC<T> &m, _Matrix_CSC<T> &n)
+	void swap(_Matrix_CSC<T, I> &m, _Matrix_CSC<T, I> &n)
 	{
 		swap(m.nrows, n.nrows);
 		swap(m.ncols, n.ncols);
@@ -124,7 +125,7 @@ protected:
 		swap(m.vals, n.vals);
 	}
 
-	void realloc(_Matrix_CSC<T> &m, esint nrows, esint ncols, esint nnz)
+	void realloc(_Matrix_CSC<T, I> &m, esint nrows, esint ncols, esint nnz)
 	{
 		if (m.nrows < nrows) {
 			if (m.rows) { delete[] m.rows; m.rows = nullptr; }
@@ -141,7 +142,7 @@ protected:
 		m.nnz = nnz;
 	}
 
-	void realloc(_Matrix_CSC<T> &m, const _Matrix_CSC<T> &other)
+	void realloc(_Matrix_CSC<T, I> &m, const _Matrix_CSC<T, I> &other)
 	{
 		if (m.rows) { delete[] m.rows; m.rows = nullptr; }
 		if (m.cols) { delete[] m.cols; m.cols = nullptr; }
@@ -155,7 +156,7 @@ protected:
 		m.nnz = other.nnz;
 	}
 
-	void clear(_Matrix_CSC<T> &m)
+	void clear(_Matrix_CSC<T, I> &m)
 	{
 		m.nrows = m.ncols = m.nnz = 0;
 		if (m.rows) { delete[] m.rows; m.rows = nullptr; }

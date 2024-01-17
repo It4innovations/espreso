@@ -8,8 +8,8 @@ namespace espreso {
 namespace math {
 namespace lapack {
 
-template <typename T>
-void solve(Matrix_Dense<T> &A, Matrix_Dense<T> &rhs);
+template <typename T, typename I>
+void solve(Matrix_Dense<T, I> &A, Matrix_Dense<T, I> &rhs);
 
 }
 }

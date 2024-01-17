@@ -14,9 +14,9 @@
 
 namespace espreso {
 
-template <template<typename> typename Matrix, typename T> class Matrix_Distributed;
+template <template<typename, typename> typename Matrix, typename T> class Matrix_Distributed;
 
-template <template<typename> typename Matrix, typename T>
+template <template<typename, typename> typename Matrix, typename T>
 class Matrix_Distributed_Common: public Matrix_Base<T> {
 public:
 	void commit()
@@ -139,13 +139,13 @@ public:
 		eslog::error("call empty function\n");
 	}
 
-	Matrix<T> cluster;
+	Matrix<T, esint> cluster;
 	DOFsDistribution *distribution;
 	Data_Apply<Matrix, T> applyData;
 	Data_Synchronization<Matrix, T> *synchronization;
 };
 
-template <template<typename> typename Matrix, typename T>
+template <template<typename, typename> typename Matrix, typename T>
 class Matrix_Distributed: public Matrix_Distributed_Common<Matrix, T> {
 public:
 	void copySliced(const Matrix_Base<T> *in, int rowOffset, int colOffset, int size, int step)
@@ -339,7 +339,7 @@ public:
 	}
 };
 
-template <template<typename> typename Matrix, typename T>
+template <template<typename, typename> typename Matrix, typename T>
 class Matrix_Distributed<Matrix, std::complex<T> >: public Matrix_Distributed_Common<Matrix, std::complex<T> > {
 public:
 	void copyReal(const Matrix_Base<T> *in)

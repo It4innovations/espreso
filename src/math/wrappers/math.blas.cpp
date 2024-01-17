@@ -81,19 +81,19 @@ double norm(const esint size, const double *x, const esint incX)
 }
 
 template <>
-void apply(Vector_Dense<double> &y, const double &alpha, const Matrix_Dense<double> &a, const double &beta, const Vector_Dense<double> &x)
+void apply(Vector_Dense<double, int> &y, const double &alpha, const Matrix_Dense<double, int> &a, const double &beta, const Vector_Dense<double, int> &x)
 {
 	eslog::error("calling of empty BLAS wrapper.\n");
 }
 
 template <>
-void apply(Vector_Dense<std::complex<double> > &y, const std::complex<double> &alpha, const Matrix_Dense<std::complex<double> > &a, const std::complex<double> &beta, const Vector_Dense<std::complex<double> > &x)
+void apply(Vector_Dense<std::complex<double>, int> &y, const std::complex<double> &alpha, const Matrix_Dense<std::complex<double>, int> &a, const std::complex<double> &beta, const Vector_Dense<std::complex<double>, int> &x)
 {
 	eslog::error("calling of empty BLAS wrapper.\n");
 }
 
 template <>
-void applyT(Vector_Dense<double> &y, const double &alpha, const Matrix_Dense<double> &a, const double &beta, const Vector_Dense<double> &x)
+void applyT(Vector_Dense<double, int> &y, const double &alpha, const Matrix_Dense<double, int> &a, const double &beta, const Vector_Dense<double, int> &x)
 {
 	eslog::error("calling of empty BLAS wrapper.\n");
 }

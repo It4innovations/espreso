@@ -62,7 +62,7 @@ bool FETI<T>::set(const step::Step &step)
 	preconditioner = Preconditioner<T>::set(*this, step);
 
 	eslog::info(" = ----------------------------------------------------------------------------------------- = \n");
-	eslog::info(" = EXTERNAL LINEAR SOLVER %*s = \n", 66, DirectSolver<T, Matrix_CSR>::name());
+	eslog::info(" = EXTERNAL LINEAR SOLVER %*s = \n", 66, DirectSolver<Matrix_CSR, T>::name());
 	eslog::info(" = ----------------------------------------------------------------------------------------- = \n");
 	iterativeSolver->info();
 	projector->info();

@@ -13,42 +13,42 @@ namespace espreso {
 
 struct Matrix_SpBLAS_External_Representation;
 
-template <typename T, template <typename> class Matrix>
+template <template <typename, typename> class Matrix, typename T, typename I = int>
 struct SpBLAS {
 	SpBLAS();
-	SpBLAS(Matrix<T> &a);
+	SpBLAS(Matrix<T, I> &a);
 	~SpBLAS();
 
-	void insert(Matrix<T> &a);
-	void insertTransposed(Matrix<T> &a);
-	void insert(Matrix_Dense<T> &a, double threshold);
+	void insert(Matrix<T, I> &a);
+	void insertTransposed(Matrix<T, I> &a);
+	void insert(Matrix_Dense<T, I> &a, double threshold);
 
-	void extractUpper(Matrix<T> &a);
+	void extractUpper(Matrix<T, I> &a);
 
 	// y = alpha * A * x + beta * y
-	void apply(Vector_Dense<T> &y, const T &alpha, const T &beta, const Vector_Dense<T> &x);
+	void apply(Vector_Dense<T, I> &y, const T &alpha, const T &beta, const Vector_Dense<T, I> &x);
 
 	// this = A * B
-	void multiply(SpBLAS<T, Matrix> &A, SpBLAS<T, Matrix> &B);
-	void multiply(SpBLAS<T, Matrix> &A, Matrix_Dense<T> &B);
+	void multiply(SpBLAS<Matrix, T, I> &A, SpBLAS<Matrix, T, I> &B);
+	void multiply(SpBLAS<Matrix, T, I> &A, Matrix_Dense<T, I> &B);
 
 	// this = A * At
-	void AAt(SpBLAS<T, Matrix> &A);
+	void AAt(SpBLAS<Matrix, T, I> &A);
 
-	void transposeTo(SpBLAS<T, Matrix> &A);
-	void convertTo(Matrix_Dense<T> &out);
+	void transposeTo(SpBLAS<Matrix, T, I> &A);
+	void convertTo(Matrix_Dense<T, I> &out);
 
-	void solveRowMayor(Matrix_Dense<T> &rhs, Matrix_Dense<T> &solution);
-	void solveColMayor(Matrix_Dense<T> &rhs, Matrix_Dense<T> &solution);
+	void solveRowMayor(Matrix_Dense<T, I> &rhs, Matrix_Dense<T, I> &solution);
+	void solveColMayor(Matrix_Dense<T, I> &rhs, Matrix_Dense<T, I> &solution);
 
 	// input = output[start_row:end_row, start_col:end_col]. Start inclusive, end exclusive
-	void submatrix(Matrix_Dense<T> &output, esint start_row, esint end_row, esint start_col, esint end_col, bool trans = false, bool conj = false, bool output_force_full = false);
-	void submatrix(Matrix_CSR<T>   &output, esint start_row, esint end_row, esint start_col, esint end_col, bool trans = false, bool conj = false, bool output_force_full = false);
+	void submatrix(Matrix_Dense<T, I> &output, esint start_row, esint end_row, esint start_col, esint end_col, bool trans = false, bool conj = false, bool output_force_full = false);
+	void submatrix(Matrix_CSR<T, I>   &output, esint start_row, esint end_row, esint start_col, esint end_col, bool trans = false, bool conj = false, bool output_force_full = false);
 
-	static void submatrix(const Matrix_CSR<T> &input, Matrix_Dense<T> &output, esint start_row, esint end_row, esint start_col, esint end_col, bool trans = false, bool conj = false, bool output_force_full = false);
-	static void submatrix(const Matrix_CSR<T> &input, Matrix_CSR<T>   &output, esint start_row, esint end_row, esint start_col, esint end_col, bool trans = false, bool conj = false, bool output_force_full = false);
+	static void submatrix(const Matrix_CSR<T, I> &input, Matrix_Dense<T, I> &output, esint start_row, esint end_row, esint start_col, esint end_col, bool trans = false, bool conj = false, bool output_force_full = false);
+	static void submatrix(const Matrix_CSR<T, I> &input, Matrix_CSR<T, I>   &output, esint start_row, esint end_row, esint start_col, esint end_col, bool trans = false, bool conj = false, bool output_force_full = false);
 
-	Matrix<T> *matrix;
+	Matrix<T, I> *matrix;
 
 private:
 	Matrix_SpBLAS_External_Representation *_spblas;

@@ -46,10 +46,10 @@ void _buildNeighNeighs(Data_Apply<Matrix_CSR, T> *data, Matrix_Distributed<Matri
 	}
 }
 
-template <typename T>
+template <typename T, typename I>
 void _init(Data_Apply<Matrix_CSR, T> *data, Matrix_Distributed<Matrix_CSR, T> &m)
 {
-	const Matrix_CSR<T> &matrix = m.cluster;
+	const Matrix_CSR<T, I> &matrix = m.cluster;
 	esint nhalo = m.distribution->halo.size();
 	esint msize = m.distribution->end - m.distribution->begin;
 
@@ -60,8 +60,8 @@ void _init(Data_Apply<Matrix_CSR, T> *data, Matrix_Distributed<Matrix_CSR, T> &m
 	data->sOffset.resize(data->neighbors.size());
 	data->rOffset.resize(data->neighbors.size());
 
-	std::set<esint> lower, higher;
-	std::vector<std::set<esint> > send(data->neighbors.size());
+	std::set<I> lower, higher;
+	std::vector<std::set<I> > send(data->neighbors.size());
 	for (esint r = nhalo; r < matrix.nrows; ++r) {
 		for (esint c = matrix.rows[r] - Indexing::CSR; c < matrix.rows[r + 1] - Indexing::CSR; ++c) {
 			if (matrix.cols[c] - Indexing::CSR < m.distribution->begin) {
@@ -125,14 +125,14 @@ void _init(Data_Apply<Matrix_CSR, T> *data, Matrix_Distributed<Matrix_CSR, T> &m
 	}
 }
 
-template <typename T>
+template <typename T, typename I>
 void _commit(Data_Apply<Matrix_CSR, T> *data, Matrix_Distributed<Matrix_CSR, T> &m)
 {
 	data->m.vals = m.cluster.vals + m.cluster.rows[m.distribution->halo.size()] - Indexing::CSR;
 	data->spblas.insert(data->m);
 }
 
-template <typename T>
+template <typename T, typename I>
 void _apply(Data_Apply<Matrix_CSR, T> *data, Vector_Distributed<Vector_Dense, T> *y, const T &alpha, const T &beta, const Vector_Distributed<Vector_Dense, T> *x)
 {
 	for (size_t n = 0; n < data->sOffset.size(); ++n) {
@@ -150,20 +150,20 @@ void _apply(Data_Apply<Matrix_CSR, T> *data, Vector_Distributed<Vector_Dense, T>
 	}
 	std::copy(x->cluster.vals + x->distribution->halo.size(), x->cluster.vals + x->cluster.size, data->v.vals + data->offset);
 
-	Vector_Dense<T> v;
+	Vector_Dense<T, I> v;
 	v.size = data->m.nrows;
 	v.vals = y->cluster.vals + y->distribution->halo.size();
 	data->spblas.apply(v, alpha, beta, data->v);
 	y->scatter();
 }
 
-template<> void Data_Apply<Matrix_CSR, double>::init(Matrix_Distributed<Matrix_CSR, double> &m) { _init(this, m); }
-template<> void Data_Apply<Matrix_CSR, std::complex<double> >::init(Matrix_Distributed<Matrix_CSR, std::complex<double> > &m) { _init(this, m); }
+template<> void Data_Apply<Matrix_CSR, double, esint>::init(Matrix_Distributed<Matrix_CSR, double> &m) { _init<double, esint>(this, m); }
+template<> void Data_Apply<Matrix_CSR, std::complex<double>, esint>::init(Matrix_Distributed<Matrix_CSR, std::complex<double> > &m) { _init<std::complex<double>, esint>(this, m); }
 
-template<> void Data_Apply<Matrix_CSR, double>::commit(Matrix_Distributed<Matrix_CSR, double> &m) { _commit(this, m); }
-template<> void Data_Apply<Matrix_CSR, std::complex<double> >::commit(Matrix_Distributed<Matrix_CSR, std::complex<double> > &m) { _commit(this, m); }
+template<> void Data_Apply<Matrix_CSR, double, esint>::commit(Matrix_Distributed<Matrix_CSR, double> &m) { _commit<double, esint>(this, m); }
+template<> void Data_Apply<Matrix_CSR, std::complex<double>, esint>::commit(Matrix_Distributed<Matrix_CSR, std::complex<double> > &m) { _commit<std::complex<double>, esint>(this, m); }
 
-template<> void Data_Apply<Matrix_CSR, double>::apply(Vector_Distributed<Vector_Dense, double> *y, const double &alpha, const double &beta, const Vector_Distributed<Vector_Dense, double> *x) { _apply(this, y, alpha, beta, x); }
-template<> void Data_Apply<Matrix_CSR, std::complex<double> >::apply(Vector_Distributed<Vector_Dense, std::complex<double>> *y, const std::complex<double> &alpha, const std::complex<double> &beta, const Vector_Distributed<Vector_Dense, std::complex<double> > *x) { _apply(this, y, alpha, beta, x); }
+template<> void Data_Apply<Matrix_CSR, double, esint>::apply(Vector_Distributed<Vector_Dense, double> *y, const double &alpha, const double &beta, const Vector_Distributed<Vector_Dense, double> *x) { _apply<double, esint>(this, y, alpha, beta, x); }
+template<> void Data_Apply<Matrix_CSR, std::complex<double>, esint>::apply(Vector_Distributed<Vector_Dense, std::complex<double>> *y, const std::complex<double> &alpha, const std::complex<double> &beta, const Vector_Distributed<Vector_Dense, std::complex<double> > *x) { _apply<std::complex<double>, esint>(this, y, alpha, beta, x); }
 
 }

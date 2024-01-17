@@ -12,7 +12,7 @@
 namespace espreso {
 
 template <typename T>
-struct Vector_Kernel: public Vector_Dense<T> {
+struct Vector_Kernel: public Vector_Dense<T, int> {
 
 	enum: size_t {
 		align = 64U
@@ -38,11 +38,11 @@ struct Vector_Kernel: public Vector_Dense<T> {
 
 	void resize()
 	{
-		Vector_Dense<T>::resize(Vector_Kernel<T>::totalSize + 2 * align);
-		void* _vals = static_cast<void*>(Vector_Dense<T>::vals);
+		Vector_Dense<T, int>::resize(Vector_Kernel<T>::totalSize + 2 * align);
+		void* _vals = static_cast<void*>(Vector_Dense<T, int>::vals);
 		size_t _size = Vector_Kernel<T>::totalSize + align;
-		Vector_Dense<T>::vals = static_cast<T*>(std::align(align, sizeof(T), _vals, _size));
-		Vector_Dense<T>::size = Vector_Kernel<T>::totalSize;
+		Vector_Dense<T, int>::vals = static_cast<T*>(std::align(align, sizeof(T), _vals, _size));
+		Vector_Dense<T, int>::size = Vector_Kernel<T>::totalSize;
 	}
 
 	void synchronize()

@@ -2,33 +2,35 @@
 #ifndef SRC_MATH2_PRIMITIVES_VECTOR_DENSE_H_
 #define SRC_MATH2_PRIMITIVES_VECTOR_DENSE_H_
 
+#include "basis/containers/allocators.h"
+
 namespace espreso {
 
-template <typename T>
+template <typename T, typename I>
 struct _Vector_Dense {
-	esint size;
+	I size;
 	T *vals;
 };
 
-template <typename T>
-class Vector_Dense: public _Vector_Dense<T>
+template <typename T, typename I = int, template<typename> typename A = cpu_allocator>
+class Vector_Dense: public _Vector_Dense<T, I>
 {
 public:
-	Vector_Dense(): _Vector_Dense<T>{}, _allocated{}
+	Vector_Dense(): _Vector_Dense<T, I>{}, _allocated{}
 	{
 
 	}
 
-	Vector_Dense(const Vector_Dense &other): _Vector_Dense<T>{}, _allocated{}
+	Vector_Dense(const Vector_Dense &other): _Vector_Dense<T, I>{}, _allocated{}
 	{
 		realloc(_allocated, other.size);
-		_Vector_Dense<T>::operator=(_allocated);
+		_Vector_Dense<T, I>::operator=(_allocated);
 		for (esint i = 0; i < other.size; ++i) {
 			this->vals[i] = other.vals[i];
 		}
 	}
 
-	Vector_Dense(Vector_Dense &&other): _Vector_Dense<T>{}, _allocated{}
+	Vector_Dense(Vector_Dense &&other): _Vector_Dense<T, I>{}, _allocated{}
 	{
 		swap(*this, other);
 		swap(_allocated, other._allocated);
@@ -37,7 +39,7 @@ public:
 	Vector_Dense& operator=(const Vector_Dense &other) = delete;
 //	{
 //		realloc(_allocated, other.size);
-//		_Vector_Dense<T>::operator=(_allocated);
+//		_Vector_Dense<T, I>::operator=(_allocated);
 //		for (esint i = 0; i < other.size; ++i) {
 //			this->vals[i] = other.vals[i];
 //		}
@@ -59,7 +61,7 @@ public:
 	void resize(esint size)
 	{
 		realloc(_allocated, size);
-		_Vector_Dense<T>::operator=(_allocated);
+		_Vector_Dense<T, I>::operator=(_allocated);
 	}
 
 	void resize(const Vector_Dense &other)
@@ -70,7 +72,7 @@ public:
 	void pattern(const Vector_Dense &other)
 	{
 		realloc(_allocated, other.size);
-		_Vector_Dense<T>::operator=(_allocated);
+		_Vector_Dense<T, I>::operator=(_allocated);
 	}
 
 	void swap(Vector_Dense &other)
@@ -79,7 +81,7 @@ public:
 		swap(_allocated, other._allocated);
 	}
 
-	_Vector_Dense<T> _allocated;
+	_Vector_Dense<T, I> _allocated;
 
 protected:
 	template <typename Type>
@@ -88,13 +90,13 @@ protected:
 		Type tmp = v; v = u; u = tmp;
 	}
 
-	void swap(_Vector_Dense<T> &v, _Vector_Dense<T> &u)
+	void swap(_Vector_Dense<T, I> &v, _Vector_Dense<T, I> &u)
 	{
 		_swap(v.size, u.size);
 		_swap(v.vals, u.vals);
 	}
 
-	void realloc(_Vector_Dense<T> &v, esint size)
+	void realloc(_Vector_Dense<T, I> &v, esint size)
 	{
 		if (v.size < size) {
 			clear(v);
@@ -103,7 +105,7 @@ protected:
 		v.size = size;
 	}
 
-	void clear(_Vector_Dense<T> &v)
+	void clear(_Vector_Dense<T, I> &v)
 	{
 		if (v.vals) { delete[] v.vals; v.vals = nullptr; }
 	}

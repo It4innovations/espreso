@@ -10,9 +10,9 @@
 
 namespace espreso {
 
-template struct SpBLAS<float, Matrix_CSR>;
-template struct SpBLAS<double, Matrix_CSR>;
-template struct SpBLAS<std::complex<double>, Matrix_CSR>;
+template struct SpBLAS<Matrix_CSR, float, int>;
+template struct SpBLAS<Matrix_CSR, double, int>;
+template struct SpBLAS<Matrix_CSR, std::complex<double>, int>;
 
 struct Matrix_SpBLAS_External_Representation {
 	sparse_matrix_t inspector;
@@ -31,25 +31,25 @@ static void checkStatus(sparse_status_t status)
 }
 }
 
-template <typename T, template <typename> class Matrix>
-SpBLAS<T, Matrix>::SpBLAS()
+template <template <typename, typename> class Matrix, typename T, typename I>
+SpBLAS<Matrix, T, I>::SpBLAS()
 : matrix{}, _spblas{}
 {
 
 }
 
-template <typename T, template <typename> class Matrix>
-SpBLAS<T, Matrix>::~SpBLAS()
+template <template <typename, typename> class Matrix, typename T, typename I>
+SpBLAS<Matrix, T, I>::~SpBLAS()
 {
 	if (_spblas) {
 		checkStatus(mkl_sparse_destroy(_spblas->inspector));
 	}
 }
 
-template <typename T, template <typename> class Matrix> void create(const Matrix<T> *matrix, Matrix_SpBLAS_External_Representation *_spblas, bool transposed = false);
-template <typename T, template <typename> class Matrix> void extract(Matrix<T> *matrix, Matrix_SpBLAS_External_Representation *_spblas, bool transposed = false);
+template <template <typename, typename> class Matrix, typename T, typename I> void create(const Matrix<T, I> *matrix, Matrix_SpBLAS_External_Representation *_spblas, bool transposed = false);
+template <template <typename, typename> class Matrix, typename T, typename I> void extract(Matrix<T, I> *matrix, Matrix_SpBLAS_External_Representation *_spblas, bool transposed = false);
 
-template <> void create<float, Matrix_CSR>(const Matrix_CSR<float> *matrix, Matrix_SpBLAS_External_Representation *_spblas, bool transposed)
+template <> void create<Matrix_CSR, float, int>(const Matrix_CSR<float, int> *matrix, Matrix_SpBLAS_External_Representation *_spblas, bool transposed)
 {
 	if (matrix->nnz) {
 		if (transposed) {
@@ -66,7 +66,7 @@ template <> void create<float, Matrix_CSR>(const Matrix_CSR<float> *matrix, Matr
 	}
 }
 
-template <> void create<double, Matrix_CSR>(const Matrix_CSR<double> *matrix, Matrix_SpBLAS_External_Representation *_spblas, bool transposed)
+template <> void create<Matrix_CSR, double, int>(const Matrix_CSR<double, int> *matrix, Matrix_SpBLAS_External_Representation *_spblas, bool transposed)
 {
 	if (matrix->nnz) {
 		if (transposed) {
@@ -84,7 +84,7 @@ template <> void create<double, Matrix_CSR>(const Matrix_CSR<double> *matrix, Ma
 	}
 }
 
-template <> void create<std::complex<double>, Matrix_CSR>(const Matrix_CSR<std::complex<double> > *matrix, Matrix_SpBLAS_External_Representation *_spblas, bool transposed)
+template <> void create<Matrix_CSR, std::complex<double>, int>(const Matrix_CSR<std::complex<double>, int> *matrix, Matrix_SpBLAS_External_Representation *_spblas, bool transposed)
 {
 	if (matrix->nnz) {
 		if (transposed) {
@@ -101,7 +101,7 @@ template <> void create<std::complex<double>, Matrix_CSR>(const Matrix_CSR<std::
 	}
 }
 
-template <> void extract<float, Matrix_CSR>(Matrix_CSR<float> *matrix, Matrix_SpBLAS_External_Representation *_spblas, bool transposed)
+template <> void extract<Matrix_CSR, float, int>(Matrix_CSR<float, int> *matrix, Matrix_SpBLAS_External_Representation *_spblas, bool transposed)
 {
 //	if (matrix->nnz) {
 //		if (transposed) {
@@ -118,7 +118,7 @@ template <> void extract<float, Matrix_CSR>(Matrix_CSR<float> *matrix, Matrix_Sp
 //	}
 }
 
-template <> void extract<double, Matrix_CSR>(Matrix_CSR<double> *matrix, Matrix_SpBLAS_External_Representation *_spblas, bool transposed)
+template <> void extract<Matrix_CSR, double, int>(Matrix_CSR<double, int> *matrix, Matrix_SpBLAS_External_Representation *_spblas, bool transposed)
 {
 	sparse_index_base_t indexing;
 	esint *rowend;
@@ -132,7 +132,7 @@ template <> void extract<double, Matrix_CSR>(Matrix_CSR<double> *matrix, Matrix_
 	matrix->nnz = matrix->rows[matrix->nrows - 1 + matrix->rows[0]] - matrix->rows[0];
 }
 
-template <> void extract<std::complex<double>, Matrix_CSR>(Matrix_CSR<std::complex<double> > *matrix, Matrix_SpBLAS_External_Representation *_spblas, bool transposed)
+template <> void extract<Matrix_CSR, std::complex<double>, int>(Matrix_CSR<std::complex<double>, int> *matrix, Matrix_SpBLAS_External_Representation *_spblas, bool transposed)
 {
 //	if (matrix->nnz) {
 //		if (transposed) {
@@ -149,16 +149,16 @@ template <> void extract<std::complex<double>, Matrix_CSR>(Matrix_CSR<std::compl
 //	}
 }
 
-template <typename T, template <typename> class Matrix>
-SpBLAS<T, Matrix>::SpBLAS(Matrix<T> &a)
+template <template <typename, typename> class Matrix, typename T, typename I>
+SpBLAS<Matrix, T, I>::SpBLAS(Matrix<T, I> &a)
 : matrix{&a}, _spblas{}
 {
 	_spblas = new Matrix_SpBLAS_External_Representation();
 	create(matrix, _spblas, false);
 }
 
-template <typename T, template <typename> class Matrix>
-void SpBLAS<T, Matrix>::insert(Matrix<T> &a)
+template <template <typename, typename> class Matrix, typename T, typename I>
+void SpBLAS<Matrix, T, I>::insert(Matrix<T, I> &a)
 {
 	matrix = &a;
 	if (_spblas) {
@@ -169,7 +169,7 @@ void SpBLAS<T, Matrix>::insert(Matrix<T> &a)
 }
 
 template <>
-void SpBLAS<double, Matrix_CSR>::insert(Matrix_Dense<double> &a, double threshold)
+void SpBLAS<Matrix_CSR, double, int>::insert(Matrix_Dense<double, int> &a, double threshold)
 {
 	matrix = new Matrix_CSR<double>();
 
@@ -197,8 +197,8 @@ void SpBLAS<double, Matrix_CSR>::insert(Matrix_Dense<double> &a, double threshol
 	insert(*matrix);
 }
 
-template <typename T, template <typename> class Matrix>
-void SpBLAS<T, Matrix>::insertTransposed(Matrix<T> &a)
+template <template <typename, typename> class Matrix, typename T, typename I>
+void SpBLAS<Matrix, T, I>::insertTransposed(Matrix<T, I> &a)
 {
 	matrix = &a;
 	if (_spblas) {
@@ -209,8 +209,8 @@ void SpBLAS<T, Matrix>::insertTransposed(Matrix<T> &a)
 	matrix = nullptr; // since it is not transposed
 }
 
-template <typename T, template <typename> class Matrix>
-void SpBLAS<T, Matrix>::extractUpper(Matrix<T> &a)
+template <template <typename, typename> class Matrix, typename T, typename I>
+void SpBLAS<Matrix, T, I>::extractUpper(Matrix<T, I> &a)
 {
 //	extract(&a, _spblas, false);
 }
@@ -241,7 +241,7 @@ static void setDescription(matrix_descr &descr, Matrix_Type type, Matrix_Shape s
 }
 
 template <>
-void SpBLAS<float, Matrix_CSR>::apply(Vector_Dense<float> &y, const float &alpha, const float &beta, const Vector_Dense<float> &x)
+void SpBLAS<Matrix_CSR, float, int>::apply(Vector_Dense<float> &y, const float &alpha, const float &beta, const Vector_Dense<float> &x)
 {
 	matrix_descr descr;
 	setDescription(descr, matrix->type, matrix->shape);
@@ -250,7 +250,7 @@ void SpBLAS<float, Matrix_CSR>::apply(Vector_Dense<float> &y, const float &alpha
 }
 
 template <>
-void SpBLAS<double, Matrix_CSR>::apply(Vector_Dense<double> &y, const double &alpha, const double &beta, const Vector_Dense<double> &x)
+void SpBLAS<Matrix_CSR, double, int>::apply(Vector_Dense<double> &y, const double &alpha, const double &beta, const Vector_Dense<double> &x)
 {
 	matrix_descr descr;
 	setDescription(descr, matrix->type, matrix->shape);
@@ -259,7 +259,7 @@ void SpBLAS<double, Matrix_CSR>::apply(Vector_Dense<double> &y, const double &al
 }
 
 template <>
-void SpBLAS<std::complex<double>, Matrix_CSR>::apply(Vector_Dense<std::complex<double> > &y, const std::complex<double> &alpha, const std::complex<double> &beta, const Vector_Dense<std::complex<double> > &x)
+void SpBLAS<Matrix_CSR, std::complex<double>, int>::apply(Vector_Dense<std::complex<double> > &y, const std::complex<double> &alpha, const std::complex<double> &beta, const Vector_Dense<std::complex<double> > &x)
 {
 	matrix_descr descr;
 	setDescription(descr, matrix->type, matrix->shape);
@@ -267,14 +267,14 @@ void SpBLAS<std::complex<double>, Matrix_CSR>::apply(Vector_Dense<std::complex<d
 	checkStatus(mkl_sparse_z_mv(SPARSE_OPERATION_NON_TRANSPOSE, alpha, _spblas->inspector, descr, x.vals, beta, y.vals));
 }
 
-template <typename T, template <typename> class Matrix>
-void SpBLAS<T, Matrix>::transposeTo(SpBLAS<T, Matrix> &A)
+template <template <typename, typename> class Matrix, typename T, typename I>
+void SpBLAS<Matrix, T, I>::transposeTo(SpBLAS<Matrix, T, I> &A)
 {
 	eslog::error("MKL SpBLAS: call empty function.\n");
 }
 
-template <typename T, template <typename> class Matrix>
-void SpBLAS<T, Matrix>::convertTo(Matrix_Dense<T> &out)
+template <template <typename, typename> class Matrix, typename T, typename I>
+void SpBLAS<Matrix, T, I>::convertTo(Matrix_Dense<T, I> &out)
 {
 	// is there a better functions?
 	out.resize(matrix->nrows, matrix->ncols);
@@ -288,7 +288,7 @@ void SpBLAS<T, Matrix>::convertTo(Matrix_Dense<T> &out)
 }
 
 template <>
-void SpBLAS<double, Matrix_CSR>::multiply(SpBLAS<double, Matrix_CSR> &A, SpBLAS<double, Matrix_CSR> &B)
+void SpBLAS<Matrix_CSR, double, int>::multiply(SpBLAS<Matrix_CSR, double, int> &A, SpBLAS<Matrix_CSR, double, int> &B)
 {
 	if (_spblas) {
 		checkStatus(mkl_sparse_destroy(_spblas->inspector));
@@ -301,13 +301,13 @@ void SpBLAS<double, Matrix_CSR>::multiply(SpBLAS<double, Matrix_CSR> &A, SpBLAS<
 }
 
 template <>
-void SpBLAS<double, Matrix_CSR>::multiply(SpBLAS<double, Matrix_CSR> &A, Matrix_Dense<double> &B)
+void SpBLAS<Matrix_CSR, double, int>::multiply(SpBLAS<Matrix_CSR, double, int> &A, Matrix_Dense<double> &B)
 {
 
 }
 
 template <>
-void SpBLAS<double, Matrix_CSR>::AAt(SpBLAS<double, Matrix_CSR> &A)
+void SpBLAS<Matrix_CSR, double, int>::AAt(SpBLAS<Matrix_CSR, double, int> &A)
 {
 	if (_spblas) {
 		checkStatus(mkl_sparse_destroy(_spblas->inspector));
@@ -321,7 +321,7 @@ void SpBLAS<double, Matrix_CSR>::AAt(SpBLAS<double, Matrix_CSR> &A)
 }
 
 template <>
-void SpBLAS<double, Matrix_CSR>::solveRowMayor(Matrix_Dense<double> &rhs, Matrix_Dense<double> &solution)
+void SpBLAS<Matrix_CSR, double, int>::solveRowMayor(Matrix_Dense<double> &rhs, Matrix_Dense<double> &solution)
 {
 	solution.resize(rhs.nrows, rhs.ncols);
 	matrix_descr descr;
@@ -331,7 +331,7 @@ void SpBLAS<double, Matrix_CSR>::solveRowMayor(Matrix_Dense<double> &rhs, Matrix
 }
 
 template <>
-void SpBLAS<double, Matrix_CSR>::solveColMayor(Matrix_Dense<double> &rhs, Matrix_Dense<double> &solution)
+void SpBLAS<Matrix_CSR, double, int>::solveColMayor(Matrix_Dense<double> &rhs, Matrix_Dense<double> &solution)
 {
 	solution.resize(rhs.nrows, rhs.ncols);
 	matrix_descr descr;

@@ -6,8 +6,8 @@
 
 namespace espreso {
 
-template<typename T>
-int _pardisoType(const Matrix_CSR<T> &x)
+template<typename T, typename I = int>
+int _pardisoType(const Matrix_CSR<T, I> &x)
 {
 	switch (x.type) {
 	case Matrix_Type::REAL_SYMMETRIC_POSITIVE_DEFINITE:    return  2;

@@ -8,41 +8,41 @@ namespace espreso {
 
 #ifndef HAVE_ROCM
 
-template <typename T, template <typename> class Matrix>
-AccFETIDualOperator<T, Matrix>::AccFETIDualOperator(int rank)
+template <template <typename, typename> class Matrix, typename T, typename I>
+AccFETIDualOperator<Matrix, T, I>::AccFETIDualOperator(int rank)
 : rank(rank), _acc(nullptr)
 {
 	eslog::error("calling of empty AccFETIDualOperator wrapper.\n");
 }
 
 
-template <typename T, template <typename> class Matrix>
-AccFETIDualOperator<T, Matrix>::~AccFETIDualOperator()
+template <template <typename, typename> class Matrix, typename T, typename I>
+AccFETIDualOperator<Matrix, T, I>::~AccFETIDualOperator()
 {
 
 }
 
-template <typename T, template <typename> class Matrix>
-void AccFETIDualOperator<T, Matrix>::set(const std::vector<Matrix<T> > &K, const std::vector<Matrix<T> > &B)
+template <template <typename, typename> class Matrix, typename T, typename I>
+void AccFETIDualOperator<Matrix, T, I>::set(const std::vector<Matrix<T, I> > &K, const std::vector<Matrix<T, I> > &B)
 {
 
 }
 
-template <typename T, template <typename> class Matrix>
-void AccFETIDualOperator<T, Matrix>::update(const std::vector<Matrix<T> > &K)
+template <template <typename, typename> class Matrix, typename T, typename I>
+void AccFETIDualOperator<Matrix, T, I>::update(const std::vector<Matrix<T, I> > &K)
 {
 
 }
 
-template <typename T, template <typename> class Matrix>
-void AccFETIDualOperator<T, Matrix>::apply(const Vector_Dual<T> &x, Vector_Dual<T> &y, const std::vector<std::vector<int> > & D2C)
+template <template <typename, typename> class Matrix, typename T, typename I>
+void AccFETIDualOperator<Matrix, T, I>::apply(const Vector_Dual<T> &x, Vector_Dual<T> &y, const std::vector<std::vector<int> > & D2C)
 {
 
 }
 
 #endif
 
-template struct AccFETIDualOperator<double, Matrix_CSR>;
-template struct AccFETIDualOperator<std::complex<double>, Matrix_CSR>;
+template struct AccFETIDualOperator<Matrix_CSR, double, int>;
+template struct AccFETIDualOperator<Matrix_CSR, std::complex<double>, int>;
 
 }

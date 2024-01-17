@@ -11,7 +11,7 @@ namespace espreso {
 
 template <typename T>
 TotalFETIImplicit<T>::TotalFETIImplicit(FETI<T> &feti)
-: DualOperator<T>(feti), sparsity(DirectSolver<T, Matrix_CSR>::VectorSparsity::DENSE)
+: DualOperator<T>(feti), sparsity(DirectSolver<Matrix_CSR, T>::VectorSparsity::DENSE)
 {
 
 }
@@ -69,7 +69,7 @@ void TotalFETIImplicit<T>::printInfo(DualOperatorInfo &sum, DualOperatorInfo &mi
 	eslog::info(" =   K+ NNZ                                                   %8.0f <%8d - %8d> = \n", (double)sum.nnzA / feti.sinfo.domains, min.nnzA, max.nnzA);
 	eslog::info(" =   K+ FACTORS NNZ                                           %8.0f <%8d - %8d> = \n", (double)sum.nnzL / feti.sinfo.domains, min.nnzL, max.nnzL);
 	eslog::info(" =   K+ SOLVER MEMORY [MB]                                    %8.2f <%8.2f - %8.2f> = \n", (double)sum.memoryL / feti.sinfo.domains / 1024. / 1024., min.memoryL / 1024. / 1024., max.memoryL / 1024. / 1024.);
-	if (sparsity != DirectSolver<T, Matrix_CSR>::VectorSparsity::DENSE) {
+	if (sparsity != DirectSolver<Matrix_CSR, T>::VectorSparsity::DENSE) {
 		eslog::info(" =   K+ FACTORIZATION                                                        RESPECT SURFACE = \n");
 	}
 	if (feti.configuration.exhaustive_info) {
@@ -97,7 +97,7 @@ template <typename T>
 void TotalFETIImplicit<T>::set(const step::Step &step)
 {
 	const typename FETI<T>::EqualityConstraints &L = feti.equalityConstraints;
-	sparsity = feti.configuration.partial_dual ? DirectSolver<T, Matrix_CSR>::VectorSparsity::SPARSE_RHS | DirectSolver<T, Matrix_CSR>::VectorSparsity::SPARSE_SOLUTION : DirectSolver<T, Matrix_CSR>::VectorSparsity::DENSE;
+	sparsity = feti.configuration.partial_dual ? DirectSolver<Matrix_CSR, T>::VectorSparsity::SPARSE_RHS | DirectSolver<Matrix_CSR, T>::VectorSparsity::SPARSE_SOLUTION : DirectSolver<Matrix_CSR, T>::VectorSparsity::DENSE;
 
 	Kplus.resize(feti.K.domains.size());
 	d.resize();
@@ -121,7 +121,7 @@ void TotalFETIImplicit<T>::set(const step::Step &step)
 		KSolver[di].commit(Kplus[di]);
 
 		esint suffix = 0;
-		if (sparsity != DirectSolver<T, Matrix_CSR>::VectorSparsity::DENSE) {
+		if (sparsity != DirectSolver<Matrix_CSR, T>::VectorSparsity::DENSE) {
 			suffix = *std::min_element(L.domain[di].B1.cols, L.domain[di].B1.cols + L.domain[di].B1.nnz);
 		}
 
@@ -147,7 +147,6 @@ void TotalFETIImplicit<T>::update(const step::Step &step)
 
 	#pragma omp parallel for
 	for (size_t di = 0; di < feti.K.domains.size(); ++di) {
-		printf("%lu\n", di);
 		KSolver[di].numericalFactorization();
 	}
 	eslog::checkpointln("FETI: TFETI NUMERICAL FACTORIZATION");

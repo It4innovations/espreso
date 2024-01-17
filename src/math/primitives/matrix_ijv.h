@@ -3,30 +3,31 @@
 #define SRC_MATH2_PRIMITIVES_MATRIX_IJV_H_
 
 #include "matrix_info.h"
+#include "basis/containers/allocators.h"
 
 namespace espreso {
 
-template <typename T>
+template <typename T, typename I>
 struct _Matrix_IJV {
-	esint nrows, ncols, nnz, *rows, *cols;
+	I nrows, ncols, nnz, *rows, *cols;
 	T *vals;
 };
 
-template <typename T>
-class Matrix_IJV: public _Matrix_IJV<T>
+template <typename T, typename I = int, template<typename> typename A = cpu_allocator>
+class Matrix_IJV: public _Matrix_IJV<T, I>
 {
 public:
-	Matrix_IJV(): _Matrix_IJV<T>{}, type{Matrix_Type::REAL_NONSYMMETRIC}, shape{Matrix_Shape::FULL}, _allocated{}
+	Matrix_IJV(): _Matrix_IJV<T, I>{}, type{Matrix_Type::REAL_NONSYMMETRIC}, shape{Matrix_Shape::FULL}, _allocated{}
 	{
 
 	}
 
-	Matrix_IJV(const Matrix_IJV &other): _Matrix_IJV<T>{}, type{Matrix_Type::REAL_NONSYMMETRIC}, shape{Matrix_Shape::FULL}, _allocated{}
+	Matrix_IJV(const Matrix_IJV &other): _Matrix_IJV<T, I>{}, type{Matrix_Type::REAL_NONSYMMETRIC}, shape{Matrix_Shape::FULL}, _allocated{}
 	{
 		this->type = other.type;
 		this->shape = other.shape;
 		realloc(_allocated, other.nrows, other.ncols, other.nnz);
-		_Matrix_IJV<T>::operator=(_allocated);
+		_Matrix_IJV<T, I>::operator=(_allocated);
 		for (esint i = 0; i < other.nnz; ++i) {
 			this->rows[i] = other.rows[i];
 			this->cols[i] = other.cols[i];
@@ -34,7 +35,7 @@ public:
 		}
 	}
 
-	Matrix_IJV(Matrix_IJV &&other): _Matrix_IJV<T>{}, type{Matrix_Type::REAL_NONSYMMETRIC}, shape{Matrix_Shape::FULL}, _allocated{}
+	Matrix_IJV(Matrix_IJV &&other): _Matrix_IJV<T, I>{}, type{Matrix_Type::REAL_NONSYMMETRIC}, shape{Matrix_Shape::FULL}, _allocated{}
 	{
 		this->type = other.type;
 		this->shape = other.shape;
@@ -47,7 +48,7 @@ public:
 //		this->type = other.type;
 //		this->shape = other.shape;
 //		realloc(_allocated, other.nrows, other.ncols, other.nnz);
-//		_Matrix_IJV<T>::operator=(_allocated);
+//		_Matrix_IJV<T, I>::operator=(_allocated);
 //		for (esint i = 0; i < other.nnz; ++i) {
 //			this->rows[i] = other.rows[i];
 //			this->cols[i] = other.cols[i];
@@ -73,7 +74,7 @@ public:
 	void resize(esint nrows, esint ncols, esint nnz)
 	{
 		realloc(_allocated, nrows, ncols, nnz);
-		_Matrix_IJV<T>::operator=(_allocated);
+		_Matrix_IJV<T, I>::operator=(_allocated);
 	}
 
 	void resize(const Matrix_IJV &other)
@@ -84,7 +85,7 @@ public:
 	void pattern(const Matrix_IJV &other)
 	{
 		realloc(_allocated, other);
-		_Matrix_IJV<T>::operator=(_allocated);
+		_Matrix_IJV<T, I>::operator=(_allocated);
 		this->rows = other.rows;
 		this->cols = other.cols;
 	}
@@ -99,7 +100,7 @@ protected:
 		Type tmp = v; v = u; u = tmp;
 	}
 
-	void swap(_Matrix_IJV<T> &m, _Matrix_IJV<T> &n)
+	void swap(_Matrix_IJV<T, I> &m, _Matrix_IJV<T, I> &n)
 	{
 		swap(m.nrows, n.nrows);
 		swap(m.ncols, n.ncols);
@@ -109,7 +110,7 @@ protected:
 		swap(m.vals, n.vals);
 	}
 
-	void realloc(_Matrix_IJV<T> &m, esint nrows, esint ncols, esint nnz)
+	void realloc(_Matrix_IJV<T, I> &m, esint nrows, esint ncols, esint nnz)
 	{
 		if (m.nnz < nnz) {
 			if (m.rows) { delete[] m.rows; m.rows = nullptr; }
@@ -124,7 +125,7 @@ protected:
 		m.nnz = nnz;
 	}
 
-	void realloc(_Matrix_IJV<T> &m, const _Matrix_IJV<T> &other)
+	void realloc(_Matrix_IJV<T, I> &m, const _Matrix_IJV<T, I> &other)
 	{
 		if (m.rows) { delete[] m.rows; m.rows = nullptr; }
 		if (m.cols) { delete[] m.cols; m.cols = nullptr; }
@@ -138,7 +139,7 @@ protected:
 		m.nnz = other.nnz;
 	}
 
-	void clear(_Matrix_IJV<T> &m)
+	void clear(_Matrix_IJV<T, I> &m)
 	{
 		m.nrows = m.ncols = m.nnz = 0;
 		if (m.rows) { delete[] m.rows; m.rows = nullptr; }
@@ -146,7 +147,7 @@ protected:
 		if (m.vals) { delete[] m.vals; m.vals = nullptr; }
 	}
 
-	_Matrix_IJV<T> _allocated;
+	_Matrix_IJV<T, I> _allocated;
 };
 
 }

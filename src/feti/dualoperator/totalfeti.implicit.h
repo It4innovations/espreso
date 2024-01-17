@@ -43,7 +43,7 @@ protected:
 
 	std::vector<Matrix_CSR<T> > Kplus;
 	std::vector<Vector_Dense<T> > Btx, KplusBtx;
-	std::vector<DirectSolver<T, Matrix_CSR> > KSolver;
+	std::vector<DirectSolver<Matrix_CSR, T> > KSolver;
 	int sparsity;
 };
 

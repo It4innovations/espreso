@@ -20,8 +20,8 @@ namespace espreso {
 namespace math { // interface to wrappers
 
 	// x = value
-	template <typename T>
-	void set(const esint size, T *x, const int incX, const T &value)
+	template <typename T, typename I>
+	void set(const I size, T *x, const int incX, const T &value)
 	{
 		for (esint i = 0; i < size; i += incX) {
 			x[i] = value;
@@ -34,37 +34,37 @@ namespace math { // interface to wrappers
 namespace espreso {
 namespace math {
 
-	template <typename T> void copy(Vector_Dense<T>  &x, const Vector_Dense<T>  &y) { blas::copy(x.size           , x.vals, 1, y.vals, 1); }
-	template <typename T> void copy(Vector_Sparse<T> &x, const Vector_Sparse<T> &y) { blas::copy(x.nnz            , x.vals, 1, y.vals, 1); }
-	template <typename T> void copy(Matrix_Dense<T>  &x, const Matrix_Dense<T>  &y) { blas::copy(x.nrows * x.ncols, x.vals, 1, y.vals, 1); }
-	template <typename T> void copy(Matrix_CSR<T>    &x, const Matrix_CSR<T>    &y) { blas::copy(x.nnz            , x.vals, 1, y.vals, 1); }
-	template <typename T> void copy(Matrix_IJV<T>    &x, const Matrix_IJV<T>    &y) { blas::copy(x.nnz            , x.vals, 1, y.vals, 1); }
+	template <typename T, typename I> void copy(Vector_Dense<T, I>  &x, const Vector_Dense<T, I>  &y) { blas::copy(x.size           , x.vals, 1, y.vals, 1); }
+	template <typename T, typename I> void copy(Vector_Sparse<T, I> &x, const Vector_Sparse<T, I> &y) { blas::copy(x.nnz            , x.vals, 1, y.vals, 1); }
+	template <typename T, typename I> void copy(Matrix_Dense<T, I>  &x, const Matrix_Dense<T, I>  &y) { blas::copy(x.nrows * x.ncols, x.vals, 1, y.vals, 1); }
+	template <typename T, typename I> void copy(Matrix_CSR<T, I>    &x, const Matrix_CSR<T, I>    &y) { blas::copy(x.nnz            , x.vals, 1, y.vals, 1); }
+	template <typename T, typename I> void copy(Matrix_IJV<T, I>    &x, const Matrix_IJV<T, I>    &y) { blas::copy(x.nnz            , x.vals, 1, y.vals, 1); }
 
-	template <typename T> void scale(const T &alpha, Vector_Dense<T>  &x) { blas::scale(x.size           , alpha, x.vals, 1); }
-	template <typename T> void scale(const T &alpha, Vector_Sparse<T> &x) { blas::scale(x.nnz            , alpha, x.vals, 1); }
-	template <typename T> void scale(const T &alpha, Matrix_Dense<T>  &x) { blas::scale(x.nrows * x.ncols, alpha, x.vals, 1); }
-	template <typename T> void scale(const T &alpha, Matrix_CSR<T>    &x) { blas::scale(x.nnz            , alpha, x.vals, 1); }
-	template <typename T> void scale(const T &alpha, Matrix_IJV<T>    &x) { blas::scale(x.nnz            , alpha, x.vals, 1); }
+	template <typename T, typename I> void scale(const T &alpha, Vector_Dense<T, I>  &x) { blas::scale(x.size           , alpha, x.vals, 1); }
+	template <typename T, typename I> void scale(const T &alpha, Vector_Sparse<T, I> &x) { blas::scale(x.nnz            , alpha, x.vals, 1); }
+	template <typename T, typename I> void scale(const T &alpha, Matrix_Dense<T, I>  &x) { blas::scale(x.nrows * x.ncols, alpha, x.vals, 1); }
+	template <typename T, typename I> void scale(const T &alpha, Matrix_CSR<T, I>    &x) { blas::scale(x.nnz            , alpha, x.vals, 1); }
+	template <typename T, typename I> void scale(const T &alpha, Matrix_IJV<T, I>    &x) { blas::scale(x.nnz            , alpha, x.vals, 1); }
 
-	template <typename T> void add(Vector_Dense<T>  &x, const T &alpha, const Vector_Dense<T>  &y) { blas::add(x.size           , x.vals, 1, alpha, y.vals, 1); }
-	template <typename T> void add(Vector_Sparse<T> &x, const T &alpha, const Vector_Sparse<T> &y) { blas::add(x.nnz            , x.vals, 1, alpha, y.vals, 1); }
-	template <typename T> void add(Matrix_Dense<T>  &x, const T &alpha, const Matrix_Dense<T>  &y) { blas::add(x.nrows * x.ncols, x.vals, 1, alpha, y.vals, 1); }
-	template <typename T> void add(Matrix_CSR<T>    &x, const T &alpha, const Matrix_CSR<T>    &y) { blas::add(x.nnz            , x.vals, 1, alpha, y.vals, 1); }
-	template <typename T> void add(Matrix_IJV<T>    &x, const T &alpha, const Matrix_IJV<T>    &y) { blas::add(x.nnz            , x.vals, 1, alpha, y.vals, 1); }
+	template <typename T, typename I> void add(Vector_Dense<T, I>  &x, const T &alpha, const Vector_Dense<T, I>  &y) { blas::add(x.size           , x.vals, 1, alpha, y.vals, 1); }
+	template <typename T, typename I> void add(Vector_Sparse<T, I> &x, const T &alpha, const Vector_Sparse<T, I> &y) { blas::add(x.nnz            , x.vals, 1, alpha, y.vals, 1); }
+	template <typename T, typename I> void add(Matrix_Dense<T, I>  &x, const T &alpha, const Matrix_Dense<T, I>  &y) { blas::add(x.nrows * x.ncols, x.vals, 1, alpha, y.vals, 1); }
+	template <typename T, typename I> void add(Matrix_CSR<T, I>    &x, const T &alpha, const Matrix_CSR<T, I>    &y) { blas::add(x.nnz            , x.vals, 1, alpha, y.vals, 1); }
+	template <typename T, typename I> void add(Matrix_IJV<T, I>    &x, const T &alpha, const Matrix_IJV<T, I>    &y) { blas::add(x.nnz            , x.vals, 1, alpha, y.vals, 1); }
 
-	template <typename T> T dot(const Vector_Dense<T>  &x, const Vector_Dense<T>  &y) { return blas::dot(x.size, x.vals, 1, y.vals, 1); }
-	template <typename T> T dot(const Vector_Sparse<T> &x, const Vector_Sparse<T> &y) { return blas::dot(x.nnz , x.vals, 1, y.vals, 1); }
+	template <typename T, typename I> T dot(const Vector_Dense<T, I>  &x, const Vector_Dense<T, I>  &y) { return blas::dot(x.size, x.vals, 1, y.vals, 1); }
+	template <typename T, typename I> T dot(const Vector_Sparse<T, I> &x, const Vector_Sparse<T, I> &y) { return blas::dot(x.nnz , x.vals, 1, y.vals, 1); }
 
-	template <typename T> T norm(const Vector_Dense<T>  &x) { return blas::norm(x.size, x.vals, 1); }
-	template <typename T> T norm(const Vector_Sparse<T> &x) { return blas::norm(x.nnz , x.vals, 1); }
+	template <typename T, typename I> T norm(const Vector_Dense<T, I>  &x) { return blas::norm(x.size, x.vals, 1); }
+	template <typename T, typename I> T norm(const Vector_Sparse<T, I> &x) { return blas::norm(x.nnz , x.vals, 1); }
 
-	template <typename T> void set(Vector_Dense<T>  &x, const T &value) { set(x.size           , x.vals, 1, value); }
-	template <typename T> void set(Vector_Sparse<T> &x, const T &value) { set(x.nnz            , x.vals, 1, value); }
-	template <typename T> void set(Matrix_Dense<T>  &x, const T &value) { set(x.nrows * x.ncols, x.vals, 1, value); }
-	template <typename T> void set(Matrix_CSR<T>    &x, const T &value) { set(x.nnz            , x.vals, 1, value); }
-	template <typename T> void set(Matrix_IJV<T>    &x, const T &value) { set(x.nnz            , x.vals, 1, value); }
+	template <typename T, typename I> void set(Vector_Dense<T, I>  &x, const T &value) { set(x.size           , x.vals, 1, value); }
+	template <typename T, typename I> void set(Vector_Sparse<T, I> &x, const T &value) { set(x.nnz            , x.vals, 1, value); }
+	template <typename T, typename I> void set(Matrix_Dense<T, I>  &x, const T &value) { set(x.nrows * x.ncols, x.vals, 1, value); }
+	template <typename T, typename I> void set(Matrix_CSR<T, I>    &x, const T &value) { set(x.nnz            , x.vals, 1, value); }
+	template <typename T, typename I> void set(Matrix_IJV<T, I>    &x, const T &value) { set(x.nnz            , x.vals, 1, value); }
 
-	template <typename T> void combine(Matrix_CSR<T> &C, const Matrix_CSR<T> &A, const Matrix_CSR<T> &B)
+	template <typename T, typename I> void combine(Matrix_CSR<T, I> &C, const Matrix_CSR<T, I> &A, const Matrix_CSR<T, I> &B)
 	{
 		if (A.nrows != B.nrows || A.ncols != B.ncols) {
 			eslog::error("invalid matrices sizes.\n");
@@ -115,7 +115,7 @@ namespace math {
 		*r = c - C.cols + Indexing::CSR;
 	}
 
-	template <typename T> void sumCombined(Matrix_CSR<T> &C, const T &alpha, const Matrix_CSR<T> &A, const Matrix_CSR<T> &B)
+	template <typename T, typename I> void sumCombined(Matrix_CSR<T, I> &C, const T &alpha, const Matrix_CSR<T, I> &A, const Matrix_CSR<T, I> &B)
 	{
 		if (A.nrows != B.nrows || A.ncols != B.ncols) {
 			eslog::error("invalid matrices sizes.\n");
@@ -139,29 +139,7 @@ namespace math {
 		}
 	}
 
-	template <typename T> T max(const Vector_Dense<T> &x)
-	{
-		T max = x.vals[0];
-		for (esint i = 0; i < x.size; ++i) {
-			if (max < x.vals[i]) {
-				max = x.vals[i];
-			}
-		}
-		return max;
-	}
-
-	template <typename T> T getDiagonalMax(const Matrix_CSR<T> &m)
-	{
-		T max = m.vals[0];
-		for (esint r = 0; r < m.nrows; ++r) {
-			esint *c = m.cols + m.rows[r] - Indexing::CSR;
-			while (*c != r + Indexing::CSR) { ++c; }
-			max = std::max(max, m.vals[c - m.cols]);
-		}
-		return max;
-	}
-
-	template <typename T> void orthonormalize(Matrix_Dense<T> &m)
+	template <typename T, typename I> void orthonormalize(Matrix_Dense<T, I> &m)
 	{
 		for (esint r = 0; r < m.nrows; ++r) {
 			for (esint rr = 0; rr < r; ++rr) {

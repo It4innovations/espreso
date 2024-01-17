@@ -145,7 +145,7 @@ void DirectSolver<T, Matrix>::numericalFactorization()
 }
 
 template <typename T, template <typename> class Matrix>
-void DirectSolver<T, Matrix>::solve(Vector_Dense<T> &rhs, Vector_Dense<T> &solution, int sparsity)
+void DirectSolver<T, Matrix>::solve(Vector_Dense<T, I> &rhs, Vector_Dense<T, I> &solution, int sparsity)
 {
 	switch (matrix->type) {
 	case Matrix_Type::REAL_SYMMETRIC_POSITIVE_DEFINITE:
@@ -161,7 +161,7 @@ void DirectSolver<T, Matrix>::solve(Vector_Dense<T> &rhs, Vector_Dense<T> &solut
 }
 
 template <typename T, template <typename> class Matrix>
-void DirectSolver<T, Matrix>::solve(Matrix_Dense<T> &rhs, Matrix_Dense<T> &solution, int sparsity)
+void DirectSolver<T, Matrix>::solve(Matrix_Dense<T, I> &rhs, Matrix_Dense<T, I> &solution, int sparsity)
 {
 	switch (matrix->type) {
 	case Matrix_Type::REAL_SYMMETRIC_POSITIVE_DEFINITE:
@@ -205,7 +205,7 @@ void DirectSolver<T, Matrix>::getFactors(Matrix_CSC<T> &L, Matrix_CSC<T> &U, Vec
 }
 
 template <typename T, template <typename> class Matrix>
-void DirectSolver<T, Matrix>::getSC(Matrix_Dense<T> &sc)
+void DirectSolver<T, Matrix>::getSC(Matrix_Dense<T, I> &sc)
 {
 	// computes the schur complement S = A22 - A21 * A11^{-1} * A12, where A = [A11, A12; A21, A22]
 	switch(matrix->type) {
@@ -220,10 +220,10 @@ void DirectSolver<T, Matrix>::getSC(Matrix_Dense<T> &sc)
 		esint size = matrix->nrows;
 		esint size_A11 = size - size_sc;
 
-		Matrix_CSR<T> A11_sp;
-		Matrix_CSR<T> A21t_sp; // = A12c_sp
-		Matrix_Dense<T> A22t_dn;
-		Matrix_Dense<T> A12t_dn;
+		Matrix_CSR<T, I> A11_sp;
+		Matrix_CSR<T, I> A21t_sp; // = A12c_sp
+		Matrix_Dense<T, I> A22t_dn;
+		Matrix_Dense<T, I> A12t_dn;
 		SpBLAS<T, Matrix_CSR>::submatrix(*matrix, A11_sp, 0, size_A11, 0, size_A11);
 		SpBLAS<T, Matrix_CSR>::submatrix(*matrix, A21t_sp, 0, size_A11, size_A11, size, false, true); // = A12c_sp
 		SpBLAS<T, Matrix_CSR>::submatrix(*matrix, A22t_dn, size_A11, size, size_A11, size, true, false, true);

@@ -28,6 +28,25 @@ public:
 	}
 };
 
+template<typename T>
+class cpu_allocator
+{
+public:
+    static constexpr bool is_data_host_accessible = true;
+public:
+    using value_type = T;
+    std::allocator<T> a;
+    cpu_allocator() = default;
+    T * allocate(size_t count)
+    {
+        return a.allocate(count);
+    }
+    void deallocate(T * ptr, size_t count)
+    {
+        a.deallocate(ptr, count);
+    }
+};
+
 }
 
 #endif /* SRC_BASIS_CONTAINERS_ALLOCATORS_H_ */

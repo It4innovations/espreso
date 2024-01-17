@@ -11,9 +11,9 @@
 
 namespace espreso {
 
-template <template<typename> typename Matrix, typename T> class Matrix_FETI;
+template <template<typename, typename> typename Matrix, typename T> class Matrix_FETI;
 
-template <template<typename> typename Matrix, typename T>
+template <template<typename, typename> typename Matrix, typename T>
 class Matrix_FETI_Common: public Matrix_Base<T> {
 public:
 	void commit()
@@ -194,11 +194,11 @@ public:
 		}
 	}
 
-	std::vector<Matrix<T> > domains;
+	std::vector<Matrix<T, int> > domains;
 	DOFsDecomposition *decomposition;
 };
 
-template <template<typename> typename Matrix, typename T>
+template <template<typename, typename> typename Matrix, typename T>
 class Matrix_FETI: public Matrix_FETI_Common<Matrix, T> {
 public:
 	void copySliced(const Matrix_Base<T> *in, int rowOffset, int colOffset, int size, int step)
@@ -422,7 +422,7 @@ public:
 	}
 };
 
-template <template<typename> typename Matrix, typename T>
+template <template<typename, typename> typename Matrix, typename T>
 class Matrix_FETI<Matrix, std::complex<T> >: public Matrix_FETI_Common<Matrix, std::complex<T> > {
 public:
 	void copyReal(const Matrix_Base<T> *in)

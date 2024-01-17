@@ -4,36 +4,37 @@
 
 #include "matrix_info.h"
 #include "slice.h"
+#include "basis/containers/allocators.h"
 
 namespace espreso {
 
-template <typename T>
+template <typename T, typename I>
 struct _Matrix_Dense {
-	esint nrows, ncols, nnz;
+	I nrows, ncols, nnz;
 	T *vals;
 };
 
-template <typename T>
-class Matrix_Dense: public _Matrix_Dense<T>
+template <typename T, typename I = int, template<typename> typename A = cpu_allocator>
+class Matrix_Dense: public _Matrix_Dense<T, I>
 {
 public:
-	Matrix_Dense(): _Matrix_Dense<T>{}, type{Matrix_Type::REAL_STRUCTURALLY_SYMMETRIC}, shape{Matrix_Shape::FULL}, _allocated{}
+	Matrix_Dense(): _Matrix_Dense<T, I>{}, type{Matrix_Type::REAL_STRUCTURALLY_SYMMETRIC}, shape{Matrix_Shape::FULL}, _allocated{}
 	{
 
 	}
 
-	Matrix_Dense(const Matrix_Dense &other): _Matrix_Dense<T>{}, _allocated{}
+	Matrix_Dense(const Matrix_Dense &other): _Matrix_Dense<T, I>{}, _allocated{}
 	{
 		this->type = other.type;
 		this->shape = other.shape;
 		realloc(_allocated, this->shape, other.nrows, other.ncols);
-		_Matrix_Dense<T>::operator=(_allocated);
+		_Matrix_Dense<T, I>::operator=(_allocated);
 		for (esint i = 0; i < other.nnz; ++i) {
 			this->vals[i] = other.vals[i];
 		}
 	}
 
-	Matrix_Dense(Matrix_Dense &&other): _Matrix_Dense<T>{}, _allocated{}
+	Matrix_Dense(Matrix_Dense &&other): _Matrix_Dense<T, I>{}, _allocated{}
 	{
 		this->type = other.type;
 		this->shape = other.shape;
@@ -46,7 +47,7 @@ public:
 //		this->type = other.type;
 //		this->shape = other.shape;
 //		realloc(_allocated, other.nrows, other.ncols);
-//		_Matrix_Dense<T>::operator=(_allocated);
+//		_Matrix_Dense<T, I>::operator=(_allocated);
 //		for (esint i = 0; i < other.nrows * other.ncols; ++i) {
 //			this->vals[i] = other.vals[i];
 //		}
@@ -67,7 +68,7 @@ public:
 		clear(_allocated);
 	}
 
-	_Matrix_Dense<T>& allocated()
+	_Matrix_Dense<T, I>& allocated()
 	{
 		return _allocated;
 	}
@@ -75,7 +76,7 @@ public:
 	void resize(esint nrows, esint ncols)
 	{
 		realloc(_allocated, shape, nrows, ncols);
-		_Matrix_Dense<T>::operator=(_allocated);
+		_Matrix_Dense<T, I>::operator=(_allocated);
 	}
 
 	void resize(const Matrix_Dense &other)
@@ -86,7 +87,7 @@ public:
 	void pattern(const Matrix_Dense &other)
 	{
 		realloc(_allocated, other.shape, other.nrows, other.ncols);
-		_Matrix_Dense<T>::operator=(_allocated);
+		_Matrix_Dense<T, I>::operator=(_allocated);
 	}
 
 	void slice(const Slice &rows, const Slice &cols)
@@ -106,14 +107,14 @@ protected:
 		Type tmp = v; v = u; u = tmp;
 	}
 
-	void swap(_Matrix_Dense<T> &m, _Matrix_Dense<T> &n)
+	void swap(_Matrix_Dense<T, I> &m, _Matrix_Dense<T, I> &n)
 	{
 		swap(m.nrows, n.nrows);
 		swap(m.ncols, n.ncols);
 		swap(m.vals, n.vals);
 	}
 
-	void realloc(_Matrix_Dense<T> &m, const Matrix_Shape &shape, esint nrows, esint ncols)
+	void realloc(_Matrix_Dense<T, I> &m, const Matrix_Shape &shape, esint nrows, esint ncols)
 	{
 		esint nnz;
 		if (shape == Matrix_Shape::FULL) {
@@ -130,13 +131,13 @@ protected:
 		m.nnz = nnz;
 	}
 
-	void clear(_Matrix_Dense<T> &m)
+	void clear(_Matrix_Dense<T, I> &m)
 	{
 		m.nrows = m.ncols = 0;
 		if (m.vals) { delete[] m.vals; m.vals = nullptr; }
 	}
 
-	_Matrix_Dense<T> _allocated;
+	_Matrix_Dense<T, I> _allocated;
 };
 
 

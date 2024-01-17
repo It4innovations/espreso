@@ -17,14 +17,14 @@ namespace espreso {
 template <typename T>
 struct Acc_FETI_Dual_Operator;
 
-template <typename T, template <typename> class Matrix>
+template <template <typename, typename> class Matrix, typename T, typename I = int>
 struct AccFETIDualOperator {
 
 	AccFETIDualOperator(int rank);
 	~AccFETIDualOperator();
 
-	void set(const std::vector<Matrix<T> > &K, const std::vector<Matrix<T> > &B);
-	void update(const std::vector<Matrix<T> > &K);
+	void set(const std::vector<Matrix<T, I> > &K, const std::vector<Matrix<T, I> > &B);
+	void update(const std::vector<Matrix<T, I> > &K);
 	void apply(const Vector_Dual<T> &x, Vector_Dual<T> &y, const std::vector<std::vector<int> > & D2C);
 
 private:

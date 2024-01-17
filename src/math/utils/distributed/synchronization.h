@@ -3,21 +3,21 @@
 #define SRC_MATH2_UTILS_DISTRIBUTED_SYNCHRONIZATION_H_
 
 #include "esinfo/eslog.h"
-#include <vector>
 
 #include "math/primitives/matrix_csr.h"
+#include "math/primitives/vector_dense.h"
+#include "math/primitives/vector_sparse.h"
 #include "wrappers/mpi/communication.h"
 #include "mesh/store/nodestore.h"
 
+#include <vector>
+
 namespace espreso {
 
-template <typename T> class Vector_Dense;
-template <typename T> class Vector_Sparse;
-template <typename T> class Matrix_CSR;
-template <template<typename> typename Matrix, typename T> class Vector_Distributed;
-template <template<typename> typename Matrix, typename T> class Matrix_Distributed;
+template <template<typename, typename> typename Vector, typename T> class Vector_Distributed;
+template <template<typename, typename> typename Matrix, typename T> class Matrix_Distributed;
 
-template <template<typename> typename Struct, typename T> struct Data_Synchronization { };
+template <template<typename, typename> typename Struct, typename T> struct Data_Synchronization { };
 
 template <typename T>
 struct Data_Synchronization<Matrix_CSR, T> {

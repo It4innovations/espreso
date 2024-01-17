@@ -101,7 +101,7 @@ void _scatterToUpper(Data_Synchronization<Matrix_CSR, T> *sync, Matrix_Distribut
 template<> void Data_Synchronization<Matrix_CSR, double>::init(Matrix_Distributed<Matrix_CSR, double> &m) { _init(this, m); }
 template<> void Data_Synchronization<Matrix_CSR, std::complex<double> >::init(Matrix_Distributed<Matrix_CSR, std::complex<double> > &m) { _init(this, m); }
 
-template<> void Data_Synchronization<Matrix_CSR, double>::gatherFromUpper(Matrix_Distributed<Matrix_CSR, double> &m) { _gatherFromUpper(this, m); }
+template<> void Data_Synchronization<Matrix_CSR, double >::gatherFromUpper(Matrix_Distributed<Matrix_CSR, double> &m) { _gatherFromUpper(this, m); }
 template<> void Data_Synchronization<Matrix_CSR, std::complex<double> >::gatherFromUpper(Matrix_Distributed<Matrix_CSR, std::complex<double> > &m) { _gatherFromUpper(this, m); }
 
 template<> void Data_Synchronization<Matrix_CSR, double>::scatterToUpper(Matrix_Distributed<Matrix_CSR, double> &m) { _scatterToUpper(this, m); }

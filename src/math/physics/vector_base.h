@@ -2,6 +2,8 @@
 #ifndef SRC_MATH2_GENERALIZATION_VECTOR_BASE_H_
 #define SRC_MATH2_GENERALIZATION_VECTOR_BASE_H_
 
+#include "math/primitives/vector_dense.h"
+#include "math/primitives/vector_sparse.h"
 #include "math/utils/mapping.h"
 
 #include <complex>
@@ -10,10 +12,8 @@
 namespace espreso {
 
 template <typename T> class Vector_Base;
-template <typename T> class Vector_Dense;
-template <typename T> class Vector_Sparse;
-template <template<typename> typename Vector, typename T> class Vector_Distributed;
-template <template<typename> typename Vector, typename T> class Vector_FETI;
+template <template<typename, typename> typename Vector, typename T> class Vector_Distributed;
+template <template<typename, typename> typename Vector, typename T> class Vector_FETI;
 
 template <typename T> class Vector_Base_Common {
 public:

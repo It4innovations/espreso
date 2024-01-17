@@ -15,7 +15,7 @@ namespace espreso {
 
 struct Matrix_Solver_External_Representation;
 
-template <typename T, template <typename> class Matrix>
+template <template <typename, typename> class Matrix, typename T, typename I = int>
 struct DirectSolver {
 	struct VectorSparsity {
 		static const int DENSE           = 0;
@@ -28,22 +28,22 @@ struct DirectSolver {
 	static bool provideSC();
 
 	DirectSolver();
-	DirectSolver(const Matrix<T> &a);
+	DirectSolver(const Matrix<T, I> &a);
 	~DirectSolver();
 
-	void commit(const Matrix<T> &a);
-	void commit(SpBLAS<T, Matrix> &spblas);
+	void commit(const Matrix<T, I> &a);
+	void commit(SpBLAS<Matrix, T, I> &spblas);
 
 	void symbolicFactorization(int fixedSuffix = 0); // do not permute suffix
 	void numericalFactorization();
 
-	void solve(Vector_Dense<T> &rhs, Vector_Dense<T> &solution, int sparsity = VectorSparsity::DENSE);
-	void solve(Matrix_Dense<T> &rhs, Matrix_Dense<T> &solution, int sparsity = VectorSparsity::DENSE);
+	void solve(Vector_Dense<T, I> &rhs, Vector_Dense<T, I> &solution, int sparsity = VectorSparsity::DENSE);
+	void solve(Matrix_Dense<T, I> &rhs, Matrix_Dense<T, I> &solution, int sparsity = VectorSparsity::DENSE);
 
 	void getFactors(Matrix_CSC<T> &L, Matrix_CSC<T> &U, Vector_Dense<int> &p);
-	void getSC(Matrix_Dense<T> &sc);
+	void getSC(Matrix_Dense<T, I> &sc);
 
-	const Matrix<T> *matrix;
+	const Matrix<T, I> *matrix;
 
 	size_t rows, nnzA, nnzL;
 	size_t memoryL;

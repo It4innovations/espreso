@@ -4,6 +4,9 @@
 
 #include "vector_base.h"
 #include "math/primitives/matrix_info.h"
+#include "math/primitives/matrix_csr.h"
+#include "math/primitives/matrix_dense.h"
+#include "math/primitives/matrix_ijv.h"
 
 #include "math/utils/mapping.h"
 
@@ -12,11 +15,8 @@
 namespace espreso {
 
 template <typename T> class Matrix_Base;
-template <typename T> class Matrix_CSR;
-template <typename T> class Matrix_IJV;
-template <typename T> class Matrix_Dense;
-template <template<typename> typename Matrix, typename T> class Matrix_Distributed;
-template <template<typename> typename Matrix, typename T> class Matrix_FETI;
+template <template<typename, typename> typename Matrix, typename T> class Matrix_Distributed;
+template <template<typename, typename> typename Matrix, typename T> class Matrix_FETI;
 
 template <typename T>
 class Matrix_Base_Common {

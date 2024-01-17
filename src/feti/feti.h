@@ -40,15 +40,15 @@ struct FETI {
 			esint nhalo;
 			std::vector<int> D2C;
 
-			Matrix_CSR<T> B1;
-			Vector_Dense<T> duplication;
+			Matrix_CSR<T, int> B1;
+			Vector_Dense<T, int> duplication;
 		};
 
 		std::vector<esint> cmap; // size, ndomains <d0, d1, ..., dn>; size, ndomains <>; ...;
 
 		esint dirichlet, nhalo, size;
 		std::vector<Domain> domain;
-		Vector_Dense<T> c;
+		Vector_Dense<T, int> c;
 	};
 
 	FETI(FETIConfiguration &configuration);

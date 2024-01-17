@@ -1,7 +1,6 @@
 
 #include "math/math.h"
 #include "math/math.h"
-#include "math/matrix.h"
 #include "esinfo/eslog.h"
 #include "esinfo/envinfo.h"
 

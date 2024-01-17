@@ -13,7 +13,7 @@
 
 namespace espreso {
 
-template <template<typename> typename Vector, typename T>
+template <template<typename, typename> typename Vector, typename T>
 class Vector_Distributed_Common: public Vector_Base<T> {
 public:
 	void synchronize()
@@ -126,12 +126,12 @@ public:
 		eslog::error("call empty function\n");
 	}
 
-	Vector<T> cluster;
+	Vector<T, esint> cluster;
 	DOFsDistribution *distribution;
 	Data_Synchronization<Vector, T> *synchronization;
 };
 
-template <template<typename> typename Vector, typename T>
+template <template<typename, typename> typename Vector, typename T>
 class Vector_Distributed: public Vector_Distributed_Common<Vector, T> {
 public:
 	void storeTo(std::vector<double> &output)
@@ -272,7 +272,7 @@ public:
 	}
 };
 
-template <template<typename> typename Vector, typename T>
+template <template<typename, typename> typename Vector, typename T>
 class Vector_Distributed<Vector, std::complex<T> >: public Vector_Distributed_Common<Vector, std::complex<T> > {
 public:
 	void storeTo(std::vector<double> &output)

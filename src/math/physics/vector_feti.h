@@ -2,15 +2,16 @@
 #ifndef SRC_MATH2_GENERALIZATION_VECTOR_FETI_H_
 #define SRC_MATH2_GENERALIZATION_VECTOR_FETI_H_
 
-#include <math/utils/feti/decomposition.h>
 #include "vector_base.h"
-#include "esinfo/eslog.h"
 #include "math/physics/math.physics.h"
+#include "math/utils/feti/decomposition.h"
+#include "esinfo/eslog.h"
+
 #include <vector>
 
 namespace espreso {
 
-template <template<typename> typename Vector, typename T>
+template <template<typename, typename> typename Vector, typename T>
 class Vector_FETI_Common: public Vector_Base<T> {
 public:
 	void synchronize()
@@ -146,11 +147,11 @@ public:
 		}
 	}
 
-	std::vector<Vector<T> > domains;
+	std::vector<Vector<T, int> > domains;
 	DOFsDecomposition *decomposition;
 };
 
-template <template<typename> typename Vector, typename T>
+template <template<typename, typename> typename Vector, typename T>
 class Vector_FETI: public Vector_FETI_Common<Vector, T> {
 
 	void _store(const std::vector<Vector_Dense<double> > &domains, const DOFsDecomposition *decomposition, std::vector<double> &output)
@@ -339,7 +340,7 @@ public:
 	}
 };
 
-template <template<typename> typename Vector, typename T>
+template <template<typename, typename> typename Vector, typename T>
 class Vector_FETI<Vector, std::complex<T> >: public Vector_FETI_Common<Vector, std::complex<T> > {
 public:
 	void storeTo(std::vector<double> &output)

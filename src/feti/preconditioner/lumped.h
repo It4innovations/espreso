@@ -20,7 +20,7 @@ struct Lumped: public Preconditioner<T> {
 protected:
 	using Preconditioner<T>::feti;
 	std::vector<Vector_Dense<T> > Btx, KBtx;
-	std::vector<SpBLAS<T, Matrix_CSR> > KSpBlas;
+	std::vector<SpBLAS<Matrix_CSR, T> > KSpBlas;
 };
 
 }

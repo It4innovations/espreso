@@ -22,7 +22,7 @@ protected:
 	using Preconditioner<T>::feti;
 	std::vector<Vector_Dense<T> > Btx, KBtx;
 	std::vector<Matrix_Dense<T> > sc;
-	std::vector<DirectSolver<T, Matrix_CSR> > Ksolver;
+	std::vector<DirectSolver<Matrix_CSR, T> > Ksolver;
 };
 
 }

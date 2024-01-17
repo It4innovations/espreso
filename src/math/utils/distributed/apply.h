@@ -3,33 +3,34 @@
 #define SRC_MATH2_UTILS_DISTRIBUTED_APPLY_H_
 
 #include "math/primitives/matrix_csr.h"
+#include "math/primitives/matrix_dense.h"
+#include "math/primitives/vector_dense.h"
 #include "math/wrappers/math.spblas.h"
 
 #include <vector>
 
 namespace espreso {
 
-template <typename T> class Vector_Dense;
-template <template<typename> typename Matrix, typename T> class Vector_Distributed;
-template <template<typename> typename Matrix, typename T> class Matrix_Distributed;
+template <template<typename, typename> typename Vector, typename T> class Vector_Distributed;
+template <template<typename, typename> typename Matrix, typename T> class Matrix_Distributed;
 
-template <template<typename> typename Struct, typename T> struct Data_Apply { };
+template <template<typename, typename> typename Struct, typename T, typename I = esint> struct Data_Apply { };
 
-template <typename T>
-struct Data_Apply<Matrix_CSR, T> {
-	Matrix_CSR<T> m;
-	Vector_Dense<T> v;
+template <typename T, typename I>
+struct Data_Apply<Matrix_CSR, T, I> {
+	Matrix_CSR<T, I> m;
+	Vector_Dense<T, I> v;
 	std::vector<std::vector<T> > sBuffer, rBuffer;
-	std::vector<std::vector<esint> > rOffset, sOffset;
+	std::vector<std::vector<I> > rOffset, sOffset;
 	std::vector<int> neighbors;
-	std::vector<esint> nDOF;
-	esint offset;
+	std::vector<I> nDOF;
+	I offset;
 
-	SpBLAS<T, Matrix_CSR> spblas;
+	SpBLAS<Matrix_CSR, T, I> spblas;
 
 	Data_Apply<Matrix_CSR, T>& operator=(const Data_Apply<Matrix_CSR, T> &other)
 	{
-		m._Matrix_CSR<T>::operator=(other.m);
+		m._Matrix_CSR<T, I>::operator=(other.m);
 		return *this;
 	}
 
