@@ -24,10 +24,10 @@ TFETIOrthogonalSymmetric<T>::TFETIOrthogonalSymmetric(FETI<T> &feti)
 
 	domainOffset = feti.K.decomposition->dbegin;
 
-	dinfo.reserve(R.R1.domains.size());
-	for (size_t d = 0, koffset = feti.sinfo.R1offset; d < R.R1.domains.size(); ++d) {
-		dinfo.push_back(DomainInfo((esint)(domainOffset + d), koffset, R.R1.domains[d].nrows));
-		koffset += R.R1.domains[d].nrows;
+	dinfo.reserve(R.R1.size());
+	for (size_t d = 0, koffset = feti.sinfo.R1offset; d < R.R1.size(); ++d) {
+		dinfo.push_back(DomainInfo((esint)(domainOffset + d), koffset, R.R1[d].nrows));
+		koffset += R.R1[d].nrows;
 	}
 
 	_computeDualGraph();
@@ -63,11 +63,11 @@ void TFETIOrthogonalSymmetric<T>::update(const step::Step &step)
 
 	#pragma omp parallel for
 	for (size_t d = 0; d < dinfo.size(); ++d) {
-		math::orthonormalize(R.R1.domains[d]);
+		math::orthonormalize(R.R1[d]);
 		Vector_Dense<T> _e;
-		_e.size = R.R1.domains[d].nrows;
+		_e.size = R.R1[d].nrows;
 		_e.vals = e.vals + dinfo[d].koffset;
-		math::blas::apply(_e, T{1}, R.R1.domains[d], T{0}, feti.f.domains[d]);
+		math::blas::apply(_e, T{1}, R.R1[d], T{0}, feti.f.domains[d]);
 	}
 	e.synchronize();
 	eslog::checkpointln("FETI: COMPUTE DUAL RHS [e]");
@@ -154,7 +154,7 @@ void TFETIOrthogonalSymmetric<T>::_applyR(const Vector_Dense<T> &in, Vector_FETI
 		y.size = dinfo[d].kernels;
 		y.vals = in.vals + dinfo[d].koffset - feti.sinfo.R1offset;
 
-		math::blas::applyT(out.domains[d], T{1}, feti.regularization.R1.domains[d], T{0}, y);
+		math::blas::applyT(out.domains[d], T{1}, feti.regularization.R1[d], T{0}, y);
 	}
 }
 
@@ -316,7 +316,7 @@ void TFETIOrthogonalSymmetric<T>::_updateG()
 			for (esint c = 0; c < L.domain[d].B1.nrows; ++c) {
 				G.vals[G.rows[r] + c] = 0;
 				for (esint i = L.domain[d].B1.rows[c]; i < L.domain[d].B1.rows[c + 1]; ++i) {
-					G.vals[G.rows[r] + c] -= R.R1.domains[d].vals[R.R1.domains[d].ncols * kr + L.domain[d].B1.cols[i]] * L.domain[d].B1.vals[i];
+					G.vals[G.rows[r] + c] -= R.R1[d].vals[R.R1[d].ncols * kr + L.domain[d].B1.cols[i]] * L.domain[d].B1.vals[i];
 				}
 			}
 		}
@@ -463,8 +463,8 @@ void TFETIOrthogonalSymmetric<T>::_print(const step::Step &step)
 {
 	if (info::ecf->output.print_matrices) {
 		eslog::storedata(" STORE: feti/projector/{R_orth, G, e, GGt, invGGt}\n");
-		for (size_t di = 0; di < feti.regularization.R1.domains.size(); ++di) {
-			math::store(feti.regularization.R1.domains[di], utils::filename(utils::debugDirectory(step) + "/feti/projector", (std::string("R_orth") + std::to_string(di)).c_str()).c_str());
+		for (size_t di = 0; di < feti.regularization.R1.size(); ++di) {
+			math::store(feti.regularization.R1[di], utils::filename(utils::debugDirectory(step) + "/feti/projector", (std::string("R_orth") + std::to_string(di)).c_str()).c_str());
 		}
 		math::store(G, utils::filename(utils::debugDirectory(step) + "/feti/projector", "G").c_str());
 		math::store(Gt, utils::filename(utils::debugDirectory(step) + "/feti/projector", "Gt").c_str());

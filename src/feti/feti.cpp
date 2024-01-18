@@ -11,6 +11,9 @@
 
 namespace espreso {
 
+
+template struct FETI<double>;
+
 template <typename T>
 FETI<T>::FETI(FETIConfiguration &configuration)
 : configuration(configuration), decomposition(nullptr)
@@ -36,8 +39,8 @@ bool FETI<T>::set(const step::Step &step)
 	esint size[5] = { 0, 0, 0, 0, 0 };
 	size[0] = K.domains.size();
 	for (size_t d = 0; d < K.domains.size(); ++d) {
-		sinfo.R1size = offset[0] = size[2] += regularization.R1.domains[d].nrows;
-		sinfo.R2size = offset[1] = size[3] += regularization.R2.domains[d].nrows;
+		sinfo.R1size = offset[0] = size[2] += regularization.R1[d].nrows;
+		sinfo.R2size = offset[1] = size[3] += regularization.R2[d].nrows;
 	}
 	sinfo.lambdasLocal = equalityConstraints.size;
 	size[4] = sinfo.lambdasLocal - equalityConstraints.nhalo + equalityConstraints.dirichlet;
@@ -117,7 +120,5 @@ bool FETI<T>::solve(const step::Step &step)
 	eslog::info("       = ----------------------------------------------------------------------------- = \n");
 	return true;
 }
-
-template struct FETI<double>;
 
 }

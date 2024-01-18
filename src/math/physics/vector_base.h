@@ -11,14 +11,13 @@
 
 namespace espreso {
 
-template <typename T> class Vector_Base;
-template <template<typename, typename> typename Vector, typename T> class Vector_Distributed;
-template <template<typename, typename> typename Vector, typename T> class Vector_FETI;
+template <template<typename, typename, template<typename> typename> typename Vector, typename T> class Vector_Distributed;
+template <template<typename, typename, template<typename> typename> typename Vector, typename T> class Vector_FETI;
 
-template <typename T> class Vector_Base_Common {
+template <typename T> class Vector_Base {
 public:
-	Vector_Base_Common(): touched(false) {}
-	virtual ~Vector_Base_Common() {};
+	Vector_Base(): touched(false) {}
+	virtual ~Vector_Base() {};
 
 	virtual void synchronize() =0;
 
@@ -49,59 +48,6 @@ public:
 
 	Mapping<T> mapping;
 	bool touched;
-};
-
-template <typename T>
-class Vector_Base: public Vector_Base_Common<T>
-{
-public:
-	using Vector_Base_Common<T>::copy;
-	using Vector_Base_Common<T>::add;
-	using Vector_Base_Common<T>::copyTo;
-	using Vector_Base_Common<T>::addTo;
-
-	virtual void copyReal(const Vector_Distributed<Vector_Dense , std::complex<T> > *a) =0;
-	virtual void copyReal(const Vector_Distributed<Vector_Sparse, std::complex<T> > *a) =0;
-	virtual void copyReal(const Vector_FETI<Vector_Dense , std::complex<T> > *a) =0;
-	virtual void copyReal(const Vector_FETI<Vector_Sparse, std::complex<T> > *a) =0;
-
-	virtual void copyImag(const Vector_Distributed<Vector_Dense , std::complex<T> > *a) =0;
-	virtual void copyImag(const Vector_Distributed<Vector_Sparse, std::complex<T> > *a) =0;
-	virtual void copyImag(const Vector_FETI<Vector_Dense , std::complex<T> > *a) =0;
-	virtual void copyImag(const Vector_FETI<Vector_Sparse, std::complex<T> > *a) =0;
-
-	virtual void copyToReal(Vector_Distributed<Vector_Dense , std::complex<T> > *a) const =0;
-	virtual void copyToReal(Vector_Distributed<Vector_Sparse, std::complex<T> > *a) const =0;
-	virtual void copyToReal(Vector_FETI<Vector_Dense , std::complex<T> > *a) const =0;
-	virtual void copyToReal(Vector_FETI<Vector_Sparse, std::complex<T> > *a) const =0;
-
-	virtual void copyToImag(Vector_Distributed<Vector_Dense , std::complex<T> > *a) const =0;
-	virtual void copyToImag(Vector_Distributed<Vector_Sparse, std::complex<T> > *a) const =0;
-	virtual void copyToImag(Vector_FETI<Vector_Dense , std::complex<T> > *a) const =0;
-	virtual void copyToImag(Vector_FETI<Vector_Sparse, std::complex<T> > *a) const =0;
-
-	virtual void copySliced(const Vector_Base<T> *in, int offset, int size, int step) =0;
-	virtual void addSliced(const T &alpha, const Vector_Base<T> *a, int offset, int size, int step) =0;
-
-	virtual void copyToSliced(Vector_Distributed<Vector_Dense, T> *a, int offset, int size, int step) const =0;
-	virtual void copyToSliced(Vector_Distributed<Vector_Sparse, T> *a, int offset, int size, int step) const =0;
-	virtual void copyToSliced(Vector_FETI<Vector_Dense, T> *a, int offset, int size, int step) const =0;
-	virtual void copyToSliced(Vector_FETI<Vector_Sparse, T> *a, int offset, int size, int step) const =0;
-
-	virtual void addToSliced(const T &alpha, Vector_Distributed<Vector_Dense, T> *a, int offset, int size, int step) const =0;
-	virtual void addToSliced(const T &alpha, Vector_Distributed<Vector_Sparse, T> *a, int offset, int size, int step) const =0;
-	virtual void addToSliced(const T &alpha, Vector_FETI<Vector_Dense, T> *a, int offset, int size, int step) const =0;
-	virtual void addToSliced(const T &alpha, Vector_FETI<Vector_Sparse, T> *a, int offset, int size, int step) const =0;
-};
-
-template <typename T>
-class Vector_Base<std::complex<T> >: public Vector_Base_Common<std::complex<T> >
-{
-public:
-	virtual void copyReal(const Vector_Base<T> *in) =0;
-	virtual void copyImag(const Vector_Base<T> *in) =0;
-	virtual void copyRealTo(Vector_Base<T> *in) const =0;
-	virtual void copyImagTo(Vector_Base<T> *in) const =0;
 };
 
 }

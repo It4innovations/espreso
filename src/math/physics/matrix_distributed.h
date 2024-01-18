@@ -6,6 +6,7 @@
 #include "matrix_base.h"
 #include "math/physics/math.physics.h"
 #include "math/primitives/matrix_dense.h"
+#include "math/primitives/matrix_csr.h"
 #include "math/utils/distributed/distribution.h"
 #include "math/utils/distributed/apply.h"
 #include "math/utils/distributed/synchronization.h"
@@ -14,10 +15,8 @@
 
 namespace espreso {
 
-template <template<typename, typename> typename Matrix, typename T> class Matrix_Distributed;
-
-template <template<typename, typename> typename Matrix, typename T>
-class Matrix_Distributed_Common: public Matrix_Base<T> {
+template <template<typename, typename, template<typename> typename> typename Matrix, typename T>
+class Matrix_Distributed: public Matrix_Base<T> {
 public:
 	void commit()
 	{
@@ -79,24 +78,9 @@ public:
 		}
 	}
 
-	void copyTo(Matrix_Distributed<Matrix_Dense, T> *a) const
-	{
-		math::copy(a->cluster, this->cluster);
-	}
-
 	void copyTo(Matrix_Distributed<Matrix_CSR, T> *a) const
 	{
 		math::copy(a->cluster, this->cluster);
-	}
-
-	void copyTo(Matrix_Distributed<Matrix_IJV, T> *a) const
-	{
-		math::copy(a->cluster, this->cluster);
-	}
-
-	void copyTo(Matrix_FETI<Matrix_Dense, T> *a) const
-	{
-		eslog::error("call empty function\n");
 	}
 
 	void copyTo(Matrix_FETI<Matrix_CSR, T> *a) const
@@ -104,29 +88,9 @@ public:
 		eslog::error("call empty function\n");
 	}
 
-	void copyTo(Matrix_FETI<Matrix_IJV, T> *a) const
-	{
-		eslog::error("call empty function\n");
-	}
-
-	void addTo(const T &alpha, Matrix_Distributed<Matrix_Dense, T> *a) const
-	{
-		math::add(a->cluster, alpha, this->cluster);
-	}
-
 	void addTo(const T &alpha, Matrix_Distributed<Matrix_CSR, T> *a) const
 	{
 		math::add(a->cluster, alpha, this->cluster);
-	}
-
-	void addTo(const T &alpha, Matrix_Distributed<Matrix_IJV, T> *a) const
-	{
-		math::add(a->cluster, alpha, this->cluster);
-	}
-
-	void addTo(const T &alpha, Matrix_FETI<Matrix_Dense, T> *a) const
-	{
-		eslog::error("call empty function\n");
 	}
 
 	void addTo(const T &alpha, Matrix_FETI<Matrix_CSR, T> *a) const
@@ -134,233 +98,10 @@ public:
 		eslog::error("call empty function\n");
 	}
 
-	void addTo(const T &alpha, Matrix_FETI<Matrix_IJV, T> *a) const
-	{
-		eslog::error("call empty function\n");
-	}
-
-	Matrix<T, esint> cluster;
+	Matrix<T, esint, cpu_allocator> cluster;
 	DOFsDistribution *distribution;
 	Data_Apply<Matrix, T> applyData;
 	Data_Synchronization<Matrix, T> *synchronization;
-};
-
-template <template<typename, typename> typename Matrix, typename T>
-class Matrix_Distributed: public Matrix_Distributed_Common<Matrix, T> {
-public:
-	void copySliced(const Matrix_Base<T> *in, int rowOffset, int colOffset, int size, int step)
-	{
-		in->copyToSliced(this, rowOffset, colOffset, size, step);
-	}
-
-	void addSliced(const T &alpha, const Matrix_Base<T> *a, int rowOffset, int colOffset, int size, int step)
-	{
-		a->addToSliced(alpha, this, rowOffset, colOffset, size, step);
-	}
-
-	void copyToSliced(Matrix_Distributed<Matrix_Dense, T> *a, int rowOffset, int colOffset, int size, int step) const
-	{
-		math::copy(a->cluster, this->cluster, rowOffset, colOffset, size, step);
-	}
-
-	void copyToSliced(Matrix_Distributed<Matrix_CSR, T> *a, int rowOffset, int colOffset, int size, int step) const
-	{
-		math::copy(a->cluster, this->cluster, rowOffset, colOffset, size, step);
-	}
-
-	void copyToSliced(Matrix_Distributed<Matrix_IJV, T> *a, int rowOffset, int colOffset, int size, int step) const
-	{
-		math::copy(a->cluster, this->cluster, rowOffset, colOffset, size, step);
-	}
-
-	void copyToSliced(Matrix_FETI<Matrix_Dense, T> *a, int rowOffset, int colOffset, int size, int step) const
-	{
-		eslog::error("call empty function\n");
-	}
-
-	void copyToSliced(Matrix_FETI<Matrix_CSR, T> *a, int rowOffset, int colOffset, int size, int step) const
-	{
-		eslog::error("call empty function\n");
-	}
-
-	void copyToSliced(Matrix_FETI<Matrix_IJV, T> *a, int rowOffset, int colOffset, int size, int step) const
-	{
-		eslog::error("call empty function\n");
-	}
-
-	void addToSliced(const T &alpha, Matrix_Distributed<Matrix_Dense, T> *a, int rowOffset, int colOffset, int size, int step) const
-	{
-		math::add(a->cluster, alpha, this->cluster, rowOffset, colOffset, size, step);
-	}
-
-	void addToSliced(const T &alpha, Matrix_Distributed<Matrix_CSR, T> *a, int rowOffset, int colOffset, int size, int step) const
-	{
-		math::add(a->cluster, alpha, this->cluster, rowOffset, colOffset, size, step);
-	}
-
-	void addToSliced(const T &alpha, Matrix_Distributed<Matrix_IJV, T> *a, int rowOffset, int colOffset, int size, int step) const
-	{
-		math::add(a->cluster, alpha, this->cluster, rowOffset, colOffset, size, step);
-	}
-
-	void addToSliced(const T &alpha, Matrix_FETI<Matrix_Dense, T> *a, int rowOffset, int colOffset, int size, int step) const
-	{
-		eslog::error("call empty function\n");
-	}
-
-	void addToSliced(const T &alpha, Matrix_FETI<Matrix_CSR, T> *a, int rowOffset, int colOffset, int size, int step) const
-	{
-		eslog::error("call empty function\n");
-	}
-
-	void addToSliced(const T &alpha, Matrix_FETI<Matrix_IJV, T> *a, int rowOffset, int colOffset, int size, int step) const
-	{
-		eslog::error("call empty function\n");
-	}
-
-	void copyToReal(Matrix_Distributed<Matrix_Dense, std::complex<T> > *a) const
-	{
-		eslog::error("call empty function\n");
-	}
-
-	void copyToReal(Matrix_Distributed<Matrix_CSR, std::complex<T> > *a) const
-	{
-		math::copy(a->cluster, 0, this->cluster);
-	}
-
-	void copyToReal(Matrix_Distributed<Matrix_IJV, std::complex<T> > *a) const
-	{
-		eslog::error("call empty function\n");
-	}
-
-	void copyToReal(Matrix_FETI<Matrix_Dense, std::complex<T> > *a) const
-	{
-		eslog::error("call empty function\n");
-	}
-
-	void copyToReal(Matrix_FETI<Matrix_CSR, std::complex<T> > *a) const
-	{
-		eslog::error("call empty function\n");
-	}
-
-	void copyToReal(Matrix_FETI<Matrix_IJV, std::complex<T> > *a) const
-	{
-		eslog::error("call empty function\n");
-	}
-
-	void copyToImag(Matrix_Distributed<Matrix_Dense, std::complex<T> > *a) const
-	{
-		eslog::error("call empty function\n");
-	}
-
-	void copyToImag(Matrix_Distributed<Matrix_CSR, std::complex<T> > *a) const
-	{
-		math::copy(a->cluster, 1, this->cluster);
-	}
-
-	void copyToImag(Matrix_Distributed<Matrix_IJV, std::complex<T> > *a) const
-	{
-		eslog::error("call empty function\n");
-	}
-
-	void copyToImag(Matrix_FETI<Matrix_Dense, std::complex<T> > *a) const
-	{
-		eslog::error("call empty function\n");
-	}
-
-	void copyToImag(Matrix_FETI<Matrix_CSR, std::complex<T> > *a) const
-	{
-		eslog::error("call empty function\n");
-	}
-
-	void copyToImag(Matrix_FETI<Matrix_IJV, std::complex<T> > *a) const
-	{
-		eslog::error("call empty function\n");
-	}
-
-	void addToReal(const T &alpha, Matrix_Distributed<Matrix_Dense, std::complex<T> > *a) const
-	{
-		eslog::error("call empty function\n");
-	}
-
-	void addToReal(const T &alpha, Matrix_Distributed<Matrix_CSR  , std::complex<T> > *a) const
-	{
-		math::add(a->cluster, 0, alpha, this->cluster);
-	}
-
-	void addToReal(const T &alpha, Matrix_Distributed<Matrix_IJV  , std::complex<T> > *a) const
-	{
-		eslog::error("call empty function\n");
-	}
-
-	void addToReal(const T &alpha, Matrix_FETI<Matrix_Dense, std::complex<T> > *a) const
-	{
-		eslog::error("call empty function\n");
-	}
-
-	void addToReal(const T &alpha, Matrix_FETI<Matrix_CSR  , std::complex<T> > *a) const
-	{
-		eslog::error("call empty function\n");
-	}
-
-	void addToReal(const T &alpha, Matrix_FETI<Matrix_IJV  , std::complex<T> > *a) const
-	{
-		eslog::error("call empty function\n");
-	}
-
-	void addToImag(const T &alpha, Matrix_Distributed<Matrix_Dense, std::complex<T> > *a) const
-	{
-		eslog::error("call empty function\n");
-	}
-
-	void addToImag(const T &alpha, Matrix_Distributed<Matrix_CSR  , std::complex<T> > *a) const
-	{
-		math::add(a->cluster, 1, alpha, this->cluster);
-	}
-
-	void addToImag(const T &alpha, Matrix_Distributed<Matrix_IJV  , std::complex<T> > *a) const
-	{
-		eslog::error("call empty function\n");
-	}
-
-	void addToImag(const T &alpha, Matrix_FETI<Matrix_Dense, std::complex<T> > *a) const
-	{
-		eslog::error("call empty function\n");
-	}
-
-	void addToImag(const T &alpha, Matrix_FETI<Matrix_CSR  , std::complex<T> > *a) const
-	{
-		eslog::error("call empty function\n");
-	}
-
-	void addToImag(const T &alpha, Matrix_FETI<Matrix_IJV  , std::complex<T> > *a) const
-	{
-		eslog::error("call empty function\n");
-	}
-};
-
-template <template<typename, typename> typename Matrix, typename T>
-class Matrix_Distributed<Matrix, std::complex<T> >: public Matrix_Distributed_Common<Matrix, std::complex<T> > {
-public:
-	void copyReal(const Matrix_Base<T> *in)
-	{
-		in->copyToReal(this);
-	}
-
-	void copyImag(const Matrix_Base<T> *in)
-	{
-		in->copyToImag(this);
-	}
-
-	void addReal(const T &alpha, const Matrix_Base<T> *a)
-	{
-		a->addToReal(alpha, this);
-	}
-
-	void addImag(const T &alpha, const Matrix_Base<T> *a)
-	{
-		a->addToImag(alpha, this);
-	}
 };
 
 }

@@ -75,17 +75,16 @@ void FETILinearSystemSolver<T, Physics>::update(step::Step &step)
 		eslog::storedata(" STORE: system/{K, f, R, RegMat}\n");
 		math::store(feti.K, utils::filename(utils::debugDirectory(step) + "/system", "K").c_str());
 		math::store(feti.f, utils::filename(utils::debugDirectory(step) + "/system", "f").c_str());
-		math::store(feti.regularization.R1, utils::filename(utils::debugDirectory(step) + "/system", "R").c_str());
-		math::store(feti.regularization.RegMat, utils::filename(utils::debugDirectory(step) + "/system", "RegMat").c_str());
+		for (size_t d = 0; d < feti.regularization.R1.size(); ++d) {
+			math::store(feti.regularization.R1[d], utils::filename(utils::debugDirectory(step) + "/system", "R" + std::to_string(d)).c_str());
+			math::store(feti.regularization.RegMat[d], utils::filename(utils::debugDirectory(step) + "/system", "RegMat" + std::to_string(d)).c_str());
+		}
 
 		eslog::storedata(" STORE: system/{B1, B1c, B1Duplication, D2C, LMAP}\n");
 		math::store(feti.equalityConstraints.c, utils::filename(utils::debugDirectory(step) + "/system", "B1c").c_str());
 		for (size_t d = 0; d < feti.equalityConstraints.domain.size(); ++d) {
 			math::store(feti.equalityConstraints.domain[d].B1, utils::filename(utils::debugDirectory(step) + "/system", "B1" + std::to_string(d)).c_str());
-			math::store(feti.equalityConstraints.domain[d].duplication, utils::filename(utils::debugDirectory(step) + "/system", "B1Duplication" + std::to_string(d)).c_str());
 			math::store(feti.equalityConstraints.domain[d].D2C, utils::filename(utils::debugDirectory(step) + "/system", "D2C" + std::to_string(d)).c_str());
-//			math::store(feti.equalityConstraints.lmap, utils::filename(utils::debugDirectory(step) + "/system", "LMAP").c_str());
-//			math::store(feti.equalityConstraints.lmmap, utils::filename(utils::debugDirectory(step) + "/system", "LMAP").c_str());
 		}
 	}
 	feti.update(step);

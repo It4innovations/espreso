@@ -14,10 +14,10 @@
 
 namespace espreso {
 
-template <template<typename, typename> typename Vector, typename T> class Vector_Distributed;
-template <template<typename, typename> typename Matrix, typename T> class Matrix_Distributed;
+template <template<typename, typename, template<typename> typename> typename Vector, typename T> class Vector_Distributed;
+template <template<typename, typename, template<typename> typename> typename Matrix, typename T> class Matrix_Distributed;
 
-template <template<typename, typename> typename Struct, typename T> struct Data_Synchronization { };
+template <template<typename, typename, template<typename> typename> typename Struct, typename T> struct Data_Synchronization { };
 
 template <typename T>
 struct Data_Synchronization<Matrix_CSR, T> {

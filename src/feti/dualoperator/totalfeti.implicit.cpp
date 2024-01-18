@@ -9,6 +9,9 @@
 
 namespace espreso {
 
+template class TotalFETIImplicit<double>;
+template class TotalFETIImplicit<std::complex<double> >;
+
 template <typename T>
 TotalFETIImplicit<T>::TotalFETIImplicit(FETI<T> &feti)
 : DualOperator<T>(feti), sparsity(DirectSolver<Matrix_CSR, T>::VectorSparsity::DENSE)
@@ -109,7 +112,7 @@ void TotalFETIImplicit<T>::set(const step::Step &step)
 	for (size_t di = 0; di < feti.K.domains.size(); ++di) {
 		Kplus[di].type = feti.K.domains[di].type;
 		Kplus[di].shape = feti.K.domains[di].shape;
-		math::combine(Kplus[di], feti.K.domains[di], feti.regularization.RegMat.domains[di]);
+		math::combine(Kplus[di], feti.K.domains[di], feti.regularization.RegMat[di]);
 		Btx[di].resize(feti.K.domains[di].nrows);
 		KplusBtx[di].resize(feti.K.domains[di].nrows);
 		math::set(Btx[di], T{0});
@@ -135,7 +138,7 @@ void TotalFETIImplicit<T>::update(const step::Step &step)
 {
 	#pragma omp parallel for
 	for (size_t di = 0; di < feti.K.domains.size(); ++di) {
-		math::sumCombined(Kplus[di], T{1}, feti.K.domains[di], feti.regularization.RegMat.domains[di]);
+		math::sumCombined(Kplus[di], T{1}, feti.K.domains[di], feti.regularization.RegMat[di]);
 	}
 	if (info::ecf->output.print_matrices) {
 		eslog::storedata(" STORE: feti/dualop/{Kplus}\n");
@@ -187,8 +190,5 @@ void TotalFETIImplicit<T>::toPrimal(const Vector_Dual<T> &x, Vector_FETI<Vector_
 		KSolver[di].solve(KplusBtx[di], y.domains[di]);
 	}
 }
-
-template class TotalFETIImplicit<double>;
-template class TotalFETIImplicit<std::complex<double> >;
 
 }

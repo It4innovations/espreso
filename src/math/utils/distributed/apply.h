@@ -11,10 +11,10 @@
 
 namespace espreso {
 
-template <template<typename, typename> typename Vector, typename T> class Vector_Distributed;
-template <template<typename, typename> typename Matrix, typename T> class Matrix_Distributed;
+template <template<typename, typename, template<typename> typename> typename Vector, typename T> class Vector_Distributed;
+template <template<typename, typename, template<typename> typename> typename Matrix, typename T> class Matrix_Distributed;
 
-template <template<typename, typename> typename Struct, typename T, typename I = esint> struct Data_Apply { };
+template <template<typename, typename, template<typename> typename> typename Struct, typename T, typename I = esint> struct Data_Apply { };
 
 template <typename T, typename I>
 struct Data_Apply<Matrix_CSR, T, I> {

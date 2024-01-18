@@ -60,7 +60,7 @@ void TotalFETIExplicit<T>::set(const step::Step &step)
 	for (size_t di = 0; di < feti.K.domains.size(); ++di) {
 		Kplus[di].type = feti.K.domains[di].type;
 		Kplus[di].shape = feti.K.domains[di].shape;
-		math::combine(Kplus[di], feti.K.domains[di], feti.regularization.RegMat.domains[di]);
+		math::combine(Kplus[di], feti.K.domains[di], feti.regularization.RegMat[di]);
 		Btx[di].resize(feti.K.domains[di].nrows);
 		KplusBtx[di].resize(feti.K.domains[di].nrows);
 		math::set(Btx[di], T{0});
@@ -98,7 +98,7 @@ void TotalFETIExplicit<T>::update(const step::Step &step)
 {
 	#pragma omp parallel for
 	for (size_t di = 0; di < feti.K.domains.size(); ++di) {
-		math::sumCombined(Kplus[di], T{1}, feti.K.domains[di], feti.regularization.RegMat.domains[di]);
+		math::sumCombined(Kplus[di], T{1}, feti.K.domains[di], feti.regularization.RegMat[di]);
 	}
 	eslog::checkpointln("FETI: UPDATE TOTAL-FETI OPERATOR");
 	#pragma omp parallel for

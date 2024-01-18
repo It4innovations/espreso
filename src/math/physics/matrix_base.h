@@ -14,16 +14,15 @@
 
 namespace espreso {
 
-template <typename T> class Matrix_Base;
-template <template<typename, typename> typename Matrix, typename T> class Matrix_Distributed;
-template <template<typename, typename> typename Matrix, typename T> class Matrix_FETI;
+template <template<typename, typename, template<typename> typename> typename Matrix, typename T> class Matrix_Distributed;
+template <template<typename, typename, template<typename> typename> typename Matrix, typename T> class Matrix_FETI;
 
 template <typename T>
-class Matrix_Base_Common {
+class Matrix_Base {
 public:
-	Matrix_Base_Common(Matrix_Type type): type(type), shape(Matrix_Shape::FULL), touched(false) {}
+	Matrix_Base(): type(Matrix_Type::REAL_STRUCTURALLY_SYMMETRIC), shape(Matrix_Shape::FULL), touched(false) {}
 
-	virtual ~Matrix_Base_Common() {};
+	virtual ~Matrix_Base() {};
 
 	virtual void commit() =0;
 	virtual void synchronize() =0;
@@ -35,95 +34,19 @@ public:
 	virtual void scale(const T &alpha) =0;
 
 	virtual void copy(const Matrix_Base<T> *in) =0;
-	virtual void add(const T &alpha, const Matrix_Base<T> *a) =0;
-	virtual void apply(const T &alpha, const Vector_Base<T> *in, const T &beta, Vector_Base<T> *out) =0;
-
-	virtual void copyTo(Matrix_Distributed<Matrix_Dense, T> *a) const =0;
 	virtual void copyTo(Matrix_Distributed<Matrix_CSR, T> *a) const =0;
-	virtual void copyTo(Matrix_Distributed<Matrix_IJV, T> *a) const =0;
-	virtual void copyTo(Matrix_FETI<Matrix_Dense, T> *a) const =0;
 	virtual void copyTo(Matrix_FETI<Matrix_CSR, T> *a) const =0;
-	virtual void copyTo(Matrix_FETI<Matrix_IJV, T> *a) const =0;
-	virtual void addTo(const T &alpha, Matrix_Distributed<Matrix_Dense, T> *a) const =0;
+
+	virtual void add(const T &alpha, const Matrix_Base<T> *a) =0;
 	virtual void addTo(const T &alpha, Matrix_Distributed<Matrix_CSR, T> *a) const =0;
-	virtual void addTo(const T &alpha, Matrix_Distributed<Matrix_IJV, T> *a) const =0;
-	virtual void addTo(const T &alpha, Matrix_FETI<Matrix_Dense, T> *a) const =0;
 	virtual void addTo(const T &alpha, Matrix_FETI<Matrix_CSR, T> *a) const =0;
-	virtual void addTo(const T &alpha, Matrix_FETI<Matrix_IJV, T> *a) const =0;
+
+	virtual void apply(const T &alpha, const Vector_Base<T> *in, const T &beta, Vector_Base<T> *out) =0;
 
 	Matrix_Type type;
 	Matrix_Shape shape;
 	Mapping<T> mapping;
 	bool touched;
-};
-
-template <typename T>
-class Matrix_Base: public Matrix_Base_Common<T> {
-public:
-	Matrix_Base(): Matrix_Base_Common<T>(Matrix_Type::REAL_STRUCTURALLY_SYMMETRIC) {}
-	virtual ~Matrix_Base() {}
-
-	using Matrix_Base_Common<T>::copy;
-	using Matrix_Base_Common<T>::copyTo;
-	using Matrix_Base_Common<T>::add;
-	using Matrix_Base_Common<T>::addTo;
-
-	virtual void copySliced(const Matrix_Base<T> *in, int rowOffset, int colOffset, int size, int step) =0;
-	virtual void addSliced(const T &alpha, const Matrix_Base<T> *a, int rowOffset, int colOffset, int size, int step) =0;
-
-	virtual void copyToSliced(Matrix_Distributed<Matrix_Dense, T> *a, int rowOffset, int colOffset, int size, int step) const =0;
-	virtual void copyToSliced(Matrix_Distributed<Matrix_CSR, T>   *a, int rowOffset, int colOffset, int size, int step) const =0;
-	virtual void copyToSliced(Matrix_Distributed<Matrix_IJV, T>   *a, int rowOffset, int colOffset, int size, int step) const =0;
-	virtual void copyToSliced(Matrix_FETI<Matrix_Dense, T> *a, int rowOffset, int colOffset, int size, int step) const =0;
-	virtual void copyToSliced(Matrix_FETI<Matrix_CSR, T>   *a, int rowOffset, int colOffset, int size, int step) const =0;
-	virtual void copyToSliced(Matrix_FETI<Matrix_IJV, T>   *a, int rowOffset, int colOffset, int size, int step) const =0;
-
-	virtual void addToSliced(const T &alpha, Matrix_Distributed<Matrix_Dense, T> *a, int rowOffset, int colOffset, int size, int step) const =0;
-	virtual void addToSliced(const T &alpha, Matrix_Distributed<Matrix_CSR, T>   *a, int rowOffset, int colOffset, int size, int step) const =0;
-	virtual void addToSliced(const T &alpha, Matrix_Distributed<Matrix_IJV, T>   *a, int rowOffset, int colOffset, int size, int step) const =0;
-	virtual void addToSliced(const T &alpha, Matrix_FETI<Matrix_Dense, T> *a, int rowOffset, int colOffset, int size, int step) const =0;
-	virtual void addToSliced(const T &alpha, Matrix_FETI<Matrix_CSR, T>   *a, int rowOffset, int colOffset, int size, int step) const =0;
-	virtual void addToSliced(const T &alpha, Matrix_FETI<Matrix_IJV, T>   *a, int rowOffset, int colOffset, int size, int step) const =0;
-
-	virtual void copyToReal(Matrix_Distributed<Matrix_Dense, std::complex<T> > *a) const =0;
-	virtual void copyToReal(Matrix_Distributed<Matrix_CSR  , std::complex<T> > *a) const =0;
-	virtual void copyToReal(Matrix_Distributed<Matrix_IJV  , std::complex<T> > *a) const =0;
-	virtual void copyToReal(Matrix_FETI<Matrix_Dense, std::complex<T> > *a) const =0;
-	virtual void copyToReal(Matrix_FETI<Matrix_CSR  , std::complex<T> > *a) const =0;
-	virtual void copyToReal(Matrix_FETI<Matrix_IJV  , std::complex<T> > *a) const =0;
-
-	virtual void copyToImag(Matrix_Distributed<Matrix_Dense, std::complex<T> > *a) const =0;
-	virtual void copyToImag(Matrix_Distributed<Matrix_CSR  , std::complex<T> > *a) const =0;
-	virtual void copyToImag(Matrix_Distributed<Matrix_IJV  , std::complex<T> > *a) const =0;
-	virtual void copyToImag(Matrix_FETI<Matrix_Dense, std::complex<T> > *a) const =0;
-	virtual void copyToImag(Matrix_FETI<Matrix_CSR  , std::complex<T> > *a) const =0;
-	virtual void copyToImag(Matrix_FETI<Matrix_IJV  , std::complex<T> > *a) const =0;
-
-	virtual void addToReal(const T &alpha, Matrix_Distributed<Matrix_Dense, std::complex<T> > *a) const =0;
-	virtual void addToReal(const T &alpha, Matrix_Distributed<Matrix_CSR  , std::complex<T> > *a) const =0;
-	virtual void addToReal(const T &alpha, Matrix_Distributed<Matrix_IJV  , std::complex<T> > *a) const =0;
-	virtual void addToReal(const T &alpha, Matrix_FETI<Matrix_Dense, std::complex<T> > *a) const =0;
-	virtual void addToReal(const T &alpha, Matrix_FETI<Matrix_CSR  , std::complex<T> > *a) const =0;
-	virtual void addToReal(const T &alpha, Matrix_FETI<Matrix_IJV  , std::complex<T> > *a) const =0;
-
-	virtual void addToImag(const T &alpha, Matrix_Distributed<Matrix_Dense, std::complex<T> > *a) const =0;
-	virtual void addToImag(const T &alpha, Matrix_Distributed<Matrix_CSR  , std::complex<T> > *a) const =0;
-	virtual void addToImag(const T &alpha, Matrix_Distributed<Matrix_IJV  , std::complex<T> > *a) const =0;
-	virtual void addToImag(const T &alpha, Matrix_FETI<Matrix_Dense, std::complex<T> > *a) const =0;
-	virtual void addToImag(const T &alpha, Matrix_FETI<Matrix_CSR  , std::complex<T> > *a) const =0;
-	virtual void addToImag(const T &alpha, Matrix_FETI<Matrix_IJV  , std::complex<T> > *a) const =0;
-};
-
-template <typename T>
-class Matrix_Base<std::complex<T> >: public Matrix_Base_Common<std::complex<T> > {
-public:
-	Matrix_Base(): Matrix_Base_Common<std::complex<T> >(Matrix_Type::COMPLEX_STRUCTURALLY_SYMMETRIC) {}
-	virtual ~Matrix_Base() {}
-
-	virtual void copyReal(const Matrix_Base<T> *in) =0;
-	virtual void copyImag(const Matrix_Base<T> *in) =0;
-	virtual void addReal(const T &alpha, const Matrix_Base<T> *a) =0;
-	virtual void addImag(const T &alpha, const Matrix_Base<T> *a) =0;
 };
 
 }

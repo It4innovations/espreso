@@ -13,8 +13,8 @@
 
 namespace espreso {
 
-template <template<typename, typename> typename Vector, typename T>
-class Vector_Distributed_Common: public Vector_Base<T> {
+template <template<typename, typename, template<typename> typename> typename Vector, typename T>
+class Vector_Distributed: public Vector_Base<T> {
 public:
 	void synchronize()
 	{
@@ -38,6 +38,13 @@ public:
 	void store(const char *file)
 	{
 		math::store(*static_cast<Vector_Distributed<Vector, T>*>(this), file);
+	}
+
+	void storeTo(std::vector<double> &output)
+	{
+		for (size_t i = 0; i < output.size(); ++i) {
+			output[i] = this->cluster.vals[i];
+		}
 	}
 
 	void set(const T &value)
@@ -126,181 +133,9 @@ public:
 		eslog::error("call empty function\n");
 	}
 
-	Vector<T, esint> cluster;
+	Vector<T, esint, cpu_allocator> cluster;
 	DOFsDistribution *distribution;
 	Data_Synchronization<Vector, T> *synchronization;
-};
-
-template <template<typename, typename> typename Vector, typename T>
-class Vector_Distributed: public Vector_Distributed_Common<Vector, T> {
-public:
-	void storeTo(std::vector<double> &output)
-	{
-		for (size_t i = 0; i < output.size(); ++i) {
-			output[i] = this->cluster.vals[i];
-		}
-	}
-
-	void copyReal(const Vector_Distributed<Vector_Dense , std::complex<T> > *a)
-	{
-		math::copy(this->cluster, a->cluster, 0);
-	}
-
-	void copyReal(const Vector_Distributed<Vector_Sparse, std::complex<T> > *a)
-	{
-		math::copy(this->cluster, a->cluster, 0);
-	}
-
-	void copyReal(const Vector_FETI<Vector_Dense , std::complex<T> > *a)
-	{
-
-	}
-
-	void copyReal(const Vector_FETI<Vector_Sparse, std::complex<T> > *a)
-	{
-
-	}
-
-	void copyImag(const Vector_Distributed<Vector_Dense , std::complex<T> > *a)
-	{
-		math::copy(this->cluster, a->cluster, 1);
-	}
-
-	void copyImag(const Vector_Distributed<Vector_Sparse, std::complex<T> > *a)
-	{
-		math::copy(this->cluster, a->cluster, 1);
-	}
-
-	void copyImag(const Vector_FETI<Vector_Dense , std::complex<T> > *a)
-	{
-
-	}
-
-	void copyImag(const Vector_FETI<Vector_Sparse, std::complex<T> > *a)
-	{
-
-	}
-
-	void copyToReal(Vector_Distributed<Vector_Dense , std::complex<T> > *a) const
-	{
-		math::copy(a->cluster, 0, this->cluster);
-	}
-
-	void copyToReal(Vector_Distributed<Vector_Sparse, std::complex<T> > *a) const
-	{
-		math::copy(a->cluster, 0, this->cluster);
-	}
-
-	void copyToReal(Vector_FETI<Vector_Dense , std::complex<T> > *a) const
-	{
-
-	}
-
-	void copyToReal(Vector_FETI<Vector_Sparse, std::complex<T> > *a) const
-	{
-
-	}
-
-	void copyToImag(Vector_Distributed<Vector_Dense , std::complex<T> > *a) const
-	{
-		math::copy(a->cluster, 1, this->cluster);
-	}
-
-	void copyToImag(Vector_Distributed<Vector_Sparse, std::complex<T> > *a) const
-	{
-		math::copy(a->cluster, 1, this->cluster);
-	}
-
-	void copyToImag(Vector_FETI<Vector_Dense , std::complex<T> > *a) const
-	{
-
-	}
-
-	void copyToImag(Vector_FETI<Vector_Sparse, std::complex<T> > *a) const
-	{
-
-	}
-
-	void copySliced(const Vector_Base<T> *in, int offset, int size, int step)
-	{
-		in->copyToSliced(this, offset, size, step);
-	}
-
-	void addSliced(const T &alpha, const Vector_Base<double> *a, int offset, int size, int step)
-	{
-		a->addToSliced(alpha, this, offset, size, step);
-	}
-
-	void copyToSliced(Vector_Distributed<Vector_Dense, T> *a, int offset, int size, int step) const
-	{
-		math::copy(a->cluster, this->cluster, offset, size, step);
-	}
-
-	void copyToSliced(Vector_Distributed<Vector_Sparse, T> *a, int offset, int size, int step) const
-	{
-		math::copy(a->cluster, this->cluster, offset, size, step);
-	}
-
-	void copyToSliced(Vector_FETI<Vector_Dense, T> *a, int offset, int size, int step) const
-	{
-
-	}
-
-	void copyToSliced(Vector_FETI<Vector_Sparse, T> *a, int offset, int size, int step) const
-	{
-
-	}
-
-	void addToSliced(const T &alpha, Vector_Distributed<Vector_Dense, double> *a, int offset, int size, int step) const
-	{
-		math::add(a->cluster, alpha, this->cluster, offset, size, step);
-	}
-
-	void addToSliced(const T &alpha, Vector_Distributed<Vector_Sparse, double> *a, int offset, int size, int step) const
-	{
-		math::add(a->cluster, alpha, this->cluster, offset, size, step);
-	}
-
-	void addToSliced(const T &alpha, Vector_FETI<Vector_Dense, double> *a, int offset, int size, int step) const
-	{
-
-	}
-
-	void addToSliced(const T &alpha, Vector_FETI<Vector_Sparse, double> *a, int offset, int size, int step) const
-	{
-
-	}
-};
-
-template <template<typename, typename> typename Vector, typename T>
-class Vector_Distributed<Vector, std::complex<T> >: public Vector_Distributed_Common<Vector, std::complex<T> > {
-public:
-	void storeTo(std::vector<double> &output)
-	{
-		for (size_t i = 0; i < output.size(); ++i) {
-			output[i] = this->cluster.vals[i].real();
-		}
-	}
-
-	void copyReal(const Vector_Base<T> *in)
-	{
-		in->copyToReal(this);
-	}
-
-	void copyImag(const Vector_Base<T> *in)
-	{
-		in->copyToImag(this);
-	}
-
-	void copyRealTo(Vector_Base<T> *in) const
-	{
-		in->copyReal(this);
-	}
-
-	void copyImagTo(Vector_Base<T> *in) const
-	{
-		in->copyImag(this);
-	}
 };
 
 }

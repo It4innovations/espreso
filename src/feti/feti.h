@@ -31,8 +31,8 @@ struct FETI {
 	};
 
 	struct Regularization {
-		Matrix_FETI<Matrix_Dense, T> R1, R2;
-		Matrix_FETI<Matrix_CSR, T> RegMat;
+		std::vector<Matrix_Dense<T> > R1, R2;
+		std::vector<Matrix_CSR<T> > RegMat;
 	};
 
 	struct EqualityConstraints {
@@ -41,7 +41,6 @@ struct FETI {
 			std::vector<int> D2C;
 
 			Matrix_CSR<T, int> B1;
-			Vector_Dense<T, int> duplication;
 		};
 
 		std::vector<esint> cmap; // size, ndomains <d0, d1, ..., dn>; size, ndomains <>; ...;

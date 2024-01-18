@@ -244,8 +244,8 @@ void RegularizationElasticity<T>::set2D(esint domain)
 	getFixPoints(fixPoints, domain);
 
 	const Matrix_CSR<T> &K = feti.K.domains[domain];
-	Matrix_Dense<T> &R = feti.regularization.R1.domains[domain];
-	Matrix_CSR<T> &RegMat = feti.regularization.RegMat.domains[domain];
+	Matrix_Dense<T> &R = feti.regularization.R1[domain];
+	Matrix_CSR<T> &RegMat = feti.regularization.RegMat[domain];
 	const DOFsDecomposition *decomposition = feti.K.decomposition;
 
 	struct __fix__ { int col; double value[3]; }; // reorder DOFs to get sorted output
@@ -322,8 +322,8 @@ void RegularizationElasticity<T>::set3D(esint domain)
 	getFixPoints(fixPoints, domain);
 
 	const Matrix_CSR<T> &K = feti.K.domains[domain];
-	Matrix_Dense<T> &R = feti.regularization.R1.domains[domain];
-	Matrix_CSR<T> &RegMat = feti.regularization.RegMat.domains[domain];
+	Matrix_Dense<T> &R = feti.regularization.R1[domain];
+	Matrix_CSR<T> &RegMat = feti.regularization.RegMat[domain];
 	const DOFsDecomposition *decomposition = feti.K.decomposition;
 
 	struct __fix__ { int col; double value[6]; }; // reorder DOFs to get sorted output
@@ -436,7 +436,7 @@ void RegularizationElasticity<T>::updateAnalytic()
 	#pragma omp parallel for
 	for (size_t d = 0; d < feti.K.domains.size(); ++d) {
 		const Matrix_CSR<T> &K = feti.K.domains[d];
-		Matrix_CSR<T> &RegMat = feti.regularization.RegMat.domains[d];
+		Matrix_CSR<T> &RegMat = feti.regularization.RegMat[d];
 
 		double max = 0;
 		for (esint r = 0; r < K.nrows; ++r) {

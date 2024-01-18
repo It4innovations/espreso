@@ -11,8 +11,12 @@
 
 namespace espreso {
 
-template <template<typename, typename> typename Vector, typename T>
-class Vector_FETI_Common: public Vector_Base<T> {
+template <template<typename, typename, template<typename> typename> typename Vector, typename T>
+class Vector_FETI: public Vector_Base<T> {
+
+	void _store(double &out, const double &in) { out = in; }
+	void _store(double &out, const std::complex<double> &in) { out = in.real(); }
+
 public:
 	void synchronize()
 	{
@@ -39,6 +43,19 @@ public:
 	void store(const char *file)
 	{
 		math::store(*static_cast<Vector_FETI<Vector, T>*>(this), file);
+	}
+
+	void storeTo(std::vector<double> &output)
+	{
+		auto dmap = decomposition->dmap->cbegin();
+		for (size_t i = 0; i < output.size(); ++i, ++dmap) {
+			for (auto di = dmap->begin(); di != dmap->end(); ++di) {
+				if (decomposition->ismy(di->domain)) {
+					_store(output[i], domains[di->domain - decomposition->dbegin].vals[di->index]);
+					break; // we assume synchronization inside the solver
+				}
+			}
+		}
 	}
 
 	void set(const T &value)
@@ -147,230 +164,10 @@ public:
 		}
 	}
 
-	std::vector<Vector<T, int> > domains;
+	std::vector<Vector<T, int, cpu_allocator> > domains;
 	DOFsDecomposition *decomposition;
 };
 
-template <template<typename, typename> typename Vector, typename T>
-class Vector_FETI: public Vector_FETI_Common<Vector, T> {
-
-	void _store(const std::vector<Vector_Dense<double> > &domains, const DOFsDecomposition *decomposition, std::vector<double> &output)
-	{
-		auto dmap = decomposition->dmap->cbegin();
-		for (size_t i = 0; i < output.size(); ++i, ++dmap) {
-			for (auto di = dmap->begin(); di != dmap->end(); ++di) {
-				if (decomposition->ismy(di->domain)) {
-					output[i] = domains[di->domain - decomposition->dbegin].vals[di->index];
-					break; // we assume synchronization inside the solver
-				}
-			}
-		}
-	}
-
-public:
-	void storeTo(std::vector<double> &output)
-	{
-		_store(this->domains, this->decomposition, output);
-	}
-
-	void copyReal(const Vector_Distributed<Vector_Dense , std::complex<T> > *a)
-	{
-		eslog::error("call empty function\n");
-	}
-
-	void copyReal(const Vector_Distributed<Vector_Sparse, std::complex<T> > *a)
-	{
-		eslog::error("call empty function\n");
-	}
-
-	void copyReal(const Vector_FETI<Vector_Dense , std::complex<T> > *a)
-	{
-		#pragma omp parallel for
-		for (size_t d = 0; d < this->domains.size(); ++d) {
-			math::copy(this->domains[d], a->domains[d], 0);
-		}
-	}
-
-	void copyReal(const Vector_FETI<Vector_Sparse, std::complex<T> > *a)
-	{
-		#pragma omp parallel for
-		for (size_t d = 0; d < this->domains.size(); ++d) {
-			math::copy(this->domains[d], a->domains[d], 0);
-		}
-	}
-
-	void copyImag(const Vector_Distributed<Vector_Dense , std::complex<T> > *a)
-	{
-		eslog::error("call empty function\n");
-	}
-
-	void copyImag(const Vector_Distributed<Vector_Sparse, std::complex<T> > *a)
-	{
-		eslog::error("call empty function\n");
-	}
-
-	void copyImag(const Vector_FETI<Vector_Dense , std::complex<T> > *a)
-	{
-		#pragma omp parallel for
-		for (size_t d = 0; d < this->domains.size(); ++d) {
-			math::copy(this->domains[d], a->domains[d], 1);
-		}
-	}
-
-	void copyImag(const Vector_FETI<Vector_Sparse, std::complex<T> > *a)
-	{
-		#pragma omp parallel for
-		for (size_t d = 0; d < this->domains.size(); ++d) {
-			math::copy(this->domains[d], a->domains[d], 1);
-		}
-	}
-
-	void copyToReal(Vector_Distributed<Vector_Dense , std::complex<T> > *a) const
-	{
-		eslog::error("call empty function\n");
-	}
-
-	void copyToReal(Vector_Distributed<Vector_Sparse, std::complex<T> > *a) const
-	{
-		eslog::error("call empty function\n");
-	}
-
-	void copyToReal(Vector_FETI<Vector_Dense , std::complex<T> > *a) const
-	{
-		#pragma omp parallel for
-		for (size_t d = 0; d < this->domains.size(); ++d) {
-			math::copy(a->domains[d], 0, this->domains[d]);
-		}
-	}
-
-	void copyToReal(Vector_FETI<Vector_Sparse, std::complex<T> > *a) const
-	{
-		#pragma omp parallel for
-		for (size_t d = 0; d < this->domains.size(); ++d) {
-			math::copy(a->domains[d], 0, this->domains[d]);
-		}
-	}
-
-	void copyToImag(Vector_Distributed<Vector_Dense , std::complex<T> > *a) const
-	{
-		eslog::error("call empty function\n");
-	}
-
-	void copyToImag(Vector_Distributed<Vector_Sparse, std::complex<T> > *a) const
-	{
-		eslog::error("call empty function\n");
-	}
-
-	void copyToImag(Vector_FETI<Vector_Dense , std::complex<T> > *a) const
-	{
-		#pragma omp parallel for
-		for (size_t d = 0; d < this->domains.size(); ++d) {
-			math::copy(a->domains[d], 1, this->domains[d]);
-		}
-	}
-
-	void copyToImag(Vector_FETI<Vector_Sparse, std::complex<T> > *a) const
-	{
-		#pragma omp parallel for
-		for (size_t d = 0; d < this->domains.size(); ++d) {
-			math::copy(a->domains[d], 1, this->domains[d]);
-		}
-	}
-
-	void copySliced(const Vector_Base<T> *in, int offset, int size, int step)
-	{
-		in->copyToSliced(this, offset, size, step);
-	}
-
-	void addSliced(const T &alpha, const Vector_Base<double> *a, int offset, int size, int step)
-	{
-		a->addToSliced(alpha, this, offset, size, step);
-	}
-
-	void copyToSliced(Vector_Distributed<Vector_Dense, T> *a, int offset, int size, int step) const
-	{
-		eslog::error("call empty function\n");
-	}
-
-	void copyToSliced(Vector_Distributed<Vector_Sparse, T> *a, int offset, int size, int step) const
-	{
-		eslog::error("call empty function\n");
-	}
-
-	void copyToSliced(Vector_FETI<Vector_Dense, T> *a, int offset, int size, int step) const
-	{
-		#pragma omp parallel for
-		for (size_t d = 0; d < this->domains.size(); ++d) {
-			math::copy(a->domains[d], this->domains[d], offset, size, step);
-		}
-	}
-
-	void copyToSliced(Vector_FETI<Vector_Sparse, T> *a, int offset, int size, int step) const
-	{
-		#pragma omp parallel for
-		for (size_t d = 0; d < this->domains.size(); ++d) {
-			math::copy(a->domains[d], this->domains[d], offset, size, step);
-		}
-	}
-
-	void addToSliced(const T &alpha, Vector_Distributed<Vector_Dense, double> *a, int offset, int size, int step) const
-	{
-		eslog::error("call empty function\n");
-	}
-
-	void addToSliced(const T &alpha, Vector_Distributed<Vector_Sparse, double> *a, int offset, int size, int step) const
-	{
-		eslog::error("call empty function\n");
-	}
-
-	void addToSliced(const T &alpha, Vector_FETI<Vector_Dense, double> *a, int offset, int size, int step) const
-	{
-		#pragma omp parallel for
-		for (size_t d = 0; d < this->domains.size(); ++d) {
-			math::add(a->domains[d], alpha, this->domains[d], offset, size, step);
-		}
-	}
-
-	void addToSliced(const T &alpha, Vector_FETI<Vector_Sparse, double> *a, int offset, int size, int step) const
-	{
-		#pragma omp parallel for
-		for (size_t d = 0; d < this->domains.size(); ++d) {
-			math::add(a->domains[d], alpha, this->domains[d], offset, size, step);
-		}
-	}
-};
-
-template <template<typename, typename> typename Vector, typename T>
-class Vector_FETI<Vector, std::complex<T> >: public Vector_FETI_Common<Vector, std::complex<T> > {
-public:
-	void storeTo(std::vector<double> &output)
-	{
-//		for (size_t i = 0; i < output.size(); ++i) {
-//			output[i] = this->cluster.vals[i].real();
-//		}
-		eslog::error("call empty function\n");
-	}
-
-	void copyReal(const Vector_Base<T> *in)
-	{
-		in->copyToReal(this);
-	}
-
-	void copyImag(const Vector_Base<T> *in)
-	{
-		in->copyToImag(this);
-	}
-
-	void copyRealTo(Vector_Base<T> *in) const
-	{
-		in->copyReal(this);
-	}
-
-	void copyImagTo(Vector_Base<T> *in) const
-	{
-		in->copyImag(this);
-	}
-};
 }
 
 #endif /* SRC_MATH2_GENERALIZATION_VECTOR_FETI_H_ */
