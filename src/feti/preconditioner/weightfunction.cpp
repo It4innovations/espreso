@@ -10,11 +10,11 @@ template <typename T>
 WeightFunction<T>::WeightFunction(FETI<T> &feti)
 : Preconditioner<T>(feti)
 {
-	Btx.resize(feti.K.domains.size());
+	Btx.resize(feti.K.size());
 
 	#pragma omp parallel for
-	for (size_t d = 0; d < feti.K.domains.size(); ++d) {
-		Btx[d].resize(feti.K.domains[d].nrows);
+	for (size_t d = 0; d < feti.K.size(); ++d) {
+		Btx[d].resize(feti.K[d].nrows);
 	}
 
 	eslog::checkpointln("FETI: SET WEIGHT FUNCTION PRECONDITIONER");
@@ -39,7 +39,7 @@ template <typename T>
 void WeightFunction<T>::apply(const Vector_Dual<T> &x, Vector_Dual<T> &y)
 {
 	#pragma omp parallel for
-	for (size_t d = 0; d < feti.K.domains.size(); ++d) {
+	for (size_t d = 0; d < feti.K.size(); ++d) {
 		applyBt(feti, d, x, Btx[d]);
 	}
 	applyB(feti, Btx, y);

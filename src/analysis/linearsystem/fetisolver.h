@@ -27,7 +27,10 @@ struct FETILinearSystemSolver: LinearSystemSolver<T> {
 	bool solve(step::Step &step);
 
 private:
+	Matrix_FETI<Matrix_CSR, T> A;
+	Vector_FETI<Vector_Dense, T> x, b;
 	Vector_Distributed<Vector_Sparse, T> dirichlet;
+
 	FETI<T> feti;
 	EqualityConstrains<T> *equalityConstrains;
 	Regularization<T> *regularization;

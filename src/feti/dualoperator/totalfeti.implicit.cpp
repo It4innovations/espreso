@@ -28,14 +28,12 @@ TotalFETIImplicit<T>::~TotalFETIImplicit()
 template <typename T>
 void TotalFETIImplicit<T>::reduceInfo(DualOperatorInfo &sum, DualOperatorInfo &min, DualOperatorInfo &max)
 {
-	const typename FETI<T>::EqualityConstraints &L = feti.equalityConstraints;
-
 	sum.nnzA = sum.nnzL = sum.memoryL = sum.rows = sum.dualA = sum.surfaceA = 0;
 	min.nnzA = min.nnzL = min.memoryL = min.rows = min.dualA = min.surfaceA = INT32_MAX;
 	max.nnzA = max.nnzL = max.memoryL = max.rows = max.dualA = max.surfaceA = 0;
-	for (size_t di = 0; di < feti.K.domains.size(); ++di) {
-		size_t dualA = L.domain[di].B1.nrows;
-		size_t surfaceA = Kplus[di].nrows - *std::min_element(L.domain[di].B1.cols, L.domain[di].B1.cols + L.domain[di].B1.nnz);
+	for (size_t di = 0; di < feti.K.size(); ++di) {
+		size_t dualA = feti.B1[di].nrows;
+		size_t surfaceA = Kplus[di].nrows - *std::min_element(feti.B1[di].cols, feti.B1[di].cols + feti.B1[di].nnz);
 		min.rows = std::min(min.rows, KSolver[di].rows);
 		min.nnzA = std::min(min.nnzA, KSolver[di].nnzA);
 		min.nnzL = std::min(min.nnzL, KSolver[di].nnzL);
@@ -99,33 +97,32 @@ void TotalFETIImplicit<T>::info()
 template <typename T>
 void TotalFETIImplicit<T>::set(const step::Step &step)
 {
-	const typename FETI<T>::EqualityConstraints &L = feti.equalityConstraints;
 	sparsity = feti.configuration.partial_dual ? DirectSolver<Matrix_CSR, T>::VectorSparsity::SPARSE_RHS | DirectSolver<Matrix_CSR, T>::VectorSparsity::SPARSE_SOLUTION : DirectSolver<Matrix_CSR, T>::VectorSparsity::DENSE;
 
-	Kplus.resize(feti.K.domains.size());
+	Kplus.resize(feti.K.size());
 	d.resize();
-	Btx.resize(feti.K.domains.size());
-	KplusBtx.resize(feti.K.domains.size());
-	KSolver.resize(feti.K.domains.size());
+	Btx.resize(feti.K.size());
+	KplusBtx.resize(feti.K.size());
+	KSolver.resize(feti.K.size());
 
 	#pragma omp parallel for
-	for (size_t di = 0; di < feti.K.domains.size(); ++di) {
-		Kplus[di].type = feti.K.domains[di].type;
-		Kplus[di].shape = feti.K.domains[di].shape;
-		math::combine(Kplus[di], feti.K.domains[di], feti.regularization.RegMat[di]);
-		Btx[di].resize(feti.K.domains[di].nrows);
-		KplusBtx[di].resize(feti.K.domains[di].nrows);
+	for (size_t di = 0; di < feti.K.size(); ++di) {
+		Kplus[di].type = feti.K[di].type;
+		Kplus[di].shape = feti.K[di].shape;
+		math::combine(Kplus[di], feti.K[di], feti.RegMat[di]);
+		Btx[di].resize(feti.K[di].nrows);
+		KplusBtx[di].resize(feti.K[di].nrows);
 		math::set(Btx[di], T{0});
 	}
 	eslog::checkpointln("FETI: SET TOTAL-FETI OPERATOR");
 
 	#pragma omp parallel for
-	for (size_t di = 0; di < feti.K.domains.size(); ++di) {
+	for (size_t di = 0; di < feti.K.size(); ++di) {
 		KSolver[di].commit(Kplus[di]);
 
 		esint suffix = 0;
 		if (sparsity != DirectSolver<Matrix_CSR, T>::VectorSparsity::DENSE) {
-			suffix = *std::min_element(L.domain[di].B1.cols, L.domain[di].B1.cols + L.domain[di].B1.nnz);
+			suffix = *std::min_element(feti.B1[di].cols, feti.B1[di].cols + feti.B1[di].nnz);
 		}
 
 		KSolver[di].symbolicFactorization(suffix);
@@ -137,29 +134,29 @@ template <typename T>
 void TotalFETIImplicit<T>::update(const step::Step &step)
 {
 	#pragma omp parallel for
-	for (size_t di = 0; di < feti.K.domains.size(); ++di) {
-		math::sumCombined(Kplus[di], T{1}, feti.K.domains[di], feti.regularization.RegMat[di]);
+	for (size_t di = 0; di < feti.K.size(); ++di) {
+		math::sumCombined(Kplus[di], T{1}, feti.K[di], feti.RegMat[di]);
 	}
 	if (info::ecf->output.print_matrices) {
 		eslog::storedata(" STORE: feti/dualop/{Kplus}\n");
-		for (size_t di = 0; di < feti.K.domains.size(); ++di) {
+		for (size_t di = 0; di < feti.K.size(); ++di) {
 			math::store(Kplus[di], utils::filename(utils::debugDirectory(step) + "/feti/dualop", (std::string("Kplus") + std::to_string(di)).c_str()).c_str());
 		}
 	}
 	eslog::checkpointln("FETI: UPDATE TOTAL-FETI OPERATOR");
 
 	#pragma omp parallel for
-	for (size_t di = 0; di < feti.K.domains.size(); ++di) {
+	for (size_t di = 0; di < feti.K.size(); ++di) {
 		KSolver[di].numericalFactorization();
 	}
 	eslog::checkpointln("FETI: TFETI NUMERICAL FACTORIZATION");
 
 	#pragma omp parallel for
-	for (size_t di = 0; di < feti.K.domains.size(); ++di) {
-		KSolver[di].solve(feti.f.domains[di], KplusBtx[di], sparsity);
+	for (size_t di = 0; di < feti.K.size(); ++di) {
+		KSolver[di].solve(feti.f[di], KplusBtx[di], sparsity);
 	}
 	applyB(feti, KplusBtx, d);
-	d.add(T{-1}, feti.equalityConstraints.c);
+	d.add(T{-1}, feti.c);
 	eslog::checkpointln("FETI: COMPUTE DUAL RHS [d]");
 	if (info::ecf->output.print_matrices) {
 		eslog::storedata(" STORE: feti/dualop/{d}\n");
@@ -172,7 +169,7 @@ template <typename T>
 void TotalFETIImplicit<T>::apply(const Vector_Dual<T> &x, Vector_Dual<T> &y)
 {
 	#pragma omp parallel for
-	for (size_t di = 0; di < feti.K.domains.size(); ++di) {
+	for (size_t di = 0; di < feti.K.size(); ++di) {
 		applyBt(feti, di, x, Btx[di]);
 		KSolver[di].solve(Btx[di], KplusBtx[di], sparsity);
 	}
@@ -183,9 +180,9 @@ template <typename T>
 void TotalFETIImplicit<T>::toPrimal(const Vector_Dual<T> &x, Vector_FETI<Vector_Dense, T> &y)
 {
 	#pragma omp parallel for
-	for (size_t di = 0; di < feti.K.domains.size(); ++di) {
+	for (size_t di = 0; di < feti.K.size(); ++di) {
 		applyBt(feti, di, x, Btx[di]);
-		math::copy(KplusBtx[di], feti.f.domains[di]);
+		math::copy(KplusBtx[di], feti.f[di]);
 		math::add(KplusBtx[di], T{-1}, Btx[di]);
 		KSolver[di].solve(KplusBtx[di], y.domains[di]);
 	}

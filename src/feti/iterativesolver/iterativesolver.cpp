@@ -55,9 +55,9 @@ void IterativeSolver<T>::reconstructSolution(const Vector_Dual<T> &l, const Vect
 	F->toPrimal(l, iKfBtL);
 	P->applyRInvGGtG(r, Ra);
 	#pragma omp parallel for
-	for (size_t d = 0; d < feti.K.domains.size(); ++d) {
-		math::copy(feti.x.domains[d], iKfBtL.domains[d]);
-		math::add(feti.x.domains[d], T{1}, Ra.domains[d]);
+	for (size_t d = 0; d < feti.K.size(); ++d) {
+		math::copy(feti.x[d], iKfBtL.domains[d]);
+		math::add(feti.x[d], T{1}, Ra.domains[d]);
 	}
 }
 

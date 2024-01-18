@@ -7,9 +7,9 @@ template <typename T>
 void Regularization<T>::set(step::Step &step)
 {
 	eslog::info(" = REGULARIZATION                                                                   ANALYTIC = \n");
-	feti.regularization.R1.resize(feti.K.domains.size());
-	feti.regularization.R2.resize(feti.K.domains.size());
-	feti.regularization.RegMat.resize(feti.K.domains.size());
+	feti.R1.resize(feti.K.size());
+	feti.R2.resize(feti.K.size());
+	feti.RegMat.resize(feti.K.size());
 
 	setAnalytic();
 }

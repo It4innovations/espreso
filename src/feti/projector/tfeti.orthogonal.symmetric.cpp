@@ -16,18 +16,16 @@ template<typename T>
 TFETIOrthogonalSymmetric<T>::TFETIOrthogonalSymmetric(FETI<T> &feti)
 : Projector<T>(feti)
 {
-	const typename FETI<T>::Regularization &R = feti.regularization;
-
 	e.resize();
 	Gx.resize();
 	iGGtGx.resize(feti.sinfo.R1size);
 
-	domainOffset = feti.K.decomposition->dbegin;
+	domainOffset = feti.decomposition->dbegin;
 
-	dinfo.reserve(R.R1.size());
-	for (size_t d = 0, koffset = feti.sinfo.R1offset; d < R.R1.size(); ++d) {
-		dinfo.push_back(DomainInfo((esint)(domainOffset + d), koffset, R.R1[d].nrows));
-		koffset += R.R1[d].nrows;
+	dinfo.reserve(feti.R1.size());
+	for (size_t d = 0, koffset = feti.sinfo.R1offset; d < feti.R1.size(); ++d) {
+		dinfo.push_back(DomainInfo((esint)(domainOffset + d), koffset, feti.R1[d].nrows));
+		koffset += feti.R1[d].nrows;
 	}
 
 	_computeDualGraph();
@@ -59,15 +57,13 @@ void TFETIOrthogonalSymmetric<T>::info()
 template<typename T>
 void TFETIOrthogonalSymmetric<T>::update(const step::Step &step)
 {
-	typename FETI<T>::Regularization &R = feti.regularization;
-
 	#pragma omp parallel for
 	for (size_t d = 0; d < dinfo.size(); ++d) {
-		math::orthonormalize(R.R1[d]);
+		math::orthonormalize(feti.R1[d]);
 		Vector_Dense<T> _e;
-		_e.size = R.R1[d].nrows;
+		_e.size = feti.R1[d].nrows;
 		_e.vals = e.vals + dinfo[d].koffset;
-		math::blas::apply(_e, T{1}, R.R1[d], T{0}, feti.f.domains[d]);
+		math::blas::apply(_e, T{1}, feti.R1[d], T{0}, feti.f[d]);
 	}
 	e.synchronize();
 	eslog::checkpointln("FETI: COMPUTE DUAL RHS [e]");
@@ -154,54 +150,51 @@ void TFETIOrthogonalSymmetric<T>::_applyR(const Vector_Dense<T> &in, Vector_FETI
 		y.size = dinfo[d].kernels;
 		y.vals = in.vals + dinfo[d].koffset - feti.sinfo.R1offset;
 
-		math::blas::applyT(out.domains[d], T{1}, feti.regularization.R1[d], T{0}, y);
+		math::blas::applyT(out.domains[d], T{1}, feti.R1[d], T{0}, y);
 	}
 }
 
 template<typename T>
 void TFETIOrthogonalSymmetric<T>::_computeDualGraph()
 {
-	const DOFsDecomposition *decomposition = feti.decomposition;
-	const typename FETI<T>::EqualityConstraints &eq = feti.equalityConstraints;
-
 	dualGraph.resize(dinfo.size());
-	for (size_t i = 0; i < eq.cmap.size(); ) {
-		esint domains = eq.cmap[i + 1];
+	for (size_t i = 0; i < feti.lambdas.cmap.size(); ) {
+		esint domains = feti.lambdas.cmap[i + 1];
 		for (esint d1 = 0; d1 < domains; ++d1) {
-			esint di1 = eq.cmap[i + 2 + d1] - domainOffset;
+			esint di1 = feti.lambdas.cmap[i + 2 + d1] - domainOffset;
 			for (esint d2 = 0; d2 < domains; ++d2) {
-				esint di2 = eq.cmap[i + 2 + d2] - domainOffset;
-				if (decomposition->ismy(eq.cmap[i + 2 + d1]) && decomposition->ismy(eq.cmap[i + 2 + d2])) {
+				esint di2 = feti.lambdas.cmap[i + 2 + d2] - domainOffset;
+				if (feti.decomposition->ismy(feti.lambdas.cmap[i + 2 + d1]) && feti.decomposition->ismy(feti.lambdas.cmap[i + 2 + d2])) {
 					dualGraph[di1].push_back(dinfo[di2]);
 				} else {
-					if (decomposition->ismy(eq.cmap[i + 2 + d1]) && !decomposition->ismy(eq.cmap[i + 2 + d2])) {
-						dualGraph[di1].push_back(DomainInfo(eq.cmap[i + 2 + d2], 0, 0));
+					if (feti.decomposition->ismy(feti.lambdas.cmap[i + 2 + d1]) && !feti.decomposition->ismy(feti.lambdas.cmap[i + 2 + d2])) {
+						dualGraph[di1].push_back(DomainInfo(feti.lambdas.cmap[i + 2 + d2], 0, 0));
 					}
-					if (decomposition->ismy(eq.cmap[i + 2 + d2]) && !decomposition->ismy(eq.cmap[i + 2 + d1])) {
-						dualGraph[di2].push_back(DomainInfo(eq.cmap[i + 2 + d1], 0, 0));
+					if (feti.decomposition->ismy(feti.lambdas.cmap[i + 2 + d2]) && !feti.decomposition->ismy(feti.lambdas.cmap[i + 2 + d1])) {
+						dualGraph[di2].push_back(DomainInfo(feti.lambdas.cmap[i + 2 + d1], 0, 0));
 					}
 				}
 			}
 		}
-		i += eq.cmap[i + 1] + 2;
+		i += feti.lambdas.cmap[i + 1] + 2;
 	}
 	for (size_t d = 0; d < dinfo.size(); ++d) {
 		utils::sortAndRemoveDuplicates(dualGraph[d]);
 	}
 
-	std::vector<std::vector<DomainInfo> > sBuffer(decomposition->neighbors.size()), rBuffer(decomposition->neighbors.size());
+	std::vector<std::vector<DomainInfo> > sBuffer(feti.decomposition->neighbors.size()), rBuffer(feti.decomposition->neighbors.size());
 	for (size_t d = 0; d < dualGraph.size(); ++d) {
 		esint last = -1;
 		for (size_t di = 0; di < dualGraph[d].size(); ++di) {
-			esint n = decomposition->noffset(dualGraph[d][di].domain);
-			if (!decomposition->ismy(dualGraph[d][di].domain) && last < n) {
+			esint n = feti.decomposition->noffset(dualGraph[d][di].domain);
+			if (!feti.decomposition->ismy(dualGraph[d][di].domain) && last < n) {
 				sBuffer[n].push_back(dinfo[d]);
 				last = n;
 			}
 		}
 	}
 
-	if (!Communication::exchangeUnknownSize(sBuffer, rBuffer, decomposition->neighbors)) {
+	if (!Communication::exchangeUnknownSize(sBuffer, rBuffer, feti.decomposition->neighbors)) {
 		eslog::error("cannot exchange dual graph info\n");
 	}
 
@@ -214,45 +207,45 @@ void TFETIOrthogonalSymmetric<T>::_computeDualGraph()
 
 	for (size_t d = 0; d < dinfo.size(); ++d) {
 		for (size_t i = 0; i < dualGraph[d].size(); ++i) {
-			if (!decomposition->ismy(dualGraph[d][i].domain)) {
+			if (!feti.decomposition->ismy(dualGraph[d][i].domain)) {
 				dualGraph[d][i] = other[dualGraph[d][i].domain];
 			}
 		}
 	}
 
-	downinfo.resize(decomposition->neighbors.size());
+	downinfo.resize(feti.decomposition->neighbors.size());
 	std::vector<esint> cOffset(dinfo.size());
-	for (size_t i = 0, offset = 0; i < eq.cmap.size(); ) {
-		esint lambdas = eq.cmap[i];
-		esint domains = eq.cmap[i + 1];
+	for (size_t i = 0, offset = 0; i < feti.lambdas.cmap.size(); ) {
+		esint lsize = feti.lambdas.cmap[i];
+		esint domains = feti.lambdas.cmap[i + 1];
 		esint last = -1;
 		for (esint d = 0; d < domains; ++d) {
-			esint di = eq.cmap[i + 2 + d] - domainOffset;
-			if (eq.cmap[i + 2 + d] < decomposition->dbegin) {
-				esint n = decomposition->noffset(eq.cmap[i + 2 + d]);
+			esint di = feti.lambdas.cmap[i + 2 + d] - domainOffset;
+			if (feti.lambdas.cmap[i + 2 + d] < feti.decomposition->dbegin) {
+				esint n = feti.decomposition->noffset(feti.lambdas.cmap[i + 2 + d]);
 				if (last < n) {
 					for (esint d2 = d; d2 < domains; ++d2) {
-						if (decomposition->ismy(eq.cmap[i + 2 + d2])) {
-							esint di2 = eq.cmap[i + 2 + d2] - domainOffset;
-							downinfo[n][eq.cmap[i + 2 + d2]] = dinfo[eq.cmap[i + 2 + d2] - domainOffset];
-							downinfo[n][eq.cmap[i + 2 + d2]].cindices.push_back({cOffset[di2], lambdas});
-							downinfo[n][eq.cmap[i + 2 + d2]].ncols += lambdas;
+						if (feti.decomposition->ismy(feti.lambdas.cmap[i + 2 + d2])) {
+							esint di2 = feti.lambdas.cmap[i + 2 + d2] - domainOffset;
+							downinfo[n][feti.lambdas.cmap[i + 2 + d2]] = dinfo[feti.lambdas.cmap[i + 2 + d2] - domainOffset];
+							downinfo[n][feti.lambdas.cmap[i + 2 + d2]].cindices.push_back({cOffset[di2], lsize});
+							downinfo[n][feti.lambdas.cmap[i + 2 + d2]].ncols += lsize;
 						}
 					}
 					last = n;
 				}
 			}
-			if (decomposition->dend <= eq.cmap[i + 2 + d]) {
-				upinfo[eq.cmap[i + 2 + d]] = other[eq.cmap[i + 2 + d]];
-				upinfo[eq.cmap[i + 2 + d]].cindices.push_back({(esint)offset, lambdas});
-				upinfo[eq.cmap[i + 2 + d]].ncols += lambdas;
+			if (feti.decomposition->dend <= feti.lambdas.cmap[i + 2 + d]) {
+				upinfo[feti.lambdas.cmap[i + 2 + d]] = other[feti.lambdas.cmap[i + 2 + d]];
+				upinfo[feti.lambdas.cmap[i + 2 + d]].cindices.push_back({(esint)offset, lsize});
+				upinfo[feti.lambdas.cmap[i + 2 + d]].ncols += lsize;
 			}
-			if (decomposition->ismy(eq.cmap[i + 2 + d])) {
-				cOffset[di] += lambdas;
+			if (feti.decomposition->ismy(feti.lambdas.cmap[i + 2 + d])) {
+				cOffset[di] += lsize;
 			}
 		}
-		i += eq.cmap[i + 1] + 2;
-		offset += lambdas;
+		i += feti.lambdas.cmap[i + 1] + 2;
+		offset += lsize;
 	}
 }
 
@@ -260,12 +253,10 @@ template<typename T>
 void TFETIOrthogonalSymmetric<T>::_setG()
 {
 	// G is stored with 0-based in indexing
-	const typename FETI<T>::EqualityConstraints &eq = feti.equalityConstraints;
-
 	esint Grows = 0, Gnnz = 0;
 	for (size_t d = 0; d < dinfo.size(); ++d) {
 		Grows += dinfo[d].kernels;
-		Gnnz += dinfo[d].kernels * eq.domain[d].D2C.size();
+		Gnnz += dinfo[d].kernels * feti.D2C[d].size();
 	}
 	esint Gtrows = Grows, Gtnnz = Gnnz;
 	for (auto di = upinfo.cbegin(); di != upinfo.cend(); ++di) {
@@ -278,9 +269,9 @@ void TFETIOrthogonalSymmetric<T>::_setG()
 	size_t ri = 0;
 	for (size_t d = 0; d < dinfo.size(); ++d) {
 		for (esint kr = 0; kr < dinfo[d].kernels; ++kr, ++ri) {
-			Gt.rows[ri + 1] = Gt.rows[ri] + eq.domain[d].B1.nrows;
-			for (esint c = 0; c < eq.domain[d].B1.nrows; ++c) {
-				Gt.cols[Gt.rows[ri] + c] = eq.domain[d].D2C[c];
+			Gt.rows[ri + 1] = Gt.rows[ri] + feti.B1[d].nrows;
+			for (esint c = 0; c < feti.B1[d].nrows; ++c) {
+				Gt.cols[Gt.rows[ri] + c] = feti.D2C[d][c];
 			}
 		}
 	}
@@ -308,15 +299,12 @@ template<typename T>
 void TFETIOrthogonalSymmetric<T>::_updateG()
 {
 	// G is stored with 0-based in indexing
-	const typename FETI<T>::Regularization &R = feti.regularization;
-	const typename FETI<T>::EqualityConstraints &L = feti.equalityConstraints;
-
 	for (size_t d = 0, r = 0; d < dinfo.size(); ++d) {
 		for (esint kr = 0; kr < dinfo[d].kernels; ++kr, ++r) {
-			for (esint c = 0; c < L.domain[d].B1.nrows; ++c) {
+			for (esint c = 0; c < feti.B1[d].nrows; ++c) {
 				G.vals[G.rows[r] + c] = 0;
-				for (esint i = L.domain[d].B1.rows[c]; i < L.domain[d].B1.rows[c + 1]; ++i) {
-					G.vals[G.rows[r] + c] -= R.R1[d].vals[R.R1[d].ncols * kr + L.domain[d].B1.cols[i]] * L.domain[d].B1.vals[i];
+				for (esint i = feti.B1[d].rows[c]; i < feti.B1[d].rows[c + 1]; ++i) {
+					G.vals[G.rows[r] + c] -= feti.R1[d].vals[feti.R1[d].ncols * kr + feti.B1[d].cols[i]] * feti.B1[d].vals[i];
 				}
 			}
 		}
@@ -463,8 +451,8 @@ void TFETIOrthogonalSymmetric<T>::_print(const step::Step &step)
 {
 	if (info::ecf->output.print_matrices) {
 		eslog::storedata(" STORE: feti/projector/{R_orth, G, e, GGt, invGGt}\n");
-		for (size_t di = 0; di < feti.regularization.R1.size(); ++di) {
-			math::store(feti.regularization.R1[di], utils::filename(utils::debugDirectory(step) + "/feti/projector", (std::string("R_orth") + std::to_string(di)).c_str()).c_str());
+		for (size_t di = 0; di < feti.R1.size(); ++di) {
+			math::store(feti.R1[di], utils::filename(utils::debugDirectory(step) + "/feti/projector", (std::string("R_orth") + std::to_string(di)).c_str()).c_str());
 		}
 		math::store(G, utils::filename(utils::debugDirectory(step) + "/feti/projector", "G").c_str());
 		math::store(Gt, utils::filename(utils::debugDirectory(step) + "/feti/projector", "Gt").c_str());

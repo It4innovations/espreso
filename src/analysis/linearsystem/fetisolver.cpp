@@ -36,9 +36,9 @@ FETILinearSystemSolver<T, Physics>::FETILinearSystemSolver(FETIConfiguration &co
   equalityConstrains(new EqualityConstrains<T>(feti)),
   regularization(RegularizationSelector<T, Physics>()(feti))
 {
-	LinearSystemSolver<T>::A = &feti.K;
-	LinearSystemSolver<T>::x = &feti.x;
-	LinearSystemSolver<T>::b = &feti.f;
+	LinearSystemSolver<T>::A = &A;
+	LinearSystemSolver<T>::x = &x;
+	LinearSystemSolver<T>::b = &b;
 	LinearSystemSolver<T>::dirichlet = &dirichlet;
 }
 
@@ -53,7 +53,15 @@ template <typename T, class Physics>
 void FETILinearSystemSolver<T, Physics>::set(step::Step &step)
 {
 	eslog::startln("FETI: SETTING LINEAR SYSTEM", "FETI[SET]");
-	feti.decomposition = feti.K.decomposition;
+	feti.K.resize(A.domains.size());
+	feti.x.resize(A.domains.size());
+	feti.f.resize(A.domains.size());
+	for (size_t di = 0; di < A.domains.size(); ++di) {
+		feti.K[di].shallowCopy(A.domains[di]);
+		feti.f[di].shallowCopy(b.domains[di]);
+		feti.x[di].shallowCopy(x.domains[di]);
+	}
+	feti.decomposition = A.decomposition;
 	equalityConstrains->set(step, dirichlet);
 	eslog::checkpointln("FETI: SET B1");
 	regularization->set(step);
@@ -73,18 +81,18 @@ void FETILinearSystemSolver<T, Physics>::update(step::Step &step)
 	eslog::checkpointln("FETI: UPDATE KERNELS");
 	if (info::ecf->output.print_matrices) {
 		eslog::storedata(" STORE: system/{K, f, R, RegMat}\n");
-		math::store(feti.K, utils::filename(utils::debugDirectory(step) + "/system", "K").c_str());
-		math::store(feti.f, utils::filename(utils::debugDirectory(step) + "/system", "f").c_str());
-		for (size_t d = 0; d < feti.regularization.R1.size(); ++d) {
-			math::store(feti.regularization.R1[d], utils::filename(utils::debugDirectory(step) + "/system", "R" + std::to_string(d)).c_str());
-			math::store(feti.regularization.RegMat[d], utils::filename(utils::debugDirectory(step) + "/system", "RegMat" + std::to_string(d)).c_str());
+		for (size_t d = 0; d < feti.K.size(); ++d) {
+			math::store(feti.K[d], utils::filename(utils::debugDirectory(step) + "/system", "K" + std::to_string(d)).c_str());
+			math::store(feti.f[d], utils::filename(utils::debugDirectory(step) + "/system", "f" + std::to_string(d)).c_str());
+			math::store(feti.R1[d], utils::filename(utils::debugDirectory(step) + "/system", "R" + std::to_string(d)).c_str());
+			math::store(feti.RegMat[d], utils::filename(utils::debugDirectory(step) + "/system", "RegMat" + std::to_string(d)).c_str());
 		}
 
 		eslog::storedata(" STORE: system/{B1, B1c, B1Duplication, D2C, LMAP}\n");
-		math::store(feti.equalityConstraints.c, utils::filename(utils::debugDirectory(step) + "/system", "B1c").c_str());
-		for (size_t d = 0; d < feti.equalityConstraints.domain.size(); ++d) {
-			math::store(feti.equalityConstraints.domain[d].B1, utils::filename(utils::debugDirectory(step) + "/system", "B1" + std::to_string(d)).c_str());
-			math::store(feti.equalityConstraints.domain[d].D2C, utils::filename(utils::debugDirectory(step) + "/system", "D2C" + std::to_string(d)).c_str());
+		math::store(feti.c, utils::filename(utils::debugDirectory(step) + "/system", "B1c").c_str());
+		for (size_t d = 0; d < feti.B1.size(); ++d) {
+			math::store(feti.B1[d], utils::filename(utils::debugDirectory(step) + "/system", "B1" + std::to_string(d)).c_str());
+			math::store(feti.D2C[d], utils::filename(utils::debugDirectory(step) + "/system", "D2C" + std::to_string(d)).c_str());
 		}
 	}
 	feti.update(step);
@@ -98,7 +106,9 @@ bool FETILinearSystemSolver<T, Physics>::solve(step::Step &step)
 	if (feti.solve(step)) {
 		if (info::ecf->output.print_matrices) {
 			eslog::storedata(" STORE: system/{x}\n");
-			math::store(feti.x, utils::filename(utils::debugDirectory(step) + "/system", "x").c_str());
+			for (size_t d = 0; d < feti.x.size(); ++d) {
+				math::store(feti.x[d], utils::filename(utils::debugDirectory(step) + "/system", "x" + std::to_string(d)).c_str());
+			}
 		}
 		eslog::endln("FETI: LINEAR SYSTEM SOLVED");
 		return true;

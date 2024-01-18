@@ -9,10 +9,10 @@ template <typename T>
 void RegularizationHeatTransfer<T>::setAnalytic()
 {
 	#pragma omp parallel for
-	for (size_t d = 0; d < feti.K.domains.size(); ++d) {
-		const Matrix_CSR<T> &K = feti.K.domains[d];
-		Matrix_Dense<T> &R = feti.regularization.R1[d];
-		Matrix_CSR<T> &RegMat = feti.regularization.RegMat[d];
+	for (size_t d = 0; d < feti.K.size(); ++d) {
+		const Matrix_CSR<T> &K = feti.K[d];
+		Matrix_Dense<T> &R = feti.R1[d];
+		Matrix_CSR<T> &RegMat = feti.RegMat[d];
 
 		R.resize(1, K.nrows);
 		R.type = Matrix_Type::REAL_NONSYMMETRIC;
@@ -31,10 +31,10 @@ template <typename T>
 void RegularizationHeatTransfer<T>::updateAnalytic()
 {
 	#pragma omp parallel for
-	for (size_t d = 0; d < feti.K.domains.size(); ++d) {
-		const Matrix_CSR<T> &K = feti.K.domains[d];
-		Matrix_Dense<T> &R = feti.regularization.R1[d];
-		Matrix_CSR<T> &RegMat = feti.regularization.RegMat[d];
+	for (size_t d = 0; d < feti.K.size(); ++d) {
+		const Matrix_CSR<T> &K = feti.K[d];
+		Matrix_Dense<T> &R = feti.R1[d];
+		Matrix_CSR<T> &RegMat = feti.RegMat[d];
 
 		RegMat.vals[0] = 0;
 		for (esint r = 0; r < K.nrows; ++r) {

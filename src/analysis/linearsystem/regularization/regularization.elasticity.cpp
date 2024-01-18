@@ -243,10 +243,10 @@ void RegularizationElasticity<T>::set2D(esint domain)
 	std::vector<esint> fixPoints;
 	getFixPoints(fixPoints, domain);
 
-	const Matrix_CSR<T> &K = feti.K.domains[domain];
-	Matrix_Dense<T> &R = feti.regularization.R1[domain];
-	Matrix_CSR<T> &RegMat = feti.regularization.RegMat[domain];
-	const DOFsDecomposition *decomposition = feti.K.decomposition;
+	const Matrix_CSR<T> &K = feti.K[domain];
+	Matrix_Dense<T> &R = feti.R1[domain];
+	Matrix_CSR<T> &RegMat = feti.RegMat[domain];
+	const DOFsDecomposition *decomposition = feti.decomposition;
 
 	struct __fix__ { int col; double value[3]; }; // reorder DOFs to get sorted output
 	std::vector<__fix__> fix(2 * fixPoints.size());
@@ -321,10 +321,10 @@ void RegularizationElasticity<T>::set3D(esint domain)
 	std::vector<esint> fixPoints;
 	getFixPoints(fixPoints, domain);
 
-	const Matrix_CSR<T> &K = feti.K.domains[domain];
-	Matrix_Dense<T> &R = feti.regularization.R1[domain];
-	Matrix_CSR<T> &RegMat = feti.regularization.RegMat[domain];
-	const DOFsDecomposition *decomposition = feti.K.decomposition;
+	const Matrix_CSR<T> &K = feti.K[domain];
+	Matrix_Dense<T> &R = feti.R1[domain];
+	Matrix_CSR<T> &RegMat = feti.RegMat[domain];
+	const DOFsDecomposition *decomposition = feti.decomposition;
 
 	struct __fix__ { int col; double value[6]; }; // reorder DOFs to get sorted output
 	std::vector<__fix__> fix(3 * fixPoints.size());
@@ -420,9 +420,9 @@ void RegularizationElasticity<T>::set3D(esint domain)
 template <typename T>
 void RegularizationElasticity<T>::setAnalytic()
 {
-	NtNNtN.resize(feti.K.domains.size());
+	NtNNtN.resize(feti.K.size());
 	#pragma omp parallel for
-	for (size_t d = 0; d < feti.K.domains.size(); ++d) {
+	for (size_t d = 0; d < feti.K.size(); ++d) {
 		switch (info::mesh->dimension) {
 		case 2: set2D(d); break;
 		case 3: set3D(d); break;
@@ -434,9 +434,9 @@ template <typename T>
 void RegularizationElasticity<T>::updateAnalytic()
 {
 	#pragma omp parallel for
-	for (size_t d = 0; d < feti.K.domains.size(); ++d) {
-		const Matrix_CSR<T> &K = feti.K.domains[d];
-		Matrix_CSR<T> &RegMat = feti.regularization.RegMat[d];
+	for (size_t d = 0; d < feti.K.size(); ++d) {
+		const Matrix_CSR<T> &K = feti.K[d];
+		Matrix_CSR<T> &RegMat = feti.RegMat[d];
 
 		double max = 0;
 		for (esint r = 0; r < K.nrows; ++r) {

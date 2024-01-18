@@ -37,13 +37,13 @@ bool FETI<T>::set(const step::Step &step)
 
 	esint offset[2] = { 0, 0 };
 	esint size[5] = { 0, 0, 0, 0, 0 };
-	size[0] = K.domains.size();
-	for (size_t d = 0; d < K.domains.size(); ++d) {
-		sinfo.R1size = offset[0] = size[2] += regularization.R1[d].nrows;
-		sinfo.R2size = offset[1] = size[3] += regularization.R2[d].nrows;
+	size[0] = K.size();
+	for (size_t d = 0; d < K.size(); ++d) {
+		sinfo.R1size = offset[0] = size[2] += R1[d].nrows;
+		sinfo.R2size = offset[1] = size[3] += R2[d].nrows;
 	}
-	sinfo.lambdasLocal = equalityConstraints.size;
-	size[4] = sinfo.lambdasLocal - equalityConstraints.nhalo + equalityConstraints.dirichlet;
+	sinfo.lambdasLocal = lambdas.size;
+	size[4] = sinfo.lambdasLocal - lambdas.nhalo + lambdas.dirichlet;
 
 	Communication::exscan(offset, NULL, 2, MPITools::getType<esint>().mpitype, MPI_SUM);
 	Communication::allReduce(size, NULL, 5, MPITools::getType<esint>().mpitype, MPI_SUM);
@@ -54,7 +54,7 @@ bool FETI<T>::set(const step::Step &step)
 	sinfo.R1offset = info::mpi::rank ? offset[0] : 0;
 	sinfo.R2offset = info::mpi::rank ? offset[1] : 0;
 
-	Vector_Dual<T>::set(equalityConstraints.dirichlet, equalityConstraints.nhalo, equalityConstraints.cmap, *K.decomposition);
+	Vector_Dual<T>::set(lambdas.dirichlet, lambdas.nhalo, lambdas.cmap, *decomposition);
 	Vector_Kernel<T>::set(sinfo.R1offset, sinfo.R1size, sinfo.R1totalSize);
 
 	eslog::checkpointln("FETI: SET INFO");

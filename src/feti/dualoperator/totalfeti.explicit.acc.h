@@ -44,8 +44,6 @@ protected:
 	std::vector<Vector_Dense<T> > Btx, KplusBtx;
 	std::vector<DirectSolver<Matrix_CSR, T> > KSolver;
 
-	std::vector<Matrix_CSR<T> > B1;
-	std::vector<std::vector<int> > D2C;
 	AccFETIDualOperator<Matrix_CSR, T> acc;
 
 };

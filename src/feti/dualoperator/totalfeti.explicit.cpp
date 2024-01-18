@@ -47,48 +47,47 @@ void TotalFETIExplicit<T>::info()
 template <typename T>
 void TotalFETIExplicit<T>::set(const step::Step &step)
 {
-	const typename FETI<T>::EqualityConstraints &L = feti.equalityConstraints;
 //	sparsity = feti.configuration.partial_dual ? DirectSolver<T, Matrix_CSR>::VectorSparsity::SPARSE_RHS | DirectSolver<T, Matrix_CSR>::VectorSparsity::SPARSE_SOLUTION : DirectSolver<T, Matrix_CSR>::VectorSparsity::DENSE;
 
-	Kplus.resize(feti.K.domains.size());
+	Kplus.resize(feti.K.size());
 	d.resize();
-	Btx.resize(feti.K.domains.size());
-	KplusBtx.resize(feti.K.domains.size());
-	KSolver.resize(feti.K.domains.size());
+	Btx.resize(feti.K.size());
+	KplusBtx.resize(feti.K.size());
+	KSolver.resize(feti.K.size());
 
 	#pragma omp parallel for
-	for (size_t di = 0; di < feti.K.domains.size(); ++di) {
-		Kplus[di].type = feti.K.domains[di].type;
-		Kplus[di].shape = feti.K.domains[di].shape;
-		math::combine(Kplus[di], feti.K.domains[di], feti.regularization.RegMat[di]);
-		Btx[di].resize(feti.K.domains[di].nrows);
-		KplusBtx[di].resize(feti.K.domains[di].nrows);
+	for (size_t di = 0; di < feti.K.size(); ++di) {
+		Kplus[di].type = feti.K[di].type;
+		Kplus[di].shape = feti.K[di].shape;
+		math::combine(Kplus[di], feti.K[di], feti.RegMat[di]);
+		Btx[di].resize(feti.K[di].nrows);
+		KplusBtx[di].resize(feti.K[di].nrows);
 		math::set(Btx[di], T{0});
 	}
 	eslog::checkpointln("FETI: SET TOTAL-FETI OPERATOR");
 
 	#pragma omp parallel for
-	for (size_t di = 0; di < feti.K.domains.size(); ++di) {
+	for (size_t di = 0; di < feti.K.size(); ++di) {
 		KSolver[di].commit(Kplus[di]);
 
 		esint suffix = 0;
 //		if (sparsity != DirectSolver<T, Matrix_CSR>::VectorSparsity::DENSE) {
-//			suffix = *std::min_element(L.domain[di].B1.cols, L.domain[di].B1.cols + L.domain[di].B1.nnz);
+//			suffix = *std::min_element(feti.B1[di].cols, feti.B1[di].cols + feti.B1[di].nnz);
 //		}
 
 		KSolver[di].symbolicFactorization(suffix);
 	}
 	eslog::checkpointln("FETI: TFETI SYMBOLIC FACTORIZATION");
 
-	F.resize(feti.K.domains.size());
-	in.resize(feti.K.domains.size());
-	out.resize(feti.K.domains.size());
+	F.resize(feti.K.size());
+	in.resize(feti.K.size());
+	out.resize(feti.K.size());
 
 	#pragma omp parallel for
-	for (size_t d = 0; d < feti.K.domains.size(); ++d) {
-		F[d].resize(L.domain[d].B1.nrows, L.domain[d].B1.nrows);
-		in[d].resize(L.domain[d].B1.nrows);
-		out[d].resize(L.domain[d].B1.nrows);
+	for (size_t d = 0; d < feti.K.size(); ++d) {
+		F[d].resize(feti.B1[d].nrows, feti.B1[d].nrows);
+		in[d].resize(feti.B1[d].nrows);
+		out[d].resize(feti.B1[d].nrows);
 	}
 	eslog::checkpointln("FETI: TFETI SET EXPLICIT OPERATOR");
 }
@@ -97,65 +96,63 @@ template <typename T>
 void TotalFETIExplicit<T>::update(const step::Step &step)
 {
 	#pragma omp parallel for
-	for (size_t di = 0; di < feti.K.domains.size(); ++di) {
-		math::sumCombined(Kplus[di], T{1}, feti.K.domains[di], feti.regularization.RegMat[di]);
+	for (size_t di = 0; di < feti.K.size(); ++di) {
+		math::sumCombined(Kplus[di], T{1}, feti.K[di], feti.RegMat[di]);
 	}
 	eslog::checkpointln("FETI: UPDATE TOTAL-FETI OPERATOR");
 	#pragma omp parallel for
-	for (size_t di = 0; di < feti.K.domains.size(); ++di) {
+	for (size_t di = 0; di < feti.K.size(); ++di) {
 		KSolver[di].numericalFactorization();
 	}
 	eslog::checkpointln("FETI: TFETI NUMERICAL FACTORIZATION");
 
 	#pragma omp parallel for
-	for (size_t di = 0; di < feti.K.domains.size(); ++di) {
-		KSolver[di].solve(feti.f.domains[di], KplusBtx[di]);
+	for (size_t di = 0; di < feti.K.size(); ++di) {
+		KSolver[di].solve(feti.f[di], KplusBtx[di]);
 	}
 	applyB(feti, KplusBtx, d);
-	d.add(T{-1}, feti.equalityConstraints.c);
+	d.add(T{-1}, feti.c);
 	eslog::checkpointln("FETI: COMPUTE DUAL RHS [d]");
-
-	const typename FETI<T>::EqualityConstraints &L = feti.equalityConstraints;
 
 	bool perLambda = false;
 
 	if (perLambda) {
 		#pragma omp parallel for
-		for (size_t d = 0; d < feti.K.domains.size(); ++d) {
+		for (size_t d = 0; d < feti.K.size(); ++d) {
 			Vector_Dense<T> KplusBt, Bt;
-			KplusBt.resize(L.domain[d].B1.ncols);
-			Bt.resize(L.domain[d].B1.ncols);
+			KplusBt.resize(feti.B1[d].ncols);
+			Bt.resize(feti.B1[d].ncols);
 
-			for (esint r = 0; r < L.domain[d].B1.nrows; ++r) {
+			for (esint r = 0; r < feti.B1[d].nrows; ++r) {
 				math::set(Bt, T{0});
-				for (esint c = L.domain[d].B1.rows[r]; c < L.domain[d].B1.rows[r + 1]; ++c) {
-					Bt.vals[L.domain[d].B1.cols[c]] = L.domain[d].B1.vals[c];
+				for (esint c = feti.B1[d].rows[r]; c < feti.B1[d].rows[r + 1]; ++c) {
+					Bt.vals[feti.B1[d].cols[c]] = feti.B1[d].vals[c];
 				}
 				KSolver[d].solve(Bt, KplusBt);
 
-				for (esint fr = 0; fr < L.domain[d].B1.nrows; ++fr) {
-					F[d].vals[fr * L.domain[d].B1.nrows + r] = 0;
-					for (esint fc = L.domain[d].B1.rows[fr]; fc < L.domain[d].B1.rows[fr + 1]; ++fc) {
-						F[d].vals[fr * L.domain[d].B1.nrows + r] += L.domain[d].B1.vals[fc] * KplusBt.vals[L.domain[d].B1.cols[fc]];
+				for (esint fr = 0; fr < feti.B1[d].nrows; ++fr) {
+					F[d].vals[fr * feti.B1[d].nrows + r] = 0;
+					for (esint fc = feti.B1[d].rows[fr]; fc < feti.B1[d].rows[fr + 1]; ++fc) {
+						F[d].vals[fr * feti.B1[d].nrows + r] += feti.B1[d].vals[fc] * KplusBt.vals[feti.B1[d].cols[fc]];
 					}
 				}
 			}
 		}
 	} else {
 		#pragma omp parallel for
-		for (size_t d = 0; d < feti.K.domains.size(); ++d) {
+		for (size_t d = 0; d < feti.K.size(); ++d) {
 			Matrix_Dense<T> KplusBt, Bt;
-			KplusBt.resize(L.domain[d].B1.nrows, L.domain[d].B1.ncols);
-			Bt.resize(L.domain[d].B1.nrows, L.domain[d].B1.ncols);
+			KplusBt.resize(feti.B1[d].nrows, feti.B1[d].ncols);
+			Bt.resize(feti.B1[d].nrows, feti.B1[d].ncols);
 
-			for (esint r = 0; r < L.domain[d].B1.nrows; ++r) {
+			for (esint r = 0; r < feti.B1[d].nrows; ++r) {
 				esint cc = 0;
-				for (esint c = L.domain[d].B1.rows[r]; c < L.domain[d].B1.rows[r + 1]; ++c, ++cc) {
-					while (cc < L.domain[d].B1.cols[c]) {
+				for (esint c = feti.B1[d].rows[r]; c < feti.B1[d].rows[r + 1]; ++c, ++cc) {
+					while (cc < feti.B1[d].cols[c]) {
 						Bt.vals[r * Bt.ncols + cc] = 0;
 						++cc;
 					}
-					Bt.vals[r * Bt.ncols + cc] = L.domain[d].B1.vals[c];
+					Bt.vals[r * Bt.ncols + cc] = feti.B1[d].vals[c];
 				}
 				while (cc < Bt.ncols) {
 					Bt.vals[r * Bt.ncols + cc] = 0;
@@ -163,11 +160,11 @@ void TotalFETIExplicit<T>::update(const step::Step &step)
 				}
 			}
 			KSolver[d].solve(Bt, KplusBt);
-			for (esint r = 0; r < L.domain[d].B1.nrows; ++r) {
-				for (esint lr = 0; lr < L.domain[d].B1.nrows; ++lr) {
-					F[d].vals[lr * L.domain[d].B1.nrows + r] = 0;
-					for (esint lc = L.domain[d].B1.rows[lr]; lc < L.domain[d].B1.rows[lr + 1]; ++lc) {
-						F[d].vals[lr * F[d].ncols + r] += L.domain[d].B1.vals[lc] * KplusBt.vals[r * KplusBt.ncols + L.domain[d].B1.cols[lc]];
+			for (esint r = 0; r < feti.B1[d].nrows; ++r) {
+				for (esint lr = 0; lr < feti.B1[d].nrows; ++lr) {
+					F[d].vals[lr * feti.B1[d].nrows + r] = 0;
+					for (esint lc = feti.B1[d].rows[lr]; lc < feti.B1[d].rows[lr + 1]; ++lc) {
+						F[d].vals[lr * F[d].ncols + r] += feti.B1[d].vals[lc] * KplusBt.vals[r * KplusBt.ncols + feti.B1[d].cols[lc]];
 					}
 				}
 			}
@@ -183,7 +180,7 @@ template <typename T>
 void TotalFETIExplicit<T>::apply(const Vector_Dual<T> &x, Vector_Dual<T> &y)
 {
 	#pragma omp parallel for
-	for (size_t d = 0; d < feti.K.domains.size(); ++d) {
+	for (size_t d = 0; d < feti.K.size(); ++d) {
 		extractDomain(feti, d, x, in[d]);
 		math::blas::apply(out[d], T{1}, F[d], T{0}, in[d]);
 	}
@@ -194,9 +191,9 @@ template <typename T>
 void TotalFETIExplicit<T>::toPrimal(const Vector_Dual<T> &x, Vector_FETI<Vector_Dense, T> &y)
 {
 	#pragma omp parallel for
-	for (size_t di = 0; di < feti.K.domains.size(); ++di) {
+	for (size_t di = 0; di < feti.K.size(); ++di) {
 		applyBt(feti, di, x, Btx[di]);
-		math::copy(KplusBtx[di], feti.f.domains[di]);
+		math::copy(KplusBtx[di], feti.f[di]);
 		math::add(KplusBtx[di], T{-1}, Btx[di]);
 		KSolver[di].solve(KplusBtx[di], y.domains[di]);
 	}
@@ -207,7 +204,7 @@ void TotalFETIExplicit<T>::print(const step::Step &step)
 {
 	if (info::ecf->output.print_matrices) {
 		eslog::storedata(" STORE: feti/dualop/{Kplus, F}\n");
-		for (size_t di = 0; di < feti.K.domains.size(); ++di) {
+		for (size_t di = 0; di < feti.K.size(); ++di) {
 			math::store(Kplus[di], utils::filename(utils::debugDirectory(step) + "/feti/dualop", (std::string("Kplus") + std::to_string(di)).c_str()).c_str());
 			math::store(F[di], utils::filename(utils::debugDirectory(step) + "/feti/dualop", (std::string("F") + std::to_string(di)).c_str()).c_str());
 		}

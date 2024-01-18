@@ -10,13 +10,11 @@ namespace espreso {
 template <typename T>
 static void applyBt(FETI<T> &feti, size_t d, const Vector_Dual<T> &in, Vector_Dense<T> &out)
 {
-	const typename FETI<T>::EqualityConstraints::Domain &L = feti.equalityConstraints.domain[d];
-
 	math::set(out, T{0});
 
-	for (esint r = 0; r < L.B1.nrows; ++r) {
-		for (esint c = L.B1.rows[r]; c < L.B1.rows[r + 1]; ++c) {
-			out.vals[L.B1.cols[c]] += L.B1.vals[c] * in.vals[L.D2C[r]];
+	for (esint r = 0; r < feti.B1[d].nrows; ++r) {
+		for (esint c = feti.B1[d].rows[r]; c < feti.B1[d].rows[r + 1]; ++c) {
+			out.vals[feti.B1[d].cols[c]] += feti.B1[d].vals[c] * in.vals[feti.D2C[d][r]];
 		}
 	}
 }
@@ -24,11 +22,9 @@ static void applyBt(FETI<T> &feti, size_t d, const Vector_Dual<T> &in, Vector_De
 template <typename T>
 static void extractDomain(FETI<T> &feti, size_t d, const Vector_Dual<T> &in, Vector_Dense<T> &out)
 {
-	const typename FETI<T>::EqualityConstraints::Domain &L = feti.equalityConstraints.domain[d];
-
 	math::set(out, T{0});
-	for (esint r = 0; r < L.B1.nrows; ++r) {
-		out.vals[r] = in.vals[L.D2C[r]];
+	for (esint r = 0; r < feti.B1[d].nrows; ++r) {
+		out.vals[r] = in.vals[feti.D2C[d][r]];
 	}
 }
 
@@ -36,13 +32,11 @@ static void extractDomain(FETI<T> &feti, size_t d, const Vector_Dual<T> &in, Vec
 template <typename T>
 static void applyB(FETI<T> &feti, const std::vector<Vector_Dense<T> > &in, Vector_Dual<T> &out)
 {
-	const typename FETI<T>::EqualityConstraints &L = feti.equalityConstraints;
-
 	math::set(out, T{0});
-	for (size_t d = 0; d < L.domain.size(); ++d) {
-		for (esint r = 0; r < L.domain[d].B1.nrows; ++r) {
-			for (esint c = L.domain[d].B1.rows[r]; c < L.domain[d].B1.rows[r + 1]; ++c) {
-				out.vals[L.domain[d].D2C[r]] += L.domain[d].B1.vals[c] * in[d].vals[L.domain[d].B1.cols[c]];
+	for (size_t d = 0; d < feti.K.size(); ++d) {
+		for (esint r = 0; r < feti.B1[d].nrows; ++r) {
+			for (esint c = feti.B1[d].rows[r]; c < feti.B1[d].rows[r + 1]; ++c) {
+				out.vals[feti.D2C[d][r]] += feti.B1[d].vals[c] * in[d].vals[feti.B1[d].cols[c]];
 			}
 		}
 	}
@@ -52,12 +46,10 @@ static void applyB(FETI<T> &feti, const std::vector<Vector_Dense<T> > &in, Vecto
 template <typename T>
 static void insertDomains(FETI<T> &feti, const std::vector<Vector_Dense<T> > &in, Vector_Dual<T> &out)
 {
-	const typename FETI<T>::EqualityConstraints &L = feti.equalityConstraints;
-
 	math::set(out, T{0});
-	for (size_t d = 0; d < L.domain.size(); ++d) {
-		for (esint r = 0; r < L.domain[d].B1.nrows; ++r) {
-			out.vals[L.domain[d].D2C[r]] += in[d].vals[r];
+	for (size_t d = 0; d < feti.K.size(); ++d) {
+		for (esint r = 0; r < feti.B1[d].nrows; ++r) {
+			out.vals[feti.D2C[d][r]] += in[d].vals[r];
 		}
 	}
 	out.synchronize();

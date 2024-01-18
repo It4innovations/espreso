@@ -75,6 +75,11 @@ public:
 		_Vector_Dense<T, I>::operator=(_allocated);
 	}
 
+	void shallowCopy(const Vector_Dense &other)
+	{
+		_Vector_Dense<T, I>::operator=(other);
+	}
+
 	void swap(Vector_Dense &other)
 	{
 		swap(*this, other);

@@ -46,13 +46,13 @@ public:
 
 	IterativeSolver(FETI<T> &feti): feti(feti)
 	{
-		iKfBtL.domains.resize(feti.K.domains.size());
-		Ra.domains.resize(feti.K.domains.size());
+		iKfBtL.domains.resize(feti.K.size());
+		Ra.domains.resize(feti.K.size());
 
 		#pragma omp parallel for
-		for (size_t d = 0; d < feti.K.domains.size(); ++d) {
-			iKfBtL.domains[d].resize(feti.K.domains[d].nrows);
-			Ra.domains[d].resize(feti.K.domains[d].nrows);
+		for (size_t d = 0; d < feti.K.size(); ++d) {
+			iKfBtL.domains[d].resize(feti.K[d].nrows);
+			Ra.domains[d].resize(feti.K[d].nrows);
 		}
 	}
 

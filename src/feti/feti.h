@@ -30,25 +30,7 @@ struct FETI {
 		esint lambdasLocal, lambdasTotal;
 	};
 
-	struct Regularization {
-		std::vector<Matrix_Dense<T> > R1, R2;
-		std::vector<Matrix_CSR<T> > RegMat;
-	};
 
-	struct EqualityConstraints {
-		struct Domain {
-			esint nhalo;
-			std::vector<int> D2C;
-
-			Matrix_CSR<T, int> B1;
-		};
-
-		std::vector<esint> cmap; // size, ndomains <d0, d1, ..., dn>; size, ndomains <>; ...;
-
-		esint dirichlet, nhalo, size;
-		std::vector<Domain> domain;
-		Vector_Dense<T, int> c;
-	};
 
 	FETI(FETIConfiguration &configuration);
 	~FETI();
@@ -63,10 +45,19 @@ struct FETI {
 	SystemInfo sinfo;
 
 	DOFsDecomposition *decomposition;
-	Matrix_FETI<Matrix_CSR, T> K;
-	Vector_FETI<Vector_Dense, T> f, x;
-	Regularization regularization;
-	EqualityConstraints equalityConstraints;
+	std::vector<Matrix_CSR<T> > K;
+	std::vector<Vector_Dense<T> > f, x;
+
+	std::vector<Matrix_Dense<T> > R1, R2;
+	std::vector<Matrix_CSR<T> > RegMat;
+
+	std::vector<Matrix_CSR<T> > B1;
+	std::vector<std::vector<int> > D2C;
+	Vector_Dense<T, int> c;
+	struct EqualityConstraints {
+		esint dirichlet, nhalo, size;
+		std::vector<esint> cmap; // size, ndomains <d0, d1, ..., dn>; size, ndomains <>; ...;
+	} lambdas;
 
 	IterativeSolver<T> *iterativeSolver = nullptr;
 	Preconditioner<T> *preconditioner = nullptr;

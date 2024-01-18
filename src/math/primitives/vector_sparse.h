@@ -78,6 +78,11 @@ public:
 		this->indices = other.indices;
 	}
 
+	void shallowCopy(const Vector_Sparse &other)
+	{
+		_Vector_Sparse<T, I>::operator=(other);
+	}
+
 	bool touched;
 	_Vector_Sparse<T, I> _allocated;
 
