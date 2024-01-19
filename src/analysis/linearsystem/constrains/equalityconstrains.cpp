@@ -2,7 +2,8 @@
 #include "equalityconstrains.h"
 
 #include "basis/containers/allocators.h"
-#include "math/physics/vector_distributed.h"
+#include "analysis/linearsystem/matrices/vector_distributed.h"
+#include "analysis/linearsystem/matrices/matrix_feti.decomposition.h"
 
 #include <algorithm>
 #include <numeric>

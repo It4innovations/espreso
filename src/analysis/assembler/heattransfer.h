@@ -4,13 +4,14 @@
 
 #include "assembler.h"
 #include "analysis/assembler/heattransfer/operators.h"
+#include "analysis/linearsystem/matrices/matrix_base.h"
+#include "analysis/linearsystem/matrices/vector_base.h"
 #include "config/ecf/physics/heattransfer.h"
 #include "config/holders/expression.h"
 #include "mesh/store/nodestore.h"
 #include "mesh/store/elementstore.h"
 #include "math/primitives/vector_sparse.h"
 #include "math/primitives/matrix_info.h"
-#include "math/physics/matrix_base.h"
 
 #include <cstddef>
 #include <map>

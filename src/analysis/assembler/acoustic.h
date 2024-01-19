@@ -3,12 +3,13 @@
 #define SRC_ANALYSIS_ASSEMBLER_ACOUSTIC_H_
 
 #include "assembler.h"
+#include "analysis/linearsystem/matrices/matrix_base.h"
+#include "analysis/linearsystem/matrices/vector_base.h"
 #include "config/ecf/physics/acoustic.h"
 #include "mesh/store/nodestore.h"
 #include "mesh/store/elementstore.h"
 #include "math/primitives/vector_sparse.h"
 #include "math/primitives/matrix_info.h"
-#include "math/physics/matrix_base.h"
 
 #include <vector>
 

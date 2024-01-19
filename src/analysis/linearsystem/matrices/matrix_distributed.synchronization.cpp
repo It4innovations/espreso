@@ -1,11 +1,10 @@
 
-#include "synchronization.h"
-
+#include "matrix_distributed.synchronization.h"
 #include "esinfo/eslog.h"
 #include "esinfo/mpiinfo.h"
 #include "esinfo/meshinfo.h"
 #include "math/primitives/matrix_csr.h"
-#include "math/physics/matrix_distributed.h"
+#include "analysis/linearsystem/matrices/matrix_distributed.h"
 #include "wrappers/mpi/communication.h"
 
 #include <cstring>

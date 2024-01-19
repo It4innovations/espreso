@@ -32,7 +32,7 @@ struct TFETIOrthogonalSymmetric: public Projector<T> {
 
 	void apply(const Vector_Dual<T> &x, Vector_Dual<T> &y);
 	void applyGtInvGGt(const Vector_Kernel<T> &x, Vector_Dual<T> &y);
-	void applyRInvGGtG(const Vector_Dual<T> &x, Vector_FETI<Vector_Dense, T> &y);
+	void applyRInvGGtG(const Vector_Dual<T> &x, std::vector<Vector_Dense<T> > &y);
 
 protected:
 	void _computeDualGraph();
@@ -44,7 +44,7 @@ protected:
 	void _applyG(const Vector_Dual<T> &in, Vector_Kernel<T> &out);
 	void _applyInvGGt(const Vector_Kernel<T> &in, Vector_Dense<T> &out);
 	void _applyGt(const Vector_Dense<T> &in, const T &alpha, Vector_Dual<T> &out);
-	void _applyR(const Vector_Dense<T> &in, Vector_FETI<Vector_Dense, T> &out);
+	void _applyR(const Vector_Dense<T> &in, std::vector<Vector_Dense<T> > &out);
 
 	void _print(const step::Step &step);
 

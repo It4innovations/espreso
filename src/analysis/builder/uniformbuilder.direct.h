@@ -6,8 +6,8 @@
 #include "basis/containers/serializededata.h"
 #include "esinfo/ecfinfo.h"
 #include "esinfo/meshinfo.h"
-#include "math/utils/distributed/distribution.h"
-#include "math/utils/distributed/synchronization.h"
+#include "analysis/linearsystem/matrices/matrix_distributed.distribution.h"
+#include "analysis/linearsystem/matrices/matrix_distributed.synchronization.h"
 #include "mesh/store/elementstore.h"
 #include "mesh/store/boundaryregionstore.h"
 

@@ -130,7 +130,8 @@ def build(ctx):
     ctx.build_espreso(ctx.path.ant_glob('src/wrappers/blas/**/*.cpp'), "wcblas", [ "CBLAS" ])
     ctx.build_espreso(ctx.path.ant_glob('src/wrappers/lapack/**/*.cpp'), "wlapack", [ "LAPACK" ])
     ctx.build_espreso(ctx.path.ant_glob('src/wrappers/mkl/**/*.cpp'), "wmkl", [ "MKL" ])
-    ctx.build_espreso(ctx.path.ant_glob('src/wrappers/cuda/**/*.(cu|cpp)'), "wcuda", [ "CUDA" ])
+    if ctx.env.HAVE_CUDA:
+        ctx.build_espreso(ctx.path.ant_glob('src/wrappers/cuda/**/*.(cu|cpp)'), "wcuda", [ "CUDA" ])
 #     ctx.build_espreso(ctx.path.ant_glob('src/wrappers/hypre/**/*.cpp'), "whypre", [ "HYPRE" ])
     ctx.build_espreso(ctx.path.ant_glob('src/wrappers/mklpdss/**/*.cpp'), "wmklpdss", [ "MKLPDSS", "MKL" ])
 #     ctx.build_espreso(ctx.path.ant_glob('src/wrappers/pardiso/**/*.cpp'), "wpardiso", [ "PARDISO" ])

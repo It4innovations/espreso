@@ -4,9 +4,9 @@
 #include "cpg.h"
 #include "pcpg.h"
 #include "orthocpg.h"
+#include "math/math.h"
 #include "feti/projector/projector.h"
 #include "feti/dualoperator/dualoperator.h"
-
 #include "feti/common/vector_kernel.h"
 
 #include "esinfo/eslog.hpp"
@@ -56,8 +56,8 @@ void IterativeSolver<T>::reconstructSolution(const Vector_Dual<T> &l, const Vect
 	P->applyRInvGGtG(r, Ra);
 	#pragma omp parallel for
 	for (size_t d = 0; d < feti.K.size(); ++d) {
-		math::copy(feti.x[d], iKfBtL.domains[d]);
-		math::add(feti.x[d], T{1}, Ra.domains[d]);
+		math::copy(feti.x[d], iKfBtL[d]);
+		math::add(feti.x[d], T{1}, Ra[d]);
 	}
 }
 

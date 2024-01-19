@@ -2,8 +2,8 @@
 #include "vector_dual.h"
 
 #include "esinfo/envinfo.h"
+#include "analysis/linearsystem/matrices/matrix_feti.decomposition.h"
 #include "math/primitives/vector_dense.h"
-#include "math/utils/feti/decomposition.h"
 #include "math/wrappers/math.blas.h"
 #include "wrappers/mpi/communication.h"
 

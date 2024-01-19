@@ -4,9 +4,9 @@
 
 #include "builder.h"
 
-#include "math/physics/matrix_feti.h"
-#include "math/physics/vector_feti.h"
-#include "math/utils/feti/decomposition.h"
+#include "analysis/linearsystem/matrices/matrix_feti.h"
+#include "analysis/linearsystem/matrices/vector_feti.h"
+#include "analysis/linearsystem/matrices/matrix_feti.decomposition.h"
 #include "esinfo/ecfinfo.h"
 #include "esinfo/meshinfo.h"
 #include "mesh/store/domainstore.h"

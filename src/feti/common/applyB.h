@@ -4,6 +4,7 @@
 
 #include "vector_dual.h"
 #include "feti/feti.h"
+#include "math/math.h"
 
 namespace espreso {
 

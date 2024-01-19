@@ -3,6 +3,7 @@
 
 #include "esinfo/ecfinfo.h"
 #include "esinfo/eslog.hpp"
+#include "math/math.h"
 #include "feti/projector/projector.h"
 #include "feti/dualoperator/dualoperator.h"
 

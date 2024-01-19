@@ -6,10 +6,10 @@
 
 #include "basis/utilities/sysutils.h"
 #include "esinfo/ecfinfo.h"
+#include "matrices/matrix_feti.h"
+#include "matrices/vector_feti.h"
+#include "matrices/vector_distributed.h"
 #include "feti/feti.h"
-#include "math/physics/matrix_feti.h"
-#include "math/physics/matrix_distributed.h"
-#include "math/physics/vector_feti.h"
 
 namespace espreso {
 

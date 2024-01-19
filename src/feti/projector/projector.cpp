@@ -1,6 +1,7 @@
 
 #include "projector.h"
 #include "tfeti.orthogonal.symmetric.h"
+#include "esinfo/eslog.h"
 
 namespace espreso {
 

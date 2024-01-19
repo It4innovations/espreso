@@ -8,6 +8,9 @@
 #include "mesh/store/nodestore.h"
 #include "mesh/store/domainstore.h"
 #include "mesh/store/fetidatastore.h"
+#include "math/wrappers/math.spblas.h"
+#include "math/wrappers/math.blas.h"
+#include "math/wrappers/math.lapack.h"
 #include "wrappers/metis/w.metis.h"
 
 #include <algorithm>
@@ -185,8 +188,8 @@ static void getFixPoints(std::vector<esint> &fixPoints, int domain)
 			while (fabs((l - last_l) / l) > 1e-6) {
 				spblas.apply(out, 1, 0, in);
 				last_l = l;
-				l = math::norm(out);
-				math::scale(1 / l, out);
+				l = math::blas::norm(out.size, out.vals, 1);
+				math::blas::scale(out.size, 1 / l, out.vals, 1);
 				out.swap(in);
 			}
 			fixPoints.push_back(ids[pids[p][std::max_element(in.vals, in.vals + in.size) - in.vals]]);

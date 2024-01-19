@@ -3,10 +3,10 @@
 #include "math/primitives/vector_dense.h"
 #include "feti/common/vector_dual.h"
 #include "feti/common/vector_kernel.h"
-#include "math/physics/vector_distributed.h"
-#include "math/physics/vector_feti.h"
-#include "math/physics/matrix_distributed.h"
-#include "math/physics/matrix_feti.h"
+#include "analysis/linearsystem/matrices/matrix_feti.h"
+#include "analysis/linearsystem/matrices/matrix_distributed.h"
+#include "analysis/linearsystem/matrices/vector_feti.h"
+#include "analysis/linearsystem/matrices/vector_distributed.h"
 #include "esinfo/meshinfo.h"
 
 #include <fstream>

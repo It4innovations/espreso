@@ -20,7 +20,7 @@ struct Projector {
 
 	virtual void apply(const Vector_Dual<T> &x, Vector_Dual<T> &y) =0;
 	virtual void applyGtInvGGt(const Vector_Kernel<T> &x, Vector_Dual<T> &y) =0;
-	virtual void applyRInvGGtG(const Vector_Dual<T> &x, Vector_FETI<Vector_Dense, T> &y) =0;
+	virtual void applyRInvGGtG(const Vector_Dual<T> &x, std::vector<Vector_Dense<T> > &y) =0;
 
 	Vector_Kernel<T> e;
 

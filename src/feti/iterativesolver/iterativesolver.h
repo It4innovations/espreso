@@ -5,7 +5,6 @@
 #include "feti/feti.h"
 #include "feti/common/vector_dual.h"
 #include "feti/common/vector_kernel.h"
-#include "math/physics/vector_feti.h"
 
 namespace espreso {
 
@@ -46,13 +45,13 @@ public:
 
 	IterativeSolver(FETI<T> &feti): feti(feti)
 	{
-		iKfBtL.domains.resize(feti.K.size());
-		Ra.domains.resize(feti.K.size());
+		iKfBtL.resize(feti.K.size());
+		Ra.resize(feti.K.size());
 
 		#pragma omp parallel for
 		for (size_t d = 0; d < feti.K.size(); ++d) {
-			iKfBtL.domains[d].resize(feti.K[d].nrows);
-			Ra.domains[d].resize(feti.K[d].nrows);
+			iKfBtL[d].resize(feti.K[d].nrows);
+			Ra[d].resize(feti.K[d].nrows);
 		}
 	}
 
@@ -67,7 +66,7 @@ public:
 
 	FETI<T> &feti;
 
-	Vector_FETI<Vector_Dense, T> iKfBtL, Ra;
+	std::vector<Vector_Dense<T> > iKfBtL, Ra;
 };
 
 }

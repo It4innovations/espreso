@@ -4,8 +4,8 @@
 
 #include "linearsystem.h"
 
-#include "math/physics/matrix_distributed.h"
-#include "math/physics/vector_distributed.h"
+#include "analysis/linearsystem/matrices/matrix_distributed.h"
+#include "analysis/linearsystem/matrices/vector_distributed.h"
 
 namespace espreso {
 

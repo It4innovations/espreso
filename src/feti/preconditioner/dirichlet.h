@@ -3,6 +3,7 @@
 #define SRC_FETI_PRECONDITIONER_DIRICHLET_H_
 
 #include "preconditioner.h"
+#include "math/wrappers/math.solver.h"
 
 namespace espreso {
 

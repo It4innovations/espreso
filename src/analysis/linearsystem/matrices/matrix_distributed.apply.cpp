@@ -1,13 +1,12 @@
 
-#include "apply.h"
-
+#include <analysis/linearsystem/matrices/matrix_distributed.apply.h>
 #include "basis/utilities/utils.h"
 #include "esinfo/eslog.h"
 #include "esinfo/mpiinfo.h"
 #include "esinfo/meshinfo.h"
 #include "math/math.h"
 #include "math/primitives/matrix_csr.h"
-#include "math/physics/matrix_distributed.h"
+#include "analysis/linearsystem/matrices/matrix_distributed.h"
 #include "wrappers/mpi/communication.h"
 
 #include <complex>

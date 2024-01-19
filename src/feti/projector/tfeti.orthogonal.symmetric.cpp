@@ -6,6 +6,7 @@
 #include "esinfo/ecfinfo.h"
 #include "esinfo/envinfo.h"
 #include "esinfo/eslog.hpp"
+#include "math/math.h"
 
 #include <vector>
 #include <unordered_map>
@@ -91,7 +92,7 @@ void TFETIOrthogonalSymmetric<T>::applyGtInvGGt(const Vector_Kernel<T> &x, Vecto
 }
 
 template<typename T>
-void TFETIOrthogonalSymmetric<T>::applyRInvGGtG(const Vector_Dual<T> &x, Vector_FETI<Vector_Dense, T> &y)
+void TFETIOrthogonalSymmetric<T>::applyRInvGGtG(const Vector_Dual<T> &x,  std::vector<Vector_Dense<T> > &y)
 {
 	_applyG(x, Gx);
 	_applyInvGGt(Gx, iGGtGx);
@@ -142,15 +143,15 @@ void TFETIOrthogonalSymmetric<T>::_applyGt(const Vector_Dense<T> &in, const T &a
 }
 
 template<typename T>
-void TFETIOrthogonalSymmetric<T>::_applyR(const Vector_Dense<T> &in, Vector_FETI<Vector_Dense, T> &out)
+void TFETIOrthogonalSymmetric<T>::_applyR(const Vector_Dense<T> &in, std::vector<Vector_Dense<T> > &out)
 {
 	#pragma omp parallel for
-	for (size_t d = 0; d < out.domains.size(); ++d) {
+	for (size_t d = 0; d < out.size(); ++d) {
 		Vector_Dense<T> y;
 		y.size = dinfo[d].kernels;
 		y.vals = in.vals + dinfo[d].koffset - feti.sinfo.R1offset;
 
-		math::blas::applyT(out.domains[d], T{1}, feti.R1[d], T{0}, y);
+		math::blas::applyT(out[d], T{1}, feti.R1[d], T{0}, y);
 	}
 }
 

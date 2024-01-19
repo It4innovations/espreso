@@ -2,12 +2,11 @@
 #ifndef SRC_MATH2_GENERALIZATION_MATRIX_FETI_H_
 #define SRC_MATH2_GENERALIZATION_MATRIX_FETI_H_
 
-
 #include "vector_feti.h"
 #include "matrix_base.h"
-#include "math/physics/math.physics.h"
+#include "math.physics.h"
+#include "matrix_feti.decomposition.h"
 #include "math/primitives/matrix_dense.h"
-#include "math/utils/feti/decomposition.h"
 
 #include <vector>
 

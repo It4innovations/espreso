@@ -4,7 +4,7 @@
 #include "iterativesolver/pcpg.h"
 #include "projector/projector.h"
 #include "preconditioner/preconditioner.h"
-
+#include "math/wrappers/math.solver.h"
 #include "esinfo/eslog.hpp"
 #include "esinfo/systeminfo.h"
 #include "wrappers/mpi/communication.h"

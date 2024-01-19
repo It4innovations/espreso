@@ -4,7 +4,7 @@
 
 #include "math/primitives/vector_dense.h"
 #include "math/primitives/vector_sparse.h"
-#include "math/utils/mapping.h"
+#include "mapping.h"
 
 #include <complex>
 #include <vector>

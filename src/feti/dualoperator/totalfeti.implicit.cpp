@@ -177,14 +177,14 @@ void TotalFETIImplicit<T>::apply(const Vector_Dual<T> &x, Vector_Dual<T> &y)
 }
 
 template <typename T>
-void TotalFETIImplicit<T>::toPrimal(const Vector_Dual<T> &x, Vector_FETI<Vector_Dense, T> &y)
+void TotalFETIImplicit<T>::toPrimal(const Vector_Dual<T> &x, std::vector<Vector_Dense<T> > &y)
 {
 	#pragma omp parallel for
 	for (size_t di = 0; di < feti.K.size(); ++di) {
 		applyBt(feti, di, x, Btx[di]);
 		math::copy(KplusBtx[di], feti.f[di]);
 		math::add(KplusBtx[di], T{-1}, Btx[di]);
-		KSolver[di].solve(KplusBtx[di], y.domains[di]);
+		KSolver[di].solve(KplusBtx[di], y[di]);
 	}
 }
 

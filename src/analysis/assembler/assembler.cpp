@@ -9,7 +9,6 @@
 #include "esinfo/envinfo.h"
 #include "esinfo/eslog.hpp"
 #include "esinfo/meshinfo.h"
-#include "math/physics/matrix_distributed.h"
 #include "mesh/store/domainstore.h"
 #include "mesh/store/nodestore.h"
 #include "mesh/store/elementstore.h"

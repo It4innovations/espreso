@@ -1,5 +1,6 @@
 
 #include "regularization.h"
+#include "esinfo/eslog.h"
 
 namespace espreso {
 

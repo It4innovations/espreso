@@ -1,9 +1,9 @@
 
-#ifndef SRC_MATH2_UTILS_DECOMPOSED_DECOMPOSITION_H_
-#define SRC_MATH2_UTILS_DECOMPOSED_DECOMPOSITION_H_
+#ifndef SRC_ANALYSIS_LINEARSYSTEM_MATRICES_MATRIX_FETI_DECOMPOSITION_H_
+#define SRC_ANALYSIS_LINEARSYSTEM_MATRICES_MATRIX_FETI_DECOMPOSITION_H_
 
+#include "matrix_distributed.distribution.h"
 #include "basis/containers/serializededata.h"
-#include "math/utils/distributed/distribution.h"
 
 namespace espreso {
 
@@ -40,4 +40,6 @@ struct DOFsDecomposition: public DOFsDistribution {
 
 }
 
-#endif /* SRC_MATH2_UTILS_DECOMPOSED_DECOMPOSITION_H_ */
+
+
+#endif /* SRC_ANALYSIS_LINEARSYSTEM_MATRICES_MATRIX_FETI_DECOMPOSITION_H_ */

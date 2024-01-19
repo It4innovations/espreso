@@ -5,6 +5,9 @@
 #include "emptypreconditioner.h"
 #include "lumped.h"
 #include "weightfunction.h"
+#include "esinfo/eslog.h"
+
+#include <complex>
 
 namespace espreso {
 

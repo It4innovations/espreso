@@ -4,8 +4,8 @@
 
 #include "subkernel.h"
 #include "math/primitives/matrix_info.h"
-#include "math/physics/matrix_base.h"
-#include "math/physics/vector_base.h"
+#include "analysis/linearsystem/matrices/matrix_base.h"
+#include "analysis/linearsystem/matrices/vector_base.h"
 
 #include <functional>
 

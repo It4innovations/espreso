@@ -4,14 +4,12 @@
 
 #include "config/ecf/linearsolver/feti.h"
 #include "esinfo/stepinfo.h"
+#include "analysis/linearsystem/matrices/matrix_feti.decomposition.h"
 #include "math/primitives/vector_dense.h"
 #include "math/primitives/matrix_dense.h"
 #include "math/primitives/matrix_csr.h"
-#include "math/physics/matrix_feti.h"
-#include "math/physics/vector_feti.h"
 
-#include <map>
-#include <set>
+#include <complex>
 
 namespace espreso {
 

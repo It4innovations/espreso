@@ -3,8 +3,8 @@
 #define SRC_MATH2_GENERALIZATION_VECTOR_FETI_H_
 
 #include "vector_base.h"
-#include "math/physics/math.physics.h"
-#include "math/utils/feti/decomposition.h"
+#include "matrix_feti.decomposition.h"
+#include "math.physics.h"
 #include "esinfo/eslog.h"
 
 #include <vector>

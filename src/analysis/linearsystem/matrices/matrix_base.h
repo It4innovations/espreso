@@ -3,12 +3,11 @@
 #define SRC_MATH2_GENERALIZATION_MATRIX_BASE_H_
 
 #include "vector_base.h"
+#include "mapping.h"
 #include "math/primitives/matrix_info.h"
 #include "math/primitives/matrix_csr.h"
 #include "math/primitives/matrix_dense.h"
 #include "math/primitives/matrix_ijv.h"
-
-#include "math/utils/mapping.h"
 
 #include <complex>
 

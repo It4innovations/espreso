@@ -32,7 +32,7 @@ public:
 	// y = F * x
 	void apply(const Vector_Dual<T> &x, Vector_Dual<T> &y);
 	// y = K+(f - Bt * x)
-	void toPrimal(const Vector_Dual<T> &x, Vector_FETI<Vector_Dense, T> &y);
+	void toPrimal(const Vector_Dual<T> &x, std::vector<Vector_Dense<T> > &y);
 
 protected:
 	void print(const step::Step &step);

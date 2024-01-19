@@ -31,7 +31,7 @@ public:
 	virtual void apply(const Vector_Dual<T> &x, Vector_Dual<T> &y) =0;
 
 	// y = K+(f - Bt * x)
-	virtual void toPrimal(const Vector_Dual<T> &x, Vector_FETI<Vector_Dense, T> &y) =0;
+	virtual void toPrimal(const Vector_Dual<T> &x, std::vector<Vector_Dense<T> > &y) =0;
 
 	FETI<T> &feti;
 	Vector_Dual<T> d;

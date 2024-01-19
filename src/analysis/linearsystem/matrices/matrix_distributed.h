@@ -4,12 +4,12 @@
 
 #include "vector_distributed.h"
 #include "matrix_base.h"
-#include "math/physics/math.physics.h"
+#include "matrix_distributed.distribution.h"
+#include "math.physics.h"
 #include "math/primitives/matrix_dense.h"
 #include "math/primitives/matrix_csr.h"
-#include "math/utils/distributed/distribution.h"
-#include "math/utils/distributed/apply.h"
-#include "math/utils/distributed/synchronization.h"
+#include "matrix_distributed.apply.h"
+#include "matrix_distributed.synchronization.h"
 
 #include <vector>
 
