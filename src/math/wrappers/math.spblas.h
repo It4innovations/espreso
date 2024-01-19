@@ -20,26 +20,9 @@ struct SpBLAS {
 	~SpBLAS();
 
 	void insert(Matrix<T, I> &a);
-	void insertTransposed(Matrix<T, I> &a);
-	void insert(Matrix_Dense<T, I> &a, double threshold);
-
-	void extractUpper(Matrix<T, I> &a);
 
 	// y = alpha * A * x + beta * y
 	void apply(Vector_Dense<T, I> &y, const T &alpha, const T &beta, const Vector_Dense<T, I> &x);
-
-	// this = A * B
-	void multiply(SpBLAS<Matrix, T, I> &A, SpBLAS<Matrix, T, I> &B);
-	void multiply(SpBLAS<Matrix, T, I> &A, Matrix_Dense<T, I> &B);
-
-	// this = A * At
-	void AAt(SpBLAS<Matrix, T, I> &A);
-
-	void transposeTo(SpBLAS<Matrix, T, I> &A);
-	void convertTo(Matrix_Dense<T, I> &out);
-
-	void solveRowMayor(Matrix_Dense<T, I> &rhs, Matrix_Dense<T, I> &solution);
-	void solveColMayor(Matrix_Dense<T, I> &rhs, Matrix_Dense<T, I> &solution);
 
 	// input = output[start_row:end_row, start_col:end_col]. Start inclusive, end exclusive
 	void submatrix(Matrix_Dense<T, I> &output, esint start_row, esint end_row, esint start_col, esint end_col, bool trans = false, bool conj = false, bool output_force_full = false);
