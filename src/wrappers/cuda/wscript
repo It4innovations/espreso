@@ -1,6 +1,6 @@
 
 def options(opt):
-    opt.other.add_option("--cuda-arch", action="store", type="string", help="CUDA architecture.")
+    pass
 
 def configure(ctx):
     pass
