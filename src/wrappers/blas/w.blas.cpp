@@ -5,7 +5,7 @@
 #include <complex>
 
 #ifndef HAVE_MKL
-#ifdef HAVE_CBLAS
+#ifdef HAVE_BLAS
 #include "cblas.h"
 
 namespace espreso {
@@ -82,6 +82,18 @@ double norm(const esint size, const double *x, const esint incX)
 }
 
 template <>
+float norm(const esint size, const std::complex<float> *x, const esint incX)
+{
+	return cblas_scnrm2(size, x, incX);
+}
+
+template <>
+double norm(const esint size, const std::complex<double> *x, const esint incX)
+{
+	return cblas_dznrm2(size, x, incX);
+}
+
+template <>
 void apply(Vector_Dense<double> &y, const double &alpha, const Matrix_Dense<double> &a, const double &beta, const Vector_Dense<double> &x)
 {
 	if (a.submatrix[0].step != 1 || a.submatrix[1].step != 1) {
@@ -152,6 +164,20 @@ void applyT(Vector_Dense<std::complex<double> > &y, const std::complex<double> &
 	} else {
 		eslog::error("not implemented BLAS routine.\n");
 	}
+}
+
+template <>
+void AAt(const Matrix_Dense<double> &A, Matrix_Dense<double> &AAt)
+{
+	AAt.resize(A.nrows, A.nrows);
+	cblas_dsyrk(CblasRowMajor, CblasUpper, CblasNoTrans, A.nrows, A.ncols, 1, A.vals, A.ncols, 0, AAt.vals, AAt.ncols);
+}
+
+template <>
+void multiply(double alpha, const Matrix_Dense<double> &A, const Matrix_Dense<double> &B, double beta, Matrix_Dense<double> &C, bool transA, bool transB)
+{
+	C.resize(transA ? A.ncols : A.nrows, transB ? B.nrows : B.ncols);
+	cblas_dgemm(CblasRowMajor, transA ? CblasTrans : CblasNoTrans, transB ? CblasTrans : CblasNoTrans, C.nrows, C.ncols, transA ? A.nrows : A.ncols, alpha, A.vals, transA ? A.ncols: A.nrows, B.vals, transB ? B.nrows : B.ncols, beta, C.vals, C.ncols);
 }
 
 }

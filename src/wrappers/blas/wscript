@@ -1,7 +1,7 @@
 import os
 
 def options(opt):
-    opt.math.add_option("--blas_libraries", action="store", type="string", default=os.getenv("BLAS_LIBRARIES") or "cblas", help="List of BLAS libraries.")
+    opt.math.add_option("--blas_libraries", action="store", type="string", default=os.getenv("BLAS_LIBRARIES") or "blas", help="List of BLAS libraries.")
 
 def configure(ctx):
-    ctx.check_cxx(mandatory=False, msg="Checking for 'cblas'", okmsg=ctx.options.blas_libraries, define_name="HAVE_CBLAS", header_name="cblas.h", lib=ctx.options.blas_libraries, uselib_store="CBLAS")
+    ctx.check_cxx(mandatory=False, msg="Checking for 'blas'", okmsg=ctx.options.blas_libraries, define_name="HAVE_BLAS", header_name="cblas.h", lib=ctx.options.blas_libraries, uselib_store="BLAS")

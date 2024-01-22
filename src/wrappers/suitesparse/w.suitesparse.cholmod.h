@@ -3,8 +3,7 @@
 #define SRC_WRAPPERS_SUITESPARSE_W_SUITESPARSE_CHOLMOD_H_
 
 #include "cholmod.h"
-#include "math/wrappers/math.spblas.h"
-#include "math/wrappers/math.solver.h"
+#include "math/math.h"
 
 #include <cstring>
 
@@ -87,7 +86,7 @@ constexpr int _getCholmodStype(Matrix_Shape shape)
 	}
 }
 
-template <typename T>
+template <typename T, typename I>
 static inline void setSymmetric(cholmod_sparse* &A, const Matrix_CSR<T, I> &M)
 {
 	if (!A) A = new cholmod_sparse();
@@ -106,7 +105,7 @@ static inline void setSymmetric(cholmod_sparse* &A, const Matrix_CSR<T, I> &M)
 	A->packed = 1;
 }
 
-template <typename T>
+template <typename T, typename I>
 static inline void setAsymmetric(cholmod_sparse* &A, cholmod_common &common, const Matrix_CSR<T, I> &M)
 {
 	if (A) delete A;
@@ -130,14 +129,14 @@ static inline void setAsymmetric(cholmod_sparse* &A, cholmod_common &common, con
 	delete At;
 }
 
-template <typename T>
+template <typename T, typename I>
 static inline void updateSymmetric(cholmod_sparse *A, const Matrix_CSR<T, I> &M)
 {
 	A->x = M.vals;
 	A->xtype = _getCholmodXtype<T>();
 }
 
-template <typename T>
+template <typename T, typename I>
 static inline void update(cholmod_dense* &A, const Matrix_Dense<T, I> &M)
 {
 	if (!A) A = new cholmod_dense();
@@ -150,7 +149,7 @@ static inline void update(cholmod_dense* &A, const Matrix_Dense<T, I> &M)
 	A->dtype = _getCholmodDtype<T>();
 }
 
-template <typename T>
+template <typename T, typename I>
 static inline void update(cholmod_dense* &A, const Vector_Dense<T, I> &v)
 {
 	if (!A) A = new cholmod_dense();
@@ -163,7 +162,7 @@ static inline void update(cholmod_dense* &A, const Vector_Dense<T, I> &v)
 	A->dtype = _getCholmodDtype<T>();
 }
 
-template <typename T>
+template <typename T, typename I>
 static inline void _extractUpper(cholmod_sparse* &A, cholmod_common &common, Matrix_CSR<T, I> &M)
 {
 	cholmod_sparse* upA;
@@ -177,14 +176,14 @@ static inline void _extractUpper(cholmod_sparse* &A, cholmod_common &common, Mat
 	delete upA;
 }
 
-template <typename T>
+template <typename T, typename I>
 static inline void extract(cholmod_dense *A, cholmod_common &common, Matrix_Dense<T, I> &M)
 {
 	memcpy(M.vals, A->x, sizeof(T) * M.nrows * M.ncols);
 	_free<esint>(A, common);
 }
 
-template <typename T>
+template <typename T, typename I>
 static inline void extract(cholmod_dense *A, cholmod_common &common, Vector_Dense<T, I> &v)
 {
 	memcpy(v.vals, A->x, sizeof(T) * v.size);

@@ -1,5 +1,5 @@
 
-#include "math/wrappers/math.solver.h"
+#include "math/math.h"
 #include "esinfo/eslog.h"
 
 #include <complex>
@@ -7,8 +7,7 @@
 #ifndef HAVE_MKL
 #ifdef HAVE_SUITESPARSE
 
-#include "wrappers/suitesparse/w.suitesparse.cholmod.h"
-#include "math/wrappers/math.spblas.h"
+#include "w.suitesparse.cholmod.h"
 
 namespace espreso {
 
@@ -25,34 +24,34 @@ struct Matrix_Solver_External_Representation {
 	} cholmod;
 };
 
-template <typename T, template <typename> class Matrix>
-const char* DirectSolver<T, Matrix>::name()
+template <template <typename, typename> class Matrix, typename T, typename I>
+const char* DirectSolver<Matrix, T, I>::name()
 {
 	return "SUITE SPARSE";
 }
 
-template <typename T, template <typename> class Matrix>
-bool DirectSolver<T, Matrix>::provideFactors()
+template <template <typename, typename> class Matrix, typename T, typename I>
+bool DirectSolver<Matrix, T, I>::provideFactors()
 {
 	return true;
 }
 
-template <typename T, template <typename> class Matrix>
-bool DirectSolver<T, Matrix>::provideSC()
+template <template <typename, typename> class Matrix, typename T, typename I>
+bool DirectSolver<Matrix, T, I>::provideSC()
 {
 	// manually computed
 	return true;
 }
 
-template <typename T, template <typename> class Matrix>
-DirectSolver<T, Matrix>::DirectSolver()
+template <template <typename, typename> class Matrix, typename T, typename I>
+DirectSolver<Matrix, T, I>::DirectSolver()
 : matrix{}, rows{}, nnzA{}, nnzL{}, memoryL{}, _solver{nullptr}
 {
 
 }
 
-template <typename T, template <typename> class Matrix>
-DirectSolver<T, Matrix>::~DirectSolver()
+template <template <typename, typename> class Matrix, typename T, typename I>
+DirectSolver<Matrix, T, I>::~DirectSolver()
 {
 	if (_solver) {
 		switch (matrix->type) {
@@ -68,15 +67,15 @@ DirectSolver<T, Matrix>::~DirectSolver()
 	}
 }
 
-template <typename T, template <typename> class Matrix>
-DirectSolver<T, Matrix>::DirectSolver(const Matrix<T> &a)
+template <template <typename, typename> class Matrix, typename T, typename I>
+DirectSolver<Matrix, T, I>::DirectSolver(const Matrix<T, I> &a)
 : matrix{}, rows{}, nnzA{}, nnzL{}, memoryL{}, _solver{nullptr}
 {
 	commit(a);
 }
 
-template <typename T, template <typename> class Matrix>
-void DirectSolver<T, Matrix>::commit(const Matrix<T> &a)
+template <template <typename, typename> class Matrix, typename T, typename I>
+void DirectSolver<Matrix, T, I>::commit(const Matrix<T, I> &a)
 {
 	matrix = &a;
 	if (_solver) { delete _solver; }
@@ -90,8 +89,8 @@ void DirectSolver<T, Matrix>::commit(const Matrix<T> &a)
 	}
 }
 
-template <typename T, template <typename> class Matrix>
-void DirectSolver<T, Matrix>::commit(SpBLAS<T, Matrix> &spblas)
+template <template <typename, typename> class Matrix, typename T, typename I>
+void DirectSolver<Matrix, T, I>::commit(SpBLAS<Matrix, T, I> &spblas)
 {
 	if (_solver) { delete _solver; }
 	_solver = new Matrix_Solver_External_Representation();
@@ -104,8 +103,8 @@ void DirectSolver<T, Matrix>::commit(SpBLAS<T, Matrix> &spblas)
 	}
 }
 
-template <typename T, template <typename> class Matrix>
-void DirectSolver<T, Matrix>::symbolicFactorization(int fixedSuffix)
+template <template <typename, typename> class Matrix, typename T, typename I>
+void DirectSolver<Matrix, T, I>::symbolicFactorization(int fixedSuffix)
 {
 	switch (matrix->type) {
 	case Matrix_Type::REAL_SYMMETRIC_POSITIVE_DEFINITE:
@@ -130,8 +129,8 @@ void DirectSolver<T, Matrix>::symbolicFactorization(int fixedSuffix)
 	}
 }
 
-template <typename T, template <typename> class Matrix>
-void DirectSolver<T, Matrix>::numericalFactorization()
+template <template <typename, typename> class Matrix, typename T, typename I>
+void DirectSolver<Matrix, T, I>::numericalFactorization()
 {
 	switch (matrix->type) {
 	case Matrix_Type::REAL_SYMMETRIC_POSITIVE_DEFINITE:
@@ -144,8 +143,8 @@ void DirectSolver<T, Matrix>::numericalFactorization()
 	}
 }
 
-template <typename T, template <typename> class Matrix>
-void DirectSolver<T, Matrix>::solve(Vector_Dense<T, I> &rhs, Vector_Dense<T, I> &solution, int sparsity)
+template <template <typename, typename> class Matrix, typename T, typename I>
+void DirectSolver<Matrix, T, I>::solve(Vector_Dense<T, I> &rhs, Vector_Dense<T, I> &solution, int sparsity)
 {
 	switch (matrix->type) {
 	case Matrix_Type::REAL_SYMMETRIC_POSITIVE_DEFINITE:
@@ -160,8 +159,8 @@ void DirectSolver<T, Matrix>::solve(Vector_Dense<T, I> &rhs, Vector_Dense<T, I> 
 	}
 }
 
-template <typename T, template <typename> class Matrix>
-void DirectSolver<T, Matrix>::solve(Matrix_Dense<T, I> &rhs, Matrix_Dense<T, I> &solution, int sparsity)
+template <template <typename, typename> class Matrix, typename T, typename I>
+void DirectSolver<Matrix, T, I>::solve(Matrix_Dense<T, I> &rhs, Matrix_Dense<T, I> &solution, int sparsity)
 {
 	switch (matrix->type) {
 	case Matrix_Type::REAL_SYMMETRIC_POSITIVE_DEFINITE:
@@ -176,8 +175,8 @@ void DirectSolver<T, Matrix>::solve(Matrix_Dense<T, I> &rhs, Matrix_Dense<T, I> 
 	}
 }
 
-template <typename T, template <typename> class Matrix>
-void DirectSolver<T, Matrix>::getFactors(Matrix_CSC<T> &L, Matrix_CSC<T> &U, Vector_Dense<int> &p)
+template <template <typename, typename> class Matrix, typename T, typename I>
+void DirectSolver<Matrix, T, I>::getFactors(Matrix_CSC<T> &L, Matrix_CSC<T> &U, Vector_Dense<int> &p)
 {
 	switch (matrix->type) {
 	case Matrix_Type::REAL_SYMMETRIC_POSITIVE_DEFINITE:
@@ -204,8 +203,8 @@ void DirectSolver<T, Matrix>::getFactors(Matrix_CSC<T> &L, Matrix_CSC<T> &U, Vec
 	}
 }
 
-template <typename T, template <typename> class Matrix>
-void DirectSolver<T, Matrix>::getSC(Matrix_Dense<T, I> &sc)
+template <template <typename, typename> class Matrix, typename T, typename I>
+void DirectSolver<Matrix, T, I>::getSC(Matrix_Dense<T, I> &sc)
 {
 	// computes the schur complement S = A22 - A21 * A11^{-1} * A12, where A = [A11, A12; A21, A22]
 	switch(matrix->type) {
@@ -224,10 +223,10 @@ void DirectSolver<T, Matrix>::getSC(Matrix_Dense<T, I> &sc)
 		Matrix_CSR<T, I> A21t_sp; // = A12c_sp
 		Matrix_Dense<T, I> A22t_dn;
 		Matrix_Dense<T, I> A12t_dn;
-		SpBLAS<T, Matrix_CSR>::submatrix(*matrix, A11_sp, 0, size_A11, 0, size_A11);
-		SpBLAS<T, Matrix_CSR>::submatrix(*matrix, A21t_sp, 0, size_A11, size_A11, size, false, true); // = A12c_sp
-		SpBLAS<T, Matrix_CSR>::submatrix(*matrix, A22t_dn, size_A11, size, size_A11, size, true, false, true);
-		SpBLAS<T, Matrix_CSR>::submatrix(*matrix, A12t_dn, 0, size_A11, size_A11, size, true, false, true);
+		SpBLAS<Matrix_CSR, T, I>::submatrix(*matrix, A11_sp, 0, size_A11, 0, size_A11);
+		SpBLAS<Matrix_CSR, T, I>::submatrix(*matrix, A21t_sp, 0, size_A11, size_A11, size, false, true); // = A12c_sp
+		SpBLAS<Matrix_CSR, T, I>::submatrix(*matrix, A22t_dn, size_A11, size, size_A11, size, true, false, true);
+		SpBLAS<Matrix_CSR, T, I>::submatrix(*matrix, A12t_dn, 0, size_A11, size_A11, size, true, false, true);
 
 		cholmod_common &cm_common = _solver->cholmod.common;
 		cholmod_sparse *cm_A11_sp = new cholmod_sparse();
@@ -275,8 +274,8 @@ void DirectSolver<T, Matrix>::getSC(Matrix_Dense<T, I> &sc)
 	}
 }
 
-template struct DirectSolver<double, Matrix_CSR>;
-template struct DirectSolver<std::complex<double>, Matrix_CSR>;
+template struct DirectSolver<Matrix_CSR, double, int>;
+template struct DirectSolver<Matrix_CSR, std::complex<double>, int>;
 
 }
 

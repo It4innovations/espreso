@@ -5,10 +5,11 @@
 #include <complex>
 
 #ifndef HAVE_MKL
-#ifndef HAVE_CBLAS
+#ifndef HAVE_BLAS
 
 namespace espreso {
 namespace math {
+namespace blas {
 
 template <>
 void copy(const esint size, double *x, const esint incX, const double *y, const esint incY)
@@ -104,6 +105,7 @@ void applyT(Vector_Dense<std::complex<double> > &y, const std::complex<double> &
 	eslog::error("calling of empty BLAS wrapper.\n");
 }
 
+}
 }
 }
 

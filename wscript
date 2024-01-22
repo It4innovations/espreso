@@ -127,7 +127,7 @@ def build(ctx):
     ctx.build_espreso(ctx.path.ant_glob('src/autoopt/**/*.cpp'), "autoopt")
     ctx.build_espreso(ctx.path.ant_glob('src/feti/**/*.cpp'), "feti")
     ctx.build_espreso(ctx.path.ant_glob('src/wrappers/simd/**/*.cpp'), "simd")
-    ctx.build_espreso(ctx.path.ant_glob('src/wrappers/blas/**/*.cpp'), "wcblas", [ "CBLAS" ])
+    ctx.build_espreso(ctx.path.ant_glob('src/wrappers/blas/**/*.cpp'), "wblas", [ "BLAS" ])
     ctx.build_espreso(ctx.path.ant_glob('src/wrappers/lapack/**/*.cpp'), "wlapack", [ "LAPACK" ])
     ctx.build_espreso(ctx.path.ant_glob('src/wrappers/mkl/**/*.cpp'), "wmkl", [ "MKL" ])
     if ctx.env.HAVE_CUDA:
@@ -250,7 +250,7 @@ def settings(ctx):
     libsmsg("                         mesh generators", [ "gmsh", "nglib" ])
     libsmsg("                      graph partitioners", [ "metis", "scotch", "kahip"])
     libsmsg("          distributed graph partitioners", [ "parmetis", "ptscotch" ])
-    libsmsg("                          BLAS libraries", [ "mkl", "cblas" ])
+    libsmsg("                          BLAS libraries", [ "mkl", "blas" ])
     libsmsg("                        SpBLAS libraries", [ "mkl", "suitesparse" ])
     libsmsg("                        LAPACK libraries", [ "mkl", "lapack" ])
     libsmsg("                          sparse solvers", [ "mkl", "suitesparse" ])

@@ -1,4 +1,4 @@
-ml SuiteSparse/5.10.1-foss-2021a-METIS-5.1.0 ParMETIS/4.0.3-foss-2020b OpenMPI/4.1.1-GCC-10.2.0 Python/3.8.6-GCCcore-10.2.0 git/2.31.1 PAPI/6.0.0-GCCcore-10.2.0
+ml SuiteSparse/5.10.1-foss-2021a-METIS-5.1.0 ParMETIS/4.0.3-foss-2020b OpenMPI/4.1.1-GCC-10.2.0 LAPACK/3.9.1-GCC-10.2.0 PAPI/6.0.0-GCCcore-10.2.0
 
 export CXX=mpic++
 export BLAS_LIBRARIES=openblas

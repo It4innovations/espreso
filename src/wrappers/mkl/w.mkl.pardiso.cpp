@@ -10,9 +10,6 @@
 
 namespace espreso {
 
-template struct DirectSolver<Matrix_CSR, double, int>;
-template struct DirectSolver<Matrix_CSR, std::complex<double>, int>;
-
 struct Matrix_CSR_Solver: public PARDISOParameters { };
 
 struct Matrix_Solver_External_Representation: PARDISOParameters { };
@@ -182,6 +179,9 @@ void DirectSolver<Matrix, T, I>::getSC(Matrix_Dense<T, I> &sc)
 		}
 	}
 }
+
+template struct DirectSolver<Matrix_CSR, double, int>;
+template struct DirectSolver<Matrix_CSR, std::complex<double>, int>;
 
 }
 

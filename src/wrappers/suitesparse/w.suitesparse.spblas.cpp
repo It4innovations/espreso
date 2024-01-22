@@ -7,7 +7,7 @@
 #ifndef HAVE_MKL
 #ifdef HAVE_SUITESPARSE
 
-#include "wrappers/suitesparse/w.suitesparse.cholmod.h"
+#include "w.suitesparse.cholmod.h"
 
 namespace espreso {
 
