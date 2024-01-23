@@ -3,6 +3,10 @@ def options(opt):
     pass
 
 def configure(ctx):
-    headers = "cholmod.h"
+    headers_direct = "cholmod.h"
+    headers_subdir = "suitesparse/cholmod.h"
     libs = ["cholmod"]
-    ctx.check_cxx(mandatory=False, msg="Checking for 'suitesparse'", okmsg=" ".join(libs), define_name="HAVE_SUITESPARSE", header_name=headers, lib=libs, uselib_store="SUITESPARSE")
+    if ctx.check_cxx(mandatory=False, msg="Checking for 'suitesparse'", okmsg=" ".join(libs), define_name="HAVE_SUITESPARSE", header_name=headers_direct, lib=libs, uselib_store="SUITESPARSE"):
+        ctx.env.append_unique("DEFINES", "SUITESPARSE_HEADER_DIRECT")
+    elif ctx.check_cxx(mandatory=False, msg="Checking for 'suitesparse'", okmsg=" ".join(libs), define_name="HAVE_SUITESPARSE", header_name=headers_subdir, lib=libs, uselib_store="SUITESPARSE"):
+        ctx.env.append_unique("DEFINES", "SUITESPARSE_HEADER_SUBDIR")
