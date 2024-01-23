@@ -1,35 +1,37 @@
 
-#include "pcpg.h"
+#include "orthopcpg.h"
 
-#include "basis/utilities/sysutils.h"
 #include "esinfo/ecfinfo.h"
 #include "esinfo/eslog.hpp"
+#include "math/math.h"
 #include "feti/projector/projector.h"
 #include "feti/dualoperator/dualoperator.h"
 #include "feti/preconditioner/preconditioner.h"
 
 namespace espreso {
 
+// https://digital.library.unt.edu/ark:/67531/metadc739671/m2/1/high_res_d/792775.pdf
+// page 15
+
 // initialization
 // l_0: L => Gt * inv(GGt) * e
 // r_0: L => d - F * lambda_0
 // w_0: L => r_0 - Gt * inv(GGt) * G * r_0 :: (I - Q) * r_0
-// y_0: L -> r_0 - Gt * inv(GGt) * G * S * w_0 :: (I - Q) * S * w_0
 // p_0: L => w_0
 
 // loop
-// gamma_k: 1 => (y_k,w_k) / (p_k, F * p_k)
+// gamma_k: 1 => (w_k,w_k) / (p_k, F * p_k)
 //   x_k+1: L => x_k + gama_k * p_k
 //   r_k+1: L => r_k - gama_k * F * p_k
 //   w_k+1: L => r_k+1 - Gt * inv(GGt) * G * r_k+1 :: (I - Q) * r_k+1
-//   y_k+1: L => (I - Q) * S * w_k+1
-//  beta_k: 1 => (y_k+1,w_k+1) / (p_k,w_k)
-//   p_k+1: L => y_k+1 + beta_k * p_k
+//   y_k+1: L => w_k+1 - Gt * inv(GGt) * G * w_k+1 :: (I - Q) * w_k+1
+
+//   p_k+1: L => w_k+1 - SUM{0->i}[ ((w_k+1, F * p_i) / (p_i, F * p_i)) * p_i ]
 
 template <typename T>
-void PCPG<T>::info()
+void OrthogonalizedPCPG<T>::info()
 {
-	eslog::info(" = PRECONDITIONED CONJUGATE PROJECTED GRADIENT SETTINGS                                      = \n");
+	eslog::info(" = ORTHOGONAL PRECONDITIONED CONJUGATE PROJECTED GRADIENT SETTINGS                           = \n");
 	switch (feti.configuration.stopping_criterion) {
 	case FETIConfiguration::STOPPING_CRITERION::RELATIVE:
 		eslog::info(" =   STOPPING CRITERION                                                             RELATIVE = \n");
@@ -51,7 +53,7 @@ void PCPG<T>::info()
 }
 
 template <typename T>
-PCPG<T>::PCPG(FETI<T> &feti)
+OrthogonalizedPCPG<T>::OrthogonalizedPCPG(FETI<T> &feti)
 : IterativeSolver<T>(feti)
 {
 	l.resize();
@@ -59,17 +61,24 @@ PCPG<T>::PCPG(FETI<T> &feti)
 	w.resize();
 	y.resize();
 	z.resize();
-	p.resize();
-
 	x.resize();
-	Fp.resize();
+
+	pi.resize();
+	Fpi.resize();
+	yFp.reserve(pi.initial_space);
+	pFp.reserve(pi.initial_space);
 }
 
-template <> void PCPG<double>::solve(const step::Step &step, IterativeSolverInfo &info)
+template <> void OrthogonalizedPCPG<double>::solve(const step::Step &step, IterativeSolverInfo &info)
 {
 	DualOperator<double> *F = feti.dualOperator;
 	Projector<double> *P = feti.projector;
 	Preconditioner<double> *S = feti.preconditioner;
+
+	Vector_Dual<double> p, Fp;
+	pi.next(p);
+
+	Vector_Dense<double> _yFp;
 
 	P->applyGtInvGGt(P->e, l);             // l = Gt * inv(GGt) * e
 
@@ -87,60 +96,64 @@ template <> void PCPG<double>::solve(const step::Step &step, IterativeSolverInfo
 	double yw = y.dot(w);
 	setInfo(info, feti.configuration, yw);
 
-	eslog::checkpointln("FETI: CPG INITIALIZATION");
-	eslog::startln("PCPG: ITERATIONS STARTED", "pcpg");
+	eslog::checkpointln("FETI: PCPG INITIALIZATION");
+	eslog::startln("ORTHOGONAL PCPG: ITERATIONS STARTED", "orthopcpg");
 	while (!info.converged) {
-		// gamma = (y, w) / (p, F * p)
+		// gamma = (w, w) / (p, F * p)
+		Fpi.next(Fp);
 		F->apply(p, Fp);
-		eslog::accumulatedln("pcpg: apply F");
-		double pFp = p.dot(Fp), gamma = yw / pFp;
-		eslog::accumulatedln("pcpg: dot(p, Fp)");
+		eslog::accumulatedln("orthopcpg: apply F");
+		pFp.push_back(p.dot(Fp));
+		double gamma = yw / pFp.back();
+		eslog::accumulatedln("orthopcpg: dot(p, Fp)");
 
 		// x = x + gamma * p
 		// r = r - gamma * F * p
 		x.add(gamma, p);
 		r.add(-gamma, Fp);
-		eslog::accumulatedln("pcpg: update x, r");
+		eslog::accumulatedln("orthopcpg: update x, r");
 
 		// w = P * r
 		P->apply(r, w);
-		eslog::accumulatedln("pcpg: apply P * r");
+		eslog::accumulatedln("orthopcpg: apply P");
 
 		// z = S * w
 		S->apply(w, z);
-		eslog::accumulatedln("pcpg: apply S * w");
+		eslog::accumulatedln("orthopcpg: apply S * w");
 
 		// y = P * z
 		P->apply(z, y);
-		eslog::accumulatedln("pcpg: apply P * z");
+		eslog::accumulatedln("orthopcpg: apply P * z");
 
-		// beta = (y+1, w+1) / (y, w)
-		double _yw = y.dot(w), beta = _yw / yw;
-		eslog::accumulatedln("pcpg: dot(y, w)");
-
-		// p = y + beta * p  (y is not used anymore)
-		y.add(beta, p); y.swap(p);
-		eslog::accumulatedln("pcpg: update p");
+		// p = w - SUM{0->i}[ ((w, F * p_i) / (p_i, F * p_i)) * p_i ]
+		yFp.push_back(0); _yFp.vals = yFp.data(); _yFp.size = yFp.size();
+		Fpi.apply(y, _yFp);
+		for (size_t i = 0; i < yFp.size(); ++i) {
+			_yFp.vals[i] /= -pFp[i];
+		}
+		pi.next(p);
+		pi.applyT(_yFp, p);
+		math::add(p, 1., y);
+		eslog::accumulatedln("orthopcpg: orthogonalization");
 
 		updateInfo(info, feti.configuration, yw, 0, 0);
-		yw = _yw; // keep yw for the next iteration
-		eslog::accumulatedln("pcpg: check criteria");
+		yw = y.dot(w);
+		eslog::accumulatedln("orthopcpg: check criteria");
 	}
-	eslog::endln("pcpg: finished");
-	eslog::checkpointln("FETI: PCPG ITERATIONS");
+	eslog::endln("orthopcpg: finished");
+	eslog::checkpointln("FETI: ORTHOGONAL PCPG ITERATIONS");
 	reconstructSolution(x, r);
 	eslog::checkpointln("FETI: SOLUTION RECONSTRUCTION");
 	eslog::info("       = ----------------------------------------------------------------------------- = \n");
 }
 
-template <> void PCPG<std::complex<double> >::solve(const step::Step &step, IterativeSolverInfo &info)
+template <> void OrthogonalizedPCPG<std::complex<double> >::solve(const step::Step &step, IterativeSolverInfo &info)
 {
 
 }
 
-template class PCPG<double>;
-template class PCPG<std::complex<double> >;
+template class OrthogonalizedPCPG<double>;
+template class OrthogonalizedPCPG<std::complex<double> >;
 
 }
-
 

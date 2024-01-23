@@ -43,7 +43,7 @@ bool FETI<T>::set(const step::Step &step)
 		sinfo.R2size = offset[1] = size[3] += R2[d].nrows;
 	}
 	sinfo.lambdasLocal = lambdas.size;
-	size[4] = sinfo.lambdasLocal - lambdas.nhalo + lambdas.dirichlet;
+	size[4] = sinfo.lambdasLocal - lambdas.nhalo;
 
 	Communication::exscan(offset, NULL, 2, MPITools::getType<esint>().mpitype, MPI_SUM);
 	Communication::allReduce(size, NULL, 5, MPITools::getType<esint>().mpitype, MPI_SUM);
@@ -54,7 +54,7 @@ bool FETI<T>::set(const step::Step &step)
 	sinfo.R1offset = info::mpi::rank ? offset[0] : 0;
 	sinfo.R2offset = info::mpi::rank ? offset[1] : 0;
 
-	Vector_Dual<T>::set(lambdas.dirichlet, lambdas.nhalo, lambdas.cmap, *decomposition);
+	Vector_Dual<T>::set(lambdas.nhalo, lambdas.cmap, *decomposition);
 	Vector_Kernel<T>::set(sinfo.R1offset, sinfo.R1size, sinfo.R1totalSize);
 
 	eslog::checkpointln("FETI: SET INFO");
@@ -103,22 +103,25 @@ bool FETI<T>::solve(const step::Step &step)
 	case IterativeSolverInfo::ERROR::OK: break;
 	case IterativeSolverInfo::ERROR::STAGNATION:
 
-		eslog::info("       = FETI SOLVER ERROR                                   NONDECREASING CONVERGENCE = \n");
+		eslog::warning("       = FETI SOLVER ERROR                                   NONDECREASING CONVERGENCE = \n");
 		break;
 	case IterativeSolverInfo::ERROR::MAX_ITERATIONS_REACHED:
-		eslog::info("       = FETI SOLVER ERROR                                  MAXIMUM ITERATIONS REACHED = \n");
+		eslog::warning("       = FETI SOLVER ERROR                                  MAXIMUM ITERATIONS REACHED = \n");
 		break;
 	case IterativeSolverInfo::ERROR::INVALID_DATA:
-		eslog::info("       = FETI SOLVER ERROR                                          INVALID INPUT DATA = \n");
+		eslog::warning("       = FETI SOLVER ERROR                                          INVALID INPUT DATA = \n");
 		break;
 	case IterativeSolverInfo::ERROR::CONVERGENCE_ERROR:
-		eslog::info("       = FETI SOLVER ERROR              SOLVER DOES NOT CONVERGE TO THE REQUESTED NORM = \n");
+		eslog::warning("       = FETI SOLVER ERROR              SOLVER DOES NOT CONVERGE TO THE REQUESTED NORM = \n");
 		break;
+	}
+	if (configuration.exit_on_nonconvergence && info.error != IterativeSolverInfo::ERROR::OK) {
+		eslog::globalerror("FETI solver did not converge.\n");
 	}
 	eslog::info("       = ITERATIONS TOTAL                                                    %9d = \n", info.iterations);
 	eslog::info("       = FETI SOLVER TIME                                                   %8.3f s = \n", eslog::time() - start);
 	eslog::info("       = ----------------------------------------------------------------------------- = \n");
-	return true;
+	return info.error == IterativeSolverInfo::ERROR::OK;
 }
 
 }

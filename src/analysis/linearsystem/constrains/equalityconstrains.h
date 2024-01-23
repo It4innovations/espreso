@@ -17,6 +17,7 @@ struct EqualityConstrains {
 
 protected:
 	FETI<T> &feti;
+	std::vector<size_t> doffset;
 };
 
 }

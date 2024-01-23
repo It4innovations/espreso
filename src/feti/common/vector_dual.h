@@ -15,7 +15,7 @@ struct Vector_Dual: public Vector_Dense<T, int> {
 
 	template <typename Type> friend struct Matrix_Dual_Orthogonal;
 
-	static void set(esint dirichlet, esint nhalo, const std::vector<esint> &cmap, const DOFsDecomposition &decomposition);
+	static void set(esint nhalo, const std::vector<esint> &cmap, const DOFsDecomposition &decomposition);
 
 	void resize();
 	void synchronize();
@@ -28,15 +28,14 @@ struct Vector_Dual: public Vector_Dense<T, int> {
 	double dot() const;
 
 protected:
-	static esint dirichlet, nhalo, size;
+	static esint nhalo, localSize;
 	static std::vector<int> nmap, neighbors;
 	static std::vector<std::vector<T> > sBuffer, rBuffer;
 
 };
 
-template <typename T> esint Vector_Dual<T>::dirichlet;
 template <typename T> esint Vector_Dual<T>::nhalo;
-template <typename T> esint Vector_Dual<T>::size;
+template <typename T> esint Vector_Dual<T>::localSize;
 template <typename T> std::vector<int> Vector_Dual<T>::nmap;
 template <typename T> std::vector<int> Vector_Dual<T>::neighbors;
 template <typename T> std::vector<std::vector<T> > Vector_Dual<T>::sBuffer;

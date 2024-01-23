@@ -60,6 +60,11 @@ espreso::FETIConfiguration::FETIConfiguration()
 			.setdescription({ "Max stagnation steps." })
 			.setdatatype({ ECFDataType::POSITIVE_INTEGER }));
 
+	exit_on_nonconvergence = true;
+	REGISTER(exit_on_nonconvergence, ECFMetaData()
+			.setdescription({ "Finish when FETI solver does not converge." })
+			.setdatatype({ ECFDataType::BOOL }));
+
 	num_directions = 3;
 	REGISTER(num_directions, ECFMetaData()
 			 .setdescription({ "Number of plane wave directions" })

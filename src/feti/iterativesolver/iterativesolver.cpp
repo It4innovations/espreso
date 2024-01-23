@@ -4,6 +4,7 @@
 #include "cpg.h"
 #include "pcpg.h"
 #include "orthocpg.h"
+#include "orthopcpg.h"
 #include "math/math.h"
 #include "feti/projector/projector.h"
 #include "feti/dualoperator/dualoperator.h"
@@ -34,8 +35,7 @@ IterativeSolver<T>* IterativeSolver<T>::set(FETI<T> &feti, const step::Step &ste
 			return new OrthogonalizedCPG<T>(feti);
 		} else {
 			eslog::info(" = ITERATIVE SOLVER       PRECONDITIONED CONJUGATE PROJECTED GRADIENT WITH ORTHOGONALIZATION = \n");
-//			return new OrthogonalizedPCPG<T>(feti);
-			return new OrthogonalizedCPG<T>(feti);
+			return new OrthogonalizedPCPG<T>(feti);
 		}
 	case FETIConfiguration::ITERATIVE_SOLVER::GMRES:
 	case FETIConfiguration::ITERATIVE_SOLVER::BICGSTAB:

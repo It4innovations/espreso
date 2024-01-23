@@ -142,6 +142,7 @@ struct FETIConfiguration: public ECFDescription {
 	size_t print_iteration;
 	size_t max_iterations;
 	size_t max_stagnation;
+	bool exit_on_nonconvergence;
 	size_t num_directions;
 
 	METHOD method;

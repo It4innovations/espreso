@@ -26,7 +26,7 @@ DualOperator<T>* DualOperator<T>::set(FETI<T> &feti, const step::Step &step)
 			eslog::info(" = DUAL OPERATOR                                                  EXPLICIT TOTAL FETI ON GPU = \n");
 			dual = new TotalFETIExplicitAcc<T>(feti);
 		} else {
-			eslog::globalerror("Linked third party solver does not provide factors that are required for requested dual operator.\n");
+			eslog::globalerror("Third party software problem: solver does not provide factors that are required for EXPLICIT TOTAL FETI ON GPU.\n");
 		}
 		break;
 	}

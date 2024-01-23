@@ -116,7 +116,7 @@ template <> void OrthogonalizedCPG<double>::solve(const step::Step &step, Iterat
 			_wFp.vals[i] /= -pFp[i];
 		}
 		pi.next(p);
-		pi.applyT(wFp.size(), _wFp, p);
+		pi.applyT(_wFp, p);
 		math::add(p, 1., w);
 		eslog::accumulatedln("orthocpg: orthogonalization");
 

@@ -13,9 +13,8 @@
 namespace espreso {
 
 template <typename T>
-void Vector_Dual<T>::set(esint dirichlet, esint nhalo, const std::vector<esint> &cmap, const DOFsDecomposition &decomposition)
+void Vector_Dual<T>::set(esint nhalo, const std::vector<esint> &cmap, const DOFsDecomposition &decomposition)
 {
-	Vector_Dual<T>::dirichlet = dirichlet;
 	Vector_Dual<T>::nhalo = nhalo;
 	Vector_Dual<T>::neighbors.assign(decomposition.neighbors.begin(), decomposition.neighbors.end());
 	Vector_Dual<T>::sBuffer.resize(Vector_Dual<T>::neighbors.size());
@@ -25,8 +24,8 @@ void Vector_Dual<T>::set(esint dirichlet, esint nhalo, const std::vector<esint> 
 	for (size_t i = 0; i < cmap.size(); ) {
 		esint lambdas = cmap[i];
 		esint domains = cmap[i + 1];
-		Vector_Dual<T>::nmap.push_back(Vector_Dual<T>::size);
-		Vector_Dual<T>::nmap.push_back(Vector_Dual<T>::size + lambdas);
+		Vector_Dual<T>::nmap.push_back(Vector_Dual<T>::localSize);
+		Vector_Dual<T>::nmap.push_back(Vector_Dual<T>::localSize + lambdas);
 		size_t ncounter = Vector_Dual<T>::nmap.size();
 		Vector_Dual<T>::nmap.push_back(0); // neighbors
 		esint last = -1;
@@ -44,7 +43,7 @@ void Vector_Dual<T>::set(esint dirichlet, esint nhalo, const std::vector<esint> 
 		if (Vector_Dual<T>::nmap[ncounter] == 0) {
 			Vector_Dual<T>::nmap.resize(Vector_Dual<T>::nmap.size() - 3);
 		}
-		Vector_Dual<T>::size += lambdas;
+		Vector_Dual<T>::localSize += lambdas;
 		i += cmap[i + 1] + 2;
 	}
 
@@ -57,7 +56,7 @@ void Vector_Dual<T>::set(esint dirichlet, esint nhalo, const std::vector<esint> 
 template <typename T>
 void Vector_Dual<T>::resize()
 {
-	Vector_Dense<T>::resize(Vector_Dual<T>::size);
+	Vector_Dense<T>::resize(Vector_Dual<T>::localSize);
 }
 
 template <typename T>
@@ -103,15 +102,11 @@ template <typename T>
 void Vector_Dual<T>::copyToWithoutHalo(Vector_Dense<T> &to) const
 {
 	#pragma omp parallel for
-	for (esint i = 0; i < dirichlet; ++i) {
-		to.vals[i] = this->vals[i];
-	}
-	#pragma omp parallel for
-	for (esint i = dirichlet; i < nhalo; ++i) {
+	for (esint i = 0; i < nhalo; ++i) {
 		to.vals[i] = 0;
 	}
 	#pragma omp parallel for
-	for (esint i = nhalo; i < size; ++i) {
+	for (esint i = nhalo; i < this->size; ++i) {
 		to.vals[i] = this->vals[i];
 	}
 }
@@ -138,10 +133,6 @@ template <>
 double Vector_Dual<double>::dot(const Vector_Dense<double> &other) const
 {
 	double sum = 0;
-	#pragma omp parallel for reduction(+:sum)
-	for (esint i = 0; i < dirichlet; ++i) {
-		sum += other.vals[i] * this->vals[i];
-	}
 	#pragma omp parallel for reduction(+:sum)
 	for (esint i = nhalo; i < size; ++i) {
 		sum += other.vals[i] * this->vals[i];

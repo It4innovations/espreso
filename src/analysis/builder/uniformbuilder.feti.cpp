@@ -156,7 +156,7 @@ void UniformBuilderFETIPattern::fillDecomposition(FETIConfiguration &feti, int d
 
 	switch (feti.ordering) {
 	case FETIConfiguration::ORDERING::ORDERED:
-		// order: inner, dirichlet, lambdas
+		// order: inner, lambdas, dirichlet
 		{ // go through the rest dofs
 			esint index = 0;
 			auto fix = decomposition.fixedDOFs.begin();
@@ -170,18 +170,6 @@ void UniformBuilderFETIPattern::fillDecomposition(FETIConfiguration &feti, int d
 						}
 					}
 					if (fix != decomposition.fixedDOFs.end() && *fix == dofs * index + dof) ++fix;
-				}
-			}
-		}
-		// go through dirichlet
-		for (auto i = decomposition.fixedDOFs.begin(); i != decomposition.fixedDOFs.end(); ++i) {
-			auto domains = info::mesh->nodes->domains->begin() + *i / dofs;
-			auto dmap = decomposition.dmap->begin() + *i;
-			auto di = dmap->begin();
-			for (auto d = domains->begin(); d != domains->end(); ++d, ++di) {
-				di->domain = *d;
-				if (decomposition.ismy(*d)) {
-					di->index = elements[*d - decomposition.dbegin].size++;
 				}
 			}
 		}
@@ -203,6 +191,18 @@ void UniformBuilderFETIPattern::fillDecomposition(FETIConfiguration &feti, int d
 						}
 					}
 					if (fix != decomposition.fixedDOFs.end() && *fix == dofs * index + dof) ++fix;
+				}
+			}
+		}
+		// go through dirichlet
+		for (auto i = decomposition.fixedDOFs.begin(); i != decomposition.fixedDOFs.end(); ++i) {
+			auto domains = info::mesh->nodes->domains->begin() + *i / dofs;
+			auto dmap = decomposition.dmap->begin() + *i;
+			auto di = dmap->begin();
+			for (auto d = domains->begin(); d != domains->end(); ++d, ++di) {
+				di->domain = *d;
+				if (decomposition.ismy(*d)) {
+					di->index = elements[*d - decomposition.dbegin].size++;
 				}
 			}
 		}
