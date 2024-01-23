@@ -11,7 +11,7 @@
 
 namespace espreso {
 
-template <template<typename, typename, template<typename> typename> typename Vector, typename T>
+template <template<typename, typename> typename Vector, typename T>
 class Vector_FETI: public Vector_Base<T> {
 
 	void _store(double &out, const double &in) { out = in; }
@@ -53,6 +53,18 @@ public:
 				if (decomposition->ismy(di->domain)) {
 					_store(output[i], domains[di->domain - decomposition->dbegin].vals[di->index]);
 					break; // we assume synchronization inside the solver
+				}
+			}
+		}
+	}
+
+	void setFrom(std::vector<double> &output)
+	{
+		auto dmap = decomposition->dmap->cbegin();
+		for (size_t i = 0; i < output.size(); ++i, ++dmap) {
+			for (auto di = dmap->begin(); di != dmap->end(); ++di) {
+				if (decomposition->ismy(di->domain)) {
+					_store(domains[di->domain - decomposition->dbegin].vals[di->index], output[i]);
 				}
 			}
 		}
@@ -164,7 +176,7 @@ public:
 		}
 	}
 
-	std::vector<Vector<T, int, cpu_allocator> > domains;
+	std::vector<Vector<T, int> > domains;
 	DOFsDecomposition *decomposition;
 };
 

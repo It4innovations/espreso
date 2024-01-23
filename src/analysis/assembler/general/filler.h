@@ -71,9 +71,7 @@ template <size_t nodes>
 struct MatricFillerKernel: DataFiller {
 	MatricFillerKernel(const DataFiller &base): DataFiller(base) {}
 
-	// TODO: direct store
-	template <typename Element>
-	void simd(Element &element)
+	void simd(SIMD matrix[])
 	{
 		size_t size = nodes * dofs;
 		size_t count = std::min((size_t)SIMD::size, elements);
@@ -82,7 +80,7 @@ struct MatricFillerKernel: DataFiller {
 			for (size_t s = 0, i = 0; s < count; ++s) {
 				for (size_t r = 0; r < size; ++r) {
 					for (size_t c = 0; c < size; ++c, ++i) {
-						out[position[i]] += element.K[(r * size + c)][s];
+						out[position[i]] += matrix[(r * size + c)][s];
 					}
 				}
 			}
@@ -92,7 +90,7 @@ struct MatricFillerKernel: DataFiller {
 			for (size_t s = 0, i = 0; s < count; ++s) {
 				for (size_t r = 0; r < size; ++r) {
 					for (size_t c = r; c < size; ++c, ++i) {
-						out[position[i]] += element.K[(r * size + c)][s];
+						out[position[i]] += matrix[(r * size + c)][s];
 					}
 				}
 			}
@@ -102,7 +100,7 @@ struct MatricFillerKernel: DataFiller {
 			for (size_t s = 0, i = 0; s < count; ++s) {
 				for (size_t r = 0; r < size; ++r) {
 					for (size_t c = 0; c <= r; ++c, ++i) {
-						out[position[i]] += element.K[(r * size + c)][s];
+						out[position[i]] += matrix[(r * size + c)][s];
 					}
 				}
 			}
@@ -111,7 +109,7 @@ struct MatricFillerKernel: DataFiller {
 		}
 		elements -= count;
 		for (size_t i = 0; i < size * size; ++i) {
-			element.K[i] = zeros();
+			matrix[i] = zeros();
 		}
 	}
 };
@@ -120,42 +118,19 @@ template <size_t nodes>
 struct RHSFillerKernel: DataFiller {
 	RHSFillerKernel(const DataFiller &base): DataFiller(base) {}
 
-	template <typename Element>
-	void simd(Element &element)
+	void simd(SIMD vector[])
 	{
 		size_t size = nodes * dofs;
 		size_t count = std::min((size_t)SIMD::size, elements);
 		for (size_t s = 0, i = 0; s < count; ++s) {
 			for (size_t r = 0; r < size; ++r, ++i) {
-				out[position[i]] += element.f[r][s];
+				out[position[i]] += vector[r][s];
 			}
 		}
 		position += count * size;
 		elements -= count;
 		for (size_t i = 0; i < size; ++i) {
-			element.f[i] = zeros();
-		}
-	}
-};
-
-template <size_t nodes>
-struct nRHSFillerKernel: DataFiller {
-	nRHSFillerKernel(const DataFiller &base): DataFiller(base) {}
-
-	template <typename Element>
-	void simd(Element &element)
-	{
-		size_t size = nodes * dofs;
-		size_t count = std::min((size_t)SIMD::size, elements);
-		for (size_t s = 0, i = 0; s < count; ++s) {
-			for (size_t r = 0, j = 0; r < size; ++r, ++i, ++j) {
-				out[position[i]] += element.nf[j][s];
-			}
-		}
-		position += count * size;
-		elements -= count;
-		for (size_t i = 0; i < size; ++i) {
-			element.nf[i] = zeros();
+			vector[i] = zeros();
 		}
 	}
 };

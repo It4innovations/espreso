@@ -265,6 +265,9 @@ void HeatTransfer::analyze()
 			}
 		}
 		subkernels[i].K.activate(model);
+		if (configuration.type == LoadStepSolverConfiguration::TYPE::TRANSIENT) {
+			subkernels[i].M.activate();
+		}
 
 		if (Results::gradient != nullptr) {
 			subkernels[i].gradient.activate(i, Results::gradient);
@@ -276,11 +279,9 @@ void HeatTransfer::analyze()
 //			subkernels[i].advection.action |= SubKernel::SOLUTION;
 		}
 
+		subkernels[i].initTemperature.activate(getExpression(i, settings.initial_temperature));
 		if (Results::gradient != nullptr || Results::flux != nullptr || gptemp) {
 			subkernels[i].temperature.activate(info::mesh->elements->nodes->cbegin() + info::mesh->elements->eintervals[i].begin, info::mesh->elements->nodes->cend(), Results::temperature->data.data(), gptemp);
-			if (!gptemp) {
-				subkernels[i].temperature.action = SubKernel::SOLUTION;
-			}
 		}
 	}
 
@@ -321,8 +322,12 @@ void HeatTransfer::analyze()
 
 	for (auto it = configuration.temperature.begin(); it != configuration.temperature.end(); ++it) {
 		size_t r = info::mesh->bregionIndex(it->first);
-		for (size_t t = 0; t < info::mesh->boundaryRegions[r]->nodes->threads(); ++t) {
+		const BoundaryRegionStore *region = info::mesh->boundaryRegions[r];
+		for (size_t t = 0; t < region->nodes->threads(); ++t) {
 			boundary[r][t].temperature.activate(it->second);
+			if (settings.init_temp_respect_bc) {
+				boundary[r][t].initialTemperature.activate(region->nodes->cbegin(t), region->nodes->cend(), Results::temperature->data.data(), false);
+			}
 		}
 	}
 
@@ -346,6 +351,8 @@ void HeatTransfer::analyze()
 			boundary[r][i].surface = surface[r];
 		}
 	}
+	Results::initialTemperature->data = Results::temperature->data;
+
 
 	eslog::info("  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  \n");
 	eslog::info("  SIMD SIZE                                                                                 %lu \n", SIMD::size);
@@ -416,9 +423,14 @@ void HeatTransfer::run(SubKernel::Action action, size_t region, size_t interval)
 
 void HeatTransfer::evaluate(step::Time &time, Matrix_Base<double> *K, Matrix_Base<double> *M, Vector_Base<double> *f, Vector_Base<double> *nf, Vector_Base<double> *dirichlet)
 {
-	reset(K, f, dirichlet);
+	reset(K, M, f, dirichlet);
 	assemble(SubKernel::ASSEMBLE);
-	update(K, f);
+	update(K, M, f);
+}
+
+void HeatTransfer::getInitialTemperature(Vector_Base<double> *x)
+{
+	x->setFrom(Results::initialTemperature->data);
 }
 
 void HeatTransfer::updateSolution(Vector_Base<double> *x)

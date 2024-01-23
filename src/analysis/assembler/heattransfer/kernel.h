@@ -171,6 +171,12 @@ void setElementKernel(HeatTransferElementOperators &subkernels, SubKernel::Actio
 		}
 	}
 
+	if (subkernels.initTemperature.expression) {
+		subkernels.expressions.node.push_back(new ExternalNodeExpression<ndim, Element>(
+				subkernels.initTemperature.expression->evaluator,
+				[] (Element &element, size_t &n, size_t &s, double value) { element.temperature.initial[n][s] = value; }));
+	}
+
 	if (subkernels.heatSource.expression) {
 		subkernels.expressions.gp.push_back(new ExternalGPsExpression<ndim, Element>(
 				subkernels.heatSource.expression->evaluator,
@@ -190,14 +196,39 @@ void setElementKernel(HeatTransferElementOperators &subkernels, SubKernel::Actio
 
 	BasisKernel<code, nodes, gps, edim> basis(subkernels.basis);
 	CoordinatesKernel<nodes, ndim> coordinates(subkernels.coordinates);
+	InitialTemperatureKernel<nodes> temperature(subkernels.temperature);
 	IntegrationKernel<nodes, ndim, edim> integration(subkernels.integration);
 	ThicknessToNodes<nodes, ndim> thickness(subkernels.thickness);
+
+	struct {
+		std::vector<ExternalNodeExpression<ndim, Element>*> node;
+		std::vector<ExternalGPsExpression<ndim, Element>*> gp;
+	} nonconst;
+
+	for (size_t i = 0; i < subkernels.expressions.node.size(); ++i) {
+		ExternalNodeExpression<ndim, Element>* exp = dynamic_cast<ExternalNodeExpression<ndim, Element>*>(subkernels.expressions.node[i]);
+		if (subkernels.expressions.node[i]->evaluator->isConst()) {
+			for (size_t n = 0; n < nodes; ++n) {
+				exp->simd(element, n);
+			}
+		} else {
+			nonconst.node.push_back(exp);
+		}
+	}
 
 	SIMD volume;
 	basis.simd(element);
 	for (size_t c = 0; c < subkernels.chunks; ++c) {
 		coordinates.simd(element);
 		thickness.simd(element);
+
+		for (size_t i = 0; i < nonconst.node.size(); ++i) {
+			for (size_t n = 0; n < nodes; ++n) {
+				nonconst.node[i]->simd(element, n);
+			}
+		}
+
+		temperature.simd(element);
 
 		for (size_t gp = 0; gp < gps; ++gp) {
 			integration.simd(element, gp);
@@ -227,9 +258,11 @@ void runElementKernel(const HeatTransferElementOperators &subkernels, SubKernel:
 	HeatSourceKernel<nodes> heatSource(subkernels.heatSource);
 	AdvectionKernel<nodes, ndim> advection(subkernels.advection);
 	MatrixConductivityKernel<nodes, ndim> K(subkernels.K);
+	MatrixMassKernel<nodes> M(subkernels.M);
 	TemperatureGradientKernel<nodes, gps, ndim> gradient(subkernels.gradient);
 	TemperatureFluxKernel<nodes, gps, ndim> flux(subkernels.flux);
 	MatricFillerKernel<nodes> outK(subkernels.Kfiller);
+	MatricFillerKernel<nodes> outM(subkernels.Mfiller);
 	RHSFillerKernel<nodes> outRHS(subkernels.RHSfiller);
 
 	struct {
@@ -271,7 +304,7 @@ void runElementKernel(const HeatTransferElementOperators &subkernels, SubKernel:
 	heatSource.setActiveness(action);
 	advection.setActiveness(action);
 	K.setActiveness(action);
-//	M.setActiveness(action);
+	M.setActiveness(action);
 	gradient.setActiveness(action);
 	flux.setActiveness(action);
 
@@ -322,6 +355,9 @@ void runElementKernel(const HeatTransferElementOperators &subkernels, SubKernel:
 			if (K.isactive) {
 				K.simd(element, gp);
 			}
+			if (M.isactive) {
+				M.simd(element, gp);
+			}
 			if (gradient.isactive) {
 				gradient.simd(element, gp);
 			}
@@ -339,10 +375,13 @@ void runElementKernel(const HeatTransferElementOperators &subkernels, SubKernel:
 		}
 
 		if (outK.isactive) {
-			outK.simd(element);
+			outK.simd(element.K);
+		}
+		if (outM.isactive) {
+			outM.simd(element.M);
 		}
 		if (outRHS.isactive) {
-			outRHS.simd(element);
+			outRHS.simd(element.f);
 		}
 	}
 }
@@ -451,7 +490,7 @@ void runBoundaryKernel(const HeatTransferBoundaryOperators &subkernels, SubKerne
 		}
 
 		if (outRHS.isactive) {
-			outRHS.simd(element);
+			outRHS.simd(element.f);
 		}
 	}
 }
@@ -461,10 +500,33 @@ void setDirichletKernel(HeatTransferBoundaryOperators &subkernels, SubKernel::Ac
 {
 	typedef HeatTransferDirichlet<ndim> Element; Element element;
 	if (subkernels.temperature.expression) {
-		auto setter = [] (Element &element, size_t &n, size_t &s, double value) { element.temperature.node[0][s] = value; };
+		auto setter = [] (Element &element, size_t &n, size_t &s, double value) { element.temperature.node[0][s] = element.temperature.initial[0][s] = value; };
 		switch (info::mesh->dimension) {
 		case 2: subkernels.expressions.node.push_back(new ExternalNodeExpression<2, Element>(subkernels.temperature.expression->evaluator, setter)); break;
 		case 3: subkernels.expressions.node.push_back(new ExternalNodeExpression<3, Element>(subkernels.temperature.expression->evaluator, setter)); break;
+		}
+	}
+
+	CoordinatesKernel<1, ndim> coordinates(subkernels.coordinates);
+	InitialTemperatureKernel<1> initTemperature(subkernels.initialTemperature);
+
+	std::vector<ExternalNodeExpression<ndim, Element>*> nonconst;
+	for (size_t i = 0; i < subkernels.expressions.node.size(); ++i) {
+		ExternalNodeExpression<ndim, Element>* exp = dynamic_cast<ExternalNodeExpression<ndim, Element>*>(subkernels.expressions.node[i]);
+		if (subkernels.expressions.node[i]->evaluator->isConst()) {
+			exp->simd(element, 0);
+		} else {
+			nonconst.push_back(exp);
+		}
+	}
+
+	for (size_t c = 0; c < subkernels.chunks; ++c) {
+		coordinates.simd(element);
+		for (size_t i = 0; i < nonconst.size(); ++i) {
+			nonconst[i]->simd(element, 0);
+		}
+		if (initTemperature.isactive) {
+			initTemperature.simd(element);
 		}
 	}
 }

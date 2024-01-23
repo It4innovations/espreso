@@ -18,6 +18,7 @@
 #include "analysis/assembler/heattransfer/op.flux.h"
 #include "analysis/assembler/heattransfer/op.gradient.h"
 #include "analysis/assembler/heattransfer/op.matrix.conductivity.h"
+#include "analysis/assembler/heattransfer/op.matrix.mass.h"
 #include "analysis/assembler/heattransfer/op.externalheat.h"
 
 namespace espreso {
@@ -37,8 +38,9 @@ struct HeatTransferElementOperators {
 	Integration integration;
 	Conductivity conductivity;
 	Advection advection;
-	BoundaryCondition heatSource;
+	BoundaryCondition heatSource, initTemperature;
 	MatrixConductivity K;
+	MatrixMass M;
 
 	TemperatureGradient gradient;
 	TemperatureFlux flux;
@@ -61,6 +63,7 @@ struct HeatTransferBoundaryOperators {
 	Basis basis;
 	Thickness thickness;
 	Coordinates coordinates;
+	Temperature initialTemperature;
 	Integration integration;
 
 	ExternalExpression temperature;

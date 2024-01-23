@@ -14,6 +14,9 @@ template <typename T>
 Dirichlet<T>::Dirichlet(FETI<T> &feti)
 : Preconditioner<T>(feti)
 {
+	if (feti.configuration.ordering == FETIConfiguration::ORDERING::NATURAL) {
+		eslog::error("natural ordering is not compatible with the Dirichlet preconditioner.\n");
+	}
 	Btx.resize(feti.K.size());
 	KBtx.resize(feti.K.size());
 	sc.resize(feti.K.size());
@@ -78,7 +81,7 @@ void Dirichlet<T>::_print(const step::Step &step)
 	if (info::ecf->output.print_matrices) {
 		eslog::storedata(" STORE: feti/preconditioner/{Dirichlet}\n");
 		for (size_t d = 0; d < feti.K.size(); ++d) {
-			math::store(sc[d], utils::filename(utils::debugDirectory(step) + "/feti/precondition", (std::string("Dirichlet") + std::to_string(d)).c_str()).c_str());
+			math::store(sc[d], utils::filename(utils::debugDirectory(step) + "/feti/precondition", (std::string("dirichlet") + std::to_string(d)).c_str()).c_str());
 		}
 	}
 }

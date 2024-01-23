@@ -77,26 +77,41 @@ void TFETIOrthogonalSymmetric<T>::update(const step::Step &step)
 template<typename T>
 void TFETIOrthogonalSymmetric<T>::apply(const Vector_Dual<T> &x, Vector_Dual<T> &y)
 {
-	x.copyToWithoutHalo(y);
-	_applyG(x, Gx);
-	_applyInvGGt(Gx, iGGtGx);
-	_applyGt(iGGtGx, T{-1}, y);
+	if (GGt.nrows) {
+		x.copyToWithoutHalo(y);
+		_applyG(x, Gx);
+		_applyInvGGt(Gx, iGGtGx);
+		_applyGt(iGGtGx, T{-1}, y);
+	} else {
+		x.copyTo(y);
+	}
 }
 
 template<typename T>
 void TFETIOrthogonalSymmetric<T>::applyGtInvGGt(const Vector_Kernel<T> &x, Vector_Dual<T> &y)
 {
-	math::set(y, T{0});
-	_applyInvGGt(x, iGGtGx);
-	_applyGt(iGGtGx, T{-1}, y);
+	if (GGt.nrows) {
+		math::set(y, T{0});
+		_applyInvGGt(x, iGGtGx);
+		_applyGt(iGGtGx, T{-1}, y);
+	} else {
+		math::set(y, T{0});
+	}
 }
 
 template<typename T>
 void TFETIOrthogonalSymmetric<T>::applyRInvGGtG(const Vector_Dual<T> &x,  std::vector<Vector_Dense<T> > &y)
 {
-	_applyG(x, Gx);
-	_applyInvGGt(Gx, iGGtGx);
-	_applyR(iGGtGx, y);
+	if (GGt.nrows) {
+		_applyG(x, Gx);
+		_applyInvGGt(Gx, iGGtGx);
+		_applyR(iGGtGx, y);
+	} else {
+		#pragma omp parallel for
+		for (size_t d = 0; d < y.size(); ++d) {
+			math::set(y[d], T{0});
+		}
+	}
 }
 
 template<typename T>
@@ -431,19 +446,21 @@ void TFETIOrthogonalSymmetric<T>::_updateGGt()
 	}
 	eslog::checkpointln("FETI: GATHER GGT VALUES");
 
-	DirectSolver<Matrix_CSR, T> GGtSolver;
-	GGtSolver.commit(GGt);
-	GGtSolver.symbolicFactorization();
-	GGtSolver.numericalFactorization();
-	eslog::checkpointln("FETI: GGT FACTORIZATION");
+	if (GGt.nrows) {
+		DirectSolver<Matrix_CSR, T> GGtSolver;
+		GGtSolver.commit(GGt);
+		GGtSolver.symbolicFactorization();
+		GGtSolver.numericalFactorization();
+		eslog::checkpointln("FETI: GGT FACTORIZATION");
 
-	Matrix_Dense<T> eye;
-	eye.resize(G.nrows, feti.sinfo.R1totalSize);
-	math::set(eye, T{});
-	for (esint r = 0; r < G.nrows; ++r) {
-		eye.vals[r * feti.sinfo.R1totalSize + feti.sinfo.R1offset + r] = T{1};
+		Matrix_Dense<T> eye;
+		eye.resize(G.nrows, feti.sinfo.R1totalSize);
+		math::set(eye, T{});
+		for (esint r = 0; r < G.nrows; ++r) {
+			eye.vals[r * feti.sinfo.R1totalSize + feti.sinfo.R1offset + r] = T{1};
+		}
+		GGtSolver.solve(eye, invGGt);
 	}
-	GGtSolver.solve(eye, invGGt);
 	eslog::checkpointln("FETI: COMPUTE GGT INVERSE");
 }
 

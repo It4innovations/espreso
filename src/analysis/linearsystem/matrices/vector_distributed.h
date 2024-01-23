@@ -47,6 +47,13 @@ public:
 		}
 	}
 
+	void setFrom(std::vector<double> &output)
+	{
+		for (size_t i = 0; i < output.size(); ++i) {
+			this->cluster.vals[i] = output[i];
+		}
+	}
+
 	void set(const T &value)
 	{
 		math::set(cluster, value);

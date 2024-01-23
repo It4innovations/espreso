@@ -4,6 +4,7 @@
 #include "physics/acoustic.complex.linear.h"
 #include "physics/heat.steadystate.linear.h"
 #include "physics/heat.steadystate.nonlinear.h"
+#include "physics/heat.transient.linear.h"
 #include "physics/structuralmechanics.steadystate.linear.h"
 #include "physics/structuralmechanics.steadystate.nonlinear.h"
 
@@ -41,10 +42,19 @@ void Analysis::run()
 		}
 		break;
 	case PhysicsConfiguration::TYPE::HEAT_TRANSFER_2D:
-		switch (info::ecf->heat_transfer_2d.load_steps_settings.at(1).mode) {
-		case LoadStepSolverConfiguration::MODE::LINEAR: physics = new HeatSteadyStateLinear(info::ecf->heat_transfer_2d, info::ecf->heat_transfer_2d.load_steps_settings.at(1)); break;
-		case LoadStepSolverConfiguration::MODE::NONLINEAR: physics = new HeatSteadyStateNonLinear(info::ecf->heat_transfer_2d, info::ecf->heat_transfer_2d.load_steps_settings.at(1)); break;
+		switch (info::ecf->heat_transfer_2d.load_steps_settings.at(1).type) {
+		case LoadStepSolverConfiguration::TYPE::STEADY_STATE:
+			switch (info::ecf->heat_transfer_2d.load_steps_settings.at(1).mode) {
+			case LoadStepSolverConfiguration::MODE::LINEAR: physics = new HeatSteadyStateLinear(info::ecf->heat_transfer_2d, info::ecf->heat_transfer_2d.load_steps_settings.at(1)); break;
+			case LoadStepSolverConfiguration::MODE::NONLINEAR: physics = new HeatSteadyStateNonLinear(info::ecf->heat_transfer_2d, info::ecf->heat_transfer_2d.load_steps_settings.at(1)); break;
+			} break;
+		case LoadStepSolverConfiguration::TYPE::TRANSIENT:
+			switch (info::ecf->heat_transfer_2d.load_steps_settings.at(1).mode) {
+			case LoadStepSolverConfiguration::MODE::LINEAR: physics = new HeatTransientLinear(info::ecf->heat_transfer_2d, info::ecf->heat_transfer_2d.load_steps_settings.at(1)); break;
+//			case LoadStepSolverConfiguration::MODE::NONLINEAR: physics = new HeatSteadyStateNonLinear(info::ecf->heat_transfer_2d, info::ecf->heat_transfer_2d.load_steps_settings.at(1)); break;
+			} break;
 		}
+
 		break;
 	case PhysicsConfiguration::TYPE::HEAT_TRANSFER_3D:
 		switch (info::ecf->heat_transfer_3d.load_steps_settings.at(1).mode) {

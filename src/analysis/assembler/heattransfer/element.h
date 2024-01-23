@@ -52,6 +52,7 @@ template <size_t nodes, size_t gps, size_t ndim, size_t edim> struct HeatTransfe
 	alignas(SIMD::size * sizeof(double)) SIMD flux    [ndim];
 
 	alignas(SIMD::size * sizeof(double)) SIMD K[nodes * nodes];
+	alignas(SIMD::size * sizeof(double)) SIMD M[nodes * nodes];
 	alignas(SIMD::size * sizeof(double)) SIMD f[nodes];
 };
 

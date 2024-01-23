@@ -1,12 +1,14 @@
 
 #include "fetisolver.h"
 
+#include "regularization/regularization.empty.h"
 #include "regularization/regularization.heattransfer.h"
 #include "regularization/regularization.elasticity.h"
 #include "constrains/equalityconstrains.h"
 
 #include "analysis/physics/heat.steadystate.linear.h"
 #include "analysis/physics/heat.steadystate.nonlinear.h"
+#include "analysis/physics/heat.transient.linear.h"
 #include "analysis/physics/structuralmechanics.steadystate.linear.h"
 #include "analysis/physics/structuralmechanics.steadystate.nonlinear.h"
 
@@ -20,6 +22,10 @@ template <typename T> struct RegularizationSelector<T, HeatSteadyStateLinear> {
 
 template <typename T> struct RegularizationSelector<T, HeatSteadyStateNonLinear> {
 	Regularization<T>* operator()(FETI<T> &feti){ return new RegularizationHeatTransfer<T>(feti); }
+};
+
+template <typename T> struct RegularizationSelector<T, HeatTransientLinear> {
+	Regularization<T>* operator()(FETI<T> &feti){ return new RegularizationEmpty<T>(feti); }
 };
 
 template <typename T> struct RegularizationSelector<T, StructuralMechanicsSteadyStateLinear> {
@@ -119,6 +125,7 @@ bool FETILinearSystemSolver<T, Physics>::solve(step::Step &step)
 
 template struct FETILinearSystemSolver<double, HeatSteadyStateLinear>;
 template struct FETILinearSystemSolver<double, HeatSteadyStateNonLinear>;
+template struct FETILinearSystemSolver<double, HeatTransientLinear>;
 template struct FETILinearSystemSolver<double, StructuralMechanicsSteadyStateLinear>;
 template struct FETILinearSystemSolver<double, StructuralMechanicsSteadyStateNonLinear>;
 

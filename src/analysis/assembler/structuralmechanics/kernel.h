@@ -273,7 +273,7 @@ void runElementKernel(StructuralMechanicsOperators &subkernels, SubKernel::Actio
 	StressKernel<nodes, gps, ndim> stress(subkernels.stress);
 	MatricFillerKernel<nodes> outK(subkernels.Kfiller);
 	RHSFillerKernel<nodes> outRHS(subkernels.RHSfiller);
-	nRHSFillerKernel<nodes> outNRHS(subkernels.RHSfiller);
+	RHSFillerKernel<nodes> outNRHS(subkernels.RHSfiller);
 
 	struct {
 		std::vector<ExternalNodeExpression<ndim, Element>*> node;
@@ -383,13 +383,13 @@ void runElementKernel(StructuralMechanicsOperators &subkernels, SubKernel::Actio
 		}
 
 		if (outK.isactive) {
-			outK.simd(element);
+			outK.simd(element.K);
 		}
 		if (outRHS.isactive) {
-			outRHS.simd(element);
+			outRHS.simd(element.f);
 		}
-		if (outRHS.isactive) {
-			outNRHS.simd(element);
+		if (outNRHS.isactive) {
+			outNRHS.simd(element.nf);
 		}
 		if (stress.isactive) {
 			stress.simd(element);
@@ -485,7 +485,7 @@ void runBoundaryKernel(const StructuralMechanicsBoundaryOperators &subkernels, S
 		}
 
 		if (outRHS.isactive) {
-			outRHS.simd(element);
+			outRHS.simd(element.f);
 		}
 	}
 }

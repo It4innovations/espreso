@@ -12,7 +12,7 @@
 namespace espreso {
 
 template <template<typename, typename, template<typename> typename> typename Vector, typename T> class Vector_Distributed;
-template <template<typename, typename, template<typename> typename> typename Vector, typename T> class Vector_FETI;
+template <template<typename, typename> typename Vector, typename T> class Vector_FETI;
 
 template <typename T> class Vector_Base {
 public:
@@ -24,6 +24,7 @@ public:
 	virtual Vector_Base<T>* copyPattern() =0;
 	virtual void store(const char *file) =0;
 	virtual void storeTo(std::vector<double> &output) =0;
+	virtual void setFrom(std::vector<double> &output) =0;
 
 	virtual void set(const T &value) =0;
 	virtual void scale(const T&alpha) =0;

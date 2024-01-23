@@ -7,57 +7,15 @@
 #include "math.physics.h"
 #include "matrix_feti.decomposition.h"
 #include "math/primitives/matrix_dense.h"
+#include "math/math.h"
 
 #include <vector>
 
 namespace espreso {
 
-template <template<typename, typename, template<typename> typename> typename Matrix, typename T>
+template <template<typename, typename> typename Matrix, typename T>
 class Matrix_FETI: public Matrix_Base<T> {
 public:
-	void commit()
-	{
-//		spblas.resize(this->domains.size());
-//		#pragma omp parallel for
-//		for (size_t d = 0; d < this->domains.size(); ++d) {
-//			spblas.commit(this->domains[d]);
-//		}
-	}
-
-	void combine(const Matrix_FETI<Matrix, T> &A, const Matrix_FETI<Matrix, T> &B)
-	{
-		for (size_t d = 0; d < this->domains.size(); ++d) {
-			if (A.domains[d].type != B.domains[d].type) {
-				eslog::error("cannot combine matrices of different types.\n");
-			}
-			if (A.domains[d].shape != B.domains[d].shape) {
-				eslog::error("cannot combine matrices of different shapes.\n");
-			}
-		}
-		this->type = A.type;
-		this->shape = A.shape;
-		this->domains.resize(A.domains.size());
-		#pragma omp parallel for
-		for (size_t d = 0; d < this->domains.size(); ++d) {
-			this->domains[d].type = A.domains[d].type;
-			this->domains[d].shape = A.domains[d].shape;
-			math::combine(this->domains[d], A.domains[d], B.domains[d]);
-		}
-	}
-
-	void sumCombined(const T &alpha, const Matrix_FETI<Matrix, T> &A, const Matrix_FETI<Matrix, T> &B)
-	{
-		#pragma omp parallel for
-		for (size_t d = 0; d < this->domains.size(); ++d) {
-			math::sumCombined(this->domains[d], alpha, A.domains[d], B.domains[d]);
-		}
-	}
-
-	void initApply()
-	{
-//		applyData.init(*static_cast<Matrix_FETI<Matrix, T>*>(this));
-	}
-
 	void synchronize()
 	{
 //		synchronization->gatherFromUpper(*static_cast<Matrix_FETI<Matrix, T>*>(this));
@@ -112,7 +70,24 @@ public:
 
 	void apply(const T &alpha, const Vector_Base<T> *in, const T &beta, Vector_Base<T> *out)
 	{
-		eslog::error("call empty function\n");
+		if (spblas.size() == 0) {
+			spblas.resize(domains.size());
+			#pragma omp parallel for
+			for (size_t i = 0; i < spblas.size(); ++i) {
+				spblas[i].insert(domains[i]);
+			}
+		}
+
+		const Vector_FETI<Vector_Dense, T> *_in = dynamic_cast<const Vector_FETI<Vector_Dense, T>*>(in);
+		Vector_FETI<Vector_Dense, T> *_out = dynamic_cast<Vector_FETI<Vector_Dense, T>*>(out);
+		if (_in && _out) {
+			#pragma omp parallel for
+			for (size_t i = 0; i < spblas.size(); ++i) {
+				spblas[i].apply(_out->domains[i], alpha, beta, _in->domains[i]);
+			}
+		} else {
+			eslog::error("call empty function Matrix_FETI::apply\n");
+		}
 	}
 
 	void copyTo(Matrix_Distributed<Matrix_CSR, T> *a) const
@@ -141,7 +116,8 @@ public:
 		}
 	}
 
-	std::vector<Matrix<T, int, cpu_allocator> > domains;
+	std::vector<Matrix<T, int> > domains;
+	std::vector<SpBLAS<Matrix, T, int> > spblas;
 	DOFsDecomposition *decomposition;
 };
 

@@ -25,6 +25,7 @@ template <size_t nodes, size_t gps, size_t ndim, size_t edim> struct GeneralElem
 	} coords;
 
 	struct {
+		alignas(SIMD::size * sizeof(double)) SIMD initial[nodes];
 		alignas(SIMD::size * sizeof(double)) SIMD node[nodes];
 		alignas(SIMD::size * sizeof(double)) SIMD gp;
 	} temperature;
@@ -79,6 +80,7 @@ template <size_t ndim> struct GeneralDirichlet {
 	} coords;
 
 	struct {
+		alignas(SIMD::size * sizeof(double)) SIMD initial[1];
 		alignas(SIMD::size * sizeof(double)) SIMD node[1];
 	} temperature;
 };

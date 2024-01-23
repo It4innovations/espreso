@@ -14,7 +14,7 @@
 namespace espreso {
 
 template <template<typename, typename, template<typename> typename> typename Matrix, typename T> class Matrix_Distributed;
-template <template<typename, typename, template<typename> typename> typename Matrix, typename T> class Matrix_FETI;
+template <template<typename, typename> typename Matrix, typename T> class Matrix_FETI;
 
 template <typename T>
 class Matrix_Base {
@@ -23,7 +23,6 @@ public:
 
 	virtual ~Matrix_Base() {};
 
-	virtual void commit() =0;
 	virtual void synchronize() =0;
 
 	virtual Matrix_Base<T>* copyPattern() =0;

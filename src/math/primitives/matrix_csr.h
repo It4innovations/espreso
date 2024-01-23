@@ -129,12 +129,18 @@ protected:
 	{
 		if (m.nrows < nrows) {
 			if (m.rows) { delete[] m.rows; m.rows = nullptr; }
+		}
+		if (m.rows == nullptr) {
 			m.rows = new esint[nrows + 1];
 		}
 		if (m.nnz < nnz) {
 			if (m.cols) { delete[] m.cols; m.cols = nullptr; }
 			if (m.vals) { delete[] m.vals; m.vals = nullptr; }
+		}
+		if (m.cols == nullptr) {
 			m.cols = new esint[nnz];
+		}
+		if (m.vals == nullptr) {
 			m.vals = new T[nnz];
 		}
 		m.nrows = nrows;

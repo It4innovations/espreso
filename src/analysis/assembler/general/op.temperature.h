@@ -14,7 +14,7 @@ struct Temperature: SubKernel {
 	const char* name() const { return "Temperature"; }
 
 	serializededata<esint, esint>::const_iterator enodes, end;
-	const double * source;
+	double * source;
 	bool toGPs;
 
 	Temperature()
@@ -26,7 +26,7 @@ struct Temperature: SubKernel {
 		action = SubKernel::ASSEMBLE | SubKernel::REASSEMBLE | SubKernel::ITERATION | SubKernel::SOLUTION;
 	}
 
-	void activate(serializededata<esint, esint>::const_iterator enodes, serializededata<esint, esint>::const_iterator end, const double * source, bool toGPs)
+	void activate(serializededata<esint, esint>::const_iterator enodes, serializededata<esint, esint>::const_iterator end, double * source, bool toGPs)
 	{
 		this->enodes = enodes;
 		this->end = end;
@@ -47,6 +47,22 @@ struct TemperatureKernel: Temperature {
 			if (enodes == end) break;
 			for (size_t n = 0; n < nodes; ++n) {
 				element.temperature.node[n][s] = source[enodes->at(n)];
+			}
+		}
+	}
+};
+
+template <size_t nodes>
+struct InitialTemperatureKernel: Temperature {
+	InitialTemperatureKernel(const Temperature &base): Temperature(base) {}
+
+	template <typename Element>
+	void simd(Element &element)
+	{
+		for (size_t s = 0; s < SIMD::size; ++s, ++enodes) {
+			if (enodes == end) break;
+			for (size_t n = 0; n < nodes; ++n) {
+				source[enodes->at(n)] = element.temperature.initial[n][s];
 			}
 		}
 	}
