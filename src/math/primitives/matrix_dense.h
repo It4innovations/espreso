@@ -5,6 +5,7 @@
 #include "matrix_info.h"
 #include "slice.h"
 #include "basis/containers/allocators.h"
+#include "esinfo/eslog.hpp"
 
 namespace espreso {
 
@@ -14,16 +15,16 @@ struct _Matrix_Dense {
 	T *vals;
 };
 
-template <typename T, typename I = int, template<typename> typename A = cpu_allocator>
+template <typename T, typename I = int, typename A = cpu_allocator>
 class Matrix_Dense: public _Matrix_Dense<T, I>
 {
 public:
-	Matrix_Dense(): _Matrix_Dense<T, I>{}, type{Matrix_Type::REAL_STRUCTURALLY_SYMMETRIC}, shape{Matrix_Shape::FULL}, _allocated{}
+	Matrix_Dense(const A &ator_ = A()): _Matrix_Dense<T, I>{}, type{Matrix_Type::REAL_STRUCTURALLY_SYMMETRIC}, shape{Matrix_Shape::FULL}, _allocated{}, ator(ator_)
 	{
 
 	}
 
-	Matrix_Dense(const Matrix_Dense &other): _Matrix_Dense<T, I>{}, _allocated{}
+	Matrix_Dense(const Matrix_Dense &other): _Matrix_Dense<T, I>{}, _allocated{}, ator(other.ator)
 	{
 		this->type = other.type;
 		this->shape = other.shape;
@@ -34,7 +35,7 @@ public:
 		}
 	}
 
-	Matrix_Dense(Matrix_Dense &&other): _Matrix_Dense<T, I>{}, _allocated{}
+	Matrix_Dense(Matrix_Dense &&other): _Matrix_Dense<T, I>{}, _allocated{}, ator(std::move(other.ator))
 	{
 		this->type = other.type;
 		this->shape = other.shape;
@@ -79,13 +80,16 @@ public:
 		_Matrix_Dense<T, I>::operator=(_allocated);
 	}
 
-	void resize(const Matrix_Dense &other)
+	template<typename T2, typename I2, typename A2>
+	void resize(const Matrix_Dense<T2,I2,A2> &other)
 	{
 		resize(other.nrows, other.ncols);
 	}
 
-	void pattern(const Matrix_Dense &other)
+	template<typename T2>
+	void pattern(const Matrix_Dense<T2,I,A> &other)
 	{
+		if constexpr(!A::always_equal) if(this->ator != other.ator) eslog::error("not implemented for unequal allocators");
 		realloc(_allocated, other.shape, other.nrows, other.ncols);
 		_Matrix_Dense<T, I>::operator=(_allocated);
 	}
@@ -124,7 +128,7 @@ protected:
 		}
 		if (m.nrows * m.ncols < nrows * ncols) {
 			clear(m);
-			m.vals = new T[nnz];
+			m.vals = ator.template allocate<T>(nnz);
 		}
 		m.nrows = nrows;
 		m.ncols = ncols;
@@ -134,10 +138,11 @@ protected:
 	void clear(_Matrix_Dense<T, I> &m)
 	{
 		m.nrows = m.ncols = 0;
-		if (m.vals) { delete[] m.vals; m.vals = nullptr; }
+		if (m.vals) { ator.deallocate(m.vals); m.vals = nullptr; }
 	}
 
 	_Matrix_Dense<T, I> _allocated;
+	A ator;
 };
 
 

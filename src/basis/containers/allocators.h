@@ -3,6 +3,7 @@
 #define SRC_BASIS_CONTAINERS_ALLOCATORS_H_
 
 #include <memory>
+#include <cstdlib>
 
 namespace espreso {
 
@@ -28,22 +29,39 @@ public:
 	}
 };
 
-template<typename T>
+// not compatible with std::allocator
 class cpu_allocator
 {
 public:
     static constexpr bool is_data_host_accessible = true;
+    static constexpr bool is_data_device_accessible = false;
+    static constexpr bool always_equal = true;
 public:
-    using value_type = T;
-    std::allocator<T> a;
-    cpu_allocator() = default;
+    void * allocate(size_t num_bytes, size_t alignment)
+    {
+        return aligned_alloc(alignment, num_bytes);
+    }
+    void * allocate(size_t num_bytes)
+    {
+        return allocate(num_bytes, 1);
+    }
+    template<typename T>
     T * allocate(size_t count)
     {
-        return a.allocate(count);
+        return reinterpret_cast<T*>(allocate(count * sizeof(T), sizeof(T)));
     }
-    void deallocate(T * ptr, size_t count)
+    template<typename T>
+    void deallocate(T * ptr)
+    { 
+        free(ptr);
+    }
+    bool operator==(const cpu_allocator & other)
     {
-        a.deallocate(ptr, count);
+        return true;
+    }
+    bool operator!=(const cpu_allocator & other)
+    {
+        return !(*this == other);
     }
 };
 

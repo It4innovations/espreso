@@ -3,6 +3,7 @@
 #define SRC_MATH2_PRIMITIVES_VECTOR_SPARSE_H_
 
 #include "basis/containers/allocators.h"
+#include "esinfo/eslog.hpp"
 
 namespace espreso {
 
@@ -12,26 +13,26 @@ struct _Vector_Sparse {
 	T *vals;
 };
 
-template <typename T, typename I = int, template<typename> typename A = cpu_allocator>
+template <typename T, typename I = int, typename A = cpu_allocator>
 class Vector_Sparse: public _Vector_Sparse<T, I>
 {
 public:
-	Vector_Sparse(): _Vector_Sparse<T, I>{}, touched(false), _allocated{}
+	Vector_Sparse(const A &ator_ = A()): _Vector_Sparse<T, I>{}, touched(false), _allocated{}, ator(ator_)
 	{
 
 	}
 
-	Vector_Sparse(const Vector_Sparse &other): _Vector_Sparse<T, I>{}, touched(false), _allocated{}
+	Vector_Sparse(const Vector_Sparse &other): _Vector_Sparse<T, I>{}, touched(false), _allocated{}, ator(other.ator)
 	{
 		realloc(_allocated, other.size, other.nnz);
 		_Vector_Sparse<T, I>::operator=(_allocated);
-		for (esint i = 0; i < other.nnz; ++i) {
+		for (I i = 0; i < other.nnz; ++i) {
 			this->indices[i] = other.indices[i];
 			this->vals[i] = other.vals[i];
 		}
 	}
 
-	Vector_Sparse(Vector_Sparse &&other): _Vector_Sparse<T, I>{}, touched(false), _allocated{}
+	Vector_Sparse(Vector_Sparse &&other): _Vector_Sparse<T, I>{}, touched(false), _allocated{}, ator(std::move(other.ator))
 	{
 		swap(*this, other);
 		swap(_allocated, other._allocated);
@@ -39,9 +40,10 @@ public:
 
 	Vector_Sparse& operator=(const Vector_Sparse &other)
 	{
+		if constexpr(!A::always_equal) if(this->ator != other.ator) eslog::error("not implemented for unequal allocators");
 		realloc(_allocated, other.size, other.nnz);
 		_Vector_Sparse<T, I>::operator=(_allocated);
-		for (esint i = 0; i < other.nnz; ++i) {
+		for (I i = 0; i < other.nnz; ++i) {
 			this->indices[i] = other.indices[i];
 			this->vals[i] = other.vals[i];
 		}
@@ -52,6 +54,7 @@ public:
 	{
 		swap(*this, other);
 		swap(_allocated, other._allocated);
+		std::swap(this->ator, other.ator);
 		return *this;
 	}
 
@@ -60,19 +63,22 @@ public:
 		clear(_allocated);
 	}
 
-	void resize(esint size, esint nnz)
+	void resize(I size, I nnz)
 	{
 		realloc(_allocated, size, nnz);
 		_Vector_Sparse<T, I>::operator=(_allocated);
 	}
 
-	void resize(const Vector_Sparse &other)
+	template<typename T2, typename I2, typename A2>
+	void resize(const Vector_Sparse<T2,I2,A2> &other)
 	{
 		resize(other.size, other.nnz);
 	}
 
-	void pattern(const Vector_Sparse &other)
+	template<typename T2>
+	void pattern(const Vector_Sparse<T2,I,A> &other)
 	{
+		if constexpr(!A::always_equal) if(this->ator != other.ator) eslog::error("not implemented for unequal allocators");
 		realloc(_allocated, other);
 		_Vector_Sparse<T, I>::operator=(_allocated);
 		this->indices = other.indices;
@@ -80,11 +86,13 @@ public:
 
 	void shallowCopy(const Vector_Sparse &other)
 	{
+		if constexpr(!A::always_equal) if(this->ator != other.ator) eslog::error("not implemented for unequal allocators");
 		_Vector_Sparse<T, I>::operator=(other);
 	}
 
 	bool touched;
 	_Vector_Sparse<T, I> _allocated;
+	A ator;
 
 protected:
 	template <typename Type>
@@ -101,12 +109,12 @@ protected:
 		swap(v.vals, u.vals);
 	}
 
-	void realloc(_Vector_Sparse<T, I> &v, esint size, esint nnz)
+	void realloc(_Vector_Sparse<T, I> &v, I size, I nnz)
 	{
 		if (v.nnz < nnz) {
 			clear(v);
-			v.indices = new esint[nnz];
-			v.vals = new T[nnz];
+			v.indices = ator.template allocate<I>(nnz);
+			v.vals = ator.template allocate<T>(nnz);
 		}
 		v.size = size;
 		v.nnz = nnz;
@@ -114,11 +122,11 @@ protected:
 
 	void realloc(_Vector_Sparse<T, I> &v, const _Vector_Sparse<T, I> &other)
 	{
-		if (v.indices) { delete[] v.indices; v.indices = nullptr; }
+		if (v.indices) { ator.deallocate(v.indices); v.indices = nullptr; }
 
 		if (v.nnz < other.nnz) {
 			clear(v);
-			v.vals = new T[other.nnz];
+			v.vals = ator.template allocate<T>(other.nnz);
 		}
 		v.size = other.size;
 		v.nnz = other.nnz;
@@ -126,8 +134,8 @@ protected:
 
 	void clear(_Vector_Sparse<T, I> &v)
 	{
-		if (v.indices) { delete[] v.indices; v.indices = nullptr; }
-		if (v.vals) { delete[] v.vals; v.vals = nullptr; }
+		if (v.indices) { ator.deallocate(v.indices); v.indices = nullptr; }
+		if (v.vals) { ator.deallocate(v.vals); v.vals = nullptr; }
 	}
 };
 

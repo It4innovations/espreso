@@ -4,6 +4,7 @@
 
 #include "matrix_info.h"
 #include "basis/containers/allocators.h"
+#include "esinfo/eslog.hpp"
 
 namespace espreso {
 
@@ -13,29 +14,29 @@ struct _Matrix_IJV {
 	T *vals;
 };
 
-template <typename T, typename I = int, template<typename> typename A = cpu_allocator>
+template <typename T, typename I = int, typename A = cpu_allocator>
 class Matrix_IJV: public _Matrix_IJV<T, I>
 {
 public:
-	Matrix_IJV(): _Matrix_IJV<T, I>{}, type{Matrix_Type::REAL_NONSYMMETRIC}, shape{Matrix_Shape::FULL}, _allocated{}
+	Matrix_IJV(const A &ator_ = A()): _Matrix_IJV<T, I>{}, type{Matrix_Type::REAL_NONSYMMETRIC}, shape{Matrix_Shape::FULL}, _allocated{}, ator(ator_)
 	{
 
 	}
 
-	Matrix_IJV(const Matrix_IJV &other): _Matrix_IJV<T, I>{}, type{Matrix_Type::REAL_NONSYMMETRIC}, shape{Matrix_Shape::FULL}, _allocated{}
+	Matrix_IJV(const Matrix_IJV &other): _Matrix_IJV<T, I>{}, type{Matrix_Type::REAL_NONSYMMETRIC}, shape{Matrix_Shape::FULL}, _allocated{}, ator(other.ator)
 	{
 		this->type = other.type;
 		this->shape = other.shape;
 		realloc(_allocated, other.nrows, other.ncols, other.nnz);
 		_Matrix_IJV<T, I>::operator=(_allocated);
-		for (esint i = 0; i < other.nnz; ++i) {
+		for (I i = 0; i < other.nnz; ++i) {
 			this->rows[i] = other.rows[i];
 			this->cols[i] = other.cols[i];
 			this->vals[i] = other.vals[i];
 		}
 	}
 
-	Matrix_IJV(Matrix_IJV &&other): _Matrix_IJV<T, I>{}, type{Matrix_Type::REAL_NONSYMMETRIC}, shape{Matrix_Shape::FULL}, _allocated{}
+	Matrix_IJV(Matrix_IJV &&other): _Matrix_IJV<T, I>{}, type{Matrix_Type::REAL_NONSYMMETRIC}, shape{Matrix_Shape::FULL}, _allocated{}, ator(std::move(other.ator))
 	{
 		this->type = other.type;
 		this->shape = other.shape;
@@ -71,19 +72,21 @@ public:
 		clear(_allocated);
 	}
 
-	void resize(esint nrows, esint ncols, esint nnz)
+	void resize(I nrows, I ncols, I nnz)
 	{
 		realloc(_allocated, nrows, ncols, nnz);
 		_Matrix_IJV<T, I>::operator=(_allocated);
 	}
 
-	void resize(const Matrix_IJV &other)
+	template<typename T2, typename I2, typename A2>
+	void resize(const Matrix_IJV<T2,I2,A2> &other)
 	{
 		resize(other.nrows, other.ncols, other.nnz);
 	}
 
 	void pattern(const Matrix_IJV &other)
 	{
+		if constexpr(!A::always_equal) if(this->ator != other.ator) eslog::error("not implemented for unequal allocators");
 		realloc(_allocated, other);
 		_Matrix_IJV<T, I>::operator=(_allocated);
 		this->rows = other.rows;
@@ -110,15 +113,15 @@ protected:
 		swap(m.vals, n.vals);
 	}
 
-	void realloc(_Matrix_IJV<T, I> &m, esint nrows, esint ncols, esint nnz)
+	void realloc(_Matrix_IJV<T, I> &m, I nrows, I ncols, I nnz)
 	{
 		if (m.nnz < nnz) {
-			if (m.rows) { delete[] m.rows; m.rows = nullptr; }
-			if (m.cols) { delete[] m.cols; m.cols = nullptr; }
-			if (m.vals) { delete[] m.vals; m.vals = nullptr; }
-			m.rows = new esint[nnz];
-			m.cols = new esint[nnz];
-			m.vals = new T[nnz];
+			if (m.rows) { ator.deallocate(m.rows); m.rows = nullptr; }
+			if (m.cols) { ator.deallocate(m.cols); m.cols = nullptr; }
+			if (m.vals) { ator.deallocate(m.vals); m.vals = nullptr; }
+			m.rows = ator.template allocate<I>(nnz);
+			m.cols = ator.template allocate<I>(nnz);
+			m.vals = ator.template allocate<T>(nnz);
 		}
 		m.nrows = nrows;
 		m.ncols = ncols;
@@ -127,12 +130,12 @@ protected:
 
 	void realloc(_Matrix_IJV<T, I> &m, const _Matrix_IJV<T, I> &other)
 	{
-		if (m.rows) { delete[] m.rows; m.rows = nullptr; }
-		if (m.cols) { delete[] m.cols; m.cols = nullptr; }
+		if (m.rows) { ator.deallocate(m.rows); m.rows = nullptr; }
+		if (m.cols) { ator.deallocate(m.cols); m.cols = nullptr; }
 
 		if (m.nnz < other.nnz) {
 			clear(m);
-			m.vals = new T[other.nnz];
+			m.vals = ator.template allocate<T>(other.nnz);
 		}
 		m.nrows = other.nrows;
 		m.ncols = other.ncols;
@@ -142,12 +145,13 @@ protected:
 	void clear(_Matrix_IJV<T, I> &m)
 	{
 		m.nrows = m.ncols = m.nnz = 0;
-		if (m.rows) { delete[] m.rows; m.rows = nullptr; }
-		if (m.cols) { delete[] m.cols; m.cols = nullptr; }
-		if (m.vals) { delete[] m.vals; m.vals = nullptr; }
+		if (m.rows) { ator.deallocate(m.rows); m.rows = nullptr; }
+		if (m.cols) { ator.deallocate(m.cols); m.cols = nullptr; }
+		if (m.vals) { ator.deallocate(m.vals); m.vals = nullptr; }
 	}
 
 	_Matrix_IJV<T, I> _allocated;
+	A ator;
 };
 
 }
