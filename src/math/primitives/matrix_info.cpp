@@ -3,10 +3,10 @@
 
 namespace espreso {
 
-#ifdef HAVE_SUITESPARSE
-const int Indexing::CSR = 0;
-#else
+#ifdef HAVE_MKL
 const int Indexing::CSR = 1;
+#else
+const int Indexing::CSR = 0;
 #endif
 
 const int Indexing::IJV = 1;
