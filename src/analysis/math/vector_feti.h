@@ -11,7 +11,7 @@
 
 namespace espreso {
 
-template <template<typename, typename> typename Vector, typename T>
+template <template<typename, typename, typename> typename Vector, typename T>
 class Vector_FETI: public Vector_Base<T> {
 
 	void _store(double &out, const double &in) { out = in; }
