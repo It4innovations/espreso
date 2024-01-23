@@ -255,7 +255,7 @@ def settings(ctx):
     libsmsg("                        LAPACK libraries", [ "mkl", "lapack" ])
     libsmsg("                          sparse solvers", [ "mkl", "suitesparse" ])
     libsmsg("              distributed sparse solvers", [ "mklpdss", "hypre", "superlu", "wsmp" ])
-    libsmsg("                           GPU libraries", [ "rocm" ])
+    libsmsg("                           GPU libraries", [ "cuda", "rocm" ])
 
 """ Recurse to third party libraries wrappers"""
 def recurse(ctx):
