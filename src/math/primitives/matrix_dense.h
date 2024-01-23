@@ -30,7 +30,7 @@ public:
 		this->shape = other.shape;
 		realloc(_allocated, this->shape, other.nrows, other.ncols);
 		_Matrix_Dense<T, I>::operator=(_allocated);
-		for (esint i = 0; i < other.nnz; ++i) {
+		for (I i = 0; i < other.nnz; ++i) {
 			this->vals[i] = other.vals[i];
 		}
 	}
@@ -74,7 +74,7 @@ public:
 		return _allocated;
 	}
 
-	void resize(esint nrows, esint ncols)
+	void resize(I nrows, I ncols)
 	{
 		realloc(_allocated, shape, nrows, ncols);
 		_Matrix_Dense<T, I>::operator=(_allocated);
@@ -118,9 +118,9 @@ protected:
 		swap(m.vals, n.vals);
 	}
 
-	void realloc(_Matrix_Dense<T, I> &m, const Matrix_Shape &shape, esint nrows, esint ncols)
+	void realloc(_Matrix_Dense<T, I> &m, const Matrix_Shape &shape, I nrows, I ncols)
 	{
-		esint nnz;
+		I nnz;
 		if (shape == Matrix_Shape::FULL) {
 			nnz = nrows * ncols;
 		} else {
