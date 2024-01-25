@@ -138,12 +138,12 @@ void Matrix_CSR_Apply<T>::apply(Matrix_Distributed<T> &m, Vector_Distributed<Vec
 			localV.vals[rOffset[n][i]] = rBuffer[n][i];
 		}
 	}
-	std::copy(x->cluster.vals + x->decomposition->halo.size(), x->cluster.vals + x->cluster.size, localM.vals + offset);
+	std::copy(x->cluster.vals + x->decomposition->halo.size(), x->cluster.vals + x->cluster.size, localV.vals + offset);
 
 	Vector_Dense<T, esint> v;
 	v.size = localM.nrows;
 	v.vals = y->cluster.vals + m.decomposition->halo.size();
-	spblas.apply(v, alpha, beta, v);
+	spblas.apply(v, alpha, beta, localV);
 	y->scatter();
 }
 
