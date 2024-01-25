@@ -1,8 +1,8 @@
 
-#ifndef SRC_MATH_PHYSICS_MATH_PHYSICS_COPY_HPP_
-#define SRC_MATH_PHYSICS_MATH_PHYSICS_COPY_HPP_
+#ifndef SRC_ANALYSIS_MATH_MATH_PHYSICS_COPY_H_
+#define SRC_ANALYSIS_MATH_MATH_PHYSICS_COPY_H_
 
-#include "math.physics.h"
+#include "analysis/math/math.physics.h"
 
 namespace espreso {
 namespace math {
@@ -185,4 +185,4 @@ template <typename T> void copy(Matrix_IJV<std::complex<T> >   &x, const int off
 }
 }
 
-#endif /* SRC_MATH_PHYSICS_MATH_PHYSICS_COPY_HPP_ */
+#endif /* SRC_ANALYSIS_MATH_MATH_PHYSICS_COPY_H_ */

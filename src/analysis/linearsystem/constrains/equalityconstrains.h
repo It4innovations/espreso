@@ -2,8 +2,8 @@
 #ifndef SRC_ANALYSIS_LINEARSYSTEM_CONSTRAINS_EQUALITYCONSTRAINS_H_
 #define SRC_ANALYSIS_LINEARSYSTEM_CONSTRAINS_EQUALITYCONSTRAINS_H_
 
+#include "analysis/math/vector_distributed.h"
 #include "feti/feti.h"
-#include "analysis/linearsystem/matrices/vector_distributed.h"
 
 namespace espreso {
 

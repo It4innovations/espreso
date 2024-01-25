@@ -1,29 +1,30 @@
 
-#ifndef SRC_MATH2_GENERALIZATION_MATRIX_FETI_H_
-#define SRC_MATH2_GENERALIZATION_MATRIX_FETI_H_
+#ifndef SRC_ANALYSIS_MATH_MATRIX_FETI_H_
+#define SRC_ANALYSIS_MATH_MATRIX_FETI_H_
 
-#include "vector_feti.h"
-#include "matrix_base.h"
-#include "math.physics.h"
-#include "matrix_feti.decomposition.h"
+#include "analysis/math/math.physics.h"
+#include "analysis/math/matrix_base.h"
+#include "analysis/math/vector_feti.h"
+#include "analysis/builder/feti.decomposition.h"
 #include "math/primitives/matrix_dense.h"
+#include "math/primitives/matrix_csr.h"
 #include "math/math.h"
 
 #include <vector>
 
 namespace espreso {
 
-template <template<typename, typename> typename Matrix, typename T>
+template <typename T>
 class Matrix_FETI: public Matrix_Base<T> {
 public:
 	void synchronize()
 	{
-//		synchronization->gatherFromUpper(*static_cast<Matrix_FETI<Matrix, T>*>(this));
+
 	}
 
 	Matrix_Base<T>* copyPattern()
 	{
-		Matrix_FETI<Matrix, T> *m = new Matrix_FETI<Matrix, T>();
+		Matrix_FETI<T> *m = new Matrix_FETI<T>();
 		m->type = this->type;
 		m->shape = this->shape;
 		m->domains.resize(domains.size());
@@ -38,7 +39,7 @@ public:
 
 	void store(const char *file)
 	{
-		math::store(*static_cast<Matrix_FETI<Matrix, T>*>(this), file);
+		math::store(*static_cast<Matrix_FETI<T>*>(this), file);
 	}
 
 	void set(const T &value)
@@ -60,12 +61,12 @@ public:
 	void copy(const Matrix_Base<T> *in)
 	{
 		this->touched = true;
-		in->copyTo(static_cast<Matrix_FETI<Matrix, T>*>(this));
+		in->copyTo(static_cast<Matrix_FETI<T>*>(this));
 	}
 
 	void add(const T &alpha, const Matrix_Base<T> *a)
 	{
-		a->addTo(alpha, static_cast<Matrix_FETI<Matrix, T>*>(this));
+		a->addTo(alpha, static_cast<Matrix_FETI<T>*>(this));
 	}
 
 	void apply(const T &alpha, const Vector_Base<T> *in, const T &beta, Vector_Base<T> *out)
@@ -90,12 +91,12 @@ public:
 		}
 	}
 
-	void copyTo(Matrix_Distributed<Matrix_CSR, T> *a) const
+	void copyTo(Matrix_Distributed<T> *a) const
 	{
 		eslog::error("call empty function\n");
 	}
 
-	void copyTo(Matrix_FETI<Matrix_CSR, T> *a) const
+	void copyTo(Matrix_FETI<T> *a) const
 	{
 		#pragma omp parallel for
 		for (size_t d = 0; d < this->domains.size(); ++d) {
@@ -103,12 +104,12 @@ public:
 		}
 	}
 
-	void addTo(const T &alpha, Matrix_Distributed<Matrix_CSR, T> *a) const
+	void addTo(const T &alpha, Matrix_Distributed<T> *a) const
 	{
 		eslog::error("call empty function\n");
 	}
 
-	void addTo(const T &alpha, Matrix_FETI<Matrix_CSR, T> *a) const
+	void addTo(const T &alpha, Matrix_FETI<T> *a) const
 	{
 		#pragma omp parallel for
 		for (size_t d = 0; d < this->domains.size(); ++d) {
@@ -116,11 +117,11 @@ public:
 		}
 	}
 
-	std::vector<Matrix<T, int> > domains;
-	std::vector<SpBLAS<Matrix, T, int> > spblas;
-	DOFsDecomposition *decomposition;
+	std::vector<Matrix_CSR<T, int> > domains;
+	std::vector<SpBLAS<Matrix_CSR, T, int> > spblas;
+	FETIDecomposition *decomposition;
 };
 
 }
 
-#endif /* SRC_MATH2_GENERALIZATION_MATRIX_FETI_H_ */
+#endif /* SRC_ANALYSIS_MATH_MATRIX_FETI_H_ */

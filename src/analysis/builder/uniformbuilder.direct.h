@@ -3,11 +3,12 @@
 #define SRC_ANALYSIS_BUILDER_UNIFORMBUILDER_DIRECT_H_
 
 #include "builder.h"
+#include "direct.decomposition.h"
+#include "direct.apply.h"
+#include "direct.synchronization.h"
 #include "basis/containers/serializededata.h"
 #include "esinfo/ecfinfo.h"
 #include "esinfo/meshinfo.h"
-#include "analysis/linearsystem/matrices/matrix_distributed.distribution.h"
-#include "analysis/linearsystem/matrices/matrix_distributed.synchronization.h"
 #include "mesh/store/elementstore.h"
 #include "mesh/store/boundaryregionstore.h"
 
@@ -26,7 +27,7 @@ struct UniformBuilderDirectPattern {
 	~UniformBuilderDirectPattern();
 
 protected:
-	DOFsDistribution distribution;
+	DirectDecomposition decomposition;
 	RegionInfo elements;
 	std::vector<RegionInfo> bregion; // RegionInfo per domain per boundary region
 
@@ -38,27 +39,28 @@ template <typename T>
 struct UniformBuilderDirect: UniformBuilderDirectPattern, SparseMatrixBuilder<T> {
 
 	UniformBuilderDirect(std::map<std::string, ECFExpression> &dirichlet, int dofs, Matrix_Shape shape)
-	: UniformBuilderDirectPattern(dirichlet, dofs, shape), SparseMatrixBuilder<T>(dofs), syncM{}, syncV{}
+	: UniformBuilderDirectPattern(dirichlet, dofs, shape), SparseMatrixBuilder<T>(dofs), apply{}, syncM{}, syncV{}
 	{
 
 	}
 
 	UniformBuilderDirect(std::map<std::string, ECFExpressionOptionalVector> &dirichlet, int dofs, Matrix_Shape shape)
-	: UniformBuilderDirectPattern(dirichlet, dofs, shape), SparseMatrixBuilder<T>(dofs), syncM{}, syncV{}
+	: UniformBuilderDirectPattern(dirichlet, dofs, shape), SparseMatrixBuilder<T>(dofs), apply{}, syncM{}, syncV{}
 	{
 
 	}
 
 	~UniformBuilderDirect()
 	{
-		if (syncV) { delete syncV; }
+		if (apply) { delete apply; }
 		if (syncM) { delete syncM; }
+		if (syncV) { delete syncV; }
 	}
 
 	void fillDirichlet(Vector_Base<T> *v)
 	{
 		auto *_v = dynamic_cast<Vector_Distributed<Vector_Sparse, T> *>(v);
-		_v->distribution = &distribution;
+		_v->decomposition = &decomposition;
 		_v->cluster.resize(elements.nrows, bregion[0].indices.size());
 		for (size_t i = 0; i < bregion[0].indices.size(); ++i) {
 			_v->cluster.indices[i] = bregion[0].indices[i];
@@ -68,19 +70,19 @@ struct UniformBuilderDirect: UniformBuilderDirectPattern, SparseMatrixBuilder<T>
 	void fillVector(Vector_Base<T> *v)
 	{
 		auto *_v = dynamic_cast<Vector_Distributed<Vector_Dense, T> *>(v);
-		_v->distribution = &distribution;
+		_v->decomposition = &decomposition;
 		_v->cluster.resize(elements.nrows);
 		if (syncV == nullptr) {
-			syncV = new Data_Synchronization<Vector_Dense, T>();
+			syncV = new Vector_Dense_Sync<T>();
 			syncV->init(*_v);
 		}
-		_v->synchronization = syncV;
+		_v->_sync = syncV;
 	}
 
 	void fillMatrix(Matrix_Base<T> *m, Matrix_Type type, Matrix_Shape shape)
 	{
-		auto *_m = dynamic_cast<Matrix_Distributed<Matrix_CSR, T> *>(m);
-		_m->distribution = &distribution;
+		auto *_m = dynamic_cast<Matrix_Distributed<T> *>(m);
+		_m->decomposition = &decomposition;
 		_m->cluster.type = _m->type = type;
 		_m->cluster.shape = _m->shape = Matrix_Shape::FULL; // always full
 		// we set square matrix in order to be able to call local operations (e.g., apply)
@@ -97,10 +99,15 @@ struct UniformBuilderDirect: UniformBuilderDirectPattern, SparseMatrixBuilder<T>
 		_m->cluster.rows[r] = elements.column.size() + Indexing::CSR;
 
 		if (syncM == nullptr) {
-			syncM = new Data_Synchronization<Matrix_CSR, T>();
+			syncM = new Matrix_CSR_Sync<T>();
 			syncM->init(*_m);
 		}
-		_m->synchronization = syncM;
+		_m->_sync = syncM;
+		if (apply == nullptr) {
+			apply = new Matrix_CSR_Apply<T>();
+			apply->init(*_m);
+		}
+		_m->_apply = apply;
 	}
 
 	void fillDirichletMap(Vector_Base<T> *v)
@@ -155,7 +162,7 @@ struct UniformBuilderDirect: UniformBuilderDirectPattern, SparseMatrixBuilder<T>
 
 	void fillMatrixMap(Matrix_Base<T> *m)
 	{
-		auto *_m = dynamic_cast<Matrix_Distributed<Matrix_CSR, T> *>(m);
+		auto *_m = dynamic_cast<Matrix_Distributed<T> *>(m);
 		_m->mapping.elements.resize(info::mesh->elements->eintervals.size());
 		for (size_t i = 0, offset = 0; i < info::mesh->elements->eintervals.size(); ++i) {
 			_m->mapping.elements[i].data = _m->cluster.vals;
@@ -179,8 +186,9 @@ struct UniformBuilderDirect: UniformBuilderDirectPattern, SparseMatrixBuilder<T>
 	}
 
 protected:
-	Data_Synchronization<Matrix_CSR, T> *syncM;
-	Data_Synchronization<Vector_Dense, T> *syncV;
+	Matrix_CSR_Apply<T> *apply;
+	Matrix_CSR_Sync<T> *syncM;
+	Vector_Dense_Sync<T> *syncV;
 };
 
 }

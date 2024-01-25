@@ -16,15 +16,15 @@ void DirectLinearSystemSolver<T>::setDirichlet()
 {
 	std::vector<__Dirichlet__<T> > tosend;
 
-	esint nhalo = A.distribution->halo.size();
+	esint nhalo = A.decomposition->halo.size();
 	auto getrow = [&] (esint dof) {
 		esint row = -1;
-		if (A.distribution->begin <= dof && dof < A.distribution->end) {
-			row = dof - A.distribution->begin + nhalo;
+		if (A.decomposition->begin <= dof && dof < A.decomposition->end) {
+			row = dof - A.decomposition->begin + nhalo;
 		} else {
-			auto inhalo = std::lower_bound(A.distribution->halo.begin(), A.distribution->halo.end(), dof);
-			if (inhalo != A.distribution->halo.end() && *inhalo == dof) {
-				row = inhalo - A.distribution->halo.begin();
+			auto inhalo = std::lower_bound(A.decomposition->halo.begin(), A.decomposition->halo.end(), dof);
+			if (inhalo != A.decomposition->halo.end() && *inhalo == dof) {
+				row = inhalo - A.decomposition->halo.begin();
 			}
 		}
 		return row;
@@ -34,9 +34,9 @@ void DirectLinearSystemSolver<T>::setDirichlet()
 		b.cluster.vals[dirichlet.cluster.indices[i]] = dirichlet.cluster.vals[i];
 		esint col = 0;
 		if (dirichlet.cluster.indices[i] < nhalo) {
-			col = A.distribution->halo[dirichlet.cluster.indices[i]] + 1;
+			col = A.decomposition->halo[dirichlet.cluster.indices[i]] + 1;
 		} else {
-			col = A.distribution->begin + dirichlet.cluster.indices[i] - nhalo + 1;
+			col = A.decomposition->begin + dirichlet.cluster.indices[i] - nhalo + 1;
 		}
 		for (esint j = A.cluster.rows[dirichlet.cluster.indices[i]]; j < A.cluster.rows[dirichlet.cluster.indices[i] + 1]; j++) {
 			if (A.cluster.cols[j - 1] == col) {
@@ -70,7 +70,7 @@ void DirectLinearSystemSolver<T>::setDirichlet()
 
 	std::vector<std::vector<__Dirichlet__<T>> > sBuffer(info::mesh->neighbors.size()), rBuffer(info::mesh->neighbors.size());
 	for (size_t n = 0, i = 0; n < info::mesh->neighbors.size(); n++) {
-		while (i < tosend.size() && tosend[i].row < A.distribution->neighDOF[n + 1]) {
+		while (i < tosend.size() && tosend[i].row < A.decomposition->neighDOF[n + 1]) {
 			sBuffer[n].push_back(tosend[i++]);
 		}
 	}

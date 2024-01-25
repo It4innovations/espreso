@@ -1,12 +1,12 @@
 
+#include "analysis/math/matrix_distributed.h"
+#include "analysis/math/matrix_feti.h"
+#include "analysis/math/vector_distributed.h"
+#include "analysis/math/vector_feti.h"
 #include "math/math.h"
 #include "math/primitives/vector_dense.h"
 #include "feti/common/vector_dual.h"
 #include "feti/common/vector_kernel.h"
-#include "analysis/linearsystem/matrices/matrix_feti.h"
-#include "analysis/linearsystem/matrices/matrix_distributed.h"
-#include "analysis/linearsystem/matrices/vector_feti.h"
-#include "analysis/linearsystem/matrices/vector_distributed.h"
 #include "esinfo/meshinfo.h"
 
 #include <fstream>
@@ -50,8 +50,8 @@ template <typename T>
 void _store(const Vector_Distributed<Vector_Dense, T> &x, const char* file)
 {
 	Vector_Dense<T> _x;
-	_x.size = x.cluster.size - x.distribution->halo.size();
-	_x.vals = x.cluster.vals + x.distribution->halo.size();
+	_x.size = x.cluster.size - x.decomposition->halo.size();
+	_x.vals = x.cluster.vals + x.decomposition->halo.size();
 	store(_x, file);
 }
 
@@ -62,10 +62,10 @@ template <typename T>
 void _store(const Vector_Distributed<Vector_Sparse, T> &x, const char* file)
 {
 	Vector_Sparse<T> _x;
-	_x.size = x.cluster.size - x.distribution->halo.size();
-	_x.nnz = x.cluster.nnz - x.distribution->halo.size();
-	_x.indices = x.cluster.indices + x.distribution->halo.size();
-	_x.vals = x.cluster.vals + x.distribution->halo.size();
+	_x.size = x.cluster.size - x.decomposition->halo.size();
+	_x.nnz = x.cluster.nnz - x.decomposition->halo.size();
+	_x.indices = x.cluster.indices + x.decomposition->halo.size();
+	_x.vals = x.cluster.vals + x.decomposition->halo.size();
 	store(_x, file);
 }
 
@@ -132,7 +132,7 @@ void _store(const Matrix_CSR<T> &A, const char* file, esint offset = 0)
 }
 
 template <> void store(const Matrix_CSR<double> &A, const char* file) { _store<double>(A, file); }
-template <> void store(const Matrix_CSR<std::complex<double>> &A, const char* file) { _store<std::complex<double>>(A, file); }
+template <> void store(const Matrix_CSR<std::complex<double>> &A, const char* file) { _store<std::complex<double> >(A, file); }
 
 template <typename T>
 void _store(const Matrix_IJV<T> &A, const char* file)
@@ -150,56 +150,34 @@ void _store(const Matrix_IJV<T> &A, const char* file)
 }
 
 template <> void store(const Matrix_IJV<double> &A, const char* file) { _store<double>(A, file); }
-template <> void store(const Matrix_IJV<std::complex<double>> &A, const char* file) { _store<std::complex<double>>(A, file); }
+template <> void store(const Matrix_IJV<std::complex<double>> &A, const char* file) { _store<std::complex<double> >(A, file); }
 
 template <typename T>
-void _store(const Matrix_Distributed<Matrix_CSR, T> &A, const char* file)
+void _store(const Matrix_Distributed<T> &A, const char* file)
 {
 	Matrix_CSR<T> _A;
-	_A.nrows = A.cluster.nrows - A.distribution->halo.size();
+	_A.nrows = A.cluster.nrows - A.decomposition->halo.size();
 	_A.ncols = A.cluster.ncols;
-	_A.nnz = A.cluster.nnz - (A.cluster.rows[A.distribution->halo.size()] - Indexing::CSR);
-	_A.rows = A.cluster.rows + A.distribution->halo.size();
+	_A.nnz = A.cluster.nnz - (A.cluster.rows[A.decomposition->halo.size()] - Indexing::CSR);
+	_A.rows = A.cluster.rows + A.decomposition->halo.size();
 	_A.cols = A.cluster.cols;
 	_A.vals = A.cluster.vals;
-	_store(_A, file, A.distribution->begin);
+	_store(_A, file, A.decomposition->begin);
 }
 
-template <> void store(const Matrix_Distributed<Matrix_CSR, double> &A, const char* file) { _store<double>(A, file); }
-template <> void store(const Matrix_Distributed<Matrix_CSR, std::complex<double> > &A, const char* file) { _store<std::complex<double>>(A, file); }
+template <> void store(const Matrix_Distributed<double> &A, const char* file) { _store<double>(A, file); }
+template <> void store(const Matrix_Distributed<std::complex<double> > &A, const char* file) { _store<std::complex<double> >(A, file); }
 
 template <typename T>
-void _store(const Matrix_FETI<Matrix_Dense, T> &A, const char* file)
+void _store(const Matrix_FETI<T> &A, const char* file)
 {
 	for (size_t d = 0; d < A.domains.size(); ++d) {
 		store(A.domains[d], (std::string(file) + std::to_string(d)).c_str());
 	}
 }
 
-template <> void store(const Matrix_FETI<Matrix_Dense, double> &A, const char* file) { _store<double>(A, file); }
-template <> void store(const Matrix_FETI<Matrix_Dense, std::complex<double> > &A, const char* file) { _store<std::complex<double>>(A, file); }
-
-template <typename T>
-void _store(const Matrix_FETI<Matrix_CSR, T> &A, const char* file)
-{
-	for (size_t d = 0; d < A.domains.size(); ++d) {
-		store(A.domains[d], (std::string(file) + std::to_string(d)).c_str());
-	}
-}
-
-template <> void store(const Matrix_FETI<Matrix_CSR, double> &A, const char* file) { _store<double>(A, file); }
-template <> void store(const Matrix_FETI<Matrix_CSR, std::complex<double> > &A, const char* file) { _store<std::complex<double>>(A, file); }
-
-template <typename T>
-void _store(const Matrix_FETI<Matrix_IJV, T> &A, const char* file)
-{
-	for (size_t d = 0; d < A.domains.size(); ++d) {
-		store(A.domains[d], (std::string(file) + std::to_string(d)).c_str());
-	}
-}
-
-template <> void store(const Matrix_FETI<Matrix_IJV, double> &A, const char* file) { _store<double>(A, file); }
-template <> void store(const Matrix_FETI<Matrix_IJV, std::complex<double> > &A, const char* file) { _store<std::complex<double>>(A, file); }
+template <> void store(const Matrix_FETI<double> &A, const char* file) { _store<double>(A, file); }
+template <> void store(const Matrix_FETI<std::complex<double> > &A, const char* file) { _store<std::complex<double>>(A, file); }
 
 template <>
 void store(const std::vector<esint> &v, const char* file)

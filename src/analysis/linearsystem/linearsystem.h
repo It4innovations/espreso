@@ -2,8 +2,8 @@
 #ifndef SRC_ANALYSIS_LINEARSOLVER_LINEARSOLVER_H_
 #define SRC_ANALYSIS_LINEARSOLVER_LINEARSOLVER_H_
 
-#include "matrices/matrix_base.h"
-#include "matrices/vector_base.h"
+#include "analysis/math/matrix_base.h"
+#include "analysis/math/vector_base.h"
 
 namespace espreso {
 

@@ -2,7 +2,7 @@
 #include "vector_dual.h"
 
 #include "esinfo/envinfo.h"
-#include "analysis/linearsystem/matrices/matrix_feti.decomposition.h"
+#include "analysis/builder/feti.decomposition.h"
 #include "math/primitives/vector_dense.h"
 #include "math/wrappers/math.blas.h"
 #include "wrappers/mpi/communication.h"
@@ -13,7 +13,7 @@
 namespace espreso {
 
 template <typename T>
-void Vector_Dual<T>::set(esint nhalo, const std::vector<esint> &cmap, const DOFsDecomposition &decomposition)
+void Vector_Dual<T>::set(esint nhalo, const std::vector<esint> &cmap, const FETIDecomposition &decomposition)
 {
 	Vector_Dual<T>::nhalo = nhalo;
 	Vector_Dual<T>::neighbors.assign(decomposition.neighbors.begin(), decomposition.neighbors.end());

@@ -2,9 +2,9 @@
 #ifndef SRC_ANALYSIS_ASSEMBLER_ACOUSTIC_H_
 #define SRC_ANALYSIS_ASSEMBLER_ACOUSTIC_H_
 
+#include "analysis/math/matrix_base.h"
+#include "analysis/math/vector_base.h"
 #include "assembler.h"
-#include "analysis/linearsystem/matrices/matrix_base.h"
-#include "analysis/linearsystem/matrices/vector_base.h"
 #include "config/ecf/physics/acoustic.h"
 #include "mesh/store/nodestore.h"
 #include "mesh/store/elementstore.h"

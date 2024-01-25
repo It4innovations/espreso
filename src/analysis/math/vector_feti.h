@@ -1,10 +1,10 @@
 
-#ifndef SRC_MATH2_GENERALIZATION_VECTOR_FETI_H_
-#define SRC_MATH2_GENERALIZATION_VECTOR_FETI_H_
+#ifndef SRC_ANALYSIS_MATH_VECTOR_FETI_H_
+#define SRC_ANALYSIS_MATH_VECTOR_FETI_H_
 
-#include "vector_base.h"
-#include "matrix_feti.decomposition.h"
-#include "math.physics.h"
+#include "analysis/math/math.physics.h"
+#include "analysis/math/vector_base.h"
+#include "analysis/builder/feti.decomposition.h"
 #include "esinfo/eslog.h"
 
 #include <vector>
@@ -177,9 +177,9 @@ public:
 	}
 
 	std::vector<Vector<T, int> > domains;
-	DOFsDecomposition *decomposition;
+	FETIDecomposition *decomposition;
 };
 
 }
 
-#endif /* SRC_MATH2_GENERALIZATION_VECTOR_FETI_H_ */
+#endif /* SRC_ANALYSIS_MATH_VECTOR_FETI_H_ */

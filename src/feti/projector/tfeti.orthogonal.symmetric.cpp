@@ -326,7 +326,7 @@ void TFETIOrthogonalSymmetric<T>::_updateG()
 		}
 	}
 
-	const DOFsDecomposition *decomposition = feti.decomposition;
+	const FETIDecomposition *decomposition = feti.decomposition;
 
 	std::vector<std::vector<T> > sBuffer(decomposition->neighbors.size()), rBuffer(decomposition->neighbors.size());
 	for (size_t n = 0; n < downinfo.size(); ++n) {

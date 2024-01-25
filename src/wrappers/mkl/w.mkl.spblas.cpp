@@ -1,5 +1,6 @@
 
 #include "math/math.h"
+#include "math/primitives/matrix_csr.h"
 #include "math/wrappers/math.spblas.h"
 #include "esinfo/eslog.h"
 
@@ -9,10 +10,6 @@
 #include "mkl_spblas.h"
 
 namespace espreso {
-
-template struct SpBLAS<Matrix_CSR, float, int>;
-template struct SpBLAS<Matrix_CSR, double, int>;
-template struct SpBLAS<Matrix_CSR, std::complex<double>, int>;
 
 struct Matrix_SpBLAS_External_Representation {
 	sparse_matrix_t inspector;
@@ -105,7 +102,7 @@ SpBLAS<Matrix, T, I>::SpBLAS(Matrix<T, I> &a)
 : matrix{&a}, _spblas{}
 {
 	_spblas = new Matrix_SpBLAS_External_Representation();
-	create(matrix, _spblas, false);
+	create<Matrix, T, I>(matrix, _spblas, false);
 }
 
 template <template <typename, typename> class Matrix, typename T, typename I>
@@ -116,7 +113,7 @@ void SpBLAS<Matrix, T, I>::insert(Matrix<T, I> &a)
 		checkStatus(mkl_sparse_destroy(_spblas->inspector));
 	}
 	_spblas = new Matrix_SpBLAS_External_Representation();
-	create(matrix, _spblas, false);
+	create<Matrix, T, I>(matrix, _spblas, false);
 }
 
 static void setDescription(matrix_descr &descr, Matrix_Type type, Matrix_Shape shape)
@@ -170,6 +167,10 @@ void SpBLAS<Matrix_CSR, std::complex<double>, int>::apply(Vector_Dense<std::comp
 	descr.diag = SPARSE_DIAG_NON_UNIT;
 	checkStatus(mkl_sparse_z_mv(SPARSE_OPERATION_NON_TRANSPOSE, alpha, _spblas->inspector, descr, x.vals, beta, y.vals));
 }
+
+template struct SpBLAS<Matrix_CSR, float, int>;
+template struct SpBLAS<Matrix_CSR, double, int>;
+template struct SpBLAS<Matrix_CSR, std::complex<double>, int>;
 
 }
 

@@ -2,9 +2,9 @@
 #ifndef SRC_WRAPPERS_MKLPDSS_W_MKL_PDSS_H_
 #define SRC_WRAPPERS_MKLPDSS_W_MKL_PDSS_H_
 
+#include "analysis/math/matrix_distributed.h"
+#include "analysis/math/vector_distributed.h"
 #include "config/ecf/linearsolver/mklpdss.h"
-#include "analysis/linearsystem/matrices/matrix_distributed.h"
-#include "analysis/linearsystem/matrices/vector_distributed.h"
 
 namespace espreso {
 
@@ -26,8 +26,8 @@ public:
 		clear();
 	}
 
-	bool set(const Matrix_Distributed<Matrix_CSR, T> &A);
-	bool update(const Matrix_Distributed<Matrix_CSR, T> &A);
+	bool set(const Matrix_Distributed<T> &A);
+	bool update(const Matrix_Distributed<T> &A);
 	bool solve(const Vector_Distributed<Vector_Dense, T> &b, Vector_Distributed<Vector_Dense, T> &x);
 
 	MKLPDSSConfiguration &configuration;

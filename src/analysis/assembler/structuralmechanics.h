@@ -2,10 +2,10 @@
 #ifndef SRC_ANALYSIS_ASSEMBLER_STRUCTURALMECHANICS_H_
 #define SRC_ANALYSIS_ASSEMBLER_STRUCTURALMECHANICS_H_
 
+#include "analysis/math/matrix_base.h"
+#include "analysis/math/vector_base.h"
 #include "assembler.h"
 #include "analysis/assembler/structuralmechanics/operators.h"
-#include "analysis/linearsystem/matrices/matrix_base.h"
-#include "analysis/linearsystem/matrices/vector_base.h"
 #include "config/ecf/physics/structuralmechanics.h"
 #include "config/holders/expression.h"
 #include "mesh/store/nodestore.h"

@@ -2,11 +2,10 @@
 #ifndef SRC_ANALYSIS_ASSEMBLER_SUBKERNEL_FILLER_H_
 #define SRC_ANALYSIS_ASSEMBLER_SUBKERNEL_FILLER_H_
 
+#include "analysis/math/matrix_base.h"
+#include "analysis/math/vector_base.h"
 #include "subkernel.h"
 #include "math/primitives/matrix_info.h"
-#include "analysis/linearsystem/matrices/matrix_base.h"
-#include "analysis/linearsystem/matrices/vector_base.h"
-
 #include <functional>
 
 namespace espreso {

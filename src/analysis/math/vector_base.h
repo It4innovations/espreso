@@ -1,17 +1,16 @@
 
-#ifndef SRC_MATH2_GENERALIZATION_VECTOR_BASE_H_
-#define SRC_MATH2_GENERALIZATION_VECTOR_BASE_H_
+#ifndef SRC_ANALYSIS_MATH_VECTOR_BASE_H_
+#define SRC_ANALYSIS_MATH_VECTOR_BASE_H_
 
+#include "analysis/builder/mapping.h"
 #include "math/primitives/vector_dense.h"
 #include "math/primitives/vector_sparse.h"
-#include "mapping.h"
-
 #include <complex>
 #include <vector>
 
 namespace espreso {
 
-template <template<typename, typename, template<typename> typename> typename Vector, typename T> class Vector_Distributed;
+template <template<typename, typename> typename Vector, typename T> class Vector_Distributed;
 template <template<typename, typename> typename Vector, typename T> class Vector_FETI;
 
 template <typename T> class Vector_Base {
@@ -53,4 +52,4 @@ public:
 
 }
 
-#endif /* SRC_MATH2_GENERALIZATION_VECTOR_BASE_H_ */
+#endif /* SRC_ANALYSIS_MATH_VECTOR_BASE_H_ */

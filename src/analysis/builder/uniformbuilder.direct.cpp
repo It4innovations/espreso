@@ -262,23 +262,23 @@ void UniformBuilderDirectPattern::buildPattern(int dofs)
 		}
 	}
 
-	distribution.begin = dofs * info::mesh->nodes->uniqInfo.offset;
-	distribution.end = dofs * (info::mesh->nodes->uniqInfo.offset + info::mesh->nodes->uniqInfo.size);
-	distribution.totalSize = dofs * info::mesh->nodes->uniqInfo.totalSize;
+	decomposition.begin = dofs * info::mesh->nodes->uniqInfo.offset;
+	decomposition.end = dofs * (info::mesh->nodes->uniqInfo.offset + info::mesh->nodes->uniqInfo.size);
+	decomposition.totalSize = dofs * info::mesh->nodes->uniqInfo.totalSize;
 
-	distribution.neighbors = info::mesh->neighbors;
-	distribution.neighDOF.resize(distribution.neighbors.size() + 1, distribution.begin); // the last is my offset
-	distribution.halo.clear();
-	distribution.halo.reserve(dofs * info::mesh->nodes->uniqInfo.nhalo);
+	decomposition.neighbors = info::mesh->neighbors;
+	decomposition.neighDOF.resize(decomposition.neighbors.size() + 1, decomposition.begin); // the last is my offset
+	decomposition.halo.clear();
+	decomposition.halo.reserve(dofs * info::mesh->nodes->uniqInfo.nhalo);
 	for (esint n = 0; n < info::mesh->nodes->uniqInfo.nhalo; ++n) {
 		for (int dof = 0; dof < dofs; ++dof) {
-			distribution.halo.push_back(dofs * info::mesh->nodes->uniqInfo.position[n] + dof);
+			decomposition.halo.push_back(dofs * info::mesh->nodes->uniqInfo.position[n] + dof);
 		}
 	}
 
-	std::vector<esint> dBuffer = { distribution.begin };
-	if (!Communication::gatherUniformNeighbors(dBuffer, distribution.neighDOF, distribution.neighbors)) {
-		eslog::internalFailure("cannot exchange matrix distribution info.\n");
+	std::vector<esint> dBuffer = { decomposition.begin };
+	if (!Communication::gatherUniformNeighbors(dBuffer, decomposition.neighDOF, decomposition.neighbors)) {
+		eslog::internalFailure("cannot exchange matrix decomposition info.\n");
 	}
 
 	size_t nonzeros[2] = { elements.row.size(), bregion[0].b.size() };
@@ -286,9 +286,9 @@ void UniformBuilderDirectPattern::buildPattern(int dofs)
 
 
 	eslog::info(" == DIRICHLET SIZE                                                           %14lu == \n", nonzeros[1]);
-	eslog::info(" == LINEAR SYSTEM SIZE                                                       %14d == \n", distribution.totalSize);
+	eslog::info(" == LINEAR SYSTEM SIZE                                                       %14d == \n", decomposition.totalSize);
 	eslog::info(" == NON-ZERO VALUES                                                          %14lu == \n", nonzeros[0]);
-	eslog::info(" == NON-ZERO FILL-IN RATIO                                                         %7.4f%% == \n", 100.0 * nonzeros[0] / distribution.totalSize / distribution.totalSize);
+	eslog::info(" == NON-ZERO FILL-IN RATIO                                                         %7.4f%% == \n", 100.0 * nonzeros[0] / decomposition.totalSize / decomposition.totalSize);
 	eslog::info(" == COMPOSITION RUNTIME                                                          %8.3f s == \n", eslog::time() - start);
 	eslog::info(" ============================================================================================= \n");
 }

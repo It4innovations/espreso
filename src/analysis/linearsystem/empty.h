@@ -45,7 +45,7 @@ struct EmptySystemSolver: LinearSystemSolver<T> {
 protected:
 //	void setDirichlet() {}
 
-	Matrix_Distributed<Matrix_CSR, T> A;
+	Matrix_Distributed<T> A;
 	Vector_Distributed<Vector_Dense, T> x, b;
 	Vector_Distributed<Vector_Sparse, T> dirichlet;
 };

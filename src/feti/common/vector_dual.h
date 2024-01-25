@@ -8,14 +8,14 @@
 
 namespace espreso {
 
-struct DOFsDecomposition;
+struct FETIDecomposition;
 
 template <typename T>
 struct Vector_Dual: public Vector_Dense<T, int> {
 
 	template <typename Type> friend struct Matrix_Dual_Orthogonal;
 
-	static void set(esint nhalo, const std::vector<esint> &cmap, const DOFsDecomposition &decomposition);
+	static void set(esint nhalo, const std::vector<esint> &cmap, const FETIDecomposition &decomposition);
 
 	void resize();
 	void synchronize();

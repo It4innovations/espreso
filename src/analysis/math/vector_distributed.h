@@ -1,37 +1,37 @@
 
-#ifndef SRC_MATH2_GENERALIZATION_VECTOR_DISTRIBUTED_H_
-#define SRC_MATH2_GENERALIZATION_VECTOR_DISTRIBUTED_H_
+#ifndef SRC_ANALYSIS_MATH_VECTOR_DISTRIBUTED_H_
+#define SRC_ANALYSIS_MATH_VECTOR_DISTRIBUTED_H_
 
-#include "vector_base.h"
+#include "analysis/math/math.physics.h"
+#include "analysis/math/vector_base.h"
 #include "esinfo/eslog.h"
-#include "math.physics.h"
-#include "matrix_distributed.distribution.h"
-#include "matrix_distributed.synchronization.h"
+#include "analysis/builder/direct.decomposition.h"
+#include "analysis/builder/direct.synchronization.h"
 #include "wrappers/mpi/communication.h"
 
 #include <vector>
 
 namespace espreso {
 
-template <template<typename, typename, template<typename> typename> typename Vector, typename T>
+template <template<typename, typename> typename Vector, typename T>
 class Vector_Distributed: public Vector_Base<T> {
 public:
 	void synchronize()
 	{
-		synchronization->synchronize(*static_cast<Vector_Distributed<Vector, T>*>(this));
+		_sync->synchronize(*static_cast<Vector_Distributed<Vector, T>*>(this));
 	}
 
 	void scatter()
 	{
-		synchronization->scatterToUpper(*static_cast<Vector_Distributed<Vector, T>*>(this));
+		_sync->scatterToUpper(*static_cast<Vector_Distributed<Vector, T>*>(this));
 	}
 
 	Vector_Base<T>* copyPattern()
 	{
 		Vector_Distributed<Vector, T> *m = new Vector_Distributed<Vector, T>();
 		m->cluster.pattern(cluster);
-		m->distribution = this->distribution;
-		m->synchronization = this->synchronization;
+		m->decomposition = this->decomposition;
+		m->_sync = this->_sync;
 		return m;
 	}
 
@@ -77,7 +77,7 @@ public:
 
 	T norm()
 	{
-		T dot = math::blas::dot(cluster.size - distribution->halo.size(), cluster.vals + distribution->halo.size(), 1, cluster.vals + distribution->halo.size(), 1);
+		T dot = math::blas::dot(cluster.size - decomposition->halo.size(), cluster.vals + decomposition->halo.size(), 1, cluster.vals + decomposition->halo.size(), 1);
 		Communication::allReduce(&dot, NULL, 1, MPI_DOUBLE, MPI_SUM);
 		return std::sqrt(dot);
 	}
@@ -140,11 +140,11 @@ public:
 		eslog::error("call empty function\n");
 	}
 
-	Vector<T, esint, cpu_allocator> cluster;
-	DOFsDistribution *distribution;
-	Data_Synchronization<Vector, T> *synchronization;
+	Vector<T, esint> cluster;
+	DirectDecomposition *decomposition;
+	Vector_Sync<Vector, T> *_sync;
 };
 
 }
 
-#endif /* SRC_MATH2_GENERALIZATION_VECTOR_DISTRIBUTED_H_ */
+#endif /* SRC_ANALYSIS_MATH_VECTOR_DISTRIBUTED_H_ */

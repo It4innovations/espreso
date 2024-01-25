@@ -91,7 +91,7 @@ bool _call(MKLPDSS<T> &mklpdss, esint phase)
 }
 
 template<typename T>
-void _info(const Matrix_Distributed<Matrix_CSR, T> &A)
+void _info(const Matrix_Distributed<T> &A)
 {
 	eslog::info(" = LINEAR SOLVER :: MKL                                TYPE :: PARALLEL DIRECT SPARSE SOLVER = \n");
 	switch (A.cluster.type) {
@@ -127,14 +127,14 @@ void _info(const Matrix_Distributed<Matrix_CSR, T> &A)
 }
 
 template<typename T>
-bool _set(MKLPDSS<T> &mklpdss, const Matrix_Distributed<Matrix_CSR, T> &A)
+bool _set(MKLPDSS<T> &mklpdss, const Matrix_Distributed<T> &A)
 {
 #ifdef HAVE_MKLPDSS
 	_info(A); // print the info before call the solver
 	double start = eslog::time();
 
 	mklpdss.external = new MKLPDSSDataHolder<T>();
-	mklpdss.external->n = A.distribution->totalSize;
+	mklpdss.external->n = A.decomposition->totalSize;
 
 	mklpdss.external->maxfct = 1; // dummy
 	mklpdss.external->mnum = 1; // dummy
@@ -147,8 +147,8 @@ bool _set(MKLPDSS<T> &mklpdss, const Matrix_Distributed<Matrix_CSR, T> &A)
 	mklpdss.external->iparm[1] = info::mpi::size > 1 ? 10 : 3; // MPI or parallel
 	// Matrix input format.
 	mklpdss.external->iparm[39] = 2; // distributed A, x, rhs
-	mklpdss.external->iparm[40] = A.distribution->begin + 1;
-	mklpdss.external->iparm[41] = A.distribution->end;
+	mklpdss.external->iparm[40] = A.decomposition->begin + 1;
+	mklpdss.external->iparm[41] = A.decomposition->end;
 
 	mklpdss.external->msglvl = 0;
 	mklpdss.external->comm = MPI_Comm_c2f(info::mpi::comm);
@@ -167,10 +167,10 @@ bool _set(MKLPDSS<T> &mklpdss, const Matrix_Distributed<Matrix_CSR, T> &A)
 
 	// pick only upper triangle (since composer does not set correct dirichlet in symmetric matrices)
 	if (_isSymmetric(A.cluster.type)) {
-		esint nhalo = A.distribution->halo.size();
+		esint nhalo = A.decomposition->halo.size();
 		for (esint i = nhalo; i < A.cluster.nrows; i++) {
 			for (esint c = A.cluster.rows[i] - Indexing::CSR; c < A.cluster.rows[i + 1] - Indexing::CSR; ++c) {
-				if (A.distribution->begin + i - nhalo <= A.cluster.cols[c] - Indexing::CSR) {
+				if (A.decomposition->begin + i - nhalo <= A.cluster.cols[c] - Indexing::CSR) {
 					++mklpdss.external->A.nnz;
 				}
 			}
@@ -179,14 +179,14 @@ bool _set(MKLPDSS<T> &mklpdss, const Matrix_Distributed<Matrix_CSR, T> &A)
 		mklpdss.external->A.rows[0] = Indexing::CSR;
 		for (esint i = nhalo, offset = 0; i < A.cluster.nrows; i++) {
 			for (esint c = A.cluster.rows[i] - Indexing::CSR; c < A.cluster.rows[i + 1] - Indexing::CSR; ++c) {
-				if (A.distribution->begin + i - nhalo <= A.cluster.cols[c] - Indexing::CSR) {
+				if (A.decomposition->begin + i - nhalo <= A.cluster.cols[c] - Indexing::CSR) {
 					mklpdss.external->A.cols[offset++] = A.cluster.cols[c];
 				}
 			}
 			mklpdss.external->A.rows[i - nhalo + 1] = offset + Indexing::CSR;
 		}
 	} else {
-		esint nhalo = A.distribution->halo.size();
+		esint nhalo = A.decomposition->halo.size();
 		for (esint i = nhalo; i < A.cluster.nrows; i++) {
 			for (esint c = A.cluster.rows[i] - Indexing::CSR; c < A.cluster.rows[i + 1] - Indexing::CSR; ++c) {
 				++mklpdss.external->A.nnz;
@@ -209,21 +209,21 @@ bool _set(MKLPDSS<T> &mklpdss, const Matrix_Distributed<Matrix_CSR, T> &A)
 }
 
 template<typename T>
-bool _update(MKLPDSS<T> &mklpdss, const Matrix_Distributed<Matrix_CSR, T> &A)
+bool _update(MKLPDSS<T> &mklpdss, const Matrix_Distributed<T> &A)
 {
 #ifdef HAVE_MKLPDSS
 	double start = eslog::time();
 	if (_isSymmetric(A.cluster.type)) {
-		esint nhalo = A.distribution->halo.size();
+		esint nhalo = A.decomposition->halo.size();
 		for (esint i = nhalo, offset = 0; i < A.cluster.nrows; i++) {
 			for (esint c = A.cluster.rows[i] - Indexing::CSR; c < A.cluster.rows[i + 1] - Indexing::CSR; ++c) {
-				if (A.distribution->begin + i - nhalo <= A.cluster.cols[c] - Indexing::CSR) {
+				if (A.decomposition->begin + i - nhalo <= A.cluster.cols[c] - Indexing::CSR) {
 					mklpdss.external->A.vals[offset++] = A.cluster.vals[c];
 				}
 			}
 		}
 	} else {
-		esint nhalo = A.distribution->halo.size();
+		esint nhalo = A.decomposition->halo.size();
 		for (esint i = nhalo, offset = 0; i < A.cluster.nrows; i++) {
 			for (esint c = A.cluster.rows[i] - Indexing::CSR; c < A.cluster.rows[i + 1] - Indexing::CSR; ++c) {
 				mklpdss.external->A.vals[offset++] = A.cluster.vals[c];
@@ -241,8 +241,8 @@ template<typename T>
 bool _solve(MKLPDSS<T> &mklpdss, const Vector_Distributed<Vector_Dense, T> &b, Vector_Distributed<Vector_Dense, T> &x)
 {
 #ifdef HAVE_MKLPDSS
-	mklpdss.external->b.vals = b.cluster.vals + b.distribution->halo.size();
-	mklpdss.external->x.vals = x.cluster.vals + x.distribution->halo.size();
+	mklpdss.external->b.vals = b.cluster.vals + b.decomposition->halo.size();
+	mklpdss.external->x.vals = x.cluster.vals + x.decomposition->halo.size();
 	double start = eslog::time();
 
 	bool status = _call(mklpdss, 33); // solve at once
@@ -260,11 +260,11 @@ void _clear(MKLPDSS<T> &mklpdss)
 #endif
 }
 
-template<> bool MKLPDSS<double>::set(const Matrix_Distributed<Matrix_CSR, double> &A) { return _set(*this, A); }
-template<> bool MKLPDSS<std::complex<double> >::set(const Matrix_Distributed<Matrix_CSR, std::complex<double> > &A) { return _set(*this, A); }
+template<> bool MKLPDSS<double>::set(const Matrix_Distributed<double> &A) { return _set(*this, A); }
+template<> bool MKLPDSS<std::complex<double> >::set(const Matrix_Distributed<std::complex<double> > &A) { return _set(*this, A); }
 
-template<> bool MKLPDSS<double>::update(const Matrix_Distributed<Matrix_CSR, double> &A) { return _update(*this, A); }
-template<> bool MKLPDSS<std::complex<double> >::update(const Matrix_Distributed<Matrix_CSR, std::complex<double> > &A) { return _update(*this, A); }
+template<> bool MKLPDSS<double>::update(const Matrix_Distributed<double> &A) { return _update(*this, A); }
+template<> bool MKLPDSS<std::complex<double> >::update(const Matrix_Distributed<std::complex<double> > &A) { return _update(*this, A); }
 
 template<> bool MKLPDSS<double>::solve(const Vector_Distributed<Vector_Dense, double> &b, Vector_Distributed<Vector_Dense, double> &x) { return _solve(*this, b, x); }
 template<> bool MKLPDSS<std::complex<double> >::solve(const Vector_Distributed<Vector_Dense, std::complex<double> > &b, Vector_Distributed<Vector_Dense, std::complex<double>> &x) { return _solve(*this, b, x); }

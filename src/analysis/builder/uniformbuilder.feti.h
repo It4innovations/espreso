@@ -3,10 +3,9 @@
 #define SRC_ANALYSIS_BUILDER_UNIFORMBUILDER_FETI_H_
 
 #include "builder.h"
-
-#include "analysis/linearsystem/matrices/matrix_feti.h"
-#include "analysis/linearsystem/matrices/vector_feti.h"
-#include "analysis/linearsystem/matrices/matrix_feti.decomposition.h"
+#include "feti.decomposition.h"
+#include "analysis/math/matrix_feti.h"
+#include "analysis/math/vector_feti.h"
 #include "esinfo/ecfinfo.h"
 #include "esinfo/meshinfo.h"
 #include "mesh/store/domainstore.h"
@@ -28,7 +27,7 @@ struct UniformBuilderFETIPattern {
 	~UniformBuilderFETIPattern();
 
 protected:
-	DOFsDecomposition decomposition;
+	FETIDecomposition decomposition;
 	std::vector<RegionInfo> elements;
 	std::vector<std::vector<RegionInfo> > bregion; // RegionInfo per domain per boundary region
 	std::vector<RegionInfo> dirichletInfo;
@@ -61,7 +60,7 @@ struct UniformBuilderFETI: UniformBuilderFETIPattern, SparseMatrixBuilder<T> {
 	void fillDirichlet(Vector_Base<T> *v)
 	{
 		auto *_v = dynamic_cast<Vector_Distributed<Vector_Sparse, T> *>(v);
-		_v->distribution = &decomposition;
+		_v->decomposition = &decomposition;
 		_v->cluster.resize(dirichletInfo[0].size, dirichletInfo[0].indices.size());
 		for (size_t i = 0; i < dirichletInfo[0].indices.size(); ++i) {
 			_v->cluster.indices[i] = dirichletInfo[0].indices[i];
@@ -81,7 +80,7 @@ struct UniformBuilderFETI: UniformBuilderFETIPattern, SparseMatrixBuilder<T> {
 
 	void fillMatrix(Matrix_Base<T> *m, Matrix_Type type, Matrix_Shape shape)
 	{
-		auto *_m = dynamic_cast<Matrix_FETI<Matrix_CSR, T> *>(m);
+		auto *_m = dynamic_cast<Matrix_FETI<T> *>(m);
 		_m->decomposition = &decomposition;
 		_m->domains.resize(elements.size());
 		#pragma omp parallel for
@@ -155,7 +154,7 @@ struct UniformBuilderFETI: UniformBuilderFETIPattern, SparseMatrixBuilder<T> {
 
 	void fillMatrixMap(Matrix_Base<T> *m)
 	{
-		auto *_m = dynamic_cast<Matrix_FETI<Matrix_CSR, T> *>(m);
+		auto *_m = dynamic_cast<Matrix_FETI<T> *>(m);
 		_m->mapping.elements.resize(info::mesh->elements->eintervals.size());
 		for (esint domain = 0; domain < info::mesh->domains->size; ++domain) {
 			for (esint i = info::mesh->elements->eintervalsDistribution[domain], offset = 0; i < info::mesh->elements->eintervalsDistribution[domain + 1]; ++i) {

@@ -2,11 +2,8 @@
 #ifndef SRC_ANALYSIS_BUILDER_BUILDER_H_
 #define SRC_ANALYSIS_BUILDER_BUILDER_H_
 
-#include "analysis/linearsystem/matrices/matrix_base.h"
-#include "analysis/linearsystem/matrices/vector_base.h"
-
-#include <map>
-#include <vector>
+#include "analysis/math/matrix_base.h"
+#include "analysis/math/vector_base.h"
 
 namespace espreso {
 

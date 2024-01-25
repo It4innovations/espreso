@@ -54,14 +54,10 @@ struct Vector_Kernel: public Vector_Dense<T, int> {
 	static std::vector<size_t> distribution;
 };
 
-template <typename T>
-esint Vector_Kernel<T>::offset = 0;
-template <typename T>
-esint Vector_Kernel<T>::size = 0;
-template <typename T>
-esint Vector_Kernel<T>::totalSize = 0;
-template <typename T>
-std::vector<size_t> Vector_Kernel<T>::distribution = { 0, 0 };
+template <typename T> esint               Vector_Kernel<T>::offset = 0;
+template <typename T> esint               Vector_Kernel<T>::size = 0;
+template <typename T> esint               Vector_Kernel<T>::totalSize = 0;
+template <typename T> std::vector<size_t> Vector_Kernel<T>::distribution = { 0, 0 };
 
 }
 

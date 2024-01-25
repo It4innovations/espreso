@@ -1,6 +1,6 @@
 
-#ifndef SRC_MATH_PHYSICS_MATH_PHYSICS_H_
-#define SRC_MATH_PHYSICS_MATH_PHYSICS_H_
+#ifndef SRC_ANALYSIS_MATH_MATH_PHYSICS_H_
+#define SRC_ANALYSIS_MATH_MATH_PHYSICS_H_
 
 #include "math/math.h"
 
@@ -116,7 +116,7 @@ template <typename T> void add(Matrix_IJV<T>    &x, const T &alpha, const Matrix
 }
 }
 
-#include "math.physics.copy.hpp"
-#include "math.physics.add.hpp"
+#include "analysis/math/math.physics.copy.hpp"
+#include "analysis/math/math.physics.add.hpp"
 
-#endif /* SRC_MATH_PHYSICS_MATH_PHYSICS_H_ */
+#endif /* SRC_ANALYSIS_MATH_MATH_PHYSICS_H_ */

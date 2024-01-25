@@ -1,8 +1,8 @@
 
-#ifndef SRC_MATH_PHYSICS_MATH_PHYSICS_ADD_HPP_
-#define SRC_MATH_PHYSICS_MATH_PHYSICS_ADD_HPP_
+#ifndef SRC_ANALYSIS_MATH_MATH_PHYSICS_ADD_H_
+#define SRC_ANALYSIS_MATH_MATH_PHYSICS_ADD_H_
 
-#include "math.physics.h"
+#include "analysis/math/math.physics.h"
 
 namespace espreso {
 namespace math {
@@ -142,4 +142,4 @@ template <typename T> void add(Matrix_IJV<T> &x, const T &beta, const Matrix_IJV
 }
 }
 
-#endif /* SRC_MATH_PHYSICS_MATH_PHYSICS_ADD_HPP_ */
+#endif /* SRC_ANALYSIS_MATH_MATH_PHYSICS_ADD_H_ */
