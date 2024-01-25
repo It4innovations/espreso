@@ -175,18 +175,21 @@ void HeatTransientLinear::run(step::Step &step)
 		solver->A->set(0);
 		solver->A->add(1, K);
 		solver->A->add(1 / (alpha * time.shift), M);
+		solver->A->updated = K->updated || M->updated;
 
 		X->set(0);
 		X->add(1 / (alpha * time.shift), U);
 		X->add((1 - alpha) / alpha, V);
 		M->apply(1, X, 0, Y);
 
-		storeSystem(step);
-
 		solver->b->copy(f);
 		solver->b->add(1, Y);
+		solver->b->updated = true;
 
 		solver->dirichlet->copy(dirichlet);
+		solver->dirichlet->updated = dirichlet->updated;
+
+		storeSystem(step);
 
 		eslog::info("       = ----------------------------------------------------------------------------- = \n");
 		eslog::info("       = SYSTEM ASSEMBLY                                                    %8.3f s = \n", eslog::time() - start);

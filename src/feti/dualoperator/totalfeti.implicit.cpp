@@ -133,9 +133,12 @@ void TotalFETIImplicit<T>::set(const step::Step &step)
 template <typename T>
 void TotalFETIImplicit<T>::update(const step::Step &step)
 {
-	#pragma omp parallel for
-	for (size_t di = 0; di < feti.K.size(); ++di) {
-		math::sumCombined(Kplus[di], T{1}, feti.K[di], feti.RegMat[di]);
+	if (feti.updated.K) {
+		#pragma omp parallel for
+		for (size_t di = 0; di < feti.K.size(); ++di) {
+			math::sumCombined(Kplus[di], T{1}, feti.K[di], feti.RegMat[di]);
+		}
+		eslog::checkpointln("FETI: UPDATE TOTAL-FETI OPERATOR");
 	}
 	if (info::ecf->output.print_matrices) {
 		eslog::storedata(" STORE: feti/dualop/{Kplus}\n");
@@ -143,13 +146,14 @@ void TotalFETIImplicit<T>::update(const step::Step &step)
 			math::store(Kplus[di], utils::filename(utils::debugDirectory(step) + "/feti/dualop", (std::string("Kplus") + std::to_string(di)).c_str()).c_str());
 		}
 	}
-	eslog::checkpointln("FETI: UPDATE TOTAL-FETI OPERATOR");
 
-	#pragma omp parallel for
-	for (size_t di = 0; di < feti.K.size(); ++di) {
-		KSolver[di].numericalFactorization();
+	if (feti.updated.K) {
+		#pragma omp parallel for
+		for (size_t di = 0; di < feti.K.size(); ++di) {
+			KSolver[di].numericalFactorization();
+		}
+		eslog::checkpointln("FETI: TFETI NUMERICAL FACTORIZATION");
 	}
-	eslog::checkpointln("FETI: TFETI NUMERICAL FACTORIZATION");
 
 	#pragma omp parallel for
 	for (size_t di = 0; di < feti.K.size(); ++di) {

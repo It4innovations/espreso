@@ -44,6 +44,10 @@ public:
 		static ElementData *translationMotion, *gradient, *flux;
 	};
 
+	struct {
+		bool K, M, f, nf, dirichlet;
+	} constant;
+
 protected:
 	void run(SubKernel::Action action, size_t interval);
 	void run(SubKernel::Action action, size_t region, size_t interval);

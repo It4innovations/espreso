@@ -19,7 +19,7 @@ template <typename T> class Matrix_FETI;
 template <typename T>
 class Matrix_Base {
 public:
-	Matrix_Base(): type(Matrix_Type::REAL_STRUCTURALLY_SYMMETRIC), shape(Matrix_Shape::FULL), touched(false) {}
+	Matrix_Base(): type(Matrix_Type::REAL_STRUCTURALLY_SYMMETRIC), shape(Matrix_Shape::FULL), filled(false), updated(false) {}
 
 	virtual ~Matrix_Base() {};
 
@@ -44,7 +44,7 @@ public:
 	Matrix_Type type;
 	Matrix_Shape shape;
 	Mapping<T> mapping;
-	bool touched;
+	bool filled, updated;
 };
 
 }

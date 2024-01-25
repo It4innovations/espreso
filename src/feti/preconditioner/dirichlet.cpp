@@ -54,9 +54,11 @@ void Dirichlet<T>::info()
 template <typename T>
 void Dirichlet<T>::update(const step::Step &step)
 {
-	#pragma omp parallel for
-	for (size_t d = 0; d < feti.K.size(); ++d) {
-		Ksolver[d].getSC(sc[d]);
+	if (feti.updated.K) {
+		#pragma omp parallel for
+		for (size_t d = 0; d < feti.K.size(); ++d) {
+			Ksolver[d].getSC(sc[d]);
+		}
 	}
 	_print(step);
 }

@@ -28,8 +28,6 @@ struct FETI {
 		esint lambdasLocal, lambdasTotal;
 	};
 
-
-
 	FETI(FETIConfiguration &configuration);
 	~FETI();
 
@@ -56,6 +54,10 @@ struct FETI {
 		esint nhalo, size;
 		std::vector<esint> cmap; // size, ndomains <d0, d1, ..., dn>; size, ndomains <>; ...;
 	} lambdas;
+
+	struct {
+		bool K = true, B = true;
+	} updated;
 
 	IterativeSolver<T> *iterativeSolver = nullptr;
 	Preconditioner<T> *preconditioner = nullptr;

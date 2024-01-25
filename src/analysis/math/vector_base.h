@@ -15,7 +15,7 @@ template <template<typename, typename> typename Vector, typename T> class Vector
 
 template <typename T> class Vector_Base {
 public:
-	Vector_Base(): touched(false) {}
+	Vector_Base(): filled(false), updated(false) {}
 	virtual ~Vector_Base() {};
 
 	virtual void synchronize() =0;
@@ -47,7 +47,7 @@ public:
 	virtual void addTo(const T &alpha, Vector_FETI<Vector_Sparse, T> *a) const =0;
 
 	Mapping<T> mapping;
-	bool touched;
+	bool filled, updated;
 };
 
 }

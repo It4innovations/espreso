@@ -4,6 +4,7 @@
 
 #include "builder.h"
 #include "feti.decomposition.h"
+#include "direct.synchronization.h"
 #include "analysis/math/matrix_feti.h"
 #include "analysis/math/vector_feti.h"
 #include "esinfo/ecfinfo.h"
@@ -41,20 +42,20 @@ template <typename T>
 struct UniformBuilderFETI: UniformBuilderFETIPattern, SparseMatrixBuilder<T> {
 
 	UniformBuilderFETI(FETIConfiguration &feti, std::map<std::string, ECFExpression> &dirichlet, int dofs, Matrix_Shape shape)
-	: UniformBuilderFETIPattern(feti, dirichlet, dofs, shape), SparseMatrixBuilder<T>(dofs)
+	: UniformBuilderFETIPattern(feti, dirichlet, dofs, shape), SparseMatrixBuilder<T>(dofs), syncS{}
 	{
 
 	}
 
 	UniformBuilderFETI(FETIConfiguration &feti, std::map<std::string, ECFExpressionOptionalVector> &dirichlet, int dofs, Matrix_Shape shape)
-	: UniformBuilderFETIPattern(feti, dirichlet, dofs, shape), SparseMatrixBuilder<T>(dofs)
+	: UniformBuilderFETIPattern(feti, dirichlet, dofs, shape), SparseMatrixBuilder<T>(dofs), syncS{}
 	{
 
 	}
 
 	~UniformBuilderFETI()
 	{
-
+		if (syncS) { delete syncS; }
 	}
 
 	void fillDirichlet(Vector_Base<T> *v)
@@ -65,6 +66,10 @@ struct UniformBuilderFETI: UniformBuilderFETIPattern, SparseMatrixBuilder<T> {
 		for (size_t i = 0; i < dirichletInfo[0].indices.size(); ++i) {
 			_v->cluster.indices[i] = dirichletInfo[0].indices[i];
 		}
+		if (syncS == nullptr) {
+			syncS = new Vector_Sparse_Sync<T>();
+		}
+		_v->_sync = syncS;
 	}
 
 	void fillVector(Vector_Base<T> *v)
@@ -189,6 +194,9 @@ struct UniformBuilderFETI: UniformBuilderFETIPattern, SparseMatrixBuilder<T> {
 			}
 		}
 	}
+
+protected:
+	Vector_Sparse_Sync<T> *syncS;
 };
 
 }

@@ -44,6 +44,10 @@ public:
 		static ElementData *isPlastized;
 	};
 
+	struct {
+		bool K, M, C, f, nf, dirichlet;
+	} constant;
+
 protected:
 	void run(SubKernel::Action action, size_t interval);
 	void run(SubKernel::Action action, size_t region, size_t interval);

@@ -95,16 +95,18 @@ void TotalFETIExplicit<T>::set(const step::Step &step)
 template <typename T>
 void TotalFETIExplicit<T>::update(const step::Step &step)
 {
-	#pragma omp parallel for
-	for (size_t di = 0; di < feti.K.size(); ++di) {
-		math::sumCombined(Kplus[di], T{1}, feti.K[di], feti.RegMat[di]);
+	if (feti.updated.K) {
+		#pragma omp parallel for
+		for (size_t di = 0; di < feti.K.size(); ++di) {
+			math::sumCombined(Kplus[di], T{1}, feti.K[di], feti.RegMat[di]);
+		}
+		eslog::checkpointln("FETI: UPDATE TOTAL-FETI OPERATOR");
+		#pragma omp parallel for
+		for (size_t di = 0; di < feti.K.size(); ++di) {
+			KSolver[di].numericalFactorization();
+		}
+		eslog::checkpointln("FETI: TFETI NUMERICAL FACTORIZATION");
 	}
-	eslog::checkpointln("FETI: UPDATE TOTAL-FETI OPERATOR");
-	#pragma omp parallel for
-	for (size_t di = 0; di < feti.K.size(); ++di) {
-		KSolver[di].numericalFactorization();
-	}
-	eslog::checkpointln("FETI: TFETI NUMERICAL FACTORIZATION");
 
 	#pragma omp parallel for
 	for (size_t di = 0; di < feti.K.size(); ++di) {
@@ -116,55 +118,57 @@ void TotalFETIExplicit<T>::update(const step::Step &step)
 
 	bool perLambda = false;
 
-	if (perLambda) {
-		#pragma omp parallel for
-		for (size_t d = 0; d < feti.K.size(); ++d) {
-			Vector_Dense<T> KplusBt, Bt;
-			KplusBt.resize(feti.B1[d].ncols);
-			Bt.resize(feti.B1[d].ncols);
+	if (feti.updated.K) {
+		if (perLambda) {
+			#pragma omp parallel for
+			for (size_t d = 0; d < feti.K.size(); ++d) {
+				Vector_Dense<T> KplusBt, Bt;
+				KplusBt.resize(feti.B1[d].ncols);
+				Bt.resize(feti.B1[d].ncols);
 
-			for (esint r = 0; r < feti.B1[d].nrows; ++r) {
-				math::set(Bt, T{0});
-				for (esint c = feti.B1[d].rows[r]; c < feti.B1[d].rows[r + 1]; ++c) {
-					Bt.vals[feti.B1[d].cols[c]] = feti.B1[d].vals[c];
-				}
-				KSolver[d].solve(Bt, KplusBt);
+				for (esint r = 0; r < feti.B1[d].nrows; ++r) {
+					math::set(Bt, T{0});
+					for (esint c = feti.B1[d].rows[r]; c < feti.B1[d].rows[r + 1]; ++c) {
+						Bt.vals[feti.B1[d].cols[c]] = feti.B1[d].vals[c];
+					}
+					KSolver[d].solve(Bt, KplusBt);
 
-				for (esint fr = 0; fr < feti.B1[d].nrows; ++fr) {
-					F[d].vals[fr * feti.B1[d].nrows + r] = 0;
-					for (esint fc = feti.B1[d].rows[fr]; fc < feti.B1[d].rows[fr + 1]; ++fc) {
-						F[d].vals[fr * feti.B1[d].nrows + r] += feti.B1[d].vals[fc] * KplusBt.vals[feti.B1[d].cols[fc]];
+					for (esint fr = 0; fr < feti.B1[d].nrows; ++fr) {
+						F[d].vals[fr * feti.B1[d].nrows + r] = 0;
+						for (esint fc = feti.B1[d].rows[fr]; fc < feti.B1[d].rows[fr + 1]; ++fc) {
+							F[d].vals[fr * feti.B1[d].nrows + r] += feti.B1[d].vals[fc] * KplusBt.vals[feti.B1[d].cols[fc]];
+						}
 					}
 				}
 			}
-		}
-	} else {
-		#pragma omp parallel for
-		for (size_t d = 0; d < feti.K.size(); ++d) {
-			Matrix_Dense<T> KplusBt, Bt;
-			KplusBt.resize(feti.B1[d].nrows, feti.B1[d].ncols);
-			Bt.resize(feti.B1[d].nrows, feti.B1[d].ncols);
+		} else {
+			#pragma omp parallel for
+			for (size_t d = 0; d < feti.K.size(); ++d) {
+				Matrix_Dense<T> KplusBt, Bt;
+				KplusBt.resize(feti.B1[d].nrows, feti.B1[d].ncols);
+				Bt.resize(feti.B1[d].nrows, feti.B1[d].ncols);
 
-			for (esint r = 0; r < feti.B1[d].nrows; ++r) {
-				esint cc = 0;
-				for (esint c = feti.B1[d].rows[r]; c < feti.B1[d].rows[r + 1]; ++c, ++cc) {
-					while (cc < feti.B1[d].cols[c]) {
+				for (esint r = 0; r < feti.B1[d].nrows; ++r) {
+					esint cc = 0;
+					for (esint c = feti.B1[d].rows[r]; c < feti.B1[d].rows[r + 1]; ++c, ++cc) {
+						while (cc < feti.B1[d].cols[c]) {
+							Bt.vals[r * Bt.ncols + cc] = 0;
+							++cc;
+						}
+						Bt.vals[r * Bt.ncols + cc] = feti.B1[d].vals[c];
+					}
+					while (cc < Bt.ncols) {
 						Bt.vals[r * Bt.ncols + cc] = 0;
 						++cc;
 					}
-					Bt.vals[r * Bt.ncols + cc] = feti.B1[d].vals[c];
 				}
-				while (cc < Bt.ncols) {
-					Bt.vals[r * Bt.ncols + cc] = 0;
-					++cc;
-				}
-			}
-			KSolver[d].solve(Bt, KplusBt);
-			for (esint r = 0; r < feti.B1[d].nrows; ++r) {
-				for (esint lr = 0; lr < feti.B1[d].nrows; ++lr) {
-					F[d].vals[lr * feti.B1[d].nrows + r] = 0;
-					for (esint lc = feti.B1[d].rows[lr]; lc < feti.B1[d].rows[lr + 1]; ++lc) {
-						F[d].vals[lr * F[d].ncols + r] += feti.B1[d].vals[lc] * KplusBt.vals[r * KplusBt.ncols + feti.B1[d].cols[lc]];
+				KSolver[d].solve(Bt, KplusBt);
+				for (esint r = 0; r < feti.B1[d].nrows; ++r) {
+					for (esint lr = 0; lr < feti.B1[d].nrows; ++lr) {
+						F[d].vals[lr * feti.B1[d].nrows + r] = 0;
+						for (esint lc = feti.B1[d].rows[lr]; lc < feti.B1[d].rows[lr + 1]; ++lc) {
+							F[d].vals[lr * F[d].ncols + r] += feti.B1[d].vals[lc] * KplusBt.vals[r * KplusBt.ncols + feti.B1[d].cols[lc]];
+						}
 					}
 				}
 			}

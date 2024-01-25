@@ -82,6 +82,8 @@ StructuralMechanics::StructuralMechanics(StructuralMechanics *previous, Structur
 
 void StructuralMechanics::analyze()
 {
+	constant.K = constant.M = constant.f = constant.nf = constant.dirichlet = false;
+
 	double start = eslog::time();
 	eslog::info("\n ============================================================================================= \n");
 
@@ -401,9 +403,9 @@ void StructuralMechanics::evaluate(const step::Step &step, const step::Time &tim
 			}
 		}
 	}
-	reset(K, M, C, f, nf, dirichlet);
-	assemble(SubKernel::ASSEMBLE);
-	update(K, M, C, f, nf, dirichlet);
+	bool run = reset(K, constant.K) || reset(M, constant.M) || reset(C, constant.C) || reset(f, constant.f) || reset(nf, constant.nf) || reset(dirichlet, constant.dirichlet);
+	if (run) { assemble(SubKernel::ASSEMBLE); }
+	update(K, constant.K); update(M, constant.M); update(C, constant.C); update(f, constant.f); update(nf, constant.nf); update(dirichlet, constant.dirichlet);
 }
 
 void StructuralMechanics::run(SubKernel::Action action, size_t interval)

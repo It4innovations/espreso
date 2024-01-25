@@ -23,7 +23,7 @@ struct MKLPDSSLinearSystemSolver: DirectLinearSystemSolver<T> {
 
 	void update(step::Step &step)
 	{
-		if (this->A.touched || this->b.touched || this->dirichlet.touched) {
+		if (this->A.updated || this->b.updated || this->dirichlet.updated) {
 			this->setDirichlet();
 			mklpdss.update(this->A);
 		}

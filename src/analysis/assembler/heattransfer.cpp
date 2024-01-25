@@ -353,6 +353,35 @@ void HeatTransfer::analyze()
 	}
 	Results::initialTemperature->data = Results::temperature->data;
 
+	constant.K = true; // currently everything or nothing
+	for (size_t i = 0; i < subkernels.size(); ++i) {
+		for (size_t e = 0; e < subkernels[i].expressions.node.size(); ++e) {
+			constant.K &= subkernels[i].expressions.node[e]->evaluator->isConst();
+		}
+		for (size_t e = 0; e < subkernels[i].expressions.gp.size(); ++e) {
+			constant.K &= subkernels[i].expressions.gp[e]->evaluator->isConst();
+		}
+	}
+	constant.M = constant.f = constant.K;
+
+	constant.f = true;
+	for (size_t r = 1; r < boundary.size(); ++r) {
+		for (size_t i = 0; i < boundary[r].size(); ++i) {
+			for (size_t e = 0; e < boundary[r][i].expressions.node.size(); ++e) {
+				constant.f = boundary[r][i].expressions.node[e]->evaluator->isConst();
+			}
+			for (size_t e = 0; e < boundary[r][i].expressions.gp.size(); ++e) {
+				constant.f = boundary[r][i].expressions.gp[e]->evaluator->isConst();
+			}
+		}
+	}
+	constant.dirichlet = constant.f;
+
+	std::string constants;
+	if (constant.K)         { constants += "K"; }
+	if (constant.M)         { if (constants.size()) constants += ", "; constants += "M"; }
+	if (constant.f)         { if (constants.size()) constants += ", "; constants += "f"; }
+	if (constant.dirichlet) { if (constants.size()) constants += ", "; constants += "dirichlet"; }
 
 	eslog::info("  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  \n");
 	eslog::info("  SIMD SIZE                                                                                 %lu \n", SIMD::size);
@@ -360,6 +389,7 @@ void HeatTransfer::analyze()
 	eslog::info("  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  \n");
 	if (correct) {
 		eslog::info("  PHYSICS CONFIGURED                                                               %8.3f s \n", eslog::time() - start);
+		eslog::info("  CONSTANT MATRICES, VECTORS         %*s  [ %s ] \n", 50 - constants.size(), " ", constants.c_str());
 	} else {
 		eslog::globalerror("  PHYSICS CONFIGURATION FAILED                                                         \n");
 	}
@@ -423,9 +453,12 @@ void HeatTransfer::run(SubKernel::Action action, size_t region, size_t interval)
 
 void HeatTransfer::evaluate(step::Time &time, Matrix_Base<double> *K, Matrix_Base<double> *M, Vector_Base<double> *f, Vector_Base<double> *nf, Vector_Base<double> *dirichlet)
 {
-	reset(K, M, f, dirichlet);
-	assemble(SubKernel::ASSEMBLE);
-	update(K, M, f);
+	bool run = reset(K, constant.K) | reset(M, constant.M) | reset(f, constant.f) | reset(dirichlet, constant.dirichlet);
+	if (run) { assemble(SubKernel::ASSEMBLE); }
+	update(K, constant.K);
+	update(M, constant.M);
+	update(f, constant.f);
+	update(dirichlet, constant.dirichlet);
 }
 
 void HeatTransfer::getInitialTemperature(Vector_Base<double> *x)

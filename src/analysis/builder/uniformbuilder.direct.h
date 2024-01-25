@@ -39,13 +39,13 @@ template <typename T>
 struct UniformBuilderDirect: UniformBuilderDirectPattern, SparseMatrixBuilder<T> {
 
 	UniformBuilderDirect(std::map<std::string, ECFExpression> &dirichlet, int dofs, Matrix_Shape shape)
-	: UniformBuilderDirectPattern(dirichlet, dofs, shape), SparseMatrixBuilder<T>(dofs), apply{}, syncM{}, syncV{}
+	: UniformBuilderDirectPattern(dirichlet, dofs, shape), SparseMatrixBuilder<T>(dofs), apply{}, syncM{}, syncD{}, syncS{}
 	{
 
 	}
 
 	UniformBuilderDirect(std::map<std::string, ECFExpressionOptionalVector> &dirichlet, int dofs, Matrix_Shape shape)
-	: UniformBuilderDirectPattern(dirichlet, dofs, shape), SparseMatrixBuilder<T>(dofs), apply{}, syncM{}, syncV{}
+	: UniformBuilderDirectPattern(dirichlet, dofs, shape), SparseMatrixBuilder<T>(dofs), apply{}, syncM{}, syncD{}, syncS{}
 	{
 
 	}
@@ -54,7 +54,8 @@ struct UniformBuilderDirect: UniformBuilderDirectPattern, SparseMatrixBuilder<T>
 	{
 		if (apply) { delete apply; }
 		if (syncM) { delete syncM; }
-		if (syncV) { delete syncV; }
+		if (syncD) { delete syncD; }
+		if (syncS) { delete syncS; }
 	}
 
 	void fillDirichlet(Vector_Base<T> *v)
@@ -65,6 +66,10 @@ struct UniformBuilderDirect: UniformBuilderDirectPattern, SparseMatrixBuilder<T>
 		for (size_t i = 0; i < bregion[0].indices.size(); ++i) {
 			_v->cluster.indices[i] = bregion[0].indices[i];
 		}
+		if (syncS == nullptr) {
+			syncS = new Vector_Sparse_Sync<T>();
+		}
+		_v->_sync = syncS;
 	}
 
 	void fillVector(Vector_Base<T> *v)
@@ -72,11 +77,11 @@ struct UniformBuilderDirect: UniformBuilderDirectPattern, SparseMatrixBuilder<T>
 		auto *_v = dynamic_cast<Vector_Distributed<Vector_Dense, T> *>(v);
 		_v->decomposition = &decomposition;
 		_v->cluster.resize(elements.nrows);
-		if (syncV == nullptr) {
-			syncV = new Vector_Dense_Sync<T>();
-			syncV->init(*_v);
+		if (syncD == nullptr) {
+			syncD = new Vector_Dense_Sync<T>();
+			syncD->init(*_v);
 		}
-		_v->_sync = syncV;
+		_v->_sync = syncD;
 	}
 
 	void fillMatrix(Matrix_Base<T> *m, Matrix_Type type, Matrix_Shape shape)
@@ -188,7 +193,8 @@ struct UniformBuilderDirect: UniformBuilderDirectPattern, SparseMatrixBuilder<T>
 protected:
 	Matrix_CSR_Apply<T> *apply;
 	Matrix_CSR_Sync<T> *syncM;
-	Vector_Dense_Sync<T> *syncV;
+	Vector_Dense_Sync<T> *syncD;
+	Vector_Sparse_Sync<T> *syncS;
 };
 
 }

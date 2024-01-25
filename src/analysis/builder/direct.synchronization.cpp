@@ -169,7 +169,7 @@ void Vector_Dense_Sync<T>::scatterToUpper(Vector_Distributed<Vector_Dense, T> &v
 template <typename T>
 void Vector_Sparse_Sync<T>::init(Vector_Distributed<Vector_Sparse, T> &v)
 {
-	eslog::error("non-implemented synchronization called.\n");
+
 }
 
 template <typename T>

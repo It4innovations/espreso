@@ -58,34 +58,27 @@ protected:
 };
 
 template <typename T>
-static void reset(T *t)
+static bool reset(T *t, bool constant)
 {
 	if (t) {
-		t->set(0);
+		if (!t->filled || !constant) {
+			t->set(0);
+			t->updated = true;
+			return true;
+		}
+		t->updated = false;
+		return false;
 	}
-}
-
-template <typename T, typename ...Other>
-static void reset(T *t, Other... other)
-{
-	reset(t);
-	reset(other...);
+	return false;
 }
 
 template <typename T>
-static void update(T *t)
+static void update(T *t, bool constant)
 {
-	if (t) {
+	if (t && t->updated) {
+		t->filled = true;
 		t->synchronize();
-		t->touched = true;
 	}
-}
-
-template <typename T, typename ...Other>
-static void update(T *t, Other... other)
-{
-	update(t);
-	update(other...);
 }
 
 }

@@ -83,8 +83,10 @@ void FETILinearSystemSolver<T, Physics>::update(step::Step &step)
 	eslog::startln("FETI: UPDATING LINEAR SYSTEM", "FETI[UPDATE]");
 	equalityConstrains->update(step, dirichlet);
 	eslog::checkpointln("FETI: UPDATE B1");
-	regularization->update(step);
-	eslog::checkpointln("FETI: UPDATE KERNELS");
+	if (A.updated) {
+		regularization->update(step);
+		eslog::checkpointln("FETI: UPDATE KERNELS");
+	}
 	if (info::ecf->output.print_matrices) {
 		eslog::storedata(" STORE: system/{K, f, R, RegMat}\n");
 		for (size_t d = 0; d < feti.K.size(); ++d) {
@@ -101,7 +103,10 @@ void FETILinearSystemSolver<T, Physics>::update(step::Step &step)
 			math::store(feti.D2C[d], utils::filename(utils::debugDirectory(step) + "/system", "D2C" + std::to_string(d)).c_str());
 		}
 	}
+	feti.updated.K = A.updated;
+	feti.updated.B = step.substep == 0;
 	feti.update(step);
+	A.updated = b.updated = dirichlet.updated = false;
 	eslog::endln("FETI: LINEAR SYSTEM UPDATED");
 }
 

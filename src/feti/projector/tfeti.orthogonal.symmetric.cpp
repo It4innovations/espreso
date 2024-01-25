@@ -60,7 +60,9 @@ void TFETIOrthogonalSymmetric<T>::update(const step::Step &step)
 {
 	#pragma omp parallel for
 	for (size_t d = 0; d < dinfo.size(); ++d) {
-		math::orthonormalize(feti.R1[d]);
+		if (feti.updated.K) {
+			math::orthonormalize(feti.R1[d]);
+		}
 		Vector_Dense<T> _e;
 		_e.size = feti.R1[d].nrows;
 		_e.vals = e.vals + dinfo[d].koffset;
@@ -69,8 +71,10 @@ void TFETIOrthogonalSymmetric<T>::update(const step::Step &step)
 	e.synchronize();
 	eslog::checkpointln("FETI: COMPUTE DUAL RHS [e]");
 
-	_updateG();
-	_updateGGt();
+	if (feti.updated.K || feti.updated.B) {
+		_updateG();
+		_updateGGt();
+	}
 	_print(step);
 }
 
