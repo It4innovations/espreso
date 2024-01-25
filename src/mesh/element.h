@@ -63,15 +63,6 @@ struct Element {
 	int nCommonEdge;
 	int dimension;
 
-	std::vector<MatrixDense> *N;
-	std::vector<MatrixDense> *NN;
-	std::vector<MatrixDense> *NNN;
-	std::vector<MatrixDense> *dN;
-	std::vector<double> *weighFactor;
-
-	std::vector<MatrixDense> *nN;
-	std::vector<MatrixDense> *ndN;
-
 	serializededata<int, int> *faceList;
 	serializededata<int, int> *edgeList;
 
@@ -83,7 +74,6 @@ struct Element {
 
 	Element()
 	: type(TYPE::POINT), code(CODE::POINT1), nodes(1), gps(1), edges(1), faces(1), coarseNodes(1), nCommonFace(1), nCommonEdge(1), dimension(0),
-	  N(NULL), NN(NULL), NNN(NULL), dN(NULL), weighFactor(NULL), nN(NULL), ndN(NULL),
 	  faceList(NULL), edgeList(NULL), facepointers(NULL), edgepointers(NULL),
 	  triangles(NULL), polygon(NULL) {}
 
