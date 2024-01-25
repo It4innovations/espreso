@@ -18,6 +18,7 @@ struct Solver_External_Representation {
 	cholmod_factor * cm_factor_super = nullptr;
 	cholmod_factor * cm_factor_simpl = nullptr;
 	cholmod_sparse * cm_matrix_view = nullptr;
+    const Matrix_CSR<T, I> * matrix = nullptr;
 	Vector_Dense<I> map_simpl_super;
 	char zerodrop;
 	int stage = 0; // 0 = completely uninitialized, 1 = initialized without matrix, 2 = matrix set but not factorized, 3 = symbolic factorization done, 4 = numeric factorization done
@@ -99,7 +100,9 @@ void DirectSparseSolver<T, I>::commit(const Matrix_CSR<T,I> &a)
 	if(a.type != Matrix_Type::REAL_SYMMETRIC_POSITIVE_DEFINITE && a.type != Matrix_Type::COMPLEX_HERMITIAN_POSITIVE_DEFINITE) eslog::error("commit: matrix has to be SPD or HPD\n");
 	if(a.shape != Matrix_Shape::UPPER) eslog::error("commit: CSR matrix has to be upper triangular\n");
 
-    if(ext->stage < 1) eslog::error("commit: invalid order of operations in solver\n");
+    if(ext->stage < 1) eslog::error("commit: invalid order of operations in spsolver\n");
+
+    ext->matrix = &a;
 
 	if(ext->cm_matrix_view == nullptr)
     {
@@ -130,7 +133,7 @@ void DirectSparseSolver<T, I>::symbolicFactorization(int fixedSuffix)
 {
 	if(fixedSuffix != 0) eslog::error("symbolicFactorization: dont know what to do with that. TODO\n");
 
-    if(ext->stage != 2) throw std::runtime_error("symbolicFactorization: invalid order of operations in solver\n");
+    if(ext->stage != 2) throw std::runtime_error("symbolicFactorization: invalid order of operations in spsolver\n");
 	
 	ext->cm_factor_super = _analyze<I>(ext->cm_matrix_view, ext->cm_common);
 
@@ -149,7 +152,7 @@ void DirectSparseSolver<T, I>::symbolicFactorization(int fixedSuffix)
 template <typename T, typename I>
 void DirectSparseSolver<T, I>::numericalFactorization()
 {
-	if(ext->stage < 3) eslog::error("numericalFactorization: invalid order of operations in solver\n");
+	if(ext->stage < 3) eslog::error("numericalFactorization: invalid order of operations in spsolver\n");
 
     _factorize<I>(ext->cm_factor_super, ext->cm_matrix_view, ext->cm_common);
 
@@ -212,7 +215,7 @@ I DirectSparseSolver<T, I>::getMatrixNnz()
 template <typename T, typename I>
 I DirectSparseSolver<T, I>::getFactorNnz()
 {
-	if(ext->stage < 3) eslog::error("getFactorNnz: invalid order of operations in solver\n");
+	if(ext->stage < 3) eslog::error("getFactorNnz: invalid order of operations in spsolver\n");
 
     // https://github.com/DrTimothyAldenDavis/SuiteSparse/issues/523
 
@@ -228,8 +231,8 @@ void DirectSparseSolver<T, I>::getFactorL(Matrix_CSR<T,I> &/*L*/, bool /*copyPat
 template <typename T, typename I>
 void DirectSparseSolver<T, I>::getFactorU(Matrix_CSR<T,I> &U, bool copyPattern, bool copyValues)
 {
-	if(ext->stage < 3) eslog::error("getFactorU: invalid order of operations in solver\n");
-    if(copyValues && ext->stage < 4) eslog::error("getFactorU: invalid order of operations in solver\n");
+	if(ext->stage < 3) eslog::error("getFactorU: invalid order of operations in spsolver\n");
+    if(copyValues && ext->stage < 4) eslog::error("getFactorU: invalid order of operations in spsolver\n");
     if((size_t)U.nrows != ext->cm_factor_simpl->n || (size_t)U.ncols != ext->cm_factor_simpl->n) eslog::error("getFactorU: output matrix has wrong dimensions\n");
 
 	U.resize(ext->cm_factor_simpl->n, ext->cm_factor_simpl->n, ext->cm_factor_simpl->nzmax);
@@ -242,7 +245,7 @@ void DirectSparseSolver<T, I>::getFactorU(Matrix_CSR<T,I> &U, bool copyPattern, 
 template <typename T, typename I>
 void DirectSparseSolver<T, I>::getPermutation(Permutation<I> &perm)
 {
-	if(ext->stage < 3) eslog::error("getPermutation: invalid order of operations in solver\n");
+	if(ext->stage < 3) eslog::error("getPermutation: invalid order of operations in spsolver\n");
 
 	perm.resize(ext->cm_factor_simpl->n);
 
@@ -255,63 +258,62 @@ void DirectSparseSolver<T, I>::getPermutation(Permutation<I> &perm)
 template <typename T, typename I>
 void DirectSparseSolver<T, I>::getSC(Matrix_Dense<T,I> &sc)
 {
-    eslog::error("getSC: not implemented, todo\n");
-    // old implementation, todo
+    // todo: can I use the existing factor so i don't have to factorize again?
 	// computes the schur complement S = A22 - A21 * A11^{-1} * A12, where A = [A11, A12; A21, A22]
 
-    // esint size_sc = sc.nrows;
-    // esint size = matrix->nrows;
-    // esint size_A11 = size - size_sc;
+    if(ext->stage < 2) eslog::error("getSC: invalid order of operations in spsolver\n");
 
-    // Matrix_CSR<T, I> A11_sp;
-    // Matrix_CSR<T, I> A21t_sp; // = A12c_sp
-    // Matrix_Dense<T, I> A22t_dn;
-    // Matrix_Dense<T, I> A12t_dn;
-    // SpBLAS<Matrix_CSR, T, I>::submatrix(*matrix, A11_sp, 0, size_A11, 0, size_A11);
-    // SpBLAS<Matrix_CSR, T, I>::submatrix(*matrix, A21t_sp, 0, size_A11, size_A11, size, false, true); // = A12c_sp
-    // SpBLAS<Matrix_CSR, T, I>::submatrix(*matrix, A22t_dn, size_A11, size, size_A11, size, true, false, true);
-    // SpBLAS<Matrix_CSR, T, I>::submatrix(*matrix, A12t_dn, 0, size_A11, size_A11, size, true, false, true);
+    I size_sc = sc.nrows;
+    I size = ext->matrix->nrows;
+    I size_A11 = size - size_sc;
 
-    // cholmod_common &cm_common = _solver->cholmod.common;
-    // cholmod_sparse *cm_A11_sp = new cholmod_sparse();
-    // cholmod_sparse *cm_A21_sp = new cholmod_sparse();
-    // cholmod_dense *cm_A22_dn = new cholmod_dense();
-    // cholmod_dense *cm_A12_dn = new cholmod_dense();
-    // cholmod_factor *cm_L;
-    // cholmod_dense *cm_A11iA12_dn;
+    Matrix_CSR<T, I> A11_sp;
+    Matrix_CSR<T, I> A21t_sp; // = A12c_sp
+    Matrix_Dense<T, I> A22t_dn;
+    Matrix_Dense<T, I> A12t_dn;
+    SpBLAS<Matrix_CSR, T, I>::submatrix(*ext->matrix, A11_sp, 0, size_A11, 0, size_A11);
+    SpBLAS<Matrix_CSR, T, I>::submatrix(*ext->matrix, A21t_sp, 0, size_A11, size_A11, size, false, true); // = A12c_sp
+    SpBLAS<Matrix_CSR, T, I>::submatrix(*ext->matrix, A22t_dn, size_A11, size, size_A11, size, true, false, true);
+    SpBLAS<Matrix_CSR, T, I>::submatrix(*ext->matrix, A12t_dn, 0, size_A11, size_A11, size, true, false, true);
 
-    // setSymmetric(cm_A11_sp, A11_sp);
-    // updateSymmetric(cm_A11_sp, A11_sp);
-    // setSymmetric(cm_A21_sp, A21t_sp);
-    // updateSymmetric(cm_A21_sp, A21t_sp);
-    // update(cm_A22_dn, A22t_dn);
-    // update(cm_A12_dn, A12t_dn);
+    cholmod_sparse *cm_A11_sp = nullptr;
+    cholmod_sparse *cm_A21_sp = nullptr;
+    cholmod_dense *cm_A22_dn = nullptr;
+    cholmod_dense *cm_A12_dn = nullptr;
+    cholmod_factor *cm_L = nullptr;
+    cholmod_dense *cm_A11iA12_dn = nullptr;
 
-    // double alpha[2] = {-1,0};
-    // double beta[2] = {1,0};
+    setSymmetric(cm_A11_sp, A11_sp);
+    updateSymmetric(cm_A11_sp, A11_sp);
+    setSymmetric(cm_A21_sp, A21t_sp);
+    updateSymmetric(cm_A21_sp, A21t_sp);
+    update(cm_A22_dn, A22t_dn);
+    update(cm_A12_dn, A12t_dn);
 
-    // _analyze<esint>(cm_L, cm_A11_sp, cm_common);
-    // _factorize<esint>(cm_L, cm_A11_sp, cm_common);
-    // _solve<esint>(cm_A11iA12_dn, cm_L, cm_A12_dn, cm_common);
-    // _apply<esint>(cm_A22_dn, cm_A21_sp, cm_A11iA12_dn, alpha, beta, cm_common);
+    double alpha[2] = {-1,0};
+    double beta[2] = {1,0};
 
-    // if constexpr (std::is_same_v<T,double>) { sc.type = Matrix_Type::REAL_SYMMETRIC_POSITIVE_DEFINITE; }
-    // if constexpr (std::is_same_v<T,std::complex<double>>) { sc.type = Matrix_Type::COMPLEX_HERMITIAN_POSITIVE_DEFINITE; }
-    // sc.shape = Matrix_Shape::UPPER;
-    // sc.resize(A22t_dn);
-    // for(esint r = 0, i = 0; r < sc.nrows; ++r) {
-    //     for(esint c = r; c < sc.ncols; ++c, ++i) {
-    //         sc.vals[i] = A22t_dn.vals[r * sc.ncols + c];
-    //     }
-    // }
+    cm_L = _analyze<esint>(cm_A11_sp, ext->cm_common);
+    _factorize<esint>(cm_L, cm_A11_sp, ext->cm_common);
+    cm_A11iA12_dn = _solve<esint>(CHOLMOD_A, cm_L, cm_A12_dn, ext->cm_common);
+    _apply<esint>(cm_A22_dn, cm_A21_sp, cm_A11iA12_dn, alpha, beta, ext->cm_common);
 
-    // delete cm_A11_sp;
-    // delete cm_A21_sp;
-    // delete cm_A22_dn;
-    // delete cm_A12_dn;
-    // _free<esint>(cm_L, cm_common);
-    // _free<esint>(cm_A11iA12_dn, cm_common);
-    // break;
+    if constexpr (std::is_same_v<T,double>) { sc.type = Matrix_Type::REAL_SYMMETRIC_POSITIVE_DEFINITE; }
+    if constexpr (std::is_same_v<T,std::complex<double>>) { sc.type = Matrix_Type::COMPLEX_HERMITIAN_POSITIVE_DEFINITE; }
+    sc.shape = Matrix_Shape::UPPER;
+    sc.resize(A22t_dn);
+    for(esint r = 0, i = 0; r < sc.nrows; ++r) {
+        for(esint c = r; c < sc.ncols; ++c, ++i) {
+            sc.vals[i] = A22t_dn.vals[r * sc.ncols + c];
+        }
+    }
+
+    delete cm_A11_sp;
+    delete cm_A21_sp;
+    delete cm_A22_dn;
+    delete cm_A12_dn;
+    _free<esint>(cm_L, ext->cm_common);
+    _free<esint>(cm_A11iA12_dn, ext->cm_common);
 }
 
 template struct DirectSparseSolver<double, int>;
