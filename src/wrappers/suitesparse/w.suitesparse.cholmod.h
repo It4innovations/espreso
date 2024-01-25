@@ -9,51 +9,59 @@
 
 namespace espreso {
 
-template <typename T> inline void _start(cholmod_common &common);
+template <typename I> inline void _start(cholmod_common &common);
 template <> inline void _start<int>(cholmod_common &common) { cholmod_start(&common); }
 template <> inline void _start<long>(cholmod_common &common) { cholmod_l_start(&common); }
 
-template <typename T> inline void _copy(cholmod_sparse* A, cholmod_sparse* &AC, int stype, int mode, cholmod_common &common);
-template <> inline void _copy<int>(cholmod_sparse* A, cholmod_sparse* &AC, int stype, int mode, cholmod_common &common) { AC = cholmod_copy(A, stype, mode, &common); }
-template <> inline void _copy<long>(cholmod_sparse* A, cholmod_sparse* &AC, int stype, int mode, cholmod_common &common) { AC = cholmod_l_copy(A, stype, mode, &common); }
+template <typename I> inline cholmod_sparse* _copy(cholmod_sparse* A, int stype, int mode, cholmod_common &common);
+template <> inline cholmod_sparse* _copy<int>(cholmod_sparse* A, int stype, int mode, cholmod_common &common) { return cholmod_copy(A, stype, mode, &common); }
+template <> inline cholmod_sparse* _copy<long>(cholmod_sparse* A, int stype, int mode, cholmod_common &common) { return cholmod_l_copy(A, stype, mode, &common); }
 
-template <typename T> inline void _analyze(cholmod_factor* &L, cholmod_sparse* A, cholmod_common &common);
-template <> inline void _analyze<int>(cholmod_factor* &L, cholmod_sparse* A, cholmod_common &common) { A->itype = CHOLMOD_INT; L = cholmod_analyze(A, &common); }
-template <> inline void _analyze<long>(cholmod_factor* &L, cholmod_sparse* A, cholmod_common &common) { A->itype = CHOLMOD_LONG; L = cholmod_l_analyze(A, &common); }
+template <typename I> inline cholmod_factor* _analyze(cholmod_sparse* A, cholmod_common &common);
+template <> inline cholmod_factor* _analyze<int>(cholmod_sparse* A, cholmod_common &common) { A->itype = CHOLMOD_INT; return cholmod_analyze(A, &common); }
+template <> inline cholmod_factor* _analyze<long>(cholmod_sparse* A, cholmod_common &common) { A->itype = CHOLMOD_LONG; return cholmod_l_analyze(A, &common); }
 
-template <typename T> inline void _factorize(cholmod_factor *L, cholmod_sparse *A, cholmod_common &common);
+template <typename I> inline void _factorize(cholmod_factor *L, cholmod_sparse *A, cholmod_common &common);
 template <> inline void _factorize<int>(cholmod_factor *L, cholmod_sparse *A, cholmod_common &common) { cholmod_factorize(A, L, &common); }
 template <> inline void _factorize<long>(cholmod_factor *L, cholmod_sparse *A, cholmod_common &common) { cholmod_l_factorize(A, L, &common); }
 
-template <typename T> inline void _solve(cholmod_dense* &x, cholmod_factor *L, cholmod_dense *b, cholmod_common &common);
-template <> inline void _solve<int>(cholmod_dense* &x, cholmod_factor *L, cholmod_dense *b, cholmod_common &common) { x = cholmod_solve(CHOLMOD_A, L, b, &common); }
-template <> inline void _solve<long>(cholmod_dense* &x, cholmod_factor *L, cholmod_dense *b, cholmod_common &common) { x = cholmod_l_solve(CHOLMOD_A, L, b, &common); }
+template <typename I> inline cholmod_dense* _solve(int sys, cholmod_factor *L, cholmod_dense *b, cholmod_common &common);
+template <> inline cholmod_dense* _solve<int>(int sys, cholmod_factor *L, cholmod_dense *b, cholmod_common &common) { return cholmod_solve(sys, L, b, &common); }
+template <> inline cholmod_dense* _solve<long>(int sys, cholmod_factor *L, cholmod_dense *b, cholmod_common &common) { return cholmod_l_solve(sys, L, b, &common); }
 
-template <typename T> inline void _apply(cholmod_dense* Y, cholmod_sparse* A, cholmod_dense *X, double alpha[2], double beta[2], cholmod_common &common);
+template <typename I> inline void _apply(cholmod_dense* Y, cholmod_sparse* A, cholmod_dense *X, double alpha[2], double beta[2], cholmod_common &common);
 template <> inline void _apply<int>(cholmod_dense* Y, cholmod_sparse* A, cholmod_dense *X, double alpha[2], double beta[2], cholmod_common &common) { cholmod_sdmult(A, 0, alpha, beta, X, Y, &common); }
 template <> inline void _apply<long>(cholmod_dense* Y, cholmod_sparse* A, cholmod_dense *X, double alpha[2], double beta[2], cholmod_common &common) { cholmod_l_sdmult(A, 0, alpha, beta, X, Y, &common); }
 
-template <typename T> inline void _transpose(cholmod_sparse* A, cholmod_sparse* &At, cholmod_common &common);
-template <> inline void _transpose<int>(cholmod_sparse* A, cholmod_sparse* &At, cholmod_common &common) { At = cholmod_transpose(A, 1, &common); }
-template <> inline void _transpose<long>(cholmod_sparse* A, cholmod_sparse* &At, cholmod_common &common) { At = cholmod_l_transpose(A, 1, &common); }
+template <typename I> inline cholmod_sparse* _transpose(cholmod_sparse* A, cholmod_common &common);
+template <> inline cholmod_sparse* _transpose<int>(cholmod_sparse* A, cholmod_common &common) { return cholmod_transpose(A, 1, &common); }
+template <> inline cholmod_sparse* _transpose<long>(cholmod_sparse* A, cholmod_common &common) { return cholmod_l_transpose(A, 1, &common); }
 
-template <typename T> inline void _multiply(cholmod_sparse* A, cholmod_sparse* B, cholmod_sparse* &C, cholmod_common &common);
-template <> inline void _multiply<int>(cholmod_sparse* A, cholmod_sparse* B, cholmod_sparse* &C, cholmod_common &common) { C = cholmod_ssmult(A, B, 1, true, true, &common); }
-template <> inline void _multiply<long>(cholmod_sparse* A, cholmod_sparse* B, cholmod_sparse* &C, cholmod_common &common) { C = cholmod_l_ssmult(A, B, 1, true, true, &common); }
+template <typename I> inline cholmod_sparse* _multiply(cholmod_sparse* A, cholmod_sparse* B, cholmod_common &common);
+template <> inline cholmod_sparse* _multiply<int>(cholmod_sparse* A, cholmod_sparse* B, cholmod_common &common) { return cholmod_ssmult(A, B, 1, true, true, &common); }
+template <> inline cholmod_sparse* _multiply<long>(cholmod_sparse* A, cholmod_sparse* B, cholmod_common &common) { return cholmod_l_ssmult(A, B, 1, true, true, &common); }
 
-template <typename T> inline void _factorToSparse(cholmod_factor *L, cholmod_sparse* &A, cholmod_common &common);
-template <> inline void _factorToSparse<int>(cholmod_factor *L, cholmod_sparse* &A, cholmod_common &common) { A = cholmod_factor_to_sparse(L, &common); }
-template <> inline void _factorToSparse<long>(cholmod_factor *L, cholmod_sparse* &A, cholmod_common &common) { A = cholmod_l_factor_to_sparse(L, &common); }
+template <typename I> inline cholmod_sparse* _factorToSparse(cholmod_factor *L, cholmod_common &common);
+template <> inline cholmod_sparse* _factorToSparse<int>(cholmod_factor *L, cholmod_common &common) { return cholmod_factor_to_sparse(L, &common); }
+template <> inline cholmod_sparse* _factorToSparse<long>(cholmod_factor *L, cholmod_common &common) { return cholmod_l_factor_to_sparse(L, &common); }
 
-template <typename T> inline void _copyFactor(cholmod_factor *in, cholmod_factor* &out, cholmod_common &common);
-template <> inline void _copyFactor<int>(cholmod_factor *in, cholmod_factor* &out, cholmod_common &common) { out = cholmod_copy_factor(in, &common); }
-template <> inline void _copyFactor<long>(cholmod_factor *in, cholmod_factor* &out, cholmod_common &common) { out = cholmod_l_copy_factor(in, &common); }
+template <typename I> inline cholmod_factor* _copyFactor(cholmod_factor *in, cholmod_common &common);
+template <> inline cholmod_factor* _copyFactor<int>(cholmod_factor *in, cholmod_common &common) { return cholmod_copy_factor(in, &common); }
+template <> inline cholmod_factor* _copyFactor<long>(cholmod_factor *in, cholmod_common &common) { return cholmod_l_copy_factor(in, &common); }
 
-template <typename T> inline void _finish(cholmod_common &common);
+template <typename I> inline void _changeFactor(int to_xtype, bool to_ll, bool to_super, bool to_packed, bool to_monotonic, cholmod_factor *L, cholmod_common &common);
+template <> inline void _changeFactor<int>(int to_xtype, bool to_ll, bool to_super, bool to_packed, bool to_monotonic, cholmod_factor *L, cholmod_common &common) { cholmod_change_factor(to_xtype, to_ll, to_super, to_packed, to_monotonic, L, &common); }
+template <> inline void _changeFactor<int64_t>(int to_xtype, bool to_ll, bool to_super, bool to_packed, bool to_monotonic, cholmod_factor *L, cholmod_common &common) { cholmod_l_change_factor(to_xtype, to_ll, to_super, to_packed, to_monotonic, L, &common); }
+
+template <typename I> inline void _resymbol(cholmod_sparse *A, I *fset, size_t fsize, int pack, cholmod_factor *L, cholmod_common &common);
+template <> inline void _resymbol<int>(cholmod_sparse *A, int *fset, size_t fsize, int pack, cholmod_factor *L, cholmod_common &common) { cholmod_resymbol(A, fset, fsize, pack, L, &common); }
+template <> inline void _resymbol<int64_t>(cholmod_sparse *A, int64_t *fset, size_t fsize, int pack, cholmod_factor *L, cholmod_common &common) { cholmod_l_resymbol(A, fset, fsize, pack, L, &common); }
+
+template <typename I> inline void _finish(cholmod_common &common);
 template <> inline void _finish<int>(cholmod_common &common) { cholmod_finish(&common); }
 template <> inline void _finish<long>(cholmod_common &common) { cholmod_l_finish(&common); }
 
-template <typename T, typename O> inline void _free(O* &object, cholmod_common &common);
+template <typename I, typename O> inline void _free(O* &object, cholmod_common &common);
 template <> inline void _free<int, cholmod_sparse>(cholmod_sparse* &object, cholmod_common &common) { cholmod_free_sparse(&object, &common); }
 template <> inline void _free<long, cholmod_sparse>(cholmod_sparse* &object, cholmod_common &common) { cholmod_l_free_sparse(&object, &common); }
 template <> inline void _free<int, cholmod_dense>(cholmod_dense* &object, cholmod_common &common) { cholmod_free_dense(&object, &common); }
@@ -64,12 +72,18 @@ template <> inline void _free<long, cholmod_factor>(cholmod_factor* &object, cho
 template <typename T> constexpr int _getCholmodXtype();
 template <> constexpr int _getCholmodXtype<float>() { return CHOLMOD_REAL; }
 template <> constexpr int _getCholmodXtype<double>() { return CHOLMOD_REAL; }
+template <> constexpr int _getCholmodXtype<std::complex<float>>() { return CHOLMOD_COMPLEX; }
 template <> constexpr int _getCholmodXtype<std::complex<double>>() { return CHOLMOD_COMPLEX; }
 
 template <typename T> constexpr int _getCholmodDtype();
 template <> constexpr int _getCholmodDtype<float>() { return CHOLMOD_SINGLE; }
 template <> constexpr int _getCholmodDtype<double>() { return CHOLMOD_DOUBLE; }
+template <> constexpr int _getCholmodDtype<std::complex<float>>() { return CHOLMOD_SINGLE; }
 template <> constexpr int _getCholmodDtype<std::complex<double>>() { return CHOLMOD_DOUBLE; }
+
+template<typename I> constexpr int _getCholmodItype();
+template<> constexpr int _getCholmodItype<int32_t>() { return CHOLMOD_INT; }
+template<> constexpr int _getCholmodItype<int64_t>() { return CHOLMOD_LONG; }
 
 constexpr int _getCholmodStype(Matrix_Shape shape)
 {
@@ -125,7 +139,7 @@ static inline void setAsymmetric(cholmod_sparse* &A, cholmod_common &common, con
 	At->packed = 1;
 
 	// CSR -> CSC
-	_transpose<esint>(At, A, common);
+	At = _transpose<esint>(A, common);
 	delete At;
 }
 
@@ -165,8 +179,7 @@ static inline void update(cholmod_dense* &A, const Vector_Dense<T, I> &v)
 template <typename T, typename I>
 static inline void _extractUpper(cholmod_sparse* &A, cholmod_common &common, Matrix_CSR<T, I> &M)
 {
-	cholmod_sparse* upA;
-	_copy<esint>(A, upA, -1, 1, common); // CSC -> CSR
+	cholmod_sparse* upA = _copy<esint>(A, -1, 1, common); // CSC -> CSR
 	M.shape = Matrix_Shape::UPPER;
 	M.type = Matrix_Type::REAL_SYMMETRIC_INDEFINITE;
 	M.resize(upA->ncol, upA->nrow, upA->nzmax);

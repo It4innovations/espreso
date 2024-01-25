@@ -14,124 +14,14 @@ namespace espreso {
 
 template<typename T, typename I>
 struct Solver_External_Representation {
-	char zerodrop;
-	int stage = 0; // 0 = completely uninitialized, 1 = initialized without matrix, 2 = matrix set but not factorized, 3 = symbolic factorization done, 4 = numeric factorization done
-	cholmod_common * cm_common = nullptr;
+	cholmod_common cm_common;
 	cholmod_factor * cm_factor_super = nullptr;
 	cholmod_factor * cm_factor_simpl = nullptr;
 	cholmod_sparse * cm_matrix_view = nullptr;
 	Vector_Dense<I> map_simpl_super;
+	char zerodrop;
+	int stage = 0; // 0 = completely uninitialized, 1 = initialized without matrix, 2 = matrix set but not factorized, 3 = symbolic factorization done, 4 = numeric factorization done
 };
-
-
-
-
-template<typename I>
-static void my_cholmod_start(cholmod_common * common)
-{
-    if constexpr(std::is_same_v<I,int32_t>) cholmod_start(common);
-    if constexpr(std::is_same_v<I,int64_t>) cholmod_l_start(common);
-}
-template<typename I>
-static cholmod_factor * my_cholmod_analyze(cholmod_sparse * A, cholmod_common * common)
-{
-    if constexpr(std::is_same_v<I,int32_t>) return cholmod_analyze(A, common);
-    if constexpr(std::is_same_v<I,int64_t>) return cholmod_l_analyze(A, common);
-}
-template<typename I>
-static void my_cholmod_factorize(cholmod_sparse * A, cholmod_factor * F, cholmod_common * common)
-{
-    if constexpr(std::is_same_v<I,int32_t>) cholmod_factorize(A, F, common);
-    if constexpr(std::is_same_v<I,int64_t>) cholmod_l_factorize(A, F, common);
-}
-template<typename I>
-static cholmod_sparse * my_cholmod_factor_to_sparse(cholmod_factor * F, cholmod_common * common)
-{
-    if constexpr(std::is_same_v<I,int32_t>) return cholmod_factor_to_sparse(F, common);
-    if constexpr(std::is_same_v<I,int64_t>) return cholmod_l_factor_to_sparse(F, common);
-}
-template<typename I>
-static cholmod_dense * my_cholmod_solve(int sys, cholmod_factor * L, cholmod_dense * B, cholmod_common * common)
-{
-    if constexpr(std::is_same_v<I,int32_t>) return cholmod_solve(sys, L, B, common);
-    if constexpr(std::is_same_v<I,int64_t>) return cholmod_l_solve(sys, L, B, common);
-}
-template<typename I>
-static void my_cholmod_free_sparse(cholmod_sparse ** A, cholmod_common * common)
-{
-    if constexpr(std::is_same_v<I,int32_t>) cholmod_free_sparse(A, common);
-    if constexpr(std::is_same_v<I,int64_t>) cholmod_l_free_sparse(A, common);
-}
-template<typename I>
-static void my_cholmod_free_factor(cholmod_factor ** F, cholmod_common * common)
-{
-    if constexpr(std::is_same_v<I,int32_t>) cholmod_free_factor(F, common);
-    if constexpr(std::is_same_v<I,int64_t>) cholmod_l_free_factor(F, common);
-}
-template<typename I>
-static int my_cholmod_sdmult(cholmod_sparse * A, int transpose, double alpha[2], double beta[2], cholmod_dense * X, cholmod_dense * Y, cholmod_common * Common)
-{
-    if constexpr(std::is_same_v<I,int32_t>) return cholmod_sdmult(A, transpose, alpha, beta, X, Y, Common);
-    if constexpr(std::is_same_v<I,int64_t>) return cholmod_l_sdmult(A, transpose, alpha, beta, X, Y, Common);
-}
-template<typename I>
-static cholmod_dense * my_cholmod_sparse_to_dense(cholmod_sparse * A, cholmod_common * Common)
-{
-    if constexpr(std::is_same_v<I,int32_t>) return cholmod_sparse_to_dense(A, Common);
-    if constexpr(std::is_same_v<I,int64_t>) return cholmod_l_sparse_to_dense(A, Common);
-}
-template<typename I>
-static cholmod_dense * my_cholmod_allocate_dense(size_t nrow, size_t ncol, size_t d, int xtype, cholmod_common *Common)
-{
-    if constexpr(std::is_same_v<I,int32_t>) return cholmod_allocate_dense(nrow, ncol, d, xtype, Common);
-    if constexpr(std::is_same_v<I,int64_t>) return cholmod_l_allocate_dense(nrow, ncol, d, xtype, Common);
-}
-template<typename I>
-static int my_cholmod_free_dense(cholmod_dense **X, cholmod_common *Common)
-{
-    if constexpr(std::is_same_v<I,int32_t>) return cholmod_free_dense(X, Common);
-    if constexpr(std::is_same_v<I,int64_t>) return cholmod_l_free_dense(X, Common);
-}
-template<typename I>
-static cholmod_factor * my_cholmod_copy_factor(cholmod_factor * F, cholmod_common * Common)
-{
-    if constexpr(std::is_same_v<I,int32_t>) return cholmod_copy_factor(F, Common);
-    if constexpr(std::is_same_v<I,int64_t>) return cholmod_l_copy_factor(F, Common);
-}
-template<typename I>
-static int my_cholmod_change_factor(int to_xtype, int to_ll, int to_super, int to_packed, int to_monotonic, cholmod_factor *L, cholmod_common *Common)
-{
-    if constexpr(std::is_same_v<I,int32_t>) return cholmod_change_factor(to_xtype, to_ll, to_super, to_packed, to_monotonic, L, Common);
-    if constexpr(std::is_same_v<I,int64_t>) return cholmod_l_change_factor(to_xtype, to_ll, to_super, to_packed, to_monotonic, L, Common);
-}
-template<typename I>
-static int my_cholmod_resymbol(cholmod_sparse *A, I *fset, size_t fsize, int pack, cholmod_factor *L, cholmod_common *Common)
-{
-    if constexpr(std::is_same_v<I,int32_t>) return cholmod_resymbol(A, fset, fsize, pack, L, Common);
-    if constexpr(std::is_same_v<I,int64_t>) return cholmod_l_resymbol(A, fset, fsize, pack, L, Common);
-}
-template<typename T>
-static constexpr int my_cholmod_dtype()
-{
-    if constexpr(std::is_same_v<T,double>)               return CHOLMOD_DOUBLE;
-    if constexpr(std::is_same_v<T,std::complex<double>>) return CHOLMOD_DOUBLE;
-    if constexpr(std::is_same_v<T,float>)                return CHOLMOD_SINGLE;
-    if constexpr(std::is_same_v<T,std::complex<float>>)  return CHOLMOD_SINGLE;
-}
-template<typename T>
-static constexpr int my_cholmod_xtype()
-{
-    if constexpr(std::is_same_v<T,std::complex<float>>)  return CHOLMOD_COMPLEX;
-    if constexpr(std::is_same_v<T,std::complex<double>>) return CHOLMOD_COMPLEX;
-    if constexpr(std::is_same_v<T,float>)                return CHOLMOD_REAL;
-    if constexpr(std::is_same_v<T,double>)               return CHOLMOD_REAL;
-}
-template<typename I>
-static constexpr int my_cholmod_itype()
-{
-    if constexpr(std::is_same_v<I,int32_t>) return CHOLMOD_INT;
-    if constexpr(std::is_same_v<I,int64_t>) return CHOLMOD_LONG;
-}
 
 
 
@@ -167,14 +57,13 @@ DirectSparseSolver<T, I>::DirectSparseSolver()
 
     ext->zerodrop = 'D'; // Drop, Keep
 
-    ext->cm_common = new cholmod_common();
-    my_cholmod_start<I>(ext->cm_common);
-    ext->cm_common->final_ll = 1;
-    ext->cm_common->nthreads_max = 1;
-    ext->cm_common->nmethods = 1;
-    ext->cm_common->method[0].ordering = CHOLMOD_METIS;
-    ext->cm_common->itype = my_cholmod_itype<I>();
-    ext->cm_common->supernodal = CHOLMOD_SUPERNODAL;
+    _start<I>(ext->cm_common);
+    ext->cm_common.final_ll = 1;
+    ext->cm_common.nthreads_max = 1;
+    ext->cm_common.nmethods = 1;
+    ext->cm_common.method[0].ordering = CHOLMOD_METIS;
+    ext->cm_common.itype = _getCholmodItype<I>();
+    ext->cm_common.supernodal = CHOLMOD_SUPERNODAL;
 
 	ext->stage = 1;
 }
@@ -196,12 +85,11 @@ DirectSparseSolver<T, I>::~DirectSparseSolver()
 {
     delete ext->cm_matrix_view;
 
-    if(ext->cm_factor_super != nullptr) my_cholmod_free_factor<I>(&ext->cm_factor_super, ext->cm_common);
+    if(ext->cm_factor_super != nullptr) _free<I>(ext->cm_factor_super, ext->cm_common);
 
-    if(ext->cm_factor_super != nullptr) my_cholmod_free_factor<I>(&ext->cm_factor_simpl, ext->cm_common);
+    if(ext->cm_factor_super != nullptr) _free<I>(ext->cm_factor_simpl, ext->cm_common);
 
-    if(ext->cm_common != nullptr) cholmod_finish(ext->cm_common);
-    delete ext->cm_common;
+    _finish<I>(ext->cm_common);
 }
 
 template <typename T, typename I>
@@ -221,10 +109,10 @@ void DirectSparseSolver<T, I>::commit(const Matrix_CSR<T,I> &a)
         ext->cm_matrix_view->nzmax = a.nnz;
         ext->cm_matrix_view->nz = nullptr;
         ext->cm_matrix_view->z = nullptr;
-        ext->cm_matrix_view->stype = -1;
-        ext->cm_matrix_view->itype = my_cholmod_itype<I>();
-        ext->cm_matrix_view->xtype = my_cholmod_xtype<T>();
-        ext->cm_matrix_view->dtype = my_cholmod_dtype<T>();
+        ext->cm_matrix_view->stype = -1; // UPPER in CSR, but LOWER in CSC
+        ext->cm_matrix_view->itype = _getCholmodItype<I>();
+        ext->cm_matrix_view->xtype = _getCholmodXtype<T>();
+        ext->cm_matrix_view->dtype = _getCholmodDtype<T>();
         ext->cm_matrix_view->sorted = 1;
         ext->cm_matrix_view->packed = 1;
     }
@@ -244,14 +132,14 @@ void DirectSparseSolver<T, I>::symbolicFactorization(int fixedSuffix)
 
     if(ext->stage != 2) throw std::runtime_error("symbolicFactorization: invalid order of operations in solver\n");
 	
-	ext->cm_factor_super = my_cholmod_analyze<I>(ext->cm_matrix_view, ext->cm_common);
+	ext->cm_factor_super = _analyze<I>(ext->cm_matrix_view, ext->cm_common);
 
     if(ext->cm_factor_super->xsize > utils::get_max_val_no_precision_loss_in_fp<T>()) eslog::error("symbolicFactorization: factor nnz too large for my super->simpl map\n");
-    ext->cm_factor_simpl = my_cholmod_copy_factor<I>(ext->cm_factor_super, ext->cm_common);
-    my_cholmod_change_factor<I>(CHOLMOD_REAL, 1, 1, 1, 1, ext->cm_factor_simpl, ext->cm_common);
+    ext->cm_factor_simpl = _copyFactor<I>(ext->cm_factor_super, ext->cm_common);
+    _changeFactor<I>(_getCholmodXtype<T>(), true, true, true, true, ext->cm_factor_simpl, ext->cm_common);
     for(size_t i = 0; i < ext->cm_factor_simpl->xsize; i++) reinterpret_cast<T*>(ext->cm_factor_simpl->x)[i] = static_cast<T>(i);
-    my_cholmod_change_factor<I>(CHOLMOD_REAL, 1, 0, 1, 1, ext->cm_factor_simpl, ext->cm_common);
-    if(ext->zerodrop == 'D') my_cholmod_resymbol<I>(ext->cm_matrix_view, nullptr, 0, 1, ext->cm_factor_simpl, ext->cm_common);
+    _changeFactor<I>(_getCholmodXtype<T>(), true, false, true, true, ext->cm_factor_simpl, ext->cm_common);
+    if(ext->zerodrop == 'D') _resymbol<I>(ext->cm_matrix_view, nullptr, 0, 1, ext->cm_factor_simpl, ext->cm_common);
     ext->map_simpl_super.resize(ext->cm_factor_simpl->nzmax);
     for(I i = 0; i < ext->map_simpl_super.size; i++) ext->map_simpl_super.vals[i] = static_cast<I>(std::real(reinterpret_cast<T*>(ext->cm_factor_simpl->x)[i]));
     
@@ -263,7 +151,7 @@ void DirectSparseSolver<T, I>::numericalFactorization()
 {
 	if(ext->stage < 3) eslog::error("numericalFactorization: invalid order of operations in solver\n");
 
-    my_cholmod_factorize<I>(ext->cm_matrix_view, ext->cm_factor_super, ext->cm_common);
+    _factorize<I>(ext->cm_factor_super, ext->cm_matrix_view, ext->cm_common);
 
     ext->stage = 4;
 }
@@ -277,15 +165,15 @@ void DirectSparseSolver<T, I>::solve(Vector_Dense<T, I> &rhs, Vector_Dense<T, I>
 	cm_rhs.d = rhs.size;
 	cm_rhs.nzmax = rhs.size;
 	cm_rhs.x = rhs.vals;
-	cm_rhs.xtype = my_cholmod_xtype<T>();
-	cm_rhs.dtype = my_cholmod_dtype<T>();
+	cm_rhs.xtype = _getCholmodXtype<T>();
+	cm_rhs.dtype = _getCholmodDtype<T>();
 
-	cholmod_dense * cm_sol = my_cholmod_solve<I>(CHOLMOD_A, ext->cm_factor_super, &cm_rhs, ext->cm_common);
+	cholmod_dense * cm_sol = _solve<I>(CHOLMOD_A, ext->cm_factor_super, &cm_rhs, ext->cm_common);
 
 	solution.resize(cm_sol->nrow);
 	std::copy_n(reinterpret_cast<T*>(cm_sol->x), cm_sol->nrow, solution.vals);
 
-	my_cholmod_free_dense<I>(&cm_sol, ext->cm_common);
+	_free<I>(cm_sol, ext->cm_common);
 }
 
 template <typename T, typename I>
@@ -297,16 +185,16 @@ void DirectSparseSolver<T, I>::solve(Matrix_Dense<T, I> &rhs, Matrix_Dense<T, I>
 	cm_rhs.d = rhs.get_ld();
 	cm_rhs.nzmax = cm_rhs.d * rhs.nrows;
 	cm_rhs.x = rhs.vals;
-	cm_rhs.xtype = my_cholmod_xtype<T>();
-	cm_rhs.dtype = my_cholmod_dtype<T>();
+	cm_rhs.xtype = _getCholmodXtype<T>();
+	cm_rhs.dtype = _getCholmodDtype<T>();
 
-	cholmod_dense * cm_sol = my_cholmod_solve<I>(CHOLMOD_A, ext->cm_factor_super, &cm_rhs, ext->cm_common);
+	cholmod_dense * cm_sol = _solve<I>(CHOLMOD_A, ext->cm_factor_super, &cm_rhs, ext->cm_common);
 
 	solution.resize(cm_sol->ncol, cm_sol->d);
 	solution.ncols = cm_sol->nrow;
 	std::copy_n(reinterpret_cast<T*>(cm_sol->x), cm_sol->nzmax, solution.vals);
 
-	my_cholmod_free_dense<I>(&cm_sol, ext->cm_common);
+	_free<I>(cm_sol, ext->cm_common);
 }
 
 template <typename T, typename I>
