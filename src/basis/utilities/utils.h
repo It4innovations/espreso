@@ -4,6 +4,7 @@
 
 #include <cstddef>
 #include <vector>
+#include <limits>
 
 namespace espreso {
 namespace utils {
@@ -67,6 +68,25 @@ namespace utils {
 
 	template<typename Ttype>
 	void mergeAppendedData(std::vector<Ttype> &data, const std::vector<size_t> &distribution);
+
+	template<typename I>
+	constexpr I my_int_pow(I base, I exponent)
+	{
+		if(exponent < 0) return 0;
+		if(exponent == 0) return 1;
+		if(exponent == 1) return base;
+		I tmp = my_int_pow<I>(base, exponent / 2);
+		I result = tmp * tmp;
+		if(exponent % 2 == 1) result *= base;
+		return result;
+	}
+
+	template<typename T>
+	constexpr size_t get_max_val_no_precision_loss_in_fp()
+	{
+		constexpr size_t result = my_int_pow<long long>(std::numeric_limits<T>::radix, std::numeric_limits<T>::digits);
+		return result;
+	}
 };
 
 }

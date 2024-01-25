@@ -28,14 +28,14 @@ static void checkStatus(sparse_status_t status)
 }
 }
 
-template <template <typename, typename> class Matrix, typename T, typename I>
+template <template <typename, typename, typename> class Matrix, typename T, typename I>
 SpBLAS<Matrix, T, I>::SpBLAS()
 : matrix{}, _spblas{}
 {
 
 }
 
-template <template <typename, typename> class Matrix, typename T, typename I>
+template <template <typename, typename, typename> class Matrix, typename T, typename I>
 SpBLAS<Matrix, T, I>::~SpBLAS()
 {
 	if (_spblas) {
@@ -43,7 +43,7 @@ SpBLAS<Matrix, T, I>::~SpBLAS()
 	}
 }
 
-template <template <typename, typename> class Matrix, typename T, typename I> void create(const Matrix<T, I> *matrix, Matrix_SpBLAS_External_Representation *_spblas, bool transposed = false);
+template <template <typename, typename, typename> class Matrix, typename T, typename I> void create(const typename SpBLAS<Matrix,T,I>::MatrixType *matrix, Matrix_SpBLAS_External_Representation *_spblas, bool transposed = false);
 
 template <> void create<Matrix_CSR, float, int>(const Matrix_CSR<float, int> *matrix, Matrix_SpBLAS_External_Representation *_spblas, bool transposed)
 {
@@ -97,16 +97,16 @@ template <> void create<Matrix_CSR, std::complex<double>, int>(const Matrix_CSR<
 	}
 }
 
-template <template <typename, typename> class Matrix, typename T, typename I>
-SpBLAS<Matrix, T, I>::SpBLAS(Matrix<T, I> &a)
+template <template <typename, typename, typename> class Matrix, typename T, typename I>
+SpBLAS<Matrix, T, I>::SpBLAS(MatrixType &a)
 : matrix{&a}, _spblas{}
 {
 	_spblas = new Matrix_SpBLAS_External_Representation();
 	create<Matrix, T, I>(matrix, _spblas, false);
 }
 
-template <template <typename, typename> class Matrix, typename T, typename I>
-void SpBLAS<Matrix, T, I>::insert(Matrix<T, I> &a)
+template <template <typename, typename, typename> class Matrix, typename T, typename I>
+void SpBLAS<Matrix, T, I>::insert(MatrixType &a)
 {
 	matrix = &a;
 	if (_spblas) {

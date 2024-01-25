@@ -86,7 +86,7 @@ public:
 
 	void pattern(const Matrix_IJV &other)
 	{
-		if constexpr(!A::always_equal) if(this->ator != other.ator) eslog::error("not implemented for unequal allocators");
+		if constexpr(!A::always_equal) if(this->ator != other.ator) eslog::error("not implemented for unequal allocators\n");
 		realloc(_allocated, other);
 		_Matrix_IJV<T, I>::operator=(_allocated);
 		this->rows = other.rows;

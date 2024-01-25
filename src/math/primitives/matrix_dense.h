@@ -89,7 +89,7 @@ public:
 	template<typename T2>
 	void pattern(const Matrix_Dense<T2,I,A> &other)
 	{
-		if constexpr(!A::always_equal) if(this->ator != other.ator) eslog::error("not implemented for unequal allocators");
+		if constexpr(!A::always_equal) if(this->ator != other.ator) eslog::error("not implemented for unequal allocators\n");
 		realloc(_allocated, other.shape, other.nrows, other.ncols);
 		_Matrix_Dense<T, I>::operator=(_allocated);
 	}
@@ -98,6 +98,11 @@ public:
 	{
 		submatrix[0] = rows;
 		submatrix[1] = cols;
+	}
+
+	I get_ld()
+	{
+		return _allocated.ncols;
 	}
 
 	Matrix_Type type;

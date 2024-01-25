@@ -40,7 +40,7 @@ public:
 
 	Vector_Sparse& operator=(const Vector_Sparse &other)
 	{
-		if constexpr(!A::always_equal) if(this->ator != other.ator) eslog::error("not implemented for unequal allocators");
+		if constexpr(!A::always_equal) if(this->ator != other.ator) eslog::error("not implemented for unequal allocators\n");
 		realloc(_allocated, other.size, other.nnz);
 		_Vector_Sparse<T, I>::operator=(_allocated);
 		for (I i = 0; i < other.nnz; ++i) {
@@ -78,7 +78,7 @@ public:
 	template<typename T2>
 	void pattern(const Vector_Sparse<T2,I,A> &other)
 	{
-		if constexpr(!A::always_equal) if(this->ator != other.ator) eslog::error("not implemented for unequal allocators");
+		if constexpr(!A::always_equal) if(this->ator != other.ator) eslog::error("not implemented for unequal allocators\n");
 		realloc(_allocated, other);
 		_Vector_Sparse<T, I>::operator=(_allocated);
 		this->indices = other.indices;
@@ -86,7 +86,7 @@ public:
 
 	void shallowCopy(const Vector_Sparse &other)
 	{
-		if constexpr(!A::always_equal) if(this->ator != other.ator) eslog::error("not implemented for unequal allocators");
+		if constexpr(!A::always_equal) if(this->ator != other.ator) eslog::error("not implemented for unequal allocators\n");
 		_Vector_Sparse<T, I>::operator=(other);
 	}
 

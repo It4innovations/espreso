@@ -3,7 +3,7 @@
 #define SRC_FETI_DUALOPERATOR_TOTALFETI_EXPLICIT_H_
 
 #include "dualoperator.h"
-#include "math/wrappers/math.solver.h"
+#include "math/wrappers/math.spsolver.h"
 
 namespace espreso {
 
@@ -42,7 +42,7 @@ protected:
 
 	std::vector<Matrix_CSR<T> > Kplus;
 	std::vector<Vector_Dense<T> > Btx, KplusBtx;
-	std::vector<DirectSolver<Matrix_CSR, T> > KSolver;
+	std::vector<DirectSparseSolver<T> > KSolver;
 
 	std::vector<Matrix_Dense<T> > F;
 	std::vector<Vector_Dense<T> > in, out;

@@ -25,14 +25,14 @@ struct Matrix_SpBLAS_External_Representation {
 	~Matrix_SpBLAS_External_Representation() { delete A; delete X; delete Y;}
 };
 
-template <template <typename, typename> class Matrix, typename T, typename I>
+template <template <typename, typename, typename> class Matrix, typename T, typename I>
 SpBLAS<Matrix, T, I>::SpBLAS()
 : matrix{}, _spblas{}
 {
 
 }
 
-template <template <typename, typename> class Matrix, typename T, typename I>
+template <template <typename, typename, typename> class Matrix, typename T, typename I>
 SpBLAS<Matrix, T, I>::~SpBLAS()
 {
 	if (_spblas) {
@@ -41,8 +41,8 @@ SpBLAS<Matrix, T, I>::~SpBLAS()
 	}
 }
 
-template <template <typename, typename> class Matrix, typename T, typename I>
-SpBLAS<Matrix, T, I>::SpBLAS(Matrix<T, I> &a)
+template <template <typename, typename, typename> class Matrix, typename T, typename I>
+SpBLAS<Matrix, T, I>::SpBLAS(MatrixType &a)
 : matrix(&a)
 {
 	_spblas = new Matrix_SpBLAS_External_Representation();
@@ -51,8 +51,8 @@ SpBLAS<Matrix, T, I>::SpBLAS(Matrix<T, I> &a)
 	updateSymmetric(_spblas->A, *matrix);
 }
 
-template <template <typename, typename> class Matrix, typename T, typename I>
-void SpBLAS<Matrix, T, I>::insert(Matrix<T, I> &a)
+template <template <typename, typename, typename> class Matrix, typename T, typename I>
+void SpBLAS<Matrix, T, I>::insert(MatrixType &a)
 {
 	matrix = &a;
 	if (_spblas) {

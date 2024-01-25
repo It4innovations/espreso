@@ -94,7 +94,7 @@ public:
 	template<typename T2>
 	void pattern(const Matrix_CSR<T2,I,A> &other)
 	{
-		if constexpr(!A::always_equal) if(this->ator != other.ator) eslog::error("not implemented for unequal allocators");
+		if constexpr(!A::always_equal) if(this->ator != other.ator) eslog::error("not implemented for unequal allocators\n");
 		realloc(_allocated, other);
 		_Matrix_CSR<T, I>::operator=(_allocated);
 		this->rows = other.rows;
@@ -103,7 +103,7 @@ public:
 
 	void shallowCopy(const Matrix_CSR &other)
 	{
-		if constexpr(!A::always_equal) if(this->ator != other.ator) eslog::error("not implemented for unequal allocators");
+		if constexpr(!A::always_equal) if(this->ator != other.ator) eslog::error("not implemented for unequal allocators\n");
 		type = other.type;
 		shape = other.shape;
 		_Matrix_CSR<T, I>::operator=(other);

@@ -1,6 +1,6 @@
 
 #include "math/wrappers/math.spblas.h"
-#include "math/wrappers/math.solver.h"
+#include "math/wrappers/math.spsolver.h"
 #include "esinfo/eslog.h"
 
 #include <algorithm>
@@ -15,58 +15,58 @@ namespace espreso {
 
 
 
-template <typename T, template <typename> class Matrix>
-SpBLAS<T, Matrix>::SpBLAS()
+template <template <typename, typename, typename> class Matrix, typename T, typename I>
+SpBLAS<Matrix, T, I>::SpBLAS()
 : matrix{}, _spblas{}
 {
 
 }
 
-template <typename T, template <typename> class Matrix>
-SpBLAS<T, Matrix>::~SpBLAS()
+template <template <typename, typename, typename> class Matrix, typename T, typename I>
+SpBLAS<Matrix, T, I>::~SpBLAS()
 {
 
 }
 
-template <typename T, template <typename> class Matrix>
-SpBLAS<T, Matrix>::SpBLAS(const Matrix<T> &a)
+template <template <typename, typename, typename> class Matrix, typename T, typename I>
+SpBLAS<Matrix, T, I>::SpBLAS(const MatrixType &a)
 : matrix{}, _spblas{}
 {
 
 }
 
-template <typename T, template <typename> class Matrix>
-void SpBLAS<T, Matrix>::insert(const Matrix<T> &a)
+template <template <typename, typename, typename> class Matrix, typename T, typename I>
+void SpBLAS<Matrix, T, I>::insert(const MatrixType &a)
 {
 
 }
 
-template <typename T, template <typename> class Matrix>
-void SpBLAS<T, Matrix>::insertTransposed(const Matrix<T> &a)
+template <template <typename, typename, typename> class Matrix, typename T, typename I>
+void SpBLAS<Matrix, T, I>::insertTransposed(const MatrixType &a)
 {
 
 }
 
-template <typename T, template <typename> class Matrix>
-void SpBLAS<T, Matrix>::extractUpper(Matrix<T> &a)
+template <template <typename, typename, typename> class Matrix, typename T, typename I>
+void SpBLAS<Matrix, T, I>::extractUpper(MatrixType &a)
 {
 
 }
 
-template <typename T, template <typename> class Matrix>
-void SpBLAS<T, Matrix>::apply(Vector_Dense<T> &y, const T &alpha, const T &beta, const Vector_Dense<T> &x)
+template <template <typename, typename, typename> class Matrix, typename T, typename I>
+void SpBLAS<Matrix, T, I>::apply(Vector_Dense<T> &y, const T &alpha, const T &beta, const Vector_Dense<T> &x)
 {
 	eslog::error("calling of empty SpBLAS wrapper.\n");
 }
 
-template <typename T, template <typename> class Matrix>
-void SpBLAS<T, Matrix>::transposeTo(SpBLAS<T, Matrix> &A)
+template <template <typename, typename, typename> class Matrix, typename T, typename I>
+void SpBLAS<Matrix, T, I>::transposeTo(SpBLAS<Matrix, T, I> &A)
 {
 
 }
 
-template <typename T, template <typename> class Matrix>
-void SpBLAS<T, Matrix>::multiply(SpBLAS<T, Matrix> &A, SpBLAS<T, Matrix> &B)
+template <template <typename, typename, typename> class Matrix, typename T, typename I>
+void SpBLAS<Matrix, T, I>::multiply(SpBLAS<Matrix, T, I> &A, SpBLAS<Matrix, T, I> &B)
 {
 	eslog::error("calling of empty SpBLAS wrapper.\n");
 }
@@ -97,6 +97,9 @@ static void _submatrix(const Matrix_CSR<T> &input, Matrix_Dense<T> &output, esin
 		return;
 	}
 
+	constexpr bool is_T_real = std::is_same<T,float>::value || std::is_same<T,double>::value;
+	constexpr bool is_T_complex = std::is_same<T,std::complex<float>>::value || std::is_same<T,std::complex<double>>::value;
+
 	esint out_rows = end_row - start_row;
 	esint out_cols = end_col - start_col;
 	bool is_out_block_symmetric = (start_row == start_col && end_row == end_col);
@@ -106,8 +109,8 @@ static void _submatrix(const Matrix_CSR<T> &input, Matrix_Dense<T> &output, esin
 		output.type = input.type;
 	}
 	else {
-		if constexpr (std::is_same<T,double>::value) { output.type = Matrix_Type::REAL_NONSYMMETRIC; }
-		else if constexpr (std::is_same<T,std::complex<double>>::value) { output.type = Matrix_Type::COMPLEX_NONSYMMETRIC; }
+		if constexpr (is_T_real)    { output.type = Matrix_Type::REAL_NONSYMMETRIC; }
+		if constexpr (is_T_complex) { output.type = Matrix_Type::COMPLEX_NONSYMMETRIC; }
 	}
 
 	if constexpr(DoTrans) { output.resize(out_cols, out_rows); }
@@ -141,8 +144,8 @@ static void _submatrix(const Matrix_CSR<T> &input, Matrix_Dense<T> &output, esin
 
 			val = input.vals[i];
 			if constexpr(do_copy_conjugated || do_transposed_conjugated) {
-				if constexpr(std::is_same<T,double>::value) { conjval = val; }
-				if constexpr(std::is_same<T,std::complex<double>>::value) { conjval = std::conj(val); }
+				if constexpr(is_T_real)    { conjval = val; }
+				if constexpr(is_T_complex) { conjval = std::conj(val); }
 			}
 			if constexpr(do_copy || do_copy_conjugated) { out_val = output.vals + denseMatCalcIndexRowMajor<OutShape>(out_r, out_c, output.ncols); }
 			if constexpr(do_transpose_copy || do_transposed_conjugated) { out_val_trans = output.vals + denseMatCalcIndexRowMajor<OutShape>(out_c, out_r, output.ncols); }
@@ -237,20 +240,23 @@ static void _submatrix(const Matrix_CSR<T> &input, Matrix_CSR<T> &output, esint 
 	// start is inclusive, end is exclusive; all must be valid ranges in the context of this matrix
 	// make sure all the desired values are present in the matrix (are not missing due to symmetry)
 
+	constexpr bool is_T_real = std::is_same<T,float>::value || std::is_same<T,double>::value;
+	constexpr bool is_T_complex = std::is_same<T,std::complex<float>>::value || std::is_same<T,std::complex<double>>::value;
+
 	esint out_rows = end_row - start_row;
 	esint out_cols = end_col - start_col;
 
 	bool is_out_block_symmetric = (start_row == start_col && end_row == end_col);
-	bool is_output_symmetric = (is_out_block_symmetric && getSymmetry(input.type) == Matrix_Symmetry::SYMMETRIC);
-	bool is_output_hermitian = (is_out_block_symmetric && getSymmetry(input.type) == Matrix_Symmetry::HERMITIAN);
+	// bool is_output_symmetric = (is_out_block_symmetric && getSymmetry(input.type) == Matrix_Symmetry::SYMMETRIC);
+	// bool is_output_hermitian = (is_out_block_symmetric && getSymmetry(input.type) == Matrix_Symmetry::HERMITIAN);
 
 	if(is_out_block_symmetric) {
 		output.type = input.type;
 		output.shape = input.shape;
 	}
 	else {
-		if constexpr (std::is_same<T,double>::value) { output.type = Matrix_Type::REAL_NONSYMMETRIC; }
-		if constexpr (std::is_same<T,std::complex<double>>::value) { output.type = Matrix_Type::COMPLEX_NONSYMMETRIC; }
+		if constexpr (is_T_real)    { output.type = Matrix_Type::REAL_NONSYMMETRIC; }
+		if constexpr (is_T_complex) { output.type = Matrix_Type::COMPLEX_NONSYMMETRIC; }
 		output.shape = Matrix_Shape::FULL;
 	}
 
@@ -283,7 +289,7 @@ static void _submatrix(const Matrix_CSR<T> &input, Matrix_CSR<T> &output, esint 
 		for(esint i = colidx_start; i < colidx_end; i++)
 		{
 			output.cols[curr_idx] = input.cols[i] - start_col;
-			if constexpr(std::is_same<T,std::complex<double>>::value && DoConj) { output.vals[curr_idx] = std::conj(input.vals[i]); }
+			if constexpr(is_T_complex && DoConj) { output.vals[curr_idx] = std::conj(input.vals[i]); }
 			else { output.vals[curr_idx] = input.vals[i]; }
 			curr_idx++;
 		}
@@ -292,23 +298,23 @@ static void _submatrix(const Matrix_CSR<T> &input, Matrix_CSR<T> &output, esint 
 }
 
 
-template <template <typename, typename> class Matrix, typename T, typename I>
+template <template <typename, typename, typename> class Matrix, typename T, typename I>
 void SpBLAS<Matrix, T, I>::submatrix(Matrix_Dense<T, I> &output, esint start_row, esint end_row, esint start_col, esint end_col, bool trans, bool conj, bool output_force_full)
 {
 	submatrix(*matrix, output, start_row, end_row, start_col, end_col, trans, conj, output_force_full);
 }
 
-template <template <typename, typename> class Matrix, typename T, typename I>
+template <template <typename, typename, typename> class Matrix, typename T, typename I>
 void SpBLAS<Matrix, T, I>::submatrix(Matrix_CSR<T, I> &output, esint start_row, esint end_row, esint start_col, esint end_col, bool trans, bool conj, bool output_force_full)
 {
 	submatrix(*matrix, output, start_row, end_row, start_col, end_col, trans, conj, output_force_full);
 }
 
-template <template <typename, typename> class Matrix, typename T, typename I>
+template <template <typename, typename, typename> class Matrix, typename T, typename I>
 void SpBLAS<Matrix, T, I>::submatrix(const Matrix_CSR<T, I> &input, Matrix_Dense<T, I> &output, esint start_row, esint end_row, esint start_col, esint end_col, bool trans, bool conj, bool output_force_full)
 {
-	esint out_rows = end_row - start_row;
-	esint out_cols = end_col - start_col;
+	// esint out_rows = end_row - start_row;
+	// esint out_cols = end_col - start_col;
 	bool is_out_block_symmetric = (start_row == start_col && end_row == end_col);
 
 	Matrix_Symmetry out_symmetry;
@@ -324,7 +330,7 @@ void SpBLAS<Matrix, T, I>::submatrix(const Matrix_CSR<T, I> &input, Matrix_Dense
 	_submatrix<T>(input, output, start_row, end_row, start_col, end_col, out_shape, in_shape, out_symmetry, conj, trans);
 }
 
-template <template <typename, typename> class Matrix, typename T, typename I>
+template <template <typename, typename, typename> class Matrix, typename T, typename I>
 void SpBLAS<Matrix, T, I>::submatrix(const Matrix_CSR<T, I> &input, Matrix_CSR<T, I> &output, esint start_row, esint end_row, esint start_col, esint end_col, bool trans, bool conj, bool output_force_full)
 {
 	if(trans) {

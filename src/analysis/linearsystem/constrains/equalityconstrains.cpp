@@ -9,8 +9,6 @@
 
 namespace espreso {
 
-template struct EqualityConstrains<double>;
-
 template <typename T>
 void EqualityConstrains<T>::set(step::Step &step, const Vector_Distributed<Vector_Sparse, T> &dirichlet)
 {
@@ -147,6 +145,8 @@ void EqualityConstrains<T>::update(step::Step &step, const Vector_Distributed<Ve
 		}
 	}
 }
+
+template struct EqualityConstrains<double>;
 
 }
 

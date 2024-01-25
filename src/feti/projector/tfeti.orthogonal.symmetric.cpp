@@ -451,7 +451,7 @@ void TFETIOrthogonalSymmetric<T>::_updateGGt()
 	eslog::checkpointln("FETI: GATHER GGT VALUES");
 
 	if (GGt.nrows) {
-		DirectSolver<Matrix_CSR, T> GGtSolver;
+		DirectSparseSolver<T> GGtSolver;
 		GGtSolver.commit(GGt);
 		GGtSolver.symbolicFactorization();
 		GGtSolver.numericalFactorization();

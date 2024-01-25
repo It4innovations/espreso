@@ -8,7 +8,7 @@ namespace espreso {
 
 #ifndef HAVE_ROCM
 
-template <template <typename, typename> class Matrix, typename T, typename I>
+template <template <typename, typename, typename> class Matrix, typename T, typename I>
 AccFETIDualOperator<Matrix, T, I>::AccFETIDualOperator(int rank)
 : rank(rank), _acc(nullptr)
 {
@@ -16,25 +16,25 @@ AccFETIDualOperator<Matrix, T, I>::AccFETIDualOperator(int rank)
 }
 
 
-template <template <typename, typename> class Matrix, typename T, typename I>
+template <template <typename, typename, typename> class Matrix, typename T, typename I>
 AccFETIDualOperator<Matrix, T, I>::~AccFETIDualOperator()
 {
 
 }
 
-template <template <typename, typename> class Matrix, typename T, typename I>
-void AccFETIDualOperator<Matrix, T, I>::set(const std::vector<Matrix<T, I> > &K, const std::vector<Matrix<T, I> > &B)
+template <template <typename, typename, typename> class Matrix, typename T, typename I>
+void AccFETIDualOperator<Matrix, T, I>::set(const std::vector<MatrixType> &K, const std::vector<MatrixType> &B)
 {
 
 }
 
-template <template <typename, typename> class Matrix, typename T, typename I>
-void AccFETIDualOperator<Matrix, T, I>::update(const std::vector<Matrix<T, I> > &K)
+template <template <typename, typename, typename> class Matrix, typename T, typename I>
+void AccFETIDualOperator<Matrix, T, I>::update(const std::vector<MatrixType> &K)
 {
 
 }
 
-template <template <typename, typename> class Matrix, typename T, typename I>
+template <template <typename, typename, typename> class Matrix, typename T, typename I>
 void AccFETIDualOperator<Matrix, T, I>::apply(const Vector_Dual<T> &x, Vector_Dual<T> &y, const std::vector<std::vector<int> > & D2C)
 {
 

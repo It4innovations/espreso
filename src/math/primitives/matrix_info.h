@@ -28,6 +28,13 @@ enum struct Matrix_Shape: int {
 	FULL
 };
 
+enum struct Solver_Factors: int {
+	NONE,
+	NONSYMMETRIC_BOTH,
+	SYMMETRIC_UPPER,
+	SYMMETRIC_LOWER
+};
+
 enum struct Matrix_Symmetry: int {
 	NONE,					// no symmetry
 	STRUCTURALLY_SYMMETRIC,	// symmetric distribution of nonzeros, but unsymmetric values

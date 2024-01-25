@@ -4,15 +4,12 @@
 #include "iterativesolver/pcpg.h"
 #include "projector/projector.h"
 #include "preconditioner/preconditioner.h"
-#include "math/wrappers/math.solver.h"
+#include "math/wrappers/math.spsolver.h"
 #include "esinfo/eslog.hpp"
 #include "esinfo/systeminfo.h"
 #include "wrappers/mpi/communication.h"
 
 namespace espreso {
-
-
-template struct FETI<double>;
 
 template <typename T>
 FETI<T>::FETI(FETIConfiguration &configuration)
@@ -65,7 +62,7 @@ bool FETI<T>::set(const step::Step &step)
 	preconditioner = Preconditioner<T>::set(*this, step);
 
 	eslog::info(" = ----------------------------------------------------------------------------------------- = \n");
-	eslog::info(" = EXTERNAL LINEAR SOLVER %*s = \n", 66, DirectSolver<Matrix_CSR, T>::name());
+	eslog::info(" = EXTERNAL LINEAR SOLVER %*s = \n", 66, DirectSparseSolver<T>::name());
 	eslog::info(" = ----------------------------------------------------------------------------------------- = \n");
 	iterativeSolver->info();
 	projector->info();
@@ -123,5 +120,7 @@ bool FETI<T>::solve(const step::Step &step)
 	eslog::info("       = ----------------------------------------------------------------------------- = \n");
 	return info.error == IterativeSolverInfo::ERROR::OK;
 }
+
+template struct FETI<double>;
 
 }

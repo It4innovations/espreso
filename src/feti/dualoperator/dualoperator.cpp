@@ -22,7 +22,7 @@ DualOperator<T>* DualOperator<T>::set(FETI<T> &feti, const step::Step &step)
 		dual = new TotalFETIExplicit<T>(feti);
 		break;
 	case FETIConfiguration::DUAL_OPERATOR::EXPLICIT_GPU:
-		if (DirectSolver<Matrix_CSR, T>::provideFactors()) {
+		if (DirectSparseSolver<T>::provideFactors()) {
 			eslog::info(" = DUAL OPERATOR                                                  EXPLICIT TOTAL FETI ON GPU = \n");
 			dual = new TotalFETIExplicitAcc<T>(feti);
 		} else {

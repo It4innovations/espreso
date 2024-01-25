@@ -74,14 +74,14 @@ public:
 	template<typename T2>
 	void pattern(const Vector_Dense<T2,I,A> &other)
 	{
-		if constexpr(!A::always_equal) if(this->ator != other.ator) eslog::error("not implemented for unequal allocators");
+		if constexpr(!A::always_equal) if(this->ator != other.ator) eslog::error("not implemented for unequal allocators\n");
 		realloc(_allocated, other.size);
 		_Vector_Dense<T, I>::operator=(_allocated);
 	}
 
 	void shallowCopy(const Vector_Dense &other)
 	{
-		if constexpr(!A::always_equal) if(this->ator != other.ator) eslog::error("not implemented for unequal allocators");
+		if constexpr(!A::always_equal) if(this->ator != other.ator) eslog::error("not implemented for unequal allocators\n");
 		_Vector_Dense<T, I>::operator=(other);
 	}
 

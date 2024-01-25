@@ -9,12 +9,9 @@
 
 namespace espreso {
 
-template class TotalFETIImplicit<double>;
-template class TotalFETIImplicit<std::complex<double> >;
-
 template <typename T>
 TotalFETIImplicit<T>::TotalFETIImplicit(FETI<T> &feti)
-: DualOperator<T>(feti), sparsity(DirectSolver<Matrix_CSR, T>::VectorSparsity::DENSE)
+: DualOperator<T>(feti), sparsity(DirectSparseSolver<T>::VectorSparsity::DENSE)
 {
 
 }
@@ -28,28 +25,28 @@ TotalFETIImplicit<T>::~TotalFETIImplicit()
 template <typename T>
 void TotalFETIImplicit<T>::reduceInfo(DualOperatorInfo &sum, DualOperatorInfo &min, DualOperatorInfo &max)
 {
-	sum.nnzA = sum.nnzL = sum.memoryL = sum.rows = sum.dualA = sum.surfaceA = 0;
-	min.nnzA = min.nnzL = min.memoryL = min.rows = min.dualA = min.surfaceA = INT32_MAX;
-	max.nnzA = max.nnzL = max.memoryL = max.rows = max.dualA = max.surfaceA = 0;
+	sum.nnzA = sum.nnzL = /*sum.memoryL =*/ sum.rows = sum.dualA = sum.surfaceA = 0;
+	min.nnzA = min.nnzL = /*min.memoryL =*/ min.rows = min.dualA = min.surfaceA = INT32_MAX;
+	max.nnzA = max.nnzL = /*max.memoryL =*/ max.rows = max.dualA = max.surfaceA = 0;
 	for (size_t di = 0; di < feti.K.size(); ++di) {
 		size_t dualA = feti.B1[di].nrows;
 		size_t surfaceA = Kplus[di].nrows - *std::min_element(feti.B1[di].cols, feti.B1[di].cols + feti.B1[di].nnz);
-		min.rows = std::min(min.rows, KSolver[di].rows);
-		min.nnzA = std::min(min.nnzA, KSolver[di].nnzA);
-		min.nnzL = std::min(min.nnzL, KSolver[di].nnzL);
-		min.memoryL = std::min(min.memoryL, KSolver[di].memoryL);
+		min.rows = std::min<size_t>(min.rows, KSolver[di].getMatrixSize());
+		min.nnzA = std::min<size_t>(min.nnzA, KSolver[di].getMatrixNnz());
+		min.nnzL = std::min<size_t>(min.nnzL, KSolver[di].getFactorNnz());
+		// min.memoryL = std::min(min.memoryL, KSolver[di].memoryL);
 		min.dualA = std::min(min.dualA, dualA);
 		min.surfaceA = std::min(min.surfaceA, surfaceA);
-		max.rows = std::max(max.rows, KSolver[di].rows);
-		max.nnzA = std::max(max.nnzA, KSolver[di].nnzA);
-		max.nnzL = std::max(max.nnzL, KSolver[di].nnzL);
-		max.memoryL = std::max(max.memoryL, KSolver[di].memoryL);
+		max.rows = std::max<size_t>(max.rows, KSolver[di].getMatrixSize());
+		max.nnzA = std::max<size_t>(max.nnzA, KSolver[di].getMatrixNnz());
+		max.nnzL = std::max<size_t>(max.nnzL, KSolver[di].getFactorNnz());
+		// max.memoryL = std::max(max.memoryL, KSolver[di].memoryL);
 		max.dualA = std::max(max.dualA, dualA);
 		max.surfaceA = std::max(max.surfaceA, surfaceA);
-		sum.rows += KSolver[di].rows;
-		sum.nnzA += KSolver[di].nnzA;
-		sum.nnzL += KSolver[di].nnzL;
-		sum.memoryL += KSolver[di].memoryL;
+		sum.rows += KSolver[di].getMatrixSize();
+		sum.nnzA += KSolver[di].getMatrixNnz();
+		sum.nnzL += KSolver[di].getFactorNnz();
+		// sum.memoryL += KSolver[di].memoryL;
 		sum.dualA += dualA;
 		sum.surfaceA += surfaceA;
 	}
@@ -69,8 +66,8 @@ void TotalFETIImplicit<T>::printInfo(DualOperatorInfo &sum, DualOperatorInfo &mi
 	eslog::info(" =   K+ ROWS                                                  %8.0f <%8d - %8d> = \n", (double)sum.rows / feti.sinfo.domains, min.rows, max.rows);
 	eslog::info(" =   K+ NNZ                                                   %8.0f <%8d - %8d> = \n", (double)sum.nnzA / feti.sinfo.domains, min.nnzA, max.nnzA);
 	eslog::info(" =   K+ FACTORS NNZ                                           %8.0f <%8d - %8d> = \n", (double)sum.nnzL / feti.sinfo.domains, min.nnzL, max.nnzL);
-	eslog::info(" =   K+ SOLVER MEMORY [MB]                                    %8.2f <%8.2f - %8.2f> = \n", (double)sum.memoryL / feti.sinfo.domains / 1024. / 1024., min.memoryL / 1024. / 1024., max.memoryL / 1024. / 1024.);
-	if (sparsity != DirectSolver<Matrix_CSR, T>::VectorSparsity::DENSE) {
+	// eslog::info(" =   K+ SOLVER MEMORY [MB]                                    %8.2f <%8.2f - %8.2f> = \n", (double)sum.memoryL / feti.sinfo.domains / 1024. / 1024., min.memoryL / 1024. / 1024., max.memoryL / 1024. / 1024.);
+	if (sparsity != DirectSparseSolver<T>::VectorSparsity::DENSE) {
 		eslog::info(" =   K+ FACTORIZATION                                                        RESPECT SURFACE = \n");
 	}
 	if (feti.configuration.exhaustive_info) {
@@ -97,7 +94,7 @@ void TotalFETIImplicit<T>::info()
 template <typename T>
 void TotalFETIImplicit<T>::set(const step::Step &step)
 {
-	sparsity = feti.configuration.partial_dual ? DirectSolver<Matrix_CSR, T>::VectorSparsity::SPARSE_RHS | DirectSolver<Matrix_CSR, T>::VectorSparsity::SPARSE_SOLUTION : DirectSolver<Matrix_CSR, T>::VectorSparsity::DENSE;
+	sparsity = feti.configuration.partial_dual ? DirectSparseSolver<T>::VectorSparsity::SPARSE_RHS | DirectSparseSolver<T>::VectorSparsity::SPARSE_SOLUTION : DirectSparseSolver<T>::VectorSparsity::DENSE;
 
 	Kplus.resize(feti.K.size());
 	d.resize();
@@ -121,7 +118,7 @@ void TotalFETIImplicit<T>::set(const step::Step &step)
 		KSolver[di].commit(Kplus[di]);
 
 		esint suffix = 0;
-		if (sparsity != DirectSolver<Matrix_CSR, T>::VectorSparsity::DENSE) {
+		if (sparsity != DirectSparseSolver<T>::VectorSparsity::DENSE) {
 			suffix = *std::min_element(feti.B1[di].cols, feti.B1[di].cols + feti.B1[di].nnz);
 		}
 
@@ -191,5 +188,8 @@ void TotalFETIImplicit<T>::toPrimal(const Vector_Dual<T> &x, std::vector<Vector_
 		KSolver[di].solve(KplusBtx[di], y[di]);
 	}
 }
+
+template class TotalFETIImplicit<double>;
+template class TotalFETIImplicit<std::complex<double> >;
 
 }
