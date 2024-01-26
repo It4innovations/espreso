@@ -2,7 +2,12 @@
 #ifndef SRC_WRAPPERS_SUITESPARSE_W_SUITESPARSE_CHOLMOD_H_
 #define SRC_WRAPPERS_SUITESPARSE_W_SUITESPARSE_CHOLMOD_H_
 
+#ifdef SUITESPARSE_HEADER_NESTED
+#include "suitesparse/cholmod.h"
+#else // SUITESPARSE_HEADER_DIRECT
 #include "cholmod.h"
+#endif
+
 #include "math/math.h"
 
 #include <cstring>

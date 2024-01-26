@@ -7,6 +7,6 @@ def configure(ctx):
     headers_subdir = "suitesparse/cholmod.h"
     libs = ["cholmod"]
     if ctx.check_cxx(mandatory=False, msg="Checking for 'suitesparse'", okmsg=" ".join(libs), define_name="HAVE_SUITESPARSE", header_name=headers_direct, lib=libs, uselib_store="SUITESPARSE"):
-        ctx.env.append_unique("DEFINES", "SUITESPARSE_HEADER_DIRECT")
+        ctx.env.append_unique("DEFINES_SUITESPARSE", "SUITESPARSE_HEADER_DIRECT")
     elif ctx.check_cxx(mandatory=False, msg="Checking for 'suitesparse'", okmsg=" ".join(libs), define_name="HAVE_SUITESPARSE", header_name=headers_subdir, lib=libs, uselib_store="SUITESPARSE"):
-        ctx.env.append_unique("DEFINES", "SUITESPARSE_HEADER_SUBDIR")
+        ctx.env.append_unique("DEFINES_SUITESPARSE", "SUITESPARSE_HEADER_SUBDIR")
