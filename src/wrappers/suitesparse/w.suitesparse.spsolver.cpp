@@ -21,7 +21,7 @@ struct Solver_External_Representation {
     const Matrix_CSR<T, I> * matrix = nullptr;
 	Vector_Dense<I> map_simpl_super;
 	char zerodrop;
-	int stage = 0; // 0 = completely uninitialized, 1 = initialized without matrix, 2 = matrix set but not factorized, 3 = symbolic factorization done, 4 = numeric factorization done
+	int stage = 0; // 0 = completely uninitialized, 1 = initialized without matrix, 2 = have matrix symbolic pattern, 3 = symbolic factorization done, 4 = have matrix numeric values, 5 = numeric factorization done
 };
 
 
@@ -125,7 +125,8 @@ void DirectSparseSolver<T, I>::commit(const Matrix_CSR<T,I> &a)
     ext->cm_matrix_view->x = a.vals;
 	
     if(ext->stage == 1) ext->stage = 2;
-    if(ext->stage == 4) ext->stage = 3;
+    if(ext->stage == 3) ext->stage = 4;
+    if(ext->stage == 5) ext->stage = 4;
 }
 
 template <typename T, typename I>
@@ -152,16 +153,18 @@ void DirectSparseSolver<T, I>::symbolicFactorization(int fixedSuffix)
 template <typename T, typename I>
 void DirectSparseSolver<T, I>::numericalFactorization()
 {
-	if(ext->stage < 3) eslog::error("numericalFactorization: invalid order of operations in spsolver\n");
+	if(ext->stage < 4) eslog::error("numericalFactorization: invalid order of operations in spsolver\n");
 
     _factorize<I>(ext->cm_factor_super, ext->cm_matrix_view, ext->cm_common);
 
-    ext->stage = 4;
+    ext->stage = 5;
 }
 
 template <typename T, typename I>
 void DirectSparseSolver<T, I>::solve(Vector_Dense<T, I> &rhs, Vector_Dense<T, I> &solution, int sparsity)
 {
+	if(ext->stage < 5) eslog::error("solve: invalid order of operations in spsolver\n");
+
 	cholmod_dense cm_rhs;
 	cm_rhs.nrow = rhs.size;
 	cm_rhs.ncol = 1;
@@ -182,6 +185,8 @@ void DirectSparseSolver<T, I>::solve(Vector_Dense<T, I> &rhs, Vector_Dense<T, I>
 template <typename T, typename I>
 void DirectSparseSolver<T, I>::solve(Matrix_Dense<T, I> &rhs, Matrix_Dense<T, I> &solution, int sparsity)
 {
+	if(ext->stage < 5) eslog::error("solve: invalid order of operations in spsolver\n");
+
 	cholmod_dense cm_rhs;
 	cm_rhs.nrow = rhs.ncols;
 	cm_rhs.ncol = rhs.nrows;
@@ -232,7 +237,7 @@ template <typename T, typename I>
 void DirectSparseSolver<T, I>::getFactorU(Matrix_CSR<T,I> &U, bool copyPattern, bool copyValues)
 {
 	if(ext->stage < 3) eslog::error("getFactorU: invalid order of operations in spsolver\n");
-    if(copyValues && ext->stage < 4) eslog::error("getFactorU: invalid order of operations in spsolver\n");
+    if(copyValues && ext->stage < 5) eslog::error("getFactorU: invalid order of operations in spsolver\n");
     if((size_t)U.nrows != ext->cm_factor_simpl->n || (size_t)U.ncols != ext->cm_factor_simpl->n) eslog::error("getFactorU: output matrix has wrong dimensions\n");
 
 	U.resize(ext->cm_factor_simpl->n, ext->cm_factor_simpl->n, ext->cm_factor_simpl->nzmax);
