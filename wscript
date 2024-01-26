@@ -37,6 +37,9 @@ def configure(ctx):
     if ctx.options.simd_off:
         ctx.env.append_unique("DEFINES", [ "SIMD_OFF" ])
 
+    if ctx.options.use_cusparse_legacy:
+        ctx.env.append_unique("DEFINES", [ "USE_CUSPARSE_LEGACY" ])
+
     ctx.env.append_unique("CXXFLAGS", [ "-std=c++17", "-Wall" ])
     ctx.env.append_unique("CXXFLAGS", ctx.options.cxxflags.split())
     if ctx.options.mode == "release":
@@ -130,8 +133,7 @@ def build(ctx):
     ctx.build_espreso(ctx.path.ant_glob('src/wrappers/blas/**/*.cpp'), "wblas", [ "BLAS" ])
     ctx.build_espreso(ctx.path.ant_glob('src/wrappers/lapack/**/*.cpp'), "wlapack", [ "LAPACK" ])
     ctx.build_espreso(ctx.path.ant_glob('src/wrappers/mkl/**/*.cpp'), "wmkl", [ "MKL" ])
-    if ctx.env.HAVE_CUDA:
-        ctx.build_espreso(ctx.path.ant_glob('src/wrappers/cuda/**/*.(cu|cpp)'), "wcuda", [ "CUDA" ])
+    ctx.build_espreso(ctx.path.ant_glob('src/wrappers/cuda/**/*.(cu|cpp)'), "wcuda", [ "CUDA" ])
 #     ctx.build_espreso(ctx.path.ant_glob('src/wrappers/hypre/**/*.cpp'), "whypre", [ "HYPRE" ])
     ctx.build_espreso(ctx.path.ant_glob('src/wrappers/mklpdss/**/*.cpp'), "wmklpdss", [ "MKLPDSS", "MKL" ])
 #     ctx.build_espreso(ctx.path.ant_glob('src/wrappers/pardiso/**/*.cpp'), "wpardiso", [ "PARDISO" ])
@@ -232,6 +234,11 @@ def options(opt):
         action="store_true",
         default=False,
         help="Build ESPRESO with GUI (Qt5 is needed).")
+
+    opt.compiler.add_option("--use-cusparse-legacy",
+        action="store_true",
+        default=False,
+        help="Use legacy cusparse API. For CUDA < 12 only")
 
     recurse(opt)
 
