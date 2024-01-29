@@ -23,8 +23,8 @@ struct UniformBuilderFETIPattern {
 		std::vector<esint> K, f, indices; // local permutations
 	};
 
-	UniformBuilderFETIPattern(FETIConfiguration &feti, std::map<std::string, ECFExpression> &dirichlet, int dofs, Matrix_Shape shape);
-	UniformBuilderFETIPattern(FETIConfiguration &feti, std::map<std::string, ECFExpressionOptionalVector> &dirichlet, int dofs, Matrix_Shape shape);
+	UniformBuilderFETIPattern(FETIConfiguration &feti, std::map<std::string, ECFExpression> &dirichlet, int dofs, int multiplicity, Matrix_Shape shape);
+	UniformBuilderFETIPattern(FETIConfiguration &feti, std::map<std::string, ECFExpressionOptionalVector> &dirichlet, int dofs, int multiplicity,Matrix_Shape shape);
 	~UniformBuilderFETIPattern();
 
 protected:
@@ -41,14 +41,14 @@ private:
 template <typename T>
 struct UniformBuilderFETI: UniformBuilderFETIPattern, SparseMatrixBuilder<T> {
 
-	UniformBuilderFETI(FETIConfiguration &feti, std::map<std::string, ECFExpression> &dirichlet, int dofs, Matrix_Shape shape)
-	: UniformBuilderFETIPattern(feti, dirichlet, dofs, shape), SparseMatrixBuilder<T>(dofs), syncS{}
+	UniformBuilderFETI(FETIConfiguration &feti, std::map<std::string, ECFExpression> &dirichlet, int dofs, int multiplicity, Matrix_Shape shape)
+	: UniformBuilderFETIPattern(feti, dirichlet, dofs, multiplicity, shape), SparseMatrixBuilder<T>(dofs), syncS{}
 	{
 
 	}
 
-	UniformBuilderFETI(FETIConfiguration &feti, std::map<std::string, ECFExpressionOptionalVector> &dirichlet, int dofs, Matrix_Shape shape)
-	: UniformBuilderFETIPattern(feti, dirichlet, dofs, shape), SparseMatrixBuilder<T>(dofs), syncS{}
+	UniformBuilderFETI(FETIConfiguration &feti, std::map<std::string, ECFExpressionOptionalVector> &dirichlet, int dofs, int multiplicity,Matrix_Shape shape)
+	: UniformBuilderFETIPattern(feti, dirichlet, dofs, multiplicity, shape), SparseMatrixBuilder<T>(dofs), syncS{}
 	{
 
 	}

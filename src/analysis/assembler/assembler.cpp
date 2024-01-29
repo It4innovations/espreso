@@ -249,6 +249,33 @@ bool Assembler::checkBoundaryParameter(const std::string &name, std::map<std::st
 	return true;
 }
 
+bool Assembler::checkBoundaryParameter(const std::string &name, std::map<std::string, ECFHarmonicExpressionVector> &settings)
+{
+	eslog::info("  %s%*s \n", name.c_str(), 91 - name.size(), "");
+	for (auto region = info::mesh->boundaryRegions.crbegin(); region != info::mesh->boundaryRegions.crend(); ++region) {
+		auto it = settings.find((*region)->name);
+		if (it != settings.end()) {
+			switch (info::mesh->dimension) {
+			case 2:
+				if (
+						!checkExpression(it->first + ".X.MAGNITUDE", it->second.magnitude.x) || !checkExpression(it->first + ".X.PHASE    ", it->second.phase.x) ||
+						!checkExpression(it->first + ".Y.MAGNITUDE", it->second.magnitude.y) || !checkExpression(it->first + ".Y.PHASE    ", it->second.phase.y))
+				{ return false; }
+				break;
+			case 3:
+				if (
+						!checkExpression(it->first + ".X.MAGNITUDE", it->second.magnitude.x) || !checkExpression(it->first + ".X.PHASE    ", it->second.phase.x) ||
+						!checkExpression(it->first + ".Y.MAGNITUDE", it->second.magnitude.y) || !checkExpression(it->first + ".Y.PHASE    ", it->second.phase.y) ||
+						!checkExpression(it->first + ".Z.MAGNITUDE", it->second.magnitude.z) || !checkExpression(it->first + ".Z.PHASE    ", it->second.phase.z))
+				{ return false; }
+				break;
+			}
+		}
+	}
+	eslog::info("  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  \n");
+	return true;
+}
+
 ECFExpression* Assembler::getExpression(size_t interval, std::map<std::string, ECFExpression> &settings)
 {
 	int region = info::mesh->elements->eintervals[interval].region;
@@ -269,6 +296,16 @@ ECFExpressionVector* Assembler::getExpression(size_t interval, std::map<std::str
 	return it != settings.end() ? &it->second : nullptr;
 }
 
+ECFHarmonicExpressionVector* Assembler::getExpression(size_t interval, std::map<std::string, ECFHarmonicExpressionVector> &settings)
+{
+	int region = info::mesh->elements->eintervals[interval].region;
+	auto it = settings.find(info::mesh->elementsRegions[region]->name);
+	if (it == settings.end()) {
+		it = settings.find(info::mesh->elementsRegions[0]->name);
+	}
+	return it != settings.end() ? &it->second : nullptr;
+}
+
 ECFExpression* Assembler::getExpression(const std::string &name, std::map<std::string, ECFExpression> &settings)
 {
 	auto it = settings.find(name);
@@ -276,6 +313,12 @@ ECFExpression* Assembler::getExpression(const std::string &name, std::map<std::s
 }
 
 ECFExpressionVector* Assembler::getExpression(const std::string &name, std::map<std::string, ECFExpressionVector> &settings)
+{
+	auto it = settings.find(name);
+	return it != settings.end() ? &it->second : nullptr;
+}
+
+ECFHarmonicExpressionVector* Assembler::getExpression(const std::string &name, std::map<std::string, ECFHarmonicExpressionVector> &settings)
 {
 	auto it = settings.find(name);
 	return it != settings.end() ? &it->second : nullptr;

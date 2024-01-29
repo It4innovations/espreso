@@ -35,7 +35,7 @@ struct OutputExecutor {
 	}
 
 	virtual void mesh() = 0;
-	virtual void monitors(step::TYPE type) = 0;
+	virtual void monitors(const step::Step &step) = 0;
 	virtual void solution(const step::Step &step, const step::Time &time) = 0;
 	virtual void solution(const step::Step &step, const step::Frequency &frequency) = 0;
 
@@ -51,10 +51,10 @@ public:
 		}
 	}
 
-	virtual void monitors(step::TYPE type)
+	virtual void monitors(const step::Step &step)
 	{
 		for (size_t i = 0; i < writers.size(); ++i) {
-			writers[i]->updateMonitors(type);
+			writers[i]->updateMonitors(step);
 		}
 	}
 
@@ -83,18 +83,17 @@ class AsyncOutputExecutor: public DirectOutputExecutor, public Pthread::Executor
 			SOLUTION,
 			DUMMY
 		} tag;
-		step::TYPE type;
 		step::Step step;
 		step::Time time;
 		step::Frequency frequency;
 
-		SharedData(TAG tag, step::TYPE type): tag(tag), type(type) {}
-		SharedData(TAG tag, const step::Step &step, const step::Time &time): tag(tag), type(step.type), step(step), time(time) {}
-		SharedData(TAG tag, const step::Step &step, const step::Frequency &frequency): tag(tag), type(step.type), step(step), frequency(frequency) {}
+		SharedData(TAG tag, const step::Step &step): tag(tag) {}
+		SharedData(TAG tag, const step::Step &step, const step::Time &time): tag(tag), step(step), time(time) {}
+		SharedData(TAG tag, const step::Step &step, const step::Frequency &frequency): tag(tag), step(step), frequency(frequency) {}
 	} app, thread;
 
 public:
-	AsyncOutputExecutor(): Pthread(this), app(SharedData::TAG::DUMMY, step::TYPE::TIME), thread(app)
+	AsyncOutputExecutor(): Pthread(this), app(SharedData::TAG::DUMMY, step::Step()), thread(app)
 	{
 
 	}
@@ -111,25 +110,25 @@ public:
 			DirectOutputExecutor::mesh();
 		}
 		if (thread.tag == SharedData::TAG::MONITORS) {
-			DirectOutputExecutor::monitors(thread.type);
+			DirectOutputExecutor::monitors(thread.step);
 		}
-		if (thread.tag == SharedData::TAG::SOLUTION && thread.type == step::TYPE::TIME) {
+		if (thread.tag == SharedData::TAG::SOLUTION && thread.step.type == step::TYPE::TIME) {
 			DirectOutputExecutor::solution(thread.step, thread.time);
 		}
-		if (thread.tag == SharedData::TAG::SOLUTION && thread.type == step::TYPE::FREQUENCY) {
+		if (thread.tag == SharedData::TAG::SOLUTION && thread.step.type == step::TYPE::FREQUENCY) {
 			DirectOutputExecutor::solution(thread.step, thread.frequency);
 		}
 	}
 
 	virtual void mesh()
 	{
-		app = SharedData(SharedData::TAG::MESH, step::TYPE::TIME); // dummy type
+		app = SharedData(SharedData::TAG::MESH, step::Step()); // dummy step
 		Pthread::call();
 	}
 
-	virtual void monitors(step::TYPE type)
+	virtual void monitors(const step::Step &step)
 	{
-		app = SharedData(SharedData::TAG::MONITORS, type);
+		app = SharedData(SharedData::TAG::MONITORS, step);
 		Pthread::call();
 	}
 
@@ -214,11 +213,11 @@ void Output::updateMesh()
 	if (_direct) { _direct->mesh(); }
 }
 
-void Output::updateMonitors(step::TYPE type)
+void Output::updateMonitors(const step::Step &step)
 {
 	if (_allowed) {
-		if (_async) { _async->monitors(type); }
-		if (_direct) { _direct->monitors(type); }
+		if (_async) { _async->monitors(step); }
+		if (_direct) { _direct->monitors(step); }
 	}
 }
 

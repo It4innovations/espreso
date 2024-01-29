@@ -70,30 +70,34 @@ public:
 		}
 	}
 
-	void set(const T &value)
+	Vector_Base<T>* set(const T &value)
 	{
 		#pragma omp parallel for
 		for (size_t d = 0; d < domains.size(); ++d) {
 			math::set(domains[d], value);
 		}
+		return this;
 	}
 
-	void scale(const T &alpha)
+	Vector_Base<T>* scale(const T &value)
 	{
 		#pragma omp parallel for
 		for (size_t d = 0; d < domains.size(); ++d) {
-			math::scale(alpha, domains[d]);
+			math::scale(value, domains[d]);
 		}
+		return this;
 	}
 
-	void copy(const Vector_Base<T> *in)
+	Vector_Base<T>* copy(const Vector_Base<T> *in, const Selection &rows = Selection())
 	{
-		in->copyTo(static_cast<Vector_FETI<Vector, T>*>(this));
+		in->copyTo(static_cast<Vector_FETI<Vector, T>*>(this), rows);
+		return this;
 	}
 
-	void add(const T &alpha, const Vector_Base<T> *a)
+	Vector_Base<T>* add(const T &alpha, const Vector_Base<T> *a, const Selection &rows = Selection())
 	{
-		a->addTo(alpha, static_cast<Vector_FETI<Vector, T>*>(this));
+		a->addTo(alpha, static_cast<Vector_FETI<Vector, T>*>(this), rows);
+		return this;
 	}
 
 	T norm()
@@ -123,55 +127,55 @@ public:
 		return T{};
 	}
 
-	void copyTo(Vector_Distributed<Vector_Dense , T> *a) const
+	void copyTo(Vector_Distributed<Vector_Dense , T> *a, const Selection &rows = Selection()) const
 	{
 		eslog::error("call empty function\n");
 	}
 
-	void copyTo(Vector_Distributed<Vector_Sparse, T> *a) const
+	void copyTo(Vector_Distributed<Vector_Sparse, T> *a, const Selection &rows = Selection()) const
 	{
 		eslog::error("call empty function\n");
 	}
 
-	void copyTo(Vector_FETI<Vector_Dense , T> *a) const
+	void copyTo(Vector_FETI<Vector_Dense , T> *a, const Selection &rows = Selection()) const
 	{
 		#pragma omp parallel for
 		for (size_t d = 0; d < domains.size(); ++d) {
-			math::copy(a->domains[d], domains[d]);
+			math::copy(a->domains[d], domains[d], rows);
 		}
 	}
 
-	void copyTo(Vector_FETI<Vector_Sparse, T> *a) const
+	void copyTo(Vector_FETI<Vector_Sparse, T> *a, const Selection &rows = Selection()) const
 	{
 		#pragma omp parallel for
 		for (size_t d = 0; d < domains.size(); ++d) {
-			math::copy(a->domains[d], domains[d]);
+			math::copy(a->domains[d], domains[d], rows);
 		}
 	}
 
-	void addTo(const T &alpha, Vector_Distributed<Vector_Dense, T> *a) const
+	void addTo(const T &alpha, Vector_Distributed<Vector_Dense, T> *a, const Selection &rows = Selection()) const
 	{
 		eslog::error("call empty function\n");
 	}
 
-	void addTo(const T &alpha, Vector_Distributed<Vector_Sparse, T> *a) const
+	void addTo(const T &alpha, Vector_Distributed<Vector_Sparse, T> *a, const Selection &rows = Selection()) const
 	{
 		eslog::error("call empty function\n");
 	}
 
-	void addTo(const T &alpha, Vector_FETI<Vector_Dense, T> *a) const
+	void addTo(const T &alpha, Vector_FETI<Vector_Dense, T> *a, const Selection &rows = Selection()) const
 	{
 		#pragma omp parallel for
 		for (size_t d = 0; d < domains.size(); ++d) {
-			math::add(a->domains[d], alpha, domains[d]);
+			math::add(a->domains[d], alpha, domains[d], rows);
 		}
 	}
 
-	void addTo(const T &alpha, Vector_FETI<Vector_Sparse, T> *a) const
+	void addTo(const T &alpha, Vector_FETI<Vector_Sparse, T> *a, const Selection &rows = Selection()) const
 	{
 		#pragma omp parallel for
 		for (size_t d = 0; d < domains.size(); ++d) {
-			math::add(a->domains[d], alpha, domains[d]);
+			math::add(a->domains[d], alpha, domains[d], rows);
 		}
 	}
 

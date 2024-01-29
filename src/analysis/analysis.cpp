@@ -7,6 +7,7 @@
 #include "physics/heat.transient.linear.h"
 #include "physics/structuralmechanics.steadystate.linear.h"
 #include "physics/structuralmechanics.steadystate.nonlinear.h"
+#include "physics/structuralmechanics.harmonic.real.linear.h"
 
 #include "basis/utilities/parser.h"
 #include "esinfo/ecfinfo.h"
@@ -68,14 +69,24 @@ void Analysis::run()
 		}
 		break;
 	case PhysicsConfiguration::TYPE::STRUCTURAL_MECHANICS_3D:
-		switch (info::ecf->structural_mechanics_3d.load_steps_settings.at(1).mode) {
-		case LoadStepSolverConfiguration::MODE::LINEAR: physics = new StructuralMechanicsSteadyStateLinear(info::ecf->structural_mechanics_3d, info::ecf->structural_mechanics_3d.load_steps_settings.at(1)); break;
-		case LoadStepSolverConfiguration::MODE::NONLINEAR: physics = new StructuralMechanicsSteadyStateNonLinear(info::ecf->structural_mechanics_3d, info::ecf->structural_mechanics_3d.load_steps_settings.at(1)); break;
-		}
+		switch (info::ecf->structural_mechanics_3d.load_steps_settings.at(1).type) {
+		case LoadStepSolverConfiguration::TYPE::HARMONIC:
+			switch (info::ecf->structural_mechanics_3d.load_steps_settings.at(1).mode) {
+			case LoadStepSolverConfiguration::MODE::LINEAR: physics = new StructuralMechanicsHarmonicRealLinear(info::ecf->structural_mechanics_3d, info::ecf->structural_mechanics_3d.load_steps_settings.at(1)); break;
+			case LoadStepSolverConfiguration::MODE::NONLINEAR:  break;
+			} break;
+		case LoadStepSolverConfiguration::TYPE::STEADY_STATE:
+			switch (info::ecf->structural_mechanics_3d.load_steps_settings.at(1).mode) {
+			case LoadStepSolverConfiguration::MODE::LINEAR: physics = new StructuralMechanicsSteadyStateLinear(info::ecf->structural_mechanics_3d, info::ecf->structural_mechanics_3d.load_steps_settings.at(1)); break;
+			case LoadStepSolverConfiguration::MODE::NONLINEAR: physics = new StructuralMechanicsSteadyStateNonLinear(info::ecf->structural_mechanics_3d, info::ecf->structural_mechanics_3d.load_steps_settings.at(1)); break;
+			} break;
+		case LoadStepSolverConfiguration::TYPE::TRANSIENT:
+			break;
+		} break;
 		break;
 	}
 
-	physics->analyze();
+	physics->analyze(step);
 	eslog::checkpointln("SIMULATION: PHYSICS ANALYSED");
 	step.loadstep = 0;
 	step.loadsteps = 1;

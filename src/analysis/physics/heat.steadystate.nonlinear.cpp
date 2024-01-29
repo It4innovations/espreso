@@ -37,15 +37,16 @@ HeatSteadyStateNonLinear::~HeatSteadyStateNonLinear()
 	if (solver) { delete solver; }
 }
 
-void HeatSteadyStateNonLinear::analyze()
+void HeatSteadyStateNonLinear::analyze(step::Step &step)
 {
 	eslog::info("\n ============================================================================================= \n");
 	eslog::info(" == ANALYSIS                                                        NON-LINEAR STEADY STATE == \n");
 	eslog::info(" == PHYSICS                                                                   HEAT TRANSFER == \n");
 	eslog::info(" ============================================================================================= \n");
 
+	step.type = step::TYPE::TIME;
 	assembler.analyze();
-	info::mesh->output->updateMonitors(step::TYPE::TIME);
+	info::mesh->output->updateMonitors(step);
 
 	Matrix_Shape shape = Matrix_Shape::UPPER;
 	Matrix_Type type = Matrix_Type::REAL_SYMMETRIC_POSITIVE_DEFINITE;
@@ -62,19 +63,19 @@ void HeatSteadyStateNonLinear::analyze()
 
 	switch (configuration.solver) {
 	case LoadStepSolverConfiguration::SOLVER::FETI:
-		builder = new UniformBuilderFETI<double>(configuration.feti, configuration.temperature, 1, shape);
+		builder = new UniformBuilderFETI<double>(configuration.feti, configuration.temperature, 1, 1, shape);
 		solver = new FETILinearSystemSolver<double, HeatSteadyStateNonLinear>(configuration.feti);
 		break;
 	case LoadStepSolverConfiguration::SOLVER::HYPRE:   break;
 	case LoadStepSolverConfiguration::SOLVER::MKLPDSS:
-		builder = new UniformBuilderDirect<double>(configuration.temperature, 1, shape);
+		builder = new UniformBuilderDirect<double>(configuration.temperature, 1, 1, shape);
 		solver = new MKLPDSSLinearSystemSolver<double>(configuration.mklpdss);
 		break;
 	case LoadStepSolverConfiguration::SOLVER::PARDISO: break;
 	case LoadStepSolverConfiguration::SOLVER::SUPERLU: break;
 	case LoadStepSolverConfiguration::SOLVER::WSMP:    break;
 	case LoadStepSolverConfiguration::SOLVER::NONE:
-		builder = new UniformBuilderDirect<double>(configuration.temperature, 1, shape);
+		builder = new UniformBuilderDirect<double>(configuration.temperature, 1, 1, shape);
 		solver = new EmptySystemSolver<double>();
 	}
 
@@ -119,7 +120,7 @@ void HeatSteadyStateNonLinear::run(step::Step &step)
 	eslog::info(" ============================================================================================= \n\n");
 
 	eslog::info(" ============================================================================================= \n");
-	eslog::info(" = LOAD STEP %2d                                                              TIME %10.4f = \n", step::step.loadstep + 1, time.current);
+	eslog::info(" = LOAD STEP %2d                                                              TIME %10.4f = \n", step.loadstep + 1, time.current);
 	eslog::info(" = ----------------------------------------------------------------------------------------- = \n");
 	eslog::info("      =================================================================================== \n");
 	eslog::info("      ==  NEWTON RAPHSON CONVERGENCE CRITERIA                                          == \n");
@@ -142,6 +143,7 @@ void HeatSteadyStateNonLinear::run(step::Step &step)
 	assembler.evaluate(time, K, nullptr, f, nullptr, dirichlet);
 	storeSystem(step);
 	solver->A->copy(K);
+	solver->A->updated = true;
 	solver->b->copy(f);
 	solver->dirichlet->copy(dirichlet);
 	eslog::info("      == ----------------------------------------------------------------------------- == \n");
@@ -166,6 +168,7 @@ void HeatSteadyStateNonLinear::run(step::Step &step)
 		assembler.evaluate(time, K, nullptr, f, R, dirichlet);
 		storeSystem(step);
 		solver->A->copy(K);
+		solver->A->updated = true;
 		solver->b->copy(f);
 		solver->b->add(-1, R);
 		solver->dirichlet->copy(dirichlet);

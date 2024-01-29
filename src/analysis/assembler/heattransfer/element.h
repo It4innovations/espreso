@@ -54,6 +54,14 @@ template <size_t nodes, size_t gps, size_t ndim, size_t edim> struct HeatTransfe
 	alignas(SIMD::size * sizeof(double)) SIMD K[nodes * nodes];
 	alignas(SIMD::size * sizeof(double)) SIMD M[nodes * nodes];
 	alignas(SIMD::size * sizeof(double)) SIMD f[nodes];
+
+	HeatTransferElement()
+	{
+		for (size_t i = 0; i < ndim * nodes * ndim * nodes; ++i) {
+			K[i] = zeros();
+			M[i] = zeros();
+		}
+	}
 };
 
 template <size_t nodes, size_t gps, size_t ndim, size_t edim> struct HeatTransferBoundary: public GeneralBoundary<nodes, gps, ndim, edim> {
@@ -67,7 +75,7 @@ template <size_t nodes, size_t gps, size_t ndim, size_t edim> struct HeatTransfe
 	alignas(SIMD::size * sizeof(double)) SIMD f[nodes];
 };
 
-template <size_t ndim> struct HeatTransferDirichlet: public GeneralDirichlet<ndim> {
+template <size_t ndim> struct HeatTransferNode: public GeneralNode<ndim> {
 
 };
 

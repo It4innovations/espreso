@@ -18,7 +18,6 @@ void createSymlink(const std::string &path, const std::string &link);
 void copyFile(const std::string &source, const std::string &destination);
 bool exists(const std::string &path);
 void remove(const std::string &path);
-std::string debugDirectory();
 std::string debugDirectory(const step::Step &step);
 std::string prepareFile(const std::string &directory, const std::string &name, int domain = -1);
 std::string filename(const std::string &directory, const std::string &name);

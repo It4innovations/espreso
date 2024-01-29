@@ -402,7 +402,7 @@ void XDMF::updateMesh()
 	if (_measure) { eslog::endln("XDMF: GEOMETRY STORED"); }
 }
 
-void XDMF::updateMonitors(step::TYPE type)
+void XDMF::updateMonitors(const step::Step &step)
 {
 
 }
@@ -425,12 +425,12 @@ void XDMF::updateSolution(const step::Step &step, const step::Time &time)
 			_data->topoloty[rindex] = _data->region[rindex]->element(_data->topoloty[rindex]);
 		}
 	}
-	_data->tree->element("Time")->attribute("Value", std::to_string(step::outtime.current));
+	_data->tree->element("Time")->attribute("Value", std::to_string(time.current));
 
 	std::vector<XDMF::Attribute> attributes;
 	attributes.reserve(info::mesh->elements->data.size() + info::mesh->nodes->data.size());
 	for (size_t di = 0; di < info::mesh->elements->data.size(); ++di) {
-		if (storeData(info::mesh->elements->data[di])) {
+		if (storeData(info::mesh->elements->data[di], step)) {
 			rindex = 0;
 			for (size_t r = 1; r < info::mesh->elementsRegions.size(); ++r, ++rindex) {
 				attributes.push_back({});
@@ -440,7 +440,7 @@ void XDMF::updateSolution(const step::Step &step, const step::Time &time)
 	}
 
 	for (size_t di = 0; di < info::mesh->nodes->data.size(); ++di) {
-		if (storeData(info::mesh->nodes->data[di])) {
+		if (storeData(info::mesh->nodes->data[di], step)) {
 			rindex = 0;
 			for (size_t r = 1; r < info::mesh->elementsRegions.size(); ++r, ++rindex) {
 				attributes.push_back({});
@@ -498,7 +498,7 @@ void XDMF::updateSolution(const step::Step &step, const step::Frequency &frequen
 
 }
 
-void XDMF::updateSolution()
+void XDMF::updateSolution(const step::Step &step)
 {
 
 }

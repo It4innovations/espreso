@@ -18,12 +18,22 @@
 
 namespace espreso {
 
-NodeData* StructuralMechanics::Results::displacement = nullptr;
 NodeData* StructuralMechanics::Results::thickness = nullptr;
 ElementData* StructuralMechanics::Results::principalStress = nullptr;
 ElementData* StructuralMechanics::Results::componentStress = nullptr;
 ElementData* StructuralMechanics::Results::vonMisesStress = nullptr;
 ElementData* StructuralMechanics::Results::isPlastized = nullptr;
+
+NodeData* StructuralMechanics::Results::displacement = nullptr;
+
+NodeData* StructuralMechanics::Results::cosDisplacement = nullptr;
+NodeData* StructuralMechanics::Results::sinDisplacement = nullptr;
+NodeData* StructuralMechanics::Results::displacementAmplitude = nullptr;
+NodeData* StructuralMechanics::Results::phase = nullptr;
+NodeData* StructuralMechanics::Results::velocity = nullptr;
+NodeData* StructuralMechanics::Results::velocityAmplitude = nullptr;
+NodeData* StructuralMechanics::Results::acceleration = nullptr;
+NodeData* StructuralMechanics::Results::accelerationAmplitude = nullptr;
 
 StructuralMechanics::StructuralMechanics(StructuralMechanics *previous, StructuralMechanicsConfiguration &settings, StructuralMechanicsLoadStepConfiguration &configuration)
 : Assembler(settings), settings(settings), configuration(configuration)
@@ -91,22 +101,50 @@ void StructuralMechanics::analyze()
 	validateRegionSettings("INITIAL TEMPERATURE", settings.initial_temperature);
 	validateRegionSettings("THICKNESS", settings.thickness);
 
-	if (Results::displacement == nullptr) {
-		Results::displacement = info::mesh->nodes->appendData(info::mesh->dimension, NamedData::DataType::VECTOR, "DISPLACEMENT");
-	}
 	if (Results::thickness == nullptr && info::mesh->dimension == 2) {
 		Results::thickness = info::mesh->nodes->appendData(1, NamedData::DataType::SCALAR, "THICKNESS");
 	}
-	if (info::ecf->output.results_selection.stress && Results::principalStress == nullptr) {
-		Results::principalStress = info::mesh->elements->appendData(info::mesh->dimension    , NamedData::DataType::NUMBERED   , "PRINCIPAL_STRESS");
-		Results::componentStress = info::mesh->elements->appendData(info::mesh->dimension * 2, NamedData::DataType::TENSOR_SYMM, "COMPONENT_STRESS");
-		Results::vonMisesStress  = info::mesh->elements->appendData(                        1, NamedData::DataType::SCALAR     , "VON_MISES_STRESS");
-	}
 
-	for (size_t i = 0; i < info::mesh->materials.size(); ++i) {
-		if (info::mesh->materials[i]->material_model == MaterialConfiguration::MATERIAL_MODEL::PLASTICITY) {
-			if (Results::isPlastized == nullptr) {
-				Results::isPlastized = info::mesh->elements->appendData(1, NamedData::DataType::SCALAR, "IS_PLASTIZED");
+	if (configuration.type == StructuralMechanicsLoadStepConfiguration::TYPE::HARMONIC) {
+		if (Results::cosDisplacement == nullptr) {
+			Results::cosDisplacement = info::mesh->nodes->appendData(info::mesh->dimension, NamedData::DataType::VECTOR, "DISPLACEMENT_COS", step::TYPE::FREQUENCY);
+		}
+		if (Results::sinDisplacement == nullptr) {
+			Results::sinDisplacement = info::mesh->nodes->appendData(info::mesh->dimension, NamedData::DataType::VECTOR, "DISPLACEMENT_SIN", step::TYPE::FREQUENCY);
+		}
+		if (Results::displacementAmplitude == nullptr) {
+			Results::displacementAmplitude = info::mesh->nodes->appendData(info::mesh->dimension, NamedData::DataType::SCALAR, "DISPLACEMENT_AMPLITUDE", step::TYPE::FREQUENCY);
+		}
+		if (Results::phase == nullptr) {
+			Results::phase = info::mesh->nodes->appendData(info::mesh->dimension, NamedData::DataType::SCALAR, "PHASE", step::TYPE::FREQUENCY);
+		}
+		if (Results::velocity == nullptr) {
+			Results::velocity = info::mesh->nodes->appendData(info::mesh->dimension, NamedData::DataType::VECTOR, "VELOCITY", step::TYPE::FREQUENCY);
+		}
+		if (Results::velocityAmplitude == nullptr) {
+			Results::velocityAmplitude = info::mesh->nodes->appendData(info::mesh->dimension, NamedData::DataType::SCALAR, "VELOCITY_AMPLITUDE", step::TYPE::FREQUENCY);
+		}
+		if (Results::acceleration == nullptr) {
+			Results::acceleration = info::mesh->nodes->appendData(info::mesh->dimension, NamedData::DataType::VECTOR, "ACCELERATION", step::TYPE::FREQUENCY);
+		}
+		if (Results::accelerationAmplitude == nullptr) {
+			Results::accelerationAmplitude = info::mesh->nodes->appendData(info::mesh->dimension, NamedData::DataType::SCALAR, "ACCELERATION_AMPLITUDE", step::TYPE::FREQUENCY);
+		}
+	} else {
+		if (Results::displacement == nullptr) {
+			Results::displacement = info::mesh->nodes->appendData(info::mesh->dimension, NamedData::DataType::VECTOR, "DISPLACEMENT");
+		}
+		if (info::ecf->output.results_selection.stress && Results::principalStress == nullptr) {
+			Results::principalStress = info::mesh->elements->appendData(info::mesh->dimension    , NamedData::DataType::NUMBERED   , "PRINCIPAL_STRESS");
+			Results::componentStress = info::mesh->elements->appendData(info::mesh->dimension * 2, NamedData::DataType::TENSOR_SYMM, "COMPONENT_STRESS");
+			Results::vonMisesStress  = info::mesh->elements->appendData(                        1, NamedData::DataType::SCALAR     , "VON_MISES_STRESS");
+		}
+
+		for (size_t i = 0; i < info::mesh->materials.size(); ++i) {
+			if (info::mesh->materials[i]->material_model == MaterialConfiguration::MATERIAL_MODEL::PLASTICITY) {
+				if (Results::isPlastized == nullptr) {
+					Results::isPlastized = info::mesh->elements->appendData(1, NamedData::DataType::SCALAR, "IS_PLASTIZED");
+				}
 			}
 		}
 	}
@@ -121,7 +159,7 @@ void StructuralMechanics::analyze()
 //		generateBoundaryExpression<ExternalNodeExpression>(axisymmetric, boundaryOps, configuration.displacement, 2, [] (auto &element, const size_t &n, const size_t &s, const double &value) { element.displacement[n][2][s] = value; });
 	}
 
-	if (step::step.loadstep == 0) {
+	if (true) { // add check
 		///////////////////////////////////// Set materials and check if there is not any incorrect region intersection
 		///////////////////////////////////////////////////////////////////////////////////////////////////////////////
 		eslog::info("\n  MATERIALS                                                                                    \n");
@@ -258,6 +296,9 @@ void StructuralMechanics::analyze()
 	if (configuration.normal_pressure.size()) {
 		correct &= checkBoundaryParameter("NORMAL_PRESSURE", configuration.normal_pressure);
 	}
+	if (configuration.harmonic_force.size()) {
+		correct &= checkBoundaryParameter("HARMONIC_FORCE", configuration.harmonic_force);
+	}
 
 	for(size_t i = 0; i < info::mesh->elements->eintervals.size(); ++i) {
 		const MaterialConfiguration *mat = info::mesh->materials[info::mesh->elements->eintervals[i].material];
@@ -281,6 +322,9 @@ void StructuralMechanics::analyze()
 		subkernels[i].material.activate(mat);
 
 		subkernels[i].K.activate(settings.element_behaviour, mat->linear_elastic_properties.model, subkernels[i].elasticity.rotated);
+		if (configuration.type != LoadStepSolverConfiguration::TYPE::STEADY_STATE) {
+			subkernels[i].M.activate();
+		}
 		subkernels[i].acceleration.activate(getExpression(i, configuration.acceleration), settings.element_behaviour);
 		subkernels[i].angularVelocity.activate(getExpression(i, configuration.angular_velocity), settings.element_behaviour);
 		if (Results::principalStress) {
@@ -301,6 +345,7 @@ void StructuralMechanics::analyze()
 			}
 		} else {
 			for(size_t t = 0; t < info::mesh->boundaryRegions[r]->nodes->threads(); ++t) {
+				boundary[r][t].harmonicForce.activate(getExpression(info::mesh->boundaryRegions[r]->name, configuration.harmonic_force), settings.element_behaviour);
 				boundary[r][t].coordinates.activate(region->nodes->cbegin(t), region->nodes->cend(), false);
 			}
 		}
@@ -343,31 +388,66 @@ void StructuralMechanics::analyze()
 	eslog::info(" ============================================================================================= \n");
 }
 
-void StructuralMechanics::connect(Matrix_Base<double> *K, Matrix_Base<double> *M, Matrix_Base<double> *C, Vector_Base<double> *f, Vector_Base<double> *nf, Vector_Base<double> *dirichlet)
+void StructuralMechanics::connect(Matrix_Base<double> *K, Matrix_Base<double> *M, Vector_Base<double> *f, Vector_Base<double> *nf, Vector_Base<double> *dirichlet)
 {
 	for(size_t i = 0; i < info::mesh->elements->eintervals.size(); ++i) {
 		subkernels[i].Kfiller.activate(i, info::mesh->dimension, subkernels[i].elements, K);
+		subkernels[i].Mfiller.activate(i, info::mesh->dimension, subkernels[i].elements, M);
 
-		subkernels[i].RHSfiller.activate(i, info::mesh->dimension, subkernels[i].elements, f);
-		subkernels[i].nRHSfiller.activate(i, info::mesh->dimension, subkernels[i].elements, nf);
+		subkernels[i].reRHSfiller.activate(i, info::mesh->dimension, subkernels[i].elements, f);
+		subkernels[i].reNRHSfiller.activate(i, info::mesh->dimension, subkernels[i].elements, nf);
 	}
 
 	for(size_t r = 1; r < info::mesh->boundaryRegions.size(); ++r) {
 		if (info::mesh->boundaryRegions[r]->dimension) {
 			for (size_t i = 0; i < info::mesh->boundaryRegions[r]->eintervals.size(); ++i) {
-				boundary[r][i].RHSfiller.activate(r, i, info::mesh->dimension, boundary[r][i].elements, f);
+				boundary[r][i].reRHSfiller.activate(r, i, info::mesh->dimension, boundary[r][i].elements, f);
 			}
 		}
 	}
 	for (auto it = configuration.displacement.begin(); it != configuration.displacement.end(); ++it) {
 		size_t r = info::mesh->bregionIndex(it->first);
 		for (size_t t = 0; t < info::mesh->boundaryRegions[r]->nodes->threads(); ++t) {
-			boundary[r][t].dirichlet.activate(r, t, info::mesh->dimension, boundary[r][t].elements, dirichlet);
+			boundary[r][t].reDirichlet.activate(r, t, info::mesh->dimension, boundary[r][t].elements, dirichlet);
 		}
 	}
 }
 
-void StructuralMechanics::evaluate(const step::Step &step, const step::Time &time, Matrix_Base<double> *K, Matrix_Base<double> *M, Matrix_Base<double> *C, Vector_Base<double> *f, Vector_Base<double> *nf, Vector_Base<double> *dirichlet)
+void StructuralMechanics::connect(Matrix_Base<double> *K, Matrix_Base<double> *M, Matrix_Base<double> *C, Vector_Base<double> *ref, Vector_Base<double> *imf, Vector_Base<double> *renf, Vector_Base<double> *imnf, Vector_Base<double> *reDirichlet, Vector_Base<double> *imDirichlet)
+{
+	for(size_t i = 0; i < info::mesh->elements->eintervals.size(); ++i) {
+		subkernels[i].Kfiller.activate(i, info::mesh->dimension, subkernels[i].elements, K);
+		subkernels[i].Mfiller.activate(i, info::mesh->dimension, subkernels[i].elements, M);
+		subkernels[i].Cfiller.activate(i, info::mesh->dimension, subkernels[i].elements, C);
+
+		subkernels[i].reRHSfiller.activate(i, info::mesh->dimension, subkernels[i].elements, ref);
+		subkernels[i].imRHSfiller.activate(i, info::mesh->dimension, subkernels[i].elements, imf);
+		subkernels[i].reNRHSfiller.activate(i, info::mesh->dimension, subkernels[i].elements, renf);
+		subkernels[i].imNRHSfiller.activate(i, info::mesh->dimension, subkernels[i].elements, imnf);
+	}
+
+	for(size_t r = 1; r < info::mesh->boundaryRegions.size(); ++r) {
+		if (info::mesh->boundaryRegions[r]->dimension) {
+			for (size_t i = 0; i < info::mesh->boundaryRegions[r]->eintervals.size(); ++i) {
+				boundary[r][i].reRHSfiller.activate(r, i, info::mesh->dimension, boundary[r][i].elements, ref);
+				boundary[r][i].imRHSfiller.activate(r, i, info::mesh->dimension, boundary[r][i].elements, imf);
+			}
+		} else {
+			for (size_t t = 0; t < info::mesh->boundaryRegions[r]->nodes->threads(); ++t) {
+				boundary[r][t].reRHSfiller.activate(r, t, info::mesh->dimension, boundary[r][t].elements, ref);
+				boundary[r][t].imRHSfiller.activate(r, t, info::mesh->dimension, boundary[r][t].elements, imf);
+			}
+		}
+	}
+	for (auto it = configuration.displacement.begin(); it != configuration.displacement.end(); ++it) {
+		size_t r = info::mesh->bregionIndex(it->first);
+		for (size_t t = 0; t < info::mesh->boundaryRegions[r]->nodes->threads(); ++t) {
+			boundary[r][t].reDirichlet.activate(r, t, info::mesh->dimension, boundary[r][t].elements, reDirichlet); // imDirichlet is 0
+		}
+	}
+}
+
+void StructuralMechanics::evaluate(const step::Step &step, const step::Time &time, Matrix_Base<double> *K, Matrix_Base<double> *M, Vector_Base<double> *f, Vector_Base<double> *nf, Vector_Base<double> *dirichlet)
 {
 	for (size_t i = 0; i < subkernels.size(); ++i) {
 		for (size_t e = 0; e < subkernels[i].expressions.node.size(); ++e) {
@@ -403,9 +483,47 @@ void StructuralMechanics::evaluate(const step::Step &step, const step::Time &tim
 			}
 		}
 	}
-	bool run = reset(K, constant.K) || reset(M, constant.M) || reset(C, constant.C) || reset(f, constant.f) || reset(nf, constant.nf) || reset(dirichlet, constant.dirichlet);
+	bool run = reset(K, constant.K) || reset(M, constant.M) || reset(f, constant.f) || reset(nf, constant.nf) || reset(dirichlet, constant.dirichlet);
 	if (run) { assemble(SubKernel::ASSEMBLE); }
-	update(K, constant.K); update(M, constant.M); update(C, constant.C); update(f, constant.f); update(nf, constant.nf); update(dirichlet, constant.dirichlet);
+	update(K, constant.K); update(M, constant.M); update(f, constant.f); update(nf, constant.nf); update(dirichlet, constant.dirichlet);
+}
+
+void StructuralMechanics::evaluate(const step::Step &step, const step::Frequency &freq, Matrix_Base<double> *K, Matrix_Base<double> *M, Matrix_Base<double> *C, Vector_Base<double> *ref, Vector_Base<double> *imf, Vector_Base<double> *renf, Vector_Base<double> *imnf, Vector_Base<double> *reDirichlet, Vector_Base<double> *imDirichlet)
+{
+	for (size_t i = 0; i < subkernels.size(); ++i) {
+		for (size_t e = 0; e < subkernels[i].expressions.node.size(); ++e) {
+			#pragma omp parallel for
+			for (int t = 0; t < info::env::threads; ++t) {
+				subkernels[i].expressions.node[e]->evaluator->getFrequency(t) = freq.current;
+			}
+		}
+		for (size_t e = 0; e < subkernels[i].expressions.gp.size(); ++e) {
+			#pragma omp parallel for
+			for (int t = 0; t < info::env::threads; ++t) {
+				subkernels[i].expressions.gp[e]->evaluator->getFrequency(t) = freq.current;
+			}
+		}
+	}
+	for (size_t i = 0; i < boundary.size(); ++i) {
+		for (size_t j = 0; j < boundary[i].size(); ++j) {
+			for (size_t e = 0; e < boundary[i][j].expressions.node.size(); ++e) {
+				#pragma omp parallel for
+				for (int t = 0; t < info::env::threads; ++t) {
+					boundary[i][j].expressions.node[e]->evaluator->getFrequency(t) = freq.current;
+				}
+			}
+			for (size_t e = 0; e < boundary[i][j].expressions.gp.size(); ++e) {
+				#pragma omp parallel for
+				for (int t = 0; t < info::env::threads; ++t) {
+					boundary[i][j].expressions.gp[e]->evaluator->getFrequency(t) = freq.current;
+				}
+			}
+		}
+	}
+
+	bool run = reset(K, constant.K) | reset(M, constant.M) | reset(C, constant.C) | reset(ref, constant.f) | reset(imf, constant.f) | reset(renf, constant.nf) | reset(imnf, constant.nf) | reset(reDirichlet, constant.dirichlet) | reset(imDirichlet, constant.dirichlet);
+	if (run) { assemble(SubKernel::ASSEMBLE); }
+	update(K, constant.K); update(M, constant.M); update(C, constant.C); update(ref, constant.f); update(imf, constant.f); update(renf, constant.nf); update(imnf, constant.nf); update(reDirichlet, constant.dirichlet); update(imDirichlet, constant.dirichlet);
 }
 
 void StructuralMechanics::run(SubKernel::Action action, size_t interval)
@@ -442,6 +560,13 @@ void StructuralMechanics::run(SubKernel::Action action, size_t region, size_t in
 void StructuralMechanics::updateSolution(Vector_Base<double> *x)
 {
 	x->storeTo(Results::displacement->data);
+	assemble(SubKernel::SOLUTION);
+}
+
+void StructuralMechanics::updateSolution(Vector_Base<double> *rex, Vector_Base<double> *imx)
+{
+	rex->storeTo(Results::cosDisplacement->data);
+	imx->storeTo(Results::sinDisplacement->data);
 	assemble(SubKernel::SOLUTION);
 }
 

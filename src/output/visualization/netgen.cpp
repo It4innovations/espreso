@@ -95,7 +95,7 @@ void Netgen::updateMesh()
 	_writer.write();
 }
 
-void Netgen::updateMonitors(step::TYPE type)
+void Netgen::updateMonitors(const step::Step &step)
 {
 
 }

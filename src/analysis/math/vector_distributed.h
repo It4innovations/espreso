@@ -54,24 +54,28 @@ public:
 		}
 	}
 
-	void set(const T &value)
+	Vector_Base<T>* set(const T &value)
 	{
 		math::set(cluster, value);
+		return this;
 	}
 
-	void scale(const T &alpha)
+	Vector_Base<T>* scale(const T &value)
 	{
-		math::scale(alpha, cluster);
+		math::scale(value, cluster);
+		return this;
 	}
 
-	void copy(const Vector_Base<T> *in)
+	Vector_Base<T>* copy(const Vector_Base<T> *a, const Selection &rows = Selection())
 	{
-		in->copyTo(static_cast<Vector_Distributed<Vector, T>*>(this));
+		a->copyTo(static_cast<Vector_Distributed<Vector, T>*>(this), rows);
+		return this;
 	}
 
-	void add(const T &alpha, const Vector_Base<T> *a)
+	Vector_Base<T>* add(const T &alpha, const Vector_Base<T> *a, const Selection &rows = Selection())
 	{
 		a->addTo(alpha, static_cast<Vector_Distributed<Vector, T>*>(this));
+		return this;
 	}
 
 	T norm()
@@ -99,42 +103,42 @@ public:
 		return 0;
 	}
 
-	void copyTo(Vector_Distributed<Vector_Dense , T> *a) const
+	void copyTo(Vector_Distributed<Vector_Dense , T> *a, const Selection &rows = Selection()) const
 	{
-		math::copy(a->cluster, cluster);
+		math::copy(a->cluster, cluster, rows);
 	}
 
-	void copyTo(Vector_Distributed<Vector_Sparse, T> *a) const
+	void copyTo(Vector_Distributed<Vector_Sparse, T> *a, const Selection &rows = Selection()) const
 	{
-		math::copy(a->cluster, cluster);
+		math::copy(a->cluster, cluster, rows);
 	}
 
-	void copyTo(Vector_FETI<Vector_Dense , T> *a) const
-	{
-		eslog::error("call empty function\n");
-	}
-
-	void copyTo(Vector_FETI<Vector_Sparse, T> *a) const
+	void copyTo(Vector_FETI<Vector_Dense , T> *a, const Selection &rows = Selection()) const
 	{
 		eslog::error("call empty function\n");
 	}
 
-	void addTo(const T &alpha, Vector_Distributed<Vector_Dense, T> *a) const
-	{
-		math::add(a->cluster, alpha, cluster);
-	}
-
-	void addTo(const T &alpha, Vector_Distributed<Vector_Sparse, T> *a) const
-	{
-		math::add(a->cluster, alpha, cluster);
-	}
-
-	void addTo(const T &alpha, Vector_FETI<Vector_Dense, T> *a) const
+	void copyTo(Vector_FETI<Vector_Sparse, T> *a, const Selection &rows = Selection()) const
 	{
 		eslog::error("call empty function\n");
 	}
 
-	void addTo(const T &alpha, Vector_FETI<Vector_Sparse, T> *a) const
+	void addTo(const T &alpha, Vector_Distributed<Vector_Dense, T> *a, const Selection &rows = Selection()) const
+	{
+		math::add(a->cluster, alpha, cluster, rows);
+	}
+
+	void addTo(const T &alpha, Vector_Distributed<Vector_Sparse, T> *a, const Selection &rows = Selection()) const
+	{
+		math::add(a->cluster, alpha, cluster, rows);
+	}
+
+	void addTo(const T &alpha, Vector_FETI<Vector_Dense, T> *a, const Selection &rows = Selection()) const
+	{
+		eslog::error("call empty function\n");
+	}
+
+	void addTo(const T &alpha, Vector_FETI<Vector_Sparse, T> *a, const Selection &rows = Selection()) const
 	{
 		eslog::error("call empty function\n");
 	}

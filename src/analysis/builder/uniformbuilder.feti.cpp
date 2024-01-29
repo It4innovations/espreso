@@ -19,13 +19,15 @@
 
 using namespace espreso;
 
-UniformBuilderFETIPattern::UniformBuilderFETIPattern(FETIConfiguration &feti, std::map<std::string, ECFExpression> &dirichlet, int dofs, Matrix_Shape shape)
+UniformBuilderFETIPattern::UniformBuilderFETIPattern(FETIConfiguration &feti, std::map<std::string, ECFExpression> &dirichlet, int dofs, int multiplicity, Matrix_Shape shape)
 {
 	dirichletInfo.resize(info::mesh->boundaryRegions.size());
 	for (size_t r = 1; r < info::mesh->boundaryRegions.size(); ++r) {
 		const BoundaryRegionStore *region = info::mesh->boundaryRegions[r];
 		if (dirichlet.find(region->name) != dirichlet.end()) {
-			dirichletInfo[r].dirichlet = 1;
+			for (int m = 0; m < multiplicity; ++m) {
+				dirichletInfo[r].dirichlet = 1 << m;
+			}
 		}
 	}
 
@@ -34,15 +36,17 @@ UniformBuilderFETIPattern::UniformBuilderFETIPattern(FETIConfiguration &feti, st
 		if (dirichlet.find(region->name) != dirichlet.end()) {
 			if (dirichletInfo[r].dirichlet) {
 				for (auto n = region->nodes->datatarray().cbegin(); n != region->nodes->datatarray().cend(); ++n) {
-					for (int d = 0; d < dofs; ++d) {
-						decomposition.fixedDOFs.push_back(*n * dofs + d);
+					for (int m = 0; m < multiplicity; ++m) {
+						for (int d = 0; d < dofs; ++d) {
+							decomposition.fixedDOFs.push_back(*n * dofs * multiplicity + m * dofs + d);
+						}
 					}
 				}
 			}
 		}
 	}
 
-	dirichletInfo[0].size = dofs * (info::mesh->nodes->uniqInfo.nhalo + info::mesh->nodes->uniqInfo.size);
+	dirichletInfo[0].size = dofs * multiplicity * (info::mesh->nodes->uniqInfo.nhalo + info::mesh->nodes->uniqInfo.size);
 	dirichletInfo[0].f = decomposition.fixedDOFs; // use the first region to store indices permutation;
 	utils::sortAndRemoveDuplicates(decomposition.fixedDOFs);
 	dirichletInfo[0].indices = decomposition.fixedDOFs;
@@ -50,23 +54,25 @@ UniformBuilderFETIPattern::UniformBuilderFETIPattern(FETIConfiguration &feti, st
 		dirichletInfo[0].f[i] = std::lower_bound(decomposition.fixedDOFs.begin(), decomposition.fixedDOFs.end(), dirichletInfo[0].f[i]) - decomposition.fixedDOFs.begin();
 	}
 
-	fillDecomposition(feti, dofs);
+	fillDecomposition(feti, dofs * multiplicity);
 	#pragma omp parallel for
 	for (esint domain = 0; domain < info::mesh->domains->size; ++domain) {
-		buildPattern(dofs, shape, domain);
+		buildPattern(dofs * multiplicity, shape, domain);
 	}
 }
 
-UniformBuilderFETIPattern::UniformBuilderFETIPattern(FETIConfiguration &feti, std::map<std::string, ECFExpressionOptionalVector> &dirichlet, int dofs, Matrix_Shape shape)
+UniformBuilderFETIPattern::UniformBuilderFETIPattern(FETIConfiguration &feti, std::map<std::string, ECFExpressionOptionalVector> &dirichlet, int dofs, int multiplicity, Matrix_Shape shape)
 {
 	dirichletInfo.resize(info::mesh->boundaryRegions.size());
 	for (size_t r = 1; r < info::mesh->boundaryRegions.size(); ++r) {
 		const BoundaryRegionStore *region = info::mesh->boundaryRegions[r];
 		auto expr = dirichlet.find(region->name);
 		if (expr != dirichlet.end()) {
-			for (int d = 0; d < dofs; ++d) {
-				if (expr->second.data[d].isset) {
-					dirichletInfo[r].dirichlet += 1 << d;
+			for (int m = 0; m < multiplicity; ++m) {
+				for (int d = 0; d < dofs; ++d) {
+					if (expr->second.data[d].isset) {
+						dirichletInfo[r].dirichlet += 1 << (dofs * m + d);
+					}
 				}
 			}
 		}
@@ -76,16 +82,18 @@ UniformBuilderFETIPattern::UniformBuilderFETIPattern(FETIConfiguration &feti, st
 		const BoundaryRegionStore *region = info::mesh->boundaryRegions[r];
 		if (dirichlet.find(region->name) != dirichlet.end()) {
 			for (auto n = region->nodes->datatarray().cbegin(); n != region->nodes->datatarray().cend(); ++n) {
-				for (int d = 0; d < dofs; ++d) {
-					if (dirichletInfo[r].dirichlet & (1 << d)) {
-						decomposition.fixedDOFs.push_back(*n * dofs + d);
+				for (int m = 0; m < multiplicity; ++m) {
+					for (int d = 0; d < dofs; ++d) {
+						if (dirichletInfo[r].dirichlet & (1 << d)) {
+							decomposition.fixedDOFs.push_back(*n * dofs * multiplicity + m * dofs + d);
+						}
 					}
 				}
 			}
 		}
 	}
 
-	dirichletInfo[0].size = dofs * (info::mesh->nodes->uniqInfo.nhalo + info::mesh->nodes->uniqInfo.size);
+	dirichletInfo[0].size = dofs * multiplicity * (info::mesh->nodes->uniqInfo.nhalo + info::mesh->nodes->uniqInfo.size);
 	dirichletInfo[0].f = decomposition.fixedDOFs; // use the first region to store indices permutation;
 	utils::sortAndRemoveDuplicates(decomposition.fixedDOFs);
 	dirichletInfo[0].indices = decomposition.fixedDOFs;
@@ -93,10 +101,10 @@ UniformBuilderFETIPattern::UniformBuilderFETIPattern(FETIConfiguration &feti, st
 		dirichletInfo[0].f[i] = std::lower_bound(decomposition.fixedDOFs.begin(), decomposition.fixedDOFs.end(), dirichletInfo[0].f[i]) - decomposition.fixedDOFs.begin();
 	}
 
-	fillDecomposition(feti, dofs);
+	fillDecomposition(feti, dofs * multiplicity);
 	#pragma omp parallel for
 	for (esint domain = 0; domain < info::mesh->domains->size; ++domain) {
-		buildPattern(dofs, shape, domain);
+		buildPattern(dofs * multiplicity, shape, domain);
 	}
 }
 

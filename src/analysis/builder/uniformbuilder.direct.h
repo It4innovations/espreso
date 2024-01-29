@@ -22,8 +22,8 @@ struct UniformBuilderDirectPattern {
 		std::vector<esint> A, b, indices; // local permutations
 	};
 
-	UniformBuilderDirectPattern(std::map<std::string, ECFExpression> &dirichlet, int dofs, Matrix_Shape shape);
-	UniformBuilderDirectPattern(std::map<std::string, ECFExpressionOptionalVector> &dirichlet, int dofs, Matrix_Shape shape);
+	UniformBuilderDirectPattern(std::map<std::string, ECFExpression> &dirichlet, int dofs, int multiplicity, Matrix_Shape shape);
+	UniformBuilderDirectPattern(std::map<std::string, ECFExpressionOptionalVector> &dirichlet, int dofs, int multiplicity, Matrix_Shape shape);
 	~UniformBuilderDirectPattern();
 
 protected:
@@ -38,14 +38,14 @@ private:
 template <typename T>
 struct UniformBuilderDirect: UniformBuilderDirectPattern, SparseMatrixBuilder<T> {
 
-	UniformBuilderDirect(std::map<std::string, ECFExpression> &dirichlet, int dofs, Matrix_Shape shape)
-	: UniformBuilderDirectPattern(dirichlet, dofs, shape), SparseMatrixBuilder<T>(dofs), apply{}, syncM{}, syncD{}, syncS{}
+	UniformBuilderDirect(std::map<std::string, ECFExpression> &dirichlet, int dofs, int multiplicity, Matrix_Shape shape)
+	: UniformBuilderDirectPattern(dirichlet, dofs, multiplicity, shape), SparseMatrixBuilder<T>(dofs), apply{}, syncM{}, syncD{}, syncS{}
 	{
 
 	}
 
-	UniformBuilderDirect(std::map<std::string, ECFExpressionOptionalVector> &dirichlet, int dofs, Matrix_Shape shape)
-	: UniformBuilderDirectPattern(dirichlet, dofs, shape), SparseMatrixBuilder<T>(dofs), apply{}, syncM{}, syncD{}, syncS{}
+	UniformBuilderDirect(std::map<std::string, ECFExpressionOptionalVector> &dirichlet, int dofs, int multiplicity, Matrix_Shape shape)
+	: UniformBuilderDirectPattern(dirichlet, dofs, multiplicity, shape), SparseMatrixBuilder<T>(dofs), apply{}, syncM{}, syncD{}, syncS{}
 	{
 
 	}
@@ -160,6 +160,13 @@ struct UniformBuilderDirect: UniformBuilderDirectPattern, SparseMatrixBuilder<T>
 					_v->mapping.boundary[r][i].position = bregion[r].b.data() + offset;
 					esint esize = this->dofs * Mesh::edata[info::mesh->boundaryRegions[r]->eintervals[i].code].nodes;
 					offset += (info::mesh->boundaryRegions[r]->eintervals[i].end - info::mesh->boundaryRegions[r]->eintervals[i].begin) * esize;
+				}
+			} else {
+				_v->mapping.boundary[r].resize(info::mesh->boundaryRegions[r]->nodes->threads());
+				for (size_t t = 0, offset = 0; t < _v->mapping.boundary[r].size(); ++t) {
+					_v->mapping.boundary[r][t].data = _v->cluster.vals;
+					_v->mapping.boundary[r][t].position = bregion[r].b.data() + offset;
+					offset += this->dofs * info::mesh->boundaryRegions[r]->nodes->datatarray().size(t);
 				}
 			}
 		}

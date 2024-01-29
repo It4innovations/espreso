@@ -35,15 +35,16 @@ StructuralMechanicsSteadyStateNonLinear::~StructuralMechanicsSteadyStateNonLinea
 	if (solver) { delete solver; }
 }
 
-void StructuralMechanicsSteadyStateNonLinear::analyze()
+void StructuralMechanicsSteadyStateNonLinear::analyze(step::Step &step)
 {
 	eslog::info("\n ============================================================================================= \n");
 	eslog::info(" == ANALYSIS                                                        PLASTICITY STEADY STATE == \n");
 	eslog::info(" == PHYSICS                                                            STRUCTURAL MECHANICS == \n");
 	eslog::info(" ============================================================================================= \n");
 
+	step.type = step::TYPE::TIME;
 	assembler.analyze();
-	info::mesh->output->updateMonitors(step::TYPE::TIME);
+	info::mesh->output->updateMonitors(step);
 	if (configuration.nonlinear_solver.stepping == NonLinearSolverConfiguration::STEPPINGG::FALSE) {
 		configuration.nonlinear_solver.substeps = 1;
 	}
@@ -53,19 +54,19 @@ void StructuralMechanicsSteadyStateNonLinear::analyze()
 
 	switch (configuration.solver) {
 	case LoadStepSolverConfiguration::SOLVER::FETI:
-		builder = new UniformBuilderFETI<double>(configuration.feti, configuration.displacement, info::mesh->dimension, shape);
+		builder = new UniformBuilderFETI<double>(configuration.feti, configuration.displacement, info::mesh->dimension, 1, shape);
 		solver = new FETILinearSystemSolver<double, StructuralMechanicsSteadyStateNonLinear>(configuration.feti);
 		break;
 	case LoadStepSolverConfiguration::SOLVER::HYPRE:   break;
 	case LoadStepSolverConfiguration::SOLVER::MKLPDSS:
-		builder = new UniformBuilderDirect<double>(configuration.displacement, info::mesh->dimension, shape);
+		builder = new UniformBuilderDirect<double>(configuration.displacement, info::mesh->dimension, 1, shape);
 		solver = new MKLPDSSLinearSystemSolver<double>(configuration.mklpdss);
 		break;
 	case LoadStepSolverConfiguration::SOLVER::PARDISO: break;
 	case LoadStepSolverConfiguration::SOLVER::SUPERLU: break;
 	case LoadStepSolverConfiguration::SOLVER::WSMP:    break;
 	case LoadStepSolverConfiguration::SOLVER::NONE:
-		builder = new UniformBuilderDirect<double>(configuration.temperature, 1, shape);
+		builder = new UniformBuilderDirect<double>(configuration.temperature, 1, 1, shape);
 		solver = new EmptySystemSolver<double>();
 	}
 
@@ -90,7 +91,7 @@ void StructuralMechanicsSteadyStateNonLinear::analyze()
 
 void StructuralMechanicsSteadyStateNonLinear::run(step::Step &step)
 {
-	assembler.connect(K, nullptr, nullptr, f, R, dirichlet);
+	assembler.connect(K, nullptr, f, R, dirichlet);
 
 	if (MPITools::node->rank == 0) {
 		info::system::memory::physics = info::system::memoryAvail();
@@ -110,7 +111,7 @@ void StructuralMechanicsSteadyStateNonLinear::run(step::Step &step)
 	eslog::checkpointln("SIMULATION: LINEAR SYSTEM SET");
 
 	eslog::info(" ============================================================================================= \n");
-	eslog::info(" = LOAD STEP %2d                                                              TIME %10.4f = \n", step::step.loadstep + 1, time.current);
+	eslog::info(" = LOAD STEP %2d                                                              TIME %10.4f = \n", step.loadstep + 1, time.current);
 	eslog::info(" = ----------------------------------------------------------------------------------------- = \n");
 	eslog::info("      =================================================================================== \n");
 	eslog::info("      ==  NEWTON RAPHSON CONVERGENCE CRITERIA                                          == \n");
@@ -144,9 +145,10 @@ void StructuralMechanicsSteadyStateNonLinear::run(step::Step &step)
 			time.current = time.final;
 		}
 
-		assembler.evaluate(step, time, K, nullptr, nullptr, f, nullptr, dirichlet);
+		assembler.evaluate(step, time, K, nullptr, f, nullptr, dirichlet);
 		storeSystem(step);
 		solver->A->copy(K);
+		solver->A->updated = true;
 		solver->b->copy(f);
 		solver->dirichlet->copy(dirichlet);
 		eslog::info("      == ----------------------------------------------------------------------------- == \n");
@@ -168,9 +170,10 @@ void StructuralMechanicsSteadyStateNonLinear::run(step::Step &step)
 
 			start = eslog::time();
 			U->copy(solver->x);
-			assembler.evaluate(step, time, K, nullptr, nullptr, f, R, dirichlet);
+			assembler.evaluate(step, time, K, nullptr, f, R, dirichlet);
 			storeSystem(step);
 			solver->A->copy(K);
+			solver->A->updated = true;
 			solver->b->copy(f);
 			solver->b->add(-1, R);
 			solver->dirichlet->copy(dirichlet);

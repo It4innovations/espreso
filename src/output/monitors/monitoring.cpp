@@ -37,9 +37,9 @@ int post(const std::string &value, int size)
 	return (size - value.size()) / 2 + 1;
 }
 
-bool Monitoring::storeStep()
+bool Monitoring::storeStep(const step::Step &step)
 {
-	if (step::outstep.type == step::TYPE::FTT) {
+	if (step.type == step::TYPE::FTT) {
 		return true;
 	} else {
 		switch (info::ecf->output.monitors_store_frequency) {
@@ -48,9 +48,9 @@ bool Monitoring::storeStep()
 		case OutputConfiguration::STORE_FREQUENCY::EVERY_SUBSTEP:
 			return true;
 		case OutputConfiguration::STORE_FREQUENCY::EVERY_NTH_SUBSTEP:
-			return step::outstep.substep % info::ecf->output.monitors_nth_stepping == 0;
+			return step.substep % info::ecf->output.monitors_nth_stepping == 0;
 		case OutputConfiguration::STORE_FREQUENCY::LAST_SUBSTEP:
-			return step::isLast();
+			return step::isLast(step);
 		default:
 			return false;
 		}
@@ -71,7 +71,7 @@ Monitoring::~Monitoring()
 	}
 }
 
-void Monitoring::updateMonitors(step::TYPE type)
+void Monitoring::updateMonitors(const step::Step &step)
 {
 	for (auto it = info::ecf->output.monitoring.begin(); it != info::ecf->output.monitoring.end(); ++it) {
 		if (it->first <= 0) {
@@ -289,7 +289,7 @@ void Monitoring::updateMonitors(step::TYPE type)
 
 		// 2. line with parameters
 		fprintf(_runFile, "%8s %c %8s %c ", "loadstep", delimiter, "substep", delimiter);
-		switch (type) {
+		switch (step.type) {
 		case step::TYPE::TIME:
 			fprintf(_runFile, "%12s %c", "time", delimiter); break;
 		case step::TYPE::FREQUENCY:
@@ -308,13 +308,13 @@ void Monitoring::updateMonitors(step::TYPE type)
 		}
 		fprintf(_runFile, "\n\n");
 
-		for (int i = 0; i < step::outduplicate.offset; i++) {
-			fprintf(_runFile, "%10c %10c %14c", delimiter, delimiter, delimiter);
-			for (size_t i = 0; i < _monitors.size(); i++) {
-				center(_monitors[i].stats, _monitors[i].printSize);
-			}
-			fprintf(_runFile, "\n\n");
-		}
+//		for (int i = 0; i < step::outduplicate.offset; i++) {
+//			fprintf(_runFile, "%10c %10c %14c", delimiter, delimiter, delimiter);
+//			for (size_t i = 0; i < _monitors.size(); i++) {
+//				center(_monitors[i].stats, _monitors[i].printSize);
+//			}
+//			fprintf(_runFile, "\n\n");
+//		}
 
 		fflush(_runFile);
 	}
@@ -322,29 +322,29 @@ void Monitoring::updateMonitors(step::TYPE type)
 
 void Monitoring::updateSolution(const step::Step &step, const step::Time &time)
 {
-	updateSolution();
+	updateSolution(step);
 
 	if (info::mpi::rank == 0) {
 		fprintf(_runFile, "%8d %c %8d %c ", step.loadstep + 1, delimiter, step.substep + 1, delimiter);
 		fprintf(_runFile, "%12.6f %c ", time.current, delimiter);
-		storeSolution();
+		storeSolution(step);
 	}
 }
 
 void Monitoring::updateSolution(const step::Step &step, const step::Frequency &frequency)
 {
-	updateSolution();
+	updateSolution(step);
 
 	if (info::mpi::rank == 0) {
 		fprintf(_runFile, "%8d %c %8d %c ", step.loadstep + 1, delimiter, step.substep + 1, delimiter);
 		fprintf(_runFile, "%12.4f %c ", frequency.current, delimiter);
-		storeSolution();
+		storeSolution(step);
 	}
 }
 
-void Monitoring::updateSolution()
+void Monitoring::updateSolution(const step::Step &step)
 {
-	if (!storeStep()) {
+	if (!storeStep(step)) {
 		return;
 	}
 
@@ -360,7 +360,7 @@ void Monitoring::updateSolution()
 	}
 }
 
-void Monitoring::storeSolution()
+void Monitoring::storeSolution(const step::Step &step)
 {
 	for (size_t i = 0; i < _monitors.size(); i++) {
 		if (_monitors[i].data != NULL) {

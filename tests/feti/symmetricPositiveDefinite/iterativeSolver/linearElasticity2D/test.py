@@ -6,7 +6,7 @@ cases = [
     ("          PCG", "     NONE", 980),
     ("          PCG", "DIRICHLET", 160),
     ("orthogonalPCG", "     NONE", 180),
-    ("orthogonalPCG", "DIRICHLET ",  60),
+    ("orthogonalPCG", "DIRICHLET ", 60),
     ]
 
 class Assembler(unittest.TestCase):

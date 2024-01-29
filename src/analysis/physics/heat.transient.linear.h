@@ -18,7 +18,7 @@ public:
 	HeatTransientLinear(HeatTransferConfiguration &settings, HeatTransferLoadStepConfiguration &configuration);
 	~HeatTransientLinear();
 
-	void analyze();
+	void analyze(step::Step &step);
 	void run(step::Step &step);
 
 	step::Time time;

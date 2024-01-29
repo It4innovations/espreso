@@ -21,17 +21,17 @@ public:
 	~EnSightGold();
 
 	void updateMesh();
-	void updateMonitors(step::TYPE type);
+	void updateMonitors(const step::Step &step);
 	void updateSolution(const step::Step &step, const step::Time &time);
 	void updateSolution(const step::Step &step, const step::Frequency &frequency);
 
 protected:
-	void updateSolution();
+	void updateSolution(const step::Step &step);
 	std::string dataname(const NamedData *data, int d);
 	void casefile();
 	void geometry();
-	int ndata(const NamedData *data);
-	int edata(const NamedData *data);
+	int ndata(const NamedData *data, const step::Step &step);
+	int edata(const NamedData *data, const step::Step &step);
 	void decomposition();
 
 	FTT *_ftt;
@@ -48,7 +48,7 @@ protected:
 class EnSightGold::FTT: public EnSightGold {
 
 public:
-	FTT(EnSightGold *parent);
+	FTT(EnSightGold *parent, const step::Frequency &frequency);
 };
 
 }

@@ -20,15 +20,16 @@ AcousticRealLinear::AcousticRealLinear(AcousticConfiguration &settings, Acoustic
 
 }
 
-void AcousticRealLinear::analyze()
+void AcousticRealLinear::analyze(step::Step &step)
 {
 	eslog::info("\n ============================================================================================= \n");
 	eslog::info(" == ANALYSIS                                                                  HARMONIC REAL == \n");
 	eslog::info(" == PHYSICS                                                                        ACOUSTIC == \n");
 	eslog::info(" ============================================================================================= \n");
 
+	step.type = step::TYPE::FREQUENCY;
 	assembler.analyze();
-	info::mesh->output->updateMonitors(step::TYPE::FREQUENCY);
+	info::mesh->output->updateMonitors(step);
 }
 
 void AcousticRealLinear::run(step::Step &step)
@@ -80,7 +81,7 @@ void AcousticRealLinear::run(step::Step &step)
 		}
 		frequency.angular = 2 * M_PI * frequency.current;
 		eslog::info(" ============================================================================================= \n");
-		eslog::info(" = LOAD STEP %2d                                                         FREQUENCY %10.4f = \n", step::step.loadstep + 1, frequency.current);
+//		eslog::info(" = LOAD STEP %2d                                                         FREQUENCY %10.4f = \n", step::step.loadstep + 1, frequency.current);
 		eslog::info(" = ----------------------------------------------------------------------------------------- = \n");
 
 		assembler.evaluate(frequency, K, M, C, re.f, im.f, nullptr, nullptr, re.dirichlet);
@@ -129,23 +130,23 @@ void AcousticRealLinear::run(step::Step &step)
 
 void AcousticRealLinear::storeSystem(step::Step &step)
 {
-	if (info::ecf->output.print_matrices) {
-		eslog::storedata(" STORE: scheme/{K, M, C, f.re, f.im, dirichlet.re, dirichlet.im}\n");
-		K->store(utils::filename(utils::debugDirectory() + "/scheme", "K").c_str());
-		M->store(utils::filename(utils::debugDirectory() + "/scheme", "M").c_str());
-		C->store(utils::filename(utils::debugDirectory() + "/scheme", "C").c_str());
-		re.f->store(utils::filename(utils::debugDirectory() + "/scheme", "f.re").c_str());
-		im.f->store(utils::filename(utils::debugDirectory() + "/scheme", "f.im").c_str());
-		re.dirichlet->store(utils::filename(utils::debugDirectory() + "/scheme", "dirichlet.re").c_str());
-		im.dirichlet->store(utils::filename(utils::debugDirectory() + "/scheme", "dirichlet.im").c_str());
-	}
+//	if (info::ecf->output.print_matrices) {
+//		eslog::storedata(" STORE: scheme/{K, M, C, f.re, f.im, dirichlet.re, dirichlet.im}\n");
+//		K->store(utils::filename(utils::debugDirectory() + "/scheme", "K").c_str());
+//		M->store(utils::filename(utils::debugDirectory() + "/scheme", "M").c_str());
+//		C->store(utils::filename(utils::debugDirectory() + "/scheme", "C").c_str());
+//		re.f->store(utils::filename(utils::debugDirectory() + "/scheme", "f.re").c_str());
+//		im.f->store(utils::filename(utils::debugDirectory() + "/scheme", "f.im").c_str());
+//		re.dirichlet->store(utils::filename(utils::debugDirectory() + "/scheme", "dirichlet.re").c_str());
+//		im.dirichlet->store(utils::filename(utils::debugDirectory() + "/scheme", "dirichlet.im").c_str());
+//	}
 }
 
 void AcousticRealLinear::storeSolution(step::Step &step)
 {
-	if (info::ecf->output.print_matrices) {
-		eslog::storedata(" STORE: scheme/{x.re, x.im}\n");
-		re.x->store(utils::filename(utils::debugDirectory() + "/scheme", "x.re").c_str());
-		im.x->store(utils::filename(utils::debugDirectory() + "/scheme", "x.im").c_str());
-	}
+//	if (info::ecf->output.print_matrices) {
+//		eslog::storedata(" STORE: scheme/{x.re, x.im}\n");
+//		re.x->store(utils::filename(utils::debugDirectory() + "/scheme", "x.re").c_str());
+//		im.x->store(utils::filename(utils::debugDirectory() + "/scheme", "x.im").c_str());
+//	}
 }

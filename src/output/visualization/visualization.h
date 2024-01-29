@@ -13,10 +13,10 @@ class Visualization: public OutputWriter {
 
 public:
 	static bool isRoot();
-	static bool storeData(const NamedData *data);
+	static bool storeData(const NamedData *data, const step::Step &step);
 	static Point shrink(const Point &p, const Point &ccenter, const Point &dcenter, double cratio, double dratio);
 
-	bool storeStep();
+	bool storeStep(const step::Step &step);
 
 	Visualization();
 	~Visualization();

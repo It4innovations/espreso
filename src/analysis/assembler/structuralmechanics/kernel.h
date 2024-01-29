@@ -267,13 +267,18 @@ void runElementKernel(StructuralMechanicsOperators &subkernels, SubKernel::Actio
 	ElasticityKernel<ndim> elasticity(subkernels.elasticity);
 	PlasticityKernel<nodes, ndim> plasticity(subkernels.plasticity, action);
 	MatrixElasticityKernel<nodes, ndim> K(subkernels.K);
+	MatrixMassKernel<nodes, ndim> M(subkernels.M);
 	AccelerationKernel<nodes, ndim> acceleration(subkernels.acceleration);
 	AngularVelocityKernel<nodes, ndim> angularVelocity(subkernels.angularVelocity);
 	SigmaKernel<nodes, ndim> sigma(subkernels.sigma);
 	StressKernel<nodes, gps, ndim> stress(subkernels.stress);
 	MatricFillerKernel<nodes> outK(subkernels.Kfiller);
-	RHSFillerKernel<nodes> outRHS(subkernels.RHSfiller);
-	RHSFillerKernel<nodes> outNRHS(subkernels.RHSfiller);
+	MatricFillerKernel<nodes> outM(subkernels.Mfiller);
+	MatricFillerKernel<nodes> outC(subkernels.Cfiller);
+	RHSFillerKernel<nodes> outReRHS(subkernels.reRHSfiller);
+	RHSFillerKernel<nodes> outReNRHS(subkernels.reRHSfiller);
+	RHSFillerKernel<nodes> outImRHS(subkernels.imRHSfiller);
+	RHSFillerKernel<nodes> outImNRHS(subkernels.imRHSfiller);
 
 	struct {
 		std::vector<ExternalNodeExpression<ndim, Element>*> node;
@@ -315,14 +320,20 @@ void runElementKernel(StructuralMechanicsOperators &subkernels, SubKernel::Actio
 	displacement.setActiveness(action);
 	smallStrainTensor.setActiveness(action);
 	K.setActiveness(action);
+	M.setActiveness(action);
+//	C.setActiveness(action);
 	acceleration.setActiveness(action);
 	angularVelocity.setActiveness(action);
 	sigma.setActiveness(action);
 	stress.setActiveness(action);
 
 	outK.setActiveness(action);
-	outRHS.setActiveness(action);
-	outNRHS.setActiveness(action);
+	outM.setActiveness(action);
+	outC.setActiveness(action);
+	outReRHS.setActiveness(action);
+	outReNRHS.setActiveness(action);
+	outImRHS.setActiveness(action);
+	outImNRHS.setActiveness(action);
 
 	for (size_t c = 0; c < subkernels.chunks; ++c) {
 		if (sigma.isactive) {
@@ -370,6 +381,12 @@ void runElementKernel(StructuralMechanicsOperators &subkernels, SubKernel::Actio
 			if (K.isactive) {
 				K.simd(element, gp);
 			}
+			if (M.isactive) {
+				M.simd(element, gp);
+			}
+//			if (C.isactive) {
+//				C.simd(element, gp);
+//			}
 
 			if (acceleration.isactive) {
 				acceleration.simd(element, gp);
@@ -385,11 +402,23 @@ void runElementKernel(StructuralMechanicsOperators &subkernels, SubKernel::Actio
 		if (outK.isactive) {
 			outK.simd(element.K);
 		}
-		if (outRHS.isactive) {
-			outRHS.simd(element.f);
+		if (outM.isactive) {
+			outM.simd(element.M);
 		}
-		if (outNRHS.isactive) {
-			outNRHS.simd(element.nf);
+		if (outC.isactive) {
+			outC.simd(element.C);
+		}
+		if (outReRHS.isactive) {
+			outReRHS.simd(element.f);
+		}
+		if (outReNRHS.isactive) {
+			outReNRHS.simd(element.nf);
+		}
+		if (outImRHS.isactive) {
+			outImRHS.simd(element.f);
+		}
+		if (outImNRHS.isactive) {
+			outImNRHS.simd(element.nf);
 		}
 		if (stress.isactive) {
 			stress.simd(element);
@@ -440,7 +469,8 @@ void runBoundaryKernel(const StructuralMechanicsBoundaryOperators &subkernels, S
 	ThicknessToGp<nodes, ndim> thicknessToGPs(subkernels.thickness);
 	IntegrationKernel<nodes, ndim, edim> integration(subkernels.integration);
 	NormalPressureKernel<nodes, ndim> normalPressure(subkernels.normalPressure);
-	RHSFillerKernel<nodes> outRHS(subkernels.RHSfiller);
+	RHSFillerKernel<nodes> outReRHS(subkernels.reRHSfiller);
+	RHSFillerKernel<nodes> outImRHS(subkernels.imRHSfiller);
 
 	std::vector<ExternalGPsExpression<ndim, Element>*> nonconst;
 	for (size_t i = 0; i < subkernels.expressions.gp.size(); ++i) {
@@ -455,7 +485,8 @@ void runBoundaryKernel(const StructuralMechanicsBoundaryOperators &subkernels, S
 	basis.simd(element);
 	thickness.setActiveness(action);
 
-	outRHS.setActiveness(action);
+	outReRHS.setActiveness(action);
+	outImRHS.setActiveness(action);
 
 	for (size_t c = 0; c < subkernels.chunks; ++c) {
 		coordinates.simd(element);
@@ -484,45 +515,109 @@ void runBoundaryKernel(const StructuralMechanicsBoundaryOperators &subkernels, S
 			}
 		}
 
-		if (outRHS.isactive) {
-			outRHS.simd(element.f);
+		if (outReRHS.isactive) {
+			outReRHS.simd(element.f);
+		}
+		if (outImRHS.isactive) {
+			outImRHS.simd(element.f);
 		}
 	}
 }
 
 template <size_t ndim>
-void setDirichletKernel(StructuralMechanicsBoundaryOperators &subkernels, SubKernel::Action action)
+void setNodeKernel(StructuralMechanicsBoundaryOperators &subkernels, SubKernel::Action action)
 {
-	typedef StructuralMechanicsDirichlet<ndim> Element; Element element;
-	if (subkernels.displacement.expression) {
-		if (subkernels.displacement.expression->x.isset) {
-			auto setter = [] (Element &element, size_t &n, size_t &s, double value) { element.displacement.node[0][s] = value; };
-			switch (info::mesh->dimension) {
-			case 2: subkernels.expressions.node.push_back(new ExternalNodeExpression<2, Element>(subkernels.displacement.expression->x.evaluator, setter)); break;
-			case 3: subkernels.expressions.node.push_back(new ExternalNodeExpression<3, Element>(subkernels.displacement.expression->x.evaluator, setter)); break;
+	typedef StructuralMechanicsDirichlet<ndim> Element;
+
+	if constexpr(ndim == 2) {
+		if (subkernels.displacement.expression) {
+			if (subkernels.displacement.expression->x.isset) {
+				subkernels.expressions.node.push_back(new ExternalNodeExpression<ndim, Element>(
+						subkernels.displacement.expression->x.evaluator,
+						[] (Element &element, size_t &n, size_t &s, double value) { element.displacement.node[0][s] = value; }));
+			}
+			if (subkernels.displacement.expression->y.isset) {
+				subkernels.expressions.node.push_back(new ExternalNodeExpression<ndim, Element>(
+						subkernels.displacement.expression->y.evaluator,
+						[] (Element &element, size_t &n, size_t &s, double value) { element.displacement.node[1][s] = value; }));
 			}
 		}
-		if (subkernels.displacement.expression->y.isset) {
-			auto setter = [] (Element &element, size_t &n, size_t &s, double value) { element.displacement.node[1][s] = value; };
-			switch (info::mesh->dimension) {
-			case 2: subkernels.expressions.node.push_back(new ExternalNodeExpression<2, Element>(subkernels.displacement.expression->y.evaluator, setter)); break;
-			case 3: subkernels.expressions.node.push_back(new ExternalNodeExpression<3, Element>(subkernels.displacement.expression->y.evaluator, setter)); break;
+		if (subkernels.harmonicForce.magnitude.expressionVector) {
+			subkernels.expressions.node.push_back(new ExternalNodeExpression<ndim, Element>(
+					subkernels.harmonicForce.magnitude.expressionVector->x.evaluator,
+					[] (Element &element, size_t &gp, size_t &s, double value) { element.ecf.harmonicForceMag[0][s] = value; }));
+			subkernels.expressions.node.push_back(new ExternalNodeExpression<ndim, Element>(
+					subkernels.harmonicForce.magnitude.expressionVector->y.evaluator,
+					[] (Element &element, size_t &gp, size_t &s, double value) { element.ecf.harmonicForceMag[1][s] = value; }));
+		}
+		if (subkernels.harmonicForce.phase.expressionVector) {
+			subkernels.expressions.node.push_back(new ExternalNodeExpression<ndim, Element>(
+					subkernels.harmonicForce.phase.expressionVector->x.evaluator,
+					[] (Element &element, size_t &gp, size_t &s, double value) { element.ecf.harmonicForceCos[0][s] = std::cos(value * M_PI / 180); element.ecf.harmonicForceSin[0][s] = std::sin(value * M_PI / 180); }));
+			subkernels.expressions.node.push_back(new ExternalNodeExpression<ndim, Element>(
+					subkernels.harmonicForce.phase.expressionVector->y.evaluator,
+					[] (Element &element, size_t &gp, size_t &s, double value) { element.ecf.harmonicForceCos[1][s] = std::cos(value * M_PI / 180); element.ecf.harmonicForceSin[1][s] = std::sin(value * M_PI / 180); }));
+		}
+	}
+
+	if constexpr(ndim == 3) {
+		if (subkernels.displacement.expression) {
+			if (subkernels.displacement.expression->x.isset) {
+				subkernels.expressions.node.push_back(new ExternalNodeExpression<ndim, Element>(
+						subkernels.displacement.expression->x.evaluator,
+						[] (Element &element, size_t &n, size_t &s, double value) { element.displacement.node[0][s] = value; }));
+			}
+			if (subkernels.displacement.expression->y.isset) {
+				subkernels.expressions.node.push_back(new ExternalNodeExpression<ndim, Element>(
+						subkernels.displacement.expression->y.evaluator,
+						[] (Element &element, size_t &n, size_t &s, double value) { element.displacement.node[1][s] = value; }));
+			}
+			if (subkernels.displacement.expression->z.isset) {
+				subkernels.expressions.node.push_back(new ExternalNodeExpression<ndim, Element>(
+						subkernels.displacement.expression->z.evaluator,
+						[] (Element &element, size_t &n, size_t &s, double value) { element.displacement.node[2][s] = value; }));
 			}
 		}
-		if (subkernels.displacement.expression->z.isset) {
-			auto setter = [] (Element &element, size_t &n, size_t &s, double value) { element.displacement.node[2][s] = value; };
-			subkernels.expressions.node.push_back(new ExternalNodeExpression<3, Element>(subkernels.displacement.expression->z.evaluator, setter));
+		if (subkernels.harmonicForce.magnitude.expressionVector) {
+			subkernels.expressions.node.push_back(new ExternalNodeExpression<ndim, Element>(
+					subkernels.harmonicForce.magnitude.expressionVector->x.evaluator,
+					[] (Element &element, size_t &gp, size_t &s, double value) { element.ecf.harmonicForceMag[0][s] = value; }));
+			subkernels.expressions.node.push_back(new ExternalNodeExpression<ndim, Element>(
+					subkernels.harmonicForce.magnitude.expressionVector->y.evaluator,
+					[] (Element &element, size_t &gp, size_t &s, double value) { element.ecf.harmonicForceMag[1][s] = value; }));
+			subkernels.expressions.node.push_back(new ExternalNodeExpression<ndim, Element>(
+					subkernels.harmonicForce.magnitude.expressionVector->z.evaluator,
+					[] (Element &element, size_t &gp, size_t &s, double value) { element.ecf.harmonicForceMag[2][s] = value; }));
+		}
+		if (subkernels.harmonicForce.phase.expressionVector) {
+			subkernels.expressions.node.push_back(new ExternalNodeExpression<ndim, Element>(
+					subkernels.harmonicForce.phase.expressionVector->x.evaluator,
+					[] (Element &element, size_t &gp, size_t &s, double value) { element.ecf.harmonicForceCos[0][s] = std::cos(value * M_PI / 180); element.ecf.harmonicForceSin[0][s] = std::sin(value * M_PI / 180); }));
+			subkernels.expressions.node.push_back(new ExternalNodeExpression<ndim, Element>(
+					subkernels.harmonicForce.phase.expressionVector->y.evaluator,
+					[] (Element &element, size_t &gp, size_t &s, double value) { element.ecf.harmonicForceCos[1][s] = std::cos(value * M_PI / 180); element.ecf.harmonicForceSin[1][s] = std::sin(value * M_PI / 180); }));
+			subkernels.expressions.node.push_back(new ExternalNodeExpression<ndim, Element>(
+					subkernels.harmonicForce.phase.expressionVector->z.evaluator,
+					[] (Element &element, size_t &gp, size_t &s, double value) { element.ecf.harmonicForceCos[2][s] = std::cos(value * M_PI / 180); element.ecf.harmonicForceSin[2][s] = std::sin(value * M_PI / 180); }));
 		}
 	}
 }
 
 template <size_t ndim>
-void runDirichletKernel(const StructuralMechanicsBoundaryOperators &subkernels, SubKernel::Action action)
+void runNodeKernel(const StructuralMechanicsBoundaryOperators &subkernels, SubKernel::Action action)
 {
 	typedef StructuralMechanicsDirichlet<ndim> Element; Element element;
 
 	CoordinatesKernel<1, ndim> coordinates(subkernels.coordinates);
-	VectorSetterKernel<1, Element> set(subkernels.dirichlet, [] (auto &element, size_t &n, size_t &d, size_t &s) { return element.displacement.node[d][s]; });
+	HarmonicForceKernel<1, ndim> harmonicForce(subkernels.harmonicForce);
+	RHSFillerKernel<1> outReRHS(subkernels.reRHSfiller);
+	RHSFillerKernel<1> outImRHS(subkernels.imRHSfiller);
+	VectorSetterKernel<1, Element> set(subkernels.reDirichlet, [] (auto &element, size_t &n, size_t &d, size_t &s) { return element.displacement.node[d][s]; });
+
+	harmonicForce.setActiveness(action);
+	outReRHS.setActiveness(action);
+	outImRHS.setActiveness(action);
+	set.setActiveness(action);
 
 	std::vector<ExternalNodeExpression<ndim, Element>*> nonconst;
 	for (size_t i = 0; i < subkernels.expressions.node.size(); ++i) {
@@ -539,7 +634,21 @@ void runDirichletKernel(const StructuralMechanicsBoundaryOperators &subkernels, 
 		for (size_t i = 0; i < nonconst.size(); ++i) {
 			nonconst[i]->simd(element, 0);
 		}
-		set.simd(element);
+
+		if (harmonicForce.isactive) {
+			harmonicForce.simd(element);
+		}
+
+		if (set.isactive) {
+			set.simd(element);
+		}
+
+		if (outReRHS.isactive) {
+			outReRHS.simd(element.f);
+		}
+		if (outImRHS.isactive) {
+			outImRHS.simd(element.f);
+		}
 	}
 }
 

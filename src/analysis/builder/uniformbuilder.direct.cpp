@@ -17,14 +17,16 @@
 
 using namespace espreso;
 
-UniformBuilderDirectPattern::UniformBuilderDirectPattern(std::map<std::string, ECFExpression> &dirichlet, int dofs, Matrix_Shape shape) // always full
+UniformBuilderDirectPattern::UniformBuilderDirectPattern(std::map<std::string, ECFExpression> &dirichlet, int dofs, int multiplicity, Matrix_Shape shape) // always full
 {
 	std::vector<esint> indices;
 	bregion.resize(info::mesh->boundaryRegions.size());
 	for (size_t r = 1; r < info::mesh->boundaryRegions.size(); ++r) {
 		const BoundaryRegionStore *region = info::mesh->boundaryRegions[r];
 		if (dirichlet.find(region->name) != dirichlet.end()) {
-			bregion[r].dirichlet = 1;
+			for (int m = 0; m < multiplicity; ++m) {
+				bregion[r].dirichlet = 1 << m;
+			}
 		}
 	}
 
@@ -32,8 +34,10 @@ UniformBuilderDirectPattern::UniformBuilderDirectPattern(std::map<std::string, E
 		const BoundaryRegionStore *region = info::mesh->boundaryRegions[r];
 		if (bregion[r].dirichlet) {
 			for (auto n = region->nodes->datatarray().cbegin(); n != region->nodes->datatarray().cend(); ++n) {
-				for (int d = 0; d < dofs; ++d) {
-					indices.push_back(*n * dofs + d);
+				for (int m = 0; m < multiplicity; ++m) {
+					for (int d = 0; d < dofs; ++d) {
+						indices.push_back(*n * dofs * multiplicity + m * dofs + d);
+					}
 				}
 			}
 		}
@@ -44,10 +48,10 @@ UniformBuilderDirectPattern::UniformBuilderDirectPattern(std::map<std::string, E
 	for (size_t i = 0; i < bregion[0].b.size(); ++i) {
 		bregion[0].b[i] = std::lower_bound(indices.begin(), indices.end(), bregion[0].b[i]) - indices.begin();
 	}
-	buildPattern(dofs);
+	buildPattern(dofs * multiplicity);
 }
 
-UniformBuilderDirectPattern::UniformBuilderDirectPattern(std::map<std::string, ECFExpressionOptionalVector> &dirichlet, int dofs, Matrix_Shape shape) // always full
+UniformBuilderDirectPattern::UniformBuilderDirectPattern(std::map<std::string, ECFExpressionOptionalVector> &dirichlet, int dofs, int multiplicity, Matrix_Shape shape) // always full
 {
 	std::vector<esint> indices;
 	bregion.resize(info::mesh->boundaryRegions.size());
@@ -55,9 +59,11 @@ UniformBuilderDirectPattern::UniformBuilderDirectPattern(std::map<std::string, E
 		const BoundaryRegionStore *region = info::mesh->boundaryRegions[r];
 		auto expr = dirichlet.find(region->name);
 		if (expr != dirichlet.end()) {
-			for (int d = 0; d < dofs; ++d) {
-				if (expr->second.data[d].isset) {
-					bregion[r].dirichlet += 1 << d;
+			for (int m = 0; m < multiplicity; ++m) {
+				for (int d = 0; d < dofs; ++d) {
+					if (expr->second.data[d].isset) {
+						bregion[r].dirichlet += 1 << (dofs * m + d);
+					}
 				}
 			}
 		}
@@ -66,9 +72,11 @@ UniformBuilderDirectPattern::UniformBuilderDirectPattern(std::map<std::string, E
 	for (size_t r = 1; r < info::mesh->boundaryRegions.size(); ++r) {
 		const BoundaryRegionStore *region = info::mesh->boundaryRegions[r];
 		for (auto n = region->nodes->datatarray().cbegin(); n != region->nodes->datatarray().cend(); ++n) {
-			for (int d = 0; d < dofs; ++d) {
-				if (bregion[r].dirichlet & (1 << d)) {
-					indices.push_back(*n * dofs + d);
+			for (int m = 0; m < multiplicity; ++m) {
+				for (int d = 0; d < dofs; ++d) {
+					if (bregion[r].dirichlet & (1 << (dofs * m + d))) {
+						indices.push_back(*n * dofs * multiplicity + m * dofs + d);
+					}
 				}
 			}
 		}
@@ -79,7 +87,7 @@ UniformBuilderDirectPattern::UniformBuilderDirectPattern(std::map<std::string, E
 	for (size_t i = 0; i < bregion[0].b.size(); ++i) {
 		bregion[0].b[i] = std::lower_bound(indices.begin(), indices.end(), bregion[0].b[i]) - indices.begin();
 	}
-	buildPattern(dofs);
+	buildPattern(dofs * multiplicity);
 }
 
 UniformBuilderDirectPattern::~UniformBuilderDirectPattern()

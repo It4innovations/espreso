@@ -30,18 +30,29 @@ public:
 
 	void analyze();
 
-	void connect(Matrix_Base<double> *K, Matrix_Base<double> *M, Matrix_Base<double> *C, Vector_Base<double> *f, Vector_Base<double> *nf, Vector_Base<double> *dirichlet);
-	void evaluate(const step::Step &step, const step::Time &time, Matrix_Base<double> *K, Matrix_Base<double> *M, Matrix_Base<double> *C, Vector_Base<double> *f, Vector_Base<double> *nf, Vector_Base<double> *dirichlet);
+	void connect(Matrix_Base<double> *K, Matrix_Base<double> *M, Vector_Base<double> *f, Vector_Base<double> *nf, Vector_Base<double> *dirichlet);
+	void evaluate(const step::Step &step, const step::Time &time, Matrix_Base<double> *K, Matrix_Base<double> *M, Vector_Base<double> *f, Vector_Base<double> *nf, Vector_Base<double> *dirichlet);
 	void updateSolution(Vector_Base<double> *x);
 	void nextIteration(Vector_Base<double> *x);
+
+	void connect(Matrix_Base<double> *K, Matrix_Base<double> *M, Matrix_Base<double> *C, Vector_Base<double> *ref, Vector_Base<double> *imf, Vector_Base<double> *renf, Vector_Base<double> *imnf, Vector_Base<double> *reDirichlet, Vector_Base<double> *imDirichlet);
+	void evaluate(const step::Step &step, const step::Frequency &freq, Matrix_Base<double> *K, Matrix_Base<double> *M, Matrix_Base<double> *C, Vector_Base<double> *ref, Vector_Base<double> *imf, Vector_Base<double> *renf, Vector_Base<double> *imnf, Vector_Base<double> *reDirichlet, Vector_Base<double> *imDirichlet);
+	void updateSolution(Vector_Base<double> *rex, Vector_Base<double> *imx);
 
 	StructuralMechanicsConfiguration &settings;
 	StructuralMechanicsLoadStepConfiguration &configuration;
 
 	struct Results {
-		static NodeData *displacement, *thickness;
+		static NodeData *thickness;
+
+		// steady state, transient
+		static NodeData *displacement;
 		static ElementData *principalStress, *componentStress, *vonMisesStress;
 		static ElementData *isPlastized;
+
+		// harmonic
+		static NodeData *cosDisplacement, *sinDisplacement, *displacementAmplitude;
+		static NodeData *phase, *velocity, *velocityAmplitude, *acceleration, *accelerationAmplitude;
 	};
 
 	struct {

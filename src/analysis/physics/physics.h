@@ -11,7 +11,7 @@ namespace step { struct Step; }
 struct Physics {
 	virtual ~Physics() {}
 
-	virtual void analyze() =0;
+	virtual void analyze(step::Step &step) =0;
 	virtual void run(step::Step &step) =0;
 };
 

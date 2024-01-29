@@ -14,7 +14,7 @@ struct STL: public Visualization {
 	~STL();
 
 	void updateMesh();
-	void updateMonitors(step::TYPE type);
+	void updateMonitors(const step::Step &step);
 	void updateSolution(const step::Step &step, const step::Time &time);
 	void updateSolution(const step::Step &step, const step::Frequency &frequency);
 

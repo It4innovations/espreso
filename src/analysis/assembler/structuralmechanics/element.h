@@ -61,13 +61,24 @@ template <size_t nodes, size_t gps, size_t ndim, size_t edim> struct StructuralM
 	} rotation;
 
 	alignas(SIMD::size * sizeof(double)) SIMD K[ndim * nodes * ndim * nodes];
-	alignas(SIMD::size * sizeof(double)) SIMD f[ndim * nodes];
+	alignas(SIMD::size * sizeof(double)) SIMD M[ndim * nodes * ndim * nodes];
+	alignas(SIMD::size * sizeof(double)) SIMD C[ndim * nodes * ndim * nodes];
+	alignas(SIMD::size * sizeof(double)) SIMD f[ndim * nodes], imf[ndim * nodes];
 	alignas(SIMD::size * sizeof(double)) SIMD nf[ndim * nodes];
 
 	alignas(SIMD::size * sizeof(double)) SIMD displacement[nodes][ndim];
 
 	alignas(SIMD::size * sizeof(double)) SIMD smallStrainTensor[ndim * (ndim - 1)];
 	alignas(SIMD::size * sizeof(double)) SIMD sigma            [ndim * (ndim - 1)]; // elasticity * smallStrainTensor
+
+	StructuralMechanicsElement()
+	{
+		for (size_t i = 0; i < ndim * nodes * ndim * nodes; ++i) {
+			K[i] = zeros();
+			M[i] = zeros();
+			C[i] = zeros();
+		}
+	}
 };
 
 template <size_t nodes, size_t gps, size_t ndim, size_t edim> struct StructuralMechanicsBoundary: public GeneralBoundary<nodes, gps, ndim, edim> {
@@ -79,10 +90,18 @@ template <size_t nodes, size_t gps, size_t ndim, size_t edim> struct StructuralM
 	alignas(SIMD::size * sizeof(double)) SIMD f[ndim * nodes];
 };
 
-template <size_t ndim> struct StructuralMechanicsDirichlet: public GeneralDirichlet<ndim> {
+template <size_t ndim> struct StructuralMechanicsDirichlet: public GeneralNode<ndim> {
 	struct {
-		alignas(SIMD::size * sizeof(double)) SIMD node[3]; // dim=3 to avoid if constexpr
+		alignas(SIMD::size * sizeof(double)) SIMD harmonicForceMag[ndim];
+		alignas(SIMD::size * sizeof(double)) SIMD harmonicForceCos[ndim];
+		alignas(SIMD::size * sizeof(double)) SIMD harmonicForceSin[ndim];
+	} ecf;
+
+	struct {
+		alignas(SIMD::size * sizeof(double)) SIMD node[ndim];
 	} displacement;
+
+	alignas(SIMD::size * sizeof(double)) SIMD f[ndim], imf[ndim];
 };
 
 }

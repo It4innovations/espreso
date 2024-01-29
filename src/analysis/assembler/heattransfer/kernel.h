@@ -258,7 +258,7 @@ void runElementKernel(const HeatTransferElementOperators &subkernels, SubKernel:
 	HeatSourceKernel<nodes> heatSource(subkernels.heatSource);
 	AdvectionKernel<nodes, ndim> advection(subkernels.advection);
 	MatrixConductivityKernel<nodes, ndim> K(subkernels.K);
-	MatrixMassKernel<nodes> M(subkernels.M);
+	MatrixMassKernel<nodes, 1> M(subkernels.M);
 	TemperatureGradientKernel<nodes, gps, ndim> gradient(subkernels.gradient);
 	TemperatureFluxKernel<nodes, gps, ndim> flux(subkernels.flux);
 	MatricFillerKernel<nodes> outK(subkernels.Kfiller);
@@ -496,9 +496,9 @@ void runBoundaryKernel(const HeatTransferBoundaryOperators &subkernels, SubKerne
 }
 
 template <size_t ndim>
-void setDirichletKernel(HeatTransferBoundaryOperators &subkernels, SubKernel::Action action)
+void setNodeKernel(HeatTransferBoundaryOperators &subkernels, SubKernel::Action action)
 {
-	typedef HeatTransferDirichlet<ndim> Element; Element element;
+	typedef HeatTransferNode<ndim> Element; Element element;
 	if (subkernels.temperature.expression) {
 		auto setter = [] (Element &element, size_t &n, size_t &s, double value) { element.temperature.node[0][s] = element.temperature.initial[0][s] = value; };
 		switch (info::mesh->dimension) {
@@ -532,9 +532,9 @@ void setDirichletKernel(HeatTransferBoundaryOperators &subkernels, SubKernel::Ac
 }
 
 template <size_t ndim>
-void runDirichletKernel(const HeatTransferBoundaryOperators &subkernels, SubKernel::Action action)
+void runNodeKernel(const HeatTransferBoundaryOperators &subkernels, SubKernel::Action action)
 {
-	typedef HeatTransferDirichlet<ndim> Element; Element element;
+	typedef HeatTransferNode<ndim> Element; Element element;
 
 	CoordinatesKernel<1, ndim> coordinates(subkernels.coordinates);
 	VectorSetterKernel<1, Element> set(subkernels.dirichlet, [] (auto &element, size_t &n, size_t &d, size_t &s) { return element.temperature.node[0][s]; });

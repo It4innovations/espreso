@@ -21,6 +21,9 @@ protected:
 
 	virtual void setAnalytic() { setAlgebraic(); }
 	virtual void updateAnalytic() { updateAlgebraic(); }
+
+	void getFixPoints(std::vector<esint> &fixPoints, int domain);
+
 	FETI<T> &feti;
 };
 

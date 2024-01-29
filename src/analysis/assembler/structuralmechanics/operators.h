@@ -13,6 +13,7 @@
 #include "analysis/assembler/general/op.temperature.h"
 #include "analysis/assembler/general/op.thickness.h"
 #include "analysis/assembler/general/op.thickness.h"
+#include "analysis/assembler/general/op.matrix.mass.h"
 #include "analysis/assembler/structuralmechanics/op.angularvelocity.h"
 #include "analysis/assembler/structuralmechanics/op.acceleration.h"
 #include "analysis/assembler/structuralmechanics/op.displacement.h"
@@ -23,6 +24,7 @@
 #include "analysis/assembler/structuralmechanics/op.plasticity.h"
 #include "analysis/assembler/structuralmechanics/op.matrix.elasticity.h"
 #include "analysis/assembler/structuralmechanics/op.normalpressure.h"
+#include "analysis/assembler/structuralmechanics/op.harmonicforce.h"
 
 namespace espreso {
 
@@ -44,11 +46,12 @@ struct StructuralMechanicsOperators {
 	Elasticity elasticity;
 	Plasticity plasticity;
 	MatrixElasticity K;
+	MatrixMass M;
 	ElementCondition acceleration, angularVelocity;
 	Sigma sigma;
 	Stress stress;
 
-	DataFiller Kfiller, RHSfiller, nRHSfiller;
+	DataFiller Kfiller, Mfiller, Cfiller, reRHSfiller, imRHSfiller, reNRHSfiller, imNRHSfiller;
 
 	struct {
 		std::vector<ExternalEvaluator*> node;
@@ -69,9 +72,10 @@ struct StructuralMechanicsBoundaryOperators {
 	Integration integration;
 
 	ExternalExpressionVector displacement;
-	NormalPressupre normalPressure;
+	NormalPressure normalPressure;
+	HarmonicForce harmonicForce;
 
-	DataFiller RHSfiller, dirichlet;
+	DataFiller reRHSfiller, imRHSfiller, reDirichlet, imDirichlet;
 
 	struct {
 		std::vector<ExternalEvaluator*> node;

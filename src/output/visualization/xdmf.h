@@ -35,12 +35,12 @@ public:
 	~XDMF();
 
 	void updateMesh();
-	void updateMonitors(step::TYPE type);
+	void updateMonitors(const step::Step &step);
 	void updateSolution(const step::Step &step, const step::Time &time);
 	void updateSolution(const step::Step &step, const step::Frequency &frequency);
 
 protected:
-	void updateSolution();
+	void updateSolution(const step::Step &step);
 
 	HDF5 *_hdf5;
 	XML *_xml;

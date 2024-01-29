@@ -7,9 +7,9 @@
 
 namespace espreso {
 
-struct NormalPressupre: BoundaryCondition {
+struct NormalPressure: BoundaryCondition {
 
-	NormalPressupre()
+	NormalPressure()
 	: behaviour(StructuralMechanicsGlobalSettings::ELEMENT_BEHAVIOUR::PLANE_STRAIN)
 	{
 
@@ -27,8 +27,8 @@ struct NormalPressupre: BoundaryCondition {
 template <size_t nodes, size_t ndim> struct NormalPressureKernel;
 
 template <size_t nodes>
-struct NormalPressureKernel<nodes, 2>: NormalPressupre {
-	NormalPressureKernel(const NormalPressupre &base): NormalPressupre(base) {}
+struct NormalPressureKernel<nodes, 2>: NormalPressure {
+	NormalPressureKernel(const NormalPressure &base): NormalPressure(base) {}
 
 	template <typename Element>
 	void simd(Element &element, size_t gp)
@@ -55,8 +55,8 @@ struct NormalPressureKernel<nodes, 2>: NormalPressupre {
 };
 
 template <size_t nodes>
-struct NormalPressureKernel<nodes, 3>: NormalPressupre {
-	NormalPressureKernel(const NormalPressupre &base): NormalPressupre(base) {}
+struct NormalPressureKernel<nodes, 3>: NormalPressure {
+	NormalPressureKernel(const NormalPressure &base): NormalPressure(base) {}
 
 	template <typename Element>
 	void simd(Element &element, size_t gp)

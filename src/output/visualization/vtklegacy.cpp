@@ -128,21 +128,21 @@ void VTKLegacy::updateMesh()
 	if (_measure) { eslog::endln("VTK LEGACY: GEOMETRY STORED"); }
 }
 
-void VTKLegacy::updateMonitors(step::TYPE type)
+void VTKLegacy::updateMonitors(const step::Step &step)
 {
 }
 
 void VTKLegacy::updateSolution(const step::Step &step, const step::Time &time)
 {
-	updateSolution(_path + _directory, _name, "." + std::to_string(time.current) + _suffix);
+	updateSolution(step, _path + _directory, _name, "." + std::to_string(time.current) + _suffix);
 }
 
 void VTKLegacy::updateSolution(const step::Step &step, const step::Frequency &frequency)
 {
-	updateSolution(_path + _directory, _name, "." + std::to_string(frequency.current) + _suffix);
+	updateSolution(step, _path + _directory, _name, "." + std::to_string(frequency.current) + _suffix);
 }
 
-void VTKLegacy::updateSolution(const std::string &dir, const std::string &name, const std::string &suffix)
+void VTKLegacy::updateSolution(const step::Step &step, const std::string &dir, const std::string &name, const std::string &suffix)
 {
 	int index = 0;
 	for (size_t r = 1; r < info::mesh->elementsRegions.size(); ++r, ++index) {
@@ -157,6 +157,7 @@ void VTKLegacy::updateSolution(const std::string &dir, const std::string &name, 
 		}
 		for (size_t i = 0; i < info::mesh->elements->data.size(); ++i) {
 			insertData(
+					step,
 					info::mesh->elements->data[i],
 					info::mesh->elementsRegions[r]->elements->datatarray().size(),
 					info::mesh->elementsRegions[r]->elements->datatarray().data());
@@ -167,6 +168,7 @@ void VTKLegacy::updateSolution(const std::string &dir, const std::string &name, 
 		}
 		for (size_t i = 0; i < info::mesh->nodes->data.size(); ++i) {
 			insertData(
+					step,
 					info::mesh->nodes->data[i],
 					info::mesh->elementsRegions[r]->nodeInfo.size,
 					info::mesh->elementsRegions[r]->nodes->datatarray().data() + info::mesh->elementsRegions[r]->nodeInfo.nhalo);
@@ -182,7 +184,7 @@ void VTKLegacy::updateSolution(const std::string &dir, const std::string &name, 
 			_writer.pointdata(region->nodeInfo.totalSize);
 		}
 		for (size_t i = 0; i < info::mesh->nodes->data.size(); ++i) {
-			insertData(info::mesh->nodes->data[i], region->nodeInfo.size, region->nodes->datatarray().data() + region->nodeInfo.nhalo);
+			insertData(step, info::mesh->nodes->data[i], region->nodeInfo.size, region->nodes->datatarray().data() + region->nodeInfo.nhalo);
 		}
 		_writer.commitFile(dir + name + "." + region->name + suffix);
 	};
@@ -318,9 +320,9 @@ esint VTKLegacy::insertElements(const BoundaryRegionStore *store, const std::vec
 	}
 }
 
-void VTKLegacy::insertData(NamedData *data, esint nindices, esint *indices)
+void VTKLegacy::insertData(const step::Step &step, NamedData *data, esint nindices, esint *indices)
 {
-	if (!storeData(data)) {
+	if (!storeData(data, step)) {
 		return;
 	}
 

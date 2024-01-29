@@ -11,23 +11,23 @@ void StructuralMechanics::runBoundary<Element::CODE::POINT1>(SubKernel::Action a
 	case 2:
 		switch (action) {
 		case SubKernel::Action::PREPROCESS:
-			setDirichletKernel<2>(boundary[region][interval], action); break;
+			setNodeKernel<2>(boundary[region][interval], action); break;
 		case SubKernel::Action::ASSEMBLE:
 		case SubKernel::Action::REASSEMBLE:
 		case SubKernel::Action::ITERATION:
 		case SubKernel::Action::SOLUTION:
-			runDirichletKernel<2>(boundary[region][interval], action); break;
+			runNodeKernel<2>(boundary[region][interval], action); break;
 		default: break;
 		} break;
 	case 3:
 		switch (action) {
 		case SubKernel::Action::PREPROCESS:
-			setDirichletKernel<3>(boundary[region][interval], action); break;
+			setNodeKernel<3>(boundary[region][interval], action); break;
 		case SubKernel::Action::ASSEMBLE:
 		case SubKernel::Action::REASSEMBLE:
 		case SubKernel::Action::ITERATION:
 		case SubKernel::Action::SOLUTION:
-			runDirichletKernel<3>(boundary[region][interval], action); break;
+			runNodeKernel<3>(boundary[region][interval], action); break;
 		default: break;
 		} break;
 	}

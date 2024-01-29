@@ -117,7 +117,7 @@ void HeatTransfer::analyze()
 		correct &= checkElementParameter("INITIAL TEMPERATURE", settings.initial_temperature);
 	}
 
-	if (step::step.loadstep == 0) {
+	if (true) { // add check
 		if (info::mesh->dimension == 2) {
 			correct &= checkElementParameter("THICKNESS", settings.thickness);
 		}
@@ -453,6 +453,37 @@ void HeatTransfer::run(SubKernel::Action action, size_t region, size_t interval)
 
 void HeatTransfer::evaluate(step::Time &time, Matrix_Base<double> *K, Matrix_Base<double> *M, Vector_Base<double> *f, Vector_Base<double> *nf, Vector_Base<double> *dirichlet)
 {
+	for (size_t i = 0; i < subkernels.size(); ++i) {
+		for (size_t e = 0; e < subkernels[i].expressions.node.size(); ++e) {
+			#pragma omp parallel for
+			for (int t = 0; t < info::env::threads; ++t) {
+				subkernels[i].expressions.node[e]->evaluator->getTime(t) = time.current;
+			}
+		}
+		for (size_t e = 0; e < subkernels[i].expressions.gp.size(); ++e) {
+			#pragma omp parallel for
+			for (int t = 0; t < info::env::threads; ++t) {
+				subkernels[i].expressions.gp[e]->evaluator->getTime(t) = time.current;
+			}
+		}
+	}
+	for (size_t i = 0; i < boundary.size(); ++i) {
+		for (size_t j = 0; j < boundary[i].size(); ++j) {
+			for (size_t e = 0; e < boundary[i][j].expressions.node.size(); ++e) {
+				#pragma omp parallel for
+				for (int t = 0; t < info::env::threads; ++t) {
+					boundary[i][j].expressions.node[e]->evaluator->getTime(t) = time.current;
+				}
+			}
+			for (size_t e = 0; e < boundary[i][j].expressions.gp.size(); ++e) {
+				#pragma omp parallel for
+				for (int t = 0; t < info::env::threads; ++t) {
+					boundary[i][j].expressions.gp[e]->evaluator->getTime(t) = time.current;
+				}
+			}
+		}
+	}
+
 	bool run = reset(K, constant.K) | reset(M, constant.M) | reset(f, constant.f) | reset(dirichlet, constant.dirichlet);
 	if (run) { assemble(SubKernel::ASSEMBLE); }
 	update(K, constant.K);

@@ -75,17 +75,6 @@ void copyFile(const std::string &source, const std::string &destination)
 	dst << src.rdbuf();
 }
 
-std::string debugDirectory()
-{
-	std::stringstream path;
-	path << info::ecf->outpath << "/DEBUG";
-	path << "/loadstep" << step::step.loadstep;
-	path << "/substep" << step::step.substep;
-	path << "/iteration" << step::step.iteration;
-	path << "/" << info::mpi::rank;
-	return path.str();
-}
-
 std::string debugDirectory(const step::Step &step)
 {
 	std::stringstream path;

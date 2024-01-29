@@ -18,7 +18,7 @@ public:
 	StructuralMechanicsSteadyStateNonLinear(StructuralMechanicsConfiguration &settings, StructuralMechanicsLoadStepConfiguration &configuration);
 	~StructuralMechanicsSteadyStateNonLinear();
 
-	void analyze();
+	void analyze(step::Step &step);
 	void run(step::Step &step);
 
 	step::Time time;

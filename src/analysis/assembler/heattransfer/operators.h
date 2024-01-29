@@ -12,13 +12,13 @@
 #include "analysis/assembler/general/op.integration.h"
 #include "analysis/assembler/general/op.temperature.h"
 #include "analysis/assembler/general/op.thickness.h"
+#include "analysis/assembler/general/op.matrix.mass.h"
 #include "analysis/assembler/heattransfer/op.advection.h"
 #include "analysis/assembler/heattransfer/op.conductivity.h"
 #include "analysis/assembler/heattransfer/op.heatsource.h"
 #include "analysis/assembler/heattransfer/op.flux.h"
 #include "analysis/assembler/heattransfer/op.gradient.h"
 #include "analysis/assembler/heattransfer/op.matrix.conductivity.h"
-#include "analysis/assembler/heattransfer/op.matrix.mass.h"
 #include "analysis/assembler/heattransfer/op.externalheat.h"
 
 namespace espreso {

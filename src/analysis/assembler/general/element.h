@@ -74,7 +74,7 @@ template <size_t nodes, size_t gps, size_t ndim, size_t edim> struct GeneralBoun
 	}
 };
 
-template <size_t ndim> struct GeneralDirichlet {
+template <size_t ndim> struct GeneralNode {
 	struct {
 		alignas(SIMD::size * sizeof(double)) SIMD node[1][ndim];
 	} coords;

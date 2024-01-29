@@ -40,6 +40,38 @@ struct BoundaryCondition: public SubKernel {
 	}
 };
 
+struct HarmonicBoundaryCondition: public SubKernel {
+	BoundaryCondition magnitude, phase;
+
+	HarmonicBoundaryCondition()
+	{
+		isconst = false;
+		action = SubKernel::ASSEMBLE | SubKernel::REASSEMBLE | SubKernel::ITERATION;
+	}
+
+	void activate(ECFHarmonicExpressionVector *expressionVector)
+	{
+		if (expressionVector) {
+			magnitude.activate(&expressionVector->magnitude);
+			phase.activate(&expressionVector->phase);
+			this->isconst = magnitude.isconst && phase.isconst;
+			this->isactive = 1;
+			this->needCoordinates = magnitude.needCoordinates || phase.needCoordinates;
+		}
+	}
+
+	void activate(ECFHarmonicExpression *expression)
+	{
+		if (expression) {
+			magnitude.activate(&expression->magnitude);
+			phase.activate(&expression->phase);
+			this->isconst = magnitude.isconst && phase.isconst;
+			this->isactive = 1;
+			this->needCoordinates = magnitude.needCoordinates || phase.needCoordinates;
+		}
+	}
+};
+
 }
 
 

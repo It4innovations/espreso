@@ -29,10 +29,10 @@ struct Monitor {
 class Monitoring: public OutputWriter {
 
 public:
-	bool storeStep();
+	bool storeStep(const step::Step &step);
 
 	void updateMesh() {}
-	void updateMonitors(step::TYPE type);
+	void updateMonitors(const step::Step &step);
 	void updateSolution(const step::Step &step, const step::Time &time);
 	void updateSolution(const step::Step &step, const step::Frequency &frequency);
 
@@ -41,8 +41,8 @@ public:
 	static char delimiter;
 
 protected:
-	void updateSolution();
-	void storeSolution();
+	void updateSolution(const step::Step &step);
+	void storeSolution(const step::Step &step);
 
 	FILE *_runFile, *_fttFile;
 

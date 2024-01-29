@@ -40,24 +40,22 @@ public:
 		math::store(*static_cast<Matrix_Distributed<T>*>(this), file);
 	}
 
-	void set(const T &value)
+	Matrix_Base<T>* set(const T &value)
 	{
 		math::set(cluster, value);
+		return this;
 	}
 
-	void scale(const T &alpha)
+	Matrix_Base<T>* copy(const Matrix_Base<T> *in, const Selection &rows = Selection(), const Selection &cols = Selection())
 	{
-		math::scale(alpha, cluster);
+		in->copyTo(static_cast<Matrix_Distributed<T>*>(this), rows, cols);
+		return this;
 	}
 
-	void copy(const Matrix_Base<T> *in)
+	Matrix_Base<T>* add(const T &alpha, const Matrix_Base<T> *a, const Selection &rows = Selection(), const Selection &cols = Selection())
 	{
-		in->copyTo(static_cast<Matrix_Distributed<T>*>(this));
-	}
-
-	void add(const T &alpha, const Matrix_Base<T> *a)
-	{
-		a->addTo(alpha, static_cast<Matrix_Distributed<T>*>(this));
+		a->addTo(alpha, static_cast<Matrix_Distributed<T>*>(this), rows, cols);
+		return this;
 	}
 
 	void apply(const T &alpha, const Vector_Base<T> *in, const T &beta, Vector_Base<T> *out)
@@ -67,22 +65,22 @@ public:
 		}
 	}
 
-	void copyTo(Matrix_Distributed<T> *a) const
+	void copyTo(Matrix_Distributed<T> *a, const Selection &rows = Selection(), const Selection &cols = Selection()) const
 	{
-		math::copy(a->cluster, this->cluster);
+		math::copy(a->cluster, this->cluster, rows, cols);
 	}
 
-	void copyTo(Matrix_FETI<T> *a) const
+	void copyTo(Matrix_FETI<T> *a, const Selection &rows = Selection(), const Selection &cols = Selection()) const
 	{
 		eslog::error("call empty function\n");
 	}
 
-	void addTo(const T &alpha, Matrix_Distributed<T> *a) const
+	void addTo(const T &alpha, Matrix_Distributed<T> *a, const Selection &rows = Selection(), const Selection &cols = Selection()) const
 	{
-		math::add(a->cluster, alpha, this->cluster);
+		math::add(a->cluster, alpha, this->cluster, rows, cols);
 	}
 
-	void addTo(const T &alpha, Matrix_FETI<T> *a) const
+	void addTo(const T &alpha, Matrix_FETI<T> *a, const Selection &rows = Selection(), const Selection &cols = Selection()) const
 	{
 		eslog::error("call empty function\n");
 	}

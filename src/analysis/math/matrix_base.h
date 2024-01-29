@@ -2,8 +2,9 @@
 #ifndef SRC_ANALYSIS_MATH_MATRIX_BASE_H_
 #define SRC_ANALYSIS_MATH_MATRIX_BASE_H_
 
+#include "selection.h"
+#include "vector_base.h"
 #include "analysis/builder/mapping.h"
-#include "analysis/math/vector_base.h"
 #include "math/primitives/matrix_info.h"
 #include "math/primitives/matrix_csr.h"
 #include "math/primitives/matrix_dense.h"
@@ -28,16 +29,15 @@ public:
 	virtual Matrix_Base<T>* copyPattern() =0;
 	virtual void store(const char *file) =0;
 
-	virtual void set(const T &value) =0;
-	virtual void scale(const T &alpha) =0;
+	virtual Matrix_Base<T>* set(const T &value) =0;
 
-	virtual void copy(const Matrix_Base<T> *in) =0;
-	virtual void copyTo(Matrix_Distributed<T> *a) const =0;
-	virtual void copyTo(Matrix_FETI<T> *a) const =0;
+	virtual Matrix_Base<T>* copy(const Matrix_Base<T> *in, const Selection &rows = Selection(), const Selection &cols = Selection()) =0;
+	virtual void copyTo(Matrix_Distributed<T> *a, const Selection &rows = Selection(), const Selection &cols = Selection()) const =0;
+	virtual void copyTo(Matrix_FETI<T> *a, const Selection &rows = Selection(), const Selection &cols = Selection()) const =0;
 
-	virtual void add(const T &alpha, const Matrix_Base<T> *a) =0;
-	virtual void addTo(const T &alpha, Matrix_Distributed<T> *a) const =0;
-	virtual void addTo(const T &alpha, Matrix_FETI<T> *a) const =0;
+	virtual Matrix_Base<T>* add(const T &alpha, const Matrix_Base<T> *a, const Selection &rows = Selection(), const Selection &cols = Selection()) =0;
+	virtual void addTo(const T &alpha, Matrix_Distributed<T> *a, const Selection &rows = Selection(), const Selection &cols = Selection()) const =0;
+	virtual void addTo(const T &alpha, Matrix_FETI<T> *a, const Selection &rows = Selection(), const Selection &cols = Selection()) const =0;
 
 	virtual void apply(const T &alpha, const Vector_Base<T> *in, const T &beta, Vector_Base<T> *out) =0;
 

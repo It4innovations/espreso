@@ -16,7 +16,7 @@ public:
 	virtual bool storeStep() { return true; }
 
 	virtual void updateMesh() =0;
-	virtual void updateMonitors(step::TYPE type) =0;
+	virtual void updateMonitors(const step::Step &step) =0;
 
 	virtual void updateSolution(const step::Step &step, const step::Time &time) =0;
 	virtual void updateSolution(const step::Step &step, const step::Frequency &frequency) =0;
@@ -37,7 +37,7 @@ public:
 	~Output();
 
 	void updateMesh();
-	void updateMonitors(step::TYPE type);
+	void updateMonitors(const step::Step &step);
 
 	void updateSolution(const step::Step &step, const step::Time &time);
 	void updateSolution(const step::Step &step, const step::Frequency &frequency);

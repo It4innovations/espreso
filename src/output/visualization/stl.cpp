@@ -64,7 +64,7 @@ void STL::updateMesh()
 	_writer.write();
 }
 
-void STL::updateMonitors(step::TYPE type)
+void STL::updateMonitors(const step::Step &step)
 {
 
 }

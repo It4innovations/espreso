@@ -42,30 +42,25 @@ public:
 		math::store(*static_cast<Matrix_FETI<T>*>(this), file);
 	}
 
-	void set(const T &value)
+	Matrix_Base<T>* set(const T &value)
 	{
 		#pragma omp parallel for
 		for (size_t d = 0; d < this->domains.size(); ++d) {
 			math::set(this->domains[d], value);
 		}
+		return this;
 	}
 
-	void scale(const T &alpha)
+	Matrix_Base<T>* copy(const Matrix_Base<T> *in, const Selection &rows = Selection(), const Selection &cols = Selection())
 	{
-		#pragma omp parallel for
-		for (size_t d = 0; d < this->domains.size(); ++d) {
-			math::scale(alpha, this->domains[d]);
-		}
+		in->copyTo(static_cast<Matrix_FETI<T>*>(this), rows, cols);
+		return this;
 	}
 
-	void copy(const Matrix_Base<T> *in)
+	Matrix_Base<T>* add(const T &alpha, const Matrix_Base<T> *a, const Selection &rows = Selection(), const Selection &cols = Selection())
 	{
-		in->copyTo(static_cast<Matrix_FETI<T>*>(this));
-	}
-
-	void add(const T &alpha, const Matrix_Base<T> *a)
-	{
-		a->addTo(alpha, static_cast<Matrix_FETI<T>*>(this));
+		a->addTo(alpha, static_cast<Matrix_FETI<T>*>(this), rows, cols);
+		return this;
 	}
 
 	void apply(const T &alpha, const Vector_Base<T> *in, const T &beta, Vector_Base<T> *out)
@@ -90,29 +85,29 @@ public:
 		}
 	}
 
-	void copyTo(Matrix_Distributed<T> *a) const
+	void copyTo(Matrix_Distributed<T> *a, const Selection &rows = Selection(), const Selection &cols = Selection()) const
 	{
 		eslog::error("call empty function\n");
 	}
 
-	void copyTo(Matrix_FETI<T> *a) const
+	void copyTo(Matrix_FETI<T> *a, const Selection &rows = Selection(), const Selection &cols = Selection()) const
 	{
 		#pragma omp parallel for
 		for (size_t d = 0; d < this->domains.size(); ++d) {
-			math::copy(a->domains[d], this->domains[d]);
+			math::copy(a->domains[d], this->domains[d], rows, cols);
 		}
 	}
 
-	void addTo(const T &alpha, Matrix_Distributed<T> *a) const
+	void addTo(const T &alpha, Matrix_Distributed<T> *a, const Selection &rows = Selection(), const Selection &cols = Selection()) const
 	{
 		eslog::error("call empty function\n");
 	}
 
-	void addTo(const T &alpha, Matrix_FETI<T> *a) const
+	void addTo(const T &alpha, Matrix_FETI<T> *a, const Selection &rows = Selection(), const Selection &cols = Selection()) const
 	{
 		#pragma omp parallel for
 		for (size_t d = 0; d < this->domains.size(); ++d) {
-			math::add(a->domains[d], alpha, this->domains[d]);
+			math::add(a->domains[d], alpha, this->domains[d], rows, cols);
 		}
 	}
 

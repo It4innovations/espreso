@@ -47,7 +47,7 @@ HeatTransientLinear::~HeatTransientLinear()
 	if (solver) { delete solver; }
 }
 
-void HeatTransientLinear::analyze()
+void HeatTransientLinear::analyze(step::Step &step)
 {
 	eslog::info("\n ============================================================================================= \n");
 	eslog::info(" == ANALYSIS                                                               LINEAR TRANSIENT == \n");
@@ -70,8 +70,9 @@ void HeatTransientLinear::analyze()
 	}
 	eslog::info(" ============================================================================================= \n");
 
+	step.type = step::TYPE::TIME;
 	assembler.analyze();
-	info::mesh->output->updateMonitors(step::TYPE::TIME);
+	info::mesh->output->updateMonitors(step);
 
 	Matrix_Shape shape = Matrix_Shape::UPPER;
 	Matrix_Type type = Matrix_Type::REAL_SYMMETRIC_POSITIVE_DEFINITE;
@@ -88,19 +89,19 @@ void HeatTransientLinear::analyze()
 
 	switch (configuration.solver) {
 	case LoadStepSolverConfiguration::SOLVER::FETI:
-		builder = new UniformBuilderFETI<double>(configuration.feti, configuration.temperature, 1, shape);
+		builder = new UniformBuilderFETI<double>(configuration.feti, configuration.temperature, 1, 1, shape);
 		solver = new FETILinearSystemSolver<double, HeatTransientLinear>(configuration.feti);
 		break;
 	case LoadStepSolverConfiguration::SOLVER::HYPRE:   break;
 	case LoadStepSolverConfiguration::SOLVER::MKLPDSS:
-		builder = new UniformBuilderDirect<double>(configuration.temperature, 1, shape);
+		builder = new UniformBuilderDirect<double>(configuration.temperature, 1, 1, shape);
 		solver = new MKLPDSSLinearSystemSolver<double>(configuration.mklpdss);
 		break;
 	case LoadStepSolverConfiguration::SOLVER::PARDISO: break;
 	case LoadStepSolverConfiguration::SOLVER::SUPERLU: break;
 	case LoadStepSolverConfiguration::SOLVER::WSMP:    break;
 	case LoadStepSolverConfiguration::SOLVER::NONE:
-		builder = new UniformBuilderDirect<double>(configuration.temperature, 1, shape);
+		builder = new UniformBuilderDirect<double>(configuration.temperature, 1, 1, shape);
 		solver = new EmptySystemSolver<double>();
 	}
 
@@ -172,10 +173,10 @@ void HeatTransientLinear::run(step::Step &step)
 		assembler.evaluate(time, K, M, f, nullptr, dirichlet);
 		eslog::checkpointln("SIMULATION: PHYSICS ASSEMBLED");
 
-		solver->A->set(0);
-		solver->A->add(1, K);
-		solver->A->add(1 / (alpha * time.shift), M);
-		solver->A->updated = K->updated || M->updated;
+		if (K->updated || M->updated) {
+			solver->A->set(0)->add(1, K)->add(1 / (alpha * time.shift), M);
+			solver->A->updated = true;
+		}
 
 		X->set(0);
 		X->add(1 / (alpha * time.shift), U);

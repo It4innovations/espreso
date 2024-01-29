@@ -15,6 +15,7 @@ namespace espreso {
 struct ECFExpression;
 struct ECFExpressionVector;
 struct ECFExpressionOptionalVector;
+struct ECFHarmonicExpressionVector;
 struct ConvectionConfiguration;
 struct ImpedanceConfiguration;
 struct PointSourceConfiguration;
@@ -28,8 +29,10 @@ public:
 
 	static ECFExpression* getExpression(size_t interval, std::map<std::string, ECFExpression> &settings);
 	static ECFExpressionVector* getExpression(size_t interval, std::map<std::string, ECFExpressionVector> &settings);
+	static ECFHarmonicExpressionVector* getExpression(size_t interval, std::map<std::string, ECFHarmonicExpressionVector> &settings);
 	static ECFExpression* getExpression(const std::string &name, std::map<std::string, ECFExpression> &settings);
 	static ECFExpressionVector* getExpression(const std::string &name, std::map<std::string, ECFExpressionVector> &settings);
+	static ECFHarmonicExpressionVector* getExpression(const std::string &name, std::map<std::string, ECFHarmonicExpressionVector> &settings);
 
 	static Evaluator* getEvaluator(size_t interval, std::map<std::string, ECFExpression> &settings);
 	static Evaluator* getEvaluator(size_t interval, std::map<std::string, ECFExpressionVector> &settings, int dim);
@@ -48,6 +51,7 @@ protected:
 	bool checkBoundaryParameter(const std::string &name, std::map<std::string, ECFExpression> &settings);
 	bool checkBoundaryParameter(const std::string &name, std::map<std::string, ECFExpressionVector> &settings);
 	bool checkBoundaryParameter(const std::string &name, std::map<std::string, ECFExpressionOptionalVector> &settings);
+	bool checkBoundaryParameter(const std::string &name, std::map<std::string, ECFHarmonicExpressionVector> &settings);
 
 	void printElementVolume(std::vector<double> &volume);
 	void printBoundarySurface(std::vector<double> &surface);
