@@ -24,8 +24,8 @@ struct Vector_Dual: public Vector_Dense<T, int> {
 	void scale(const T &alpha);
 	void add(const T &alpha, const Vector_Dense<T, int> &other);
 
-	double dot(const Vector_Dense<T, int> &other) const;
-	double dot() const;
+	T dot(const Vector_Dense<T, int> &other) const;
+	T dot() const;
 
 protected:
 	static esint nhalo, localSize;

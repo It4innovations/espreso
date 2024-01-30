@@ -338,7 +338,7 @@ void TimeLogger::finish()
 						if (std::find(printed.begin(), printed.end(), events[i].name) == printed.end()) {
 							printed.push_back(events[i].name);
 							int counter = 0;
-							double min = duration, max = 0, savg, smin, smax;
+							double min = duration, max = 0, savg = 0, smin = 0, smax = 0;
 							for (size_t j = start; j <= end; j++) {
 								if (events[i].name == events[j].name) {
 									min = std::min(min, statistics[j].min.time);

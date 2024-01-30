@@ -14,7 +14,7 @@ def configure(ctx):
 
     """ Set default compilers flags"""
     if ctx.env.COMPILER_CXX == "g++":
-        ctx.env.append_unique("CXXFLAGS", [ "-fopenmp" ])
+        ctx.env.append_unique("CXXFLAGS", [ "-fopenmp", "-Wno-psabi" ])
         ctx.env.append_unique("LINKFLAGS", [ "-fopenmp" ])
     if ctx.env.COMPILER_CXX == "icpc":
         ctx.env.append_unique("CXXFLAGS", [ "-qopenmp", "-diag-disable=10441" ])
@@ -39,6 +39,9 @@ def configure(ctx):
 
     if ctx.options.use_cusparse_legacy:
         ctx.env.append_unique("DEFINES", [ "USE_CUSPARSE_LEGACY" ])
+
+    if ctx.options.enable_dualop_explicit_gpu_timers:
+        ctx.env.append_unique("DEFINES", [ "ENABLE_DUALOP_EXPLICIT_GPU_TIMERS" ])
 
     ctx.env.append_unique("CXXFLAGS", [ "-std=c++17", "-Wall" ])
     ctx.env.append_unique("CXXFLAGS", ctx.options.cxxflags.split())
@@ -235,10 +238,15 @@ def options(opt):
         default=False,
         help="Build ESPRESO with GUI (Qt5 is needed).")
 
-    opt.compiler.add_option("--use-cusparse-legacy",
+    opt.other.add_option("--use-cusparse-legacy",
         action="store_true",
         default=False,
         help="Use legacy cusparse API. For CUDA < 12 only")
+
+    opt.other.add_option("--enable-dualop-explicit-gpu-timers",
+        action="store_true",
+        default=False,
+        help="Enable timers for explicit dual operator on GPU")
 
     recurse(opt)
 

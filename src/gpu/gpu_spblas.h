@@ -44,7 +44,10 @@ namespace spblas {
     static void descr_vector_dense_create(descr_vector_dense & descr, I size);
 
     template<typename T, typename I, typename A>
-    static void descr_vector_dense_link_data(descr_vector_dense & descr, Vector_Dense<T,I,A> & vector, I colidx = 0);
+    static void descr_vector_dense_link_data(descr_vector_dense & descr, Vector_Dense<T,I,A> & vector);
+
+    template<typename T, typename I, typename A>
+    static void descr_vector_dense_link_data(descr_vector_dense & descr, Matrix_Dense<T,I,A> & matrix, I colidx = 0);
 
     static void descr_vector_dense_destroy(descr_vector_dense & descr);
     

@@ -8,21 +8,10 @@
 #ifndef HAVE_MKL
 #ifdef HAVE_SUITESPARSE
 
+#include "math/wrappers/math.spsolver.h"
 #include "w.suitesparse.cholmod.h"
 
 namespace espreso {
-
-template<typename T, typename I>
-struct Solver_External_Representation {
-	cholmod_common cm_common;
-	cholmod_factor * cm_factor_super = nullptr;
-	cholmod_factor * cm_factor_simpl = nullptr;
-	cholmod_sparse * cm_matrix_view = nullptr;
-    const Matrix_CSR<T, I> * matrix = nullptr;
-	Vector_Dense<I> map_simpl_super;
-	char zerodrop;
-	int stage = 0; // 0 = completely uninitialized, 1 = initialized without matrix, 2 = have matrix symbolic pattern, 3 = symbolic factorization done, 4 = have matrix numeric values, 5 = numeric factorization done
-};
 
 
 
@@ -125,8 +114,7 @@ void DirectSparseSolver<T, I>::commit(const Matrix_CSR<T,I> &a)
     ext->cm_matrix_view->x = a.vals;
 	
     if(ext->stage == 1) ext->stage = 2;
-    if(ext->stage == 3) ext->stage = 4;
-    if(ext->stage == 5) ext->stage = 4;
+    if(ext->stage == 4) ext->stage = 3;
 }
 
 template <typename T, typename I>
@@ -153,17 +141,17 @@ void DirectSparseSolver<T, I>::symbolicFactorization(int fixedSuffix)
 template <typename T, typename I>
 void DirectSparseSolver<T, I>::numericalFactorization()
 {
-	if(ext->stage < 4) eslog::error("numericalFactorization: invalid order of operations in spsolver\n");
+	if(ext->stage < 3) eslog::error("numericalFactorization: invalid order of operations in spsolver\n");
 
     _factorize<I>(ext->cm_factor_super, ext->cm_matrix_view, ext->cm_common);
 
-    ext->stage = 5;
+    ext->stage = 4;
 }
 
 template <typename T, typename I>
 void DirectSparseSolver<T, I>::solve(Vector_Dense<T, I> &rhs, Vector_Dense<T, I> &solution, int sparsity)
 {
-	if(ext->stage < 5) eslog::error("solve: invalid order of operations in spsolver\n");
+	if(ext->stage < 4) eslog::error("solve: invalid order of operations in spsolver\n");
 
 	cholmod_dense cm_rhs;
 	cm_rhs.nrow = rhs.size;
@@ -185,7 +173,7 @@ void DirectSparseSolver<T, I>::solve(Vector_Dense<T, I> &rhs, Vector_Dense<T, I>
 template <typename T, typename I>
 void DirectSparseSolver<T, I>::solve(Matrix_Dense<T, I> &rhs, Matrix_Dense<T, I> &solution, int sparsity)
 {
-	if(ext->stage < 5) eslog::error("solve: invalid order of operations in spsolver\n");
+	if(ext->stage < 4) eslog::error("solve: invalid order of operations in spsolver\n");
 
 	cholmod_dense cm_rhs;
 	cm_rhs.nrow = rhs.ncols;
@@ -228,26 +216,6 @@ I DirectSparseSolver<T, I>::getFactorNnz()
 }
 
 template <typename T, typename I>
-void DirectSparseSolver<T, I>::getFactorL(Matrix_CSR<T,I> &/*L*/, bool /*copyPattern*/, bool /*copyValues*/)
-{
-	eslog::error("L factor is not provided\n");
-}
-
-template <typename T, typename I>
-void DirectSparseSolver<T, I>::getFactorU(Matrix_CSR<T,I> &U, bool copyPattern, bool copyValues)
-{
-	if(ext->stage < 3) eslog::error("getFactorU: invalid order of operations in spsolver\n");
-    if(copyValues && ext->stage < 5) eslog::error("getFactorU: invalid order of operations in spsolver\n");
-    if((size_t)U.nrows != ext->cm_factor_simpl->n || (size_t)U.ncols != ext->cm_factor_simpl->n) eslog::error("getFactorU: output matrix has wrong dimensions\n");
-
-	U.resize(ext->cm_factor_simpl->n, ext->cm_factor_simpl->n, ext->cm_factor_simpl->nzmax);
-
-    if(copyPattern) std::copy_n(static_cast<I*>(ext->cm_factor_simpl->p), ext->cm_factor_simpl->n+1, U.rows);
-    if(copyPattern) std::copy_n(static_cast<I*>(ext->cm_factor_simpl->i), ext->cm_factor_simpl->nzmax, U.cols);
-    if(copyValues) for(I i = 0; i < ext->map_simpl_super.size; i++) U.vals[i] = reinterpret_cast<T*>(ext->cm_factor_super->x)[ext->map_simpl_super.vals[i]];
-}
-
-template <typename T, typename I>
 void DirectSparseSolver<T, I>::getPermutation(Permutation<I> &perm)
 {
 	if(ext->stage < 3) eslog::error("getPermutation: invalid order of operations in spsolver\n");
@@ -258,6 +226,16 @@ void DirectSparseSolver<T, I>::getPermutation(Permutation<I> &perm)
 
     if(ext->cm_factor_simpl->IPerm != nullptr) std::copy_n(static_cast<I*>(ext->cm_factor_simpl->IPerm), ext->cm_factor_simpl->n, perm.dst_to_src);
     else perm.invert(perm.dst_to_src, perm.src_to_dst);
+}
+
+template <typename T, typename I>
+void DirectSparseSolver<T, I>::getPermutation(Vector_Dense<I> &perm)
+{
+	if(ext->stage < 3) eslog::error("getPermutation: invalid order of operations in spsolver\n");
+
+	perm.resize(ext->cm_factor_simpl->n);
+
+    std::copy_n(static_cast<I*>(ext->cm_factor_simpl->Perm), ext->cm_factor_simpl->n, perm.vals);
 }
 
 template <typename T, typename I>
@@ -321,8 +299,14 @@ void DirectSparseSolver<T, I>::getSC(Matrix_Dense<T,I> &sc)
     _free<esint>(cm_A11iA12_dn, ext->cm_common);
 }
 
-template struct DirectSparseSolver<double, int>;
-template struct DirectSparseSolver<std::complex<double>, int>;
+template struct DirectSparseSolver<float, int32_t>;
+template struct DirectSparseSolver<double, int32_t>;
+template struct DirectSparseSolver<float, int64_t>;
+template struct DirectSparseSolver<double, int64_t>;
+template struct DirectSparseSolver<std::complex<float>, int32_t>;
+template struct DirectSparseSolver<std::complex<double>, int32_t>;
+template struct DirectSparseSolver<std::complex<float>, int64_t>;
+template struct DirectSparseSolver<std::complex<double>, int64_t>;
 
 }
 

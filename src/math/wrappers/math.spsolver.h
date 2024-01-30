@@ -52,9 +52,12 @@ struct DirectSparseSolver {
 	I getMatrixNnz();
 	I getFactorNnz();
 
-	void getFactorL(Matrix_CSR<T,I> &L, bool copyPattern = true, bool copyValues = true);
-	void getFactorU(Matrix_CSR<T,I> &U, bool copyPattern = true, bool copyValues = true);
+	template<typename A>
+	void getFactorL(Matrix_CSR<T,I,A> &L, bool copyPattern = true, bool copyValues = true);
+	template<typename A>
+	void getFactorU(Matrix_CSR<T,I,A> &U, bool copyPattern = true, bool copyValues = true);
 	void getPermutation(Permutation<I> &perm);
+	void getPermutation(Vector_Dense<I> &perm);
 	void getSC(Matrix_Dense<T,I> &sc);
 
 private:
@@ -62,6 +65,12 @@ private:
 };
 
 }
+
+#ifdef HAVE_MKL
+#include "wrappers/mkl/w.mkl.pardiso.hpp"
+#elif defined(HAVE_SUITESPARSE)
+#include "wrappers/suitesparse/w.suitesparse.spsolver.hpp"
+#endif
 
 #endif /* SRC_MATH_WRAPPERS_MATH_SOLVER_H_ */
 

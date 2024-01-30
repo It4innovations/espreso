@@ -1,7 +1,4 @@
 
-#ifndef SRC_WRAPPERS_CUDA_W_CUDA_GPU_SPBLAS_LEGACY_HPP_
-#define SRC_WRAPPERS_CUDA_W_CUDA_GPU_SPBLAS_LEGACY_HPP_
-
 #ifdef HAVE_CUDA
 
 #include "gpu/gpu_spblas.h"
@@ -43,6 +40,11 @@ namespace spblas {
             }
         }
 
+        template<typename T> struct cpp_to_cuda_type { using type = T; };
+        template<> struct cpp_to_cuda_type<std::complex<float>> { using type = cuComplex; };
+        template<> struct cpp_to_cuda_type<std::complex<double>> { using type = cuDoubleComplex; };
+        template<typename T> using cpp_to_cuda_type_t = typename cpp_to_cuda_type<T>::type;
+
         template<typename I>
         static cusparseIndexType_t _sparse_index_type()
         {
@@ -55,48 +57,68 @@ namespace spblas {
         {
             if constexpr(std::is_same_v<T, float>)  return CUDA_R_32F;
             if constexpr(std::is_same_v<T, double>) return CUDA_R_64F;
+            if constexpr(std::is_same_v<T, std::complex<float>>)  return CUDA_C_32F;
+            if constexpr(std::is_same_v<T, std::complex<double>>) return CUDA_C_64F;
         }
 
         template<typename T, typename I>
         cusparseStatus_t _my_sparse_trsv_buffersize(cusparseHandle_t handle, cusparseOperation_t transA, I m, I nnz, const cusparseMatDescr_t descrA, void * csrValA, const void * csrRowPtrA, const void * csrColIndA, csrsv2Info_t info, int * pBufferSizeInBytes)
         {
-            if constexpr(std::is_same_v<T, float>)  return cusparseScsrsv2_bufferSize(handle, transA, m, nnz, descrA, (T*)csrValA, (I*)csrRowPtrA, (I*)csrColIndA, info, pBufferSizeInBytes);
-            if constexpr(std::is_same_v<T, double>) return cusparseDcsrsv2_bufferSize(handle, transA, m, nnz, descrA, (T*)csrValA, (I*)csrRowPtrA, (I*)csrColIndA, info, pBufferSizeInBytes);
+            using U = cpp_to_cuda_type_t<T>;
+            if constexpr(std::is_same_v<T, float>)                return cusparseScsrsv2_bufferSize(handle, transA, m, nnz, descrA, (U*)csrValA, (I*)csrRowPtrA, (I*)csrColIndA, info, pBufferSizeInBytes);
+            if constexpr(std::is_same_v<T, double>)               return cusparseDcsrsv2_bufferSize(handle, transA, m, nnz, descrA, (U*)csrValA, (I*)csrRowPtrA, (I*)csrColIndA, info, pBufferSizeInBytes);
+            if constexpr(std::is_same_v<T, std::complex<float>>)  return cusparseCcsrsv2_bufferSize(handle, transA, m, nnz, descrA, (U*)csrValA, (I*)csrRowPtrA, (I*)csrColIndA, info, pBufferSizeInBytes);
+            if constexpr(std::is_same_v<T, std::complex<double>>) return cusparseZcsrsv2_bufferSize(handle, transA, m, nnz, descrA, (U*)csrValA, (I*)csrRowPtrA, (I*)csrColIndA, info, pBufferSizeInBytes);
         }
 
         template<typename T, typename I>
         cusparseStatus_t _my_sparse_trsv_analysis(cusparseHandle_t handle, cusparseOperation_t transA, I m, I nnz, const cusparseMatDescr_t descrA, void * csrValA, const void * csrRowPtrA, const void * csrColIndA, csrsv2Info_t info, cusparseSolvePolicy_t policy, void * pBuffer)
         {
-            if constexpr(std::is_same_v<T, float>)  return cusparseScsrsv2_analysis(handle, transA, m, nnz, descrA, (T*)csrValA, (I*)csrRowPtrA, (I*)csrColIndA, info, policy, pBuffer);
-            if constexpr(std::is_same_v<T, double>) return cusparseDcsrsv2_analysis(handle, transA, m, nnz, descrA, (T*)csrValA, (I*)csrRowPtrA, (I*)csrColIndA, info, policy, pBuffer);
+            using U = cpp_to_cuda_type_t<T>;
+            if constexpr(std::is_same_v<T, float>)                return cusparseScsrsv2_analysis(handle, transA, m, nnz, descrA, (U*)csrValA, (I*)csrRowPtrA, (I*)csrColIndA, info, policy, pBuffer);
+            if constexpr(std::is_same_v<T, double>)               return cusparseDcsrsv2_analysis(handle, transA, m, nnz, descrA, (U*)csrValA, (I*)csrRowPtrA, (I*)csrColIndA, info, policy, pBuffer);
+            if constexpr(std::is_same_v<T, std::complex<float>>)  return cusparseCcsrsv2_analysis(handle, transA, m, nnz, descrA, (U*)csrValA, (I*)csrRowPtrA, (I*)csrColIndA, info, policy, pBuffer);
+            if constexpr(std::is_same_v<T, std::complex<double>>) return cusparseZcsrsv2_analysis(handle, transA, m, nnz, descrA, (U*)csrValA, (I*)csrRowPtrA, (I*)csrColIndA, info, policy, pBuffer);
         }
 
         template<typename T, typename I>
         cusparseStatus_t _my_sparse_trsv_solve(cusparseHandle_t handle, cusparseOperation_t transA, I m, I nnz, void * alpha, const cusparseMatDescr_t descrA, void * csrValA, const void * csrRowPtrA, const void * csrColIndA, csrsv2Info_t info, const void * x, void * y, cusparseSolvePolicy_t policy, void * pBuffer)
         {
-            if constexpr(std::is_same_v<T, float>)  return cusparseScsrsv2_solve(handle, transA, m, nnz, (T*)alpha, descrA, (T*)csrValA, (I*)csrRowPtrA, (I*)csrColIndA, info, (T*)x, (T*)y, policy, pBuffer);
-            if constexpr(std::is_same_v<T, double>) return cusparseDcsrsv2_solve(handle, transA, m, nnz, (T*)alpha, descrA, (T*)csrValA, (I*)csrRowPtrA, (I*)csrColIndA, info, (T*)x, (T*)y, policy, pBuffer);
+            using U = cpp_to_cuda_type_t<T>;
+            if constexpr(std::is_same_v<T, float>)                return cusparseScsrsv2_solve(handle, transA, m, nnz, (U*)alpha, descrA, (U*)csrValA, (I*)csrRowPtrA, (I*)csrColIndA, info, (U*)x, (U*)y, policy, pBuffer);
+            if constexpr(std::is_same_v<T, double>)               return cusparseDcsrsv2_solve(handle, transA, m, nnz, (U*)alpha, descrA, (U*)csrValA, (I*)csrRowPtrA, (I*)csrColIndA, info, (U*)x, (U*)y, policy, pBuffer);
+            if constexpr(std::is_same_v<T, std::complex<float>>)  return cusparseCcsrsv2_solve(handle, transA, m, nnz, (U*)alpha, descrA, (U*)csrValA, (I*)csrRowPtrA, (I*)csrColIndA, info, (U*)x, (U*)y, policy, pBuffer);
+            if constexpr(std::is_same_v<T, std::complex<double>>) return cusparseZcsrsv2_solve(handle, transA, m, nnz, (U*)alpha, descrA, (U*)csrValA, (I*)csrRowPtrA, (I*)csrColIndA, info, (U*)x, (U*)y, policy, pBuffer);
         }
 
         template<typename T, typename I>
         cusparseStatus_t _my_sparse_trsm_buffersize(cusparseHandle_t handle, int algo, cusparseOperation_t transA, cusparseOperation_t transB, int m, int nrhs, int nnz, const void * alpha, const cusparseMatDescr_t descrA, const void * csrSortedValA, const void * csrSortedRowPtrA, const void * csrSortedColIndA, const void * B, int ldb, csrsm2Info_t info, cusparseSolvePolicy_t policy, size_t * pBufferSize)
         {
-            if constexpr(std::is_same_v<T, float>)  return cusparseScsrsm2_bufferSizeExt(handle, algo, transA, transB, m, nrhs, nnz, (T*)alpha, descrA, (T*)csrSortedValA, (I*)csrSortedRowPtrA, (I*)csrSortedColIndA, (T*)B, ldb, info, policy, pBufferSize);
-            if constexpr(std::is_same_v<T, double>) return cusparseDcsrsm2_bufferSizeExt(handle, algo, transA, transB, m, nrhs, nnz, (T*)alpha, descrA, (T*)csrSortedValA, (I*)csrSortedRowPtrA, (I*)csrSortedColIndA, (T*)B, ldb, info, policy, pBufferSize);
+            using U = cpp_to_cuda_type_t<T>;
+            if constexpr(std::is_same_v<T, float>)                return cusparseScsrsm2_bufferSizeExt(handle, algo, transA, transB, m, nrhs, nnz, (U*)alpha, descrA, (U*)csrSortedValA, (I*)csrSortedRowPtrA, (I*)csrSortedColIndA, (U*)B, ldb, info, policy, pBufferSize);
+            if constexpr(std::is_same_v<T, double>)               return cusparseDcsrsm2_bufferSizeExt(handle, algo, transA, transB, m, nrhs, nnz, (U*)alpha, descrA, (U*)csrSortedValA, (I*)csrSortedRowPtrA, (I*)csrSortedColIndA, (U*)B, ldb, info, policy, pBufferSize);
+            if constexpr(std::is_same_v<T, std::complex<float>>)  return cusparseCcsrsm2_bufferSizeExt(handle, algo, transA, transB, m, nrhs, nnz, (U*)alpha, descrA, (U*)csrSortedValA, (I*)csrSortedRowPtrA, (I*)csrSortedColIndA, (U*)B, ldb, info, policy, pBufferSize);
+            if constexpr(std::is_same_v<T, std::complex<double>>) return cusparseZcsrsm2_bufferSizeExt(handle, algo, transA, transB, m, nrhs, nnz, (U*)alpha, descrA, (U*)csrSortedValA, (I*)csrSortedRowPtrA, (I*)csrSortedColIndA, (U*)B, ldb, info, policy, pBufferSize);
         }
 
         template<typename T, typename I>
         cusparseStatus_t _my_sparse_trsm_analysis(cusparseHandle_t handle, int algo, cusparseOperation_t transA, cusparseOperation_t transB, int m, int nrhs, int nnz, const void * alpha, const cusparseMatDescr_t descrA, const void * csrSortedValA, const void * csrSortedRowPtrA, const void * csrSortedColIndA, const void * B, int ldb, csrsm2Info_t info, cusparseSolvePolicy_t policy, void * pBuffer)
         {
-            if constexpr(std::is_same_v<T, float>)  return cusparseScsrsm2_analysis(handle, algo, transA, transB, m, nrhs, nnz, (T*)alpha, descrA, (T*)csrSortedValA, (I*)csrSortedRowPtrA, (I*)csrSortedColIndA, (T*)B, ldb, info, policy, pBuffer);
-            if constexpr(std::is_same_v<T, double>) return cusparseDcsrsm2_analysis(handle, algo, transA, transB, m, nrhs, nnz, (T*)alpha, descrA, (T*)csrSortedValA, (I*)csrSortedRowPtrA, (I*)csrSortedColIndA, (T*)B, ldb, info, policy, pBuffer);
+            using U = cpp_to_cuda_type_t<T>;
+            if constexpr(std::is_same_v<T, float>)                return cusparseScsrsm2_analysis(handle, algo, transA, transB, m, nrhs, nnz, (U*)alpha, descrA, (U*)csrSortedValA, (I*)csrSortedRowPtrA, (I*)csrSortedColIndA, (U*)B, ldb, info, policy, pBuffer);
+            if constexpr(std::is_same_v<T, double>)               return cusparseDcsrsm2_analysis(handle, algo, transA, transB, m, nrhs, nnz, (U*)alpha, descrA, (U*)csrSortedValA, (I*)csrSortedRowPtrA, (I*)csrSortedColIndA, (U*)B, ldb, info, policy, pBuffer);
+            if constexpr(std::is_same_v<T, std::complex<float>>)  return cusparseCcsrsm2_analysis(handle, algo, transA, transB, m, nrhs, nnz, (U*)alpha, descrA, (U*)csrSortedValA, (I*)csrSortedRowPtrA, (I*)csrSortedColIndA, (U*)B, ldb, info, policy, pBuffer);
+            if constexpr(std::is_same_v<T, std::complex<double>>) return cusparseZcsrsm2_analysis(handle, algo, transA, transB, m, nrhs, nnz, (U*)alpha, descrA, (U*)csrSortedValA, (I*)csrSortedRowPtrA, (I*)csrSortedColIndA, (U*)B, ldb, info, policy, pBuffer);
         }
 
         template<typename T, typename I>
         cusparseStatus_t _my_sparse_trsm_solve(cusparseHandle_t handle, int algo, cusparseOperation_t transA, cusparseOperation_t transB, int m, int nrhs, int nnz, const void * alpha, const cusparseMatDescr_t descrA, const void * csrSortedValA, const void * csrSortedRowPtrA, const void * csrSortedColIndA, const void * B, int ldb, csrsm2Info_t info, cusparseSolvePolicy_t policy, void * pBuffer)
         {
-            if constexpr(std::is_same_v<T, float>)  return cusparseScsrsm2_solve(handle, algo, transA, transB, m, nrhs, nnz, (T*)alpha, descrA, (T*)csrSortedValA, (I*)csrSortedRowPtrA, (I*)csrSortedColIndA, (T*)B, ldb, info, policy, pBuffer);
-            if constexpr(std::is_same_v<T, double>) return cusparseDcsrsm2_solve(handle, algo, transA, transB, m, nrhs, nnz, (T*)alpha, descrA, (T*)csrSortedValA, (I*)csrSortedRowPtrA, (I*)csrSortedColIndA, (T*)B, ldb, info, policy, pBuffer);
+            using U = cpp_to_cuda_type_t<T>;
+            if constexpr(std::is_same_v<T, float>)                return cusparseScsrsm2_solve(handle, algo, transA, transB, m, nrhs, nnz, (U*)alpha, descrA, (U*)csrSortedValA, (I*)csrSortedRowPtrA, (I*)csrSortedColIndA, (U*)B, ldb, info, policy, pBuffer);
+            if constexpr(std::is_same_v<T, double>)               return cusparseDcsrsm2_solve(handle, algo, transA, transB, m, nrhs, nnz, (U*)alpha, descrA, (U*)csrSortedValA, (I*)csrSortedRowPtrA, (I*)csrSortedColIndA, (U*)B, ldb, info, policy, pBuffer);
+            if constexpr(std::is_same_v<T, std::complex<float>>)  return cusparseCcsrsm2_solve(handle, algo, transA, transB, m, nrhs, nnz, (U*)alpha, descrA, (U*)csrSortedValA, (I*)csrSortedRowPtrA, (I*)csrSortedColIndA, (U*)B, ldb, info, policy, pBuffer);
+            if constexpr(std::is_same_v<T, std::complex<double>>) return cusparseZcsrsm2_solve(handle, algo, transA, transB, m, nrhs, nnz, (U*)alpha, descrA, (U*)csrSortedValA, (I*)csrSortedRowPtrA, (I*)csrSortedColIndA, (U*)B, ldb, info, policy, pBuffer);
         }
     }
 
@@ -174,7 +196,7 @@ namespace spblas {
     }
 
     template<typename T, typename I>
-    void descr_matrix_csr_create(descr_matrix_csr & descr, I nrows, I ncols, I nnz, char symmetry)
+    static void descr_matrix_csr_create(descr_matrix_csr & descr, I nrows, I ncols, I nnz, char symmetry)
     {
         void * dummyptr = reinterpret_cast<void*>(1);
         CHECK(cusparseCreateCsr(&descr.d_new, nrows, ncols, nnz, dummyptr, dummyptr, dummyptr, _sparse_index_type<I>(), _sparse_index_type<I>(), CUSPARSE_INDEX_BASE_ZERO, _sparse_data_type<T>()));
@@ -198,22 +220,22 @@ namespace spblas {
     }
 
     template<typename T, typename I, typename A>
-    void descr_matrix_sparse_link_data(descr_matrix_csr & descr, Matrix_CSR<T,I,A> & matrix)
+    static void descr_matrix_sparse_link_data(descr_matrix_csr & descr, Matrix_CSR<T,I,A> & matrix)
     {
-        CHECK(cusparseCsrSetPointers(descr.d_new, matrix.rowptrs, matrix.colidxs, matrix.vals));
-        descr.rowptrs = matrix.rowptrs;
-        descr.colidxs = matrix.colidxs;
+        CHECK(cusparseCsrSetPointers(descr.d_new, matrix.rows, matrix.cols, matrix.vals));
+        descr.rowptrs = matrix.rows;
+        descr.colidxs = matrix.cols;
         descr.vals = matrix.vals;
     }
 
-    void descr_matrix_csr_destroy(descr_matrix_csr & descr)
+    static void descr_matrix_csr_destroy(descr_matrix_csr & descr)
     {
         CHECK(cusparseDestroySpMat(descr.d_new));
         CHECK(cusparseDestroyMatDescr(descr.d_leg));
     }
 
     template<typename T, typename I>
-    void descr_matrix_dense_create(descr_matrix_dense & descr, I nrows, I ncols, I ld, char order)
+    static void descr_matrix_dense_create(descr_matrix_dense & descr, I nrows, I ncols, I ld, char order)
     {
         void * dummyptr = reinterpret_cast<void*>(1);
         if(order == 'R') CHECK(cusparseCreateDnMat(&descr.d_new, nrows, ncols, ld, dummyptr, _sparse_data_type<T>(), CUSPARSE_ORDER_ROW));
@@ -228,60 +250,67 @@ namespace spblas {
     }
 
     template<typename T, typename I, typename A>
-    void descr_matrix_dense_link_data(descr_matrix_dense & descr, Matrix_Dense<T,I,A> & matrix)
+    static void descr_matrix_dense_link_data(descr_matrix_dense & descr, Matrix_Dense<T,I,A> & matrix)
     {
         CHECK(cusparseDnMatSetValues(descr.d_new, matrix.vals));
         CHECK(cusparseDnMatSetValues(descr.d_new_complementary, matrix.vals));
         descr.vals = matrix.vals;
     }
 
-    void descr_matrix_dense_destroy(descr_matrix_dense & descr)
+    static void descr_matrix_dense_destroy(descr_matrix_dense & descr)
     {
         CHECK(cusparseDestroyDnMat(descr.d_new));
         CHECK(cusparseDestroyDnMat(descr.d_new_complementary));
     }
 
     template<typename T, typename I>
-    void descr_vector_dense_create(descr_vector_dense & descr, I size)
+    static void descr_vector_dense_create(descr_vector_dense & descr, I size)
     {
         void * dummyptr = reinterpret_cast<void*>(1);
         CHECK(cusparseCreateDnVec(&descr.d_new, size, dummyptr, _sparse_data_type<T>()));
     }
 
     template<typename T, typename I, typename A>
-    void descr_vector_dense_link_data(descr_vector_dense & descr, Vector_Dense<T,I,A> & vector, I colidx)
+    static void descr_vector_dense_link_data(descr_vector_dense & descr, Vector_Dense<T,I,A> & vector)
     {
-        CHECK(cusparseDnVecSetValues(descr.d_new, vector.vals + colidx * vector.get_ld()));
-        descr.vals = vector.vals + colidx * vector.get_ld();
+        CHECK(cusparseDnVecSetValues(descr.d_new, vector.vals));
+        descr.vals = vector.vals;
     }
 
-    void descr_vector_dense_destroy(descr_vector_dense & descr)
+    template<typename T, typename I, typename A>
+    static void descr_vector_dense_link_data(descr_vector_dense & descr, Matrix_Dense<T,I,A> & matrix, I colidx)
+    {
+        CHECK(cusparseDnVecSetValues(descr.d_new, matrix.vals + colidx * matrix.get_ld()));
+        descr.vals = matrix.vals + colidx * matrix.get_ld();
+    }
+
+    static void descr_vector_dense_destroy(descr_vector_dense & descr)
     {
         CHECK(cusparseDestroyDnVec(descr.d_new));
     }
 
-    void descr_sparse_trsv_create(descr_sparse_trsv & descr)
+    static void descr_sparse_trsv_create(descr_sparse_trsv & descr)
     {
         CHECK(cusparseCreateCsrsv2Info(&descr.i));
     }
 
-    void descr_sparse_trsv_destroy(descr_sparse_trsv & descr)
+    static void descr_sparse_trsv_destroy(descr_sparse_trsv & descr)
     {
         CHECK(cusparseDestroyCsrsv2Info(descr.i));
     }
 
-    void descr_sparse_trsm_create(descr_sparse_trsm & descr)
+    static void descr_sparse_trsm_create(descr_sparse_trsm & descr)
     {
         CHECK(cusparseCreateCsrsm2Info(&descr.i));
     }
 
-    void descr_sparse_trsm_destroy(descr_sparse_trsm & descr)
+    static void descr_sparse_trsm_destroy(descr_sparse_trsm & descr)
     {
         CHECK(cusparseDestroyCsrsm2Info(descr.i));
     }
 
     template<typename T, typename I>
-    void sparse_to_dense(handle & h, char transpose, descr_matrix_csr & sparse, descr_matrix_dense & dense, size_t & buffersize, void * buffer, char stage)
+    static void sparse_to_dense(handle & h, char transpose, descr_matrix_csr & sparse, descr_matrix_dense & dense, size_t & buffersize, void * buffer, char stage)
     {
         if(transpose == 'T')
         {
@@ -294,7 +323,7 @@ namespace spblas {
     }
 
     template<typename T, typename I>
-    void trsv(handle & h, char transpose, descr_matrix_csr & matrix, descr_vector_dense & rhs, descr_vector_dense & sol, descr_sparse_trsv & descr_trsv, size_t & buffersize, void * buffer, char stage)
+    static void trsv(handle & h, char transpose, descr_matrix_csr & matrix, descr_vector_dense & rhs, descr_vector_dense & sol, descr_sparse_trsv & descr_trsv, size_t & buffersize, void * buffer, char stage)
     {
         cusparseOperation_t op = (transpose == 'T' ? CUSPARSE_OPERATION_TRANSPOSE : CUSPARSE_OPERATION_NON_TRANSPOSE);
         cusparseSolvePolicy_t policy = CUSPARSE_SOLVE_POLICY_USE_LEVEL;
@@ -308,7 +337,7 @@ namespace spblas {
     }
 
     template<typename T, typename I>
-    void trsm(handle & h, char transpose_mat, char transpose_rhs, descr_matrix_csr & matrix, descr_matrix_dense & rhs, descr_matrix_dense & sol, descr_sparse_trsm & descr_trsm, size_t & buffersize, void * buffer, char stage)
+    static void trsm(handle & h, char transpose_mat, char transpose_rhs, descr_matrix_csr & matrix, descr_matrix_dense & rhs, descr_matrix_dense & sol, descr_sparse_trsm & descr_trsm, size_t & buffersize, void * buffer, char stage)
     {
         // cudaleg has the transB on the rhs as well as on the solution
         if(rhs.order != sol.order) eslog::error("dense matrix order has to be the same");
@@ -334,7 +363,7 @@ namespace spblas {
     }
 
     template<typename T, typename I>
-    void mv(handle & h, char transpose, descr_matrix_csr & A, descr_vector_dense & x, descr_vector_dense & y, size_t & buffersize, void * buffer, char stage)
+    static void mv(handle & h, char transpose, descr_matrix_csr & A, descr_vector_dense & x, descr_vector_dense & y, size_t & buffersize, void * buffer, char stage)
     {
         cusparseOperation_t op = (transpose == 'T' ? CUSPARSE_OPERATION_TRANSPOSE : CUSPARSE_OPERATION_NON_TRANSPOSE);
         T one = 1.0;
@@ -344,7 +373,7 @@ namespace spblas {
     }
 
     template<typename T, typename I>
-    void mm(handle & h, char transpose_A, char transpose_B, descr_matrix_csr & A, descr_matrix_dense & B, descr_matrix_dense & C, size_t & buffersize, void * buffer, char stage)
+    static void mm(handle & h, char transpose_A, char transpose_B, descr_matrix_csr & A, descr_matrix_dense & B, descr_matrix_dense & C, size_t & buffersize, void * buffer, char stage)
     {
         cusparseOperation_t op_A = (transpose_A == 'T' ? CUSPARSE_OPERATION_TRANSPOSE : CUSPARSE_OPERATION_NON_TRANSPOSE);
         cusparseOperation_t op_B = (transpose_B == 'T' ? CUSPARSE_OPERATION_TRANSPOSE : CUSPARSE_OPERATION_NON_TRANSPOSE);
@@ -370,4 +399,3 @@ namespace spblas {
 #undef MY_COMPILER_CLANG
 
 #endif
-#endif /* SRC_WRAPPERS_CUDA_W_CUDA_GPU_SPBLAS_LEGACY_HPP_ */

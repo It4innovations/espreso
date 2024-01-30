@@ -14,7 +14,11 @@
 #include "wrappers/math.lapack.h"
 #include "wrappers/math.spsolver.h"
 
+#include "basis/utilities/utils.h"
+
 #include <complex>
+#include <vector>
+#include <algorithm>
 
 namespace espreso {
 namespace math { // interface to wrappers
@@ -68,6 +72,15 @@ namespace math {
 	{
 		if (A.nrows != B.nrows || A.ncols != B.ncols) {
 			eslog::error("invalid matrices sizes.\n");
+		}
+		if(A.type == B.type && A.shape == B.shape) {
+			C.type = A.type;
+			C.shape = A.shape;
+		}
+		else {
+			if(utils::is_real<T>()) C.type = Matrix_Type::REAL_NONSYMMETRIC;
+			else C.type = Matrix_Type::COMPLEX_NONSYMMETRIC;
+			C.shape = Matrix_Shape::FULL;
 		}
 		esint nnz = 0;
 		for (esint r = 0; r < A.nrows; ++r) {
@@ -151,6 +164,93 @@ namespace math {
 	}
 
 	template <class T> void store(const T &x, const char* file);
+	
+	template<typename T, typename I, typename Ao, typename Ai, typename Ap>
+	static void permuteColumns(Matrix_CSR<T,I,Ao> & output, const Matrix_CSR<T,I,Ai> & input, const Permutation<I,Ap> & perm)
+	{
+		static_assert(Ao::is_data_host_accessible, "permuteColumns: the allocator does not provide host-accessible memory");
+		static_assert(Ai::is_data_host_accessible, "permuteColumns: the allocator does not provide host-accessible memory");
+		static_assert(Ap::is_data_host_accessible, "permuteColumns: the allocator does not provide host-accessible memory");
+		if(output.nrows != input.nrows || output.ncols != input.ncols || output.nnz != input.nnz) eslog::error("permuteColumns: output matrix has wrong dimensions\n");
+		if(perm.size != input.ncols) eslog::error("permuteColumns: permutation has wrong size\n");
+
+		struct colval{ I col; T val; colval(I c, T v){ col = c; val = v;} };
+		
+		std::copy_n(input.rows, input.nrows + 1, output.rows);
+
+		for(I r = 0; r < input.nrows; r++)
+		{
+			I start = input.rows[r];
+			I end = input.rows[r+1];
+			std::vector<colval> colvals_out;
+			colvals_out.reserve(end - start);
+			for(I i = start; i < end; i++)
+			{
+				T val = input.vals[i];
+				I col_in = input.cols[i];
+				I col_out = perm.src_to_dst[col_in];
+				colvals_out.emplace_back(col_out, val);
+			}
+			std::sort(colvals_out.begin(), colvals_out.end(), [&](const colval & l, const colval & r){ return l.col < r.col; });
+			for(size_t j = 0; j < colvals_out.size(); j++) { output.cols[start + j] = colvals_out[j].col; output.vals[start + j] = colvals_out[j].val; }
+		}
+	}
+
+	template<typename T, typename I, typename Ao, typename Am, typename Ai>
+	static void transposeMapSetup(Matrix_CSR<T,I,Ao> & output, Vector_Dense<I,I,Am> & map, const Matrix_CSR<T,I,Ai> & input)
+	{
+		static_assert(Ao::is_data_host_accessible, "transposeMapSetup: the allocator does not provide host-accessible memory");
+		static_assert(Am::is_data_host_accessible, "transposeMapSetup: the allocator does not provide host-accessible memory");
+		static_assert(Ai::is_data_host_accessible, "transposeMapSetup: the allocator does not provide host-accessible memory");
+		if(output.nrows != input.ncols || output.ncols != input.nrows || output.nnz != input.nnz) eslog::error("transposeMapSetup: output matrix has wrong dimensions\n");
+		if(input.nnz != map.size) eslog::error("transposeMapSetup: input map has wrong dimensions\n");
+
+		struct colvalidx{ T val; I col; I idx; colvalidx(I c, T v, I i){ col = c; val = v; idx = i;} };
+
+		std::vector<std::vector<colvalidx>> out_rows(output.nrows);
+
+		for(I r = 0; r < input.nrows; r++)
+		{
+			I start = input.rows[r];
+			I end = input.rows[r+1];
+			for(I i = start; i < end; i++)
+			{
+				I c = input.cols[i];
+				T v = input.vals[i];
+				out_rows[c].emplace_back(r, v, i);
+			}
+		}
+
+		I curr_idx = 0;
+		for(I row_out = 0; row_out < output.nrows; row_out++)
+		{
+			output.rows[row_out] = curr_idx;
+			std::vector<colvalidx> & data = out_rows[row_out];
+			for(size_t i = 0; i < data.size(); i++)
+			{
+				output.cols[curr_idx] = data[i].col;
+				output.vals[curr_idx] = data[i].val;
+				map.vals[curr_idx] = data[i].idx;
+				curr_idx++;
+			}
+		}
+		output.rows[output.nrows] = curr_idx;
+	}
+
+	template<typename T, typename I, typename Ao, typename Am, typename Ai>
+	static void transposeMapUse(Matrix_CSR<T,I,Ao> & output, const Vector_Dense<I,I,Am> & map, const Matrix_CSR<T,I,Ai> & input)
+	{
+		static_assert(Ao::is_data_host_accessible, "transposeMapUse: the allocator does not provide host-accessible memory");
+		static_assert(Am::is_data_host_accessible, "transposeMapUse: the allocator does not provide host-accessible memory");
+		static_assert(Ai::is_data_host_accessible, "transposeMapUse: the allocator does not provide host-accessible memory");
+		if(output.nrows != input.ncols || output.ncols != input.nrows || output.nnz != input.nnz) eslog::error("transposeMapUse: output matrix has wrong dimensions\n");
+		if(input.nnz != map.size) eslog::error("transposeMapUse: input map has wrong dimensions\n");
+
+		for(I i = 0; i < map.size; i++)
+		{
+			output.vals[i] = input.vals[map.vals[i]];
+		}
+	}
 
 } // math
 } // espreso

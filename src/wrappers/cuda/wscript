@@ -4,7 +4,7 @@ def options(opt):
 
 def configure(ctx):
     ctx.env.NVCC = ctx.find_program("nvcc", mandatory=False)
-    ctx.env.NVCCFLAGS = [ "-std=c++17", "-arch=native", "-O2", "-Xcompiler", "-fPIC", "-allow-unsupported-compiler" ]
+    ctx.env.NVCCFLAGS = [ "-std=c++17", "-arch=native", "-O2", "-Xcompiler", "-fPIC", "-allow-unsupported-compiler", "-ccbin=" + ctx.env.COMPILER_CXX ]
 
     headers = [ "cuda_runtime.h" ]
     libs = [ "cudart", "cusparse", "cublas", "cusolver" ]

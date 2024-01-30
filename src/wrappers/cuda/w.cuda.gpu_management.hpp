@@ -1,11 +1,9 @@
 
-#ifndef SRC_WRAPPERS_CUDA_W_CUDA_GPU_MANAGEMENT_HPP_
-#define SRC_WRAPPERS_CUDA_W_CUDA_GPU_MANAGEMENT_HPP_
-
 #ifdef HAVE_CUDA
 
 #include "gpu/gpu_management.h"
 
+#include <omp.h>
 #include "w.cuda.common.h"
 
 
@@ -16,8 +14,6 @@ namespace mgm {
 
     namespace
     {
-        static constexpr int rank_gpu_map[] = {2,3,0,1,6,7,4,5}; // assuming Karolina GPU
-
         template<typename T, typename I>
         static void _copy_submit(T * dst, const T * src, I num_elements, cudaMemcpyKind dir, cudaStream_t stream)
         {
@@ -29,19 +25,26 @@ namespace mgm {
         }
 
         template<typename T, typename I, typename A1, typename A2>
-        static void _copy_matrix_submit(Matrix_Dense<T,I,A1> & output, const Matrix_Dense<T,I,A2> & input, cudaMemcpyKind direction, cudaStream_t stream)
+        static void _copy_submit(Vector_Dense<T,I,A1> & output, const Vector_Dense<T,I,A2> & input, cudaMemcpyKind direction, cudaStream_t stream)
         {
-            if(output.nrows != input.nrows || output.ncols != input.ncols) eslog::error("copy matrix: output matrix has wrong dimensions");
-            CHECK(cudaMemcpy2DAsync(output.vals, output.ld * sizeof(T), input.vals, input.ld * sizeof(T), input.ncols * sizeof(T), input.nrows, direction, stream));
+            if(output.size != input.size) eslog::error("copy submit: output vector has wrong dimensions");
+            CHECK(cudaMemcpyAsync(output.vals, input.vals, input.size * sizeof(T), direction, stream));
         }
 
         template<typename T, typename I, typename A1, typename A2>
-        static void _copy_matrix_submit(Matrix_CSR<T,I,A1> & output, const Matrix_CSR<T,I,A2> & input, cudaMemcpyKind direction, cudaStream_t stream, bool copy_pattern, bool copy_vals)
+        static void _copy_submit(Matrix_Dense<T,I,A1> & output, const Matrix_Dense<T,I,A2> & input, cudaMemcpyKind direction, cudaStream_t stream)
         {
-            if(output.nrows != input.nrows || output.ncols != input.ncols || output.nvals != input.nvals) eslog::error("copy matrix: output matrix has wrong dimensions");
-            if(copy_pattern) CHECK(cudaMemcpyAsync(output.rowptrs, input.rowptrs, (input.nrows+1) * sizeof(I), direction, stream));
-            if(copy_pattern) CHECK(cudaMemcpyAsync(output.colidxs, input.colidxs,  input.nvals    * sizeof(I), direction, stream));
-            if(copy_vals)    CHECK(cudaMemcpyAsync(output.vals,    input.vals,     input.nvals    * sizeof(T), direction, stream));
+            if(output.nrows != input.nrows || output.ncols != input.ncols) eslog::error("copy submit: output matrix has wrong dimensions");
+            CHECK(cudaMemcpy2DAsync(output.vals, output.get_ld() * sizeof(T), input.vals, input.get_ld() * sizeof(T), input.ncols * sizeof(T), input.nrows, direction, stream));
+        }
+
+        template<typename T, typename I, typename A1, typename A2>
+        static void _copy_submit(Matrix_CSR<T,I,A1> & output, const Matrix_CSR<T,I,A2> & input, cudaMemcpyKind direction, cudaStream_t stream, bool copy_pattern, bool copy_vals)
+        {
+            if(output.nrows != input.nrows || output.ncols != input.ncols || output.nnz != input.nnz) eslog::error("copy submit: output matrix has wrong dimensions");
+            if(copy_pattern) CHECK(cudaMemcpyAsync(output.rows, input.rows, (input.nrows+1) * sizeof(I), direction, stream));
+            if(copy_pattern) CHECK(cudaMemcpyAsync(output.cols, input.cols,  input.nnz      * sizeof(I), direction, stream));
+            if(copy_vals)    CHECK(cudaMemcpyAsync(output.vals, input.vals,  input.nnz      * sizeof(T), direction, stream));
         }
     }
 
@@ -55,7 +58,7 @@ namespace mgm {
         cudaStream_t stream;
     };
 
-    void * Ad::allocate(size_t num_bytes)
+    inline void * Ad::allocate(size_t num_bytes)
     {
         void * ptr;
         CHECK(cudaMalloc(&ptr, num_bytes));
@@ -63,18 +66,18 @@ namespace mgm {
     }
 
     template<typename T>
-    T * Ad::allocate(size_t count)
+    inline T * Ad::allocate(size_t count)
     {
         return reinterpret_cast<T*>(allocate(count * sizeof(T)));
     }
 
     template<typename T>
-    void Ad::deallocate(T * ptr)
+    inline void Ad::deallocate(T * ptr)
     { 
         CHECK(cudaFree(ptr));
     }
 
-    void * Ah::allocate(size_t num_bytes)
+    inline void * Ah::allocate(size_t num_bytes)
     {
         void * ptr;
         CHECK(cudaMallocHost(&ptr, num_bytes));
@@ -82,25 +85,44 @@ namespace mgm {
     }
 
     template<typename T>
-    T * Ah::allocate(size_t count)
+    inline T * Ah::allocate(size_t count)
     {
         return reinterpret_cast<T*>(allocate(count * sizeof(T)));
     }
 
     template<typename T>
-    void Ah::deallocate(T * ptr)
+    inline void Ah::deallocate(T * ptr)
     { 
         CHECK(cudaFreeHost(ptr));
     }
 
-    device get_device_by_mpi(int mpi_rank)
+    static device get_device_by_mpi(int mpi_rank, int mpi_size)
     {
+        static constexpr int rank_gpu_map[] = {2,3,0,1,6,7,4,5}; // assuming Karolina GPU
         device d;
-        d.gpu_idx = rank_gpu_map[mpi_rank];
+        if(mpi_size == 1) {
+            d.gpu_idx = 0;
+        }
+        else if(mpi_size % 8 == 0) {
+            int local_node_rank = mpi_rank % 8;
+            d.gpu_idx = rank_gpu_map[local_node_rank];
+        }
+        else {
+            eslog::error("unsupported number of gpus and mpisize. Should be 1 or a multiple of 8\n");
+            d.gpu_idx = -1;
+        }
+
         return d;
     }
 
-    void set_device(const device & d)
+    static void init_gpu(const device & d)
+    {
+        CHECK(cudaSetDevice(d.gpu_idx));
+        CHECK(cudaFree(nullptr));
+        CHECK(cudaDeviceSynchronize());
+    }
+
+    static void set_device(const device & d)
     {
         #pragma omp parallel
         {
@@ -108,17 +130,17 @@ namespace mgm {
         }
     }
 
-    void queue_create(queue & q, device & /*d*/)
+    static void queue_create(queue & q, device & /*d*/)
     {
         CHECK(cudaStreamCreate(&q.stream));
     }
 
-    void queue_destroy(queue & q)
+    static void queue_destroy(queue & q)
     {
         CHECK(cudaStreamDestroy(q.stream));
     }
 
-    void queue_async_barrier(const std::vector<queue> & waitfor, const std::vector<queue> & waitin)
+    static void queue_async_barrier(const std::vector<queue> & waitfor, const std::vector<queue> & waitin)
     {
         // made mainly for 1:N or N:1 scenarios
         std::vector<cudaEvent_t> events(waitfor.size());
@@ -140,12 +162,12 @@ namespace mgm {
         }
     }
 
-    void queue_wait(queue & q)
+    static void queue_wait(queue & q)
     {
         CHECK(cudaStreamSynchronize(q.stream));
     }
 
-    void device_wait(device & /*d*/)
+    static void device_wait(device & /*d*/)
     {
         CHECK(cudaDeviceSynchronize());
     }
@@ -157,7 +179,7 @@ namespace mgm {
         return props.totalGlobalMem;
     }
 
-    void * memalloc_device(device & /*d*/, size_t num_bytes)
+    static void * memalloc_device(device & /*d*/, size_t num_bytes)
     {
         void * ptr;
         CHECK(cudaMalloc(&ptr, num_bytes));
@@ -165,12 +187,12 @@ namespace mgm {
     }
 
     template<typename T>
-    void memfree_device(device & /*d*/, T * ptr)
+    static void memfree_device(device & /*d*/, T * ptr)
     {
         CHECK(cudaFree(ptr));
     }
 
-    void memalloc_device_max(device & d, void * & memory, size_t & memory_size_B, size_t max_needed)
+    static void memalloc_device_max(device & d, void * & memory, size_t & memory_size_B, size_t max_needed)
     {
         size_t coef_percent = 95;
 
@@ -191,7 +213,7 @@ namespace mgm {
 
 
     template<typename C>
-    void submit_host_function(queue & q, C && c)
+    static void submit_host_function(queue & q, C && c)
     {
         C * cp = new C(std::move(c));
 
@@ -203,51 +225,67 @@ namespace mgm {
     }
 
     template<typename T, typename I>
-    void copy_submit_h2d(queue & q, T * dst, const T * src, I num_elements)
+    static void copy_submit_h2d(queue & q, T * dst, const T * src, I num_elements)
     {
         _copy_submit(dst, src, num_elements, cudaMemcpyHostToDevice, q.stream);
     }
 
     template<typename T, typename I>
-    void copy_submit_d2h(queue & q, T * dst, const T * src, I num_elements)
+    static void copy_submit_d2h(queue & q, T * dst, const T * src, I num_elements)
     {
         _copy_submit(dst, src, num_elements, cudaMemcpyDeviceToHost, q.stream);
     }
 
     template<typename T, typename I, typename Ao, typename Ai>
-    void copy_matrix_submit_d2h(queue & q, Matrix_Dense<T,I,Ao> & output, const Matrix_Dense<T,I,Ai> & input)
+    static void copy_submit_d2h(queue & q, Vector_Dense<T,I,Ao> & output, const Vector_Dense<T,I,Ai> & input)
+    {
+        static_assert(Ao::is_data_host_accessible, "output vector data has to be host accessible");
+        static_assert(Ai::is_data_device_accessible, "input vector data has to be device accessible");
+        _copy_submit(output, input, cudaMemcpyDeviceToHost, q.stream);
+    }
+
+    template<typename T, typename I, typename Ao, typename Ai>
+    static void copy_submit_h2d(queue & q, Vector_Dense<T,I,Ao> & output, const Vector_Dense<T,I,Ai> & input)
+    {
+        static_assert(Ao::is_data_device_accessible, "output vector data has to be device accessible");
+        static_assert(Ai::is_data_host_accessible, "input vector data has to be host accessible");
+        _copy_submit(output, input, cudaMemcpyHostToDevice, q.stream);
+    }
+
+    template<typename T, typename I, typename Ao, typename Ai>
+    static void copy_submit_d2h(queue & q, Matrix_Dense<T,I,Ao> & output, const Matrix_Dense<T,I,Ai> & input)
     {
         static_assert(Ao::is_data_host_accessible, "output matrix data has to be host accessible");
         static_assert(Ai::is_data_device_accessible, "input matrix data has to be device accessible");
-        _copy_matrix_submit(output, input, cudaMemcpyDeviceToHost, q.stream);
+        _copy_submit(output, input, cudaMemcpyDeviceToHost, q.stream);
     }
 
     template<typename T, typename I, typename Ao, typename Ai>
-    void copy_matrix_submit_h2d(queue & q, Matrix_Dense<T,I,Ao> & output, const Matrix_Dense<T,I,Ai> & input)
+    static void copy_submit_h2d(queue & q, Matrix_Dense<T,I,Ao> & output, const Matrix_Dense<T,I,Ai> & input)
     {
         static_assert(Ao::is_data_device_accessible, "output matrix data has to be device accessible");
         static_assert(Ai::is_data_host_accessible, "input matrix data has to be host accessible");
-        _copy_matrix_submit(output, input, cudaMemcpyHostToDevice, q.stream);
+        _copy_submit(output, input, cudaMemcpyHostToDevice, q.stream);
     }
 
     template<typename T, typename I, typename Ao, typename Ai>
-    void copy_matrix_submit_d2h(queue & q, Matrix_CSR<T,I,Ao> & output, const Matrix_CSR<T,I,Ai> & input, bool copy_pattern, bool copy_vals)
+    static void copy_submit_d2h(queue & q, Matrix_CSR<T,I,Ao> & output, const Matrix_CSR<T,I,Ai> & input, bool copy_pattern, bool copy_vals)
     {
         static_assert(Ao::is_data_host_accessible, "output matrix data has to be host accessible");
         static_assert(Ai::is_data_device_accessible, "input matrix data has to be device accessible");
-        _copy_matrix_submit(output, input, cudaMemcpyDeviceToHost, q.stream, copy_pattern, copy_vals);
+        _copy_submit(output, input, cudaMemcpyDeviceToHost, q.stream, copy_pattern, copy_vals);
     }
 
     template<typename T, typename I, typename Ao, typename Ai>
-    void copy_matrix_submit_h2d(queue & q, Matrix_CSR<T,I,Ao> & output, const Matrix_CSR<T,I,Ai> & input, bool copy_pattern, bool copy_vals)
+    static void copy_submit_h2d(queue & q, Matrix_CSR<T,I,Ao> & output, const Matrix_CSR<T,I,Ai> & input, bool copy_pattern, bool copy_vals)
     {
         static_assert(Ao::is_data_device_accessible, "output matrix data has to be device accessible");
         static_assert(Ai::is_data_host_accessible, "input matrix data has to be host accessible");
-        _copy_matrix_submit(output, input, cudaMemcpyHostToDevice, q.stream, copy_pattern, copy_vals);
+        _copy_submit(output, input, cudaMemcpyHostToDevice, q.stream, copy_pattern, copy_vals);
     }
 
     template<typename T, typename I>
-    void memset_submit(queue & q, T * ptr, I num_bytes, char val)
+    static void memset_submit(queue & q, T * ptr, I num_bytes, char val)
     {
         CHECK(cudaMemsetAsync(ptr, val, num_bytes, q.stream));
     }
@@ -257,4 +295,3 @@ namespace mgm {
 }
 
 #endif
-#endif /* SRC_WRAPPERS_CUDA_W_CUDA_GPU_MANAGEMENT_HPP_ */

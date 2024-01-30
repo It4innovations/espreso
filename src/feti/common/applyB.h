@@ -9,13 +9,13 @@
 namespace espreso {
 
 template <typename T>
-static void applyBt(FETI<T> &feti, size_t d, const Vector_Dual<T> &in, Vector_Dense<T> &out)
+static void applyBt(FETI<T> &feti, size_t d, const Vector_Dual<T> &in, Vector_Dense<T> &out, T alpha = T{1})
 {
 	math::set(out, T{0});
 
 	for (esint r = 0; r < feti.B1[d].nrows; ++r) {
 		for (esint c = feti.B1[d].rows[r]; c < feti.B1[d].rows[r + 1]; ++c) {
-			out.vals[feti.B1[d].cols[c]] += feti.B1[d].vals[c] * in.vals[feti.D2C[d][r]];
+			out.vals[feti.B1[d].cols[c]] += alpha * feti.B1[d].vals[c] * in.vals[feti.D2C[d][r]];
 		}
 	}
 }

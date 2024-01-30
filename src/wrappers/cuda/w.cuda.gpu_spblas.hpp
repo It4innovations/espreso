@@ -1,7 +1,4 @@
 
-#ifndef SRC_WRAPPERS_CUDA_W_CUDA_GPU_SPBLAS_HPP_
-#define SRC_WRAPPERS_CUDA_W_CUDA_GPU_SPBLAS_HPP_
-
 #ifdef HAVE_CUDA
 
 #ifdef USE_CUSPARSE_LEGACY
@@ -11,5 +8,3 @@
 #endif
 
 #endif
-
-#endif /* SRC_WRAPPERS_CUDA_W_CUDA_GPU_SPBLAS_HPP_ */

@@ -109,6 +109,11 @@ public:
 		_Matrix_CSR<T, I>::operator=(other);
 	}
 
+    static size_t memoryRequirement(I nrows, I /*ncols*/, I nvals)
+    {
+        return (nrows+1) * sizeof(I) + nvals * sizeof(I) + nvals * sizeof(T);
+    }
+
 	Matrix_Type type;
 	Matrix_Shape shape;
 	_Matrix_CSR<T, I> _allocated;

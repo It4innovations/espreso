@@ -1,7 +1,4 @@
 
-#ifndef SRC_WRAPPERS_CUDA_W_CUDA_GPU_SPBLAS_MODERN_HPP_
-#define SRC_WRAPPERS_CUDA_W_CUDA_GPU_SPBLAS_MODERN_HPP_
-
 #ifdef HAVE_CUDA
 
 #include "gpu/gpu_spblas.h"
@@ -39,6 +36,8 @@ namespace spblas {
         {
             if constexpr(std::is_same_v<T, float>)  return CUDA_R_32F;
             if constexpr(std::is_same_v<T, double>) return CUDA_R_64F;
+            if constexpr(std::is_same_v<T, std::complex<float>>)  return CUDA_C_32F;
+            if constexpr(std::is_same_v<T, std::complex<double>>) return CUDA_C_64F;
         }
     }
 
@@ -90,7 +89,7 @@ namespace spblas {
     }
 
     template<typename T, typename I>
-    void descr_matrix_csr_create(descr_matrix_csr & descr, I nrows, I ncols, I nnz, char symmetry)
+    static void descr_matrix_csr_create(descr_matrix_csr & descr, I nrows, I ncols, I nnz, char symmetry)
     {
         void * dummyptr = reinterpret_cast<void*>(1);
         CHECK(cusparseCreateCsr(&descr.d, nrows, ncols, nnz, dummyptr, dummyptr, dummyptr, _sparse_index_type<I>(), _sparse_index_type<I>(), CUSPARSE_INDEX_BASE_ZERO, _sparse_data_type<T>()));
@@ -104,19 +103,19 @@ namespace spblas {
     }
 
     template<typename T, typename I, typename A>
-    void descr_matrix_sparse_link_data(descr_matrix_csr & descr, Matrix_CSR<T,I,A> & matrix)
+    static void descr_matrix_sparse_link_data(descr_matrix_csr & descr, Matrix_CSR<T,I,A> & matrix)
     {
-        CHECK(cusparseCsrSetPointers(descr.d, matrix.rowptrs, matrix.colidxs, matrix.vals));
+        CHECK(cusparseCsrSetPointers(descr.d, matrix.rows, matrix.cols, matrix.vals));
         descr.vals_ptr = matrix.vals;
     }
 
-    void descr_matrix_csr_destroy(descr_matrix_csr & descr)
+    static void descr_matrix_csr_destroy(descr_matrix_csr & descr)
     {
         CHECK(cusparseDestroySpMat(descr.d));
     }
 
     template<typename T, typename I>
-    void descr_matrix_dense_create(descr_matrix_dense & descr, I nrows, I ncols, I ld, char order)
+    static void descr_matrix_dense_create(descr_matrix_dense & descr, I nrows, I ncols, I ld, char order)
     {
         void * dummyptr = reinterpret_cast<void*>(1);
         if(order == 'R') CHECK(cusparseCreateDnMat(&descr.d, nrows, ncols, ld, dummyptr, _sparse_data_type<T>(), CUSPARSE_ORDER_ROW));
@@ -126,58 +125,64 @@ namespace spblas {
     }
 
     template<typename T, typename I, typename A>
-    void descr_matrix_dense_link_data(descr_matrix_dense & descr, Matrix_Dense<T,I,A> & matrix)
+    static void descr_matrix_dense_link_data(descr_matrix_dense & descr, Matrix_Dense<T,I,A> & matrix)
     {
         CHECK(cusparseDnMatSetValues(descr.d, matrix.vals));
         CHECK(cusparseDnMatSetValues(descr.d_complementary, matrix.vals));
     }
 
-    void descr_matrix_dense_destroy(descr_matrix_dense & descr)
+    static void descr_matrix_dense_destroy(descr_matrix_dense & descr)
     {
         CHECK(cusparseDestroyDnMat(descr.d));
         CHECK(cusparseDestroyDnMat(descr.d_complementary));
     }
 
     template<typename T, typename I>
-    void descr_vector_dense_create(descr_vector_dense & descr, I size)
+    static void descr_vector_dense_create(descr_vector_dense & descr, I size)
     {
         void * dummyptr = reinterpret_cast<void*>(1);
         CHECK(cusparseCreateDnVec(&descr.d, size, dummyptr, _sparse_data_type<T>()));
     }
 
     template<typename T, typename I, typename A>
-    void descr_vector_dense_link_data(descr_vector_dense & descr, Vector_Dense<T,I,A> & vector, I colidx)
+    static void descr_vector_dense_link_data(descr_vector_dense & descr, Vector_Dense<T,I,A> & vector)
     {
-        CHECK(cusparseDnVecSetValues(descr.d, vector.vals + colidx * vector.get_ld()));
+        CHECK(cusparseDnVecSetValues(descr.d, vector.vals));
     }
 
-    void descr_vector_dense_destroy(descr_vector_dense & descr)
+    template<typename T, typename I, typename A>
+    static void descr_vector_dense_link_data(descr_vector_dense & descr, Matrix_Dense<T,I,A> & matrix, I colidx)
+    {
+        CHECK(cusparseDnVecSetValues(descr.d, matrix.vals + colidx * matrix.get_ld()));
+    }
+
+    static void descr_vector_dense_destroy(descr_vector_dense & descr)
     {
         CHECK(cusparseDestroyDnVec(descr.d));
     }
 
-    void descr_sparse_trsv_create(descr_sparse_trsv & descr)
+    static void descr_sparse_trsv_create(descr_sparse_trsv & descr)
     {
         CHECK(cusparseSpSV_createDescr(&descr.d));
     }
 
-    void descr_sparse_trsv_destroy(descr_sparse_trsv & descr)
+    static void descr_sparse_trsv_destroy(descr_sparse_trsv & descr)
     {
         CHECK(cusparseSpSV_destroyDescr(descr.d));
     }
 
-    void descr_sparse_trsm_create(descr_sparse_trsm & descr)
+    static void descr_sparse_trsm_create(descr_sparse_trsm & descr)
     {
         CHECK(cusparseSpSM_createDescr(&descr.d));
     }
 
-    void descr_sparse_trsm_destroy(descr_sparse_trsm & descr)
+    static void descr_sparse_trsm_destroy(descr_sparse_trsm & descr)
     {
         CHECK(cusparseSpSM_destroyDescr(descr.d));
     }
 
     template<typename T, typename I>
-    void sparse_to_dense(handle & h, char transpose, descr_matrix_csr & sparse, descr_matrix_dense & dense, size_t & buffersize, void * buffer, char stage)
+    static void sparse_to_dense(handle & h, char transpose, descr_matrix_csr & sparse, descr_matrix_dense & dense, size_t & buffersize, void * buffer, char stage)
     {
         if(transpose == 'T')
         {
@@ -190,7 +195,7 @@ namespace spblas {
     }
 
     template<typename T, typename I>
-    void trsv(handle & h, char transpose, descr_matrix_csr & matrix, descr_vector_dense & rhs, descr_vector_dense & sol, descr_sparse_trsv & descr_trsv, size_t & buffersize, void * buffer, char stage)
+    static void trsv(handle & h, char transpose, descr_matrix_csr & matrix, descr_vector_dense & rhs, descr_vector_dense & sol, descr_sparse_trsv & descr_trsv, size_t & buffersize, void * buffer, char stage)
     {
         cusparseOperation_t op = (transpose == 'T' ? CUSPARSE_OPERATION_TRANSPOSE : CUSPARSE_OPERATION_NON_TRANSPOSE);
         T one = 1.0;
@@ -201,7 +206,7 @@ namespace spblas {
     }
 
     template<typename T, typename I>
-    void trsm(handle & h, char transpose_mat, char transpose_rhs, descr_matrix_csr & matrix, descr_matrix_dense & rhs, descr_matrix_dense & sol, descr_sparse_trsm & descr_trsm, size_t & buffersize, void * buffer, char stage)
+    static void trsm(handle & h, char transpose_mat, char transpose_rhs, descr_matrix_csr & matrix, descr_matrix_dense & rhs, descr_matrix_dense & sol, descr_sparse_trsm & descr_trsm, size_t & buffersize, void * buffer, char stage)
     {
         cusparseOperation_t op_mat = (transpose_mat == 'T' ? CUSPARSE_OPERATION_TRANSPOSE : CUSPARSE_OPERATION_NON_TRANSPOSE);
         cusparseOperation_t op_rhs = (transpose_rhs == 'T' ? CUSPARSE_OPERATION_TRANSPOSE : CUSPARSE_OPERATION_NON_TRANSPOSE);
@@ -213,7 +218,7 @@ namespace spblas {
     }
 
     template<typename T, typename I>
-    void mv(handle & h, char transpose, descr_matrix_csr & A, descr_vector_dense & x, descr_vector_dense & y, size_t & buffersize, void * buffer, char stage)
+    static void mv(handle & h, char transpose, descr_matrix_csr & A, descr_vector_dense & x, descr_vector_dense & y, size_t & buffersize, void * buffer, char stage)
     {
         cusparseOperation_t op = (transpose == 'T' ? CUSPARSE_OPERATION_TRANSPOSE : CUSPARSE_OPERATION_NON_TRANSPOSE);
         T one = 1.0;
@@ -223,7 +228,7 @@ namespace spblas {
     }
 
     template<typename T, typename I>
-    void mm(handle & h, char transpose_A, char transpose_B, descr_matrix_csr & A, descr_matrix_dense & B, descr_matrix_dense & C, size_t & buffersize, void * buffer, char stage)
+    static void mm(handle & h, char transpose_A, char transpose_B, descr_matrix_csr & A, descr_matrix_dense & B, descr_matrix_dense & C, size_t & buffersize, void * buffer, char stage)
     {
         cusparseOperation_t op_A = (transpose_A == 'T' ? CUSPARSE_OPERATION_TRANSPOSE : CUSPARSE_OPERATION_NON_TRANSPOSE);
         cusparseOperation_t op_B = (transpose_B == 'T' ? CUSPARSE_OPERATION_TRANSPOSE : CUSPARSE_OPERATION_NON_TRANSPOSE);
@@ -239,4 +244,3 @@ namespace spblas {
 }
 
 #endif
-#endif /* SRC_WRAPPERS_CUDA_W_CUDA_GPU_SPBLAS_MODERN_HPP_ */

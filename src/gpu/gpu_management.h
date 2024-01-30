@@ -4,6 +4,7 @@
 
 #include <vector>
 
+#include "math/primitives/vector_dense.h"
 #include "math/primitives/matrix_dense.h"
 #include "math/primitives/matrix_csr.h"
 
@@ -14,7 +15,6 @@ namespace mgm {
     struct device;
 
     struct queue;
-
 
     class Ad // Allocator device
     {
@@ -42,7 +42,9 @@ namespace mgm {
         void deallocate(T * ptr);
     };
 
-    static device get_device_by_mpi(int mpi_rank);
+    static device get_device_by_mpi(int mpi_rank, int mpi_size);
+
+    static void init_gpu(const device & d);
 
     static void set_device(const device & d);
 
@@ -75,16 +77,22 @@ namespace mgm {
     static void copy_submit_d2h(queue & q, T * dst, const T * src, I num_elements);
 
     template<typename T, typename I, typename Ao, typename Ai>
-    static void copy_matrix_submit_d2h(queue & q, Matrix_Dense<T,I,Ao> & output, const Matrix_Dense<T,I,Ai> & input);
+    static void copy_submit_d2h(queue & q, Vector_Dense<T,I,Ao> & output, const Vector_Dense<T,I,Ai> & input);
 
     template<typename T, typename I, typename Ao, typename Ai>
-    static void copy_matrix_submit_h2d(queue & q, Matrix_Dense<T,I,Ao> & output, const Matrix_Dense<T,I,Ai> & input);
+    static void copy_submit_h2d(queue & q, Vector_Dense<T,I,Ao> & output, const Vector_Dense<T,I,Ai> & input);
+
+    template<typename T, typename I, typename Ao, typename Ai>
+    static void copy_submit_d2h(queue & q, Matrix_Dense<T,I,Ao> & output, const Matrix_Dense<T,I,Ai> & input);
+
+    template<typename T, typename I, typename Ao, typename Ai>
+    static void copy_submit_h2d(queue & q, Matrix_Dense<T,I,Ao> & output, const Matrix_Dense<T,I,Ai> & input);
     
     template<typename T, typename I, typename Ao, typename Ai>
-    static void copy_matrix_submit_d2h(queue & q, Matrix_CSR<T,I,Ao> & output, const Matrix_CSR<T,I,Ai> & input, bool copy_pattern = true, bool copy_vals = true);
+    static void copy_submit_d2h(queue & q, Matrix_CSR<T,I,Ao> & output, const Matrix_CSR<T,I,Ai> & input, bool copy_pattern = true, bool copy_vals = true);
 
     template<typename T, typename I, typename Ao, typename Ai>
-    static void copy_matrix_submit_h2d(queue & q, Matrix_CSR<T,I,Ao> & output, const Matrix_CSR<T,I,Ai> & input, bool copy_pattern = true, bool copy_vals = true);
+    static void copy_submit_h2d(queue & q, Matrix_CSR<T,I,Ao> & output, const Matrix_CSR<T,I,Ai> & input, bool copy_pattern = true, bool copy_vals = true);
 
     template<typename I>
     static void memset_submit(queue & q, void * ptr, I num_bytes, char val);

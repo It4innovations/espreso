@@ -80,10 +80,17 @@ public:
 		_Matrix_Dense<T, I>::operator=(_allocated);
 	}
 
+	void resize(I nrows_, I ncols_, I ld_)
+	{
+		if(ld_ < 0) ld_ = ncols_;
+		resize(nrows_, ld_);
+		this->ncols = ncols_;
+	}
+
 	template<typename T2, typename I2, typename A2>
 	void resize(const Matrix_Dense<T2,I2,A2> &other)
 	{
-		resize(other.nrows, other.ncols);
+		resize(other.nrows, other.ncols, other.get_ld());
 	}
 
 	template<typename T2>
@@ -100,10 +107,16 @@ public:
 		submatrix[1] = cols;
 	}
 
-	I get_ld()
+	I get_ld() const
 	{
 		return _allocated.ncols;
 	}
+
+    static size_t memoryRequirement(I nrows, I ncols, I ld)
+    {
+        if(ld < 0) ld = ncols;
+        return nrows * ld * sizeof(T);
+    }
 
 	Matrix_Type type;
 	Matrix_Shape shape;

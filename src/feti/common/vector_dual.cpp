@@ -130,6 +130,22 @@ void Vector_Dual<T>::add(const T &alpha, const Vector_Dense<T> &other)
 }
 
 template <>
+float Vector_Dual<float>::dot(const Vector_Dense<float> &other) const
+{
+	float sum = 0;
+	#pragma omp parallel for reduction(+:sum)
+	for (esint i = 0; i < dirichlet; ++i) {
+		sum += other.vals[i] * this->vals[i];
+	}
+	#pragma omp parallel for reduction(+:sum)
+	for (esint i = nhalo; i < size; ++i) {
+		sum += other.vals[i] * this->vals[i];
+	}
+	Communication::allReduce(&sum, nullptr, 1, MPITools::getType(sum).mpitype, MPI_SUM);
+	return sum;
+}
+
+template <>
 double Vector_Dual<double>::dot(const Vector_Dense<double> &other) const
 {
 	double sum = 0;
@@ -142,19 +158,28 @@ double Vector_Dual<double>::dot(const Vector_Dense<double> &other) const
 }
 
 template <>
-double Vector_Dual<std::complex<double> >::dot(const Vector_Dense<std::complex<double> > &other) const
+std::complex<float> Vector_Dual<std::complex<float> >::dot(const Vector_Dense<std::complex<float> > &other) const
 {
-	double sum = 0;
+	std::complex<float> sum = 0;
+	return sum;
+}
+
+template <>
+std::complex<double> Vector_Dual<std::complex<double> >::dot(const Vector_Dense<std::complex<double> > &other) const
+{
+	std::complex<double> sum = 0;
 	return sum;
 }
 
 template <typename T>
-double Vector_Dual<T>::dot() const
+T Vector_Dual<T>::dot() const
 {
 	return dot(*this);
 }
 
+template struct Vector_Dual<float>;
 template struct Vector_Dual<double>;
-template struct Vector_Dual<std::complex<double> >;
+template struct Vector_Dual<std::complex<float>>;
+template struct Vector_Dual<std::complex<double>>;
 
 }

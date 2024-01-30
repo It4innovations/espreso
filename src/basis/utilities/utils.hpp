@@ -2,6 +2,8 @@
 #include "utils.h"
 
 #include <algorithm>
+#include <cstdio>
+#include <omp.h>
 
 namespace espreso {
 namespace utils {
@@ -234,6 +236,18 @@ void mergeAppendedData(std::vector<Ttype> &data, const std::vector<size_t> &dist
 			data.data(),
 			data.data() + _distribution.front(),
 			data.data() + _distribution.back());
+}
+
+[[maybe_unused]]
+static void run_dummy_parallel_region()
+{
+	// https://github.com/llvm/llvm-project/issues/63197
+#ifdef _OPENMP
+    #pragma omp parallel
+    {
+        if(omp_get_thread_num() % 17 == 19) printf("Hello world\n");
+    }
+#endif
 }
 
 }

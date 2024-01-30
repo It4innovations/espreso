@@ -91,6 +91,12 @@ public:
 		}
 	}
 
+	void clear()
+	{
+		clear(_allocated);
+		resize(0);
+	}
+
 	_Permutation<I> _allocated;
 	A ator;
 

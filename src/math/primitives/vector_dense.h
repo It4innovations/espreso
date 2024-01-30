@@ -92,6 +92,12 @@ public:
 		std::swap(this->ator, other.ator);
 	}
 
+	void clear()
+	{
+		clear(_allocated);
+		resize(0);
+	}
+
 	_Vector_Dense<T, I> _allocated;
 	A ator;
 

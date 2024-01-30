@@ -43,9 +43,21 @@ void scale(const esint size, const std::complex<double> &alpha, std::complex<dou
 }
 
 template <>
+void add(const esint size, float *x, const esint incX, const float &alpha, const float *y, const esint incY)
+{
+	cblas_saxpy(size, alpha, y, incY, x, incX);
+}
+
+template <>
 void add(const esint size, double *x, const esint incX, const double &alpha, const double *y, const esint incY)
 {
 	cblas_daxpy(size, alpha, y, incY, x, incX);
+}
+
+template <>
+void add(const esint size, std::complex<float> *x, const esint incX, const std::complex<float> &alpha, const std::complex<float> *y, const esint incY)
+{
+	cblas_caxpy(size, &alpha, y, incY, x, incX);
 }
 
 template <>

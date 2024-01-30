@@ -3,6 +3,8 @@
 
 #include "gpu/gpu_kernels.h"
 
+#include <complex>
+
 #include "w.cuda.common.h"
 
 
@@ -13,6 +15,18 @@ namespace kernels {
 
     namespace
     {
+        template<typename T>
+        static __device__ void complexAtomicAdd(std::complex<T> * dst, std::complex<T> val)
+        {
+            atomicAdd(&reinterpret_cast<T*>(dst)[0], reinterpret_cast<T*>(&val)[0]);
+            atomicAdd(&reinterpret_cast<T*>(dst)[1], reinterpret_cast<T*>(&val)[1]);
+        }
+
+        template<typename T>
+        static __device__ void myAtomicAdd(T * dst, T val) { atomicAdd(dst, val); }
+        template<typename T>
+        static __device__ void myAtomicAdd(std::complex<T> * dst, std::complex<T> val) { complexAtomicAdd(dst, val); }
+
         template<typename T, typename I>
         static __global__ void _do_DCmap_scatter(T ** domain_vectors, const I * n_dofs_interfaces, const T * cluster_vector, I const * const * D2Cs)
         {
@@ -41,7 +55,7 @@ namespace kernels {
         
             for(I dof = threadIdx.x; dof < n_dofs_interface; dof += blockDim.x)
             {
-                atomicAdd(&cluster_vector[D2C[dof]], domain_vector[dof]);
+                myAtomicAdd(&cluster_vector[D2C[dof]], domain_vector[dof]);
             }
         }
     }
@@ -69,16 +83,17 @@ namespace kernels {
     template void DCmap_gather<T,I>(mgm::queue & q, const Vector_Dense<T*,I,mgm::Ad> & domain_vector_pointers, const Vector_Dense<I,I,mgm::Ad> & n_dofs_interfaces, Vector_Dense<T,I,mgm::Ad> & cluster_vector, const Vector_Dense<I*,I,mgm::Ad> & D2Cs);
 
     INSTANTIATE(float,  int32_t)
-    INSTANTIATE(float,  int64_t)
     INSTANTIATE(double, int32_t)
+    INSTANTIATE(float,  int64_t)
     INSTANTIATE(double, int64_t)
+    INSTANTIATE(std::complex<float>,  int32_t)
+    INSTANTIATE(std::complex<double>, int32_t)
+    INSTANTIATE(std::complex<float>,  int64_t)
+    INSTANTIATE(std::complex<double>, int64_t)
 
     #undef INSTANTIATE
 }
 }
 }
-
-
-
 
 #endif

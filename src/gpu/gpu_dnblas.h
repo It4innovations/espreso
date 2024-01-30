@@ -28,10 +28,10 @@ namespace dnblas {
     static void trsm(handle & h, char side, char mat_symmetry, char transpose, I nrows_X, I ncols_X, T * A, I ld_A, T * rhs_sol, I ld_X);
 
     template<typename T, typename I>
-    static void syrk(handle & h, char out_fill, char transpose, I n, I k, T * A, I ld_A, T * C, I ld_C);
+    static void herk(handle & h, char out_fill, char transpose, I n, I k, T * A, I ld_A, T * C, I ld_C);
     
     template<typename T, typename I>
-    static void symv(handle & h, char fill, I n, T * A, I ld_A, T * vec_in, T * vec_out);
+    static void hemv(handle & h, char fill, I n, T * A, I ld_A, T * vec_in, T * vec_out);
 
 }
 }

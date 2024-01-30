@@ -5,6 +5,7 @@
 #include <cstddef>
 #include <vector>
 #include <limits>
+#include <complex>
 
 namespace espreso {
 namespace utils {
@@ -87,7 +88,27 @@ namespace utils {
 		constexpr size_t result = my_int_pow<long long>(std::numeric_limits<T>::radix, std::numeric_limits<T>::digits);
 		return result;
 	}
-};
+
+	static void run_dummy_parallel_region();
+
+	template<typename T> static constexpr bool is_real();
+	template<> constexpr bool is_real<float>() { return true; }
+	template<> constexpr bool is_real<double>() { return true; }
+	template<> constexpr bool is_real<std::complex<float>>() { return false; }
+	template<> constexpr bool is_real<std::complex<double>>() { return false; }
+
+	template<typename T> static constexpr bool is_complex();
+	template<> constexpr bool is_complex<float>() { return false; }
+	template<> constexpr bool is_complex<double>() { return false; }
+	template<> constexpr bool is_complex<std::complex<float>>() { return true; }
+	template<> constexpr bool is_complex<std::complex<double>>() { return true; }
+
+	template<typename T> static T & real_ref(std::complex<T> & x) { return reinterpret_cast<T*>(&x)[0]; }
+	template<typename T> static T & imag_ref(std::complex<T> & x) { return reinterpret_cast<T*>(&x)[1]; }
+
+	template<typename T> struct remove_complex { using type = decltype(std::real(T{})); };
+	template<typename T> using remove_complex_t = typename remove_complex<T>::type;
+}
 
 }
 
