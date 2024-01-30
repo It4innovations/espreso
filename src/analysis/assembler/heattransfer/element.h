@@ -57,7 +57,7 @@ template <size_t nodes, size_t gps, size_t ndim, size_t edim> struct HeatTransfe
 
 	HeatTransferElement()
 	{
-		for (size_t i = 0; i < ndim * nodes * ndim * nodes; ++i) {
+		for (size_t i = 0; i < nodes * nodes; ++i) {
 			K[i] = zeros();
 			M[i] = zeros();
 		}
