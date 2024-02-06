@@ -1,10 +1,17 @@
 
+import os
+
 def options(opt):
-    pass
+    opt.compiler.add_option("--cudaarch",
+        action="store",
+        type="string",
+        default=os.getenv("CUDAARCH") or "native",
+        help="Set vectorized instruction set.")
 
 def configure(ctx):
     ctx.env.NVCC = ctx.find_program("nvcc", mandatory=False)
-    ctx.env.NVCCFLAGS = [ "-std=c++17", "-arch=native", "-O2", "-Xcompiler", "-fPIC", "-allow-unsupported-compiler", "-ccbin=" + ctx.env.COMPILER_CXX ]
+    ctx.env.NVCCFLAGS = [ "-std=c++17", "-O2", "-Xcompiler", "-fPIC", "-allow-unsupported-compiler", "-ccbin=" + ctx.env.COMPILER_CXX ]
+    ctx.env.append_unique("NVCCFLAGS", [ "-arch=" + ctx.options.cudaarch ])
 
     headers = [ "cuda_runtime.h" ]
     libs = [ "cudart", "cusparse", "cublas", "cusolver" ]

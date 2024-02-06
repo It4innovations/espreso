@@ -29,7 +29,7 @@ void Ah::deallocate(void *ptr)
 
 device get_device_by_mpi(int mpi_rank, int mpi_size) { return device{}; }
 
-void init_gpu(const device & d) {}
+void init_gpu(device & d) {}
 
 void set_device(const device & d) {}
 
@@ -54,12 +54,8 @@ void memalloc_device_max(device & d, void * & memory, size_t & memory_size_B, si
 void submit_host_function(queue & q, const std::function<void(void)> & c) {}
 
 template<> void copy_submit_d2h<double , int                              >(queue & q, double * dst, const double * src, int num_elements) {}
-template<> void copy_submit_d2h<double , int, mgm::Ad      , mgm::Ah      >(queue & q, Vector_Dense<double , int, mgm::Ad      > & output, const Vector_Dense<double , int, mgm::Ah      > & input) {}
 template<> void copy_submit_d2h<double , int, mgm::Ah      , mgm::Ad      >(queue & q, Vector_Dense<double , int, mgm::Ah      > & output, const Vector_Dense<double , int, mgm::Ad      > & input) {}
 template<> void copy_submit_d2h<double , int, cpu_allocator, mgm::Ad      >(queue & q, Vector_Dense<double , int, cpu_allocator> & output, const Vector_Dense<double , int, mgm::Ad      > & input) {}
-template<> void copy_submit_d2h<double*, int, mgm::Ad      , mgm::Ah      >(queue & q, Vector_Dense<double*, int, mgm::Ad      > & output, const Vector_Dense<double*, int, mgm::Ah      > & input) {}
-template<> void copy_submit_d2h<double , int, mgm::Ad      , mgm::Ah      >(queue & q, Matrix_Dense<double , int, mgm::Ad      > & output, const Matrix_Dense<double , int, mgm::Ah      > & input) {}
-template<> void copy_submit_d2h<double , int, mgm::Ad      , mgm::Ah      >(queue & q, Matrix_CSR  <double , int, mgm::Ad      > & output, const Matrix_CSR  <double , int, mgm::Ah      > & input, bool copy_pattern, bool copy_vals) {}
 
 template<> void copy_submit_h2d<int    , int                              >(queue & q, int * dst, const int * src, int num_elements) {}
 template<> void copy_submit_h2d<double , int                              >(queue & q, double * dst, const double * src, int num_elements) {}

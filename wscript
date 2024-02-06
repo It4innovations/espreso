@@ -132,7 +132,7 @@ def build(ctx):
     ctx.build_espreso(ctx.path.ant_glob('src/math/**/*.cpp'), "math")
     ctx.build_espreso(ctx.path.ant_glob('src/autoopt/**/*.cpp'), "autoopt")
     ctx.build_espreso(ctx.path.ant_glob('src/feti/**/*.cpp'), "feti")
-    ctx.build_espreso(ctx.path.ant_glob('src/gpu/**/*.cpp'), "gpu")
+    ctx.build_espreso(ctx.path.ant_glob('src/gpu/**/*.cpp'), "gpu", [ "CUDA" ])
     ctx.build_espreso(ctx.path.ant_glob('src/wrappers/simd/**/*.cpp'), "simd")
     ctx.build_espreso(ctx.path.ant_glob('src/wrappers/blas/**/*.cpp'), "wblas", [ "BLAS" ])
     ctx.build_espreso(ctx.path.ant_glob('src/wrappers/lapack/**/*.cpp'), "wlapack", [ "LAPACK" ])
@@ -260,6 +260,9 @@ def settings(ctx):
 
     ctx.msg("                                CXXFLAGS", ctx.env.CXXFLAGS)
     ctx.msg("                               LINKFLAGS", ctx.env.LINKFLAGS)
+    if ctx.env.HAVE_CUDA:
+        ctx.msg("                                    NVCC", ctx.env.NVCC)
+        ctx.msg("                               NVCCFLAGS", ctx.env.NVCCFLAGS)
     ctx.msg("                               int width", ctx.env.intwidth)
     ctx.msg("                                    mode", ctx.env.mode)
     ctx.msg("                                    SIMD", ctx.env.SIMD)

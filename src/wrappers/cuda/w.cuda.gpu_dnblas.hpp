@@ -4,9 +4,10 @@
 #include "gpu/gpu_dnblas.h"
 
 #include <cublas_v2.h>
+#include "basis/utilities/utils.h"
 #include "w.cuda.common.h"
 
-
+#include <complex>
 
 namespace espreso {
 namespace gpu {
@@ -82,40 +83,39 @@ namespace dnblas {
         }
     }
 
-    struct handle
+    struct _handle
     {
         cublasHandle_t h;
     };
 
-    static void handle_create(handle & h, mgm::queue & q)
+    static void handle_create(_handle & h, mgm::_queue & q)
     {
         CHECK(cublasCreate(&h.h));
         CHECK(cublasSetStream(h.h, q.stream));
     }
 
-    static void handle_destroy(handle & h)
+    static void handle_destroy(_handle & h)
     {
         CHECK(cublasDestroy(h.h));
     }
 
-    template<typename F>
-    static void buffer_collect_size(handle & /*q*/, size_t & buffersize, const F & /*f*/)
+    static void buffer_collect_size(_handle & /*q*/, size_t & buffersize, const std::function<void(void)> & /*f*/)
     {
         // https://docs.nvidia.com/cuda/cublas/index.html#cublassetworkspace
         // no manual workspace needed if I use just a single stream with this handle
         buffersize = 0;
     }
 
-    static void buffer_set(handle & /*q*/, void * /*ptr*/, size_t /*size*/)
+    static void buffer_set(_handle & /*q*/, void * /*ptr*/, size_t /*size*/)
     {
     }
 
-    static void buffer_unset(handle & /*q*/)
+    static void buffer_unset(_handle & /*q*/)
     {
     }
 
     template<typename T, typename I>
-    static void trsv(handle & h, char mat_symmetry, char transpose, I n, I ld, T * matrix, T * rhs_sol)
+    static void trsv(_handle & h, char mat_symmetry, char transpose, I n, I ld, T * matrix, T * rhs_sol)
     {
         cublasFillMode_t fill = (mat_symmetry == 'U' ? CUBLAS_FILL_MODE_UPPER : CUBLAS_FILL_MODE_LOWER);
         cublasOperation_t op = (transpose == 'T' ? CUBLAS_OP_T : CUBLAS_OP_N);
@@ -123,7 +123,7 @@ namespace dnblas {
     }
 
     template<typename T, typename I>
-    static void trsm(handle & h, char side, char mat_symmetry, char transpose, I nrows_X, I ncols_X, T * A, I ld_A, T * rhs_sol, I ld_X)
+    static void trsm(_handle & h, char side, char mat_symmetry, char transpose, I nrows_X, I ncols_X, T * A, I ld_A, T * rhs_sol, I ld_X)
     {
         cublasSideMode_t s = (side == 'L' ? CUBLAS_SIDE_LEFT : CUBLAS_SIDE_RIGHT);
         cublasFillMode_t fill = (mat_symmetry == 'U' ? CUBLAS_FILL_MODE_UPPER : CUBLAS_FILL_MODE_LOWER);
@@ -133,7 +133,7 @@ namespace dnblas {
     }
 
     template<typename T, typename I>
-    static void herk(handle & h, char out_fill, char transpose, I n, I k, T * A, I ld_A, T * C, I ld_C)
+    static void herk(_handle & h, char out_fill, char transpose, I n, I k, T * A, I ld_A, T * C, I ld_C)
     {
         cublasFillMode_t fill = (out_fill == 'U' ? CUBLAS_FILL_MODE_UPPER : CUBLAS_FILL_MODE_LOWER);
         cublasOperation_t op = (transpose == 'T' ? CUBLAS_OP_T : CUBLAS_OP_N);
@@ -144,7 +144,7 @@ namespace dnblas {
     }
 
     template<typename T, typename I>
-    static void hemv(handle & h, char fill, I n, T * A, I ld_A, T * vec_in, T * vec_out)
+    static void hemv(_handle & h, char fill, I n, T * A, I ld_A, T * vec_in, T * vec_out)
     {
         cublasFillMode_t f = (fill == 'U' ? CUBLAS_FILL_MODE_UPPER : CUBLAS_FILL_MODE_LOWER);
         T zero = 0.0;

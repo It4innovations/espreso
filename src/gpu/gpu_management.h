@@ -54,7 +54,7 @@ namespace mgm {
 
     device get_device_by_mpi(int mpi_rank, int mpi_size);
 
-    void init_gpu(const device & d);
+    void init_gpu(device & d);
 
     void set_device(const device & d);
 

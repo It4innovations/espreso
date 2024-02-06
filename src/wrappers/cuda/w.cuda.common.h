@@ -6,8 +6,6 @@
 
 #include "esinfo/eslog.h"
 
-
-
 #ifndef CHECK
 #define CHECK(status) do { _check((status), __FILE__, __LINE__); } while(false)
 #endif
@@ -21,5 +19,24 @@ inline static void _check(cudaError_t error_code, const char *file, int line)
         espreso::eslog::error(str);
     }
 }
+
+namespace espreso {
+namespace gpu {
+namespace mgm {
+
+    struct _device
+    {
+        int gpu_idx;
+    };
+
+    struct _queue
+    {
+        cudaStream_t stream;
+    };
+
+}
+}
+}
+
 
 #endif
