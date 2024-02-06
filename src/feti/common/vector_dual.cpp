@@ -134,11 +134,7 @@ float Vector_Dual<float>::dot(const Vector_Dense<float> &other) const
 {
 	float sum = 0;
 	#pragma omp parallel for reduction(+:sum)
-	for (esint i = 0; i < dirichlet; ++i) {
-		sum += other.vals[i] * this->vals[i];
-	}
-	#pragma omp parallel for reduction(+:sum)
-	for (esint i = nhalo; i < size; ++i) {
+	for (esint i = nhalo; i < this->size; ++i) {
 		sum += other.vals[i] * this->vals[i];
 	}
 	Communication::allReduce(&sum, nullptr, 1, MPITools::getType(sum).mpitype, MPI_SUM);
@@ -150,7 +146,7 @@ double Vector_Dual<double>::dot(const Vector_Dense<double> &other) const
 {
 	double sum = 0;
 	#pragma omp parallel for reduction(+:sum)
-	for (esint i = nhalo; i < size; ++i) {
+	for (esint i = nhalo; i < this->size; ++i) {
 		sum += other.vals[i] * this->vals[i];
 	}
 	Communication::allReduce(&sum, nullptr, 1, MPITools::getType(sum).mpitype, MPI_SUM);

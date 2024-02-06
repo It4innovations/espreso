@@ -52,8 +52,8 @@ protected:
 	using Ad = gpu::mgm::Ad;
 	using Ah = gpu::mgm::Ah;
 
-    static constexpr size_t align_B = 512;
-    static constexpr size_t align_elem = align_B / sizeof(T);
+	static constexpr size_t align_B = 512;
+	static constexpr size_t align_elem = align_B / sizeof(T);
 	int stage = 0;
 	char wcpset, wcpupdate, wcpapply, spdnfactor, trsvtrsm, factrs1, factrs2syrk, handlecount, applyalg;
 	gpu::mgm::device device;
@@ -63,8 +63,8 @@ protected:
 	std::unique_ptr<cbmba_resource> cbmba_res_device;
 	gpu::mgm::queue main_q;
 	std::vector<gpu::mgm::queue> queues;
-    std::vector<gpu::dnblas::handle> handles_dense;
-    std::vector<gpu::spblas::handle> handles_sparse;
+	std::vector<gpu::dnblas::handle> handles_dense;
+	std::vector<gpu::spblas::handle> handles_sparse;
 	std::vector<DirectSparseSolver<T>> solvers_Kreg;
 	std::vector<Matrix_Dense<T,I,Ad>> d_Fs;
 	std::vector<Matrix_CSR<T,I>> Kregs;

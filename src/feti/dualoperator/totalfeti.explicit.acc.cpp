@@ -15,7 +15,7 @@ namespace espreso {
 
 template <typename T, typename I>
 TotalFETIExplicitAcc<T,I>::TotalFETIExplicitAcc(FETI<T> &feti)
-: DualOperator<T>(feti)
+: DualOperator<T>(feti), n_domains(0), n_queues(0), mem_pool_device(nullptr)
 {
     if(stage != 0) eslog::error("init: invalid order of operations in dualop\n");
 
@@ -1108,12 +1108,12 @@ void TotalFETIExplicitAcc<T,I>::print(const step::Step &step)
 	// }
 }
 
-template class TotalFETIExplicitAcc<float , int32_t>;
+//template class TotalFETIExplicitAcc<float , int32_t>;
 template class TotalFETIExplicitAcc<double, int32_t>;
 // template class TotalFETIExplicitAcc<float , int64_t>;
 // template class TotalFETIExplicitAcc<double, int64_t>;
-template class TotalFETIExplicitAcc<std::complex<float >, int32_t>;
-template class TotalFETIExplicitAcc<std::complex<double>, int32_t>;
+//template class TotalFETIExplicitAcc<std::complex<float >, int32_t>;
+//template class TotalFETIExplicitAcc<std::complex<double>, int32_t>;
 // template class TotalFETIExplicitAcc<std::complex<float >, int64_t>;
 // template class TotalFETIExplicitAcc<std::complex<double>, int64_t>;
 

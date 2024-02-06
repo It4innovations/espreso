@@ -11,11 +11,9 @@
 
 #include "esinfo/mpiinfo.h"
 
-
+namespace espreso {
 
 #ifdef ENABLE_DUALOP_EXPLICIT_GPU_TIMERS
-
-namespace espreso {
 
 class my_timer
 {

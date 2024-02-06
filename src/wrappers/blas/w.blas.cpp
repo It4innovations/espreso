@@ -49,6 +49,12 @@ void add(const esint size, float *x, const esint incX, const float &alpha, const
 }
 
 template <>
+void add(const esint size, float *x, const esint incX, const float &alpha, const float *y, const esint incY)
+{
+	cblas_saxpy(size, alpha, y, incY, x, incX);
+}
+
+template <>
 void add(const esint size, double *x, const esint incX, const double &alpha, const double *y, const esint incY)
 {
 	cblas_daxpy(size, alpha, y, incY, x, incX);
