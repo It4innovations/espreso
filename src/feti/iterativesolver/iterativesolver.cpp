@@ -100,7 +100,7 @@ template <>
 void IterativeSolver<double>::updateInfo(IterativeSolverInfo &info, const FETIConfiguration &configuration, const double &ww, const double &psi, const double &ry)
 {
 //	info.norm.dual.ksi += psi;
-	info.norm.dual.absolute = std::sqrt(ww);
+	info.norm.dual.absolute = std::sqrt(std::max(0., ww));
 	info.norm.dual.relative = info.norm.dual.absolute / info.norm.dual.initial;
 //	info.norm.dual.arioli = std::sqrt(info.norm.dual.ksi / ry);
 
