@@ -1,5 +1,6 @@
 
 #include "math/math.h"
+#include "gpu/gpu_management.h"
 #include "esinfo/eslog.h"
 
 #ifdef HAVE_MKL
@@ -185,6 +186,20 @@ I DirectSparseSolver<T, I>::getFactorNnz()
 }
 
 template <typename T, typename I>
+template<typename A>
+inline void DirectSparseSolver<T, I>::getFactorL(Matrix_CSR<T, I, A> &/*L*/, bool /*copyPattern*/, bool /*copyValues*/)
+{
+	eslog::error("MKL PARDISO does not provide factors.\n");
+}
+
+template <typename T, typename I>
+template<typename A>
+inline void DirectSparseSolver<T, I>::getFactorU(Matrix_CSR<T, I, A> &/*U*/, bool /*copyPattern*/, bool /*copyValues*/)
+{
+	eslog::error("MKL PARDISO does not provide factors.\n");
+}
+
+template <typename T, typename I>
 void DirectSparseSolver<T, I>::getPermutation(Permutation<I> &/*perm*/)
 {
 	eslog::error("MKL PARDISO does not provide factors.\n");
@@ -219,6 +234,9 @@ void DirectSparseSolver<T, I>::getSC(Matrix_Dense<T, I> &sc)
 
 template struct DirectSparseSolver<double, int>;
 template struct DirectSparseSolver<std::complex<double>, int>;
+
+template void DirectSparseSolver<double, int>::getFactorL<gpu::mgm::Ah>(Matrix_CSR<double, int, gpu::mgm::Ah> &, bool, bool);
+template void DirectSparseSolver<double, int>::getFactorU<gpu::mgm::Ah>(Matrix_CSR<double, int, gpu::mgm::Ah> &, bool, bool);
 
 }
 

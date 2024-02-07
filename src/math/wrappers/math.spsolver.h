@@ -66,11 +66,5 @@ private:
 
 }
 
-#ifdef HAVE_MKL
-#include "wrappers/mkl/w.mkl.pardiso.hpp"
-#elif defined(HAVE_SUITESPARSE)
-#include "wrappers/suitesparse/w.suitesparse.spsolver.hpp"
-#endif
-
 #endif /* SRC_MATH_WRAPPERS_MATH_SOLVER_H_ */
 
