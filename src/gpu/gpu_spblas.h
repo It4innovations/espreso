@@ -35,7 +35,7 @@ namespace spblas {
     void descr_matrix_csr_create(descr_matrix_csr & descr, I nrows, I ncols, I nnz, char symmetry);
 
     template<typename T, typename I, typename A>
-    void descr_matrix_sparse_link_data(descr_matrix_csr & descr, Matrix_CSR<T,I,A> & matrix);
+    void descr_matrix_csr_link_data(descr_matrix_csr & descr, Matrix_CSR<T,I,A> & matrix);
 
     void descr_matrix_csr_destroy(descr_matrix_csr & descr);
 
@@ -76,7 +76,7 @@ namespace spblas {
     void trsm(handle & h, char transpose_mat, char transpose_rhs, descr_matrix_csr & matrix, descr_matrix_dense & rhs, descr_matrix_dense & sol, descr_sparse_trsm & descr_trsm, size_t & buffersize, void * buffer, char stage);
 
     template<typename T, typename I>
-    static void mv(handle & h, char transpose, descr_matrix_csr & A, descr_vector_dense & x, descr_vector_dense & y, size_t & buffersize, void * buffer, char stage);
+    void mv(handle & h, char transpose, descr_matrix_csr & A, descr_vector_dense & x, descr_vector_dense & y, size_t & buffersize, void * buffer, char stage);
 
     template<typename T, typename I>
     void mm(handle & h, char transpose_A, char transpose_B, descr_matrix_csr & A, descr_matrix_dense & B, descr_matrix_dense & C, size_t & buffersize, void * buffer, char stage);

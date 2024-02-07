@@ -89,25 +89,24 @@ namespace mgm {
     void copy_submit_d2h(queue & q, T * dst, const T * src, I num_elements);
 
     template<typename T, typename I, typename Ao, typename Ai>
+    void copy_submit_h2d(queue & q, Vector_Dense<T,I,Ao> & output, const Vector_Dense<T,I,Ai> & input);
+
+    template<typename T, typename I, typename Ao, typename Ai>
     void copy_submit_d2h(queue & q, Vector_Dense<T,I,Ao> & output, const Vector_Dense<T,I,Ai> & input);
 
     template<typename T, typename I, typename Ao, typename Ai>
-    void copy_submit_h2d(queue & q, Vector_Dense<T,I,Ao> & output, const Vector_Dense<T,I,Ai> & input);
+    void copy_submit_h2d(queue & q, Matrix_Dense<T,I,Ao> & output, const Matrix_Dense<T,I,Ai> & input);
 
     template<typename T, typename I, typename Ao, typename Ai>
     void copy_submit_d2h(queue & q, Matrix_Dense<T,I,Ao> & output, const Matrix_Dense<T,I,Ai> & input);
 
     template<typename T, typename I, typename Ao, typename Ai>
-    void copy_submit_h2d(queue & q, Matrix_Dense<T,I,Ao> & output, const Matrix_Dense<T,I,Ai> & input);
+    void copy_submit_h2d(queue & q, Matrix_CSR<T,I,Ao> & output, const Matrix_CSR<T,I,Ai> & input, bool copy_pattern = true, bool copy_vals = true);
     
     template<typename T, typename I, typename Ao, typename Ai>
     void copy_submit_d2h(queue & q, Matrix_CSR<T,I,Ao> & output, const Matrix_CSR<T,I,Ai> & input, bool copy_pattern = true, bool copy_vals = true);
 
-    template<typename T, typename I, typename Ao, typename Ai>
-    void copy_submit_h2d(queue & q, Matrix_CSR<T,I,Ao> & output, const Matrix_CSR<T,I,Ai> & input, bool copy_pattern = true, bool copy_vals = true);
-
-    template<typename I>
-    void memset_submit(queue & q, void * ptr, I num_bytes, char val);
+    void memset_submit(queue & q, void * ptr, size_t num_bytes, char val);
 
     inline char change_operation(char op)
     {
