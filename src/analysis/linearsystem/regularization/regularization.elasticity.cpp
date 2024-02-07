@@ -24,7 +24,7 @@ template <typename TFix, typename T>
 static void setRegMat(std::vector<TFix> &fix, Matrix_CSR<T> &RegMat, esint size)
 {
 	RegMat.resize(size, size, (fix.size() - 1) * fix.size() / 2 + fix.size());
-	RegMat.type = Matrix_Type::REAL_SYMMETRIC_INDEFINITE;
+	RegMat.type = Matrix_Type::REAL_SYMMETRIC_POSITIVE_DEFINITE;
 	RegMat.shape = Matrix_Shape::UPPER;
 
 	RegMat.rows[0] = Indexing::CSR;

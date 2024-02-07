@@ -73,15 +73,15 @@ namespace math {
 		if (A.nrows != B.nrows || A.ncols != B.ncols) {
 			eslog::error("invalid matrices sizes.\n");
 		}
-		if(A.type == B.type && A.shape == B.shape) {
-			C.type = A.type;
-			C.shape = A.shape;
-		}
-		else {
-			if(utils::is_real<T>()) C.type = Matrix_Type::REAL_NONSYMMETRIC;
-			else C.type = Matrix_Type::COMPLEX_NONSYMMETRIC;
-			C.shape = Matrix_Shape::FULL;
-		}
+//		if(A.type == B.type && A.shape == B.shape) {
+//			C.type = A.type;
+//			C.shape = A.shape;
+//		}
+//		else {
+//			if(utils::is_real<T>()) C.type = Matrix_Type::REAL_NONSYMMETRIC;
+//			else C.type = Matrix_Type::COMPLEX_NONSYMMETRIC;
+//			C.shape = Matrix_Shape::FULL;
+//		}
 		esint nnz = 0;
 		for (esint r = 0; r < A.nrows; ++r) {
 			esint *beginA = A.cols + A.rows[r    ] - Indexing::CSR;

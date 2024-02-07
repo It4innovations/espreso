@@ -483,7 +483,7 @@ void StructuralMechanics::evaluate(const step::Step &step, const step::Time &tim
 			}
 		}
 	}
-	bool run = reset(K, constant.K) || reset(M, constant.M) || reset(f, constant.f) || reset(nf, constant.nf) || reset(dirichlet, constant.dirichlet);
+	bool run = reset(K, constant.K) | reset(M, constant.M) | reset(f, constant.f) | reset(nf, constant.nf) | reset(dirichlet, constant.dirichlet);
 	if (run) { assemble(SubKernel::ASSEMBLE); }
 	update(K, constant.K); update(M, constant.M); update(f, constant.f); update(nf, constant.nf); update(dirichlet, constant.dirichlet);
 }
