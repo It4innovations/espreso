@@ -7,6 +7,10 @@ namespace espreso {
 namespace gpu {
 namespace mgm {
 
+    struct _device {};
+
+    struct _queue {};
+
     void* Ad::allocate(size_t num_bytes)
     {
         return nullptr;

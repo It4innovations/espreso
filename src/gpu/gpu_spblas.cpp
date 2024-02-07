@@ -6,10 +6,22 @@
 namespace espreso {
 namespace gpu {
 namespace spblas {
+    
+    struct _handle {};
 
-void handle_create(handle & h, mgm::queue & q) {}
+    struct _descr_matrix_csr {};
 
-void handle_destroy(handle & h) {}
+    struct _descr_matrix_dense {};
+
+    struct _descr_vector_dense {};
+
+    struct _descr_sparse_trsv {};
+
+    struct _descr_sparse_trsm {};
+
+    void handle_create(handle & h, mgm::queue & q) {}
+
+    void handle_destroy(handle & h) {}
 
     template<typename T, typename I>
     void descr_matrix_csr_create(descr_matrix_csr & descr, I nrows, I ncols, I nnz, char symmetry) {}

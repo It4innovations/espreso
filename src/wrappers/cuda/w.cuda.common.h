@@ -20,23 +20,4 @@ inline static void _check(cudaError_t error_code, const char *file, int line)
     }
 }
 
-namespace espreso {
-namespace gpu {
-namespace mgm {
-
-    struct _device
-    {
-        int gpu_idx;
-    };
-
-    struct _queue
-    {
-        cudaStream_t stream;
-    };
-
-}
-}
-}
-
-
 #endif /* SRC_WRAPPERS_CUDA_W_CUDA_COMMON_H_ */

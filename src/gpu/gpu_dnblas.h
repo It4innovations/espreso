@@ -11,7 +11,7 @@ namespace gpu {
 namespace dnblas {
 
     struct _handle;
-    struct handle { _handle *inner; };
+    using handle = std::unique_ptr<_handle>;
 
     void handle_create(handle & h, mgm::queue & q);
 

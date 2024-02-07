@@ -15,10 +15,10 @@ namespace gpu {
 namespace mgm {
 
     struct _device;
-    struct device { _device *inner; };
+    using device = std::unique_ptr<_device>;
 
     struct _queue;
-    struct queue { _queue *inner; };
+    using queue = std::unique_ptr<_queue>;
 
     class Ad // Allocator device
     {
