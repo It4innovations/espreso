@@ -2,9 +2,10 @@
 #ifdef HAVE_ROCM
 
 #include "gpu/gpu_management.h"
+#include "w.rocm.gpu_management.h"
 
 #include <omp.h>
-#include "w.rocm.common.h"
+#include <complex>
 
 
 
@@ -48,17 +49,7 @@ namespace mgm {
         }
     }
 
-    struct device
-    {
-        int gpu_idx;
-    };
-
-    struct queue
-    {
-        hipStream_t stream;
-    };
-
-    inline void * Ad::allocate(size_t num_bytes)
+    void * Ad::allocate(size_t num_bytes)
     {
         void * ptr;
         CHECK(hipMalloc(&ptr, num_bytes));
@@ -66,18 +57,18 @@ namespace mgm {
     }
 
     template<typename T>
-    inline T * Ad::allocate(size_t count)
+    T * Ad::allocate(size_t count)
     {
         return reinterpret_cast<T*>(allocate(count * sizeof(T)));
     }
 
     template<typename T>
-    inline void Ad::deallocate(T * ptr)
+    void Ad::deallocate(T * ptr)
     { 
         CHECK(hipFree(ptr));
     }
 
-    inline void * Ah::allocate(size_t num_bytes)
+    void * Ah::allocate(size_t num_bytes)
     {
         void * ptr;
         CHECK(hipHostMalloc(&ptr, num_bytes));
@@ -85,13 +76,13 @@ namespace mgm {
     }
 
     template<typename T>
-    inline T * Ah::allocate(size_t count)
+    T * Ah::allocate(size_t count)
     {
         return reinterpret_cast<T*>(allocate(count * sizeof(T)));
     }
 
     template<typename T>
-    inline void Ah::deallocate(T * ptr)
+    void Ah::deallocate(T * ptr)
     { 
         CHECK(hipHostFree(ptr));
     }
@@ -100,14 +91,14 @@ namespace mgm {
     {
         // static constexpr int rank_gpu_map[] = {4,5,2,3,6,7,0,1}; // assuming LUMI-G
         // on LUMI, when using e.g. `salloc --ntasks=8 --gpus-per-task=1`, each task (=rank) can see only a single gpu
-        device d;
-        d.gpu_idx = 0;
+        device d = std::make_unique<_device>();
+        d->gpu_idx = 0;
         return d;
     }
 
     static void init_gpu(const device & d)
     {
-        CHECK(hipSetDevice(d.gpu_idx));
+        CHECK(hipSetDevice(d->gpu_idx));
         CHECK(hipFree(nullptr));
         CHECK(hipDeviceSynchronize());
     }
@@ -116,17 +107,19 @@ namespace mgm {
     {
         #pragma omp parallel
         {
-            CHECK(hipSetDevice(d.gpu_idx));
+            CHECK(hipSetDevice(d->gpu_idx));
         }
     }
 
     void queue_create(queue & q, device & /*d*/)
     {
+        q = std::make_unique<_queue>();
         CHECK(hipStreamCreate(&q.stream));
     }
     void queue_destroy(queue & q)
     {
         CHECK(hipStreamDestroy(q.stream));
+        q.reset();
     }
 
     void queue_async_barrier(const std::vector<queue> & waitfor, const std::vector<queue> & waitin)
@@ -136,13 +129,13 @@ namespace mgm {
         for(size_t i = 0; i < waitfor.size(); i++)
         {
             CHECK(hipEventCreate(&events[i]));
-            CHECK(hipEventRecord(events[i], waitfor[i].stream));
+            CHECK(hipEventRecord(events[i], waitfor[i]->stream));
         }
         for(size_t j = 0; j < waitin.size(); j++)
         {
             for(size_t k = 0; k < events.size(); k++)
             {
-                CHECK(hipStreamWaitEvent(waitin[j].stream, events[k], 0));
+                CHECK(hipStreamWaitEvent(waitin[j]->stream, events[k], 0));
             }
         }
         for(size_t k = 0; k < events.size(); k++)
@@ -153,7 +146,7 @@ namespace mgm {
 
     void queue_wait(queue & q)
     {
-        CHECK(hipStreamSynchronize(q.stream));
+        CHECK(hipStreamSynchronize(q->stream));
     }
 
     void device_wait(device & /*d*/)
@@ -164,7 +157,7 @@ namespace mgm {
     size_t get_device_memory_capacity(device & d)
     {
         hipDeviceProp_t props;
-        CHECK(hipGetDeviceProperties(&props, d.gpu_idx));
+        CHECK(hipGetDeviceProperties(&props, d->gpu_idx));
         return props.totalGlobalMem;
     }
 
@@ -219,7 +212,7 @@ namespace mgm {
     {
         C * cp = new C(std::move(c));
 
-        CHECK(hipStreamAddCallback(q.stream, [](hipStream_t /*str*/, hipError_t /*err*/, void * arg){
+        CHECK(hipStreamAddCallback(q->stream, [](hipStream_t /*str*/, hipError_t /*err*/, void * arg){
             C * cpi = reinterpret_cast<C*>(arg);
             (*cpi)();
             delete cpi;
@@ -236,12 +229,12 @@ namespace mgm {
     template<typename T, typename I>
     void copy_submit_h2d(queue & q, T * dst, const T * src, I num_elements)
     {
-        _copy_submit(dst, src, num_elements, hipMemcpyHostToDevice, q.stream);
+        _copy_submit(dst, src, num_elements, hipMemcpyHostToDevice, q->stream);
     }
     template<typename T, typename I>
     void copy_submit_d2h(queue & q, T * dst, const T * src, I num_elements)
     {
-        _copy_submit(dst, src, num_elements, hipMemcpyDeviceToHost, q.stream);
+        _copy_submit(dst, src, num_elements, hipMemcpyDeviceToHost, q->stream);
     }
 
     template<typename T, typename I, typename Ao, typename Ai>
@@ -249,7 +242,7 @@ namespace mgm {
     {
         static_assert(Ao::is_data_host_accessible, "output vector data has to be host accessible");
         static_assert(Ai::is_data_device_accessible, "input vector data has to be device accessible");
-        _copy_submit(output, input, hipMemcpyDeviceToHost, q.stream);
+        _copy_submit(output, input, hipMemcpyDeviceToHost, q->stream);
     }
 
     template<typename T, typename I, typename Ao, typename Ai>
@@ -257,7 +250,7 @@ namespace mgm {
     {
         static_assert(Ao::is_data_device_accessible, "output vector data has to be device accessible");
         static_assert(Ai::is_data_host_accessible, "input vector data has to be host accessible");
-        _copy_submit(output, input, hipMemcpyHostToDevice, q.stream);
+        _copy_submit(output, input, hipMemcpyHostToDevice, q->stream);
     }
 
     template<typename T, typename I, typename Ao, typename Ai>
@@ -265,7 +258,7 @@ namespace mgm {
     {
         static_assert(Ao::is_data_host_accessible, "output matrix data has to be host accessible");
         static_assert(Ai::is_data_device_accessible, "input matrix data has to be device accessible");
-        _copy_submit(output, input, hipMemcpyDeviceToHost, q.stream);
+        _copy_submit(output, input, hipMemcpyDeviceToHost, q->stream);
     }
 
     template<typename T, typename I, typename Ao, typename Ai>
@@ -273,7 +266,7 @@ namespace mgm {
     {
         static_assert(Ao::is_data_device_accessible, "output matrix data has to be device accessible");
         static_assert(Ai::is_data_host_accessible, "input matrix data has to be host accessible");
-        _copy_submit(output, input, hipMemcpyHostToDevice, q.stream);
+        _copy_submit(output, input, hipMemcpyHostToDevice, q->stream);
     }
 
     template<typename T, typename I, typename Ao, typename Ai>
@@ -281,7 +274,7 @@ namespace mgm {
     {
         static_assert(Ao::is_data_host_accessible, "output matrix data has to be host accessible");
         static_assert(Ai::is_data_device_accessible, "input matrix data has to be device accessible");
-        _copy_submit(output, input, hipMemcpyDeviceToHost, q.stream, copy_pattern, copy_vals);
+        _copy_submit(output, input, hipMemcpyDeviceToHost, q->stream, copy_pattern, copy_vals);
     }
 
     template<typename T, typename I, typename Ao, typename Ai>
@@ -289,14 +282,58 @@ namespace mgm {
     {
         static_assert(Ao::is_data_device_accessible, "output matrix data has to be device accessible");
         static_assert(Ai::is_data_host_accessible, "input matrix data has to be host accessible");
-        _copy_submit(output, input, hipMemcpyHostToDevice, q.stream, copy_pattern, copy_vals);
+        _copy_submit(output, input, hipMemcpyHostToDevice, q->stream, copy_pattern, copy_vals);
     }
 
-    template<typename T, typename I>
-    void memset_submit(queue & q, T * ptr, I num_bytes, char val)
+    void memset_submit(queue & q, void * ptr, size_t num_bytes, char val)
     {
-        CHECK(hipMemsetAsync(ptr, val, num_bytes, q.stream));
+        CHECK(hipMemsetAsync(ptr, val, num_bytes, q->stream));
     }
+
+
+
+    #define INSTANTIATE(T,I,Ahost,Adevice) \
+    template void copy_submit_h2d<T,I,Adevice,Ahost  >(queue & q, T * dst, const T * src, I num_elements); \
+    template void copy_submit_d2h<T,I,Ahost,  Adevice>(queue & q, T * dst, const T * src, I num_elements); \
+    template void copy_submit_h2d<T,I,Adevice,Ahost  >(queue & q, Vector_Dense<T,I,Ao> & output, const Vector_Dense<T,I,Ai> & input); \
+    template void copy_submit_d2h<T,I,Ahost,  Adevice>(queue & q, Vector_Dense<T,I,Ao> & output, const Vector_Dense<T,I,Ai> & input); \
+    template void copy_submit_h2d<T,I,Adevice,Ahost  >(queue & q, Matrix_Dense<T,I,Ao> & output, const Matrix_Dense<T,I,Ai> & input); \
+    template void copy_submit_d2h<T,I,Ahost,  Adevice>(queue & q, Matrix_Dense<T,I,Ao> & output, const Matrix_Dense<T,I,Ai> & input); \
+    template void copy_submit_h2d<T,I,Adevice,Ahost  >(queue & q, Matrix_CSR<T,I,Ao> & output, const Matrix_CSR<T,I,Ai> & input, bool copy_pattern = true, bool copy_vals = true); \
+    template void copy_submit_d2h<T,I,Ahost,  Adevice>(queue & q, Matrix_CSR<T,I,Ao> & output, const Matrix_CSR<T,I,Ai> & input, bool copy_pattern = true, bool copy_vals = true);
+        // INSTANTIATE(float,                int32_t, mgm::Ah,       mgm::Ad)
+        INSTANTIATE(double,               int32_t, mgm::Ah,       mgm::Ad)
+        // INSTANTIATE(std::complex<float >, int32_t, mgm::Ah,       mgm::Ad)
+        // INSTANTIATE(std::complex<double>, int32_t, mgm::Ah,       mgm::Ad)
+        // INSTANTIATE(float,                int64_t, mgm::Ah,       mgm::Ad)
+        // INSTANTIATE(double,               int64_t, mgm::Ah,       mgm::Ad)
+        // INSTANTIATE(std::complex<float >, int64_t, mgm::Ah,       mgm::Ad)
+        // INSTANTIATE(std::complex<double>, int64_t, mgm::Ah,       mgm::Ad)
+        // INSTANTIATE(float,                int32_t, mgm::Ah,       cbmba_d)
+        // INSTANTIATE(double,               int32_t, mgm::Ah,       cbmba_d)
+        // INSTANTIATE(std::complex<float >, int32_t, mgm::Ah,       cbmba_d)
+        // INSTANTIATE(std::complex<double>, int32_t, mgm::Ah,       cbmba_d)
+        // INSTANTIATE(float,                int64_t, mgm::Ah,       cbmba_d)
+        // INSTANTIATE(double,               int64_t, mgm::Ah,       cbmba_d)
+        // INSTANTIATE(std::complex<float >, int64_t, mgm::Ah,       cbmba_d)
+        // INSTANTIATE(std::complex<double>, int64_t, mgm::Ah,       cbmba_d)
+        // INSTANTIATE(float,                int32_t, cpu_allocator, mgm::Ad)
+        // INSTANTIATE(double,               int32_t, cpu_allocator, mgm::Ad)
+        // INSTANTIATE(std::complex<float >, int32_t, cpu_allocator, mgm::Ad)
+        // INSTANTIATE(std::complex<double>, int32_t, cpu_allocator, mgm::Ad)
+        // INSTANTIATE(float,                int64_t, cpu_allocator, mgm::Ad)
+        // INSTANTIATE(double,               int64_t, cpu_allocator, mgm::Ad)
+        // INSTANTIATE(std::complex<float >, int64_t, cpu_allocator, mgm::Ad)
+        // INSTANTIATE(std::complex<double>, int64_t, cpu_allocator, mgm::Ad)
+        // INSTANTIATE(float,                int32_t, cpu_allocator, cbmba_d)
+        // INSTANTIATE(double,               int32_t, cpu_allocator, cbmba_d)
+        // INSTANTIATE(std::complex<float >, int32_t, cpu_allocator, cbmba_d)
+        // INSTANTIATE(std::complex<double>, int32_t, cpu_allocator, cbmba_d)
+        // INSTANTIATE(float,                int64_t, cpu_allocator, cbmba_d)
+        // INSTANTIATE(double,               int64_t, cpu_allocator, cbmba_d)
+        // INSTANTIATE(std::complex<float >, int64_t, cpu_allocator, cbmba_d)
+        // INSTANTIATE(std::complex<double>, int64_t, cpu_allocator, cbmba_d)
+    #undef INSTANTIATE
 
 }
 }

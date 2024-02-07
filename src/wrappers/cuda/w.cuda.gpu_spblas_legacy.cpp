@@ -1,11 +1,11 @@
 
 #ifdef HAVE_CUDA
+#ifdef USE_CUSPARSE_LEGACY
 
 #include "gpu/gpu_spblas.h"
+#include "w.cuda.gpu_management.h"
 
 #include <cusparse.h>
-#include "w.cuda.common.h"
-
 #include <complex>
 
 #if defined(__GNUC__) && !defined(__clang__)
@@ -24,22 +24,26 @@
 #pragma clang diagnostic ignored "-Wdeprecated-declarations"
 #endif
 
+
+
+inline void _check(cusparseStatus_t status, const char *file, int line)
+{
+    if (status != CUSPARSE_STATUS_SUCCESS)
+    {
+        fprintf(stderr, "CUSPARSE Error %d %s: %s. In file '%s' on line %d\n", status, cusparseGetErrorName(status), cusparseGetErrorString(status), file, line);
+        fflush(stderr);
+        exit(status);
+    }
+}
+
+
+
 namespace espreso {
 namespace gpu {
 namespace spblas {
 
     namespace
     {
-        inline static void _check(cusparseStatus_t status, const char *file, int line)
-        {
-            if (status != CUSPARSE_STATUS_SUCCESS)
-            {
-                fprintf(stderr, "CUSPARSE Error %d %s: %s. In file '%s' on line %d\n", status, cusparseGetErrorName(status), cusparseGetErrorString(status), file, line);
-                fflush(stderr);
-                exit(status);
-            }
-        }
-
         template<typename T> struct cpp_to_cuda_type { using type = T; };
         template<> struct cpp_to_cuda_type<std::complex<float>> { using type = cuComplex; };
         template<> struct cpp_to_cuda_type<std::complex<double>> { using type = cuDoubleComplex; };
@@ -154,16 +158,16 @@ namespace spblas {
         int64_t ncols;
         int64_t ld;
         char order;
-        _descr_matrix_dense get_complementary()
+        descr_matrix_dense get_complementary()
         {
-            _descr_matrix_dense ret;
-            ret.d_new = d_new_complementary;
-            ret.d_new_complementary = d_new;
-            ret.vals = vals;
-            ret.nrows = ncols;
-            ret.ncols = nrows;
-            ret.ld = ld;
-            ret.order = mgm::change_order(order);
+            descr_matrix_dense ret = std::make_unique<_descr_matrix_dense>();
+            ret->d_new = d_new_complementary;
+            ret->d_new_complementary = d_new;
+            ret->vals = vals;
+            ret->nrows = ncols;
+            ret->ncols = nrows;
+            ret->ld = ld;
+            ret->order = mgm::change_order(order);
             return ret;
         }
     };
@@ -184,171 +188,183 @@ namespace spblas {
         csrsm2Info_t i;
     };
 
-    static void handle_create(_handle & h, mgm::_queue & q)
+    static void handle_create(handle & h, mgm::queue & q)
     {
-        CHECK(cusparseCreate(&h.h));
-        CHECK(cusparseSetStream(h.h, q.stream));
+        h = std::make_unique<_handle>();
+        CHECK(cusparseCreate(&h->h));
+        CHECK(cusparseSetStream(h->h, q->stream));
     }
 
-    static void handle_destroy(_handle & h)
+    static void handle_destroy(handle & h)
     {
-        CHECK(cusparseDestroy(h.h));
+        CHECK(cusparseDestroy(h->h));
+        h.reset();
     }
 
     template<typename T, typename I>
-    static void descr_matrix_csr_create(_descr_matrix_csr & descr, I nrows, I ncols, I nnz, char symmetry)
+    static void descr_matrix_csr_create(descr_matrix_csr & descr, I nrows, I ncols, I nnz, char symmetry)
     {
+        descr = std::make_unique<_descr_matrix_csr>();
         void * dummyptr = reinterpret_cast<void*>(1);
-        CHECK(cusparseCreateCsr(&descr.d_new, nrows, ncols, nnz, dummyptr, dummyptr, dummyptr, _sparse_index_type<I>(), _sparse_index_type<I>(), CUSPARSE_INDEX_BASE_ZERO, _sparse_data_type<T>()));
+        CHECK(cusparseCreateCsr(&descr->d_new, nrows, ncols, nnz, dummyptr, dummyptr, dummyptr, _sparse_index_type<I>(), _sparse_index_type<I>(), CUSPARSE_INDEX_BASE_ZERO, _sparse_data_type<T>()));
         auto upper = CUSPARSE_FILL_MODE_UPPER;
         auto lower = CUSPARSE_FILL_MODE_LOWER;
         auto nonunit = CUSPARSE_DIAG_TYPE_NON_UNIT;
-        if(symmetry == 'L') CHECK(cusparseSpMatSetAttribute(descr.d_new, CUSPARSE_SPMAT_FILL_MODE, &lower, sizeof(lower)));
-        if(symmetry == 'U') CHECK(cusparseSpMatSetAttribute(descr.d_new, CUSPARSE_SPMAT_FILL_MODE, &upper, sizeof(upper)));
-        if(symmetry != 'N') CHECK(cusparseSpMatSetAttribute(descr.d_new, CUSPARSE_SPMAT_DIAG_TYPE, &nonunit, sizeof(nonunit)));
+        if(symmetry == 'L') CHECK(cusparseSpMatSetAttribute(descr->d_new, CUSPARSE_SPMAT_FILL_MODE, &lower, sizeof(lower)));
+        if(symmetry == 'U') CHECK(cusparseSpMatSetAttribute(descr->d_new, CUSPARSE_SPMAT_FILL_MODE, &upper, sizeof(upper)));
+        if(symmetry != 'N') CHECK(cusparseSpMatSetAttribute(descr->d_new, CUSPARSE_SPMAT_DIAG_TYPE, &nonunit, sizeof(nonunit)));
 
-        CHECK(cusparseCreateMatDescr(&descr.d_leg));
-        CHECK(cusparseSetMatDiagType(descr.d_leg, CUSPARSE_DIAG_TYPE_NON_UNIT));
-        CHECK(cusparseSetMatIndexBase(descr.d_leg, CUSPARSE_INDEX_BASE_ZERO));
-        CHECK(cusparseSetMatType(descr.d_leg, CUSPARSE_MATRIX_TYPE_GENERAL));
-        if(symmetry == 'U') CHECK(cusparseSetMatFillMode(descr.d_leg, CUSPARSE_FILL_MODE_UPPER));
-        if(symmetry == 'L') CHECK(cusparseSetMatFillMode(descr.d_leg, CUSPARSE_FILL_MODE_LOWER));
+        CHECK(cusparseCreateMatDescr(&descr->d_leg));
+        CHECK(cusparseSetMatDiagType(descr->d_leg, CUSPARSE_DIAG_TYPE_NON_UNIT));
+        CHECK(cusparseSetMatIndexBase(descr->d_leg, CUSPARSE_INDEX_BASE_ZERO));
+        CHECK(cusparseSetMatType(descr->d_leg, CUSPARSE_MATRIX_TYPE_GENERAL));
+        if(symmetry == 'U') CHECK(cusparseSetMatFillMode(descr->d_leg, CUSPARSE_FILL_MODE_UPPER));
+        if(symmetry == 'L') CHECK(cusparseSetMatFillMode(descr->d_leg, CUSPARSE_FILL_MODE_LOWER));
 
-        descr.nrows = nrows;
-        descr.ncols = ncols;
-        descr.nnz = nnz;
+        descr->nrows = nrows;
+        descr->ncols = ncols;
+        descr->nnz = nnz;
     }
 
     template<typename T, typename I, typename A>
-    static void descr_matrix_sparse_link_data(_descr_matrix_csr & descr, Matrix_CSR<T,I,A> & matrix)
+    static void descr_matrix_sparse_link_data(descr_matrix_csr & descr, Matrix_CSR<T,I,A> & matrix)
     {
         static_assert(A::is_data_device_accessible, "matrix data must be device accessible");
-        CHECK(cusparseCsrSetPointers(descr.d_new, matrix.rows, matrix.cols, matrix.vals));
-        descr.rowptrs = matrix.rows;
-        descr.colidxs = matrix.cols;
-        descr.vals = matrix.vals;
+        CHECK(cusparseCsrSetPointers(descr->d_new, matrix.rows, matrix.cols, matrix.vals));
+        descr->rowptrs = matrix.rows;
+        descr->colidxs = matrix.cols;
+        descr->vals = matrix.vals;
     }
 
-    static void descr_matrix_csr_destroy(_descr_matrix_csr & descr)
+    static void descr_matrix_csr_destroy(descr_matrix_csr & descr)
     {
-        CHECK(cusparseDestroySpMat(descr.d_new));
-        CHECK(cusparseDestroyMatDescr(descr.d_leg));
+        CHECK(cusparseDestroySpMat(descr->d_new));
+        CHECK(cusparseDestroyMatDescr(descr->d_leg));
+        descr.reset();
     }
 
     template<typename T, typename I>
-    static void descr_matrix_dense_create(_descr_matrix_dense & descr, I nrows, I ncols, I ld, char order)
+    static void descr_matrix_dense_create(descr_matrix_dense & descr, I nrows, I ncols, I ld, char order)
     {
+        descr = std::make_unique<_descr_matrix_dense>();
         void * dummyptr = reinterpret_cast<void*>(1);
-        if(order == 'R') CHECK(cusparseCreateDnMat(&descr.d_new, nrows, ncols, ld, dummyptr, _sparse_data_type<T>(), CUSPARSE_ORDER_ROW));
-        if(order == 'C') CHECK(cusparseCreateDnMat(&descr.d_new, nrows, ncols, ld, dummyptr, _sparse_data_type<T>(), CUSPARSE_ORDER_COL));
-        if(order == 'R') CHECK(cusparseCreateDnMat(&descr.d_new_complementary, ncols, nrows, ld, dummyptr, _sparse_data_type<T>(), CUSPARSE_ORDER_COL));
-        if(order == 'C') CHECK(cusparseCreateDnMat(&descr.d_new_complementary, ncols, nrows, ld, dummyptr, _sparse_data_type<T>(), CUSPARSE_ORDER_ROW));
+        if(order == 'R') CHECK(cusparseCreateDnMat(&descr->d_new, nrows, ncols, ld, dummyptr, _sparse_data_type<T>(), CUSPARSE_ORDER_ROW));
+        if(order == 'C') CHECK(cusparseCreateDnMat(&descr->d_new, nrows, ncols, ld, dummyptr, _sparse_data_type<T>(), CUSPARSE_ORDER_COL));
+        if(order == 'R') CHECK(cusparseCreateDnMat(&descr->d_new_complementary, ncols, nrows, ld, dummyptr, _sparse_data_type<T>(), CUSPARSE_ORDER_COL));
+        if(order == 'C') CHECK(cusparseCreateDnMat(&descr->d_new_complementary, ncols, nrows, ld, dummyptr, _sparse_data_type<T>(), CUSPARSE_ORDER_ROW));
 
-        descr.nrows = nrows;
-        descr.ncols = ncols;
-        descr.ld = ld;
-        descr.order = order;
+        descr->nrows = nrows;
+        descr->ncols = ncols;
+        descr->ld = ld;
+        descr->order = order;
     }
 
     template<typename T, typename I, typename A>
-    static void descr_matrix_dense_link_data(_descr_matrix_dense & descr, Matrix_Dense<T,I,A> & matrix)
+    static void descr_matrix_dense_link_data(descr_matrix_dense & descr, Matrix_Dense<T,I,A> & matrix)
     {
         static_assert(A::is_data_device_accessible, "matrix data must be device accessible");
-        CHECK(cusparseDnMatSetValues(descr.d_new, matrix.vals));
-        CHECK(cusparseDnMatSetValues(descr.d_new_complementary, matrix.vals));
-        descr.vals = matrix.vals;
+        CHECK(cusparseDnMatSetValues(descr->d_new, matrix.vals));
+        CHECK(cusparseDnMatSetValues(descr->d_new_complementary, matrix.vals));
+        descr->vals = matrix.vals;
     }
 
-    static void descr_matrix_dense_destroy(_descr_matrix_dense & descr)
+    static void descr_matrix_dense_destroy(descr_matrix_dense & descr)
     {
-        CHECK(cusparseDestroyDnMat(descr.d_new));
-        CHECK(cusparseDestroyDnMat(descr.d_new_complementary));
+        CHECK(cusparseDestroyDnMat(descr->d_new));
+        CHECK(cusparseDestroyDnMat(descr->d_new_complementary));
+        descr.reset();
     }
 
     template<typename T, typename I>
-    static void descr_vector_dense_create(_descr_vector_dense & descr, I size)
+    static void descr_vector_dense_create(descr_vector_dense & descr, I size)
     {
+        descr = std::make_unique<_descr_vector_dense>();
         void * dummyptr = reinterpret_cast<void*>(1);
-        CHECK(cusparseCreateDnVec(&descr.d_new, size, dummyptr, _sparse_data_type<T>()));
+        CHECK(cusparseCreateDnVec(&descr->d_new, size, dummyptr, _sparse_data_type<T>()));
     }
 
     template<typename T, typename I, typename A>
-    static void descr_vector_dense_link_data(_descr_vector_dense & descr, Vector_Dense<T,I,A> & vector)
+    static void descr_vector_dense_link_data(descr_vector_dense & descr, Vector_Dense<T,I,A> & vector)
     {
         static_assert(A::is_data_device_accessible, "vector data must be device accessible");
-        CHECK(cusparseDnVecSetValues(descr.d_new, vector.vals));
-        descr.vals = vector.vals;
+        CHECK(cusparseDnVecSetValues(descr->d_new, vector.vals));
+        descr->vals = vector.vals;
     }
 
     template<typename T, typename I, typename A>
-    static void descr_vector_dense_link_data(_descr_vector_dense & descr, Matrix_Dense<T,I,A> & matrix, I colidx)
+    static void descr_vector_dense_link_data(descr_vector_dense & descr, Matrix_Dense<T,I,A> & matrix, I colidx)
     {
         static_assert(A::is_data_device_accessible, "vector data must be device accessible");
-        CHECK(cusparseDnVecSetValues(descr.d_new, matrix.vals + colidx * matrix.get_ld()));
-        descr.vals = matrix.vals + colidx * matrix.get_ld();
+        CHECK(cusparseDnVecSetValues(descr->d_new, matrix.vals + colidx * matrix.get_ld()));
+        descr->vals = matrix.vals + colidx * matrix.get_ld();
     }
 
-    static void descr_vector_dense_destroy(_descr_vector_dense & descr)
+    static void descr_vector_dense_destroy(descr_vector_dense & descr)
     {
-        CHECK(cusparseDestroyDnVec(descr.d_new));
+        CHECK(cusparseDestroyDnVec(descr->d_new));
+        descr.reset();
     }
 
-    static void descr_sparse_trsv_create(_descr_sparse_trsv & descr)
+    static void descr_sparse_trsv_create(descr_sparse_trsv & descr)
     {
-        CHECK(cusparseCreateCsrsv2Info(&descr.i));
+        descr = std::make_unique<_descr_sparse_trsv>();
+        CHECK(cusparseCreateCsrsv2Info(&descr->i));
     }
 
-    static void descr_sparse_trsv_destroy(_descr_sparse_trsv & descr)
+    static void descr_sparse_trsv_destroy(descr_sparse_trsv & descr)
     {
-        CHECK(cusparseDestroyCsrsv2Info(descr.i));
+        CHECK(cusparseDestroyCsrsv2Info(descr->i));
+        descr.reset();
     }
 
-    static void descr_sparse_trsm_create(_descr_sparse_trsm & descr)
+    static void descr_sparse_trsm_create(descr_sparse_trsm & descr)
     {
-        CHECK(cusparseCreateCsrsm2Info(&descr.i));
+        descr = std::make_unique<_descr_sparse_trsm>();
+        CHECK(cusparseCreateCsrsm2Info(&descr->i));
     }
 
-    static void descr_sparse_trsm_destroy(_descr_sparse_trsm & descr)
+    static void descr_sparse_trsm_destroy(descr_sparse_trsm & descr)
     {
-        CHECK(cusparseDestroyCsrsm2Info(descr.i));
+        CHECK(cusparseDestroyCsrsm2Info(descr->i));
+        descr.reset();
     }
 
     template<typename T, typename I>
-    static void sparse_to_dense(_handle & h, char transpose, _descr_matrix_csr & sparse, _descr_matrix_dense & dense, size_t & buffersize, void * buffer, char stage)
+    static void sparse_to_dense(handle & h, char transpose, descr_matrix_csr & sparse, descr_matrix_dense & dense, size_t & buffersize, void * buffer, char stage)
     {
         if(transpose == 'T')
         {
-            _descr_matrix_dense descr_dense_complementary = dense.get_complementary();
+            descr_matrix_dense descr_dense_complementary = dense.get_complementary();
             sparse_to_dense<T,I>(h, 'N', sparse, descr_dense_complementary, buffersize, buffer, stage);
             return;
         }
-        if(stage == 'B') CHECK(cusparseSparseToDense_bufferSize(h.h, sparse.d_new, dense.d_new, CUSPARSE_SPARSETODENSE_ALG_DEFAULT, &buffersize));
-        if(stage == 'C') CHECK(cusparseSparseToDense           (h.h, sparse.d_new, dense.d_new, CUSPARSE_SPARSETODENSE_ALG_DEFAULT, buffer));
+        if(stage == 'B') CHECK(cusparseSparseToDense_bufferSize(h->h, sparse->d_new, dense->d_new, CUSPARSE_SPARSETODENSE_ALG_DEFAULT, &buffersize));
+        if(stage == 'C') CHECK(cusparseSparseToDense           (h->h, sparse->d_new, dense->d_new, CUSPARSE_SPARSETODENSE_ALG_DEFAULT, buffer));
     }
 
     template<typename T, typename I>
-    static void trsv(_handle & h, char transpose, _descr_matrix_csr & matrix, _descr_vector_dense & rhs, _descr_vector_dense & sol, _descr_sparse_trsv & descr_trsv, size_t & buffersize, void * buffer, char stage)
+    static void trsv(handle & h, char transpose, descr_matrix_csr & matrix, descr_vector_dense & rhs, descr_vector_dense & sol, descr_sparse_trsv & descr_trsv, size_t & buffersize, void * buffer, char stage)
     {
         cusparseOperation_t op = (transpose == 'T' ? CUSPARSE_OPERATION_TRANSPOSE : CUSPARSE_OPERATION_NON_TRANSPOSE);
         cusparseSolvePolicy_t policy = CUSPARSE_SOLVE_POLICY_USE_LEVEL;
         int bfsz = buffersize;
         T one = 1.0;
-        if(stage == 'B') CHECK((_my_sparse_trsv_buffersize<T,I>)(h.h, op, matrix.nrows, matrix.nnz,       matrix.d_leg, matrix.vals, matrix.rowptrs, matrix.colidxs, descr_trsv.i, &bfsz));
-        if(stage == 'P') CHECK((_my_sparse_trsv_analysis<T,I>)  (h.h, op, matrix.nrows, matrix.nnz,       matrix.d_leg, matrix.vals, matrix.rowptrs, matrix.colidxs, descr_trsv.i, policy, buffer));
+        if(stage == 'B') CHECK((_my_sparse_trsv_buffersize<T,I>)(h->h, op, matrix->nrows, matrix->nnz,       matrix->d_leg, matrix->vals, matrix->rowptrs, matrix->colidxs, descr_trsv->i, &bfsz));
+        if(stage == 'P') CHECK((_my_sparse_trsv_analysis<T,I>)  (h->h, op, matrix->nrows, matrix->nnz,       matrix->d_leg, matrix->vals, matrix->rowptrs, matrix->colidxs, descr_trsv->i, policy, buffer));
         // if(stage == 'U') ;
-        if(stage == 'C') CHECK((_my_sparse_trsv_solve<T,I>)     (h.h, op, matrix.nrows, matrix.nnz, &one, matrix.d_leg, matrix.vals, matrix.rowptrs, matrix.colidxs, descr_trsv.i, rhs.vals, sol.vals, policy, buffer));
+        if(stage == 'C') CHECK((_my_sparse_trsv_solve<T,I>)     (h->h, op, matrix->nrows, matrix->nnz, &one, matrix->d_leg, matrix->vals, matrix->rowptrs, matrix->colidxs, descr_trsv->i, rhs->vals, sol->vals, policy, buffer));
         buffersize = bfsz;
     }
 
     template<typename T, typename I>
-    static void trsm(_handle & h, char transpose_mat, char transpose_rhs, _descr_matrix_csr & matrix, _descr_matrix_dense & rhs, _descr_matrix_dense & sol, _descr_sparse_trsm & descr_trsm, size_t & buffersize, void * buffer, char stage)
+    static void trsm(handle & h, char transpose_mat, char transpose_rhs, descr_matrix_csr & matrix, descr_matrix_dense & rhs, descr_matrix_dense & sol, descr_sparse_trsm & descr_trsm, size_t & buffersize, void * buffer, char stage)
     {
         // cudaleg has the transB on the rhs as well as on the solution
         if(rhs.order != sol.order) eslog::error("dense matrix order has to be the same");
         if(rhs.order == 'R')
         {
-            _descr_matrix_dense descr_rhs_complementary = rhs.get_complementary();
-            _descr_matrix_dense descr_sol_complementary = sol.get_complementary();
+            descr_matrix_dense descr_rhs_complementary = rhs.get_complementary();
+            descr_matrix_dense descr_sol_complementary = sol.get_complementary();
             char transpose_rhs_compl = mgm::change_operation(transpose_rhs);
             trsm<T,I>(h, transpose_mat, transpose_rhs_compl, matrix, descr_rhs_complementary, descr_sol_complementary, descr_trsm, buffersize, buffer, stage);
             return;
@@ -358,35 +374,68 @@ namespace spblas {
         T one = 1.0;
         int algo = 1;
         cusparseSolvePolicy_t policy = CUSPARSE_SOLVE_POLICY_USE_LEVEL;
-        I nrhs = (transpose_rhs == 'T' ? sol.nrows : sol.ncols);
-        if(stage == 'B') CHECK((_my_sparse_trsm_buffersize<T,I>)(h.h, algo, op_mat, op_rhs, matrix.nrows, nrhs, matrix.nnz, &one, matrix.d_leg, matrix.vals, matrix.rowptrs, matrix.colidxs, rhs.vals, rhs.ld, descr_trsm.i, policy, &buffersize));
-        if(stage == 'P') CHECK((_my_sparse_trsm_analysis<T,I>)  (h.h, algo, op_mat, op_rhs, matrix.nrows, nrhs, matrix.nnz, &one, matrix.d_leg, matrix.vals, matrix.rowptrs, matrix.colidxs, rhs.vals, rhs.ld, descr_trsm.i, policy, buffer));
+        I nrhs = (transpose_rhs == 'T' ? sol->nrows : sol->ncols);
+        if(stage == 'B') CHECK((_my_sparse_trsm_buffersize<T,I>)(h->h, algo, op_mat, op_rhs, matrix->nrows, nrhs, matrix->nnz, &one, matrix->d_leg, matrix->vals, matrix->rowptrs, matrix->colidxs, rhs->vals, rhs->ld, descr_trsm->i, policy, &buffersize));
+        if(stage == 'P') CHECK((_my_sparse_trsm_analysis<T,I>)  (h->h, algo, op_mat, op_rhs, matrix->nrows, nrhs, matrix->nnz, &one, matrix->d_leg, matrix->vals, matrix->rowptrs, matrix->colidxs, rhs->vals, rhs->ld, descr_trsm->i, policy, buffer));
         // if(stage == 'U') ;
-        if(stage == 'C') CHECK((_my_sparse_trsm_solve<T,I>)     (h.h, algo, op_mat, op_rhs, matrix.nrows, nrhs, matrix.nnz, &one, matrix.d_leg, matrix.vals, matrix.rowptrs, matrix.colidxs, rhs.vals, rhs.ld, descr_trsm.i, policy, buffer));
-        if(stage == 'C') CHECK(cudaMemcpy2DAsync(sol.vals, sol.ld * sizeof(T), rhs.vals, rhs.ld * sizeof(T), sol.nrows * sizeof(T), sol.ncols, cudaMemcpyDeviceToDevice, h.get_stream()));
+        if(stage == 'C') CHECK((_my_sparse_trsm_solve<T,I>)     (h->h, algo, op_mat, op_rhs, matrix->nrows, nrhs, matrix->nnz, &one, matrix->d_leg, matrix->vals, matrix->rowptrs, matrix->colidxs, rhs->vals, rhs->ld, descr_trsm->i, policy, buffer));
+        if(stage == 'C') CHECK(cudaMemcpy2DAsync(sol->vals, sol->ld * sizeof(T), rhs->vals, rhs->ld * sizeof(T), sol->nrows * sizeof(T), sol->ncols, cudaMemcpyDeviceToDevice, h->get_stream()));
     }
 
     template<typename T, typename I>
-    static void mv(_handle & h, char transpose, _descr_matrix_csr & A, _descr_vector_dense & x, _descr_vector_dense & y, size_t & buffersize, void * buffer, char stage)
+    static void mv(handle & h, char transpose, descr_matrix_csr & A, descr_vector_dense & x, descr_vector_dense & y, size_t & buffersize, void * buffer, char stage)
     {
         cusparseOperation_t op = (transpose == 'T' ? CUSPARSE_OPERATION_TRANSPOSE : CUSPARSE_OPERATION_NON_TRANSPOSE);
         T one = 1.0;
         T zero = 0.0;
-        if(stage == 'B') CHECK(cusparseSpMV_bufferSize(h.h, op, &one, A.d_new, x.d_new, &zero, y.d_new, _sparse_data_type<T>(), CUSPARSE_SPMV_ALG_DEFAULT, &buffersize));
-        if(stage == 'C') CHECK(cusparseSpMV           (h.h, op, &one, A.d_new, x.d_new, &zero, y.d_new, _sparse_data_type<T>(), CUSPARSE_SPMV_ALG_DEFAULT, buffer));
+        if(stage == 'B') CHECK(cusparseSpMV_bufferSize(h->h, op, &one, A->d_new, x->d_new, &zero, y->d_new, _sparse_data_type<T>(), CUSPARSE_SPMV_ALG_DEFAULT, &buffersize));
+        if(stage == 'C') CHECK(cusparseSpMV           (h->h, op, &one, A->d_new, x->d_new, &zero, y->d_new, _sparse_data_type<T>(), CUSPARSE_SPMV_ALG_DEFAULT, buffer));
     }
 
     template<typename T, typename I>
-    static void mm(_handle & h, char transpose_A, char transpose_B, _descr_matrix_csr & A, _descr_matrix_dense & B, _descr_matrix_dense & C, size_t & buffersize, void * buffer, char stage)
+    static void mm(handle & h, char transpose_A, char transpose_B, descr_matrix_csr & A, descr_matrix_dense & B, descr_matrix_dense & C, size_t & buffersize, void * buffer, char stage)
     {
         cusparseOperation_t op_A = (transpose_A == 'T' ? CUSPARSE_OPERATION_TRANSPOSE : CUSPARSE_OPERATION_NON_TRANSPOSE);
         cusparseOperation_t op_B = (transpose_B == 'T' ? CUSPARSE_OPERATION_TRANSPOSE : CUSPARSE_OPERATION_NON_TRANSPOSE);
         T zero = 0.0;
         T one = 1.0;
-        if(stage == 'B') CHECK(cusparseSpMM_bufferSize(h.h, op_A, op_B, &one, A.d_new, B.d_new, &zero, C.d_new, _sparse_data_type<T>(), CUSPARSE_SPMM_ALG_DEFAULT, &buffersize));
-        if(stage == 'P') CHECK(cusparseSpMM_preprocess(h.h, op_A, op_B, &one, A.d_new, B.d_new, &zero, C.d_new, _sparse_data_type<T>(), CUSPARSE_SPMM_ALG_DEFAULT, buffer));
-        if(stage == 'C') CHECK(cusparseSpMM           (h.h, op_A, op_B, &one, A.d_new, B.d_new, &zero, C.d_new, _sparse_data_type<T>(), CUSPARSE_SPMM_ALG_DEFAULT, buffer));
+        if(stage == 'B') CHECK(cusparseSpMM_bufferSize(h->h, op_A, op_B, &one, A->d_new, B->d_new, &zero, C->d_new, _sparse_data_type<T>(), CUSPARSE_SPMM_ALG_DEFAULT, &buffersize));
+        if(stage == 'P') CHECK(cusparseSpMM_preprocess(h->h, op_A, op_B, &one, A->d_new, B->d_new, &zero, C->d_new, _sparse_data_type<T>(), CUSPARSE_SPMM_ALG_DEFAULT, buffer));
+        if(stage == 'C') CHECK(cusparseSpMM           (h->h, op_A, op_B, &one, A->d_new, B->d_new, &zero, C->d_new, _sparse_data_type<T>(), CUSPARSE_SPMM_ALG_DEFAULT, buffer));
     }
+
+
+
+    #define INSTANTIATE(T,I,Adevice) \
+    template void descr_matrix_csr_create<T,I>(descr_matrix_csr & descr, I nrows, I ncols, I nnz, char symmetry); \
+    template void descr_matrix_csr_link_data<T,I,Adevice>(descr_matrix_csr & descr, Matrix_CSR<T,I,A> & matrix); \
+    template void descr_matrix_dense_create<T,I>(descr_matrix_dense & descr, I nrows, I ncols, I ld, char order); \
+    template void descr_matrix_dense_link_data<T,I,Adevice>(descr_matrix_dense & descr, Matrix_Dense<T,I,A> & matrix); \
+    template void descr_vector_dense_create<T,I>(descr_vector_dense & descr, I size); \
+    template void descr_vector_dense_link_data<T,I,Adevice>(descr_vector_dense & descr, Vector_Dense<T,I,A> & vector); \
+    template void descr_vector_dense_link_data<T,I,Adevice>(descr_vector_dense & descr, Matrix_Dense<T,I,A> & matrix, I colidx = 0); \
+    template void sparse_to_dense<T,I>(handle & h, char transpose, descr_matrix_csr & sparse, descr_matrix_dense & dense, size_t & buffersize, void * buffer, char stage); \
+    template void trsv<T,I>(handle & h, char transpose, descr_matrix_csr & matrix, descr_vector_dense & rhs, descr_vector_dense & sol, descr_sparse_trsv & descr_trsv, size_t & buffersize, void * buffer, char stage); \
+    template void trsm<T,I>(handle & h, char transpose_mat, char transpose_rhs, descr_matrix_csr & matrix, descr_matrix_dense & rhs, descr_matrix_dense & sol, descr_sparse_trsm & descr_trsm, size_t & buffersize, void * buffer, char stage); \
+    template void mv<T,I>(handle & h, char transpose, descr_matrix_csr & A, descr_vector_dense & x, descr_vector_dense & y, size_t & buffersize, void * buffer, char stage); \
+    template void mm<T,I>(handle & h, char transpose_A, char transpose_B, descr_matrix_csr & A, descr_matrix_dense & B, descr_matrix_dense & C, size_t & buffersize, void * buffer, char stage);
+        // INSTANTIATE(float,                int32_t, mgm::Ad)
+        INSTANTIATE(double,               int32_t, mgm::Ad)
+        // INSTANTIATE(std::complex<float >, int32_t, mgm::Ad)
+        // INSTANTIATE(std::complex<double>, int32_t, mgm::Ad)
+        // INSTANTIATE(float,                int64_t, mgm::Ad)
+        // INSTANTIATE(double,               int64_t, mgm::Ad)
+        // INSTANTIATE(std::complex<float >, int64_t, mgm::Ad)
+        // INSTANTIATE(std::complex<double>, int64_t, mgm::Ad)
+        // INSTANTIATE(float,                int32_t, cbmba_d)
+        INSTANTIATE(double,               int32_t, cbmba_d)
+        // INSTANTIATE(std::complex<float >, int32_t, cbmba_d)
+        // INSTANTIATE(std::complex<double>, int32_t, cbmba_d)
+        // INSTANTIATE(float,                int64_t, cbmba_d)
+        // INSTANTIATE(double,               int64_t, cbmba_d)
+        // INSTANTIATE(std::complex<float >, int64_t, cbmba_d)
+        // INSTANTIATE(std::complex<double>, int64_t, cbmba_d)
+    #undef INSTANTIATE
 
 }
 }
@@ -402,4 +451,5 @@ namespace spblas {
 #undef MY_COMPILER_GCC
 #undef MY_COMPILER_CLANG
 
+#endif
 #endif

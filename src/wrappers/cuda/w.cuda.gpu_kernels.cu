@@ -2,10 +2,11 @@
 #ifdef HAVE_CUDA
 
 #include "gpu/gpu_kernels.h"
+#include "w.cuda.gpu_management.h"
 
 #include <complex>
 
-#include "w.cuda.common.h"
+
 
 namespace espreso {
 namespace gpu {
@@ -62,7 +63,7 @@ namespace kernels {
     void DCmap_scatter(mgm::queue & q, Vector_Dense<T*,I,mgm::Ad> & domain_vector_pointers, const Vector_Dense<I,I,mgm::Ad> & n_dofs_interfaces, const Vector_Dense<T,I,mgm::Ad> & cluster_vector, const Vector_Dense<I*,I,mgm::Ad> & D2Cs)
     {
         I n_domains = domain_vector_pointers.size;
-        _do_DCmap_scatter<T,I><<< n_domains, 256, 0, q.inner->stream >>>(domain_vector_pointers.vals, n_dofs_interfaces.vals, cluster_vector.vals, D2Cs.vals);
+        _do_DCmap_scatter<T,I><<< n_domains, 256, 0, q->stream >>>(domain_vector_pointers.vals, n_dofs_interfaces.vals, cluster_vector.vals, D2Cs.vals);
         CHECK(cudaPeekAtLastError());
     }
 
@@ -70,7 +71,7 @@ namespace kernels {
     void DCmap_gather(mgm::queue & q, const Vector_Dense<T*,I,mgm::Ad> & domain_vector_pointers, const Vector_Dense<I,I,mgm::Ad> & n_dofs_interfaces, Vector_Dense<T,I,mgm::Ad> & cluster_vector, const Vector_Dense<I*,I,mgm::Ad> & D2Cs)
     {
         I n_domains = domain_vector_pointers.size;
-        _do_DCmap_gather<T,I><<< n_domains, 256, 0, q.inner->stream >>>(domain_vector_pointers.vals, n_dofs_interfaces.vals, cluster_vector.vals, D2Cs.vals);
+        _do_DCmap_gather<T,I><<< n_domains, 256, 0, q->stream >>>(domain_vector_pointers.vals, n_dofs_interfaces.vals, cluster_vector.vals, D2Cs.vals);
         CHECK(cudaPeekAtLastError());
     }
 
@@ -79,17 +80,16 @@ namespace kernels {
     #define INSTANTIATE(T,I) \
     template void DCmap_scatter<T,I>(mgm::queue & q, Vector_Dense<T*,I,mgm::Ad> & domain_vector_pointers, const Vector_Dense<I,I,mgm::Ad> & n_dofs_interfaces, const Vector_Dense<T,I,mgm::Ad> & cluster_vector, const Vector_Dense<I*,I,mgm::Ad> & D2Cs); \
     template void DCmap_gather<T,I>(mgm::queue & q, const Vector_Dense<T*,I,mgm::Ad> & domain_vector_pointers, const Vector_Dense<I,I,mgm::Ad> & n_dofs_interfaces, Vector_Dense<T,I,mgm::Ad> & cluster_vector, const Vector_Dense<I*,I,mgm::Ad> & D2Cs);
-
-    INSTANTIATE(float,  int32_t)
-    INSTANTIATE(double, int32_t)
-    INSTANTIATE(float,  int64_t)
-    INSTANTIATE(double, int64_t)
-    INSTANTIATE(std::complex<float>,  int32_t)
-    INSTANTIATE(std::complex<double>, int32_t)
-    INSTANTIATE(std::complex<float>,  int64_t)
-    INSTANTIATE(std::complex<double>, int64_t)
-
+        // INSTANTIATE(float,                int32_t)
+        INSTANTIATE(double,               int32_t)
+        // INSTANTIATE(std::complex<float >, int32_t)
+        // INSTANTIATE(std::complex<double>, int32_t)
+        // INSTANTIATE(float,                int64_t)
+        // INSTANTIATE(double,               int64_t)
+        // INSTANTIATE(std::complex<float >, int64_t)
+        // INSTANTIATE(std::complex<double>, int64_t)
     #undef INSTANTIATE
+
 }
 }
 }
