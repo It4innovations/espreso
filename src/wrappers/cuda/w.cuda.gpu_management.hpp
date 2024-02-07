@@ -161,8 +161,7 @@ namespace mgm {
         return ptr;
     }
 
-    template<typename T>
-    static void memfree_device(_device & /*d*/, T * ptr)
+    static void memfree_device(device & /*d*/, void * ptr)
     {
         CHECK(cudaFree(ptr));
     }
@@ -186,6 +185,17 @@ namespace mgm {
         eslog::error("could not allocate any gpu memory");
     }
 
+    static void * memalloc_hostpinned(device & /*d*/, size_t num_bytes)
+    {
+        void * ptr;
+        CHECK(cudaMallocHost(&ptr, num_bytes));
+        return ptr;
+    }
+
+    static void memfree_hostpinned(device & /*d*/, void * ptr)
+    {
+        CHECK(cudaFreeHost(ptr));
+    }
 
     template<typename C>
     static void submit_host_function(_queue & q, C c)

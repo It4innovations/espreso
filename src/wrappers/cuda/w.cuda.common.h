@@ -39,4 +39,4 @@ namespace mgm {
 }
 
 
-#endif
+#endif /* SRC_WRAPPERS_CUDA_W_CUDA_COMMON_H_ */

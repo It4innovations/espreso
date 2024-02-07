@@ -14,3 +14,6 @@ lib64/*
 
 # ignore *.ecf files in root directory
 /*.ecf
+
+# ignore the locally-installed dependencies
+dependencies/

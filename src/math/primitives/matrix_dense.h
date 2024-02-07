@@ -7,6 +7,8 @@
 #include "basis/containers/allocators.h"
 #include "esinfo/eslog.hpp"
 
+#include <limits>
+
 namespace espreso {
 
 template <typename T, typename I>
@@ -115,7 +117,7 @@ public:
     static size_t memoryRequirement(I nrows, I ncols, I ld)
     {
         if(ld < 0) ld = ncols;
-        return nrows * ld * sizeof(T);
+        return nrows * (ld * sizeof(T));
     }
 
 	Matrix_Type type;
@@ -138,6 +140,7 @@ protected:
 
 	void realloc(_Matrix_Dense<T, I> &m, const Matrix_Shape &shape, I nrows, I ncols)
 	{
+		if((size_t)nrows * ncols > std::numeric_limits<I>::max()) eslog::error("matrix too large for the used integer type\n");
 		I nnz;
 		if (shape == Matrix_Shape::FULL) {
 			nnz = nrows * ncols;

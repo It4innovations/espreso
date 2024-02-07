@@ -76,6 +76,10 @@ namespace mgm {
     
     void memalloc_device_max(device & d, void * & memory, size_t & memory_size_B, size_t max_needed);
 
+    void * memalloc_hostpinned(device & d, size_t num_bytes);
+
+    void memfree_hostpinned(device & d, void * ptr);
+
     void submit_host_function(queue & q, const std::function<void(void)> & c);
 
     template<typename T, typename I>

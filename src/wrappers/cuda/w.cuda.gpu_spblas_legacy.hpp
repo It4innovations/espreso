@@ -222,6 +222,7 @@ namespace spblas {
     template<typename T, typename I, typename A>
     static void descr_matrix_sparse_link_data(_descr_matrix_csr & descr, Matrix_CSR<T,I,A> & matrix)
     {
+        static_assert(A::is_data_device_accessible, "matrix data must be device accessible");
         CHECK(cusparseCsrSetPointers(descr.d_new, matrix.rows, matrix.cols, matrix.vals));
         descr.rowptrs = matrix.rows;
         descr.colidxs = matrix.cols;
@@ -252,6 +253,7 @@ namespace spblas {
     template<typename T, typename I, typename A>
     static void descr_matrix_dense_link_data(_descr_matrix_dense & descr, Matrix_Dense<T,I,A> & matrix)
     {
+        static_assert(A::is_data_device_accessible, "matrix data must be device accessible");
         CHECK(cusparseDnMatSetValues(descr.d_new, matrix.vals));
         CHECK(cusparseDnMatSetValues(descr.d_new_complementary, matrix.vals));
         descr.vals = matrix.vals;
@@ -273,6 +275,7 @@ namespace spblas {
     template<typename T, typename I, typename A>
     static void descr_vector_dense_link_data(_descr_vector_dense & descr, Vector_Dense<T,I,A> & vector)
     {
+        static_assert(A::is_data_device_accessible, "vector data must be device accessible");
         CHECK(cusparseDnVecSetValues(descr.d_new, vector.vals));
         descr.vals = vector.vals;
     }
@@ -280,6 +283,7 @@ namespace spblas {
     template<typename T, typename I, typename A>
     static void descr_vector_dense_link_data(_descr_vector_dense & descr, Matrix_Dense<T,I,A> & matrix, I colidx)
     {
+        static_assert(A::is_data_device_accessible, "vector data must be device accessible");
         CHECK(cusparseDnVecSetValues(descr.d_new, matrix.vals + colidx * matrix.get_ld()));
         descr.vals = matrix.vals + colidx * matrix.get_ld();
     }

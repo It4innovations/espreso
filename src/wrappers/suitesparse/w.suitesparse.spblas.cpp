@@ -11,10 +11,6 @@
 
 namespace espreso {
 
-template struct SpBLAS<Matrix_CSR, float, int>;
-template struct SpBLAS<Matrix_CSR, double, int>;
-template struct SpBLAS<Matrix_CSR, std::complex<double>, int>;
-
 struct Matrix_SpBLAS_External_Representation {
 	cholmod_sparse *A;
 	cholmod_dense *X, *Y;
@@ -101,6 +97,10 @@ void SpBLAS<Matrix_CSR, std::complex<double>, int>::apply(Vector_Dense<std::comp
 	_spblas->beta[1] = beta.imag();
 	_apply<esint>(_spblas->Y, _spblas->A, _spblas->X, _spblas->alpha, _spblas->beta, _spblas->common);
 }
+
+template struct SpBLAS<Matrix_CSR, float, int>;
+template struct SpBLAS<Matrix_CSR, double, int>;
+template struct SpBLAS<Matrix_CSR, std::complex<double>, int>;
 
 }
 
