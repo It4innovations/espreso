@@ -51,9 +51,9 @@ void TotalFETIImplicit<T>::reduceInfo(DualOperatorInfo &sum, DualOperatorInfo &m
 		sum.surfaceA += surfaceA;
 	}
 
-	Communication::allReduce(&min, nullptr, 5, MPITools::getType<size_t>().mpitype, MPI_MIN);
-	Communication::allReduce(&max, nullptr, 5, MPITools::getType<size_t>().mpitype, MPI_MAX);
-	Communication::allReduce(&sum, nullptr, 5, MPITools::getType<size_t>().mpitype, MPI_SUM);
+	Communication::allReduce(&min, nullptr, sizeof(DualOperatorInfo) / sizeof(size_t), MPITools::getType<size_t>().mpitype, MPI_MIN);
+	Communication::allReduce(&max, nullptr, sizeof(DualOperatorInfo) / sizeof(size_t), MPITools::getType<size_t>().mpitype, MPI_MAX);
+	Communication::allReduce(&sum, nullptr, sizeof(DualOperatorInfo) / sizeof(size_t), MPITools::getType<size_t>().mpitype, MPI_SUM);
 }
 
 template <typename T>
