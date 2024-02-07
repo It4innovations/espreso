@@ -280,9 +280,7 @@ void HeatTransfer::analyze()
 		}
 
 		subkernels[i].initTemperature.activate(getExpression(i, settings.initial_temperature));
-		if (Results::gradient != nullptr || Results::flux != nullptr || gptemp) {
-			subkernels[i].temperature.activate(info::mesh->elements->nodes->cbegin() + info::mesh->elements->eintervals[i].begin, info::mesh->elements->nodes->cend(), Results::temperature->data.data(), gptemp);
-		}
+		subkernels[i].temperature.activate(info::mesh->elements->nodes->cbegin() + info::mesh->elements->eintervals[i].begin, info::mesh->elements->nodes->cend(), Results::temperature->data.data(), gptemp);
 	}
 
 	for(size_t r = 1; r < info::mesh->boundaryRegions.size(); ++r) {
