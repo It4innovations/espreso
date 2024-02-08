@@ -7,6 +7,7 @@
 #include "physics/heat.transient.linear.h"
 #include "physics/structuralmechanics.steadystate.linear.h"
 #include "physics/structuralmechanics.steadystate.nonlinear.h"
+#include "physics/structuralmechanics.transient.linear.h"
 #include "physics/structuralmechanics.harmonic.real.linear.h"
 
 #include "basis/utilities/parser.h"
@@ -81,7 +82,10 @@ void Analysis::run()
 			case LoadStepSolverConfiguration::MODE::NONLINEAR: physics = new StructuralMechanicsSteadyStateNonLinear(info::ecf->structural_mechanics_3d, info::ecf->structural_mechanics_3d.load_steps_settings.at(1)); break;
 			} break;
 		case LoadStepSolverConfiguration::TYPE::TRANSIENT:
-			break;
+			switch (info::ecf->structural_mechanics_3d.load_steps_settings.at(1).mode) {
+			case LoadStepSolverConfiguration::MODE::LINEAR:    physics = new StructuralMechanicsTransientLinear(info::ecf->structural_mechanics_3d, info::ecf->structural_mechanics_3d.load_steps_settings.at(1)); break;
+			case LoadStepSolverConfiguration::MODE::NONLINEAR: break;
+			} break;
 		} break;
 		break;
 	}
