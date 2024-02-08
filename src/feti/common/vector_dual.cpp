@@ -13,19 +13,20 @@
 namespace espreso {
 
 template <typename T>
-void Vector_Dual<T>::set(esint nhalo, const std::vector<esint> &cmap, const FETIDecomposition &decomposition)
+void Vector_Dual<T>::set(esint nhalo, esint localSize, const std::vector<esint> &cmap, const FETIDecomposition &decomposition)
 {
 	Vector_Dual<T>::nhalo = nhalo;
+	Vector_Dual<T>::localSize = localSize;
 	Vector_Dual<T>::neighbors.assign(decomposition.neighbors.begin(), decomposition.neighbors.end());
 	Vector_Dual<T>::sBuffer.resize(Vector_Dual<T>::neighbors.size());
 	Vector_Dual<T>::rBuffer.resize(Vector_Dual<T>::neighbors.size());
 
 	std::vector<esint> size(Vector_Dual<T>::neighbors.size());
-	for (size_t i = 0; i < cmap.size(); ) {
+	for (size_t i = 0, offset = 0; i < cmap.size(); ) {
 		esint lambdas = cmap[i];
 		esint domains = cmap[i + 1];
-		Vector_Dual<T>::nmap.push_back(Vector_Dual<T>::localSize);
-		Vector_Dual<T>::nmap.push_back(Vector_Dual<T>::localSize + lambdas);
+		Vector_Dual<T>::nmap.push_back(offset);
+		Vector_Dual<T>::nmap.push_back(offset + lambdas);
 		size_t ncounter = Vector_Dual<T>::nmap.size();
 		Vector_Dual<T>::nmap.push_back(0); // neighbors
 		esint last = -1;
@@ -43,7 +44,7 @@ void Vector_Dual<T>::set(esint nhalo, const std::vector<esint> &cmap, const FETI
 		if (Vector_Dual<T>::nmap[ncounter] == 0) {
 			Vector_Dual<T>::nmap.resize(Vector_Dual<T>::nmap.size() - 3);
 		}
-		Vector_Dual<T>::localSize += lambdas;
+		offset += lambdas;
 		i += cmap[i + 1] + 2;
 	}
 

@@ -3,6 +3,7 @@
 #define SRC_ANALYSIS_LINEARSYSTEM_CONSTRAINS_FIXEDWALL_H_
 
 #include "analysis/math/vector_distributed.h"
+#include "esinfo/ecfinfo.h"
 #include "feti/feti.h"
 
 namespace espreso {

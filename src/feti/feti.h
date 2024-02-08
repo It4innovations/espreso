@@ -51,7 +51,7 @@ struct FETI {
 	std::vector<std::vector<int> > D2C;
 	Vector_Dense<T, int> c;
 	struct EqualityConstraints {
-		esint nhalo, size;
+		esint nhalo, equalities, size;
 		std::vector<esint> cmap; // size, ndomains <d0, d1, ..., dn>; size, ndomains <>; ...;
 	} lambdas;
 

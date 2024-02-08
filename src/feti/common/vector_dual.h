@@ -15,7 +15,7 @@ struct Vector_Dual: public Vector_Dense<T, int> {
 
 	template <typename Type> friend struct Matrix_Dual_Orthogonal;
 
-	static void set(esint nhalo, const std::vector<esint> &cmap, const FETIDecomposition &decomposition);
+	static void set(esint nhalo, esint localSize, const std::vector<esint> &cmap, const FETIDecomposition &decomposition);
 
 	void resize();
 	void synchronize();

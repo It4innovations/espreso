@@ -107,6 +107,7 @@ void EqualityConstrains<T>::set(const step::Step &step, FETI<T> &feti, const Vec
 		feti.lambdas.cmap.push_back(1);
 		feti.lambdas.cmap.push_back(feti.decomposition->dbegin + d);
 	}
+	feti.lambdas.equalities = feti.lambdas.size;
 
 	#pragma omp parallel for
 	for (size_t d = 0; d < feti.K.size(); ++d) {
