@@ -3,6 +3,7 @@
 
 #include "gpu/gpu_kernels.h"
 #include "w.cuda.gpu_management.h"
+#include "basis/utilities/utils.h"
 
 #include <complex>
 
@@ -45,16 +46,42 @@ namespace kernels {
         template<typename T, typename I>
         static __global__ void _do_DCmap_gather(T const * const * domain_vectors, const I * n_dofs_interfaces, T * cluster_vector, I const * const * D2Cs)
         {
-            // one block per domain
-        
-            I d = blockIdx.x;
-            I n_dofs_interface = n_dofs_interfaces[d];
-            const T * domain_vector = domain_vectors[d];
-            const I * D2C = D2Cs[d];
-        
-            for(I dof = threadIdx.x; dof < n_dofs_interface; dof += blockDim.x)
+            // launch with one block per domain
+            #if defined(__CUDA_ARCH__) && __CUDA_ARCH__ >= 600
+            #define MY_DOUBLE_ATOMIC_AVAILABLE true
+            #else
+            #define MY_DOUBLE_ATOMIC_AVAILABLE false
+            #endif
+
+            if constexpr(std::is_same_v<utils::remove_complex_t<T>,double> && !MY_DOUBLE_ATOMIC_AVAILABLE)
             {
-                myAtomicAdd(&cluster_vector[D2C[dof]], domain_vector[dof]);
+                // must iterate sequentially through the domains
+                I n_domains = blockDim.x;
+                if(blockIdx.x > 0) return;
+
+                for(I d = 0; d < n_domains; d++)
+                {
+                    I n_dofs_interface = n_dofs_interfaces[d];
+                    const T * domain_vector = domain_vectors[d];
+                    const I * D2C = D2Cs[d];
+                
+                    for(I dof = threadIdx.x; dof < n_dofs_interface; dof += blockDim.x)
+                    {
+                        cluster_vector[D2C[dof]] += domain_vector[dof];
+                    }
+                }
+            }
+            else
+            {
+                I d = blockIdx.x;
+                I n_dofs_interface = n_dofs_interfaces[d];
+                const T * domain_vector = domain_vectors[d];
+                const I * D2C = D2Cs[d];
+            
+                for(I dof = threadIdx.x; dof < n_dofs_interface; dof += blockDim.x)
+                {
+                    myAtomicAdd(&cluster_vector[D2C[dof]], domain_vector[dof]);
+                }
             }
         }
     }
