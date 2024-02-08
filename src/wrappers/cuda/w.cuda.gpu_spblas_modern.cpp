@@ -205,7 +205,7 @@ namespace spblas {
     {
         if(transpose == 'T')
         {
-            descr_matrix_dense descr_dense_complementary = std::make_unique<_descr_matrix_dense>(dense->get_complementary());
+            descr_matrix_dense descr_dense_complementary = std::make_shared<_descr_matrix_dense>(dense->get_complementary());
             sparse_to_dense<T,I>(h, 'N', sparse, descr_dense_complementary, buffersize, buffer, stage);
             return;
         }

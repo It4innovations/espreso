@@ -340,7 +340,7 @@ namespace spblas {
     {
         if(transpose == 'T')
         {
-            descr_matrix_dense descr_dense_complementary = std::make_unique<_descr_matrix_dense>(dense->get_complementary());
+            descr_matrix_dense descr_dense_complementary = std::make_shared<_descr_matrix_dense>(dense->get_complementary());
             sparse_to_dense<T,I>(h, 'N', sparse, descr_dense_complementary, buffersize, buffer, stage);
             return;
         }
@@ -369,8 +369,8 @@ namespace spblas {
         if(rhs->order != sol->order) eslog::error("dense matrix order has to be the same");
         if(rhs->order == 'R')
         {
-            descr_matrix_dense descr_rhs_complementary = std::make_unique<_descr_matrix_dense>(rhs->get_complementary());
-            descr_matrix_dense descr_sol_complementary = std::make_unique<_descr_matrix_dense>(sol->get_complementary());
+            descr_matrix_dense descr_rhs_complementary = std::make_shared<_descr_matrix_dense>(rhs->get_complementary());
+            descr_matrix_dense descr_sol_complementary = std::make_shared<_descr_matrix_dense>(sol->get_complementary());
             char transpose_rhs_compl = mgm::change_operation(transpose_rhs);
             trsm<T,I>(h, transpose_mat, transpose_rhs_compl, matrix, descr_rhs_complementary, descr_sol_complementary, descr_trsm, buffersize, buffer, stage);
             return;
