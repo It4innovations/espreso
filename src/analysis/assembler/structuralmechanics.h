@@ -44,6 +44,7 @@ public:
 
 	struct Results {
 		static NodeData *thickness;
+		static NodeData *normal;
 
 		// steady state, transient
 		static NodeData *displacement;
@@ -68,6 +69,7 @@ protected:
 
 	std::vector<StructuralMechanicsOperators> subkernels;
 	std::vector<std::vector<StructuralMechanicsBoundaryOperators> > boundary;
+	std::vector<double> faceMultiplicity;
 };
 
 }

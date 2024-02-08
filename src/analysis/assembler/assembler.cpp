@@ -147,6 +147,17 @@ bool Assembler::checkExpression(const std::string &name, ECFExpression &expressi
 	return true;
 }
 
+bool Assembler::checkExpression(const std::string &name, ECFExpressionVector &expression)
+{
+	bool correct = true;
+	correct &= checkExpression(name + ".X", expression.x);
+	correct &= checkExpression(name + ".Y", expression.y);
+	if (info::mesh->dimension == 3) {
+		correct &= checkExpression(name + ".Z", expression.z);
+	}
+	return correct;
+}
+
 bool Assembler::checkElementParameter(const std::string &name, std::map<std::string, ECFExpression> &settings)
 {
 	if (settings.size() == 1 && StringCompare::caseInsensitiveEq(settings.begin()->first, "ALL_ELEMENTS")) {

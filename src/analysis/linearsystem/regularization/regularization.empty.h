@@ -2,20 +2,14 @@
 #ifndef SRC_ANALYSIS_LINEARSYSTEM_REGULARIZATION_REGULARIZATION_EMPTY_H_
 #define SRC_ANALYSIS_LINEARSYSTEM_REGULARIZATION_REGULARIZATION_EMPTY_H_
 
-#include "regularization.h"
+#include "feti/feti.h"
 
 namespace espreso {
 
 template <typename T>
-struct RegularizationEmpty: Regularization<T> {
-
-	RegularizationEmpty(FETI<T> &feti): Regularization<T>(feti) {}
-
-	void setAnalytic();
-	void updateAnalytic();
-
-protected:
-	using Regularization<T>::feti;
+struct RegularizationEmpty {
+	static void set(FETI<T> &feti);
+	static void update(FETI<T> &feti);
 };
 
 }

@@ -2,20 +2,15 @@
 #ifndef SRC_ANALYSIS_LINEARSYSTEM_REGULARIZATION_REGULARIZATION_HEATTRANSFER_H_
 #define SRC_ANALYSIS_LINEARSYSTEM_REGULARIZATION_REGULARIZATION_HEATTRANSFER_H_
 
-#include "regularization.h"
+#include "feti/feti.h"
 
 namespace espreso {
 
 template <typename T>
-struct RegularizationHeatTransfer: Regularization<T> {
+struct RegularizationHeatTransfer {
 
-	RegularizationHeatTransfer(FETI<T> &feti): Regularization<T>(feti) {}
-
-	void setAnalytic();
-	void updateAnalytic();
-
-protected:
-	using Regularization<T>::feti;
+	static void set(FETI<T> &feti);
+	static void update(FETI<T> &feti);
 };
 
 }

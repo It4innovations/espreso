@@ -1,11 +1,8 @@
 
 #include "fetisolver.h"
 
-#include "regularization/regularization.empty.h"
-#include "regularization/regularization.heattransfer.h"
-#include "regularization/regularization.elasticity.h"
-#include "regularization/regularization.harmonic.h"
-#include "constrains/equalityconstrains.h"
+#include "regularization/regularization.h"
+#include "constrains/constrains.h"
 
 #include "analysis/physics/heat.steadystate.linear.h"
 #include "analysis/physics/heat.steadystate.nonlinear.h"
@@ -16,37 +13,9 @@
 
 namespace espreso {
 
-template <typename T, class Physics> struct RegularizationSelector { };
-
-template <typename T> struct RegularizationSelector<T, HeatSteadyStateLinear> {
-	Regularization<T>* operator()(FETI<T> &feti){ return new RegularizationHeatTransfer<T>(feti); }
-};
-
-template <typename T> struct RegularizationSelector<T, HeatSteadyStateNonLinear> {
-	Regularization<T>* operator()(FETI<T> &feti){ return new RegularizationHeatTransfer<T>(feti); }
-};
-
-template <typename T> struct RegularizationSelector<T, HeatTransientLinear> {
-	Regularization<T>* operator()(FETI<T> &feti){ return new RegularizationEmpty<T>(feti); }
-};
-
-template <typename T> struct RegularizationSelector<T, StructuralMechanicsSteadyStateLinear> {
-	Regularization<T>* operator()(FETI<T> &feti){ return new RegularizationElasticity<T>(feti); }
-};
-
-template <typename T> struct RegularizationSelector<T, StructuralMechanicsSteadyStateNonLinear> {
-	Regularization<T>* operator()(FETI<T> &feti){ return new RegularizationElasticity<T>(feti); }
-};
-
-template <typename T> struct RegularizationSelector<T, StructuralMechanicsHarmonicRealLinear> {
-	Regularization<T>* operator()(FETI<T> &feti){ return new RegularizationHarmonic<T>(feti); }
-};
-
-template <typename T, class Physics>
-FETILinearSystemSolver<T, Physics>::FETILinearSystemSolver(FETIConfiguration &configuration)
-: feti(configuration),
-  equalityConstrains(new EqualityConstrains<T>(feti)),
-  regularization(RegularizationSelector<T, Physics>()(feti))
+template <typename T>
+FETILinearSystemSolver<T>::FETILinearSystemSolver(PhysicsConfiguration &physics, LoadStepSolverConfiguration &loadStep)
+: physics(physics), loadStep(loadStep), feti(loadStep.feti)
 {
 	LinearSystemSolver<T>::A = &A;
 	LinearSystemSolver<T>::x = &x;
@@ -54,15 +23,14 @@ FETILinearSystemSolver<T, Physics>::FETILinearSystemSolver(FETIConfiguration &co
 	LinearSystemSolver<T>::dirichlet = &dirichlet;
 }
 
-template <typename T, class Physics>
-FETILinearSystemSolver<T, Physics>::~FETILinearSystemSolver()
+template <typename T>
+FETILinearSystemSolver<T>::~FETILinearSystemSolver()
 {
-	delete equalityConstrains;
-	delete regularization;
+
 }
 
-template <typename T, class Physics>
-void FETILinearSystemSolver<T, Physics>::set(step::Step &step)
+template <typename T>
+void FETILinearSystemSolver<T>::set(step::Step &step)
 {
 	eslog::startln("FETI: SETTING LINEAR SYSTEM", "FETI[SET]");
 	feti.K.resize(A.domains.size());
@@ -74,23 +42,23 @@ void FETILinearSystemSolver<T, Physics>::set(step::Step &step)
 		feti.x[di].shallowCopy(x.domains[di]);
 	}
 	feti.decomposition = A.decomposition;
-	equalityConstrains->set(step, dirichlet);
+	Constrains<T>::set(step, feti, dirichlet);
 	eslog::checkpointln("FETI: SET B1");
-	regularization->set(step);
+	Regularization<T>::set(step, feti);
 	eslog::checkpointln("FETI: SET KERNELS");
 	eslog::info(" = ----------------------------------------------------------------------------------------- = \n");
 	feti.set(step);
 	eslog::endln("FETI: LINEAR SYSTEM SET");
 }
 
-template <typename T, class Physics>
-void FETILinearSystemSolver<T, Physics>::update(step::Step &step)
+template <typename T>
+void FETILinearSystemSolver<T>::update(step::Step &step)
 {
 	eslog::startln("FETI: UPDATING LINEAR SYSTEM", "FETI[UPDATE]");
-	equalityConstrains->update(step, dirichlet);
+	Constrains<T>::update(step, feti, dirichlet);
 	eslog::checkpointln("FETI: UPDATE B1");
 	if (A.updated) {
-		regularization->update(step);
+		Regularization<T>::update(step, feti);
 		eslog::checkpointln("FETI: UPDATE KERNELS");
 	}
 	if (info::ecf->output.print_matrices) {
@@ -116,8 +84,8 @@ void FETILinearSystemSolver<T, Physics>::update(step::Step &step)
 	eslog::endln("FETI: LINEAR SYSTEM UPDATED");
 }
 
-template <typename T, class Physics>
-bool FETILinearSystemSolver<T, Physics>::solve(step::Step &step)
+template <typename T>
+bool FETILinearSystemSolver<T>::solve(step::Step &step)
 {
 	eslog::startln("FETI: RUN LINEAR SYSTEM", "FETI[SOLVE]");
 	if (feti.solve(step)) {
@@ -134,12 +102,7 @@ bool FETILinearSystemSolver<T, Physics>::solve(step::Step &step)
 	return false;
 }
 
-template struct FETILinearSystemSolver<double, HeatSteadyStateLinear>;
-template struct FETILinearSystemSolver<double, HeatSteadyStateNonLinear>;
-template struct FETILinearSystemSolver<double, HeatTransientLinear>;
-template struct FETILinearSystemSolver<double, StructuralMechanicsSteadyStateLinear>;
-template struct FETILinearSystemSolver<double, StructuralMechanicsSteadyStateNonLinear>;
-template struct FETILinearSystemSolver<double, StructuralMechanicsHarmonicRealLinear>;
+template struct FETILinearSystemSolver<double>;
 
 }
 

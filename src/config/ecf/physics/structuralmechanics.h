@@ -96,6 +96,13 @@ struct NonlinerSpringConfiguration: public ECFDescription {
 	NonlinerSpringConfiguration(DIMENSION *dimension);
 };
 
+struct FixedWallConfiguration: public ECFDescription {
+	ECFExpressionVector normal;
+	ECFExpression distance;
+
+	FixedWallConfiguration(DIMENSION *dimension);
+};
+
 struct StructuralMechanicsGlobalSettings {
 
 	enum class ELEMENT_BEHAVIOUR {
@@ -116,7 +123,8 @@ struct StructuralMechanicsLoadStepConfiguration: public StructuralMechanicsLoadS
 	bool large_displacement;
 
 	std::map<std::string, ECFExpression> temperature, normal_pressure;
-	std::map<std::string, ECFExpressionVector> force, angular_velocity, acceleration, normal_direction, obstacle;
+	std::map<std::string, ECFExpressionVector> force, angular_velocity, acceleration;
+	std::map<std::string, FixedWallConfiguration> fixed_wall;
 	std::map<std::string, ECFHarmonicExpressionVector> harmonic_force, harmonic_acceleration;
 	std::map<std::string, ECFExpressionOptionalVector> displacement;
 	std::map<std::string, RotatingForceConfiguration> rotating_force;

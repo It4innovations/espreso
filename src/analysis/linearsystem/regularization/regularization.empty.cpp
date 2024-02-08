@@ -4,10 +4,8 @@
 
 namespace espreso {
 
-template struct RegularizationEmpty<double>;
-
 template <typename T>
-void RegularizationEmpty<T>::setAnalytic()
+void RegularizationEmpty<T>::set(FETI<T> &feti)
 {
 	#pragma omp parallel for
 	for (size_t d = 0; d < feti.K.size(); ++d) {
@@ -25,9 +23,11 @@ void RegularizationEmpty<T>::setAnalytic()
 }
 
 template <typename T>
-void RegularizationEmpty<T>::updateAnalytic()
+void RegularizationEmpty<T>::update(FETI<T> &feti)
 {
 
 }
+
+template struct RegularizationEmpty<double>;
 
 }

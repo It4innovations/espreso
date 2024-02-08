@@ -58,7 +58,7 @@ void StructuralMechanicsHarmonicRealLinear::analyze(step::Step &step)
 	case LoadStepSolverConfiguration::SOLVER::FETI:
 		builderAssembler = new UniformBuilderFETI<double>(configuration.feti, configuration.displacement, info::mesh->dimension, 1, shape);
 		builderSolver = new UniformBuilderFETI<double>(configuration.feti, configuration.displacement, info::mesh->dimension, 2, shape);
-		solver = new FETILinearSystemSolver<double, StructuralMechanicsHarmonicRealLinear>(configuration.feti);
+		solver = new FETILinearSystemSolver<double>(settings, configuration);
 		break;
 	case LoadStepSolverConfiguration::SOLVER::HYPRE:   break;
 	case LoadStepSolverConfiguration::SOLVER::MKLPDSS:

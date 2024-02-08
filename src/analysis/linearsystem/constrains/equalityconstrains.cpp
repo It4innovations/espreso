@@ -1,5 +1,6 @@
 
 #include "equalityconstrains.h"
+#include "analysis/assembler/structuralmechanics.h"
 #include "analysis/math/vector_distributed.h"
 #include "basis/containers/allocators.h"
 #include "analysis/builder/feti.decomposition.h"
@@ -10,7 +11,7 @@
 namespace espreso {
 
 template <typename T>
-void EqualityConstrains<T>::set(step::Step &step, const Vector_Distributed<Vector_Sparse, T> &dirichlet)
+void EqualityConstrains<T>::set(const step::Step &step, FETI<T> &feti, const Vector_Distributed<Vector_Sparse, T> &dirichlet)
 {
 	feti.B1.resize(feti.K.size());
 	feti.D2C.resize(feti.K.size());
@@ -128,7 +129,7 @@ void EqualityConstrains<T>::set(step::Step &step, const Vector_Distributed<Vecto
 }
 
 template <typename T>
-void EqualityConstrains<T>::update(step::Step &step, const Vector_Distributed<Vector_Sparse, T> &dirichlet)
+void EqualityConstrains<T>::update(const step::Step &step, FETI<T> &feti, const Vector_Distributed<Vector_Sparse, T> &dirichlet)
 {
 	math::set(feti.c, T{0});
 	std::vector<size_t> dindex = doffset;
@@ -145,6 +146,9 @@ void EqualityConstrains<T>::update(step::Step &step, const Vector_Distributed<Ve
 		}
 	}
 }
+
+template <typename T>
+std::vector<size_t> EqualityConstrains<T>::doffset;
 
 template struct EqualityConstrains<double>;
 

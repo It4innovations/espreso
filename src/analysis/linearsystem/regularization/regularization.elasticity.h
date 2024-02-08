@@ -2,24 +2,23 @@
 #ifndef SRC_ANALYSIS_LINEARSYSTEM_REGULARIZATION_REGULARIZATION_ELASTICITY_H_
 #define SRC_ANALYSIS_LINEARSYSTEM_REGULARIZATION_REGULARIZATION_ELASTICITY_H_
 
-#include "regularization.h"
+#include "feti/feti.h"
 
 namespace espreso {
 
 template <typename T>
-struct RegularizationElasticity: Regularization<T> {
+struct RegularizationElasticity {
 
-	RegularizationElasticity(FETI<T> &feti): Regularization<T>(feti) {}
+	static void set(FETI<T> &feti);
+	static void update(FETI<T> &feti);
 
-	void setAnalytic();
-	void updateAnalytic();
+	static void getFixPoints(std::vector<esint> &fixPoints, int domain);
 
 protected:
-	void set2D(esint domain);
-	void set3D(esint domain);
+	static void set2D(FETI<T> &feti, esint domain);
+	static void set3D(FETI<T> &feti, esint domain);
 
-	using Regularization<T>::feti;
-	std::vector<Matrix_Dense<T> > NtNNtN;
+	static std::vector<Matrix_Dense<T> > NtNNtN;
 };
 
 }

@@ -154,6 +154,13 @@ NonlinerSpringConfiguration::NonlinerSpringConfiguration(DIMENSION *dimension)
 	REGISTER(force_derivative, ECFMetaData().setdescription({ "Force derivative." }).setdatatype({ ECFDataType::EXPRESSION }));
 }
 
+FixedWallConfiguration::FixedWallConfiguration(DIMENSION *dimension)
+: normal(dimension)
+{
+	REGISTER(normal, ECFMetaData().setdescription({ "Normal." }));
+	REGISTER(distance, ECFMetaData().setdescription({ "Distance." }).setdatatype({ ECFDataType::EXPRESSION }));
+}
+
 StructuralMechanicsLoadStepConfiguration::StructuralMechanicsLoadStepConfiguration(DIMENSION *dimension)
 : rotor_dynamics(*dimension)
 {
@@ -183,16 +190,10 @@ StructuralMechanicsLoadStepConfiguration::StructuralMechanicsLoadStepConfigurati
 			.setpattern({ "MY_REGION" }),
 			dimension);
 
-	REGISTER(normal_direction, ECFMetaData()
-			.setdescription({ "The name of a region.", "Normal direction of a given region." })
+	REGISTER(fixed_wall, ECFMetaData()
+			.setdescription({ "The name of a region.", "Fixed wall settings." })
 			.setdatatype({ ECFDataType::BOUNDARY_REGION })
-			.setpattern({ "MY_REGION" }),
-			dimension);
-
-	REGISTER(obstacle, ECFMetaData()
-			.setdescription({ "The name of a region.", "Obstacle for a given region." })
-			.setdatatype({ ECFDataType::BOUNDARY_REGION })
-			.setpattern({ "MY_REGION" }),
+			.setpattern({ "MY_REGION", }),
 			dimension);
 
 	REGISTER(acceleration, ECFMetaData()

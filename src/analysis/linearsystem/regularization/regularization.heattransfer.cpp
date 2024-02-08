@@ -4,10 +4,8 @@
 
 namespace espreso {
 
-template struct RegularizationHeatTransfer<double>;
-
 template <typename T>
-void RegularizationHeatTransfer<T>::setAnalytic()
+void RegularizationHeatTransfer<T>::set(FETI<T> &feti)
 {
 	#pragma omp parallel for
 	for (size_t d = 0; d < feti.K.size(); ++d) {
@@ -29,7 +27,7 @@ void RegularizationHeatTransfer<T>::setAnalytic()
 }
 
 template <typename T>
-void RegularizationHeatTransfer<T>::updateAnalytic()
+void RegularizationHeatTransfer<T>::update(FETI<T> &feti)
 {
 	#pragma omp parallel for
 	for (size_t d = 0; d < feti.K.size(); ++d) {
@@ -44,5 +42,7 @@ void RegularizationHeatTransfer<T>::updateAnalytic()
 		math::set(R.ncols, R.vals, 1, 1.0 / std::sqrt(K.nrows));
 	}
 }
+
+template struct RegularizationHeatTransfer<double>;
 
 }

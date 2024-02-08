@@ -63,9 +63,9 @@ struct NormalPressureKernel<nodes, 3>: NormalPressure {
 	{
 		for (size_t n = 0; n < nodes; ++n) {
 			SIMD pressure = element.det * load1(element.w[gp]) * load1(element.N[gp][n]) * element.ecf.normalPressure;
-			element.f[0 * nodes + n] = element.f[0 * nodes + n] + pressure * element.normal[0];
-			element.f[1 * nodes + n] = element.f[1 * nodes + n] + pressure * element.normal[1];
-			element.f[2 * nodes + n] = element.f[2 * nodes + n] + pressure * element.normal[2];
+			element.f[0 * nodes + n] = element.f[0 * nodes + n] - pressure * element.normal[0];
+			element.f[1 * nodes + n] = element.f[1 * nodes + n] - pressure * element.normal[1];
+			element.f[2 * nodes + n] = element.f[2 * nodes + n] - pressure * element.normal[2];
 		}
 	}
 };

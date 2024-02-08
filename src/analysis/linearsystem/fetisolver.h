@@ -13,13 +13,10 @@
 
 namespace espreso {
 
-template <typename T> struct EqualityConstrains;
-template <typename T> struct Regularization;
-
-template <typename T, class Physics>
+template <typename T>
 struct FETILinearSystemSolver: LinearSystemSolver<T> {
 
-	FETILinearSystemSolver(FETIConfiguration &configuration);
+	FETILinearSystemSolver(PhysicsConfiguration &physics, LoadStepSolverConfiguration &loadStep);
 	~FETILinearSystemSolver();
 
 	void set(step::Step &step);
@@ -27,13 +24,14 @@ struct FETILinearSystemSolver: LinearSystemSolver<T> {
 	bool solve(step::Step &step);
 
 private:
+	PhysicsConfiguration &physics;
+	LoadStepSolverConfiguration &loadStep;
+
 	Matrix_FETI<T> A;
 	Vector_FETI<Vector_Dense, T> x, b;
 	Vector_Distributed<Vector_Sparse, T> dirichlet;
 
 	FETI<T> feti;
-	EqualityConstrains<T> *equalityConstrains;
-	Regularization<T> *regularization;
 };
 
 }

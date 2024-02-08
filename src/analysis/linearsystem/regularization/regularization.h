@@ -9,22 +9,8 @@ namespace espreso {
 template <typename T>
 struct Regularization {
 
-	Regularization(FETI<T> &feti): feti(feti) {}
-	virtual ~Regularization() {}
-
-	void set(step::Step &step);
-	void update(step::Step &step);
-
-protected:
-	void setAlgebraic();
-	void updateAlgebraic();
-
-	virtual void setAnalytic() { setAlgebraic(); }
-	virtual void updateAnalytic() { updateAlgebraic(); }
-
-	void getFixPoints(std::vector<esint> &fixPoints, int domain);
-
-	FETI<T> &feti;
+	static void set(const step::Step &step, FETI<T> &feti);
+	static void update(const step::Step &step, FETI<T> &feti);
 };
 
 }

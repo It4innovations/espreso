@@ -19,6 +19,8 @@
 namespace espreso {
 
 NodeData* StructuralMechanics::Results::thickness = nullptr;
+NodeData* StructuralMechanics::Results::normal = nullptr;
+
 ElementData* StructuralMechanics::Results::principalStress = nullptr;
 ElementData* StructuralMechanics::Results::componentStress = nullptr;
 ElementData* StructuralMechanics::Results::vonMisesStress = nullptr;
@@ -103,6 +105,28 @@ void StructuralMechanics::analyze()
 
 	if (Results::thickness == nullptr && info::mesh->dimension == 2) {
 		Results::thickness = info::mesh->nodes->appendData(1, NamedData::DataType::SCALAR, "THICKNESS");
+	}
+
+	if (settings.contact_interfaces) {
+		if (Results::normal == nullptr) {
+			Results::normal = info::mesh->nodes->appendData(info::mesh->dimension, NamedData::DataType::VECTOR, "NORMAL");
+		}
+		faceMultiplicity.resize(info::mesh->nodes->size);
+		for(size_t r = 1; r < info::mesh->boundaryRegions.size(); ++r) {
+			const BoundaryRegionStore *region = info::mesh->boundaryRegions[r];
+			if (info::mesh->boundaryRegions[r]->dimension) {
+				for (auto face = region->elements->cbegin(); face != region->elements->cend(); ++face) {
+					for (auto n = face->begin(); n != face->end(); ++n) {
+						faceMultiplicity[*n] += 1;
+					}
+				}
+			}
+		}
+		for (size_t i = 0; i < faceMultiplicity.size(); ++i) {
+			if (faceMultiplicity[i] != 0) {
+				faceMultiplicity[i] = 1 / faceMultiplicity[i];
+			}
+		}
 	}
 
 	if (configuration.type == StructuralMechanicsLoadStepConfiguration::TYPE::HARMONIC) {
@@ -336,12 +360,21 @@ void StructuralMechanics::analyze()
 		}
 	}
 
+	for (auto wall = configuration.fixed_wall.begin(); wall != configuration.fixed_wall.end(); ++wall) {
+		eslog::info("  %s: %*s\n", wall->first.c_str(), 90 - wall->first.size(), " ");
+		correct &= checkExpression("DISTANCE", wall->second.distance);
+		correct &= checkExpression("NORMAL", wall->second.normal);
+	}
+
 	for(size_t r = 1; r < info::mesh->boundaryRegions.size(); ++r) {
 		const BoundaryRegionStore *region = info::mesh->boundaryRegions[r];
 		if (info::mesh->boundaryRegions[r]->dimension) {
 			for(size_t i = 0; i < info::mesh->boundaryRegions[r]->eintervals.size(); ++i) {
 				boundary[r][i].coordinates.activate(region->elements->cbegin() + region->eintervals[i].begin, region->elements->cend(), settings.element_behaviour == StructuralMechanicsGlobalSettings::ELEMENT_BEHAVIOUR::AXISYMMETRIC);
 				boundary[r][i].normalPressure.activate(getExpression(info::mesh->boundaryRegions[r]->name, configuration.normal_pressure), settings.element_behaviour);
+				if (settings.contact_interfaces) {
+					boundary[r][i].normal.activate(region->elements->cbegin() + region->eintervals[i].begin, region->elements->cend(), Results::normal->data.data(), faceMultiplicity.data());
+				}
 			}
 		} else {
 			for(size_t t = 0; t < info::mesh->boundaryRegions[r]->nodes->threads(); ++t) {

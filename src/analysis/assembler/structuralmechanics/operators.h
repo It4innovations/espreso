@@ -10,6 +10,7 @@
 #include "analysis/assembler/general/op.coordinates.h"
 #include "analysis/assembler/general/op.expression.h"
 #include "analysis/assembler/general/op.integration.h"
+#include "analysis/assembler/general/op.normal.h"
 #include "analysis/assembler/general/op.temperature.h"
 #include "analysis/assembler/general/op.thickness.h"
 #include "analysis/assembler/general/op.thickness.h"
@@ -70,6 +71,7 @@ struct StructuralMechanicsBoundaryOperators {
 	Thickness thickness;
 	Coordinates coordinates;
 	Integration integration;
+	Normal normal;
 
 	ExternalExpressionVector displacement;
 	NormalPressure normalPressure;

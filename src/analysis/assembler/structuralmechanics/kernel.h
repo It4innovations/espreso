@@ -440,6 +440,9 @@ void setBoundaryKernel(StructuralMechanicsBoundaryOperators &subkernels, SubKern
 	BasisKernel<code, nodes, gps, edim> basis(subkernels.basis);
 	CoordinatesKernel<nodes, ndim> coordinates(subkernels.coordinates);
 	IntegrationKernel<nodes, ndim, edim> integration(subkernels.integration);
+	StoreNormalKernel<nodes, ndim> storeNornal(subkernels.normal);
+
+	storeNornal.setActiveness(action);
 
 	SIMD surface;
 	basis.simd(element);
@@ -448,6 +451,9 @@ void setBoundaryKernel(StructuralMechanicsBoundaryOperators &subkernels, SubKern
 		for (size_t gp = 0; gp < gps; ++gp) {
 			integration.simd(element, gp);
 			surface = surface + element.det * load1(element.w[gp]);
+		}
+		if (storeNornal.isactive) {
+			storeNornal.simd(element);
 		}
 	}
 

@@ -27,11 +27,11 @@ public:
 	Assembler(PhysicsConfiguration &settings);
 	virtual ~Assembler();
 
-	static ECFExpression* getExpression(size_t interval, std::map<std::string, ECFExpression> &settings);
-	static ECFExpressionVector* getExpression(size_t interval, std::map<std::string, ECFExpressionVector> &settings);
-	static ECFHarmonicExpressionVector* getExpression(size_t interval, std::map<std::string, ECFHarmonicExpressionVector> &settings);
-	static ECFExpression* getExpression(const std::string &name, std::map<std::string, ECFExpression> &settings);
-	static ECFExpressionVector* getExpression(const std::string &name, std::map<std::string, ECFExpressionVector> &settings);
+	static ECFExpression*               getExpression(size_t interval        , std::map<std::string, ECFExpression> &settings);
+	static ECFExpressionVector*         getExpression(size_t interval        , std::map<std::string, ECFExpressionVector> &settings);
+	static ECFHarmonicExpressionVector* getExpression(size_t interval        , std::map<std::string, ECFHarmonicExpressionVector> &settings);
+	static ECFExpression*               getExpression(const std::string &name, std::map<std::string, ECFExpression> &settings);
+	static ECFExpressionVector*         getExpression(const std::string &name, std::map<std::string, ECFExpressionVector> &settings);
 	static ECFHarmonicExpressionVector* getExpression(const std::string &name, std::map<std::string, ECFHarmonicExpressionVector> &settings);
 
 	static Evaluator* getEvaluator(size_t interval, std::map<std::string, ECFExpression> &settings);
@@ -45,6 +45,7 @@ protected:
 	virtual void run(SubKernel::Action action, size_t region, size_t interval) =0;
 
 	bool checkExpression(const std::string &name, ECFExpression &expression);
+	bool checkExpression(const std::string &name, ECFExpressionVector &expression);
 	bool checkElementParameter(const std::string &name, std::map<std::string, ECFExpression> &settings);
 	bool checkElementParameter(const std::string &name, std::map<std::string, ECFExpressionVector> &settings);
 	bool checkElementParameter(const std::string &name, std::map<std::string, ECFExpressionVector> &settings, int dim);
