@@ -2,7 +2,7 @@
 import os, unittest
 from estest import ESPRESOTest
 
-class Assembler(unittest.TestCase):
+class PhysicalSolver(unittest.TestCase):
 
     def setUp(self):
         ESPRESOTest.path = os.path.dirname(__file__)
@@ -13,7 +13,7 @@ class Assembler(unittest.TestCase):
     def tearDown(self):
         ESPRESOTest.clean()
 
-    def test_feti(self):
+    def test_physical_solver(self):
         for solver in [ "MKLPDSS", "   FETI" ]:
             yield run, solver
 
@@ -21,3 +21,6 @@ def run(solver):
     ESPRESOTest.args[7] = solver
     ESPRESOTest.run()
     ESPRESOTest.compare_emr("espreso.emr")
+
+run.physical_solver = 1
+run.generator = 1
