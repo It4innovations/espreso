@@ -66,63 +66,69 @@ namespace spblas {
         }
 
         template<typename T, typename I>
-        static cusparseStatus_t _my_sparse_trsv_buffersize(cusparseHandle_t handle, cusparseOperation_t transA, I m, I nnz, const cusparseMatDescr_t descrA, void * csrValA, const void * csrRowPtrA, const void * csrColIndA, csrsv2Info_t info, int * pBufferSizeInBytes)
+        static cusparseStatus_t _my_sparse_trsv_buffersize(cusparseHandle_t handle, cusparseOperation_t transA, I m, I nnz, const cusparseMatDescr_t descrA, T * csrValA, const I * csrRowPtrA, const I * csrColIndA, csrsv2Info_t info, int * pBufferSizeInBytes)
         {
+            static_assert(std::is_same_v<I,int32_t>, "only 32-bit integers are supported in legacy cusparse");
             using U = cpp_to_cuda_type_t<T>;
-            if constexpr(std::is_same_v<T, float>)                return cusparseScsrsv2_bufferSize(handle, transA, m, nnz, descrA, (U*)csrValA, (I*)csrRowPtrA, (I*)csrColIndA, info, pBufferSizeInBytes);
-            if constexpr(std::is_same_v<T, double>)               return cusparseDcsrsv2_bufferSize(handle, transA, m, nnz, descrA, (U*)csrValA, (I*)csrRowPtrA, (I*)csrColIndA, info, pBufferSizeInBytes);
-            if constexpr(std::is_same_v<T, std::complex<float>>)  return cusparseCcsrsv2_bufferSize(handle, transA, m, nnz, descrA, (U*)csrValA, (I*)csrRowPtrA, (I*)csrColIndA, info, pBufferSizeInBytes);
-            if constexpr(std::is_same_v<T, std::complex<double>>) return cusparseZcsrsv2_bufferSize(handle, transA, m, nnz, descrA, (U*)csrValA, (I*)csrRowPtrA, (I*)csrColIndA, info, pBufferSizeInBytes);
+            if constexpr(std::is_same_v<T, float>)                return cusparseScsrsv2_bufferSize(handle, transA, m, nnz, descrA, (U*)csrValA, csrRowPtrA, csrColIndA, info, pBufferSizeInBytes);
+            if constexpr(std::is_same_v<T, double>)               return cusparseDcsrsv2_bufferSize(handle, transA, m, nnz, descrA, (U*)csrValA, csrRowPtrA, csrColIndA, info, pBufferSizeInBytes);
+            if constexpr(std::is_same_v<T, std::complex<float>>)  return cusparseCcsrsv2_bufferSize(handle, transA, m, nnz, descrA, (U*)csrValA, csrRowPtrA, csrColIndA, info, pBufferSizeInBytes);
+            if constexpr(std::is_same_v<T, std::complex<double>>) return cusparseZcsrsv2_bufferSize(handle, transA, m, nnz, descrA, (U*)csrValA, csrRowPtrA, csrColIndA, info, pBufferSizeInBytes);
         }
 
         template<typename T, typename I>
-        static cusparseStatus_t _my_sparse_trsv_analysis(cusparseHandle_t handle, cusparseOperation_t transA, I m, I nnz, const cusparseMatDescr_t descrA, void * csrValA, const void * csrRowPtrA, const void * csrColIndA, csrsv2Info_t info, cusparseSolvePolicy_t policy, void * pBuffer)
+        static cusparseStatus_t _my_sparse_trsv_analysis(cusparseHandle_t handle, cusparseOperation_t transA, I m, I nnz, const cusparseMatDescr_t descrA, T * csrValA, const I * csrRowPtrA, const I * csrColIndA, csrsv2Info_t info, cusparseSolvePolicy_t policy, void * pBuffer)
         {
+            static_assert(std::is_same_v<I,int32_t>, "only 32-bit integers are supported in legacy cusparse");
             using U = cpp_to_cuda_type_t<T>;
-            if constexpr(std::is_same_v<T, float>)                return cusparseScsrsv2_analysis(handle, transA, m, nnz, descrA, (U*)csrValA, (I*)csrRowPtrA, (I*)csrColIndA, info, policy, pBuffer);
-            if constexpr(std::is_same_v<T, double>)               return cusparseDcsrsv2_analysis(handle, transA, m, nnz, descrA, (U*)csrValA, (I*)csrRowPtrA, (I*)csrColIndA, info, policy, pBuffer);
-            if constexpr(std::is_same_v<T, std::complex<float>>)  return cusparseCcsrsv2_analysis(handle, transA, m, nnz, descrA, (U*)csrValA, (I*)csrRowPtrA, (I*)csrColIndA, info, policy, pBuffer);
-            if constexpr(std::is_same_v<T, std::complex<double>>) return cusparseZcsrsv2_analysis(handle, transA, m, nnz, descrA, (U*)csrValA, (I*)csrRowPtrA, (I*)csrColIndA, info, policy, pBuffer);
+            if constexpr(std::is_same_v<T, float>)                return cusparseScsrsv2_analysis(handle, transA, m, nnz, descrA, (U*)csrValA, csrRowPtrA, csrColIndA, info, policy, pBuffer);
+            if constexpr(std::is_same_v<T, double>)               return cusparseDcsrsv2_analysis(handle, transA, m, nnz, descrA, (U*)csrValA, csrRowPtrA, csrColIndA, info, policy, pBuffer);
+            if constexpr(std::is_same_v<T, std::complex<float>>)  return cusparseCcsrsv2_analysis(handle, transA, m, nnz, descrA, (U*)csrValA, csrRowPtrA, csrColIndA, info, policy, pBuffer);
+            if constexpr(std::is_same_v<T, std::complex<double>>) return cusparseZcsrsv2_analysis(handle, transA, m, nnz, descrA, (U*)csrValA, csrRowPtrA, csrColIndA, info, policy, pBuffer);
         }
 
         template<typename T, typename I>
-        static cusparseStatus_t _my_sparse_trsv_solve(cusparseHandle_t handle, cusparseOperation_t transA, I m, I nnz, void * alpha, const cusparseMatDescr_t descrA, void * csrValA, const void * csrRowPtrA, const void * csrColIndA, csrsv2Info_t info, const void * x, void * y, cusparseSolvePolicy_t policy, void * pBuffer)
+        static cusparseStatus_t _my_sparse_trsv_solve(cusparseHandle_t handle, cusparseOperation_t transA, I m, I nnz, const T * alpha, const cusparseMatDescr_t descrA, T * csrValA, const I * csrRowPtrA, const I * csrColIndA, csrsv2Info_t info, const T * x, T * y, cusparseSolvePolicy_t policy, void * pBuffer)
         {
+            static_assert(std::is_same_v<I,int32_t>, "only 32-bit integers are supported in legacy cusparse");
             using U = cpp_to_cuda_type_t<T>;
-            if constexpr(std::is_same_v<T, float>)                return cusparseScsrsv2_solve(handle, transA, m, nnz, (U*)alpha, descrA, (U*)csrValA, (I*)csrRowPtrA, (I*)csrColIndA, info, (U*)x, (U*)y, policy, pBuffer);
-            if constexpr(std::is_same_v<T, double>)               return cusparseDcsrsv2_solve(handle, transA, m, nnz, (U*)alpha, descrA, (U*)csrValA, (I*)csrRowPtrA, (I*)csrColIndA, info, (U*)x, (U*)y, policy, pBuffer);
-            if constexpr(std::is_same_v<T, std::complex<float>>)  return cusparseCcsrsv2_solve(handle, transA, m, nnz, (U*)alpha, descrA, (U*)csrValA, (I*)csrRowPtrA, (I*)csrColIndA, info, (U*)x, (U*)y, policy, pBuffer);
-            if constexpr(std::is_same_v<T, std::complex<double>>) return cusparseZcsrsv2_solve(handle, transA, m, nnz, (U*)alpha, descrA, (U*)csrValA, (I*)csrRowPtrA, (I*)csrColIndA, info, (U*)x, (U*)y, policy, pBuffer);
+            if constexpr(std::is_same_v<T, float>)                return cusparseScsrsv2_solve(handle, transA, m, nnz, (const U*)alpha, descrA, (U*)csrValA, csrRowPtrA, csrColIndA, info, (const U*)x, (U*)y, policy, pBuffer);
+            if constexpr(std::is_same_v<T, double>)               return cusparseDcsrsv2_solve(handle, transA, m, nnz, (const U*)alpha, descrA, (U*)csrValA, csrRowPtrA, csrColIndA, info, (const U*)x, (U*)y, policy, pBuffer);
+            if constexpr(std::is_same_v<T, std::complex<float>>)  return cusparseCcsrsv2_solve(handle, transA, m, nnz, (const U*)alpha, descrA, (U*)csrValA, csrRowPtrA, csrColIndA, info, (const U*)x, (U*)y, policy, pBuffer);
+            if constexpr(std::is_same_v<T, std::complex<double>>) return cusparseZcsrsv2_solve(handle, transA, m, nnz, (const U*)alpha, descrA, (U*)csrValA, csrRowPtrA, csrColIndA, info, (const U*)x, (U*)y, policy, pBuffer);
         }
 
         template<typename T, typename I>
-        static cusparseStatus_t _my_sparse_trsm_buffersize(cusparseHandle_t handle, int algo, cusparseOperation_t transA, cusparseOperation_t transB, int m, int nrhs, int nnz, const void * alpha, const cusparseMatDescr_t descrA, const void * csrSortedValA, const void * csrSortedRowPtrA, const void * csrSortedColIndA, const void * B, int ldb, csrsm2Info_t info, cusparseSolvePolicy_t policy, size_t * pBufferSize)
+        static cusparseStatus_t _my_sparse_trsm_buffersize(cusparseHandle_t handle, int algo, cusparseOperation_t transA, cusparseOperation_t transB, int m, int nrhs, int nnz, const T * alpha, const cusparseMatDescr_t descrA, const T * csrSortedValA, const I * csrSortedRowPtrA, const I * csrSortedColIndA, T * B, int ldb, csrsm2Info_t info, cusparseSolvePolicy_t policy, size_t * pBufferSize)
         {
+            static_assert(std::is_same_v<I,int32_t>, "only 32-bit integers are supported in legacy cusparse");
             using U = cpp_to_cuda_type_t<T>;
-            if constexpr(std::is_same_v<T, float>)                return cusparseScsrsm2_bufferSizeExt(handle, algo, transA, transB, m, nrhs, nnz, (U*)alpha, descrA, (U*)csrSortedValA, (I*)csrSortedRowPtrA, (I*)csrSortedColIndA, (U*)B, ldb, info, policy, pBufferSize);
-            if constexpr(std::is_same_v<T, double>)               return cusparseDcsrsm2_bufferSizeExt(handle, algo, transA, transB, m, nrhs, nnz, (U*)alpha, descrA, (U*)csrSortedValA, (I*)csrSortedRowPtrA, (I*)csrSortedColIndA, (U*)B, ldb, info, policy, pBufferSize);
-            if constexpr(std::is_same_v<T, std::complex<float>>)  return cusparseCcsrsm2_bufferSizeExt(handle, algo, transA, transB, m, nrhs, nnz, (U*)alpha, descrA, (U*)csrSortedValA, (I*)csrSortedRowPtrA, (I*)csrSortedColIndA, (U*)B, ldb, info, policy, pBufferSize);
-            if constexpr(std::is_same_v<T, std::complex<double>>) return cusparseZcsrsm2_bufferSizeExt(handle, algo, transA, transB, m, nrhs, nnz, (U*)alpha, descrA, (U*)csrSortedValA, (I*)csrSortedRowPtrA, (I*)csrSortedColIndA, (U*)B, ldb, info, policy, pBufferSize);
+            if constexpr(std::is_same_v<T, float>)                return cusparseScsrsm2_bufferSizeExt(handle, algo, transA, transB, m, nrhs, nnz, (const U*)alpha, descrA, (const U*)csrSortedValA, csrSortedRowPtrA, csrSortedColIndA, (U*)B, ldb, info, policy, pBufferSize);
+            if constexpr(std::is_same_v<T, double>)               return cusparseDcsrsm2_bufferSizeExt(handle, algo, transA, transB, m, nrhs, nnz, (const U*)alpha, descrA, (const U*)csrSortedValA, csrSortedRowPtrA, csrSortedColIndA, (U*)B, ldb, info, policy, pBufferSize);
+            if constexpr(std::is_same_v<T, std::complex<float>>)  return cusparseCcsrsm2_bufferSizeExt(handle, algo, transA, transB, m, nrhs, nnz, (const U*)alpha, descrA, (const U*)csrSortedValA, csrSortedRowPtrA, csrSortedColIndA, (U*)B, ldb, info, policy, pBufferSize);
+            if constexpr(std::is_same_v<T, std::complex<double>>) return cusparseZcsrsm2_bufferSizeExt(handle, algo, transA, transB, m, nrhs, nnz, (const U*)alpha, descrA, (const U*)csrSortedValA, csrSortedRowPtrA, csrSortedColIndA, (U*)B, ldb, info, policy, pBufferSize);
         }
 
         template<typename T, typename I>
-        static cusparseStatus_t _my_sparse_trsm_analysis(cusparseHandle_t handle, int algo, cusparseOperation_t transA, cusparseOperation_t transB, int m, int nrhs, int nnz, const void * alpha, const cusparseMatDescr_t descrA, const void * csrSortedValA, const void * csrSortedRowPtrA, const void * csrSortedColIndA, const void * B, int ldb, csrsm2Info_t info, cusparseSolvePolicy_t policy, void * pBuffer)
+        static cusparseStatus_t _my_sparse_trsm_analysis(cusparseHandle_t handle, int algo, cusparseOperation_t transA, cusparseOperation_t transB, int m, int nrhs, int nnz, const T * alpha, const cusparseMatDescr_t descrA, const T * csrSortedValA, const I * csrSortedRowPtrA, const I * csrSortedColIndA, T * B, int ldb, csrsm2Info_t info, cusparseSolvePolicy_t policy, void * pBuffer)
         {
+            static_assert(std::is_same_v<I,int32_t>, "only 32-bit integers are supported in legacy cusparse");
             using U = cpp_to_cuda_type_t<T>;
-            if constexpr(std::is_same_v<T, float>)                return cusparseScsrsm2_analysis(handle, algo, transA, transB, m, nrhs, nnz, (U*)alpha, descrA, (U*)csrSortedValA, (I*)csrSortedRowPtrA, (I*)csrSortedColIndA, (U*)B, ldb, info, policy, pBuffer);
-            if constexpr(std::is_same_v<T, double>)               return cusparseDcsrsm2_analysis(handle, algo, transA, transB, m, nrhs, nnz, (U*)alpha, descrA, (U*)csrSortedValA, (I*)csrSortedRowPtrA, (I*)csrSortedColIndA, (U*)B, ldb, info, policy, pBuffer);
-            if constexpr(std::is_same_v<T, std::complex<float>>)  return cusparseCcsrsm2_analysis(handle, algo, transA, transB, m, nrhs, nnz, (U*)alpha, descrA, (U*)csrSortedValA, (I*)csrSortedRowPtrA, (I*)csrSortedColIndA, (U*)B, ldb, info, policy, pBuffer);
-            if constexpr(std::is_same_v<T, std::complex<double>>) return cusparseZcsrsm2_analysis(handle, algo, transA, transB, m, nrhs, nnz, (U*)alpha, descrA, (U*)csrSortedValA, (I*)csrSortedRowPtrA, (I*)csrSortedColIndA, (U*)B, ldb, info, policy, pBuffer);
+            if constexpr(std::is_same_v<T, float>)                return cusparseScsrsm2_analysis(handle, algo, transA, transB, m, nrhs, nnz, (const U*)alpha, descrA, (const U*)csrSortedValA, csrSortedRowPtrA, csrSortedColIndA, (U*)B, ldb, info, policy, pBuffer);
+            if constexpr(std::is_same_v<T, double>)               return cusparseDcsrsm2_analysis(handle, algo, transA, transB, m, nrhs, nnz, (const U*)alpha, descrA, (const U*)csrSortedValA, csrSortedRowPtrA, csrSortedColIndA, (U*)B, ldb, info, policy, pBuffer);
+            if constexpr(std::is_same_v<T, std::complex<float>>)  return cusparseCcsrsm2_analysis(handle, algo, transA, transB, m, nrhs, nnz, (const U*)alpha, descrA, (const U*)csrSortedValA, csrSortedRowPtrA, csrSortedColIndA, (U*)B, ldb, info, policy, pBuffer);
+            if constexpr(std::is_same_v<T, std::complex<double>>) return cusparseZcsrsm2_analysis(handle, algo, transA, transB, m, nrhs, nnz, (const U*)alpha, descrA, (const U*)csrSortedValA, csrSortedRowPtrA, csrSortedColIndA, (U*)B, ldb, info, policy, pBuffer);
         }
 
         template<typename T, typename I>
-        static cusparseStatus_t _my_sparse_trsm_solve(cusparseHandle_t handle, int algo, cusparseOperation_t transA, cusparseOperation_t transB, int m, int nrhs, int nnz, const void * alpha, const cusparseMatDescr_t descrA, const void * csrSortedValA, const void * csrSortedRowPtrA, const void * csrSortedColIndA, const void * B, int ldb, csrsm2Info_t info, cusparseSolvePolicy_t policy, void * pBuffer)
+        static cusparseStatus_t _my_sparse_trsm_solve(cusparseHandle_t handle, int algo, cusparseOperation_t transA, cusparseOperation_t transB, int m, int nrhs, int nnz, const T * alpha, const cusparseMatDescr_t descrA, const T * csrSortedValA, const I * csrSortedRowPtrA, const I * csrSortedColIndA, T * B, int ldb, csrsm2Info_t info, cusparseSolvePolicy_t policy, void * pBuffer)
         {
+            static_assert(std::is_same_v<I,int32_t>, "only 32-bit integers are supported in legacy cusparse");
             using U = cpp_to_cuda_type_t<T>;
-            if constexpr(std::is_same_v<T, float>)                return cusparseScsrsm2_solve(handle, algo, transA, transB, m, nrhs, nnz, (U*)alpha, descrA, (U*)csrSortedValA, (I*)csrSortedRowPtrA, (I*)csrSortedColIndA, (U*)B, ldb, info, policy, pBuffer);
-            if constexpr(std::is_same_v<T, double>)               return cusparseDcsrsm2_solve(handle, algo, transA, transB, m, nrhs, nnz, (U*)alpha, descrA, (U*)csrSortedValA, (I*)csrSortedRowPtrA, (I*)csrSortedColIndA, (U*)B, ldb, info, policy, pBuffer);
-            if constexpr(std::is_same_v<T, std::complex<float>>)  return cusparseCcsrsm2_solve(handle, algo, transA, transB, m, nrhs, nnz, (U*)alpha, descrA, (U*)csrSortedValA, (I*)csrSortedRowPtrA, (I*)csrSortedColIndA, (U*)B, ldb, info, policy, pBuffer);
-            if constexpr(std::is_same_v<T, std::complex<double>>) return cusparseZcsrsm2_solve(handle, algo, transA, transB, m, nrhs, nnz, (U*)alpha, descrA, (U*)csrSortedValA, (I*)csrSortedRowPtrA, (I*)csrSortedColIndA, (U*)B, ldb, info, policy, pBuffer);
+            if constexpr(std::is_same_v<T, float>)                return cusparseScsrsm2_solve(handle, algo, transA, transB, m, nrhs, nnz, (const U*)alpha, descrA, (const U*)csrSortedValA, csrSortedRowPtrA, csrSortedColIndA, (U*)B, ldb, info, policy, pBuffer);
+            if constexpr(std::is_same_v<T, double>)               return cusparseDcsrsm2_solve(handle, algo, transA, transB, m, nrhs, nnz, (const U*)alpha, descrA, (const U*)csrSortedValA, csrSortedRowPtrA, csrSortedColIndA, (U*)B, ldb, info, policy, pBuffer);
+            if constexpr(std::is_same_v<T, std::complex<float>>)  return cusparseCcsrsm2_solve(handle, algo, transA, transB, m, nrhs, nnz, (const U*)alpha, descrA, (const U*)csrSortedValA, csrSortedRowPtrA, csrSortedColIndA, (U*)B, ldb, info, policy, pBuffer);
+            if constexpr(std::is_same_v<T, std::complex<double>>) return cusparseZcsrsm2_solve(handle, algo, transA, transB, m, nrhs, nnz, (const U*)alpha, descrA, (const U*)csrSortedValA, csrSortedRowPtrA, csrSortedColIndA, (U*)B, ldb, info, policy, pBuffer);
         }
     }
 
@@ -349,10 +355,10 @@ namespace spblas {
         cusparseSolvePolicy_t policy = CUSPARSE_SOLVE_POLICY_USE_LEVEL;
         int bfsz = buffersize;
         T one = 1.0;
-        if(stage == 'B') CHECK((_my_sparse_trsv_buffersize<T,I>)(h->h, op, matrix->nrows, matrix->nnz,       matrix->d_leg, matrix->vals, matrix->rowptrs, matrix->colidxs, descr_trsv->i, &bfsz));
-        if(stage == 'P') CHECK((_my_sparse_trsv_analysis<T,I>)  (h->h, op, matrix->nrows, matrix->nnz,       matrix->d_leg, matrix->vals, matrix->rowptrs, matrix->colidxs, descr_trsv->i, policy, buffer));
+        if(stage == 'B') CHECK((_my_sparse_trsv_buffersize<T,I>)(h->h, op, matrix->nrows, matrix->nnz,       matrix->d_leg, (T*)matrix->vals, (I*)matrix->rowptrs, (I*)matrix->colidxs, descr_trsv->i, &bfsz));
+        if(stage == 'P') CHECK((_my_sparse_trsv_analysis<T,I>)  (h->h, op, matrix->nrows, matrix->nnz,       matrix->d_leg, (T*)matrix->vals, (I*)matrix->rowptrs, (I*)matrix->colidxs, descr_trsv->i, policy, buffer));
         // if(stage == 'U') ;
-        if(stage == 'C') CHECK((_my_sparse_trsv_solve<T,I>)     (h->h, op, matrix->nrows, matrix->nnz, &one, matrix->d_leg, matrix->vals, matrix->rowptrs, matrix->colidxs, descr_trsv->i, rhs->vals, sol->vals, policy, buffer));
+        if(stage == 'C') CHECK((_my_sparse_trsv_solve<T,I>)     (h->h, op, matrix->nrows, matrix->nnz, &one, matrix->d_leg, (T*)matrix->vals, (I*)matrix->rowptrs, (I*)matrix->colidxs, descr_trsv->i, (T*)rhs->vals, (T*)sol->vals, policy, buffer));
         buffersize = bfsz;
     }
 
@@ -375,10 +381,10 @@ namespace spblas {
         int algo = 1;
         cusparseSolvePolicy_t policy = CUSPARSE_SOLVE_POLICY_USE_LEVEL;
         I nrhs = (transpose_rhs == 'T' ? sol->nrows : sol->ncols);
-        if(stage == 'B') CHECK((_my_sparse_trsm_buffersize<T,I>)(h->h, algo, op_mat, op_rhs, matrix->nrows, nrhs, matrix->nnz, &one, matrix->d_leg, matrix->vals, matrix->rowptrs, matrix->colidxs, rhs->vals, rhs->ld, descr_trsm->i, policy, &buffersize));
-        if(stage == 'P') CHECK((_my_sparse_trsm_analysis<T,I>)  (h->h, algo, op_mat, op_rhs, matrix->nrows, nrhs, matrix->nnz, &one, matrix->d_leg, matrix->vals, matrix->rowptrs, matrix->colidxs, rhs->vals, rhs->ld, descr_trsm->i, policy, buffer));
+        if(stage == 'B') CHECK((_my_sparse_trsm_buffersize<T,I>)(h->h, algo, op_mat, op_rhs, matrix->nrows, nrhs, matrix->nnz, &one, matrix->d_leg, (T*)matrix->vals, (I*)matrix->rowptrs, (I*)matrix->colidxs, (T*)rhs->vals, rhs->ld, descr_trsm->i, policy, &buffersize));
+        if(stage == 'P') CHECK((_my_sparse_trsm_analysis<T,I>)  (h->h, algo, op_mat, op_rhs, matrix->nrows, nrhs, matrix->nnz, &one, matrix->d_leg, (T*)matrix->vals, (I*)matrix->rowptrs, (I*)matrix->colidxs, (T*)rhs->vals, rhs->ld, descr_trsm->i, policy, buffer));
         // if(stage == 'U') ;
-        if(stage == 'C') CHECK((_my_sparse_trsm_solve<T,I>)     (h->h, algo, op_mat, op_rhs, matrix->nrows, nrhs, matrix->nnz, &one, matrix->d_leg, matrix->vals, matrix->rowptrs, matrix->colidxs, rhs->vals, rhs->ld, descr_trsm->i, policy, buffer));
+        if(stage == 'C') CHECK((_my_sparse_trsm_solve<T,I>)     (h->h, algo, op_mat, op_rhs, matrix->nrows, nrhs, matrix->nnz, &one, matrix->d_leg, (T*)matrix->vals, (I*)matrix->rowptrs, (I*)matrix->colidxs, (T*)rhs->vals, rhs->ld, descr_trsm->i, policy, buffer));
         if(stage == 'C') CHECK(cudaMemcpy2DAsync(sol->vals, sol->ld * sizeof(T), rhs->vals, rhs->ld * sizeof(T), sol->nrows * sizeof(T), sol->ncols, cudaMemcpyDeviceToDevice, h->get_stream()));
     }
 
@@ -447,6 +453,7 @@ namespace spblas {
         // INSTANTIATE(std::complex<float >, int64_t, cbmba_d)
         // INSTANTIATE(std::complex<double>, int64_t, cbmba_d)
     #undef INSTANTIATE
+
 
 }
 }
