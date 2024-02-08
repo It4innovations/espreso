@@ -93,7 +93,7 @@ HEAT_TRANSFER_2D {
 
   LOAD_STEPS_SETTINGS {
     1 {
-      DURATION_TIME     2;
+      DURATION_TIME   2.1;
       TYPE      TRANSIENT;
       MODE         LINEAR;
       SOLVER       [ARG7];

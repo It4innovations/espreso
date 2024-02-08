@@ -322,6 +322,9 @@ void Monitoring::updateMonitors(const step::Step &step)
 
 void Monitoring::updateSolution(const step::Step &step, const step::Time &time)
 {
+	if (!storeStep(step)) {
+		return;
+	}
 	updateSolution(step);
 
 	if (info::mpi::rank == 0) {
@@ -333,6 +336,9 @@ void Monitoring::updateSolution(const step::Step &step, const step::Time &time)
 
 void Monitoring::updateSolution(const step::Step &step, const step::Frequency &frequency)
 {
+	if (!storeStep(step)) {
+		return;
+	}
 	updateSolution(step);
 
 	if (info::mpi::rank == 0) {
@@ -344,10 +350,6 @@ void Monitoring::updateSolution(const step::Step &step, const step::Frequency &f
 
 void Monitoring::updateSolution(const step::Step &step)
 {
-	if (!storeStep(step)) {
-		return;
-	}
-
 	esint offset = 0;
 	for (size_t i = 0; i < _edata.size(); offset += _edata[i++].first->nstatistics()) {
 		_edata[i].first->statistics(_edata[i].second->elements->datatarray(), _edata[i].second->nodeInfo.totalSize, _statistics.data() + offset);
