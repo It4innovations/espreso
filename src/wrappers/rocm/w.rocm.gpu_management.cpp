@@ -50,44 +50,6 @@ namespace mgm {
         }
     }
 
-    void * Ad::allocate(size_t num_bytes)
-    {
-        void * ptr;
-        CHECK(hipMalloc(&ptr, num_bytes));
-        return ptr;
-    }
-
-    template<typename T>
-    T * Ad::allocate(size_t count)
-    {
-        return reinterpret_cast<T*>(allocate(count * sizeof(T)));
-    }
-
-    template<typename T>
-    void Ad::deallocate(T * ptr)
-    { 
-        CHECK(hipFree(ptr));
-    }
-
-    void * Ah::allocate(size_t num_bytes)
-    {
-        void * ptr;
-        CHECK(hipHostMalloc(&ptr, num_bytes));
-        return ptr;
-    }
-
-    template<typename T>
-    T * Ah::allocate(size_t count)
-    {
-        return reinterpret_cast<T*>(allocate(count * sizeof(T)));
-    }
-
-    template<typename T>
-    void Ah::deallocate(T * ptr)
-    { 
-        CHECK(hipHostFree(ptr));
-    }
-
     device get_device_by_mpi(int mpi_rank, int mpi_size)
     {
         // static constexpr int rank_gpu_map[] = {4,5,2,3,6,7,0,1}; // assuming LUMI-G
@@ -112,7 +74,7 @@ namespace mgm {
         }
     }
 
-    void queue_create(queue & q, device & /*d*/)
+    void queue_create(queue & q)
     {
         q = std::make_shared<_queue>();
         CHECK(hipStreamCreate(&q.stream));
@@ -150,35 +112,37 @@ namespace mgm {
         CHECK(hipStreamSynchronize(q->stream));
     }
 
-    void device_wait(device & /*d*/)
+    void device_wait()
     {
         CHECK(hipDeviceSynchronize());
     }
 
-    size_t get_device_memory_capacity(device & d)
+    size_t get_device_memory_capacity()
     {
         hipDeviceProp_t props;
-        CHECK(hipGetDeviceProperties(&props, d->gpu_idx));
+        int gpu_idx;
+        CHECK(hipGetDevice(&gpu_idx));
+        CHECK(hipGetDeviceProperties(&props, gpu_idx));
         return props.totalGlobalMem;
     }
 
-    void * memalloc_device(device & /*d*/, size_t num_bytes)
+    void * memalloc_device(size_t num_bytes)
     {
         void * ptr;
         CHECK(hipMalloc(&ptr, num_bytes));
         return ptr;
     }
 
-    void memfree_device(device & /*d*/, void * ptr)
+    void memfree_device(void * ptr)
     {
         CHECK(hipFree(ptr));
     }
 
-    void memalloc_device_max(device & d, void * & memory, size_t & memory_size_B, size_t max_needed)
+    void memalloc_device_max(void * & memory, size_t & memory_size_B, size_t max_needed)
     {
         size_t coef_percent = 95;
 
-        memory_size_B = std::min(max_needed, get_device_memory_capacity(d));
+        memory_size_B = std::min(max_needed, get_device_memory_capacity());
         while(memory_size_B > 0)
         {
             hipError_t err = hipMalloc(&memory, memory_size_B);
@@ -196,14 +160,14 @@ namespace mgm {
         throw std::runtime_error("could not allocate any memory");
     }
 
-    void * memalloc_hostpinned(device & /*d*/, size_t num_bytes)
+    void * memalloc_hostpinned(size_t num_bytes)
     {
         void * ptr;
         CHECK(hipHostMalloc(&ptr, num_bytes));
         return ptr;
     }
 
-    void memfree_hostpinned(device & /*d*/, void * ptr)
+    void memfree_hostpinned(void * ptr)
     {
         CHECK(hipHostFree(ptr));
     }

@@ -162,6 +162,7 @@ namespace espreso {
     public:
         static constexpr bool is_data_device_accessible = ad;
         static constexpr bool is_data_host_accessible = ah;
+        static constexpr bool always_equal = true; // for my usage of this class it holds, but not in general
     private:
         cbmba_resource & resource;
         size_t align_B;

@@ -50,30 +50,6 @@ namespace mgm {
         }
     }
 
-    void * Ad::allocate(size_t num_bytes)
-    {
-        void * ptr;
-        CHECK(cudaMalloc(&ptr, num_bytes));
-        return ptr;
-    }
-
-    void Ad::deallocate(void * ptr)
-    { 
-        CHECK(cudaFree(ptr));
-    }
-
-    void * Ah::allocate(size_t num_bytes)
-    {
-        void * ptr;
-        CHECK(cudaMallocHost(&ptr, num_bytes));
-        return ptr;
-    }
-
-    void Ah::deallocate(void * ptr)
-    { 
-        CHECK(cudaFreeHost(ptr));
-    }
-
     device get_device_by_mpi(int mpi_rank, int mpi_size)
     {
         static constexpr int rank_gpu_map[] = {2,3,0,1,6,7,4,5}; // assuming Karolina GPU
@@ -108,7 +84,7 @@ namespace mgm {
         }
     }
 
-    void queue_create(queue & q, device & /*d*/)
+    void queue_create(queue & q)
     {
         q = std::make_shared<_queue>();
         CHECK(cudaStreamCreate(&q->stream));
@@ -147,35 +123,37 @@ namespace mgm {
         CHECK(cudaStreamSynchronize(q->stream));
     }
 
-    void device_wait(device & /*d*/)
+    void device_wait()
     {
         CHECK(cudaDeviceSynchronize());
     }
 
-    size_t get_device_memory_capacity(device & d)
+    size_t get_device_memory_capacity()
     {
         cudaDeviceProp props;
-        CHECK(cudaGetDeviceProperties(&props, d->gpu_idx));
+        int gpu_idx;
+        CHECK(cudaGetDevice(&gpu_idx));
+        CHECK(cudaGetDeviceProperties(&props, gpu_idx));
         return props.totalGlobalMem;
     }
 
-    void * memalloc_device(device & /*d*/, size_t num_bytes)
+    void * memalloc_device(size_t num_bytes)
     {
         void * ptr;
         CHECK(cudaMalloc(&ptr, num_bytes));
         return ptr;
     }
 
-    void memfree_device(device & /*d*/, void * ptr)
+    void memfree_device(void * ptr)
     {
         CHECK(cudaFree(ptr));
     }
 
-    void memalloc_device_max(device & d, void * & memory, size_t & memory_size_B, size_t max_needed)
+    void memalloc_device_max(void * & memory, size_t & memory_size_B, size_t max_needed)
     {
         size_t coef_percent = 95;
 
-        memory_size_B = std::min(max_needed, get_device_memory_capacity(d));
+        memory_size_B = std::min(max_needed, get_device_memory_capacity());
         while(memory_size_B > 0)
         {
             cudaMalloc(&memory, memory_size_B);
@@ -190,14 +168,14 @@ namespace mgm {
         eslog::error("could not allocate any gpu memory");
     }
 
-    void * memalloc_hostpinned(device & /*d*/, size_t num_bytes)
+    void * memalloc_hostpinned(size_t num_bytes)
     {
         void * ptr;
         CHECK(cudaMallocHost(&ptr, num_bytes));
         return ptr;
     }
 
-    void memfree_hostpinned(device & /*d*/, void * ptr)
+    void memfree_hostpinned(void * ptr)
     {
         CHECK(cudaFreeHost(ptr));
     }

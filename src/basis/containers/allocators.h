@@ -34,6 +34,7 @@ class cpu_allocator
 {
 public:
     static constexpr bool is_data_host_accessible = true;
+    static constexpr bool is_data_device_accessible = false;
     static constexpr bool always_equal = true;
 public:
     void * allocate(size_t num_bytes, size_t alignment)

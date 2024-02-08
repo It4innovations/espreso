@@ -80,7 +80,7 @@ TotalFETIExplicitAcc<T,I>::~TotalFETIExplicitAcc()
     tm_gpulibs.stop();
 
     tm_gpumempool.start();
-    gpu::mgm::memfree_device(device, mem_pool_device);
+    gpu::mgm::memfree_device(mem_pool_device);
     tm_gpumempool.stop();
 
     tm_gpumem.start();
@@ -94,9 +94,9 @@ TotalFETIExplicitAcc<T,I>::~TotalFETIExplicitAcc()
     d_Ys_c.clear();
     d_Ys_r.clear();
     d_Fs.clear();
-    for(void * ptr : buffers_sptrs1) gpu::mgm::memfree_device(device, ptr);
-    for(void * ptr : buffers_sptrs2) gpu::mgm::memfree_device(device, ptr);
-    for(void * ptr : buffers_spmm) gpu::mgm::memfree_device(device, ptr);
+    for(void * ptr : buffers_sptrs1) gpu::mgm::memfree_device(ptr);
+    for(void * ptr : buffers_sptrs2) gpu::mgm::memfree_device(ptr);
+    for(void * ptr : buffers_spmm) gpu::mgm::memfree_device(ptr);
     d_applyg_D2Cs.clear();
     d_apply_xs.clear();
     d_apply_ys.clear();
@@ -117,7 +117,7 @@ TotalFETIExplicitAcc<T,I>::~TotalFETIExplicitAcc()
     tm_gpuhostmem.stop();
 
     tm_wait.start();
-    gpu::mgm::device_wait(device);
+    gpu::mgm::device_wait();
     tm_wait.stop();
 
     tm_total.stop();
@@ -207,7 +207,7 @@ void TotalFETIExplicitAcc<T,I>::set(const step::Step &step)
             I ld_interface = ((n_dofs_interface - 1) / align_elem + 1) * align_elem;
             Matrix_Dense<T,I>::memoryRequirement(n_dofs_interface, n_dofs_interface, ld_interface);
         }
-        size_t mem_capacity = gpu::mgm::get_device_memory_capacity(device);
+        size_t mem_capacity = gpu::mgm::get_device_memory_capacity();
         if(mem_needed > mem_capacity)
         {
             char str[1000];
@@ -273,8 +273,8 @@ void TotalFETIExplicitAcc<T,I>::set(const step::Step &step)
 
     // create gpu stream and libraries
     tm_gpucreate.start();
-    gpu::mgm::queue_create(main_q, device);
-    for(gpu::mgm::queue & q : queues) gpu::mgm::queue_create(q, device);
+    gpu::mgm::queue_create(main_q);
+    for(gpu::mgm::queue & q : queues) gpu::mgm::queue_create(q);
     for(size_t i = 0; i < n_queues; i++) gpu::dnblas::handle_create(handles_dense[i], queues[i]);
     for(size_t i = 0; i < n_queues; i++) gpu::spblas::handle_create(handles_sparse[i], queues[i]);
     tm_gpucreate.stop();
@@ -418,9 +418,9 @@ void TotalFETIExplicitAcc<T,I>::set(const step::Step &step)
             d_apply_xs[d].resize(n_dofs_interface);
             d_apply_ys[d].resize(n_dofs_interface);
             d_applyg_D2Cs[d].resize(n_dofs_interface);
-            if(spdnfactor == 'S') buffers_sptrs1[d] = gpu::mgm::memalloc_device(device, buffersizes_sptrs1[d]);
-            if(spdnfactor == 'S' && factrs2syrk != 'S') buffers_sptrs2[d] = gpu::mgm::memalloc_device(device, buffersizes_sptrs2[d]);
-            if(factrs2syrk != 'S') buffers_spmm[d] = gpu::mgm::memalloc_device(device, buffersizes_spmm[d]);
+            if(spdnfactor == 'S') buffers_sptrs1[d] = gpu::mgm::memalloc_device(buffersizes_sptrs1[d]);
+            if(spdnfactor == 'S' && factrs2syrk != 'S') buffers_sptrs2[d] = gpu::mgm::memalloc_device(buffersizes_sptrs2[d]);
+            if(factrs2syrk != 'S') buffers_spmm[d] = gpu::mgm::memalloc_device(buffersizes_spmm[d]);
             tm_alloc_device.stop();
         }
         tm_alloc.stop();
@@ -585,7 +585,7 @@ void TotalFETIExplicitAcc<T,I>::set(const step::Step &step)
         }
         mem_pool_size_request = 2 * mem_pool_size_request + 1024; // safety margin
         size_t pool_size_device;
-        gpu::mgm::memalloc_device_max(device, mem_pool_device, pool_size_device, mem_pool_size_request);
+        gpu::mgm::memalloc_device_max(mem_pool_device, pool_size_device, mem_pool_size_request);
         printf("Mem pool requesting %zu MiB, allocated %zu MiB   (%zu B, %zu B)\n", mem_pool_size_request >> 20, pool_size_device >> 20, mem_pool_size_request, pool_size_device);
         size_t pool_size_device_aligned = (pool_size_device / align_B) * align_B;
         cbmba_res_device = std::make_unique<cbmba_resource>(mem_pool_device, pool_size_device_aligned);
@@ -593,7 +593,7 @@ void TotalFETIExplicitAcc<T,I>::set(const step::Step &step)
     tm_poolalloc.stop();
 
     tm_wait.start();
-    gpu::mgm::device_wait(device);
+    gpu::mgm::device_wait();
     tm_wait.stop();
     tm_total.stop();
 
@@ -881,7 +881,7 @@ void TotalFETIExplicitAcc<T,I>::update(const step::Step &step)
     tm_compute_d.stop();
 
     tm_wait.start();
-    gpu::mgm::device_wait(device);
+    gpu::mgm::device_wait();
     tm_wait.stop();
     tm_total.stop();
 
@@ -977,7 +977,7 @@ void TotalFETIExplicitAcc<T,I>::apply(const Vector_Dual<T> &x_cluster, Vector_Du
 
         // wait
         tm_wait.start();
-        gpu::mgm::device_wait(device);
+        gpu::mgm::device_wait();
         tm_wait.stop();
 
         tm_total.stop();
@@ -1038,7 +1038,7 @@ void TotalFETIExplicitAcc<T,I>::apply(const Vector_Dual<T> &x_cluster, Vector_Du
         tm_zerofill.stop();
 
         tm_wait.start();
-        gpu::mgm::device_wait(device);
+        gpu::mgm::device_wait();
         tm_wait.stop();
 
         tm_gather.start();

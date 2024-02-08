@@ -12,33 +12,13 @@ namespace mgm {
 
     struct _queue {};
 
-    void* Ad::allocate(size_t num_bytes)
-    {
-        return nullptr;
-    }
-
-    void Ad::deallocate(void *ptr)
-    {
-
-    }
-
-    void* Ah::allocate(size_t num_bytes)
-    {
-        return nullptr;
-    }
-
-    void Ah::deallocate(void *ptr)
-    {
-
-    }
-
     device get_device_by_mpi(int mpi_rank, int mpi_size) { return device{}; }
 
     void init_gpu(device & d) {}
 
     void set_device(device & d) {}
 
-    void queue_create(queue & q, device & d) {}
+    void queue_create(queue & q) {}
 
     void queue_destroy(queue & q) {}
 
@@ -46,15 +26,15 @@ namespace mgm {
 
     void queue_wait(queue & q) {}
 
-    void device_wait(device & d) {}
+    void device_wait() {}
 
-    size_t get_device_memory_capacity(device & d) { return 0; }
+    size_t get_device_memory_capacity() { return 0; }
 
-    void * memalloc_device(device & d, size_t num_bytes) { return nullptr; }
+    void * memalloc_device(size_t num_bytes) { return nullptr; }
 
-    void memfree_device(device & d, void * ptr) {}
+    void memfree_device(void * ptr) {}
 
-    void memalloc_device_max(device & d, void * & memory, size_t & memory_size_B, size_t max_needed) {}
+    void memalloc_device_max(void * & memory, size_t & memory_size_B, size_t max_needed) {}
 
     void submit_host_function(queue & q, const std::function<void(void)> & f) {}
 

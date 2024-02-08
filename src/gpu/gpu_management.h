@@ -19,45 +19,13 @@ namespace mgm {
     struct _queue;
     using queue = std::shared_ptr<_queue>;
 
-    class Ad // Allocator device
-    {
-    public:
-        static constexpr bool is_data_host_accessible = false;
-        static constexpr bool is_data_device_accessible = true;
-    public:
-        void * allocate(size_t num_bytes);
-        void deallocate(void * ptr);
-
-        template<typename T>
-        T * allocate(size_t count)
-        {
-            return reinterpret_cast<T*>(allocate(count * sizeof(T)));
-        }
-    };
-
-    class Ah // Allocator host
-    {
-    public:
-        static constexpr bool is_data_host_accessible = true;
-        static constexpr bool is_data_device_accessible = false;
-    public:
-        void * allocate(size_t num_bytes);
-        void deallocate(void * ptr);
-
-        template<typename T>
-        T * allocate(size_t count)
-        {
-            return reinterpret_cast<T*>(allocate(count * sizeof(T)));
-        }
-    };
-
     device get_device_by_mpi(int mpi_rank, int mpi_size);
 
     void init_gpu(device & d);
 
-    void set_device(device & d);
+    void set_device(device & d); // global variable representing the device thas is being used
 
-    void queue_create(queue & q, device & d);
+    void queue_create(queue & q);
 
     void queue_destroy(queue & q);
 
@@ -65,19 +33,19 @@ namespace mgm {
 
     void queue_wait(queue & q);
 
-    void device_wait(device & d);
+    void device_wait();
 
-    size_t get_device_memory_capacity(device & d);
+    size_t get_device_memory_capacity();
 
-    void * memalloc_device(device & d, size_t num_bytes);
+    void * memalloc_device(size_t num_bytes);
 
-    void memfree_device(device & d, void * ptr);
+    void memfree_device(void * ptr);
     
-    void memalloc_device_max(device & d, void * & memory, size_t & memory_size_B, size_t max_needed);
+    void memalloc_device_max(void * & memory, size_t & memory_size_B, size_t max_needed);
 
-    void * memalloc_hostpinned(device & d, size_t num_bytes);
+    void * memalloc_hostpinned(size_t num_bytes);
 
-    void memfree_hostpinned(device & d, void * ptr);
+    void memfree_hostpinned(void * ptr);
 
     void submit_host_function(queue & q, const std::function<void(void)> & f);
 
@@ -120,6 +88,51 @@ namespace mgm {
         if(order == 'C') return 'R';
         return '_';
     }
+
+    class Ad // Allocator device
+    {
+    public:
+        static constexpr bool is_data_host_accessible = false;
+        static constexpr bool is_data_device_accessible = true;
+        static constexpr bool always_equal = true; // data are allocated from the same globally-set device
+    public:
+        void * allocate(size_t num_bytes)
+        {
+            return memalloc_device(num_bytes);
+        }
+        void deallocate(void * ptr)
+        {
+            memfree_device(ptr);
+        }
+        template<typename T>
+        T * allocate(size_t count)
+        {
+            return reinterpret_cast<T*>(allocate(count * sizeof(T)));
+        }
+    };
+
+    class Ah // Allocator host
+    {
+    public:
+        static constexpr bool is_data_host_accessible = true;
+        static constexpr bool is_data_device_accessible = false;
+        static constexpr bool always_equal = true;
+    public:
+        void * allocate(size_t num_bytes)
+        {
+            return memalloc_hostpinned(num_bytes);
+        }
+        void deallocate(void * ptr)
+        {
+            memfree_hostpinned(ptr);
+        }
+        template<typename T>
+        T * allocate(size_t count)
+        {
+            return reinterpret_cast<T*>(allocate(count * sizeof(T)));
+        }
+    };
+
 }
 }
 }
