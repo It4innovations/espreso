@@ -299,6 +299,9 @@ void TotalFETIExplicitAcc<T,I>::set(const step::Step &step)
         tm_Kreg_combine.start();
         {
 		    math::combine(Kregs[d], feti.K[d], feti.RegMat[d]);
+            if constexpr(utils::is_real<T>())    Kregs[d].type = Matrix_Type::REAL_SYMMETRIC_POSITIVE_DEFINITE;
+            if constexpr(utils::is_complex<T>()) Kregs[d].type = Matrix_Type::COMPLEX_HERMITIAN_POSITIVE_DEFINITE;
+            Kregs[d].shape = feti.K[d].shape;
         }
         tm_Kreg_combine.stop();
 
