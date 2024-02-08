@@ -12,8 +12,8 @@
 
 namespace espreso {
 
-template <template<typename, typename> typename Vector, typename T> class Vector_Distributed;
-template <template<typename, typename> typename Vector, typename T> class Vector_FETI;
+template <template<typename, typename, typename> typename Vector, typename T> class Vector_Distributed;
+template <template<typename, typename, typename> typename Vector, typename T> class Vector_FETI;
 
 template <typename T> class Vector_Base {
 public:

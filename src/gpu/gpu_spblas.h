@@ -13,22 +13,22 @@ namespace gpu {
 namespace spblas {
 
     struct _handle;
-    using handle = std::unique_ptr<_handle>;
+    using handle = std::shared_ptr<_handle>;
 
     struct _descr_matrix_csr;
-    using descr_matrix_csr = std::unique_ptr<_descr_matrix_csr>;
+    using descr_matrix_csr = std::shared_ptr<_descr_matrix_csr>;
 
     struct _descr_matrix_dense;
-    using descr_matrix_dense = std::unique_ptr<_descr_matrix_dense>;
+    using descr_matrix_dense = std::shared_ptr<_descr_matrix_dense>;
 
     struct _descr_vector_dense;
-    using descr_vector_dense = std::unique_ptr<_descr_vector_dense>;
+    using descr_vector_dense = std::shared_ptr<_descr_vector_dense>;
 
     struct _descr_sparse_trsv;
-    using descr_sparse_trsv = std::unique_ptr<_descr_sparse_trsv>;
+    using descr_sparse_trsv = std::shared_ptr<_descr_sparse_trsv>;
 
     struct _descr_sparse_trsm;
-    using descr_sparse_trsm = std::unique_ptr<_descr_sparse_trsm>;
+    using descr_sparse_trsm = std::shared_ptr<_descr_sparse_trsm>;
 
     void handle_create(handle & h, mgm::queue & q);
 

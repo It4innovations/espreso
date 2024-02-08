@@ -179,7 +179,7 @@ public:
 		}
 	}
 
-	std::vector<Vector<T, int> > domains;
+	std::vector<Vector<T, int, cpu_allocator> > domains;
 	FETIDecomposition *decomposition;
 };
 

@@ -14,7 +14,7 @@ inline void _check(rocblas_status status, const char *file, int line)
     {
         char str[1000];
         snprintf(str, sizeof(str), "ROCBLAS Error %d. In file '%s' on line %d\n", status, file, line);
-        eslog::error(str);
+        espreso::eslog::error(str);
     }
 }
 
@@ -91,7 +91,7 @@ namespace dnblas {
 
     void handle_create(handle & h, mgm::queue & q)
     {
-        h = std::make_unique<_handle>();
+        h = std::make_shared<_handle>();
         CHECK(rocblas_create_handle(&h->h));
         CHECK(rocblas_set_stream(h->h, q->stream));
     }

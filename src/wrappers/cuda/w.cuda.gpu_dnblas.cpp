@@ -16,7 +16,7 @@ inline void _check(cublasStatus_t status, const char *file, int line)
     {
         char str[1000];
         snprintf(str, sizeof(str), "CUBLAS Error %d %s: %s. In file '%s' on line %d\n", status, cublasGetStatusName(status), cublasGetStatusString(status), file, line);
-        eslog::error(str);
+        espreso::eslog::error(str);
     }
 }
 
@@ -91,36 +91,36 @@ namespace dnblas {
         cublasHandle_t h;
     };
 
-    static void handle_create(handle & h, mgm::queue & q)
+    void handle_create(handle & h, mgm::queue & q)
     {
-        h = std::make_unique<_handle>();
+        h = std::make_shared<_handle>();
         CHECK(cublasCreate(&h->h));
         CHECK(cublasSetStream(h->h, q->stream));
     }
 
-    static void handle_destroy(handle & h)
+    void handle_destroy(handle & h)
     {
         CHECK(cublasDestroy(h->h));
         h.reset();
     }
 
-    static void buffer_collect_size(handle & /*q*/, size_t & buffersize, const std::function<void(void)> & /*f*/)
+    void buffer_collect_size(handle & /*q*/, size_t & buffersize, const std::function<void(void)> & /*f*/)
     {
         // https://docs.nvidia.com/cuda/cublas/index.html#cublassetworkspace
         // no manual workspace needed if I use just a single stream with this handle
         buffersize = 0;
     }
 
-    static void buffer_set(handle & /*q*/, void * /*ptr*/, size_t /*size*/)
+    void buffer_set(handle & /*q*/, void * /*ptr*/, size_t /*size*/)
     {
     }
 
-    static void buffer_unset(handle & /*q*/)
+    void buffer_unset(handle & /*q*/)
     {
     }
 
     template<typename T, typename I>
-    static void trsv(handle & h, char mat_symmetry, char transpose, I n, I ld, T * matrix, T * rhs_sol)
+    void trsv(handle & h, char mat_symmetry, char transpose, I n, I ld, T * matrix, T * rhs_sol)
     {
         cublasFillMode_t fill = (mat_symmetry == 'U' ? CUBLAS_FILL_MODE_UPPER : CUBLAS_FILL_MODE_LOWER);
         cublasOperation_t op = (transpose == 'T' ? CUBLAS_OP_T : CUBLAS_OP_N);
@@ -128,7 +128,7 @@ namespace dnblas {
     }
 
     template<typename T, typename I>
-    static void trsm(handle & h, char side, char mat_symmetry, char transpose, I nrows_X, I ncols_X, T * A, I ld_A, T * rhs_sol, I ld_X)
+    void trsm(handle & h, char side, char mat_symmetry, char transpose, I nrows_X, I ncols_X, T * A, I ld_A, T * rhs_sol, I ld_X)
     {
         cublasSideMode_t s = (side == 'L' ? CUBLAS_SIDE_LEFT : CUBLAS_SIDE_RIGHT);
         cublasFillMode_t fill = (mat_symmetry == 'U' ? CUBLAS_FILL_MODE_UPPER : CUBLAS_FILL_MODE_LOWER);
@@ -138,7 +138,7 @@ namespace dnblas {
     }
 
     template<typename T, typename I>
-    static void herk(handle & h, char out_fill, char transpose, I n, I k, T * A, I ld_A, T * C, I ld_C)
+    void herk(handle & h, char out_fill, char transpose, I n, I k, T * A, I ld_A, T * C, I ld_C)
     {
         cublasFillMode_t fill = (out_fill == 'U' ? CUBLAS_FILL_MODE_UPPER : CUBLAS_FILL_MODE_LOWER);
         cublasOperation_t op = (transpose == 'T' ? CUBLAS_OP_T : CUBLAS_OP_N);
@@ -149,7 +149,7 @@ namespace dnblas {
     }
 
     template<typename T, typename I>
-    static void hemv(handle & h, char fill, I n, T * A, I ld_A, T * vec_in, T * vec_out)
+    void hemv(handle & h, char fill, I n, T * A, I ld_A, T * vec_in, T * vec_out)
     {
         cublasFillMode_t f = (fill == 'U' ? CUBLAS_FILL_MODE_UPPER : CUBLAS_FILL_MODE_LOWER);
         T zero = 0.0;

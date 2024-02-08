@@ -9,7 +9,7 @@
 namespace espreso {
 
 template <typename T> class Matrix_Distributed;
-template <template<typename, typename> typename Vector, typename T> class Vector_Distributed;
+template <template<typename, typename, typename> typename Vector, typename T> class Vector_Distributed;
 
 template <typename T>
 struct Matrix_CSR_Apply {

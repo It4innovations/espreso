@@ -3,22 +3,21 @@
 #define SRC_GPU_MANAGEMENT_H_
 
 #include <vector>
+#include <functional>
 
 #include "math/primitives/vector_dense.h"
 #include "math/primitives/matrix_dense.h"
 #include "math/primitives/matrix_csr.h"
-
-#include <functional>
 
 namespace espreso {
 namespace gpu {
 namespace mgm {
 
     struct _device;
-    using device = std::unique_ptr<_device>;
+    using device = std::shared_ptr<_device>;
 
     struct _queue;
-    using queue = std::unique_ptr<_queue>;
+    using queue = std::shared_ptr<_queue>;
 
     class Ad // Allocator device
     {
@@ -56,7 +55,7 @@ namespace mgm {
 
     void init_gpu(device & d);
 
-    void set_device(const device & d);
+    void set_device(device & d);
 
     void queue_create(queue & q, device & d);
 
@@ -80,7 +79,7 @@ namespace mgm {
 
     void memfree_hostpinned(device & d, void * ptr);
 
-    void submit_host_function(queue & q, const std::function<void(void)> & c);
+    void submit_host_function(queue & q, const std::function<void(void)> & f);
 
     template<typename T, typename I>
     void copy_submit_h2d(queue & q, T * dst, const T * src, I num_elements);

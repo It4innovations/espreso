@@ -13,7 +13,7 @@
 
 namespace espreso {
 
-template <template<typename, typename> typename Vector, typename T>
+template <template<typename, typename, typename> typename Vector, typename T>
 class Vector_Distributed: public Vector_Base<T> {
 public:
 	void synchronize()
@@ -143,7 +143,7 @@ public:
 		eslog::error("call empty function\n");
 	}
 
-	Vector<T, esint> cluster;
+	Vector<T, esint, cpu_allocator> cluster;
 	DirectDecomposition *decomposition;
 	Vector_Sync<Vector, T> *_sync;
 };

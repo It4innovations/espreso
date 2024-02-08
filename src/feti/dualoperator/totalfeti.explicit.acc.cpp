@@ -292,8 +292,8 @@ void TotalFETIExplicitAcc<T,I>::set(const step::Step &step)
         I n_nz_factor;
 
         gpu::mgm::queue & q = queues[d % n_queues];
-        gpu::dnblas::handle hd = handles_dense[d % n_queues];
-        gpu::spblas::handle hs = handles_sparse[d % n_queues];
+        gpu::dnblas::handle & hd = handles_dense[d % n_queues];
+        gpu::spblas::handle & hs = handles_sparse[d % n_queues];
 
         // Kreg = K + RegMat symbolic pattern
         tm_Kreg_combine.start();
@@ -425,11 +425,11 @@ void TotalFETIExplicitAcc<T,I>::set(const step::Step &step)
         // set the pointers inside the descriptors of some matrices
         tm_setpointers.start();
         {
-            if(need_d_Us_sp)     gpu::spblas::descr_matrix_sparse_link_data(   descr_Us_sp1[d],     d_Us_sp[d]);
-            if(need_d_Us_sp)     gpu::spblas::descr_matrix_sparse_link_data(   descr_Us_sp2[d],     d_Us_sp[d]);
-            if(need_d_Ls_sp)     gpu::spblas::descr_matrix_sparse_link_data(   descr_Ls_sp1[d],     d_Ls_sp[d]);
-            if(need_d_Ls_sp)     gpu::spblas::descr_matrix_sparse_link_data(   descr_Ls_sp2[d],     d_Ls_sp[d]);
-            if(need_d_Bperms_sp) gpu::spblas::descr_matrix_sparse_link_data(descr_Bperms_sp[d], d_Bperms_sp[d]);
+            if(need_d_Us_sp)     gpu::spblas::descr_matrix_csr_link_data(   descr_Us_sp1[d],     d_Us_sp[d]);
+            if(need_d_Us_sp)     gpu::spblas::descr_matrix_csr_link_data(   descr_Us_sp2[d],     d_Us_sp[d]);
+            if(need_d_Ls_sp)     gpu::spblas::descr_matrix_csr_link_data(   descr_Ls_sp1[d],     d_Ls_sp[d]);
+            if(need_d_Ls_sp)     gpu::spblas::descr_matrix_csr_link_data(   descr_Ls_sp2[d],     d_Ls_sp[d]);
+            if(need_d_Bperms_sp) gpu::spblas::descr_matrix_csr_link_data(descr_Bperms_sp[d], d_Bperms_sp[d]);
             gpu::spblas::descr_matrix_dense_link_data(descr_Fs_r[d], d_Fs[d]);
             gpu::spblas::descr_matrix_dense_link_data(descr_Fs_c[d], d_Fs[d]);
         }
@@ -664,8 +664,8 @@ void TotalFETIExplicitAcc<T,I>::update(const step::Step &step)
         I ld_interface = ((n_dofs_interface - 1) / align_elem + 1) * align_elem;
 
         gpu::mgm::queue & q = queues[d % n_queues];
-        gpu::dnblas::handle hd = handles_dense[d % n_queues];
-        gpu::spblas::handle hs = handles_sparse[d % n_queues];
+        gpu::dnblas::handle & hd = handles_dense[d % n_queues];
+        gpu::spblas::handle & hs = handles_sparse[d % n_queues];
 
         void * buffer_other = nullptr;
 
@@ -943,7 +943,7 @@ void TotalFETIExplicitAcc<T,I>::apply(const Vector_Dual<T> &x_cluster, Vector_Du
         for(size_t d = 0; d < n_domains; d++)
         {
             gpu::mgm::queue & q = queues[d % n_queues];
-            gpu::dnblas::handle hd = handles_dense[d % n_queues];
+            gpu::dnblas::handle & hd = handles_dense[d % n_queues];
 
             tm_mv.start();
             gpu::dnblas::hemv(hd, 'L', d_Fs[d].nrows, d_Fs[d].vals, d_Fs[d].get_ld(), d_apply_xs[d].vals, d_apply_ys[d].vals);
@@ -1005,7 +1005,7 @@ void TotalFETIExplicitAcc<T,I>::apply(const Vector_Dual<T> &x_cluster, Vector_Du
             I n_dofs_interface = h_Bperms_sp[d].nrows;
 
             gpu::mgm::queue & q = queues[d % n_queues];
-            gpu::dnblas::handle hd = handles_dense[d % n_queues];
+            gpu::dnblas::handle & hd = handles_dense[d % n_queues];
 
             tm_scatter.start();
             for(I i = 0; i < n_dofs_interface; i++) h_applyc_xs[d].vals[i] = x_cluster.vals[feti.D2C[d][i]];

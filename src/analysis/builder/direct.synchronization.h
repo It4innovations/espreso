@@ -10,7 +10,7 @@
 namespace espreso {
 
 template <typename T> class Matrix_Distributed;
-template <template<typename, typename> typename Vector, typename T> class Vector_Distributed;
+template <template<typename, typename, typename> typename Vector, typename T> class Vector_Distributed;
 
 template <typename T>
 struct Matrix_CSR_Sync {
@@ -30,7 +30,7 @@ struct Matrix_CSR_Sync {
 	}
 };
 
-template <template<typename, typename> typename Vector, typename T>
+template <template<typename, typename, typename> typename Vector, typename T>
 struct Vector_Sync {
 	virtual ~Vector_Sync() {}
 

@@ -3,7 +3,8 @@ def options(opt):
     pass
 
 def configure(ctx):
-    ctx.env.append_unique("CXXFLAGS", [ "--offload-arch=gfx90a:sramecc+:xnack-" ])
     headers = [ "hip/hip_runtime.h", "rocblas.h", "rocsparse.h" ]
     libs = [ "rocblas", "rocsparse" ]
     ctx.check_cxx(mandatory=False, msg="Checking for 'rocm'", okmsg=" ".join(libs), define_name="HAVE_ROCM", header_name=headers, lib=libs, uselib_store="ROCM")
+    if ctx.env.HAVE_ROCM:
+        ctx.env.append_unique("CXXFLAGS", [ "--offload-arch=gfx90a:sramecc+:xnack-" ])

@@ -2,6 +2,7 @@
 #if !defined(HAVE_CUDA) && !defined(HAVE_ROCM)
 
 #include "gpu_management.h"
+#include "basis/utilities/cbmb_allocator.h"
 
 namespace espreso {
 namespace gpu {
@@ -35,7 +36,7 @@ namespace mgm {
 
     void init_gpu(device & d) {}
 
-    void set_device(const device & d) {}
+    void set_device(device & d) {}
 
     void queue_create(queue & q, device & d) {}
 
@@ -55,7 +56,7 @@ namespace mgm {
 
     void memalloc_device_max(device & d, void * & memory, size_t & memory_size_B, size_t max_needed) {}
 
-    void submit_host_function(queue & q, const std::function<void(void)> & c) {}
+    void submit_host_function(queue & q, const std::function<void(void)> & f) {}
 
     template<typename T, typename I>
     void copy_submit_h2d(queue & q, T * dst, const T * src, I num_elements) {}
@@ -85,48 +86,42 @@ namespace mgm {
 
 
 
-    #define INSTANTIATE(T,I,Ahost,Adevice) \
-    template void copy_submit_h2d<T,I,Adevice,Ahost  >(queue & q, T * dst, const T * src, I num_elements); \
-    template void copy_submit_d2h<T,I,Ahost,  Adevice>(queue & q, T * dst, const T * src, I num_elements); \
-    template void copy_submit_h2d<T,I,Adevice,Ahost  >(queue & q, Vector_Dense<T,I,Ao> & output, const Vector_Dense<T,I,Ai> & input); \
-    template void copy_submit_d2h<T,I,Ahost,  Adevice>(queue & q, Vector_Dense<T,I,Ao> & output, const Vector_Dense<T,I,Ai> & input); \
-    template void copy_submit_h2d<T,I,Adevice,Ahost  >(queue & q, Matrix_Dense<T,I,Ao> & output, const Matrix_Dense<T,I,Ai> & input); \
-    template void copy_submit_d2h<T,I,Ahost,  Adevice>(queue & q, Matrix_Dense<T,I,Ao> & output, const Matrix_Dense<T,I,Ai> & input); \
-    template void copy_submit_h2d<T,I,Adevice,Ahost  >(queue & q, Matrix_CSR<T,I,Ao> & output, const Matrix_CSR<T,I,Ai> & input, bool copy_pattern = true, bool copy_vals = true); \
-    template void copy_submit_d2h<T,I,Ahost,  Adevice>(queue & q, Matrix_CSR<T,I,Ao> & output, const Matrix_CSR<T,I,Ai> & input, bool copy_pattern = true, bool copy_vals = true);
-        // INSTANTIATE(float,                int32_t, mgm::Ah,       mgm::Ad)
-        INSTANTIATE(double,               int32_t, mgm::Ah,       mgm::Ad)
-        // INSTANTIATE(std::complex<float >, int32_t, mgm::Ah,       mgm::Ad)
-        // INSTANTIATE(std::complex<double>, int32_t, mgm::Ah,       mgm::Ad)
-        // INSTANTIATE(float,                int64_t, mgm::Ah,       mgm::Ad)
-        // INSTANTIATE(double,               int64_t, mgm::Ah,       mgm::Ad)
-        // INSTANTIATE(std::complex<float >, int64_t, mgm::Ah,       mgm::Ad)
-        // INSTANTIATE(std::complex<double>, int64_t, mgm::Ah,       mgm::Ad)
-        // INSTANTIATE(float,                int32_t, mgm::Ah,       cbmba_d)
-        // INSTANTIATE(double,               int32_t, mgm::Ah,       cbmba_d)
-        // INSTANTIATE(std::complex<float >, int32_t, mgm::Ah,       cbmba_d)
-        // INSTANTIATE(std::complex<double>, int32_t, mgm::Ah,       cbmba_d)
-        // INSTANTIATE(float,                int64_t, mgm::Ah,       cbmba_d)
-        // INSTANTIATE(double,               int64_t, mgm::Ah,       cbmba_d)
-        // INSTANTIATE(std::complex<float >, int64_t, mgm::Ah,       cbmba_d)
-        // INSTANTIATE(std::complex<double>, int64_t, mgm::Ah,       cbmba_d)
-        // INSTANTIATE(float,                int32_t, cpu_allocator, mgm::Ad)
-        // INSTANTIATE(double,               int32_t, cpu_allocator, mgm::Ad)
-        // INSTANTIATE(std::complex<float >, int32_t, cpu_allocator, mgm::Ad)
-        // INSTANTIATE(std::complex<double>, int32_t, cpu_allocator, mgm::Ad)
-        // INSTANTIATE(float,                int64_t, cpu_allocator, mgm::Ad)
-        // INSTANTIATE(double,               int64_t, cpu_allocator, mgm::Ad)
-        // INSTANTIATE(std::complex<float >, int64_t, cpu_allocator, mgm::Ad)
-        // INSTANTIATE(std::complex<double>, int64_t, cpu_allocator, mgm::Ad)
-        // INSTANTIATE(float,                int32_t, cpu_allocator, cbmba_d)
-        // INSTANTIATE(double,               int32_t, cpu_allocator, cbmba_d)
-        // INSTANTIATE(std::complex<float >, int32_t, cpu_allocator, cbmba_d)
-        // INSTANTIATE(std::complex<double>, int32_t, cpu_allocator, cbmba_d)
-        // INSTANTIATE(float,                int64_t, cpu_allocator, cbmba_d)
-        // INSTANTIATE(double,               int64_t, cpu_allocator, cbmba_d)
-        // INSTANTIATE(std::complex<float >, int64_t, cpu_allocator, cbmba_d)
-        // INSTANTIATE(std::complex<double>, int64_t, cpu_allocator, cbmba_d)
-    #undef INSTANTIATE
+    #define INSTANTIATE_T_I_AHOST_ADEVICE(T,I,Ahost,Adevice) \
+    template void copy_submit_h2d<T,I,Adevice,Ahost  >(queue & q, Vector_Dense<T,I,Adevice> & output, const Vector_Dense<T,I,Ahost>   & input); \
+    template void copy_submit_d2h<T,I,Ahost,  Adevice>(queue & q, Vector_Dense<T,I,Ahost>   & output, const Vector_Dense<T,I,Adevice> & input); \
+    template void copy_submit_h2d<T,I,Adevice,Ahost  >(queue & q, Matrix_Dense<T,I,Adevice> & output, const Matrix_Dense<T,I,Ahost>   & input); \
+    template void copy_submit_d2h<T,I,Ahost,  Adevice>(queue & q, Matrix_Dense<T,I,Ahost>   & output, const Matrix_Dense<T,I,Adevice> & input); \
+    template void copy_submit_h2d<T,I,Adevice,Ahost  >(queue & q, Matrix_CSR<T,I,Adevice> & output, const Matrix_CSR<T,I,Ahost>   & input, bool copy_pattern = true, bool copy_vals = true); \
+    template void copy_submit_d2h<T,I,Ahost,  Adevice>(queue & q, Matrix_CSR<T,I,Ahost>   & output, const Matrix_CSR<T,I,Adevice> & input, bool copy_pattern = true, bool copy_vals = true);
+
+    #define INSTANTIATE_T_I(T,I) \
+    template void copy_submit_h2d<T,I>(queue & q, T * dst, const T * src, I num_elements); \
+    template void copy_submit_d2h<T,I>(queue & q, T * dst, const T * src, I num_elements); \
+    INSTANTIATE_T_I_AHOST_ADEVICE(T, I, mgm::Ah,       mgm::Ad) \
+    INSTANTIATE_T_I_AHOST_ADEVICE(T, I, mgm::Ah,       cbmba_d) \
+    INSTANTIATE_T_I_AHOST_ADEVICE(T, I, cpu_allocator, mgm::Ad) \
+    INSTANTIATE_T_I_AHOST_ADEVICE(T, I, cpu_allocator, cbmba_d)
+
+    #define INSTANTIATE_T(T) \
+    INSTANTIATE_T_I(T, int32_t) \
+    /* INSTANTIATE_T_I(T, int64_t) */
+
+    // INSTANTIATE_T(float)
+    INSTANTIATE_T(double)
+    // INSTANTIATE_T(std::complex<float>)
+    // INSTANTIATE_T(std::complex<double>)
+    // INSTANTIATE_T(float*)
+    INSTANTIATE_T(double*)
+    // INSTANTIATE_T(std::complex<float>*)
+    // INSTANTIATE_T(std::complex<double>*)
+    INSTANTIATE_T(int32_t)
+    INSTANTIATE_T(int32_t*)
+    // INSTANTIATE_T(int64_t)
+    // INSTANTIATE_T(int64_t*)
+
+    #undef INSTANTIATE_T
+    #undef INSTANTIATE_T_I
+    #undef INSTANTIATE_T_I_AHOST_ADEVICE
 
 }
 }
