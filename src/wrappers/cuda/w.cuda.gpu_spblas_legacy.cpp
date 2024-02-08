@@ -164,16 +164,16 @@ namespace spblas {
         int64_t ncols;
         int64_t ld;
         char order;
-        descr_matrix_dense get_complementary()
+        _descr_matrix_dense get_complementary()
         {
-            descr_matrix_dense ret = std::make_shared<_descr_matrix_dense>();
-            ret->d_new = d_new_complementary;
-            ret->d_new_complementary = d_new;
-            ret->vals = vals;
-            ret->nrows = ncols;
-            ret->ncols = nrows;
-            ret->ld = ld;
-            ret->order = mgm::change_order(order);
+            _descr_matrix_dense ret;
+            ret.d_new = d_new_complementary;
+            ret.d_new_complementary = d_new;
+            ret.vals = vals;
+            ret.nrows = ncols;
+            ret.ncols = nrows;
+            ret.ld = ld;
+            ret.order = mgm::change_order(order);
             return ret;
         }
     };
@@ -340,7 +340,7 @@ namespace spblas {
     {
         if(transpose == 'T')
         {
-            descr_matrix_dense descr_dense_complementary = dense->get_complementary();
+            descr_matrix_dense descr_dense_complementary = std::make_unique<_descr_matrix_dense>(dense->get_complementary());
             sparse_to_dense<T,I>(h, 'N', sparse, descr_dense_complementary, buffersize, buffer, stage);
             return;
         }
@@ -369,8 +369,8 @@ namespace spblas {
         if(rhs->order != sol->order) eslog::error("dense matrix order has to be the same");
         if(rhs->order == 'R')
         {
-            descr_matrix_dense descr_rhs_complementary = rhs->get_complementary();
-            descr_matrix_dense descr_sol_complementary = sol->get_complementary();
+            descr_matrix_dense descr_rhs_complementary = std::make_unique<_descr_matrix_dense>(rhs->get_complementary());
+            descr_matrix_dense descr_sol_complementary = std::make_unique<_descr_matrix_dense>(sol->get_complementary());
             char transpose_rhs_compl = mgm::change_operation(transpose_rhs);
             trsm<T,I>(h, transpose_mat, transpose_rhs_compl, matrix, descr_rhs_complementary, descr_sol_complementary, descr_trsm, buffersize, buffer, stage);
             return;
@@ -412,48 +412,36 @@ namespace spblas {
 
 
 
-    #define INSTANTIATE(T,I) \
-    template void descr_matrix_csr_create<T,I>(descr_matrix_csr & descr, I nrows, I ncols, I nnz, char symmetry); \
-    template void descr_matrix_dense_create<T,I>(descr_matrix_dense & descr, I nrows, I ncols, I ld, char order); \
-    template void descr_vector_dense_create<T,I>(descr_vector_dense & descr, I size); \
-    template void sparse_to_dense<T,I>(handle & h, char transpose, descr_matrix_csr & sparse, descr_matrix_dense & dense, size_t & buffersize, void * buffer, char stage); \
-    template void trsv<T,I>(handle & h, char transpose, descr_matrix_csr & matrix, descr_vector_dense & rhs, descr_vector_dense & sol, descr_sparse_trsv & descr_trsv, size_t & buffersize, void * buffer, char stage); \
-    template void trsm<T,I>(handle & h, char transpose_mat, char transpose_rhs, descr_matrix_csr & matrix, descr_matrix_dense & rhs, descr_matrix_dense & sol, descr_sparse_trsm & descr_trsm, size_t & buffersize, void * buffer, char stage); \
-    template void mv<T,I>(handle & h, char transpose, descr_matrix_csr & A, descr_vector_dense & x, descr_vector_dense & y, size_t & buffersize, void * buffer, char stage); \
-    template void mm<T,I>(handle & h, char transpose_A, char transpose_B, descr_matrix_csr & A, descr_matrix_dense & B, descr_matrix_dense & C, size_t & buffersize, void * buffer, char stage);
-        // INSTANTIATE(float,                int32_t)
-        INSTANTIATE(double,               int32_t)
-        // INSTANTIATE(std::complex<float >, int32_t)
-        // INSTANTIATE(std::complex<double>, int32_t)
-        // INSTANTIATE(float,                int64_t)
-        // INSTANTIATE(double,               int64_t)
-        // INSTANTIATE(std::complex<float >, int64_t)
-        // INSTANTIATE(std::complex<double>, int64_t)
-    #undef INSTANTIATE
-
-    #define INSTANTIATE(T,I,Adevice) \
+    #define INSTANTIATE_T_I_ADEVICE(T,I,Adevice) \
     template void descr_matrix_csr_link_data<T,I,Adevice>(descr_matrix_csr & descr, Matrix_CSR<T,I,Adevice> & matrix); \
     template void descr_matrix_dense_link_data<T,I,Adevice>(descr_matrix_dense & descr, Matrix_Dense<T,I,Adevice> & matrix); \
     template void descr_vector_dense_link_data<T,I,Adevice>(descr_vector_dense & descr, Vector_Dense<T,I,Adevice> & vector); \
-    template void descr_vector_dense_link_data<T,I,Adevice>(descr_vector_dense & descr, Matrix_Dense<T,I,Adevice> & matrix, I colidx = 0); \
-        // INSTANTIATE(float,                int32_t, mgm::Ad)
-        INSTANTIATE(double,               int32_t, mgm::Ad)
-        // INSTANTIATE(std::complex<float >, int32_t, mgm::Ad)
-        // INSTANTIATE(std::complex<double>, int32_t, mgm::Ad)
-        // INSTANTIATE(float,                int64_t, mgm::Ad)
-        // INSTANTIATE(double,               int64_t, mgm::Ad)
-        // INSTANTIATE(std::complex<float >, int64_t, mgm::Ad)
-        // INSTANTIATE(std::complex<double>, int64_t, mgm::Ad)
-        // INSTANTIATE(float,                int32_t, cbmba_d)
-        INSTANTIATE(double,               int32_t, cbmba_d)
-        // INSTANTIATE(std::complex<float >, int32_t, cbmba_d)
-        // INSTANTIATE(std::complex<double>, int32_t, cbmba_d)
-        // INSTANTIATE(float,                int64_t, cbmba_d)
-        // INSTANTIATE(double,               int64_t, cbmba_d)
-        // INSTANTIATE(std::complex<float >, int64_t, cbmba_d)
-        // INSTANTIATE(std::complex<double>, int64_t, cbmba_d)
-    #undef INSTANTIATE
+    template void descr_vector_dense_link_data<T,I,Adevice>(descr_vector_dense & descr, Matrix_Dense<T,I,Adevice> & matrix, I colidx = 0);
 
+        #define INSTANTIATE_T_I(T,I) \
+        template void descr_matrix_csr_create<T,I>(descr_matrix_csr & descr, I nrows, I ncols, I nnz, char symmetry); \
+        template void descr_matrix_dense_create<T,I>(descr_matrix_dense & descr, I nrows, I ncols, I ld, char order); \
+        template void descr_vector_dense_create<T,I>(descr_vector_dense & descr, I size); \
+        template void sparse_to_dense<T,I>(handle & h, char transpose, descr_matrix_csr & sparse, descr_matrix_dense & dense, size_t & buffersize, void * buffer, char stage); \
+        template void trsv<T,I>(handle & h, char transpose, descr_matrix_csr & matrix, descr_vector_dense & rhs, descr_vector_dense & sol, descr_sparse_trsv & descr_trsv, size_t & buffersize, void * buffer, char stage); \
+        template void trsm<T,I>(handle & h, char transpose_mat, char transpose_rhs, descr_matrix_csr & matrix, descr_matrix_dense & rhs, descr_matrix_dense & sol, descr_sparse_trsm & descr_trsm, size_t & buffersize, void * buffer, char stage); \
+        template void mv<T,I>(handle & h, char transpose, descr_matrix_csr & A, descr_vector_dense & x, descr_vector_dense & y, size_t & buffersize, void * buffer, char stage); \
+        template void mm<T,I>(handle & h, char transpose_A, char transpose_B, descr_matrix_csr & A, descr_matrix_dense & B, descr_matrix_dense & C, size_t & buffersize, void * buffer, char stage); \
+        INSTANTIATE_T_I_ADEVICE(T, I, mgm::Ad) \
+        INSTANTIATE_T_I_ADEVICE(T, I, cbmba_d)
+
+            #define INSTANTIATE_T(T) \
+            INSTANTIATE_T_I(T, int32_t) \
+            /* INSTANTIATE_T_I(T, int64_t) */
+
+                // INSTANTIATE_T(float)
+                INSTANTIATE_T(double)
+                // INSTANTIATE_T(std::complex<float>)
+                // INSTANTIATE_T(std::complex<double>)
+
+            #undef INSTANTIATE_T
+        #undef INSTANTIATE_T_I
+    #undef INSTANTIATE_T_I_ADEVICE
 
 }
 }

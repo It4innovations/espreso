@@ -50,10 +50,10 @@ namespace mgm {
     void submit_host_function(queue & q, const std::function<void(void)> & f);
 
     template<typename T, typename I>
-    void copy_submit_h2d(queue & q, T * dst, const T * src, I num_elements);
+    void copy_submit_h2d(queue & q, T * dst, T const * src, I num_elements);
 
     template<typename T, typename I>
-    void copy_submit_d2h(queue & q, T * dst, const T * src, I num_elements);
+    void copy_submit_d2h(queue & q, T * dst, T const * src, I num_elements);
 
     template<typename T, typename I, typename Ao, typename Ai>
     void copy_submit_h2d(queue & q, Vector_Dense<T,I,Ao> & output, const Vector_Dense<T,I,Ai> & input);

@@ -161,20 +161,23 @@ namespace dnblas {
 
 
 
-    #define INSTANTIATE(T,I) \
+    #define INSTANTIATE_T_I(T,I) \
     template void trsv<T,I>(handle & h, char mat_symmetry, char transpose, I n, I ld, T * matrix, T * rhs_sol); \
     template void trsm<T,I>(handle & h, char side, char mat_symmetry, char transpose, I nrows_X, I ncols_X, T * A, I ld_A, T * rhs_sol, I ld_X); \
     template void herk<T,I>(handle & h, char out_fill, char transpose, I n, I k, T * A, I ld_A, T * C, I ld_C); \
     template void hemv<T,I>(handle & h, char fill, I n, T * A, I ld_A, T * vec_in, T * vec_out);
-        // INSTANTIATE(float,                int32_t)
-        INSTANTIATE(double,               int32_t)
-        // INSTANTIATE(std::complex<float >, int32_t)
-        // INSTANTIATE(std::complex<double>, int32_t)
-        // INSTANTIATE(float,                int64_t)
-        // INSTANTIATE(double,               int64_t)
-        // INSTANTIATE(std::complex<float >, int64_t)
-        // INSTANTIATE(std::complex<double>, int64_t)
-    #undef INSTANTIATE
+
+        #define INSTANTIATE_T(T) \
+        INSTANTIATE_T_I(T, int32_t) \
+        /* INSTANTIATE_T_I(T, int64_t) */
+
+            // INSTANTIATE_T(float,                int32_t)
+            INSTANTIATE_T(double,               int32_t)
+            // INSTANTIATE_T(std::complex<float >, int32_t)
+            // INSTANTIATE_T(std::complex<double>, int32_t)
+
+        #undef INSTANTIATE_T
+    #undef INSTANTIATE_T_I
 
 }
 }

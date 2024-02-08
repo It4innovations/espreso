@@ -39,10 +39,10 @@ namespace mgm {
     void submit_host_function(queue & q, const std::function<void(void)> & f) {}
 
     template<typename T, typename I>
-    void copy_submit_h2d(queue & q, T * dst, const T * src, I num_elements) {}
+    void copy_submit_h2d(queue & q, T * dst, T const * src, I num_elements) {}
 
     template<typename T, typename I>
-    void copy_submit_d2h(queue & q, T * dst, const T * src, I num_elements) {}
+    void copy_submit_d2h(queue & q, T * dst, T const * src, I num_elements) {}
 
     template<typename T, typename I, typename Ao, typename Ai>
     void copy_submit_d2h(queue & q, Vector_Dense<T,I,Ao> & output, const Vector_Dense<T,I,Ai> & input) {}
@@ -74,33 +74,33 @@ namespace mgm {
     template void copy_submit_h2d<T,I,Adevice,Ahost  >(queue & q, Matrix_CSR<T,I,Adevice> & output, const Matrix_CSR<T,I,Ahost>   & input, bool copy_pattern = true, bool copy_vals = true); \
     template void copy_submit_d2h<T,I,Ahost,  Adevice>(queue & q, Matrix_CSR<T,I,Ahost>   & output, const Matrix_CSR<T,I,Adevice> & input, bool copy_pattern = true, bool copy_vals = true);
 
-    #define INSTANTIATE_T_I(T,I) \
-    template void copy_submit_h2d<T,I>(queue & q, T * dst, const T * src, I num_elements); \
-    template void copy_submit_d2h<T,I>(queue & q, T * dst, const T * src, I num_elements); \
-    INSTANTIATE_T_I_AHOST_ADEVICE(T, I, mgm::Ah,       mgm::Ad) \
-    INSTANTIATE_T_I_AHOST_ADEVICE(T, I, mgm::Ah,       cbmba_d) \
-    INSTANTIATE_T_I_AHOST_ADEVICE(T, I, cpu_allocator, mgm::Ad) \
-    INSTANTIATE_T_I_AHOST_ADEVICE(T, I, cpu_allocator, cbmba_d)
+        #define INSTANTIATE_T_I(T,I) \
+        template void copy_submit_h2d<T,I>(queue & q, T * dst, T const * src, I num_elements); \
+        template void copy_submit_d2h<T,I>(queue & q, T * dst, T const * src, I num_elements); \
+        INSTANTIATE_T_I_AHOST_ADEVICE(T, I, mgm::Ah,       mgm::Ad) \
+        INSTANTIATE_T_I_AHOST_ADEVICE(T, I, mgm::Ah,       cbmba_d) \
+        INSTANTIATE_T_I_AHOST_ADEVICE(T, I, cpu_allocator, mgm::Ad) \
+        INSTANTIATE_T_I_AHOST_ADEVICE(T, I, cpu_allocator, cbmba_d)
 
-    #define INSTANTIATE_T(T) \
-    INSTANTIATE_T_I(T, int32_t) \
-    /* INSTANTIATE_T_I(T, int64_t) */
+            #define INSTANTIATE_T(T) \
+            INSTANTIATE_T_I(T, int32_t) \
+            /* INSTANTIATE_T_I(T, int64_t) */
 
-    // INSTANTIATE_T(float)
-    INSTANTIATE_T(double)
-    // INSTANTIATE_T(std::complex<float>)
-    // INSTANTIATE_T(std::complex<double>)
-    // INSTANTIATE_T(float*)
-    INSTANTIATE_T(double*)
-    // INSTANTIATE_T(std::complex<float>*)
-    // INSTANTIATE_T(std::complex<double>*)
-    INSTANTIATE_T(int32_t)
-    INSTANTIATE_T(int32_t*)
-    // INSTANTIATE_T(int64_t)
-    // INSTANTIATE_T(int64_t*)
+                // INSTANTIATE_T(float)
+                INSTANTIATE_T(double)
+                // INSTANTIATE_T(std::complex<float>)
+                // INSTANTIATE_T(std::complex<double>)
+                // INSTANTIATE_T(float*)
+                INSTANTIATE_T(double*)
+                // INSTANTIATE_T(std::complex<float>*)
+                // INSTANTIATE_T(std::complex<double>*)
+                INSTANTIATE_T(int32_t)
+                INSTANTIATE_T(int32_t*)
+                // INSTANTIATE_T(int64_t)
+                // INSTANTIATE_T(int64_t*)
 
-    #undef INSTANTIATE_T
-    #undef INSTANTIATE_T_I
+            #undef INSTANTIATE_T
+        #undef INSTANTIATE_T_I
     #undef INSTANTIATE_T_I_AHOST_ADEVICE
 
 }
