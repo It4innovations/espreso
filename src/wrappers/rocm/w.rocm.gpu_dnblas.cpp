@@ -3,6 +3,7 @@
 
 #include "gpu/gpu_dnblas.h"
 #include "w.rocm.gpu_management.h"
+#include "basis/utilities/utils.h"
 
 #include <rocblas.h>
 
@@ -102,8 +103,7 @@ namespace dnblas {
         h.reset();
     }
 
-    template<typename F>
-    void buffer_collect_size(handle & h, size_t & buffersize, const F & f)
+    void buffer_collect_size(handle & h, size_t & buffersize, const std::function<void(void)> & f)
     {
         CHECK(rocblas_start_device_memory_size_query(h->h));
         f();
@@ -171,10 +171,10 @@ namespace dnblas {
         INSTANTIATE_T_I(T, int32_t) \
         /* INSTANTIATE_T_I(T, int64_t) */
 
-            // INSTANTIATE_T(float,                int32_t)
-            INSTANTIATE_T(double,               int32_t)
-            // INSTANTIATE_T(std::complex<float >, int32_t)
-            // INSTANTIATE_T(std::complex<double>, int32_t)
+            // INSTANTIATE_T(float)
+            INSTANTIATE_T(double)
+            // INSTANTIATE_T(std::complex<float>)
+            // INSTANTIATE_T(std::complex<double>)
 
         #undef INSTANTIATE_T
     #undef INSTANTIATE_T_I

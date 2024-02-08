@@ -53,14 +53,14 @@ namespace spblas {
         rocsparse_spmat_descr d;
     };
 
-    struct descr_matrix_dense
+    struct _descr_matrix_dense
     {
         rocsparse_dnmat_descr d;
         rocsparse_dnmat_descr d_complementary;
         char order;
-        descr_matrix_dense get_complementary()
+        _descr_matrix_dense get_complementary()
         {
-            descr_matrix_dense ret;
+            _descr_matrix_dense ret;
             ret.d = d_complementary;
             ret.d_complementary = d;
             ret.order = mgm::change_operation(order);
@@ -68,14 +68,14 @@ namespace spblas {
         }
     };
 
-    struct descr_vector_dense
+    struct _descr_vector_dense
     {
         rocsparse_dnvec_descr d;
     };
 
-    struct descr_sparse_trsv { };
+    struct _descr_sparse_trsv { };
 
-    struct descr_sparse_trsm { };
+    struct _descr_sparse_trsm { };
 
     void handle_create(handle & h, mgm::queue & q)
     {
@@ -190,7 +190,7 @@ namespace spblas {
     {
         if(transpose == 'T')
         {
-            descr_matrix_dense descr_dense_complementary = dense.get_complementary();
+            descr_matrix_dense descr_dense_complementary = std::make_shared<_descr_matrix_dense>(dense->get_complementary());
             sparse_to_dense<T,I>(h, 'N', sparse, descr_dense_complementary, buffersize, buffer, stage);
             return;
         }
@@ -216,13 +216,13 @@ namespace spblas {
         static_assert(false, "not sure how (not) buggy it is in newer versions, check and redo");
 #else
         // older rocsparse assumes colmajor for both dense matrices. I can work around that, but only if the orders are equal
-        if(rhs.order != sol.order) eslog::error("cant work with dense matrices with different order\n");
-        if(rhs.order == 'R') // colmajor just continue normally, rowmajor call it differently
+        if(rhs->order != sol->order) eslog::error("cant work with dense matrices with different order\n");
+        if(rhs->order == 'R') // colmajor just continue normally, rowmajor call it differently
         {
             // old rocsparse mistakenly thinks that trans_B is applied to both B and C
             // this actually makes it easier for me and allows me to just swap nrows-ncols and change the order and transposition
-            descr_matrix_dense descr_rhs_compl = rhs.get_complementary();
-            descr_matrix_dense descr_sol_compl = sol.get_complementary();
+            descr_matrix_dense descr_rhs_compl = std::make_shared<_descr_matrix_dense>(rhs->get_complementary());
+            descr_matrix_dense descr_sol_compl = std::make_shared<_descr_matrix_dense>(sol->get_complementary());
             char transpose_rhs_compl = mgm::change_operation(transpose_rhs);
             trsm<T,I>(h, transpose_mat, transpose_rhs_compl, matrix, descr_rhs_compl, descr_sol_compl, descr_trsm, buffersize, buffer, stage);
             return;
@@ -243,11 +243,11 @@ namespace spblas {
         rocsparse_operation op = (transpose == 'T' ? rocsparse_operation_transpose : rocsparse_operation_none);
         T one = 1.0;
         T zero = 0.0;
-#if ROCSPARSE_VERSION_MAJOR >= 3 // rocsparse >= 3.0, comes with rocm-6.0.x, replaced old spmv with new spmv with stage (aka renamed the previous spmv_ex)
+#if HIP_VERSION_MAJOR >= 6 // rocparse that comes with hip/rocm 6.0.x, replaced old spmv with new spmv with stage (aka renamed the previous spmv_ex)
         if(stage == 'B') CHECK(rocsparse_spmv(h->h, op, &one, A->d, x->d, &zero, y->d, _sparse_data_type<T>(), rocsparse_spmv_alg_default, rocsparse_spmv_stage_buffer_size, &buffersize, buffer));
         if(stage == 'P') CHECK(rocsparse_spmv(h->h, op, &one, A->d, x->d, &zero, y->d, _sparse_data_type<T>(), rocsparse_spmv_alg_default, rocsparse_spmv_stage_preprocess,  &buffersize, buffer));
         if(stage == 'C') CHECK(rocsparse_spmv(h->h, op, &one, A->d, x->d, &zero, y->d, _sparse_data_type<T>(), rocsparse_spmv_alg_default, rocsparse_spmv_stage_compute,     &buffersize, buffer));
-#elif ROCSPARSE_VERSION_MAJOR == 2 && ROCSPARSE_VERSION_MINOR >= 4 // rocsparse >= 2.4, comes with rocm-5.4.x, deprecated original spmv and added spmv_ex with stage
+#elif HIP_VERSION_MAJOR == 5 && HIP_VERSION_MINOR >= 4 // rocsparse that comes with hip/rocm 5.4.x, deprecated original spmv and added spmv_ex with stage
         if(stage == 'B') CHECK(rocsparse_spmv_ex(h->h, op, &one, A->d, x->d, &zero, y->d, _sparse_data_type<T>(), rocsparse_spmv_alg_default, rocsparse_spmv_stage_buffer_size, &buffersize, buffer));
         if(stage == 'P') CHECK(rocsparse_spmv_ex(h->h, op, &one, A->d, x->d, &zero, y->d, _sparse_data_type<T>(), rocsparse_spmv_alg_default, rocsparse_spmv_stage_preprocess,  &buffersize, buffer));
         if(stage == 'C') CHECK(rocsparse_spmv_ex(h->h, op, &one, A->d, x->d, &zero, y->d, _sparse_data_type<T>(), rocsparse_spmv_alg_default, rocsparse_spmv_stage_compute,     &buffersize, buffer));

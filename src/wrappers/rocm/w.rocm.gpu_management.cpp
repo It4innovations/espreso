@@ -77,11 +77,11 @@ namespace mgm {
     void queue_create(queue & q)
     {
         q = std::make_shared<_queue>();
-        CHECK(hipStreamCreate(&q.stream));
+        CHECK(hipStreamCreate(&q->stream));
     }
     void queue_destroy(queue & q)
     {
-        CHECK(hipStreamDestroy(q.stream));
+        CHECK(hipStreamDestroy(q->stream));
         q.reset();
     }
 
@@ -172,16 +172,15 @@ namespace mgm {
         CHECK(hipHostFree(ptr));
     }
 
-    template<typename C>
-    void submit_host_function(queue & q, C && c)
+    void submit_host_function(queue & q, const std::function<void(void)> & f)
     {
         std::function<void(void)> * func_ptr = new std::function<void(void)>(f);
 
-        CHECK(cudaLaunchHostFunc(q->stream, [](void * arg){
+        CHECK(hipStreamAddCallback(q->stream, [](hipStream_t /*str*/, hipError_t /*err*/, void * arg){
             std::function<void(void)> * func_ptr = reinterpret_cast<std::function<void(void)>*>(arg);
             (*func_ptr)();
             delete func_ptr;
-        }, func_ptr));
+        }, func_ptr, 0));
 
         // hipLaunchHostFunc is still marked as beta in rocm-6.0.0
     }
