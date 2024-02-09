@@ -210,9 +210,7 @@ void TotalFETIExplicitAcc<T,I>::set(const step::Step &step)
         size_t mem_capacity = gpu::mgm::get_device_memory_capacity();
         if(mem_needed > mem_capacity)
         {
-            char str[1000];
-            snprintf(str, sizeof(str), "Not enough device memory for this input. Need %zu GiB, but have only %zu GiB\n", mem_needed >> 30, mem_capacity >> 30);
-            eslog::error(str);
+            eslog::error("Not enough device memory for this input. Need %zu GiB, but have only %zu GiB\n", mem_needed >> 30, mem_capacity >> 30);
         }
     }
 
@@ -586,7 +584,7 @@ void TotalFETIExplicitAcc<T,I>::set(const step::Step &step)
         mem_pool_size_request = 2 * mem_pool_size_request + 1024; // safety margin
         size_t pool_size_device;
         gpu::mgm::memalloc_device_max(mem_pool_device, pool_size_device, mem_pool_size_request);
-        printf("Mem pool requesting %zu MiB, allocated %zu MiB   (%zu B, %zu B)\n", mem_pool_size_request >> 20, pool_size_device >> 20, mem_pool_size_request, pool_size_device);
+        // eslog::info("Mem pool requesting %zu MiB, allocated %zu MiB   (%zu B, %zu B)\n", mem_pool_size_request >> 20, pool_size_device >> 20, mem_pool_size_request, pool_size_device);
         size_t pool_size_device_aligned = (pool_size_device / align_B) * align_B;
         cbmba_res_device = std::make_unique<cbmba_resource>(mem_pool_device, pool_size_device_aligned);
     }

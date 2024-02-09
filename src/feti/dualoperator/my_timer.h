@@ -135,25 +135,25 @@ static void print_timer(const char * name, const my_timer & tm, int indent = 0)
     int spbef_name_length = spaces_before + std::min(namelength, max_name_length);
     int spaces_after = label_width - spbef_name_length - 1;
 
-    printf("rank %4d %*.*s:%*s", info::mpi::rank, spbef_name_length, max_name_length, name, spaces_after, "");
+    eslog::info("rank %4d %*.*s:%*s", info::mpi::rank, spbef_name_length, max_name_length, name, spaces_after, "");
 
     bool was_parallel = (tm.get_n_used_threads() > 1);
     bool print_total = allow_irellevant_values || !was_parallel;
     bool print_para = allow_irellevant_values || was_parallel;
 
-    if(print_total) printf("%*.*f", number_width, number_precision, 1000.0 * tm.total_time());
-    else printf("%*s", number_width, "");
+    if(print_total) eslog::info("%*.*f", number_width, number_precision, 1000.0 * tm.total_time());
+    else eslog::info("%*s", number_width, "");
 
-    printf("%*.*f", number_width, number_precision, 1000.0 * tm.avg_time());
+    eslog::info("%*.*f", number_width, number_precision, 1000.0 * tm.avg_time());
 
-    if(print_para) printf("%*.*f", number_width, number_precision, 1000.0 * tm.avg_perthread_time());
-    else printf("%*s", number_width, "");
+    if(print_para) eslog::info("%*.*f", number_width, number_precision, 1000.0 * tm.avg_perthread_time());
+    else eslog::info("%*s", number_width, "");
 
-    // printf("    ");
+    // eslog::info("    ");
     // for(size_t i = 0; i < tm.get_n_used_threads(); i++)
-    //     printf(" %*.*f", number_width, number_precision, 1000.0 * tm.perthread_time(i));
+    //     eslog::info(" %*.*f", number_width, number_precision, 1000.0 * tm.perthread_time(i));
 
-    printf("\n");
+    eslog::info("\n");
 #endif
 }
 
