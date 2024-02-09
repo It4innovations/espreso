@@ -133,7 +133,7 @@ namespace spblas {
         {
             switch(c)
             {
-                case 'N': return CUSPARSE_OPERATION_TRANSPOSE;
+                case 'N': return CUSPARSE_OPERATION_NON_TRANSPOSE;
                 case 'T': return CUSPARSE_OPERATION_TRANSPOSE;
                 case 'H': return CUSPARSE_OPERATION_CONJUGATE_TRANSPOSE;
                 default: eslog::error("invalid operation '%c'\n", c);

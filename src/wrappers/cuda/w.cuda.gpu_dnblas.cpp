@@ -167,8 +167,8 @@ namespace dnblas {
         if(utils::is_real<T>() && transpose == 'H') transpose = 'T';
         utils::remove_complex_t<T> zero = 0.0;
         utils::remove_complex_t<T> one = 1.0;
-        if constexpr(utils::is_real<T>())    CHECK(_my_blas_xsyrk<T>(h->h, _char_to_fill(fill), _char_to_operation(transpose), n, k, &one, A, ld_A, &zero, C, ld_C));
-        if constexpr(utils::is_complex<T>()) CHECK(_my_blas_xherk<T>(h->h, _char_to_fill(fill), _char_to_operation(transpose), n, k, &one, A, ld_A, &zero, C, ld_C));
+        if constexpr(utils::is_real<T>())    CHECK(_my_blas_xsyrk<T>(h->h, _char_to_fill(out_fill), _char_to_operation(transpose), n, k, &one, A, ld_A, &zero, C, ld_C));
+        if constexpr(utils::is_complex<T>()) CHECK(_my_blas_xherk<T>(h->h, _char_to_fill(out_fill), _char_to_operation(transpose), n, k, &one, A, ld_A, &zero, C, ld_C));
     }
 
     template<typename T, typename I>
