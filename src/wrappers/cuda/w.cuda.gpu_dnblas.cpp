@@ -14,9 +14,7 @@ inline void _check(cublasStatus_t status, const char *file, int line)
 {
     if (status != CUBLAS_STATUS_SUCCESS)
     {
-        char str[1000];
-        snprintf(str, sizeof(str), "CUBLAS Error %d %s: %s. In file '%s' on line %d\n", status, cublasGetStatusName(status), cublasGetStatusString(status), file, line);
-        espreso::eslog::error(str);
+        espreso::eslog::error("CUBLAS Error %d %s: %s. In file '%s' on line %d\n", status, cublasGetStatusName(status), cublasGetStatusString(status), file, line);
     }
 }
 
@@ -84,6 +82,37 @@ namespace dnblas {
             if constexpr(std::is_same_v<T,std::complex<float>>)  return cublasChemv(handle, uplo, n, (U*)alpha, (U*)A, lda, (U*)x, incx, (U*)beta, (U*)y, incy);
             if constexpr(std::is_same_v<T,std::complex<double>>) return cublasZhemv(handle, uplo, n, (U*)alpha, (U*)A, lda, (U*)x, incx, (U*)beta, (U*)y, incy);
         }
+
+        static cublasFillMode_t _char_to_fill(char c)
+        {
+            switch(c)
+            {
+                case 'U': return CUBLAS_FILL_MODE_UPPER;
+                case 'L': return CUBLAS_FILL_MODE_LOWER;
+                default: eslog::error("invalid fill '%c'\n", c);
+            }
+        }
+
+        static cublasOperation_t _char_to_operation(char c)
+        {
+            switch(c)
+            {
+                case 'N': return CUBLAS_OP_N;
+                case 'T': return CUBLAS_OP_T;
+                case 'H': return CUBLAS_OP_C;
+                default: eslog::error("invalid operation '%c'\n", c);
+            }
+        }
+
+        static cublasSideMode_t _char_to_side(char c)
+        {
+            switch(c)
+            {
+                case 'L': return CUBLAS_SIDE_LEFT;
+                case 'R': return CUBLAS_SIDE_RIGHT;
+                default: eslog::error("invalid side '%c'\n", c);
+            }
+        }
     }
 
     struct _handle
@@ -120,49 +149,42 @@ namespace dnblas {
     }
 
     template<typename T, typename I>
-    void trsv(handle & h, char mat_symmetry, char transpose, I n, I ld, T * matrix, T * rhs_sol)
+    void trsv(handle & h, char fill, char transpose, I n, I ld, T * matrix, T * rhs_sol)
     {
-        cublasFillMode_t fill = (mat_symmetry == 'U' ? CUBLAS_FILL_MODE_UPPER : CUBLAS_FILL_MODE_LOWER);
-        cublasOperation_t op = (transpose == 'T' ? CUBLAS_OP_T : CUBLAS_OP_N);
-        CHECK(_my_blas_xtrsv<T>(h->h, fill, op, CUBLAS_DIAG_NON_UNIT, n, matrix, ld, rhs_sol, 1));
+        CHECK(_my_blas_xtrsv<T>(h->h, _char_to_fill(fill), _char_to_operation(transpose), CUBLAS_DIAG_NON_UNIT, n, matrix, ld, rhs_sol, 1));
     }
 
     template<typename T, typename I>
-    void trsm(handle & h, char side, char mat_symmetry, char transpose, I nrows_X, I ncols_X, T * A, I ld_A, T * rhs_sol, I ld_X)
+    void trsm(handle & h, char side, char fill, char transpose, I nrows_X, I ncols_X, T * A, I ld_A, T * rhs_sol, I ld_X)
     {
-        cublasSideMode_t s = (side == 'L' ? CUBLAS_SIDE_LEFT : CUBLAS_SIDE_RIGHT);
-        cublasFillMode_t fill = (mat_symmetry == 'U' ? CUBLAS_FILL_MODE_UPPER : CUBLAS_FILL_MODE_LOWER);
-        cublasOperation_t op = (transpose == 'T' ? CUBLAS_OP_T : CUBLAS_OP_N);
         T one = 1.0;
-        CHECK(_my_blas_xtrsm<T>(h->h, s, fill, op, CUBLAS_DIAG_NON_UNIT, nrows_X, ncols_X, &one, A, ld_A, rhs_sol, ld_X));
+        CHECK(_my_blas_xtrsm<T>(h->h, _char_to_side(side), _char_to_fill(fill), _char_to_operation(transpose), CUBLAS_DIAG_NON_UNIT, nrows_X, ncols_X, &one, A, ld_A, rhs_sol, ld_X));
     }
 
     template<typename T, typename I>
     void herk(handle & h, char out_fill, char transpose, I n, I k, T * A, I ld_A, T * C, I ld_C)
     {
-        cublasFillMode_t fill = (out_fill == 'U' ? CUBLAS_FILL_MODE_UPPER : CUBLAS_FILL_MODE_LOWER);
-        cublasOperation_t op = (transpose == 'T' ? CUBLAS_OP_T : CUBLAS_OP_N);
+        if(utils::is_real<T>() && transpose == 'H') transpose = 'T';
         utils::remove_complex_t<T> zero = 0.0;
         utils::remove_complex_t<T> one = 1.0;
-        if constexpr(utils::is_real<T>())    CHECK(_my_blas_xsyrk<T>(h->h, fill, op, n, k, &one, A, ld_A, &zero, C, ld_C));
-        if constexpr(utils::is_complex<T>()) CHECK(_my_blas_xherk<T>(h->h, fill, op, n, k, &one, A, ld_A, &zero, C, ld_C));
+        if constexpr(utils::is_real<T>())    CHECK(_my_blas_xsyrk<T>(h->h, _char_to_fill(fill), _char_to_operation(transpose), n, k, &one, A, ld_A, &zero, C, ld_C));
+        if constexpr(utils::is_complex<T>()) CHECK(_my_blas_xherk<T>(h->h, _char_to_fill(fill), _char_to_operation(transpose), n, k, &one, A, ld_A, &zero, C, ld_C));
     }
 
     template<typename T, typename I>
     void hemv(handle & h, char fill, I n, T * A, I ld_A, T * vec_in, T * vec_out)
     {
-        cublasFillMode_t f = (fill == 'U' ? CUBLAS_FILL_MODE_UPPER : CUBLAS_FILL_MODE_LOWER);
         T zero = 0.0;
         T one = 1.0;
-        if constexpr(utils::is_real<T>())    CHECK(_my_blas_xsymv<T>(h->h, f, n, &one, A, ld_A, vec_in, 1, &zero, vec_out, 1));
-        if constexpr(utils::is_complex<T>()) CHECK(_my_blas_xhemv<T>(h->h, f, n, &one, A, ld_A, vec_in, 1, &zero, vec_out, 1));
+        if constexpr(utils::is_real<T>())    CHECK(_my_blas_xsymv<T>(h->h, _char_to_fill(fill), n, &one, A, ld_A, vec_in, 1, &zero, vec_out, 1));
+        if constexpr(utils::is_complex<T>()) CHECK(_my_blas_xhemv<T>(h->h, _char_to_fill(fill), n, &one, A, ld_A, vec_in, 1, &zero, vec_out, 1));
     }
 
 
 
     #define INSTANTIATE_T_I(T,I) \
-    template void trsv<T,I>(handle & h, char mat_symmetry, char transpose, I n, I ld, T * matrix, T * rhs_sol); \
-    template void trsm<T,I>(handle & h, char side, char mat_symmetry, char transpose, I nrows_X, I ncols_X, T * A, I ld_A, T * rhs_sol, I ld_X); \
+    template void trsv<T,I>(handle & h, char fill, char transpose, I n, I ld, T * matrix, T * rhs_sol); \
+    template void trsm<T,I>(handle & h, char side, char fill, char transpose, I nrows_X, I ncols_X, T * A, I ld_A, T * rhs_sol, I ld_X); \
     template void herk<T,I>(handle & h, char out_fill, char transpose, I n, I k, T * A, I ld_A, T * C, I ld_C); \
     template void hemv<T,I>(handle & h, char fill, I n, T * A, I ld_A, T * vec_in, T * vec_out);
 

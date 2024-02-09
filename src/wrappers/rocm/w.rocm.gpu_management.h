@@ -16,9 +16,7 @@ inline void _check(hipError_t error_code, const char *file, int line)
 {
     if (error_code != hipSuccess)
     {
-        char str[1000];
-        snprintf(str, sizeof(str), "HIP Error %d %s: %s. In file '%s' on line %d\n", error_code, hipGetErrorName(error_code), hipGetErrorString(error_code), file, line);
-        espreso::eslog::error(str);
+        espreso::eslog::error("HIP Error %d %s: %s. In file '%s' on line %d\n", error_code, hipGetErrorName(error_code), hipGetErrorString(error_code), file, line);
     }
 }
 

@@ -16,9 +16,7 @@ inline void _check(cudaError_t error_code, const char *file, int line)
 {
     if (error_code != cudaSuccess)
     {
-        char str[1000];
-        snprintf(str, sizeof(str), "CUDA Error %d %s: %s. In file '%s' on line %d\n", error_code, cudaGetErrorName(error_code), cudaGetErrorString(error_code), file, line);
-        espreso::eslog::error(str);
+        espreso::eslog::error("CUDA Error %d %s: %s. In file '%s' on line %d\n", error_code, cudaGetErrorName(error_code), cudaGetErrorString(error_code), file, line);
     }
 }
 

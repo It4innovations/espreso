@@ -75,11 +75,28 @@ namespace mgm {
 
     void memset_submit(queue & q, void * ptr, size_t num_bytes, char val);
 
-    inline char change_operation(char op)
+    inline char change_operation_array_transpose(char op)
     {
-        if(op == 'N') return 'T';
-        if(op == 'T') return 'N';
-        return '_';
+        switch(op)
+        {
+            case 'N': return 'T';
+            case 'T': return 'N';
+            case 'C': return 'H';
+            case 'H': return 'C';
+            default: return '_';
+        }
+    }
+
+    inline char change_operation_conj_transpose(char op)
+    {
+        switch(op)
+        {
+            case 'N': return 'H';
+            case 'T': return 'C';
+            case 'C': return 'T';
+            case 'H': return 'N';
+            default: return '_';
+        }
     }
 
     inline char change_order(char order)

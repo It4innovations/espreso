@@ -40,10 +40,10 @@ void linearsolver(const char* msg);
 void duration(const char* msg);
 void warning(const char* msg);
 void storedata(const char* msg);
-void failure(const char* msg);
-void internalFailure(const char* msg);
-void error(const char* msg);
-void globalerror(const char* msg);
+[[noreturn]] void failure(const char* msg);
+[[noreturn]] void internalFailure(const char* msg);
+[[noreturn]] void error(const char* msg);
+[[noreturn]] void globalerror(const char* msg);
 
 double time();
 double duration();

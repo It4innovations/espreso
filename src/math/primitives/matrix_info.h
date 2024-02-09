@@ -31,8 +31,8 @@ enum struct Matrix_Shape: int {
 enum struct Solver_Factors: int {
 	NONE,
 	NONSYMMETRIC_BOTH,
-	SYMMETRIC_UPPER,
-	SYMMETRIC_LOWER
+	HERMITIAN_UPPER, // for non-complex, hermitian and symmetric are equivalent
+	HERMITIAN_LOWER
 };
 
 enum struct Matrix_Symmetry: int {

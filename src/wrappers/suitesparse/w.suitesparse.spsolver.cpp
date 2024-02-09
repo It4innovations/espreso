@@ -49,7 +49,7 @@ bool DirectSparseSolver<T, I>::provideSC()
 template <typename T, typename I>
 Solver_Factors DirectSparseSolver<T, I>::factorsSymmetry()
 {
-	return Solver_Factors::SYMMETRIC_UPPER;
+	return Solver_Factors::HERMITIAN_UPPER;
 }
 
 template <typename T, typename I>

@@ -66,7 +66,7 @@ void storedata(const char* format, Args... args)
 }
 
 template <typename... Args>
-void failure(const char* format, Args... args)
+[[noreturn]] void failure(const char* format, Args... args)
 {
 	if (BUFFER_SIZE < snprintf(buffer, BUFFER_SIZE, format, args...)) {
 		buffer[BUFFER_SIZE - 2] = '\n';
@@ -75,7 +75,7 @@ void failure(const char* format, Args... args)
 }
 
 template <typename... Args>
-void internalFailure(const char* format, Args... args)
+[[noreturn]] void internalFailure(const char* format, Args... args)
 {
 	if (BUFFER_SIZE < snprintf(buffer, BUFFER_SIZE, format, args...)) {
 		buffer[BUFFER_SIZE - 2] = '\n';
@@ -84,7 +84,7 @@ void internalFailure(const char* format, Args... args)
 }
 
 template <typename... Args>
-void error(const char* format, Args... args)
+[[noreturn]] void error(const char* format, Args... args)
 {
 	if (BUFFER_SIZE < snprintf(buffer, BUFFER_SIZE, format, args...)) {
 		buffer[BUFFER_SIZE - 2] = '\n';
@@ -93,7 +93,7 @@ void error(const char* format, Args... args)
 }
 
 template <typename... Args>
-void globalerror(const char* format, Args... args)
+[[noreturn]] void globalerror(const char* format, Args... args)
 {
 	if (BUFFER_SIZE < snprintf(buffer, BUFFER_SIZE, format, args...)) {
 		buffer[BUFFER_SIZE - 2] = '\n';

@@ -20,10 +20,10 @@ namespace dnblas {
     void buffer_unset(handle & h) {}
 
     template<typename T, typename I>
-    void trsv(handle & h, char mat_symmetry, char transpose, I n, I ld, T * matrix, T * rhs_sol) {}
+    void trsv(handle & h, char fill, char transpose, I n, I ld, T * matrix, T * rhs_sol) {}
 
     template<typename T, typename I>
-    void trsm(handle & h, char side, char mat_symmetry, char transpose, I nrows_X, I ncols_X, T * A, I ld_A, T * rhs_sol, I ld_X) {}
+    void trsm(handle & h, char side, char fill, char transpose, I nrows_X, I ncols_X, T * A, I ld_A, T * rhs_sol, I ld_X) {}
 
     template<typename T, typename I>
     void herk(handle & h, char out_fill, char transpose, I n, I k, T * A, I ld_A, T * C, I ld_C) {}
@@ -34,8 +34,8 @@ namespace dnblas {
 
 
     #define INSTANTIATE_T_I(T,I) \
-    template void trsv<T,I>(handle & h, char mat_symmetry, char transpose, I n, I ld, T * matrix, T * rhs_sol); \
-    template void trsm<T,I>(handle & h, char side, char mat_symmetry, char transpose, I nrows_X, I ncols_X, T * A, I ld_A, T * rhs_sol, I ld_X); \
+    template void trsv<T,I>(handle & h, char fill, char transpose, I n, I ld, T * matrix, T * rhs_sol); \
+    template void trsm<T,I>(handle & h, char side, char fill, char transpose, I nrows_X, I ncols_X, T * A, I ld_A, T * rhs_sol, I ld_X); \
     template void herk<T,I>(handle & h, char out_fill, char transpose, I n, I k, T * A, I ld_A, T * C, I ld_C); \
     template void hemv<T,I>(handle & h, char fill, I n, T * A, I ld_A, T * vec_in, T * vec_out);
 

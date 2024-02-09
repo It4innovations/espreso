@@ -13,9 +13,7 @@ inline void _check(rocblas_status status, const char *file, int line)
 {
     if (status != rocblas_status_success && status != rocblas_status_size_unchanged && status != rocblas_status_size_increased)
     {
-        char str[1000];
-        snprintf(str, sizeof(str), "ROCBLAS Error %d. In file '%s' on line %d\n", status, file, line);
-        espreso::eslog::error(str);
+        espreso::eslog::error("ROCBLAS Error %d. In file '%s' on line %d\n", status, file, line);
     }
 }
 
@@ -83,6 +81,37 @@ namespace dnblas {
             if constexpr(std::is_same_v<T,std::complex<float>>)  return rocblas_csymv(handle, uplo, n, (U*)alpha, (U*)A, lda, (U*)x, incx, (U*)beta, (U*)y, incy);
             if constexpr(std::is_same_v<T,std::complex<double>>) return rocblas_zsymv(handle, uplo, n, (U*)alpha, (U*)A, lda, (U*)x, incx, (U*)beta, (U*)y, incy);
         }
+
+        static rocblas_fill _char_to_fill(char c)
+        {
+            switch(c)
+            {
+                case 'U': return rocblas_fill_upper;
+                case 'L': return rocblas_fill_lower;
+                default: eslog::error("invalid fill '%c'\n", c);
+            }
+        }
+
+        static rocblas_operation _char_to_operation(char c)
+        {
+            switch(c)
+            {
+                case 'N': return rocblas_operation_none;
+                case 'T': return rocblas_operation_transpose;
+                case 'H': return rocblas_operation_conjugate_transpose;
+                default: eslog::error("invalid operation '%c'\n", c);
+            }
+        }
+
+        static rocblas_side _char_to_side(char c)
+        {
+            switch(c)
+            {
+                case 'L': return rocblas_side_left;
+                case 'R': return rocblas_side_right;
+                default: eslog::error("invalid side '%c'\n", c);
+            }
+        }
     }
 
     struct _handle
@@ -121,49 +150,42 @@ namespace dnblas {
     }
 
     template<typename T, typename I>
-    void trsv(handle & h, char mat_symmetry, char transpose, I n, I ld, T * matrix, T * rhs_sol)
+    void trsv(handle & h, char fill, char transpose, I n, I ld, T * matrix, T * rhs_sol)
     {
-        rocblas_fill fill = (mat_symmetry == 'U' ? rocblas_fill_upper : rocblas_fill_lower);
-        rocblas_operation op = (transpose == 'T' ? rocblas_operation_transpose : rocblas_operation_none);
-        CHECK(_my_blas_xtrsv(h->h, fill, op, rocblas_diagonal_non_unit, n, matrix, ld, rhs_sol, 1));
+        CHECK(_my_blas_xtrsv(h->h, _char_to_fill(fill), _char_to_operation(transpose), rocblas_diagonal_non_unit, n, matrix, ld, rhs_sol, 1));
     }
 
     template<typename T, typename I>
-    void trsm(handle & h, char side, char mat_symmetry, char transpose, I nrows_X, I ncols_X, T * A, I ld_A, T * rhs_sol, I ld_X)
+    void trsm(handle & h, char side, char fill, char transpose, I nrows_X, I ncols_X, T * A, I ld_A, T * rhs_sol, I ld_X)
     {
-        rocblas_side s = (side == 'L' ? rocblas_side_left : rocblas_side_right);
-        rocblas_fill fill = (mat_symmetry == 'U' ? rocblas_fill_upper : rocblas_fill_lower);
-        rocblas_operation op = (transpose == 'T' ? rocblas_operation_transpose : rocblas_operation_none);
         T one = 1.0;
-        CHECK(_my_blas_xtrsm(h->h, s, fill, op, rocblas_diagonal_non_unit, nrows_X, ncols_X, &one, A, ld_A, rhs_sol, ld_X));
+        CHECK(_my_blas_xtrsm(h->h, _char_to_side(side), _char_to_fill(fill), _char_to_operation(transpose), rocblas_diagonal_non_unit, nrows_X, ncols_X, &one, A, ld_A, rhs_sol, ld_X));
     }
 
     template<typename T, typename I>
     void herk(handle & h, char out_fill, char transpose, I n, I k, T * A, I ld_A, T * C, I ld_C)
     {
-        rocblas_fill fill = (out_fill == 'U' ? rocblas_fill_upper : rocblas_fill_lower);
-        rocblas_operation op = (transpose == 'T' ? rocblas_operation_transpose : rocblas_operation_none);
+        if(utils::is_real<T>() && transpose == 'H') transpose = 'T';
         utils::remove_complex_t<T> zero = 0.0;
         utils::remove_complex_t<T> one = 1.0;
-        if constexpr(utils::is_real<T>())    CHECK(_my_blas_xsyrk(h->h, fill, op, n, k, &one, A, ld_A, &zero, C, ld_C));
-        if constexpr(utils::is_complex<T>()) CHECK(_my_blas_xherk(h->h, fill, op, n, k, &one, A, ld_A, &zero, C, ld_C));
+        if constexpr(utils::is_real<T>())    CHECK(_my_blas_xsyrk(h->h, _char_to_fill(out_fill), _char_to_operation(transpose), n, k, &one, A, ld_A, &zero, C, ld_C));
+        if constexpr(utils::is_complex<T>()) CHECK(_my_blas_xherk(h->h, _char_to_fill(out_fill), _char_to_operation(transpose), n, k, &one, A, ld_A, &zero, C, ld_C));
     }
 
     template<typename T, typename I>
     void hemv(handle & h, char fill, I n, T * A, I ld_A, T * vec_in, T * vec_out)
     {
-        rocblas_fill f = (fill == 'U' ? rocblas_fill_upper : rocblas_fill_lower);
         T zero = 0.0;
         T one = 1.0;
-        if constexpr(utils::is_real<T>())    CHECK(_my_blas_xsymv(h->h, f, n, &one, A, ld_A, vec_in, 1, &zero, vec_out, 1));
-        if constexpr(utils::is_complex<T>()) CHECK(_my_blas_xhemv(h->h, f, n, &one, A, ld_A, vec_in, 1, &zero, vec_out, 1));
+        if constexpr(utils::is_real<T>())    CHECK(_my_blas_xsymv(h->h, _char_to_fill(fill), n, &one, A, ld_A, vec_in, 1, &zero, vec_out, 1));
+        if constexpr(utils::is_complex<T>()) CHECK(_my_blas_xhemv(h->h, _char_to_fill(fill), n, &one, A, ld_A, vec_in, 1, &zero, vec_out, 1));
     }
 
 
 
     #define INSTANTIATE_T_I(T,I) \
-    template void trsv<T,I>(handle & h, char mat_symmetry, char transpose, I n, I ld, T * matrix, T * rhs_sol); \
-    template void trsm<T,I>(handle & h, char side, char mat_symmetry, char transpose, I nrows_X, I ncols_X, T * A, I ld_A, T * rhs_sol, I ld_X); \
+    template void trsv<T,I>(handle & h, char fill, char transpose, I n, I ld, T * matrix, T * rhs_sol); \
+    template void trsm<T,I>(handle & h, char side, char fill, char transpose, I nrows_X, I ncols_X, T * A, I ld_A, T * rhs_sol, I ld_X); \
     template void herk<T,I>(handle & h, char out_fill, char transpose, I n, I k, T * A, I ld_A, T * C, I ld_C); \
     template void hemv<T,I>(handle & h, char fill, I n, T * A, I ld_A, T * vec_in, T * vec_out);
 

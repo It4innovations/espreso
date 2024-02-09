@@ -166,7 +166,7 @@ namespace math {
 	template <class T> void store(const T &x, const char* file);
 	
 	template<typename T, typename I, typename Ao, typename Ai, typename Ap>
-	static void permuteColumns(Matrix_CSR<T,I,Ao> & output, const Matrix_CSR<T,I,Ai> & input, const Permutation<I,Ap> & perm)
+	void permuteColumns(Matrix_CSR<T,I,Ao> & output, const Matrix_CSR<T,I,Ai> & input, const Permutation<I,Ap> & perm)
 	{
 		static_assert(Ao::is_data_host_accessible, "permuteColumns: the allocator does not provide host-accessible memory");
 		static_assert(Ai::is_data_host_accessible, "permuteColumns: the allocator does not provide host-accessible memory");
@@ -196,14 +196,21 @@ namespace math {
 		}
 	}
 
-	template<typename T, typename I, typename Ao, typename Am, typename Ai>
-	static void transposeMapSetup(Matrix_CSR<T,I,Ao> & output, Vector_Dense<I,I,Am> & map, const Matrix_CSR<T,I,Ai> & input)
+	template<typename T>
+	T my_conj(T val)
 	{
-		static_assert(Ao::is_data_host_accessible, "transposeMapSetup: the allocator does not provide host-accessible memory");
-		static_assert(Am::is_data_host_accessible, "transposeMapSetup: the allocator does not provide host-accessible memory");
-		static_assert(Ai::is_data_host_accessible, "transposeMapSetup: the allocator does not provide host-accessible memory");
-		if(output.nrows != input.ncols || output.ncols != input.nrows || output.nnz != input.nnz) eslog::error("transposeMapSetup: output matrix has wrong dimensions\n");
-		if(input.nnz != map.size) eslog::error("transposeMapSetup: input map has wrong dimensions\n");
+		if constexpr(utils::is_real<T>()) return val;
+		if constexpr(utils::is_complex<T>()) return std::conj(val);
+	}
+
+	template<typename T, typename I, typename Ao, typename Am, typename Ai>
+	void conjTransposeMapSetup(Matrix_CSR<T,I,Ao> & output, Vector_Dense<I,I,Am> & map, const Matrix_CSR<T,I,Ai> & input)
+	{
+		static_assert(Ao::is_data_host_accessible, "conjTransposeMapSetup: the allocator does not provide host-accessible memory");
+		static_assert(Am::is_data_host_accessible, "conjTransposeMapSetup: the allocator does not provide host-accessible memory");
+		static_assert(Ai::is_data_host_accessible, "conjTransposeMapSetup: the allocator does not provide host-accessible memory");
+		if(output.nrows != input.ncols || output.ncols != input.nrows || output.nnz != input.nnz) eslog::error("conjTransposeMapSetup: output matrix has wrong dimensions\n");
+		if(input.nnz != map.size) eslog::error("conjTransposeMapSetup: input map has wrong dimensions\n");
 
 		struct colvalidx{ T val; I col; I idx; colvalidx(I c, T v, I i){ col = c; val = v; idx = i;} };
 
@@ -229,7 +236,7 @@ namespace math {
 			for(size_t i = 0; i < data.size(); i++)
 			{
 				output.cols[curr_idx] = data[i].col;
-				output.vals[curr_idx] = data[i].val;
+				output.vals[curr_idx] = my_conj(data[i].val);
 				map.vals[curr_idx] = data[i].idx;
 				curr_idx++;
 			}
@@ -238,17 +245,17 @@ namespace math {
 	}
 
 	template<typename T, typename I, typename Ao, typename Am, typename Ai>
-	static void transposeMapUse(Matrix_CSR<T,I,Ao> & output, const Vector_Dense<I,I,Am> & map, const Matrix_CSR<T,I,Ai> & input)
+	void conjTransposeMapUse(Matrix_CSR<T,I,Ao> & output, const Vector_Dense<I,I,Am> & map, const Matrix_CSR<T,I,Ai> & input)
 	{
-		static_assert(Ao::is_data_host_accessible, "transposeMapUse: the allocator does not provide host-accessible memory");
-		static_assert(Am::is_data_host_accessible, "transposeMapUse: the allocator does not provide host-accessible memory");
-		static_assert(Ai::is_data_host_accessible, "transposeMapUse: the allocator does not provide host-accessible memory");
-		if(output.nrows != input.ncols || output.ncols != input.nrows || output.nnz != input.nnz) eslog::error("transposeMapUse: output matrix has wrong dimensions\n");
-		if(input.nnz != map.size) eslog::error("transposeMapUse: input map has wrong dimensions\n");
+		static_assert(Ao::is_data_host_accessible, "conjTransposeMapUse: the allocator does not provide host-accessible memory");
+		static_assert(Am::is_data_host_accessible, "conjTransposeMapUse: the allocator does not provide host-accessible memory");
+		static_assert(Ai::is_data_host_accessible, "conjTransposeMapUse: the allocator does not provide host-accessible memory");
+		if(output.nrows != input.ncols || output.ncols != input.nrows || output.nnz != input.nnz) eslog::error("conjTransposeMapUse: output matrix has wrong dimensions\n");
+		if(input.nnz != map.size) eslog::error("conjTransposeMapUse: input map has wrong dimensions\n");
 
 		for(I i = 0; i < map.size; i++)
 		{
-			output.vals[i] = input.vals[map.vals[i]];
+			output.vals[i] = my_conj(input.vals[map.vals[i]]);
 		}
 	}
 
