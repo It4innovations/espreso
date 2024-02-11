@@ -8,14 +8,20 @@ namespace espreso {
 
 template<typename T> struct FETI;
 
-template <typename T>
-struct Dual_Buffer {
-    void set(FETI<T> &feti);
-
-	int nhalo, size;
-	std::vector<int> nmap, neighbors;
-	std::vector<std::vector<T> > send, recv;
+struct Dual_Map {
+    static int nhalo, size;
+    static std::vector<int> nmap, neighbors;
 };
+
+template <typename T>
+struct Dual_Buffer: public Dual_Map {
+    template <typename Other>
+    static void set(FETI<Other> &feti);
+    static std::vector<std::vector<T> > send, recv;
+};
+
+template <typename T> std::vector<std::vector<T> > Dual_Buffer<T>::send;
+template <typename T> std::vector<std::vector<T> > Dual_Buffer<T>::recv;
 
 }
 

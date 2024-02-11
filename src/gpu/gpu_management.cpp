@@ -36,6 +36,10 @@ namespace mgm {
 
     void memalloc_device_max(void * & memory, size_t & memory_size_B, size_t max_needed) {}
 
+    void * memalloc_hostpinned(size_t num_bytes) { return nullptr; }
+
+    void memfree_hostpinned(void * ptr) {}
+
     void submit_host_function(queue & q, const std::function<void(void)> & f) {}
 
     template<typename T, typename I>
@@ -57,10 +61,10 @@ namespace mgm {
     void copy_submit_h2d(queue & q, Matrix_Dense<T,I,Ao> & output, const Matrix_Dense<T,I,Ai> & input) {}
     
     template<typename T, typename I, typename Ao, typename Ai>
-    void copy_submit_d2h(queue & q, Matrix_CSR<T,I,Ao> & output, const Matrix_CSR<T,I,Ai> & input, bool copy_pattern = true, bool copy_vals = true) {}
+    void copy_submit_d2h(queue & q, Matrix_CSR<T,I,Ao> & output, const Matrix_CSR<T,I,Ai> & input, bool copy_pattern, bool copy_vals) {}
 
     template<typename T, typename I, typename Ao, typename Ai>
-    void copy_submit_h2d(queue & q, Matrix_CSR<T,I,Ao> & output, const Matrix_CSR<T,I,Ai> & input, bool copy_pattern = true, bool copy_vals = true) {}
+    void copy_submit_h2d(queue & q, Matrix_CSR<T,I,Ao> & output, const Matrix_CSR<T,I,Ai> & input, bool copy_pattern, bool copy_vals) {}
 
     void memset_submit(queue & q, void * ptr, size_t num_bytes, char val) {}
 
@@ -71,8 +75,8 @@ namespace mgm {
     template void copy_submit_d2h<T,I,Ahost,  Adevice>(queue & q, Vector_Dense<T,I,Ahost>   & output, const Vector_Dense<T,I,Adevice> & input); \
     template void copy_submit_h2d<T,I,Adevice,Ahost  >(queue & q, Matrix_Dense<T,I,Adevice> & output, const Matrix_Dense<T,I,Ahost>   & input); \
     template void copy_submit_d2h<T,I,Ahost,  Adevice>(queue & q, Matrix_Dense<T,I,Ahost>   & output, const Matrix_Dense<T,I,Adevice> & input); \
-    template void copy_submit_h2d<T,I,Adevice,Ahost  >(queue & q, Matrix_CSR<T,I,Adevice> & output, const Matrix_CSR<T,I,Ahost>   & input, bool copy_pattern = true, bool copy_vals = true); \
-    template void copy_submit_d2h<T,I,Ahost,  Adevice>(queue & q, Matrix_CSR<T,I,Ahost>   & output, const Matrix_CSR<T,I,Adevice> & input, bool copy_pattern = true, bool copy_vals = true);
+    template void copy_submit_h2d<T,I,Adevice,Ahost  >(queue & q, Matrix_CSR<T,I,Adevice> & output, const Matrix_CSR<T,I,Ahost>   & input, bool copy_pattern, bool copy_vals); \
+    template void copy_submit_d2h<T,I,Ahost,  Adevice>(queue & q, Matrix_CSR<T,I,Ahost>   & output, const Matrix_CSR<T,I,Adevice> & input, bool copy_pattern, bool copy_vals);
 
         #define INSTANTIATE_T_I(T,I) \
         template void copy_submit_h2d<T,I>(queue & q, T * dst, T const * src, I num_elements); \

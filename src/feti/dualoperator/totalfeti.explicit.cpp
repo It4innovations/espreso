@@ -50,7 +50,6 @@ void TotalFETIExplicit<T>::set(const step::Step &step)
 //	sparsity = feti.configuration.partial_dual ? DirectSolver<T, Matrix_CSR>::VectorSparsity::SPARSE_RHS | DirectSolver<T, Matrix_CSR>::VectorSparsity::SPARSE_SOLUTION : DirectSolver<T, Matrix_CSR>::VectorSparsity::DENSE;
 
 	Kplus.resize(feti.K.size());
-	d.resize(feti.lambdas.size);
 	Btx.resize(feti.K.size());
 	KplusBtx.resize(feti.K.size());
 	KSolver.resize(feti.K.size());
@@ -113,7 +112,7 @@ void TotalFETIExplicit<T>::update(const step::Step &step)
 		KSolver[di].solve(feti.f[di], KplusBtx[di]);
 	}
 	applyB(feti, KplusBtx, d);
-	d.add(T{-1}, feti.c);
+	math::add(d, T{-1}, feti.c);
 	eslog::checkpointln("FETI: COMPUTE DUAL RHS [d]");
 
 	bool perLambda = false;

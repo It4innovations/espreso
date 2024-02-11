@@ -215,7 +215,6 @@ void TotalFETIExplicitAcc<T,I>::set(const step::Step &step)
     }
 
     tm_vecresize.start();
-    d.resize(feti.lambdas.size);
     queues.resize(n_queues);
     handles_dense.resize(n_queues);
     handles_sparse.resize(n_queues);
@@ -874,7 +873,7 @@ void TotalFETIExplicitAcc<T,I>::update(const step::Step &step)
             solvers_Kreg[d].solve(feti.f[d], Kplus_fs[d]);
         }
         applyB(feti, Kplus_fs, d);
-	    d.add(T{-1}, feti.c);
+        math::add(d, T{-1}, feti.c);
     }
     tm_compute_d.stop();
 

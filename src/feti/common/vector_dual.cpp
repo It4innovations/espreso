@@ -12,38 +12,38 @@
 namespace espreso {
 
 template <typename T>
-void Vector_Dual<T>::resize(int nhalo, int size)
+Vector_Dual<T>::Vector_Dual()
 {
-	this->nhalo = nhalo;
-	Vector_Dense<T>::resize(size);
+	this->nhalo = Dual_Buffer<T>::nhalo;
+	Vector_Dense<T>::resize(Dual_Buffer<T>::size);
 }
 
 template <typename T>
-void Vector_Dual<T>::synchronize(Dual_Buffer<T> &buffer)
+void Vector_Dual<T>::synchronize()
 {
-	std::vector<esint> offset(buffer.send.size());
-	for (size_t i = 0; i < buffer.nmap.size();) {
-		for (esint n = 0; n < buffer.nmap[i + 2]; ++n) {
-			esint ni = buffer.nmap[i + 3 + n];
-			std::copy(this->vals + buffer.nmap[i], this->vals + buffer.nmap[i + 1], buffer.send[ni].data() + offset[ni]);
-			offset[ni] += buffer.nmap[i + 1] - buffer.nmap[i];
+	std::vector<esint> offset(Dual_Buffer<T>::send.size());
+	for (size_t i = 0; i < Dual_Buffer<T>::nmap.size();) {
+		for (esint n = 0; n < Dual_Buffer<T>::nmap[i + 2]; ++n) {
+			esint ni = Dual_Buffer<T>::nmap[i + 3 + n];
+			std::copy(this->vals + Dual_Buffer<T>::nmap[i], this->vals + Dual_Buffer<T>::nmap[i + 1], Dual_Buffer<T>::send[ni].data() + offset[ni]);
+			offset[ni] += Dual_Buffer<T>::nmap[i + 1] - Dual_Buffer<T>::nmap[i];
 		}
-		i += buffer.nmap[i + 2] + 3;
+		i += Dual_Buffer<T>::nmap[i + 2] + 3;
 	}
-	Communication::exchangeKnownSize(buffer.send, buffer.recv, buffer.neighbors);
+	Communication::exchangeKnownSize(Dual_Buffer<T>::send, Dual_Buffer<T>::recv, Dual_Buffer<T>::neighbors);
 	std::fill(offset.begin(), offset.end(), 0);
-	for (size_t i = 0; i < buffer.nmap.size();) {
-		for (esint n = 0; n < buffer.nmap[i + 2]; ++n) {
-			esint ni = buffer.nmap[i + 3 + n];
-			math::blas::add<T>(buffer.nmap[i + 1] - buffer.nmap[i], this->vals + buffer.nmap[i], 1, 1, buffer.recv[ni].data() + offset[ni], 1);
-			offset[ni] += buffer.nmap[i + 1] - buffer.nmap[i];
+	for (size_t i = 0; i < Dual_Buffer<T>::nmap.size();) {
+		for (esint n = 0; n < Dual_Buffer<T>::nmap[i + 2]; ++n) {
+			esint ni = Dual_Buffer<T>::nmap[i + 3 + n];
+			math::blas::add<T>(Dual_Buffer<T>::nmap[i + 1] - Dual_Buffer<T>::nmap[i], this->vals + Dual_Buffer<T>::nmap[i], 1, 1, Dual_Buffer<T>::recv[ni].data() + offset[ni], 1);
+			offset[ni] += Dual_Buffer<T>::nmap[i + 1] - Dual_Buffer<T>::nmap[i];
 		}
-		i += buffer.nmap[i + 2] + 3;
+		i += Dual_Buffer<T>::nmap[i + 2] + 3;
 	}
 }
 
 template <typename T>
-void Vector_Dual<T>::copyToWithoutHalo(Vector_Dense<T> &to)
+void Vector_Dual<T>::copyToWithoutHalo(Vector_Dense<T> &to) const
 {
 	std::fill(to.vals, to.vals + nhalo, 0);
 	math::blas::copy(size - nhalo, to.vals + nhalo, 1, vals + nhalo, 1);
@@ -65,6 +65,6 @@ T Vector_Dual<T>::dot() const
 
 template struct Vector_Dual<int>;
 template struct Vector_Dual<double>;
-template struct Vector_Dual<std::complex<double>>;
+template struct Vector_Dual<std::complex<double> >;
 
 }

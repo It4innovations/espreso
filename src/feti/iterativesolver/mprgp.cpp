@@ -17,7 +17,7 @@ template <typename T>
 MPRGP<T>::MPRGP(FETI<T> &feti)
 : IterativeSolver<T>(feti)
 {
-    intBuffer.set(feti);
+    Dual_Buffer<int>::set(feti);
 }
 
 template <typename T>
@@ -70,8 +70,8 @@ void MPRGP<double>::updateFreeAndActiveSet(Vector_Dual<int> &free, Vector_Dual<i
         free.vals[i] = (x.vals[i] - feti.lb.vals[j] > epsilon && feti.ub.vals[j] - x.vals[i] > epsilon) ? 1 : 0;
         active.vals[i] = free.vals[i] ? 0 : 1;
     }
-    free.synchronize(intBuffer);
-    active.synchronize(intBuffer);
+    free.synchronize();
+    active.synchronize();
 }
 
 template <>
@@ -87,7 +87,7 @@ void MPRGP<double>::updateReducedGradient(Vector_Dual<double> &g_red, Vector_Dua
             g_red.vals[i] = 0;
         }
     }
-    g_red.synchronize(feti.dualBuffer);
+    g_red.synchronize();
     updateFreeAndActiveSet(free, active, x, epsilon);
     for (int i = 0; i < g_red.size; ++i) {
         fi_red.vals[i] = free.vals[i] ? g_red.vals[i] : 0;
@@ -107,7 +107,7 @@ void MPRGP<double>::updateFreeGradient(Vector_Dual<double> &g_free, Vector_Dual<
     for (int i = 0; i < feti.lambdas.size; ++i) {
         g_free.vals[i] = free.vals[i] ? g.vals[i] : 0;
     }
-    g_free.synchronize(feti.dualBuffer);
+    g_free.synchronize();
 }
 
 template <>

@@ -17,9 +17,10 @@ struct Vector_Dual: public Vector_Dense<T> {
 
 	template <typename Type> friend struct Matrix_Dual_Orthogonal;
 
-	void resize(int nhalo, int size);
-	void synchronize(Dual_Buffer<T> &buffer);
-	void copyToWithoutHalo(Vector_Dense<T> &to);
+	Vector_Dual();
+
+	void synchronize();
+	void copyToWithoutHalo(Vector_Dense<T> &to) const;
 	T dot(const Vector_Dense<T> &other) const;
 	T dot() const;
 

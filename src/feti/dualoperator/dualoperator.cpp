@@ -61,7 +61,7 @@ void DualOperator<T>::estimateMaxEigenValue(double epsilon, int maxIterations, d
 	for (esint i = feti.lambdas.nhalo; i < y.size; ++i) {
 		// y.vals[i] = (1 - 2 * ((feti.decomposition->halo + i) % 2)) * norm;
 	}
-	y.synchronize(feti.dualBuffer);
+	y.synchronize();
 	F->apply(y, v);
 
 	// double lambda = std::sqrt(v.dot());

@@ -46,7 +46,7 @@ namespace spblas {
     void descr_vector_dense_link_data(descr_vector_dense & descr, Vector_Dense<T,I,A> & vector) {}
 
     template<typename T, typename I, typename A>
-    void descr_vector_dense_link_data(descr_vector_dense & descr, Matrix_Dense<T,I,A> & matrix, I colidx = 0) {}
+    void descr_vector_dense_link_data(descr_vector_dense & descr, Matrix_Dense<T,I,A> & matrix, I colidx) {}
 
     void descr_vector_dense_destroy(descr_vector_dense & descr) {}
 

@@ -2,7 +2,6 @@
 #ifndef SRC_FETI_FETI_H_
 #define SRC_FETI_FETI_H_
 
-#include "common/dual_buffer.h"
 #include "config/ecf/linearsolver/feti.h"
 #include "esinfo/stepinfo.h"
 #include "analysis/builder/feti.decomposition.h"
@@ -60,7 +59,6 @@ struct FETI {
 		bool K = true, B = true;
 	} updated;
 
-	Dual_Buffer<T> dualBuffer;
 	IterativeSolver<T> *iterativeSolver = nullptr;
 	Preconditioner<T> *preconditioner = nullptr;
 	Projector<T> *projector = nullptr;
