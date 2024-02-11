@@ -1,25 +1,19 @@
 
-#include "dual_buffer.h"
+#include "dual_map.h"
 #include "feti/feti.h"
+
+#include <complex>
+#include <vector>
 
 namespace espreso {
 
-int Dual_Map::nhalo;
-int Dual_Map::size;
-std::vector<int> Dual_Map::nmap;
-std::vector<int> Dual_Map::neighbors;
-
 template <typename T>
-template <typename Other>
-void Dual_Buffer<T>::set(FETI<Other> &feti)
-{
+void Dual_Map::set(FETI<T> &feti) {
     nhalo = feti.lambdas.nhalo;
     size = feti.lambdas.size;
     neighbors = feti.decomposition->neighbors;
-    send.resize(neighbors.size());
-    recv.resize(neighbors.size());
 
-    std::vector<esint> bsize(neighbors.size());
+    nsize.resize(neighbors.size());
     for (size_t i = 0, offset = 0; i < feti.lambdas.cmap.size(); ) {
         esint lambdas =  feti.lambdas.cmap[i];
         esint domains =  feti.lambdas.cmap[i + 1];
@@ -34,7 +28,7 @@ void Dual_Buffer<T>::set(FETI<Other> &feti)
                 if (last < neigh) {
                     nmap.push_back(neigh);
                     nmap[ncounter]++;
-                    bsize[neigh] += lambdas;
+                    nsize[neigh] += lambdas;
                     last = neigh;
                 }
             }
@@ -45,17 +39,13 @@ void Dual_Buffer<T>::set(FETI<Other> &feti)
         offset += lambdas;
         i += feti.lambdas.cmap[i + 1] + 2;
     }
-
-    for (size_t i = 0; i < neighbors.size(); ++i) {
-        send[i].resize(bsize[i]);
-        recv[i].resize(bsize[i]);
-    }
 }
 
-template void Dual_Buffer<int>::set<double>(FETI<double> &);
-template void Dual_Buffer<int>::set<std::complex<double> >(FETI<std::complex<double> > &);
-template void Dual_Buffer<double>::set<double>(FETI<double> &);
-template void Dual_Buffer<std::complex<double> >::set<std::complex<double> >(FETI<std::complex<double> > &);
+int Dual_Map::nhalo, Dual_Map::size;
+std::vector<int> Dual_Map::nmap, Dual_Map::neighbors, Dual_Map::nsize;
 
+template void Dual_Map::set(FETI<double>&);
+template void Dual_Map::set(FETI<std::complex<double> >&);
 
 }
+

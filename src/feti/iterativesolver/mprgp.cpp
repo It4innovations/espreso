@@ -17,30 +17,29 @@ template <typename T>
 MPRGP<T>::MPRGP(FETI<T> &feti)
 : IterativeSolver<T>(feti)
 {
-    Dual_Buffer<int>::set(feti);
+    Vector_Dual<int>::initBuffers();
 }
 
 template <typename T>
 void MPRGP<T>::info()
 {
-    eslog::info(" = CONJUGATE PROJECTED GRADIENT SETTINGS                                                     = \n");
-    switch (feti.configuration.stopping_criterion) {
-    case FETIConfiguration::STOPPING_CRITERION::RELATIVE:
-        eslog::info(" =   STOPPING CRITERION                                                             RELATIVE = \n");
-        break;
-    case FETIConfiguration::STOPPING_CRITERION::ABSOLUTE:
-        eslog::info(" =   STOPPING CRITERION                                                             ABSOLUTE = \n");
-        break;
-    case FETIConfiguration::STOPPING_CRITERION::ARIOLI:
-        eslog::info(" =   STOPPING CRITERION                                                               ARIOLI = \n");
-        break;
-    }
+    eslog::info(" = MODIFIED PROPORTIONING WITH REDUCED GRADIENT PROJECTION SETTING                           = \n");
+//    switch (feti.configuration.stopping_criterion) {
+//    case FETIConfiguration::STOPPING_CRITERION::RELATIVE:
+//        eslog::info(" =   STOPPING CRITERION                                                             RELATIVE = \n");
+//        break;
+//    case FETIConfiguration::STOPPING_CRITERION::ABSOLUTE:
+//        eslog::info(" =   STOPPING CRITERION                                                             ABSOLUTE = \n");
+//        break;
+//    case FETIConfiguration::STOPPING_CRITERION::ARIOLI:
+//        eslog::info(" =   STOPPING CRITERION                                                               ARIOLI = \n");
+//        break;
+//    }
     eslog::info(" =   PRECISION                                                                      %.2e = \n", feti.configuration.precision);
-    if (feti.configuration.max_iterations == 0) {
-        eslog::info(" =   MAX_ITERATIONS                                                                     AUTO = \n");
-    } else {
-        eslog::info(" =   MAX_ITERATIONS                                                                  %7d = \n", feti.configuration.max_iterations);
-    }
+    eslog::info(" =   MAX_ITERATIONS                                                                  %7d = \n", feti.configuration.max_iterations);
+    eslog::info(" =   ALPHAM                                                                         %.2e = \n", feti.configuration.alpham);
+    eslog::info(" =   DELTA                                                                          %.2e = \n", feti.configuration.delta);
+    eslog::info(" =   GRADPROJ                                                                        %7d = \n", feti.configuration.gradproj);
     eslog::info(" = ----------------------------------------------------------------------------------------- = \n");
 }
 
@@ -70,14 +69,13 @@ void MPRGP<double>::updateFreeAndActiveSet(Vector_Dual<int> &free, Vector_Dual<i
         free.vals[i] = (x.vals[i] - feti.lb.vals[j] > epsilon && feti.ub.vals[j] - x.vals[i] > epsilon) ? 1 : 0;
         active.vals[i] = free.vals[i] ? 0 : 1;
     }
-    free.synchronize();
-    active.synchronize();
 }
 
 template <>
-void MPRGP<double>::updateReducedGradient(Vector_Dual<double> &g_red, Vector_Dual<double> &fi_red, Vector_Dual<double> &beta_red, const Vector_Dual<double> &g, const Vector_Dual<double> &x, double alpha, double epsilon)
+void MPRGP<double>::updateReducedGradient(Vector_Dual<double> &g_red, const Vector_Dual<double> &g, const Vector_Dual<double> &x, double alpha, double epsilon)
 {
     math::copy(xp, x);
+    math::add(xp, -alpha, g);
     restrictToFeasibleSet(xp);
     math::copy(g_red, x);
     math::add(g_red, -1., xp);
@@ -87,18 +85,16 @@ void MPRGP<double>::updateReducedGradient(Vector_Dual<double> &g_red, Vector_Dua
             g_red.vals[i] = 0;
         }
     }
-    g_red.synchronize();
-    updateFreeAndActiveSet(free, active, x, epsilon);
-    for (int i = 0; i < g_red.size; ++i) {
-        fi_red.vals[i] = free.vals[i] ? g_red.vals[i] : 0;
-        beta_red.vals[i] = active.vals[i] ? g_red.vals[i] : 0;
-    }
+//    for (int i = 0; i < g_red.size; ++i) {
+//        fi_red.vals[i] = free.vals[i] ? g_red.vals[i] : 0;
+//        beta_red.vals[i] = active.vals[i] ? g_red.vals[i] : 0;
+//    }
 }
 
 template <>
-void MPRGP<double>::updateStoppingGradient(Vector_Dual<double> &g_stop, Vector_Dual<double> &fi_stop, Vector_Dual<double> &beta_stop, Vector_Dual<double> &g, Vector_Dual<double> &x, double alpha, double epsilon)
+void MPRGP<double>::updateStoppingGradient(Vector_Dual<double> &g_stop, Vector_Dual<double> &g, Vector_Dual<double> &x, double alpha, double epsilon)
 {
-    updateReducedGradient(g_stop, fi_stop, beta_stop, g, x, alpha, epsilon);
+    updateReducedGradient(g_stop, g, x, alpha, epsilon);
 }
 
 template <>
@@ -107,7 +103,14 @@ void MPRGP<double>::updateFreeGradient(Vector_Dual<double> &g_free, Vector_Dual<
     for (int i = 0; i < feti.lambdas.size; ++i) {
         g_free.vals[i] = free.vals[i] ? g.vals[i] : 0;
     }
-    g_free.synchronize();
+}
+
+template <>
+void MPRGP<double>::multByFree(Vector_Dual<double> &z, Vector_Dual<int> &free)
+{
+    for (int i = 0; i < z.size; ++i) {
+        z.vals[i] = free.vals[i] * z.vals[i];
+    }
 }
 
 template <>
@@ -116,12 +119,13 @@ double MPRGP<double>::getFeasibleStepLength(Vector_Dual<double> &x, Vector_Dual<
     double alpha = std::numeric_limits<double>::max();
     for (int i = feti.lambdas.equalities, j = 0; i < feti.lambdas.size; ++i, ++j) {
         if (p.vals[i] > 0) {
-            alpha = std::min(alpha, x.vals[i] - feti.lb.vals[j] / p.vals[i]);
+            alpha = std::min(alpha, (x.vals[i] - feti.lb.vals[j]) / p.vals[i]);
         }
         if (p.vals[i] < 0) {
-            alpha = std::min(alpha, x.vals[i] - feti.ub.vals[j] / p.vals[i]);
+            alpha = std::min(alpha, (x.vals[i] - feti.ub.vals[j]) / p.vals[i]);
         }
     }
+    Communication::allReduce(&alpha, nullptr, 1, MPITools::getType(alpha).mpitype, MPI_MIN);
     return alpha;
 }
 
@@ -138,45 +142,57 @@ template <> void MPRGP<double>::solve(const step::Step &step, IterativeSolverInf
     Preconditioner<double> *M = feti.preconditioner;
     // Projector<double> *P = feti.projector;
 
+    eslog::info("       = ----------------------------------------------------------------------------- = \n");
+
     double maxEIG;
     int nIt;
     F->estimateMaxEigenValue(0.001, 10, maxEIG, nIt);
-    double alpha = 1.95 / maxEIG;
-    double delta = 0.25;
-    double epsilon = 1e-10;
-    bool gradproj = true;
     math::set(x0, 0.);
+
+    eslog::info("       - ESTIMATED MAX EIGEN VALUE                             %.3e in %4d steps - \n", maxEIG, nIt);
+    eslog::info("       - ----------------------------------------------------------------------------- - \n");
+    eslog::info("       - ITERATION        STEP                 NORM(G)         TOLERANCE      TIME [s] - \n");
+    eslog::info("       - ----------------------------------------------------------------------------- - \n");
+    const char *cg = "   cg", *mixed = "cg-gp", *prop = "   gp", *opt = cg;
+    double alpha = feti.configuration.alpham / maxEIG;
 
     math::copy(g0, F->d);
     math::scale(-1., g0);
     F->apply(x0, g);
-    math::add(g0, 1., g);
-    updateReducedGradient(g_red, fi_red, beta_red, g, x0, alpha, epsilon);
-    updateStoppingGradient(g_stop, fi_stop, beta_stop, g, x0, alpha, epsilon);
-    updateFreeGradient(g_free, g, free, alpha, epsilon);
+    math::add(g, 1., g0);
+    updateReducedGradient(g_red, g, x0, alpha, feti.configuration.precision);
+    updateFreeAndActiveSet(free, active, x0, feti.configuration.precision);
+    updateStoppingGradient(g_stop, g, x0, alpha, feti.configuration.precision);
+    updateFreeGradient(g_free, g, free, alpha, feti.configuration.precision);
     math::copy(x, x0); // to feasible?
-    math::copy(z, g_free);
     M->apply(g_free, z);
-    // z * free -> z -->> copy of replace by zero
+    multByFree(z, free);
     math::copy(p, z);
 
-    while (!stop(g_stop, epsilon)) {
+    eslog::checkpointln("FETI: MPRGP INITIALIZATION");
+    eslog::startln("MPRGP: ITERATIONS STARTED", "mprgp");
+    while (!stop(g_stop, feti.configuration.precision) && info.iterations++ < feti.configuration.max_iterations) {
+        info.time.current = eslog::time();
         // PROPORTIONALITY TEST
-        if (2 * delta * std::max(0., g.dot(g_stop)) <= std::max(0., g_stop.dot(g_free))) {
+        if (2 * feti.configuration.delta * std::max(0., g_stop.dot(g)) <= std::max(0., g_stop.dot(g_free))) {
             F->apply(p, Fp);
             double pFp = p.dot(Fp);
-            double alpha_cg = p.dot() / pFp;
+            double alpha_cg = z.dot(g) / pFp;
             double alpha_f = getFeasibleStepLength(x, p);
             if (alpha_cg <= alpha_f) { // Conjugate gradient step
+                opt = cg;
                 math::add(x, -alpha_cg, p);
                 math::add(g, -alpha_cg, Fp);
-                updateReducedGradient(g_red, fi_red, beta_red, g, x, alpha, epsilon);
+                updateReducedGradient(g_red, g, x, alpha, feti.configuration.precision);
+                updateFreeAndActiveSet(free, active, x, feti.configuration.precision);
+                updateFreeGradient(g_free, g, free, alpha, feti.configuration.precision);
                 M->apply(g_free, z);
-                // z * free -> z -->> copy of replace by zero
+                multByFree(z, free);
                 double gamma_cg = z.dot(Fp) / pFp;
+                math::add(z, -gamma_cg, p);
                 math::copy(p, z);
-                math::add(p, -gamma_cg, p);
             } else { // Mixed step
+                opt = mixed;
                 math::copy(gg0, g0); math::add(gg0, 1., g);
                 double fx = .5 * x.dot(gg0);
                 math::copy(nx, x); math::add(nx, -alpha_cg, p);
@@ -192,37 +208,56 @@ template <> void MPRGP<double>::solve(const step::Step &step, IterativeSolverInf
                 } else { // Halfstep
                     math::add(x, -alpha_f, p);
                     math::add(g, -alpha_f, Fp);
-                    updateReducedGradient(g_red, fi_red, beta_red, g, x, alpha, epsilon);
-                    if (gradproj) {
+                    updateReducedGradient(g_red, g, x, alpha, feti.configuration.precision);
+                    updateFreeAndActiveSet(free, active, x, feti.configuration.precision);
+                    if (feti.configuration.gradproj) {
                         math::add(x, -alpha, g_red);
                     } else {
-                        math::add(x, -alpha, g_red); // g_red.* free
+                        math::add(x, -alpha, g_red);
+                        multByFree(g_red, free);
                     }
                     F->apply(x, g);
                     math::add(g, 1., g0);
                 }
                 // Gradient projection step
-                updateReducedGradient(g_red, fi_red, beta_red, g, x, alpha, epsilon);
+                updateReducedGradient(g_red, g, x, alpha, feti.configuration.precision);
+                updateFreeAndActiveSet(free, active, x, feti.configuration.precision);
+                updateFreeGradient(g_free, g, free, alpha, feti.configuration.precision);
                 M->apply(g_free, z);
-                // z * free -> z -->> copy of replace by zero
+                multByFree(z, free);
                 math::copy(p, z);
             }
         } else {
+            opt = prop;
             // Proportioning step
-            if (gradproj) {
+            if (feti.configuration.gradproj) {
                 math::add(x, -alpha, g_red);
             } else {
-                math::add(x, -alpha, g_red); // g_red.* free
+                math::add(x, -alpha, g_red);
+                multByFree(x, active);
             }
             F->apply(x, g);
             math::add(g, 1., g0);
-            updateReducedGradient(g_red, fi_red, beta_red, g, x, alpha, epsilon);
+            updateReducedGradient(g_red, g, x, alpha, feti.configuration.precision);
+            updateFreeAndActiveSet(free, active, x, feti.configuration.precision);
+            updateFreeGradient(g_free, g, free, alpha, feti.configuration.precision);
             M->apply(g_free, z);
-            // z * free -> z -->> copy of replace by zero
+            multByFree(z, free);
             math::copy(p, z);
         }
-        updateStoppingGradient(g_stop, fi_stop, beta_stop, g, x, alpha, epsilon);
+        updateStoppingGradient(g_stop, g, x, alpha, feti.configuration.precision);
+        eslog::info("       - %9d    %9s             %9.4e        %9.4e      %7.2e - \n", info.iterations, opt, std::sqrt(g_stop.dot()), feti.configuration.precision * std::sqrt(feti.dualOperator->d.dot()), eslog::time() - info.time.current);
     }
+    info.converged = stop(g_stop, feti.configuration.precision);
+    if (!info.converged && feti.configuration.max_iterations <= info.iterations) {
+        info.error = IterativeSolverInfo::ERROR::MAX_ITERATIONS_REACHED;
+    }
+
+    eslog::endln("mprgp: finished");
+    eslog::checkpointln("FETI: MPRGP ITERATIONS");
+    reconstructSolution(x, z);
+    eslog::checkpointln("FETI: SOLUTION RECONSTRUCTION");
+    eslog::info("       = ----------------------------------------------------------------------------- = \n");
 }
 
 template <> void MPRGP<std::complex<double> >::solve(const step::Step &step, IterativeSolverInfo &info)

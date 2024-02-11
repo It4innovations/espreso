@@ -173,6 +173,90 @@ espreso::FETIConfiguration::FETIConfiguration()
 			.addoption(ECFOption().setname("DOUBLE").setdescription("Double precision."))
 			.addoption(ECFOption().setname("SINGLE").setdescription("Single precision.")));
 
+	precision_in = 1e-4;
+	REGISTER(precision_in, ECFMetaData()
+			.setdescription({ "SMALSE inner precision" })
+			.setdatatype({ ECFDataType::FLOAT }));
+
+	max_iterations_in = 500;
+	REGISTER(max_iterations_in, ECFMetaData()
+			.setdescription({ "SMALSE inner max iterations" })
+			.setdatatype({ ECFDataType::NONNEGATIVE_INTEGER }));
+
+	// SMALSE
+	int th, no_enlarg_exp, no_enlarg_prop, optimset;
+
+	gamma = 1;
+	REGISTER(gamma, ECFMetaData()
+			.setdescription({ "SMALSE gamma" })
+			.setdatatype({ ECFDataType::FLOAT }));
+	M = 1e-3;
+	REGISTER(M, ECFMetaData()
+			.setdescription({ "SMALSE M" })
+			.setdatatype({ ECFDataType::FLOAT }));
+	rho = 1;
+	REGISTER(rho, ECFMetaData()
+			.setdescription({ "SMALSE rho" })
+			.setdatatype({ ECFDataType::FLOAT }));
+	eta = 1;
+	REGISTER(eta, ECFMetaData()
+			.setdescription({ "SMALSE eta" })
+			.setdatatype({ ECFDataType::FLOAT }));
+	beta = 0.1;
+	REGISTER(beta, ECFMetaData()
+			.setdescription({ "SMALSE beta" })
+			.setdatatype({ ECFDataType::FLOAT }));
+	alpham = 1.95;
+	REGISTER(alpham, ECFMetaData()
+			.setdescription({ "SMALSE alpham" })
+			.setdatatype({ ECFDataType::FLOAT }));
+	delta = 0.25;
+	REGISTER(delta, ECFMetaData()
+			.setdescription({ "SMALSE delta" })
+			.setdatatype({ ECFDataType::FLOAT }));
+	rtol = 1e-2;
+	REGISTER(rtol, ECFMetaData()
+			.setdescription({ "SMALSE rtol" })
+			.setdatatype({ ECFDataType::FLOAT }));
+
+	halfstep = true;
+	REGISTER(halfstep, ECFMetaData()
+			.setdescription({ "SMALSE halfstep" })
+			.setdatatype({ ECFDataType::BOOL }));
+	exp_projgrad = true;
+	REGISTER(exp_projgrad, ECFMetaData()
+			.setdescription({ "SMALSE exp_projgrad" })
+			.setdatatype({ ECFDataType::BOOL }));
+	prop_projgrad = true;
+	REGISTER(prop_projgrad, ECFMetaData()
+			.setdescription({ "SMALSE prop_projgrad" })
+			.setdatatype({ ECFDataType::BOOL }));
+	proj_grad = false;
+	REGISTER(proj_grad, ECFMetaData()
+			.setdescription({ "SMALSE proj_grad" })
+			.setdatatype({ ECFDataType::BOOL }));
+	gradproj = true;
+	REGISTER(gradproj, ECFMetaData()
+			.setdescription({ "SMALSE gradproj" })
+			.setdatatype({ ECFDataType::BOOL }));
+	optimset = true;
+	REGISTER(th, ECFMetaData()
+			.setdescription({ "SMALSE optimset" })
+			.setdatatype({ ECFDataType::BOOL }));
+
+	th = 0;
+	REGISTER(th, ECFMetaData()
+			.setdescription({ "SMALSE th" })
+			.setdatatype({ ECFDataType::INTEGER }));
+	no_enlarg_exp = 0;
+	REGISTER(no_enlarg_exp, ECFMetaData()
+			.setdescription({ "SMALSE no_enlarg_exp" })
+			.setdatatype({ ECFDataType::INTEGER }));
+	no_enlarg_prop = 0;
+	REGISTER(th, ECFMetaData()
+			.setdescription({ "SMALSE no_enlarg_prop" })
+			.setdatatype({ ECFDataType::INTEGER }));
+
 	Ksolver = KSOLVER::DIRECT_DP;
 	REGISTER(Ksolver, ECFMetaData()
 			.setdescription({ "K solver type" })

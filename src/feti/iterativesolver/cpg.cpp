@@ -31,7 +31,7 @@ template <typename T>
 CPG<T>::CPG(FETI<T> &feti)
 : IterativeSolver<T>(feti)
 {
-	
+
 }
 
 template <typename T>
@@ -122,6 +122,11 @@ template <> void CPG<double>::solve(const step::Step &step, IterativeSolverInfo 
 		ww = _ww; // keep ww for the next iteration
 		eslog::accumulatedln("cpg: check criteria");
 	}
+	if (info::ecf->output.print_matrices) {
+		eslog::storedata(" STORE: feti/iterativesolver/{x}\n");
+		math::store(x, utils::filename(utils::debugDirectory(step) + "/feti/iterativesolver", "x").c_str());
+	}
+
 	eslog::endln("cpg: finished");
 	eslog::checkpointln("FETI: CPG ITERATIONS");
 	reconstructSolution(x, r);

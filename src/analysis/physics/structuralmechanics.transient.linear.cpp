@@ -145,8 +145,10 @@ void StructuralMechanicsTransientLinear::run(step::Step &step)
     eslog::checkpointln("SIMULATION: LINEAR SYSTEM SET");
 
     dU->set(0);
+    U->set(0);
     V->set(0);
     W->set(0);
+    Z->set(0);
     while (time.current <= time.final + time.precision) {
         eslog::info(" ============================================================================================= \n");
         eslog::info(" = LOAD STEP %2d, SUBSTEP   %3d,   TIME %9.4f, TIME SHIFT %9.4f, FINAL TIME %9.4f = \n", step.loadstep + 1, step.substep + 1, time.current, time.shift, time.final);

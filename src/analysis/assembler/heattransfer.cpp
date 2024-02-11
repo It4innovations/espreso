@@ -236,10 +236,10 @@ void HeatTransfer::analyze()
 		const MaterialConfiguration *mat = info::mesh->materials[info::mesh->elements->eintervals[i].material];
 		bool cartesian = mat->coordinate_system.type == CoordinateSystemConfiguration::TYPE::CARTESIAN;
 		bool gptemp = mat->thermal_conductivity.needTemperature();
-		esint eoffset = info::mesh->elements->eintervals[i].begin;
+		esint ebegin = info::mesh->elements->eintervals[i].begin, eend = info::mesh->elements->eintervals[i].end;
 
 		if (info::mesh->dimension == 2) {
-			subkernels[i].thickness.activate(getExpression(i, settings.thickness), info::mesh->elements->nodes->cbegin() + eoffset, info::mesh->elements->nodes->cend(), Results::thickness->data.data());
+			subkernels[i].thickness.activate(getExpression(i, settings.thickness), info::mesh->elements->nodes->cbegin() + ebegin, info::mesh->elements->nodes->cbegin() + eend, Results::thickness->data.data());
 		}
 		subkernels[i].material.activate(mat);
 		subkernels[i].conductivity.activate(&mat->thermal_conductivity, &mat->coordinate_system);
@@ -253,7 +253,7 @@ void HeatTransfer::analyze()
 				subkernels[i].heatSource.needCoordinates ||
 				subkernels[i].advection.needCoordinates;
 
-		subkernels[i].coordinates.activate(info::mesh->elements->nodes->cbegin() + eoffset, info::mesh->elements->nodes->cend(), !cartesian || gpcoo);
+		subkernels[i].coordinates.activate(info::mesh->elements->nodes->cbegin() + ebegin, info::mesh->elements->nodes->cbegin() + eend, !cartesian || gpcoo);
 
 		auto model = mat->thermal_conductivity.model;
 		if (subkernels[i].conductivity.rotated) {
@@ -280,7 +280,7 @@ void HeatTransfer::analyze()
 		}
 
 		subkernels[i].initTemperature.activate(getExpression(i, settings.initial_temperature));
-		subkernels[i].temperature.activate(info::mesh->elements->nodes->cbegin() + info::mesh->elements->eintervals[i].begin, info::mesh->elements->nodes->cend(), Results::temperature->data.data(), gptemp);
+		subkernels[i].temperature.activate(info::mesh->elements->nodes->cbegin() + ebegin, info::mesh->elements->nodes->cbegin() + eend, Results::temperature->data.data(), gptemp);
 	}
 
 	for(size_t r = 1; r < info::mesh->boundaryRegions.size(); ++r) {
@@ -288,7 +288,7 @@ void HeatTransfer::analyze()
 		if (info::mesh->boundaryRegions[r]->dimension) {
 			for(size_t i = 0; i < info::mesh->boundaryRegions[r]->eintervals.size(); ++i) {
 				if (info::mesh->dimension == 2) {
-					boundary[r][i].thickness.activate(region->elements->cbegin() + region->eintervals[i].begin, region->elements->cend(), Results::thickness->data.data());
+					boundary[r][i].thickness.activate(region->elements->cbegin() + region->eintervals[i].begin, region->elements->cbegin() + region->eintervals[i].end, Results::thickness->data.data());
 				}
 				boundary[r][i].heatFlow.activate(getExpression(info::mesh->boundaryRegions[r]->name, configuration.heat_flow));
 				boundary[r][i].heatFlux.activate(getExpression(info::mesh->boundaryRegions[r]->name, configuration.heat_flux));
@@ -309,7 +309,7 @@ void HeatTransfer::analyze()
 						boundary[r][i].htc.needCoordinates ||
 						boundary[r][i].externalTemperature.needCoordinates;
 
-				boundary[r][i].coordinates.activate(region->elements->cbegin() + region->eintervals[i].begin, region->elements->cend(), gpcoords);
+				boundary[r][i].coordinates.activate(region->elements->cbegin() + region->eintervals[i].begin, region->elements->cbegin() + region->eintervals[i].end, gpcoords);
 			}
 		} else {
 			for(size_t t = 0; t < info::mesh->boundaryRegions[r]->nodes->threads(); ++t) {

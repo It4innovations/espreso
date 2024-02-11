@@ -168,6 +168,14 @@ struct FETIConfiguration: public ECFDescription {
 
 	bool use_schur_complement;
 
+	double precision_in;
+	size_t max_iterations_in;
+
+	// SMALSE
+	double gamma, M, rho, eta, beta, alpham, delta, rtol;
+	bool halfstep, exp_projgrad, prop_projgrad, proj_grad, gradproj, optimset;
+	int th, no_enlarg_exp, no_enlarg_prop;
+
 	FLOAT_PRECISION schur_precision;
 	KSOLVER Ksolver;
 	size_t Ksolver_max_iterations;

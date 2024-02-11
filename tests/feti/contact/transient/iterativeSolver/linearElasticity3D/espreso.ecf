@@ -15,7 +15,9 @@ DEFAULT_ARGS {
   8        4;
   9        8;
 
-  10    FETI;
+  10   MPRGP;
+  11    NONE;
+  12     900;
 }
 
 INPUT_TYPE              GENERATOR;
@@ -87,15 +89,21 @@ STRUCTURAL_MECHANICS_3D {
 
   LOAD_STEPS_SETTINGS {
     1 {
-      DURATION_TIME     1;
+      DURATION_TIME    .3;
       TYPE      TRANSIENT;
       MODE         LINEAR;
-      SOLVER      [ARG10];
+      SOLVER         FETI;
+
+      TRANSIENT_SOLVER {
+        TIME_STEP    0.01;
+      }
 
       FETI {
         METHOD          TOTAL_FETI;
-        PRECONDITIONER   DIRICHLET;
-        ITERATIVE_SOLVER     MPRGP;
+        ITERATIVE_SOLVER   [ARG10];
+        PRECONDITIONER     [ARG11];
+        MAX_ITERATIONS     [ARG12];
+        PRECISION             1e-9;
       }
 
       ACCELERATION {
@@ -113,28 +121,34 @@ STRUCTURAL_MECHANICS_3D {
 }
 
 OUTPUT {
-  RESULTS_STORE_FREQUENCY    NEVER;
+#  RESULTS_STORE_FREQUENCY    NEVER;
   MONITORS_STORE_FREQUENCY   EVERY_SUBSTEP;
 
   STORE_RESULTS         ALL;
 
   MONITORING {
     1 {
-      REGION        ALL_NODES;
-      STATISTICS          MIN;
-      PROPERTY   DISPLACEMENT;
+      REGION          ALL_NODES;
+      STATISTICS            MIN;
+      PROPERTY     DISPLACEMENT;
     }
 
     2 {
-      REGION        ALL_NODES;
-      STATISTICS          MAX;
-      PROPERTY   DISPLACEMENT;
+      REGION          ALL_NODES;
+      STATISTICS            MAX;
+      PROPERTY     DISPLACEMENT;
     }
 
     3 {
-      REGION        ALL_NODES;
-      STATISTICS          AVG;
-      PROPERTY   DISPLACEMENT;
+      REGION          ALL_NODES;
+      STATISTICS            AVG;
+      PROPERTY     DISPLACEMENT;
+    }
+
+    4 {
+      REGION       ALL_ELEMENTS;
+      STATISTICS            MAX;
+      PROPERTY VON_MISES_STRESS;
     }
   }
 }

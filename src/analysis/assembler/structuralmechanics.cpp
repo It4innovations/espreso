@@ -331,17 +331,17 @@ void StructuralMechanics::analyze()
 		gpcoo |= settings.element_behaviour == StructuralMechanicsGlobalSettings::ELEMENT_BEHAVIOUR::AXISYMMETRIC;
 		gpcoo |= mat->coordinate_system.type != CoordinateSystemConfiguration::TYPE::CARTESIAN;
 //		bool gptemp = mat->linear_elastic_properties.needTemperature();
-		esint eoffset = info::mesh->elements->eintervals[i].begin;
+		esint ebegin = info::mesh->elements->eintervals[i].begin, eend = info::mesh->elements->eintervals[i].end;
 
 		if (info::mesh->dimension == 2) {
-			subkernels[i].thickness.activate(getExpression(i, settings.thickness), info::mesh->elements->nodes->cbegin() + eoffset, info::mesh->elements->nodes->cend(), Results::thickness->data.data());
+			subkernels[i].thickness.activate(getExpression(i, settings.thickness), info::mesh->elements->nodes->cbegin() + ebegin, info::mesh->elements->nodes->cbegin() + eend, Results::thickness->data.data());
 		}
 
-		subkernels[i].coordinates.activate(info::mesh->elements->nodes->cbegin() + info::mesh->elements->eintervals[i].begin, info::mesh->elements->nodes->cend(), !cartesian || gpcoo);
+		subkernels[i].coordinates.activate(info::mesh->elements->nodes->cbegin() + ebegin, info::mesh->elements->nodes->cbegin() + eend, !cartesian || gpcoo);
 		subkernels[i].elasticity.activate(settings.element_behaviour, &mat->linear_elastic_properties, &mat->coordinate_system);
 		if (mat->material_model == MaterialBaseConfiguration::MATERIAL_MODEL::PLASTICITY) {
 			subkernels[i].plasticity.activate(i, settings.element_behaviour, &mat->plasticity_properties, Results::isPlastized);
-			subkernels[i].displacement.activate(info::mesh->elements->nodes->cbegin() + info::mesh->elements->eintervals[i].begin, info::mesh->elements->nodes->cend(), Results::displacement->data.data());
+			subkernels[i].displacement.activate(info::mesh->elements->nodes->cbegin() + ebegin, info::mesh->elements->nodes->cbegin() + eend, Results::displacement->data.data());
 		}
 		subkernels[i].material.activate(mat);
 
@@ -352,7 +352,7 @@ void StructuralMechanics::analyze()
 		subkernels[i].acceleration.activate(getExpression(i, configuration.acceleration), settings.element_behaviour);
 		subkernels[i].angularVelocity.activate(getExpression(i, configuration.angular_velocity), settings.element_behaviour);
 		if (Results::principalStress) {
-			subkernels[i].displacement.activate(info::mesh->elements->nodes->cbegin() + info::mesh->elements->eintervals[i].begin, info::mesh->elements->nodes->cend(), Results::displacement->data.data());
+			subkernels[i].displacement.activate(info::mesh->elements->nodes->cbegin() + ebegin, info::mesh->elements->nodes->cbegin() + eend, Results::displacement->data.data());
 			subkernels[i].smallStrainTensor.activate();
 			subkernels[i].sigma.activate(settings.element_behaviour, mat->linear_elastic_properties.model, subkernels[i].elasticity.rotated);
 			subkernels[i].stress.activate(i, Results::principalStress, Results::componentStress, Results::vonMisesStress);
@@ -370,10 +370,10 @@ void StructuralMechanics::analyze()
 		const BoundaryRegionStore *region = info::mesh->boundaryRegions[r];
 		if (info::mesh->boundaryRegions[r]->dimension) {
 			for(size_t i = 0; i < info::mesh->boundaryRegions[r]->eintervals.size(); ++i) {
-				boundary[r][i].coordinates.activate(region->elements->cbegin() + region->eintervals[i].begin, region->elements->cend(), settings.element_behaviour == StructuralMechanicsGlobalSettings::ELEMENT_BEHAVIOUR::AXISYMMETRIC);
+				boundary[r][i].coordinates.activate(region->elements->cbegin() + region->eintervals[i].begin, region->elements->cbegin() + region->eintervals[i].end, settings.element_behaviour == StructuralMechanicsGlobalSettings::ELEMENT_BEHAVIOUR::AXISYMMETRIC);
 				boundary[r][i].normalPressure.activate(getExpression(info::mesh->boundaryRegions[r]->name, configuration.normal_pressure), settings.element_behaviour);
 				if (settings.contact_interfaces) {
-					boundary[r][i].normal.activate(region->elements->cbegin() + region->eintervals[i].begin, region->elements->cend(), Results::normal->data.data(), faceMultiplicity.data());
+					boundary[r][i].normal.activate(region->elements->cbegin() + region->eintervals[i].begin, region->elements->cbegin() + region->eintervals[i].end, Results::normal->data.data(), faceMultiplicity.data());
 				}
 			}
 		} else {

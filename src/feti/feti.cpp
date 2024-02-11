@@ -33,25 +33,26 @@ bool FETI<T>::set(const step::Step &step)
 	double start = eslog::time();
 
 	esint offset[2] = { 0, 0 };
-	esint size[5] = { 0, 0, 0, 0, 0 };
+	esint size[4] = { 0, 0, 0, 0 };
 	size[0] = K.size();
 	for (size_t d = 0; d < K.size(); ++d) {
 		sinfo.R1size = offset[0] = size[2] += R1[d].nrows;
 		sinfo.R2size = offset[1] = size[3] += R2[d].nrows;
 	}
 	sinfo.lambdasLocal = lambdas.size;
-	size[4] = sinfo.lambdasLocal - lambdas.nhalo;
+	sinfo.lambdasOffset = lambdas.size - lambdas.nhalo;
+	sinfo.lambdasTotal = Communication::exscan(sinfo.lambdasOffset);
 
 	Communication::exscan(offset, NULL, 2, MPITools::getType<esint>().mpitype, MPI_SUM);
 	Communication::allReduce(size, NULL, 5, MPITools::getType<esint>().mpitype, MPI_SUM);
 	sinfo.domains = size[0];
 	sinfo.R1totalSize = size[2];
 	sinfo.R2totalSize = size[3];
-	sinfo.lambdasTotal = size[4];
 	sinfo.R1offset = info::mpi::rank ? offset[0] : 0;
 	sinfo.R2offset = info::mpi::rank ? offset[1] : 0;
 
-	Dual_Buffer<T>::set(*this);
+	Dual_Map::set(*this);
+	Vector_Dual<T>::initBuffers();
 	Vector_Kernel<T>::set(sinfo.R1offset, sinfo.R1size, sinfo.R1totalSize);
 
 	eslog::checkpointln("FETI: SET INFO");

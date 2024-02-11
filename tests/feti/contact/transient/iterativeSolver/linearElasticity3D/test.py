@@ -3,7 +3,7 @@ import os, unittest
 from estest import ESPRESOTest
 
 cases = [
-    ("MPRGP", "     NONE", 980),
+    ("MPRGP", "     NONE", 40),
     ]
 
 class Assembler(unittest.TestCase):
