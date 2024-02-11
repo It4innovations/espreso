@@ -97,7 +97,7 @@ void TotalFETIImplicit<T>::set(const step::Step &step)
 	sparsity = feti.configuration.partial_dual ? DirectSparseSolver<T>::VectorSparsity::SPARSE_RHS | DirectSparseSolver<T>::VectorSparsity::SPARSE_SOLUTION : DirectSparseSolver<T>::VectorSparsity::DENSE;
 
 	Kplus.resize(feti.K.size());
-	d.resize();
+	d.resize(feti.lambdas.size);
 	Btx.resize(feti.K.size());
 	KplusBtx.resize(feti.K.size());
 	KSolver.resize(feti.K.size());

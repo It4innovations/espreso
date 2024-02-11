@@ -51,7 +51,7 @@ bool FETI<T>::set(const step::Step &step)
 	sinfo.R1offset = info::mpi::rank ? offset[0] : 0;
 	sinfo.R2offset = info::mpi::rank ? offset[1] : 0;
 
-	Vector_Dual<T>::set(lambdas.nhalo, lambdas.size, lambdas.cmap, *decomposition);
+	dualBuffer.set(*this);
 	Vector_Kernel<T>::set(sinfo.R1offset, sinfo.R1size, sinfo.R1totalSize);
 
 	eslog::checkpointln("FETI: SET INFO");

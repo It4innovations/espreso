@@ -5,6 +5,8 @@
 #include "pcpg.h"
 #include "orthocpg.h"
 #include "orthopcpg.h"
+#include "smalbe.h"
+#include "mprgp.h"
 #include "math/math.h"
 #include "feti/projector/projector.h"
 #include "feti/dualoperator/dualoperator.h"
@@ -42,6 +44,12 @@ IterativeSolver<T>* IterativeSolver<T>::set(FETI<T> &feti, const step::Step &ste
 	case FETIConfiguration::ITERATIVE_SOLVER::QPCE:
 	case FETIConfiguration::ITERATIVE_SOLVER::orthogonalPCG_CP:
 	case FETIConfiguration::ITERATIVE_SOLVER::PCG_CP:
+	case FETIConfiguration::ITERATIVE_SOLVER::SMALBE:
+	eslog::info(" = ITERATIVE SOLVER       SEMI-MONOTONIC AUGMENTED LAGRANGIAN ALG. FOR BOUND & EQUALITY CNST = \n");
+		return new SMALBE<T>(feti);
+	case FETIConfiguration::ITERATIVE_SOLVER::MPRGP:
+	eslog::info(" = ITERATIVE SOLVER                  MODIFIED PROPORTIONING WITH REDUCED GRADIENT PROJECTION = \n");
+		return new MPRGP<T>(feti);
 	default: return nullptr;
 	}
 }

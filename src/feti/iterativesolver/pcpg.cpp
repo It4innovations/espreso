@@ -4,6 +4,7 @@
 #include "basis/utilities/sysutils.h"
 #include "esinfo/ecfinfo.h"
 #include "esinfo/eslog.hpp"
+#include "math/math.h"
 #include "feti/projector/projector.h"
 #include "feti/dualoperator/dualoperator.h"
 #include "feti/preconditioner/preconditioner.h"
@@ -54,15 +55,7 @@ template <typename T>
 PCPG<T>::PCPG(FETI<T> &feti)
 : IterativeSolver<T>(feti)
 {
-	l.resize();
-	r.resize();
-	w.resize();
-	y.resize();
-	z.resize();
-	p.resize();
 
-	x.resize();
-	Fp.resize();
 }
 
 template <> void PCPG<double>::solve(const step::Step &step, IterativeSolverInfo &info)
@@ -74,15 +67,15 @@ template <> void PCPG<double>::solve(const step::Step &step, IterativeSolverInfo
 	P->applyGtInvGGt(P->e, l);             // l = Gt * inv(GGt) * e
 
 	F->apply(l, r);                        // r = d - F * l
-	r.scale(-1);                           //
-	r.add(1, F->d);                        //
+	math::scale(-1., r);                   //
+	math::add(r, 1., F->d);                //
 
 	P->apply(r, w);                        // w = P * r
 	S->apply(w, z);                        // z = S * w
 	P->apply(z, y);                        // y = P * z (y = P * S * w)
 
-	y.copyTo(p);                           // p = y
-	l.copyTo(x);                           // x = l
+	math::copy(p, y);                      // p = w
+	math::copy(x, l);                      // x = l
 
 	double yw = y.dot(w);
 	setInfo(info, feti.configuration, yw);
@@ -98,8 +91,8 @@ template <> void PCPG<double>::solve(const step::Step &step, IterativeSolverInfo
 
 		// x = x + gamma * p
 		// r = r - gamma * F * p
-		x.add(gamma, p);
-		r.add(-gamma, Fp);
+		math::add(x,  gamma,  p);
+		math::add(r, -gamma, Fp);
 		eslog::accumulatedln("pcpg: update x, r");
 
 		// w = P * r
@@ -119,7 +112,7 @@ template <> void PCPG<double>::solve(const step::Step &step, IterativeSolverInfo
 		eslog::accumulatedln("pcpg: dot(y, w)");
 
 		// p = y + beta * p  (y is not used anymore)
-		y.add(beta, p); y.swap(p);
+		math::add(y, beta, p); y.swap(p);
 		eslog::accumulatedln("pcpg: update p");
 
 		updateInfo(info, feti.configuration, yw, 0, 0);

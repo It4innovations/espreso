@@ -215,7 +215,7 @@ void TotalFETIExplicitAcc<T,I>::set(const step::Step &step)
     }
 
     tm_vecresize.start();
-    d.resize();
+    d.resize(feti.lambdas.size);
     queues.resize(n_queues);
     handles_dense.resize(n_queues);
     handles_sparse.resize(n_queues);

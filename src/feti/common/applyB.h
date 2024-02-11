@@ -41,7 +41,7 @@ static void applyB(FETI<T> &feti, const std::vector<Vector_Dense<T> > &in, Vecto
 			}
 		}
 	}
-	out.synchronize();
+	out.synchronize(feti.dualBuffer);
 }
 
 template <typename T>
@@ -53,7 +53,7 @@ static void insertDomains(FETI<T> &feti, const std::vector<Vector_Dense<T> > &in
 			out.vals[feti.D2C[d][r]] += in[d].vals[r];
 		}
 	}
-	out.synchronize();
+	out.synchronize(feti.dualBuffer);
 }
 
 }

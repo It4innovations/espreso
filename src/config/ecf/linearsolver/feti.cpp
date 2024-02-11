@@ -82,6 +82,8 @@ espreso::FETIConfiguration::FETIConfiguration()
 			.addoption(ECFOption().setname("QPCE").setdescription("QPCE"))
 			.addoption(ECFOption().setname("orthogonalPCG_CP").setdescription("FETI Geneo with full ortogonalization CG"))
 			.addoption(ECFOption().setname("PCG_CP").setdescription("FETI Geneo with regular CG"))
+			.addoption(ECFOption().setname("SMALBE").setdescription("SMALBE with MPRGP."))
+			.addoption(ECFOption().setname("MPRGP").setdescription("MPRGP."))
 			);
 
 	regularization = REGULARIZATION::ANALYTIC;

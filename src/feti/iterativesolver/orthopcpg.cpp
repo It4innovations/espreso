@@ -56,15 +56,6 @@ template <typename T>
 OrthogonalizedPCPG<T>::OrthogonalizedPCPG(FETI<T> &feti)
 : IterativeSolver<T>(feti)
 {
-	l.resize();
-	r.resize();
-	w.resize();
-	y.resize();
-	z.resize();
-	x.resize();
-
-	pi.resize();
-	Fpi.resize();
 	yFp.reserve(pi.initial_space);
 	pFp.reserve(pi.initial_space);
 }
@@ -83,15 +74,15 @@ template <> void OrthogonalizedPCPG<double>::solve(const step::Step &step, Itera
 	P->applyGtInvGGt(P->e, l);             // l = Gt * inv(GGt) * e
 
 	F->apply(l, r);                        // r = d - F * l
-	r.scale(-1);                           //
-	r.add(1, F->d);                        //
+	math::scale(-1., r);                   //
+	math::add(r, 1., F->d);                //
 
 	P->apply(r, w);                        // w = P * r
 	S->apply(w, z);                        // z = S * w
 	P->apply(z, y);                        // y = P * z (y = P * S * w)
 
-	y.copyTo(p);                           // p = y
-	l.copyTo(x);                           // x = l
+	math::copy(p, y);                      // p = y
+	math::copy(x, l);                      // x = l
 
 	double yw = y.dot(w);
 	setInfo(info, feti.configuration, yw);
@@ -109,8 +100,8 @@ template <> void OrthogonalizedPCPG<double>::solve(const step::Step &step, Itera
 
 		// x = x + gamma * p
 		// r = r - gamma * F * p
-		x.add(gamma, p);
-		r.add(-gamma, Fp);
+		math::add(x,  gamma,  p);
+		math::add(r, -gamma, Fp);
 		eslog::accumulatedln("orthopcpg: update x, r");
 
 		// w = P * r

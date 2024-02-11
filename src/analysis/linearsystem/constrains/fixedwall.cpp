@@ -7,6 +7,8 @@
 #include "mesh/store/boundaryregionstore.h"
 #include "math/math.h"
 
+#include <climits>
+
 namespace espreso {
 
 template <typename T>
@@ -58,12 +60,15 @@ void FixedWall<T>::set(const step::Step &step, FETI<T> &feti)
 	swap(B1, feti.B1);
 
 	feti.c.resize(feti.lambdas.size);
+	feti.lb.resize(feti.lambdas.size - feti.lambdas.equalities);
+	feti.ub.resize(feti.lambdas.size - feti.lambdas.equalities);
 }
 
 template <typename T>
 void FixedWall<T>::update(const step::Step &step, FETI<T> &feti)
 {
-
+	math::set(feti.lb, T{0});
+	math::set(feti.lb, std::numeric_limits<T>::max());
 }
 
 template struct FixedWall<double>;

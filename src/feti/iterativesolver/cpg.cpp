@@ -31,14 +31,7 @@ template <typename T>
 CPG<T>::CPG(FETI<T> &feti)
 : IterativeSolver<T>(feti)
 {
-	l.resize();
-	r.resize();
-	w.resize();
-	p.resize();
-//	r0.resize();
-
-	x.resize();
-	Fp.resize();
+	
 }
 
 template <typename T>
@@ -82,12 +75,12 @@ template <> void CPG<double>::solve(const step::Step &step, IterativeSolverInfo 
 	P->applyGtInvGGt(P->e, l);             // l = Gt * inv(GGt) * e
 
 	F->apply(l, r);                        // r = d - F * l
-	r.scale(-1);                           //
-	r.add(1, F->d);                        //
+	math::scale(-1., r);                   //
+	math::add(r, 1., F->d);                //
 
 	P->apply(r, w);                        // w = P * r
-	w.copyTo(p);                           // p = w
-	l.copyTo(x);                           // x = l
+	math::copy(p, w);                      // p = w
+	math::copy(x, l);                      // x = l
 
 //	r.copyTo(r0);
 //	double rho = F->d.dot(l), rr, r0x;
@@ -107,8 +100,8 @@ template <> void CPG<double>::solve(const step::Step &step, IterativeSolverInfo 
 		eslog::accumulatedln("cpg: dot(p, Fp)");    //
 		_print("Fp", info, step, Fp);
 
-		x.add(gamma, p);                            // x = x + gamma * p
-		r.add(-gamma, Fp);                          // r = r - gamma * F * p
+		math::add(x,  gamma,  p);                   // x = x + gamma * p
+		math::add(r, -gamma, Fp);                   // r = r - gamma * F * p
 		eslog::accumulatedln("cpg: update x, r");   //
 		_print("x", info, step, x);
 		_print("r", info, step, r);
@@ -118,7 +111,7 @@ template <> void CPG<double>::solve(const step::Step &step, IterativeSolverInfo 
 
 		double _ww = w.dot(), beta = _ww / ww;      // beta = (w+1, w+1) / (w, w)
 		eslog::accumulatedln("cpg: dot(w, w)");     //
-		w.add(beta, p); w.swap(p);                  // p = w + beta * p  (w is not used anymore)
+		math::add(w, beta, p); w.swap(p);           // p = w + beta * p  (w is not used anymore)
 		eslog::accumulatedln("cpg: update p");      //
 		_print("p", info, step, p);
 

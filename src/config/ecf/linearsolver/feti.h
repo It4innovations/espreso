@@ -42,7 +42,9 @@ struct FETIConfiguration: public ECFDescription {
 		BICGSTAB,
 		QPCE,
 		orthogonalPCG_CP,
-		PCG_CP
+		PCG_CP,
+		SMALBE,
+		MPRGP
 	};
 
 	enum class PRECONDITIONER {
