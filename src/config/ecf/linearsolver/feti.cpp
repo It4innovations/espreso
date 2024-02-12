@@ -366,6 +366,10 @@ espreso::FETIConfiguration::FETIConfiguration()
 	REGISTER(num_streams, ECFMetaData()
 			.setdescription({ "The number of CUDA streams for iterative solver" })
 			.setdatatype({ ECFDataType::POSITIVE_INTEGER }));
+
+	REGISTER(dual_operator_explicit_gpu_config, ECFMetaData()
+		.setdescription({ "Explicit dual operator on GPU configuration." })
+		.setcollapsed());
 }
 
 

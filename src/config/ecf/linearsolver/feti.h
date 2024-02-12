@@ -4,6 +4,7 @@
 
 #include "config/description.h"
 #include "autoopt.h"
+#include "config/ecf/linearsolver/dual_operator_explicit_gpu_config.h"
 
 #include <cstddef>
 
@@ -202,6 +203,8 @@ struct FETIConfiguration: public ECFDescription {
 	size_t num_streams;
 
 	AutoOptimizationConfiguration auto_optimization;
+
+	DualOperatorExplicitGpuConfig dual_operator_explicit_gpu_config;
 
 	FETIConfiguration();
 };

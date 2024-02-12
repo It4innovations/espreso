@@ -1,0 +1,89 @@
+
+#include "config/ecf/linearsolver/dual_operator_explicit_gpu_config.h"
+
+#include "config/configuration.hpp"
+
+using namespace espreso;
+
+DualOperatorExplicitGpuConfig::DualOperatorExplicitGpuConfig()
+{
+	concurrency_set = CONCURRENCY::PARALLEL;
+	REGISTER(concurrency_set, ECFMetaData()
+			.setdescription({ "Concurrency during set." })
+			.setdatatype({ ECFDataType::OPTION })
+			.addoption(ECFOption().setname("PARALLEL").setdescription("Parallel factorization and submitting, asynchronous execution on gpu."))
+			.addoption(ECFOption().setname("SEQ_CONTINUE").setdescription("Sequential factorization and submitting, asynchronous execution on gpu."))
+			.addoption(ECFOption().setname("SEQ_WAIT").setdescription("Sequential factorization and submitting, synchronous gpu execution.")));
+
+	concurrency_update = CONCURRENCY::PARALLEL;
+	REGISTER(concurrency_update, ECFMetaData()
+			.setdescription({ "Concurrency during update." })
+			.setdatatype({ ECFDataType::OPTION })
+			.addoption(ECFOption().setname("PARALLEL").setdescription("Parallel factorization and submitting, asynchronous execution on gpu."))
+			.addoption(ECFOption().setname("SEQ_CONTINUE").setdescription("Sequential factorization and submitting, asynchronous execution on gpu."))
+			.addoption(ECFOption().setname("SEQ_WAIT").setdescription("Sequential factorization and submitting, synchronous gpu execution.")));
+
+	concurrency_apply = CONCURRENCY::PARALLEL;
+	REGISTER(concurrency_apply, ECFMetaData()
+			.setdescription({ "Concurrency during apply." })
+			.setdatatype({ ECFDataType::OPTION })
+			.addoption(ECFOption().setname("PARALLEL").setdescription("Parallel submitting, asynchronous execution on gpu."))
+			.addoption(ECFOption().setname("SEQ_CONTINUE").setdescription("Sequential submitting, asynchronous execution on gpu."))
+			.addoption(ECFOption().setname("SEQ_WAIT").setdescription("Sequential submitting, synchronous gpu execution.")));
+
+	trsm1_factor_storage = MATRIX_STORAGE::CSR;
+	REGISTER(trsm1_factor_storage, ECFMetaData()
+			.setdescription({ "Storage of the factor in the first trsm operation." })
+			.setdatatype({ ECFDataType::OPTION })
+			.addoption(ECFOption().setname("CSR").setdescription("CSR."))
+			.addoption(ECFOption().setname("DENSE_ROW_MAJOR").setdescription("Dense row-major.")));
+
+	trsm2_factor_storage = MATRIX_STORAGE::CSR;
+	REGISTER(trsm2_factor_storage, ECFMetaData()
+			.setdescription({ "Storage of the factor in the second trsm operation." })
+			.setdatatype({ ECFDataType::OPTION })
+			.addoption(ECFOption().setname("CSR").setdescription("CSR."))
+			.addoption(ECFOption().setname("DENSE_ROW_MAJOR").setdescription("Dense row-major.")));
+
+	trsm1_solve_type = TRSM1_SOLVE_TYPE::UH;
+	REGISTER(trsm1_solve_type, ECFMetaData()
+			.setdescription({ "Type of the first solve." })
+			.setdatatype({ ECFDataType::OPTION })
+			.addoption(ECFOption().setname("L").setdescription("Solve LY=X."))
+			.addoption(ECFOption().setname("UH").setdescription("Solve ((U*)*)Y=X.")));
+
+	trsm2_solve_type = TRSM2_SOLVE_TYPE::LH;
+	REGISTER(trsm2_solve_type, ECFMetaData()
+			.setdescription({ "Type of the first solve." })
+			.setdatatype({ ECFDataType::OPTION })
+			.addoption(ECFOption().setname("U").setdescription("Solve UZ=Y."))
+			.addoption(ECFOption().setname("LH").setdescription("Solve ((L*)*)Z=Y.")));
+
+	trsm_rhs_sol_order = MATRIX_ORDER::ROW_MAJOR;
+	REGISTER(trsm_rhs_sol_order, ECFMetaData()
+			.setdescription({ "Memory order of the rhs and sol matrices in trsm." })
+			.setdatatype({ ECFDataType::OPTION })
+			.addoption(ECFOption().setname("ROW_MAJOR").setdescription("Row-major."))
+			.addoption(ECFOption().setname("COL_MAJOR").setdescription("Col-major.")));
+
+	path_if_hermitian = PATH_IF_HERMITIAN::HERK;
+	REGISTER(path_if_hermitian, ECFMetaData()
+			.setdescription({ "Code path if the system matrix is hermitian or symmetric." })
+			.setdatatype({ ECFDataType::OPTION })
+			.addoption(ECFOption().setname("SECOND_TRSM").setdescription("Solve LX=Y, solve UY=Z, sp-dn multiply F=B*Z."))
+			.addoption(ECFOption().setname("HERK").setdescription("Solve LX=Y, dn-dn multiply F=Yt*Y.")));
+
+	queue_count = QUEUE_COUNT::PER_THREAD;
+	REGISTER(queue_count, ECFMetaData()
+			.setdescription({ "Determines the number of gpu queues (streams) and handles." })
+			.setdatatype({ ECFDataType::OPTION })
+			.addoption(ECFOption().setname("PER_THREAD").setdescription("One queue and handle per thread."))
+			.addoption(ECFOption().setname("PER_DOMAIN").setdescription("One queue and handle per domain.")));
+
+	apply_scatter_gather_where = DEVICE::GPU;
+	REGISTER(apply_scatter_gather_where, ECFMetaData()
+			.setdescription({ "Where to perform the lambda vector scatter/gather operations during apply." })
+			.setdatatype({ ECFDataType::OPTION })
+			.addoption(ECFOption().setname("CPU").setdescription("On the CPU."))
+			.addoption(ECFOption().setname("GPU").setdescription("On the GPU.")));
+}
