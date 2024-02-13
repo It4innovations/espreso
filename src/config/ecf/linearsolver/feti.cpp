@@ -30,6 +30,13 @@ espreso::FETIConfiguration::FETIConfiguration()
 			.addoption(ECFOption().setname("EXPLICIT").setdescription("Explicit F with BLAS."))
 			.addoption(ECFOption().setname("EXPLICIT_GPU").setdescription("Explicit F with BLAS on GPU.")));
 
+	projector = PROJECTOR::ORTHOGONAL;
+	REGISTER(projector, ECFMetaData()
+			.setdescription({ "Type" })
+			.setdatatype({ ECFDataType::OPTION })
+			.addoption(ECFOption().setname("ORTHOGONAL").setdescription("Orthogonal projector Gt * inv(G * Gt) * G."))
+			.addoption(ECFOption().setname("CONJUGATE").setdescription("Conjugate projector Gt * inv(G * F * Gt) * G * F.")));
+
 	preconditioner = PRECONDITIONER::DIRICHLET;
 	REGISTER(preconditioner, ECFMetaData()
 			.setdescription({ "Preconditioner" })

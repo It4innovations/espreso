@@ -72,7 +72,7 @@ template <> void CPG<double>::solve(const step::Step &step, IterativeSolverInfo 
     DualOperator<double> *F = feti.dualOperator;
     Projector<double> *P = feti.projector;
 
-    P->applyGtInvGGt(P->e, l);             // l = Gt * inv(GGt) * e
+    P->apply_e(P->e, l);                   // l = Gt * inv(GGt) * e
 
     F->apply(l, r);                        // r = d - F * l
     math::scale(-1., r);                   //

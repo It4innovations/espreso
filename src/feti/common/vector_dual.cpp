@@ -1,8 +1,6 @@
 
 #include "vector_dual.h"
 
-#include "analysis/builder/feti.decomposition.h"
-#include "math/primitives/vector_dense.h"
 #include "math/wrappers/math.blas.h"
 #include "wrappers/mpi/communication.h"
 
@@ -25,7 +23,7 @@ void Vector_Dual<T>::synchronize()
     for (size_t i = 0; i < Dual_Map::nmap.size();) {
         for (esint n = 0; n < Dual_Map::nmap[i + 2]; ++n) {
             esint ni = Dual_Map::nmap[i + 3 + n];
-            std::copy(this->vals + Dual_Map::nmap[i], this->vals + Dual_Map::nmap[i + 1], send[ni].data() + offset[ni]);
+            std::copy(vals + Dual_Map::nmap[i], vals + Dual_Map::nmap[i + 1], send[ni].data() + offset[ni]);
             offset[ni] += Dual_Map::nmap[i + 1] - Dual_Map::nmap[i];
         }
         i += Dual_Map::nmap[i + 2] + 3;
@@ -35,7 +33,7 @@ void Vector_Dual<T>::synchronize()
     for (size_t i = 0; i < Dual_Map::nmap.size();) {
         for (esint n = 0; n < Dual_Map::nmap[i + 2]; ++n) {
             esint ni = Dual_Map::nmap[i + 3 + n];
-            math::blas::add<T>(Dual_Map::nmap[i + 1] - Dual_Map::nmap[i], this->vals + Dual_Map::nmap[i], 1, 1, recv[ni].data() + offset[ni], 1);
+            math::blas::add<T>(Dual_Map::nmap[i + 1] - Dual_Map::nmap[i], vals + Dual_Map::nmap[i], 1, 1, recv[ni].data() + offset[ni], 1);
             offset[ni] += Dual_Map::nmap[i + 1] - Dual_Map::nmap[i];
         }
         i += Dual_Map::nmap[i + 2] + 3;

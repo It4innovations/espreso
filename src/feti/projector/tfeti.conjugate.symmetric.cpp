@@ -1,5 +1,5 @@
 
-#include "tfeti.orthogonal.symmetric.h"
+#include "tfeti.conjugate.symmetric.h"
 #include "basis/containers/serializededata.h"
 #include "basis/utilities/sysutils.h"
 #include "basis/utilities/utils.h"
@@ -14,12 +14,12 @@
 namespace espreso {
 
 template<typename T>
-TFETIOrthogonalSymmetric<T>::TFETIOrthogonalSymmetric(FETI<T> &feti)
+TFETIConjugateSymmetric<T>::TFETIConjugateSymmetric(FETI<T> &feti)
 : Projector<T>(feti)
 {
     e.resize();
     Gx.resize();
-    iGGtGx.resize(feti.sinfo.R1size);
+    iGFGtGx.resize(feti.sinfo.R1size);
 
     domainOffset = feti.decomposition->dbegin;
 
@@ -31,24 +31,24 @@ TFETIOrthogonalSymmetric<T>::TFETIOrthogonalSymmetric(FETI<T> &feti)
 
     _computeDualGraph();
     _setG();
-    _setGGt();
+    _setGFGt();
 }
 
 template<typename T>
-TFETIOrthogonalSymmetric<T>::~TFETIOrthogonalSymmetric()
+TFETIConjugateSymmetric<T>::~TFETIConjugateSymmetric()
 {
 
 }
 
 template<typename T>
-void TFETIOrthogonalSymmetric<T>::info()
+void TFETIConjugateSymmetric<T>::info()
 {
-    esint nnz = 2 * (GGt.nnz - GGt.nrows) + GGt.nrows;
+    esint nnz = 2 * (GFGt.nnz - GFGt.nrows) + GFGt.nrows;
 
-    eslog::info(" = ORTHOGONAL PROJECTOR PROPERTIES                                                           = \n");
-    eslog::info(" =   GGT ROWS                                                                      %9d = \n", GGt.nrows);
-    eslog::info(" =   GGT NNZ                                                                       %9d = \n", nnz);
-//    eslog::info(" =   GGT FACTORS NNZ                                                               %9d = \n", GGtSolver.nnzL);
+    eslog::info(" = CONJUGATE PROJECTOR PROPERTIES                                                            = \n");
+    eslog::info(" =   GFGT ROWS                                                                     %9d = \n", GFGt.nrows);
+    eslog::info(" =   GFGT NNZ                                                                      %9d = \n", nnz);
+//    eslog::info(" =   GFGt FACTORS NNZ                                                               %9d = \n", GFGtSolver.nnzL);
     if (feti.configuration.exhaustive_info) {
         // PPt = eye
     }
@@ -56,7 +56,7 @@ void TFETIOrthogonalSymmetric<T>::info()
 }
 
 template<typename T>
-void TFETIOrthogonalSymmetric<T>::update(const step::Step &step)
+void TFETIConjugateSymmetric<T>::update(const step::Step &step)
 {
     #pragma omp parallel for
     for (size_t d = 0; d < dinfo.size(); ++d) {
@@ -73,43 +73,43 @@ void TFETIOrthogonalSymmetric<T>::update(const step::Step &step)
 
     if (feti.updated.K || feti.updated.B) {
         _updateG();
-        _updateGGt();
+        _updateGFGt();
     }
     _print(step);
 }
 
 template<typename T>
-void TFETIOrthogonalSymmetric<T>::apply(const Vector_Dual<T> &x, Vector_Dual<T> &y)
+void TFETIConjugateSymmetric<T>::apply(const Vector_Dual<T> &x, Vector_Dual<T> &y)
 {
-    if (GGt.nrows) {
+    if (GFGt.nrows) {
         x.copyToWithoutHalo(y);
         _applyG(x, Gx);
-        _applyInvGGt(Gx, iGGtGx);
-        _applyGt(iGGtGx, T{-1}, y);
+        _applyInvGFGt(Gx, iGFGtGx);
+        _applyGt(iGFGtGx, T{-1}, y);
     } else {
         math::copy(y, x);
     }
 }
 
 template<typename T>
-void TFETIOrthogonalSymmetric<T>::apply_e(const Vector_Kernel<T> &x, Vector_Dual<T> &y)
+void TFETIConjugateSymmetric<T>::apply_e(const Vector_Kernel<T> &x, Vector_Dual<T> &y)
 {
-    if (GGt.nrows) {
+    if (GFGt.nrows) {
         math::set(y, T{0});
-        _applyInvGGt(x, iGGtGx);
-        _applyGt(iGGtGx, T{-1}, y);
+        _applyInvGFGt(x, iGFGtGx);
+        _applyGt(iGFGtGx, T{-1}, y);
     } else {
         math::set(y, T{0});
     }
 }
 
 template<typename T>
-void TFETIOrthogonalSymmetric<T>::apply_Ra(const Vector_Dual<T> &x,  std::vector<Vector_Dense<T> > &y)
+void TFETIConjugateSymmetric<T>::apply_Ra(const Vector_Dual<T> &x,  std::vector<Vector_Dense<T> > &y)
 {
-    if (GGt.nrows) {
+    if (GFGt.nrows) {
         _applyG(x, Gx);
-        _applyInvGGt(Gx, iGGtGx);
-        _applyR(iGGtGx, y);
+        _applyInvGFGt(Gx, iGFGtGx);
+        _applyR(iGFGtGx, y);
     } else {
         #pragma omp parallel for
         for (size_t d = 0; d < y.size(); ++d) {
@@ -119,7 +119,7 @@ void TFETIOrthogonalSymmetric<T>::apply_Ra(const Vector_Dual<T> &x,  std::vector
 }
 
 template<typename T>
-void TFETIOrthogonalSymmetric<T>::_applyG(const Vector_Dual<T> &in, Vector_Kernel<T> &out)
+void TFETIConjugateSymmetric<T>::_applyG(const Vector_Dual<T> &in, Vector_Kernel<T> &out)
 {
     #pragma omp parallel for
     for (int t = 0; t < info::env::threads; ++t) {
@@ -134,16 +134,16 @@ void TFETIOrthogonalSymmetric<T>::_applyG(const Vector_Dual<T> &in, Vector_Kerne
 }
 
 template<typename T>
-void TFETIOrthogonalSymmetric<T>::_applyInvGGt(const Vector_Kernel<T> &in, Vector_Dense<T> &out)
+void TFETIConjugateSymmetric<T>::_applyInvGFGt(const Vector_Kernel<T> &in, Vector_Dense<T> &out)
 {
     #pragma omp parallel for
     for (int t = 0; t < info::env::threads; ++t) {
         Matrix_Dense<T> a;
         Vector_Dense<T> y;
-        a.ncols = invGGt.ncols;
+        a.ncols = invGFGt.ncols;
         a.nrows = y.size = Vector_Kernel<T>::distribution[t + 1] - Vector_Kernel<T>::distribution[t];
 
-        a.vals = invGGt.vals + invGGt.ncols * Vector_Kernel<T>::distribution[t];
+        a.vals = invGFGt.vals + invGFGt.ncols * Vector_Kernel<T>::distribution[t];
         y.vals = out.vals + Vector_Kernel<T>::distribution[t];
 
         math::blas::apply(y, T{1}, a, T{0}, in);
@@ -151,7 +151,7 @@ void TFETIOrthogonalSymmetric<T>::_applyInvGGt(const Vector_Kernel<T> &in, Vecto
 }
 
 template<typename T>
-void TFETIOrthogonalSymmetric<T>::_applyGt(const Vector_Dense<T> &in, const T &alpha, Vector_Dual<T> &out)
+void TFETIConjugateSymmetric<T>::_applyGt(const Vector_Dense<T> &in, const T &alpha, Vector_Dual<T> &out)
 {
     for (esint r = 0; r < G.nrows; ++r) {
         for (esint c = G.rows[r]; c < G.rows[r + 1]; ++c) {
@@ -162,7 +162,7 @@ void TFETIOrthogonalSymmetric<T>::_applyGt(const Vector_Dense<T> &in, const T &a
 }
 
 template<typename T>
-void TFETIOrthogonalSymmetric<T>::_applyR(const Vector_Dense<T> &in, std::vector<Vector_Dense<T> > &out)
+void TFETIConjugateSymmetric<T>::_applyR(const Vector_Dense<T> &in, std::vector<Vector_Dense<T> > &out)
 {
     #pragma omp parallel for
     for (size_t d = 0; d < out.size(); ++d) {
@@ -175,7 +175,7 @@ void TFETIOrthogonalSymmetric<T>::_applyR(const Vector_Dense<T> &in, std::vector
 }
 
 template<typename T>
-void TFETIOrthogonalSymmetric<T>::_computeDualGraph()
+void TFETIConjugateSymmetric<T>::_computeDualGraph()
 {
     dualGraph.resize(dinfo.size());
     for (size_t i = 0; i < feti.lambdas.cmap.size(); ) {
@@ -270,7 +270,7 @@ void TFETIOrthogonalSymmetric<T>::_computeDualGraph()
 }
 
 template<typename T>
-void TFETIOrthogonalSymmetric<T>::_setG()
+void TFETIConjugateSymmetric<T>::_setG()
 {
     // G is stored with 0-based in indexing
     esint Grows = 0, Gnnz = 0;
@@ -316,7 +316,7 @@ void TFETIOrthogonalSymmetric<T>::_setG()
 }
 
 template<typename T>
-void TFETIOrthogonalSymmetric<T>::_updateG()
+void TFETIConjugateSymmetric<T>::_updateG()
 {
     // G is stored with 0-based in indexing
     for (size_t d = 0, r = 0; d < dinfo.size(); ++d) {
@@ -360,66 +360,68 @@ void TFETIOrthogonalSymmetric<T>::_updateG()
 }
 
 template<typename T>
-void TFETIOrthogonalSymmetric<T>::_setGGt()
+void TFETIConjugateSymmetric<T>::_setGFGt()
 {
     const int IDX = Indexing::CSR;
 
-    GGtDataOffset = 0;
+    GFGtDataOffset = 0;
     for (size_t d = 0; d < dinfo.size(); ++d) {
         for (esint kr = 0; kr < dinfo[d].kernels; ++kr) {
             for (size_t i = 0; i < dualGraph[d].size(); ++i) {
                 for (esint kc = 0; kc < dualGraph[d][i].kernels; ++kc) {
                     if (dinfo[d].koffset + kr <= dualGraph[d][i].koffset + kc) {
-                        ++GGtDataOffset;
+                        ++GFGtDataOffset;
                     }
                 }
             }
         }
     }
-    GGtDataSize = GGtDataOffset;
-    GGtNnz = Communication::exscan(GGtDataOffset);
+    GFGtDataSize = GFGtDataOffset;
+    GFGtNnz = Communication::exscan(GFGtDataOffset);
 
-    GGt.resize(feti.sinfo.R1totalSize, feti.sinfo.R1totalSize, GGtNnz);
-    GGt.shape = Matrix_Shape::UPPER;
-    GGt.type = Matrix_Type::REAL_SYMMETRIC_POSITIVE_DEFINITE;
-    GGt.rows[0] = IDX;
-    GGt.rows[feti.sinfo.R1offset] = GGtDataOffset + IDX;
+    GFGt.resize(feti.sinfo.R1totalSize, feti.sinfo.R1totalSize, GFGtNnz);
+    GFGt.shape = Matrix_Shape::UPPER;
+    GFGt.type = Matrix_Type::REAL_SYMMETRIC_POSITIVE_DEFINITE;
+    GFGt.rows[0] = IDX;
+    GFGt.rows[feti.sinfo.R1offset] = GFGtDataOffset + IDX;
     for (size_t d = 0; d < dinfo.size(); ++d) {
         for (esint kr = 0; kr < dinfo[d].kernels; ++kr) {
-            GGt.rows[dinfo[d].koffset + kr + 1] = GGt.rows[dinfo[d].koffset + kr];
-            for (size_t i = 0, c = GGt.rows[dinfo[d].koffset + kr] - IDX; i < dualGraph[d].size(); ++i) {
+            GFGt.rows[dinfo[d].koffset + kr + 1] = GFGt.rows[dinfo[d].koffset + kr];
+            for (size_t i = 0, c = GFGt.rows[dinfo[d].koffset + kr] - IDX; i < dualGraph[d].size(); ++i) {
                 for (esint kc = 0; kc < dualGraph[d][i].kernels; ++kc) {
                     if (dinfo[d].koffset + kr <= dualGraph[d][i].koffset + kc) {
-                        GGt.cols[c++] = dualGraph[d][i].koffset + kc + IDX;
-                        ++GGt.rows[dinfo[d].koffset + kr + 1];
+                        GFGt.cols[c++] = dualGraph[d][i].koffset + kc + IDX;
+                        ++GFGt.rows[dinfo[d].koffset + kr + 1];
                     }
                 }
             }
         }
     }
 
-    if (!Communication::allGatherInplace(GGt.rows, feti.sinfo.R1offset + 1, G.nrows)) {
-        eslog::error("cannot gather GGt rows.\n");
+    if (!Communication::allGatherInplace(GFGt.rows, feti.sinfo.R1offset + 1, G.nrows)) {
+        eslog::error("cannot gather GFGt rows.\n");
     }
-    if (!Communication::allGatherInplace(GGt.cols, GGtDataOffset, GGtDataSize)) {
-        eslog::error("cannot gather GGt cols.\n");
+    if (!Communication::allGatherInplace(GFGt.cols, GFGtDataOffset, GFGtDataSize)) {
+        eslog::error("cannot gather GFGt cols.\n");
     }
 
-    invGGt.resize(G.nrows, feti.sinfo.R1totalSize);
-    eslog::checkpointln("FETI: SET GGT");
+    invGFGt.resize(G.nrows, feti.sinfo.R1totalSize);
+    eslog::checkpointln("FETI: SET GFGt");
 }
 
 template<typename T>
-void TFETIOrthogonalSymmetric<T>::_updateGGt()
+void TFETIConjugateSymmetric<T>::_updateGFGt()
 {
     const int IDX = Indexing::CSR;
 
+    Matrix_Dense<T> dGt;
+
     for (size_t d = 0; d < dinfo.size(); ++d) {
         for (esint kr = 0; kr < dinfo[d].kernels; ++kr) {
-            for (size_t i = 0, c = GGt.rows[dinfo[d].koffset + kr] - IDX; i < dualGraph[d].size(); ++i) {
+            for (size_t i = 0, c = GFGt.rows[dinfo[d].koffset + kr] - IDX; i < dualGraph[d].size(); ++i) {
                 for (esint kc = 0; kc < dualGraph[d][i].kernels; ++kc) {
                     if (dinfo[d].koffset + kr <= dualGraph[d][i].koffset + kc) {
-                        GGt.vals[c] = 0;
+                        GFGt.vals[c] = 0;
                         esint k1, k2, ke1, ke2;
                         k1  = G.rows[dinfo[d].koffset - feti.sinfo.R1offset + kr];
                         ke1 = G.rows[dinfo[d].koffset - feti.sinfo.R1offset + kr + 1];
@@ -434,7 +436,7 @@ void TFETIOrthogonalSymmetric<T>::_updateGGt()
                             while (k1 < ke1 && Gt.cols[k1] < Gt.cols[k2]) { ++k1; };
                             while (k2 < ke2 && Gt.cols[k2] < Gt.cols[k1]) { ++k2; };
                             if (k1 < ke1 && k2 < ke2 && Gt.cols[k1] == Gt.cols[k2]) {
-                                GGt.vals[c] += Gt.vals[k1++] * Gt.vals[k2++];
+                                GFGt.vals[c] += Gt.vals[k1++] * Gt.vals[k2++];
                             }
                         }
                         ++c;
@@ -445,17 +447,17 @@ void TFETIOrthogonalSymmetric<T>::_updateGGt()
     }
 
 
-    if (!Communication::allGatherInplace(GGt.vals, GGtDataOffset, GGtDataSize)) {
-        eslog::error("cannot gather GGt vals.\n");
+    if (!Communication::allGatherInplace(GFGt.vals, GFGtDataOffset, GFGtDataSize)) {
+        eslog::error("cannot gather GFGt vals.\n");
     }
-    eslog::checkpointln("FETI: GATHER GGT VALUES");
+    eslog::checkpointln("FETI: GATHER GFGt VALUES");
 
-    if (GGt.nrows) {
-        DirectSparseSolver<T> GGtSolver;
-        GGtSolver.commit(GGt);
-        GGtSolver.symbolicFactorization();
-        GGtSolver.numericalFactorization();
-        eslog::checkpointln("FETI: GGT FACTORIZATION");
+    if (GFGt.nrows) {
+        DirectSparseSolver<T> GFGtSolver;
+        GFGtSolver.commit(GFGt);
+        GFGtSolver.symbolicFactorization();
+        GFGtSolver.numericalFactorization();
+        eslog::checkpointln("FETI: GFGt FACTORIZATION");
 
         Matrix_Dense<T> eye;
         eye.resize(G.nrows, feti.sinfo.R1totalSize);
@@ -463,28 +465,28 @@ void TFETIOrthogonalSymmetric<T>::_updateGGt()
         for (esint r = 0; r < G.nrows; ++r) {
             eye.vals[r * feti.sinfo.R1totalSize + feti.sinfo.R1offset + r] = T{1};
         }
-        GGtSolver.solve(eye, invGGt);
+        GFGtSolver.solve(eye, invGFGt);
     }
-    eslog::checkpointln("FETI: COMPUTE GGT INVERSE");
+    eslog::checkpointln("FETI: COMPUTE GFGt INVERSE");
 }
 
 template<typename T>
-void TFETIOrthogonalSymmetric<T>::_print(const step::Step &step)
+void TFETIConjugateSymmetric<T>::_print(const step::Step &step)
 {
     if (info::ecf->output.print_matrices) {
-        eslog::storedata(" STORE: feti/projector/{R_orth, G, e, GGt, invGGt}\n");
+        eslog::storedata(" STORE: feti/projector/{R_orth, G, e, GFGt, invGFGt}\n");
         for (size_t di = 0; di < feti.R1.size(); ++di) {
             math::store(feti.R1[di], utils::filename(utils::debugDirectory(step) + "/feti/projector", (std::string("R_orth") + std::to_string(di)).c_str()).c_str());
         }
         math::store(G, utils::filename(utils::debugDirectory(step) + "/feti/projector", "G").c_str());
         math::store(Gt, utils::filename(utils::debugDirectory(step) + "/feti/projector", "Gt").c_str());
-        math::store(e, utils::filename(utils::debugDirectory(step) + "/feti/projector", "e").c_str());
-        math::store(GGt, utils::filename(utils::debugDirectory(step) + "/feti/projector", "GGt").c_str());
-        math::store(invGGt, utils::filename(utils::debugDirectory(step) + "/feti/projector", "invGGt").c_str());
+        // math::store(e, utils::filename(utils::debugDirectory(step) + "/feti/projector", "e").c_str());
+        // math::store(GFGt, utils::filename(utils::debugDirectory(step) + "/feti/projector", "GFGt").c_str());
+        // math::store(invGFGt, utils::filename(utils::debugDirectory(step) + "/feti/projector", "invGFGt").c_str());
     }
 }
 
-template struct TFETIOrthogonalSymmetric<double>;
-template struct TFETIOrthogonalSymmetric<std::complex<double> >;
+template struct TFETIConjugateSymmetric<double>;
+template struct TFETIConjugateSymmetric<std::complex<double> >;
 
 }

@@ -1,6 +1,6 @@
 
-#ifndef SRC_FETI_PROJECTOR_TFETI_ORTHOGONAL_SYMMETRIC_H_
-#define SRC_FETI_PROJECTOR_TFETI_ORTHOGONAL_SYMMETRIC_H_
+#ifndef SRC_FETI_PROJECTOR_TFETI_CONJUGATE_SYMMETRIC_H_
+#define SRC_FETI_PROJECTOR_TFETI_CONJUGATE_SYMMETRIC_H_
 
 #include "projector.h"
 
@@ -11,11 +11,12 @@ namespace espreso {
 /*
  * R: KxR : block diagonal
  * B: LxK : from primal to dual
+ * F: KxK : dual operator
  *
  * e = Rt * f : R
  * G = Rt * Bt: RxL: from dual to kernels
  *
- * y = Q * x = Gt * inv(GGt) * G * x
+ * y = Q * x = Gt * inv(GFGt) * G * F * x
  *
  *     Gx = G * x         :: x      -> Gx     :      L -> R
  * iGGtGx = inv(GGt) * Gx :: Gx     -> iGGtGx : totalR -> R
@@ -23,9 +24,9 @@ namespace espreso {
  */
 
 template <typename T>
-struct TFETIOrthogonalSymmetric: public Projector<T> {
-    TFETIOrthogonalSymmetric(FETI<T> &feti);
-    ~TFETIOrthogonalSymmetric();
+struct TFETIConjugateSymmetric: public Projector<T> {
+    TFETIConjugateSymmetric(FETI<T> &feti);
+    ~TFETIConjugateSymmetric();
 
     void info();
     void update(const step::Step &step);
@@ -37,12 +38,12 @@ struct TFETIOrthogonalSymmetric: public Projector<T> {
 protected:
     void _computeDualGraph();
     void _setG();
-    void _setGGt();
+    void _setGFGt();
     void _updateG();
-    void _updateGGt();
+    void _updateGFGt();
 
     void _applyG(const Vector_Dual<T> &in, Vector_Kernel<T> &out);
-    void _applyInvGGt(const Vector_Kernel<T> &in, Vector_Dense<T> &out);
+    void _applyInvGFGt(const Vector_Kernel<T> &in, Vector_Dense<T> &out);
     void _applyGt(const Vector_Dense<T> &in, const T &alpha, Vector_Dual<T> &out);
     void _applyR(const Vector_Dense<T> &in, std::vector<Vector_Dense<T> > &out);
 
@@ -51,14 +52,14 @@ protected:
     using Projector<T>::feti;
     using Projector<T>::e;
 
-    Matrix_CSR<T> G, Gt, GGt;
-    Matrix_Dense<T> invGGt;
+    Matrix_CSR<T> G, Gt, GFGt;
+    Matrix_Dense<T> invGFGt;
 
     Vector_Kernel<T> Gx; // we need whole vector
-    Vector_Dense<T> iGGtGx; // only local part is sufficient
+    Vector_Dense<T> iGFGtGx; // only local part is sufficient
 
     size_t domainOffset;
-    size_t GGtDataOffset, GGtDataSize, GGtNnz;
+    size_t GFGtDataOffset, GFGtDataSize, GFGtNnz;
 
     struct DomainInfo {
         esint domain, koffset, kernels;
@@ -70,6 +71,7 @@ protected:
         bool operator<=(const DomainInfo &other) const { return domain <= other.domain; }
         bool operator!=(const DomainInfo &other) const { return domain != other.domain; }
     };
+
     struct NeighborDomainInfo: DomainInfo {
         struct CIndices { esint offset, count; };
         std::vector<CIndices> cindices;
@@ -92,6 +94,4 @@ protected:
 
 }
 
-
-
-#endif /* SRC_FETI_PROJECTOR_TFETI_ORTHOGONAL_SYMMETRIC_H_ */
+#endif /* SRC_FETI_PROJECTOR_TFETI_CONJUGATE_SYMMETRIC_H_ */

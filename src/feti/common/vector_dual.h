@@ -4,14 +4,11 @@
 
 #include "dual_map.h"
 #include "feti/feti.h"
-#include "esinfo/mpiinfo.h"
 #include "math/primitives/vector_dense.h"
 
 #include <vector>
 
 namespace espreso {
-
-struct FETIDecomposition;
 
 template <typename T>
 struct Vector_Dual: public Vector_Dense<T> {

@@ -68,7 +68,7 @@ template <> void OrthogonalizedCPG<double>::solve(const step::Step &step, Iterat
 
     Vector_Dense<double> _wFp;
 
-    P->applyGtInvGGt(P->e, l);             // l = Gt * inv(GGt) * e
+    P->apply_e(P->e, l);             // l = Gt * inv(GGt) * e
 
     F->apply(l, r);                        // r = d - F * l
     math::scale(-1., r);                   //

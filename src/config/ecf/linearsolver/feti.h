@@ -34,6 +34,11 @@ struct FETIConfiguration: public ECFDescription {
 		EXPLICIT_GPU,
 	};
 
+	enum class PROJECTOR {
+		ORTHOGONAL = 0,
+		CONJUGATE,
+	};
+
 	enum class ITERATIVE_SOLVER {
 		PCG = 0,
 		pipePCG,
@@ -150,6 +155,7 @@ struct FETIConfiguration: public ECFDescription {
 	METHOD method;
 	ORDERING ordering;
 	DUAL_OPERATOR dual_operator;
+	PROJECTOR projector;
 	ITERATIVE_SOLVER iterative_solver;
 	PRECONDITIONER preconditioner;
 	REGULARIZATION regularization;
