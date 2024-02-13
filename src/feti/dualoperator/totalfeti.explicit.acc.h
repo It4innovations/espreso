@@ -55,7 +55,7 @@ protected:
     static constexpr size_t align_B = 512;
     static constexpr size_t align_elem = align_B / sizeof(T);
     int stage = 0;
-    char wcpset, wcpupdate, wcpapply, spdnfactor, trsvtrsm, factrs1, factrs2syrk, handlecount, applyalg;
+    char wcpset, wcpupdate, wcpapply, spdnfactor, rhsorder, factrs1, factrs2syrk, handlecount, applyalg;
     gpu::mgm::device device;
     size_t n_domains;
     size_t n_queues;
@@ -93,10 +93,6 @@ protected:
     std::vector<gpu::spblas::descr_matrix_dense> descr_Xs_c;
     std::vector<gpu::spblas::descr_matrix_dense> descr_Ys_r;
     std::vector<gpu::spblas::descr_matrix_dense> descr_Ys_c;
-    std::vector<std::vector<gpu::spblas::descr_vector_dense>> descr_Xs_vecs;
-    std::vector<std::vector<gpu::spblas::descr_vector_dense>> descr_Ys_vecs;
-    std::vector<gpu::spblas::descr_sparse_trsv> descrs_sparse_trsv1;
-    std::vector<gpu::spblas::descr_sparse_trsv> descrs_sparse_trsv2;
     std::vector<gpu::spblas::descr_sparse_trsm> descrs_sparse_trsm1;
     std::vector<gpu::spblas::descr_sparse_trsm> descrs_sparse_trsm2;
     std::vector<size_t> buffersizes_sptrs1;
