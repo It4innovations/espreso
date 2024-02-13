@@ -45,3 +45,5 @@ export OMP_PROC_BIND=close
 export OMP_NUM_THREADS=16
 
 # ./waf configure --use-cusparse-legacy --enable-dualop-explicit-gpu-timers
+
+# mpirun -n 8 --bind-to numa ./build/espreso -c espreso.ecf

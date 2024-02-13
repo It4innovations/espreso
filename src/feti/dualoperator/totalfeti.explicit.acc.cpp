@@ -13,25 +13,31 @@
 
 namespace espreso {
 
+using CONCURRENCY       = DualOperatorExplicitGpuConfig::CONCURRENCY;
+using MATRIX_STORAGE    = DualOperatorExplicitGpuConfig::MATRIX_STORAGE;
+using TRSM1_SOLVE_TYPE  = DualOperatorExplicitGpuConfig::TRSM1_SOLVE_TYPE;
+using TRSM2_SOLVE_TYPE  = DualOperatorExplicitGpuConfig::TRSM2_SOLVE_TYPE;
+using MATRIX_ORDER      = DualOperatorExplicitGpuConfig::MATRIX_ORDER;
+using PATH_IF_HERMITIAN = DualOperatorExplicitGpuConfig::PATH_IF_HERMITIAN;
+using QUEUE_COUNT       = DualOperatorExplicitGpuConfig::QUEUE_COUNT;
+using DEVICE            = DualOperatorExplicitGpuConfig::DEVICE;
+
 template <typename T, typename I>
 TotalFETIExplicitAcc<T,I>::TotalFETIExplicitAcc(FETI<T> &feti)
 : DualOperator<T>(feti), n_domains(0), n_queues(0), mem_pool_device(nullptr)
 {
     if(stage != 0) eslog::error("init: invalid order of operations in dualop\n");
 
+    config = &feti.configuration.dual_operator_explicit_gpu_config;
+    if(config->trsm_rhs_sol_order == MATRIX_ORDER::ROW_MAJOR) rhssolorder = 'R';
+    if(config->trsm_rhs_sol_order == MATRIX_ORDER::COL_MAJOR) rhssolorder = 'C';
+
     device = gpu::mgm::get_device_by_mpi(info::mpi::rank, info::mpi::size);
 
     const char * magicstring = "PPCSRLS_TG";
-
-    wcpset       = magicstring[0];
-    wcpupdate    = magicstring[1];
-    wcpapply     = magicstring[2];
     spdnfactor   = magicstring[3];
-    rhsorder     = magicstring[4];
     factrs1      = magicstring[5];
     factrs2syrk  = magicstring[6];
-    handlecount  = magicstring[8];
-    applyalg     = magicstring[9];
 
     stage = 1;
 }
@@ -164,8 +170,8 @@ void TotalFETIExplicitAcc<T,I>::set(const step::Step &step)
     tm_total.start();
     n_domains = feti.K.size();
 
-    if(handlecount == 'D') n_queues = n_domains;
-    if(handlecount == 'T') n_queues = omp_get_max_threads();
+    if(config->queue_count == QUEUE_COUNT::PER_DOMAIN) n_queues = n_domains;
+    if(config->queue_count == QUEUE_COUNT::PER_THREAD) n_queues = omp_get_max_threads();
 
     const bool need_L = (factrs1 == 'L' || factrs2syrk == 'L');
     const bool need_U = (factrs1 == 'U' || factrs2syrk == 'U');
@@ -177,8 +183,8 @@ void TotalFETIExplicitAcc<T,I>::set(const step::Step &step)
     const bool need_h_Us_sp = (need_d_Us_sp || DirectSparseSolver<T,I>::factorsSymmetry() == Solver_Factors::HERMITIAN_UPPER || DirectSparseSolver<T,I>::factorsSymmetry() == Solver_Factors::NONSYMMETRIC_BOTH);
     const bool need_d_Bperms_sp = true;
     const bool need_h_Bperms_sp = true;
-    const bool need_d_Xs_c = (rhsorder == 'C');
-    const bool need_d_Xs_r = (rhsorder == 'R');
+    const bool need_d_Xs_c = (rhssolorder == 'C');
+    const bool need_d_Xs_r = (rhssolorder == 'R');
     const bool need_d_Ys_c = (need_d_Xs_c && spdnfactor == 'S');
     const bool need_d_Ys_r = (need_d_Xs_r && spdnfactor == 'S');
 
@@ -265,7 +271,7 @@ void TotalFETIExplicitAcc<T,I>::set(const step::Step &step)
     tm_gpucreate.stop();
 
     tm_mainloop_outer.start();
-    #pragma omp parallel for schedule(static,1) if(wcpset == 'P')
+    #pragma omp parallel for schedule(static,1) if(config->concurrency_set == CONCURRENCY::PARALLEL)
     for(size_t d = 0; d < n_domains; d++)
     {
         tm_mainloop_inner.start();
@@ -336,29 +342,29 @@ void TotalFETIExplicitAcc<T,I>::set(const step::Step &step)
             if(need_d_Xs_c)  gpu::spblas::sparse_to_dense<T,I>(hs, 'T', descr_Bperms_sp[d], descr_Xs_c[d], buffer_requirements.emplace_back(), nullptr, 'B');
             if(need_d_Xs_r)  gpu::spblas::sparse_to_dense<T,I>(hs, 'T', descr_Bperms_sp[d], descr_Xs_r[d], buffer_requirements.emplace_back(), nullptr, 'B');
 
-            if(rhsorder == 'C' && spdnfactor == 'S' && factrs1 == 'L') gpu::spblas::trsm<T,I>(hs, 'N', 'N', 'N', descr_Ls_sp1[d], descr_Xs_c[d], descr_Ys_c[d], descrs_sparse_trsm1[d], buffersizes_sptrs1[d], buffers_sptrs1[d], 'B');
-            if(rhsorder == 'C' && spdnfactor == 'S' && factrs1 == 'U') gpu::spblas::trsm<T,I>(hs, 'H', 'N', 'N', descr_Us_sp1[d], descr_Xs_c[d], descr_Ys_c[d], descrs_sparse_trsm1[d], buffersizes_sptrs1[d], buffers_sptrs1[d], 'B');
-            if(rhsorder == 'R' && spdnfactor == 'S' && factrs1 == 'L') gpu::spblas::trsm<T,I>(hs, 'N', 'N', 'N', descr_Ls_sp1[d], descr_Xs_r[d], descr_Ys_r[d], descrs_sparse_trsm1[d], buffersizes_sptrs1[d], buffers_sptrs1[d], 'B');
-            if(rhsorder == 'R' && spdnfactor == 'S' && factrs1 == 'U') gpu::spblas::trsm<T,I>(hs, 'H', 'N', 'N', descr_Us_sp1[d], descr_Xs_r[d], descr_Ys_r[d], descrs_sparse_trsm1[d], buffersizes_sptrs1[d], buffers_sptrs1[d], 'B');
-            if(rhsorder == 'C' && spdnfactor == 'S' && factrs2syrk == 'L') gpu::spblas::trsm<T,I>(hs, 'H', 'N', 'N', descr_Ls_sp2[d], descr_Ys_c[d], descr_Xs_c[d], descrs_sparse_trsm2[d], buffersizes_sptrs2[d], buffers_sptrs2[d], 'B');
-            if(rhsorder == 'C' && spdnfactor == 'S' && factrs2syrk == 'U') gpu::spblas::trsm<T,I>(hs, 'N', 'N', 'N', descr_Us_sp2[d], descr_Ys_c[d], descr_Xs_c[d], descrs_sparse_trsm2[d], buffersizes_sptrs2[d], buffers_sptrs2[d], 'B');
-            if(rhsorder == 'R' && spdnfactor == 'S' && factrs2syrk == 'L') gpu::spblas::trsm<T,I>(hs, 'H', 'N', 'N', descr_Ls_sp2[d], descr_Ys_r[d], descr_Xs_r[d], descrs_sparse_trsm2[d], buffersizes_sptrs2[d], buffers_sptrs2[d], 'B');
-            if(rhsorder == 'R' && spdnfactor == 'S' && factrs2syrk == 'U') gpu::spblas::trsm<T,I>(hs, 'N', 'N', 'N', descr_Us_sp2[d], descr_Ys_r[d], descr_Xs_r[d], descrs_sparse_trsm2[d], buffersizes_sptrs2[d], buffers_sptrs2[d], 'B');
-            if(factrs2syrk != 'S' && rhsorder == 'C') gpu::spblas::mm<T,I>(hs, 'N', 'N', descr_Bperms_sp[d], descr_Xs_c[d], descr_Fs_c[d], buffersizes_spmm[d], buffers_spmm[d], 'B');
-            if(factrs2syrk != 'S' && rhsorder == 'R') gpu::spblas::mm<T,I>(hs, 'N', 'N', descr_Bperms_sp[d], descr_Xs_r[d], descr_Fs_r[d], buffersizes_spmm[d], buffers_spmm[d], 'B');
+            if(rhssolorder == 'C' && spdnfactor == 'S' && factrs1 == 'L') gpu::spblas::trsm<T,I>(hs, 'N', 'N', 'N', descr_Ls_sp1[d], descr_Xs_c[d], descr_Ys_c[d], descrs_sparse_trsm1[d], buffersizes_sptrs1[d], buffers_sptrs1[d], 'B');
+            if(rhssolorder == 'C' && spdnfactor == 'S' && factrs1 == 'U') gpu::spblas::trsm<T,I>(hs, 'H', 'N', 'N', descr_Us_sp1[d], descr_Xs_c[d], descr_Ys_c[d], descrs_sparse_trsm1[d], buffersizes_sptrs1[d], buffers_sptrs1[d], 'B');
+            if(rhssolorder == 'R' && spdnfactor == 'S' && factrs1 == 'L') gpu::spblas::trsm<T,I>(hs, 'N', 'N', 'N', descr_Ls_sp1[d], descr_Xs_r[d], descr_Ys_r[d], descrs_sparse_trsm1[d], buffersizes_sptrs1[d], buffers_sptrs1[d], 'B');
+            if(rhssolorder == 'R' && spdnfactor == 'S' && factrs1 == 'U') gpu::spblas::trsm<T,I>(hs, 'H', 'N', 'N', descr_Us_sp1[d], descr_Xs_r[d], descr_Ys_r[d], descrs_sparse_trsm1[d], buffersizes_sptrs1[d], buffers_sptrs1[d], 'B');
+            if(rhssolorder == 'C' && spdnfactor == 'S' && factrs2syrk == 'L') gpu::spblas::trsm<T,I>(hs, 'H', 'N', 'N', descr_Ls_sp2[d], descr_Ys_c[d], descr_Xs_c[d], descrs_sparse_trsm2[d], buffersizes_sptrs2[d], buffers_sptrs2[d], 'B');
+            if(rhssolorder == 'C' && spdnfactor == 'S' && factrs2syrk == 'U') gpu::spblas::trsm<T,I>(hs, 'N', 'N', 'N', descr_Us_sp2[d], descr_Ys_c[d], descr_Xs_c[d], descrs_sparse_trsm2[d], buffersizes_sptrs2[d], buffers_sptrs2[d], 'B');
+            if(rhssolorder == 'R' && spdnfactor == 'S' && factrs2syrk == 'L') gpu::spblas::trsm<T,I>(hs, 'H', 'N', 'N', descr_Ls_sp2[d], descr_Ys_r[d], descr_Xs_r[d], descrs_sparse_trsm2[d], buffersizes_sptrs2[d], buffers_sptrs2[d], 'B');
+            if(rhssolorder == 'R' && spdnfactor == 'S' && factrs2syrk == 'U') gpu::spblas::trsm<T,I>(hs, 'N', 'N', 'N', descr_Us_sp2[d], descr_Ys_r[d], descr_Xs_r[d], descrs_sparse_trsm2[d], buffersizes_sptrs2[d], buffers_sptrs2[d], 'B');
+            if(factrs2syrk != 'S' && rhssolorder == 'C') gpu::spblas::mm<T,I>(hs, 'N', 'N', descr_Bperms_sp[d], descr_Xs_c[d], descr_Fs_c[d], buffersizes_spmm[d], buffers_spmm[d], 'B');
+            if(factrs2syrk != 'S' && rhssolorder == 'R') gpu::spblas::mm<T,I>(hs, 'N', 'N', descr_Bperms_sp[d], descr_Xs_r[d], descr_Fs_r[d], buffersizes_spmm[d], buffers_spmm[d], 'B');
 
             gpu::dnblas::buffer_collect_size(hd, buffer_requirements.emplace_back(), [&](){
                 T * dummyptrT = reinterpret_cast<T*>(sizeof(T));
-                if(rhsorder == 'C' && spdnfactor == 'D' && factrs1 == 'L') gpu::dnblas::trsm<T,I>(hd, 'L', 'U', 'H', n_dofs_domain,    n_dofs_interface, dummyptrT, ld_domain, dummyptrT, ld_domain);
-                if(rhsorder == 'C' && spdnfactor == 'D' && factrs1 == 'U') gpu::dnblas::trsm<T,I>(hd, 'L', 'L', 'N', n_dofs_domain,    n_dofs_interface, dummyptrT, ld_domain, dummyptrT, ld_domain);
-                if(rhsorder == 'R' && spdnfactor == 'D' && factrs1 == 'L') gpu::dnblas::trsm<T,I>(hd, 'R', 'U', 'N', n_dofs_interface, n_dofs_domain,    dummyptrT, ld_domain, dummyptrT, ld_interface);
-                if(rhsorder == 'R' && spdnfactor == 'D' && factrs1 == 'U') gpu::dnblas::trsm<T,I>(hd, 'R', 'L', 'H', n_dofs_interface, n_dofs_domain,    dummyptrT, ld_domain, dummyptrT, ld_interface);
-                if(rhsorder == 'C' && spdnfactor == 'D' && factrs2syrk == 'L') gpu::dnblas::trsm<T,I>(hd, 'L', 'U', 'N', n_dofs_domain,    n_dofs_interface, dummyptrT, ld_domain, dummyptrT, ld_domain);
-                if(rhsorder == 'C' && spdnfactor == 'D' && factrs2syrk == 'U') gpu::dnblas::trsm<T,I>(hd, 'L', 'L', 'H', n_dofs_domain,    n_dofs_interface, dummyptrT, ld_domain, dummyptrT, ld_domain);
-                if(rhsorder == 'R' && spdnfactor == 'D' && factrs2syrk == 'L') gpu::dnblas::trsm<T,I>(hd, 'R', 'U', 'H', n_dofs_interface, n_dofs_domain,    dummyptrT, ld_domain, dummyptrT, ld_interface);
-                if(rhsorder == 'R' && spdnfactor == 'D' && factrs2syrk == 'U') gpu::dnblas::trsm<T,I>(hd, 'R', 'L', 'N', n_dofs_interface, n_dofs_domain,    dummyptrT, ld_domain, dummyptrT, ld_interface);
-                if(factrs2syrk == 'S' && rhsorder == 'C') gpu::dnblas::herk(hd, 'L', 'H', n_dofs_interface, n_dofs_domain, dummyptrT, ld_domain,    dummyptrT, ld_interface);
-                if(factrs2syrk == 'S' && rhsorder == 'R') gpu::dnblas::herk(hd, 'L', 'N', n_dofs_interface, n_dofs_domain, dummyptrT, ld_interface, dummyptrT, ld_interface);
+                if(rhssolorder == 'C' && spdnfactor == 'D' && factrs1 == 'L') gpu::dnblas::trsm<T,I>(hd, 'L', 'U', 'H', n_dofs_domain,    n_dofs_interface, dummyptrT, ld_domain, dummyptrT, ld_domain);
+                if(rhssolorder == 'C' && spdnfactor == 'D' && factrs1 == 'U') gpu::dnblas::trsm<T,I>(hd, 'L', 'L', 'N', n_dofs_domain,    n_dofs_interface, dummyptrT, ld_domain, dummyptrT, ld_domain);
+                if(rhssolorder == 'R' && spdnfactor == 'D' && factrs1 == 'L') gpu::dnblas::trsm<T,I>(hd, 'R', 'U', 'N', n_dofs_interface, n_dofs_domain,    dummyptrT, ld_domain, dummyptrT, ld_interface);
+                if(rhssolorder == 'R' && spdnfactor == 'D' && factrs1 == 'U') gpu::dnblas::trsm<T,I>(hd, 'R', 'L', 'H', n_dofs_interface, n_dofs_domain,    dummyptrT, ld_domain, dummyptrT, ld_interface);
+                if(rhssolorder == 'C' && spdnfactor == 'D' && factrs2syrk == 'L') gpu::dnblas::trsm<T,I>(hd, 'L', 'U', 'N', n_dofs_domain,    n_dofs_interface, dummyptrT, ld_domain, dummyptrT, ld_domain);
+                if(rhssolorder == 'C' && spdnfactor == 'D' && factrs2syrk == 'U') gpu::dnblas::trsm<T,I>(hd, 'L', 'L', 'H', n_dofs_domain,    n_dofs_interface, dummyptrT, ld_domain, dummyptrT, ld_domain);
+                if(rhssolorder == 'R' && spdnfactor == 'D' && factrs2syrk == 'L') gpu::dnblas::trsm<T,I>(hd, 'R', 'U', 'H', n_dofs_interface, n_dofs_domain,    dummyptrT, ld_domain, dummyptrT, ld_interface);
+                if(rhssolorder == 'R' && spdnfactor == 'D' && factrs2syrk == 'U') gpu::dnblas::trsm<T,I>(hd, 'R', 'L', 'N', n_dofs_interface, n_dofs_domain,    dummyptrT, ld_domain, dummyptrT, ld_interface);
+                if(factrs2syrk == 'S' && rhssolorder == 'C') gpu::dnblas::herk(hd, 'L', 'H', n_dofs_interface, n_dofs_domain, dummyptrT, ld_domain,    dummyptrT, ld_interface);
+                if(factrs2syrk == 'S' && rhssolorder == 'R') gpu::dnblas::herk(hd, 'L', 'N', n_dofs_interface, n_dofs_domain, dummyptrT, ld_interface, dummyptrT, ld_interface);
                 gpu::dnblas::hemv(hd, 'L', n_dofs_interface, dummyptrT, ld_interface, dummyptrT, dummyptrT);
             });
 
@@ -376,8 +382,8 @@ void TotalFETIExplicitAcc<T,I>::set(const step::Step &step)
             if(need_h_Us_sp)         h_Us_sp[d].resize(n_dofs_domain,    n_dofs_domain, n_nz_factor);
             if(need_h_Ls_sp)         h_Ls_sp[d].resize(n_dofs_domain,    n_dofs_domain, n_nz_factor);
             if(need_h_Bperms_sp) h_Bperms_sp[d].resize(n_dofs_interface, n_dofs_domain, feti.B1[d].nnz);
-            if(applyalg == 'C')  h_applyc_xs[d].resize(n_dofs_interface);
-            if(applyalg == 'C')  h_applyc_ys[d].resize(n_dofs_interface);
+            if(config->apply_scatter_gather_where == DEVICE::CPU)  h_applyc_xs[d].resize(n_dofs_interface);
+            if(config->apply_scatter_gather_where == DEVICE::CPU)  h_applyc_ys[d].resize(n_dofs_interface);
             tm_alloc_host.stop();
 
             // device memory
@@ -449,7 +455,7 @@ void TotalFETIExplicitAcc<T,I>::set(const step::Step &step)
             if(need_d_Us_sp) gpu::mgm::copy_submit_h2d(q, d_Us_sp[d], h_Us_sp[d], true, false);
             if(need_d_Ls_sp) gpu::mgm::copy_submit_h2d(q, d_Ls_sp[d], h_Ls_sp[d], true, false);
             if(need_d_Bperms_sp) gpu::mgm::copy_submit_h2d(q, d_Bperms_sp[d], h_Bperms_sp[d], true, true);
-            if(wcpset == 'W') gpu::mgm::queue_wait(q);
+            if(config->concurrency_set == CONCURRENCY::SEQ_WAIT) gpu::mgm::queue_wait(q);
         }
         tm_copyin.stop();
         
@@ -457,27 +463,27 @@ void TotalFETIExplicitAcc<T,I>::set(const step::Step &step)
         tm_kernels_preprocess.start();
         {
             tm_trs1.start();
-            if(rhsorder == 'C' && spdnfactor == 'S' && factrs1 == 'L') gpu::spblas::trsm<T,I>(hs, 'N', 'N', 'N', descr_Ls_sp1[d], descr_Xs_c[d], descr_Ys_c[d], descrs_sparse_trsm1[d], buffersizes_sptrs1[d], buffers_sptrs1[d], 'P');
-            if(rhsorder == 'C' && spdnfactor == 'S' && factrs1 == 'U') gpu::spblas::trsm<T,I>(hs, 'H', 'N', 'N', descr_Us_sp1[d], descr_Xs_c[d], descr_Ys_c[d], descrs_sparse_trsm1[d], buffersizes_sptrs1[d], buffers_sptrs1[d], 'P');
-            if(rhsorder == 'R' && spdnfactor == 'S' && factrs1 == 'L') gpu::spblas::trsm<T,I>(hs, 'N', 'N', 'N', descr_Ls_sp1[d], descr_Xs_r[d], descr_Ys_r[d], descrs_sparse_trsm1[d], buffersizes_sptrs1[d], buffers_sptrs1[d], 'P');
-            if(rhsorder == 'R' && spdnfactor == 'S' && factrs1 == 'U') gpu::spblas::trsm<T,I>(hs, 'H', 'N', 'N', descr_Us_sp1[d], descr_Xs_r[d], descr_Ys_r[d], descrs_sparse_trsm1[d], buffersizes_sptrs1[d], buffers_sptrs1[d], 'P');
-            if(wcpset == 'W') gpu::mgm::queue_wait(q);
+            if(rhssolorder == 'C' && spdnfactor == 'S' && factrs1 == 'L') gpu::spblas::trsm<T,I>(hs, 'N', 'N', 'N', descr_Ls_sp1[d], descr_Xs_c[d], descr_Ys_c[d], descrs_sparse_trsm1[d], buffersizes_sptrs1[d], buffers_sptrs1[d], 'P');
+            if(rhssolorder == 'C' && spdnfactor == 'S' && factrs1 == 'U') gpu::spblas::trsm<T,I>(hs, 'H', 'N', 'N', descr_Us_sp1[d], descr_Xs_c[d], descr_Ys_c[d], descrs_sparse_trsm1[d], buffersizes_sptrs1[d], buffers_sptrs1[d], 'P');
+            if(rhssolorder == 'R' && spdnfactor == 'S' && factrs1 == 'L') gpu::spblas::trsm<T,I>(hs, 'N', 'N', 'N', descr_Ls_sp1[d], descr_Xs_r[d], descr_Ys_r[d], descrs_sparse_trsm1[d], buffersizes_sptrs1[d], buffers_sptrs1[d], 'P');
+            if(rhssolorder == 'R' && spdnfactor == 'S' && factrs1 == 'U') gpu::spblas::trsm<T,I>(hs, 'H', 'N', 'N', descr_Us_sp1[d], descr_Xs_r[d], descr_Ys_r[d], descrs_sparse_trsm1[d], buffersizes_sptrs1[d], buffers_sptrs1[d], 'P');
+            if(config->concurrency_set == CONCURRENCY::SEQ_WAIT) gpu::mgm::queue_wait(q);
             tm_trs1.stop();
 
             if(factrs2syrk != 'S')
             {
                 tm_trs2.start();
-                if(rhsorder == 'C' && spdnfactor == 'S' && factrs2syrk == 'L') gpu::spblas::trsm<T,I>(hs, 'H', 'N', 'N', descr_Ls_sp2[d], descr_Ys_c[d], descr_Xs_c[d], descrs_sparse_trsm2[d], buffersizes_sptrs2[d], buffers_sptrs2[d], 'P');
-                if(rhsorder == 'C' && spdnfactor == 'S' && factrs2syrk == 'U') gpu::spblas::trsm<T,I>(hs, 'N', 'N', 'N', descr_Us_sp2[d], descr_Ys_c[d], descr_Xs_c[d], descrs_sparse_trsm2[d], buffersizes_sptrs2[d], buffers_sptrs2[d], 'P');
-                if(rhsorder == 'R' && spdnfactor == 'S' && factrs2syrk == 'L') gpu::spblas::trsm<T,I>(hs, 'H', 'N', 'N', descr_Ls_sp2[d], descr_Ys_r[d], descr_Xs_r[d], descrs_sparse_trsm2[d], buffersizes_sptrs2[d], buffers_sptrs2[d], 'P');
-                if(rhsorder == 'R' && spdnfactor == 'S' && factrs2syrk == 'U') gpu::spblas::trsm<T,I>(hs, 'N', 'N', 'N', descr_Us_sp2[d], descr_Ys_r[d], descr_Xs_r[d], descrs_sparse_trsm2[d], buffersizes_sptrs2[d], buffers_sptrs2[d], 'P');
-                if(wcpset == 'W') gpu::mgm::queue_wait(q);
+                if(rhssolorder == 'C' && spdnfactor == 'S' && factrs2syrk == 'L') gpu::spblas::trsm<T,I>(hs, 'H', 'N', 'N', descr_Ls_sp2[d], descr_Ys_c[d], descr_Xs_c[d], descrs_sparse_trsm2[d], buffersizes_sptrs2[d], buffers_sptrs2[d], 'P');
+                if(rhssolorder == 'C' && spdnfactor == 'S' && factrs2syrk == 'U') gpu::spblas::trsm<T,I>(hs, 'N', 'N', 'N', descr_Us_sp2[d], descr_Ys_c[d], descr_Xs_c[d], descrs_sparse_trsm2[d], buffersizes_sptrs2[d], buffers_sptrs2[d], 'P');
+                if(rhssolorder == 'R' && spdnfactor == 'S' && factrs2syrk == 'L') gpu::spblas::trsm<T,I>(hs, 'H', 'N', 'N', descr_Ls_sp2[d], descr_Ys_r[d], descr_Xs_r[d], descrs_sparse_trsm2[d], buffersizes_sptrs2[d], buffers_sptrs2[d], 'P');
+                if(rhssolorder == 'R' && spdnfactor == 'S' && factrs2syrk == 'U') gpu::spblas::trsm<T,I>(hs, 'N', 'N', 'N', descr_Us_sp2[d], descr_Ys_r[d], descr_Xs_r[d], descrs_sparse_trsm2[d], buffersizes_sptrs2[d], buffers_sptrs2[d], 'P');
+                if(config->concurrency_set == CONCURRENCY::SEQ_WAIT) gpu::mgm::queue_wait(q);
                 tm_trs2.stop();
                 
                 tm_gemm.start();
-                if(rhsorder == 'C') gpu::spblas::mm<T,I>(hs, 'N', 'N', descr_Bperms_sp[d], descr_Xs_c[d], descr_Fs_c[d], buffersizes_spmm[d], buffers_spmm[d], 'P');
-                if(rhsorder == 'R') gpu::spblas::mm<T,I>(hs, 'N', 'N', descr_Bperms_sp[d], descr_Xs_r[d], descr_Fs_r[d], buffersizes_spmm[d], buffers_spmm[d], 'P');
-                if(wcpset == 'W') gpu::mgm::queue_wait(q);
+                if(rhssolorder == 'C') gpu::spblas::mm<T,I>(hs, 'N', 'N', descr_Bperms_sp[d], descr_Xs_c[d], descr_Fs_c[d], buffersizes_spmm[d], buffers_spmm[d], 'P');
+                if(rhssolorder == 'R') gpu::spblas::mm<T,I>(hs, 'N', 'N', descr_Bperms_sp[d], descr_Xs_r[d], descr_Fs_r[d], buffersizes_spmm[d], buffers_spmm[d], 'P');
+                if(config->concurrency_set == CONCURRENCY::SEQ_WAIT) gpu::mgm::queue_wait(q);
                 tm_gemm.stop();
             }
         }
@@ -519,7 +525,7 @@ void TotalFETIExplicitAcc<T,I>::set(const step::Step &step)
         gpu::mgm::copy_submit_h2d(main_q, d_applyg_n_dofs_interfaces, h_applyg_n_dofs_interfaces);
         gpu::mgm::copy_submit_h2d(main_q, d_applyg_D2Cs_pointers,     h_applyg_D2Cs_pointers);
         for(size_t d = 0; d < n_domains; d++) gpu::mgm::copy_submit_h2d(main_q, d_applyg_D2Cs[d].vals, feti.D2C[d].data(), feti.B1[d].nrows);
-        if(wcpset == 'W') gpu::mgm::queue_wait(main_q);
+        if(config->concurrency_set == CONCURRENCY::SEQ_WAIT) gpu::mgm::queue_wait(main_q);
     }
     tm_applystuff.stop();
 
@@ -599,6 +605,7 @@ void TotalFETIExplicitAcc<T,I>::set(const step::Step &step)
 template <typename T, typename I>
 void TotalFETIExplicitAcc<T,I>::update(const step::Step &step)
 {
+    eslog::info("UPDATE, %d threads, parallel \n", omp_get_max_threads(), (int)(config->concurrency_update == CONCURRENCY::PARALLEL));
     if(stage != 2 && stage != 3) eslog::error("update: invalud order of operations in dualop\n");
     if(solvers_Kreg.size() != n_domains) eslog::error("non-matching number of matrices Kreg between set and update\n");
     if(DirectSparseSolver<T,I>::factorsSymmetry() == Solver_Factors::NONSYMMETRIC_BOTH && (factrs1 != 'L' || factrs2syrk != 'U')) eslog::error("Wrong options for non-symmetric K\n");
@@ -613,15 +620,15 @@ void TotalFETIExplicitAcc<T,I>::update(const step::Step &step)
     const bool need_d_Us_dn = (need_U && spdnfactor == 'D');
     const bool need_d_Ls_sp = need_L;
     const bool need_d_Us_sp = need_U;
-    const bool need_d_Xs_c = (rhsorder == 'C');
-    const bool need_d_Xs_r = (rhsorder == 'R');
+    const bool need_d_Xs_c = (rhssolorder == 'C');
+    const bool need_d_Xs_r = (rhssolorder == 'R');
     const bool need_d_Ys_c = (need_d_Xs_c && spdnfactor == 'S');
     const bool need_d_Ys_r = (need_d_Xs_r && spdnfactor == 'S');
 
     gpu::mgm::set_device(device);
 
     tm_mainloop_outer.start();
-    #pragma omp parallel for schedule(static,1) if(wcpupdate == 'P')
+    #pragma omp parallel for schedule(static,1) if(config->concurrency_update == CONCURRENCY::PARALLEL)
     for(size_t d = 0; d < n_domains; d++)
     {
         tm_mainloop_inner.start();
@@ -715,22 +722,22 @@ void TotalFETIExplicitAcc<T,I>::update(const step::Step &step)
         {
             if(need_d_Us_sp) gpu::mgm::copy_submit_h2d(q, d_Us_sp[d], h_Us_sp[d], false, true);
             if(need_d_Ls_sp) gpu::mgm::copy_submit_h2d(q, d_Ls_sp[d], h_Ls_sp[d], false, true);
-            if(wcpupdate == 'W') gpu::mgm::queue_wait(q);
+            if(config->concurrency_update == CONCURRENCY::SEQ_WAIT) gpu::mgm::queue_wait(q);
         }
         tm_copyin.stop();
 
         // update sparse trsm descriptors to reflect the new matrix values
         tm_descr_update.start();
         {
-            if(spdnfactor == 'S' && rhsorder == 'C' && factrs1 == 'L') gpu::spblas::trsm<T,I>(hs, 'N', 'N', 'N', descr_Ls_sp1[d], descr_Xs_c[d], descr_Ys_c[d], descrs_sparse_trsm1[d], buffersizes_sptrs1[d], buffers_sptrs1[d], 'U');
-            if(spdnfactor == 'S' && rhsorder == 'C' && factrs1 == 'U') gpu::spblas::trsm<T,I>(hs, 'H', 'N', 'N', descr_Us_sp1[d], descr_Xs_c[d], descr_Ys_c[d], descrs_sparse_trsm1[d], buffersizes_sptrs1[d], buffers_sptrs1[d], 'U');
-            if(spdnfactor == 'S' && rhsorder == 'R' && factrs1 == 'L') gpu::spblas::trsm<T,I>(hs, 'N', 'N', 'N', descr_Ls_sp1[d], descr_Xs_r[d], descr_Ys_r[d], descrs_sparse_trsm1[d], buffersizes_sptrs1[d], buffers_sptrs1[d], 'U');
-            if(spdnfactor == 'S' && rhsorder == 'R' && factrs1 == 'U') gpu::spblas::trsm<T,I>(hs, 'H', 'N', 'N', descr_Us_sp1[d], descr_Xs_r[d], descr_Ys_r[d], descrs_sparse_trsm1[d], buffersizes_sptrs1[d], buffers_sptrs1[d], 'U');
-            if(spdnfactor == 'S' && rhsorder == 'C' && factrs2syrk == 'L') gpu::spblas::trsm<T,I>(hs, 'H', 'N', 'N', descr_Ls_sp2[d], descr_Ys_c[d], descr_Xs_c[d], descrs_sparse_trsm2[d], buffersizes_sptrs2[d], buffers_sptrs2[d], 'U');
-            if(spdnfactor == 'S' && rhsorder == 'C' && factrs2syrk == 'U') gpu::spblas::trsm<T,I>(hs, 'N', 'N', 'N', descr_Us_sp2[d], descr_Ys_c[d], descr_Xs_c[d], descrs_sparse_trsm2[d], buffersizes_sptrs2[d], buffers_sptrs2[d], 'U');
-            if(spdnfactor == 'S' && rhsorder == 'R' && factrs2syrk == 'L') gpu::spblas::trsm<T,I>(hs, 'H', 'N', 'N', descr_Ls_sp2[d], descr_Ys_r[d], descr_Xs_r[d], descrs_sparse_trsm2[d], buffersizes_sptrs2[d], buffers_sptrs2[d], 'U');
-            if(spdnfactor == 'S' && rhsorder == 'R' && factrs2syrk == 'U') gpu::spblas::trsm<T,I>(hs, 'N', 'N', 'N', descr_Us_sp2[d], descr_Ys_r[d], descr_Xs_r[d], descrs_sparse_trsm2[d], buffersizes_sptrs2[d], buffers_sptrs2[d], 'U');
-            if(wcpupdate == 'W') gpu::mgm::queue_wait(q);
+            if(spdnfactor == 'S' && rhssolorder == 'C' && factrs1 == 'L') gpu::spblas::trsm<T,I>(hs, 'N', 'N', 'N', descr_Ls_sp1[d], descr_Xs_c[d], descr_Ys_c[d], descrs_sparse_trsm1[d], buffersizes_sptrs1[d], buffers_sptrs1[d], 'U');
+            if(spdnfactor == 'S' && rhssolorder == 'C' && factrs1 == 'U') gpu::spblas::trsm<T,I>(hs, 'H', 'N', 'N', descr_Us_sp1[d], descr_Xs_c[d], descr_Ys_c[d], descrs_sparse_trsm1[d], buffersizes_sptrs1[d], buffers_sptrs1[d], 'U');
+            if(spdnfactor == 'S' && rhssolorder == 'R' && factrs1 == 'L') gpu::spblas::trsm<T,I>(hs, 'N', 'N', 'N', descr_Ls_sp1[d], descr_Xs_r[d], descr_Ys_r[d], descrs_sparse_trsm1[d], buffersizes_sptrs1[d], buffers_sptrs1[d], 'U');
+            if(spdnfactor == 'S' && rhssolorder == 'R' && factrs1 == 'U') gpu::spblas::trsm<T,I>(hs, 'H', 'N', 'N', descr_Us_sp1[d], descr_Xs_r[d], descr_Ys_r[d], descrs_sparse_trsm1[d], buffersizes_sptrs1[d], buffers_sptrs1[d], 'U');
+            if(spdnfactor == 'S' && rhssolorder == 'C' && factrs2syrk == 'L') gpu::spblas::trsm<T,I>(hs, 'H', 'N', 'N', descr_Ls_sp2[d], descr_Ys_c[d], descr_Xs_c[d], descrs_sparse_trsm2[d], buffersizes_sptrs2[d], buffers_sptrs2[d], 'U');
+            if(spdnfactor == 'S' && rhssolorder == 'C' && factrs2syrk == 'U') gpu::spblas::trsm<T,I>(hs, 'N', 'N', 'N', descr_Us_sp2[d], descr_Ys_c[d], descr_Xs_c[d], descrs_sparse_trsm2[d], buffersizes_sptrs2[d], buffers_sptrs2[d], 'U');
+            if(spdnfactor == 'S' && rhssolorder == 'R' && factrs2syrk == 'L') gpu::spblas::trsm<T,I>(hs, 'H', 'N', 'N', descr_Ls_sp2[d], descr_Ys_r[d], descr_Xs_r[d], descrs_sparse_trsm2[d], buffersizes_sptrs2[d], buffers_sptrs2[d], 'U');
+            if(spdnfactor == 'S' && rhssolorder == 'R' && factrs2syrk == 'U') gpu::spblas::trsm<T,I>(hs, 'N', 'N', 'N', descr_Us_sp2[d], descr_Ys_r[d], descr_Xs_r[d], descrs_sparse_trsm2[d], buffersizes_sptrs2[d], buffers_sptrs2[d], 'U');
+            if(config->concurrency_update == CONCURRENCY::SEQ_WAIT) gpu::mgm::queue_wait(q);
         }
         tm_descr_update.stop();
         
@@ -741,7 +748,7 @@ void TotalFETIExplicitAcc<T,I>::update(const step::Step &step)
             if(need_d_Ls_dn) gpu::spblas::sparse_to_dense<T,I>(hs, 'N', descr_Ls_sp1[d],    descr_Ls_dn[d], buffersizes_other[d], buffer_other, 'C');
             if(need_d_Xs_c)  gpu::spblas::sparse_to_dense<T,I>(hs, 'T', descr_Bperms_sp[d], descr_Xs_c[d], buffersizes_other[d], buffer_other, 'C');
             if(need_d_Xs_r)  gpu::spblas::sparse_to_dense<T,I>(hs, 'T', descr_Bperms_sp[d], descr_Xs_r[d], buffersizes_other[d], buffer_other, 'C');
-            if(wcpupdate == 'W') gpu::mgm::queue_wait(q);
+            if(config->concurrency_update == CONCURRENCY::SEQ_WAIT) gpu::mgm::queue_wait(q);
         }
         tm_sp2dn.stop();
 
@@ -749,45 +756,45 @@ void TotalFETIExplicitAcc<T,I>::update(const step::Step &step)
         tm_kernels_compute.start();
         {
             tm_trs1.start();
-            if(rhsorder == 'C' && spdnfactor == 'S' && factrs1 == 'L') gpu::spblas::trsm<T,I>(hs, 'N', 'N', 'N', descr_Ls_sp1[d], descr_Xs_c[d], descr_Ys_c[d], descrs_sparse_trsm1[d], buffersizes_sptrs1[d], buffers_sptrs1[d], 'C');
-            if(rhsorder == 'C' && spdnfactor == 'S' && factrs1 == 'U') gpu::spblas::trsm<T,I>(hs, 'H', 'N', 'N', descr_Us_sp1[d], descr_Xs_c[d], descr_Ys_c[d], descrs_sparse_trsm1[d], buffersizes_sptrs1[d], buffers_sptrs1[d], 'C');
-            if(rhsorder == 'R' && spdnfactor == 'S' && factrs1 == 'L') gpu::spblas::trsm<T,I>(hs, 'N', 'N', 'N', descr_Ls_sp1[d], descr_Xs_r[d], descr_Ys_r[d], descrs_sparse_trsm1[d], buffersizes_sptrs1[d], buffers_sptrs1[d], 'C');
-            if(rhsorder == 'R' && spdnfactor == 'S' && factrs1 == 'U') gpu::spblas::trsm<T,I>(hs, 'H', 'N', 'N', descr_Us_sp1[d], descr_Xs_r[d], descr_Ys_r[d], descrs_sparse_trsm1[d], buffersizes_sptrs1[d], buffers_sptrs1[d], 'C');
-            if(rhsorder == 'C' && spdnfactor == 'D' && factrs1 == 'L') gpu::dnblas::trsm<T,I>(hd, 'L', 'U', 'H', n_dofs_domain,    n_dofs_interface, d_Ls_dn[d]->vals, ld_domain, d_Xs_c[d]->vals, ld_domain);
-            if(rhsorder == 'C' && spdnfactor == 'D' && factrs1 == 'U') gpu::dnblas::trsm<T,I>(hd, 'L', 'L', 'N', n_dofs_domain,    n_dofs_interface, d_Us_dn[d]->vals, ld_domain, d_Xs_c[d]->vals, ld_domain);
-            if(rhsorder == 'R' && spdnfactor == 'D' && factrs1 == 'L') gpu::dnblas::trsm<T,I>(hd, 'R', 'U', 'N', n_dofs_interface, n_dofs_domain,    d_Ls_dn[d]->vals, ld_domain, d_Xs_r[d]->vals, ld_interface);
-            if(rhsorder == 'R' && spdnfactor == 'D' && factrs1 == 'U') gpu::dnblas::trsm<T,I>(hd, 'R', 'L', 'H', n_dofs_interface, n_dofs_domain,    d_Us_dn[d]->vals, ld_domain, d_Xs_r[d]->vals, ld_interface);
-            if(wcpupdate == 'W') gpu::mgm::queue_wait(q);
+            if(rhssolorder == 'C' && spdnfactor == 'S' && factrs1 == 'L') gpu::spblas::trsm<T,I>(hs, 'N', 'N', 'N', descr_Ls_sp1[d], descr_Xs_c[d], descr_Ys_c[d], descrs_sparse_trsm1[d], buffersizes_sptrs1[d], buffers_sptrs1[d], 'C');
+            if(rhssolorder == 'C' && spdnfactor == 'S' && factrs1 == 'U') gpu::spblas::trsm<T,I>(hs, 'H', 'N', 'N', descr_Us_sp1[d], descr_Xs_c[d], descr_Ys_c[d], descrs_sparse_trsm1[d], buffersizes_sptrs1[d], buffers_sptrs1[d], 'C');
+            if(rhssolorder == 'R' && spdnfactor == 'S' && factrs1 == 'L') gpu::spblas::trsm<T,I>(hs, 'N', 'N', 'N', descr_Ls_sp1[d], descr_Xs_r[d], descr_Ys_r[d], descrs_sparse_trsm1[d], buffersizes_sptrs1[d], buffers_sptrs1[d], 'C');
+            if(rhssolorder == 'R' && spdnfactor == 'S' && factrs1 == 'U') gpu::spblas::trsm<T,I>(hs, 'H', 'N', 'N', descr_Us_sp1[d], descr_Xs_r[d], descr_Ys_r[d], descrs_sparse_trsm1[d], buffersizes_sptrs1[d], buffers_sptrs1[d], 'C');
+            if(rhssolorder == 'C' && spdnfactor == 'D' && factrs1 == 'L') gpu::dnblas::trsm<T,I>(hd, 'L', 'U', 'H', n_dofs_domain,    n_dofs_interface, d_Ls_dn[d]->vals, ld_domain, d_Xs_c[d]->vals, ld_domain);
+            if(rhssolorder == 'C' && spdnfactor == 'D' && factrs1 == 'U') gpu::dnblas::trsm<T,I>(hd, 'L', 'L', 'N', n_dofs_domain,    n_dofs_interface, d_Us_dn[d]->vals, ld_domain, d_Xs_c[d]->vals, ld_domain);
+            if(rhssolorder == 'R' && spdnfactor == 'D' && factrs1 == 'L') gpu::dnblas::trsm<T,I>(hd, 'R', 'U', 'N', n_dofs_interface, n_dofs_domain,    d_Ls_dn[d]->vals, ld_domain, d_Xs_r[d]->vals, ld_interface);
+            if(rhssolorder == 'R' && spdnfactor == 'D' && factrs1 == 'U') gpu::dnblas::trsm<T,I>(hd, 'R', 'L', 'H', n_dofs_interface, n_dofs_domain,    d_Us_dn[d]->vals, ld_domain, d_Xs_r[d]->vals, ld_interface);
+            if(config->concurrency_update == CONCURRENCY::SEQ_WAIT) gpu::mgm::queue_wait(q);
             tm_trs1.stop();
 
             if(factrs2syrk == 'S')
             {
                 tm_syrk.start();
-                if(spdnfactor == 'S' && rhsorder == 'C') gpu::dnblas::herk(hd, 'L', 'H', n_dofs_interface, n_dofs_domain, d_Ys_c[d]->vals, ld_domain,    d_Fs[d].vals, ld_interface);
-                if(spdnfactor == 'S' && rhsorder == 'R') gpu::dnblas::herk(hd, 'L', 'N', n_dofs_interface, n_dofs_domain, d_Ys_r[d]->vals, ld_interface, d_Fs[d].vals, ld_interface);
-                if(spdnfactor == 'D' && rhsorder == 'C') gpu::dnblas::herk(hd, 'L', 'H', n_dofs_interface, n_dofs_domain, d_Xs_c[d]->vals, ld_domain,    d_Fs[d].vals, ld_interface);
-                if(spdnfactor == 'D' && rhsorder == 'R') gpu::dnblas::herk(hd, 'L', 'N', n_dofs_interface, n_dofs_domain, d_Xs_r[d]->vals, ld_interface, d_Fs[d].vals, ld_interface);
-                if(wcpupdate == 'W') gpu::mgm::queue_wait(q);
+                if(spdnfactor == 'S' && rhssolorder == 'C') gpu::dnblas::herk(hd, 'L', 'H', n_dofs_interface, n_dofs_domain, d_Ys_c[d]->vals, ld_domain,    d_Fs[d].vals, ld_interface);
+                if(spdnfactor == 'S' && rhssolorder == 'R') gpu::dnblas::herk(hd, 'L', 'N', n_dofs_interface, n_dofs_domain, d_Ys_r[d]->vals, ld_interface, d_Fs[d].vals, ld_interface);
+                if(spdnfactor == 'D' && rhssolorder == 'C') gpu::dnblas::herk(hd, 'L', 'H', n_dofs_interface, n_dofs_domain, d_Xs_c[d]->vals, ld_domain,    d_Fs[d].vals, ld_interface);
+                if(spdnfactor == 'D' && rhssolorder == 'R') gpu::dnblas::herk(hd, 'L', 'N', n_dofs_interface, n_dofs_domain, d_Xs_r[d]->vals, ld_interface, d_Fs[d].vals, ld_interface);
+                if(config->concurrency_update == CONCURRENCY::SEQ_WAIT) gpu::mgm::queue_wait(q);
                 tm_syrk.stop();
             }
             else
             {
                 tm_trs2.start();
-                if(rhsorder == 'C' && spdnfactor == 'S' && factrs2syrk == 'L') gpu::spblas::trsm<T,I>(hs, 'H', 'N', 'N', descr_Ls_sp2[d], descr_Ys_c[d], descr_Xs_c[d], descrs_sparse_trsm2[d], buffersizes_sptrs2[d], buffers_sptrs2[d], 'C');
-                if(rhsorder == 'C' && spdnfactor == 'S' && factrs2syrk == 'U') gpu::spblas::trsm<T,I>(hs, 'N', 'N', 'N', descr_Us_sp2[d], descr_Ys_c[d], descr_Xs_c[d], descrs_sparse_trsm2[d], buffersizes_sptrs2[d], buffers_sptrs2[d], 'C');
-                if(rhsorder == 'R' && spdnfactor == 'S' && factrs2syrk == 'L') gpu::spblas::trsm<T,I>(hs, 'H', 'N', 'N', descr_Ls_sp2[d], descr_Ys_r[d], descr_Xs_r[d], descrs_sparse_trsm2[d], buffersizes_sptrs2[d], buffers_sptrs2[d], 'C');
-                if(rhsorder == 'R' && spdnfactor == 'S' && factrs2syrk == 'U') gpu::spblas::trsm<T,I>(hs, 'N', 'N', 'N', descr_Us_sp2[d], descr_Ys_r[d], descr_Xs_r[d], descrs_sparse_trsm2[d], buffersizes_sptrs2[d], buffers_sptrs2[d], 'C');
-                if(rhsorder == 'C' && spdnfactor == 'D' && factrs2syrk == 'L') gpu::dnblas::trsm<T,I>(hd, 'L', 'U', 'N', n_dofs_domain,    n_dofs_interface, d_Ls_dn[d]->vals, ld_domain, d_Xs_c[d]->vals, ld_domain);
-                if(rhsorder == 'C' && spdnfactor == 'D' && factrs2syrk == 'U') gpu::dnblas::trsm<T,I>(hd, 'L', 'L', 'H', n_dofs_domain,    n_dofs_interface, d_Us_dn[d]->vals, ld_domain, d_Xs_c[d]->vals, ld_domain);
-                if(rhsorder == 'R' && spdnfactor == 'D' && factrs2syrk == 'L') gpu::dnblas::trsm<T,I>(hd, 'R', 'U', 'H', n_dofs_interface, n_dofs_domain,    d_Ls_dn[d]->vals, ld_domain, d_Xs_r[d]->vals, ld_interface);
-                if(rhsorder == 'R' && spdnfactor == 'D' && factrs2syrk == 'U') gpu::dnblas::trsm<T,I>(hd, 'R', 'L', 'N', n_dofs_interface, n_dofs_domain,    d_Us_dn[d]->vals, ld_domain, d_Xs_r[d]->vals, ld_interface);
-                if(wcpupdate == 'W') gpu::mgm::queue_wait(q);
+                if(rhssolorder == 'C' && spdnfactor == 'S' && factrs2syrk == 'L') gpu::spblas::trsm<T,I>(hs, 'H', 'N', 'N', descr_Ls_sp2[d], descr_Ys_c[d], descr_Xs_c[d], descrs_sparse_trsm2[d], buffersizes_sptrs2[d], buffers_sptrs2[d], 'C');
+                if(rhssolorder == 'C' && spdnfactor == 'S' && factrs2syrk == 'U') gpu::spblas::trsm<T,I>(hs, 'N', 'N', 'N', descr_Us_sp2[d], descr_Ys_c[d], descr_Xs_c[d], descrs_sparse_trsm2[d], buffersizes_sptrs2[d], buffers_sptrs2[d], 'C');
+                if(rhssolorder == 'R' && spdnfactor == 'S' && factrs2syrk == 'L') gpu::spblas::trsm<T,I>(hs, 'H', 'N', 'N', descr_Ls_sp2[d], descr_Ys_r[d], descr_Xs_r[d], descrs_sparse_trsm2[d], buffersizes_sptrs2[d], buffers_sptrs2[d], 'C');
+                if(rhssolorder == 'R' && spdnfactor == 'S' && factrs2syrk == 'U') gpu::spblas::trsm<T,I>(hs, 'N', 'N', 'N', descr_Us_sp2[d], descr_Ys_r[d], descr_Xs_r[d], descrs_sparse_trsm2[d], buffersizes_sptrs2[d], buffers_sptrs2[d], 'C');
+                if(rhssolorder == 'C' && spdnfactor == 'D' && factrs2syrk == 'L') gpu::dnblas::trsm<T,I>(hd, 'L', 'U', 'N', n_dofs_domain,    n_dofs_interface, d_Ls_dn[d]->vals, ld_domain, d_Xs_c[d]->vals, ld_domain);
+                if(rhssolorder == 'C' && spdnfactor == 'D' && factrs2syrk == 'U') gpu::dnblas::trsm<T,I>(hd, 'L', 'L', 'H', n_dofs_domain,    n_dofs_interface, d_Us_dn[d]->vals, ld_domain, d_Xs_c[d]->vals, ld_domain);
+                if(rhssolorder == 'R' && spdnfactor == 'D' && factrs2syrk == 'L') gpu::dnblas::trsm<T,I>(hd, 'R', 'U', 'H', n_dofs_interface, n_dofs_domain,    d_Ls_dn[d]->vals, ld_domain, d_Xs_r[d]->vals, ld_interface);
+                if(rhssolorder == 'R' && spdnfactor == 'D' && factrs2syrk == 'U') gpu::dnblas::trsm<T,I>(hd, 'R', 'L', 'N', n_dofs_interface, n_dofs_domain,    d_Us_dn[d]->vals, ld_domain, d_Xs_r[d]->vals, ld_interface);
+                if(config->concurrency_update == CONCURRENCY::SEQ_WAIT) gpu::mgm::queue_wait(q);
                 tm_trs2.stop();
 
                 tm_gemm.start();
-                if(rhsorder == 'C') gpu::spblas::mm<T,I>(hs, 'N', 'N', descr_Bperms_sp[d], descr_Xs_c[d], descr_Fs_c[d], buffersizes_spmm[d], buffers_spmm[d], 'C');
-                if(rhsorder == 'R') gpu::spblas::mm<T,I>(hs, 'N', 'N', descr_Bperms_sp[d], descr_Xs_r[d], descr_Fs_r[d], buffersizes_spmm[d], buffers_spmm[d], 'C');
-                if(wcpupdate == 'W') gpu::mgm::queue_wait(q);
+                if(rhssolorder == 'C') gpu::spblas::mm<T,I>(hs, 'N', 'N', descr_Bperms_sp[d], descr_Xs_c[d], descr_Fs_c[d], buffersizes_spmm[d], buffers_spmm[d], 'C');
+                if(rhssolorder == 'R') gpu::spblas::mm<T,I>(hs, 'N', 'N', descr_Bperms_sp[d], descr_Xs_r[d], descr_Fs_r[d], buffersizes_spmm[d], buffers_spmm[d], 'C');
+                if(config->concurrency_update == CONCURRENCY::SEQ_WAIT) gpu::mgm::queue_wait(q);
                 tm_gemm.stop();
             }
         }
@@ -808,7 +815,7 @@ void TotalFETIExplicitAcc<T,I>::update(const step::Step &step)
             cbmba_res_device->deallocate(buffer_other);
             tm_freeinpool_exec.stop();
         });
-        if(wcpupdate == 'W') gpu::mgm::queue_wait(q);
+        if(config->concurrency_update == CONCURRENCY::SEQ_WAIT) gpu::mgm::queue_wait(q);
         tm_freeinpool.stop();
 
         tm_mainloop_inner.stop();
@@ -822,7 +829,7 @@ void TotalFETIExplicitAcc<T,I>::update(const step::Step &step)
     {
         // just use the cpu solver
         std::vector<Vector_Dense<T,I>> Kplus_fs(n_domains);
-        #pragma omp parallel for schedule(static,1) if(wcpupdate == 'P')
+        #pragma omp parallel for schedule(static,1) if(config->concurrency_update == CONCURRENCY::PARALLEL)
         for(size_t d = 0; d < n_domains; d++) {
             solvers_Kreg[d].solve(feti.f[d], Kplus_fs[d]);
         }
@@ -872,7 +879,7 @@ void TotalFETIExplicitAcc<T,I>::apply(const Vector_Dual<T> &x_cluster, Vector_Du
 
     gpu::mgm::set_device(device);
 
-    if(applyalg == 'G')
+    if(config->apply_scatter_gather_where == DEVICE::GPU)
     {
         my_timer tm_total, tm_copyin, tm_scatter, tm_mv_outer, tm_mv, tm_zerofill, tm_gather, tm_copyout, tm_wait;
 
@@ -881,19 +888,19 @@ void TotalFETIExplicitAcc<T,I>::apply(const Vector_Dual<T> &x_cluster, Vector_Du
         // copy x_cluster to device
         tm_copyin.start();
         gpu::mgm::copy_submit_h2d(main_q, d_applyg_x_cluster, x_cluster);
-        if(wcpapply == 'W') gpu::mgm::queue_wait(main_q);
+        if(config->concurrency_apply == CONCURRENCY::SEQ_WAIT) gpu::mgm::queue_wait(main_q);
         tm_copyin.stop();
 
         // scatter
         tm_scatter.start();
         gpu::kernels::DCmap_scatter(main_q, d_applyg_xs_pointers, d_applyg_n_dofs_interfaces, d_applyg_x_cluster, d_applyg_D2Cs_pointers);
-        if(wcpapply == 'W') gpu::mgm::queue_wait(main_q);
+        if(config->concurrency_apply == CONCURRENCY::SEQ_WAIT) gpu::mgm::queue_wait(main_q);
         tm_scatter.stop();
 
         // apply
         tm_mv_outer.start();
         gpu::mgm::queue_async_barrier({main_q}, queues);
-        #pragma omp parallel for schedule(static,1) if(wcpapply == 'P')
+        #pragma omp parallel for schedule(static,1) if(config->concurrency_apply == CONCURRENCY::PARALLEL)
         for(size_t d = 0; d < n_domains; d++)
         {
             gpu::mgm::queue & q = queues[d % n_queues];
@@ -901,7 +908,7 @@ void TotalFETIExplicitAcc<T,I>::apply(const Vector_Dual<T> &x_cluster, Vector_Du
 
             tm_mv.start();
             gpu::dnblas::hemv(hd, 'L', d_Fs[d].nrows, d_Fs[d].vals, d_Fs[d].get_ld(), d_apply_xs[d].vals, d_apply_ys[d].vals);
-            if(wcpapply == 'W') gpu::mgm::queue_wait(q);
+            if(config->concurrency_apply == CONCURRENCY::SEQ_WAIT) gpu::mgm::queue_wait(q);
             tm_mv.stop();
         }
         tm_mv_outer.stop();
@@ -909,7 +916,7 @@ void TotalFETIExplicitAcc<T,I>::apply(const Vector_Dual<T> &x_cluster, Vector_Du
         // zerofill y_cluster on device
         tm_zerofill.start();
         gpu::mgm::memset_submit(main_q, d_applyg_y_cluster.vals, d_applyg_y_cluster.size * sizeof(T), 0);
-        if(wcpapply == 'W') gpu::mgm::queue_wait(main_q);
+        if(config->concurrency_apply == CONCURRENCY::SEQ_WAIT) gpu::mgm::queue_wait(main_q);
         tm_zerofill.stop();
 
         gpu::mgm::queue_async_barrier(queues, {main_q});
@@ -917,13 +924,13 @@ void TotalFETIExplicitAcc<T,I>::apply(const Vector_Dual<T> &x_cluster, Vector_Du
         // gather
         tm_gather.start();
         gpu::kernels::DCmap_gather(main_q, d_applyg_ys_pointers, d_applyg_n_dofs_interfaces, d_applyg_y_cluster, d_applyg_D2Cs_pointers);
-        if(wcpapply == 'W') gpu::mgm::queue_wait(main_q);
+        if(config->concurrency_apply == CONCURRENCY::SEQ_WAIT) gpu::mgm::queue_wait(main_q);
         tm_gather.stop();
 
         // copy y_cluster from device
         tm_copyout.start();
         gpu::mgm::copy_submit_d2h(main_q, y_cluster, d_applyg_y_cluster);
-        if(wcpapply == 'W') gpu::mgm::queue_wait(main_q);
+        if(config->concurrency_apply == CONCURRENCY::SEQ_WAIT) gpu::mgm::queue_wait(main_q);
         tm_copyout.stop();
 
         // wait
@@ -944,14 +951,14 @@ void TotalFETIExplicitAcc<T,I>::apply(const Vector_Dual<T> &x_cluster, Vector_Du
         print_timer("Apply     wait", tm_wait);
     }
     
-    if(applyalg == 'C')
+    if(config->apply_scatter_gather_where == DEVICE::CPU)
     {
         my_timer tm_total, tm_apply_outer, tm_apply_inner, tm_scatter, tm_copyin, tm_mv, tm_copyout, tm_zerofill, tm_wait, tm_gather, tm_gather_inner;
 
         tm_total.start();
 
         tm_apply_outer.start();
-        #pragma omp parallel for schedule(static,1) if(wcpapply == 'P')
+        #pragma omp parallel for schedule(static,1) if(config->concurrency_apply == CONCURRENCY::PARALLEL)
         for(size_t d = 0; d < n_domains; d++)
         {
             tm_apply_inner.start();
@@ -967,17 +974,17 @@ void TotalFETIExplicitAcc<T,I>::apply(const Vector_Dual<T> &x_cluster, Vector_Du
 
             tm_copyin.start();
             gpu::mgm::copy_submit_h2d(q, d_apply_xs[d], h_applyc_xs[d]);
-            if(wcpapply == 'W') gpu::mgm::queue_wait(q);
+            if(config->concurrency_apply == CONCURRENCY::SEQ_WAIT) gpu::mgm::queue_wait(q);
             tm_copyin.stop();
 
             tm_mv.start();
             gpu::dnblas::hemv(hd, 'L', d_Fs[d].nrows, d_Fs[d].vals, d_Fs[d].get_ld(), d_apply_xs[d].vals, d_apply_ys[d].vals);
-            if(wcpapply == 'W') gpu::mgm::queue_wait(q);
+            if(config->concurrency_apply == CONCURRENCY::SEQ_WAIT) gpu::mgm::queue_wait(q);
             tm_mv.stop();
 
             tm_copyout.start();
             gpu::mgm::copy_submit_d2h(q, h_applyc_ys[d], d_apply_ys[d]);
-            if(wcpapply == 'W') gpu::mgm::queue_wait(q);
+            if(config->concurrency_apply == CONCURRENCY::SEQ_WAIT) gpu::mgm::queue_wait(q);
             tm_copyout.stop();
 
             tm_apply_inner.stop();
@@ -993,7 +1000,7 @@ void TotalFETIExplicitAcc<T,I>::apply(const Vector_Dual<T> &x_cluster, Vector_Du
         tm_wait.stop();
 
         tm_gather.start();
-        #pragma omp parallel for schedule(static,1) if(wcpapply == 'P')
+        #pragma omp parallel for schedule(static,1) if(config->concurrency_apply == CONCURRENCY::PARALLEL)
         for(size_t d = 0; d < n_domains; d++)
         {
             tm_gather_inner.start();
@@ -1039,7 +1046,7 @@ template <typename T, typename I>
 void TotalFETIExplicitAcc<T,I>::toPrimal(const Vector_Dual<T> &x, std::vector<Vector_Dense<T> > &y)
 {
     // just do it on cpu
-    #pragma omp parallel for schedule(static,1) if(wcpset == 'P')
+    #pragma omp parallel for schedule(static,1) if(config->concurrency_set == CONCURRENCY::PARALLEL)
     for (size_t d = 0; d < feti.K.size(); ++d) {
         Vector_Dense<T,I> z;
         z.resize(y[d]);

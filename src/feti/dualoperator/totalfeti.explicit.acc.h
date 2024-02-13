@@ -52,10 +52,12 @@ protected:
     using Ad = gpu::mgm::Ad;
     using Ah = gpu::mgm::Ah;
 
+    DualOperatorExplicitGpuConfig * config = nullptr;
+    char rhssolorder;
     static constexpr size_t align_B = 512;
     static constexpr size_t align_elem = align_B / sizeof(T);
     int stage = 0;
-    char wcpset, wcpupdate, wcpapply, spdnfactor, rhsorder, factrs1, factrs2syrk, handlecount, applyalg;
+    char spdnfactor, factrs1, factrs2syrk;
     gpu::mgm::device device;
     size_t n_domains;
     size_t n_queues;
