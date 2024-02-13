@@ -25,6 +25,15 @@ struct DEConfiguration : public ECFDescription
 	DEConfiguration();
 };
 
+struct MicroDERConfiguration : public ECFDescription
+{
+	double F_START;
+	double F_END;
+	double CR;
+	int RESTART_LIMIT;
+
+	MicroDERConfiguration();
+};
 
 struct SOMAT3AConfiguration : public ECFDescription
 {
@@ -50,7 +59,8 @@ struct AutoOptimizationConfiguration : public ECFDescription
 		SOMAT3A,
 		SOMA,
 		RANDOM,
-		ALL_PERMUTATIONS
+		ALL_PERMUTATIONS,
+		MICRO_DER
 	};
 
 	ALGORITHM algorithm;
@@ -61,6 +71,7 @@ struct AutoOptimizationConfiguration : public ECFDescription
 	DEConfiguration differential_evolution;
 	SOMAConfiguration soma;
 	SOMAT3AConfiguration somat3a;
+	MicroDERConfiguration micro_der;
 
 	AutoOptimizationConfiguration();
 };

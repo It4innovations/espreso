@@ -113,6 +113,50 @@ private:
 	void mutateSpecimen();
 };
 
+class MicroDERAlgorithm : public EvolutionAlgorithm
+{
+public:
+	MicroDERAlgorithm(ParameterManager& manager, OutputManager& output,
+		double F_START, double F_END, double CR, double RESTART_LIMIT);
+
+	std::vector<double>& getCurrentSpecimen() override;
+	void evaluateCurrentSpecimen(double value) override;
+
+private:
+	const int population;
+	const int dimension;
+
+	int generation;
+	bool isInitializing;
+	std::vector<std::vector<double> >::iterator current;
+	std::vector<std::vector<double> > new_generation;
+	std::vector<double> trial_vector;
+
+	const double F_START;
+	const double F_END;
+	double F;
+	const double CR;
+
+	std::vector<std::vector<double> > ray_vectors;
+	std::vector<std::vector<double> >::iterator ray_vector_iterator;
+	int ray_best_position;
+	const double LSA_L;
+	const double LSA_k;
+	const double LSA_error;
+	std::vector<double> LSA_x0;
+	double LSA_delta_r;
+
+	const int RESTART_LIMIT;
+	int restarts;
+	double R;
+
+	void mutateSpecimen();
+	void initLineSearch();
+	void produceRayVectors();
+	void sortSpecimens(std::vector<std::vector<double> >& specimens);
+	void restartPopulation();
+};
+
 class DEOldAlgorithm : public EvolutionAlgorithm
 {
 public:

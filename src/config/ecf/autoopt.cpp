@@ -45,6 +45,29 @@ DEConfiguration::DEConfiguration()
 		.setdatatype({ECFDataType::FLOAT}));
 }
 
+MicroDERConfiguration::MicroDERConfiguration()
+{
+	this->F_START = 0.1f;
+	REGISTER(F_START, ECFMetaData()
+		.setdescription({"F_START"})
+		.setdatatype({ECFDataType::FLOAT}));
+
+	this->F_END = 1.5f;
+	REGISTER(F_END, ECFMetaData()
+		.setdescription({"F_END"})
+		.setdatatype({ECFDataType::FLOAT}));
+
+	this->CR = 0.9f;
+	REGISTER(CR, ECFMetaData()
+		.setdescription({"CR"})
+		.setdatatype({ECFDataType::FLOAT}));
+
+	this->RESTART_LIMIT = 5;
+	REGISTER(RESTART_LIMIT, ECFMetaData()
+		.setdescription({"RESTART_LIMIT"})
+		.setdatatype({ECFDataType::NONNEGATIVE_INTEGER}));
+}
+
 SOMAConfiguration::SOMAConfiguration()
 {
 	this->PRT = 0.3f;
@@ -75,7 +98,8 @@ AutoOptimizationConfiguration::AutoOptimizationConfiguration()
 		.addoption(ECFOption().setname("SOMAT3A").setdescription("SOMAT3A."))
 		.addoption(ECFOption().setname("SOMA").setdescription("SOMA."))
 		.addoption(ECFOption().setname("RANDOM").setdescription("Generating random configurations."))
-		.addoption(ECFOption().setname("ALL_PERMUTATIONS").setdescription("All parameter permutations.")));
+		.addoption(ECFOption().setname("ALL_PERMUTATIONS").setdescription("All parameter permutations."))
+		.addoption(ECFOption().setname("MICRO_DER").setdescription("Micro Differential Evolution Ray.")));
 
 	this->rounding_immediate = false;
 	REGISTER(rounding_immediate, ECFMetaData()
@@ -93,6 +117,8 @@ AutoOptimizationConfiguration::AutoOptimizationConfiguration()
 		.setdescription({"Differential Evolution"}));
 	REGISTER(soma, ECFMetaData()
 		.setdescription({"SOMA"}));
+	REGISTER(micro_der, ECFMetaData()
+		.setdescription({"Micro Differential Evolution Ray"}));
 	// REGISTER(somat3a, ECFMetaData()
 	// 	.setdescription({"SOMA Team-to-Team"}));
 }

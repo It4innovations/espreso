@@ -23,6 +23,7 @@ public:
 
 	int count() const;
 	int generateInt(int start, int endInclusive);
+	double generateDouble(double start, double endInclusive);
 	int generateSpecimenNumber();
 	int generateParameterNumber();
 	double generateDecimal();

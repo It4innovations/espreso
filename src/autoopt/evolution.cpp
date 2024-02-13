@@ -282,6 +282,244 @@ void DEAlgorithm::mutateSpecimen()
 	}
 }
 
+
+
+MicroDERAlgorithm::MicroDERAlgorithm(ParameterManager& manager, OutputManager& output,
+	double F_START, double F_END, double CR, double RESTART_LIMIT)
+: EvolutionAlgorithm(manager, output), population(5), dimension(manager.count()),
+  generation(0) ,isInitializing(true), F_START(F_START), F_END(F_END),
+  F(manager.generateDouble(F_START, F_END)), CR(CR), LSA_L(2), LSA_k(3), 
+  LSA_error(1e-8), LSA_x0(manager.count(), 0.0f), RESTART_LIMIT(RESTART_LIMIT), 
+  restarts(0), R(1)
+{
+	for (int s = 0; s < population; s++) {
+		m_specimens.push_back(m_manager.generateConfiguration());
+	}
+	this->current = m_specimens.begin();
+}
+
+std::vector<double>& MicroDERAlgorithm::getCurrentSpecimen()
+{
+	if (isInitializing)
+	{
+		m_output.writeConfiguration('I', *current, dimension);
+		return *current;
+	}
+	else
+	{
+		if (current->size() == this->dimension)
+		{
+			this->m_output.writeConfiguration('T', *current, dimension);
+			return *current;
+		}
+		else
+		{
+			this->m_output.writeConfiguration('R', *ray_vector_iterator, dimension);
+			return *ray_vector_iterator;
+		}
+	}
+}
+
+void MicroDERAlgorithm::evaluateCurrentSpecimen(double value)
+{
+	if (isInitializing)
+	{
+		current->push_back(value);
+		m_output.writeEvaluation(value);
+
+		if (++current == m_specimens.end())
+		{
+			isInitializing = false;
+			generation++;
+			this->sortSpecimens(m_specimens);
+			current = m_specimens.begin();
+			this->mutateSpecimen();
+			this->initLineSearch();
+			this->produceRayVectors();
+		}
+	}
+	else
+	{
+		m_output.writeEvaluation(value);
+
+		// Current individual position in the population
+		int s = std::distance(m_specimens.begin(), current);
+
+		// INDIVIDUAL = ELITIST
+		if (s < 2)
+		{
+			ray_vector_iterator->push_back(value);
+
+			if (ray_vector_iterator->back() < ray_vectors[ray_best_position].back())
+			{ ray_best_position = std::distance(ray_vectors.begin(), ray_vector_iterator); }
+
+			if (++ray_vector_iterator == ray_vectors.end())
+			{
+				LSA_delta_r = (ray_best_position == 0) || (ray_best_position == 2 * LSA_k) 
+					? 2 * LSA_delta_r : LSA_delta_r / LSA_k;
+				LSA_x0 = ray_vectors[ray_best_position];
+				this->produceRayVectors();
+			}
+
+			if (LSA_delta_r <= LSA_error)
+			{
+				// SELECTION
+				if (LSA_x0.back() < current->back())
+				{ new_generation.push_back(LSA_x0); }
+				else
+				{ new_generation.push_back(*current); }
+
+				current++;
+				this->mutateSpecimen();
+				this->initLineSearch();
+				this->produceRayVectors();
+			}
+		} // TRACKING + RESTART/RANDOM VECTORS
+		else
+		{
+			if (current->size() == this->dimension)
+			{ current->push_back(value); }
+
+			new_generation.push_back(*current);
+			current++;
+
+			// SKIP ALREADY EVALUATED INDIVIDUALS
+			while ( current != m_specimens.end() && current->size() != this->dimension )
+			{ 
+				new_generation.push_back(*current);
+				current++;
+			}
+
+			// END OF A GENERATION
+			if (current == m_specimens.end())
+			{
+				generation++;
+				this->m_specimens = this->new_generation;
+				this->sortSpecimens(m_specimens);
+				this->current = this->m_specimens.begin();
+
+				// RESTART POPULATION CHECK POINT
+				if (generation % RESTART_LIMIT == 0)
+				{ this->restartPopulation(); }
+
+				this->new_generation.clear();
+				F = m_manager.generateDouble(F_START, F_END);
+				this->mutateSpecimen();
+				this->initLineSearch();
+				this->produceRayVectors();
+			}
+		}
+	}
+}
+
+void MicroDERAlgorithm::mutateSpecimen()
+{
+	// Current individual position in the population
+	int s = std::distance(m_specimens.begin(), current);
+
+	// MUTATION
+	const int MUTATION_PARENTS = 3;
+	std::vector<double> parents[MUTATION_PARENTS];
+	int p_idx[MUTATION_PARENTS];
+	// Parent #1
+	while ( ( p_idx[0] = m_manager.generateSpecimenNumber() ) == s );
+	// Parent #2
+	do { p_idx[1] = m_manager.generateSpecimenNumber(); }
+	while (s == p_idx[1] || p_idx[0] == p_idx[1]);
+	// Parent #3
+	do { p_idx[2] = m_manager.generateSpecimenNumber(); }
+	while (s == p_idx[2] || p_idx[0] == p_idx[2] || p_idx[1] == p_idx[2]);
+
+	for (int i = 0; i < MUTATION_PARENTS; i++)
+	{ parents[i] = m_specimens[ p_idx[i] ]; }
+
+	std::vector<double> noisy_vector(this->dimension, 0.0f);
+	for (int d = 0; d < this->dimension; d++)
+	{
+		noisy_vector[d] = m_manager.checkParameter(
+			d,
+			parents[0][d] + F * (parents[1][d] - parents[2][d])
+		);
+	}
+
+	// CROSSOVER
+	int J = m_manager.generateParameterNumber();
+	trial_vector.clear(); trial_vector.resize(this->dimension);
+	for (int i = 0; i < this->dimension; i++) {
+		trial_vector[i] = (m_manager.generateDecimal() <= CR) || (i == J)
+			? noisy_vector[i] : (*current)[i];
+	}
+}
+
+void MicroDERAlgorithm::initLineSearch()
+{
+	this->LSA_x0.assign(this->dimension, 0.0f);
+	this->LSA_delta_r = LSA_L / LSA_k;
+}
+
+void MicroDERAlgorithm::produceRayVectors()
+{
+	this->ray_vectors.clear();
+	for (int p = 1; p <= (2 * LSA_k + 1); p++)
+	{
+		std::vector<double> x_p(this->dimension, 0.0f);
+		for (int i = 0; i < this->dimension; i++)
+		{
+			x_p[i] = LSA_x0[i] + LSA_delta_r * (p - LSA_k - 1) * trial_vector[i];
+		}
+		this->ray_vectors.push_back(x_p);
+	}
+	this->ray_vector_iterator = this->ray_vectors.begin();
+	this->ray_best_position = 0;
+}
+
+void MicroDERAlgorithm::sortSpecimens(std::vector<std::vector<double> >& specimens)
+{
+	std::sort(specimens.begin(), specimens.end(), 
+		[] (std::vector<double>& s1, std::vector<double>& s2) -> bool 
+		{ return s1.back() < s2.back(); }
+	);
+}
+
+void MicroDERAlgorithm::restartPopulation()
+{
+	// SORT
+	this->sortSpecimens(new_generation);
+
+	// ELITISTS
+	this->m_specimens.clear();
+	this->m_specimens.push_back(new_generation[0]);
+	this->m_specimens.push_back(new_generation[1]);
+
+	// TRACKING VECTORS
+	std::vector<double> w1(this->dimension, 0);
+	std::vector<double> w2(this->dimension, 0);
+	auto fill_w = [&, this] (std::vector<double>& w, std::vector<double>& e) 
+	{
+		double lambda = m_manager.generateDecimal();
+		for (int i = 0; i < dimension; i++)
+		{
+			w[i] = e[i] * R * lambda;
+		}
+	};
+	fill_w(w1, m_specimens[0]);
+	fill_w(w2, m_specimens[1]);
+	this->m_specimens.push_back(w1);
+	this->m_specimens.push_back(w2);
+
+	// RESTART VECTOR
+	this->m_specimens.push_back(this->m_manager.generateConfiguration());
+
+	// SET POINTER TO THE FIRST ELITIST
+	this->current = this->m_specimens.begin();
+
+	// ADJUST R
+	if ( ( (++restarts) % this->dimension ) == 0 )
+	{ this->R = this->R * 0.9f; }
+}
+
+
+
 DEOldAlgorithm::DEOldAlgorithm(ParameterManager& manager, OutputManager& output,
 	int population, double F, double CR)
 : EvolutionAlgorithm(manager, output), population(population), dimension(manager.count()),

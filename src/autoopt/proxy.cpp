@@ -88,6 +88,12 @@ int ParameterManager::generateInt(int start, int endInclusive)
 	return d(m_generator);
 }
 
+double ParameterManager::generateDouble(double start, double endInclusive)
+{
+	std::uniform_real_distribution<double> d(start, endInclusive);
+	return d(m_generator);
+}
+
 int ParameterManager::generateSpecimenNumber()
 {
 	return m_dist_population(m_generator);
@@ -556,6 +562,11 @@ OptimizationProxy::OptimizationProxy(
 		break;
 	case AutoOptimizationConfiguration::ALGORITHM::ALL_PERMUTATIONS:
 		this->m_alg = new AllPermutationsAlgorithm(m_manager, m_output);
+		break;
+	case AutoOptimizationConfiguration::ALGORITHM::MICRO_DER:
+		this->m_alg = new MicroDERAlgorithm(m_manager, m_output,
+			m_config.micro_der.F_START, m_config.micro_der.F_END,
+			m_config.micro_der.CR, m_config.micro_der.RESTART_LIMIT);
 		break;
 	default:;
 	}
