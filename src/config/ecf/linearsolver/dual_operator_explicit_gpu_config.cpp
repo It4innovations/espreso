@@ -45,19 +45,19 @@ DualOperatorExplicitGpuConfig::DualOperatorExplicitGpuConfig()
 			.addoption(ECFOption().setname("CSR").setdescription("CSR."))
 			.addoption(ECFOption().setname("DENSE_ROW_MAJOR").setdescription("Dense row-major.")));
 
-	trsm1_solve_type = TRSM1_SOLVE_TYPE::UH;
+	trsm1_solve_type = TRSM1_SOLVE_TYPE::LHH;
 	REGISTER(trsm1_solve_type, ECFMetaData()
 			.setdescription({ "Type of the first solve." })
 			.setdatatype({ ECFDataType::OPTION })
 			.addoption(ECFOption().setname("L").setdescription("Solve LY=X."))
-			.addoption(ECFOption().setname("UH").setdescription("Solve ((U*)*)Y=X.")));
+			.addoption(ECFOption().setname("LHH").setdescription("Solve ((L*)*)Y=X.")));
 
-	trsm2_solve_type = TRSM2_SOLVE_TYPE::LH;
+	trsm2_solve_type = TRSM2_SOLVE_TYPE::U;
 	REGISTER(trsm2_solve_type, ECFMetaData()
 			.setdescription({ "Type of the first solve." })
 			.setdatatype({ ECFDataType::OPTION })
 			.addoption(ECFOption().setname("U").setdescription("Solve UZ=Y."))
-			.addoption(ECFOption().setname("LH").setdescription("Solve ((L*)*)Z=Y.")));
+			.addoption(ECFOption().setname("UHH").setdescription("Solve ((U*)*)Z=Y.")));
 
 	trsm_rhs_sol_order = MATRIX_ORDER::ROW_MAJOR;
 	REGISTER(trsm_rhs_sol_order, ECFMetaData()

@@ -21,12 +21,12 @@ struct DualOperatorExplicitGpuConfig: public ECFDescription {
 
     enum class TRSM1_SOLVE_TYPE {
         L,
-        UH
+        LHH
     };
 
     enum class TRSM2_SOLVE_TYPE {
         U,
-        LH
+        UHH
     };
 
     enum class MATRIX_ORDER {
