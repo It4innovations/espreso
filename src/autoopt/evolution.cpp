@@ -287,7 +287,7 @@ void DEAlgorithm::mutateSpecimen()
 MicroDERAlgorithm::MicroDERAlgorithm(ParameterManager& manager, OutputManager& output,
 	double F_START, double F_END, double CR, double RESTART_LIMIT)
 : EvolutionAlgorithm(manager, output), population(5), dimension(manager.count()),
-  generation(0) ,isInitializing(true), F_START(F_START), F_END(F_END),
+  generation(0), isInitializing(true), F_START(F_START), F_END(F_END),
   F(manager.generateDouble(F_START, F_END)), CR(CR), LSA_L(2), LSA_k(3), 
   LSA_error(1e-8), LSA_x0(manager.count(), 0.0f), RESTART_LIMIT(RESTART_LIMIT), 
   restarts(0), R(1)
@@ -370,6 +370,7 @@ void MicroDERAlgorithm::evaluateCurrentSpecimen(double value)
 				{ new_generation.push_back(*current); }
 
 				current++;
+				s = std::distance(m_specimens.begin(), current);
 				this->mutateSpecimen();
 				this->initLineSearch();
 				this->produceRayVectors();
@@ -382,32 +383,35 @@ void MicroDERAlgorithm::evaluateCurrentSpecimen(double value)
 
 			new_generation.push_back(*current);
 			current++;
+		}
 
-			// SKIP ALREADY EVALUATED INDIVIDUALS
+		// SKIP ALREADY EVALUATED INDIVIDUALS
+		if (s > 1)
+		{
 			while ( current != m_specimens.end() && current->size() != this->dimension )
 			{ 
 				new_generation.push_back(*current);
 				current++;
 			}
+		}
 
-			// END OF A GENERATION
-			if (current == m_specimens.end())
-			{
-				generation++;
-				this->m_specimens = this->new_generation;
-				this->sortSpecimens(m_specimens);
-				this->current = this->m_specimens.begin();
+		// END OF A GENERATION
+		if (current == m_specimens.end())
+		{
+			generation++;
+			this->m_specimens = this->new_generation;
+			this->sortSpecimens(m_specimens);
+			this->current = this->m_specimens.begin();
 
-				// RESTART POPULATION CHECK POINT
-				if (generation % RESTART_LIMIT == 0)
-				{ this->restartPopulation(); }
+			// RESTART POPULATION CHECK POINT
+			if (generation % RESTART_LIMIT == 0)
+			{ this->restartPopulation(); }
 
-				this->new_generation.clear();
-				F = m_manager.generateDouble(F_START, F_END);
-				this->mutateSpecimen();
-				this->initLineSearch();
-				this->produceRayVectors();
-			}
+			this->new_generation.clear();
+			F = m_manager.generateDouble(F_START, F_END);
+			this->mutateSpecimen();
+			this->initLineSearch();
+			this->produceRayVectors();
 		}
 	}
 }
