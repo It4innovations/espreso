@@ -27,6 +27,7 @@ protected:
     int dofs;
     Matrix_Type type;
     Matrix_Shape shape;
+    std::vector<esint> dirichlet, inequality;
     FETIDecomposition decomposition;
     std::vector<RegionInfo> elements;
     std::vector<std::vector<RegionInfo> > bregion; // RegionInfo per domain per boundary region

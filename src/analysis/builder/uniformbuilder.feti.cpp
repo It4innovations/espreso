@@ -49,7 +49,7 @@ UniformBuilderFETIPattern::UniformBuilderFETIPattern(HeatTransferLoadStepConfigu
             if (dirichletInfo[r].dirichlet) {
                 for (auto n = region->nodes->datatarray().cbegin(); n != region->nodes->datatarray().cend(); ++n) {
                     for (int d = 0; d < dofs; ++d) {
-                        decomposition.fixedDOFs.push_back(*n * dofs + d);
+                        dirichlet.push_back(*n * dofs + d);
                     }
                 }
             }
@@ -57,11 +57,11 @@ UniformBuilderFETIPattern::UniformBuilderFETIPattern(HeatTransferLoadStepConfigu
     }
 
     dirichletInfo[0].size = dofs * (info::mesh->nodes->uniqInfo.nhalo + info::mesh->nodes->uniqInfo.size);
-    dirichletInfo[0].f = decomposition.fixedDOFs; // use the first region to store indices permutation;
-    utils::sortAndRemoveDuplicates(decomposition.fixedDOFs);
-    dirichletInfo[0].indices = decomposition.fixedDOFs;
+    dirichletInfo[0].f = dirichlet; // use the first region to store indices permutation;
+    utils::sortAndRemoveDuplicates(dirichlet);
+    dirichletInfo[0].indices = dirichlet;
     for (size_t i = 0; i < dirichletInfo[0].f.size(); ++i) {
-        dirichletInfo[0].f[i] = std::lower_bound(decomposition.fixedDOFs.begin(), decomposition.fixedDOFs.end(), dirichletInfo[0].f[i]) - decomposition.fixedDOFs.begin();
+        dirichletInfo[0].f[i] = std::lower_bound(dirichlet.begin(), dirichlet.end(), dirichletInfo[0].f[i]) - dirichlet.begin();
     }
 
     fillDecomposition(configuration.feti, dofs);
@@ -98,7 +98,7 @@ UniformBuilderFETIPattern::UniformBuilderFETIPattern(StructuralMechanicsLoadStep
                 for (int m = 0; m < multiplicity; ++m) {
                     for (int d = 0; d < dofs; ++d) {
                         if (dirichletInfo[r].dirichlet & (1 << d)) {
-                            decomposition.fixedDOFs.push_back(*n * dofs * multiplicity + m * dofs + d);
+                            dirichlet.push_back(*n * dofs * multiplicity + m * dofs + d);
                         }
                     }
                 }
@@ -106,12 +106,24 @@ UniformBuilderFETIPattern::UniformBuilderFETIPattern(StructuralMechanicsLoadStep
         }
     }
 
+    for (auto disp = configuration.fixed_wall.cbegin(); disp != configuration.fixed_wall.cend(); ++disp) {
+        const BoundaryRegionStore *region = info::mesh->bregion(disp->first);
+        for (auto n = region->nodes->datatarray().cbegin(); n != region->nodes->datatarray().cend(); ++n) {
+            for (int m = 0; m < multiplicity; ++m) {
+                for (int d = 0; d < dofs; ++d) {
+                    inequality.push_back(*n * dofs * multiplicity + m * dofs + d);
+                }
+            }
+        }
+    }
+    utils::sortAndRemoveDuplicates(inequality);
+
     dirichletInfo[0].size = dofs * multiplicity * (info::mesh->nodes->uniqInfo.nhalo + info::mesh->nodes->uniqInfo.size);
-    dirichletInfo[0].f = decomposition.fixedDOFs; // use the first region to store indices permutation;
-    utils::sortAndRemoveDuplicates(decomposition.fixedDOFs);
-    dirichletInfo[0].indices = decomposition.fixedDOFs;
+    dirichletInfo[0].f = dirichlet; // use the first region to store indices permutation;
+    utils::sortAndRemoveDuplicates(dirichlet);
+    dirichletInfo[0].indices = dirichlet;
     for (size_t i = 0; i < dirichletInfo[0].f.size(); ++i) {
-        dirichletInfo[0].f[i] = std::lower_bound(decomposition.fixedDOFs.begin(), decomposition.fixedDOFs.end(), dirichletInfo[0].f[i]) - decomposition.fixedDOFs.begin();
+        dirichletInfo[0].f[i] = std::lower_bound(dirichlet.begin(), dirichlet.end(), dirichletInfo[0].f[i]) - dirichlet.begin();
     }
 
     fillDecomposition(configuration.feti, dofs * multiplicity);
@@ -172,30 +184,35 @@ void UniformBuilderFETIPattern::fillDecomposition(FETIConfiguration &feti, int d
 
     switch (feti.ordering) {
     case FETIConfiguration::ORDERING::ORDERED:
-        // order: inner, lambdas, dirichlet
+        // order: inner, lambdas, dirichlet, inequalities
         { // go through the rest dofs
             esint index = 0;
-            auto fix = decomposition.fixedDOFs.begin();
+            auto fix = dirichlet.begin();
+            auto ieq = inequality.begin();
             auto dmap = decomposition.dmap->begin();
             for (auto domains = info::mesh->nodes->domains->begin(); domains != info::mesh->nodes->domains->end(); ++domains, ++index) {
                 for (int dof = 0; dof < dofs; ++dof, ++dmap) {
-                    if (fix == decomposition.fixedDOFs.end() || *fix != dofs * index + dof) {
-                        if (domains->size() == 1) {
-                            dmap->begin()->domain = *domains->begin();
-                            dmap->begin()->index = elements[dmap->begin()->domain - decomposition.dbegin].size++;
-                        }
+                    if (
+                            domains->size() == 1 &&
+                            (fix == dirichlet.end()  || *fix != dofs * index + dof) &&
+                            (ieq == inequality.end() || *ieq != dofs * index + dof)
+                            ) {
+
+                        dmap->begin()->domain = *domains->begin();
+                        dmap->begin()->index = elements[dmap->begin()->domain - decomposition.dbegin].size++;
                     }
-                    if (fix != decomposition.fixedDOFs.end() && *fix == dofs * index + dof) ++fix;
+                    if (fix != dirichlet.end()  && *fix == dofs * index + dof) ++fix;
+                    if (ieq != inequality.end() && *ieq == dofs * index + dof) ++ieq;
                 }
             }
         }
         { // go through shared nodes
             esint index = 0;
-            auto fix = decomposition.fixedDOFs.begin();
+            auto fix = dirichlet.begin();
             auto dmap = decomposition.dmap->begin();
             for (auto domains = info::mesh->nodes->domains->begin(); domains != info::mesh->nodes->domains->end(); ++domains, ++index) {
                 for (int dof = 0; dof < dofs; ++dof, ++dmap) {
-                    if (fix == decomposition.fixedDOFs.end() || *fix != dofs * index + dof) {
+                    if (fix == dirichlet.end() || *fix != dofs * index + dof) {
                         if (domains->size() > 1) {
                             auto di = dmap->begin();
                             for (auto d = domains->begin(); d != domains->end(); ++d, ++di) {
@@ -206,12 +223,12 @@ void UniformBuilderFETIPattern::fillDecomposition(FETIConfiguration &feti, int d
                             }
                         }
                     }
-                    if (fix != decomposition.fixedDOFs.end() && *fix == dofs * index + dof) ++fix;
+                    if (fix != dirichlet.end() && *fix == dofs * index + dof) ++fix;
                 }
             }
         }
         // go through dirichlet
-        for (auto i = decomposition.fixedDOFs.begin(); i != decomposition.fixedDOFs.end(); ++i) {
+        for (auto i = dirichlet.begin(); i != dirichlet.end(); ++i) {
             auto domains = info::mesh->nodes->domains->begin() + *i / dofs;
             auto dmap = decomposition.dmap->begin() + *i;
             auto di = dmap->begin();
@@ -219,6 +236,20 @@ void UniformBuilderFETIPattern::fillDecomposition(FETIConfiguration &feti, int d
                 di->domain = *d;
                 if (decomposition.ismy(*d)) {
                     di->index = elements[*d - decomposition.dbegin].size++;
+                }
+            }
+        }
+        // go through inequalities
+        for (auto i = inequality.begin(); i != inequality.end(); ++i) {
+            auto domains = info::mesh->nodes->domains->begin() + *i / dofs;
+            if (domains->size() == 1) { // already indexed when domains->size > 1
+                auto dmap = decomposition.dmap->begin() + *i;
+                auto di = dmap->begin();
+                for (auto d = domains->begin(); d != domains->end(); ++d, ++di) {
+                    di->domain = *d;
+                    if (decomposition.ismy(*d)) {
+                        di->index = elements[*d - decomposition.dbegin].size++;
+                    }
                 }
             }
         }
