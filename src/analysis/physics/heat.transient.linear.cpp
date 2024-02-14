@@ -74,38 +74,25 @@ void HeatTransientLinear::analyze(step::Step &step)
 	assembler.analyze();
 	info::mesh->output->updateMonitors(step);
 
-	Matrix_Shape shape = Matrix_Shape::UPPER;
-	Matrix_Type type = Matrix_Type::REAL_SYMMETRIC_POSITIVE_DEFINITE;
-	for (auto mat = settings.material_set.begin(); mat != settings.material_set.end(); ++mat) {
-		if (settings.materials.find(mat->second)->second.thermal_conductivity.model == ThermalConductivityConfiguration::MODEL::ANISOTROPIC) {
-			shape = Matrix_Shape::FULL;
-			type = Matrix_Type::REAL_STRUCTURALLY_SYMMETRIC;
-		}
-	}
-	if (configuration.translation_motions.size()) {
-		shape = Matrix_Shape::FULL;
-		type = Matrix_Type::REAL_STRUCTURALLY_SYMMETRIC;
-	}
-
 	switch (configuration.solver) {
 	case LoadStepSolverConfiguration::SOLVER::FETI:
-		builder = new UniformBuilderFETI<double>(configuration.feti, configuration.temperature, 1, 1, shape);
+		builder = new UniformBuilderFETI<double>(configuration);
 		solver = new FETILinearSystemSolver<double>(settings, configuration);
 		break;
 	case LoadStepSolverConfiguration::SOLVER::HYPRE:   break;
 	case LoadStepSolverConfiguration::SOLVER::MKLPDSS:
-		builder = new UniformBuilderDirect<double>(configuration.temperature, 1, 1, shape);
+		builder = new UniformBuilderDirect<double>(configuration);
 		solver = new MKLPDSSLinearSystemSolver<double>(configuration.mklpdss);
 		break;
 	case LoadStepSolverConfiguration::SOLVER::PARDISO: break;
 	case LoadStepSolverConfiguration::SOLVER::SUPERLU: break;
 	case LoadStepSolverConfiguration::SOLVER::WSMP:    break;
 	case LoadStepSolverConfiguration::SOLVER::NONE:
-		builder = new UniformBuilderDirect<double>(configuration.temperature, 1, 1, shape);
+		builder = new UniformBuilderDirect<double>(configuration);
 		solver = new EmptySystemSolver<double>();
 	}
 
-	builder->fillMatrix(solver->A, type, shape);
+	builder->fillMatrix(solver->A);
 	builder->fillVector(solver->b);
 	builder->fillVector(solver->x);
 	builder->fillDirichlet(solver->dirichlet);

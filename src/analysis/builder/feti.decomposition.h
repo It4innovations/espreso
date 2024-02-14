@@ -14,28 +14,28 @@ inline bool operator!=(const DIndex &left, const DIndex &right) { return !(left 
 inline bool operator <(const DIndex &left, const DIndex &right) { return left.domain == right.domain ? left.index < right.index : left.domain < right.domain; }
 
 struct FETIDecomposition: public DirectDecomposition {
-	esint dbegin, dend, dtotal;
-	std::vector<esint> neighDomain; // first domain index per neighbor, the last is MY OFFSET
+    esint dbegin, dend, dtotal;
+    std::vector<esint> neighDomain; // first domain index per neighbor, the last is MY OFFSET
 
-	std::vector<esint> fixedDOFs;
-	serializededata<esint, DIndex> *dmap = nullptr;
+    std::vector<esint> fixedDOFs;
+    serializededata<esint, DIndex> *dmap = nullptr;
 
-	bool ismy(esint domain) const
-	{
-		return dbegin <= domain && domain < dend;
-	}
+    bool ismy(esint domain) const
+    {
+        return dbegin <= domain && domain < dend;
+    }
 
-	int noffset(esint domain) const
-	{
-		size_t n = 0;
-		while (n + 1 < neighbors.size() && neighDomain[n + 1] <= domain) { ++n; }
-		return n;
-	}
+    int noffset(esint domain) const
+    {
+        size_t n = 0;
+        while (n + 1 < neighbors.size() && neighDomain[n + 1] <= domain) { ++n; }
+        return n;
+    }
 
-	~FETIDecomposition()
-	{
-		if (dmap) delete dmap;
-	}
+    ~FETIDecomposition()
+    {
+        if (dmap) delete dmap;
+    }
 };
 
 }

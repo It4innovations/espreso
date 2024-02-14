@@ -51,34 +51,31 @@ void StructuralMechanicsHarmonicRealLinear::analyze(step::Step &step)
 	assembler.analyze();
 	info::mesh->output->updateMonitors(step);
 
-	Matrix_Shape shape = Matrix_Shape::UPPER;
-	Matrix_Type type = Matrix_Type::REAL_SYMMETRIC_INDEFINITE;
-
 	switch (configuration.solver) {
 	case LoadStepSolverConfiguration::SOLVER::FETI:
-		builderAssembler = new UniformBuilderFETI<double>(configuration.feti, configuration.displacement, info::mesh->dimension, 1, shape);
-		builderSolver = new UniformBuilderFETI<double>(configuration.feti, configuration.displacement, info::mesh->dimension, 2, shape);
+		builderAssembler = new UniformBuilderFETI<double>(configuration, 1);
+		builderSolver = new UniformBuilderFETI<double>(configuration, 2);
 		solver = new FETILinearSystemSolver<double>(settings, configuration);
 		break;
 	case LoadStepSolverConfiguration::SOLVER::HYPRE:   break;
 	case LoadStepSolverConfiguration::SOLVER::MKLPDSS:
-		builderAssembler = new UniformBuilderDirect<double>(configuration.displacement, info::mesh->dimension, 1, shape);
-		builderSolver = new UniformBuilderDirect<double>(configuration.displacement, info::mesh->dimension, 2, shape);
+		builderAssembler = new UniformBuilderDirect<double>(configuration, 1);
+		builderSolver = new UniformBuilderDirect<double>(configuration, 2);
 		solver = new MKLPDSSLinearSystemSolver<double>(configuration.mklpdss);
 		break;
 	case LoadStepSolverConfiguration::SOLVER::PARDISO: break;
 	case LoadStepSolverConfiguration::SOLVER::SUPERLU: break;
 	case LoadStepSolverConfiguration::SOLVER::WSMP:    break;
 	case LoadStepSolverConfiguration::SOLVER::NONE:
-		builderAssembler = new UniformBuilderDirect<double>(configuration.displacement, info::mesh->dimension, 1, shape);
-		builderSolver = new UniformBuilderDirect<double>(configuration.displacement, info::mesh->dimension, 2, shape);
+		builderAssembler = new UniformBuilderDirect<double>(configuration, 1);
+		builderSolver = new UniformBuilderDirect<double>(configuration, 2);
 		solver = new EmptySystemSolver<double>();
 	}
 
 	K = solver->A->copyPattern();
 	re.f = solver->b->copyPattern();
 	re.dirichlet = solver->dirichlet->copyPattern();
-	builderAssembler->fillMatrix(K, type, shape);
+	builderAssembler->fillMatrix(K);
 	builderAssembler->fillVector(re.f);
 	builderAssembler->fillDirichlet(re.dirichlet);
 	M = K->copyPattern();
@@ -88,7 +85,7 @@ void StructuralMechanicsHarmonicRealLinear::analyze(step::Step &step)
 	im.x = re.f->copyPattern();
 	im.dirichlet = re.dirichlet->copyPattern();
 
-	builderSolver->fillMatrix(solver->A, type, shape);
+	builderSolver->fillMatrix(solver->A);
 	builderSolver->fillVector(solver->b);
 	builderSolver->fillVector(solver->x);
 	builderSolver->fillDirichlet(solver->dirichlet);

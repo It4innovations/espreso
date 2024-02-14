@@ -13,19 +13,19 @@ template <template<typename, typename, typename> typename Vector, typename T> cl
 
 template <typename T>
 struct Matrix_CSR_Apply {
-	Matrix_CSR<T> localM;
-	Vector_Dense<T> localV;
-	std::vector<std::vector<T> > sBuffer, rBuffer;
-	std::vector<std::vector<esint> > rOffset, sOffset;
-	std::vector<int> neighbors;
-	std::vector<esint> nDOF;
-	esint offset;
+    Matrix_CSR<T> localM;
+    Vector_Dense<T> localV;
+    std::vector<std::vector<T> > sBuffer, rBuffer;
+    std::vector<std::vector<esint> > rOffset, sOffset;
+    std::vector<int> neighbors;
+    std::vector<esint> nDOF;
+    esint offset;
 
-	SpBLAS<Matrix_CSR, T> spblas;
+    SpBLAS<Matrix_CSR, T> spblas;
 
-	void init(Matrix_Distributed<T> &m);
+    void init(Matrix_Distributed<T> &m);
 
-	void apply(Matrix_Distributed<T> &m, Vector_Distributed<Vector_Dense, T> *y, const T &alpha, const T &beta, const Vector_Distributed<Vector_Dense, T> *x);
+    void apply(Matrix_Distributed<T> &m, Vector_Distributed<Vector_Dense, T> *y, const T &alpha, const T &beta, const Vector_Distributed<Vector_Dense, T> *x);
 };
 
 }

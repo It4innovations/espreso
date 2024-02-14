@@ -10,16 +10,16 @@ namespace espreso {
 template <typename T>
 struct Mapping {
 
-	struct Map {
-		int filter;
-		T* data;
-		const esint* position;
+    struct Map {
+        int filter;
+        T* data;
+        const esint* position;
 
-		Map(): filter(255), data(nullptr), position(nullptr) {}
-	};
+        Map(): filter(255), data(nullptr), position(nullptr) {}
+    };
 
-	std::vector<Map> elements; // per interval map
-	std::vector<std::vector<Map> > boundary; // per boundary x interval
+    std::vector<Map> elements; // per interval map
+    std::vector<std::vector<Map> > boundary; // per boundary x interval
 };
 
 }

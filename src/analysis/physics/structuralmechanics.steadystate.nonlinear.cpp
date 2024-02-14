@@ -49,28 +49,25 @@ void StructuralMechanicsSteadyStateNonLinear::analyze(step::Step &step)
 		configuration.nonlinear_solver.substeps = 1;
 	}
 
-	Matrix_Shape shape = Matrix_Shape::UPPER;
-	Matrix_Type type = Matrix_Type::REAL_SYMMETRIC_POSITIVE_DEFINITE;
-
 	switch (configuration.solver) {
 	case LoadStepSolverConfiguration::SOLVER::FETI:
-		builder = new UniformBuilderFETI<double>(configuration.feti, configuration.displacement, info::mesh->dimension, 1, shape);
+		builder = new UniformBuilderFETI<double>(configuration, 1);
 		solver = new FETILinearSystemSolver<double>(settings, configuration);
 		break;
 	case LoadStepSolverConfiguration::SOLVER::HYPRE:   break;
 	case LoadStepSolverConfiguration::SOLVER::MKLPDSS:
-		builder = new UniformBuilderDirect<double>(configuration.displacement, info::mesh->dimension, 1, shape);
+		builder = new UniformBuilderDirect<double>(configuration, 1);
 		solver = new MKLPDSSLinearSystemSolver<double>(configuration.mklpdss);
 		break;
 	case LoadStepSolverConfiguration::SOLVER::PARDISO: break;
 	case LoadStepSolverConfiguration::SOLVER::SUPERLU: break;
 	case LoadStepSolverConfiguration::SOLVER::WSMP:    break;
 	case LoadStepSolverConfiguration::SOLVER::NONE:
-		builder = new UniformBuilderDirect<double>(configuration.temperature, 1, 1, shape);
+		builder = new UniformBuilderDirect<double>(configuration, 1);
 		solver = new EmptySystemSolver<double>();
 	}
 
-	builder->fillMatrix(solver->A, type, shape);
+	builder->fillMatrix(solver->A);
 	builder->fillVector(solver->b);
 	builder->fillVector(solver->x);
 	builder->fillDirichlet(solver->dirichlet);
