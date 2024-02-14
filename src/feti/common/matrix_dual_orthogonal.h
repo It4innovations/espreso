@@ -16,51 +16,51 @@ namespace espreso {
 template <typename T>
 struct Matrix_Dual_Orthogonal: public Matrix_Dense<T, int> {
 
-	enum: size_t {
-		initial_space = 32
-	};
+    enum: size_t {
+        initial_space = 32
+    };
 
-	void resize(int nhalo, int size)
-	{
-		// align matrix values ??
-		Matrix_Dense<T>::resize(initial_space, size);
-		Matrix_Dense<T>::nrows = 0;
-		Matrix_Dense<T>::slice({}, { nhalo, size });
-	}
+    Matrix_Dual_Orthogonal()
+    {
+        // align matrix values ??
+        Matrix_Dense<T>::resize(initial_space, Dual_Map::size);
+        Matrix_Dense<T>::nrows = 0;
+        Matrix_Dense<T>::slice({}, { Dual_Map::nhalo, Dual_Map::size });
+    }
 
-	void next(Vector_Dual<T> &v)
-	{
-		if (Matrix_Dense<T>::nrows == Matrix_Dense<T>::_allocated.nrows) {
-			Matrix_Dense<T> _m;
-			_m.resize(2 * Matrix_Dense<T>::nrows, Matrix_Dense<T>::ncols);
-			_m.nrows = Matrix_Dense<T>::nrows;
-			Matrix_Dense<T>::swap(*this, _m);
-			Matrix_Dense<T>::swap(Matrix_Dense<T>::_allocated, _m.allocated());
-			memcpy(Matrix_Dense<T>::vals, _m.vals, sizeof(T) * _m.nrows * _m.ncols);
-		}
-		v.vals = Matrix_Dense<T>::vals + Matrix_Dense<T>::ncols * Matrix_Dense<T>::nrows++;
-		v.size = this->ncols;
-	}
+    void next(Vector_Dual<T> &v)
+    {
+        if (Matrix_Dense<T>::nrows == Matrix_Dense<T>::_allocated.nrows) {
+            Matrix_Dense<T> _m;
+            _m.resize(2 * Matrix_Dense<T>::nrows, Matrix_Dense<T>::ncols);
+            _m.nrows = Matrix_Dense<T>::nrows;
+            Matrix_Dense<T>::swap(*this, _m);
+            Matrix_Dense<T>::swap(Matrix_Dense<T>::_allocated, _m.allocated());
+            memcpy(Matrix_Dense<T>::vals, _m.vals, sizeof(T) * _m.nrows * _m.ncols);
+        }
+        v.vals = Matrix_Dense<T>::vals + Matrix_Dense<T>::ncols * Matrix_Dense<T>::nrows++;
+        v.size = this->ncols;
+    }
 
-	void apply(const Vector_Dual<T> &x, Vector_Dense<T> &y)
-	{
-		Vector_Dense<T> _x;
-		_x.size = x.size - Dual_Map::nhalo;
-		_x.vals = x.vals + Dual_Map::nhalo;
-		math::blas::apply(y, T{1}, static_cast<Matrix_Dense<T>&>(*this), T{0}, _x);
-		Communication::allReduce(y.vals, nullptr, y.size, MPITools::getType<T>().mpitype, MPI_SUM);
-	}
+    void apply(const Vector_Dual<T> &x, Vector_Dense<T> &y)
+    {
+        Vector_Dense<T> _x;
+        _x.size = x.size - Dual_Map::nhalo;
+        _x.vals = x.vals + Dual_Map::nhalo;
+        math::blas::apply(y, T{1}, static_cast<Matrix_Dense<T>&>(*this), T{0}, _x);
+        Communication::allReduce(y.vals, nullptr, y.size, MPITools::getType<T>().mpitype, MPI_SUM);
+    }
 
-	void applyT(const Vector_Dense<T> &x, Vector_Dual<T> &y)
-	{
-		esint size = x.size;
-		Slice slice(0, Dual_Map::size);
-		std::swap(Matrix_Dense<T>::nrows, size);
-		std::swap(Matrix_Dense<T>::submatrix[1], slice);
-		math::blas::applyT(y, T{1}, static_cast<Matrix_Dense<T>&>(*this), T{0}, x);
-		std::swap(Matrix_Dense<T>::nrows, size);
-		std::swap(Matrix_Dense<T>::submatrix[1], slice);
-	}
+    void applyT(const Vector_Dense<T> &x, Vector_Dual<T> &y)
+    {
+        esint size = x.size;
+        Slice slice(0, Dual_Map::size);
+        std::swap(Matrix_Dense<T>::nrows, size);
+        std::swap(Matrix_Dense<T>::submatrix[1], slice);
+        math::blas::applyT(y, T{1}, static_cast<Matrix_Dense<T>&>(*this), T{0}, x);
+        std::swap(Matrix_Dense<T>::nrows, size);
+        std::swap(Matrix_Dense<T>::submatrix[1], slice);
+    }
 };
 
 }
