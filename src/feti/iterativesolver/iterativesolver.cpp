@@ -73,7 +73,8 @@ template <>
 void IterativeSolver<double>::setInfo(IterativeSolverInfo &info, const FETIConfiguration &configuration, const double &ww)
 {
 	eslog::info("       = ----------------------------------------------------------------------------- = \n");
-	eslog::info("       - ITERATION     RELATIVE NORM      ABSOLUTE NORM      ARIOLI NORM      TIME [s] - \n");
+//	eslog::info("       - ITERATION     RELATIVE NORM      ABSOLUTE NORM      ARIOLI NORM      TIME [s] - \n");
+	eslog::info("       - ITERATION     RELATIVE NORM      ABSOLUTE NORM                       TIME [s] - \n");
 	eslog::info("       - ----------------------------------------------------------------------------- - \n");
 
 	info.iterations = 1;
@@ -137,7 +138,7 @@ void IterativeSolver<double>::updateInfo(IterativeSolverInfo &info, const FETICo
 	}
 
 	if (info.converged || (info.iterations - 1) % feti.configuration.print_iteration == 0) {
-		eslog::info("       - %9d        %9.4e         %9.4e        %9.4e      %7.2e - \n", info.iterations, info.norm.dual.relative, info.norm.dual.absolute, info.norm.dual.arioli, eslog::time() - info.time.current);
+		eslog::info("       - %9d        %9.4e         %9.4e                       %7.2e - \n", info.iterations, info.norm.dual.relative, info.norm.dual.absolute, eslog::time() - info.time.current);
 	}
 	if (info.converged) {
 		info.time.total = eslog::time() - info.time.total;
