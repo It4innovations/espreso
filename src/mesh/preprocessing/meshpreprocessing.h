@@ -16,6 +16,7 @@ struct ElementStore;
 struct NodeStore;
 struct RegionStore;
 struct DomainStore;
+struct DomainSurfaceStore;
 struct BoundaryRegionStore;
 struct ElementsRegionStore;
 struct ContactInterfaceStore;
@@ -119,8 +120,8 @@ void permuteElements(ElementStore *elements, NodeStore *nodes, DomainStore *doma
 
 void computeDomainDual(NodeStore *nodes, ElementStore *elements, DomainStore *domains, std::vector<int> &neighbors, std::vector<int> &neighborsWithMe);
 void computeClustersDistribution(DomainStore *domains, ClusterStore *clusters);
-void computeDomainsSurface(NodeStore *nodes, ElementStore *elements, DomainStore *domains, SurfaceStore *domainsSurface, std::vector<int> &neighbors);
-void triangularizeDomainSurface(NodeStore *nodes, ElementStore *elements, DomainStore *domains, SurfaceStore *domainsSurface, std::vector<int> &neighbors);
+void computeDomainsSurface(NodeStore *nodes, ElementStore *elements, DomainStore *domains, DomainSurfaceStore *domainsSurface, std::vector<int> &neighbors);
+//void triangularizeDomainSurface(NodeStore *nodes, ElementStore *elements, DomainStore *domains, DomainSurfaceStore *domainsSurface, std::vector<int> &neighbors);
 
 void computeNodeDomainDistribution(ElementStore *elements, NodeStore *nodes, DomainStore *domains, std::vector<int> neighborsWithMe);
 void computeLocalIndices(ElementStore *elements, DomainStore *domains);

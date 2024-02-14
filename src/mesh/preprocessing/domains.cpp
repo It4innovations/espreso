@@ -7,6 +7,7 @@
 #include "mesh/store/boundaryregionstore.h"
 #include "mesh/store/contactinterfacestore.h"
 #include "mesh/store/domainstore.h"
+#include "mesh/store/domainsurfacestore.h"
 #include "mesh/store/clusterstore.h"
 #include "mesh/store/surfacestore.h"
 #include "mesh/store/fetidatastore.h"
@@ -461,12 +462,12 @@ void computeClustersDistribution(DomainStore *domains, ClusterStore *clusters)
 	eslog::checkpointln("MESH: CLUSTERS DISTRIBUTION COMPUTED");
 }
 
-void computeDomainsSurface(NodeStore *nodes, ElementStore *elements, DomainStore *domains, SurfaceStore *domainsSurface, std::vector<int> &neighbors)
+void computeDomainsSurface(NodeStore *nodes, ElementStore *elements, DomainStore *domains, DomainSurfaceStore *domainsSurface, std::vector<int> &neighbors)
 {
 	profiler::syncend("compute_domains_surface");
 	size_t threads = info::env::OMP_NUM_THREADS;
 
-	std::vector<std::vector<esint> > faces(threads), facesDistribution(threads), ecounter(threads, std::vector<esint>((int)Element::CODE::SIZE));
+	std::vector<std::vector<esint> > faces(threads), facesDistribution(threads);
 	std::vector<std::vector<Element*> > fpointer(threads);
 	std::vector<std::vector<size_t> > intervals(threads);
 
@@ -508,18 +509,10 @@ void computeDomainsSurface(NodeStore *nodes, ElementStore *elements, DomainStore
 		faces[t].swap(tfaces);
 		facesDistribution[t].swap(tfacesDistribution);
 		fpointer[t].swap(tfpointer);
-		ecounter[t].swap(tecounter);
 		intervals[t].swap(tintervals);
 	}
 
-	for (size_t t = 1; t < threads; t++) {
-		for (size_t e = 0; e < ecounter[0].size(); e++) {
-			ecounter[0][e] += ecounter[t][e];
-		}
-	}
-
 	domainsSurface->epointers = new serializededata<esint, Element*>(1, fpointer);
-	domainsSurface->ecounters = ecounter[0];
 
 	for (size_t i = 1; i < intervals[0].size(); i++) {
 		--intervals[0][i];
@@ -541,61 +534,82 @@ void computeDomainsSurface(NodeStore *nodes, ElementStore *elements, DomainStore
 		tdistribution.push_back(domainsSurface->edistribution[domains->distribution[t + 1]]);
 	}
 
-	if (ecounter[0][(int)Element::CODE::TRIANGLE3] == (esint)domainsSurface->edistribution.back()) {
-		serializededata<esint, esint>::balance(3, faces, &tdistribution);
-		domainsSurface->enodes = new serializededata<esint, esint>(3, faces);
-		domainsSurface->triangles = domainsSurface->enodes;
-		domainsSurface->tdistribution = domainsSurface->edistribution;
-	} else {
-		utils::threadDistributionToFullDistribution(facesDistribution);
-		serializededata<esint, esint>::balance(facesDistribution, faces, &tdistribution);
-		domainsSurface->enodes = new serializededata<esint, esint>(facesDistribution, faces);
+	utils::threadDistributionToFullDistribution(facesDistribution);
+	serializededata<esint, esint>::balance(facesDistribution, faces, &tdistribution);
+	domainsSurface->enodes = new serializededata<esint, esint>(facesDistribution, faces);
+
+	std::vector<std::vector<esint> > uniqueNodes(threads);
+	uniqueNodes[0] = std::vector<esint>(domainsSurface->enodes->datatarray().begin(), domainsSurface->enodes->datatarray().end());
+	utils::sortAndRemoveDuplicates(uniqueNodes[0]);
+	serializededata<esint, esint>::balance(1, uniqueNodes);
+	domainsSurface->nodes = new serializededata<esint, esint>(1, uniqueNodes);
+
+	domainsSurface->dnodes.resize(domains->size);
+	domainsSurface->denodes.resize(domains->size);
+	domainsSurface->coordinates.resize(domains->size);
+	#pragma omp parallel for
+	for (size_t t = 0; t < threads; t++) {
+	    for (size_t d = domains->distribution[t]; d < domains->distribution[t + 1]; d++) {
+	        auto dbegin = domainsSurface->enodes->cbegin() + domainsSurface->edistribution[d];
+	        auto dend = domainsSurface->enodes->cbegin() + domainsSurface->edistribution[d + 1];
+	        domainsSurface->denodes[d].insert(domainsSurface->denodes[d].end(), dbegin->begin(), dend->begin());
+
+	        domainsSurface->dnodes[d] = domainsSurface->denodes[d];
+	        utils::sortAndRemoveDuplicates(domainsSurface->dnodes[d]);
+	        domainsSurface->coordinates[d].reserve(domainsSurface->dnodes[d].size());
+	        for (size_t i = 0; i < domainsSurface->dnodes[d].size(); ++i) {
+	            domainsSurface->coordinates[d].push_back(nodes->coordinates->datatarray()[domainsSurface->dnodes[d][i]]);
+	        }
+	        for (size_t i = 0; i < domainsSurface->denodes[d].size(); ++i) {
+	            domainsSurface->denodes[d][i] = std::lower_bound(domainsSurface->dnodes[d].begin(), domainsSurface->dnodes[d].end(), domainsSurface->denodes[d][i]) - domainsSurface->dnodes[d].begin();
+	        }
+	    }
 	}
 
 	profiler::syncend("compute_domains_surface");
 	eslog::checkpointln("MESH: DOMAIN SURFACE COMPUTED");
 }
 
-void triangularizeDomainSurface(NodeStore *nodes, ElementStore *elements, DomainStore *domains, SurfaceStore *domainsSurface, std::vector<int> &neighbors)
-{
-	profiler::syncstart("triangulate_domains_surface");
-	if (domainsSurface->enodes == NULL) {
-		computeDomainsSurface(nodes, elements, domains, domainsSurface, neighbors);
-	}
-
-	size_t threads = info::env::OMP_NUM_THREADS;
-
-	if (domainsSurface->triangles == NULL) {
-
-		std::vector<std::vector<esint> > triangles(threads);
-		std::vector<std::vector<size_t> > intervals(threads);
-
-		intervals.front().push_back(0);
-		#pragma omp parallel for
-		for (size_t t = 0; t < threads; t++) {
-			for (size_t d = domains->distribution[t]; d < domains->distribution[t + 1]; d++) {
-				auto elements = domainsSurface->enodes->cbegin() + domainsSurface->edistribution[d];
-				auto epointer = domainsSurface->epointers->datatarray().begin() + domainsSurface->edistribution[d];
-
-				for (size_t e = domainsSurface->edistribution[d]; e < domainsSurface->edistribution[d + 1]; ++e, ++elements, ++epointer) {
-					for (auto n = (*epointer)->triangles->datatarray().cbegin(); n != (*epointer)->triangles->datatarray().cend(); ++n) {
-						triangles[t].push_back(elements->at(*n));
-					}
-				}
-				intervals[t].push_back(triangles[t].size() / 3);
-			}
-		}
-
-		utils::threadDistributionToFullDistribution(intervals);
-		utils::mergeThreadedUniqueData(intervals);
-
-		domainsSurface->tdistribution = intervals[0];
-		domainsSurface->triangles = new serializededata<esint, esint>(3, triangles);
-	}
-
-	profiler::syncend("triangulate_domains_surface");
-	eslog::checkpointln("MESH: DOMAIN SURFACE TRIANGULARIZED");
-}
+//void triangularizeDomainSurface(NodeStore *nodes, ElementStore *elements, DomainStore *domains, DomainSurfaceStore *domainsSurface, std::vector<int> &neighbors)
+//{
+//	profiler::syncstart("triangulate_domains_surface");
+//	if (domainsSurface->enodes == NULL) {
+//		computeDomainsSurface(nodes, elements, domains, domainsSurface, neighbors);
+//	}
+//
+//	size_t threads = info::env::OMP_NUM_THREADS;
+//
+//	if (domainsSurface->triangles == NULL) {
+//
+//		std::vector<std::vector<esint> > triangles(threads);
+//		std::vector<std::vector<size_t> > intervals(threads);
+//
+//		intervals.front().push_back(0);
+//		#pragma omp parallel for
+//		for (size_t t = 0; t < threads; t++) {
+//			for (size_t d = domains->distribution[t]; d < domains->distribution[t + 1]; d++) {
+//				auto elements = domainsSurface->enodes->cbegin() + domainsSurface->edistribution[d];
+//				auto epointer = domainsSurface->epointers->datatarray().begin() + domainsSurface->edistribution[d];
+//
+//				for (size_t e = domainsSurface->edistribution[d]; e < domainsSurface->edistribution[d + 1]; ++e, ++elements, ++epointer) {
+//					for (auto n = (*epointer)->triangles->datatarray().cbegin(); n != (*epointer)->triangles->datatarray().cend(); ++n) {
+//						triangles[t].push_back(elements->at(*n));
+//					}
+//				}
+//				intervals[t].push_back(triangles[t].size() / 3);
+//			}
+//		}
+//
+//		utils::threadDistributionToFullDistribution(intervals);
+//		utils::mergeThreadedUniqueData(intervals);
+//
+//		domainsSurface->tdistribution = intervals[0];
+//		domainsSurface->triangles = new serializededata<esint, esint>(3, triangles);
+//	}
+//
+//	profiler::syncend("triangulate_domains_surface");
+//	eslog::checkpointln("MESH: DOMAIN SURFACE TRIANGULARIZED");
+//}
 
 }
 }

@@ -32,6 +32,7 @@
 #include "store/elementstore.h"
 #include "store/nodestore.h"
 #include "store/domainstore.h"
+#include "store/domainsurfacestore.h"
 #include "store/clusterstore.h"
 #include "store/bodystore.h"
 #include "store/elementsregionstore.h"
@@ -126,7 +127,7 @@ Mesh::Mesh()
   clusters(new ClusterStore()),
   bodies(new BodyStore()),
   FETIData(new FETIDataStore()),
-  surface(new SurfaceStore()), domainsSurface(new SurfaceStore()),
+  surface(new SurfaceStore()), domainsSurface(new DomainSurfaceStore()),
   contact(new ContactStore()),
 
   output(new Output()),
@@ -357,7 +358,7 @@ void Mesh::analyze()
 			info::ecf->input.decomposition.separate_materials ||
 			info::ecf->input.decomposition.separate_regions ||
 			info::ecf->input.decomposition.separate_etypes) {
-		_omitDecomposition = false;
+//		_omitDecomposition = false;
 	}
 }
 
@@ -547,7 +548,7 @@ void Mesh::partitiate(int ndomains)
 
 		if (_withBEM) {
 			mesh::computeDomainsSurface(nodes, elements, domains, domainsSurface, neighbors);
-			mesh::triangularizeDomainSurface(nodes, elements, domains, domainsSurface, neighbors);
+//			mesh::triangularizeDomainSurface(nodes, elements, domains, domainsSurface, neighbors);
 			profiler::synccheckpoint("preprocess_surface");
 			eslog::checkpointln("MESH: DOMAIN SURFACE COMPUTED");
 		}

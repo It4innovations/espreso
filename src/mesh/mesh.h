@@ -29,6 +29,7 @@ struct BoundaryRegionStore;
 struct ContactInterfaceStore;
 struct FETIDataStore;
 struct SurfaceStore;
+struct DomainSurfaceStore;
 struct ContactStore;
 
 class Output;
@@ -95,7 +96,7 @@ public:
 	FETIDataStore *FETIData;
 
 	SurfaceStore *surface;
-	SurfaceStore *domainsSurface;
+	DomainSurfaceStore *domainsSurface;
 
 	ContactStore *contact;
 

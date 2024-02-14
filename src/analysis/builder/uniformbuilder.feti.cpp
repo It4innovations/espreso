@@ -14,6 +14,7 @@
 #include "mesh/store/elementstore.h"
 #include "mesh/store/boundaryregionstore.h"
 #include "mesh/store/nodestore.h"
+#include "mesh/store/domainsurfacestore.h"
 
 #include "wrappers/mpi/communication.h"
 
@@ -48,11 +49,18 @@ UniformBuilderFETIPattern::UniformBuilderFETIPattern(HeatTransferLoadStepConfigu
         if (configuration.temperature.find(region->name) != configuration.temperature.end()) {
             if (dirichletInfo[r].dirichlet) {
                 for (auto n = region->nodes->datatarray().cbegin(); n != region->nodes->datatarray().cend(); ++n) {
-                    for (int d = 0; d < dofs; ++d) {
-                        dirichlet.push_back(*n * dofs + d);
-                    }
+                    dirichlet.push_back(*n);
                 }
             }
+        }
+    }
+
+    for (auto disc = info::ecf->heat_transfer.discretization.cbegin(); disc != info::ecf->heat_transfer.discretization.cend(); ++disc) {
+        if (disc->second == PhysicsConfiguration::DISCRETIZATION::BEM) {
+            for (auto n = info::mesh->domainsSurface->nodes->datatarray().cbegin(); n != info::mesh->domainsSurface->nodes->datatarray().cend(); ++n) {
+                surface.push_back(*n);
+            }
+            break;
         }
     }
 
@@ -118,6 +126,17 @@ UniformBuilderFETIPattern::UniformBuilderFETIPattern(StructuralMechanicsLoadStep
     }
     utils::sortAndRemoveDuplicates(inequality);
 
+    for (auto disc = info::ecf->structural_mechanics.discretization.cbegin(); disc != info::ecf->structural_mechanics.discretization.cend(); ++disc) {
+        if (disc->second == PhysicsConfiguration::DISCRETIZATION::BEM) {
+            for (auto n = info::mesh->domainsSurface->nodes->datatarray().cbegin(); n != info::mesh->domainsSurface->nodes->datatarray().cend(); ++n) {
+                for (int d = 0; d < dofs; ++d) {
+                    surface.push_back(*n * dofs + d);
+                }
+            }
+            break;
+        }
+    }
+
     dirichletInfo[0].size = dofs * multiplicity * (info::mesh->nodes->uniqInfo.nhalo + info::mesh->nodes->uniqInfo.size);
     dirichletInfo[0].f = dirichlet; // use the first region to store indices permutation;
     utils::sortAndRemoveDuplicates(dirichlet);
@@ -181,6 +200,37 @@ void UniformBuilderFETIPattern::fillDecomposition(FETIConfiguration &feti, int d
     decomposition.dmap = new serializededata<esint, DIndex>(
             tarray<esint>(info::env::threads, distribution),
             tarray<DIndex>(info::mesh->nodes->domains->datatarray().distribution(), dofs));
+
+    if (surface.size()) { // with BEM, TODO: mixed FEM & BEM
+        // go through surface
+        for (auto i = surface.begin(); i != surface.end(); ++i) {
+            auto domains = info::mesh->nodes->domains->begin() + *i / dofs;
+            auto dmap = decomposition.dmap->begin() + *i;
+            auto di = dmap->begin();
+            for (auto d = domains->begin(); d != domains->end(); ++d, ++di) {
+                di->domain = *d;
+                if (decomposition.ismy(*d)) {
+                    di->index = elements[*d - decomposition.dbegin].size++;
+                }
+            }
+        }
+
+        { // go through the rest dofs
+            esint index = 0;
+            auto surf = surface.begin();
+            auto dmap = decomposition.dmap->begin();
+            for (auto domains = info::mesh->nodes->domains->begin(); domains != info::mesh->nodes->domains->end(); ++domains, ++index) {
+                for (int dof = 0; dof < dofs; ++dof, ++dmap) {
+                    if (surf == dirichlet.end()  || *surf != dofs * index + dof) {
+                        dmap->begin()->domain = *domains->begin();
+                        dmap->begin()->index = elements[dmap->begin()->domain - decomposition.dbegin].size++;
+                    }
+                    if (surf != dirichlet.end()  && *surf == dofs * index + dof) ++surf;
+                }
+            }
+        }
+        return;
+    }
 
     switch (feti.ordering) {
     case FETIConfiguration::ORDERING::ORDERED:

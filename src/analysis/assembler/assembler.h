@@ -24,66 +24,74 @@ struct PhysicsConfiguration;
 class Assembler
 {
 public:
-	Assembler(PhysicsConfiguration &settings);
-	virtual ~Assembler();
+    Assembler(PhysicsConfiguration &settings);
+    virtual ~Assembler();
 
-	static ECFExpression*               getExpression(size_t interval        , std::map<std::string, ECFExpression> &settings);
-	static ECFExpressionVector*         getExpression(size_t interval        , std::map<std::string, ECFExpressionVector> &settings);
-	static ECFHarmonicExpressionVector* getExpression(size_t interval        , std::map<std::string, ECFHarmonicExpressionVector> &settings);
-	static ECFExpression*               getExpression(const std::string &name, std::map<std::string, ECFExpression> &settings);
-	static ECFExpressionVector*         getExpression(const std::string &name, std::map<std::string, ECFExpressionVector> &settings);
-	static ECFHarmonicExpressionVector* getExpression(const std::string &name, std::map<std::string, ECFHarmonicExpressionVector> &settings);
+    static ECFExpression*               getExpression(size_t interval        , std::map<std::string, ECFExpression> &settings);
+    static ECFExpressionVector*         getExpression(size_t interval        , std::map<std::string, ECFExpressionVector> &settings);
+    static ECFHarmonicExpressionVector* getExpression(size_t interval        , std::map<std::string, ECFHarmonicExpressionVector> &settings);
+    static ECFExpression*               getExpression(const std::string &name, std::map<std::string, ECFExpression> &settings);
+    static ECFExpressionVector*         getExpression(const std::string &name, std::map<std::string, ECFExpressionVector> &settings);
+    static ECFHarmonicExpressionVector* getExpression(const std::string &name, std::map<std::string, ECFHarmonicExpressionVector> &settings);
 
-	static Evaluator* getEvaluator(size_t interval, std::map<std::string, ECFExpression> &settings);
-	static Evaluator* getEvaluator(size_t interval, std::map<std::string, ECFExpressionVector> &settings, int dim);
+    static Evaluator* getEvaluator(size_t interval, std::map<std::string, ECFExpression> &settings);
+    static Evaluator* getEvaluator(size_t interval, std::map<std::string, ECFExpressionVector> &settings, int dim);
 
-	PhysicsConfiguration &settings;
+    PhysicsConfiguration &settings;
 
 protected:
-	void assemble(SubKernel::Action action);
-	virtual void run(SubKernel::Action action, size_t interval) =0;
-	virtual void run(SubKernel::Action action, size_t region, size_t interval) =0;
+    void assemble(SubKernel::Action action);
+    virtual void run(SubKernel::Action action, size_t interval) =0;
+    virtual void run(SubKernel::Action action, size_t region, size_t interval) =0;
+    virtual void runBEM(SubKernel::Action action, size_t domain)
+    {
+        eslog::error("implement BEM assembler\n");
+    }
 
-	bool checkExpression(const std::string &name, ECFExpression &expression);
-	bool checkExpression(const std::string &name, ECFExpressionVector &expression);
-	bool checkElementParameter(const std::string &name, std::map<std::string, ECFExpression> &settings);
-	bool checkElementParameter(const std::string &name, std::map<std::string, ECFExpressionVector> &settings);
-	bool checkElementParameter(const std::string &name, std::map<std::string, ECFExpressionVector> &settings, int dim);
-	bool checkBoundaryParameter(const std::string &name, std::map<std::string, ECFExpression> &settings);
-	bool checkBoundaryParameter(const std::string &name, std::map<std::string, ECFExpressionVector> &settings);
-	bool checkBoundaryParameter(const std::string &name, std::map<std::string, ECFExpressionOptionalVector> &settings);
-	bool checkBoundaryParameter(const std::string &name, std::map<std::string, ECFHarmonicExpressionVector> &settings);
+    bool checkExpression(const std::string &name, ECFExpression &expression);
+    bool checkExpression(const std::string &name, ECFExpressionVector &expression);
+    bool checkElementParameter(const std::string &name, std::map<std::string, ECFExpression> &settings);
+    bool checkElementParameter(const std::string &name, std::map<std::string, ECFExpressionVector> &settings);
+    bool checkElementParameter(const std::string &name, std::map<std::string, ECFExpressionVector> &settings, int dim);
+    bool checkBoundaryParameter(const std::string &name, std::map<std::string, ECFExpression> &settings);
+    bool checkBoundaryParameter(const std::string &name, std::map<std::string, ECFExpressionVector> &settings);
+    bool checkBoundaryParameter(const std::string &name, std::map<std::string, ECFExpressionOptionalVector> &settings);
+    bool checkBoundaryParameter(const std::string &name, std::map<std::string, ECFHarmonicExpressionVector> &settings);
 
-	void printElementVolume(std::vector<double> &volume);
-	void printBoundarySurface(std::vector<double> &surface);
+    void printElementVolume(std::vector<double> &volume);
+    void printBoundarySurface(std::vector<double> &surface);
 
-	void printMaterials(const std::map<std::string, std::string> &settings);
-	template<typename Ttype>
-	void validateRegionSettings(const std::string &name, const std::map<std::string, Ttype> &settings);
+    void printMaterials(const std::map<std::string, std::string> &settings);
+    template<typename Ttype>
+    void validateRegionSettings(const std::string &name, const std::map<std::string, Ttype> &settings);
+
+    bool isBEM(size_t interval);
+
+    std::vector<int> bem;
 };
 
 template <typename T>
 static bool reset(T *t, bool constant)
 {
-	if (t) {
-		if (!t->filled || !constant) {
-			t->set(0);
-			t->updated = true;
-			return true;
-		}
-		t->updated = false;
-		return false;
-	}
-	return false;
+    if (t) {
+        if (!t->filled || !constant) {
+            t->set(0);
+            t->updated = true;
+            return true;
+        }
+        t->updated = false;
+        return false;
+    }
+    return false;
 }
 
 template <typename T>
 static void update(T *t, bool constant)
 {
-	if (t && t->updated) {
-		t->filled = true;
-		t->synchronize();
-	}
+    if (t && t->updated) {
+        t->filled = true;
+        t->synchronize();
+    }
 }
 
 }
