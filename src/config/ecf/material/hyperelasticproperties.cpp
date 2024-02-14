@@ -2,9 +2,8 @@
 #include "hyperelasticproperties.h"
 #include "config/configuration.hpp"
 
-espreso::HyperElasticPropertiesConfiguration::HyperElasticPropertiesConfiguration(DIMENSION *D)
-: model(MODEL::NEO_HOOKEN_CMP),
-  dimension(D)
+espreso::HyperElasticPropertiesConfiguration::HyperElasticPropertiesConfiguration()
+: model(MODEL::NEO_HOOKEN_CMP)
 {
 	REGISTER(model, ECFMetaData()
 			.setdescription({ "Material model." })

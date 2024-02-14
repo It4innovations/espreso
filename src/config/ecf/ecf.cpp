@@ -43,22 +43,14 @@ void ECF::finish()
 const PhysicsConfiguration* ECF::_getPhysics() const
 {
 	switch (physics) {
-	case PhysicsConfiguration::TYPE::THERMO_ELASTICITY_2D:
-		return &thermo_elasticity_2d;
-	case PhysicsConfiguration::TYPE::THERMO_ELASTICITY_3D:
-		return &thermo_elasticity_3d;
-	case PhysicsConfiguration::TYPE::HEAT_TRANSFER_2D:
-		return &heat_transfer_2d;
-	case PhysicsConfiguration::TYPE::HEAT_TRANSFER_3D:
-		return &heat_transfer_3d;
-	case PhysicsConfiguration::TYPE::STRUCTURAL_MECHANICS_2D:
-		return &structural_mechanics_2d;
-	case PhysicsConfiguration::TYPE::STRUCTURAL_MECHANICS_3D:
-		return &structural_mechanics_3d;
-	case PhysicsConfiguration::TYPE::ACOUSTICS_2D:
-		return &acoustics_2d;
-	case PhysicsConfiguration::TYPE::ACOUSTICS_3D:
-		return &acoustics_3d;
+//	case PhysicsConfiguration::TYPE::THERMO_ELASTICITY:
+//		return &thermo_elasticity_2d;
+	case PhysicsConfiguration::TYPE::HEAT_TRANSFER:
+		return &heat_transfer;
+	case PhysicsConfiguration::TYPE::STRUCTURAL_MECHANICS:
+		return &structural_mechanics;
+//	case PhysicsConfiguration::TYPE::ACOUSTICS:
+//		return &acoustics;
 	default:
 		eslog::globalerror("Request for unknown physics.");
 		return NULL;
@@ -156,43 +148,28 @@ void ECF::_init()
 			.setdescription({ "Always call update conductivity function." })
 			.setdatatype({ ECFDataType::BOOL }));
 
-	physics = PhysicsConfiguration::TYPE::HEAT_TRANSFER_3D;
+	physics = PhysicsConfiguration::TYPE::HEAT_TRANSFER;
 	REGISTER(physics, ECFMetaData()
 			.setdescription({ "Physics" })
 			.setdatatype({ ECFDataType::OPTION })
-			.addoption(ECFOption().setname("THERMO_ELASTICITY_2D").setdescription("Coupled 2D physics."))
-			.addoption(ECFOption().setname("THERMO_ELASTICITY_3D").setdescription("Coupled 3D physics."))
-			.addoption(ECFOption().setname("HEAT_TRANSFER_2D").setdescription("Heat transfer 2D."))
-			.addoption(ECFOption().setname("HEAT_TRANSFER_3D").setdescription("Heat transfer 3D."))
-			.addoption(ECFOption().setname("STRUCTURAL_MECHANICS_2D").setdescription("Structural mechanics 2D."))
-			.addoption(ECFOption().setname("STRUCTURAL_MECHANICS_3D").setdescription("Structural mechanics 3D."))
-			.addoption(ECFOption().setname("ACOUSTICS_2D").setdescription("Acoustics 2D."))
-			.addoption(ECFOption().setname("ACOUSTICS_3D").setdescription("Acoustics 3D.")));
+//			.addoption(ECFOption().setname("THERMO_ELASTICITY").setdescription("Coupled physics."))
+			.addoption(ECFOption().setname("HEAT_TRANSFER").setdescription("Heat transfer."))
+			.addoption(ECFOption().setname("STRUCTURAL_MECHANICS").setdescription("Structural mechanics 2D."))
+//			.addoption(ECFOption().setname("ACOUSTICS").setdescription("Acoustics."))
+			);
 
-	REGISTER(thermo_elasticity_2d, ECFMetaData()
-			.setdescription({ "Coupled physics" })
-			.allowonly([&] () { return physics == PhysicsConfiguration::TYPE::THERMO_ELASTICITY_2D; }));
-	REGISTER(thermo_elasticity_3d, ECFMetaData()
-			.setdescription({ "Coupled physics" })
-			.allowonly([&] () { return physics == PhysicsConfiguration::TYPE::THERMO_ELASTICITY_3D; }));
-	REGISTER(heat_transfer_2d, ECFMetaData()
-			.setdescription({ "Heat transfer 2D" })
-			.allowonly([&] () { return physics == PhysicsConfiguration::TYPE::HEAT_TRANSFER_2D; }));
-	REGISTER(heat_transfer_3d, ECFMetaData()
-			.setdescription({ "Heat transfer 3D" })
-			.allowonly([&] () { return physics == PhysicsConfiguration::TYPE::HEAT_TRANSFER_3D; }));
-	REGISTER(structural_mechanics_2d, ECFMetaData()
-			.setdescription({ "Structural mechanics 2D" })
-			.allowonly([&] () { return physics == PhysicsConfiguration::TYPE::STRUCTURAL_MECHANICS_2D; }));
-	REGISTER(structural_mechanics_3d, ECFMetaData()
-			.setdescription({ "Structural mechanics 3D" })
-			.allowonly([&] () { return physics == PhysicsConfiguration::TYPE::STRUCTURAL_MECHANICS_3D; }));
-	REGISTER(acoustics_2d, ECFMetaData()
-			.setdescription({ "Acoustics 2D" })
-			.allowonly([&] () { return physics == PhysicsConfiguration::TYPE::ACOUSTICS_2D; }));
-	REGISTER(acoustics_3d, ECFMetaData()
-			.setdescription({ "Acoustics 3D" })
-			.allowonly([&] () { return physics == PhysicsConfiguration::TYPE::ACOUSTICS_3D; }));
+//	REGISTER(thermo_elasticity, ECFMetaData()
+//			.setdescription({ "Coupled physics" })
+//			.allowonly([&] () { return physics == PhysicsConfiguration::TYPE::THERMO_ELASTICITY; }));
+	REGISTER(heat_transfer, ECFMetaData()
+			.setdescription({ "Heat transfer" })
+			.allowonly([&] () { return physics == PhysicsConfiguration::TYPE::HEAT_TRANSFER; }));
+	REGISTER(structural_mechanics, ECFMetaData()
+			.setdescription({ "Structural mechanics" })
+			.allowonly([&] () { return physics == PhysicsConfiguration::TYPE::STRUCTURAL_MECHANICS; }));
+//	REGISTER(acoustics, ECFMetaData()
+//			.setdescription({ "Acoustics" })
+//			.allowonly([&] () { return physics == PhysicsConfiguration::TYPE::ACOUSTICS; }));
 
 	REGISTER(output, ECFMetaData()
 			.setdescription({ "Output configurations." }));
@@ -200,14 +177,6 @@ void ECF::_init()
 
 ECF::ECF()
 : mesh_morphing(this),
-  thermo_elasticity_2d(DIMENSION::D2),
-  thermo_elasticity_3d(DIMENSION::D3),
-  heat_transfer_2d(DIMENSION::D2),
-  heat_transfer_3d(DIMENSION::D3),
-  structural_mechanics_2d(DIMENSION::D2),
-  structural_mechanics_3d(DIMENSION::D3),
-  acoustics_2d(DIMENSION::D2),
-  acoustics_3d(DIMENSION::D3),
   output(this)
 {
 	info::ecf = this;

@@ -120,7 +120,7 @@ struct HeatTransferLoadStepConfiguration: public HeatTransferLoadStepSolverConfi
 	std::map<std::string, RadiationConfiguration> diffuse_radiation;
 	HumanThermoregulationSystem human_thermoregulation_system;
 
-	HeatTransferLoadStepConfiguration(DIMENSION *D);
+	HeatTransferLoadStepConfiguration();
 };
 
 struct HeatTransferOutputSettings: public virtual ECFDescription {
@@ -147,10 +147,9 @@ protected:
 
 struct HeatTransferConfiguration: public PhysicsConfiguration, public HeatTransferGlobalSettings {
 
-	DIMENSION dimension;
 	std::map<size_t, HeatTransferLoadStepConfiguration> load_steps_settings;
 
-	HeatTransferConfiguration(DIMENSION d);
+	HeatTransferConfiguration();
 };
 
 }

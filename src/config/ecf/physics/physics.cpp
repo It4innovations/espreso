@@ -3,8 +3,8 @@
 #include "config/configuration.hpp"
 #include "config/conditions.h"
 
-espreso::PhysicsConfiguration::PhysicsConfiguration(DIMENSION dim, MaterialConfiguration::PHYSICAL_MODEL physicalModel)
-: dimension(dim), physical_model(physicalModel)
+espreso::PhysicsConfiguration::PhysicsConfiguration(MaterialConfiguration::PHYSICAL_MODEL physicalModel)
+: physical_model(physicalModel)
 {
 	load_steps = 1;
 	REGISTER(load_steps, ECFMetaData()
@@ -42,7 +42,7 @@ espreso::PhysicsConfiguration::PhysicsConfiguration(DIMENSION dim, MaterialConfi
 			.setpattern({ "MY_MATERIAL" })
 			.setdynamic()
 			.setpatternname("Material"),
-			&dimension, physicalModel);
+			physicalModel);
 
 	REGISTER(material_set, ECFMetaData()
 			.setname("Material set")
@@ -74,11 +74,9 @@ espreso::PhysicsConfiguration::PhysicsConfiguration(DIMENSION dim, MaterialConfi
 			.setpattern({ "MY_REGION", "273.15" })
 			.setdynamic());
 
-	if (dimension == DIMENSION::D2) {
-		REGISTER(thickness, ECFMetaData()
-				.setdatatype({ ECFDataType::ELEMENTS_REGION, ECFDataType::EXPRESSION })
-				.setdescription({ "The name of a region.", "Thickness" })
-				.setpattern({ "MY_REGION", "1" })
-				.setdynamic());
-	}
+	REGISTER(thickness, ECFMetaData()
+			.setdatatype({ ECFDataType::ELEMENTS_REGION, ECFDataType::EXPRESSION })
+			.setdescription({ "The name of a region.", "Thickness" })
+			.setpattern({ "MY_REGION", "1" })
+			.setdynamic());
 }

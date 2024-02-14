@@ -3,10 +3,9 @@
 #include "config/configuration.hpp"
 #include "config/conditions.h"
 
-espreso::LinearElasticPropertiesConfiguration::LinearElasticPropertiesConfiguration(DIMENSION *D)
+espreso::LinearElasticPropertiesConfiguration::LinearElasticPropertiesConfiguration()
 : orientation(false),
   model(MODEL::ISOTROPIC),
-  dimension(D),
   poisson_ratio(3),
   young_modulus(3),
   shear_modulus(3),
@@ -25,7 +24,7 @@ espreso::LinearElasticPropertiesConfiguration::LinearElasticPropertiesConfigurat
 			.registertensor(anisotropic)
 			.addoption(ECFOption().setname("ISOTROPIC").setdescription("Isotropic model."))
 			.addoption(ECFOption().setname("ORTHOTROPIC").setdescription("Orthotropic model."))
-			.addoption(ECFOption().setname("ANISOTROPIC").setdescription("Anisotropic model.").allowonly([&] () { return *dimension == DIMENSION::D3; })));
+			.addoption(ECFOption().setname("ANISOTROPIC").setdescription("Anisotropic model.")));
 
 	ecfdescription->addSeparator();
 
@@ -38,12 +37,12 @@ espreso::LinearElasticPropertiesConfiguration::LinearElasticPropertiesConfigurat
 			.setdescription({ "Poisson ratio XZ." })
 			.setdatatype({ ECFDataType::EXPRESSION })
 			.settensor(poisson_ratio, 1, 1)
-			.allowonly([&] () { return model == MODEL::ORTHOTROPIC && *dimension == DIMENSION::D3; }));
+			.allowonly([&] () { return model == MODEL::ORTHOTROPIC; }));
 	ecfdescription->registerParameter("MIYZ", poisson_ratio.get(2, 2), ECFMetaData()
 			.setdescription({ "Poisson ratio YZ." })
 			.setdatatype({ ECFDataType::EXPRESSION })
 			.settensor(poisson_ratio, 2, 2)
-			.allowonly([&] () { return model == MODEL::ORTHOTROPIC && *dimension == DIMENSION::D3; }));
+			.allowonly([&] () { return model == MODEL::ORTHOTROPIC; }));
 
 	ecfdescription->addSeparator()->metadata.allowonly([&] () { return model != MODEL::ISOTROPIC; });
 
@@ -61,7 +60,7 @@ espreso::LinearElasticPropertiesConfiguration::LinearElasticPropertiesConfigurat
 			.setdescription({ "Young modulus Z." })
 			.setdatatype({ ECFDataType::EXPRESSION })
 			.settensor(young_modulus, 2, 2)
-			.allowonly([&] () { return model == MODEL::ORTHOTROPIC && *dimension == DIMENSION::D3; }));
+			.allowonly([&] () { return model == MODEL::ORTHOTROPIC; }));
 
 	ecfdescription->addSeparator()->metadata.allowonly([&] () { return model != MODEL::ISOTROPIC; });
 
@@ -69,17 +68,17 @@ espreso::LinearElasticPropertiesConfiguration::LinearElasticPropertiesConfigurat
 			.setdescription({ "Shear modulus XY." })
 			.setdatatype({ ECFDataType::EXPRESSION })
 			.settensor(shear_modulus, 0, 0)
-			.allowonly([&] () { return model == MODEL::ORTHOTROPIC && *dimension == DIMENSION::D3; }));
+			.allowonly([&] () { return model == MODEL::ORTHOTROPIC; }));
 	ecfdescription->registerParameter("GXZ", shear_modulus.get(1, 1), ECFMetaData()
 			.setdescription({ "Shear modulus XZ." })
 			.setdatatype({ ECFDataType::EXPRESSION })
 			.settensor(shear_modulus, 1, 1)
-			.allowonly([&] () { return model == MODEL::ORTHOTROPIC && *dimension == DIMENSION::D3; }));
+			.allowonly([&] () { return model == MODEL::ORTHOTROPIC; }));
 	ecfdescription->registerParameter("GYZ", shear_modulus.get(2, 2), ECFMetaData()
 			.setdescription({ "Shear modulus YZ." })
 			.setdatatype({ ECFDataType::EXPRESSION })
 			.settensor(shear_modulus, 2, 2)
-			.allowonly([&] () { return model == MODEL::ORTHOTROPIC && *dimension == DIMENSION::D3; }));
+			.allowonly([&] () { return model == MODEL::ORTHOTROPIC; }));
 
 	// anisotropic is allowed only in 3D
 	ecfdescription->registerParameter("D11", anisotropic.get(0, 0), ECFMetaData()

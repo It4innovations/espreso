@@ -25,13 +25,12 @@ struct HyperElasticPropertiesConfiguration: public ECFDescription {
 	};
 
 	MODEL model;
-	DIMENSION *dimension;
 
 	ECFExpression E, mi;
 	ECFExpression d, G, lambdaL;
 	ECFExpression C10, C01, C11, C02, C20, C30, C21, C12, C03;
 
-	HyperElasticPropertiesConfiguration(DIMENSION *D);
+	HyperElasticPropertiesConfiguration();
 };
 
 }

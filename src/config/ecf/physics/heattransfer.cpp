@@ -142,7 +142,7 @@ HumanThermoregulationSystem::HumanThermoregulationSystem()
 			.addoption(ECFOption().setname("TEACHER").setdescription("--")));
 }
 
-HeatTransferLoadStepConfiguration::HeatTransferLoadStepConfiguration(DIMENSION *D)
+HeatTransferLoadStepConfiguration::HeatTransferLoadStepConfiguration()
 {
 	update_initial_temperature = false;
 	REGISTER(update_initial_temperature, ECFMetaData()
@@ -163,8 +163,7 @@ HeatTransferLoadStepConfiguration::HeatTransferLoadStepConfiguration(DIMENSION *
 			.setdescription({ "The name of a region.", "Translation motion" })
 			.setdatatype({ ECFDataType::ELEMENTS_REGION })
 			.setpattern({ "MY_REGION" })
-			.setdynamic(),
-			D);
+			.setdynamic());
 
 	REGISTER(heat_flux, ECFMetaData()
 			.setdescription({ "The name of a region.", "Heat flux" })
@@ -210,12 +209,12 @@ void HeatTransferOutputSettings::addMonitorableProperties(ECFMetaData &metadata,
 	.addoption(ECFOption().setname("FLUX").setdescription("Heat flux magnitude.").allowonly([&] () { return _activated; }))
 	.addoption(ECFOption().setname("FLUX_X").setdescription("Heat flux in x-direction.").allowonly([&] () { return _activated; }))
 	.addoption(ECFOption().setname("FLUX_Y").setdescription("Heat flux in y-direction.").allowonly([&] () { return _activated; }))
-	.addoption(ECFOption().setname("FLUX_Z").setdescription("Heat flux in z-direction.").allowonly([&] () { return _activated && root->physics == PhysicsConfiguration::TYPE::HEAT_TRANSFER_3D; }))
+	.addoption(ECFOption().setname("FLUX_Z").setdescription("Heat flux in z-direction.").allowonly([&] () { return _activated; }))
 
 	.addoption(ECFOption().setname("GRADIENT").setdescription("Heat gradient magnitude.").allowonly([&] () { return _activated; }))
 	.addoption(ECFOption().setname("GRADIENT_X").setdescription("Heat gradient in x-direction.").allowonly([&] () { return _activated; }))
 	.addoption(ECFOption().setname("GRADIENT_Y").setdescription("Heat gradient in y-direction.").allowonly([&] () { return _activated; }))
-	.addoption(ECFOption().setname("GRADIENT_Z").setdescription("Heat gradient in z-direction.").allowonly([&] () { return _activated && root->physics == PhysicsConfiguration::TYPE::HEAT_TRANSFER_3D; }));
+	.addoption(ECFOption().setname("GRADIENT_Z").setdescription("Heat gradient in z-direction.").allowonly([&] () { return _activated; }));
 }
 
 HeatTransferOutputSettings::HeatTransferOutputSettings()
@@ -290,17 +289,15 @@ HeatTransferGlobalSettings::HeatTransferGlobalSettings(ECFObject *ecfdescription
 			.setform());
 }
 
-HeatTransferConfiguration::HeatTransferConfiguration(DIMENSION d)
-: PhysicsConfiguration(d, MaterialConfiguration::PHYSICAL_MODEL::THERMAL),
-  HeatTransferGlobalSettings(ecfdescription),
-  dimension(d)
+HeatTransferConfiguration::HeatTransferConfiguration()
+: PhysicsConfiguration(MaterialConfiguration::PHYSICAL_MODEL::THERMAL),
+  HeatTransferGlobalSettings(ecfdescription)
 {
 	REGISTER(load_steps_settings, ECFMetaData()
 			.setdescription({ "Settings for each load step", "LoadStep" })
 			.setdatatype({ ECFDataType::LOAD_STEP })
 			.setpattern({ "1" })
-			.setdynamic(),
-			&dimension);
+			.setdynamic());
 }
 
 

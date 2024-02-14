@@ -44,14 +44,13 @@ struct ECFHarmonicExpression: public ECFDescription {
 struct ECFExpressionVector: public ECFDescription {
 	ECFExpression data[3];
 	ECFExpression &x = data[0], &y = data[1], &z = data[2];
-	DIMENSION *dimension;
 
 	ECFExpressionVector(const ECFExpressionVector &other) = delete;
 	ECFExpressionVector(const ECFExpressionVector &&other) = delete;
 	ECFExpressionVector& operator=(const ECFExpressionVector &other) = delete;
 	ECFExpressionVector& operator=(const ECFExpressionVector &&other) = delete;
 
-	ECFExpressionVector(DIMENSION *dimension);
+	ECFExpressionVector();
 
 	static bool forall(const std::map<std::string, ECFExpressionVector> &parameter, std::function<bool(const ECFExpression &expr)> fnc);
 };
@@ -64,7 +63,7 @@ struct ECFHarmonicExpressionVector: public ECFDescription {
 	Type type;
 	ECFExpressionVector magnitude, phase;
 
-	ECFHarmonicExpressionVector(DIMENSION *dimension);
+	ECFHarmonicExpressionVector();
 
 	ECFHarmonicExpressionVector(const ECFHarmonicExpressionVector &other) = delete;
 	ECFHarmonicExpressionVector& operator=(const ECFHarmonicExpressionVector &other) = delete;
@@ -75,7 +74,7 @@ struct ECFHarmonicExpressionVector: public ECFDescription {
 struct ECFExpressionOptionalVector: public ECFExpressionVector {
 	ECFExpression all;
 
-	ECFExpressionOptionalVector(DIMENSION *dimension);
+	ECFExpressionOptionalVector();
 
 	ECFExpressionOptionalVector(const ECFExpressionOptionalVector &other) = delete;
 	ECFExpressionOptionalVector& operator=(const ECFExpressionOptionalVector &other) = delete;

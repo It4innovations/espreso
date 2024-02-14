@@ -50,15 +50,14 @@ struct AcousticLoadStepConfiguration: public AcousticLoadStepSolverConfiguration
 	std::map<std::string, ImpedanceConfiguration> impedance;
 	std::map<std::string, PointSourceConfiguration> point_source;
 
-	AcousticLoadStepConfiguration(DIMENSION *D);
+	AcousticLoadStepConfiguration();
 };
 
 struct AcousticConfiguration: public PhysicsConfiguration, public AcousticGlobalSettings {
 
-	DIMENSION dimension;
 	std::map<size_t, AcousticLoadStepConfiguration> load_steps_settings;
 
-	AcousticConfiguration(DIMENSION d);
+	AcousticConfiguration();
 };
 
 }

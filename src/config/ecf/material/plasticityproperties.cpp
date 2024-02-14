@@ -2,8 +2,7 @@
 #include "plasticityproperties.h"
 #include "config/configuration.hpp"
 
-espreso::PlasticityPropertiesConfiguration::PlasticityPropertiesConfiguration(DIMENSION *D)
-: dimension(D)
+espreso::PlasticityPropertiesConfiguration::PlasticityPropertiesConfiguration()
 {
 	REGISTER(initial_yield_stress, ECFMetaData()
 			.setdescription({ "Initial yield stress." })

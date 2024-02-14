@@ -14,12 +14,17 @@ namespace espreso {
 template <typename T>
 void FixedWall<T>::set(const step::Step &step, FETI<T> &feti)
 {
-    if (info::ecf->physics != PhysicsConfiguration::TYPE::STRUCTURAL_MECHANICS_3D) {
-        eslog::error("Fixed wall boundary condition is implemented on for STRUCTURAL_MECHANICS_3D.\n");
+    StructuralMechanicsLoadStepConfiguration &loadstep = info::ecf->structural_mechanics.load_steps_settings.at(step.loadstep + 1);
+
+    if (loadstep.fixed_wall.empty()) {
+        return;
+    }
+    if (info::ecf->physics != PhysicsConfiguration::TYPE::STRUCTURAL_MECHANICS || info::mesh->dimension != 3) {
+        eslog::error("Fixed wall boundary condition is implemented on for STRUCTURAL_MECHANICS 3D.\n");
     }
 
     int dim = info::mesh->dimension;
-    StructuralMechanicsLoadStepConfiguration &loadstep = info::ecf->structural_mechanics_3d.load_steps_settings.at(step.loadstep + 1);
+
     std::vector<double> &normal = StructuralMechanics::Results::normal->data;
 
     std::vector<std::vector<esint> > &D2C = feti.D2C;

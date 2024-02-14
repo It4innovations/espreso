@@ -13,8 +13,8 @@ void Constrains<T>::set(const step::Step &step, FETI<T> &feti, const Vector_Dist
 {
 	EqualityConstrains<T>::set(step, feti, dirichlet);
 	switch (info::ecf->physics) {
-	case PhysicsConfiguration::TYPE::STRUCTURAL_MECHANICS_2D:
-	case PhysicsConfiguration::TYPE::STRUCTURAL_MECHANICS_3D:
+	case PhysicsConfiguration::TYPE::HEAT_TRANSFER: break;
+	case PhysicsConfiguration::TYPE::STRUCTURAL_MECHANICS:
 		FixedWall<T>::set(step, feti); break;
 	}
 }
@@ -24,8 +24,8 @@ void Constrains<T>::update(const step::Step &step, FETI<T> &feti, const Vector_D
 {
 	EqualityConstrains<T>::update(step, feti, dirichlet);
 	switch (info::ecf->physics) {
-	case PhysicsConfiguration::TYPE::STRUCTURAL_MECHANICS_2D:
-	case PhysicsConfiguration::TYPE::STRUCTURAL_MECHANICS_3D:
+	case PhysicsConfiguration::TYPE::HEAT_TRANSFER: break;
+	case PhysicsConfiguration::TYPE::STRUCTURAL_MECHANICS:
 		FixedWall<T>::update(step, feti); break;
 	}
 }

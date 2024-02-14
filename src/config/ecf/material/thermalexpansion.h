@@ -15,11 +15,10 @@ struct ThermalExpansionConfiguration: public ECFDescription {
 	};
 
 	MODEL model;
-	DIMENSION *dimension;
 
 	TensorConfiguration thermal_expansion;
 
-	ThermalExpansionConfiguration(DIMENSION *D);
+	ThermalExpansionConfiguration();
 };
 
 }

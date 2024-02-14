@@ -4,8 +4,7 @@
 
 using namespace espreso;
 
-RotorDynamicsConfiguration::RotationAxisConfiguration::RotationAxisConfiguration(DIMENSION dimension)
-: dimension(dimension), center(&this->dimension), orientation(&this->dimension)
+RotorDynamicsConfiguration::RotationAxisConfiguration::RotationAxisConfiguration()
 {
 	REGISTER(center, ECFMetaData()
 			.setname("Center")
@@ -60,8 +59,7 @@ RotorDynamicsConfiguration::CorotatingRotorConfiguration::CorotatingRotorConfigu
 	REGISTER(rotation, ECFMetaData().setdescription({ "Rotation configuration." }));
 }
 
-RotorDynamicsConfiguration::CorotatingConfiguration::CorotatingConfiguration(DIMENSION dimension)
-: rotation_axis(dimension)
+RotorDynamicsConfiguration::CorotatingConfiguration::CorotatingConfiguration()
 {
 	REGISTER(rotors_definitions, ECFMetaData()
 			.setdescription({ "List of rotor definitions.", "Rotor definition." })
@@ -71,8 +69,7 @@ RotorDynamicsConfiguration::CorotatingConfiguration::CorotatingConfiguration(DIM
 	REGISTER(rotation_axis, ECFMetaData().setdescription({ "Rotation axis." }));
 }
 
-RotorDynamicsConfiguration::FixedRotorConfiguration::FixedRotorConfiguration(DIMENSION dimension)
-: rotation_axis(dimension)
+RotorDynamicsConfiguration::FixedRotorConfiguration::FixedRotorConfiguration()
 {
 	gyroscopic_effect = true;
 	REGISTER(gyroscopic_effect, ECFMetaData()
@@ -93,16 +90,15 @@ RotorDynamicsConfiguration::FixedRotorConfiguration::FixedRotorConfiguration(DIM
 	REGISTER(rotation_axis, ECFMetaData().setdescription({ "Rotation axis." }));
 }
 
-RotorDynamicsConfiguration::FixedConfiguration::FixedConfiguration(DIMENSION dimension)
+RotorDynamicsConfiguration::FixedConfiguration::FixedConfiguration()
 {
 	REGISTER(rotors_definitions, ECFMetaData()
 			.setdescription({ "List of rotor definitions.", "Rotor definition." })
 			.setdatatype({ ECFDataType::ELEMENTS_REGION })
-			.setpattern({ "MY REGIONS" }), dimension);
+			.setpattern({ "MY REGIONS" }));
 }
 
-RotorDynamicsConfiguration::RotorDynamicsConfiguration(DIMENSION dimension)
-: fixed(dimension), corotating(dimension)
+RotorDynamicsConfiguration::RotorDynamicsConfiguration()
 {
 	type = TYPE::FIXED;
 	REGISTER(type, ECFMetaData()
@@ -115,8 +111,7 @@ RotorDynamicsConfiguration::RotorDynamicsConfiguration(DIMENSION dimension)
 	REGISTER(corotating, ECFMetaData().setdescription({ "Corotating rotor configuration." }));
 }
 
-RotatingForceConfiguration::RotatingForceConfiguration(DIMENSION *dimension)
-: rotation_axis(dimension)
+RotatingForceConfiguration::RotatingForceConfiguration()
 {
 	rotation_axis.x.value = rotation_axis.y.value = "0";
 	rotation_axis.z.value = "1";
@@ -139,8 +134,7 @@ RotatingForceConfiguration::RotatingForceConfiguration(DIMENSION *dimension)
 			.setdatatype({ ECFDataType::EXPRESSION }));
 }
 
-NonlinerSpringConfiguration::NonlinerSpringConfiguration(DIMENSION *dimension)
-: direction(dimension)
+NonlinerSpringConfiguration::NonlinerSpringConfiguration()
 {
 	support = Support::SLIDING;
 	REGISTER(support, ECFMetaData()
@@ -154,15 +148,13 @@ NonlinerSpringConfiguration::NonlinerSpringConfiguration(DIMENSION *dimension)
 	REGISTER(force_derivative, ECFMetaData().setdescription({ "Force derivative." }).setdatatype({ ECFDataType::EXPRESSION }));
 }
 
-FixedWallConfiguration::FixedWallConfiguration(DIMENSION *dimension)
-: normal(dimension)
+FixedWallConfiguration::FixedWallConfiguration()
 {
 	REGISTER(normal, ECFMetaData().setdescription({ "Normal." }));
 	REGISTER(distance, ECFMetaData().setdescription({ "Distance." }).setdatatype({ ECFDataType::EXPRESSION }));
 }
 
-StructuralMechanicsLoadStepConfiguration::StructuralMechanicsLoadStepConfiguration(DIMENSION *dimension)
-: rotor_dynamics(*dimension)
+StructuralMechanicsLoadStepConfiguration::StructuralMechanicsLoadStepConfiguration()
 {
 	large_displacement = false;
 	REGISTER(large_displacement, ECFMetaData()
@@ -181,51 +173,43 @@ StructuralMechanicsLoadStepConfiguration::StructuralMechanicsLoadStepConfigurati
 	REGISTER(force, ECFMetaData()
 			.setdescription({ "The name of a region.", "Force on a given region." })
 			.setdatatype({ ECFDataType::BOUNDARY_REGION })
-			.setpattern({ "MY_REGION" }),
-			dimension);
+			.setpattern({ "MY_REGION" }));
 
 	REGISTER(angular_velocity, ECFMetaData()
 			.setdescription({ "The name of a region.", "Angular velocity of a given region." })
 			.setdatatype({ ECFDataType::ELEMENTS_REGION })
-			.setpattern({ "MY_REGION" }),
-			dimension);
+			.setpattern({ "MY_REGION" }));
 
 	REGISTER(fixed_wall, ECFMetaData()
 			.setdescription({ "The name of a region.", "Fixed wall settings." })
 			.setdatatype({ ECFDataType::BOUNDARY_REGION })
-			.setpattern({ "MY_REGION", }),
-			dimension);
+			.setpattern({ "MY_REGION", }));
 
 	REGISTER(acceleration, ECFMetaData()
 			.setdescription({ "The name of a region.", "Acceleration of a given region." })
 			.setdatatype({ ECFDataType::ELEMENTS_REGION })
-			.setpattern({ "MY_REGION" }),
-			dimension);
+			.setpattern({ "MY_REGION" }));
 
 
 	REGISTER(displacement, ECFMetaData()
 			.setdescription({ "The name of a region.", "Fixed displacement of a given region." })
 			.setdatatype({ ECFDataType::BOUNDARY_REGION })
-			.setpattern({ "MY_REGION" }),
-			dimension);
+			.setpattern({ "MY_REGION" }));
 
 	REGISTER(harmonic_force, ECFMetaData()
 			.setdescription({ "The name of a region.", "Harmonic force" })
 			.setdatatype({ ECFDataType::BOUNDARY_REGION })
-			.setpattern({ "MY_REGION", }),
-			dimension);
+			.setpattern({ "MY_REGION", }));
 
 	REGISTER(nonlinear_spring, ECFMetaData()
 			.setdescription({ "The name of a region.", "Non-linear spring" })
 			.setdatatype({ ECFDataType::BOUNDARY_REGION })
-			.setpattern({ "MY_REGION", }),
-			dimension);
+			.setpattern({ "MY_REGION", }));
 
 	REGISTER(rotating_force, ECFMetaData()
 			.setdescription({ "The name of a region.", "Rotating force" })
 			.setdatatype({ ECFDataType::ELEMENTS_REGION })
-			.setpattern({ "MY_REGION", }),
-			dimension);
+			.setpattern({ "MY_REGION", }));
 
 	REGISTER(rotor_dynamics, ECFMetaData().setdescription({ "Rotor dynamics." }));
 }
@@ -235,8 +219,8 @@ bool StructuralMechanicsOutputSettings::_activated = false;
 void StructuralMechanicsOutputSettings::addMonitorableProperties(ECFMetaData &metadata, const ECF *root)
 {
 	auto harmonic = [&] () {
-		if (root->physics == PhysicsConfiguration::TYPE::STRUCTURAL_MECHANICS_3D) {
-			for (auto it = root->structural_mechanics_3d.load_steps_settings.begin(); it != root->structural_mechanics_3d.load_steps_settings.end(); ++it) {
+		if (root->physics == PhysicsConfiguration::TYPE::STRUCTURAL_MECHANICS) {
+			for (auto it = root->structural_mechanics.load_steps_settings.begin(); it != root->structural_mechanics.load_steps_settings.end(); ++it) {
 				if (it->second.type == LoadStepSolverConfiguration::TYPE::HARMONIC) {
 					return true;
 				}
@@ -249,37 +233,37 @@ void StructuralMechanicsOutputSettings::addMonitorableProperties(ECFMetaData &me
 	.addoption(ECFOption().setname("DISPLACEMENT").setdescription("Displacement magnitude.").allowonly([&] () { return _activated; }))
 	.addoption(ECFOption().setname("DISPLACEMENT_X").setdescription("Displacement in x-direction.").allowonly([&] () { return _activated; }))
 	.addoption(ECFOption().setname("DISPLACEMENT_Y").setdescription("Displacement in y-direction.").allowonly([&] () { return _activated; }))
-	.addoption(ECFOption().setname("DISPLACEMENT_Z").setdescription("Displacement in z-direction.").allowonly([&] () { return _activated && root->physics == PhysicsConfiguration::TYPE::STRUCTURAL_MECHANICS_3D; }))
+	.addoption(ECFOption().setname("DISPLACEMENT_Z").setdescription("Displacement in z-direction.").allowonly([&] () { return _activated; }))
 
 	.addoption(ECFOption().setname("DISPLACEMENT_AMPLITUDE_X").setdescription("Displacement amplitude in x-direction.").allowonly([&] () { return _activated && harmonic(); }))
 	.addoption(ECFOption().setname("DISPLACEMENT_AMPLITUDE_Y").setdescription("Displacement amplitude in y-direction.").allowonly([&] () { return _activated && harmonic(); }))
-	.addoption(ECFOption().setname("DISPLACEMENT_AMPLITUDE_Z").setdescription("Displacement amplitude in z-direction.").allowonly([&] () { return _activated && harmonic() && root->physics == PhysicsConfiguration::TYPE::STRUCTURAL_MECHANICS_3D; }))
+	.addoption(ECFOption().setname("DISPLACEMENT_AMPLITUDE_Z").setdescription("Displacement amplitude in z-direction.").allowonly([&] () { return _activated && harmonic(); }))
 
 	.addoption(ECFOption().setname("DISPLACEMENT_COS_X").setdescription("Displacement cosine in x-direction.").allowonly([&] () { return _activated && harmonic(); }))
 	.addoption(ECFOption().setname("DISPLACEMENT_COS_Y").setdescription("Displacement cosine in y-direction.").allowonly([&] () { return _activated && harmonic(); }))
-	.addoption(ECFOption().setname("DISPLACEMENT_COS_Z").setdescription("Displacement cosine in z-direction.").allowonly([&] () { return _activated && harmonic() && root->physics == PhysicsConfiguration::TYPE::STRUCTURAL_MECHANICS_3D; }))
+	.addoption(ECFOption().setname("DISPLACEMENT_COS_Z").setdescription("Displacement cosine in z-direction.").allowonly([&] () { return _activated && harmonic(); }))
 
 	.addoption(ECFOption().setname("DISPLACEMENT_SIN_X").setdescription("Displacement sinus in x-direction.").allowonly([&] () { return _activated && harmonic(); }))
 	.addoption(ECFOption().setname("DISPLACEMENT_SIN_Y").setdescription("Displacement sinus in y-direction.").allowonly([&] () { return _activated && harmonic(); }))
-	.addoption(ECFOption().setname("DISPLACEMENT_SIN_Z").setdescription("Displacement sinus in z-direction.").allowonly([&] () { return _activated && harmonic() && root->physics == PhysicsConfiguration::TYPE::STRUCTURAL_MECHANICS_3D; }))
+	.addoption(ECFOption().setname("DISPLACEMENT_SIN_Z").setdescription("Displacement sinus in z-direction.").allowonly([&] () { return _activated && harmonic(); }))
 
 	.addoption(ECFOption().setname("VELOCITY").setdescription("Velocity magnitude.").allowonly([&] () { return _activated; }))
 	.addoption(ECFOption().setname("VELOCITY_X").setdescription("Velocity in x-direction.").allowonly([&] () { return _activated; }))
 	.addoption(ECFOption().setname("VELOCITY_Y").setdescription("Velocity in y-direction.").allowonly([&] () { return _activated; }))
-	.addoption(ECFOption().setname("VELOCITY_Z").setdescription("Velocity in z-direction.").allowonly([&] () { return _activated && root->physics == PhysicsConfiguration::TYPE::STRUCTURAL_MECHANICS_3D; }))
+	.addoption(ECFOption().setname("VELOCITY_Z").setdescription("Velocity in z-direction.").allowonly([&] () { return _activated; }))
 
 	.addoption(ECFOption().setname("VELOCITY_AMPLITUDE_X").setdescription("Velocity amplitude in x-direction.").allowonly([&] () { return _activated && harmonic(); }))
 	.addoption(ECFOption().setname("VELOCITY_AMPLITUDE_Y").setdescription("Velocity amplitude in y-direction.").allowonly([&] () { return _activated && harmonic(); }))
-	.addoption(ECFOption().setname("VELOCITY_AMPLITUDE_Z").setdescription("Velocity amplitude in z-direction.").allowonly([&] () { return _activated && harmonic() && root->physics == PhysicsConfiguration::TYPE::STRUCTURAL_MECHANICS_3D; }))
+	.addoption(ECFOption().setname("VELOCITY_AMPLITUDE_Z").setdescription("Velocity amplitude in z-direction.").allowonly([&] () { return _activated && harmonic(); }))
 
 	.addoption(ECFOption().setname("ACCELERATION").setdescription("Acceleration magnitude.").allowonly([&] () { return _activated; }))
 	.addoption(ECFOption().setname("ACCELERATION_X").setdescription("Acceleration in x-direction.").allowonly([&] () { return _activated; }))
 	.addoption(ECFOption().setname("ACCELERATION_Y").setdescription("Acceleration in y-direction.").allowonly([&] () { return _activated; }))
-	.addoption(ECFOption().setname("ACCELERATION_Z").setdescription("Acceleration in z-direction.").allowonly([&] () { return _activated && root->physics == PhysicsConfiguration::TYPE::STRUCTURAL_MECHANICS_3D; }))
+	.addoption(ECFOption().setname("ACCELERATION_Z").setdescription("Acceleration in z-direction.").allowonly([&] () { return _activated; }))
 
 	.addoption(ECFOption().setname("ACCELERATION_AMPLITUDE_X").setdescription("Acceleration amplitude in x-direction.").allowonly([&] () { return _activated && harmonic(); }))
 	.addoption(ECFOption().setname("ACCELERATION_AMPLITUDE_Y").setdescription("Acceleration amplitude in y-direction.").allowonly([&] () { return _activated && harmonic(); }))
-	.addoption(ECFOption().setname("ACCELERATION_AMPLITUDE_Z").setdescription("Acceleration amplitude in z-direction.").allowonly([&] () { return _activated && harmonic() && root->physics == PhysicsConfiguration::TYPE::STRUCTURAL_MECHANICS_3D; }));
+	.addoption(ECFOption().setname("ACCELERATION_AMPLITUDE_Z").setdescription("Acceleration amplitude in z-direction.").allowonly([&] () { return _activated && harmonic(); }));
 }
 
 
@@ -298,30 +282,26 @@ StructuralMechanicsOutputSettings::StructuralMechanicsOutputSettings()
 				.allowonly([&] () { return _activated; }));
 }
 
-StructuralMechanicsGlobalSettings::StructuralMechanicsGlobalSettings(ECFObject *ecfdescription, DIMENSION dimension)
-: element_dimension(dimension)
+StructuralMechanicsGlobalSettings::StructuralMechanicsGlobalSettings(ECFObject *ecfdescription)
 {
 	element_behaviour = ELEMENT_BEHAVIOUR::PLANE_STRESS_WITH_THICKNESS;
 	REGISTER(element_behaviour, ECFMetaData()
 			.setdescription({ "Physics solver type." })
 			.setdatatype({ ECFDataType::OPTION })
-			.allowonly([&] () { return element_dimension == DIMENSION::D2; })
 			.addoption(ECFOption().setname("PLANE_STRAIN").setdescription("Plane strain."))
 			.addoption(ECFOption().setname("AXISYMMETRIC").setdescription("Axisymmetric."))
 			.addoption(ECFOption().setname("PLANE_STRESS").setdescription("Plane stress."))
 			.addoption(ECFOption().setname("PLANE_STRESS_WITH_THICKNESS").setdescription("Plane stress with thickness.")));
 }
 
-StructuralMechanicsConfiguration::StructuralMechanicsConfiguration(DIMENSION d)
-: PhysicsConfiguration(d, MaterialConfiguration::PHYSICAL_MODEL::STRUCTURAL_MECHANICS),
-  StructuralMechanicsGlobalSettings(ecfdescription, d),
-  dimension(d)
+StructuralMechanicsConfiguration::StructuralMechanicsConfiguration()
+: PhysicsConfiguration(MaterialConfiguration::PHYSICAL_MODEL::STRUCTURAL_MECHANICS),
+  StructuralMechanicsGlobalSettings(ecfdescription)
 {
 	REGISTER(load_steps_settings, ECFMetaData()
 			.setdescription({ "Settings for each load step.", "Load step index." })
 			.setdatatype({ ECFDataType::LOAD_STEP })
-			.setpattern({ "1" }),
-			&dimension);
+			.setpattern({ "1" }));
 }
 
 

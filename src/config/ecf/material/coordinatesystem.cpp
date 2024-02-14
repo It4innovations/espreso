@@ -3,11 +3,11 @@
 
 #include "config/conditions.h"
 #include "config/configuration.hpp"
+#include "esinfo/meshinfo.h"
 
 using namespace espreso;
 
-CoordinateSystemConfiguration::CoordinateSystemConfiguration(DIMENSION *D)
-: dimension(D), rotation(dimension), center(dimension)
+CoordinateSystemConfiguration::CoordinateSystemConfiguration()
 {
 	type = TYPE::CARTESIAN;
 
@@ -16,7 +16,7 @@ CoordinateSystemConfiguration::CoordinateSystemConfiguration(DIMENSION *D)
 			.setdatatype({ ECFDataType::OPTION })
 			.addoption(ECFOption().setname("CARTESIAN").setdescription("Cartesian system."))
 			.addoption(ECFOption().setname("CYLINDRICAL").setdescription("Cylindrical system."))
-			.addoption(ECFOption().setname("SPHERICAL").setdescription("Spherical system.").allowonly([&] () { return *dimension == DIMENSION::D3; })));
+			.addoption(ECFOption().setname("SPHERICAL").setdescription("Spherical system.")));
 
 	ecfdescription->addSeparator()->metadata.noexport();
 
@@ -42,14 +42,14 @@ CoordinateSystemConfiguration::CoordinateSystemConfiguration(DIMENSION *D)
 bool CoordinateSystemConfiguration::isConst() const
 {
 	if (type == TYPE::CARTESIAN) {
-		switch (*dimension) {
-		case DIMENSION::D2: return rotation.z.evaluator->isConst();
-		case DIMENSION::D3: return rotation.z.evaluator->isConst() && rotation.y.evaluator->isConst() && rotation.x.evaluator->isConst();
+		switch (info::mesh->dimension) {
+		case 2: return rotation.z.evaluator->isConst();
+		case 3: return rotation.z.evaluator->isConst() && rotation.y.evaluator->isConst() && rotation.x.evaluator->isConst();
 		}
 	}
-	switch (*dimension) {
-	case DIMENSION::D2: return center.x.evaluator->isConst() && center.y.evaluator->isConst();
-	case DIMENSION::D3: return center.x.evaluator->isConst() && center.y.evaluator->isConst() && center.z.evaluator->isConst();
+	switch (info::mesh->dimension) {
+	case 2: return center.x.evaluator->isConst() && center.y.evaluator->isConst();
+	case 3: return center.x.evaluator->isConst() && center.y.evaluator->isConst() && center.z.evaluator->isConst();
 	}
 	return true;
 }
@@ -57,9 +57,9 @@ bool CoordinateSystemConfiguration::isConst() const
 bool CoordinateSystemConfiguration::isRotated() const
 {
 	if (type == TYPE::CARTESIAN) {
-		switch (*dimension) {
-		case DIMENSION::D2: return rotation.z.isset && rotation.z.evaluator->evaluate() != 0;
-		case DIMENSION::D3:
+		switch (info::mesh->dimension) {
+		case 2: return rotation.z.isset && rotation.z.evaluator->evaluate() != 0;
+		case 3:
 			return
 				(rotation.x.isset && rotation.x.evaluator->evaluate() != 0) |
 				(rotation.y.isset && rotation.y.evaluator->evaluate() != 0) |

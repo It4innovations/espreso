@@ -18,12 +18,11 @@ struct CoordinateSystemConfiguration: public ECFDescription {
 	};
 
 	TYPE type;
-	DIMENSION *dimension;
 
 	ECFExpressionVector rotation;
 	ECFExpressionVector center;
 
-	CoordinateSystemConfiguration(DIMENSION *D);
+	CoordinateSystemConfiguration();
 
 	bool isConst() const;
 	bool isRotated() const;

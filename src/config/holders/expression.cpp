@@ -101,8 +101,8 @@ ECFHarmonicExpression::ECFHarmonicExpression()
 	REGISTER(phase, ECFMetaData().setdescription({ "Phase." }));
 }
 
-ECFHarmonicExpressionVector::ECFHarmonicExpressionVector(DIMENSION *dimension)
-: type(Type::COMPONENTS), magnitude(dimension), phase(dimension)
+ECFHarmonicExpressionVector::ECFHarmonicExpressionVector()
+: type(Type::COMPONENTS)
 {
 	type = Type::COMPONENTS;
 	REGISTER(type, ECFMetaData()
@@ -114,25 +114,20 @@ ECFHarmonicExpressionVector::ECFHarmonicExpressionVector(DIMENSION *dimension)
 	REGISTER(phase, ECFMetaData().setdescription({ "Phase." }));
 }
 
-ECFExpressionVector::ECFExpressionVector(DIMENSION *dimension)
-: dimension(dimension)
+ECFExpressionVector::ECFExpressionVector()
 {
 	REGISTER(x, ECFMetaData()
 			.setdescription({ "x-direction." })
-			.setdatatype({ ECFDataType::EXPRESSION })
-			.allowonly([&] () { return *dimension != DIMENSION::Z; }));
+			.setdatatype({ ECFDataType::EXPRESSION }));
 	REGISTER(y, ECFMetaData()
 			.setdescription({ "y-direction." })
-			.setdatatype({ ECFDataType::EXPRESSION })
-			.allowonly([&] () { return *dimension == DIMENSION::D2 || *dimension == DIMENSION::D3; }));
+			.setdatatype({ ECFDataType::EXPRESSION }));
 	REGISTER(z, ECFMetaData()
 			.setdescription({ "z-direction." })
-			.setdatatype({ ECFDataType::EXPRESSION })
-			.allowonly([&] () { return *dimension == DIMENSION::Z || *dimension == DIMENSION::D3; }));
+			.setdatatype({ ECFDataType::EXPRESSION }));
 }
 
-ECFExpressionOptionalVector::ECFExpressionOptionalVector(DIMENSION *dimension)
-: ECFExpressionVector(dimension)
+ECFExpressionOptionalVector::ECFExpressionOptionalVector()
 {
 	REGISTER(all, ECFMetaData()
 			.setdescription({ "all-directions." })

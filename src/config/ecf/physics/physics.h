@@ -9,15 +9,11 @@ namespace espreso {
 struct PhysicsConfiguration: public ECFDescription {
 
 	enum class TYPE {
-		THERMO_ELASTICITY_2D,
-		THERMO_ELASTICITY_3D,
-		HEAT_TRANSFER_2D,
-		HEAT_TRANSFER_3D,
-		STRUCTURAL_MECHANICS_2D,
-		STRUCTURAL_MECHANICS_3D,
-		ACOUSTICS_2D,
-		ACOUSTICS_3D,
-		SHALLOW_WATER_2D
+//		THERMO_ELASTICITY,
+		HEAT_TRANSFER,
+		STRUCTURAL_MECHANICS,
+//		ACOUSTICS,
+//		SHALLOW_WATER
 	};
 
 	enum class INTERPOLATION {
@@ -38,7 +34,6 @@ struct PhysicsConfiguration: public ECFDescription {
 	// TODO: case insensitive compare
 	INTERPOLATION interpolation;
 	std::map<std::string, DISCRETIZATION> discretization;
-	DIMENSION dimension;
 	MaterialConfiguration::PHYSICAL_MODEL physical_model;
 
 	std::map<std::string, MaterialConfiguration> materials;
@@ -48,7 +43,7 @@ struct PhysicsConfiguration: public ECFDescription {
 
 	bool contact_interfaces, reassembling_optimization;
 
-	PhysicsConfiguration(DIMENSION dim, MaterialConfiguration::PHYSICAL_MODEL physicalModel);
+	PhysicsConfiguration(MaterialConfiguration::PHYSICAL_MODEL physicalModel);
 };
 
 }

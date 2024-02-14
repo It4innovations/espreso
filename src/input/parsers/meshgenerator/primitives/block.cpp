@@ -24,6 +24,7 @@
 #include "basis/evaluator/evaluator.h"
 #include "basis/utilities/utils.h"
 #include "esinfo/eslog.h"
+#include "esinfo/meshinfo.h"
 #include "config/ecf/input/block.h"
 #include "config/ecf/input/generatorelements.h"
 
@@ -38,39 +39,51 @@ BlockGenerator::BlockGenerator(const BlockGeneratorConfiguration &configuration,
 	switch (configuration.element_type) {
 	case GENERATOR_ELEMENT_TYPE::SQUARE4:
 		_element = new Square4Generator();
+		info::mesh->dimension = 2;
 		break;
 	case GENERATOR_ELEMENT_TYPE::SQUARE8:
 		_element = new Square8Generator();
+		info::mesh->dimension = 2;
 		break;
 	case GENERATOR_ELEMENT_TYPE::TRIANGLE3:
 		_element = new Triangle3Generator();
+		info::mesh->dimension = 2;
 		break;
 	case GENERATOR_ELEMENT_TYPE::TRIANGLE6:
 		_element = new Triangle6Generator();
+		info::mesh->dimension = 2;
 		break;
 	case GENERATOR_ELEMENT_TYPE::TETRA4:
 		_element = new Tetrahedron4Generator();
+		info::mesh->dimension = 3;
 		break;
 	case GENERATOR_ELEMENT_TYPE::PYRAMID5:
 		_element = new Pyramid5Generator();
+		info::mesh->dimension = 3;
 		break;
 	case GENERATOR_ELEMENT_TYPE::PRISMA6:
 		_element = new Prisma6Generator();
+		info::mesh->dimension = 3;
 		break;
 	case GENERATOR_ELEMENT_TYPE::HEXA8:
 		_element = new Hexahedron8Generator();
+		info::mesh->dimension = 3;
 		break;
 	case GENERATOR_ELEMENT_TYPE::TETRA10:
 		_element = new Tetrahedron10Generator();
+		info::mesh->dimension = 3;
 		break;
 	case GENERATOR_ELEMENT_TYPE::PYRAMID13:
 		_element = new Pyramid13Generator();
+		info::mesh->dimension = 3;
 		break;
 	case GENERATOR_ELEMENT_TYPE::PRISMA15:
 		_element = new Prisma15Generator();
+		info::mesh->dimension = 3;
 		break;
 	case GENERATOR_ELEMENT_TYPE::HEXA20:
 		_element = new Hexahedron20Generator();
+		info::mesh->dimension = 3;
 		break;
 	default:
 		eslog::error("Invalid element type.\n");

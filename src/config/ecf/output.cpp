@@ -38,8 +38,7 @@ ResultsSelectionConfiguration::ResultsSelectionConfiguration(const PhysicsConfig
 
 	REGISTER(thickness, ECFMetaData()
 			.setdescription({ "Element thickness." })
-			.setdatatype({ ECFDataType::BOOL })
-			.allowonly([&] () { return _physics == PhysicsConfiguration::TYPE::HEAT_TRANSFER_2D || _physics == PhysicsConfiguration::TYPE::STRUCTURAL_MECHANICS_2D; }));
+			.setdatatype({ ECFDataType::BOOL }));
 }
 
 HarmonicOuputConfiguration::HarmonicOuputConfiguration()
@@ -188,8 +187,7 @@ OutputConfiguration::OutputConfiguration(const ECF *root)
 			.setdatatype({ ECFDataType::POSITIVE_INTEGER})
 			.allowonly([&] () { return monitors_store_frequency == STORE_FREQUENCY::EVERY_NTH_SUBSTEP; }));
 	REGISTER(frequency_to_time, ECFMetaData()
-			.setdescription({ "Frequency to time settings" })
-			.allowonly([&] () { return _root->physics == PhysicsConfiguration::TYPE::STRUCTURAL_MECHANICS_3D; }));
+			.setdescription({ "Frequency to time settings" }));
 
 	ecfdescription->addSpace();
 

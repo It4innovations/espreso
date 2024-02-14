@@ -17,11 +17,10 @@ struct ThermalConductivityConfiguration: public ECFDescription {
 	};
 
 	MODEL model;
-	DIMENSION *dimension;
 
 	TensorConfiguration values;
 
-	ThermalConductivityConfiguration(DIMENSION *D);
+	ThermalConductivityConfiguration();
 
 	bool needCoordinates() const;
 	bool needTemperature() const;

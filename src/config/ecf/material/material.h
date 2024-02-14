@@ -41,7 +41,7 @@ struct MaterialBaseConfiguration: public ECFDescription {
 	ThermalExpansionConfiguration thermal_expansion;
 	ThermalConductivityConfiguration thermal_conductivity;
 
-	MaterialBaseConfiguration(DIMENSION *D, PHYSICAL_MODEL physicalModel, bool *phase_change);
+	MaterialBaseConfiguration(PHYSICAL_MODEL physicalModel, bool *phase_change);
 
 protected:
 	bool *_phase_change;
@@ -58,7 +58,7 @@ struct MaterialConfiguration: public MaterialBaseConfiguration {
 
 	std::map<size_t, MaterialBaseConfiguration> phases;
 
-	MaterialConfiguration(DIMENSION *D, PHYSICAL_MODEL physicalModel = static_cast<PHYSICAL_MODEL>(~0));
+	MaterialConfiguration(PHYSICAL_MODEL physicalModel = static_cast<PHYSICAL_MODEL>(~0));
 };
 
 }

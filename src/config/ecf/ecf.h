@@ -76,14 +76,10 @@ struct ECF: public ECFDescription {
 	size_t dryrun;
 
 	PhysicsConfiguration::TYPE physics;
-	ThermoElasticityConfiguration thermo_elasticity_2d;
-	ThermoElasticityConfiguration thermo_elasticity_3d;
-	HeatTransferConfiguration heat_transfer_2d;
-	HeatTransferConfiguration heat_transfer_3d;
-	StructuralMechanicsConfiguration structural_mechanics_2d;
-	StructuralMechanicsConfiguration structural_mechanics_3d;
-	AcousticConfiguration acoustics_2d;
-	AcousticConfiguration acoustics_3d;
+//	ThermoElasticityConfiguration thermo_elasticity;
+	HeatTransferConfiguration heat_transfer;
+	StructuralMechanicsConfiguration structural_mechanics;
+//	AcousticConfiguration acoustics;
 
 	OutputConfiguration output;
 

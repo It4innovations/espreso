@@ -6,11 +6,8 @@
 
 using namespace espreso;
 
-MaterialBaseConfiguration::MaterialBaseConfiguration(DIMENSION *D, PHYSICAL_MODEL physicalModel, bool *phase_change)
+MaterialBaseConfiguration::MaterialBaseConfiguration(PHYSICAL_MODEL physicalModel, bool *phase_change)
 : physical_model(physicalModel), material_model(MATERIAL_MODEL::LINEAR_ELASTIC),
-  coordinate_system(D),
-  linear_elastic_properties(D), plasticity_properties(D), hyper_elastic_properties(D), thermal_expansion(D),
-  thermal_conductivity(D),
   _phase_change(phase_change)
 {
 	REGISTER(coordinate_system, ECFMetaData()
@@ -88,8 +85,8 @@ MaterialBaseConfiguration::MaterialBaseConfiguration(DIMENSION *D, PHYSICAL_MODE
 	}
 }
 
-MaterialConfiguration::MaterialConfiguration(DIMENSION *D, PHYSICAL_MODEL physicalModel)
-: MaterialBaseConfiguration(D, physicalModel, &phase_change),
+MaterialConfiguration::MaterialConfiguration(PHYSICAL_MODEL physicalModel)
+: MaterialBaseConfiguration(physicalModel, &phase_change),
   phase_change(false)
 {
 	name = "";
@@ -170,7 +167,7 @@ MaterialConfiguration::MaterialConfiguration(DIMENSION *D, PHYSICAL_MODEL physic
 			.setgroup()
 			.allowonly([&] () { return phase_change; })
 			.addconstraint(ECFCondition(phase_change, ECFCondition::EQUALS, true)),
-			D, physical_model, &phase_change);
+			physical_model, &phase_change);
 
 //	auto removePhaseConstraints = [&] (ECFParameter* object) {
 //		ECFObject* obj = static_cast<ECFObject*>(object);

@@ -18,14 +18,13 @@ struct LinearElasticPropertiesConfiguration: public ECFDescription {
 	bool orientation;
 
 	MODEL model;
-	DIMENSION *dimension;
 
 	TensorConfiguration poisson_ratio;
 	TensorConfiguration young_modulus;
 	TensorConfiguration shear_modulus;
 	TensorConfiguration anisotropic;
 
-	LinearElasticPropertiesConfiguration(DIMENSION *D);
+	LinearElasticPropertiesConfiguration();
 
 	bool needCoordinates() const;
 	bool needTemperature() const;

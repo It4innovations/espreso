@@ -137,23 +137,7 @@ Mesh::Mesh()
   _withBEM(false),
   _withEdgeDual(false)
 {
-	dimension = 0;
-	switch (info::ecf->physics) {
-	case PhysicsConfiguration::TYPE::ACOUSTICS_2D:
-	case PhysicsConfiguration::TYPE::THERMO_ELASTICITY_2D:
-	case PhysicsConfiguration::TYPE::HEAT_TRANSFER_2D:
-	case PhysicsConfiguration::TYPE::STRUCTURAL_MECHANICS_2D:
-	case PhysicsConfiguration::TYPE::SHALLOW_WATER_2D:
-		dimension = 2;
-		break;
-	case PhysicsConfiguration::TYPE::ACOUSTICS_3D:
-	case PhysicsConfiguration::TYPE::THERMO_ELASTICITY_3D:
-	case PhysicsConfiguration::TYPE::HEAT_TRANSFER_3D:
-	case PhysicsConfiguration::TYPE::STRUCTURAL_MECHANICS_3D:
-		dimension = 3;
-		break;
-	}
-
+	dimension = 3;
 	preferedDomains = info::ecf->input.decomposition.domains;
 	if (preferedDomains == 0) {
 		preferedDomains = info::env::OMP_NUM_THREADS; // TODO: set better value;
@@ -259,45 +243,24 @@ void Mesh::analyze()
 {
 	// check FETI
 	switch (info::ecf->physics) {
-	case PhysicsConfiguration::TYPE::ACOUSTICS_2D:
-		for (auto step = info::ecf->acoustics_2d.load_steps_settings.begin(); step != info::ecf->acoustics_2d.load_steps_settings.end(); ++step) {
+//	case PhysicsConfiguration::TYPE::ACOUSTICS:
+//		for (auto step = info::ecf->acoustics.load_steps_settings.begin(); step != info::ecf->acoustics.load_steps_settings.end(); ++step) {
+//			_withFETI |= step->second.solver == LoadStepSolverConfiguration::SOLVER::FETI;
+//		}
+//		break;
+//	case PhysicsConfiguration::TYPE::THERMO_ELASTICITY:
+//		for (auto step = info::ecf->thermo_elasticity.load_steps_settings.begin(); step != info::ecf->thermo_elasticity.load_steps_settings.end(); ++step) {
+//			_withFETI |= step->second.heat_transfer.solver == LoadStepSolverConfiguration::SOLVER::FETI;
+//			_withFETI |= step->second.structural_mechanics.solver == LoadStepSolverConfiguration::SOLVER::FETI;
+//		}
+//		break;
+	case PhysicsConfiguration::TYPE::HEAT_TRANSFER:
+		for (auto step = info::ecf->heat_transfer.load_steps_settings.begin(); step != info::ecf->heat_transfer.load_steps_settings.end(); ++step) {
 			_withFETI |= step->second.solver == LoadStepSolverConfiguration::SOLVER::FETI;
 		}
 		break;
-	case PhysicsConfiguration::TYPE::ACOUSTICS_3D:
-		for (auto step = info::ecf->acoustics_3d.load_steps_settings.begin(); step != info::ecf->acoustics_3d.load_steps_settings.end(); ++step) {
-			_withFETI |= step->second.solver == LoadStepSolverConfiguration::SOLVER::FETI;
-		}
-		break;
-	case PhysicsConfiguration::TYPE::THERMO_ELASTICITY_2D:
-		for (auto step = info::ecf->thermo_elasticity_2d.load_steps_settings.begin(); step != info::ecf->thermo_elasticity_2d.load_steps_settings.end(); ++step) {
-			_withFETI |= step->second.heat_transfer.solver == LoadStepSolverConfiguration::SOLVER::FETI;
-			_withFETI |= step->second.structural_mechanics.solver == LoadStepSolverConfiguration::SOLVER::FETI;
-		}
-		break;
-	case PhysicsConfiguration::TYPE::THERMO_ELASTICITY_3D:
-		for (auto step = info::ecf->thermo_elasticity_3d.load_steps_settings.begin(); step != info::ecf->thermo_elasticity_3d.load_steps_settings.end(); ++step) {
-			_withFETI |= step->second.heat_transfer.solver == LoadStepSolverConfiguration::SOLVER::FETI;
-			_withFETI |= step->second.structural_mechanics.solver == LoadStepSolverConfiguration::SOLVER::FETI;
-		}
-		break;
-	case PhysicsConfiguration::TYPE::HEAT_TRANSFER_2D:
-		for (auto step = info::ecf->heat_transfer_2d.load_steps_settings.begin(); step != info::ecf->heat_transfer_2d.load_steps_settings.end(); ++step) {
-			_withFETI |= step->second.solver == LoadStepSolverConfiguration::SOLVER::FETI;
-		}
-		break;
-	case PhysicsConfiguration::TYPE::HEAT_TRANSFER_3D:
-		for (auto step = info::ecf->heat_transfer_3d.load_steps_settings.begin(); step != info::ecf->heat_transfer_3d.load_steps_settings.end(); ++step) {
-			_withFETI |= step->second.solver == LoadStepSolverConfiguration::SOLVER::FETI;
-		}
-		break;
-	case PhysicsConfiguration::TYPE::STRUCTURAL_MECHANICS_2D:
-		for (auto step = info::ecf->structural_mechanics_2d.load_steps_settings.begin(); step != info::ecf->structural_mechanics_2d.load_steps_settings.end(); ++step) {
-			_withFETI |= step->second.solver == LoadStepSolverConfiguration::SOLVER::FETI;
-		}
-		break;
-	case PhysicsConfiguration::TYPE::STRUCTURAL_MECHANICS_3D:
-		for (auto step = info::ecf->structural_mechanics_3d.load_steps_settings.begin(); step != info::ecf->structural_mechanics_3d.load_steps_settings.end(); ++step) {
+	case PhysicsConfiguration::TYPE::STRUCTURAL_MECHANICS:
+		for (auto step = info::ecf->structural_mechanics.load_steps_settings.begin(); step != info::ecf->structural_mechanics.load_steps_settings.end(); ++step) {
 			_withFETI |= step->second.solver == LoadStepSolverConfiguration::SOLVER::FETI;
 		}
 		break;
@@ -313,91 +276,58 @@ void Mesh::analyze()
 	// check BEM
 	for (auto it = info::ecf->getPhysics()->discretization.begin(); it != info::ecf->getPhysics()->discretization.end(); ++it) {
 		if (it->second == PhysicsConfiguration::DISCRETIZATION::BEM) {
-			_withBEM = info::ecf->getPhysics()->dimension == DIMENSION::D3;
+			_withBEM = dimension == 3;
 		}
 	}
 
 	// check whether we need to 'increase' boundary dimensions
-	if (info::ecf->physics == PhysicsConfiguration::TYPE::STRUCTURAL_MECHANICS_2D || info::ecf->physics == PhysicsConfiguration::TYPE::STRUCTURAL_MECHANICS_3D) {
-		const StructuralMechanicsConfiguration *sm;
-		int dimension;
-		if (info::ecf->physics == PhysicsConfiguration::TYPE::STRUCTURAL_MECHANICS_2D) {
-			sm = &info::ecf->structural_mechanics_2d;
-			dimension = 1;
-		}
-		if (info::ecf->physics == PhysicsConfiguration::TYPE::STRUCTURAL_MECHANICS_3D) {
-			sm = &info::ecf->structural_mechanics_3d;
-			dimension = 2;
-		}
-
-		for (auto ls = sm->load_steps_settings.begin(); ls != sm->load_steps_settings.end(); ++ls) {
+	if (info::ecf->physics == PhysicsConfiguration::TYPE::STRUCTURAL_MECHANICS) {
+		for (auto ls = info::ecf->structural_mechanics.load_steps_settings.begin(); ls != info::ecf->structural_mechanics.load_steps_settings.end(); ++ls) {
 			for (auto bc = ls->second.normal_pressure.begin(); bc != ls->second.normal_pressure.end(); ++bc) {
-				bregion(bc->first)->dimension = dimension;
+				bregion(bc->first)->dimension = dimension - 1;
 			}
 		}
 	}
 
-	if (info::ecf->physics == PhysicsConfiguration::TYPE::HEAT_TRANSFER_2D || info::ecf->physics == PhysicsConfiguration::TYPE::HEAT_TRANSFER_3D) {
-		const HeatTransferConfiguration *ht;
-		int dimension;
-		if (info::ecf->physics == PhysicsConfiguration::TYPE::HEAT_TRANSFER_2D) {
-			ht = &info::ecf->heat_transfer_2d;
-			dimension = 1;
-		}
-		if (info::ecf->physics == PhysicsConfiguration::TYPE::HEAT_TRANSFER_3D) {
-			ht = &info::ecf->heat_transfer_3d;
-			dimension = 2;
-		}
-
-		for (auto ls = ht->load_steps_settings.begin(); ls != ht->load_steps_settings.end(); ++ls) {
+	if (info::ecf->physics == PhysicsConfiguration::TYPE::HEAT_TRANSFER) {
+		for (auto ls = info::ecf->heat_transfer.load_steps_settings.begin(); ls != info::ecf->heat_transfer.load_steps_settings.end(); ++ls) {
 			for (auto bc = ls->second.heat_flow.begin(); bc != ls->second.heat_flow.end(); ++bc) {
-				bregion(bc->first)->dimension = dimension;
+				bregion(bc->first)->dimension = dimension - 1;
 			}
 			for (auto bc = ls->second.heat_flux.begin(); bc != ls->second.heat_flux.end(); ++bc) {
-				bregion(bc->first)->dimension = dimension;
+				bregion(bc->first)->dimension = dimension - 1;
 			}
 			for (auto bc = ls->second.convection.begin(); bc != ls->second.convection.end(); ++bc) {
-				bregion(bc->first)->dimension = dimension;
+				bregion(bc->first)->dimension = dimension - 1;
 			}
 			for (auto bc = ls->second.diffuse_radiation.begin(); bc != ls->second.diffuse_radiation.end(); ++bc) {
-				bregion(bc->first)->dimension = dimension;
+				bregion(bc->first)->dimension = dimension - 1;
 			}
 		}
 	}
 
-	if (info::ecf->physics == PhysicsConfiguration::TYPE::THERMO_ELASTICITY_2D || info::ecf->physics == PhysicsConfiguration::TYPE::THERMO_ELASTICITY_3D) {
-		const ThermoElasticityConfiguration *te;
-		int dimension;
-		if (info::ecf->physics == PhysicsConfiguration::TYPE::THERMO_ELASTICITY_2D) {
-			te = &info::ecf->thermo_elasticity_2d;
-			dimension = 1;
-		}
-		if (info::ecf->physics == PhysicsConfiguration::TYPE::THERMO_ELASTICITY_3D) {
-			te = &info::ecf->thermo_elasticity_3d;
-			dimension = 2;
-		}
+//	if (info::ecf->physics == PhysicsConfiguration::TYPE::THERMO_ELASTICITY) {
+//		for (auto ls = info::ecf->thermo_elasticity.load_steps_settings.begin(); ls != info::ecf->thermo_elasticity.load_steps_settings.end(); ++ls) {
+//			for (auto bc = ls->second.heat_transfer.heat_flow.begin(); bc != ls->second.heat_transfer.heat_flow.end(); ++bc) {
+//				bregion(bc->first)->dimension = dimension - 1;
+//			}
+//			for (auto bc = ls->second.heat_transfer.heat_flux.begin(); bc != ls->second.heat_transfer.heat_flux.end(); ++bc) {
+//				bregion(bc->first)->dimension = dimension - 1;
+//			}
+//			for (auto bc = ls->second.heat_transfer.convection.begin(); bc != ls->second.heat_transfer.convection.end(); ++bc) {
+//				bregion(bc->first)->dimension = dimension - 1;
+//			}
+//			for (auto bc = ls->second.heat_transfer.diffuse_radiation.begin(); bc != ls->second.heat_transfer.diffuse_radiation.end(); ++bc) {
+//				bregion(bc->first)->dimension = dimension - 1;
+//			}
+//			for (auto bc = ls->second.structural_mechanics.normal_pressure.begin(); bc != ls->second.structural_mechanics.normal_pressure.end(); ++bc) {
+//				bregion(bc->first)->dimension = dimension - 1;
+//			}
+//		}
+//	}
 
-		for (auto ls = te->load_steps_settings.begin(); ls != te->load_steps_settings.end(); ++ls) {
-			for (auto bc = ls->second.heat_transfer.heat_flow.begin(); bc != ls->second.heat_transfer.heat_flow.end(); ++bc) {
-				bregion(bc->first)->dimension = dimension;
-			}
-			for (auto bc = ls->second.heat_transfer.heat_flux.begin(); bc != ls->second.heat_transfer.heat_flux.end(); ++bc) {
-				bregion(bc->first)->dimension = dimension;
-			}
-			for (auto bc = ls->second.heat_transfer.convection.begin(); bc != ls->second.heat_transfer.convection.end(); ++bc) {
-				bregion(bc->first)->dimension = dimension;
-			}
-			for (auto bc = ls->second.heat_transfer.diffuse_radiation.begin(); bc != ls->second.heat_transfer.diffuse_radiation.end(); ++bc) {
-				bregion(bc->first)->dimension = dimension;
-			}
-			for (auto bc = ls->second.structural_mechanics.normal_pressure.begin(); bc != ls->second.structural_mechanics.normal_pressure.end(); ++bc) {
-				bregion(bc->first)->dimension = dimension;
-			}
-		}
-	}
-
-	if (info::ecf->physics == PhysicsConfiguration::TYPE::STRUCTURAL_MECHANICS_3D) {
-		if (info::ecf->structural_mechanics_3d.discretization.size() && info::ecf->structural_mechanics_3d.discretization.begin()->second == PhysicsConfiguration::DISCRETIZATION::FEM_TDNNS) {
+	if (info::ecf->physics == PhysicsConfiguration::TYPE::STRUCTURAL_MECHANICS) {
+		if (info::ecf->structural_mechanics.discretization.size() && info::ecf->structural_mechanics.discretization.begin()->second == PhysicsConfiguration::DISCRETIZATION::FEM_TDNNS) {
 			_withEdgeDual = true;
 		}
 	}
@@ -505,7 +435,7 @@ void Mesh::computePersistentParameters()
 
 	{ // compute boundary element from nodes
 		ElementStore *halo = NULL;
-		if (info::ecf->getPhysics()->dimension == DIMENSION::D3 && _withGUI) {
+		if (dimension == 3 && _withGUI) {
 			halo = mesh::exchangeHalo(elements, nodes, neighbors);
 			mesh::computeRegionsSurface(elements, nodes, halo, elementsRegions, neighbors);
 			for (size_t r = 0; r < elementsRegions.size(); r++) {
@@ -552,7 +482,7 @@ void Mesh::computePersistentParameters()
 	mesh::computeRegionsBoundaryNodes(neighbors, nodes, boundaryRegions, contactInterfaces);
 	mesh::computeRegionsBoundaryParents(nodes, elements, boundaryRegions, contactInterfaces);
 
-	if (info::ecf->getPhysics()->dimension == DIMENSION::D3 && info::ecf->output.format == OutputConfiguration::FORMAT::STL_SURFACE) {
+	if (dimension == 3 && info::ecf->output.format == OutputConfiguration::FORMAT::STL_SURFACE) {
 		if (info::ecf->input.contact_interfaces.size() == 0) {
 			mesh::computeBodiesSurface(nodes, elements, elementsRegions, surface, neighbors);
 		}

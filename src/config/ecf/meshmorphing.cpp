@@ -5,12 +5,7 @@
 
 
 espreso::RBFTargetTransformationConfiguration::RBFTargetTransformationConfiguration(ECF *ECF)
-: dimension(DIMENSION::D3),
-  offset(),
-  scaling(&dimension),
-  translation(&dimension),
-  coordinate_system(&dimension),
-  override(true),
+  :override(true),
   _ECF(ECF)
 {
 	transformation = MORPHING_TRANSFORMATION::TRANSLATION;
@@ -44,21 +39,6 @@ espreso::RBFTargetTransformationConfiguration::RBFTargetTransformationConfigurat
 	REGISTER(override, ECFMetaData()
 		.setdescription({ "Turn morphing target override on/off." })
 		.setdatatype({ ECFDataType::BOOL }));
-
-	ECF->ecfdescription->getParameter(&ECF->physics)->addListener(ECFParameter::Event::VALUE_SET, [&] (const std::string &value) {
-		switch (ECF->physics) {
-		case PhysicsConfiguration::TYPE::HEAT_TRANSFER_2D:
-		case PhysicsConfiguration::TYPE::STRUCTURAL_MECHANICS_2D:
-			*translation.dimension = DIMENSION::D2;
-			break;
-		case PhysicsConfiguration::TYPE::HEAT_TRANSFER_3D:
-		case PhysicsConfiguration::TYPE::STRUCTURAL_MECHANICS_3D:
-			*translation.dimension = DIMENSION::D3;
-			break;
-		default:
-			eslog::internalFailure("unknown physics while set RBFTargetTransformation.");
-		}
-	});
 }
 
 espreso::RBFTargetConfiguration::RBFTargetConfiguration(ECF *ECF)

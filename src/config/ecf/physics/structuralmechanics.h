@@ -29,10 +29,9 @@ struct RotorDynamicsConfiguration: public ECFDescription {
 	};
 
 	struct RotationAxisConfiguration: public ECFDescription {
-		DIMENSION dimension;
 		ECFExpressionVector center, orientation;
 
-		RotationAxisConfiguration(DIMENSION dimension);
+		RotationAxisConfiguration();
 	};
 
 	struct CorotatingRotorConfiguration: public ECFDescription {
@@ -46,7 +45,7 @@ struct RotorDynamicsConfiguration: public ECFDescription {
 		std::map<std::string, CorotatingRotorConfiguration> rotors_definitions;
 		RotationAxisConfiguration rotation_axis;
 
-		CorotatingConfiguration(DIMENSION dimension);
+		CorotatingConfiguration();
 	};
 
 	struct FixedRotorConfiguration: public ECFDescription {
@@ -55,20 +54,20 @@ struct RotorDynamicsConfiguration: public ECFDescription {
 		RotationConfiguration rotation;
 		RotationAxisConfiguration rotation_axis;
 
-		FixedRotorConfiguration(DIMENSION dimension);
+		FixedRotorConfiguration();
 	};
 
 	struct FixedConfiguration: public ECFDescription {
 		std::map<std::string, FixedRotorConfiguration> rotors_definitions;
 
-		FixedConfiguration(DIMENSION dimension);
+		FixedConfiguration();
 	};
 
 	TYPE type;
 	FixedConfiguration fixed;
 	CorotatingConfiguration corotating;
 
-	RotorDynamicsConfiguration(DIMENSION dimension);
+	RotorDynamicsConfiguration();
 };
 
 struct RotatingForceConfiguration: public ECFDescription {
@@ -79,7 +78,7 @@ struct RotatingForceConfiguration: public ECFDescription {
 	ECFExpression unbalance_phase_angle;
 	ECFExpression location;
 
-	RotatingForceConfiguration(DIMENSION *dimension);
+	RotatingForceConfiguration();
 };
 
 struct NonlinerSpringConfiguration: public ECFDescription {
@@ -93,14 +92,14 @@ struct NonlinerSpringConfiguration: public ECFDescription {
 	ECFExpression force;
 	ECFExpression force_derivative;
 
-	NonlinerSpringConfiguration(DIMENSION *dimension);
+	NonlinerSpringConfiguration();
 };
 
 struct FixedWallConfiguration: public ECFDescription {
 	ECFExpressionVector normal;
 	ECFExpression distance;
 
-	FixedWallConfiguration(DIMENSION *dimension);
+	FixedWallConfiguration();
 };
 
 struct StructuralMechanicsGlobalSettings {
@@ -112,10 +111,9 @@ struct StructuralMechanicsGlobalSettings {
 		PLANE_STRESS_WITH_THICKNESS = 3
 	};
 
-	DIMENSION element_dimension;
 	ELEMENT_BEHAVIOUR element_behaviour;
 
-	StructuralMechanicsGlobalSettings(ECFObject *ecfdescription, DIMENSION dimension);
+	StructuralMechanicsGlobalSettings(ECFObject *ecfdescription);
 };
 
 struct StructuralMechanicsLoadStepConfiguration: public StructuralMechanicsLoadStepSolverConfiguration {
@@ -131,7 +129,7 @@ struct StructuralMechanicsLoadStepConfiguration: public StructuralMechanicsLoadS
 	std::map<std::string, NonlinerSpringConfiguration> nonlinear_spring;
 	RotorDynamicsConfiguration rotor_dynamics;
 
-	StructuralMechanicsLoadStepConfiguration(DIMENSION *dimension);
+	StructuralMechanicsLoadStepConfiguration();
 };
 
 struct StructuralMechanicsOutputSettings: public virtual ECFDescription {
@@ -159,10 +157,9 @@ protected:
 
 struct StructuralMechanicsConfiguration: public PhysicsConfiguration, public StructuralMechanicsGlobalSettings {
 
-	DIMENSION dimension;
 	std::map<size_t, StructuralMechanicsLoadStepConfiguration> load_steps_settings;
 
-	StructuralMechanicsConfiguration(DIMENSION d);
+	StructuralMechanicsConfiguration();
 };
 
 }

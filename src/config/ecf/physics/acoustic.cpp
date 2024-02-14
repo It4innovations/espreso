@@ -62,7 +62,7 @@ PointSourceConfiguration::PointSourceConfiguration()
 			.setdatatype({ ECFDataType::EXPRESSION }));
 }
 
-AcousticLoadStepConfiguration::AcousticLoadStepConfiguration(DIMENSION *D)
+AcousticLoadStepConfiguration::AcousticLoadStepConfiguration()
 {
 	system = SYSTEM::REAL;
 	REGISTER(system, ECFMetaData()
@@ -80,8 +80,7 @@ AcousticLoadStepConfiguration::AcousticLoadStepConfiguration(DIMENSION *D)
 	REGISTER(dipole_source, ECFMetaData()
 			.setdescription({ "The name of a region.", "Dipole source." })
 			.setdatatype({ ECFDataType::ELEMENTS_REGION })
-			.setpattern({ "MY_REGION" }),
-			D);
+			.setpattern({ "MY_REGION" }));
 
 	REGISTER(acoustic_pressure, ECFMetaData()
 			.setdescription({ "The name of a region.", "Pressure" })
@@ -99,8 +98,7 @@ AcousticLoadStepConfiguration::AcousticLoadStepConfiguration(DIMENSION *D)
 			.setdescription({ "The name of a region.", "Acceleration" })
 			.setdatatype({ ECFDataType::BOUNDARY_REGION })
 			.setpattern({ "MY_REGION" })
-			.setdynamic(),
-			D);
+			.setdynamic());
 
 	REGISTER(impedance, ECFMetaData()
 			.setdescription({ "The name of a region.", "Impedance" })
@@ -115,14 +113,12 @@ AcousticLoadStepConfiguration::AcousticLoadStepConfiguration(DIMENSION *D)
 			.setdynamic());
 }
 
-AcousticConfiguration::AcousticConfiguration(DIMENSION d)
-: PhysicsConfiguration(d, MaterialConfiguration::PHYSICAL_MODEL::ACOUSTICS),
-  AcousticGlobalSettings(ecfdescription),
-  dimension(d)
+AcousticConfiguration::AcousticConfiguration()
+: PhysicsConfiguration(MaterialConfiguration::PHYSICAL_MODEL::ACOUSTICS),
+  AcousticGlobalSettings(ecfdescription)
 {
 	REGISTER(load_steps_settings, ECFMetaData()
 			.setdescription({ "Settings for each load step.", "Load step index." })
 			.setdatatype({ ECFDataType::LOAD_STEP })
-			.setpattern({ "1" }),
-			&dimension);
+			.setpattern({ "1" }));
 }

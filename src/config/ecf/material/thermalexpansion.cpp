@@ -2,9 +2,8 @@
 #include "thermalexpansion.h"
 #include "config/configuration.hpp"
 
-espreso::ThermalExpansionConfiguration::ThermalExpansionConfiguration(DIMENSION *D)
+espreso::ThermalExpansionConfiguration::ThermalExpansionConfiguration()
 : model(MODEL::ISOTROPIC),
-  dimension(D),
   thermal_expansion(3)
 {
 	REGISTER(model, ECFMetaData()
@@ -29,6 +28,6 @@ espreso::ThermalExpansionConfiguration::ThermalExpansionConfiguration(DIMENSION 
 			.setdescription({ "Thermal expansion Z." })
 			.setdatatype({ ECFDataType::EXPRESSION })
 			.settensor(thermal_expansion)
-			.allowonly([&] () { return model != MODEL::ORTHOTROPIC && *dimension == DIMENSION::D3; }));
+			.allowonly([&] () { return model != MODEL::ORTHOTROPIC; }));
 }
 

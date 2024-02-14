@@ -22,15 +22,14 @@ struct ThermoElasticityLoadStepConfiguration: public CoupledPhysicsGlobalConfigu
 	HeatTransferLoadStepConfiguration heat_transfer;
 	StructuralMechanicsLoadStepConfiguration structural_mechanics;
 
-	ThermoElasticityLoadStepConfiguration(DIMENSION *D);
+	ThermoElasticityLoadStepConfiguration();
 };
 
 struct ThermoElasticityConfiguration: public PhysicsConfiguration, public HeatTransferGlobalSettings, public StructuralMechanicsGlobalSettings {
 
-	DIMENSION dimension;
 	std::map<size_t, ThermoElasticityLoadStepConfiguration> load_steps_settings;
 
-	ThermoElasticityConfiguration(DIMENSION d);
+	ThermoElasticityConfiguration();
 };
 
 }
