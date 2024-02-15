@@ -33,8 +33,8 @@ public:
 	// y = K+(f - Bt * x)
 	virtual void toPrimal(const Vector_Dual<T> &x, std::vector<Vector_Dense<T> > &y) =0;
 
-	void estimateMaxEigenValue(double epsilon, int maxIterations, double &lambda, int &iterations);
-	void estimateMaxProjectedEigenValue(double epsilon, int maxIterations, double &lambda, int &iterations);
+	void estimateMaxEigenValue(double &lambda, int &iterations, double epsilon, int maxIterations);
+	void estimateMaxProjectedEigenValue(double &lambda, int &iterations, double epsilon, int maxIterations, double rho = 1, double normPFP = 1);
 
 	FETI<T> &feti;
 	Vector_Dual<T> d;

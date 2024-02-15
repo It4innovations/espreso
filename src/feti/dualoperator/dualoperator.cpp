@@ -3,6 +3,7 @@
 #include "totalfeti.implicit.h"
 #include "totalfeti.explicit.h"
 #include "totalfeti.explicit.acc.h"
+#include "feti/projector/projector.h"
 
 #include "esinfo/eslog.hpp"
 #include "math/math.h"
@@ -38,7 +39,7 @@ DualOperator<T>* DualOperator<T>::set(FETI<T> &feti, const step::Step &step)
 }
 
 template<typename T>
-void DualOperator<T>::estimateMaxEigenValue(double epsilon, int maxIterations, double &lambda, int &iterations)
+void DualOperator<T>::estimateMaxEigenValue(double &lambda, int &iterations, double epsilon, int maxIterations)
 {
     DualOperator<T> *F = feti.dualOperator;
 
@@ -46,18 +47,17 @@ void DualOperator<T>::estimateMaxEigenValue(double epsilon, int maxIterations, d
     Vector_Dual<T> y, v;
     double norm = 1 / std::sqrt(feti.sinfo.lambdasTotal);
     for (esint i = 0; i < feti.lambdas.nhalo; ++i) {
-        y.vals[i] = 0;
+        v.vals[i] = 0;
     }
-    for (esint i = feti.lambdas.nhalo, j = 0; i < y.size; ++i, ++j) {
+    for (esint i = feti.lambdas.nhalo, j = 0; i < v.size; ++i, ++j) {
         int mul = (feti.sinfo.lambdasOffset + j) % 2;
-        y.vals[i] = (1 - 2 * mul) * norm;
+        v.vals[i] = (1 - 2 * mul) * norm;
     }
-    y.synchronize();
-    F->apply(y, v);
+    v.synchronize();
 
     lambda = std::sqrt(v.dot());
     double err = std::numeric_limits<T>::max();
-    for (iterations = 0; iterations < maxIterations && epsilon < err; ++iterations) {
+    for (iterations = 0; iterations <= maxIterations && epsilon < err; ++iterations) {
         math::copy(y, v);
         math::scale(1 / lambda, y);
         F->apply(y, v);
@@ -68,29 +68,41 @@ void DualOperator<T>::estimateMaxEigenValue(double epsilon, int maxIterations, d
 }
 
 template<typename T>
-void DualOperator<T>::estimateMaxProjectedEigenValue(double epsilon, int maxIterations, double &lambda, int &iterations)
+void DualOperator<T>::estimateMaxProjectedEigenValue(double &lambda, int &iterations, double epsilon, int maxIterations, double rho, double normPFP)
 {
-    // DualOperator<double> *F = feti.dualOperator;
-    // Projector<double> *P = feti.projector;
+    DualOperator<T> *F = feti.dualOperator;
+    Projector<double> *P = feti.projector;
 
     // {-1, 1} / norma
-    // Vector_Dual<T> y, v;
-    // for (esint i = y.nhalo; i < y.size; ++i) {
-    //     y.vals[i] = 1;
-    // }
-    // P->apply()
-    // F->apply(y, v);
-    // P->apply()
+    Vector_Dual<T> v, y, x, z;
+    double norm = 1 / std::sqrt(feti.sinfo.lambdasTotal);
+    for (esint i = 0; i < feti.lambdas.nhalo; ++i) {
+        y.vals[i] = 0;
+    }
+    for (esint i = feti.lambdas.nhalo, j = 0; i < y.size; ++i, ++j) {
+        int mul = (feti.sinfo.lambdasOffset + j) % 2;
+        y.vals[i] = (1 - 2 * mul) * norm;
+    }
+    y.synchronize();
 
-    // double lambda = 0; //v->norm();
-    // double err = 111; // DOUBLE_MAX;
-    // for (int i = 0; i < maxIterations && epsilon < err; ++i) {
-    //     // y = v->scale(1 / lambda);
-    //     F->apply(y, v);
-    //     double _lambda = lambda;
-    //     // lambda = v->norm();
-    //     err = std::fabs(lambda - _lambda) / std::fabs(lambda);
-    // }
+    lambda = std::sqrt(y.dot());
+    double err = std::numeric_limits<T>::max();
+    for (iterations = 0; iterations <= maxIterations && epsilon < err; ++iterations) {
+        math::copy(x, y);
+        math::scale(1 / lambda, x);
+
+        // y = H(x)
+        P->apply(x, v);
+        F->apply(v, z);
+        P->apply(z, y);
+        math::scale(1 / normPFP, y);
+        math::add(y,  rho, x);
+        math::add(y, -rho, v);
+
+        double _lambda = lambda;
+        lambda = std::sqrt(y.dot());
+        err = std::fabs(lambda - _lambda) / std::fabs(lambda);
+    }
 }
 
 template class DualOperator<double>;

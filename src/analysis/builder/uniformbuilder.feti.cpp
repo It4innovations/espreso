@@ -232,6 +232,7 @@ void UniformBuilderFETIPattern::fillDecomposition(FETIConfiguration &feti, int d
         return;
     }
 
+    inequality.clear();
     switch (feti.ordering) {
     case FETIConfiguration::ORDERING::ORDERED:
         // order: inner, lambdas, dirichlet, inequalities

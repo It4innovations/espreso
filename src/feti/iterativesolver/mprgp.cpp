@@ -8,6 +8,7 @@
 #include "feti/projector/projector.h"
 #include "feti/preconditioner/preconditioner.h"
 #include "feti/dualoperator/dualoperator.h"
+#include "wrappers/mpi/communication.h"
 
 namespace espreso {
 
@@ -146,7 +147,7 @@ template <> void MPRGP<double>::solve(const step::Step &step, IterativeSolverInf
 
     double maxEIG;
     int nIt;
-    F->estimateMaxEigenValue(0.001, 10, maxEIG, nIt);
+    F->estimateMaxEigenValue(maxEIG, nIt, 0.001, 10);
     math::set(x0, 0.);
 
     eslog::info("       - ESTIMATED MAX EIGEN VALUE                             %.3e in %4d steps - \n", maxEIG, nIt);

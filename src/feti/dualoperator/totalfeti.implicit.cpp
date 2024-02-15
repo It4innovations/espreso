@@ -109,7 +109,9 @@ void TotalFETIImplicit<T>::set(const step::Step &step)
 		Btx[di].resize(feti.K[di].nrows);
 		KplusBtx[di].resize(feti.K[di].nrows);
 		math::set(Btx[di], T{0});
+		math::store(Kplus[di], utils::filename(utils::debugDirectory(step) + "/feti/dualop", (std::string("Kplus") + std::to_string(di)).c_str()).c_str());
 	}
+
 	eslog::checkpointln("FETI: SET TOTAL-FETI OPERATOR");
 
 	#pragma omp parallel for
