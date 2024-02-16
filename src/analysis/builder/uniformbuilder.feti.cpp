@@ -130,8 +130,10 @@ UniformBuilderFETIPattern::UniformBuilderFETIPattern(StructuralMechanicsLoadStep
     for (auto disc = info::ecf->structural_mechanics.discretization.cbegin(); disc != info::ecf->structural_mechanics.discretization.cend(); ++disc) {
         if (disc->second == PhysicsConfiguration::DISCRETIZATION::BEM) {
             for (auto n = info::mesh->domainsSurface->nodes->datatarray().cbegin(); n != info::mesh->domainsSurface->nodes->datatarray().cend(); ++n) {
-                for (int d = 0; d < dofs; ++d) {
-                    surface.push_back(*n * dofs + d);
+                for (int m = 0; m < multiplicity; ++m) {
+                    for (int d = 0; d < dofs; ++d) {
+                        surface.push_back(*n * dofs * multiplicity + m * dofs + d);
+                    }
                 }
             }
             break;

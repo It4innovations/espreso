@@ -481,7 +481,7 @@ void HeatTransfer::runBEM(SubKernel::Action action, size_t domain, double *BETI)
         Matrix_Dense<double> D; D.resize(np, np);
         Matrix_Dense<double> M; M.resize(ne, np);
 
-        BEM3dLaplace(np, points, ne, elemNodes, order, V.vals, K.vals, D.vals, M.vals);
+        BEM3DLaplace(np, points, ne, elemNodes, order, V.vals, K.vals, D.vals, M.vals);
 
         double xx = 0;
         for (int r = 0; r < V.nrows; ++r) {

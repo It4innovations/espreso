@@ -8,8 +8,8 @@ namespace espreso {
 
 template <typename T>
 struct RegularizationEmpty {
-	static void set(FETI<T> &feti);
-	static void update(FETI<T> &feti);
+    static void set(FETI<T> &feti);
+    static void update(FETI<T> &feti);
 };
 
 }

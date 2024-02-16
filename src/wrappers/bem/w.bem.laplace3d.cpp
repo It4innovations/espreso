@@ -11,16 +11,16 @@ namespace espreso {
 
 //#define  M_PI  3.1415926535897932
 
-double *qPoints2, *qWeights2;
-double *qPoints3, *qWeights3;
-double *qPoints4, *qWeights4;
-int quadn;
-double *qPoints, *qWeights;
-int quadTrin;
-Point2D *qTriPoints;
-double *qTriWeights;
+static double *qPoints2, *qWeights2;
+static double *qPoints3, *qWeights3;
+static double *qPoints4, *qWeights4;
+static int quadn;
+static double *qPoints, *qWeights;
+static int quadTrin;
+static Point2D *qTriPoints;
+static double *qTriWeights;
 
-double SingleLayerLaplace3d_idPanels(double *us, double *vs) {
+static double SingleLayerLaplace3d_idPanels(double *us, double *vs) {
     int i;
     double u1, u2, u3, v1, v2, v3, J1, J2, J3, Jsq;
     double xy1, xy2, xy3, I, Ii, eta3;
@@ -56,7 +56,7 @@ double SingleLayerLaplace3d_idPanels(double *us, double *vs) {
     return Jsq * I / M_PI / 12.0;
 }
 
-double SingleLayerLaplace3d_commonEdge(double *us, double *vs, double *ws) {
+static double SingleLayerLaplace3d_commonEdge(double *us, double *vs, double *ws) {
     int i, j;
     double u1, u2, u3, v1, v2, v3, w1, w2, w3, J1, J2, J3, J;
     double xy1, xy2, xy3, I, Iij, eta2, eta3, weta2, weta3;
@@ -112,7 +112,7 @@ double SingleLayerLaplace3d_commonEdge(double *us, double *vs, double *ws) {
     return J * I / M_PI / 24.0;
 }
 
-double SingleLayerLaplace3d_commonVertex(double *us, double *vs, double *ws,
+static double SingleLayerLaplace3d_commonVertex(double *us, double *vs, double *ws,
         double *zs) {
     int i, j, k;
     double u1, u2, u3, v1, v2, v3, w1, w2, w3, z1, z2, z3, J1, J2, J3, J;
@@ -165,7 +165,7 @@ double SingleLayerLaplace3d_commonVertex(double *us, double *vs, double *ws,
     return J * I / M_PI / 12.0;
 }
 
-double SingleLayerLaplace3d_disjointPanels(double *As, double *us, double *vs,
+static double SingleLayerLaplace3d_disjointPanels(double *As, double *us, double *vs,
         double *Bs, double *ws, double *zs) {
     int i, j;
     double A1, A2, A3, u1, u2, u3, v1, v2, v3, B1, B2, B3, w1, w2, w3, z1, z2,
@@ -222,7 +222,7 @@ double SingleLayerLaplace3d_disjointPanels(double *As, double *us, double *vs,
     return J * I / M_PI / 4.0;
 }
 
-void DoubleLayerLaplace3d_commonEdge(double *us, double *vs, double *ws,
+static void DoubleLayerLaplace3d_commonEdge(double *us, double *vs, double *ws,
         double *Kij) {
     int i, j;
     double u1, u2, u3, v1, v2, v3, w1, w2, w3, J1, J2, J3, J, JT, n1, n2, n3;
@@ -355,7 +355,7 @@ void DoubleLayerLaplace3d_commonEdge(double *us, double *vs, double *ws,
     Kij[2] = J * I3 / 4.0 / M_PI;
 }
 
-void DoubleLayerLaplace3d_commonVertex(double *us, double *vs, double *ws,
+static void DoubleLayerLaplace3d_commonVertex(double *us, double *vs, double *ws,
         double *zs, double *Kij) {
     int i, j, k;
     double u1, u2, u3, v1, v2, v3, w1, w2, w3, z1, z2, z3;
@@ -443,7 +443,7 @@ void DoubleLayerLaplace3d_commonVertex(double *us, double *vs, double *ws,
     Kij[2] = J * I3 / 4.0 / M_PI;
 }
 
-void DoubleLayerLaplace3d_disjointPanels(double *As, double *us, double *vs,
+static void DoubleLayerLaplace3d_disjointPanels(double *As, double *us, double *vs,
         double *Bs, double *ws, double *zs, double *Kij) {
     int i, j;
     double A1, A2, A3, u1, u2, u3, v1, v2, v3, B1, B2, B3, w1, w2, w3, z1, z2,
@@ -511,7 +511,7 @@ void DoubleLayerLaplace3d_disjointPanels(double *As, double *us, double *vs,
     Kij[2] = J * I3 / M_PI / 4.0;
 }
 
-void BEM3dLaplace(int np, double *points, int ne, int *elemNodes, int order, double *V, double *K, double *D, double *M) {
+void BEM3DLaplace(int np, double *points, int ne, int *elemNodes, int order, double *V, double *K, double *D, double *M) {
     int i, j, k, l, cmnIdxi[2], cmnIdxj[2], cmnIdxSize, remIdxi, remIdxj, idx, tmp;
 
     /*

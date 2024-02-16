@@ -63,6 +63,7 @@ public:
 protected:
     void run(SubKernel::Action action, size_t interval);
     void run(SubKernel::Action action, size_t region, size_t interval);
+    void runBEM(SubKernel::Action action, size_t domain, double *BETI);
 
     template <Element::CODE code> void runElement(SubKernel::Action action, size_t interval);
     template <Element::CODE code> void runBoundary(SubKernel::Action action, size_t region, size_t interval);

@@ -3,13 +3,17 @@
 #include "assembler.hpp"
 
 #include "analysis/assembler/structuralmechanics/element.h"
+#include "analysis/math/matrix_feti.h"
 
 #include "esinfo/ecfinfo.h"
 #include "esinfo/eslog.hpp"
 #include "esinfo/envinfo.h"
 #include "esinfo/meshinfo.h"
+#include "math/math.h"
 #include "mesh/store/nodestore.h"
 #include "mesh/store/boundaryregionstore.h"
+#include "mesh/store/domainsurfacestore.h"
+#include "wrappers/bem/w.bem.h"
 
 #include <numeric>
 #include <algorithm>
@@ -424,6 +428,13 @@ void StructuralMechanics::analyze()
 
 void StructuralMechanics::connect(Matrix_Base<double> *K, Matrix_Base<double> *M, Vector_Base<double> *f, Vector_Base<double> *nf, Vector_Base<double> *dirichlet)
 {
+    Matrix_FETI<double> *KBEM = dynamic_cast<Matrix_FETI<double>*>(K);
+    for (size_t i = 0; i < bem.size(); ++i) { // when BEM, K is FETI matrix
+        if (bem[i]) {
+            BETI[i] = KBEM->domains[i].vals;
+        }
+    }
+
     for(size_t i = 0; i < info::mesh->elements->eintervals.size(); ++i) {
         subkernels[i].Kfiller.activate(i, info::mesh->dimension, subkernels[i].elements, K);
         subkernels[i].Mfiller.activate(i, info::mesh->dimension, subkernels[i].elements, M);
@@ -588,6 +599,28 @@ void StructuralMechanics::run(SubKernel::Action action, size_t region, size_t in
     case static_cast<size_t>(Element::CODE::TRIANGLE6): runBoundary<Element::CODE::TRIANGLE6>(action, region, interval); break;
     case static_cast<size_t>(Element::CODE::SQUARE4  ): runBoundary<Element::CODE::SQUARE4  >(action, region, interval); break;
     case static_cast<size_t>(Element::CODE::SQUARE8  ): runBoundary<Element::CODE::SQUARE8  >(action, region, interval); break;
+    }
+}
+
+void StructuralMechanics::runBEM(SubKernel::Action action, size_t domain, double *BETI)
+{
+    if (action == SubKernel::Action::ASSEMBLE) {
+        int np = info::mesh->domainsSurface->dnodes[domain].size();
+        double *points = &(info::mesh->domainsSurface->coordinates[domain][0].x);
+        int ne = info::mesh->domainsSurface->edistribution[domain + 1] - info::mesh->domainsSurface->edistribution[domain];
+        int *elemNodes = info::mesh->domainsSurface->denodes[domain].data();
+        int order = 10;
+
+        Matrix_Dense<double> K; K.resize(3 * np, 3 * np);
+        BEM3DElasticity(np, points, ne, elemNodes, order, 0.3, 1e9, K.vals);
+
+        math::store(K, "K");
+
+        for (int r = 0, cc = 0; r < K.nrows; ++r) {
+            for (int c = r; c < K.ncols; ++c) {
+                BETI[cc++] = K.vals[r * K.ncols + c];
+            }
+        }
     }
 }
 

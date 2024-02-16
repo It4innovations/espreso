@@ -9,16 +9,16 @@ namespace espreso {
 template <typename T>
 struct RegularizationElasticity {
 
-	static void set(FETI<T> &feti);
-	static void update(FETI<T> &feti);
+    static void set(FETI<T> &feti);
+    static void update(FETI<T> &feti);
 
-	static void getFixPoints(std::vector<esint> &fixPoints, int domain);
+    static void getFixPoints(std::vector<esint> &fixPoints, int domain, bool onSurface = false);
 
 protected:
-	static void set2D(FETI<T> &feti, esint domain);
-	static void set3D(FETI<T> &feti, esint domain);
+    static void set2D(FETI<T> &feti, esint domain);
+    static void set3D(FETI<T> &feti, esint domain, bool onSurface);
 
-	static std::vector<Matrix_Dense<T> > NtNNtN;
+    static std::vector<Matrix_Dense<T> > NtNNtN;
 };
 
 }

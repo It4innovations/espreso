@@ -9,8 +9,8 @@ namespace espreso {
 template <typename T>
 struct RegularizationHeatTransfer {
 
-	static void set(FETI<T> &feti);
-	static void update(FETI<T> &feti);
+    static void set(FETI<T> &feti);
+    static void update(FETI<T> &feti);
 };
 
 }
