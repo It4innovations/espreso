@@ -705,9 +705,9 @@ void BEM3dLaplace(int np, double *points, int ne, int *elemNodes, int order, dou
                 break;
             case 2: // common edge
                 for (k = 0; k < 3; k++) {
-                    if (Find<int>(k, cmnIdxi, 3) == 0)
+                    if (Find<int>(k, cmnIdxi, 2) == 0)
                         remIdxi = k;
-                    if (Find<int>(k, cmnIdxj, 3) == 0)
+                    if (Find<int>(k, cmnIdxj, 2) == 0)
                         remIdxj = k;
                 }
                 for (k = 0; k < 3; k++) {

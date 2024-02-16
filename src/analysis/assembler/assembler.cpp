@@ -29,6 +29,7 @@ Assembler::Assembler(PhysicsConfiguration &settings)
 : settings(settings)
 {
     bem.resize(info::mesh->domains->size);
+    BETI.resize(info::mesh->domains->size);
     for (int t = 0; t < info::env::threads; ++t) {
         for (size_t d = info::mesh->domains->distribution[t]; d < info::mesh->domains->distribution[t + 1]; d++) {
             for (esint i = info::mesh->elements->eintervalsDistribution[d]; i < info::mesh->elements->eintervalsDistribution[d + 1]; ++i) {
@@ -60,7 +61,7 @@ void Assembler::assemble(SubKernel::Action action)
     for (int t = 0; t < info::env::threads; ++t) {
         for (size_t d = info::mesh->domains->distribution[t]; d < info::mesh->domains->distribution[t + 1]; d++) {
             if (bem[d]) {
-                runBEM(action, d);
+                runBEM(action, d, BETI[d]);
             } else {
                 for (esint i = info::mesh->elements->eintervalsDistribution[d]; i < info::mesh->elements->eintervalsDistribution[d + 1]; ++i) {
                     run(action, i);

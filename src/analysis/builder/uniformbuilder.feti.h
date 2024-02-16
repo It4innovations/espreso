@@ -18,13 +18,14 @@ namespace espreso {
 struct UniformBuilderFETIPattern {
 
     struct RegionInfo {
-        esint size = 0, dirichlet = 0;
+        esint size = 0, dirichlet = 0, surface = 0;
         std::vector<esint> row, column; // row, column indices
         std::vector<esint> K, f, indices; // local permutations
     };
 
 protected:
     int dofs;
+    bool BEM;
     Matrix_Type type;
     Matrix_Shape shape;
     std::vector<esint> dirichlet, inequality, surface;
@@ -86,17 +87,28 @@ struct UniformBuilderFETI: UniformBuilderFETIPattern, SparseMatrixBuilder<T> {
         for (size_t d = 0; d < _m->domains.size(); ++d) {
             _m->domains[d].type = _m->type = type;
             _m->domains[d].shape = _m->shape = shape;
-            _m->domains[d].resize(elements[d].size, elements[d].size, elements[d].row.size());
-            _m->domains[d].rows[0] = Indexing::CSR;
-            _m->domains[d].cols[0] = elements[d].column.front() + Indexing::CSR;
-            size_t r = 1;
-            for (size_t c = 1; c < elements[d].column.size(); ++c) {
-                _m->domains[d].cols[c] = elements[d].column[c] + Indexing::CSR;
-                if (elements[d].row[c] != elements[d].row[c - 1]) {
-                    _m->domains[d].rows[r++] = c + Indexing::CSR;
+            if (BEM) {
+                _m->domains[d].resize(elements[d].surface, elements[d].surface, elements[d].surface * (elements[d].surface - 1) / 2 + elements[d].surface);
+                _m->domains[d].rows[0] = Indexing::CSR;
+                for (esint r = 0, cc = 0; r < elements[d].surface; ++r) {
+                    _m->domains[d].rows[r + 1] = _m->domains[d].rows[r] + elements[d].surface - r;
+                    for (esint c = r; c < elements[d].surface; ++c) {
+                        _m->domains[d].cols[cc++] = c + Indexing::CSR;
+                    }
                 }
+            } else {
+                _m->domains[d].resize(elements[d].size, elements[d].size, elements[d].row.size());
+                _m->domains[d].rows[0] = Indexing::CSR;
+                _m->domains[d].cols[0] = elements[d].column.front() + Indexing::CSR;
+                size_t r = 1;
+                for (size_t c = 1; c < elements[d].column.size(); ++c) {
+                    _m->domains[d].cols[c] = elements[d].column[c] + Indexing::CSR;
+                    if (elements[d].row[c] != elements[d].row[c - 1]) {
+                        _m->domains[d].rows[r++] = c + Indexing::CSR;
+                    }
+                }
+                _m->domains[d].rows[r] = elements[d].column.size() + Indexing::CSR;
             }
-            _m->domains[d].rows[r] = elements[d].column.size() + Indexing::CSR;
         }
     }
 

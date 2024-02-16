@@ -12,6 +12,8 @@
 #include "math/wrappers/math.lapack.h"
 #include "wrappers/metis/w.metis.h"
 
+#include "math/math.h"
+
 #include <algorithm>
 #include <numeric>
 #include <random>

@@ -63,6 +63,7 @@ UniformBuilderFETIPattern::UniformBuilderFETIPattern(HeatTransferLoadStepConfigu
             break;
         }
     }
+    BEM = surface.size();
 
     dirichletInfo[0].size = dofs * (info::mesh->nodes->uniqInfo.nhalo + info::mesh->nodes->uniqInfo.size);
     dirichletInfo[0].f = dirichlet; // use the first region to store indices permutation;
@@ -136,6 +137,7 @@ UniformBuilderFETIPattern::UniformBuilderFETIPattern(StructuralMechanicsLoadStep
             break;
         }
     }
+    BEM = surface.size();
 
     dirichletInfo[0].size = dofs * multiplicity * (info::mesh->nodes->uniqInfo.nhalo + info::mesh->nodes->uniqInfo.size);
     dirichletInfo[0].f = dirichlet; // use the first region to store indices permutation;
@@ -201,7 +203,7 @@ void UniformBuilderFETIPattern::fillDecomposition(FETIConfiguration &feti, int d
             tarray<esint>(info::env::threads, distribution),
             tarray<DIndex>(info::mesh->nodes->domains->datatarray().distribution(), dofs));
 
-    if (surface.size()) { // with BEM, TODO: mixed FEM & BEM
+    if (BEM) { // with BEM, TODO: mixed FEM & BEM
         // go through surface
         for (auto i = surface.begin(); i != surface.end(); ++i) {
             auto domains = info::mesh->nodes->domains->begin() + *i / dofs;
@@ -213,6 +215,10 @@ void UniformBuilderFETIPattern::fillDecomposition(FETIConfiguration &feti, int d
                     di->index = elements[*d - decomposition.dbegin].size++;
                 }
             }
+        }
+
+        for (size_t i = 0; i < elements.size(); i++) {
+            elements[i].surface = elements[i].size;
         }
 
         { // go through the rest dofs

@@ -43,7 +43,7 @@ protected:
     void assemble(SubKernel::Action action);
     virtual void run(SubKernel::Action action, size_t interval) =0;
     virtual void run(SubKernel::Action action, size_t region, size_t interval) =0;
-    virtual void runBEM(SubKernel::Action action, size_t domain)
+    virtual void runBEM(SubKernel::Action action, size_t domain, double *BETI)
     {
         eslog::error("implement BEM assembler\n");
     }
@@ -68,6 +68,7 @@ protected:
     bool isBEM(size_t interval);
 
     std::vector<int> bem;
+    std::vector<double*> BETI;
 };
 
 template <typename T>

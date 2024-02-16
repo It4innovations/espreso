@@ -4,7 +4,7 @@
 #include "iterativesolver/pcpg.h"
 #include "projector/projector.h"
 #include "preconditioner/preconditioner.h"
-#include "math/wrappers/math.spsolver.h"
+#include "math/math.h"
 #include "esinfo/eslog.hpp"
 #include "esinfo/systeminfo.h"
 #include "wrappers/mpi/communication.h"
@@ -38,6 +38,11 @@ bool FETI<T>::set(const step::Step &step)
 	for (size_t d = 0; d < K.size(); ++d) {
 		sinfo.R1size = offset[0] = size[2] += R1[d].nrows;
 		sinfo.R2size = offset[1] = size[3] += R2[d].nrows;
+		if (K[d].nrows < x[d].size) { // it is possible when the solver is called with BEM
+		    math::set(x[d], 0.); // set inner DOFs to zero and resize 'f' to correct size
+		    f[d].size = K[d].nrows;
+		    x[d].size = K[d].nrows;
+		}
 	}
 	sinfo.lambdasLocal = lambdas.size;
 	sinfo.lambdasOffset = lambdas.size - lambdas.nhalo;

@@ -3,6 +3,7 @@
 #include "assembler.hpp"
 
 #include "analysis/assembler/heattransfer/element.h"
+#include "analysis/math/matrix_feti.h"
 
 #include "esinfo/ecfinfo.h"
 #include "esinfo/eslog.hpp"
@@ -12,6 +13,8 @@
 #include "mesh/store/boundaryregionstore.h"
 #include "mesh/store/domainsurfacestore.h"
 #include "wrappers/bem/w.bem.h"
+
+#include "math/math.h"
 
 #include <numeric>
 #include <algorithm>
@@ -400,6 +403,13 @@ void HeatTransfer::analyze()
 
 void HeatTransfer::connect(Matrix_Base<double> *K, Matrix_Base<double> *M, Vector_Base<double> *f, Vector_Base<double> *nf, Vector_Base<double> *dirichlet)
 {
+    Matrix_FETI<double> *KBEM = dynamic_cast<Matrix_FETI<double>*>(K);
+    for (size_t i = 0; i < bem.size(); ++i) { // when BEM, K is FETI matrix
+        if (bem[i]) {
+            BETI[i] = KBEM->domains[i].vals;
+        }
+    }
+
     for(size_t i = 0; i < info::mesh->elements->eintervals.size(); ++i) {
         subkernels[i].Kfiller.activate(i, 1, subkernels[i].elements, K);
         subkernels[i].Mfiller.activate(i, 1, subkernels[i].elements, M);
@@ -453,14 +463,14 @@ void HeatTransfer::run(SubKernel::Action action, size_t region, size_t interval)
     }
 }
 
-void HeatTransfer::runBEM(SubKernel::Action action, size_t domain)
+void HeatTransfer::runBEM(SubKernel::Action action, size_t domain, double *BETI)
 {
     if (action == SubKernel::Action::ASSEMBLE) {
         int np = info::mesh->domainsSurface->dnodes[domain].size();
         double *points = &(info::mesh->domainsSurface->coordinates[domain][0].x);
         int ne = info::mesh->domainsSurface->edistribution[domain + 1] - info::mesh->domainsSurface->edistribution[domain];
         int *elemNodes = info::mesh->domainsSurface->denodes[domain].data();
-        int order = 3;
+        int order = 12;
 
         // V: ne * ne;
         // K: ne * np;
@@ -472,6 +482,39 @@ void HeatTransfer::runBEM(SubKernel::Action action, size_t domain)
         Matrix_Dense<double> M; M.resize(ne, np);
 
         BEM3dLaplace(np, points, ne, elemNodes, order, V.vals, K.vals, D.vals, M.vals);
+
+        double xx = 0;
+        for (int r = 0; r < V.nrows; ++r) {
+            for (int c = 0; c < V.ncols; ++c) {
+                xx += std::fabs(V.vals[r * V.ncols + c] - V.vals[c * V.ncols + r]);
+            }
+        }
+        printf("xx: %.15f\n", xx);
+
+        for (int r = 0; r < V.nrows; ++r) {
+            for (int c = r + 1; c < V.ncols; ++c) {
+                double avg = (V.vals[r * V.ncols + c] + V.vals[c * V.ncols + r]) / 2;
+                V.vals[r * V.ncols + c] = V.vals[c * V.ncols + r] = avg;
+            }
+        }
+
+        math::store(K, "K");
+        math::store(M, "M");
+        math::store(V, "V");
+        math::store(D, "D");
+
+        // S = D + (.5 * M + K)^T * (V)^-1 * (.5 * M + K)
+        math::add(K, .5, M);
+        math::copy(M, K);
+        math::lapack::solve(V, K);
+        math::blas::multiply(1., M, K, 1., D, true, false);
+        math::store(D, "S");
+
+        for (int r = 0, cc = 0; r < D.nrows; ++r) {
+            for (int c = r; c < D.ncols; ++c) {
+                BETI[cc++] = D.vals[r * D.ncols + c];
+            }
+        }
     }
 }
 
@@ -523,6 +566,11 @@ void HeatTransfer::getInitialTemperature(Vector_Base<double> *x)
 
 void HeatTransfer::updateSolution(Vector_Base<double> *x)
 {
+    for (size_t i = 0; i < bem.size(); ++i) {
+        if (bem[i]) {
+            // compute internal values;
+        }
+    }
     x->storeTo(Results::temperature->data);
     assemble(SubKernel::SOLUTION);
 }
