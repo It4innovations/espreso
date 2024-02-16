@@ -10,15 +10,15 @@ namespace espreso {
 template <typename T>
 class OrthogonalizedPCPG: public IterativeSolver<T> {
 public:
-	OrthogonalizedPCPG(FETI<T> &feti);
+    OrthogonalizedPCPG(FETI<T> &feti);
 
-	void info();
-	void solve(const step::Step &step, IterativeSolverInfo &info);
+    void info();
+    void solve(const step::Step &step, IterativeSolverInfo &info);
 
-	using IterativeSolver<T>::feti;
-	Vector_Dual<T> l, r, w, y, z, x;
-	Matrix_Dual_Orthogonal<T> pi, Fpi;
-	std::vector<T> yFp, pFp;
+    using IterativeSolver<T>::feti;
+    Vector_Dual<T> l, r, w, y, z, x;
+    Matrix_Dual_Orthogonal<T> pi, Fpi;
+    std::vector<T> yFp, pFp;
 };
 
 }

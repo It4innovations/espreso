@@ -9,14 +9,14 @@ namespace espreso {
 template <typename T>
 class CPG: public IterativeSolver<T> {
 public:
-	CPG(FETI<T> &feti);
+    CPG(FETI<T> &feti);
 
-	void info();
-	void solve(const step::Step &step, IterativeSolverInfo &info);
+    void info();
+    void solve(const step::Step &step, IterativeSolverInfo &info);
 
-	using IterativeSolver<T>::feti;
-	Vector_Dual<T> l, r, w, p;
-	Vector_Dual<T> x, Fp;
+    using IterativeSolver<T>::feti;
+    Vector_Dual<T> l, r, w, p;
+    Vector_Dual<T> x, Fp;
 };
 
 }

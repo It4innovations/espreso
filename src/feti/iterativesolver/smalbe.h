@@ -13,14 +13,14 @@ namespace espreso {
 template <typename T>
 class SMALBE: public IterativeSolver<T> {
 public:
-	SMALBE(FETI<T> &feti);
+    SMALBE(FETI<T> &feti);
 
-	void info();
-	void solve(const step::Step &step, IterativeSolverInfo &info);
+    void info();
+    void solve(const step::Step &step, IterativeSolverInfo &info);
 
-	using IterativeSolver<T>::feti;
-	Vector_Dual<T> b, b_, x_im, bCtmu;
-	Vector_Kernel<T> mu;
+    using IterativeSolver<T>::feti;
+    Vector_Dual<T> b, b_, x_im, bCtmu;
+    Vector_Kernel<T> mu;
 };
 
 }

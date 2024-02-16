@@ -8,16 +8,16 @@ namespace espreso {
 
 template <typename T>
 struct WeightFunction: public Preconditioner<T> {
-	WeightFunction(FETI<T> &feti);
+    WeightFunction(FETI<T> &feti);
 
-	void info();
-	void update(const step::Step &step);
+    void info();
+    void update(const step::Step &step);
 
-	void apply(const Vector_Dual<T> &x, Vector_Dual<T> &y);
+    void apply(const Vector_Dual<T> &x, Vector_Dual<T> &y);
 
 private:
-	using Preconditioner<T>::feti;
-	std::vector<Vector_Dense<T> > Btx;
+    using Preconditioner<T>::feti;
+    std::vector<Vector_Dense<T> > Btx;
 };
 
 }

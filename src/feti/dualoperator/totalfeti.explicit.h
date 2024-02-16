@@ -22,30 +22,30 @@ namespace espreso {
 template <typename T>
 class TotalFETIExplicit: public DualOperator<T> {
 public:
-	TotalFETIExplicit(FETI<T> &feti);
-	~TotalFETIExplicit();
+    TotalFETIExplicit(FETI<T> &feti);
+    ~TotalFETIExplicit();
 
-	void info();
-	void set(const step::Step &step);
-	void update(const step::Step &step);
+    void info();
+    void set(const step::Step &step);
+    void update(const step::Step &step);
 
-	// y = F * x
-	void apply(const Vector_Dual<T> &x, Vector_Dual<T> &y);
-	// y = K+(f - Bt * x)
-	void toPrimal(const Vector_Dual<T> &x, std::vector<Vector_Dense<T> > &y);
+    // y = F * x
+    void apply(const Vector_Dual<T> &x, Vector_Dual<T> &y);
+    // y = K+(f - Bt * x)
+    void toPrimal(const Vector_Dual<T> &x, std::vector<Vector_Dense<T> > &y);
 
 protected:
-	void print(const step::Step &step);
+    void print(const step::Step &step);
 
-	using DualOperator<T>::feti;
-	using DualOperator<T>::d;
+    using DualOperator<T>::feti;
+    using DualOperator<T>::d;
 
-	std::vector<Matrix_CSR<T> > Kplus;
-	std::vector<Vector_Dense<T> > Btx, KplusBtx;
-	std::vector<DirectSparseSolver<T> > KSolver;
+    std::vector<Matrix_CSR<T> > Kplus;
+    std::vector<Vector_Dense<T> > Btx, KplusBtx;
+    std::vector<DirectSparseSolver<T> > KSolver;
 
-	std::vector<Matrix_Dense<T> > F;
-	std::vector<Vector_Dense<T> > in, out;
+    std::vector<Matrix_Dense<T> > F;
+    std::vector<Vector_Dense<T> > in, out;
 };
 
 }

@@ -24,70 +24,70 @@ namespace espreso {
 
 template <typename T>
 struct TFETIOrthogonalSymmetric: public Projector<T> {
-	TFETIOrthogonalSymmetric(FETI<T> &feti);
-	~TFETIOrthogonalSymmetric();
+    TFETIOrthogonalSymmetric(FETI<T> &feti);
+    ~TFETIOrthogonalSymmetric();
 
-	void info();
-	void update(const step::Step &step);
+    void info();
+    void update(const step::Step &step);
 
-	void apply(const Vector_Dual<T> &x, Vector_Dual<T> &y);
-	void applyGtInvGGt(const Vector_Kernel<T> &x, Vector_Dual<T> &y);
-	void applyRInvGGtG(const Vector_Dual<T> &x, std::vector<Vector_Dense<T> > &y);
+    void apply(const Vector_Dual<T> &x, Vector_Dual<T> &y);
+    void applyGtInvGGt(const Vector_Kernel<T> &x, Vector_Dual<T> &y);
+    void applyRInvGGtG(const Vector_Dual<T> &x, std::vector<Vector_Dense<T> > &y);
 
 protected:
-	void _computeDualGraph();
-	void _setG();
-	void _setGGt();
-	void _updateG();
-	void _updateGGt();
+    void _computeDualGraph();
+    void _setG();
+    void _setGGt();
+    void _updateG();
+    void _updateGGt();
 
-	void _applyG(const Vector_Dual<T> &in, Vector_Kernel<T> &out);
-	void _applyInvGGt(const Vector_Kernel<T> &in, Vector_Dense<T> &out);
-	void _applyGt(const Vector_Dense<T> &in, const T &alpha, Vector_Dual<T> &out);
-	void _applyR(const Vector_Dense<T> &in, std::vector<Vector_Dense<T> > &out);
+    void _applyG(const Vector_Dual<T> &in, Vector_Kernel<T> &out);
+    void _applyInvGGt(const Vector_Kernel<T> &in, Vector_Dense<T> &out);
+    void _applyGt(const Vector_Dense<T> &in, const T &alpha, Vector_Dual<T> &out);
+    void _applyR(const Vector_Dense<T> &in, std::vector<Vector_Dense<T> > &out);
 
-	void _print(const step::Step &step);
+    void _print(const step::Step &step);
 
-	using Projector<T>::feti;
-	using Projector<T>::e;
+    using Projector<T>::feti;
+    using Projector<T>::e;
 
-	Matrix_CSR<T> G, Gt, GGt;
-	Matrix_Dense<T> invGGt;
+    Matrix_CSR<T> G, Gt, GGt;
+    Matrix_Dense<T> invGGt;
 
-	Vector_Kernel<T> Gx; // we need whole vector
-	Vector_Dense<T> iGGtGx; // only local part is sufficient
+    Vector_Kernel<T> Gx; // we need whole vector
+    Vector_Dense<T> iGGtGx; // only local part is sufficient
 
-	size_t domainOffset;
-	size_t GGtDataOffset, GGtDataSize, GGtNnz;
+    size_t domainOffset;
+    size_t GGtDataOffset, GGtDataSize, GGtNnz;
 
-	struct DomainInfo {
-		esint domain, koffset, kernels;
+    struct DomainInfo {
+        esint domain, koffset, kernels;
 
-		DomainInfo() = default;
-		DomainInfo(esint domain, esint koffset, esint kernels): domain(domain), koffset(koffset), kernels(kernels) {}
+        DomainInfo() = default;
+        DomainInfo(esint domain, esint koffset, esint kernels): domain(domain), koffset(koffset), kernels(kernels) {}
 
-		bool operator< (const DomainInfo &other) const { return domain <  other.domain; }
-		bool operator<=(const DomainInfo &other) const { return domain <= other.domain; }
-		bool operator!=(const DomainInfo &other) const { return domain != other.domain; }
-	};
-	struct NeighborDomainInfo: DomainInfo {
-		struct CIndices { esint offset, count; };
-		std::vector<CIndices> cindices;
-		esint ncols;
+        bool operator< (const DomainInfo &other) const { return domain <  other.domain; }
+        bool operator<=(const DomainInfo &other) const { return domain <= other.domain; }
+        bool operator!=(const DomainInfo &other) const { return domain != other.domain; }
+    };
+    struct NeighborDomainInfo: DomainInfo {
+        struct CIndices { esint offset, count; };
+        std::vector<CIndices> cindices;
+        esint ncols;
 
-		NeighborDomainInfo() = default;
+        NeighborDomainInfo() = default;
 
-		NeighborDomainInfo& operator=(const DomainInfo &other) {
-			this->domain = other.domain;
-			this->koffset = other.koffset;
-			this->kernels = other.kernels;
-			return *this;
-		}
-	};
-	std::vector<DomainInfo> dinfo;
-	std::vector<std::vector<DomainInfo> > dualGraph;
-	std::map<esint, NeighborDomainInfo> upinfo;
-	std::vector<std::map<esint, NeighborDomainInfo> > downinfo;
+        NeighborDomainInfo& operator=(const DomainInfo &other) {
+            this->domain = other.domain;
+            this->koffset = other.koffset;
+            this->kernels = other.kernels;
+            return *this;
+        }
+    };
+    std::vector<DomainInfo> dinfo;
+    std::vector<std::vector<DomainInfo> > dualGraph;
+    std::map<esint, NeighborDomainInfo> upinfo;
+    std::vector<std::map<esint, NeighborDomainInfo> > downinfo;
 };
 
 }
