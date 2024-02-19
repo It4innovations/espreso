@@ -4,6 +4,7 @@
 
 #include "gpu/gpu_spblas.h"
 #include "w.cuda.gpu_management.h"
+#include "basis/utilities/utils.h"
 
 #include <cusparse.h>
 #include <complex>
@@ -129,15 +130,30 @@ namespace spblas {
             if constexpr(std::is_same_v<T, std::complex<double>>) return cusparseZcsrsm2_solve(handle, algo, transA, transB, m, nrhs, nnz, (const U*)alpha, descrA, (const U*)csrSortedValA, csrSortedRowPtrA, csrSortedColIndA, (U*)B, ldb, info, policy, pBuffer);
         }
 
+        template<typename T>
         static cusparseOperation_t _char_to_operation(char c)
         {
-            switch(c)
+            if(utils::is_real<T>())
             {
-                case 'N': return CUSPARSE_OPERATION_NON_TRANSPOSE;
-                case 'T': return CUSPARSE_OPERATION_TRANSPOSE;
-                case 'H': return CUSPARSE_OPERATION_CONJUGATE_TRANSPOSE;
-                default: eslog::error("invalid operation '%c'\n", c);
+                switch(c)
+                {
+                    case 'N': return CUSPARSE_OPERATION_NON_TRANSPOSE;
+                    case 'T': return CUSPARSE_OPERATION_TRANSPOSE;
+                    case 'H': return CUSPARSE_OPERATION_TRANSPOSE;
+                    default: eslog::error("invalid operation '%c'\n", c);
+                }
             }
+            if(utils::is_complex<T>())
+            {
+                switch(c)
+                {
+                    case 'N': return CUSPARSE_OPERATION_NON_TRANSPOSE;
+                    case 'T': return CUSPARSE_OPERATION_TRANSPOSE;
+                    case 'H': return CUSPARSE_OPERATION_CONJUGATE_TRANSPOSE;
+                    default: eslog::error("invalid operation '%c'\n", c);
+                }
+            }
+            eslog::error("invalid type\n");
         }
     }
 
@@ -182,7 +198,7 @@ namespace spblas {
             ret.nrows = ncols;
             ret.ncols = nrows;
             ret.ld = ld;
-            ret.order = mgm::change_order(order);
+            ret.order = mgm::order_change(order);
             return ret;
         }
     };
@@ -212,6 +228,8 @@ namespace spblas {
 
     void handle_destroy(handle & h)
     {
+        if(h.get() == nullptr) return;
+
         CHECK(cusparseDestroy(h->h));
         h.reset();
     }
@@ -253,6 +271,8 @@ namespace spblas {
 
     void descr_matrix_csr_destroy(descr_matrix_csr & descr)
     {
+        if(descr.get() == nullptr) return;
+
         CHECK(cusparseDestroySpMat(descr->d_new));
         CHECK(cusparseDestroyMatDescr(descr->d_leg));
         descr.reset();
@@ -285,6 +305,8 @@ namespace spblas {
 
     void descr_matrix_dense_destroy(descr_matrix_dense & descr)
     {
+        if(descr.get() == nullptr) return;
+
         CHECK(cusparseDestroyDnMat(descr->d_new));
         CHECK(cusparseDestroyDnMat(descr->d_new_complementary));
         descr.reset();
@@ -316,6 +338,8 @@ namespace spblas {
 
     void descr_vector_dense_destroy(descr_vector_dense & descr)
     {
+        if(descr.get() == nullptr) return;
+
         CHECK(cusparseDestroyDnVec(descr->d_new));
         descr.reset();
     }
@@ -328,6 +352,8 @@ namespace spblas {
 
     void descr_sparse_trsv_destroy(descr_sparse_trsv & descr)
     {
+        if(descr.get() == nullptr) return;
+
         CHECK(cusparseDestroyCsrsv2Info(descr->i));
         descr.reset();
     }
@@ -340,6 +366,8 @@ namespace spblas {
 
     void descr_sparse_trsm_destroy(descr_sparse_trsm & descr)
     {
+        if(descr.get() == nullptr) return;
+
         CHECK(cusparseDestroyCsrsm2Info(descr->i));
         descr.reset();
     }
@@ -356,12 +384,8 @@ namespace spblas {
         {
             descr_matrix_dense descr_dense_complementary = std::make_shared<_descr_matrix_dense>(dense->get_complementary());
             sparse_to_dense<T,I>(h, 'N', sparse, descr_dense_complementary, buffersize, buffer, stage);
-            return;
         }
-        else
-        {
-            eslog::error("transpose '%c' not supported\n", transpose);
-        }
+        else eslog::error("transpose '%c' not supported\n", transpose);
     }
 
     template<typename T, typename I>
@@ -370,10 +394,10 @@ namespace spblas {
         cusparseSolvePolicy_t policy = CUSPARSE_SOLVE_POLICY_USE_LEVEL;
         int bfsz = buffersize;
         T one = 1.0;
-        if(stage == 'B') CHECK((_my_sparse_trsv_buffersize<T,I>)(h->h, _char_to_operation(transpose), matrix->nrows, matrix->nnz,       matrix->d_leg, (T*)matrix->vals, (I*)matrix->rowptrs, (I*)matrix->colidxs, descr_trsv->i, &bfsz));
-        if(stage == 'P') CHECK((_my_sparse_trsv_analysis<T,I>)  (h->h, _char_to_operation(transpose), matrix->nrows, matrix->nnz,       matrix->d_leg, (T*)matrix->vals, (I*)matrix->rowptrs, (I*)matrix->colidxs, descr_trsv->i, policy, buffer));
+        if(stage == 'B') CHECK((_my_sparse_trsv_buffersize<T,I>)(h->h, _char_to_operation<T>(transpose), matrix->nrows, matrix->nnz,       matrix->d_leg, (T*)matrix->vals, (I*)matrix->rowptrs, (I*)matrix->colidxs, descr_trsv->i, &bfsz));
+        if(stage == 'P') CHECK((_my_sparse_trsv_analysis<T,I>)  (h->h, _char_to_operation<T>(transpose), matrix->nrows, matrix->nnz,       matrix->d_leg, (T*)matrix->vals, (I*)matrix->rowptrs, (I*)matrix->colidxs, descr_trsv->i, policy, buffer));
         // if(stage == 'U') ;
-        if(stage == 'C') CHECK((_my_sparse_trsv_solve<T,I>)     (h->h, _char_to_operation(transpose), matrix->nrows, matrix->nnz, &one, matrix->d_leg, (T*)matrix->vals, (I*)matrix->rowptrs, (I*)matrix->colidxs, descr_trsv->i, (T*)rhs->vals, (T*)sol->vals, policy, buffer));
+        if(stage == 'C') CHECK((_my_sparse_trsv_solve<T,I>)     (h->h, _char_to_operation<T>(transpose), matrix->nrows, matrix->nnz, &one, matrix->d_leg, (T*)matrix->vals, (I*)matrix->rowptrs, (I*)matrix->colidxs, descr_trsv->i, (T*)rhs->vals, (T*)sol->vals, policy, buffer));
         buffersize = bfsz;
     }
 
@@ -392,17 +416,17 @@ namespace spblas {
                     int algo = 1;
                     cusparseSolvePolicy_t policy = CUSPARSE_SOLVE_POLICY_USE_LEVEL;
                     I nrhs = (transpose_rhs == 'T' ? sol->nrows : sol->ncols);
-                    if(stage == 'B') CHECK((_my_sparse_trsm_buffersize<T,I>)(h->h, algo, _char_to_operation(transpose_mat), _char_to_operation(transpose_rhs), matrix->nrows, nrhs, matrix->nnz, &one, matrix->d_leg, (T*)matrix->vals, (I*)matrix->rowptrs, (I*)matrix->colidxs, (T*)rhs->vals, rhs->ld, descr_trsm->i, policy, &buffersize));
-                    if(stage == 'P') CHECK((_my_sparse_trsm_analysis<T,I>)  (h->h, algo, _char_to_operation(transpose_mat), _char_to_operation(transpose_rhs), matrix->nrows, nrhs, matrix->nnz, &one, matrix->d_leg, (T*)matrix->vals, (I*)matrix->rowptrs, (I*)matrix->colidxs, (T*)rhs->vals, rhs->ld, descr_trsm->i, policy, buffer));
+                    if(stage == 'B') CHECK((_my_sparse_trsm_buffersize<T,I>)(h->h, algo, _char_to_operation<T>(transpose_mat), _char_to_operation<T>(transpose_rhs), matrix->nrows, nrhs, matrix->nnz, &one, matrix->d_leg, (T*)matrix->vals, (I*)matrix->rowptrs, (I*)matrix->colidxs, (T*)rhs->vals, rhs->ld, descr_trsm->i, policy, &buffersize));
+                    if(stage == 'P') CHECK((_my_sparse_trsm_analysis<T,I>)  (h->h, algo, _char_to_operation<T>(transpose_mat), _char_to_operation<T>(transpose_rhs), matrix->nrows, nrhs, matrix->nnz, &one, matrix->d_leg, (T*)matrix->vals, (I*)matrix->rowptrs, (I*)matrix->colidxs, (T*)rhs->vals, rhs->ld, descr_trsm->i, policy, buffer));
                     // if(stage == 'U') ;
-                    if(stage == 'C') CHECK((_my_sparse_trsm_solve<T,I>)     (h->h, algo, _char_to_operation(transpose_mat), _char_to_operation(transpose_rhs), matrix->nrows, nrhs, matrix->nnz, &one, matrix->d_leg, (T*)matrix->vals, (I*)matrix->rowptrs, (I*)matrix->colidxs, (T*)rhs->vals, rhs->ld, descr_trsm->i, policy, buffer));
+                    if(stage == 'C') CHECK((_my_sparse_trsm_solve<T,I>)     (h->h, algo, _char_to_operation<T>(transpose_mat), _char_to_operation<T>(transpose_rhs), matrix->nrows, nrhs, matrix->nnz, &one, matrix->d_leg, (T*)matrix->vals, (I*)matrix->rowptrs, (I*)matrix->colidxs, (T*)rhs->vals, rhs->ld, descr_trsm->i, policy, buffer));
                     if(stage == 'C') CHECK(cudaMemcpy2DAsync(sol->vals, sol->ld * sizeof(T), rhs->vals, rhs->ld * sizeof(T), sol->nrows * sizeof(T), sol->ncols, cudaMemcpyDeviceToDevice, h->get_stream()));
                 }
                 else if(rhs->order == 'R')
                 {
                     descr_matrix_dense descr_rhs_compl = std::make_shared<_descr_matrix_dense>(rhs->get_complementary());
                     descr_matrix_dense descr_sol_compl = std::make_shared<_descr_matrix_dense>(sol->get_complementary());
-                    char transpose_compl = mgm::change_operation_array_transpose(transpose_rhs);
+                    char transpose_compl = mgm::operation_combine(transpose_rhs, 'T');
                     trsm<T,I>(h, transpose_mat, transpose_compl, transpose_compl, matrix, descr_rhs_compl, descr_sol_compl, descr_trsm, buffersize, buffer, stage);
                 }
                 else
@@ -418,7 +442,7 @@ namespace spblas {
         else
         {
             descr_matrix_dense descr_rhs_compl = std::make_shared<_descr_matrix_dense>(rhs->get_complementary());
-            char transpose_rhs_compl = mgm::change_operation_array_transpose(transpose_rhs);
+            char transpose_rhs_compl = mgm::operation_combine(transpose_rhs, 'T');
             trsm<T,I>(h, transpose_mat, transpose_rhs_compl, transpose_sol, matrix, descr_rhs_compl, sol, descr_trsm, buffersize, buffer, stage);
         }
     }
@@ -428,8 +452,8 @@ namespace spblas {
     {
         T one = 1.0;
         T zero = 0.0;
-        if(stage == 'B') CHECK(cusparseSpMV_bufferSize(h->h, _char_to_operation(transpose), &one, A->d_new, x->d_new, &zero, y->d_new, _sparse_data_type<T>(), CUSPARSE_SPMV_ALG_DEFAULT, &buffersize));
-        if(stage == 'C') CHECK(cusparseSpMV           (h->h, _char_to_operation(transpose), &one, A->d_new, x->d_new, &zero, y->d_new, _sparse_data_type<T>(), CUSPARSE_SPMV_ALG_DEFAULT, buffer));
+        if(stage == 'B') CHECK(cusparseSpMV_bufferSize(h->h, _char_to_operation<T>(transpose), &one, A->d_new, x->d_new, &zero, y->d_new, _sparse_data_type<T>(), CUSPARSE_SPMV_ALG_DEFAULT, &buffersize));
+        if(stage == 'C') CHECK(cusparseSpMV           (h->h, _char_to_operation<T>(transpose), &one, A->d_new, x->d_new, &zero, y->d_new, _sparse_data_type<T>(), CUSPARSE_SPMV_ALG_DEFAULT, buffer));
     }
 
     template<typename T, typename I>
@@ -437,43 +461,10 @@ namespace spblas {
     {
         T zero = 0.0;
         T one = 1.0;
-        if(stage == 'B') CHECK(cusparseSpMM_bufferSize(h->h, _char_to_operation(transpose_A), _char_to_operation(transpose_B), &one, A->d_new, B->d_new, &zero, C->d_new, _sparse_data_type<T>(), CUSPARSE_SPMM_ALG_DEFAULT, &buffersize));
-        if(stage == 'P') CHECK(cusparseSpMM_preprocess(h->h, _char_to_operation(transpose_A), _char_to_operation(transpose_B), &one, A->d_new, B->d_new, &zero, C->d_new, _sparse_data_type<T>(), CUSPARSE_SPMM_ALG_DEFAULT, buffer));
-        if(stage == 'C') CHECK(cusparseSpMM           (h->h, _char_to_operation(transpose_A), _char_to_operation(transpose_B), &one, A->d_new, B->d_new, &zero, C->d_new, _sparse_data_type<T>(), CUSPARSE_SPMM_ALG_DEFAULT, buffer));
+        if(stage == 'B') CHECK(cusparseSpMM_bufferSize(h->h, _char_to_operation<T>(transpose_A), _char_to_operation<T>(transpose_B), &one, A->d_new, B->d_new, &zero, C->d_new, _sparse_data_type<T>(), CUSPARSE_SPMM_ALG_DEFAULT, &buffersize));
+        if(stage == 'P') CHECK(cusparseSpMM_preprocess(h->h, _char_to_operation<T>(transpose_A), _char_to_operation<T>(transpose_B), &one, A->d_new, B->d_new, &zero, C->d_new, _sparse_data_type<T>(), CUSPARSE_SPMM_ALG_DEFAULT, buffer));
+        if(stage == 'C') CHECK(cusparseSpMM           (h->h, _char_to_operation<T>(transpose_A), _char_to_operation<T>(transpose_B), &one, A->d_new, B->d_new, &zero, C->d_new, _sparse_data_type<T>(), CUSPARSE_SPMM_ALG_DEFAULT, buffer));
     }
-
-
-
-    #define INSTANTIATE_T_I_ADEVICE(T,I,Adevice) \
-    template void descr_matrix_csr_link_data<T,I,Adevice>(descr_matrix_csr & descr, Matrix_CSR<T,I,Adevice> & matrix); \
-    template void descr_matrix_dense_link_data<T,I,Adevice>(descr_matrix_dense & descr, Matrix_Dense<T,I,Adevice> & matrix); \
-    template void descr_vector_dense_link_data<T,I,Adevice>(descr_vector_dense & descr, Vector_Dense<T,I,Adevice> & vector); \
-    template void descr_vector_dense_link_data<T,I,Adevice>(descr_vector_dense & descr, Matrix_Dense<T,I,Adevice> & matrix, I colidx = 0);
-
-        #define INSTANTIATE_T_I(T,I) \
-        template void descr_matrix_csr_create<T,I>(descr_matrix_csr & descr, I nrows, I ncols, I nnz, char symmetry); \
-        template void descr_matrix_dense_create<T,I>(descr_matrix_dense & descr, I nrows, I ncols, I ld, char order); \
-        template void descr_vector_dense_create<T,I>(descr_vector_dense & descr, I size); \
-        template void sparse_to_dense<T,I>(handle & h, char transpose, descr_matrix_csr & sparse, descr_matrix_dense & dense, size_t & buffersize, void * buffer, char stage); \
-        template void trsv<T,I>(handle & h, char transpose, descr_matrix_csr & matrix, descr_vector_dense & rhs, descr_vector_dense & sol, descr_sparse_trsv & descr_trsv, size_t & buffersize, void * buffer, char stage); \
-        template void trsm<T,I>(handle & h, char transpose_mat, char transpose_rhs, char transpose_sol, descr_matrix_csr & matrix, descr_matrix_dense & rhs, descr_matrix_dense & sol, descr_sparse_trsm & descr_trsm, size_t & buffersize, void * buffer, char stage); \
-        template void mv<T,I>(handle & h, char transpose, descr_matrix_csr & A, descr_vector_dense & x, descr_vector_dense & y, size_t & buffersize, void * buffer, char stage); \
-        template void mm<T,I>(handle & h, char transpose_A, char transpose_B, descr_matrix_csr & A, descr_matrix_dense & B, descr_matrix_dense & C, size_t & buffersize, void * buffer, char stage); \
-        INSTANTIATE_T_I_ADEVICE(T, I, mgm::Ad) \
-        INSTANTIATE_T_I_ADEVICE(T, I, cbmba_d)
-
-            #define INSTANTIATE_T(T) \
-            INSTANTIATE_T_I(T, int32_t) \
-            /* INSTANTIATE_T_I(T, int64_t) */
-
-                // INSTANTIATE_T(float)
-                INSTANTIATE_T(double)
-                // INSTANTIATE_T(std::complex<float>)
-                // INSTANTIATE_T(std::complex<double>)
-
-            #undef INSTANTIATE_T
-        #undef INSTANTIATE_T_I
-    #undef INSTANTIATE_T_I_ADEVICE
 
 }
 }
@@ -488,6 +479,8 @@ namespace spblas {
 
 #undef MY_COMPILER_GCC
 #undef MY_COMPILER_CLANG
+
+#include "gpu/gpu_spblas_inst.hpp"
 
 #endif
 #endif

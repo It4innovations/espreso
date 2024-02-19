@@ -71,6 +71,15 @@ public:
         clear(_allocated);
     }
 
+    void clear()
+    {
+        clear(_allocated);
+        this->nrows = 0;
+        this->ncols = 0;
+        this->nnz = 0;
+        this->vals = nullptr;
+    }
+
     _Matrix_Dense<T, I>& allocated()
     {
         return _allocated;
@@ -112,6 +121,17 @@ public:
     I get_ld() const
     {
         return _allocated.ncols;
+    }
+
+    void shallowCopy(const Matrix_Dense &other)
+    {
+        if constexpr(!A::always_equal) if(this->ator != other.ator) eslog::error("not implemented for unequal allocators\n");
+        type = other.type;
+        shape = other.shape;
+        submatrix[0] = other.submatrix[0];
+        submatrix[1] = other.submatrix[1];
+        _Matrix_Dense<T, I>::operator=(other);
+        _allocated.ncols = other.get_ld();
     }
 
     static size_t memoryRequirement(I nrows, I ncols, I ld)

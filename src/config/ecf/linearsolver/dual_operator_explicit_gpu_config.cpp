@@ -31,19 +31,19 @@ DualOperatorExplicitGpuConfig::DualOperatorExplicitGpuConfig()
 			.addoption(ECFOption().setname("SEQ_CONTINUE").setdescription("Sequential submitting, asynchronous execution on gpu."))
 			.addoption(ECFOption().setname("SEQ_WAIT").setdescription("Sequential submitting, synchronous gpu execution.")));
 
-	trsm1_factor_storage = MATRIX_STORAGE::CSR;
+	trsm1_factor_storage = MATRIX_STORAGE::SPARSE;
 	REGISTER(trsm1_factor_storage, ECFMetaData()
 			.setdescription({ "Storage of the factor in the first trsm operation." })
 			.setdatatype({ ECFDataType::OPTION })
-			.addoption(ECFOption().setname("CSR").setdescription("CSR."))
-			.addoption(ECFOption().setname("DENSE_ROW_MAJOR").setdescription("Dense row-major.")));
+			.addoption(ECFOption().setname("SPARSE").setdescription("Sparse in CSR format."))
+			.addoption(ECFOption().setname("DENSE").setdescription("Dense in row-major order.")));
 
-	trsm2_factor_storage = MATRIX_STORAGE::CSR;
+	trsm2_factor_storage = MATRIX_STORAGE::SPARSE;
 	REGISTER(trsm2_factor_storage, ECFMetaData()
 			.setdescription({ "Storage of the factor in the second trsm operation." })
 			.setdatatype({ ECFDataType::OPTION })
-			.addoption(ECFOption().setname("CSR").setdescription("CSR."))
-			.addoption(ECFOption().setname("DENSE_ROW_MAJOR").setdescription("Dense row-major.")));
+			.addoption(ECFOption().setname("SPARSE").setdescription("Sparse in CSR format."))
+			.addoption(ECFOption().setname("DENSE").setdescription("Dense in row-major order.")));
 
 	trsm1_solve_type = TRSM1_SOLVE_TYPE::LHH;
 	REGISTER(trsm1_solve_type, ECFMetaData()
@@ -70,8 +70,8 @@ DualOperatorExplicitGpuConfig::DualOperatorExplicitGpuConfig()
 	REGISTER(path_if_hermitian, ECFMetaData()
 			.setdescription({ "Code path if the system matrix is hermitian or symmetric." })
 			.setdatatype({ ECFDataType::OPTION })
-			.addoption(ECFOption().setname("SECOND_TRSM").setdescription("Solve LX=Y, solve UY=Z, sp-dn multiply F=B*Z."))
-			.addoption(ECFOption().setname("HERK").setdescription("Solve LX=Y, dn-dn multiply F=Yt*Y.")));
+			.addoption(ECFOption().setname("TRSM").setdescription("Solve LY=x, solve UZ=Y, sp-dn multiply F=B*Z."))
+			.addoption(ECFOption().setname("HERK").setdescription("Solve LY=x, dn-dn multiply F=Yt*Y.")));
 
 	queue_count = QUEUE_COUNT::PER_THREAD;
 	REGISTER(queue_count, ECFMetaData()

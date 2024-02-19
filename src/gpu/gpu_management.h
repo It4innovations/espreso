@@ -52,11 +52,11 @@ namespace mgm {
 
     void submit_host_function(queue & q, const std::function<void(void)> & f);
 
-    template<typename T, typename I>
-    void copy_submit_h2d(queue & q, T * dst, T const * src, I num_elements);
+    template<typename T>
+    void copy_submit_h2d(queue & q, T * dst, T const * src, size_t num_elements);
 
-    template<typename T, typename I>
-    void copy_submit_d2h(queue & q, T * dst, T const * src, I num_elements);
+    template<typename T>
+    void copy_submit_d2h(queue & q, T * dst, T const * src, size_t num_elements);
 
     template<typename T, typename I, typename Ao, typename Ai>
     void copy_submit_h2d(queue & q, Vector_Dense<T,I,Ao> & output, const Vector_Dense<T,I,Ai> & input);
@@ -78,34 +78,39 @@ namespace mgm {
 
     void memset_submit(queue & q, void * ptr, size_t num_bytes, char val);
 
-    inline char change_operation_array_transpose(char op)
+    inline char operation_combine(char op1, char op2)
     {
-        switch(op)
-        {
-            case 'N': return 'T';
-            case 'T': return 'N';
-            case 'C': return 'H';
-            case 'H': return 'C';
-            default: return '_';
-        }
+        bool trans1 = (op1 == 'T' || op1 == 'H');
+        bool trans2 = (op2 == 'T' || op2 == 'H');
+        bool conj1 = (op1 == 'C' || op1 == 'H');
+        bool conj2 = (op2 == 'C' || op2 == 'H');
+        bool trans = (trans1 != trans2);
+        bool conj = (conj1 != conj2);
+        if(!trans && !conj) return 'N';
+        if(!trans &&  conj) return 'C';
+        if( trans && !conj) return 'T';
+        if( trans &&  conj) return 'H';
+        return '_';
     }
 
-    inline char change_operation_conj_transpose(char op)
-    {
-        switch(op)
-        {
-            case 'N': return 'H';
-            case 'T': return 'C';
-            case 'C': return 'T';
-            case 'H': return 'N';
-            default: return '_';
-        }
-    }
-
-    inline char change_order(char order)
+    inline char order_change(char order)
     {
         if(order == 'R') return 'C';
         if(order == 'C') return 'R';
+        return '_';
+    }
+
+    inline char side_change(char side)
+    {
+        if(side == 'L') return 'R';
+        if(side == 'R') return 'L';
+        return '_';
+    }
+
+    inline char fill_change(char fill)
+    {
+        if(fill == 'U') return 'L';
+        if(fill == 'L') return 'U';
         return '_';
     }
 

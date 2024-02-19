@@ -24,16 +24,16 @@ namespace dnblas {
     void buffer_unset(handle & h);
 
     template<typename T, typename I>
-    void trsv(handle & h, char fill, char transpose, I n, I ld, T * matrix, T * rhs_sol);
+    void trsm(handle & h, char side, I n, I nrhs, T * A, I ld_A, char order_A, char op_A, char fill_A, T * X, I ld_X, char order_X, char op_X);
 
     template<typename T, typename I>
-    void trsm(handle & h, char side, char fill, char transpose, I nrows_X, I ncols_X, T * A, I ld_A, T * rhs_sol, I ld_X);
+    void herk(handle & h, I n, I k, T * A, I ld_A, char order_A, char op_A, T * C, I ld_C, char order_C, char fill_C);
 
     template<typename T, typename I>
-    void herk(handle & h, char out_fill, char transpose, I n, I k, T * A, I ld_A, T * C, I ld_C);
-    
+    void hemv(handle & h, I n, T * A, I ld_A, char order_A, char op_A, char fill_A, T * x, T * y);
+
     template<typename T, typename I>
-    void hemv(handle & h, char fill, I n, T * A, I ld_A, T * vec_in, T * vec_out);
+    void gemv(handle & h, I m, I n, T * A, I ld_A, char order_A, char op_A, T * x, T * y);
 
 }
 }

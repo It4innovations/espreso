@@ -15,8 +15,8 @@ struct DualOperatorExplicitGpuConfig: public ECFDescription {
     };
 
     enum class MATRIX_STORAGE {
-        CSR,
-        DENSE_ROW_MAJOR
+        SPARSE,
+        DENSE
     };
 
     enum class TRSM1_SOLVE_TYPE {
@@ -35,7 +35,7 @@ struct DualOperatorExplicitGpuConfig: public ECFDescription {
     };
 
     enum class PATH_IF_HERMITIAN {
-        SECOND_TRSM,
+        TRSM,
         HERK
     };
 

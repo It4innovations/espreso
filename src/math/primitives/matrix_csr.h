@@ -79,6 +79,17 @@ public:
         clear(_allocated);
     }
 
+    void clear()
+    {
+        clear(_allocated);
+        this->nrows = 0;
+        this->ncols = 0;
+        this->nnz = 0;
+        this->rows = nullptr;
+        this->cols = nullptr;
+        this->vals = nullptr;
+    }
+
     void resize(I nrows, I ncols, I nnz)
     {
         realloc(_allocated, nrows, ncols, nnz);
