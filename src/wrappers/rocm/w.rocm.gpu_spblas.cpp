@@ -102,7 +102,7 @@ namespace spblas {
     }
 
     template<typename T, typename I>
-    void descr_matrix_csr_create(descr_matrix_csr & descr, I nrows, I ncols, I nnz, char symmetry)
+    void descr_matrix_csr_create(descr_matrix_csr & descr, I nrows, I ncols, I nnz, char fill)
     {
         descr = std::make_shared<_descr_matrix_csr>();
         void * dummyptr = reinterpret_cast<void*>(1);
@@ -113,10 +113,10 @@ namespace spblas {
         rocsparse_diag_type nonunit = rocsparse_diag_type_non_unit;
         // rocsparse_matrix_type triangular = rocsparse_matrix_type_triangular;
         rocsparse_storage_mode sorted = rocsparse_storage_mode_sorted;
-        if(symmetry == 'L') CHECK(rocsparse_spmat_set_attribute(descr->d, rocsparse_spmat_fill_mode, &lower, sizeof(lower)));
-        if(symmetry == 'U') CHECK(rocsparse_spmat_set_attribute(descr->d, rocsparse_spmat_fill_mode, &upper, sizeof(upper)));
-        if(symmetry != 'N') CHECK(rocsparse_spmat_set_attribute(descr->d, rocsparse_spmat_diag_type, &nonunit, sizeof(nonunit)));
-        // if(symmetry != 'N') CHECK(rocsparse_spmat_set_attribute(descr->d, rocsparse_spmat_matrix_type, &triangular, sizeof(triangular)));
+        if(fill == 'L') CHECK(rocsparse_spmat_set_attribute(descr->d, rocsparse_spmat_fill_mode, &lower, sizeof(lower)));
+        if(fill == 'U') CHECK(rocsparse_spmat_set_attribute(descr->d, rocsparse_spmat_fill_mode, &upper, sizeof(upper)));
+        if(fill != 'N') CHECK(rocsparse_spmat_set_attribute(descr->d, rocsparse_spmat_diag_type, &nonunit, sizeof(nonunit)));
+        // if(fill != 'N') CHECK(rocsparse_spmat_set_attribute(descr->d, rocsparse_spmat_matrix_type, &triangular, sizeof(triangular)));
         CHECK(rocsparse_spmat_set_attribute(descr->d, rocsparse_spmat_storage_mode, &sorted, sizeof(sorted)));
     }
 

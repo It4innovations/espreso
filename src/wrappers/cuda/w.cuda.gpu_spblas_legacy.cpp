@@ -235,7 +235,7 @@ namespace spblas {
     }
 
     template<typename T, typename I>
-    void descr_matrix_csr_create(descr_matrix_csr & descr, I nrows, I ncols, I nnz, char symmetry)
+    void descr_matrix_csr_create(descr_matrix_csr & descr, I nrows, I ncols, I nnz, char fill)
     {
         descr = std::make_shared<_descr_matrix_csr>();
         void * dummyptr = reinterpret_cast<void*>(1);
@@ -243,16 +243,16 @@ namespace spblas {
         auto upper = CUSPARSE_FILL_MODE_UPPER;
         auto lower = CUSPARSE_FILL_MODE_LOWER;
         auto nonunit = CUSPARSE_DIAG_TYPE_NON_UNIT;
-        if(symmetry == 'L') CHECK(cusparseSpMatSetAttribute(descr->d_new, CUSPARSE_SPMAT_FILL_MODE, &lower, sizeof(lower)));
-        if(symmetry == 'U') CHECK(cusparseSpMatSetAttribute(descr->d_new, CUSPARSE_SPMAT_FILL_MODE, &upper, sizeof(upper)));
-        if(symmetry != 'N') CHECK(cusparseSpMatSetAttribute(descr->d_new, CUSPARSE_SPMAT_DIAG_TYPE, &nonunit, sizeof(nonunit)));
+        if(fill == 'L') CHECK(cusparseSpMatSetAttribute(descr->d_new, CUSPARSE_SPMAT_FILL_MODE, &lower, sizeof(lower)));
+        if(fill == 'U') CHECK(cusparseSpMatSetAttribute(descr->d_new, CUSPARSE_SPMAT_FILL_MODE, &upper, sizeof(upper)));
+        if(fill != 'N') CHECK(cusparseSpMatSetAttribute(descr->d_new, CUSPARSE_SPMAT_DIAG_TYPE, &nonunit, sizeof(nonunit)));
 
         CHECK(cusparseCreateMatDescr(&descr->d_leg));
         CHECK(cusparseSetMatDiagType(descr->d_leg, CUSPARSE_DIAG_TYPE_NON_UNIT));
         CHECK(cusparseSetMatIndexBase(descr->d_leg, CUSPARSE_INDEX_BASE_ZERO));
         CHECK(cusparseSetMatType(descr->d_leg, CUSPARSE_MATRIX_TYPE_GENERAL));
-        if(symmetry == 'U') CHECK(cusparseSetMatFillMode(descr->d_leg, CUSPARSE_FILL_MODE_UPPER));
-        if(symmetry == 'L') CHECK(cusparseSetMatFillMode(descr->d_leg, CUSPARSE_FILL_MODE_LOWER));
+        if(fill == 'U') CHECK(cusparseSetMatFillMode(descr->d_leg, CUSPARSE_FILL_MODE_UPPER));
+        if(fill == 'L') CHECK(cusparseSetMatFillMode(descr->d_leg, CUSPARSE_FILL_MODE_LOWER));
 
         descr->nrows = nrows;
         descr->ncols = ncols;

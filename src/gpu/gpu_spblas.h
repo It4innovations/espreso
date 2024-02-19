@@ -35,7 +35,7 @@ namespace spblas {
     void handle_destroy(handle & h);
 
     template<typename T, typename I>
-    void descr_matrix_csr_create(descr_matrix_csr & descr, I nrows, I ncols, I nnz, char symmetry);
+    void descr_matrix_csr_create(descr_matrix_csr & descr, I nrows, I ncols, I nnz, char fill);
 
     template<typename T, typename I, typename A>
     void descr_matrix_csr_link_data(descr_matrix_csr & descr, Matrix_CSR<T,I,A> & matrix);
