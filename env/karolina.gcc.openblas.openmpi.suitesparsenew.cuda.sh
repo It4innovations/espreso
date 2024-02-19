@@ -1,12 +1,17 @@
 #!/bin/bash
 
+cusparse_version="legacy"
+# cusparse_version="modern"
+
+
+
 ml GCC/12.2.0
 ml OpenBLAS/0.3.21-GCC-12.2.0
 ml LAPACK/3.10.0-GCC-12.2.0
 ml OpenMPI/4.1.5-GCC-12.2.0
 ml METIS/5.1.0-GCCcore-12.2.0
-# ml CUDA/12.2.0
-ml CUDA/11.7.0 # for legacy cusparse
+if [ "${cusparse_version}" = "legacy" ]; then ml CUDA/11.7.0; fi
+if [ "${cusparse_version}" = "modern" ]; then ml CUDA/12.2.0; fi
 
 DEPENDENCIES_DIR="dependencies"
 if [ ! -d "${DEPENDENCIES_DIR}" ]; then mkdir "${DEPENDENCIES_DIR}"; fi
@@ -43,6 +48,12 @@ export BLAS_LIBRARIES=openblas
 export OMP_PLACES=cores
 export OMP_PROC_BIND=close
 export OMP_NUM_THREADS=16
+
+if [ "${cusparse_version}" = "legacy" ]; then
+    export ESPRESO_USE_CUSPARSE_LEGACY="true"
+fi
+
+
 
 # ./waf configure --use-cusparse-legacy --enable-dualop-explicit-gpu-timers
 

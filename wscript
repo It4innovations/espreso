@@ -241,7 +241,7 @@ def options(opt):
 
     opt.other.add_option("--use-cusparse-legacy",
         action="store_true",
-        default=False,
+        default=os.getenv("ESPRESO_USE_CUSPARSE_LEGACY"),
         help="Use legacy cusparse API. For CUDA < 12 only")
 
     opt.other.add_option("--enable-dualop-explicit-gpu-timers",
