@@ -8,7 +8,10 @@ namespace espreso {
 namespace gpu {
 namespace mgm {
 
-    bool is_linked() { return false; }
+    gpu_wrapper_impl get_implementation()
+    {
+        return gpu_wrapper_impl::NONE;
+    }
 
     struct _device {};
 

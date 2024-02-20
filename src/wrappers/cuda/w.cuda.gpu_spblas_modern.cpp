@@ -25,6 +25,11 @@ namespace espreso {
 namespace gpu {
 namespace spblas {
 
+    spblas_wrapper_impl get_implementation()
+    {
+        return spblas_wrapper_impl::CUSPARSE_MODERN;
+    }
+
     namespace
     {
         template<typename I>

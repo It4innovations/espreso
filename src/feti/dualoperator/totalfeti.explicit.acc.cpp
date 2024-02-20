@@ -29,6 +29,7 @@ TotalFETIExplicitAcc<T,I>::TotalFETIExplicitAcc(FETI<T> &feti)
     if(stage != 0) eslog::error("init: invalid order of operations in dualop\n");
 
     config = &feti.configuration.dual_operator_explicit_gpu_config;
+    config_replace_defaults();
     if(config->trsm_rhs_sol_order == MATRIX_ORDER::ROW_MAJOR) order_X = 'R';
     if(config->trsm_rhs_sol_order == MATRIX_ORDER::COL_MAJOR) order_X = 'C';
     order_F = order_X;
@@ -1027,6 +1028,64 @@ void TotalFETIExplicitAcc<T,I>::print(const step::Step &step)
     //     }
     //     math::store(d, utils::filename(utils::debugDirectory(step) + "/feti/dualop", "d").c_str());
     // }
+}
+
+
+
+template <typename T, typename I>
+template<typename U>
+void TotalFETIExplicitAcc<T,I>::replace_if_default(U & val, U replace_with)
+{
+    if(val == U::DEFAULT) val = replace_with;
+}
+
+
+
+template <typename T, typename I>
+void TotalFETIExplicitAcc<T,I>::config_replace_defaults()
+{
+    if(gpu::mgm::get_implementation() == gpu::mgm::gpu_wrapper_impl::CUDA)
+    {
+        replace_if_default(config->trsm1_factor_storage,       MATRIX_STORAGE::SPARSE);
+        replace_if_default(config->trsm2_factor_storage,       MATRIX_STORAGE::SPARSE);
+        replace_if_default(config->trsm1_solve_type,           TRSM1_SOLVE_TYPE::LHH);
+        replace_if_default(config->trsm2_solve_type,           TRSM2_SOLVE_TYPE::U);
+        replace_if_default(config->trsm_rhs_sol_order,         MATRIX_ORDER::ROW_MAJOR);
+        replace_if_default(config->path_if_hermitian,          PATH_IF_HERMITIAN::HERK);
+        replace_if_default(config->queue_count,                QUEUE_COUNT::PER_THREAD);
+        replace_if_default(config->apply_scatter_gather_where, DEVICE::GPU);
+        
+        bool is_spsm_used = (config->trsm1_factor_storage == MATRIX_STORAGE::SPARSE || (config->trsm2_factor_storage == MATRIX_STORAGE::SPARSE && config->path_if_hermitian == PATH_IF_HERMITIAN::TRSM));
+        bool is_spsm_concurrent_working;
+        if(gpu::spblas::get_implementation() == gpu::spblas::spblas_wrapper_impl::CUSPARSE_LEGACY) {
+            is_spsm_concurrent_working = true;
+        }
+        else if(gpu::spblas::get_implementation() == gpu::spblas::spblas_wrapper_impl::CUSPARSE_MODERN) {
+            is_spsm_concurrent_working = false;
+        }
+        else {
+            eslog::error("Unexpected gpu sparse blas implementation\n");
+        }
+        bool need_seq = (is_spsm_used && !is_spsm_concurrent_working);
+        CONCURRENCY concurrency_set_update = (need_seq ? CONCURRENCY::SEQ_WAIT : CONCURRENCY::PARALLEL);
+        replace_if_default(config->concurrency_set,            concurrency_set_update);
+        replace_if_default(config->concurrency_update,         concurrency_set_update);
+        replace_if_default(config->concurrency_apply,          CONCURRENCY::SEQ_CONTINUE);
+    }
+    if(gpu::mgm::get_implementation() == gpu::mgm::gpu_wrapper_impl::ROCM)
+    {
+        replace_if_default(config->concurrency_set,            CONCURRENCY::PARALLEL);
+        replace_if_default(config->concurrency_update,         CONCURRENCY::PARALLEL);
+        replace_if_default(config->concurrency_apply,          CONCURRENCY::SEQ_CONTINUE);
+        replace_if_default(config->trsm1_factor_storage,       MATRIX_STORAGE::SPARSE);
+        replace_if_default(config->trsm2_factor_storage,       MATRIX_STORAGE::SPARSE);
+        replace_if_default(config->trsm1_solve_type,           TRSM1_SOLVE_TYPE::LHH);
+        replace_if_default(config->trsm2_solve_type,           TRSM2_SOLVE_TYPE::U);
+        replace_if_default(config->trsm_rhs_sol_order,         MATRIX_ORDER::ROW_MAJOR);
+        replace_if_default(config->path_if_hermitian,          PATH_IF_HERMITIAN::HERK);
+        replace_if_default(config->queue_count,                QUEUE_COUNT::PER_THREAD);
+        replace_if_default(config->apply_scatter_gather_where, DEVICE::GPU);
+    }
 }
 
 

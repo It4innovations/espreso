@@ -14,7 +14,18 @@ namespace espreso {
 namespace gpu {
 namespace mgm {
 
-    bool is_linked();
+    enum struct gpu_wrapper_impl {
+        NONE,
+        CUDA,
+        ROCM
+    };
+
+    gpu_wrapper_impl get_implementation();
+
+    inline bool is_linked()
+    {
+        return (get_implementation() != gpu_wrapper_impl::NONE);
+    }
 
     struct _device;
     using device = std::shared_ptr<_device>;

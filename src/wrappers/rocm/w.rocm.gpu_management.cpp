@@ -14,7 +14,10 @@ namespace espreso {
 namespace gpu {
 namespace mgm {
 
-    bool is_linked() { return true; }
+    gpu_wrapper_impl get_implementation()
+    {
+        return gpu_wrapper_impl::ROCM;
+    }
 
     namespace
     {

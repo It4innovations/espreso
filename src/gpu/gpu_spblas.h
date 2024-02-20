@@ -12,6 +12,15 @@ namespace espreso {
 namespace gpu {
 namespace spblas {
 
+    enum struct spblas_wrapper_impl {
+        NONE,
+        CUSPARSE_LEGACY,
+        CUSPARSE_MODERN,
+        ROCSPARSE
+    };
+
+    spblas_wrapper_impl get_implementation();
+
     struct _handle;
     using handle = std::shared_ptr<_handle>;
 

@@ -41,6 +41,11 @@ namespace espreso {
 namespace gpu {
 namespace spblas {
 
+    spblas_wrapper_impl get_implementation()
+    {
+        return spblas_wrapper_impl::CUSPARSE_LEGACY;
+    }
+
     namespace
     {
         template<typename T> struct cpp_to_cuda_type { using type = T; };

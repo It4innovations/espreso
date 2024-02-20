@@ -46,6 +46,11 @@ public:
 protected:
     void print(const step::Step &step);
 
+    template<typename U>
+    void replace_if_default(U & val, U replace_with);
+
+    void config_replace_defaults();
+
     using DualOperator<T>::feti;
     using DualOperator<T>::d;
 

@@ -9,42 +9,50 @@ namespace espreso {
 struct DualOperatorExplicitGpuConfig: public ECFDescription {
 
     enum class CONCURRENCY {
+        DEFAULT,
         PARALLEL,
         SEQ_CONTINUE,
         SEQ_WAIT
     };
 
     enum class MATRIX_STORAGE {
+        DEFAULT,
         SPARSE,
         DENSE
     };
 
     enum class TRSM1_SOLVE_TYPE {
+        DEFAULT,
         L,
         LHH
     };
 
     enum class TRSM2_SOLVE_TYPE {
+        DEFAULT,
         U,
         UHH
     };
 
     enum class MATRIX_ORDER {
+        DEFAULT,
         ROW_MAJOR,
         COL_MAJOR
     };
 
     enum class PATH_IF_HERMITIAN {
+        DEFAULT,
         TRSM,
         HERK
     };
 
     enum class QUEUE_COUNT {
+        DEFAULT,
         PER_THREAD,
         PER_DOMAIN
     };
 
     enum class DEVICE {
+        DEFAULT,
         CPU,
         GPU
     };
