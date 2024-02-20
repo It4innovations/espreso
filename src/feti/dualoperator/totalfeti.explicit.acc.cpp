@@ -180,6 +180,11 @@ void TotalFETIExplicitAcc<T,I>::info()
 
     eslog::info(" = EXPLICIT TOTAL FETI OPERATOR ON GPU                                                       = \n");
 //    TotalFETIImplicit<T>::printInfo(sum, min, max);
+    config->ecfdescription->forEachParameters([](ECFParameter * param){
+        std::string name = param->name;
+        for(char & c : name) c = std::toupper(c);
+        eslog::info(" =   %-50s       %+30s = \n", name.c_str(), param->getValue().c_str());
+    });
     eslog::info(" =   F MEMORY [MB]                                            %8.2f <%8.2f - %8.2f> = \n", (double)sumF / n_domains / 1024. / 1024., minF / 1024. / 1024., maxF / 1024. / 1024.);
     eslog::info(" = ----------------------------------------------------------------------------------------- = \n");
 }
