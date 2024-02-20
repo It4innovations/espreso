@@ -4,6 +4,7 @@
 
 #include "analysis/assembler/heattransfer/element.h"
 #include "analysis/math/matrix_feti.h"
+#include "analysis/math/vector_feti.h"
 
 #include "esinfo/ecfinfo.h"
 #include "esinfo/eslog.hpp"
@@ -470,51 +471,53 @@ void HeatTransfer::runBEM(SubKernel::Action action, size_t domain, double *BETI)
         double *points = &(info::mesh->domainsSurface->coordinates[domain][0].x);
         int ne = info::mesh->domainsSurface->edistribution[domain + 1] - info::mesh->domainsSurface->edistribution[domain];
         int *elemNodes = info::mesh->domainsSurface->denodes[domain].data();
-        int order = 12;
+
+        Matrix_Dense<double> K; K.resize(np, np);
+        BEM3DLaplace(K.vals, np, points, ne, elemNodes, 1);
+//        math::store(K, "K");
+
+        for (int r = 0, cc = 0; r < K.nrows; ++r) {
+            for (int c = r; c < K.ncols; ++c) {
+                BETI[cc++] = K.vals[r * K.ncols + c];
+            }
+        }
 
         // V: ne * ne;
         // K: ne * np;
         // D: np * np;
         // M: ne * np;
-        Matrix_Dense<double> V; V.resize(ne, ne);
-        Matrix_Dense<double> K; K.resize(ne, np);
-        Matrix_Dense<double> D; D.resize(np, np);
-        Matrix_Dense<double> M; M.resize(ne, np);
+//        Matrix_Dense<double> V; V.resize(ne, ne);
+//        Matrix_Dense<double> K; K.resize(ne, np);
+//        Matrix_Dense<double> D; D.resize(np, np);
+//        Matrix_Dense<double> M; M.resize(ne, np);
+//        int order = 7;
 
-        BEM3DLaplace(np, points, ne, elemNodes, order, V.vals, K.vals, D.vals, M.vals);
-
-        double xx = 0;
-        for (int r = 0; r < V.nrows; ++r) {
-            for (int c = 0; c < V.ncols; ++c) {
-                xx += std::fabs(V.vals[r * V.ncols + c] - V.vals[c * V.ncols + r]);
-            }
-        }
-        printf("xx: %.15f\n", xx);
-
-        for (int r = 0; r < V.nrows; ++r) {
-            for (int c = r + 1; c < V.ncols; ++c) {
-                double avg = (V.vals[r * V.ncols + c] + V.vals[c * V.ncols + r]) / 2;
-                V.vals[r * V.ncols + c] = V.vals[c * V.ncols + r] = avg;
-            }
-        }
-
-        math::store(K, "K");
-        math::store(M, "M");
-        math::store(V, "V");
-        math::store(D, "D");
+//        BEM3DLaplace(np, points, ne, elemNodes, order, V.vals, K.vals, D.vals, M.vals);
+//        // make matrix V symmetric
+//        for (int r = 0; r < V.nrows; ++r) {
+//            for (int c = r + 1; c < V.ncols; ++c) {
+//                double avg = (V.vals[r * V.ncols + c] + V.vals[c * V.ncols + r]) / 2;
+//                V.vals[r * V.ncols + c] = V.vals[c * V.ncols + r] = avg;
+//            }
+//        }
+//
+//        math::store(K, "TB_K");
+//        math::store(M, "TB_M");
+//        math::store(V, "TB_V");
+//        math::store(D, "TB_D");
 
         // S = D + (.5 * M + K)^T * (V)^-1 * (.5 * M + K)
-        math::add(K, .5, M);
-        math::copy(M, K);
-        math::lapack::solve(V, K);
-        math::blas::multiply(1., M, K, 1., D, true, false);
-        math::store(D, "S");
+//        math::add(K, .5, M);
+//        math::copy(M, K);
+//        math::lapack::solve(V, K);
+//        math::blas::multiply(1., M, K, 1., D, true, false);
+//        math::store(D, "HT_S");
 
-        for (int r = 0, cc = 0; r < D.nrows; ++r) {
-            for (int c = r; c < D.ncols; ++c) {
-                BETI[cc++] = D.vals[r * D.ncols + c];
-            }
-        }
+//        for (int r = 0, cc = 0; r < D.nrows; ++r) {
+//            for (int c = r; c < D.ncols; ++c) {
+//                BETI[cc++] = D.vals[r * D.ncols + c];
+//            }
+//        }
     }
 }
 
@@ -566,9 +569,18 @@ void HeatTransfer::getInitialTemperature(Vector_Base<double> *x)
 
 void HeatTransfer::updateSolution(Vector_Base<double> *x)
 {
+    Vector_FETI<Vector_Dense, double> *xBEM = dynamic_cast<Vector_FETI<Vector_Dense, double>*>(x);
     for (size_t i = 0; i < bem.size(); ++i) {
         if (bem[i]) {
-            // compute internal values;
+            int np = info::mesh->domainsSurface->dnodes[i].size();
+            double *points = &(info::mesh->domainsSurface->coordinates[i][0].x);
+            int ne = info::mesh->domainsSurface->edistribution[i + 1] - info::mesh->domainsSurface->edistribution[i];
+            int *elemNodes = info::mesh->domainsSurface->denodes[i].data();
+            int ni = info::mesh->domainsSurface->coordinates[i].size() - info::mesh->domainsSurface->dnodes[i].size();
+            double *inner = points + 3 * np;
+
+
+            BEM3DLaplaceEval(xBEM->domains[i].vals + np, np, points, ne, elemNodes, ni, inner, 1, xBEM->domains[i].vals);
         }
     }
     x->storeTo(Results::temperature->data);

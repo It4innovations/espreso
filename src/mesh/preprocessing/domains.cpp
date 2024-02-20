@@ -556,12 +556,23 @@ void computeDomainsSurface(NodeStore *nodes, ElementStore *elements, DomainStore
 
 	        domainsSurface->dnodes[d] = domainsSurface->denodes[d];
 	        utils::sortAndRemoveDuplicates(domainsSurface->dnodes[d]);
-	        domainsSurface->coordinates[d].reserve(domainsSurface->dnodes[d].size());
 	        for (size_t i = 0; i < domainsSurface->dnodes[d].size(); ++i) {
 	            domainsSurface->coordinates[d].push_back(nodes->coordinates->datatarray()[domainsSurface->dnodes[d][i]]);
 	        }
 	        for (size_t i = 0; i < domainsSurface->denodes[d].size(); ++i) {
 	            domainsSurface->denodes[d][i] = std::lower_bound(domainsSurface->dnodes[d].begin(), domainsSurface->dnodes[d].end(), domainsSurface->denodes[d][i]) - domainsSurface->dnodes[d].begin();
+	        }
+	    }
+	}
+
+	std::vector<esint> di(domains->size);
+	esint ni = 0;
+	for (auto nd = nodes->domains->cbegin(); nd != nodes->domains->cend(); ++nd, ++ni) {
+	    for (auto d = nd->begin(); d != nd->end(); ++d) {
+	        if (domainsSurface->dnodes[*d][di[*d]] == ni) {
+	            ++di[*d];
+	        } else {
+	            domainsSurface->coordinates[*d].push_back(nodes->coordinates->datatarray()[ni]);
 	        }
 	    }
 	}

@@ -136,6 +136,7 @@ UniformBuilderFETIPattern::UniformBuilderFETIPattern(StructuralMechanicsLoadStep
                     }
                 }
             }
+            type = Matrix_Type::REAL_SYMMETRIC_INDEFINITE;
             break;
         }
     }

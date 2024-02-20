@@ -436,8 +436,10 @@ void StructuralMechanics::connect(Matrix_Base<double> *K, Matrix_Base<double> *M
     }
 
     for(size_t i = 0; i < info::mesh->elements->eintervals.size(); ++i) {
-        subkernels[i].Kfiller.activate(i, info::mesh->dimension, subkernels[i].elements, K);
-        subkernels[i].Mfiller.activate(i, info::mesh->dimension, subkernels[i].elements, M);
+        if (!bem[info::mesh->elements->eintervals[i].domain - info::mesh->domains->offset]) {
+            subkernels[i].Kfiller.activate(i, info::mesh->dimension, subkernels[i].elements, K);
+            subkernels[i].Mfiller.activate(i, info::mesh->dimension, subkernels[i].elements, M);
+        }
 
         subkernels[i].reRHSfiller.activate(i, info::mesh->dimension, subkernels[i].elements, f);
         subkernels[i].reNRHSfiller.activate(i, info::mesh->dimension, subkernels[i].elements, nf);
@@ -611,14 +613,25 @@ void StructuralMechanics::runBEM(SubKernel::Action action, size_t domain, double
         int *elemNodes = info::mesh->domainsSurface->denodes[domain].data();
         int order = 10;
 
+//        for (int p = 0; p < np; ++p) {
+//            printf("%f %f %f\n", points[3 * p + 0], points[3 * p + 1], points[3 * p + 2]);
+//        }
+//        for (int e = 0; e < ne; ++e) {
+//            printf("%f %f %f\n", elemNodes[3 * e + 0], elemNodes[3 * e + 1], elemNodes[3 * e + 2]);
+//        }
+
         Matrix_Dense<double> K; K.resize(3 * np, 3 * np);
-        BEM3DElasticity(np, points, ne, elemNodes, order, 0.3, 1e9, K.vals);
+//        BEM3DElasticity(np, points, ne, elemNodes, order, 0.3, 1e9, K.vals);
 
         math::store(K, "K");
 
-        for (int r = 0, cc = 0; r < K.nrows; ++r) {
-            for (int c = r; c < K.ncols; ++c) {
-                BETI[cc++] = K.vals[r * K.ncols + c];
+        for (int dr = 0, cc = 0; dr < info::mesh->dimension; ++dr) {
+            for (int r = dr; r < K.nrows; r += 3) {
+                for (int dc = 0; dc < info::mesh->dimension; ++dc) {
+                    for (int c = r + dc; c < K.ncols; c += 3) {
+                        BETI[cc++] = K.vals[r * K.ncols + c];
+                    }
+                }
             }
         }
     }
