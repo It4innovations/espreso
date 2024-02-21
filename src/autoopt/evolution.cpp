@@ -5,6 +5,7 @@
 #include <cstdlib>
 #include <ctime>
 #include <algorithm>
+#include <cmath>
 
 using namespace espreso;
 
@@ -172,6 +173,273 @@ void PSOAlgorithm::migrateSpecimen()
 		m_specimens[s][v_i] = new_value;
 	}
 }
+
+
+ImprovedMicroPSOAlgorithm::ImprovedMicroPSOAlgorithm(ParameterManager& manager, OutputManager& output,
+	int population, double C1, double C2, double W_START,
+	double W_END, double pop_convergence, double convergence_threshold, 
+	int M, double BETA, double RHO_START, double S_c, double F_c)
+: EvolutionAlgorithm(manager, output),
+  population(population), dimension(manager.count()),
+  generation(0), isInitializing(true),
+  C1(C1), C2(C2),
+  w(W_START), W_START(W_START), W_END(W_END),
+  POP_CONVERGENCE(pop_convergence), CONVERGENCE_THRESHOLD(convergence_threshold),
+  M(M), BETA(BETA), RHO_START(RHO_START), rho(RHO_START), best_successes(0), best_S_c(S_c), 
+  best_failures(0), best_F_c(F_c), gBest_index(0)
+{
+	for (int s = 0; s < population; s++)
+	{ m_specimens.push_back(m_manager.generateConfiguration()); }
+	this->current = m_specimens.begin();
+
+	this->velocity.resize(this->population);
+	for (size_t s = 0; s < m_specimens.size(); s++)
+	{
+		// VELOCITY GENERATION
+		std::vector<double> velocity_vector(dimension, 0.0f);
+		for (int d = 0; d < dimension; d++)
+		{ velocity_vector[d] = m_manager.generateDecimal(); }
+		this->velocity[s] = velocity_vector;
+	}
+
+	// INITIALIZE PARAMETER BOUNDARIES
+	for (int p = 0; p < dimension; p++)
+	{
+		param_boundaries.push_back(
+			{m_manager.getParameterMin(p), m_manager.getParameterMax(p)}
+		);
+	}
+}
+
+std::vector<double>& ImprovedMicroPSOAlgorithm::getCurrentSpecimen()
+{
+	if (isInitializing)
+	{
+		m_output.writeConfiguration('I', *current, dimension);
+		return *current;
+	}
+	else
+	{
+		m_output.writeConfiguration('N', *current, dimension);
+		return *current;
+	}
+}
+
+void ImprovedMicroPSOAlgorithm::evaluateCurrentSpecimen(double value)
+{
+	if (isInitializing)
+	{
+		current->push_back(value);
+		m_output.writeEvaluation(value);
+		this->pBest.push_back(*current);
+		if (!gBest.size()) gBest = *current;
+
+		// SEARCH OF gBest
+		if (this->gBest.back() > value)
+		{ 
+			this->gBest = *current; 
+			this->gBest_index = std::distance(m_specimens.begin(), current);
+		}
+
+		if (++current == m_specimens.end())
+		{
+			isInitializing = false;
+			current = m_specimens.begin();
+			if (generation == 0) { total_gBest = gBest; }
+			this->migrateSpecimen();
+		}
+	} else {
+		int s = std::distance(m_specimens.begin(), current);
+
+		(*current)[this->dimension] = value;
+		m_output.writeEvaluation(value);
+
+		// pBest
+		if ((*current)[this->dimension] < this->pBest[s].back())
+		{
+			this->pBest[s] = *current;
+			if (s == gBest_index)
+			{ this->best_successes++; this->best_failures = 0; }
+		}
+		else if (s == gBest_index)
+		{ this->best_failures++; this->best_successes = 0; }
+		
+		// gBest
+		if (this->pBest[s].back() < this->gBest.back())
+		{
+			this->gBest = this->pBest[s];
+			if (s != this->gBest_index)
+			{ this->best_successes = 0; this->best_failures = 0; }
+			this->gBest_index = s;
+		}
+
+		bool restart = false;
+		if (++current == m_specimens.end())
+		{
+			current = m_specimens.begin();
+			this->generation++;
+
+			// RHO UPDATE
+			if (best_successes > best_S_c) { rho = 2.0f * rho; }
+			else if (best_failures > best_F_c) { rho = 0.5f * rho; }
+			
+			restart = this->detectRestartAndPerform();
+		}
+
+		if (!restart) this->migrateSpecimen();
+	}
+}
+
+double ImprovedMicroPSOAlgorithm::checkParameterBoundaries(int id, double value)
+{
+	if (param_boundaries[id][0] > value) { return param_boundaries[id][0]; }
+	else if (param_boundaries[id][1] < value) { return param_boundaries[id][1]; }
+	else { return value; }
+}
+
+void ImprovedMicroPSOAlgorithm::migrateSpecimen()
+{
+	double r1 = m_manager.generateDecimal();
+	double r2 = m_manager.generateDecimal();
+	double r3 = m_manager.generateDecimal();
+	int s = std::distance(m_specimens.begin(), current);
+
+	// REPULSION COMPUTATION
+	std::vector<double> repulsion(this->dimension, 0.0f);
+	for (size_t l = 0; l < blacklist.size(); l++)
+	{
+		std::vector<double> d_li(this->dimension, 0.0f);
+		for (int i = 0; i < dimension; i++)
+		{ d_li[i] = current->at(i) - blacklist[l][i]; }
+		
+		double d_li_size = 0.0f;
+		for (int i = 0; i < dimension; i++)
+		{ d_li_size += d_li[i] * d_li[i]; }
+		d_li_size = sqrt(d_li_size);
+		double d_li_size_m = pow(d_li_size, M + 1);
+		
+		for (int i = 0; i < dimension; i++)
+		{ d_li[i] = d_li[i] / d_li_size_m; }
+		
+		for (int i = 0; i < dimension; i++)
+		{ repulsion[i] += d_li[i]; }
+	}
+	for (int i = 0; i < dimension; i++)
+	{ repulsion[i] *= dimension; }
+
+	// NEW VELOCITY COMPUTATION AND A PARTICLE MOVE
+	for (int v_i = 0; v_i < this->dimension; v_i++)
+	{
+		// BEST PARTICLE (s==gBest_index) OR A REGULAR PARTICLE
+		this->velocity[s][v_i] = (s == gBest_index) ?
+			w * velocity[s][v_i]
+			+ gBest[v_i] - m_specimens[s][v_i]
+			+ rho * (1 - 2 * r3) + repulsion[v_i]
+			:
+			w * velocity[s][v_i]
+			+ C1 * r1 * (pBest[s][v_i] - m_specimens[s][v_i])
+			+ C2 * r2 * (gBest[v_i] - m_specimens[s][v_i])
+			+ repulsion[v_i];
+
+		double new_value = this->checkParameterBoundaries(
+			v_i,
+			m_specimens[s][v_i] + velocity[s][v_i]
+		);
+		m_specimens[s][v_i] = new_value;
+	}
+}
+
+bool ImprovedMicroPSOAlgorithm::detectRestartAndPerform()
+{
+	// DETECT RESTART
+	int n_converged_specimens = 0;
+	for (int s = 0; s < population; s++)
+	{
+		if (s == gBest_index) continue;
+
+		double sum_diffsquared = 0;
+		for (int i = 0; i < dimension; i++)
+		{
+			double diff = m_specimens[s][i] - gBest[i];
+			sum_diffsquared += pow(diff, 2);
+		}
+		double standarddev = sqrt(sum_diffsquared / (double)dimension);
+		if (standarddev < CONVERGENCE_THRESHOLD) n_converged_specimens++;
+	}
+
+	double ratio_converged = (double)n_converged_specimens / (double)(population - 1);
+	// RESTART?
+	if (ratio_converged < POP_CONVERGENCE) return false;
+
+	// IS CONVERGED SOLUTION BETTER?
+	bool found_better = (gBest.back() < total_gBest.back()) ? true : false;
+	if (!found_better) this->blacklist.push_back(gBest);
+	else total_gBest = gBest;
+
+	// UPDATE W
+	this->w = found_better ? this->W_START : std::min(this->w * (1.0f + BETA), this->W_END);
+
+	// DYNAMIC SPACE ADJUSTMENT STRATEGY
+	double delta = found_better ? this->W_START : std::min(this->w * (1.0f + BETA), this->W_END);
+	std::vector<std::vector<double> > new_boundaries;
+	for (int p = 0; p < dimension; p++)
+	{
+		double new_P_min = std::max(gBest[p] - (gBest[p] - param_boundaries[p][0]) * delta,
+			m_manager.getParameterMin(p));
+		double new_P_max = std::min(gBest[p] + (param_boundaries[p][1] - gBest[p]) * delta,
+			m_manager.getParameterMax(p));
+		new_boundaries.push_back({new_P_min, new_P_max});
+	}
+
+	// SELECTIVE RE-INITIALIZATION STRATEGY
+	m_specimens.clear();
+	for (int s = 0; s < population; s++)
+	{
+		// POPULATION
+		std::vector<double> specimen(dimension, 0.0f);
+		double r4 = m_manager.generateDecimal();
+		for (int i = 0; i < dimension; i++)
+		{
+			double val;
+			if (new_boundaries[i][0] < param_boundaries[i][0]
+				&& param_boundaries[i][1] < new_boundaries[i][1])
+			{
+				int coin = m_manager.generateInt(0, 1);
+				val = (coin == 0) ?
+					new_boundaries[i][0] +
+					(param_boundaries[i][0] - new_boundaries[i][0]) * r4
+					:
+					param_boundaries[i][1] +
+					(new_boundaries[i][1] - param_boundaries[i][1]) * r4;
+			}
+			else if (new_boundaries[i][0] < param_boundaries[i][0])
+			{ val = new_boundaries[i][0] +
+				(param_boundaries[i][0] - new_boundaries[i][0]) * r4; }
+			else if (param_boundaries[i][1] < new_boundaries[i][1])
+			{ val = param_boundaries[i][1] +
+				(new_boundaries[i][1] - param_boundaries[i][1]) * r4; }
+			else
+			{ val = m_manager.generateParameter(i); }
+
+			specimen[i] = m_manager.checkParameter(i, val);
+		}
+		m_specimens.push_back(specimen);
+
+		// VELOCITY
+		for (int i = 0; i < dimension; i++)
+		{ velocity[s][i] = m_manager.generateDecimal(); }
+	}
+	this->current = m_specimens.begin();
+	this->pBest.clear();
+	this->gBest.clear(); this->gBest_index = 0;
+	this->isInitializing = true;
+	this->rho = RHO_START; best_failures = 0; best_successes = 0;
+	this->param_boundaries = new_boundaries;
+
+	return true;
+}
+
+
 
 DEAlgorithm::DEAlgorithm(ParameterManager& manager, OutputManager& output,
 	int population, double F, double CR)

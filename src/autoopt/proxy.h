@@ -27,6 +27,7 @@ public:
 	int generateSpecimenNumber();
 	int generateParameterNumber();
 	double generateDecimal();
+	double generateParameter(int id);
 	std::vector<double> generateConfiguration();
 	std::vector<double> generateVerifiedConfiguration();
 	double checkParameter(int id, double value);

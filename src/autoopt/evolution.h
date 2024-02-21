@@ -86,6 +86,59 @@ private:
 	void migrateSpecimen();
 };
 
+// Source papers:
+// [1] Improved microPSO, DOI: 10.1002/etep.1704
+// [2] Original microPSO, DOI: 10.1016/j.amc.2006.01.088
+// [3] Definition of rho, s_c, f_c, DOI: 10.1109/SIS.2003.1202274
+class ImprovedMicroPSOAlgorithm : public EvolutionAlgorithm
+{
+public:
+	ImprovedMicroPSOAlgorithm(ParameterManager& manager, OutputManager& output,
+		int population, double C1, double C2,
+		double W_START, double W_END, double pop_convergence, 
+		double convergence_threshold, int M, double BETA, 
+		double RHO_START, double S_c, double F_c);
+
+	std::vector<double>& getCurrentSpecimen() override;
+	void evaluateCurrentSpecimen(double value) override;
+
+private:
+	const int population;
+	const int dimension;
+
+	int generation;
+	std::vector<std::vector<double> >::iterator current;
+	bool isInitializing;
+
+	const double C1;
+	const double C2;
+	double w;
+	const double W_START;
+	const double W_END;
+	const double POP_CONVERGENCE;
+	const double CONVERGENCE_THRESHOLD;
+	const int M;
+	const double BETA;
+	const double RHO_START;
+	double rho;
+	int best_successes;
+	const int best_S_c;
+	int best_failures;
+	const int best_F_c;
+
+	std::vector<std::vector<double> > pBest;
+	std::vector<std::vector<double> > velocity;
+	std::vector<double> gBest;
+	int gBest_index;
+	std::vector<double> total_gBest;
+	std::vector<std::vector<double> > blacklist;
+	std::vector<std::vector<double> > param_boundaries;
+
+	double checkParameterBoundaries(int id, double value);
+	void migrateSpecimen();
+	bool detectRestartAndPerform();
+};
+
 class DEAlgorithm : public EvolutionAlgorithm
 {
 public:
@@ -113,6 +166,9 @@ private:
 	void mutateSpecimen();
 };
 
+// Source papers:
+// [1] microDER, DOI: 10.1109/ACCESS.2019.2954296
+// [2] Ray-ES, DOI: 10.1007/978-3-642-32937-1_37
 class MicroDERAlgorithm : public EvolutionAlgorithm
 {
 public:

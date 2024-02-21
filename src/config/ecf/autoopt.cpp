@@ -32,6 +32,64 @@ PSOConfiguration::PSOConfiguration()
 		.setdatatype({ECFDataType::FLOAT}));
 }
 
+ImprovedMicroPSOConfiguration::ImprovedMicroPSOConfiguration()
+{
+	this->C1 = 1.49f;
+	REGISTER(C1, ECFMetaData()
+		.setdescription({"C1"})
+		.setdatatype({ECFDataType::FLOAT}));
+
+	this->C2 = 1.49f;
+	REGISTER(C2, ECFMetaData()
+		.setdescription({"C2"})
+		.setdatatype({ECFDataType::FLOAT}));
+
+	this->W_START = 0.3f;
+	REGISTER(W_START, ECFMetaData()
+		.setdescription({"W_START"})
+		.setdatatype({ECFDataType::FLOAT}));
+
+	this->W_END = 0.9f;
+	REGISTER(W_END, ECFMetaData()
+		.setdescription({"W_END"})
+		.setdatatype({ECFDataType::FLOAT}));
+
+	this->POPULATION_CONVERGENCE = 0.8f;
+	REGISTER(POPULATION_CONVERGENCE, ECFMetaData()
+		.setdescription({"POPULATION_CONVERGENCE"})
+		.setdatatype({ECFDataType::FLOAT}));
+
+	this->CONVERGENCE_THRESHOLD = 0.001f;
+	REGISTER(CONVERGENCE_THRESHOLD, ECFMetaData()
+		.setdescription({"CONVERGENCE_THRESHOLD"})
+		.setdatatype({ECFDataType::FLOAT}));
+
+	this->M = 20;
+	REGISTER(M, ECFMetaData()
+		.setdescription({"M"})
+		.setdatatype({ECFDataType::POSITIVE_INTEGER}));
+	
+	this->BETA = 0.1f;
+	REGISTER(BETA, ECFMetaData()
+		.setdescription({"BETA"})
+		.setdatatype({ECFDataType::FLOAT}));
+	
+	this->RHO_START = 1.0f;
+	REGISTER(RHO_START, ECFMetaData()
+		.setdescription({"POPULATION_CONVERGENCE"})
+		.setdatatype({ECFDataType::FLOAT}));
+	
+	this->S_C = 5;
+	REGISTER(S_C, ECFMetaData()
+		.setdescription({"SUCCESSES CONSTANT"})
+		.setdatatype({ECFDataType::FLOAT}));
+	
+	this->F_C = 5;
+	REGISTER(F_C, ECFMetaData()
+		.setdescription({"FAILURES CONSTANT"})
+		.setdatatype({ECFDataType::FLOAT}));
+}
+
 DEConfiguration::DEConfiguration()
 {
 	this->F = 0.9f;
@@ -99,7 +157,8 @@ AutoOptimizationConfiguration::AutoOptimizationConfiguration()
 		.addoption(ECFOption().setname("SOMA").setdescription("SOMA."))
 		.addoption(ECFOption().setname("RANDOM").setdescription("Generating random configurations."))
 		.addoption(ECFOption().setname("ALL_PERMUTATIONS").setdescription("All parameter permutations."))
-		.addoption(ECFOption().setname("MICRO_DER").setdescription("Micro Differential Evolution Ray.")));
+		.addoption(ECFOption().setname("MICRO_DER").setdescription("Micro Differential Evolution Ray."))
+		.addoption(ECFOption().setname("IMPROVED_MICRO_PSO").setdescription("Improved microPSO")));
 
 	this->rounding_immediate = false;
 	REGISTER(rounding_immediate, ECFMetaData()
@@ -119,6 +178,8 @@ AutoOptimizationConfiguration::AutoOptimizationConfiguration()
 		.setdescription({"SOMA"}));
 	REGISTER(micro_der, ECFMetaData()
 		.setdescription({"Micro Differential Evolution Ray"}));
+	REGISTER(improved_micro_pso, ECFMetaData()
+		.setdescription({"Improved Micro Particle Swarm Optimization"}));
 	// REGISTER(somat3a, ECFMetaData()
 	// 	.setdescription({"SOMA Team-to-Team"}));
 }

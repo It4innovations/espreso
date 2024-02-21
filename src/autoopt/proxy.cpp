@@ -118,6 +118,59 @@ std::vector<double> ParameterManager::generateConfiguration()
 	return this->generateRandomConfiguration();
 }
 
+double ParameterManager::generateParameter(int id)
+{
+	double value;
+	ECFDataType dt = m_params[id]->metadata.datatype.front();
+	
+	if (dt == ECFDataType::INTEGER)
+	{
+		value = m_generator() - m_generator() ;
+	}
+	else if (dt == ECFDataType::POSITIVE_INTEGER)
+	{
+		value = m_generator() % m_generator.max() + 1;
+	}
+	else if (dt == ECFDataType::NONNEGATIVE_INTEGER)
+	{
+		if (m_params[id]->metadata.range)
+		{
+			std::uniform_int_distribution<int> dist(
+				std::atoi(m_params[id]->metadata.range->min.c_str()),
+				std::atoi(m_params[id]->metadata.range->max.c_str())
+			);
+			value = dist(m_generator);
+		}
+		else 
+		{ value = m_generator(); }
+	}
+	else if (dt == ECFDataType::FLOAT)
+	{
+		value = (double)(m_generator() - m_generator()) + generateDecimal();
+	}
+	else if (dt == ECFDataType::OPTION)
+	{
+		std::uniform_int_distribution<int> dist(0, m_params[id]->metadata.options.size() - 1);
+		value = dist(m_generator);
+	}
+	else if (dt == ECFDataType::ENUM_FLAGS)
+	{
+		std::uniform_int_distribution<int> dist(0, m_params[id]->metadata.options.size() - 1);
+		value = dist(m_generator);
+	}
+	else if (dt == ECFDataType::BOOL)
+	{
+		std::uniform_int_distribution<int> dist(0, 1);
+		value = dist(m_generator);
+	}
+	else
+	{
+		eslog::globalerror("Optimization - UNKNOWN PARAMETER DATA TYPE!\n");
+	}
+
+	return value;
+}
+
 std::vector<double> ParameterManager::generateRandomConfiguration()
 {
 	std::vector<double> configuration;
@@ -567,6 +620,15 @@ OptimizationProxy::OptimizationProxy(
 		this->m_alg = new MicroDERAlgorithm(m_manager, m_output,
 			m_config.micro_der.F_START, m_config.micro_der.F_END,
 			m_config.micro_der.CR, m_config.micro_der.RESTART_LIMIT);
+		break;
+	case AutoOptimizationConfiguration::ALGORITHM::IMPROVED_MICRO_PSO:
+		this->m_alg = new ImprovedMicroPSOAlgorithm(m_manager, m_output,
+			m_config.population, m_config.improved_micro_pso.C1,
+			m_config.improved_micro_pso.C2, m_config.improved_micro_pso.W_START,
+			m_config.improved_micro_pso.W_END, m_config.improved_micro_pso.POPULATION_CONVERGENCE,
+			m_config.improved_micro_pso.CONVERGENCE_THRESHOLD, m_config.improved_micro_pso.M,
+			m_config.improved_micro_pso.BETA, m_config.improved_micro_pso.RHO_START,
+			m_config.improved_micro_pso.S_C, m_config.improved_micro_pso.F_C);
 		break;
 	default:;
 	}
