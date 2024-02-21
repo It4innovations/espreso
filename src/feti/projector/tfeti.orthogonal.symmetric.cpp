@@ -17,8 +17,6 @@ template<typename T>
 TFETIOrthogonalSymmetric<T>::TFETIOrthogonalSymmetric(FETI<T> &feti)
 : Projector<T>(feti)
 {
-    e.resize();
-    Gx.resize();
     iGGtGx.resize(feti.sinfo.R1size);
 
     domainOffset = feti.decomposition->dbegin;
@@ -134,6 +132,18 @@ void TFETIOrthogonalSymmetric<T>::_applyG(const Vector_Dual<T> &in, Vector_Kerne
 }
 
 template<typename T>
+void TFETIOrthogonalSymmetric<T>::apply_GtinvU(const Vector_Kernel<T> &x, Vector_Dual<T> &y)
+{
+    if (GGt.nrows) {
+        math::set(y, T{0});
+        _applyInvU(x, iGGtGx);
+        _applyGt(iGGtGx, T{-1}, y);
+    } else {
+        math::set(y, T{0});
+    }
+}
+
+template<typename T>
 void TFETIOrthogonalSymmetric<T>::_applyInvGGt(const Vector_Kernel<T> &in, Vector_Dense<T> &out)
 {
     #pragma omp parallel for
@@ -148,6 +158,12 @@ void TFETIOrthogonalSymmetric<T>::_applyInvGGt(const Vector_Kernel<T> &in, Vecto
 
         math::blas::apply(y, T{1}, a, T{0}, in);
     }
+}
+
+template<typename T>
+void TFETIOrthogonalSymmetric<T>::_applyInvU(const Vector_Kernel<T> &in, Vector_Dense<T> &out)
+{
+    eslog::error("cannot apply inv(U). Use different projector.\n");
 }
 
 template<typename T>

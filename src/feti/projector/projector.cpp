@@ -1,4 +1,5 @@
 
+#include <feti/projector/tfeti.orthogonal.symmetric.withfactors.h>
 #include "projector.h"
 #include "tfeti.orthogonal.symmetric.h"
 #include "tfeti.conjugate.symmetric.h"
@@ -9,12 +10,21 @@ namespace espreso {
 template <typename T>
 Projector<T>* Projector<T>::set(FETI<T> &feti, const step::Step &step)
 {
+    if (feti.configuration.iterative_solver == FETIConfiguration::ITERATIVE_SOLVER::SMALBE) {
+        if (feti.configuration.projector == FETIConfiguration::PROJECTOR::ORTHOGONAL) {
+            feti.configuration.projector = FETIConfiguration::PROJECTOR::ORTHOGONAL_WITH_FACTORS;
+        }
+    }
+
     switch (feti.configuration.projector) {
     case FETIConfiguration::PROJECTOR::ORTHOGONAL:
-        eslog::info(" = PROJECTOR                                                                      ORTHOGONAL = \n");
+        eslog::info(" = PROJECTOR                                                             EXPLICIT ORTHOGONAL = \n");
+        return new TFETIOrthogonalSymmetric<T>(feti);
+    case FETIConfiguration::PROJECTOR::ORTHOGONAL_WITH_FACTORS:
+        eslog::info(" = PROJECTOR                                                EXPLICIT ORTHOGONAL WITH FACTORS = \n");
         return new TFETIOrthogonalSymmetric<T>(feti);
     case FETIConfiguration::PROJECTOR::CONJUGATE:
-        eslog::info(" = PROJECTOR                                                                       CONJUGATE = \n");
+        eslog::info(" = PROJECTOR                                                              EXPLICIT CONJUGATE = \n");
         return new TFETIConjugateSymmetric<T>(feti);
     default: return nullptr;
     }

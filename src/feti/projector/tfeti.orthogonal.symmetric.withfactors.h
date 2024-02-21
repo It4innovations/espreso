@@ -1,6 +1,6 @@
 
-#ifndef SRC_FETI_PROJECTOR_TFETI_ORTHOGONAL_SYMMETRIC_H_
-#define SRC_FETI_PROJECTOR_TFETI_ORTHOGONAL_SYMMETRIC_H_
+#ifndef SRC_FETI_PROJECTOR_TFETI_ORTHOGONAL_SYMMETRIC_WITHFACTORS_H_
+#define SRC_FETI_PROJECTOR_TFETI_ORTHOGONAL_SYMMETRIC_WITHFACTORS_H_
 
 #include "projector.h"
 
@@ -23,9 +23,9 @@ namespace espreso {
  */
 
 template <typename T>
-struct TFETIOrthogonalSymmetric: public Projector<T> {
-    TFETIOrthogonalSymmetric(FETI<T> &feti);
-    ~TFETIOrthogonalSymmetric();
+struct TFETIOrthogonalSymmetricWithFactors: public Projector<T> {
+    TFETIOrthogonalSymmetricWithFactors(FETI<T> &feti);
+    ~TFETIOrthogonalSymmetricWithFactors();
 
     void info();
     void update(const step::Step &step);
@@ -54,7 +54,7 @@ protected:
     using Projector<T>::e;
 
     Matrix_CSR<T> G, Gt, GGt;
-    Matrix_Dense<T> invGGt;
+    Matrix_Dense<T> invL, invU;
 
     Vector_Kernel<T> Gx; // we need whole vector
     Vector_Dense<T> iGGtGx; // only local part is sufficient
@@ -86,6 +86,7 @@ protected:
             return *this;
         }
     };
+
     std::vector<DomainInfo> dinfo;
     std::vector<std::vector<DomainInfo> > dualGraph;
     std::map<esint, NeighborDomainInfo> upinfo;
@@ -96,4 +97,4 @@ protected:
 
 
 
-#endif /* SRC_FETI_PROJECTOR_TFETI_ORTHOGONAL_SYMMETRIC_H_ */
+#endif /* SRC_FETI_PROJECTOR_TFETI_ORTHOGONAL_SYMMETRIC_WITHFACTORS_H_ */

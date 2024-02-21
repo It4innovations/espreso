@@ -35,6 +35,7 @@ espreso::FETIConfiguration::FETIConfiguration()
 			.setdescription({ "Type" })
 			.setdatatype({ ECFDataType::OPTION })
 			.addoption(ECFOption().setname("ORTHOGONAL").setdescription("Orthogonal projector Gt * inv(G * Gt) * G."))
+			.addoption(ECFOption().setname("ORTHOGONAL_WITH_FACTORS").setdescription("Orthogonal projector Gt * inv(U) * inv(L) * G."))
 			.addoption(ECFOption().setname("CONJUGATE").setdescription("Conjugate projector Gt * inv(G * F * Gt) * G * F.")));
 
 	preconditioner = PRECONDITIONER::DIRICHLET;

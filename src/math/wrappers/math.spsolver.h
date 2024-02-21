@@ -48,6 +48,14 @@ struct DirectSparseSolver {
 	void solve(Vector_Dense<T, I> &rhs, Vector_Dense<T, I> &solution, int sparsity = VectorSparsity::DENSE);
 	void solve(Matrix_Dense<T, I> &rhs, Matrix_Dense<T, I> &solution, int sparsity = VectorSparsity::DENSE);
 
+	void solveForward (Vector_Dense<T, I> &rhs, Vector_Dense<T, I> &solution, int sparsity = VectorSparsity::DENSE);
+	void solveDiagonal(Vector_Dense<T, I> &rhs, Vector_Dense<T, I> &solution, int sparsity = VectorSparsity::DENSE);
+	void solveBackward(Vector_Dense<T, I> &rhs, Vector_Dense<T, I> &solution, int sparsity = VectorSparsity::DENSE);
+	void solveForward (Matrix_Dense<T, I> &rhs, Matrix_Dense<T, I> &solution, int sparsity = VectorSparsity::DENSE);
+	void solveDiagonal(Matrix_Dense<T, I> &rhs, Matrix_Dense<T, I> &solution, int sparsity = VectorSparsity::DENSE);
+	void solveBackward(Matrix_Dense<T, I> &rhs, Matrix_Dense<T, I> &solution, int sparsity = VectorSparsity::DENSE);
+
+
 	I getMatrixSize();
 	I getMatrixNnz();
 	I getFactorNnz();

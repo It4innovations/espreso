@@ -185,6 +185,49 @@ void DirectSparseSolver<T, I>::solve(Vector_Dense<T, I> &rhs, Vector_Dense<T, I>
 template <typename T, typename I>
 void DirectSparseSolver<T, I>::solve(Matrix_Dense<T, I> &rhs, Matrix_Dense<T, I> &solution, int sparsity)
 {
+    ext->pp.iparm[30] = _sparsity<T, I>(sparsity);
+    _callPardiso<T>(33, ext, rhs.nrows, rhs.vals, solution.vals);
+}
+
+template <typename T, typename I>
+void DirectSparseSolver<T, I>::solveForward (Vector_Dense<T, I> &rhs, Vector_Dense<T, I> &solution, int sparsity)
+{
+    eslog::error("implement solveForward for SuiteSparse.\n")
+}
+
+template <typename T, typename I>
+void DirectSparseSolver<T, I>::solveDiagonal(Vector_Dense<T, I> &rhs, Vector_Dense<T, I> &solution, int sparsity)
+{
+    eslog::error("implement solveDiagonal for SuiteSparse.\n")
+}
+
+template <typename T, typename I>
+void DirectSparseSolver<T, I>::solveBackward(Vector_Dense<T, I> &rhs, Vector_Dense<T, I> &solution, int sparsity)
+{
+    eslog::error("implement solveBackward for SuiteSparse.\n")
+}
+
+template <typename T, typename I>
+void DirectSparseSolver<T, I>::solveForward (Matrix_Dense<T, I> &rhs, Matrix_Dense<T, I> &solution, int sparsity)
+{
+    eslog::error("implement solveForward for SuiteSparse.\n")
+}
+
+template <typename T, typename I>
+void DirectSparseSolver<T, I>::solveDiagonal(Matrix_Dense<T, I> &rhs, Matrix_Dense<T, I> &solution, int sparsity)
+{
+    eslog::error("implement solveDiagonal for SuiteSparse.\n")
+}
+
+template <typename T, typename I>
+void DirectSparseSolver<T, I>::solveBackward(Matrix_Dense<T, I> &rhs, Matrix_Dense<T, I> &solution, int sparsity)
+{
+    eslog::error("implement solveBackward for SuiteSparse.\n")
+}
+
+template <typename T, typename I>
+void DirectSparseSolver<T, I>::solve(Matrix_Dense<T, I> &rhs, Matrix_Dense<T, I> &solution, int sparsity)
+{
 	if(ext->stage < 4) eslog::error("solve: invalid order of operations in spsolver\n");
 
 	cholmod_dense cm_rhs;

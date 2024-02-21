@@ -36,6 +36,7 @@ struct FETIConfiguration: public ECFDescription {
 
 	enum class PROJECTOR {
 		ORTHOGONAL = 0,
+		ORTHOGONAL_WITH_FACTORS,
 		CONJUGATE,
 	};
 

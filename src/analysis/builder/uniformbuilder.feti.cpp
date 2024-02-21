@@ -203,7 +203,7 @@ void UniformBuilderFETIPattern::fillDecomposition(FETIConfiguration &feti, int d
     // fill DMAP
     decomposition.dmap = new serializededata<esint, DIndex>(
             tarray<esint>(info::env::threads, distribution),
-            tarray<DIndex>(info::mesh->nodes->domains->datatarray().distribution(), dofs));
+            tarray<DIndex>(info::mesh->nodes->domains->datatarray().distribution(), dofs, DIndex{0, -1}));
 
     if (BEM) { // with BEM, TODO: mixed FEM & BEM
         // go through surface
@@ -301,10 +301,10 @@ void UniformBuilderFETIPattern::fillDecomposition(FETIConfiguration &feti, int d
         // go through inequalities
         for (auto i = inequality.begin(); i != inequality.end(); ++i) {
             auto domains = info::mesh->nodes->domains->begin() + *i / dofs;
-            if (domains->size() == 1) { // already indexed when domains->size > 1
-                auto dmap = decomposition.dmap->begin() + *i;
-                auto di = dmap->begin();
-                for (auto d = domains->begin(); d != domains->end(); ++d, ++di) {
+            auto dmap = decomposition.dmap->begin() + *i;
+            auto di = dmap->begin();
+            for (auto d = domains->begin(); d != domains->end(); ++d, ++di) {
+                if (di->index == -1) {
                     di->domain = *d;
                     if (decomposition.ismy(*d)) {
                         di->index = elements[*d - decomposition.dbegin].size++;
