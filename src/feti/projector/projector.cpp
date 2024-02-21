@@ -22,7 +22,7 @@ Projector<T>* Projector<T>::set(FETI<T> &feti, const step::Step &step)
         return new TFETIOrthogonalSymmetric<T>(feti);
     case FETIConfiguration::PROJECTOR::ORTHOGONAL_WITH_FACTORS:
         eslog::info(" = PROJECTOR                                                EXPLICIT ORTHOGONAL WITH FACTORS = \n");
-        return new TFETIOrthogonalSymmetric<T>(feti);
+        return new TFETIOrthogonalSymmetricWithFactors<T>(feti);
     case FETIConfiguration::PROJECTOR::CONJUGATE:
         eslog::info(" = PROJECTOR                                                              EXPLICIT CONJUGATE = \n");
         return new TFETIConjugateSymmetric<T>(feti);

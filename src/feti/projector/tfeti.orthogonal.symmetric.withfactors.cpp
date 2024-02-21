@@ -147,6 +147,35 @@ void TFETIOrthogonalSymmetricWithFactors<T>::apply_GtinvU(const Vector_Kernel<T>
 template<typename T>
 void TFETIOrthogonalSymmetricWithFactors<T>::_applyInvGGt(const Vector_Kernel<T> &in, Vector_Dense<T> &out)
 {
+    Vector_Kernel<T> mid;
+    #pragma omp parallel for
+    for (int t = 0; t < info::env::threads; ++t) {
+        Matrix_Dense<T> a;
+        Vector_Dense<T> y;
+        a.ncols = invU.ncols;
+        a.nrows = y.size = Vector_Kernel<T>::distribution[t + 1] - Vector_Kernel<T>::distribution[t];
+        y.vals = mid.vals + Vector_Kernel<T>::distribution[t] + Vector_Kernel<T>::offset;
+
+        a.vals = invL.vals + invL.ncols * Vector_Kernel<T>::distribution[t];
+        math::blas::apply(y, T{1}, a, T{0}, in);
+    }
+    mid.synchronize();
+    #pragma omp parallel for
+    for (int t = 0; t < info::env::threads; ++t) {
+        Matrix_Dense<T> a;
+        Vector_Dense<T> x;
+        a.ncols = invU.ncols;
+        a.nrows = x.size = Vector_Kernel<T>::distribution[t + 1] - Vector_Kernel<T>::distribution[t];
+        x.vals = out.vals + Vector_Kernel<T>::distribution[t];
+
+        a.vals = invU.vals + invU.ncols * Vector_Kernel<T>::distribution[t];
+        math::blas::apply(x, T{1}, a, T{0}, mid);
+    }
+}
+
+template<typename T>
+void TFETIOrthogonalSymmetricWithFactors<T>::_applyInvU(const Vector_Kernel<T> &in, Vector_Dense<T> &out)
+{
     #pragma omp parallel for
     for (int t = 0; t < info::env::threads; ++t) {
         Matrix_Dense<T> a;
@@ -156,17 +185,9 @@ void TFETIOrthogonalSymmetricWithFactors<T>::_applyInvGGt(const Vector_Kernel<T>
         x.vals = out.vals + Vector_Kernel<T>::distribution[t];
         y.resize(x.size);
 
-        a.vals = invL.vals + invL.ncols * Vector_Kernel<T>::distribution[t];
-        math::blas::apply(y, T{1}, a, T{0}, in);
         a.vals = invU.vals + invU.ncols * Vector_Kernel<T>::distribution[t];
         math::blas::apply(x, T{1}, a, T{0}, y);
     }
-}
-
-template<typename T>
-void TFETIOrthogonalSymmetricWithFactors<T>::_applyInvU(const Vector_Kernel<T> &in, Vector_Dense<T> &out)
-{
-    eslog::error("cannot apply inv(U). Use different projector.\n");
 }
 
 template<typename T>

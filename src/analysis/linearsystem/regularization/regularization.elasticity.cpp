@@ -331,11 +331,6 @@ void RegularizationElasticity<T>::set3D(FETI<T> &feti, esint domain, bool onSurf
     std::vector<esint> fixPoints;
     getFixPoints(fixPoints, domain, onSurface);
 
-    for (size_t i = 0; i < fixPoints.size(); ++i) {
-        printf(" %d", fixPoints[i]);
-    }
-    printf("\n");
-
     const Matrix_CSR<T> &K = feti.K[domain];
     Matrix_Dense<T> &R = feti.R1[domain];
     Matrix_CSR<T> &RegMat = feti.RegMat[domain];

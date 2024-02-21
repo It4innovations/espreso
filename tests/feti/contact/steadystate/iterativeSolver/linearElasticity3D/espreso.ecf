@@ -20,7 +20,7 @@ DEFAULT_ARGS {
   12     900;
 }
 
-INPUT_TYPE              GENERATOR;
+INPUT_TYPE           GENERATOR;
 PHYSICS   STRUCTURAL_MECHANICS;
 
 GENERATOR {
@@ -40,7 +40,7 @@ GENERATOR {
     }
 
     FACES {
-      WALL  <0 , 1> <0 , 1> <1 , 1>;
+      WALL  <0 , 1> <0 , 0> <0 , 1>;
     }
 
     ELEMENT_TYPE          [ARG0];
@@ -102,14 +102,18 @@ STRUCTURAL_MECHANICS {
         PRECISION             1e-9;
       }
 
+      DISPLACEMENT {
+        Z0  { X 0; Y 0; Z 0; }
+      }
+
       ACCELERATION {
-        ALL_ELEMENTS   { Z 9.8066; };
+        ALL_ELEMENTS   { Y -9.8066; };
       }
 
       FIXED_WALL {
         WALL {
           NORMAL  { Z 1; }
-          DISTANCE  1;
+          DISTANCE  0;
         }
       }
     }

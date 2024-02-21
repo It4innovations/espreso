@@ -21,7 +21,6 @@ public:
     Vector_Dual<T> z, p, Fp, g, g0, gg0;
     Vector_Dual<int> free, active;
 
-protected:
     void restrictToFeasibleSet(Vector_Dual<T> &x);
     void updateFreeAndActiveSet(Vector_Dual<int> &free, Vector_Dual<int> &active, const Vector_Dual<T> &x, T epsilon);
     void updateReducedGradient(Vector_Dual<T> &g_red, const Vector_Dual<T> &g, const Vector_Dual<T> &x, double alpha, double epsilon);

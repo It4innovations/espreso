@@ -64,7 +64,7 @@ template <> void PCPG<double>::solve(const step::Step &step, IterativeSolverInfo
     Projector<double> *P = feti.projector;
     Preconditioner<double> *S = feti.preconditioner;
 
-    P->apply_e(P->e, l);             // l = Gt * inv(GGt) * e
+    P->apply_e(P->e, l);                   // l = Gt * inv(GGt) * e
 
     F->apply(l, r);                        // r = d - F * l
     math::scale(-1., r);                   //

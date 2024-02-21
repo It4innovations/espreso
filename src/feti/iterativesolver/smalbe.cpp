@@ -12,7 +12,7 @@ namespace espreso {
 
 template <typename T>
 SMALBE<T>::SMALBE(FETI<T> &feti)
-: IterativeSolver<T>(feti)
+: IterativeSolver<T>(feti), mprgp(feti)
 {
 
 }
@@ -21,18 +21,6 @@ template <typename T>
 void SMALBE<T>::info()
 {
     eslog::info(" = MODIFIED PROPORTIONING WITH REDUCED GRADIENT PROJECTION SETTING                           = \n");
-    eslog::info(" = MODIFIED PROPORTIONING WITH REDUCED GRADIENT PROJECTION SETTING                           = \n");
-//    switch (feti.configuration.stopping_criterion) {
-//    case FETIConfiguration::STOPPING_CRITERION::RELATIVE:
-//        eslog::info(" =   STOPPING CRITERION                                                             RELATIVE = \n");
-//        break;
-//    case FETIConfiguration::STOPPING_CRITERION::ABSOLUTE:
-//        eslog::info(" =   STOPPING CRITERION                                                             ABSOLUTE = \n");
-//        break;
-//    case FETIConfiguration::STOPPING_CRITERION::ARIOLI:
-//        eslog::info(" =   STOPPING CRITERION                                                               ARIOLI = \n");
-//        break;
-//    }
     eslog::info(" =   PRECISION                                                                      %.2e = \n", feti.configuration.precision);
     eslog::info(" =   MAX_ITERATIONS                                                                  %7d = \n", feti.configuration.max_iterations);
     eslog::info(" =   ALPHAM                                                                         %.2e = \n", feti.configuration.alpham);
@@ -64,6 +52,8 @@ static void _print(const char *name, const IterativeSolverInfo &info, const step
 //  flag = (norm(stopping_gradient)<=options.epsilon*norm_b && norm(Cx)<=options.epsilon*norm_b/maxeig);
 //end
 
+
+
 template <> void SMALBE<double>::solve(const step::Step &step, IterativeSolverInfo &info)
 {
     DualOperator<double> *F = feti.dualOperator;
@@ -74,15 +64,19 @@ template <> void SMALBE<double>::solve(const step::Step &step, IterativeSolverIn
     math::copy(b_, F->d);
     // Homogenization of the equality constraints
 
-//    if (std::sqrt(P->e.dot()) > 10 * feti.configuration.precision) {
-//        x_im = Ct*(Uc\P->e);
-//        b = b - F->apply(x_im);
-//        constraints.sbc.lb = constraints.sbc.lb - x_im(constraints.indsbc); // indsbc -> inequalities
-//        constraints.sbc.ub = constraints.sbc.ub - x_im(constraints.indsbc);
-//        x0 = x0 - x_im;
-//    } else {
-//        x_im = zeros(n,1);
-//    }
+    math::set(mprgp.x0, 0.);
+    if (std::sqrt(P->e.dot()) > 10 * feti.configuration.precision) {
+        P->apply_GtinvU(P->e, x_im);
+        F->apply(x_im, Fx_im);
+        math::add(b, -1., Fx_im);
+        for (esint i = feti.lambdas.equalities, j = 0; i < feti.lambdas.size; ++i, ++j) {
+            feti.lb.vals[j] -= x_im.vals[i];
+            feti.ub.vals[j] -= x_im.vals[i];
+        }
+        math::add(mprgp.x0, -1., x_im);
+    } else {
+        math::set(x_im, 1.);
+    }
 
     // constraints=initialize_slip_bound(); coulomb, later
 
@@ -108,28 +102,52 @@ template <> void SMALBE<double>::solve(const step::Step &step, IterativeSolverIn
     double norm_b = std::sqrt(b.dot());
 
     math::set(mu, 0.0);
-    // bCtmu = b - Ct*(Uc\mu)
-    // x0 = 0
-    // x = project_to_feasible_set(x0,constraints,options.prec);
-    // g = H(x) - bCtmu
-    // stopping_gradient = compute_stopping_gradient(options.stopping_gradient,g,x,constraints,alpha,options.prec);
-    // Gx = Lg\(G*x);
-    // free = compute_free_and_active_sets(x,constraints,options.prec);
+    P->apply_GtinvU(mu, bCtmu);
+    math::scale(-1., bCtmu);
+    math::add(bCtmu, 1., b);
+    math::set(mprgp.x0, 0.);
 
-    while (1) {
-        // zavolat mprgp
-        // [x,g,mpgp_outputs] = mprgp(@H,bCtmu,x,g,mpgp_options,@Hplus,constraints,C,Ct,Lc,Uc,fem,data_master);
-        //
-        // stopping_gradient = compute_stopping_gradient(options.stopping_gradient,g,x,constraints,alpha,options.prec);
+    math::copy(mprgp.x, mprgp.x0);
+    mprgp.restrictToFeasibleSet(mprgp.x);
+
+    // Hessian multiplication (PAP+rho*Ct*inv(C*Ct)*C)*x
+    P->apply(mprgp.x, y);
+    F->apply(y, z);
+    P->apply(z, mprgp.g);
+    math::scale(1. / normPFP, mprgp.g);
+    math::add(mprgp.g,  rho, mprgp.x);
+    math::add(mprgp.g, -rho, z);
+    math::add(mprgp.g, -1., bCtmu);
+    mprgp.updateStoppingGradient(mprgp.g_stop, mprgp.g, mprgp.x, alpha, feti.configuration.precision);
+    // Gx = Lg\(G*x);
+    mprgp.updateFreeAndActiveSet(mprgp.free, mprgp.active, mprgp.x, feti.configuration.precision);
+
+    for (size_t it = 1; it <= feti.configuration.max_iterations; ++it) {
+        mprgp.solve(step, info);
+        mprgp.updateStoppingGradient(mprgp.g_stop, mprgp.g, mprgp.x, alpha, feti.configuration.precision);
         // Gx = Lg\(G*x);
 
-        // mit_flag=out_of_maxiter_stop; min_flag=minimization_good_enough_stop;
-        // if mit_flag || (min_flag && bch_flag); break; end;
+        double norm_b = std::sqrt(b.dot());
+        double norm_stop = std::sqrt(mprgp.g_stop.dot());
+        double norm_Cx = 0;
+        if (norm_stop <= feti.configuration.precision * norm_b && norm_Cx <= feti.configuration.precision * norm_b / maxEIG_H) {
+            break;
+        }
 
         // 2. Update mu and M
-        // Lag1 = 0.5*(x'*(g - bCtmu));
-        // mu = mu + rho*Cx; bCtmu_prev=bCtmu; bCtmu = b - Ct*(Uc\mu);
+        math::copy(gbCtmu, mprgp.g);
+        math::add(gbCtmu, -1., bCtmu);
+        double Lag1 = gbCtmu.dot(mprgp.x); // Lag1 = 0.5*(x'*(g - bCtmu));
+        math::add(mu, rho, Cx); // mu = mu + rho*Cx;
+        math::copy(bCtmu_prev, bCtmu);
+        // bCtmu = b - Ct*(Uc\mu);
+        P->apply_GtinvU(mu, bCtmu);
+        math::scale(-1., bCtmu);
+        math::add(bCtmu, 1., b);
         // g = g - bCtmu + bCtmu_prev;
+        math::add(mprgp.g, -1., bCtmu);
+        math::add(mprgp.g, -1., bCtmu_prev);
+
         // if Lag1 < Lag0 + rho*norm(Gx)^2/2
           // M = options.beta*M; mpgp_options.M = M;
         // end
@@ -137,8 +155,9 @@ template <> void SMALBE<double>::solve(const step::Step &step, IterativeSolverIn
     }
 
     // x = x+x_im;
+    math::add(mprgp.x, 1., x_im);
     // rbm = Uc\( Lc\(C*(-b_+A(x)))-mu*normPAP ); rbm = -rbm(ip);
-    // reconstructSolution(x, g);
+    reconstructSolution(mprgp.x, mprgp.g);
 }
 
 template <> void SMALBE<std::complex<double> >::solve(const step::Step &step, IterativeSolverInfo &info)

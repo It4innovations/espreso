@@ -3,6 +3,7 @@
 #define SRC_FETI_ITERATIVESOLVER_SMALSE_H_
 
 #include "iterativesolver.h"
+#include "mprgp.h"
 
 namespace espreso {
 
@@ -19,7 +20,9 @@ public:
     void solve(const step::Step &step, IterativeSolverInfo &info);
 
     using IterativeSolver<T>::feti;
-    Vector_Dual<T> b, b_, x_im, bCtmu;
+
+    MPRGP<T> mprgp;
+    Vector_Dual<T> b, b_, y, z, x_im, Fx_im, bCtmu, bCtmu_prev, Cx, Gx, gbCtmu;
     Vector_Kernel<T> mu;
 };
 
