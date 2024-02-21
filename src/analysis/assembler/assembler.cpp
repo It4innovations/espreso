@@ -26,7 +26,7 @@
 using namespace espreso;
 
 Assembler::Assembler(PhysicsConfiguration &settings)
-: settings(settings)
+: settings(settings), threaded(false)
 {
     bem.resize(info::mesh->domains->size);
     BETI.resize(info::mesh->domains->size);
@@ -57,10 +57,37 @@ Assembler::~Assembler()
 
 void Assembler::assemble(SubKernel::Action action)
 {
-//    #pragma omp parallel for
-    for (int t = 0; t < info::env::threads; ++t) {
-        for (size_t d = info::mesh->domains->distribution[t]; d < info::mesh->domains->distribution[t + 1]; d++) {
-            if (bem[d]) {
+    if (threaded) {
+        #pragma omp parallel for
+        for (int t = 0; t < info::env::threads; ++t) {
+            for (size_t d = info::mesh->domains->distribution[t]; d < info::mesh->domains->distribution[t + 1]; d++) {
+                if (bem[d] && action == SubKernel::Action::ASSEMBLE) {
+                    runBEM(action, d, BETI[d]);
+                } else {
+                    for (esint i = info::mesh->elements->eintervalsDistribution[d]; i < info::mesh->elements->eintervalsDistribution[d + 1]; ++i) {
+                        run(action, i);
+                    }
+                }
+            }
+        }
+        #pragma omp parallel for
+        for (int t = 0; t < info::env::threads; ++t) {
+            for (size_t r = 1; r < info::mesh->boundaryRegions.size(); ++r) {
+                if (info::mesh->boundaryRegions[r]->dimension) {
+                    for (size_t d = info::mesh->domains->distribution[t]; d < info::mesh->domains->distribution[t + 1]; d++) {
+                        for (esint i = info::mesh->boundaryRegions[r]->eintervalsDistribution[d]; i < info::mesh->boundaryRegions[r]->eintervalsDistribution[d + 1]; ++i) {
+                            run(action, r, i);
+                        }
+                    }
+                } else {
+                    run(action, r, t);
+                }
+            }
+        }
+
+    } else {
+        for (esint d = 0; d < info::mesh->domains->size; d++) {
+            if (bem[d] && action == SubKernel::Action::ASSEMBLE) {
                 runBEM(action, d, BETI[d]);
             } else {
                 for (esint i = info::mesh->elements->eintervalsDistribution[d]; i < info::mesh->elements->eintervalsDistribution[d + 1]; ++i) {
@@ -68,18 +95,17 @@ void Assembler::assemble(SubKernel::Action action)
                 }
             }
         }
-    }
-//    #pragma omp parallel for
-    for (int t = 0; t < info::env::threads; ++t) {
         for (size_t r = 1; r < info::mesh->boundaryRegions.size(); ++r) {
             if (info::mesh->boundaryRegions[r]->dimension) {
-                for (size_t d = info::mesh->domains->distribution[t]; d < info::mesh->domains->distribution[t + 1]; d++) {
+                for (esint d = 0; d < info::mesh->domains->size; d++) {
                     for (esint i = info::mesh->boundaryRegions[r]->eintervalsDistribution[d]; i < info::mesh->boundaryRegions[r]->eintervalsDistribution[d + 1]; ++i) {
                         run(action, r, i);
                     }
                 }
             } else {
-                run(action, r, t);
+                for (int t = 0; t < info::env::threads; ++t) {
+                    run(action, r, t);
+                }
             }
         }
     }

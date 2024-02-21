@@ -69,6 +69,7 @@ protected:
 
     std::vector<int> bem;
     std::vector<double*> BETI;
+    bool threaded;
 };
 
 template <typename T>

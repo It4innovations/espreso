@@ -33,6 +33,7 @@ ElementData* HeatTransfer::Results::flux = nullptr;
 HeatTransfer::HeatTransfer(HeatTransfer *previous, HeatTransferConfiguration &settings, HeatTransferLoadStepConfiguration &configuration)
 : Assembler(settings), settings(settings), configuration(configuration)
 {
+    threaded = configuration.solver == HeatTransferLoadStepConfiguration::SOLVER::FETI;
     subkernels.resize(info::mesh->elements->eintervals.size());
     boundary.resize(info::mesh->boundaryRegions.size());
     for (size_t r = 1; r < info::mesh->boundaryRegions.size(); ++r) {
@@ -570,6 +571,7 @@ void HeatTransfer::getInitialTemperature(Vector_Base<double> *x)
 void HeatTransfer::updateSolution(Vector_Base<double> *x)
 {
     Vector_FETI<Vector_Dense, double> *xBEM = dynamic_cast<Vector_FETI<Vector_Dense, double>*>(x);
+    #pragma omp parallel for
     for (size_t i = 0; i < bem.size(); ++i) {
         if (bem[i]) {
             int np = info::mesh->domainsSurface->dnodes[i].size();

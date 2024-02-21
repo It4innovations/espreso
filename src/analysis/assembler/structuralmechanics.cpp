@@ -44,6 +44,7 @@ NodeData* StructuralMechanics::Results::accelerationAmplitude = nullptr;
 StructuralMechanics::StructuralMechanics(StructuralMechanics *previous, StructuralMechanicsConfiguration &settings, StructuralMechanicsLoadStepConfiguration &configuration)
 : Assembler(settings), settings(settings), configuration(configuration)
 {
+    threaded = configuration.solver == StructuralMechanicsLoadStepConfiguration::SOLVER::FETI;
     subkernels.resize(info::mesh->elements->eintervals.size());
     boundary.resize(info::mesh->boundaryRegions.size());
     for (size_t r = 1; r < info::mesh->boundaryRegions.size(); ++r) {
