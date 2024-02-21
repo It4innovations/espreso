@@ -60,6 +60,7 @@ protected:
     struct per_domain_stuff {
         DirectSparseSolver<T> solver_Kreg;
         Matrix_Dense<T,I,Ad> d_F;
+        std::unique_ptr<Matrix_Dense<T,I,cbmba_d>> d_F_tmp;
         Matrix_CSR<T,I> Kreg;
         Matrix_CSR<T,I,Ah> h_L_sp;
         Matrix_CSR<T,I,Ah> h_LH_sp;
@@ -105,12 +106,20 @@ protected:
         Vector_Dense<T,I,Ad> d_apply_y;
         Vector_Dense<T,I,Ah> h_applyc_x;
         Vector_Dense<T,I,Ah> h_applyc_y;
+        size_t allocated_F_index;
+        char hermitian_F_fill;
+        I n_dofs_domain;
+        I n_dofs_interface;
+        I ld_domain;
+        I ld_interface;
+        I ld_X;
+        I ld_F;
+        bool should_allocate_d_F;
     };
 
     DualOperatorExplicitGpuConfig * config = nullptr;
     char order_X;
     char order_F;
-    char hermitian_F_fill;
     bool is_system_hermitian;
     bool is_factor1_dense, is_factor2_dense, is_factor1_sparse, is_factor2_sparse;
     bool is_path_trsm, is_path_herk;
@@ -121,6 +130,7 @@ protected:
     bool can_use_LH_is_U_d_sp, can_use_UH_is_L_d_sp;
     bool can_use_LH_is_U_d_dn, can_use_UH_is_L_d_dn;
     bool need_conjtrans_L2LH, need_conjtrans_U2UH;
+    bool is_f_triangles_shared, need_f_tmp;
     static constexpr size_t align_B = 512;
     static constexpr size_t align_elem = align_B / sizeof(T);
     int stage = 0;
@@ -134,6 +144,7 @@ protected:
     std::vector<gpu::dnblas::handle> handles_dense;
     std::vector<gpu::spblas::handle> handles_sparse;
     std::vector<per_domain_stuff> domain_data;
+    std::vector<Matrix_Dense<T,I,Ad>> d_Fs_allocated;
     Vector_Dense<T,I,Ad> d_applyg_x_cluster;
     Vector_Dense<T,I,Ad> d_applyg_y_cluster;
     Vector_Dense<T*,I,Ad> d_applyg_xs_pointers;

@@ -76,11 +76,19 @@ DualOperatorExplicitGpuConfig::DualOperatorExplicitGpuConfig()
 
 	path_if_hermitian = PATH_IF_HERMITIAN::DEFAULT;
 	REGISTER(path_if_hermitian, ECFMetaData()
-			.setdescription({ "Code path if the system matrix is hermitian or symmetric." })
+			.setdescription({ "Code path if the system is hermitian or symmetric." })
 			.setdatatype({ ECFDataType::OPTION })
 			.addoption(ECFOption().setname("DEFAULT").setdescription("Default, depending on the specific GPU and libraries."))
 			.addoption(ECFOption().setname("TRSM").setdescription("Solve LY=x, solve UZ=Y, sp-dn multiply F=B*Z."))
 			.addoption(ECFOption().setname("HERK").setdescription("Solve LY=x, dn-dn multiply F=Yt*Y.")));
+	
+	f_sharing_if_hermitian = TRIANGLE_MATRIX_SHARING::DEFAULT;
+	REGISTER(f_sharing_if_hermitian, ECFMetaData()
+			.setdescription({ "Sharing of the F matrix if the system is hermitian or symmetric." })
+			.setdatatype({ ECFDataType::OPTION })
+			.addoption(ECFOption().setname("DEFAULT").setdescription("Default, depending on the specific GPU and libraries."))
+			.addoption(ECFOption().setname("PRIVATE").setdescription("Every domain has its own allocation to store F."))
+			.addoption(ECFOption().setname("SHARED").setdescription("Two domains share the same allocation to store the triangles of F.")));
 
 	queue_count = QUEUE_COUNT::DEFAULT;
 	REGISTER(queue_count, ECFMetaData()

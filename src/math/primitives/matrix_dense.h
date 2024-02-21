@@ -123,9 +123,9 @@ public:
         return _allocated.ncols;
     }
 
-    void shallowCopy(const Matrix_Dense &other)
+    template<typename A2>
+    void shallowCopy(const Matrix_Dense<T,I,A2> &other)
     {
-        if constexpr(!A::always_equal) if(this->ator != other.ator) eslog::error("not implemented for unequal allocators\n");
         type = other.type;
         shape = other.shape;
         submatrix[0] = other.submatrix[0];

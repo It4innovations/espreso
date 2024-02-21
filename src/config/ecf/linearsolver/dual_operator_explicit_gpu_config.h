@@ -45,6 +45,12 @@ struct DualOperatorExplicitGpuConfig: public ECFDescription {
         HERK
     };
 
+    enum class TRIANGLE_MATRIX_SHARING {
+        DEFAULT,
+        PRIVATE,
+        SHARED
+    };
+
     enum class QUEUE_COUNT {
         DEFAULT,
         PER_THREAD,
@@ -66,6 +72,7 @@ struct DualOperatorExplicitGpuConfig: public ECFDescription {
     TRSM2_SOLVE_TYPE trsm2_solve_type;
     MATRIX_ORDER trsm_rhs_sol_order;
     PATH_IF_HERMITIAN path_if_hermitian;
+    TRIANGLE_MATRIX_SHARING f_sharing_if_hermitian;
     QUEUE_COUNT queue_count;
     DEVICE apply_scatter_gather_where;
 

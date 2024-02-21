@@ -112,9 +112,9 @@ public:
         this->cols = other.cols;
     }
 
-    void shallowCopy(const Matrix_CSR &other)
+    template<typename A2>
+    void shallowCopy(const Matrix_CSR<T,I,A2> &other)
     {
-        if constexpr(!A::always_equal) if(this->ator != other.ator) eslog::error("not implemented for unequal allocators\n");
         type = other.type;
         shape = other.shape;
         _Matrix_CSR<T, I>::operator=(other);

@@ -13,14 +13,15 @@
 
 namespace espreso {
 
-using CONCURRENCY       = DualOperatorExplicitGpuConfig::CONCURRENCY;
-using MATRIX_STORAGE    = DualOperatorExplicitGpuConfig::MATRIX_STORAGE;
-using TRSM1_SOLVE_TYPE  = DualOperatorExplicitGpuConfig::TRSM1_SOLVE_TYPE;
-using TRSM2_SOLVE_TYPE  = DualOperatorExplicitGpuConfig::TRSM2_SOLVE_TYPE;
-using MATRIX_ORDER      = DualOperatorExplicitGpuConfig::MATRIX_ORDER;
-using PATH_IF_HERMITIAN = DualOperatorExplicitGpuConfig::PATH_IF_HERMITIAN;
-using QUEUE_COUNT       = DualOperatorExplicitGpuConfig::QUEUE_COUNT;
-using DEVICE            = DualOperatorExplicitGpuConfig::DEVICE;
+using CONCURRENCY             = DualOperatorExplicitGpuConfig::CONCURRENCY;
+using MATRIX_STORAGE          = DualOperatorExplicitGpuConfig::MATRIX_STORAGE;
+using TRSM1_SOLVE_TYPE        = DualOperatorExplicitGpuConfig::TRSM1_SOLVE_TYPE;
+using TRSM2_SOLVE_TYPE        = DualOperatorExplicitGpuConfig::TRSM2_SOLVE_TYPE;
+using MATRIX_ORDER            = DualOperatorExplicitGpuConfig::MATRIX_ORDER;
+using PATH_IF_HERMITIAN       = DualOperatorExplicitGpuConfig::PATH_IF_HERMITIAN;
+using TRIANGLE_MATRIX_SHARING = DualOperatorExplicitGpuConfig::TRIANGLE_MATRIX_SHARING;
+using QUEUE_COUNT             = DualOperatorExplicitGpuConfig::QUEUE_COUNT;
+using DEVICE                  = DualOperatorExplicitGpuConfig::DEVICE;
 
 template <typename T, typename I>
 TotalFETIExplicitAcc<T,I>::TotalFETIExplicitAcc(FETI<T> &feti)
@@ -33,7 +34,6 @@ TotalFETIExplicitAcc<T,I>::TotalFETIExplicitAcc(FETI<T> &feti)
     if(config->trsm_rhs_sol_order == MATRIX_ORDER::ROW_MAJOR) order_X = 'R';
     if(config->trsm_rhs_sol_order == MATRIX_ORDER::COL_MAJOR) order_X = 'C';
     order_F = order_X;
-    hermitian_F_fill = 'L';
     is_system_hermitian = (DirectSparseSolver<T,I>::factorsSymmetry() == Solver_Factors::HERMITIAN_LOWER || DirectSparseSolver<T,I>::factorsSymmetry() == Solver_Factors::HERMITIAN_UPPER);
     is_factor1_dense = (config->trsm1_factor_storage == MATRIX_STORAGE::DENSE);
     is_factor2_dense = (config->trsm2_factor_storage == MATRIX_STORAGE::DENSE);
@@ -57,6 +57,8 @@ TotalFETIExplicitAcc<T,I>::TotalFETIExplicitAcc(FETI<T> &feti)
     can_use_UH_is_L_d_dn = (is_system_hermitian &&  trsm1_use_L && is_factor1_dense);
     need_conjtrans_L2LH = (is_system_hermitian && solver_get_L && (trsm1_use_LH || trsm2_use_U)) || (!is_system_hermitian && trsm1_use_LH);
     need_conjtrans_U2UH = (is_system_hermitian && solver_get_U && (trsm2_use_UH || trsm1_use_L)) || (!is_system_hermitian && trsm2_use_UH);
+    is_f_triangles_shared = (is_system_hermitian && config->f_sharing_if_hermitian == TRIANGLE_MATRIX_SHARING::SHARED);
+    need_f_tmp = (is_f_triangles_shared && is_path_trsm);
 
     if(is_path_herk && !is_system_hermitian) eslog::error("cannot do herk path with non-hermitian system\n");
 
@@ -107,10 +109,10 @@ TotalFETIExplicitAcc<T,I>::~TotalFETIExplicitAcc()
     tm_gpumempool.start();
     gpu::mgm::memfree_device(mem_pool_device);
     tm_gpumempool.stop();
+    for(auto & f : d_Fs_allocated) f.clear();
     for(size_t d = 0; d < n_domains; d++)
     {
         per_domain_stuff & data = domain_data[d];
-        data.d_F.clear();
         data.d_L_sp.clear();
         data.d_LH_sp.clear();
         data.d_U_sp.clear();
@@ -198,7 +200,7 @@ void TotalFETIExplicitAcc<T,I>::set(const step::Step &step)
 {
     if(stage != 1) eslog::error("set: invalid order of operations in dualop\n");
 
-    my_timer tm_total, tm_gpuinit, tm_gpuset, tm_vecresize, tm_gpucreate, tm_mainloop_outer, tm_mainloop_inner, tm_Kreg_combine, tm_solver_commit, tm_fact_symbolic, tm_descriptors, tm_buffersize, tm_alloc, tm_alloc_host, tm_alloc_device, tm_setpointers, tm_Bperm, tm_get_factors, tm_extract, tm_transpose, tm_copyin, tm_kernels_preprocess, tm_trs1, tm_trs2, tm_gemm, tm_applystuff, tm_poolalloc, tm_wait;
+    my_timer tm_total, tm_gpuinit, tm_gpuset, tm_vecresize, tm_sizecalc, tm_gpucreate, tm_mainloop_outer, tm_mainloop_inner, tm_Kreg_combine, tm_solver_commit, tm_fact_symbolic, tm_descriptors, tm_buffersize, tm_alloc, tm_alloc_host, tm_alloc_device, tm_setpointers, tm_Bperm, tm_get_factors, tm_extract, tm_transpose, tm_copyin, tm_kernels_preprocess, tm_trs1, tm_trs2, tm_gemm, tm_applystuff, tm_poolalloc, tm_wait;
 
     tm_total.start();
     n_domains = feti.K.size();
@@ -214,14 +216,57 @@ void TotalFETIExplicitAcc<T,I>::set(const step::Step &step)
     gpu::mgm::set_device(device);
     tm_gpuset.stop();
 
-    // approximate check if it is possible for the matrices to fit into memory
+    tm_vecresize.start();
+    queues.resize(n_queues);
+    handles_dense.resize(n_queues);
+    handles_sparse.resize(n_queues);
+    domain_data.resize(n_domains);
+    d_Fs_allocated.resize(is_f_triangles_shared ? (n_domains - 1) / 2 + 1 : n_domains);
+    tm_vecresize.stop();
+    
+    tm_sizecalc.start();
+    for(size_t d = 0; d < n_domains; d++)
     {
+        per_domain_stuff & data = domain_data[d];
+        data.n_dofs_domain = feti.B1[d].ncols;
+        data.n_dofs_interface = feti.B1[d].nrows;
+        data.ld_domain = ((data.n_dofs_domain - 1) / align_elem + 1) * align_elem;
+        data.ld_interface = ((data.n_dofs_interface - 1) / align_elem + 1) * align_elem;
+        data.ld_X = (order_X == 'R' ? data.ld_interface : data.ld_domain);
+    }
+    if(is_f_triangles_shared)
+    {
+        std::vector<size_t> domain_idxs_sorted_by_f_size_desc(n_domains);
+        for(size_t d = 0; d < n_domains; d++) domain_idxs_sorted_by_f_size_desc[d] = d;
+        std::sort(domain_idxs_sorted_by_f_size_desc.rbegin(), domain_idxs_sorted_by_f_size_desc.rend(), [&](size_t dl, size_t dr){ return domain_data[dl].n_dofs_interface < domain_data[dr].n_dofs_interface; });
+        for(size_t i = 0; i < n_domains; i++)
+        {
+            size_t d = domain_idxs_sorted_by_f_size_desc[i];
+            size_t d_bigger = domain_idxs_sorted_by_f_size_desc[(i / 2) * 2];
+            domain_data[d].allocated_F_index = i / 2;
+            domain_data[d].hermitian_F_fill = (i % 2 == 0 ? 'U' : 'L');
+            domain_data[d].ld_F = domain_data[d_bigger].ld_interface;
+            domain_data[d].should_allocate_d_F = (i % 2 == 0);
+        }
+    }
+    else
+    {
+        for(size_t d = 0; d < n_domains; d++)
+        {
+            domain_data[d].allocated_F_index = d;
+            domain_data[d].hermitian_F_fill = 'U';
+            domain_data[d].ld_F = domain_data[d].ld_interface;
+            domain_data[d].should_allocate_d_F = true;
+        }
+    }
+    {
+        // approximate check if it is possible for the matrices to fit into memory
         size_t mem_needed = 0;
         for(size_t d = 0; d < n_domains; d++)
         {
-            I n_dofs_interface = feti.B1[d].nrows;
-            I ld_interface = ((n_dofs_interface - 1) / align_elem + 1) * align_elem;
-            Matrix_Dense<T,I>::memoryRequirement(n_dofs_interface, n_dofs_interface, ld_interface);
+            size_t mem_needed_f = Matrix_Dense<T,I>::memoryRequirement(domain_data[d].n_dofs_interface, domain_data[d].n_dofs_interface, domain_data[d].ld_F);
+            if(is_f_triangles_shared) mem_needed_f /= 2;
+            mem_needed += mem_needed_f;
         }
         size_t mem_capacity = gpu::mgm::get_device_memory_capacity();
         if(mem_needed > mem_capacity)
@@ -229,13 +274,7 @@ void TotalFETIExplicitAcc<T,I>::set(const step::Step &step)
             eslog::error("Not enough device memory for this input. Need %zu GiB, but have only %zu GiB\n", mem_needed >> 30, mem_capacity >> 30);
         }
     }
-
-    tm_vecresize.start();
-    queues.resize(n_queues);
-    handles_dense.resize(n_queues);
-    handles_sparse.resize(n_queues);
-    domain_data.resize(n_domains);
-    tm_vecresize.stop();
+    tm_sizecalc.stop();
 
     // create gpu stream and libraries
     tm_gpucreate.start();
@@ -251,11 +290,6 @@ void TotalFETIExplicitAcc<T,I>::set(const step::Step &step)
     {
         tm_mainloop_inner.start();
 
-        I n_dofs_domain = feti.B1[d].ncols;
-        I n_dofs_interface = feti.B1[d].nrows;
-        I ld_domain = ((n_dofs_domain - 1) / align_elem + 1) * align_elem;
-        I ld_interface = ((n_dofs_interface - 1) / align_elem + 1) * align_elem;
-        I ld_X = (order_X == 'R' ? ld_interface : ld_domain);
         I n_nz_factor;
 
         gpu::mgm::queue & q = queues[d % n_queues];
@@ -295,18 +329,18 @@ void TotalFETIExplicitAcc<T,I>::set(const step::Step &step)
         // create descriptors
         tm_descriptors.start();
         {
-            if(trsm1_use_L)  gpu::spblas::descr_matrix_csr_create<T,I>(data.descr_L_sp,  n_dofs_domain, n_dofs_domain, n_nz_factor, 'L');
-            if(trsm1_use_LH) gpu::spblas::descr_matrix_csr_create<T,I>(data.descr_LH_sp, n_dofs_domain, n_dofs_domain, n_nz_factor, 'U');
-            if(trsm2_use_U)  gpu::spblas::descr_matrix_csr_create<T,I>(data.descr_U_sp,  n_dofs_domain, n_dofs_domain, n_nz_factor, 'U');
-            if(trsm2_use_UH) gpu::spblas::descr_matrix_csr_create<T,I>(data.descr_UH_sp, n_dofs_domain, n_dofs_domain, n_nz_factor, 'L');
-            gpu::spblas::descr_matrix_csr_create<T,I>(data.descr_Bperm_sp, n_dofs_interface, n_dofs_domain, feti.B1[d].nnz, 'N');
-            if(trsm1_use_L  && is_factor1_dense) gpu::spblas::descr_matrix_dense_create<T,I>(data.descr_L_dn,  n_dofs_domain, n_dofs_domain, ld_domain, 'R');
-            if(trsm1_use_LH && is_factor1_dense) gpu::spblas::descr_matrix_dense_create<T,I>(data.descr_LH_dn, n_dofs_domain, n_dofs_domain, ld_domain, 'R');
-            if(trsm2_use_U  && is_factor2_dense) gpu::spblas::descr_matrix_dense_create<T,I>(data.descr_U_dn,  n_dofs_domain, n_dofs_domain, ld_domain, 'R');
-            if(trsm2_use_UH && is_factor2_dense) gpu::spblas::descr_matrix_dense_create<T,I>(data.descr_UH_dn, n_dofs_domain, n_dofs_domain, ld_domain, 'R');
-            if(true)   gpu::spblas::descr_matrix_dense_create<T,I>(data.descr_X, n_dofs_domain, n_dofs_interface, ld_X, order_X);
-            if(need_Y) gpu::spblas::descr_matrix_dense_create<T,I>(data.descr_Y, n_dofs_domain, n_dofs_interface, ld_X, order_X);
-            gpu::spblas::descr_matrix_dense_create<T,I>(data.descr_F, n_dofs_interface, n_dofs_interface, ld_interface, order_F);
+            if(trsm1_use_L)  gpu::spblas::descr_matrix_csr_create<T,I>(data.descr_L_sp,  data.n_dofs_domain, data.n_dofs_domain, n_nz_factor, 'L');
+            if(trsm1_use_LH) gpu::spblas::descr_matrix_csr_create<T,I>(data.descr_LH_sp, data.n_dofs_domain, data.n_dofs_domain, n_nz_factor, 'U');
+            if(trsm2_use_U)  gpu::spblas::descr_matrix_csr_create<T,I>(data.descr_U_sp,  data.n_dofs_domain, data.n_dofs_domain, n_nz_factor, 'U');
+            if(trsm2_use_UH) gpu::spblas::descr_matrix_csr_create<T,I>(data.descr_UH_sp, data.n_dofs_domain, data.n_dofs_domain, n_nz_factor, 'L');
+            gpu::spblas::descr_matrix_csr_create<T,I>(data.descr_Bperm_sp, data.n_dofs_interface, data.n_dofs_domain, feti.B1[d].nnz, 'N');
+            if(trsm1_use_L  && is_factor1_dense) gpu::spblas::descr_matrix_dense_create<T,I>(data.descr_L_dn,  data.n_dofs_domain, data.n_dofs_domain, data.ld_domain, 'R');
+            if(trsm1_use_LH && is_factor1_dense) gpu::spblas::descr_matrix_dense_create<T,I>(data.descr_LH_dn, data.n_dofs_domain, data.n_dofs_domain, data.ld_domain, 'R');
+            if(trsm2_use_U  && is_factor2_dense) gpu::spblas::descr_matrix_dense_create<T,I>(data.descr_U_dn,  data.n_dofs_domain, data.n_dofs_domain, data.ld_domain, 'R');
+            if(trsm2_use_UH && is_factor2_dense) gpu::spblas::descr_matrix_dense_create<T,I>(data.descr_UH_dn, data.n_dofs_domain, data.n_dofs_domain, data.ld_domain, 'R');
+            if(true)   gpu::spblas::descr_matrix_dense_create<T,I>(data.descr_X, data.n_dofs_domain, data.n_dofs_interface, data.ld_X, order_X);
+            if(need_Y) gpu::spblas::descr_matrix_dense_create<T,I>(data.descr_Y, data.n_dofs_domain, data.n_dofs_interface, data.ld_X, order_X);
+            gpu::spblas::descr_matrix_dense_create<T,I>(data.descr_F, data.n_dofs_interface, data.n_dofs_interface, data.ld_F, order_F);
             if(is_factor1_sparse)                 gpu::spblas::descr_sparse_trsm_create(data.descr_sparse_trsm1);
             if(is_factor2_sparse && is_path_trsm) gpu::spblas::descr_sparse_trsm_create(data.descr_sparse_trsm2);
         }
@@ -331,13 +365,13 @@ void TotalFETIExplicitAcc<T,I>::set(const step::Step &step)
 
             gpu::dnblas::buffer_collect_size(hd, buffer_requirements.emplace_back(), [&](){
                 T * dummyptrT = reinterpret_cast<T*>(sizeof(T));
-                if(trsm1_use_L  && is_factor1_dense) gpu::dnblas::trsm<T,I>(hd, 'L', n_dofs_domain, n_dofs_interface, dummyptrT, ld_domain, 'R', 'N', 'L', dummyptrT, ld_X, order_X, 'N');
-                if(trsm1_use_LH && is_factor1_dense) gpu::dnblas::trsm<T,I>(hd, 'L', n_dofs_domain, n_dofs_interface, dummyptrT, ld_domain, 'R', 'H', 'U', dummyptrT, ld_X, order_X, 'N');
-                if(trsm2_use_U  && is_factor2_dense) gpu::dnblas::trsm<T,I>(hd, 'L', n_dofs_domain, n_dofs_interface, dummyptrT, ld_domain, 'R', 'N', 'U', dummyptrT, ld_X, order_X, 'N');
-                if(trsm2_use_UH && is_factor2_dense) gpu::dnblas::trsm<T,I>(hd, 'L', n_dofs_domain, n_dofs_interface, dummyptrT, ld_domain, 'R', 'H', 'L', dummyptrT, ld_X, order_X, 'N');
-                if(is_path_herk) gpu::dnblas::herk<T,I>(hd, n_dofs_interface, n_dofs_domain, dummyptrT, ld_X, order_X, 'H', dummyptrT, ld_interface, order_F, hermitian_F_fill);
-                if( is_system_hermitian) gpu::dnblas::hemv(hd, n_dofs_interface, dummyptrT, ld_interface, order_F, 'N', hermitian_F_fill, dummyptrT, dummyptrT);
-                if(!is_system_hermitian) gpu::dnblas::gemv(hd, n_dofs_interface, n_dofs_interface, dummyptrT, ld_interface, order_F, 'N', dummyptrT, dummyptrT);
+                if(trsm1_use_L  && is_factor1_dense) gpu::dnblas::trsm<T,I>(hd, 'L', data.n_dofs_domain, data.n_dofs_interface, dummyptrT, data.ld_domain, 'R', 'N', 'L', dummyptrT, data.ld_X, order_X, 'N');
+                if(trsm1_use_LH && is_factor1_dense) gpu::dnblas::trsm<T,I>(hd, 'L', data.n_dofs_domain, data.n_dofs_interface, dummyptrT, data.ld_domain, 'R', 'H', 'U', dummyptrT, data.ld_X, order_X, 'N');
+                if(trsm2_use_U  && is_factor2_dense) gpu::dnblas::trsm<T,I>(hd, 'L', data.n_dofs_domain, data.n_dofs_interface, dummyptrT, data.ld_domain, 'R', 'N', 'U', dummyptrT, data.ld_X, order_X, 'N');
+                if(trsm2_use_UH && is_factor2_dense) gpu::dnblas::trsm<T,I>(hd, 'L', data.n_dofs_domain, data.n_dofs_interface, dummyptrT, data.ld_domain, 'R', 'H', 'L', dummyptrT, data.ld_X, order_X, 'N');
+                if(is_path_herk) gpu::dnblas::herk<T,I>(hd, data.n_dofs_interface, data.n_dofs_domain, dummyptrT, data.ld_X, order_X, 'H', dummyptrT, data.ld_F, order_F, data.hermitian_F_fill);
+                if( is_system_hermitian) gpu::dnblas::hemv(hd, data.n_dofs_interface, dummyptrT, data.ld_F, order_F, 'N', data.hermitian_F_fill, dummyptrT, dummyptrT);
+                if(!is_system_hermitian) gpu::dnblas::gemv(hd, data.n_dofs_interface, data.n_dofs_interface, dummyptrT, data.ld_F, order_F, 'N', dummyptrT, dummyptrT);
             });
 
             gpu::mgm::queue_wait(q);
@@ -351,33 +385,33 @@ void TotalFETIExplicitAcc<T,I>::set(const step::Step &step)
         {
             // host pinned memory
             tm_alloc_host.start();
-            if(trsm1_use_L || solver_get_L)           data.h_L_sp .resize(n_dofs_domain, n_dofs_domain, n_nz_factor);
-            if(trsm2_use_U || solver_get_U)           data.h_U_sp .resize(n_dofs_domain, n_dofs_domain, n_nz_factor);
-            if(trsm1_use_LH && !can_use_LH_is_U_h_sp) data.h_LH_sp.resize(n_dofs_domain, n_dofs_domain, n_nz_factor);
-            if(trsm2_use_UH && !can_use_UH_is_L_h_sp) data.h_UH_sp.resize(n_dofs_domain, n_dofs_domain, n_nz_factor);
+            if(trsm1_use_L || solver_get_L)           data.h_L_sp .resize(data.n_dofs_domain, data.n_dofs_domain, n_nz_factor);
+            if(trsm2_use_U || solver_get_U)           data.h_U_sp .resize(data.n_dofs_domain, data.n_dofs_domain, n_nz_factor);
+            if(trsm1_use_LH && !can_use_LH_is_U_h_sp) data.h_LH_sp.resize(data.n_dofs_domain, data.n_dofs_domain, n_nz_factor);
+            if(trsm2_use_UH && !can_use_UH_is_L_h_sp) data.h_UH_sp.resize(data.n_dofs_domain, data.n_dofs_domain, n_nz_factor);
             if(                 can_use_LH_is_U_h_sp) data.h_LH_sp.shallowCopy(data.h_U_sp);
             if(                 can_use_UH_is_L_h_sp) data.h_UH_sp.shallowCopy(data.h_L_sp);
-            data.h_Bperm_sp.resize(n_dofs_interface, n_dofs_domain, feti.B1[d].nnz);
-            if(config->apply_scatter_gather_where == DEVICE::CPU) data.h_applyc_x.resize(n_dofs_interface);
-            if(config->apply_scatter_gather_where == DEVICE::CPU) data.h_applyc_y.resize(n_dofs_interface);
+            data.h_Bperm_sp.resize(data.n_dofs_interface, data.n_dofs_domain, feti.B1[d].nnz);
+            if(config->apply_scatter_gather_where == DEVICE::CPU) data.h_applyc_x.resize(data.n_dofs_interface);
+            if(config->apply_scatter_gather_where == DEVICE::CPU) data.h_applyc_y.resize(data.n_dofs_interface);
             tm_alloc_host.stop();
 
             // device memory
             tm_alloc_device.start();
-            if(trsm1_use_L)                           data.d_L_sp .resize(n_dofs_domain, n_dofs_domain, n_nz_factor);
-            if(trsm2_use_U)                           data.d_U_sp .resize(n_dofs_domain, n_dofs_domain, n_nz_factor);
-            if(trsm1_use_LH && !can_use_LH_is_U_d_sp) data.d_LH_sp.resize(n_dofs_domain, n_dofs_domain, n_nz_factor);
-            if(trsm2_use_UH && !can_use_UH_is_L_d_sp) data.d_UH_sp.resize(n_dofs_domain, n_dofs_domain, n_nz_factor);
+            if(trsm1_use_L)                           data.d_L_sp .resize(data.n_dofs_domain, data.n_dofs_domain, n_nz_factor);
+            if(trsm2_use_U)                           data.d_U_sp .resize(data.n_dofs_domain, data.n_dofs_domain, n_nz_factor);
+            if(trsm1_use_LH && !can_use_LH_is_U_d_sp) data.d_LH_sp.resize(data.n_dofs_domain, data.n_dofs_domain, n_nz_factor);
+            if(trsm2_use_UH && !can_use_UH_is_L_d_sp) data.d_UH_sp.resize(data.n_dofs_domain, data.n_dofs_domain, n_nz_factor);
             if(trsm1_use_LH &&  can_use_LH_is_U_d_sp) data.d_LH_sp.shallowCopy(data.d_U_sp);
             if(trsm2_use_UH &&  can_use_UH_is_L_d_sp) data.d_UH_sp.shallowCopy(data.d_L_sp);
-            data.d_Bperm_sp.resize(n_dofs_interface, n_dofs_domain, feti.B1[d].nnz);
-            data.d_F.resize(n_dofs_interface, n_dofs_interface, ld_interface);
-            data.d_apply_x.resize(n_dofs_interface);
-            data.d_apply_y.resize(n_dofs_interface);
-            data.d_applyg_D2C.resize(n_dofs_interface);
+            data.d_Bperm_sp.resize(data.n_dofs_interface, data.n_dofs_domain, feti.B1[d].nnz);
+            data.d_apply_x.resize(data.n_dofs_interface);
+            data.d_apply_y.resize(data.n_dofs_interface);
+            data.d_applyg_D2C.resize(data.n_dofs_interface);
             if(is_factor1_sparse)                 data.buffer_sptrs1 = gpu::mgm::memalloc_device(data.buffersize_sptrs1);
             if(is_factor2_sparse && is_path_trsm) data.buffer_sptrs2 = gpu::mgm::memalloc_device(data.buffersize_sptrs2);
             if(                     is_path_trsm) data.buffer_spmm   = gpu::mgm::memalloc_device(data.buffersize_spmm);
+            if(data.should_allocate_d_F) d_Fs_allocated[data.allocated_F_index].resize(data.n_dofs_interface + 1, data.n_dofs_interface, data.ld_F);
             tm_alloc_device.stop();
         }
         tm_alloc.stop();
@@ -390,7 +424,6 @@ void TotalFETIExplicitAcc<T,I>::set(const step::Step &step)
             if(trsm2_use_U)  gpu::spblas::descr_matrix_csr_link_data(data.descr_U_sp,  data.d_U_sp);
             if(trsm2_use_UH) gpu::spblas::descr_matrix_csr_link_data(data.descr_UH_sp, data.d_UH_sp);
             gpu::spblas::descr_matrix_csr_link_data(data.descr_Bperm_sp, data.d_Bperm_sp);
-            gpu::spblas::descr_matrix_dense_link_data(data.descr_F, data.d_F);
         }
         tm_setpointers.stop();
 
@@ -398,7 +431,7 @@ void TotalFETIExplicitAcc<T,I>::set(const step::Step &step)
         tm_Bperm.start();
         {
             Permutation<I> perm;
-            perm.resize(n_dofs_domain);
+            perm.resize(data.n_dofs_domain);
             data.solver_Kreg.getPermutation(perm);
             math::permuteColumns(data.h_Bperm_sp, feti.B1[d], perm);
         }
@@ -468,6 +501,15 @@ void TotalFETIExplicitAcc<T,I>::set(const step::Step &step)
     }
     tm_mainloop_outer.stop();
 
+    for(size_t d = 0; d < n_domains; d++)
+    {
+        per_domain_stuff & data = domain_data[d];
+        data.d_F.shallowCopy(d_Fs_allocated[data.allocated_F_index]);
+        data.d_F.nrows = data.n_dofs_interface;
+        data.d_F.ncols = data.n_dofs_interface;
+        if((data.hermitian_F_fill == 'L') == (order_F == 'R')) data.d_F.vals += data.d_F.get_ld();
+    }
+
     // clean up the mess from buggy openmp in clang
     utils::run_dummy_parallel_region();
     
@@ -492,7 +534,7 @@ void TotalFETIExplicitAcc<T,I>::set(const step::Step &step)
         {
             h_applyg_xs_pointers.vals[d] = domain_data[d].d_apply_x.vals;
             h_applyg_ys_pointers.vals[d] = domain_data[d].d_apply_y.vals;
-            h_applyg_n_dofs_interfaces.vals[d] = feti.B1[d].nrows;
+            h_applyg_n_dofs_interfaces.vals[d] = domain_data[d].n_dofs_interface;
             h_applyg_D2Cs_pointers.vals[d] = domain_data[d].d_applyg_D2C.vals;
         }
         gpu::mgm::copy_submit_h2d(main_q, d_applyg_xs_pointers,       h_applyg_xs_pointers);
@@ -514,18 +556,15 @@ void TotalFETIExplicitAcc<T,I>::set(const step::Step &step)
             size_t mem_pool_size_request_queue = 0;
             for(size_t d = qidx; d < n_domains; d += n_queues)
             {
+                per_domain_stuff & data = domain_data[d];
                 size_t mem_pool_size_request_domain = 0;
-                I n_dofs_domain = feti.B1[d].ncols;
-                I n_dofs_interface = feti.B1[d].nrows;
-                I ld_domain = ((n_dofs_domain - 1) / align_elem + 1) * align_elem;
-                I ld_interface = ((n_dofs_interface - 1) / align_elem + 1) * align_elem;
-                I ld_X = (order_X == 'R' ? ld_interface : ld_domain);
-                if(is_factor1_dense && trsm1_use_L)                           mem_pool_size_request_domain += Matrix_Dense<T,I>::memoryRequirement(n_dofs_domain, n_dofs_domain, ld_domain);
-                if(is_factor2_dense && trsm2_use_U)                           mem_pool_size_request_domain += Matrix_Dense<T,I>::memoryRequirement(n_dofs_domain, n_dofs_domain, ld_domain);
-                if(is_factor1_dense && trsm1_use_LH && !can_use_LH_is_U_d_dn) mem_pool_size_request_domain += Matrix_Dense<T,I>::memoryRequirement(n_dofs_domain, n_dofs_domain, ld_domain);
-                if(is_factor2_dense && trsm2_use_UH && !can_use_UH_is_L_d_dn) mem_pool_size_request_domain += Matrix_Dense<T,I>::memoryRequirement(n_dofs_domain, n_dofs_domain, ld_domain);
-                if(true)   mem_pool_size_request_domain += Matrix_Dense<T,I>::memoryRequirement(n_dofs_domain, n_dofs_interface, ld_X);
-                if(need_Y) mem_pool_size_request_domain += Matrix_Dense<T,I>::memoryRequirement(n_dofs_domain, n_dofs_interface, ld_X);
+                if(is_factor1_dense && trsm1_use_L)                           mem_pool_size_request_domain += Matrix_Dense<T,I>::memoryRequirement(data.n_dofs_domain, data.n_dofs_domain, data.ld_domain);
+                if(is_factor2_dense && trsm2_use_U)                           mem_pool_size_request_domain += Matrix_Dense<T,I>::memoryRequirement(data.n_dofs_domain, data.n_dofs_domain, data.ld_domain);
+                if(is_factor1_dense && trsm1_use_LH && !can_use_LH_is_U_d_dn) mem_pool_size_request_domain += Matrix_Dense<T,I>::memoryRequirement(data.n_dofs_domain, data.n_dofs_domain, data.ld_domain);
+                if(is_factor2_dense && trsm2_use_UH && !can_use_UH_is_L_d_dn) mem_pool_size_request_domain += Matrix_Dense<T,I>::memoryRequirement(data.n_dofs_domain, data.n_dofs_domain, data.ld_domain);
+                if(true)   mem_pool_size_request_domain += Matrix_Dense<T,I>::memoryRequirement(data.n_dofs_domain, data.n_dofs_interface, data.ld_X);
+                if(need_Y) mem_pool_size_request_domain += Matrix_Dense<T,I>::memoryRequirement(data.n_dofs_domain, data.n_dofs_interface, data.ld_X);
+                if(need_f_tmp) Matrix_Dense<T,I>::memoryRequirement(data.n_dofs_interface, data.n_dofs_interface, data.ld_F);
                 mem_pool_size_request_domain += domain_data[d].buffersize_other;
                 // mem_pool_size_request_queue = std::max(mem_pool_size_request_queue, mem_pool_size_request_domain);
                 mem_pool_size_request_queue += mem_pool_size_request_domain;
@@ -552,6 +591,7 @@ void TotalFETIExplicitAcc<T,I>::set(const step::Step &step)
     print_timer("Set       gpuinit", tm_gpuinit);
     print_timer("Set       gpuset", tm_gpuset);
     print_timer("Set       vecresize", tm_vecresize);
+    print_timer("Set       sizecalc", tm_sizecalc);
     print_timer("Set       gpucreate", tm_gpucreate);
     print_timer("Set       mainloop_outer", tm_mainloop_outer);
     print_timer("Set         mainloop_inner", tm_mainloop_inner);
@@ -583,7 +623,7 @@ void TotalFETIExplicitAcc<T,I>::update(const step::Step &step)
 {
     if(stage != 2 && stage != 3) eslog::error("update: invalud order of operations in dualop\n");
 
-    my_timer tm_total, tm_mainloop_outer, tm_mainloop_inner, tm_Kreg_combine, tm_solver_commit, tm_fact_numeric, tm_get_factors, tm_extract, tm_transpose, tm_allocinpool, tm_setpointers, tm_copyin, tm_descr_update, tm_sp2dn, tm_kernels_compute, tm_trs1, tm_trs2, tm_gemm, tm_syrk, tm_freeinpool, tm_freeinpool_exec, tm_compute_d, tm_wait;
+    my_timer tm_total, tm_mainloop_outer, tm_mainloop_inner, tm_Kreg_combine, tm_solver_commit, tm_fact_numeric, tm_get_factors, tm_extract, tm_transpose, tm_allocinpool, tm_setpointers, tm_copyin, tm_descr_update, tm_sp2dn, tm_kernels_compute, tm_trs1, tm_trs2, tm_gemm, tm_fcopy, tm_syrk, tm_freeinpool, tm_freeinpool_exec, tm_compute_d, tm_wait;
 
     tm_total.start();
 
@@ -594,12 +634,6 @@ void TotalFETIExplicitAcc<T,I>::update(const step::Step &step)
     for(size_t d = 0; d < n_domains; d++)
     {
         tm_mainloop_inner.start();
-
-        I n_dofs_domain = feti.B1[d].ncols;
-        I n_dofs_interface = feti.B1[d].nrows;
-        I ld_domain = ((n_dofs_domain - 1) / align_elem + 1) * align_elem;
-        I ld_interface = ((n_dofs_interface - 1) / align_elem + 1) * align_elem;
-        I ld_X = (order_X == 'R' ? ld_interface : ld_domain);
 
         gpu::mgm::queue & q = queues[d % n_queues];
         gpu::dnblas::handle & hd = handles_dense[d % n_queues];
@@ -653,25 +687,28 @@ void TotalFETIExplicitAcc<T,I>::update(const step::Step &step)
         // temporary allocations using the memory pool
         tm_allocinpool.start();
         {
-            cbmba_d ator_dt(*cbmba_res_device, align_B);
+            cbmba_d ator_d(*cbmba_res_device, align_B);
             cbmba_res_device->do_transaction([&](){
-                if(is_factor1_dense && trsm1_use_L)  data.d_L_dn  = std::make_unique<Matrix_Dense<T,I,cbmba_d>>(ator_dt);
-                if(is_factor2_dense && trsm2_use_U)  data.d_U_dn  = std::make_unique<Matrix_Dense<T,I,cbmba_d>>(ator_dt);
-                if(is_factor1_dense && trsm1_use_LH) data.d_LH_dn = std::make_unique<Matrix_Dense<T,I,cbmba_d>>(ator_dt);
-                if(is_factor2_dense && trsm2_use_UH) data.d_UH_dn = std::make_unique<Matrix_Dense<T,I,cbmba_d>>(ator_dt);
-                if(true)   data.d_X = std::make_unique<Matrix_Dense<T,I,cbmba_d>>(ator_dt);
-                if(need_Y) data.d_Y = std::make_unique<Matrix_Dense<T,I,cbmba_d>>(ator_dt);
+                if(is_factor1_dense && trsm1_use_L)  data.d_L_dn  = std::make_unique<Matrix_Dense<T,I,cbmba_d>>(ator_d);
+                if(is_factor2_dense && trsm2_use_U)  data.d_U_dn  = std::make_unique<Matrix_Dense<T,I,cbmba_d>>(ator_d);
+                if(is_factor1_dense && trsm1_use_LH) data.d_LH_dn = std::make_unique<Matrix_Dense<T,I,cbmba_d>>(ator_d);
+                if(is_factor2_dense && trsm2_use_UH) data.d_UH_dn = std::make_unique<Matrix_Dense<T,I,cbmba_d>>(ator_d);
+                if(true)   data.d_X = std::make_unique<Matrix_Dense<T,I,cbmba_d>>(ator_d);
+                if(need_Y) data.d_Y = std::make_unique<Matrix_Dense<T,I,cbmba_d>>(ator_d);
+                data.d_F_tmp = std::make_unique<Matrix_Dense<T,I,cbmba_d>>(ator_d);
 
-                if(is_factor1_dense && trsm1_use_L)                           data.d_L_dn ->resize(n_dofs_domain, n_dofs_domain, ld_domain);
-                if(is_factor2_dense && trsm2_use_U)                           data.d_U_dn ->resize(n_dofs_domain, n_dofs_domain, ld_domain);
-                if(is_factor1_dense && trsm1_use_LH && !can_use_LH_is_U_d_dn) data.d_LH_dn->resize(n_dofs_domain, n_dofs_domain, ld_domain);
-                if(is_factor2_dense && trsm2_use_UH && !can_use_UH_is_L_d_dn) data.d_UH_dn->resize(n_dofs_domain, n_dofs_domain, ld_domain);
+                if(is_factor1_dense && trsm1_use_L)                           data.d_L_dn ->resize(data.n_dofs_domain, data.n_dofs_domain, data.ld_domain);
+                if(is_factor2_dense && trsm2_use_U)                           data.d_U_dn ->resize(data.n_dofs_domain, data.n_dofs_domain, data.ld_domain);
+                if(is_factor1_dense && trsm1_use_LH && !can_use_LH_is_U_d_dn) data.d_LH_dn->resize(data.n_dofs_domain, data.n_dofs_domain, data.ld_domain);
+                if(is_factor2_dense && trsm2_use_UH && !can_use_UH_is_L_d_dn) data.d_UH_dn->resize(data.n_dofs_domain, data.n_dofs_domain, data.ld_domain);
                 if(is_factor1_dense && trsm1_use_LH &&  can_use_LH_is_U_d_dn) data.d_LH_dn->shallowCopy(*data.d_U_dn);
                 if(is_factor2_dense && trsm2_use_UH &&  can_use_UH_is_L_d_dn) data.d_UH_dn->shallowCopy(*data.d_L_dn);
-                if(order_X == 'R')           data.d_X->resize(n_dofs_domain,    n_dofs_interface, ld_X);
-                if(order_X == 'C')           data.d_X->resize(n_dofs_interface, n_dofs_domain,    ld_X);
-                if(order_X == 'R' && need_Y) data.d_Y->resize(n_dofs_domain,    n_dofs_interface, ld_X);
-                if(order_X == 'C' && need_Y) data.d_Y->resize(n_dofs_interface, n_dofs_domain,    ld_X);
+                if(order_X == 'R')           data.d_X->resize(data.n_dofs_domain,    data.n_dofs_interface, data.ld_X);
+                if(order_X == 'C')           data.d_X->resize(data.n_dofs_interface, data.n_dofs_domain,    data.ld_X);
+                if(order_X == 'R' && need_Y) data.d_Y->resize(data.n_dofs_domain,    data.n_dofs_interface, data.ld_X);
+                if(order_X == 'C' && need_Y) data.d_Y->resize(data.n_dofs_interface, data.n_dofs_domain,    data.ld_X);
+                if( need_f_tmp) data.d_F_tmp->resize(data.n_dofs_interface, data.n_dofs_interface, data.ld_F);
+                if(!need_f_tmp) data.d_F_tmp->shallowCopy(data.d_F);
                 buffer_other = cbmba_res_device->allocate(data.buffersize_other, align_B);
             });
         }
@@ -688,6 +725,7 @@ void TotalFETIExplicitAcc<T,I>::update(const step::Step &step)
             if(trsm2_use_UH && is_factor2_dense) gpu::spblas::descr_matrix_dense_link_data(data.descr_UH_dn, *data.d_UH_dn);
             if(true)   gpu::spblas::descr_matrix_dense_link_data(data.descr_X, *data.d_X);
             if(need_Y) gpu::spblas::descr_matrix_dense_link_data(data.descr_Y, *data.d_Y);
+            if(is_path_trsm) gpu::spblas::descr_matrix_dense_link_data(data.descr_F, *data.d_F_tmp);
         }
         tm_setpointers.stop();
 
@@ -731,15 +769,15 @@ void TotalFETIExplicitAcc<T,I>::update(const step::Step &step)
             tm_trs1.start();
             if(is_factor1_sparse && trsm1_use_L)  gpu::spblas::trsm<T,I>(hs, 'N', 'N', 'N', data.descr_L_sp,  descr_X, descr_W, data.descr_sparse_trsm1, data.buffersize_sptrs1, data.buffer_sptrs1, 'C');
             if(is_factor1_sparse && trsm1_use_LH) gpu::spblas::trsm<T,I>(hs, 'H', 'N', 'N', data.descr_LH_sp, descr_X, descr_W, data.descr_sparse_trsm1, data.buffersize_sptrs1, data.buffer_sptrs1, 'C');
-            if(is_factor1_dense  && trsm1_use_L)  gpu::dnblas::trsm<T,I>(hd, 'L', n_dofs_domain, n_dofs_interface, data.d_L_dn->vals,  ld_domain, 'R', 'N', 'L', d_X->vals, ld_X, order_X, 'N');
-            if(is_factor1_dense  && trsm1_use_LH) gpu::dnblas::trsm<T,I>(hd, 'L', n_dofs_domain, n_dofs_interface, data.d_LH_dn->vals, ld_domain, 'R', 'H', 'U', d_X->vals, ld_X, order_X, 'N');
+            if(is_factor1_dense  && trsm1_use_L)  gpu::dnblas::trsm<T,I>(hd, 'L', data.n_dofs_domain, data.n_dofs_interface, data.d_L_dn->vals,  data.ld_domain, 'R', 'N', 'L', d_X->vals, data.ld_X, order_X, 'N');
+            if(is_factor1_dense  && trsm1_use_LH) gpu::dnblas::trsm<T,I>(hd, 'L', data.n_dofs_domain, data.n_dofs_interface, data.d_LH_dn->vals, data.ld_domain, 'R', 'H', 'U', d_X->vals, data.ld_X, order_X, 'N');
             if(config->concurrency_update == CONCURRENCY::SEQ_WAIT) gpu::mgm::queue_wait(q);
             tm_trs1.stop();
 
             if(is_path_herk)
             {
                 tm_syrk.start();
-                gpu::dnblas::herk<T,I>(hd, n_dofs_interface, n_dofs_domain, d_W->vals, ld_X, order_X, 'H', data.d_F.vals, ld_interface, order_F, hermitian_F_fill);
+                gpu::dnblas::herk<T,I>(hd, data.n_dofs_interface, data.n_dofs_domain, d_W->vals, data.ld_X, order_X, 'H', data.d_F_tmp->vals, data.ld_F, order_F, data.hermitian_F_fill);
                 if(config->concurrency_update == CONCURRENCY::SEQ_WAIT) gpu::mgm::queue_wait(q);
                 tm_syrk.stop();
             }
@@ -748,8 +786,8 @@ void TotalFETIExplicitAcc<T,I>::update(const step::Step &step)
                 tm_trs2.start();
                 if(is_factor2_sparse && trsm2_use_U)  gpu::spblas::trsm<T,I>(hs, 'N', 'N', 'N', data.descr_U_sp,  descr_W, descr_Z, data.descr_sparse_trsm2, data.buffersize_sptrs2, data.buffer_sptrs2, 'C');
                 if(is_factor2_sparse && trsm2_use_UH) gpu::spblas::trsm<T,I>(hs, 'H', 'N', 'N', data.descr_UH_sp, descr_W, descr_Z, data.descr_sparse_trsm2, data.buffersize_sptrs2, data.buffer_sptrs2, 'C');
-                if(is_factor2_dense  && trsm2_use_U)  gpu::dnblas::trsm<T,I>(hd, 'L', n_dofs_domain, n_dofs_interface, data.d_U_dn->vals,  ld_domain, 'R', 'N', 'U', d_W->vals, ld_X, order_X, 'N');
-                if(is_factor2_dense  && trsm2_use_UH) gpu::dnblas::trsm<T,I>(hd, 'L', n_dofs_domain, n_dofs_interface, data.d_UH_dn->vals, ld_domain, 'R', 'H', 'L', d_W->vals, ld_X, order_X, 'N');
+                if(is_factor2_dense  && trsm2_use_U)  gpu::dnblas::trsm<T,I>(hd, 'L', data.n_dofs_domain, data.n_dofs_interface, data.d_U_dn->vals,  data.ld_domain, 'R', 'N', 'U', d_W->vals, data.ld_X, order_X, 'N');
+                if(is_factor2_dense  && trsm2_use_UH) gpu::dnblas::trsm<T,I>(hd, 'L', data.n_dofs_domain, data.n_dofs_interface, data.d_UH_dn->vals, data.ld_domain, 'R', 'H', 'L', d_W->vals, data.ld_X, order_X, 'N');
                 if(config->concurrency_update == CONCURRENCY::SEQ_WAIT) gpu::mgm::queue_wait(q);
                 tm_trs2.stop();
 
@@ -757,6 +795,11 @@ void TotalFETIExplicitAcc<T,I>::update(const step::Step &step)
                 gpu::spblas::mm<T,I>(hs, 'N', 'N', data.descr_Bperm_sp, descr_Z, data.descr_F, data.buffersize_spmm, data.buffer_spmm, 'C');
                 if(config->concurrency_update == CONCURRENCY::SEQ_WAIT) gpu::mgm::queue_wait(q);
                 tm_gemm.stop();
+
+                tm_fcopy.start();
+                if(need_f_tmp) gpu::kernels::copy_matrix_triangle(q, data.d_F, *data.d_F_tmp, data.hermitian_F_fill, order_F);
+                if(config->concurrency_update == CONCURRENCY::SEQ_WAIT) gpu::mgm::queue_wait(q);
+                tm_fcopy.stop();
             }
         }
         tm_kernels_compute.stop();
@@ -773,6 +816,7 @@ void TotalFETIExplicitAcc<T,I>::update(const step::Step &step)
             data.d_UH_dn.reset();
             data.d_X.reset();
             data.d_Y.reset();
+            data.d_F_tmp.reset();
             cbmba_res_device->deallocate(buffer_other);
             tm_freeinpool_exec.stop();
         });
@@ -824,6 +868,7 @@ void TotalFETIExplicitAcc<T,I>::update(const step::Step &step)
     print_timer("Update          trs1", tm_trs1);
     print_timer("Update          trs2", tm_trs2);
     print_timer("Update          gemm", tm_gemm);
+    print_timer("Update          fcopy", tm_fcopy);
     print_timer("Update          syrk", tm_syrk);
     print_timer("Update        freeinpool", tm_freeinpool);
     print_timer("Update          freeinpool_exec", tm_freeinpool_exec);
@@ -869,7 +914,7 @@ void TotalFETIExplicitAcc<T,I>::apply(const Vector_Dual<T> &x_cluster, Vector_Du
             per_domain_stuff & data = domain_data[d];
 
             tm_mv.start();
-            if( is_system_hermitian) gpu::dnblas::hemv<T,I>(hd, data.d_F.nrows, data.d_F.vals, data.d_F.get_ld(), order_F, 'N', hermitian_F_fill, data.d_apply_x.vals, data.d_apply_y.vals);
+            if( is_system_hermitian) gpu::dnblas::hemv<T,I>(hd, data.d_F.nrows, data.d_F.vals, data.d_F.get_ld(), order_F, 'N', data.hermitian_F_fill, data.d_apply_x.vals, data.d_apply_y.vals);
             if(!is_system_hermitian) gpu::dnblas::gemv<T,I>(hd, data.d_F.nrows, data.d_F.ncols, data.d_F.vals, data.d_F.get_ld(), order_F, 'N', data.d_apply_x.vals, data.d_apply_y.vals);
             if(config->concurrency_apply == CONCURRENCY::SEQ_WAIT) gpu::mgm::queue_wait(q);
             tm_mv.stop();
@@ -926,14 +971,12 @@ void TotalFETIExplicitAcc<T,I>::apply(const Vector_Dual<T> &x_cluster, Vector_Du
         {
             tm_apply_inner.start();
 
-            I n_dofs_interface = feti.B1[d].nrows;
-
             gpu::mgm::queue & q = queues[d % n_queues];
             gpu::dnblas::handle & hd = handles_dense[d % n_queues];
             per_domain_stuff & data = domain_data[d];
 
             tm_scatter.start();
-            for(I i = 0; i < n_dofs_interface; i++) data.h_applyc_x.vals[i] = x_cluster.vals[feti.D2C[d][i]];
+            for(I i = 0; i < data.n_dofs_interface; i++) data.h_applyc_x.vals[i] = x_cluster.vals[feti.D2C[d][i]];
             tm_scatter.stop();
 
             tm_copyin.start();
@@ -942,7 +985,7 @@ void TotalFETIExplicitAcc<T,I>::apply(const Vector_Dual<T> &x_cluster, Vector_Du
             tm_copyin.stop();
 
             tm_mv.start();
-            if( is_system_hermitian) gpu::dnblas::hemv<T,I>(hd, data.d_F.nrows, data.d_F.vals, data.d_F.get_ld(), order_F, 'N', hermitian_F_fill, data.d_apply_x.vals, data.d_apply_y.vals);
+            if( is_system_hermitian) gpu::dnblas::hemv<T,I>(hd, data.d_F.nrows, data.d_F.vals, data.d_F.get_ld(), order_F, 'N', data.hermitian_F_fill, data.d_apply_x.vals, data.d_apply_y.vals);
             if(!is_system_hermitian) gpu::dnblas::gemv<T,I>(hd, data.d_F.nrows, data.d_F.ncols, data.d_F.vals, data.d_F.get_ld(), order_F, 'N', data.d_apply_x.vals, data.d_apply_y.vals);
             if(config->concurrency_apply == CONCURRENCY::SEQ_WAIT) gpu::mgm::queue_wait(q);
             tm_mv.stop();
@@ -970,8 +1013,7 @@ void TotalFETIExplicitAcc<T,I>::apply(const Vector_Dual<T> &x_cluster, Vector_Du
         {
             tm_gather_inner.start();
             per_domain_stuff & data = domain_data[d];
-            I n_dofs_interface = data.h_Bperm_sp.nrows;
-            for(I i = 0; i < n_dofs_interface; i++)
+            for(I i = 0; i < data.n_dofs_interface; i++)
             {
                 if constexpr(utils::is_real<T>())
                 {
@@ -1057,6 +1099,7 @@ void TotalFETIExplicitAcc<T,I>::config_replace_defaults()
         replace_if_default(config->trsm2_solve_type,           TRSM2_SOLVE_TYPE::U);
         replace_if_default(config->trsm_rhs_sol_order,         MATRIX_ORDER::ROW_MAJOR);
         replace_if_default(config->path_if_hermitian,          PATH_IF_HERMITIAN::HERK);
+        replace_if_default(config->f_sharing_if_hermitian,     TRIANGLE_MATRIX_SHARING::SHARED);
         replace_if_default(config->queue_count,                QUEUE_COUNT::PER_THREAD);
         replace_if_default(config->apply_scatter_gather_where, DEVICE::GPU);
         
@@ -1088,6 +1131,7 @@ void TotalFETIExplicitAcc<T,I>::config_replace_defaults()
         replace_if_default(config->trsm2_solve_type,           TRSM2_SOLVE_TYPE::U);
         replace_if_default(config->trsm_rhs_sol_order,         MATRIX_ORDER::ROW_MAJOR);
         replace_if_default(config->path_if_hermitian,          PATH_IF_HERMITIAN::HERK);
+        replace_if_default(config->f_sharing_if_hermitian,     TRIANGLE_MATRIX_SHARING::SHARED);
         replace_if_default(config->queue_count,                QUEUE_COUNT::PER_THREAD);
         replace_if_default(config->apply_scatter_gather_where, DEVICE::GPU);
     }
