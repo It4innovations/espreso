@@ -1,6 +1,7 @@
 
 #include "regularization.heattransfer.h"
 #include "math/math.h"
+#include "esinfo/ecfinfo.h"
 
 namespace espreso {
 
@@ -24,6 +25,8 @@ void RegularizationHeatTransfer<T>::set(FETI<T> &feti)
         RegMat.rows[0] = RegMat.cols[0] = Indexing::CSR;
         std::fill(RegMat.rows + 1, RegMat.rows + RegMat.nrows + 1, RegMat.rows[0] + 1);
     }
+
+
 }
 
 template <typename T>

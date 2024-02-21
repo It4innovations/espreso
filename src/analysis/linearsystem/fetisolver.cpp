@@ -17,12 +17,18 @@ namespace espreso {
 
 template <typename T>
 FETILinearSystemSolver<T>::FETILinearSystemSolver(PhysicsConfiguration &physics, LoadStepSolverConfiguration &loadStep)
-: physics(physics), loadStep(loadStep), feti(loadStep.feti)
+: physics(physics), loadStep(loadStep), feti(loadStep.feti), bem(false)
 {
     LinearSystemSolver<T>::A = &A;
     LinearSystemSolver<T>::x = &x;
     LinearSystemSolver<T>::b = &b;
     LinearSystemSolver<T>::dirichlet = &dirichlet;
+
+    for (auto disc = info::ecf->heat_transfer.discretization.cbegin(); disc != info::ecf->heat_transfer.discretization.cend(); ++disc) {
+        if (disc->second == PhysicsConfiguration::DISCRETIZATION::BEM) {
+            bem = true;
+        }
+    }
 }
 
 template <typename T>
@@ -63,6 +69,35 @@ void FETILinearSystemSolver<T>::update(step::Step &step)
         Regularization<T>::update(step, feti);
         eslog::checkpointln("FETI: UPDATE KERNELS");
     }
+
+    if (bem) {
+        IRRt.resize(feti.K.size());
+        #pragma omp parallel for
+        for (size_t d = 0; d < feti.K.size(); ++d) {
+            Matrix_Dense<T> R, RRt, K, KP, PKP;
+            R.resize(feti.R1[d].nrows, feti.R1[d].ncols);
+            math::copy(R, feti.R1[d]);
+            math::orthonormalize(R);
+            math::blas::AAt(R, RRt, true);
+            for (int r = 0; r < RRt.nrows; ++r) {
+                for (int c = r + 1; c < RRt.ncols; ++c) {
+                    RRt.vals[c * RRt.ncols + r] = RRt.vals[r * RRt.ncols + c];
+                }
+            }
+            IRRt[d].resize(feti.K[d].nrows, feti.K[d].nrows);
+            math::eye(IRRt[d], 1.);
+            math::add(IRRt[d], -1., RRt);
+            math::copy(K, feti.K[d]);
+            math::blas::multiply(T{1.}, K, IRRt[d], T{0}, KP);
+            math::blas::multiply(T{1.}, IRRt[d], KP, T{0}, PKP);
+            math::copy(feti.K[d], PKP);
+
+            Vector_Dense<T> Pf; Pf.resize(feti.f[d].size);
+            math::blas::apply(Pf, T{1}, IRRt[d], T{0}, feti.f[d]);
+            math::copy(feti.f[d], Pf);
+        }
+    }
+
     if (info::ecf->output.print_matrices) {
         eslog::storedata(" STORE: system/{K, f, R, RegMat}\n");
         for (size_t d = 0; d < feti.K.size(); ++d) {

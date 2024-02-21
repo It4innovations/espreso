@@ -569,10 +569,13 @@ void computeDomainsSurface(NodeStore *nodes, ElementStore *elements, DomainStore
 	esint ni = 0;
 	for (auto nd = nodes->domains->cbegin(); nd != nodes->domains->cend(); ++nd, ++ni) {
 	    for (auto d = nd->begin(); d != nd->end(); ++d) {
-	        if (domainsSurface->dnodes[*d][di[*d]] == ni) {
-	            ++di[*d];
-	        } else {
-	            domainsSurface->coordinates[*d].push_back(nodes->coordinates->datatarray()[ni]);
+	        if (domains->offset <= *d && *d < domains->next) {
+	            int dd = *d - domains->offset;
+                if (di[dd] < (esint)domainsSurface->dnodes[dd].size() && domainsSurface->dnodes[dd][di[dd]] == ni) {
+                    ++di[dd];
+                } else {
+                    domainsSurface->coordinates[dd].push_back(nodes->coordinates->datatarray()[ni]);
+                }
 	        }
 	    }
 	}
