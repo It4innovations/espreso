@@ -68,6 +68,43 @@ namespace math {
     template <typename T, typename I> void set(Matrix_CSR<T, I>    &x, const T &value) { set(x.nnz            , x.vals, 1, value); }
     template <typename T, typename I> void set(Matrix_IJV<T, I>    &x, const T &value) { set(x.nnz            , x.vals, 1, value); }
 
+    template <typename T, typename I> void copy(Matrix_Dense<T, I>  &x, const Matrix_CSR<T, I>  &y)
+    {
+        x.resize(y.nrows, y.ncols);
+        math::set(x, T{0});
+        for (I r = 0; r < y.nrows; ++r) {
+            for (I ci = y.rows[r]; ci < y.rows[r + 1]; ++ci) {
+                I c = y.cols[ci - Indexing::CSR] - Indexing::CSR;
+                x.vals[r * y.ncols + c] = y.vals[ci - Indexing::CSR];
+                if (y.shape != Matrix_Shape::FULL) {
+                    x.vals[c * y.ncols + r] = y.vals[ci - Indexing::CSR];
+                }
+            }
+        }
+    }
+
+    template <typename T, typename I> void copy(Matrix_CSR<T, I> &x, const Matrix_Dense<T, I> &y)
+    {
+        if (x.shape == Matrix_Shape::UPPER) {
+            for (I r = 0; r < x.nrows; ++r) {
+                for (I ci = x.rows[r]; ci < x.rows[r + 1]; ++ci) {
+                    I c = x.cols[ci - Indexing::CSR] - Indexing::CSR;
+                    x.vals[ci - Indexing::CSR] = y.vals[r * y.ncols + c];
+                }
+            }
+        } else {
+            eslog::error("Implement non-UPPER copy.\n");
+        }
+    }
+
+    template <typename T, typename I> void eye(Matrix_Dense<T, I>  &x, const T &value)
+    {
+        math::set(x, 0.);
+        for (int i = 0; i < std::max(x.nrows, x.ncols); ++i) {
+            x.vals[i * x.ncols + i] = value;
+        }
+    }
+
     template <typename T, typename I> void combine(Matrix_CSR<T, I> &C, const Matrix_CSR<T, I> &A, const Matrix_CSR<T, I> &B)
     {
         if (A.nrows != B.nrows || A.ncols != B.ncols) {

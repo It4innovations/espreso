@@ -179,10 +179,15 @@ void applyT(Vector_Dense<std::complex<double> > &y, const std::complex<double> &
 }
 
 template <>
-void AAt(const Matrix_Dense<double> &A, Matrix_Dense<double> &AAt)
+void AAt(const Matrix_Dense<double> &A, Matrix_Dense<double> &AAt, bool trans)
 {
-    AAt.resize(A.nrows, A.nrows);
-    cblas_dsyrk(CblasRowMajor, CblasUpper, CblasNoTrans, A.nrows, A.ncols, 1, A.vals, A.ncols, 0, AAt.vals, AAt.ncols);
+    if (trans) {
+        AAt.resize(A.ncols, A.ncols);
+        cblas_dsyrk(CblasRowMajor, CblasUpper, CblasTrans, AAt.nrows, A.nrows, 1, A.vals, A.ncols, 0, AAt.vals, AAt.ncols);
+    } else {
+        AAt.resize(A.nrows, A.nrows);
+        cblas_dsyrk(CblasRowMajor, CblasUpper, CblasNoTrans, A.nrows, A.ncols, 1, A.vals, A.ncols, 0, AAt.vals, AAt.ncols);
+    }
 }
 
 template <>
