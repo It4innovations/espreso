@@ -737,7 +737,8 @@ void MicroDERAlgorithm::produceRayVectors()
 		std::vector<double> x_p(this->dimension, 0.0f);
 		for (int i = 0; i < this->dimension; i++)
 		{
-			x_p[i] = LSA_x0[i] + LSA_delta_r * (p - LSA_k - 1) * trial_vector[i];
+			x_p[i] = m_manager.checkParameter(i,
+				LSA_x0[i] + LSA_delta_r * (p - LSA_k - 1) * trial_vector[i]);
 		}
 		this->ray_vectors.push_back(x_p);
 	}
