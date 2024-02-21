@@ -16,46 +16,46 @@ namespace espreso {
 
 template<typename T, typename I>
 struct Solver_External_Representation {
-	cholmod_common cm_common;
-	cholmod_factor * cm_factor_super = nullptr;
-	cholmod_factor * cm_factor_simpl = nullptr;
-	cholmod_sparse * cm_matrix_view = nullptr;
+    cholmod_common cm_common;
+    cholmod_factor * cm_factor_super = nullptr;
+    cholmod_factor * cm_factor_simpl = nullptr;
+    cholmod_sparse * cm_matrix_view = nullptr;
     const Matrix_CSR<T, I> * matrix = nullptr;
-	Vector_Dense<I> map_simpl_super;
-	char zerodrop;
-	int stage = 0; // 0 = completely uninitialized, 1 = initialized without matrix, 2 = have matrix, 3 = symbolic factorization done, 4 = numeric factorization done
+    Vector_Dense<I> map_simpl_super;
+    char zerodrop;
+    int stage = 0; // 0 = completely uninitialized, 1 = initialized without matrix, 2 = have matrix, 3 = symbolic factorization done, 4 = numeric factorization done
 };
 
 
 template <typename T, typename I>
 const char* DirectSparseSolver<T, I>::name()
 {
-	return "SUITESPARSE";
+    return "SUITESPARSE";
 }
 
 template <typename T, typename I>
 bool DirectSparseSolver<T, I>::provideFactors()
 {
-	return true;
+    return true;
 }
 
 template <typename T, typename I>
 bool DirectSparseSolver<T, I>::provideSC()
 {
-	// manually computed
+    // manually computed
     return true;
 }
 
 template <typename T, typename I>
 Solver_Factors DirectSparseSolver<T, I>::factorsSymmetry()
 {
-	return Solver_Factors::HERMITIAN_UPPER;
+    return Solver_Factors::HERMITIAN_UPPER;
 }
 
 template <typename T, typename I>
 DirectSparseSolver<T, I>::DirectSparseSolver()
 {
-	ext = std::make_unique<Solver_External_Representation<T,I>>();
+    ext = std::make_unique<Solver_External_Representation<T,I>>();
 
     ext->zerodrop = 'D'; // Drop, Keep
 
@@ -67,13 +67,13 @@ DirectSparseSolver<T, I>::DirectSparseSolver()
     ext->cm_common.itype = _getCholmodItype<I>();
     ext->cm_common.supernodal = CHOLMOD_SUPERNODAL;
 
-	ext->stage = 1;
+    ext->stage = 1;
 }
 
 template <typename T, typename I>
 DirectSparseSolver<T, I>::DirectSparseSolver(const Matrix_CSR<T, I> &a) : DirectSparseSolver()
 {
-	commit(a);
+    commit(a);
 }
 
 template <typename T, typename I>
@@ -97,15 +97,15 @@ DirectSparseSolver<T, I>::~DirectSparseSolver()
 template <typename T, typename I>
 void DirectSparseSolver<T, I>::commit(const Matrix_CSR<T,I> &a)
 {
-	if(a.nrows != a.ncols) eslog::error("commit: matrix has to be square\n");
-	if(a.type != Matrix_Type::REAL_SYMMETRIC_POSITIVE_DEFINITE && a.type != Matrix_Type::COMPLEX_HERMITIAN_POSITIVE_DEFINITE) eslog::error("commit: matrix has to be SPD or HPD\n");
-	if(a.shape != Matrix_Shape::UPPER) eslog::error("commit: CSR matrix has to be upper triangular\n");
+    if(a.nrows != a.ncols) eslog::error("commit: matrix has to be square\n");
+    if(a.type != Matrix_Type::REAL_SYMMETRIC_POSITIVE_DEFINITE && a.type != Matrix_Type::COMPLEX_HERMITIAN_POSITIVE_DEFINITE) eslog::error("commit: matrix has to be SPD or HPD\n");
+    if(a.shape != Matrix_Shape::UPPER) eslog::error("commit: CSR matrix has to be upper triangular\n");
 
     if(ext->stage < 1) eslog::error("commit: invalid order of operations in spsolver\n");
 
     ext->matrix = &a;
 
-	if(ext->cm_matrix_view == nullptr)
+    if(ext->cm_matrix_view == nullptr)
     {
         ext->cm_matrix_view = new cholmod_sparse();
         ext->cm_matrix_view->nrow = a.ncols;
@@ -124,7 +124,7 @@ void DirectSparseSolver<T, I>::commit(const Matrix_CSR<T,I> &a)
     ext->cm_matrix_view->p = a.rows;
     ext->cm_matrix_view->i = a.cols;
     ext->cm_matrix_view->x = a.vals;
-	
+
     if(ext->stage == 1) ext->stage = 2;
     if(ext->stage == 4) ext->stage = 3;
 }
@@ -132,11 +132,11 @@ void DirectSparseSolver<T, I>::commit(const Matrix_CSR<T,I> &a)
 template <typename T, typename I>
 void DirectSparseSolver<T, I>::symbolicFactorization(int fixedSuffix)
 {
-	if(fixedSuffix != 0) eslog::error("symbolicFactorization: dont know what to do with that. TODO\n");
+    if(fixedSuffix != 0) eslog::error("symbolicFactorization: dont know what to do with that. TODO\n");
 
     if(ext->stage != 2) throw std::runtime_error("symbolicFactorization: invalid order of operations in spsolver\n");
-	
-	ext->cm_factor_super = _analyze<I>(ext->cm_matrix_view, ext->cm_common);
+
+    ext->cm_factor_super = _analyze<I>(ext->cm_matrix_view, ext->cm_common);
 
     if(ext->cm_factor_super->xsize > utils::get_max_val_no_precision_loss_in_fp<T>()) eslog::error("symbolicFactorization: factor nnz too large for my super->simpl map\n");
     ext->cm_factor_simpl = _copyFactor<I>(ext->cm_factor_super, ext->cm_common);
@@ -153,7 +153,7 @@ void DirectSparseSolver<T, I>::symbolicFactorization(int fixedSuffix)
 template <typename T, typename I>
 void DirectSparseSolver<T, I>::numericalFactorization()
 {
-	if(ext->stage < 3) eslog::error("numericalFactorization: invalid order of operations in spsolver\n");
+    if(ext->stage < 3) eslog::error("numericalFactorization: invalid order of operations in spsolver\n");
 
     _factorize<I>(ext->cm_factor_super, ext->cm_matrix_view, ext->cm_common);
 
@@ -163,23 +163,23 @@ void DirectSparseSolver<T, I>::numericalFactorization()
 template <typename T, typename I>
 void DirectSparseSolver<T, I>::solve(Vector_Dense<T, I> &rhs, Vector_Dense<T, I> &solution, int sparsity)
 {
-	if(ext->stage < 4) eslog::error("solve: invalid order of operations in spsolver\n");
+    if(ext->stage < 4) eslog::error("solve: invalid order of operations in spsolver\n");
 
-	cholmod_dense cm_rhs;
-	cm_rhs.nrow = rhs.size;
-	cm_rhs.ncol = 1;
-	cm_rhs.d = rhs.size;
-	cm_rhs.nzmax = rhs.size;
-	cm_rhs.x = rhs.vals;
-	cm_rhs.xtype = _getCholmodXtype<T>();
-	cm_rhs.dtype = _getCholmodDtype<T>();
+    cholmod_dense cm_rhs;
+    cm_rhs.nrow = rhs.size;
+    cm_rhs.ncol = 1;
+    cm_rhs.d = rhs.size;
+    cm_rhs.nzmax = rhs.size;
+    cm_rhs.x = rhs.vals;
+    cm_rhs.xtype = _getCholmodXtype<T>();
+    cm_rhs.dtype = _getCholmodDtype<T>();
 
-	cholmod_dense * cm_sol = _solve<I>(CHOLMOD_A, ext->cm_factor_super, &cm_rhs, ext->cm_common);
+    cholmod_dense * cm_sol = _solve<I>(CHOLMOD_A, ext->cm_factor_super, &cm_rhs, ext->cm_common);
 
-	solution.resize(cm_sol->nrow);
-	std::copy_n(reinterpret_cast<T*>(cm_sol->x), cm_sol->nrow, solution.vals);
+    solution.resize(cm_sol->nrow);
+    std::copy_n(reinterpret_cast<T*>(cm_sol->x), cm_sol->nrow, solution.vals);
 
-	_free<I>(cm_sol, ext->cm_common);
+    _free<I>(cm_sol, ext->cm_common);
 }
 
 template <typename T, typename I>
@@ -228,42 +228,42 @@ void DirectSparseSolver<T, I>::solveBackward(Matrix_Dense<T, I> &rhs, Matrix_Den
 template <typename T, typename I>
 void DirectSparseSolver<T, I>::solve(Matrix_Dense<T, I> &rhs, Matrix_Dense<T, I> &solution, int sparsity)
 {
-	if(ext->stage < 4) eslog::error("solve: invalid order of operations in spsolver\n");
+    if(ext->stage < 4) eslog::error("solve: invalid order of operations in spsolver\n");
 
-	cholmod_dense cm_rhs;
-	cm_rhs.nrow = rhs.ncols;
-	cm_rhs.ncol = rhs.nrows;
-	cm_rhs.d = rhs.get_ld();
-	cm_rhs.nzmax = cm_rhs.d * rhs.nrows;
-	cm_rhs.x = rhs.vals;
-	cm_rhs.xtype = _getCholmodXtype<T>();
-	cm_rhs.dtype = _getCholmodDtype<T>();
+    cholmod_dense cm_rhs;
+    cm_rhs.nrow = rhs.ncols;
+    cm_rhs.ncol = rhs.nrows;
+    cm_rhs.d = rhs.get_ld();
+    cm_rhs.nzmax = cm_rhs.d * rhs.nrows;
+    cm_rhs.x = rhs.vals;
+    cm_rhs.xtype = _getCholmodXtype<T>();
+    cm_rhs.dtype = _getCholmodDtype<T>();
 
-	cholmod_dense * cm_sol = _solve<I>(CHOLMOD_A, ext->cm_factor_super, &cm_rhs, ext->cm_common);
+    cholmod_dense * cm_sol = _solve<I>(CHOLMOD_A, ext->cm_factor_super, &cm_rhs, ext->cm_common);
 
-	solution.resize(cm_sol->ncol, cm_sol->d);
-	solution.ncols = cm_sol->nrow;
-	std::copy_n(reinterpret_cast<T*>(cm_sol->x), cm_sol->nzmax, solution.vals);
+    solution.resize(cm_sol->ncol, cm_sol->d);
+    solution.ncols = cm_sol->nrow;
+    std::copy_n(reinterpret_cast<T*>(cm_sol->x), cm_sol->nzmax, solution.vals);
 
-	_free<I>(cm_sol, ext->cm_common);
+    _free<I>(cm_sol, ext->cm_common);
 }
 
 template <typename T, typename I>
 I DirectSparseSolver<T, I>::getMatrixSize()
 {
-	return ext->cm_matrix_view->nrow;
+    return ext->cm_matrix_view->nrow;
 }
 
 template <typename T, typename I>
 I DirectSparseSolver<T, I>::getMatrixNnz()
 {
-	return ext->cm_matrix_view->nzmax;
+    return ext->cm_matrix_view->nzmax;
 }
 
 template <typename T, typename I>
 I DirectSparseSolver<T, I>::getFactorNnz()
 {
-	if(ext->stage < 3) eslog::error("getFactorNnz: invalid order of operations in spsolver\n");
+    if(ext->stage < 3) eslog::error("getFactorNnz: invalid order of operations in spsolver\n");
 
     // https://github.com/DrTimothyAldenDavis/SuiteSparse/issues/523
 
@@ -274,18 +274,18 @@ template <typename T, typename I>
 template <typename A>
 inline void DirectSparseSolver<T, I>::getFactorL(Matrix_CSR<T,I,A> &/*L*/, bool /*copyPattern*/, bool /*copyValues*/)
 {
-	eslog::error("L factor is not provided\n");
+    eslog::error("L factor is not provided\n");
 }
 
 template <typename T, typename I>
 template <typename A>
 inline void DirectSparseSolver<T, I>::getFactorU(Matrix_CSR<T,I,A> &U, bool copyPattern, bool copyValues)
 {
-	if(ext->stage < 3) eslog::error("getFactorU: invalid order of operations in spsolver\n");
+    if(ext->stage < 3) eslog::error("getFactorU: invalid order of operations in spsolver\n");
     if(copyValues && ext->stage < 4) eslog::error("getFactorU: invalid order of operations in spsolver\n");
     if((size_t)U.nrows != ext->cm_factor_simpl->n || (size_t)U.ncols != ext->cm_factor_simpl->n) eslog::error("getFactorU: output matrix has wrong dimensions\n");
 
-	U.resize(ext->cm_factor_simpl->n, ext->cm_factor_simpl->n, ext->cm_factor_simpl->nzmax);
+    U.resize(ext->cm_factor_simpl->n, ext->cm_factor_simpl->n, ext->cm_factor_simpl->nzmax);
 
     if(copyPattern) std::copy_n(static_cast<I*>(ext->cm_factor_simpl->p), ext->cm_factor_simpl->n+1, U.rows);
     if(copyPattern) std::copy_n(static_cast<I*>(ext->cm_factor_simpl->i), ext->cm_factor_simpl->nzmax, U.cols);
@@ -295,9 +295,9 @@ inline void DirectSparseSolver<T, I>::getFactorU(Matrix_CSR<T,I,A> &U, bool copy
 template <typename T, typename I>
 void DirectSparseSolver<T, I>::getPermutation(Permutation<I> &perm)
 {
-	if(ext->stage < 3) eslog::error("getPermutation: invalid order of operations in spsolver\n");
+    if(ext->stage < 3) eslog::error("getPermutation: invalid order of operations in spsolver\n");
 
-	perm.resize(ext->cm_factor_simpl->n);
+    perm.resize(ext->cm_factor_simpl->n);
 
     std::copy_n(static_cast<I*>(ext->cm_factor_simpl->Perm), ext->cm_factor_simpl->n, perm.dst_to_src);
 
@@ -308,9 +308,9 @@ void DirectSparseSolver<T, I>::getPermutation(Permutation<I> &perm)
 template <typename T, typename I>
 void DirectSparseSolver<T, I>::getPermutation(Vector_Dense<I> &perm)
 {
-	if(ext->stage < 3) eslog::error("getPermutation: invalid order of operations in spsolver\n");
+    if(ext->stage < 3) eslog::error("getPermutation: invalid order of operations in spsolver\n");
 
-	perm.resize(ext->cm_factor_simpl->n);
+    perm.resize(ext->cm_factor_simpl->n);
 
     std::copy_n(static_cast<I*>(ext->cm_factor_simpl->Perm), ext->cm_factor_simpl->n, perm.vals);
 }
@@ -319,7 +319,7 @@ template <typename T, typename I>
 void DirectSparseSolver<T, I>::getSC(Matrix_Dense<T,I> &sc)
 {
     // todo: can I use the existing factor so i don't have to factorize again?
-	// computes the schur complement S = A22 - A21 * A11^{-1} * A12, where A = [A11, A12; A21, A22]
+    // computes the schur complement S = A22 - A21 * A11^{-1} * A12, where A = [A11, A12; A21, A22]
 
     if(ext->stage < 2) eslog::error("getSC: invalid order of operations in spsolver\n");
 

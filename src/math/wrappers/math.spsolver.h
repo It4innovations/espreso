@@ -21,55 +21,55 @@ struct Solver_External_Representation;
 
 template <typename T, typename I = int>
 struct DirectSparseSolver {
-	struct VectorSparsity {
-		static const int DENSE           = 0;
-		static const int SPARSE_RHS      = 1 << 0;
-		static const int SPARSE_SOLUTION = 2 << 0;
-	};
+    struct VectorSparsity {
+        static const int DENSE           = 0;
+        static const int SPARSE_RHS      = 1 << 0;
+        static const int SPARSE_SOLUTION = 2 << 0;
+    };
 
-	static const char* name();
-	static bool provideFactors();
-	static bool provideSC();
-	static Solver_Factors factorsSymmetry();
+    static const char* name();
+    static bool provideFactors();
+    static bool provideSC();
+    static Solver_Factors factorsSymmetry();
 
-	DirectSparseSolver();
-	DirectSparseSolver(const Matrix_CSR<T, I> &a);
-	DirectSparseSolver(const DirectSparseSolver &other) = delete;
-	DirectSparseSolver(DirectSparseSolver &&other);
-	DirectSparseSolver & operator=(const DirectSparseSolver &other) = delete;
-	DirectSparseSolver & operator=(DirectSparseSolver &&other);
-	~DirectSparseSolver();
+    DirectSparseSolver();
+    DirectSparseSolver(const Matrix_CSR<T, I> &a);
+    DirectSparseSolver(const DirectSparseSolver &other) = delete;
+    DirectSparseSolver(DirectSparseSolver &&other);
+    DirectSparseSolver & operator=(const DirectSparseSolver &other) = delete;
+    DirectSparseSolver & operator=(DirectSparseSolver &&other);
+    ~DirectSparseSolver();
 
-	void commit(const Matrix_CSR<T, I> &a);
+    void commit(const Matrix_CSR<T, I> &a);
 
-	void symbolicFactorization(int fixedSuffix = 0); // do not permute suffix
-	void numericalFactorization();
+    void symbolicFactorization(int fixedSuffix = 0); // do not permute suffix
+    void numericalFactorization();
 
-	void solve(Vector_Dense<T, I> &rhs, Vector_Dense<T, I> &solution, int sparsity = VectorSparsity::DENSE);
-	void solve(Matrix_Dense<T, I> &rhs, Matrix_Dense<T, I> &solution, int sparsity = VectorSparsity::DENSE);
+    void solve(Vector_Dense<T, I> &rhs, Vector_Dense<T, I> &solution, int sparsity = VectorSparsity::DENSE);
+    void solve(Matrix_Dense<T, I> &rhs, Matrix_Dense<T, I> &solution, int sparsity = VectorSparsity::DENSE);
 
-	void solveForward (Vector_Dense<T, I> &rhs, Vector_Dense<T, I> &solution, int sparsity = VectorSparsity::DENSE);
-	void solveDiagonal(Vector_Dense<T, I> &rhs, Vector_Dense<T, I> &solution, int sparsity = VectorSparsity::DENSE);
-	void solveBackward(Vector_Dense<T, I> &rhs, Vector_Dense<T, I> &solution, int sparsity = VectorSparsity::DENSE);
-	void solveForward (Matrix_Dense<T, I> &rhs, Matrix_Dense<T, I> &solution, int sparsity = VectorSparsity::DENSE);
-	void solveDiagonal(Matrix_Dense<T, I> &rhs, Matrix_Dense<T, I> &solution, int sparsity = VectorSparsity::DENSE);
-	void solveBackward(Matrix_Dense<T, I> &rhs, Matrix_Dense<T, I> &solution, int sparsity = VectorSparsity::DENSE);
+    void solveForward (Vector_Dense<T, I> &rhs, Vector_Dense<T, I> &solution, int sparsity = VectorSparsity::DENSE);
+    void solveDiagonal(Vector_Dense<T, I> &rhs, Vector_Dense<T, I> &solution, int sparsity = VectorSparsity::DENSE);
+    void solveBackward(Vector_Dense<T, I> &rhs, Vector_Dense<T, I> &solution, int sparsity = VectorSparsity::DENSE);
+    void solveForward (Matrix_Dense<T, I> &rhs, Matrix_Dense<T, I> &solution, int sparsity = VectorSparsity::DENSE);
+    void solveDiagonal(Matrix_Dense<T, I> &rhs, Matrix_Dense<T, I> &solution, int sparsity = VectorSparsity::DENSE);
+    void solveBackward(Matrix_Dense<T, I> &rhs, Matrix_Dense<T, I> &solution, int sparsity = VectorSparsity::DENSE);
 
 
-	I getMatrixSize();
-	I getMatrixNnz();
-	I getFactorNnz();
+    I getMatrixSize();
+    I getMatrixNnz();
+    I getFactorNnz();
 
-	template<typename A>
-	void getFactorL(Matrix_CSR<T,I,A> &L, bool copyPattern = true, bool copyValues = true);
-	template<typename A>
-	void getFactorU(Matrix_CSR<T,I,A> &U, bool copyPattern = true, bool copyValues = true);
-	void getPermutation(Permutation<I> &perm);
-	void getPermutation(Vector_Dense<I> &perm);
-	void getSC(Matrix_Dense<T,I> &sc);
+    template<typename A>
+    void getFactorL(Matrix_CSR<T,I,A> &L, bool copyPattern = true, bool copyValues = true);
+    template<typename A>
+    void getFactorU(Matrix_CSR<T,I,A> &U, bool copyPattern = true, bool copyValues = true);
+    void getPermutation(Permutation<I> &perm);
+    void getPermutation(Vector_Dense<I> &perm);
+    void getSC(Matrix_Dense<T,I> &sc);
 
 private:
-	std::unique_ptr<Solver_External_Representation<T,I>> ext;
+    std::unique_ptr<Solver_External_Representation<T,I>> ext;
 };
 
 }

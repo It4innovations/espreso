@@ -12,7 +12,7 @@ template <template <typename, typename, typename> class Matrix, typename T, type
 AccFETIDualOperator<Matrix, T, I>::AccFETIDualOperator(int rank)
 : rank(rank), _acc(nullptr)
 {
-	eslog::error("calling of empty AccFETIDualOperator wrapper.\n");
+    eslog::error("calling of empty AccFETIDualOperator wrapper.\n");
 }
 
 

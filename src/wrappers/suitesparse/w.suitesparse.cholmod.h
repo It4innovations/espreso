@@ -92,120 +92,120 @@ template<> constexpr int _getCholmodItype<int64_t>() { return CHOLMOD_LONG; }
 
 constexpr int _getCholmodStype(Matrix_Shape shape)
 {
-	switch(shape)
-	{
-	case Matrix_Shape::UPPER:
-		return 1;
-	case Matrix_Shape::LOWER:
-		return -1;
-	case Matrix_Shape::FULL:
-		return 0;
-	default:
-		return 0;
-	}
+    switch(shape)
+    {
+    case Matrix_Shape::UPPER:
+        return 1;
+    case Matrix_Shape::LOWER:
+        return -1;
+    case Matrix_Shape::FULL:
+        return 0;
+    default:
+        return 0;
+    }
 }
 
 template <typename T, typename I>
 static inline void setSymmetric(cholmod_sparse* &A, const Matrix_CSR<T, I> &M)
 {
-	if (!A) A = new cholmod_sparse();
-	A->nrow = M.ncols; // CSR -> CSC, it works only for symmetric matrices
-	A->ncol = M.nrows;
-	A->nzmax = M.nnz;
+    if (!A) A = new cholmod_sparse();
+    A->nrow = M.ncols; // CSR -> CSC, it works only for symmetric matrices
+    A->ncol = M.nrows;
+    A->nzmax = M.nnz;
 
-	A->p = M.rows;
-	A->i = M.cols;
-	A->x = M.vals;
+    A->p = M.rows;
+    A->i = M.cols;
+    A->x = M.vals;
 
-	A->stype = (-1) * _getCholmodStype(M.shape); // (-1)* <=> CSR -> CSC
-	A->xtype = CHOLMOD_PATTERN;
-	A->dtype = _getCholmodDtype<T>();
-	A->sorted = 1;
-	A->packed = 1;
+    A->stype = (-1) * _getCholmodStype(M.shape); // (-1)* <=> CSR -> CSC
+    A->xtype = CHOLMOD_PATTERN;
+    A->dtype = _getCholmodDtype<T>();
+    A->sorted = 1;
+    A->packed = 1;
 }
 
 template <typename T, typename I>
 static inline void setAsymmetric(cholmod_sparse* &A, cholmod_common &common, const Matrix_CSR<T, I> &M)
 {
-	if (A) delete A;
-	cholmod_sparse* At = new cholmod_sparse();
-	At->nrow = M.ncols;
-	At->ncol = M.nrows;
-	At->nzmax = M.nnz;
+    if (A) delete A;
+    cholmod_sparse* At = new cholmod_sparse();
+    At->nrow = M.ncols;
+    At->ncol = M.nrows;
+    At->nzmax = M.nnz;
 
-	At->p = M.rows;
-	At->i = M.cols;
-	At->x = M.vals;
+    At->p = M.rows;
+    At->i = M.cols;
+    At->x = M.vals;
 
-	At->stype = (-1) * _getCholmodStype(M.shape); // (-1)* <=> CSR -> CSC
-	At->xtype = _getCholmodXtype<T>();
-	At->dtype = _getCholmodDtype<T>();
-	At->sorted = 1;
-	At->packed = 1;
+    At->stype = (-1) * _getCholmodStype(M.shape); // (-1)* <=> CSR -> CSC
+    At->xtype = _getCholmodXtype<T>();
+    At->dtype = _getCholmodDtype<T>();
+    At->sorted = 1;
+    At->packed = 1;
 
-	// CSR -> CSC
-	At = _transpose<esint>(A, common);
-	delete At;
+    // CSR -> CSC
+    At = _transpose<esint>(A, common);
+    delete At;
 }
 
 template <typename T, typename I>
 static inline void updateSymmetric(cholmod_sparse *A, const Matrix_CSR<T, I> &M)
 {
-	A->x = M.vals;
-	A->xtype = _getCholmodXtype<T>();
+    A->x = M.vals;
+    A->xtype = _getCholmodXtype<T>();
 }
 
 template <typename T, typename I>
 static inline void update(cholmod_dense* &A, const Matrix_Dense<T, I> &M)
 {
-	if (!A) A = new cholmod_dense();
-	A->nrow = M.ncols; // row-major -> column-major, therefore transposed. JUST array-transposed. NOT conjugate-transposed
-	A->ncol = M.nrows;
-	A->nzmax = M.ncols * M.nrows;
-	A->d = M.ncols;
-	A->x = M.vals;
-	A->xtype = _getCholmodXtype<T>();
-	A->dtype = _getCholmodDtype<T>();
+    if (!A) A = new cholmod_dense();
+    A->nrow = M.ncols; // row-major -> column-major, therefore transposed. JUST array-transposed. NOT conjugate-transposed
+    A->ncol = M.nrows;
+    A->nzmax = M.ncols * M.nrows;
+    A->d = M.ncols;
+    A->x = M.vals;
+    A->xtype = _getCholmodXtype<T>();
+    A->dtype = _getCholmodDtype<T>();
 }
 
 template <typename T, typename I>
 static inline void update(cholmod_dense* &A, const Vector_Dense<T, I> &v)
 {
-	if (!A) A = new cholmod_dense();
-	A->nrow = v.size;
-	A->ncol = 1;
-	A->nzmax = v.size;
-	A->d = v.size;
-	A->x = v.vals;
-	A->xtype = _getCholmodXtype<T>();
-	A->dtype = _getCholmodDtype<T>();
+    if (!A) A = new cholmod_dense();
+    A->nrow = v.size;
+    A->ncol = 1;
+    A->nzmax = v.size;
+    A->d = v.size;
+    A->x = v.vals;
+    A->xtype = _getCholmodXtype<T>();
+    A->dtype = _getCholmodDtype<T>();
 }
 
 template <typename T, typename I>
 static inline void _extractUpper(cholmod_sparse* &A, cholmod_common &common, Matrix_CSR<T, I> &M)
 {
-	cholmod_sparse* upA = _copy<esint>(A, -1, 1, common); // CSC -> CSR
-	M.shape = Matrix_Shape::UPPER;
-	M.type = Matrix_Type::REAL_SYMMETRIC_INDEFINITE;
-	M.resize(upA->ncol, upA->nrow, upA->nzmax);
-	std::copy((esint*)upA->p, (esint*)upA->p + M.nrows + 1, M.rows);
-	std::copy((esint*)upA->i, (esint*)upA->i + M.nnz, M.cols);
-	std::copy((T*)upA->x, (T*)upA->x + M.nnz, M.vals);
-	delete upA;
+    cholmod_sparse* upA = _copy<esint>(A, -1, 1, common); // CSC -> CSR
+    M.shape = Matrix_Shape::UPPER;
+    M.type = Matrix_Type::REAL_SYMMETRIC_INDEFINITE;
+    M.resize(upA->ncol, upA->nrow, upA->nzmax);
+    std::copy((esint*)upA->p, (esint*)upA->p + M.nrows + 1, M.rows);
+    std::copy((esint*)upA->i, (esint*)upA->i + M.nnz, M.cols);
+    std::copy((T*)upA->x, (T*)upA->x + M.nnz, M.vals);
+    delete upA;
 }
 
 template <typename T, typename I>
 static inline void extract(cholmod_dense *A, cholmod_common &common, Matrix_Dense<T, I> &M)
 {
-	memcpy(M.vals, A->x, sizeof(T) * M.nrows * M.ncols);
-	_free<esint>(A, common);
+    memcpy(M.vals, A->x, sizeof(T) * M.nrows * M.ncols);
+    _free<esint>(A, common);
 }
 
 template <typename T, typename I>
 static inline void extract(cholmod_dense *A, cholmod_common &common, Vector_Dense<T, I> &v)
 {
-	memcpy(v.vals, A->x, sizeof(T) * v.size);
-	_free<esint>(A, common);
+    memcpy(v.vals, A->x, sizeof(T) * v.size);
+    _free<esint>(A, common);
 }
 
 }

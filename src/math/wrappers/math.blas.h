@@ -14,41 +14,41 @@ namespace espreso {
 namespace math {
 namespace blas {
 
-	// x = y
-	template <typename T>
-	void copy(const int size, T *x, const int incX, const T *y, const int incY);
+    // x = y
+    template <typename T>
+    void copy(const int size, T *x, const int incX, const T *y, const int incY);
 
-	// x *= alpha
-	template <typename T>
-	void scale(const int size, const T &alpha, T *x, const int incX);
+    // x *= alpha
+    template <typename T>
+    void scale(const int size, const T &alpha, T *x, const int incX);
 
-	// x += alpha * y
-	template <typename T>
-	void add(const int size, T *x, const int incX, const T &alpha, const T *y, const int incY);
+    // x += alpha * y
+    template <typename T>
+    void add(const int size, T *x, const int incX, const T &alpha, const T *y, const int incY);
 
-	template <typename T>
-	T dot(const int size, const T *x, const int incX, const T *y, const int incY);
+    template <typename T>
+    T dot(const int size, const T *x, const int incX, const T *y, const int incY);
 
-	template <typename T>
-	T norm(const int size, const T *x, const int incX);
+    template <typename T>
+    T norm(const int size, const T *x, const int incX);
 
-	template <typename T>
-	T norm(const int size, const std::complex<T> *x, const int incX);
+    template <typename T>
+    T norm(const int size, const std::complex<T> *x, const int incX);
 
-	// y = alpha * A * x + beta * y
-	template <typename T, typename I>
-	void apply(Vector_Dense<T, I> &y, const T &alpha, const Matrix_Dense<T, I> &a, const T &beta, const Vector_Dense<T, I> &x);
+    // y = alpha * A * x + beta * y
+    template <typename T, typename I>
+    void apply(Vector_Dense<T, I> &y, const T &alpha, const Matrix_Dense<T, I> &a, const T &beta, const Vector_Dense<T, I> &x);
 
-	// y = alpha * At * x + beta * y
-	template <typename T, typename I>
-	void applyT(Vector_Dense<T, I> &y, const T &alpha, const Matrix_Dense<T, I> &a, const T &beta, const Vector_Dense<T, I> &x);
+    // y = alpha * At * x + beta * y
+    template <typename T, typename I>
+    void applyT(Vector_Dense<T, I> &y, const T &alpha, const Matrix_Dense<T, I> &a, const T &beta, const Vector_Dense<T, I> &x);
 
-	template <typename T, typename I>
-	void AAt(const Matrix_Dense<T, I> &A, Matrix_Dense<T, I> &AAt);
+    template <typename T, typename I>
+    void AAt(const Matrix_Dense<T, I> &A, Matrix_Dense<T, I> &AAt);
 
-	// C = alpha * op(A) * op(B) + beta C
-	template <typename T, typename I>
-	void multiply(T alpha, const Matrix_Dense<T, I> &A, const Matrix_Dense<T, I> &B, T beta, Matrix_Dense<T, I> &C, bool transA = false, bool transB = false);
+    // C = alpha * op(A) * op(B) + beta C
+    template <typename T, typename I>
+    void multiply(T alpha, const Matrix_Dense<T, I> &A, const Matrix_Dense<T, I> &B, T beta, Matrix_Dense<T, I> &C, bool transA = false, bool transB = false);
 }
 }
 }
