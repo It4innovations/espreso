@@ -186,7 +186,7 @@ void AAt(const Matrix_Dense<double> &A, Matrix_Dense<double> &AAt, bool trans)
         cblas_dsyrk(CblasRowMajor, CblasUpper, CblasTrans, AAt.nrows, A.nrows, 1, A.vals, A.ncols, 0, AAt.vals, AAt.ncols);
     } else {
         AAt.resize(A.nrows, A.nrows);
-        cblas_dsyrk(CblasRowMajor, CblasUpper, CblasNoTrans, A.nrows, A.ncols, 1, A.vals, A.ncols, 0, AAt.vals, AAt.ncols);
+        cblas_dsyrk(CblasRowMajor, CblasUpper, CblasNoTrans, AAt.nrows, A.ncols, 1, A.vals, A.ncols, 0, AAt.vals, AAt.ncols);
     }
 }
 
