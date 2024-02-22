@@ -875,7 +875,7 @@ void TotalFETIExplicitAcc<T,I>::update(const step::Step &step)
     print_timer("Update    compute_d", tm_compute_d);
     print_timer("Update    wait", tm_wait);
 
-//    print(step);
+    print(step);
 }
 
 template <typename T, typename I>
@@ -1067,14 +1067,39 @@ void TotalFETIExplicitAcc<T,I>::toPrimal(const Vector_Dual<T> &x, std::vector<Ve
 template <typename T, typename I>
 void TotalFETIExplicitAcc<T,I>::print(const step::Step &step)
 {
-    eslog::error("todo\n");
-    // if (info::ecf->output.print_matrices) {
-    //     eslog::storedata(" STORE: feti/dualop/{Kplus}\n");
-    //     for (size_t di = 0; di < feti.K.size(); ++di) {
-    //         math::store(Kplus[di], utils::filename(utils::debugDirectory(step) + "/feti/dualop", (std::string("Kplus") + std::to_string(di)).c_str()).c_str());
-    //     }
-    //     math::store(d, utils::filename(utils::debugDirectory(step) + "/feti/dualop", "d").c_str());
-    // }
+    if (info::ecf->output.print_matrices) {
+        eslog::storedata(" STORE: feti/dualop/{Kplus, F}\n"); // Kplus is actually Kreg
+        for (size_t di = 0; di < feti.K.size(); ++di) {
+            math::store(domain_data[di].Kreg, utils::filename(utils::debugDirectory(step) + "/feti/dualop", (std::string("Kplus") + std::to_string(di)).c_str()).c_str());
+            {
+                per_domain_stuff & data = domain_data[di];
+                Matrix_Dense<T,I,Ah> h_F;
+                h_F.resize(data.d_F.nrows, data.d_F.ncols);
+                gpu::mgm::copy_submit_d2h(main_q, h_F, data.d_F);
+                gpu::mgm::queue_wait(main_q);
+                if(order_F == 'C') {
+                    // transpose the matrix to transition colmajor->rowmajor
+                    for(I r = 0; r < h_F.nrows; r++) {
+                        for(I c = 0; c < r; c++) {
+                            std::swap(h_F.vals[r * h_F.get_ld() + c], h_F.vals[c * h_F.get_ld() + r]);
+                        }
+                    }
+                }
+                if(is_system_hermitian) {
+                    // fill the other triangle
+                    for(I r = 0; r < h_F.nrows; r++) {
+                        I begin = (data.hermitian_F_fill == 'L') ? r+1       : 0;
+                        I end   = (data.hermitian_F_fill == 'L') ? h_F.ncols : r;
+                        for(I c = begin; c < end; c++) h_F.vals[r * h_F.get_ld() + c] = h_F.vals[c * h_F.get_ld() + r];
+                    }
+                }
+                Matrix_Dense<T> F;
+                F.shallowCopy(h_F);
+                math::store(F, utils::filename(utils::debugDirectory(step) + "/feti/dualop", (std::string("F") + std::to_string(di)).c_str()).c_str());
+            }
+        }
+        math::store(d, utils::filename(utils::debugDirectory(step) + "/feti/dualop", "d").c_str());
+    }
 }
 
 
