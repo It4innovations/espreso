@@ -32,7 +32,6 @@ private:
 	Vector_Distributed<Vector_Sparse, T> dirichlet;
 
 	FETI<T> feti;
-	std::vector<Matrix_Dense<T> > IRRt;
 	bool bem;
 };
 

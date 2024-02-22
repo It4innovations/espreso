@@ -391,8 +391,12 @@ void HeatTransfer::analyze()
     if (constant.dirichlet) { if (constants.size()) constants += ", "; constants += "dirichlet"; }
 
     eslog::info("  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  \n");
-    eslog::info("  SIMD SIZE                                                                                 %lu \n", SIMD::size);
-    eslog::info("  MAX ELEMENT SIZE                                                                   %6lu B \n", esize);
+    if (bem.front()) {
+        eslog::info("  ASSEMBLER                                                                               BEM \n");
+    } else {
+        eslog::info("  SIMD SIZE                                                                                 %lu \n", SIMD::size);
+        eslog::info("  MAX ELEMENT SIZE                                                                   %6lu B \n", esize);
+    }
     eslog::info("  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  \n");
     if (correct) {
         eslog::info("  PHYSICS CONFIGURED                                                               %8.3f s \n", eslog::time() - start);

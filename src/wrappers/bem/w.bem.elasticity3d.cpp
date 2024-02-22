@@ -1072,14 +1072,12 @@ static void assembleSteklovPoincareCholesky (esint nElements, esint nNodes, doub
 //}
 
 
-void BEM3DElasticity(int np, double *points, int ne, int *elemNodes, int order, double YoungModulus, double PoissonRatio, double *K)
-//void getElasticity (/*MyBEMData* &bem,*/ double *K,
-//            esint nNodes, /*const*/ double *nodes,
-//            esint nElements, /*const esint*/ double *elements, int order,
-//            double YoungModulus, double PoissonRatio)
+void BEM3DElasticity(double *K, int np, double *points, int ne, int *elements, double YoungModulus, double PoissonRatio)
+
 {
-  esint i, j, idx, nElements3 = 3 * ne, nNodes3 = 3 * np;
+  int i, j, idx, nElements3 = 3 * ne, nNodes3 = 3 * np;
   double *V, *KK, *D, *M, *invV;
+  int order = 7;
   /*
   deleteMyBEMData(bem);
   bem->nNodes = nNodes;
@@ -1088,7 +1086,7 @@ void BEM3DElasticity(int np, double *points, int ne, int *elemNodes, int order, 
   KK = new double[nElements3*nNodes3];
   D = new double[nNodes3*nNodes3];
   M = new double[nElements3*nNodes3];
-  BEM3DElasticity(np, points, ne, elemNodes, order, V, KK, D, M, PoissonRatio);
+  BEM3DElasticity(np, points, ne, elements, order, V, KK, D, M, PoissonRatio);
   /*
   mexPrintfMatrix(nElements3,nElements3,V,"V");
   mexPrintfMatrix(nElements3,nNodes3,KK,"K");

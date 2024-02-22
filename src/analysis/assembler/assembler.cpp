@@ -400,7 +400,7 @@ bool Assembler::isBEM(size_t interval)
     if (it == settings.discretization.end()) {
         it = settings.discretization.find(info::mesh->elementsRegions[0]->name);
     }
-    if (it != settings.discretization.end()) {
+    if (it != settings.discretization.end() && it->second == PhysicsConfiguration::DISCRETIZATION::BEM) {
         return true;
     }
     return false;

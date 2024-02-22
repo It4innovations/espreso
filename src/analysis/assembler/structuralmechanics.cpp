@@ -416,8 +416,12 @@ void StructuralMechanics::analyze()
     printBoundarySurface(surface);
 
     eslog::info("  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  \n");
-    eslog::info("  SIMD SIZE                                                                                 %lu \n", SIMD::size);
-    eslog::info("  MAX ELEMENT SIZE                                                                   %6lu B \n", esize);
+    if (bem.front()) {
+        eslog::info("  ASSEMBLER                                                                               BEM \n");
+    } else {
+        eslog::info("  SIMD SIZE                                                                                 %lu \n", SIMD::size);
+        eslog::info("  MAX ELEMENT SIZE                                                                   %6lu B \n", esize);
+    }
     eslog::info("  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  \n");
     if (correct) {
         eslog::info("  PHYSICS CONFIGURED                                                               %8.3f s \n", eslog::time() - start);
@@ -612,27 +616,15 @@ void StructuralMechanics::runBEM(SubKernel::Action action, size_t domain, double
         double *points = &(info::mesh->domainsSurface->coordinates[domain][0].x);
         int ne = info::mesh->domainsSurface->edistribution[domain + 1] - info::mesh->domainsSurface->edistribution[domain];
         int *elemNodes = info::mesh->domainsSurface->denodes[domain].data();
-        int order = 10;
-
-//        for (int p = 0; p < np; ++p) {
-//            printf("%f %f %f\n", points[3 * p + 0], points[3 * p + 1], points[3 * p + 2]);
-//        }
-//        for (int e = 0; e < ne; ++e) {
-//            printf("%f %f %f\n", elemNodes[3 * e + 0], elemNodes[3 * e + 1], elemNodes[3 * e + 2]);
-//        }
 
         Matrix_Dense<double> K; K.resize(3 * np, 3 * np);
-//        BEM3DElasticity(np, points, ne, elemNodes, order, 0.3, 1e9, K.vals);
+        BEM3DElasticity(K.vals, np, points, ne, elemNodes, 2.1e11, 0.3);
 
-        math::store(K, "K");
-
-        for (int dr = 0, cc = 0; dr < info::mesh->dimension; ++dr) {
-            for (int r = dr; r < K.nrows; r += 3) {
-                for (int dc = 0; dc < info::mesh->dimension; ++dc) {
-                    for (int c = r + dc; c < K.ncols; c += 3) {
-                        BETI[cc++] = K.vals[r * K.ncols + c];
-                    }
-                }
+        for (int r = 0, cc = 0; r < K.nrows; ++r) {
+            int br = np * (r % 3) + r / 3;
+            for (int c = r; c < K.ncols; ++c) {
+                int bc = np * (c % 3) + c / 3;
+                BETI[cc++] = K.vals[br * K.ncols + bc];
             }
         }
     }
@@ -640,6 +632,21 @@ void StructuralMechanics::runBEM(SubKernel::Action action, size_t domain, double
 
 void StructuralMechanics::updateSolution(Vector_Base<double> *x)
 {
+//    Vector_FETI<Vector_Dense, double> *xBEM = dynamic_cast<Vector_FETI<Vector_Dense, double>*>(x);
+//    #pragma omp parallel for
+//    for (size_t i = 0; i < bem.size(); ++i) {
+//        if (bem[i]) {
+//            int np = info::mesh->domainsSurface->dnodes[i].size();
+//            double *points = &(info::mesh->domainsSurface->coordinates[i][0].x);
+//            int ne = info::mesh->domainsSurface->edistribution[i + 1] - info::mesh->domainsSurface->edistribution[i];
+//            int *elemNodes = info::mesh->domainsSurface->denodes[i].data();
+//            int ni = info::mesh->domainsSurface->coordinates[i].size() - info::mesh->domainsSurface->dnodes[i].size();
+//            double *inner = points + 3 * np;
+//
+//
+//            BEM3DLaplaceEval(xBEM->domains[i].vals + np, np, points, ne, elemNodes, ni, inner, 1, xBEM->domains[i].vals);
+//        }
+//    }
     x->storeTo(Results::displacement->data);
     assemble(SubKernel::SOLUTION);
 }

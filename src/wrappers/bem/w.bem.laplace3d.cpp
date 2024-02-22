@@ -856,10 +856,7 @@ static void assembleSteklovPoincareCholesky (esint nElements, esint nNodes, doub
 //}
 
 
-void BEM3DLaplace ( /*MyBEMData* &bem,*/ double *K,
-          esint nNodes, /*const*/ double *nodes,
-          esint nElements, /*const esint*/ int *elements,
-          double conductivity)
+void BEM3DLaplace (double *K, int np, double *points, int ne, int *elements, double conductivity)
 {
   esint i, j, idx;
   double *V, *KK, *D, *M, *invV;
@@ -867,11 +864,11 @@ void BEM3DLaplace ( /*MyBEMData* &bem,*/ double *K,
   deleteMyBEMData(bem);
   bem->nNodes = nNodes;
   */
-  V = new double[nElements*nElements];
-  KK = new double[nElements*nNodes];
-  D = new double[nNodes*nNodes];
-  M = new double[nElements*nNodes];
-  BEM3dLaplace(nNodes,nodes,nElements,elements,7,V,KK,D,M);
+  V = new double[ne*ne];
+  KK = new double[ne*np];
+  D = new double[np*np];
+  M = new double[ne*np];
+  BEM3dLaplace(np,points,ne,elements,7,V,KK,D,M);
   /*
   mexPrintfMatrix(nElements,nElements,V,"V");
   mexPrintfMatrix(nElements,nNodes,KK,"K");
@@ -880,17 +877,17 @@ void BEM3DLaplace ( /*MyBEMData* &bem,*/ double *K,
   */
   //invV = new double[nElements*nElements];
   //invertMatrix(nElements,V,invV);
-  for (i=0, idx=0; i<nElements; i++)
-    for (j=0; j<nNodes; j++, idx++)
+  for (i=0, idx=0; i<ne; i++)
+    for (j=0; j<np; j++, idx++)
       KK[idx] += 0.5*M[idx];
   //K = new double[nNodes*nNodes];
   //assembleSteklovPoincare(nElements,nNodes,invV,KK,D,K);
   ///*
-  cholesky(nElements,V);
-  assembleSteklovPoincareCholesky(nElements,nNodes,V,KK,D,K);
+  cholesky(ne,V);
+  assembleSteklovPoincareCholesky(ne,np,V,KK,D,K);
   //*/
-  for (i=0, idx=0; i<nNodes; i++)
-    for (j=0; j<nNodes; j++, idx++)
+  for (i=0, idx=0; i<np; i++)
+    for (j=0; j<np; j++, idx++)
       K[idx] *= conductivity;
   //bem->S = K;
   delete [] V;
@@ -901,11 +898,7 @@ void BEM3DLaplace ( /*MyBEMData* &bem,*/ double *K,
 }
 
 
-void BEM3DLaplaceEval( /*MyBEMData* &bem,*/ double *results,
-              esint nNodes, /*const*/ double *nodes,
-              esint nElements, /*const esint*/ int *elements,
-              esint nPoints, /*const*/ double *points,
-              double conductivity, double *dirichlet )
+void BEM3DLaplaceEval(double *results, int np, double *points, int ne, int *elements, int ni, double *inner, double conductivity, double *dirichlet)
 {
   esint i, j, idx;
   double *rhs, *neumann;
@@ -914,27 +907,26 @@ void BEM3DLaplaceEval( /*MyBEMData* &bem,*/ double *results,
   deleteMyBEMData(bem);
   bem->nNodes = nNodes;
   */
-  V = new double[nElements*nElements];
-  KK = new double[nElements*nNodes];
-  D = new double[nNodes*nNodes];
-  M = new double[nElements*nNodes];
-  BEM3dLaplace(nNodes,nodes,nElements,elements,7,V,KK,D,M);
-  for (i=0, idx=0; i<nElements; i++)
-    for (j=0; j<nNodes; j++, idx++)
+  V = new double[ne*ne];
+  KK = new double[ne*np];
+  D = new double[np*np];
+  M = new double[ne*np];
+  BEM3dLaplace(np,points,ne,elements,7,V,KK,D,M);
+  for (i=0, idx=0; i<ne; i++)
+    for (j=0; j<np; j++, idx++)
       KK[idx] += 0.5*M[idx];
 
-  rhs = new double[nElements];
-  memset(rhs,0,nElements*sizeof(double));
-  for (j=0, idx=0; j<nNodes; j++)
-    for (i=0; i<nElements; i++, idx++)
+  rhs = new double[ne];
+  memset(rhs,0,ne*sizeof(double));
+  for (j=0, idx=0; j<np; j++)
+    for (i=0; i<ne; i++, idx++)
       rhs[i] += KK[idx]*dirichlet[j];
-  neumann = new double[nElements];
-  cholesky(nElements,V);
-  choleskySolve(nElements,V,rhs,neumann);
-  for (i=0; i<nElements; i++)
+  neumann = new double[ne];
+  cholesky(ne,V);
+  choleskySolve(ne,V,rhs,neumann);
+  for (i=0; i<ne; i++)
     neumann[i] *= conductivity;
-  BEM3dLaplaceVolume(nodes,nElements,elements,nPoints,points,7,
-             neumann,dirichlet,results);
+  BEM3dLaplaceVolume(points,ne,elements,ni,inner,7,neumann,dirichlet,results);
   delete [] neumann;
   delete [] rhs;
   delete [] V;
