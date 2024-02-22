@@ -10,10 +10,6 @@ cases = [
 
 class Assembler(unittest.TestCase):
 
-    def startTest(self, event):
-        event.test._testFunc = dummy
-        event.handled = True
-
     def setUp(self):
         ESPRESOTest.path = os.path.dirname(__file__)
         ESPRESOTest.args = [ "TETRA4", 2, 2, 1, 2, 2, 2, 4, 4, 8, "NONE", 200 ]
