@@ -27,12 +27,12 @@ void RegularizationElasticity<T>::getFixPoints(std::vector<esint> &fixPoints, in
     esint begin = info::mesh->domains->elements[domain];
     esint end = info::mesh->domains->elements[domain + 1];
     auto element = info::mesh->elements->nodes->begin() + begin;
-    auto &epointer = info::mesh->elements->epointers->datatarray();
+    auto *epointer = &info::mesh->elements->epointers->datatarray();
     if (onSurface) {
         begin = info::mesh->domainsSurface->edistribution[domain];
         end = info::mesh->domainsSurface->edistribution[domain + 1];
         element = info::mesh->domainsSurface->enodes->begin() + begin;
-        epointer = info::mesh->domainsSurface->epointers->datatarray();
+        epointer = &info::mesh->domainsSurface->epointers->datatarray();
     }
 
     size_t FIX_POINTS_SIZE = 8;
@@ -108,10 +108,10 @@ void RegularizationElasticity<T>::getFixPoints(std::vector<esint> &fixPoints, in
     std::vector<esint> originnodes, neighsnodes;
     originnodes.reserve((end - begin) * 20);
     for (esint e = 0; e < end - begin; ++e, ++element) {
-        for (int n = 0; n < epointer[begin + e]->coarseNodes; ++n) {
+        for (int n = 0; n < (*epointer)[begin + e]->coarseNodes; ++n) {
             originnodes.insert(
                     originnodes.end(),
-                    neighs(neighsnodes, epointer[begin + e]->code, n, element->data()),
+                    neighs(neighsnodes, (*epointer)[begin + e]->code, n, element->data()),
                     element->at(n));
         }
     }
