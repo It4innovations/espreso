@@ -59,7 +59,7 @@ ImprovedMicroPSOConfiguration::ImprovedMicroPSOConfiguration()
 		.setdescription({"POPULATION_CONVERGENCE"})
 		.setdatatype({ECFDataType::FLOAT}));
 
-	this->CONVERGENCE_THRESHOLD = 0.001f;
+	this->CONVERGENCE_THRESHOLD = 0.1f;
 	REGISTER(CONVERGENCE_THRESHOLD, ECFMetaData()
 		.setdescription({"CONVERGENCE_THRESHOLD"})
 		.setdatatype({ECFDataType::FLOAT}));
