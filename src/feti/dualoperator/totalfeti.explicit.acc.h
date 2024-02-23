@@ -131,6 +131,7 @@ protected:
     bool can_use_LH_is_U_d_dn, can_use_UH_is_L_d_dn;
     bool need_conjtrans_L2LH, need_conjtrans_U2UH;
     bool is_f_triangles_shared, need_f_tmp;
+    bool timers_basic, timers_detailed;
     static constexpr size_t align_B = 512;
     static constexpr size_t align_elem = align_B / sizeof(T);
     int stage = 0;

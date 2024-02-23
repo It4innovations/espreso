@@ -63,6 +63,12 @@ struct DualOperatorExplicitGpuConfig: public ECFDescription {
 		GPU
 	};
 
+	enum class TIMERS {
+		NONE,
+		BASIC,
+		ALL
+	};
+
 	CONCURRENCY concurrency_set;
 	CONCURRENCY concurrency_update;
 	CONCURRENCY concurrency_apply;
@@ -75,6 +81,7 @@ struct DualOperatorExplicitGpuConfig: public ECFDescription {
 	TRIANGLE_MATRIX_SHARING f_sharing_if_hermitian;
 	QUEUE_COUNT queue_count;
 	DEVICE apply_scatter_gather_where;
+	TIMERS timers;
 
 	DualOperatorExplicitGpuConfig();
 

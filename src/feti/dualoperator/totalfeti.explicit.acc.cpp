@@ -22,6 +22,7 @@ using PATH_IF_HERMITIAN       = DualOperatorExplicitGpuConfig::PATH_IF_HERMITIAN
 using TRIANGLE_MATRIX_SHARING = DualOperatorExplicitGpuConfig::TRIANGLE_MATRIX_SHARING;
 using QUEUE_COUNT             = DualOperatorExplicitGpuConfig::QUEUE_COUNT;
 using DEVICE                  = DualOperatorExplicitGpuConfig::DEVICE;
+using TIMERS                  = DualOperatorExplicitGpuConfig::TIMERS;
 
 template <typename T, typename I>
 TotalFETIExplicitAcc<T,I>::TotalFETIExplicitAcc(FETI<T> &feti)
@@ -59,6 +60,8 @@ TotalFETIExplicitAcc<T,I>::TotalFETIExplicitAcc(FETI<T> &feti)
     need_conjtrans_U2UH = (is_system_hermitian && solver_get_U && (trsm2_use_UH || trsm1_use_L)) || (!is_system_hermitian && trsm2_use_UH);
     is_f_triangles_shared = (is_system_hermitian && config->f_sharing_if_hermitian == TRIANGLE_MATRIX_SHARING::SHARED);
     need_f_tmp = (is_f_triangles_shared && is_path_trsm);
+    timers_basic = (config->timers == TIMERS::BASIC || config->timers == TIMERS::ALL);
+    timers_detailed = (config->timers == TIMERS::ALL);
 
     if(is_path_herk && !is_system_hermitian) eslog::error("cannot do herk path with non-hermitian system\n");
 
@@ -72,7 +75,8 @@ TotalFETIExplicitAcc<T,I>::~TotalFETIExplicitAcc()
 {
     gpu::mgm::set_device(device);
 
-    my_timer tm_total, tm_descriptors, tm_gpulibs, tm_gpumem, tm_gpumempool, tm_gpuhostmem, tm_wait;
+    my_timer tm_total(timers_basic);
+    my_timer tm_descriptors(timers_detailed), tm_gpulibs(timers_detailed), tm_gpumem(timers_detailed), tm_gpumempool(timers_detailed), tm_gpuhostmem(timers_detailed), tm_wait(timers_detailed);
 
     tm_total.start();
 
@@ -200,7 +204,8 @@ void TotalFETIExplicitAcc<T,I>::set(const step::Step &step)
 {
     if(stage != 1) eslog::error("set: invalid order of operations in dualop\n");
 
-    my_timer tm_total, tm_gpuinit, tm_gpuset, tm_vecresize, tm_sizecalc, tm_gpucreate, tm_mainloop_outer, tm_mainloop_inner, tm_Kreg_combine, tm_solver_commit, tm_fact_symbolic, tm_descriptors, tm_buffersize, tm_alloc, tm_alloc_host, tm_alloc_device, tm_setpointers, tm_Bperm, tm_get_factors, tm_extract, tm_transpose, tm_copyin, tm_kernels_preprocess, tm_trs1, tm_trs2, tm_gemm, tm_applystuff, tm_poolalloc, tm_wait;
+    my_timer tm_total(timers_basic), tm_gpuinit(timers_basic), tm_gpuset(timers_basic), tm_vecresize(timers_basic), tm_sizecalc(timers_basic), tm_gpucreate(timers_basic), tm_mainloop_outer(timers_basic), tm_applystuff(timers_basic), tm_poolalloc(timers_basic), tm_wait(timers_basic);
+    my_timer tm_mainloop_inner(timers_detailed), tm_Kreg_combine(timers_detailed), tm_solver_commit(timers_detailed), tm_fact_symbolic(timers_detailed), tm_descriptors(timers_detailed), tm_buffersize(timers_detailed), tm_alloc(timers_detailed), tm_alloc_host(timers_detailed), tm_alloc_device(timers_detailed), tm_setpointers(timers_detailed), tm_Bperm(timers_detailed), tm_get_factors(timers_detailed), tm_extract(timers_detailed), tm_transpose(timers_detailed), tm_copyin(timers_detailed), tm_kernels_preprocess(timers_detailed), tm_trs1(timers_detailed), tm_trs2(timers_detailed), tm_gemm(timers_detailed);
 
     tm_total.start();
     n_domains = feti.K.size();
@@ -623,7 +628,8 @@ void TotalFETIExplicitAcc<T,I>::update(const step::Step &step)
 {
     if(stage != 2 && stage != 3) eslog::error("update: invalud order of operations in dualop\n");
 
-    my_timer tm_total, tm_mainloop_outer, tm_mainloop_inner, tm_Kreg_combine, tm_solver_commit, tm_fact_numeric, tm_get_factors, tm_extract, tm_transpose, tm_allocinpool, tm_setpointers, tm_copyin, tm_descr_update, tm_sp2dn, tm_kernels_compute, tm_trs1, tm_trs2, tm_gemm, tm_fcopy, tm_syrk, tm_freeinpool, tm_freeinpool_exec, tm_compute_d, tm_wait;
+    my_timer tm_total(timers_basic), tm_mainloop_outer(timers_basic), tm_compute_d(timers_basic), tm_wait(timers_basic);
+    my_timer tm_mainloop_inner(timers_detailed), tm_Kreg_combine(timers_detailed), tm_solver_commit(timers_detailed), tm_fact_numeric(timers_detailed), tm_get_factors(timers_detailed), tm_extract(timers_detailed), tm_transpose(timers_detailed), tm_allocinpool(timers_detailed), tm_setpointers(timers_detailed), tm_copyin(timers_detailed), tm_descr_update(timers_detailed), tm_sp2dn(timers_detailed), tm_kernels_compute(timers_detailed), tm_trs1(timers_detailed), tm_trs2(timers_detailed), tm_gemm(timers_detailed), tm_fcopy(timers_detailed), tm_syrk(timers_detailed), tm_freeinpool(timers_detailed), tm_freeinpool_exec(timers_detailed);
 
     tm_total.start();
 
@@ -887,7 +893,8 @@ void TotalFETIExplicitAcc<T,I>::apply(const Vector_Dual<T> &x_cluster, Vector_Du
 
     if(config->apply_scatter_gather_where == DEVICE::GPU)
     {
-        my_timer tm_total, tm_copyin, tm_scatter, tm_mv_outer, tm_mv, tm_zerofill, tm_gather, tm_copyout, tm_wait;
+        my_timer tm_total(timers_basic);
+        my_timer tm_copyin(timers_detailed), tm_scatter(timers_detailed), tm_mv_outer(timers_detailed), tm_mv(timers_detailed), tm_zerofill(timers_detailed), tm_gather(timers_detailed), tm_copyout(timers_detailed), tm_wait(timers_detailed);
 
         tm_total.start();
 
@@ -961,7 +968,8 @@ void TotalFETIExplicitAcc<T,I>::apply(const Vector_Dual<T> &x_cluster, Vector_Du
     
     if(config->apply_scatter_gather_where == DEVICE::CPU)
     {
-        my_timer tm_total, tm_apply_outer, tm_apply_inner, tm_scatter, tm_copyin, tm_mv, tm_copyout, tm_zerofill, tm_wait, tm_gather, tm_gather_inner;
+        my_timer tm_total(timers_basic);
+        my_timer tm_apply_outer(timers_detailed), tm_apply_inner(timers_detailed), tm_scatter(timers_detailed), tm_copyin(timers_detailed), tm_mv(timers_detailed), tm_copyout(timers_detailed), tm_zerofill(timers_detailed), tm_wait(timers_detailed), tm_gather(timers_detailed), tm_gather_inner(timers_detailed);
 
         tm_total.start();
 

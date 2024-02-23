@@ -2,6 +2,8 @@
 #ifndef SRC_FETI_DUALOPERATOR_MY_TIMER_H_
 #define SRC_FETI_DUALOPERATOR_MY_TIMER_H_
 
+#define ENABLE_DUALOP_EXPLICIT_GPU_TIMERS
+
 #include <chrono>
 #include <vector>
 #include <algorithm>
@@ -26,9 +28,11 @@ private:
     std::vector<long long> ticks_per_thread_last_laps;
     long long total_ticks;
     long long n_stops;
+    bool enabled;
 public:
-    my_timer()
+    my_timer(bool enabled_ = true) : enabled{enabled_}
     {
+        if(!enabled) return;
         this->reset();
         start_times.resize(get_thread_count());
         ticks_per_thread_last_laps.resize(get_thread_count());
@@ -36,10 +40,12 @@ public:
     }
     void start()
     {
+        if(!enabled) return;
         this->start_times[get_thread_idx()] = clocktype::now();
     }
     void stop()
     {
+        if(!enabled) return;
         auto stop_time = clocktype::now();
         auto start_time = start_times[get_thread_idx()];
         long long n_ticks = (stop_time - start_time).count();
@@ -52,33 +58,44 @@ public:
     }
     void reset()
     {
+        if(!enabled) return;
         this->total_ticks = 0LL;
         this->n_stops = 0LL;
     }
     double total_time() const
     {
+        if(!enabled) return 0.0;
         return this->total_ticks * ticks_to_sec;
     }
     double avg_time() const
     {
+        if(!enabled) return 0.0;
         return this->total_time() / n_stops;
     }
     double avg_perthread_time() const
     {
+        if(!enabled) return 0.0;
         return this->total_time() / this->get_n_used_threads();
     }
     double perthread_time(int thread_idx) const
     {
+        if(!enabled) return 0.0;
         return this->ticks_per_thread[thread_idx] * ticks_to_sec;
     }
     double lap_time(int thread_idx = -1)
     {
+        if(!enabled) return 0.0;
         if(thread_idx < 0) thread_idx = get_thread_idx();
         return ticks_per_thread_last_laps[thread_idx] * ticks_to_sec;
     }
     int get_n_used_threads() const
     {
+        if(!enabled) return 1;
         return std::count_if(start_times.begin(), start_times.end(), [](clocktype::time_point tp) { return tp.time_since_epoch().count() > 0LL; });
+    }
+    bool is_enabled() const
+    {
+        return enabled;
     }
 private:
     int get_thread_idx() const
@@ -123,6 +140,8 @@ public:
 static void print_timer(const char * name, const my_timer & tm, int indent = 0)
 {
 #ifdef ENABLE_DUALOP_EXPLICIT_GPU_TIMERS
+    if(!tm.is_enabled()) return;
+
     int number_width = 20;
     int number_precision = 6;
     int indent_size = 2;

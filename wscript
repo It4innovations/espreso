@@ -40,9 +40,6 @@ def configure(ctx):
     if ctx.options.use_cusparse_legacy:
         ctx.env.append_unique("DEFINES", [ "USE_CUSPARSE_LEGACY" ])
 
-    if ctx.options.enable_dualop_explicit_gpu_timers:
-        ctx.env.append_unique("DEFINES", [ "ENABLE_DUALOP_EXPLICIT_GPU_TIMERS" ])
-
     ctx.env.append_unique("CXXFLAGS", [ "-std=c++17", "-Wall" ])
     ctx.env.append_unique("CXXFLAGS", ctx.options.cxxflags.split())
     if ctx.options.mode == "release":
@@ -243,11 +240,6 @@ def options(opt):
         action="store_true",
         default=os.getenv("ESPRESO_USE_CUSPARSE_LEGACY"),
         help="Use legacy cusparse API. For CUDA < 12 only")
-
-    opt.other.add_option("--enable-dualop-explicit-gpu-timers",
-        action="store_true",
-        default=False,
-        help="Enable timers for explicit dual operator on GPU")
 
     recurse(opt)
 

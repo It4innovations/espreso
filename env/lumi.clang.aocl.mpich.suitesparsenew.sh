@@ -86,7 +86,7 @@ export OMP_PLACES=cores
 export OMP_PROC_BIND=close
 export OMP_NUM_THREADS=7
 
-# ./waf configure --enable-dualop-explicit-gpu-timers
+
 
 # salloc --account=project_465000572 --partition=standard-g --ntasks=8 --gpus-per-task=1 --cpus-per-task=7  --time=8:00:00
 # srun -n 8 ./build/espreso -c path/to/espreso.ecf
