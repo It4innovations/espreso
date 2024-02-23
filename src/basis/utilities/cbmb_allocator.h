@@ -4,6 +4,9 @@
 
 #include <stdexcept>
 #include <algorithm>
+#include <list>
+#include <mutex>
+#include <condition_variable>
 #include <omp.h>
 
 
@@ -32,34 +35,26 @@ namespace espreso {
             size_t start_aligned;
             mem_block(size_t s, size_t sa) : start(s), start_aligned(sa) {}
         };
+        std::mutex mtx_transaction;
+        std::mutex mtx_blocks;
+        std::condition_variable cv;
         char * memory_pool;
         size_t memory_pool_size;
         size_t volatile start_empty;
         size_t volatile start_full;
-        size_t volatile full_blocks_vector_capacity;
-        size_t volatile full_blocks_vector_size;
-        mem_block /*volatile*/ * volatile full_blocks_vector_data;
+        std::list<mem_block> full_blocks;
         size_t transaction_end_fail;
-        omp_lock_t lock_vector;
-        omp_lock_t lock_transaction;
     public:
         cbmba_resource(void * memory_pool_, size_t memory_pool_size_)
             : memory_pool(reinterpret_cast<char*>(memory_pool_))
             , memory_pool_size(memory_pool_size_)
             , start_empty(0)
             , start_full(0)
-            , full_blocks_vector_capacity(0)
-            , full_blocks_vector_size(0)
-            , full_blocks_vector_data(nullptr)
             , transaction_end_fail(~(size_t)0)
         {
-            omp_init_lock(&lock_vector);
-            omp_init_lock(&lock_transaction);
         }
         ~cbmba_resource()
         {
-            omp_destroy_lock(&lock_vector);
-            omp_destroy_lock(&lock_transaction);
         }
         cbmba_resource() = delete;
         cbmba_resource(cbmba_resource const &) = delete;
@@ -77,7 +72,8 @@ namespace espreso {
             size_t new_block_start_aligned;
             size_t new_block_end;
             {
-                omp_set_lock(&lock_vector);
+                std::unique_lock<std::mutex> lk(mtx_blocks);
+
                 new_block_start = start_empty;
                 new_block_start_aligned = ((new_block_start - 1) / align + 1) * align;
                 new_block_end = new_block_start_aligned + num_bytes;
@@ -88,16 +84,15 @@ namespace espreso {
                     new_block_end = new_block_start_aligned + num_bytes;
                 }
 
-                add_to_full_blocks_vector(mem_block(new_block_start, new_block_start_aligned));
+                full_blocks.emplace_back(new_block_start, new_block_start_aligned);
                 start_empty = new_block_end;
 
                 if(start_empty > transaction_end_fail) throw std::runtime_error("More memory requested in a single transaction then what is available in the pool");
-                omp_unset_lock(&lock_vector);
-            }
 
-            // if(new_block_end > start_full + memory_pool_size) printf("Memory full, waiting. this=%p, ptr=%p\n", this, memory_pool + new_block_start_aligned % memory_pool_size);
-            while(new_block_end > start_full + memory_pool_size) ; // busy waiting for some deallocation that moves the start_full pointer so I can return the memory to the user
-            // printf("Memory granted, %zu B, this=%p, pool=%p--%p, ptr=%p\n", num_bytes, this, memory_pool, memory_pool + memory_pool_size, memory_pool + new_block_start_aligned % memory_pool_size);
+                // printf("Waiting for memory, %zu B, this=%p, new_block_end=%zu, sf+mps=%zu\n", num_bytes, this, new_block_end, start_full + memory_pool_size);
+                cv.wait(lk, [&]{ return new_block_end <= start_full + memory_pool_size; });
+                // printf("Memory granted,     %zu B, this=%p, new_block_end=%zu, sf+mps=%zu\n", num_bytes, this, new_block_end, start_full + memory_pool_size);
+            }
 
             return memory_pool + new_block_start_aligned % memory_pool_size;
         }
@@ -107,50 +102,32 @@ namespace espreso {
             size_t mem_block_start_aligned = reinterpret_cast<char*>(ptr) - memory_pool;
 
             {
-                omp_set_lock(&lock_vector);
-                // printf("Deallocating, this=%p, ptr=%p\n", this, ptr);
-                remove_from_full_blocks_vector(mem_block_start_aligned);
-                if(full_blocks_vector_size == 0) start_full = start_empty = 0;
-                else start_full = full_blocks_vector_data[0].start;
-                omp_unset_lock(&lock_vector);
+                std::lock_guard<std::mutex> lk(mtx_blocks);
+
+                // printf("Deallocating, this=%p, ptr=%p, pos=%zu\n", this, ptr, mem_block_start_aligned);
+                // remove_from_full_blocks_vector(mem_block_start_aligned);
+                auto it = std::find_if(full_blocks.begin(), full_blocks.end(), [=](mem_block const & mb){return mb.start_aligned % memory_pool_size == mem_block_start_aligned;});
+                if(it == full_blocks.end()) throw std::runtime_error("Bad remove from full blocks vector");
+                full_blocks.erase(it);
+
+                if(full_blocks.size() == 0) start_full = start_empty = 0;
+                else start_full = full_blocks.front().start;
             }
+            cv.notify_all();
         }
         void print_full_blocks()
         {
             printf("cbmba_resource full blocks:");
-            for(size_t i = 0; i < full_blocks_vector_size; i++) printf(" %zu/%zu", full_blocks_vector_data[i].start, full_blocks_vector_data[i].start % memory_pool_size);
+            for(mem_block & mb : full_blocks) printf(" %zu/%zu", mb.start, mb.start % memory_pool_size);
             printf("\n");
         }
-        template<typename C> void do_transaction(const C & c)
+        void do_transaction(const std::function<void(void)> & f)
         {
+            std::lock_guard<std::mutex> lk(mtx_transaction);
             // c must have an operator() with no parameters and must only do allocations using this resource
-            omp_set_lock(&lock_transaction);
             transaction_end_fail = start_empty + memory_pool_size;
-            c();
+            f();
             transaction_end_fail = ~(size_t)0;
-            omp_unset_lock(&lock_transaction);
-        }
-    private:
-        void add_to_full_blocks_vector(mem_block mb)
-        {
-            if(full_blocks_vector_size == full_blocks_vector_capacity)
-            {
-                full_blocks_vector_capacity = 2 * full_blocks_vector_capacity + 1;
-                mem_block * new_data = reinterpret_cast<mem_block*>(malloc(full_blocks_vector_capacity * sizeof(mem_block)));
-                std::uninitialized_move_n(full_blocks_vector_data, full_blocks_vector_size, new_data);
-                free(full_blocks_vector_data);
-                full_blocks_vector_data = new_data;
-            }
-            std::uninitialized_move_n(&mb, 1, full_blocks_vector_data + full_blocks_vector_size);
-            full_blocks_vector_size++;
-        }
-        void remove_from_full_blocks_vector(size_t mem_block_start_aligned)
-        {
-            mem_block * end_iter = full_blocks_vector_data + full_blocks_vector_size;
-            mem_block * it = std::find_if(full_blocks_vector_data, end_iter, [=](mem_block const & mb){return mb.start_aligned % memory_pool_size == mem_block_start_aligned;});
-            if(it == end_iter) throw std::runtime_error("Bad remove from full blocks vector");
-            std::move(it + 1, end_iter, it);
-            full_blocks_vector_size--;
         }
     };
 
