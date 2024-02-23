@@ -367,7 +367,7 @@ bool ImprovedMicroPSOAlgorithm::detectRestartAndPerform()
 		if (standarddev < CONVERGENCE_THRESHOLD) n_converged_specimens++;
 	}
 
-	double ratio_converged = (double)n_converged_specimens / (double)(population - 1);
+	double ratio_converged = (double)(n_converged_specimens + 1) / (double)population;
 	// RESTART?
 	if (ratio_converged < POP_CONVERGENCE) return false;
 
