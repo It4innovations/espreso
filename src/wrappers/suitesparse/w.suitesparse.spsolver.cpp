@@ -302,9 +302,9 @@ inline void DirectSparseSolver<T, I>::getFactorU(Matrix_CSR<T,I,A> &U, bool copy
 {
     if(ext->stage < 3) eslog::error("getFactorU: invalid order of operations in spsolver\n");
     if(copyValues && ext->stage < 4) eslog::error("getFactorU: invalid order of operations in spsolver\n");
-    if((size_t)U.nrows != ext->cm_factor_simpl->n || (size_t)U.ncols != ext->cm_factor_simpl->n) eslog::error("getFactorU: output matrix has wrong dimensions\n");
+    if((size_t)U.nrows != ext->cm_factor_simpl->n || (size_t)U.ncols != ext->cm_factor_simpl->n || (size_t)U.nnz != ext->cm_factor_simpl->nzmax) eslog::error("getFactorU: output matrix has wrong dimensions\n");
 
-    U.resize(ext->cm_factor_simpl->n, ext->cm_factor_simpl->n, ext->cm_factor_simpl->nzmax);
+    // U.resize(ext->cm_factor_simpl->n, ext->cm_factor_simpl->n, ext->cm_factor_simpl->nzmax);
 
     if(copyPattern) std::copy_n(static_cast<I*>(ext->cm_factor_simpl->p), ext->cm_factor_simpl->n+1, U.rows);
     if(copyPattern) std::copy_n(static_cast<I*>(ext->cm_factor_simpl->i), ext->cm_factor_simpl->nzmax, U.cols);
