@@ -79,9 +79,9 @@ public:
         _Vector_Dense<T, I>::operator=(_allocated);
     }
 
-    void shallowCopy(const Vector_Dense &other)
+    template<typename A2>
+    void shallowCopy(const Vector_Dense<T,I,A2> &other)
     {
-        if constexpr(!A::always_equal) if(this->ator != other.ator) eslog::error("not implemented for unequal allocators\n");
         _Vector_Dense<T, I>::operator=(other);
     }
 

@@ -79,6 +79,17 @@ public:
         clear(_allocated);
     }
 
+    void clear()
+    {
+        clear(_allocated);
+        this->nrows = 0;
+        this->ncols = 0;
+        this->nnz = 0;
+        this->rows = nullptr;
+        this->cols = nullptr;
+        this->vals = nullptr;
+    }
+
     void resize(I nrows, I ncols, I nnz)
     {
         realloc(_allocated, nrows, ncols, nnz);
@@ -101,9 +112,9 @@ public:
         this->cols = other.cols;
     }
 
-    void shallowCopy(const Matrix_CSC &other)
+    template<typename A2>
+    void shallowCopy(const Matrix_CSC<T,I,A2> &other)
     {
-        if constexpr(!A::always_equal) if(this->ator != other.ator) eslog::error("not implemented for unequal allocators\n");
         type = other.type;
         shape = other.shape;
         _Matrix_CSC<T, I>::operator=(other);

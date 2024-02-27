@@ -84,9 +84,9 @@ public:
         this->indices = other.indices;
     }
 
-    void shallowCopy(const Vector_Sparse &other)
+    template<typename A2>
+    void shallowCopy(const Vector_Sparse<T,I,A2> &other)
     {
-        if constexpr(!A::always_equal) if(this->ator != other.ator) eslog::error("not implemented for unequal allocators\n");
         _Vector_Sparse<T, I>::operator=(other);
     }
 

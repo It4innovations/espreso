@@ -69,9 +69,9 @@ public:
         _Permutation<I>::operator=(_allocated);
     }
 
-    void shallowCopy(const Permutation &other)
+    template<typename A2>
+    void shallowCopy(const Permutation<I,A2> &other)
     {
-        if constexpr(!A::always_equal) if(this->ator != other.ator) eslog::error("not implemented for unequal allocators\n");
         _Permutation<I>::operator=(other);
     }
 
