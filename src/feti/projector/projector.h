@@ -20,8 +20,12 @@ struct Projector {
 
     virtual void apply(const Vector_Dual<T> &x, Vector_Dual<T> &y) =0;
     virtual void apply_e(const Vector_Kernel<T> &x, Vector_Dual<T> &y) =0;
+    virtual void apply_R(const Vector_Kernel<T> &x, std::vector<Vector_Dense<T> > &y) =0;
     virtual void apply_Ra(const Vector_Dual<T> &x, std::vector<Vector_Dense<T> > &y) =0;
+    virtual void apply_invU(const Vector_Kernel<T> &x, Vector_Kernel<T> &y) =0;
+    virtual void apply_invL(const Vector_Kernel<T> &x, Vector_Kernel<T> &y) =0;
     virtual void apply_GtinvU(const Vector_Kernel<T> &x, Vector_Dual<T> &y) =0;
+    virtual void apply_invLG(const Vector_Dual<T> &x, Vector_Kernel<T> &y) =0;
 
     Vector_Kernel<T> e;
 

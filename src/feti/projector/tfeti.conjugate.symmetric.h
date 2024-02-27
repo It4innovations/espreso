@@ -33,8 +33,12 @@ struct TFETIConjugateSymmetric: public Projector<T> {
 
     void apply(const Vector_Dual<T> &x, Vector_Dual<T> &y);
     void apply_e(const Vector_Kernel<T> &x, Vector_Dual<T> &y);
+    void apply_R(const Vector_Kernel<T> &x, std::vector<Vector_Dense<T> > &y);
     void apply_Ra(const Vector_Dual<T> &x, std::vector<Vector_Dense<T> > &y);
+    void apply_invU(const Vector_Kernel<T> &x, Vector_Kernel<T> &y);
+    void apply_invL(const Vector_Kernel<T> &x, Vector_Kernel<T> &y);
     void apply_GtinvU(const Vector_Kernel<T> &x, Vector_Dual<T> &y);
+    void apply_invLG(const Vector_Dual<T> &x, Vector_Kernel<T> &y);
 
 protected:
     void _computeDualGraph();

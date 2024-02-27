@@ -87,7 +87,7 @@ void DualOperator<T>::estimateMaxProjectedEigenValue(double &lambda, int &iterat
 
     lambda = std::sqrt(y.dot());
     double err = std::numeric_limits<T>::max();
-    for (iterations = 0; iterations <= maxIterations && epsilon < err; ++iterations) {
+    for (iterations = 1; iterations <= maxIterations && epsilon < err; ++iterations) {
         math::copy(x, y);
         math::scale(1 / lambda, x);
 
@@ -95,9 +95,9 @@ void DualOperator<T>::estimateMaxProjectedEigenValue(double &lambda, int &iterat
         P->apply(x, v);
         F->apply(v, z);
         P->apply(z, y);
-        math::scale(1 / normPFP, y);
-        math::add(y,  rho, x);
-        math::add(y, -rho, v);
+//        math::scale(1 / normPFP, y);
+//        math::add(y,  rho, x);
+//        math::add(y, -rho, v);
 
         double _lambda = lambda;
         lambda = std::sqrt(y.dot());

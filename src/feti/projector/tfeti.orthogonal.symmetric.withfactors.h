@@ -32,8 +32,12 @@ struct TFETIOrthogonalSymmetricWithFactors: public Projector<T> {
 
     void apply(const Vector_Dual<T> &x, Vector_Dual<T> &y);
     void apply_e(const Vector_Kernel<T> &x, Vector_Dual<T> &y);
+    void apply_R(const Vector_Kernel<T> &x, std::vector<Vector_Dense<T> > &y);
     void apply_Ra(const Vector_Dual<T> &x, std::vector<Vector_Dense<T> > &y);
+    void apply_invU(const Vector_Kernel<T> &x, Vector_Kernel<T> &y);
+    void apply_invL(const Vector_Kernel<T> &x, Vector_Kernel<T> &y);
     void apply_GtinvU(const Vector_Kernel<T> &x, Vector_Dual<T> &y);
+    void apply_invLG(const Vector_Dual<T> &x, Vector_Kernel<T> &y);
 
 protected:
     void _computeDualGraph();
@@ -44,6 +48,7 @@ protected:
 
     void _applyG(const Vector_Dual<T> &in, Vector_Kernel<T> &out);
     void _applyInvGGt(const Vector_Kernel<T> &in, Vector_Dense<T> &out);
+    void _applyInvL(const Vector_Kernel<T> &in, Vector_Dense<T> &out);
     void _applyInvU(const Vector_Kernel<T> &in, Vector_Dense<T> &out);
     void _applyGt(const Vector_Dense<T> &in, const T &alpha, Vector_Dual<T> &out);
     void _applyR(const Vector_Dense<T> &in, std::vector<Vector_Dense<T> > &out);

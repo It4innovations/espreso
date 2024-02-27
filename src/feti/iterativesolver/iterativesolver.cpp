@@ -69,6 +69,21 @@ void IterativeSolver<T>::reconstructSolution(const Vector_Dual<T> &l, const Vect
     }
 }
 
+template <typename T>
+void IterativeSolver<T>::reconstructSolution(const Vector_Dual<T> &l, const Vector_Kernel<T> &rbm)
+{
+    Projector<T> *P = feti.projector;
+    DualOperator<T> *F = feti.dualOperator;
+
+    F->toPrimal(l, iKfBtL);
+    P->apply_R(rbm, Ra);
+    #pragma omp parallel for
+    for (size_t d = 0; d < feti.K.size(); ++d) {
+        math::copy(feti.x[d], iKfBtL[d]);
+        math::add(feti.x[d], T{1}, Ra[d]);
+    }
+}
+
 template <>
 void IterativeSolver<double>::setInfo(IterativeSolverInfo &info, const FETIConfiguration &configuration, const double &ww)
 {

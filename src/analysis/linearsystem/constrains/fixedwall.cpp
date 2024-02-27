@@ -34,13 +34,22 @@ void FixedWall<T>::set(const step::Step &step, FETI<T> &feti)
     for (auto wall = loadstep.fixed_wall.begin(); wall != loadstep.fixed_wall.end(); ++wall) {
         const BoundaryRegionStore *region = info::mesh->bregion(wall->first);
         // const FixedWallConfiguration &conf = wall->second;
-        for (auto n = region->nodes->datatarray().begin(); n < region->nodes->datatarray().end(); ++n) {
+        for (auto n = region->nodes->datatarray().begin(); n < region->nodes->datatarray().end(); ++n, ++feti.lambdas.size) {
             auto dmap = feti.decomposition->dmap->cbegin() + *n * dim;
+            double norm2 = 0;
+            for (int d = 0; d < dim; ++d) {
+                norm2 += normal[*n * dim + d] * normal[*n * dim + d];
+            }
+            norm2 *= dmap->size();
+            double norm = std::sqrt(norm2);
             for (int d = 0; d < dim; ++d, ++dmap) {
                 for (auto di = dmap->begin(); di != dmap->end(); ++di) {
                     if (feti.decomposition->ismy(di->domain)) {
                         COLS[di->domain - feti.decomposition->dbegin].push_back(di->index);
-                        VALS[di->domain - feti.decomposition->dbegin].push_back(normal[*n * dim + d]);
+                        VALS[di->domain - feti.decomposition->dbegin].push_back(normal[*n * dim + d] / norm);
+                        if (d == 0) {
+                            D2C[di->domain - feti.decomposition->dbegin].push_back(feti.lambdas.size);
+                        }
                     }
                 }
             }
@@ -50,12 +59,11 @@ void FixedWall<T>::set(const step::Step &step, FETI<T> &feti)
 
     #pragma omp parallel for
     for (size_t d = 0; d < feti.K.size(); ++d) {
-        B1[d].resize(D2C[d].size() + COLS[d].size() / 3, feti.B1[d].ncols, feti.B1[d].nnz + COLS[d].size());
+        B1[d].resize(feti.B1[d].nrows + COLS[d].size() / 3, feti.B1[d].ncols, feti.B1[d].nnz + COLS[d].size());
         memcpy(B1[d].rows, feti.B1[d].rows, sizeof(int) * (feti.B1[d].nrows + 1));
         memcpy(B1[d].cols, feti.B1[d].cols, sizeof(int) * feti.B1[d].nnz);
         memcpy(B1[d].vals, feti.B1[d].vals, sizeof(T)   * feti.B1[d].nnz);
         for (size_t i = 0; i < COLS[d].size() / 3; ++i) {
-            D2C[d].push_back(feti.lambdas.size++);
             B1[d].rows[feti.B1[d].nrows + i + 1] = B1[d].rows[feti.B1[d].nrows + i] + 3;
         }
         memcpy(B1[d].cols + feti.B1[d].nnz, COLS[d].data(), sizeof(int) * COLS[d].size());

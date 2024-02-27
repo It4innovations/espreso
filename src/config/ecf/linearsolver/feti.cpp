@@ -186,6 +186,11 @@ espreso::FETIConfiguration::FETIConfiguration()
 			.setdescription({ "SMALSE inner precision" })
 			.setdatatype({ ECFDataType::FLOAT }));
 
+    precision_set = 1e-9;
+    REGISTER(precision_set, ECFMetaData()
+            .setdescription({ "Precision for active and free sets." })
+            .setdatatype({ ECFDataType::FLOAT }));
+
 	max_iterations_in = 500;
 	REGISTER(max_iterations_in, ECFMetaData()
 			.setdescription({ "SMALSE inner max iterations" })
@@ -210,7 +215,7 @@ espreso::FETIConfiguration::FETIConfiguration()
 	REGISTER(eta, ECFMetaData()
 			.setdescription({ "SMALSE eta" })
 			.setdatatype({ ECFDataType::FLOAT }));
-	beta = 0.1;
+	beta = 0.5;
 	REGISTER(beta, ECFMetaData()
 			.setdescription({ "SMALSE beta" })
 			.setdatatype({ ECFDataType::FLOAT }));

@@ -3,6 +3,8 @@
 #include "gpu/gpu_management.h"
 #include "esinfo/eslog.h"
 
+#include <numeric>
+
 #ifdef HAVE_MKL
 
 #include "wrappers/pardiso/w.pardiso.type.h"
@@ -113,8 +115,9 @@ void DirectSparseSolver<T, I>::commit(const Matrix_CSR<T, I> &a)
     ext->pp.iparm[1] = 2;            /* Fill-in reordering from METIS */
     ext->pp.iparm[9] = 13;           /* Perturb the pivot elements with 1E-13 */
 
-    ext->pp.iparm[4] = 2;            /* Return permutation vector */
+    ext->pp.iparm[4] = 1;            /* Return permutation vector */
     ext->pp.perm = new esint[ext->matrix->nrows];
+    std::iota(ext->pp.perm, ext->pp.perm + ext->matrix->nrows, 1);
 }
 
 template <typename T, typename I>

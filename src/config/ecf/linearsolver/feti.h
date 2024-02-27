@@ -175,7 +175,7 @@ struct FETIConfiguration: public ECFDescription {
 
 	bool use_schur_complement;
 
-	double precision_in;
+	double precision_in, precision_set;
 	size_t max_iterations_in;
 
 	// SMALSE

@@ -102,6 +102,19 @@ void TFETIConjugateSymmetric<T>::apply_e(const Vector_Kernel<T> &x, Vector_Dual<
 }
 
 template<typename T>
+void TFETIConjugateSymmetric<T>::apply_R(const Vector_Kernel<T> &x,  std::vector<Vector_Dense<T> > &y)
+{
+    if (GFGt.nrows) {
+        _applyR(x, y);
+    } else {
+        #pragma omp parallel for
+        for (size_t d = 0; d < y.size(); ++d) {
+            math::set(y[d], T{0});
+        }
+    }
+}
+
+template<typename T>
 void TFETIConjugateSymmetric<T>::apply_Ra(const Vector_Dual<T> &x,  std::vector<Vector_Dense<T> > &y)
 {
     if (GFGt.nrows) {
@@ -117,7 +130,26 @@ void TFETIConjugateSymmetric<T>::apply_Ra(const Vector_Dual<T> &x,  std::vector<
 }
 
 template<typename T>
+void TFETIConjugateSymmetric<T>::apply_invU(const Vector_Kernel<T> &x, Vector_Kernel<T> &y)
+{
+
+}
+
+template<typename T>
+void TFETIConjugateSymmetric<T>::apply_invL(const Vector_Kernel<T> &x, Vector_Kernel<T> &y)
+{
+
+}
+
+
+template<typename T>
 void TFETIConjugateSymmetric<T>::apply_GtinvU(const Vector_Kernel<T> &x, Vector_Dual<T> &y)
+{
+
+}
+
+template<typename T>
+void TFETIConjugateSymmetric<T>::apply_invLG(const Vector_Dual<T> &x, Vector_Kernel<T> &y)
 {
 
 }

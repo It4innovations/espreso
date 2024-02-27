@@ -64,7 +64,7 @@ void TFETIOrthogonalSymmetric<T>::update(const step::Step &step)
         Vector_Dense<T> _e;
         _e.size = feti.R1[d].nrows;
         _e.vals = e.vals + dinfo[d].koffset;
-        math::blas::apply(_e, T{1}, feti.R1[d], T{0}, feti.f[d]);
+        math::blas::apply(_e, T{-1}, feti.R1[d], T{0}, feti.f[d]);
     }
     e.synchronize();
     eslog::checkpointln("FETI: COMPUTE DUAL RHS [e]");
@@ -95,9 +95,22 @@ void TFETIOrthogonalSymmetric<T>::apply_e(const Vector_Kernel<T> &x, Vector_Dual
     if (GGt.nrows) {
         math::set(y, T{0});
         _applyInvGGt(x, iGGtGx);
-        _applyGt(iGGtGx, T{-1}, y);
+        _applyGt(iGGtGx, T{1}, y);
     } else {
         math::set(y, T{0});
+    }
+}
+
+template<typename T>
+void TFETIOrthogonalSymmetric<T>::apply_R(const Vector_Kernel<T> &x,  std::vector<Vector_Dense<T> > &y)
+{
+    if (GGt.nrows) {
+        _applyR(x, y);
+    } else {
+        #pragma omp parallel for
+        for (size_t d = 0; d < y.size(); ++d) {
+            math::set(y[d], T{0});
+        }
     }
 }
 
@@ -117,6 +130,49 @@ void TFETIOrthogonalSymmetric<T>::apply_Ra(const Vector_Dual<T> &x,  std::vector
 }
 
 template<typename T>
+void TFETIOrthogonalSymmetric<T>::apply_invU(const Vector_Kernel<T> &x, Vector_Kernel<T> &y)
+{
+    if (GGt.nrows) {
+        _applyInvU(x, y);
+    } else {
+        math::set(y, T{0});
+    }
+}
+
+template<typename T>
+void TFETIOrthogonalSymmetric<T>::apply_invL(const Vector_Kernel<T> &x, Vector_Kernel<T> &y)
+{
+    if (GGt.nrows) {
+        _applyInvL(x, y);
+    } else {
+        math::set(y, T{0});
+    }
+}
+
+template<typename T>
+void TFETIOrthogonalSymmetric<T>::apply_GtinvU(const Vector_Kernel<T> &x, Vector_Dual<T> &y)
+{
+    if (GGt.nrows) {
+        math::set(y, T{0});
+        _applyInvU(x, iGGtGx);
+        _applyGt(iGGtGx, T{1}, y);
+    } else {
+        math::set(y, T{0});
+    }
+}
+
+template<typename T>
+void TFETIOrthogonalSymmetric<T>::apply_invLG(const Vector_Dual<T> &x, Vector_Kernel<T> &y)
+{
+    if (GGt.nrows) {
+        _applyG(x, Gx);
+        _applyInvL(Gx, y);
+    } else {
+        math::copy(y, x);
+    }
+}
+
+template<typename T>
 void TFETIOrthogonalSymmetric<T>::_applyG(const Vector_Dual<T> &in, Vector_Kernel<T> &out)
 {
     #pragma omp parallel for
@@ -129,18 +185,6 @@ void TFETIOrthogonalSymmetric<T>::_applyG(const Vector_Dual<T> &in, Vector_Kerne
         }
     }
     out.synchronize();
-}
-
-template<typename T>
-void TFETIOrthogonalSymmetric<T>::apply_GtinvU(const Vector_Kernel<T> &x, Vector_Dual<T> &y)
-{
-    if (GGt.nrows) {
-        math::set(y, T{0});
-        _applyInvU(x, iGGtGx);
-        _applyGt(iGGtGx, T{-1}, y);
-    } else {
-        math::set(y, T{0});
-    }
 }
 
 template<typename T>
@@ -158,6 +202,12 @@ void TFETIOrthogonalSymmetric<T>::_applyInvGGt(const Vector_Kernel<T> &in, Vecto
 
         math::blas::apply(y, T{1}, a, T{0}, in);
     }
+}
+
+template<typename T>
+void TFETIOrthogonalSymmetric<T>::_applyInvL(const Vector_Kernel<T> &in, Vector_Dense<T> &out)
+{
+    eslog::error("cannot apply inv(L). Use different projector.\n");
 }
 
 template<typename T>

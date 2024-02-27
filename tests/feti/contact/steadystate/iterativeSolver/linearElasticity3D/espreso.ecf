@@ -37,6 +37,7 @@ GENERATOR {
 
     NODES {
       Z0   <0 , 1> <0 , 1> <0 , 0>;
+      Y1   <0 , 1> <1 , 1> <0 , 1>;
     }
 
     FACES {
@@ -63,6 +64,10 @@ STRUCTURAL_MECHANICS {
   LOAD_STEPS   1;
 
   CONTACT_INTERFACES     TRUE;
+
+  DISCRETIZATION {
+#    ALL_ELEMENTS  BEM;
+  }
 
   MATERIALS {
     1 {
@@ -99,15 +104,16 @@ STRUCTURAL_MECHANICS {
         ITERATIVE_SOLVER   [ARG10];
         PRECONDITIONER     [ARG11];
         MAX_ITERATIONS     [ARG12];
-        PRECISION             1e-9;
+        PRECISION             1e-4;
+        PRECISION_IN          1e-4;
       }
 
       DISPLACEMENT {
         Z0  { X 0; Y 0; Z 0; }
       }
 
-      ACCELERATION {
-        ALL_ELEMENTS   { Y -9.8066; };
+      NORMAL_PRESSURE {
+        Y1  100000;
       }
 
       FIXED_WALL {

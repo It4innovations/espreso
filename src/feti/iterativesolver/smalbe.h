@@ -22,8 +22,8 @@ public:
     using IterativeSolver<T>::feti;
 
     MPRGP<T> mprgp;
-    Vector_Dual<T> b, b_, y, z, x_im, Fx_im, bCtmu, bCtmu_prev, Cx, Gx, gbCtmu;
-    Vector_Kernel<T> mu;
+    Vector_Dual<T> Pb, b, y, z, x_im, Fx_im, bCtmu, bCtmu_prev, gbCtmu;
+    Vector_Kernel<T> mu, invLce, Gx;
 };
 
 }
