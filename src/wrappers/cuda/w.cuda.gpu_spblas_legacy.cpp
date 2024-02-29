@@ -423,7 +423,7 @@ namespace spblas {
                     I nrhs = (transpose_rhs == 'T' ? sol->nrows : sol->ncols);
                     if(stage == 'B') CHECK((_my_sparse_trsm_buffersize<T,I>)(h->h, algo, _char_to_operation<T>(transpose_mat), _char_to_operation<T>(transpose_rhs), matrix->nrows, nrhs, matrix->nnz, &one, matrix->d_leg, (T*)matrix->vals, (I*)matrix->rowptrs, (I*)matrix->colidxs, (T*)rhs->vals, rhs->ld, descr_trsm->i, policy, &buffersize));
                     if(stage == 'P') CHECK((_my_sparse_trsm_analysis<T,I>)  (h->h, algo, _char_to_operation<T>(transpose_mat), _char_to_operation<T>(transpose_rhs), matrix->nrows, nrhs, matrix->nnz, &one, matrix->d_leg, (T*)matrix->vals, (I*)matrix->rowptrs, (I*)matrix->colidxs, (T*)rhs->vals, rhs->ld, descr_trsm->i, policy, buffer));
-                    // if(stage == 'U') ;
+                    // if(stage == 'U') ; // I can just modify the values behind the pointer, and cusparse will notice
                     if(stage == 'C') CHECK((_my_sparse_trsm_solve<T,I>)     (h->h, algo, _char_to_operation<T>(transpose_mat), _char_to_operation<T>(transpose_rhs), matrix->nrows, nrhs, matrix->nnz, &one, matrix->d_leg, (T*)matrix->vals, (I*)matrix->rowptrs, (I*)matrix->colidxs, (T*)rhs->vals, rhs->ld, descr_trsm->i, policy, buffer));
                     if(stage == 'C') CHECK(cudaMemcpy2DAsync(sol->vals, sol->ld * sizeof(T), rhs->vals, rhs->ld * sizeof(T), sol->nrows * sizeof(T), sol->ncols, cudaMemcpyDeviceToDevice, h->get_stream()));
                 }
