@@ -86,6 +86,8 @@ export OMP_PLACES=cores
 export OMP_PROC_BIND=close
 export OMP_NUM_THREADS=7
 
+export ESPRESO_RANK_TO_GPU_MAP="4,5,2,3,6,7,0,1"
+
 
 
 # salloc --account=project_465000572 --partition=standard-g --ntasks=8 --gpus-per-task=1 --cpus-per-task=7  --time=8:00:00

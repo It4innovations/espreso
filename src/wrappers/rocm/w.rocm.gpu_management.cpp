@@ -57,7 +57,6 @@ namespace mgm {
 
     device get_device_by_mpi(int mpi_rank, int mpi_size)
     {
-        // static constexpr int rank_gpu_map[] = {4,5,2,3,6,7,0,1}; // assuming LUMI-G
         // on LUMI, when using e.g. `salloc --ntasks=8 --gpus-per-task=1`, each task (=rank) can see only a single gpu
         device d = std::make_shared<_device>();
         d->gpu_idx = 0;

@@ -49,6 +49,8 @@ export OMP_PLACES=cores
 export OMP_PROC_BIND=close
 export OMP_NUM_THREADS=16
 
+export ESPRESO_RANK_TO_GPU_MAP="2,3,0,1,6,7,4,5"
+
 if [ "${cusparse_version}" = "legacy" ]; then
     export ESPRESO_USE_CUSPARSE_LEGACY="true"
 fi

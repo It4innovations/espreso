@@ -57,18 +57,23 @@ namespace mgm {
 
     device get_device_by_mpi(int mpi_rank, int mpi_size)
     {
-        static constexpr int rank_gpu_map[] = {2,3,0,1,6,7,4,5}; // assuming Karolina GPU
+#ifndef ESPRESO_RANK_TO_GPU_MAP
+#error "Undefined macro ESPRESO_RANK_TO_GPU_MAP. It should be defined in some wscript"
+#endif
+        static constexpr int rank_gpu_map[] = {ESPRESO_RANK_TO_GPU_MAP};
+        static constexpr int n_gpus = sizeof(rank_gpu_map) / sizeof(*rank_gpu_map);
+
         device d = std::make_shared<_device>();
         if(mpi_size == 1) {
             d->gpu_idx = 0;
         }
-        else if(mpi_size % 8 == 0) {
-            int local_node_rank = mpi_rank % 8;
+        else if(mpi_size % n_gpus == 0) {
+            // assuming rank0=numa0, rank1=numa1 etc...
+            int local_node_rank = mpi_rank % n_gpus;
             d->gpu_idx = rank_gpu_map[local_node_rank];
         }
         else {
-            eslog::error("unsupported number of gpus and mpisize. Should be 1 or a multiple of 8\n");
-            d->gpu_idx = -1;
+            eslog::error("unsupported number of gpus and mpisize. Should be 1 or a multiple of n_gpus=%d\n", n_gpus);
         }
 
         return d;

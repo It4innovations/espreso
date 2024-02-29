@@ -241,6 +241,12 @@ def options(opt):
         default=os.getenv("ESPRESO_USE_CUSPARSE_LEGACY"),
         help="Use legacy cusparse API. For CUDA < 12 only")
 
+    opt.other.add_option("--rank-to-gpu-map",
+        action="store",
+        type="string",
+        default=os.getenv("ESPRESO_RANK_TO_GPU_MAP"),
+        help="Map from node-local MPI rank to GPU index, if the process can see multiple GPUs")
+
     recurse(opt)
 
 def settings(ctx):
