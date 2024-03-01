@@ -250,36 +250,30 @@ namespace math {
         if(output.nrows != input.ncols || output.ncols != input.nrows || output.nnz != input.nnz) eslog::error("conjTransposeMapSetup: output matrix has wrong dimensions\n");
         if(input.nnz != map.size) eslog::error("conjTransposeMapSetup: input map has wrong dimensions\n");
 
-        struct colvalidx{ T val; I col; I idx; colvalidx(I c, T v, I i){ col = c; val = v; idx = i;} };
+        std::vector<I> out_nnz_in_rows(output.nrows, I{0});
 
-        std::vector<std::vector<colvalidx>> out_rows(output.nrows);
+        for(I i = 0; i < input.nnz; i++) out_nnz_in_rows[input.cols[i]]++;
 
-        for(I r = 0; r < input.nrows; r++)
+        output.rows[0] = 0;
+        for(I r = 0; r < output.nrows; r++) output.rows[r+1] = output.rows[r] + out_nnz_in_rows[r];
+
+        std::vector<I> curr_out_row_idxs(output.nrows);
+        std::copy_n(output.rows, output.nrows, curr_out_row_idxs.begin());
+
+        for(I r_in = 0; r_in < input.nrows; r_in++)
         {
-            I start = input.rows[r];
-            I end = input.rows[r+1];
+            I start = input.rows[r_in];
+            I end = input.rows[r_in+1];
             for(I i = start; i < end; i++)
             {
-                I c = input.cols[i];
-                T v = input.vals[i];
-                out_rows[c].emplace_back(r, v, i);
+                I c_in = input.cols[i];
+                I out_index = curr_out_row_idxs[c_in];
+                curr_out_row_idxs[c_in]++;
+                output.cols[out_index] = r_in;
+                output.vals[out_index] = my_conj(input.vals[i]);
+                map.vals[out_index] = i;
             }
         }
-
-        I curr_idx = 0;
-        for(I row_out = 0; row_out < output.nrows; row_out++)
-        {
-            output.rows[row_out] = curr_idx;
-            std::vector<colvalidx> & data = out_rows[row_out];
-            for(size_t i = 0; i < data.size(); i++)
-            {
-                output.cols[curr_idx] = data[i].col;
-                output.vals[curr_idx] = my_conj(data[i].val);
-                map.vals[curr_idx] = data[i].idx;
-                curr_idx++;
-            }
-        }
-        output.rows[output.nrows] = curr_idx;
     }
 
     template<typename T, typename I, typename Ao, typename Am, typename Ai>
