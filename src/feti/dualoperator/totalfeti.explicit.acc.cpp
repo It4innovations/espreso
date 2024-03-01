@@ -629,7 +629,7 @@ void TotalFETIExplicitAcc<T,I>::update(const step::Step &step)
     if(stage != 2 && stage != 3) eslog::error("update: invalud order of operations in dualop\n");
 
     my_timer tm_total(timers_basic), tm_mainloop_outer(timers_basic), tm_compute_d(timers_basic), tm_wait(timers_basic);
-    my_timer tm_mainloop_inner(timers_detailed), tm_Kreg_combine(timers_detailed), tm_solver_commit(timers_detailed), tm_fact_numeric(timers_detailed), tm_get_factors(timers_detailed), tm_extract(timers_detailed), tm_transpose(timers_detailed), tm_allocinpool(timers_detailed), tm_setpointers(timers_detailed), tm_copyin(timers_detailed), tm_descr_update(timers_detailed), tm_sp2dn(timers_detailed), tm_kernels_compute(timers_detailed), tm_trs1(timers_detailed), tm_trs2(timers_detailed), tm_gemm(timers_detailed), tm_fcopy(timers_detailed), tm_syrk(timers_detailed), tm_freeinpool(timers_detailed), tm_freeinpool_exec(timers_detailed);
+    my_timer tm_mainloop_inner(timers_detailed), tm_Kreg_combine(timers_detailed), tm_solver_commit(timers_detailed), tm_fact_numeric(timers_detailed), tm_get_factors(timers_detailed), tm_extract(timers_detailed), tm_transpose(timers_detailed), tm_allocinpool(timers_detailed), tm_setpointers(timers_detailed), tm_copyin(timers_detailed), tm_descr_update(timers_detailed), tm_descr_update_trs1(timers_detailed), tm_descr_update_trs2(timers_detailed), tm_sp2dn(timers_detailed), tm_kernels_compute(timers_detailed), tm_trs1(timers_detailed), tm_trs2(timers_detailed), tm_gemm(timers_detailed), tm_fcopy(timers_detailed), tm_syrk(timers_detailed), tm_freeinpool(timers_detailed), tm_freeinpool_exec(timers_detailed);
 
     tm_total.start();
 
@@ -749,10 +749,14 @@ void TotalFETIExplicitAcc<T,I>::update(const step::Step &step)
         // update sparse trsm descriptors to reflect the new matrix values, possibly re-preprocess
         tm_descr_update.start();
         {
+            tm_descr_update_trs1.start();
             if(trsm1_use_L  && is_factor1_sparse) gpu::spblas::trsm<T,I>(hs, 'N', 'N', 'N', data.descr_L_sp,  descr_X, descr_W, data.descr_sparse_trsm1, data.buffersize_sptrs1, data.buffer_sptrs1, 'U');
             if(trsm1_use_LH && is_factor1_sparse) gpu::spblas::trsm<T,I>(hs, 'H', 'N', 'N', data.descr_LH_sp, descr_X, descr_W, data.descr_sparse_trsm1, data.buffersize_sptrs1, data.buffer_sptrs1, 'U');
+            tm_descr_update_trs1.stop();
+            tm_descr_update_trs2.start();
             if(trsm2_use_U  && is_factor2_sparse) gpu::spblas::trsm<T,I>(hs, 'N', 'N', 'N', data.descr_U_sp,  descr_W, descr_Z, data.descr_sparse_trsm2, data.buffersize_sptrs2, data.buffer_sptrs2, 'U');
             if(trsm2_use_UH && is_factor2_sparse) gpu::spblas::trsm<T,I>(hs, 'H', 'N', 'N', data.descr_UH_sp, descr_W, descr_Z, data.descr_sparse_trsm2, data.buffersize_sptrs2, data.buffer_sptrs2, 'U');
+            tm_descr_update_trs2.stop();
             if(config->concurrency_update == CONCURRENCY::SEQ_WAIT) gpu::mgm::queue_wait(q);
         }
         tm_descr_update.stop();
@@ -869,6 +873,8 @@ void TotalFETIExplicitAcc<T,I>::update(const step::Step &step)
     print_timer("Update        setpointers", tm_setpointers);
     print_timer("Update        copyin", tm_copyin);
     print_timer("Update        descr_update", tm_descr_update);
+    print_timer("Update          descr_update_trs1", tm_descr_update_trs1);
+    print_timer("Update          descr_update_trs2", tm_descr_update_trs2);
     print_timer("Update        sp2dn", tm_sp2dn);
     print_timer("Update        kernels_compute", tm_kernels_compute);
     print_timer("Update          trs1", tm_trs1);
