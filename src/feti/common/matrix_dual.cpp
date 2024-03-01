@@ -11,7 +11,6 @@ namespace espreso {
 template <typename T>
 void Matrix_Dual<T>::resize(int nrhs)
 {
-    this->nhalo = Dual_Map::nhalo;
     Matrix_Dense<T>::resize(nrhs, Dual_Map::size);
 }
 

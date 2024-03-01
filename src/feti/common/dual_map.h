@@ -13,7 +13,10 @@ struct Dual_Map {
     template <typename T>
     static void set(FETI<T> &feti);
 
-    static int nhalo, size;
+    struct interval { int start, end, size; };
+
+    static int size;
+    static std::vector<interval> local_intervals;
     static std::vector<int> nmap, neighbors, nsize;
 };
 

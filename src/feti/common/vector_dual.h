@@ -22,7 +22,6 @@ struct Vector_Dual: public Vector_Dense<T> {
     T dot(const Vector_Dense<T> &other) const;
     T dot() const;
 
-    int nhalo;
     using Vector_Dense<T>::size;
     using Vector_Dense<T>::vals;
 

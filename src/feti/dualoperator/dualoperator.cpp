@@ -46,10 +46,10 @@ void DualOperator<T>::estimateMaxEigenValue(double &lambda, int &iterations, dou
     // {-1, 1} / norma
     Vector_Dual<T> y, v;
     double norm = 1 / std::sqrt(feti.sinfo.lambdasTotal);
-    for (esint i = 0; i < feti.lambdas.nhalo; ++i) {
+    for (esint i = 0; i < feti.lambdas.eq_halo; ++i) {
         v.vals[i] = 0;
     }
-    for (esint i = feti.lambdas.nhalo, j = 0; i < v.size; ++i, ++j) {
+    for (esint i = feti.lambdas.eq_halo, j = 0; i < v.size; ++i, ++j) {
         int mul = (feti.sinfo.lambdasOffset + j) % 2;
         v.vals[i] = (1 - 2 * mul) * norm;
     }
@@ -76,10 +76,10 @@ void DualOperator<T>::estimateMaxProjectedEigenValue(double &lambda, int &iterat
     // {-1, 1} / norma
     Vector_Dual<T> v, y, x, z;
     double norm = 1 / std::sqrt(feti.sinfo.lambdasTotal);
-    for (esint i = 0; i < feti.lambdas.nhalo; ++i) {
+    for (esint i = 0; i < feti.lambdas.eq_halo; ++i) {
         y.vals[i] = 0;
     }
-    for (esint i = feti.lambdas.nhalo, j = 0; i < y.size; ++i, ++j) {
+    for (esint i = feti.lambdas.eq_halo, j = 0; i < y.size; ++i, ++j) {
         int mul = (feti.sinfo.lambdasOffset + j) % 2;
         y.vals[i] = (1 - 2 * mul) * norm;
     }

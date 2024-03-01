@@ -25,7 +25,6 @@ struct Matrix_Dual_Orthogonal: public Matrix_Dense<T, int> {
         // align matrix values ??
         Matrix_Dense<T>::resize(initial_space, Dual_Map::size);
         Matrix_Dense<T>::nrows = 0;
-        Matrix_Dense<T>::slice({}, { Dual_Map::nhalo, Dual_Map::size });
     }
 
     void next(Vector_Dual<T> &v)
@@ -44,22 +43,23 @@ struct Matrix_Dual_Orthogonal: public Matrix_Dense<T, int> {
 
     void apply(const Vector_Dual<T> &x, Vector_Dense<T> &y)
     {
-        Vector_Dense<T> _x;
-        _x.size = x.size - Dual_Map::nhalo;
-        _x.vals = x.vals + Dual_Map::nhalo;
-        math::blas::apply(y, T{1}, static_cast<Matrix_Dense<T>&>(*this), T{0}, _x);
+        for (size_t i = 0; i < Dual_Map::local_intervals.size(); ++i) {
+            Vector_Dense<T> _x;
+            _x.size = Dual_Map::local_intervals[i].size;
+            _x.vals = x.vals + Dual_Map::local_intervals[i].start;
+            Matrix_Dense<T>::slice({}, { Dual_Map::local_intervals[i].start, Dual_Map::local_intervals[i].end });
+            math::blas::apply(y, T{1}, static_cast<Matrix_Dense<T>&>(*this), T{0}, _x);
+        }
         Communication::allReduce(y.vals, nullptr, y.size, MPITools::getType<T>().mpitype, MPI_SUM);
     }
 
     void applyT(const Vector_Dense<T> &x, Vector_Dual<T> &y)
     {
         esint size = x.size;
-        Slice slice(0, Dual_Map::size);
+        Matrix_Dense<T>::slice({}, {});
         std::swap(Matrix_Dense<T>::nrows, size);
-        std::swap(Matrix_Dense<T>::submatrix[1], slice);
         math::blas::applyT(y, T{1}, static_cast<Matrix_Dense<T>&>(*this), T{0}, x);
         std::swap(Matrix_Dense<T>::nrows, size);
-        std::swap(Matrix_Dense<T>::submatrix[1], slice);
     }
 };
 

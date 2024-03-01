@@ -16,7 +16,6 @@ struct Matrix_Dual: public Matrix_Dense<T> {
 	void resize(int nrhs);
 	void synchronize();
 
-	int nhalo;
 	using Matrix_Dense<T>::nrows;
 	using Matrix_Dense<T>::ncols;
 	using Matrix_Dense<T>::vals;

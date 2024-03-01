@@ -58,6 +58,15 @@ PCPG<T>::PCPG(FETI<T> &feti)
 
 }
 
+template <typename T>
+static void _print(const char *name, const IterativeSolverInfo &info, const step::Step &step, const Vector_Dual<T> &v)
+{
+    if (info::ecf->output.print_matrices > 1) {
+        eslog::storedata(" STORE: feti/pcpg/{%s%s}\n", name, std::to_string(info.iterations).c_str());
+        math::store(v, utils::filename(utils::debugDirectory(step) + "/feti/pcpg", std::string(name) + std::to_string(info.iterations)).c_str());
+    }
+}
+
 template <> void PCPG<double>::solve(const step::Step &step, IterativeSolverInfo &info)
 {
     DualOperator<double> *F = feti.dualOperator;
@@ -76,6 +85,11 @@ template <> void PCPG<double>::solve(const step::Step &step, IterativeSolverInfo
 
     math::copy(p, y);                      // p = w
     math::copy(x, l);                      // x = l
+
+    _print("p", info, step, p);
+    _print("x", info, step, x);
+    _print("r", info, step, r);
+    _print("z", info, step, x);
 
     double yw = y.dot(w);
     setInfo(info, feti.configuration, yw);

@@ -9,8 +9,15 @@ namespace espreso {
 
 template <typename T>
 void Dual_Map::set(FETI<T> &feti) {
-    nhalo = feti.lambdas.nhalo;
     size = feti.lambdas.size;
+    local_intervals.resize(2);
+    local_intervals[0].start = feti.lambdas.eq_halo;
+    local_intervals[0].end   = feti.lambdas.eq_halo + feti.lambdas.eq_size;
+    local_intervals[0].size  = local_intervals[0].end - local_intervals[0].start;
+    local_intervals[1].start = local_intervals[0].end;
+    local_intervals[1].end   = local_intervals[0].end;
+    local_intervals[1].size  = 0;
+
     neighbors = feti.decomposition->neighbors;
 
     nsize.resize(neighbors.size());
@@ -41,7 +48,8 @@ void Dual_Map::set(FETI<T> &feti) {
     }
 }
 
-int Dual_Map::nhalo, Dual_Map::size;
+int Dual_Map::size;
+std::vector<Dual_Map::interval> Dual_Map::local_intervals;
 std::vector<int> Dual_Map::nmap, Dual_Map::neighbors, Dual_Map::nsize;
 
 template void Dual_Map::set(FETI<double>&);

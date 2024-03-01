@@ -50,8 +50,13 @@ struct FETI {
     std::vector<Matrix_CSR<T> > B1;
     std::vector<std::vector<int> > D2C;
     Vector_Dense<T> c, lb, ub;
-    struct EqualityConstraints {
-        esint nhalo, equalities, size;
+    struct Lambdas {
+        // equality (local)
+        esint eq_halo, eq_size;
+//        // normal contact
+//        esint eq_halo, equalities, size;
+
+        esint equalities, size;
         std::vector<esint> cmap; // size, ndomains <d0, d1, ..., dn>; size, ndomains <>; ...;
     } lambdas;
 
