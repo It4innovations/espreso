@@ -110,9 +110,9 @@ template <typename T>
 bool FETI<T>::update(const step::Step &step)
 {
     double start = eslog::time();
-    projector->update(step);
     dualOperator->update(step);
     preconditioner->update(step);
+    projector->update(step);
     eslog::info("       = FETI SOLVER UPDATED                                                %8.3f s = \n", eslog::time() - start);
     return true;
 }
