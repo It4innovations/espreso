@@ -72,6 +72,7 @@ struct DualOperatorExplicitGpuConfig: public ECFDescription {
 	CONCURRENCY concurrency_set;
 	CONCURRENCY concurrency_update;
 	CONCURRENCY concurrency_apply;
+	bool synchronize_update;
 	MATRIX_STORAGE trsm1_factor_storage;
 	MATRIX_STORAGE trsm2_factor_storage;
 	TRSM1_SOLVE_TYPE trsm1_solve_type;

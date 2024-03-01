@@ -819,7 +819,6 @@ void TotalFETIExplicitAcc<T,I>::update(const step::Step &step)
         // free the temporary memory from the pool
         tm_freeinpool.start();
         gpu::mgm::submit_host_function(q, [&,di,buffer_other](){
-            tm_freeinpool_exec.start();
             domain_data[di].d_L_dn.reset();
             domain_data[di].d_LH_dn.reset();
             domain_data[di].d_U_dn.reset();
@@ -828,7 +827,6 @@ void TotalFETIExplicitAcc<T,I>::update(const step::Step &step)
             domain_data[di].d_Y.reset();
             domain_data[di].d_F_tmp.reset();
             cbmba_res_device->deallocate(buffer_other);
-            tm_freeinpool_exec.stop();
         });
         if(config->concurrency_update == CONCURRENCY::SEQ_WAIT) gpu::mgm::queue_wait(q);
         tm_freeinpool.stop();
@@ -854,7 +852,7 @@ void TotalFETIExplicitAcc<T,I>::update(const step::Step &step)
     tm_compute_d.stop();
 
     tm_wait.start();
-    gpu::mgm::device_wait();
+    if(config->synchronize_update) gpu::mgm::device_wait();
     tm_wait.stop();
     tm_total.stop();
 
@@ -883,7 +881,6 @@ void TotalFETIExplicitAcc<T,I>::update(const step::Step &step)
     print_timer("Update          fcopy", tm_fcopy);
     print_timer("Update          syrk", tm_syrk);
     print_timer("Update        freeinpool", tm_freeinpool);
-    print_timer("Update          freeinpool_exec", tm_freeinpool_exec);
     print_timer("Update    compute_d", tm_compute_d);
     print_timer("Update    wait", tm_wait);
 

@@ -33,6 +33,11 @@ DualOperatorExplicitGpuConfig::DualOperatorExplicitGpuConfig()
 			.addoption(ECFOption().setname("PARALLEL").setdescription("Parallel submitting, asynchronous execution on gpu."))
 			.addoption(ECFOption().setname("SEQ_CONTINUE").setdescription("Sequential submitting, asynchronous execution on gpu."))
 			.addoption(ECFOption().setname("SEQ_WAIT").setdescription("Sequential submitting, synchronous gpu execution.")));
+	
+	synchronize_update = false;
+	REGISTER(synchronize_update, ECFMetaData()
+			.setdescription({ "Wait at the end of update for all the GPU kernels to finish." })
+			.setdatatype({ ECFDataType::BOOL }));
 
 	trsm1_factor_storage = MATRIX_STORAGE::DEFAULT;
 	REGISTER(trsm1_factor_storage, ECFMetaData()
