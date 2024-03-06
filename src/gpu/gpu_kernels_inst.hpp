@@ -30,7 +30,8 @@ namespace kernels {
                 #undef INSTANTIATE_T
             #undef INSTANTIATE_T_I
         #undef INSTANTIATE_T_I_AO
-    #undef INSTANTIATE_T_I_Ao_Ai
+    #undef INSTANTIATE_T_I_AO_AI
+
 }
 }
 }

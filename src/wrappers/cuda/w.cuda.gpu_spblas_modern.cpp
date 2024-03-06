@@ -21,6 +21,10 @@ inline void _check(cusparseStatus_t status, const char *file, int line)
 
 
 
+#include "w.cuda.gpu_spblas_common.h"
+
+
+
 namespace espreso {
 namespace gpu {
 namespace spblas {
@@ -78,6 +82,12 @@ namespace spblas {
     struct _handle
     {
         cusparseHandle_t h;
+        cudaStream_t get_stream()
+        {
+            cudaStream_t stream;
+            CHECK(cusparseGetStream(h, &stream));
+            return stream;
+        }
     };
 
     struct _descr_matrix_csr
@@ -114,6 +124,7 @@ namespace spblas {
     void handle_create(handle & h, mgm::queue & q)
     {
         h = std::make_shared<_handle>();
+        h->q = q;
         CHECK(cusparseCreate(&h->h));
         CHECK(cusparseSetStream(h->h, q->stream));
     }
@@ -240,6 +251,22 @@ namespace spblas {
 
         CHECK(cusparseSpSM_destroyDescr(descr->d));
         descr.reset();
+    }
+
+    template<typename T, typename I>
+    void transpose(handle & h, descr_matrix_csr & output, descr_matrix_csr & input, size_t & buffersize, void * buffer, char stage)
+    {
+        int64_t out_nrows, out_ncols, out_nnz, in_nrows, in_ncols, in_nnz;
+        void *out_rowptrs, *out_colidxs, *out_vals, *in_rowptrs, *in_colidxs, *in_vals;
+        cusparseIndexType_t rowoffsettype, colindtype;
+        cusparseIndexBase_t idxbase;
+        cudaDataType type;
+        CHECK(cusparseCsrGet(output, &out_nrows, &out_ncols, &out_nnz, &out_rowptrs, &out_colidxs, &out_vals, &rowoffsettype, &colindtype, &idxbase, &type));
+        CHECK(cusparseCsrGet(input,  &in_nrows,  &in_ncols,  &in_nnz,  &in_rowptrs,  &in_colidxs,  &in_vals,  &rowoffsettype, &colindtype, &idxbase, &type));
+        cudaStream_t stream = h->get_stream();
+        if(stage == 'B') my_csr_transpose_buffersize<I>(stream, in_nrows, in_ncols, in_nnz, buffersize);
+        if(stage == 'P') my_csr_transpose_preprocess<I>(stream, in_nrows, in_ncols, in_nnz, (I*)in_rowptrs, (I*)in_colidxs, (I*)out_rowptrs, (I*)out_colidxs, buffersize, buffer);
+        if(stage == 'C') my_csr_transpose_compute<T,I>(stream, in_nnz, (T*)in_vals, (T*)out_vals, buffer);
     }
 
     template<typename T, typename I>

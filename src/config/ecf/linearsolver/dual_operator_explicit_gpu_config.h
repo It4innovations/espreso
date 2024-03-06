@@ -82,6 +82,7 @@ struct DualOperatorExplicitGpuConfig: public ECFDescription {
 	TRIANGLE_MATRIX_SHARING f_sharing_if_hermitian;
 	QUEUE_COUNT queue_count;
 	DEVICE apply_scatter_gather_where;
+	DEVICE transpose_where;
 	TIMERS timers;
 
 	DualOperatorExplicitGpuConfig();

@@ -37,6 +37,10 @@ inline void _check(cusparseStatus_t status, const char *file, int line)
 
 
 
+#include "w.cuda.gpu_spblas_common.h"
+
+
+
 namespace espreso {
 namespace gpu {
 namespace spblas {
@@ -375,6 +379,15 @@ namespace spblas {
 
         CHECK(cusparseDestroyCsrsm2Info(descr->i));
         descr.reset();
+    }
+
+    template<typename T, typename I>
+    void transpose(handle & h, descr_matrix_csr & output, descr_matrix_csr & input, size_t & buffersize, void * buffer, char stage)
+    {
+        cudaStream_t stream = h->get_stream();
+        if(stage == 'B') my_csr_transpose_buffersize<I>(stream, input->nrows, input->ncols, input->nnz, buffersize);
+        if(stage == 'P') my_csr_transpose_preprocess<I>(stream, input->nrows, input->ncols, input->nnz, (I*)input->rowptrs, (I*)input->colidxs, (I*)output->rowptrs, (I*)output->colidxs, buffersize, buffer);
+        if(stage == 'C') my_csr_transpose_compute<T,I>(stream, input->nnz, (T*)input->vals, (T*)output->vals, buffer);
     }
 
     template<typename T, typename I>

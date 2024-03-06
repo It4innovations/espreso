@@ -111,6 +111,14 @@ DualOperatorExplicitGpuConfig::DualOperatorExplicitGpuConfig()
 			.addoption(ECFOption().setname("CPU").setdescription("On the CPU."))
 			.addoption(ECFOption().setname("GPU").setdescription("On the GPU.")));
 
+	transpose_where = DEVICE::DEFAULT;
+	REGISTER(transpose_where, ECFMetaData()
+			.setdescription({ "Where to perform sparse matrix transposition." })
+			.setdatatype({ ECFDataType::OPTION })
+			.addoption(ECFOption().setname("DEFAULT").setdescription("Default, depending on the specific GPU and libraries."))
+			.addoption(ECFOption().setname("CPU").setdescription("On the CPU."))
+			.addoption(ECFOption().setname("GPU").setdescription("On the GPU.")));
+
 	timers = TIMERS::NONE;
 	REGISTER(timers, ECFMetaData()
 			.setdescription({ "Verbosity of timers in the explicit gpu F functions." })
