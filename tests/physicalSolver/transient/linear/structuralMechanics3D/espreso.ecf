@@ -29,12 +29,16 @@ GENERATOR {
     START_Y                    0;
     START_Z                    0;
 
-    LENGTH_X                 100;
-    LENGTH_Y                 100;
-    LENGTH_Z                 100;
+    LENGTH_X                   1;
+    LENGTH_Y                  .1;
+    LENGTH_Z                  .5;
 
     NODES {
-      Z0   <0 , 100> <0 , 100> <0 , 0>;
+      X0   <0 , 0> <0 , .1> <0 , .5>;
+    }
+
+    FACES {
+      Y1   <0 , 1> <.1 , .1> <0 , .5>;
     }
 
     ELEMENT_TYPE          [ARG0];
@@ -66,7 +70,7 @@ STRUCTURAL_MECHANICS {
         MODEL   ISOTROPIC;
 
         MIXY          0.3;
-        EX         2.1E10;
+        EX         2.1E11;
       }
 
       THERMAL_EXPANSION {
@@ -81,13 +85,13 @@ STRUCTURAL_MECHANICS {
 
   LOAD_STEPS_SETTINGS {
     1 {
-      DURATION_TIME     1;
+      DURATION_TIME   .001;
       TYPE      TRANSIENT;
       MODE         LINEAR;
       SOLVER      [ARG10];
 
       TRANSIENT_SOLVER {
-        TIME_STEP     .01;
+        TIME_STEP     .0001;
       }
 
       FETI {
@@ -95,15 +99,15 @@ STRUCTURAL_MECHANICS {
         PRECONDITIONER   DIRICHLET;
         ITERATIVE_SOLVER       PCG;
         REGULARIZATION    ANALYTIC;
-        B0_TYPE            KERNELS;
+        PRECISION             1e-9;
       }
 
       DISPLACEMENT {
-        Z0   { X 0 ; Y 0 ; Z 0; }
+        X0   { X 0 ; Y 0 ; Z 0; }
       }
 
-      ACCELERATION {
-        ALL_ELEMENTS   { Z 9.8066; };
+      NORMAL_PRESSURE {
+        Y1    1;
       }
     }
   }
