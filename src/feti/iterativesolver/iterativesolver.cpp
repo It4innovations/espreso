@@ -97,7 +97,7 @@ void IterativeSolver<double>::setInfo(IterativeSolverInfo &info, const FETIConfi
     info.norm.dual.relative = 1;
     info.norm.dual.arioli = std::numeric_limits<double>::infinity();
     info.norm.dual.ksi = 0;
-    info.converged = info.norm.dual.absolute < configuration.precision;
+    info.converged = false; // info.norm.dual.absolute < configuration.precision;
     info.time.total = info.time.current = eslog::time();
 
     switch (configuration.stopping_criterion) {

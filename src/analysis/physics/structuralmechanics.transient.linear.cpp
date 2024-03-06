@@ -154,10 +154,10 @@ void StructuralMechanicsTransientLinear::run(step::Step &step)
         assembler.evaluate(step, time, K, M, f, nullptr, dirichlet);
         eslog::checkpointln("SIMULATION: PHYSICS ASSEMBLED");
 
-        if (K->updated || M->updated) {
-            solver->A->set(0)->add(1 + newmark[1], K)->add(newmark[0], M);
+//        if (K->updated || M->updated) {
+            solver->A->set(0)->add(1, K)->add(newmark[0], M);
             solver->A->updated = true;
-        }
+//        }
 
         X->set(0);
         X->add(newmark[0], U);
@@ -193,6 +193,7 @@ void StructuralMechanicsTransientLinear::run(step::Step &step)
         U->copy(solver->x);
         Z->set(0)->add(newmark[0], dU)->add(-newmark[2], V)->add(-newmark[3], W);
         V->add(newmark[6], W)->add(newmark[7], Z);
+        W->copy(Z);
 
         eslog::info("       = PROCESS SOLUTION                                                   %8.3f s = \n", eslog::time() - solution);
         eslog::info("       = ----------------------------------------------------------------------------- = \n");
