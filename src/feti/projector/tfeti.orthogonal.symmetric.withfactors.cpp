@@ -136,7 +136,12 @@ template<typename T>
 void TFETIOrthogonalSymmetricWithFactors<T>::apply_invU(const Vector_Kernel<T> &x, Vector_Kernel<T> &y)
 {
     if (GGt.nrows) {
-        _applyInvU(x, y);
+        math::set(y, T{0});
+        Vector_Dense<T> local;
+        local.size = Vector_Kernel<T>::localSize;
+        local.vals = y.vals + Vector_Kernel<T>::offset;
+        _applyInvU(x, local);
+        y.synchronize();
     } else {
         math::set(y, T{0});
     }
@@ -146,7 +151,12 @@ template<typename T>
 void TFETIOrthogonalSymmetricWithFactors<T>::apply_invL(const Vector_Kernel<T> &x, Vector_Kernel<T> &y)
 {
     if (GGt.nrows) {
-        _applyInvL(x, y);
+        math::set(y, T{0});
+        Vector_Dense<T> local;
+        local.size = Vector_Kernel<T>::localSize;
+        local.vals = y.vals + Vector_Kernel<T>::offset;
+        _applyInvL(x, local);
+        y.synchronize();
     } else {
         math::set(y, T{0});
     }
@@ -169,7 +179,13 @@ void TFETIOrthogonalSymmetricWithFactors<T>::apply_invLG(const Vector_Dual<T> &x
 {
     if (GGt.nrows) {
         _applyG(x, Gx);
-        _applyInvL(Gx, y);
+
+        math::set(y, T{0});
+        Vector_Dense<T> local;
+        local.size = Vector_Kernel<T>::localSize;
+        local.vals = y.vals + Vector_Kernel<T>::offset;
+        _applyInvL(Gx, local);
+        y.synchronize();
     } else {
         math::copy(y, x);
     }
@@ -179,11 +195,12 @@ template<typename T>
 void TFETIOrthogonalSymmetricWithFactors<T>::_applyInvGGt(const Vector_Kernel<T> &in, Vector_Dense<T> &out)
 {
     Vector_Kernel<T> mid;
+//    _applyInvL(in, mid);
     #pragma omp parallel for
     for (int t = 0; t < info::env::threads; ++t) {
         Matrix_Dense<T> a;
         Vector_Dense<T> y;
-        a.ncols = invU.ncols;
+        a.ncols = invL.ncols;
         a.nrows = y.size = Vector_Kernel<T>::distribution[t + 1] - Vector_Kernel<T>::distribution[t];
         y.vals = mid.vals + Vector_Kernel<T>::distribution[t] + Vector_Kernel<T>::offset;
 

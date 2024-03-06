@@ -17,7 +17,7 @@ DEFAULT_ARGS {
 
   10  SMALBE;
   11    NONE;
-  12     900;
+  12      10;
 }
 
 INPUT_TYPE           GENERATOR;

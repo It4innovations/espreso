@@ -52,10 +52,11 @@ struct FETI {
     Vector_Dense<T> c, lb, ub;
     struct Lambdas {
         // equality (local)
-        esint eq_halo, eq_size;
-//        // normal contact
-//        esint eq_halo, equalities, size;
+        esint eq_halo = 0, eq_size = 0;
+        // normal contact
+        esint nc_halo = 0, nc_size = 0;
 
+        // general
         esint equalities, size;
         std::vector<esint> cmap; // size, ndomains <d0, d1, ..., dn>; size, ndomains <>; ...;
     } lambdas;

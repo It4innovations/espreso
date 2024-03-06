@@ -15,7 +15,7 @@ void Constrains<T>::set(const step::Step &step, FETI<T> &feti, const Vector_Dist
 	switch (info::ecf->physics) {
 	case PhysicsConfiguration::TYPE::HEAT_TRANSFER: break;
 	case PhysicsConfiguration::TYPE::STRUCTURAL_MECHANICS:
-		FixedWall<T>::set(step, feti); break;
+		FixedWall<T>::set(step, feti, dirichlet); break;
 	}
 }
 

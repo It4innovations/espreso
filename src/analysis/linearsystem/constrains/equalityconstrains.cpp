@@ -69,14 +69,14 @@ void EqualityConstrains<T>::set(const step::Step &step, FETI<T> &feti, const Vec
         lambdas.vals[r * maxMultiplicity + nc] = -scale * nc / (nc + 1);
     }
 
-    feti.lambdas.size = feti.lambdas.nhalo = 0;
+    feti.lambdas.size = feti.lambdas.eq_halo = 0;
     for (size_t i = 0, prev = feti.lambdas.cmap.size(); i < permutation.size(); ++i, ++feti.lambdas.size) {
         auto dmap = feti.decomposition->dmap->cbegin() + permutation[i].dof;
         size_t cbegin = feti.lambdas.cmap.size();
         feti.lambdas.cmap.push_back(1);
         feti.lambdas.cmap.push_back(permutation[i].size);
         if (dmap->at(0).domain < feti.decomposition->dbegin) {
-            feti.lambdas.nhalo = feti.lambdas.size + 1;
+            feti.lambdas.eq_halo = feti.lambdas.size + 1;
         }
         for (int c = 0, r = permutation[i].size - 2; c < permutation[i].size; ++c) {
             feti.lambdas.cmap.push_back(dmap->at(c).domain);
@@ -114,6 +114,7 @@ void EqualityConstrains<T>::set(const step::Step &step, FETI<T> &feti, const Vec
         }
     }
     feti.lambdas.equalities = feti.lambdas.size;
+    feti.lambdas.eq_size = feti.lambdas.size - feti.lambdas.eq_halo;
 
     #pragma omp parallel for
     for (size_t d = 0; d < feti.K.size(); ++d) {

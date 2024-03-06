@@ -4,7 +4,7 @@ from estest import ESPRESOTest
 
 cases = [
     ("     NONE", 85),
-    ("   LUMPED", 55),
+    ("   LUMPED", 60),
     ("DIRICHLET", 23),
     ]
 
@@ -12,7 +12,7 @@ class Assembler(unittest.TestCase):
 
     def setUp(self):
         ESPRESOTest.path = os.path.dirname(__file__)
-        ESPRESOTest.args = [ "TRIANGLE3", 2, 2, 2, 2, 20, 20, "NONE", "50" ]
+        ESPRESOTest.args = [ "TRIANGLE3", 2, 2, 2, 2, 20, 20, "NONE", "85" ]
         ESPRESOTest.processes = 4
         ESPRESOTest.set_threads(2)
 

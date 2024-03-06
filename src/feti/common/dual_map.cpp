@@ -12,11 +12,14 @@ void Dual_Map::set(FETI<T> &feti) {
     size = feti.lambdas.size;
     local_intervals.resize(2);
     local_intervals[0].start = feti.lambdas.eq_halo;
-    local_intervals[0].end   = feti.lambdas.eq_halo + feti.lambdas.eq_size;
-    local_intervals[0].size  = local_intervals[0].end - local_intervals[0].start;
-    local_intervals[1].start = local_intervals[0].end;
-    local_intervals[1].end   = local_intervals[0].end;
-    local_intervals[1].size  = 0;
+    local_intervals[0].size  = feti.lambdas.eq_size;
+    local_intervals[1].start = feti.lambdas.nc_halo;
+    local_intervals[1].size  = feti.lambdas.nc_size;
+    for (size_t i = 0, offset = 0; i < local_intervals.size(); ++i) {
+        local_intervals[i].start += offset;
+        local_intervals[i].end = local_intervals[i].start + local_intervals[i].size;
+        offset = local_intervals[i].end;
+    }
 
     neighbors = feti.decomposition->neighbors;
 

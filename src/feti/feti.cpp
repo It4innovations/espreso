@@ -45,7 +45,7 @@ bool FETI<T>::set(const step::Step &step)
         }
     }
     sinfo.lambdasLocal = lambdas.size;
-    sinfo.lambdasOffset = lambdas.eq_size;
+    sinfo.lambdasOffset = lambdas.eq_size + lambdas.nc_size;
     sinfo.lambdasTotal = Communication::exscan(sinfo.lambdasOffset);
 
     Communication::exscan(offset, NULL, 2, MPITools::getType<esint>().mpitype, MPI_SUM);
