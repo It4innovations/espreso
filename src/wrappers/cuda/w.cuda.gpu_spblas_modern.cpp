@@ -124,7 +124,6 @@ namespace spblas {
     void handle_create(handle & h, mgm::queue & q)
     {
         h = std::make_shared<_handle>();
-        h->q = q;
         CHECK(cusparseCreate(&h->h));
         CHECK(cusparseSetStream(h->h, q->stream));
     }
@@ -261,8 +260,8 @@ namespace spblas {
         cusparseIndexType_t rowoffsettype, colindtype;
         cusparseIndexBase_t idxbase;
         cudaDataType type;
-        CHECK(cusparseCsrGet(output, &out_nrows, &out_ncols, &out_nnz, &out_rowptrs, &out_colidxs, &out_vals, &rowoffsettype, &colindtype, &idxbase, &type));
-        CHECK(cusparseCsrGet(input,  &in_nrows,  &in_ncols,  &in_nnz,  &in_rowptrs,  &in_colidxs,  &in_vals,  &rowoffsettype, &colindtype, &idxbase, &type));
+        CHECK(cusparseCsrGet(output->d, &out_nrows, &out_ncols, &out_nnz, &out_rowptrs, &out_colidxs, &out_vals, &rowoffsettype, &colindtype, &idxbase, &type));
+        CHECK(cusparseCsrGet(input->d,  &in_nrows,  &in_ncols,  &in_nnz,  &in_rowptrs,  &in_colidxs,  &in_vals,  &rowoffsettype, &colindtype, &idxbase, &type));
         cudaStream_t stream = h->get_stream();
         if(stage == 'B') my_csr_transpose_buffersize<I>(stream, in_nrows, in_ncols, in_nnz, buffersize);
         if(stage == 'P') my_csr_transpose_preprocess<I>(stream, in_nrows, in_ncols, in_nnz, (I*)in_rowptrs, (I*)in_colidxs, (I*)out_rowptrs, (I*)out_colidxs, buffersize, buffer);

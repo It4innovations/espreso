@@ -5,14 +5,6 @@ cusparse_version="legacy"
 
 
 
-ml LAPACK/3.10.0-GCC-11.2.0
-ml GCC/11.3.0
-ml OpenBLAS/0.3.20-GCC-11.3.0
-ml OpenMPI/4.1.4-GCC-11.3.0
-ml METIS/5.1.0-GCCcore-11.3.0
-if [ "${cusparse_version}" = "legacy" ]; then ml CUDA/11.7.0; fi
-if [ "${cusparse_version}" = "modern" ]; then ml CUDA/12.2.0; fi
-
 DEPENDENCIES_DIR="dependencies"
 if [ ! -d "${DEPENDENCIES_DIR}" ]; then mkdir "${DEPENDENCIES_DIR}"; fi
 
@@ -27,6 +19,9 @@ then
         git clone -b "${VERSION_SUITESPARSE}" https://github.com/DrTimothyAldenDavis/SuiteSparse.git "${SUITESPARSE_DIR}"
         cd "${SUITESPARSE_DIR}"
 
+        ml LAPACK/3.10.0-GCC-11.2.0
+        ml GCC/11.3.0
+        ml OpenBLAS/0.3.20-GCC-11.3.0
         ml CMake/3.24.3-GCCcore-11.3.0
         mkdir -p build
         cd build
@@ -35,10 +30,19 @@ then
         cmake --install .
     )
 fi
-
 export CPATH="${PWD}/${SUITESPARSE_ROOT}/include:${CPATH}"
 export LIBRARY_PATH="${PWD}/${SUITESPARSE_ROOT}/lib64:${LIBRARY_PATH}"
 export LD_LIBRARY_PATH="${PWD}/${SUITESPARSE_ROOT}/lib64:${LD_LIBRARY_PATH}"
+
+
+
+ml LAPACK/3.10.0-GCC-11.2.0
+ml GCC/11.3.0
+ml OpenBLAS/0.3.20-GCC-11.3.0
+ml OpenMPI/4.1.4-GCC-11.3.0
+ml METIS/5.1.0-GCCcore-11.3.0
+if [ "${cusparse_version}" = "legacy" ]; then ml CUDA/11.7.0; fi
+if [ "${cusparse_version}" = "modern" ]; then ml CUDA/12.2.0; fi
 
 export CXX=mpic++
 export CXXFLAGS+=" -fmax-errors=1"

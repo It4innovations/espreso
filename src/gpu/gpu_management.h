@@ -251,6 +251,37 @@ namespace mgm {
         }
     }
 
+    template<typename T, typename I, typename A>
+    void print_matrix_csr_arrays(queue & q, Matrix_CSR<T,I,A> & matrix, const char * name = "")
+    {
+        if constexpr(A::is_data_host_accessible)
+        {
+            printf("CSR matrix %s, size %lldx%lld, nnz %lld\n", name, (long long)matrix.nrows, (long long)matrix.ncols, (long long)matrix.nnz);
+            printf("row ptrs: ");
+            for(I r = 0; r <= matrix.nrows; r++) printf("%lld ", (long long)matrix.rows[r]);
+            printf("\n");
+            printf("col idxs: ");
+            for(I i = 0; i < matrix.nnz; i++) printf("%lld ", (long long)matrix.cols[i]);
+            printf("\n");
+            printf("vals:     ");
+            for(I i = 0; i < matrix.nnz; i++) printf("%+.3e ", (double)matrix.vals[i]);
+            printf("\n");
+            fflush(stdout);
+        }
+        else if constexpr(A::is_data_device_accessible)
+        {
+            Matrix_CSR<T,I,Ah> matrix_host;
+            matrix_host.resize(matrix);
+            copy_submit_d2h(q, matrix_host, matrix);
+            queue_wait(q);
+            print_matrix_csr_arrays(q, matrix_host, name);
+        }
+        else
+        {
+            static_assert(true, "weird matrix with inaccessible data");
+        }
+    }
+
 }
 }
 }

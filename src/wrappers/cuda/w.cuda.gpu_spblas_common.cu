@@ -104,7 +104,7 @@ namespace spblas {
         buffer = (char*)buffer + nnz * sizeof(I);   buffersize -= nnz * sizeof(I);
         I * colidxs_sorted = (I*)buffer;
         buffer = (char*)buffer + nnz * sizeof(I);   buffersize -= nnz * sizeof(I);
-        CHECK(cub::DeviceHistogram::HistogramEven(buffer, buffersize, input_colidxs, output_rowptrs, output_nrows+1, 0, output_nrows+1, nnz, stream));
+        CHECK(cub::DeviceHistogram::HistogramEven(buffer, buffersize, input_colidxs, output_rowptrs, output_nrows+1, 0, output_nrows, nnz, stream));
         CHECK(cub::DeviceScan::ExclusiveSum(buffer, buffersize, output_rowptrs, output_rowptrs, output_nrows+1, stream));
         _init_linear<<< 16, 256, 0, stream >>>(linear, nnz);
         CHECK(cudaPeekAtLastError());

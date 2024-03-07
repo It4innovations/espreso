@@ -5,13 +5,6 @@ cusparse_version="legacy"
 
 
 
-ml METIS/5.1.0-GCCcore-10.3.0
-ml GCC/11.3.0
-ml OpenBLAS/0.3.20-GCC-11.3.0
-ml OpenMPI/4.1.4-GCC-11.3.0
-if [ "${cusparse_version}" = "legacy" ]; then ml CUDA/11.7.0; fi
-if [ "${cusparse_version}" = "modern" ]; then ml CUDA/12.2.0; fi
-
 DEPENDENCIES_DIR="dependencies"
 if [ ! -d "${DEPENDENCIES_DIR}" ]; then mkdir "${DEPENDENCIES_DIR}"; fi
 
@@ -19,6 +12,8 @@ LAPACK_ROOT="${DEPENDENCIES_DIR}/lapack"
 if [ ! -d "${LAPACK_ROOT}" ]
 then
     (
+        ml GCC/11.3.0
+        ml OpenBLAS/0.3.20-GCC-11.3.0
         ml CMake/3.24.3-GCCcore-11.3.0
         cd "${DEPENDENCIES_DIR}"
         wget http://www.netlib.org/lapack/lapack.tgz
@@ -33,7 +28,6 @@ then
         make install
     )
 fi
-
 export CPATH="${PWD}/${LAPACK_ROOT}/include:${CPATH}"
 export LIBRARY_PATH="${PWD}/${LAPACK_ROOT}/lib64:${LIBRARY_PATH}"
 export LD_LIBRARY_PATH="${PWD}/${LAPACK_ROOT}/lib64:${LD_LIBRARY_PATH}"
@@ -49,6 +43,8 @@ then
         git clone -b "${VERSION_SUITESPARSE}" https://github.com/DrTimothyAldenDavis/SuiteSparse.git "${SUITESPARSE_DIR}"
         cd "${SUITESPARSE_DIR}"
 
+        ml GCC/11.3.0
+        ml OpenBLAS/0.3.20-GCC-11.3.0
         ml CMake/3.24.3-GCCcore-11.3.0
         mkdir -p build
         cd build
@@ -57,10 +53,18 @@ then
         cmake --install .
     )
 fi
-
 export CPATH="${PWD}/${SUITESPARSE_ROOT}/include:${CPATH}"
 export LIBRARY_PATH="${PWD}/${SUITESPARSE_ROOT}/lib64:${LIBRARY_PATH}"
 export LD_LIBRARY_PATH="${PWD}/${SUITESPARSE_ROOT}/lib64:${LD_LIBRARY_PATH}"
+
+
+
+ml METIS/5.1.0-GCCcore-10.3.0
+ml GCC/11.3.0
+ml OpenBLAS/0.3.20-GCC-11.3.0
+ml OpenMPI/4.1.4-GCC-11.3.0
+if [ "${cusparse_version}" = "legacy" ]; then ml CUDA/11.7.0; fi
+if [ "${cusparse_version}" = "modern" ]; then ml CUDA/12.2.0; fi
 
 export CXX=mpic++
 export CXXFLAGS+=" -fmax-errors=1"
