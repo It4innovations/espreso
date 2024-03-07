@@ -5,11 +5,11 @@ cusparse_version="legacy"
 
 
 
-ml GCC/12.2.0
-ml OpenBLAS/0.3.21-GCC-12.2.0
-ml LAPACK/3.10.0-GCC-12.2.0
-ml OpenMPI/4.1.5-GCC-12.2.0
-ml METIS/5.1.0-GCCcore-12.2.0
+ml LAPACK/3.10.0-GCC-11.2.0
+ml GCC/11.3.0
+ml OpenBLAS/0.3.20-GCC-11.3.0
+ml OpenMPI/4.1.4-GCC-11.3.0
+ml METIS/5.1.0-GCCcore-11.3.0
 if [ "${cusparse_version}" = "legacy" ]; then ml CUDA/11.7.0; fi
 if [ "${cusparse_version}" = "modern" ]; then ml CUDA/12.2.0; fi
 
@@ -17,7 +17,6 @@ DEPENDENCIES_DIR="dependencies"
 if [ ! -d "${DEPENDENCIES_DIR}" ]; then mkdir "${DEPENDENCIES_DIR}"; fi
 
 VERSION_SUITESPARSE=v7.6.0
-
 export SUITESPARSE_DIR="SuiteSparse_${VERSION_SUITESPARSE}_gcc_openblas"
 export SUITESPARSE_ROOT="${DEPENDENCIES_DIR}/${SUITESPARSE_DIR}"
 if [ ! -d "${SUITESPARSE_ROOT}" ]
@@ -28,7 +27,7 @@ then
         git clone -b "${VERSION_SUITESPARSE}" https://github.com/DrTimothyAldenDavis/SuiteSparse.git "${SUITESPARSE_DIR}"
         cd "${SUITESPARSE_DIR}"
 
-        ml CMake/3.24.3-GCCcore-12.2.0
+        ml CMake/3.24.3-GCCcore-11.3.0
         mkdir -p build
         cd build
         cmake -DCMAKE_C_COMPILER=gcc -DENABLE_CUDA=false -DSUITESPARSE_ENABLE_PROJECTS="cholmod" -DCMAKE_INSTALL_PREFIX=.. ..

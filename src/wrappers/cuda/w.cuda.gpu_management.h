@@ -4,7 +4,7 @@
 
 #include <cuda_runtime.h>
 
-#include "esinfo/eslog.h"
+#include "esinfo/eslog.hpp"
 
 
 
