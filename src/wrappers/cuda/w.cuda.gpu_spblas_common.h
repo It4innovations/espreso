@@ -15,7 +15,7 @@ namespace spblas {
     void my_csr_transpose_preprocess(cudaStream_t & stream, I input_nrows, I input_ncols, I nnz, I * input_rowptrs, I * input_colidxs, I * output_rowptrs, I * output_colidxs, size_t buffersize, void * buffer);
     
     template<typename T, typename I>
-    void my_csr_transpose_compute(cudaStream_t & stream, I nnz, T * input_vals, T * output_vals, void * buffer);
+    void my_csr_transpose_compute(cudaStream_t & stream, I nnz, T * input_vals, T * output_vals, bool conjugate, void * buffer);
 
 }
 }

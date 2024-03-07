@@ -254,7 +254,7 @@ namespace spblas {
     }
 
     template<typename T, typename I>
-    void transpose(handle & h, descr_matrix_csr & output, descr_matrix_csr & input, size_t & buffersize, void * buffer, char stage)
+    void transpose(handle & h, descr_matrix_csr & output, descr_matrix_csr & input, bool conjugate, size_t & buffersize, void * buffer, char stage)
     {
         int64_t out_nrows, out_ncols, out_nnz, in_nrows, in_ncols, in_nnz;
         void *out_rowptrs, *out_colidxs, *out_vals, *in_rowptrs, *in_colidxs, *in_vals;
@@ -266,7 +266,7 @@ namespace spblas {
         cudaStream_t stream = h->get_stream();
         if(stage == 'B') my_csr_transpose_buffersize<I>(stream, in_nrows, in_ncols, in_nnz, buffersize);
         if(stage == 'P') my_csr_transpose_preprocess<I>(stream, in_nrows, in_ncols, in_nnz, (I*)in_rowptrs, (I*)in_colidxs, (I*)out_rowptrs, (I*)out_colidxs, buffersize, buffer);
-        if(stage == 'C') my_csr_transpose_compute<T,I>(stream, in_nnz, (T*)in_vals, (T*)out_vals, buffer);
+        if(stage == 'C') my_csr_transpose_compute<T,I>(stream, in_nnz, (T*)in_vals, (T*)out_vals, conjugate, buffer);
     }
 
     template<typename T, typename I>

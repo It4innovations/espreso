@@ -29,6 +29,14 @@ namespace spblas {
             return msb;
         }
 
+        template<typename T> __device__ constexpr bool is_complex();
+        template<> __device__ constexpr bool is_complex<int32_t>() { return false; }
+        // template<> __device__ constexpr bool is_complex<int64_t>() { return false; }
+        // template<> __device__ constexpr bool is_complex<float>() { return false; }
+        template<> __device__ constexpr bool is_complex<double>() { return false; }
+        // template<> __device__ constexpr bool is_complex<std::complex<float>>() { return true; }
+        // template<> __device__ constexpr bool is_complex<std::complex<double>>() { return true; }
+
         template<typename T>
         static __global__ void _init_linear(T * output, size_t count)
         {
@@ -37,12 +45,25 @@ namespace spblas {
             for(size_t i = idx; i < count; i += stride) output[i] = (T)i;
         }
 
-        template<typename T, typename I>
+        template<typename T, typename I, bool conj = false>
         static __global__ void _permute_array(T * output, T const * input, I const * perm, size_t count)
         {
             size_t idx = blockIdx.x * blockDim.x + threadIdx.x;
             size_t stride = blockDim.x * gridDim.x;
-            for(size_t i = idx; i < count; i += stride) output[i] = input[perm[i]];
+            for(size_t i = idx; i < count; i += stride)
+            {
+                T & out = output[i];
+                const T & val = input[perm[i]];
+                if constexpr(conj && is_complex<T>())
+                {
+                    reinterpret_cast<T*>(&out)[0] =  reinterpret_cast<T*>(&val)[0];
+                    reinterpret_cast<T*>(&out)[1] = -reinterpret_cast<T*>(&val)[1];
+                }
+                else
+                {
+                    out = val;
+                }
+            }
         }
 
         template<typename I>
@@ -96,17 +117,18 @@ namespace spblas {
     }
     
     template<typename T, typename I>
-    void my_csr_transpose_compute(cudaStream_t & stream, I nnz, T * input_vals, T * output_vals, void * buffer)
+    void my_csr_transpose_compute(cudaStream_t & stream, I nnz, T * input_vals, T * output_vals, bool conjugate, void * buffer)
     {
         I * map = (I*)buffer;
-        _permute_array<<< 16, 256, 0, stream >>>(output_vals, input_vals, map, nnz);
+        if(conjugate) _permute_array<T,I,true> <<< 16, 256, 0, stream >>>(output_vals, input_vals, map, nnz);
+        else          _permute_array<T,I,false><<< 16, 256, 0, stream >>>(output_vals, input_vals, map, nnz);
         CHECK(cudaPeekAtLastError());
     }
 
 
 
     #define INSTANTIATE_T_I(T,I) \
-    template void my_csr_transpose_compute<T,I>(cudaStream_t & stream, I nnz, T * input_vals, T * output_vals, void * buffer);
+    template void my_csr_transpose_compute<T,I>(cudaStream_t & stream, I nnz, T * input_vals, T * output_vals, bool conjugate, void * buffer);
 
         #define INSTANTIATE_I(I) \
         /* INSTANTIATE_T_I(float,I) */ \

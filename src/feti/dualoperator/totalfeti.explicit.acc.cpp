@@ -422,8 +422,8 @@ void TotalFETIExplicitAcc<T,I>::set(const step::Step &step)
         {
             std::vector<size_t> buffer_requirements;
 
-            if(do_conjtrans_L2LH_d) gpu::spblas::transpose<T,I>(hs, data.descr_LH_sp, data.descr_L_sp, data.buffersize_transL2LH, data.buffer_transL2LH, 'B');
-            if(do_conjtrans_U2UH_d) gpu::spblas::transpose<T,I>(hs, data.descr_UH_sp, data.descr_U_sp, data.buffersize_transU2UH, data.buffer_transU2UH, 'B');
+            if(do_conjtrans_L2LH_d) gpu::spblas::transpose<T,I>(hs, data.descr_LH_sp, data.descr_L_sp, true, data.buffersize_transL2LH, data.buffer_transL2LH, 'B');
+            if(do_conjtrans_U2UH_d) gpu::spblas::transpose<T,I>(hs, data.descr_UH_sp, data.descr_U_sp, true, data.buffersize_transU2UH, data.buffer_transU2UH, 'B');
 
             if(do_sp2dn_L)  gpu::spblas::sparse_to_dense<T,I>(hs, 'N', data.descr_L_sp,  data.descr_L_dn,  buffer_requirements.emplace_back(), nullptr, 'B');
             if(do_sp2dn_U)  gpu::spblas::sparse_to_dense<T,I>(hs, 'N', data.descr_U_sp,  data.descr_U_dn,  buffer_requirements.emplace_back(), nullptr, 'B');
@@ -551,8 +551,8 @@ void TotalFETIExplicitAcc<T,I>::set(const step::Step &step)
         tm_kernels_preprocess.start();
         {
             tm_trans_gpu.start();
-            if(do_conjtrans_L2LH_d) gpu::spblas::transpose<T,I>(hs, data.descr_LH_sp, data.descr_L_sp, data.buffersize_transL2LH, data.buffer_transL2LH, 'P');
-            if(do_conjtrans_U2UH_d) gpu::spblas::transpose<T,I>(hs, data.descr_UH_sp, data.descr_U_sp, data.buffersize_transU2UH, data.buffer_transU2UH, 'P');
+            if(do_conjtrans_L2LH_d) gpu::spblas::transpose<T,I>(hs, data.descr_LH_sp, data.descr_L_sp, true, data.buffersize_transL2LH, data.buffer_transL2LH, 'P');
+            if(do_conjtrans_U2UH_d) gpu::spblas::transpose<T,I>(hs, data.descr_UH_sp, data.descr_U_sp, true, data.buffersize_transU2UH, data.buffer_transU2UH, 'P');
             tm_trans_gpu.stop();
 
             tm_trs1.start();
@@ -825,8 +825,8 @@ void TotalFETIExplicitAcc<T,I>::update(const step::Step &step)
         // transpose csr matrices on device
         tm_trans_gpu.start();
         {
-            if(do_conjtrans_L2LH_d) gpu::spblas::transpose<T,I>(hs, data.descr_LH_sp, data.descr_L_sp, data.buffersize_transL2LH, data.buffer_transL2LH, 'C');
-            if(do_conjtrans_U2UH_d) gpu::spblas::transpose<T,I>(hs, data.descr_UH_sp, data.descr_U_sp, data.buffersize_transU2UH, data.buffer_transU2UH, 'C');
+            if(do_conjtrans_L2LH_d) gpu::spblas::transpose<T,I>(hs, data.descr_LH_sp, data.descr_L_sp, true, data.buffersize_transL2LH, data.buffer_transL2LH, 'C');
+            if(do_conjtrans_U2UH_d) gpu::spblas::transpose<T,I>(hs, data.descr_UH_sp, data.descr_U_sp, true, data.buffersize_transU2UH, data.buffer_transU2UH, 'C');
         }
         tm_trans_gpu.stop();
 

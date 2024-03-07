@@ -79,7 +79,7 @@ namespace spblas {
     void descr_sparse_trsm_destroy(descr_sparse_trsm & descr);
 
     template<typename T, typename I>
-    void transpose(handle & h, descr_matrix_csr & output, descr_matrix_csr & input, size_t & buffersize, void * buffer, char stage);
+    void transpose(handle & h, descr_matrix_csr & output, descr_matrix_csr & input, bool conjugate, size_t & buffersize, void * buffer, char stage);
 
     template<typename T, typename I>
     void sparse_to_dense(handle & h, char transpose, descr_matrix_csr & sparse, descr_matrix_dense & dense, size_t & buffersize, void * buffer, char stage);
