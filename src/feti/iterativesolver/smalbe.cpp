@@ -42,6 +42,8 @@ template <> void SMALBE<double>::solve(const step::Step &step, IterativeSolverIn
 {
     DualOperator<double> *F = feti.dualOperator;
     Projector<double> *P = feti.projector;
+    MPRGPSolverInfo mprgp_info;
+    mprgp_info.print = false;
 
     math::copy(b, F->d);
     // Homogenization of the equality constraints
@@ -73,7 +75,9 @@ template <> void SMALBE<double>::solve(const step::Step &step, IterativeSolverIn
     F->estimateMaxProjectedEigenValue(maxEIG_H, nIt, 0.0001, 10);
     eslog::info("       - ESTIMATED MAX PROJECTED EIGEN VALUE                   %.3e in %4d steps - \n", maxEIG_H, nIt);
     eslog::info("       - ----------------------------------------------------------------------------- - \n");
-    eslog::info("       - ITERATION        STEP                 NORM(G)         TOLERANCE      TIME [s] - \n");
+//    eslog::info("       - ITER   L  ||gs(x)||   ||Gx||  As/Fs-Ac/Fc    cg   mixed  grad.pr.  Hess     M   RHO   TIME [s] - \n");
+    eslog::info("       -        SBC ACTIVE /  FREE   PQC ACTIVE /  FREE       CG  MIXED  GPROJ    HESS - \n");
+    eslog::info("       - ITERATION   L(X,MU,RHO)   ||GS(X)||      ||GX||     M       RHO      TIME [s] - \n");
     eslog::info("       - ----------------------------------------------------------------------------- - \n");
 
     // switch PFP-scaling, TODO
@@ -102,6 +106,7 @@ template <> void SMALBE<double>::solve(const step::Step &step, IterativeSolverIn
         math::scale(1. / normPFP, out);
         math::add(out,  rho, in);
         math::add(out, -rho, y);
+        ++mprgp_info.n_hess;
     };
 
     auto stop = [&] (const Vector_Dual<double> &x, const Vector_Dual<double> &g_stop) {
@@ -124,24 +129,31 @@ template <> void SMALBE<double>::solve(const step::Step &step, IterativeSolverIn
 
     double Lag0 = -std::numeric_limits<double>::infinity();
     P->apply_invLG(mprgp.x, Gx);
-    for (size_t it = 1; it <= feti.configuration.max_iterations; ++it) {
+    for (mprgp_info.iterations = 1; mprgp_info.iterations <= feti.configuration.max_iterations; ) {
         math::copy(mprgp.b, bCtmu);
-        mprgp.run(step, info, alpha, A_apply, stop);
+        mprgp.run(step, mprgp_info, alpha, A_apply, stop);
         math::copy(mprgp.x0, mprgp.x);
         mprgp.updateStoppingGradient(mprgp.g_stop, mprgp.g, mprgp.x, alpha);
-        eslog::info("       - ----------------------------------------------------------------------------- - \n");
         P->apply_invLG(mprgp.x, Gx);
 
+        math::copy(gbCtmu, mprgp.g);
+        math::add(gbCtmu, -1., bCtmu);
+        double Lag1 = .5 * gbCtmu.dot(mprgp.x); // Lag1 = 0.5*(x'*(g - bCtmu));
         double norm_stop = std::sqrt(mprgp.g_stop.dot());
         double norm_Gx = std::sqrt(Gx.dot());
+
+        int active_sbc = 0, free_sbc = 0;
+        int active_pqc = 0, free_pqc = 0;
+        eslog::info("       -                                                                               - \n");
+        eslog::info("       -           %7d %7d      %7d %7d    %5d  %5d  %5d %7d - \n", active_sbc, free_sbc, active_pqc, free_pqc, mprgp_info.n_cg, mprgp_info.n_mixed, mprgp_info.n_gproj, mprgp_info.n_hess);
+        eslog::info("       - -   %5d   %9.4e  %9.4e  %9.4e   %6.2f   %7.2e  %7.2e - \n", mprgp_info.iterations, Lag1, norm_stop, norm_Gx * maxEIG_H, M_const, rho, eslog::time() - info.time.current);
+        info.time.current = eslog::time();
+
         if (norm_stop <= feti.configuration.precision * norm_b && norm_Gx <= feti.configuration.precision * norm_b / maxEIG_H) {
             break;
         }
 
         // 2. Update mu and M
-        math::copy(gbCtmu, mprgp.g);
-        math::add(gbCtmu, -1., bCtmu);
-        double Lag1 = .5 * gbCtmu.dot(mprgp.x); // Lag1 = 0.5*(x'*(g - bCtmu));
         math::add(mu, rho, Gx); // mu = mu + rho*Gx;
         math::copy(bCtmu_prev, bCtmu);
 
@@ -159,6 +171,7 @@ template <> void SMALBE<double>::solve(const step::Step &step, IterativeSolverIn
         }
         Lag0 = Lag1;
     }
+    eslog::info("       - ----------------------------------------------------------------------------- - \n");
 
     math::add(mprgp.x, 1., x_im);
     // rbm = Uc\( Lc\(C*(-b_+A(x)))-mu*normPAP ); rbm = -rbm(ip);
@@ -171,6 +184,7 @@ template <> void SMALBE<double>::solve(const step::Step &step, IterativeSolverIn
     // permute -mu
 
     reconstructSolution(mprgp.x, mu);
+    info = mprgp_info;
 }
 
 template <> void SMALBE<std::complex<double> >::solve(const step::Step &step, IterativeSolverInfo &info)

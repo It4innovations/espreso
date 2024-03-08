@@ -8,6 +8,11 @@ namespace espreso {
 
 // Modified Proportioning with Reduced Gradient Projection
 
+struct MPRGPSolverInfo: IterativeSolverInfo {
+    bool print;
+    int n_cg, n_mixed, n_gproj, n_hess;
+};
+
 template <typename T>
 class MPRGP: public IterativeSolver<T> {
 public:
@@ -16,7 +21,7 @@ public:
     void info();
     void solve(const step::Step &step, IterativeSolverInfo &info);
 
-    void run(const step::Step &step, IterativeSolverInfo &info, double alpha, std::function<void(Vector_Dual<T> &in, Vector_Dual<T> &out)> H, std::function<bool(const Vector_Dual<T> &x, const Vector_Dual<T> &g_stop)> stop);
+    void run(const step::Step &step, MPRGPSolverInfo &info, double alpha, std::function<void(Vector_Dual<T> &in, Vector_Dual<T> &out)> H, std::function<bool(const Vector_Dual<T> &x, const Vector_Dual<T> &g_stop)> stop);
 
     using IterativeSolver<T>::feti;
     Vector_Dual<T> b, x, x0, nx, ng, ngg0, xp, g_red, g_free, g_stop;
