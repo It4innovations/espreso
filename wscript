@@ -244,7 +244,7 @@ def options(opt):
     opt.other.add_option("--rank-to-gpu-map",
         action="store",
         type="string",
-        default=os.getenv("ESPRESO_RANK_TO_GPU_MAP"),
+        default=os.getenv("ESPRESO_RANK_TO_GPU_MAP") or "0",
         help="Map from node-local MPI rank to GPU index, if the process can see multiple GPUs")
 
     recurse(opt)
