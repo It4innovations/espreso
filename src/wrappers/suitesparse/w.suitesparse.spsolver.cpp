@@ -395,19 +395,9 @@ void DirectSparseSolver<T, I>::getSC(Matrix_Dense<T,I> &sc)
     _free<I>(cm_A11iA12_dn, ext->cm_common);
 }
 
-template struct DirectSparseSolver<float,                int32_t>;
-template struct DirectSparseSolver<double,               int32_t>;
-template struct DirectSparseSolver<float,                int64_t>;
-template struct DirectSparseSolver<double,               int64_t>;
-template struct DirectSparseSolver<std::complex<float >, int32_t>;
-template struct DirectSparseSolver<std::complex<double>, int32_t>;
-template struct DirectSparseSolver<std::complex<float >, int64_t>;
-template struct DirectSparseSolver<std::complex<double>, int64_t>;
-
-template void DirectSparseSolver<double, int32_t>::getFactorL<gpu::mgm::Ah>(Matrix_CSR<double, int32_t, gpu::mgm::Ah> &, bool, bool);
-template void DirectSparseSolver<double, int32_t>::getFactorU<gpu::mgm::Ah>(Matrix_CSR<double, int32_t, gpu::mgm::Ah> &, bool, bool);
-
 }
+
+#include "math/wrappers/math.spsolver_inst.hpp"
 
 #endif
 #endif

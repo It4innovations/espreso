@@ -294,12 +294,8 @@ void DirectSparseSolver<T, I>::getSC(Matrix_Dense<T, I> &sc)
     }
 }
 
-template struct DirectSparseSolver<double, int>;
-template struct DirectSparseSolver<std::complex<double>, int>;
-
-template void DirectSparseSolver<double, int>::getFactorL<gpu::mgm::Ah>(Matrix_CSR<double, int, gpu::mgm::Ah> &, bool, bool);
-template void DirectSparseSolver<double, int>::getFactorU<gpu::mgm::Ah>(Matrix_CSR<double, int, gpu::mgm::Ah> &, bool, bool);
-
 }
+
+#include "math/wrappers/math.spsolver_inst.hpp"
 
 #endif

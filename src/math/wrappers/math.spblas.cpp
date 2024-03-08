@@ -43,15 +43,9 @@ void SpBLAS<Matrix, T, I>::apply(Vector_Dense<T, I> &y, const T &alpha, const T 
     eslog::error("call empty SpBLAS wrapper\n");
 }
 
-template struct SpBLAS<Matrix_CSR, float, int>;
-template struct SpBLAS<Matrix_CSR, double, int>;
-template struct SpBLAS<Matrix_CSR, std::complex<double>, int>;
-
-template struct SpBLAS<Matrix_CSR, float, long>;
-template struct SpBLAS<Matrix_CSR, double, long>;
-template struct SpBLAS<Matrix_CSR, std::complex<double>, long>;
-
 }
+
+#include "math/wrappers/math.spblas_inst.hpp"
 
 #endif
 #endif
