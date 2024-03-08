@@ -179,6 +179,6 @@ void SpBLAS<Matrix, T, I>::apply(Vector_Dense<T, I> &y, const T &alpha, const T 
 
 }
 
-#include "math/wrappers/math.spblas_inst.hpp"
+#include "math/wrappers/math.spblas.inst.hpp"
 
 #endif

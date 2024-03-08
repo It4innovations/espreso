@@ -20,6 +20,6 @@ namespace kernels {
 }
 }
 
-#include "gpu/gpu_kernels_inst.hpp"
+#include "gpu/gpu_kernels.inst.hpp"
 
 #endif

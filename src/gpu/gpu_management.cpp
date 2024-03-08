@@ -77,6 +77,6 @@ namespace mgm {
 }
 }
 
-#include "gpu/gpu_management_inst.hpp"
+#include "gpu/gpu_management.inst.hpp"
 
 #endif

@@ -35,6 +35,6 @@ namespace dnblas {
 }
 }
 
-#include "gpu/gpu_dnblas_inst.hpp"
+#include "gpu/gpu_dnblas.inst.hpp"
 
 #endif

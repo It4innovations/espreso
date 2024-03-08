@@ -177,7 +177,7 @@ void DirectSparseSolver<T, I>::getSC(Matrix_Dense<T,I> &/*sc*/)
 
 }
 
-#include "math/wrappers/math.spsolver_inst.hpp"
+#include "math/wrappers/math.spsolver.inst.hpp"
 
 #endif
 #endif

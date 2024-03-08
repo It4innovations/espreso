@@ -498,7 +498,7 @@ namespace spblas {
 #undef MY_COMPILER_GCC
 #undef MY_COMPILER_CLANG
 
-#include "gpu/gpu_spblas_inst.hpp"
+#include "gpu/gpu_spblas.inst.hpp"
 
 #endif
 #endif
