@@ -93,6 +93,7 @@ namespace spblas {
     struct _descr_matrix_csr
     {
         cusparseSpMatDescr_t d;
+        cusparseSpMatDescr_t d_for_sp2dn; // no attributes set
         void * vals_ptr;
     };
     struct _descr_matrix_dense
@@ -140,8 +141,9 @@ namespace spblas {
     void descr_matrix_csr_create(descr_matrix_csr & descr, I nrows, I ncols, I nnz, char fill)
     {
         descr = std::make_shared<_descr_matrix_csr>();
-        void * dummyptr = reinterpret_cast<void*>(1);
-        CHECK(cusparseCreateCsr(&descr->d, nrows, ncols, nnz, dummyptr, dummyptr, dummyptr, _sparse_index_type<I>(), _sparse_index_type<I>(), CUSPARSE_INDEX_BASE_ZERO, _sparse_data_type<T>()));
+        void * dummyptr = reinterpret_cast<void*>(8);
+        CHECK(cusparseCreateCsr(&descr->d_for_sp2dn, nrows, ncols, nnz, dummyptr, dummyptr, dummyptr, _sparse_index_type<I>(), _sparse_index_type<I>(), CUSPARSE_INDEX_BASE_ZERO, _sparse_data_type<T>()));
+        CHECK(cusparseCreateCsr(&descr->d,           nrows, ncols, nnz, dummyptr, dummyptr, dummyptr, _sparse_index_type<I>(), _sparse_index_type<I>(), CUSPARSE_INDEX_BASE_ZERO, _sparse_data_type<T>()));
         auto upper = CUSPARSE_FILL_MODE_UPPER;
         auto lower = CUSPARSE_FILL_MODE_LOWER;
         auto nonunit = CUSPARSE_DIAG_TYPE_NON_UNIT;
@@ -154,7 +156,8 @@ namespace spblas {
     void descr_matrix_csr_link_data(descr_matrix_csr & descr, Matrix_CSR<T,I,A> & matrix)
     {
         static_assert(A::is_data_device_accessible, "matrix data must be device accessible");
-        CHECK(cusparseCsrSetPointers(descr->d, matrix.rows, matrix.cols, matrix.vals));
+        CHECK(cusparseCsrSetPointers(descr->d,           matrix.rows, matrix.cols, matrix.vals));
+        CHECK(cusparseCsrSetPointers(descr->d_for_sp2dn, matrix.rows, matrix.cols, matrix.vals));
         descr->vals_ptr = matrix.vals;
     }
 
@@ -163,6 +166,7 @@ namespace spblas {
         if(descr.get() == nullptr) return;
 
         CHECK(cusparseDestroySpMat(descr->d));
+        CHECK(cusparseDestroySpMat(descr->d_for_sp2dn));
         descr.reset();
     }
 
@@ -170,7 +174,7 @@ namespace spblas {
     void descr_matrix_dense_create(descr_matrix_dense & descr, I nrows, I ncols, I ld, char order)
     {
         descr = std::make_shared<_descr_matrix_dense>();
-        void * dummyptr = reinterpret_cast<void*>(1);
+        void * dummyptr = reinterpret_cast<void*>(8);
         if(order == 'R') CHECK(cusparseCreateDnMat(&descr->d, nrows, ncols, ld, dummyptr, _sparse_data_type<T>(), CUSPARSE_ORDER_ROW));
         if(order == 'C') CHECK(cusparseCreateDnMat(&descr->d, nrows, ncols, ld, dummyptr, _sparse_data_type<T>(), CUSPARSE_ORDER_COL));
         if(order == 'R') CHECK(cusparseCreateDnMat(&descr->d_complementary, ncols, nrows, ld, dummyptr, _sparse_data_type<T>(), CUSPARSE_ORDER_COL));
@@ -198,7 +202,7 @@ namespace spblas {
     void descr_vector_dense_create(descr_vector_dense & descr, I size)
     {
         descr = std::make_shared<_descr_vector_dense>();
-        void * dummyptr = reinterpret_cast<void*>(1);
+        void * dummyptr = reinterpret_cast<void*>(8);
         CHECK(cusparseCreateDnVec(&descr->d, size, dummyptr, _sparse_data_type<T>()));
     }
 
@@ -273,8 +277,8 @@ namespace spblas {
     {
         if(transpose == 'N')
         {
-            if(stage == 'B') CHECK(cusparseSparseToDense_bufferSize(h->h, sparse->d, dense->d, CUSPARSE_SPARSETODENSE_ALG_DEFAULT, &buffersize));
-            if(stage == 'C') CHECK(cusparseSparseToDense           (h->h, sparse->d, dense->d, CUSPARSE_SPARSETODENSE_ALG_DEFAULT, buffer));
+            if(stage == 'B') CHECK(cusparseSparseToDense_bufferSize(h->h, sparse->d_for_sp2dn, dense->d, CUSPARSE_SPARSETODENSE_ALG_DEFAULT, &buffersize));
+            if(stage == 'C') CHECK(cusparseSparseToDense           (h->h, sparse->d_for_sp2dn, dense->d, CUSPARSE_SPARSETODENSE_ALG_DEFAULT, buffer));
         }
         else if(transpose == 'T')
         {

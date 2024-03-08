@@ -37,15 +37,15 @@ then
         tar -xf metis-5.1.0.tar.gz
         rm metis-5.1.0.tar.gz
         cd metis-5.1.0
-        # CFLAGS="-fPIC"
+        sed -i 's/#define REALTYPEWIDTH 32/#define REALTYPEWIDTH 64/' include/metis.h
         make config shared=1 cc=clang gklib_path="${PWD}/GKlib" prefix="${PWD}"
         make -j$(nproc)
         make install
     )
 fi
-export CPATH="${METIS_ROOT}/include:${CPATH}"
-export LIBRARY_PATH="${METIS_ROOT}/lib:${LD_LIBRARY_PATH}"
-export LD_LIBRARY_PATH="${METIS_ROOT}/lib:${LD_LIBRARY_PATH}"
+export CPATH="${PWD}/${METIS_ROOT}/include:${CPATH}"
+export LIBRARY_PATH="${PWD}/${METIS_ROOT}/lib:${LD_LIBRARY_PATH}"
+export LD_LIBRARY_PATH="${PWD}/${METIS_ROOT}/lib:${LD_LIBRARY_PATH}"
 
 
 
