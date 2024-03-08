@@ -2,6 +2,7 @@
 #include "math/wrappers/math.spsolver.h"
 #include "gpu/gpu_management.h"
 #include "esinfo/eslog.h"
+#include "gpu/gpu_management.h"
 
 #include <complex>
 
@@ -174,11 +175,17 @@ void DirectSparseSolver<T, I>::getSC(Matrix_Dense<T,I> &/*sc*/)
     eslog::error("calling of empty sparse solver wrapper.\n");
 }
 
-template struct DirectSparseSolver<double, int>;
-template struct DirectSparseSolver<std::complex<double>, int>;
+template struct DirectSparseSolver<float,                int32_t>;
+template struct DirectSparseSolver<double,               int32_t>;
+template struct DirectSparseSolver<float,                int64_t>;
+template struct DirectSparseSolver<double,               int64_t>;
+template struct DirectSparseSolver<std::complex<float >, int32_t>;
+template struct DirectSparseSolver<std::complex<double>, int32_t>;
+template struct DirectSparseSolver<std::complex<float >, int64_t>;
+template struct DirectSparseSolver<std::complex<double>, int64_t>;
 
-template void DirectSparseSolver<double, int>::getFactorL<gpu::mgm::Ah>(Matrix_CSR<double, int, gpu::mgm::Ah> &, bool, bool);
-template void DirectSparseSolver<double, int>::getFactorU<gpu::mgm::Ah>(Matrix_CSR<double, int, gpu::mgm::Ah> &, bool, bool);
+template void DirectSparseSolver<double, int32_t>::getFactorL<gpu::mgm::Ah>(Matrix_CSR<double, int32_t, gpu::mgm::Ah> &, bool, bool);
+template void DirectSparseSolver<double, int32_t>::getFactorU<gpu::mgm::Ah>(Matrix_CSR<double, int32_t, gpu::mgm::Ah> &, bool, bool);
 
 }
 

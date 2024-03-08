@@ -1,4 +1,6 @@
 
+#include "math/math.h"
+#include "math/primitives/matrix_csr.h"
 #include "math/wrappers/math.spblas.h"
 #include "esinfo/eslog.h"
 
@@ -10,7 +12,6 @@
 namespace espreso {
 
 struct Matrix_SpBLAS_External_Representation {
-
 };
 
 template <template <typename, typename, typename> class Matrix, typename T, typename I>
@@ -22,14 +23,12 @@ SpBLAS<Matrix, T, I>::SpBLAS()
 template <template <typename, typename, typename> class Matrix, typename T, typename I>
 SpBLAS<Matrix, T, I>::~SpBLAS()
 {
-
 }
 
 template <template <typename, typename, typename> class Matrix, typename T, typename I>
 SpBLAS<Matrix, T, I>::SpBLAS(MatrixType &a)
-
 {
-
+    eslog::error("calling of empty sparse blas wrapper.\n");
 }
 
 template <template <typename, typename, typename> class Matrix, typename T, typename I>
