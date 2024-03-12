@@ -118,7 +118,7 @@ namespace kernels {
         if(order == 'R')
         {
             int bpg = (input.nrows - 1) / 2 + 1;
-            _copy_matrix_triangle<<< bpg, 32, 0, q->stream >>>(output.vals, output.get_ld(), input.vals, input.get_ld(), input.nrows, fill);
+            _copy_matrix_triangle<<< bpg, 64, 0, q->stream >>>(output.vals, output.get_ld(), input.vals, input.get_ld(), input.nrows, fill);
             CHECK(hipPeekAtLastError());
         }
         else if(order == 'C')
