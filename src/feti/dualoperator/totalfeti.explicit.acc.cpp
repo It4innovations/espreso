@@ -100,8 +100,8 @@ TotalFETIExplicitAcc<T,I>::TotalFETIExplicitAcc(FETI<T> &feti)
     bool is_present_h_sp_LH = (do_alloc_h_sp_LH || do_link_h_sp_LH_U);
     bool is_present_h_sp_UH = (do_alloc_h_sp_UH || do_link_h_sp_UH_L);
 
-    do_alloc_d_sp_L = (trsm1_use_L || (trsm1_use_LH && solver_get_L && conjtrans_on_device));
-    do_alloc_d_sp_U = (trsm2_use_U || (trsm2_use_UH && solver_get_U && conjtrans_on_device));
+    do_alloc_d_sp_L = (trsm1_use_L || ((trsm1_use_LH || (trsm2_use_U && is_system_hermitian)) && solver_get_L && conjtrans_on_device));
+    do_alloc_d_sp_U = (trsm2_use_U || ((trsm2_use_UH || (trsm1_use_L && is_system_hermitian)) && solver_get_U && conjtrans_on_device));
     bool can_use_LH_is_U_d_sp = (is_system_hermitian && do_alloc_d_sp_U);
     bool can_use_UH_is_L_d_sp = (is_system_hermitian && do_alloc_d_sp_L);
     do_alloc_d_sp_LH  = (!can_use_LH_is_U_d_sp && trsm1_use_LH);
