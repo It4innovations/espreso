@@ -33,6 +33,14 @@ namespace mgm {
 
     void device_wait() {}
 
+    void event_create(event & e) {}
+
+    void event_destroy(event & e) {}
+
+    void event_record(event & e, queue & q) {}
+
+    void event_wait(event & e) {}
+
     size_t get_device_memory_capacity() { return 0; }
 
     void * memalloc_device(size_t num_bytes) { return nullptr; }

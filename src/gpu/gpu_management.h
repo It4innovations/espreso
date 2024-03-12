@@ -33,6 +33,9 @@ namespace mgm {
     struct _queue;
     using queue = std::shared_ptr<_queue>;
 
+    struct _event;
+    using event = std::shared_ptr<_event>;
+
     device get_device_by_mpi(int mpi_rank, int mpi_size);
 
     void init_gpu(device & d);
@@ -48,6 +51,14 @@ namespace mgm {
     void queue_wait(queue & q);
 
     void device_wait();
+
+    void event_create(event & e);
+
+    void event_destroy(event & e);
+
+    void event_record(event & e, queue & q);
+
+    void event_wait(event & e);
 
     size_t get_device_memory_capacity();
 
