@@ -97,7 +97,7 @@ export CXXFLAGS+=" -fmax-errors=1"
 
 export OMP_PLACES=cores
 export OMP_PROC_BIND=close
-export OMP_NUM_THREADS=72
+export OMP_NUM_THREADS=72,1
 
 export ESPRESO_RANK_TO_GPU_MAP="0"
 

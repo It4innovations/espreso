@@ -84,7 +84,7 @@ export LAPACK_LIBRARIES=flame
 
 export OMP_PLACES=cores
 export OMP_PROC_BIND=close
-export OMP_NUM_THREADS=7
+export OMP_NUM_THREADS=7,1
 
 export ESPRESO_RANK_TO_GPU_MAP="4,5,2,3,6,7,0,1"
 

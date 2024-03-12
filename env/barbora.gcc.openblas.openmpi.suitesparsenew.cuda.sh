@@ -72,7 +72,7 @@ export BLAS_LIBRARIES=openblas
 
 export OMP_PLACES=cores
 export OMP_PROC_BIND=close
-export OMP_NUM_THREADS=6
+export OMP_NUM_THREADS=6,1
 
 export ESPRESO_RANK_TO_GPU_MAP="0,1,2,3"
 

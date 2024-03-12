@@ -50,7 +50,7 @@ export BLAS_LIBRARIES=openblas
 
 export OMP_PLACES=cores
 export OMP_PROC_BIND=close
-export OMP_NUM_THREADS=16
+export OMP_NUM_THREADS=16,1
 
 export ESPRESO_RANK_TO_GPU_MAP="2,3,0,1,6,7,4,5"
 
