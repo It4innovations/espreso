@@ -86,7 +86,7 @@ namespace spblas {
         bfs_map = nnz * sizeof(I);
         bfs_linear = nnz * sizeof(I);
         bfs_sorted_colidxs = nnz * sizeof(I);
-        CHECK(cub::DeviceHistogram::HistogramEven(nullptr, bfs_hist, (I*)nullptr, (I*)nullptr, output_nrows+1, 0, output_nrows+1, nnz, stream));
+        CHECK(cub::DeviceHistogram::HistogramEven(nullptr, bfs_hist, (I*)nullptr, (I*)nullptr, output_nrows+1, 0, output_nrows, nnz, stream));
         CHECK(cub::DeviceScan::ExclusiveSum(nullptr, bfs_scan, (I*)nullptr, (I*)nullptr, output_nrows+1, stream));
         CHECK(cub::DeviceRadixSort::SortPairs(nullptr, bfs_sort, (I*)nullptr, (I*)nullptr, (I*)nullptr, (I*)nullptr, nnz, 0, end_bit, stream));
         CHECK(cudaStreamSynchronize(stream));

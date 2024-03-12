@@ -5,6 +5,7 @@
 #include "w.rocm.gpu_management.h"
 
 #include <rocsparse.h>
+#include <rocprim/rocprim.hpp>
 
 
 
@@ -55,11 +56,125 @@ namespace spblas {
                 default: eslog::error("invalid operation '%c'\n", c);
             }
         }
+
+        template<typename I>
+        I get_most_significant_bit(I val)
+        {
+            static_assert(std::is_integral_v<I> && std::is_unsigned_v<I>, "wrong type");
+            I msb = 0;
+            while(val != 0)
+            {
+                val >>= 1;
+                msb++;
+            }
+            return msb;
+        }
+
+        template<typename T> __device__ constexpr bool is_complex();
+        template<> __device__ constexpr bool is_complex<int32_t>() { return false; }
+        // template<> __device__ constexpr bool is_complex<int64_t>() { return false; }
+        // template<> __device__ constexpr bool is_complex<float>() { return false; }
+        template<> __device__ constexpr bool is_complex<double>() { return false; }
+        // template<> __device__ constexpr bool is_complex<std::complex<float>>() { return true; }
+        // template<> __device__ constexpr bool is_complex<std::complex<double>>() { return true; }
+
+        template<typename T>
+        static __global__ void _init_linear(T * output, size_t count)
+        {
+            size_t idx = blockIdx.x * blockDim.x + threadIdx.x;
+            size_t stride = blockDim.x * gridDim.x;
+            for(size_t i = idx; i < count; i += stride) output[i] = (T)i;
+        }
+
+        template<typename T, typename I, bool conj = false>
+        static __global__ void _permute_array(T * output, T const * input, I const * perm, size_t count)
+        {
+            size_t idx = blockIdx.x * blockDim.x + threadIdx.x;
+            size_t stride = blockDim.x * gridDim.x;
+            for(size_t i = idx; i < count; i += stride)
+            {
+                T & out = output[i];
+                const T & val = input[perm[i]];
+                if constexpr(conj && is_complex<T>())
+                {
+                    reinterpret_cast<T*>(&out)[0] =  reinterpret_cast<T*>(&val)[0];
+                    reinterpret_cast<T*>(&out)[1] = -reinterpret_cast<T*>(&val)[1];
+                }
+                else
+                {
+                    out = val;
+                }
+            }
+        }
+
+        template<typename I>
+        static __global__ void _csr_to_ijv_rowidxs(I * out_rowidxs, I const * in_rowptrs)
+        {
+            I r = blockIdx.x;
+            I start = in_rowptrs[r];
+            I end = in_rowptrs[r+1];
+            for(I i = start + threadIdx.x; i < end; i += blockDim.x) out_rowidxs[i] = r;
+        }
+
+        template<typename I>
+        static void my_csr_transpose_buffersize(hipStream_t & stream, I input_nrows, I input_ncols, I nnz, size_t & buffersize)
+        {
+            I output_nrows = input_ncols;
+            I end_bit = get_most_significant_bit((uint64_t)input_ncols);
+            size_t bfs_map, bfs_linear, bfs_sorted_colidxs;
+            size_t bfs_hist, bfs_scan, bfs_sort;
+            bfs_map = nnz * sizeof(I);
+            bfs_linear = nnz * sizeof(I);
+            bfs_sorted_colidxs = nnz * sizeof(I);
+            CHECK(rocprim::histogram_even(nullptr, bfs_hist, (I*)nullptr, nnz, (I*)nullptr, output_nrows+1, 0, output_nrows, stream));
+            CHECK(rocprim::exclusive_scan(nullptr, bfs_scan, (I*)nullptr, (I*)nullptr, 0, output_nrows+1, rocprim::plus<I>(), stream));
+            CHECK(rocprim::radix_sort_pairs(nullptr, bfs_sort, (I*)nullptr, (I*)nullptr, (I*)nullptr, (I*)nullptr, nnz, 0, end_bit, stream));
+            CHECK(hipStreamSynchronize(stream));
+            buffersize = bfs_map + bfs_linear + bfs_sorted_colidxs + std::max(std::max(bfs_hist, bfs_scan), bfs_sort);
+        }
+        
+        template<typename I>
+        static void my_csr_transpose_preprocess(hipStream_t & stream, I input_nrows, I input_ncols, I nnz, I * input_rowptrs, I * input_colidxs, I * output_rowptrs, I * output_colidxs, size_t buffersize, void * buffer)
+        {
+            I output_nrows = input_ncols;
+            I end_bit = get_most_significant_bit((uint64_t)input_ncols);
+            I * map = (I*)buffer;
+            buffer = (char*)buffer + nnz * sizeof(I);   buffersize -= nnz * sizeof(I);
+            I * linear = (I*)buffer;
+            buffer = (char*)buffer + nnz * sizeof(I);   buffersize -= nnz * sizeof(I);
+            I * colidxs_sorted = (I*)buffer;
+            buffer = (char*)buffer + nnz * sizeof(I);   buffersize -= nnz * sizeof(I);
+            CHECK(rocprim::histogram_even(buffer, buffersize, input_colidxs, nnz, output_rowptrs, output_nrows+1, 0, output_nrows, stream));
+            CHECK(rocprim::exclusive_scan(buffer, buffersize, output_rowptrs, output_rowptrs, 0, output_nrows+1, rocprim::plus<I>(), stream));
+            _init_linear<<< 16, 256, 0, stream >>>(linear, nnz);
+            CHECK(hipPeekAtLastError());
+            CHECK(rocprim::radix_sort_pairs(buffer, buffersize, input_colidxs, colidxs_sorted, linear, map, nnz, 0, end_bit, stream));
+            I * ijv_rowidxs = colidxs_sorted; // just two unrelated temporary buffers sharing the same memory
+            _csr_to_ijv_rowidxs<<< input_nrows, 256, 0, stream >>>(ijv_rowidxs, input_rowptrs);
+            CHECK(hipPeekAtLastError());
+            _permute_array<<< 16, 256, 0, stream >>>(output_colidxs, ijv_rowidxs, map, nnz);
+            CHECK(hipPeekAtLastError());
+        }
+        
+        template<typename T, typename I>
+        static void my_csr_transpose_compute(hipStream_t & stream, I nnz, T * input_vals, T * output_vals, bool conjugate, void * buffer)
+        {
+            I * map = (I*)buffer;
+            if(conjugate) _permute_array<T,I,true> <<< 16, 256, 0, stream >>>(output_vals, input_vals, map, nnz);
+            else          _permute_array<T,I,false><<< 16, 256, 0, stream >>>(output_vals, input_vals, map, nnz);
+            CHECK(hipPeekAtLastError());
+        }
     }
 
     struct _handle
     {
         rocsparse_handle h;
+        hipStream_t get_stream()
+        {
+            hipStream_t stream;
+            CHECK(rocsparse_get_stream(h, &stream));
+            return stream;
+        }
     };
 
     struct _descr_matrix_csr
@@ -77,7 +192,7 @@ namespace spblas {
             _descr_matrix_dense ret;
             ret.d = d_complementary;
             ret.d_complementary = d;
-            ret.order = mgm::change_order(order);
+            ret.order = mgm::order_change(order);
             return ret;
         }
     };
@@ -208,6 +323,22 @@ namespace spblas {
     void descr_sparse_trsm_destroy(descr_sparse_trsm & /*descr*/) { }
 
     template<typename T, typename I>
+    void transpose(handle & h, descr_matrix_csr & output, descr_matrix_csr & input, bool conjugate, size_t & buffersize, void * buffer, char stage)
+    {
+        int64_t out_nrows, out_ncols, out_nnz, in_nrows, in_ncols, in_nnz;
+        void *out_rowptrs, *out_colidxs, *out_vals, *in_rowptrs, *in_colidxs, *in_vals;
+        rocsparse_indextype rowptrtype, colindtype;
+        rocsparse_index_base idxbase;
+        rocsparse_datatype type;
+        CHECK(rocsparse_csr_get(output->d, &out_nrows, &out_ncols, &out_nnz, &out_rowptrs, &out_colidxs, &out_vals, &rowptrtype, &colindtype, &idxbase, &type));
+        CHECK(rocsparse_csr_get(input->d,  &in_nrows,  &in_ncols,  &in_nnz,  &in_rowptrs,  &in_colidxs,  &in_vals,  &rowptrtype, &colindtype, &idxbase, &type));
+        hipStream_t stream = h->get_stream();
+        if(stage == 'B') my_csr_transpose_buffersize<I>(stream, in_nrows, in_ncols, in_nnz, buffersize);
+        if(stage == 'P') my_csr_transpose_preprocess<I>(stream, in_nrows, in_ncols, in_nnz, (I*)in_rowptrs, (I*)in_colidxs, (I*)out_rowptrs, (I*)out_colidxs, buffersize, buffer);
+        if(stage == 'C') my_csr_transpose_compute<T,I>(stream, in_nnz, (T*)in_vals, (T*)out_vals, conjugate, buffer);
+    }
+
+    template<typename T, typename I>
     void sparse_to_dense(handle & h, char transpose, descr_matrix_csr & sparse, descr_matrix_dense & dense, size_t & buffersize, void * buffer, char stage)
     {
         if(transpose == 'N')
@@ -260,7 +391,7 @@ namespace spblas {
                 {
                     descr_matrix_dense descr_rhs_compl = std::make_shared<_descr_matrix_dense>(rhs->get_complementary());
                     descr_matrix_dense descr_sol_compl = std::make_shared<_descr_matrix_dense>(sol->get_complementary());
-                    char transpose_compl = mgm::change_operation_array_transpose(transpose_rhs);
+                    char transpose_compl = mgm::operation_combine(transpose_rhs, 'T');
                     trsm<T,I>(h, transpose_mat, transpose_compl, transpose_compl, matrix, descr_rhs_compl, descr_sol_compl, descr_trsm, buffersize, buffer, stage);
                 }
                 else
@@ -270,13 +401,13 @@ namespace spblas {
             }
             else
             {
-                eslog::error("unsupported combimation of matrix orders and transpositions '%c'\n", rhs->order);
+                eslog::error("unsupported combimation of matrix order '%c' and transpositions\n", rhs->order);
             }
         }
         else
         {
             descr_matrix_dense descr_rhs_compl = std::make_shared<_descr_matrix_dense>(rhs->get_complementary());
-            char transpose_rhs_compl = mgm::change_operation_array_transpose(transpose_rhs);
+            char transpose_rhs_compl = mgm::operation_combine(transpose_rhs, 'T');
             trsm<T,I>(h, transpose_mat, transpose_rhs_compl, transpose_sol, matrix, descr_rhs_compl, sol, descr_trsm, buffersize, buffer, stage);
         }
 #endif

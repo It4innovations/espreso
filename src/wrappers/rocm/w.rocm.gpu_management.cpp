@@ -21,8 +21,8 @@ namespace mgm {
 
     namespace
     {
-        template<typename T, typename I>
-        static void _copy_submit(T * dst, const T * src, I num_elements, hipMemcpyKind dir, hipStream_t stream)
+        template<typename T>
+        static void _copy_submit(T * dst, const T * src, size_t num_elements, hipMemcpyKind dir, hipStream_t stream)
         {
             size_t sizeof_T;
             if constexpr(std::is_same_v<T,void>) sizeof_T = 1;
@@ -189,13 +189,14 @@ namespace mgm {
         // hipLaunchHostFunc is still marked as beta in rocm-6.0.0
     }
 
-    template<typename T, typename I>
-    void copy_submit_h2d(queue & q, T * dst, T const * src, I num_elements)
+    template<typename T>
+    void copy_submit_h2d(queue & q, T * dst, T const * src, size_t num_elements)
     {
         _copy_submit(dst, src, num_elements, hipMemcpyHostToDevice, q->stream);
     }
-    template<typename T, typename I>
-    void copy_submit_d2h(queue & q, T * dst, T const * src, I num_elements)
+
+    template<typename T>
+    void copy_submit_d2h(queue & q, T * dst, T const * src, size_t num_elements)
     {
         _copy_submit(dst, src, num_elements, hipMemcpyDeviceToHost, q->stream);
     }

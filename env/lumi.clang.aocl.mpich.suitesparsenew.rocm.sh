@@ -1,6 +1,6 @@
 #!/bin/bash
 
-DEPENDENCIES_DIR="${PWD}/dependencies"
+DEPENDENCIES_DIR="dependencies"
 mkdir -p dependencies
 
 module use /pfs/lustrep2/projappl/project_462000125/samantao-public/mymodules
@@ -68,9 +68,9 @@ then
         cmake --install .
     )
 fi
-export CPATH="${SUITESPARSE_ROOT}/include:${CPATH}"
-export LIBRARY_PATH="${SUITESPARSE_ROOT}/lib64:${LD_LIBRARY_PATH}"
-export LD_LIBRARY_PATH="${SUITESPARSE_ROOT}/lib64:${LD_LIBRARY_PATH}"
+export CPATH="${PWD}/${SUITESPARSE_ROOT}/include:${CPATH}"
+export LIBRARY_PATH="${PWD}/${SUITESPARSE_ROOT}/lib64:${LD_LIBRARY_PATH}"
+export LD_LIBRARY_PATH="${PWD}/${SUITESPARSE_ROOT}/lib64:${LD_LIBRARY_PATH}"
 
 export LIBRARIES=mpich
 export CPATH="${CRAY_MPICH_DIR}/include:${CPATH}"

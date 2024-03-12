@@ -58,9 +58,9 @@ namespace espreso {
         }
         cbmba_resource() = delete;
         cbmba_resource(cbmba_resource const &) = delete;
-        cbmba_resource(cbmba_resource &&) = default;
+        cbmba_resource(cbmba_resource &&) = delete;
         cbmba_resource & operator=(cbmba_resource const &) = delete;
-        cbmba_resource & operator=(cbmba_resource &&) = default;
+        cbmba_resource & operator=(cbmba_resource &&) = delete;
         void * allocate(size_t num_bytes, size_t align = 1)
         {
             if(num_bytes == 0) num_bytes = 1;

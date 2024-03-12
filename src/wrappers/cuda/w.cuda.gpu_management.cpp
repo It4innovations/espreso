@@ -21,8 +21,8 @@ namespace mgm {
 
     namespace
     {
-        template<typename T, typename I>
-        static void _copy_submit(T * dst, const T * src, I num_elements, cudaMemcpyKind dir, cudaStream_t stream)
+        template<typename T>
+        static void _copy_submit(T * dst, const T * src, size_t num_elements, cudaMemcpyKind dir, cudaStream_t stream)
         {
             size_t sizeof_T;
             if constexpr(std::is_same_v<T,void>) sizeof_T = 1;
