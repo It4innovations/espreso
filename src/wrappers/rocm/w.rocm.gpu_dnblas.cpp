@@ -201,6 +201,7 @@ namespace dnblas {
                         T one = 1.0;
                         I nrows_X = (side == 'L' ? n : nrhs);
                         I ncols_X = (side == 'L' ? nrhs : n);
+                        #pragma omp critical(espreso_gpu_dnblas_rocm)
                         CHECK(_my_blas_xtrsm<T>(h->h, _char_to_side(side), _char_to_fill(fill_A), _char_to_operation(op_A), rocblas_diagonal_non_unit, nrows_X, ncols_X, &one, A, ld_A, X, ld_X));
                     }
                 }
@@ -244,7 +245,9 @@ namespace dnblas {
                 if(utils::is_real<T>() && op_A == 'H') op_A = 'T';
                 utils::remove_complex_t<T> zero = 0.0;
                 utils::remove_complex_t<T> one = 1.0;
+                #pragma omp critical(espreso_gpu_dnblas_rocm)
                 if constexpr(utils::is_real<T>())    CHECK(_my_blas_xsyrk<T>(h->h, _char_to_fill(fill_C), _char_to_operation(op_A), n, k, &one, A, ld_A, &zero, C, ld_C));
+                #pragma omp critical(espreso_gpu_dnblas_rocm)
                 if constexpr(utils::is_complex<T>()) CHECK(_my_blas_xherk<T>(h->h, _char_to_fill(fill_C), _char_to_operation(op_A), n, k, &one, A, ld_A, &zero, C, ld_C));
             }
             else if(order_A == 'R')
