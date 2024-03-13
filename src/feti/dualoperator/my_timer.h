@@ -28,6 +28,7 @@ private:
     std::vector<long long> ticks_per_thread_last_laps;
     long long total_ticks;
     long long n_stops;
+    int nested_level_created;
     bool enabled;
 public:
     my_timer(bool enabled_ = true) : enabled{enabled_}
@@ -37,20 +38,29 @@ public:
         start_times.resize(get_thread_count());
         ticks_per_thread_last_laps.resize(get_thread_count());
         ticks_per_thread.resize(get_thread_count(), 0LL);
+        nested_level_created = omp_get_level();
     }
     void start()
     {
         if(!enabled) return;
-        this->start_times[get_thread_idx()] = clocktype::now();
+        int idx;
+        if(omp_get_level() == nested_level_created) idx = 0;
+        else if(omp_get_level() == nested_level_created + 1) idx = get_thread_idx();
+        else throw std::runtime_error("my timer can only be used in the same openmp nested level or one level deeper");
+        this->start_times[idx] = clocktype::now();
     }
     void stop()
     {
         if(!enabled) return;
+        int idx;
+        if(omp_get_level() == nested_level_created) idx = 0;
+        else if(omp_get_level() == nested_level_created + 1) idx = get_thread_idx();
+        else throw std::runtime_error("my timer can only be used in the same openmp nested level or one level deeper");
         auto stop_time = clocktype::now();
-        auto start_time = start_times[get_thread_idx()];
+        auto start_time = start_times[idx];
         long long n_ticks = (stop_time - start_time).count();
-        this->ticks_per_thread[get_thread_idx()] += n_ticks;
-        this->ticks_per_thread_last_laps[get_thread_idx()] = n_ticks;
+        this->ticks_per_thread[idx] += n_ticks;
+        this->ticks_per_thread_last_laps[idx] = n_ticks;
 #pragma omp atomic
         this->total_ticks += n_ticks;
 #pragma omp atomic
