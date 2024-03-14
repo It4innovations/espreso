@@ -73,7 +73,7 @@ namespace mgm {
             d->gpu_idx = 0;
         }
         else if(mpi_size % n_gpus == 0) {
-            // assuming rank0=numa0, rank1=numa1 etc...
+            // assuming rank0=gpu0, rank1=gpu1 etc..., and there are as many ranks on a node as gpus
             int local_node_rank = mpi_rank % n_gpus;
             d->gpu_idx = rank_gpu_map[local_node_rank];
         }

@@ -57,9 +57,26 @@ namespace mgm {
 
     device get_device_by_mpi(int mpi_rank, int mpi_size)
     {
-        // on LUMI, when using e.g. `salloc --ntasks=8 --gpus-per-task=1`, each task (=rank) can see only a single gpu
+#ifndef ESPRESO_RANK_TO_GPU_MAP
+#error "Undefined macro ESPRESO_RANK_TO_GPU_MAP. It should be defined in some wscript"
+#endif
+        static constexpr int rank_gpu_map[] = {ESPRESO_RANK_TO_GPU_MAP};
+        static constexpr int n_gpus = sizeof(rank_gpu_map) / sizeof(*rank_gpu_map);
+
         device d = std::make_shared<_device>();
-        d->gpu_idx = 0;
+        if(mpi_size == 1) {
+            d->gpu_idx = 0;
+        }
+        else if(mpi_size % n_gpus == 0) {
+            // assuming rank0=gpu0, rank1=gpu1 etc..., and there are as many ranks on a node as gpus
+            int local_node_rank = mpi_rank % n_gpus;
+            d->gpu_idx = rank_gpu_map[local_node_rank];
+            printf("rank %d localrank %d assigned gpu %d. btw ngpus=%d\n", mpi_rank, local_node_rank, d->gpu_idx, n_gpus); fflush(stdout);
+        }
+        else {
+            eslog::error("unsupported number of gpus and mpisize. Should be 1 or a multiple of n_gpus=%d\n", n_gpus);
+        }
+
         return d;
     }
 
