@@ -83,6 +83,7 @@ namespace mgm {
     void init_gpu(device & d)
     {
         CHECK(hipSetDevice(d->gpu_idx));
+        CHECK(hipSetDeviceFlags(hipDeviceScheduleYield));
         CHECK(hipFree(nullptr));
         CHECK(hipDeviceSynchronize());
     }
