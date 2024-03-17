@@ -87,6 +87,7 @@ namespace mgm {
     void init_gpu(device & d)
     {
         CHECK(cudaSetDevice(d->gpu_idx));
+        CHECK(cudaSetDeviceFlags(cudaDeviceScheduleYield));
         CHECK(cudaFree(nullptr));
         CHECK(cudaDeviceSynchronize());
     }
