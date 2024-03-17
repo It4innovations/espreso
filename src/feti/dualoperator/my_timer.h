@@ -147,7 +147,7 @@ public:
 
 
 
-static void print_timer(const char * name, const my_timer & tm, int indent = 0)
+inline void print_timer(const char * name, const my_timer & tm, int indent = 0)
 {
 #ifdef ENABLE_DUALOP_EXPLICIT_GPU_TIMERS
     if(!tm.is_enabled()) return;
