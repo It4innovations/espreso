@@ -1224,6 +1224,7 @@ void TotalFETIExplicitAcc<T,I>::config_replace_defaults()
         replace_if_default(config->f_sharing_if_hermitian,     TRIANGLE_MATRIX_SHARING::SHARED);
         replace_if_default(config->queue_count,                QUEUE_COUNT::PER_THREAD);
         replace_if_default(config->apply_scatter_gather_where, DEVICE::GPU);
+        replace_if_default(config->transpose_where,            DEVICE::GPU);
         
         bool is_spsm_used = (config->trsm1_factor_storage == MATRIX_STORAGE::SPARSE || (config->trsm2_factor_storage == MATRIX_STORAGE::SPARSE && config->path_if_hermitian == PATH_IF_HERMITIAN::TRSM));
         bool is_spsm_concurrent_working;
@@ -1256,6 +1257,7 @@ void TotalFETIExplicitAcc<T,I>::config_replace_defaults()
         replace_if_default(config->f_sharing_if_hermitian,     TRIANGLE_MATRIX_SHARING::SHARED);
         replace_if_default(config->queue_count,                QUEUE_COUNT::PER_THREAD);
         replace_if_default(config->apply_scatter_gather_where, DEVICE::GPU);
+        replace_if_default(config->transpose_where,            DEVICE::GPU);
     }
 }
 
