@@ -110,7 +110,7 @@ namespace spblas {
         CHECK(cudaPeekAtLastError());
         CHECK(cub::DeviceRadixSort::SortPairs(buffer, buffersize, input_colidxs, colidxs_sorted, linear, map, nnz, 0, end_bit, stream));
         I * ijv_rowidxs = colidxs_sorted; // just two unrelated temporary buffers sharing the same memory
-        _csr_to_ijv_rowidxs<<< input_nrows, 256, 0, stream >>>(ijv_rowidxs, input_rowptrs);
+        _csr_to_ijv_rowidxs<<< input_nrows, 64, 0, stream >>>(ijv_rowidxs, input_rowptrs);
         CHECK(cudaPeekAtLastError());
         _permute_array<<< 16, 256, 0, stream >>>(output_colidxs, ijv_rowidxs, map, nnz);
         CHECK(cudaPeekAtLastError());
