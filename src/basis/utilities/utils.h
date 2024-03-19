@@ -92,12 +92,16 @@ namespace utils {
 	static void run_dummy_parallel_region();
 
 	template<typename T> static constexpr bool is_real();
+	template<> constexpr bool is_real<int32_t>() { return true; }
+	template<> constexpr bool is_real<int64_t>() { return true; }
 	template<> constexpr bool is_real<float>() { return true; }
 	template<> constexpr bool is_real<double>() { return true; }
 	template<> constexpr bool is_real<std::complex<float>>() { return false; }
 	template<> constexpr bool is_real<std::complex<double>>() { return false; }
 
 	template<typename T> static constexpr bool is_complex();
+	template<> constexpr bool is_complex<int32_t>() { return false; }
+	template<> constexpr bool is_complex<int64_t>() { return false; }
 	template<> constexpr bool is_complex<float>() { return false; }
 	template<> constexpr bool is_complex<double>() { return false; }
 	template<> constexpr bool is_complex<std::complex<float>>() { return true; }
