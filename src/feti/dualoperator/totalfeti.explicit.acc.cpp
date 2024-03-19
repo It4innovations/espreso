@@ -161,6 +161,7 @@ TotalFETIExplicitAcc<T,I>::~TotalFETIExplicitAcc()
         gpu::spblas::descr_matrix_dense_destroy(data.descr_X);
         gpu::spblas::descr_matrix_dense_destroy(data.descr_Y);
         gpu::spblas::descr_matrix_dense_destroy(data.descr_F);
+        gpu::spblas::descr_matrix_dense_destroy(data.descr_F_tmp);
         gpu::spblas::descr_sparse_trsm_destroy(data.descr_sparse_trsm1);
         gpu::spblas::descr_sparse_trsm_destroy(data.descr_sparse_trsm2);
     }
@@ -411,7 +412,8 @@ void TotalFETIExplicitAcc<T,I>::set(const step::Step &step)
             if(do_descr_dn_UH) gpu::spblas::descr_matrix_dense_create<T,I>(data.descr_UH_dn, data.n_dofs_domain, data.n_dofs_domain, data.ld_domain, 'R');
             if(true)   gpu::spblas::descr_matrix_dense_create<T,I>(data.descr_X, data.n_dofs_domain, data.n_dofs_interface, data.ld_X, order_X);
             if(need_Y) gpu::spblas::descr_matrix_dense_create<T,I>(data.descr_Y, data.n_dofs_domain, data.n_dofs_interface, data.ld_X, order_X);
-            gpu::spblas::descr_matrix_dense_create<T,I>(data.descr_F, data.n_dofs_interface, data.n_dofs_interface, data.ld_F, order_F);
+            if(true)       gpu::spblas::descr_matrix_dense_create<T,I>(data.descr_F,     data.n_dofs_interface, data.n_dofs_interface, data.ld_F, order_F);
+            if(need_f_tmp) gpu::spblas::descr_matrix_dense_create<T,I>(data.descr_F_tmp, data.n_dofs_interface, data.n_dofs_interface, data.ld_F, order_F);
             if(is_factor1_sparse)                 gpu::spblas::descr_sparse_trsm_create(data.descr_sparse_trsm1);
             if(is_factor2_sparse && is_path_trsm) gpu::spblas::descr_sparse_trsm_create(data.descr_sparse_trsm2);
         }
@@ -435,7 +437,8 @@ void TotalFETIExplicitAcc<T,I>::set(const step::Step &step)
             if(do_trsm1_sp_LH) gpu::spblas::trsm<T,I>(hs, 'H', 'N', 'N', data.descr_LH_sp, descr_X, descr_W, data.descr_sparse_trsm1, data.buffersize_sptrs1, data.buffer_sptrs1, 'B');
             if(do_trsm2_sp_U)  gpu::spblas::trsm<T,I>(hs, 'N', 'N', 'N', data.descr_U_sp,  descr_W, descr_Z, data.descr_sparse_trsm2, data.buffersize_sptrs2, data.buffer_sptrs2, 'B');
             if(do_trsm2_sp_UH) gpu::spblas::trsm<T,I>(hs, 'H', 'N', 'N', data.descr_UH_sp, descr_W, descr_Z, data.descr_sparse_trsm2, data.buffersize_sptrs2, data.buffer_sptrs2, 'B');
-            if(is_path_trsm) gpu::spblas::mm<T,I>(hs, 'N', 'N', data.descr_Bperm_sp, descr_Z, data.descr_F, data.buffersize_spmm, data.buffer_spmm, 'B');
+            if(is_path_trsm &&  need_f_tmp) gpu::spblas::mm<T,I>(hs, 'N', 'N', data.descr_Bperm_sp, descr_Z, data.descr_F_tmp, data.buffersize_spmm, data.buffer_spmm, 'B');
+            if(is_path_trsm && !need_f_tmp) gpu::spblas::mm<T,I>(hs, 'N', 'N', data.descr_Bperm_sp, descr_Z, data.descr_F,     data.buffersize_spmm, data.buffer_spmm, 'B');
 
             gpu::dnblas::buffer_collect_size(hd, buffer_requirements.emplace_back(), [&](){
                 T * dummyptrT = reinterpret_cast<T*>(sizeof(T));
@@ -570,7 +573,8 @@ void TotalFETIExplicitAcc<T,I>::set(const step::Step &step)
                 tm_trs2.stop();
                 
                 tm_gemm.start();
-                gpu::spblas::mm<T,I>(hs, 'N', 'N', data.descr_Bperm_sp, descr_Z, data.descr_F, data.buffersize_spmm, data.buffer_spmm, 'P');
+                if( need_f_tmp) gpu::spblas::mm<T,I>(hs, 'N', 'N', data.descr_Bperm_sp, descr_Z, data.descr_F_tmp, data.buffersize_spmm, data.buffer_spmm, 'P');
+                if(!need_f_tmp) gpu::spblas::mm<T,I>(hs, 'N', 'N', data.descr_Bperm_sp, descr_Z, data.descr_F,     data.buffersize_spmm, data.buffer_spmm, 'P');
                 if(config->concurrency_set == CONCURRENCY::SEQ_WAIT) gpu::mgm::queue_wait(q);
                 tm_gemm.stop();
             }
@@ -588,6 +592,7 @@ void TotalFETIExplicitAcc<T,I>::set(const step::Step &step)
         data.d_F.nrows = data.n_dofs_interface;
         data.d_F.ncols = data.n_dofs_interface;
         if((data.hermitian_F_fill == 'L') == (order_F == 'R')) data.d_F.vals += data.d_F.get_ld();
+        if(is_path_trsm) gpu::spblas::descr_matrix_dense_link_data(data.descr_F, data.d_F);
     }
 
     // clean up the mess from buggy openmp in clang
@@ -789,8 +794,7 @@ void TotalFETIExplicitAcc<T,I>::update(const step::Step &step)
                 if(order_X == 'C')           data.d_X->resize(data.n_dofs_interface, data.n_dofs_domain,    data.ld_X);
                 if(order_X == 'R' && need_Y) data.d_Y->resize(data.n_dofs_domain,    data.n_dofs_interface, data.ld_X);
                 if(order_X == 'C' && need_Y) data.d_Y->resize(data.n_dofs_interface, data.n_dofs_domain,    data.ld_X);
-                if( need_f_tmp) data.d_F_tmp->resize(data.n_dofs_interface, data.n_dofs_interface, data.ld_F);
-                if(!need_f_tmp) data.d_F_tmp->shallowCopy(data.d_F);
+                if(need_f_tmp) data.d_F_tmp->resize(data.n_dofs_interface, data.n_dofs_interface, data.ld_F);
                 buffer_other = cbmba_res_device->allocate(data.buffersize_other, align_B);
             });
         }
@@ -807,7 +811,7 @@ void TotalFETIExplicitAcc<T,I>::update(const step::Step &step)
             if(do_descr_dn_UH) gpu::spblas::descr_matrix_dense_link_data(data.descr_UH_dn, *data.d_UH_dn);
             if(true)   gpu::spblas::descr_matrix_dense_link_data(data.descr_X, *data.d_X);
             if(need_Y) gpu::spblas::descr_matrix_dense_link_data(data.descr_Y, *data.d_Y);
-            if(is_path_trsm) gpu::spblas::descr_matrix_dense_link_data(data.descr_F, *data.d_F_tmp);
+            if(need_f_tmp) gpu::spblas::descr_matrix_dense_link_data(data.descr_F_tmp, *data.d_F_tmp);
         }
         tm_setpointers.stop();
 
@@ -872,7 +876,7 @@ void TotalFETIExplicitAcc<T,I>::update(const step::Step &step)
             if(is_path_herk)
             {
                 tm_syrk.start();
-                gpu::dnblas::herk<T,I>(hd, data.n_dofs_interface, data.n_dofs_domain, d_W->vals, data.ld_X, order_X, 'H', data.d_F_tmp->vals, data.ld_F, order_F, data.hermitian_F_fill);
+                gpu::dnblas::herk<T,I>(hd, data.n_dofs_interface, data.n_dofs_domain, d_W->vals, data.ld_X, order_X, 'H', data.d_F.vals, data.ld_F, order_F, data.hermitian_F_fill);
                 if(config->concurrency_update == CONCURRENCY::SEQ_WAIT) gpu::mgm::queue_wait(q);
                 tm_syrk.stop();
             }
@@ -887,7 +891,8 @@ void TotalFETIExplicitAcc<T,I>::update(const step::Step &step)
                 tm_trs2.stop();
 
                 tm_gemm.start();
-                gpu::spblas::mm<T,I>(hs, 'N', 'N', data.descr_Bperm_sp, descr_Z, data.descr_F, data.buffersize_spmm, data.buffer_spmm, 'C');
+                if( need_f_tmp) gpu::spblas::mm<T,I>(hs, 'N', 'N', data.descr_Bperm_sp, descr_Z, data.descr_F_tmp, data.buffersize_spmm, data.buffer_spmm, 'C');
+                if(!need_f_tmp) gpu::spblas::mm<T,I>(hs, 'N', 'N', data.descr_Bperm_sp, descr_Z, data.descr_F,     data.buffersize_spmm, data.buffer_spmm, 'C');
                 if(config->concurrency_update == CONCURRENCY::SEQ_WAIT) gpu::mgm::queue_wait(q);
                 tm_gemm.stop();
 

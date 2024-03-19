@@ -79,6 +79,7 @@ protected:
         std::unique_ptr<Matrix_Dense<T,I,cbmba_d>> d_X;
         std::unique_ptr<Matrix_Dense<T,I,cbmba_d>> d_Y;
         gpu::spblas::descr_matrix_dense descr_F;
+        gpu::spblas::descr_matrix_dense descr_F_tmp;
         gpu::spblas::descr_matrix_csr descr_L_sp;
         gpu::spblas::descr_matrix_csr descr_LH_sp;
         gpu::spblas::descr_matrix_csr descr_U_sp;
