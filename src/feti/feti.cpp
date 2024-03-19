@@ -110,6 +110,26 @@ template <typename T>
 bool FETI<T>::update(const step::Step &step)
 {
     double start = eslog::time();
+    {
+        #warning this is temporary just for testing, remove later
+        dualOperator->update(step);
+        {
+            // try to clear cpu cache
+            size_t size = (size_t{1} << 27) - rand() % 1000;
+            double * data = new double[size]; // ~1 GiB
+            #pragma omp parallel for
+            for(size_t i = 0; i < size; i++) data[i] = std::sin((double)(i+1));
+            double result = 0;
+            #pragma omp parallel for reduction(+:result)
+            for(size_t i = 0; i < size; i++) result += data[i] * std::cos((double)(i+2));
+            if(std::abs(result) < 0.001) printf("hello %f\n", result);
+            delete[] data;
+        }
+        {
+            // try to clear gpu cache
+            dualOperator->clear_gpu_cache();
+        }
+    }
     dualOperator->update(step);
     preconditioner->update(step);
     projector->update(step);

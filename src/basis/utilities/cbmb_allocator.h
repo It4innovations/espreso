@@ -61,6 +61,7 @@ namespace espreso {
         cbmba_resource(cbmba_resource &&) = delete;
         cbmba_resource & operator=(cbmba_resource const &) = delete;
         cbmba_resource & operator=(cbmba_resource &&) = delete;
+        size_t get_capacity() { return memory_pool_size; }
         void * allocate(size_t num_bytes, size_t align = 1)
         {
             if(num_bytes == 0) num_bytes = 1;

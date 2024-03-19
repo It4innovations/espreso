@@ -34,6 +34,8 @@ public:
     // y = K+(f - Bt * x)
     void toPrimal(const Vector_Dual<T> &x, std::vector<Vector_Dense<T> > &y);
 
+    virtual void clear_gpu_cache() override {}
+
 protected:
     using DualOperator<T>::feti;
     using DualOperator<T>::d;

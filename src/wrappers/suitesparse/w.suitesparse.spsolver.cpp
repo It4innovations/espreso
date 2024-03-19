@@ -24,6 +24,9 @@ struct Solver_External_Representation {
     Vector_Dense<I> map_simpl_super;
     char zerodrop;
     int stage = 0; // 0 = completely uninitialized, 1 = initialized without matrix, 2 = have matrix, 3 = symbolic factorization done, 4 = numeric factorization done
+    char fake_tmp_symmetry;
+    Matrix_CSR<I,I> tmp_factor_L_novals;
+    Vector_Dense<I,I> tmp_factor_map_supernodalU_to_simplL;
 };
 
 
@@ -49,7 +52,17 @@ bool DirectSparseSolver<T, I>::provideSC()
 template <typename T, typename I>
 Solver_Factors DirectSparseSolver<T, I>::factorsSymmetry()
 {
-    return Solver_Factors::HERMITIAN_UPPER;
+    // return Solver_Factors::HERMITIAN_UPPER;
+    char * fake_sym_envvar = std::getenv("ESPRESO_FAKE_TEMP_FACTOR_SYMMETRY");
+    if(fake_sym_envvar == nullptr) eslog::error("temporary: environment variable ESPRESO_FAKE_TEMP_FACTOR_SYMMETRY not set\n");
+    char fake_tmp_symmetry = fake_sym_envvar[0];
+    switch(fake_tmp_symmetry)
+    {
+        case 'U': return Solver_Factors::HERMITIAN_UPPER;
+        case 'L': return Solver_Factors::HERMITIAN_LOWER;
+        case 'B': return Solver_Factors::NONSYMMETRIC_BOTH;
+        default: return Solver_Factors::NONE;
+    }
 }
 
 template <typename T, typename I>
@@ -66,6 +79,10 @@ DirectSparseSolver<T, I>::DirectSparseSolver()
     ext->cm_common.method[0].ordering = CHOLMOD_METIS;
     ext->cm_common.itype = _getCholmodItype<I>();
     ext->cm_common.supernodal = CHOLMOD_SUPERNODAL;
+    
+    char * fake_sym_envvar = std::getenv("ESPRESO_FAKE_TEMP_FACTOR_SYMMETRY");
+    if(fake_sym_envvar == nullptr) eslog::error("temporary: environment variable ESPRESO_FAKE_TEMP_FACTOR_SYMMETRY not set\n");
+    ext->fake_tmp_symmetry = fake_sym_envvar[0];
 
     ext->stage = 1;
 }
@@ -146,6 +163,23 @@ void DirectSparseSolver<T, I>::symbolicFactorization(int fixedSuffix)
     if(ext->zerodrop == 'D') _resymbol<I>(ext->cm_matrix_view, nullptr, 0, 1, ext->cm_factor_simpl, ext->cm_common);
     ext->map_simpl_super.resize(ext->cm_factor_simpl->nzmax);
     for(I i = 0; i < ext->map_simpl_super.size; i++) ext->map_simpl_super.vals[i] = static_cast<I>(std::real(reinterpret_cast<T*>(ext->cm_factor_simpl->x)[i]));
+
+    if(ext->fake_tmp_symmetry == 'L' || ext->fake_tmp_symmetry == 'B')
+    {
+        Matrix_CSR<I,I> tmp_U_to_make_map;
+        tmp_U_to_make_map.nrows = ext->cm_factor_super->n;
+        tmp_U_to_make_map.ncols = ext->cm_factor_super->n;
+        tmp_U_to_make_map.nnz = ext->map_simpl_super.size;
+        tmp_U_to_make_map.rows = static_cast<I*>(ext->cm_factor_simpl->p);
+        tmp_U_to_make_map.cols = static_cast<I*>(ext->cm_factor_simpl->i);
+        tmp_U_to_make_map.vals = ext->map_simpl_super.vals;
+        ext->tmp_factor_L_novals.resize(ext->cm_factor_super->n, ext->cm_factor_super->n, ext->map_simpl_super.size);
+        Vector_Dense<I,I> map_tmp_unused;
+        map_tmp_unused.resize(ext->map_simpl_super.size);
+        math::conjTransposeMapSetup(ext->tmp_factor_L_novals, map_tmp_unused, tmp_U_to_make_map);
+        ext->tmp_factor_map_supernodalU_to_simplL.resize(ext->map_simpl_super.size);
+        std::copy_n(ext->tmp_factor_L_novals.vals, ext->tmp_factor_L_novals.nnz, ext->tmp_factor_map_supernodalU_to_simplL.vals);
+    }
     
     ext->stage = 3;
 }
@@ -291,24 +325,45 @@ I DirectSparseSolver<T, I>::getFactorNnz()
 
 template <typename T, typename I>
 template <typename A>
-inline void DirectSparseSolver<T, I>::getFactorL(Matrix_CSR<T,I,A> &/*L*/, bool /*copyPattern*/, bool /*copyValues*/)
+inline void DirectSparseSolver<T, I>::getFactorL(Matrix_CSR<T,I,A> &L, bool copyPattern, bool copyValues)
 {
-    eslog::error("L factor is not provided\n");
+    // eslog::error("L factor is not provided\n");
+    if(ext->fake_tmp_symmetry == 'L' || ext->fake_tmp_symmetry == 'B')
+    {
+        if(ext->stage < 3) eslog::error("getFactorL: invalid order of operations in spsolver\n");
+        if(copyValues && ext->stage < 4) eslog::error("getFactorL: invalid order of operations in spsolver\n");
+        if((size_t)L.nrows != ext->cm_factor_simpl->n || (size_t)L.ncols != ext->cm_factor_simpl->n || (size_t)L.nnz != ext->cm_factor_simpl->nzmax) eslog::error("getFactorL: output matrix has wrong dimensions\n");
+
+        if(copyPattern) std::copy_n(ext->tmp_factor_L_novals.rows, ext->tmp_factor_L_novals.nrows + 1, L.rows);
+        if(copyPattern) std::copy_n(ext->tmp_factor_L_novals.cols, ext->tmp_factor_L_novals.nnz, L.cols);
+        if(copyValues) for(I i = 0; i < ext->tmp_factor_map_supernodalU_to_simplL.size; i++) L.vals[i] = reinterpret_cast<T*>(ext->cm_factor_super->x)[ext->tmp_factor_map_supernodalU_to_simplL.vals[i]];
+    }
+    else
+    {
+        eslog::error("L factor is not provided\n");
+    }
 }
 
 template <typename T, typename I>
 template <typename A>
 inline void DirectSparseSolver<T, I>::getFactorU(Matrix_CSR<T,I,A> &U, bool copyPattern, bool copyValues)
 {
-    if(ext->stage < 3) eslog::error("getFactorU: invalid order of operations in spsolver\n");
-    if(copyValues && ext->stage < 4) eslog::error("getFactorU: invalid order of operations in spsolver\n");
-    if((size_t)U.nrows != ext->cm_factor_simpl->n || (size_t)U.ncols != ext->cm_factor_simpl->n || (size_t)U.nnz != ext->cm_factor_simpl->nzmax) eslog::error("getFactorU: output matrix has wrong dimensions\n");
+    if(ext->fake_tmp_symmetry == 'U' || ext->fake_tmp_symmetry == 'B')
+    {
+        if(ext->stage < 3) eslog::error("getFactorU: invalid order of operations in spsolver\n");
+        if(copyValues && ext->stage < 4) eslog::error("getFactorU: invalid order of operations in spsolver\n");
+        if((size_t)U.nrows != ext->cm_factor_simpl->n || (size_t)U.ncols != ext->cm_factor_simpl->n || (size_t)U.nnz != ext->cm_factor_simpl->nzmax) eslog::error("getFactorU: output matrix has wrong dimensions\n");
 
-    // U.resize(ext->cm_factor_simpl->n, ext->cm_factor_simpl->n, ext->cm_factor_simpl->nzmax);
+        // U.resize(ext->cm_factor_simpl->n, ext->cm_factor_simpl->n, ext->cm_factor_simpl->nzmax);
 
-    if(copyPattern) std::copy_n(static_cast<I*>(ext->cm_factor_simpl->p), ext->cm_factor_simpl->n+1, U.rows);
-    if(copyPattern) std::copy_n(static_cast<I*>(ext->cm_factor_simpl->i), ext->cm_factor_simpl->nzmax, U.cols);
-    if(copyValues) for(I i = 0; i < ext->map_simpl_super.size; i++) U.vals[i] = reinterpret_cast<T*>(ext->cm_factor_super->x)[ext->map_simpl_super.vals[i]];
+        if(copyPattern) std::copy_n(static_cast<I*>(ext->cm_factor_simpl->p), ext->cm_factor_simpl->n+1, U.rows);
+        if(copyPattern) std::copy_n(static_cast<I*>(ext->cm_factor_simpl->i), ext->cm_factor_simpl->nzmax, U.cols);
+        if(copyValues) for(I i = 0; i < ext->map_simpl_super.size; i++) U.vals[i] = reinterpret_cast<T*>(ext->cm_factor_super->x)[ext->map_simpl_super.vals[i]];
+    }
+    else
+    {
+        eslog::error("U factor is not provided\n");
+    }
 }
 
 template <typename T, typename I>
