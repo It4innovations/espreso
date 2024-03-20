@@ -1,0 +1,139 @@
+# ESPRESO Configuration File
+
+DEFAULT_ARGS {
+}
+
+INPUT_TYPE              GENERATOR;
+PHYSICS   STRUCTURAL_MECHANICS;
+
+GENERATOR {
+  SHAPE   GRID;
+
+  UNIFORM_CLUSTERS        [ARG1];
+  UNIFORM_DOMAINS         [ARG1];
+
+  GRID {
+    START_X                    0;
+    START_Y                    0;
+    START_Z                    0;
+
+    LENGTH_X                 100;
+    LENGTH_Y                 100;
+    LENGTH_Z                 100;
+
+    NODES {
+      Z0   <0 , 100> <0 , 100> <0 , 0>;
+    }
+
+    ELEMENT_TYPE          [ARG2];
+
+    CLUSTERS_X                 1;
+    CLUSTERS_Y                 1;
+    CLUSTERS_Z                 1;
+
+    DOMAINS_X             [ARG3];
+    DOMAINS_Y             [ARG4];
+    DOMAINS_Z             [ARG5];
+
+    ELEMENTS_X            [ARG6];
+    ELEMENTS_Y            [ARG7];
+    ELEMENTS_Z            [ARG8];
+  }
+}
+
+STRUCTURAL_MECHANICS {
+  LOAD_STEPS   1;
+
+  MATERIALS {
+    1 {
+
+      DENS   7850;
+      CP        1;
+
+      LINEAR_ELASTIC_PROPERTIES {
+        MODEL   ISOTROPIC;
+
+        MIXY          0.3;
+        EX          2.1E9;
+      }
+
+      THERMAL_EXPANSION {
+        TEX             0;
+      }
+    }
+  }
+
+  MATERIAL_SET {
+    ALL_ELEMENTS   1;
+  }
+
+  LOAD_STEPS_SETTINGS {
+    1 {
+      DURATION_TIME     1;
+      TYPE   STEADY_STATE;
+      MODE         LINEAR;
+      SOLVER         FETI;
+
+      FETI {
+        METHOD          TOTAL_FETI;
+        DUAL_OPERATOR EXPLICIT_GPU;
+        PRECONDITIONER        NONE;
+        ITERATIVE_SOLVER       PCG;
+        REGULARIZATION    ANALYTIC;
+        MAX_ITERATIONS        1000;
+
+        DUAL_OPERATOR_EXPLICIT_GPU_CONFIG {
+          CONCURRENCY_SET                 [ARG9];
+          CONCURRENCY_UPDATE             [ARG10];
+          CONCURRENCY_APPLY              [ARG11];
+          SYNCHRONIZE_UPDATE                TRUE;
+          TRSM1_FACTOR_STORAGE           [ARG12];
+          TRSM2_FACTOR_STORAGE           [ARG13];
+          TRSM1_SOLVE_TYPE               [ARG14];
+          TRSM2_SOLVE_TYPE               [ARG15];
+          TRSM_RHS_SOL_ORDER             [ARG16];
+          PATH_IF_HERMITIAN              [ARG17];
+          F_SHARING_IF_HERMITIAN         [ARG18];
+          QUEUE_COUNT                 PER_THREAD;
+          APPLY_SCATTER_GATHER_WHERE     [ARG19];
+          TRANSPOSE_WHERE                [ARG20];
+          TIMERS                             ALL;
+        }
+      }
+
+      DISPLACEMENT {
+        Z0   { X 0 ; Y 0 ; Z 0; }
+      }
+
+      ACCELERATION {
+        ALL_ELEMENTS   { Z 9.8066; };
+      }
+    }
+  }
+}
+
+OUTPUT {
+  PATH                       [ARG0];
+  RESULTS_STORE_FREQUENCY    NEVER;
+  MONITORS_STORE_FREQUENCY   EVERY_SUBSTEP;
+
+  MONITORING {
+    1 {
+      REGION        ALL_NODES;
+      STATISTICS          MIN;
+      PROPERTY   DISPLACEMENT;
+    }
+
+    2 {
+      REGION        ALL_NODES;
+      STATISTICS          MAX;
+      PROPERTY   DISPLACEMENT;
+    }
+
+    3 {
+      REGION        ALL_NODES;
+      STATISTICS          AVG;
+      PROPERTY   DISPLACEMENT;
+    }
+  }
+}
