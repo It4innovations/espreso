@@ -2,6 +2,10 @@
 
 cusparse_version="legacy"
 # cusparse_version="modern"
+if [ "$#" -ge 1 ]
+then
+    cusparse_version="$1"
+fi
 
 
 
