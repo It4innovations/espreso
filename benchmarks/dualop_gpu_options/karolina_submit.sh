@@ -110,9 +110,9 @@ function submit_hq_job
 
 
 
-sbatch_command_normal="sbatch -o ${slurm_outdir_root}/slurm-%j.out -e ${slurm_outdir_root}/slurm-%j.err ${basedir}/karolina_slurmjob.sh"
-sbatch_command_exp="sbatch --partition=qgpu_exp --time=1:00:00 -o ${slurm_outdir_root}/slurm-%j.out -e ${slurm_outdir_root}/slurm-%j.err ${basedir}/karolina_slurmjob.sh"
-sbatch_command_array="sbatch --array=1-100 -o ${slurm_outdir_root}/slurm-%A-%a.out -e ${slurm_outdir_root}/slurm-%A-%a.err ${basedir}/karolina_slurmjob.sh"
+sbatch_command_normal="sbatch -o ${slurm_outdir}/slurm-%j.out -e ${slurm_outdir}/slurm-%j.err ${basedir}/karolina_slurmjob.sh"
+sbatch_command_exp="sbatch --partition=qgpu_exp --time=1:00:00 -o ${slurm_outdir}/slurm-%j.out -e ${slurm_outdir}/slurm-%j.err ${basedir}/karolina_slurmjob.sh"
+sbatch_command_array="sbatch --array=1-100 -o ${slurm_outdir}/slurm-%A-%a.out -e ${slurm_outdir}/slurm-%A-%a.err ${basedir}/karolina_slurmjob.sh"
 
 ${sbatch_command_array}
 
@@ -132,12 +132,12 @@ array_elements_z_2d=(1  1  1  1   1)
 array_elements_x_3d=(4 6 10 16 25)
 array_elements_y_3d=(4 6 10 16 25)
 array_elements_z_3d=(4 6 10 16 25)
-array_domains_x_2d=(11 16 23 32 45)
-array_domains_y_2d=(11 16 22 32 45)
-array_domains_z_2d=( 1  1  1  1  1)
-array_domains_x_3d=(5 7 8 10 13)
-array_domains_y_3d=(5 6 8 10 13)
-array_domains_z_3d=(5 6 8 10 12)
+array_domains_x_2d=(32 23 16 11 8)
+array_domains_y_2d=(32 22 16 11 8)
+array_domains_z_2d=( 1  1  1  1 1)
+array_domains_x_3d=(10 8 7 5 4)
+array_domains_y_3d=(10 8 6 5 4)
+array_domains_z_3d=(10 8 6 5 4)
 array_ecf_file=()
 array_element_type=()
 array_elements_x=()
@@ -196,10 +196,13 @@ do
                                 do
                                     for trsm_rhs_sol_order in ROW_MAJOR COL_MAJOR
                                     do
-                                        path_if_hermitian="HERK"
-                                        trsm2_factor_storage="SPARSE"
-                                        trsm2_solve_type="U"
-                                        submit_hq_job
+                                        if [[ "${factor_symmetry_fake}" != "B" ]]
+                                        then
+                                            path_if_hermitian="HERK"
+                                            trsm2_factor_storage="SPARSE"
+                                            trsm2_solve_type="U"
+                                            submit_hq_job
+                                        fi
 
                                         path_if_hermitian="TRSM"
                                         for trsm2_factor_storage in SPARSE DENSE

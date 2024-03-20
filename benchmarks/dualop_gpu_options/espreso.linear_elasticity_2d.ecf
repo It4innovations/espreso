@@ -79,7 +79,8 @@ STRUCTURAL_MECHANICS {
         ITERATIVE_SOLVER       PCG;
         REGULARIZATION    ANALYTIC;
         PRECISION             1e-7;
-        MAX_ITERATIONS        1000;
+        MAX_ITERATIONS          12;
+        EXIT_ON_NONCONVERGENCE FALSE;
 
         DUAL_OPERATOR_EXPLICIT_GPU_CONFIG {
           CONCURRENCY_SET                 [ARG9];

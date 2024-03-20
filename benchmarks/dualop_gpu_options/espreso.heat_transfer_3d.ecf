@@ -83,7 +83,8 @@ HEAT_TRANSFER {
         PRECISION            1E-09;
         ITERATIVE_SOLVER       PCG;
         REGULARIZATION    ANALYTIC;
-        MAX_ITERATIONS        1000;
+        MAX_ITERATIONS          12;
+        EXIT_ON_NONCONVERGENCE FALSE;
 
         DUAL_OPERATOR_EXPLICIT_GPU_CONFIG {
           CONCURRENCY_SET                 [ARG9];
