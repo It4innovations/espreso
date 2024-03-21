@@ -2,12 +2,13 @@
 #ifndef SRC_BASIS_UTILITIES_CBMB_ALLOCATOR_H_
 #define SRC_BASIS_UTILITIES_CBMB_ALLOCATOR_H_
 
-#include <stdexcept>
 #include <algorithm>
 #include <list>
 #include <mutex>
 #include <condition_variable>
 #include <omp.h>
+
+#include "esinfo/eslog.hpp"
 
 
 
@@ -65,9 +66,9 @@ namespace espreso {
         void * allocate(size_t num_bytes, size_t align = 1)
         {
             if(num_bytes == 0) num_bytes = 1;
-            if(num_bytes > memory_pool_size) throw std::runtime_error("Not enough memory in the pool");
-            if(memory_pool_size % align != 0) throw std::runtime_error("Align has to divide memory_pool_size");
-            if(reinterpret_cast<std::uintptr_t>(memory_pool) % align != 0) throw std::runtime_error("Memory pool has to be aligned the same way as is the requested align");
+            if(num_bytes > memory_pool_size) eslog::error("Not enough memory in the pool, capacity is %zu B = %zu MiB\n", memory_pool_size, memory_pool_size >> 20);
+            if(memory_pool_size % align != 0) eslog::error("Align has to divide memory_pool_size\n");
+            if(reinterpret_cast<std::uintptr_t>(memory_pool) % align != 0) eslog::error("Memory pool has to be aligned the same way as is the requested align\n");
 
             size_t new_block_start;
             size_t new_block_start_aligned;
@@ -88,7 +89,7 @@ namespace espreso {
                 full_blocks.emplace_back(new_block_start, new_block_start_aligned);
                 start_empty = new_block_end;
 
-                if(start_empty > transaction_end_fail) throw std::runtime_error("More memory requested in a single transaction then what is available in the pool");
+                if(start_empty > transaction_end_fail) eslog::error("More memory requested in a single transaction then what is available in the pool. Capacity is %zu B = %zu MiB\n", memory_pool_size, memory_pool_size >> 20);
 
                 // printf("Waiting for memory, %zu B, this=%p, new_block_end=%zu, sf+mps=%zu\n", num_bytes, this, new_block_end, start_full + memory_pool_size);
                 cv.wait(lk, [&]{ return new_block_end <= start_full + memory_pool_size; });
@@ -108,7 +109,7 @@ namespace espreso {
                 // printf("Deallocating, this=%p, ptr=%p, pos=%zu\n", this, ptr, mem_block_start_aligned);
                 // remove_from_full_blocks_vector(mem_block_start_aligned);
                 auto it = std::find_if(full_blocks.begin(), full_blocks.end(), [=](mem_block const & mb){return mb.start_aligned % memory_pool_size == mem_block_start_aligned;});
-                if(it == full_blocks.end()) throw std::runtime_error("Bad remove from full blocks vector");
+                if(it == full_blocks.end()) eslog::error("Bad remove from full blocks vector\n");
                 full_blocks.erase(it);
 
                 if(full_blocks.size() == 0) start_full = start_empty = 0;
