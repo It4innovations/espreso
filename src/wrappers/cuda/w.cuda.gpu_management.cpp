@@ -189,21 +189,13 @@ namespace mgm {
 
     void memalloc_device_max(void * & memory, size_t & memory_size_B, size_t max_needed)
     {
-        size_t coef_percent = 95;
-
-        memory_size_B = std::min(max_needed, get_device_memory_capacity());
-        while(memory_size_B > 0)
-        {
-            cudaMalloc(&memory, memory_size_B);
-            cudaError_t err = cudaGetLastError();
-
-            if(err == cudaSuccess) return;
-            if(err != cudaErrorMemoryAllocation) CHECK(err);
-
-            memory_size_B = (memory_size_B * coef_percent) / 100;
-        }
-
-        eslog::error("could not allocate any gpu memory\n");
+        size_t keep_free_percent = 5;
+        size_t size_free;
+        size_t size_total;
+        CHECK(cudaMemGetInfo(&size_free, &size_total));
+        size_t can_allocate_max = ((100 - keep_free_percent) * size_free) / 100;
+        memory_size_B = std::min(can_allocate_max, max_needed);
+        CHECK(cudaMalloc(&memory, memory_size_B));
     }
 
     void * memalloc_hostpinned(size_t num_bytes)

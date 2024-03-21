@@ -162,24 +162,13 @@ namespace mgm {
 
     void memalloc_device_max(void * & memory, size_t & memory_size_B, size_t max_needed)
     {
-        size_t coef_percent = 95;
-
-        memory_size_B = std::min(max_needed, get_device_memory_capacity());
-        while(memory_size_B > 0)
-        {
-            hipError_t err = hipMalloc(&memory, memory_size_B);
-
-            if(err == hipSuccess)
-            {
-                err = hipGetLastError(); // reset the internal last error variable
-                return;
-            }
-            if(err != hipErrorMemoryAllocation) CHECK(err);
-
-            memory_size_B = (memory_size_B * coef_percent) / 100;
-        }
-
-        eslog::error("could not allocate any gpu memory\n");
+        size_t keep_free_percent = 5;
+        size_t size_free;
+        size_t size_total;
+        CHECK(hipMemGetInfo(&size_free, &size_total));
+        size_t can_allocate_max = ((100 - keep_free_percent) * size_free) / 100;
+        memory_size_B = std::min(can_allocate_max, max_needed);
+        CHECK(hipMalloc(&memory, memory_size_B));
     }
 
     void * memalloc_hostpinned(size_t num_bytes)
