@@ -20,7 +20,8 @@
 // for a given allocate-deallocate region, all allocations should be in a critical region to avoid deadlocks
 //     allocate the memory inside cbmba_resource::do_transaction([](){ /* lambda */ }), all will be managed for you
 // beware of fragmentation - there can be an allocated block of memory in the middle the pool, which leaves not enough space on the sides for a new larger allocation
-//     to guarantee successfull allocations (in this problem scenario), the total memory that is required for a single loop iteration should be at most half of the pool size. I think. Or the largest chunk of memory must be smaller than half of remaining memory
+//     to guarantee successfull allocations (in this problem scenario), the total memory that is required for a single loop iteration (for a single transaction) should be at most half of the pool size. I think. Or the largest chunk of memory must be smaller than half of remaining memory
+//     If I detect that more than half of the resource's memory was allocated in a single transaction, the resource transitions into a state where all transactions start at the start of the memory buffer. This makes the caller wait for longer on allocate(), possibly sacrificing performance, but it will at least work
 // the allocated memory should be freed asap to allow it to be used in other memory requests. Allocating a chunk of memory for the lifetime of the object will deadlock, since I use the buffer in a circular way -- unless the memory block is freed, no allocations located after it can occur
 
 
@@ -45,6 +46,9 @@ namespace espreso {
         size_t volatile start_full;
         std::list<mem_block> full_blocks;
         size_t transaction_end_fail;
+        size_t mem_allocated_in_transaction;
+        bool do_reset_to_start_after_transaction = false;
+        bool in_transaction = false;
     public:
         cbmba_resource(void * memory_pool_, size_t memory_pool_size_)
             : memory_pool(reinterpret_cast<char*>(memory_pool_))
@@ -89,7 +93,10 @@ namespace espreso {
                 full_blocks.emplace_back(new_block_start, new_block_start_aligned);
                 start_empty = new_block_end;
 
-                if(start_empty > transaction_end_fail) eslog::error("More memory requested in a single transaction then what is available in the pool. Capacity is %zu B = %zu MiB\n", memory_pool_size, memory_pool_size >> 20);
+                if(in_transaction && start_empty > transaction_end_fail) eslog::error("More memory requested in a single transaction then what is available in the pool. Capacity is %zu B = %zu MiB\n", memory_pool_size, memory_pool_size >> 20);
+
+                if(in_transaction) mem_allocated_in_transaction += num_bytes;
+                if(in_transaction && mem_allocated_in_transaction > memory_pool_size / 2) do_reset_to_start_after_transaction = true;
 
                 // printf("Waiting for memory, %zu B, this=%p, new_block_end=%zu, sf+mps=%zu\n", num_bytes, this, new_block_end, start_full + memory_pool_size);
                 cv.wait(lk, [&]{ return new_block_end <= start_full + memory_pool_size; });
@@ -126,10 +133,13 @@ namespace espreso {
         void do_transaction(const std::function<void(void)> & f)
         {
             std::lock_guard<std::mutex> lk(mtx_transaction);
-            // c must have an operator() with no parameters and must only do allocations using this resource
+            // f must do allocations using only this resource
             transaction_end_fail = start_empty + memory_pool_size;
+            mem_allocated_in_transaction = 0;
+            in_transaction = true;
             f();
-            transaction_end_fail = ~(size_t)0;
+            in_transaction = false;
+            if(do_reset_to_start_after_transaction) start_empty = ((start_empty - 1) / memory_pool_size + 1) * memory_pool_size;
         }
     };
 
