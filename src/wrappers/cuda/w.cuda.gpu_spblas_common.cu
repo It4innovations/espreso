@@ -92,7 +92,7 @@ namespace spblas {
                 for(I r = lastrow; r < nrows; r++) csr_rowptrs[r+1] = nnz;
 
                 I firstrow = ijv_rowidxs_sorted[0];
-                for(I r = 0; r < firstrow; r++) csr_rowptrs[r+1] = 0;
+                for(I r = 0; r <= firstrow; r++) csr_rowptrs[r] = 0;
             }
         }
     }
@@ -100,7 +100,6 @@ namespace spblas {
     template<typename I>
     void my_csr_transpose_buffersize(cudaStream_t & stream, I input_nrows, I input_ncols, I nnz, size_t & buffersize)
     {
-        I output_nrows = input_ncols;
         I end_bit = get_most_significant_bit((uint64_t)input_ncols);
         size_t bfs_map_and_linear = nnz * sizeof(I);
         size_t bfs_sorted_colidxs = nnz * sizeof(I);

@@ -133,14 +133,13 @@ namespace spblas {
                 for(I r = lastrow; r < nrows; r++) csr_rowptrs[r+1] = nnz;
 
                 I firstrow = ijv_rowidxs_sorted[0];
-                for(I r = 0; r < firstrow; r++) csr_rowptrs[r+1] = 0;
+                for(I r = 0; r <= firstrow; r++) csr_rowptrs[r] = 0;
             }
         }
 
         template<typename I>
         static void my_csr_transpose_buffersize(hipStream_t & stream, I input_nrows, I input_ncols, I nnz, size_t & buffersize)
         {
-            I output_nrows = input_ncols;
             I end_bit = get_most_significant_bit((uint64_t)input_ncols);
             size_t bfs_map_and_linear = nnz * sizeof(I);
             size_t bfs_sorted_colidxs = nnz * sizeof(I);
@@ -150,7 +149,7 @@ namespace spblas {
             CHECK(hipStreamSynchronize(stream));
             buffersize = bfs_map_and_linear + bfs_sorted_colidxs + bfs_sort;
         }
-        
+
         template<typename I>
         static void my_csr_transpose_preprocess(hipStream_t & stream, I input_nrows, I input_ncols, I nnz, I * input_rowptrs, I * input_colidxs, I * output_rowptrs, I * output_colidxs, size_t buffersize, void * buffer)
         {
@@ -172,7 +171,7 @@ namespace spblas {
             _permute_array<<< 16, 256, 0, stream >>>(output_colidxs, ijv_rowidxs, map, nnz);
             CHECK(hipPeekAtLastError());
         }
-        
+
         template<typename T, typename I>
         static void my_csr_transpose_compute(hipStream_t & stream, I nnz, T * input_vals, T * output_vals, bool conjugate, void * buffer)
         {
