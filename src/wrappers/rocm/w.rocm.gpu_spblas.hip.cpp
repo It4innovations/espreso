@@ -117,20 +117,38 @@ namespace spblas {
         }
 
         template<typename I>
+        static __global__ void _ijv_rowidxs_to_csr_rowptrs(I * csr_rowptrs, I * ijv_rowidxs_sorted, I nrows, I nnz)
+        {
+            I idx = blockIdx.x * blockDim.x + threadIdx.x;
+            I stride = blockDim.x * gridDim.x;
+            for(I i = idx; i < nnz-1; i += stride)
+            {
+                I curr_row = ijv_rowidxs_sorted[i];
+                I next_row = ijv_rowidxs_sorted[i+1];
+                for(I r = curr_row; r < next_row; r++) csr_rowptrs[r+1] = i+1;
+            }
+            if(idx == stride-1)
+            {
+                I lastrow = ijv_rowidxs_sorted[nnz-1];
+                for(I r = lastrow; r < nrows; r++) csr_rowptrs[r+1] = nnz;
+
+                I firstrow = ijv_rowidxs_sorted[0];
+                for(I r = 0; r < firstrow; r++) csr_rowptrs[r+1] = 0;
+            }
+        }
+
+        template<typename I>
         static void my_csr_transpose_buffersize(hipStream_t & stream, I input_nrows, I input_ncols, I nnz, size_t & buffersize)
         {
             I output_nrows = input_ncols;
             I end_bit = get_most_significant_bit((uint64_t)input_ncols);
-            size_t bfs_map, bfs_linear, bfs_sorted_colidxs;
-            size_t bfs_hist, bfs_scan, bfs_sort;
-            bfs_map = nnz * sizeof(I);
-            bfs_linear = nnz * sizeof(I);
+            size_t bfs_map_and_linear = nnz * sizeof(I);
+            size_t bfs_sorted_colidxs = nnz * sizeof(I);
+            size_t bfs_sort;
             bfs_sorted_colidxs = nnz * sizeof(I);
-            CHECK(rocprim::histogram_even(nullptr, bfs_hist, (I*)nullptr, nnz, (I*)nullptr, output_nrows+1, 0, output_nrows, stream));
-            CHECK(rocprim::exclusive_scan(nullptr, bfs_scan, (I*)nullptr, (I*)nullptr, 0, output_nrows+1, rocprim::plus<I>(), stream));
             CHECK(rocprim::radix_sort_pairs(nullptr, bfs_sort, (I*)nullptr, (I*)nullptr, (I*)nullptr, (I*)nullptr, nnz, 0, end_bit, stream));
             CHECK(hipStreamSynchronize(stream));
-            buffersize = bfs_map + bfs_linear + bfs_sorted_colidxs + std::max(std::max(bfs_hist, bfs_scan), bfs_sort);
+            buffersize = bfs_map_and_linear + bfs_sorted_colidxs + bfs_sort;
         }
         
         template<typename I>
@@ -140,16 +158,15 @@ namespace spblas {
             I end_bit = get_most_significant_bit((uint64_t)input_ncols);
             I * map = (I*)buffer;
             buffer = (char*)buffer + nnz * sizeof(I);   buffersize -= nnz * sizeof(I);
-            I * linear = (I*)buffer;
-            buffer = (char*)buffer + nnz * sizeof(I);   buffersize -= nnz * sizeof(I);
             I * colidxs_sorted = (I*)buffer;
             buffer = (char*)buffer + nnz * sizeof(I);   buffersize -= nnz * sizeof(I);
-            CHECK(rocprim::histogram_even(buffer, buffersize, input_colidxs, nnz, output_rowptrs, output_nrows+1, 0, output_nrows, stream));
-            CHECK(rocprim::exclusive_scan(buffer, buffersize, output_rowptrs, output_rowptrs, 0, output_nrows+1, rocprim::plus<I>(), stream));
+            I * ijv_rowidxs = colidxs_sorted; // just two unrelated temporary buffers sharing the same memory
+            I * linear = map; // also sharing memory
             _init_linear<<< 16, 256, 0, stream >>>(linear, nnz);
             CHECK(hipPeekAtLastError());
             CHECK(rocprim::radix_sort_pairs(buffer, buffersize, input_colidxs, colidxs_sorted, linear, map, nnz, 0, end_bit, stream));
-            I * ijv_rowidxs = colidxs_sorted; // just two unrelated temporary buffers sharing the same memory
+            _ijv_rowidxs_to_csr_rowptrs<<< 16, 256, 0, stream >>>(output_rowptrs, colidxs_sorted, output_nrows, nnz);
+            CHECK(hipPeekAtLastError());
             _csr_to_ijv_rowidxs<<< input_nrows, 64, 0, stream >>>(ijv_rowidxs, input_rowptrs);
             CHECK(hipPeekAtLastError());
             _permute_array<<< 16, 256, 0, stream >>>(output_colidxs, ijv_rowidxs, map, nnz);
