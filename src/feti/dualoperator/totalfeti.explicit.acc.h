@@ -32,16 +32,16 @@ template <typename T, typename I>
 class TotalFETIExplicitAcc: public DualOperator<T> {
 public:
     TotalFETIExplicitAcc(FETI<T> &feti);
-    ~TotalFETIExplicitAcc();
+    virtual ~TotalFETIExplicitAcc();
 
-    void info();
-    void set(const step::Step &step);
-    void update(const step::Step &step);
+    virtual void info() override;
+    virtual void set(const step::Step &step) override;
+    virtual void update(const step::Step &step) override;
 
     // y = F * x
-    void apply(const Vector_Dual<T> &x, Vector_Dual<T> &y);
+    virtual void apply(const Vector_Dual<T> &x, Vector_Dual<T> &y) override;
     // y = K+(f - Bt * x)
-    void toPrimal(const Vector_Dual<T> &x, std::vector<Vector_Dense<T> > &y);
+    virtual void toPrimal(const Vector_Dual<T> &x, std::vector<Vector_Dense<T> > &y) override;
 
     virtual void clear_gpu_cache() override;
 
