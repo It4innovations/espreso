@@ -291,6 +291,19 @@ void TFETIOrthogonalSymmetricWithFactors<T>::_applyR(const Vector_Dense<T> &in, 
 }
 
 template<typename T>
+void TFETIOrthogonalSymmetricWithFactors<T>::_applyR(const Vector_Kernel<T> &in, std::vector<Vector_Dense<T> > &out)
+{
+    #pragma omp parallel for
+    for (size_t d = 0; d < out.size(); ++d) {
+        Vector_Dense<T> y;
+        y.size = dinfo[d].kernels;
+        y.vals = in.vals + dinfo[d].koffset;
+
+        math::blas::applyT(out[d], T{1}, feti.R1[d], T{0}, y);
+    }
+}
+
+template<typename T>
 void TFETIOrthogonalSymmetricWithFactors<T>::_computeDualGraph()
 {
     dualGraph.resize(dinfo.size());

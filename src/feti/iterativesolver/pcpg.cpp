@@ -135,7 +135,7 @@ template <> void PCPG<double>::solve(const step::Step &step, IterativeSolverInfo
     }
     eslog::endln("pcpg: finished");
     eslog::checkpointln("FETI: PCPG ITERATIONS");
-    reconstructSolution(x, r);
+    reconstructSolution(x, r, step);
     eslog::checkpointln("FETI: SOLUTION RECONSTRUCTION");
     eslog::info("       = ----------------------------------------------------------------------------- = \n");
 }

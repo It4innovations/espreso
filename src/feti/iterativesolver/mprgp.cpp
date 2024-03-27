@@ -278,7 +278,7 @@ template <> void MPRGP<double>::solve(const step::Step &step, IterativeSolverInf
 
     eslog::endln("mprgp: finished");
     eslog::checkpointln("FETI: MPRGP ITERATIONS");
-    reconstructSolution(x, z);
+    reconstructSolution(x, z, step);
     eslog::checkpointln("FETI: SOLUTION RECONSTRUCTION");
     eslog::info("       = ----------------------------------------------------------------------------- = \n");
 }

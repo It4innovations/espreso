@@ -133,7 +133,7 @@ template <> void OrthogonalizedPCPG<double>::solve(const step::Step &step, Itera
     }
     eslog::endln("orthopcpg: finished");
     eslog::checkpointln("FETI: ORTHOGONAL PCPG ITERATIONS");
-    reconstructSolution(x, r);
+    reconstructSolution(x, r, step);
     eslog::checkpointln("FETI: SOLUTION RECONSTRUCTION");
     eslog::info("       = ----------------------------------------------------------------------------- = \n");
 }

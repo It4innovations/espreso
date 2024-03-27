@@ -52,6 +52,7 @@ protected:
     void _applyInvU(const Vector_Kernel<T> &in, Vector_Dense<T> &out);
     void _applyGt(const Vector_Dense<T> &in, const T &alpha, Vector_Dual<T> &out);
     void _applyR(const Vector_Dense<T> &in, std::vector<Vector_Dense<T> > &out);
+    void _applyR(const Vector_Kernel<T> &in, std::vector<Vector_Dense<T> > &out);
 
     void _print(const step::Step &step);
 

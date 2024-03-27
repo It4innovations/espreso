@@ -17,7 +17,7 @@ DEFAULT_ARGS {
 
   10  SMALBE;
   11    NONE;
-  12      10;
+  12    1000;
 }
 
 INPUT_TYPE           GENERATOR;
@@ -104,8 +104,8 @@ STRUCTURAL_MECHANICS {
         ITERATIVE_SOLVER   [ARG10];
         PRECONDITIONER     [ARG11];
         MAX_ITERATIONS     [ARG12];
-        PRECISION             1e-4;
-        PRECISION_IN          1e-4;
+        PRECISION             1e-7;
+        PRECISION_IN          1e-7;
       }
 
       DISPLACEMENT {

@@ -62,12 +62,15 @@ public:
 
     void setInfo(IterativeSolverInfo &info, const FETIConfiguration &configuration, const T &ww);
     void updateInfo(IterativeSolverInfo &info, const FETIConfiguration &configuration, const T &ww, const T &psi, const T &ry);
-    void reconstructSolution(const Vector_Dual<T> &l, const Vector_Dual<T> &r);
-    void reconstructSolution(const Vector_Dual<T> &l, const Vector_Kernel<T> &rbm);
+    void reconstructSolution(const Vector_Dual<T> &l, const Vector_Dual<T> &r, const step::Step &step);
+    void reconstructSolution(const Vector_Dual<T> &l, const Vector_Kernel<T> &rbm, const step::Step &step);
 
     FETI<T> &feti;
 
     std::vector<Vector_Dense<T> > iKfBtL, Ra;
+
+protected:
+    void print(const step::Step &step);
 };
 
 }

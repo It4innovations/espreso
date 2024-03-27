@@ -12,6 +12,8 @@
 #include "feti/dualoperator/dualoperator.h"
 #include "feti/common/vector_kernel.h"
 
+#include "basis/utilities/sysutils.h"
+#include "esinfo/ecfinfo.h"
 #include "esinfo/eslog.hpp"
 
 #include <limits>
@@ -55,13 +57,14 @@ IterativeSolver<T>* IterativeSolver<T>::set(FETI<T> &feti, const step::Step &ste
 }
 
 template <typename T>
-void IterativeSolver<T>::reconstructSolution(const Vector_Dual<T> &l, const Vector_Dual<T> &r)
+void IterativeSolver<T>::reconstructSolution(const Vector_Dual<T> &l, const Vector_Dual<T> &r, const step::Step &step)
 {
     Projector<T> *P = feti.projector;
     DualOperator<T> *F = feti.dualOperator;
 
     F->toPrimal(l, iKfBtL);
     P->apply_Ra(r, Ra);
+    print(step);
     #pragma omp parallel for
     for (size_t d = 0; d < feti.K.size(); ++d) {
         math::copy(feti.x[d], iKfBtL[d]);
@@ -70,13 +73,14 @@ void IterativeSolver<T>::reconstructSolution(const Vector_Dual<T> &l, const Vect
 }
 
 template <typename T>
-void IterativeSolver<T>::reconstructSolution(const Vector_Dual<T> &l, const Vector_Kernel<T> &rbm)
+void IterativeSolver<T>::reconstructSolution(const Vector_Dual<T> &l, const Vector_Kernel<T> &rbm, const step::Step &step)
 {
     Projector<T> *P = feti.projector;
     DualOperator<T> *F = feti.dualOperator;
 
     F->toPrimal(l, iKfBtL);
     P->apply_R(rbm, Ra);
+    print(step);
     #pragma omp parallel for
     for (size_t d = 0; d < feti.K.size(); ++d) {
         math::copy(feti.x[d], iKfBtL[d]);
@@ -169,6 +173,19 @@ void IterativeSolver<std::complex<double> >::updateInfo(IterativeSolverInfo &inf
 {
 
 }
+
+template <typename T>
+void IterativeSolver<T>::print(const step::Step &step)
+{
+    if (info::ecf->output.print_matrices > 1) {
+        eslog::storedata(" STORE: feti/iterativesolver/{iKfBtL, Ra}\n");
+        for (size_t d = 0; d < iKfBtL.size(); ++d) {
+            math::store(iKfBtL[d], utils::filename(utils::debugDirectory(step) + "/feti/iterativesolver", "iKfBtL").c_str());
+            math::store(Ra[d], utils::filename(utils::debugDirectory(step) + "/feti/iterativesolver", "Ra").c_str());
+        }
+    }
+}
+
 
 template class IterativeSolver<double>;
 template class IterativeSolver<std::complex<double> >;

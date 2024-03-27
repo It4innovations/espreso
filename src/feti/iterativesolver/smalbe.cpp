@@ -29,12 +29,12 @@ void SMALBE<T>::info()
     eslog::info(" = ----------------------------------------------------------------------------------------- = \n");
 }
 
-template <typename T>
-static void _print(const char *name, const IterativeSolverInfo &info, const step::Step &step, const Vector_Dual<T> &v)
+template <typename T, template <typename> class V>
+static void _print(const char *name, const IterativeSolverInfo &info, const step::Step &step, const V<T> &v)
 {
     if (info::ecf->output.print_matrices > 1) {
-        eslog::storedata(" STORE: feti/SMALBE/{%s%s}\n", name, std::to_string(info.iterations).c_str());
-        math::store(v, utils::filename(utils::debugDirectory(step) + "/feti/SMALBE", std::string(name) + std::to_string(info.iterations)).c_str());
+        eslog::storedata(" STORE: feti/iterativesolver/{%s%s}\n", name, std::to_string(info.iterations).c_str());
+        math::store(v, utils::filename(utils::debugDirectory(step) + "/feti/iterativesolver", std::string(name) + std::to_string(info.iterations)).c_str());
     }
 }
 
@@ -99,6 +99,7 @@ template <> void SMALBE<double>::solve(const step::Step &step, IterativeSolverIn
     math::copy(mprgp.x, mprgp.x0);
     mprgp.restrictToFeasibleSet(mprgp.x);
 
+    mprgp_info.n_hess = 0;
     auto A_apply = [&] (Vector_Dual<double> &in, Vector_Dual<double> &out) {
         P->apply(in, y);
         F->apply(y, z);
@@ -129,7 +130,8 @@ template <> void SMALBE<double>::solve(const step::Step &step, IterativeSolverIn
 
     double Lag0 = -std::numeric_limits<double>::infinity();
     P->apply_invLG(mprgp.x, Gx);
-    for (mprgp_info.iterations = 1; mprgp_info.iterations <= feti.configuration.max_iterations; ) {
+    mprgp_info.iterations = 1;
+    for (int i = 0; mprgp_info.iterations <= feti.configuration.max_iterations; ++i) {
         math::copy(mprgp.b, bCtmu);
         mprgp.run(step, mprgp_info, alpha, A_apply, stop);
         math::copy(mprgp.x0, mprgp.x);
@@ -146,7 +148,7 @@ template <> void SMALBE<double>::solve(const step::Step &step, IterativeSolverIn
         int active_pqc = 0, free_pqc = 0;
         eslog::info("       -                                                                               - \n");
         eslog::info("       -           %7d %7d      %7d %7d    %5d  %5d  %5d %7d - \n", active_sbc, free_sbc, active_pqc, free_pqc, mprgp_info.n_cg, mprgp_info.n_mixed, mprgp_info.n_gproj, mprgp_info.n_hess);
-        eslog::info("       - -   %5d   %9.4e  %9.4e  %9.4e   %6.2f   %7.2e  %7.2e - \n", mprgp_info.iterations, Lag1, norm_stop, norm_Gx * maxEIG_H, M_const, rho, eslog::time() - info.time.current);
+        eslog::info("       - -   %5d   %9.4e  %9.4e  %9.4e   %6.2f   %7.2e  %7.2e - \n", i, Lag1, norm_stop, norm_Gx * maxEIG_H, M_const, rho, eslog::time() - info.time.current);
         info.time.current = eslog::time();
 
         if (norm_stop <= feti.configuration.precision * norm_b && norm_Gx <= feti.configuration.precision * norm_b / maxEIG_H) {
@@ -182,8 +184,10 @@ template <> void SMALBE<double>::solve(const step::Step &step, IterativeSolverIn
     P->apply_invU(Gx, mu); // rbm = mu
     math::scale(-1., mu);
     // permute -mu
+    _print("x", info, step, mprgp.x);
+    _print("mu", info, step, mu);
 
-    reconstructSolution(mprgp.x, mu);
+    reconstructSolution(mprgp.x, mu, step);
     info = mprgp_info;
 }
 
