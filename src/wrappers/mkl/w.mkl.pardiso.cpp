@@ -115,9 +115,8 @@ void DirectSparseSolver<T, I>::commit(const Matrix_CSR<T, I> &a)
     ext->pp.iparm[1] = 2;            /* Fill-in reordering from METIS */
     ext->pp.iparm[9] = 13;           /* Perturb the pivot elements with 1E-13 */
 
-    ext->pp.iparm[4] = 1;            /* Return permutation vector */
+    ext->pp.iparm[4] = 2;            /* Return permutation vector */
     ext->pp.perm = new esint[ext->matrix->nrows];
-    std::iota(ext->pp.perm, ext->pp.perm + ext->matrix->nrows, 1);
 }
 
 template <typename T, typename I>
@@ -247,15 +246,23 @@ inline void DirectSparseSolver<T, I>::getFactorU(Matrix_CSR<T, I, A> &/*U*/, boo
 }
 
 template <typename T, typename I>
-void DirectSparseSolver<T, I>::getPermutation(Permutation<I> &/*perm*/)
+void DirectSparseSolver<T, I>::getPermutation(Permutation<I> &perm)
 {
-    eslog::error("MKL PARDISO does not provide factors.\n");
+    if(ext->pp.phase < 11) eslog::error("getPermutation: invalid order of operations in spsolver\n");
+
+    perm.resize(ext->matrix->nrows);
+
+    std::copy_n(ext->pp.perm, ext->matrix->nrows, perm.dst_to_src);
+    perm.invert(perm.dst_to_src, perm.src_to_dst);
 }
 
 template <typename T, typename I>
-void DirectSparseSolver<T, I>::getPermutation(Vector_Dense<I> &/*perm*/)
+void DirectSparseSolver<T, I>::getPermutation(Vector_Dense<I> &perm)
 {
-    eslog::error("MKL PARDISO does not provide factors.\n");
+    if(ext->pp.phase < 11) eslog::error("getPermutation: invalid order of operations in spsolver\n");
+
+    perm.resize(ext->matrix->nrows);
+    std::copy_n(ext->pp.perm, ext->matrix->nrows, perm.vals);
 }
 
 template <typename T, typename I>

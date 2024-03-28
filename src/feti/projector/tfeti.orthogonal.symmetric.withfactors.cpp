@@ -595,11 +595,6 @@ void TFETIOrthogonalSymmetricWithFactors<T>::_updateGGt()
         }
         GGtSolver.solveForward(eye, invU);
         GGtSolver.solveBackward(eye, invL);
-//
-//        Vector_Dense<T> ones;
-//        ones.resize(G.nrows);
-//        math::set(ones, T{1});
-//        GGtSolver.solveDiagonal(ones, invD);
     }
     eslog::checkpointln("FETI: COMPUTE GGT INVERSE");
 }

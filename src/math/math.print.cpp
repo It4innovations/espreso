@@ -27,6 +27,7 @@ void _store(const Vector_Dense<T> &x, const char* file)
     }
 }
 
+template <> void store(const Vector_Dense<int> &x, const char* file) { _store(x, file); }
 template <> void store(const Vector_Dense<double> &x, const char* file) { _store(x, file); }
 template <> void store(const Vector_Dense<std::complex<double> > &x, const char* file) { _store(x, file); }
 
