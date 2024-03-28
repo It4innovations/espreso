@@ -24,6 +24,11 @@ namespace espreso {
 template <typename T>
 void RegularizationElasticity<T>::getFixPoints(std::vector<esint> &fixPoints, int domain, bool onSurface)
 {
+    if (info::ecf->input_type == ECF::INPUT_TYPE::GENERATOR && info::ecf->generator.uniform_clusters && info::ecf->generator.uniform_domains) {
+        getCorners(fixPoints, domain);
+        return;
+    }
+
     esint begin = info::mesh->domains->elements[domain];
     esint end = info::mesh->domains->elements[domain + 1];
     auto element = info::mesh->elements->nodes->begin() + begin;
@@ -203,6 +208,42 @@ void RegularizationElasticity<T>::getFixPoints(std::vector<esint> &fixPoints, in
         }
     }
     utils::sortAndRemoveDuplicates(fixPoints);
+}
+
+template <typename T>
+void RegularizationElasticity<T>::getCorners(std::vector<esint> &fixPoints, int domain)
+{
+    esint begin = info::mesh->domains->elements[domain];
+    esint end = info::mesh->domains->elements[domain + 1];
+    auto element = info::mesh->elements->nodes->begin() + begin;
+    auto *epointer = &info::mesh->elements->epointers->datatarray();
+
+    int ex = info::ecf->generator.grid.elements_x;
+    int ey = info::ecf->generator.grid.elements_y;
+    int ez = info::ecf->generator.grid.elements_z;
+
+    std::vector<esint> nodes;
+    for (esint e = 0; e < end - begin; ++e, ++element) {
+        for (int n = 0; n < (*epointer)[begin + e]->coarseNodes; ++n) {
+            nodes.push_back(element->at(n));
+        }
+    }
+    utils::sortAndRemoveDuplicates(nodes);
+    std::sort(nodes.begin(), nodes.end(), [&] (esint i, esint j) {
+        return info::mesh->nodes->coordinates->datatarray()[i] < info::mesh->nodes->coordinates->datatarray()[j];
+    });
+
+    fixPoints.push_back(nodes[0]);
+    fixPoints.push_back(nodes[ex]);
+    fixPoints.push_back(nodes[(ex + 1) * ey]);
+    fixPoints.push_back(nodes[(ex + 1) * ey + ex]);
+
+    fixPoints.push_back(nodes[ez * (ex + 1) * (ey + 1)]);
+    fixPoints.push_back(nodes[ez * (ex + 1) * (ey + 1) + ex]);
+    fixPoints.push_back(nodes[ez * (ex + 1) * (ey + 1) + (ex + 1) * ey]);
+    fixPoints.push_back(nodes[ez * (ex + 1) * (ey + 1) + (ex + 1) * ey + ex]);
+
+    std::sort(fixPoints.begin(), fixPoints.end());
 }
 
 template <typename T>

@@ -38,6 +38,9 @@ public:
 
     FETI<T> &feti;
     Vector_Dual<T> d;
+
+protected:
+    void getInitVector(Vector_Dual<T> &v);
 };
 
 }

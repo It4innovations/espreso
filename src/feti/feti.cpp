@@ -44,9 +44,11 @@ bool FETI<T>::set(const step::Step &step)
             x[d].size = K[d].nrows;
         }
     }
-    sinfo.lambdasLocal = lambdas.size;
-    sinfo.lambdasOffset = lambdas.eq_size + lambdas.nc_size;
-    sinfo.lambdasTotal = Communication::exscan(sinfo.lambdasOffset);
+    sinfo.eq_offset = lambdas.eq_size;
+    sinfo.nc_offset = lambdas.nc_size;
+    sinfo.eq_total = Communication::exscan(sinfo.eq_offset);
+    sinfo.nc_total = Communication::exscan(sinfo.nc_offset);
+    sinfo.dual_total = sinfo.eq_total + sinfo.nc_total;
 
     Communication::exscan(offset, NULL, 2, MPITools::getType<esint>().mpitype, MPI_SUM);
     Communication::allReduce(size, NULL, 5, MPITools::getType<esint>().mpitype, MPI_SUM);

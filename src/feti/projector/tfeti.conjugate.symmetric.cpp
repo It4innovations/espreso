@@ -320,7 +320,7 @@ void TFETIConjugateSymmetric<T>::_setG()
         Gtnnz += di->second.kernels * di->second.ncols;
     }
 
-    Gt.resize(Gtrows, feti.sinfo.lambdasLocal, Gtnnz);
+    Gt.resize(Gtrows, feti.lambdas.size, Gtnnz);
     Gt.rows[0] = 0;
     size_t ri = 0;
     for (size_t d = 0; d < dinfo.size(); ++d) {

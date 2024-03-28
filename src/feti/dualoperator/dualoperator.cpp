@@ -39,21 +39,35 @@ DualOperator<T>* DualOperator<T>::set(FETI<T> &feti, const step::Step &step)
 }
 
 template<typename T>
+void DualOperator<T>::getInitVector(Vector_Dual<T> &v)
+{
+    double norm = 1 / std::sqrt(feti.sinfo.dual_total);
+    esint i = 0;
+    for (esint j = 0; j < feti.lambdas.eq_halo; ++i, ++j) {
+        v.vals[i] = 0;
+    }
+    for (esint j = 0; j < feti.lambdas.eq_size; ++i, ++j) {
+        int mul = (feti.sinfo.eq_offset + j) % 2;
+        v.vals[i] = (1 - 2 * mul) * norm;
+    }
+    for (esint j = 0; j < feti.lambdas.nc_halo; ++i, ++j) {
+        v.vals[i] = 0;
+    }
+    for (esint j = 0; j < feti.lambdas.nc_size; ++i, ++j) {
+        int mul = (feti.sinfo.eq_total + feti.sinfo.nc_offset + j) % 2;
+        v.vals[i] = (1 - 2 * mul) * norm;
+    }
+    v.synchronize();
+}
+
+template<typename T>
 void DualOperator<T>::estimateMaxEigenValue(double &lambda, int &iterations, double epsilon, int maxIterations)
 {
     DualOperator<T> *F = feti.dualOperator;
 
     // {-1, 1} / norma
     Vector_Dual<T> y, v;
-    double norm = 1 / std::sqrt(feti.sinfo.lambdasTotal);
-    for (esint i = 0; i < feti.lambdas.eq_halo; ++i) {
-        v.vals[i] = 0;
-    }
-    for (esint i = feti.lambdas.eq_halo, j = 0; i < v.size; ++i, ++j) {
-        int mul = (feti.sinfo.lambdasOffset + j) % 2;
-        v.vals[i] = (1 - 2 * mul) * norm;
-    }
-    v.synchronize();
+    getInitVector(y);
 
     lambda = std::sqrt(v.dot());
     double err = std::numeric_limits<T>::max();
@@ -75,16 +89,7 @@ void DualOperator<T>::estimateMaxProjectedEigenValue(double &lambda, int &iterat
 
     // {-1, 1} / norma
     Vector_Dual<T> v, y, x, z;
-    double norm = 1 / std::sqrt(feti.sinfo.lambdasTotal);
-    for (esint i = 0; i < feti.lambdas.eq_halo; ++i) {
-        y.vals[i] = 0;
-    }
-    for (esint i = feti.lambdas.eq_halo, j = 0; i < y.size; ++i, ++j) {
-        int mul = (feti.sinfo.lambdasOffset + j) % 2;
-        y.vals[i] = (1 - 2 * mul) * norm;
-    }
-    y.synchronize();
-
+    getInitVector(y);
     lambda = std::sqrt(y.dot());
     double err = std::numeric_limits<T>::max();
     for (iterations = 1; iterations <= maxIterations && epsilon < err; ++iterations) {
@@ -95,10 +100,6 @@ void DualOperator<T>::estimateMaxProjectedEigenValue(double &lambda, int &iterat
         P->apply(x, v);
         F->apply(v, z);
         P->apply(z, y);
-//        math::scale(1 / normPFP, y);
-//        math::add(y,  rho, x);
-//        math::add(y, -rho, v);
-
         double _lambda = lambda;
         lambda = std::sqrt(y.dot());
         err = std::fabs(lambda - _lambda) / std::fabs(lambda);

@@ -522,8 +522,8 @@ void TotalFETIExplicitAcc<T,I>::set(const step::Step &step)
     
     // some stuff needed for apply
     tm_applystuff.start();
-    d_applyg_x_cluster.resize(feti.sinfo.lambdasLocal);
-    d_applyg_y_cluster.resize(feti.sinfo.lambdasLocal);
+    d_applyg_x_cluster.resize(feti.lambdas.size);
+    d_applyg_y_cluster.resize(feti.lambdas.size);
     {
         Vector_Dense<T*,I,Ah> h_applyg_xs_pointers;
         Vector_Dense<T*,I,Ah> h_applyg_ys_pointers;

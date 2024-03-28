@@ -25,7 +25,10 @@ struct FETI {
         esint R1offset, R2offset;
         esint R1size, R2size;
         esint R1totalSize, R2totalSize;
-        size_t lambdasOffset, lambdasLocal, lambdasTotal;
+
+        size_t eq_offset, nc_offset;
+        size_t eq_total, nc_total;
+        size_t dual_total;
     };
 
     FETI(FETIConfiguration &configuration);

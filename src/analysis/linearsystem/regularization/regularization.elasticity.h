@@ -13,6 +13,7 @@ struct RegularizationElasticity {
     static void update(FETI<T> &feti);
 
     static void getFixPoints(std::vector<esint> &fixPoints, int domain, bool onSurface = false);
+    static void getCorners(std::vector<esint> &fixPoints, int domain);
 
 protected:
     static void set2D(FETI<T> &feti, esint domain);
