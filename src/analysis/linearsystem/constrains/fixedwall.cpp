@@ -11,6 +11,7 @@
 
 namespace espreso {
 
+
 template <typename T>
 void FixedWall<T>::set(const step::Step &step, FETI<T> &feti, const Vector_Distributed<Vector_Sparse, T> &dirichlet)
 {
@@ -24,32 +25,23 @@ void FixedWall<T>::set(const step::Step &step, FETI<T> &feti, const Vector_Distr
     }
 
     int dim = info::mesh->dimension;
-    struct __lambda__ { int dof, size; double value; };
+    struct __lambda__ { int dof, size, cindex; };
     std::vector<__lambda__> permutation;
-
-    std::vector<double> &normal = StructuralMechanics::Results::normal->data;
 
     std::vector<std::vector<esint> > &D2C = feti.D2C;
     std::vector<std::vector<esint> > ROWS(feti.K.size()), COLS(feti.K.size());
-    std::vector<std::vector<T> > VALS(feti.K.size());
 
+    int cc = 0;
     for (auto wall = loadstep.fixed_wall.begin(); wall != loadstep.fixed_wall.end(); ++wall) {
         const BoundaryRegionStore *region = info::mesh->bregion(wall->first);
         esint dindex = 0;
-        for (auto n = region->nodes->datatarray().begin(); n < region->nodes->datatarray().end(); ++n) {
+        for (auto n = region->nodes->datatarray().begin(); n < region->nodes->datatarray().end(); ++n, ++cc) {
             auto dmap = feti.decomposition->dmap->cbegin() + *n * dim;
-            size_t psize = permutation.size();
-            double sum = 0;
             for (int d = 0; d < dim; ++d, ++dmap) {
                 while (dindex < dirichlet.cluster.nnz && dirichlet.cluster.indices[dindex] < *n * dim + d) { ++dindex; }
                 if (dindex == dirichlet.cluster.nnz || dirichlet.cluster.indices[dindex] != *n * dim + d) {
-                    permutation.push_back(__lambda__{ *n * dim + d, (int)dmap->size(), normal[*n * dim + d] });
-                    sum += dmap->size() * normal[*n * dim + d] * normal[*n * dim + d];
+                    permutation.push_back(__lambda__{ *n * dim + d, (int)dmap->size(), cc });
                 }
-            }
-            double norm = std::sqrt(sum);
-            for (size_t pp = psize; pp < permutation.size(); ++pp) {
-                permutation[pp].value /= norm;
             }
         }
     }
@@ -68,6 +60,9 @@ void FixedWall<T>::set(const step::Step &step, FETI<T> &feti, const Vector_Distr
         }
     });
 
+    cindex.clear();
+    cindex.resize(feti.K.size());
+    std::vector<std::vector<esint> > cperm(feti.K.size());
     feti.lambdas.nc_halo = 0;
     for (size_t i = 0, cprev = feti.lambdas.cmap.size(), lprev = 0; i < permutation.size(); ++i) {
         auto dmap = feti.decomposition->dmap->cbegin() + permutation[i].dof;
@@ -84,10 +79,12 @@ void FixedWall<T>::set(const step::Step &step, FETI<T> &feti, const Vector_Distr
             for (int c = 0; c < permutation[i].size; ++c) {
                 feti.lambdas.cmap.push_back(dmap->at(c).domain);
                 if (feti.decomposition->ismy(dmap->at(c).domain)) {
-                    ROWS[dmap->at(c).domain - feti.decomposition->dbegin].push_back(1);
-                    COLS[dmap->at(c).domain - feti.decomposition->dbegin].push_back(dmap->at(c).index);
-                    VALS[dmap->at(c).domain - feti.decomposition->dbegin].push_back(permutation[i].value);
-                    D2C [dmap->at(c).domain - feti.decomposition->dbegin].push_back(feti.lambdas.size);
+                    int dd = dmap->at(c).domain - feti.decomposition->dbegin;
+                    cindex[dd].push_back(feti.B1[dd].nrows + ROWS[dd].size());
+                    cperm[dd].push_back(permutation[i].cindex);
+                    ROWS[dd].push_back(1);
+                    COLS[dd].push_back(dmap->at(c).index);
+                    D2C [dd].push_back(feti.lambdas.size);
                 }
             }
             if (feti.lambdas.cmap[cprev + 1] == feti.lambdas.cmap[cbegin + 1]) { // domains sizes
@@ -108,12 +105,18 @@ void FixedWall<T>::set(const step::Step &step, FETI<T> &feti, const Vector_Distr
                 if (feti.decomposition->ismy(dmap->at(c).domain)) {
                     ROWS[dmap->at(c).domain - feti.decomposition->dbegin].back()++;
                     COLS[dmap->at(c).domain - feti.decomposition->dbegin].push_back(dmap->at(c).index);
-                    VALS[dmap->at(c).domain - feti.decomposition->dbegin].push_back(permutation[i].value);
                 }
             }
         }
     }
     feti.lambdas.nc_size = feti.lambdas.size - feti.lambdas.equalities - feti.lambdas.nc_halo;
+
+    #pragma omp parallel for
+    for (size_t d = 0; d < cindex.size(); ++d) {
+        std::sort(cindex[d].begin(), cindex[d].end(), [&] (esint i, esint j) {
+            return cperm[d][i - feti.B1[d].nrows] < cperm[d][j - feti.B1[d].nrows];
+        });
+    }
 
     std::vector<Matrix_CSR<T> > B1(feti.B1.size());
 
@@ -127,7 +130,6 @@ void FixedWall<T>::set(const step::Step &step, FETI<T> &feti, const Vector_Distr
             B1[d].rows[feti.B1[d].nrows + i + 1] = B1[d].rows[feti.B1[d].nrows + i] + ROWS[d][i];
         }
         memcpy(B1[d].cols + feti.B1[d].nnz, COLS[d].data(), sizeof(int) * COLS[d].size());
-        memcpy(B1[d].vals + feti.B1[d].nnz, VALS[d].data(), sizeof(T)   * VALS[d].size());
     }
 
     swap(B1, feti.B1);
@@ -135,15 +137,75 @@ void FixedWall<T>::set(const step::Step &step, FETI<T> &feti, const Vector_Distr
     feti.c.resize(feti.lambdas.size);
     feti.lb.resize(feti.lambdas.size - feti.lambdas.equalities);
     feti.ub.resize(feti.lambdas.size - feti.lambdas.equalities);
-}
-
-template <typename T>
-void FixedWall<T>::update(const step::Step &step, FETI<T> &feti)
-{
     math::set(feti.lb, T{0});
     math::set(feti.ub, std::numeric_limits<T>::max());
 }
 
-template struct FixedWall<double>;
+template <typename T>
+void FixedWall<T>::update(const step::Step &step, FETI<T> &feti, const Vector_Distributed<Vector_Sparse, T> &dirichlet)
+{
+    StructuralMechanicsLoadStepConfiguration &loadstep = info::ecf->structural_mechanics.load_steps_settings.at(step.loadstep + 1);
+    std::vector<double> &normal = StructuralMechanics::Results::normal->data;
+
+    int dim = info::mesh->dimension;
+    std::vector<int> cc(cindex.size());
+    for (auto wall = loadstep.fixed_wall.begin(); wall != loadstep.fixed_wall.end(); ++wall) {
+        Point pn, pp;
+        pn.x = wall->second.normal.x.evaluator->evaluate();
+        pn.y = wall->second.normal.y.evaluator->evaluate();
+        pn.z = wall->second.normal.z.evaluator->evaluate();
+        pp.x = wall->second.point.x.evaluator->evaluate();
+        pp.y = wall->second.point.y.evaluator->evaluate();
+        pp.z = wall->second.point.z.evaluator->evaluate();
+        pn.normalize();
+
+        const BoundaryRegionStore *region = info::mesh->bregion(wall->first);
+        esint dindex = 0;
+        std::vector<double> nv; nv.reserve(3);
+        for (auto n = region->nodes->datatarray().begin(); n < region->nodes->datatarray().end(); ++n) {
+            auto dmap = feti.decomposition->dmap->cbegin() + *n * dim;
+            double sum = 0;
+            nv.clear();
+            Point nn;
+            for (int d = 0; d < dim; ++d, ++dmap) {
+                while (dindex < dirichlet.cluster.nnz && dirichlet.cluster.indices[dindex] < *n * dim + d) { ++dindex; }
+                if (dindex == dirichlet.cluster.nnz || dirichlet.cluster.indices[dindex] != *n * dim + d) {
+                    nv.push_back(normal[*n * dim + d]);
+                    sum += dmap->size() * normal[*n * dim + d] * normal[*n * dim + d];
+                    nn[d] = normal[*n * dim + d];
+                }
+            }
+            double norm = std::sqrt(sum);
+            for (size_t i = 0; i < nv.size(); ++i) {
+                nv[i] /= norm;
+                nn[i] /= norm;
+            }
+            if (nv.size()) {
+                dmap -= dim;
+                int d2c = 0;
+                for (auto di = dmap->begin(); di != dmap->end(); ++di) {
+                    if (feti.decomposition->ismy(di->domain)) {
+                        int dd = di->domain - feti.decomposition->dbegin;
+                        int row = cindex[dd][cc[dd]++];
+                        for (int c = feti.B1[dd].rows[row], ii = 0; c < feti.B1[dd].rows[row + 1]; ++c, ++ii) {
+                            feti.B1[dd].vals[c] = nv[ii];
+                        }
+                        d2c = feti.D2C[dd][row];
+                    }
+                }
+                if (nn * pn == 0) {
+                    feti.c.vals[d2c] = std::numeric_limits<T>::max(); // TODO: set correct value
+                } else {
+                    Point w = info::mesh->nodes->coordinates->datatarray()[*n] - pp;
+                    feti.c.vals[d2c] = -(pn * w) / (pn * nn);
+                }
+            }
+        }
+    }
+}
+
+template <typename T> std::vector<std::vector<esint> > FixedWall<T>::cindex;
+
+template class FixedWall<double>;
 
 }

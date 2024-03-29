@@ -151,7 +151,7 @@ NonlinerSpringConfiguration::NonlinerSpringConfiguration()
 FixedWallConfiguration::FixedWallConfiguration()
 {
 	REGISTER(normal, ECFMetaData().setdescription({ "Normal." }));
-	REGISTER(distance, ECFMetaData().setdescription({ "Distance." }).setdatatype({ ECFDataType::EXPRESSION }));
+	REGISTER(point, ECFMetaData().setdescription({ "Point in the plane." }));
 }
 
 StructuralMechanicsLoadStepConfiguration::StructuralMechanicsLoadStepConfiguration()

@@ -368,7 +368,7 @@ void StructuralMechanics::analyze()
 
     for (auto wall = configuration.fixed_wall.begin(); wall != configuration.fixed_wall.end(); ++wall) {
         eslog::info("  %s: %*s\n", wall->first.c_str(), 90 - wall->first.size(), " ");
-        correct &= checkExpression("DISTANCE", wall->second.distance);
+        correct &= checkExpression("POINT", wall->second.point);
         correct &= checkExpression("NORMAL", wall->second.normal);
     }
 

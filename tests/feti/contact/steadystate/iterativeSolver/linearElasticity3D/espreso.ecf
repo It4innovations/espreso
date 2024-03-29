@@ -26,6 +26,9 @@ PHYSICS   STRUCTURAL_MECHANICS;
 GENERATOR {
   SHAPE   GRID;
 
+  UNIFORM_CLUSTERS         FALSE;
+  UNIFORM_DOMAINS          FALSE;
+
   GRID {
     START_X                    0;
     START_Y                    0;
@@ -104,8 +107,8 @@ STRUCTURAL_MECHANICS {
         ITERATIVE_SOLVER   [ARG10];
         PRECONDITIONER     [ARG11];
         MAX_ITERATIONS     [ARG12];
-        PRECISION             1e-7;
-        PRECISION_IN          1e-7;
+        PRECISION             1e-9;
+        PRECISION_IN          1e-9;
       }
 
       DISPLACEMENT {
@@ -113,13 +116,13 @@ STRUCTURAL_MECHANICS {
       }
 
       NORMAL_PRESSURE {
-        Y1  100000;
+        Y1  10000000;
       }
 
       FIXED_WALL {
         WALL {
-          NORMAL  { Z 1; }
-          DISTANCE  0;
+          NORMAL  { Y 1; Z -0.2; }
+          POINT   { X 0; Y -.03; Z .3; };
         }
       }
     }

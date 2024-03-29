@@ -26,7 +26,7 @@ void Constrains<T>::update(const step::Step &step, FETI<T> &feti, const Vector_D
 	switch (info::ecf->physics) {
 	case PhysicsConfiguration::TYPE::HEAT_TRANSFER: break;
 	case PhysicsConfiguration::TYPE::STRUCTURAL_MECHANICS:
-		FixedWall<T>::update(step, feti); break;
+		FixedWall<T>::update(step, feti, dirichlet); break;
 	}
 }
 

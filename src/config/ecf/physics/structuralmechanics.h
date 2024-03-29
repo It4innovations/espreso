@@ -96,8 +96,7 @@ struct NonlinerSpringConfiguration: public ECFDescription {
 };
 
 struct FixedWallConfiguration: public ECFDescription {
-	ECFExpressionVector normal;
-	ECFExpression distance;
+	ECFExpressionVector normal, point;
 
 	FixedWallConfiguration();
 };
