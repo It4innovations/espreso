@@ -6,6 +6,7 @@
 #include "analysis/math/vector_distributed.h"
 #include "analysis/math/vector_feti.h"
 #include "linearsystem.h"
+#include "constrains/constrains.h"
 
 #include "basis/utilities/sysutils.h"
 #include "esinfo/ecfinfo.h"
@@ -30,6 +31,8 @@ private:
 	Matrix_FETI<T> A;
 	Vector_FETI<Vector_Dense, T> x, b;
 	Vector_Distributed<Vector_Sparse, T> dirichlet;
+
+	Constrains<T> constrains;
 
 	FETI<T> feti;
 	bool bem;

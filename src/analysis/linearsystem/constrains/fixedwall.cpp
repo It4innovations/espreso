@@ -204,8 +204,6 @@ void FixedWall<T>::update(const step::Step &step, FETI<T> &feti, const Vector_Di
     }
 }
 
-template <typename T> std::vector<std::vector<esint> > FixedWall<T>::cindex;
-
 template class FixedWall<double>;
 
 }

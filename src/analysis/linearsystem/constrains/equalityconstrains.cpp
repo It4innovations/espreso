@@ -146,9 +146,6 @@ void EqualityConstrains<T>::update(const step::Step &step, FETI<T> &feti, const 
     }
 }
 
-template <typename T>
-std::vector<size_t> EqualityConstrains<T>::doffset;
-
 template struct EqualityConstrains<double>;
 
 }

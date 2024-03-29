@@ -55,7 +55,7 @@ void FETILinearSystemSolver<T>::set(step::Step &step)
         feti.x[di].shallowCopy(x.domains[di]);
     }
     feti.decomposition = A.decomposition;
-    Constrains<T>::set(step, feti, dirichlet);
+    constrains.set(step, feti, dirichlet);
     eslog::checkpointln("FETI: SET B1");
     Regularization<T>::set(step, feti);
     eslog::checkpointln("FETI: SET KERNELS");
@@ -68,7 +68,7 @@ template <typename T>
 void FETILinearSystemSolver<T>::update(step::Step &step)
 {
     eslog::startln("FETI: UPDATING LINEAR SYSTEM", "FETI[UPDATE]");
-    Constrains<T>::update(step, feti, dirichlet);
+    constrains.update(step, feti, dirichlet);
     eslog::checkpointln("FETI: UPDATE B1");
     if (A.updated) {
         Regularization<T>::update(step, feti);
