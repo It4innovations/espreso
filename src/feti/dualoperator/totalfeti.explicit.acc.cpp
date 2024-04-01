@@ -258,9 +258,6 @@ void TotalFETIExplicitAcc<T,I>::info()
         for(char & c : name) c = std::toupper(c);
         eslog::info(" =   %-50s       %+30s = \n", name.c_str(), param->getValue().c_str());
     });
-    char * temp_fake_fac_sym = std::getenv("ESPRESO_FAKE_TEMP_FACTOR_SYMMETRY");
-    if(temp_fake_fac_sym == nullptr) eslog::error("temporary: environment variable ESPRESO_FAKE_TEMP_FACTOR_SYMMETRY not set\n");
-    eslog::info("temporary_fake_factor_symmetry %c\n", temp_fake_fac_sym[0]);
     eslog::info(" =   F MEMORY [MB]                                            %8.2f <%8.2f - %8.2f> = \n", (double)sumF / n_domains / 1024. / 1024., minF / 1024. / 1024., maxF / 1024. / 1024.);
     eslog::info(" = ----------------------------------------------------------------------------------------- = \n");
 }
@@ -1269,20 +1266,6 @@ void TotalFETIExplicitAcc<T,I>::config_replace_defaults()
     }
 }
 
-template <typename T, typename I>
-void TotalFETIExplicitAcc<T,I>::clear_gpu_cache()
-{
-    size_t size = size_t{1} << 30;
-    bool alloc_from_pool = true;
-    if(size > cbmba_res_device->get_capacity() / 2) alloc_from_pool = false;
-    char * data;
-    if(alloc_from_pool) cbmba_res_device->do_transaction([&](){ data = (char*)cbmba_res_device->allocate(size, align_B); });
-    else data = (char*)gpu::mgm::memalloc_device(size);
-    gpu::mgm::memset_submit(main_q, data, size, 0);
-    gpu::mgm::device_wait();
-    if(alloc_from_pool) cbmba_res_device->deallocate(data);
-    else gpu::mgm::memfree_device(data);
-}
 
 
 #define INSTANTIATE_T_I(T,I) \

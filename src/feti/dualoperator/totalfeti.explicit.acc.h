@@ -43,8 +43,6 @@ public:
     // y = K+(f - Bt * x)
     virtual void toPrimal(const Vector_Dual<T> &x, std::vector<Vector_Dense<T> > &y) override;
 
-    virtual void clear_gpu_cache() override;
-
 protected:
     void print(const step::Step &step);
 
