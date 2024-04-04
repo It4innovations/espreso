@@ -15,9 +15,7 @@ DEFAULT_ARGS {
   8        4;
   9        8;
 
-  10  SMALBE;
-  11    NONE;
-  12    1000;
+  10     FEM_LOADED;
 }
 
 INPUT_TYPE           GENERATOR;
@@ -69,7 +67,7 @@ STRUCTURAL_MECHANICS {
   CONTACT_INTERFACES     TRUE;
 
   DISCRETIZATION {
-#    ALL_ELEMENTS  BEM;
+    ALL_ELEMENTS  [ARG10];
   }
 
   MATERIALS {
@@ -104,9 +102,9 @@ STRUCTURAL_MECHANICS {
 
       FETI {
         METHOD          TOTAL_FETI;
-        ITERATIVE_SOLVER   [ARG10];
-        PRECONDITIONER     [ARG11];
-        MAX_ITERATIONS     [ARG12];
+        ITERATIVE_SOLVER    SMALBE;
+        PRECONDITIONER        NONE;
+        MAX_ITERATIONS        1000;
         PRECISION             1e-9;
         PRECISION_IN          1e-9;
       }
