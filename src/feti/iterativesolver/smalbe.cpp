@@ -72,7 +72,7 @@ template <> void SMALBE<double>::solve(const step::Step &step, IterativeSolverIn
 
     int nIt;
     double rho = 0, normPFP = 1, M_const = 1, maxEIG_H;
-    F->estimateMaxProjectedEigenValue(maxEIG_H, nIt, 0.0001, 10);
+    F->estimateMaxProjectedEigenValue(maxEIG_H, nIt, feti.configuration.power_precision, feti.configuration.power_maxit);
     eslog::info("       - ESTIMATED MAX PROJECTED EIGEN VALUE                   %.3e in %4d steps - \n", maxEIG_H, nIt);
     eslog::info("       - ----------------------------------------------------------------------------- - \n");
 //    eslog::info("       - ITER   L  ||gs(x)||   ||Gx||  As/Fs-Ac/Fc    cg   mixed  grad.pr.  Hess     M   RHO   TIME [s] - \n");
@@ -85,9 +85,9 @@ template <> void SMALBE<double>::solve(const step::Step &step, IterativeSolverIn
     maxEIG_H = 1;
     math::scale(1 / normPFP, b);
 
-    M_const *= 100; // based on experience of O. Vlach
     double alpha = feti.configuration.alpham / maxEIG_H;
     rho = feti.configuration.rho * maxEIG_H;
+    M_const = feti.configuration.M;
 
     double norm_b = std::sqrt(b.dot());
 

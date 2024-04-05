@@ -203,7 +203,7 @@ espreso::FETIConfiguration::FETIConfiguration()
 	REGISTER(gamma, ECFMetaData()
 			.setdescription({ "SMALSE gamma" })
 			.setdatatype({ ECFDataType::FLOAT }));
-	M = 1e-3;
+	M = 1;
 	REGISTER(M, ECFMetaData()
 			.setdescription({ "SMALSE M" })
 			.setdatatype({ ECFDataType::FLOAT }));
@@ -215,18 +215,27 @@ espreso::FETIConfiguration::FETIConfiguration()
 	REGISTER(eta, ECFMetaData()
 			.setdescription({ "SMALSE eta" })
 			.setdatatype({ ECFDataType::FLOAT }));
-	beta = 0.5;
+	beta = 0.8;
 	REGISTER(beta, ECFMetaData()
 			.setdescription({ "SMALSE beta" })
 			.setdatatype({ ECFDataType::FLOAT }));
-	alpham = 1.95;
+	alpham = 2;
 	REGISTER(alpham, ECFMetaData()
 			.setdescription({ "SMALSE alpham" })
 			.setdatatype({ ECFDataType::FLOAT }));
-	delta = 0.25;
-	REGISTER(delta, ECFMetaData()
-			.setdescription({ "SMALSE delta" })
+	power_precision = 1e-9;
+	REGISTER(power_precision, ECFMetaData()
+			.setdescription({ "SMALSE precision for power method" })
 			.setdatatype({ ECFDataType::FLOAT }));
+	power_maxit = 100;
+    REGISTER(power_maxit, ECFMetaData()
+            .setdescription({ "SMALSE max iteration for power method" })
+            .setdatatype({ ECFDataType::POSITIVE_INTEGER }));
+    delta = 0.25;
+    REGISTER(delta, ECFMetaData()
+            .setdescription({ "SMALSE delta" })
+            .setdatatype({ ECFDataType::FLOAT }));
+
 	rtol = 1e-2;
 	REGISTER(rtol, ECFMetaData()
 			.setdescription({ "SMALSE rtol" })

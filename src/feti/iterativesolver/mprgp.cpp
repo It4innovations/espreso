@@ -244,7 +244,7 @@ template <> void MPRGP<double>::solve(const step::Step &step, IterativeSolverInf
 
     double maxEIG;
     int nIt;
-    F->estimateMaxEigenValue(maxEIG, nIt, 0.001, 10);
+    F->estimateMaxEigenValue(maxEIG, nIt, feti.configuration.power_precision, feti.configuration.power_maxit);
     math::set(x0, 0.);
     math::copy(b, F->d);
 

@@ -104,9 +104,10 @@ STRUCTURAL_MECHANICS {
         METHOD          TOTAL_FETI;
         ITERATIVE_SOLVER    SMALBE;
         PRECONDITIONER        NONE;
-        MAX_ITERATIONS        1000;
-        PRECISION             1e-9;
-        PRECISION_IN          1e-9;
+        MAX_ITERATIONS        5000;
+        PRECISION             1e-5;
+        PRECISION_IN          1e-7;
+        M                        1;
       }
 
       DISPLACEMENT {
@@ -114,14 +115,18 @@ STRUCTURAL_MECHANICS {
       }
 
       NORMAL_PRESSURE {
-        Y1  10000000;
+        Y1  1000000;
       }
 
       FIXED_WALL {
         WALL {
-          NORMAL  { Y 1; Z -0.2; }
-          POINT   { X 0; Y -.03; Z .3; };
+          NORMAL  { Y 1; Z -0.05; }
+          POINT   { X 0; Y -.06; Z .05; };
         }
+#        WALL {
+#           NORMAL  { Y 1; }
+#           POINT   { X 0; Y -.001; Z 0; }
+#        }
       }
     }
   }

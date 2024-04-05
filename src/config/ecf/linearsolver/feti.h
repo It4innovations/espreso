@@ -178,6 +178,9 @@ struct FETIConfiguration: public ECFDescription {
 	double precision_in, precision_set;
 	size_t max_iterations_in;
 
+	int power_maxit;
+	double power_precision;
+
 	// SMALSE
 	double gamma, M, rho, eta, beta, alpham, delta, rtol;
 	bool halfstep, exp_projgrad, prop_projgrad, proj_grad, gradproj, optimset;
