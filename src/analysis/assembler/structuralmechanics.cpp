@@ -617,8 +617,11 @@ void StructuralMechanics::runBEM(SubKernel::Action action, size_t domain, double
         int ne = info::mesh->domainsSurface->edistribution[domain + 1] - info::mesh->domainsSurface->edistribution[domain];
         int *elemNodes = info::mesh->domainsSurface->denodes[domain].data();
 
+        double ex = subkernels[domain].elasticity.configuration->young_modulus.get(0, 0).evaluator->evaluate();
+        double mu = subkernels[domain].elasticity.configuration->poisson_ratio.get(0, 0).evaluator->evaluate();
+
         Matrix_Dense<double> K; K.resize(3 * np, 3 * np);
-        BEM3DElasticity(K.vals, np, points, ne, elemNodes, 2.1e11, 0.3);
+        BEM3DElasticity(K.vals, np, points, ne, elemNodes, ex, mu);
 
         for (int r = 0, cc = 0; r < K.nrows; ++r) {
             int br = np * (r % 3) + r / 3;

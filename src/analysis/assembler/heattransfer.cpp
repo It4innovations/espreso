@@ -477,8 +477,10 @@ void HeatTransfer::runBEM(SubKernel::Action action, size_t domain, double *BETI)
         int ne = info::mesh->domainsSurface->edistribution[domain + 1] - info::mesh->domainsSurface->edistribution[domain];
         int *elemNodes = info::mesh->domainsSurface->denodes[domain].data();
 
+        double c = subkernels[domain].conductivity.conductivity->values.get(0, 0).evaluator->evaluate();
+
         Matrix_Dense<double> K; K.resize(np, np);
-        BEM3DLaplace(K.vals, np, points, ne, elemNodes, 1);
+        BEM3DLaplace(K.vals, np, points, ne, elemNodes, c);
 //        math::store(K, "K");
 
         for (int r = 0, cc = 0; r < K.nrows; ++r) {
@@ -585,8 +587,8 @@ void HeatTransfer::updateSolution(Vector_Base<double> *x)
             int ni = info::mesh->domainsSurface->coordinates[i].size() - info::mesh->domainsSurface->dnodes[i].size();
             double *inner = points + 3 * np;
 
-
-            BEM3DLaplaceEval(xBEM->domains[i].vals + np, np, points, ne, elemNodes, ni, inner, 1, xBEM->domains[i].vals);
+            double c = subkernels[i].conductivity.conductivity->values.get(0, 0).evaluator->evaluate();
+            BEM3DLaplaceEval(xBEM->domains[i].vals + np, np, points, ne, elemNodes, ni, inner, c, xBEM->domains[i].vals);
         }
     }
     x->storeTo(Results::temperature->data);
