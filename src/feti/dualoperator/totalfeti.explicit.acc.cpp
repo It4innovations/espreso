@@ -8,6 +8,7 @@
 #include "esinfo/ecfinfo.h"
 #include "wrappers/mpi/communication.h"
 #include "esinfo/mpiinfo.h"
+#include "basis/utilities/minmaxavg.h"
 
 #include "my_timer.h"
 
@@ -23,6 +24,7 @@ using TRIANGLE_MATRIX_SHARING = DualOperatorExplicitGpuConfig::TRIANGLE_MATRIX_S
 using QUEUE_COUNT             = DualOperatorExplicitGpuConfig::QUEUE_COUNT;
 using DEVICE                  = DualOperatorExplicitGpuConfig::DEVICE;
 using TIMERS                  = DualOperatorExplicitGpuConfig::TIMERS;
+using MEMORY_INFO             = DualOperatorExplicitGpuConfig::MEMORY_INFO;
 
 template <typename T, typename I>
 TotalFETIExplicitAcc<T,I>::TotalFETIExplicitAcc(FETI<T> &feti)
@@ -56,6 +58,8 @@ TotalFETIExplicitAcc<T,I>::TotalFETIExplicitAcc(FETI<T> &feti)
     need_f_tmp = (is_f_triangles_shared && is_path_trsm);
     timers_basic = (config->timers == TIMERS::BASIC || config->timers == TIMERS::ALL);
     timers_detailed = (config->timers == TIMERS::ALL);
+    memory_info_basic = (config->memory_info == MEMORY_INFO::BASIC || config->memory_info == MEMORY_INFO::ALL);
+    memory_info_detailed = (config->memory_info == MEMORY_INFO::ALL);
 
     bool need_conjtrans_L2LH = (is_system_hermitian && solver_get_L && (trsm1_use_LH || trsm2_use_U)) || (!is_system_hermitian && trsm1_use_LH);
     bool need_conjtrans_U2UH = (is_system_hermitian && solver_get_U && (trsm2_use_UH || trsm1_use_L)) || (!is_system_hermitian && trsm2_use_UH);
@@ -238,27 +242,18 @@ TotalFETIExplicitAcc<T,I>::~TotalFETIExplicitAcc()
 template <typename T, typename I>
 void TotalFETIExplicitAcc<T,I>::info()
 {
-    // DualOperatorInfo sum, min, max;
-    size_t minF = INT32_MAX, maxF = 0, sumF = 0;
-    for (size_t di = 0; di < n_domains; ++di) {
-        minF = std::min(minF, domain_data[di].d_F.nrows * domain_data[di].d_F.ncols * sizeof(T));
-        maxF = std::max(maxF, domain_data[di].d_F.nrows * domain_data[di].d_F.ncols * sizeof(T));
-        sumF += domain_data[di].d_F.nrows * domain_data[di].d_F.ncols * sizeof(T);
-    }
-
-//    TotalFETIImplicit<T>::reduceInfo(sum, min, max);
-    Communication::allReduce(&minF, nullptr, 1, MPITools::getType<size_t>().mpitype, MPI_MIN);
-    Communication::allReduce(&maxF, nullptr, 1, MPITools::getType<size_t>().mpitype, MPI_MAX);
-    Communication::allReduce(&sumF, nullptr, 1, MPITools::getType<size_t>().mpitype, MPI_SUM);
+    if(stage < 2) eslog::error("info: invalid order of operations in dualop\n");
 
     eslog::info(" = EXPLICIT TOTAL FETI OPERATOR ON GPU                                                       = \n");
-//    TotalFETIImplicit<T>::printInfo(sum, min, max);
     config->ecfdescription->forEachParameters([](ECFParameter * param){
         std::string name = param->name;
         for(char & c : name) c = std::toupper(c);
         eslog::info(" =   %-50s       %+30s = \n", name.c_str(), param->getValue().c_str());
     });
-    eslog::info(" =   F MEMORY [MB]                                            %8.2f <%8.2f - %8.2f> = \n", (double)sumF / n_domains / 1024. / 1024., minF / 1024. / 1024., maxF / 1024. / 1024.);
+    eslog::info(minmaxavg<double>::compute_from_allranks(domain_data.begin(), domain_data.end(), [](const per_domain_stuff & data){ return data.d_F.nrows * data.d_F.ncols * sizeof(T) / (1024.0 * 1024.0); }).to_string("  F MEMORY [MB]").c_str());
+    eslog::info(minmaxavg<size_t>::compute_from_allranks(domain_data.begin(), domain_data.end(), [](const per_domain_stuff & data){ return data.n_dofs_domain; }).to_string("  Domain volume [dofs]").c_str());
+    eslog::info(minmaxavg<size_t>::compute_from_allranks(domain_data.begin(), domain_data.end(), [](const per_domain_stuff & data){ return data.n_dofs_interface; }).to_string("  Domain surface [dofs]").c_str());
+    eslog::info(minmaxavg<size_t>::compute_from_allranks(domain_data.begin(), domain_data.end(), [](const per_domain_stuff & data){ return data.n_nz_factor; }).to_string("  Factor nnz").c_str());
     eslog::info(" = ----------------------------------------------------------------------------------------- = \n");
 }
 
@@ -362,8 +357,6 @@ void TotalFETIExplicitAcc<T,I>::set(const step::Step &step)
     {
         tm_mainloop_inner.start();
 
-        I n_nz_factor;
-
         gpu::mgm::queue & q = queues[di % n_queues];
         gpu::dnblas::handle & hd = handles_dense[di % n_queues];
         gpu::spblas::handle & hs = handles_sparse[di % n_queues];
@@ -394,17 +387,17 @@ void TotalFETIExplicitAcc<T,I>::set(const step::Step &step)
         tm_fact_symbolic.start();
         {
             data.solver_Kreg.symbolicFactorization();
-            n_nz_factor = data.solver_Kreg.getFactorNnz();
+            data.n_nz_factor = data.solver_Kreg.getFactorNnz();
         }
         tm_fact_symbolic.stop();
 
         // create descriptors
         tm_descriptors.start();
         {
-            if(do_descr_sp_L)  gpu::spblas::descr_matrix_csr_create<T,I>(data.descr_L_sp,  data.n_dofs_domain, data.n_dofs_domain, n_nz_factor, 'L');
-            if(do_descr_sp_LH) gpu::spblas::descr_matrix_csr_create<T,I>(data.descr_LH_sp, data.n_dofs_domain, data.n_dofs_domain, n_nz_factor, 'U');
-            if(do_descr_sp_U)  gpu::spblas::descr_matrix_csr_create<T,I>(data.descr_U_sp,  data.n_dofs_domain, data.n_dofs_domain, n_nz_factor, 'U');
-            if(do_descr_sp_UH) gpu::spblas::descr_matrix_csr_create<T,I>(data.descr_UH_sp, data.n_dofs_domain, data.n_dofs_domain, n_nz_factor, 'L');
+            if(do_descr_sp_L)  gpu::spblas::descr_matrix_csr_create<T,I>(data.descr_L_sp,  data.n_dofs_domain, data.n_dofs_domain, data.n_nz_factor, 'L');
+            if(do_descr_sp_LH) gpu::spblas::descr_matrix_csr_create<T,I>(data.descr_LH_sp, data.n_dofs_domain, data.n_dofs_domain, data.n_nz_factor, 'U');
+            if(do_descr_sp_U)  gpu::spblas::descr_matrix_csr_create<T,I>(data.descr_U_sp,  data.n_dofs_domain, data.n_dofs_domain, data.n_nz_factor, 'U');
+            if(do_descr_sp_UH) gpu::spblas::descr_matrix_csr_create<T,I>(data.descr_UH_sp, data.n_dofs_domain, data.n_dofs_domain, data.n_nz_factor, 'L');
             gpu::spblas::descr_matrix_csr_create<T,I>(data.descr_Bperm_sp, data.n_dofs_interface, data.n_dofs_domain, feti.B1[di].nnz, 'N');
             if(do_descr_dn_L)  gpu::spblas::descr_matrix_dense_create<T,I>(data.descr_L_dn,  data.n_dofs_domain, data.n_dofs_domain, data.ld_domain, 'R');
             if(do_descr_dn_LH) gpu::spblas::descr_matrix_dense_create<T,I>(data.descr_LH_dn, data.n_dofs_domain, data.n_dofs_domain, data.ld_domain, 'R');
@@ -462,10 +455,10 @@ void TotalFETIExplicitAcc<T,I>::set(const step::Step &step)
         {
             // host pinned memory
             tm_alloc_host.start();
-            if(do_alloc_h_sp_L)   data.h_L_sp .resize(data.n_dofs_domain, data.n_dofs_domain, n_nz_factor);
-            if(do_alloc_h_sp_U)   data.h_U_sp .resize(data.n_dofs_domain, data.n_dofs_domain, n_nz_factor);
-            if(do_alloc_h_sp_LH)  data.h_LH_sp.resize(data.n_dofs_domain, data.n_dofs_domain, n_nz_factor);
-            if(do_alloc_h_sp_UH)  data.h_UH_sp.resize(data.n_dofs_domain, data.n_dofs_domain, n_nz_factor);
+            if(do_alloc_h_sp_L)   data.h_L_sp .resize(data.n_dofs_domain, data.n_dofs_domain, data.n_nz_factor);
+            if(do_alloc_h_sp_U)   data.h_U_sp .resize(data.n_dofs_domain, data.n_dofs_domain, data.n_nz_factor);
+            if(do_alloc_h_sp_LH)  data.h_LH_sp.resize(data.n_dofs_domain, data.n_dofs_domain, data.n_nz_factor);
+            if(do_alloc_h_sp_UH)  data.h_UH_sp.resize(data.n_dofs_domain, data.n_dofs_domain, data.n_nz_factor);
             if(do_link_h_sp_LH_U) data.h_LH_sp.shallowCopy(data.h_U_sp);
             if(do_link_h_sp_UH_L) data.h_UH_sp.shallowCopy(data.h_L_sp);
             data.h_Bperm_sp.resize(data.n_dofs_interface, data.n_dofs_domain, feti.B1[di].nnz);
@@ -475,10 +468,10 @@ void TotalFETIExplicitAcc<T,I>::set(const step::Step &step)
 
             // device memory
             tm_alloc_device.start();
-            if(do_alloc_d_sp_L)   data.d_L_sp .resize(data.n_dofs_domain, data.n_dofs_domain, n_nz_factor);
-            if(do_alloc_d_sp_U)   data.d_U_sp .resize(data.n_dofs_domain, data.n_dofs_domain, n_nz_factor);
-            if(do_alloc_d_sp_LH)  data.d_LH_sp.resize(data.n_dofs_domain, data.n_dofs_domain, n_nz_factor);
-            if(do_alloc_d_sp_UH)  data.d_UH_sp.resize(data.n_dofs_domain, data.n_dofs_domain, n_nz_factor);
+            if(do_alloc_d_sp_L)   data.d_L_sp .resize(data.n_dofs_domain, data.n_dofs_domain, data.n_nz_factor);
+            if(do_alloc_d_sp_U)   data.d_U_sp .resize(data.n_dofs_domain, data.n_dofs_domain, data.n_nz_factor);
+            if(do_alloc_d_sp_LH)  data.d_LH_sp.resize(data.n_dofs_domain, data.n_dofs_domain, data.n_nz_factor);
+            if(do_alloc_d_sp_UH)  data.d_UH_sp.resize(data.n_dofs_domain, data.n_dofs_domain, data.n_nz_factor);
             if(do_link_d_sp_LH_U) data.d_LH_sp.shallowCopy(data.d_U_sp);
             if(do_link_d_sp_UH_L) data.d_UH_sp.shallowCopy(data.d_L_sp);
             data.d_Bperm_sp.resize(data.n_dofs_interface, data.n_dofs_domain, feti.B1[di].nnz);
@@ -664,6 +657,70 @@ void TotalFETIExplicitAcc<T,I>::set(const step::Step &step)
         cbmba_res_device = std::make_unique<cbmba_resource>(mem_pool_device, pool_size_device_aligned);
     }
     tm_poolalloc.stop();
+
+    if(memory_info_basic)
+    {
+        size_t total_mem_sp_factors = 0;
+        size_t mem_buffer_sptrs1 = 0;
+        size_t mem_buffer_sptrs2 = 0;
+        size_t mem_buffer_spmm = 0;
+        size_t mem_buffer_transL2LH = 0;
+        size_t mem_buffer_transU2UH = 0;
+        size_t total_mem_Fs = 0;
+        for(size_t di = 0; di < n_domains; di++)
+        {
+            per_domain_stuff & data = domain_data[di];
+            if(do_alloc_d_sp_L)  total_mem_sp_factors += Matrix_CSR<T,I>::memoryRequirement(data.n_dofs_domain, data.n_dofs_domain, data.n_nz_factor);
+            if(do_alloc_d_sp_U)  total_mem_sp_factors += Matrix_CSR<T,I>::memoryRequirement(data.n_dofs_domain, data.n_dofs_domain, data.n_nz_factor);
+            if(do_alloc_d_sp_LH) total_mem_sp_factors += Matrix_CSR<T,I>::memoryRequirement(data.n_dofs_domain, data.n_dofs_domain, data.n_nz_factor);
+            if(do_alloc_d_sp_UH) total_mem_sp_factors += Matrix_CSR<T,I>::memoryRequirement(data.n_dofs_domain, data.n_dofs_domain, data.n_nz_factor);
+            if(is_factor1_sparse)                 mem_buffer_sptrs1 += data.buffersize_sptrs1;
+            if(is_factor2_sparse && is_path_trsm) mem_buffer_sptrs2 += data.buffersize_sptrs2;
+            if(                     is_path_trsm) mem_buffer_spmm += data.buffersize_spmm;
+            if(data.buffersize_transL2LH > 0) mem_buffer_transL2LH += data.buffersize_transL2LH;
+            if(data.buffersize_transU2UH > 0) mem_buffer_transU2UH += data.buffersize_transU2UH;
+            if(data.should_allocate_d_F) total_mem_Fs += Matrix_Dense<T,I>::memoryRequirement(data.n_dofs_interface + 1, data.n_dofs_interface, data.ld_F);
+        }
+        size_t total_mem_buffers = mem_buffer_sptrs1 + mem_buffer_sptrs2 + mem_buffer_spmm + mem_buffer_transL2LH + mem_buffer_transU2UH;
+
+        eslog::info("rank %4d GPU memory capacity [MiB]:                     %9zu\n", info::mpi::rank, gpu::mgm::get_device_memory_capacity() >> 20);
+        eslog::info("rank %4d GPU memory used for F matrices [MiB]:          %9zu\n", info::mpi::rank, total_mem_Fs >> 20);
+        eslog::info("rank %4d GPU memory used for sparse factors [MiB]:      %9zu\n", info::mpi::rank, total_mem_sp_factors >> 20);
+        eslog::info("rank %4d GPU memory used for persistent buffers [MiB]:  %9zu\n", info::mpi::rank, total_mem_buffers >> 20);
+        eslog::info("rank %4d   GPU memory used for buffers sptrs1 [MiB]:    %9zu\n", info::mpi::rank, mem_buffer_sptrs1 >> 20);
+        eslog::info("rank %4d   GPU memory used for buffers sptrs2 [MiB]:    %9zu\n", info::mpi::rank, mem_buffer_sptrs2 >> 20);
+        eslog::info("rank %4d   GPU memory used for buffers spmm [MiB]:      %9zu\n", info::mpi::rank, mem_buffer_spmm >> 20);
+        eslog::info("rank %4d   GPU memory used for buffers transL2LH [MiB]: %9zu\n", info::mpi::rank, mem_buffer_transL2LH >> 20);
+        eslog::info("rank %4d   GPU memory used for buffers transU2UH [MiB]: %9zu\n", info::mpi::rank, mem_buffer_transU2UH >> 20);
+        eslog::info("rank %4d GPU memory used for memory pool [MiB]:         %9zu\n", info::mpi::rank, cbmba_res_device->get_max_capacity() >> 20);
+    }
+
+    {
+        size_t min_mem = std::numeric_limits<size_t>::max();
+        size_t max_mem = std::numeric_limits<size_t>::min();
+        size_t avg_mem = 0;
+        for(size_t di = 0; di < n_domains; di++)
+        {
+            per_domain_stuff & data = domain_data[di];
+            size_t mem = 0;
+            if(do_alloc_d_dn_L)   mem += Matrix_Dense<T,I>::memoryRequirement(data.n_dofs_domain, data.n_dofs_domain, data.ld_domain);
+            if(do_alloc_d_dn_U)   mem += Matrix_Dense<T,I>::memoryRequirement(data.n_dofs_domain, data.n_dofs_domain, data.ld_domain);
+            if(do_alloc_d_dn_LH)  mem += Matrix_Dense<T,I>::memoryRequirement(data.n_dofs_domain, data.n_dofs_domain, data.ld_domain);
+            if(do_alloc_d_dn_UH)  mem += Matrix_Dense<T,I>::memoryRequirement(data.n_dofs_domain, data.n_dofs_domain, data.ld_domain);
+            if(order_X == 'R')           mem += Matrix_Dense<T,I>::memoryRequirement(data.n_dofs_domain,    data.n_dofs_interface, data.ld_X);
+            if(order_X == 'C')           mem += Matrix_Dense<T,I>::memoryRequirement(data.n_dofs_interface, data.n_dofs_domain,    data.ld_X);
+            if(order_X == 'R' && need_Y) mem += Matrix_Dense<T,I>::memoryRequirement(data.n_dofs_domain,    data.n_dofs_interface, data.ld_X);
+            if(order_X == 'C' && need_Y) mem += Matrix_Dense<T,I>::memoryRequirement(data.n_dofs_interface, data.n_dofs_domain,    data.ld_X);
+            if(need_f_tmp) mem += Matrix_Dense<T,I>::memoryRequirement(data.n_dofs_interface, data.n_dofs_interface, data.ld_F);
+            mem += data.buffersize_other;
+            min_mem = std::min(min_mem, mem);
+            max_mem = std::max(max_mem, mem);
+            avg_mem += mem;
+        }
+        avg_mem /= n_domains;
+        if(memory_info_basic) eslog::info("rank %4d GPU memory from mempool requirements per domain [MiB]: %9zu < %9zu - %9zu >\n", info::mpi::rank, avg_mem >> 20, min_mem >> 20, max_mem >> 20);
+        if(max_mem > cbmba_res_device->get_max_capacity()) eslog::error("There is not enough memory in the GPU mempool\n");
+    }
 
     tm_wait.start();
     gpu::mgm::device_wait();

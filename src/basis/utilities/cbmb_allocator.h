@@ -139,6 +139,15 @@ namespace espreso {
             f();
             in_transaction = false;
             if(do_reset_to_start_after_transaction) start_empty = ((start_empty - 1) / memory_pool_size + 1) * memory_pool_size;
+            mem_allocated_in_transaction = 0;
+        }
+        size_t get_curr_memory_requested_in_transaction() const
+        {
+            return mem_allocated_in_transaction;
+        }
+        size_t get_max_capacity() const
+        {
+            return memory_pool_size;
         }
     };
 

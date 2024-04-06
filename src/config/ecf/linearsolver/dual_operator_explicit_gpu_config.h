@@ -69,6 +69,12 @@ struct DualOperatorExplicitGpuConfig: public ECFDescription {
 		ALL
 	};
 
+	enum class MEMORY_INFO {
+		NONE,
+		BASIC,
+		ALL
+	};
+
 	CONCURRENCY concurrency_set;
 	CONCURRENCY concurrency_update;
 	CONCURRENCY concurrency_apply;
@@ -84,6 +90,7 @@ struct DualOperatorExplicitGpuConfig: public ECFDescription {
 	DEVICE apply_scatter_gather_where;
 	DEVICE transpose_where;
 	TIMERS timers;
+	MEMORY_INFO memory_info;
 
 	DualOperatorExplicitGpuConfig();
 

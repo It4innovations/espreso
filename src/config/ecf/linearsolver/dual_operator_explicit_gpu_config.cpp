@@ -126,4 +126,12 @@ DualOperatorExplicitGpuConfig::DualOperatorExplicitGpuConfig()
 			.addoption(ECFOption().setname("NONE").setdescription("No timers are printed."))
 			.addoption(ECFOption().setname("BASIC").setdescription("Only the basic timers are printed."))
 			.addoption(ECFOption().setname("ALL").setdescription("All timers are printed.")));
+
+	memory_info = MEMORY_INFO::NONE;
+	REGISTER(memory_info, ECFMetaData()
+			.setdescription({ "Verbosity of memory information printed in the explicit gpu F functions." })
+			.setdatatype({ ECFDataType::OPTION })
+			.addoption(ECFOption().setname("NONE").setdescription("No info is printed."))
+			.addoption(ECFOption().setname("BASIC").setdescription("Only the basic info is printed."))
+			.addoption(ECFOption().setname("ALL").setdescription("All info is printed.")));
 }

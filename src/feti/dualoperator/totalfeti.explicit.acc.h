@@ -100,10 +100,10 @@ protected:
         void * buffer_spmm = nullptr;
         size_t buffersize_transL2LH = 0;
         size_t buffersize_transU2UH = 0;
-        size_t buffersize_sptrs1;
-        size_t buffersize_sptrs2;
-        size_t buffersize_spmm;
-        size_t buffersize_other;
+        size_t buffersize_sptrs1 = 0;
+        size_t buffersize_sptrs2 = 0;
+        size_t buffersize_spmm = 0;
+        size_t buffersize_other = 0;
         Vector_Dense<I,I> transmap_L2LH;
         Vector_Dense<I,I> transmap_U2UH;
         Vector_Dense<I,I,Ad> d_applyg_D2C;
@@ -115,6 +115,7 @@ protected:
         char hermitian_F_fill;
         I n_dofs_domain;
         I n_dofs_interface;
+        I n_nz_factor;
         I ld_domain;
         I ld_interface;
         I ld_X;
@@ -134,6 +135,7 @@ protected:
     bool can_use_LH_is_U_d_dn, can_use_UH_is_L_d_dn;
     bool is_f_triangles_shared, need_f_tmp;
     bool timers_basic, timers_detailed;
+    bool memory_info_basic, memory_info_detailed;
     bool do_conjtrans_L2LH_h, do_conjtrans_U2UH_h, do_conjtrans_L2LH_d, do_conjtrans_U2UH_d;
     bool do_sp2dn_L, do_sp2dn_LH, do_sp2dn_U, do_sp2dn_UH;
     bool do_trsm1_sp_L, do_trsm1_sp_LH, do_trsm2_sp_U, do_trsm2_sp_UH, do_trsm1_dn_L, do_trsm1_dn_LH, do_trsm2_dn_U, do_trsm2_dn_UH;
