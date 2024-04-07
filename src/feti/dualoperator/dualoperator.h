@@ -28,6 +28,8 @@ public:
     virtual void set(const step::Step &step) =0;
     virtual void update(const step::Step &step) =0;
 
+    virtual void clear_gpu_cache() {}
+
     // y = F * x
     virtual void apply(const Vector_Dual<T> &x, Vector_Dual<T> &y) =0;
 
