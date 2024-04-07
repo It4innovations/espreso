@@ -31,7 +31,7 @@ static void extractDomain(FETI<T> &feti, size_t d, const Vector_Dual<T> &in, Vec
 
 // TODO: threaded implementation + more efficient 'beta' scale
 template <typename T>
-static void applyB(FETI<T> &feti, const std::vector<Vector_Dense<T> > &in, Vector_Dual<T> &out)
+static void applyB(FETI<T> &feti, const std::vector<Vector_Dense<T> > &in, Vector_Dual<T> &out, double * apply_start_time = nullptr)
 {
     math::set(out, T{0});
     for (size_t d = 0; d < feti.K.size(); ++d) {
@@ -40,6 +40,11 @@ static void applyB(FETI<T> &feti, const std::vector<Vector_Dense<T> > &in, Vecto
                 out.vals[feti.D2C[d][r]] += feti.B1[d].vals[c] * in[d].vals[feti.B1[d].cols[c]];
             }
         }
+    }
+    if(apply_start_time != nullptr)
+    {
+        double stop = eslog::time();
+        printf("TMP DUAL OPERATOR APPLY TIME:  %12.6f ms\n", (stop - *apply_start_time) * 1000.0);
     }
 }
 
