@@ -13,15 +13,15 @@ template <template<typename, typename, typename> typename Vector, typename T> cl
 
 template <typename T>
 struct Matrix_CSR_Apply {
-    Matrix_CSR<T> localM;
-    Vector_Dense<T> localV;
+    Matrix_CSR<T, esint> localM;
+    Vector_Dense<T, esint> localV;
     std::vector<std::vector<T> > sBuffer, rBuffer;
     std::vector<std::vector<esint> > rOffset, sOffset;
     std::vector<int> neighbors;
     std::vector<esint> nDOF;
     esint offset;
 
-    SpBLAS<Matrix_CSR, T> spblas;
+    SpBLAS<Matrix_CSR, T, esint> spblas;
 
     void init(Matrix_Distributed<T> &m);
 

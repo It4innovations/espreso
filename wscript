@@ -253,8 +253,10 @@ def options(opt):
     recurse(opt)
 
 def settings(ctx):
+    libraries = { x.lstrip("HAVE_").split("=")[0].lower() for x in ctx.env.DEFINES if x.startswith("HAVE_") }
+
     def libsmsg(msg, libs):
-        libs = [lib for lib in libs if ctx.env["HAVE_" + lib.upper()]]
+        libs = [ lib for lib in libs if lib in libraries ]
         ctx.start_msg(msg)
         ctx.end_msg("[ " + ", ".join(libs) + " ]", color="BLUE")
 

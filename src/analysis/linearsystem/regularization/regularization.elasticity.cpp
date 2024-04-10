@@ -163,7 +163,7 @@ void RegularizationElasticity<T>::getFixPoints(std::vector<esint> &fixPoints, in
     METISConfiguration options;
     METIS::call(options, ids.size(), dist.data(), data.data(), 0, NULL, NULL, FIX_POINTS_SIZE, partition.data());
 
-    std::vector<std::vector<esint> > pids(FIX_POINTS_SIZE), pdist(FIX_POINTS_SIZE, { Indexing::CSR }), pdata(FIX_POINTS_SIZE);
+    std::vector<std::vector<int> > pids(FIX_POINTS_SIZE), pdist(FIX_POINTS_SIZE, { Indexing::CSR }), pdata(FIX_POINTS_SIZE);
     for (size_t i = 0; i < partition.size(); i++) {
         pids[partition[i]].push_back(i);
     }

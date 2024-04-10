@@ -8,14 +8,14 @@ namespace espreso {
 
 struct PARDISOParameters {
 	void* pt[64];
-	esint maxfct, mnum, mtype, phase, iparm[64], msglvl, error, *perm;
+	int maxfct, mnum, mtype, phase, iparm[64], msglvl, error, *perm;
 	double dparm[64];
 
 	int called;
 
 	PARDISOParameters(): pt{}, called(0)
 	{
-		for (esint i = 0 ; i < 64; i++) {
+		for (int i = 0 ; i < 64; i++) {
 			pt[i] = NULL;
 			iparm[i] = 0;
 			dparm[i] = 0;

@@ -43,7 +43,10 @@ SpBLAS<Matrix, T, I>::~SpBLAS()
     }
 }
 
-template <template <typename, typename, typename> class Matrix, typename T, typename I> void create(const typename SpBLAS<Matrix,T,I>::MatrixType *matrix, Matrix_SpBLAS_External_Representation *_spblas, bool transposed = false);
+template <template <typename, typename, typename> class Matrix, typename T, typename I> void create(const typename SpBLAS<Matrix,T,I>::MatrixType *matrix, Matrix_SpBLAS_External_Representation *_spblas, bool transposed = false)
+{
+    eslog::error("SpBLAS wrapper is incompatible with T=%dB, I=%dB\n", sizeof(T), sizeof(I));
+}
 
 template <> void create<Matrix_CSR, float, int>(const Matrix_CSR<float, int> *matrix, Matrix_SpBLAS_External_Representation *_spblas, bool transposed)
 {
@@ -168,9 +171,19 @@ void SpBLAS<Matrix_CSR, std::complex<double>, int>::apply(Vector_Dense<std::comp
     checkStatus(mkl_sparse_z_mv(SPARSE_OPERATION_NON_TRANSPOSE, alpha, _spblas->inspector, descr, x.vals, beta, y.vals));
 }
 
+template <template <typename, typename, typename> class Matrix, typename T, typename I>
+void SpBLAS<Matrix, T, I>::apply(Vector_Dense<T, I> &y, const T &alpha, const T &beta, const Vector_Dense<T, I> &x)
+{
+    eslog::error("SpBLAS wrapper is incompatible with T=%dB, I=%dB\n", sizeof(T), sizeof(I));
+}
+
 template struct SpBLAS<Matrix_CSR, float, int>;
 template struct SpBLAS<Matrix_CSR, double, int>;
 template struct SpBLAS<Matrix_CSR, std::complex<double>, int>;
+
+template struct SpBLAS<Matrix_CSR, float, long>;
+template struct SpBLAS<Matrix_CSR, double, long>;
+template struct SpBLAS<Matrix_CSR, std::complex<double>, long>;
 
 }
 

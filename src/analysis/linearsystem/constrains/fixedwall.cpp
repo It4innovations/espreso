@@ -28,19 +28,19 @@ void FixedWall<T>::set(const step::Step &step, FETI<T> &feti, const Vector_Distr
     struct __lambda__ { int dof, size, cindex; };
     std::vector<__lambda__> permutation;
 
-    std::vector<std::vector<esint> > &D2C = feti.D2C;
-    std::vector<std::vector<esint> > ROWS(feti.K.size()), COLS(feti.K.size());
+    std::vector<std::vector<int> > &D2C = feti.D2C;
+    std::vector<std::vector<int> > ROWS(feti.K.size()), COLS(feti.K.size());
 
     int cc = 0;
     for (auto wall = loadstep.fixed_wall.begin(); wall != loadstep.fixed_wall.end(); ++wall) {
         const BoundaryRegionStore *region = info::mesh->bregion(wall->first);
-        esint dindex = 0;
+        int dindex = 0;
         for (auto n = region->nodes->datatarray().begin(); n < region->nodes->datatarray().end(); ++n, ++cc) {
             auto dmap = feti.decomposition->dmap->cbegin() + *n * dim;
             for (int d = 0; d < dim; ++d, ++dmap) {
                 while (dindex < dirichlet.cluster.nnz && dirichlet.cluster.indices[dindex] < *n * dim + d) { ++dindex; }
                 if (dindex == dirichlet.cluster.nnz || dirichlet.cluster.indices[dindex] != *n * dim + d) {
-                    permutation.push_back(__lambda__{ *n * dim + d, (int)dmap->size(), cc });
+                    permutation.push_back(__lambda__{ (int)(*n * dim + d), (int)dmap->size(), cc });
                 }
             }
         }

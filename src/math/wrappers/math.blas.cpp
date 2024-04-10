@@ -9,7 +9,7 @@ namespace math {
 namespace blas {
 
 template <>
-int dot(const esint size, const int *x, const esint incX, const int *y, const esint incY)
+int dot(const int size, const int *x, const int incX, const int *y, const int incY)
 {
     int sum = 0;
     for (int i = 0; i < size; ++i) {
@@ -19,7 +19,7 @@ int dot(const esint size, const int *x, const esint incX, const int *y, const es
 }
 
 template <>
-void copy(const esint size, int *x, const esint incX, const int *y, const esint incY)
+void copy(const int size, int *x, const int incX, const int *y, const int incY)
 {
     for (int i = 0; i < size; ++i) {
         x[i * incX] = y[i * incY];
@@ -27,7 +27,7 @@ void copy(const esint size, int *x, const esint incX, const int *y, const esint 
 }
 
 template <>
-void add(const esint size, int *x, const esint incX, const int &alpha, const int *y, const esint incY)
+void add(const int size, int *x, const int incX, const int &alpha, const int *y, const int incY)
 {
     for (int i = 0; i < size; ++i) {
         x[i * incX] += alpha * y[i * incY];
@@ -46,70 +46,70 @@ namespace math {
 namespace blas {
 
 template <>
-void copy(const esint size, double *x, const esint incX, const double *y, const esint incY)
+void copy(const int size, double *x, const int incX, const double *y, const int incY)
 {
     eslog::error("calling of empty BLAS wrapper.\n");
 }
 
 template <>
-void copy(const esint size, std::complex<double> *x, const esint incX, const std::complex<double> *y, const esint incY)
+void copy(const int size, std::complex<double> *x, const int incX, const std::complex<double> *y, const int incY)
 {
     eslog::error("calling of empty BLAS wrapper.\n");
 }
 
 template <>
-void scale(const esint size, const float &alpha, float *x, const esint incX)
+void scale(const int size, const float &alpha, float *x, const int incX)
 {
     eslog::error("calling of empty BLAS wrapper.\n");
 }
 
 template <>
-void scale(const esint size, const double &alpha, double *x, const esint incX)
+void scale(const int size, const double &alpha, double *x, const int incX)
 {
     eslog::error("calling of empty BLAS wrapper.\n");
 }
 
 template <>
-void scale(const esint size, const std::complex<double> &alpha, std::complex<double> *x, const esint incX)
+void scale(const int size, const std::complex<double> &alpha, std::complex<double> *x, const int incX)
 {
     eslog::error("calling of empty BLAS wrapper.\n");
 }
 
 template <>
-void add(const esint size, double *x, const esint incX, const double &alpha, const double *y, const esint incY)
+void add(const int size, double *x, const int incX, const double &alpha, const double *y, const int incY)
 {
     eslog::error("calling of empty BLAS wrapper.\n");
 }
 
 template <>
-void add(const esint size, std::complex<double> *x, const esint incX, const std::complex<double> &alpha, const std::complex<double> *y, const esint incY)
+void add(const int size, std::complex<double> *x, const int incX, const std::complex<double> &alpha, const std::complex<double> *y, const int incY)
 {
     eslog::error("calling of empty BLAS wrapper.\n");
 }
 
 template <>
-double dot(const esint size, const double *x, const esint incX, const double *y, const esint incY)
-{
-    eslog::error("calling of empty BLAS wrapper.\n");
-    return 0;
-}
-
-template <>
-std::complex<double> dot(const esint size, const std::complex<double> *x, const esint incX, const std::complex<double> *y, const esint incY)
+double dot(const int size, const double *x, const int incX, const double *y, const int incY)
 {
     eslog::error("calling of empty BLAS wrapper.\n");
     return 0;
 }
 
 template <>
-float norm(const esint size, const float *x, const esint incX)
+std::complex<double> dot(const int size, const std::complex<double> *x, const int incX, const std::complex<double> *y, const int incY)
+{
+    eslog::error("calling of empty BLAS wrapper.\n");
+    return 0;
+}
+
+template <>
+float norm(const int size, const float *x, const int incX)
 {
         eslog::error("calling of empty BLAS wrapper.\n");
         return 0;
 }
 
 template <>
-double norm(const esint size, const double *x, const esint incX)
+double norm(const int size, const double *x, const int incX)
 {
     eslog::error("calling of empty BLAS wrapper.\n");
     return 0;

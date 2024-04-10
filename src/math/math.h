@@ -119,12 +119,12 @@ namespace math {
 //            else C.type = Matrix_Type::COMPLEX_NONSYMMETRIC;
 //            C.shape = Matrix_Shape::FULL;
 //        }
-        esint nnz = 0;
-        for (esint r = 0; r < A.nrows; ++r) {
-            esint *beginA = A.cols + A.rows[r    ] - Indexing::CSR;
-            esint *endA   = A.cols + A.rows[r + 1] - Indexing::CSR;
-            esint *beginB = B.cols + B.rows[r    ] - Indexing::CSR;
-            esint *endB   = B.cols + B.rows[r + 1] - Indexing::CSR;
+        I nnz = 0;
+        for (I r = 0; r < A.nrows; ++r) {
+            I *beginA = A.cols + A.rows[r    ] - Indexing::CSR;
+            I *endA   = A.cols + A.rows[r + 1] - Indexing::CSR;
+            I *beginB = B.cols + B.rows[r    ] - Indexing::CSR;
+            I *endB   = B.cols + B.rows[r + 1] - Indexing::CSR;
             while (true) {
                 if (beginA == endA) { nnz += endB - beginB; break; }
                 if (beginB == endB) { nnz += endA - beginA; break; }
@@ -141,13 +141,13 @@ namespace math {
             }
         }
         C.resize(A.nrows, A.ncols, nnz);
-        esint *r = C.rows, *c = C.cols;
-        for (esint i = 0; i < A.nrows; ++i, ++r) {
+        I *r = C.rows, *c = C.cols;
+        for (I i = 0; i < A.nrows; ++i, ++r) {
             *r = c - C.cols + Indexing::CSR;
-            esint *bA = A.cols + A.rows[i    ] - Indexing::CSR;
-            esint *eA = A.cols + A.rows[i + 1] - Indexing::CSR;
-            esint *bB = B.cols + B.rows[i    ] - Indexing::CSR;
-            esint *eB = B.cols + B.rows[i + 1] - Indexing::CSR;
+           I *bA = A.cols + A.rows[i    ] - Indexing::CSR;
+           I *eA = A.cols + A.rows[i + 1] - Indexing::CSR;
+           I *bB = B.cols + B.rows[i    ] - Indexing::CSR;
+           I *eB = B.cols + B.rows[i + 1] - Indexing::CSR;
             while (true) {
                 if (bA == eA) { while (bB != eB) { *c++ = *bB++;} break; }
                 if (bB == eB) { while (bA != eA) { *c++ = *bA++;} break; }
@@ -170,16 +170,16 @@ namespace math {
         if (A.nrows != B.nrows || A.ncols != B.ncols) {
             eslog::error("invalid matrices sizes.\n");
         }
-        for (esint r = 0; r < A.nrows; ++r) {
-            esint *bA = A.cols + A.rows[r    ] - Indexing::CSR;
-            esint *eA = A.cols + A.rows[r + 1] - Indexing::CSR;
-            esint *bB = B.cols + B.rows[r    ] - Indexing::CSR;
-            esint *eB = B.cols + B.rows[r + 1] - Indexing::CSR;
-            esint *bC = C.cols + C.rows[r    ] - Indexing::CSR;
-            esint *eC = C.cols + C.rows[r + 1] - Indexing::CSR;
-            T      *a = A.vals + A.rows[r    ] - Indexing::CSR;
-            T      *b = B.vals + B.rows[r    ] - Indexing::CSR;
-            T      *c = C.vals + C.rows[r    ] - Indexing::CSR;
+        for (I r = 0; r < A.nrows; ++r) {
+            I *bA = A.cols + A.rows[r    ] - Indexing::CSR;
+            I *eA = A.cols + A.rows[r + 1] - Indexing::CSR;
+            I *bB = B.cols + B.rows[r    ] - Indexing::CSR;
+            I *eB = B.cols + B.rows[r + 1] - Indexing::CSR;
+            I *bC = C.cols + C.rows[r    ] - Indexing::CSR;
+            I *eC = C.cols + C.rows[r + 1] - Indexing::CSR;
+            T  *a = A.vals + A.rows[r    ] - Indexing::CSR;
+            T  *b = B.vals + B.rows[r    ] - Indexing::CSR;
+            T  *c = C.vals + C.rows[r    ] - Indexing::CSR;
             while (bC != eC) {
                 *c = 0;
                 if (bA != eA && *bC == *bA) { *c += *a++; ++bA; }

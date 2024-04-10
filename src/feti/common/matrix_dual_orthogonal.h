@@ -55,7 +55,7 @@ struct Matrix_Dual_Orthogonal: public Matrix_Dense<T, int> {
 
     void applyT(const Vector_Dense<T> &x, Vector_Dual<T> &y)
     {
-        esint size = x.size;
+        int size = x.size;
         Matrix_Dense<T>::slice({}, {});
         std::swap(Matrix_Dense<T>::nrows, size);
         math::blas::applyT(y, T{1}, static_cast<Matrix_Dense<T>&>(*this), T{0}, x);

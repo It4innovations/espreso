@@ -8,7 +8,7 @@
 namespace espreso {
 namespace math {
 
-template <typename T> void copy(Matrix_CSR<T> &x, const Matrix_CSR<T> &y, const Selection &rows, const Selection &cols)
+template <typename T, typename I> void copy(Matrix_CSR<T, I> &x, const Matrix_CSR<T, I> &y, const Selection &rows, const Selection &cols)
 {
 	if (rows == Selection() && cols == Selection()) {
 		math::copy(x, y);
@@ -33,7 +33,7 @@ template <typename T> void copy(Matrix_CSR<T> &x, const Matrix_CSR<T> &y, const 
 	}
 }
 
-template <typename T> void copy(Vector_Dense<T> &x, const Vector_Dense<T> &y, const Selection &rows)
+template <typename T, typename I> void copy(Vector_Dense<T, I> &x, const Vector_Dense<T, I> &y, const Selection &rows)
 {
 	if (rows == Selection()) {
 		math::copy(x, y);
@@ -52,7 +52,7 @@ template <typename T> void copy(Vector_Dense<T> &x, const Vector_Dense<T> &y, co
 	}
 }
 
-template <typename T> void copy(Vector_Sparse<T> &x, const Vector_Sparse<T> &y, const Selection &rows)
+template <typename T, typename I> void copy(Vector_Sparse<T, I> &x, const Vector_Sparse<T, I> &y, const Selection &rows)
 {
 	if (rows == Selection()) {
 		math::copy(x, y);
@@ -73,21 +73,21 @@ template <typename T> void copy(Vector_Sparse<T> &x, const Vector_Sparse<T> &y, 
 	}
 }
 
-template <typename T> void copy(Vector_Dense<T> &x, const Vector_Sparse<T> &y, const Selection &rows)
+template <typename T, typename I> void copy(Vector_Dense<T, I> &x, const Vector_Sparse<T, I> &y, const Selection &rows)
 {
 	for (esint i = 0; i < y.nnz; ++i) {
 		x.vals[y.indices[i]] = y.vals[i];
 	}
 }
 
-template <typename T> void copy(Vector_Sparse<T> &x, const Vector_Dense<T> &y, const Selection &rows)
+template <typename T, typename I> void copy(Vector_Sparse<T, I> &x, const Vector_Dense<T, I> &y, const Selection &rows)
 {
 	for (esint i = 0; i < x.nnz; ++i) {
 		x.vals[i] = y.vals[x.indices[i]];
 	}
 }
 
-template <typename T> void add(Matrix_CSR<T> &x, const T &alpha, const Matrix_CSR<T> &y, const Selection &rows, const Selection &cols)
+template <typename T, typename I> void add(Matrix_CSR<T, I> &x, const T &alpha, const Matrix_CSR<T, I> &y, const Selection &rows, const Selection &cols)
 {
 	if (rows == Selection() && cols == Selection()) {
 		math::add(x, alpha, y);
@@ -112,7 +112,7 @@ template <typename T> void add(Matrix_CSR<T> &x, const T &alpha, const Matrix_CS
 	}
 }
 
-template <typename T> void add(Vector_Dense<T> &x, const T &alpha, const Vector_Dense<T> &y, const Selection &rows)
+template <typename T, typename I> void add(Vector_Dense<T, I> &x, const T &alpha, const Vector_Dense<T, I> &y, const Selection &rows)
 {
 	if (rows == Selection()) {
 		math::add(x, alpha, y);
@@ -131,7 +131,7 @@ template <typename T> void add(Vector_Dense<T> &x, const T &alpha, const Vector_
 	}
 }
 
-template <typename T> void add(Vector_Sparse<T> &x, const T &alpha, const Vector_Sparse<T> &y, const Selection &rows)
+template <typename T, typename I> void add(Vector_Sparse<T, I> &x, const T &alpha, const Vector_Sparse<T, I> &y, const Selection &rows)
 {
 	if (rows == Selection()) {
 		math::add(x, alpha, y);
@@ -152,13 +152,13 @@ template <typename T> void add(Vector_Sparse<T> &x, const T &alpha, const Vector
 	}
 }
 
-template <typename T> void add(Vector_Sparse<T> &x, const T &alpha, const Vector_Dense<T> &y, const Selection &rows)
+template <typename T, typename I> void add(Vector_Sparse<T, I> &x, const T &alpha, const Vector_Dense<T, I> &y, const Selection &rows)
 {
 	for (esint i = 0; i < x.nnz; ++i) {
 		x.vals[i] += alpha * y.vals[x.indices[i]];
 	}
 }
-template <typename T> void add(Vector_Dense<T> &x, const T &alpha, const Vector_Sparse<T> &y, const Selection &rows)
+template <typename T, typename I> void add(Vector_Dense<T, I> &x, const T &alpha, const Vector_Sparse<T, I> &y, const Selection &rows)
 {
 	for (esint i = 0; i < y.nnz; ++i) {
 		x.vals[y.indices[i]] += alpha * y.vals[i];

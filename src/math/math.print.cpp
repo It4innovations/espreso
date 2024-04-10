@@ -31,21 +31,23 @@ template <> void store(const Vector_Dense<int> &x, const char* file) { _store(x,
 template <> void store(const Vector_Dense<double> &x, const char* file) { _store(x, file); }
 template <> void store(const Vector_Dense<std::complex<double> > &x, const char* file) { _store(x, file); }
 
-template <typename T>
-void _store(const Vector_Sparse<T> &x, const char* file)
+template <typename T, typename I>
+void _store(const Vector_Sparse<T, I> &x, const char* file)
 {
     std::ofstream os(std::string(file) + ".txt");
     os.precision(15);
     os << std::showpos;
 
-    for (esint i = 0; i < x.nnz; i++) {
+    for (I i = 0; i < x.nnz; i++) {
         os << std::setw(6) << x.indices[i] << " ";
         os << std::setw(25) << std::scientific << x.vals[i] << "\n";
     }
 }
 
-template <> void store(const Vector_Sparse<double> &x, const char* file) { _store(x, file); }
-template <> void store(const Vector_Sparse<std::complex<double> > &x, const char* file) { _store(x, file); }
+template <> void store(const Vector_Sparse<double, int> &x, const char* file) { _store(x, file); }
+template <> void store(const Vector_Sparse<double, long> &x, const char* file) { _store(x, file); }
+template <> void store(const Vector_Sparse<std::complex<double>, int > &x, const char* file) { _store(x, file); }
+template <> void store(const Vector_Sparse<std::complex<double>, long > &x, const char* file) { _store(x, file); }
 
 template <typename T>
 void _store(const Vector_Distributed<Vector_Dense, T> &x, const char* file)
@@ -62,7 +64,7 @@ template <> void store(const Vector_Distributed<Vector_Dense, std::complex<doubl
 template <typename T>
 void _store(const Vector_Distributed<Vector_Sparse, T> &x, const char* file)
 {
-    Vector_Sparse<T> _x;
+    Vector_Sparse<T, esint> _x;
     _x.size = x.cluster.size - x.decomposition->halo.size();
     _x.nnz = x.cluster.nnz - x.decomposition->halo.size();
     _x.indices = x.cluster.indices + x.decomposition->halo.size();
@@ -114,8 +116,8 @@ void _store(const Matrix_Dense<T> &A, const char* file)
 template <> void store(const Matrix_Dense<double> &A, const char* file) { _store(A, file); }
 template <> void store(const Matrix_Dense<std::complex<double> > &A, const char* file) { _store(A, file); }
 
-template <typename T>
-void _store(const Matrix_CSR<T> &A, const char* file, esint offset = 0)
+template <typename T, typename I>
+void _store(const Matrix_CSR<T, I> &A, const char* file, esint offset = 0)
 {
     std::ofstream os(std::string(file) + ".txt");
     os << std::setw(6) << A.nrows << " " << std::setw(6) << A.ncols << " " << std::setw(6) << A.nnz << "\n";
@@ -156,7 +158,7 @@ template <> void store(const Matrix_IJV<std::complex<double>> &A, const char* fi
 template <typename T>
 void _store(const Matrix_Distributed<T> &A, const char* file)
 {
-    Matrix_CSR<T> _A;
+    Matrix_CSR<T, esint> _A;
     _A.nrows = A.cluster.nrows - A.decomposition->halo.size();
     _A.ncols = A.cluster.ncols;
     _A.nnz = A.cluster.nnz - (A.cluster.rows[A.decomposition->halo.size()] - Indexing::CSR);
@@ -181,7 +183,7 @@ template <> void store(const Matrix_FETI<double> &A, const char* file) { _store<
 template <> void store(const Matrix_FETI<std::complex<double> > &A, const char* file) { _store<std::complex<double>>(A, file); }
 
 template <>
-void store(const std::vector<esint> &v, const char* file)
+void store(const std::vector<int> &v, const char* file)
 {
     std::ofstream os(std::string(file) + ".txt");
 
@@ -191,7 +193,7 @@ void store(const std::vector<esint> &v, const char* file)
 }
 
 template <>
-void store(const std::vector<std::vector<esint> > &v, const char* file)
+void store(const std::vector<std::vector<int> > &v, const char* file)
 {
     for (size_t d = 0; d < v.size(); ++d) {
         store(v[d], (std::string(file) + std::to_string(d)).c_str());

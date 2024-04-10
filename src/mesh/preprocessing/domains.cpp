@@ -66,7 +66,7 @@ void computeElementIntervals(const DomainStore *domains, ElementStore *elements)
 		std::vector<int> regions;
 		for (size_t r = 1; r < elements->regions->edataSize() * sizeof(esint) * 8; ++r) {
 			esint maskOffset = r / (8 * sizeof(esint));
-			esint bit = 1 << (r % (8 * sizeof(esint)));
+			esint bit = 1L << (r % (8 * sizeof(esint)));
 			if (regs[maskOffset] & bit) {
 				regions.push_back(r);
 			}

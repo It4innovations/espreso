@@ -3,6 +3,9 @@ def options(opt):
     pass
 
 def configure(ctx):
+    if ctx.options.intwidth == "64":
+        return # denny 64-bit interface due to conflict with FETI  
+    
     prefix = 'mkl_blacs_'
     if ctx.options.intwidth == "32":
         suffix = '_lp64'

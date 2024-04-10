@@ -28,7 +28,7 @@ DualOperator<T>* DualOperator<T>::set(FETI<T> &feti, const step::Step &step)
     case FETIConfiguration::DUAL_OPERATOR::EXPLICIT_GPU:
         if (DirectSparseSolver<T>::provideFactors()) {
             eslog::info(" = DUAL OPERATOR                                                  EXPLICIT TOTAL FETI ON GPU = \n");
-            dual = new TotalFETIExplicitAcc<T,esint>(feti);
+            dual = new TotalFETIExplicitAcc<T,int>(feti);
         } else {
             eslog::globalerror("Third party software problem: solver does not provide factors that are required for EXPLICIT TOTAL FETI ON GPU.\n");
         }

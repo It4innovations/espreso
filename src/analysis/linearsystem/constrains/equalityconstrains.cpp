@@ -18,14 +18,14 @@ void EqualityConstrains<T>::set(const step::Step &step, FETI<T> &feti, const Vec
     doffset.resize(feti.K.size());
 
     size_t maxMultiplicity = 2;
-    std::vector<std::vector<esint> > &D2C = feti.D2C;
-    std::vector<std::vector<esint> > COLS(feti.K.size()), FIXED(feti.K.size());
+    std::vector<std::vector<int> > &D2C = feti.D2C;
+    std::vector<std::vector<int> > COLS(feti.K.size()), FIXED(feti.K.size());
     std::vector<std::vector<T> > VALS(feti.K.size());
 
     struct __lambda__ { int dof, size; };
     std::vector<__lambda__> permutation;
 
-    esint dindex = 0, dof = 0;
+    int dindex = 0, dof = 0;
     for (auto dmap = feti.decomposition->dmap->cbegin(); dmap != feti.decomposition->dmap->cend(); ++dmap, ++dof) {
         while (dindex < dirichlet.cluster.nnz && dirichlet.cluster.indices[dindex] < dof) { ++dindex; }
         if (dindex < dirichlet.cluster.nnz && dirichlet.cluster.indices[dindex] == dof) {
@@ -61,9 +61,9 @@ void EqualityConstrains<T>::set(const step::Step &step, FETI<T> &feti, const Vec
     Matrix_Dense<double> lambdas;
     lambdas.resize(maxMultiplicity - 1, maxMultiplicity);
     math::set(lambdas.nrows * lambdas.ncols, lambdas.vals, 1, T{0});
-    for (esint r = 0, nc = 1; r < lambdas.nrows; ++r, ++nc) {
+    for (int r = 0, nc = 1; r < lambdas.nrows; ++r, ++nc) {
         double scale = std::sqrt(1 + (double)nc / (nc * nc));
-        for (esint c = 0; c < nc; ++c) {
+        for (int c = 0; c < nc; ++c) {
             lambdas.vals[r * maxMultiplicity + c] = scale / (nc + 1);
         }
         lambdas.vals[r * maxMultiplicity + nc] = -scale * nc / (nc + 1);

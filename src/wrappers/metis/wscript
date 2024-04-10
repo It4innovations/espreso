@@ -6,4 +6,4 @@ def configure(ctx):
     if (ctx.options.skip_metis):
         return
     fragment = "#include \"metis.h\"\nint main(int argc, char** argv) {{ return IDXTYPEWIDTH != {0}; }}\n".format(ctx.options.intwidth)
-    ctx.check_cxx(mandatory=False, msg="Checking for 'metis'", okmsg="metis", define_name="HAVE_METIS", header_name="metis.h", lib="metis", fragment=fragment, uselib_store="METIS")
+    ctx.check_cxx(mandatory=False, fragment=fragment, msg="Checking for 'metis'", okmsg="metis", define_name="HAVE_METIS", header="metis.h", lib="metis", uselib_store="METIS", execute=True)

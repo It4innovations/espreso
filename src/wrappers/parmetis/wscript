@@ -5,5 +5,5 @@ def options(opt):
 def configure(ctx):
     if (ctx.options.skip_parmetis):
         return
-    if "HAVE_METIS" in ctx.env:
-        ctx.check_cxx(mandatory=False, msg="Checking for 'parmetis'", okmsg="parmetis", define_name="HAVE_PARMETIS", header_name="parmetis.h", lib="parmetis", uselib_store="PARMETIS")
+    fragment = "#include \"metis.h\"\nint main(int argc, char** argv) {{ return IDXTYPEWIDTH != {0}; }}\n".format(ctx.options.intwidth)
+    ctx.check_cxx(mandatory=False, fragment=fragment, msg="Checking for 'parmetis'", okmsg="parmetis", define_name="HAVE_PARMETIS", header_name="parmetis.h", lib="parmetis", uselib_store="PARMETIS", execute=True)

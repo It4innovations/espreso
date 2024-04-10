@@ -26,7 +26,7 @@ void Matrix_CSR_Sync<T>::init(Matrix_Distributed<T> &m)
 
     std::vector<std::vector<esint> > sbuffer(neighbors.size()), rbuffer(neighbors.size());
 
-    const Matrix_CSR<T> &csr = m.cluster;
+    const Matrix_CSR<T, esint> &csr = m.cluster;
 
     auto halo = m.decomposition->halo.begin();
     for (size_t n = 0, r = 0; n < neighbors.size() && neighbors[n] < info::mpi::rank; ++n) {

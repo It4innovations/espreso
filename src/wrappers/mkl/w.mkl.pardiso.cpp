@@ -22,7 +22,7 @@ struct Solver_External_Representation
 };
 
 template<typename T, typename I>
-bool _callPardiso(esint phase, std::unique_ptr<Solver_External_Representation<T,I>> & ext, I nrhs, T *rhs, T *solution)
+bool _callPardiso(I phase, std::unique_ptr<Solver_External_Representation<T,I>> & ext, I nrhs, T *rhs, T *solution)
 {
     ext->pp.phase = phase;
     pardiso(
@@ -116,7 +116,7 @@ void DirectSparseSolver<T, I>::commit(const Matrix_CSR<T, I> &a)
     ext->pp.iparm[9] = 13;           /* Perturb the pivot elements with 1E-13 */
 
     ext->pp.iparm[4] = 2;            /* Return permutation vector */
-    ext->pp.perm = new esint[ext->matrix->nrows];
+    ext->pp.perm = new I[ext->matrix->nrows];
 }
 
 template <typename T, typename I>
@@ -124,8 +124,8 @@ void DirectSparseSolver<T, I>::symbolicFactorization(int fixedSuffix)
 {
     if (fixedSuffix) {
         ext->pp.iparm[30] = 1;
-        for (esint i = 0          ; i < fixedSuffix;        ++i) { ext->pp.perm[i] = 0; }
-        for (esint i = fixedSuffix; i < ext->matrix->nrows; ++i) { ext->pp.perm[i] = 1; }
+        for (I i = 0          ; i < fixedSuffix;        ++i) { ext->pp.perm[i] = 0; }
+        for (I i = fixedSuffix; i < ext->matrix->nrows; ++i) { ext->pp.perm[i] = 1; }
     }
 
     _callPardiso<T>(11, ext, 0, nullptr, nullptr);
@@ -269,9 +269,9 @@ template <typename T, typename I>
 void DirectSparseSolver<T, I>::getSC(Matrix_Dense<T, I> &sc)
 {
     Matrix_Dense<T, I> full; full.resize(sc.nrows, sc.nrows);
-    Vector_Dense<esint> perm; perm.resize(ext->matrix->nrows);
-    for (esint i = 0                            ; i < ext->matrix->nrows - sc.nrows; ++i) { perm.vals[i] = 0; }
-    for (esint i = ext->matrix->nrows - sc.nrows; i < ext->matrix->nrows           ; ++i) { perm.vals[i] = 1; }
+    Vector_Dense<I> perm; perm.resize(ext->matrix->nrows);
+    for (I i = 0                            ; i < ext->matrix->nrows - sc.nrows; ++i) { perm.vals[i] = 0; }
+    for (I i = ext->matrix->nrows - sc.nrows; i < ext->matrix->nrows           ; ++i) { perm.vals[i] = 1; }
 
     ext->pp.iparm[35] = 1;
     std::swap(ext->pp.perm, perm.vals);
@@ -279,8 +279,8 @@ void DirectSparseSolver<T, I>::getSC(Matrix_Dense<T, I> &sc)
     std::swap(ext->pp.perm, perm.vals);
     ext->pp.iparm[35] = 0;
 
-    for (esint r = 0, i = 0; r < full.nrows; ++r) {
-        for (esint c = r; c < full.ncols; ++c, ++i) {
+    for (I r = 0, i = 0; r < full.nrows; ++r) {
+        for (I c = r; c < full.ncols; ++c, ++i) {
             sc.vals[i] = full.vals[r * full.ncols + c];
         }
     }

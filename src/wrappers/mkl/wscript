@@ -5,14 +5,12 @@ def options(opt):
 def configure(ctx):
     if (ctx.options.skip_mkl):
         return
+
     # currently it seems that there is a bug in OpenMP version (use gomp + gnu_threads)
     libs = []
     if ctx.options.cxx == "icpc":
         libs.append("gomp")
-    if ctx.options.intwidth == "32":
-        libs.append("mkl_intel_lp64")
-    if ctx.options.intwidth == "64":
-        libs.append("mkl_intel_ilp64")
+    libs.append("mkl_intel_lp64")
     libs.append("mkl_core")
     # if ctx.options.cxx == "icpc":
     #     libs.append("mkl_intel_thread")
@@ -21,4 +19,4 @@ def configure(ctx):
     libs.append("mkl_sequential")
 
     if ctx.check_cxx(mandatory=False, msg="Checking for 'mkl'", okmsg=" ".join(libs), define_name="HAVE_MKL", header_name="mkl.h", lib=libs, uselib_store="MKL"):
-        ctx.env.append_unique("DEFINES_MKL", [("MKL_INT=int", "MKL_INT=long")[ctx.options.intwidth == "64"], "MKL_Complex8=std::complex<float>", "MKL_Complex16=std::complex<double>"])
+        ctx.env.append_unique("DEFINES_MKL", [ "MKL_INT=int", "MKL_Complex8=std::complex<float>", "MKL_Complex16=std::complex<double>" ])
