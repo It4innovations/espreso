@@ -98,9 +98,19 @@ void SpBLAS<Matrix_CSR, std::complex<double>, int>::apply(Vector_Dense<std::comp
     _apply<esint>(_spblas->Y, _spblas->A, _spblas->X, _spblas->alpha, _spblas->beta, _spblas->common);
 }
 
+template <template <typename, typename, typename> class Matrix, typename T, typename I>
+void SpBLAS<Matrix, T, I>::apply(Vector_Dense<T, I> &y, const T &alpha, const T &beta, const Vector_Dense<T, I> &x)
+{
+    eslog::error("SpBLAS wrapper is incompatible with T=%dB, I=%dB\n", sizeof(T), sizeof(I));
+}
+
 template struct SpBLAS<Matrix_CSR, float, int>;
 template struct SpBLAS<Matrix_CSR, double, int>;
 template struct SpBLAS<Matrix_CSR, std::complex<double>, int>;
+
+template struct SpBLAS<Matrix_CSR, float, long>;
+template struct SpBLAS<Matrix_CSR, double, long>;
+template struct SpBLAS<Matrix_CSR, std::complex<double>, long>;
 
 }
 

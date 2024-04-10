@@ -38,27 +38,19 @@ void SpBLAS<Matrix, T, I>::insert(MatrixType &a)
 
 }
 
-template <>
-void SpBLAS<Matrix_CSR, float, int>::apply(Vector_Dense<float> &y, const float &alpha, const float &beta, const Vector_Dense<float> &x)
+template <template <typename, typename, typename> class Matrix, typename T, typename I>
+void SpBLAS<Matrix, T, I>::apply(Vector_Dense<T, I> &y, const T &alpha, const T &beta, const Vector_Dense<T, I> &x)
 {
-
-}
-
-template <>
-void SpBLAS<Matrix_CSR, double, int>::apply(Vector_Dense<double> &y, const double &alpha, const double &beta, const Vector_Dense<double> &x)
-{
-
-}
-
-template <>
-void SpBLAS<Matrix_CSR, std::complex<double>, int>::apply(Vector_Dense<std::complex<double>, int> &y, const std::complex<double> &alpha, const std::complex<double> &beta, const Vector_Dense<std::complex<double> > &x)
-{
-
+    eslog::error("call empty SpBLAS wrapper\n");
 }
 
 template struct SpBLAS<Matrix_CSR, float, int>;
 template struct SpBLAS<Matrix_CSR, double, int>;
 template struct SpBLAS<Matrix_CSR, std::complex<double>, int>;
+
+template struct SpBLAS<Matrix_CSR, float, long>;
+template struct SpBLAS<Matrix_CSR, double, long>;
+template struct SpBLAS<Matrix_CSR, std::complex<double>, long>;
 
 }
 

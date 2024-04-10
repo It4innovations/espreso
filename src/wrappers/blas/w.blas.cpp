@@ -13,67 +13,67 @@ namespace math {
 namespace blas {
 
 template <>
-void copy(const esint size, double *x, const esint incX, const double *y, const esint incY)
+void copy(const int size, double *x, const int incX, const double *y, const int incY)
 {
     cblas_dcopy(size, y, incY, x, incX);
 }
 
 template <>
-void copy(const esint size, std::complex<double> *x, const esint incX, const std::complex<double> *y, const esint incY)
+void copy(const int size, std::complex<double> *x, const int incX, const std::complex<double> *y, const int incY)
 {
     cblas_zcopy(size, y, incY, x, incX);
 }
 
 template <>
-void scale(const esint size, const float &alpha, float *x, const esint incX)
+void scale(const int size, const float &alpha, float *x, const int incX)
 {
     cblas_sscal(size, alpha, x, incX);
 }
 
 template <>
-void scale(const esint size, const double &alpha, double *x, const esint incX)
+void scale(const int size, const double &alpha, double *x, const int incX)
 {
     cblas_dscal(size, alpha, x, incX);
 }
 
 template <>
-void scale(const esint size, const std::complex<double> &alpha, std::complex<double> *x, const esint incX)
+void scale(const int size, const std::complex<double> &alpha, std::complex<double> *x, const int incX)
 {
     cblas_zscal(size, &alpha, x, incX);
 }
 
 template <>
-void add(const esint size, float *x, const esint incX, const float &alpha, const float *y, const esint incY)
+void add(const int size, float *x, const int incX, const float &alpha, const float *y, const int incY)
 {
     cblas_saxpy(size, alpha, y, incY, x, incX);
 }
 
 template <>
-void add(const esint size, double *x, const esint incX, const double &alpha, const double *y, const esint incY)
+void add(const int size, double *x, const int incX, const double &alpha, const double *y, const int incY)
 {
     cblas_daxpy(size, alpha, y, incY, x, incX);
 }
 
 template <>
-void add(const esint size, std::complex<float> *x, const esint incX, const std::complex<float> &alpha, const std::complex<float> *y, const esint incY)
+void add(const int size, std::complex<float> *x, const int incX, const std::complex<float> &alpha, const std::complex<float> *y, const int incY)
 {
     cblas_caxpy(size, &alpha, y, incY, x, incX);
 }
 
 template <>
-void add(const esint size, std::complex<double> *x, const esint incX, const std::complex<double> &alpha, const std::complex<double> *y, const esint incY)
+void add(const int size, std::complex<double> *x, const int incX, const std::complex<double> &alpha, const std::complex<double> *y, const int incY)
 {
     cblas_zaxpy(size, &alpha, y, incY, x, incX);
 }
 
 template <>
-double dot(const esint size, const double *x, const esint incX, const double *y, const esint incY)
+double dot(const int size, const double *x, const int incX, const double *y, const int incY)
 {
     return cblas_ddot(size, x, incX, y, incY);
 }
 
 template <>
-std::complex<double> dot(const esint size, const std::complex<double> *x, const esint incX, const std::complex<double> *y, const esint incY)
+std::complex<double> dot(const int size, const std::complex<double> *x, const int incX, const std::complex<double> *y, const int incY)
 {
     std::complex<double> dot = 0;
     eslog::error("not implemented BLAS routine.\n");
@@ -82,25 +82,25 @@ std::complex<double> dot(const esint size, const std::complex<double> *x, const 
 }
 
 template <>
-float norm(const esint size, const float *x, const esint incX)
+float norm(const int size, const float *x, const int incX)
 {
     return cblas_snrm2(size, x, incX);
 }
 
 template <>
-double norm(const esint size, const double *x, const esint incX)
+double norm(const int size, const double *x, const int incX)
 {
     return cblas_dnrm2(size, x, incX);
 }
 
 template <>
-float norm(const esint size, const std::complex<float> *x, const esint incX)
+float norm(const int size, const std::complex<float> *x, const int incX)
 {
     return cblas_scnrm2(size, x, incX);
 }
 
 template <>
-double norm(const esint size, const std::complex<double> *x, const esint incX)
+double norm(const int size, const std::complex<double> *x, const int incX)
 {
     return cblas_dznrm2(size, x, incX);
 }
