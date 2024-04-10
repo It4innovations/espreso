@@ -3,21 +3,52 @@ stages:
   - release
 
 before_script:
-  - export CPATH=/usr/include/mkl:$CPATH
-  - export CPATH=/usr/include/suitesparse:$CPATH
   - export CXX=mpic++
 
-INT32:
+DUMMY:
+  stage: build
+  script:
+    - ./waf configure --skip-suitesparse --skip-mkl
+    - ./waf -j8
+
+    - ./waf configure --skip-suitesparse --skip-mkl --intwidth=64
+    - ./waf -j8
+
+MKL:
+  stage: build
+  script:
+    - export CPATH=/usr/include/mkl:$CPATH
+
+    - ./waf configure
+    - ./waf -j8
+    - nose2 -v -s tests/heatTransfer/const/conductivity/isotropic2D/
+    - nose2 -v -s tests/heatTransfer/const/conductivity/isotropic3D/
+    - nose2 -v -s tests/linearElasticity/const/planeStrain/elements/acceleration/
+    - nose2 -v -s tests/linearElasticity/const/volume/element/acceleration/
+
+    - ./waf configure --intwidth=64
+    - ./waf -j8
+    - nose2 -v -s tests/heatTransfer/const/conductivity/isotropic2D/
+    - nose2 -v -s tests/heatTransfer/const/conductivity/isotropic3D/
+    - nose2 -v -s tests/linearElasticity/const/planeStrain/elements/acceleration/
+    - nose2 -v -s tests/linearElasticity/const/volume/element/acceleration/
+
+FOSS:
   stage: build
   script:
     - ./waf configure
     - ./waf -j8
+    - nose2 -v -s tests/heatTransfer/const/conductivity/isotropic2D/
+    - nose2 -v -s tests/heatTransfer/const/conductivity/isotropic3D/
+    - nose2 -v -s tests/linearElasticity/const/planeStrain/elements/acceleration/
+    - nose2 -v -s tests/linearElasticity/const/volume/element/acceleration/
 
-INT64:
-  stage: build
-  script:
     - ./waf configure --intwidth=64
     - ./waf -j8
+    - nose2 -v -s tests/heatTransfer/const/conductivity/isotropic2D/
+    - nose2 -v -s tests/heatTransfer/const/conductivity/isotropic3D/
+    - nose2 -v -s tests/linearElasticity/const/planeStrain/elements/acceleration/
+    - nose2 -v -s tests/linearElasticity/const/volume/element/acceleration/
 
 GITHUB:
   stage: release
