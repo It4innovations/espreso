@@ -50,6 +50,25 @@ FOSS:
     - nose2 -v -s tests/linearElasticity/const/planeStrain/elements/acceleration/
     - nose2 -v -s tests/linearElasticity/const/volume/element/acceleration/
 
+INTEL:
+  stage: build
+  script:
+    - . env/modules.workstation.icpc
+
+    - ./waf configure
+    - ./waf -j8
+    - nose2 -v -s tests/heatTransfer/const/conductivity/anisotropic2D/
+    - nose2 -v -s tests/heatTransfer/const/conductivity/isotropic3D/
+    - nose2 -v -s tests/linearElasticity/const/planeStrain/elements/acceleration/
+    - nose2 -v -s tests/linearElasticity/const/volume/element/acceleration/
+
+    - ./waf configure --intwidth=64
+    - ./waf -j8
+    - nose2 -v -s tests/heatTransfer/const/conductivity/anisotropic2D/
+    - nose2 -v -s tests/heatTransfer/const/conductivity/isotropic3D/
+    - nose2 -v -s tests/linearElasticity/const/planeStrain/elements/acceleration/
+    - nose2 -v -s tests/linearElasticity/const/volume/element/acceleration/
+
 GITHUB:
   stage: release
   script:
