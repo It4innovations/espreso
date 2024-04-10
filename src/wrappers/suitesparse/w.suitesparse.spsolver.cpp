@@ -347,17 +347,17 @@ void DirectSparseSolver<T, I>::getSC(Matrix_Dense<T,I> &sc)
     double alpha[2] = {-1,0};
     double beta[2] = {1,0};
 
-    cm_L = _analyze<esint>(cm_A11_sp, ext->cm_common);
-    _factorize<esint>(cm_L, cm_A11_sp, ext->cm_common);
-    cm_A11iA12_dn = _solve<esint>(CHOLMOD_A, cm_L, cm_A12_dn, ext->cm_common);
-    _apply<esint>(cm_A22_dn, cm_A21_sp, cm_A11iA12_dn, alpha, beta, ext->cm_common);
+    cm_L = _analyze<I>(cm_A11_sp, ext->cm_common);
+    _factorize<I>(cm_L, cm_A11_sp, ext->cm_common);
+    cm_A11iA12_dn = _solve<I>(CHOLMOD_A, cm_L, cm_A12_dn, ext->cm_common);
+    _apply<I>(cm_A22_dn, cm_A21_sp, cm_A11iA12_dn, alpha, beta, ext->cm_common);
 
     if constexpr (std::is_same_v<T,double>) { sc.type = Matrix_Type::REAL_SYMMETRIC_POSITIVE_DEFINITE; }
     if constexpr (std::is_same_v<T,std::complex<double>>) { sc.type = Matrix_Type::COMPLEX_HERMITIAN_POSITIVE_DEFINITE; }
     sc.shape = Matrix_Shape::UPPER;
     sc.resize(A22t_dn);
-    for(esint r = 0, i = 0; r < sc.nrows; ++r) {
-        for(esint c = r; c < sc.ncols; ++c, ++i) {
+    for(I r = 0, i = 0; r < sc.nrows; ++r) {
+        for(I c = r; c < sc.ncols; ++c, ++i) {
             sc.vals[i] = A22t_dn.vals[r * sc.ncols + c];
         }
     }
@@ -366,8 +366,8 @@ void DirectSparseSolver<T, I>::getSC(Matrix_Dense<T,I> &sc)
     delete cm_A21_sp;
     delete cm_A22_dn;
     delete cm_A12_dn;
-    _free<esint>(cm_L, ext->cm_common);
-    _free<esint>(cm_A11iA12_dn, ext->cm_common);
+    _free<I>(cm_L, ext->cm_common);
+    _free<I>(cm_A11iA12_dn, ext->cm_common);
 }
 
 template struct DirectSparseSolver<float,                int32_t>;
