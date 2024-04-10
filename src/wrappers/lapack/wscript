@@ -2,6 +2,10 @@ import os
 
 def options(opt):
     opt.math.add_option("--lapack_libraries", action="store", type="string", default=os.getenv("LAPACK_LIBRARIES") or "lapack", help="List of LAPACK libraries.")
+    opt.math.add_option("--skip-lapack", action="store_true", default=False, help="Skip search for LAPACK library.")
 
 def configure(ctx):
+    if (ctx.options.skip_lapack):
+        return
+
     ctx.check_cxx(mandatory=False, msg="Checking for 'lapack'", okmsg=ctx.options.lapack_libraries, define_name="HAVE_LAPACK", header_name="lapacke.h", lib=ctx.options.lapack_libraries, uselib_store="LAPACK")

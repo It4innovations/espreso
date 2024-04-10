@@ -8,10 +8,10 @@ before_script:
 DUMMY:
   stage: build
   script:
-    - ./waf configure --skip-suitesparse --skip-mkl
+    - ./waf configure --skip-suitesparse --skip-mkl --skip-blas --skip-lapack
     - ./waf -j8
 
-    - ./waf configure --skip-suitesparse --skip-mkl --intwidth=64
+    - ./waf configure --skip-suitesparse --skip-mkl --skip-blas --skip-lapack --intwidth=64
     - ./waf -j8
 
 MKL:
