@@ -1,5 +1,6 @@
 
 #include "math/wrappers/math.spsolver.h"
+#include "gpu/gpu_management.h"
 #include "esinfo/eslog.h"
 
 #include <complex>
@@ -10,6 +11,7 @@
 
 namespace espreso {
 
+template<typename T, typename I>
 struct Solver_External_Representation
 {
 };
@@ -40,13 +42,12 @@ Solver_Factors DirectSparseSolver<T, I>::factorsSymmetry()
 
 template <typename T, typename I>
 DirectSparseSolver<T, I>::DirectSparseSolver()
-: matrix{}, rows{}, nnzA{}, nnzL{}, memoryL{}, _solver{nullptr}
 {
     eslog::error("calling of empty sparse solver wrapper.\n");
 }
 
 template <typename T, typename I>
-DirectSparseSolver<T, I>::DirectSparseSolver(const Matrix_CSR<T> &a)
+DirectSparseSolver<T, I>::DirectSparseSolver(const Matrix_CSR<T, I> &a)
 {
     eslog::error("calling of empty sparse solver wrapper.\n");
 }
@@ -94,6 +95,42 @@ void DirectSparseSolver<T, I>::solve(Matrix_Dense<T, I> &rhs, Matrix_Dense<T, I>
 }
 
 template <typename T, typename I>
+void DirectSparseSolver<T, I>::solveForward (Vector_Dense<T, I> &rhs, Vector_Dense<T, I> &solution, int sparsity)
+{
+
+}
+
+template <typename T, typename I>
+void DirectSparseSolver<T, I>::solveDiagonal(Vector_Dense<T, I> &rhs, Vector_Dense<T, I> &solution, int sparsity)
+{
+
+}
+
+template <typename T, typename I>
+void DirectSparseSolver<T, I>::solveBackward(Vector_Dense<T, I> &rhs, Vector_Dense<T, I> &solution, int sparsity)
+{
+
+}
+
+template <typename T, typename I>
+void DirectSparseSolver<T, I>::solveForward (Matrix_Dense<T, I> &rhs, Matrix_Dense<T, I> &solution, int sparsity)
+{
+
+}
+
+template <typename T, typename I>
+void DirectSparseSolver<T, I>::solveDiagonal(Matrix_Dense<T, I> &rhs, Matrix_Dense<T, I> &solution, int sparsity)
+{
+
+}
+
+template <typename T, typename I>
+void DirectSparseSolver<T, I>::solveBackward(Matrix_Dense<T, I> &rhs, Matrix_Dense<T, I> &solution, int sparsity)
+{
+
+}
+
+template <typename T, typename I>
 I DirectSparseSolver<T, I>::getMatrixSize()
 {
     return 0;
@@ -112,13 +149,15 @@ I DirectSparseSolver<T, I>::getFactorNnz()
 }
 
 template <typename T, typename I>
-void DirectSparseSolver<T, I>::getFactorL(Matrix_CSR<T,I> &/*L*/, bool /*copyPattern*/, bool /*copyValues*/)
+template<typename A>
+inline void DirectSparseSolver<T, I>::getFactorL(Matrix_CSR<T, I, A> &/*L*/, bool /*copyPattern*/, bool /*copyValues*/)
 {
     eslog::error("calling of empty sparse solver wrapper.\n");
 }
 
 template <typename T, typename I>
-void DirectSparseSolver<T, I>::getFactorU(Matrix_CSR<T,I> &/*U*/, bool /*copyPattern*/, bool /*copyValues*/)
+template<typename A>
+inline void DirectSparseSolver<T, I>::getFactorU(Matrix_CSR<T, I, A> &/*U*/, bool /*copyPattern*/, bool /*copyValues*/)
 {
     eslog::error("calling of empty sparse solver wrapper.\n");
 }
@@ -135,8 +174,11 @@ void DirectSparseSolver<T, I>::getSC(Matrix_Dense<T,I> &/*sc*/)
     eslog::error("calling of empty sparse solver wrapper.\n");
 }
 
-template struct DirectSparseSolver<Matrix_CSR, double, int>;
-template struct DirectSparseSolver<Matrix_CSR, std::complex<double>, int>;
+template struct DirectSparseSolver<double, int>;
+template struct DirectSparseSolver<std::complex<double>, int>;
+
+template void DirectSparseSolver<double, int>::getFactorL<gpu::mgm::Ah>(Matrix_CSR<double, int, gpu::mgm::Ah> &, bool, bool);
+template void DirectSparseSolver<double, int>::getFactorU<gpu::mgm::Ah>(Matrix_CSR<double, int, gpu::mgm::Ah> &, bool, bool);
 
 }
 
