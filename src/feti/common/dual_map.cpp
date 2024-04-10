@@ -25,16 +25,16 @@ void Dual_Map::set(FETI<T> &feti) {
 
     nsize.resize(neighbors.size());
     for (size_t i = 0, offset = 0; i < feti.lambdas.cmap.size(); ) {
-        esint lambdas =  feti.lambdas.cmap[i];
-        esint domains =  feti.lambdas.cmap[i + 1];
+        int lambdas =  feti.lambdas.cmap[i];
+        int domains =  feti.lambdas.cmap[i + 1];
         nmap.push_back(offset);
         nmap.push_back(offset + lambdas);
         size_t ncounter = nmap.size();
         nmap.push_back(0); // neighbors
-        esint last = -1;
-        for (esint d = 0; d < domains; ++d) {
+        int last = -1;
+        for (int d = 0; d < domains; ++d) {
             if (!feti.decomposition->ismy(feti.lambdas.cmap[2 + i + d])) {
-                esint neigh = feti.decomposition->noffset(feti.lambdas.cmap[2 + i + d]);
+                int neigh = feti.decomposition->noffset(feti.lambdas.cmap[2 + i + d]);
                 if (last < neigh) {
                     nmap.push_back(neigh);
                     nmap[ncounter]++;

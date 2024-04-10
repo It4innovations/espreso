@@ -69,7 +69,7 @@ void TotalFETIExplicit<T>::set(const step::Step &step)
     for (size_t di = 0; di < feti.K.size(); ++di) {
         KSolver[di].commit(Kplus[di]);
 
-        esint suffix = 0;
+        int suffix = 0;
 //        if (sparsity != DirectSolver<T, Matrix_CSR>::VectorSparsity::DENSE) {
 //            suffix = *std::min_element(feti.B1[di].cols, feti.B1[di].cols + feti.B1[di].nnz);
 //        }
@@ -125,16 +125,16 @@ void TotalFETIExplicit<T>::update(const step::Step &step)
                 KplusBt.resize(feti.B1[d].ncols);
                 Bt.resize(feti.B1[d].ncols);
 
-                for (esint r = 0; r < feti.B1[d].nrows; ++r) {
+                for (int r = 0; r < feti.B1[d].nrows; ++r) {
                     math::set(Bt, T{0});
-                    for (esint c = feti.B1[d].rows[r]; c < feti.B1[d].rows[r + 1]; ++c) {
+                    for (int c = feti.B1[d].rows[r]; c < feti.B1[d].rows[r + 1]; ++c) {
                         Bt.vals[feti.B1[d].cols[c]] = feti.B1[d].vals[c];
                     }
                     KSolver[d].solve(Bt, KplusBt);
 
-                    for (esint fr = 0; fr < feti.B1[d].nrows; ++fr) {
+                    for (int fr = 0; fr < feti.B1[d].nrows; ++fr) {
                         F[d].vals[fr * feti.B1[d].nrows + r] = 0;
-                        for (esint fc = feti.B1[d].rows[fr]; fc < feti.B1[d].rows[fr + 1]; ++fc) {
+                        for (int fc = feti.B1[d].rows[fr]; fc < feti.B1[d].rows[fr + 1]; ++fc) {
                             F[d].vals[fr * feti.B1[d].nrows + r] += feti.B1[d].vals[fc] * KplusBt.vals[feti.B1[d].cols[fc]];
                         }
                     }
@@ -147,9 +147,9 @@ void TotalFETIExplicit<T>::update(const step::Step &step)
                 KplusBt.resize(feti.B1[d].nrows, feti.B1[d].ncols);
                 Bt.resize(feti.B1[d].nrows, feti.B1[d].ncols);
 
-                for (esint r = 0; r < feti.B1[d].nrows; ++r) {
-                    esint cc = 0;
-                    for (esint c = feti.B1[d].rows[r]; c < feti.B1[d].rows[r + 1]; ++c, ++cc) {
+                for (int r = 0; r < feti.B1[d].nrows; ++r) {
+                    int cc = 0;
+                    for (int c = feti.B1[d].rows[r]; c < feti.B1[d].rows[r + 1]; ++c, ++cc) {
                         while (cc < feti.B1[d].cols[c]) {
                             Bt.vals[r * Bt.ncols + cc] = 0;
                             ++cc;
@@ -162,10 +162,10 @@ void TotalFETIExplicit<T>::update(const step::Step &step)
                     }
                 }
                 KSolver[d].solve(Bt, KplusBt);
-                for (esint r = 0; r < feti.B1[d].nrows; ++r) {
-                    for (esint lr = 0; lr < feti.B1[d].nrows; ++lr) {
+                for (int r = 0; r < feti.B1[d].nrows; ++r) {
+                    for (int lr = 0; lr < feti.B1[d].nrows; ++lr) {
                         F[d].vals[lr * feti.B1[d].nrows + r] = 0;
-                        for (esint lc = feti.B1[d].rows[lr]; lc < feti.B1[d].rows[lr + 1]; ++lc) {
+                        for (int lc = feti.B1[d].rows[lr]; lc < feti.B1[d].rows[lr + 1]; ++lc) {
                             F[d].vals[lr * F[d].ncols + r] += feti.B1[d].vals[lc] * KplusBt.vals[r * KplusBt.ncols + feti.B1[d].cols[lc]];
                         }
                     }

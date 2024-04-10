@@ -117,7 +117,7 @@ void TotalFETIImplicit<T>::set(const step::Step &step)
     for (size_t di = 0; di < feti.K.size(); ++di) {
         KSolver[di].commit(Kplus[di]);
 
-        esint suffix = 0;
+        int suffix = 0;
         if (sparsity != DirectSparseSolver<T>::VectorSparsity::DENSE) {
             suffix = *std::min_element(feti.B1[di].cols, feti.B1[di].cols + feti.B1[di].nnz);
         }

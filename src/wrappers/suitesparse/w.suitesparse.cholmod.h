@@ -144,7 +144,7 @@ static inline void setAsymmetric(cholmod_sparse* &A, cholmod_common &common, con
     At->packed = 1;
 
     // CSR -> CSC
-    At = _transpose<esint>(A, common);
+    At = _transpose<I>(A, common);
     delete At;
 }
 
@@ -184,12 +184,12 @@ static inline void update(cholmod_dense* &A, const Vector_Dense<T, I> &v)
 template <typename T, typename I>
 static inline void _extractUpper(cholmod_sparse* &A, cholmod_common &common, Matrix_CSR<T, I> &M)
 {
-    cholmod_sparse* upA = _copy<esint>(A, -1, 1, common); // CSC -> CSR
+    cholmod_sparse* upA = _copy<I>(A, -1, 1, common); // CSC -> CSR
     M.shape = Matrix_Shape::UPPER;
     M.type = Matrix_Type::REAL_SYMMETRIC_INDEFINITE;
     M.resize(upA->ncol, upA->nrow, upA->nzmax);
-    std::copy((esint*)upA->p, (esint*)upA->p + M.nrows + 1, M.rows);
-    std::copy((esint*)upA->i, (esint*)upA->i + M.nnz, M.cols);
+    std::copy((I*)upA->p, (I*)upA->p + M.nrows + 1, M.rows);
+    std::copy((I*)upA->i, (I*)upA->i + M.nnz, M.cols);
     std::copy((T*)upA->x, (T*)upA->x + M.nnz, M.vals);
     delete upA;
 }
@@ -198,14 +198,14 @@ template <typename T, typename I>
 static inline void extract(cholmod_dense *A, cholmod_common &common, Matrix_Dense<T, I> &M)
 {
     memcpy(M.vals, A->x, sizeof(T) * M.nrows * M.ncols);
-    _free<esint>(A, common);
+    _free<I>(A, common);
 }
 
 template <typename T, typename I>
 static inline void extract(cholmod_dense *A, cholmod_common &common, Vector_Dense<T, I> &v)
 {
     memcpy(v.vals, A->x, sizeof(T) * v.size);
-    _free<esint>(A, common);
+    _free<I>(A, common);
 }
 
 }

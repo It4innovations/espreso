@@ -7,7 +7,7 @@
 namespace espreso {
 
 template <typename T>
-void Vector_Kernel<T>::set(esint offset, esint size, esint totalSize)
+void Vector_Kernel<T>::set(int offset, int size, int totalSize)
 {
     Vector_Kernel<T>::offset = offset;
     Vector_Kernel<T>::localSize = size;

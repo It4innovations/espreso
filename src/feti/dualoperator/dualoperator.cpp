@@ -42,18 +42,18 @@ template<typename T>
 void DualOperator<T>::getInitVector(Vector_Dual<T> &v)
 {
     double norm = 1 / std::sqrt(feti.sinfo.dual_total);
-    esint i = 0;
-    for (esint j = 0; j < feti.lambdas.eq_halo; ++i, ++j) {
+    int i = 0;
+    for (int j = 0; j < feti.lambdas.eq_halo; ++i, ++j) {
         v.vals[i] = 0;
     }
-    for (esint j = 0; j < feti.lambdas.eq_size; ++i, ++j) {
+    for (int j = 0; j < feti.lambdas.eq_size; ++i, ++j) {
         int mul = (feti.sinfo.eq_offset + j) % 2;
         v.vals[i] = (1 - 2 * mul) * norm;
     }
-    for (esint j = 0; j < feti.lambdas.nc_halo; ++i, ++j) {
+    for (int j = 0; j < feti.lambdas.nc_halo; ++i, ++j) {
         v.vals[i] = 0;
     }
-    for (esint j = 0; j < feti.lambdas.nc_size; ++i, ++j) {
+    for (int j = 0; j < feti.lambdas.nc_size; ++i, ++j) {
         int mul = (feti.sinfo.eq_total + feti.sinfo.nc_offset + j) % 2;
         v.vals[i] = (1 - 2 * mul) * norm;
     }

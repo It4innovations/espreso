@@ -13,8 +13,8 @@ static void applyBt(FETI<T> &feti, size_t d, const Vector_Dual<T> &in, Vector_De
 {
     math::set(out, T{0});
 
-    for (esint r = 0; r < feti.B1[d].nrows; ++r) {
-        for (esint c = feti.B1[d].rows[r]; c < feti.B1[d].rows[r + 1]; ++c) {
+    for (int r = 0; r < feti.B1[d].nrows; ++r) {
+        for (int c = feti.B1[d].rows[r]; c < feti.B1[d].rows[r + 1]; ++c) {
             out.vals[feti.B1[d].cols[c]] += alpha * feti.B1[d].vals[c] * in.vals[feti.D2C[d][r]];
         }
     }
@@ -24,7 +24,7 @@ template <typename T>
 static void extractDomain(FETI<T> &feti, size_t d, const Vector_Dual<T> &in, Vector_Dense<T> &out)
 {
     math::set(out, T{0});
-    for (esint r = 0; r < feti.B1[d].nrows; ++r) {
+    for (int r = 0; r < feti.B1[d].nrows; ++r) {
         out.vals[r] = in.vals[feti.D2C[d][r]];
     }
 }
@@ -35,8 +35,8 @@ static void applyB(FETI<T> &feti, const std::vector<Vector_Dense<T> > &in, Vecto
 {
     math::set(out, T{0});
     for (size_t d = 0; d < feti.K.size(); ++d) {
-        for (esint r = 0; r < feti.B1[d].nrows; ++r) {
-            for (esint c = feti.B1[d].rows[r]; c < feti.B1[d].rows[r + 1]; ++c) {
+        for (int r = 0; r < feti.B1[d].nrows; ++r) {
+            for (int c = feti.B1[d].rows[r]; c < feti.B1[d].rows[r + 1]; ++c) {
                 out.vals[feti.D2C[d][r]] += feti.B1[d].vals[c] * in[d].vals[feti.B1[d].cols[c]];
             }
         }
@@ -49,7 +49,7 @@ static void insertDomains(FETI<T> &feti, const std::vector<Vector_Dense<T> > &in
 {
     math::set(out, T{0});
     for (size_t d = 0; d < feti.K.size(); ++d) {
-        for (esint r = 0; r < feti.B1[d].nrows; ++r) {
+        for (int r = 0; r < feti.B1[d].nrows; ++r) {
             out.vals[feti.D2C[d][r]] += in[d].vals[r];
         }
     }

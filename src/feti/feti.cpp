@@ -32,8 +32,8 @@ bool FETI<T>::set(const step::Step &step)
 {
     double start = eslog::time();
 
-    esint offset[2] = { 0, 0 };
-    esint size[4] = { 0, 0, 0, 0 };
+    int offset[2] = { 0, 0 };
+    int size[4] = { 0, 0, 0, 0 };
     size[0] = K.size();
     for (size_t d = 0; d < K.size(); ++d) {
         sinfo.R1size = offset[0] = size[2] += R1[d].nrows;
@@ -50,8 +50,8 @@ bool FETI<T>::set(const step::Step &step)
     sinfo.nc_total = Communication::exscan(sinfo.nc_offset);
     sinfo.dual_total = sinfo.eq_total + sinfo.nc_total;
 
-    Communication::exscan(offset, NULL, 2, MPITools::getType<esint>().mpitype, MPI_SUM);
-    Communication::allReduce(size, NULL, 5, MPITools::getType<esint>().mpitype, MPI_SUM);
+    Communication::exscan(offset, NULL, 2, MPITools::getType<int>().mpitype, MPI_SUM);
+    Communication::allReduce(size, NULL, 5, MPITools::getType<int>().mpitype, MPI_SUM);
     sinfo.domains = size[0];
     sinfo.R1totalSize = size[2];
     sinfo.R2totalSize = size[3];

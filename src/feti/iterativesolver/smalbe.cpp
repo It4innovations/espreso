@@ -54,7 +54,7 @@ template <> void SMALBE<double>::solve(const step::Step &step, IterativeSolverIn
         P->apply_GtinvU(invLce, x_im);
         F->apply(x_im, Fx_im);
         math::add(b, -1., Fx_im);
-        for (esint i = feti.lambdas.equalities, j = 0; i < feti.lambdas.size; ++i, ++j) {
+        for (int i = feti.lambdas.equalities, j = 0; i < feti.lambdas.size; ++i, ++j) {
             feti.lb.vals[j] -= x_im.vals[i];
             feti.ub.vals[j] -= x_im.vals[i];
         }

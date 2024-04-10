@@ -67,10 +67,10 @@ protected:
     size_t GFGtDataOffset, GFGtDataSize, GFGtNnz;
 
     struct DomainInfo {
-        esint domain, koffset, kernels;
+        int domain, koffset, kernels;
 
         DomainInfo() = default;
-        DomainInfo(esint domain, esint koffset, esint kernels): domain(domain), koffset(koffset), kernels(kernels) {}
+        DomainInfo(int domain, int koffset, int kernels): domain(domain), koffset(koffset), kernels(kernels) {}
 
         bool operator< (const DomainInfo &other) const { return domain <  other.domain; }
         bool operator<=(const DomainInfo &other) const { return domain <= other.domain; }
@@ -78,9 +78,9 @@ protected:
     };
 
     struct NeighborDomainInfo: DomainInfo {
-        struct CIndices { esint offset, count; };
+        struct CIndices { int offset, count; };
         std::vector<CIndices> cindices;
-        esint ncols;
+        int ncols;
 
         NeighborDomainInfo() = default;
 
@@ -93,8 +93,8 @@ protected:
     };
     std::vector<DomainInfo> dinfo;
     std::vector<std::vector<DomainInfo> > dualGraph;
-    std::map<esint, NeighborDomainInfo> upinfo;
-    std::vector<std::map<esint, NeighborDomainInfo> > downinfo;
+    std::map<int, NeighborDomainInfo> upinfo;
+    std::vector<std::map<int, NeighborDomainInfo> > downinfo;
 };
 
 }

@@ -18,7 +18,7 @@ struct Vector_Kernel: public Vector_Dense<T, int> {
         align = 64U
     };
 
-    static void set(esint offset, esint size, esint totalSize);
+    static void set(int offset, int size, int totalSize);
 
     Vector_Kernel();
     void synchronize();
@@ -29,13 +29,13 @@ struct Vector_Kernel: public Vector_Dense<T, int> {
     using Vector_Dense<T>::size;
     using Vector_Dense<T>::vals;
 
-    static esint offset, localSize, totalSize;
+    static int offset, localSize, totalSize;
     static std::vector<size_t> distribution;
 };
 
-template <typename T> esint               Vector_Kernel<T>::offset = 0;
-template <typename T> esint               Vector_Kernel<T>::localSize = 0;
-template <typename T> esint               Vector_Kernel<T>::totalSize = 0;
+template <typename T> int               Vector_Kernel<T>::offset = 0;
+template <typename T> int               Vector_Kernel<T>::localSize = 0;
+template <typename T> int               Vector_Kernel<T>::totalSize = 0;
 template <typename T> std::vector<size_t> Vector_Kernel<T>::distribution = { 0, 0 };
 
 }

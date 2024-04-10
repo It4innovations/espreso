@@ -23,7 +23,7 @@ TFETIConjugateSymmetric<T>::TFETIConjugateSymmetric(FETI<T> &feti)
 
     dinfo.reserve(feti.R1.size());
     for (size_t d = 0, koffset = feti.sinfo.R1offset; d < feti.R1.size(); ++d) {
-        dinfo.push_back(DomainInfo((esint)(domainOffset + d), koffset, feti.R1[d].nrows));
+        dinfo.push_back(DomainInfo((int)(domainOffset + d), koffset, feti.R1[d].nrows));
         koffset += feti.R1[d].nrows;
     }
 
@@ -41,7 +41,7 @@ TFETIConjugateSymmetric<T>::~TFETIConjugateSymmetric()
 template<typename T>
 void TFETIConjugateSymmetric<T>::info()
 {
-    esint nnz = 2 * (GFGt.nnz - GFGt.nrows) + GFGt.nrows;
+    int nnz = 2 * (GFGt.nnz - GFGt.nrows) + GFGt.nrows;
 
     eslog::info(" = CONJUGATE PROJECTOR PROPERTIES                                                            = \n");
     eslog::info(" =   GFGT ROWS                                                                     %9d = \n", GFGt.nrows);
@@ -161,7 +161,7 @@ void TFETIConjugateSymmetric<T>::_applyG(const Vector_Dual<T> &in, Vector_Kernel
     for (int t = 0; t < info::env::threads; ++t) {
         for (size_t r = Vector_Kernel<T>::distribution[t]; r < Vector_Kernel<T>::distribution[t + 1]; ++r) {
             out.vals[r + Vector_Kernel<T>::offset] = T{0};
-            for (esint c = G.rows[r]; c < G.rows[r + 1]; ++c) {
+            for (int c = G.rows[r]; c < G.rows[r + 1]; ++c) {
                 out.vals[r + Vector_Kernel<T>::offset] += G.vals[c] * in.vals[G.cols[c]];
             }
         }
@@ -189,8 +189,8 @@ void TFETIConjugateSymmetric<T>::_applyInvGFGt(const Vector_Kernel<T> &in, Vecto
 template<typename T>
 void TFETIConjugateSymmetric<T>::_applyGt(const Vector_Dense<T> &in, const T &alpha, Vector_Dual<T> &out)
 {
-    for (esint r = 0; r < G.nrows; ++r) {
-        for (esint c = G.rows[r]; c < G.rows[r + 1]; ++c) {
+    for (int r = 0; r < G.nrows; ++r) {
+        for (int c = G.rows[r]; c < G.rows[r + 1]; ++c) {
             out.vals[G.cols[c]] += alpha * G.vals[c] * in.vals[r];
         }
     }
@@ -215,11 +215,11 @@ void TFETIConjugateSymmetric<T>::_computeDualGraph()
 {
     dualGraph.resize(dinfo.size());
     for (size_t i = 0; i < feti.lambdas.cmap.size(); ) {
-        esint domains = feti.lambdas.cmap[i + 1];
-        for (esint d1 = 0; d1 < domains; ++d1) {
-            esint di1 = feti.lambdas.cmap[i + 2 + d1] - domainOffset;
-            for (esint d2 = 0; d2 < domains; ++d2) {
-                esint di2 = feti.lambdas.cmap[i + 2 + d2] - domainOffset;
+        int domains = feti.lambdas.cmap[i + 1];
+        for (int d1 = 0; d1 < domains; ++d1) {
+            int di1 = feti.lambdas.cmap[i + 2 + d1] - domainOffset;
+            for (int d2 = 0; d2 < domains; ++d2) {
+                int di2 = feti.lambdas.cmap[i + 2 + d2] - domainOffset;
                 if (feti.decomposition->ismy(feti.lambdas.cmap[i + 2 + d1]) && feti.decomposition->ismy(feti.lambdas.cmap[i + 2 + d2])) {
                     dualGraph[di1].push_back(dinfo[di2]);
                 } else {
@@ -240,9 +240,9 @@ void TFETIConjugateSymmetric<T>::_computeDualGraph()
 
     std::vector<std::vector<DomainInfo> > sBuffer(feti.decomposition->neighbors.size()), rBuffer(feti.decomposition->neighbors.size());
     for (size_t d = 0; d < dualGraph.size(); ++d) {
-        esint last = -1;
+        int last = -1;
         for (size_t di = 0; di < dualGraph[d].size(); ++di) {
-            esint n = feti.decomposition->noffset(dualGraph[d][di].domain);
+            int n = feti.decomposition->noffset(dualGraph[d][di].domain);
             if (!feti.decomposition->ismy(dualGraph[d][di].domain) && last < n) {
                 sBuffer[n].push_back(dinfo[d]);
                 last = n;
@@ -254,7 +254,7 @@ void TFETIConjugateSymmetric<T>::_computeDualGraph()
         eslog::error("cannot exchange dual graph info\n");
     }
 
-    std::unordered_map<esint, DomainInfo> other;
+    std::unordered_map<int, DomainInfo> other;
     for (size_t n = 0; n < rBuffer.size(); ++n) {
         for (size_t i = 0; i < rBuffer[n].size(); ++i) {
             other[rBuffer[n][i].domain] = rBuffer[n][i];
@@ -270,19 +270,19 @@ void TFETIConjugateSymmetric<T>::_computeDualGraph()
     }
 
     downinfo.resize(feti.decomposition->neighbors.size());
-    std::vector<esint> cOffset(dinfo.size());
+    std::vector<int> cOffset(dinfo.size());
     for (size_t i = 0, offset = 0; i < feti.lambdas.cmap.size(); ) {
-        esint lsize = feti.lambdas.cmap[i];
-        esint domains = feti.lambdas.cmap[i + 1];
-        esint last = -1;
-        for (esint d = 0; d < domains; ++d) {
-            esint di = feti.lambdas.cmap[i + 2 + d] - domainOffset;
+        int lsize = feti.lambdas.cmap[i];
+        int domains = feti.lambdas.cmap[i + 1];
+        int last = -1;
+        for (int d = 0; d < domains; ++d) {
+            int di = feti.lambdas.cmap[i + 2 + d] - domainOffset;
             if (feti.lambdas.cmap[i + 2 + d] < feti.decomposition->dbegin) {
-                esint n = feti.decomposition->noffset(feti.lambdas.cmap[i + 2 + d]);
+                int n = feti.decomposition->noffset(feti.lambdas.cmap[i + 2 + d]);
                 if (last < n) {
-                    for (esint d2 = d; d2 < domains; ++d2) {
+                    for (int d2 = d; d2 < domains; ++d2) {
                         if (feti.decomposition->ismy(feti.lambdas.cmap[i + 2 + d2])) {
-                            esint di2 = feti.lambdas.cmap[i + 2 + d2] - domainOffset;
+                            int di2 = feti.lambdas.cmap[i + 2 + d2] - domainOffset;
                             downinfo[n][feti.lambdas.cmap[i + 2 + d2]] = dinfo[feti.lambdas.cmap[i + 2 + d2] - domainOffset];
                             downinfo[n][feti.lambdas.cmap[i + 2 + d2]].cindices.push_back({cOffset[di2], lsize});
                             downinfo[n][feti.lambdas.cmap[i + 2 + d2]].ncols += lsize;
@@ -293,7 +293,7 @@ void TFETIConjugateSymmetric<T>::_computeDualGraph()
             }
             if (feti.decomposition->dend <= feti.lambdas.cmap[i + 2 + d]) {
                 upinfo[feti.lambdas.cmap[i + 2 + d]] = other[feti.lambdas.cmap[i + 2 + d]];
-                upinfo[feti.lambdas.cmap[i + 2 + d]].cindices.push_back({(esint)offset, lsize});
+                upinfo[feti.lambdas.cmap[i + 2 + d]].cindices.push_back({(int)offset, lsize});
                 upinfo[feti.lambdas.cmap[i + 2 + d]].ncols += lsize;
             }
             if (feti.decomposition->ismy(feti.lambdas.cmap[i + 2 + d])) {
@@ -309,12 +309,12 @@ template<typename T>
 void TFETIConjugateSymmetric<T>::_setG()
 {
     // G is stored with 0-based in indexing
-    esint Grows = 0, Gnnz = 0;
+    int Grows = 0, Gnnz = 0;
     for (size_t d = 0; d < dinfo.size(); ++d) {
         Grows += dinfo[d].kernels;
         Gnnz += dinfo[d].kernels * feti.D2C[d].size();
     }
-    esint Gtrows = Grows, Gtnnz = Gnnz;
+    int Gtrows = Grows, Gtnnz = Gnnz;
     for (auto di = upinfo.cbegin(); di != upinfo.cend(); ++di) {
         Gtrows += di->second.kernels;
         Gtnnz += di->second.kernels * di->second.ncols;
@@ -324,9 +324,9 @@ void TFETIConjugateSymmetric<T>::_setG()
     Gt.rows[0] = 0;
     size_t ri = 0;
     for (size_t d = 0; d < dinfo.size(); ++d) {
-        for (esint kr = 0; kr < dinfo[d].kernels; ++kr, ++ri) {
+        for (int kr = 0; kr < dinfo[d].kernels; ++kr, ++ri) {
             Gt.rows[ri + 1] = Gt.rows[ri] + feti.B1[d].nrows;
-            for (esint c = 0; c < feti.B1[d].nrows; ++c) {
+            for (int c = 0; c < feti.B1[d].nrows; ++c) {
                 Gt.cols[Gt.rows[ri] + c] = feti.D2C[d][c];
             }
         }
@@ -334,10 +334,10 @@ void TFETIConjugateSymmetric<T>::_setG()
     for (auto di = upinfo.begin(); di != upinfo.end(); ++di) {
         NeighborDomainInfo &ndi = di->second;
         ndi.koffset = ri;
-        for (esint kr = 0; kr < ndi.kernels; ++kr, ++ri) {
+        for (int kr = 0; kr < ndi.kernels; ++kr, ++ri) {
             Gt.rows[ri + 1] = Gt.rows[ri] + ndi.ncols;
             for (size_t ci = 0, c = 0; ci < ndi.cindices.size(); ++ci) {
-                for (esint cc = 0; cc < ndi.cindices[ci].count; ++cc, ++c) {
+                for (int cc = 0; cc < ndi.cindices[ci].count; ++cc, ++c) {
                     Gt.cols[Gt.rows[ri] + c] = ndi.cindices[ci].offset + cc;
                 }
             }
@@ -356,10 +356,10 @@ void TFETIConjugateSymmetric<T>::_updateG()
 {
     // G is stored with 0-based in indexing
     for (size_t d = 0, r = 0; d < dinfo.size(); ++d) {
-        for (esint kr = 0; kr < dinfo[d].kernels; ++kr, ++r) {
-            for (esint c = 0; c < feti.B1[d].nrows; ++c) {
+        for (int kr = 0; kr < dinfo[d].kernels; ++kr, ++r) {
+            for (int c = 0; c < feti.B1[d].nrows; ++c) {
                 G.vals[G.rows[r] + c] = 0;
-                for (esint i = feti.B1[d].rows[c]; i < feti.B1[d].rows[c + 1]; ++i) {
+                for (int i = feti.B1[d].rows[c]; i < feti.B1[d].rows[c + 1]; ++i) {
                     G.vals[G.rows[r] + c] -= feti.R1[d].vals[feti.R1[d].ncols * kr + feti.B1[d].cols[i]] * feti.B1[d].vals[i];
                 }
             }
@@ -372,10 +372,10 @@ void TFETIConjugateSymmetric<T>::_updateG()
     for (size_t n = 0; n < downinfo.size(); ++n) {
         for (auto di = downinfo[n].cbegin(); di != downinfo[n].cend(); ++di) {
             const NeighborDomainInfo &ndi = di->second;
-            for (esint kr = 0; kr < ndi.kernels; ++kr) {
-                esint roffset = G.rows[ndi.koffset - feti.sinfo.R1offset + kr];
+            for (int kr = 0; kr < ndi.kernels; ++kr) {
+                int roffset = G.rows[ndi.koffset - feti.sinfo.R1offset + kr];
                 for (size_t cc = 0; cc < ndi.cindices.size(); ++cc) {
-                    for (esint c = 0; c < ndi.cindices[cc].count; ++c) {
+                    for (int c = 0; c < ndi.cindices[cc].count; ++c) {
                         sBuffer[n].push_back(G.vals[roffset + ndi.cindices[cc].offset + c]);
                     }
                 }
@@ -402,9 +402,9 @@ void TFETIConjugateSymmetric<T>::_setGFGt()
 
     GFGtDataOffset = 0;
     for (size_t d = 0; d < dinfo.size(); ++d) {
-        for (esint kr = 0; kr < dinfo[d].kernels; ++kr) {
+        for (int kr = 0; kr < dinfo[d].kernels; ++kr) {
             for (size_t i = 0; i < dualGraph[d].size(); ++i) {
-                for (esint kc = 0; kc < dualGraph[d][i].kernels; ++kc) {
+                for (int kc = 0; kc < dualGraph[d][i].kernels; ++kc) {
                     if (dinfo[d].koffset + kr <= dualGraph[d][i].koffset + kc) {
                         ++GFGtDataOffset;
                     }
@@ -421,10 +421,10 @@ void TFETIConjugateSymmetric<T>::_setGFGt()
     GFGt.rows[0] = IDX;
     GFGt.rows[feti.sinfo.R1offset] = GFGtDataOffset + IDX;
     for (size_t d = 0; d < dinfo.size(); ++d) {
-        for (esint kr = 0; kr < dinfo[d].kernels; ++kr) {
+        for (int kr = 0; kr < dinfo[d].kernels; ++kr) {
             GFGt.rows[dinfo[d].koffset + kr + 1] = GFGt.rows[dinfo[d].koffset + kr];
             for (size_t i = 0, c = GFGt.rows[dinfo[d].koffset + kr] - IDX; i < dualGraph[d].size(); ++i) {
-                for (esint kc = 0; kc < dualGraph[d][i].kernels; ++kc) {
+                for (int kc = 0; kc < dualGraph[d][i].kernels; ++kc) {
                     if (dinfo[d].koffset + kr <= dualGraph[d][i].koffset + kc) {
                         GFGt.cols[c++] = dualGraph[d][i].koffset + kc + IDX;
                         ++GFGt.rows[dinfo[d].koffset + kr + 1];
@@ -453,12 +453,12 @@ void TFETIConjugateSymmetric<T>::_updateGFGt()
     Matrix_Dense<T> dGt;
 
     for (size_t d = 0; d < dinfo.size(); ++d) {
-        for (esint kr = 0; kr < dinfo[d].kernels; ++kr) {
+        for (int kr = 0; kr < dinfo[d].kernels; ++kr) {
             for (size_t i = 0, c = GFGt.rows[dinfo[d].koffset + kr] - IDX; i < dualGraph[d].size(); ++i) {
-                for (esint kc = 0; kc < dualGraph[d][i].kernels; ++kc) {
+                for (int kc = 0; kc < dualGraph[d][i].kernels; ++kc) {
                     if (dinfo[d].koffset + kr <= dualGraph[d][i].koffset + kc) {
                         GFGt.vals[c] = 0;
-                        esint k1, k2, ke1, ke2;
+                        int k1, k2, ke1, ke2;
                         k1  = G.rows[dinfo[d].koffset - feti.sinfo.R1offset + kr];
                         ke1 = G.rows[dinfo[d].koffset - feti.sinfo.R1offset + kr + 1];
                         if (dualGraph[d][i].koffset - feti.sinfo.R1offset < G.nrows) {
@@ -498,7 +498,7 @@ void TFETIConjugateSymmetric<T>::_updateGFGt()
         Matrix_Dense<T> eye;
         eye.resize(G.nrows, feti.sinfo.R1totalSize);
         math::set(eye, T{});
-        for (esint r = 0; r < G.nrows; ++r) {
+        for (int r = 0; r < G.nrows; ++r) {
             eye.vals[r * feti.sinfo.R1totalSize + feti.sinfo.R1offset + r] = T{1};
         }
         GFGtSolver.solve(eye, invGFGt);

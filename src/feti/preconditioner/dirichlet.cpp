@@ -29,7 +29,7 @@ Dirichlet<T>::Dirichlet(FETI<T> &feti)
         KBtx[d].resize(feti.K[d].nrows);
         sc[d].shape = Matrix_Shape::UPPER;
 
-        esint sc_size = feti.B1[d].ncols - *std::min_element(feti.B1[d].cols, feti.B1[d].cols + feti.B1[d].nnz);
+        int sc_size = feti.B1[d].ncols - *std::min_element(feti.B1[d].cols, feti.B1[d].cols + feti.B1[d].nnz);
         sc[d].resize(sc_size, sc_size);
     }
 

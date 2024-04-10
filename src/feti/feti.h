@@ -21,10 +21,10 @@ template <typename T> class DualOperator;
 template<typename T>
 struct FETI {
     struct SystemInfo {
-        esint domains, clusters;
-        esint R1offset, R2offset;
-        esint R1size, R2size;
-        esint R1totalSize, R2totalSize;
+        int domains, clusters;
+        int R1offset, R2offset;
+        int R1size, R2size;
+        int R1totalSize, R2totalSize;
 
         size_t eq_offset, nc_offset;
         size_t eq_total, nc_total;
@@ -55,13 +55,13 @@ struct FETI {
     Vector_Dense<T> c, lb, ub;
     struct Lambdas {
         // equality (local)
-        esint eq_halo = 0, eq_size = 0;
+        int eq_halo = 0, eq_size = 0;
         // normal contact
-        esint nc_halo = 0, nc_size = 0;
+        int nc_halo = 0, nc_size = 0;
 
         // general
-        esint equalities, size;
-        std::vector<esint> cmap; // size, ndomains <d0, d1, ..., dn>; size, ndomains <>; ...;
+        int equalities, size;
+        std::vector<int> cmap; // size, ndomains <d0, d1, ..., dn>; size, ndomains <>; ...;
     } lambdas;
 
     struct {

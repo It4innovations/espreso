@@ -32,7 +32,7 @@ template <template <typename, typename, typename> class Matrix, typename T, type
 SpBLAS<Matrix, T, I>::~SpBLAS()
 {
     if (_spblas) {
-        _finish<esint>(_spblas->common);
+        _finish<I>(_spblas->common);
         delete _spblas;
     }
 }
@@ -42,7 +42,7 @@ SpBLAS<Matrix, T, I>::SpBLAS(MatrixType &a)
 : matrix(&a)
 {
     _spblas = new Matrix_SpBLAS_External_Representation();
-    _start<esint>(_spblas->common);
+    _start<I>(_spblas->common);
     setSymmetric(_spblas->A, *matrix);
     updateSymmetric(_spblas->A, *matrix);
 }
@@ -52,11 +52,11 @@ void SpBLAS<Matrix, T, I>::insert(MatrixType &a)
 {
     matrix = &a;
     if (_spblas) {
-        _finish<esint>(_spblas->common);
+        _finish<I>(_spblas->common);
         delete _spblas;
     }
     _spblas = new Matrix_SpBLAS_External_Representation();
-    _start<esint>(_spblas->common);
+    _start<I>(_spblas->common);
     if (a.shape == Matrix_Shape::FULL) {
         setAsymmetric(_spblas->A, _spblas->common, *matrix);
         matrix = nullptr;
@@ -73,7 +73,7 @@ void SpBLAS<Matrix_CSR, float, int>::apply(Vector_Dense<float> &y, const float &
     update(_spblas->Y, y);
     _spblas->alpha[0] = alpha;
     _spblas->beta[0] = beta;
-    _apply<esint>(_spblas->Y, _spblas->A, _spblas->X, _spblas->alpha, _spblas->beta, _spblas->common);
+    _apply<int>(_spblas->Y, _spblas->A, _spblas->X, _spblas->alpha, _spblas->beta, _spblas->common);
 }
 
 template <>
@@ -83,7 +83,7 @@ void SpBLAS<Matrix_CSR, double, int>::apply(Vector_Dense<double> &y, const doubl
     update(_spblas->Y, y);
     _spblas->alpha[0] = alpha;
     _spblas->beta[0] = beta;
-    _apply<esint>(_spblas->Y, _spblas->A, _spblas->X, _spblas->alpha, _spblas->beta, _spblas->common);
+    _apply<int>(_spblas->Y, _spblas->A, _spblas->X, _spblas->alpha, _spblas->beta, _spblas->common);
 }
 
 template <>
@@ -95,7 +95,7 @@ void SpBLAS<Matrix_CSR, std::complex<double>, int>::apply(Vector_Dense<std::comp
     _spblas->alpha[1] = alpha.imag();
     _spblas->beta[0] = beta.real();
     _spblas->beta[1] = beta.imag();
-    _apply<esint>(_spblas->Y, _spblas->A, _spblas->X, _spblas->alpha, _spblas->beta, _spblas->common);
+    _apply<int>(_spblas->Y, _spblas->A, _spblas->X, _spblas->alpha, _spblas->beta, _spblas->common);
 }
 
 template <template <typename, typename, typename> class Matrix, typename T, typename I>

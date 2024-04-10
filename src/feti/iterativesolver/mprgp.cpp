@@ -56,7 +56,7 @@ static void _print(const char *name, const IterativeSolverInfo &info, const step
 template <>
 void MPRGP<double>::restrictToFeasibleSet(Vector_Dual<double> &x)
 {
-    for (esint i = feti.lambdas.equalities, j = 0; i < feti.lambdas.size; ++i, ++j) {
+    for (int i = feti.lambdas.equalities, j = 0; i < feti.lambdas.size; ++i, ++j) {
         x.vals[i] = std::max(feti.lb.vals[j], std::min(feti.ub.vals[j], x.vals[i]));
     }
 }
