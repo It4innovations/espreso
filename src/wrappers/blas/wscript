@@ -8,4 +8,4 @@ def configure(ctx):
     if (ctx.options.skip_blas):
         return
 
-    ctx.check_cxx(mandatory=False, msg="Checking for 'blas'", okmsg=ctx.options.blas_libraries, define_name="HAVE_BLAS", header_name="cblas.h", lib=ctx.options.blas_libraries, uselib_store="BLAS")
+    ctx.check_cxx(mandatory=False, msg="Checking for 'blas'", okmsg=ctx.options.blas_libraries, define_name="HAVE_BLAS", header_name="cblas.h", lib=ctx.options.blas_libraries, uselib_store="BLAS", global_define=0)

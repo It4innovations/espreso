@@ -6,4 +6,4 @@ def configure(ctx):
     if (ctx.options.skip_ptscotch):
         return
     if "HAVE_SCOTCH" in ctx.env:
-        ctx.check_cxx(mandatory=False, msg="Checking for 'pt-scotch'", okmsg="ptscotch", define_name="HAVE_PTSCOTCH", header_name="mpi.h ptscotch.h", lib="ptscotch scotch scotcherr", uselib_store="PTSCOTCH")
+        ctx.check_cxx(mandatory=False, msg="Checking for 'pt-scotch'", okmsg="ptscotch", define_name="HAVE_PTSCOTCH", header_name="mpi.h ptscotch.h", lib="ptscotch scotch scotcherr", uselib_store="PTSCOTCH", global_define=0)

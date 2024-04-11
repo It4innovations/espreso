@@ -126,16 +126,15 @@ def build(ctx):
     ctx.lib(source="src/api/wrapper.mesio.cpp", target="mesioapi", includes="include", use=ctx.checker + ctx.mesio + ["API"], stlib=ctx.options.stlibs, lib=ctx.options.libs)
     ctx.program(source=["src/api/api.mesio.cpp"], target="test.mesio", includes="include", use=ctx.checker + ctx.mesio + ["API", "mesioapi"], stlib=ctx.options.stlibs, lib=ctx.options.libs)
 
-    ctx.build_espreso(ctx.path.ant_glob('src/analysis/**/*.cpp'), "analysis", [ "LAPACK" ])
-#     ctx.build_espreso(ctx.path.ant_glob('src/physics/**/*.cpp'), "physics")
+    ctx.build_espreso(ctx.path.ant_glob('src/analysis/**/*.cpp'), "analysis")
     ctx.build_espreso(ctx.path.ant_glob('src/morphing/**/*.cpp'), "devel")
-    ctx.build_espreso(ctx.path.ant_glob('src/math/**/*.cpp'), "math")
+    ctx.build_espreso(ctx.path.ant_glob('src/math/**/*.cpp'), "math", [ "BLAS", "LAPACK", "MKL", "SUITESPARSE" ])
     ctx.build_espreso(ctx.path.ant_glob('src/autoopt/**/*.cpp'), "autoopt")
     ctx.build_espreso(ctx.path.ant_glob('src/feti/**/*.cpp'), "feti")
     ctx.build_espreso(ctx.path.ant_glob('src/gpu/**/*.cpp'), "gpu", [ "CUDA" ])
     ctx.build_espreso(ctx.path.ant_glob('src/wrappers/simd/**/*.cpp'), "simd")
-    ctx.build_espreso(ctx.path.ant_glob('src/wrappers/blas/**/*.cpp'), "wblas", [ "BLAS" ])
-    ctx.build_espreso(ctx.path.ant_glob('src/wrappers/lapack/**/*.cpp'), "wlapack", [ "LAPACK" ])
+    ctx.build_espreso(ctx.path.ant_glob('src/wrappers/blas/**/*.cpp'), "wblas", [ "BLAS", "MKL" ])
+    ctx.build_espreso(ctx.path.ant_glob('src/wrappers/lapack/**/*.cpp'), "wlapack", [ "LAPACK", "MKL" ])
     ctx.build_espreso(ctx.path.ant_glob('src/wrappers/mkl/**/*.cpp'), "wmkl", [ "MKL" ])
     if ctx.env.HAVE_CUDA:
         ctx.build_espreso(ctx.path.ant_glob('src/wrappers/cuda/**/*.(cu|cpp)'), "wcuda", [ "CUDA" ])
@@ -144,7 +143,7 @@ def build(ctx):
 #     ctx.build_espreso(ctx.path.ant_glob('src/wrappers/pardiso/**/*.cpp'), "wpardiso", [ "PARDISO" ])
 #     ctx.build_espreso(ctx.path.ant_glob('src/wrappers/superlu/**/*.cpp'), "wsuperlu", [ "SUPERLU" ])
 #     ctx.build_espreso(ctx.path.ant_glob('src/wrappers/wsmp/**/*.cpp'), "wwsmp", [ "WSMP" ])
-    ctx.build_espreso(ctx.path.ant_glob('src/wrappers/suitesparse/**/*.cpp'), "wsuitesparse", [ "SUITESPARSE" ])
+    ctx.build_espreso(ctx.path.ant_glob('src/wrappers/suitesparse/**/*.cpp'), "wsuitesparse", [ "SUITESPARSE", "MKL" ])
     ctx.build_espreso(ctx.path.ant_glob('src/wrappers/bem/**/*.cpp'), "wbem",)
     ctx.build_espreso(ctx.path.ant_glob('src/wrappers/nvtx/**/*.cpp'), "wnvtx", [ "NVTX" ])
     ctx.build_espreso(ctx.path.ant_glob('src/wrappers/rocm/**/*.cpp'), "wrocm", [ "ROCM" ])
@@ -253,7 +252,7 @@ def options(opt):
     recurse(opt)
 
 def settings(ctx):
-    libraries = { x.lstrip("HAVE_").split("=")[0].lower() for x in ctx.env.DEFINES if x.startswith("HAVE_") }
+    libraries = { x.lstrip("HAVE_").split("=")[0].lower() for x in ctx.env if x.startswith("HAVE_") }
 
     def libsmsg(msg, libs):
         libs = [ lib for lib in libs if lib in libraries ]

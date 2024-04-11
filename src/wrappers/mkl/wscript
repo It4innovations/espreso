@@ -18,5 +18,5 @@ def configure(ctx):
     #     libs.append("mkl_gnu_thread")
     libs.append("mkl_sequential")
 
-    if ctx.check_cxx(mandatory=False, msg="Checking for 'mkl'", okmsg=" ".join(libs), define_name="HAVE_MKL", header_name="mkl.h", lib=libs, uselib_store="MKL"):
+    if ctx.check_cxx(mandatory=False, msg="Checking for 'mkl'", okmsg=" ".join(libs), define_name="HAVE_MKL", header_name="mkl.h", lib=libs, uselib_store="MKL", global_define=0):
         ctx.env.append_unique("DEFINES_MKL", [ "MKL_INT=int", "MKL_Complex8=std::complex<float>", "MKL_Complex16=std::complex<double>" ])

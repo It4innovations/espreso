@@ -4,4 +4,4 @@ def options(opt):
 
 def configure(ctx):
     fragment = "#include \"scotch.h\"\nint main(int argc, char** argv) {{ return sizeof(SCOTCH_Num) != sizeof(esint); }}\n"
-    ctx.check_cxx(mandatory=False, msg="Checking for 'scotch'", okmsg="scotch", define_name="HAVE_SCOTCH", header_name="cstdio cstdint scotch.h", lib="scotch scotcherr", fragment=fragment, uselib_store="SCOTCH")
+    ctx.check_cxx(mandatory=False, msg="Checking for 'scotch'", okmsg="scotch", define_name="HAVE_SCOTCH", header_name="cstdio cstdint scotch.h", lib="scotch scotcherr", fragment=fragment, uselib_store="SCOTCH", global_define=0)

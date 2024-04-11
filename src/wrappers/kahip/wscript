@@ -5,4 +5,4 @@ def options(opt):
 def configure(ctx):
     if (ctx.options.skip_kahip):
         return
-    ctx.check_cxx(mandatory=False, msg="Checking for 'kahip'", okmsg="kahip", define_name="HAVE_KAHIP", header_name="kaHIP_interface.h", lib="kahip", uselib_store="KAHIP")
+    ctx.check_cxx(mandatory=False, msg="Checking for 'kahip'", okmsg="kahip", define_name="HAVE_KAHIP", header_name="kaHIP_interface.h", lib="kahip", uselib_store="KAHIP", global_define=0)

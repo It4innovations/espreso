@@ -6,4 +6,4 @@ def configure(ctx):
     if (ctx.options.skip_hypre):
         return
     if int(ctx.options.intwidth) == 32:
-        ctx.check_cxx(mandatory=False, msg="Checking for 'hypre'", okmsg="hypre", define_name="HAVE_HYPRE", header_name="HYPRE.h", lib="hypre", uselib_store="HYPRE")
+        ctx.check_cxx(mandatory=False, msg="Checking for 'hypre'", okmsg="hypre", define_name="HAVE_HYPRE", header_name="HYPRE.h", lib="hypre", uselib_store="HYPRE", global_define=0)

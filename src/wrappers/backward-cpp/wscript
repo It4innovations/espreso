@@ -21,12 +21,12 @@ dwarf = {
 }
 
 def configure(ctx):
-    if ctx.check_cxx(mandatory=False, msg="Checking for 'backward + dw'", okmsg=" ".join(dw["lib"]), define_name="HAVE_BACKWARD", header_name=dw["header"], lib=dw["lib"], uselib_store="BACKWARD"):
-        ctx.env.append_unique("DEFINES", dw["defines"])
-    elif ctx.check_cxx(mandatory=False, msg="Checking for 'backward + dwarf'", okmsg=" ".join(dwarf["lib"]), define_name="HAVE_BACKWARD", header_name=dwarf["header"], lib=dwarf["lib"], uselib_store="BACKWARD"):
-        ctx.env.append_unique("DEFINES", dwdwarf["defines"])
-    elif ctx.check_cxx(mandatory=False, msg="Checking for 'backward + bdf'", okmsg=" ".join(bdf["lib"]), define_name="HAVE_BACKWARD", header_name=bdf["header"], lib=bdf["lib"], uselib_store="BACKWARD"):
-        ctx.env.append_unique("DEFINES", bdf["defines"])
+    if ctx.check_cxx(mandatory=False, msg="Checking for 'backward + dw'", okmsg=" ".join(dw["lib"]), define_name="HAVE_BACKWARD", header_name=dw["header"], lib=dw["lib"], uselib_store="BACKWARD", global_define=0):
+        ctx.env.append_unique("DEFINES_BACKWARD", dw["defines"])
+    elif ctx.check_cxx(mandatory=False, msg="Checking for 'backward + dwarf'", okmsg=" ".join(dwarf["lib"]), define_name="HAVE_BACKWARD", header_name=dwarf["header"], lib=dwarf["lib"], uselib_store="BACKWARD", global_define=0):
+        ctx.env.append_unique("DEFINES_BACKWARD", dwdwarf["defines"])
+    elif ctx.check_cxx(mandatory=False, msg="Checking for 'backward + bdf'", okmsg=" ".join(bdf["lib"]), define_name="HAVE_BACKWARD", header_name=bdf["header"], lib=bdf["lib"], uselib_store="BACKWARD", global_define=0):
+        ctx.env.append_unique("DEFINES_BACKWARD", bdf["defines"])
     else:
-        ctx.check_cxx(mandatory=False, msg="Checking for 'backward'", okmsg="backward", define_name="HAVE_BACKWARD", uselib_store="BACKWARD")
+        ctx.check_cxx(mandatory=False, msg="Checking for 'backward'", okmsg="backward", define_name="HAVE_BACKWARD", uselib_store="BACKWARD", global_define=0)
 

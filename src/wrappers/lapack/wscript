@@ -8,4 +8,4 @@ def configure(ctx):
     if (ctx.options.skip_lapack):
         return
 
-    ctx.check_cxx(mandatory=False, msg="Checking for 'lapack'", okmsg=ctx.options.lapack_libraries, define_name="HAVE_LAPACK", header_name="lapacke.h", lib=ctx.options.lapack_libraries, uselib_store="LAPACK")
+    ctx.check_cxx(mandatory=False, msg="Checking for 'lapack'", okmsg=ctx.options.lapack_libraries, define_name="HAVE_LAPACK", header_name="lapacke.h", lib=ctx.options.lapack_libraries, uselib_store="LAPACK", global_define=0)

@@ -15,4 +15,4 @@ def configure(ctx):
 
     headers = [ "cuda_runtime.h" ]
     libs = [ "cudart", "cusparse", "cublas", "cusolver" ]
-    ctx.check_cxx(mandatory=False, msg="Checking for 'cuda'", okmsg=" ".join(libs), define_name="HAVE_CUDA", header_name=headers, lib=libs, uselib_store="CUDA")
+    ctx.check_cxx(mandatory=False, msg="Checking for 'cuda'", okmsg=" ".join(libs), define_name="HAVE_CUDA", header_name=headers, lib=libs, uselib_store="CUDA", global_define=0)

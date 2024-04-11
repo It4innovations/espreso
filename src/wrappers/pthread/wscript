@@ -3,4 +3,4 @@ def options(opt):
     pass
 
 def configure(ctx):
-    ctx.check_cxx(msg="Checking for 'pthread'", okmsg="pthread", define_name="HAVE_PTHREAD", header_name="pthread.h", lib="pthread", uselib_store="PTHREAD")
+    ctx.check_cxx(msg="Checking for 'pthread'", okmsg="pthread", define_name="HAVE_PTHREAD", header_name="pthread.h", lib="pthread", uselib_store="PTHREAD", global_define=0)

@@ -6,4 +6,4 @@ def configure(ctx):
     if (ctx.options.skip_pardiso):
         return
     if int(ctx.options.intwidth) == 32:
-        ctx.check_cxx(mandatory=False, msg="Checking for 'pardiso'", okmsg="pardiso", define_name="HAVE_PARDISO", header_name="pardiso.h", lib="pardiso gfortran gomp", uselib_store="PARDISO")
+        ctx.check_cxx(mandatory=False, msg="Checking for 'pardiso'", okmsg="pardiso", define_name="HAVE_PARDISO", header_name="pardiso.h", lib="pardiso gfortran gomp", uselib_store="PARDISO", global_define=0)
