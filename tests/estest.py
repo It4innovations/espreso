@@ -38,7 +38,7 @@ class ESPRESOTest:
 
     @staticmethod
     def raise_error(error, output=""):
-        if error.find("Third party software problem") != -1:
+        if error.find("GPU acceleration is not supported") != -1:
             error = error[error.find(":") + 2:error.find("\n")]
             raise NotSupportedConfiguration(error)
         else:

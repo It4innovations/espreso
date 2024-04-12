@@ -14,13 +14,9 @@ DEFAULT_ARGS {
   7        4;
   8        4;
   9        8;
-
-  10   MPRGP;
-  11    NONE;
-  12     900;
 }
 
-INPUT_TYPE              GENERATOR;
+INPUT_TYPE           GENERATOR;
 PHYSICS   STRUCTURAL_MECHANICS;
 
 GENERATOR {
@@ -100,9 +96,9 @@ STRUCTURAL_MECHANICS {
 
       FETI {
         METHOD          TOTAL_FETI;
-        ITERATIVE_SOLVER   [ARG10];
-        PRECONDITIONER     [ARG11];
-        MAX_ITERATIONS     [ARG12];
+        ITERATIVE_SOLVER     MPRGP;
+        PRECONDITIONER        NONE;
+        MAX_ITERATIONS         900;
         PRECISION             1e-9;
       }
 
@@ -112,8 +108,8 @@ STRUCTURAL_MECHANICS {
 
       FIXED_WALL {
         WALL {
-          NORMAL  { Z 1; }
-          DISTANCE  1;
+          NORMAL  { Y 1; }
+          POINT   { X 0; Y 0; Z 0; };
         }
       }
     }
