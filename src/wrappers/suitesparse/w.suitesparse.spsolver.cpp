@@ -22,9 +22,28 @@ struct Solver_External_Representation {
     cholmod_sparse * cm_matrix_view = nullptr;
     const Matrix_CSR<T, I> * matrix = nullptr;
     Vector_Dense<I> map_simpl_super;
-    char zerodrop;
+    I factor_nnz;
     int stage = 0; // 0 = completely uninitialized, 1 = initialized without matrix, 2 = have matrix, 3 = symbolic factorization done, 4 = numeric factorization done
+    bool getfactor_preprocess_done = false;
+    bool getfactor_preprocess_lazy;
+    char zerodrop;
 };
+
+template<typename T, typename I>
+void getfactor_preprocess(std::unique_ptr<Solver_External_Representation<T,I>> & ext)
+{
+    if(ext->cm_factor_super->xsize > utils::get_max_val_no_precision_loss_in_fp<T>()) eslog::error("symbolicFactorization: factor nnz too large for my super->simpl map\n");
+    ext->cm_factor_simpl = _copyFactor<I>(ext->cm_factor_super, ext->cm_common);
+    _changeFactor<I>(_getCholmodXtype<T>(), true, true, true, true, ext->cm_factor_simpl, ext->cm_common);
+    for(size_t i = 0; i < ext->cm_factor_simpl->xsize; i++) reinterpret_cast<T*>(ext->cm_factor_simpl->x)[i] = static_cast<T>(i);
+    _changeFactor<I>(_getCholmodXtype<T>(), true, false, true, true, ext->cm_factor_simpl, ext->cm_common);
+    if(ext->zerodrop == 'D') _resymbol<I>(ext->cm_matrix_view, nullptr, 0, 1, ext->cm_factor_simpl, ext->cm_common);
+    if(ext->cm_factor_simpl->nzmax != ext->factor_nnz) eslog::error("getfactor_preprocess: some weird error in cholmod\n");
+    ext->map_simpl_super.resize(ext->factor_nnz);
+    for(I i = 0; i < ext->map_simpl_super.size; i++) ext->map_simpl_super.vals[i] = static_cast<I>(std::real(reinterpret_cast<T*>(ext->cm_factor_simpl->x)[i]));
+    ext->getfactor_preprocess_done = true;
+}
+
 
 
 template <typename T, typename I>
@@ -58,6 +77,7 @@ DirectSparseSolver<T, I>::DirectSparseSolver()
     ext = std::make_unique<Solver_External_Representation<T,I>>();
 
     ext->zerodrop = 'D'; // Drop, Keep
+    ext->getfactor_preprocess_lazy = false;
 
     _start<I>(ext->cm_common);
     ext->cm_common.final_ll = 1;
@@ -137,15 +157,9 @@ void DirectSparseSolver<T, I>::symbolicFactorization(int fixedSuffix)
     if(ext->stage != 2) throw std::runtime_error("symbolicFactorization: invalid order of operations in spsolver\n");
 
     ext->cm_factor_super = _analyze<I>(ext->cm_matrix_view, ext->cm_common);
+    ext->factor_nnz = static_cast<I>(ext->cm_common.lnz);
 
-    if(ext->cm_factor_super->xsize > utils::get_max_val_no_precision_loss_in_fp<T>()) eslog::error("symbolicFactorization: factor nnz too large for my super->simpl map\n");
-    ext->cm_factor_simpl = _copyFactor<I>(ext->cm_factor_super, ext->cm_common);
-    _changeFactor<I>(_getCholmodXtype<T>(), true, true, true, true, ext->cm_factor_simpl, ext->cm_common);
-    for(size_t i = 0; i < ext->cm_factor_simpl->xsize; i++) reinterpret_cast<T*>(ext->cm_factor_simpl->x)[i] = static_cast<T>(i);
-    _changeFactor<I>(_getCholmodXtype<T>(), true, false, true, true, ext->cm_factor_simpl, ext->cm_common);
-    if(ext->zerodrop == 'D') _resymbol<I>(ext->cm_matrix_view, nullptr, 0, 1, ext->cm_factor_simpl, ext->cm_common);
-    ext->map_simpl_super.resize(ext->cm_factor_simpl->nzmax);
-    for(I i = 0; i < ext->map_simpl_super.size; i++) ext->map_simpl_super.vals[i] = static_cast<I>(std::real(reinterpret_cast<T*>(ext->cm_factor_simpl->x)[i]));
+    if(!ext->getfactor_preprocess_lazy) getfactor_preprocess(ext);
     
     ext->stage = 3;
 }
@@ -286,7 +300,7 @@ I DirectSparseSolver<T, I>::getFactorNnz()
 
     // https://github.com/DrTimothyAldenDavis/SuiteSparse/issues/523
 
-    return ext->cm_factor_simpl->nzmax;
+    return ext->factor_nnz;
 }
 
 template <typename T, typename I>
@@ -302,9 +316,9 @@ inline void DirectSparseSolver<T, I>::getFactorU(Matrix_CSR<T,I,A> &U, bool copy
 {
     if(ext->stage < 3) eslog::error("getFactorU: invalid order of operations in spsolver\n");
     if(copyValues && ext->stage < 4) eslog::error("getFactorU: invalid order of operations in spsolver\n");
-    if((size_t)U.nrows != ext->cm_factor_simpl->n || (size_t)U.ncols != ext->cm_factor_simpl->n || (size_t)U.nnz != ext->cm_factor_simpl->nzmax) eslog::error("getFactorU: output matrix has wrong dimensions\n");
+    if((size_t)U.nrows != ext->cm_factor_super->n || (size_t)U.ncols != ext->cm_factor_super->n || U.nnz != getFactorNnz()) eslog::error("getFactorU: output matrix has wrong dimensions\n");
 
-    // U.resize(ext->cm_factor_simpl->n, ext->cm_factor_simpl->n, ext->cm_factor_simpl->nzmax);
+    if(!ext->getfactor_preprocess_done) getfactor_preprocess(ext);
 
     if(copyPattern) std::copy_n(static_cast<I*>(ext->cm_factor_simpl->p), ext->cm_factor_simpl->n+1, U.rows);
     if(copyPattern) std::copy_n(static_cast<I*>(ext->cm_factor_simpl->i), ext->cm_factor_simpl->nzmax, U.cols);
@@ -316,11 +330,11 @@ void DirectSparseSolver<T, I>::getPermutation(Permutation<I> &perm)
 {
     if(ext->stage < 3) eslog::error("getPermutation: invalid order of operations in spsolver\n");
 
-    perm.resize(ext->cm_factor_simpl->n);
+    perm.resize(ext->cm_factor_super->n);
 
-    std::copy_n(static_cast<I*>(ext->cm_factor_simpl->Perm), ext->cm_factor_simpl->n, perm.dst_to_src);
+    std::copy_n(static_cast<I*>(ext->cm_factor_super->Perm), ext->cm_factor_super->n, perm.dst_to_src);
 
-    if(ext->cm_factor_simpl->IPerm != nullptr) std::copy_n(static_cast<I*>(ext->cm_factor_simpl->IPerm), ext->cm_factor_simpl->n, perm.dst_to_src);
+    if(ext->cm_factor_super->IPerm != nullptr) std::copy_n(static_cast<I*>(ext->cm_factor_super->IPerm), ext->cm_factor_super->n, perm.dst_to_src);
     else perm.invert(perm.dst_to_src, perm.src_to_dst);
 }
 
@@ -329,9 +343,9 @@ void DirectSparseSolver<T, I>::getPermutation(Vector_Dense<I> &perm)
 {
     if(ext->stage < 3) eslog::error("getPermutation: invalid order of operations in spsolver\n");
 
-    perm.resize(ext->cm_factor_simpl->n);
+    perm.resize(ext->cm_factor_super->n);
 
-    std::copy_n(static_cast<I*>(ext->cm_factor_simpl->Perm), ext->cm_factor_simpl->n, perm.vals);
+    std::copy_n(static_cast<I*>(ext->cm_factor_super->Perm), ext->cm_factor_super->n, perm.vals);
 }
 
 template <typename T, typename I>
