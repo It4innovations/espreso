@@ -14,6 +14,8 @@ namespace espreso {
 namespace gpu {
 namespace mgm {
 
+    bool is_linked();
+
     struct _device;
     using device = std::shared_ptr<_device>;
 

@@ -14,6 +14,8 @@ namespace espreso {
 namespace gpu {
 namespace mgm {
 
+    bool is_linked() { return true; }
+
     namespace
     {
         template<typename T, typename I>

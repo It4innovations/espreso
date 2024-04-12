@@ -26,12 +26,14 @@ DualOperator<T>* DualOperator<T>::set(FETI<T> &feti, const step::Step &step)
         dual = new TotalFETIExplicit<T>(feti);
         break;
     case FETIConfiguration::DUAL_OPERATOR::EXPLICIT_GPU:
-        if (DirectSparseSolver<T>::provideFactors()) {
-            eslog::info(" = DUAL OPERATOR                                                  EXPLICIT TOTAL FETI ON GPU = \n");
-            dual = new TotalFETIExplicitAcc<T,int>(feti);
-        } else {
-            eslog::globalerror("Third party software problem: solver does not provide factors that are required for EXPLICIT TOTAL FETI ON GPU.\n");
+        if (!gpu::mgm::is_linked()) {
+            eslog::globalerror("GPU acceleration is not supported: GPU support in not built.\n");
         }
+        if (!DirectSparseSolver<T>::provideFactors()) {
+            eslog::globalerror("GPU acceleration is not supported: Third party sparse solver does not provide factors.\n");
+        }
+        eslog::info(" = DUAL OPERATOR                                                  EXPLICIT TOTAL FETI ON GPU = \n");
+        dual = new TotalFETIExplicitAcc<T,int>(feti);
         break;
     }
     dual->set(step);

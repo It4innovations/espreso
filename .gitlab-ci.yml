@@ -1,11 +1,12 @@
 stages:
   - build
+  - solver
   - release
 
 before_script:
   - export CXX=mpic++
 
-DUMMY:
+WS_DUMMY:
   stage: build
   script:
     - ./waf configure --skip-suitesparse --skip-mkl --skip-blas --skip-lapack
@@ -14,7 +15,7 @@ DUMMY:
     - ./waf configure --skip-suitesparse --skip-mkl --skip-blas --skip-lapack --intwidth=64
     - ./waf -j8
 
-MKL:
+WS_MKL:
   stage: build
   script:
     - export CPATH=/usr/include/mkl:$CPATH
@@ -33,7 +34,7 @@ MKL:
     - nose2 -v -s tests/linearElasticity/const/planeStrain/elements/acceleration/
     - nose2 -v -s tests/linearElasticity/const/volume/element/acceleration/
 
-FOSS:
+WS_FOSS:
   stage: build
   script:
     - ./waf configure
@@ -50,7 +51,7 @@ FOSS:
     - nose2 -v -s tests/linearElasticity/const/planeStrain/elements/acceleration/
     - nose2 -v -s tests/linearElasticity/const/volume/element/acceleration/
 
-INTEL:
+WS_INTEL:
   stage: build
   script:
     - . env/modules.workstation.icpc
@@ -68,6 +69,54 @@ INTEL:
     - nose2 -v -s tests/heatTransfer/const/conductivity/isotropic3D/
     - nose2 -v -s tests/linearElasticity/const/planeStrain/elements/acceleration/
     - nose2 -v -s tests/linearElasticity/const/volume/element/acceleration/
+
+WS_ASSEMBLER:
+  stage: solver
+  only:
+    refs:
+      - schedules
+  script:
+    - . env/modules.workstation.icpc
+
+    - ./waf configure
+    - ./waf -j8
+    - nose2 -v -s tests/heatTransfer/
+    - nose2 -v -s tests/linearElasticity/
+
+    - ./waf configure --intwidth=64
+    - ./waf -j8
+    - nose2 -v -s tests/heatTransfer/
+    - nose2 -v -s tests/linearElasticity/
+
+WS_PHYSICAL_SOLVER:
+  stage: solver
+  only:
+    refs:
+      - schedules
+  script:
+    - . env/modules.workstation.icpc
+
+    - ./waf configure
+    - ./waf -j8
+    - nose2 -v - s tests/physicalSolver
+
+WS_FETI:
+  stage: solver
+  only:
+    refs:
+      - schedules
+  script:
+    - ./waf configure
+    - ./waf -j8
+    - nose2 -c tests/nose2.cfg -A feti -v -s tests/heatTransfer/
+    - nose2 -c tests/nose2.cfg -A feti -v -s tests/linearElasticity/
+    - nose2 -c tests/nose2.cfg         -v -s tests/feti/
+
+    - ./waf configure --intwidth=64
+    - ./waf -j8
+    - nose2 -c tests/nose2.cfg -A feti -v -s tests/heatTransfer/
+    - nose2 -c tests/nose2.cfg -A feti -v -s tests/linearElasticity/
+    - nose2 -c tests/nose2.cfg         -v -s tests/feti/
 
 GITHUB:
   stage: release

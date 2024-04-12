@@ -8,6 +8,8 @@ namespace espreso {
 namespace gpu {
 namespace mgm {
 
+    bool is_linked() { return false; }
+
     struct _device {};
 
     struct _queue {};
