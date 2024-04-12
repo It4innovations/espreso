@@ -1042,8 +1042,6 @@ template <typename T, typename I>
 void TotalFETIExplicitAcc<T,I>::apply(const Vector_Dual<T> &x_cluster, Vector_Dual<T> &y_cluster)
 {
     if(stage != 3) eslog::error("invalid stage when calling apply\n");
-    
-    double start = eslog::time();
 
     gpu::mgm::set_device(device);
 
@@ -1211,9 +1209,6 @@ void TotalFETIExplicitAcc<T,I>::apply(const Vector_Dual<T> &x_cluster, Vector_Du
         print_timer("Apply     gather_inner", tm_gather_inner);
     }
 
-    double stop = eslog::time();
-    printf("TMP DUAL OPERATOR APPLY TIME:  %12.6f ms\n", (stop - start) * 1000.0);
-
     y_cluster.synchronize();
 }
 
@@ -1267,23 +1262,6 @@ void TotalFETIExplicitAcc<T,I>::print(const step::Step &step)
         }
         math::store(d, utils::filename(utils::debugDirectory(step) + "/feti/dualop", "d").c_str());
     }
-}
-
-
-
-template <typename T, typename I>
-void TotalFETIExplicitAcc<T,I>::clear_gpu_cache()
-{
-    size_t size = size_t{1} << 30;
-    bool alloc_from_pool = true;
-    if(size > cbmba_res_device->get_max_capacity() / 2) alloc_from_pool = false;
-    char * data;
-    if(alloc_from_pool) cbmba_res_device->do_transaction([&](){ data = (char*)cbmba_res_device->allocate(size, align_B); });
-    else data = (char*)gpu::mgm::memalloc_device(size);
-    gpu::mgm::memset_submit(main_q, data, size, 0);
-    gpu::mgm::device_wait();
-    if(alloc_from_pool) cbmba_res_device->deallocate(data);
-    else gpu::mgm::memfree_device(data);
 }
 
 

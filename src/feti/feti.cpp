@@ -86,10 +86,7 @@ bool FETI<T>::set(const step::Step &step)
 
     iterativeSolver = IterativeSolver<T>::set(*this, step);
     projector = Projector<T>::set(*this, step);
-    double dualop_start = eslog::time();
     dualOperator = DualOperator<T>::set(*this, step);
-    double dualop_stop = eslog::time();
-    printf("TMP DUAL OPERATOR SET TIME:    %12.6f ms\n", (dualop_stop - dualop_start) * 1000.0);
     preconditioner = Preconditioner<T>::set(*this, step);
 
     eslog::info(" = ----------------------------------------------------------------------------------------- = \n");
@@ -113,31 +110,7 @@ template <typename T>
 bool FETI<T>::update(const step::Step &step)
 {
     double start = eslog::time();
-    #warning this is temporary just for testing, remove later
-    for(int rep = 0; rep < 2; rep++)
-    {
-        double start = eslog::time();
-        dualOperator->update(step);
-        double stop = eslog::time();
-        printf("TMP DUAL OPERATOR UPDATE TIME: %12.6f ms\n", (stop - start) * 1000.0);
-        if(rep == 0)
-        {
-            // try to clear cpu cache
-            size_t size = (size_t{1} << 27) - rand() % 1000;
-            double * data = new double[size]; // ~1 GiB
-            #pragma omp parallel for
-            for(size_t i = 0; i < size; i++) data[i] = std::sin((double)(i+1));
-            double result = 0;
-            #pragma omp parallel for reduction(+:result)
-            for(size_t i = 0; i < size; i++) result += data[i] * std::cos((double)(i+2));
-            if(std::abs(result) < 0.001) printf("hello %f\n", result);
-            delete[] data;
-
-            // try to clear gpu cache
-            dualOperator->clear_gpu_cache();
-        }
-    }
-    // dualOperator->update(step);
+    dualOperator->update(step);
     preconditioner->update(step);
     projector->update(step);
     eslog::info("       = FETI SOLVER UPDATED                                                %8.3f s = \n", eslog::time() - start);
