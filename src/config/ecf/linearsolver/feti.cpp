@@ -10,10 +10,7 @@ espreso::FETIConfiguration::FETIConfiguration()
 			.setdescription({ "Type" })
 			.setdatatype({ ECFDataType::OPTION })
 			.addoption(ECFOption().setname("TOTAL_FETI").setdescription("FETI with Dirichlet in B1."))
-			.addoption(ECFOption().setname("HYBRID_FETI").setdescription("HYBRID FETI with Dirichlet in B1."))
-			.addoption(ECFOption().setname("IMPLICIT_TFETI").setdescription("Fx = (B * (K+ * (B' * x)))"))
-			.addoption(ECFOption().setname("EXPLICIT_TFETI").setdescription("Fx = (B * K+ * B') * x"))
-			.addoption(ECFOption().setname("ACCELERATED_TFETI").setdescription("Fx = (B * K+ * B') * x on accelerator")));
+			.addoption(ECFOption().setname("HYBRID_FETI").setdescription("HYBRID FETI with Dirichlet in B1.")));
 
 	ordering = ORDERING::ORDERED;
 	REGISTER(ordering, ECFMetaData()
@@ -262,7 +259,7 @@ espreso::FETIConfiguration::FETIConfiguration()
 			.setdescription({ "SMALSE gradproj" })
 			.setdatatype({ ECFDataType::BOOL }));
 	optimset = true;
-	REGISTER(th, ECFMetaData()
+	REGISTER(optimset, ECFMetaData()
 			.setdescription({ "SMALSE optimset" })
 			.setdatatype({ ECFDataType::BOOL }));
 

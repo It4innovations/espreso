@@ -55,10 +55,10 @@ void FETILinearSystemSolver<T>::set(step::Step &step)
         feti.x[di].shallowCopy(x.domains[di]);
     }
     feti.decomposition = A.decomposition;
-    constrains.set(step, feti, dirichlet);
-    eslog::checkpointln("FETI: SET B1");
     Regularization<T>::set(step, feti);
     eslog::checkpointln("FETI: SET KERNELS");
+    constrains.set(step, feti, dirichlet);
+    eslog::checkpointln("FETI: SET B1");
     eslog::info(" = ----------------------------------------------------------------------------------------- = \n");
     feti.set(step);
     eslog::endln("FETI: LINEAR SYSTEM SET");
@@ -68,12 +68,13 @@ template <typename T>
 void FETILinearSystemSolver<T>::update(step::Step &step)
 {
     eslog::startln("FETI: UPDATING LINEAR SYSTEM", "FETI[UPDATE]");
-    constrains.update(step, feti, dirichlet);
-    eslog::checkpointln("FETI: UPDATE B1");
     if (A.updated) {
         Regularization<T>::update(step, feti);
         eslog::checkpointln("FETI: UPDATE KERNELS");
     }
+
+    constrains.update(step, feti, dirichlet);
+    eslog::checkpointln("FETI: UPDATE B1");
 
     if (bem) {
         #pragma omp parallel for
@@ -121,6 +122,14 @@ void FETILinearSystemSolver<T>::update(step::Step &step)
             }
             os << "\n";
             i += feti.lambdas.cmap[i + 1] + 2;
+        }
+
+        if (feti.B0.size()) {
+            eslog::storedata(" STORE: system/{B0, D2C0}\n");
+            for (size_t d = 0; d < feti.B0.size(); ++d) {
+                math::store(feti.B0[d], utils::filename(utils::debugDirectory(step) + "/system", "B0" + std::to_string(d)).c_str());
+                math::store(feti.D2C0[d], utils::filename(utils::debugDirectory(step) + "/system", "D2C0" + std::to_string(d)).c_str());
+            }
         }
     }
     feti.updated.K = A.updated;

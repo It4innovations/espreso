@@ -23,68 +23,13 @@ TotalFETIImplicit<T>::~TotalFETIImplicit()
 }
 
 template <typename T>
-void TotalFETIImplicit<T>::reduceInfo(DualOperatorInfo &sum, DualOperatorInfo &min, DualOperatorInfo &max)
-{
-    sum.nnzA = sum.nnzL = /*sum.memoryL =*/ sum.rows = sum.dualA = sum.surfaceA = 0;
-    min.nnzA = min.nnzL = /*min.memoryL =*/ min.rows = min.dualA = min.surfaceA = INT32_MAX;
-    max.nnzA = max.nnzL = /*max.memoryL =*/ max.rows = max.dualA = max.surfaceA = 0;
-    for (size_t di = 0; di < feti.K.size(); ++di) {
-        size_t dualA = feti.B1[di].nrows;
-        size_t surfaceA = Kplus[di].nrows - *std::min_element(feti.B1[di].cols, feti.B1[di].cols + feti.B1[di].nnz);
-        min.rows = std::min<size_t>(min.rows, KSolver[di].getMatrixSize());
-        min.nnzA = std::min<size_t>(min.nnzA, KSolver[di].getMatrixNnz());
-        min.nnzL = std::min<size_t>(min.nnzL, KSolver[di].getFactorNnz());
-        // min.memoryL = std::min(min.memoryL, KSolver[di].memoryL);
-        min.dualA = std::min(min.dualA, dualA);
-        min.surfaceA = std::min(min.surfaceA, surfaceA);
-        max.rows = std::max<size_t>(max.rows, KSolver[di].getMatrixSize());
-        max.nnzA = std::max<size_t>(max.nnzA, KSolver[di].getMatrixNnz());
-        max.nnzL = std::max<size_t>(max.nnzL, KSolver[di].getFactorNnz());
-        // max.memoryL = std::max(max.memoryL, KSolver[di].memoryL);
-        max.dualA = std::max(max.dualA, dualA);
-        max.surfaceA = std::max(max.surfaceA, surfaceA);
-        sum.rows += KSolver[di].getMatrixSize();
-        sum.nnzA += KSolver[di].getMatrixNnz();
-        sum.nnzL += KSolver[di].getFactorNnz();
-        // sum.memoryL += KSolver[di].memoryL;
-        sum.dualA += dualA;
-        sum.surfaceA += surfaceA;
-    }
-
-    Communication::allReduce(&min, nullptr, sizeof(DualOperatorInfo) / sizeof(size_t), MPITools::getType<size_t>().mpitype, MPI_MIN);
-    Communication::allReduce(&max, nullptr, sizeof(DualOperatorInfo) / sizeof(size_t), MPITools::getType<size_t>().mpitype, MPI_MAX);
-    Communication::allReduce(&sum, nullptr, sizeof(DualOperatorInfo) / sizeof(size_t), MPITools::getType<size_t>().mpitype, MPI_SUM);
-}
-
-template <typename T>
-void TotalFETIImplicit<T>::printInfo(DualOperatorInfo &sum, DualOperatorInfo &min, DualOperatorInfo &max)
-{
-    eslog::info(" =   DOMAINS TOTAL                                                                 %9d = \n", feti.sinfo.domains);
-    eslog::info(" =   DUAL SIZE                                                                     %9d = \n", feti.sinfo.dual_total);
-    eslog::info(" =   B1 ROWS                                                  %8.0f <%8d - %8d> = \n", (double)sum.dualA / feti.sinfo.domains, min.dualA, max.dualA);
-    eslog::info(" =   K+ SURFACE                                               %8.0f <%8d - %8d> = \n", (double)sum.surfaceA / feti.sinfo.domains, min.surfaceA, max.surfaceA);
-    eslog::info(" =   K+ ROWS                                                  %8.0f <%8d - %8d> = \n", (double)sum.rows / feti.sinfo.domains, min.rows, max.rows);
-    eslog::info(" =   K+ NNZ                                                   %8.0f <%8d - %8d> = \n", (double)sum.nnzA / feti.sinfo.domains, min.nnzA, max.nnzA);
-    eslog::info(" =   K+ FACTORS NNZ                                           %8.0f <%8d - %8d> = \n", (double)sum.nnzL / feti.sinfo.domains, min.nnzL, max.nnzL);
-    // eslog::info(" =   K+ SOLVER MEMORY [MB]                                    %8.2f <%8.2f - %8.2f> = \n", (double)sum.memoryL / feti.sinfo.domains / 1024. / 1024., min.memoryL / 1024. / 1024., max.memoryL / 1024. / 1024.);
-    if (sparsity != DirectSparseSolver<T>::VectorSparsity::DENSE) {
-        eslog::info(" =   K+ FACTORIZATION                                                        RESPECT SURFACE = \n");
-    }
-    if (feti.configuration.exhaustive_info) {
-        // power method to Eigen values
-        // B * Bt = eye
-        // pseudo inverse
-    }
-}
-
-template <typename T>
 void TotalFETIImplicit<T>::info()
 {
     DualOperatorInfo sum, min, max;
-    reduceInfo(sum, min, max);
+    DualOperator<T>::reduceInfo(KSolver, sum, min, max);
 
     eslog::info(" = IMPLICIT TOTAL FETI OPERATOR                                                              = \n");
-    printInfo(sum, min, max);
+    DualOperator<T>::printInfo(KSolver, sum, min, max);
     eslog::info(" = ----------------------------------------------------------------------------------------- = \n");
 }
 
@@ -190,6 +135,5 @@ void TotalFETIImplicit<T>::toPrimal(const Vector_Dual<T> &x, std::vector<Vector_
 }
 
 template class TotalFETIImplicit<double>;
-template class TotalFETIImplicit<std::complex<double> >;
 
 }

@@ -25,7 +25,7 @@ TotalFETIExplicit<T>::~TotalFETIExplicit()
 template <typename T>
 void TotalFETIExplicit<T>::info()
 {
-//    DualOperatorInfo sum, min, max;
+    DualOperatorInfo sum, min, max;
     size_t minF = INT32_MAX, maxF = 0, sumF = 0;
     for (size_t d = 0; d < F.size(); ++d) {
         minF = std::min(minF, F[d].nrows * F[d].ncols * sizeof(double));
@@ -33,13 +33,13 @@ void TotalFETIExplicit<T>::info()
         sumF += F[d].nrows * F[d].ncols * sizeof(double);
     }
 
-//    TotalFETIImplicit<T>::reduceInfo(sum, min, max);
+    DualOperator<T>::reduceInfo(KSolver, sum, min, max);
     Communication::allReduce(&minF, nullptr, 1, MPITools::getType<size_t>().mpitype, MPI_MIN);
     Communication::allReduce(&maxF, nullptr, 1, MPITools::getType<size_t>().mpitype, MPI_MAX);
     Communication::allReduce(&sumF, nullptr, 1, MPITools::getType<size_t>().mpitype, MPI_SUM);
 
     eslog::info(" = EXPLICIT TOTAL FETI OPERATOR                                                              = \n");
-//    TotalFETIImplicit<T>::printInfo(sum, min, max);
+    DualOperator<T>::printInfo(KSolver, sum, min, max);
     eslog::info(" =   F MEMORY [MB]                                            %8.2f <%8.2f - %8.2f> = \n", (double)sumF / F.size() / 1024. / 1024., minF / 1024. / 1024., maxF / 1024. / 1024.);
     eslog::info(" = ----------------------------------------------------------------------------------------- = \n");
 }
@@ -216,6 +216,5 @@ void TotalFETIExplicit<T>::print(const step::Step &step)
 }
 
 template class TotalFETIExplicit<double>;
-template class TotalFETIExplicit<std::complex<double> >;
 
 }

@@ -136,23 +136,23 @@ TotalFETIExplicitAcc<T,I>::~TotalFETIExplicitAcc()
 template <typename T, typename I>
 void TotalFETIExplicitAcc<T,I>::info()
 {
-	// DualOperatorInfo sum, min, max;
-	size_t minF = INT32_MAX, maxF = 0, sumF = 0;
-	for (size_t d = 0; d < d_Fs.size(); ++d) {
-		minF = std::min(minF, d_Fs[d].nrows * d_Fs[d].ncols * sizeof(T));
-		maxF = std::max(maxF, d_Fs[d].nrows * d_Fs[d].ncols * sizeof(T));
-		sumF += d_Fs[d].nrows * d_Fs[d].ncols * sizeof(T);
-	}
+    // DualOperatorInfo sum, min, max;
+    size_t minF = INT32_MAX, maxF = 0, sumF = 0;
+    for (size_t d = 0; d < d_Fs.size(); ++d) {
+        minF = std::min(minF, d_Fs[d].nrows * d_Fs[d].ncols * sizeof(T));
+        maxF = std::max(maxF, d_Fs[d].nrows * d_Fs[d].ncols * sizeof(T));
+        sumF += d_Fs[d].nrows * d_Fs[d].ncols * sizeof(T);
+    }
 
-//	TotalFETIImplicit<T>::reduceInfo(sum, min, max);
-	Communication::allReduce(&minF, nullptr, 1, MPITools::getType<size_t>().mpitype, MPI_MIN);
-	Communication::allReduce(&maxF, nullptr, 1, MPITools::getType<size_t>().mpitype, MPI_MAX);
-	Communication::allReduce(&sumF, nullptr, 1, MPITools::getType<size_t>().mpitype, MPI_SUM);
+//    TotalFETIImplicit<T>::reduceInfo(sum, min, max);
+    Communication::allReduce(&minF, nullptr, 1, MPITools::getType<size_t>().mpitype, MPI_MIN);
+    Communication::allReduce(&maxF, nullptr, 1, MPITools::getType<size_t>().mpitype, MPI_MAX);
+    Communication::allReduce(&sumF, nullptr, 1, MPITools::getType<size_t>().mpitype, MPI_SUM);
 
-	eslog::info(" = EXPLICIT TOTAL FETI OPERATOR ON GPU                                                       = \n");
-//	TotalFETIImplicit<T>::printInfo(sum, min, max);
-	eslog::info(" =   F MEMORY [MB]                                            %8.2f <%8.2f - %8.2f> = \n", (double)sumF / d_Fs.size() / 1024. / 1024., minF / 1024. / 1024., maxF / 1024. / 1024.);
-	eslog::info(" = ----------------------------------------------------------------------------------------- = \n");
+    eslog::info(" = EXPLICIT TOTAL FETI OPERATOR ON GPU                                                       = \n");
+//    TotalFETIImplicit<T>::printInfo(sum, min, max);
+    eslog::info(" =   F MEMORY [MB]                                            %8.2f <%8.2f - %8.2f> = \n", (double)sumF / d_Fs.size() / 1024. / 1024., minF / 1024. / 1024., maxF / 1024. / 1024.);
+    eslog::info(" = ----------------------------------------------------------------------------------------- = \n");
 }
 
 
@@ -295,7 +295,7 @@ void TotalFETIExplicitAcc<T,I>::set(const step::Step &step)
         // Kreg = K + RegMat symbolic pattern
         tm_Kreg_combine.start();
         {
-		    math::combine(Kregs[d], feti.K[d], feti.RegMat[d]);
+            math::combine(Kregs[d], feti.K[d], feti.RegMat[d]);
             if constexpr(utils::is_real<T>())    Kregs[d].type = Matrix_Type::REAL_SYMMETRIC_POSITIVE_DEFINITE;
             if constexpr(utils::is_complex<T>()) Kregs[d].type = Matrix_Type::COMPLEX_HERMITIAN_POSITIVE_DEFINITE;
             Kregs[d].shape = feti.K[d].shape;
@@ -672,7 +672,7 @@ void TotalFETIExplicitAcc<T,I>::update(const step::Step &step)
         // Kreg = K + RegMat numeric values
         tm_Kreg_combine.start();
         {
-		    math::sumCombined(Kregs[d], T{1.0}, feti.K[d], feti.RegMat[d]);
+            math::sumCombined(Kregs[d], T{1.0}, feti.K[d], feti.RegMat[d]);
         }
         tm_Kreg_combine.stop();
 
@@ -908,13 +908,13 @@ void TotalFETIExplicitAcc<T,I>::update(const step::Step &step)
     print_timer("Update    compute_d", tm_compute_d);
     print_timer("Update    wait", tm_wait);
 
-//	print(step);
+//    print(step);
 }
 
 template <typename T, typename I>
 void TotalFETIExplicitAcc<T,I>::apply(const Vector_Dual<T> &x_cluster, Vector_Dual<T> &y_cluster)
 {
-	if(stage != 3) eslog::error("invalid stage when calling apply\n");
+    if(stage != 3) eslog::error("invalid stage when calling apply\n");
 
     gpu::mgm::set_device(device);
 
@@ -1078,34 +1078,34 @@ void TotalFETIExplicitAcc<T,I>::apply(const Vector_Dual<T> &x_cluster, Vector_Du
         print_timer("Apply     gather_inner", tm_gather_inner);
     }
 
-	y_cluster.synchronize();
+    y_cluster.synchronize();
 }
 
 template <typename T, typename I>
 void TotalFETIExplicitAcc<T,I>::toPrimal(const Vector_Dual<T> &x, std::vector<Vector_Dense<T> > &y)
 {
     // just do it on cpu
-	#pragma omp parallel for schedule(static,1) if(wcpset == 'P')
-	for (size_t d = 0; d < feti.K.size(); ++d) {
+    #pragma omp parallel for schedule(static,1) if(wcpset == 'P')
+    for (size_t d = 0; d < feti.K.size(); ++d) {
         Vector_Dense<T,I> z;
         z.resize(y[d]);
-		applyBt(feti, d, x, z, T{-1});
-		math::add(z, T{1}, feti.f[d]);
-		solvers_Kreg[d].solve(z, y[d]);
-	}
+        applyBt(feti, d, x, z, T{-1});
+        math::add(z, T{1}, feti.f[d]);
+        solvers_Kreg[d].solve(z, y[d]);
+    }
 }
 
 template <typename T, typename I>
 void TotalFETIExplicitAcc<T,I>::print(const step::Step &step)
 {
     eslog::error("todo\n");
-	// if (info::ecf->output.print_matrices) {
-	// 	eslog::storedata(" STORE: feti/dualop/{Kplus}\n");
-	// 	for (size_t di = 0; di < feti.K.size(); ++di) {
-	// 		math::store(Kplus[di], utils::filename(utils::debugDirectory(step) + "/feti/dualop", (std::string("Kplus") + std::to_string(di)).c_str()).c_str());
-	// 	}
-	// 	math::store(d, utils::filename(utils::debugDirectory(step) + "/feti/dualop", "d").c_str());
-	// }
+    // if (info::ecf->output.print_matrices) {
+    //     eslog::storedata(" STORE: feti/dualop/{Kplus}\n");
+    //     for (size_t di = 0; di < feti.K.size(); ++di) {
+    //         math::store(Kplus[di], utils::filename(utils::debugDirectory(step) + "/feti/dualop", (std::string("Kplus") + std::to_string(di)).c_str()).c_str());
+    //     }
+    //     math::store(d, utils::filename(utils::debugDirectory(step) + "/feti/dualop", "d").c_str());
+    // }
 }
 
 //template class TotalFETIExplicitAcc<float , int32_t>;

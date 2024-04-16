@@ -50,8 +50,8 @@ struct FETI {
     std::vector<Matrix_Dense<T> > R1, R2;
     std::vector<Matrix_CSR<T> > RegMat;
 
-    std::vector<Matrix_CSR<T> > B1;
-    std::vector<std::vector<int> > D2C;
+    std::vector<Matrix_CSR<T> > B1, B0;
+    std::vector<std::vector<int> > D2C, D2C0;
     Vector_Dense<T> c, lb, ub;
     struct Lambdas {
         // equality (local)
@@ -63,6 +63,10 @@ struct FETI {
         int equalities, size;
         std::vector<int> cmap; // size, ndomains <d0, d1, ..., dn>; size, ndomains <>; ...;
     } lambdas;
+
+    struct Cluster {
+        int gl_size = 0;
+    } cluster;
 
     struct {
         bool K = true, B = true;

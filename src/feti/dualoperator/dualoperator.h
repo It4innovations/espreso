@@ -4,6 +4,7 @@
 
 #include "feti/feti.h"
 #include "feti/common/vector_dual.h"
+#include "math/wrappers/math.spsolver.h"
 
 #include <vector>
 
@@ -41,6 +42,9 @@ public:
 
 protected:
     void getInitVector(Vector_Dual<T> &v);
+
+    void reduceInfo(std::vector<DirectSparseSolver<T> > &KSolver, DualOperatorInfo &sum, DualOperatorInfo &min, DualOperatorInfo &max);
+    void printInfo(std::vector<DirectSparseSolver<T> > &KSolver, DualOperatorInfo &sum, DualOperatorInfo &min, DualOperatorInfo &max);
 };
 
 }

@@ -19,7 +19,4 @@ struct FixedWall {
 
 }
 
-
-
-
 #endif /* SRC_ANALYSIS_LINEARSYSTEM_CONSTRAINS_FIXEDWALL_H_ */

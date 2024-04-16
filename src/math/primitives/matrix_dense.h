@@ -13,7 +13,7 @@ namespace espreso {
 
 template <typename T, typename I>
 struct _Matrix_Dense {
-    I nrows, ncols, nnz;
+    I nrows, ncols, nnz, maxnnz;
     T *vals;
 };
 
@@ -147,9 +147,10 @@ protected:
         } else {
             nnz = (nrows * ncols - nrows) / 2 + nrows;
         }
-        if (m.nrows * m.ncols < nrows * ncols) {
+        if (m.maxnnz < nrows * ncols) {
             clear(m);
             m.vals = ator.template allocate<T>(nnz);
+            m.maxnnz = nnz;
         }
         m.nrows = nrows;
         m.ncols = ncols;
@@ -160,6 +161,7 @@ protected:
     {
         m.nrows = m.ncols = 0;
         if (m.vals) { ator.deallocate(m.vals); m.vals = nullptr; }
+        m.maxnnz = 0;
     }
 
     _Matrix_Dense<T, I> _allocated;

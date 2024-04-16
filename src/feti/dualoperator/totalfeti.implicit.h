@@ -35,9 +35,6 @@ public:
     void toPrimal(const Vector_Dual<T> &x, std::vector<Vector_Dense<T> > &y);
 
 protected:
-    void reduceInfo(DualOperatorInfo &sum, DualOperatorInfo &min, DualOperatorInfo &max);
-    void printInfo(DualOperatorInfo &sum, DualOperatorInfo &min, DualOperatorInfo &max);
-
     using DualOperator<T>::feti;
     using DualOperator<T>::d;
 
