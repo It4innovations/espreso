@@ -194,7 +194,7 @@ template <>
 void multiply(double alpha, const Matrix_Dense<double> &A, const Matrix_Dense<double> &B, double beta, Matrix_Dense<double> &C, bool transA, bool transB)
 {
     C.resize(transA ? A.ncols : A.nrows, transB ? B.nrows : B.ncols);
-    cblas_dgemm(CblasRowMajor, transA ? CblasTrans : CblasNoTrans, transB ? CblasTrans : CblasNoTrans, C.nrows, C.ncols, transA ? A.nrows : A.ncols, alpha, A.vals, transA ? A.ncols: A.nrows, B.vals, transB ? B.nrows : B.ncols, beta, C.vals, C.ncols);
+    cblas_dgemm(CblasRowMajor, transA ? CblasTrans : CblasNoTrans, transB ? CblasTrans : CblasNoTrans, C.nrows, C.ncols, transA ? A.nrows : A.ncols, alpha, A.vals, A.ncols, B.vals, B.ncols, beta, C.vals, C.ncols);
 }
 
 }
