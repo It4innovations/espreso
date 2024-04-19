@@ -14,7 +14,7 @@ void BEM3DElasticity(double *K, int np, double *points, int ne, int *elements, d
 
 
 void BEM3DLaplaceEval(double *results, int np, double *points, int ne, int *elements, int ni, double *inner, double conductivity, double *dirichlet);
-void BEM3DElasticityEval(double *results, int np, double *points, int ne, int *elements, int ni, double *inner, double conductivity, double *dirichlet);
+void BEM3DElasticityEval(double *results, int np, double *points, int ne, int *elements, int ni, double *inner, double YoungModulus, double PoissonRatio, double *dirichlet);
 
 
 

@@ -23,6 +23,9 @@ PHYSICS   STRUCTURAL_MECHANICS;
 GENERATOR {
   SHAPE   GRID;
 
+  UNIFORM_DOMAINS          FALSE;
+  UNIFORM_CLUSTERS         FALSE;
+
   GRID {
     START_X                    0;
     START_Y                    0;
@@ -96,7 +99,7 @@ STRUCTURAL_MECHANICS {
         PRECONDITIONER        NONE;
         ITERATIVE_SOLVER       PCG;
         REGULARIZATION    ANALYTIC;
-        MAX_ITERATIONS          15;
+        MAX_ITERATIONS         500;
       }
 
       DISPLACEMENT {

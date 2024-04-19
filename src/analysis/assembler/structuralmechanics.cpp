@@ -635,21 +635,32 @@ void StructuralMechanics::runBEM(SubKernel::Action action, size_t domain, double
 
 void StructuralMechanics::updateSolution(Vector_Base<double> *x)
 {
-//    Vector_FETI<Vector_Dense, double> *xBEM = dynamic_cast<Vector_FETI<Vector_Dense, double>*>(x);
-//    #pragma omp parallel for
-//    for (size_t i = 0; i < bem.size(); ++i) {
-//        if (bem[i]) {
-//            int np = info::mesh->domainsSurface->dnodes[i].size();
-//            double *points = &(info::mesh->domainsSurface->coordinates[i][0].x);
-//            int ne = info::mesh->domainsSurface->edistribution[i + 1] - info::mesh->domainsSurface->edistribution[i];
-//            int *elemNodes = info::mesh->domainsSurface->denodes[i].data();
-//            int ni = info::mesh->domainsSurface->coordinates[i].size() - info::mesh->domainsSurface->dnodes[i].size();
-//            double *inner = points + 3 * np;
-//
-//
-//            BEM3DLaplaceEval(xBEM->domains[i].vals + np, np, points, ne, elemNodes, ni, inner, 1, xBEM->domains[i].vals);
-//        }
-//    }
+    Vector_FETI<Vector_Dense, double> *xBEM = dynamic_cast<Vector_FETI<Vector_Dense, double>*>(x);
+    #pragma omp parallel for
+    for (size_t i = 0; i < bem.size(); ++i) {
+        if (bem[i]) {
+            int np = info::mesh->domainsSurface->dnodes[i].size();
+            double *points = &(info::mesh->domainsSurface->coordinates[i][0].x);
+            int ne = info::mesh->domainsSurface->edistribution[i + 1] - info::mesh->domainsSurface->edistribution[i];
+            int *elemNodes = info::mesh->domainsSurface->denodes[i].data();
+            int ni = info::mesh->domainsSurface->coordinates[i].size() - info::mesh->domainsSurface->dnodes[i].size();
+            double *inner = points + 3 * np;
+            double ex = subkernels[i].elasticity.configuration->young_modulus.get(0, 0).evaluator->evaluate();
+            double mu = subkernels[i].elasticity.configuration->poisson_ratio.get(0, 0).evaluator->evaluate();
+            std::vector<double> xx(xBEM->domains[i].size);
+            for (int p = 0; p < np; ++p) {
+                xx[0 * np + p] = xBEM->domains[i].vals[3 * p + 0];
+                xx[1 * np + p] = xBEM->domains[i].vals[3 * p + 1];
+                xx[2 * np + p] = xBEM->domains[i].vals[3 * p + 2];
+            }
+            BEM3DElasticityEval(xx.data() + 3 * np, np, points, ne, elemNodes, ni, inner, ex, mu, xx.data());
+            for (int p = 0; p < ni; ++p) {
+                xBEM->domains[i].vals[3 * (p + np) + 0] = xx[3 * np + 0 * ni + p];
+                xBEM->domains[i].vals[3 * (p + np) + 1] = xx[3 * np + 1 * ni + p];
+                xBEM->domains[i].vals[3 * (p + np) + 2] = xx[3 * np + 2 * ni + p];
+            }
+        }
+    }
     x->storeTo(Results::displacement->data);
     assemble(SubKernel::SOLUTION);
 }

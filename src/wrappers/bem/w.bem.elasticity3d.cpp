@@ -916,6 +916,133 @@ static void BEM3DElasticity (esint np, double *points, esint ne, int *elemNodes,
     }
 }
 
+void BEM3dElasticityVolume (esint nn, double *nodes,
+                esint ne, esint *elemNodes,
+                esint np, double *points, int order,
+                //E = 1
+                double nu,
+                double *t, double *u, double *Vt_Wu)
+{
+  double lambda = /* E* */ nu/(1.0+nu)/(1.0-2.0*nu), mu = /* E* */ 0.5/(1+nu);
+  esint i, j, k, faceNodesj[3];
+  double ksi1, ksi2, wksi, A1, A2, A3, u1, u2, u3, v1, v2, v3, n1, n2, n3,Jacob;
+  double V1, V2, V3, W1, W2, W3;
+  double x1, x2, x3, xy1, xy2, xy3, xy12, xy13, xy22, xy23, xy32, xy33;
+  double normxy, normxy3, normxy5;
+  double t1j, t2j, t3j, u1j1, u1j2, u1j3, u2j1, u2j2, u2j3, u3j1, u3j2, u3j3;
+  double A, B, C, D, E, F, G, H, I, J, K, L, M;
+  double U11, U12, U13, U22, U23, U33;
+  double U111, U112, U113, U121, U122, U123, U131, U132, U133;
+  double U221, U222, U223, U231, U232, U233, U331, U332, U333;
+  double u1ksi, u2ksi, u3ksi, un11, un22, un33, un, un12, un13, un23;
+
+  quadTrin = TriangleQuadratureSizes[order];
+  qTriPoints = TriangleQuadraturePoints[order];
+  qTriWeights = TriangleQuadratureWeights[order];
+
+  memset(Vt_Wu,0,3*np*sizeof(double));
+  for (j=0; j<ne; j++)
+    {
+      t1j = t[j];
+      t2j = t[ne+j];
+      t3j = t[2*ne+j];
+      for (k=0; k<3; k++)
+    faceNodesj[k] = elemNodes[3*j+k] + 1;
+      u1j1 = u[faceNodesj[0]-1];
+      u1j2 = u[faceNodesj[1]-1];
+      u1j3 = u[faceNodesj[2]-1];
+      u2j1 = u[nn+faceNodesj[0]-1];
+      u2j2 = u[nn+faceNodesj[1]-1];
+      u2j3 = u[nn+faceNodesj[2]-1];
+      u3j1 = u[2*nn+faceNodesj[0]-1];
+      u3j2 = u[2*nn+faceNodesj[1]-1];
+      u3j3 = u[2*nn+faceNodesj[2]-1];
+      A1 = nodes[3*(faceNodesj[0]-1)];
+      A2 = nodes[3*(faceNodesj[0]-1)+1];
+      A3 = nodes[3*(faceNodesj[0]-1)+2];
+      u1 = nodes[3*(faceNodesj[1]-1)]-A1;
+      u2 = nodes[3*(faceNodesj[1]-1)+1]-A2;
+      u3 = nodes[3*(faceNodesj[1]-1)+2]-A3;
+      v1 = nodes[3*(faceNodesj[2]-1)]-A1;
+      v2 = nodes[3*(faceNodesj[2]-1)+1]-A2;
+      v3 = nodes[3*(faceNodesj[2]-1)+2]-A3;
+      n1 = u2*v3-u3*v2; n2 = u3*v1-u1*v3; n3 = u1*v2-u2*v1;
+      Jacob = sqrt(n1*n1+n2*n2+n3*n3);
+      n1 /= Jacob; n2 /= Jacob; n3 /= Jacob;
+      for (i=0; i<np; i++)
+    {
+      x1 = points[3*i];
+      x2 = points[3*i+1];
+      x3 = points[3*i+2];
+      for (k=0, V1=0.0, V2=0.0, V3=0.0, W1=0.0, W2=0.0, W3=0.0;
+           k<quadTrin; k++)
+        {
+          wksi = qTriWeights[k];
+          ksi1 = qTriPoints[k].x;
+          ksi2 = qTriPoints[k].y;
+          u1ksi = u1j1+(u1j2-u1j1)*ksi1+(u1j3-u1j1)*ksi2;
+          u2ksi = u2j1+(u2j2-u2j1)*ksi1+(u2j3-u2j1)*ksi2;
+          u3ksi = u3j1+(u3j2-u3j1)*ksi1+(u3j3-u3j1)*ksi2;
+          un11 = u1ksi*n1; un22 = u2ksi*n2; un33 = u3ksi*n3;
+          un = un11+un22+un33;
+          un12 = u1ksi*n2 + u2ksi*n1;
+          un13 = u1ksi*n3 + u3ksi*n1;
+          un23 = u2ksi*n3 + u3ksi*n2;
+          xy1 = x1 - A1 - u1*ksi1 - v1*ksi2;
+          xy12 = xy1*xy1; xy13 = xy12*xy1;
+          xy2 = x2 - A2 - u2*ksi1 - v2*ksi2;
+          xy22 = xy2*xy2; xy23 = xy22*xy2;
+          xy3 = x3 - A3 - u3*ksi1 - v3*ksi2;
+          xy32 = xy3*xy3; xy33 = xy32*xy3;
+          normxy = sqrt(xy1*xy1+xy2*xy2+xy3*xy3);
+          normxy3 = normxy*normxy*normxy;
+          normxy5 = normxy3*normxy*normxy;
+          U11 = (3.0-4.0*nu)/normxy + xy12/normxy3;
+          U22 = (3.0-4.0*nu)/normxy + xy22/normxy3;
+          U33 = (3.0-4.0*nu)/normxy + xy32/normxy3;
+          U12 = xy1*xy2/normxy3; U13 = xy1*xy3/normxy3; U23=xy2*xy3/normxy3;
+          A = xy1/normxy3; B = xy2/normxy3; C = xy3/normxy3;
+          D = 3.0*xy13/normxy5; E = 3.0*xy23/normxy5; F = 3.0*xy33/normxy5;
+          G = 3.0*xy12*xy2/normxy5; H = 3.0*xy12*xy3/normxy5;
+          I = 3.0*xy22*xy1/normxy5; J = 3.0*xy22*xy3/normxy5;
+          K = 3.0*xy32*xy1/normxy5; L = 3.0*xy32*xy2/normxy5;
+          M = 3.0*xy1*xy2*xy3/normxy5;
+          U111 = (1.0-4.0*nu)*A + D;
+          U222 = (1.0-4.0*nu)*B + E;
+          U333 = (1.0-4.0*nu)*C + F;
+          U112 = (3.0-4.0*nu)*B + G;
+          U113 = (3.0-4.0*nu)*C + H;
+          U221 = (3.0-4.0*nu)*A + I;
+          U223 = (3.0-4.0*nu)*C + J;
+          U331 = (3.0-4.0*nu)*A + K;
+          U332 = (3.0-4.0*nu)*B + L;
+          U121 = G-B; U131 = H-C; U232 = J-C;
+          U122 = I-A; U133 = K-A; U233 = L-B;
+          U123 = U132 = U231 = M;
+          V1 += wksi * (U11*t1j+U12*t2j+U13*t3j);
+          V2 += wksi * (U12*t1j+U22*t2j+U23*t3j);
+          V3 += wksi * (U13*t1j+U23*t2j+U33*t3j);
+          W1 += wksi * ( lambda*(U111+U122+U133)*un +
+                 2*mu*(U111*un11+U122*un22+U133*un33) +
+                 mu*((U112+U121)*un12+(U113+U131)*un13+
+                 (U123+U132)*un23) );
+          W2 += wksi * ( lambda*(U121+U222+U233)*un +
+                 2*mu*(U121*un11+U222*un22+U233*un33) +
+                 mu*((U122+U221)*un12+(U123+U231)*un13+
+                 (U223+U232)*un23) );
+          W3 += wksi * ( lambda*(U131+U232+U333)*un +
+                 2*mu*(U131*un11+U232*un22+U333*un33) +
+                 mu*((U132+U231)*un12+(U133+U331)*un13+
+                 (U233+U332)*un23) );
+        }
+      Vt_Wu[i] += Jacob * (V1-W1) * (1.0+nu) / 8.0 / M_PI / (1.0-nu);
+      Vt_Wu[np+i] += Jacob * (V2-W2) * (1.0+nu) / 8.0 / M_PI / (1.0-nu);
+      Vt_Wu[2*np+i] += Jacob * (V3-W3) * (1.0+nu) / 8.0 / M_PI / (1.0-nu);
+    }
+    }
+}
+
+
 
 //static void invertMatrix (esint n, double *M, double *invM)
 //{
@@ -1073,7 +1200,6 @@ static void assembleSteklovPoincareCholesky (esint nElements, esint nNodes, doub
 
 
 void BEM3DElasticity(double *K, int np, double *points, int ne, int *elements, double YoungModulus, double PoissonRatio)
-
 {
   int i, j, idx, nElements3 = 3 * ne, nNodes3 = 3 * np;
   double *V, *KK, *D, *M, *invV;
@@ -1113,6 +1239,43 @@ void BEM3DElasticity(double *K, int np, double *points, int ne, int *elements, d
   delete [] KK;
   delete [] D;
   delete [] M;
+}
+
+void BEM3DElasticityEval(double *results, int np, double *points, int ne, int *elements, int ni, double *inner, double YoungModulus, double PoissonRatio, double *dirichlet)
+{
+    esint i, j, idx, nElements3 = 3*ne, nNodes3 = 3*np;
+    double *rhs, *neumann;
+    double *V, *KK, *D, *M, *invV;
+    int order = 7;
+    /*
+    deleteMyBEMData(bem);
+    bem->nNodes = nNodes;
+    */
+    V = new double[nElements3*nElements3];
+    KK = new double[nElements3*nNodes3];
+    D = new double[nNodes3*nNodes3];
+    M = new double[nElements3*nNodes3];
+    BEM3DElasticity(np,points,ne,elements,order,V,KK,D,M,PoissonRatio);
+    for (i=0, idx=0; i<nElements3; i++)
+      for (j=0; j<nNodes3; j++, idx++)
+        KK[idx] += 0.5*M[idx];
+
+    rhs = new double[nElements3];
+    memset(rhs,0,nElements3*sizeof(double));
+    for (j=0, idx=0; j<nNodes3; j++)
+      for (i=0; i<nElements3; i++, idx++)
+        rhs[i] += KK[idx]*dirichlet[j];
+    neumann = new double[nElements3];
+    cholesky(nElements3,V);
+    choleskySolve(nElements3,V,rhs,neumann);
+
+    BEM3dElasticityVolume(np,points,ne,elements,ni,inner,order, PoissonRatio,neumann,dirichlet,results);
+    delete [] neumann;
+    delete [] rhs;
+    delete [] V;
+    delete [] KK;
+    delete [] D;
+    delete [] M;
 }
 
 }
