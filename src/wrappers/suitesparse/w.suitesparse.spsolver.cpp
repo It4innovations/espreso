@@ -77,7 +77,7 @@ DirectSparseSolver<T, I>::DirectSparseSolver()
     ext = std::make_unique<Solver_External_Representation<T,I>>();
 
     ext->zerodrop = 'D'; // Drop, Keep
-    ext->getfactor_preprocess_lazy = false;
+    ext->getfactor_preprocess_lazy = true;
 
     _start<I>(ext->cm_common);
     ext->cm_common.final_ll = 1;
