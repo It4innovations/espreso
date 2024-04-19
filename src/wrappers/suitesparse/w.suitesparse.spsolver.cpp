@@ -305,14 +305,14 @@ I DirectSparseSolver<T, I>::getFactorNnz()
 
 template <typename T, typename I>
 template <typename A>
-inline void DirectSparseSolver<T, I>::getFactorL(Matrix_CSR<T,I,A> &/*L*/, bool /*copyPattern*/, bool /*copyValues*/)
+void DirectSparseSolver<T, I>::getFactorL(Matrix_CSR<T,I,A> &/*L*/, bool /*copyPattern*/, bool /*copyValues*/)
 {
     eslog::error("L factor is not provided\n");
 }
 
 template <typename T, typename I>
 template <typename A>
-inline void DirectSparseSolver<T, I>::getFactorU(Matrix_CSR<T,I,A> &U, bool copyPattern, bool copyValues)
+void DirectSparseSolver<T, I>::getFactorU(Matrix_CSR<T,I,A> &U, bool copyPattern, bool copyValues)
 {
     if(ext->stage < 3) eslog::error("getFactorU: invalid order of operations in spsolver\n");
     if(copyValues && ext->stage < 4) eslog::error("getFactorU: invalid order of operations in spsolver\n");

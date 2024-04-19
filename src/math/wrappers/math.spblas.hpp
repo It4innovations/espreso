@@ -233,19 +233,19 @@ static void _submatrix(const Matrix_CSR<T, I> &input, Matrix_CSR<T, I> &output, 
 
 
 template <template <typename, typename, typename> class Matrix, typename T, typename I>
-inline void SpBLAS<Matrix, T, I>::submatrix(Matrix_Dense<T, I> &output, I start_row, I end_row, I start_col, I end_col, bool trans, bool conj, bool output_force_full)
+void SpBLAS<Matrix, T, I>::submatrix(Matrix_Dense<T, I> &output, I start_row, I end_row, I start_col, I end_col, bool trans, bool conj, bool output_force_full)
 {
     submatrix(*matrix, output, start_row, end_row, start_col, end_col, trans, conj, output_force_full);
 }
 
 template <template <typename, typename, typename> class Matrix, typename T, typename I>
-inline void SpBLAS<Matrix, T, I>::submatrix(Matrix_CSR<T, I> &output, I start_row, I end_row, I start_col, I end_col, bool trans, bool conj, bool output_force_full)
+void SpBLAS<Matrix, T, I>::submatrix(Matrix_CSR<T, I> &output, I start_row, I end_row, I start_col, I end_col, bool trans, bool conj, bool output_force_full)
 {
     submatrix(*matrix, output, start_row, end_row, start_col, end_col, trans, conj, output_force_full);
 }
 
 template <template <typename, typename, typename> class Matrix, typename T, typename I>
-inline void SpBLAS<Matrix, T, I>::submatrix(const Matrix_CSR<T, I> &input, Matrix_Dense<T, I> &output, I start_row, I end_row, I start_col, I end_col, bool trans, bool conj, bool output_force_full)
+void SpBLAS<Matrix, T, I>::submatrix(const Matrix_CSR<T, I> &input, Matrix_Dense<T, I> &output, I start_row, I end_row, I start_col, I end_col, bool trans, bool conj, bool output_force_full)
 {
     // I out_rows = end_row - start_row;
     // I out_cols = end_col - start_col;
@@ -265,7 +265,7 @@ inline void SpBLAS<Matrix, T, I>::submatrix(const Matrix_CSR<T, I> &input, Matri
 }
 
 template <template <typename, typename, typename> class Matrix, typename T, typename I>
-inline void SpBLAS<Matrix, T, I>::submatrix(const Matrix_CSR<T, I> &input, Matrix_CSR<T, I> &output, I start_row, I end_row, I start_col, I end_col, bool trans, bool conj, bool output_force_full)
+void SpBLAS<Matrix, T, I>::submatrix(const Matrix_CSR<T, I> &input, Matrix_CSR<T, I> &output, I start_row, I end_row, I start_col, I end_col, bool trans, bool conj, bool output_force_full)
 {
     if(trans) {
         eslog::error("Submatrix CSR->CSR: transposition is not supported.\n");
