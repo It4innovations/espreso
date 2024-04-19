@@ -38,7 +38,7 @@ void getfactor_preprocess(std::unique_ptr<Solver_External_Representation<T,I>> &
     for(size_t i = 0; i < ext->cm_factor_simpl->xsize; i++) reinterpret_cast<T*>(ext->cm_factor_simpl->x)[i] = static_cast<T>(i);
     _changeFactor<I>(_getCholmodXtype<T>(), true, false, true, true, ext->cm_factor_simpl, ext->cm_common);
     if(ext->zerodrop == 'D') _resymbol<I>(ext->cm_matrix_view, nullptr, 0, 1, ext->cm_factor_simpl, ext->cm_common);
-    if(ext->cm_factor_simpl->nzmax != ext->factor_nnz) eslog::error("getfactor_preprocess: some weird error in cholmod\n");
+    if(ext->cm_factor_simpl->nzmax != (size_t)ext->factor_nnz) eslog::error("getfactor_preprocess: some weird error in cholmod\n");
     ext->map_simpl_super.resize(ext->factor_nnz);
     for(I i = 0; i < ext->map_simpl_super.size; i++) ext->map_simpl_super.vals[i] = static_cast<I>(std::real(reinterpret_cast<T*>(ext->cm_factor_simpl->x)[i]));
     ext->getfactor_preprocess_done = true;
