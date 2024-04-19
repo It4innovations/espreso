@@ -21,8 +21,8 @@ struct DomainSurfaceStore {
 
     std::vector<size_t> edistribution;
 
-    std::vector<std::vector<int> > dnodes;
-    std::vector<std::vector<int> > denodes;
+    std::vector<std::vector<esint> > dnodes;
+    std::vector<std::vector<esint> > denodes;
     std::vector<std::vector<Point> > coordinates;
 
     serializededata<esint, Element*>* epointers;

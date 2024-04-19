@@ -472,10 +472,10 @@ void HeatTransfer::run(SubKernel::Action action, size_t region, size_t interval)
 void HeatTransfer::runBEM(SubKernel::Action action, size_t domain, double *BETI)
 {
     if (action == SubKernel::Action::ASSEMBLE) {
-        int np = info::mesh->domainsSurface->dnodes[domain].size();
+        esint np = info::mesh->domainsSurface->dnodes[domain].size();
         double *points = &(info::mesh->domainsSurface->coordinates[domain][0].x);
-        int ne = info::mesh->domainsSurface->edistribution[domain + 1] - info::mesh->domainsSurface->edistribution[domain];
-        int *elemNodes = info::mesh->domainsSurface->denodes[domain].data();
+        esint ne = info::mesh->domainsSurface->edistribution[domain + 1] - info::mesh->domainsSurface->edistribution[domain];
+        esint *elemNodes = info::mesh->domainsSurface->denodes[domain].data();
 
         double c = subkernels[domain].conductivity.conductivity->values.get(0, 0).evaluator->evaluate();
 
@@ -580,11 +580,11 @@ void HeatTransfer::updateSolution(Vector_Base<double> *x)
     #pragma omp parallel for
     for (size_t i = 0; i < bem.size(); ++i) {
         if (bem[i]) {
-            int np = info::mesh->domainsSurface->dnodes[i].size();
+            esint np = info::mesh->domainsSurface->dnodes[i].size();
             double *points = &(info::mesh->domainsSurface->coordinates[i][0].x);
-            int ne = info::mesh->domainsSurface->edistribution[i + 1] - info::mesh->domainsSurface->edistribution[i];
-            int *elemNodes = info::mesh->domainsSurface->denodes[i].data();
-            int ni = info::mesh->domainsSurface->coordinates[i].size() - info::mesh->domainsSurface->dnodes[i].size();
+            esint ne = info::mesh->domainsSurface->edistribution[i + 1] - info::mesh->domainsSurface->edistribution[i];
+            esint *elemNodes = info::mesh->domainsSurface->denodes[i].data();
+            esint ni = info::mesh->domainsSurface->coordinates[i].size() - info::mesh->domainsSurface->dnodes[i].size();
             double *inner = points + 3 * np;
 
             double c = subkernels[i].conductivity.conductivity->values.get(0, 0).evaluator->evaluate();

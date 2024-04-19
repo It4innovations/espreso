@@ -23,9 +23,6 @@ PHYSICS   STRUCTURAL_MECHANICS;
 GENERATOR {
   SHAPE   GRID;
 
-  UNIFORM_DOMAINS          FALSE;
-  UNIFORM_CLUSTERS         FALSE;
-
   GRID {
     START_X                    0;
     START_Y                    0;

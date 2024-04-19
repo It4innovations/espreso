@@ -439,7 +439,7 @@ static void DoubleLayerLaplace3d_disjointPanels(double *As, double *us, double *
 }
 
 
-static void BEM3dLaplace (esint np, double *points, esint ne, int *elemNodes,
+static void BEM3dLaplace (esint np, double *points, esint ne, esint *elemNodes,
            int order, double *V, double *K, double *D, double *M)
 {
   esint i, j, k, l, cmnIdxi[2],cmnIdxj[2],cmnIdxSize, remIdxi, remIdxj, idx,tmp;
@@ -512,11 +512,9 @@ static void BEM3dLaplace (esint np, double *points, esint ne, int *elemNodes,
       curli2[0] = -y12-y22; curli2[1] = y12; curli2[2] = y22;
       curli3[0] = -y13-y23; curli3[1] = y13; curli3[2] = y23;
 
-      for (j=0; j<ne; j++, idx++)
-    {
-      if (j==i)
-        {
-          for (k=0; k<3; k++)
+    for (j=0; j<ne; j++, idx++) {
+      if (j==i) {
+        for (k=0; k<3; k++)
         {
           u[k] = Pi[1][k]-Pi[0][k];
           v[k] = Pi[2][k]-Pi[1][k];
@@ -645,7 +643,7 @@ static void BEM3dLaplace (esint np, double *points, esint ne, int *elemNodes,
 }
 
 
-static void BEM3dLaplaceVolume (double *nodes, esint ne, int *elemNodes,
+static void BEM3dLaplaceVolume (double *nodes, esint ne, esint *elemNodes,
              esint np, double *points, int order,
              double *t, double *u, double *Vt_Wu)
 {
@@ -702,46 +700,46 @@ static void BEM3dLaplaceVolume (double *nodes, esint ne, int *elemNodes,
  }
 
 
-static void invertMatrix (esint n, double *M, double *invM)
-{
-  esint i, j, k;
-  double pivot, factor, entry;
-
-  memset(invM,0,n*n*sizeof(double));
-  for (i=0; i<n; i++)
-    invM[i*n+i] = 1.0;
-
-  // forward elimination
-  for (i=0; i<n; i++)
-    {
-      pivot = M[i*n+i];
-      for (j=i+1; j<n; j++)
-    {
-      factor = M[i*n+j] / pivot;
-          M[i*n+j] = 0.0;
-      for (k=i+1; k<n; k++)
-        M[k*n+j] -= factor * M[k*n+i];
-      for (k=0; k<n; k++)
-        invM[k*n+j] -= factor * invM[k*n+i];
-    }
-    }
-
-  // backward substitution
-  for (i=n-1; i>=0; i--)
-    {
-      pivot = M[i*n+i];
-      M[i*n+i] = 1.0;
-      for (k=0; k<n; k++)
-    invM[k*n+i] /= pivot;
-      for (j=i-1; j>=0; j--)
-    {
-      factor = M[i*n+j];
-      M[i*n+j] = 0.0;
-      for (k=0; k<n; k++)
-        invM[k*n+j] -= factor * invM[k*n+i];
-    }
-    }
-}
+//static void invertMatrix (esint n, double *M, double *invM)
+//{
+//  esint i, j, k;
+//  double pivot, factor;
+//
+//  memset(invM,0,n*n*sizeof(double));
+//  for (i=0; i<n; i++)
+//    invM[i*n+i] = 1.0;
+//
+//  // forward elimination
+//  for (i=0; i<n; i++)
+//    {
+//      pivot = M[i*n+i];
+//      for (j=i+1; j<n; j++)
+//    {
+//      factor = M[i*n+j] / pivot;
+//          M[i*n+j] = 0.0;
+//      for (k=i+1; k<n; k++)
+//        M[k*n+j] -= factor * M[k*n+i];
+//      for (k=0; k<n; k++)
+//        invM[k*n+j] -= factor * invM[k*n+i];
+//    }
+//    }
+//
+//  // backward substitution
+//  for (i=n-1; i>=0; i--)
+//    {
+//      pivot = M[i*n+i];
+//      M[i*n+i] = 1.0;
+//      for (k=0; k<n; k++)
+//    invM[k*n+i] /= pivot;
+//      for (j=i-1; j>=0; j--)
+//    {
+//      factor = M[i*n+j];
+//      M[i*n+j] = 0.0;
+//      for (k=0; k<n; k++)
+//        invM[k*n+j] -= factor * invM[k*n+i];
+//    }
+//    }
+//}
 
 
 static void cholesky (int n, double *V)
@@ -798,17 +796,17 @@ static void choleskySolve (int n, double *L, double *rhs, double *u, int m=1)
 }
 
 
-static void assembleSteklovPoincare (esint nElements, esint nNodes, double *invV,
-                  double *KK, double *D, double *K)
-{
-  esint i, j, k, l, idx;
-  memcpy(K,D,nNodes*nNodes*sizeof(double));
-  for (j=0, idx=0; j<nNodes; j++) // cols of K
-    for (i=0; i<nNodes; i++, idx++) // rows of K
-      for (k=0; k<nElements; k++) // rows of invV
-    for (l=0; l<nElements; l++) // cols of invV
-      K[idx] += KK[i*nElements+k] * invV[l*nElements+k] * KK[j*nElements+l];
-}
+//static void assembleSteklovPoincare (esint nElements, esint nNodes, double *invV,
+//                  double *KK, double *D, double *K)
+//{
+//  esint i, j, k, l, idx;
+//  memcpy(K,D,nNodes*nNodes*sizeof(double));
+//  for (j=0, idx=0; j<nNodes; j++) // cols of K
+//    for (i=0; i<nNodes; i++, idx++) // rows of K
+//      for (k=0; k<nElements; k++) // rows of invV
+//    for (l=0; l<nElements; l++) // cols of invV
+//      K[idx] += KK[i*nElements+k] * invV[l*nElements+k] * KK[j*nElements+l];
+//}
 
 
 //void mexPrintfMatrix (int n, int m, double *mat, char *name=0)
@@ -856,10 +854,10 @@ static void assembleSteklovPoincareCholesky (esint nElements, esint nNodes, doub
 //}
 
 
-void BEM3DLaplace (double *K, int np, double *points, int ne, int *elements, double conductivity)
+void BEM3DLaplace (double *K, esint np, double *points, esint ne, esint *elements, double conductivity)
 {
   esint i, j, idx;
-  double *V, *KK, *D, *M, *invV;
+  double *V, *KK, *D, *M;
   /*
   deleteMyBEMData(bem);
   bem->nNodes = nNodes;
@@ -898,7 +896,7 @@ void BEM3DLaplace (double *K, int np, double *points, int ne, int *elements, dou
 }
 
 
-void BEM3DLaplaceEval(double *results, int np, double *points, int ne, int *elements, int ni, double *inner, double conductivity, double *dirichlet)
+void BEM3DLaplaceEval(double *results, esint np, double *points, esint ne, esint *elements, esint ni, double *inner, double conductivity, double *dirichlet)
 {
   esint i, j, idx;
   double *rhs, *neumann;

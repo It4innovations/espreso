@@ -584,10 +584,10 @@ static void DoubleLayerLaplace3d_disjointPanels(double *As, double *us, double *
 }
 
 
-static void BEM3DElasticity (esint np, double *points, esint ne, int *elemNodes, int order, double *V, double *K, double *D, double *M, double nu)
+static void BEM3DElasticity (esint np, double *points, esint ne, esint *elemNodes, int order, double *V, double *K, double *D, double *M, double nu)
 {
   esint i, j, k, l, cmnIdxi[2],cmnIdxj[2],cmnIdxSize, remIdxi, remIdxj, tmp;
-  esint idx, ne2 = 2*ne, ne3 = 3*ne, np2 = 2*np, np3 = 3*np;
+  esint ne2 = 2*ne, ne3 = 3*ne, np2 = 2*np, np3 = 3*np;
   double factor = (1+nu)/2.0/ /* E/ */ (1-nu), fact = 3-4*nu;
   double factorK = 1.0/2.0/(1-nu), factK = 1-2*nu;
   double V11K, V12K, V13K, V22K, V23K, V33K;
@@ -1199,10 +1199,10 @@ static void assembleSteklovPoincareCholesky (esint nElements, esint nNodes, doub
 //}
 
 
-void BEM3DElasticity(double *K, int np, double *points, int ne, int *elements, double YoungModulus, double PoissonRatio)
+void BEM3DElasticity(double *K, esint np, double *points, esint ne, esint *elements, double YoungModulus, double PoissonRatio)
 {
   int i, j, idx, nElements3 = 3 * ne, nNodes3 = 3 * np;
-  double *V, *KK, *D, *M, *invV;
+  double *V, *KK, *D, *M;
   int order = 7;
   /*
   deleteMyBEMData(bem);
@@ -1241,11 +1241,11 @@ void BEM3DElasticity(double *K, int np, double *points, int ne, int *elements, d
   delete [] M;
 }
 
-void BEM3DElasticityEval(double *results, int np, double *points, int ne, int *elements, int ni, double *inner, double YoungModulus, double PoissonRatio, double *dirichlet)
+void BEM3DElasticityEval(double *results, esint np, double *points, esint ne, esint *elements, esint ni, double *inner, double YoungModulus, double PoissonRatio, double *dirichlet)
 {
     esint i, j, idx, nElements3 = 3*ne, nNodes3 = 3*np;
     double *rhs, *neumann;
-    double *V, *KK, *D, *M, *invV;
+    double *V, *KK, *D, *M;
     int order = 7;
     /*
     deleteMyBEMData(bem);

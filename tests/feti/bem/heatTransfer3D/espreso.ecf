@@ -12,6 +12,8 @@ DEFAULT_ARGS {
   6           4;
   7           4;
   8           8;
+
+  9         BEM;
 }
 
 INPUT_TYPE         GENERATOR;
@@ -19,9 +21,6 @@ PHYSICS        HEAT_TRANSFER;
 
 GENERATOR {
   SHAPE   GRID;
-
-  UNIFORM_DOMAINS          FALSE;
-  UNIFORM_CLUSTERS         FALSE;
 
   GRID {
     LENGTH_X                   4;
@@ -61,7 +60,7 @@ HEAT_TRANSFER {
   LOAD_STEPS        1;
 
   DISCRETIZATION {
-    ALL_ELEMENTS  BEM;
+    ALL_ELEMENTS  [ARG9];
   }
 
   MATERIALS {
