@@ -922,8 +922,8 @@ void BEM3DLaplaceEval(double *results, esint np, double *points, esint ne, esint
   neumann = new double[ne];
   cholesky(ne,V);
   choleskySolve(ne,V,rhs,neumann);
-  for (i=0; i<ne; i++)
-    neumann[i] *= conductivity;
+//  for (i=0; i<ne; i++)
+//    neumann[i] *= conductivity;
   BEM3dLaplaceVolume(points,ne,elements,ni,inner,7,neumann,dirichlet,results);
   delete [] neumann;
   delete [] rhs;
