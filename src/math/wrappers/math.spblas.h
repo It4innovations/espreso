@@ -39,6 +39,61 @@ private:
     Matrix_SpBLAS_External_Representation *_spblas;
 };
 
+namespace math {
+namespace spblas {
+
+
+// TODO: do it in SpBLAS
+// TODO: indexing
+// y += alpha * A * x
+// y += alpha * A * x
+template <typename T, typename I>
+void apply(Vector_Dense<T, I> &y, const T &alpha, Matrix_CSR<T, I> &A, const Vector_Dense<T> &x)
+{
+    if (A.rows[0] != 0) eslog::error("implement math::spblas::apply with non-zero based indexing.\n");
+    for (int r = 0; r < A.nrows; ++r) {
+        for (int c = A.rows[r]; c < A.rows[r + 1]; ++c) {
+            y.vals[r] += alpha * A.vals[c] * x.vals[A.cols[c]];
+        }
+    }
+}
+
+template <typename T, typename I>
+void applyT(Vector_Dense<T, I> &y, const T &alpha, Matrix_CSR<T, I> &A, const Vector_Dense<T> &x)
+{
+    if (A.rows[0] != 0) eslog::error("implement math::spblas::apply with non-zero based indexing.\n");
+    for (int r = 0; r < A.nrows; ++r) {
+        for (int c = A.rows[r]; c < A.rows[r + 1]; ++c) {
+            y.vals[A.cols[c]] += alpha * A.vals[c] * x.vals[r];
+        }
+    }
+}
+
+template <typename T, typename I>
+void apply(Vector_Dense<T, I> &y, const T &alpha, Matrix_CSR<T, I> &A, const int* D2C, const Vector_Dense<T> &x)
+{
+    if (A.rows[0] != 0) eslog::error("implement math::spblas::apply with non-zero based indexing.\n");
+    for (int r = 0; r < A.nrows; ++r) {
+        for (int c = A.rows[r]; c < A.rows[r + 1]; ++c) {
+            y.vals[D2C[r]] += alpha * A.vals[c] * x.vals[A.cols[c]];
+        }
+    }
+}
+
+template <typename T, typename I>
+void applyT(Vector_Dense<T, I> &y, const T &alpha, Matrix_CSR<T, I> &A, const int* D2C, const Vector_Dense<T> &x)
+{
+    if (A.rows[0] != 0) eslog::error("implement math::spblas::apply with non-zero based indexing.\n");
+    for (int r = 0; r < A.nrows; ++r) {
+        for (int c = A.rows[r]; c < A.rows[r + 1]; ++c) {
+            y.vals[A.cols[c]] += alpha * A.vals[c] * x.vals[D2C[r]];
+        }
+    }
+}
+
+}
+}
+
 }
 
 #include "math.spblas.hpp"

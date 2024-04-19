@@ -5,7 +5,7 @@
 #include "matrix_info.h"
 #include "slice.h"
 #include "basis/containers/allocators.h"
-#include "esinfo/eslog.hpp"
+#include "esinfo/eslog.h"
 
 #include <limits>
 
@@ -51,20 +51,20 @@ public:
 //        this->shape = other.shape;
 //        realloc(_allocated, other.nrows, other.ncols);
 //        _Matrix_Dense<T, I>::operator=(_allocated);
-//        for (esint i = 0; i < other.nrows * other.ncols; ++i) {
-//            this->vals[i] = other.vals[i];
-//        }
+//        blas::copy(nnz, vals, 1, other.vals, 1);
 //        return *this;
 //    }
 
-    Matrix_Dense& operator=(Matrix_Dense &&other) = delete;
-//    {
-//        this->type = other.type;
-//        this->shape = other.shape;
-//        swap(*this, other);
-//        swap(_allocated, other._allocated);
-//        return *this;
-//    }
+    Matrix_Dense& operator=(Matrix_Dense &&other)
+    {
+        clear(_allocated);
+        this->ator = std::move(other.ator);
+        this->type = other.type;
+        this->shape = other.shape;
+        swap(*this, other);
+        swap(_allocated, other._allocated);
+        return *this;
+    }
 
     ~Matrix_Dense()
     {
@@ -126,16 +126,18 @@ public:
 
 protected:
     template <typename Type>
-    void swap(Type &v, Type &u)
+    void _swap(Type &v, Type &u)
     {
         Type tmp = v; v = u; u = tmp;
     }
 
     void swap(_Matrix_Dense<T, I> &m, _Matrix_Dense<T, I> &n)
     {
-        swap(m.nrows, n.nrows);
-        swap(m.ncols, n.ncols);
-        swap(m.vals, n.vals);
+        _swap(m.nrows, n.nrows);
+        _swap(m.ncols, n.ncols);
+        _swap(m.nnz, n.nnz);
+        _swap(m.maxnnz, n.maxnnz);
+        _swap(m.vals, n.vals);
     }
 
     void realloc(_Matrix_Dense<T, I> &m, const Matrix_Shape &shape, I nrows, I ncols)

@@ -1,6 +1,6 @@
 
-#ifndef SRC_MATH_WRAPPERS_MATH_SOLVER_H_
-#define SRC_MATH_WRAPPERS_MATH_SOLVER_H_
+#ifndef SRC_MATH_WRAPPERS_MATH_SPSOLVER_H_
+#define SRC_MATH_WRAPPERS_MATH_SPSOLVER_H_
 
 #include "basis/containers/allocators.h"
 #include "math/primitives/matrix_info.h"
@@ -74,5 +74,5 @@ private:
 
 }
 
-#endif /* SRC_MATH_WRAPPERS_MATH_SOLVER_H_ */
+#endif /* SRC_MATH_WRAPPERS_MATH_SPSOLVER_H_ */
 

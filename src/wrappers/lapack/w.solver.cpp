@@ -1,0 +1,72 @@
+
+#include "math/math.h"
+#include "math/wrappers/math.solver.h"
+
+#ifndef HAVE_MKL
+#ifdef HAVE_LAPACK
+#include "lapacke.h"
+
+namespace espreso {
+
+template <typename T, typename I>
+DenseSolver<T, I>::DenseSolver()
+{
+
+}
+
+template <typename T, typename I>
+DenseSolver<T, I>::DenseSolver(const Matrix_Dense<T, I> &a)
+{
+    math::copy(this->a, a);
+}
+
+template <typename T, typename I>
+DenseSolver<T, I>::DenseSolver(Matrix_Dense<T, I> &&a)
+: a(std::move(a))
+{
+
+}
+
+template <typename T, typename I>
+DenseSolver<T, I>::~DenseSolver()
+{
+
+}
+
+template <typename T, typename I>
+void DenseSolver<T, I>::commit(const Matrix_Dense<T,I> &a)
+{
+    math::copy(this->a, a);
+}
+
+template <typename T, typename I>
+void DenseSolver<T, I>::commit(Matrix_Dense<T,I> &&a)
+{
+    this->a = std::move(a);
+}
+
+template <typename T, typename I>
+void DenseSolver<T, I>::factorization()
+{
+    ipiv.resize(a.nrows);
+    LAPACKE_dsytrf(LAPACK_ROW_MAJOR, 'U', a.nrows, a.vals, a.ncols, ipiv.data());
+}
+
+template <typename T, typename I>
+void DenseSolver<T, I>::solve(Vector_Dense<T, I> &rhs, Vector_Dense<T, I> &solution)
+{
+    LAPACKE_dsytrs(LAPACK_ROW_MAJOR, 'U', a.nrows, 1, a.vals, a.ncols, ipiv.data(), rhs.vals, 1);
+}
+
+template <typename T, typename I>
+void DenseSolver<T, I>::solve(Matrix_Dense<T, I> &rhs, Matrix_Dense<T, I> &solution)
+{
+    LAPACKE_dsytrs(LAPACK_ROW_MAJOR, 'U', a.nrows, rhs.ncols, a.vals, a.ncols, ipiv.data(), rhs.vals, rhs.ncols);
+}
+
+template struct DenseSolver<double, int>;
+
+}
+
+#endif
+#endif

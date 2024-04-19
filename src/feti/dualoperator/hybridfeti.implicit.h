@@ -3,6 +3,7 @@
 #define SRC_FETI_DUALOPERATOR_HYBRIDFETI_IMPLICIT_H_
 
 #include "dualoperator.h"
+#include "math/wrappers/math.solver.h"
 #include "math/wrappers/math.spsolver.h"
 
 namespace espreso {
@@ -49,14 +50,15 @@ protected:
 
     std::vector<Matrix_CSR<T> > Kplus;
     std::vector<Vector_Dense<T> > Btx, KplusBtx;
-    std::vector<Matrix_Dense<T> > dB0, dKB0, dF0;
     std::vector<DirectSparseSolver<T> > KSolver;
 
     std::vector<std::vector<int> > permutation;
-    Matrix_CSR<T> HFETIDual;
-    DirectSparseSolver<T> HFETISolver;
-
-
+    std::vector<Matrix_Dense<T> > dB0, dKB0, dF0;
+    std::vector<int> G0offset;
+    Matrix_CSR<T> F0, G0;
+    DirectSparseSolver<T> F0Solver;
+    DenseSolver<T> Splus;
+    Vector_Dense<T> g, e, beta, mu;
 };
 
 }

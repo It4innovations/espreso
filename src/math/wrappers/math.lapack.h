@@ -3,6 +3,7 @@
 #define SRC_MATH_WRAPPERS_MATH_LAPACK_H_
 
 #include "math/primitives/matrix_dense.h"
+#include "math/primitives/vector_dense.h"
 
 namespace espreso {
 namespace math {

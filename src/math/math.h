@@ -10,6 +10,7 @@
 #include "primitives/matrix_ijv.h"
 
 #include "wrappers/math.blas.h"
+#include "wrappers/math.solver.h"
 #include "wrappers/math.spblas.h"
 #include "wrappers/math.lapack.h"
 #include "wrappers/math.spsolver.h"
@@ -74,10 +75,10 @@ namespace math {
         math::set(x, T{0});
         for (I r = 0; r < y.nrows; ++r) {
             for (I ci = y.rows[r]; ci < y.rows[r + 1]; ++ci) {
-                I c = y.cols[ci - Indexing::CSR] - Indexing::CSR;
-                x.vals[r * y.ncols + c] = y.vals[ci - Indexing::CSR];
+                I c = y.cols[ci - y.rows[0]] - y.rows[0];
+                x.vals[r * y.ncols + c] = y.vals[ci - y.rows[0]];
                 if (y.shape != Matrix_Shape::FULL) {
-                    x.vals[c * y.ncols + r] = y.vals[ci - Indexing::CSR];
+                    x.vals[c * y.ncols + r] = y.vals[ci - y.rows[0]];
                 }
             }
         }

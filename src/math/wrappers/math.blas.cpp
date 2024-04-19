@@ -165,6 +165,12 @@ void multiply(double alpha, const Matrix_Dense<double> &A, const Matrix_Dense<do
     eslog::error("calling of empty BLAS wrapper.\n");
 }
 
+template <>
+void multiply(double alpha, const Matrix_Dense<double> &A, const Vector_Dense<double> &B, double beta, Vector_Dense<double> &C, bool transA)
+{
+    eslog::error("calling of empty BLAS wrapper.\n");
+}
+
 }
 }
 }

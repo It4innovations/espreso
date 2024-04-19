@@ -161,6 +161,7 @@ template <typename T, typename I>
 void DirectSparseSolver<T, I>::solve(Vector_Dense<T, I> &rhs, Vector_Dense<T, I> &solution, int sparsity)
 {
     ext->pp.iparm[30] = _sparsity<T, I>(sparsity);
+    solution.resize(rhs.size);
     _callPardiso<T>(33, ext, 1, rhs.vals, solution.vals);
 }
 
@@ -168,6 +169,7 @@ template <typename T, typename I>
 void DirectSparseSolver<T, I>::solve(Matrix_Dense<T, I> &rhs, Matrix_Dense<T, I> &solution, int sparsity)
 {
     ext->pp.iparm[30] = _sparsity<T, I>(sparsity);
+    solution.resize(rhs.nrows, rhs.ncols);
     _callPardiso<T>(33, ext, rhs.nrows, rhs.vals, solution.vals);
 }
 
@@ -175,6 +177,7 @@ template <typename T, typename I>
 void DirectSparseSolver<T, I>::solveForward (Vector_Dense<T, I> &rhs, Vector_Dense<T, I> &solution, int sparsity)
 {
     ext->pp.iparm[30] = _sparsity<T, I>(sparsity);
+    solution.resize(rhs.size);
     _callPardiso<T>(331, ext, 1, rhs.vals, solution.vals);
 }
 
@@ -182,6 +185,7 @@ template <typename T, typename I>
 void DirectSparseSolver<T, I>::solveDiagonal(Vector_Dense<T, I> &rhs, Vector_Dense<T, I> &solution, int sparsity)
 {
     ext->pp.iparm[30] = _sparsity<T, I>(sparsity);
+    solution.resize(rhs.size);
     _callPardiso<T>(332, ext, 1, rhs.vals, solution.vals);
 }
 
@@ -189,6 +193,7 @@ template <typename T, typename I>
 void DirectSparseSolver<T, I>::solveBackward(Vector_Dense<T, I> &rhs, Vector_Dense<T, I> &solution, int sparsity)
 {
     ext->pp.iparm[30] = _sparsity<T, I>(sparsity);
+    solution.resize(rhs.size);
     _callPardiso<T>(333, ext, 1, rhs.vals, solution.vals);
 }
 
@@ -196,6 +201,7 @@ template <typename T, typename I>
 void DirectSparseSolver<T, I>::solveForward (Matrix_Dense<T, I> &rhs, Matrix_Dense<T, I> &solution, int sparsity)
 {
     ext->pp.iparm[30] = _sparsity<T, I>(sparsity);
+    solution.resize(rhs.nrows, rhs.ncols);
     _callPardiso<T>(331, ext, rhs.nrows, rhs.vals, solution.vals);
 }
 
@@ -203,6 +209,7 @@ template <typename T, typename I>
 void DirectSparseSolver<T, I>::solveDiagonal(Matrix_Dense<T, I> &rhs, Matrix_Dense<T, I> &solution, int sparsity)
 {
     ext->pp.iparm[30] = _sparsity<T, I>(sparsity);
+    solution.resize(rhs.nrows, rhs.ncols);
     _callPardiso<T>(332, ext, rhs.nrows, rhs.vals, solution.vals);
 }
 
@@ -210,6 +217,7 @@ template <typename T, typename I>
 void DirectSparseSolver<T, I>::solveBackward(Matrix_Dense<T, I> &rhs, Matrix_Dense<T, I> &solution, int sparsity)
 {
     ext->pp.iparm[30] = _sparsity<T, I>(sparsity);
+    solution.resize(rhs.nrows, rhs.ncols);
     _callPardiso<T>(333, ext, rhs.nrows, rhs.vals, solution.vals);
 }
 

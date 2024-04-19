@@ -181,20 +181,28 @@ void applyT(Vector_Dense<std::complex<double> > &y, const std::complex<double> &
 template <>
 void AAt(const Matrix_Dense<double> &A, Matrix_Dense<double> &AAt, bool trans)
 {
-    if (trans) {
-        AAt.resize(A.ncols, A.ncols);
-        cblas_dsyrk(CblasRowMajor, CblasUpper, CblasTrans, AAt.nrows, A.nrows, 1, A.vals, A.ncols, 0, AAt.vals, AAt.ncols);
-    } else {
-        AAt.resize(A.nrows, A.nrows);
-        cblas_dsyrk(CblasRowMajor, CblasUpper, CblasNoTrans, AAt.nrows, A.ncols, 1, A.vals, A.ncols, 0, AAt.vals, AAt.ncols);
-    }
+//    if (trans) {
+//        AAt.resize(A.ncols, A.ncols);
+//        cblas_dsyrk(CblasRowMajor, CblasUpper, CblasTrans, AAt.nrows, A.nrows, 1, A.vals, A.ncols, 0, AAt.vals, AAt.ncols);
+//    } else {
+//        AAt.resize(A.nrows, A.nrows);
+//        cblas_dsyrk(CblasRowMajor, CblasUpper, CblasNoTrans, AAt.nrows, A.ncols, 1, A.vals, A.ncols, 0, AAt.vals, AAt.ncols);
+//    }
+    cblas_dsyrk(CblasRowMajor, CblasUpper, trans ? CblasTrans : CblasNoTrans, AAt.nrows, trans ? A.nrows : A.ncols, 1, A.vals, A.ncols, 0, AAt.vals, AAt.ncols);
 }
 
 template <>
 void multiply(double alpha, const Matrix_Dense<double> &A, const Matrix_Dense<double> &B, double beta, Matrix_Dense<double> &C, bool transA, bool transB)
 {
-    C.resize(transA ? A.ncols : A.nrows, transB ? B.nrows : B.ncols);
+//    C.resize(transA ? A.ncols : A.nrows, transB ? B.nrows : B.ncols);
     cblas_dgemm(CblasRowMajor, transA ? CblasTrans : CblasNoTrans, transB ? CblasTrans : CblasNoTrans, C.nrows, C.ncols, transA ? A.nrows : A.ncols, alpha, A.vals, A.ncols, B.vals, B.ncols, beta, C.vals, C.ncols);
+}
+
+template <>
+void multiply(double alpha, const Matrix_Dense<double> &A, const Vector_Dense<double> &B, double beta, Vector_Dense<double> &C, bool transA)
+{
+//    C.resize(transA ? A.ncols : A.nrows);
+    cblas_dgemm(CblasRowMajor, transA ? CblasTrans : CblasNoTrans, CblasNoTrans, C.size, 1, transA ? A.nrows : A.ncols, alpha, A.vals, A.ncols, B.vals, 1, beta, C.vals, 1);
 }
 
 }

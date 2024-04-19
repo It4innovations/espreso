@@ -49,6 +49,9 @@ namespace blas {
     // C = alpha * op(A) * op(B) + beta C
     template <typename T, typename I>
     void multiply(T alpha, const Matrix_Dense<T, I> &A, const Matrix_Dense<T, I> &B, T beta, Matrix_Dense<T, I> &C, bool transA = false, bool transB = false);
+
+    template <typename T, typename I>
+    void multiply(T alpha, const Matrix_Dense<T, I> &A, const Vector_Dense<T, I> &B, T beta, Vector_Dense<T, I> &C, bool transA = false);
 }
 }
 }
