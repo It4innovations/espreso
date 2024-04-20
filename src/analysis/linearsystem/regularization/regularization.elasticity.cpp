@@ -249,7 +249,8 @@ void RegularizationElasticity<T>::getCorners(std::vector<esint> &fixPoints, int 
 template <typename T>
 static void getNtNNtN(Matrix_Dense<T> &N, Matrix_Dense<T> &NtNNtN)
 {
-    Matrix_Dense<T> _N(N), NNt;
+    NtNNtN.resize(N.ncols, N.ncols);
+    Matrix_Dense<T> _N(N), NNt; NNt.resize(N.nrows, N.nrows);
     math::blas::AAt(N, NNt);
     math::lapack::solve(NNt, _N);
     math::blas::multiply(T{1}, N, _N, T{0}, NtNNtN, true);
