@@ -35,9 +35,22 @@ bool FETI<T>::set(const step::Step &step)
     int offset[2] = { 0, 0 };
     int size[4] = { 0, 0, 0, 0 };
     size[0] = K.size();
+    switch (configuration.method) {
+    case FETIConfiguration::METHOD::TOTAL_FETI:
+        for (size_t d = 0; d < K.size(); ++d) {
+            sinfo.R1size = offset[0] = size[2] += R1[d].nrows;
+            sinfo.R2size = offset[1] = size[3] += R2[d].nrows;
+        }
+        break;
+    case FETIConfiguration::METHOD::HYBRID_FETI:
+        for (size_t d = 0; d < K.size(); ++d) {
+            sinfo.R1size = offset[0] = size[2] = std::max(size[2], R1[d].nrows);
+            sinfo.R2size = offset[1] = size[3] = std::max(size[3], R2[d].nrows);
+        }
+        break;
+    }
     for (size_t d = 0; d < K.size(); ++d) {
-        sinfo.R1size = offset[0] = size[2] += R1[d].nrows;
-        sinfo.R2size = offset[1] = size[3] += R2[d].nrows;
+
         if (K[d].nrows < x[d].size) { // it is possible when the solver is called with BEM
             math::set(x[d], 0.); // set inner DOFs to zero and resize 'f' to correct size
             f[d].size = K[d].nrows;

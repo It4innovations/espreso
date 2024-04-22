@@ -71,9 +71,6 @@ void HybridFETIImplicit<T>::set(const step::Step &step)
             for (size_t j = i; j < feti.D2C0[di].size(); ++j) {
                 csr[feti.D2C0[di][i]].push_back(feti.D2C0[di][j]);
             }
-//            for (int j = 0; j < feti.R1[di].nrows; ++j) {
-//                csr[feti.D2C0[di][i]].push_back(ri + j);
-//            }
         }
         dB0max = std::max(dB0max, feti.B0[di].nrows);
         dKmax = std::max(dKmax, feti.K[di].nrows);
@@ -95,12 +92,13 @@ void HybridFETIImplicit<T>::set(const step::Step &step)
     for (size_t i = 0; i < csr.size(); ++i) {
         utils::sortAndRemoveDuplicates(csr[i]);
     }
-    int F0nnz = 0, G0nnz = 0;
+    int F0nnz = 0, G0nnz = 0, G0rows = 0;
     for (size_t i = 0; i < csr.size(); ++i) {
         F0nnz += csr[i].size();
     }
     for (size_t di = 0; di < feti.K.size(); ++di) {
         G0nnz += feti.R1[di].nrows * feti.D2C0[di].size();
+        G0rows += feti.R1[di].nrows;
     }
     F0.type = Matrix_Type::REAL_SYMMETRIC_POSITIVE_DEFINITE;
     F0.resize(feti.cluster.gl_size, feti.cluster.gl_size, F0nnz);
@@ -111,7 +109,7 @@ void HybridFETIImplicit<T>::set(const step::Step &step)
             F0.cols[F0.rows[i] - Indexing::CSR + j] = csr[i][j] + Indexing::CSR;
         }
     }
-    G0.resize(feti.sinfo.R1size, feti.cluster.gl_size, G0nnz);
+    G0.resize(G0rows, feti.cluster.gl_size, G0nnz);
     G0.rows[0] = 0;
     for (size_t di = 0, ri = 0, ci = 0; di < feti.K.size(); ++di) {
         G0offset.push_back(ri);
@@ -280,10 +278,6 @@ void HybridFETIImplicit<T>::apply(const Vector_Dual<T> &x, Vector_Dual<T> &y)
         applyBt(feti, di, x, Btx[di]);
         KSolver[di].solve(Btx[di], KplusBtx[di]);
     }
-    math::set(y, T{0});
-    for (size_t d = 0; d < feti.K.size(); ++d) {
-        math::spblas::apply(y, T{1}, feti.B1[d], feti.D2C[d].data(), KplusBtx[d]);
-    }
 
     // HYBRID FETI
     math::set(g, T{0});
@@ -292,7 +286,7 @@ void HybridFETIImplicit<T>::apply(const Vector_Dual<T> &x, Vector_Dual<T> &y)
         math::spblas::apply(g, T{1}, feti.B0[di], feti.D2C0[di].data(), KplusBtx[di]);
         // e = Rt * b
         Vector_Dense<T> _e;
-        _e.size = _e._allocated.size = feti.R1[di].nrows;
+        _e.size = feti.R1[di].nrows;
         _e.vals = beta.vals + G0offset[di];
         math::blas::multiply(T{1}, feti.R1[di], Btx[di], T{0}, _e); // assemble -e
     }
@@ -303,7 +297,7 @@ void HybridFETIImplicit<T>::apply(const Vector_Dual<T> &x, Vector_Dual<T> &y)
     math::spblas::apply(beta, T{1}, G0, F0g);
     // beta = (S+)^-1 * (G0 * F0^-1 * g - e)
     Splus.solve(beta);
-    // g = g - G0 * beta
+    // g = g - G0t * beta
     math::spblas::applyT(g, T{-1}, G0, beta);
     // mu = F0^-1 * (g - G0t * beta)
     F0Solver.solve(g, mu);
@@ -315,10 +309,14 @@ void HybridFETIImplicit<T>::apply(const Vector_Dual<T> &x, Vector_Dual<T> &y)
         // x = (K+)^-1 * (B1t * x - B0t * mu)
         KSolver[di].solve(Btx[di], KplusBtx[di]);
         // x += R * beta
-        math::blas::multiply(T{1}, feti.R1[di], beta, T{1}, KplusBtx[di], true);
+        Vector_Dense<T> _beta;
+        _beta.size = feti.R1[di].nrows;
+        _beta.vals = beta.vals + G0offset[di];
+        math::blas::multiply(T{1}, feti.R1[di], _beta, T{1}, KplusBtx[di], true);
     }
 
     // y += FETI + HFETI
+    math::set(y, T{0});
     for (size_t di = 0; di < feti.K.size(); ++di) {
         math::spblas::apply(y, T{1}, feti.B1[di], feti.D2C[di].data(), KplusBtx[di]);
     }

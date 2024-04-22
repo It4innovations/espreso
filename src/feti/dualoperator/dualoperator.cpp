@@ -54,7 +54,6 @@ DualOperator<T>* DualOperator<T>::set(FETI<T> &feti, const step::Step &step)
             break;
         }
         break;
-
     }
     dual->set(step);
     return dual;

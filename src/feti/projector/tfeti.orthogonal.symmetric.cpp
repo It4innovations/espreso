@@ -535,10 +535,7 @@ template<typename T>
 void TFETIOrthogonalSymmetric<T>::_print(const step::Step &step)
 {
     if (info::ecf->output.print_matrices) {
-        eslog::storedata(" STORE: feti/projector/{R_orth, G, e, GGt, invGGt}\n");
-        for (size_t di = 0; di < feti.R1.size(); ++di) {
-            math::store(feti.R1[di], utils::filename(utils::debugDirectory(step) + "/feti/projector", (std::string("R_orth") + std::to_string(di)).c_str()).c_str());
-        }
+        eslog::storedata(" STORE: feti/projector/{G, e, GGt, invGGt}\n");
         math::store(G, utils::filename(utils::debugDirectory(step) + "/feti/projector", "G").c_str());
         math::store(Gt, utils::filename(utils::debugDirectory(step) + "/feti/projector", "Gt").c_str());
         math::store(e, utils::filename(utils::debugDirectory(step) + "/feti/projector", "e").c_str());

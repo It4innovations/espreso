@@ -1,7 +1,8 @@
 
-#include <feti/projector/tfeti.orthogonal.symmetric.withfactors.h>
 #include "projector.h"
+#include "hfeti.orthogonal.symmetric.h"
 #include "tfeti.orthogonal.symmetric.h"
+#include "tfeti.orthogonal.symmetric.withfactors.h"
 #include "tfeti.conjugate.symmetric.h"
 #include "esinfo/eslog.h"
 
@@ -16,18 +17,37 @@ Projector<T>* Projector<T>::set(FETI<T> &feti, const step::Step &step)
         }
     }
 
-    switch (feti.configuration.projector) {
-    case FETIConfiguration::PROJECTOR::ORTHOGONAL:
-        eslog::info(" = PROJECTOR                                                             EXPLICIT ORTHOGONAL = \n");
-        return new TFETIOrthogonalSymmetric<T>(feti);
-    case FETIConfiguration::PROJECTOR::ORTHOGONAL_WITH_FACTORS:
-        eslog::info(" = PROJECTOR                                                EXPLICIT ORTHOGONAL WITH FACTORS = \n");
-        return new TFETIOrthogonalSymmetricWithFactors<T>(feti);
-    case FETIConfiguration::PROJECTOR::CONJUGATE:
-        eslog::info(" = PROJECTOR                                                              EXPLICIT CONJUGATE = \n");
-        return new TFETIConjugateSymmetric<T>(feti);
-    default: return nullptr;
+    switch (feti.configuration.method) {
+    case FETIConfiguration::METHOD::TOTAL_FETI: {
+        switch (feti.configuration.projector) {
+        case FETIConfiguration::PROJECTOR::ORTHOGONAL:
+            eslog::info(" = PROJECTOR                                                             EXPLICIT ORTHOGONAL = \n");
+            return new TFETIOrthogonalSymmetric<T>(feti);
+        case FETIConfiguration::PROJECTOR::ORTHOGONAL_WITH_FACTORS:
+            eslog::info(" = PROJECTOR                                                EXPLICIT ORTHOGONAL WITH FACTORS = \n");
+            return new TFETIOrthogonalSymmetricWithFactors<T>(feti);
+        case FETIConfiguration::PROJECTOR::CONJUGATE:
+            eslog::info(" = PROJECTOR                                                              EXPLICIT CONJUGATE = \n");
+            return new TFETIConjugateSymmetric<T>(feti);
+        default: return nullptr;
+        }
+    } break;
+    case FETIConfiguration::METHOD::HYBRID_FETI: {
+        switch (feti.configuration.projector) {
+        case FETIConfiguration::PROJECTOR::ORTHOGONAL:
+            eslog::info(" = PROJECTOR                                                       HYBRID EXPLICIT ORTHOGONAL = \n");
+            return new HFETIOrthogonalSymmetric<T>(feti);
+//        case FETIConfiguration::PROJECTOR::ORTHOGONAL_WITH_FACTORS:
+//            eslog::info(" = PROJECTOR                                          HYBRID EXPLICIT ORTHOGONAL WITH FACTORS = \n");
+//            return new TFETIOrthogonalSymmetricWithFactors<T>(feti);
+//        case FETIConfiguration::PROJECTOR::CONJUGATE:
+//            eslog::info(" = PROJECTOR                                                        HYBRID EXPLICIT CONJUGATE = \n");
+//            return new TFETIConjugateSymmetric<T>(feti);
+        default: return nullptr;
+        }
+    } break;
     }
+    return nullptr;
 }
 
 template struct Projector<double>;
