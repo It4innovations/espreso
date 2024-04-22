@@ -37,9 +37,6 @@ def configure(ctx):
     if ctx.options.simd_off:
         ctx.env.append_unique("DEFINES", [ "SIMD_OFF" ])
 
-    if ctx.options.use_cusparse_legacy:
-        ctx.env.append_unique("DEFINES", [ "USE_CUSPARSE_LEGACY" ])
-
     ctx.env.append_unique("CXXFLAGS", [ "-std=c++17", "-Wall" ])
     ctx.env.append_unique("CXXFLAGS", ctx.options.cxxflags.split())
     if ctx.options.mode == "release":

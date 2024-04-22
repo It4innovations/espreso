@@ -12,8 +12,11 @@ def configure(ctx):
     ctx.env.NVCC = ctx.find_program("nvcc", mandatory=False)
     ctx.env.NVCCFLAGS = [ "-std=c++17", "-O2", "-Xcompiler", "-fPIC", "-ccbin=" + ctx.env.COMPILER_CXX ]
     ctx.env.append_unique("NVCCFLAGS", [ "-arch=" + ctx.options.cudaarch ])
-    # ctx.env.append_unique("NVCCFLAGS", [ "-DESPRESO_RANK_TO_GPU_MAP=\"" + ctx.options.rank_to_gpu_map.replace(",", "\,") + "\"" ])
-    ctx.env.append_unique("CXXFLAGS", [ "-DESPRESO_RANK_TO_GPU_MAP=" + ctx.options.rank_to_gpu_map ])
+    ctx.env.append_unique("NVCCFLAGS", [ "-DESPRESO_RANK_TO_GPU_MAP=\"" + ctx.options.rank_to_gpu_map.replace(",", "\,") + "\"" ])
+    ctx.env.append_unique("CXXFLAGS_CUDA", [ "-DESPRESO_RANK_TO_GPU_MAP=" + ctx.options.rank_to_gpu_map ])
+
+    if ctx.options.use_cusparse_legacy:
+        ctx.env.append_unique("DEFINES_CUDA", [ "USE_CUSPARSE_LEGACY" ])
 
     headers = [ "cuda_runtime.h" ]
     libs = [ "cudart", "cusparse", "cublas", "cusolver" ]
