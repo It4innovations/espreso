@@ -106,25 +106,23 @@ bool FETI<T>::solve(const step::Step &step)
 
     std::string error;
     switch (info.error) {
-    case IterativeSolverInfo::ERROR::OK: break;
-    case IterativeSolverInfo::ERROR::STAGNATION:             error = "       = FETI SOLVER ERROR                                   NONDECREASING CONVERGENCE = \n";
-    /* no break */
-    case IterativeSolverInfo::ERROR::MAX_ITERATIONS_REACHED: error = "       = FETI SOLVER ERROR                                  MAXIMUM ITERATIONS REACHED = \n";
-    /* no break */
-    case IterativeSolverInfo::ERROR::INVALID_DATA:           error = "       = FETI SOLVER ERROR                                          INVALID INPUT DATA = \n";
-    /* no break */
-    case IterativeSolverInfo::ERROR::CONVERGENCE_ERROR:      error = "       = FETI SOLVER ERROR              SOLVER DOES NOT CONVERGE TO THE REQUESTED NORM = \n";
-        if (configuration.exit_on_nonconvergence) {
-            eslog::globalerror(error.c_str());
-        } else {
-            eslog::warning(error.c_str());
-        }
-        break;
+    case IterativeSolverInfo::ERROR::OK:{
+        eslog::info("       = ITERATIONS TOTAL                                                    %9d = \n", info.iterations);
+        eslog::info("       = FETI SOLVER TIME                                                   %8.3f s = \n", eslog::time() - start);
+        eslog::info("       = ----------------------------------------------------------------------------- = \n");
+        return true;
     }
-    eslog::info("       = ITERATIONS TOTAL                                                    %9d = \n", info.iterations);
-    eslog::info("       = FETI SOLVER TIME                                                   %8.3f s = \n", eslog::time() - start);
-    eslog::info("       = ----------------------------------------------------------------------------- = \n");
-    return info.error == IterativeSolverInfo::ERROR::OK;
+    case IterativeSolverInfo::ERROR::STAGNATION:             error = "       = FETI SOLVER ERROR                                   NONDECREASING CONVERGENCE = \n"; break;
+    case IterativeSolverInfo::ERROR::MAX_ITERATIONS_REACHED: error = "       = FETI SOLVER ERROR                                  MAXIMUM ITERATIONS REACHED = \n"; break;
+    case IterativeSolverInfo::ERROR::INVALID_DATA:           error = "       = FETI SOLVER ERROR                                          INVALID INPUT DATA = \n"; break;
+    case IterativeSolverInfo::ERROR::CONVERGENCE_ERROR:      error = "       = FETI SOLVER ERROR              SOLVER DOES NOT CONVERGE TO THE REQUESTED NORM = \n"; break;
+    }
+    if (configuration.exit_on_nonconvergence) {
+        eslog::globalerror(error.c_str());
+    } else {
+        eslog::warning(error.c_str());
+    }
+    return false;
 }
 
 template struct FETI<double>;
