@@ -49,13 +49,13 @@ void DenseSolver<T, I>::factorization()
 }
 
 template <typename T, typename I>
-void DenseSolver<T, I>::solve(Vector_Dense<T, I> &rhs, Vector_Dense<T, I> &solution)
+void DenseSolver<T, I>::solve(Vector_Dense<T, I> &rhs)
 {
 
 }
 
 template <typename T, typename I>
-void DenseSolver<T, I>::solve(Matrix_Dense<T, I> &rhs, Matrix_Dense<T, I> &solution)
+void DenseSolver<T, I>::solve(Matrix_Dense<T, I> &rhs)
 {
 
 }

@@ -25,8 +25,8 @@ struct DenseSolver {
 
     void factorization();
 
-    void solve(Vector_Dense<T, I> &rhs, Vector_Dense<T, I> &solution);
-    void solve(Matrix_Dense<T, I> &rhs, Matrix_Dense<T, I> &solution);
+    void solve(Vector_Dense<T, I> &rhs);
+    void solve(Matrix_Dense<T, I> &rhs);
 
 protected:
     Matrix_Dense<T, I> a;

@@ -53,13 +53,13 @@ void DenseSolver<T, I>::factorization()
 }
 
 template <typename T, typename I>
-void DenseSolver<T, I>::solve(Vector_Dense<T, I> &rhs, Vector_Dense<T, I> &solution)
+void DenseSolver<T, I>::solve(Vector_Dense<T, I> &rhs)
 {
     LAPACKE_dsytrs(LAPACK_ROW_MAJOR, 'U', a.nrows, 1, a.vals, a.ncols, ipiv.data(), rhs.vals, 1);
 }
 
 template <typename T, typename I>
-void DenseSolver<T, I>::solve(Matrix_Dense<T, I> &rhs, Matrix_Dense<T, I> &solution)
+void DenseSolver<T, I>::solve(Matrix_Dense<T, I> &rhs)
 {
     LAPACKE_dsytrs(LAPACK_ROW_MAJOR, 'U', a.nrows, rhs.ncols, a.vals, a.ncols, ipiv.data(), rhs.vals, rhs.ncols);
 }
