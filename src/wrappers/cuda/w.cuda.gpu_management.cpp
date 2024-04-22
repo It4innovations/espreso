@@ -116,20 +116,16 @@ namespace mgm {
     {
         // made mainly for 1:N or N:1 scenarios
         std::vector<cudaEvent_t> events(waitfor.size());
-        for(size_t i = 0; i < waitfor.size(); i++)
-        {
+        for(size_t i = 0; i < waitfor.size(); i++) {
             CHECK(cudaEventCreate(&events[i]));
             CHECK(cudaEventRecord(events[i], waitfor[i]->stream));
         }
-        for(size_t j = 0; j < waitin.size(); j++)
-        {
-            for(size_t k = 0; k < events.size(); k++)
-            {
+        for(size_t j = 0; j < waitin.size(); j++) {
+            for(size_t k = 0; k < events.size(); k++) {
                 CHECK(cudaStreamWaitEvent(waitin[j]->stream, events[k], 0));
             }
         }
-        for(size_t k = 0; k < events.size(); k++)
-        {
+        for(size_t k = 0; k < events.size(); k++) {
             CHECK(cudaEventDestroy(events[k]));
         }
     }

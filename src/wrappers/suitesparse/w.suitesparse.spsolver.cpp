@@ -33,14 +33,30 @@ template<typename T, typename I>
 void getfactor_preprocess(std::unique_ptr<Solver_External_Representation<T,I>> & ext)
 {
     if(ext->cm_factor_super->xsize > utils::get_max_val_no_precision_loss_in_fp<T>()) eslog::error("symbolicFactorization: factor nnz too large for my super->simpl map\n");
+
     ext->cm_factor_simpl = _copyFactor<I>(ext->cm_factor_super, ext->cm_common);
+
     _changeFactor<I>(_getCholmodXtype<T>(), true, true, true, true, ext->cm_factor_simpl, ext->cm_common);
-    for(size_t i = 0; i < ext->cm_factor_simpl->xsize; i++) reinterpret_cast<T*>(ext->cm_factor_simpl->x)[i] = static_cast<T>(i);
+
+    for(size_t i = 0; i < ext->cm_factor_simpl->xsize; i++) {
+        reinterpret_cast<T*>(ext->cm_factor_simpl->x)[i] = static_cast<T>(i);
+    }
+
     _changeFactor<I>(_getCholmodXtype<T>(), true, false, true, true, ext->cm_factor_simpl, ext->cm_common);
-    if(ext->zerodrop == 'D') _resymbol<I>(ext->cm_matrix_view, nullptr, 0, 1, ext->cm_factor_simpl, ext->cm_common);
-    if(ext->cm_factor_simpl->nzmax != (size_t)ext->factor_nnz) eslog::error("getfactor_preprocess: some weird error in cholmod\n");
+
+    if(ext->zerodrop == 'D') {
+        _resymbol<I>(ext->cm_matrix_view, nullptr, 0, 1, ext->cm_factor_simpl, ext->cm_common);
+    }
+
+    if(ext->cm_factor_simpl->nzmax != (size_t)ext->factor_nnz) {
+        eslog::error("getfactor_preprocess: some weird error in cholmod\n");
+    }
+
     ext->map_simpl_super.resize(ext->factor_nnz);
-    for(I i = 0; i < ext->map_simpl_super.size; i++) ext->map_simpl_super.vals[i] = static_cast<I>(std::real(reinterpret_cast<T*>(ext->cm_factor_simpl->x)[i]));
+    for(I i = 0; i < ext->map_simpl_super.size; i++) {
+        ext->map_simpl_super.vals[i] = static_cast<I>(std::real(reinterpret_cast<T*>(ext->cm_factor_simpl->x)[i]));
+    }
+
     ext->getfactor_preprocess_done = true;
 }
 
@@ -125,8 +141,7 @@ void DirectSparseSolver<T, I>::commit(const Matrix_CSR<T,I> &a)
 
     ext->matrix = &a;
 
-    if(ext->cm_matrix_view == nullptr)
-    {
+    if(ext->cm_matrix_view == nullptr) {
         ext->cm_matrix_view = new cholmod_sparse();
         ext->cm_matrix_view->nrow = a.ncols;
         ext->cm_matrix_view->ncol = a.nrows;
@@ -320,9 +335,15 @@ void DirectSparseSolver<T, I>::getFactorU(Matrix_CSR<T,I,A> &U, bool copyPattern
 
     if(!ext->getfactor_preprocess_done) getfactor_preprocess(ext);
 
-    if(copyPattern) std::copy_n(static_cast<I*>(ext->cm_factor_simpl->p), ext->cm_factor_simpl->n+1, U.rows);
-    if(copyPattern) std::copy_n(static_cast<I*>(ext->cm_factor_simpl->i), ext->cm_factor_simpl->nzmax, U.cols);
-    if(copyValues) for(I i = 0; i < ext->map_simpl_super.size; i++) U.vals[i] = reinterpret_cast<T*>(ext->cm_factor_super->x)[ext->map_simpl_super.vals[i]];
+    if(copyPattern) {
+        std::copy_n(static_cast<I*>(ext->cm_factor_simpl->p), ext->cm_factor_simpl->n+1, U.rows);
+        std::copy_n(static_cast<I*>(ext->cm_factor_simpl->i), ext->cm_factor_simpl->nzmax, U.cols);
+    }
+    if(copyValues) {
+        for(I i = 0; i < ext->map_simpl_super.size; i++) {
+            U.vals[i] = reinterpret_cast<T*>(ext->cm_factor_super->x)[ext->map_simpl_super.vals[i]];
+        }
+    }
 }
 
 template <typename T, typename I>
@@ -334,8 +355,12 @@ void DirectSparseSolver<T, I>::getPermutation(Permutation<I> &perm)
 
     std::copy_n(static_cast<I*>(ext->cm_factor_super->Perm), ext->cm_factor_super->n, perm.dst_to_src);
 
-    if(ext->cm_factor_super->IPerm != nullptr) std::copy_n(static_cast<I*>(ext->cm_factor_super->IPerm), ext->cm_factor_super->n, perm.dst_to_src);
-    else perm.invert(perm.dst_to_src, perm.src_to_dst);
+    if(ext->cm_factor_super->IPerm != nullptr) {
+        std::copy_n(static_cast<I*>(ext->cm_factor_super->IPerm), ext->cm_factor_super->n, perm.dst_to_src);
+    }
+    else {
+        perm.invert(perm.dst_to_src, perm.src_to_dst);
+    }
 }
 
 template <typename T, typename I>

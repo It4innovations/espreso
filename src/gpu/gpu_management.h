@@ -183,15 +183,11 @@ namespace mgm {
     template<typename T, typename I, typename A>
     void print_matrix_dense(queue & q, Matrix_Dense<T,I,A> & matrix, const char * name = "")
     {
-        if constexpr(A::is_data_host_accessible)
-        {
+        if constexpr(A::is_data_host_accessible) {
             printf("Dense matrix %s, size %lldx%lld, ld %lld\n", name, (long long)matrix.nrows, (long long)matrix.ncols, (long long)matrix.get_ld());
-            for(I r = 0; r < matrix.nrows; r++)
-            {
-                for(I c = 0; c < matrix.ncols; c++)
-                {
-                    if constexpr(std::is_floating_point_v<T>)
-                    {
+            for(I r = 0; r < matrix.nrows; r++) {
+                for(I c = 0; c < matrix.ncols; c++) {
+                    if constexpr(std::is_floating_point_v<T>) {
                         double v = (double)matrix.vals[r * matrix.get_ld() + c];
                         char str[100];
                         snprintf(str, sizeof(str), "%+11.3e", v);
@@ -206,16 +202,14 @@ namespace mgm {
             }
             fflush(stdout);
         }
-        else if constexpr(A::is_data_device_accessible)
-        {
+        else if constexpr(A::is_data_device_accessible) {
             Matrix_Dense<T,I,Ah> matrix_host;
             matrix_host.resize(matrix);
             copy_submit_d2h(q, matrix_host, matrix);
             queue_wait(q);
             print_matrix_dense(q, matrix_host, name);
         }
-        else
-        {
+        else {
             static_assert(true, "weird matrix with inaccessible data");
         }
     }
@@ -223,21 +217,19 @@ namespace mgm {
     template<typename T, typename I, typename A>
     void print_matrix_csr_as_dense(queue & q, Matrix_CSR<T,I,A> & matrix, const char * name = "")
     {
-        if constexpr(A::is_data_host_accessible)
-        {
+        if constexpr(A::is_data_host_accessible) {
             printf("CSR matrix %s, size %lldx%lld, nnz %lld\n", name, (long long)matrix.nrows, (long long)matrix.ncols, (long long)matrix.nnz);
-            for(I r = 0; r < matrix.nrows; r++)
-            {
+            for(I r = 0; r < matrix.nrows; r++) {
                 I start = matrix.rows[r];
                 I end = matrix.rows[r+1];
                 I curr_col = 0;
-                for(I i = start; i <= end; i++)
-                {
+                for(I i = start; i <= end; i++) {
                     I col = matrix.ncols;
                     if(i < end) col = matrix.cols[i];
-                    for(I c = curr_col; c < col; c++) printf("    .       ");
-                    if(i < end)
-                    {
+                    for(I c = curr_col; c < col; c++) {
+                        printf("    .       ");
+                    }
+                    if(i < end) {
                         double val = matrix.vals[i];
                         if(val == 0) printf("    0       ");
                         else printf(" %+11.3e", val);
@@ -248,16 +240,14 @@ namespace mgm {
             }
             fflush(stdout);
         }
-        else if constexpr(A::is_data_device_accessible)
-        {
+        else if constexpr(A::is_data_device_accessible) {
             Matrix_CSR<T,I,Ah> matrix_host;
             matrix_host.resize(matrix);
             copy_submit_d2h(q, matrix_host, matrix);
             queue_wait(q);
             print_matrix_csr_as_dense(q, matrix_host, name);
         }
-        else
-        {
+        else {
             static_assert(true, "weird matrix with inaccessible data");
         }
     }
@@ -265,8 +255,7 @@ namespace mgm {
     template<typename T, typename I, typename A>
     void print_matrix_csr_arrays(queue & q, Matrix_CSR<T,I,A> & matrix, const char * name = "")
     {
-        if constexpr(A::is_data_host_accessible)
-        {
+        if constexpr(A::is_data_host_accessible) {
             printf("CSR matrix %s, size %lldx%lld, nnz %lld\n", name, (long long)matrix.nrows, (long long)matrix.ncols, (long long)matrix.nnz);
             printf("row ptrs: ");
             for(I r = 0; r <= matrix.nrows; r++) printf("%lld ", (long long)matrix.rows[r]);
@@ -279,16 +268,14 @@ namespace mgm {
             printf("\n");
             fflush(stdout);
         }
-        else if constexpr(A::is_data_device_accessible)
-        {
+        else if constexpr(A::is_data_device_accessible) {
             Matrix_CSR<T,I,Ah> matrix_host;
             matrix_host.resize(matrix);
             copy_submit_d2h(q, matrix_host, matrix);
             queue_wait(q);
             print_matrix_csr_arrays(q, matrix_host, name);
         }
-        else
-        {
+        else {
             static_assert(true, "weird matrix with inaccessible data");
         }
     }

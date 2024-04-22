@@ -13,8 +13,7 @@
 
 inline void _check(cusparseStatus_t status, const char *file, int line)
 {
-    if (status != CUSPARSE_STATUS_SUCCESS)
-    {
+    if (status != CUSPARSE_STATUS_SUCCESS) {
         espreso::eslog::error("CUSPARSE Error %d %s: %s. In file '%s' on line %d\n", status, cusparseGetErrorName(status), cusparseGetErrorString(status), file, line);
     }
 }
@@ -55,20 +54,16 @@ namespace spblas {
         template<typename T>
         static cusparseOperation_t _char_to_operation(char c)
         {
-            if(utils::is_real<T>())
-            {
-                switch(c)
-                {
+            if(utils::is_real<T>()) {
+                switch(c) {
                     case 'N': return CUSPARSE_OPERATION_NON_TRANSPOSE;
                     case 'T': return CUSPARSE_OPERATION_TRANSPOSE;
                     case 'H': return CUSPARSE_OPERATION_TRANSPOSE;
                     default: eslog::error("invalid operation '%c'\n", c);
                 }
             }
-            if(utils::is_complex<T>())
-            {
-                switch(c)
-                {
+            if(utils::is_complex<T>()) {
+                switch(c) {
                     case 'N': return CUSPARSE_OPERATION_NON_TRANSPOSE;
                     case 'T': return CUSPARSE_OPERATION_TRANSPOSE;
                     case 'H': return CUSPARSE_OPERATION_CONJUGATE_TRANSPOSE;
@@ -275,19 +270,16 @@ namespace spblas {
     template<typename T, typename I>
     void sparse_to_dense(handle & h, char transpose, descr_matrix_csr & sparse, descr_matrix_dense & dense, size_t & buffersize, void * buffer, char stage)
     {
-        if(transpose == 'N')
-        {
+        if(transpose == 'N') {
             if(stage == 'B') CHECK(cusparseSparseToDense_bufferSize(h->h, sparse->d_for_sp2dn, dense->d, CUSPARSE_SPARSETODENSE_ALG_DEFAULT, &buffersize));
             if(stage == 'C') CHECK(cusparseSparseToDense           (h->h, sparse->d_for_sp2dn, dense->d, CUSPARSE_SPARSETODENSE_ALG_DEFAULT, buffer));
         }
-        else if(transpose == 'T')
-        {
+        else if(transpose == 'T') {
             descr_matrix_dense descr_dense_complementary = std::make_shared<_descr_matrix_dense>(dense->get_complementary());
             sparse_to_dense<T,I>(h, 'N', sparse, descr_dense_complementary, buffersize, buffer, stage);
             return;
         }
-        else
-        {
+        else {
             eslog::error("transpose '%c' not supported\n", transpose);
         }
     }
@@ -305,21 +297,18 @@ namespace spblas {
     template<typename T, typename I>
     void trsm(handle & h, char transpose_mat, char transpose_rhs, char transpose_sol, descr_matrix_csr & matrix, descr_matrix_dense & rhs, descr_matrix_dense & sol, descr_sparse_trsm & descr_trsm, size_t & buffersize, void * buffer, char stage)
     {
-        if(transpose_sol == 'N')
-        {
+        if(transpose_sol == 'N') {
             T one = 1.0;
             if(stage == 'B') CHECK(cusparseSpSM_bufferSize(h->h, _char_to_operation<T>(transpose_mat), _char_to_operation<T>(transpose_rhs), &one, matrix->d, rhs->d, sol->d, _sparse_data_type<T>(), CUSPARSE_SPSM_ALG_DEFAULT, descr_trsm->d, &buffersize));
             // if(stage == 'P') CHECK(cusparseSpSM_analysis  (h->h, _char_to_operation<T>(transpose_mat), _char_to_operation<T>(transpose_rhs), &one, matrix->d, rhs->d, sol->d, _sparse_data_type<T>(), CUSPARSE_SPSM_ALG_DEFAULT, descr_trsm->d, buffer)); // it does not make sense to do Preprocessing. Update will be called anyway, which has to completely redo the analysis
             if(stage == 'U') CHECK(cusparseSpSM_analysis  (h->h, _char_to_operation<T>(transpose_mat), _char_to_operation<T>(transpose_rhs), &one, matrix->d, rhs->d, sol->d, _sparse_data_type<T>(), CUSPARSE_SPSM_ALG_DEFAULT, descr_trsm->d, buffer));
             if(stage == 'C') CHECK(cusparseSpSM_solve     (h->h, _char_to_operation<T>(transpose_mat), _char_to_operation<T>(transpose_rhs), &one, matrix->d, rhs->d, sol->d, _sparse_data_type<T>(), CUSPARSE_SPSM_ALG_DEFAULT, descr_trsm->d));
         }
-        else if(transpose_sol == 'T')
-        {
+        else if(transpose_sol == 'T') {
             descr_matrix_dense descr_sol_compl = std::make_shared<_descr_matrix_dense>(sol->get_complementary());
             trsm<T,I>(h, transpose_mat, transpose_rhs, 'N', matrix, rhs, sol, descr_trsm, buffersize, buffer, stage);
         }
-        else
-        {
+        else {
             eslog::error("transpose_sol '%c' not supported\n", transpose_sol);
         }
     }

@@ -11,8 +11,7 @@
 
 inline void _check(rocsparse_status status, const char *file, int line)
 {
-    if (status != rocsparse_status_success)
-    {
+    if (status != rocsparse_status_success) {
         espreso::eslog::error("ROCSPARSE Error %d. In file '%s' on line %d\n", status, file, line);
     }
 }
@@ -48,8 +47,7 @@ namespace spblas {
 
         static rocsparse_operation _char_to_operation(char c)
         {
-            switch(c)
-            {
+            switch(c) {
                 case 'N': return rocsparse_operation_none;
                 case 'T': return rocsparse_operation_transpose;
                 case 'H': return rocsparse_operation_conjugate_transpose;
@@ -62,8 +60,7 @@ namespace spblas {
         {
             static_assert(std::is_integral_v<I> && std::is_unsigned_v<I>, "wrong type");
             I msb = 0;
-            while(val != 0)
-            {
+            while(val != 0) {
                 val >>= 1;
                 msb++;
             }
@@ -91,17 +88,14 @@ namespace spblas {
         {
             size_t idx = blockIdx.x * blockDim.x + threadIdx.x;
             size_t stride = blockDim.x * gridDim.x;
-            for(size_t i = idx; i < count; i += stride)
-            {
+            for(size_t i = idx; i < count; i += stride) {
                 T & out = output[i];
                 const T & val = input[perm[i]];
-                if constexpr(conj && is_complex<T>())
-                {
+                if constexpr(conj && is_complex<T>()) {
                     reinterpret_cast<T*>(&out)[0] =  reinterpret_cast<T*>(&val)[0];
                     reinterpret_cast<T*>(&out)[1] = -reinterpret_cast<T*>(&val)[1];
                 }
-                else
-                {
+                else {
                     out = val;
                 }
             }
@@ -121,14 +115,12 @@ namespace spblas {
         {
             I idx = blockIdx.x * blockDim.x + threadIdx.x;
             I stride = blockDim.x * gridDim.x;
-            for(I i = idx; i < nnz-1; i += stride)
-            {
+            for(I i = idx; i < nnz-1; i += stride) {
                 I curr_row = ijv_rowidxs_sorted[i];
                 I next_row = ijv_rowidxs_sorted[i+1];
                 for(I r = curr_row; r < next_row; r++) csr_rowptrs[r+1] = i+1;
             }
-            if(idx == stride-1)
-            {
+            if(idx == stride-1) {
                 I lastrow = ijv_rowidxs_sorted[nnz-1];
                 for(I r = lastrow; r < nrows; r++) csr_rowptrs[r+1] = nnz;
 
@@ -357,18 +349,15 @@ namespace spblas {
     template<typename T, typename I>
     void sparse_to_dense(handle & h, char transpose, descr_matrix_csr & sparse, descr_matrix_dense & dense, size_t & buffersize, void * buffer, char stage)
     {
-        if(transpose == 'N')
-        {
+        if(transpose == 'N') {
             if(stage == 'B') CHECK(rocsparse_sparse_to_dense(h->h, sparse->d, dense->d, rocsparse_sparse_to_dense_alg_default, &buffersize, nullptr));
             if(stage == 'C') CHECK(rocsparse_sparse_to_dense(h->h, sparse->d, dense->d, rocsparse_sparse_to_dense_alg_default, &buffersize, buffer));
         }
-        else if(transpose == 'T')
-        {
+        else if(transpose == 'T') {
             descr_matrix_dense descr_dense_complementary = std::make_shared<_descr_matrix_dense>(dense->get_complementary());
             sparse_to_dense<T,I>(h, 'N', sparse, descr_dense_complementary, buffersize, buffer, stage);
         }
-        else
-        {
+        else {
             eslog::error("transpose '%c' not supported\n", transpose);
         }
     }
@@ -391,37 +380,30 @@ namespace spblas {
 #else
         // older rocsparse assumes colmajor for both dense matrices
         // older rocsparse mistakenly thinks that trans_B is applied to both B and C
-        if(rhs->order == sol->order)
-        {
-            if(transpose_rhs == transpose_sol)
-            {
-                if(rhs->order == 'C')
-                {
+        if(rhs->order == sol->order) {
+            if(transpose_rhs == transpose_sol) {
+                if(rhs->order == 'C') {
                     T one = 1.0;
                     if(stage == 'B') CHECK(rocsparse_spsm(h->h, _char_to_operation(transpose_mat), _char_to_operation(transpose_rhs), &one, matrix->d, rhs->d, sol->d, _sparse_data_type<T>(), rocsparse_spsm_alg_default, rocsparse_spsm_stage_buffer_size, &buffersize, buffer));
                     if(stage == 'P') CHECK(rocsparse_spsm(h->h, _char_to_operation(transpose_mat), _char_to_operation(transpose_rhs), &one, matrix->d, rhs->d, sol->d, _sparse_data_type<T>(), rocsparse_spsm_alg_default, rocsparse_spsm_stage_preprocess,  &buffersize, buffer));
                     // if(stage == 'U') ; // no update matrix function, hopefully dont need to to anything. otherwise redo preprocessing
                     if(stage == 'C') CHECK(rocsparse_spsm(h->h, _char_to_operation(transpose_mat), _char_to_operation(transpose_rhs), &one, matrix->d, rhs->d, sol->d, _sparse_data_type<T>(), rocsparse_spsm_alg_default, rocsparse_spsm_stage_compute,     &buffersize, buffer));
                 }
-                else if(rhs->order == 'R')
-                {
+                else if(rhs->order == 'R') {
                     descr_matrix_dense descr_rhs_compl = std::make_shared<_descr_matrix_dense>(rhs->get_complementary());
                     descr_matrix_dense descr_sol_compl = std::make_shared<_descr_matrix_dense>(sol->get_complementary());
                     char transpose_compl = mgm::operation_combine(transpose_rhs, 'T');
                     trsm<T,I>(h, transpose_mat, transpose_compl, transpose_compl, matrix, descr_rhs_compl, descr_sol_compl, descr_trsm, buffersize, buffer, stage);
                 }
-                else
-                {
+                else {
                     eslog::error("wrong dense matrix order '%c'\n", rhs->order);
                 }
             }
-            else
-            {
+            else {
                 eslog::error("unsupported combimation of matrix order '%c' and transpositions\n", rhs->order);
             }
         }
-        else
-        {
+        else {
             descr_matrix_dense descr_rhs_compl = std::make_shared<_descr_matrix_dense>(rhs->get_complementary());
             char transpose_rhs_compl = mgm::operation_combine(transpose_rhs, 'T');
             trsm<T,I>(h, transpose_mat, transpose_rhs_compl, transpose_sol, matrix, descr_rhs_compl, sol, descr_trsm, buffersize, buffer, stage);

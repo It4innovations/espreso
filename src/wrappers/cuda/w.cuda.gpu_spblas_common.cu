@@ -21,8 +21,7 @@ namespace spblas {
         {
             static_assert(std::is_integral_v<I> && std::is_unsigned_v<I>, "wrong type");
             I msb = 0;
-            while(val != 0)
-            {
+            while(val != 0) {
                 val >>= 1;
                 msb++;
             }
@@ -50,17 +49,14 @@ namespace spblas {
         {
             size_t idx = blockIdx.x * blockDim.x + threadIdx.x;
             size_t stride = blockDim.x * gridDim.x;
-            for(size_t i = idx; i < count; i += stride)
-            {
+            for(size_t i = idx; i < count; i += stride) {
                 T & out = output[i];
                 const T & val = input[perm[i]];
-                if constexpr(conj && is_complex<T>())
-                {
+                if constexpr(conj && is_complex<T>()) {
                     reinterpret_cast<T*>(&out)[0] =  reinterpret_cast<T*>(&val)[0];
                     reinterpret_cast<T*>(&out)[1] = -reinterpret_cast<T*>(&val)[1];
                 }
-                else
-                {
+                else {
                     out = val;
                 }
             }
@@ -80,14 +76,12 @@ namespace spblas {
         {
             I idx = blockIdx.x * blockDim.x + threadIdx.x;
             I stride = blockDim.x * gridDim.x;
-            for(I i = idx; i < nnz-1; i += stride)
-            {
+            for(I i = idx; i < nnz-1; i += stride) {
                 I curr_row = ijv_rowidxs_sorted[i];
                 I next_row = ijv_rowidxs_sorted[i+1];
                 for(I r = curr_row; r < next_row; r++) csr_rowptrs[r+1] = i+1;
             }
-            if(idx == stride-1)
-            {
+            if(idx == stride-1) {
                 I lastrow = ijv_rowidxs_sorted[nnz-1];
                 for(I r = lastrow; r < nrows; r++) csr_rowptrs[r+1] = nnz;
 

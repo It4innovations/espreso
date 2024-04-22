@@ -111,20 +111,16 @@ namespace mgm {
     {
         // made mainly for 1:N or N:1 scenarios
         std::vector<hipEvent_t> events(waitfor.size());
-        for(size_t i = 0; i < waitfor.size(); i++)
-        {
+        for(size_t i = 0; i < waitfor.size(); i++) {
             CHECK(hipEventCreate(&events[i]));
             CHECK(hipEventRecord(events[i], waitfor[i]->stream));
         }
-        for(size_t j = 0; j < waitin.size(); j++)
-        {
-            for(size_t k = 0; k < events.size(); k++)
-            {
+        for(size_t j = 0; j < waitin.size(); j++) {
+            for(size_t k = 0; k < events.size(); k++) {
                 CHECK(hipStreamWaitEvent(waitin[j]->stream, events[k], 0));
             }
         }
-        for(size_t k = 0; k < events.size(); k++)
-        {
+        for(size_t k = 0; k < events.size(); k++) {
             CHECK(hipEventDestroy(events[k]));
         }
     }

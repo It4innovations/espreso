@@ -11,8 +11,7 @@
 
 inline void _check(rocblas_status status, const char *file, int line)
 {
-    if (status != rocblas_status_success && status != rocblas_status_size_unchanged && status != rocblas_status_size_increased)
-    {
+    if (status != rocblas_status_success && status != rocblas_status_size_unchanged && status != rocblas_status_size_increased) {
         espreso::eslog::error("ROCBLAS Error %d. In file '%s' on line %d\n", status, file, line);
     }
 }
@@ -104,8 +103,7 @@ namespace dnblas {
 
         static rocblas_fill _char_to_fill(char c)
         {
-            switch(c)
-            {
+            switch(c) {
                 case 'U': return rocblas_fill_upper;
                 case 'L': return rocblas_fill_lower;
                 default: eslog::error("invalid fill '%c'\n", c);
@@ -114,8 +112,7 @@ namespace dnblas {
 
         static rocblas_operation _char_to_operation(char c)
         {
-            switch(c)
-            {
+            switch(c) {
                 case 'N': return rocblas_operation_none;
                 case 'T': return rocblas_operation_transpose;
                 case 'H': return rocblas_operation_conjugate_transpose;
@@ -125,8 +122,7 @@ namespace dnblas {
 
         static rocblas_side _char_to_side(char c)
         {
-            switch(c)
-            {
+            switch(c) {
                 case 'L': return rocblas_side_left;
                 case 'R': return rocblas_side_right;
                 default: eslog::error("invalid side '%c'\n", c);
@@ -182,22 +178,17 @@ namespace dnblas {
     {
         // eslog::info("TRSM side %c order_A %c op_A %c fill_A %c order_X %c op_X %c\n", side, order_A, op_A, fill_A, order_X, op_X);
         // solve op(A) op(X) = op(B) or op(X) op(A) = op(B), where input B is stored in X
-        if(order_A == 'C')
-        {
-            if(order_X == 'C')
-            {
-                if(op_X == 'N')
-                {
-                    if(op_A == 'C') // conjugate_only operation not supported ...
-                    {
+        if(order_A == 'C') {
+            if(order_X == 'C') {
+                if(op_X == 'N') {
+                    if(op_A == 'C') { // conjugate_only operation not supported ...
                         utils::remove_complex_t<T> neg_one = -1;
                         I nvals_X = (side == 'L' ? nrhs : n) * ld_X; // i know order_X == 'C'
                         if(utils::is_complex<T>()) _my_blas_xscal<utils::remove_complex_t<T>>(h->h, nvals_X, &neg_one, reinterpret_cast<utils::remove_complex_t<T>*>(X) + 1, 2);
                         trsm<T,I>(h, side, n, nrhs, A, ld_A, order_A, 'N', fill_A, X, ld_X, order_X, op_X);
                         if(utils::is_complex<T>()) _my_blas_xscal<utils::remove_complex_t<T>>(h->h, nvals_X, &neg_one, reinterpret_cast<utils::remove_complex_t<T>*>(X) + 1, 2);
                     }
-                    else
-                    {
+                    else {
                         T one = 1.0;
                         I nrows_X = (side == 'L' ? n : nrhs);
                         I ncols_X = (side == 'L' ? nrhs : n);
@@ -205,44 +196,46 @@ namespace dnblas {
                         CHECK(_my_blas_xtrsm<T>(h->h, _char_to_side(side), _char_to_fill(fill_A), _char_to_operation(op_A), rocblas_diagonal_non_unit, nrows_X, ncols_X, &one, A, ld_A, X, ld_X));
                     }
                 }
-                else if(op_X == 'C')
-                {
+                else if(op_X == 'C') {
                     char op_A_comb = mgm::operation_combine(op_A, 'C');
                     trsm<T,I>(h, side, n, nrhs, A, ld_A, order_A, op_A_comb, fill_A, X, ld_X, order_X, 'N');
                 }
-                else if(op_X == 'T' || op_X == 'H')
-                {
+                else if(op_X == 'T' || op_X == 'H') {
                     char side_compl = mgm::side_change(side);
                     char op_A_comb = mgm::operation_combine(op_A, op_X);
                     trsm<T,I>(h, side_compl, n, nrhs, A, ld_A, order_A, op_A_comb, fill_A, X, ld_X, order_X, 'N');
                 }
-                else eslog::error("invalid op_X %c\n", op_X);
+                else {
+                    eslog::error("invalid op_X %c\n", op_X);
+                }
             }
-            else if(order_X == 'R')
-            {
+            else if(order_X == 'R') {
                 char op_X_compl = mgm::operation_combine(op_X, 'T');
                 trsm<T,I>(h, side, n, nrhs, A, ld_A, order_A, op_A, fill_A, X, ld_X, 'C', op_X_compl);
             }
-            else eslog::error("invalid order_X '%c'\n", order_X);
+            else {
+                eslog::error("invalid order_X '%c'\n", order_X);
+            }
         }
-        else if(order_A == 'R')
-        {
+        else if(order_A == 'R') {
             char op_A_compl = mgm::operation_combine(op_A, 'T');
             char fill_A_compl = mgm::fill_change(fill_A);
             trsm<T,I>(h, side, n, nrhs, A, ld_A, 'C', op_A_compl, fill_A_compl, X, ld_X, order_X, op_X);
         }
-        else eslog::error("invalid order_A '%c'\n", order_A);
+        else {
+            eslog::error("invalid order_A '%c'\n", order_A);
+        }
     }
 
     template<typename T, typename I>
     void herk(handle & h, I n, I k, T * A, I ld_A, char order_A, char op_A, T * C, I ld_C, char order_C, char fill_C)
     {
         // C = op(A) * op(A)^H
-        if(order_C == 'C')
-        {
-            if(order_A == 'C')
-            {
-                if(utils::is_real<T>() && op_A == 'H') op_A = 'T';
+        if(order_C == 'C') {
+            if(order_A == 'C') {
+                if(utils::is_real<T>() && op_A == 'H') {
+                    op_A = 'T';
+                }
                 utils::remove_complex_t<T> zero = 0.0;
                 utils::remove_complex_t<T> one = 1.0;
                 #pragma omp critical(espreso_gpu_dnblas_rocm)
@@ -250,43 +243,40 @@ namespace dnblas {
                 #pragma omp critical(espreso_gpu_dnblas_rocm)
                 if constexpr(utils::is_complex<T>()) CHECK(_my_blas_xherk<T>(h->h, _char_to_fill(fill_C), _char_to_operation(op_A), n, k, &one, A, ld_A, &zero, C, ld_C));
             }
-            else if(order_A == 'R')
-            {
+            else if(order_A == 'R') {
                 char op_A_compl = mgm::operation_combine(op_A, 'T');
                 herk<T,I>(h, n, k, A, ld_A, 'C', op_A_compl, C, ld_C, order_C, fill_C);
             }
-            else eslog::error("invalid order_A '%c'\n", order_A);
+            else {
+                eslog::error("invalid order_A '%c'\n", order_A);
+            }
         }
-        else if(order_C == 'R')
-        {
+        else if(order_C == 'R') {
             char fill_C_compl = mgm::fill_change(fill_C);
             char op_A_compl = mgm::operation_combine(op_A, 'C');
             herk<T,I>(h, n, k, A, ld_A, order_A, op_A_compl, C, ld_C, 'C', fill_C_compl);
         }
-        else eslog::error("invalid order_C '%c'\n", order_C);
+        else {
+            eslog::error("invalid order_C '%c'\n", order_C);
+        }
     }
 
     template<typename T, typename I>
     void hemv(handle & h, I n, T * A, I ld_A, char order_A, char op_A, char fill_A, T * x, T * y)
     {
-        if(order_A == 'C')
-        {
-            if constexpr(utils::is_real<T>())
-            {
+        if(order_A == 'C') {
+            if constexpr(utils::is_real<T>()) {
                 T zero = 0.0;
                 T one = 1.0;
                 CHECK(_my_blas_xsymv<T>(h->h, _char_to_fill(fill_A), n, &one, A, ld_A, x, 1, &zero, y, 1));
             }
-            if constexpr(utils::is_complex<T>())
-            {
-                if(utils::is_real<T>() || op_A == 'N' || op_A == 'H')
-                {
+            if constexpr(utils::is_complex<T>()) {
+                if(utils::is_real<T>() || op_A == 'N' || op_A == 'H') {
                     T zero = 0.0;
                     T one = 1.0;
                     if constexpr(utils::is_complex<T>()) CHECK(_my_blas_xhemv<T>(h->h, _char_to_fill(fill_A), n, &one, A, ld_A, x, 1, &zero, y, 1));
                 }
-                else if(op_A == 'C' || op_A == 'T')
-                {
+                else if(op_A == 'C' || op_A == 'T') {
                     utils::remove_complex_t<T> neg_one = -1;
                     _my_blas_xscal<utils::remove_complex_t<T>>(h->h, n, &neg_one, reinterpret_cast<utils::remove_complex_t<T>*>(x) + 1, 2);
                     hemv<T,I>(h, n, A, ld_A, order_A, 'N', fill_A, x, y);
@@ -295,30 +285,31 @@ namespace dnblas {
                 }
             }
         }
-        else if(order_A == 'R')
-        {
+        else if(order_A == 'R') {
             char fill_A_compl = mgm::fill_change(fill_A);
             char op_A_compl = mgm::operation_combine(op_A, 'C');
             hemv<T,I>(h, n, A, ld_A, 'C', op_A_compl, fill_A_compl, x, y);
         }
-        else eslog::error("invalid order_A '%c'\n", order_A);
+        else {
+            eslog::error("invalid order_A '%c'\n", order_A);
+        }
     }
 
     template<typename T, typename I>
     void gemv(handle & h, I m, I n, T * A, I ld_A, char order_A, char op_A, T * x, T * y)
     {
-        if(order_A == 'C')
-        {
+        if(order_A == 'C') {
             T zero = 0.0;
             T one = 1.0;
             CHECK(_my_blas_xgemv<T>(h->h, _char_to_operation(op_A), m, n, &one, A, ld_A, x, 1, &zero, y, 1));
         }
-        else if(order_A == 'R')
-        {
+        else if(order_A == 'R') {
             char op_A_compl = mgm::operation_combine(op_A, 'T');
             gemv<T,I>(h, m, n, A, ld_A, 'C', op_A_compl, x, y);
         }
-        else eslog::error("invalid order_A '%c'\n", order_A);
+        else {
+            eslog::error("invalid order_A '%c'\n", order_A);
+        }
     }
 
 }

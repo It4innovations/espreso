@@ -37,8 +37,7 @@ namespace kernels {
             T * domain_vector = domain_vectors[d];
             const I * D2C = D2Cs[d];
         
-            for(I dof = threadIdx.x; dof < n_dofs_interface; dof += blockDim.x)
-            {
+            for(I dof = threadIdx.x; dof < n_dofs_interface; dof += blockDim.x) {
                 domain_vector[dof] = cluster_vector[D2C[dof]];
             }
         }
@@ -47,39 +46,35 @@ namespace kernels {
         static __global__ void _do_DCmap_gather(T const * const * domain_vectors, const I * n_dofs_interfaces, T * cluster_vector, I const * const * D2Cs)
         {
             // launch with one block per domain
+
             #if defined(__CUDA_ARCH__) && __CUDA_ARCH__ >= 600
             #define MY_DOUBLE_ATOMIC_AVAILABLE true
             #else
             #define MY_DOUBLE_ATOMIC_AVAILABLE false
             #endif
 
-            if constexpr(std::is_same_v<utils::remove_complex_t<T>,double> && !MY_DOUBLE_ATOMIC_AVAILABLE)
-            {
+            if constexpr(std::is_same_v<utils::remove_complex_t<T>,double> && !MY_DOUBLE_ATOMIC_AVAILABLE) {
                 // must iterate sequentially through the domains
                 I n_domains = blockDim.x;
                 if(blockIdx.x > 0) return;
 
-                for(I d = 0; d < n_domains; d++)
-                {
+                for(I d = 0; d < n_domains; d++) {
                     I n_dofs_interface = n_dofs_interfaces[d];
                     const T * domain_vector = domain_vectors[d];
                     const I * D2C = D2Cs[d];
                 
-                    for(I dof = threadIdx.x; dof < n_dofs_interface; dof += blockDim.x)
-                    {
+                    for(I dof = threadIdx.x; dof < n_dofs_interface; dof += blockDim.x) {
                         cluster_vector[D2C[dof]] += domain_vector[dof];
                     }
                 }
             }
-            else
-            {
+            else {
                 I d = blockIdx.x;
                 I n_dofs_interface = n_dofs_interfaces[d];
                 const T * domain_vector = domain_vectors[d];
                 const I * D2C = D2Cs[d];
             
-                for(I dof = threadIdx.x; dof < n_dofs_interface; dof += blockDim.x)
-                {
+                for(I dof = threadIdx.x; dof < n_dofs_interface; dof += blockDim.x) {
                     myAtomicAdd(&cluster_vector[D2C[dof]], domain_vector[dof]);
                 }
             }
@@ -98,20 +93,17 @@ namespace kernels {
             I warpcount = blockDim.x / warpSize;
             I idxinwarp = threadIdx.x % warpSize;
             #pragma unroll
-            for(int stage = 0; stage <= 1; stage++)
-            {
+            for(int stage = 0; stage <= 1; stage++) {
                 if(stage == 1 && blockIdx.x == n/2) return;
                 I r = (stage == 0) ? (blockIdx.x) : (n - blockIdx.x - 1);
                 I chunk_idx = (stage == 0) ? (warpidx) : (warpcount - warpidx - 1);
                 I myidx = chunk_idx * warpSize + idxinwarp;
                 const T * row_in = input + r * input_ld;
                 T * row_out = output + r * output_ld;
-                if(fill == 'L')
-                {
+                if(fill == 'L') {
                     for(I c = myidx; c <= r; c += blockDim.x) row_out[c] = row_in[c];
                 }
-                if(fill == 'U')
-                {
+                if(fill == 'U') {
                     I skip_leaps = r / blockDim.x;
                     for(I c = skip_leaps * blockDim.x + myidx; c < n; c += blockDim.x) if(c >= r) row_out[c] = row_in[c];
                 }
@@ -142,18 +134,18 @@ namespace kernels {
         static_assert(Ai::is_data_device_accessible, "matrix data has to be device accessible");
         if(output.nrows != input.nrows || output.ncols != input.ncols || input.nrows != input.ncols) eslog::error("matrix dimensions do not match\n");
 
-        if(order == 'R')
-        {
+        if(order == 'R') {
             int bpg = (input.nrows - 1) / 2 + 1;
             _copy_matrix_triangle<<< bpg, 256, 0, q->stream >>>(output.vals, output.get_ld(), input.vals, input.get_ld(), input.nrows, fill);
             CHECK(cudaPeekAtLastError());
         }
-        else if(order == 'C')
-        {
+        else if(order == 'C') {
             char fill_compl = mgm::fill_change(fill);
             copy_matrix_triangle(q, output, input, fill_compl, 'R');
         }
-        else eslog::error("invalid order %c\n", order);
+        else {
+            eslog::error("invalid order %c\n", order);
+        }
     }
 
 }
