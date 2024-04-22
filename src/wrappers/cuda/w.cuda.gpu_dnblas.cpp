@@ -264,10 +264,10 @@ namespace dnblas {
                 CHECK(_my_blas_xsymv<T>(h->h, _char_to_fill(fill_A), n, &one, A, ld_A, x, 1, &zero, y, 1));
             }
             if constexpr(utils::is_complex<T>()) {
-                if(utils::is_real<T>() || op_A == 'N' || op_A == 'H') {
+                if(op_A == 'N' || op_A == 'H') {
                     T zero = 0.0;
                     T one = 1.0;
-                    if constexpr(utils::is_complex<T>()) CHECK(_my_blas_xhemv<T>(h->h, _char_to_fill(fill_A), n, &one, A, ld_A, x, 1, &zero, y, 1));
+                    CHECK(_my_blas_xhemv<T>(h->h, _char_to_fill(fill_A), n, &one, A, ld_A, x, 1, &zero, y, 1));
                 }
                 else if(op_A == 'C' || op_A == 'T') {
                     utils::remove_complex_t<T> neg_one = -1;
@@ -275,6 +275,9 @@ namespace dnblas {
                     hemv<T,I>(h, n, A, ld_A, order_A, 'N', fill_A, x, y);
                     _my_blas_xscal<utils::remove_complex_t<T>>(h->h, n, &neg_one, reinterpret_cast<utils::remove_complex_t<T>*>(x) + 1, 2);
                     _my_blas_xscal<utils::remove_complex_t<T>>(h->h, n, &neg_one, reinterpret_cast<utils::remove_complex_t<T>*>(y) + 1, 2);
+                }
+                else {
+                    eslog::error("invalid op_A '%c'\n", op_A);
                 }
             }
         }
