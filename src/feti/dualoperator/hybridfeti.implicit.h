@@ -58,7 +58,7 @@ protected:
     Matrix_CSR<T> F0, G0;
     DirectSparseSolver<T> F0Solver;
     DenseSolver<T> Splus;
-    Vector_Dense<T> g, e, beta, mu;
+    Vector_Dense<T> g, beta, mu;
 };
 
 }

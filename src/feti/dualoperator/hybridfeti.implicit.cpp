@@ -133,10 +133,9 @@ void HybridFETIImplicit<T>::set(const step::Step &step)
         }
     }
 
-    g.resize(F0.ncols);
-    e.resize(G0.nrows);
+    g.resize(G0.ncols);
     beta.resize(G0.nrows);
-    mu.resize(F0.ncols);
+    mu.resize(G0.ncols);
     eslog::checkpointln("FETI: SET F0, G0");
 
     F0Solver.commit(F0);
@@ -177,6 +176,7 @@ void HybridFETIImplicit<T>::update(const step::Step &step)
         dB0[t].resize(feti.B0[di].nrows, feti.B0[di].ncols);
         dKB0[t].resize(feti.B0[di].nrows, feti.B0[di].ncols);
         dF0[t].resize(feti.B0[di].nrows, feti.B0[di].nrows);
+        math::set(dB0[t], T{0});
         for (size_t i = 0; i < feti.D2C0[di].size(); ++i) {
             for (int c = feti.B0[di].rows[i]; c < feti.B0[di].rows[i + 1]; ++c) {
                 dB0[t].vals[i * dB0[t].ncols + feti.B0[di].cols[c]] = feti.B0[di].vals[c];
@@ -220,13 +220,19 @@ void HybridFETIImplicit<T>::update(const step::Step &step)
     Matrix_Dense<T> dG0, dF0G0;
     math::copy(dG0, G0);
     F0Solver.solve(dG0, dF0G0);
-    Matrix_Dense<T> S0; S0.resize(F0.nrows, F0.nrows);
+    Matrix_Dense<T> S0; S0.resize(G0.nrows, G0.nrows);
     math::blas::multiply(T{1}, dG0, dF0G0, T{0}, S0, false, true); // TODO: use sparse G0?
 
     if (info::ecf->output.print_matrices) {
         eslog::storedata(" STORE: feti/dualop/{S0}\n");
         math::store(S0, utils::filename(utils::debugDirectory(step) + "/feti/dualop", "S0").c_str());
     }
+
+    T avg = 0;
+    for (int r = 0; r < S0.nrows; ++r) {
+        avg += S0.vals[S0.nrows * r + r];
+    }
+    avg /= S0.nrows;
 
     // kernels: [3, 2, 3]
     // 1 0 0   *  1 0 0 1 0 1 0 0  =   1 0 0 1 0 1 0 0
@@ -243,7 +249,7 @@ void HybridFETIImplicit<T>::update(const step::Step &step)
         for (int r = 0; r < feti.R1[di].nrows; ++r, ++ri) {
             for (size_t dj = 0; dj < feti.K.size(); ++dj) {
                 if (r < feti.R1[dj].nrows) {
-                    S0.vals[ri * S0.ncols + G0offset[dj] + r] += 1;
+                    S0.vals[ri * S0.ncols + G0offset[dj] + r] += 0.5 * avg;
                 }
             }
         }
@@ -287,15 +293,16 @@ void HybridFETIImplicit<T>::apply(const Vector_Dual<T> &x, Vector_Dual<T> &y)
         // e = Rt * b
         Vector_Dense<T> _e;
         _e.size = _e._allocated.size = feti.R1[di].nrows;
-        _e.vals = e.vals + G0offset[di];
+        _e.vals = beta.vals + G0offset[di];
         math::blas::multiply(T{1}, feti.R1[di], Btx[di], T{0}, _e); // assemble -e
     }
 
-    F0Solver.solve(g, beta); // beta is tmp variable that can be used here
+    auto &F0g = mu; // mu is tmp variable that can be used here
+    F0Solver.solve(g, F0g);
     // e = G0 * F^-1 * g - e
-    math::spblas::apply(e, T{1}, G0, beta);
+    math::spblas::apply(beta, T{1}, G0, F0g);
     // beta = (S+)^-1 * (G0 * F0^-1 * g - e)
-    Splus.solve(e, beta);
+    Splus.solve(beta);
     // g = g - G0 * beta
     math::spblas::applyT(g, T{-1}, G0, beta);
     // mu = F0^-1 * (g - G0t * beta)
