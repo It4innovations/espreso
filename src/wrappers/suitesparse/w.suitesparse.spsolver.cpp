@@ -125,7 +125,7 @@ DirectSparseSolver<T, I>::~DirectSparseSolver()
 
     if(ext->cm_factor_super != nullptr) _free<I>(ext->cm_factor_super, ext->cm_common);
 
-    if(ext->cm_factor_super != nullptr) _free<I>(ext->cm_factor_simpl, ext->cm_common);
+    if(ext->cm_factor_simpl != nullptr) _free<I>(ext->cm_factor_simpl, ext->cm_common);
 
     _finish<I>(ext->cm_common);
 }
