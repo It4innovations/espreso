@@ -183,7 +183,7 @@ void AAt(const Matrix_Dense<double> &A, Matrix_Dense<double> &AAt, bool trans)
 {
     int size = trans ? A.ncols : A.nrows;
     if (AAt.nrows != AAt.ncols) eslog::error("invalid AAt dimension.\n");
-    if (size != A.ncols) eslog::error("invalid AAt dimension.\n");
+    if (size != AAt.ncols) eslog::error("invalid AAt dimension.\n");
     cblas_dsyrk(CblasRowMajor, CblasUpper, trans ? CblasTrans : CblasNoTrans, AAt.nrows, trans ? A.nrows : A.ncols, 1, A.vals, A.ncols, 0, AAt.vals, AAt.ncols);
 }
 
