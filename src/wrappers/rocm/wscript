@@ -1,10 +1,17 @@
 
+import os
+
 def options(opt):
-    pass
+    opt.compiler.add_option("--rocmarch",
+        action="store",
+        type="string",
+        default=os.getenv("ESPRESO_ROCM_ARCH") or "native")
 
 def configure(ctx):
     headers = [ "hip/hip_runtime.h", "rocblas.h", "rocsparse.h" ]
     libs = [ "rocblas", "rocsparse" ]
     ctx.check_cxx(mandatory=False, msg="Checking for 'rocm'", okmsg=" ".join(libs), define_name="HAVE_ROCM", header_name=headers, lib=libs, uselib_store="ROCM", global_define=0)
-    if ctx.env.HAVE_ROCM:
-        ctx.env.append_unique("CXXFLAGS", [ "--offload-arch=gfx90a:sramecc+:xnack-" ])
+    
+    ctx.env.append_unique("CXXFLAGS_ROCM", [ "-DESPRESO_RANK_TO_GPU_MAP=" + ctx.options.rank_to_gpu_map ])
+    ctx.env.append_unique("CXXFLAGS_ROCM", [ "--offload-arch=" + ctx.options.rocmarch ])
+        
