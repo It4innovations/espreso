@@ -131,7 +131,7 @@ def build(ctx):
     ctx.build_espreso(ctx.path.ant_glob('src/math/**/*.cpp'), "math", [ "BLAS", "LAPACK", "MKL", "SUITESPARSE" ])
     ctx.build_espreso(ctx.path.ant_glob('src/autoopt/**/*.cpp'), "autoopt")
     ctx.build_espreso(ctx.path.ant_glob('src/feti/**/*.cpp'), "feti")
-    ctx.build_espreso(ctx.path.ant_glob('src/gpu/**/*.cpp'), "gpu", [ "CUDA" ])
+    ctx.build_espreso(ctx.path.ant_glob('src/gpu/**/*.cpp'), "gpu", [ "CUDA", "ROCM" ])
     ctx.build_espreso(ctx.path.ant_glob('src/wrappers/simd/**/*.cpp'), "simd")
     ctx.build_espreso(ctx.path.ant_glob('src/wrappers/blas/**/*.cpp'), "wblas", [ "BLAS", "MKL" ])
     ctx.build_espreso(ctx.path.ant_glob('src/wrappers/lapack/**/*.cpp'), "wlapack", [ "LAPACK", "MKL" ])
