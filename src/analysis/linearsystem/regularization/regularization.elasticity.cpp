@@ -238,10 +238,12 @@ void RegularizationElasticity<T>::getCorners(std::vector<esint> &fixPoints, int 
     fixPoints.push_back(nodes[(ex + 1) * ey]);
     fixPoints.push_back(nodes[(ex + 1) * ey + ex]);
 
-    fixPoints.push_back(nodes[ez * (ex + 1) * (ey + 1)]);
-    fixPoints.push_back(nodes[ez * (ex + 1) * (ey + 1) + ex]);
-    fixPoints.push_back(nodes[ez * (ex + 1) * (ey + 1) + (ex + 1) * ey]);
-    fixPoints.push_back(nodes[ez * (ex + 1) * (ey + 1) + (ex + 1) * ey + ex]);
+    if (info::mesh->dimension == 3) {
+        fixPoints.push_back(nodes[ez * (ex + 1) * (ey + 1)]);
+        fixPoints.push_back(nodes[ez * (ex + 1) * (ey + 1) + ex]);
+        fixPoints.push_back(nodes[ez * (ex + 1) * (ey + 1) + (ex + 1) * ey]);
+        fixPoints.push_back(nodes[ez * (ex + 1) * (ey + 1) + (ex + 1) * ey + ex]);
+    }
 
     std::sort(fixPoints.begin(), fixPoints.end());
 }
