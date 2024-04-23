@@ -32,6 +32,10 @@ bool FETI<T>::set(const step::Step &step)
 {
     double start = eslog::time();
 
+    if (K.size() == 1) {
+        configuration.method = FETIConfiguration::METHOD::TOTAL_FETI;
+    }
+
     int offset[2] = { 0, 0 };
     int size[4] = { 0, 0, 0, 0 };
     size[0] = K.size();

@@ -171,6 +171,18 @@ void multiply(double alpha, const Matrix_Dense<double> &A, const Vector_Dense<do
     eslog::error("calling of empty BLAS wrapper.\n");
 }
 
+template <>
+void multiply(double alpha, const Vector_Dense<double> &A, const Vector_Dense<double> &B, double beta, double &out)
+{
+    eslog::error("calling of empty BLAS wrapper.\n");
+}
+
+template <>
+void multiply(std::complex<double> alpha, const Vector_Dense<std::complex<double> > &A, const Vector_Dense<std::complex<double> > &B, std::complex<double> beta, std::complex<double> &out)
+{
+    eslog::error("calling of empty BLAS wrapper.\n");
+}
+
 }
 }
 }

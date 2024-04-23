@@ -11,6 +11,9 @@ namespace espreso {
 template <typename T>
 void ClusterFacesGluing<T>::set(const step::Step &step, FETI<T> &feti)
 {
+    if (feti.K.size() == 1) {
+        return; // TOTAL FETI
+    }
     feti.B0.resize(feti.K.size());
     feti.D2C0.resize(feti.K.size());
 

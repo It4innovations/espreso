@@ -275,7 +275,8 @@ void HybridFETIImplicit<T>::apply(const Vector_Dual<T> &x, Vector_Dual<T> &y)
     // FETI
     #pragma omp parallel for
     for (size_t di = 0; di < feti.K.size(); ++di) {
-        applyBt(feti, di, x, Btx[di]);
+        math::set(Btx[di], T{0});
+        math::spblas::applyT(Btx[di], T{1}, feti.B1[di], feti.D2C[di].data(), x);
         KSolver[di].solve(Btx[di], KplusBtx[di]);
     }
 
@@ -329,10 +330,45 @@ void HybridFETIImplicit<T>::toPrimal(const Vector_Dual<T> &x, std::vector<Vector
 {
     #pragma omp parallel for
     for (size_t di = 0; di < feti.K.size(); ++di) {
-        applyBt(feti, di, x, Btx[di]);
-        math::copy(KplusBtx[di], feti.f[di]);
-        math::add(KplusBtx[di], T{-1}, Btx[di]);
-        KSolver[di].solve(KplusBtx[di], y[di]);
+        math::copy(Btx[di], feti.f[di]);
+        math::spblas::applyT(Btx[di], T{-1}, feti.B1[di], feti.D2C[di].data(), x);
+        KSolver[di].solve(Btx[di], y[di]);
+    }
+
+    // HYBRID FETI
+    math::set(g, T{0});
+    for (size_t di = 0; di < feti.K.size(); ++di) {
+        // g = B0 * (K+)^-1 * B1t * x
+        math::spblas::apply(g, T{1}, feti.B0[di], feti.D2C0[di].data(), y[di]);
+        // e = Rt * b
+        Vector_Dense<T> _e;
+        _e.size = feti.R1[di].nrows;
+        _e.vals = beta.vals + G0offset[di];
+        math::blas::multiply(T{1}, feti.R1[di], Btx[di], T{0}, _e); // assemble -e
+    }
+
+    auto &F0g = mu; // mu is tmp variable that can be used here
+    F0Solver.solve(g, F0g);
+    // e = G0 * F^-1 * g - e
+    math::spblas::apply(beta, T{1}, G0, F0g);
+    // beta = (S+)^-1 * (G0 * F0^-1 * g - e)
+    Splus.solve(beta);
+    // g = g - G0t * beta
+    math::spblas::applyT(g, T{-1}, G0, beta);
+    // mu = F0^-1 * (g - G0t * beta)
+    F0Solver.solve(g, mu);
+
+    #pragma omp parallel for
+    for (size_t di = 0; di < feti.K.size(); ++di) {
+        // Btx = (B1t * x - B0t * mu)
+        math::spblas::applyT(Btx[di], T{-1}, feti.B0[di], feti.D2C0[di].data(), mu);
+        // x = (K+)^-1 * (B1t * x - B0t * mu)
+        KSolver[di].solve(Btx[di], y[di]);
+        // x += R * beta
+        Vector_Dense<T> _beta;
+        _beta.size = feti.R1[di].nrows;
+        _beta.vals = beta.vals + G0offset[di];
+        math::blas::multiply(T{1}, feti.R1[di], _beta, T{1}, y[di], true);
     }
 }
 

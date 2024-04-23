@@ -9,7 +9,7 @@
 namespace espreso {
 
 /*
- * R: KxR : block diagonal
+ * R: KxR : single block
  * B: LxK : from primal to dual
  *
  * e = Rt * f : R
@@ -58,8 +58,8 @@ protected:
     using Projector<T>::feti;
     using Projector<T>::e;
 
-    Matrix_Dense<T> G, Gt;
-    Matrix_CSR<T> GGt;
+    Matrix_Dense<T> G;
+    Matrix_CSR<T> Gt, GGt;
     Matrix_Dense<T> invGGt;
 
     Vector_Kernel<T> Gx; // we need whole vector
@@ -68,34 +68,33 @@ protected:
     size_t domainOffset;
     size_t GGtDataOffset, GGtDataSize, GGtNnz;
 
-    struct DomainInfo {
-        int domain, koffset, kernels;
+    struct ClusterInfo {
+        int cluster, koffset, kernels;
 
-        DomainInfo() = default;
-        DomainInfo(int domain, int koffset, int kernels): domain(domain), koffset(koffset), kernels(kernels) {}
+        ClusterInfo() = default;
+        ClusterInfo(int cluster, int koffset, int kernels): cluster(cluster), koffset(koffset), kernels(kernels) {}
 
-        bool operator< (const DomainInfo &other) const { return domain <  other.domain; }
-        bool operator<=(const DomainInfo &other) const { return domain <= other.domain; }
-        bool operator!=(const DomainInfo &other) const { return domain != other.domain; }
+        bool operator< (const ClusterInfo &other) const { return cluster <  other.cluster; }
+        bool operator<=(const ClusterInfo &other) const { return cluster <= other.cluster; }
+        bool operator!=(const ClusterInfo &other) const { return cluster != other.cluster; }
     };
-    struct NeighborDomainInfo: DomainInfo {
+    struct NeighborClusterInfoInfo: ClusterInfo {
         struct CIndices { int offset, count; };
         std::vector<CIndices> cindices;
         int ncols;
 
-        NeighborDomainInfo() = default;
+        NeighborClusterInfoInfo() = default;
 
-        NeighborDomainInfo& operator=(const DomainInfo &other) {
-            this->domain = other.domain;
+        NeighborClusterInfoInfo& operator=(const ClusterInfo &other) {
+            this->cluster = other.cluster;
             this->koffset = other.koffset;
             this->kernels = other.kernels;
             return *this;
         }
     };
-    std::vector<DomainInfo> dinfo;
-    std::vector<std::vector<DomainInfo> > dualGraph;
-    std::map<int, NeighborDomainInfo> upinfo;
-    std::vector<std::map<int, NeighborDomainInfo> > downinfo;
+    std::vector<ClusterInfo> cinfo;
+    std::vector<std::vector<ClusterInfo> > dualGraph;
+    std::vector<NeighborClusterInfoInfo> neighInfo;
 };
 
 }

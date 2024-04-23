@@ -203,6 +203,20 @@ void multiply(double alpha, const Matrix_Dense<double> &A, const Vector_Dense<do
     cblas_dgemm(CblasRowMajor, transA ? CblasTrans : CblasNoTrans, CblasNoTrans, C.size, 1, transA ? A.nrows : A.ncols, alpha, A.vals, A.ncols, B.vals, 1, beta, C.vals, 1);
 }
 
+template <>
+void multiply(double alpha, const Vector_Dense<double> &A, const Vector_Dense<double> &B, double beta, double &out)
+{
+    if (A.size != B.size) eslog::error("invalid dimension.\n");
+    cblas_dgemv(CblasRowMajor, CblasNoTrans, 1, A.size, alpha, A.vals, A.size, B.vals, 1, beta, &out, 1);
+}
+
+template <>
+void multiply(std::complex<double> alpha, const Vector_Dense<std::complex<double> > &A, const Vector_Dense<std::complex<double> > &B, std::complex<double> beta, std::complex<double> &out)
+{
+    if (A.size != B.size) eslog::error("invalid dimension.\n");
+    cblas_zgemv(CblasRowMajor, CblasNoTrans, 1, A.size, &alpha, A.vals, A.size, B.vals, 1, &beta, &out, 1);
+}
+
 }
 }
 }
