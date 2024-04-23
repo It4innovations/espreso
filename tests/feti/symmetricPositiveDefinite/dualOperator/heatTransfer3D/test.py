@@ -14,9 +14,10 @@ class Assembler(unittest.TestCase):
         ESPRESOTest.clean()
 
     def test_feti(self):
-        for method in [ "TOTAL_FETI" ]:
-            for dualop in [ "    IMPLICIT", "    EXPLICIT", "EXPLICIT_GPU" ]:
-                yield run, method, dualop
+        for dualop in [ "    IMPLICIT", "    EXPLICIT", "EXPLICIT_GPU" ]:
+            yield run, " TOTAL_FETI", dualop
+        for dualop in [ "    IMPLICIT" ]:
+            yield run, "HYBRID_FETI", dualop
 
 def run(method, dualop):
     ESPRESOTest.args[10] = method

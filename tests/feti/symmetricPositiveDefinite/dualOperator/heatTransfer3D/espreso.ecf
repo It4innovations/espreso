@@ -96,7 +96,7 @@ HEAT_TRANSFER {
         PRECISION            1E-09;
         ITERATIVE_SOLVER       PCG;
         REGULARIZATION   ALGEBRAIC;
-        MAX_ITERATIONS          23;
+        MAX_ITERATIONS          25;
       }
 
       TEMPERATURE {
