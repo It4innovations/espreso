@@ -5,8 +5,7 @@ def options(opt):
     opt.compiler.add_option("--cudaarch",
         action="store",
         type="string",
-        default=os.getenv("CUDAARCH") or "native",
-        help="Set vectorized instruction set.")
+        default=os.getenv("CUDAARCH") or "native")
 
 def configure(ctx):
     ctx.env.NVCC = ctx.find_program("nvcc", mandatory=False)
