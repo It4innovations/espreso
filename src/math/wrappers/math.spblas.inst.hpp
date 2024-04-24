@@ -9,7 +9,7 @@ namespace espreso {
 
             #define INSTANTIATE_T(T) \
             INSTANTIATE_T_I(T,int32_t) \
-            /* INSTANTIATE_T_I(T,int64_t) */
+            INSTANTIATE_T_I(T,int64_t)
 
                 INSTANTIATE_T(float)
                 INSTANTIATE_T(double)
