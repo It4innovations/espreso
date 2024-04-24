@@ -101,6 +101,7 @@ void HybridFETIImplicit<T>::set(const step::Step &step)
         G0rows += feti.R1[di].nrows;
     }
     F0.type = Matrix_Type::REAL_SYMMETRIC_POSITIVE_DEFINITE;
+    F0.shape = Matrix_Shape::UPPER;
     F0.resize(feti.cluster.gl_size, feti.cluster.gl_size, F0nnz);
     F0.rows[0] = Indexing::CSR;
     for (size_t i = 0; i < csr.size(); ++i) {
@@ -202,8 +203,6 @@ void HybridFETIImplicit<T>::update(const step::Step &step)
                 }
             }
         }
-
-        KSolver[di].solve(feti.f[di], KplusBtx[di]);
     }
     if (info::ecf->output.print_matrices) {
         eslog::storedata(" STORE: feti/dualop/{F0, G0}\n");
@@ -260,6 +259,7 @@ void HybridFETIImplicit<T>::update(const step::Step &step)
 
     eslog::checkpointln("FETI: S0 FACTORIZATION");
 
+    _applyK(feti.f, KplusBtx);
     applyB(feti, KplusBtx, d);
     math::add(d, T{-1}, feti.c);
     eslog::checkpointln("FETI: COMPUTE DUAL RHS [d]");
@@ -277,44 +277,9 @@ void HybridFETIImplicit<T>::apply(const Vector_Dual<T> &x, Vector_Dual<T> &y)
     for (size_t di = 0; di < feti.K.size(); ++di) {
         math::set(Btx[di], T{0});
         math::spblas::applyT(Btx[di], T{1}, feti.B1[di], feti.D2C[di].data(), x);
-        KSolver[di].solve(Btx[di], KplusBtx[di]);
     }
 
-    // HYBRID FETI
-    math::set(g, T{0});
-    for (size_t di = 0; di < feti.K.size(); ++di) {
-        // g = B0 * (K+)^-1 * B1t * x
-        math::spblas::apply(g, T{1}, feti.B0[di], feti.D2C0[di].data(), KplusBtx[di]);
-        // e = Rt * b
-        Vector_Dense<T> _e;
-        _e.size = feti.R1[di].nrows;
-        _e.vals = beta.vals + G0offset[di];
-        math::blas::multiply(T{1}, feti.R1[di], Btx[di], T{0}, _e); // assemble -e
-    }
-
-    auto &F0g = mu; // mu is tmp variable that can be used here
-    F0Solver.solve(g, F0g);
-    // e = G0 * F^-1 * g - e
-    math::spblas::apply(beta, T{1}, G0, F0g);
-    // beta = (S+)^-1 * (G0 * F0^-1 * g - e)
-    Splus.solve(beta);
-    // g = g - G0t * beta
-    math::spblas::applyT(g, T{-1}, G0, beta);
-    // mu = F0^-1 * (g - G0t * beta)
-    F0Solver.solve(g, mu);
-
-    #pragma omp parallel for
-    for (size_t di = 0; di < feti.K.size(); ++di) {
-        // Btx = (B1t * x - B0t * mu)
-        math::spblas::applyT(Btx[di], T{-1}, feti.B0[di], feti.D2C0[di].data(), mu);
-        // x = (K+)^-1 * (B1t * x - B0t * mu)
-        KSolver[di].solve(Btx[di], KplusBtx[di]);
-        // x += R * beta
-        Vector_Dense<T> _beta;
-        _beta.size = feti.R1[di].nrows;
-        _beta.vals = beta.vals + G0offset[di];
-        math::blas::multiply(T{1}, feti.R1[di], _beta, T{1}, KplusBtx[di], true);
-    }
+    _applyK(Btx, KplusBtx);
 
     // y += FETI + HFETI
     math::set(y, T{0});
@@ -332,6 +297,17 @@ void HybridFETIImplicit<T>::toPrimal(const Vector_Dual<T> &x, std::vector<Vector
     for (size_t di = 0; di < feti.K.size(); ++di) {
         math::copy(Btx[di], feti.f[di]);
         math::spblas::applyT(Btx[di], T{-1}, feti.B1[di], feti.D2C[di].data(), x);
+    }
+
+   _applyK(Btx, y);
+}
+
+template <typename T>
+void HybridFETIImplicit<T>::_applyK(const std::vector<Vector_Dense<T> > &x, std::vector<Vector_Dense<T> > &y)
+{
+    // FETI
+    #pragma omp parallel for
+    for (size_t di = 0; di < feti.K.size(); ++di) {
         KSolver[di].solve(Btx[di], y[di]);
     }
 

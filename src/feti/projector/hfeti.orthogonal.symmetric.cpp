@@ -54,8 +54,9 @@ void HFETIOrthogonalSymmetric<T>::update(const step::Step &step)
     Vector_Dense<T> _e;
     _e.size = feti.sinfo.R1size;
     _e.vals = e.vals + feti.sinfo.R1offset;
+    math::set(e, T{0});
     for (size_t d = 0; d < feti.R1.size(); ++d) {
-        math::blas::apply(_e, T{-1}, feti.R1[d], T{0}, feti.f[d]);
+        math::blas::apply(_e, T{-1}, feti.R1[d], T{1}, feti.f[d]);
     }
     e.synchronize();
     eslog::checkpointln("FETI: COMPUTE DUAL RHS [e]");
