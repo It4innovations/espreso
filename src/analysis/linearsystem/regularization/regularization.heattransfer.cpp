@@ -42,7 +42,7 @@ void RegularizationHeatTransfer<T>::update(FETI<T> &feti)
         for (esint r = 0; r < K.nrows; ++r) {
             RegMat.vals[0] = std::max(RegMat.vals[0], K.vals[K.rows[r] - Indexing::CSR]);
         }
-        math::set(R.ncols, R.vals, 1, 1.0 / std::sqrt(K.nrows));
+        math::set(R, T{1});
     }
 }
 
