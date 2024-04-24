@@ -99,8 +99,8 @@ HEAT_TRANSFER {
         PRECONDITIONER   DIRICHLET;
         PRECISION            1E-09;
         ITERATIVE_SOLVER       PCG;
-        REGULARIZATION   ALGEBRAIC;
-        MAX_ITERATIONS        1000;
+        REGULARIZATION    ANALYTIC;
+        MAX_ITERATIONS          27;
       }
 
       TEMPERATURE {
