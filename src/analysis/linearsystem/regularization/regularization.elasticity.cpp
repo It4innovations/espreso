@@ -230,7 +230,15 @@ void RegularizationElasticity<T>::getCorners(std::vector<esint> &fixPoints, int 
     }
     utils::sortAndRemoveDuplicates(nodes);
     std::sort(nodes.begin(), nodes.end(), [&] (esint i, esint j) {
-        return info::mesh->nodes->coordinates->datatarray()[i] < info::mesh->nodes->coordinates->datatarray()[j];
+        const Point &pi = info::mesh->nodes->coordinates->datatarray()[i];
+        const Point &pj = info::mesh->nodes->coordinates->datatarray()[j];
+        if (pi.z == pj.z) {
+            if (pi.y == pj.y) {
+                return pi.x < pj.x;
+            }
+            return pi.y < pj.y;
+        }
+        return pi.z < pj.z;
     });
 
     fixPoints.push_back(nodes[0]);
