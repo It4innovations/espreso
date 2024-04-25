@@ -127,6 +127,21 @@ void TFETIOrthogonalSymmetric<T>::apply_Ra(const Vector_Dual<T> &x,  std::vector
 }
 
 template<typename T>
+void TFETIOrthogonalSymmetric<T>::_applyG(const Vector_Dual<T> &in, Vector_Kernel<T> &out)
+{
+    #pragma omp parallel for
+    for (int t = 0; t < info::env::threads; ++t) {
+        for (size_t r = Vector_Kernel<T>::distribution[t]; r < Vector_Kernel<T>::distribution[t + 1]; ++r) {
+            out.vals[r + Vector_Kernel<T>::offset] = T{0};
+            for (int c = G.rows[r]; c < G.rows[r + 1]; ++c) {
+                out.vals[r + Vector_Kernel<T>::offset] += G.vals[c] * in.vals[G.cols[c]];
+            }
+        }
+    }
+    out.synchronize();
+}
+
+template<typename T>
 void TFETIOrthogonalSymmetric<T>::apply_invU(const Vector_Kernel<T> &x, Vector_Kernel<T> &y)
 {
     if (GGt.nrows) {
@@ -167,21 +182,6 @@ void TFETIOrthogonalSymmetric<T>::apply_invLG(const Vector_Dual<T> &x, Vector_Ke
     } else {
         math::copy(y, x);
     }
-}
-
-template<typename T>
-void TFETIOrthogonalSymmetric<T>::_applyG(const Vector_Dual<T> &in, Vector_Kernel<T> &out)
-{
-    #pragma omp parallel for
-    for (int t = 0; t < info::env::threads; ++t) {
-        for (size_t r = Vector_Kernel<T>::distribution[t]; r < Vector_Kernel<T>::distribution[t + 1]; ++r) {
-            out.vals[r + Vector_Kernel<T>::offset] = T{0};
-            for (int c = G.rows[r]; c < G.rows[r + 1]; ++c) {
-                out.vals[r + Vector_Kernel<T>::offset] += G.vals[c] * in.vals[G.cols[c]];
-            }
-        }
-    }
-    out.synchronize();
 }
 
 template<typename T>

@@ -1,6 +1,6 @@
 
 
-#include <feti/projector/tfeti.orthogonal.symmetric.withfactors.h>
+#include "tfeti.orthogonal.symmetric.withfactors.h"
 #include "basis/containers/serializededata.h"
 #include "basis/utilities/sysutils.h"
 #include "basis/utilities/utils.h"
@@ -59,9 +59,6 @@ void TFETIOrthogonalSymmetricWithFactors<T>::update(const step::Step &step)
 {
     #pragma omp parallel for
     for (size_t d = 0; d < dinfo.size(); ++d) {
-        if (feti.updated.K) {
-            math::orthonormalize(feti.R1[d]);
-        }
         Vector_Dense<T> _e;
         _e.size = feti.R1[d].nrows;
         _e.vals = e.vals + dinfo[d].koffset;
@@ -99,6 +96,19 @@ void TFETIOrthogonalSymmetricWithFactors<T>::apply_e(const Vector_Kernel<T> &x, 
         _applyGt(iGGtGx, T{1}, y);
     } else {
         math::set(y, T{0});
+    }
+}
+
+template<typename T>
+void TFETIOrthogonalSymmetricWithFactors<T>::apply_R(const Vector_Kernel<T> &x,  std::vector<Vector_Dense<T> > &y)
+{
+    if (GGt.nrows) {
+        _applyR(x, y);
+    } else {
+        #pragma omp parallel for
+        for (size_t d = 0; d < y.size(); ++d) {
+            math::set(y[d], T{0});
+        }
     }
 }
 
@@ -265,19 +275,6 @@ void TFETIOrthogonalSymmetricWithFactors<T>::_applyGt(const Vector_Dense<T> &in,
 }
 
 template<typename T>
-void TFETIOrthogonalSymmetricWithFactors<T>::apply_R(const Vector_Kernel<T> &x,  std::vector<Vector_Dense<T> > &y)
-{
-    if (GGt.nrows) {
-        _applyR(x, y);
-    } else {
-        #pragma omp parallel for
-        for (size_t d = 0; d < y.size(); ++d) {
-            math::set(y[d], T{0});
-        }
-    }
-}
-
-template<typename T>
 void TFETIOrthogonalSymmetricWithFactors<T>::_applyR(const Vector_Dense<T> &in, std::vector<Vector_Dense<T> > &out)
 {
     #pragma omp parallel for
@@ -302,6 +299,7 @@ void TFETIOrthogonalSymmetricWithFactors<T>::_applyR(const Vector_Kernel<T> &in,
         math::blas::applyT(out[d], T{1}, feti.R1[d], T{0}, y);
     }
 }
+
 
 template<typename T>
 void TFETIOrthogonalSymmetricWithFactors<T>::_computeDualGraph()

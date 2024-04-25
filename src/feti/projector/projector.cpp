@@ -1,6 +1,7 @@
 
 #include "projector.h"
 #include "hfeti.orthogonal.symmetric.h"
+#include "hfeti.orthogonal.symmetric.withfactors.h"
 #include "tfeti.orthogonal.symmetric.h"
 #include "tfeti.orthogonal.symmetric.withfactors.h"
 #include "tfeti.conjugate.symmetric.h"
@@ -37,9 +38,9 @@ Projector<T>* Projector<T>::set(FETI<T> &feti, const step::Step &step)
         case FETIConfiguration::PROJECTOR::ORTHOGONAL:
             eslog::info(" = PROJECTOR                                                       HYBRID EXPLICIT ORTHOGONAL = \n");
             return new HFETIOrthogonalSymmetric<T>(feti);
-//        case FETIConfiguration::PROJECTOR::ORTHOGONAL_WITH_FACTORS:
-//            eslog::info(" = PROJECTOR                                          HYBRID EXPLICIT ORTHOGONAL WITH FACTORS = \n");
-//            return new TFETIOrthogonalSymmetricWithFactors<T>(feti);
+        case FETIConfiguration::PROJECTOR::ORTHOGONAL_WITH_FACTORS:
+            eslog::info(" = PROJECTOR                                          HYBRID EXPLICIT ORTHOGONAL WITH FACTORS = \n");
+            return new HFETIOrthogonalSymmetricWithFactors<T>(feti);
 //        case FETIConfiguration::PROJECTOR::CONJUGATE:
 //            eslog::info(" = PROJECTOR                                                        HYBRID EXPLICIT CONJUGATE = \n");
 //            return new TFETIConjugateSymmetric<T>(feti);
