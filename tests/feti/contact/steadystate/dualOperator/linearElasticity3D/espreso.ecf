@@ -1,0 +1,160 @@
+# ESPRESO Configuration File
+
+DEFAULT_ARGS {
+  0    HEXA8;
+
+  1        2;
+  2        2;
+  3        1;
+
+  4        2;
+  5        2;
+  6        2;
+
+  7        4;
+  8        4;
+  9        8;
+
+  10     TOTAL_FETI;
+  11             72;
+}
+
+INPUT_TYPE           GENERATOR;
+PHYSICS   STRUCTURAL_MECHANICS;
+
+GENERATOR {
+  SHAPE   GRID;
+
+  UNIFORM_CLUSTERS         FALSE;
+  UNIFORM_DOMAINS          FALSE;
+
+  GRID {
+    START_X                    0;
+    START_Y                    0;
+    START_Z                    0;
+
+    LENGTH_X                   1;
+    LENGTH_Y                   1;
+    LENGTH_Z                   1;
+
+    NODES {
+      Z0   <0 , 1> <0 , 1> <0 , 0>;
+      Y1   <0 , 1> <1 , 1> <0 , 1>;
+    }
+
+    FACES {
+      WALL  <0 , 1> <0 , 0> <0 , 1>;
+    }
+
+    ELEMENT_TYPE          [ARG0];
+
+    CLUSTERS_X            [ARG1];
+    CLUSTERS_Y            [ARG2];
+    CLUSTERS_Z            [ARG3];
+
+    DOMAINS_X             [ARG4];
+    DOMAINS_Y             [ARG5];
+    DOMAINS_Z             [ARG6];
+
+    ELEMENTS_X            [ARG7];
+    ELEMENTS_Y            [ARG8];
+    ELEMENTS_Z            [ARG9];
+  }
+}
+
+STRUCTURAL_MECHANICS {
+  LOAD_STEPS   1;
+
+  CONTACT_INTERFACES     TRUE;
+
+  MATERIALS {
+    1 {
+
+      DENS   7850;
+      CP        1;
+
+      LINEAR_ELASTIC_PROPERTIES {
+        MODEL   ISOTROPIC;
+
+        MIXY          0.3;
+        EX          2.1E7;
+      }
+
+      THERMAL_EXPANSION {
+        TEX             0;
+      }
+    }
+  }
+
+  MATERIAL_SET {
+    ALL_ELEMENTS   1;
+  }
+
+  LOAD_STEPS_SETTINGS {
+    1 {
+      DURATION_TIME     1;
+      TYPE   STEADY_STATE;
+      MODE         LINEAR;
+      SOLVER         FETI;
+
+      FETI {
+        METHOD             [ARG10];
+        ITERATIVE_SOLVER    SMALBE;
+        PRECONDITIONER        NONE;
+        MAX_ITERATIONS        5000;
+        PRECISION             1e-5;
+        PRECISION_IN          1e-7;
+        M                        1;
+        MAX_ITERATIONS     [ARG11];
+      }
+
+      DISPLACEMENT {
+        Z0  { X 0; Y 0; Z 0; }
+      }
+
+      NORMAL_PRESSURE {
+        Y1  1000000;
+      }
+
+      FIXED_WALL {
+        WALL {
+          NORMAL  { Y 1; Z -0.05; }
+          POINT   { X 0; Y -.06; Z .05; };
+        }
+      }
+    }
+  }
+}
+
+OUTPUT {
+#  RESULTS_STORE_FREQUENCY            NEVER;
+  MONITORS_STORE_FREQUENCY   EVERY_SUBSTEP;
+
+  STORE_RESULTS         ALL;
+
+  MONITORING {
+    1 {
+      REGION          ALL_NODES;
+      STATISTICS            MIN;
+      PROPERTY     DISPLACEMENT;
+    }
+
+    2 {
+      REGION          ALL_NODES;
+      STATISTICS            MAX;
+      PROPERTY     DISPLACEMENT;
+    }
+
+    3 {
+      REGION          ALL_NODES;
+      STATISTICS            AVG;
+      PROPERTY     DISPLACEMENT;
+    }
+
+    4 {
+      REGION       ALL_ELEMENTS;
+      STATISTICS            MAX;
+      PROPERTY VON_MISES_STRESS;
+    }
+  }
+}
