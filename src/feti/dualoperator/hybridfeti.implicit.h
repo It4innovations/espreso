@@ -45,7 +45,7 @@ protected:
     void reduceInfo(DualOperatorInfo &sum, DualOperatorInfo &min, DualOperatorInfo &max);
     void printInfo(DualOperatorInfo &sum, DualOperatorInfo &min, DualOperatorInfo &max);
 
-    void _applyK(const std::vector<Vector_Dense<T> > &x, std::vector<Vector_Dense<T> > &y);
+    void _applyK(std::vector<Vector_Dense<T> > &x, std::vector<Vector_Dense<T> > &y);
 
     using DualOperator<T>::feti;
     using DualOperator<T>::d;

@@ -303,12 +303,12 @@ void HybridFETIImplicit<T>::toPrimal(const Vector_Dual<T> &x, std::vector<Vector
 }
 
 template <typename T>
-void HybridFETIImplicit<T>::_applyK(const std::vector<Vector_Dense<T> > &x, std::vector<Vector_Dense<T> > &y)
+void HybridFETIImplicit<T>::_applyK(std::vector<Vector_Dense<T> > &x, std::vector<Vector_Dense<T> > &y)
 {
     // FETI
     #pragma omp parallel for
     for (size_t di = 0; di < feti.K.size(); ++di) {
-        KSolver[di].solve(Btx[di], y[di]);
+        KSolver[di].solve(x[di], y[di]);
     }
 
     // HYBRID FETI
@@ -320,7 +320,7 @@ void HybridFETIImplicit<T>::_applyK(const std::vector<Vector_Dense<T> > &x, std:
         Vector_Dense<T> _e;
         _e.size = feti.R1[di].nrows;
         _e.vals = beta.vals + G0offset[di];
-        math::blas::multiply(T{1}, feti.R1[di], Btx[di], T{0}, _e); // assemble -e
+        math::blas::multiply(T{1}, feti.R1[di], x[di], T{0}, _e); // assemble -e
     }
 
     auto &F0g = mu; // mu is tmp variable that can be used here
@@ -337,9 +337,9 @@ void HybridFETIImplicit<T>::_applyK(const std::vector<Vector_Dense<T> > &x, std:
     #pragma omp parallel for
     for (size_t di = 0; di < feti.K.size(); ++di) {
         // Btx = (B1t * x - B0t * mu)
-        math::spblas::applyT(Btx[di], T{-1}, feti.B0[di], feti.D2C0[di].data(), mu);
+        math::spblas::applyT(x[di], T{-1}, feti.B0[di], feti.D2C0[di].data(), mu);
         // x = (K+)^-1 * (B1t * x - B0t * mu)
-        KSolver[di].solve(Btx[di], y[di]);
+        KSolver[di].solve(x[di], y[di]);
         // x += R * beta
         Vector_Dense<T> _beta;
         _beta.size = feti.R1[di].nrows;
