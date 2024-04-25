@@ -12,7 +12,9 @@ DEFAULT_ARGS {
   5           4;
   6          40;
 
-  7  ORTHOGONAL;
+  7  TOTAL_FETI;
+  8  ORTHOGONAL;
+  9          70;
 }
 
 INPUT_TYPE              GENERATOR;
@@ -82,14 +84,14 @@ STRUCTURAL_MECHANICS {
       SOLVER         FETI;
 
       FETI {
-        METHOD          TOTAL_FETI;
+        METHOD              [ARG7];
         DUAL_OPERATOR     IMPLICIT;
         PRECONDITIONER   DIRICHLET;
-        PROJECTOR           [ARG7];
+        PROJECTOR           [ARG8];
         ITERATIVE_SOLVER       PCG;
         REGULARIZATION   ALGEBRAIC;
         PRECISION             1e-7;
-        MAX_ITERATIONS          70;
+        MAX_ITERATIONS      [ARG9];
       }
 
       DISPLACEMENT {

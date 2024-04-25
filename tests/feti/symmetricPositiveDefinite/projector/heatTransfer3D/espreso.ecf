@@ -15,7 +15,9 @@ DEFAULT_ARGS {
   8           4;
   9           8;
 
- 10  ORTHOGONAL;
+ 10  TOTAL_FETI;
+ 11  ORTHOGONAL;
+ 12          23;
 }
 
 INPUT_TYPE            GENERATOR;
@@ -89,14 +91,14 @@ HEAT_TRANSFER {
       SOLVER         FETI;
 
       FETI {
-        METHOD          TOTAL_FETI;
+        METHOD             [ARG10];
         DUAL_OPERATOR     IMPLICIT;
         PRECONDITIONER   DIRICHLET;
-        PROJECTOR          [ARG10];
+        PROJECTOR          [ARG11];
         PRECISION            1E-09;
         ITERATIVE_SOLVER       PCG;
         REGULARIZATION   ALGEBRAIC;
-        MAX_ITERATIONS          23;
+        MAX_ITERATIONS     [ARG12];
       }
 
       TEMPERATURE {
