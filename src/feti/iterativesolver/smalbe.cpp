@@ -44,6 +44,7 @@ template <> void SMALBE<double>::solve(const step::Step &step, IterativeSolverIn
     Projector<double> *P = feti.projector;
     MPRGPSolverInfo mprgp_info;
     mprgp_info.print = false;
+    mprgp_info.converged = false;
 
     math::copy(b, F->d);
     // Homogenization of the equality constraints
@@ -152,6 +153,7 @@ template <> void SMALBE<double>::solve(const step::Step &step, IterativeSolverIn
         info.time.current = eslog::time();
 
         if (norm_stop <= feti.configuration.precision * norm_b && norm_Gx <= feti.configuration.precision * norm_b / maxEIG_H) {
+            info.converged = true;
             break;
         }
 
@@ -189,6 +191,10 @@ template <> void SMALBE<double>::solve(const step::Step &step, IterativeSolverIn
 
     reconstructSolution(mprgp.x, mu, step);
     info = mprgp_info;
+
+    if (feti.configuration.max_iterations < info.iterations && !info.converged) {
+        info.error = IterativeSolverInfo::ERROR::MAX_ITERATIONS_REACHED;
+    }
 }
 
 template <> void SMALBE<std::complex<double> >::solve(const step::Step &step, IterativeSolverInfo &info)
