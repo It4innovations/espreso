@@ -36,10 +36,10 @@ Projector<T>* Projector<T>::set(FETI<T> &feti, const step::Step &step)
     case FETIConfiguration::METHOD::HYBRID_FETI: {
         switch (feti.configuration.projector) {
         case FETIConfiguration::PROJECTOR::ORTHOGONAL:
-            eslog::info(" = PROJECTOR                                                       HYBRID EXPLICIT ORTHOGONAL = \n");
+            eslog::info(" = PROJECTOR                                                      HYBRID EXPLICIT ORTHOGONAL = \n");
             return new HFETIOrthogonalSymmetric<T>(feti);
         case FETIConfiguration::PROJECTOR::ORTHOGONAL_WITH_FACTORS:
-            eslog::info(" = PROJECTOR                                          HYBRID EXPLICIT ORTHOGONAL WITH FACTORS = \n");
+            eslog::info(" = PROJECTOR                                         HYBRID EXPLICIT ORTHOGONAL WITH FACTORS = \n");
             return new HFETIOrthogonalSymmetricWithFactors<T>(feti);
 //        case FETIConfiguration::PROJECTOR::CONJUGATE:
 //            eslog::info(" = PROJECTOR                                                        HYBRID EXPLICIT CONJUGATE = \n");
