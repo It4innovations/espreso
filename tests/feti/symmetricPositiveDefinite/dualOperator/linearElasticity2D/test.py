@@ -6,7 +6,7 @@ class Assembler(unittest.TestCase):
 
     def setUp(self):
         ESPRESOTest.path = os.path.dirname(__file__)
-        ESPRESOTest.args = [ "TRIANGLE3", 2, 2, 2, 2, 40, 4, "TOTAL_FETI", "IMPLICIT" ]
+        ESPRESOTest.args = [ "TRIANGLE3", 2, 2, 2, 2, 40, 4, "TOTAL_FETI", "IMPLICIT", 80 ]
         ESPRESOTest.processes = 4
         ESPRESOTest.set_threads(2)
 
@@ -14,12 +14,14 @@ class Assembler(unittest.TestCase):
         ESPRESOTest.clean()
 
     def test_feti(self):
-        for method in [ "TOTAL_FETI" ]:
-            for dualop in [ "    IMPLICIT", "    EXPLICIT", "EXPLICIT_GPU" ]:
-                yield run, method, dualop
+        for dualop in [ "    IMPLICIT", "    EXPLICIT", "EXPLICIT_GPU" ]:
+            yield run, " TOTAL_FETI", dualop, 70
+        for dualop in [ "    IMPLICIT" ]:
+            yield run, "HYBRID_FETI", dualop, 80
 
-def run(method, dualop):
+def run(method, dualop, max_it):
     ESPRESOTest.args[7] = method
     ESPRESOTest.args[8] = dualop
+    ESPRESOTest.args[9] = max_it
     ESPRESOTest.run()
     ESPRESOTest.compare_emr("espreso.emr")

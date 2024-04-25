@@ -13,6 +13,8 @@ DEFAULT_ARGS {
   6          40;
 
   7  TOTAL_FETI;
+  8    IMPLICIT;
+  9          80;
 }
 
 INPUT_TYPE              GENERATOR;
@@ -88,7 +90,7 @@ STRUCTURAL_MECHANICS {
         ITERATIVE_SOLVER       PCG;
         REGULARIZATION   ALGEBRAIC;
         PRECISION             1e-7;
-        MAX_ITERATIONS          70;
+        MAX_ITERATIONS      [ARG9];
       }
 
       DISPLACEMENT {

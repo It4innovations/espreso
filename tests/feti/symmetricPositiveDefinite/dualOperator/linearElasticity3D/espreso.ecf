@@ -17,6 +17,7 @@ DEFAULT_ARGS {
 
   10 TOTAL_FETI;
   11   IMPLICIT;
+  12         20;
 }
 
 INPUT_TYPE              GENERATOR;
@@ -93,7 +94,7 @@ STRUCTURAL_MECHANICS {
         PRECONDITIONER   DIRICHLET;
         ITERATIVE_SOLVER       PCG;
         REGULARIZATION    ANALYTIC;
-        MAX_ITERATIONS          15;
+        MAX_ITERATIONS     [ARG12];
       }
 
       DISPLACEMENT {
