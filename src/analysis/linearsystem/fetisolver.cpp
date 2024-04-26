@@ -81,6 +81,7 @@ void FETILinearSystemSolver<T>::update(step::Step &step)
         for (size_t d = 0; d < feti.K.size(); ++d) {
             Matrix_Dense<T> R, RRt, P, K, KP;
             R.resize(feti.R1[d].nrows, feti.R1[d].ncols);
+            RRt.resize(R.ncols, R.ncols);
             math::copy(R, feti.R1[d]);
             math::orthonormalize(R);
             math::blas::AAt(R, RRt, true);
@@ -90,6 +91,7 @@ void FETILinearSystemSolver<T>::update(step::Step &step)
                 }
             }
             P.resize(feti.K[d].nrows, feti.K[d].nrows);
+            KP.resize(feti.K[d].nrows, feti.K[d].nrows);
             math::eye(P, 1.);
             math::add(P, -1., RRt);
             math::copy(K, feti.K[d]);
