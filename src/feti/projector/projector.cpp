@@ -16,6 +16,9 @@ Projector<T>* Projector<T>::set(FETI<T> &feti, const step::Step &step)
         if (feti.configuration.projector == FETIConfiguration::PROJECTOR::ORTHOGONAL) {
             feti.configuration.projector = FETIConfiguration::PROJECTOR::ORTHOGONAL_WITH_FACTORS;
         }
+        if (feti.configuration.projector == FETIConfiguration::PROJECTOR::ORTHOGONAL_FULL) {
+            feti.configuration.projector = FETIConfiguration::PROJECTOR::ORTHOGONAL_FULL_WITH_FACTORS;
+        }
     }
 
     switch (feti.configuration.method) {

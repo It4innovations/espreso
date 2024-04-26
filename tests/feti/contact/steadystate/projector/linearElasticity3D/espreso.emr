@@ -1,0 +1,5 @@
+         ;          ;              ;    ALL_NODES   ;    ALL_NODES   ;    ALL_NODES   ;    ALL_ELEMENTS    ;
+loadstep ;  substep ;         time ;  DISPLACEMENT  ;  DISPLACEMENT  ;  DISPLACEMENT  ;  VON_MISES_STRESS  ;
+         ;          ;              ;      <MIN>     ;      <MAX>     ;    <AVERAGE>   ;        <MAX>       ;
+
+       1 ;        1 ;     1.000000 ;   9.173769e-10 ;   7.992588e-02 ;   3.195736e-02 ;       2.593707e+06 ; 
