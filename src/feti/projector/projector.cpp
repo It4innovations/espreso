@@ -22,9 +22,11 @@ Projector<T>* Projector<T>::set(FETI<T> &feti, const step::Step &step)
     case FETIConfiguration::METHOD::TOTAL_FETI: {
         switch (feti.configuration.projector) {
         case FETIConfiguration::PROJECTOR::ORTHOGONAL:
+        case FETIConfiguration::PROJECTOR::ORTHOGONAL_FULL:
             eslog::info(" = PROJECTOR                                                             EXPLICIT ORTHOGONAL = \n");
             return new TFETIOrthogonalSymmetric<T>(feti);
         case FETIConfiguration::PROJECTOR::ORTHOGONAL_WITH_FACTORS:
+        case FETIConfiguration::PROJECTOR::ORTHOGONAL_FULL_WITH_FACTORS:
             eslog::info(" = PROJECTOR                                                EXPLICIT ORTHOGONAL WITH FACTORS = \n");
             return new TFETIOrthogonalSymmetricWithFactors<T>(feti);
         case FETIConfiguration::PROJECTOR::CONJUGATE:
@@ -44,6 +46,12 @@ Projector<T>* Projector<T>::set(FETI<T> &feti, const step::Step &step)
 //        case FETIConfiguration::PROJECTOR::CONJUGATE:
 //            eslog::info(" = PROJECTOR                                                        HYBRID EXPLICIT CONJUGATE = \n");
 //            return new TFETIConjugateSymmetric<T>(feti);
+        case FETIConfiguration::PROJECTOR::ORTHOGONAL_FULL:
+            eslog::info(" = PROJECTOR                                                             EXPLICIT ORTHOGONAL = \n");
+            return new TFETIOrthogonalSymmetric<T>(feti);
+        case FETIConfiguration::PROJECTOR::ORTHOGONAL_FULL_WITH_FACTORS:
+            eslog::info(" = PROJECTOR                                                EXPLICIT ORTHOGONAL WITH FACTORS = \n");
+            return new TFETIOrthogonalSymmetricWithFactors<T>(feti);
         default: return nullptr;
         }
     } break;

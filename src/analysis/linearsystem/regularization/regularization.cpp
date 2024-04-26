@@ -53,14 +53,17 @@ void Regularization<T>::update(const step::Step &step, FETI<T> &feti)
     if (feti.updated.K) {
         std::vector<int> offset;
         Matrix_Dense<T> _R1;
-        switch (feti.configuration.method) {
-        case FETIConfiguration::METHOD::TOTAL_FETI:
+        bool fetiProjection =
+                feti.configuration.method == FETIConfiguration::METHOD::TOTAL_FETI ||
+                feti.configuration.projector == FETIConfiguration::PROJECTOR::ORTHOGONAL_FULL ||
+                feti.configuration.projector == FETIConfiguration::PROJECTOR::ORTHOGONAL_FULL_WITH_FACTORS;
+
+        if (fetiProjection) {
             #pragma omp parallel for
             for (size_t d = 0; d < feti.R1.size(); ++d) {
                 math::orthonormalize(feti.R1[d]);
             }
-            break;
-        case FETIConfiguration::METHOD::HYBRID_FETI:
+        } else {
             for (size_t d = 0; d < feti.R1.size(); ++d) {
                 offset.push_back(_R1.ncols);
                 _R1.nrows = std::max(_R1.nrows, feti.R1[d].nrows);

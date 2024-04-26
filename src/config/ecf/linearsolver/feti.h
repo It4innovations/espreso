@@ -34,6 +34,8 @@ struct FETIConfiguration: public ECFDescription {
 		ORTHOGONAL = 0,
 		ORTHOGONAL_WITH_FACTORS,
 		CONJUGATE,
+		ORTHOGONAL_FULL,
+		ORTHOGONAL_FULL_WITH_FACTORS
 	};
 
 	enum class ITERATIVE_SOLVER {
