@@ -36,7 +36,7 @@ bool FETI<T>::set(const step::Step &step)
         configuration.method = FETIConfiguration::METHOD::TOTAL_FETI;
     }
 
-    int offset[2] = { 0, 0 };
+    int offset[2] = { 0, 0 }, ooffset[2];
     int size[4] = { 0, 0, 0, 0 };
     size[0] = K.size();
 
@@ -70,13 +70,13 @@ bool FETI<T>::set(const step::Step &step)
     sinfo.nc_total = Communication::exscan(sinfo.nc_offset);
     sinfo.dual_total = sinfo.eq_total + sinfo.nc_total;
 
-    Communication::exscan(offset, NULL, 2, MPITools::getType<int>().mpitype, MPI_SUM);
+    Communication::exscan(offset, ooffset, 2, MPITools::getType<int>().mpitype, MPI_SUM);
     Communication::allReduce(size, NULL, 5, MPITools::getType<int>().mpitype, MPI_SUM);
     sinfo.domains = size[0];
     sinfo.R1totalSize = size[2];
     sinfo.R2totalSize = size[3];
-    sinfo.R1offset = info::mpi::rank ? offset[0] : 0;
-    sinfo.R2offset = info::mpi::rank ? offset[1] : 0;
+    sinfo.R1offset = info::mpi::rank ? ooffset[0] : 0;
+    sinfo.R2offset = info::mpi::rank ? ooffset[1] : 0;
 
     Dual_Map::set(*this);
     Vector_Dual<T>::initBuffers();
