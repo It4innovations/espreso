@@ -1,0 +1,22 @@
+
+.basic:
+  script:
+    - nose2 -v -s tests/heatTransfer/const/conductivity/isotropic2D/
+    - nose2 -v -s tests/heatTransfer/const/conductivity/isotropic3D/
+    - nose2 -v -s tests/linearElasticity/const/planeStrain/elements/acceleration/
+    - nose2 -v -s tests/linearElasticity/const/volume/element/acceleration/
+
+.assembler:
+  script:
+    - nose2 -v -s tests/heatTransfer/
+    - nose2 -v -s tests/linearElasticity/
+
+.physical_solver:
+  script:
+    - nose2 -v - s tests/physicalSolver
+
+.feti:
+  script:
+    - nose2 -c tests/nose2.cfg -A feti -v -s tests/heatTransfer/
+    - nose2 -c tests/nose2.cfg -A feti -v -s tests/linearElasticity/
+    - nose2 -c tests/nose2.cfg         -v -s tests/feti/

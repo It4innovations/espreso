@@ -1,133 +1,119 @@
+
+include: tests/test_groups.yml
+
 stages:
   - build
   - solver
   - release
 
-WS_DUMMY:
+.ws_build:
   stage: build
   tags:
     - ws
-  script:
-    - ./waf configure --skip-suitesparse --skip-mkl --skip-blas --skip-lapack
-    - ./waf -j8
 
-    - ./waf configure --skip-suitesparse --skip-mkl --skip-blas --skip-lapack --intwidth=64
-    - ./waf -j8
+.ws_foss:
+  extends: .ws_build
+  before_script:
+    - export CXX=mpic++
 
-WS_MKL:
-  stage: build
-  tags:
-    - ws
-  script:
+.ws_mkl:
+  extends: .ws_build
+  before_script:
+    - export CXX=mpic++
     - export CPATH=/usr/include/mkl:$CPATH
 
-    - ./waf configure
-    - ./waf -j8
-    - nose2 -v -s tests/heatTransfer/const/conductivity/isotropic2D/
-    - nose2 -v -s tests/heatTransfer/const/conductivity/isotropic3D/
-    - nose2 -v -s tests/linearElasticity/const/planeStrain/elements/acceleration/
-    - nose2 -v -s tests/linearElasticity/const/volume/element/acceleration/
+.ws_intel:
+  extends: .ws_build
+  before_script:
+    - . env/modules.workstation.icpc
 
-    - ./waf configure --intwidth=64
+.ws_solver_foss:
+  extends: .ws_foss
+  stage: solver
+  only:
+    refs:
+      - schedules
+
+.ws_solver_mkl:
+  extends: .ws_mkl
+  stage: solver
+  only:
+    refs:
+      - schedules
+
+.ws_solver_intel:
+  extends: .ws_intel
+  stage: solver
+  only:
+    refs:
+      - schedules
+
+.snippets:
+  dummy: # build without any third-party library
+    - ./waf configure --skip-suitesparse --skip-mkl --skip-blas --skip-lapack
     - ./waf -j8
-    - nose2 -v -s tests/heatTransfer/const/conductivity/isotropic2D/
-    - nose2 -v -s tests/heatTransfer/const/conductivity/isotropic3D/
-    - nose2 -v -s tests/linearElasticity/const/planeStrain/elements/acceleration/
-    - nose2 -v -s tests/linearElasticity/const/volume/element/acceleration/
+    - ./waf configure --skip-suitesparse --skip-mkl --skip-blas --skip-lapack --intwidth=64
+    - ./waf -j8
+  basic: # fast tests that includes calling of third-party libraries
+    - ./waf configure
+    - ./waf -j 8
+    - !reference [.basic, script]
+    - ./waf configure --intwidth=64
+    - ./waf -j 8
+    - !reference [.basic, script]
+  assembler:
+    - ./waf configure
+    - ./waf -j 8
+    - !reference [.assembler, script]
+    - ./waf configure --intwidth=64
+    - ./waf -j 8
+    - !reference [.assembler, script]
+  physical_solver: # only 32-bit int due to MKL-PDSS
+    - ./waf configure
+    - ./waf -j 8
+    - !reference [.physical_solver, script]
+  feti:
+    - ./waf configure
+    - ./waf -j 8
+    - !reference [.feti, script]
+    - ./waf configure --intwidth=64
+    - ./waf -j 8
+    - !reference [.feti, script]
+
+WS_DUMMY:
+  extends: .ws_foss
+  script:
+    - !reference [.snippets, dummy]
 
 WS_FOSS:
-  stage: build
-  tags:
-    - ws
+  extends: .ws_foss
   script:
-    - ./waf configure
-    - ./waf -j8
-    - nose2 -v -s tests/heatTransfer/const/conductivity/isotropic2D/
-    - nose2 -v -s tests/heatTransfer/const/conductivity/isotropic3D/
-    - nose2 -v -s tests/linearElasticity/const/planeStrain/elements/acceleration/
-    - nose2 -v -s tests/linearElasticity/const/volume/element/acceleration/
+    - !reference [.snippets, basic]
 
-    - ./waf configure --intwidth=64
-    - ./waf -j8
-    - nose2 -v -s tests/heatTransfer/const/conductivity/isotropic2D/
-    - nose2 -v -s tests/heatTransfer/const/conductivity/isotropic3D/
-    - nose2 -v -s tests/linearElasticity/const/planeStrain/elements/acceleration/
-    - nose2 -v -s tests/linearElasticity/const/volume/element/acceleration/
+WS_MKL:
+  extends: .ws_mkl
+  script:
+    - !reference [.snippets, basic]
 
 WS_INTEL:
-  stage: build
-  tags:
-    - ws
+  extends: .ws_intel
   script:
-    - . env/modules.workstation.icpc
-
-    - ./waf configure
-    - ./waf -j8
-    - nose2 -v -s tests/heatTransfer/const/conductivity/anisotropic2D/
-    - nose2 -v -s tests/heatTransfer/const/conductivity/anisotropic3D/
-    - nose2 -v -s tests/linearElasticity/const/planeStrain/elements/acceleration/
-    - nose2 -v -s tests/linearElasticity/const/volume/element/acceleration/
-
-    - ./waf configure --intwidth=64
-    - ./waf -j8
-    - nose2 -v -s tests/heatTransfer/const/conductivity/isotropic2D/
-    - nose2 -v -s tests/heatTransfer/const/conductivity/isotropic3D/
-    - nose2 -v -s tests/linearElasticity/const/planeStrain/elements/acceleration/
-    - nose2 -v -s tests/linearElasticity/const/volume/element/acceleration/
+    - !reference [.snippets, basic]
 
 WS_ASSEMBLER:
-  stage: solver
-  tags:
-    - ws
-  only:
-    refs:
-      - schedules
+  extends: .ws_solver_intel
   script:
-    - . env/modules.workstation.icpc
-
-    - ./waf configure
-    - ./waf -j8
-    - nose2 -v -s tests/heatTransfer/
-    - nose2 -v -s tests/linearElasticity/
-
-    - ./waf configure --intwidth=64
-    - ./waf -j8
-    - nose2 -v -s tests/heatTransfer/
-    - nose2 -v -s tests/linearElasticity/
+    - !reference [.snippets, assembler]
 
 WS_PHYSICAL_SOLVER:
-  stage: solver
-  tags:
-    - ws
-  only:
-    refs:
-      - schedules
+  extends: .ws_solver_intel
   script:
-    - . env/modules.workstation.icpc
-
-    - ./waf configure
-    - ./waf -j8
-    - nose2 -v - s tests/physicalSolver
+    - !reference [.snippets, physical_solver]
 
 WS_FETI:
-  stage: solver
-  tags:
-    - ws
-  only:
-    refs:
-      - schedules
+  extends: .ws_solver_foss
   script:
-    - ./waf configure
-    - ./waf -j8
-    - nose2 -c tests/nose2.cfg -A feti -v -s tests/heatTransfer/
-    - nose2 -c tests/nose2.cfg -A feti -v -s tests/linearElasticity/
-    - nose2 -c tests/nose2.cfg         -v -s tests/feti/
-
-    - ./waf configure --intwidth=64
-    - ./waf -j8
-    - nose2 -c tests/nose2.cfg -A feti -v -s tests/heatTransfer/
-    - nose2 -c tests/nose2.cfg -A feti -v -s tests/linearElasticity/
-    - nose2 -c tests/nose2.cfg         -v -s tests/feti/
+    - !reference [.snippets, feti]
 
 GITHUB:
   stage: release
