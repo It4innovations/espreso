@@ -3,11 +3,10 @@ stages:
   - solver
   - release
 
-before_script:
-  - export CXX=mpic++
-
 WS_DUMMY:
   stage: build
+  tags:
+    - ws
   script:
     - ./waf configure --skip-suitesparse --skip-mkl --skip-blas --skip-lapack
     - ./waf -j8
@@ -17,6 +16,8 @@ WS_DUMMY:
 
 WS_MKL:
   stage: build
+  tags:
+    - ws
   script:
     - export CPATH=/usr/include/mkl:$CPATH
 
@@ -36,6 +37,8 @@ WS_MKL:
 
 WS_FOSS:
   stage: build
+  tags:
+    - ws
   script:
     - ./waf configure
     - ./waf -j8
@@ -53,6 +56,8 @@ WS_FOSS:
 
 WS_INTEL:
   stage: build
+  tags:
+    - ws
   script:
     - . env/modules.workstation.icpc
 
@@ -72,6 +77,8 @@ WS_INTEL:
 
 WS_ASSEMBLER:
   stage: solver
+  tags:
+    - ws
   only:
     refs:
       - schedules
@@ -90,6 +97,8 @@ WS_ASSEMBLER:
 
 WS_PHYSICAL_SOLVER:
   stage: solver
+  tags:
+    - ws
   only:
     refs:
       - schedules
@@ -102,6 +111,8 @@ WS_PHYSICAL_SOLVER:
 
 WS_FETI:
   stage: solver
+  tags:
+    - ws
   only:
     refs:
       - schedules
