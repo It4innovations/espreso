@@ -48,6 +48,19 @@ stages:
     refs:
       - schedules
 
+.cs_build:
+  stage: build
+  tags:
+    - cs
+  before_script:
+    - echo "#!/bin/bash" >> job.sh
+    - echo "#SBATCH -A $PROJECT_ID" >> job.sh
+    - echo "#SBATCH -p p01-arm" >> job.sh
+    - echo "#SBATCH -N 2" >> job.sh
+    - echo "#SBATCH -n 96" >> job.sh
+    - echo ". env/modules.cs.it4i.a64fx" >> job.sh
+
+
 .snippets:
   dummy: # build without any third-party library
     - ./waf configure --skip-suitesparse --skip-mkl --skip-blas --skip-lapack
@@ -114,6 +127,11 @@ WS_FETI:
   extends: .ws_solver_foss
   script:
     - !reference [.snippets, feti]
+
+CS_DUMMY:
+  extends: .cs_build
+  script:
+    - echo "HELLO"
 
 GITHUB:
   stage: release

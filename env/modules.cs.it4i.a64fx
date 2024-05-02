@@ -1,0 +1,14 @@
+
+ml Python/3.10.4-GCCcore-11.3.0
+ml OpenMPI/4.1.4-GCC-11.3.0
+ml OpenBLAS/0.3.20-GCC-11.3.0
+ml METIS/5.1.0-GCCcore-11.3.0
+
+. env/suitesparse.install.sh _a64fx
+
+export CPATH="${PWD}/${SUITESPARSE_ROOT}/build_a64fx/include:${CPATH}"
+export LIBRARY_PATH="${PWD}/${SUITESPARSE_ROOT}/build_a64fx/lib64:${LD_LIBRARY_PATH}"
+export LD_LIBRARY_PATH="${PWD}/${SUITESPARSE_ROOT}/build_a64fx/lib64:${LD_LIBRARY_PATH}"
+
+export CXX=mpic++
+export BLAS_LIBRARIES=openblas

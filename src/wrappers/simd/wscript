@@ -1,14 +1,18 @@
 
+import os
+
 def options(opt):
     opt.compiler.add_option("--arch",
         action="store",
         type="string",
+        metavar="ARCH",
+        default=os.getenv("ARCH"),
         help="Set vectorized instruction set.")
 
 def configure(ctx):
     if ctx.options.arch == "native":
         ctx.env.append_unique("CXXFLAGS", [ "-march=native" ])
-    if ctx.options.arch == "a64fx":
+    if ctx.options.arch == "aarch64":
         if ctx.options.flavor == "fujitsu":
             ctx.env.append_unique("CXXFLAGS", [ "-march=armv8.2-a+sve", "-D__ARM_FEATURE_SVE_BITS=512", "-KSVE", "-KA64FX", "-Kfast" ])
         else:
