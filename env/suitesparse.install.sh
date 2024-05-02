@@ -13,6 +13,7 @@ then
         cd "${SUITESPARSE_ROOT}"
         mkdir -p build$1
         cd build$1
+        ml CMake/3.23.1-GCCcore-11.3.0
         cmake -DCMAKE_C_COMPILER=gcc -DENABLE_CUDA=false -DSUITESPARSE_ENABLE_PROJECTS="cholmod" -DCMAKE_INSTALL_PREFIX=. ..
         cmake --build . -j $(nproc)
         cmake --install .

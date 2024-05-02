@@ -1,6 +1,4 @@
 
-include: tests/test_groups.yml
-
 stages:
   - build
   - solver
@@ -53,87 +51,62 @@ stages:
   tags:
     - cs
   before_script:
-    - echo "#!/bin/bash" >> job.sh
-    - echo "#SBATCH -A $PROJECT_ID" >> job.sh
-    - echo "#SBATCH -p p01-arm" >> job.sh
-    - echo "#SBATCH -N 2" >> job.sh
-    - echo "#SBATCH -n 96" >> job.sh
-    - echo ". env/modules.cs.it4i.a64fx" >> job.sh
-
-
-.snippets:
-  dummy: # build without any third-party library
-    - ./waf configure --skip-suitesparse --skip-mkl --skip-blas --skip-lapack
-    - ./waf -j8
-    - ./waf configure --skip-suitesparse --skip-mkl --skip-blas --skip-lapack --intwidth=64
-    - ./waf -j8
-  basic: # fast tests that includes calling of third-party libraries
-    - ./waf configure
-    - ./waf -j 8
-    - !reference [.basic, script]
-    - ./waf configure --intwidth=64
-    - ./waf -j 8
-    - !reference [.basic, script]
-  assembler:
-    - ./waf configure
-    - ./waf -j 8
-    - !reference [.assembler, script]
-    - ./waf configure --intwidth=64
-    - ./waf -j 8
-    - !reference [.assembler, script]
-  physical_solver: # only 32-bit int due to MKL-PDSS
-    - ./waf configure
-    - ./waf -j 8
-    - !reference [.physical_solver, script]
-  feti:
-    - ./waf configure
-    - ./waf -j 8
-    - !reference [.feti, script]
-    - ./waf configure --intwidth=64
-    - ./waf -j 8
-    - !reference [.feti, script]
+    - salloc -A $PROJECT_ID -p p01-arm -N 1 -n 48 -J $CI_JOB_ID --no-shell
+    - export SLURM_JOB_ID="$(squeue -o %A -h -t R -n $CI_JOB_ID)"
+    - sh env/suitesparse.clone.sh _a64fx
+    - cat tests/scripts/env/header.sh >> job.$CI_JOB_ID.sh
+    - cat tests/scripts/env/a64fx.cs.sh >> job.$CI_JOB_ID.sh
+  after_script:
+    - scancel "$(squeue -o %A -h -t R -n $CI_JOB_ID)"
 
 WS_DUMMY:
   extends: .ws_foss
   script:
-    - !reference [.snippets, dummy]
+    - sh tests/scripts/dummy.sh -j8
 
 WS_FOSS:
   extends: .ws_foss
   script:
-    - !reference [.snippets, basic]
+    - sh tests/scripts/basic.sh -j8
 
 WS_MKL:
   extends: .ws_mkl
   script:
-    - !reference [.snippets, basic]
+    - sh tests/scripts/basic.sh -j8
 
 WS_INTEL:
   extends: .ws_intel
   script:
-    - !reference [.snippets, basic]
+    - sh tests/scripts/basic.sh -j8
 
 WS_ASSEMBLER:
   extends: .ws_solver_intel
   script:
-    - !reference [.snippets, assembler]
+    - sh tests/scripts/assembler.sh -j8
 
 WS_PHYSICAL_SOLVER:
   extends: .ws_solver_intel
   script:
-    - !reference [.snippets, physical_solver]
+    - sh tests/scripts/physical_solver.sh -j8
 
 WS_FETI:
   extends: .ws_solver_foss
   script:
-    - !reference [.snippets, feti]
+    - sh tests/scripts/feti.sh -j8
 
 CS_DUMMY:
   extends: .cs_build
   script:
-    - echo "HELLO"
+    - cat tests/scripts/dummy.sh >> job.$CI_JOB_ID.sh
+    - srun sh job.$CI_JOB_ID.sh
 
-GITHUB:
+CS_FOSS:
+  extends: .cs_build
+  script:
+    - cat tests/scripts/basic.sh >> job.$CI_JOB_ID.sh
+    - srun sh job.$CI_JOB_ID.sh
+
+.GITHUB:
   stage: release
   script:
     - if ! git remote | grep release > /dev/null; then
