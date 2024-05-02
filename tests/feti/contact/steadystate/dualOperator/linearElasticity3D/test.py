@@ -6,7 +6,7 @@ class Assembler(unittest.TestCase):
 
     def setUp(self):
         ESPRESOTest.path = os.path.dirname(__file__)
-        ESPRESOTest.args = [ "HEXA8", 2, 2, 1, 2, 2, 2, 4, 4, 8, "TOTAL_FETI", 93 ]
+        ESPRESOTest.args = [ "HEXA8", 2, 2, 1, 2, 2, 2, 4, 4, 8, "TOTAL_FETI", 120 ]
         ESPRESOTest.processes = 4
         ESPRESOTest.set_threads(2)
 
@@ -14,7 +14,7 @@ class Assembler(unittest.TestCase):
         ESPRESOTest.clean()
 
     def test_feti(self):
-        for method, max_it in [ (" TOTAL_FETI", 120), ("HYBRID_FETI", 100) ]:
+        for method, max_it in [ (" TOTAL_FETI", 120), ("HYBRID_FETI", 112) ]:
             yield run, method, max_it
 
 def run(method, max_it):

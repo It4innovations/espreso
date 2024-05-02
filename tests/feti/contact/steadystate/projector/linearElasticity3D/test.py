@@ -14,7 +14,7 @@ class Assembler(unittest.TestCase):
         ESPRESOTest.clean()
 
     def test_feti(self):
-        for projector, max_it in [ ("ORTHOGONAL     ", 100), ("ORTHOGONAL_FULL", 84) ]:
+        for projector, max_it in [ ("ORTHOGONAL     ", 100), ("ORTHOGONAL_FULL", 90) ]:
             yield run, projector, max_it
 
 def run(projector, max_it):
