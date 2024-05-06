@@ -10,7 +10,6 @@ class ESPRESOTest:
     espreso = os.path.join(root, "build", "espreso")
     env = dict(os.environ)
 
-    mpirun = [ "mpirun", "-n" ]
     env["OMPI_MCA_rmaps_base_oversubscribe"] = "1"
     env["OMP_NUM_THREADS"] = "1"
     env["OMPI_MCA_rmaps_base_mapping_policy"] = "core"
@@ -68,7 +67,10 @@ class ESPRESOTest:
 
     @staticmethod
     def run():
-        program = copy.deepcopy(ESPRESOTest.mpirun)
+        if "PARALLEL_RUN" in os.environ:
+            program = [ os.environ["PARALLEL_RUN"], "-n" ]
+        else:
+            program = [ "mpirun", "-n" ]
         program.append(str(ESPRESOTest.processes))
         program.append(ESPRESOTest.espreso)
         program.extend([ "-c", os.path.join(ESPRESOTest.path, ESPRESOTest.ecf) ])

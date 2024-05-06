@@ -1,2 +1,0 @@
-export OMPI_MCA_rmaps_base_mapping_policy=L3cache
-export OMPI_MCA_hwloc_base_binding_policy=L3cache

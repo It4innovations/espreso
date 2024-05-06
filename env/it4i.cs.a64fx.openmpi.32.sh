@@ -4,9 +4,10 @@ ml OpenMPI/4.1.4-GCC-11.3.0
 ml OpenBLAS/0.3.20-GCC-11.3.0
 ml CMake/3.23.1-GCCcore-11.3.0
 
-. env/suitesparse.install.sh _a64fx
-. env/metis.install.sh _a64fx
-. env/parmetis.install.sh _a64fx
+. dependencies/install.suitesparse.sh gcc
+. dependencies/install.metis32.sh gcc
+. dependencies/install.parmetis32.sh mpicc
 
 export CXX=mpic++
 export BLAS_LIBRARIES=openblas
+export LAPACK_LIBRARIES=openblas

@@ -5,6 +5,8 @@ export LMOD_PKG=/apps/aarch64/all/Lmod/8.7.8/lmod/lmod
 export LMOD_CMD=/apps/aarch64/all/Lmod/8.7.8/lmod/lmod/libexec/lmod
 export LMOD_DIR=/apps/aarch64/all/Lmod/8.7.8/lmod/lmod/libexec
 
+# edited from /etc/profile.d/99-it4i_modules.sh
+
 if [ 1 ]; then
 
   # arch and flags

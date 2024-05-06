@@ -46,6 +46,41 @@ stages:
     refs:
       - schedules
 
+.WS_DUMMY:
+  extends: .ws_foss
+  script:
+    - sh tests/scripts/dummy.sh -j8
+
+.WS_FOSS:
+  extends: .ws_foss
+  script:
+    - sh tests/scripts/basic.sh -j8
+
+.WS_MKL:
+  extends: .ws_mkl
+  script:
+    - sh tests/scripts/basic.sh -j8
+
+.WS_INTEL:
+  extends: .ws_intel
+  script:
+    - sh tests/scripts/basic.sh -j8
+
+.WS_ASSEMBLER:
+  extends: .ws_solver_intel
+  script:
+    - sh tests/scripts/assembler.sh -j8
+
+.WS_PHYSICAL_SOLVER:
+  extends: .ws_solver_intel
+  script:
+    - sh tests/scripts/physical_solver.sh -j8
+
+.WS_FETI:
+  extends: .ws_solver_foss
+  script:
+    - sh tests/scripts/feti.sh -j8
+
 .cs_build:
   stage: build
   tags:
@@ -53,57 +88,29 @@ stages:
   before_script:
     - salloc -A $PROJECT_ID -p p01-arm -N 1 -n 48 -J $CI_JOB_ID --no-shell
     - export SLURM_JOB_ID="$(squeue -o %A -h -t R -n $CI_JOB_ID)"
-    - sh env/suitesparse.clone.sh _a64fx
-    - cat tests/scripts/env/header.sh >> job.$CI_JOB_ID.sh
-    - cat tests/scripts/env/a64fx.cs.sh >> job.$CI_JOB_ID.sh
+    - sh dependencies/clone.all.sh
+    - export PATH=/mnt/proj3/open-28-64/gitlab-runner/aarch64/nose2/bin/:$PATH
+    - echo "#!/bin/bash" >> job.$CI_JOB_ID.sh
+    - echo ". env/it4i.cs.a64fx.modulepath.sh" >> job.$CI_JOB_ID.sh
   after_script:
     - scancel "$(squeue -o %A -h -t R -n $CI_JOB_ID)"
 
-WS_DUMMY:
-  extends: .ws_foss
-  script:
-    - sh tests/scripts/dummy.sh -j8
-
-WS_FOSS:
-  extends: .ws_foss
-  script:
-    - sh tests/scripts/basic.sh -j8
-
-WS_MKL:
-  extends: .ws_mkl
-  script:
-    - sh tests/scripts/basic.sh -j8
-
-WS_INTEL:
-  extends: .ws_intel
-  script:
-    - sh tests/scripts/basic.sh -j8
-
-WS_ASSEMBLER:
-  extends: .ws_solver_intel
-  script:
-    - sh tests/scripts/assembler.sh -j8
-
-WS_PHYSICAL_SOLVER:
-  extends: .ws_solver_intel
-  script:
-    - sh tests/scripts/physical_solver.sh -j8
-
-WS_FETI:
-  extends: .ws_solver_foss
-  script:
-    - sh tests/scripts/feti.sh -j8
-
-CS_DUMMY:
+CS_FOSS32:
   extends: .cs_build
   script:
-    - cat tests/scripts/dummy.sh >> job.$CI_JOB_ID.sh
+    - echo ". env/it4i.cs.a64fx.openmpi.32.sh" >> job.$CI_JOB_ID.sh
+    - echo "./waf configure" >> job.$CI_JOB_ID.sh
+    - echo "./waf" >> job.$CI_JOB_ID.sh
+    - echo "sh tests/run.basic.sh" >> job.$CI_JOB_ID.sh
     - srun sh job.$CI_JOB_ID.sh
 
-CS_FOSS:
+CS_FOSS64:
   extends: .cs_build
   script:
-    - cat tests/scripts/basic.sh >> job.$CI_JOB_ID.sh
+    - echo ". env/it4i.cs.a64fx.openmpi.64.sh" >> job.$CI_JOB_ID.sh
+    - echo "./waf configure --intwidth=64" >> job.$CI_JOB_ID.sh
+    - echo "./waf" >> job.$CI_JOB_ID.sh
+    - echo "sh tests/run.basic.sh" >> job.$CI_JOB_ID.sh
     - srun sh job.$CI_JOB_ID.sh
 
 .GITHUB:
