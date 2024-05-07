@@ -45,11 +45,11 @@ public:
 
 	Acoustic(Acoustic *previous, AcousticConfiguration &settings, AcousticLoadStepConfiguration &configuration);
 
-	void analyze();
+	void analyze(const step::Step &step);
 
 	void connect(Matrix_Base<double> *K, Matrix_Base<double> *M, Matrix_Base<double> *C, Vector_Base<double> *ref, Vector_Base<double> *imf, Vector_Base<double> *renf, Vector_Base<double> *imnf, Vector_Base<double> *dirichlet);
-	void evaluate(step::Frequency &frequency, Matrix_Base<double> *K, Matrix_Base<double> *M, Matrix_Base<double> *C, Vector_Base<double> *ref, Vector_Base<double> *imf, Vector_Base<double> *renf, Vector_Base<double> *imnf, Vector_Base<double> *dirichlet);
-	void updateSolution(Vector_Base<double> *rex, Vector_Base<double> *imx);
+	void evaluate(const step::Step &step, step::Frequency &frequency, Matrix_Base<double> *K, Matrix_Base<double> *M, Matrix_Base<double> *C, Vector_Base<double> *ref, Vector_Base<double> *imf, Vector_Base<double> *renf, Vector_Base<double> *imnf, Vector_Base<double> *dirichlet);
+	void updateSolution(const step::Step &step, Vector_Base<double> *rex, Vector_Base<double> *imx);
 
 	AcousticConfiguration &settings;
 	AcousticLoadStepConfiguration &configuration;
@@ -123,8 +123,8 @@ public:
 		static NodeData *pressure, *initialPressure;
 	};
 protected:
-	void run(SubKernel::Action action, size_t interval) { }
-	void run(SubKernel::Action action, size_t region, size_t interval) { }
+	void run(const step::Step &step, SubKernel::Action action, size_t interval) { }
+	void run(const step::Step &step, SubKernel::Action action, size_t region, size_t interval) { }
 
 	void initParameters();
 };

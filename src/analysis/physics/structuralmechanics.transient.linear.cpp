@@ -56,7 +56,7 @@ void StructuralMechanicsTransientLinear::analyze(step::Step &step)
     eslog::info(" ============================================================================================= \n");
 
     step.type = step::TYPE::TIME;
-    assembler.analyze();
+    assembler.analyze(step);
     info::mesh->output->updateMonitors(step);
 
     switch (configuration.solver) {
@@ -185,7 +185,7 @@ void StructuralMechanicsTransientLinear::run(step::Step &step)
 
         x->copy(solver->x);
         storeSolution(step);
-        assembler.updateSolution(x);
+        assembler.updateSolution(step, x);
         info::mesh->output->updateSolution(step, time);
 
         dU->copy(solver->x);

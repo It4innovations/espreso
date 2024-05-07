@@ -243,7 +243,7 @@ void setElementKernel(HeatTransferElementOperators &subkernels, SubKernel::Actio
 }
 
 template <Element::CODE code, size_t nodes, size_t gps, size_t ndim, size_t edim>
-void runElementKernel(const HeatTransferElementOperators &subkernels, SubKernel::Action action)
+void runElementKernel(const step::Step &step, const HeatTransferElementOperators &subkernels, SubKernel::Action action)
 {
 	typedef HeatTransferElement<nodes, gps, ndim, edim> Element; Element element;
 

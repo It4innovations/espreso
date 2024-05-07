@@ -20,7 +20,7 @@ struct MatrixElasticity: SubKernel {
 	  rotated(false)
 	{
 		isconst = false;
-		action = SubKernel::ASSEMBLE | SubKernel::REASSEMBLE | SubKernel::ITERATION;
+		action = SubKernel::ASSEMBLE | SubKernel::REASSEMBLE;
 	}
 
 	void activate(StructuralMechanicsGlobalSettings::ELEMENT_BEHAVIOUR behaviour, LinearElasticPropertiesConfiguration::MODEL model, bool rotated)

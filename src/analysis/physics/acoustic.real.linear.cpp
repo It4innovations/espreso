@@ -28,7 +28,7 @@ void AcousticRealLinear::analyze(step::Step &step)
 	eslog::info(" ============================================================================================= \n");
 
 	step.type = step::TYPE::FREQUENCY;
-	assembler.analyze();
+	assembler.analyze(step);
 	info::mesh->output->updateMonitors(step);
 }
 
@@ -84,7 +84,7 @@ void AcousticRealLinear::run(step::Step &step)
 //		eslog::info(" = LOAD STEP %2d                                                         FREQUENCY %10.4f = \n", step::step.loadstep + 1, frequency.current);
 		eslog::info(" = ----------------------------------------------------------------------------------------- = \n");
 
-		assembler.evaluate(frequency, K, M, C, re.f, im.f, nullptr, nullptr, re.dirichlet);
+		assembler.evaluate(step, frequency, K, M, C, re.f, im.f, nullptr, nullptr, re.dirichlet);
 		storeSystem(step);
 
 		// A = [
@@ -119,7 +119,7 @@ void AcousticRealLinear::run(step::Step &step)
 		double solution = eslog::time();
 //		re.x->copySliced(system->solver.x, 0, 1, 2);
 //		im.x->copySliced(system->solver.x, 1, 1, 2);
-		assembler.updateSolution(re.x, im.x);
+		assembler.updateSolution(step, re.x, im.x);
 		info::mesh->output->updateSolution(step, frequency);
 		eslog::info("       = PROCESS SOLUTION                                                   %8.3f s = \n", eslog::time() - solution);
 		eslog::info("       = ----------------------------------------------------------------------------- = \n");

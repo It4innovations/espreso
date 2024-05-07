@@ -12,8 +12,6 @@ struct Integration: SubKernel {
 		isconst = false;
 		action = SubKernel::ASSEMBLE | SubKernel::REASSEMBLE | SubKernel::ITERATION | SubKernel::SOLUTION;
 	}
-
-
 };
 
 
@@ -43,16 +41,16 @@ struct IntegrationKernel<nodes, 2, 2>: Integration {
 		element.det = jacobian0 * jacobian3 - jacobian1 * jacobian2;
 
 		SIMD detJx = ones() / element.det;
-		SIMD inv0 =  detJx * jacobian3;
-		SIMD inv1 = -detJx * jacobian1;
-		SIMD inv2 = -detJx * jacobian2;
-		SIMD inv3 =  detJx * jacobian0;
+		element.invJ[0] =  detJx * jacobian3;
+		element.invJ[1] = -detJx * jacobian1;
+		element.invJ[2] = -detJx * jacobian2;
+		element.invJ[3] =  detJx * jacobian0;
 
 		for (size_t n = 0; n < nodes; ++n) {
 			SIMD dNX = load1(element.dN[gp][n][0]);
 			SIMD dNY = load1(element.dN[gp][n][1]);
-			element.dND[n][0] = inv0 * dNX + inv1 * dNY;
-			element.dND[n][1] = inv2 * dNX + inv3 * dNY;
+			element.dND[n][0] = element.invJ[0] * dNX + element.invJ[1] * dNY;
+			element.dND[n][1] = element.invJ[2] * dNX + element.invJ[3] * dNY;
 		}
 	}
 };
@@ -95,23 +93,23 @@ struct IntegrationKernel<nodes, 3, 3>: Integration {
 				- jacobian0 * jacobian5 * jacobian7;
 
 		SIMD detJx = ones() / element.det;
-		SIMD inv0 = detJx * ( jacobian8 * jacobian4 - jacobian7 * jacobian5);
-		SIMD inv1 = detJx * (-jacobian8 * jacobian1 + jacobian7 * jacobian2);
-		SIMD inv2 = detJx * ( jacobian5 * jacobian1 - jacobian4 * jacobian2);
-		SIMD inv3 = detJx * (-jacobian8 * jacobian3 + jacobian6 * jacobian5);
-		SIMD inv4 = detJx * ( jacobian8 * jacobian0 - jacobian6 * jacobian2);
-		SIMD inv5 = detJx * (-jacobian5 * jacobian0 + jacobian3 * jacobian2);
-		SIMD inv6 = detJx * ( jacobian7 * jacobian3 - jacobian6 * jacobian4);
-		SIMD inv7 = detJx * (-jacobian7 * jacobian0 + jacobian6 * jacobian1);
-		SIMD inv8 = detJx * ( jacobian4 * jacobian0 - jacobian3 * jacobian1);
+		element.invJ[0] = detJx * ( jacobian8 * jacobian4 - jacobian7 * jacobian5);
+		element.invJ[1] = detJx * (-jacobian8 * jacobian1 + jacobian7 * jacobian2);
+		element.invJ[2] = detJx * ( jacobian5 * jacobian1 - jacobian4 * jacobian2);
+		element.invJ[3] = detJx * (-jacobian8 * jacobian3 + jacobian6 * jacobian5);
+		element.invJ[4] = detJx * ( jacobian8 * jacobian0 - jacobian6 * jacobian2);
+		element.invJ[5] = detJx * (-jacobian5 * jacobian0 + jacobian3 * jacobian2);
+		element.invJ[6] = detJx * ( jacobian7 * jacobian3 - jacobian6 * jacobian4);
+		element.invJ[7] = detJx * (-jacobian7 * jacobian0 + jacobian6 * jacobian1);
+		element.invJ[8] = detJx * ( jacobian4 * jacobian0 - jacobian3 * jacobian1);
 
 		for (size_t n = 0; n < nodes; ++n) {
 			SIMD dNX = load1(element.dN[gp][n][0]);
 			SIMD dNY = load1(element.dN[gp][n][1]);
 			SIMD dNZ = load1(element.dN[gp][n][2]);
-			element.dND[n][0] = inv0 * dNX + inv1 * dNY + inv2 * dNZ;
-			element.dND[n][1] = inv3 * dNX + inv4 * dNY + inv5 * dNZ;
-			element.dND[n][2] = inv6 * dNX + inv7 * dNY + inv8 * dNZ;
+			element.dND[n][0] = element.invJ[0] * dNX + element.invJ[1] * dNY + element.invJ[2] * dNZ;
+			element.dND[n][1] = element.invJ[3] * dNX + element.invJ[4] * dNY + element.invJ[5] * dNZ;
+			element.dND[n][2] = element.invJ[6] * dNX + element.invJ[7] * dNY + element.invJ[8] * dNZ;
 		}
 	}
 };

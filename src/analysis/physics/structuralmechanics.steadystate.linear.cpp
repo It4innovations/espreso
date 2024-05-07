@@ -41,7 +41,7 @@ void StructuralMechanicsSteadyStateLinear::analyze(step::Step &step)
 	eslog::info(" ============================================================================================= \n");
 
 	step.type = step::TYPE::TIME;
-	assembler.analyze();
+	assembler.analyze(step);
 	info::mesh->output->updateMonitors(step);
 
 	switch (configuration.solver) {
@@ -125,7 +125,7 @@ void StructuralMechanicsSteadyStateLinear::run(step::Step &step)
 	double solution = eslog::time();
 	x->copy(solver->x);
 	storeSolution(step);
-	assembler.updateSolution(x);
+	assembler.updateSolution(step, x);
 	info::mesh->output->updateSolution(step, time);
 	eslog::info("       = PROCESS SOLUTION                                                   %8.3f s = \n", eslog::time() - solution);
 	eslog::info("       = ----------------------------------------------------------------------------- = \n");

@@ -5,7 +5,7 @@
 namespace espreso {
 
 template <>
-void StructuralMechanics::runBoundary<Element::CODE::LINE2>(SubKernel::Action action, size_t region, size_t interval)
+void StructuralMechanics::runBoundary<Element::CODE::LINE2>(const step::Step &step, SubKernel::Action action, size_t region, size_t interval)
 {
 	switch (info::mesh->dimension) {
 	case 2:

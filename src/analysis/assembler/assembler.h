@@ -4,6 +4,7 @@
 
 #include "general/subkernel.h"
 #include "basis/evaluator/evaluator.h"
+#include "esinfo/stepinfo.h"
 #include "math/primitives/vector_sparse.h"
 
 #include <vector>
@@ -40,10 +41,10 @@ public:
     PhysicsConfiguration &settings;
 
 protected:
-    void assemble(SubKernel::Action action);
-    virtual void run(SubKernel::Action action, size_t interval) =0;
-    virtual void run(SubKernel::Action action, size_t region, size_t interval) =0;
-    virtual void runBEM(SubKernel::Action action, size_t domain, double *BETI)
+    void assemble(const step::Step &step, SubKernel::Action action);
+    virtual void run(const step::Step &step, SubKernel::Action action, size_t interval) =0;
+    virtual void run(const step::Step &step, SubKernel::Action action, size_t region, size_t interval) =0;
+    virtual void runBEM(const step::Step &step, SubKernel::Action action, size_t domain, double *BETI)
     {
         eslog::error("implement BEM assembler\n");
     }

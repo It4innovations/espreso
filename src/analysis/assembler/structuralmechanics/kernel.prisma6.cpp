@@ -5,7 +5,7 @@
 namespace espreso {
 
 template <>
-void StructuralMechanics::runElement<Element::CODE::PRISMA6>(SubKernel::Action action, size_t interval)
+void StructuralMechanics::runElement<Element::CODE::PRISMA6>(const step::Step &step, SubKernel::Action action, size_t interval)
 {
 	switch (action) {
 	case SubKernel::Action::PREPROCESS:
@@ -14,7 +14,7 @@ void StructuralMechanics::runElement<Element::CODE::PRISMA6>(SubKernel::Action a
 	case SubKernel::Action::REASSEMBLE:
 	case SubKernel::Action::ITERATION:
 	case SubKernel::Action::SOLUTION:
-		runElementKernel<Element::CODE::PRISMA6, 6, StructuralMechanicsGPC::PRISMA6, 3, 3>(subkernels[interval], action); break;
+		runElementKernel<Element::CODE::PRISMA6, 6, StructuralMechanicsGPC::PRISMA6, 3, 3>(step, subkernels[interval], action); break;
 	default: break;
 	}
 }

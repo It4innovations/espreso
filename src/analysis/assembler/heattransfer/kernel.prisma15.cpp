@@ -5,7 +5,7 @@
 namespace espreso {
 
 template <>
-void HeatTransfer::runElement<Element::CODE::PRISMA15>(SubKernel::Action action, size_t interval)
+void HeatTransfer::runElement<Element::CODE::PRISMA15>(const step::Step &step, SubKernel::Action action, size_t interval)
 {
 	switch (action) {
 	case SubKernel::Action::PREPROCESS:
@@ -14,7 +14,7 @@ void HeatTransfer::runElement<Element::CODE::PRISMA15>(SubKernel::Action action,
 	case SubKernel::Action::REASSEMBLE:
 	case SubKernel::Action::ITERATION:
 	case SubKernel::Action::SOLUTION:
-		runElementKernel<Element::CODE::PRISMA15, 15, HeatTransferGPC::PRISMA15, 3, 3>(subkernels[interval], action); break;
+		runElementKernel<Element::CODE::PRISMA15, 15, HeatTransferGPC::PRISMA15, 3, 3>(step, subkernels[interval], action); break;
 	default: break;
 	}
 }

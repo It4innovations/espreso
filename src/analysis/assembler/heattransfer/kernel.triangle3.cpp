@@ -5,7 +5,7 @@
 namespace espreso {
 
 template <>
-void HeatTransfer::runElement<Element::CODE::TRIANGLE6>(SubKernel::Action action, size_t interval)
+void HeatTransfer::runElement<Element::CODE::TRIANGLE6>(const step::Step &step, SubKernel::Action action, size_t interval)
 {
 	switch (action) {
 	case SubKernel::Action::PREPROCESS:
@@ -14,13 +14,13 @@ void HeatTransfer::runElement<Element::CODE::TRIANGLE6>(SubKernel::Action action
 	case SubKernel::Action::REASSEMBLE:
 	case SubKernel::Action::ITERATION:
 	case SubKernel::Action::SOLUTION:
-		runElementKernel<Element::CODE::TRIANGLE6, 6, HeatTransferGPC::TRIANGLE6, 2, 2>(subkernels[interval], action); break;
+		runElementKernel<Element::CODE::TRIANGLE6, 6, HeatTransferGPC::TRIANGLE6, 2, 2>(step, subkernels[interval], action); break;
 	default: break;
 	}
 }
 
 template <>
-void HeatTransfer::runBoundary<Element::CODE::TRIANGLE6>(SubKernel::Action action, size_t region, size_t interval)
+void HeatTransfer::runBoundary<Element::CODE::TRIANGLE6>(const step::Step &step, SubKernel::Action action, size_t region, size_t interval)
 {
 	switch (action) {
 	case SubKernel::Action::PREPROCESS:

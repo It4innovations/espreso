@@ -97,7 +97,7 @@ StructuralMechanics::StructuralMechanics(StructuralMechanics *previous, Structur
     GaussPoints<Element::CODE::HEXA20   , 20, StructuralMechanicsGPC::HEXA20   , 3>::set();
 }
 
-void StructuralMechanics::analyze()
+void StructuralMechanics::analyze(const step::Step &step)
 {
     constant.K = constant.M = constant.f = constant.nf = constant.dirichlet = false;
 
@@ -343,9 +343,17 @@ void StructuralMechanics::analyze()
             subkernels[i].thickness.activate(getExpression(i, settings.thickness), info::mesh->elements->nodes->cbegin() + ebegin, info::mesh->elements->nodes->cbegin() + eend, Results::thickness->data.data());
         }
 
+        if (configuration.large_displacement) {
+            subkernels[i].displacement.activate(info::mesh->elements->nodes->cbegin() + ebegin, info::mesh->elements->nodes->cbegin() + eend, Results::displacement->data.data());
+            subkernels[i].integrationDisplaced.activate();
+            subkernels[i].elasticityLargeDisplacement.activate();
+            subkernels[i].KLD.activate();
+        }
+
         subkernels[i].coordinates.activate(info::mesh->elements->nodes->cbegin() + ebegin, info::mesh->elements->nodes->cbegin() + eend, !cartesian || gpcoo);
         subkernels[i].elasticity.activate(settings.element_behaviour, &mat->linear_elastic_properties, &mat->coordinate_system);
         if (mat->material_model == MaterialBaseConfiguration::MATERIAL_MODEL::PLASTICITY) {
+            subkernels[i].smallStrainTensor.activate();
             subkernels[i].plasticity.activate(i, settings.element_behaviour, &mat->plasticity_properties, Results::isPlastized);
             subkernels[i].displacement.activate(info::mesh->elements->nodes->cbegin() + ebegin, info::mesh->elements->nodes->cbegin() + eend, Results::displacement->data.data());
         }
@@ -397,7 +405,7 @@ void StructuralMechanics::analyze()
         }
     }
 
-    assemble(SubKernel::PREPROCESS);
+    assemble(step, SubKernel::PREPROCESS);
     size_t esize = 0;
     std::vector<double> volume(subkernels.size()), surface(boundary.size());
     for (size_t i = 0; i < subkernels.size(); ++i) {
@@ -536,7 +544,7 @@ void StructuralMechanics::evaluate(const step::Step &step, const step::Time &tim
         }
     }
     bool run = reset(K, constant.K) | reset(M, constant.M) | reset(f, constant.f) | reset(nf, constant.nf) | reset(dirichlet, constant.dirichlet);
-    if (run) { assemble(SubKernel::ASSEMBLE); }
+    if (run) { assemble(step, SubKernel::ASSEMBLE); }
     update(K, constant.K); update(M, constant.M); update(f, constant.f); update(nf, constant.nf); update(dirichlet, constant.dirichlet);
 }
 
@@ -574,42 +582,42 @@ void StructuralMechanics::evaluate(const step::Step &step, const step::Frequency
     }
 
     bool run = reset(K, constant.K) | reset(M, constant.M) | reset(C, constant.C) | reset(ref, constant.f) | reset(imf, constant.f) | reset(renf, constant.nf) | reset(imnf, constant.nf) | reset(reDirichlet, constant.dirichlet) | reset(imDirichlet, constant.dirichlet);
-    if (run) { assemble(SubKernel::ASSEMBLE); }
+    if (run) { assemble(step, SubKernel::ASSEMBLE); }
     update(K, constant.K); update(M, constant.M); update(C, constant.C); update(ref, constant.f); update(imf, constant.f); update(renf, constant.nf); update(imnf, constant.nf); update(reDirichlet, constant.dirichlet); update(imDirichlet, constant.dirichlet);
 }
 
-void StructuralMechanics::run(SubKernel::Action action, size_t interval)
+void StructuralMechanics::run(const step::Step &step, SubKernel::Action action, size_t interval)
 {
     switch (subkernels[interval].code) {
-    case static_cast<size_t>(Element::CODE::TRIANGLE3): runElement<Element::CODE::TRIANGLE3>(action, interval); break;
-    case static_cast<size_t>(Element::CODE::TRIANGLE6): runElement<Element::CODE::TRIANGLE6>(action, interval); break;
-    case static_cast<size_t>(Element::CODE::SQUARE4  ): runElement<Element::CODE::SQUARE4  >(action, interval); break;
-    case static_cast<size_t>(Element::CODE::SQUARE8  ): runElement<Element::CODE::SQUARE8  >(action, interval); break;
-    case static_cast<size_t>(Element::CODE::TETRA4   ): runElement<Element::CODE::TETRA4   >(action, interval); break;
-    case static_cast<size_t>(Element::CODE::TETRA10  ): runElement<Element::CODE::TETRA10  >(action, interval); break;
-    case static_cast<size_t>(Element::CODE::PYRAMID5 ): runElement<Element::CODE::PYRAMID5 >(action, interval); break;
-    case static_cast<size_t>(Element::CODE::PYRAMID13): runElement<Element::CODE::PYRAMID13>(action, interval); break;
-    case static_cast<size_t>(Element::CODE::PRISMA6  ): runElement<Element::CODE::PRISMA6  >(action, interval); break;
-    case static_cast<size_t>(Element::CODE::PRISMA15 ): runElement<Element::CODE::PRISMA15 >(action, interval); break;
-    case static_cast<size_t>(Element::CODE::HEXA8    ): runElement<Element::CODE::HEXA8    >(action, interval); break;
-    case static_cast<size_t>(Element::CODE::HEXA20   ): runElement<Element::CODE::HEXA20   >(action, interval); break;
+    case static_cast<size_t>(Element::CODE::TRIANGLE3): runElement<Element::CODE::TRIANGLE3>(step, action, interval); break;
+    case static_cast<size_t>(Element::CODE::TRIANGLE6): runElement<Element::CODE::TRIANGLE6>(step, action, interval); break;
+    case static_cast<size_t>(Element::CODE::SQUARE4  ): runElement<Element::CODE::SQUARE4  >(step, action, interval); break;
+    case static_cast<size_t>(Element::CODE::SQUARE8  ): runElement<Element::CODE::SQUARE8  >(step, action, interval); break;
+    case static_cast<size_t>(Element::CODE::TETRA4   ): runElement<Element::CODE::TETRA4   >(step, action, interval); break;
+    case static_cast<size_t>(Element::CODE::TETRA10  ): runElement<Element::CODE::TETRA10  >(step, action, interval); break;
+    case static_cast<size_t>(Element::CODE::PYRAMID5 ): runElement<Element::CODE::PYRAMID5 >(step, action, interval); break;
+    case static_cast<size_t>(Element::CODE::PYRAMID13): runElement<Element::CODE::PYRAMID13>(step, action, interval); break;
+    case static_cast<size_t>(Element::CODE::PRISMA6  ): runElement<Element::CODE::PRISMA6  >(step, action, interval); break;
+    case static_cast<size_t>(Element::CODE::PRISMA15 ): runElement<Element::CODE::PRISMA15 >(step, action, interval); break;
+    case static_cast<size_t>(Element::CODE::HEXA8    ): runElement<Element::CODE::HEXA8    >(step, action, interval); break;
+    case static_cast<size_t>(Element::CODE::HEXA20   ): runElement<Element::CODE::HEXA20   >(step, action, interval); break;
     }
 }
 
-void StructuralMechanics::run(SubKernel::Action action, size_t region, size_t interval)
+void StructuralMechanics::run(const step::Step &step, SubKernel::Action action, size_t region, size_t interval)
 {
     switch (boundary[region][interval].code) {
-    case static_cast<size_t>(Element::CODE::POINT1   ): runBoundary<Element::CODE::POINT1   >(action, region, interval); break;
-    case static_cast<size_t>(Element::CODE::LINE2    ): runBoundary<Element::CODE::LINE2    >(action, region, interval); break;
-    case static_cast<size_t>(Element::CODE::LINE3    ): runBoundary<Element::CODE::LINE3    >(action, region, interval); break;
-    case static_cast<size_t>(Element::CODE::TRIANGLE3): runBoundary<Element::CODE::TRIANGLE3>(action, region, interval); break;
-    case static_cast<size_t>(Element::CODE::TRIANGLE6): runBoundary<Element::CODE::TRIANGLE6>(action, region, interval); break;
-    case static_cast<size_t>(Element::CODE::SQUARE4  ): runBoundary<Element::CODE::SQUARE4  >(action, region, interval); break;
-    case static_cast<size_t>(Element::CODE::SQUARE8  ): runBoundary<Element::CODE::SQUARE8  >(action, region, interval); break;
+    case static_cast<size_t>(Element::CODE::POINT1   ): runBoundary<Element::CODE::POINT1   >(step, action, region, interval); break;
+    case static_cast<size_t>(Element::CODE::LINE2    ): runBoundary<Element::CODE::LINE2    >(step, action, region, interval); break;
+    case static_cast<size_t>(Element::CODE::LINE3    ): runBoundary<Element::CODE::LINE3    >(step, action, region, interval); break;
+    case static_cast<size_t>(Element::CODE::TRIANGLE3): runBoundary<Element::CODE::TRIANGLE3>(step, action, region, interval); break;
+    case static_cast<size_t>(Element::CODE::TRIANGLE6): runBoundary<Element::CODE::TRIANGLE6>(step, action, region, interval); break;
+    case static_cast<size_t>(Element::CODE::SQUARE4  ): runBoundary<Element::CODE::SQUARE4  >(step, action, region, interval); break;
+    case static_cast<size_t>(Element::CODE::SQUARE8  ): runBoundary<Element::CODE::SQUARE8  >(step, action, region, interval); break;
     }
 }
 
-void StructuralMechanics::runBEM(SubKernel::Action action, size_t domain, double *BETI)
+void StructuralMechanics::runBEM(const step::Step &step, SubKernel::Action action, size_t domain, double *BETI)
 {
     if (action == SubKernel::Action::ASSEMBLE) {
         esint np = info::mesh->domainsSurface->dnodes[domain].size();
@@ -633,7 +641,7 @@ void StructuralMechanics::runBEM(SubKernel::Action action, size_t domain, double
     }
 }
 
-void StructuralMechanics::updateSolution(Vector_Base<double> *x)
+void StructuralMechanics::updateSolution(const step::Step &step, Vector_Base<double> *x)
 {
     Vector_FETI<Vector_Dense, double> *xBEM = dynamic_cast<Vector_FETI<Vector_Dense, double>*>(x);
     #pragma omp parallel for
@@ -662,20 +670,20 @@ void StructuralMechanics::updateSolution(Vector_Base<double> *x)
         }
     }
     x->storeTo(Results::displacement->data);
-    assemble(SubKernel::SOLUTION);
+    assemble(step, SubKernel::SOLUTION);
 }
 
-void StructuralMechanics::updateSolution(Vector_Base<double> *rex, Vector_Base<double> *imx)
+void StructuralMechanics::updateSolution(const step::Step &step, Vector_Base<double> *rex, Vector_Base<double> *imx)
 {
     rex->storeTo(Results::cosDisplacement->data);
     imx->storeTo(Results::sinDisplacement->data);
-    assemble(SubKernel::SOLUTION);
+    assemble(step, SubKernel::SOLUTION);
 }
 
-void StructuralMechanics::nextIteration(Vector_Base<double> *x)
+void StructuralMechanics::nextIteration(const step::Step &step, Vector_Base<double> *x)
 {
     x->storeTo(Results::displacement->data);
-    assemble(SubKernel::ITERATION);
+    assemble(step, SubKernel::ITERATION);
 }
 
 }

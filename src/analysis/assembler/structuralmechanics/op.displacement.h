@@ -17,7 +17,7 @@ struct Displacement: SubKernel {
 	  source(nullptr)
 	{
 		isconst = false;
-		action = SubKernel::ITERATION | SubKernel::SOLUTION;
+		action = SubKernel::ASSEMBLE | SubKernel::REASSEMBLE | SubKernel::ITERATION | SubKernel::SOLUTION;
 	}
 
 	void activate(serializededata<esint, esint>::const_iterator enodes, serializededata<esint, esint>::const_iterator end, const double * source)

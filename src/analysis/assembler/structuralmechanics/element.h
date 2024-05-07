@@ -68,8 +68,12 @@ template <size_t nodes, size_t gps, size_t ndim, size_t edim> struct StructuralM
 
 	alignas(SIMD::size * sizeof(double)) SIMD displacement[nodes][ndim];
 
-	alignas(SIMD::size * sizeof(double)) SIMD smallStrainTensor[ndim * (ndim - 1)];
+	alignas(SIMD::size * sizeof(double)) SIMD smallStrainTensor[ndim * (ndim - 1)]; // dND * displacement
 	alignas(SIMD::size * sizeof(double)) SIMD sigma            [ndim * (ndim - 1)]; // elasticity * smallStrainTensor
+
+	// large displacement
+	alignas(SIMD::size * sizeof(double)) SIMD F   [ndim * ndim];       // dN * (coordinates + displacement)
+	alignas(SIMD::size * sizeof(double)) SIMD sVec[ndim * (ndim - 1)]; // elasticity * smallStrainTensor
 
 	StructuralMechanicsElement()
 	{

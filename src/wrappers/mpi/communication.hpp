@@ -4,6 +4,7 @@
 
 #include <algorithm>
 #include <cmath>
+#include <complex>
 
 namespace espreso {
 
@@ -53,6 +54,12 @@ template <>
 inline MPIType MPITools::getType<double>()
 {
 	return { MPI_DOUBLE, };
+}
+
+template <>
+inline MPIType MPITools::getType<std::complex<double> >()
+{
+    return { MPI_DOUBLE_COMPLEX, };
 }
 
 // WARNING: be care of this (MPI can divide long message in arbitrary position)

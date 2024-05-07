@@ -42,7 +42,7 @@ void HeatSteadyStateLinear::analyze(step::Step &step)
 	eslog::info(" ============================================================================================= \n");
 
 	step.type = step::TYPE::TIME;
-	assembler.analyze();
+	assembler.analyze(step);
 	info::mesh->output->updateMonitors(step);
 
 	switch (configuration.solver) {
@@ -105,7 +105,7 @@ void HeatSteadyStateLinear::run(step::Step &step)
 	eslog::info(" = LOAD STEP %2d                                                              TIME %10.4f = \n", step.loadstep + 1, time.current);
 	eslog::info(" = ----------------------------------------------------------------------------------------- = \n");
 	double start = eslog::time();
-	assembler.evaluate(time, K, nullptr, f, nullptr, dirichlet);
+	assembler.evaluate(step, time, K, nullptr, f, nullptr, dirichlet);
 	eslog::checkpointln("SIMULATION: PHYSICS ASSEMBLED");
 	storeSystem(step);
 
@@ -125,7 +125,7 @@ void HeatSteadyStateLinear::run(step::Step &step)
 
 	x->copy(solver->x);
 	storeSolution(step);
-	assembler.updateSolution(x);
+	assembler.updateSolution(step, x);
 	info::mesh->output->updateSolution(step, time);
 	eslog::info("       = PROCESS SOLUTION                                                   %8.3f s = \n", eslog::time() - solution);
 	eslog::info("       = ----------------------------------------------------------------------------- = \n");

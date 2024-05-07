@@ -45,7 +45,7 @@ void HeatSteadyStateNonLinear::analyze(step::Step &step)
 	eslog::info(" ============================================================================================= \n");
 
 	step.type = step::TYPE::TIME;
-	assembler.analyze();
+	assembler.analyze(step);
 	info::mesh->output->updateMonitors(step);
 
 	switch (configuration.solver) {
@@ -127,7 +127,7 @@ void HeatSteadyStateNonLinear::run(step::Step &step)
 
 	double start = eslog::time();
 	step.iteration = 0;
-	assembler.evaluate(time, K, nullptr, f, nullptr, dirichlet);
+	assembler.evaluate(step, time, K, nullptr, f, nullptr, dirichlet);
 	storeSystem(step);
 	solver->A->copy(K);
 	solver->A->updated = true;
@@ -142,7 +142,7 @@ void HeatSteadyStateNonLinear::run(step::Step &step)
 	double solution = eslog::time();
 	x->copy(solver->x);
 	storeSolution(step);
-	assembler.updateSolution(x);
+	assembler.updateSolution(step, x);
 	eslog::info("      == PROCESS SOLUTION                                                   %8.3f s == \n", eslog::time() - solution);
 	eslog::info("      == ----------------------------------------------------------------------------- == \n");
 
@@ -152,7 +152,7 @@ void HeatSteadyStateNonLinear::run(step::Step &step)
 
 		start = eslog::time();
 		U->copy(solver->x);
-		assembler.evaluate(time, K, nullptr, f, R, dirichlet);
+		assembler.evaluate(step, time, K, nullptr, f, R, dirichlet);
 		storeSystem(step);
 		solver->A->copy(K);
 		solver->A->updated = true;
@@ -193,7 +193,7 @@ bool HeatSteadyStateNonLinear::checkTemp(step::Step &step)
 		eslog::info("      == TEMPERATURE NORM, CRITERIA [CONVERGED]              %.5e / %.5e == \n", solutionNumerator, solutionDenominator * configuration.nonlinear_solver.requested_first_residual);
 	}
 
-	assembler.updateSolution(x);
+	assembler.updateSolution(step, x);
 	return !(norm > configuration.nonlinear_solver.requested_first_residual);
 }
 

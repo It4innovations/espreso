@@ -37,7 +37,7 @@ void Acoustic::initParameters()
 	}
 }
 
-void Acoustic::analyze()
+void Acoustic::analyze(const step::Step &step)
 {
 	double start = eslog::time();
 	eslog::info("\n ============================================================================================= \n");
@@ -143,12 +143,12 @@ void Acoustic::connect(Matrix_Base<double> *K, Matrix_Base<double> *M, Matrix_Ba
 
 }
 
-void Acoustic::evaluate(step::Frequency &frequency, Matrix_Base<double> *K, Matrix_Base<double> *M, Matrix_Base<double> *C, Vector_Base<double> *ref, Vector_Base<double> *imf, Vector_Base<double> *renf, Vector_Base<double> *imnf, Vector_Base<double> *dirichlet)
+void Acoustic::evaluate(const step::Step &step, step::Frequency &frequency, Matrix_Base<double> *K, Matrix_Base<double> *M, Matrix_Base<double> *C, Vector_Base<double> *ref, Vector_Base<double> *imf, Vector_Base<double> *renf, Vector_Base<double> *imnf, Vector_Base<double> *dirichlet)
 {
 
 }
 
-void Acoustic::updateSolution(Vector_Base<double> *rex, Vector_Base<double> *imx)
+void Acoustic::updateSolution(const step::Step &step, Vector_Base<double> *rex, Vector_Base<double> *imx)
 {
 
 }

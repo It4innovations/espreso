@@ -13,6 +13,7 @@ template <size_t nodes, size_t gps, size_t ndim, size_t edim> struct GeneralElem
 
 	alignas(SIMD::size * sizeof(double)) SIMD dND[nodes][edim];
 	alignas(SIMD::size * sizeof(double)) SIMD det;
+	alignas(SIMD::size * sizeof(double)) SIMD invJ[ndim * ndim];
 
 	struct {
 		alignas(SIMD::size * sizeof(double)) SIMD node[nodes];

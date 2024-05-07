@@ -22,8 +22,11 @@
 #include "analysis/assembler/structuralmechanics/op.sigma.h"
 #include "analysis/assembler/structuralmechanics/op.stress.h"
 #include "analysis/assembler/structuralmechanics/op.elasticity.h"
+#include "analysis/assembler/structuralmechanics/op.elasticity.largedisplacement.h"
 #include "analysis/assembler/structuralmechanics/op.plasticity.h"
+#include "analysis/assembler/structuralmechanics/op.integration.displaced.h"
 #include "analysis/assembler/structuralmechanics/op.matrix.elasticity.h"
+#include "analysis/assembler/structuralmechanics/op.matrix.largedisplacement.h"
 #include "analysis/assembler/structuralmechanics/op.normalpressure.h"
 #include "analysis/assembler/structuralmechanics/op.harmonicforce.h"
 
@@ -44,9 +47,12 @@ struct StructuralMechanicsOperators {
 	SmallStrainTensor smallStrainTensor;
 	Temperature temperature;
 	Integration integration;
+	IntegrationDisplaced integrationDisplaced;
 	Elasticity elasticity;
+	ElasticityLargeDisplacement elasticityLargeDisplacement;
 	Plasticity plasticity;
 	MatrixElasticity K;
+	MatrixLargeDisplacement KLD;
 	MatrixMass M;
 	ElementCondition acceleration, angularVelocity;
 	Sigma sigma;

@@ -71,7 +71,7 @@ void HeatTransientLinear::analyze(step::Step &step)
 	eslog::info(" ============================================================================================= \n");
 
 	step.type = step::TYPE::TIME;
-	assembler.analyze();
+	assembler.analyze(step);
 	info::mesh->output->updateMonitors(step);
 
 	switch (configuration.solver) {
@@ -157,7 +157,7 @@ void HeatTransientLinear::run(step::Step &step)
 		eslog::info(" = LOAD STEP %2d, SUBSTEP   %3d,   TIME %9.4f, TIME SHIFT %9.4f, FINAL TIME %9.4f = \n", step.loadstep + 1, step.substep + 1, time.current, time.shift, time.final);
 		eslog::info(" = ----------------------------------------------------------------------------------------- = \n");
 		double start = eslog::time();
-		assembler.evaluate(time, K, M, f, nullptr, dirichlet);
+		assembler.evaluate(step, time, K, M, f, nullptr, dirichlet);
 		eslog::checkpointln("SIMULATION: PHYSICS ASSEMBLED");
 
 		if (K->updated || M->updated) {
@@ -190,7 +190,7 @@ void HeatTransientLinear::run(step::Step &step)
 
 		x->copy(solver->x);
 		storeSolution(step);
-		assembler.updateSolution(x);
+		assembler.updateSolution(step, x);
 		info::mesh->output->updateSolution(step, time);
 
 		dU->copy(solver->x);
