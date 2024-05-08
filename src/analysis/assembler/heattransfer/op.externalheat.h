@@ -9,40 +9,40 @@ namespace espreso {
 
 struct ExternalHeat: BoundaryCondition {
 
-	ExternalHeat()
-	: area(0)
-	{
-		isconst = false;
-		action = SubKernel::ASSEMBLE | SubKernel::REASSEMBLE | SubKernel::ITERATION;
-	}
+    ExternalHeat()
+    : area(0)
+    {
+        isconst = false;
+        action = SubKernel::ASSEMBLE | SubKernel::REASSEMBLE | SubKernel::ITERATION;
+    }
 
-	void activate()
-	{
-		this->isactive = true;
-	}
+    void activate()
+    {
+        this->isactive = true;
+    }
 
-	double area;
+    double area;
 };
 
 template <size_t nodes> struct ExternalHeatKernel;
 
 template <size_t nodes>
 struct ExternalHeatKernel: ExternalHeat {
-	ExternalHeatKernel(const ExternalHeat &base): ExternalHeat(base) { area = 1 / base.area; }
+    ExternalHeatKernel(const ExternalHeat &base): ExternalHeat(base) { area = 1 / base.area; }
 
-	template <typename Element>
-	void simd(Element &element, size_t gp)
-	{
-		for (size_t n = 0; n < nodes; ++n) {
-			SIMD q;
-			q = q + element.ecf.heatFlow * load1(area);
-			q = q + element.ecf.heatFlux;
-			q = q + element.ecf.htc * element.ecf.extTemp;
+    template <typename Element>
+    void simd(Element &element, size_t gp)
+    {
+        for (size_t n = 0; n < nodes; ++n) {
+            SIMD q;
+            q = q + element.ecf.heatFlow * load1(area);
+            q = q + element.ecf.heatFlux;
+            q = q + element.ecf.htc * element.ecf.extTemp;
 
-			element.f[n] = element.f[n] + q * element.thickness.gp * element.det * load1(element.w[gp]) * load1(element.N[gp][n]);
+            element.f[n] = element.f[n] + q * element.thickness.gp * element.det * load1(element.w[gp]) * load1(element.N[gp][n]);
 
-		}
-	}
+        }
+    }
 };
 
 }

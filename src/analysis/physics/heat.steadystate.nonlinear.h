@@ -16,29 +16,29 @@ struct NonLinearSolverConfiguration;
 class HeatSteadyStateNonLinear: public Physics {
 
 public:
-	HeatSteadyStateNonLinear(HeatTransferConfiguration &settings, HeatTransferLoadStepConfiguration &configuration);
-	~HeatSteadyStateNonLinear();
+    HeatSteadyStateNonLinear(HeatTransferConfiguration &settings, HeatTransferLoadStepConfiguration &configuration);
+    ~HeatSteadyStateNonLinear();
 
-	void analyze(step::Step &step);
-	void run(step::Step &step);
+    void analyze(step::Step &step);
+    void run(step::Step &step);
 
-	step::Time time;
-	HeatTransferConfiguration &settings;
-	HeatTransferLoadStepConfiguration &configuration;
+    step::Time time;
+    HeatTransferConfiguration &settings;
+    HeatTransferLoadStepConfiguration &configuration;
 
-	HeatTransfer assembler;
+    HeatTransfer assembler;
 
-	Matrix_Base<double> *K;
-	Vector_Base<double> *U, *R, *f, *x, *dirichlet;
+    Matrix_Base<double> *K;
+    Vector_Base<double> *U, *R, *f, *x, *dirichlet;
 
-	SparseMatrixBuilder<double> *builder;
-	LinearSystemSolver<double> *solver;
+    SparseMatrixBuilder<double> *builder;
+    LinearSystemSolver<double> *solver;
 
 protected:
-	bool checkTemp(step::Step &step);
+    bool checkTemp(step::Step &step);
 
-	void storeSystem(step::Step &step);
-	void storeSolution(step::Step &step);
+    void storeSystem(step::Step &step);
+    void storeSolution(step::Step &step);
 };
 
 }

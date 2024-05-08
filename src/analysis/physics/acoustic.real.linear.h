@@ -14,27 +14,27 @@ struct AcousticLoadStepConfiguration;
 class AcousticRealLinear: public Physics {
 
 public:
-	AcousticRealLinear(AcousticConfiguration &settings, AcousticLoadStepConfiguration &configuration);
+    AcousticRealLinear(AcousticConfiguration &settings, AcousticLoadStepConfiguration &configuration);
 
-	void analyze(step::Step &step);
-	void run(step::Step &step);
+    void analyze(step::Step &step);
+    void run(step::Step &step);
 
-	step::Frequency frequency;
-	AcousticConfiguration &settings;
-	AcousticLoadStepConfiguration &configuration;
+    step::Frequency frequency;
+    AcousticConfiguration &settings;
+    AcousticLoadStepConfiguration &configuration;
 
-	Acoustic assembler;
+    Acoustic assembler;
 
-	Matrix_Base<double> *K, *M, *C;
-	struct {
-		Vector_Base<double> *f, *x, *dirichlet;
-	} re, im;
+    Matrix_Base<double> *K, *M, *C;
+    struct {
+        Vector_Base<double> *f, *x, *dirichlet;
+    } re, im;
 
-//	LinearSystem<double> *system;
+//    LinearSystem<double> *system;
 
 protected:
-	void storeSystem(step::Step &step);
-	void storeSolution(step::Step &step);
+    void storeSystem(step::Step &step);
+    void storeSolution(step::Step &step);
 };
 
 }

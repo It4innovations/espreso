@@ -15,29 +15,29 @@ struct StructuralMechanicsLoadStepConfiguration;
 class StructuralMechanicsSteadyStateNonLinear: public Physics {
 
 public:
-	StructuralMechanicsSteadyStateNonLinear(StructuralMechanicsConfiguration &settings, StructuralMechanicsLoadStepConfiguration &configuration);
-	~StructuralMechanicsSteadyStateNonLinear();
+    StructuralMechanicsSteadyStateNonLinear(StructuralMechanicsConfiguration &settings, StructuralMechanicsLoadStepConfiguration &configuration);
+    ~StructuralMechanicsSteadyStateNonLinear();
 
-	void analyze(step::Step &step);
-	void run(step::Step &step);
+    void analyze(step::Step &step);
+    void run(step::Step &step);
 
-	step::Time time;
-	StructuralMechanicsConfiguration &settings;
-	StructuralMechanicsLoadStepConfiguration &configuration;
+    step::Time time;
+    StructuralMechanicsConfiguration &settings;
+    StructuralMechanicsLoadStepConfiguration &configuration;
 
-	StructuralMechanics assembler;
+    StructuralMechanics assembler;
 
-	Matrix_Base<double> *K;
-	Vector_Base<double> *U, *R, *f, *x, *dirichlet;
+    Matrix_Base<double> *K;
+    Vector_Base<double> *U, *R, *f, *x, *dirichlet;
 
-	SparseMatrixBuilder<double> *builder;
-	LinearSystemSolver<double> *solver;
+    SparseMatrixBuilder<double> *builder;
+    LinearSystemSolver<double> *solver;
 
 protected:
-	bool checkDisplacement(step::Step &step);
+    bool checkDisplacement(step::Step &step);
 
-	void storeSystem(step::Step &step);
-	void storeSolution(step::Step &step);
+    void storeSystem(step::Step &step);
+    void storeSolution(step::Step &step);
 };
 
 }

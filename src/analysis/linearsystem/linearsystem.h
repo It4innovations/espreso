@@ -12,14 +12,14 @@ namespace step { struct Step; }
 template <typename T>
 struct LinearSystemSolver {
 
-	virtual ~LinearSystemSolver() {}
+    virtual ~LinearSystemSolver() {}
 
-	virtual void set(step::Step &step) =0;
-	virtual void update(step::Step &step) =0;
-	virtual bool solve(step::Step &step) =0;
+    virtual void set(step::Step &step) =0;
+    virtual void update(step::Step &step) =0;
+    virtual bool solve(step::Step &step) =0;
 
-	Matrix_Base<T> *A;
-	Vector_Base<T> *x, *b, *dirichlet;
+    Matrix_Base<T> *A;
+    Vector_Base<T> *x, *b, *dirichlet;
 };
 
 }

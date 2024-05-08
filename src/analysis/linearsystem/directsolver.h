@@ -12,25 +12,25 @@ namespace espreso {
 template <typename T>
 struct DirectLinearSystemSolver: LinearSystemSolver<T> {
 
-	DirectLinearSystemSolver()
-	{
-		LinearSystemSolver<T>::A = &A;
-		LinearSystemSolver<T>::x = &x;
-		LinearSystemSolver<T>::b = &b;
-		LinearSystemSolver<T>::dirichlet = &dirichlet;
-	}
+    DirectLinearSystemSolver()
+    {
+        LinearSystemSolver<T>::A = &A;
+        LinearSystemSolver<T>::x = &x;
+        LinearSystemSolver<T>::b = &b;
+        LinearSystemSolver<T>::dirichlet = &dirichlet;
+    }
 
-	~DirectLinearSystemSolver()
-	{
+    ~DirectLinearSystemSolver()
+    {
 
-	}
+    }
 
 protected:
-	void setDirichlet();
+    void setDirichlet();
 
-	Matrix_Distributed<T> A;
-	Vector_Distributed<Vector_Dense, T> x, b;
-	Vector_Distributed<Vector_Sparse, T> dirichlet;
+    Matrix_Distributed<T> A;
+    Vector_Distributed<Vector_Dense, T> x, b;
+    Vector_Distributed<Vector_Sparse, T> dirichlet;
 };
 
 }

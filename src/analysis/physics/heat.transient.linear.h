@@ -15,28 +15,28 @@ struct HeatTransferLoadStepConfiguration;
 class HeatTransientLinear: public Physics {
 
 public:
-	HeatTransientLinear(HeatTransferConfiguration &settings, HeatTransferLoadStepConfiguration &configuration);
-	~HeatTransientLinear();
+    HeatTransientLinear(HeatTransferConfiguration &settings, HeatTransferLoadStepConfiguration &configuration);
+    ~HeatTransientLinear();
 
-	void analyze(step::Step &step);
-	void run(step::Step &step);
+    void analyze(step::Step &step);
+    void run(step::Step &step);
 
-	step::Time time;
-	HeatTransferConfiguration &settings;
-	HeatTransferLoadStepConfiguration &configuration;
+    step::Time time;
+    HeatTransferConfiguration &settings;
+    HeatTransferLoadStepConfiguration &configuration;
 
-	HeatTransfer assembler;
+    HeatTransfer assembler;
 
-	Matrix_Base<double> *K, *M;
-	Vector_Base<double> *f, *x, *dirichlet;
-	Vector_Base<double> *U, *dU, *V, *X, *Y, *dTK, *dTM;
+    Matrix_Base<double> *K, *M;
+    Vector_Base<double> *f, *x, *dirichlet;
+    Vector_Base<double> *U, *dU, *V, *X, *Y, *dTK, *dTM;
 
-	SparseMatrixBuilder<double> *builder;
-	LinearSystemSolver<double> *solver;
+    SparseMatrixBuilder<double> *builder;
+    LinearSystemSolver<double> *solver;
 
 protected:
-	void storeSystem(step::Step &step);
-	void storeSolution(step::Step &step);
+    void storeSystem(step::Step &step);
+    void storeSolution(step::Step &step);
 };
 
 }

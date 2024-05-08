@@ -11,10 +11,10 @@ namespace espreso {
 template <typename T>
 struct FixedWall {
 
-	void set(const step::Step &step, FETI<T> &feti, const Vector_Distributed<Vector_Sparse, T> &dirichlet);
-	void update(const step::Step &step, FETI<T> &feti, const Vector_Distributed<Vector_Sparse, T> &dirichlet);
+    void set(const step::Step &step, FETI<T> &feti, const Vector_Distributed<Vector_Sparse, T> &dirichlet);
+    void update(const step::Step &step, FETI<T> &feti, const Vector_Distributed<Vector_Sparse, T> &dirichlet);
 
-	std::vector<std::vector<esint> > cindex;
+    std::vector<std::vector<esint> > cindex;
 };
 
 }

@@ -21,64 +21,64 @@ using namespace espreso;
 
 void Analysis::run()
 {
-	eslog::startln("ESPRESO: SIMULATION STARTED", "SIMULATION");
+    eslog::startln("ESPRESO: SIMULATION STARTED", "SIMULATION");
 
-//	for (auto range = info::ecf->ranges.begin(); range != info::ecf->ranges.end(); ++range) {
+//    for (auto range = info::ecf->ranges.begin(); range != info::ecf->ranges.end(); ++range) {
 //
-//	}
+//    }
 
-	step::Step step;
-	Physics *physics;
+    step::Step step;
+    Physics *physics;
 
-	switch (info::ecf->physics) {
-//	case PhysicsConfiguration::TYPE::ACOUSTICS:
-//		switch (info::ecf->acoustics.load_steps_settings.at(1).system) {
-//		case AcousticLoadStepConfiguration::SYSTEM::REAL: physics = new AcousticRealLinear(info::ecf->acoustics, info::ecf->acoustics.load_steps_settings.at(1)); break;
-//		case AcousticLoadStepConfiguration::SYSTEM::COMPLEX: physics = new AcousticComplexLinear(info::ecf->acoustics, info::ecf->acoustics.load_steps_settings.at(1)); break;
-//		}
-//		break;
-	case PhysicsConfiguration::TYPE::HEAT_TRANSFER:
-		switch (info::ecf->heat_transfer.load_steps_settings.at(1).type) {
-		case LoadStepSolverConfiguration::TYPE::STEADY_STATE:
-			switch (info::ecf->heat_transfer.load_steps_settings.at(1).mode) {
-			case LoadStepSolverConfiguration::MODE::LINEAR: physics = new HeatSteadyStateLinear(info::ecf->heat_transfer, info::ecf->heat_transfer.load_steps_settings.at(1)); break;
-			case LoadStepSolverConfiguration::MODE::NONLINEAR: physics = new HeatSteadyStateNonLinear(info::ecf->heat_transfer, info::ecf->heat_transfer.load_steps_settings.at(1)); break;
-			} break;
-		case LoadStepSolverConfiguration::TYPE::TRANSIENT:
-			switch (info::ecf->heat_transfer.load_steps_settings.at(1).mode) {
-			case LoadStepSolverConfiguration::MODE::LINEAR: physics = new HeatTransientLinear(info::ecf->heat_transfer, info::ecf->heat_transfer.load_steps_settings.at(1)); break;
-//			case LoadStepSolverConfiguration::MODE::NONLINEAR: physics = new HeatSteadyStateNonLinear(info::ecf->heat_transfer_2d, info::ecf->heat_transfer_2d.load_steps_settings.at(1)); break;
-			} break;
-		}
+    switch (info::ecf->physics) {
+//    case PhysicsConfiguration::TYPE::ACOUSTICS:
+//        switch (info::ecf->acoustics.load_steps_settings.at(1).system) {
+//        case AcousticLoadStepConfiguration::SYSTEM::REAL: physics = new AcousticRealLinear(info::ecf->acoustics, info::ecf->acoustics.load_steps_settings.at(1)); break;
+//        case AcousticLoadStepConfiguration::SYSTEM::COMPLEX: physics = new AcousticComplexLinear(info::ecf->acoustics, info::ecf->acoustics.load_steps_settings.at(1)); break;
+//        }
+//        break;
+    case PhysicsConfiguration::TYPE::HEAT_TRANSFER:
+        switch (info::ecf->heat_transfer.load_steps_settings.at(1).type) {
+        case LoadStepSolverConfiguration::TYPE::STEADY_STATE:
+            switch (info::ecf->heat_transfer.load_steps_settings.at(1).mode) {
+            case LoadStepSolverConfiguration::MODE::LINEAR: physics = new HeatSteadyStateLinear(info::ecf->heat_transfer, info::ecf->heat_transfer.load_steps_settings.at(1)); break;
+            case LoadStepSolverConfiguration::MODE::NONLINEAR: physics = new HeatSteadyStateNonLinear(info::ecf->heat_transfer, info::ecf->heat_transfer.load_steps_settings.at(1)); break;
+            } break;
+        case LoadStepSolverConfiguration::TYPE::TRANSIENT:
+            switch (info::ecf->heat_transfer.load_steps_settings.at(1).mode) {
+            case LoadStepSolverConfiguration::MODE::LINEAR: physics = new HeatTransientLinear(info::ecf->heat_transfer, info::ecf->heat_transfer.load_steps_settings.at(1)); break;
+//            case LoadStepSolverConfiguration::MODE::NONLINEAR: physics = new HeatSteadyStateNonLinear(info::ecf->heat_transfer_2d, info::ecf->heat_transfer_2d.load_steps_settings.at(1)); break;
+            } break;
+        }
 
-		break;
-	case PhysicsConfiguration::TYPE::STRUCTURAL_MECHANICS:
-		switch (info::ecf->structural_mechanics.load_steps_settings.at(1).type) {
-		case LoadStepSolverConfiguration::TYPE::HARMONIC:
-			switch (info::ecf->structural_mechanics.load_steps_settings.at(1).mode) {
-			case LoadStepSolverConfiguration::MODE::LINEAR: physics = new StructuralMechanicsHarmonicRealLinear(info::ecf->structural_mechanics, info::ecf->structural_mechanics.load_steps_settings.at(1)); break;
-			case LoadStepSolverConfiguration::MODE::NONLINEAR:  break;
-			} break;
-		case LoadStepSolverConfiguration::TYPE::STEADY_STATE:
-			switch (info::ecf->structural_mechanics.load_steps_settings.at(1).mode) {
-			case LoadStepSolverConfiguration::MODE::LINEAR: physics = new StructuralMechanicsSteadyStateLinear(info::ecf->structural_mechanics, info::ecf->structural_mechanics.load_steps_settings.at(1)); break;
-			case LoadStepSolverConfiguration::MODE::NONLINEAR: physics = new StructuralMechanicsSteadyStateNonLinear(info::ecf->structural_mechanics, info::ecf->structural_mechanics.load_steps_settings.at(1)); break;
-			} break;
-		case LoadStepSolverConfiguration::TYPE::TRANSIENT:
-			switch (info::ecf->structural_mechanics.load_steps_settings.at(1).mode) {
-			case LoadStepSolverConfiguration::MODE::LINEAR:    physics = new StructuralMechanicsTransientLinear(info::ecf->structural_mechanics, info::ecf->structural_mechanics.load_steps_settings.at(1)); break;
-			case LoadStepSolverConfiguration::MODE::NONLINEAR: break;
-			} break;
-		} break;
-		break;
-	}
+        break;
+    case PhysicsConfiguration::TYPE::STRUCTURAL_MECHANICS:
+        switch (info::ecf->structural_mechanics.load_steps_settings.at(1).type) {
+        case LoadStepSolverConfiguration::TYPE::HARMONIC:
+            switch (info::ecf->structural_mechanics.load_steps_settings.at(1).mode) {
+            case LoadStepSolverConfiguration::MODE::LINEAR: physics = new StructuralMechanicsHarmonicRealLinear(info::ecf->structural_mechanics, info::ecf->structural_mechanics.load_steps_settings.at(1)); break;
+            case LoadStepSolverConfiguration::MODE::NONLINEAR:  break;
+            } break;
+        case LoadStepSolverConfiguration::TYPE::STEADY_STATE:
+            switch (info::ecf->structural_mechanics.load_steps_settings.at(1).mode) {
+            case LoadStepSolverConfiguration::MODE::LINEAR: physics = new StructuralMechanicsSteadyStateLinear(info::ecf->structural_mechanics, info::ecf->structural_mechanics.load_steps_settings.at(1)); break;
+            case LoadStepSolverConfiguration::MODE::NONLINEAR: physics = new StructuralMechanicsSteadyStateNonLinear(info::ecf->structural_mechanics, info::ecf->structural_mechanics.load_steps_settings.at(1)); break;
+            } break;
+        case LoadStepSolverConfiguration::TYPE::TRANSIENT:
+            switch (info::ecf->structural_mechanics.load_steps_settings.at(1).mode) {
+            case LoadStepSolverConfiguration::MODE::LINEAR:    physics = new StructuralMechanicsTransientLinear(info::ecf->structural_mechanics, info::ecf->structural_mechanics.load_steps_settings.at(1)); break;
+            case LoadStepSolverConfiguration::MODE::NONLINEAR: break;
+            } break;
+        } break;
+        break;
+    }
 
-	physics->analyze(step);
-	eslog::checkpointln("SIMULATION: PHYSICS ANALYSED");
-	step.loadstep = 0;
-	step.loadsteps = 1;
-	physics->run(step);
+    physics->analyze(step);
+    eslog::checkpointln("SIMULATION: PHYSICS ANALYSED");
+    step.loadstep = 0;
+    step.loadsteps = 1;
+    physics->run(step);
 
-	delete physics;
-	eslog::endln("SIMULATION: DATA CLEARED");
+    delete physics;
+    eslog::endln("SIMULATION: DATA CLEARED");
 }

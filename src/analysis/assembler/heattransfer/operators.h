@@ -24,58 +24,58 @@
 namespace espreso {
 
 struct HeatTransferElementOperators {
-	int code;
-	size_t elements, chunks;
+    int code;
+    size_t elements, chunks;
 
-	size_t esize;
-	double volume;
+    size_t esize;
+    double volume;
 
-	Basis basis;
-	Thickness thickness;
-	Material material;
-	Coordinates coordinates;
-	Temperature temperature;
-	Integration integration;
-	Conductivity conductivity;
-	Advection advection;
-	BoundaryCondition heatSource, initTemperature;
-	MatrixConductivity K;
-	MatrixMass M;
+    Basis basis;
+    Thickness thickness;
+    Material material;
+    Coordinates coordinates;
+    Temperature temperature;
+    Integration integration;
+    Conductivity conductivity;
+    Advection advection;
+    BoundaryCondition heatSource, initTemperature;
+    MatrixConductivity K;
+    MatrixMass M;
 
-	TemperatureGradient gradient;
-	TemperatureFlux flux;
+    TemperatureGradient gradient;
+    TemperatureFlux flux;
 
-	DataFiller Kfiller, Mfiller, RHSfiller, nRHSfiller;
+    DataFiller Kfiller, Mfiller, RHSfiller, nRHSfiller;
 
-	struct {
-		std::vector<ExternalEvaluator*> node;
-		std::vector<ExternalEvaluator*> gp;
-	} expressions;
+    struct {
+        std::vector<ExternalEvaluator*> node;
+        std::vector<ExternalEvaluator*> gp;
+    } expressions;
 };
 
 struct HeatTransferBoundaryOperators {
-	int code;
-	size_t elements, chunks;
+    int code;
+    size_t elements, chunks;
 
-	size_t esize;
-	double surface;
+    size_t esize;
+    double surface;
 
-	Basis basis;
-	Thickness thickness;
-	Coordinates coordinates;
-	Temperature initialTemperature;
-	Integration integration;
+    Basis basis;
+    Thickness thickness;
+    Coordinates coordinates;
+    Temperature initialTemperature;
+    Integration integration;
 
-	ExternalExpression temperature;
-	BoundaryCondition heatFlux, heatFlow, htc, externalTemperature;
-	ExternalHeat externalHeat;
+    ExternalExpression temperature;
+    BoundaryCondition heatFlux, heatFlow, htc, externalTemperature;
+    ExternalHeat externalHeat;
 
-	DataFiller RHSfiller, dirichlet;
+    DataFiller RHSfiller, dirichlet;
 
-	struct {
-		std::vector<ExternalEvaluator*> node;
-		std::vector<ExternalEvaluator*> gp;
-	} expressions;
+    struct {
+        std::vector<ExternalEvaluator*> node;
+        std::vector<ExternalEvaluator*> gp;
+    } expressions;
 };
 
 }

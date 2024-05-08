@@ -17,25 +17,25 @@ namespace espreso {
 template <typename T>
 struct FETILinearSystemSolver: LinearSystemSolver<T> {
 
-	FETILinearSystemSolver(PhysicsConfiguration &physics, LoadStepSolverConfiguration &loadStep);
-	~FETILinearSystemSolver();
+    FETILinearSystemSolver(PhysicsConfiguration &physics, LoadStepSolverConfiguration &loadStep);
+    ~FETILinearSystemSolver();
 
-	void set(step::Step &step);
-	void update(step::Step &step);
-	bool solve(step::Step &step);
+    void set(step::Step &step);
+    void update(step::Step &step);
+    bool solve(step::Step &step);
 
 private:
-	PhysicsConfiguration &physics;
-	LoadStepSolverConfiguration &loadStep;
+    PhysicsConfiguration &physics;
+    LoadStepSolverConfiguration &loadStep;
 
-	Matrix_FETI<T> A;
-	Vector_FETI<Vector_Dense, T> x, b;
-	Vector_Distributed<Vector_Sparse, T> dirichlet;
+    Matrix_FETI<T> A;
+    Vector_FETI<Vector_Dense, T> x, b;
+    Vector_Distributed<Vector_Sparse, T> dirichlet;
 
-	Constrains<T> constrains;
+    Constrains<T> constrains;
 
-	FETI<T> feti;
-	bool bem;
+    FETI<T> feti;
+    bool bem;
 };
 
 }

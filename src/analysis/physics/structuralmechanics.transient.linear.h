@@ -15,28 +15,28 @@ struct StructuralMechanicsLoadStepConfiguration;
 class StructuralMechanicsTransientLinear: public Physics {
 
 public:
-	StructuralMechanicsTransientLinear(StructuralMechanicsConfiguration &settings, StructuralMechanicsLoadStepConfiguration &configuration);
-	~StructuralMechanicsTransientLinear();
+    StructuralMechanicsTransientLinear(StructuralMechanicsConfiguration &settings, StructuralMechanicsLoadStepConfiguration &configuration);
+    ~StructuralMechanicsTransientLinear();
 
-	void analyze(step::Step &step);
-	void run(step::Step &step);
+    void analyze(step::Step &step);
+    void run(step::Step &step);
 
-	step::Time time;
-	StructuralMechanicsConfiguration &settings;
-	StructuralMechanicsLoadStepConfiguration &configuration;
+    step::Time time;
+    StructuralMechanicsConfiguration &settings;
+    StructuralMechanicsLoadStepConfiguration &configuration;
 
-	StructuralMechanics assembler;
+    StructuralMechanics assembler;
 
-	Matrix_Base<double> *K, *M;
-	Vector_Base<double> *f, *x, *dirichlet;
-	Vector_Base<double> *U, *dU, *V, *W, *X, *Y, *Z, *dTK, *dTM;
+    Matrix_Base<double> *K, *M;
+    Vector_Base<double> *f, *x, *dirichlet;
+    Vector_Base<double> *U, *dU, *V, *W, *X, *Y, *Z, *dTK, *dTM;
 
-	SparseMatrixBuilder<double> *builder;
-	LinearSystemSolver<double> *solver;
+    SparseMatrixBuilder<double> *builder;
+    LinearSystemSolver<double> *solver;
 
 protected:
-	void storeSystem(step::Step &step);
-	void storeSolution(step::Step &step);
+    void storeSystem(step::Step &step);
+    void storeSolution(step::Step &step);
 };
 
 }

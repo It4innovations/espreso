@@ -7,7 +7,7 @@ namespace espreso {
 class Analysis {
 
 public:
-	void run();
+    void run();
 };
 
 }

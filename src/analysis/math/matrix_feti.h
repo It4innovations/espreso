@@ -17,103 +17,103 @@ namespace espreso {
 template <typename T>
 class Matrix_FETI: public Matrix_Base<T> {
 public:
-	void synchronize()
-	{
+    void synchronize()
+    {
 
-	}
+    }
 
-	Matrix_Base<T>* copyPattern()
-	{
-		Matrix_FETI<T> *m = new Matrix_FETI<T>();
-		m->type = this->type;
-		m->shape = this->shape;
-		m->domains.resize(domains.size());
-		#pragma omp parallel for
-		for (size_t d = 0; d < domains.size(); ++d) {
-			m->domains[d].type = domains[d].type;
-			m->domains[d].shape = domains[d].shape;
-			m->domains[d].pattern(domains[d]);
-		}
-		return m;
-	}
+    Matrix_Base<T>* copyPattern()
+    {
+        Matrix_FETI<T> *m = new Matrix_FETI<T>();
+        m->type = this->type;
+        m->shape = this->shape;
+        m->domains.resize(domains.size());
+        #pragma omp parallel for
+        for (size_t d = 0; d < domains.size(); ++d) {
+            m->domains[d].type = domains[d].type;
+            m->domains[d].shape = domains[d].shape;
+            m->domains[d].pattern(domains[d]);
+        }
+        return m;
+    }
 
-	void store(const char *file)
-	{
-		math::store(*static_cast<Matrix_FETI<T>*>(this), file);
-	}
+    void store(const char *file)
+    {
+        math::store(*static_cast<Matrix_FETI<T>*>(this), file);
+    }
 
-	Matrix_Base<T>* set(const T &value)
-	{
-		#pragma omp parallel for
-		for (size_t d = 0; d < this->domains.size(); ++d) {
-			math::set(this->domains[d], value);
-		}
-		return this;
-	}
+    Matrix_Base<T>* set(const T &value)
+    {
+        #pragma omp parallel for
+        for (size_t d = 0; d < this->domains.size(); ++d) {
+            math::set(this->domains[d], value);
+        }
+        return this;
+    }
 
-	Matrix_Base<T>* copy(const Matrix_Base<T> *in, const Selection &rows = Selection(), const Selection &cols = Selection())
-	{
-		in->copyTo(static_cast<Matrix_FETI<T>*>(this), rows, cols);
-		return this;
-	}
+    Matrix_Base<T>* copy(const Matrix_Base<T> *in, const Selection &rows = Selection(), const Selection &cols = Selection())
+    {
+        in->copyTo(static_cast<Matrix_FETI<T>*>(this), rows, cols);
+        return this;
+    }
 
-	Matrix_Base<T>* add(const T &alpha, const Matrix_Base<T> *a, const Selection &rows = Selection(), const Selection &cols = Selection())
-	{
-		a->addTo(alpha, static_cast<Matrix_FETI<T>*>(this), rows, cols);
-		return this;
-	}
+    Matrix_Base<T>* add(const T &alpha, const Matrix_Base<T> *a, const Selection &rows = Selection(), const Selection &cols = Selection())
+    {
+        a->addTo(alpha, static_cast<Matrix_FETI<T>*>(this), rows, cols);
+        return this;
+    }
 
-	void apply(const T &alpha, const Vector_Base<T> *in, const T &beta, Vector_Base<T> *out)
-	{
-		if (spblas.size() == 0) {
-			spblas.resize(domains.size());
-			#pragma omp parallel for
-			for (size_t i = 0; i < spblas.size(); ++i) {
-				spblas[i].insert(domains[i]);
-			}
-		}
+    void apply(const T &alpha, const Vector_Base<T> *in, const T &beta, Vector_Base<T> *out)
+    {
+        if (spblas.size() == 0) {
+            spblas.resize(domains.size());
+            #pragma omp parallel for
+            for (size_t i = 0; i < spblas.size(); ++i) {
+                spblas[i].insert(domains[i]);
+            }
+        }
 
-		const Vector_FETI<Vector_Dense, T> *_in = dynamic_cast<const Vector_FETI<Vector_Dense, T>*>(in);
-		Vector_FETI<Vector_Dense, T> *_out = dynamic_cast<Vector_FETI<Vector_Dense, T>*>(out);
-		if (_in && _out) {
-			#pragma omp parallel for
-			for (size_t i = 0; i < spblas.size(); ++i) {
-				spblas[i].apply(_out->domains[i], alpha, beta, _in->domains[i]);
-			}
-		} else {
-			eslog::error("call empty function Matrix_FETI::apply\n");
-		}
-	}
+        const Vector_FETI<Vector_Dense, T> *_in = dynamic_cast<const Vector_FETI<Vector_Dense, T>*>(in);
+        Vector_FETI<Vector_Dense, T> *_out = dynamic_cast<Vector_FETI<Vector_Dense, T>*>(out);
+        if (_in && _out) {
+            #pragma omp parallel for
+            for (size_t i = 0; i < spblas.size(); ++i) {
+                spblas[i].apply(_out->domains[i], alpha, beta, _in->domains[i]);
+            }
+        } else {
+            eslog::error("call empty function Matrix_FETI::apply\n");
+        }
+    }
 
-	void copyTo(Matrix_Distributed<T> *a, const Selection &rows = Selection(), const Selection &cols = Selection()) const
-	{
-		eslog::error("call empty function\n");
-	}
+    void copyTo(Matrix_Distributed<T> *a, const Selection &rows = Selection(), const Selection &cols = Selection()) const
+    {
+        eslog::error("call empty function\n");
+    }
 
-	void copyTo(Matrix_FETI<T> *a, const Selection &rows = Selection(), const Selection &cols = Selection()) const
-	{
-		#pragma omp parallel for
-		for (size_t d = 0; d < this->domains.size(); ++d) {
-			math::copy(a->domains[d], this->domains[d], rows, cols);
-		}
-	}
+    void copyTo(Matrix_FETI<T> *a, const Selection &rows = Selection(), const Selection &cols = Selection()) const
+    {
+        #pragma omp parallel for
+        for (size_t d = 0; d < this->domains.size(); ++d) {
+            math::copy(a->domains[d], this->domains[d], rows, cols);
+        }
+    }
 
-	void addTo(const T &alpha, Matrix_Distributed<T> *a, const Selection &rows = Selection(), const Selection &cols = Selection()) const
-	{
-		eslog::error("call empty function\n");
-	}
+    void addTo(const T &alpha, Matrix_Distributed<T> *a, const Selection &rows = Selection(), const Selection &cols = Selection()) const
+    {
+        eslog::error("call empty function\n");
+    }
 
-	void addTo(const T &alpha, Matrix_FETI<T> *a, const Selection &rows = Selection(), const Selection &cols = Selection()) const
-	{
-		#pragma omp parallel for
-		for (size_t d = 0; d < this->domains.size(); ++d) {
-			math::add(a->domains[d], alpha, this->domains[d], rows, cols);
-		}
-	}
+    void addTo(const T &alpha, Matrix_FETI<T> *a, const Selection &rows = Selection(), const Selection &cols = Selection()) const
+    {
+        #pragma omp parallel for
+        for (size_t d = 0; d < this->domains.size(); ++d) {
+            math::add(a->domains[d], alpha, this->domains[d], rows, cols);
+        }
+    }
 
-	std::vector<Matrix_CSR<T, int> > domains;
-	std::vector<SpBLAS<Matrix_CSR, T, int> > spblas;
-	FETIDecomposition *decomposition;
+    std::vector<Matrix_CSR<T, int> > domains;
+    std::vector<SpBLAS<Matrix_CSR, T, int> > spblas;
+    FETIDecomposition *decomposition;
 };
 
 }

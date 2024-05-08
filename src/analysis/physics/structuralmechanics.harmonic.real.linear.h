@@ -15,29 +15,29 @@ struct StructuralMechanicsLoadStepConfiguration;
 class StructuralMechanicsHarmonicRealLinear: public Physics {
 
 public:
-	StructuralMechanicsHarmonicRealLinear(StructuralMechanicsConfiguration &settings, StructuralMechanicsLoadStepConfiguration &configuration);
-	~StructuralMechanicsHarmonicRealLinear();
+    StructuralMechanicsHarmonicRealLinear(StructuralMechanicsConfiguration &settings, StructuralMechanicsLoadStepConfiguration &configuration);
+    ~StructuralMechanicsHarmonicRealLinear();
 
-	void analyze(step::Step &step);
-	void run(step::Step &step);
+    void analyze(step::Step &step);
+    void run(step::Step &step);
 
-	step::Frequency frequency;
-	StructuralMechanicsConfiguration &settings;
-	StructuralMechanicsLoadStepConfiguration &configuration;
+    step::Frequency frequency;
+    StructuralMechanicsConfiguration &settings;
+    StructuralMechanicsLoadStepConfiguration &configuration;
 
-	StructuralMechanics assembler;
+    StructuralMechanics assembler;
 
-	Matrix_Base<double> *K, *M, *C;
-	struct {
-		Vector_Base<double> *f, *x, *dirichlet;
-	} re, im;
+    Matrix_Base<double> *K, *M, *C;
+    struct {
+        Vector_Base<double> *f, *x, *dirichlet;
+    } re, im;
 
-	SparseMatrixBuilder<double> *builderAssembler, *builderSolver;
-	LinearSystemSolver<double> *solver;
+    SparseMatrixBuilder<double> *builderAssembler, *builderSolver;
+    LinearSystemSolver<double> *solver;
 
 protected:
-	void storeSystem(step::Step &step);
-	void storeSolution(step::Step &step);
+    void storeSystem(step::Step &step);
+    void storeSolution(step::Step &step);
 };
 
 }

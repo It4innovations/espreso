@@ -15,27 +15,27 @@ struct StructuralMechanicsLoadStepConfiguration;
 class StructuralMechanicsSteadyStateLinear: public Physics {
 
 public:
-	StructuralMechanicsSteadyStateLinear(StructuralMechanicsConfiguration &settings, StructuralMechanicsLoadStepConfiguration &configuration);
-	~StructuralMechanicsSteadyStateLinear();
+    StructuralMechanicsSteadyStateLinear(StructuralMechanicsConfiguration &settings, StructuralMechanicsLoadStepConfiguration &configuration);
+    ~StructuralMechanicsSteadyStateLinear();
 
-	void analyze(step::Step &step);
-	void run(step::Step &step);
+    void analyze(step::Step &step);
+    void run(step::Step &step);
 
-	step::Time time;
-	StructuralMechanicsConfiguration &settings;
-	StructuralMechanicsLoadStepConfiguration &configuration;
+    step::Time time;
+    StructuralMechanicsConfiguration &settings;
+    StructuralMechanicsLoadStepConfiguration &configuration;
 
-	StructuralMechanics assembler;
+    StructuralMechanics assembler;
 
-	Matrix_Base<double> *K;
-	Vector_Base<double> *f, *x, *dirichlet;
+    Matrix_Base<double> *K;
+    Vector_Base<double> *f, *x, *dirichlet;
 
-	SparseMatrixBuilder<double> *builder;
-	LinearSystemSolver<double> *solver;
+    SparseMatrixBuilder<double> *builder;
+    LinearSystemSolver<double> *solver;
 
 protected:
-	void storeSystem(step::Step &step);
-	void storeSolution(step::Step &step);
+    void storeSystem(step::Step &step);
+    void storeSolution(step::Step &step);
 };
 
 }

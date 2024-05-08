@@ -33,62 +33,62 @@
 namespace espreso {
 
 struct StructuralMechanicsOperators {
-	int code;
-	size_t elements, chunks;
+    int code;
+    size_t elements, chunks;
 
-	size_t esize;
-	double volume;
+    size_t esize;
+    double volume;
 
-	Basis basis;
-	Thickness thickness;
-	Material material;
-	Coordinates coordinates;
-	Displacement displacement;
-	SmallStrainTensor smallStrainTensor;
-	Temperature temperature;
-	Integration integration;
-	IntegrationDisplaced integrationDisplaced;
-	Elasticity elasticity;
-	ElasticityLargeDisplacement elasticityLargeDisplacement;
-	Plasticity plasticity;
-	MatrixElasticity K;
-	MatrixLargeDisplacement KLD;
-	MatrixMass M;
-	ElementCondition acceleration, angularVelocity;
-	Sigma sigma;
-	Stress stress;
+    Basis basis;
+    Thickness thickness;
+    Material material;
+    Coordinates coordinates;
+    Displacement displacement;
+    SmallStrainTensor smallStrainTensor;
+    Temperature temperature;
+    Integration integration;
+    IntegrationDisplaced integrationDisplaced;
+    Elasticity elasticity;
+    ElasticityLargeDisplacement elasticityLargeDisplacement;
+    Plasticity plasticity;
+    MatrixElasticity K;
+    MatrixLargeDisplacement KLD;
+    MatrixMass M;
+    ElementCondition acceleration, angularVelocity;
+    Sigma sigma;
+    Stress stress;
 
-	DataFiller Kfiller, Mfiller, Cfiller, reRHSfiller, imRHSfiller, reNRHSfiller, imNRHSfiller;
+    DataFiller Kfiller, Mfiller, Cfiller, reRHSfiller, imRHSfiller, reNRHSfiller, imNRHSfiller;
 
-	struct {
-		std::vector<ExternalEvaluator*> node;
-		std::vector<ExternalEvaluator*> gp;
-	} expressions;
+    struct {
+        std::vector<ExternalEvaluator*> node;
+        std::vector<ExternalEvaluator*> gp;
+    } expressions;
 };
 
 struct StructuralMechanicsBoundaryOperators {
-	int code;
-	size_t elements, chunks;
+    int code;
+    size_t elements, chunks;
 
-	size_t esize;
-	double surface;
+    size_t esize;
+    double surface;
 
-	Basis basis;
-	Thickness thickness;
-	Coordinates coordinates;
-	Integration integration;
-	Normal normal;
+    Basis basis;
+    Thickness thickness;
+    Coordinates coordinates;
+    Integration integration;
+    Normal normal;
 
-	ExternalExpressionVector displacement;
-	NormalPressure normalPressure;
-	HarmonicForce harmonicForce;
+    ExternalExpressionVector displacement;
+    NormalPressure normalPressure;
+    HarmonicForce harmonicForce;
 
-	DataFiller reRHSfiller, imRHSfiller, reDirichlet, imDirichlet;
+    DataFiller reRHSfiller, imRHSfiller, reDirichlet, imDirichlet;
 
-	struct {
-		std::vector<ExternalEvaluator*> node;
-		std::vector<ExternalEvaluator*> gp;
-	} expressions;
+    struct {
+        std::vector<ExternalEvaluator*> node;
+        std::vector<ExternalEvaluator*> gp;
+    } expressions;
 };
 
 }

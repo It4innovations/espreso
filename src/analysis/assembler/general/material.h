@@ -8,20 +8,20 @@
 namespace espreso {
 
 struct Material: SubKernel {
-	const char* name() const { return "Material"; }
+    const char* name() const { return "Material"; }
 
-	Material()
-	: configuration(nullptr)
-	{
-		action = SubKernel::ASSEMBLE | SubKernel::REASSEMBLE | SubKernel::ITERATION;
-	}
+    Material()
+    : configuration(nullptr)
+    {
+        action = SubKernel::ASSEMBLE | SubKernel::REASSEMBLE | SubKernel::ITERATION;
+    }
 
-	void activate(const MaterialConfiguration *configuration)
-	{
-		this->configuration = configuration;
-	}
+    void activate(const MaterialConfiguration *configuration)
+    {
+        this->configuration = configuration;
+    }
 
-	const MaterialConfiguration *configuration;
+    const MaterialConfiguration *configuration;
 };
 
 }

@@ -9,25 +9,25 @@ namespace espreso {
 
 struct ElementCondition: BoundaryCondition {
 
-	ElementCondition()
-	: behaviour(StructuralMechanicsGlobalSettings::ELEMENT_BEHAVIOUR::PLANE_STRAIN)
-	{
+    ElementCondition()
+    : behaviour(StructuralMechanicsGlobalSettings::ELEMENT_BEHAVIOUR::PLANE_STRAIN)
+    {
 
-	}
+    }
 
-	void activate(ECFExpressionVector *expressionVector, StructuralMechanicsGlobalSettings::ELEMENT_BEHAVIOUR behaviour)
-	{
-		this->behaviour = behaviour;
-		BoundaryCondition::activate(expressionVector);
-	}
+    void activate(ECFExpressionVector *expressionVector, StructuralMechanicsGlobalSettings::ELEMENT_BEHAVIOUR behaviour)
+    {
+        this->behaviour = behaviour;
+        BoundaryCondition::activate(expressionVector);
+    }
 
-	void activate(ECFExpression *expression, StructuralMechanicsGlobalSettings::ELEMENT_BEHAVIOUR behaviour)
-	{
-		this->behaviour = behaviour;
-		BoundaryCondition::activate(expression);
-	}
+    void activate(ECFExpression *expression, StructuralMechanicsGlobalSettings::ELEMENT_BEHAVIOUR behaviour)
+    {
+        this->behaviour = behaviour;
+        BoundaryCondition::activate(expression);
+    }
 
-	StructuralMechanicsGlobalSettings::ELEMENT_BEHAVIOUR behaviour;
+    StructuralMechanicsGlobalSettings::ELEMENT_BEHAVIOUR behaviour;
 };
 
 }

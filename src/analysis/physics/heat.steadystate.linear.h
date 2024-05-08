@@ -15,27 +15,27 @@ struct HeatTransferLoadStepConfiguration;
 class HeatSteadyStateLinear: public Physics {
 
 public:
-	HeatSteadyStateLinear(HeatTransferConfiguration &settings, HeatTransferLoadStepConfiguration &configuration);
-	~HeatSteadyStateLinear();
+    HeatSteadyStateLinear(HeatTransferConfiguration &settings, HeatTransferLoadStepConfiguration &configuration);
+    ~HeatSteadyStateLinear();
 
-	void analyze(step::Step &step);
-	void run(step::Step &step);
+    void analyze(step::Step &step);
+    void run(step::Step &step);
 
-	step::Time time;
-	HeatTransferConfiguration &settings;
-	HeatTransferLoadStepConfiguration &configuration;
+    step::Time time;
+    HeatTransferConfiguration &settings;
+    HeatTransferLoadStepConfiguration &configuration;
 
-	HeatTransfer assembler;
+    HeatTransfer assembler;
 
-	Matrix_Base<double> *K;
-	Vector_Base<double> *f, *x, *dirichlet;
+    Matrix_Base<double> *K;
+    Vector_Base<double> *f, *x, *dirichlet;
 
-	SparseMatrixBuilder<double> *builder;
-	LinearSystemSolver<double> *solver;
+    SparseMatrixBuilder<double> *builder;
+    LinearSystemSolver<double> *solver;
 
 protected:
-	void storeSystem(step::Step &step);
-	void storeSolution(step::Step &step);
+    void storeSystem(step::Step &step);
+    void storeSolution(step::Step &step);
 };
 
 }
