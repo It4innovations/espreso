@@ -46,40 +46,55 @@ stages:
     refs:
       - schedules
 
-.WS_DUMMY:
+WS_DUMMY:
   extends: .ws_foss
   script:
-    - sh tests/scripts/dummy.sh -j8
+    - ./waf configure --skip-suitesparse --skip-mkl --skip-blas --skip-lapack
+    - ./waf -j8
+    - ./waf configure --skip-suitesparse --skip-mkl --skip-blas --skip-lapack --intwidth=64
+    - ./waf -j8
 
-.WS_FOSS:
+WS_FOSS:
   extends: .ws_foss
   script:
-    - sh tests/scripts/basic.sh -j8
+    - ./waf configure
+    - ./waf -j 8
+    - sh tests/run.basic.sh
 
-.WS_MKL:
+WS_MKL:
   extends: .ws_mkl
   script:
-    - sh tests/scripts/basic.sh -j8
+    - ./waf configure
+    - ./waf -j 8
+    - sh tests/run.basic.sh
 
-.WS_INTEL:
+WS_INTEL:
   extends: .ws_intel
   script:
-    - sh tests/scripts/basic.sh -j8
+    - ./waf configure
+    - ./waf -j 8
+    - sh tests/run.basic.sh
 
-.WS_ASSEMBLER:
+WS_ASSEMBLER:
   extends: .ws_solver_intel
   script:
-    - sh tests/scripts/assembler.sh -j8
+    - ./waf configure
+    - ./waf -j 8
+    - sh tests/run.assembler.sh
 
-.WS_PHYSICAL_SOLVER:
+WS_PHYSICAL_SOLVER:
   extends: .ws_solver_intel
   script:
-    - sh tests/scripts/physical_solver.sh -j8
+    - ./waf configure
+    - ./waf -j 8
+    - sh tests/run.physical_solver.sh
 
-.WS_FETI:
+WS_FETI:
   extends: .ws_solver_foss
   script:
-    - sh tests/scripts/feti.sh -j8
+    - ./waf configure
+    - ./waf -j 8
+    - sh tests/run.feti.sh
 
 .cs_build:
   stage: build
