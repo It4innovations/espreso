@@ -8,91 +8,101 @@ stages:
   stage: build
   tags:
     - ws
-
-.ws_foss:
-  extends: .ws_build
   before_script:
-    - export CXX=mpic++
+    - sh dependencies/clone.metis.sh
+    - sh dependencies/clone.parmetis.sh
 
-.ws_mkl:
+WS_DUMMY32:
   extends: .ws_build
-  before_script:
-    - export CXX=mpic++
-    - export CPATH=/usr/include/mkl:$CPATH
-
-.ws_intel:
-  extends: .ws_build
-  before_script:
-    - . env/modules.workstation.icpc
-
-.ws_solver_foss:
-  extends: .ws_foss
-  stage: solver
-  only:
-    refs:
-      - schedules
-
-.ws_solver_mkl:
-  extends: .ws_mkl
-  stage: solver
-  only:
-    refs:
-      - schedules
-
-.ws_solver_intel:
-  extends: .ws_intel
-  stage: solver
-  only:
-    refs:
-      - schedules
-
-WS_DUMMY:
-  extends: .ws_foss
   script:
+    - . env/workstation.openmpi.32.sh
     - ./waf configure --skip-suitesparse --skip-mkl --skip-blas --skip-lapack
     - ./waf -j8
+
+WS_DUMMY64:
+  extends: .ws_build
+  script:
+    - . env/workstation.openmpi.64.sh
     - ./waf configure --skip-suitesparse --skip-mkl --skip-blas --skip-lapack --intwidth=64
     - ./waf -j8
 
-WS_FOSS:
-  extends: .ws_foss
+WS_FOSS32:
+  extends: .ws_build
   script:
+    - . env/workstation.openmpi.32.sh
     - ./waf configure
     - ./waf -j 8
     - sh tests/run.basic.sh
 
-WS_MKL:
-  extends: .ws_mkl
+WS_FOSS64:
+  extends: .ws_build
   script:
+    - . env/workstation.openmpi.64.sh
+    - ./waf configure --intwidth=64
+    - ./waf -j 8
+    - sh tests/run.basic.sh
+
+WS_MKL32:
+  extends: .ws_build
+  script:
+    - . env/workstation.openmpi.mkl.32.sh
     - ./waf configure
     - ./waf -j 8
     - sh tests/run.basic.sh
 
-WS_INTEL:
-  extends: .ws_intel
+WS_MKL64:
+  extends: .ws_build
   script:
+    - . env/workstation.openmpi.mkl.64.sh
     - ./waf configure
     - ./waf -j 8
     - sh tests/run.basic.sh
 
-WS_ASSEMBLER:
-  extends: .ws_solver_intel
+WS_INTEL32:
+  extends: .ws_build
   script:
+    - . env/workstation.intel.32.sh
+    - ./waf configure
+    - ./waf -j 8
+    - sh tests/run.basic.sh
+
+WS_INTEL64:
+  extends: .ws_build
+  script:
+    - . env/workstation.intel.64.sh
+    - ./waf configure --intwidth=64
+    - ./waf -j 8
+    - sh tests/run.basic.sh
+
+WS_ASSEMBLER32:
+  extends: .ws_build
+  script:
+    - . env/workstation.openmpi.32.sh
     - ./waf configure
     - ./waf -j 8
     - sh tests/run.assembler.sh
 
-WS_PHYSICAL_SOLVER:
-  extends: .ws_solver_intel
+WS_PHYSICAL_SOLVER32:
+  extends: .ws_build
   script:
+    - . env/workstation.intel.32.sh
     - ./waf configure
     - ./waf -j 8
     - sh tests/run.physical_solver.sh
 
-WS_FETI:
-  extends: .ws_solver_foss
+WS_FETI32:
+  extends: .ws_build
   script:
+    - . env/workstation.openmpi.32.sh
     - ./waf configure
+    - ./waf -j 8
+    - sh tests/run.feti.sh
+
+WS_FETI64:
+  extends: .ws_build
+  script:
+    - . env/workstation.openmpi.64.sh
+    - ./waf configure --intwidth=64
     - ./waf -j 8
     - sh tests/run.feti.sh
 
