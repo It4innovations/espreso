@@ -17,7 +17,7 @@ DEFAULT_ARGS {
 }
 
 INPUT_TYPE              GENERATOR;
-PHYSICS   STRUCTURAL_MECHANICS;
+PHYSICS      STRUCTURAL_MECHANICS;
 
 GENERATOR {
   SHAPE   GRID;
@@ -27,12 +27,12 @@ GENERATOR {
     START_Y                    0;
     START_Z                    0;
 
-    LENGTH_X                   1;
-    LENGTH_Y                   1;
-    LENGTH_Z                   1;
+    LENGTH_X                 .35;
+    LENGTH_Y                 .35;
+    LENGTH_Z                 .02;
 
     NODES {
-      FIX   <0 , 0> <0 , 1> <0 , 1>;
+      FIX   <0 , 0> <0 , .35> <0 , .02>;
     }
 
     ELEMENT_TYPE          [ARG0];
@@ -82,17 +82,16 @@ STRUCTURAL_MECHANICS {
       DURATION_TIME     1;
       TYPE   STEADY_STATE;
       MODE      NONLINEAR;
-      SOLVER         FETI;
+      SOLVER      MKLPDSS;
 
       LARGE_DISPLACEMENT      TRUE;
 
       FETI {
         METHOD          TOTAL_FETI;
-        PRECONDITIONER        NONE;
+        PRECONDITIONER   DIRICHLET;
         ITERATIVE_SOLVER       PCG;
         REGULARIZATION    ANALYTIC;
-        B0_TYPE            KERNELS;
-        ORDERING           NATURAL;
+        PRECISION             1e-9;
       }
 
       DISPLACEMENT {
@@ -107,7 +106,7 @@ STRUCTURAL_MECHANICS {
 }
 
 OUTPUT {
-  RESULTS_STORE_FREQUENCY            NEVER;
+#  RESULTS_STORE_FREQUENCY            NEVER;
   MONITORS_STORE_FREQUENCY   EVERY_SUBSTEP;
 
   STORE_RESULTS         ALL;
