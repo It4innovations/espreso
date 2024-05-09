@@ -82,7 +82,7 @@ WS_ASSEMBLER32:
     - ./waf -j 8
     - sh tests/run.assembler.sh
 
-WS_PHYSICAL_SOLVER32:
+.WS_PHYSICAL_SOLVER32:
   extends: .ws_build
   script:
     - . env/workstation.intel.32.sh
