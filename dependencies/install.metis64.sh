@@ -13,7 +13,7 @@ then
     (
         cd "${METIS_ROOT}"
         sed -i 's/#define IDXTYPEWIDTH 32/#define IDXTYPEWIDTH 64/g' ${PWD}/include/metis.h
-
+        sed -i 's/add_subdirectory(\"programs\")/#add_subdirectory(\"programs\")/'g CMakeLists.txt
         make config shared=1 cc=$1 gklib_path="${PWD}/GKlib" prefix="${PWD}/$1_64"
         make -j$(nproc)
         make install

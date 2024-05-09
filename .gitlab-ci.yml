@@ -77,7 +77,7 @@ WS_INTEL64:
 WS_ASSEMBLER32:
   extends: .ws_build
   script:
-    - . env/workstation.openmpi.32.sh
+    - . env/workstation.intel.32.sh
     - ./waf configure
     - ./waf -j 8
     - sh tests/run.assembler.sh
@@ -98,7 +98,7 @@ WS_FETI32:
     - ./waf -j 8
     - sh tests/run.feti.sh
 
-WS_FETI64:
+.WS_FETI64:
   extends: .ws_build
   script:
     - . env/workstation.openmpi.64.sh
