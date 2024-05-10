@@ -160,7 +160,7 @@ void HeatTransientLinear::run(step::Step &step)
         assembler.evaluate(step, time, K, M, f, nullptr, dirichlet);
         eslog::checkpointln("SIMULATION: PHYSICS ASSEMBLED");
 
-        if (K->updated || M->updated) {
+        if (K->updated || M->updated || solver->A->updated) {
             solver->A->set(0)->add(1, K)->add(1 / (alpha * time.shift), M);
             solver->A->updated = true;
         }

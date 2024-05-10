@@ -154,7 +154,7 @@ void StructuralMechanicsTransientLinear::run(step::Step &step)
         assembler.evaluate(step, time, K, M, f, nullptr, dirichlet);
         eslog::checkpointln("SIMULATION: PHYSICS ASSEMBLED");
 
-        if (K->updated || M->updated) {
+        if (K->updated || M->updated || solver->A->updated) {
             solver->A->set(0)->add(1, K)->add(newmark[0], M);
             solver->A->updated = true;
         }

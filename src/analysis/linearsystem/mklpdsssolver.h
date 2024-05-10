@@ -26,7 +26,9 @@ struct MKLPDSSLinearSystemSolver: DirectLinearSystemSolver<T> {
         if (this->A.updated || this->b.updated || this->dirichlet.updated) {
             this->setDirichlet();
             mklpdss.update(this->A);
+            this->A.updated = this->b.updated = true; // set dirichlet update both
         }
+        this->dirichlet.updated = false;
 
         if (info::ecf->output.print_matrices) {
             eslog::storedata(" STORE: system/{A, b, dirichlet}\n");
