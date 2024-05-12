@@ -23,7 +23,7 @@ then
         git clone -b "${VERSION_SUITESPARSE}" https://github.com/DrTimothyAldenDavis/SuiteSparse.git "${SUITESPARSE_DIR}"
         cd "${SUITESPARSE_DIR}"
 
-        ml LAPACK/3.10.0-GCC-11.2.0
+        ml LAPACK/3.10.0-GCC-12.2.0
         ml GCC/11.3.0
         ml OpenBLAS/0.3.20-GCC-11.3.0
         ml CMake/3.24.3-GCCcore-11.3.0
@@ -40,7 +40,7 @@ export LD_LIBRARY_PATH="${PWD}/${SUITESPARSE_ROOT}/lib64:${LD_LIBRARY_PATH}"
 
 
 
-ml LAPACK/3.10.0-GCC-11.2.0
+ml LAPACK/3.10.0-GCC-12.2.0
 ml GCC/11.3.0
 ml OpenBLAS/0.3.20-GCC-11.3.0
 ml OpenMPI/4.1.4-GCC-11.3.0
