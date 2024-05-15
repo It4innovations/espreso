@@ -40,7 +40,6 @@ struct ExternalHeatKernel: ExternalHeat {
             q = q + element.ecf.htc * element.ecf.extTemp;
 
             element.f[n] = element.f[n] + q * element.thickness.gp * element.det * load1(element.w[gp]) * load1(element.N[gp][n]);
-
         }
     }
 };

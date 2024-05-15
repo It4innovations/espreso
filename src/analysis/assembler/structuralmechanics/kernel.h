@@ -275,9 +275,9 @@ void runElementKernel(const step::Step &step, StructuralMechanicsOperators &subk
     AngularVelocityKernel<nodes, ndim> angularVelocity(subkernels.angularVelocity);
     SigmaKernel<nodes, ndim> sigma(subkernels.sigma);
     StressKernel<nodes, gps, ndim> stress(subkernels.stress);
-    MatricFillerKernel<nodes> outK(subkernels.Kfiller);
-    MatricFillerKernel<nodes> outM(subkernels.Mfiller);
-    MatricFillerKernel<nodes> outC(subkernels.Cfiller);
+    MatrixFillerKernel<nodes> outK(subkernels.Kfiller);
+    MatrixFillerKernel<nodes> outM(subkernels.Mfiller);
+    MatrixFillerKernel<nodes> outC(subkernels.Cfiller);
     RHSFillerKernel<nodes> outReRHS(subkernels.reRHSfiller);
     RHSFillerKernel<nodes> outReNRHS(subkernels.reNRHSfiller);
     RHSFillerKernel<nodes> outImRHS(subkernels.imRHSfiller);

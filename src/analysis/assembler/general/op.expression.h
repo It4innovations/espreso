@@ -127,7 +127,7 @@ struct ExternalGPsExpression: ExternalEvaluator, Element {
         for (size_t s = 0; s < SIMD::size; ++s) {
             temperature = element.temperature.gp[s];
             SetExpression<ndim>::coordinates_gp(element, s, coordinateX, coordinateY, coordinateZ);
-            setter(element, gp, s, this->evaluator->evaluate());
+            setter(element, gp, s, this->evaluator->evaluate(t));
         }
     }
 };
@@ -154,7 +154,7 @@ struct ExternalNodeExpression: ExternalEvaluator, Element {
         for (size_t s = 0; s < SIMD::size; ++s) {
             temperature = element.temperature.node[n][s];
             SetExpression<ndim>::coordinates_node(element, n, s, coordinateX, coordinateY, coordinateZ);
-            setter(element, n, s, this->evaluator->evaluate());
+            setter(element, n, s, this->evaluator->evaluate(t));
         }
     }
 };

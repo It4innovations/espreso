@@ -59,15 +59,17 @@ HeatTransfer::HeatTransfer(HeatTransfer *previous, HeatTransferConfiguration &se
                         boundary[r][i].elements = info::mesh->boundaryRegions[r]->eintervals[i].end - info::mesh->boundaryRegions[r]->eintervals[i].begin;
                         boundary[r][i].chunks = boundary[r][i].elements / SIMD::size + (boundary[r][i].elements % SIMD::size ? 1 : 0);
                     }
-                } else {
-                    boundary[r][t].code = static_cast<int>(Element::CODE::POINT1);
-                    boundary[r][t].elements = info::mesh->boundaryRegions[r]->nodes->datatarray().size(t);
-                    boundary[r][t].chunks = boundary[r][t].elements / SIMD::size + (boundary[r][t].elements % SIMD::size ? 1 : 0);
                 }
             }
         }
+        for (size_t r = 1; r < info::mesh->boundaryRegions.size(); ++r) {
+            if (info::mesh->boundaryRegions[r]->dimension == 0) {
+                boundary[r][t].code = static_cast<int>(Element::CODE::POINT1);
+                boundary[r][t].elements = info::mesh->boundaryRegions[r]->nodes->datatarray().size(t);
+                boundary[r][t].chunks = boundary[r][t].elements / SIMD::size + (boundary[r][t].elements % SIMD::size ? 1 : 0);
+            }
+        }
     }
-
 
     GaussPoints<Element::CODE::LINE2    ,  2, HeatTransferGPC::LINE2    , 1>::set();
     GaussPoints<Element::CODE::TRIANGLE3,  3, HeatTransferGPC::TRIANGLE3, 2>::set();

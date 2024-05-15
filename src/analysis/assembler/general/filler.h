@@ -67,8 +67,8 @@ struct DataFiller: SubKernel {
 };
 
 template <size_t nodes>
-struct MatricFillerKernel: DataFiller {
-    MatricFillerKernel(const DataFiller &base): DataFiller(base) {}
+struct MatrixFillerKernel: DataFiller {
+    MatrixFillerKernel(const DataFiller &base): DataFiller(base) {}
 
     void simd(SIMD matrix[])
     {

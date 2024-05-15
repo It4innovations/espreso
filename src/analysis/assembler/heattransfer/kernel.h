@@ -261,8 +261,8 @@ void runElementKernel(const step::Step &step, const HeatTransferElementOperators
     MatrixMassKernel<nodes, 1> M(subkernels.M);
     TemperatureGradientKernel<nodes, gps, ndim> gradient(subkernels.gradient);
     TemperatureFluxKernel<nodes, gps, ndim> flux(subkernels.flux);
-    MatricFillerKernel<nodes> outK(subkernels.Kfiller);
-    MatricFillerKernel<nodes> outM(subkernels.Mfiller);
+    MatrixFillerKernel<nodes> outK(subkernels.Kfiller);
+    MatrixFillerKernel<nodes> outM(subkernels.Mfiller);
     RHSFillerKernel<nodes> outRHS(subkernels.RHSfiller);
 
     struct {
