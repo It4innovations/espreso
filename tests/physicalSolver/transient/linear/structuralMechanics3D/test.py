@@ -14,7 +14,7 @@ class PhysicalSolver(unittest.TestCase):
         ESPRESOTest.clean()
 
     def test_physical_solver(self):
-        for solver in [ "   FETI" ]:
+        for solver in [ "MKLPDSS", "   FETI" ]:
             yield run, solver
 
 def run(solver):
