@@ -12,6 +12,10 @@ stages:
     - sh dependencies/clone.metis.sh
     - sh dependencies/clone.parmetis.sh
 
+.ws_solver:
+  extends: .ws_build
+  stage: solver
+
 WS_DUMMY32:
   extends: .ws_build
   script:
@@ -75,7 +79,7 @@ WS_INTEL64:
     - sh tests/run.basic.sh
 
 WS_ASSEMBLER32:
-  extends: .ws_build
+  extends: .ws_solver
   script:
     - . env/workstation.intel.32.sh
     - ./waf configure
@@ -83,7 +87,7 @@ WS_ASSEMBLER32:
     - sh tests/run.assembler.sh
 
 WS_PHYSICAL_SOLVER32:
-  extends: .ws_build
+  extends: .ws_solver
   script:
     - . env/workstation.intel.32.sh
     - ./waf configure
@@ -91,7 +95,7 @@ WS_PHYSICAL_SOLVER32:
     - sh tests/run.physical_solver.sh
 
 WS_FETI32:
-  extends: .ws_build
+  extends: .ws_solver
   script:
     - . env/workstation.openmpi.32.sh
     - ./waf configure
@@ -99,7 +103,7 @@ WS_FETI32:
     - sh tests/run.feti.sh
 
 .WS_FETI64:
-  extends: .ws_build
+  extends: .ws_solver
   script:
     - . env/workstation.openmpi.64.sh
     - ./waf configure --intwidth=64
