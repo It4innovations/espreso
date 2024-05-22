@@ -1,6 +1,6 @@
 
-#ifndef SRC_ANALYSIS_ASSEMBLER_HEATTRANSFER_SUBKERNELS_H_
-#define SRC_ANALYSIS_ASSEMBLER_HEATTRANSFER_SUBKERNELS_H_
+#ifndef SRC_ANALYSIS_ASSEMBLER_HEATTRANSFER_OPERATORS_H_
+#define SRC_ANALYSIS_ASSEMBLER_HEATTRANSFER_OPERATORS_H_
 
 #include "analysis/assembler/general/subkernel.h"
 #include "analysis/assembler/general/basis.h"
@@ -81,4 +81,4 @@ struct HeatTransferBoundaryOperators {
 }
 
 
-#endif /* SRC_ANALYSIS_ASSEMBLER_HEATTRANSFER_SUBKERNELS_H_ */
+#endif /* SRC_ANALYSIS_ASSEMBLER_HEATTRANSFER_OPERATORS_H_ */

@@ -13,7 +13,6 @@
 #include "math/primitives/vector_sparse.h"
 #include "math/primitives/matrix_info.h"
 
-
 #include <cstddef>
 #include <map>
 
@@ -65,10 +64,7 @@ protected:
     void run(const step::Step &step, SubKernel::Action action, size_t region, size_t interval);
     void runBEM(const step::Step &step, SubKernel::Action action, size_t domain, double *BETI);
 
-    template <Element::CODE code> void runElement(const step::Step &step, SubKernel::Action action, size_t interval);
-    template <Element::CODE code> void runBoundary(const step::Step &step, SubKernel::Action action, size_t region, size_t interval);
-
-    std::vector<StructuralMechanicsOperators> subkernels;
+    std::vector<StructuralMechanicsElementOperators> subkernels;
     std::vector<std::vector<StructuralMechanicsBoundaryOperators> > boundary;
     std::vector<double> faceMultiplicity;
 };

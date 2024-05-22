@@ -69,26 +69,21 @@ static void _submatrix(const Matrix_CSR<T, I> &input, Matrix_Dense<T, I> &output
             if(c >= end_col) {
                 break;
             }
-            I out_c = c - start_col;
-
-            T val;
-            T conjval;
-            T *out_val;
-            T *out_val_trans;
-
-            val = input.vals[i];
-            if constexpr(do_copy_conjugated || do_transposed_conjugated) {
-                if constexpr(is_T_real)    { conjval = val; }
-                if constexpr(is_T_complex) { conjval = std::conj(val); }
+            I out_c = c - start_col, index = 0;
+            T val = input.vals[i];
+            if (do_copy || do_copy_conjugated) {
+                index = denseMatCalcIndexRowMajor<OutShape>(out_r, out_c, output.ncols);
             }
-            if constexpr(do_copy || do_copy_conjugated) { out_val = output.vals + denseMatCalcIndexRowMajor<OutShape>(out_r, out_c, output.ncols); }
-            if constexpr(do_transpose_copy || do_transposed_conjugated) { out_val_trans = output.vals + denseMatCalcIndexRowMajor<OutShape>(out_c, out_r, output.ncols); }
-
-            if constexpr(do_copy) { *out_val = val; }
-            if constexpr(do_transpose_copy) { *out_val_trans = val; }
-            if constexpr(do_copy_conjugated) { *out_val = conjval; }
-            if constexpr(do_transposed_conjugated) { *out_val_trans = conjval; }
-
+            if (do_transpose_copy || do_transposed_conjugated) {
+                index = denseMatCalcIndexRowMajor<OutShape>(out_c, out_r, output.ncols);
+            }
+            if constexpr(do_copy || do_transpose_copy) {
+                output.vals[index] = val;
+            }
+            if constexpr(do_copy_conjugated || do_transposed_conjugated) {
+                if constexpr(is_T_real)    { output.vals[index] = val; }
+                if constexpr(is_T_complex) { output.vals[index] = std::conj(val); }
+            }
             // since I use = instead of +=, duplicated operations on diagonal entries should not matter
         }
     }

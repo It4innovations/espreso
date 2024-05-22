@@ -11,34 +11,34 @@
 namespace espreso {
 
 template <Element::CODE code, size_t nodes, size_t gps, size_t ndim, size_t edim>
-void setElementKernel(StructuralMechanicsOperators &subkernels, SubKernel::Action action)
+void setElementKernel(StructuralMechanicsElementOperators &operators, SubKernel::Action action)
 {
     typedef StructuralMechanicsElement<nodes, gps, ndim, edim> Element; Element element;
 
     if constexpr(ndim == 2) {
-        if (subkernels.thickness.expression) {
-            subkernels.expressions.node.push_back(new ExternalNodeExpression<ndim, Element>(
-                    subkernels.thickness.expression->evaluator,
+        if (operators.thickness.expression) {
+            operators.expressions.node.push_back(new ExternalNodeExpression<ndim, Element>(
+                    operators.thickness.expression->evaluator,
                     [] (Element &element, size_t &n, size_t &s, double value) { element.thickness.node[n][s] = value; }));
         }
 
-        switch (subkernels.elasticity.coordinateSystem->type) {
+        switch (operators.elasticity.coordinateSystem->type) {
         case CoordinateSystemConfiguration::TYPE::CARTESIAN:
-            if (subkernels.elasticity.coordinateSystem->rotation.z.isset) {
-                subkernels.expressions.gp.push_back(new ExternalGPsExpression<ndim, Element>(
-                    subkernels.elasticity.coordinateSystem->rotation.z.evaluator,
+            if (operators.elasticity.coordinateSystem->rotation.z.isset) {
+                operators.expressions.gp.push_back(new ExternalGPsExpression<ndim, Element>(
+                    operators.elasticity.coordinateSystem->rotation.z.evaluator,
                     [] (Element &element, size_t &gp, size_t &s, double value) { element.rotation.center[0][s] = value; }));
             }
             break;
         case CoordinateSystemConfiguration::TYPE::CYLINDRICAL:
-            if (subkernels.elasticity.coordinateSystem->center.x.isset) {
-                subkernels.expressions.gp.push_back(new ExternalGPsExpression<ndim, Element>(
-                    subkernels.elasticity.coordinateSystem->center.x.evaluator,
+            if (operators.elasticity.coordinateSystem->center.x.isset) {
+                operators.expressions.gp.push_back(new ExternalGPsExpression<ndim, Element>(
+                    operators.elasticity.coordinateSystem->center.x.evaluator,
                     [] (Element &element, size_t &gp, size_t &s, double value) { element.rotation.center[0][s] = value; }));
             }
-            if (subkernels.elasticity.coordinateSystem->center.y.isset) {
-                subkernels.expressions.gp.push_back(new ExternalGPsExpression<ndim, Element>(
-                    subkernels.elasticity.coordinateSystem->center.y.evaluator,
+            if (operators.elasticity.coordinateSystem->center.y.isset) {
+                operators.expressions.gp.push_back(new ExternalGPsExpression<ndim, Element>(
+                    operators.elasticity.coordinateSystem->center.y.evaluator,
                     [] (Element &element, size_t &gp, size_t &s, double value) { element.rotation.center[1][s] = value; }));
             }
             break;
@@ -46,195 +46,195 @@ void setElementKernel(StructuralMechanicsOperators &subkernels, SubKernel::Actio
             break;
         }
 
-        subkernels.expressions.gp.push_back(new ExternalGPsExpression<ndim, Element>(
-                subkernels.elasticity.configuration->young_modulus.get(0, 0).evaluator,
+        operators.expressions.gp.push_back(new ExternalGPsExpression<ndim, Element>(
+                operators.elasticity.configuration->young_modulus.get(0, 0).evaluator,
                 [] (Element &element, size_t &gp, size_t &s, double value) { element.ecf.youngModulus[0][s] = value; }));
-        subkernels.expressions.gp.push_back(new ExternalGPsExpression<ndim, Element>(
-                subkernels.elasticity.configuration->young_modulus.get(1, 1).evaluator,
+        operators.expressions.gp.push_back(new ExternalGPsExpression<ndim, Element>(
+                operators.elasticity.configuration->young_modulus.get(1, 1).evaluator,
                 [] (Element &element, size_t &gp, size_t &s, double value) { element.ecf.youngModulus[1][s] = value; }));
 
-        subkernels.expressions.gp.push_back(new ExternalGPsExpression<ndim, Element>(
-                subkernels.elasticity.configuration->poisson_ratio.get(0, 0).evaluator,
+        operators.expressions.gp.push_back(new ExternalGPsExpression<ndim, Element>(
+                operators.elasticity.configuration->poisson_ratio.get(0, 0).evaluator,
                 [] (Element &element, size_t &gp, size_t &s, double value) { element.ecf.poissonRatio[0][s] = value; }));
-        subkernels.expressions.gp.push_back(new ExternalGPsExpression<ndim, Element>(
-                subkernels.elasticity.configuration->poisson_ratio.get(1, 1).evaluator,
+        operators.expressions.gp.push_back(new ExternalGPsExpression<ndim, Element>(
+                operators.elasticity.configuration->poisson_ratio.get(1, 1).evaluator,
                 [] (Element &element, size_t &gp, size_t &s, double value) { element.ecf.poissonRatio[1][s] = value; }));
 
-        subkernels.expressions.gp.push_back(new ExternalGPsExpression<ndim, Element>(
-                subkernels.elasticity.configuration->shear_modulus.get(0, 0).evaluator,
+        operators.expressions.gp.push_back(new ExternalGPsExpression<ndim, Element>(
+                operators.elasticity.configuration->shear_modulus.get(0, 0).evaluator,
                 [] (Element &element, size_t &gp, size_t &s, double value) { element.ecf.shearModulus[0][s] = value; }));
-        subkernels.expressions.gp.push_back(new ExternalGPsExpression<ndim, Element>(
-                subkernels.elasticity.configuration->shear_modulus.get(1, 1).evaluator,
+        operators.expressions.gp.push_back(new ExternalGPsExpression<ndim, Element>(
+                operators.elasticity.configuration->shear_modulus.get(1, 1).evaluator,
                 [] (Element &element, size_t &gp, size_t &s, double value) { element.ecf.shearModulus[1][s] = value; }));
 
-        if (subkernels.acceleration.expressionVector) {
-            subkernels.expressions.gp.push_back(new ExternalGPsExpression<ndim, Element>(
-                    subkernels.acceleration.expressionVector->x.evaluator,
+        if (operators.acceleration.expressionVector) {
+            operators.expressions.gp.push_back(new ExternalGPsExpression<ndim, Element>(
+                    operators.acceleration.expressionVector->x.evaluator,
                     [] (Element &element, size_t &gp, size_t &s, double value) { element.ecf.acceleration[0][s] = value; }));
         }
-        if (subkernels.acceleration.expressionVector) {
-            subkernels.expressions.gp.push_back(new ExternalGPsExpression<ndim, Element>(
-                    subkernels.acceleration.expressionVector->y.evaluator,
+        if (operators.acceleration.expressionVector) {
+            operators.expressions.gp.push_back(new ExternalGPsExpression<ndim, Element>(
+                    operators.acceleration.expressionVector->y.evaluator,
                     [] (Element &element, size_t &gp, size_t &s, double value) { element.ecf.acceleration[1][s] = value; }));
         }
 
-        if (subkernels.angularVelocity.expressionVector) {
-            subkernels.expressions.gp.push_back(new ExternalGPsExpression<ndim, Element>(
-                    subkernels.angularVelocity.expressionVector->y.evaluator,
+        if (operators.angularVelocity.expressionVector) {
+            operators.expressions.gp.push_back(new ExternalGPsExpression<ndim, Element>(
+                    operators.angularVelocity.expressionVector->y.evaluator,
                     [] (Element &element, size_t &gp, size_t &s, double value) { element.ecf.angularVelocity[1][s] = value; }));
         }
-        if (subkernels.angularVelocity.expressionVector) {
-            subkernels.expressions.gp.push_back(new ExternalGPsExpression<ndim, Element>(
-                    subkernels.angularVelocity.expressionVector->z.evaluator,
+        if (operators.angularVelocity.expressionVector) {
+            operators.expressions.gp.push_back(new ExternalGPsExpression<ndim, Element>(
+                    operators.angularVelocity.expressionVector->z.evaluator,
                     [] (Element &element, size_t &gp, size_t &s, double value) { element.ecf.angularVelocity[2][s] = value; }));
         }
     }
 
     if constexpr(ndim == 3) {
-        switch (subkernels.elasticity.coordinateSystem->type) {
+        switch (operators.elasticity.coordinateSystem->type) {
         case CoordinateSystemConfiguration::TYPE::CARTESIAN:
-            if (subkernels.elasticity.coordinateSystem->rotation.x.isset) {
-                subkernels.expressions.gp.push_back(new ExternalGPsExpression<ndim, Element>(
-                    subkernels.elasticity.coordinateSystem->rotation.x.evaluator,
+            if (operators.elasticity.coordinateSystem->rotation.x.isset) {
+                operators.expressions.gp.push_back(new ExternalGPsExpression<ndim, Element>(
+                    operators.elasticity.coordinateSystem->rotation.x.evaluator,
                     [] (Element &element, size_t &gp, size_t &s, double value) { element.rotation.center[0][s] = value; }));
             }
-            if (subkernels.elasticity.coordinateSystem->rotation.y.isset) {
-                subkernels.expressions.gp.push_back(new ExternalGPsExpression<ndim, Element>(
-                    subkernels.elasticity.coordinateSystem->rotation.y.evaluator,
+            if (operators.elasticity.coordinateSystem->rotation.y.isset) {
+                operators.expressions.gp.push_back(new ExternalGPsExpression<ndim, Element>(
+                    operators.elasticity.coordinateSystem->rotation.y.evaluator,
                     [] (Element &element, size_t &gp, size_t &s, double value) { element.rotation.center[1][s] = value; }));
             }
-            if (subkernels.elasticity.coordinateSystem->rotation.z.isset) {
-                subkernels.expressions.gp.push_back(new ExternalGPsExpression<ndim, Element>(
-                    subkernels.elasticity.coordinateSystem->rotation.z.evaluator,
+            if (operators.elasticity.coordinateSystem->rotation.z.isset) {
+                operators.expressions.gp.push_back(new ExternalGPsExpression<ndim, Element>(
+                    operators.elasticity.coordinateSystem->rotation.z.evaluator,
                     [] (Element &element, size_t &gp, size_t &s, double value) { element.rotation.center[2][s] = value; }));
             }
             break;
         case CoordinateSystemConfiguration::TYPE::CYLINDRICAL:
-            if (subkernels.elasticity.coordinateSystem->center.x.isset) {
-                subkernels.expressions.gp.push_back(new ExternalGPsExpression<ndim, Element>(
-                    subkernels.elasticity.coordinateSystem->center.x.evaluator,
+            if (operators.elasticity.coordinateSystem->center.x.isset) {
+                operators.expressions.gp.push_back(new ExternalGPsExpression<ndim, Element>(
+                    operators.elasticity.coordinateSystem->center.x.evaluator,
                     [] (Element &element, size_t &gp, size_t &s, double value) { element.rotation.center[0][s] = value; }));
             }
-            if (subkernels.elasticity.coordinateSystem->center.y.isset) {
-                subkernels.expressions.gp.push_back(new ExternalGPsExpression<ndim, Element>(
-                    subkernels.elasticity.coordinateSystem->center.y.evaluator,
+            if (operators.elasticity.coordinateSystem->center.y.isset) {
+                operators.expressions.gp.push_back(new ExternalGPsExpression<ndim, Element>(
+                    operators.elasticity.coordinateSystem->center.y.evaluator,
                     [] (Element &element, size_t &gp, size_t &s, double value) { element.rotation.center[1][s] = value; }));
             }
             break;
         case CoordinateSystemConfiguration::TYPE::SPHERICAL:
-            if (subkernels.elasticity.coordinateSystem->center.x.isset) {
-                subkernels.expressions.gp.push_back(new ExternalGPsExpression<ndim, Element>(
-                    subkernels.elasticity.coordinateSystem->center.x.evaluator,
+            if (operators.elasticity.coordinateSystem->center.x.isset) {
+                operators.expressions.gp.push_back(new ExternalGPsExpression<ndim, Element>(
+                    operators.elasticity.coordinateSystem->center.x.evaluator,
                     [] (Element &element, size_t &gp, size_t &s, double value) { element.rotation.center[0][s] = value; }));
             }
-            if (subkernels.elasticity.coordinateSystem->center.y.isset) {
-                subkernels.expressions.gp.push_back(new ExternalGPsExpression<ndim, Element>(
-                    subkernels.elasticity.coordinateSystem->center.y.evaluator,
+            if (operators.elasticity.coordinateSystem->center.y.isset) {
+                operators.expressions.gp.push_back(new ExternalGPsExpression<ndim, Element>(
+                    operators.elasticity.coordinateSystem->center.y.evaluator,
                     [] (Element &element, size_t &gp, size_t &s, double value) { element.rotation.center[1][s] = value; }));
             }
-            if (subkernels.elasticity.coordinateSystem->center.z.isset) {
-                subkernels.expressions.gp.push_back(new ExternalGPsExpression<ndim, Element>(
-                    subkernels.elasticity.coordinateSystem->center.z.evaluator,
+            if (operators.elasticity.coordinateSystem->center.z.isset) {
+                operators.expressions.gp.push_back(new ExternalGPsExpression<ndim, Element>(
+                    operators.elasticity.coordinateSystem->center.z.evaluator,
                     [] (Element &element, size_t &gp, size_t &s, double value) { element.rotation.center[2][s] = value; }));
             }
             break;
         }
 
-        subkernels.expressions.gp.push_back(new ExternalGPsExpression<ndim, Element>(
-                subkernels.elasticity.configuration->young_modulus.get(0, 0).evaluator,
+        operators.expressions.gp.push_back(new ExternalGPsExpression<ndim, Element>(
+                operators.elasticity.configuration->young_modulus.get(0, 0).evaluator,
                 [] (Element &element, size_t &gp, size_t &s, double value) { element.ecf.youngModulus[0][s] = value; }));
-        subkernels.expressions.gp.push_back(new ExternalGPsExpression<ndim, Element>(
-                subkernels.elasticity.configuration->young_modulus.get(1, 1).evaluator,
+        operators.expressions.gp.push_back(new ExternalGPsExpression<ndim, Element>(
+                operators.elasticity.configuration->young_modulus.get(1, 1).evaluator,
                 [] (Element &element, size_t &gp, size_t &s, double value) { element.ecf.youngModulus[1][s] = value; }));
-        subkernels.expressions.gp.push_back(new ExternalGPsExpression<ndim, Element>(
-                subkernels.elasticity.configuration->young_modulus.get(2, 2).evaluator,
+        operators.expressions.gp.push_back(new ExternalGPsExpression<ndim, Element>(
+                operators.elasticity.configuration->young_modulus.get(2, 2).evaluator,
                 [] (Element &element, size_t &gp, size_t &s, double value) { element.ecf.youngModulus[2][s] = value; }));
 
-        subkernels.expressions.gp.push_back(new ExternalGPsExpression<ndim, Element>(
-                subkernels.elasticity.configuration->poisson_ratio.get(0, 0).evaluator,
+        operators.expressions.gp.push_back(new ExternalGPsExpression<ndim, Element>(
+                operators.elasticity.configuration->poisson_ratio.get(0, 0).evaluator,
                 [] (Element &element, size_t &gp, size_t &s, double value) { element.ecf.poissonRatio[0][s] = value; }));
-        subkernels.expressions.gp.push_back(new ExternalGPsExpression<ndim, Element>(
-                subkernels.elasticity.configuration->poisson_ratio.get(1, 1).evaluator,
+        operators.expressions.gp.push_back(new ExternalGPsExpression<ndim, Element>(
+                operators.elasticity.configuration->poisson_ratio.get(1, 1).evaluator,
                 [] (Element &element, size_t &gp, size_t &s, double value) { element.ecf.poissonRatio[1][s] = value; }));
-        subkernels.expressions.gp.push_back(new ExternalGPsExpression<ndim, Element>(
-                subkernels.elasticity.configuration->poisson_ratio.get(2, 2).evaluator,
+        operators.expressions.gp.push_back(new ExternalGPsExpression<ndim, Element>(
+                operators.elasticity.configuration->poisson_ratio.get(2, 2).evaluator,
                 [] (Element &element, size_t &gp, size_t &s, double value) { element.ecf.poissonRatio[2][s] = value; }));
 
-        subkernels.expressions.gp.push_back(new ExternalGPsExpression<ndim, Element>(
-                subkernels.elasticity.configuration->shear_modulus.get(0, 0).evaluator,
+        operators.expressions.gp.push_back(new ExternalGPsExpression<ndim, Element>(
+                operators.elasticity.configuration->shear_modulus.get(0, 0).evaluator,
                 [] (Element &element, size_t &gp, size_t &s, double value) { element.ecf.shearModulus[0][s] = value; }));
-        subkernels.expressions.gp.push_back(new ExternalGPsExpression<ndim, Element>(
-                subkernels.elasticity.configuration->shear_modulus.get(1, 1).evaluator,
+        operators.expressions.gp.push_back(new ExternalGPsExpression<ndim, Element>(
+                operators.elasticity.configuration->shear_modulus.get(1, 1).evaluator,
                 [] (Element &element, size_t &gp, size_t &s, double value) { element.ecf.shearModulus[1][s] = value; }));
-        subkernels.expressions.gp.push_back(new ExternalGPsExpression<ndim, Element>(
-                subkernels.elasticity.configuration->shear_modulus.get(2, 2).evaluator,
+        operators.expressions.gp.push_back(new ExternalGPsExpression<ndim, Element>(
+                operators.elasticity.configuration->shear_modulus.get(2, 2).evaluator,
                 [] (Element &element, size_t &gp, size_t &s, double value) { element.ecf.shearModulus[2][s] = value; }));
 
-        if (subkernels.plasticity.isactive) {
-            subkernels.expressions.gp.push_back(new ExternalGPsExpression<ndim, Element>(
-                    subkernels.plasticity.configuration->initial_yield_stress.evaluator,
+        if (operators.plasticity.isactive) {
+            operators.expressions.gp.push_back(new ExternalGPsExpression<ndim, Element>(
+                    operators.plasticity.configuration->initial_yield_stress.evaluator,
                     [] (Element &element, size_t &gp, size_t &s, double value) { element.ecf.initialYieldStress[s] = value; }));
-            subkernels.expressions.gp.push_back(new ExternalGPsExpression<ndim, Element>(
-                    subkernels.plasticity.configuration->isotropic_hardening.evaluator,
+            operators.expressions.gp.push_back(new ExternalGPsExpression<ndim, Element>(
+                    operators.plasticity.configuration->isotropic_hardening.evaluator,
                     [] (Element &element, size_t &gp, size_t &s, double value) { element.ecf.isotropicHardening[s] = value; }));
-            subkernels.expressions.gp.push_back(new ExternalGPsExpression<ndim, Element>(
-                    subkernels.plasticity.configuration->kinematic_hardening.evaluator,
+            operators.expressions.gp.push_back(new ExternalGPsExpression<ndim, Element>(
+                    operators.plasticity.configuration->kinematic_hardening.evaluator,
                     [] (Element &element, size_t &gp, size_t &s, double value) { element.ecf.kinematicHardening[s] = value; }));
-            subkernels.plasticity.smallStrainTensorPlastic.resize(gps * (subkernels.chunks + 1) * SIMD::size * 6);
-            subkernels.plasticity.xi.resize(gps * (subkernels.chunks + 1) * SIMD::size * 6 + SIMD::size);
+            operators.plasticity.smallStrainTensorPlastic.resize(gps * (operators.chunks + 1) * SIMD::size * 6);
+            operators.plasticity.xi.resize(gps * (operators.chunks + 1) * SIMD::size * 6 + SIMD::size);
         }
 
-        if (subkernels.acceleration.expressionVector) {
-            subkernels.expressions.gp.push_back(new ExternalGPsExpression<ndim, Element>(
-                    subkernels.acceleration.expressionVector->x.evaluator,
+        if (operators.acceleration.expressionVector) {
+            operators.expressions.gp.push_back(new ExternalGPsExpression<ndim, Element>(
+                    operators.acceleration.expressionVector->x.evaluator,
                     [] (Element &element, size_t &gp, size_t &s, double value) { element.ecf.acceleration[0][s] = value; }));
         }
-        if (subkernels.acceleration.expressionVector) {
-            subkernels.expressions.gp.push_back(new ExternalGPsExpression<ndim, Element>(
-                    subkernels.acceleration.expressionVector->y.evaluator,
+        if (operators.acceleration.expressionVector) {
+            operators.expressions.gp.push_back(new ExternalGPsExpression<ndim, Element>(
+                    operators.acceleration.expressionVector->y.evaluator,
                     [] (Element &element, size_t &gp, size_t &s, double value) { element.ecf.acceleration[1][s] = value; }));
         }
-        if (subkernels.acceleration.expressionVector) {
-            subkernels.expressions.gp.push_back(new ExternalGPsExpression<ndim, Element>(
-                    subkernels.acceleration.expressionVector->z.evaluator,
+        if (operators.acceleration.expressionVector) {
+            operators.expressions.gp.push_back(new ExternalGPsExpression<ndim, Element>(
+                    operators.acceleration.expressionVector->z.evaluator,
                     [] (Element &element, size_t &gp, size_t &s, double value) { element.ecf.acceleration[2][s] = value; }));
         }
-        if (subkernels.angularVelocity.expressionVector) {
-            subkernels.expressions.gp.push_back(new ExternalGPsExpression<ndim, Element>(
-                    subkernels.angularVelocity.expressionVector->x.evaluator,
+        if (operators.angularVelocity.expressionVector) {
+            operators.expressions.gp.push_back(new ExternalGPsExpression<ndim, Element>(
+                    operators.angularVelocity.expressionVector->x.evaluator,
                     [] (Element &element, size_t &gp, size_t &s, double value) { element.ecf.angularVelocity[0][s] = value; }));
         }
-        if (subkernels.angularVelocity.expressionVector) {
-            subkernels.expressions.gp.push_back(new ExternalGPsExpression<ndim, Element>(
-                    subkernels.angularVelocity.expressionVector->y.evaluator,
+        if (operators.angularVelocity.expressionVector) {
+            operators.expressions.gp.push_back(new ExternalGPsExpression<ndim, Element>(
+                    operators.angularVelocity.expressionVector->y.evaluator,
                     [] (Element &element, size_t &gp, size_t &s, double value) { element.ecf.angularVelocity[1][s] = value; }));
         }
-        if (subkernels.angularVelocity.expressionVector) {
-            subkernels.expressions.gp.push_back(new ExternalGPsExpression<ndim, Element>(
-                    subkernels.angularVelocity.expressionVector->z.evaluator,
+        if (operators.angularVelocity.expressionVector) {
+            operators.expressions.gp.push_back(new ExternalGPsExpression<ndim, Element>(
+                    operators.angularVelocity.expressionVector->z.evaluator,
                     [] (Element &element, size_t &gp, size_t &s, double value) { element.ecf.angularVelocity[2][s] = value; }));
         }
     }
 
-    if (subkernels.material.configuration->density.isset) {
-        subkernels.expressions.gp.push_back(new ExternalGPsExpression<ndim, Element>(
-                subkernels.material.configuration->density.evaluator,
+    if (operators.material.configuration->density.isset) {
+        operators.expressions.gp.push_back(new ExternalGPsExpression<ndim, Element>(
+                operators.material.configuration->density.evaluator,
                 [] (Element &element, size_t &gp, size_t &s, double value) { element.ecf.density[s] = value; }));
     }
-    if (subkernels.material.configuration->heat_capacity.isset) {
-        subkernels.expressions.gp.push_back(new ExternalGPsExpression<ndim, Element>(
-                subkernels.material.configuration->heat_capacity.evaluator,
+    if (operators.material.configuration->heat_capacity.isset) {
+        operators.expressions.gp.push_back(new ExternalGPsExpression<ndim, Element>(
+                operators.material.configuration->heat_capacity.evaluator,
                 [] (Element &element, size_t &gp, size_t &s, double value) { element.ecf.heatCapacity[s] = value; }));
     }
 
-    BasisKernel<code, nodes, gps, edim> basis(subkernels.basis);
-    CoordinatesKernel<nodes, ndim> coordinates(subkernels.coordinates);
-    IntegrationKernel<nodes, ndim, edim> integration(subkernels.integration);
-    ThicknessToNodes<nodes, ndim> thickness(subkernels.thickness);
+    BasisKernel<code, nodes, gps, edim> basis(operators.basis);
+    CoordinatesKernel<nodes, ndim> coordinates(operators.coordinates);
+    IntegrationKernel<nodes, ndim, edim> integration(operators.integration);
+    ThicknessToNodes<nodes, ndim> thickness(operators.thickness);
 
     SIMD volume;
     basis.simd(element);
-    for (size_t c = 0; c < subkernels.chunks; ++c) {
+    for (size_t c = 0; c < operators.chunks; ++c) {
         coordinates.simd(element);
         thickness.simd(element);
 
@@ -244,53 +244,53 @@ void setElementKernel(StructuralMechanicsOperators &subkernels, SubKernel::Actio
         }
     }
 
-    subkernels.esize = sizeof(Element);
+    operators.esize = sizeof(Element);
     for (size_t s = 0; s < SIMD::size; ++s) {
-        subkernels.volume += volume[s];
+        operators.volume += volume[s];
     }
 }
 
 template <Element::CODE code, size_t nodes, size_t gps, size_t ndim, size_t edim>
-void runElementKernel(const step::Step &step, StructuralMechanicsOperators &subkernels, SubKernel::Action action)
+void runElementKernel(const step::Step &step, StructuralMechanicsElementOperators &operators, SubKernel::Action action)
 {
     typedef StructuralMechanicsElement<nodes, gps, ndim, edim> Element; Element element;
 
-    BasisKernel<code, nodes, gps, edim> basis(subkernels.basis);
-    CoordinatesKernel<nodes, ndim> coordinates(subkernels.coordinates);
-    CoordinatesToGPsKernel<nodes, ndim> coordinatesToGPs(subkernels.coordinates);
-    ThicknessToGp<nodes, ndim> thickness(subkernels.thickness);
-    TemperatureKernel<nodes> temperature(subkernels.temperature);
-    TemperatureToGPsKernel<nodes> temperatureToGPs(subkernels.temperature);
-    IntegrationKernel<nodes, ndim, edim> integration(subkernels.integration);
-    IntegrationDisplacedKernel<nodes, ndim> integrationDisplaced(subkernels.integrationDisplaced);
-    DisplacementKernel<nodes, ndim> displacement(subkernels.displacement);
-    SmallStrainTensorKernel<nodes, ndim> smallStrainTensor(subkernels.smallStrainTensor);
-    ElasticityKernel<ndim> elasticity(subkernels.elasticity);
-    ElasticityLargeDisplacementKernel<ndim> elasticityLargeDisplacement(subkernels.elasticityLargeDisplacement);
-    PlasticityKernel<nodes, ndim> plasticity(subkernels.plasticity, action);
-    MatrixElasticityKernel<nodes, ndim> K(subkernels.K);
-    MatrixLargeDisplacementKernel<nodes, ndim> KLD(subkernels.KLD);
-    MatrixMassKernel<nodes, ndim> M(subkernels.M);
-    AccelerationKernel<nodes, ndim> acceleration(subkernels.acceleration);
-    AngularVelocityKernel<nodes, ndim> angularVelocity(subkernels.angularVelocity);
-    SigmaKernel<nodes, ndim> sigma(subkernels.sigma);
-    StressKernel<nodes, gps, ndim> stress(subkernels.stress);
-    MatrixFillerKernel<nodes> outK(subkernels.Kfiller);
-    MatrixFillerKernel<nodes> outM(subkernels.Mfiller);
-    MatrixFillerKernel<nodes> outC(subkernels.Cfiller);
-    RHSFillerKernel<nodes> outReRHS(subkernels.reRHSfiller);
-    RHSFillerKernel<nodes> outReNRHS(subkernels.reNRHSfiller);
-    RHSFillerKernel<nodes> outImRHS(subkernels.imRHSfiller);
-    RHSFillerKernel<nodes> outImNRHS(subkernels.imRHSfiller);
+    BasisKernel<code, nodes, gps, edim> basis(operators.basis);
+    CoordinatesKernel<nodes, ndim> coordinates(operators.coordinates);
+    CoordinatesToGPsKernel<nodes, ndim> coordinatesToGPs(operators.coordinates);
+    ThicknessToGp<nodes, ndim> thickness(operators.thickness);
+    TemperatureKernel<nodes> temperature(operators.temperature);
+    TemperatureToGPsKernel<nodes> temperatureToGPs(operators.temperature);
+    IntegrationKernel<nodes, ndim, edim> integration(operators.integration);
+    IntegrationDisplacedKernel<nodes, ndim> integrationDisplaced(operators.integrationDisplaced);
+    DisplacementKernel<nodes, ndim> displacement(operators.displacement);
+    SmallStrainTensorKernel<nodes, ndim> smallStrainTensor(operators.smallStrainTensor);
+    ElasticityKernel<ndim> elasticity(operators.elasticity);
+    ElasticityLargeDisplacementKernel<ndim> elasticityLargeDisplacement(operators.elasticityLargeDisplacement);
+    PlasticityKernel<nodes, ndim> plasticity(operators.plasticity, action);
+    MatrixElasticityKernel<nodes, ndim> K(operators.K);
+    MatrixLargeDisplacementKernel<nodes, ndim> KLD(operators.KLD);
+    MatrixMassKernel<nodes, ndim> M(operators.M);
+    AccelerationKernel<nodes, ndim> acceleration(operators.acceleration);
+    AngularVelocityKernel<nodes, ndim> angularVelocity(operators.angularVelocity);
+    SigmaKernel<nodes, ndim> sigma(operators.sigma);
+    StressKernel<nodes, gps, ndim> stress(operators.stress);
+    MatrixFillerKernel<nodes> outK(operators.Kfiller);
+    MatrixFillerKernel<nodes> outM(operators.Mfiller);
+    MatrixFillerKernel<nodes> outC(operators.Cfiller);
+    RHSFillerKernel<nodes> outReRHS(operators.reRHSfiller);
+    RHSFillerKernel<nodes> outReNRHS(operators.reNRHSfiller);
+    RHSFillerKernel<nodes> outImRHS(operators.imRHSfiller);
+    RHSFillerKernel<nodes> outImNRHS(operators.imRHSfiller);
 
     struct {
         std::vector<ExternalNodeExpression<ndim, Element>*> node;
         std::vector<ExternalGPsExpression<ndim, Element>*> gp;
     } nonconst;
 
-    for (size_t i = 0; i < subkernels.expressions.node.size(); ++i) {
-        ExternalNodeExpression<ndim, Element>* exp = dynamic_cast<ExternalNodeExpression<ndim, Element>*>(subkernels.expressions.node[i]);
-        if (subkernels.expressions.node[i]->evaluator->isConst()) {
+    for (size_t i = 0; i < operators.expressions.node.size(); ++i) {
+        ExternalNodeExpression<ndim, Element>* exp = dynamic_cast<ExternalNodeExpression<ndim, Element>*>(operators.expressions.node[i]);
+        if (operators.expressions.node[i]->evaluator->isConst()) {
             for (size_t n = 0; n < nodes; ++n) {
                 exp->simd(element, n);
             }
@@ -299,9 +299,9 @@ void runElementKernel(const step::Step &step, StructuralMechanicsOperators &subk
         }
     }
 
-    for (size_t i = 0; i < subkernels.expressions.gp.size(); ++i) {
-        ExternalGPsExpression<ndim, Element>* exp = dynamic_cast<ExternalGPsExpression<ndim, Element>*>(subkernels.expressions.gp[i]);
-        if (subkernels.expressions.gp[i]->evaluator->isConst()) {
+    for (size_t i = 0; i < operators.expressions.gp.size(); ++i) {
+        ExternalGPsExpression<ndim, Element>* exp = dynamic_cast<ExternalGPsExpression<ndim, Element>*>(operators.expressions.gp[i]);
+        if (operators.expressions.gp[i]->evaluator->isConst()) {
             for (size_t gp = 0; gp < gps; ++gp) {
                 exp->simd(element, gp);
             }
@@ -341,7 +341,7 @@ void runElementKernel(const step::Step &step, StructuralMechanicsOperators &subk
     outImRHS.setActiveness(action);
     outImNRHS.setActiveness(action);
 
-    for (size_t c = 0; c < subkernels.chunks; ++c) {
+    for (size_t c = 0; c < operators.chunks; ++c) {
         if (sigma.isactive) {
             sigma.reset(element);
         }
@@ -443,26 +443,26 @@ void runElementKernel(const step::Step &step, StructuralMechanicsOperators &subk
 }
 
 template <Element::CODE code, size_t nodes, size_t gps, size_t ndim, size_t edim>
-void setBoundaryKernel(StructuralMechanicsBoundaryOperators &subkernels, SubKernel::Action action)
+void setBoundaryKernel(StructuralMechanicsBoundaryOperators &operators, SubKernel::Action action)
 {
     typedef StructuralMechanicsBoundary<nodes, gps, ndim, edim> Element; Element element;
 
-    if (subkernels.normalPressure.expression) {
-        subkernels.expressions.gp.push_back(new ExternalGPsExpression<ndim, Element>(
-                subkernels.normalPressure.expression->evaluator,
+    if (operators.normalPressure.expression) {
+        operators.expressions.gp.push_back(new ExternalGPsExpression<ndim, Element>(
+                operators.normalPressure.expression->evaluator,
                 [] (Element &element, size_t &gp, size_t &s, double value) { element.ecf.normalPressure[s] = value; }));
     }
 
-    BasisKernel<code, nodes, gps, edim> basis(subkernels.basis);
-    CoordinatesKernel<nodes, ndim> coordinates(subkernels.coordinates);
-    IntegrationKernel<nodes, ndim, edim> integration(subkernels.integration);
-    StoreNormalKernel<nodes, ndim> storeNornal(subkernels.normal);
+    BasisKernel<code, nodes, gps, edim> basis(operators.basis);
+    CoordinatesKernel<nodes, ndim> coordinates(operators.coordinates);
+    IntegrationKernel<nodes, ndim, edim> integration(operators.integration);
+    StoreNormalKernel<nodes, ndim> storeNornal(operators.normal);
 
     storeNornal.setActiveness(action);
 
     SIMD surface;
     basis.simd(element);
-    for (size_t c = 0; c < subkernels.chunks; ++c) {
+    for (size_t c = 0; c < operators.chunks; ++c) {
         coordinates.simd(element);
         for (size_t gp = 0; gp < gps; ++gp) {
             integration.simd(element, gp);
@@ -473,31 +473,31 @@ void setBoundaryKernel(StructuralMechanicsBoundaryOperators &subkernels, SubKern
         }
     }
 
-    subkernels.esize = sizeof(Element);
+    operators.esize = sizeof(Element);
     for (size_t s = 0; s < SIMD::size; ++s) {
-        subkernels.surface += surface[s];
+        operators.surface += surface[s];
     }
 }
 
 template <Element::CODE code, size_t nodes, size_t gps, size_t ndim, size_t edim>
-void runBoundaryKernel(const StructuralMechanicsBoundaryOperators &subkernels, SubKernel::Action action)
+void runBoundaryKernel(const StructuralMechanicsBoundaryOperators &operators, SubKernel::Action action)
 {
     typedef StructuralMechanicsBoundary<nodes, gps, ndim, edim> Element; Element element;
 
-    BasisKernel<code, nodes, gps, edim> basis(subkernels.basis);
-    CoordinatesKernel<nodes, ndim> coordinates(subkernels.coordinates);
-    CoordinatesToGPsKernel<nodes, ndim> coordinatesToGPs(subkernels.coordinates);
-    ThicknessFromNodes<nodes, ndim> thickness(subkernels.thickness);
-    ThicknessToGp<nodes, ndim> thicknessToGPs(subkernels.thickness);
-    IntegrationKernel<nodes, ndim, edim> integration(subkernels.integration);
-    NormalPressureKernel<nodes, ndim> normalPressure(subkernels.normalPressure);
-    RHSFillerKernel<nodes> outReRHS(subkernels.reRHSfiller);
-    RHSFillerKernel<nodes> outImRHS(subkernels.imRHSfiller);
+    BasisKernel<code, nodes, gps, edim> basis(operators.basis);
+    CoordinatesKernel<nodes, ndim> coordinates(operators.coordinates);
+    CoordinatesToGPsKernel<nodes, ndim> coordinatesToGPs(operators.coordinates);
+    ThicknessFromNodes<nodes, ndim> thickness(operators.thickness);
+    ThicknessToGp<nodes, ndim> thicknessToGPs(operators.thickness);
+    IntegrationKernel<nodes, ndim, edim> integration(operators.integration);
+    NormalPressureKernel<nodes, ndim> normalPressure(operators.normalPressure);
+    RHSFillerKernel<nodes> outReRHS(operators.reRHSfiller);
+    RHSFillerKernel<nodes> outImRHS(operators.imRHSfiller);
 
     std::vector<ExternalGPsExpression<ndim, Element>*> nonconst;
-    for (size_t i = 0; i < subkernels.expressions.gp.size(); ++i) {
-        ExternalGPsExpression<ndim, Element>* exp = dynamic_cast<ExternalGPsExpression<ndim, Element>*>(subkernels.expressions.gp[i]);
-        if (subkernels.expressions.gp[i]->evaluator->isConst()) {
+    for (size_t i = 0; i < operators.expressions.gp.size(); ++i) {
+        ExternalGPsExpression<ndim, Element>* exp = dynamic_cast<ExternalGPsExpression<ndim, Element>*>(operators.expressions.gp[i]);
+        if (operators.expressions.gp[i]->evaluator->isConst()) {
             exp->simd(element, 0);
         } else {
             nonconst.push_back(exp);
@@ -510,7 +510,7 @@ void runBoundaryKernel(const StructuralMechanicsBoundaryOperators &subkernels, S
     outReRHS.setActiveness(action);
     outImRHS.setActiveness(action);
 
-    for (size_t c = 0; c < subkernels.chunks; ++c) {
+    for (size_t c = 0; c < operators.chunks; ++c) {
         coordinates.simd(element);
 
         if (thickness.isactive) {
@@ -547,94 +547,94 @@ void runBoundaryKernel(const StructuralMechanicsBoundaryOperators &subkernels, S
 }
 
 template <size_t ndim>
-void setNodeKernel(StructuralMechanicsBoundaryOperators &subkernels, SubKernel::Action action)
+void setNodeKernel(StructuralMechanicsBoundaryOperators &operators, SubKernel::Action action)
 {
     typedef StructuralMechanicsDirichlet<ndim> Element;
 
     if constexpr(ndim == 2) {
-        if (subkernels.displacement.expression) {
-            if (subkernels.displacement.expression->x.isset) {
-                subkernels.expressions.node.push_back(new ExternalNodeExpression<ndim, Element>(
-                        subkernels.displacement.expression->x.evaluator,
+        if (operators.displacement.expression) {
+            if (operators.displacement.expression->x.isset) {
+                operators.expressions.node.push_back(new ExternalNodeExpression<ndim, Element>(
+                        operators.displacement.expression->x.evaluator,
                         [] (Element &element, size_t &n, size_t &s, double value) { element.displacement.node[0][s] = value; }));
             }
-            if (subkernels.displacement.expression->y.isset) {
-                subkernels.expressions.node.push_back(new ExternalNodeExpression<ndim, Element>(
-                        subkernels.displacement.expression->y.evaluator,
+            if (operators.displacement.expression->y.isset) {
+                operators.expressions.node.push_back(new ExternalNodeExpression<ndim, Element>(
+                        operators.displacement.expression->y.evaluator,
                         [] (Element &element, size_t &n, size_t &s, double value) { element.displacement.node[1][s] = value; }));
             }
         }
-        if (subkernels.harmonicForce.magnitude.expressionVector) {
-            subkernels.expressions.node.push_back(new ExternalNodeExpression<ndim, Element>(
-                    subkernels.harmonicForce.magnitude.expressionVector->x.evaluator,
+        if (operators.harmonicForce.magnitude.expressionVector) {
+            operators.expressions.node.push_back(new ExternalNodeExpression<ndim, Element>(
+                    operators.harmonicForce.magnitude.expressionVector->x.evaluator,
                     [] (Element &element, size_t &gp, size_t &s, double value) { element.ecf.harmonicForceMag[0][s] = value; }));
-            subkernels.expressions.node.push_back(new ExternalNodeExpression<ndim, Element>(
-                    subkernels.harmonicForce.magnitude.expressionVector->y.evaluator,
+            operators.expressions.node.push_back(new ExternalNodeExpression<ndim, Element>(
+                    operators.harmonicForce.magnitude.expressionVector->y.evaluator,
                     [] (Element &element, size_t &gp, size_t &s, double value) { element.ecf.harmonicForceMag[1][s] = value; }));
         }
-        if (subkernels.harmonicForce.phase.expressionVector) {
-            subkernels.expressions.node.push_back(new ExternalNodeExpression<ndim, Element>(
-                    subkernels.harmonicForce.phase.expressionVector->x.evaluator,
+        if (operators.harmonicForce.phase.expressionVector) {
+            operators.expressions.node.push_back(new ExternalNodeExpression<ndim, Element>(
+                    operators.harmonicForce.phase.expressionVector->x.evaluator,
                     [] (Element &element, size_t &gp, size_t &s, double value) { element.ecf.harmonicForceCos[0][s] = std::cos(value * M_PI / 180); element.ecf.harmonicForceSin[0][s] = std::sin(value * M_PI / 180); }));
-            subkernels.expressions.node.push_back(new ExternalNodeExpression<ndim, Element>(
-                    subkernels.harmonicForce.phase.expressionVector->y.evaluator,
+            operators.expressions.node.push_back(new ExternalNodeExpression<ndim, Element>(
+                    operators.harmonicForce.phase.expressionVector->y.evaluator,
                     [] (Element &element, size_t &gp, size_t &s, double value) { element.ecf.harmonicForceCos[1][s] = std::cos(value * M_PI / 180); element.ecf.harmonicForceSin[1][s] = std::sin(value * M_PI / 180); }));
         }
     }
 
     if constexpr(ndim == 3) {
-        if (subkernels.displacement.expression) {
-            if (subkernels.displacement.expression->x.isset) {
-                subkernels.expressions.node.push_back(new ExternalNodeExpression<ndim, Element>(
-                        subkernels.displacement.expression->x.evaluator,
+        if (operators.displacement.expression) {
+            if (operators.displacement.expression->x.isset) {
+                operators.expressions.node.push_back(new ExternalNodeExpression<ndim, Element>(
+                        operators.displacement.expression->x.evaluator,
                         [] (Element &element, size_t &n, size_t &s, double value) { element.displacement.node[0][s] = value; }));
             }
-            if (subkernels.displacement.expression->y.isset) {
-                subkernels.expressions.node.push_back(new ExternalNodeExpression<ndim, Element>(
-                        subkernels.displacement.expression->y.evaluator,
+            if (operators.displacement.expression->y.isset) {
+                operators.expressions.node.push_back(new ExternalNodeExpression<ndim, Element>(
+                        operators.displacement.expression->y.evaluator,
                         [] (Element &element, size_t &n, size_t &s, double value) { element.displacement.node[1][s] = value; }));
             }
-            if (subkernels.displacement.expression->z.isset) {
-                subkernels.expressions.node.push_back(new ExternalNodeExpression<ndim, Element>(
-                        subkernels.displacement.expression->z.evaluator,
+            if (operators.displacement.expression->z.isset) {
+                operators.expressions.node.push_back(new ExternalNodeExpression<ndim, Element>(
+                        operators.displacement.expression->z.evaluator,
                         [] (Element &element, size_t &n, size_t &s, double value) { element.displacement.node[2][s] = value; }));
             }
         }
-        if (subkernels.harmonicForce.magnitude.expressionVector) {
-            subkernels.expressions.node.push_back(new ExternalNodeExpression<ndim, Element>(
-                    subkernels.harmonicForce.magnitude.expressionVector->x.evaluator,
+        if (operators.harmonicForce.magnitude.expressionVector) {
+            operators.expressions.node.push_back(new ExternalNodeExpression<ndim, Element>(
+                    operators.harmonicForce.magnitude.expressionVector->x.evaluator,
                     [] (Element &element, size_t &gp, size_t &s, double value) { element.ecf.harmonicForceMag[0][s] = value; }));
-            subkernels.expressions.node.push_back(new ExternalNodeExpression<ndim, Element>(
-                    subkernels.harmonicForce.magnitude.expressionVector->y.evaluator,
+            operators.expressions.node.push_back(new ExternalNodeExpression<ndim, Element>(
+                    operators.harmonicForce.magnitude.expressionVector->y.evaluator,
                     [] (Element &element, size_t &gp, size_t &s, double value) { element.ecf.harmonicForceMag[1][s] = value; }));
-            subkernels.expressions.node.push_back(new ExternalNodeExpression<ndim, Element>(
-                    subkernels.harmonicForce.magnitude.expressionVector->z.evaluator,
+            operators.expressions.node.push_back(new ExternalNodeExpression<ndim, Element>(
+                    operators.harmonicForce.magnitude.expressionVector->z.evaluator,
                     [] (Element &element, size_t &gp, size_t &s, double value) { element.ecf.harmonicForceMag[2][s] = value; }));
         }
-        if (subkernels.harmonicForce.phase.expressionVector) {
-            subkernels.expressions.node.push_back(new ExternalNodeExpression<ndim, Element>(
-                    subkernels.harmonicForce.phase.expressionVector->x.evaluator,
+        if (operators.harmonicForce.phase.expressionVector) {
+            operators.expressions.node.push_back(new ExternalNodeExpression<ndim, Element>(
+                    operators.harmonicForce.phase.expressionVector->x.evaluator,
                     [] (Element &element, size_t &gp, size_t &s, double value) { element.ecf.harmonicForceCos[0][s] = std::cos(value * M_PI / 180); element.ecf.harmonicForceSin[0][s] = std::sin(value * M_PI / 180); }));
-            subkernels.expressions.node.push_back(new ExternalNodeExpression<ndim, Element>(
-                    subkernels.harmonicForce.phase.expressionVector->y.evaluator,
+            operators.expressions.node.push_back(new ExternalNodeExpression<ndim, Element>(
+                    operators.harmonicForce.phase.expressionVector->y.evaluator,
                     [] (Element &element, size_t &gp, size_t &s, double value) { element.ecf.harmonicForceCos[1][s] = std::cos(value * M_PI / 180); element.ecf.harmonicForceSin[1][s] = std::sin(value * M_PI / 180); }));
-            subkernels.expressions.node.push_back(new ExternalNodeExpression<ndim, Element>(
-                    subkernels.harmonicForce.phase.expressionVector->z.evaluator,
+            operators.expressions.node.push_back(new ExternalNodeExpression<ndim, Element>(
+                    operators.harmonicForce.phase.expressionVector->z.evaluator,
                     [] (Element &element, size_t &gp, size_t &s, double value) { element.ecf.harmonicForceCos[2][s] = std::cos(value * M_PI / 180); element.ecf.harmonicForceSin[2][s] = std::sin(value * M_PI / 180); }));
         }
     }
 }
 
 template <size_t ndim>
-void runNodeKernel(const StructuralMechanicsBoundaryOperators &subkernels, SubKernel::Action action)
+void runNodeKernel(const StructuralMechanicsBoundaryOperators &operators, SubKernel::Action action)
 {
     typedef StructuralMechanicsDirichlet<ndim> Element; Element element;
 
-    CoordinatesKernel<1, ndim> coordinates(subkernels.coordinates);
-    HarmonicForceKernel<1, ndim> harmonicForce(subkernels.harmonicForce);
-    RHSFillerKernel<1> outReRHS(subkernels.reRHSfiller);
-    RHSFillerKernel<1> outImRHS(subkernels.imRHSfiller);
-    VectorSetterKernel<1, Element> set(subkernels.reDirichlet, [] (auto &element, size_t &n, size_t &d, size_t &s) { return element.displacement.node[d][s]; });
+    CoordinatesKernel<1, ndim> coordinates(operators.coordinates);
+    HarmonicForceKernel<1, ndim> harmonicForce(operators.harmonicForce);
+    RHSFillerKernel<1> outReRHS(operators.reRHSfiller);
+    RHSFillerKernel<1> outImRHS(operators.imRHSfiller);
+    VectorSetterKernel<1, Element> set(operators.reDirichlet, [] (auto &element, size_t &n, size_t &d, size_t &s) { return element.displacement.node[d][s]; });
 
     harmonicForce.setActiveness(action);
     outReRHS.setActiveness(action);
@@ -642,16 +642,16 @@ void runNodeKernel(const StructuralMechanicsBoundaryOperators &subkernels, SubKe
     set.setActiveness(action);
 
     std::vector<ExternalNodeExpression<ndim, Element>*> nonconst;
-    for (size_t i = 0; i < subkernels.expressions.node.size(); ++i) {
-        ExternalNodeExpression<ndim, Element>* exp = dynamic_cast<ExternalNodeExpression<ndim, Element>*>(subkernels.expressions.node[i]);
-        if (subkernels.expressions.node[i]->evaluator->isConst()) {
+    for (size_t i = 0; i < operators.expressions.node.size(); ++i) {
+        ExternalNodeExpression<ndim, Element>* exp = dynamic_cast<ExternalNodeExpression<ndim, Element>*>(operators.expressions.node[i]);
+        if (operators.expressions.node[i]->evaluator->isConst()) {
             exp->simd(element, 0);
         } else {
             nonconst.push_back(exp);
         }
     }
 
-    for (size_t c = 0; c < subkernels.chunks; ++c) {
+    for (size_t c = 0; c < operators.chunks; ++c) {
         coordinates.simd(element);
         for (size_t i = 0; i < nonconst.size(); ++i) {
             nonconst[i]->simd(element, 0);

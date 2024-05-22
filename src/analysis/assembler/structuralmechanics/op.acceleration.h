@@ -2,7 +2,6 @@
 #ifndef SRC_ANALYSIS_ASSEMBLER_STRUCTURALMECHANICS_OP_ACCELERATION_H_
 #define SRC_ANALYSIS_ASSEMBLER_STRUCTURALMECHANICS_OP_ACCELERATION_H_
 
-#include "element.h"
 #include "op.elementcondition.h"
 
 namespace espreso {

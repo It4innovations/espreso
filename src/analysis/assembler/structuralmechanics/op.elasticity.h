@@ -2,7 +2,6 @@
 #ifndef SRC_ANALYSIS_ASSEMBLER_STRUCTURALMECHANICS_OP_ELASTICITY_H_
 #define SRC_ANALYSIS_ASSEMBLER_STRUCTURALMECHANICS_OP_ELASTICITY_H_
 
-#include "element.h"
 #include "analysis/assembler/general/subkernel.h"
 #include "analysis/assembler/general/op.coordinatesystem.h"
 #include "config/ecf/physics/structuralmechanics.h"

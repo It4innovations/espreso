@@ -1,20 +1,20 @@
 
 #include "kernel.h"
-#include "analysis/assembler/heattransfer.h"
+#include "element.h"
 
 namespace espreso {
 
 template <>
-void HeatTransfer::runElement<Element::CODE::PYRAMID5>(const step::Step &step, SubKernel::Action action, size_t interval)
+void runElement<Element::CODE::PYRAMID5>(const step::Step &step, HeatTransferElementOperators &operators, SubKernel::Action action)
 {
     switch (action) {
     case SubKernel::Action::PREPROCESS:
-        setElementKernel<Element::CODE::PYRAMID5, 5, HeatTransferGPC::PYRAMID5, 3, 3>(subkernels[interval], action); break;
+        setElementKernel<Element::CODE::PYRAMID5, 5, HeatTransferGPC::PYRAMID5, 3, 3>(operators, action); break;
     case SubKernel::Action::ASSEMBLE:
     case SubKernel::Action::REASSEMBLE:
     case SubKernel::Action::ITERATION:
     case SubKernel::Action::SOLUTION:
-        runElementKernel<Element::CODE::PYRAMID5, 5, HeatTransferGPC::PYRAMID5, 3, 3>(step, subkernels[interval], action); break;
+        runElementKernel<Element::CODE::PYRAMID5, 5, HeatTransferGPC::PYRAMID5, 3, 3>(step, operators, action); break;
     default: break;
     }
 }

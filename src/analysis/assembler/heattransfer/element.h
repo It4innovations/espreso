@@ -3,6 +3,10 @@
 #define SRC_ANALYSIS_ASSEMBLER_HEATTRANSFER_ELEMENT_H_
 
 #include "analysis/assembler/general/element.h"
+#include "analysis/assembler/general/subkernel.h"
+#include "analysis/assembler/heattransfer/operators.h"
+#include "esinfo/stepinfo.h"
+#include "mesh/element.h"
 
 namespace espreso {
 
@@ -78,6 +82,9 @@ template <size_t nodes, size_t gps, size_t ndim, size_t edim> struct HeatTransfe
 template <size_t ndim> struct HeatTransferNode: public GeneralNode<ndim> {
 
 };
+
+template <Element::CODE code> void runElement(const step::Step &step, HeatTransferElementOperators &operators, SubKernel::Action action);
+template <Element::CODE code> void runBoundary(const step::Step &step, HeatTransferBoundaryOperators &operators, SubKernel::Action action);
 
 }
 

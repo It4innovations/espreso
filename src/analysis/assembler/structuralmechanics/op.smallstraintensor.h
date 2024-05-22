@@ -2,7 +2,6 @@
 #ifndef SRC_ANALYSIS_ASSEMBLER_STRUCTURALMECHANICS_OP_SMALLSTRAINTENSOR_H_
 #define SRC_ANALYSIS_ASSEMBLER_STRUCTURALMECHANICS_OP_SMALLSTRAINTENSOR_H_
 
-#include "element.h"
 #include "analysis/assembler/general/subkernel.h"
 
 namespace espreso {

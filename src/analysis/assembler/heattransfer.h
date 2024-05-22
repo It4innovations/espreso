@@ -16,8 +16,6 @@
 #include <cstddef>
 #include <map>
 
-#include <type_traits>
-
 namespace espreso {
 
 struct HeatTransferConfiguration;
@@ -52,9 +50,6 @@ protected:
     void run(const step::Step &step, SubKernel::Action action, size_t interval);
     void run(const step::Step &step, SubKernel::Action action, size_t region, size_t interval);
     void runBEM(const step::Step &step, SubKernel::Action action, size_t domain, double *BETI);
-
-    template <Element::CODE code> void runElement(const step::Step &step, SubKernel::Action action, size_t interval);
-    template <Element::CODE code> void runBoundary(const step::Step &step, SubKernel::Action action, size_t region, size_t interval);
 
     std::vector<HeatTransferElementOperators> subkernels;
     std::vector<std::vector<HeatTransferBoundaryOperators> > boundary;

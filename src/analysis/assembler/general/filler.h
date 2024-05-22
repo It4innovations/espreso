@@ -2,13 +2,17 @@
 #ifndef SRC_ANALYSIS_ASSEMBLER_SUBKERNEL_FILLER_H_
 #define SRC_ANALYSIS_ASSEMBLER_SUBKERNEL_FILLER_H_
 
-#include "analysis/math/matrix_base.h"
-#include "analysis/math/vector_base.h"
+
 #include "subkernel.h"
 #include "math/primitives/matrix_info.h"
+#include "wrappers/simd/simd.h"
+
 #include <functional>
 
 namespace espreso {
+
+template <typename T> class Vector_Base;
+template <typename T> class Matrix_Base;
 
 struct DataFiller: SubKernel {
     const char* name() const { return "MatrixFiller"; }
@@ -27,43 +31,9 @@ struct DataFiller: SubKernel {
         action = SubKernel::ASSEMBLE | SubKernel::REASSEMBLE;
     }
 
-    void activate(size_t interval, size_t dofs, size_t elements, Matrix_Base<double> *A)
-    {
-        if (A == nullptr) {
-            return;
-        }
-        this->dofs = dofs;
-        this->elements = elements;
-        this->out = A->mapping.elements[interval].data;
-        this->position = A->mapping.elements[interval].position;
-        this->isactive = 1;
-        this->shape = A->shape;
-    }
-
-    void activate(size_t interval, size_t dofs, size_t elements, Vector_Base<double> *A)
-    {
-        if (A == nullptr) {
-            return;
-        }
-        this->dofs = dofs;
-        this->elements = elements;
-        this->out = A->mapping.elements[interval].data;
-        this->position = A->mapping.elements[interval].position;
-        this->isactive = 1;
-    }
-
-    void activate(size_t region, size_t interval, size_t dofs, size_t elements, Vector_Base<double> *A)
-    {
-        if (A == nullptr) {
-            return;
-        }
-        this->dofs = dofs;
-        this->filter = A->mapping.boundary[region][interval].filter;
-        this->elements = elements;
-        this->out = A->mapping.boundary[region][interval].data;
-        this->position = A->mapping.boundary[region][interval].position;
-        this->isactive = 1;
-    }
+    void activate(size_t interval, size_t dofs, size_t elements, Matrix_Base<double> *A);
+    void activate(size_t interval, size_t dofs, size_t elements, Vector_Base<double> *A);
+    void activate(size_t region, size_t interval, size_t dofs, size_t elements, Vector_Base<double> *A);
 };
 
 template <size_t nodes>

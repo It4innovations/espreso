@@ -1,33 +1,33 @@
 
 #include "kernel.h"
-#include "analysis/assembler/structuralmechanics.h"
+#include "element.h"
 
 namespace espreso {
 
 template <>
-void StructuralMechanics::runBoundary<Element::CODE::LINE3>(const step::Step &step, SubKernel::Action action, size_t region, size_t interval)
+void runBoundary<Element::CODE::LINE3>(const step::Step &step, StructuralMechanicsBoundaryOperators &operators, SubKernel::Action action)
 {
     switch (info::mesh->dimension) {
     case 2:
         switch (action) {
         case SubKernel::Action::PREPROCESS:
-            setBoundaryKernel<Element::CODE::LINE3, 3, StructuralMechanicsGPC::LINE3, 2, 1>(boundary[region][interval], action); break;
+            setBoundaryKernel<Element::CODE::LINE3, 3, StructuralMechanicsGPC::LINE3, 2, 1>(operators, action); break;
         case SubKernel::Action::ASSEMBLE:
         case SubKernel::Action::REASSEMBLE:
         case SubKernel::Action::ITERATION:
         case SubKernel::Action::SOLUTION:
-            runBoundaryKernel<Element::CODE::LINE3, 3, StructuralMechanicsGPC::LINE3, 2, 1>(boundary[region][interval], action); break;
+            runBoundaryKernel<Element::CODE::LINE3, 3, StructuralMechanicsGPC::LINE3, 2, 1>(operators, action); break;
         default: break;
         } break;
     case 3:
         switch (action) {
         case SubKernel::Action::PREPROCESS:
-            setBoundaryKernel<Element::CODE::LINE3, 3, StructuralMechanicsGPC::LINE3, 3, 1>(boundary[region][interval], action); break;
+            setBoundaryKernel<Element::CODE::LINE3, 3, StructuralMechanicsGPC::LINE3, 3, 1>(operators, action); break;
         case SubKernel::Action::ASSEMBLE:
         case SubKernel::Action::REASSEMBLE:
         case SubKernel::Action::ITERATION:
         case SubKernel::Action::SOLUTION:
-            runBoundaryKernel<Element::CODE::LINE3, 3, StructuralMechanicsGPC::LINE3, 3, 1>(boundary[region][interval], action); break;
+            runBoundaryKernel<Element::CODE::LINE3, 3, StructuralMechanicsGPC::LINE3, 3, 1>(operators, action); break;
         default: break;
         } break;
     }

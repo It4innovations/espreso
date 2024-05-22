@@ -3,6 +3,10 @@
 #define SRC_ANALYSIS_ASSEMBLER_STRUCTURALMECHANICS_ELEMENT_H_
 
 #include "analysis/assembler/general/element.h"
+#include "analysis/assembler/general/subkernel.h"
+#include "analysis/assembler/structuralmechanics/operators.h"
+#include "esinfo/stepinfo.h"
+#include "mesh/element.h"
 
 namespace espreso {
 
@@ -107,6 +111,9 @@ template <size_t ndim> struct StructuralMechanicsDirichlet: public GeneralNode<n
 
     alignas(SIMD::size * sizeof(double)) SIMD f[ndim], imf[ndim];
 };
+
+template <Element::CODE code> void runElement(const step::Step &step, StructuralMechanicsElementOperators &operators, SubKernel::Action action);
+template <Element::CODE code> void runBoundary(const step::Step &step, StructuralMechanicsBoundaryOperators &operators, SubKernel::Action action);
 
 }
 

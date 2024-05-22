@@ -1,35 +1,35 @@
 
 #include "kernel.h"
-#include "analysis/assembler/heattransfer.h"
+#include "element.h"
 
 namespace espreso {
 
 template <>
-void HeatTransfer::runElement<Element::CODE::SQUARE4>(const step::Step &step, SubKernel::Action action, size_t interval)
+void runElement<Element::CODE::SQUARE4>(const step::Step &step, HeatTransferElementOperators &operators, SubKernel::Action action)
 {
     switch (action) {
     case SubKernel::Action::PREPROCESS:
-        setElementKernel<Element::CODE::SQUARE4, 4, HeatTransferGPC::SQUARE4, 2, 2>(subkernels[interval], action); break;
+        setElementKernel<Element::CODE::SQUARE4, 4, HeatTransferGPC::SQUARE4, 2, 2>(operators, action); break;
     case SubKernel::Action::ASSEMBLE:
     case SubKernel::Action::REASSEMBLE:
     case SubKernel::Action::ITERATION:
     case SubKernel::Action::SOLUTION:
-        runElementKernel<Element::CODE::SQUARE4, 4, HeatTransferGPC::SQUARE4, 2, 2>(step, subkernels[interval], action); break;
+        runElementKernel<Element::CODE::SQUARE4, 4, HeatTransferGPC::SQUARE4, 2, 2>(step, operators, action); break;
     default: break;
     }
 }
 
 template <>
-void HeatTransfer::runBoundary<Element::CODE::SQUARE4>(const step::Step &step, SubKernel::Action action, size_t region, size_t interval)
+void runBoundary<Element::CODE::SQUARE4>(const step::Step &step, HeatTransferBoundaryOperators &operators, SubKernel::Action action)
 {
     switch (action) {
     case SubKernel::Action::PREPROCESS:
-        setBoundaryKernel<Element::CODE::SQUARE4, 4, HeatTransferGPC::SQUARE4, 3, 2>(boundary[region][interval], action); break;
+        setBoundaryKernel<Element::CODE::SQUARE4, 4, HeatTransferGPC::SQUARE4, 3, 2>(operators, action); break;
     case SubKernel::Action::ASSEMBLE:
     case SubKernel::Action::REASSEMBLE:
     case SubKernel::Action::ITERATION:
     case SubKernel::Action::SOLUTION:
-        runBoundaryKernel<Element::CODE::SQUARE4, 4, HeatTransferGPC::SQUARE4, 3, 2>(boundary[region][interval], action); break;
+        runBoundaryKernel<Element::CODE::SQUARE4, 4, HeatTransferGPC::SQUARE4, 3, 2>(operators, action); break;
     default: break;
     }
 }
