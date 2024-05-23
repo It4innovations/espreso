@@ -1,20 +1,21 @@
 # ESPRESO Configuration File
 
 DEFAULT_ARGS {
-  0   TRIANGLE3;
+   0   TRIANGLE3;
 
-  1           2;
-  2           2;
+   1           2;
+   2           2;
 
-  3           2;
-  4           2;
+   3           2;
+   4           2;
 
-  5           4;
-  6          40;
+   5           4;
+   6          40;
 
-  7  TOTAL_FETI;
-  8  ORTHOGONAL;
-  9          70;
+   7  TOTAL_FETI;
+   8  ORTHOGONAL;
+   9     DEFAULT;
+  10          70;
 }
 
 INPUT_TYPE              GENERATOR;
@@ -88,10 +89,11 @@ STRUCTURAL_MECHANICS {
         DUAL_OPERATOR     IMPLICIT;
         PRECONDITIONER   DIRICHLET;
         PROJECTOR           [ARG8];
+        PROJECTOR_OPT       [ARG9];
         ITERATIVE_SOLVER       PCG;
         REGULARIZATION   ALGEBRAIC;
         PRECISION             1e-7;
-        MAX_ITERATIONS      [ARG9];
+        MAX_ITERATIONS     [ARG10];
       }
 
       DISPLACEMENT {

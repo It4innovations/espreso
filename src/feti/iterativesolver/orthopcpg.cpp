@@ -71,7 +71,7 @@ template <> void OrthogonalizedPCPG<double>::solve(const step::Step &step, Itera
 
     Vector_Dense<double> _yFp;
 
-    P->apply_e(P->e, l);             // l = Gt * inv(GGt) * e
+    P->apply_GtintGGt(P->e, l);            // l = Gt * inv(GGt) * e
 
     F->apply(l, r);                        // r = d - F * l
     math::scale(-1., r);                   //

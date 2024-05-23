@@ -33,10 +33,13 @@ struct FETIConfiguration: public ECFDescription {
 
 	enum class PROJECTOR {
 		ORTHOGONAL = 0,
-		ORTHOGONAL_WITH_FACTORS,
 		CONJUGATE,
-		ORTHOGONAL_FULL,
-		ORTHOGONAL_FULL_WITH_FACTORS
+	};
+
+	enum PROJECTOR_OPT {
+	    DEFAULT      = 1 << 0,
+	    WITH_FACTORS = 1 << 1,
+	    FULL         = 1 << 2
 	};
 
 	enum class ITERATIVE_SOLVER {
@@ -156,6 +159,7 @@ struct FETIConfiguration: public ECFDescription {
 	ORDERING ordering;
 	DUAL_OPERATOR dual_operator;
 	PROJECTOR projector;
+	PROJECTOR_OPT projector_opt;
 	ITERATIVE_SOLVER iterative_solver;
 	PRECONDITIONER preconditioner;
 	REGULARIZATION regularization;

@@ -10,7 +10,6 @@
 #include "math/math.h"
 #include "feti/projector/projector.h"
 #include "feti/dualoperator/dualoperator.h"
-#include "feti/common/vector_kernel.h"
 
 #include "basis/utilities/sysutils.h"
 #include "esinfo/ecfinfo.h"
@@ -63,7 +62,7 @@ void IterativeSolver<T>::reconstructSolution(const Vector_Dual<T> &l, const Vect
     DualOperator<T> *F = feti.dualOperator;
 
     F->toPrimal(l, iKfBtL);
-    P->apply_Ra(r, Ra);
+    P->apply_RinvGGtG(r, Ra);
     print(step);
     #pragma omp parallel for
     for (size_t d = 0; d < feti.K.size(); ++d) {

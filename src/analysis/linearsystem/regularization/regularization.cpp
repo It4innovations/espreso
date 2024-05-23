@@ -54,9 +54,8 @@ void Regularization<T>::update(const step::Step &step, FETI<T> &feti)
         std::vector<int> offset;
         Matrix_Dense<T> _R1;
         bool fetiProjection =
-                feti.configuration.method == FETIConfiguration::METHOD::TOTAL_FETI ||
-                feti.configuration.projector == FETIConfiguration::PROJECTOR::ORTHOGONAL_FULL ||
-                feti.configuration.projector == FETIConfiguration::PROJECTOR::ORTHOGONAL_FULL_WITH_FACTORS;
+                (feti.configuration.method == FETIConfiguration::METHOD::TOTAL_FETI) ||
+                (feti.configuration.projector_opt & FETIConfiguration::PROJECTOR_OPT::FULL);
 
         if (fetiProjection) {
             #pragma omp parallel for

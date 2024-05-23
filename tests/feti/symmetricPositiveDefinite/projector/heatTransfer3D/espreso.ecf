@@ -17,7 +17,8 @@ DEFAULT_ARGS {
 
  10  TOTAL_FETI;
  11  ORTHOGONAL;
- 12          23;
+ 12     DEFAULT;
+ 13          23;
 }
 
 INPUT_TYPE            GENERATOR;
@@ -95,10 +96,11 @@ HEAT_TRANSFER {
         DUAL_OPERATOR     IMPLICIT;
         PRECONDITIONER   DIRICHLET;
         PROJECTOR          [ARG11];
+        PROJECTOR_OPT      [ARG12];
         PRECISION            1E-09;
         ITERATIVE_SOLVER       PCG;
         REGULARIZATION   ALGEBRAIC;
-        MAX_ITERATIONS     [ARG12];
+        MAX_ITERATIONS     [ARG13];
       }
 
       TEMPERATURE {

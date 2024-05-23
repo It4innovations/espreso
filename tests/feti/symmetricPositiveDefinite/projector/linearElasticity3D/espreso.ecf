@@ -17,7 +17,8 @@ DEFAULT_ARGS {
 
   10 TOTAL_FETI;
   11 ORTHOGONAL;
-  12         15;
+  12    DEFAULT;
+  13         15;
 }
 
 INPUT_TYPE              GENERATOR;
@@ -92,10 +93,11 @@ STRUCTURAL_MECHANICS {
         METHOD             [ARG10];
         DUAL_OPERATOR     IMPLICIT;
         PROJECTOR          [ARG11];
+        PROJECTOR_OPT      [ARG12];
         PRECONDITIONER   DIRICHLET;
         ITERATIVE_SOLVER       PCG;
         REGULARIZATION    ANALYTIC;
-        MAX_ITERATIONS     [ARG12];
+        MAX_ITERATIONS     [ARG13];
       }
 
       DISPLACEMENT {

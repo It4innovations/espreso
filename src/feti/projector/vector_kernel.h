@@ -33,9 +33,9 @@ struct Vector_Kernel: public Vector_Dense<T, int> {
     static std::vector<size_t> distribution;
 };
 
-template <typename T> int               Vector_Kernel<T>::offset = 0;
-template <typename T> int               Vector_Kernel<T>::localSize = 0;
-template <typename T> int               Vector_Kernel<T>::totalSize = 0;
+template <typename T> int                 Vector_Kernel<T>::offset = 0;
+template <typename T> int                 Vector_Kernel<T>::localSize = 0;
+template <typename T> int                 Vector_Kernel<T>::totalSize = 0;
 template <typename T> std::vector<size_t> Vector_Kernel<T>::distribution = { 0, 0 };
 
 }

@@ -4,7 +4,7 @@
 
 #include "feti/feti.h"
 #include "feti/common/vector_dual.h"
-#include "feti/common/vector_kernel.h"
+#include "feti/projector/vector_kernel.h"
 
 namespace espreso {
 

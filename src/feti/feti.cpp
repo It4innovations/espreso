@@ -40,23 +40,6 @@ bool FETI<T>::set(const step::Step &step)
     int size[4] = { 0, 0, 0, 0 };
     size[0] = K.size();
 
-    bool fetiProjection =
-            configuration.method == FETIConfiguration::METHOD::TOTAL_FETI ||
-            configuration.projector == FETIConfiguration::PROJECTOR::ORTHOGONAL_FULL ||
-            configuration.projector == FETIConfiguration::PROJECTOR::ORTHOGONAL_FULL_WITH_FACTORS;
-
-    if (fetiProjection) {
-        for (size_t d = 0; d < K.size(); ++d) {
-            sinfo.R1size = offset[0] = size[2] += R1[d].nrows;
-            sinfo.R2size = offset[1] = size[3] += R2[d].nrows;
-        }
-    } else {
-        for (size_t d = 0; d < K.size(); ++d) {
-            sinfo.R1size = offset[0] = size[2] = std::max(size[2], R1[d].nrows);
-            sinfo.R2size = offset[1] = size[3] = std::max(size[3], R2[d].nrows);
-        }
-    }
-
     for (size_t d = 0; d < K.size(); ++d) {
         if (K[d].nrows < x[d].size) { // it is possible when the solver is called with BEM
             math::set(x[d], 0.); // set inner DOFs to zero and resize 'f' to correct size
@@ -73,14 +56,9 @@ bool FETI<T>::set(const step::Step &step)
     Communication::exscan(offset, ooffset, 2, MPITools::getType<int>().mpitype, MPI_SUM);
     Communication::allReduce(size, NULL, 5, MPITools::getType<int>().mpitype, MPI_SUM);
     sinfo.domains = size[0];
-    sinfo.R1totalSize = size[2];
-    sinfo.R2totalSize = size[3];
-    sinfo.R1offset = info::mpi::rank ? ooffset[0] : 0;
-    sinfo.R2offset = info::mpi::rank ? ooffset[1] : 0;
 
     Dual_Map::set(*this);
     Vector_Dual<T>::initBuffers();
-    Vector_Kernel<T>::set(sinfo.R1offset, sinfo.R1size, sinfo.R1totalSize);
 
     eslog::checkpointln("FETI: SET INFO");
 

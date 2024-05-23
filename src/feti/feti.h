@@ -22,9 +22,6 @@ template<typename T>
 struct FETI {
     struct SystemInfo {
         int domains, clusters;
-        int R1offset, R2offset;
-        int R1size, R2size;
-        int R1totalSize, R2totalSize;
 
         size_t eq_offset, nc_offset;
         size_t eq_total, nc_total;

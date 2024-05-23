@@ -6,7 +6,7 @@
 #include "math/math.h"
 #include "math/primitives/vector_dense.h"
 #include "feti/common/vector_dual.h"
-#include "feti/common/vector_kernel.h"
+#include "feti/projector/vector_kernel.h"
 #include "esinfo/meshinfo.h"
 
 #include <fstream>
