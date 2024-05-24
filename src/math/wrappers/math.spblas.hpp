@@ -69,20 +69,19 @@ static void _submatrix(const Matrix_CSR<T, I> &input, Matrix_Dense<T, I> &output
             if(c >= end_col) {
                 break;
             }
-            I out_c = c - start_col, index = 0;
-            T val = input.vals[i];
-            if (do_copy || do_copy_conjugated) {
-                index = denseMatCalcIndexRowMajor<OutShape>(out_r, out_c, output.ncols);
+            I out_c = c - start_col;
+
+            if constexpr(do_copy || (do_copy_conjugated && is_T_real)) {
+                output.vals[denseMatCalcIndexRowMajor<OutShape>(out_r, out_c, output.ncols)] = input.vals[i];
             }
-            if (do_transpose_copy || do_transposed_conjugated) {
-                index = denseMatCalcIndexRowMajor<OutShape>(out_c, out_r, output.ncols);
+            if constexpr(do_copy_conjugated && is_T_complex) {
+                output.vals[denseMatCalcIndexRowMajor<OutShape>(out_r, out_c, output.ncols)] = std::conj(input.vals[i]);
             }
-            if constexpr(do_copy || do_transpose_copy) {
-                output.vals[index] = val;
+            if constexpr(do_transpose_copy || (do_transposed_conjugated && is_T_real)) {
+                output.vals[denseMatCalcIndexRowMajor<OutShape>(out_c, out_r, output.ncols)] = input.vals[i];
             }
-            if constexpr(do_copy_conjugated || do_transposed_conjugated) {
-                if constexpr(is_T_real)    { output.vals[index] = val; }
-                if constexpr(is_T_complex) { output.vals[index] = std::conj(val); }
+            if constexpr(do_transposed_conjugated && is_T_complex) {
+                output.vals[denseMatCalcIndexRowMajor<OutShape>(out_c, out_r, output.ncols)] = std::conj(input.vals[i]);
             }
             // since I use = instead of +=, duplicated operations on diagonal entries should not matter
         }
