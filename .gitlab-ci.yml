@@ -102,7 +102,7 @@ WS_FETI32:
     - ./waf -j 8
     - sh tests/run.feti.sh
 
-.WS_FETI64:
+WS_FETI64:
   extends: .ws_solver
   script:
     - . env/workstation.openmpi.64.sh
