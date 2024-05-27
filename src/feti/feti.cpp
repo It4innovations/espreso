@@ -62,10 +62,10 @@ bool FETI<T>::set(const step::Step &step)
 
     eslog::checkpointln("FETI: SET INFO");
 
-    iterativeSolver = IterativeSolver<T>::set(*this, step);
     projector = Projector<T>::set(*this, step);
     dualOperator = DualOperator<T>::set(*this, step);
     preconditioner = Preconditioner<T>::set(*this, step);
+    iterativeSolver = IterativeSolver<T>::set(*this, step);
 
     eslog::info(" = ----------------------------------------------------------------------------------------- = \n");
     eslog::info(" = EXTERNAL LINEAR SOLVER %*s = \n", 66, DirectSparseSolver<T>::name());

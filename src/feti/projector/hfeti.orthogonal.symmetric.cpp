@@ -232,7 +232,16 @@ void HFETIOrthogonalSymmetric<T>::_setGGt()
         eslog::error("cannot gather GGt cols.\n");
     }
 
-    invGGt.resize(G.nrows, Projector<T>::Kernel::total);
+    switch (Projector<T>::GGTtype) {
+    case Projector<T>::GGT_TYPE::GGT:
+        invGGt.resize(G.nrows, Projector<T>::Kernel::total);
+        break;
+    case Projector<T>::GGT_TYPE::LU:
+        invU.resize(G.nrows, Projector<T>::Kernel::total);
+        invL.resize(G.nrows, Projector<T>::Kernel::total);
+        break;
+    default: break;
+    }
     eslog::checkpointln("FETI: SET GGT");
 }
 

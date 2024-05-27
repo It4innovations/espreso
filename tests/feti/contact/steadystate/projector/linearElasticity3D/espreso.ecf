@@ -16,7 +16,8 @@ DEFAULT_ARGS {
   9        8;
 
   10     ORTHOGONAL;
-  11             72;
+  10        DEFAULT;
+  11            100;
 }
 
 INPUT_TYPE           GENERATOR;
@@ -108,10 +109,11 @@ STRUCTURAL_MECHANICS {
         ITERATIVE_SOLVER    SMALBE;
         PRECONDITIONER        NONE;
         PROJECTOR          [ARG10];
+        PROJECTOR_OPT      [ARG11];
         PRECISION             1e-5;
         PRECISION_IN          1e-7;
         M                        1;
-        MAX_ITERATIONS     [ARG11];
+        MAX_ITERATIONS     [ARG12];
       }
 
       DISPLACEMENT {

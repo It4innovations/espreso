@@ -112,13 +112,23 @@ void Projector<T>::apply_RinvGGtG(const Vector_Dual<T> &x, std::vector<Vector_De
 template<typename T>
 void Projector<T>::apply_invU(const Vector_Kernel<T> &x, Vector_Kernel<T> &y)
 {
-    _apply_invU(x, y);
+    math::set(y, T{0});
+    Vector_Dense<T> local;
+    local.size = Vector_Kernel<T>::localSize;
+    local.vals = y.vals + Vector_Kernel<T>::offset;
+    _apply_invU(x, local);
+    y.synchronize();
 }
 
 template<typename T>
 void Projector<T>::apply_invL(const Vector_Kernel<T> &x, Vector_Kernel<T> &y)
 {
-    _apply_invL(x, y);
+    math::set(y, T{0});
+    Vector_Dense<T> local;
+    local.size = Vector_Kernel<T>::localSize;
+    local.vals = y.vals + Vector_Kernel<T>::offset;
+    _apply_invL(x, local);
+    y.synchronize();
 }
 
 template<typename T>
@@ -133,7 +143,7 @@ template<typename T>
 void Projector<T>::apply_invLG(const Vector_Dual<T> &x, Vector_Kernel<T> &y)
 {
     _apply_G(x, Gx);
-    _apply_invL(Gx, y);
+    apply_invL(Gx, y);
 }
 
 template<typename T>
@@ -268,7 +278,7 @@ void Projector<T>::_apply_R(const Vector_Dense<T> &in, std::vector<Vector_Dense<
     for (size_t d = 0; d < out.size(); ++d) {
         Vector_Dense<T> y;
         y.size = feti.R1[d].nrows;
-        y.vals = in.vals + kernel[d].offset;
+        y.vals = in.vals + Kernel::roffset + kernel[d].offset;
 
         math::blas::applyT(out[d], T{1}, feti.R1[d], T{0}, y);
     }
@@ -283,7 +293,16 @@ void Projector<T>::_print(const step::Step &step)
         math::store(Gt, utils::filename(utils::debugDirectory(step) + "/feti/projector", "Gt").c_str());
         math::store(e, utils::filename(utils::debugDirectory(step) + "/feti/projector", "e").c_str());
         math::store(GGt, utils::filename(utils::debugDirectory(step) + "/feti/projector", "GGt").c_str());
-        math::store(invGGt, utils::filename(utils::debugDirectory(step) + "/feti/projector", "invGGt").c_str());
+        switch (Projector<T>::GGTtype) {
+        case Projector<T>::GGT_TYPE::GGT:
+            math::store(invGGt, utils::filename(utils::debugDirectory(step) + "/feti/projector", "invGGt").c_str());
+            break;
+        case Projector<T>::GGT_TYPE::LU:
+            math::store(invU, utils::filename(utils::debugDirectory(step) + "/feti/projector", "invU").c_str());
+            math::store(invL, utils::filename(utils::debugDirectory(step) + "/feti/projector", "invL").c_str());
+            break;
+        default: break;
+        }
     }
 }
 
