@@ -85,7 +85,10 @@ template<typename T>
 void Projector<T>::apply_R(const Vector_Kernel<T> &x, std::vector<Vector_Dense<T> > &y)
 {
     if (GGTtype != GGT_TYPE::NONE) { // avoid this condition
-        _apply_R(x, y);
+        Vector_Dense<T> local;
+        local.size = Kernel::rsize;
+        local.vals = x.vals + Kernel::roffset;
+        _apply_R(local, y);
     } else {
         #pragma omp parallel for
         for (size_t d = 0; d < y.size(); ++d) {
@@ -278,7 +281,7 @@ void Projector<T>::_apply_R(const Vector_Dense<T> &in, std::vector<Vector_Dense<
     for (size_t d = 0; d < out.size(); ++d) {
         Vector_Dense<T> y;
         y.size = feti.R1[d].nrows;
-        y.vals = in.vals + Kernel::roffset + kernel[d].offset;
+        y.vals = in.vals + kernel[d].offset;
 
         math::blas::applyT(out[d], T{1}, feti.R1[d], T{0}, y);
     }
