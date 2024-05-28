@@ -2,7 +2,6 @@
 
 DEPENDENCIES_DIR="${PWD}/dependencies"
 
-METIS_ROOT="${DEPENDENCIES_DIR}/metis-5.1.0"
 PARMETIS_ROOT="${DEPENDENCIES_DIR}/parmetis-4.0.3"
 if [ ! -d "${PARMETIS_ROOT}" ]
 then
