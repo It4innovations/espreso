@@ -24,7 +24,10 @@ namespace espreso {
 template <typename T>
 void RegularizationElasticity<T>::getFixPoints(std::vector<esint> &fixPoints, int domain, bool onSurface)
 {
-    if (info::ecf->input_type == ECF::INPUT_TYPE::GENERATOR && info::ecf->generator.uniform_clusters && info::ecf->generator.uniform_domains) {
+    if (
+            info::ecf->input_type == ECF::INPUT_TYPE::GENERATOR &&
+            info::ecf->generator.uniform_clusters && info::ecf->generator.uniform_domains &&
+            info::ecf->generator.shape == INPUT_GENERATOR_SHAPE::GRID) {
         getCorners(fixPoints, domain);
         return;
     }

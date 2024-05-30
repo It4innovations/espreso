@@ -123,6 +123,17 @@ UniformBuilderFETIPattern::UniformBuilderFETIPattern(StructuralMechanicsLoadStep
         }
     }
 
+    for (size_t r = 0; r < info::mesh->contactInterfaces.size(); ++r) {
+        const ContactInterfaceStore *region = info::mesh->contactInterfaces[r];
+        for (auto n = region->nodes->datatarray().cbegin(); n != region->nodes->datatarray().cend(); ++n) {
+            for (int m = 0; m < multiplicity; ++m) {
+                for (int d = 0; d < dofs; ++d) {
+                    inequality.push_back(*n * dofs * multiplicity + m * dofs + d);
+                }
+            }
+        }
+    }
+
     for (auto disp = configuration.fixed_wall.cbegin(); disp != configuration.fixed_wall.cend(); ++disp) {
         const BoundaryRegionStore *region = info::mesh->bregion(disp->first);
         for (auto n = region->nodes->datatarray().cbegin(); n != region->nodes->datatarray().cend(); ++n) {

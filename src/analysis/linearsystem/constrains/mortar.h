@@ -10,7 +10,7 @@ namespace espreso {
 template <typename T>
 struct MortarContact {
 
-    void set(const step::Step &step, FETI<T> &feti);
+    void set(const step::Step &step, FETI<T> &feti, int dofs);
     void update(const step::Step &step, FETI<T> &feti);
 
 protected:

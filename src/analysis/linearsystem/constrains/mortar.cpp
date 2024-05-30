@@ -261,7 +261,6 @@ void MortarContact<T>::assembleMortarInterface(std::vector<Mortar> &B)
                             Matrix_Dense<double> psi;
                             psi.resize(D.nrows, sN.ncols);
                             math::blas::multiply(T{1}, D, sN, T{0}, psi, true, false);
-//                            psi.multiply(D.data(), sElement->nodes, sElement->nodes, sN.nrows, sN.ncols, sN.vals, 1, 0, true);
                             if (printrank == info::mpi::rank) {
                                 for (int r = 0; r < psi.nrows; ++r) {
                                     for (int c = 0; c < psi.ncols; ++c) {
@@ -335,36 +334,10 @@ void MortarContact<T>::assembleMortarInterface(std::vector<Mortar> &B)
 template <typename T>
 void MortarContact<T>::synchronize(std::vector<Mortar> &B)
 {
-    // exchange neighbors
-    std::vector<int> neighs, neighsWithMe = info::mesh->contact->neighbors;
-    std::vector<std::vector<int> > rNeighs(info::mesh->neighbors.size());
-    if (!Communication::exchangeUnknownSize(info::mesh->contact->neighbors, rNeighs, info::mesh->neighbors)) {
-        eslog::internalFailure("exchange mortar neighbors.\n");
-    }
-    for (size_t r = 0; r < rNeighs.size(); ++r) {
-        neighsWithMe.insert(neighsWithMe.end(), rNeighs[r].begin(), rNeighs[r].end());
-    }
-    rNeighs.resize(info::mesh->contact->neighbors.size());
-    if (!Communication::exchangeUnknownSize(info::mesh->neighbors, rNeighs, info::mesh->contact->neighbors)) {
-        eslog::internalFailure("exchange mortar geometric neighbors.\n");
-    }
-    for (size_t r = 0; r < rNeighs.size(); ++r) {
-        neighsWithMe.insert(neighsWithMe.end(), rNeighs[r].begin(), rNeighs[r].end());
-    }
-    utils::sortAndRemoveDuplicates(neighsWithMe);
-    neighs = neighsWithMe;
-    auto myrank = std::lower_bound(neighs.begin(), neighs.end(), info::mpi::rank);
-    if (myrank != neighs.end() && *myrank == info::mpi::rank) {
-        neighs.erase(myrank);
-    } else {
-        neighsWithMe.push_back(info::mpi::rank);
-        std::sort(neighsWithMe.begin(), neighsWithMe.end());
-    }
-
     // synchronize across neighbors
-    std::vector<std::vector<Mortar> > Bs(neighs.size(), B), Br(neighs.size());
+    std::vector<std::vector<Mortar> > Bs(info::mesh->neighbors.size(), B), Br(info::mesh->neighbors.size());
 
-    if (!Communication::exchangeUnknownSize(Bs, Br, neighs)) {
+    if (!Communication::exchangeUnknownSize(Bs, Br, info::mesh->neighbors)) {
         eslog::internalFailure("cannot synchronize mortars.\n");
     }
 
@@ -413,7 +386,7 @@ void MortarContact<T>::synchronize(std::vector<Mortar> &B)
 }
 
 template <typename T>
-void MortarContact<T>::set(const step::Step &step, FETI<T> &feti)
+void MortarContact<T>::set(const step::Step &step, FETI<T> &feti, int dofs)
 {
     if (info::mesh->contactInterfaces.size() == 0) {
         return;
@@ -496,14 +469,14 @@ void MortarContact<T>::set(const step::Step &step, FETI<T> &feti)
         }
         if (nit != myids.end() && *nit == *it) {
             sBuffer.push_back(*it);
-            size_t size = sBuffer.size();
-            sBuffer.push_back(0);
-            auto dmap = feti.decomposition->dmap->begin() + (nit - myids.begin());
-            for (auto di = dmap->begin(); di != dmap->end(); ++di) {
-                if (feti.decomposition->ismy(di->domain)) {
-                    ++sBuffer[size];
-                    sBuffer.push_back(di->domain);
-                    sBuffer.push_back(di->index);
+            auto dmap = feti.decomposition->dmap->begin() + dofs * (nit - myids.begin());
+            sBuffer.push_back(dmap->size());
+            for (int dof = 0; dof < dofs; ++dof, ++dmap) {
+                for (auto di = dmap->begin(); di != dmap->end(); ++di) {
+                    if (feti.decomposition->ismy(di->domain)) {
+                        sBuffer.push_back(di->domain);
+                        sBuffer.push_back(di->index);
+                    }
                 }
             }
         }
@@ -516,7 +489,7 @@ void MortarContact<T>::set(const step::Step &step, FETI<T> &feti)
     struct npair { esint id, n, offset; };
     std::vector<npair> ninfo; // where we have stored info about a particular node
     for (size_t n = 0; n < rBuffer.size(); ++n) {
-        for (size_t i = 1; i < rBuffer[n].size(); i += 2 * rBuffer[n][i + 1] + 2) {
+        for (size_t i = 1; i < rBuffer[n].size(); i += 2 * dofs * rBuffer[n][i + 1] + 2) {
             ninfo.push_back(npair{ rBuffer[n][i], (esint)n, (esint)i });
         }
     }
@@ -545,30 +518,37 @@ void MortarContact<T>::set(const step::Step &step, FETI<T> &feti)
             ++end;
         }
 
+
         domains.clear();
-        for (auto it = begin; it != end; ++it) {
-            auto nit = std::lower_bound(ninfo.begin(), ninfo.end(), it->to, [&] (const npair &info, const esint &lambda) { return info.id < lambda; });
-            esint ndomains = 0;
-            for (auto nnit = nit; nnit != ninfo.end() && nnit->id == it->to; ++nnit) {
-                ndomains += rBuffer[nnit->n][nnit->offset + 1];
-                for (esint i = 0; i < rBuffer[nnit->n][nnit->offset + 1]; ++i) {
-                    domains.push_back(rBuffer[nit->n][nit->offset + 2 + 2 * i]);
-                }
-            }
-            while (nit != ninfo.end() && nit->id == it->to) {
-                if (info::mesh->neighborsWithMe[nit->n] == info::mpi::rank) {
-                    for (esint i = 0; i < rBuffer[nit->n][nit->offset + 1]; ++i) {
-                        if (D2C[rBuffer[nit->n][nit->offset + 2 + 2 * i] - feti.decomposition->dbegin].size() == 0 || D2C[rBuffer[nit->n][nit->offset + 2 + 2 * i] - feti.decomposition->dbegin].back() != feti.lambdas.size) {
-                            D2C[rBuffer[nit->n][nit->offset + 2 + 2 * i] - feti.decomposition->dbegin].push_back(feti.lambdas.size);
-                            ROWS[rBuffer[nit->n][nit->offset + 2 + 2 * i] - feti.decomposition->dbegin].push_back(0);
+        for (int dof = 0; dof < dofs; ++dof) {
+            for (auto it = begin; it != end; ++it) {
+                auto nit = std::lower_bound(ninfo.begin(), ninfo.end(), it->to, [&] (const npair &info, const esint &lambda) { return info.id < lambda; });
+                int ndomains = 0;
+                for (auto nnit = nit; nnit != ninfo.end() && nnit->id == it->to; ++nnit) {
+                    ndomains += rBuffer[nnit->n][nnit->offset + 1];
+                    if (dof == 0) {
+                        for (esint i = 0; i < rBuffer[nnit->n][nnit->offset + 1]; ++i) {
+                            domains.push_back(rBuffer[nit->n][nit->offset + 2 + 2 * i]);
                         }
-                        ROWS[rBuffer[nit->n][nit->offset + 2 + 2 * i] - feti.decomposition->dbegin].back()++;
-                        COLS[rBuffer[nit->n][nit->offset + 2 + 2 * i] - feti.decomposition->dbegin].push_back(rBuffer[nit->n][nit->offset + 2 + 2 * i + 1]);
-                        VALS[rBuffer[nit->n][nit->offset + 2 + 2 * i] - feti.decomposition->dbegin].push_back(it->value / ndomains);
                     }
                 }
-                ++nit;
+                while (nit != ninfo.end() && nit->id == it->to) {
+                    if (info::mesh->neighborsWithMe[nit->n] == info::mpi::rank) {
+                        for (esint i = 0; i < rBuffer[nit->n][nit->offset + 1]; ++i) {
+                            if (D2C [rBuffer[nit->n][nit->offset + 2 * dof * ndomains + 2 + 2 * i] - feti.decomposition->dbegin].size() == 0 || D2C[rBuffer[nit->n][nit->offset + 2 * dof * ndomains + 2 + 2 * i] - feti.decomposition->dbegin].back() != feti.lambdas.size) {
+                                D2C [rBuffer[nit->n][nit->offset + 2 * dof * ndomains + 2 + 2 * i] - feti.decomposition->dbegin].push_back(feti.lambdas.size);
+                                ROWS[rBuffer[nit->n][nit->offset + 2 * dof * ndomains + 2 + 2 * i] - feti.decomposition->dbegin].push_back(0);
+                            }
+                            ROWS[rBuffer[nit->n][nit->offset + 2 * dof * ndomains + 2 + 2 * i] - feti.decomposition->dbegin].back()++;
+                            COLS[rBuffer[nit->n][nit->offset + 2 * dof * ndomains + 2 + 2 * i] - feti.decomposition->dbegin].push_back(rBuffer[nit->n][nit->offset + 2 * dof * ndomains + 2 + 2 * i + 1]);
+                            VALS[rBuffer[nit->n][nit->offset + 2 * dof * ndomains + 2 + 2 * i] - feti.decomposition->dbegin].push_back(it->value / ndomains);
+                        }
+                    }
+                    ++nit;
+                }
             }
+            feti.lambdas.size++;
+            feti.lambdas.intervals.back().size++;
         }
         utils::sortAndRemoveDuplicates(domains);
         bool pushcmap = true;
@@ -582,20 +562,17 @@ void MortarContact<T>::set(const step::Step &step, FETI<T> &feti)
         }
         if (pushcmap) {
             prevmap = feti.lambdas.cmap.size();
-            feti.lambdas.cmap.push_back(1); // TODO: sum up the lambdas with the same map
+            feti.lambdas.cmap.push_back(dofs); // TODO: sum up the lambdas with the same map
             feti.lambdas.cmap.push_back(domains.size());
             for (size_t i = 0; i < domains.size(); ++i) {
                 feti.lambdas.cmap.push_back(domains[i]);
             }
         } else {
-            feti.lambdas.cmap[prevmap]++;
+            feti.lambdas.cmap[prevmap] += dofs;
         }
         if (domains.front() < feti.decomposition->dbegin) {
-            feti.lambdas.intervals.back().halo++;
+            feti.lambdas.intervals.back().halo += dofs;
         }
-
-        feti.lambdas.size++;
-        feti.lambdas.intervals.back().size++;
     }
 
     std::vector<Matrix_CSR<T> > B1(feti.B1.size());
