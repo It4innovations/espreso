@@ -22,10 +22,6 @@ template<typename T>
 struct FETI {
     struct SystemInfo {
         int domains, clusters;
-
-        size_t eq_offset, nc_offset;
-        size_t eq_total, nc_total;
-        size_t dual_total;
     };
 
     FETI(FETIConfiguration &configuration);
@@ -51,10 +47,9 @@ struct FETI {
     std::vector<std::vector<int> > D2C, D2C0;
     Vector_Dense<T> c, lb, ub;
     struct Lambdas {
-        // equality (local)
-        int eq_halo = 0, eq_size = 0;
-        // normal contact
-        int nc_halo = 0, nc_size = 0;
+        struct interval { int halo, size; };
+
+        std::vector<interval> intervals;
 
         // general
         int equalities, size;

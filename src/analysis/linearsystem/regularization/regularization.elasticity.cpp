@@ -262,7 +262,7 @@ static void getNtNNtN(Matrix_Dense<T> &N, Matrix_Dense<T> &NtNNtN)
     NtNNtN.resize(N.ncols, N.ncols);
     Matrix_Dense<T> _N(N), NNt; NNt.resize(N.nrows, N.nrows);
     math::blas::AAt(N, NNt);
-    math::lapack::solve(NNt, _N);
+    math::lapack::solve_sym_upper(NNt, _N);
     math::blas::multiply(T{1}, N, _N, T{0}, NtNNtN, true);
 }
 

@@ -24,6 +24,7 @@ void FixedWall<T>::set(const step::Step &step, FETI<T> &feti, const Vector_Distr
         eslog::error("Fixed wall boundary condition is implemented on for STRUCTURAL_MECHANICS 3D.\n");
     }
 
+    feti.lambdas.intervals.push_back({ 0, 0 });
     int dim = info::mesh->dimension;
     struct __lambda__ { int dof, size, cindex; };
     std::vector<__lambda__> permutation;
@@ -63,7 +64,6 @@ void FixedWall<T>::set(const step::Step &step, FETI<T> &feti, const Vector_Distr
     cindex.clear();
     cindex.resize(feti.K.size());
     std::vector<std::vector<esint> > cperm(feti.K.size());
-    feti.lambdas.nc_halo = 0;
     for (size_t i = 0, cprev = feti.lambdas.cmap.size(), lprev = 0; i < permutation.size(); ++i) {
         auto dmap = feti.decomposition->dmap->cbegin() + permutation[i].dof;
         bool nextL = i == 0 || lprev != (size_t)permutation[i].dof / 3;
@@ -74,7 +74,7 @@ void FixedWall<T>::set(const step::Step &step, FETI<T> &feti, const Vector_Distr
             feti.lambdas.cmap.push_back(1);
             feti.lambdas.cmap.push_back(permutation[i].size);
             if (dmap->at(0).domain < feti.decomposition->dbegin) {
-                ++feti.lambdas.nc_halo;
+                ++feti.lambdas.intervals.back().halo;
             }
             for (int c = 0; c < permutation[i].size; ++c) {
                 feti.lambdas.cmap.push_back(dmap->at(c).domain);
@@ -109,7 +109,7 @@ void FixedWall<T>::set(const step::Step &step, FETI<T> &feti, const Vector_Distr
             }
         }
     }
-    feti.lambdas.nc_size = feti.lambdas.size - feti.lambdas.equalities - feti.lambdas.nc_halo;
+    feti.lambdas.intervals.back().size = feti.lambdas.size - feti.lambdas.equalities - feti.lambdas.intervals.back().halo;
 
     #pragma omp parallel for
     for (size_t d = 0; d < cindex.size(); ++d) {

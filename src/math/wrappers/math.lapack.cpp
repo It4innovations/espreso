@@ -12,10 +12,17 @@ namespace math {
 namespace lapack {
 
 template <>
-void solve(Matrix_Dense<double> &A, Matrix_Dense<double> &rhs)
+void solve_sym_upper(Matrix_Dense<double> &A, Matrix_Dense<double> &rhs)
 {
     eslog::error("calling of empty LAPACK wrapper.\n");
 }
+
+template <>
+void solve_general(Matrix_Dense<double> &A, Matrix_Dense<double> &rhs)
+{
+    eslog::error("calling of empty LAPACK wrapper.\n");
+}
+
 
 }
 }

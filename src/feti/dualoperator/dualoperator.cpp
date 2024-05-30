@@ -62,21 +62,13 @@ DualOperator<T>* DualOperator<T>::set(FETI<T> &feti, const step::Step &step)
 template<typename T>
 void DualOperator<T>::getInitVector(Vector_Dual<T> &v)
 {
-    double norm = 1 / std::sqrt(feti.sinfo.dual_total);
-    int i = 0;
-    for (int j = 0; j < feti.lambdas.eq_halo; ++i, ++j) {
-        v.vals[i] = 0;
-    }
-    for (int j = 0; j < feti.lambdas.eq_size; ++i, ++j) {
-        int mul = (feti.sinfo.eq_offset + j) % 2;
-        v.vals[i] = (1 - 2 * mul) * norm;
-    }
-    for (int j = 0; j < feti.lambdas.nc_halo; ++i, ++j) {
-        v.vals[i] = 0;
-    }
-    for (int j = 0; j < feti.lambdas.nc_size; ++i, ++j) {
-        int mul = (feti.sinfo.eq_total + feti.sinfo.nc_offset + j) % 2;
-        v.vals[i] = (1 - 2 * mul) * norm;
+    double norm = 1 / std::sqrt(Dual_Map::total);
+    math::set(v, T{0});
+    for (size_t i = 0; i < Dual_Map::local_intervals.size(); ++i) {
+        for (int j = Dual_Map::local_intervals[i].start; j < Dual_Map::local_intervals[i].end; ++j) {
+            int mul = (Dual_Map::local_intervals[i].offset + j) % 2;
+            v.vals[j] = (1 - 2 * mul) * norm;
+        }
     }
     v.synchronize();
 }
@@ -119,7 +111,7 @@ template<typename T>
 void DualOperator<T>::printInfo(std::vector<DirectSparseSolver<T> > &KSolver, DualOperatorInfo &sum, DualOperatorInfo &min, DualOperatorInfo &max)
 {
     eslog::info(" =   DOMAINS TOTAL                                                                 %9d = \n", feti.sinfo.domains);
-    eslog::info(" =   DUAL SIZE                                                                     %9d = \n", feti.sinfo.dual_total);
+    eslog::info(" =   DUAL SIZE                                                                     %9d = \n", Dual_Map::total);
     eslog::info(" =   B1 ROWS                                                  %8.0f <%8d - %8d> = \n", (double)sum.dualA / feti.sinfo.domains, min.dualA, max.dualA);
     eslog::info(" =   K+ SURFACE                                               %8.0f <%8d - %8d> = \n", (double)sum.surfaceA / feti.sinfo.domains, min.surfaceA, max.surfaceA);
     eslog::info(" =   K+ ROWS                                                  %8.0f <%8d - %8d> = \n", (double)sum.rows / feti.sinfo.domains, min.rows, max.rows);

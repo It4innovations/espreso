@@ -1,0 +1,174 @@
+# ESPRESO Configuration File
+
+DEFAULT_ARGS {
+  0        HEXA8;
+  1            2;
+  2            4;
+
+  3       TETRA4;
+  4            2;
+  5            5;
+  
+  6         1000;
+}
+
+INPUT_TYPE            GENERATOR;
+PHYSICS           HEAT_TRANSFER;
+
+INPUT {
+  CONTACT_INTERFACES {
+    GENERAL {
+      DETECTION     ALL_BODIES;
+    }
+  }
+}
+
+GENERATOR {
+  SHAPE   GRID_TOWER;
+
+  UNIFORM_DOMAINS              FALSE;
+
+  GRID_TOWER {
+
+    DIRECTION Z;
+
+    GRIDS {
+      0 {
+        START_X                  -.5;
+        START_Y                  -.5;
+
+        LENGTH_X                   1;
+        LENGTH_Y                   1;
+        LENGTH_Z                   1;
+
+        NODES {
+          BOTTOM   <-1 , 1> <-1 , 1> <0 , 0>;
+        }
+
+        ELEMENT_TYPE          [ARG0];
+
+        BLOCKS_X                   1;
+        BLOCKS_Y                   1;
+        BLOCKS_Z                   1;
+
+        CLUSTERS_X                 1;
+        CLUSTERS_Y                 1;
+        CLUSTERS_Z                 1;
+
+        DOMAINS_X             [ARG1];
+        DOMAINS_Y             [ARG1];
+        DOMAINS_Z             [ARG1];
+
+        ELEMENTS_X            [ARG2];
+        ELEMENTS_Y            [ARG2];
+        ELEMENTS_Z            [ARG2];
+      }
+
+      1 {
+        START_X                  -.6;
+        START_Y                 -1.1;
+
+        LENGTH_X                   1;
+        LENGTH_Y                   1;
+        LENGTH_Z                   1;
+
+        NODES {
+          TOP      <-1 , 1> <-1 , 1> <2 , 2>;
+        }
+
+        ELEMENT_TYPE          [ARG3];
+
+        BLOCKS_X                   1;
+        BLOCKS_Y                   1;
+        BLOCKS_Z                   1;
+
+        CLUSTERS_X                 1;
+        CLUSTERS_Y                 1;
+        CLUSTERS_Z                 1;
+
+        DOMAINS_X             [ARG4];
+        DOMAINS_Y             [ARG4];
+        DOMAINS_Z             [ARG4];
+
+        ELEMENTS_X            [ARG5];
+        ELEMENTS_Y            [ARG5];
+        ELEMENTS_Z            [ARG5];
+      }
+    }
+  }
+}
+
+HEAT_TRANSFER {
+  LOAD_STEPS        1;
+
+  MATERIALS {
+    1 {
+      DENS   1;
+      CP     1;
+
+      THERMAL_CONDUCTIVITY {
+        KXX            1;
+      }
+    }
+  }
+
+  MATERIAL_SET {
+    ALL_ELEMENTS   1;
+  }
+
+  INITIAL_TEMPERATURE {
+    ALL_ELEMENTS   200;
+  }
+
+  STABILIZATION   CAU;
+  SIGMA             0;
+
+  LOAD_STEPS_SETTINGS {
+    1 {
+      DURATION_TIME     1;
+      TYPE   STEADY_STATE;
+      MODE         LINEAR;
+      SOLVER         FETI;
+
+      FETI {
+        METHOD          TOTAL_FETI;
+        PRECONDITIONER        NONE;
+        PRECISION            1E-08;
+        ITERATIVE_SOLVER       PCG;
+        REGULARIZATION    ANALYTIC;
+        MAX_ITERATIONS      [ARG6];
+        PRINT_ITERATION          1;
+      }
+
+      TEMPERATURE {
+        TOP      100;
+        BOTTOM   300;
+      }
+    }
+  }
+}
+
+OUTPUT {
+  RESULTS_STORE_FREQUENCY    EVERY_SUBSTEP;
+  MONITORS_STORE_FREQUENCY   EVERY_SUBSTEP;
+
+  MONITORING {
+    1 {
+      REGION            TOP;
+      STATISTICS        MAX;
+      PROPERTY  TEMPERATURE;
+    }
+
+    2 {
+      REGION         BOTTOM;
+      STATISTICS        MIN;
+      PROPERTY  TEMPERATURE;
+    }
+
+    5 {
+      REGION   ALL_ELEMENTS;
+      STATISTICS        AVG;
+      PROPERTY  TEMPERATURE;
+    }
+  }
+}

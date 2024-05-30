@@ -12,6 +12,7 @@
 #include "basis/logging/profiler.h"
 #include "basis/utilities/parser.h"
 #include "basis/utilities/packing.h"
+#include "basis/utilities/utils.h"
 #include "wrappers/mpi/communication.h"
 
 #include "input/builders/input.h"
@@ -473,6 +474,11 @@ void Mesh::computePersistentParameters()
 		mesh::findCloseElements(contact);
 		mesh::computeContactInterface(surface, contact);
 		mesh::arrangeContactInterfaces(contact, bodies, elementsRegions, contactInterfaces);
+
+		neighbors.insert(neighbors.end(), contact->neighbors.begin(), contact->neighbors.end());
+		utils::sortAndRemoveDuplicates(neighbors);
+		neighborsWithMe.insert(neighborsWithMe.end(), contact->neighborsWithMe.begin(), contact->neighborsWithMe.end());
+		utils::sortAndRemoveDuplicates(neighborsWithMe);
 		profiler::synccheckpoint("compute_contact_interface");
 		eslog::checkpointln("MESH: CONTACT INTERFACE COMPUTED");
 	}

@@ -6,6 +6,7 @@
 #include "feti/feti.h"
 #include "cluster.faces.h"
 #include "equalityconstrains.h"
+#include "mortar.h"
 #include "fixedwall.h"
 
 namespace espreso {
@@ -17,6 +18,7 @@ struct Constrains {
     void update(const step::Step &step, FETI<T> &feti, const Vector_Distributed<Vector_Sparse, T> &dirichlet);
 
     EqualityConstrains<T> eq;
+    MortarContact<T> mortar;
     FixedWall<T> fw;
     ClusterFacesGluing<T> cfg;
 };

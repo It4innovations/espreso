@@ -10,7 +10,10 @@ namespace math {
 namespace lapack {
 
 template <typename T, typename I>
-void solve(Matrix_Dense<T, I> &A, Matrix_Dense<T, I> &rhs);
+void solve_sym_upper(Matrix_Dense<T, I> &A, Matrix_Dense<T, I> &rhs);
+
+template <typename T, typename I>
+void solve_general(Matrix_Dense<T, I> &A, Matrix_Dense<T, I> &rhs);
 
 }
 }

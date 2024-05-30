@@ -11,18 +11,6 @@ namespace espreso {
 
 #define MIN_SLAVE_COVER_RATIO 0.001
 
-struct ijv {
-	int pair;
-	int i , j;
-	double v;
-	ijv(): pair(0), i(0), j(0), v(0) {}
-	ijv(int pair, int i, int j, double v): pair(pair), i(i), j(j), v(v) {}
-
-	bool operator<(ijv &other) { return pair == other.pair ? (i == other.i ? j < other.j : i < other.i) : pair < other.pair; }
-	bool operator==(ijv &other) { return pair == other.pair && i == other.i && j == other.j; }
-	bool operator!=(ijv &other) { return !(*this == other); }
-};
-
 struct Point2D {
 	double x, y;
 
@@ -126,8 +114,6 @@ struct ContactStore {
 	serializededata<esint, Point2D>* planeCoordinates;
 
 	std::vector<Interface> interfaces;
-
-	std::vector<ijv> B;
 
 	ContactStore();
 	~ContactStore();

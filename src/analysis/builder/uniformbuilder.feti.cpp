@@ -13,6 +13,7 @@
 #include "mesh/store/domainstore.h"
 #include "mesh/store/elementstore.h"
 #include "mesh/store/boundaryregionstore.h"
+#include "mesh/store/contactinterfacestore.h"
 #include "mesh/store/nodestore.h"
 #include "mesh/store/domainsurfacestore.h"
 
@@ -53,6 +54,13 @@ UniformBuilderFETIPattern::UniformBuilderFETIPattern(HeatTransferLoadStepConfigu
                 }
             }
         }
+    }
+
+    for (size_t r = 0; r < info::mesh->contactInterfaces.size(); ++r) {
+        const ContactInterfaceStore *region = info::mesh->contactInterfaces[r];
+            for (auto n = region->nodes->datatarray().cbegin(); n != region->nodes->datatarray().cend(); ++n) {
+                inequality.push_back(*n);
+            }
     }
 
     for (auto disc = info::ecf->heat_transfer.discretization.cbegin(); disc != info::ecf->heat_transfer.discretization.cend(); ++disc) {

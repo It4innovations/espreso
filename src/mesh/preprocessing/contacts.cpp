@@ -26,6 +26,9 @@
 #include "output/visualization/debug.h"
 #include "wrappers/mpi/communication.h"
 
+#include "math/primitives/matrix_dense.h"
+#include "math/wrappers/math.lapack.h"
+
 #include <algorithm>
 #include <map>
 #include <numeric>

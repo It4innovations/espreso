@@ -36,10 +36,6 @@ bool FETI<T>::set(const step::Step &step)
         configuration.method = FETIConfiguration::METHOD::TOTAL_FETI;
     }
 
-    int offset[2] = { 0, 0 }, ooffset[2];
-    int size[4] = { 0, 0, 0, 0 };
-    size[0] = K.size();
-
     for (size_t d = 0; d < K.size(); ++d) {
         if (K[d].nrows < x[d].size) { // it is possible when the solver is called with BEM
             math::set(x[d], 0.); // set inner DOFs to zero and resize 'f' to correct size
@@ -47,15 +43,9 @@ bool FETI<T>::set(const step::Step &step)
             x[d].size = K[d].nrows;
         }
     }
-    sinfo.eq_offset = lambdas.eq_size;
-    sinfo.nc_offset = lambdas.nc_size;
-    sinfo.eq_total = Communication::exscan(sinfo.eq_offset);
-    sinfo.nc_total = Communication::exscan(sinfo.nc_offset);
-    sinfo.dual_total = sinfo.eq_total + sinfo.nc_total;
 
-    Communication::exscan(offset, ooffset, 2, MPITools::getType<int>().mpitype, MPI_SUM);
-    Communication::allReduce(size, NULL, 5, MPITools::getType<int>().mpitype, MPI_SUM);
-    sinfo.domains = size[0];
+    int size = K.size();
+    Communication::allReduce(&size, &sinfo.domains, 1, MPITools::getType(size).mpitype, MPI_SUM);
 
     Dual_Map::set(*this);
     Vector_Dual<T>::initBuffers();
