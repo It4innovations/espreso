@@ -22,6 +22,14 @@ namespace espreso {
 template <typename T>
 IterativeSolver<T>* IterativeSolver<T>::set(FETI<T> &feti, const step::Step &step)
 {
+    if (feti.lambdas.equalities != feti.lambdas.size) {
+        if (
+                feti.configuration.iterative_solver != FETIConfiguration::ITERATIVE_SOLVER::SMALBE &&
+                feti.configuration.iterative_solver != FETIConfiguration::ITERATIVE_SOLVER::MPRGP) {
+            eslog::globalerror("FETI solver error: use SMALBE or MPRGP for solving system with inequalities.\n");
+        }
+    }
+
     switch (feti.configuration.iterative_solver) {
     case FETIConfiguration::ITERATIVE_SOLVER::PCG:
         if (feti.configuration.preconditioner == FETIConfiguration::PRECONDITIONER::NONE) {

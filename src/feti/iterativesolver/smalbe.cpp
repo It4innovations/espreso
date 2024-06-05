@@ -22,10 +22,14 @@ void SMALBE<T>::info()
 {
     eslog::info(" = MODIFIED PROPORTIONING WITH REDUCED GRADIENT PROJECTION SETTING                           = \n");
     eslog::info(" =   PRECISION                                                                      %.2e = \n", feti.configuration.precision);
+    eslog::info(" =   PRECISION_IN                                                                   %.2e = \n", feti.configuration.precision_in);
     eslog::info(" =   MAX_ITERATIONS                                                                  %7d = \n", feti.configuration.max_iterations);
     eslog::info(" =   ALPHAM                                                                         %.2e = \n", feti.configuration.alpham);
     eslog::info(" =   DELTA                                                                          %.2e = \n", feti.configuration.delta);
     eslog::info(" =   GRADPROJ                                                                        %7d = \n", feti.configuration.gradproj);
+    eslog::info("  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  \n");
+    eslog::info(" =   EQUALITIES                                                                 %13d = \n", feti.lambdas.equalities);
+    eslog::info(" =   INEQUALITIES                                                               %13d = \n", feti.lambdas.size - feti.lambdas.equalities);
     eslog::info(" = ----------------------------------------------------------------------------------------- = \n");
 }
 

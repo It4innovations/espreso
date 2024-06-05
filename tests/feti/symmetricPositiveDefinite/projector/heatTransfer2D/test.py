@@ -19,7 +19,7 @@ class Assembler(unittest.TestCase):
         for opt in [ "          DEFAULT", "     WITH_FACTORS"]:
             yield run, "HYBRID_FETI", "ORTHOGONAL", opt, 26
         for opt in [ "             FULL", "WITH_FACTORS|FULL" ]:
-            yield run, "HYBRID_FETI", "ORTHOGONAL", opt, 22
+            yield run, "HYBRID_FETI", "ORTHOGONAL", opt, 24
 
 def run(method, projector, opt, max_it):
     ESPRESOTest.args[ 7] = method

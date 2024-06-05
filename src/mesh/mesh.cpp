@@ -482,6 +482,8 @@ void Mesh::computePersistentParameters()
 		profiler::synccheckpoint("compute_contact_interface");
 		eslog::checkpointln("MESH: CONTACT INTERFACE COMPUTED");
 	}
+	boundary.insert(boundary.end(), boundaryRegions.begin(), boundaryRegions.end());
+	boundary.insert(boundary.end(), contactInterfaces.begin(), contactInterfaces.end());
 
 	mesh::computeRegionsBoundaryDistribution(nodes, boundaryRegions, contactInterfaces);
 

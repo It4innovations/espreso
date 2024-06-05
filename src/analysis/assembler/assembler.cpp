@@ -39,10 +39,10 @@ Assembler::Assembler(PhysicsConfiguration &settings)
     }
     for (int t = 0; t < info::env::threads; ++t) {
         for (size_t d = info::mesh->domains->distribution[t]; d < info::mesh->domains->distribution[t + 1]; d++) {
-            for (size_t r = 0; r < info::mesh->boundaryRegions.size(); ++r) {
-                if (info::mesh->boundaryRegions[r]->dimension) {
-                    for (esint i = info::mesh->boundaryRegions[r]->eintervalsDistribution[d]; i < info::mesh->boundaryRegions[r]->eintervalsDistribution[d + 1]; ++i) {
-                        info::mesh->boundaryRegions[r]->eintervals[i].thread = t;
+            for (size_t r = 0; r < info::mesh->boundary.size(); ++r) {
+                if (info::mesh->boundary[r]->dimension) {
+                    for (esint i = info::mesh->boundary[r]->eintervalsDistribution[d]; i < info::mesh->boundary[r]->eintervalsDistribution[d + 1]; ++i) {
+                        info::mesh->boundary[r]->eintervals[i].thread = t;
                     }
                 }
             }
@@ -72,10 +72,10 @@ void Assembler::assemble(const step::Step &step, SubKernel::Action action)
         }
         #pragma omp parallel for
         for (int t = 0; t < info::env::threads; ++t) {
-            for (size_t r = 1; r < info::mesh->boundaryRegions.size(); ++r) {
-                if (info::mesh->boundaryRegions[r]->dimension) {
+            for (size_t r = 1; r < info::mesh->boundary.size(); ++r) {
+                if (info::mesh->boundary[r]->dimension) {
                     for (size_t d = info::mesh->domains->distribution[t]; d < info::mesh->domains->distribution[t + 1]; d++) {
-                        for (esint i = info::mesh->boundaryRegions[r]->eintervalsDistribution[d]; i < info::mesh->boundaryRegions[r]->eintervalsDistribution[d + 1]; ++i) {
+                        for (esint i = info::mesh->boundary[r]->eintervalsDistribution[d]; i < info::mesh->boundary[r]->eintervalsDistribution[d + 1]; ++i) {
                             run(step, action, r, i);
                         }
                     }
@@ -95,10 +95,10 @@ void Assembler::assemble(const step::Step &step, SubKernel::Action action)
                 }
             }
         }
-        for (size_t r = 1; r < info::mesh->boundaryRegions.size(); ++r) {
-            if (info::mesh->boundaryRegions[r]->dimension) {
+        for (size_t r = 1; r < info::mesh->boundary.size(); ++r) {
+            if (info::mesh->boundary[r]->dimension) {
                 for (esint d = 0; d < info::mesh->domains->size; d++) {
-                    for (esint i = info::mesh->boundaryRegions[r]->eintervalsDistribution[d]; i < info::mesh->boundaryRegions[r]->eintervalsDistribution[d + 1]; ++i) {
+                    for (esint i = info::mesh->boundary[r]->eintervalsDistribution[d]; i < info::mesh->boundary[r]->eintervalsDistribution[d + 1]; ++i) {
                         run(step, action, r, i);
                     }
                 }

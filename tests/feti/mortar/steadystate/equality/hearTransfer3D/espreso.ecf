@@ -19,6 +19,7 @@ INPUT {
   CONTACT_INTERFACES {
     GENERAL {
       DETECTION     ALL_BODIES;
+      CRITERION          BOUND;
     }
   }
 }

@@ -185,7 +185,7 @@ espreso::FETIConfiguration::FETIConfiguration()
 			.addoption(ECFOption().setname("DOUBLE").setdescription("Double precision."))
 			.addoption(ECFOption().setname("SINGLE").setdescription("Single precision.")));
 
-	precision_in = 1e-4;
+	precision_in = 1e-6;
 	REGISTER(precision_in, ECFMetaData()
 			.setdescription({ "SMALSE inner precision" })
 			.setdatatype({ ECFDataType::FLOAT }));

@@ -4,7 +4,7 @@ from estest import ESPRESOTest
 
 cases = [
     ("          PCG", "     NONE", 85),
-    ("          PCG", "DIRICHLET", 23),
+    ("          PCG", "DIRICHLET", 25),
     ("orthogonalPCG", "     NONE", 63),
     ("orthogonalPCG", "DIRICHLET", 23),
     ]

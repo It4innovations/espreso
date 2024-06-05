@@ -14,7 +14,7 @@ class Assembler(unittest.TestCase):
         ESPRESOTest.clean()
 
     def test_feti(self):
-        for opt, max_it in [ ("         DEFAULT", 100), ("    WITH_FACTORS", 100), ("WITH_FACTORS|FULL", 90) ]:
+        for opt, max_it in [ ("         DEFAULT", 120), ("    WITH_FACTORS", 120), ("WITH_FACTORS|FULL", 95) ]:
             yield run, opt, max_it
 
 def run(opt, max_it):

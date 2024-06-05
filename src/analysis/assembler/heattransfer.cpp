@@ -34,10 +34,10 @@ HeatTransfer::HeatTransfer(HeatTransfer *previous, HeatTransferConfiguration &se
 {
     threaded = configuration.solver == HeatTransferLoadStepConfiguration::SOLVER::FETI;
     subkernels.resize(info::mesh->elements->eintervals.size());
-    boundary.resize(info::mesh->boundaryRegions.size());
-    for (size_t r = 1; r < info::mesh->boundaryRegions.size(); ++r) {
-        if (info::mesh->boundaryRegions[r]->dimension) {
-            boundary[r].resize(info::mesh->boundaryRegions[r]->eintervals.size());
+    boundary.resize(info::mesh->boundary.size());
+    for (size_t r = 1; r < info::mesh->boundary.size(); ++r) {
+        if (info::mesh->boundary[r]->dimension) {
+            boundary[r].resize(info::mesh->boundary[r]->eintervals.size());
         } else {
             boundary[r].resize(info::env::threads);
         }
@@ -51,20 +51,20 @@ HeatTransfer::HeatTransfer(HeatTransfer *previous, HeatTransferConfiguration &se
                 subkernels[i].chunks = subkernels[i].elements / SIMD::size + (subkernels[i].elements % SIMD::size ? 1 : 0);
             }
 
-            for (size_t r = 1; r < info::mesh->boundaryRegions.size(); ++r) {
-                if (info::mesh->boundaryRegions[r]->dimension) {
-                    for (esint i = info::mesh->boundaryRegions[r]->eintervalsDistribution[d]; i < info::mesh->boundaryRegions[r]->eintervalsDistribution[d + 1]; ++i) {
-                        boundary[r][i].code = info::mesh->boundaryRegions[r]->eintervals[i].code;
-                        boundary[r][i].elements = info::mesh->boundaryRegions[r]->eintervals[i].end - info::mesh->boundaryRegions[r]->eintervals[i].begin;
+            for (size_t r = 1; r < info::mesh->boundary.size(); ++r) {
+                if (info::mesh->boundary[r]->dimension) {
+                    for (esint i = info::mesh->boundary[r]->eintervalsDistribution[d]; i < info::mesh->boundary[r]->eintervalsDistribution[d + 1]; ++i) {
+                        boundary[r][i].code = info::mesh->boundary[r]->eintervals[i].code;
+                        boundary[r][i].elements = info::mesh->boundary[r]->eintervals[i].end - info::mesh->boundary[r]->eintervals[i].begin;
                         boundary[r][i].chunks = boundary[r][i].elements / SIMD::size + (boundary[r][i].elements % SIMD::size ? 1 : 0);
                     }
                 }
             }
         }
-        for (size_t r = 1; r < info::mesh->boundaryRegions.size(); ++r) {
-            if (info::mesh->boundaryRegions[r]->dimension == 0) {
+        for (size_t r = 1; r < info::mesh->boundary.size(); ++r) {
+            if (info::mesh->boundary[r]->dimension == 0) {
                 boundary[r][t].code = static_cast<int>(Element::CODE::POINT1);
-                boundary[r][t].elements = info::mesh->boundaryRegions[r]->nodes->datatarray().size(t);
+                boundary[r][t].elements = info::mesh->boundary[r]->nodes->datatarray().size(t);
                 boundary[r][t].chunks = boundary[r][t].elements / SIMD::size + (boundary[r][t].elements % SIMD::size ? 1 : 0);
             }
         }
@@ -293,17 +293,17 @@ void HeatTransfer::analyze(const step::Step &step)
         subkernels[i].temperature.activate(info::mesh->elements->nodes->cbegin() + ebegin, info::mesh->elements->nodes->cbegin() + eend, Results::temperature->data.data(), gptemp);
     }
 
-    for(size_t r = 1; r < info::mesh->boundaryRegions.size(); ++r) {
-        const BoundaryRegionStore *region = info::mesh->boundaryRegions[r];
-        if (info::mesh->boundaryRegions[r]->dimension) {
-            for(size_t i = 0; i < info::mesh->boundaryRegions[r]->eintervals.size(); ++i) {
+    for(size_t r = 1; r < info::mesh->boundary.size(); ++r) {
+        const BoundaryRegionStore *region = info::mesh->boundary[r];
+        if (info::mesh->boundary[r]->dimension) {
+            for(size_t i = 0; i < info::mesh->boundary[r]->eintervals.size(); ++i) {
                 if (info::mesh->dimension == 2) {
                     boundary[r][i].thickness.activate(region->elements->cbegin() + region->eintervals[i].begin, region->elements->cbegin() + region->eintervals[i].end, Results::thickness->data.data());
                 }
-                boundary[r][i].heatFlow.activate(getExpression(info::mesh->boundaryRegions[r]->name, configuration.heat_flow));
-                boundary[r][i].heatFlux.activate(getExpression(info::mesh->boundaryRegions[r]->name, configuration.heat_flux));
+                boundary[r][i].heatFlow.activate(getExpression(info::mesh->boundary[r]->name, configuration.heat_flow));
+                boundary[r][i].heatFlux.activate(getExpression(info::mesh->boundary[r]->name, configuration.heat_flux));
 
-                auto convection = configuration.convection.find(info::mesh->boundaryRegions[r]->name);
+                auto convection = configuration.convection.find(info::mesh->boundary[r]->name);
                 if (convection != configuration.convection.end()) {
                     boundary[r][i].htc.activate(&convection->second.heat_transfer_coefficient);
                     boundary[r][i].externalTemperature.activate(&convection->second.external_temperature);
@@ -322,7 +322,7 @@ void HeatTransfer::analyze(const step::Step &step)
                 boundary[r][i].coordinates.activate(region->elements->cbegin() + region->eintervals[i].begin, region->elements->cbegin() + region->eintervals[i].end, gpcoords);
             }
         } else {
-            for(size_t t = 0; t < info::mesh->boundaryRegions[r]->nodes->threads(); ++t) {
+            for(size_t t = 0; t < info::mesh->boundary[r]->nodes->threads(); ++t) {
                 boundary[r][t].coordinates.activate(region->nodes->cbegin(t), region->nodes->cend(), false);
             }
         }
@@ -330,7 +330,7 @@ void HeatTransfer::analyze(const step::Step &step)
 
     for (auto it = configuration.temperature.begin(); it != configuration.temperature.end(); ++it) {
         size_t r = info::mesh->bregionIndex(it->first);
-        const BoundaryRegionStore *region = info::mesh->boundaryRegions[r];
+        const BoundaryRegionStore *region = info::mesh->boundary[r];
         for (size_t t = 0; t < region->nodes->threads(); ++t) {
             boundary[r][t].temperature.activate(it->second);
             if (settings.init_temp_respect_bc) {

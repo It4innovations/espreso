@@ -1,6 +1,7 @@
 
 #include "mortar.h"
 
+#include "analysis/assembler/structuralmechanics.h"
 #include "esinfo/ecfinfo.h"
 #include "esinfo/meshinfo.h"
 #include "esinfo/mpiinfo.h"
@@ -392,6 +393,18 @@ void MortarContact<T>::set(const step::Step &step, FETI<T> &feti, int dofs)
         return;
     }
 
+    std::vector<int> bound, gap;
+    for (auto it = info::ecf->input.contact_interfaces.begin(); it != info::ecf->input.contact_interfaces.end(); ++it) {
+        switch (it->second.criterion) {
+        case ContactInterfaceConfiguration::CRITERION::BOUND:
+            bound.insert(bound.end(), it->second.found_interfaces.begin(), it->second.found_interfaces.end()); break;
+        case ContactInterfaceConfiguration::CRITERION::GAP:
+            gap.insert(gap.end(), it->second.found_interfaces.begin(), it->second.found_interfaces.end()); break;
+        }
+    }
+    std::sort(bound.begin(), bound.end());
+    std::sort(gap.begin(), gap.end());
+
     std::vector<Mortar> B;
     if (info::mesh->contact->sparseSide != NULL) {
         assembleMortarInterface(B);
@@ -459,9 +472,11 @@ void MortarContact<T>::set(const step::Step &step, FETI<T> &feti, int dofs)
     utils::sortAndRemoveDuplicates(mylambdas);
     utils::sortAndRemoveDuplicates(mids);
 
+    int vecsize = 3 * sizeof(double) / sizeof(esint);
     std::vector<esint> sBuffer;
     std::vector<std::vector<esint> > rBuffer(info::mesh->neighborsWithMe.size());
     sBuffer.push_back(mids.size());
+    Point dummy;
     for (auto it = mids.begin(); it != mids.end(); ++it) {
         auto nit = std::find(myids.begin(), myids.begin() + info::mesh->nodes->uniqInfo.nhalo, *it);
         if (nit == myids.begin() + info::mesh->nodes->uniqInfo.nhalo || *nit != *it) {
@@ -471,6 +486,27 @@ void MortarContact<T>::set(const step::Step &step, FETI<T> &feti, int dofs)
             sBuffer.push_back(*it);
             auto dmap = feti.decomposition->dmap->begin() + dofs * (nit - myids.begin());
             sBuffer.push_back(dmap->size());
+            if (sBuffer.capacity() < sBuffer.size() + 2 * vecsize) {
+                sBuffer.reserve(2 * sBuffer.capacity());
+            }
+            size_t offset = nit - myids.begin();
+            esint *normal;
+            if (StructuralMechanics::Results::normal) {
+                normal = reinterpret_cast<esint*>(StructuralMechanics::Results::normal->data.data() + dofs * offset);
+            } else {
+                normal = reinterpret_cast<esint*>(&dummy.x);
+            }
+            sBuffer.insert(sBuffer.end(), normal, normal + vecsize);
+
+            Point coords = info::mesh->nodes->coordinates->datatarray()[offset];
+            if (StructuralMechanics::Results::displacement) {
+                coords.x += StructuralMechanics::Results::displacement->data[dofs * offset + 0];
+                coords.y += StructuralMechanics::Results::displacement->data[dofs * offset + 1];
+                coords.z += StructuralMechanics::Results::displacement->data[dofs * offset + 2];
+            }
+            esint *icoords = reinterpret_cast<esint*>(&coords.x);
+            sBuffer.insert(sBuffer.end(), icoords, icoords + vecsize);
+
             for (int dof = 0; dof < dofs; ++dof, ++dmap) {
                 for (auto di = dmap->begin(); di != dmap->end(); ++di) {
                     if (feti.decomposition->ismy(di->domain)) {
@@ -489,7 +525,7 @@ void MortarContact<T>::set(const step::Step &step, FETI<T> &feti, int dofs)
     struct npair { esint id, n, offset; };
     std::vector<npair> ninfo; // where we have stored info about a particular node
     for (size_t n = 0; n < rBuffer.size(); ++n) {
-        for (size_t i = 1; i < rBuffer[n].size(); i += 2 * dofs * rBuffer[n][i + 1] + 2) {
+        for (size_t i = 1; i < rBuffer[n].size(); i += 2 * dofs * rBuffer[n][i + 1] + 2 + 2 * vecsize) {
             ninfo.push_back(npair{ rBuffer[n][i], (esint)n, (esint)i });
         }
     }
@@ -500,48 +536,123 @@ void MortarContact<T>::set(const step::Step &step, FETI<T> &feti, int dofs)
         return i.id < j.id;
     });
 
-    feti.lambdas.intervals.push_back({ 0, 0 });
     std::vector<std::vector<int> > &D2C = feti.D2C;
     std::vector<std::vector<int> > ROWS(feti.K.size()), COLS(feti.K.size());
-    std::vector<std::vector<double> > VALS(feti.K.size());
+    std::vector<std::vector<double> > VALS(feti.K.size()), C(feti.K.size());
 
-    // build B1 in correct order
-    size_t prevmap = feti.lambdas.cmap.size();
-    std::vector<int> domains;
-    for (auto lambda = lambdas.begin(); lambda != lambdas.end(); ++lambda) {
-        if (!std::binary_search(mylambdas.begin(), mylambdas.end(), lambda->id)) {
-            continue;
+    if (bound.size()) {
+        feti.lambdas.intervals.push_back({ 0, 0 });
+        size_t prevmap = feti.lambdas.cmap.size();
+        std::vector<int> domains;
+        for (auto lambda = lambdas.begin(); lambda != lambdas.end(); ++lambda) { // equality constrains
+            if (!std::binary_search(mylambdas.begin(), mylambdas.end(), lambda->id) || !std::binary_search(bound.begin(), bound.end(), lambda->pair)) {
+                continue;
+            }
+            auto begin = std::lower_bound(mortar.begin(), mortar.end(), *lambda, [] (const Mortar &b, const __lambda__ &l) { return b.pair == l.pair ? b.from < l.id : b.pair < l.pair; });
+            auto end = begin;
+            while (end != mortar.end() && lambda->pair == end->pair && lambda->id == end->from) {
+                ++end;
+            }
+
+            domains.clear();
+            for (int dof = 0; dof < dofs; ++dof) {
+                for (auto it = begin; it != end; ++it) {
+                    auto nit = std::lower_bound(ninfo.begin(), ninfo.end(), it->to, [&] (const npair &info, const esint &lambda) { return info.id < lambda; });
+                    int ndomains = 0;
+                    for (auto nnit = nit; nnit != ninfo.end() && nnit->id == it->to; ++nnit) {
+                        ndomains += rBuffer[nnit->n][nnit->offset + 1];
+                        if (dof == 0) {
+                            for (esint i = 0; i < rBuffer[nnit->n][nnit->offset + 1]; ++i) {
+                                domains.push_back(rBuffer[nit->n][nit->offset + 2 + 2 * i + 2 * vecsize]);
+                            }
+                        }
+                    }
+                    while (nit != ninfo.end() && nit->id == it->to) {
+                        if (info::mesh->neighborsWithMe[nit->n] == info::mpi::rank) {
+                            for (esint i = 0; i < rBuffer[nit->n][nit->offset + 1]; ++i) {
+                                if (D2C [rBuffer[nit->n][nit->offset + 2 * dof * ndomains + 2 + 2 * i + 2 * vecsize] - feti.decomposition->dbegin].size() == 0 || D2C[rBuffer[nit->n][nit->offset + 2 * dof * ndomains + 2 + 2 * i + 2 * vecsize] - feti.decomposition->dbegin].back() != feti.lambdas.size) {
+                                    D2C [rBuffer[nit->n][nit->offset + 2 * dof * ndomains + 2 + 2 * i + 2 * vecsize] - feti.decomposition->dbegin].push_back(feti.lambdas.size);
+                                    ROWS[rBuffer[nit->n][nit->offset + 2 * dof * ndomains + 2 + 2 * i + 2 * vecsize] - feti.decomposition->dbegin].push_back(0);
+                                }
+                                ROWS[rBuffer[nit->n][nit->offset + 2 * dof * ndomains + 2 + 2 * i + 2 * vecsize] - feti.decomposition->dbegin].back()++;
+                                COLS[rBuffer[nit->n][nit->offset + 2 * dof * ndomains + 2 + 2 * i + 2 * vecsize] - feti.decomposition->dbegin].push_back(rBuffer[nit->n][nit->offset + 2 * dof * ndomains + 2 + 2 * i + 1 + 2 * vecsize]);
+                                VALS[rBuffer[nit->n][nit->offset + 2 * dof * ndomains + 2 + 2 * i + 2 * vecsize] - feti.decomposition->dbegin].push_back(it->value / ndomains);
+                            }
+                        }
+                        ++nit;
+                    }
+                }
+                feti.lambdas.size++;
+                feti.lambdas.intervals.back().size++;
+            }
+            utils::sortAndRemoveDuplicates(domains);
+            bool pushcmap = true;
+            if (prevmap < feti.lambdas.cmap.size() && feti.lambdas.cmap[prevmap + 1] == (int)domains.size()) {
+                pushcmap = false;
+                for (size_t i = 0; i < domains.size(); ++i) {
+                    if (domains[i] != feti.lambdas.cmap[prevmap + 2 + i]) {
+                        pushcmap = true;
+                    }
+                }
+            }
+            if (pushcmap) {
+                prevmap = feti.lambdas.cmap.size();
+                feti.lambdas.cmap.push_back(dofs); // TODO: sum up the lambdas with the same map
+                feti.lambdas.cmap.push_back(domains.size());
+                for (size_t i = 0; i < domains.size(); ++i) {
+                    feti.lambdas.cmap.push_back(domains[i]);
+                }
+            } else {
+                feti.lambdas.cmap[prevmap] += dofs;
+            }
+            if (domains.front() < feti.decomposition->dbegin) {
+                feti.lambdas.intervals.back().halo += dofs;
+            }
         }
-        auto begin = std::lower_bound(mortar.begin(), mortar.end(), *lambda, [] (const Mortar &b, const __lambda__ &l) { return b.pair == l.pair ? b.from < l.id : b.pair < l.pair; });
-        auto end = begin;
-        while (end != mortar.end() && lambda->pair == end->pair && lambda->id == end->from) {
-            ++end;
-        }
+        feti.lambdas.equalities = feti.lambdas.size;
+    }
 
+    if (gap.size()) {
+        feti.lambdas.intervals.push_back({ 0, 0 });
+        size_t prevmap = feti.lambdas.cmap.size();
+        std::vector<int> domains;
+        for (auto lambda = lambdas.begin(); lambda != lambdas.end(); ++lambda) { // inequality constrains
+            if (!std::binary_search(mylambdas.begin(), mylambdas.end(), lambda->id) || !std::binary_search(gap.begin(), gap.end(), lambda->pair)) {
+                continue;
+            }
+            auto begin = std::lower_bound(mortar.begin(), mortar.end(), *lambda, [] (const Mortar &b, const __lambda__ &l) { return b.pair == l.pair ? b.from < l.id : b.pair < l.pair; });
+            auto end = begin;
+            while (end != mortar.end() && lambda->pair == end->pair && lambda->id == end->from) {
+                ++end;
+            }
 
-        domains.clear();
-        for (int dof = 0; dof < dofs; ++dof) {
+            domains.clear();
             for (auto it = begin; it != end; ++it) {
                 auto nit = std::lower_bound(ninfo.begin(), ninfo.end(), it->to, [&] (const npair &info, const esint &lambda) { return info.id < lambda; });
                 int ndomains = 0;
                 for (auto nnit = nit; nnit != ninfo.end() && nnit->id == it->to; ++nnit) {
                     ndomains += rBuffer[nnit->n][nnit->offset + 1];
-                    if (dof == 0) {
-                        for (esint i = 0; i < rBuffer[nnit->n][nnit->offset + 1]; ++i) {
-                            domains.push_back(rBuffer[nit->n][nit->offset + 2 + 2 * i]);
-                        }
+                    for (esint i = 0; i < rBuffer[nnit->n][nnit->offset + 1]; ++i) {
+                        domains.push_back(rBuffer[nit->n][nit->offset + 2 + 2 * i + 2 * vecsize]);
                     }
                 }
+
                 while (nit != ninfo.end() && nit->id == it->to) {
                     if (info::mesh->neighborsWithMe[nit->n] == info::mpi::rank) {
-                        for (esint i = 0; i < rBuffer[nit->n][nit->offset + 1]; ++i) {
-                            if (D2C [rBuffer[nit->n][nit->offset + 2 * dof * ndomains + 2 + 2 * i] - feti.decomposition->dbegin].size() == 0 || D2C[rBuffer[nit->n][nit->offset + 2 * dof * ndomains + 2 + 2 * i] - feti.decomposition->dbegin].back() != feti.lambdas.size) {
-                                D2C [rBuffer[nit->n][nit->offset + 2 * dof * ndomains + 2 + 2 * i] - feti.decomposition->dbegin].push_back(feti.lambdas.size);
-                                ROWS[rBuffer[nit->n][nit->offset + 2 * dof * ndomains + 2 + 2 * i] - feti.decomposition->dbegin].push_back(0);
+                        double *normal = reinterpret_cast<double*>(rBuffer[nit->n].data() + nit->offset + 2);
+                        double *coords = reinterpret_cast<double*>(rBuffer[nit->n].data() + nit->offset + 2 + vecsize);
+                        for (int dof = 0; dof < dofs; ++dof) {
+                            if (std::fabs(normal[dof]) > BE_VALUE_TRESHOLD) {
+                                for (esint i = 0; i < rBuffer[nit->n][nit->offset + 1]; ++i) {
+                                    if (D2C [rBuffer[nit->n][nit->offset + 2 * dof * ndomains + 2 + 2 * i + 2 * vecsize] - feti.decomposition->dbegin].size() == 0 || D2C[rBuffer[nit->n][nit->offset + 2 * dof * ndomains + 2 + 2 * i + 2 * vecsize] - feti.decomposition->dbegin].back() != feti.lambdas.size) {
+                                        D2C [rBuffer[nit->n][nit->offset + 2 * dof * ndomains + 2 + 2 * i + 2 * vecsize] - feti.decomposition->dbegin].push_back(feti.lambdas.size);
+                                        ROWS[rBuffer[nit->n][nit->offset + 2 * dof * ndomains + 2 + 2 * i + 2 * vecsize] - feti.decomposition->dbegin].push_back(0);
+                                    }
+                                    ROWS[rBuffer[nit->n][nit->offset + 2 * dof * ndomains + 2 + 2 * i + 2 * vecsize] - feti.decomposition->dbegin].back()++;
+                                    COLS[rBuffer[nit->n][nit->offset + 2 * dof * ndomains + 2 + 2 * i + 2 * vecsize] - feti.decomposition->dbegin].push_back(rBuffer[nit->n][nit->offset + 2 * dof * ndomains + 2 + 2 * i + 1 + 2 * vecsize]);
+                                    VALS[rBuffer[nit->n][nit->offset + 2 * dof * ndomains + 2 + 2 * i + 2 * vecsize] - feti.decomposition->dbegin].push_back(it->value / ndomains);
+                                }
                             }
-                            ROWS[rBuffer[nit->n][nit->offset + 2 * dof * ndomains + 2 + 2 * i] - feti.decomposition->dbegin].back()++;
-                            COLS[rBuffer[nit->n][nit->offset + 2 * dof * ndomains + 2 + 2 * i] - feti.decomposition->dbegin].push_back(rBuffer[nit->n][nit->offset + 2 * dof * ndomains + 2 + 2 * i + 1]);
-                            VALS[rBuffer[nit->n][nit->offset + 2 * dof * ndomains + 2 + 2 * i] - feti.decomposition->dbegin].push_back(it->value / ndomains);
                         }
                     }
                     ++nit;
@@ -549,30 +660,35 @@ void MortarContact<T>::set(const step::Step &step, FETI<T> &feti, int dofs)
             }
             feti.lambdas.size++;
             feti.lambdas.intervals.back().size++;
-        }
-        utils::sortAndRemoveDuplicates(domains);
-        bool pushcmap = true;
-        if (prevmap < feti.lambdas.cmap.size() && feti.lambdas.cmap[prevmap + 1] == (int)domains.size()) {
-            pushcmap = false;
-            for (size_t i = 0; i < domains.size(); ++i) {
-                if (domains[i] != feti.lambdas.cmap[prevmap + 2 + i]) {
-                    pushcmap = true;
+            utils::sortAndRemoveDuplicates(domains);
+            bool pushcmap = true;
+            if (prevmap < feti.lambdas.cmap.size() && feti.lambdas.cmap[prevmap + 1] == (int)domains.size()) {
+                pushcmap = false;
+                for (size_t i = 0; i < domains.size(); ++i) {
+                    if (domains[i] != feti.lambdas.cmap[prevmap + 2 + i]) {
+                        pushcmap = true;
+                    }
                 }
             }
-        }
-        if (pushcmap) {
-            prevmap = feti.lambdas.cmap.size();
-            feti.lambdas.cmap.push_back(dofs); // TODO: sum up the lambdas with the same map
-            feti.lambdas.cmap.push_back(domains.size());
-            for (size_t i = 0; i < domains.size(); ++i) {
-                feti.lambdas.cmap.push_back(domains[i]);
+            if (pushcmap) {
+                prevmap = feti.lambdas.cmap.size();
+                feti.lambdas.cmap.push_back(1); // TODO: sum up the lambdas with the same map
+                feti.lambdas.cmap.push_back(domains.size());
+                for (size_t i = 0; i < domains.size(); ++i) {
+                    feti.lambdas.cmap.push_back(domains[i]);
+                }
+            } else {
+                feti.lambdas.cmap[prevmap] += 1;
             }
-        } else {
-            feti.lambdas.cmap[prevmap] += dofs;
+            if (domains.front() < feti.decomposition->dbegin) {
+                feti.lambdas.intervals.back().halo += 1;
+            }
         }
-        if (domains.front() < feti.decomposition->dbegin) {
-            feti.lambdas.intervals.back().halo += dofs;
-        }
+
+        feti.lb.resize(feti.lambdas.size - feti.lambdas.equalities);
+        feti.ub.resize(feti.lambdas.size - feti.lambdas.equalities);
+        math::set(feti.lb, T{0});
+        math::set(feti.ub, std::numeric_limits<T>::max());
     }
 
     std::vector<Matrix_CSR<T> > B1(feti.B1.size());

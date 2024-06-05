@@ -5,7 +5,7 @@ from estest import ESPRESOTest
 cases = [
     ("     NONE", 85),
     ("   LUMPED", 60),
-    ("DIRICHLET", 23),
+    ("DIRICHLET", 25),
     ]
 
 class Assembler(unittest.TestCase):

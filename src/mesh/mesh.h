@@ -88,6 +88,7 @@ public:
 	std::vector<ElementsRegionStore*> elementsRegions;
 	std::vector<BoundaryRegionStore*> boundaryRegions;
 	std::vector<ContactInterfaceStore*> contactInterfaces;
+	std::vector<BoundaryRegionStore*> boundary; // boundaryRegions + contactInterfaces
 
 	DomainStore *domains;
 	ClusterStore *clusters;
