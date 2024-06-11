@@ -20,7 +20,7 @@ void runElement<Element::CODE::TRIANGLE6>(const step::Step &step, StructuralMech
 }
 
 template <>
-void runBoundary<Element::CODE::TRIANGLE6>(const step::Step &step, StructuralMechanicsBoundaryOperators &operators, SubKernel::Action action)
+void runBoundary<Element::CODE::TRIANGLE6>(const step::Step &step, StructuralMechanicsFaceOperators &operators, SubKernel::Action action)
 {
     switch (action) {
     case SubKernel::Action::PREPROCESS:

@@ -66,7 +66,7 @@ struct StructuralMechanicsElementOperators {
     } expressions;
 };
 
-struct StructuralMechanicsBoundaryOperators {
+struct StructuralMechanicsFaceOperators {
     int code;
     size_t elements, chunks;
 
@@ -79,8 +79,29 @@ struct StructuralMechanicsBoundaryOperators {
     Integration integration;
     Normal normal;
 
-    ExternalExpressionVector displacement;
     NormalPressure normalPressure;
+    HarmonicForce harmonicForce;
+
+    DataFiller reRHSfiller, imRHSfiller;
+
+    struct {
+        std::vector<ExternalEvaluator*> node;
+        std::vector<ExternalEvaluator*> gp;
+    } expressions;
+};
+
+struct StructuralMechanicsNodeOperators {
+    int code;
+    size_t elements, chunks;
+
+    size_t esize;
+
+    Basis basis;
+    Thickness thickness;
+    Coordinates coordinates;
+    Normal normal;
+
+    ExternalExpressionVector displacement;
     HarmonicForce harmonicForce;
 
     DataFiller reRHSfiller, imRHSfiller, reDirichlet, imDirichlet;

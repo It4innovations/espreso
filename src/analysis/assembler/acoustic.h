@@ -123,8 +123,9 @@ public:
         static NodeData *pressure, *initialPressure;
     };
 protected:
-    void run(const step::Step &step, SubKernel::Action action, size_t interval) { }
-    void run(const step::Step &step, SubKernel::Action action, size_t region, size_t interval) { }
+    void elements(const step::Step &step, SubKernel::Action action, size_t interval) { }
+    void boundary(const step::Step &step, SubKernel::Action action, size_t region, size_t interval) { }
+    void nodes(const step::Step &step, SubKernel::Action action, size_t region, size_t interval) { }
 
     void initParameters();
 };

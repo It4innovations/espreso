@@ -28,7 +28,7 @@ using namespace espreso;
 Assembler::Assembler(PhysicsConfiguration &settings)
 : settings(settings), threaded(false)
 {
-    bem.resize(info::mesh->domains->size);
+    BEM.resize(info::mesh->domains->size);
     BETI.resize(info::mesh->domains->size);
     for (int t = 0; t < info::env::threads; ++t) {
         for (size_t d = info::mesh->domains->distribution[t]; d < info::mesh->domains->distribution[t + 1]; d++) {
@@ -61,11 +61,11 @@ void Assembler::assemble(const step::Step &step, SubKernel::Action action)
         #pragma omp parallel for
         for (int t = 0; t < info::env::threads; ++t) {
             for (size_t d = info::mesh->domains->distribution[t]; d < info::mesh->domains->distribution[t + 1]; d++) {
-                if (bem[d] && action == SubKernel::Action::ASSEMBLE) {
-                    runBEM(step, action, d, BETI[d]);
+                if (BEM[d] && action == SubKernel::Action::ASSEMBLE) {
+                    bem(step, action, d, BETI[d]);
                 } else {
                     for (esint i = info::mesh->elements->eintervalsDistribution[d]; i < info::mesh->elements->eintervalsDistribution[d + 1]; ++i) {
-                        run(step, action, i);
+                        elements(step, action, i);
                     }
                 }
             }
@@ -76,22 +76,22 @@ void Assembler::assemble(const step::Step &step, SubKernel::Action action)
                 if (info::mesh->boundary[r]->dimension) {
                     for (size_t d = info::mesh->domains->distribution[t]; d < info::mesh->domains->distribution[t + 1]; d++) {
                         for (esint i = info::mesh->boundary[r]->eintervalsDistribution[d]; i < info::mesh->boundary[r]->eintervalsDistribution[d + 1]; ++i) {
-                            run(step, action, r, i);
+                            boundary(step, action, r, i);
                         }
                     }
                 } else {
-                    run(step, action, r, t);
+                    nodes(step, action, r, t);
                 }
             }
         }
 
     } else {
         for (esint d = 0; d < info::mesh->domains->size; d++) {
-            if (bem[d] && action == SubKernel::Action::ASSEMBLE) {
-                runBEM(step, action, d, BETI[d]);
+            if (BEM[d] && action == SubKernel::Action::ASSEMBLE) {
+                bem(step, action, d, BETI[d]);
             } else {
                 for (esint i = info::mesh->elements->eintervalsDistribution[d]; i < info::mesh->elements->eintervalsDistribution[d + 1]; ++i) {
-                    run(step, action, i);
+                    elements(step, action, i);
                 }
             }
         }
@@ -99,12 +99,12 @@ void Assembler::assemble(const step::Step &step, SubKernel::Action action)
             if (info::mesh->boundary[r]->dimension) {
                 for (esint d = 0; d < info::mesh->domains->size; d++) {
                     for (esint i = info::mesh->boundary[r]->eintervalsDistribution[d]; i < info::mesh->boundary[r]->eintervalsDistribution[d + 1]; ++i) {
-                        run(step, action, r, i);
+                        boundary(step, action, r, i);
                     }
                 }
             } else {
                 for (int t = 0; t < info::env::threads; ++t) {
-                    run(step, action, r, t);
+                    nodes(step, action, r, t);
                 }
             }
         }

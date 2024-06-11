@@ -45,40 +45,38 @@ StructuralMechanics::StructuralMechanics(StructuralMechanics *previous, Structur
 : Assembler(settings), settings(settings), configuration(configuration)
 {
     threaded = configuration.solver == StructuralMechanicsLoadStepConfiguration::SOLVER::FETI;
-    subkernels.resize(info::mesh->elements->eintervals.size());
-    boundary.resize(info::mesh->boundary.size());
+    elementKernels.resize(info::mesh->elements->eintervals.size());
+    faceKernels.resize(info::mesh->boundary.size());
+    nodeKernels.resize(info::mesh->boundary.size());
     for (size_t r = 1; r < info::mesh->boundary.size(); ++r) {
         if (info::mesh->boundary[r]->dimension) {
-            boundary[r].resize(info::mesh->boundary[r]->eintervals.size());
-        } else {
-            boundary[r].resize(info::env::threads);
+            faceKernels[r].resize(info::mesh->boundary[r]->eintervals.size());
         }
+        nodeKernels[r].resize(info::env::threads);
     }
 
     for (int t = 0; t < info::env::threads; ++t) {
         for (size_t d = info::mesh->domains->distribution[t]; d < info::mesh->domains->distribution[t + 1]; d++) {
             for (esint i = info::mesh->elements->eintervalsDistribution[d]; i < info::mesh->elements->eintervalsDistribution[d + 1]; ++i) {
-                subkernels[i].code = info::mesh->elements->eintervals[i].code;
-                subkernels[i].elements = info::mesh->elements->eintervals[i].end - info::mesh->elements->eintervals[i].begin;
-                subkernels[i].chunks = subkernels[i].elements / SIMD::size + (subkernels[i].elements % SIMD::size ? 1 : 0);
+                elementKernels[i].code = info::mesh->elements->eintervals[i].code;
+                elementKernels[i].elements = info::mesh->elements->eintervals[i].end - info::mesh->elements->eintervals[i].begin;
+                elementKernels[i].chunks = elementKernels[i].elements / SIMD::size + (elementKernels[i].elements % SIMD::size ? 1 : 0);
             }
 
             for (size_t r = 1; r < info::mesh->boundary.size(); ++r) {
                 if (info::mesh->boundary[r]->dimension) {
                     for (esint i = info::mesh->boundary[r]->eintervalsDistribution[d]; i < info::mesh->boundary[r]->eintervalsDistribution[d + 1]; ++i) {
-                        boundary[r][i].code = info::mesh->boundary[r]->eintervals[i].code;
-                        boundary[r][i].elements = info::mesh->boundary[r]->eintervals[i].end - info::mesh->boundary[r]->eintervals[i].begin;
-                        boundary[r][i].chunks = boundary[r][i].elements / SIMD::size + (boundary[r][i].elements % SIMD::size ? 1 : 0);
+                        faceKernels[r][i].code = info::mesh->boundary[r]->eintervals[i].code;
+                        faceKernels[r][i].elements = info::mesh->boundary[r]->eintervals[i].end - info::mesh->boundary[r]->eintervals[i].begin;
+                        faceKernels[r][i].chunks = faceKernels[r][i].elements / SIMD::size + (faceKernels[r][i].elements % SIMD::size ? 1 : 0);
                     }
                 }
             }
         }
         for (size_t r = 1; r < info::mesh->boundary.size(); ++r) {
-            if (info::mesh->boundary[r]->dimension == 0) {
-                boundary[r][t].code = static_cast<int>(Element::CODE::POINT1);
-                boundary[r][t].elements = info::mesh->boundary[r]->nodes->datatarray().size(t);
-                boundary[r][t].chunks = boundary[r][t].elements / SIMD::size + (boundary[r][t].elements % SIMD::size ? 1 : 0);
-            }
+            nodeKernels[r][t].code = static_cast<int>(Element::CODE::POINT1);
+            nodeKernels[r][t].elements = info::mesh->boundary[r]->nodes->datatarray().size(t);
+            nodeKernels[r][t].chunks = nodeKernels[r][t].elements / SIMD::size + (nodeKernels[r][t].elements % SIMD::size ? 1 : 0);
         }
     }
 
@@ -331,7 +329,7 @@ void StructuralMechanics::analyze(const step::Step &step)
     }
 
     for(size_t i = 0; i < info::mesh->elements->eintervals.size(); ++i) {
-        bem[info::mesh->elements->eintervals[i].domain - info::mesh->domains->offset] = isBEM(i);
+        BEM[info::mesh->elements->eintervals[i].domain - info::mesh->domains->offset] = isBEM(i);
         const MaterialConfiguration *mat = info::mesh->materials[info::mesh->elements->eintervals[i].material];
         bool cartesian = mat->coordinate_system.type == CoordinateSystemConfiguration::TYPE::CARTESIAN;
         bool gpcoo = mat->linear_elastic_properties.needCoordinates() || getExpression(i, configuration.angular_velocity);
@@ -341,37 +339,37 @@ void StructuralMechanics::analyze(const step::Step &step)
         esint ebegin = info::mesh->elements->eintervals[i].begin, eend = info::mesh->elements->eintervals[i].end;
 
         if (info::mesh->dimension == 2) {
-            subkernels[i].thickness.activate(getExpression(i, settings.thickness), info::mesh->elements->nodes->cbegin() + ebegin, info::mesh->elements->nodes->cbegin() + eend, Results::thickness->data.data());
+            elementKernels[i].thickness.activate(getExpression(i, settings.thickness), info::mesh->elements->nodes->cbegin() + ebegin, info::mesh->elements->nodes->cbegin() + eend, Results::thickness->data.data());
         }
 
         if (configuration.large_displacement) {
-            subkernels[i].displacement.activate(info::mesh->elements->nodes->cbegin() + ebegin, info::mesh->elements->nodes->cbegin() + eend, Results::displacement->data.data());
-            subkernels[i].integrationDisplaced.activate();
-            subkernels[i].elasticityLargeDisplacement.activate();
-            subkernels[i].KLD.activate();
+            elementKernels[i].displacement.activate(info::mesh->elements->nodes->cbegin() + ebegin, info::mesh->elements->nodes->cbegin() + eend, Results::displacement->data.data());
+            elementKernels[i].integrationDisplaced.activate();
+            elementKernels[i].elasticityLargeDisplacement.activate();
+            elementKernels[i].KLD.activate();
         }
 
-        subkernels[i].coordinates.activate(info::mesh->elements->nodes->cbegin() + ebegin, info::mesh->elements->nodes->cbegin() + eend, !cartesian || gpcoo);
-        subkernels[i].elasticity.activate(settings.element_behaviour, &mat->linear_elastic_properties, &mat->coordinate_system);
+        elementKernels[i].coordinates.activate(info::mesh->elements->nodes->cbegin() + ebegin, info::mesh->elements->nodes->cbegin() + eend, !cartesian || gpcoo);
+        elementKernels[i].elasticity.activate(settings.element_behaviour, &mat->linear_elastic_properties, &mat->coordinate_system);
         if (mat->material_model == MaterialBaseConfiguration::MATERIAL_MODEL::PLASTICITY) {
-            subkernels[i].smallStrainTensor.activate();
-            subkernels[i].plasticity.activate(i, settings.element_behaviour, &mat->plasticity_properties, Results::isPlastized);
-            subkernels[i].displacement.activate(info::mesh->elements->nodes->cbegin() + ebegin, info::mesh->elements->nodes->cbegin() + eend, Results::displacement->data.data());
+            elementKernels[i].smallStrainTensor.activate();
+            elementKernels[i].plasticity.activate(i, settings.element_behaviour, &mat->plasticity_properties, Results::isPlastized);
+            elementKernels[i].displacement.activate(info::mesh->elements->nodes->cbegin() + ebegin, info::mesh->elements->nodes->cbegin() + eend, Results::displacement->data.data());
         }
-        subkernels[i].material.activate(mat);
+        elementKernels[i].material.activate(mat);
 
-        subkernels[i].K.activate(settings.element_behaviour, mat->linear_elastic_properties.model, subkernels[i].elasticity.rotated);
+        elementKernels[i].K.activate(settings.element_behaviour, mat->linear_elastic_properties.model, elementKernels[i].elasticity.rotated);
         if (configuration.type != LoadStepSolverConfiguration::TYPE::STEADY_STATE) {
-            subkernels[i].M.activate();
+            elementKernels[i].M.activate();
         }
-        subkernels[i].acceleration.activate(getExpression(i, configuration.acceleration), settings.element_behaviour);
-        subkernels[i].angularVelocity.activate(getExpression(i, configuration.angular_velocity), settings.element_behaviour);
+        elementKernels[i].acceleration.activate(getExpression(i, configuration.acceleration), settings.element_behaviour);
+        elementKernels[i].angularVelocity.activate(getExpression(i, configuration.angular_velocity), settings.element_behaviour);
         if (Results::principalStress) {
-            subkernels[i].displacement.activate(info::mesh->elements->nodes->cbegin() + ebegin, info::mesh->elements->nodes->cbegin() + eend, Results::displacement->data.data());
-            subkernels[i].smallStrainTensor.activate();
-            subkernels[i].sigma.activate(settings.element_behaviour, mat->linear_elastic_properties.model, subkernels[i].elasticity.rotated);
-            subkernels[i].stress.activate(i, Results::principalStress, Results::componentStress, Results::vonMisesStress);
-            subkernels[i].elasticity.action |= SubKernel::SOLUTION;
+            elementKernels[i].displacement.activate(info::mesh->elements->nodes->cbegin() + ebegin, info::mesh->elements->nodes->cbegin() + eend, Results::displacement->data.data());
+            elementKernels[i].smallStrainTensor.activate();
+            elementKernels[i].sigma.activate(settings.element_behaviour, mat->linear_elastic_properties.model, elementKernels[i].elasticity.rotated);
+            elementKernels[i].stress.activate(i, Results::principalStress, Results::componentStress, Results::vonMisesStress);
+            elementKernels[i].elasticity.action |= SubKernel::SOLUTION;
         }
     }
 
@@ -384,48 +382,47 @@ void StructuralMechanics::analyze(const step::Step &step)
     for(size_t r = 1; r < info::mesh->boundary.size(); ++r) {
         const BoundaryRegionStore *region = info::mesh->boundary[r];
         if (info::mesh->boundary[r]->dimension) {
-            for(size_t i = 0; i < info::mesh->boundary[r]->eintervals.size(); ++i) {
-                boundary[r][i].coordinates.activate(region->elements->cbegin() + region->eintervals[i].begin, region->elements->cbegin() + region->eintervals[i].end, settings.element_behaviour == StructuralMechanicsGlobalSettings::ELEMENT_BEHAVIOUR::AXISYMMETRIC);
-                boundary[r][i].normalPressure.activate(getExpression(info::mesh->boundary[r]->name, configuration.normal_pressure), settings.element_behaviour);
+            for (size_t i = 0; i < info::mesh->boundary[r]->eintervals.size(); ++i) {
+                faceKernels[r][i].coordinates.activate(region->elements->cbegin() + region->eintervals[i].begin, region->elements->cbegin() + region->eintervals[i].end, settings.element_behaviour == StructuralMechanicsGlobalSettings::ELEMENT_BEHAVIOUR::AXISYMMETRIC);
+                faceKernels[r][i].normalPressure.activate(getExpression(info::mesh->boundary[r]->name, configuration.normal_pressure), settings.element_behaviour);
                 if (settings.contact_interfaces) {
-                    boundary[r][i].normal.activate(region->elements->cbegin() + region->eintervals[i].begin, region->elements->cbegin() + region->eintervals[i].end, Results::normal->data.data(), faceMultiplicity.data());
+                    faceKernels[r][i].normal.activate(region->elements->cbegin() + region->eintervals[i].begin, region->elements->cbegin() + region->eintervals[i].end, Results::normal->data.data(), faceMultiplicity.data());
                 }
             }
-        } else {
-            for(size_t t = 0; t < info::mesh->boundary[r]->nodes->threads(); ++t) {
-                boundary[r][t].harmonicForce.activate(getExpression(info::mesh->boundary[r]->name, configuration.harmonic_force), settings.element_behaviour);
-                boundary[r][t].coordinates.activate(region->nodes->cbegin(t), region->nodes->cend(), false);
-            }
+        }
+        for (size_t t = 0; t < info::mesh->boundary[r]->nodes->threads(); ++t) {
+            nodeKernels[r][t].harmonicForce.activate(getExpression(info::mesh->boundary[r]->name, configuration.harmonic_force), settings.element_behaviour);
+            nodeKernels[r][t].coordinates.activate(region->nodes->cbegin(t), region->nodes->cend(), false);
         }
     }
 
     for (auto it = configuration.displacement.begin(); it != configuration.displacement.end(); ++it) {
         size_t r = info::mesh->bregionIndex(it->first);
         for (size_t t = 0; t < info::mesh->boundaryRegions[r]->nodes->threads(); ++t) {
-            boundary[r][t].displacement.activate(it->second);
+            nodeKernels[r][t].displacement.activate(it->second);
         }
     }
 
     assemble(step, SubKernel::PREPROCESS);
     size_t esize = 0;
-    std::vector<double> volume(subkernels.size()), surface(boundary.size());
-    for (size_t i = 0; i < subkernels.size(); ++i) {
-        esize = std::max(subkernels[i].esize, esize);
-        volume[i] = subkernels[i].volume;
+    std::vector<double> volume(elementKernels.size()), surface(faceKernels.size());
+    for (size_t i = 0; i < elementKernels.size(); ++i) {
+        esize = std::max(elementKernels[i].esize, esize);
+        volume[i] = elementKernels[i].volume;
     }
-    for (size_t r = 1; r < boundary.size(); ++r) {
-        for (size_t i = 0; i < boundary[r].size(); ++i) {
-            surface[r] += boundary[r][i].surface;
+    for (size_t r = 1; r < faceKernels.size(); ++r) {
+        for (size_t i = 0; i < faceKernels[r].size(); ++i) {
+            surface[r] += faceKernels[r][i].surface;
         }
-        for (size_t i = 0; i < boundary[r].size(); ++i) {
-            boundary[r][i].surface = surface[r];
+        for (size_t i = 0; i < faceKernels[r].size(); ++i) {
+            faceKernels[r][i].surface = surface[r];
         }
     }
     printElementVolume(volume);
     printBoundarySurface(surface);
 
     eslog::info("  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  \n");
-    if (bem.front()) {
+    if (BEM.front()) {
         eslog::info("  ASSEMBLER                                                                               BEM \n");
     } else {
         eslog::info("  SIMD SIZE                                                                                 %lu \n", SIMD::size);
@@ -443,33 +440,33 @@ void StructuralMechanics::analyze(const step::Step &step)
 void StructuralMechanics::connect(Matrix_Base<double> *K, Matrix_Base<double> *M, Vector_Base<double> *f, Vector_Base<double> *nf, Vector_Base<double> *dirichlet)
 {
     Matrix_FETI<double> *KBEM = dynamic_cast<Matrix_FETI<double>*>(K);
-    for (size_t i = 0; i < bem.size(); ++i) { // when BEM, K is FETI matrix
-        if (bem[i]) {
+    for (size_t i = 0; i < BEM.size(); ++i) { // when BEM, K is FETI matrix
+        if (BEM[i]) {
             BETI[i] = KBEM->domains[i].vals;
         }
     }
 
     for(size_t i = 0; i < info::mesh->elements->eintervals.size(); ++i) {
-        if (!bem[info::mesh->elements->eintervals[i].domain - info::mesh->domains->offset]) {
-            subkernels[i].Kfiller.activate(i, info::mesh->dimension, subkernels[i].elements, K);
-            subkernels[i].Mfiller.activate(i, info::mesh->dimension, subkernels[i].elements, M);
+        if (!BEM[info::mesh->elements->eintervals[i].domain - info::mesh->domains->offset]) {
+            elementKernels[i].Kfiller.activate(i, info::mesh->dimension, elementKernels[i].elements, K);
+            elementKernels[i].Mfiller.activate(i, info::mesh->dimension, elementKernels[i].elements, M);
         }
 
-        subkernels[i].reRHSfiller.activate(i, info::mesh->dimension, subkernels[i].elements, f);
-        subkernels[i].reNRHSfiller.activate(i, info::mesh->dimension, subkernels[i].elements, nf);
+        elementKernels[i].reRHSfiller.activate(i, info::mesh->dimension, elementKernels[i].elements, f);
+        elementKernels[i].reNRHSfiller.activate(i, info::mesh->dimension, elementKernels[i].elements, nf);
     }
 
     for(size_t r = 1; r < info::mesh->boundaryRegions.size(); ++r) {
         if (info::mesh->boundaryRegions[r]->dimension) {
             for (size_t i = 0; i < info::mesh->boundaryRegions[r]->eintervals.size(); ++i) {
-                boundary[r][i].reRHSfiller.activate(r, i, info::mesh->dimension, boundary[r][i].elements, f);
+                faceKernels[r][i].reRHSfiller.activate(r, i, info::mesh->dimension, faceKernels[r][i].elements, f);
             }
         }
     }
     for (auto it = configuration.displacement.begin(); it != configuration.displacement.end(); ++it) {
         size_t r = info::mesh->bregionIndex(it->first);
         for (size_t t = 0; t < info::mesh->boundary[r]->nodes->threads(); ++t) {
-            boundary[r][t].reDirichlet.activate(r, t, info::mesh->dimension, boundary[r][t].elements, dirichlet);
+            nodeKernels[r][t].reDirichlet.activate(r, t, info::mesh->dimension, nodeKernels[r][t].elements, dirichlet);
         }
     }
 }
@@ -477,69 +474,68 @@ void StructuralMechanics::connect(Matrix_Base<double> *K, Matrix_Base<double> *M
 void StructuralMechanics::connect(Matrix_Base<double> *K, Matrix_Base<double> *M, Matrix_Base<double> *C, Vector_Base<double> *ref, Vector_Base<double> *imf, Vector_Base<double> *renf, Vector_Base<double> *imnf, Vector_Base<double> *reDirichlet, Vector_Base<double> *imDirichlet)
 {
     for(size_t i = 0; i < info::mesh->elements->eintervals.size(); ++i) {
-        subkernels[i].Kfiller.activate(i, info::mesh->dimension, subkernels[i].elements, K);
-        subkernels[i].Mfiller.activate(i, info::mesh->dimension, subkernels[i].elements, M);
-        subkernels[i].Cfiller.activate(i, info::mesh->dimension, subkernels[i].elements, C);
+        elementKernels[i].Kfiller.activate(i, info::mesh->dimension, elementKernels[i].elements, K);
+        elementKernels[i].Mfiller.activate(i, info::mesh->dimension, elementKernels[i].elements, M);
+        elementKernels[i].Cfiller.activate(i, info::mesh->dimension, elementKernels[i].elements, C);
 
-        subkernels[i].reRHSfiller.activate(i, info::mesh->dimension, subkernels[i].elements, ref);
-        subkernels[i].imRHSfiller.activate(i, info::mesh->dimension, subkernels[i].elements, imf);
-        subkernels[i].reNRHSfiller.activate(i, info::mesh->dimension, subkernels[i].elements, renf);
-        subkernels[i].imNRHSfiller.activate(i, info::mesh->dimension, subkernels[i].elements, imnf);
+        elementKernels[i].reRHSfiller.activate(i, info::mesh->dimension, elementKernels[i].elements, ref);
+        elementKernels[i].imRHSfiller.activate(i, info::mesh->dimension, elementKernels[i].elements, imf);
+        elementKernels[i].reNRHSfiller.activate(i, info::mesh->dimension, elementKernels[i].elements, renf);
+        elementKernels[i].imNRHSfiller.activate(i, info::mesh->dimension, elementKernels[i].elements, imnf);
     }
 
     for(size_t r = 1; r < info::mesh->boundaryRegions.size(); ++r) {
         if (info::mesh->boundaryRegions[r]->dimension) {
             for (size_t i = 0; i < info::mesh->boundaryRegions[r]->eintervals.size(); ++i) {
-                boundary[r][i].reRHSfiller.activate(r, i, info::mesh->dimension, boundary[r][i].elements, ref);
-                boundary[r][i].imRHSfiller.activate(r, i, info::mesh->dimension, boundary[r][i].elements, imf);
+                faceKernels[r][i].reRHSfiller.activate(r, i, info::mesh->dimension, faceKernels[r][i].elements, ref);
+                faceKernels[r][i].imRHSfiller.activate(r, i, info::mesh->dimension, faceKernels[r][i].elements, imf);
             }
-        } else {
-            for (size_t t = 0; t < info::mesh->boundaryRegions[r]->nodes->threads(); ++t) {
-                boundary[r][t].reRHSfiller.activate(r, t, info::mesh->dimension, boundary[r][t].elements, ref);
-                boundary[r][t].imRHSfiller.activate(r, t, info::mesh->dimension, boundary[r][t].elements, imf);
-            }
+        }
+        for (size_t t = 0; t < info::mesh->boundaryRegions[r]->nodes->threads(); ++t) {
+            nodeKernels[r][t].reRHSfiller.activate(r, t, info::mesh->dimension, nodeKernels[r][t].elements, ref);
+            nodeKernels[r][t].imRHSfiller.activate(r, t, info::mesh->dimension, nodeKernels[r][t].elements, imf);
         }
     }
     for (auto it = configuration.displacement.begin(); it != configuration.displacement.end(); ++it) {
         size_t r = info::mesh->bregionIndex(it->first);
         for (size_t t = 0; t < info::mesh->boundaryRegions[r]->nodes->threads(); ++t) {
-            boundary[r][t].reDirichlet.activate(r, t, info::mesh->dimension, boundary[r][t].elements, reDirichlet); // imDirichlet is 0
+            nodeKernels[r][t].reDirichlet.activate(r, t, info::mesh->dimension, nodeKernels[r][t].elements, reDirichlet); // imDirichlet is 0
         }
     }
 }
 
 void StructuralMechanics::evaluate(const step::Step &step, const step::Time &time, Matrix_Base<double> *K, Matrix_Base<double> *M, Vector_Base<double> *f, Vector_Base<double> *nf, Vector_Base<double> *dirichlet)
 {
-    for (size_t i = 0; i < subkernels.size(); ++i) {
-        for (size_t e = 0; e < subkernels[i].expressions.node.size(); ++e) {
+    for (size_t i = 0; i < elementKernels.size(); ++i) {
+        for (size_t e = 0; e < elementKernels[i].expressions.node.size(); ++e) {
             #pragma omp parallel for
             for (int t = 0; t < info::env::threads; ++t) {
-                subkernels[i].expressions.node[e]->evaluator->getSubstep(t) = (step.substep + 1) / (double)step.substeps;
-                subkernels[i].expressions.node[e]->evaluator->getTime(t) = time.current;
+                elementKernels[i].expressions.node[e]->evaluator->getSubstep(t) = (step.substep + 1) / (double)step.substeps;
+                elementKernels[i].expressions.node[e]->evaluator->getTime(t) = time.current;
             }
         }
-        for (size_t e = 0; e < subkernels[i].expressions.gp.size(); ++e) {
+        for (size_t e = 0; e < elementKernels[i].expressions.gp.size(); ++e) {
             #pragma omp parallel for
             for (int t = 0; t < info::env::threads; ++t) {
-                subkernels[i].expressions.gp[e]->evaluator->getSubstep(t) = (step.substep + 1) / (double)step.substeps;
-                subkernels[i].expressions.gp[e]->evaluator->getTime(t) = time.current;
+                elementKernels[i].expressions.gp[e]->evaluator->getSubstep(t) = (step.substep + 1) / (double)step.substeps;
+                elementKernels[i].expressions.gp[e]->evaluator->getTime(t) = time.current;
             }
         }
     }
-    for (size_t i = 0; i < boundary.size(); ++i) {
-        for (size_t j = 0; j < boundary[i].size(); ++j) {
-            for (size_t e = 0; e < boundary[i][j].expressions.node.size(); ++e) {
+    for (size_t i = 0; i < faceKernels.size(); ++i) {
+        for (size_t j = 0; j < faceKernels[i].size(); ++j) {
+            for (size_t e = 0; e < faceKernels[i][j].expressions.node.size(); ++e) {
                 #pragma omp parallel for
                 for (int t = 0; t < info::env::threads; ++t) {
-                    boundary[i][j].expressions.node[e]->evaluator->getSubstep(t) = (step.substep + 1) / (double)step.substeps;
-                    boundary[i][j].expressions.node[e]->evaluator->getTime(t) = time.current;
+                    faceKernels[i][j].expressions.node[e]->evaluator->getSubstep(t) = (step.substep + 1) / (double)step.substeps;
+                    faceKernels[i][j].expressions.node[e]->evaluator->getTime(t) = time.current;
                 }
             }
-            for (size_t e = 0; e < boundary[i][j].expressions.gp.size(); ++e) {
+            for (size_t e = 0; e < faceKernels[i][j].expressions.gp.size(); ++e) {
                 #pragma omp parallel for
                 for (int t = 0; t < info::env::threads; ++t) {
-                    boundary[i][j].expressions.gp[e]->evaluator->getSubstep(t) = (step.substep + 1) / (double)step.substeps;
-                    boundary[i][j].expressions.gp[e]->evaluator->getTime(t) = time.current;
+                    faceKernels[i][j].expressions.gp[e]->evaluator->getSubstep(t) = (step.substep + 1) / (double)step.substeps;
+                    faceKernels[i][j].expressions.gp[e]->evaluator->getTime(t) = time.current;
                 }
             }
         }
@@ -551,32 +547,32 @@ void StructuralMechanics::evaluate(const step::Step &step, const step::Time &tim
 
 void StructuralMechanics::evaluate(const step::Step &step, const step::Frequency &freq, Matrix_Base<double> *K, Matrix_Base<double> *M, Matrix_Base<double> *C, Vector_Base<double> *ref, Vector_Base<double> *imf, Vector_Base<double> *renf, Vector_Base<double> *imnf, Vector_Base<double> *reDirichlet, Vector_Base<double> *imDirichlet)
 {
-    for (size_t i = 0; i < subkernels.size(); ++i) {
-        for (size_t e = 0; e < subkernels[i].expressions.node.size(); ++e) {
+    for (size_t i = 0; i < elementKernels.size(); ++i) {
+        for (size_t e = 0; e < elementKernels[i].expressions.node.size(); ++e) {
             #pragma omp parallel for
             for (int t = 0; t < info::env::threads; ++t) {
-                subkernels[i].expressions.node[e]->evaluator->getFrequency(t) = freq.current;
+                elementKernels[i].expressions.node[e]->evaluator->getFrequency(t) = freq.current;
             }
         }
-        for (size_t e = 0; e < subkernels[i].expressions.gp.size(); ++e) {
+        for (size_t e = 0; e < elementKernels[i].expressions.gp.size(); ++e) {
             #pragma omp parallel for
             for (int t = 0; t < info::env::threads; ++t) {
-                subkernels[i].expressions.gp[e]->evaluator->getFrequency(t) = freq.current;
+                elementKernels[i].expressions.gp[e]->evaluator->getFrequency(t) = freq.current;
             }
         }
     }
-    for (size_t i = 0; i < boundary.size(); ++i) {
-        for (size_t j = 0; j < boundary[i].size(); ++j) {
-            for (size_t e = 0; e < boundary[i][j].expressions.node.size(); ++e) {
+    for (size_t i = 0; i < faceKernels.size(); ++i) {
+        for (size_t j = 0; j < faceKernels[i].size(); ++j) {
+            for (size_t e = 0; e < faceKernels[i][j].expressions.node.size(); ++e) {
                 #pragma omp parallel for
                 for (int t = 0; t < info::env::threads; ++t) {
-                    boundary[i][j].expressions.node[e]->evaluator->getFrequency(t) = freq.current;
+                    faceKernels[i][j].expressions.node[e]->evaluator->getFrequency(t) = freq.current;
                 }
             }
-            for (size_t e = 0; e < boundary[i][j].expressions.gp.size(); ++e) {
+            for (size_t e = 0; e < faceKernels[i][j].expressions.gp.size(); ++e) {
                 #pragma omp parallel for
                 for (int t = 0; t < info::env::threads; ++t) {
-                    boundary[i][j].expressions.gp[e]->evaluator->getFrequency(t) = freq.current;
+                    faceKernels[i][j].expressions.gp[e]->evaluator->getFrequency(t) = freq.current;
                 }
             }
         }
@@ -587,38 +583,44 @@ void StructuralMechanics::evaluate(const step::Step &step, const step::Frequency
     update(K, constant.K); update(M, constant.M); update(C, constant.C); update(ref, constant.f); update(imf, constant.f); update(renf, constant.nf); update(imnf, constant.nf); update(reDirichlet, constant.dirichlet); update(imDirichlet, constant.dirichlet);
 }
 
-void StructuralMechanics::run(const step::Step &step, SubKernel::Action action, size_t interval)
+void StructuralMechanics::elements(const step::Step &step, SubKernel::Action action, size_t interval)
 {
-    switch (subkernels[interval].code) {
-    case static_cast<size_t>(Element::CODE::TRIANGLE3): runElement<Element::CODE::TRIANGLE3>(step, subkernels[interval], action); break;
-    case static_cast<size_t>(Element::CODE::TRIANGLE6): runElement<Element::CODE::TRIANGLE6>(step, subkernels[interval], action); break;
-    case static_cast<size_t>(Element::CODE::SQUARE4  ): runElement<Element::CODE::SQUARE4  >(step, subkernels[interval], action); break;
-    case static_cast<size_t>(Element::CODE::SQUARE8  ): runElement<Element::CODE::SQUARE8  >(step, subkernels[interval], action); break;
-    case static_cast<size_t>(Element::CODE::TETRA4   ): runElement<Element::CODE::TETRA4   >(step, subkernels[interval], action); break;
-    case static_cast<size_t>(Element::CODE::TETRA10  ): runElement<Element::CODE::TETRA10  >(step, subkernels[interval], action); break;
-    case static_cast<size_t>(Element::CODE::PYRAMID5 ): runElement<Element::CODE::PYRAMID5 >(step, subkernels[interval], action); break;
-    case static_cast<size_t>(Element::CODE::PYRAMID13): runElement<Element::CODE::PYRAMID13>(step, subkernels[interval], action); break;
-    case static_cast<size_t>(Element::CODE::PRISMA6  ): runElement<Element::CODE::PRISMA6  >(step, subkernels[interval], action); break;
-    case static_cast<size_t>(Element::CODE::PRISMA15 ): runElement<Element::CODE::PRISMA15 >(step, subkernels[interval], action); break;
-    case static_cast<size_t>(Element::CODE::HEXA8    ): runElement<Element::CODE::HEXA8    >(step, subkernels[interval], action); break;
-    case static_cast<size_t>(Element::CODE::HEXA20   ): runElement<Element::CODE::HEXA20   >(step, subkernels[interval], action); break;
+    switch (elementKernels[interval].code) {
+    case static_cast<size_t>(Element::CODE::TRIANGLE3): runElement<Element::CODE::TRIANGLE3>(step, elementKernels[interval], action); break;
+    case static_cast<size_t>(Element::CODE::TRIANGLE6): runElement<Element::CODE::TRIANGLE6>(step, elementKernels[interval], action); break;
+    case static_cast<size_t>(Element::CODE::SQUARE4  ): runElement<Element::CODE::SQUARE4  >(step, elementKernels[interval], action); break;
+    case static_cast<size_t>(Element::CODE::SQUARE8  ): runElement<Element::CODE::SQUARE8  >(step, elementKernels[interval], action); break;
+    case static_cast<size_t>(Element::CODE::TETRA4   ): runElement<Element::CODE::TETRA4   >(step, elementKernels[interval], action); break;
+    case static_cast<size_t>(Element::CODE::TETRA10  ): runElement<Element::CODE::TETRA10  >(step, elementKernels[interval], action); break;
+    case static_cast<size_t>(Element::CODE::PYRAMID5 ): runElement<Element::CODE::PYRAMID5 >(step, elementKernels[interval], action); break;
+    case static_cast<size_t>(Element::CODE::PYRAMID13): runElement<Element::CODE::PYRAMID13>(step, elementKernels[interval], action); break;
+    case static_cast<size_t>(Element::CODE::PRISMA6  ): runElement<Element::CODE::PRISMA6  >(step, elementKernels[interval], action); break;
+    case static_cast<size_t>(Element::CODE::PRISMA15 ): runElement<Element::CODE::PRISMA15 >(step, elementKernels[interval], action); break;
+    case static_cast<size_t>(Element::CODE::HEXA8    ): runElement<Element::CODE::HEXA8    >(step, elementKernels[interval], action); break;
+    case static_cast<size_t>(Element::CODE::HEXA20   ): runElement<Element::CODE::HEXA20   >(step, elementKernels[interval], action); break;
     }
 }
 
-void StructuralMechanics::run(const step::Step &step, SubKernel::Action action, size_t region, size_t interval)
+void StructuralMechanics::boundary(const step::Step &step, SubKernel::Action action, size_t region, size_t interval)
 {
-    switch (boundary[region][interval].code) {
-    case static_cast<size_t>(Element::CODE::POINT1   ): runBoundary<Element::CODE::POINT1   >(step, boundary[region][interval], action); break;
-    case static_cast<size_t>(Element::CODE::LINE2    ): runBoundary<Element::CODE::LINE2    >(step, boundary[region][interval], action); break;
-    case static_cast<size_t>(Element::CODE::LINE3    ): runBoundary<Element::CODE::LINE3    >(step, boundary[region][interval], action); break;
-    case static_cast<size_t>(Element::CODE::TRIANGLE3): runBoundary<Element::CODE::TRIANGLE3>(step, boundary[region][interval], action); break;
-    case static_cast<size_t>(Element::CODE::TRIANGLE6): runBoundary<Element::CODE::TRIANGLE6>(step, boundary[region][interval], action); break;
-    case static_cast<size_t>(Element::CODE::SQUARE4  ): runBoundary<Element::CODE::SQUARE4  >(step, boundary[region][interval], action); break;
-    case static_cast<size_t>(Element::CODE::SQUARE8  ): runBoundary<Element::CODE::SQUARE8  >(step, boundary[region][interval], action); break;
+    switch (faceKernels[region][interval].code) {
+    case static_cast<size_t>(Element::CODE::LINE2    ): runBoundary<Element::CODE::LINE2    >(step, faceKernels[region][interval], action); break;
+    case static_cast<size_t>(Element::CODE::LINE3    ): runBoundary<Element::CODE::LINE3    >(step, faceKernels[region][interval], action); break;
+    case static_cast<size_t>(Element::CODE::TRIANGLE3): runBoundary<Element::CODE::TRIANGLE3>(step, faceKernels[region][interval], action); break;
+    case static_cast<size_t>(Element::CODE::TRIANGLE6): runBoundary<Element::CODE::TRIANGLE6>(step, faceKernels[region][interval], action); break;
+    case static_cast<size_t>(Element::CODE::SQUARE4  ): runBoundary<Element::CODE::SQUARE4  >(step, faceKernels[region][interval], action); break;
+    case static_cast<size_t>(Element::CODE::SQUARE8  ): runBoundary<Element::CODE::SQUARE8  >(step, faceKernels[region][interval], action); break;
     }
 }
 
-void StructuralMechanics::runBEM(const step::Step &step, SubKernel::Action action, size_t domain, double *BETI)
+void StructuralMechanics::nodes(const step::Step &step, SubKernel::Action action, size_t region, size_t interval)
+{
+    switch (nodeKernels[region][interval].code) {
+    case static_cast<size_t>(Element::CODE::POINT1   ): runNode<Element::CODE::POINT1   >(step, nodeKernels[region][interval], action); break;
+    }
+}
+
+void StructuralMechanics::bem(const step::Step &step, SubKernel::Action action, size_t domain, double *BETI)
 {
     if (action == SubKernel::Action::ASSEMBLE) {
         esint np = info::mesh->domainsSurface->dnodes[domain].size();
@@ -626,8 +628,8 @@ void StructuralMechanics::runBEM(const step::Step &step, SubKernel::Action actio
         esint ne = info::mesh->domainsSurface->edistribution[domain + 1] - info::mesh->domainsSurface->edistribution[domain];
         esint *elemNodes = info::mesh->domainsSurface->denodes[domain].data();
 
-        double ex = subkernels[domain].elasticity.configuration->young_modulus.get(0, 0).evaluator->evaluate();
-        double mu = subkernels[domain].elasticity.configuration->poisson_ratio.get(0, 0).evaluator->evaluate();
+        double ex = elementKernels[domain].elasticity.configuration->young_modulus.get(0, 0).evaluator->evaluate();
+        double mu = elementKernels[domain].elasticity.configuration->poisson_ratio.get(0, 0).evaluator->evaluate();
 
         Matrix_Dense<double> K; K.resize(3 * np, 3 * np);
         BEM3DElasticity(K.vals, np, points, ne, elemNodes, ex, mu);
@@ -646,16 +648,16 @@ void StructuralMechanics::updateSolution(const step::Step &step, Vector_Base<dou
 {
     Vector_FETI<Vector_Dense, double> *xBEM = dynamic_cast<Vector_FETI<Vector_Dense, double>*>(x);
     #pragma omp parallel for
-    for (size_t i = 0; i < bem.size(); ++i) {
-        if (bem[i]) {
+    for (size_t i = 0; i < BEM.size(); ++i) {
+        if (BEM[i]) {
             esint np = info::mesh->domainsSurface->dnodes[i].size();
             double *points = &(info::mesh->domainsSurface->coordinates[i][0].x);
             esint ne = info::mesh->domainsSurface->edistribution[i + 1] - info::mesh->domainsSurface->edistribution[i];
             esint *elemNodes = info::mesh->domainsSurface->denodes[i].data();
             esint ni = info::mesh->domainsSurface->coordinates[i].size() - info::mesh->domainsSurface->dnodes[i].size();
             double *inner = points + 3 * np;
-            double ex = subkernels[i].elasticity.configuration->young_modulus.get(0, 0).evaluator->evaluate();
-            double mu = subkernels[i].elasticity.configuration->poisson_ratio.get(0, 0).evaluator->evaluate();
+            double ex = elementKernels[i].elasticity.configuration->young_modulus.get(0, 0).evaluator->evaluate();
+            double mu = elementKernels[i].elasticity.configuration->poisson_ratio.get(0, 0).evaluator->evaluate();
             std::vector<double> xx(xBEM->domains[i].size);
             for (esint p = 0; p < np; ++p) {
                 xx[0 * np + p] = xBEM->domains[i].vals[3 * p + 0];

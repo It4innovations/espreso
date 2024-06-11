@@ -443,7 +443,7 @@ void runElementKernel(const step::Step &step, StructuralMechanicsElementOperator
 }
 
 template <Element::CODE code, size_t nodes, size_t gps, size_t ndim, size_t edim>
-void setBoundaryKernel(StructuralMechanicsBoundaryOperators &operators, SubKernel::Action action)
+void setBoundaryKernel(StructuralMechanicsFaceOperators &operators, SubKernel::Action action)
 {
     typedef StructuralMechanicsBoundary<nodes, gps, ndim, edim> Element; Element element;
 
@@ -480,7 +480,7 @@ void setBoundaryKernel(StructuralMechanicsBoundaryOperators &operators, SubKerne
 }
 
 template <Element::CODE code, size_t nodes, size_t gps, size_t ndim, size_t edim>
-void runBoundaryKernel(const StructuralMechanicsBoundaryOperators &operators, SubKernel::Action action)
+void runBoundaryKernel(const StructuralMechanicsFaceOperators &operators, SubKernel::Action action)
 {
     typedef StructuralMechanicsBoundary<nodes, gps, ndim, edim> Element; Element element;
 
@@ -547,7 +547,7 @@ void runBoundaryKernel(const StructuralMechanicsBoundaryOperators &operators, Su
 }
 
 template <size_t ndim>
-void setNodeKernel(StructuralMechanicsBoundaryOperators &operators, SubKernel::Action action)
+void setNodeKernel(StructuralMechanicsNodeOperators &operators, SubKernel::Action action)
 {
     typedef StructuralMechanicsDirichlet<ndim> Element;
 
@@ -626,7 +626,7 @@ void setNodeKernel(StructuralMechanicsBoundaryOperators &operators, SubKernel::A
 }
 
 template <size_t ndim>
-void runNodeKernel(const StructuralMechanicsBoundaryOperators &operators, SubKernel::Action action)
+void runNodeKernel(const StructuralMechanicsNodeOperators &operators, SubKernel::Action action)
 {
     typedef StructuralMechanicsDirichlet<ndim> Element; Element element;
 

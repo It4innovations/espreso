@@ -20,7 +20,7 @@ void runElement<Element::CODE::SQUARE8>(const step::Step &step, StructuralMechan
 }
 
 template <>
-void runBoundary<Element::CODE::SQUARE8>(const step::Step &step, StructuralMechanicsBoundaryOperators &operators, SubKernel::Action action)
+void runBoundary<Element::CODE::SQUARE8>(const step::Step &step, StructuralMechanicsFaceOperators &operators, SubKernel::Action action)
 {
     switch (action) {
     case SubKernel::Action::PREPROCESS:

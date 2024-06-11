@@ -113,7 +113,8 @@ template <size_t ndim> struct StructuralMechanicsDirichlet: public GeneralNode<n
 };
 
 template <Element::CODE code> void runElement(const step::Step &step, StructuralMechanicsElementOperators &operators, SubKernel::Action action);
-template <Element::CODE code> void runBoundary(const step::Step &step, StructuralMechanicsBoundaryOperators &operators, SubKernel::Action action);
+template <Element::CODE code> void runBoundary(const step::Step &step, StructuralMechanicsFaceOperators &operators, SubKernel::Action action);
+template <Element::CODE code> void runNode(const step::Step &step, StructuralMechanicsNodeOperators &operators, SubKernel::Action action);
 
 }
 

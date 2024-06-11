@@ -42,9 +42,10 @@ public:
 
 protected:
     void assemble(const step::Step &step, SubKernel::Action action);
-    virtual void run(const step::Step &step, SubKernel::Action action, size_t interval) =0;
-    virtual void run(const step::Step &step, SubKernel::Action action, size_t region, size_t interval) =0;
-    virtual void runBEM(const step::Step &step, SubKernel::Action action, size_t domain, double *BETI)
+    virtual void elements(const step::Step &step, SubKernel::Action action, size_t interval) =0;
+    virtual void boundary(const step::Step &step, SubKernel::Action action, size_t region, size_t interval) =0;
+    virtual void nodes(const step::Step &step, SubKernel::Action action, size_t region, size_t interval) =0;
+    virtual void bem(const step::Step &step, SubKernel::Action action, size_t domain, double *BETI)
     {
         eslog::error("implement BEM assembler\n");
     }
@@ -68,7 +69,7 @@ protected:
 
     bool isBEM(size_t interval);
 
-    std::vector<int> bem;
+    std::vector<int> BEM;
     std::vector<double*> BETI;
     bool threaded;
 };

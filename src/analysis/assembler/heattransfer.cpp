@@ -33,39 +33,39 @@ HeatTransfer::HeatTransfer(HeatTransfer *previous, HeatTransferConfiguration &se
 : Assembler(settings), settings(settings), configuration(configuration)
 {
     threaded = configuration.solver == HeatTransferLoadStepConfiguration::SOLVER::FETI;
-    subkernels.resize(info::mesh->elements->eintervals.size());
-    boundary.resize(info::mesh->boundary.size());
+    elementKernels.resize(info::mesh->elements->eintervals.size());
+    faceKernels.resize(info::mesh->boundary.size());
     for (size_t r = 1; r < info::mesh->boundary.size(); ++r) {
         if (info::mesh->boundary[r]->dimension) {
-            boundary[r].resize(info::mesh->boundary[r]->eintervals.size());
+            faceKernels[r].resize(info::mesh->boundary[r]->eintervals.size());
         } else {
-            boundary[r].resize(info::env::threads);
+            faceKernels[r].resize(info::env::threads);
         }
     }
 
     for (int t = 0; t < info::env::threads; ++t) {
         for (size_t d = info::mesh->domains->distribution[t]; d < info::mesh->domains->distribution[t + 1]; d++) {
             for (esint i = info::mesh->elements->eintervalsDistribution[d]; i < info::mesh->elements->eintervalsDistribution[d + 1]; ++i) {
-                subkernels[i].code = info::mesh->elements->eintervals[i].code;
-                subkernels[i].elements = info::mesh->elements->eintervals[i].end - info::mesh->elements->eintervals[i].begin;
-                subkernels[i].chunks = subkernels[i].elements / SIMD::size + (subkernels[i].elements % SIMD::size ? 1 : 0);
+                elementKernels[i].code = info::mesh->elements->eintervals[i].code;
+                elementKernels[i].elements = info::mesh->elements->eintervals[i].end - info::mesh->elements->eintervals[i].begin;
+                elementKernels[i].chunks = elementKernels[i].elements / SIMD::size + (elementKernels[i].elements % SIMD::size ? 1 : 0);
             }
 
             for (size_t r = 1; r < info::mesh->boundary.size(); ++r) {
                 if (info::mesh->boundary[r]->dimension) {
                     for (esint i = info::mesh->boundary[r]->eintervalsDistribution[d]; i < info::mesh->boundary[r]->eintervalsDistribution[d + 1]; ++i) {
-                        boundary[r][i].code = info::mesh->boundary[r]->eintervals[i].code;
-                        boundary[r][i].elements = info::mesh->boundary[r]->eintervals[i].end - info::mesh->boundary[r]->eintervals[i].begin;
-                        boundary[r][i].chunks = boundary[r][i].elements / SIMD::size + (boundary[r][i].elements % SIMD::size ? 1 : 0);
+                        faceKernels[r][i].code = info::mesh->boundary[r]->eintervals[i].code;
+                        faceKernels[r][i].elements = info::mesh->boundary[r]->eintervals[i].end - info::mesh->boundary[r]->eintervals[i].begin;
+                        faceKernels[r][i].chunks = faceKernels[r][i].elements / SIMD::size + (faceKernels[r][i].elements % SIMD::size ? 1 : 0);
                     }
                 }
             }
         }
         for (size_t r = 1; r < info::mesh->boundary.size(); ++r) {
             if (info::mesh->boundary[r]->dimension == 0) {
-                boundary[r][t].code = static_cast<int>(Element::CODE::POINT1);
-                boundary[r][t].elements = info::mesh->boundary[r]->nodes->datatarray().size(t);
-                boundary[r][t].chunks = boundary[r][t].elements / SIMD::size + (boundary[r][t].elements % SIMD::size ? 1 : 0);
+                faceKernels[r][t].code = static_cast<int>(Element::CODE::POINT1);
+                faceKernels[r][t].elements = info::mesh->boundary[r]->nodes->datatarray().size(t);
+                faceKernels[r][t].chunks = faceKernels[r][t].elements / SIMD::size + (faceKernels[r][t].elements % SIMD::size ? 1 : 0);
             }
         }
     }
@@ -241,7 +241,7 @@ void HeatTransfer::analyze(const step::Step &step)
     }
 
     for(size_t i = 0; i < info::mesh->elements->eintervals.size(); ++i) {
-        bem[info::mesh->elements->eintervals[i].domain - info::mesh->domains->offset] = isBEM(i);
+        BEM[info::mesh->elements->eintervals[i].domain - info::mesh->domains->offset] = isBEM(i);
 
         const MaterialConfiguration *mat = info::mesh->materials[info::mesh->elements->eintervals[i].material];
         bool cartesian = mat->coordinate_system.type == CoordinateSystemConfiguration::TYPE::CARTESIAN;
@@ -249,24 +249,24 @@ void HeatTransfer::analyze(const step::Step &step)
         esint ebegin = info::mesh->elements->eintervals[i].begin, eend = info::mesh->elements->eintervals[i].end;
 
         if (info::mesh->dimension == 2) {
-            subkernels[i].thickness.activate(getExpression(i, settings.thickness), info::mesh->elements->nodes->cbegin() + ebegin, info::mesh->elements->nodes->cbegin() + eend, Results::thickness->data.data());
+            elementKernels[i].thickness.activate(getExpression(i, settings.thickness), info::mesh->elements->nodes->cbegin() + ebegin, info::mesh->elements->nodes->cbegin() + eend, Results::thickness->data.data());
         }
-        subkernels[i].material.activate(mat);
-        subkernels[i].conductivity.activate(&mat->thermal_conductivity, &mat->coordinate_system);
-        subkernels[i].heatSource.activate(getExpression(i, configuration.heat_source));
-        subkernels[i].advection.activate(getExpression(i, configuration.translation_motions), settings.sigma);
+        elementKernels[i].material.activate(mat);
+        elementKernels[i].conductivity.activate(&mat->thermal_conductivity, &mat->coordinate_system);
+        elementKernels[i].heatSource.activate(getExpression(i, configuration.heat_source));
+        elementKernels[i].advection.activate(getExpression(i, configuration.translation_motions), settings.sigma);
 
         bool gpcoo =
-                subkernels[i].conductivity.needCoordinates ||
-                subkernels[i].material.needCoordinates ||
-                subkernels[i].thickness.needCoordinates ||
-                subkernels[i].heatSource.needCoordinates ||
-                subkernels[i].advection.needCoordinates;
+                elementKernels[i].conductivity.needCoordinates ||
+                elementKernels[i].material.needCoordinates ||
+                elementKernels[i].thickness.needCoordinates ||
+                elementKernels[i].heatSource.needCoordinates ||
+                elementKernels[i].advection.needCoordinates;
 
-        subkernels[i].coordinates.activate(info::mesh->elements->nodes->cbegin() + ebegin, info::mesh->elements->nodes->cbegin() + eend, !cartesian || gpcoo);
+        elementKernels[i].coordinates.activate(info::mesh->elements->nodes->cbegin() + ebegin, info::mesh->elements->nodes->cbegin() + eend, !cartesian || gpcoo);
 
         auto model = mat->thermal_conductivity.model;
-        if (subkernels[i].conductivity.rotated) {
+        if (elementKernels[i].conductivity.rotated) {
             switch (mat->thermal_conductivity.model) {
             case ThermalConductivityConfiguration::MODEL::ISOTROPIC:   model = ThermalConductivityConfiguration::MODEL::ISOTROPIC  ; break;
             case ThermalConductivityConfiguration::MODEL::DIAGONAL:    model = ThermalConductivityConfiguration::MODEL::SYMMETRIC  ; break;
@@ -274,23 +274,23 @@ void HeatTransfer::analyze(const step::Step &step)
             case ThermalConductivityConfiguration::MODEL::ANISOTROPIC: model = ThermalConductivityConfiguration::MODEL::ANISOTROPIC; break;
             }
         }
-        subkernels[i].K.activate(model);
+        elementKernels[i].K.activate(model);
         if (configuration.type == LoadStepSolverConfiguration::TYPE::TRANSIENT) {
-            subkernels[i].M.activate();
+            elementKernels[i].M.activate();
         }
 
         if (Results::gradient != nullptr) {
-            subkernels[i].gradient.activate(i, Results::gradient);
+            elementKernels[i].gradient.activate(i, Results::gradient);
         }
         if (Results::flux != nullptr) {
-            subkernels[i].flux.activate(i, Results::flux, model);
-            subkernels[i].conductivity.action |= SubKernel::SOLUTION;
-//            subkernels[i].material.action |= SubKernel::SOLUTION;
-//            subkernels[i].advection.action |= SubKernel::SOLUTION;
+            elementKernels[i].flux.activate(i, Results::flux, model);
+            elementKernels[i].conductivity.action |= SubKernel::SOLUTION;
+//            elementKernels[i].material.action |= SubKernel::SOLUTION;
+//            elementKernels[i].advection.action |= SubKernel::SOLUTION;
         }
 
-        subkernels[i].initTemperature.activate(getExpression(i, settings.initial_temperature));
-        subkernels[i].temperature.activate(info::mesh->elements->nodes->cbegin() + ebegin, info::mesh->elements->nodes->cbegin() + eend, Results::temperature->data.data(), gptemp);
+        elementKernels[i].initTemperature.activate(getExpression(i, settings.initial_temperature));
+        elementKernels[i].temperature.activate(info::mesh->elements->nodes->cbegin() + ebegin, info::mesh->elements->nodes->cbegin() + eend, Results::temperature->data.data(), gptemp);
     }
 
     for(size_t r = 1; r < info::mesh->boundary.size(); ++r) {
@@ -298,32 +298,32 @@ void HeatTransfer::analyze(const step::Step &step)
         if (info::mesh->boundary[r]->dimension) {
             for(size_t i = 0; i < info::mesh->boundary[r]->eintervals.size(); ++i) {
                 if (info::mesh->dimension == 2) {
-                    boundary[r][i].thickness.activate(region->elements->cbegin() + region->eintervals[i].begin, region->elements->cbegin() + region->eintervals[i].end, Results::thickness->data.data());
+                    faceKernels[r][i].thickness.activate(region->elements->cbegin() + region->eintervals[i].begin, region->elements->cbegin() + region->eintervals[i].end, Results::thickness->data.data());
                 }
-                boundary[r][i].heatFlow.activate(getExpression(info::mesh->boundary[r]->name, configuration.heat_flow));
-                boundary[r][i].heatFlux.activate(getExpression(info::mesh->boundary[r]->name, configuration.heat_flux));
+                faceKernels[r][i].heatFlow.activate(getExpression(info::mesh->boundary[r]->name, configuration.heat_flow));
+                faceKernels[r][i].heatFlux.activate(getExpression(info::mesh->boundary[r]->name, configuration.heat_flux));
 
                 auto convection = configuration.convection.find(info::mesh->boundary[r]->name);
                 if (convection != configuration.convection.end()) {
-                    boundary[r][i].htc.activate(&convection->second.heat_transfer_coefficient);
-                    boundary[r][i].externalTemperature.activate(&convection->second.external_temperature);
+                    faceKernels[r][i].htc.activate(&convection->second.heat_transfer_coefficient);
+                    faceKernels[r][i].externalTemperature.activate(&convection->second.external_temperature);
                 }
-                if (boundary[r][i].heatFlow.isactive | boundary[r][i].heatFlux.isactive | boundary[r][i].htc.isactive) {
-                    boundary[r][i].externalHeat.activate();
+                if (faceKernels[r][i].heatFlow.isactive | faceKernels[r][i].heatFlux.isactive | faceKernels[r][i].htc.isactive) {
+                    faceKernels[r][i].externalHeat.activate();
                 }
 
                 bool gpcoords =
-                        boundary[r][i].thickness.needCoordinates ||
-                        boundary[r][i].heatFlow.needCoordinates ||
-                        boundary[r][i].heatFlux.needCoordinates ||
-                        boundary[r][i].htc.needCoordinates ||
-                        boundary[r][i].externalTemperature.needCoordinates;
+                        faceKernels[r][i].thickness.needCoordinates ||
+                        faceKernels[r][i].heatFlow.needCoordinates ||
+                        faceKernels[r][i].heatFlux.needCoordinates ||
+                        faceKernels[r][i].htc.needCoordinates ||
+                        faceKernels[r][i].externalTemperature.needCoordinates;
 
-                boundary[r][i].coordinates.activate(region->elements->cbegin() + region->eintervals[i].begin, region->elements->cbegin() + region->eintervals[i].end, gpcoords);
+                faceKernels[r][i].coordinates.activate(region->elements->cbegin() + region->eintervals[i].begin, region->elements->cbegin() + region->eintervals[i].end, gpcoords);
             }
         } else {
             for(size_t t = 0; t < info::mesh->boundary[r]->nodes->threads(); ++t) {
-                boundary[r][t].coordinates.activate(region->nodes->cbegin(t), region->nodes->cend(), false);
+                faceKernels[r][t].coordinates.activate(region->nodes->cbegin(t), region->nodes->cend(), false);
             }
         }
     }
@@ -332,54 +332,54 @@ void HeatTransfer::analyze(const step::Step &step)
         size_t r = info::mesh->bregionIndex(it->first);
         const BoundaryRegionStore *region = info::mesh->boundary[r];
         for (size_t t = 0; t < region->nodes->threads(); ++t) {
-            boundary[r][t].temperature.activate(it->second);
+            faceKernels[r][t].temperature.activate(it->second);
             if (settings.init_temp_respect_bc) {
-                boundary[r][t].initialTemperature.activate(region->nodes->cbegin(t), region->nodes->cend(), Results::temperature->data.data(), false);
+                faceKernels[r][t].initialTemperature.activate(region->nodes->cbegin(t), region->nodes->cend(), Results::temperature->data.data(), false);
             }
         }
     }
 
     assemble(step, SubKernel::Action::PREPROCESS);
     size_t esize = 0;
-    std::vector<double> volume(subkernels.size()), surface(boundary.size());
-    for (size_t i = 0; i < subkernels.size(); ++i) {
-        esize = std::max(subkernels[i].esize, esize);
-        volume[i] = subkernels[i].volume;
+    std::vector<double> volume(elementKernels.size()), surface(faceKernels.size());
+    for (size_t i = 0; i < elementKernels.size(); ++i) {
+        esize = std::max(elementKernels[i].esize, esize);
+        volume[i] = elementKernels[i].volume;
     }
-    for (size_t r = 1; r < boundary.size(); ++r) {
-        for (size_t i = 0; i < boundary[r].size(); ++i) {
-            surface[r] += boundary[r][i].surface;
+    for (size_t r = 1; r < faceKernels.size(); ++r) {
+        for (size_t i = 0; i < faceKernels[r].size(); ++i) {
+            surface[r] += faceKernels[r][i].surface;
         }
     }
     printElementVolume(volume);
     printBoundarySurface(surface);
-    for (size_t r = 1; r < boundary.size(); ++r) {
-        for (size_t i = 0; i < boundary[r].size(); ++i) {
-            boundary[r][i].surface = boundary[r][i].externalHeat.area = surface[r];
-            boundary[r][i].surface = surface[r];
+    for (size_t r = 1; r < faceKernels.size(); ++r) {
+        for (size_t i = 0; i < faceKernels[r].size(); ++i) {
+            faceKernels[r][i].surface = faceKernels[r][i].externalHeat.area = surface[r];
+            faceKernels[r][i].surface = surface[r];
         }
     }
     Results::initialTemperature->data = Results::temperature->data;
 
     constant.K = true; // currently everything or nothing
-    for (size_t i = 0; i < subkernels.size(); ++i) {
-        for (size_t e = 0; e < subkernels[i].expressions.node.size(); ++e) {
-            constant.K &= subkernels[i].expressions.node[e]->evaluator->isConst();
+    for (size_t i = 0; i < elementKernels.size(); ++i) {
+        for (size_t e = 0; e < elementKernels[i].expressions.node.size(); ++e) {
+            constant.K &= elementKernels[i].expressions.node[e]->evaluator->isConst();
         }
-        for (size_t e = 0; e < subkernels[i].expressions.gp.size(); ++e) {
-            constant.K &= subkernels[i].expressions.gp[e]->evaluator->isConst();
+        for (size_t e = 0; e < elementKernels[i].expressions.gp.size(); ++e) {
+            constant.K &= elementKernels[i].expressions.gp[e]->evaluator->isConst();
         }
     }
     constant.M = constant.f = constant.K;
 
     constant.f = true;
-    for (size_t r = 1; r < boundary.size(); ++r) {
-        for (size_t i = 0; i < boundary[r].size(); ++i) {
-            for (size_t e = 0; e < boundary[r][i].expressions.node.size(); ++e) {
-                constant.f = boundary[r][i].expressions.node[e]->evaluator->isConst();
+    for (size_t r = 1; r < faceKernels.size(); ++r) {
+        for (size_t i = 0; i < faceKernels[r].size(); ++i) {
+            for (size_t e = 0; e < faceKernels[r][i].expressions.node.size(); ++e) {
+                constant.f = faceKernels[r][i].expressions.node[e]->evaluator->isConst();
             }
-            for (size_t e = 0; e < boundary[r][i].expressions.gp.size(); ++e) {
-                constant.f = boundary[r][i].expressions.gp[e]->evaluator->isConst();
+            for (size_t e = 0; e < faceKernels[r][i].expressions.gp.size(); ++e) {
+                constant.f = faceKernels[r][i].expressions.gp[e]->evaluator->isConst();
             }
         }
     }
@@ -392,7 +392,7 @@ void HeatTransfer::analyze(const step::Step &step)
     if (constant.dirichlet) { if (constants.size()) constants += ", "; constants += "dirichlet"; }
 
     eslog::info("  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  \n");
-    if (bem.front()) {
+    if (BEM.front()) {
         eslog::info("  ASSEMBLER                                                                               BEM \n");
     } else {
         eslog::info("  SIMD SIZE                                                                                 %lu \n", SIMD::size);
@@ -411,66 +411,72 @@ void HeatTransfer::analyze(const step::Step &step)
 void HeatTransfer::connect(Matrix_Base<double> *K, Matrix_Base<double> *M, Vector_Base<double> *f, Vector_Base<double> *nf, Vector_Base<double> *dirichlet)
 {
     Matrix_FETI<double> *KBEM = dynamic_cast<Matrix_FETI<double>*>(K);
-    for (size_t i = 0; i < bem.size(); ++i) { // when BEM, K is FETI matrix
-        if (bem[i]) {
+    for (size_t i = 0; i < BEM.size(); ++i) { // when BEM, K is FETI matrix
+        if (BEM[i]) {
             BETI[i] = KBEM->domains[i].vals;
         }
     }
 
     for(size_t i = 0; i < info::mesh->elements->eintervals.size(); ++i) {
-        subkernels[i].Kfiller.activate(i, 1, subkernels[i].elements, K);
-        subkernels[i].Mfiller.activate(i, 1, subkernels[i].elements, M);
-        subkernels[i].RHSfiller.activate(i, 1, subkernels[i].elements, f);
-        subkernels[i].nRHSfiller.activate(i, 1, subkernels[i].elements, nf);
+        elementKernels[i].Kfiller.activate(i, 1, elementKernels[i].elements, K);
+        elementKernels[i].Mfiller.activate(i, 1, elementKernels[i].elements, M);
+        elementKernels[i].RHSfiller.activate(i, 1, elementKernels[i].elements, f);
+        elementKernels[i].nRHSfiller.activate(i, 1, elementKernels[i].elements, nf);
     }
 
     for(size_t r = 1; r < info::mesh->boundaryRegions.size(); ++r) {
         if (info::mesh->boundaryRegions[r]->dimension) {
             for (size_t i = 0; i < info::mesh->boundaryRegions[r]->eintervals.size(); ++i) {
-                boundary[r][i].RHSfiller.activate(r, i, 1, boundary[r][i].elements, f);
+                faceKernels[r][i].RHSfiller.activate(r, i, 1, faceKernels[r][i].elements, f);
             }
         }
     }
     for (auto it = configuration.temperature.begin(); it != configuration.temperature.end(); ++it) {
         size_t r = info::mesh->bregionIndex(it->first);
         for (size_t t = 0; t < info::mesh->boundaryRegions[r]->nodes->threads(); ++t) {
-            boundary[r][t].dirichlet.activate(r, t, 1, boundary[r][t].elements, dirichlet);
+            faceKernels[r][t].dirichlet.activate(r, t, 1, faceKernels[r][t].elements, dirichlet);
         }
     }
 }
 
-void HeatTransfer::run(const step::Step &step, SubKernel::Action action, size_t interval)
+void HeatTransfer::elements(const step::Step &step, SubKernel::Action action, size_t interval)
 {
-    switch (subkernels[interval].code) {
-    case static_cast<size_t>(Element::CODE::TRIANGLE3): runElement<Element::CODE::TRIANGLE3>(step, subkernels[interval], action); break;
-    case static_cast<size_t>(Element::CODE::TRIANGLE6): runElement<Element::CODE::TRIANGLE6>(step, subkernels[interval], action); break;
-    case static_cast<size_t>(Element::CODE::SQUARE4  ): runElement<Element::CODE::SQUARE4  >(step, subkernels[interval], action); break;
-    case static_cast<size_t>(Element::CODE::SQUARE8  ): runElement<Element::CODE::SQUARE8  >(step, subkernels[interval], action); break;
-    case static_cast<size_t>(Element::CODE::TETRA4   ): runElement<Element::CODE::TETRA4   >(step, subkernels[interval], action); break;
-    case static_cast<size_t>(Element::CODE::TETRA10  ): runElement<Element::CODE::TETRA10  >(step, subkernels[interval], action); break;
-    case static_cast<size_t>(Element::CODE::PYRAMID5 ): runElement<Element::CODE::PYRAMID5 >(step, subkernels[interval], action); break;
-    case static_cast<size_t>(Element::CODE::PYRAMID13): runElement<Element::CODE::PYRAMID13>(step, subkernels[interval], action); break;
-    case static_cast<size_t>(Element::CODE::PRISMA6  ): runElement<Element::CODE::PRISMA6  >(step, subkernels[interval], action); break;
-    case static_cast<size_t>(Element::CODE::PRISMA15 ): runElement<Element::CODE::PRISMA15 >(step, subkernels[interval], action); break;
-    case static_cast<size_t>(Element::CODE::HEXA8    ): runElement<Element::CODE::HEXA8    >(step, subkernels[interval], action); break;
-    case static_cast<size_t>(Element::CODE::HEXA20   ): runElement<Element::CODE::HEXA20   >(step, subkernels[interval], action); break;
+    switch (elementKernels[interval].code) {
+    case static_cast<size_t>(Element::CODE::TRIANGLE3): runElement<Element::CODE::TRIANGLE3>(step, elementKernels[interval], action); break;
+    case static_cast<size_t>(Element::CODE::TRIANGLE6): runElement<Element::CODE::TRIANGLE6>(step, elementKernels[interval], action); break;
+    case static_cast<size_t>(Element::CODE::SQUARE4  ): runElement<Element::CODE::SQUARE4  >(step, elementKernels[interval], action); break;
+    case static_cast<size_t>(Element::CODE::SQUARE8  ): runElement<Element::CODE::SQUARE8  >(step, elementKernels[interval], action); break;
+    case static_cast<size_t>(Element::CODE::TETRA4   ): runElement<Element::CODE::TETRA4   >(step, elementKernels[interval], action); break;
+    case static_cast<size_t>(Element::CODE::TETRA10  ): runElement<Element::CODE::TETRA10  >(step, elementKernels[interval], action); break;
+    case static_cast<size_t>(Element::CODE::PYRAMID5 ): runElement<Element::CODE::PYRAMID5 >(step, elementKernels[interval], action); break;
+    case static_cast<size_t>(Element::CODE::PYRAMID13): runElement<Element::CODE::PYRAMID13>(step, elementKernels[interval], action); break;
+    case static_cast<size_t>(Element::CODE::PRISMA6  ): runElement<Element::CODE::PRISMA6  >(step, elementKernels[interval], action); break;
+    case static_cast<size_t>(Element::CODE::PRISMA15 ): runElement<Element::CODE::PRISMA15 >(step, elementKernels[interval], action); break;
+    case static_cast<size_t>(Element::CODE::HEXA8    ): runElement<Element::CODE::HEXA8    >(step, elementKernels[interval], action); break;
+    case static_cast<size_t>(Element::CODE::HEXA20   ): runElement<Element::CODE::HEXA20   >(step, elementKernels[interval], action); break;
     }
 }
 
-void HeatTransfer::run(const step::Step &step, SubKernel::Action action, size_t region, size_t interval)
+void HeatTransfer::boundary(const step::Step &step, SubKernel::Action action, size_t region, size_t interval)
 {
-    switch (boundary[region][interval].code) {
-    case static_cast<size_t>(Element::CODE::POINT1   ): runBoundary<Element::CODE::POINT1   >(step, boundary[region][interval], action); break;
-    case static_cast<size_t>(Element::CODE::LINE2    ): runBoundary<Element::CODE::LINE2    >(step, boundary[region][interval], action); break;
-    case static_cast<size_t>(Element::CODE::LINE3    ): runBoundary<Element::CODE::LINE3    >(step, boundary[region][interval], action); break;
-    case static_cast<size_t>(Element::CODE::TRIANGLE3): runBoundary<Element::CODE::TRIANGLE3>(step, boundary[region][interval], action); break;
-    case static_cast<size_t>(Element::CODE::TRIANGLE6): runBoundary<Element::CODE::TRIANGLE6>(step, boundary[region][interval], action); break;
-    case static_cast<size_t>(Element::CODE::SQUARE4  ): runBoundary<Element::CODE::SQUARE4  >(step, boundary[region][interval], action); break;
-    case static_cast<size_t>(Element::CODE::SQUARE8  ): runBoundary<Element::CODE::SQUARE8  >(step, boundary[region][interval], action); break;
+    switch (faceKernels[region][interval].code) {
+    case static_cast<size_t>(Element::CODE::LINE2    ): runBoundary<Element::CODE::LINE2    >(step, faceKernels[region][interval], action); break;
+    case static_cast<size_t>(Element::CODE::LINE3    ): runBoundary<Element::CODE::LINE3    >(step, faceKernels[region][interval], action); break;
+    case static_cast<size_t>(Element::CODE::TRIANGLE3): runBoundary<Element::CODE::TRIANGLE3>(step, faceKernels[region][interval], action); break;
+    case static_cast<size_t>(Element::CODE::TRIANGLE6): runBoundary<Element::CODE::TRIANGLE6>(step, faceKernels[region][interval], action); break;
+    case static_cast<size_t>(Element::CODE::SQUARE4  ): runBoundary<Element::CODE::SQUARE4  >(step, faceKernels[region][interval], action); break;
+    case static_cast<size_t>(Element::CODE::SQUARE8  ): runBoundary<Element::CODE::SQUARE8  >(step, faceKernels[region][interval], action); break;
     }
 }
 
-void HeatTransfer::runBEM(const step::Step &step, SubKernel::Action action, size_t domain, double *BETI)
+void HeatTransfer::nodes(const step::Step &step, SubKernel::Action action, size_t region, size_t interval)
+{
+    switch (faceKernels[region][interval].code) {
+    case static_cast<size_t>(Element::CODE::POINT1   ): runBoundary<Element::CODE::POINT1   >(step, faceKernels[region][interval], action); break;
+    }
+}
+
+void HeatTransfer::bem(const step::Step &step, SubKernel::Action action, size_t domain, double *BETI)
 {
     if (action == SubKernel::Action::ASSEMBLE) {
         esint np = info::mesh->domainsSurface->dnodes[domain].size();
@@ -478,7 +484,7 @@ void HeatTransfer::runBEM(const step::Step &step, SubKernel::Action action, size
         esint ne = info::mesh->domainsSurface->edistribution[domain + 1] - info::mesh->domainsSurface->edistribution[domain];
         esint *elemNodes = info::mesh->domainsSurface->denodes[domain].data();
 
-        double c = subkernels[domain].conductivity.conductivity->values.get(0, 0).evaluator->evaluate();
+        double c = elementKernels[domain].conductivity.conductivity->values.get(0, 0).evaluator->evaluate();
 
         Matrix_Dense<double> K; K.resize(np, np);
         BEM3DLaplace(K.vals, np, points, ne, elemNodes, c);
@@ -531,32 +537,32 @@ void HeatTransfer::runBEM(const step::Step &step, SubKernel::Action action, size
 
 void HeatTransfer::evaluate(const step::Step &step, step::Time &time, Matrix_Base<double> *K, Matrix_Base<double> *M, Vector_Base<double> *f, Vector_Base<double> *nf, Vector_Base<double> *dirichlet)
 {
-    for (size_t i = 0; i < subkernels.size(); ++i) {
-        for (size_t e = 0; e < subkernels[i].expressions.node.size(); ++e) {
+    for (size_t i = 0; i < elementKernels.size(); ++i) {
+        for (size_t e = 0; e < elementKernels[i].expressions.node.size(); ++e) {
             #pragma omp parallel for
             for (int t = 0; t < info::env::threads; ++t) {
-                subkernels[i].expressions.node[e]->evaluator->getTime(t) = time.current;
+                elementKernels[i].expressions.node[e]->evaluator->getTime(t) = time.current;
             }
         }
-        for (size_t e = 0; e < subkernels[i].expressions.gp.size(); ++e) {
+        for (size_t e = 0; e < elementKernels[i].expressions.gp.size(); ++e) {
             #pragma omp parallel for
             for (int t = 0; t < info::env::threads; ++t) {
-                subkernels[i].expressions.gp[e]->evaluator->getTime(t) = time.current;
+                elementKernels[i].expressions.gp[e]->evaluator->getTime(t) = time.current;
             }
         }
     }
-    for (size_t i = 0; i < boundary.size(); ++i) {
-        for (size_t j = 0; j < boundary[i].size(); ++j) {
-            for (size_t e = 0; e < boundary[i][j].expressions.node.size(); ++e) {
+    for (size_t i = 0; i < faceKernels.size(); ++i) {
+        for (size_t j = 0; j < faceKernels[i].size(); ++j) {
+            for (size_t e = 0; e < faceKernels[i][j].expressions.node.size(); ++e) {
                 #pragma omp parallel for
                 for (int t = 0; t < info::env::threads; ++t) {
-                    boundary[i][j].expressions.node[e]->evaluator->getTime(t) = time.current;
+                    faceKernels[i][j].expressions.node[e]->evaluator->getTime(t) = time.current;
                 }
             }
-            for (size_t e = 0; e < boundary[i][j].expressions.gp.size(); ++e) {
+            for (size_t e = 0; e < faceKernels[i][j].expressions.gp.size(); ++e) {
                 #pragma omp parallel for
                 for (int t = 0; t < info::env::threads; ++t) {
-                    boundary[i][j].expressions.gp[e]->evaluator->getTime(t) = time.current;
+                    faceKernels[i][j].expressions.gp[e]->evaluator->getTime(t) = time.current;
                 }
             }
         }
@@ -579,8 +585,8 @@ void HeatTransfer::updateSolution(const step::Step &step, Vector_Base<double> *x
 {
     Vector_FETI<Vector_Dense, double> *xBEM = dynamic_cast<Vector_FETI<Vector_Dense, double>*>(x);
     #pragma omp parallel for
-    for (size_t i = 0; i < bem.size(); ++i) {
-        if (bem[i]) {
+    for (size_t i = 0; i < BEM.size(); ++i) {
+        if (BEM[i]) {
             esint np = info::mesh->domainsSurface->dnodes[i].size();
             double *points = &(info::mesh->domainsSurface->coordinates[i][0].x);
             esint ne = info::mesh->domainsSurface->edistribution[i + 1] - info::mesh->domainsSurface->edistribution[i];
@@ -588,7 +594,7 @@ void HeatTransfer::updateSolution(const step::Step &step, Vector_Base<double> *x
             esint ni = info::mesh->domainsSurface->coordinates[i].size() - info::mesh->domainsSurface->dnodes[i].size();
             double *inner = points + 3 * np;
 
-            double c = subkernels[i].conductivity.conductivity->values.get(0, 0).evaluator->evaluate();
+            double c = elementKernels[i].conductivity.conductivity->values.get(0, 0).evaluator->evaluate();
             BEM3DLaplaceEval(xBEM->domains[i].vals + np, np, points, ne, elemNodes, ni, inner, c, xBEM->domains[i].vals);
         }
     }
