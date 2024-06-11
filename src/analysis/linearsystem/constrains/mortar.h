@@ -9,8 +9,7 @@ namespace espreso {
 
 template <typename T>
 struct MortarContact {
-
-    void set(const step::Step &step, FETI<T> &feti, int dofs);
+    void set(const step::Step &step, FETI<T> &feti);
     void update(const step::Step &step, FETI<T> &feti);
 
 protected:
@@ -26,9 +25,29 @@ protected:
         bool operator!=(Mortar &other) { return !(*this == other); }
     };
 
-    void assembleMortarInterface(std::vector<Mortar> &B);
-    void synchronize(std::vector<Mortar> &B);
+    struct Lambda {
+        esint lambda, pair, id;
+        Point normal;
 
+        Lambda(): lambda(0), pair(0), id(0) {}
+        Lambda(const Lambda &lambda) = default;
+        Lambda(esint lambda, esint pair, esint id): lambda(lambda), pair(pair), id(id) {}
+    };
+
+    struct LambdaInfo: public Lambda {
+        esint ndomains, doffset;
+
+        LambdaInfo(const Lambda&lambda): Lambda(lambda), ndomains(0), doffset(0) {}
+    };
+
+    void assembleMortarInterface(std::vector<Mortar> &B);
+    void synchronize(std::vector<Mortar> &B, std::vector<LambdaInfo> &lambdas, std::vector<int> &domains);
+
+    esint ineq_begin, ineq_end;
+    std::vector<LambdaInfo> lambdas;
+    std::vector<int> domains;
+
+    // pair, from, to, value -> normalized
     std::vector<Mortar> mortar;
 };
 

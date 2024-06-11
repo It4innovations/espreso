@@ -1,15 +1,23 @@
 # ESPRESO Configuration File
 
 DEFAULT_ARGS {
-  0        HEXA8;
-  1            2;
-  2            4;
+   0        HEXA8;
+   1            2;
+   2            4;
+   3            2;
+   4            3;
+   5            6;
+   6            3;
 
-  3       TETRA4;
-  4            2;
-  5            5;
-  
-  6         1000;
+   7        HEXA8;
+   8            2;
+   9            4;
+  10            2;
+  11            4;
+  12            8;
+  13            4;
+
+  14         5000;
 }
 
 INPUT_TYPE            GENERATOR;
@@ -20,6 +28,8 @@ INPUT {
     GENERAL {
       DETECTION     ALL_BODIES;
       CRITERION            GAP;
+
+      GAP                  0.2;
     }
   }
 }
@@ -27,7 +37,7 @@ INPUT {
 GENERATOR {
   SHAPE   GRID_TOWER;
 
-  UNIFORM_DOMAINS               TRUE;
+  UNIFORM_DOMAINS              FALSE;
 
   GRID_TOWER {
 
@@ -77,6 +87,8 @@ GENERATOR {
         LENGTH_Y                   5;
         LENGTH_Z                   1;
 
+        PROJECTION_Z         Z + 0.1;
+
         NODES {
           RIGHT   <-1 , 1> <5 , 5> <1 , 2>;
           FORCE   <-1 , 1> <0 , 5> <2 , 2>;
@@ -123,7 +135,7 @@ STRUCTURAL_MECHANICS {
         MODEL   ISOTROPIC;
 
         MIXY          0.3;
-        EX          2.1E9;
+        EX          2.1E7;
       }
     }
     2 {
@@ -135,7 +147,7 @@ STRUCTURAL_MECHANICS {
         MODEL   ISOTROPIC;
         
         MIXY          0.3;
-        EX          2.1E7;
+        EX          2.1E9;
       }
     }
   }
@@ -160,8 +172,7 @@ STRUCTURAL_MECHANICS {
         REGULARIZATION    ANALYTIC;
         MAX_ITERATIONS     [ARG14];
         M                       10;
-        MAX_ITERATIONS        1000;
-        PRECISION             1e-4;
+        PRECISION             1e-5;
         PRECISION_IN          1e-9;
       }
 
@@ -171,11 +182,7 @@ STRUCTURAL_MECHANICS {
       }
 
       NORMAL_PRESSURE {
-        FORCE         100000;
-      }
-
-      ACCELERATION {
-#        ALL_ELEMENTS   { Z 9.8066; };
+        FORCE           100000;
       }
     }
   }
@@ -197,12 +204,6 @@ OUTPUT {
     2 {
       REGION        ALL_NODES;
       STATISTICS          MAX;
-      PROPERTY   DISPLACEMENT;
-    }
-
-    3 {
-      REGION        ALL_NODES;
-      STATISTICS          AVG;
       PROPERTY   DISPLACEMENT;
     }
   }
