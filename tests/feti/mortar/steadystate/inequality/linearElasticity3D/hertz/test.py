@@ -6,7 +6,7 @@ class Assembler(unittest.TestCase):
 
     def setUp(self):
         ESPRESOTest.path = os.path.dirname(__file__)
-        ESPRESOTest.args = [ "HEXA8", 2, 4, 2, 3, 6, 3, "HEXA8", 2, 4, 2, 4, 8, 4, 600 ]
+        ESPRESOTest.args = [ "HEXA8", 2, 5, "TETRA4", 2, 9, 230 ]
         ESPRESOTest.processes = 2
         ESPRESOTest.set_threads(2)
 
@@ -14,7 +14,7 @@ class Assembler(unittest.TestCase):
         ESPRESOTest.clean()
 
     def test_feti(self):
-        iterations = [ 5000, 5000, 5000, 5000 ]
+        iterations = [ 230, 280, 340, 360 ]
         it = 0
         for el1 in [ " HEXA8", "TETRA4" ]:
             for el2 in [ " HEXA8", "TETRA4" ]:
@@ -22,8 +22,8 @@ class Assembler(unittest.TestCase):
                 it = it + 1
 
 def run(el1, el2, it):
-    ESPRESOTest.args[ 0] = el1
-    ESPRESOTest.args[ 7] = el2
-    ESPRESOTest.args[14] = it
+    ESPRESOTest.args[0] = el1
+    ESPRESOTest.args[3] = el2
+    ESPRESOTest.args[6] = it
     ESPRESOTest.run()
     ESPRESOTest.compare_emr("{0}_{1}.emr".format(el1, el2))
