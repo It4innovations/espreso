@@ -251,16 +251,23 @@ void computeWarpedNormals(SurfaceStore * surface)
 						d - tnormal[i] * (tnormal[i] * (d - center))
 				};
 				Point pp[4] = { plane[1] - plane[0], plane[2] - plane[1], plane[3] - plane[2], plane[0] - plane[3] };
+				int minv = 0; double mindiff = 2;
 				for (int v = 0; v < 4; ++v) {
 					double _s, _t;
 					plane[(v + 2) % 4].getBarycentric(plane[v], pp[v], -pp[(v + 3) % 4], _s, _t);
-					if (0 <= _s && _s <= 1 && 0 <= _t && _t <= 1) {
-						tbase[i] = plane[v];
-						tparamters[2 * i] = pp[v];
-						tparamters[2 * i + 1] = -pp[(v + 3) % 4];
-						break;
+					double diff = 0;
+					if (_s < 0) diff += -_s;
+					if (_t < 0) diff += -_t;
+					if (_s > 0) diff += _s - 1;
+					if (_t > 0) diff += _t - 1;
+					if (mindiff > diff) {
+						mindiff = diff;
+						minv = v;
 					}
 				}
+				tbase[i] = plane[minv];
+				tparamters[2 * i] = pp[minv];
+				tparamters[2 * i + 1] = -pp[(minv + 3) % 4];
 			} break;
 			default:
 				eslog::internalFailure("unknown or not implemented surface element.\n");
@@ -573,7 +580,6 @@ void findCloseElements(ContactStore *contact)
 				esint index = *pp - offset[n];
 				int nbody = contact->surfaces[n]->body->datatarray()[index];
 				const Point &nnormal = contact->surfaces[n]->normal->datatarray()[index];
-
 				if ((self_contact || nbody != body) && nnormal * normal <= angle && cohen_sutherland(n, index)) {
 					bodyPairs[std::min(body, nbody)].insert(std::max(body, nbody));
 					data.push_back(n);
@@ -586,7 +592,6 @@ void findCloseElements(ContactStore *contact)
 			for (auto pp = ltree.permutation.cbegin() + ltree.begin(lintervals[i]); pp != ltree.permutation.cbegin() + ltree.end(lintervals[i]); ++pp) {
 				int nbody = contact->surfaces.back()->body->datatarray()[*pp];
 				const Point &nnormal = contact->surfaces.back()->normal->datatarray()[*pp];
-//				printf("%d->%d=%d-%d%d%d\n", face, *pp, *pp < face, (self_contact || nbody != body), nnormal * normal <= angle, cohen_sutherland(contact->surfaces.size() - 1, *pp));
 				if ((self_contact || nbody != body) && nnormal * normal <= angle && cohen_sutherland(contact->surfaces.size() - 1, *pp)) {
 					bodyPairs[std::min(body, nbody)].insert(std::max(body, nbody));
 					data.push_back(contact->surfaces.size() - 1);
@@ -616,7 +621,7 @@ void findCloseElements(ContactStore *contact)
 	eslog::checkpointln("MESH: CLOSE ELEMENTS FOUND");
 }
 
-void triangulate(std::vector<Point> &face, std::vector<Triangle> &triangles)
+static void triangulate(std::vector<Point> &face, std::vector<Triangle> &triangles)
 {
 	triangles.clear();
 	auto prev= [&] (const int &i) -> int {
@@ -651,7 +656,7 @@ void triangulate(std::vector<Point> &face, std::vector<Triangle> &triangles)
 	eslog::internalFailure("cannot compute triangles from a polygon.\n");
 }
 
-void clip(const Point &base, const std::vector<Triangle> &triangles, const std::vector<Point> &polygon, const double &gap, std::vector<Triangle> &output)
+static void clip(const Point &base, const std::vector<Triangle> &triangles, const std::vector<Point> &polygon, const double &gap, std::vector<Triangle> &output)
 {
 	double eps = 1e-10;
 	enum status { in, out, on, processed };

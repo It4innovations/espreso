@@ -515,7 +515,7 @@ void DebugOutput::warpedNormals(const char* name, double clusterShrinkRatio, dou
 	for (esint e = 0; e < surf->size; ++e, ++enodes, ++normal, ++center) {
 		Point &p = *center;
 		Point &n = *normal;
-		double scale = 0.001;
+		double scale = 0.01;
 		output._writer.point(p.x, p.y, p.z);
 		output._writer.point(p.x + scale * n.x, p.y + scale * n.y, p.z + scale * n.z);
 		for (auto nn = enodes->begin(); nn != enodes->end(); ++nn) {
@@ -527,14 +527,16 @@ void DebugOutput::warpedNormals(const char* name, double clusterShrinkRatio, dou
 	}
 	output._writer.groupData();
 
-	esint esize = 2 * surf->size, gesize;
-	Communication::allReduce(&esize, &gesize, 1, MPITools::getType<esint>().mpitype, MPI_SUM);
+	esint esize = 2 * surf->size;
+	esint noffset = surf->enodes->datatarray().size() + 2 * surf->size;
+	esint gesize = Communication::exscan(esize);
+	Communication::exscan(noffset);
 
 	if (Visualization::isRoot()) {
 		output._writer.cells(gesize, gesize + gpsize);
 	}
 	enodes = surf->enodes->begin();
-	for (esint e = 0, n = 0; e < surf->size; ++e, ++enodes) {
+	for (esint e = 0, n = noffset; e < surf->size; ++e, ++enodes) {
 		output._writer.int32s(2);
 		output._writer.int32s(n++);
 		output._writer.int32ln(n++);
