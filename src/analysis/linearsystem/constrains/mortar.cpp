@@ -696,7 +696,12 @@ void MortarContact<T>::update(const step::Step &step, FETI<T> &feti)
         c.push_back(std::make_pair(begin->from, 0));
         for (auto it = begin; it != end; ++it) {
             for (int dof = 0; dof < dofs; ++dof) {
-                c.back().second -= lambda->normal[dof] * it->value * (info::mesh->nodes->coordinates->datatarray()[it->to][dof] + disp[dofs * it->to + dof]);
+                if (std::fabs(lambda->normal[dof]) > BE_VALUE_TRESHOLD) {
+                    auto dmap = feti.decomposition->dmap->begin() + dofs * it->to + dof;
+                    if (feti.decomposition->ismy(dmap->begin()->domain)) {
+                        c.back().second -= lambda->normal[dof] * it->value * (info::mesh->nodes->coordinates->datatarray()[it->to][dof] + disp[dofs * it->to + dof]);
+                    }
+                }
             }
         }
     }
