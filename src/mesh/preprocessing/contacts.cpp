@@ -339,9 +339,9 @@ void exchangeContactHalo(SurfaceStore * surface, ContactStore *contact)
 		for (size_t e = 0; e < surface->enodes->structures(); ++e, ++enodes) {
 			for (auto ec = enodes->begin(); ec != enodes->end(); ++ec) {
 				if (
-						min.x <= coordinates[*ec].x && coordinates[*ec].x <= max.x &&
-						min.y <= coordinates[*ec].y && coordinates[*ec].y <= max.y &&
-						min.z <= coordinates[*ec].z && coordinates[*ec].z <= max.z) {
+						(min.x <= coordinates[*ec].x && coordinates[*ec].x <= max.x) ||
+						(min.y <= coordinates[*ec].y && coordinates[*ec].y <= max.y) ||
+						(min.z <= coordinates[*ec].z && coordinates[*ec].z <= max.z)) {
 
 					esend.push_back(e);
 					for (auto c = enodes->begin(); c != enodes->end(); ++c) {
