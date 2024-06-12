@@ -104,8 +104,9 @@ void GridTowerGenerator::init(const GridTowerGeneratorConfiguration &configurati
 
 						if (cluster++ == info::mpi::rank) {
 							_clusterOffset = offset;
-							_settings.start = _settings.start + ((_settings.end - _settings.start) / (Triple<double>)_settings.clusters * offset).round();
-							_settings.end   = _settings.start + ((_settings.end - _settings.start) / (Triple<double>)_settings.clusters * (offset + 1)).round();
+							Triple<long> start = _settings.start;
+							_settings.start = start + ((_settings.end - start) / (Triple<double>)_settings.clusters * offset).round();
+							_settings.end   = start + ((_settings.end - start) / (Triple<double>)_settings.clusters * (offset + 1)).round();
 						}
 					}
 				}

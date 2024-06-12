@@ -60,7 +60,7 @@ void GridGenerator::init()
 
 				if (cluster++ == info::mpi::rank) {
 					_clusterOffset = offset;
-					Triple<int> start = _settings.start;
+					Triple<long> start = _settings.start;
 					_settings.start = start + ((_settings.end - start) / (Triple<double>)_settings.clusters * offset).round();
 					_settings.end   = start + ((_settings.end - start) / (Triple<double>)_settings.clusters * (offset + 1)).round();
 				}
