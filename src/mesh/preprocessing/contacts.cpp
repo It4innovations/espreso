@@ -315,9 +315,9 @@ void exchangeContactHalo(SurfaceStore * surface, ContactStore *contact)
 
 	auto areIntersected = [&] (_Point<float> *block1, _Point<float> *block2) {
 		return	!
-				(block1[1].x < block2[0].x || block2[1].x < block1[0].x) ||
-				(block1[1].y < block2[0].y || block2[1].y < block1[0].y) ||
-				(block1[1].z < block2[0].z || block2[1].z < block1[0].z);
+				((block1[1].x < block2[0].x || block2[1].x < block1[0].x) ||
+				 (block1[1].y < block2[0].y || block2[1].y < block1[0].y) ||
+				 (block1[1].z < block2[0].z || block2[1].z < block1[0].z));
 	};
 
 	contact->neighbors.clear();
@@ -339,8 +339,8 @@ void exchangeContactHalo(SurfaceStore * surface, ContactStore *contact)
 		for (size_t e = 0; e < surface->enodes->structures(); ++e, ++enodes) {
 			for (auto ec = enodes->begin(); ec != enodes->end(); ++ec) {
 				if (
-						(min.x <= coordinates[*ec].x && coordinates[*ec].x <= max.x) ||
-						(min.y <= coordinates[*ec].y && coordinates[*ec].y <= max.y) ||
+						(min.x <= coordinates[*ec].x && coordinates[*ec].x <= max.x) &&
+						(min.y <= coordinates[*ec].y && coordinates[*ec].y <= max.y) &&
 						(min.z <= coordinates[*ec].z && coordinates[*ec].z <= max.z)) {
 
 					esend.push_back(e);
