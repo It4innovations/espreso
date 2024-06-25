@@ -1,0 +1,90 @@
+
+INPUT {
+  FORMAT    ANSYS_CDB;
+  PATH      TvT04.dat;
+
+  KEEP_MATERIAL_SETS     FALSE;
+  CONVERT_DATABASE       FALSE;
+
+  CONTACT_INTERFACES {
+    GENERAL {
+      DETECTION     ALL_BODIES;
+      CRITERION            GAP;
+
+       GAP                0.02;
+    }
+  }
+
+  DECOMPOSITION {
+    DOMAINS    8;
+  }
+}
+
+PHYSICS    STRUCTURAL_MECHANICS;
+
+STRUCTURAL_MECHANICS {
+  LOAD_STEPS   1;
+
+  CONTACT_INTERFACES       TRUE;
+
+  MATERIALS {
+    1 {
+
+      DENS   7850;
+      CP        1;
+
+      LINEAR_ELASTIC_PROPERTIES {
+        MODEL   ISOTROPIC;
+
+        MIXY          0.3;
+        EX          2.1E8;
+      }
+    }
+    2 {
+
+      DENS   7850;
+      CP        1;
+
+      LINEAR_ELASTIC_PROPERTIES {
+        MODEL   ISOTROPIC;
+        
+        MIXY          0.3;
+        EX          2.1E8;
+      }
+    }
+  }
+
+  MATERIAL_SET {
+    KOST    2;
+    STEHNO  1;
+  }
+
+  LOAD_STEPS_SETTINGS {
+    1 {
+      DURATION_TIME     1;
+      TYPE   STEADY_STATE;
+      MODE         LINEAR;
+      SOLVER         FETI;
+
+      FETI {
+        METHOD          TOTAL_FETI;
+        DUAL_OPERATOR     IMPLICIT;
+        PRECONDITIONER        NONE;
+        ITERATIVE_SOLVER    SMALBE;
+        REGULARIZATION    ANALYTIC;
+        MAX_ITERATIONS        5000;
+        MAX_STAGNATION        1000;
+      }
+
+      DISPLACEMENT {
+        KOST_KOLENO1  { X 0; Y 0; Z     0; }
+        B             { X 0; Y 0; Z -0.03; }
+      }
+    }
+  }
+}
+
+OUTPUT {
+  
+}
+
