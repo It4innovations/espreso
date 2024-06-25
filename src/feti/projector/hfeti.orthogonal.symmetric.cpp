@@ -77,16 +77,18 @@ void HFETIOrthogonalSymmetric<T>::_computeDualGraph()
     }
 
     dualGraph.resize(1);
+    neighInfo.resize(feti.decomposition->neighbors.size());
     size_t n = 0;
     for (; n < feti.decomposition->neighbors.size() && feti.decomposition->neighbors[n] < info::mpi::rank; ++n) {
         dualGraph[0].push_back(ClusterInfo(feti.decomposition->neighbors[n], rBuffer[n][0].koffset, rBuffer[n][0].kernels));
+        neighInfo[n] = dualGraph[0].back();
     }
     dualGraph[0].push_back(ClusterInfo(info::mpi::rank, Projector<T>::Kernel::roffset, Projector<T>::Kernel::rsize));
     for (; n < feti.decomposition->neighbors.size(); ++n) {
         dualGraph[0].push_back(ClusterInfo(feti.decomposition->neighbors[n], rBuffer[n][0].koffset, rBuffer[n][0].kernels));
+        neighInfo[n] = dualGraph[0].back();
     }
 
-    neighInfo.resize(feti.decomposition->neighbors.size());
     for (size_t i = 0, offset = 0; i < feti.lambdas.cmap.size(); ) {
         int lsize = feti.lambdas.cmap[i];
         int domains = feti.lambdas.cmap[i + 1];
@@ -94,12 +96,10 @@ void HFETIOrthogonalSymmetric<T>::_computeDualGraph()
             int n = feti.decomposition->noffset(feti.lambdas.cmap[i + 2 + d]);
             if (!feti.decomposition->ismy(feti.lambdas.cmap[i + 2 + d]) && last < n) {
                 if (feti.lambdas.cmap[i + 2 + d] < feti.decomposition->dbegin) {
-                    neighInfo[n] = dualGraph[0][n];
                     neighInfo[n].cindices.push_back({ (int)offset, lsize });
                     neighInfo[n].ncols += lsize;
                 }
                 if (feti.decomposition->dend <= feti.lambdas.cmap[i + 2 + d]) {
-                    neighInfo[n] = dualGraph[0][n + 1];
                     neighInfo[n].cindices.push_back({ (int)offset, lsize });
                     neighInfo[n].ncols += lsize;
                 }
