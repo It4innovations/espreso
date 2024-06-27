@@ -20,6 +20,17 @@ SMALBE<T>::SMALBE(FETI<T> &feti)
 template <typename T>
 void SMALBE<T>::info()
 {
+    int lambdas[2] = { 0, 0 }, size = 0;
+    for (size_t i = 0; i < feti.lambdas.intervals.size(); ++i) {
+        size += feti.lambdas.intervals[i].size + feti.lambdas.intervals[i].halo;
+        if (size <= feti.lambdas.equalities) {
+            lambdas[0] += feti.lambdas.intervals[i].size;
+        } else {
+            lambdas[1] += feti.lambdas.intervals[i].size;
+        }
+    }
+    Communication::allReduce(lambdas, nullptr, 2, MPI_INT, MPI_SUM);
+
     eslog::info(" = MODIFIED PROPORTIONING WITH REDUCED GRADIENT PROJECTION SETTING                           = \n");
     eslog::info(" =   PRECISION                                                                      %.2e = \n", feti.configuration.precision);
     eslog::info(" =   PRECISION_IN                                                                   %.2e = \n", feti.configuration.precision_in);
@@ -28,8 +39,8 @@ void SMALBE<T>::info()
     eslog::info(" =   DELTA                                                                          %.2e = \n", feti.configuration.delta);
     eslog::info(" =   GRADPROJ                                                                        %7d = \n", feti.configuration.gradproj);
     eslog::info("  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  \n");
-    eslog::info(" =   EQUALITIES                                                                 %13d = \n", feti.lambdas.equalities);
-    eslog::info(" =   INEQUALITIES                                                               %13d = \n", feti.lambdas.size - feti.lambdas.equalities);
+    eslog::info(" =   EQUALITIES                                                                %13d = \n", lambdas[0]);
+    eslog::info(" =   INEQUALITIES                                                              %13d = \n", lambdas[1]);
     eslog::info(" = ----------------------------------------------------------------------------------------- = \n");
 }
 
