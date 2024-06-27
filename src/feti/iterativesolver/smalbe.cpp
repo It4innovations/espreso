@@ -31,6 +31,11 @@ void SMALBE<T>::info()
     }
     Communication::allReduce(lambdas, nullptr, 2, MPI_INT, MPI_SUM);
 
+    if (feti.configuration.precision < feti.configuration.precision_in) {
+        eslog::warning("inner precision higher that outer precision: set precision_in=precision\n");
+        feti.configuration.precision_in = feti.configuration.precision;
+    }
+
     eslog::info(" = MODIFIED PROPORTIONING WITH REDUCED GRADIENT PROJECTION SETTING                           = \n");
     eslog::info(" =   PRECISION                                                                      %.2e = \n", feti.configuration.precision);
     eslog::info(" =   PRECISION_IN                                                                   %.2e = \n", feti.configuration.precision_in);
@@ -60,6 +65,7 @@ template <> void SMALBE<double>::solve(const step::Step &step, IterativeSolverIn
     MPRGPSolverInfo mprgp_info;
     mprgp_info.print = false;
     mprgp_info.converged = false;
+    info.time.current = eslog::time();
 
     math::copy(b, F->d);
     // Homogenization of the equality constraints
@@ -89,12 +95,11 @@ template <> void SMALBE<double>::solve(const step::Step &step, IterativeSolverIn
     int nIt;
     double rho = 0, normPFP = 1, M_const = 1, maxEIG_H;
     F->estimateMaxProjectedEigenValue(maxEIG_H, nIt, feti.configuration.power_precision, feti.configuration.power_maxit);
-    eslog::info("       - ESTIMATED MAX PROJECTED EIGEN VALUE                   %.3e in %4d steps - \n", maxEIG_H, nIt);
-    eslog::info("       - ----------------------------------------------------------------------------- - \n");
-//    eslog::info("       - ITER   L  ||gs(x)||   ||Gx||  As/Fs-Ac/Fc    cg   mixed  grad.pr.  Hess     M   RHO   TIME [s] - \n");
-    eslog::info("       -        SBC ACTIVE /  FREE   PQC ACTIVE /  FREE       CG  MIXED  GPROJ    HESS - \n");
-    eslog::info("       - ITERATION   L(X,MU,RHO)   ||GS(X)||      ||GX||     M       RHO      TIME [s] - \n");
-    eslog::info("       - ----------------------------------------------------------------------------- - \n");
+    eslog::info("   --- - ----------------------------------------------------------------------------- - --- \n");
+    eslog::info("   - ESTIMATED MAX PROJECTED EIGEN VALUE                      %.6e in %6d steps - \n", maxEIG_H, nIt);
+    eslog::info("   - ------------------------------------------------------------------------------------- - \n");
+    eslog::info("   -   IT      SBC     PQC        CG  MIXED  GPROJ       M   ||GS(X)||/||b||  ||GX||/||b|| - \n");
+    eslog::info("   - ------------------------------------------------------------------------------------- - \n");
 
     // switch PFP-scaling, TODO
     normPFP = maxEIG_H;
@@ -131,11 +136,13 @@ template <> void SMALBE<double>::solve(const step::Step &step, IterativeSolverIn
 
         P->apply_invLG(x, Gx);
         double norm_Gx = std::sqrt(Gx.dot());
-
-        return
-             norm_g_stop <= std::min(M_const * norm_Gx, feti.configuration.eta * norm_b) ||
-            (norm_g_stop <= feti.configuration.precision_in * norm_b &&
-            norm_Gx      <= feti.configuration.precision_in * norm_b / maxEIG_H);
+        bool cr0 = norm_g_stop <= std::min(M_const * norm_Gx, feti.configuration.eta * norm_b);
+        bool cr1 = norm_g_stop <= feti.configuration.precision_in * norm_b && norm_Gx <= feti.configuration.precision_in * norm_b / maxEIG_H;
+        int it = mprgp_info.n_cg + mprgp_info.n_mixed + mprgp_info.n_gproj;
+        if (it && (it % feti.configuration.print_iteration == 0) && !cr0 && !cr1) {
+            eslog::info("   -                                                              %9.4e    %9.4e - \n", norm_g_stop / norm_b, norm_Gx * maxEIG_H / norm_b);
+        }
+        return cr0 || cr1;
     };
 
     // Hessian multiplication (PAP+rho*Ct*inv(C*Ct)*C)*x
@@ -148,6 +155,7 @@ template <> void SMALBE<double>::solve(const step::Step &step, IterativeSolverIn
     P->apply_invLG(mprgp.x, Gx);
     mprgp_info.iterations = 1;
     for (int i = 0; mprgp_info.iterations <= feti.configuration.max_iterations; ++i) {
+
         math::copy(mprgp.b, bCtmu);
         mprgp.run(step, mprgp_info, alpha, A_apply, stop);
         math::copy(mprgp.x0, mprgp.x);
@@ -159,12 +167,7 @@ template <> void SMALBE<double>::solve(const step::Step &step, IterativeSolverIn
         double Lag1 = .5 * gbCtmu.dot(mprgp.x); // Lag1 = 0.5*(x'*(g - bCtmu));
         double norm_stop = std::sqrt(mprgp.g_stop.dot());
         double norm_Gx = std::sqrt(Gx.dot());
-
-        int active_sbc = 0, free_sbc = 0;
-        int active_pqc = 0, free_pqc = 0;
-        eslog::info("       -                                                                               - \n");
-        eslog::info("       -           %7d %7d      %7d %7d    %5d  %5d  %5d %7d - \n", active_sbc, free_sbc, active_pqc, free_pqc, mprgp_info.n_cg, mprgp_info.n_mixed, mprgp_info.n_gproj, mprgp_info.n_hess);
-        eslog::info("       - -   %5d   %9.4e  %9.4e  %9.4e   %6.2f   %7.2e  %7.2e - \n", i, Lag1, norm_stop, norm_Gx * maxEIG_H, M_const, rho, eslog::time() - info.time.current);
+        eslog::info("   -  %3d  %7d %7d    %6d %6d %6d %7.3f        %9.4e    %9.4e - \n", i, mprgp.active.dot(), 0, mprgp_info.n_cg, mprgp_info.n_mixed, mprgp_info.n_gproj, M_const, norm_stop / norm_b, norm_Gx * maxEIG_H / norm_b);
         info.time.current = eslog::time();
 
         if (norm_stop <= feti.configuration.precision * norm_b && norm_Gx <= feti.configuration.precision * norm_b / maxEIG_H) {
@@ -190,7 +193,7 @@ template <> void SMALBE<double>::solve(const step::Step &step, IterativeSolverIn
         }
         Lag0 = Lag1;
     }
-    eslog::info("       - ----------------------------------------------------------------------------- - \n");
+    eslog::info("   - ------------------------------------------------------------------------------------- - \n");
 
     math::add(mprgp.x, 1., x_im);
     // rbm = Uc\( Lc\(C*(-b_+A(x)))-mu*normPAP ); rbm = -rbm(ip);
@@ -206,6 +209,11 @@ template <> void SMALBE<double>::solve(const step::Step &step, IterativeSolverIn
 
     reconstructSolution(mprgp.x, mu, step);
     info = mprgp_info;
+
+    eslog::info("   - HESSIANS TO EIGEN VALUE                                                     %9d - \n", nIt);
+    eslog::info("   - HESSIANS IN ITERATIONS                                                      %9d - \n", mprgp_info.n_hess);
+    eslog::info("   - HESSIANS TOTAL                                                              %9d - \n", mprgp_info.n_hess + nIt);
+    eslog::info("   --- - ----------------------------------------------------------------------------- - --- \n");
 
     if (feti.configuration.max_iterations < info.iterations && !info.converged) {
         info.error = IterativeSolverInfo::ERROR::MAX_ITERATIONS_REACHED;
