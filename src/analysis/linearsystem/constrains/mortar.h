@@ -41,7 +41,7 @@ protected:
     };
 
     void assembleMortarInterface(std::vector<Mortar> &B);
-    void synchronize(std::vector<Mortar> &B, std::vector<LambdaInfo> &lambdas, std::vector<int> &domains);
+    void synchronize(FETI<T> &feti, std::vector<Mortar> &B, std::vector<LambdaInfo> &lambdas, std::vector<int> &domains);
 
     esint ineq_begin, ineq_end;
     std::vector<LambdaInfo> lambdas;

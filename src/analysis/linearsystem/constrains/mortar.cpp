@@ -333,7 +333,7 @@ void MortarContact<T>::assembleMortarInterface(std::vector<Mortar> &B)
 }
 
 template <typename T>
-void MortarContact<T>::synchronize(std::vector<Mortar> &B, std::vector<LambdaInfo> &lambdas, std::vector<int> &domains)
+void MortarContact<T>::synchronize(FETI<T> &feti, std::vector<Mortar> &B, std::vector<LambdaInfo> &lambdas, std::vector<int> &domains)
 {
     // synchronize across neighbors
     std::vector<std::vector<Mortar> > Bs(info::mesh->neighbors.size(), B), Br(info::mesh->neighbors.size());
@@ -373,7 +373,6 @@ void MortarContact<T>::synchronize(std::vector<Mortar> &B, std::vector<LambdaInf
         }
     }
 
-
     // compute lambda info
 
     // collect my lambdas
@@ -408,10 +407,11 @@ void MortarContact<T>::synchronize(std::vector<Mortar> &B, std::vector<LambdaInf
         eslog::internalFailure("cannot exchange mortar lambdas.\n");
     }
 
+
     std::vector<esint> ldomains, sBuffer;
     std::vector<double> sScale;
-    auto mit = mortar.begin();
     for (size_t n = 0; n < rLambdas.size(); ++n) {
+        auto mit = mortar.begin();
         for (size_t i = 0; i < rLambdas[n].size(); ++i) {
             ldomains.clear();
             double scale = 0;
@@ -423,7 +423,9 @@ void MortarContact<T>::synchronize(std::vector<Mortar> &B, std::vector<LambdaInf
                         ldomains.push_back(*d);
                     }
                     utils::sortAndRemoveDuplicates(ldomains);
-                    scale += dmap->size() * (mit->value / dmap->size()) * (mit->value / dmap->size());
+                    if (feti.decomposition->ismy(ldomains.front())) {
+                        scale += dmap->size() * (mit->value / dmap->size()) * (mit->value / dmap->size());
+                    }
                     ++mit;
                 }
             }
@@ -480,15 +482,15 @@ void MortarContact<T>::synchronize(std::vector<Mortar> &B, std::vector<LambdaInf
 
 //    Communication::serialize([&] () {
 //        for (size_t i = 0; i < lambdas.size(); ++i) {
-//            printf("%3d :: ", lambdas[i].id);
+//            printf("%d %3d :: ", info::mpi::rank, lambdas[i].id);
 //            printf("%.3f %.3f %.3f :: ", lambdas[i].normal.x, lambdas[i].normal.y, lambdas[i].normal.z);
-//            for (esint j = 0; j < lambdas[i].ndomains; ++j) {
-//                printf(" %2d", domains[lambdas[i].doffset + j]);
-//            }
 //            for (size_t j = 0; j < mortar.size(); ++j) {
 //                if (mortar[j].from == lambdas[i].id) {
-//                    printf(" <%2d:%2d>=%+.3f", mortar[j].from, mortar[j].to, mortar[j].value);
+//                    printf("<%2d:%2d>=%+.3f", mortar[j].from, info::mesh->nodes->IDs->datatarray()[mortar[j].to], mortar[j].value);
 //                }
+//            }
+//            for (esint j = 0; j < lambdas[i].ndomains; ++j) {
+//                printf(" %2d", domains[lambdas[i].doffset + j]);
 //            }
 //            printf("\n"); // it does not respect decomposition; hence, it is not 1
 //        }
@@ -507,7 +509,7 @@ void MortarContact<T>::set(const step::Step &step, FETI<T> &feti)
         assembleMortarInterface(B);
     }
     std::sort(B.begin(), B.end());
-    synchronize(B, lambdas, domains);
+    synchronize(feti, B, lambdas, domains);
 
     std::vector<int> bound, gap;
     for (auto it = info::ecf->input.contact_interfaces.begin(); it != info::ecf->input.contact_interfaces.end(); ++it) {
@@ -533,9 +535,8 @@ void MortarContact<T>::set(const step::Step &step, FETI<T> &feti)
     auto begin = mortar.begin(), end = begin;
     auto getarray = [&] (const LambdaInfo &lambda, std::vector<int> &filter) {
         if (!std::binary_search(filter.begin(), filter.end(), lambda.pair)) { return false; }
-        while (begin != mortar.end() && begin->from  < lambda.id) ++begin;
-        end = begin;
-        while (  end != mortar.end() &&   end->from == lambda.id) ++end;
+        end = begin = std::lower_bound(mortar.begin(), mortar.end(), lambda.id, [] (const Mortar &m, esint id) { return m.from < id; });
+        while (  end != mortar.end() && end->from == lambda.id) ++end;
         return true;
     };
 
