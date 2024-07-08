@@ -1,0 +1,7 @@
+
+def options(opt):
+    pass
+
+def configure(ctx):
+    libs = ["olbcore", "tinyxml"]
+    ctx.check_cxx(mandatory=False, msg="Checking for 'openlb'", okmsg=" ".join(libs), define_name="HAVE_OPENLB", header_name="olb2D.h olb2D.hh olb3D.h olb3D.hh", lib=libs, uselib_store="OPENLB", global_define=0)

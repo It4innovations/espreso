@@ -59,7 +59,7 @@ def configure(ctx):
 
     ctx.env.SIMD = ctx.check_cxx(
         mandatory   = False,
-        msg         = 'Checking for SIMD intrinsics',
+        msg         = "Checking for 'simd intrinsics'",
         fragment    = code,
         define_ret  = True,
         execute     = True,

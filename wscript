@@ -138,6 +138,7 @@ def build(ctx):
 #     ctx.build_espreso(ctx.path.ant_glob('src/wrappers/superlu/**/*.cpp'), "wsuperlu", [ "SUPERLU" ])
 #     ctx.build_espreso(ctx.path.ant_glob('src/wrappers/wsmp/**/*.cpp'), "wwsmp", [ "WSMP" ])
     ctx.build_espreso(ctx.path.ant_glob('src/wrappers/suitesparse/**/*.cpp'), "wsuitesparse", [ "SUITESPARSE", "MKL" ])
+    ctx.build_espreso(ctx.path.ant_glob('src/wrappers/openlb/**/*.cpp'), "wopenlb", [ "OPENLB" ])
     ctx.build_espreso(ctx.path.ant_glob('src/wrappers/bem/**/*.cpp'), "wbem",)
     ctx.build_espreso(ctx.path.ant_glob('src/wrappers/nvtx/**/*.cpp'), "wnvtx", [ "NVTX" ])
     ctx.build_espreso(ctx.path.ant_glob('src/wrappers/rocm/**/*.cpp'), "wrocm", [ "ROCM" ])
@@ -298,6 +299,7 @@ def recurse(ctx):
     ctx.recurse("src/wrappers/hypre")
     ctx.recurse("src/wrappers/superlu")
     ctx.recurse("src/wrappers/wsmp")
+    ctx.recurse("src/wrappers/openlb")
 
     """ Other """
     ctx.recurse("src/wrappers/simd")
