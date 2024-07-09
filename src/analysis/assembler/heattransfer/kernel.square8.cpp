@@ -5,7 +5,7 @@
 namespace espreso {
 
 template <>
-void runElement<Element::CODE::SQUARE8>(const step::Step &step, HeatTransferElementOperators &operators, SubKernel::Action action)
+void runElement<Element::CODE::SQUARE8>(const step::Step &step, const step::Time &time, HeatTransferElementOperators &operators, SubKernel::Action action)
 {
     switch (action) {
     case SubKernel::Action::PREPROCESS:
@@ -14,13 +14,13 @@ void runElement<Element::CODE::SQUARE8>(const step::Step &step, HeatTransferElem
     case SubKernel::Action::REASSEMBLE:
     case SubKernel::Action::ITERATION:
     case SubKernel::Action::SOLUTION:
-        runElementKernel<Element::CODE::SQUARE8, 8, HeatTransferGPC::SQUARE8, 2, 2>(step, operators, action); break;
+        runElementKernel<Element::CODE::SQUARE8, 8, HeatTransferGPC::SQUARE8, 2, 2>(step, time, operators, action); break;
     default: break;
     }
 }
 
 template <>
-void runBoundary<Element::CODE::SQUARE8>(const step::Step &step, HeatTransferBoundaryOperators &operators, SubKernel::Action action)
+void runBoundary<Element::CODE::SQUARE8>(const step::Step &step, const step::Time &time, HeatTransferBoundaryOperators &operators, SubKernel::Action action)
 {
     switch (action) {
     case SubKernel::Action::PREPROCESS:

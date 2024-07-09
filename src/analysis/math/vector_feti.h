@@ -177,6 +177,7 @@ public:
             for (auto di = dmap->begin(); di != dmap->end(); ++di) {
                 if (decomposition->ismy(di->domain)) {
                     a->cluster.vals[i] += alpha * domains[di->domain - decomposition->dbegin].vals[di->index];
+                    break;
                 }
             }
         }
@@ -190,6 +191,7 @@ public:
             for (auto di = dmap->begin(); di != dmap->end(); ++di) {
                 if (decomposition->ismy(di->domain)) {
                     a->cluster.vals[i] += alpha * domains[di->domain - decomposition->dbegin].vals[di->index];
+                    break;
                 }
             }
         }

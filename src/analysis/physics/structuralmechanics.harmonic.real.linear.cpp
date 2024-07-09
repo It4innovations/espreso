@@ -160,7 +160,7 @@ void StructuralMechanicsHarmonicRealLinear::run(step::Step &step)
         re.x->copy(solver->x, s1);
         im.x->copy(solver->x, s2);
         storeSolution(step);
-        assembler.updateSolution(step, re.x, im.x);
+        assembler.updateSolution(re.x, im.x);
         info::mesh->output->updateSolution(step, frequency);
         eslog::info("       = PROCESS SOLUTION                                                   %8.3f s = \n", eslog::time() - solution);
         eslog::info("       = ----------------------------------------------------------------------------- = \n");

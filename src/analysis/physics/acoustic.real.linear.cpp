@@ -119,7 +119,7 @@ void AcousticRealLinear::run(step::Step &step)
         double solution = eslog::time();
 //        re.x->copySliced(system->solver.x, 0, 1, 2);
 //        im.x->copySliced(system->solver.x, 1, 1, 2);
-        assembler.updateSolution(step, re.x, im.x);
+        assembler.updateSolution(re.x, im.x);
         info::mesh->output->updateSolution(step, frequency);
         eslog::info("       = PROCESS SOLUTION                                                   %8.3f s = \n", eslog::time() - solution);
         eslog::info("       = ----------------------------------------------------------------------------- = \n");

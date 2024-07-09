@@ -12,10 +12,10 @@ DEFAULT_ARGS {
   5          20;
   6          20;
 
-  7     MKLPDSS;
+  7        FETI;
 }
 
-INPUT_TYPE            GENERATOR;
+INPUT_TYPE         GENERATOR;
 PHYSICS        HEAT_TRANSFER;
 
 GENERATOR {
@@ -56,15 +56,8 @@ HEAT_TRANSFER {
 
   MATERIALS {
     1 {
-      COORDINATE_SYSTEM {
-        TYPE      CYLINDRICAL ;
-        CENTER    { X .5; Y .5; Z .5; }
-      }
       THERMAL_CONDUCTIVITY {
-        MODEL   DIAGONAL;
-
-        KXX            5 + 0.01 * (200 - TEMPERATURE);
-        KYY            10;
+        KXX   2 + 0.01 * (TEMPERATURE/50);
       }
     }
   }
@@ -94,11 +87,12 @@ HEAT_TRANSFER {
         PRECISION            1E-09;
         ITERATIVE_SOLVER       PCG;
         REGULARIZATION   ALGEBRAIC;
+        ORDERING           NATURAL;
       }
 
       NONLINEAR_SOLVER {
         MAX_ITERATIONS  5;
-        REQUESTED_TEMPERATURE_RESIDUAL  1e-12;
+        REQUESTED_TEMPERATURE_RESIDUAL  1e-9;
       }
 
       TEMPERATURE {

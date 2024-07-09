@@ -243,7 +243,7 @@ void setElementKernel(HeatTransferElementOperators &operators, SubKernel::Action
 }
 
 template <Element::CODE code, size_t nodes, size_t gps, size_t ndim, size_t edim>
-void runElementKernel(const step::Step &step, const HeatTransferElementOperators &operators, SubKernel::Action action)
+void runElementKernel(const step::Step &step, const step::Time &time, const HeatTransferElementOperators &operators, SubKernel::Action action)
 {
     typedef HeatTransferElement<nodes, gps, ndim, edim> Element; Element element;
 
@@ -261,9 +261,11 @@ void runElementKernel(const step::Step &step, const HeatTransferElementOperators
     MatrixMassKernel<nodes, 1> M(operators.M);
     TemperatureGradientKernel<nodes, gps, ndim> gradient(operators.gradient);
     TemperatureFluxKernel<nodes, gps, ndim> flux(operators.flux);
+    MatrixApplyKernel<nodes> tempResidual(operators.temperatureResidual);
     MatrixFillerKernel<nodes> outK(operators.Kfiller);
     MatrixFillerKernel<nodes> outM(operators.Mfiller);
     RHSFillerKernel<nodes> outRHS(operators.RHSfiller);
+    RHSFillerKernel<nodes> outnRHS(operators.nRHSfiller);
 
     struct {
         std::vector<ExternalNodeExpression<ndim, Element>*> node;
@@ -307,9 +309,11 @@ void runElementKernel(const step::Step &step, const HeatTransferElementOperators
     M.setActiveness(action);
     gradient.setActiveness(action);
     flux.setActiveness(action);
+    tempResidual.setActiveness(action);
 
     outK.setActiveness(action);
     outRHS.setActiveness(action);
+    outnRHS.setActiveness(action);
 
     for (size_t c = 0; c < operators.chunks; ++c) {
         coordinates.simd(element);
@@ -375,13 +379,18 @@ void runElementKernel(const step::Step &step, const HeatTransferElementOperators
         }
 
         if (outK.isactive) {
+            tempResidual.simd(element.nf, element.K, element.temperature.node, time.timeIntegrationConstantK);
             outK.simd(element.K);
         }
         if (outM.isactive) {
+            tempResidual.simd(element.nf, element.M, element.temperature.node, time.timeIntegrationConstantM);
             outM.simd(element.M);
         }
         if (outRHS.isactive) {
             outRHS.simd(element.f);
+        }
+        if (outnRHS.isactive) {
+            outnRHS.simd(element.nf);
         }
     }
 }

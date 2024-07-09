@@ -8,6 +8,7 @@
 #include "physics/structuralmechanics.steadystate.linear.h"
 #include "physics/structuralmechanics.steadystate.nonlinear.h"
 #include "physics/structuralmechanics.transient.linear.h"
+#include "physics/structuralmechanics.transient.nonlinear.h"
 #include "physics/structuralmechanics.harmonic.real.linear.h"
 
 #include "basis/utilities/parser.h"
@@ -28,7 +29,7 @@ void Analysis::run()
 //    }
 
     step::Step step;
-    Physics *physics;
+    Physics *physics = nullptr;
 
     switch (info::ecf->physics) {
 //    case PhysicsConfiguration::TYPE::ACOUSTICS:
@@ -67,10 +68,14 @@ void Analysis::run()
         case LoadStepSolverConfiguration::TYPE::TRANSIENT:
             switch (info::ecf->structural_mechanics.load_steps_settings.at(1).mode) {
             case LoadStepSolverConfiguration::MODE::LINEAR:    physics = new StructuralMechanicsTransientLinear(info::ecf->structural_mechanics, info::ecf->structural_mechanics.load_steps_settings.at(1)); break;
-            case LoadStepSolverConfiguration::MODE::NONLINEAR: break;
+            case LoadStepSolverConfiguration::MODE::NONLINEAR: physics = new StructuralMechanicsTransientNonLinear(info::ecf->structural_mechanics, info::ecf->structural_mechanics.load_steps_settings.at(1)); break;
             } break;
         } break;
         break;
+    }
+
+    if (physics == nullptr) {
+        eslog::globalerror("not implemented physics\n");
     }
 
     physics->analyze(step);

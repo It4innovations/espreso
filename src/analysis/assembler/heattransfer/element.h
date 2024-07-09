@@ -57,13 +57,16 @@ template <size_t nodes, size_t gps, size_t ndim, size_t edim> struct HeatTransfe
 
     alignas(SIMD::size * sizeof(double)) SIMD K[nodes * nodes];
     alignas(SIMD::size * sizeof(double)) SIMD M[nodes * nodes];
-    alignas(SIMD::size * sizeof(double)) SIMD f[nodes];
+    alignas(SIMD::size * sizeof(double)) SIMD f[nodes], nf[nodes];
 
     HeatTransferElement()
     {
         for (size_t i = 0; i < nodes * nodes; ++i) {
             K[i] = zeros();
             M[i] = zeros();
+        }
+        for (size_t i = 0; i < nodes; ++i) {
+            nf[i] =zeros();
         }
     }
 };
@@ -83,8 +86,8 @@ template <size_t ndim> struct HeatTransferNode: public GeneralNode<ndim> {
 
 };
 
-template <Element::CODE code> void runElement(const step::Step &step, HeatTransferElementOperators &operators, SubKernel::Action action);
-template <Element::CODE code> void runBoundary(const step::Step &step, HeatTransferBoundaryOperators &operators, SubKernel::Action action);
+template <Element::CODE code> void runElement(const step::Step &step, const step::Time &time, HeatTransferElementOperators &operators, SubKernel::Action action);
+template <Element::CODE code> void runBoundary(const step::Step &step, const step::Time &time, HeatTransferBoundaryOperators &operators, SubKernel::Action action);
 
 }
 

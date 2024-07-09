@@ -12,6 +12,7 @@
 #include "analysis/assembler/general/op.integration.h"
 #include "analysis/assembler/general/op.temperature.h"
 #include "analysis/assembler/general/op.thickness.h"
+#include "analysis/assembler/general/op.matrix.apply.h"
 #include "analysis/assembler/general/op.matrix.mass.h"
 #include "analysis/assembler/heattransfer/op.advection.h"
 #include "analysis/assembler/heattransfer/op.conductivity.h"
@@ -41,6 +42,7 @@ struct HeatTransferElementOperators {
     BoundaryCondition heatSource, initTemperature;
     MatrixConductivity K;
     MatrixMass M;
+    MatrixApply temperatureResidual;
 
     TemperatureGradient gradient;
     TemperatureFlux flux;

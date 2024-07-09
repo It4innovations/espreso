@@ -35,6 +35,9 @@ struct Time {
 	double shift = 1; // difference between current and previous time
 	double final = 1;
 	double precision = 1e-8;
+
+	double timeIntegrationConstantK = 1;
+	double timeIntegrationConstantM = 1;
 };
 
 struct Frequency {

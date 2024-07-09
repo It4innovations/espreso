@@ -1,5 +1,6 @@
 
-#include "structuralmechanics.transient.linear.h"
+
+#include "structuralmechanics.transient.nonlinear.h"
 
 #include "analysis/builder/uniformbuilder.direct.h"
 #include "analysis/builder/uniformbuilder.feti.h"
@@ -17,16 +18,16 @@
 
 using namespace espreso;
 
-StructuralMechanicsTransientLinear::StructuralMechanicsTransientLinear(StructuralMechanicsConfiguration &settings, StructuralMechanicsLoadStepConfiguration &configuration)
+StructuralMechanicsTransientNonLinear::StructuralMechanicsTransientNonLinear(StructuralMechanicsConfiguration &settings, StructuralMechanicsLoadStepConfiguration &configuration)
 : settings(settings), configuration(configuration), assembler{nullptr, settings, configuration},
   K{}, M{}, f{}, x{}, dirichlet{},
-  U{}, dU{}, V{}, W{}, X{}, Y{}, Z{}, dTK{}, dTM{},
+  U{}, R{}, dU{}, V{}, W{}, X{}, Y{}, Z{}, dTK{}, dTM{},
   builder{}, solver{}
 {
 
 }
 
-StructuralMechanicsTransientLinear::~StructuralMechanicsTransientLinear()
+StructuralMechanicsTransientNonLinear::~StructuralMechanicsTransientNonLinear()
 {
     if (K) { delete K; }
     if (M) { delete M; }
@@ -35,6 +36,7 @@ StructuralMechanicsTransientLinear::~StructuralMechanicsTransientLinear()
     if (dirichlet) { delete dirichlet; }
 
     if (  U) { delete   U; }
+    if (  R) { delete   R; }
     if ( dU) { delete  dU; }
     if (  V) { delete   V; }
     if (  W) { delete   W; }
@@ -48,17 +50,20 @@ StructuralMechanicsTransientLinear::~StructuralMechanicsTransientLinear()
     if (solver) { delete solver; }
 }
 
-void StructuralMechanicsTransientLinear::analyze(step::Step &step)
+void StructuralMechanicsTransientNonLinear::analyze(step::Step &step)
 {
     eslog::info("\n ============================================================================================= \n");
     eslog::info(" == ANALYSIS                                                                      TRANSIENT == \n");
     eslog::info(" == PHYSICS                                                            STRUCTURAL MECHANICS == \n");
-    eslog::info(" == MODE                                                                             LINEAR == \n");
+    eslog::info(" == MODE                                                                         NON-LINEAR == \n");
     eslog::info(" ============================================================================================= \n");
 
     step.type = step::TYPE::TIME;
     assembler.analyze(step);
     info::mesh->output->updateMonitors(step);
+    if (configuration.nonlinear_solver.stepping == NonLinearSolverConfiguration::STEPPINGG::FALSE) {
+        configuration.nonlinear_solver.substeps = 1;
+    }
 
     switch (configuration.solver) {
     case LoadStepSolverConfiguration::SOLVER::FETI:
@@ -90,6 +95,7 @@ void StructuralMechanicsTransientLinear::analyze(step::Step &step)
     dirichlet = solver->dirichlet->copyPattern();
 
       U = solver->b->copyPattern();
+      R = solver->b->copyPattern();
      dU = solver->b->copyPattern();
       V = solver->b->copyPattern();
       W = solver->b->copyPattern();
@@ -102,11 +108,12 @@ void StructuralMechanicsTransientLinear::analyze(step::Step &step)
     builder->fillMatrixMap(K);
     builder->fillMatrixMap(M);
     builder->fillVectorMap(f);
+    builder->fillVectorMap(R);
     builder->fillDirichletMap(dirichlet);
     eslog::checkpointln("SIMULATION: LINEAR SYSTEM BUILT");
 }
 
-void StructuralMechanicsTransientLinear::run(step::Step &step)
+void StructuralMechanicsTransientNonLinear::run(step::Step &step)
 {
     time.shift = configuration.transient_solver.time_step;
     time.start = 0;
@@ -138,6 +145,10 @@ void StructuralMechanicsTransientLinear::run(step::Step &step)
     eslog::info("\n ============================================================================================= \n");
     eslog::info(" = RUN THE SOLVER                                                DURATION TIME: %10.4f s = \n", configuration.duration_time);
     eslog::info(" = ----------------------------------------------------------------------------------------- = \n");
+    eslog::info(" = MODE                                                                           NON-LINEAR = \n");
+    eslog::info(" = NUMBER OF SUBSTEPS                                                             %10d = \n", configuration.nonlinear_solver.substeps);
+    eslog::info(" = MAX ITERATIONS                                                                 %10d = \n", configuration.nonlinear_solver.max_iterations);
+    eslog::info(" = ----------------------------------------------------------------------------------------- = \n");
     solver->set(step);
     eslog::info(" ============================================================================================= \n\n");
     eslog::checkpointln("SIMULATION: LINEAR SYSTEM SET");
@@ -151,37 +162,107 @@ void StructuralMechanicsTransientLinear::run(step::Step &step)
         eslog::info(" ============================================================================================= \n");
         eslog::info(" = LOAD STEP %2d, SUBSTEP   %3d,   TIME %9.4f, TIME SHIFT %9.4f, FINAL TIME %9.4f = \n", step.loadstep + 1, step.substep + 1, time.current, time.shift, time.final);
         eslog::info(" = ----------------------------------------------------------------------------------------- = \n");
-        double start = eslog::time();
-        assembler.evaluate(step, time, K, M, f, nullptr, dirichlet);
-        eslog::checkpointln("SIMULATION: PHYSICS ASSEMBLED");
-
-        if (K->updated || M->updated || solver->A->updated) {
-            solver->A->set(0)->add(1, K)->add(newmark[0], M);
-            solver->A->updated = true;
+        eslog::info("      =================================================================================== \n");
+        eslog::info("      ==  NEWTON RAPHSON CONVERGENCE CRITERIA                                          == \n");
+        if (configuration.nonlinear_solver.check_first_residual) {
+            eslog::info("      ==  - DISPLACEMENT RESIDUAL                                                 TRUE == \n");
+        } else {
+            eslog::info("      ==  - DISPLACEMENT RESIDUAL                                                FALSE == \n");
         }
+        if (configuration.nonlinear_solver.check_second_residual) {
+            eslog::info("      ==  - STRESS RESIDUAL                                                       TRUE == \n");
+        } else {
+            eslog::info("      ==  - STRESS RESIDUAL                                                      FALSE == \n");
+        }
+        eslog::info("      =================================================================================== \n\n");
+        double start = eslog::time();
 
-        X->set(0);
-        X->add(newmark[0], U);
-        X->add(newmark[2], V);
-        X->add(newmark[3], W);
-        M->apply(1, X, 0, Y);
+        // NEWTON RAPHSON
+        step.substeps = configuration.nonlinear_solver.substeps;
+        for (step.substep = 0; step.substep < configuration.nonlinear_solver.substeps; ++step.substep) {
+            if (configuration.nonlinear_solver.substeps > 1) {
+                eslog::info("      ==  SUBSTEP                                                           %10d ==     \n", step.substep + 1);
+                eslog::info("      =================================================================================== \n");
+            }
+            eslog::info("      ==                                                                  INITIAL STEP ==     \n");
 
-        solver->b->copy(f);
-        solver->b->add(1, Y);
-        solver->b->updated = true;
+            double astart = eslog::time();
+            step.iteration = 0;
+            assembler.evaluate(step, time, K, M, f, nullptr, dirichlet);
+            if (K->updated || M->updated) {
+                solver->A->set(0)->add(1, K)->add(newmark[0], M);
+                solver->A->updated = true;
+            }
 
-        solver->dirichlet->copy(dirichlet);
-        solver->dirichlet->updated = dirichlet->updated;
+            X->set(0);
+            X->add(newmark[0], U);
+            X->add(newmark[2], V);
+            X->add(newmark[3], W);
+            M->apply(1, X, 0, Y);
 
-        storeSystem(step);
+            solver->b->copy(f);
+            solver->b->add(1, Y);
+            solver->b->updated = true;
 
-        eslog::info("       = ----------------------------------------------------------------------------- = \n");
-        eslog::info("       = SYSTEM ASSEMBLY                                                    %8.3f s = \n", eslog::time() - start);
+            solver->dirichlet->copy(dirichlet);
+            solver->dirichlet->updated = dirichlet->updated;
 
-        solver->update(step);
-        eslog::checkpointln("SIMULATION: LINEAR SYSTEM UPDATED");
-        solver->solve(step);
-        eslog::checkpointln("SIMULATION: LINEAR SYSTEM SOLVED");
+            eslog::info("      == ----------------------------------------------------------------------------- == \n");
+            eslog::info("      == SYSTEM ASSEMBLY                                                    %8.3f s = \n", eslog::time() - astart);
+
+            storeSystem(step);
+
+            solver->update(step);
+            solver->solve(step);
+
+            double solution = eslog::time();
+            x->copy(solver->x);
+            storeSolution(step);
+            assembler.updateSolution(x);
+            eslog::info("      == PROCESS SOLUTION                                                   %8.3f s == \n", eslog::time() - solution);
+            eslog::info("      == ----------------------------------------------------------------------------- == \n");
+
+            // iterations
+            while (step.iteration++ < configuration.nonlinear_solver.max_iterations) {
+                eslog::info("\n      ==                                                    %3d. EQUILIBRIUM ITERATION == \n", step.iteration);
+
+                astart = eslog::time();
+                U->copy(solver->x);
+                assembler.evaluate(step, time, K, nullptr, f, R, dirichlet);
+                if (K->updated || M->updated) {
+                    solver->A->set(0)->add(1, K)->add(newmark[0], M);
+                    solver->A->updated = true;
+                }
+
+                X->set(0);
+                X->add(newmark[0], U);
+                X->add(newmark[2], V);
+                X->add(newmark[3], W);
+                M->apply(1, X, 0, Y);
+
+                solver->b->copy(f);
+                solver->b->add(1, Y);
+                solver->b->add(-1, R);
+                solver->b->updated = true;
+
+                solver->dirichlet->copy(dirichlet);
+                solver->dirichlet->add(-1, U);
+                solver->dirichlet->updated = dirichlet->updated;
+
+                storeSystem(step);
+
+                eslog::info("      == ----------------------------------------------------------------------------- == \n");
+                eslog::info("      == SYSTEM ASSEMBLY                                                    %8.3f s == \n", eslog::time() - astart);
+
+                solver->update(step);
+                solver->solve(step);
+
+                if (checkDisplacement(step)) {
+                    break;
+                }
+            }
+            info::mesh->output->updateSolution(step, time);
+        }
         double solution = eslog::time();
 
         x->copy(solver->x);
@@ -205,7 +286,32 @@ void StructuralMechanicsTransientLinear::run(step::Step &step)
     }
 }
 
-void StructuralMechanicsTransientLinear::storeSystem(step::Step &step)
+bool StructuralMechanicsTransientNonLinear::checkDisplacement(step::Step &step)
+{
+    double solution = eslog::time();
+    double solutionNumerator = solver->x->norm();
+    solver->x->add(1, U);
+    x->copy(solver->x);
+
+    double solutionDenominator = std::max(solver->x->norm(), 1e-3);
+    double norm = solutionNumerator / solutionDenominator;
+
+    eslog::info("      == PROCESS SOLUTION                                                   %8.3f s == \n", eslog::time() - solution);
+    eslog::info("      == ----------------------------------------------------------------------------- == \n");
+
+    if (norm > configuration.nonlinear_solver.requested_first_residual) {
+        eslog::info("      == DISPLACEMENT NORM, CRITERIA                         %.5e / %.5e == \n", solutionNumerator, solutionDenominator * configuration.nonlinear_solver.requested_first_residual);
+        assembler.nextIteration(x);
+        return false;
+    } else {
+        eslog::info("      == DISPLACEMENT NORM, CRITERIA [CONVERGED]             %.5e / %.5e == \n", solutionNumerator, solutionDenominator * configuration.nonlinear_solver.requested_first_residual);
+        eslog::info("      =================================================================================== \n\n");
+        assembler.updateSolution(x);
+        return true;
+    }
+}
+
+void StructuralMechanicsTransientNonLinear::storeSystem(step::Step &step)
 {
     if (info::ecf->output.print_matrices) {
         eslog::storedata(" STORE: scheme/{K, f}\n");
@@ -218,13 +324,14 @@ void StructuralMechanicsTransientLinear::storeSystem(step::Step &step)
         Y->store(utils::filename(utils::debugDirectory(step) + "/scheme", "Y").c_str());
         Z->store(utils::filename(utils::debugDirectory(step) + "/scheme", "Z").c_str());
         U->store(utils::filename(utils::debugDirectory(step) + "/scheme", "U").c_str());
+        R->store(utils::filename(utils::debugDirectory(step) + "/scheme", "R").c_str());
         V->store(utils::filename(utils::debugDirectory(step) + "/scheme", "V").c_str());
         W->store(utils::filename(utils::debugDirectory(step) + "/scheme", "W").c_str());
         dU->store(utils::filename(utils::debugDirectory(step) + "/scheme", "dU").c_str());
     }
 }
 
-void StructuralMechanicsTransientLinear::storeSolution(step::Step &step)
+void StructuralMechanicsTransientNonLinear::storeSolution(step::Step &step)
 {
     if (info::ecf->output.print_matrices) {
         eslog::storedata(" STORE: scheme/{x}\n");

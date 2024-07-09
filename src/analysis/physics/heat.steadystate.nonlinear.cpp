@@ -40,12 +40,13 @@ HeatSteadyStateNonLinear::~HeatSteadyStateNonLinear()
 void HeatSteadyStateNonLinear::analyze(step::Step &step)
 {
     eslog::info("\n ============================================================================================= \n");
-    eslog::info(" == ANALYSIS                                                        NON-LINEAR STEADY STATE == \n");
+    eslog::info(" == ANALYSIS                                                                   STEADY STATE == \n");
     eslog::info(" == PHYSICS                                                                   HEAT TRANSFER == \n");
+    eslog::info(" == MODE                                                                         NON-LINEAR == \n");
     eslog::info(" ============================================================================================= \n");
 
     step.type = step::TYPE::TIME;
-    assembler.analyze(step);
+    assembler.analyze();
     info::mesh->output->updateMonitors(step);
 
     switch (configuration.solver) {
@@ -91,6 +92,7 @@ void HeatSteadyStateNonLinear::run(step::Step &step)
     time.start = 0;
     time.current = configuration.duration_time;
     time.final = configuration.duration_time;
+    time.timeIntegrationConstantK = 1;
 
     assembler.connect(K, nullptr, f, R, dirichlet);
 
@@ -142,7 +144,7 @@ void HeatSteadyStateNonLinear::run(step::Step &step)
     double solution = eslog::time();
     x->copy(solver->x);
     storeSolution(step);
-    assembler.updateSolution(step, x);
+    assembler.updateSolution(x);
     eslog::info("      == PROCESS SOLUTION                                                   %8.3f s == \n", eslog::time() - solution);
     eslog::info("      == ----------------------------------------------------------------------------- == \n");
 
@@ -193,7 +195,7 @@ bool HeatSteadyStateNonLinear::checkTemp(step::Step &step)
         eslog::info("      == TEMPERATURE NORM, CRITERIA [CONVERGED]              %.5e / %.5e == \n", solutionNumerator, solutionDenominator * configuration.nonlinear_solver.requested_first_residual);
     }
 
-    assembler.updateSolution(step, x);
+    assembler.updateSolution(x);
     return !(norm > configuration.nonlinear_solver.requested_first_residual);
 }
 

@@ -18,7 +18,7 @@ DEFAULT_ARGS {
  10        FETI;
 }
 
-INPUT_TYPE            GENERATOR;
+INPUT_TYPE         GENERATOR;
 PHYSICS        HEAT_TRANSFER;
 
 GENERATOR {
@@ -62,7 +62,7 @@ HEAT_TRANSFER {
       THERMAL_CONDUCTIVITY {
         MODEL   ISOTROPIC;
 
-        KXX     5 + 0.01 * (TEMPERATURE - 200);
+        KXX     5 + 0.01 * (TEMPERATURE/50);
       }
     }
   }
@@ -84,7 +84,7 @@ HEAT_TRANSFER {
 
       NONLINEAR_SOLVER {
         MAX_ITERATIONS  5;
-        REQUESTED_TEMPERATURE_RESIDUAL  1e-12;
+        REQUESTED_TEMPERATURE_RESIDUAL  1e-9;
       }
 
       FETI {

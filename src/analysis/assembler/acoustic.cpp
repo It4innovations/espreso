@@ -148,7 +148,7 @@ void Acoustic::evaluate(const step::Step &step, step::Frequency &frequency, Matr
 
 }
 
-void Acoustic::updateSolution(const step::Step &step, Vector_Base<double> *rex, Vector_Base<double> *imx)
+void Acoustic::updateSolution(Vector_Base<double> *rex, Vector_Base<double> *imx)
 {
 
 }

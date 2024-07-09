@@ -55,17 +55,17 @@ Assembler::~Assembler()
 
 }
 
-void Assembler::assemble(const step::Step &step, SubKernel::Action action)
+void Assembler::assemble(const SubKernel::Action action)
 {
     if (threaded) {
         #pragma omp parallel for
         for (int t = 0; t < info::env::threads; ++t) {
             for (size_t d = info::mesh->domains->distribution[t]; d < info::mesh->domains->distribution[t + 1]; d++) {
                 if (BEM[d] && action == SubKernel::Action::ASSEMBLE) {
-                    bem(step, action, d, BETI[d]);
+                    bem(action, d, BETI[d]);
                 } else {
                     for (esint i = info::mesh->elements->eintervalsDistribution[d]; i < info::mesh->elements->eintervalsDistribution[d + 1]; ++i) {
-                        elements(step, action, i);
+                        elements(action, i);
                     }
                 }
             }
@@ -76,11 +76,11 @@ void Assembler::assemble(const step::Step &step, SubKernel::Action action)
                 if (info::mesh->boundary[r]->dimension) {
                     for (size_t d = info::mesh->domains->distribution[t]; d < info::mesh->domains->distribution[t + 1]; d++) {
                         for (esint i = info::mesh->boundary[r]->eintervalsDistribution[d]; i < info::mesh->boundary[r]->eintervalsDistribution[d + 1]; ++i) {
-                            boundary(step, action, r, i);
+                            boundary(action, r, i);
                         }
                     }
                 } else {
-                    nodes(step, action, r, t);
+                    nodes(action, r, t);
                 }
             }
         }
@@ -88,10 +88,10 @@ void Assembler::assemble(const step::Step &step, SubKernel::Action action)
     } else {
         for (esint d = 0; d < info::mesh->domains->size; d++) {
             if (BEM[d] && action == SubKernel::Action::ASSEMBLE) {
-                bem(step, action, d, BETI[d]);
+                bem(action, d, BETI[d]);
             } else {
                 for (esint i = info::mesh->elements->eintervalsDistribution[d]; i < info::mesh->elements->eintervalsDistribution[d + 1]; ++i) {
-                    elements(step, action, i);
+                    elements(action, i);
                 }
             }
         }
@@ -99,12 +99,12 @@ void Assembler::assemble(const step::Step &step, SubKernel::Action action)
             if (info::mesh->boundary[r]->dimension) {
                 for (esint d = 0; d < info::mesh->domains->size; d++) {
                     for (esint i = info::mesh->boundary[r]->eintervalsDistribution[d]; i < info::mesh->boundary[r]->eintervalsDistribution[d + 1]; ++i) {
-                        boundary(step, action, r, i);
+                        boundary(action, r, i);
                     }
                 }
             } else {
                 for (int t = 0; t < info::env::threads; ++t) {
-                    nodes(step, action, r, t);
+                    nodes(action, r, t);
                 }
             }
         }

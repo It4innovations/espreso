@@ -5,7 +5,7 @@
 namespace espreso {
 
 template <>
-void runElement<Element::CODE::TETRA4>(const step::Step &step, HeatTransferElementOperators &operators, SubKernel::Action action)
+void runElement<Element::CODE::TETRA4>(const step::Step &step, const step::Time &time, HeatTransferElementOperators &operators, SubKernel::Action action)
 {
     switch (action) {
     case SubKernel::Action::PREPROCESS:
@@ -14,7 +14,7 @@ void runElement<Element::CODE::TETRA4>(const step::Step &step, HeatTransferEleme
     case SubKernel::Action::REASSEMBLE:
     case SubKernel::Action::ITERATION:
     case SubKernel::Action::SOLUTION:
-        runElementKernel<Element::CODE::TETRA4, 4, HeatTransferGPC::TETRA4, 3, 3>(step, operators, action); break;
+        runElementKernel<Element::CODE::TETRA4, 4, HeatTransferGPC::TETRA4, 3, 3>(step, time, operators, action); break;
     default: break;
     }
 }

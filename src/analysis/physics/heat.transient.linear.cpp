@@ -50,8 +50,9 @@ HeatTransientLinear::~HeatTransientLinear()
 void HeatTransientLinear::analyze(step::Step &step)
 {
     eslog::info("\n ============================================================================================= \n");
-    eslog::info(" == ANALYSIS                                                               LINEAR TRANSIENT == \n");
+    eslog::info(" == ANALYSIS                                                                      TRANSIENT == \n");
     eslog::info(" == PHYSICS                                                                   HEAT TRANSFER == \n");
+    eslog::info(" == MODE                                                                             LINEAR == \n");
     switch (configuration.transient_solver.method) {
     case TransientFirstOrderImplicitSolverConfiguration::METHOD::CRANK_NICOLSON:
         eslog::info(" == PHYSICS                                                                  CRANK NICOLSON == \n");
@@ -71,7 +72,7 @@ void HeatTransientLinear::analyze(step::Step &step)
     eslog::info(" ============================================================================================= \n");
 
     step.type = step::TYPE::TIME;
-    assembler.analyze(step);
+    assembler.analyze();
     info::mesh->output->updateMonitors(step);
 
     switch (configuration.solver) {
@@ -190,7 +191,7 @@ void HeatTransientLinear::run(step::Step &step)
 
         x->copy(solver->x);
         storeSolution(step);
-        assembler.updateSolution(step, x);
+        assembler.updateSolution(x);
         info::mesh->output->updateSolution(step, time);
 
         dU->copy(solver->x);

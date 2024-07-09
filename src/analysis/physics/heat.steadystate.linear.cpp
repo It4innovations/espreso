@@ -37,12 +37,13 @@ HeatSteadyStateLinear::~HeatSteadyStateLinear()
 void HeatSteadyStateLinear::analyze(step::Step &step)
 {
     eslog::info("\n ============================================================================================= \n");
-    eslog::info(" == ANALYSIS                                                            LINEAR STEADY STATE == \n");
     eslog::info(" == PHYSICS                                                                   HEAT TRANSFER == \n");
+    eslog::info(" == ANALYSIS                                                                   STEADY STATE == \n");
+    eslog::info(" == MODE                                                                             LINEAR == \n");
     eslog::info(" ============================================================================================= \n");
 
     step.type = step::TYPE::TIME;
-    assembler.analyze(step);
+    assembler.analyze();
     info::mesh->output->updateMonitors(step);
 
     switch (configuration.solver) {
@@ -125,7 +126,7 @@ void HeatSteadyStateLinear::run(step::Step &step)
 
     x->copy(solver->x);
     storeSolution(step);
-    assembler.updateSolution(step, x);
+    assembler.updateSolution(x);
     info::mesh->output->updateSolution(step, time);
     eslog::info("       = PROCESS SOLUTION                                                   %8.3f s = \n", eslog::time() - solution);
     eslog::info("       = ----------------------------------------------------------------------------- = \n");

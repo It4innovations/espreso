@@ -39,11 +39,8 @@ void StructuralMechanicsSteadyStateNonLinear::analyze(step::Step &step)
 {
     eslog::info("\n ============================================================================================= \n");
     eslog::info(" == ANALYSIS                                                                   STEADY STATE == \n");
-    if (configuration.large_displacement) {
-        eslog::info(" == PHYSICS                                    STRUCTURAL MECHANICS WITH LARGE DISPLACEMENT == \n");
-    } else {
-        eslog::info(" == PHYSICS                                                            STRUCTURAL MECHANICS == \n");
-    }
+    eslog::info(" == PHYSICS                                                            STRUCTURAL MECHANICS == \n");
+    eslog::info(" == MODE                                                                         NON-LINEAR == \n");
     eslog::info(" ============================================================================================= \n");
 
     step.type = step::TYPE::TIME;
@@ -161,7 +158,7 @@ void StructuralMechanicsSteadyStateNonLinear::run(step::Step &step)
         double solution = eslog::time();
         x->copy(solver->x);
         storeSolution(step);
-        assembler.updateSolution(step, x);
+        assembler.updateSolution(x);
         eslog::info("      == PROCESS SOLUTION                                                   %8.3f s == \n", eslog::time() - solution);
         eslog::info("      == ----------------------------------------------------------------------------- == \n");
 
@@ -209,12 +206,12 @@ bool StructuralMechanicsSteadyStateNonLinear::checkDisplacement(step::Step &step
 
     if (norm > configuration.nonlinear_solver.requested_first_residual) {
         eslog::info("      == DISPLACEMENT NORM, CRITERIA                         %.5e / %.5e == \n", solutionNumerator, solutionDenominator * configuration.nonlinear_solver.requested_first_residual);
-        assembler.nextIteration(step, x);
+        assembler.nextIteration(x);
         return false;
     } else {
         eslog::info("      == DISPLACEMENT NORM, CRITERIA [CONVERGED]             %.5e / %.5e == \n", solutionNumerator, solutionDenominator * configuration.nonlinear_solver.requested_first_residual);
         eslog::info("      =================================================================================== \n\n");
-        assembler.updateSolution(step, x);
+        assembler.updateSolution(x);
         return true;
     }
 }

@@ -36,8 +36,9 @@ StructuralMechanicsSteadyStateLinear::~StructuralMechanicsSteadyStateLinear()
 void StructuralMechanicsSteadyStateLinear::analyze(step::Step &step)
 {
     eslog::info("\n ============================================================================================= \n");
-    eslog::info(" == ANALYSIS                                                            LINEAR STEADY STATE == \n");
+    eslog::info(" == ANALYSIS                                                                   STEADY STATE == \n");
     eslog::info(" == PHYSICS                                                            STRUCTURAL MECHANICS == \n");
+    eslog::info(" == MODE                                                                             LINEAR == \n");
     eslog::info(" ============================================================================================= \n");
 
     step.type = step::TYPE::TIME;
@@ -125,7 +126,7 @@ void StructuralMechanicsSteadyStateLinear::run(step::Step &step)
     double solution = eslog::time();
     x->copy(solver->x);
     storeSolution(step);
-    assembler.updateSolution(step, x);
+    assembler.updateSolution(x);
     info::mesh->output->updateSolution(step, time);
     eslog::info("       = PROCESS SOLUTION                                                   %8.3f s = \n", eslog::time() - solution);
     eslog::info("       = ----------------------------------------------------------------------------- = \n");

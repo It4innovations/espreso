@@ -113,7 +113,7 @@ void AcousticComplexLinear::run(step::Step &step)
         double solution = eslog::time();
 //        system->solver.x->copyRealTo(re.x);
 //        system->solver.x->copyImagTo(im.x);
-        assembler.updateSolution(step, re.x, im.x);
+        assembler.updateSolution(re.x, im.x);
         info::mesh->output->updateSolution(step, frequency);
         eslog::info("       = PROCESS SOLUTION                                                   %8.3f s = \n", eslog::time() - solution);
         eslog::info("       = ----------------------------------------------------------------------------- = \n");

@@ -41,11 +41,11 @@ public:
     PhysicsConfiguration &settings;
 
 protected:
-    void assemble(const step::Step &step, SubKernel::Action action);
-    virtual void elements(const step::Step &step, SubKernel::Action action, size_t interval) =0;
-    virtual void boundary(const step::Step &step, SubKernel::Action action, size_t region, size_t interval) =0;
-    virtual void nodes(const step::Step &step, SubKernel::Action action, size_t region, size_t interval) =0;
-    virtual void bem(const step::Step &step, SubKernel::Action action, size_t domain, double *BETI)
+    void assemble(SubKernel::Action action);
+    virtual void elements(SubKernel::Action action, size_t interval) =0;
+    virtual void boundary(SubKernel::Action action, size_t region, size_t interval) =0;
+    virtual void nodes(SubKernel::Action action, size_t region, size_t interval) =0;
+    virtual void bem(SubKernel::Action action, size_t domain, double *BETI)
     {
         eslog::error("implement BEM assembler\n");
     }
