@@ -25,6 +25,7 @@
 #include "analysis/assembler/structuralmechanics/op.plasticity.h"
 #include "analysis/assembler/structuralmechanics/op.matrix.elasticity.h"
 #include "analysis/assembler/structuralmechanics/op.matrix.largedisplacement.h"
+#include "analysis/assembler/structuralmechanics/op.matrix.corotation.h"
 #include "analysis/assembler/structuralmechanics/op.normalpressure.h"
 #include "analysis/assembler/structuralmechanics/op.harmonicforce.h"
 
