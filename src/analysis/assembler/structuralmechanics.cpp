@@ -344,9 +344,12 @@ void StructuralMechanics::analyze(const step::Step &step)
 
         if (configuration.large_displacement) {
             elementKernels[i].displacement.activate(info::mesh->elements->nodes->cbegin() + ebegin, info::mesh->elements->nodes->cbegin() + eend, Results::displacement->data.data());
-            elementKernels[i].integrationDisplaced.activate();
-            elementKernels[i].elasticityLargeDisplacement.activate();
-            elementKernels[i].KLD.activate();
+            elementKernels[i].largeDisplacement.activate();
+
+        }
+        if (configuration.corotation) {
+            elementKernels[i].displacement.activate(info::mesh->elements->nodes->cbegin() + ebegin, info::mesh->elements->nodes->cbegin() + eend, Results::displacement->data.data());
+            elementKernels[i].corotation.activate();
         }
 
         elementKernels[i].coordinates.activate(info::mesh->elements->nodes->cbegin() + ebegin, info::mesh->elements->nodes->cbegin() + eend, !cartesian || gpcoo);

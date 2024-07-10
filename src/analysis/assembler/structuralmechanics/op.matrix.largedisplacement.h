@@ -3,7 +3,9 @@
 #define SRC_ANALYSIS_ASSEMBLER_STRUCTURALMECHANICS_MATRIX_LARGEDISPLACEMENT_H_
 
 #include "analysis/assembler/general/subkernel.h"
+#include "analysis/assembler/general/math.h"
 #include "config/ecf/physics/structuralmechanics.h"
+
 
 namespace espreso {
 
@@ -42,56 +44,47 @@ struct MatrixLargeDisplacementKernel<nodes, 3>: MatrixLargeDisplacement {
     template <typename Element>
     void simd(Element &element, size_t gp)
     {
-        SIMD scale = element.det * load1(element.w[gp]);
+        SIMD JC[9];
+        for (size_t n = 0; n < nodes; ++n) {
+            for (int i = 0; i < 3; ++i) {
+                for (int j = 0; j < 3; ++j) {
+                    JC[i * 3 + j] = JC[i * 3 + j] + load1(element.dN[gp][n][i]) * (element.coords.node[n][j] + element.displacement[n][j]);
+                }
+            }
+        }
+
+        SIMD F[9]; multAtB<3>(F, JC, element.invJ, 1.0);
+        SIMD eHat[9]; multAtB<3>(eHat, F, F, 0.5);
+        SIMD eVec[6], C05 = load1(0.5), C2 = load1(2);
+        eVec[0] = -C05 + eHat[0];
+        eVec[1] = -C05 + eHat[4];
+        eVec[2] = -C05 + eHat[8];
+        eVec[3] =   C2 * eHat[1];
+        eVec[4] =   C2 * eHat[5];
+        eVec[5] =   C2 * eHat[2];
+        SIMD sVec[6]; multMv<6, 6>(sVec, element.elasticity, eVec, load1(1.0));
 
         SIMD BL[6 * 3 * nodes];
         for (size_t n = 0; n < nodes; n++) {
             for (int j = 0; j < 3; j++) {
-                BL[0 * 3 * nodes + n + j * nodes] = element.F[j * 3 + 0] * element.dND[n][0];
-                BL[1 * 3 * nodes + n + j * nodes] = element.F[j * 3 + 1] * element.dND[n][1];
-                BL[2 * 3 * nodes + n + j * nodes] = element.F[j * 3 + 2] * element.dND[n][2];
-                BL[3 * 3 * nodes + n + j * nodes] = element.F[j * 3 + 0] * element.dND[n][1] + element.F[j * 3 + 1] * element.dND[n][0];
-                BL[4 * 3 * nodes + n + j * nodes] = element.F[j * 3 + 1] * element.dND[n][2] + element.F[j * 3 + 2] * element.dND[n][1];
-                BL[5 * 3 * nodes + n + j * nodes] = element.F[j * 3 + 0] * element.dND[n][2] + element.F[j * 3 + 2] * element.dND[n][0];
+                BL[0 * 3 * nodes + n + j * nodes] = F[j * 3 + 0] * element.dND[n][0];
+                BL[1 * 3 * nodes + n + j * nodes] = F[j * 3 + 1] * element.dND[n][1];
+                BL[2 * 3 * nodes + n + j * nodes] = F[j * 3 + 2] * element.dND[n][2];
+                BL[3 * 3 * nodes + n + j * nodes] = F[j * 3 + 0] * element.dND[n][1] + F[j * 3 + 1] * element.dND[n][0];
+                BL[4 * 3 * nodes + n + j * nodes] = F[j * 3 + 1] * element.dND[n][2] + F[j * 3 + 2] * element.dND[n][1];
+                BL[5 * 3 * nodes + n + j * nodes] = F[j * 3 + 0] * element.dND[n][2] + F[j * 3 + 2] * element.dND[n][0];
             }
         }
 
+        SIMD scale = element.det * load1(element.w[gp]);
         // BLt * C * BL
-        for (size_t n = 0; n < 3 * nodes; ++n) {
-            SIMD a = zeros(), b = zeros(), c = zeros(), d = zeros(), e = zeros(), f = zeros();
-            for (int i = 0; i < 6; ++i) {
-                a = a + BL[i * 3 * nodes + n] * element.elasticity[i * 6 + 0];
-                b = b + BL[i * 3 * nodes + n] * element.elasticity[i * 6 + 1];
-                c = c + BL[i * 3 * nodes + n] * element.elasticity[i * 6 + 2];
-                d = d + BL[i * 3 * nodes + n] * element.elasticity[i * 6 + 3];
-                e = e + BL[i * 3 * nodes + n] * element.elasticity[i * 6 + 4];
-                f = f + BL[i * 3 * nodes + n] * element.elasticity[i * 6 + 5];
-            }
-            SIMD nm = a * BL[0 * 3 * nodes + n] + b * BL[1 * 3 * nodes + n] + c * BL[2 * 3 * nodes + n] + d * BL[3 * 3 * nodes + n] + e * BL[4 * 3 * nodes + n] + f * BL[5 * 3 * nodes + n];
-            element.K[n * 3 * nodes + n] = element.K[n * 3 * nodes + n] + scale * nm;
-            for (size_t m = n + 1; m < 3 * nodes; ++m) {
-                SIMD nm = a * BL[0 * 3 * nodes + m] + b * BL[1 * 3 * nodes + m] + c * BL[2 * 3 * nodes + m] + d * BL[3 * 3 * nodes + m] + e * BL[4 * 3 * nodes + m] + f * BL[5 * 3 * nodes + m];
-                element.K[n * 3 * nodes + m] = element.K[n * 3 * nodes + m] + scale * nm;
-                element.K[m * 3 * nodes + n] = element.K[m * 3 * nodes + n] + scale * nm;
-            }
-        }
+        multAtBA<6, 3 * nodes>(element.K, BL, element.elasticity, scale);
 
-        for (size_t n = 0; n < 3 * nodes; ++n) {
-            SIMD nf =
-                    element.sVec[0] * BL[0 * 3 * nodes + n] +
-                    element.sVec[1] * BL[1 * 3 * nodes + n] +
-                    element.sVec[2] * BL[2 * 3 * nodes + n] +
-                    element.sVec[3] * BL[3 * 3 * nodes + n] +
-                    element.sVec[4] * BL[4 * 3 * nodes + n] +
-                    element.sVec[5] * BL[5 * 3 * nodes + n];
-            element.nf[n] = element.nf[n] + scale * nf;
-        }
-
-        // GLt * S * GL -- block diagonal
+        // GLt * S * GL -- block diagonal (TODO: create function)
         for (size_t n = 0; n < nodes; ++n) {
-            SIMD a = element.dND[n][0] * element.sVec[0] + element.dND[n][1] * element.sVec[3] + element.dND[n][2] * element.sVec[5];
-            SIMD b = element.dND[n][0] * element.sVec[3] + element.dND[n][1] * element.sVec[1] + element.dND[n][2] * element.sVec[4];
-            SIMD c = element.dND[n][0] * element.sVec[5] + element.dND[n][1] * element.sVec[4] + element.dND[n][2] * element.sVec[2];
+            SIMD a = element.dND[n][0] * sVec[0] + element.dND[n][1] * sVec[3] + element.dND[n][2] * sVec[5];
+            SIMD b = element.dND[n][0] * sVec[3] + element.dND[n][1] * sVec[1] + element.dND[n][2] * sVec[4];
+            SIMD c = element.dND[n][0] * sVec[5] + element.dND[n][1] * sVec[4] + element.dND[n][2] * sVec[2];
 
             SIMD nm = a * element.dND[n][0] + b * element.dND[n][1] + c * element.dND[n][2];
             element.K[(n + 0 * nodes) * 3 * nodes + (n + 0 * nodes)] = element.K[(n + 0 * nodes) * 3 * nodes + (n + 0 * nodes)] + scale * nm;
@@ -107,6 +100,9 @@ struct MatrixLargeDisplacementKernel<nodes, 3>: MatrixLargeDisplacement {
                 element.K[(m + 2 * nodes) * 3 * nodes + (n + 2 * nodes)] = element.K[(m + 2 * nodes) * 3 * nodes + (n + 2 * nodes)] + scale * nm;
             }
         }
+
+        // BLt * sVec
+        multMtv<6, 3 * nodes>(element.nf, BL, sVec, scale);
     }
 };
 

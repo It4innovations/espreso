@@ -223,7 +223,7 @@ void StructuralMechanicsSteadyStateNonLinear::storeSystem(step::Step &step)
         K->store(utils::filename(utils::debugDirectory(step) + "/scheme", "K").c_str());
         R->store(utils::filename(utils::debugDirectory(step) + "/scheme", "R").c_str());
         f->store(utils::filename(utils::debugDirectory(step) + "/scheme", "f").c_str());
-        dirichlet->store(utils::filename(utils::debugDirectory(step) + "/scheme", "dirichlet").c_str());
+        dirichlet->store(utils::filename(utils::debugDirectory(step) + "/scheme", "BC").c_str());
     }
 }
 

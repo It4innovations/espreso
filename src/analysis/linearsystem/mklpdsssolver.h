@@ -32,9 +32,9 @@ struct MKLPDSSLinearSystemSolver: DirectLinearSystemSolver<T> {
 
         if (info::ecf->output.print_matrices) {
             eslog::storedata(" STORE: system/{A, b, dirichlet}\n");
-            math::store(this->A, utils::filename(utils::debugDirectory(step) + "/system", "A").c_str());
-            math::store(this->b, utils::filename(utils::debugDirectory(step) + "/system", "b").c_str());
-            math::store(this->dirichlet, utils::filename(utils::debugDirectory(step) + "/system", "dirichlet").c_str());
+            math::store(this->A, utils::filename(utils::debugDirectory(step) + "/system", "K").c_str());
+            math::store(this->b, utils::filename(utils::debugDirectory(step) + "/system", "f").c_str());
+            math::store(this->dirichlet, utils::filename(utils::debugDirectory(step) + "/system", "BC").c_str());
         }
     }
 

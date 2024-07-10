@@ -103,6 +103,7 @@ struct IntegrationKernel<nodes, 3, 3>: Integration {
         element.invJ[7] = detJx * (-jacobian7 * jacobian0 + jacobian6 * jacobian1);
         element.invJ[8] = detJx * ( jacobian4 * jacobian0 - jacobian3 * jacobian1);
 
+
         for (size_t n = 0; n < nodes; ++n) {
             SIMD dNX = load1(element.dN[gp][n][0]);
             SIMD dNY = load1(element.dN[gp][n][1]);

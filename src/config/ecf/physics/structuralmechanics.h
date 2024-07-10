@@ -117,7 +117,7 @@ struct StructuralMechanicsGlobalSettings {
 
 struct StructuralMechanicsLoadStepConfiguration: public StructuralMechanicsLoadStepSolverConfiguration {
 
-	bool large_displacement;
+	bool large_displacement, corotation;
 
 	std::map<std::string, ECFExpression> temperature, normal_pressure;
 	std::map<std::string, ECFExpressionVector> force, angular_velocity, acceleration;

@@ -262,14 +262,13 @@ void runElementKernel(const step::Step &step, StructuralMechanicsElementOperator
     TemperatureKernel<nodes> temperature(operators.temperature);
     TemperatureToGPsKernel<nodes> temperatureToGPs(operators.temperature);
     IntegrationKernel<nodes, ndim, edim> integration(operators.integration);
-    IntegrationDisplacedKernel<nodes, ndim> integrationDisplaced(operators.integrationDisplaced);
     DisplacementKernel<nodes, ndim> displacement(operators.displacement);
     SmallStrainTensorKernel<nodes, ndim> smallStrainTensor(operators.smallStrainTensor);
     ElasticityKernel<ndim> elasticity(operators.elasticity);
-    ElasticityLargeDisplacementKernel<ndim> elasticityLargeDisplacement(operators.elasticityLargeDisplacement);
     PlasticityKernel<nodes, ndim> plasticity(operators.plasticity, action);
     MatrixElasticityKernel<nodes, ndim> K(operators.K);
-    MatrixLargeDisplacementKernel<nodes, ndim> KLD(operators.KLD);
+    MatrixLargeDisplacementKernel<nodes, ndim> largeDisplacement(operators.largeDisplacement);
+    MatrixCorotationKernel<nodes, ndim> corotation(operators.corotation);
     MatrixMassKernel<nodes, ndim> M(operators.M);
     AccelerationKernel<nodes, ndim> acceleration(operators.acceleration);
     AngularVelocityKernel<nodes, ndim> angularVelocity(operators.angularVelocity);
@@ -319,13 +318,12 @@ void runElementKernel(const step::Step &step, StructuralMechanicsElementOperator
     thickness.setActiveness(action);
     temperature.setActiveness(action);
     elasticity.setActiveness(action);
-    elasticityLargeDisplacement.setActiveness(action, step.iteration);
-    integrationDisplaced.setActiveness(action, step.iteration);
     plasticity.setActiveness(action);
     displacement.setActiveness(action);
     smallStrainTensor.setActiveness(action);
-    KLD.setActiveness(action, step.iteration);
-    K.setActiveness(action, !KLD.isactive);
+    largeDisplacement.setActiveness(action, step.iteration);
+    corotation.setActiveness(action, step.iteration);
+    K.setActiveness(action, !largeDisplacement.isactive);
     M.setActiveness(action);
 //    C.setActiveness(action);
     acceleration.setActiveness(action);
@@ -361,10 +359,6 @@ void runElementKernel(const step::Step &step, StructuralMechanicsElementOperator
         for (size_t gp = 0; gp < gps; ++gp) {
             integration.simd(element, gp);
 
-            if (integrationDisplaced.isactive) {
-                integrationDisplaced.simd(element, gp);
-            }
-
             if (coordinatesToGPs.isactive) {
                 coordinatesToGPs.simd(element, gp);
             }
@@ -382,9 +376,6 @@ void runElementKernel(const step::Step &step, StructuralMechanicsElementOperator
             if (elasticity.isactive) {
                 elasticity.simd(element, gp);
             }
-            if (elasticityLargeDisplacement.isactive) {
-                elasticityLargeDisplacement.simd(element, gp);
-            }
             if (smallStrainTensor.isactive) {
                 smallStrainTensor.simd(element, gp);
             }
@@ -394,8 +385,8 @@ void runElementKernel(const step::Step &step, StructuralMechanicsElementOperator
             if (K.isactive) {
                 K.simd(element, gp);
             }
-            if (KLD.isactive) {
-                KLD.simd(element, gp);
+            if (largeDisplacement.isactive) {
+                largeDisplacement.simd(element, gp);
             }
             if (M.isactive) {
                 M.simd(element, gp);
@@ -413,6 +404,10 @@ void runElementKernel(const step::Step &step, StructuralMechanicsElementOperator
             if (sigma.isactive) {
                 sigma.simd(element, gp);
             }
+        }
+
+        if (corotation.isactive) {
+            corotation.simd(element);
         }
 
         if (outK.isactive) {

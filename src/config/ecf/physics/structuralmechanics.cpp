@@ -161,6 +161,11 @@ StructuralMechanicsLoadStepConfiguration::StructuralMechanicsLoadStepConfigurati
 			.setdescription({ "Turn on large displacement." })
 			.setdatatype({ ECFDataType::BOOL }));
 
+	corotation = false;
+    REGISTER(corotation, ECFMetaData()
+            .setdescription({ "Turn on corotation formulation." })
+            .setdatatype({ ECFDataType::BOOL }));
+
 	REGISTER(temperature, ECFMetaData()
 			.setdescription({ "The name of a region.", "Temperature of a given region." })
 			.setdatatype({ ECFDataType::ELEMENTS_REGION, ECFDataType::EXPRESSION })
