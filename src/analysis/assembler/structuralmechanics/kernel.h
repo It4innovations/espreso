@@ -268,7 +268,7 @@ void runElementKernel(const step::Step &step, StructuralMechanicsElementOperator
     PlasticityKernel<nodes, ndim> plasticity(operators.plasticity, action);
     MatrixElasticityKernel<nodes, ndim> K(operators.K);
     MatrixLargeDisplacementKernel<nodes, ndim> largeDisplacement(operators.largeDisplacement);
-    MatrixCorotationKernel<nodes, ndim> corotation(operators.corotation);
+    MatrixCorotationKernel<code, nodes, gps, ndim> corotation(operators.corotation);
     MatrixMassKernel<nodes, ndim> M(operators.M);
     AccelerationKernel<nodes, ndim> acceleration(operators.acceleration);
     AngularVelocityKernel<nodes, ndim> angularVelocity(operators.angularVelocity);
@@ -448,6 +448,26 @@ void setBoundaryKernel(StructuralMechanicsFaceOperators &operators, SubKernel::A
                 [] (Element &element, size_t &gp, size_t &s, double value) { element.ecf.normalPressure[s] = value; }));
     }
 
+    if (operators.pressure.pressure.expression) {
+        operators.expressions.gp.push_back(new ExternalGPsExpression<ndim, Element>(
+                operators.pressure.pressure.expression->evaluator,
+                [] (Element &element, size_t &gp, size_t &s, double value) { element.ecf.pressure.pressure[s] = value; }));
+    }
+    if (operators.pressure.direction.expressionVector) {
+        operators.expressions.gp.push_back(new ExternalGPsExpression<ndim, Element>(
+                operators.pressure.direction.expressionVector->x.evaluator,
+                [] (Element &element, size_t &gp, size_t &s, double value) { element.ecf.pressure.direction[0][s] = value; }));
+        operators.expressions.gp.push_back(new ExternalGPsExpression<ndim, Element>(
+                operators.pressure.direction.expressionVector->y.evaluator,
+                [] (Element &element, size_t &gp, size_t &s, double value) { element.ecf.pressure.direction[1][s] = value; }));
+
+        if constexpr(ndim == 3) {
+            operators.expressions.gp.push_back(new ExternalGPsExpression<ndim, Element>(
+                    operators.pressure.direction.expressionVector->z.evaluator,
+                    [] (Element &element, size_t &gp, size_t &s, double value) { element.ecf.pressure.direction[2][s] = value; }));
+        }
+    }
+
     BasisKernel<code, nodes, gps, edim> basis(operators.basis);
     CoordinatesKernel<nodes, ndim> coordinates(operators.coordinates);
     IntegrationKernel<nodes, ndim, edim> integration(operators.integration);
@@ -486,6 +506,7 @@ void runBoundaryKernel(const StructuralMechanicsFaceOperators &operators, SubKer
     ThicknessToGp<nodes, ndim> thicknessToGPs(operators.thickness);
     IntegrationKernel<nodes, ndim, edim> integration(operators.integration);
     NormalPressureKernel<nodes, ndim> normalPressure(operators.normalPressure);
+    PressureKernel<nodes, ndim> pressure(operators.pressure);
     RHSFillerKernel<nodes> outReRHS(operators.reRHSfiller);
     RHSFillerKernel<nodes> outImRHS(operators.imRHSfiller);
 
@@ -529,6 +550,9 @@ void runBoundaryKernel(const StructuralMechanicsFaceOperators &operators, SubKer
 
             if (normalPressure.isactive) {
                 normalPressure.simd(element, gp);
+            }
+            if (pressure.isactive) {
+                pressure.simd(element, gp);
             }
         }
 

@@ -27,6 +27,7 @@
 #include "analysis/assembler/structuralmechanics/op.matrix.largedisplacement.h"
 #include "analysis/assembler/structuralmechanics/op.matrix.corotation.h"
 #include "analysis/assembler/structuralmechanics/op.normalpressure.h"
+#include "analysis/assembler/structuralmechanics/op.pressure.h"
 #include "analysis/assembler/structuralmechanics/op.harmonicforce.h"
 
 namespace espreso {
@@ -77,6 +78,7 @@ struct StructuralMechanicsFaceOperators {
     Integration integration;
     Normal normal;
 
+    Pressure pressure;
     NormalPressure normalPressure;
     HarmonicForce harmonicForce;
 

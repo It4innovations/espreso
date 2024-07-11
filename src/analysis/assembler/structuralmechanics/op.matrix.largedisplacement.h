@@ -53,8 +53,8 @@ struct MatrixLargeDisplacementKernel<nodes, 3>: MatrixLargeDisplacement {
             }
         }
 
-        SIMD F[9]; multAtB<3>(F, JC, element.invJ, 1.0);
-        SIMD eHat[9]; multAtB<3>(eHat, F, F, 0.5);
+        SIMD F[9]; multAtB<3, 3, 3>(F, JC, element.invJ, load1(1.0));
+        SIMD eHat[9]; multAtB<3, 3, 3>(eHat, F, F, load1(.5));
         SIMD eVec[6], C05 = load1(0.5), C2 = load1(2);
         eVec[0] = -C05 + eHat[0];
         eVec[1] = -C05 + eHat[4];
@@ -62,7 +62,8 @@ struct MatrixLargeDisplacementKernel<nodes, 3>: MatrixLargeDisplacement {
         eVec[3] =   C2 * eHat[1];
         eVec[4] =   C2 * eHat[5];
         eVec[5] =   C2 * eHat[2];
-        SIMD sVec[6]; multMv<6, 6>(sVec, element.elasticity, eVec, load1(1.0));
+        SIMD sVec[6];
+        multAB<6, 6, 1>(sVec, element.elasticity, eVec, load1(1.0));
 
         SIMD BL[6 * 3 * nodes];
         for (size_t n = 0; n < nodes; n++) {
@@ -102,7 +103,7 @@ struct MatrixLargeDisplacementKernel<nodes, 3>: MatrixLargeDisplacement {
         }
 
         // BLt * sVec
-        multMtv<6, 3 * nodes>(element.nf, BL, sVec, scale);
+        multAtB<6, 3 * nodes, 1>(element.nf, BL, sVec, scale);
     }
 };
 

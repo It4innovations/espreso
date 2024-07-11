@@ -321,6 +321,11 @@ void StructuralMechanics::analyze(const step::Step &step)
         }
     }
 
+    for (auto pressure = configuration.pressure.begin(); pressure != configuration.pressure.end(); ++pressure) {
+        eslog::info("  %s: %*s\n", pressure->first.c_str(), 90 - pressure->first.size(), " ");
+        correct &= checkExpression("PRESSURE", pressure->second.pressure);
+        correct &= checkExpression("DIRECTION", pressure->second.direction);
+    }
     if (configuration.normal_pressure.size()) {
         correct &= checkBoundaryParameter("NORMAL_PRESSURE", configuration.normal_pressure);
     }
@@ -390,6 +395,10 @@ void StructuralMechanics::analyze(const step::Step &step)
                 faceKernels[r][i].normalPressure.activate(getExpression(info::mesh->boundary[r]->name, configuration.normal_pressure), settings.element_behaviour);
                 if (settings.contact_interfaces) {
                     faceKernels[r][i].normal.activate(region->elements->cbegin() + region->eintervals[i].begin, region->elements->cbegin() + region->eintervals[i].end, Results::normal->data.data(), faceMultiplicity.data());
+                }
+                auto pressure = configuration.pressure.find(info::mesh->boundary[r]->name);
+                if (pressure != configuration.pressure.end()) {
+                    faceKernels[r][i].pressure.activate(pressure->second.pressure, pressure->second.direction, settings.element_behaviour);
                 }
             }
         }

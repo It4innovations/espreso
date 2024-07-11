@@ -154,6 +154,12 @@ FixedWallConfiguration::FixedWallConfiguration()
 	REGISTER(point, ECFMetaData().setdescription({ "Point in the plane." }));
 }
 
+PressureConfiguration::PressureConfiguration()
+{
+    REGISTER(direction, ECFMetaData().setdescription({ "Pressure direction." }));
+    REGISTER(pressure, ECFMetaData().setdescription({ "pressure." }).setdatatype({ ECFDataType::EXPRESSION }));
+}
+
 StructuralMechanicsLoadStepConfiguration::StructuralMechanicsLoadStepConfiguration()
 {
 	large_displacement = false;
@@ -174,6 +180,10 @@ StructuralMechanicsLoadStepConfiguration::StructuralMechanicsLoadStepConfigurati
 			.setdescription({ "The name of a region.", "Normal pressure on a given region." })
 			.setdatatype({ ECFDataType::BOUNDARY_REGION, ECFDataType::EXPRESSION })
 			.setpattern({ "MY_REGION", "0" }));
+    REGISTER(pressure, ECFMetaData()
+            .setdescription({ "The name of a region.", "Pressure configuration." })
+            .setdatatype({ ECFDataType::BOUNDARY_REGION })
+            .setpattern({ "MY_REGION", }));
 
 	REGISTER(force, ECFMetaData()
 			.setdescription({ "The name of a region.", "Force on a given region." })

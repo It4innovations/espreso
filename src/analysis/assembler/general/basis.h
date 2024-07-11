@@ -36,6 +36,27 @@ struct BasisKernel: Basis {
             }
         }
     }
+
+    static void setCenter(double &w, double N[], double dN[][edim])
+    {
+        w = GaussPoints<code, nodes, gps, edim>::cw;
+        for (size_t n = 0; n < nodes; ++n) {
+            N[n] = GaussPoints<code, nodes, gps, edim>::cN[n];
+            for (size_t d = 0; d < edim; ++d) {
+                dN[n][d] = GaussPoints<code, nodes, gps, edim>::cdN[d * nodes + n];
+            }
+        }
+    }
+};
+
+
+
+template <Element::CODE code, size_t nodes, size_t gps, size_t edim>
+struct BasisCenterKernel {
+    static void set(double *w, double *N, double **dN)
+    {
+
+    }
 };
 
 template<>
@@ -43,6 +64,7 @@ struct GaussPoints<Element::CODE::LINE2, 2, 2, 1> {
 
     constexpr static int nodes = 2, gps = 2, edim = 1;
     static double w[gps], N[gps * nodes], dN[gps * nodes * edim];
+    static double cw, cN[nodes], cdN[nodes * edim];
 
     static void set()
     {
@@ -64,6 +86,7 @@ struct GaussPoints<Element::CODE::TRIANGLE3, 3, 6, 2> {
 
     constexpr static int nodes = 3, gps = 6, edim = 2;
     static double w[gps], N[gps * nodes], dN[gps * nodes * edim];
+    static double cw, cN[nodes], cdN[nodes * edim];
 
     static void set()
     {
@@ -97,6 +120,7 @@ struct GaussPoints<Element::CODE::SQUARE4, 4, 4, 2> {
 
     constexpr static int nodes = 4, gps = 4, edim = 2;
     static double w[gps], N[gps * nodes], dN[gps * nodes * edim];
+    static double cw, cN[nodes], cdN[nodes * edim];
 
     static void set()
     {
@@ -130,6 +154,7 @@ struct GaussPoints<Element::CODE::TETRA4, 4, 4, 3> {
 
     constexpr static int nodes = 4, gps = 4, edim = 3;
     static double w[gps], N[gps * nodes], dN[gps * nodes * edim];
+    static double cw, cN[nodes], cdN[nodes * edim];
 
     static void set()
     {
@@ -168,6 +193,7 @@ struct GaussPoints<Element::CODE::PYRAMID5, 5, 8, 3> {
 
     constexpr static int nodes = 5, gps = 8, edim = 3;
     static double w[gps], N[gps * nodes], dN[gps * nodes * edim];
+    static double cw, cN[nodes], cdN[nodes * edim];
 
     static void set()
     {
@@ -211,6 +237,7 @@ struct GaussPoints<Element::CODE::PRISMA6, 6, 9, 3> {
 
     constexpr static int nodes = 6, gps = 9, edim = 3;
     static double w[gps], N[gps * nodes], dN[gps * nodes * edim];
+    static double cw, cN[nodes], cdN[nodes * edim];
 
     static void set()
     {
@@ -268,6 +295,7 @@ struct GaussPoints<Element::CODE::HEXA8, 8, 8, 3> {
 
     constexpr static int nodes = 8, gps = 8, edim = 3;
     static double w[gps], N[gps * nodes], dN[gps * nodes * edim];
+    static double cw, cN[nodes], cdN[nodes * edim];
 
     static void set()
     {
@@ -316,6 +344,50 @@ struct GaussPoints<Element::CODE::HEXA8, 8, 8, 3> {
             dN[3 * gp * nodes + 2 * nodes + 6] = 0.125 * ( (1 + r) * (1 + s));
             dN[3 * gp * nodes + 2 * nodes + 7] = 0.125 * ( (1 - r) * (1 + s));
         }
+
+        { // center
+            double r = 0;
+            double s = 0;
+            double t = 0;
+
+            cw = 1;
+
+            cN[0] = 0.125 * (1 - r) * (1 - s) * (1 - t);
+            cN[1] = 0.125 * (r + 1) * (1 - s) * (1 - t);
+            cN[2] = 0.125 * (r + 1) * (s + 1) * (1 - t);
+            cN[3] = 0.125 * (1 - r) * (s + 1) * (1 - t);
+            cN[4] = 0.125 * (1 - r) * (1 - s) * (t + 1);
+            cN[5] = 0.125 * (r + 1) * (1 - s) * (t + 1);
+            cN[6] = 0.125 * (r + 1) * (s + 1) * (t + 1);
+            cN[7] = 0.125 * (1 - r) * (s + 1) * (t + 1);
+
+            cdN[0 * nodes + 0] = 0.125 * (-(1 - s) * (1 - t));
+            cdN[0 * nodes + 1] = 0.125 * ( (1 - s) * (1 - t));
+            cdN[0 * nodes + 2] = 0.125 * ( (1 + s) * (1 - t));
+            cdN[0 * nodes + 3] = 0.125 * (-(1 + s) * (1 - t));
+            cdN[0 * nodes + 4] = 0.125 * (-(1 - s) * (1 + t));
+            cdN[0 * nodes + 5] = 0.125 * ( (1 - s) * (1 + t));
+            cdN[0 * nodes + 6] = 0.125 * ( (1 + s) * (1 + t));
+            cdN[0 * nodes + 7] = 0.125 * (-(1 + s) * (1 + t));
+
+            cdN[1 * nodes + 0] = 0.125 * (-(1 - r) * (1 - t));
+            cdN[1 * nodes + 1] = 0.125 * (-(1 + r) * (1 - t));
+            cdN[1 * nodes + 2] = 0.125 * ( (1 + r) * (1 - t));
+            cdN[1 * nodes + 3] = 0.125 * ( (1 - r) * (1 - t));
+            cdN[1 * nodes + 4] = 0.125 * (-(1 - r) * (1 + t));
+            cdN[1 * nodes + 5] = 0.125 * (-(1 + r) * (1 + t));
+            cdN[1 * nodes + 6] = 0.125 * ( (1 + r) * (1 + t));
+            cdN[1 * nodes + 7] = 0.125 * ( (1 - r) * (1 + t));
+
+            cdN[2 * nodes + 0] = 0.125 * (-(1 - r) * (1 - s));
+            cdN[2 * nodes + 1] = 0.125 * (-(1 + r) * (1 - s));
+            cdN[2 * nodes + 2] = 0.125 * (-(1 + r) * (1 + s));
+            cdN[2 * nodes + 3] = 0.125 * (-(1 - r) * (1 + s));
+            cdN[2 * nodes + 4] = 0.125 * ( (1 - r) * (1 - s));
+            cdN[2 * nodes + 5] = 0.125 * ( (1 + r) * (1 - s));
+            cdN[2 * nodes + 6] = 0.125 * ( (1 + r) * (1 + s));
+            cdN[2 * nodes + 7] = 0.125 * ( (1 - r) * (1 + s));
+        }
     }
 };
 
@@ -324,6 +396,7 @@ struct GaussPoints<Element::CODE::LINE3, 3, 3, 1> {
 
     constexpr static int nodes = 3, gps = 3, edim = 1;
     static double w[gps], N[gps * nodes], dN[gps * nodes * edim];
+    static double cw, cN[nodes], cdN[nodes * edim];
 
     static void set()
     {
@@ -349,6 +422,7 @@ struct GaussPoints<Element::CODE::TRIANGLE6, 6, 6, 2> {
 
     constexpr static int nodes = 6, gps = 6, edim = 2;
     static double w[gps], N[gps * nodes], dN[gps * nodes * edim];
+    static double cw, cN[nodes], cdN[nodes * edim];
 
     static void set()
     {
@@ -391,6 +465,7 @@ struct GaussPoints<Element::CODE::SQUARE8, 8, 9, 2> {
 
     constexpr static int nodes = 8, gps = 9, edim = 2;
     static double w[gps], N[gps * nodes], dN[gps * nodes * edim];
+    static double cw, cN[nodes], cdN[nodes * edim];
 
     static void set()
     {
@@ -443,6 +518,7 @@ struct GaussPoints<Element::CODE::TETRA10, 10, 15, 3> {
 
     constexpr static int nodes = 10, gps = 15, edim = 3;
     static double w[gps], N[gps * nodes], dN[gps * nodes * edim];
+    static double cw, cN[nodes], cdN[nodes * edim];
 
     static void set()
     {
@@ -530,6 +606,7 @@ struct GaussPoints<Element::CODE::PYRAMID13, 13, 14, 3> {
 
     constexpr static int nodes = 13, gps = 14, edim = 3;
     static double w[gps], N[gps * nodes], dN[gps * nodes * edim];
+    static double cw, cN[nodes], cdN[nodes * edim];
 
     static void set()
     {
@@ -623,6 +700,7 @@ struct GaussPoints<Element::CODE::PRISMA15, 15, 9, 3> {
 
     constexpr static int nodes = 15, gps = 9, edim = 3;
     static double w[gps], N[gps * nodes], dN[gps * nodes * edim];
+    static double cw, cN[nodes], cdN[nodes * edim];
 
     static void set()
     {
@@ -719,6 +797,7 @@ template<>
 struct GaussPoints<Element::CODE::HEXA20, 20, 8, 3> {
     constexpr static int nodes = 20, gps = 8, edim = 3;
     static double w[gps], N[gps * nodes], dN[gps * nodes * edim];
+    static double cw, cN[nodes], cdN[nodes * edim];
 
     static void set()
     {

@@ -88,6 +88,10 @@ template <size_t nodes, size_t gps, size_t ndim, size_t edim> struct StructuralM
 template <size_t nodes, size_t gps, size_t ndim, size_t edim> struct StructuralMechanicsBoundary: public GeneralBoundary<nodes, gps, ndim, edim> {
     struct {
         alignas(SIMD::size * sizeof(double)) SIMD normalPressure;
+        struct {
+            alignas(SIMD::size * sizeof(double)) SIMD pressure;
+            alignas(SIMD::size * sizeof(double)) SIMD direction[ndim];
+        } pressure;
     } ecf;
 
     alignas(SIMD::size * sizeof(double)) SIMD normal[ndim];
@@ -115,3 +119,4 @@ template <Element::CODE code> void runNode(const step::Step &step, StructuralMec
 }
 
 #endif /* SRC_ANALYSIS_ASSEMBLER_STRUCTURALMECHANICS_ELEMENT_H_ */
+

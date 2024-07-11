@@ -115,6 +115,7 @@ void StructuralMechanicsSteadyStateNonLinear::run(step::Step &step)
     eslog::info("      ==  NEWTON RAPHSON CONVERGENCE CRITERIA                                          == \n");
     if (configuration.nonlinear_solver.check_first_residual) {
         eslog::info("      ==  - DISPLACEMENT RESIDUAL                                                 TRUE == \n");
+        eslog::info("      ==  - REQUESTED NORM                                                 %.5e == \n", configuration.nonlinear_solver.requested_first_residual);
     } else {
         eslog::info("      ==  - DISPLACEMENT RESIDUAL                                                FALSE == \n");
     }

@@ -101,6 +101,13 @@ struct FixedWallConfiguration: public ECFDescription {
 	FixedWallConfiguration();
 };
 
+struct PressureConfiguration: public ECFDescription {
+    ECFExpression pressure;
+    ECFExpressionVector direction;
+
+    PressureConfiguration();
+};
+
 struct StructuralMechanicsGlobalSettings {
 
 	enum class ELEMENT_BEHAVIOUR {
@@ -120,6 +127,7 @@ struct StructuralMechanicsLoadStepConfiguration: public StructuralMechanicsLoadS
 	bool large_displacement, corotation;
 
 	std::map<std::string, ECFExpression> temperature, normal_pressure;
+	std::map<std::string, PressureConfiguration> pressure;
 	std::map<std::string, ECFExpressionVector> force, angular_velocity, acceleration;
 	std::map<std::string, FixedWallConfiguration> fixed_wall;
 	std::map<std::string, ECFHarmonicExpressionVector> harmonic_force, harmonic_acceleration;
