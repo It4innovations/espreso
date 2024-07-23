@@ -46,7 +46,7 @@ ml OpenBLAS/0.3.20-GCC-11.3.0
 ml OpenMPI/4.1.4-GCC-11.3.0
 ml METIS/5.1.0-GCCcore-11.3.0
 if [ "${cusparse_version}" = "legacy" ]; then ml CUDA/11.7.0; fi
-if [ "${cusparse_version}" = "modern" ]; then ml CUDA/12.2.0; fi
+if [ "${cusparse_version}" = "modern" ]; then ml CUDA/12.4.0; fi
 
 export CXX=mpic++
 export CXXFLAGS+=" -fmax-errors=1"

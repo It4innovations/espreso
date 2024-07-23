@@ -299,10 +299,15 @@ namespace spblas {
     {
         if(transpose_sol == 'N') {
             T one = 1.0;
-            if(stage == 'B') CHECK(cusparseSpSM_bufferSize(h->h, _char_to_operation<T>(transpose_mat), _char_to_operation<T>(transpose_rhs), &one, matrix->d, rhs->d, sol->d, _sparse_data_type<T>(), CUSPARSE_SPSM_ALG_DEFAULT, descr_trsm->d, &buffersize));
-            // if(stage == 'P') CHECK(cusparseSpSM_analysis  (h->h, _char_to_operation<T>(transpose_mat), _char_to_operation<T>(transpose_rhs), &one, matrix->d, rhs->d, sol->d, _sparse_data_type<T>(), CUSPARSE_SPSM_ALG_DEFAULT, descr_trsm->d, buffer)); // it does not make sense to do Preprocessing. Update will be called anyway, which has to completely redo the analysis
-            if(stage == 'U') CHECK(cusparseSpSM_analysis  (h->h, _char_to_operation<T>(transpose_mat), _char_to_operation<T>(transpose_rhs), &one, matrix->d, rhs->d, sol->d, _sparse_data_type<T>(), CUSPARSE_SPSM_ALG_DEFAULT, descr_trsm->d, buffer));
-            if(stage == 'C') CHECK(cusparseSpSM_solve     (h->h, _char_to_operation<T>(transpose_mat), _char_to_operation<T>(transpose_rhs), &one, matrix->d, rhs->d, sol->d, _sparse_data_type<T>(), CUSPARSE_SPSM_ALG_DEFAULT, descr_trsm->d));
+            if(stage == 'B') CHECK(cusparseSpSM_bufferSize  (h->h, _char_to_operation<T>(transpose_mat), _char_to_operation<T>(transpose_rhs), &one, matrix->d, rhs->d, sol->d, _sparse_data_type<T>(), CUSPARSE_SPSM_ALG_DEFAULT, descr_trsm->d, &buffersize));
+#if CUDART_VERSION >= 12040
+            if(stage == 'P') CHECK(cusparseSpSM_analysis    (h->h, _char_to_operation<T>(transpose_mat), _char_to_operation<T>(transpose_rhs), &one, matrix->d, rhs->d, sol->d, _sparse_data_type<T>(), CUSPARSE_SPSM_ALG_DEFAULT, descr_trsm->d, buffer));
+            if(stage == 'U') CHECK(cusparseSpSM_updateMatrix(h->h, descr_trsm->d, matrix->vals_ptr, CUSPARSE_SPSM_UPDATE_GENERAL));
+#else
+            // if(stage == 'P') CHECK(cusparseSpSM_analysis    (h->h, _char_to_operation<T>(transpose_mat), _char_to_operation<T>(transpose_rhs), &one, matrix->d, rhs->d, sol->d, _sparse_data_type<T>(), CUSPARSE_SPSM_ALG_DEFAULT, descr_trsm->d, buffer)); // it does not make sense to do Preprocessing. Update will be called anyway, which has to completely redo the analysis
+            if(stage == 'U') CHECK(cusparseSpSM_analysis    (h->h, _char_to_operation<T>(transpose_mat), _char_to_operation<T>(transpose_rhs), &one, matrix->d, rhs->d, sol->d, _sparse_data_type<T>(), CUSPARSE_SPSM_ALG_DEFAULT, descr_trsm->d, buffer));
+#endif
+            if(stage == 'C') CHECK(cusparseSpSM_solve       (h->h, _char_to_operation<T>(transpose_mat), _char_to_operation<T>(transpose_rhs), &one, matrix->d, rhs->d, sol->d, _sparse_data_type<T>(), CUSPARSE_SPSM_ALG_DEFAULT, descr_trsm->d));
         }
         else if(transpose_sol == 'T') {
             descr_matrix_dense descr_sol_compl = std::make_shared<_descr_matrix_dense>(sol->get_complementary());
