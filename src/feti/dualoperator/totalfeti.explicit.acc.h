@@ -7,7 +7,6 @@
 #include <memory>
 
 #include "totalfeti.explicit.h"
-#include "math/wrappers/math.acc.feti.dual.h"
 #include "gpu/gpu_management.h"
 #include "gpu/gpu_dnblas.h"
 #include "gpu/gpu_spblas.h"
