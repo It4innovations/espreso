@@ -28,10 +28,10 @@ namespace espreso {
  */
 
 template <typename T, typename I>
-class TotalFETIExplicitAcc: public DualOperator<T> {
+class TotalFETIGpu: public DualOperator<T> {
 public:
-    TotalFETIExplicitAcc(FETI<T> &feti, bool is_expl);
-    virtual ~TotalFETIExplicitAcc();
+    TotalFETIGpu(FETI<T> &feti, bool is_expl);
+    virtual ~TotalFETIGpu();
 
     virtual void info() override;
     virtual void set(const step::Step &step) override;

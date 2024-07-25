@@ -1,7 +1,7 @@
 
 #include <numeric>
 
-#include "totalfeti.explicit.acc.h"
+#include "totalfeti.gpu.h"
 #include "feti/common/applyB.h"
 
 #include "basis/utilities/sysutils.h"
@@ -30,7 +30,7 @@ using TIMERS                  = DualOperatorExplicitGpuConfig::TIMERS;
 using MEMORY_INFO             = DualOperatorExplicitGpuConfig::MEMORY_INFO;
 
 template <typename T, typename I>
-TotalFETIExplicitAcc<T,I>::TotalFETIExplicitAcc(FETI<T> &feti, bool is_expl)
+TotalFETIGpu<T,I>::TotalFETIGpu(FETI<T> &feti, bool is_expl)
 : DualOperator<T>(feti), n_domains(0), n_queues(0), mem_pool_device(nullptr)
 {
     if(stage != 0) eslog::error("init: invalid order of operations in dualop\n");
@@ -167,7 +167,7 @@ TotalFETIExplicitAcc<T,I>::TotalFETIExplicitAcc(FETI<T> &feti, bool is_expl)
 }
 
 template <typename T, typename I>
-TotalFETIExplicitAcc<T,I>::~TotalFETIExplicitAcc()
+TotalFETIGpu<T,I>::~TotalFETIGpu()
 {
     gpu::mgm::set_device(device);
 
@@ -267,7 +267,7 @@ TotalFETIExplicitAcc<T,I>::~TotalFETIExplicitAcc()
 }
 
 template <typename T, typename I>
-void TotalFETIExplicitAcc<T,I>::info()
+void TotalFETIGpu<T,I>::info()
 {
     if(stage < 2) eslog::error("info: invalid order of operations in dualop\n");
 
@@ -289,7 +289,7 @@ void TotalFETIExplicitAcc<T,I>::info()
 
 
 template <typename T, typename I>
-void TotalFETIExplicitAcc<T,I>::set(const step::Step &step)
+void TotalFETIGpu<T,I>::set(const step::Step &step)
 {
     if(stage != 1) eslog::error("set: invalid order of operations in dualop\n");
 
@@ -799,7 +799,7 @@ void TotalFETIExplicitAcc<T,I>::set(const step::Step &step)
 }
 
 template <typename T, typename I>
-void TotalFETIExplicitAcc<T,I>::update(const step::Step &step)
+void TotalFETIGpu<T,I>::update(const step::Step &step)
 {
     if(stage != 2 && stage != 3) eslog::error("update: invalud order of operations in dualop\n");
 
@@ -1083,7 +1083,7 @@ void TotalFETIExplicitAcc<T,I>::update(const step::Step &step)
 }
 
 template<typename T, typename I>
-void TotalFETIExplicitAcc<T,I>::apply_explicit_sgcpu(const Vector_Dual<T> &x_cluster, Vector_Dual<T> &y_cluster)
+void TotalFETIGpu<T,I>::apply_explicit_sgcpu(const Vector_Dual<T> &x_cluster, Vector_Dual<T> &y_cluster)
 {
     my_timer tm_total(timers_basic);
     my_timer tm_apply_outer(timers_detailed), tm_apply_inner(timers_detailed), tm_scatter(timers_detailed), tm_copyin(timers_detailed), tm_mv(timers_detailed), tm_copyout(timers_detailed), tm_zerofill(timers_detailed), tm_wait(timers_detailed), tm_gather(timers_detailed), tm_gather_inner(timers_detailed);
@@ -1170,7 +1170,7 @@ void TotalFETIExplicitAcc<T,I>::apply_explicit_sgcpu(const Vector_Dual<T> &x_clu
 }
 
 template<typename T, typename I>
-void TotalFETIExplicitAcc<T,I>::apply_explicit_sggpu(const Vector_Dual<T> &x_cluster, Vector_Dual<T> &y_cluster)
+void TotalFETIGpu<T,I>::apply_explicit_sggpu(const Vector_Dual<T> &x_cluster, Vector_Dual<T> &y_cluster)
 {
     my_timer tm_total(timers_basic);
     my_timer tm_copyin(timers_detailed), tm_scatter(timers_detailed), tm_mv_outer(timers_detailed), tm_mv(timers_detailed), tm_zerofill(timers_detailed), tm_gather(timers_detailed), tm_copyout(timers_detailed), tm_wait(timers_detailed);
@@ -1245,19 +1245,19 @@ void TotalFETIExplicitAcc<T,I>::apply_explicit_sggpu(const Vector_Dual<T> &x_clu
 }
 
 template<typename T, typename I>
-void TotalFETIExplicitAcc<T,I>::apply_implicit_sgcpu(const Vector_Dual<T> &x_cluster, Vector_Dual<T> &y_cluster)
+void TotalFETIGpu<T,I>::apply_implicit_sgcpu(const Vector_Dual<T> &x_cluster, Vector_Dual<T> &y_cluster)
 {
 
 }
 
 template<typename T, typename I>
-void TotalFETIExplicitAcc<T,I>::apply_implicit_sggpu(const Vector_Dual<T> &x_cluster, Vector_Dual<T> &y_cluster)
+void TotalFETIGpu<T,I>::apply_implicit_sggpu(const Vector_Dual<T> &x_cluster, Vector_Dual<T> &y_cluster)
 {
 
 }
 
 template <typename T, typename I>
-void TotalFETIExplicitAcc<T,I>::apply(const Vector_Dual<T> &x_cluster, Vector_Dual<T> &y_cluster)
+void TotalFETIGpu<T,I>::apply(const Vector_Dual<T> &x_cluster, Vector_Dual<T> &y_cluster)
 {
     if(stage != 3) eslog::error("invalid stage when calling apply\n");
 
@@ -1272,7 +1272,7 @@ void TotalFETIExplicitAcc<T,I>::apply(const Vector_Dual<T> &x_cluster, Vector_Du
 }
 
 template <typename T, typename I>
-void TotalFETIExplicitAcc<T,I>::toPrimal(const Vector_Dual<T> &x, std::vector<Vector_Dense<T> > &y)
+void TotalFETIGpu<T,I>::toPrimal(const Vector_Dual<T> &x, std::vector<Vector_Dense<T> > &y)
 {
     // just do it on cpu
     #pragma omp parallel for schedule(static,1)
@@ -1286,7 +1286,7 @@ void TotalFETIExplicitAcc<T,I>::toPrimal(const Vector_Dual<T> &x, std::vector<Ve
 }
 
 template <typename T, typename I>
-void TotalFETIExplicitAcc<T,I>::print(const step::Step &step)
+void TotalFETIGpu<T,I>::print(const step::Step &step)
 {
     if (info::ecf->output.print_matrices) {
         eslog::storedata(" STORE: feti/dualop/{Kplus, F}\n"); // Kplus is actually Kreg
@@ -1333,7 +1333,7 @@ void replace_if_auto(U & val, U replace_with)
 
 
 template <typename T, typename I>
-void TotalFETIExplicitAcc<T,I>::config_replace_defaults()
+void TotalFETIGpu<T,I>::config_replace_defaults()
 {
     int dimension = info::mesh->dimension;
     [[maybe_unused]] size_t avg_ndofs_per_domain = std::accumulate(feti.K.begin(), feti.K.end(), size_t{0}, [](size_t s, const Matrix_CSR<T,I> & k){ return s + k.nrows; }) / feti.K.size();
@@ -1433,7 +1433,7 @@ void TotalFETIExplicitAcc<T,I>::config_replace_defaults()
 
 
 #define INSTANTIATE_T_I(T,I) \
-template class TotalFETIExplicitAcc<T,I>;
+template class TotalFETIGpu<T,I>;
 
     #define INSTANTIATE_T(T) \
     INSTANTIATE_T_I(T, int32_t) \

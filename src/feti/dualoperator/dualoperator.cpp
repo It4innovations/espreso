@@ -2,7 +2,7 @@
 #include "dualoperator.h"
 #include "totalfeti.implicit.h"
 #include "totalfeti.explicit.h"
-#include "totalfeti.explicit.acc.h"
+#include "totalfeti.gpu.h"
 #include "hybridfeti.implicit.h"
 #include "feti/projector/projector.h"
 
@@ -37,7 +37,7 @@ DualOperator<T>* DualOperator<T>::set(FETI<T> &feti, const step::Step &step)
                 eslog::globalerror("GPU acceleration is not supported: Third party sparse solver does not provide factors.\n");
             }
             eslog::info(" = DUAL OPERATOR                                                  EXPLICIT TOTAL FETI ON GPU = \n");
-            dual = new TotalFETIExplicitAcc<T,int>(feti, true);
+            dual = new TotalFETIGpu<T,int>(feti, true);
             break;
         }
         break;
