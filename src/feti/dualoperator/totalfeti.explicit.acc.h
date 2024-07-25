@@ -30,7 +30,7 @@ namespace espreso {
 template <typename T, typename I>
 class TotalFETIExplicitAcc: public DualOperator<T> {
 public:
-    TotalFETIExplicitAcc(FETI<T> &feti);
+    TotalFETIExplicitAcc(FETI<T> &feti, bool is_expl);
     virtual ~TotalFETIExplicitAcc();
 
     virtual void info() override;
@@ -41,6 +41,12 @@ public:
     virtual void apply(const Vector_Dual<T> &x, Vector_Dual<T> &y) override;
     // y = K+(f - Bt * x)
     virtual void toPrimal(const Vector_Dual<T> &x, std::vector<Vector_Dense<T> > &y) override;
+
+private:
+    void apply_explicit_sggpu(const Vector_Dual<T> &x_cluster, Vector_Dual<T> &y_cluster);
+    void apply_explicit_sgcpu(const Vector_Dual<T> &x_cluster, Vector_Dual<T> &y_cluster);
+    void apply_implicit_sggpu(const Vector_Dual<T> &x_cluster, Vector_Dual<T> &y_cluster);
+    void apply_implicit_sgcpu(const Vector_Dual<T> &x_cluster, Vector_Dual<T> &y_cluster);
 
 protected:
     void print(const step::Step &step);
@@ -121,10 +127,15 @@ protected:
 
     DualOperatorExplicitGpuConfig * config = nullptr;
     char order_X, order_F;
+    bool is_explicit, is_implicit;
     bool is_system_hermitian;
     bool is_factor1_dense, is_factor2_dense, is_factor1_sparse, is_factor2_sparse;
     bool is_path_trsm, is_path_herk;
-    bool need_Y;
+    bool do_herk;
+    bool do_trsm1_sparse, do_trsm1_dense, do_trsm2_sparse, do_trsm2_dense;
+    bool do_trs1_sp, do_trs2_sp, do_mm;
+    bool do_trsm1_sp, do_trsm2_sp;
+    bool need_X, need_Y, need_F;
     bool solver_get_L, solver_get_U;
     bool can_use_LH_is_U_h_sp, can_use_UH_is_L_h_sp;
     bool can_use_LH_is_U_d_sp, can_use_UH_is_L_d_sp;
@@ -133,13 +144,14 @@ protected:
     bool timers_basic, timers_detailed;
     bool memory_info_basic, memory_info_detailed;
     bool do_conjtrans_L2LH_h, do_conjtrans_U2UH_h, do_conjtrans_L2LH_d, do_conjtrans_U2UH_d;
-    bool do_sp2dn_L, do_sp2dn_LH, do_sp2dn_U, do_sp2dn_UH;
+    bool do_sp2dn_L, do_sp2dn_LH, do_sp2dn_U, do_sp2dn_UH, do_sp2dn_X;
     bool do_trsm1_sp_L, do_trsm1_sp_LH, do_trsm2_sp_U, do_trsm2_sp_UH, do_trsm1_dn_L, do_trsm1_dn_LH, do_trsm2_dn_U, do_trsm2_dn_UH;
     bool do_descr_sp_L, do_descr_sp_LH, do_descr_sp_U, do_descr_sp_UH, do_descr_dn_L, do_descr_dn_LH, do_descr_dn_U, do_descr_dn_UH;
     bool do_alloc_h_sp_L, do_alloc_h_sp_U, do_alloc_h_sp_LH, do_alloc_h_sp_UH, do_link_h_sp_LH_U, do_link_h_sp_UH_L;
     bool do_alloc_d_sp_L, do_alloc_d_sp_U, do_alloc_d_sp_LH, do_alloc_d_sp_UH, do_link_d_sp_LH_U, do_link_d_sp_UH_L;
     bool do_alloc_d_dn_L, do_alloc_d_dn_U, do_alloc_d_dn_LH, do_alloc_d_dn_UH, do_link_d_dn_LH_U, do_link_d_dn_UH_L;
     bool do_copyin_L, do_copyin_U, do_copyin_LH, do_copyin_UH;
+    bool do_apply_hemv, do_apply_gemv;
     static constexpr size_t align_B = 512;
     static constexpr size_t align_elem = align_B / sizeof(T);
     int stage = 0;
