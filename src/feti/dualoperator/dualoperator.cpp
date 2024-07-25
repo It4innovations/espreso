@@ -37,7 +37,7 @@ DualOperator<T>* DualOperator<T>::set(FETI<T> &feti, const step::Step &step)
                 eslog::globalerror("GPU acceleration is not supported: Third party sparse solver does not provide factors.\n");
             }
             eslog::info(" = DUAL OPERATOR                                                  EXPLICIT TOTAL FETI ON GPU = \n");
-            dual = new TotalFETIGpu<T,int>(feti, true);
+            dual = new TotalFETIGpu<T,int>(feti, DualOperatorStrategy::EXPLICIT);
             break;
         }
         break;

@@ -30,7 +30,7 @@ using TIMERS                  = DualOperatorExplicitGpuConfig::TIMERS;
 using MEMORY_INFO             = DualOperatorExplicitGpuConfig::MEMORY_INFO;
 
 template <typename T, typename I>
-TotalFETIGpu<T,I>::TotalFETIGpu(FETI<T> &feti, bool is_expl)
+TotalFETIGpu<T,I>::TotalFETIGpu(FETI<T> &feti, DualOperatorStrategy strategy)
 : DualOperator<T>(feti), n_domains(0), n_queues(0), mem_pool_device(nullptr)
 {
     if(stage != 0) eslog::error("init: invalid order of operations in dualop\n");
@@ -39,8 +39,8 @@ TotalFETIGpu<T,I>::TotalFETIGpu(FETI<T> &feti, bool is_expl)
     config_replace_defaults();
     if(config->trsm_rhs_sol_order == MATRIX_ORDER::ROW_MAJOR) order_X = 'R';
     if(config->trsm_rhs_sol_order == MATRIX_ORDER::COL_MAJOR) order_X = 'C';
-    is_explicit =  is_expl;
-    is_implicit = !is_expl;
+    is_explicit = (strategy == DualOperatorStrategy::EXPLICIT);
+    is_implicit = (strategy == DualOperatorStrategy::IMPLICIT);
     order_F = order_X;
     is_system_hermitian = (DirectSparseSolver<T,I>::factorsSymmetry() == Solver_Factors::HERMITIAN_LOWER || DirectSparseSolver<T,I>::factorsSymmetry() == Solver_Factors::HERMITIAN_UPPER);
     is_factor1_dense = (config->trsm1_factor_storage == MATRIX_STORAGE::DENSE);

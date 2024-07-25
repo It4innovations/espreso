@@ -16,6 +16,11 @@ struct DualOperatorInfo {
     size_t dualA, surfaceA;
 };
 
+enum struct DualOperatorStrategy {
+    IMPLICIT,
+    EXPLICIT
+};
+
 template <typename T>
 class DualOperator {
 public:

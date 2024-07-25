@@ -30,7 +30,7 @@ namespace espreso {
 template <typename T, typename I>
 class TotalFETIGpu: public DualOperator<T> {
 public:
-    TotalFETIGpu(FETI<T> &feti, bool is_expl);
+    TotalFETIGpu(FETI<T> &feti, DualOperatorStrategy strategy);
     virtual ~TotalFETIGpu();
 
     virtual void info() override;
