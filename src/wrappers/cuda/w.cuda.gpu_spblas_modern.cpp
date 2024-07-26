@@ -319,12 +319,13 @@ namespace spblas {
     }
 
     template<typename T, typename I>
-    void mv(handle & h, char transpose, descr_matrix_csr & A, descr_vector_dense & x, descr_vector_dense & y, size_t & buffersize, void * buffer, char stage)
+    void mv(handle & h, char transpose, descr_matrix_csr & A, descr_vector_dense & x, descr_vector_dense & y, buffer_info & buffer, char stage)
     {
         T one = 1.0;
         T zero = 0.0;
-        if(stage == 'B') CHECK(cusparseSpMV_bufferSize(h->h, _char_to_operation<T>(transpose), &one, A->d, x->d, &zero, y->d, _sparse_data_type<T>(), CUSPARSE_SPMV_ALG_DEFAULT, &buffersize));
-        if(stage == 'C') CHECK(cusparseSpMV           (h->h, _char_to_operation<T>(transpose), &one, A->d, x->d, &zero, y->d, _sparse_data_type<T>(), CUSPARSE_SPMV_ALG_DEFAULT, buffer));
+        if(stage == 'B') CHECK(cusparseSpMV_bufferSize(h->h, _char_to_operation<T>(transpose), &one, A->d, x->d, &zero, y->d, _sparse_data_type<T>(), CUSPARSE_SPMV_ALG_DEFAULT, &buffer.size.compute));
+        // if(stage == 'P') ;
+        if(stage == 'C') CHECK(cusparseSpMV           (h->h, _char_to_operation<T>(transpose), &one, A->d, x->d, &zero, y->d, _sparse_data_type<T>(), CUSPARSE_SPMV_ALG_DEFAULT, buffer.mem.compute));
     }
 
     template<typename T, typename I>

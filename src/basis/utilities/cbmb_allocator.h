@@ -104,7 +104,7 @@ namespace espreso {
 
             return memory_pool + new_block_start_aligned % memory_pool_size;
         }
-        void deallocate(void * ptr)
+        void deallocate(void * & ptr)
         {
             if(ptr == nullptr) return;
             size_t mem_block_start_aligned = reinterpret_cast<char*>(ptr) - memory_pool;
@@ -122,6 +122,7 @@ namespace espreso {
                 else start_full = full_blocks.front().start;
             }
             cv.notify_all();
+            ptr = nullptr;
         }
         void print_full_blocks()
         {
@@ -182,9 +183,9 @@ namespace espreso {
             return reinterpret_cast<T*>(allocate(count * sizeof(T)));
         }
         template<typename T>
-        void deallocate(T * ptr)
+        void deallocate(T * & ptr)
         {
-            resource.deallocate(ptr);
+            resource.deallocate((void*&)ptr);
         }
     };
 

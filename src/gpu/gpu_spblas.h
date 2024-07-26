@@ -19,6 +19,22 @@ namespace spblas {
         ROCSPARSE
     };
 
+
+    struct buffer_info {
+        struct buffer_size {
+            size_t persistent = 0;
+            size_t preprocess = 0;
+            size_t compute = 0;
+        };
+        struct buffer_mem {
+            void * persistent = nullptr;
+            void * preprocess = nullptr;
+            void * compute = nullptr;
+        };
+        buffer_size size;
+        buffer_mem mem;
+    };
+
     spblas_wrapper_impl get_implementation();
 
     struct _handle;
@@ -91,7 +107,7 @@ namespace spblas {
     void trsm(handle & h, char transpose_mat, char transpose_rhs, char transpose_sol, descr_matrix_csr & matrix, descr_matrix_dense & rhs, descr_matrix_dense & sol, descr_sparse_trsm & descr_trsm, size_t & buffersize, void * buffer, char stage);
 
     template<typename T, typename I>
-    void mv(handle & h, char transpose, descr_matrix_csr & A, descr_vector_dense & x, descr_vector_dense & y, size_t & buffersize, void * buffer, char stage);
+    void mv(handle & h, char transpose, descr_matrix_csr & A, descr_vector_dense & x, descr_vector_dense & y, buffer_info & buffer, char stage);
 
     template<typename T, typename I>
     void mm(handle & h, char transpose_A, char transpose_B, descr_matrix_csr & A, descr_matrix_dense & B, descr_matrix_dense & C, size_t & buffersize, void * buffer, char stage);

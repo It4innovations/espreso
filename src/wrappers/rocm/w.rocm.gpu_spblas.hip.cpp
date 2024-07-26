@@ -412,22 +412,23 @@ namespace spblas {
     }
 
     template<typename T, typename I>
-    void mv(handle & h, char transpose, descr_matrix_csr & A, descr_vector_dense & x, descr_vector_dense & y, size_t & buffersize, void * buffer, char stage)
+    void mv(handle & h, char transpose, descr_matrix_csr & A, descr_vector_dense & x, descr_vector_dense & y, buffer_info & buffer, char stage)
     {
         T one = 1.0;
         T zero = 0.0;
 // should check for ROCSPARSE_VERSION_*, but I don't understand their versioning
 #if HIP_VERSION_MAJOR >= 6 // rocparse that comes with hip/rocm 6.0.x, replaced old spmv with new spmv with stage (aka renamed the previous spmv_ex)
-        if(stage == 'B') CHECK(rocsparse_spmv(h->h, _char_to_operation(transpose), &one, A->d, x->d, &zero, y->d, _sparse_data_type<T>(), rocsparse_spmv_alg_default, rocsparse_spmv_stage_buffer_size, &buffersize, buffer));
-        if(stage == 'P') CHECK(rocsparse_spmv(h->h, _char_to_operation(transpose), &one, A->d, x->d, &zero, y->d, _sparse_data_type<T>(), rocsparse_spmv_alg_default, rocsparse_spmv_stage_preprocess,  &buffersize, buffer));
-        if(stage == 'C') CHECK(rocsparse_spmv(h->h, _char_to_operation(transpose), &one, A->d, x->d, &zero, y->d, _sparse_data_type<T>(), rocsparse_spmv_alg_default, rocsparse_spmv_stage_compute,     &buffersize, buffer));
+        if(stage == 'B') CHECK(rocsparse_spmv(h->h, _char_to_operation(transpose), &one, A->d, x->d, &zero, y->d, _sparse_data_type<T>(), rocsparse_spmv_alg_default, rocsparse_spmv_stage_buffer_size, &buffer.size.persistent, buffer.mem.persistent));
+        if(stage == 'P') CHECK(rocsparse_spmv(h->h, _char_to_operation(transpose), &one, A->d, x->d, &zero, y->d, _sparse_data_type<T>(), rocsparse_spmv_alg_default, rocsparse_spmv_stage_preprocess,  &buffer.size.persistent, buffer.mem.persistent));
+        if(stage == 'C') CHECK(rocsparse_spmv(h->h, _char_to_operation(transpose), &one, A->d, x->d, &zero, y->d, _sparse_data_type<T>(), rocsparse_spmv_alg_default, rocsparse_spmv_stage_compute,     &buffer.size.persistent, buffer.mem.persistent));
 #elif HIP_VERSION_MAJOR == 5 && HIP_VERSION_MINOR >= 4 // rocsparse that comes with hip/rocm 5.4.x, deprecated original spmv and added spmv_ex with stage
-        if(stage == 'B') CHECK(rocsparse_spmv_ex(h->h, _char_to_operation(transpose), &one, A->d, x->d, &zero, y->d, _sparse_data_type<T>(), rocsparse_spmv_alg_default, rocsparse_spmv_stage_buffer_size, &buffersize, buffer));
-        if(stage == 'P') CHECK(rocsparse_spmv_ex(h->h, _char_to_operation(transpose), &one, A->d, x->d, &zero, y->d, _sparse_data_type<T>(), rocsparse_spmv_alg_default, rocsparse_spmv_stage_preprocess,  &buffersize, buffer));
-        if(stage == 'C') CHECK(rocsparse_spmv_ex(h->h, _char_to_operation(transpose), &one, A->d, x->d, &zero, y->d, _sparse_data_type<T>(), rocsparse_spmv_alg_default, rocsparse_spmv_stage_compute,     &buffersize, buffer));
+        if(stage == 'B') CHECK(rocsparse_spmv_ex(h->h, _char_to_operation(transpose), &one, A->d, x->d, &zero, y->d, _sparse_data_type<T>(), rocsparse_spmv_alg_default, rocsparse_spmv_stage_buffer_size, &buffer.size.persistent, buffer.mem.persistent));
+        if(stage == 'P') CHECK(rocsparse_spmv_ex(h->h, _char_to_operation(transpose), &one, A->d, x->d, &zero, y->d, _sparse_data_type<T>(), rocsparse_spmv_alg_default, rocsparse_spmv_stage_preprocess,  &buffer.size.persistent, buffer.mem.persistent));
+        if(stage == 'C') CHECK(rocsparse_spmv_ex(h->h, _char_to_operation(transpose), &one, A->d, x->d, &zero, y->d, _sparse_data_type<T>(), rocsparse_spmv_alg_default, rocsparse_spmv_stage_compute,     &buffer.size.persistent, buffer.mem.persistent));
 #else // older
-        if(stage == 'B') CHECK(rocsparse_spmv(h->h, _char_to_operation(transpose), &one, A->d, x->d, &zero, y->d, _sparse_data_type<T>(), rocsparse_spmv_alg_default, &buffersize, nullptr));
-        if(stage == 'C') CHECK(rocsparse_spmv(h->h, _char_to_operation(transpose), &one, A->d, x->d, &zero, y->d, _sparse_data_type<T>(), rocsparse_spmv_alg_default, &buffersize, buffer));
+        if(stage == 'B') CHECK(rocsparse_spmv(h->h, _char_to_operation(transpose), &one, A->d, x->d, &zero, y->d, _sparse_data_type<T>(), rocsparse_spmv_alg_default, &buffer.size.compute, nullptr));
+        // if(stage == 'P') ;
+        if(stage == 'C') CHECK(rocsparse_spmv(h->h, _char_to_operation(transpose), &one, A->d, x->d, &zero, y->d, _sparse_data_type<T>(), rocsparse_spmv_alg_default, &buffer.size.compute, buffer.mem.compute));
 #endif
     }
 

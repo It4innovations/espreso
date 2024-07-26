@@ -24,6 +24,9 @@ namespace dnblas {
     void buffer_unset(handle & h);
 
     template<typename T, typename I>
+    void trsv(handle & h, I n, T * A, I ld_A, char order_A, char op_A, char fill_A, T * x);
+
+    template<typename T, typename I>
     void trsm(handle & h, char side, I n, I nrhs, T * A, I ld_A, char order_A, char op_A, char fill_A, T * X, I ld_X, char order_X, char op_X);
 
     template<typename T, typename I>

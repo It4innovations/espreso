@@ -12,6 +12,7 @@
 #include "gpu/gpu_spblas.h"
 #include "gpu/gpu_kernels.h"
 #include "basis/utilities/cbmb_allocator.h"
+#include "my_timer.h"
 
 namespace espreso {
 
@@ -47,6 +48,7 @@ private:
     void apply_explicit_sgcpu(const Vector_Dual<T> &x_cluster, Vector_Dual<T> &y_cluster);
     void apply_implicit_sggpu(const Vector_Dual<T> &x_cluster, Vector_Dual<T> &y_cluster);
     void apply_implicit_sgcpu(const Vector_Dual<T> &x_cluster, Vector_Dual<T> &y_cluster);
+    void apply_implicit_compute(size_t di, my_timer & tm_allocinpool, my_timer & tm_freeinpool, my_timer & tm_compute, my_timer & tm_spmv1, my_timer & tm_trsv1, my_timer & tm_trsv2, my_timer & tm_spmv2);
 
 protected:
     void print(const step::Step &step);
@@ -95,6 +97,14 @@ protected:
         gpu::spblas::descr_matrix_dense descr_Y;
         gpu::spblas::descr_sparse_trsm descr_sparse_trsm1;
         gpu::spblas::descr_sparse_trsm descr_sparse_trsm2;
+        gpu::spblas::descr_vector_dense descr_xvec;
+        gpu::spblas::descr_vector_dense descr_yvec;
+        gpu::spblas::descr_vector_dense descr_zvec;
+        gpu::spblas::descr_vector_dense descr_wvec;
+        gpu::spblas::descr_sparse_trsv descr_sparse_trsv1;
+        gpu::spblas::descr_sparse_trsv descr_sparse_trsv2;
+        gpu::spblas::buffer_info buffer_spmv1;
+        gpu::spblas::buffer_info buffer_spmv2;
         void * buffer_transL2LH = nullptr;
         void * buffer_transU2UH = nullptr;
         void * buffer_sptrs1 = nullptr;
@@ -111,6 +121,8 @@ protected:
         Vector_Dense<I,I,Ad> d_applyg_D2C;
         Vector_Dense<T,I,Ad> d_apply_x;
         Vector_Dense<T,I,Ad> d_apply_y;
+        Vector_Dense<T,I,Ad> d_apply_z;
+        Vector_Dense<T,I,Ad> d_apply_w;
         Vector_Dense<T,I,Ah> h_applyc_x;
         Vector_Dense<T,I,Ah> h_applyc_y;
         size_t allocated_F_index;
@@ -146,6 +158,7 @@ protected:
     bool do_conjtrans_L2LH_h, do_conjtrans_U2UH_h, do_conjtrans_L2LH_d, do_conjtrans_U2UH_d;
     bool do_sp2dn_L, do_sp2dn_LH, do_sp2dn_U, do_sp2dn_UH, do_sp2dn_X;
     bool do_trsm1_sp_L, do_trsm1_sp_LH, do_trsm2_sp_U, do_trsm2_sp_UH, do_trsm1_dn_L, do_trsm1_dn_LH, do_trsm2_dn_U, do_trsm2_dn_UH;
+    bool do_trsv1_sp_L, do_trsv1_sp_LH, do_trsv2_sp_U, do_trsv2_sp_UH, do_trsv1_dn_L, do_trsv1_dn_LH, do_trsv2_dn_U, do_trsv2_dn_UH;
     bool do_descr_sp_L, do_descr_sp_LH, do_descr_sp_U, do_descr_sp_UH, do_descr_dn_L, do_descr_dn_LH, do_descr_dn_U, do_descr_dn_UH;
     bool do_alloc_h_sp_L, do_alloc_h_sp_U, do_alloc_h_sp_LH, do_alloc_h_sp_UH, do_link_h_sp_LH_U, do_link_h_sp_UH_L;
     bool do_alloc_d_sp_L, do_alloc_d_sp_U, do_alloc_d_sp_LH, do_alloc_d_sp_UH, do_link_d_sp_LH_U, do_link_d_sp_UH_L;
