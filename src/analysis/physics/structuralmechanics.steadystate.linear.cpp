@@ -128,6 +128,7 @@ void StructuralMechanicsSteadyStateLinear::run(step::Step &step)
     storeSolution(step);
     assembler.updateSolution(x);
     info::mesh->output->updateSolution(step, time);
+
     eslog::info("       = PROCESS SOLUTION                                                   %8.3f s = \n", eslog::time() - solution);
     eslog::info("       = ----------------------------------------------------------------------------- = \n");
 

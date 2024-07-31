@@ -41,6 +41,8 @@ NodeData* StructuralMechanics::Results::velocityAmplitude = nullptr;
 NodeData* StructuralMechanics::Results::acceleration = nullptr;
 NodeData* StructuralMechanics::Results::accelerationAmplitude = nullptr;
 
+NodeData* StructuralMechanics::Results::fluidForce = nullptr;
+
 StructuralMechanics::StructuralMechanics(StructuralMechanics *previous, StructuralMechanicsConfiguration &settings, StructuralMechanicsLoadStepConfiguration &configuration)
 : Assembler(settings), settings(settings), configuration(configuration)
 {
@@ -161,6 +163,9 @@ void StructuralMechanics::analyze(const step::Step &step)
     } else {
         if (Results::displacement == nullptr) {
             Results::displacement = info::mesh->nodes->appendData(info::mesh->dimension, NamedData::DataType::VECTOR, "DISPLACEMENT");
+        }
+        if (Results::fluidForce == nullptr) {
+            Results::fluidForce = info::mesh->nodes->appendData(info::mesh->dimension, NamedData::DataType::VECTOR, "FLUID_FORCE");
         }
         if (info::ecf->output.results_selection.stress && Results::principalStress == nullptr) {
             Results::principalStress = info::mesh->elements->appendData(info::mesh->dimension    , NamedData::DataType::NUMBERED   , "PRINCIPAL_STRESS");

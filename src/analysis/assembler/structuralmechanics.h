@@ -53,6 +53,9 @@ public:
         // harmonic
         static NodeData *cosDisplacement, *sinDisplacement, *displacementAmplitude;
         static NodeData *phase, *velocity, *velocityAmplitude, *acceleration, *accelerationAmplitude;
+
+        // FSI
+        static NodeData *fluidForce;
     };
 
     struct {

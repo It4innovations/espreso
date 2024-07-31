@@ -109,6 +109,8 @@ public:
 
 	Output *output;
 
+	bool withSurface;
+
 protected:
 	void analyze();
 	void setMaterials();

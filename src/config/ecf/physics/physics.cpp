@@ -60,6 +60,12 @@ espreso::PhysicsConfiguration::PhysicsConfiguration(MaterialConfiguration::PHYSI
 			.setdatatype({ ECFDataType::BOOL })
 			.setform());
 
+	coupling = false;
+    REGISTER(coupling, ECFMetaData()
+            .setdescription({ "Use preCICE for coupling" })
+            .setdatatype({ ECFDataType::BOOL })
+            .setform());
+
 	reassembling_optimization = true;
 	REGISTER(reassembling_optimization, ECFMetaData()
 			.setdescription({ "Store computed values for improving reassembling times in the cost of the memory." })

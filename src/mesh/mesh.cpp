@@ -282,12 +282,17 @@ void Mesh::analyze()
 		}
 	}
 
+	withSurface = info::ecf->input.contact_interfaces.size();
+
 	// check whether we need to 'increase' boundary dimensions
 	if (info::ecf->physics == PhysicsConfiguration::TYPE::STRUCTURAL_MECHANICS) {
 		for (auto ls = info::ecf->structural_mechanics.load_steps_settings.begin(); ls != info::ecf->structural_mechanics.load_steps_settings.end(); ++ls) {
 			for (auto bc = ls->second.normal_pressure.begin(); bc != ls->second.normal_pressure.end(); ++bc) {
 				bregion(bc->first)->dimension = dimension - 1;
 			}
+		}
+		if (info::ecf->structural_mechanics.coupling) {
+		    withSurface = true;
 		}
 	}
 
@@ -466,9 +471,11 @@ void Mesh::computePersistentParameters()
 	}
 
 	mesh::computeBodies(elements, bodies, elementsRegions, neighbors);
+	if (withSurface) {
+	    mesh::computeBodiesSurface(nodes, elements, elementsRegions, surface, neighbors);
+	}
 
 	if (info::ecf->input.contact_interfaces.size()) {
-		mesh::computeBodiesSurface(nodes, elements, elementsRegions, surface, neighbors);
 		mesh::computeWarpedNormals(surface);
 		mesh::exchangeContactHalo(surface, contact);
 		mesh::findCloseElements(contact);

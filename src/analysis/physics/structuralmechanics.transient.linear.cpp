@@ -14,6 +14,7 @@
 #include "mesh/store/elementstore.h"
 #include "output/output.h"
 #include "wrappers/mpi/communication.h"
+#include "wrappers/precice/w.precice.h"
 
 using namespace espreso;
 
@@ -108,6 +109,8 @@ void StructuralMechanicsTransientLinear::analyze(step::Step &step)
 
 void StructuralMechanicsTransientLinear::run(step::Step &step)
 {
+    Precice precice("SolidSolver", settings.coupling);
+
     time.shift = configuration.transient_solver.time_step;
     time.start = 0;
     time.current = time.start + time.shift;
@@ -152,6 +155,7 @@ void StructuralMechanicsTransientLinear::run(step::Step &step)
         eslog::info(" = LOAD STEP %2d, SUBSTEP   %3d,   TIME %9.4f, TIME SHIFT %9.4f, FINAL TIME %9.4f = \n", step.loadstep + 1, step.substep + 1, time.current, time.shift, time.final);
         eslog::info(" = ----------------------------------------------------------------------------------------- = \n");
         double start = eslog::time();
+        precice.read("Forces", StructuralMechanics::Results::fluidForce->data.data(), time.shift);
         assembler.evaluate(step, time, K, M, f, nullptr, dirichlet);
         eslog::checkpointln("SIMULATION: PHYSICS ASSEMBLED");
 
@@ -188,6 +192,9 @@ void StructuralMechanicsTransientLinear::run(step::Step &step)
         storeSolution(step);
         assembler.updateSolution(x);
         info::mesh->output->updateSolution(step, time);
+
+        precice.write("Displacement", StructuralMechanics::Results::displacement->data.data());
+        precice.advance(time.shift);
 
         dU->copy(solver->x);
         dU->add(-1, U);

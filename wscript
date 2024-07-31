@@ -130,7 +130,7 @@ def build(ctx):
     ctx.build_espreso(ctx.path.ant_glob('src/wrappers/blas/**/*.cpp'), "wblas", [ "BLAS", "MKL" ])
     ctx.build_espreso(ctx.path.ant_glob('src/wrappers/lapack/**/*.cpp'), "wlapack", [ "LAPACK", "MKL" ])
     ctx.build_espreso(ctx.path.ant_glob('src/wrappers/mkl/**/*.cpp'), "wmkl", [ "MKL" ])
-    ctx.build_espreso(ctx.path.ant_glob('src/wrappers/precice/**/*.cpp'), "wprecice")
+    ctx.build_espreso(ctx.path.ant_glob('src/wrappers/precice/**/*.cpp'), "wprecice", [ "PRECICE" ])
     if ctx.env.HAVE_CUDA:
         ctx.build_espreso(ctx.path.ant_glob('src/wrappers/cuda/**/*.(cu|cpp)'), "wcuda", [ "CUDA" ])
 #     ctx.build_espreso(ctx.path.ant_glob('src/wrappers/hypre/**/*.cpp'), "whypre", [ "HYPRE" ])
@@ -147,6 +147,7 @@ def build(ctx):
     ctx.program(source="src/app/ecfchecker.cpp", target="ecfchecker", use=ctx.checker, stlib=ctx.options.stlibs, lib=ctx.options.libs)
     ctx.program(source="src/app/mesio.cpp", target="mesio", use=ctx.checker + ctx.mesio, stlib=ctx.options.stlibs, lib=ctx.options.libs)
     ctx.program(source="src/app/espreso.cpp",target="espreso", rpath=["$ORIGIN/"], use=ctx.checker + ctx.mesio + ctx.espreso, stlib=ctx.options.stlibs, lib=ctx.options.libs)
+    ctx.program(source="src/app/dummycoupler.cpp",target="dummycoupler", rpath=["$ORIGIN/"], use=ctx.checker + ctx.mesio + ctx.espreso, stlib=ctx.options.stlibs, lib=ctx.options.libs)
 
 #         ctx.lib(source="src/api/wrapper.feti4i.cpp", target="feti4i", includes="include", use=ctx.checker + ctx.mesio + ctx.espreso + ["API"], stlib=ctx.options.stlibs, lib=ctx.options.libs)
 #         ctx.program(source=["src/api/api.feti4i.cpp", "src/api/api.feti4i.dataprovider.cpp"], target="test.feti4i", includes="include", use=ctx.checker + ctx.mesio + ctx.espreso + ["API", "feti4i"], stlib=ctx.options.stlibs, lib=ctx.options.libs)

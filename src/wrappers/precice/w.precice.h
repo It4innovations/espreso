@@ -4,10 +4,21 @@
 
 namespace espreso {
 
+struct PreciceData;
+
 struct Precice {
 
-    Precice();
+    static void dummy();
+
+    Precice(const char *name, bool active);
     ~Precice();
+
+    void read(const char *name, double *data, double dt);
+    void write(const char *name, double *data);
+    void advance(double dt);
+
+private:
+    PreciceData *_data;
 };
 
 }

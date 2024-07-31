@@ -2,7 +2,7 @@
 
 DEPENDENCIES_DIR="${PWD}/dependencies"
 
-PARMETIS_ROOT="${DEPENDENCIES_DIR}/parmetis-4.0.3"
+PARMETIS_ROOT="${DEPENDENCIES_DIR}/parmetis"
 if [ ! -d "${PARMETIS_ROOT}" ]
 then
     sh ${DEPENDENCIES_DIR}/clone.parmetis.sh
