@@ -130,6 +130,7 @@ def build(ctx):
     ctx.build_espreso(ctx.path.ant_glob('src/wrappers/blas/**/*.cpp'), "wblas", [ "BLAS", "MKL" ])
     ctx.build_espreso(ctx.path.ant_glob('src/wrappers/lapack/**/*.cpp'), "wlapack", [ "LAPACK", "MKL" ])
     ctx.build_espreso(ctx.path.ant_glob('src/wrappers/mkl/**/*.cpp'), "wmkl", [ "MKL" ])
+    ctx.build_espreso(ctx.path.ant_glob('src/wrappers/precice/**/*.cpp'), "wprecice")
     if ctx.env.HAVE_CUDA:
         ctx.build_espreso(ctx.path.ant_glob('src/wrappers/cuda/**/*.(cu|cpp)'), "wcuda", [ "CUDA" ])
 #     ctx.build_espreso(ctx.path.ant_glob('src/wrappers/hypre/**/*.cpp'), "whypre", [ "HYPRE" ])
@@ -273,6 +274,7 @@ def settings(ctx):
     libsmsg("                          sparse solvers", [ "mkl", "suitesparse" ])
     libsmsg("              distributed sparse solvers", [ "mklpdss", "hypre", "superlu", "wsmp" ])
     libsmsg("                           GPU libraries", [ "cuda", "rocm" ])
+    libsmsg("                                coupling", [ "precice" ])
 
 """ Recurse to third party libraries wrappers"""
 def recurse(ctx):
@@ -313,6 +315,7 @@ def recurse(ctx):
     # ctx.recurse("src/wrappers/catalyst")
     # ctx.recurse("src/wrappers/nvtx")
     ctx.recurse("src/wrappers/papi")
+    ctx.recurse("src/wrappers/precice")
 
 def get_commit():
     def is_git_directory(path = '.'):

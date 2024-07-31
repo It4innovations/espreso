@@ -1,0 +1,6 @@
+
+def options(opt):
+    pass
+
+def configure(ctx):
+    ctx.check_cxx(mandatory=False, msg="Checking for 'precice'", okmsg="precice", define_name="HAVE_PRECICE", header_name="precice/precice.hpp", lib="precice", uselib_store="PRECICE", global_define=0)
