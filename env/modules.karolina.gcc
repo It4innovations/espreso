@@ -1,4 +1,0 @@
-ml imkl/2022.2.1 ParMETIS/4.0.3-foss-2020b OpenMPI/4.1.4-GCC-12.2.0
-# ml PAPI/6.0.0.1-GCCcore-10.3.0
-
-export CXX=mpic++

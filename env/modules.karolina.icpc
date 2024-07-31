@@ -1,5 +1,0 @@
-ml intel/2022a
-ml PAPI/6.0.0.1-GCCcore-10.3.0
-ml Python/3.10.4-GCCcore-11.3.0
-
-export CXX=mpiicpc

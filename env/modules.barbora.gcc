@@ -1,9 +1,0 @@
-ml imkl/2021.4.0
-ml PAPI/6.0.0.1-GCCcore-10.3.0
-ml GCC/10.3.0
-ml Python/3.9.5-GCCcore-10.3.0  
-ml OpenMPI/4.1.1-GCC-10.3.0
-
-# export LD_LIBRARY_PATH+=:/home/xkadlu01/Code/espreso_measure_me/build
-export MPICXX=mpic++
-export CXX=g++

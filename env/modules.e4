@@ -1,4 +1,0 @@
-ml gcc-8.5.0/ompi-4.1.4
-
-export CXX=mpic++
-export ESPRESO_RANK_TO_GPU_MAP=1
