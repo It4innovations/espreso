@@ -374,6 +374,8 @@ void TFETIOrthogonalSymmetric<T>::_updateGGt()
             break;
         default: break;
         }
+    } else {
+        Projector<T>::GGTtype = Projector<T>::GGT_TYPE::NONE;
     }
     eslog::checkpointln("FETI: COMPUTE GGT INVERSE");
 }
