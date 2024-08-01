@@ -53,27 +53,33 @@ Precice::~Precice()
 
 void Precice::read(const char *name, double *data, double dt)
 {
+#ifdef HAVE_PRECICE
     if (_data) {
         size_t size = info::mesh->surface->size;
         esint *ids = info::mesh->surface->nIDs->datatarray().data();
         _data->precice.readData("SolidMesh", name, precice::span(ids, ids + size), dt, precice::span(data, data + 3 * size));
     }
+#endif
 }
 
 void Precice::write(const char *name, double *data)
 {
+#ifdef HAVE_PRECICE
     if (_data) {
         size_t size = info::mesh->surface->size;
         esint *ids = info::mesh->surface->nIDs->datatarray().data();
         _data->precice.writeData("SolidMesh", name, precice::span(ids, ids + size), precice::span(data, data + 3 * size));
     }
+#endif
 }
 
 void Precice::advance(double dt)
 {
+#ifdef HAVE_PRECICE
     if (_data) {
         _data->precice.advance(dt);
     }
+#endif
 }
 
 void Precice::dummy()

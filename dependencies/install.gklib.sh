@@ -8,12 +8,17 @@ then
     sh ${DEPENDENCIES_DIR}/clone.gklib.sh
 fi
 
-if [ ! -d "${GKLIB_ROOT}/include" ]
+if [ ! -d "${GKLIB_ROOT}/$1" ]
 then
     (
         cd "${GKLIB_ROOT}"
-        make config shared=1 cc=$1 prefix="${PWD}"
+        sed -i 's/option(BUILD_SHARED_LIBS \"Build shared libraries (.dll\/.so) instead of static ones (.lib\/.a)\" OFF)/option(BUILD_SHARED_LIBS \"Turn on due to intel\" ON)/'g CMakeLists.txt
+        make config cc=$1 prefix="${PWD}/$1"
         make -j$(nproc)
         make install
     )
 fi
+
+export CPATH="${GKLIB_ROOT}/$1/include:${CPATH}"
+export LIBRARY_PATH="${GKLIB_ROOT}/$1/lib:${LIBRARY_PATH}"
+export LD_LIBRARY_PATH="${GKLIB_ROOT}/$1/lib:${LD_LIBRARY_PATH}"

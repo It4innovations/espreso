@@ -12,6 +12,7 @@ if [ ! -d "${PRECICE_ROOT}/$1" ]
 then
     (
         cd "${PRECICE_ROOT}"
+        rm -rf build
         mkdir build
         cd build
         cmake .. -DPRECICE_FEATURE_PETSC_MAPPING=OFF -DCMAKE_INSTALL_PREFIX="${PRECICE_ROOT}/$1" -DCMAKE_BUILD_TYPE=Release

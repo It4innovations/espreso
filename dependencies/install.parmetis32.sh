@@ -15,7 +15,7 @@ then
         # skip building of METIS
         sed -i 's/add_subdirectory(${METIS_PATH}/#add_subdirectory(${METIS_PATH}/'g CMakeLists.txt
         sed -i 's/add_subdirectory(programs)/#add_subdirectory(programs)/'g CMakeLists.txt
-        make config shared=1 cc=$1 gklib_path="${DEPENDENCIES_DIR}/gklib" prefix="${PWD}/$1_32"
+        make config shared=1 cc=$1 prefix="${PWD}/$1_32"
         make -j$(nproc)
         make install
     )
