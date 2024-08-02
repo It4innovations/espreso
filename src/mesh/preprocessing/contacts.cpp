@@ -38,7 +38,7 @@
 namespace espreso {
 namespace mesh {
 
-void computeBodiesSurface(NodeStore *nodes, ElementStore *elements, std::vector<ElementsRegionStore*> &elementsRegions, SurfaceStore *surface, std::vector<int> &neighbors)
+void computeBodiesSurface(NodeStore *nodes, ElementStore *elements, std::vector<ElementsRegionStore*> &elementsRegions, std::vector<BoundaryRegionStore*> &boundaryRegions, SurfaceStore *surface, std::vector<int> &neighbors)
 {
 	profiler::syncstart("compute_bodies_surface");
 	auto eregion = [elementsRegions] (const std::string &name) -> ElementsRegionStore* {
@@ -156,6 +156,13 @@ void computeBodiesSurface(NodeStore *nodes, ElementStore *elements, std::vector<
 	utils::sortAndRemoveDuplicates(snodes);
 	surface->nodes = new serializededata<esint, esint>(1, tarray<esint>(threads, snodes));
 	surface->nIDs = new serializededata<esint, esint>(1, tarray<esint>(threads, snodes));
+
+	boundaryRegions.push_back(new BoundaryRegionStore("SURFACE"));
+	boundaryRegions.back()->originalDimension = boundaryRegions.back()->dimension = info::mesh->dimension - 1;
+	boundaryRegions.back()->distribution.threads = surface->edistribution;
+	boundaryRegions.back()->epointers = new serializededata<esint, Element*>(*surface->epointers);
+	boundaryRegions.back()->elements = new serializededata<esint, esint>(*surface->enodes);
+	boundaryRegions.back()->nodes = new serializededata<esint, esint>(*surface->nIDs);
 
 	std::vector<std::vector<ContactInfo> > contact(threads);
 

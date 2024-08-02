@@ -92,7 +92,7 @@ void computeRegionsBoundaryElementsFromNodes(const NodeStore *nodes, const Eleme
 void computeRegionsBoundaryDistribution(NodeStore *nodes, std::vector<BoundaryRegionStore*> &boundaryRegions, std::vector<ContactInterfaceStore*> &contactInterfaces);
 void computeRegionsBoundaryParents(const NodeStore *nodes, const ElementStore *elements, std::vector<BoundaryRegionStore*> &boundaryRegions, std::vector<ContactInterfaceStore*> &contactInterfaces);
 
-void computeBodiesSurface(NodeStore *nodes, ElementStore *elements, std::vector<ElementsRegionStore*> &elementsRegions, SurfaceStore *surface, std::vector<int> &neighbors);
+void computeBodiesSurface(NodeStore *nodes, ElementStore *elements, std::vector<ElementsRegionStore*> &elementsRegions, std::vector<BoundaryRegionStore*> &boundaryRegions, SurfaceStore *surface, std::vector<int> &neighbors);
 void computeWarpedNormals(SurfaceStore * surface);
 void exchangeContactHalo(SurfaceStore * surface, ContactStore *contact);
 void findCloseElements(ContactStore *contact);

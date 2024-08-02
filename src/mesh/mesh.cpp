@@ -282,7 +282,7 @@ void Mesh::analyze()
 		}
 	}
 
-	withSurface = info::ecf->input.contact_interfaces.size();
+	withSurface = withSurface || info::ecf->input.contact_interfaces.size();
 
 	// check whether we need to 'increase' boundary dimensions
 	if (info::ecf->physics == PhysicsConfiguration::TYPE::STRUCTURAL_MECHANICS) {
@@ -472,7 +472,7 @@ void Mesh::computePersistentParameters()
 
 	mesh::computeBodies(elements, bodies, elementsRegions, neighbors);
 	if (withSurface) {
-	    mesh::computeBodiesSurface(nodes, elements, elementsRegions, surface, neighbors);
+	    mesh::computeBodiesSurface(nodes, elements, elementsRegions, boundaryRegions, surface, neighbors);
 	}
 
 	if (info::ecf->input.contact_interfaces.size()) {
@@ -499,8 +499,8 @@ void Mesh::computePersistentParameters()
 	mesh::computeRegionsBoundaryParents(nodes, elements, boundaryRegions, contactInterfaces);
 
 	if (dimension == 3 && info::ecf->output.format == OutputConfiguration::FORMAT::STL_SURFACE) {
-		if (info::ecf->input.contact_interfaces.size() == 0) {
-			mesh::computeBodiesSurface(nodes, elements, elementsRegions, surface, neighbors);
+		if (!withSurface) {
+			mesh::computeBodiesSurface(nodes, elements, elementsRegions, boundaryRegions, surface, neighbors);
 		}
 		mesh::triangularizeSurface(surface);
 		eslog::checkpointln("MESH: BODIES SURFACE COMPUTED");
