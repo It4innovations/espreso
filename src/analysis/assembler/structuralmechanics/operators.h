@@ -29,6 +29,7 @@
 #include "analysis/assembler/structuralmechanics/op.normalpressure.h"
 #include "analysis/assembler/structuralmechanics/op.pressure.h"
 #include "analysis/assembler/structuralmechanics/op.harmonicforce.h"
+#include "analysis/assembler/structuralmechanics/op.fluidforce.h"
 
 namespace espreso {
 
@@ -80,7 +81,7 @@ struct StructuralMechanicsFaceOperators {
 
     Pressure pressure;
     NormalPressure normalPressure;
-    HarmonicForce harmonicForce;
+    FluidForce fluidForce;
 
     DataFiller reRHSfiller, imRHSfiller;
 

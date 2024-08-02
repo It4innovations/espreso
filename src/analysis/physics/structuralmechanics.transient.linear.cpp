@@ -12,6 +12,7 @@
 #include "esinfo/systeminfo.h"
 #include "mesh/store/nodestore.h"
 #include "mesh/store/elementstore.h"
+#include "mesh/store/surfacestore.h"
 #include "output/output.h"
 #include "wrappers/mpi/communication.h"
 #include "wrappers/precice/w.precice.h"
@@ -156,6 +157,13 @@ void StructuralMechanicsTransientLinear::run(step::Step &step)
         eslog::info(" = ----------------------------------------------------------------------------------------- = \n");
         double start = eslog::time();
         precice.read("Forces", StructuralMechanics::Results::fluidForce->data.data(), time.shift);
+//        printf("FORCES\n");
+//        for (int d = 0; d < info::mesh->dimension; ++d) {
+//            for (size_t i = d; i < StructuralMechanics::Results::fluidForce->data.size(); i += info::mesh->dimension) {
+//                printf(" %+e", StructuralMechanics::Results::fluidForce->data[i]);
+//            }
+//            printf("\n");
+//        }
         assembler.evaluate(step, time, K, M, f, nullptr, dirichlet);
         eslog::checkpointln("SIMULATION: PHYSICS ASSEMBLED");
 
@@ -193,6 +201,13 @@ void StructuralMechanicsTransientLinear::run(step::Step &step)
         assembler.updateSolution(x);
         info::mesh->output->updateSolution(step, time);
 
+//        printf("DISPLACEMENT\n");
+//        for (int d = 0; d < info::mesh->dimension; ++d) {
+//            for (size_t i = d; i < StructuralMechanics::Results::displacement->data.size(); i += info::mesh->dimension) {
+//                printf(" %+e", StructuralMechanics::Results::displacement->data[i]);
+//            }
+//            printf("\n");
+//        }
         precice.write("Displacement", StructuralMechanics::Results::displacement->data.data());
         precice.advance(time.shift);
 

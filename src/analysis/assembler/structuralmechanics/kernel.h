@@ -506,6 +506,8 @@ void runBoundaryKernel(const StructuralMechanicsFaceOperators &operators, SubKer
     ThicknessToGp<nodes, ndim> thicknessToGPs(operators.thickness);
     IntegrationKernel<nodes, ndim, edim> integration(operators.integration);
     NormalPressureKernel<nodes, ndim> normalPressure(operators.normalPressure);
+    FluidForceGatherKernel<nodes, ndim> fluidForceGather(operators.fluidForce);
+    FluidForceKernel<nodes, ndim> fluidForce(operators.fluidForce);
     PressureKernel<nodes, ndim> pressure(operators.pressure);
     RHSFillerKernel<nodes> outReRHS(operators.reRHSfiller);
     RHSFillerKernel<nodes> outImRHS(operators.imRHSfiller);
@@ -522,12 +524,18 @@ void runBoundaryKernel(const StructuralMechanicsFaceOperators &operators, SubKer
 
     basis.simd(element);
     thickness.setActiveness(action);
+    fluidForceGather.setActiveness(action);
+    fluidForce.setActiveness(action);
 
     outReRHS.setActiveness(action);
     outImRHS.setActiveness(action);
 
     for (size_t c = 0; c < operators.chunks; ++c) {
         coordinates.simd(element);
+
+        if (fluidForceGather.isactive) {
+            fluidForceGather.simd(element);
+        }
 
         if (thickness.isactive) {
             thickness.simd(element);
@@ -553,6 +561,9 @@ void runBoundaryKernel(const StructuralMechanicsFaceOperators &operators, SubKer
             }
             if (pressure.isactive) {
                 pressure.simd(element, gp);
+            }
+            if (fluidForce.isactive) {
+                fluidForce.simd(element, gp);
             }
         }
 
@@ -650,7 +661,7 @@ void runNodeKernel(const StructuralMechanicsNodeOperators &operators, SubKernel:
     typedef StructuralMechanicsDirichlet<ndim> Element; Element element;
 
     CoordinatesKernel<1, ndim> coordinates(operators.coordinates);
-    HarmonicForceKernel<1, ndim> harmonicForce(operators.harmonicForce);
+    HarmonicForceKernel<ndim> harmonicForce(operators.harmonicForce);
     RHSFillerKernel<1> outReRHS(operators.reRHSfiller);
     RHSFillerKernel<1> outImRHS(operators.imRHSfiller);
     VectorSetterKernel<1, Element> set(operators.reDirichlet, [] (auto &element, size_t &n, size_t &d, size_t &s) { return element.displacement.node[d][s]; });

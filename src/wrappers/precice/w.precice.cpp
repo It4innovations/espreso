@@ -38,14 +38,23 @@ Precice::Precice(const char *name, bool active)
     if (active) {
         _data = new PreciceData(name);
 
-        double *coords = &info::mesh->surface->coordinates->datatarray().data()->x;
-
         _data->size = info::mesh->surface->nIDs->datatarray().size();
         _data->ids = info::mesh->surface->nIDs->datatarray().data();
-        _data->precice.setMeshVertices("SolidMesh", precice::span(coords, coords + 3 * _data->size), precice::span(_data->ids, _data->ids + _data->size));
-        _data->precice.initialize();
 
-        _data->data.resize(3 * _data->size);
+        size_t size = info::mesh->surface->nIDs->datatarray().size();
+        if (info::mesh->dimension == 2) {
+            std::vector<double> coords; coords.reserve(info::mesh->dimension * size);
+            for (size_t n = 0; n < size; ++n) {
+                coords.push_back(info::mesh->surface->coordinates->datatarray()[n].x);
+                coords.push_back(info::mesh->surface->coordinates->datatarray()[n].y);
+            }
+            _data->precice.setMeshVertices("SolidMesh", coords, precice::span(_data->ids, _data->ids + _data->size));
+        } else {
+            double *coords = &info::mesh->surface->coordinates->datatarray().data()->x;
+            _data->precice.setMeshVertices("SolidMesh", precice::span(coords, coords + info::mesh->dimension * _data->size), precice::span(_data->ids, _data->ids + _data->size));
+        }
+        _data->precice.initialize();
+        _data->data.resize(info::mesh->dimension * _data->size);
     }
 #endif
 }
@@ -112,14 +121,23 @@ void Precice::dummy()
     Participant participant(solverName, configFileName, info::mpi::rank, info::mpi::size);
 
     size_t size = info::mesh->surface->nIDs->datatarray().size();
-    double *coords = &info::mesh->surface->coordinates->datatarray().data()->x;
     esint *ids = info::mesh->surface->nIDs->datatarray().data();
-    participant.setMeshVertices("FluidMesh", precice::span(coords, coords + 3 * size), precice::span(ids, ids + size));
+    if (info::mesh->dimension == 2) {
+        std::vector<double> coords; coords.reserve(info::mesh->dimension * size);
+        for (size_t n = 0; n < size; ++n) {
+            coords.push_back(info::mesh->surface->coordinates->datatarray()[n].x);
+            coords.push_back(info::mesh->surface->coordinates->datatarray()[n].y);
+        }
+        participant.setMeshVertices("FluidMesh", coords, precice::span(ids, ids + size));
+    } else {
+        double *coords = &info::mesh->surface->coordinates->datatarray().data()->x;
+        participant.setMeshVertices("FluidMesh", precice::span(coords, coords + info::mesh->dimension * size), precice::span(ids, ids + size));
+    }
 
-    std::vector<double> readData(size * 3);
-    std::vector<double> writeData(size * 3);
+    std::vector<double> readData(size * info::mesh->dimension);
+    std::vector<double> writeData(size * info::mesh->dimension);
 
-    for (size_t i = 2; i < size * 3; i += 3) {
+    for (size_t i = info::mesh->dimension - 1; i < size * info::mesh->dimension; i += info::mesh->dimension) {
         writeData[i] = 1;
     }
     if (participant.requiresInitialData()) {
@@ -135,27 +153,27 @@ void Precice::dummy()
         double dt = participant.getMaxTimeStepSize();
         participant.readData(meshName, dataReadName, precice::span(ids, ids + size), dt, readData);
 
-        for (size_t i = 2; i < size * 3; i += 3) {
+        for (size_t i = info::mesh->dimension - 1; i < size * info::mesh->dimension; i += info::mesh->dimension) {
             writeData[i] = readData[i];
         }
 
         participant.writeData(meshName, dataWriteName, precice::span(ids, ids + size), writeData);
 
-        printf("DISPLACEMENT\n");
-        for (int d = 0; d < 3; ++d) {
-            for (size_t i = d; i < size * 3; i += 3) {
-                printf(" %+e", readData[i]);
-            }
-            printf("\n");
-        }
-
-        printf("FORCES\n");
-        for (int d = 0; d < 3; ++d) {
-            for (size_t i = d; i < size * 3; i += 3) {
-                printf(" %+e", writeData[i]);
-            }
-            printf("\n");
-        }
+//        printf("DISPLACEMENT\n");
+//        for (int d = 0; d < info::mesh->dimension; ++d) {
+//            for (size_t i = d; i < size * info::mesh->dimension; i += info::mesh->dimension) {
+//                printf(" %+e", readData[i]);
+//            }
+//            printf("\n");
+//        }
+//
+//        printf("FORCES\n");
+//        for (int d = 0; d < info::mesh->dimension; ++d) {
+//            for (size_t i = d; i < size * info::mesh->dimension; i += info::mesh->dimension) {
+//                printf(" %+e", writeData[i]);
+//            }
+//            printf("\n");
+//        }
 
         participant.advance(dt);
 

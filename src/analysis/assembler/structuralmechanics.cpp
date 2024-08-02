@@ -397,18 +397,21 @@ void StructuralMechanics::analyze(const step::Step &step)
         if (info::mesh->boundary[r]->dimension) {
             for (size_t i = 0; i < info::mesh->boundary[r]->eintervals.size(); ++i) {
                 faceKernels[r][i].coordinates.activate(region->elements->cbegin() + region->eintervals[i].begin, region->elements->cbegin() + region->eintervals[i].end, settings.element_behaviour == StructuralMechanicsGlobalSettings::ELEMENT_BEHAVIOUR::AXISYMMETRIC);
-                faceKernels[r][i].normalPressure.activate(getExpression(info::mesh->boundary[r]->name, configuration.normal_pressure), settings.element_behaviour);
+                faceKernels[r][i].normalPressure.activate(getExpression(region->name, configuration.normal_pressure), settings.element_behaviour);
                 if (settings.contact_interfaces) {
                     faceKernels[r][i].normal.activate(region->elements->cbegin() + region->eintervals[i].begin, region->elements->cbegin() + region->eintervals[i].end, Results::normal->data.data(), faceMultiplicity.data());
                 }
-                auto pressure = configuration.pressure.find(info::mesh->boundary[r]->name);
+                auto pressure = configuration.pressure.find(region->name);
                 if (pressure != configuration.pressure.end()) {
                     faceKernels[r][i].pressure.activate(pressure->second.pressure, pressure->second.direction, settings.element_behaviour);
                 }
+                if (settings.coupling && StringCompare::caseInsensitiveEq(region->name, "SURFACE")) {
+                    faceKernels[r][i].fluidForce.activate(region->elements->cbegin() + region->eintervals[i].begin, region->elements->cbegin() + region->eintervals[i].end, Results::fluidForce->data.data());
+                }
             }
         }
-        for (size_t t = 0; t < info::mesh->boundary[r]->nodes->threads(); ++t) {
-            nodeKernels[r][t].harmonicForce.activate(getExpression(info::mesh->boundary[r]->name, configuration.harmonic_force), settings.element_behaviour);
+        for (size_t t = 0; t < region->nodes->threads(); ++t) {
+            nodeKernels[r][t].harmonicForce.activate(getExpression(region->name, configuration.harmonic_force), settings.element_behaviour);
             nodeKernels[r][t].coordinates.activate(region->nodes->cbegin(t), region->nodes->cend(), false);
         }
     }

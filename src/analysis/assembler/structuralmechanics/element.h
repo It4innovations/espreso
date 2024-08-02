@@ -94,6 +94,10 @@ template <size_t nodes, size_t gps, size_t ndim, size_t edim> struct StructuralM
         } pressure;
     } ecf;
 
+    struct {
+        alignas(SIMD::size * sizeof(double)) SIMD pressure[nodes][ndim];
+    } coupling;
+
     alignas(SIMD::size * sizeof(double)) SIMD normal[ndim];
     alignas(SIMD::size * sizeof(double)) SIMD f[ndim * nodes];
 };
