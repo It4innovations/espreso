@@ -489,7 +489,7 @@ void TotalFETIGpu<T,I>::set(const step::Step &step)
             if(is_implicit) gpu::spblas::mv<T,I>(hs, 'T', data.descr_Bperm_sp, data.descr_xvec, data.descr_wvec, data.buffer_spmv1, 'B');
             if(is_implicit) gpu::spblas::mv<T,I>(hs, 'N', data.descr_Bperm_sp, data.descr_wvec, data.descr_yvec, data.buffer_spmv2, 'B');
             if(do_trsv1_sp_L)  gpu::spblas::trsv<T,I>(hs, 'N', data.descr_L_sp,  data.descr_wvec, data.descr_zvec, data.descr_sparse_trsv1, data.buffersize_sptrs1, data.buffer_sptrs1, 'B');
-            if(do_trsv1_sp_LH) gpu::spblas::trsv<T,I>(hs, 'H', data.descr_LH_sp, data.descr_wvec, data.descr_zvec, data.descr_sparse_trsv1, data.buffersize_sptrs2, data.buffer_sptrs2, 'B');
+            if(do_trsv1_sp_LH) gpu::spblas::trsv<T,I>(hs, 'H', data.descr_LH_sp, data.descr_wvec, data.descr_zvec, data.descr_sparse_trsv1, data.buffersize_sptrs1, data.buffer_sptrs1, 'B');
             if(do_trsv2_sp_U)  gpu::spblas::trsv<T,I>(hs, 'N', data.descr_U_sp,  data.descr_zvec, data.descr_wvec, data.descr_sparse_trsv2, data.buffersize_sptrs2, data.buffer_sptrs2, 'B');
             if(do_trsv2_sp_UH) gpu::spblas::trsv<T,I>(hs, 'H', data.descr_UH_sp, data.descr_zvec, data.descr_wvec, data.descr_sparse_trsv2, data.buffersize_sptrs2, data.buffer_sptrs2, 'B');
 
@@ -537,6 +537,8 @@ void TotalFETIGpu<T,I>::set(const step::Step &step)
             data.d_Bperm_sp.resize(data.n_dofs_interface, data.n_dofs_domain, feti.B1[di].nnz);
             data.d_apply_x.resize(data.n_dofs_interface);
             data.d_apply_y.resize(data.n_dofs_interface);
+            data.d_apply_z.resize(data.n_dofs_domain);
+            data.d_apply_w.resize(data.n_dofs_domain);
             data.d_applyg_D2C.resize(data.n_dofs_interface);
             if(do_trs1_sp) data.buffer_sptrs1 = gpu::mgm::memalloc_device(data.buffersize_sptrs1);
             if(do_trs2_sp) data.buffer_sptrs2 = gpu::mgm::memalloc_device(data.buffersize_sptrs2);
@@ -698,6 +700,37 @@ void TotalFETIGpu<T,I>::set(const step::Step &step)
     }
     tm_poolalloc.stop();
 
+    // roughly guess if there is not enough memory in the pool
+    {
+        size_t min_mem = std::numeric_limits<size_t>::max();
+        size_t max_mem = std::numeric_limits<size_t>::min();
+        size_t avg_mem = 0;
+        for(size_t di = 0; di < n_domains; di++) {
+            per_domain_stuff & data = domain_data[di];
+            size_t mem = 0;
+            if(do_alloc_d_dn_L)   mem += Matrix_Dense<T,I>::memoryRequirement(data.n_dofs_domain, data.n_dofs_domain, data.ld_domain);
+            if(do_alloc_d_dn_U)   mem += Matrix_Dense<T,I>::memoryRequirement(data.n_dofs_domain, data.n_dofs_domain, data.ld_domain);
+            if(do_alloc_d_dn_LH)  mem += Matrix_Dense<T,I>::memoryRequirement(data.n_dofs_domain, data.n_dofs_domain, data.ld_domain);
+            if(do_alloc_d_dn_UH)  mem += Matrix_Dense<T,I>::memoryRequirement(data.n_dofs_domain, data.n_dofs_domain, data.ld_domain);
+            if(need_X && order_X == 'R') mem += Matrix_Dense<T,I>::memoryRequirement(data.n_dofs_domain,    data.n_dofs_interface, data.ld_X);
+            if(need_X && order_X == 'C') mem += Matrix_Dense<T,I>::memoryRequirement(data.n_dofs_interface, data.n_dofs_domain,    data.ld_X);
+            if(need_Y && order_X == 'R') mem += Matrix_Dense<T,I>::memoryRequirement(data.n_dofs_domain,    data.n_dofs_interface, data.ld_X);
+            if(need_Y && order_X == 'C') mem += Matrix_Dense<T,I>::memoryRequirement(data.n_dofs_interface, data.n_dofs_domain,    data.ld_X);
+            if(need_f_tmp) mem += Matrix_Dense<T,I>::memoryRequirement(data.n_dofs_interface, data.n_dofs_interface, data.ld_F);
+            mem += data.buffersize_other;
+            min_mem = std::min(min_mem, mem);
+            max_mem = std::max(max_mem, mem);
+            avg_mem += mem;
+        }
+        avg_mem /= n_domains;
+        if(memory_info_basic) {
+            eslog::info("rank %4d GPU memory from mempool requirements per domain [MiB]: %9zu < %9zu - %9zu >\n", info::mpi::rank, avg_mem >> 20, min_mem >> 20, max_mem >> 20);
+        }
+        if(max_mem > cbmba_res_device->get_max_capacity()) {
+            eslog::error("There is not enough memory in the GPU mempool\n");
+        }
+    }
+
     // preprocessing
     tm_preprocess.start();
     #pragma omp parallel for schedule(static,1) if(config->concurrency_set == CONCURRENCY::PARALLEL)
@@ -716,8 +749,11 @@ void TotalFETIGpu<T,I>::set(const step::Step &step)
         tm_allocinpool.start();
         {
             cbmba_res_device->do_transaction([&](){
-                if(data.buffer_spmv1.size.preprocess > 0) data.buffer_spmv1.mem.preprocess = cbmba_res_device->allocate(data.buffer_spmv1.size.preprocess, align_B);
-                if(data.buffer_spmv2.size.preprocess > 0) data.buffer_spmv2.mem.preprocess = cbmba_res_device->allocate(data.buffer_spmv2.size.preprocess, align_B);
+                size_t biggest = std::max(data.buffer_spmv1.size.preprocess, data.buffer_spmv2.size.preprocess);
+                void * ptr = nullptr;
+                if(biggest > 0) ptr = cbmba_res_device->allocate(biggest, align_B);
+                data.buffer_spmv1.mem.preprocess = ptr;
+                data.buffer_spmv2.mem.preprocess = ptr;
             });
         }
         tm_allocinpool.stop();
@@ -760,7 +796,7 @@ void TotalFETIGpu<T,I>::set(const step::Step &step)
 
                 tm_trsv1.start();
                 if(do_trsv1_sp_L)  gpu::spblas::trsv<T,I>(hs, 'N', data.descr_L_sp,  data.descr_wvec, data.descr_zvec, data.descr_sparse_trsv1, data.buffersize_sptrs1, data.buffer_sptrs1, 'P');
-                if(do_trsv1_sp_LH) gpu::spblas::trsv<T,I>(hs, 'H', data.descr_LH_sp, data.descr_wvec, data.descr_zvec, data.descr_sparse_trsv1, data.buffersize_sptrs2, data.buffer_sptrs2, 'P');
+                if(do_trsv1_sp_LH) gpu::spblas::trsv<T,I>(hs, 'H', data.descr_LH_sp, data.descr_wvec, data.descr_zvec, data.descr_sparse_trsv1, data.buffersize_sptrs1, data.buffer_sptrs1, 'P');
                 if(config->concurrency_set == CONCURRENCY::SEQ_WAIT) gpu::mgm::queue_wait(q);
                 tm_trsv1.stop();
 
@@ -782,8 +818,10 @@ void TotalFETIGpu<T,I>::set(const step::Step &step)
         tm_freeinpool.start();
         {
             gpu::mgm::submit_host_function(q, [&,di](){
-                cbmba_res_device->deallocate(domain_data[di].buffer_spmv1.mem.preprocess);
-                cbmba_res_device->deallocate(domain_data[di].buffer_spmv2.mem.preprocess);
+                void * ptr = domain_data[di].buffer_spmv1.mem.preprocess;
+                cbmba_res_device->deallocate(ptr);
+                domain_data[di].buffer_spmv1.mem.preprocess = nullptr;
+                domain_data[di].buffer_spmv2.mem.preprocess = nullptr;
             });
             if(config->concurrency_update == CONCURRENCY::SEQ_WAIT) gpu::mgm::queue_wait(q);
         }
@@ -824,36 +862,6 @@ void TotalFETIGpu<T,I>::set(const step::Step &step)
         eslog::info("rank %4d   GPU memory used for buffers transL2LH [MiB]: %9zu\n", info::mpi::rank, mem_buffer_transL2LH >> 20);
         eslog::info("rank %4d   GPU memory used for buffers transU2UH [MiB]: %9zu\n", info::mpi::rank, mem_buffer_transU2UH >> 20);
         eslog::info("rank %4d GPU memory used for memory pool [MiB]:         %9zu\n", info::mpi::rank, cbmba_res_device->get_max_capacity() >> 20);
-    }
-
-    {
-        size_t min_mem = std::numeric_limits<size_t>::max();
-        size_t max_mem = std::numeric_limits<size_t>::min();
-        size_t avg_mem = 0;
-        for(size_t di = 0; di < n_domains; di++) {
-            per_domain_stuff & data = domain_data[di];
-            size_t mem = 0;
-            if(do_alloc_d_dn_L)   mem += Matrix_Dense<T,I>::memoryRequirement(data.n_dofs_domain, data.n_dofs_domain, data.ld_domain);
-            if(do_alloc_d_dn_U)   mem += Matrix_Dense<T,I>::memoryRequirement(data.n_dofs_domain, data.n_dofs_domain, data.ld_domain);
-            if(do_alloc_d_dn_LH)  mem += Matrix_Dense<T,I>::memoryRequirement(data.n_dofs_domain, data.n_dofs_domain, data.ld_domain);
-            if(do_alloc_d_dn_UH)  mem += Matrix_Dense<T,I>::memoryRequirement(data.n_dofs_domain, data.n_dofs_domain, data.ld_domain);
-            if(order_X == 'R')           mem += Matrix_Dense<T,I>::memoryRequirement(data.n_dofs_domain,    data.n_dofs_interface, data.ld_X);
-            if(order_X == 'C')           mem += Matrix_Dense<T,I>::memoryRequirement(data.n_dofs_interface, data.n_dofs_domain,    data.ld_X);
-            if(order_X == 'R' && need_Y) mem += Matrix_Dense<T,I>::memoryRequirement(data.n_dofs_domain,    data.n_dofs_interface, data.ld_X);
-            if(order_X == 'C' && need_Y) mem += Matrix_Dense<T,I>::memoryRequirement(data.n_dofs_interface, data.n_dofs_domain,    data.ld_X);
-            if(need_f_tmp) mem += Matrix_Dense<T,I>::memoryRequirement(data.n_dofs_interface, data.n_dofs_interface, data.ld_F);
-            mem += data.buffersize_other;
-            min_mem = std::min(min_mem, mem);
-            max_mem = std::max(max_mem, mem);
-            avg_mem += mem;
-        }
-        avg_mem /= n_domains;
-        if(memory_info_basic) {
-            eslog::info("rank %4d GPU memory from mempool requirements per domain [MiB]: %9zu < %9zu - %9zu >\n", info::mpi::rank, avg_mem >> 20, min_mem >> 20, max_mem >> 20);
-        }
-        if(max_mem > cbmba_res_device->get_max_capacity()) {
-            eslog::error("There is not enough memory in the GPU mempool\n");
-        }
     }
 
     tm_wait.start();
@@ -1052,7 +1060,7 @@ void TotalFETIGpu<T,I>::update(const step::Step &step)
             tm_descr_update_trsm2.stop();
             tm_descr_update_trsv1.start();
             if(do_trsv1_sp_L)  gpu::spblas::trsv<T,I>(hs, 'N', data.descr_L_sp,  data.descr_wvec, data.descr_zvec, data.descr_sparse_trsv1, data.buffersize_sptrs1, data.buffer_sptrs1, 'U');
-            if(do_trsv1_sp_LH) gpu::spblas::trsv<T,I>(hs, 'H', data.descr_LH_sp, data.descr_wvec, data.descr_zvec, data.descr_sparse_trsv1, data.buffersize_sptrs2, data.buffer_sptrs2, 'U');
+            if(do_trsv1_sp_LH) gpu::spblas::trsv<T,I>(hs, 'H', data.descr_LH_sp, data.descr_wvec, data.descr_zvec, data.descr_sparse_trsv1, data.buffersize_sptrs1, data.buffer_sptrs1, 'U');
             if(config->concurrency_update == CONCURRENCY::SEQ_WAIT) gpu::mgm::queue_wait(q);
             tm_descr_update_trsv1.stop();
             tm_descr_update_trsv2.start();
@@ -1509,7 +1517,13 @@ void TotalFETIGpu<T,I>::apply_implicit_sggpu(const Vector_Dual<T> &x_cluster, Ve
     print_timer("Apply     copyin", tm_copyin);
     print_timer("Apply     scatter", tm_scatter);
     print_timer("Apply     apply_outer", tm_apply_outer);
+    print_timer("Apply       allocinpool", tm_allocinpool);
     print_timer("Apply       compute", tm_compute);
+    print_timer("Apply         spmv1", tm_spmv1);
+    print_timer("Apply         trsv1", tm_trsv1);
+    print_timer("Apply         trsv2", tm_trsv2);
+    print_timer("Apply         spmv2", tm_spmv2);
+    print_timer("Apply       freeinpool", tm_freeinpool);
     print_timer("Apply     zerofill", tm_zerofill);
     print_timer("Apply     gather", tm_gather);
     print_timer("Apply     copyout", tm_copyout);
@@ -1527,9 +1541,11 @@ void TotalFETIGpu<T,I>::apply_implicit_compute(size_t di, my_timer & tm_allocinp
     tm_allocinpool.start();
     {
         cbmba_res_device->do_transaction([&](){
-            // w, z vectors
-            if(data.buffer_spmv1.size.compute > 0) data.buffer_spmv1.mem.compute = cbmba_res_device->allocate(data.buffer_spmv1.size.compute, align_B);
-            if(data.buffer_spmv2.size.compute > 0) data.buffer_spmv2.mem.compute = cbmba_res_device->allocate(data.buffer_spmv2.size.compute, align_B);
+            size_t bigger = std::max(data.buffer_spmv1.size.compute, data.buffer_spmv2.size.compute);
+            void * ptr = nullptr;
+            if(bigger > 0) ptr = cbmba_res_device->allocate(bigger, align_B);
+            data.buffer_spmv1.mem.compute = ptr;
+            data.buffer_spmv2.mem.compute = ptr;
         });
     }
     tm_allocinpool.stop();
@@ -1563,8 +1579,10 @@ void TotalFETIGpu<T,I>::apply_implicit_compute(size_t di, my_timer & tm_allocinp
     tm_freeinpool.start();
     {
         gpu::mgm::submit_host_function(q, [&,di](){
-            cbmba_res_device->deallocate(domain_data[di].buffer_spmv1.mem.compute);
-            cbmba_res_device->deallocate(domain_data[di].buffer_spmv2.mem.compute);
+            void * ptr = data.buffer_spmv1.mem.compute;
+            cbmba_res_device->deallocate(ptr);
+            data.buffer_spmv1.mem.compute = nullptr;
+            data.buffer_spmv2.mem.compute = nullptr;
         });
         if(config->concurrency_update == CONCURRENCY::SEQ_WAIT) gpu::mgm::queue_wait(q);
     }
