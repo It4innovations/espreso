@@ -502,6 +502,10 @@ void TotalFETIGpu<T,I>::set(const step::Step &step)
                 if(do_herk) gpu::dnblas::herk<T,I>(hd, data.n_dofs_interface, data.n_dofs_domain, dummyptrT, data.ld_X, order_X, 'H', dummyptrT, data.ld_F, order_F, data.hermitian_F_fill);
                 if(do_apply_hemv) gpu::dnblas::hemv(hd, data.n_dofs_interface, dummyptrT, data.ld_F, order_F, 'N', data.hermitian_F_fill, dummyptrT, dummyptrT);
                 if(do_apply_gemv) gpu::dnblas::gemv(hd, data.n_dofs_interface, data.n_dofs_interface, dummyptrT, data.ld_F, order_F, 'N', dummyptrT, dummyptrT);
+                if(do_trsv1_dn_L)  gpu::dnblas::trsv<T,I>(hd, data.n_dofs_domain, dummyptrT, data.ld_domain, 'R', 'N', 'L', dummyptrT);
+                if(do_trsv1_dn_LH) gpu::dnblas::trsv<T,I>(hd, data.n_dofs_domain, dummyptrT, data.ld_domain, 'R', 'H', 'U', dummyptrT);
+                if(do_trsv2_dn_U)  gpu::dnblas::trsv<T,I>(hd, data.n_dofs_domain, dummyptrT, data.ld_domain, 'R', 'N', 'U', dummyptrT);
+                if(do_trsv2_dn_UH) gpu::dnblas::trsv<T,I>(hd, data.n_dofs_domain, dummyptrT, data.ld_domain, 'R', 'H', 'L', dummyptrT);
             });
 
             gpu::mgm::queue_wait(q);
@@ -1373,7 +1377,7 @@ template<typename T, typename I>
 void TotalFETIGpu<T,I>::apply_implicit_sgcpu(const Vector_Dual<T> &x_cluster, Vector_Dual<T> &y_cluster)
 {
     my_timer tm_total(timers_basic);
-    my_timer tm_apply_outer(timers_detailed), tm_apply_inner(timers_detailed), tm_scatter(timers_detailed), tm_copyin(timers_detailed), tm_compute(timers_detailed), tm_copyout(timers_detailed), tm_zerofill(timers_detailed), tm_wait(timers_detailed), tm_gather(timers_detailed), tm_gather_inner(timers_detailed), tm_allocinpool(timers_detailed), tm_freeinpool(timers_detailed), tm_spmv1(timers_detailed), tm_spmv2(timers_detailed), tm_trsv1(timers_detailed), tm_trsv2(timers_detailed);
+    my_timer tm_apply_outer(timers_detailed), tm_apply_inner(timers_detailed), tm_scatter(timers_detailed), tm_copyin(timers_detailed), tm_compute(timers_detailed), tm_copyout(timers_detailed), tm_zerofill(timers_detailed), tm_wait(timers_detailed), tm_gather(timers_detailed), tm_gather_inner(timers_detailed), tm_allocinpool(timers_detailed), tm_freeinpool(timers_detailed), tm_setpointers(timers_detailed), tm_sp2dn(timers_detailed), tm_spmv1(timers_detailed), tm_spmv2(timers_detailed), tm_trsv1(timers_detailed), tm_trsv2(timers_detailed);
 
     tm_total.start();
 
@@ -1396,7 +1400,7 @@ void TotalFETIGpu<T,I>::apply_implicit_sgcpu(const Vector_Dual<T> &x_cluster, Ve
         if(config->concurrency_apply == CONCURRENCY::SEQ_WAIT) gpu::mgm::queue_wait(q);
         tm_copyin.stop();
 
-        apply_implicit_compute(di, tm_allocinpool, tm_freeinpool, tm_compute, tm_spmv1, tm_trsv1, tm_trsv2, tm_spmv2);
+        apply_implicit_compute(di, tm_allocinpool, tm_freeinpool, tm_setpointers, tm_sp2dn, tm_compute, tm_spmv1, tm_trsv1, tm_trsv2, tm_spmv2);
 
         tm_copyout.start();
         gpu::mgm::copy_submit_d2h(q, data.h_applyc_y, data.d_apply_y);
@@ -1444,6 +1448,8 @@ void TotalFETIGpu<T,I>::apply_implicit_sgcpu(const Vector_Dual<T> &x_cluster, Ve
     print_timer("Apply         scatter", tm_scatter);
     print_timer("Apply         copyin", tm_copyin);
     print_timer("Apply         allocinpool", tm_allocinpool);
+    print_timer("Apply         setpointers", tm_setpointers);
+    print_timer("Apply         sp2dn", tm_sp2dn);
     print_timer("Apply         compute", tm_compute);
     print_timer("Apply           spmv1", tm_spmv1);
     print_timer("Apply           trsv1", tm_trsv1);
@@ -1461,7 +1467,7 @@ template<typename T, typename I>
 void TotalFETIGpu<T,I>::apply_implicit_sggpu(const Vector_Dual<T> &x_cluster, Vector_Dual<T> &y_cluster)
 {
     my_timer tm_total(timers_basic);
-    my_timer tm_copyin(timers_detailed), tm_scatter(timers_detailed), tm_apply_outer(timers_detailed), tm_compute(timers_detailed), tm_zerofill(timers_detailed), tm_gather(timers_detailed), tm_copyout(timers_detailed), tm_wait(timers_detailed), tm_allocinpool(timers_detailed), tm_freeinpool(timers_detailed), tm_spmv1(timers_detailed), tm_spmv2(timers_detailed), tm_trsv1(timers_detailed), tm_trsv2(timers_detailed);
+    my_timer tm_copyin(timers_detailed), tm_scatter(timers_detailed), tm_apply_outer(timers_detailed), tm_compute(timers_detailed), tm_zerofill(timers_detailed), tm_gather(timers_detailed), tm_copyout(timers_detailed), tm_wait(timers_detailed), tm_allocinpool(timers_detailed), tm_freeinpool(timers_detailed), tm_setpointers(timers_detailed), tm_sp2dn(timers_detailed), tm_spmv1(timers_detailed), tm_spmv2(timers_detailed), tm_trsv1(timers_detailed), tm_trsv2(timers_detailed);
 
     tm_total.start();
 
@@ -1482,7 +1488,7 @@ void TotalFETIGpu<T,I>::apply_implicit_sggpu(const Vector_Dual<T> &x_cluster, Ve
     gpu::mgm::queue_async_barrier({main_q}, queues);
     #pragma omp parallel for schedule(static,1) if(config->concurrency_apply == CONCURRENCY::PARALLEL)
     for(size_t di = 0; di < n_domains; di++) {
-        apply_implicit_compute(di, tm_allocinpool, tm_freeinpool, tm_compute, tm_spmv1, tm_trsv1, tm_trsv2, tm_spmv2);
+        apply_implicit_compute(di, tm_allocinpool, tm_freeinpool, tm_setpointers, tm_sp2dn, tm_compute, tm_spmv1, tm_trsv1, tm_trsv2, tm_spmv2);
     }
     tm_apply_outer.stop();
 
@@ -1518,6 +1524,8 @@ void TotalFETIGpu<T,I>::apply_implicit_sggpu(const Vector_Dual<T> &x_cluster, Ve
     print_timer("Apply     scatter", tm_scatter);
     print_timer("Apply     apply_outer", tm_apply_outer);
     print_timer("Apply       allocinpool", tm_allocinpool);
+    print_timer("Apply       setpointers", tm_setpointers);
+    print_timer("Apply       sp2dn", tm_sp2dn);
     print_timer("Apply       compute", tm_compute);
     print_timer("Apply         spmv1", tm_spmv1);
     print_timer("Apply         trsv1", tm_trsv1);
@@ -1531,56 +1539,108 @@ void TotalFETIGpu<T,I>::apply_implicit_sggpu(const Vector_Dual<T> &x_cluster, Ve
 }
 
 template<typename T, typename I>
-void TotalFETIGpu<T,I>::apply_implicit_compute(size_t di, my_timer & tm_allocinpool, my_timer & tm_freeinpool, my_timer & tm_compute, my_timer & tm_spmv1, my_timer & tm_trsv1, my_timer & tm_trsv2, my_timer & tm_spmv2)
+void TotalFETIGpu<T,I>::apply_implicit_compute(size_t di, my_timer & tm_allocinpool, my_timer & tm_freeinpool, my_timer & tm_setpointers, my_timer & tm_sp2dn, my_timer & tm_compute, my_timer & tm_spmv1, my_timer & tm_trsv1, my_timer & tm_trsv2, my_timer & tm_spmv2)
 {
     gpu::mgm::queue & q = queues[di % n_queues];
-    // gpu::dnblas::handle & hd = handles_dense[di % n_queues];
+    gpu::dnblas::handle & hd = handles_dense[di % n_queues];
     gpu::spblas::handle & hs = handles_sparse[di % n_queues];
     per_domain_stuff & data = domain_data[di];
 
+    void * buffer_other;
+
     tm_allocinpool.start();
     {
+        cbmba_d ator_d(*cbmba_res_device, align_B);
         cbmba_res_device->do_transaction([&](){
-            size_t bigger = std::max(data.buffer_spmv1.size.compute, data.buffer_spmv2.size.compute);
-            void * ptr = nullptr;
-            if(bigger > 0) ptr = cbmba_res_device->allocate(bigger, align_B);
-            data.buffer_spmv1.mem.compute = ptr;
-            data.buffer_spmv2.mem.compute = ptr;
+            data.d_L_dn  = std::make_unique<Matrix_Dense<T,I,cbmba_d>>(ator_d);
+            data.d_U_dn  = std::make_unique<Matrix_Dense<T,I,cbmba_d>>(ator_d);
+            data.d_LH_dn = std::make_unique<Matrix_Dense<T,I,cbmba_d>>(ator_d);
+            data.d_UH_dn = std::make_unique<Matrix_Dense<T,I,cbmba_d>>(ator_d);
+            if(do_alloc_d_dn_L)   data.d_L_dn ->resize(data.n_dofs_domain, data.n_dofs_domain, data.ld_domain);
+            if(do_alloc_d_dn_U)   data.d_U_dn ->resize(data.n_dofs_domain, data.n_dofs_domain, data.ld_domain);
+            if(do_alloc_d_dn_LH)  data.d_LH_dn->resize(data.n_dofs_domain, data.n_dofs_domain, data.ld_domain);
+            if(do_alloc_d_dn_UH)  data.d_UH_dn->resize(data.n_dofs_domain, data.n_dofs_domain, data.ld_domain);
+            if(do_link_d_dn_LH_U) data.d_LH_dn->shallowCopy(*data.d_U_dn);
+            if(do_link_d_dn_UH_L) data.d_UH_dn->shallowCopy(*data.d_L_dn);
+
+            size_t biggest = std::max({data.buffersize_other, data.buffer_spmv1.size.compute, data.buffer_spmv2.size.compute});
+            if(biggest > 0) buffer_other = cbmba_res_device->allocate(biggest, align_B);
+            data.buffer_spmv1.mem.compute = buffer_other;
+            data.buffer_spmv2.mem.compute = buffer_other;
         });
     }
     tm_allocinpool.stop();
 
+    gpu::dnblas::buffer_set(hd, buffer_other, data.buffersize_other);
+
+    tm_setpointers.start();
+    {
+        if(do_descr_dn_L)  gpu::spblas::descr_matrix_dense_link_data(data.descr_L_dn,  *data.d_L_dn);
+        if(do_descr_dn_LH) gpu::spblas::descr_matrix_dense_link_data(data.descr_LH_dn, *data.d_LH_dn);
+        if(do_descr_dn_U)  gpu::spblas::descr_matrix_dense_link_data(data.descr_U_dn,  *data.d_U_dn);
+        if(do_descr_dn_UH) gpu::spblas::descr_matrix_dense_link_data(data.descr_UH_dn, *data.d_UH_dn);
+    }
+    tm_setpointers.stop();
+
+    tm_sp2dn.start();
+    {
+        if(do_sp2dn_L)  gpu::spblas::sparse_to_dense<T,I>(hs, 'N', data.descr_L_sp,  data.descr_L_dn,  data.buffersize_other, buffer_other, 'C');
+        if(do_sp2dn_U)  gpu::spblas::sparse_to_dense<T,I>(hs, 'N', data.descr_U_sp,  data.descr_U_dn,  data.buffersize_other, buffer_other, 'C');
+        if(do_sp2dn_LH) gpu::spblas::sparse_to_dense<T,I>(hs, 'N', data.descr_LH_sp, data.descr_LH_dn, data.buffersize_other, buffer_other, 'C');
+        if(do_sp2dn_UH) gpu::spblas::sparse_to_dense<T,I>(hs, 'N', data.descr_UH_sp, data.descr_UH_dn, data.buffersize_other, buffer_other, 'C');
+        if(config->concurrency_apply == CONCURRENCY::SEQ_WAIT) gpu::mgm::queue_wait(q);
+    }
+    tm_sp2dn.stop();
+
     tm_compute.start();
     {
+        T * & vec_1_ptr = data.d_apply_w.vals;
+        T * & vec_2_ptr = (is_factor1_sparse ? data.d_apply_z.vals : data.d_apply_w.vals);
+        // T * & vec_3_ptr = ((is_factor1_sparse == is_factor2_sparse) ? data.d_apply_w.vals : data.d_apply_z.vals);
+        gpu::spblas::descr_vector_dense & vec_1_descr = data.descr_wvec;
+        gpu::spblas::descr_vector_dense & vec_2_descr = (is_factor1_sparse ? data.descr_zvec : data.descr_wvec);
+        gpu::spblas::descr_vector_dense & vec_3_descr = ((is_factor1_sparse == is_factor2_sparse) ? data.descr_wvec : data.descr_zvec);
+
         tm_spmv1.start();
         gpu::spblas::mv<T,I>(hs, 'T', data.descr_Bperm_sp, data.descr_xvec, data.descr_wvec, data.buffer_spmv1, 'C');
         if(config->concurrency_apply == CONCURRENCY::SEQ_WAIT) gpu::mgm::queue_wait(q);
         tm_spmv1.stop();
 
         tm_trsv1.start();
-        if(do_trsv1_sp_L)  gpu::spblas::trsv<T,I>(hs, 'N', data.descr_L_sp,  data.descr_wvec, data.descr_zvec, data.descr_sparse_trsv1, data.buffersize_sptrs1, data.buffer_sptrs1, 'C');
-        if(do_trsv1_sp_LH) gpu::spblas::trsv<T,I>(hs, 'H', data.descr_LH_sp, data.descr_wvec, data.descr_zvec, data.descr_sparse_trsv1, data.buffersize_sptrs1, data.buffer_sptrs1, 'C');
+        if(do_trsv1_sp_L)  gpu::spblas::trsv<T,I>(hs, 'N', data.descr_L_sp,  vec_1_descr, vec_2_descr, data.descr_sparse_trsv1, data.buffersize_sptrs1, data.buffer_sptrs1, 'C');
+        if(do_trsv1_sp_LH) gpu::spblas::trsv<T,I>(hs, 'H', data.descr_LH_sp, vec_1_descr, vec_2_descr, data.descr_sparse_trsv1, data.buffersize_sptrs1, data.buffer_sptrs1, 'C');
+        if(do_trsv1_dn_L)  gpu::dnblas::trsv<T,I>(hd, data.n_dofs_domain, data.d_L_dn->vals,  data.ld_domain, 'R', 'N', 'L', vec_1_ptr);
+        if(do_trsv1_dn_LH) gpu::dnblas::trsv<T,I>(hd, data.n_dofs_domain, data.d_LH_dn->vals, data.ld_domain, 'R', 'H', 'U', vec_1_ptr);
         if(config->concurrency_apply == CONCURRENCY::SEQ_WAIT) gpu::mgm::queue_wait(q);
         tm_trsv1.stop();
 
         tm_trsv2.start();
-        if(do_trsv2_sp_U)  gpu::spblas::trsv<T,I>(hs, 'N', data.descr_U_sp,  data.descr_zvec, data.descr_wvec, data.descr_sparse_trsv2, data.buffersize_sptrs2, data.buffer_sptrs2, 'C');
-        if(do_trsv2_sp_UH) gpu::spblas::trsv<T,I>(hs, 'H', data.descr_UH_sp, data.descr_zvec, data.descr_wvec, data.descr_sparse_trsv2, data.buffersize_sptrs2, data.buffer_sptrs2, 'C');
+        if(do_trsv2_sp_U)  gpu::spblas::trsv<T,I>(hs, 'N', data.descr_U_sp,  vec_2_descr, vec_3_descr, data.descr_sparse_trsv2, data.buffersize_sptrs2, data.buffer_sptrs2, 'C');
+        if(do_trsv2_sp_UH) gpu::spblas::trsv<T,I>(hs, 'H', data.descr_UH_sp, vec_2_descr, vec_3_descr, data.descr_sparse_trsv2, data.buffersize_sptrs2, data.buffer_sptrs2, 'C');
+        if(do_trsv2_dn_U)  gpu::dnblas::trsv<T,I>(hd, data.n_dofs_domain, data.d_U_dn->vals,  data.ld_domain, 'R', 'N', 'U', vec_2_ptr);
+        if(do_trsv2_dn_UH) gpu::dnblas::trsv<T,I>(hd, data.n_dofs_domain, data.d_UH_dn->vals, data.ld_domain, 'R', 'H', 'L', vec_2_ptr);
         if(config->concurrency_apply == CONCURRENCY::SEQ_WAIT) gpu::mgm::queue_wait(q);
         tm_trsv2.stop();
 
         tm_spmv2.start();
-        gpu::spblas::mv<T,I>(hs, 'N', data.descr_Bperm_sp, data.descr_wvec, data.descr_yvec, data.buffer_spmv2, 'C');
+        gpu::spblas::mv<T,I>(hs, 'N', data.descr_Bperm_sp, vec_3_descr, data.descr_yvec, data.buffer_spmv2, 'C');
         if(config->concurrency_apply == CONCURRENCY::SEQ_WAIT) gpu::mgm::queue_wait(q);
         tm_spmv2.stop();
     }
     tm_compute.stop();
+    
+    gpu::dnblas::buffer_unset(hd);
 
     tm_freeinpool.start();
     {
-        gpu::mgm::submit_host_function(q, [&,di](){
-            void * ptr = data.buffer_spmv1.mem.compute;
-            cbmba_res_device->deallocate(ptr);
+        gpu::mgm::submit_host_function(q, [&,di,buffer_other](){
+            domain_data[di].d_L_dn.reset();
+            domain_data[di].d_LH_dn.reset();
+            domain_data[di].d_U_dn.reset();
+            domain_data[di].d_UH_dn.reset();
+
+            void * buffer_other_ = buffer_other;
+            cbmba_res_device->deallocate(buffer_other_);
             data.buffer_spmv1.mem.compute = nullptr;
             data.buffer_spmv2.mem.compute = nullptr;
         });
