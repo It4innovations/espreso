@@ -137,7 +137,7 @@ protected:
         bool should_allocate_d_F;
     };
 
-    DualOperatorExplicitGpuConfig * config = nullptr;
+    DualOperatorGpuConfig * config = nullptr;
     char order_X, order_F;
     bool is_explicit, is_implicit;
     bool is_system_hermitian;

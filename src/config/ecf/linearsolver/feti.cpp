@@ -25,7 +25,8 @@ espreso::FETIConfiguration::FETIConfiguration()
 			.setdatatype({ ECFDataType::OPTION })
 			.addoption(ECFOption().setname("IMPLICIT").setdescription("Implicit F with sparse direct solver."))
 			.addoption(ECFOption().setname("EXPLICIT").setdescription("Explicit F with BLAS."))
-			.addoption(ECFOption().setname("EXPLICIT_GPU").setdescription("Explicit F with BLAS on GPU.")));
+			.addoption(ECFOption().setname("EXPLICIT_GPU").setdescription("Explicit F on GPU."))
+			.addoption(ECFOption().setname("IMPLICIT_GPU").setdescription("Implicit F on GPU.")));
 
 	projector = PROJECTOR::ORTHOGONAL;
 	REGISTER(projector, ECFMetaData()
@@ -372,8 +373,8 @@ espreso::FETIConfiguration::FETIConfiguration()
 			.setdescription({ "The number of CUDA streams for iterative solver" })
 			.setdatatype({ ECFDataType::POSITIVE_INTEGER }));
 
-	REGISTER(dual_operator_explicit_gpu_config, ECFMetaData()
-		.setdescription({ "Explicit dual operator on GPU configuration." })
+	REGISTER(dual_operator_gpu_config, ECFMetaData()
+		.setdescription({ "Dual operator on GPU configuration." })
 		.setcollapsed());
 }
 

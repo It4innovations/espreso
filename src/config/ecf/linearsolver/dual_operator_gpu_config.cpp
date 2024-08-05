@@ -1,11 +1,11 @@
 
-#include "config/ecf/linearsolver/dual_operator_explicit_gpu_config.h"
+#include "config/ecf/linearsolver/dual_operator_gpu_config.h"
 
 #include "config/configuration.hpp"
 
 using namespace espreso;
 
-DualOperatorExplicitGpuConfig::DualOperatorExplicitGpuConfig()
+DualOperatorGpuConfig::DualOperatorGpuConfig()
 {
 	concurrency_set = CONCURRENCY::AUTO;
 	REGISTER(concurrency_set, ECFMetaData()
@@ -39,32 +39,32 @@ DualOperatorExplicitGpuConfig::DualOperatorExplicitGpuConfig()
 			.setdescription({ "Wait at the end of update for all the GPU kernels to finish." })
 			.setdatatype({ ECFDataType::BOOL }));
 
-	trsm1_factor_storage = MATRIX_STORAGE::AUTO;
-	REGISTER(trsm1_factor_storage, ECFMetaData()
-			.setdescription({ "Storage of the factor in the first trsm operation." })
+	trs1_factor_storage = MATRIX_STORAGE::AUTO;
+	REGISTER(trs1_factor_storage, ECFMetaData()
+			.setdescription({ "Storage of the factor in the first trs operation." })
 			.setdatatype({ ECFDataType::OPTION })
 			.addoption(ECFOption().setname("AUTO").setdescription("Automatic selection based on the GPU vendor, libraries, and problem solved."))
 			.addoption(ECFOption().setname("SPARSE").setdescription("Sparse in CSR format."))
 			.addoption(ECFOption().setname("DENSE").setdescription("Dense in row-major order.")));
 
-	trsm2_factor_storage = MATRIX_STORAGE::AUTO;
-	REGISTER(trsm2_factor_storage, ECFMetaData()
-			.setdescription({ "Storage of the factor in the second trsm operation." })
+	trs2_factor_storage = MATRIX_STORAGE::AUTO;
+	REGISTER(trs2_factor_storage, ECFMetaData()
+			.setdescription({ "Storage of the factor in the second trs operation." })
 			.setdatatype({ ECFDataType::OPTION })
 			.addoption(ECFOption().setname("AUTO").setdescription("Automatic selection based on the GPU vendor, libraries, and problem solved."))
 			.addoption(ECFOption().setname("SPARSE").setdescription("Sparse in CSR format."))
 			.addoption(ECFOption().setname("DENSE").setdescription("Dense in row-major order.")));
 
-	trsm1_solve_type = TRSM1_SOLVE_TYPE::AUTO;
-	REGISTER(trsm1_solve_type, ECFMetaData()
+	trs1_solve_type = TRS1_SOLVE_TYPE::AUTO;
+	REGISTER(trs1_solve_type, ECFMetaData()
 			.setdescription({ "Type of the first solve." })
 			.setdatatype({ ECFDataType::OPTION })
 			.addoption(ECFOption().setname("AUTO").setdescription("Automatic selection based on the GPU vendor, libraries, and problem solved."))
 			.addoption(ECFOption().setname("L").setdescription("Solve LY=X."))
 			.addoption(ECFOption().setname("LHH").setdescription("Solve ((L*)*)Y=X.")));
 
-	trsm2_solve_type = TRSM2_SOLVE_TYPE::AUTO;
-	REGISTER(trsm2_solve_type, ECFMetaData()
+	trs2_solve_type = TRS2_SOLVE_TYPE::AUTO;
+	REGISTER(trs2_solve_type, ECFMetaData()
 			.setdescription({ "Type of the first solve." })
 			.setdatatype({ ECFDataType::OPTION })
 			.addoption(ECFOption().setname("AUTO").setdescription("Automatic selection based on the GPU vendor, libraries, and problem solved."))
@@ -73,7 +73,7 @@ DualOperatorExplicitGpuConfig::DualOperatorExplicitGpuConfig()
 
 	trsm_rhs_sol_order = MATRIX_ORDER::AUTO;
 	REGISTER(trsm_rhs_sol_order, ECFMetaData()
-			.setdescription({ "Memory order of the rhs and sol matrices in trsm." })
+			.setdescription({ "Memory order of the rhs and sol matrices in trsm. Explicit only." })
 			.setdatatype({ ECFDataType::OPTION })
 			.addoption(ECFOption().setname("AUTO").setdescription("Automatic selection based on the GPU vendor, libraries, and problem solved."))
 			.addoption(ECFOption().setname("ROW_MAJOR").setdescription("Row-major."))
@@ -81,7 +81,7 @@ DualOperatorExplicitGpuConfig::DualOperatorExplicitGpuConfig()
 
 	path_if_hermitian = PATH_IF_HERMITIAN::AUTO;
 	REGISTER(path_if_hermitian, ECFMetaData()
-			.setdescription({ "Code path if the system is hermitian or symmetric." })
+			.setdescription({ "Code path if the system is hermitian or symmetric. Explicit only." })
 			.setdatatype({ ECFDataType::OPTION })
 			.addoption(ECFOption().setname("AUTO").setdescription("Automatic selection based on the GPU vendor, libraries, and problem solved."))
 			.addoption(ECFOption().setname("TRSM").setdescription("Solve LY=x, solve UZ=Y, sp-dn multiply F=B*Z."))
@@ -89,7 +89,7 @@ DualOperatorExplicitGpuConfig::DualOperatorExplicitGpuConfig()
 	
 	f_sharing_if_hermitian = TRIANGLE_MATRIX_SHARING::AUTO;
 	REGISTER(f_sharing_if_hermitian, ECFMetaData()
-			.setdescription({ "Sharing of the F matrix if the system is hermitian or symmetric." })
+			.setdescription({ "Sharing of the F matrix if the system is hermitian or symmetric. Explicit only." })
 			.setdatatype({ ECFDataType::OPTION })
 			.addoption(ECFOption().setname("AUTO").setdescription("Automatic selection based on the GPU vendor, libraries, and problem solved."))
 			.addoption(ECFOption().setname("PRIVATE").setdescription("Every domain has its own allocation to store F."))
@@ -101,7 +101,7 @@ DualOperatorExplicitGpuConfig::DualOperatorExplicitGpuConfig()
 			.setdatatype({ ECFDataType::OPTION })
 			.addoption(ECFOption().setname("AUTO").setdescription("Automatic selection based on the GPU vendor, libraries, and problem solved."))
 			.addoption(ECFOption().setname("PER_THREAD").setdescription("One queue and handle per thread."))
-			.addoption(ECFOption().setname("PER_DOMAIN").setdescription("One queue and handle per domain.")));
+			.addoption(ECFOption().setname("PER_DOMAIN").setdescription("One queue and handle per subdomain.")));
 
 	apply_scatter_gather_where = DEVICE::AUTO;
 	REGISTER(apply_scatter_gather_where, ECFMetaData()
@@ -121,7 +121,7 @@ DualOperatorExplicitGpuConfig::DualOperatorExplicitGpuConfig()
 
 	timers = TIMERS::NONE;
 	REGISTER(timers, ECFMetaData()
-			.setdescription({ "Verbosity of timers in the explicit gpu F functions." })
+			.setdescription({ "Verbosity of timers." })
 			.setdatatype({ ECFDataType::OPTION })
 			.addoption(ECFOption().setname("NONE").setdescription("No timers are printed."))
 			.addoption(ECFOption().setname("BASIC").setdescription("Only the basic timers are printed."))
@@ -129,7 +129,7 @@ DualOperatorExplicitGpuConfig::DualOperatorExplicitGpuConfig()
 
 	memory_info = MEMORY_INFO::NONE;
 	REGISTER(memory_info, ECFMetaData()
-			.setdescription({ "Verbosity of memory information printed in the explicit gpu F functions." })
+			.setdescription({ "Verbosity of memory information printed." })
 			.setdatatype({ ECFDataType::OPTION })
 			.addoption(ECFOption().setname("NONE").setdescription("No info is printed."))
 			.addoption(ECFOption().setname("BASIC").setdescription("Only the basic info is printed."))

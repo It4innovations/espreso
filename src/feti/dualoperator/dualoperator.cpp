@@ -39,6 +39,16 @@ DualOperator<T>* DualOperator<T>::set(FETI<T> &feti, const step::Step &step)
             eslog::info(" = DUAL OPERATOR                                                  EXPLICIT TOTAL FETI ON GPU = \n");
             dual = new TotalFETIGpu<T,int>(feti, DualOperatorStrategy::EXPLICIT);
             break;
+        case FETIConfiguration::DUAL_OPERATOR::IMPLICIT_GPU:
+            if (!gpu::mgm::is_linked()) {
+                eslog::globalerror("GPU acceleration is not supported: GPU support in not built.\n");
+            }
+            if (!DirectSparseSolver<T>::provideFactors()) {
+                eslog::globalerror("GPU acceleration is not supported: Third party sparse solver does not provide factors.\n");
+            }
+            eslog::info(" = DUAL OPERATOR                                                  IMPLICIT TOTAL FETI ON GPU = \n");
+            dual = new TotalFETIGpu<T,int>(feti, DualOperatorStrategy::IMPLICIT);
+            break;
         }
         break;
 
@@ -50,6 +60,7 @@ DualOperator<T>* DualOperator<T>::set(FETI<T> &feti, const step::Step &step)
             break;
         case FETIConfiguration::DUAL_OPERATOR::EXPLICIT:
         case FETIConfiguration::DUAL_OPERATOR::EXPLICIT_GPU:
+        case FETIConfiguration::DUAL_OPERATOR::IMPLICIT_GPU:
             eslog::error("not implemented dual operator\n");
             break;
         }

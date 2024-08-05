@@ -1,12 +1,12 @@
 
-#ifndef SRC_CONFIG_ECF_LINEARSOLVER_DUAL_OPERATOR_EXPLICIT_GPU_CONFIG_H_
-#define SRC_CONFIG_ECF_LINEARSOLVER_DUAL_OPERATOR_EXPLICIT_GPU_CONFIG_H_
+#ifndef SRC_CONFIG_ECF_LINEARSOLVER_DUAL_OPERATOR_GPU_CONFIG_H_
+#define SRC_CONFIG_ECF_LINEARSOLVER_DUAL_OPERATOR_GPU_CONFIG_H_
 
 #include "config/description.h"
 
 namespace espreso {
 
-struct DualOperatorExplicitGpuConfig: public ECFDescription {
+struct DualOperatorGpuConfig: public ECFDescription {
 
 	enum class CONCURRENCY {
 		AUTO,
@@ -21,13 +21,13 @@ struct DualOperatorExplicitGpuConfig: public ECFDescription {
 		DENSE
 	};
 
-	enum class TRSM1_SOLVE_TYPE {
+	enum class TRS1_SOLVE_TYPE {
 		AUTO,
 		L,
 		LHH
 	};
 
-	enum class TRSM2_SOLVE_TYPE {
+	enum class TRS2_SOLVE_TYPE {
 		AUTO,
 		U,
 		UHH
@@ -79,10 +79,10 @@ struct DualOperatorExplicitGpuConfig: public ECFDescription {
 	CONCURRENCY concurrency_update;
 	CONCURRENCY concurrency_apply;
 	bool synchronize_update;
-	MATRIX_STORAGE trsm1_factor_storage;
-	MATRIX_STORAGE trsm2_factor_storage;
-	TRSM1_SOLVE_TYPE trsm1_solve_type;
-	TRSM2_SOLVE_TYPE trsm2_solve_type;
+	MATRIX_STORAGE trs1_factor_storage;
+	MATRIX_STORAGE trs2_factor_storage;
+	TRS1_SOLVE_TYPE trs1_solve_type;
+	TRS2_SOLVE_TYPE trs2_solve_type;
 	MATRIX_ORDER trsm_rhs_sol_order;
 	PATH_IF_HERMITIAN path_if_hermitian;
 	TRIANGLE_MATRIX_SHARING f_sharing_if_hermitian;
@@ -92,7 +92,7 @@ struct DualOperatorExplicitGpuConfig: public ECFDescription {
 	TIMERS timers;
 	MEMORY_INFO memory_info;
 
-	DualOperatorExplicitGpuConfig();
+	DualOperatorGpuConfig();
 
 };
 
@@ -100,4 +100,4 @@ struct DualOperatorExplicitGpuConfig: public ECFDescription {
 
 
 
-#endif /* SRC_CONFIG_ECF_LINEARSOLVER_DUAL_OPERATOR_EXPLICIT_GPU_CONFIG_H_ */
+#endif /* SRC_CONFIG_ECF_LINEARSOLVER_DUAL_OPERATOR_GPU_CONFIG_H_ */

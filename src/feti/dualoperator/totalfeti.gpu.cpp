@@ -17,17 +17,17 @@
 
 namespace espreso {
 
-using CONCURRENCY             = DualOperatorExplicitGpuConfig::CONCURRENCY;
-using MATRIX_STORAGE          = DualOperatorExplicitGpuConfig::MATRIX_STORAGE;
-using TRSM1_SOLVE_TYPE        = DualOperatorExplicitGpuConfig::TRSM1_SOLVE_TYPE;
-using TRSM2_SOLVE_TYPE        = DualOperatorExplicitGpuConfig::TRSM2_SOLVE_TYPE;
-using MATRIX_ORDER            = DualOperatorExplicitGpuConfig::MATRIX_ORDER;
-using PATH_IF_HERMITIAN       = DualOperatorExplicitGpuConfig::PATH_IF_HERMITIAN;
-using TRIANGLE_MATRIX_SHARING = DualOperatorExplicitGpuConfig::TRIANGLE_MATRIX_SHARING;
-using QUEUE_COUNT             = DualOperatorExplicitGpuConfig::QUEUE_COUNT;
-using DEVICE                  = DualOperatorExplicitGpuConfig::DEVICE;
-using TIMERS                  = DualOperatorExplicitGpuConfig::TIMERS;
-using MEMORY_INFO             = DualOperatorExplicitGpuConfig::MEMORY_INFO;
+using CONCURRENCY             = DualOperatorGpuConfig::CONCURRENCY;
+using MATRIX_STORAGE          = DualOperatorGpuConfig::MATRIX_STORAGE;
+using TRS1_SOLVE_TYPE         = DualOperatorGpuConfig::TRS1_SOLVE_TYPE;
+using TRS2_SOLVE_TYPE         = DualOperatorGpuConfig::TRS2_SOLVE_TYPE;
+using MATRIX_ORDER            = DualOperatorGpuConfig::MATRIX_ORDER;
+using PATH_IF_HERMITIAN       = DualOperatorGpuConfig::PATH_IF_HERMITIAN;
+using TRIANGLE_MATRIX_SHARING = DualOperatorGpuConfig::TRIANGLE_MATRIX_SHARING;
+using QUEUE_COUNT             = DualOperatorGpuConfig::QUEUE_COUNT;
+using DEVICE                  = DualOperatorGpuConfig::DEVICE;
+using TIMERS                  = DualOperatorGpuConfig::TIMERS;
+using MEMORY_INFO             = DualOperatorGpuConfig::MEMORY_INFO;
 
 template <typename T, typename I>
 TotalFETIGpu<T,I>::TotalFETIGpu(FETI<T> &feti, DualOperatorStrategy strategy)
@@ -35,7 +35,7 @@ TotalFETIGpu<T,I>::TotalFETIGpu(FETI<T> &feti, DualOperatorStrategy strategy)
 {
     if(stage != 0) eslog::error("init: invalid order of operations in dualop\n");
 
-    config = &feti.configuration.dual_operator_explicit_gpu_config;
+    config = &feti.configuration.dual_operator_gpu_config;
     config_replace_defaults();
     if(config->trsm_rhs_sol_order == MATRIX_ORDER::ROW_MAJOR) order_X = 'R';
     if(config->trsm_rhs_sol_order == MATRIX_ORDER::COL_MAJOR) order_X = 'C';
@@ -43,17 +43,17 @@ TotalFETIGpu<T,I>::TotalFETIGpu(FETI<T> &feti, DualOperatorStrategy strategy)
     is_implicit = (strategy == DualOperatorStrategy::IMPLICIT);
     order_F = order_X;
     is_system_hermitian = (DirectSparseSolver<T,I>::factorsSymmetry() == Solver_Factors::HERMITIAN_LOWER || DirectSparseSolver<T,I>::factorsSymmetry() == Solver_Factors::HERMITIAN_UPPER);
-    is_factor1_dense = (config->trsm1_factor_storage == MATRIX_STORAGE::DENSE);
-    is_factor2_dense = (config->trsm2_factor_storage == MATRIX_STORAGE::DENSE);
-    is_factor1_sparse = (config->trsm1_factor_storage == MATRIX_STORAGE::SPARSE);
-    is_factor2_sparse = (config->trsm2_factor_storage == MATRIX_STORAGE::SPARSE);
+    is_factor1_dense = (config->trs1_factor_storage == MATRIX_STORAGE::DENSE);
+    is_factor2_dense = (config->trs2_factor_storage == MATRIX_STORAGE::DENSE);
+    is_factor1_sparse = (config->trs1_factor_storage == MATRIX_STORAGE::SPARSE);
+    is_factor2_sparse = (config->trs2_factor_storage == MATRIX_STORAGE::SPARSE);
     is_path_trsm = (config->path_if_hermitian == PATH_IF_HERMITIAN::TRSM);
     is_path_herk = (config->path_if_hermitian == PATH_IF_HERMITIAN::HERK);
     do_herk = (is_path_herk && is_explicit);
-    bool trs1_use_L  = (config->trsm1_solve_type == TRSM1_SOLVE_TYPE::L);
-    bool trs1_use_LH = (config->trsm1_solve_type == TRSM1_SOLVE_TYPE::LHH);
-    bool trs2_use_U  = (config->trsm2_solve_type == TRSM2_SOLVE_TYPE::U   && (is_path_trsm || is_implicit));
-    bool trs2_use_UH = (config->trsm2_solve_type == TRSM2_SOLVE_TYPE::UHH && (is_path_trsm || is_implicit));
+    bool trs1_use_L  = (config->trs1_solve_type == TRS1_SOLVE_TYPE::L);
+    bool trs1_use_LH = (config->trs1_solve_type == TRS1_SOLVE_TYPE::LHH);
+    bool trs2_use_U  = (config->trs2_solve_type == TRS2_SOLVE_TYPE::U   && (is_path_trsm || is_implicit));
+    bool trs2_use_UH = (config->trs2_solve_type == TRS2_SOLVE_TYPE::UHH && (is_path_trsm || is_implicit));
     need_X = is_explicit;
     need_Y = (is_explicit && (is_factor1_sparse || is_factor2_sparse));
     need_F = is_explicit;
@@ -1653,31 +1653,31 @@ void TotalFETIGpu<T,I>::config_replace_defaults()
     int dimension = info::mesh->dimension;
     [[maybe_unused]] size_t avg_ndofs_per_domain = std::accumulate(feti.K.begin(), feti.K.end(), size_t{0}, [](size_t s, const Matrix_CSR<T,I> & k){ return s + k.nrows; }) / feti.K.size();
 
-    TRSM1_SOLVE_TYPE native_trsm1_solve_type;
+    TRS1_SOLVE_TYPE native_trs1_solve_type;
     switch(DirectSparseSolver<T,I>::factorsSymmetry()) {
         case Solver_Factors::HERMITIAN_UPPER:
-            native_trsm1_solve_type = TRSM1_SOLVE_TYPE::LHH;
+            native_trs1_solve_type = TRS1_SOLVE_TYPE::LHH;
             break;
         case Solver_Factors::HERMITIAN_LOWER:
-            native_trsm1_solve_type = TRSM1_SOLVE_TYPE::L;
+            native_trs1_solve_type = TRS1_SOLVE_TYPE::L;
             break;
         case Solver_Factors::NONSYMMETRIC_BOTH:
-            native_trsm1_solve_type = TRSM1_SOLVE_TYPE::L;
+            native_trs1_solve_type = TRS1_SOLVE_TYPE::L;
             break;
         default:
             eslog::error("Invalid direct sparse solver factors symmetry\n");
     }
 
-    TRSM2_SOLVE_TYPE native_trsm2_solve_type;
+    TRS2_SOLVE_TYPE native_trs2_solve_type;
     switch(DirectSparseSolver<T,I>::factorsSymmetry()) {
         case Solver_Factors::HERMITIAN_UPPER:
-            native_trsm2_solve_type = TRSM2_SOLVE_TYPE::U;
+            native_trs2_solve_type = TRS2_SOLVE_TYPE::U;
             break;
         case Solver_Factors::HERMITIAN_LOWER:
-            native_trsm2_solve_type = TRSM2_SOLVE_TYPE::UHH;
+            native_trs2_solve_type = TRS2_SOLVE_TYPE::UHH;
             break;
         case Solver_Factors::NONSYMMETRIC_BOTH:
-            native_trsm2_solve_type = TRSM2_SOLVE_TYPE::U;
+            native_trs2_solve_type = TRS2_SOLVE_TYPE::U;
             break;
         default:
             eslog::error("Invalid direct sparse solver factors symmetry\n");
@@ -1689,12 +1689,12 @@ void TotalFETIGpu<T,I>::config_replace_defaults()
             replace_if_auto(config->concurrency_set,            CONCURRENCY::PARALLEL);
             replace_if_auto(config->concurrency_update,         CONCURRENCY::PARALLEL);
             replace_if_auto(config->concurrency_apply,          CONCURRENCY::SEQ_CONTINUE);
-            if(dimension == 2) replace_if_auto(config->trsm1_factor_storage, MATRIX_STORAGE::SPARSE);
-            if(dimension == 3) replace_if_auto(config->trsm1_factor_storage, MATRIX_STORAGE::DENSE);
-            if(dimension == 2) replace_if_auto(config->trsm2_factor_storage, MATRIX_STORAGE::SPARSE);
-            if(dimension == 3) replace_if_auto(config->trsm2_factor_storage, MATRIX_STORAGE::DENSE);
-            replace_if_auto(config->trsm1_solve_type,           native_trsm1_solve_type);
-            replace_if_auto(config->trsm2_solve_type,           native_trsm2_solve_type);
+            if(dimension == 2) replace_if_auto(config->trs1_factor_storage, MATRIX_STORAGE::SPARSE);
+            if(dimension == 3) replace_if_auto(config->trs1_factor_storage, MATRIX_STORAGE::DENSE);
+            if(dimension == 2) replace_if_auto(config->trs2_factor_storage, MATRIX_STORAGE::SPARSE);
+            if(dimension == 3) replace_if_auto(config->trs2_factor_storage, MATRIX_STORAGE::DENSE);
+            replace_if_auto(config->trs1_solve_type,            native_trs1_solve_type);
+            replace_if_auto(config->trs2_solve_type,            native_trs2_solve_type);
             replace_if_auto(config->trsm_rhs_sol_order,         MATRIX_ORDER::ROW_MAJOR);
             replace_if_auto(config->path_if_hermitian,          PATH_IF_HERMITIAN::HERK);
             replace_if_auto(config->f_sharing_if_hermitian,     TRIANGLE_MATRIX_SHARING::SHARED);
@@ -1706,10 +1706,10 @@ void TotalFETIGpu<T,I>::config_replace_defaults()
             replace_if_auto(config->concurrency_set,            CONCURRENCY::PARALLEL);
             replace_if_auto(config->concurrency_update,         CONCURRENCY::PARALLEL);
             replace_if_auto(config->concurrency_apply,          CONCURRENCY::SEQ_CONTINUE);
-            replace_if_auto(config->trsm1_factor_storage,       MATRIX_STORAGE::DENSE);
-            replace_if_auto(config->trsm2_factor_storage,       MATRIX_STORAGE::DENSE);
-            replace_if_auto(config->trsm1_solve_type,           native_trsm1_solve_type);
-            replace_if_auto(config->trsm2_solve_type,           native_trsm2_solve_type);
+            replace_if_auto(config->trs1_factor_storage,        MATRIX_STORAGE::DENSE);
+            replace_if_auto(config->trs2_factor_storage,        MATRIX_STORAGE::DENSE);
+            replace_if_auto(config->trs1_solve_type,            native_trs1_solve_type);
+            replace_if_auto(config->trs2_solve_type,            native_trs2_solve_type);
             if(dimension == 2) replace_if_auto(config->trsm_rhs_sol_order, MATRIX_ORDER::COL_MAJOR);
             if(dimension == 3) replace_if_auto(config->trsm_rhs_sol_order, MATRIX_ORDER::ROW_MAJOR);
             replace_if_auto(config->path_if_hermitian,          PATH_IF_HERMITIAN::HERK);
@@ -1728,14 +1728,14 @@ void TotalFETIGpu<T,I>::config_replace_defaults()
         replace_if_auto(config->concurrency_update,         CONCURRENCY::PARALLEL);
         replace_if_auto(config->concurrency_apply,          CONCURRENCY::SEQ_CONTINUE);
         if(dimension == 3 || (dimension == 2 && avg_ndofs_per_domain < 2048)) {
-            replace_if_auto(config->trsm1_factor_storage,       MATRIX_STORAGE::DENSE);
+            replace_if_auto(config->trs1_factor_storage,        MATRIX_STORAGE::DENSE);
         }
         else {
-            replace_if_auto(config->trsm1_factor_storage,       MATRIX_STORAGE::SPARSE);
+            replace_if_auto(config->trs1_factor_storage,        MATRIX_STORAGE::SPARSE);
         }
-        replace_if_auto(config->trsm2_factor_storage,       MATRIX_STORAGE::DENSE);
-        replace_if_auto(config->trsm1_solve_type,           native_trsm1_solve_type);
-        replace_if_auto(config->trsm2_solve_type,           native_trsm2_solve_type);
+        replace_if_auto(config->trs2_factor_storage,        MATRIX_STORAGE::DENSE);
+        replace_if_auto(config->trs1_solve_type,            native_trs1_solve_type);
+        replace_if_auto(config->trs2_solve_type,            native_trs2_solve_type);
         replace_if_auto(config->trsm_rhs_sol_order,         MATRIX_ORDER::ROW_MAJOR);
         replace_if_auto(config->path_if_hermitian,          PATH_IF_HERMITIAN::HERK);
         replace_if_auto(config->f_sharing_if_hermitian,     TRIANGLE_MATRIX_SHARING::SHARED);

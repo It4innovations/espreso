@@ -4,7 +4,7 @@
 
 #include "config/description.h"
 #include "autoopt.h"
-#include "config/ecf/linearsolver/dual_operator_explicit_gpu_config.h"
+#include "config/ecf/linearsolver/dual_operator_gpu_config.h"
 
 #include <cstddef>
 
@@ -29,6 +29,7 @@ struct FETIConfiguration: public ECFDescription {
 		IMPLICIT = 0,
 		EXPLICIT,
 		EXPLICIT_GPU,
+		IMPLICIT_GPU,
 	};
 
 	enum class PROJECTOR {
@@ -208,7 +209,7 @@ struct FETIConfiguration: public ECFDescription {
 
 	AutoOptimizationConfiguration auto_optimization;
 
-	DualOperatorExplicitGpuConfig dual_operator_explicit_gpu_config;
+	DualOperatorGpuConfig dual_operator_gpu_config;
 
 	FETIConfiguration();
 };
