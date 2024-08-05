@@ -168,9 +168,27 @@ namespace dnblas {
     }
 
     template<typename T, typename I>
-    void trsv(handle & h, char fill, char transpose, I n, I ld, T * matrix, T * rhs_sol)
+    void trsv(handle & h, I n, T * A, I ld_A, char order_A, char op_A, char fill_A, T * x)
     {
-        CHECK(_my_blas_xtrsv(h->h, _char_to_fill(fill), _char_to_operation(transpose), rocblas_diagonal_non_unit, n, matrix, ld, rhs_sol, 1));
+        if(order_A == 'C') {
+            if(op_A == 'C') { // conjugate_only operation not supported ...
+                utils::remove_complex_t<T> neg_one = -1;
+                if constexpr(utils::is_complex<T>()) _my_blas_xscal<utils::remove_complex_t<T>>(h->h, n, &neg_one, reinterpret_cast<utils::remove_complex_t<T>*>(x) + 1, 2);
+                trsv<T,I>(h, n, A, ld_A, order_A, 'N', fill_A, x);
+                if constexpr(utils::is_complex<T>()) _my_blas_xscal<utils::remove_complex_t<T>>(h->h, n, &neg_one, reinterpret_cast<utils::remove_complex_t<T>*>(x) + 1, 2);
+            }
+            else {
+                CHECK(_my_blas_xtrsv(h->h, _char_to_fill(fill_A), _char_to_operation(op_A), rocblas_diagonal_non_unit, n, A, ld_A, x, 1));
+            }
+        }
+        else if(order_A == 'R') {
+            char op_A_compl = mgm::operation_combine(op_A, 'T');
+            char fill_A_compl = mgm::fill_change(fill_A);
+            trsv<T,I>(h, n, A, ld_A, 'C', op_A_compl, fill_A_compl, x);
+        }
+        else {
+            eslog::error("invalid order_A '%c'\n", order_A);
+        }
     }
 
     template<typename T, typename I>
@@ -184,16 +202,18 @@ namespace dnblas {
                     if(op_A == 'C') { // conjugate_only operation not supported ...
                         utils::remove_complex_t<T> neg_one = -1;
                         I nvals_X = (side == 'L' ? nrhs : n) * ld_X; // i know order_X == 'C'
-                        if(utils::is_complex<T>()) _my_blas_xscal<utils::remove_complex_t<T>>(h->h, nvals_X, &neg_one, reinterpret_cast<utils::remove_complex_t<T>*>(X) + 1, 2);
+                        if constexpr(utils::is_complex<T>()) _my_blas_xscal<utils::remove_complex_t<T>>(h->h, nvals_X, &neg_one, reinterpret_cast<utils::remove_complex_t<T>*>(X) + 1, 2);
                         trsm<T,I>(h, side, n, nrhs, A, ld_A, order_A, 'N', fill_A, X, ld_X, order_X, op_X);
-                        if(utils::is_complex<T>()) _my_blas_xscal<utils::remove_complex_t<T>>(h->h, nvals_X, &neg_one, reinterpret_cast<utils::remove_complex_t<T>*>(X) + 1, 2);
+                        if constexpr(utils::is_complex<T>()) _my_blas_xscal<utils::remove_complex_t<T>>(h->h, nvals_X, &neg_one, reinterpret_cast<utils::remove_complex_t<T>*>(X) + 1, 2);
                     }
                     else {
                         T one = 1.0;
                         I nrows_X = (side == 'L' ? n : nrhs);
                         I ncols_X = (side == 'L' ? nrhs : n);
                         #pragma omp critical(espreso_gpu_dnblas_rocm)
-                        CHECK(_my_blas_xtrsm<T>(h->h, _char_to_side(side), _char_to_fill(fill_A), _char_to_operation(op_A), rocblas_diagonal_non_unit, nrows_X, ncols_X, &one, A, ld_A, X, ld_X));
+                        {
+                            CHECK(_my_blas_xtrsm<T>(h->h, _char_to_side(side), _char_to_fill(fill_A), _char_to_operation(op_A), rocblas_diagonal_non_unit, nrows_X, ncols_X, &one, A, ld_A, X, ld_X));
+                        }
                     }
                 }
                 else if(op_X == 'C') {
@@ -239,9 +259,10 @@ namespace dnblas {
                 utils::remove_complex_t<T> zero = 0.0;
                 utils::remove_complex_t<T> one = 1.0;
                 #pragma omp critical(espreso_gpu_dnblas_rocm)
-                if constexpr(utils::is_real<T>())    CHECK(_my_blas_xsyrk<T>(h->h, _char_to_fill(fill_C), _char_to_operation(op_A), n, k, &one, A, ld_A, &zero, C, ld_C));
-                #pragma omp critical(espreso_gpu_dnblas_rocm)
-                if constexpr(utils::is_complex<T>()) CHECK(_my_blas_xherk<T>(h->h, _char_to_fill(fill_C), _char_to_operation(op_A), n, k, &one, A, ld_A, &zero, C, ld_C));
+                {
+                    if constexpr(utils::is_real<T>())    CHECK(_my_blas_xsyrk<T>(h->h, _char_to_fill(fill_C), _char_to_operation(op_A), n, k, &one, A, ld_A, &zero, C, ld_C));
+                    if constexpr(utils::is_complex<T>()) CHECK(_my_blas_xherk<T>(h->h, _char_to_fill(fill_C), _char_to_operation(op_A), n, k, &one, A, ld_A, &zero, C, ld_C));
+                }
             }
             else if(order_A == 'R') {
                 char op_A_compl = mgm::operation_combine(op_A, 'T');
@@ -278,10 +299,10 @@ namespace dnblas {
                 }
                 else if(op_A == 'C' || op_A == 'T') {
                     utils::remove_complex_t<T> neg_one = -1;
-                    _my_blas_xscal<utils::remove_complex_t<T>>(h->h, n, &neg_one, reinterpret_cast<utils::remove_complex_t<T>*>(x) + 1, 2);
+                    if constexpr(utils::is_complex<T>()) _my_blas_xscal<utils::remove_complex_t<T>>(h->h, n, &neg_one, reinterpret_cast<utils::remove_complex_t<T>*>(x) + 1, 2);
                     hemv<T,I>(h, n, A, ld_A, order_A, 'N', fill_A, x, y);
-                    _my_blas_xscal<utils::remove_complex_t<T>>(h->h, n, &neg_one, reinterpret_cast<utils::remove_complex_t<T>*>(x) + 1, 2);
-                    _my_blas_xscal<utils::remove_complex_t<T>>(h->h, n, &neg_one, reinterpret_cast<utils::remove_complex_t<T>*>(y) + 1, 2);
+                    if constexpr(utils::is_complex<T>()) _my_blas_xscal<utils::remove_complex_t<T>>(h->h, n, &neg_one, reinterpret_cast<utils::remove_complex_t<T>*>(x) + 1, 2);
+                    if constexpr(utils::is_complex<T>()) _my_blas_xscal<utils::remove_complex_t<T>>(h->h, n, &neg_one, reinterpret_cast<utils::remove_complex_t<T>*>(y) + 1, 2);
                 }
                 else {
                     eslog::error("invalid op_A '%c'\n", op_A);

@@ -177,10 +177,9 @@ namespace dnblas {
         if(order_A == 'C') {
             if(op_A == 'C') { // conjugate_only operation not supported ...
                 utils::remove_complex_t<T> neg_one = -1;
-                I nvals = n;
-                if(utils::is_complex<T>()) _my_blas_xscal<utils::remove_complex_t<T>>(h->h, nvals, &neg_one, reinterpret_cast<utils::remove_complex_t<T>*>(x) + 1, 2);
+                if constexpr(utils::is_complex<T>()) _my_blas_xscal<utils::remove_complex_t<T>>(h->h, n, &neg_one, reinterpret_cast<utils::remove_complex_t<T>*>(x) + 1, 2);
                 trsv<T,I>(h, n, A, ld_A, order_A, 'N', fill_A, x);
-                if(utils::is_complex<T>()) _my_blas_xscal<utils::remove_complex_t<T>>(h->h, nvals, &neg_one, reinterpret_cast<utils::remove_complex_t<T>*>(x) + 1, 2);
+                if constexpr(utils::is_complex<T>()) _my_blas_xscal<utils::remove_complex_t<T>>(h->h, n, &neg_one, reinterpret_cast<utils::remove_complex_t<T>*>(x) + 1, 2);
             }
             else {
                 CHECK(_my_blas_xtrsv(h->h, _char_to_fill(fill_A), _char_to_operation(op_A), CUBLAS_DIAG_NON_UNIT, n, A, ld_A, x, 1));
@@ -207,9 +206,9 @@ namespace dnblas {
                     if(op_A == 'C') { // conjugate_only operation not supported ...
                         utils::remove_complex_t<T> neg_one = -1;
                         I nvals_X = (side == 'L' ? nrhs : n) * ld_X; // i know order_X == 'C'
-                        if(utils::is_complex<T>()) _my_blas_xscal<utils::remove_complex_t<T>>(h->h, nvals_X, &neg_one, reinterpret_cast<utils::remove_complex_t<T>*>(X) + 1, 2);
+                        if constexpr(utils::is_complex<T>()) _my_blas_xscal<utils::remove_complex_t<T>>(h->h, nvals_X, &neg_one, reinterpret_cast<utils::remove_complex_t<T>*>(X) + 1, 2);
                         trsm<T,I>(h, side, n, nrhs, A, ld_A, order_A, 'N', fill_A, X, ld_X, order_X, op_X);
-                        if(utils::is_complex<T>()) _my_blas_xscal<utils::remove_complex_t<T>>(h->h, nvals_X, &neg_one, reinterpret_cast<utils::remove_complex_t<T>*>(X) + 1, 2);
+                        if constexpr(utils::is_complex<T>()) _my_blas_xscal<utils::remove_complex_t<T>>(h->h, nvals_X, &neg_one, reinterpret_cast<utils::remove_complex_t<T>*>(X) + 1, 2);
                     }
                     else {
                         T one = 1.0;
@@ -296,10 +295,10 @@ namespace dnblas {
                 }
                 else if(op_A == 'C' || op_A == 'T') {
                     utils::remove_complex_t<T> neg_one = -1;
-                    _my_blas_xscal<utils::remove_complex_t<T>>(h->h, n, &neg_one, reinterpret_cast<utils::remove_complex_t<T>*>(x) + 1, 2);
+                    if constexpr(utils::is_complex<T>()) _my_blas_xscal<utils::remove_complex_t<T>>(h->h, n, &neg_one, reinterpret_cast<utils::remove_complex_t<T>*>(x) + 1, 2);
                     hemv<T,I>(h, n, A, ld_A, order_A, 'N', fill_A, x, y);
-                    _my_blas_xscal<utils::remove_complex_t<T>>(h->h, n, &neg_one, reinterpret_cast<utils::remove_complex_t<T>*>(x) + 1, 2);
-                    _my_blas_xscal<utils::remove_complex_t<T>>(h->h, n, &neg_one, reinterpret_cast<utils::remove_complex_t<T>*>(y) + 1, 2);
+                    if constexpr(utils::is_complex<T>()) _my_blas_xscal<utils::remove_complex_t<T>>(h->h, n, &neg_one, reinterpret_cast<utils::remove_complex_t<T>*>(x) + 1, 2);
+                    if constexpr(utils::is_complex<T>()) _my_blas_xscal<utils::remove_complex_t<T>>(h->h, n, &neg_one, reinterpret_cast<utils::remove_complex_t<T>*>(y) + 1, 2);
                 }
                 else {
                     eslog::error("invalid op_A '%c'\n", op_A);
