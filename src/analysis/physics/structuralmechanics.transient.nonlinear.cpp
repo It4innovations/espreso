@@ -15,12 +15,13 @@
 #include "mesh/store/elementstore.h"
 #include "output/output.h"
 #include "wrappers/mpi/communication.h"
+#include "wrappers/precice/w.precice.h"
 
 using namespace espreso;
 
 StructuralMechanicsTransientNonLinear::StructuralMechanicsTransientNonLinear(StructuralMechanicsConfiguration &settings, StructuralMechanicsLoadStepConfiguration &configuration)
 : settings(settings), configuration(configuration), assembler{nullptr, settings, configuration},
-  K{}, M{}, f{}, x{}, dirichlet{},
+  K{}, M{}, f{}, x{}, dirichlet{}, prev{},
   U{}, R{}, dU{}, V{}, W{}, X{}, Y{}, Z{}, dTK{}, dTM{},
   builder{}, solver{}
 {
@@ -34,6 +35,7 @@ StructuralMechanicsTransientNonLinear::~StructuralMechanicsTransientNonLinear()
     if (f) { delete f; }
     if (x) { delete x; }
     if (dirichlet) { delete dirichlet; }
+    if (prev) { delete prev; }
 
     if (  U) { delete   U; }
     if (  R) { delete   R; }
@@ -92,6 +94,7 @@ void StructuralMechanicsTransientNonLinear::analyze(step::Step &step)
     M = solver->A->copyPattern();
     f = solver->b->copyPattern();
     x = solver->x->copyPattern();
+    prev = solver->x->copyPattern();
     dirichlet = solver->dirichlet->copyPattern();
 
       U = solver->b->copyPattern();
@@ -115,9 +118,10 @@ void StructuralMechanicsTransientNonLinear::analyze(step::Step &step)
 
 void StructuralMechanicsTransientNonLinear::run(step::Step &step)
 {
+    Precice precice;
+
+    time.start = time.previous = time.current = 0;
     time.shift = configuration.transient_solver.time_step;
-    time.start = 0;
-    time.current = time.start + time.shift;
     time.final = configuration.duration_time;
 
     double alpha = configuration.transient_solver.alpha;
@@ -158,7 +162,9 @@ void StructuralMechanicsTransientNonLinear::run(step::Step &step)
     V->set(0);
     W->set(0);
     Z->set(0);
-    while (time.current <= time.final + time.precision) {
+    while (time.current + time.shift <= time.final + time.precision) {
+        time.shift = precice.timeStep(time.shift);
+        time.current = time.previous + time.shift;
         eslog::info(" ============================================================================================= \n");
         eslog::info(" = LOAD STEP %2d, SUBSTEP   %3d,   TIME %9.4f, TIME SHIFT %9.4f, FINAL TIME %9.4f = \n", step.loadstep + 1, step.substep + 1, time.current, time.shift, time.final);
         eslog::info(" = ----------------------------------------------------------------------------------------- = \n");
@@ -176,6 +182,10 @@ void StructuralMechanicsTransientNonLinear::run(step::Step &step)
         }
         eslog::info("      =================================================================================== \n\n");
         double start = eslog::time();
+        if (precice.requiresWritingCheckpoint()) {
+            prev->copy(x);
+        }
+        precice.read(StructuralMechanics::Results::fluidForce->data.data(), time.shift);
 
         // NEWTON RAPHSON
         step.substeps = configuration.nonlinear_solver.substeps;
@@ -268,21 +278,34 @@ void StructuralMechanicsTransientNonLinear::run(step::Step &step)
         x->copy(solver->x);
         storeSolution(step);
         assembler.updateSolution(x);
-        info::mesh->output->updateSolution(step, time);
 
-        dU->copy(solver->x);
-        dU->add(-1, U);
-        U->copy(solver->x);
-        Z->set(0)->add(newmark[0], dU)->add(-newmark[2], V)->add(-newmark[3], W);
-        V->add(newmark[6], W)->add(newmark[7], Z);
-        W->copy(Z);
+        precice.write(StructuralMechanics::Results::displacement->data.data());
+        precice.advance(time.shift);
+        if (precice.requiresReadingCheckpoint()) {
+            x->copy(prev);
 
-        eslog::info("       = PROCESS SOLUTION                                                   %8.3f s = \n", eslog::time() - solution);
-        eslog::info("       = ----------------------------------------------------------------------------- = \n");
-        eslog::info(" ====================================================================== solved in %8.3f s = \n\n", eslog::time() - start);
-        eslog::checkpointln("SIMULATION: SOLUTION PROCESSED");
-        time.current += time.shift;
-        ++step.substep;
+            eslog::info("       = TIME STEP RESTARTED                                                %8.3f s = \n", eslog::time() - solution);
+            eslog::info("       = ----------------------------------------------------------------------------- = \n");
+            eslog::info(" ====================================================================== solved in %8.3f s = \n\n", eslog::time() - start);
+            eslog::checkpointln("SIMULATION: SOLUTION RESTARTED");
+            time.current = time.previous;
+        } else {
+            info::mesh->output->updateSolution(step, time);
+
+            dU->copy(solver->x);
+            dU->add(-1, U);
+            U->copy(solver->x);
+            Z->set(0)->add(newmark[0], dU)->add(-newmark[2], V)->add(-newmark[3], W);
+            V->add(newmark[6], W)->add(newmark[7], Z);
+            W->copy(Z);
+
+            eslog::info("       = PROCESS SOLUTION                                                   %8.3f s = \n", eslog::time() - solution);
+            eslog::info("       = ----------------------------------------------------------------------------- = \n");
+            eslog::info(" ====================================================================== solved in %8.3f s = \n\n", eslog::time() - start);
+            eslog::checkpointln("SIMULATION: SOLUTION PROCESSED");
+            time.previous = time.current;
+            ++step.substep;
+        }
     }
 }
 

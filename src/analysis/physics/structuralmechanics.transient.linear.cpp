@@ -35,6 +35,7 @@ StructuralMechanicsTransientLinear::~StructuralMechanicsTransientLinear()
     if (f) { delete f; }
     if (x) { delete x; }
     if (dirichlet) { delete dirichlet; }
+    if (prev) { delete prev; }
 
     if (  U) { delete   U; }
     if ( dU) { delete  dU; }
@@ -210,6 +211,7 @@ void StructuralMechanicsTransientLinear::run(step::Step &step)
             time.current = time.previous;
         } else {
             info::mesh->output->updateSolution(step, time);
+
             dU->copy(solver->x);
             dU->add(-1, U);
             U->copy(solver->x);
