@@ -214,6 +214,8 @@ namespace spblas {
 
     struct _descr_sparse_trsm { };
 
+    struct _descr_sparse_mv { };
+
     void handle_create(handle & h, mgm::queue & q)
     {
         h = std::make_shared<_handle>();
@@ -330,6 +332,10 @@ namespace spblas {
 
     void descr_sparse_trsm_destroy(descr_sparse_trsm & /*descr*/) { }
 
+    void descr_sparse_mv_create(descr_sparse_mv & /*descr*/) { }
+
+    void descr_sparse_mv_destroy(descr_sparse_mv & /*descr*/) { }
+
     template<typename T, typename I>
     void transpose(handle & h, descr_matrix_csr & output, descr_matrix_csr & input, bool conjugate, size_t & buffersize, void * buffer, char stage)
     {
@@ -412,7 +418,7 @@ namespace spblas {
     }
 
     template<typename T, typename I>
-    void mv(handle & h, char transpose, descr_matrix_csr & A, descr_vector_dense & x, descr_vector_dense & y, size_t & buffersize, void * buffer, char stage)
+    void mv(handle & h, char transpose, descr_matrix_csr & A, descr_vector_dense & x, descr_vector_dense & y, descr_sparse_mv & /*descr_mv*/, size_t & buffersize, void * buffer, char stage)
     {
         T one = 1.0;
         T zero = 0.0;

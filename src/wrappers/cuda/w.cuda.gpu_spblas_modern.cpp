@@ -91,6 +91,7 @@ namespace spblas {
         cusparseSpMatDescr_t d_for_sp2dn; // no attributes set
         void * vals_ptr;
     };
+
     struct _descr_matrix_dense
     {
         cusparseDnMatDescr_t d;
@@ -103,6 +104,7 @@ namespace spblas {
             return ret;
         }
     };
+
     struct _descr_vector_dense
     {
         cusparseDnVecDescr_t d;
@@ -112,9 +114,18 @@ namespace spblas {
     {
         cusparseSpSVDescr_t d;
     };
+
     struct _descr_sparse_trsm
     {
         cusparseSpSMDescr_t d;
+    };
+
+    struct _descr_sparse_mv
+    {
+#if CUDART_VERSION >= 12040 && CUDART_VERSION < 12070 // see the mv function for info
+        cusparseSpMatDescr_t copy_of_matrix_descr;
+        bool was_matrix_descr_initialized = false;
+#endif
     };
 
     void handle_create(handle & h, mgm::queue & q)
@@ -251,6 +262,26 @@ namespace spblas {
         descr.reset();
     }
 
+    void descr_sparse_mv_create(descr_sparse_mv & descr)
+    {
+#if CUDART_VERSION >= 12040 && CUDART_VERSION < 12070 // see the mv function for info
+        descr = std::make_shared<_descr_sparse_mv>();
+#endif
+    }
+
+    void descr_sparse_mv_destroy(descr_sparse_mv & descr)
+    {
+#if CUDART_VERSION >= 12040 && CUDART_VERSION < 12070 // see the mv function for info
+        if(descr.get() == nullptr) return;
+
+        if(descr->was_matrix_descr_initialized)
+        {
+            CHECK(cusparseDestroySpMat(descr->copy_of_matrix_descr));
+        }
+        descr.reset();
+#endif
+    }
+
     template<typename T, typename I>
     void transpose(handle & h, descr_matrix_csr & output, descr_matrix_csr & input, bool conjugate, size_t & buffersize, void * buffer, char stage)
     {
@@ -324,17 +355,41 @@ namespace spblas {
     }
 
     template<typename T, typename I>
-    void mv(handle & h, char transpose, descr_matrix_csr & A, descr_vector_dense & x, descr_vector_dense & y, size_t & buffersize, void * buffer, char stage)
+    void mv(handle & h, char transpose, descr_matrix_csr & A, descr_vector_dense & x, descr_vector_dense & y, descr_sparse_mv & descr_mv, size_t & buffersize, void * buffer, char stage)
     {
+        cusparseSpMatDescr_t * Ad = &A->d;
+#if CUDART_VERSION >= 12040 && CUDART_VERSION < 12070 // hopefully fixed in 12.7, did not check
+        {
+            // https://docs.nvidia.com/cuda/cuda-toolkit-release-notes/index.html#cusparse-release-12-6
+            // cannot perform different operations with the same handle and different buffer
+            // either use the same workspace buffer
+            // or use separate matrix handle for each spmv operation (this solution)
+            int64_t nrows, ncols, nnz;
+            void *rowptrs, *colidxs, *vals;
+            cusparseIndexType_t ro_type, ci_type;
+            cusparseIndexBase_t idxbase;
+            cudaDataType value_type;
+            CHECK(cusparseCsrGet(A->d, &nrows, &ncols, &nnz, &rowptrs, &colidxs, &vals, &ro_type, &ci_type, &idxbase, &value_type));
+
+            if(!descr_mv->was_matrix_descr_initialized)
+            {
+                CHECK(cusparseCreateCsr(&descr_mv->copy_of_matrix_descr, nrows, ncols, nnz, rowptrs, colidxs, vals, ro_type, ci_type, idxbase, value_type));
+                descr_mv->was_matrix_descr_initialized = true;
+            }
+            CHECK(cusparseCsrSetPointers(descr_mv->copy_of_matrix_descr, rowptrs, colidxs, vals));
+            Ad = &descr_mv->copy_of_matrix_descr;
+        }
+#endif
+
         T one = 1.0;
         T zero = 0.0;
-        if(stage == 'B') CHECK(cusparseSpMV_bufferSize(h->h, _char_to_operation<T>(transpose), &one, A->d, x->d, &zero, y->d, _sparse_data_type<T>(), CUSPARSE_SPMV_ALG_DEFAULT, &buffersize));
+        if(stage == 'B') CHECK(cusparseSpMV_bufferSize(h->h, _char_to_operation<T>(transpose), &one, *Ad, x->d, &zero, y->d, _sparse_data_type<T>(), CUSPARSE_SPMV_ALG_DEFAULT, &buffersize));
 #if CUDART_VERSION >= 12040
-        if(stage == 'P') CHECK(cusparseSpMV_preprocess(h->h, _char_to_operation<T>(transpose), &one, A->d, x->d, &zero, y->d, _sparse_data_type<T>(), CUSPARSE_SPMV_ALG_DEFAULT, buffer));
+        if(stage == 'P') CHECK(cusparseSpMV_preprocess(h->h, _char_to_operation<T>(transpose), &one, *Ad, x->d, &zero, y->d, _sparse_data_type<T>(), CUSPARSE_SPMV_ALG_DEFAULT, buffer));
 #else
         // if(stage == 'P') ; // no preprocess function exists in CUDA < 12.4
 #endif
-        if(stage == 'C') CHECK(cusparseSpMV           (h->h, _char_to_operation<T>(transpose), &one, A->d, x->d, &zero, y->d, _sparse_data_type<T>(), CUSPARSE_SPMV_ALG_DEFAULT, buffer));
+        if(stage == 'C') CHECK(cusparseSpMV           (h->h, _char_to_operation<T>(transpose), &one, *Ad, x->d, &zero, y->d, _sparse_data_type<T>(), CUSPARSE_SPMV_ALG_DEFAULT, buffer));
     }
 
     template<typename T, typename I>

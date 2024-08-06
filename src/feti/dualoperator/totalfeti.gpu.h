@@ -103,6 +103,8 @@ protected:
         gpu::spblas::descr_vector_dense descr_wvec;
         gpu::spblas::descr_sparse_trsv descr_sparse_trsv1;
         gpu::spblas::descr_sparse_trsv descr_sparse_trsv2;
+        gpu::spblas::descr_sparse_mv descr_sparse_spmv1;
+        gpu::spblas::descr_sparse_mv descr_sparse_spmv2;
         void * buffer_transL2LH = nullptr;
         void * buffer_transU2UH = nullptr;
         void * buffer_sptrs1 = nullptr;
