@@ -4,6 +4,7 @@
 #include "basis/containers/serializededata.h"
 #include "esinfo/mpiinfo.h"
 #include "esinfo/meshinfo.h"
+#include "esinfo/ecfinfo.h"
 #include "esinfo/eslog.h"
 #include "mesh/store/surfacestore.h"
 
@@ -14,15 +15,16 @@
 
 namespace espreso {
 struct PreciceData {
-    PreciceData(const char *name)
-    : precice(name, "precice-config.xml", info::mpi::rank, info::mpi::size)
+    PreciceData()
+    : precice(info::ecf->coupling.solver, info::ecf->coupling.configuration, info::mpi::rank, info::mpi::size),
+      size(0)
     {
 
     }
 
     precice::Participant precice;
     size_t size;
-    esint *ids;
+    std::vector<esint> ids;
     std::vector<double> data;
 };
 }
@@ -31,27 +33,26 @@ struct PreciceData {
 
 using namespace espreso;
 
-Precice::Precice(const char *name, bool active)
+Precice::Precice()
 : _data(nullptr)
 {
 #ifdef HAVE_PRECICE
-    if (active) {
-        _data = new PreciceData(name);
+    if (info::ecf->coupling.active) {
+        _data = new PreciceData();
 
         _data->size = info::mesh->surface->nIDs->datatarray().size();
-        _data->ids = info::mesh->surface->nIDs->datatarray().data();
+        _data->ids.insert(_data->ids.end(), info::mesh->surface->nIDs->datatarray().begin(), info::mesh->surface->nIDs->datatarray().end());
 
-        size_t size = info::mesh->surface->nIDs->datatarray().size();
         if (info::mesh->dimension == 2) {
-            std::vector<double> coords; coords.reserve(info::mesh->dimension * size);
-            for (size_t n = 0; n < size; ++n) {
+            std::vector<double> coords; coords.reserve(info::mesh->dimension * _data->size);
+            for (size_t n = 0; n < _data->size; ++n) {
                 coords.push_back(info::mesh->surface->coordinates->datatarray()[n].x);
                 coords.push_back(info::mesh->surface->coordinates->datatarray()[n].y);
             }
-            _data->precice.setMeshVertices("SolidMesh", coords, precice::span(_data->ids, _data->ids + _data->size));
+            _data->precice.setMeshVertices(info::ecf->coupling.mesh, coords, _data->ids);
         } else {
             double *coords = &info::mesh->surface->coordinates->datatarray().data()->x;
-            _data->precice.setMeshVertices("SolidMesh", precice::span(coords, coords + info::mesh->dimension * _data->size), precice::span(_data->ids, _data->ids + _data->size));
+            _data->precice.setMeshVertices(info::ecf->coupling.mesh, precice::span(coords, coords + info::mesh->dimension * _data->size), _data->ids);
         }
         _data->precice.initialize();
         _data->data.resize(info::mesh->dimension * _data->size);
@@ -68,30 +69,60 @@ Precice::~Precice()
 #endif
 }
 
-void Precice::read(const char *name, double *data, double dt)
+double Precice::timeStep(double dt)
 {
 #ifdef HAVE_PRECICE
     if (_data) {
-        _data->precice.readData("SolidMesh", name, precice::span(_data->ids, _data->ids + _data->size), dt, _data->data);
+        return std::min(dt, _data->precice.getMaxTimeStepSize());
+    }
+#endif
+    return dt;
+}
+
+bool Precice::requiresWritingCheckpoint()
+{
+#ifdef HAVE_PRECICE
+    if (_data) {
+        return _data->precice.requiresWritingCheckpoint();
+    }
+#endif
+    return false;
+}
+
+bool Precice::requiresReadingCheckpoint()
+{
+#ifdef HAVE_PRECICE
+    if (_data) {
+        return _data->precice.requiresReadingCheckpoint();
+    }
+#endif
+    return false;
+}
+
+void Precice::read(double *data, double dt)
+{
+#ifdef HAVE_PRECICE
+    if (_data) {
+        _data->precice.readData(info::ecf->coupling.mesh, info::ecf->coupling.data_in, _data->ids, dt, _data->data);
         for (size_t n = 0; n < _data->size; ++n) {
             for (int d = 0; d < info::mesh->dimension; ++d) {
-                data[_data->ids[n] * info::mesh->dimension + d] = _data->data[n * info::mesh->dimension + d];
+                data[info::mesh->surface->nIDs->datatarray()[n] * info::mesh->dimension + d] = _data->data[n * info::mesh->dimension + d];
             }
         }
     }
 #endif
 }
 
-void Precice::write(const char *name, double *data)
+void Precice::write(double *data)
 {
 #ifdef HAVE_PRECICE
     if (_data) {
         for (size_t n = 0; n < _data->size; ++n) {
             for (int d = 0; d < info::mesh->dimension; ++d) {
-                _data->data[n * info::mesh->dimension + d] = data[_data->ids[n] * info::mesh->dimension + d];
+                _data->data[n * info::mesh->dimension + d] = data[info::mesh->surface->nIDs->datatarray()[n] * info::mesh->dimension + d];
             }
         }
-        _data->precice.writeData("SolidMesh", name, precice::span(_data->ids, _data->ids + _data->size), _data->data);
+        _data->precice.writeData(info::ecf->coupling.mesh, info::ecf->coupling.data_out, _data->ids, _data->data);
     }
 #endif
 }
@@ -110,15 +141,9 @@ void Precice::dummy()
 #ifdef HAVE_PRECICE
     using namespace precice;
 
-    std::string configFileName("precice-config.xml");
-    std::string solverName("FluidSolver");
-    std::string meshName("FluidMesh");
-    std::string dataWriteName("Forces");
-    std::string dataReadName("Displacement");
+    std::cout << "DUMMY: Running solver dummy with preCICE config file \"" << info::ecf->coupling.dummy.configuration << "\" and participant name \"" << info::ecf->coupling.dummy.solver << "\".\n";
 
-    std::cout << "DUMMY: Running solver dummy with preCICE config file \"" << configFileName << "\" and participant name \"" << solverName << "\".\n";
-
-    Participant participant(solverName, configFileName, info::mpi::rank, info::mpi::size);
+    Participant participant(info::ecf->coupling.dummy.solver, info::ecf->coupling.dummy.configuration, info::mpi::rank, info::mpi::size);
 
     size_t size = info::mesh->surface->nIDs->datatarray().size();
     esint *ids = info::mesh->surface->nIDs->datatarray().data();
@@ -128,10 +153,10 @@ void Precice::dummy()
             coords.push_back(info::mesh->surface->coordinates->datatarray()[n].x);
             coords.push_back(info::mesh->surface->coordinates->datatarray()[n].y);
         }
-        participant.setMeshVertices("FluidMesh", coords, precice::span(ids, ids + size));
+        participant.setMeshVertices(info::ecf->coupling.dummy.mesh, coords, precice::span(ids, ids + size));
     } else {
         double *coords = &info::mesh->surface->coordinates->datatarray().data()->x;
-        participant.setMeshVertices("FluidMesh", precice::span(coords, coords + info::mesh->dimension * size), precice::span(ids, ids + size));
+        participant.setMeshVertices(info::ecf->coupling.dummy.mesh, precice::span(coords, coords + info::mesh->dimension * size), precice::span(ids, ids + size));
     }
 
     std::vector<double> readData(size * info::mesh->dimension);
@@ -141,7 +166,7 @@ void Precice::dummy()
         writeData[i] = 1;
     }
     if (participant.requiresInitialData()) {
-        participant.writeData(meshName, dataWriteName, precice::span(ids, ids + size), writeData);
+        participant.writeData(info::ecf->coupling.dummy.mesh, info::ecf->coupling.dummy.data_out, precice::span(ids, ids + size), writeData);
     }
     participant.initialize();
 
@@ -151,13 +176,13 @@ void Precice::dummy()
         }
 
         double dt = participant.getMaxTimeStepSize();
-        participant.readData(meshName, dataReadName, precice::span(ids, ids + size), dt, readData);
+        participant.readData(info::ecf->coupling.dummy.mesh, info::ecf->coupling.dummy.data_in, precice::span(ids, ids + size), dt, readData);
 
         for (size_t i = info::mesh->dimension - 1; i < size * info::mesh->dimension; i += info::mesh->dimension) {
             writeData[i] = readData[i];
         }
 
-        participant.writeData(meshName, dataWriteName, precice::span(ids, ids + size), writeData);
+        participant.writeData(info::ecf->coupling.dummy.mesh, info::ecf->coupling.dummy.data_out, precice::span(ids, ids + size), writeData);
 
 //        printf("DISPLACEMENT\n");
 //        for (int d = 0; d < info::mesh->dimension; ++d) {

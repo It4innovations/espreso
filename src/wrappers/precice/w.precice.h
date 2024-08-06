@@ -10,11 +10,16 @@ struct Precice {
 
     static void dummy();
 
-    Precice(const char *name, bool active);
+    Precice();
     ~Precice();
 
-    void read(const char *name, double *data, double dt);
-    void write(const char *name, double *data);
+    double timeStep(double dt);
+
+    bool requiresWritingCheckpoint();
+    bool requiresReadingCheckpoint();
+
+    void read(double *data, double dt);
+    void write(double *data);
     void advance(double dt);
 
 private:

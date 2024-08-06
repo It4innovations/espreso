@@ -134,6 +134,8 @@ void ECF::_init()
 
 	REGISTER(mesh_morphing, ECFMetaData()
 			.setdescription({ "Settings for mesh morphing." }));
+	REGISTER(coupling, ECFMetaData()
+            .setdescription({ "Settings for coupling." }));
 
 	dryrun = 0;
 	REGISTER(dryrun, ECFMetaData()

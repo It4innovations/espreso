@@ -11,6 +11,7 @@
 #include "input/feti4ilibrary.h"
 
 #include "meshmorphing.h"
+#include "coupling.h"
 
 #include "physics/physics.h"
 #include "physics/coupled.h"
@@ -71,6 +72,7 @@ struct ECF: public ECFDescription {
 	InputGeneratorConfiguration generator;
 
 	MeshMorphing mesh_morphing;
+	CouplingConfiguration coupling;
 
 	bool simple_output, always_update_conductivity;
 	size_t dryrun;

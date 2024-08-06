@@ -31,6 +31,7 @@ struct Duplicate {
 
 struct Time {
 	double start = 0;
+	double previous;
 	double current = 0;
 	double shift = 1; // difference between current and previous time
 	double final = 1;

@@ -41,7 +41,7 @@ struct PhysicsConfiguration: public ECFDescription {
 
 	std::map<std::string, ECFExpression> initial_temperature, thickness;
 
-	bool contact_interfaces, reassembling_optimization, coupling;
+	bool contact_interfaces, reassembling_optimization;
 
 	PhysicsConfiguration(MaterialConfiguration::PHYSICAL_MODEL physicalModel);
 };

@@ -405,7 +405,7 @@ void StructuralMechanics::analyze(const step::Step &step)
                 if (pressure != configuration.pressure.end()) {
                     faceKernels[r][i].pressure.activate(pressure->second.pressure, pressure->second.direction, settings.element_behaviour);
                 }
-                if (settings.coupling && StringCompare::caseInsensitiveEq(region->name, "SURFACE")) {
+                if (info::ecf->coupling.active && StringCompare::caseInsensitiveEq(region->name, "SURFACE")) {
                     faceKernels[r][i].fluidForce.activate(region->elements->cbegin() + region->eintervals[i].begin, region->elements->cbegin() + region->eintervals[i].end, Results::fluidForce->data.data());
                 }
             }
