@@ -289,8 +289,13 @@ namespace spblas {
     {
         T one = 1.0;
         if(stage == 'B') CHECK(cusparseSpSV_bufferSize  (h->h, _char_to_operation<T>(transpose), &one, matrix->d, rhs->d, sol->d, _sparse_data_type<T>(), CUSPARSE_SPSV_ALG_DEFAULT, descr_trsv->d, &buffersize));
+#if CUDART_VERSION >= 12020 // cusparseSpSV_updateMatrix available since CUDA/12.1.1, but no way to check for the .1 update
         if(stage == 'P') CHECK(cusparseSpSV_analysis    (h->h, _char_to_operation<T>(transpose), &one, matrix->d, rhs->d, sol->d, _sparse_data_type<T>(), CUSPARSE_SPSV_ALG_DEFAULT, descr_trsv->d, buffer));
         if(stage == 'U') CHECK(cusparseSpSV_updateMatrix(h->h, descr_trsv->d, matrix->vals_ptr, CUSPARSE_SPSV_UPDATE_GENERAL));
+#else
+        // if(stage == 'P') CHECK(cusparseSpSV_analysis    (h->h, _char_to_operation<T>(transpose), &one, matrix->d, rhs->d, sol->d, _sparse_data_type<T>(), CUSPARSE_SPSV_ALG_DEFAULT, descr_trsv->d, buffer)); // no need to do preprocess when update must happen anyway
+        if(stage == 'U') CHECK(cusparseSpSV_analysis    (h->h, _char_to_operation<T>(transpose), &one, matrix->d, rhs->d, sol->d, _sparse_data_type<T>(), CUSPARSE_SPSV_ALG_DEFAULT, descr_trsv->d, buffer));
+#endif
         if(stage == 'C') CHECK(cusparseSpSV_solve       (h->h, _char_to_operation<T>(transpose), &one, matrix->d, rhs->d, sol->d, _sparse_data_type<T>(), CUSPARSE_SPSV_ALG_DEFAULT, descr_trsv->d));
     }
 
@@ -323,9 +328,13 @@ namespace spblas {
     {
         T one = 1.0;
         T zero = 0.0;
-        if(stage == 'B') CHECK(cusparseSpMV_bufferSize(h->h, _char_to_operation<T>(transpose), &one, A->d, x->d, &zero, y->d, _sparse_data_type<T>(), CUSPARSE_SPMV_ALG_DEFAULT, &buffer.size.compute));
-        // if(stage == 'P') ;
-        if(stage == 'C') CHECK(cusparseSpMV           (h->h, _char_to_operation<T>(transpose), &one, A->d, x->d, &zero, y->d, _sparse_data_type<T>(), CUSPARSE_SPMV_ALG_DEFAULT, buffer.mem.compute));
+        if(stage == 'B') CHECK(cusparseSpMV_bufferSize(h->h, _char_to_operation<T>(transpose), &one, A->d, x->d, &zero, y->d, _sparse_data_type<T>(), CUSPARSE_SPMV_ALG_DEFAULT, &buffer.size.persistent));
+#if CUDART_VERSION >= 12040
+        if(stage == 'P') CHECK(cusparseSpMV_preprocess(h->h, _char_to_operation<T>(transpose), &one, A->d, x->d, &zero, y->d, _sparse_data_type<T>(), CUSPARSE_SPMV_ALG_DEFAULT, buffer.mem.persistent));
+#else
+        // if(stage == 'P') ; // no preprocess function exists in CUDA < 12.4
+#endif
+        if(stage == 'C') CHECK(cusparseSpMV           (h->h, _char_to_operation<T>(transpose), &one, A->d, x->d, &zero, y->d, _sparse_data_type<T>(), CUSPARSE_SPMV_ALG_DEFAULT, buffer.mem.persistent));
     }
 
     template<typename T, typename I>

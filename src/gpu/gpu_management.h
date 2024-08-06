@@ -181,6 +181,38 @@ namespace mgm {
     };
 
     template<typename T, typename I, typename A>
+    void print_vector(queue & q, Vector_Dense<T,I,A> & vec, const char * name = "")
+    {
+        if constexpr(A::is_data_host_accessible) {
+            printf("Vector %s, size %lld\n", name, (long long)vec.size);
+            for(I i = 0; i < vec.size; i++) {
+                if constexpr(std::is_floating_point_v<T>) {
+                    double v = (double)vec.vals[i];
+                    char str[100];
+                    snprintf(str, sizeof(str), "%+11.3e", v);
+                    if(strstr(str, "nan") != nullptr) printf("   nan      ");
+                    else if(strstr(str, "inf") != nullptr) printf("  %cinf      ", v > 0 ? '+' : '-');
+                    else if(v == 0) printf("   0        ");
+                    else printf(" %+11.3e", v);
+                }
+                if constexpr(std::is_integral_v<T>) printf(" %+11lld", (long long)vec.vals[i]);
+            }
+            printf("\n");
+            fflush(stdout);
+        }
+        else if constexpr(A::is_data_device_accessible) {
+            Vector_Dense<T,I,Ah> vec_host;
+            vec_host.resize(vec);
+            copy_submit_d2h(q, vec_host, vec);
+            queue_wait(q);
+            print_vector(q, vec_host, name);
+        }
+        else {
+            static_assert(true, "weird vector with inaccessible data");
+        }
+    }
+
+    template<typename T, typename I, typename A>
     void print_matrix_dense(queue & q, Matrix_Dense<T,I,A> & matrix, const char * name = "")
     {
         if constexpr(A::is_data_host_accessible) {

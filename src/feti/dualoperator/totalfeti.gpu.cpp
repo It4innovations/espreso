@@ -1546,7 +1546,7 @@ void TotalFETIGpu<T,I>::apply_implicit_compute(size_t di, my_timer & tm_allocinp
     gpu::spblas::handle & hs = handles_sparse[di % n_queues];
     per_domain_stuff & data = domain_data[di];
 
-    void * buffer_other;
+    void * buffer_other = nullptr;
 
     tm_allocinpool.start();
     {
@@ -1594,9 +1594,9 @@ void TotalFETIGpu<T,I>::apply_implicit_compute(size_t di, my_timer & tm_allocinp
 
     tm_compute.start();
     {
-        T * & vec_1_ptr = data.d_apply_w.vals;
-        T * & vec_2_ptr = (is_factor1_sparse ? data.d_apply_z.vals : data.d_apply_w.vals);
-        // T * & vec_3_ptr = ((is_factor1_sparse == is_factor2_sparse) ? data.d_apply_w.vals : data.d_apply_z.vals);
+        Vector_Dense<T,I,Ad> & vec_1 = data.d_apply_w;
+        Vector_Dense<T,I,Ad> & vec_2 = (is_factor1_sparse ? data.d_apply_z : data.d_apply_w);
+        // Vector_Dense<T,I,Ad> & vec_3 = ((is_factor1_sparse == is_factor2_sparse) ? data.d_apply_w : data.d_apply_z);
         gpu::spblas::descr_vector_dense & vec_1_descr = data.descr_wvec;
         gpu::spblas::descr_vector_dense & vec_2_descr = (is_factor1_sparse ? data.descr_zvec : data.descr_wvec);
         gpu::spblas::descr_vector_dense & vec_3_descr = ((is_factor1_sparse == is_factor2_sparse) ? data.descr_wvec : data.descr_zvec);
@@ -1609,16 +1609,16 @@ void TotalFETIGpu<T,I>::apply_implicit_compute(size_t di, my_timer & tm_allocinp
         tm_trsv1.start();
         if(do_trsv1_sp_L)  gpu::spblas::trsv<T,I>(hs, 'N', data.descr_L_sp,  vec_1_descr, vec_2_descr, data.descr_sparse_trsv1, data.buffersize_sptrs1, data.buffer_sptrs1, 'C');
         if(do_trsv1_sp_LH) gpu::spblas::trsv<T,I>(hs, 'H', data.descr_LH_sp, vec_1_descr, vec_2_descr, data.descr_sparse_trsv1, data.buffersize_sptrs1, data.buffer_sptrs1, 'C');
-        if(do_trsv1_dn_L)  gpu::dnblas::trsv<T,I>(hd, data.n_dofs_domain, data.d_L_dn->vals,  data.ld_domain, 'R', 'N', 'L', vec_1_ptr);
-        if(do_trsv1_dn_LH) gpu::dnblas::trsv<T,I>(hd, data.n_dofs_domain, data.d_LH_dn->vals, data.ld_domain, 'R', 'H', 'U', vec_1_ptr);
+        if(do_trsv1_dn_L)  gpu::dnblas::trsv<T,I>(hd, data.n_dofs_domain, data.d_L_dn->vals,  data.ld_domain, 'R', 'N', 'L', vec_1.vals);
+        if(do_trsv1_dn_LH) gpu::dnblas::trsv<T,I>(hd, data.n_dofs_domain, data.d_LH_dn->vals, data.ld_domain, 'R', 'H', 'U', vec_1.vals);
         if(config->concurrency_apply == CONCURRENCY::SEQ_WAIT) gpu::mgm::queue_wait(q);
         tm_trsv1.stop();
 
         tm_trsv2.start();
         if(do_trsv2_sp_U)  gpu::spblas::trsv<T,I>(hs, 'N', data.descr_U_sp,  vec_2_descr, vec_3_descr, data.descr_sparse_trsv2, data.buffersize_sptrs2, data.buffer_sptrs2, 'C');
         if(do_trsv2_sp_UH) gpu::spblas::trsv<T,I>(hs, 'H', data.descr_UH_sp, vec_2_descr, vec_3_descr, data.descr_sparse_trsv2, data.buffersize_sptrs2, data.buffer_sptrs2, 'C');
-        if(do_trsv2_dn_U)  gpu::dnblas::trsv<T,I>(hd, data.n_dofs_domain, data.d_U_dn->vals,  data.ld_domain, 'R', 'N', 'U', vec_2_ptr);
-        if(do_trsv2_dn_UH) gpu::dnblas::trsv<T,I>(hd, data.n_dofs_domain, data.d_UH_dn->vals, data.ld_domain, 'R', 'H', 'L', vec_2_ptr);
+        if(do_trsv2_dn_U)  gpu::dnblas::trsv<T,I>(hd, data.n_dofs_domain, data.d_U_dn->vals,  data.ld_domain, 'R', 'N', 'U', vec_2.vals);
+        if(do_trsv2_dn_UH) gpu::dnblas::trsv<T,I>(hd, data.n_dofs_domain, data.d_UH_dn->vals, data.ld_domain, 'R', 'H', 'L', vec_2.vals);
         if(config->concurrency_apply == CONCURRENCY::SEQ_WAIT) gpu::mgm::queue_wait(q);
         tm_trsv2.stop();
 
