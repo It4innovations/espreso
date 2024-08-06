@@ -454,13 +454,13 @@ namespace spblas {
     }
 
     template<typename T, typename I>
-    void mv(handle & h, char transpose, descr_matrix_csr & A, descr_vector_dense & x, descr_vector_dense & y, buffer_info & buffer, char stage)
+    void mv(handle & h, char transpose, descr_matrix_csr & A, descr_vector_dense & x, descr_vector_dense & y, size_t & buffersize, void * buffer, char stage)
     {
         T one = 1.0;
         T zero = 0.0;
-        if(stage == 'B') CHECK(cusparseSpMV_bufferSize(h->h, _char_to_operation<T>(transpose), &one, A->d_new, x->d_new, &zero, y->d_new, _sparse_data_type<T>(), CUSPARSE_SPMV_ALG_DEFAULT, &buffer.size.persistent));
+        if(stage == 'B') CHECK(cusparseSpMV_bufferSize(h->h, _char_to_operation<T>(transpose), &one, A->d_new, x->d_new, &zero, y->d_new, _sparse_data_type<T>(), CUSPARSE_SPMV_ALG_DEFAULT, &buffersize));
         // if(stage == 'P') ; // no preprocess function exists in CUDA < 12.4. Also, no macro check needed for >=12.4, since legacy cuda will be always <12
-        if(stage == 'C') CHECK(cusparseSpMV           (h->h, _char_to_operation<T>(transpose), &one, A->d_new, x->d_new, &zero, y->d_new, _sparse_data_type<T>(), CUSPARSE_SPMV_ALG_DEFAULT, buffer.mem.persistent));
+        if(stage == 'C') CHECK(cusparseSpMV           (h->h, _char_to_operation<T>(transpose), &one, A->d_new, x->d_new, &zero, y->d_new, _sparse_data_type<T>(), CUSPARSE_SPMV_ALG_DEFAULT, buffer));
     }
 
     template<typename T, typename I>

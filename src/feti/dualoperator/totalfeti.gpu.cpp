@@ -242,6 +242,8 @@ TotalFETIGpu<T,I>::~TotalFETIGpu()
         gpu::mgm::memfree_device(data.buffer_spmm);
         gpu::mgm::memfree_device(data.buffer_transL2LH);
         gpu::mgm::memfree_device(data.buffer_transU2UH);
+        gpu::mgm::memfree_device(data.buffer_spmv1);
+        gpu::mgm::memfree_device(data.buffer_spmv2);
     }
     d_applyg_x_cluster.clear();
     d_applyg_y_cluster.clear();
@@ -486,8 +488,8 @@ void TotalFETIGpu<T,I>::set(const step::Step &step)
             if(do_mm &&  need_f_tmp) gpu::spblas::mm<T,I>(hs, 'N', 'N', data.descr_Bperm_sp, descr_Z, data.descr_F_tmp, data.buffersize_spmm, data.buffer_spmm, 'B');
             if(do_mm && !need_f_tmp) gpu::spblas::mm<T,I>(hs, 'N', 'N', data.descr_Bperm_sp, descr_Z, data.descr_F,     data.buffersize_spmm, data.buffer_spmm, 'B');
 
-            if(is_implicit) gpu::spblas::mv<T,I>(hs, 'T', data.descr_Bperm_sp, data.descr_xvec, data.descr_wvec, data.buffer_spmv1, 'B');
-            if(is_implicit) gpu::spblas::mv<T,I>(hs, 'N', data.descr_Bperm_sp, data.descr_wvec, data.descr_yvec, data.buffer_spmv2, 'B');
+            if(is_implicit) gpu::spblas::mv<T,I>(hs, 'T', data.descr_Bperm_sp, data.descr_xvec, data.descr_wvec, data.buffersize_spmv1, data.buffer_spmv1, 'B');
+            if(is_implicit) gpu::spblas::mv<T,I>(hs, 'N', data.descr_Bperm_sp, data.descr_wvec, data.descr_yvec, data.buffersize_spmv2, data.buffer_spmv2, 'B');
             if(do_trsv1_sp_L)  gpu::spblas::trsv<T,I>(hs, 'N', data.descr_L_sp,  data.descr_wvec, data.descr_zvec, data.descr_sparse_trsv1, data.buffersize_sptrs1, data.buffer_sptrs1, 'B');
             if(do_trsv1_sp_LH) gpu::spblas::trsv<T,I>(hs, 'H', data.descr_LH_sp, data.descr_wvec, data.descr_zvec, data.descr_sparse_trsv1, data.buffersize_sptrs1, data.buffer_sptrs1, 'B');
             if(do_trsv2_sp_U)  gpu::spblas::trsv<T,I>(hs, 'N', data.descr_U_sp,  data.descr_zvec, data.descr_wvec, data.descr_sparse_trsv2, data.buffersize_sptrs2, data.buffer_sptrs2, 'B');
@@ -549,8 +551,8 @@ void TotalFETIGpu<T,I>::set(const step::Step &step)
             if(do_mm)      data.buffer_spmm   = gpu::mgm::memalloc_device(data.buffersize_spmm);
             if(data.buffersize_transL2LH > 0) data.buffer_transL2LH = gpu::mgm::memalloc_device(data.buffersize_transL2LH);
             if(data.buffersize_transU2UH > 0) data.buffer_transU2UH = gpu::mgm::memalloc_device(data.buffersize_transU2UH);
-            if(data.buffer_spmv1.size.persistent > 0) data.buffer_spmv1.mem.persistent = gpu::mgm::memalloc_device(data.buffer_spmv1.size.persistent);
-            if(data.buffer_spmv2.size.persistent > 0) data.buffer_spmv2.mem.persistent = gpu::mgm::memalloc_device(data.buffer_spmv2.size.persistent);
+            if(data.buffersize_spmv1 > 0) data.buffer_spmv1 = gpu::mgm::memalloc_device(data.buffersize_spmv1);
+            if(data.buffersize_spmv2 > 0) data.buffer_spmv2 = gpu::mgm::memalloc_device(data.buffersize_spmv2);
             if(need_F && data.should_allocate_d_F) d_Fs_allocated[data.allocated_F_index].resize(data.n_dofs_interface + 1, data.n_dofs_interface, data.ld_F);
             tm_alloc_device.stop();
         }
@@ -750,17 +752,12 @@ void TotalFETIGpu<T,I>::set(const step::Step &step)
         gpu::spblas::descr_matrix_dense & descr_Z = (is_factor1_sparse == is_factor2_sparse ? data.descr_X : data.descr_Y);
 
         // allocate temporary buffers for preprocessign stage from the memory pool
-        tm_allocinpool.start();
-        {
-            cbmba_res_device->do_transaction([&](){
-                size_t biggest = std::max(data.buffer_spmv1.size.preprocess, data.buffer_spmv2.size.preprocess);
-                void * ptr = nullptr;
-                if(biggest > 0) ptr = cbmba_res_device->allocate(biggest, align_B);
-                data.buffer_spmv1.mem.preprocess = ptr;
-                data.buffer_spmv2.mem.preprocess = ptr;
-            });
-        }
-        tm_allocinpool.stop();
+        // tm_allocinpool.start();
+        // {
+        //     cbmba_res_device->do_transaction([&](){
+        //     });
+        // }
+        // tm_allocinpool.stop();
         
         // proprocessing stage of the kernels
         tm_kernels_preprocess.start();
@@ -794,7 +791,7 @@ void TotalFETIGpu<T,I>::set(const step::Step &step)
             if(is_implicit)
             {
                 tm_spmv1.start();
-                gpu::spblas::mv<T,I>(hs, 'T', data.descr_Bperm_sp, data.descr_xvec, data.descr_wvec, data.buffer_spmv1, 'P');
+                gpu::spblas::mv<T,I>(hs, 'T', data.descr_Bperm_sp, data.descr_xvec, data.descr_wvec, data.buffersize_spmv1, data.buffer_spmv1, 'P');
                 if(config->concurrency_set == CONCURRENCY::SEQ_WAIT) gpu::mgm::queue_wait(q);
                 tm_spmv1.stop();
 
@@ -811,7 +808,7 @@ void TotalFETIGpu<T,I>::set(const step::Step &step)
                 tm_trsv2.stop();
 
                 tm_spmv2.start();
-                gpu::spblas::mv<T,I>(hs, 'N', data.descr_Bperm_sp, data.descr_wvec, data.descr_yvec, data.buffer_spmv2, 'P');
+                gpu::spblas::mv<T,I>(hs, 'N', data.descr_Bperm_sp, data.descr_wvec, data.descr_yvec, data.buffersize_spmv2, data.buffer_spmv2, 'P');
                 if(config->concurrency_set == CONCURRENCY::SEQ_WAIT) gpu::mgm::queue_wait(q);
                 tm_spmv2.stop();
             }
@@ -819,17 +816,13 @@ void TotalFETIGpu<T,I>::set(const step::Step &step)
         tm_kernels_preprocess.stop();
 
         // free the temporary buffers
-        tm_freeinpool.start();
-        {
-            gpu::mgm::submit_host_function(q, [&,di](){
-                void * ptr = domain_data[di].buffer_spmv1.mem.preprocess;
-                cbmba_res_device->deallocate(ptr);
-                domain_data[di].buffer_spmv1.mem.preprocess = nullptr;
-                domain_data[di].buffer_spmv2.mem.preprocess = nullptr;
-            });
-            if(config->concurrency_update == CONCURRENCY::SEQ_WAIT) gpu::mgm::queue_wait(q);
-        }
-        tm_freeinpool.stop();
+        // tm_freeinpool.start();
+        // {
+        //     gpu::mgm::submit_host_function(q, [&,di](){
+        //     });
+        //     if(config->concurrency_update == CONCURRENCY::SEQ_WAIT) gpu::mgm::queue_wait(q);
+        // }
+        // tm_freeinpool.stop();
     }
     tm_preprocess.stop();
 
@@ -1563,10 +1556,7 @@ void TotalFETIGpu<T,I>::apply_implicit_compute(size_t di, my_timer & tm_allocinp
             if(do_link_d_dn_LH_U) data.d_LH_dn->shallowCopy(*data.d_U_dn);
             if(do_link_d_dn_UH_L) data.d_UH_dn->shallowCopy(*data.d_L_dn);
 
-            size_t biggest = std::max({data.buffersize_other, data.buffer_spmv1.size.compute, data.buffer_spmv2.size.compute});
-            if(biggest > 0) buffer_other = cbmba_res_device->allocate(biggest, align_B);
-            data.buffer_spmv1.mem.compute = buffer_other;
-            data.buffer_spmv2.mem.compute = buffer_other;
+            if(data.buffersize_other > 0) buffer_other = cbmba_res_device->allocate(data.buffersize_other, align_B);
         });
     }
     tm_allocinpool.stop();
@@ -1602,7 +1592,7 @@ void TotalFETIGpu<T,I>::apply_implicit_compute(size_t di, my_timer & tm_allocinp
         gpu::spblas::descr_vector_dense & vec_3_descr = ((is_factor1_sparse == is_factor2_sparse) ? data.descr_wvec : data.descr_zvec);
 
         tm_spmv1.start();
-        gpu::spblas::mv<T,I>(hs, 'T', data.descr_Bperm_sp, data.descr_xvec, data.descr_wvec, data.buffer_spmv1, 'C');
+        gpu::spblas::mv<T,I>(hs, 'T', data.descr_Bperm_sp, data.descr_xvec, data.descr_wvec, data.buffersize_spmv1, data.buffer_spmv1, 'C');
         if(config->concurrency_apply == CONCURRENCY::SEQ_WAIT) gpu::mgm::queue_wait(q);
         tm_spmv1.stop();
 
@@ -1623,7 +1613,7 @@ void TotalFETIGpu<T,I>::apply_implicit_compute(size_t di, my_timer & tm_allocinp
         tm_trsv2.stop();
 
         tm_spmv2.start();
-        gpu::spblas::mv<T,I>(hs, 'N', data.descr_Bperm_sp, vec_3_descr, data.descr_yvec, data.buffer_spmv2, 'C');
+        gpu::spblas::mv<T,I>(hs, 'N', data.descr_Bperm_sp, vec_3_descr, data.descr_yvec, data.buffersize_spmv2, data.buffer_spmv2, 'C');
         if(config->concurrency_apply == CONCURRENCY::SEQ_WAIT) gpu::mgm::queue_wait(q);
         tm_spmv2.stop();
     }
@@ -1641,8 +1631,6 @@ void TotalFETIGpu<T,I>::apply_implicit_compute(size_t di, my_timer & tm_allocinp
 
             void * buffer_other_ = buffer_other;
             cbmba_res_device->deallocate(buffer_other_);
-            data.buffer_spmv1.mem.compute = nullptr;
-            data.buffer_spmv2.mem.compute = nullptr;
         });
         if(config->concurrency_update == CONCURRENCY::SEQ_WAIT) gpu::mgm::queue_wait(q);
     }
