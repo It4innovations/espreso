@@ -5,7 +5,7 @@
 *.csv
 
 # ignore generated directories
-build/*
+build*/*
 bin/*
 lib64/*
 
