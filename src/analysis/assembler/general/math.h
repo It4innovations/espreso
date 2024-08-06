@@ -19,9 +19,11 @@ void multAB(SIMD C[rows * cols], const SIMD A[rows * common], const SIMD B[commo
 {
     for (size_t i = 0; i < rows; ++i) {
         for (size_t j = 0; j < cols; ++j) {
+            SIMD res;
             for (size_t k = 0; k < common; ++k) {
-                C[i * cols + j] = C[i * cols + j] + scale * A[i * common + k] * B[k * cols + j];
+                res = res + A[i * common + k] * B[k * cols + j];
             }
+            C[i * cols + j] = scale * res;
         }
     }
 }
@@ -29,11 +31,13 @@ void multAB(SIMD C[rows * cols], const SIMD A[rows * common], const SIMD B[commo
 template <size_t rows, size_t common, size_t cols>
 void multAtB(SIMD C[rows * cols], const SIMD A[rows * common], const SIMD B[common * cols], const SIMD &scale = load1(1.))
 {
-    for (size_t i = 0; i < rows; ++i) {
+    for (size_t k = 0; k < common; ++k) {
         for (size_t j = 0; j < cols; ++j) {
-            for (size_t k = 0; k < common; ++k) {
-                C[i * cols + j] = C[i * cols + j] + scale * A[k * rows + i] * B[k * cols + j];
+            SIMD res;
+            for (size_t i = 0; i < rows; ++i) {
+                res = res + A[i * common + k] * B[i * cols + j];
             }
+            C[k * cols + j] = C[k * cols + j] + scale * res;
         }
     }
 }
@@ -43,9 +47,11 @@ void multABt(SIMD C[rows * cols], const SIMD A[rows * common], const SIMD B[comm
 {
     for (size_t i = 0; i < rows; ++i) {
         for (size_t j = 0; j < cols; ++j) {
+            SIMD res;
             for (size_t k = 0; k < common; ++k) {
-                C[i * cols + j] = C[i * cols + j] + scale * A[i * common + k] * B[j * common + k];
+                res = res + A[i * common + k] * B[j * common + k];
             }
+            C[i * cols + j] = C[i * cols + j] + scale * res;
         }
     }
 }
@@ -55,9 +61,11 @@ void multAtBt(SIMD C[rows * cols], const SIMD A[rows * common], const SIMD B[com
 {
     for (size_t i = 0; i < rows; ++i) {
         for (size_t j = 0; j < cols; ++j) {
+            SIMD res;
             for (size_t k = 0; k < common; ++k) {
-                C[i * cols + j] = C[i * cols + j] + scale * A[k * rows + i] * B[j * common + k];
+                res = res + A[k * rows + i] * B[j * common + k];
             }
+            C[i * cols + j] = C[i * cols + j] + scale * res;
         }
     }
 }
