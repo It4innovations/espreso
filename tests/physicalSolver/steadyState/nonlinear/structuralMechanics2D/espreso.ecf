@@ -1,53 +1,66 @@
 # ESPRESO Configuration File
 
 DEFAULT_ARGS {
-  0   SQUARE4;
+  0  SQUARE4;
 
-  1         2;
-  2         2;
+  1        1;
+  2        1;
 
-  3         2;
-  4         2;
+  3        1;
+  4        1;
 
-  5        20;
-  6        20;
+  5        3;
+  6       15;
 
-  7      FETI;
+  7  MKLPDSS;
 }
 
 INPUT_TYPE              GENERATOR;
-PHYSICS   STRUCTURAL_MECHANICS;
+PHYSICS      STRUCTURAL_MECHANICS;
 
 GENERATOR {
   SHAPE   GRID;
 
   GRID {
-    START_X                     0;
-    START_Y                     0;
-    START_Z                     0;
+    START_X                -0.05;
+    START_Y                    0;
 
-    LENGTH_X                  100;
-    LENGTH_Y                   10;
-    LENGTH_Z                   10;
+    LENGTH_X                  .1;
+    LENGTH_Y                   1;
 
     NODES {
-      X0   <0 , 0> <0 , 10> <0 , 0>;
+      DIRICHLET   <-0.05 , 0.05> <0 , 0> <0 , 0>;
     }
 
-    ELEMENT_TYPE           [ARG0];
+    EDGES {
+      STRESS     <-0.05, -0.05> <0 , 1> <0 , 0>;
+      TOP        <-0.05 , 0.05> <1 , 1> <0 , 0>;
+    }
 
-    CLUSTERS_X             [ARG1];
-    CLUSTERS_Y             [ARG2];
-    CLUSTERS_Z                  1;
+    ELEMENT_TYPE          [ARG0];
 
-    DOMAINS_X              [ARG3];
-    DOMAINS_Y              [ARG4];
-    DOMAINS_Z                   1;
+    CLUSTERS_X            [ARG1];
+    CLUSTERS_Y            [ARG2];
+    CLUSTERS_Z                 1;
 
-    ELEMENTS_X             [ARG5];
-    ELEMENTS_Y             [ARG6];
-    ELEMENTS_Z                  1;
+    DOMAINS_X             [ARG3];
+    DOMAINS_Y             [ARG4];
+    DOMAINS_Z                  1;
+
+    ELEMENTS_X            [ARG5];
+    ELEMENTS_Y            [ARG6];
+    ELEMENTS_Z                 1;
   }
+}
+
+COUPLING {
+  active                         FALSE;
+
+  configuration   ../precice-config.xml;
+  solver                          Solid;
+  mesh                       Solid-Mesh;
+  data_in                         Force;
+  data_out                 Displacement;
 }
 
 STRUCTURAL_MECHANICS {
@@ -56,52 +69,68 @@ STRUCTURAL_MECHANICS {
   MATERIALS {
     1 {
 
-      DENS   7850;
+      DENS   3000;
       CP        1;
 
       LINEAR_ELASTIC_PROPERTIES {
         MODEL   ISOTROPIC;
 
         MIXY          0.3;
-        EX         2.1E11;
+        EX            1e9;
+      }
+
+      THERMAL_EXPANSION {
+        TEX             0;
       }
     }
   }
+
+  ELEMENT_BEHAVIOUR PLANE_STRESS;
 
   MATERIAL_SET {
     ALL_ELEMENTS   1;
   }
 
-  ELEMENT_BEHAVIOUR PLANE_STRAIN;
-
   LOAD_STEPS_SETTINGS {
     1 {
-      DURATION_TIME     1;
+      DURATION_TIME   .02;
       TYPE   STEADY_STATE;
-      MODE         LINEAR;
+      MODE      NONLINEAR;
       SOLVER       [ARG7];
+
+      LARGE_DISPLACEMENT  TRUE;
+
+      TRANSIENT_SOLVER {
+        TIME_STEP       .01;
+      }
 
       FETI {
         METHOD          TOTAL_FETI;
         PRECONDITIONER   DIRICHLET;
         ITERATIVE_SOLVER       PCG;
-        REGULARIZATION   ALGEBRAIC;
-        PRECISION             1e-7;
+        REGULARIZATION    ANALYTIC;
+        PRECISION             1e-9;
       }
 
       DISPLACEMENT {
-        X0   { X 0; Y 0; }
+        DIRICHLET   { X 0 ; Y 0 ; }
       }
 
-      ACCELERATION {
-        ALL_ELEMENTS   { Y  9.8066; };
+#      NORMAL_PRESSURE {
+#        STRESS   1e6;
+#      }
+      PRESSURE {
+        TOP {
+          PRESSURE    3e6;
+          DIRECTION { X 1; }
+        }
       }
     }
   }
 }
 
 OUTPUT {
-  RESULTS_STORE_FREQUENCY    EVERY_SUBSTEP;
+#  RESULTS_STORE_FREQUENCY            NEVER;
   MONITORS_STORE_FREQUENCY   EVERY_SUBSTEP;
 
   STORE_RESULTS         ALL;
@@ -120,9 +149,9 @@ OUTPUT {
     }
 
     3 {
-      REGION                 X0;
-      STATISTICS            MAX;
-      PROPERTY     DISPLACEMENT;
+      REGION        ALL_NODES;
+      STATISTICS          AVG;
+      PROPERTY   DISPLACEMENT;
     }
   }
 }
