@@ -80,12 +80,12 @@ void multAtBA(SIMD C[cols * cols], const SIMD A[rows * cols], const SIMD B[rows 
                 AtB[j] = AtB[j] + A[i * cols + n] * B[i * rows + j];
             }
         }
-        SIMD nn; for (size_t k = 0; k < rows; ++k) { nn = nn + AtB[k] * A[k * cols + n]; }
-        C[n * cols + n] = C[n * cols + n] + scale * nn;
-        for (size_t m = n + 1; m < cols; ++m) {
-            SIMD nm; for (size_t k = 0; k < rows; ++k) { nm = nm + AtB[k] * A[k * cols + m]; }
+        for (size_t m = 0; m < cols; ++m) {
+            SIMD nm;
+            for (size_t k = 0; k < rows; ++k) {
+                nm = nm + AtB[k] * A[k * cols + m];
+            }
             C[n * cols + m] = C[n * cols + m] + scale * nm;
-            C[m * cols + n] = C[m * cols + n] + scale * nm;
         }
     }
 }
@@ -100,12 +100,12 @@ void multABAt(SIMD C[cols * cols], const SIMD A[rows * cols], const SIMD B[rows 
                 AB[j] = AB[j] + A[n * cols + i] * B[i * cols + j];
             }
         }
-        SIMD nn; for (size_t k = 0; k < cols; ++k) { nn = nn + AB[k] * A[n * cols + k]; }
-        C[n * rows + n] = C[n * rows + n] + scale * nn;
-        for (size_t m = n + 1; m < rows; ++m) {
-            SIMD nm; for (size_t k = 0; k < cols; ++k) { nm = nm + AB[k] * A[m * cols + k]; }
+        for (size_t m = 0; m < rows; ++m) {
+            SIMD nm;
+            for (size_t k = 0; k < cols; ++k) {
+                nm = nm + AB[k] * A[m * cols + k];
+            }
             C[n * rows + m] = C[n * rows + m] + scale * nm;
-            C[m * rows + n] = C[m * rows + n] + scale * nm;
         }
     }
 }
