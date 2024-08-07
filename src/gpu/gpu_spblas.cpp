@@ -24,6 +24,8 @@ namespace spblas {
 
     struct _descr_sparse_trsm {};
 
+    struct _descr_sparse_mv {};
+
     void handle_create(handle & h, mgm::queue & q) {}
 
     void handle_destroy(handle & h) {}
@@ -63,6 +65,10 @@ namespace spblas {
 
     void descr_sparse_trsm_destroy(descr_sparse_trsm & descr) {}
 
+    void descr_sparse_mv_create(descr_sparse_mv & descr) {}
+
+    void descr_sparse_mv_destroy(descr_sparse_mv & descr) {}
+
     template<typename T, typename I>
     void transpose(handle & h, descr_matrix_csr & output, descr_matrix_csr & input, bool conjugate, size_t & buffersize, void * buffer, char stage) {}
 
@@ -76,7 +82,7 @@ namespace spblas {
     void trsm(handle & h, char transpose_mat, char transpose_rhs, char transpose_sol, descr_matrix_csr & matrix, descr_matrix_dense & rhs, descr_matrix_dense & sol, descr_sparse_trsm & descr_trsm, size_t & buffersize, void * buffer, char stage) {}
 
     template<typename T, typename I>
-    void mv(handle & h, char transpose, descr_matrix_csr & A, descr_vector_dense & x, descr_vector_dense & y, size_t & buffersize, void * buffer, char stage) {}
+    void mv(handle & h, char transpose, descr_matrix_csr & A, descr_vector_dense & x, descr_vector_dense & y, descr_sparse_mv & descr_mv, size_t & buffersize, void * buffer, char stage) {}
 
     template<typename T, typename I>
     void mm(handle & h, char transpose_A, char transpose_B, descr_matrix_csr & A, descr_matrix_dense & B, descr_matrix_dense & C, size_t & buffersize, void * buffer, char stage) {}
