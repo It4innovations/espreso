@@ -18,7 +18,7 @@ DEFAULT_ARGS {
  10        FETI;
 }
 
-INPUT_TYPE            GENERATOR;
+INPUT_TYPE         GENERATOR;
 PHYSICS        HEAT_TRANSFER;
 
 GENERATOR {
@@ -59,20 +59,10 @@ HEAT_TRANSFER {
 
   MATERIALS {
     1 {
-      COORDINATE_SYSTEM {
-        TYPE               CARTESIAN;
-        ROTATION  { X 10; Y 35; Z 223; }
-      }
-
       THERMAL_CONDUCTIVITY {
-        MODEL   SYMMETRIC;
+        MODEL   ISOTROPIC;
 
-        KXX            2;
-        KYY            2;
-        KZZ            5;
-        KXY            1;
-        KYZ            2;
-        KXZ           .5;
+        KXX     50 + 0.01 * (TEMPERATURE/50);
       }
     }
   }
@@ -89,8 +79,13 @@ HEAT_TRANSFER {
     1 {
       DURATION_TIME     1;
       TYPE   STEADY_STATE;
-      MODE         LINEAR;
+      MODE      NONLINEAR;
       SOLVER      [ARG10];
+
+      NONLINEAR_SOLVER {
+        MAX_ITERATIONS                     5;
+        REQUESTED_TEMPERATURE_RESIDUAL  1e-9;
+      }
 
       FETI {
         METHOD          TOTAL_FETI;
@@ -98,7 +93,6 @@ HEAT_TRANSFER {
         PRECISION            1E-09;
         ITERATIVE_SOLVER       PCG;
         REGULARIZATION   ALGEBRAIC;
-        MAX_ITERATIONS         500;
       }
 
       TEMPERATURE {

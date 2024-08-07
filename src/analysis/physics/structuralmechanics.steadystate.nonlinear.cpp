@@ -163,7 +163,7 @@ void StructuralMechanicsSteadyStateNonLinear::run(step::Step &step)
         eslog::info("      == PROCESS SOLUTION                                                   %8.3f s == \n", eslog::time() - solution);
         eslog::info("      == ----------------------------------------------------------------------------- == \n");
 
-        // iterations
+        bool converged = false;
         while (step.iteration++ < configuration.nonlinear_solver.max_iterations) {
             eslog::info("\n      ==                                                    %3d. EQUILIBRIUM ITERATION == \n", step.iteration);
 
@@ -184,11 +184,14 @@ void StructuralMechanicsSteadyStateNonLinear::run(step::Step &step)
             solver->update(step);
             solver->solve(step);
 
-            if (checkDisplacement(step)) {
+            if ((converged = checkDisplacement(step))) {
                 break;
             }
         }
         info::mesh->output->updateSolution(step, time);
+        if (!converged) {
+            eslog::globalerror("non-linear solver did not converge.\n");
+        }
     }
 }
 

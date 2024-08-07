@@ -62,7 +62,7 @@ HEAT_TRANSFER {
       THERMAL_CONDUCTIVITY {
         MODEL   ISOTROPIC;
 
-        KXX     5 + 0.01 * (TEMPERATURE/50);
+        KXX     50 + 0.01 * (TEMPERATURE/50);
       }
     }
   }
@@ -83,7 +83,7 @@ HEAT_TRANSFER {
       SOLVER      [ARG10];
 
       NONLINEAR_SOLVER {
-        MAX_ITERATIONS  5;
+        MAX_ITERATIONS                     5;
         REQUESTED_TEMPERATURE_RESIDUAL  1e-9;
       }
 

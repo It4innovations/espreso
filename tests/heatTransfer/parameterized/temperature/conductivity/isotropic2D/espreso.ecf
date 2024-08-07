@@ -57,7 +57,7 @@ HEAT_TRANSFER {
   MATERIALS {
     1 {
       THERMAL_CONDUCTIVITY {
-        KXX   2 + 0.01 * (TEMPERATURE/50);
+        KXX   20 + 0.01 * (TEMPERATURE/50);
       }
     }
   }
@@ -91,7 +91,7 @@ HEAT_TRANSFER {
       }
 
       NONLINEAR_SOLVER {
-        MAX_ITERATIONS  5;
+        MAX_ITERATIONS                     3;
         REQUESTED_TEMPERATURE_RESIDUAL  1e-9;
       }
 
