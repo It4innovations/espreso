@@ -133,6 +133,16 @@ template <> struct ElasticityKernel<2>: Elasticity {
             } break;
             } break;
         }
+
+        if (rotated) {
+            // make the elasticity symmetric
+            element.ecf.elasticity[3] = element.ecf.elasticity[1];
+            element.ecf.elasticity[6] = element.ecf.elasticity[2]; element.ecf.elasticity[7] = element.ecf.elasticity[5];
+        } else {
+            // make the elasticity symmetric
+            element.elasticity[3] = element.elasticity[1];
+            element.elasticity[6] = element.elasticity[2]; element.elasticity[7] = element.elasticity[5];
+        }
     }
 };
 
@@ -170,8 +180,8 @@ template <> struct ElasticityKernel<3>: Elasticity {
 //                element.ecf.elasticity[1]  = element.ecf.elasticity[2]  = element.ecf.elasticity[8]  = ee * mi;
 //                element.ecf.elasticity[21] = element.ecf.elasticity[28] = element.ecf.elasticity[35] = ee * (C05 - mi);
 //            } else {
-                element.elasticity[ 0]  = element.elasticity[ 7]  = element.elasticity[14] = ee * (C1 - mi);
-                element.elasticity[ 1]  = element.elasticity[ 2]  = element.elasticity[ 8]  = ee * mi;
+                element.elasticity[ 0] = element.elasticity[ 7] = element.elasticity[14] = ee * (C1 - mi);
+                element.elasticity[ 1] = element.elasticity[ 2] = element.elasticity[ 8]  = ee * mi;
                 element.elasticity[21] = element.elasticity[28] = element.elasticity[35] = ee * (C05 - mi);
 //            }
         } break;

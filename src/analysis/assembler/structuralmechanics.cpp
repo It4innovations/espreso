@@ -354,7 +354,7 @@ void StructuralMechanics::analyze(const step::Step &step)
 
         if (configuration.large_displacement) {
             elementKernels[i].displacement.activate(info::mesh->elements->nodes->cbegin() + ebegin, info::mesh->elements->nodes->cbegin() + eend, Results::displacement->data.data());
-            elementKernels[i].largeDisplacement.activate();
+            elementKernels[i].largeDisplacement.activate(settings.element_behaviour, mat->linear_elastic_properties.model);
 
         }
         if (configuration.corotation) {
