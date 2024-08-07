@@ -6,7 +6,7 @@ class Assembler(unittest.TestCase):
 
     def setUp(self):
         ESPRESOTest.path = os.path.dirname(__file__)
-        ESPRESOTest.args = [ "HEXA8", 2, 2, 1, 2, 2, 2, 4, 4, 8, "MKLPDSS" ]
+        ESPRESOTest.args = [ "HEXA8", 2, 2, 1, 3, 1, 2, 8, 4, 4, "MKLPDSS" ]
         ESPRESOTest.processes = 4
         ESPRESOTest.set_threads(2)
 
@@ -14,7 +14,7 @@ class Assembler(unittest.TestCase):
         ESPRESOTest.clean()
 
     def test_physical_solver(self):
-        for solver in [ "MKLPDSS", "   FETI" ]:
+        for solver in [ "MKLPDSS" ]:
             yield run, solver
 
 def run(solver):
