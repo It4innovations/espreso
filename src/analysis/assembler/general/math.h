@@ -23,7 +23,7 @@ void multAB(SIMD C[rows * cols], const SIMD A[rows * common], const SIMD B[commo
             for (size_t k = 0; k < common; ++k) {
                 res = res + A[i * common + k] * B[k * cols + j];
             }
-            C[i * cols + j] = scale * res;
+            C[i * cols + j] = C[i * cols + j] + scale * res;
         }
     }
 }
@@ -140,6 +140,8 @@ inline void inv(const SIMD A[9], SIMD invA[9])
 {
     SIMD det; inv(A, det, invA);
 }
+
+void print(size_t rows, size_t cols, const SIMD *A);
 
 
 }

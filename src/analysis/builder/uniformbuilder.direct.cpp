@@ -65,7 +65,7 @@ UniformBuilderDirectPattern::UniformBuilderDirectPattern(StructuralMechanicsLoad
 {
     dofs = info::mesh->dimension * multiplicity;
     shape = Matrix_Shape::UPPER;
-    type = Matrix_Type::REAL_SYMMETRIC_POSITIVE_DEFINITE;
+    type = Matrix_Type::REAL_SYMMETRIC_INDEFINITE;
 
     std::vector<esint> indices;
     bregion.resize(info::mesh->boundaryRegions.size());

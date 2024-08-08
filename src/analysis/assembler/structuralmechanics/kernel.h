@@ -406,6 +406,72 @@ void runElementKernel(const step::Step &step, StructuralMechanicsElementOperator
             }
         }
 
+//        if (corotation.isactive) {
+//            element.coords.node[0][0][0] = 0;
+//            element.coords.node[0][1][0] = 0;
+//            element.coords.node[0][2][0] = 0;
+//
+//            element.coords.node[1][0][0] = 1;
+//            element.coords.node[1][1][0] = 0;
+//            element.coords.node[1][2][0] = 0;
+//
+//            element.coords.node[2][0][0] = 1;
+//            element.coords.node[2][1][0] = 1;
+//            element.coords.node[2][2][0] = 0;
+//
+//            element.coords.node[3][0][0] = 0;
+//            element.coords.node[3][1][0] = 1;
+//            element.coords.node[3][2][0] = 0;
+//
+//            element.coords.node[4][0][0] = 0;
+//            element.coords.node[4][1][0] = 0;
+//            element.coords.node[4][2][0] = 1;
+//
+//            element.coords.node[5][0][0] = 1;
+//            element.coords.node[5][1][0] = 0;
+//            element.coords.node[5][2][0] = 1;
+//
+//            element.coords.node[6][0][0] = 1;
+//            element.coords.node[6][1][0] = 1;
+//            element.coords.node[6][2][0] = 1;
+//
+//            element.coords.node[7][0][0] = 0;
+//            element.coords.node[7][1][0] = 1;
+//            element.coords.node[7][2][0] = 1;
+//
+//            element.displacement[0][0][0] = 0;
+//            element.displacement[0][1][0] = 0;
+//            element.displacement[0][2][0] = 0;
+//
+//            element.displacement[1][0][0] = 0;
+//            element.displacement[1][1][0] = 0;
+//            element.displacement[1][2][0] = 0.5;
+//
+//            element.displacement[2][0][0] = 0;
+//            element.displacement[2][1][0] = 0;
+//            element.displacement[2][2][0] = 0.5;
+//
+//            element.displacement[3][0][0] = 0;
+//            element.displacement[3][1][0] = 0;
+//            element.displacement[3][2][0] = 0;
+//
+//            element.displacement[4][0][0] = 0;
+//            element.displacement[4][1][0] = 0;
+//            element.displacement[4][2][0] = 0;
+//
+//            element.displacement[5][0][0] = 0;
+//            element.displacement[5][1][0] = 0;
+//            element.displacement[5][2][0] = 0.5;
+//
+//            element.displacement[6][0][0] = 0;
+//            element.displacement[6][1][0] = 0;
+//            element.displacement[6][2][0] = 0.5;
+//
+//            element.displacement[7][0][0] = 0;
+//            element.displacement[7][1][0] = 0;
+//            element.displacement[7][2][0] = 0;
+//        }
+
         if (corotation.isactive) {
             corotation.simd(element);
         }
