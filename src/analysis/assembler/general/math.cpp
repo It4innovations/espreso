@@ -55,7 +55,6 @@ void eigSym(const SIMD A[9], SIMD eVal[3])
     eVal[0] = q + load1(2) * p * cos(phi);
     eVal[2] = q + load1(2) * p * cos(phi + load1(2) * load1(M_PI) * load1(1. / 3));
     eVal[1] = load1(3) * q - eVal[0] - eVal[2];
-
 }
 
 void eigSym(const SIMD A[9], SIMD eVal[3], SIMD eVec[9])
@@ -98,9 +97,12 @@ void eigSym(const SIMD A[9], SIMD eVal[3], SIMD eVec[9])
 
 void print(size_t rows, size_t cols, const SIMD *A)
 {
-    for (size_t r = 0; r < rows; ++r) {
-        for (size_t c = 0; c < cols; ++c) {
-            printf("%+.4e ", A[r * cols + c][0]);
+    for (size_t s = 0; s < SIMD::size; ++s) {
+        for (size_t r = 0; r < rows; ++r) {
+            for (size_t c = 0; c < cols; ++c) {
+                printf("%+.4e ", A[r * cols + c][s]);
+            }
+            printf("\n");
         }
         printf("\n");
     }
