@@ -55,12 +55,6 @@ struct MatrixCorotationKernel<code, nodes, gps, 3>: MatrixCorotation {
     template <typename Element>
     void simd(Element &element)
     {
-        // S = dND[i]
-        // [  0 -3  2 ]
-        // [  3  0 -1 ]
-        // [ -2  1  0 ]
-
-
         SIMD JC[9];
         for (size_t n = 0; n < nodes; ++n) {
             for (int i = 0; i < 3; ++i) {
@@ -98,7 +92,6 @@ struct MatrixCorotationKernel<code, nodes, gps, 3>: MatrixCorotation {
         SIMD FF[9]; multAtB<3, 3, 3>(FF, F, F);
         SIMD eigVal[3], eigVec[9];
         eigSym(FF, eigVal, eigVec);
-//        printf("EIG\n"); print(1, 3, eigVal);
         SIMD FD[9] = { sqrt(eigVal[0]), zeros(), zeros(), zeros(), sqrt(eigVal[1]), zeros(), zeros(), zeros(), sqrt(eigVal[2]) };
         set<3, 3>(FF, zeros());
         multAtBA<3, 3>(FF, eigVec, FD);
@@ -139,21 +132,32 @@ struct MatrixCorotationKernel<code, nodes, gps, 3>: MatrixCorotation {
             u_lie[n + 2 * nodes] = u_lien[2] - lorigin[2];
         }
 
-        SIMD A_transp[3 * 3 * nodes];
-        for (size_t n = 0; n < nodes; ++n) {
-            A_transp[0 * 3 * nodes + n + 1 * nodes] = -cdND[n][2];
-            A_transp[0 * 3 * nodes + n + 2 * nodes] =  cdND[n][1];
-            A_transp[1 * 3 * nodes + n + 0 * nodes] =  cdND[n][2];
-            A_transp[1 * 3 * nodes + n + 2 * nodes] = -cdND[n][0];
-            A_transp[2 * 3 * nodes + n + 0 * nodes] = -cdND[n][1];
-            A_transp[2 * 3 * nodes + n + 1 * nodes] =  cdND[n][0];
-        }
+        // A_transp
+        // [  0 -3  2 ]
+        // [  3  0 -1 ]
+        // [ -2  1  0 ]
 
         // internal force computation
-        SIMD AS[9]; multAB<3, 3 * nodes, 3>(AS, A_transp, S_bar);
+        SIMD AS[9];
+        for (size_t n = 0; n < nodes; ++n) {
+            for (size_t i = 0; i < 3; ++i) {
+                AS[0 * 3 + i] = AS[0 * 3 + i] - cdND[n][2] * S_bar[(1 * nodes + n) * 3 + i] + cdND[n][1] * S_bar[(2 * nodes + n) * 3 + i];
+                AS[1 * 3 + i] = AS[1 * 3 + i] + cdND[n][2] * S_bar[(0 * nodes + n) * 3 + i] - cdND[n][0] * S_bar[(2 * nodes + n) * 3 + i];
+                AS[2 * 3 + i] = AS[2 * 3 + i] - cdND[n][1] * S_bar[(0 * nodes + n) * 3 + i] + cdND[n][0] * S_bar[(1 * nodes + n) * 3 + i];
+            }
+        }
         SIMD invAS[9]; inv(AS, invAS);
+
         // G_bar = inv(A_trans * S_bar) * A_transp
-        SIMD G_bar[3 * 3 * nodes]; multAB<3, 3, 3 * nodes>(G_bar, invAS, A_transp);
+        SIMD G_bar[3 * 3 * nodes];
+        for (size_t n = 0; n < nodes; ++n) {
+            for (size_t i = 0; i < 3; ++i) {
+                G_bar[i * 3 * nodes + 0 * nodes + n] =  invAS[i * 3 + 1] * cdND[n][2] - invAS[i * 3 + 2] * cdND[n][1];
+                G_bar[i * 3 * nodes + 1 * nodes + n] = -invAS[i * 3 + 0] * cdND[n][2] + invAS[i * 3 + 2] * cdND[n][0];
+                G_bar[i * 3 * nodes + 2 * nodes + n] =  invAS[i * 3 + 0] * cdND[n][1] - invAS[i * 3 + 1] * cdND[n][0];
+            }
+        }
+
         // P_bar = eye(24) - S_bar * G_bar
         SIMD P_bar[3 * nodes * 3 * nodes];
         for (size_t i = 0; i < 3 * nodes; ++i) {
@@ -161,19 +165,14 @@ struct MatrixCorotationKernel<code, nodes, gps, 3>: MatrixCorotation {
         }
         multAB<3 * nodes, 3, 3 * nodes>(P_bar, S_bar, G_bar, load1(-1.));
 
-        SIMD RR[3 * nodes * 3 * nodes];
-        for (size_t n = 0; n < nodes; ++n) {
-            for (int nn = 0; nn < 3; ++nn) {
-                for (int mm = 0; mm < 3; ++mm) {
-                    RR[(n + nn * nodes) * 3 * nodes + n + mm * nodes] = R[nn * 3 + mm];
-                }
-            }
-        }
-
         // f_ile = Ke * u_lie
         SIMD f_ile[3 * nodes]; multAB<3 * nodes, 3 * nodes, 1>(f_ile, element.K, u_lie);
         SIMD fiep[3 * nodes]; multAtB<3 * nodes, 3 * nodes, 1>(fiep, P_bar, f_ile);
-        multAB<3 * nodes, 3 * nodes, 1>(element.nf, RR, fiep);
+        for (size_t n = 0; n < nodes; ++n) {
+            element.nf[0 * nodes + n] = element.nf[0 * nodes + n] + R[0] * fiep[0 * nodes + n] + R[1] * fiep[1 * nodes + n] + R[2] * fiep[2 * nodes + n];
+            element.nf[1 * nodes + n] = element.nf[1 * nodes + n] + R[3] * fiep[0 * nodes + n] + R[4] * fiep[1 * nodes + n] + R[5] * fiep[2 * nodes + n];
+            element.nf[2 * nodes + n] = element.nf[2 * nodes + n] + R[6] * fiep[0 * nodes + n] + R[7] * fiep[1 * nodes + n] + R[8] * fiep[2 * nodes + n];
+        }
 
         SIMD Fn_bar[3 * nodes * 3];
         for (size_t n = 0; n < nodes; ++n) {
@@ -190,22 +189,45 @@ struct MatrixCorotationKernel<code, nodes, gps, 3>: MatrixCorotation {
         // KGP = Re * G_bar' * Fn_bar' * P_bar * Re'
         // Kte = KM - KGR - KGP
 
-        // KM =  (R * Re * C) * (R * P_bar * C)' * R * Ke * C * (R * P_bar * C) * (R * Re * C)'
-        // KGP = (R * Re * C) * (G_bar * C)' * (R * Fn_bar)'  * (R * P_bar * C) * (R * Re * C)'
-        // KGR = (R * Re * C) * (R * F_bar) * (G_bar * C)                       * (R * Re * C)'
-
         // K = Re * ((P_bar' * Ke - G_bar' * Fn_bar') * P_bar - Fn_bar * G_bar) * Re'
         SIMD Ke[3 * nodes * 3 * nodes];
         multAtB <3 * nodes, 3 * nodes, 3 * nodes>(Ke, P_bar, element.K);
-        multAtBt<3 * nodes, 3        , 3 * nodes>(Ke, G_bar, Fn_bar, load1(-1));
         set<3 * nodes, 3 * nodes>(element.K, load1(0));
+        multAB  <3 * nodes, 3        , 3 * nodes>(element.K, Fn_bar, G_bar, load1(-1));
+        for (size_t n = 0; n < 3 * nodes; ++n) { // (P_bar' * Ke) - (G_bar' * Fn_bar')
+            for (size_t m = 0; m < 3 * nodes; ++m) {
+                Ke[n * 3 * nodes + m] = Ke[n * 3 * nodes + m] + element.K[m * 3 * nodes + n];
+            }
+        }
         multAB  <3 * nodes, 3 * nodes, 3 * nodes>(element.K, Ke, P_bar);
-        multAB  <3 * nodes, 3         , 3 * nodes>(element.K, Fn_bar, G_bar, load1(-1));
 
-        set<3 * nodes, 3 * nodes>(Ke, load1(0));
-        multABt <3 * nodes, 3 * nodes, 3 * nodes>(Ke, element.K, RR);
-        set<3 * nodes, 3 * nodes>(element.K, load1(0));
-        multAB  <3 * nodes, 3 * nodes, 3 * nodes>(element.K, RR, Ke);
+        for (size_t n = 0; n < nodes; ++n) {
+            for (size_t m = 0; m < nodes; ++m) {
+                SIMD RK11 = R[0] * element.K[(0 * nodes + n) * nodes * 3 + 0 * nodes + m] + R[1] * element.K[(1 * nodes + n) * nodes * 3 + 0 * nodes + m] + R[2] * element.K[(2 * nodes + n) * nodes * 3 + 0 * nodes + m];
+                SIMD RK12 = R[0] * element.K[(0 * nodes + n) * nodes * 3 + 1 * nodes + m] + R[1] * element.K[(1 * nodes + n) * nodes * 3 + 1 * nodes + m] + R[2] * element.K[(2 * nodes + n) * nodes * 3 + 1 * nodes + m];
+                SIMD RK13 = R[0] * element.K[(0 * nodes + n) * nodes * 3 + 2 * nodes + m] + R[1] * element.K[(1 * nodes + n) * nodes * 3 + 2 * nodes + m] + R[2] * element.K[(2 * nodes + n) * nodes * 3 + 2 * nodes + m];
+
+                SIMD RK21 = R[3] * element.K[(0 * nodes + n) * nodes * 3 + 0 * nodes + m] + R[4] * element.K[(1 * nodes + n) * nodes * 3 + 0 * nodes + m] + R[5] * element.K[(2 * nodes + n) * nodes * 3 + 0 * nodes + m];
+                SIMD RK22 = R[3] * element.K[(0 * nodes + n) * nodes * 3 + 1 * nodes + m] + R[4] * element.K[(1 * nodes + n) * nodes * 3 + 1 * nodes + m] + R[5] * element.K[(2 * nodes + n) * nodes * 3 + 1 * nodes + m];
+                SIMD RK23 = R[3] * element.K[(0 * nodes + n) * nodes * 3 + 2 * nodes + m] + R[4] * element.K[(1 * nodes + n) * nodes * 3 + 2 * nodes + m] + R[5] * element.K[(2 * nodes + n) * nodes * 3 + 2 * nodes + m];
+
+                SIMD RK31 = R[6] * element.K[(0 * nodes + n) * nodes * 3 + 0 * nodes + m] + R[7] * element.K[(1 * nodes + n) * nodes * 3 + 0 * nodes + m] + R[8] * element.K[(2 * nodes + n) * nodes * 3 + 0 * nodes + m];
+                SIMD RK32 = R[6] * element.K[(0 * nodes + n) * nodes * 3 + 1 * nodes + m] + R[7] * element.K[(1 * nodes + n) * nodes * 3 + 1 * nodes + m] + R[8] * element.K[(2 * nodes + n) * nodes * 3 + 1 * nodes + m];
+                SIMD RK33 = R[6] * element.K[(0 * nodes + n) * nodes * 3 + 2 * nodes + m] + R[7] * element.K[(1 * nodes + n) * nodes * 3 + 2 * nodes + m] + R[8] * element.K[(2 * nodes + n) * nodes * 3 + 2 * nodes + m];
+
+                element.K[(0 * nodes + n) * nodes * 3 + 0 * nodes + m] = RK11 * R[0] + RK12 * R[1] + RK13 * R[2];
+                element.K[(0 * nodes + n) * nodes * 3 + 1 * nodes + m] = RK11 * R[3] + RK12 * R[4] + RK13 * R[5];
+                element.K[(0 * nodes + n) * nodes * 3 + 2 * nodes + m] = RK11 * R[6] + RK12 * R[7] + RK13 * R[8];
+
+                element.K[(1 * nodes + n) * nodes * 3 + 0 * nodes + m] = RK21 * R[0] + RK22 * R[1] + RK23 * R[2];
+                element.K[(1 * nodes + n) * nodes * 3 + 1 * nodes + m] = RK21 * R[3] + RK22 * R[4] + RK23 * R[5];
+                element.K[(1 * nodes + n) * nodes * 3 + 2 * nodes + m] = RK21 * R[6] + RK22 * R[7] + RK23 * R[8];
+
+                element.K[(2 * nodes + n) * nodes * 3 + 0 * nodes + m] = RK31 * R[0] + RK32 * R[1] + RK33 * R[2];
+                element.K[(2 * nodes + n) * nodes * 3 + 1 * nodes + m] = RK31 * R[3] + RK32 * R[4] + RK33 * R[5];
+                element.K[(2 * nodes + n) * nodes * 3 + 2 * nodes + m] = RK31 * R[6] + RK32 * R[7] + RK33 * R[8];
+            }
+        }
     }
 };
 
