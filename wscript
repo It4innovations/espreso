@@ -20,8 +20,12 @@ def configure(ctx):
         ctx.env.append_unique("CXXFLAGS", [ "-qopenmp", "-diag-disable=10441" ])
         ctx.env.append_unique("LINKFLAGS", [ "-qopenmp", "-diag-disable=10441" ])
     if ctx.env.COMPILER_CXX == "clang++":
-        ctx.env.append_unique("CXXFLAGS", [ "-fopenmp" ])
-        ctx.env.append_unique("LINKFLAGS", [ "-fopenmp" ])
+        if "icpx" in ctx.env.CXX[0]:
+            ctx.env.append_unique("CXXFLAGS", [ "-qopenmp" ])
+            ctx.env.append_unique("LINKFLAGS", [ "-qopenmp" ])
+        else:
+            ctx.env.append_unique("CXXFLAGS", [ "-fopenmp" ])
+            ctx.env.append_unique("LINKFLAGS", [ "-fopenmp" ])
 
     if ctx.options.flavor == "fujitsu":
         ctx.env.append_unique("CXXFLAGS" , [ "-Kopenmp", "-SSL2" ])
