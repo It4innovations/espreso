@@ -109,10 +109,10 @@ ALWAYS_INLINE SIMD rsqrt14(const SIMD& v) noexcept
 {
 	__m256d sqrt = _mm256_sqrt_pd(v.data);
 	return __m256d{
-		v.data[0] > 0. ? sqrt[0] : 0.,
-		v.data[1] > 0. ? sqrt[1] : 0.,
-		v.data[2] > 0. ? sqrt[2] : 0.,
-		v.data[3] > 0. ? sqrt[3] : 0.
+		v.data[0] > 0. ? 1. / sqrt[0] : 0.,
+		v.data[1] > 0. ? 1. / sqrt[1] : 0.,
+		v.data[2] > 0. ? 1. / sqrt[2] : 0.,
+		v.data[3] > 0. ? 1. / sqrt[3] : 0.
 	};
 }
 
