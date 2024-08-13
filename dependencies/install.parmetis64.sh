@@ -14,7 +14,6 @@ then
         cd "${PARMETIS_ROOT}"
         sed -i 's/add_subdirectory(${METIS_PATH}/#add_subdirectory(${METIS_PATH}/'g CMakeLists.txt
         sed -i 's/add_subdirectory(programs)/#add_subdirectory(programs)/'g CMakeLists.txt
-        sed -i 's/#define IDXTYPEWIDTH 32/#define IDXTYPEWIDTH 64/g' ${PARMETIS_ROOT}/metis/include/metis.h
         make config shared=1 cc=$1 prefix="${PWD}/$1_64"
         make -j$(nproc)
         make install
@@ -24,3 +23,4 @@ fi
 export CPATH="${PARMETIS_ROOT}/$1_64/include:${CPATH}"
 export LIBRARY_PATH="${PARMETIS_ROOT}/$1_64/lib:${LIBRARY_PATH}"
 export LD_LIBRARY_PATH="${PARMETIS_ROOT}/$1_64/lib:${LD_LIBRARY_PATH}"
+
