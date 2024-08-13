@@ -132,6 +132,7 @@ Mesh::Mesh()
   contact(new ContactStore()),
 
   output(new Output()),
+  withSurface(false),
   _omitClusterization(false),
   _omitDecomposition(false),
   _withGUI(false),
