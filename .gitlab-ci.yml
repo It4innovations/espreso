@@ -124,7 +124,7 @@ WS_FETI64:
   after_script:
     - scancel "$(squeue -o %A -h -t R -n $CI_JOB_ID)"
 
-CS_FOSS32:
+.CS_FOSS32:
   extends: .cs_build
   script:
     - echo ". env/it4i.cs.a64fx.openmpi.32.sh" >> job.$CI_JOB_ID.sh
@@ -133,7 +133,7 @@ CS_FOSS32:
     - echo "sh tests/run.basic.sh" >> job.$CI_JOB_ID.sh
     - srun sh job.$CI_JOB_ID.sh
 
-CS_FOSS64:
+.CS_FOSS64:
   extends: .cs_build
   script:
     - echo ". env/it4i.cs.a64fx.openmpi.64.sh" >> job.$CI_JOB_ID.sh
