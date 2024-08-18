@@ -16,7 +16,8 @@ namespace spblas {
         NONE,
         CUSPARSE_LEGACY,
         CUSPARSE_MODERN,
-        ROCSPARSE
+        ROCSPARSE,
+        ONEMKL_SPARSE
     };
 
 

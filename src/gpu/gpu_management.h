@@ -17,7 +17,8 @@ namespace mgm {
     enum struct gpu_wrapper_impl {
         NONE,
         CUDA,
-        ROCM
+        ROCM,
+        ONEAPI
     };
 
     gpu_wrapper_impl get_implementation();

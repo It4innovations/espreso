@@ -52,7 +52,8 @@ then
 
         mkdir -p build
         cd build
-        cmake -DCMAKE_C_COMPILER=icx -DENABLE_CUDA=false -DSUITESPARSE_ENABLE_PROJECTS="cholmod" -DCMAKE_INSTALL_PREFIX=.. ..
+        # cmake -DCMAKE_C_COMPILER=icx -DENABLE_CUDA=false -DSUITESPARSE_ENABLE_PROJECTS="cholmod" -DCMAKE_INSTALL_PREFIX=.. ..
+        cmake -DCMAKE_C_COMPILER=icx -DCMAKE_C_FLAGS="-g" -DENABLE_CUDA=false -DSUITESPARSE_ENABLE_PROJECTS="cholmod" -DCMAKE_INSTALL_PREFIX=.. ..
         cmake --build . -j $(nproc)
         cmake --install .
     )
@@ -71,6 +72,7 @@ then
 fi
 export LIBRARY_PATH="${PWD}/build:${LIBRARY_PATH}"
 export LD_LIBRARY_PATH="${PWD}/build:${LD_LIBRARY_PATH}"
+export LD_PRELOAD="${PWD}/build/libirc.so:${LD_PRELOAD}"
 
 
 
@@ -83,4 +85,5 @@ export OMP_PLACES=cores
 export OMP_PROC_BIND=close
 export OMP_NUM_THREADS=24,1
 
+export ESPRESO_FORBID_MKL_PARDISO="1"
 export ESPRESO_RANK_TO_GPU_MAP="0"

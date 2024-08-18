@@ -6,6 +6,7 @@
 #include <numeric>
 
 #ifdef HAVE_MKL
+#ifndef ESPRESO_FORBID_MKL_PARDISO
 
 #include "wrappers/pardiso/w.pardiso.type.h"
 #include "wrappers/pardiso/w.pardiso.h"
@@ -298,4 +299,5 @@ void DirectSparseSolver<T, I>::getSC(Matrix_Dense<T, I> &sc)
 
 #include "math/wrappers/math.spsolver.inst.hpp"
 
+#endif
 #endif

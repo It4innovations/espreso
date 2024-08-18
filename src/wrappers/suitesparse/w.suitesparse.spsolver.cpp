@@ -6,7 +6,6 @@
 
 #include <complex>
 
-#ifndef HAVE_MKL
 #ifdef HAVE_SUITESPARSE
 
 #include "math/wrappers/math.spsolver.h"
@@ -438,6 +437,5 @@ void DirectSparseSolver<T, I>::getSC(Matrix_Dense<T,I> &sc)
 
 #include "math/wrappers/math.spsolver.inst.hpp"
 
-#endif
 #endif
 

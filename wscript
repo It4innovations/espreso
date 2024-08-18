@@ -9,6 +9,8 @@ def configure(ctx):
     else:
         ctx.load("compiler_cxx")
 
+    detect_intel_oneapi_compiler(ctx)
+
     if ctx.options.static:
         ctx.env.append_unique("LIB", [ "dl" ])
 
@@ -20,12 +22,11 @@ def configure(ctx):
         ctx.env.append_unique("CXXFLAGS", [ "-qopenmp", "-diag-disable=10441" ])
         ctx.env.append_unique("LINKFLAGS", [ "-qopenmp", "-diag-disable=10441" ])
     if ctx.env.COMPILER_CXX == "clang++":
-        if "icpx" in ctx.env.CXX[0]:
-            ctx.env.append_unique("CXXFLAGS", [ "-qopenmp" ])
-            ctx.env.append_unique("LINKFLAGS", [ "-qopenmp" ])
-        else:
-            ctx.env.append_unique("CXXFLAGS", [ "-fopenmp" ])
-            ctx.env.append_unique("LINKFLAGS", [ "-fopenmp" ])
+        ctx.env.append_unique("CXXFLAGS", [ "-fopenmp" ])
+        ctx.env.append_unique("LINKFLAGS", [ "-fopenmp" ])
+    if ctx.env.COMPILER_CXX == "icpx":
+        ctx.env.append_unique("CXXFLAGS", [ "-qopenmp" ])
+        ctx.env.append_unique("LINKFLAGS", [ "-qopenmp" ])
 
     if ctx.options.flavor == "fujitsu":
         ctx.env.append_unique("CXXFLAGS" , [ "-Kopenmp", "-SSL2" ])
@@ -129,7 +130,7 @@ def build(ctx):
     ctx.build_espreso(ctx.path.ant_glob('src/math/**/*.cpp'), "math", [ "BLAS", "LAPACK", "MKL", "SUITESPARSE" ])
     ctx.build_espreso(ctx.path.ant_glob('src/autoopt/**/*.cpp'), "autoopt")
     ctx.build_espreso(ctx.path.ant_glob('src/feti/**/*.cpp'), "feti")
-    ctx.build_espreso(ctx.path.ant_glob('src/gpu/**/*.cpp'), "gpu", [ "CUDA", "ROCM" ])
+    ctx.build_espreso(ctx.path.ant_glob('src/gpu/**/*.cpp'), "gpu", [ "CUDA", "ROCM", "ONEAPI" ])
     ctx.build_espreso(ctx.path.ant_glob('src/wrappers/simd/**/*.cpp'), "simd")
     ctx.build_espreso(ctx.path.ant_glob('src/wrappers/blas/**/*.cpp'), "wblas", [ "BLAS", "MKL" ])
     ctx.build_espreso(ctx.path.ant_glob('src/wrappers/lapack/**/*.cpp'), "wlapack", [ "LAPACK", "MKL" ])
@@ -146,6 +147,7 @@ def build(ctx):
     ctx.build_espreso(ctx.path.ant_glob('src/wrappers/openlb/**/*.cpp'), "wopenlb", [ "OPENLB" ])
     ctx.build_espreso(ctx.path.ant_glob('src/wrappers/bem/**/*.cpp'), "wbem",)
     ctx.build_espreso(ctx.path.ant_glob('src/wrappers/nvtx/**/*.cpp'), "wnvtx", [ "NVTX" ])
+    ctx.build_espreso(ctx.path.ant_glob('src/wrappers/oneapi/**/*.cpp'), "woneapi", [ "ONEAPI" ])
     ctx.build_espreso(ctx.path.ant_glob('src/wrappers/rocm/**/*.cpp'), "wrocm", [ "ROCM" ])
 
     ctx.program(source="src/app/ecfchecker.cpp", target="ecfchecker", use=ctx.checker, stlib=ctx.options.stlibs, lib=ctx.options.libs)
@@ -278,7 +280,7 @@ def settings(ctx):
     libsmsg("                        LAPACK libraries", [ "mkl", "lapack" ])
     libsmsg("                          sparse solvers", [ "mkl", "suitesparse" ])
     libsmsg("              distributed sparse solvers", [ "mklpdss", "hypre", "superlu", "wsmp" ])
-    libsmsg("                           GPU libraries", [ "cuda", "rocm" ])
+    libsmsg("                           GPU libraries", [ "cuda", "rocm", "oneapi" ])
     libsmsg("                                coupling", [ "precice" ])
 
 """ Recurse to third party libraries wrappers"""
@@ -286,6 +288,7 @@ def recurse(ctx):
     """ Accelerators """
     ctx.recurse("src/wrappers/rocm")
     ctx.recurse("src/wrappers/cuda")
+    ctx.recurse("src/wrappers/oneapi")
 
     """ Graph partition tools """
     ctx.recurse("src/wrappers/metis")
@@ -396,3 +399,9 @@ class cuda(Task.Task):
 def cxx_hook(self, node):
     return self.create_compiled_task("cuda", node)
 
+def detect_intel_oneapi_compiler(ctx):
+    ec = os.system("which " + ctx.env.CXX[0] + " > /dev/null 2>/dev/null")
+    if ec != 0: return
+    ec = os.system(ctx.env.CXX[0] + " --version | grep -q \"oneAPI DPC++/C++ Compiler\"")
+    if ec != 0: return
+    ctx.env.COMPILER_CXX = "icpx"
