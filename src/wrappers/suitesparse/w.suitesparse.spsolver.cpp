@@ -135,6 +135,7 @@ void DirectSparseSolver<T, I>::commit(const Matrix_CSR<T,I> &a)
     if(a.nrows != a.ncols) eslog::error("commit: matrix has to be square\n");
     if(a.type != Matrix_Type::REAL_SYMMETRIC_POSITIVE_DEFINITE && a.type != Matrix_Type::COMPLEX_HERMITIAN_POSITIVE_DEFINITE) eslog::error("commit: matrix has to be SPD or HPD\n");
     if(a.shape != Matrix_Shape::UPPER) eslog::error("commit: CSR matrix has to be upper triangular\n");
+    if(a.rows[0] != 0) eslog::error("commit: CSR matrix has to use 0-based indexing\n");
 
     if(ext->stage < 1) eslog::error("commit: invalid order of operations in spsolver\n");
 
