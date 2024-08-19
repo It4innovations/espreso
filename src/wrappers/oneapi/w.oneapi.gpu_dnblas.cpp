@@ -2,6 +2,7 @@
 #ifdef HAVE_ONEAPI
 
 #include "gpu/gpu_dnblas.h"
+#include "w.oneapi.gpu_management.h"
 #include <oneapi/mkl.hpp>
 
 namespace espreso {

@@ -1,5 +1,5 @@
 
-#if !defined(HAVE_CUDA) && !defined(HAVE_ROCM)
+#if !defined(HAVE_CUDA) && !defined(HAVE_ROCM) && !defined(HAVE_ONEAPI)
 
 #include "gpu_spblas.h"
 
