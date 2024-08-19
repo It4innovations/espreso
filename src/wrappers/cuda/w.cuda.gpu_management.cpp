@@ -140,18 +140,6 @@ namespace mgm {
         CHECK(cudaDeviceSynchronize());
     }
 
-    void event_create(event & e)
-    {
-        e = std::make_shared<_event>();
-        CHECK(cudaEventCreate(&e->e));
-    }
-
-    void event_destroy(event & e)
-    {
-        CHECK(cudaEventDestroy(e->e));
-        e.reset();
-    }
-
     void event_record(event & e, queue & q)
     {
         CHECK(cudaEventRecord(e->e, q->stream));
