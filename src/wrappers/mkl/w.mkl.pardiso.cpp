@@ -283,11 +283,11 @@ void DirectSparseSolver<T, I>::getSC(Matrix_Dense<T, I> &sc)
     for (I i = 0                            ; i < ext->matrix->nrows - sc.nrows; ++i) { perm.vals[i] = 0; }
     for (I i = ext->matrix->nrows - sc.nrows; i < ext->matrix->nrows           ; ++i) { perm.vals[i] = 1; }
 
-    // ext->pp.iparm[35] = 1;
+    ext->pp.iparm[35] = 1;
     std::swap(ext->pp.perm, perm.vals);
     _callPardiso<T>(12, ext, 0, nullptr, full.vals);
     std::swap(ext->pp.perm, perm.vals);
-    // ext->pp.iparm[35] = 0;
+    ext->pp.iparm[35] = 0;
 
     for (I r = 0, i = 0; r < full.nrows; ++r) {
         for (I c = r; c < full.ncols; ++c, ++i) {
