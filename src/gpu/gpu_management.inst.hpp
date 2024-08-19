@@ -8,8 +8,8 @@ namespace mgm {
     template void copy_submit_d2h<T,I,Ahost,  Adevice>(queue & q, Vector_Dense<T,I,Ahost>   & output, const Vector_Dense<T,I,Adevice> & input); \
     template void copy_submit_h2d<T,I,Adevice,Ahost  >(queue & q, Matrix_Dense<T,I,Adevice> & output, const Matrix_Dense<T,I,Ahost>   & input); \
     template void copy_submit_d2h<T,I,Ahost,  Adevice>(queue & q, Matrix_Dense<T,I,Ahost>   & output, const Matrix_Dense<T,I,Adevice> & input); \
-    template void copy_submit_h2d<T,I,Adevice,Ahost  >(queue & q, Matrix_CSR<T,I,Adevice> & output, const Matrix_CSR<T,I,Ahost>   & input, bool copy_pattern = true, bool copy_vals = true); \
-    template void copy_submit_d2h<T,I,Ahost,  Adevice>(queue & q, Matrix_CSR<T,I,Ahost>   & output, const Matrix_CSR<T,I,Adevice> & input, bool copy_pattern = true, bool copy_vals = true);
+    template void copy_submit_h2d<T,I,Adevice,Ahost  >(queue & q, Matrix_CSR<T,I,Adevice> & output, const Matrix_CSR<T,I,Ahost>   & input, bool copy_pattern, bool copy_vals); \
+    template void copy_submit_d2h<T,I,Ahost,  Adevice>(queue & q, Matrix_CSR<T,I,Ahost>   & output, const Matrix_CSR<T,I,Adevice> & input, bool copy_pattern, bool copy_vals);
 
         #define INSTANTIATE_T_I(T,I) \
         INSTANTIATE_T_I_AHOST_ADEVICE(T, I, mgm::Ah,       mgm::Ad) \
