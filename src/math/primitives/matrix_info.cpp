@@ -4,7 +4,8 @@
 namespace espreso {
 
 #ifdef HAVE_MKL
-const int Indexing::CSR = 1;
+const int Indexing::CSR = 0;
+// const int Indexing::CSR = 1;
 #else
 const int Indexing::CSR = 0;
 #endif
