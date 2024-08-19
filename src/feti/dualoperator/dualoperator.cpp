@@ -31,7 +31,7 @@ DualOperator<T>* DualOperator<T>::set(FETI<T> &feti, const step::Step &step)
             break;
         case FETIConfiguration::DUAL_OPERATOR::EXPLICIT_GPU:
             if (!gpu::mgm::is_linked()) {
-                eslog::globalerror("GPU acceleration is not supported: GPU support in not built.\n");
+                eslog::globalerror("GPU acceleration is not supported: GPU support is not built.\n");
             }
             if (!DirectSparseSolver<T>::provideFactors()) {
                 eslog::globalerror("GPU acceleration is not supported: Third party sparse solver does not provide factors.\n");
@@ -41,7 +41,7 @@ DualOperator<T>* DualOperator<T>::set(FETI<T> &feti, const step::Step &step)
             break;
         case FETIConfiguration::DUAL_OPERATOR::IMPLICIT_GPU:
             if (!gpu::mgm::is_linked()) {
-                eslog::globalerror("GPU acceleration is not supported: GPU support in not built.\n");
+                eslog::globalerror("GPU acceleration is not supported: GPU support is not built.\n");
             }
             if (!DirectSparseSolver<T>::provideFactors()) {
                 eslog::globalerror("GPU acceleration is not supported: Third party sparse solver does not provide factors.\n");
