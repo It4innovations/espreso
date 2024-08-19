@@ -146,6 +146,7 @@ bool _set(MKLPDSS<T> &mklpdss, const Matrix_Distributed<T> &A)
     // Fill-in reducing ordering for the input matrix.
     mklpdss.external->iparm[1] = info::mpi::size > 1 ? 10 : 3; // MPI or parallel
     // Matrix input format.
+    mklpdss.external->iparm[34] = 1 - Indexing::CSR; // 0- or 1- based indexing
     mklpdss.external->iparm[39] = 2; // distributed A, x, rhs
     mklpdss.external->iparm[40] = A.decomposition->begin + 1;
     mklpdss.external->iparm[41] = A.decomposition->end;
