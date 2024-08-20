@@ -238,7 +238,7 @@ namespace spblas {
     }
 
     template<typename T, typename I>
-    void descr_matrix_csr_create(descr_matrix_csr & descr, I nrows, I ncols, I nnz, char fill)
+    void descr_matrix_csr_create(handle & /*h*/, descr_matrix_csr & descr, I nrows, I ncols, I nnz, char fill)
     {
         descr = std::make_shared<_descr_matrix_csr>();
         void * dummyptr = reinterpret_cast<void*>(1);
@@ -257,7 +257,7 @@ namespace spblas {
     }
 
     template<typename T, typename I, typename A>
-    void descr_matrix_csr_link_data(descr_matrix_csr & descr, Matrix_CSR<T,I,A> & matrix)
+    void descr_matrix_csr_link_data(handle & /*h*/, descr_matrix_csr & descr, Matrix_CSR<T,I,A> & matrix)
     {
         static_assert(A::is_data_device_accessible, "matrix data must be device accessible");
         CHECK(rocsparse_csr_set_pointers(descr->d, matrix.rows, matrix.cols, matrix.vals));
@@ -272,7 +272,7 @@ namespace spblas {
     }
 
     template<typename T, typename I>
-    void descr_matrix_dense_create(descr_matrix_dense & descr, I nrows, I ncols, I ld, char order)
+    void descr_matrix_dense_create(handle & /*h*/, descr_matrix_dense & descr, I nrows, I ncols, I ld, char order)
     {
         descr = std::make_shared<_descr_matrix_dense>();
         void * dummyptr = reinterpret_cast<void*>(1);
@@ -284,14 +284,14 @@ namespace spblas {
     }
 
     template<typename T, typename I, typename A>
-    void descr_matrix_dense_link_data(descr_matrix_dense & descr, Matrix_Dense<T,I,A> & matrix)
+    void descr_matrix_dense_link_data(handle & /*h*/, descr_matrix_dense & descr, Matrix_Dense<T,I,A> & matrix)
     {
         static_assert(A::is_data_device_accessible, "matrix data must be device accessible");
         CHECK(rocsparse_dnmat_set_values(descr->d, matrix.vals));
         CHECK(rocsparse_dnmat_set_values(descr->d_complementary, matrix.vals));
     }
 
-    void descr_matrix_dense_destroy(descr_matrix_dense & descr)
+    void descr_matrix_dense_destroy(handle & /*h*/, descr_matrix_dense & descr)
     {
         if(descr.get() == nullptr) return;
 
@@ -301,7 +301,7 @@ namespace spblas {
     }
 
     template<typename T, typename I>
-    void descr_vector_dense_create(descr_vector_dense & descr, I size)
+    void descr_vector_dense_create(handle & /*h*/, descr_vector_dense & descr, I size)
     {
         descr = std::make_shared<_descr_vector_dense>();
         void * dummyptr = reinterpret_cast<void*>(1);
@@ -309,20 +309,20 @@ namespace spblas {
     }
 
     template<typename T, typename I, typename A>
-    void descr_vector_dense_link_data(descr_vector_dense & descr, Vector_Dense<T,I,A> & vector)
+    void descr_vector_dense_link_data(handle & /*h*/, descr_vector_dense & descr, Vector_Dense<T,I,A> & vector)
     {
         static_assert(A::is_data_device_accessible, "matrix data must be device accessible");
         CHECK(rocsparse_dnvec_set_values(descr->d, vector.vals));
     }
 
     template<typename T, typename I, typename A>
-    void descr_vector_dense_link_data(descr_vector_dense & descr, Matrix_Dense<T,I,A> & matrix, I colidx)
+    void descr_vector_dense_link_data(handle & /*h*/, descr_vector_dense & descr, Matrix_Dense<T,I,A> & matrix, I colidx)
     {
         static_assert(A::is_data_device_accessible, "vector data must be device accessible");
         CHECK(rocsparse_dnvec_set_values(descr->d, matrix.vals + colidx * matrix.get_ld()));
     }
 
-    void descr_vector_dense_destroy(descr_vector_dense & descr)
+    void descr_vector_dense_destroy(handle & /*h*/, descr_vector_dense & descr)
     {
         if(descr.get() == nullptr) return;
 
@@ -330,22 +330,22 @@ namespace spblas {
         descr.reset();
     }
 
-    void descr_sparse_trsv_create(descr_sparse_trsv & /*descr*/) { }
+    void descr_sparse_trsv_create(handle & /*h*/, descr_sparse_trsv & /*descr*/) { }
 
-    void descr_sparse_trsv_destroy(descr_sparse_trsv & /*descr*/) { }
+    void descr_sparse_trsv_destroy(handle & /*h*/, descr_sparse_trsv & /*descr*/) { }
 
-    void descr_sparse_trsm_create(descr_sparse_trsm & /*descr*/) { }
+    void descr_sparse_trsm_create(handle & /*h*/, descr_sparse_trsm & /*descr*/) { }
 
-    void descr_sparse_trsm_destroy(descr_sparse_trsm & /*descr*/) { }
+    void descr_sparse_trsm_destroy(handle & /*h*/, descr_sparse_trsm & /*descr*/) { }
 
-    void descr_sparse_mv_create(descr_sparse_mv & descr)
+    void descr_sparse_mv_create(handle & /*h*/, descr_sparse_mv & descr)
     {
 #if HIP_VERSION_MAJOR == 5 && HIP_VERSION_MINOR >= 4
         descr = std::make_shared<_descr_sparse_mv>();
 #endif
     }
 
-    void descr_sparse_mv_destroy(descr_sparse_mv & descr)
+    void descr_sparse_mv_destroy(handle & /*h*/, descr_sparse_mv & descr)
     {
 #if HIP_VERSION_MAJOR == 5 && HIP_VERSION_MINOR >= 4
         if(descr.get() == nullptr) return;

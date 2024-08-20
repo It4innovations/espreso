@@ -55,11 +55,6 @@ namespace mgm {
         }
     }
 
-    struct _event
-    {
-        cudaEvent_t e;
-    };
-
     device get_device_by_mpi(int mpi_rank, int mpi_size)
     {
 #ifndef ESPRESO_RANK_TO_GPU_MAP
@@ -138,16 +133,6 @@ namespace mgm {
     void device_wait()
     {
         CHECK(cudaDeviceSynchronize());
-    }
-
-    void event_record(event & e, queue & q)
-    {
-        CHECK(cudaEventRecord(e->e, q->stream));
-    }
-
-    void event_wait(event & e)
-    {
-        CHECK(cudaEventSynchronize(e->e));
     }
 
     size_t get_device_memory_capacity()

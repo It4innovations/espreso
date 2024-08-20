@@ -13,9 +13,10 @@ namespace mgm {
     struct _device
     {
         sycl::device d;
+        sycl::context c;
         std::vector<queue> qs;
-        _device(sycl::device & dev) : d(dev) {}
-        _device(sycl::device && dev) : d(dev) {}
+        _device(sycl::device & dev, sycl::context & ctx) : d(dev), c(ctx) {}
+        _device(sycl::device && dev, sycl::context && ctx) : d(dev), c(ctx) {}
     };
 
     struct _queue

@@ -109,6 +109,20 @@ namespace mgm {
         return '_';
     }
 
+    inline char operation_remove_conj(char op)
+    {
+        switch(op) {
+            case 'N':
+            case 'C':
+                return 'N';
+            case 'T':
+            case 'H':
+                return 'T';
+            default:
+                return '_';
+        }
+    }
+
     inline char order_change(char order)
     {
         if(order == 'R') return 'C';
