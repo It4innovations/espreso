@@ -18,8 +18,8 @@ public:
     StructuralMechanicsTransientLinear(StructuralMechanicsConfiguration &settings, StructuralMechanicsLoadStepConfiguration &configuration);
     ~StructuralMechanicsTransientLinear();
 
-    void analyze(step::Step &step);
-    void run(step::Step &step);
+    bool analyze(step::Step &step);
+    bool run(step::Step &step);
 
     step::Time time;
     StructuralMechanicsConfiguration &settings;

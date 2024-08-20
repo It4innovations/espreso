@@ -40,7 +40,7 @@ StructuralMechanicsHarmonicRealLinear::~StructuralMechanicsHarmonicRealLinear()
     if (solver) { delete solver; }
 }
 
-void StructuralMechanicsHarmonicRealLinear::analyze(step::Step &step)
+bool StructuralMechanicsHarmonicRealLinear::analyze(step::Step &step)
 {
     eslog::info("\n ============================================================================================= \n");
     eslog::info(" == ANALYSIS                                                              HARMONIC ANALYSIS == \n");
@@ -48,7 +48,9 @@ void StructuralMechanicsHarmonicRealLinear::analyze(step::Step &step)
     eslog::info(" ============================================================================================= \n");
 
     step.type = step::TYPE::FREQUENCY;
-    assembler.analyze(step);
+    if (!assembler.analyze(step)) {
+        return false;
+    }
     info::mesh->output->updateMonitors(step);
 
     switch (configuration.solver) {
@@ -98,9 +100,10 @@ void StructuralMechanicsHarmonicRealLinear::analyze(step::Step &step)
     builderAssembler->fillDirichletMap(re.dirichlet);
     builderAssembler->fillDirichletMap(im.dirichlet);
     eslog::checkpointln("SIMULATION: LINEAR SYSTEM BUILT");
+    return true;
 }
 
-void StructuralMechanicsHarmonicRealLinear::run(step::Step &step)
+bool StructuralMechanicsHarmonicRealLinear::run(step::Step &step)
 {
     step.substep = 0;
     step.substeps = configuration.harmonic_solver.num_samples;
@@ -127,7 +130,8 @@ void StructuralMechanicsHarmonicRealLinear::run(step::Step &step)
     int dim = info::mesh->dimension;
     Selection s1(  0, dim, 2 * dim);
     Selection s2(dim, dim, 2 * dim);
-    while (step.substep < step.substeps) {
+    bool solved = true;
+    while (solved && step.substep < step.substeps) {
         double w = frequency.angular = 2 * M_PI * frequency.current;
 
         eslog::info(" ============================================================================================= \n");
@@ -153,7 +157,7 @@ void StructuralMechanicsHarmonicRealLinear::run(step::Step &step)
 
         solver->update(step);
         eslog::checkpointln("SIMULATION: LINEAR SYSTEM UPDATED");
-        solver->solve(step);
+        solved = solver->solve(step);
         eslog::checkpointln("SIMULATION: LINEAR SYSTEM SOLVED");
 
         double solution = eslog::time();
@@ -170,6 +174,7 @@ void StructuralMechanicsHarmonicRealLinear::run(step::Step &step)
         frequency.current += frequency.shift;
         ++step.substep;
     }
+    return solved;
 }
 
 void StructuralMechanicsHarmonicRealLinear::storeSystem(step::Step &step)

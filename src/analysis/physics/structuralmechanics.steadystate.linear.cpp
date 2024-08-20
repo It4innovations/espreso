@@ -33,7 +33,7 @@ StructuralMechanicsSteadyStateLinear::~StructuralMechanicsSteadyStateLinear()
     if (solver) { delete solver; }
 }
 
-void StructuralMechanicsSteadyStateLinear::analyze(step::Step &step)
+bool StructuralMechanicsSteadyStateLinear::analyze(step::Step &step)
 {
     eslog::info("\n ============================================================================================= \n");
     eslog::info(" == ANALYSIS                                                                   STEADY STATE == \n");
@@ -42,7 +42,9 @@ void StructuralMechanicsSteadyStateLinear::analyze(step::Step &step)
     eslog::info(" ============================================================================================= \n");
 
     step.type = step::TYPE::TIME;
-    assembler.analyze(step);
+    if (!assembler.analyze(step)) {
+        return false;
+    }
     info::mesh->output->updateMonitors(step);
 
     switch (configuration.solver) {
@@ -77,9 +79,10 @@ void StructuralMechanicsSteadyStateLinear::analyze(step::Step &step)
     builder->fillVectorMap(f);
     builder->fillDirichletMap(dirichlet);
     eslog::checkpointln("SIMULATION: LINEAR SYSTEM BUILT");
+    return true;
 }
 
-void StructuralMechanicsSteadyStateLinear::run(step::Step &step)
+bool StructuralMechanicsSteadyStateLinear::run(step::Step &step)
 {
     step.substep = 0;
     step.substeps = 1;
@@ -120,7 +123,7 @@ void StructuralMechanicsSteadyStateLinear::run(step::Step &step)
 
     solver->update(step);
     eslog::checkpointln("SIMULATION: LINEAR SYSTEM UPDATED");
-    solver->solve(step);
+    bool solved = solver->solve(step);
     eslog::checkpointln("SIMULATION: LINEAR SYSTEM SOLVED");
 
     double solution = eslog::time();
@@ -134,6 +137,7 @@ void StructuralMechanicsSteadyStateLinear::run(step::Step &step)
 
     eslog::info(" ====================================================================== solved in %8.3f s = \n\n", eslog::time() - start);
     eslog::checkpointln("SIMULATION: SOLUTION PROCESSED");
+    return solved;
 }
 
 void StructuralMechanicsSteadyStateLinear::storeSystem(step::Step &step)

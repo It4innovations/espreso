@@ -18,8 +18,8 @@ public:
     StructuralMechanicsHarmonicRealLinear(StructuralMechanicsConfiguration &settings, StructuralMechanicsLoadStepConfiguration &configuration);
     ~StructuralMechanicsHarmonicRealLinear();
 
-    void analyze(step::Step &step);
-    void run(step::Step &step);
+    bool analyze(step::Step &step);
+    bool run(step::Step &step);
 
     step::Frequency frequency;
     StructuralMechanicsConfiguration &settings;

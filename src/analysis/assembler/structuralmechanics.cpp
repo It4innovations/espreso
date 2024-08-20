@@ -98,7 +98,7 @@ StructuralMechanics::StructuralMechanics(StructuralMechanics *previous, Structur
     GaussPoints<Element::CODE::HEXA20   , 20, StructuralMechanicsGPC::HEXA20   , 3>::set();
 }
 
-void StructuralMechanics::analyze(const step::Step &step)
+bool StructuralMechanics::analyze(const step::Step &step)
 {
     constant.K = constant.M = constant.f = constant.nf = constant.dirichlet = false;
 
@@ -449,12 +449,9 @@ void StructuralMechanics::analyze(const step::Step &step)
         eslog::info("  MAX ELEMENT SIZE                                                                   %6lu B \n", esize);
     }
     eslog::info("  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  \n");
-    if (correct) {
-        eslog::info("  PHYSICS CONFIGURED                                                               %8.3f s \n", eslog::time() - start);
-    } else {
-        eslog::globalerror("  PHYSICS CONFIGURATION FAILED                                                         \n");
-    }
+    eslog::info("  PHYSICS ANALYZED                                                                 %8.3f s \n", eslog::time() - start);
     eslog::info(" ============================================================================================= \n");
+    return correct;
 }
 
 void StructuralMechanics::connect(Matrix_Base<double> *K, Matrix_Base<double> *M, Vector_Base<double> *f, Vector_Base<double> *nf, Vector_Base<double> *dirichlet)

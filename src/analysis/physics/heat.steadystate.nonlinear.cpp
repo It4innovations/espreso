@@ -37,7 +37,7 @@ HeatSteadyStateNonLinear::~HeatSteadyStateNonLinear()
     if (solver) { delete solver; }
 }
 
-void HeatSteadyStateNonLinear::analyze(step::Step &step)
+bool HeatSteadyStateNonLinear::analyze(step::Step &step)
 {
     eslog::info("\n ============================================================================================= \n");
     eslog::info(" == ANALYSIS                                                                   STEADY STATE == \n");
@@ -46,7 +46,9 @@ void HeatSteadyStateNonLinear::analyze(step::Step &step)
     eslog::info(" ============================================================================================= \n");
 
     step.type = step::TYPE::TIME;
-    assembler.analyze();
+    if (!assembler.analyze()) {
+        return false;
+    }
     info::mesh->output->updateMonitors(step);
 
     switch (configuration.solver) {
@@ -84,9 +86,10 @@ void HeatSteadyStateNonLinear::analyze(step::Step &step)
     builder->fillVectorMap(f);
     builder->fillDirichletMap(dirichlet);
     eslog::checkpointln("SIMULATION: LINEAR SYSTEM BUILT");
+    return true;
 }
 
-void HeatSteadyStateNonLinear::run(step::Step &step)
+bool HeatSteadyStateNonLinear::run(step::Step &step)
 {
     time.shift = configuration.duration_time;
     time.start = 0;
@@ -174,9 +177,7 @@ void HeatSteadyStateNonLinear::run(step::Step &step)
         }
     }
     info::mesh->output->updateSolution(step, time);
-    if (!converged) {
-        eslog::globalerror("non-linear solver did not converge.\n");
-    }
+    return converged;
 }
 
 bool HeatSteadyStateNonLinear::checkTemp(step::Step &step)

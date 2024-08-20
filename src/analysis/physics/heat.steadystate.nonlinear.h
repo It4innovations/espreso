@@ -19,8 +19,8 @@ public:
     HeatSteadyStateNonLinear(HeatTransferConfiguration &settings, HeatTransferLoadStepConfiguration &configuration);
     ~HeatSteadyStateNonLinear();
 
-    void analyze(step::Step &step);
-    void run(step::Step &step);
+    bool analyze(step::Step &step);
+    bool run(step::Step &step);
 
     step::Time time;
     HeatTransferConfiguration &settings;

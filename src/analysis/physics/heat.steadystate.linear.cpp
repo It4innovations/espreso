@@ -34,7 +34,7 @@ HeatSteadyStateLinear::~HeatSteadyStateLinear()
     if (solver) { delete solver; }
 }
 
-void HeatSteadyStateLinear::analyze(step::Step &step)
+bool HeatSteadyStateLinear::analyze(step::Step &step)
 {
     eslog::info("\n ============================================================================================= \n");
     eslog::info(" == PHYSICS                                                                   HEAT TRANSFER == \n");
@@ -43,7 +43,9 @@ void HeatSteadyStateLinear::analyze(step::Step &step)
     eslog::info(" ============================================================================================= \n");
 
     step.type = step::TYPE::TIME;
-    assembler.analyze();
+    if (!assembler.analyze()) {
+        return false;
+    }
     info::mesh->output->updateMonitors(step);
 
     switch (configuration.solver) {
@@ -78,9 +80,10 @@ void HeatSteadyStateLinear::analyze(step::Step &step)
     builder->fillVectorMap(f);
     builder->fillDirichletMap(dirichlet);
     eslog::checkpointln("SIMULATION: LINEAR SYSTEM BUILT");
+    return true;
 }
 
-void HeatSteadyStateLinear::run(step::Step &step)
+bool HeatSteadyStateLinear::run(step::Step &step)
 {
     time.shift = configuration.duration_time;
     time.start = 0;
@@ -120,7 +123,7 @@ void HeatSteadyStateLinear::run(step::Step &step)
 
     solver->update(step);
     eslog::checkpointln("SIMULATION: LINEAR SYSTEM UPDATED");
-    solver->solve(step);
+    bool solved = solver->solve(step);
     eslog::checkpointln("SIMULATION: LINEAR SYSTEM SOLVED");
     double solution = eslog::time();
 
@@ -133,6 +136,8 @@ void HeatSteadyStateLinear::run(step::Step &step)
 
     eslog::info(" ====================================================================== solved in %8.3f s = \n\n", eslog::time() - start);
     eslog::checkpointln("SIMULATION: SOLUTION PROCESSED");
+
+    return solved;
 }
 
 void HeatSteadyStateLinear::storeSystem(step::Step &step)

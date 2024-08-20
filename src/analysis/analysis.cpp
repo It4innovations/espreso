@@ -78,11 +78,15 @@ void Analysis::run()
         eslog::globalerror("not implemented physics\n");
     }
 
-    physics->analyze(step);
+    if (!physics->analyze(step)) {
+        eslog::globalerror("physical analysis failed\n");
+    }
     eslog::checkpointln("SIMULATION: PHYSICS ANALYSED");
     step.loadstep = 0;
     step.loadsteps = 1;
-    physics->run(step);
+    if (!physics->run(step)) {
+        eslog::globalerror("physical solver failed\n");
+    }
 
     delete physics;
     eslog::endln("SIMULATION: DATA CLEARED");

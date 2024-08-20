@@ -20,7 +20,7 @@ AcousticComplexLinear::AcousticComplexLinear(AcousticConfiguration &settings, Ac
 
 }
 
-void AcousticComplexLinear::analyze(step::Step &step)
+bool AcousticComplexLinear::analyze(step::Step &step)
 {
     eslog::info("\n ============================================================================================= \n");
     eslog::info(" == ANALYSIS                                                               HARMONIC COMPLEX == \n");
@@ -30,9 +30,10 @@ void AcousticComplexLinear::analyze(step::Step &step)
     step.type = step::TYPE::FREQUENCY;
     assembler.analyze(step);
     info::mesh->output->updateMonitors(step);
+    return false;
 }
 
-void AcousticComplexLinear::run(step::Step &step)
+bool AcousticComplexLinear::run(step::Step &step)
 {
 //    switch (configuration.solver) {
 //    case LoadStepSolverConfiguration::SOLVER::FETI:    system = new FETISystem<AcousticComplexLinear>(this); break;
@@ -120,6 +121,7 @@ void AcousticComplexLinear::run(step::Step &step)
 
         eslog::info(" ====================================================================== solved in %8.3f s = \n\n", eslog::time() - start);
     }
+    return false;
 }
 
 void AcousticComplexLinear::storeSystem(step::Step &step)

@@ -16,8 +16,8 @@ class AcousticRealLinear: public Physics {
 public:
     AcousticRealLinear(AcousticConfiguration &settings, AcousticLoadStepConfiguration &configuration);
 
-    void analyze(step::Step &step);
-    void run(step::Step &step);
+    bool analyze(step::Step &step);
+    bool run(step::Step &step);
 
     step::Frequency frequency;
     AcousticConfiguration &settings;

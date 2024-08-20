@@ -52,7 +52,7 @@ StructuralMechanicsTransientNonLinear::~StructuralMechanicsTransientNonLinear()
     if (solver) { delete solver; }
 }
 
-void StructuralMechanicsTransientNonLinear::analyze(step::Step &step)
+bool StructuralMechanicsTransientNonLinear::analyze(step::Step &step)
 {
     eslog::info("\n ============================================================================================= \n");
     eslog::info(" == ANALYSIS                                                                      TRANSIENT == \n");
@@ -61,7 +61,9 @@ void StructuralMechanicsTransientNonLinear::analyze(step::Step &step)
     eslog::info(" ============================================================================================= \n");
 
     step.type = step::TYPE::TIME;
-    assembler.analyze(step);
+    if (!assembler.analyze(step)) {
+        return false;
+    }
     info::mesh->output->updateMonitors(step);
     if (configuration.nonlinear_solver.stepping == NonLinearSolverConfiguration::STEPPINGG::FALSE) {
         configuration.nonlinear_solver.substeps = 1;
@@ -114,9 +116,10 @@ void StructuralMechanicsTransientNonLinear::analyze(step::Step &step)
     builder->fillVectorMap(R);
     builder->fillDirichletMap(dirichlet);
     eslog::checkpointln("SIMULATION: LINEAR SYSTEM BUILT");
+    return true;
 }
 
-void StructuralMechanicsTransientNonLinear::run(step::Step &step)
+bool StructuralMechanicsTransientNonLinear::run(step::Step &step)
 {
     Precice precice;
 
@@ -307,6 +310,7 @@ void StructuralMechanicsTransientNonLinear::run(step::Step &step)
             ++step.substep;
         }
     }
+    return converged;
 }
 
 bool StructuralMechanicsTransientNonLinear::checkDisplacement(step::Step &step)

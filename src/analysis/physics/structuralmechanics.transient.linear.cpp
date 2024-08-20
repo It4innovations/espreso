@@ -51,7 +51,7 @@ StructuralMechanicsTransientLinear::~StructuralMechanicsTransientLinear()
     if (solver) { delete solver; }
 }
 
-void StructuralMechanicsTransientLinear::analyze(step::Step &step)
+bool StructuralMechanicsTransientLinear::analyze(step::Step &step)
 {
     eslog::info("\n ============================================================================================= \n");
     eslog::info(" == ANALYSIS                                                                      TRANSIENT == \n");
@@ -60,7 +60,9 @@ void StructuralMechanicsTransientLinear::analyze(step::Step &step)
     eslog::info(" ============================================================================================= \n");
 
     step.type = step::TYPE::TIME;
-    assembler.analyze(step);
+    if (!assembler.analyze(step)) {
+        return false;
+    }
     info::mesh->output->updateMonitors(step);
 
     switch (configuration.solver) {
@@ -108,9 +110,10 @@ void StructuralMechanicsTransientLinear::analyze(step::Step &step)
     builder->fillVectorMap(f);
     builder->fillDirichletMap(dirichlet);
     eslog::checkpointln("SIMULATION: LINEAR SYSTEM BUILT");
+    return true;
 }
 
-void StructuralMechanicsTransientLinear::run(step::Step &step)
+bool StructuralMechanicsTransientLinear::run(step::Step &step)
 {
     Precice precice;
 
@@ -152,7 +155,8 @@ void StructuralMechanicsTransientLinear::run(step::Step &step)
     V->set(0);
     W->set(0);
     Z->set(0);
-    while (time.current + time.shift <= time.final + time.precision) {
+    bool solved = true;
+    while (solved && time.current + time.shift <= time.final + time.precision) {
         time.shift = precice.timeStep(time.shift);
         time.current = time.previous + time.shift;
         eslog::info(" ============================================================================================= \n");
@@ -191,7 +195,7 @@ void StructuralMechanicsTransientLinear::run(step::Step &step)
 
         solver->update(step);
         eslog::checkpointln("SIMULATION: LINEAR SYSTEM UPDATED");
-        solver->solve(step);
+        solved = solver->solve(step);
         eslog::checkpointln("SIMULATION: LINEAR SYSTEM SOLVED");
         double solution = eslog::time();
 
@@ -227,6 +231,7 @@ void StructuralMechanicsTransientLinear::run(step::Step &step)
             ++step.substep;
         }
     }
+    return solved;
 }
 
 void StructuralMechanicsTransientLinear::storeSystem(step::Step &step)

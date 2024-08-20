@@ -18,8 +18,8 @@ class AcousticComplexLinear: public Physics {
 public:
     AcousticComplexLinear(AcousticConfiguration &settings, AcousticLoadStepConfiguration &configuration);
 
-    void analyze(step::Step &step);
-    void run(step::Step &step);
+    bool analyze(step::Step &step);
+    bool run(step::Step &step);
 
     step::Frequency frequency;
     AcousticConfiguration &settings;

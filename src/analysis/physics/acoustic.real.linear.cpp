@@ -20,7 +20,7 @@ AcousticRealLinear::AcousticRealLinear(AcousticConfiguration &settings, Acoustic
 
 }
 
-void AcousticRealLinear::analyze(step::Step &step)
+bool AcousticRealLinear::analyze(step::Step &step)
 {
     eslog::info("\n ============================================================================================= \n");
     eslog::info(" == ANALYSIS                                                                  HARMONIC REAL == \n");
@@ -30,9 +30,10 @@ void AcousticRealLinear::analyze(step::Step &step)
     step.type = step::TYPE::FREQUENCY;
     assembler.analyze(step);
     info::mesh->output->updateMonitors(step);
+    return false;
 }
 
-void AcousticRealLinear::run(step::Step &step)
+bool AcousticRealLinear::run(step::Step &step)
 {
 //    switch (configuration.solver) {
 //    case LoadStepSolverConfiguration::SOLVER::FETI:    system = new FETISystem<AcousticRealLinear>(this); break;
@@ -126,6 +127,7 @@ void AcousticRealLinear::run(step::Step &step)
 
         eslog::info(" ====================================================================== solved in %8.3f s = \n\n", eslog::time() - start);
     }
+    return false;
 }
 
 void AcousticRealLinear::storeSystem(step::Step &step)

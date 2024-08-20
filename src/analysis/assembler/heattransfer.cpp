@@ -86,7 +86,7 @@ HeatTransfer::HeatTransfer(HeatTransfer *previous, HeatTransferConfiguration &se
     GaussPoints<Element::CODE::HEXA20   , 20, HeatTransferGPC::HEXA20   , 3>::set();
 }
 
-void HeatTransfer::analyze()
+bool HeatTransfer::analyze()
 {
     double start = eslog::time();
     eslog::info("\n ============================================================================================= \n");
@@ -399,13 +399,10 @@ void HeatTransfer::analyze()
         eslog::info("  MAX ELEMENT SIZE                                                                   %6lu B \n", esize);
     }
     eslog::info("  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  \n");
-    if (correct) {
-        eslog::info("  PHYSICS CONFIGURED                                                               %8.3f s \n", eslog::time() - start);
-        eslog::info("  CONSTANT MATRICES, VECTORS         %*s  [ %s ] \n", 50 - constants.size(), " ", constants.c_str());
-    } else {
-        eslog::globalerror("  PHYSICS CONFIGURATION FAILED                                                         \n");
-    }
+    eslog::info("  PHYSICS ANALYZED                                                                 %8.3f s \n", eslog::time() - start);
+    eslog::info("  CONSTANT MATRICES, VECTORS         %*s  [ %s ] \n", 50 - constants.size(), " ", constants.c_str());
     eslog::info(" ============================================================================================= \n");
+    return correct;
 }
 
 void HeatTransfer::connect(Matrix_Base<double> *K, Matrix_Base<double> *M, Vector_Base<double> *f, Vector_Base<double> *nf, Vector_Base<double> *dirichlet)

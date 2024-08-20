@@ -27,7 +27,7 @@ class HeatTransfer: public Assembler
 public:
     HeatTransfer(HeatTransfer *previous, HeatTransferConfiguration &settings, HeatTransferLoadStepConfiguration &configuration);
 
-    void analyze();
+    bool analyze();
     void getInitialTemperature(Vector_Base<double> *x);
 
     void connect(Matrix_Base<double> *K, Matrix_Base<double> *M, Vector_Base<double> *f, Vector_Base<double> *nf, Vector_Base<double> *dirichlet);

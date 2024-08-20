@@ -47,7 +47,7 @@ HeatTransientLinear::~HeatTransientLinear()
     if (solver) { delete solver; }
 }
 
-void HeatTransientLinear::analyze(step::Step &step)
+bool HeatTransientLinear::analyze(step::Step &step)
 {
     eslog::info("\n ============================================================================================= \n");
     eslog::info(" == ANALYSIS                                                                      TRANSIENT == \n");
@@ -72,7 +72,9 @@ void HeatTransientLinear::analyze(step::Step &step)
     eslog::info(" ============================================================================================= \n");
 
     step.type = step::TYPE::TIME;
-    assembler.analyze();
+    if (!assembler.analyze()) {
+        return false;
+    }
     info::mesh->output->updateMonitors(step);
 
     switch (configuration.solver) {
@@ -117,9 +119,10 @@ void HeatTransientLinear::analyze(step::Step &step)
     builder->fillVectorMap(f);
     builder->fillDirichletMap(dirichlet);
     eslog::checkpointln("SIMULATION: LINEAR SYSTEM BUILT");
+    return true;
 }
 
-void HeatTransientLinear::run(step::Step &step)
+bool HeatTransientLinear::run(step::Step &step)
 {
     time.shift = configuration.transient_solver.time_step;
     time.start = 0;
@@ -153,7 +156,8 @@ void HeatTransientLinear::run(step::Step &step)
     dU->set(0);
     assembler.getInitialTemperature(U);
     V->set(0);
-    while (time.current <= time.final + time.precision) {
+    bool solved = true;
+    while (solved && time.current <= time.final + time.precision) {
         eslog::info(" ============================================================================================= \n");
         eslog::info(" = LOAD STEP %2d, SUBSTEP   %3d,   TIME %9.4f, TIME SHIFT %9.4f, FINAL TIME %9.4f = \n", step.loadstep + 1, step.substep + 1, time.current, time.shift, time.final);
         eslog::info(" = ----------------------------------------------------------------------------------------- = \n");
@@ -185,7 +189,7 @@ void HeatTransientLinear::run(step::Step &step)
 
         solver->update(step);
         eslog::checkpointln("SIMULATION: LINEAR SYSTEM UPDATED");
-        solver->solve(step);
+        solved = solver->solve(step);
         eslog::checkpointln("SIMULATION: LINEAR SYSTEM SOLVED");
         double solution = eslog::time();
 
@@ -207,6 +211,7 @@ void HeatTransientLinear::run(step::Step &step)
         time.current += time.shift;
         ++step.substep;
     }
+    return solved;
 }
 
 void HeatTransientLinear::storeSystem(step::Step &step)

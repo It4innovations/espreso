@@ -35,7 +35,7 @@ StructuralMechanicsSteadyStateNonLinear::~StructuralMechanicsSteadyStateNonLinea
     if (solver) { delete solver; }
 }
 
-void StructuralMechanicsSteadyStateNonLinear::analyze(step::Step &step)
+bool StructuralMechanicsSteadyStateNonLinear::analyze(step::Step &step)
 {
     eslog::info("\n ============================================================================================= \n");
     eslog::info(" == ANALYSIS                                                                   STEADY STATE == \n");
@@ -44,7 +44,9 @@ void StructuralMechanicsSteadyStateNonLinear::analyze(step::Step &step)
     eslog::info(" ============================================================================================= \n");
 
     step.type = step::TYPE::TIME;
-    assembler.analyze(step);
+    if (!assembler.analyze(step)) {
+        return false;
+    }
     info::mesh->output->updateMonitors(step);
     if (configuration.nonlinear_solver.stepping == NonLinearSolverConfiguration::STEPPINGG::FALSE) {
         configuration.nonlinear_solver.substeps = 1;
@@ -85,9 +87,10 @@ void StructuralMechanicsSteadyStateNonLinear::analyze(step::Step &step)
     builder->fillVectorMap(R);
     builder->fillDirichletMap(dirichlet);
     eslog::checkpointln("SIMULATION: LINEAR SYSTEM BUILT");
+    return true;
 }
 
-void StructuralMechanicsSteadyStateNonLinear::run(step::Step &step)
+bool StructuralMechanicsSteadyStateNonLinear::run(step::Step &step)
 {
     assembler.connect(K, nullptr, f, R, dirichlet);
 
@@ -130,7 +133,8 @@ void StructuralMechanicsSteadyStateNonLinear::run(step::Step &step)
     time.shift = configuration.duration_time / configuration.nonlinear_solver.substeps;
     time.final = configuration.duration_time;
     step.substeps = configuration.nonlinear_solver.substeps;
-    for (step.substep = 0; step.substep < configuration.nonlinear_solver.substeps; ++step.substep) {
+    bool converged = true;
+    for (step.substep = 0; converged && step.substep < configuration.nonlinear_solver.substeps; ++step.substep) {
         if (configuration.nonlinear_solver.substeps > 1) {
             eslog::info("      ==  SUBSTEP                                                           %10d ==     \n", step.substep + 1);
             eslog::info("      =================================================================================== \n");
@@ -163,7 +167,7 @@ void StructuralMechanicsSteadyStateNonLinear::run(step::Step &step)
         eslog::info("      == PROCESS SOLUTION                                                   %8.3f s == \n", eslog::time() - solution);
         eslog::info("      == ----------------------------------------------------------------------------- == \n");
 
-        bool converged = false;
+        converged = false;
         while (step.iteration++ < configuration.nonlinear_solver.max_iterations) {
             eslog::info("\n      ==                                                    %3d. EQUILIBRIUM ITERATION == \n", step.iteration);
 
@@ -189,10 +193,8 @@ void StructuralMechanicsSteadyStateNonLinear::run(step::Step &step)
             }
         }
         info::mesh->output->updateSolution(step, time);
-        if (!converged) {
-            eslog::globalerror("non-linear solver did not converge.\n");
-        }
     }
+    return converged;
 }
 
 bool StructuralMechanicsSteadyStateNonLinear::checkDisplacement(step::Step &step)
