@@ -70,6 +70,8 @@ HeatTransfer::HeatTransfer(HeatTransfer *previous, HeatTransferConfiguration &se
         }
     }
 
+    constant.K = constant.M = constant.dirichlet = constant.f = constant.nf = false;
+
     GaussPoints<Element::CODE::LINE2    ,  2, HeatTransferGPC::LINE2    , 1>::set();
     GaussPoints<Element::CODE::TRIANGLE3,  3, HeatTransferGPC::TRIANGLE3, 2>::set();
     GaussPoints<Element::CODE::SQUARE4  ,  4, HeatTransferGPC::SQUARE4  , 2>::set();
@@ -389,6 +391,7 @@ bool HeatTransfer::analyze()
     if (constant.K)         { constants += "K"; }
     if (constant.M)         { if (constants.size()) constants += ", "; constants += "M"; }
     if (constant.f)         { if (constants.size()) constants += ", "; constants += "f"; }
+    if (constant.nf)        { if (constants.size()) constants += ", "; constants += "nf"; }
     if (constant.dirichlet) { if (constants.size()) constants += ", "; constants += "dirichlet"; }
 
     eslog::info("  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  \n");
