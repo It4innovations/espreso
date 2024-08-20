@@ -17,16 +17,28 @@ TransientSecondOrderImplicitSolverConfiguration::TransientSecondOrderImplicitSol
 			.setdatatype({ ECFDataType::OPTION })
 			.addoption(ECFOption().setname("NEWMARK").setdescription("NEWMARK method.")));
 
-	alpha = 0.5;
+	alpha = 0.25;
 	REGISTER(alpha, ECFMetaData()
 			.setdescription({ "Alpha" })
 			.setdatatype({ ECFDataType::FLOAT }));
 
-	delta = 0.25;
+	delta = 0.5;
 	REGISTER(delta, ECFMetaData()
 			.setdescription({ "Delta" })
 			.setdatatype({ ECFDataType::FLOAT }));
 	ecfdescription->addSpace();
+
+	alphaM = 0;
+    REGISTER(alphaM, ECFMetaData()
+            .setdescription({ "alphaM" })
+            .setdatatype({ ECFDataType::FLOAT }));
+    ecfdescription->addSpace();
+
+    alphaF = 0;
+    REGISTER(alphaF, ECFMetaData()
+            .setdescription({ "alphaF" })
+            .setdatatype({ ECFDataType::FLOAT }));
+    ecfdescription->addSpace();
 
 	mass_matrix_type = MASS_MATRIX_TYPE::CONSISTENT;
 	REGISTER(method, ECFMetaData()

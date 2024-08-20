@@ -24,7 +24,7 @@ struct TransientSecondOrderImplicitSolverConfiguration: public ECFDescription {
 
 	METHOD method;
 	AutoTimeSteppingConfiguration auto_time_stepping;
-	double alpha, delta, time_step;
+	double alpha, delta, alphaF, alphaM, time_step;
 
 	DampingConfiguration damping;
 

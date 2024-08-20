@@ -21,8 +21,8 @@ using namespace espreso;
 
 StructuralMechanicsTransientNonLinear::StructuralMechanicsTransientNonLinear(StructuralMechanicsConfiguration &settings, StructuralMechanicsLoadStepConfiguration &configuration)
 : settings(settings), configuration(configuration), assembler{nullptr, settings, configuration},
-  K{}, M{}, C{}, f{}, x{}, dirichlet{}, prev{},
-  U{}, R{}, dU{}, V{}, W{}, X{}, Y{}, Z{}, dTK{}, dTM{},
+  K{}, M{}, C{}, f{}, f_old{}, x{}, dirichlet{}, prev{},
+  R{}, R_old{}, dU{}, U{}, V{}, A{}, U_old{}, V_old{}, A_old{}, X{},
   builder{}, solver{}
 {
 
@@ -34,20 +34,21 @@ StructuralMechanicsTransientNonLinear::~StructuralMechanicsTransientNonLinear()
     if (M) { delete M; }
     if (C) { delete C; }
     if (f) { delete f; }
+    if (f_old) { delete f_old; }
     if (x) { delete x; }
     if (dirichlet) { delete dirichlet; }
     if (prev) { delete prev; }
 
-    if (  U) { delete   U; }
     if (  R) { delete   R; }
+    if (R_old) { delete R_old; }
     if ( dU) { delete  dU; }
+    if (  U) { delete   U; }
     if (  V) { delete   V; }
-    if (  W) { delete   W; }
-    if (  X) { delete   X; }
-    if (  Y) { delete   Y; }
-    if (  Z) { delete   Z; }
-    if (dTK) { delete dTK; }
-    if (dTM) { delete dTM; }
+    if (  A) { delete   A; }
+    if (U_old) { delete U_old; }
+    if (V_old) { delete V_old; }
+    if (A_old) { delete A_old; }
+    if (X) { delete X; }
 
     if (builder) { delete builder; }
     if (solver) { delete solver; }
@@ -101,16 +102,11 @@ bool StructuralMechanicsTransientNonLinear::analyze(step::Step &step)
     prev = solver->x->copyPattern();
     dirichlet = solver->dirichlet->copyPattern();
 
-      U = solver->b->copyPattern();
       R = solver->b->copyPattern();
      dU = solver->b->copyPattern();
+      U = solver->b->copyPattern();
       V = solver->b->copyPattern();
-      W = solver->b->copyPattern();
-      X = solver->b->copyPattern();
-      Y = solver->b->copyPattern();
-      Z = solver->b->copyPattern();
-    dTK = solver->b->copyPattern();
-    dTM = solver->b->copyPattern();
+      A = solver->b->copyPattern();
 
     builder->fillMatrixMap(K);
     builder->fillMatrixMap(M);
@@ -132,6 +128,8 @@ bool StructuralMechanicsTransientNonLinear::run(step::Step &step)
 
     double alpha = configuration.transient_solver.alpha;
     double delta = configuration.transient_solver.delta;
+    double alphaM = configuration.transient_solver.alphaM;
+    double alphaF = configuration.transient_solver.alphaF;
 
     assembler.connect(K, M, f, R, dirichlet);
 
@@ -170,25 +168,16 @@ bool StructuralMechanicsTransientNonLinear::run(step::Step &step)
     dU->set(0);
     U->set(0);
     V->set(0);
-    W->set(0);
-    Z->set(0);
+    A->set(0);
     solver->set(step);
 
     assembler.evaluate(step, time, K, M, f, nullptr, dirichlet);
-    solver->A->copy(M);
-    solver->b->copy(f);
-    C->apply(-1., V, 1., solver->b);
-    K->apply(-1., U, 1., solver->b);
-    solver->dirichlet->copy(dirichlet);
-
-    solver->A->updated = true;
-    solver->b->updated = true;
-    solver->dirichlet->updated = true;
-
-    solver->update(step);
-    solver->solve(step);
-
-    W->copy(solver->x);
+    C->add(configuration.transient_solver.damping.rayleigh.direct_damping.stiffness.evaluator->evaluate(), K);
+    C->add(configuration.transient_solver.damping.rayleigh.direct_damping.mass.evaluator->evaluate(), M);
+    f_old->copy(f);
+    U_old->copy(U);
+    V_old->copy(V);
+    A_old->copy(A);
 
     step.substep = 0;
     bool converged = true;
@@ -196,16 +185,13 @@ bool StructuralMechanicsTransientNonLinear::run(step::Step &step)
         double start = eslog::time();
         time.shift = precice.timeStep(time.shift);
         time.current = time.previous + time.shift;
-        double newmark[] = {
-            1. / (delta * time.shift * time.shift),
-            alpha / (delta * time.shift),
-            1. / (delta * time.shift),
-            1. / (2 * delta) - 1,
-            alpha / delta - 1,
-            time.shift / 2 * (alpha / delta - 2),
-            time.shift * (1 - alpha),
-            time.shift * alpha
-        };
+
+        double a0 = (1. - alphaM) / (alpha * time.shift * time.shift);
+        double a1 = ((1 - alphaF) * time.shift) / (alpha * time.shift);
+        double a2 = a0 * time.shift;
+        double a3 = (1 - alphaM) / (2 * alpha) - 1;
+        double a4 = ((1 - alphaF) * time.shift) / alpha - 1;
+        double a5 = (1 - alphaF) * (time.shift / (2 * alpha) - 1) * time.shift;
 
 
         if (precice.requiresWritingCheckpoint()) {
@@ -213,41 +199,69 @@ bool StructuralMechanicsTransientNonLinear::run(step::Step &step)
         }
         precice.read(StructuralMechanics::Results::fluidForce->data.data(), time.shift);
 
-        // F_hat  = f(t(i+1)) + M*(c0*un + c2*vn + c3*an) + C*(c1*un + c4*vn + c5*an);
-        assembler.evaluate(step, time, nullptr, nullptr, f, nullptr, dirichlet);
-        Z->set(0)->add(newmark[0], U)->add(newmark[2], V)->add(newmark[3], W);
-        M->apply(1., Z, 1., f);
-        Z->set(0)->add(newmark[1], U)->add(newmark[4], V)->add(newmark[5], W);
-        C->apply(1., Z, 1., f);
+        eslog::info("\n      ==                                                        INITIAL ITERATION == \n", step.iteration);
+        assembler.evaluate(step, time, K, nullptr, f, R, dirichlet);
 
-        // un1 = un + (c2/c0)*vn + (c3/c0)*an;
-        x->copy(U)->add(newmark[2] / newmark[0], V)->add(newmark[3] / newmark[0], W);
-        assembler.updateSolution(x);
+        solver->A->set(0)->add(a0, M)->add(a1, C)->add(1 - alphaF, K);
+        solver->A->updated = true;
+
+        solver->b->set(0)->add(1 - alphaF, f)->add(alphaF, f_old)->add(-1., R);
+        X->set(0)->add(a2, V_old)->add(a3, A_old); M->apply(1., X, 1., solver->b);
+        X->set(0)->add(a4, V_old)->add(a5, A_old); C->apply(1., X, 1., solver->b);
+        solver->b->updated = true;
+
+        solver->dirichlet->copy(dirichlet);
+        solver->dirichlet->add(-1, U);
+        solver->dirichlet->updated = true;
+
+        storeSystem(step);
+        solver->update(step);
+        solver->solve(step);
+
+        dU->copy(solver->x);
+        U->copy(U_old)->add(1., dU);
+        V->set(0);
+        V->add(delta / (alpha * time.shift), dU);
+        V->add(-delta / alpha + 1, V_old);
+        V->add(-time.shift / 2 * (delta / alpha - 2), A_old);
+        A->set(0);
+        A->add(1. / (alpha * time.shift * time.shift), dU);
+        A->add(-1. / (alpha * time.shift), V_old);
+        A->add(-1. / (2 * alpha) - 1, A_old);
+
+        R_old->copy(R);
 
         // NEWTON RAPHSON
         step.iteration = 0;
         converged = false;
+        double f_norm = f->norm();
         while (step.iteration++ < configuration.nonlinear_solver.max_iterations) {
             eslog::info("\n      ==                                                    %3d. EQUILIBRIUM ITERATION == \n", step.iteration);
 
-            assembler.evaluate(step, time, K, nullptr, nullptr, R, dirichlet);
-            solver->A->copy(K)->add(newmark[0], M)->add(newmark[1], C);
+            assembler.evaluate(step, time, K, nullptr, nullptr, R, nullptr);
+            solver->A->set(0)->add(a0, M)->add(a1, C)->add(1 - alphaF, K);
             solver->A->updated = true;
 
-            solver->b->copy(f);
-            solver->b->add(-1, R);
+            solver->b->set(0);
+            solver->b->add(1 - alphaF, f)->add(alphaF - 1, R); C->apply(-1., V, 1., solver->b);
+            solver->b->add(alphaF, f_old)->add(-alphaF, R_old); C->apply(-1., V_old, 1., solver->b);
+            X->copy(A)->add(1., A_old); M->apply(-1., X, 1., solver->b);
             solver->b->updated = true;
 
-            solver->dirichlet->copy(dirichlet);
-            solver->dirichlet->add(-1, U);
-            solver->dirichlet->updated = dirichlet->updated;
-
             storeSystem(step);
-
             solver->update(step);
             solver->solve(step);
 
-            if ((converged = checkDisplacement(step))) {
+            dU->copy(solver->x);
+            U->add(1., dU);
+            V->set(0);
+            V->add(delta / (alpha * time.shift), U)->add(-delta / (alpha * time.shift), U_old);
+            V->add(-delta / alpha + 1, V_old)->add(-time.shift / 2 * (delta / alpha - 2), A_old);
+            A->set(0);
+            A->add(1. / (alpha * time.shift * time.shift), U)->add(-1. / (alpha * time.shift * time.shift), U_old);
+            A->add(-1. / (alpha * time.shift), V_old)->add(-1. / (2 * alpha) - 1, A_old);
+
+            if ((converged = checkDisplacement(step, f_norm))) {
                 break;
             }
         }
@@ -265,12 +279,9 @@ bool StructuralMechanicsTransientNonLinear::run(step::Step &step)
             info::mesh->output->updateSolution(step, time);
             storeSolution(step);
 
-            dU->copy(solver->x);
-            dU->add(-1, U);
-            U->copy(solver->x);
-            Z->set(0)->add(newmark[0], dU)->add(-newmark[2], V)->add(-newmark[3], W);
-            V->add(newmark[6], W)->add(newmark[7], Z);
-            W->copy(Z);
+            U_old->copy(U);
+            V_old->copy(V);
+            A_old->copy(A);
 
             eslog::info("       = PROCESS SOLUTION                                                   %8.3f s = \n", eslog::time() - start);
             eslog::info("       = ----------------------------------------------------------------------------- = \n");
@@ -283,23 +294,19 @@ bool StructuralMechanicsTransientNonLinear::run(step::Step &step)
     return converged;
 }
 
-bool StructuralMechanicsTransientNonLinear::checkDisplacement(step::Step &step)
+bool StructuralMechanicsTransientNonLinear::checkDisplacement(step::Step &step, double f_norm)
 {
-    double solutionNumerator = solver->x->norm();
-    solver->x->add(1, U);
-    x->copy(solver->x);
+    double b_norm = solver->b->norm();
+    double nR = b_norm / (1 + f_norm);
 
-    double solutionDenominator = std::max(solver->x->norm(), 1e-3);
-    double norm = solutionNumerator / solutionDenominator;
-
-    if (norm > configuration.nonlinear_solver.requested_first_residual) {
-        eslog::info("      == DISPLACEMENT NORM, CRITERIA                         %.5e / %.5e == \n", solutionNumerator, solutionDenominator * configuration.nonlinear_solver.requested_first_residual);
-        assembler.nextIteration(x);
+    if (nR > configuration.nonlinear_solver.requested_first_residual) {
+        eslog::info("      == DISPLACEMENT NORM, CRITERIA                         %.5e / %.5e == \n", b_norm, f_norm * configuration.nonlinear_solver.requested_first_residual);
+        assembler.nextIteration(U);
         return false;
     } else {
-        eslog::info("      == DISPLACEMENT NORM, CRITERIA [CONVERGED]             %.5e / %.5e == \n", solutionNumerator, solutionDenominator * configuration.nonlinear_solver.requested_first_residual);
+        eslog::info("      == DISPLACEMENT NORM, CRITERIA [CONVERGED]             %.5e / %.5e == \n", b_norm, f_norm * configuration.nonlinear_solver.requested_first_residual);
         eslog::info("      =================================================================================== \n\n");
-        assembler.updateSolution(x);
+        assembler.updateSolution(U);
         return true;
     }
 }
@@ -314,14 +321,11 @@ void StructuralMechanicsTransientNonLinear::storeSystem(step::Step &step)
         f->store(utils::filename(utils::debugDirectory(step) + "/scheme", "f").c_str());
         dirichlet->store(utils::filename(utils::debugDirectory(step) + "/scheme", "dirichlet").c_str());
 
-        X->store(utils::filename(utils::debugDirectory(step) + "/scheme", "X").c_str());
-        Y->store(utils::filename(utils::debugDirectory(step) + "/scheme", "Y").c_str());
-        Z->store(utils::filename(utils::debugDirectory(step) + "/scheme", "Z").c_str());
-        U->store(utils::filename(utils::debugDirectory(step) + "/scheme", "U").c_str());
         R->store(utils::filename(utils::debugDirectory(step) + "/scheme", "R").c_str());
-        V->store(utils::filename(utils::debugDirectory(step) + "/scheme", "V").c_str());
-        W->store(utils::filename(utils::debugDirectory(step) + "/scheme", "W").c_str());
         dU->store(utils::filename(utils::debugDirectory(step) + "/scheme", "dU").c_str());
+        U->store(utils::filename(utils::debugDirectory(step) + "/scheme", "U").c_str());
+        V->store(utils::filename(utils::debugDirectory(step) + "/scheme", "V").c_str());
+        A->store(utils::filename(utils::debugDirectory(step) + "/scheme", "A").c_str());
     }
 }
 
