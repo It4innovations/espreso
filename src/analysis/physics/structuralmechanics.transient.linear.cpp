@@ -124,17 +124,6 @@ bool StructuralMechanicsTransientLinear::run(step::Step &step)
     double alpha = configuration.transient_solver.alpha;
     double delta = configuration.transient_solver.delta;
 
-    double newmark[] = {
-        1. / (delta * time.shift * time.shift),
-        alpha / (delta * time.shift),
-        1. / (delta * time.shift),
-        1. / (2 * delta) - 1,
-        alpha / delta - 1,
-        time.shift / 2 * (alpha / delta - 2),
-        time.shift * (1 - alpha),
-        time.shift * alpha
-    };
-
     assembler.connect(K, M, f, nullptr, dirichlet);
 
     if (MPITools::node->rank == 0) {
@@ -159,6 +148,17 @@ bool StructuralMechanicsTransientLinear::run(step::Step &step)
     while (solved && time.current + time.shift <= time.final + time.precision) {
         time.shift = precice.timeStep(time.shift);
         time.current = time.previous + time.shift;
+        double newmark[] = {
+            1. / (delta * time.shift * time.shift),
+            alpha / (delta * time.shift),
+            1. / (delta * time.shift),
+            1. / (2 * delta) - 1,
+            alpha / delta - 1,
+            time.shift / 2 * (alpha / delta - 2),
+            time.shift * (1 - alpha),
+            time.shift * alpha
+        };
+
         eslog::info(" ============================================================================================= \n");
         eslog::info(" = LOAD STEP %2d, SUBSTEP   %3d,   TIME %9.4f, TIME SHIFT %9.4f, FINAL TIME %9.4f = \n", step.loadstep + 1, step.substep + 1, time.current, time.shift, time.final);
         eslog::info(" = ----------------------------------------------------------------------------------------- = \n");
