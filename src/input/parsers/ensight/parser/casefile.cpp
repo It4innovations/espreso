@@ -29,7 +29,7 @@ void EnsightCasefile::parse()
 			while (*current++ != ':');
 			while (*current == ' ' || *current == '\t') { ++current; }
 			const char* begin = current;
-			while (*current != '\n') { ++current; };
+			while (*current != '\n' && *current != '\r') { ++current; };
 			geometry = std::string(begin, current);
 			break;
 		}

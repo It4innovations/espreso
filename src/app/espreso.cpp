@@ -76,7 +76,7 @@ int main(int argc, char **argv)
 		eslog::ln();
 	}
 	info::mesh->printMeshStatistics();
-	info::mesh->printDecompositionStatistics();
+//	info::mesh->printDecompositionStatistics();
 	profiler::syncend("mesh_preprocessing");
 
 	profiler::syncstart("mesh_output");

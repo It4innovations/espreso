@@ -28,7 +28,7 @@ public:
     StructuralMechanics assembler;
 
     Matrix_Base<double> *K, *M, *C;
-    Vector_Base<double> *f, *f_old, *x, *dirichlet, *prev;
+    Vector_Base<double> *f, *f_old, *dirichlet, *prev;
     Vector_Base<double> *R, *R_old, *dU, *U, *V, *A, *U_old, *V_old, *A_old, *X;
 
     SparseMatrixBuilder<double> *builder;

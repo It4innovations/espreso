@@ -6,8 +6,6 @@
 #include "operators.h"
 #include "mesh/element.h"
 
-#include <iostream>
-
 namespace espreso {
 
 template <Element::CODE code, size_t nodes, size_t gps, size_t ndim, size_t edim>
@@ -321,8 +319,8 @@ void runElementKernel(const step::Step &step, StructuralMechanicsElementOperator
     plasticity.setActiveness(action);
     displacement.setActiveness(action);
     smallStrainTensor.setActiveness(action);
-    largeDisplacement.setActiveness(action, step.iteration);
-    corotation.setActiveness(action, step.iteration);
+    largeDisplacement.setActiveness(action, step.loadstep || step.substep || step.iteration);
+    corotation.setActiveness(action, step.loadstep || step.substep || step.iteration);
     K.setActiveness(action, !largeDisplacement.isactive);
     M.setActiveness(action);
 //    C.setActiveness(action);
@@ -335,7 +333,7 @@ void runElementKernel(const step::Step &step, StructuralMechanicsElementOperator
     outM.setActiveness(action);
     outC.setActiveness(action);
     outReRHS.setActiveness(action);
-    outReNRHS.setActiveness(action, step.iteration);
+    outReNRHS.setActiveness(action, step.loadstep || step.substep || step.iteration);
     outImRHS.setActiveness(action);
     outImNRHS.setActiveness(action);
 
@@ -405,72 +403,6 @@ void runElementKernel(const step::Step &step, StructuralMechanicsElementOperator
                 sigma.simd(element, gp);
             }
         }
-
-//        if (corotation.isactive) {
-//            element.coords.node[0][0][0] = 0;
-//            element.coords.node[0][1][0] = 0;
-//            element.coords.node[0][2][0] = 0;
-//
-//            element.coords.node[1][0][0] = 1;
-//            element.coords.node[1][1][0] = 0;
-//            element.coords.node[1][2][0] = 0;
-//
-//            element.coords.node[2][0][0] = 1;
-//            element.coords.node[2][1][0] = 1;
-//            element.coords.node[2][2][0] = 0;
-//
-//            element.coords.node[3][0][0] = 0;
-//            element.coords.node[3][1][0] = 1;
-//            element.coords.node[3][2][0] = 0;
-//
-//            element.coords.node[4][0][0] = 0;
-//            element.coords.node[4][1][0] = 0;
-//            element.coords.node[4][2][0] = 1;
-//
-//            element.coords.node[5][0][0] = 1;
-//            element.coords.node[5][1][0] = 0;
-//            element.coords.node[5][2][0] = 1;
-//
-//            element.coords.node[6][0][0] = 1;
-//            element.coords.node[6][1][0] = 1;
-//            element.coords.node[6][2][0] = 1;
-//
-//            element.coords.node[7][0][0] = 0;
-//            element.coords.node[7][1][0] = 1;
-//            element.coords.node[7][2][0] = 1;
-//
-//            element.displacement[0][0][0] = 0;
-//            element.displacement[0][1][0] = 0;
-//            element.displacement[0][2][0] = 0;
-//
-//            element.displacement[1][0][0] = 0;
-//            element.displacement[1][1][0] = 0;
-//            element.displacement[1][2][0] = 0.5;
-//
-//            element.displacement[2][0][0] = 0;
-//            element.displacement[2][1][0] = 0;
-//            element.displacement[2][2][0] = 0.5;
-//
-//            element.displacement[3][0][0] = 0;
-//            element.displacement[3][1][0] = 0;
-//            element.displacement[3][2][0] = 0;
-//
-//            element.displacement[4][0][0] = 0;
-//            element.displacement[4][1][0] = 0;
-//            element.displacement[4][2][0] = 0;
-//
-//            element.displacement[5][0][0] = 0;
-//            element.displacement[5][1][0] = 0;
-//            element.displacement[5][2][0] = 0.5;
-//
-//            element.displacement[6][0][0] = 0;
-//            element.displacement[6][1][0] = 0;
-//            element.displacement[6][2][0] = 0.5;
-//
-//            element.displacement[7][0][0] = 0;
-//            element.displacement[7][1][0] = 0;
-//            element.displacement[7][2][0] = 0;
-//        }
 
         if (corotation.isactive) {
             corotation.simd(element);

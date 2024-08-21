@@ -3,17 +3,17 @@
 DEFAULT_ARGS {
   0    HEXA8;
 
-  1        2;
-  2        2;
+  1        1;
+  2        1;
   3        1;
 
-  4        2;
-  5        2;
-  6        2;
+  4        1;
+  5        1;
+  6        1;
 
-  7        4;
-  8        4;
-  9        8;
+  7        5;
+  8        1;
+  9        1;
 }
 
 INPUT_TYPE              GENERATOR;
@@ -27,12 +27,16 @@ GENERATOR {
     START_Y                    0;
     START_Z                    0;
 
-    LENGTH_X                   1;
+    LENGTH_X                   5;
     LENGTH_Y                   1;
     LENGTH_Z                   1;
 
     NODES {
       FIX   <0 , 0> <0 , 1> <0 , 1>;
+    }
+
+    FACES {
+      PRESS <5 , 5> <0 , 1> <0 , 1>;
     }
 
     ELEMENT_TYPE          [ARG0];
@@ -64,7 +68,7 @@ STRUCTURAL_MECHANICS {
         MODEL   ISOTROPIC;
 
         MIXY          0.3;
-        EX          2.1E9;
+        EX         2.1E11;
       }
 
       THERMAL_EXPANSION {
@@ -79,16 +83,12 @@ STRUCTURAL_MECHANICS {
 
   LOAD_STEPS_SETTINGS {
     1 {
-      DURATION_TIME  .001;
-      TYPE      TRANSIENT;
-      MODE      NONLINEAR;
-      SOLVER         FETI;
+      DURATION_TIME   0.1;
+      TYPE        TRANSIENT;
+      MODE        NONLINEAR;
+      SOLVER        MKLPDSS;
 
-      LARGE_DISPLACEMENT      TRUE;
-
-      TRANSIENT_SOLVER {
-        TIME_STEP     .0001;
-      }
+      COROTATION       TRUE;
 
       FETI {
         METHOD          TOTAL_FETI;
@@ -98,19 +98,41 @@ STRUCTURAL_MECHANICS {
         PRECISION             1e-9;
       }
 
+      NONLINEAR_SOLVER {
+        MAX_ITERATIONS                     15;
+        REQUESTED_DISPLACEMENT_RESIDUAL  1e-3;
+      }
+
+      TRANSIENT_SOLVER {
+        TIME_STEP    0.001;
+
+        DAMPING {
+          RAYLEIGH {
+            TYPE   DIRECT;
+            DIRECT_DAMPING {
+              STIFFNESS   0;
+              MASS        0;
+            }
+          }
+        }
+      }
+
       DISPLACEMENT {
         FIX   { X 0 ; Y 0 ; Z 0; }
       }
 
-      ACCELERATION {
-        ALL_ELEMENTS   { Z 9.8066; };
+      PRESSURE {
+        PRESS {
+          PRESSURE     1e9;
+          DIRECTION { Z -1; }
+        }
       }
     }
   }
 }
 
 OUTPUT {
-#  RESULTS_STORE_FREQUENCY            NEVER;
+#  RESULTS_STORE_FREQUENCY           NEVER;
   MONITORS_STORE_FREQUENCY   EVERY_SUBSTEP;
 
   STORE_RESULTS         ALL;

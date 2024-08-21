@@ -13,7 +13,7 @@ struct MatrixCorotation: SubKernel {
     MatrixCorotation()
     {
         isconst = false;
-        action = SubKernel::ASSEMBLE | SubKernel::REASSEMBLE;
+        action = SubKernel::ASSEMBLE | SubKernel::REASSEMBLE | SubKernel::ITERATION;
     }
 
     void activate()
