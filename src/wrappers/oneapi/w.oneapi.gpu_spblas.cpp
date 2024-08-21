@@ -139,6 +139,8 @@ namespace spblas {
     {
         descr = std::make_shared<_descr_matrix_csr>();
         onesparse::init_matrix_handle(&descr->d);
+        if(fill != 'N') onesparse::set_matrix_property(descr->d, onesparse::property::symmetric);
+        onesparse::set_matrix_property(descr->d, onesparse::property::sorted);
         descr->nrows = nrows;
         descr->nnz = nnz;
         descr->fill = fill;
@@ -253,7 +255,7 @@ namespace spblas {
     {
         T one = 1.0;
         if(stage == 'B') buffersize = 0;
-        // if(stage == 'P') ;
+        if(stage == 'P') onesparse::optimize_trsv(h->qq, _char_to_uplofill(matrix->fill), _char_to_operation(op), onemkl::diag::nonunit, matrix->d);
         // if(stage == 'U') ;
         if(stage == 'C') onesparse::trsv(h->qq, _char_to_uplofill(matrix->fill), _char_to_operation(op), onemkl::diag::nonunit, one, matrix->d, (T*)rhs->vals, (T*)sol->vals);
     }
@@ -265,7 +267,7 @@ namespace spblas {
             if(rhs->order == sol->order) {
                 T one = 1.0;
                 if(stage == 'B') buffersize = 0;
-                // if(stage == 'P') ;
+                if(stage == 'P') onesparse::optimize_trsm(h->qq, _char_to_layout(sol->order), _char_to_uplofill(matrix->fill), _char_to_operation(op_mat), onemkl::diag::nonunit, matrix->d, sol->ncols);
                 // if(stage == 'U') ;
                 if(stage == 'C') onesparse::trsm(h->qq, _char_to_layout(sol->order), _char_to_operation(op_mat), _char_to_operation(op_rhs), _char_to_uplofill(matrix->fill), onemkl::diag::nonunit, one, matrix->d, (T*)rhs->vals, sol->ncols, rhs->ld, (T*)sol->vals, sol->ld);
             }
@@ -295,7 +297,7 @@ namespace spblas {
         T zero = 0.0;
         T one = 1.0;
         if(stage == 'B') buffersize = 0;
-        // if(stage == 'P') ;
+        if(stage == 'P') onesparse::optimize_gemv(h->qq, _char_to_operation(op), A->d);
         if(stage == 'C') onesparse::gemv(h->qq, _char_to_operation(op), one, A->d, (T*)x->vals, zero, (T*)y->vals);
     }
 
