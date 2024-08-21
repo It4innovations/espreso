@@ -2,6 +2,9 @@
 #ifdef HAVE_ONEAPI
 
 #include "gpu/gpu_spblas.h"
+#include "w.oneapi.gpu_management.h"
+#include "basis/utilities/utils.h"
+#include <oneapi/mkl.hpp>
 
 namespace espreso {
 namespace gpu {
@@ -36,6 +39,7 @@ namespace spblas {
             switch(c) {
                 case 'R': return onemkl::layout::row_major;
                 case 'C': return onemkl::layout::col_major;
+                default: eslog::error("invalid layout '%c'\n", c);
             }
         }
         
@@ -54,16 +58,16 @@ namespace spblas {
                 , dense_vals(dv)
                 , dense_ld(ld)
             {}
-            void operator()(sycl::nd_item<1> item) {
+            void operator()(sycl::nd_item<1> item) const {
                 sycl::group g = item.get_group();
                 I row = g.get_group_linear_id();
                 I start = sparse_rowptrs[row];
                 I end = sparse_rowptrs[row+1];
-                for(I i = start + g.get_local_linear_id(); i < end; i += g.get_local_linear_range(0)) {
+                for(I i = start + g.get_local_linear_id(); i < end; i += g.get_local_linear_range()) {
                     I col = sparse_colidxs[i];
                     I val = sparse_vals[i];
-                    if constexpr(order == 'R') dense_vals[row * dense_ld + col];
-                    if constexpr(order == 'C') dense_vals[row + dense_ld * col];
+                    if constexpr(order == 'R') dense_vals[row * dense_ld + col] = val;
+                    if constexpr(order == 'C') dense_vals[row + dense_ld * col] = val;
                 }
             }
         };
@@ -87,12 +91,13 @@ namespace spblas {
         void * colidxs = nullptr;
         void * vals = nullptr;
         int64_t nrows = -1;
+        int64_t nnz = -1;
         char fill = '_';
     };
 
     struct _descr_matrix_dense
     {
-        T * vals = nullptr;
+        void * vals = nullptr;
         int64_t nrows = -1;
         int64_t ncols = -1;
         int64_t ld = -1;
@@ -108,7 +113,7 @@ namespace spblas {
 
     struct _descr_vector_dense
     {
-        T * vals = nullptr;
+        void * vals = nullptr;
     };
 
     struct _descr_sparse_trsv {};
@@ -133,20 +138,21 @@ namespace spblas {
     void descr_matrix_csr_create(handle & h, descr_matrix_csr & descr, I nrows, I ncols, I nnz, char fill)
     {
         descr = std::make_shared<_descr_matrix_csr>();
-        onesparse::init_matrix_handle(descr->h);
+        onesparse::init_matrix_handle(&descr->d);
         descr->nrows = nrows;
+        descr->nnz = nnz;
         descr->fill = fill;
     }
 
     template<typename T, typename I, typename A>
     void descr_matrix_csr_link_data(handle & h, descr_matrix_csr & descr, Matrix_CSR<T,I,A> & matrix)
     {
-        onesparse::set_csr_data(h->qq, descr->d, matrix.nrows, matrix.ncols, onemkl::index_base::zero, matrix->rows, matrix->cols, matrix->vals);
+        onesparse::set_csr_data(h->qq, descr->d, matrix.nrows, matrix.ncols, onemkl::index_base::zero, matrix.rows, matrix.cols, matrix.vals);
     }
 
     void descr_matrix_csr_destroy(handle & h, descr_matrix_csr & descr)
     {
-        onesparse::release_matrix_handle(h->qq, descr->d);
+        onesparse::release_matrix_handle(h->qq, &descr->d);
 
         descr.reset();
     }
@@ -211,16 +217,16 @@ namespace spblas {
     void transpose(handle & h, descr_matrix_csr & output, descr_matrix_csr & input, bool conjugate, size_t & buffersize, void * /*buffer*/, char stage)
     {
         if constexpr(utils::is_real<T>()) conjugate = false;
-        char op = (conjugate ? 'H', 'T');
-        if(stage == 'B') bufersize = 0;
+        char op = (conjugate ? 'H' : 'T');
+        if(stage == 'B') buffersize = 0;
         // if(stage == 'P') ;
-        if(stage == 'C') onesparse::omatcopy(h->qq, _char_to_operation(op), input->h, output->h);
+        if(stage == 'C') onesparse::omatcopy(h->qq, _char_to_operation(op), input->d, output->d);
     }
 
     template<typename T, typename I>
     void sparse_to_dense(handle & h, char op, descr_matrix_csr & sparse, descr_matrix_dense & dense, size_t & /*buffersize*/, void * /*buffer*/, char stage)
     {
-        q.fill(dense->vals, T{0}, dense->nrows * dense->ld);
+        h->qq.fill(dense->vals, T{0}, dense->nrows * dense->ld);
 
         I avg_nnz_per_row = sparse->nnz / sparse->nrows;
         int workitems_in_workgroup = std::clamp(avg_nnz_per_row, 64, 1024);
@@ -228,13 +234,13 @@ namespace spblas {
         if(dense->order == 'R') {
             h->qq.parallel_for(
                 range,
-                kernel_functor_sp2dn<T,I,'R'>(sparse->rowptrs, sparse->colidxs, sparse->vals, dense->vals, dense->ld)
+                kernel_functor_sp2dn<T,I,'R'>((I*)sparse->rowptrs, (I*)sparse->colidxs, (T*)sparse->vals, (T*)dense->vals, dense->ld)
             );
         }
         else if(dense->order == 'C') {
             h->qq.parallel_for(
                 range,
-                kernel_functor_sp2dn<T,I,'C'>(sparse->rowptrs, sparse->colidxs, sparse->vals, dense->vals, dense->ld)
+                kernel_functor_sp2dn<T,I,'C'>((I*)sparse->rowptrs, (I*)sparse->colidxs, (T*)sparse->vals, (T*)dense->vals, dense->ld)
             );
         }
         else {
@@ -246,10 +252,10 @@ namespace spblas {
     void trsv(handle & h, char op, descr_matrix_csr & matrix, descr_vector_dense & rhs, descr_vector_dense & sol, descr_sparse_trsv & /*descr_trsv*/, size_t & buffersize, void * /*buffer*/, char stage)
     {
         T one = 1.0;
-        if(stage == 'B') bufersize = 0;
+        if(stage == 'B') buffersize = 0;
         // if(stage == 'P') ;
         // if(stage == 'U') ;
-        if(stage == 'C') onesparse::trsv(h->qq, _char_to_uplofill(matrix->fill), _char_to_operation(op), onemkl::diag::nonunit, one, matrix->d, rhs->vals, sol->vals);
+        if(stage == 'C') onesparse::trsv(h->qq, _char_to_uplofill(matrix->fill), _char_to_operation(op), onemkl::diag::nonunit, one, matrix->d, (T*)rhs->vals, (T*)sol->vals);
     }
 
     template<typename T, typename I>
@@ -258,10 +264,10 @@ namespace spblas {
         if(op_sol == 'N') {
             if(rhs->order == sol->order) {
                 T one = 1.0;
-                if(stage == 'B') bufersize = 0;
+                if(stage == 'B') buffersize = 0;
                 // if(stage == 'P') ;
                 // if(stage == 'U') ;
-                if(stage == 'C') onesparse::trsm(h->qq, _char_to_layout(sol->order), _char_to_operation(op_mat), _char_to_operation(op_rhs), _char_to_uplofill(matrix->fill), onemkl::diag::nonunit, one, matrix->d, rhs->vals, sol->ncols, rhs->ld, sol->vals, sol->ld);
+                if(stage == 'C') onesparse::trsm(h->qq, _char_to_layout(sol->order), _char_to_operation(op_mat), _char_to_operation(op_rhs), _char_to_uplofill(matrix->fill), onemkl::diag::nonunit, one, matrix->d, (T*)rhs->vals, sol->ncols, rhs->ld, (T*)sol->vals, sol->ld);
             }
             else {
                 descr_matrix_dense rhs_compl = std::make_shared<_descr_matrix_dense>(rhs->get_complementary());
@@ -288,9 +294,9 @@ namespace spblas {
     {
         T zero = 0.0;
         T one = 1.0;
-        if(stage == 'B') bufersize = 0;
+        if(stage == 'B') buffersize = 0;
         // if(stage == 'P') ;
-        if(stage == 'C') onesparse::gemv(h->qq, _char_to_operation(op), one, A->d, x->vals, zero, y->vals);
+        if(stage == 'C') onesparse::gemv(h->qq, _char_to_operation(op), one, A->d, (T*)x->vals, zero, (T*)y->vals);
     }
 
     template<typename T, typename I>
@@ -299,12 +305,12 @@ namespace spblas {
         if(B->order == C->order) {
             T zero = 0.0;
             T one = 1.0;
-            if(stage == 'B') bufersize = 0;
+            if(stage == 'B') buffersize = 0;
             // if(stage == 'P') ;
-            if(stage == 'C') onesparse::gemm(h->qq, _char_to_layout(C->order), _char_to_operation(op_A), _char_to_operation(op_B), one, A->d, B->vals, C->ncols, B->ld, zero, C->vals, C->ld);
+            if(stage == 'C') onesparse::gemm(h->qq, _char_to_layout(C->order), _char_to_operation(op_A), _char_to_operation(op_B), one, A->d, (T*)B->vals, C->ncols, B->ld, zero, (T*)C->vals, C->ld);
         }
         else {
-            descr_matrix_dense B_compl = std::make_shared<_descr_matrix_dense>(B.get_complementary());
+            descr_matrix_dense B_compl = std::make_shared<_descr_matrix_dense>(B->get_complementary());
             char op_B_compl = mgm::operation_combine(op_B, 'T');
             mm<T,I>(h, op_A, op_B_compl, A, B_compl, C, buffersize, buffer, stage);
         }

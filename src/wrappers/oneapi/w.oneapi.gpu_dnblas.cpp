@@ -3,6 +3,7 @@
 
 #include "gpu/gpu_dnblas.h"
 #include "w.oneapi.gpu_management.h"
+#include "basis/utilities/utils.h"
 #include <oneapi/mkl.hpp>
 
 namespace espreso {

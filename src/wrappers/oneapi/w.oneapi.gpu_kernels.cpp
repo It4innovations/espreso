@@ -2,6 +2,8 @@
 #ifdef HAVE_ONEAPI
 
 #include "gpu/gpu_kernels.h"
+#include "w.oneapi.gpu_management.h"
+#include "basis/utilities/utils.h"
 
 namespace espreso {
 namespace gpu {
@@ -12,7 +14,7 @@ namespace kernels {
         template<typename T>
         void my_atomicadd(T * dst, T val)
         {
-            sycl::atomic_ref<T, sycl::memory_order::relaxed, sycl::memory_scope::device, sycl::access::address_space::global_space> dst_ref(&val);
+            sycl::atomic_ref<T, sycl::memory_order::relaxed, sycl::memory_scope::device, sycl::access::address_space::global_space> dst_ref(*dst);
             dst_ref += val;
         }
         template<typename T>
@@ -32,7 +34,7 @@ namespace kernels {
         T ** domain_vectors = domain_vector_pointers.vals;
         I * n_dofs_interfaces_vals = n_dofs_interfaces.vals;
         T * cluster_vector_vals = cluster_vector.vals;
-        I * D2Cs_vals = D2Cs.vals;
+        I ** D2Cs_vals = D2Cs.vals;
         q->q.parallel_for(
             range,
             [=](sycl::nd_item<1> item) {
@@ -57,7 +59,7 @@ namespace kernels {
         T ** domain_vectors = domain_vector_pointers.vals;
         I * n_dofs_interfaces_vals = n_dofs_interfaces.vals;
         T * cluster_vector_vals = cluster_vector.vals;
-        I * D2Cs_vals = D2Cs.vals;
+        I ** D2Cs_vals = D2Cs.vals;
         q->q.parallel_for(
             range,
             [=](sycl::nd_item<1> item) {
@@ -76,7 +78,62 @@ namespace kernels {
     template<typename T, typename I, typename Ao, typename Ai>
     void copy_matrix_triangle(mgm::queue & q, Matrix_Dense<T,I,Ao> & output, const Matrix_Dense<T,I,Ai> & input, char fill, char order)
     {
+        static_assert(Ao::is_data_device_accessible, "matrix data has to be device accessible");
+        static_assert(Ai::is_data_device_accessible, "matrix data has to be device accessible");
+        if(output.nrows != input.nrows || output.ncols != input.ncols || input.nrows != input.ncols) eslog::error("matrix dimensions do not match\n");
 
+        if(order == 'R') {
+            int wpw = 256;
+            int ngroups = (input.nrows - 1) / 2 + 1;
+            T * output_vals = output.vals;
+            T * input_vals = input.vals;
+            I output_ld = output.get_ld();
+            I input_ld = input.get_ld();
+            I n = input.nrows;
+            q->q.parallel_for(
+                sycl::nd_range(sycl::range<1>(ngroups * wpw), sycl::range<1>(wpw)),
+                [=](sycl::nd_item<1> item) {
+                    // assuming row-major matrix
+                    // launch with (n-1)/2+1 blocks (one block per two rows)
+                    // each block handles rows blockIdx.x (for stage=0) and n-blockIdx.x-1 (for stage=1).
+                    // in stage=0, warps are normally sequential next to each other
+                    // in stage=1, the order of warps is reversed for better load balance between warps
+
+                    sycl::group g = item.get_group();
+                    sycl::sub_group sg = item.get_sub_group();
+                    I wgidx = g.get_group_linear_id();
+                    I wgsize = g.get_group_linear_range();
+                    I sgidx = sg.get_group_linear_id();
+                    I sgcount = sg.get_group_linear_range();
+                    I sgsize = sg.get_max_local_range()[0];
+                    I idxinsg = sg.get_local_linear_id();
+                    #pragma unroll
+                    for(int stage = 0; stage <= 1; stage++) {
+                        if(stage == 1 && g.get_group_linear_id() == n/2) return;
+                        I r = (stage == 0) ? (wgidx) : (n - wgidx - 1);
+                        I chunk_idx = (stage == 0) ? (sgidx) : (sgcount - sgidx - 1);
+                        I myidx = chunk_idx * sgsize + idxinsg;
+                        const T * row_in = input_vals + r * input_ld;
+                        T * row_out = output_vals + r * output_ld;
+                        if(fill == 'L') {
+                            for(I c = myidx; c <= r; c += wgsize) row_out[c] = row_in[c];
+                        }
+                        if(fill == 'U') {
+                            I skip_leaps = r / wgsize;
+                            for(I c = skip_leaps * wgsize + myidx; c < n; c += wgsize) if(c >= r) row_out[c] = row_in[c];
+                        }
+                    }
+                    
+                }
+            );
+        }
+        else if(order == 'C') {
+            char fill_compl = mgm::fill_change(fill);
+            copy_matrix_triangle(q, output, input, fill_compl, 'R');
+        }
+        else {
+            eslog::error("invalid order %c\n", order);
+        }
     }
 
 }

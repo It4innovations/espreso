@@ -50,10 +50,6 @@ namespace mgm {
 
     void device_wait();
 
-    void event_record(event & e, queue & q);
-
-    void event_wait(event & e);
-
     size_t get_device_memory_capacity();
 
     void * memalloc_device(size_t num_bytes);

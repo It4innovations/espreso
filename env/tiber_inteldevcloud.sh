@@ -2,7 +2,7 @@
 
 
 
-if [[ "$(which icpx)" != *"2024.1"* ]]
+if [[ "$(which icpx)" != *"2024.2"* ]]
 then
     echo
     echo "Warning, default Intel toolkit changed, things might work differently"
@@ -52,8 +52,7 @@ then
 
         mkdir -p build
         cd build
-        # cmake -DCMAKE_C_COMPILER=icx -DENABLE_CUDA=false -DSUITESPARSE_ENABLE_PROJECTS="cholmod" -DCMAKE_INSTALL_PREFIX=.. ..
-        cmake -DCMAKE_C_COMPILER=icx -DCMAKE_C_FLAGS="-g" -DENABLE_CUDA=false -DSUITESPARSE_ENABLE_PROJECTS="cholmod" -DCMAKE_INSTALL_PREFIX=.. ..
+        cmake -DCMAKE_C_COMPILER=icx -DCMAKE_Fortran_COMPILER=ifx -DENABLE_CUDA=false -DSUITESPARSE_ENABLE_PROJECTS="cholmod" -DCMAKE_INSTALL_PREFIX=.. ..
         cmake --build . -j $(nproc)
         cmake --install .
     )
@@ -72,7 +71,7 @@ then
 fi
 export LIBRARY_PATH="${PWD}/build:${LIBRARY_PATH}"
 export LD_LIBRARY_PATH="${PWD}/build:${LD_LIBRARY_PATH}"
-export LD_PRELOAD="${PWD}/build/libirc.so:${LD_PRELOAD}"
+# export LD_PRELOAD="${PWD}/build/libirc.so:${LD_PRELOAD}"
 
 
 

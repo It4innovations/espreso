@@ -188,30 +188,31 @@ TotalFETIGpu<T,I>::~TotalFETIGpu()
     tm_descriptors.start();
     for(size_t di = 0; di < n_domains; di++) {
         per_domain_stuff & data = domain_data[di];
+        gpu::spblas::handle & hs = handles_sparse[di % n_queues];
 
-        gpu::spblas::descr_matrix_csr_destroy(data.descr_L_sp);
-        gpu::spblas::descr_matrix_csr_destroy(data.descr_LH_sp);
-        gpu::spblas::descr_matrix_csr_destroy(data.descr_U_sp);
-        gpu::spblas::descr_matrix_csr_destroy(data.descr_UH_sp);
-        gpu::spblas::descr_matrix_csr_destroy(data.descr_Bperm_sp);
-        gpu::spblas::descr_matrix_dense_destroy(data.descr_L_dn);
-        gpu::spblas::descr_matrix_dense_destroy(data.descr_LH_dn);
-        gpu::spblas::descr_matrix_dense_destroy(data.descr_U_dn);
-        gpu::spblas::descr_matrix_dense_destroy(data.descr_UH_dn);
-        gpu::spblas::descr_matrix_dense_destroy(data.descr_X);
-        gpu::spblas::descr_matrix_dense_destroy(data.descr_Y);
-        gpu::spblas::descr_matrix_dense_destroy(data.descr_F);
-        gpu::spblas::descr_matrix_dense_destroy(data.descr_F_tmp);
-        gpu::spblas::descr_sparse_trsm_destroy(data.descr_sparse_trsm1);
-        gpu::spblas::descr_sparse_trsm_destroy(data.descr_sparse_trsm2);
-        gpu::spblas::descr_vector_dense_destroy(data.descr_xvec);
-        gpu::spblas::descr_vector_dense_destroy(data.descr_yvec);
-        gpu::spblas::descr_vector_dense_destroy(data.descr_zvec);
-        gpu::spblas::descr_vector_dense_destroy(data.descr_wvec);
-        gpu::spblas::descr_sparse_trsv_destroy(data.descr_sparse_trsv1);
-        gpu::spblas::descr_sparse_trsv_destroy(data.descr_sparse_trsv2);
-        gpu::spblas::descr_sparse_mv_destroy(data.descr_sparse_spmv1);
-        gpu::spblas::descr_sparse_mv_destroy(data.descr_sparse_spmv2);
+        gpu::spblas::descr_matrix_csr_destroy(hs, data.descr_L_sp);
+        gpu::spblas::descr_matrix_csr_destroy(hs, data.descr_LH_sp);
+        gpu::spblas::descr_matrix_csr_destroy(hs, data.descr_U_sp);
+        gpu::spblas::descr_matrix_csr_destroy(hs, data.descr_UH_sp);
+        gpu::spblas::descr_matrix_csr_destroy(hs, data.descr_Bperm_sp);
+        gpu::spblas::descr_matrix_dense_destroy(hs, data.descr_L_dn);
+        gpu::spblas::descr_matrix_dense_destroy(hs, data.descr_LH_dn);
+        gpu::spblas::descr_matrix_dense_destroy(hs, data.descr_U_dn);
+        gpu::spblas::descr_matrix_dense_destroy(hs, data.descr_UH_dn);
+        gpu::spblas::descr_matrix_dense_destroy(hs, data.descr_X);
+        gpu::spblas::descr_matrix_dense_destroy(hs, data.descr_Y);
+        gpu::spblas::descr_matrix_dense_destroy(hs, data.descr_F);
+        gpu::spblas::descr_matrix_dense_destroy(hs, data.descr_F_tmp);
+        gpu::spblas::descr_sparse_trsm_destroy(hs, data.descr_sparse_trsm1);
+        gpu::spblas::descr_sparse_trsm_destroy(hs, data.descr_sparse_trsm2);
+        gpu::spblas::descr_vector_dense_destroy(hs, data.descr_xvec);
+        gpu::spblas::descr_vector_dense_destroy(hs, data.descr_yvec);
+        gpu::spblas::descr_vector_dense_destroy(hs, data.descr_zvec);
+        gpu::spblas::descr_vector_dense_destroy(hs, data.descr_wvec);
+        gpu::spblas::descr_sparse_trsv_destroy(hs, data.descr_sparse_trsv1);
+        gpu::spblas::descr_sparse_trsv_destroy(hs, data.descr_sparse_trsv2);
+        gpu::spblas::descr_sparse_mv_destroy(hs, data.descr_sparse_spmv1);
+        gpu::spblas::descr_sparse_mv_destroy(hs, data.descr_sparse_spmv2);
     }
     tm_descriptors.stop();
 
@@ -445,29 +446,31 @@ void TotalFETIGpu<T,I>::set(const step::Step &step)
         // create descriptors
         tm_descriptors.start();
         {
-            if(do_descr_sp_L)  gpu::spblas::descr_matrix_csr_create<T,I>(data.descr_L_sp,  data.n_dofs_domain, data.n_dofs_domain, data.n_nz_factor, 'L');
-            if(do_descr_sp_LH) gpu::spblas::descr_matrix_csr_create<T,I>(data.descr_LH_sp, data.n_dofs_domain, data.n_dofs_domain, data.n_nz_factor, 'U');
-            if(do_descr_sp_U)  gpu::spblas::descr_matrix_csr_create<T,I>(data.descr_U_sp,  data.n_dofs_domain, data.n_dofs_domain, data.n_nz_factor, 'U');
-            if(do_descr_sp_UH) gpu::spblas::descr_matrix_csr_create<T,I>(data.descr_UH_sp, data.n_dofs_domain, data.n_dofs_domain, data.n_nz_factor, 'L');
-            gpu::spblas::descr_matrix_csr_create<T,I>(data.descr_Bperm_sp, data.n_dofs_interface, data.n_dofs_domain, feti.B1[di].nnz, 'N');
-            if(do_descr_dn_L)  gpu::spblas::descr_matrix_dense_create<T,I>(data.descr_L_dn,  data.n_dofs_domain, data.n_dofs_domain, data.ld_domain, 'R');
-            if(do_descr_dn_LH) gpu::spblas::descr_matrix_dense_create<T,I>(data.descr_LH_dn, data.n_dofs_domain, data.n_dofs_domain, data.ld_domain, 'R');
-            if(do_descr_dn_U)  gpu::spblas::descr_matrix_dense_create<T,I>(data.descr_U_dn,  data.n_dofs_domain, data.n_dofs_domain, data.ld_domain, 'R');
-            if(do_descr_dn_UH) gpu::spblas::descr_matrix_dense_create<T,I>(data.descr_UH_dn, data.n_dofs_domain, data.n_dofs_domain, data.ld_domain, 'R');
-            if(need_X) gpu::spblas::descr_matrix_dense_create<T,I>(data.descr_X, data.n_dofs_domain, data.n_dofs_interface, data.ld_X, order_X);
-            if(need_Y) gpu::spblas::descr_matrix_dense_create<T,I>(data.descr_Y, data.n_dofs_domain, data.n_dofs_interface, data.ld_X, order_X);
-            if(need_F)     gpu::spblas::descr_matrix_dense_create<T,I>(data.descr_F,     data.n_dofs_interface, data.n_dofs_interface, data.ld_F, order_F);
-            if(need_f_tmp) gpu::spblas::descr_matrix_dense_create<T,I>(data.descr_F_tmp, data.n_dofs_interface, data.n_dofs_interface, data.ld_F, order_F);
-            if(do_trsm1_sp) gpu::spblas::descr_sparse_trsm_create(data.descr_sparse_trsm1);
-            if(do_trsm2_sp) gpu::spblas::descr_sparse_trsm_create(data.descr_sparse_trsm2);
-            if(is_implicit) gpu::spblas::descr_vector_dense_create<T,I>(data.descr_xvec, data.n_dofs_interface);
-            if(is_implicit) gpu::spblas::descr_vector_dense_create<T,I>(data.descr_yvec, data.n_dofs_interface);
-            if(is_implicit) gpu::spblas::descr_vector_dense_create<T,I>(data.descr_zvec, data.n_dofs_domain);
-            if(is_implicit) gpu::spblas::descr_vector_dense_create<T,I>(data.descr_wvec, data.n_dofs_domain);
-            if(is_implicit) gpu::spblas::descr_sparse_trsv_create(data.descr_sparse_trsv1);
-            if(is_implicit) gpu::spblas::descr_sparse_trsv_create(data.descr_sparse_trsv2);
-            if(is_implicit) gpu::spblas::descr_sparse_mv_create(data.descr_sparse_spmv1);
-            if(is_implicit) gpu::spblas::descr_sparse_mv_create(data.descr_sparse_spmv2);
+            gpu::spblas::handle & hs = handles_sparse[di % n_queues];
+
+            if(do_descr_sp_L)  gpu::spblas::descr_matrix_csr_create<T,I>(hs, data.descr_L_sp,  data.n_dofs_domain, data.n_dofs_domain, data.n_nz_factor, 'L');
+            if(do_descr_sp_LH) gpu::spblas::descr_matrix_csr_create<T,I>(hs, data.descr_LH_sp, data.n_dofs_domain, data.n_dofs_domain, data.n_nz_factor, 'U');
+            if(do_descr_sp_U)  gpu::spblas::descr_matrix_csr_create<T,I>(hs, data.descr_U_sp,  data.n_dofs_domain, data.n_dofs_domain, data.n_nz_factor, 'U');
+            if(do_descr_sp_UH) gpu::spblas::descr_matrix_csr_create<T,I>(hs, data.descr_UH_sp, data.n_dofs_domain, data.n_dofs_domain, data.n_nz_factor, 'L');
+            gpu::spblas::descr_matrix_csr_create<T,I>(hs, data.descr_Bperm_sp, data.n_dofs_interface, data.n_dofs_domain, feti.B1[di].nnz, 'N');
+            if(do_descr_dn_L)  gpu::spblas::descr_matrix_dense_create<T,I>(hs, data.descr_L_dn,  data.n_dofs_domain, data.n_dofs_domain, data.ld_domain, 'R');
+            if(do_descr_dn_LH) gpu::spblas::descr_matrix_dense_create<T,I>(hs, data.descr_LH_dn, data.n_dofs_domain, data.n_dofs_domain, data.ld_domain, 'R');
+            if(do_descr_dn_U)  gpu::spblas::descr_matrix_dense_create<T,I>(hs, data.descr_U_dn,  data.n_dofs_domain, data.n_dofs_domain, data.ld_domain, 'R');
+            if(do_descr_dn_UH) gpu::spblas::descr_matrix_dense_create<T,I>(hs, data.descr_UH_dn, data.n_dofs_domain, data.n_dofs_domain, data.ld_domain, 'R');
+            if(need_X) gpu::spblas::descr_matrix_dense_create<T,I>(hs, data.descr_X, data.n_dofs_domain, data.n_dofs_interface, data.ld_X, order_X);
+            if(need_Y) gpu::spblas::descr_matrix_dense_create<T,I>(hs, data.descr_Y, data.n_dofs_domain, data.n_dofs_interface, data.ld_X, order_X);
+            if(need_F)     gpu::spblas::descr_matrix_dense_create<T,I>(hs, data.descr_F,     data.n_dofs_interface, data.n_dofs_interface, data.ld_F, order_F);
+            if(need_f_tmp) gpu::spblas::descr_matrix_dense_create<T,I>(hs, data.descr_F_tmp, data.n_dofs_interface, data.n_dofs_interface, data.ld_F, order_F);
+            if(do_trsm1_sp) gpu::spblas::descr_sparse_trsm_create(hs, data.descr_sparse_trsm1);
+            if(do_trsm2_sp) gpu::spblas::descr_sparse_trsm_create(hs, data.descr_sparse_trsm2);
+            if(is_implicit) gpu::spblas::descr_vector_dense_create<T,I>(hs, data.descr_xvec, data.n_dofs_interface);
+            if(is_implicit) gpu::spblas::descr_vector_dense_create<T,I>(hs, data.descr_yvec, data.n_dofs_interface);
+            if(is_implicit) gpu::spblas::descr_vector_dense_create<T,I>(hs, data.descr_zvec, data.n_dofs_domain);
+            if(is_implicit) gpu::spblas::descr_vector_dense_create<T,I>(hs, data.descr_wvec, data.n_dofs_domain);
+            if(is_implicit) gpu::spblas::descr_sparse_trsv_create(hs, data.descr_sparse_trsv1);
+            if(is_implicit) gpu::spblas::descr_sparse_trsv_create(hs, data.descr_sparse_trsv2);
+            if(is_implicit) gpu::spblas::descr_sparse_mv_create(hs, data.descr_sparse_spmv1);
+            if(is_implicit) gpu::spblas::descr_sparse_mv_create(hs, data.descr_sparse_spmv2);
         }
         tm_descriptors.stop();
 
@@ -565,15 +568,15 @@ void TotalFETIGpu<T,I>::set(const step::Step &step)
         // set the pointers inside the descriptors of some matrices
         tm_setpointers.start();
         {
-            if(do_descr_sp_L)  gpu::spblas::descr_matrix_csr_link_data(data.descr_L_sp,  data.d_L_sp);
-            if(do_descr_sp_LH) gpu::spblas::descr_matrix_csr_link_data(data.descr_LH_sp, data.d_LH_sp);
-            if(do_descr_sp_U)  gpu::spblas::descr_matrix_csr_link_data(data.descr_U_sp,  data.d_U_sp);
-            if(do_descr_sp_UH) gpu::spblas::descr_matrix_csr_link_data(data.descr_UH_sp, data.d_UH_sp);
-            gpu::spblas::descr_matrix_csr_link_data(data.descr_Bperm_sp, data.d_Bperm_sp);
-            if(is_implicit) gpu::spblas::descr_vector_dense_link_data(data.descr_xvec, data.d_apply_x);
-            if(is_implicit) gpu::spblas::descr_vector_dense_link_data(data.descr_yvec, data.d_apply_y);
-            if(is_implicit) gpu::spblas::descr_vector_dense_link_data(data.descr_zvec, data.d_apply_z);
-            if(is_implicit) gpu::spblas::descr_vector_dense_link_data(data.descr_wvec, data.d_apply_w);
+            if(do_descr_sp_L)  gpu::spblas::descr_matrix_csr_link_data(hs, data.descr_L_sp,  data.d_L_sp);
+            if(do_descr_sp_LH) gpu::spblas::descr_matrix_csr_link_data(hs, data.descr_LH_sp, data.d_LH_sp);
+            if(do_descr_sp_U)  gpu::spblas::descr_matrix_csr_link_data(hs, data.descr_U_sp,  data.d_U_sp);
+            if(do_descr_sp_UH) gpu::spblas::descr_matrix_csr_link_data(hs, data.descr_UH_sp, data.d_UH_sp);
+            gpu::spblas::descr_matrix_csr_link_data(hs, data.descr_Bperm_sp, data.d_Bperm_sp);
+            if(is_implicit) gpu::spblas::descr_vector_dense_link_data(hs, data.descr_xvec, data.d_apply_x);
+            if(is_implicit) gpu::spblas::descr_vector_dense_link_data(hs, data.descr_yvec, data.d_apply_y);
+            if(is_implicit) gpu::spblas::descr_vector_dense_link_data(hs, data.descr_zvec, data.d_apply_z);
+            if(is_implicit) gpu::spblas::descr_vector_dense_link_data(hs, data.descr_wvec, data.d_apply_w);
         }
         tm_setpointers.stop();
 
@@ -634,7 +637,8 @@ void TotalFETIGpu<T,I>::set(const step::Step &step)
                 data.d_F.vals += data.d_F.get_ld();
             }
             if(is_path_trsm) {
-                gpu::spblas::descr_matrix_dense_link_data(data.descr_F, data.d_F);
+                gpu::spblas::handle & hs = handles_sparse[di % n_queues];
+                gpu::spblas::descr_matrix_dense_link_data(hs, data.descr_F, data.d_F);
             }
         }
     }
@@ -1016,13 +1020,13 @@ void TotalFETIGpu<T,I>::update(const step::Step &step)
         tm_setpointers.start();
         {
             if(is_explicit) {
-                if(do_descr_dn_L)  gpu::spblas::descr_matrix_dense_link_data(data.descr_L_dn,  *data.d_L_dn);
-                if(do_descr_dn_LH) gpu::spblas::descr_matrix_dense_link_data(data.descr_LH_dn, *data.d_LH_dn);
-                if(do_descr_dn_U)  gpu::spblas::descr_matrix_dense_link_data(data.descr_U_dn,  *data.d_U_dn);
-                if(do_descr_dn_UH) gpu::spblas::descr_matrix_dense_link_data(data.descr_UH_dn, *data.d_UH_dn);
-                if(need_X) gpu::spblas::descr_matrix_dense_link_data(data.descr_X, *data.d_X);
-                if(need_Y) gpu::spblas::descr_matrix_dense_link_data(data.descr_Y, *data.d_Y);
-                if(need_f_tmp) gpu::spblas::descr_matrix_dense_link_data(data.descr_F_tmp, *data.d_F_tmp);
+                if(do_descr_dn_L)  gpu::spblas::descr_matrix_dense_link_data(hs, data.descr_L_dn,  *data.d_L_dn);
+                if(do_descr_dn_LH) gpu::spblas::descr_matrix_dense_link_data(hs, data.descr_LH_dn, *data.d_LH_dn);
+                if(do_descr_dn_U)  gpu::spblas::descr_matrix_dense_link_data(hs, data.descr_U_dn,  *data.d_U_dn);
+                if(do_descr_dn_UH) gpu::spblas::descr_matrix_dense_link_data(hs, data.descr_UH_dn, *data.d_UH_dn);
+                if(need_X) gpu::spblas::descr_matrix_dense_link_data(hs, data.descr_X, *data.d_X);
+                if(need_Y) gpu::spblas::descr_matrix_dense_link_data(hs, data.descr_Y, *data.d_Y);
+                if(need_f_tmp) gpu::spblas::descr_matrix_dense_link_data(hs, data.descr_F_tmp, *data.d_F_tmp);
             }
         }
         tm_setpointers.stop();
@@ -1569,10 +1573,10 @@ void TotalFETIGpu<T,I>::apply_implicit_compute(size_t di, my_timer & tm_allocinp
 
     tm_setpointers.start();
     {
-        if(do_descr_dn_L)  gpu::spblas::descr_matrix_dense_link_data(data.descr_L_dn,  *data.d_L_dn);
-        if(do_descr_dn_LH) gpu::spblas::descr_matrix_dense_link_data(data.descr_LH_dn, *data.d_LH_dn);
-        if(do_descr_dn_U)  gpu::spblas::descr_matrix_dense_link_data(data.descr_U_dn,  *data.d_U_dn);
-        if(do_descr_dn_UH) gpu::spblas::descr_matrix_dense_link_data(data.descr_UH_dn, *data.d_UH_dn);
+        if(do_descr_dn_L)  gpu::spblas::descr_matrix_dense_link_data(hs, data.descr_L_dn,  *data.d_L_dn);
+        if(do_descr_dn_LH) gpu::spblas::descr_matrix_dense_link_data(hs, data.descr_LH_dn, *data.d_LH_dn);
+        if(do_descr_dn_U)  gpu::spblas::descr_matrix_dense_link_data(hs, data.descr_U_dn,  *data.d_U_dn);
+        if(do_descr_dn_UH) gpu::spblas::descr_matrix_dense_link_data(hs, data.descr_UH_dn, *data.d_UH_dn);
     }
     tm_setpointers.stop();
 

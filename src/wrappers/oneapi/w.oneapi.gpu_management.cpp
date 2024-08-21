@@ -4,7 +4,11 @@
 #include "gpu/gpu_management.h"
 #include "w.oneapi.gpu_management.h"
 #include "basis/utilities/cbmb_allocator.h"
+#pragma clang diagnostic push
+#pragma clang diagnostic ignored "-Wunused-function"
+#pragma clang diagnostic ignored "-Wunneeded-internal-declaration"
 #include <dpct/dpct.hpp>
+#pragma clang diagnostic pop
 
 namespace espreso {
 namespace gpu {
@@ -66,12 +70,14 @@ namespace mgm {
 
     size_t get_device_memory_capacity()
     {
-        device.get_info<sycl::info::device::global_mem_size>();
+        size_t capacity = default_device->d.get_info<sycl::info::device::global_mem_size>();
+        return capacity;
     }
 
     void * memalloc_device(size_t num_bytes)
     {
-        sycl::malloc_device(num_bytes, default_device->d, default_device->c);
+        void * ptr = sycl::malloc_device(num_bytes, default_device->d, default_device->c);
+        return ptr;
     }
 
     void memfree_device(void * ptr)
@@ -79,11 +85,19 @@ namespace mgm {
         sycl::free(ptr, default_device->c);
     }
 
-    void memalloc_device_max(void * & memory, size_t & memory_size_B, size_t max_needed) {}
+    void memalloc_device_max(void * & memory, size_t & memory_size_B, size_t max_needed)
+    {
+        size_t keep_free_percent = 5;
+        size_t size_free = default_device->d.get_info<sycl::ext::intel::info::device::free_memory>();
+        size_t can_allocate_max = ((100 - keep_free_percent) * size_free) / 100;
+        memory_size_B = std::min(can_allocate_max, max_needed);
+        memory = memalloc_device(memory_size_B);
+    }
 
     void * memalloc_hostpinned(size_t num_bytes)
     {
-        sycl::malloc_host(num_bytes, default_device->c);
+        void * ptr = sycl::malloc_host(num_bytes, default_device->c);
+        return ptr;
     }
 
     void memfree_hostpinned(void * ptr)
@@ -93,9 +107,11 @@ namespace mgm {
 
     void submit_host_function(queue & q, const std::function<void(void)> & f)
     {
-        q->q.single_task([=](){
-            f();
-        })
+        q->q.submit([&](sycl::handler & cgh){
+            cgh.host_task([=](){
+                f();
+            });
+        });
     }
 
     template<typename T>
@@ -135,7 +151,7 @@ namespace mgm {
             copy_submit_d2h(q, output.vals, input.vals, input.nrows * input.get_ld());
         }
         else {
-            dpct_memcpy(q->q, output.vals, input.vals, output.get_ld() * sizeof(T), input.get_ld() * sizeof(T), input.ncols, input.nrows);
+            dpct::async_dpct_memcpy(output.vals, output.get_ld() * sizeof(T), input.vals, input.get_ld() * sizeof(T), input.ncols * sizeof(T), input.nrows, dpct::memcpy_direction::automatic, q->q);
         }
     }
 
@@ -148,7 +164,7 @@ namespace mgm {
             copy_submit_h2d(q, output.vals, input.vals, input.nrows * input.get_ld());
         }
         else {
-            dpct_memcpy(q->q, output.vals, input.vals, output.get_ld() * sizeof(T), input.get_ld() * sizeof(T), input.ncols, input.nrows);
+            dpct::async_dpct_memcpy(output.vals, output.get_ld() * sizeof(T), input.vals, input.get_ld() * sizeof(T), input.ncols * sizeof(T), input.nrows, dpct::memcpy_direction::automatic, q->q);
         }
     }
     
