@@ -195,7 +195,7 @@ namespace mgm {
         else if constexpr(A::is_data_device_accessible) {
             Vector_Dense<T,I,Ah> vec_host;
             vec_host.resize(vec);
-            copy_submit_d2h(q, vec_host, vec);
+            copy_submit(q, vec_host, vec);
             queue_wait(q);
             print_vector(q, vec_host, name);
         }
@@ -229,7 +229,7 @@ namespace mgm {
         else if constexpr(A::is_data_device_accessible) {
             Matrix_Dense<T,I,Ah> matrix_host;
             matrix_host.resize(matrix);
-            copy_submit_d2h(q, matrix_host, matrix);
+            copy_submit(q, matrix_host, matrix);
             queue_wait(q);
             print_matrix_dense(q, matrix_host, name);
         }
@@ -267,7 +267,7 @@ namespace mgm {
         else if constexpr(A::is_data_device_accessible) {
             Matrix_CSR<T,I,Ah> matrix_host;
             matrix_host.resize(matrix);
-            copy_submit_d2h(q, matrix_host, matrix);
+            copy_submit(q, matrix_host, matrix);
             queue_wait(q);
             print_matrix_csr_as_dense(q, matrix_host, name);
         }
@@ -295,7 +295,7 @@ namespace mgm {
         else if constexpr(A::is_data_device_accessible) {
             Matrix_CSR<T,I,Ah> matrix_host;
             matrix_host.resize(matrix);
-            copy_submit_d2h(q, matrix_host, matrix);
+            copy_submit(q, matrix_host, matrix);
             queue_wait(q);
             print_matrix_csr_arrays(q, matrix_host, name);
         }
