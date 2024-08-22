@@ -402,6 +402,6 @@ def cxx_hook(self, node):
 def detect_intel_oneapi_compiler(ctx):
     ec = os.system("which " + ctx.env.CXX[0] + " > /dev/null 2>/dev/null")
     if ec != 0: return
-    ec = os.system(ctx.env.CXX[0] + " --version | grep -q \"oneAPI DPC++/C++ Compiler\"")
+    ec = os.system(ctx.env.CXX[0] + " --version 2>/dev/null | grep -q \"oneAPI DPC++/C++ Compiler\"")
     if ec != 0: return
     ctx.env.COMPILER_CXX = "icpx"

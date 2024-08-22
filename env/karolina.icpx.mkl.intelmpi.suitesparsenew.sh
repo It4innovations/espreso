@@ -5,7 +5,7 @@ mkdir -p "${DEPENDENCIES_DIR}"
 
 
 
-ml intel/2023b
+ml intel/2024a
 
 
 

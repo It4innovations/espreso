@@ -6,11 +6,12 @@ def options(opt):
 
 def configure(ctx):
     # assuming only intel oneapi for now
+    # assuming intel toolkit 2024+
 
     ctx.env.append_unique("CXXFLAGS", [ "-fsycl" ])
 
     headers = [ "sycl/sycl.hpp", "oneapi/mkl.hpp" ]
-    libs = [ "sycl", "mkl_sycl", "mkl_core", "mkl_sequential", "mkl_intel_lp64" ]
+    libs = [ "sycl", "mkl_sycl_blas", "mkl_sycl_sparse", "mkl_core", "mkl_sequential", "mkl_intel_lp64" ]
     ctx.check_cxx(mandatory=False, msg="Checking for 'oneapi'", okmsg=" ".join(libs), define_name="HAVE_ONEAPI", header_name=headers, lib=libs, uselib_store="ONEAPI", global_define=0)
 
     ctx.env.CXXFLAGS.remove("-fsycl")
