@@ -139,8 +139,6 @@ namespace spblas {
     {
         descr = std::make_shared<_descr_matrix_csr>();
         onesparse::init_matrix_handle(&descr->d);
-        if(fill != 'N') onesparse::set_matrix_property(descr->d, onesparse::property::symmetric);
-        onesparse::set_matrix_property(descr->d, onesparse::property::sorted);
         descr->nrows = nrows;
         descr->nnz = nnz;
         descr->fill = fill;
@@ -150,6 +148,11 @@ namespace spblas {
     void descr_matrix_csr_link_data(handle & h, descr_matrix_csr & descr, Matrix_CSR<T,I,A> & matrix)
     {
         onesparse::set_csr_data(h->qq, descr->d, matrix.nrows, matrix.ncols, onemkl::index_base::zero, matrix.rows, matrix.cols, matrix.vals);
+        descr->rowptrs = matrix.rows;
+        descr->colidxs = matrix.cols;
+        descr->vals = matrix.vals;
+        if(descr->fill != 'N') onesparse::set_matrix_property(descr->d, onesparse::property::symmetric);
+        onesparse::set_matrix_property(descr->d, onesparse::property::sorted);
     }
 
     void descr_matrix_csr_destroy(handle & h, descr_matrix_csr & descr)
@@ -221,7 +224,8 @@ namespace spblas {
         if constexpr(utils::is_real<T>()) conjugate = false;
         char op = (conjugate ? 'H' : 'T');
         if(stage == 'B') buffersize = 0;
-        // if(stage == 'P') ;
+#warning TODO do it my way and compare
+        if(stage == 'P') onesparse::omatcopy(h->qq, _char_to_operation(op), input->d, output->d);
         if(stage == 'C') onesparse::omatcopy(h->qq, _char_to_operation(op), input->d, output->d);
     }
 

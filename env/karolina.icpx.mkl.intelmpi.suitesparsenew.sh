@@ -65,6 +65,26 @@ export LD_LIBRARY_PATH="${PWD}/${SUITESPARSE_ROOT}/lib64:${LD_LIBRARY_PATH}"
 
 
 
+MY_DPCT_VERSION="2024.2.1"
+export DPCT_DIR="dpct_${MY_DPCT_VERSION}"
+export DPCT_ROOT="${DEPENDENCIES_DIR}/${DPCT_DIR}"
+if [ ! -d "${DPCT_ROOT}" ]
+then
+    (
+        echo "DPCT not installed, installing locally..."
+        cd "${DEPENDENCIES_DIR}"
+        mkdir "${DPCT_DIR}"
+        cd "${DPCT_DIR}"
+        mkdir install
+        wget "https://registrationcenter-download.intel.com/akdlm/IRC_NAS/e3b7b68d-65dd-4d03-9119-ce3ad448657e/l_dpcpp-ct_p_${MY_DPCT_VERSION}.64.sh"
+        rm -rf "${HOME}/intel/installercache"
+        bash "l_dpcpp-ct_p_${MY_DPCT_VERSION}.64.sh" -a --silent --eula=accept "--install-dir=${PWD}/install" --action=install
+    )
+fi
+source "${DPCT_ROOT}/install/setvars.sh" > /dev/null
+
+
+
 export CXX=mpiicpx
 export CXXFLAGS+=" -ferror-limit=1"
 
