@@ -613,11 +613,11 @@ void TotalFETIGpu<T,I>::set(const step::Step &step)
         // copy some matrices to device
         tm_copyin.start();
         {
-            if(do_copyin_L)  gpu::mgm::copy_submit_h2d(q, data.d_L_sp,  data.h_L_sp,  true, false);
-            if(do_copyin_U)  gpu::mgm::copy_submit_h2d(q, data.d_U_sp,  data.h_U_sp,  true, false);
-            if(do_copyin_LH) gpu::mgm::copy_submit_h2d(q, data.d_LH_sp, data.h_LH_sp, true, false);
-            if(do_copyin_UH) gpu::mgm::copy_submit_h2d(q, data.d_UH_sp, data.h_UH_sp, true, false);
-            gpu::mgm::copy_submit_h2d(q, data.d_Bperm_sp, data.h_Bperm_sp, true, true);
+            if(do_copyin_L)  gpu::mgm::copy_submit(q, data.d_L_sp,  data.h_L_sp,  true, false);
+            if(do_copyin_U)  gpu::mgm::copy_submit(q, data.d_U_sp,  data.h_U_sp,  true, false);
+            if(do_copyin_LH) gpu::mgm::copy_submit(q, data.d_LH_sp, data.h_LH_sp, true, false);
+            if(do_copyin_UH) gpu::mgm::copy_submit(q, data.d_UH_sp, data.h_UH_sp, true, false);
+            gpu::mgm::copy_submit(q, data.d_Bperm_sp, data.h_Bperm_sp, true, true);
             if(config->concurrency_set == CONCURRENCY::SEQ_WAIT) gpu::mgm::queue_wait(q);
         }
         tm_copyin.stop();
@@ -671,12 +671,12 @@ void TotalFETIGpu<T,I>::set(const step::Step &step)
             h_applyg_n_dofs_interfaces.vals[di] = domain_data[di].n_dofs_interface;
             h_applyg_D2Cs_pointers.vals[di] = domain_data[di].d_applyg_D2C.vals;
         }
-        gpu::mgm::copy_submit_h2d(main_q, d_applyg_xs_pointers,       h_applyg_xs_pointers);
-        gpu::mgm::copy_submit_h2d(main_q, d_applyg_ys_pointers,       h_applyg_ys_pointers);
-        gpu::mgm::copy_submit_h2d(main_q, d_applyg_n_dofs_interfaces, h_applyg_n_dofs_interfaces);
-        gpu::mgm::copy_submit_h2d(main_q, d_applyg_D2Cs_pointers,     h_applyg_D2Cs_pointers);
+        gpu::mgm::copy_submit(main_q, d_applyg_xs_pointers,       h_applyg_xs_pointers);
+        gpu::mgm::copy_submit(main_q, d_applyg_ys_pointers,       h_applyg_ys_pointers);
+        gpu::mgm::copy_submit(main_q, d_applyg_n_dofs_interfaces, h_applyg_n_dofs_interfaces);
+        gpu::mgm::copy_submit(main_q, d_applyg_D2Cs_pointers,     h_applyg_D2Cs_pointers);
         for(size_t di = 0; di < n_domains; di++) {
-            gpu::mgm::copy_submit_h2d(main_q, domain_data[di].d_applyg_D2C.vals, feti.D2C[di].data(), feti.D2C[di].size());
+            gpu::mgm::copy_submit(main_q, domain_data[di].d_applyg_D2C.vals, feti.D2C[di].data(), feti.D2C[di].size());
         }
         if(config->concurrency_set == CONCURRENCY::SEQ_WAIT) gpu::mgm::queue_wait(main_q);
     }
@@ -1034,10 +1034,10 @@ void TotalFETIGpu<T,I>::update(const step::Step &step)
         // copy the new factors to device
         tm_copyin.start();
         {
-            if(do_copyin_L)  gpu::mgm::copy_submit_h2d(q, data.d_L_sp,  data.h_L_sp,  false, true);
-            if(do_copyin_U)  gpu::mgm::copy_submit_h2d(q, data.d_U_sp,  data.h_U_sp,  false, true);
-            if(do_copyin_LH) gpu::mgm::copy_submit_h2d(q, data.d_LH_sp, data.h_LH_sp, false, true);
-            if(do_copyin_UH) gpu::mgm::copy_submit_h2d(q, data.d_UH_sp, data.h_UH_sp, false, true);
+            if(do_copyin_L)  gpu::mgm::copy_submit(q, data.d_L_sp,  data.h_L_sp,  false, true);
+            if(do_copyin_U)  gpu::mgm::copy_submit(q, data.d_U_sp,  data.h_U_sp,  false, true);
+            if(do_copyin_LH) gpu::mgm::copy_submit(q, data.d_LH_sp, data.h_LH_sp, false, true);
+            if(do_copyin_UH) gpu::mgm::copy_submit(q, data.d_UH_sp, data.h_UH_sp, false, true);
             if(config->concurrency_update == CONCURRENCY::SEQ_WAIT) gpu::mgm::queue_wait(q);
         }
         tm_copyin.stop();
@@ -1236,7 +1236,7 @@ void TotalFETIGpu<T,I>::apply_explicit_sgcpu(const Vector_Dual<T> &x_cluster, Ve
         tm_scatter.stop();
 
         tm_copyin.start();
-        gpu::mgm::copy_submit_h2d(q, data.d_apply_x, data.h_applyc_x);
+        gpu::mgm::copy_submit(q, data.d_apply_x, data.h_applyc_x);
         if(config->concurrency_apply == CONCURRENCY::SEQ_WAIT) gpu::mgm::queue_wait(q);
         tm_copyin.stop();
 
@@ -1247,7 +1247,7 @@ void TotalFETIGpu<T,I>::apply_explicit_sgcpu(const Vector_Dual<T> &x_cluster, Ve
         tm_mv.stop();
 
         tm_copyout.start();
-        gpu::mgm::copy_submit_d2h(q, data.h_applyc_y, data.d_apply_y);
+        gpu::mgm::copy_submit(q, data.h_applyc_y, data.d_apply_y);
         if(config->concurrency_apply == CONCURRENCY::SEQ_WAIT) gpu::mgm::queue_wait(q);
         tm_copyout.stop();
 
@@ -1309,7 +1309,7 @@ void TotalFETIGpu<T,I>::apply_explicit_sggpu(const Vector_Dual<T> &x_cluster, Ve
 
     // copy x_cluster to device
     tm_copyin.start();
-    gpu::mgm::copy_submit_h2d(main_q, d_applyg_x_cluster, x_cluster);
+    gpu::mgm::copy_submit(main_q, d_applyg_x_cluster, x_cluster);
     if(config->concurrency_apply == CONCURRENCY::SEQ_WAIT) gpu::mgm::queue_wait(main_q);
     tm_copyin.stop();
 
@@ -1352,7 +1352,7 @@ void TotalFETIGpu<T,I>::apply_explicit_sggpu(const Vector_Dual<T> &x_cluster, Ve
 
     // copy y_cluster from device
     tm_copyout.start();
-    gpu::mgm::copy_submit_d2h(main_q, y_cluster, d_applyg_y_cluster);
+    gpu::mgm::copy_submit(main_q, y_cluster, d_applyg_y_cluster);
     if(config->concurrency_apply == CONCURRENCY::SEQ_WAIT) gpu::mgm::queue_wait(main_q);
     tm_copyout.stop();
 
@@ -1397,14 +1397,14 @@ void TotalFETIGpu<T,I>::apply_implicit_sgcpu(const Vector_Dual<T> &x_cluster, Ve
         tm_scatter.stop();
 
         tm_copyin.start();
-        gpu::mgm::copy_submit_h2d(q, data.d_apply_x, data.h_applyc_x);
+        gpu::mgm::copy_submit(q, data.d_apply_x, data.h_applyc_x);
         if(config->concurrency_apply == CONCURRENCY::SEQ_WAIT) gpu::mgm::queue_wait(q);
         tm_copyin.stop();
 
         apply_implicit_compute(di, tm_allocinpool, tm_freeinpool, tm_setpointers, tm_sp2dn, tm_compute, tm_spmv1, tm_trsv1, tm_trsv2, tm_spmv2);
 
         tm_copyout.start();
-        gpu::mgm::copy_submit_d2h(q, data.h_applyc_y, data.d_apply_y);
+        gpu::mgm::copy_submit(q, data.h_applyc_y, data.d_apply_y);
         if(config->concurrency_apply == CONCURRENCY::SEQ_WAIT) gpu::mgm::queue_wait(q);
         tm_copyout.stop();
 
@@ -1474,7 +1474,7 @@ void TotalFETIGpu<T,I>::apply_implicit_sggpu(const Vector_Dual<T> &x_cluster, Ve
 
     // copy x_cluster to device
     tm_copyin.start();
-    gpu::mgm::copy_submit_h2d(main_q, d_applyg_x_cluster, x_cluster);
+    gpu::mgm::copy_submit(main_q, d_applyg_x_cluster, x_cluster);
     if(config->concurrency_apply == CONCURRENCY::SEQ_WAIT) gpu::mgm::queue_wait(main_q);
     tm_copyin.stop();
 
@@ -1509,7 +1509,7 @@ void TotalFETIGpu<T,I>::apply_implicit_sggpu(const Vector_Dual<T> &x_cluster, Ve
 
     // copy y_cluster from device
     tm_copyout.start();
-    gpu::mgm::copy_submit_d2h(main_q, y_cluster, d_applyg_y_cluster);
+    gpu::mgm::copy_submit(main_q, y_cluster, d_applyg_y_cluster);
     if(config->concurrency_apply == CONCURRENCY::SEQ_WAIT) gpu::mgm::queue_wait(main_q);
     tm_copyout.stop();
 
@@ -1685,7 +1685,7 @@ void TotalFETIGpu<T,I>::print(const step::Step &step)
             per_domain_stuff & data = domain_data[di];
             Matrix_Dense<T,I,Ah> h_F;
             h_F.resize(data.d_F.nrows, data.d_F.ncols);
-            gpu::mgm::copy_submit_d2h(main_q, h_F, data.d_F);
+            gpu::mgm::copy_submit(main_q, h_F, data.d_F);
             gpu::mgm::queue_wait(main_q);
             if(order_F == 'C') {
                 // transpose the matrix to transition colmajor->rowmajor

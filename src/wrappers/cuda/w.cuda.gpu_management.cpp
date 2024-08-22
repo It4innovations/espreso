@@ -19,42 +19,6 @@ namespace mgm {
         return gpu_wrapper_impl::CUDA;
     }
 
-    namespace
-    {
-        template<typename T>
-        static void _copy_submit(T * dst, const T * src, size_t num_elements, cudaMemcpyKind dir, cudaStream_t stream)
-        {
-            size_t sizeof_T;
-            if constexpr(std::is_same_v<T,void>) sizeof_T = 1;
-            else sizeof_T = sizeof(T);
-            size_t size = num_elements * sizeof_T;
-            CHECK(cudaMemcpyAsync(dst, src, size, dir, stream));
-        }
-
-        template<typename T, typename I, typename A1, typename A2>
-        static void _copy_submit(Vector_Dense<T,I,A1> & output, const Vector_Dense<T,I,A2> & input, cudaMemcpyKind direction, cudaStream_t stream)
-        {
-            if(output.size != input.size) eslog::error("copy submit: output vector has wrong dimensions\n");
-            CHECK(cudaMemcpyAsync(output.vals, input.vals, input.size * sizeof(T), direction, stream));
-        }
-
-        template<typename T, typename I, typename A1, typename A2>
-        static void _copy_submit(Matrix_Dense<T,I,A1> & output, const Matrix_Dense<T,I,A2> & input, cudaMemcpyKind direction, cudaStream_t stream)
-        {
-            if(output.nrows != input.nrows || output.ncols != input.ncols) eslog::error("copy submit: output matrix has wrong dimensions\n");
-            CHECK(cudaMemcpy2DAsync(output.vals, output.get_ld() * sizeof(T), input.vals, input.get_ld() * sizeof(T), input.ncols * sizeof(T), input.nrows, direction, stream));
-        }
-
-        template<typename T, typename I, typename A1, typename A2>
-        static void _copy_submit(Matrix_CSR<T,I,A1> & output, const Matrix_CSR<T,I,A2> & input, cudaMemcpyKind direction, cudaStream_t stream, bool copy_pattern, bool copy_vals)
-        {
-            if(output.nrows != input.nrows || output.ncols != input.ncols || output.nnz != input.nnz) eslog::error("copy submit: output matrix has wrong dimensions\n");
-            if(copy_pattern) CHECK(cudaMemcpyAsync(output.rows, input.rows, (input.nrows+1) * sizeof(I), direction, stream));
-            if(copy_pattern) CHECK(cudaMemcpyAsync(output.cols, input.cols,  input.nnz      * sizeof(I), direction, stream));
-            if(copy_vals)    CHECK(cudaMemcpyAsync(output.vals, input.vals,  input.nnz      * sizeof(T), direction, stream));
-        }
-    }
-
     device get_device_by_mpi(int mpi_rank, int mpi_size)
     {
 #ifndef ESPRESO_RANK_TO_GPU_MAP
@@ -191,63 +155,36 @@ namespace mgm {
     }
 
     template<typename T>
-    void copy_submit_h2d(queue & q, T * dst, T const * src, size_t num_elements)
+    void copy_submit(queue & q, T * dst, T const * src, size_t num_elements)
     {
-        _copy_submit(dst, src, num_elements, cudaMemcpyHostToDevice, q->stream);
-    }
-
-    template<typename T>
-    void copy_submit_d2h(queue & q, T * dst, T const * src, size_t num_elements)
-    {
-        _copy_submit(dst, src, num_elements, cudaMemcpyDeviceToHost, q->stream);
-    }
-
-    template<typename T, typename I, typename Ao, typename Ai>
-    void copy_submit_d2h(queue & q, Vector_Dense<T,I,Ao> & output, const Vector_Dense<T,I,Ai> & input)
-    {
-        static_assert(Ao::is_data_host_accessible, "output vector data has to be host accessible");
-        static_assert(Ai::is_data_device_accessible, "input vector data has to be device accessible");
-        _copy_submit(output, input, cudaMemcpyDeviceToHost, q->stream);
+        size_t sizeof_T;
+        if constexpr(std::is_same_v<T,void>) sizeof_T = 1;
+        else sizeof_T = sizeof(T);
+        size_t size = num_elements * sizeof_T;
+        CHECK(cudaMemcpyAsync(dst, src, size, cudaMemcpyDefault, q->stream));
     }
 
     template<typename T, typename I, typename Ao, typename Ai>
-    void copy_submit_h2d(queue & q, Vector_Dense<T,I,Ao> & output, const Vector_Dense<T,I,Ai> & input)
+    void copy_submit(queue & q, Vector_Dense<T,I,Ao> & output, const Vector_Dense<T,I,Ai> & input)
     {
-        static_assert(Ao::is_data_device_accessible, "output vector data has to be device accessible");
-        static_assert(Ai::is_data_host_accessible, "input vector data has to be host accessible");
-        _copy_submit(output, input, cudaMemcpyHostToDevice, q->stream);
+        if(output.size != input.size) eslog::error("copy submit: output vector has wrong dimensions\n");
+        copy_submit(q, output.vals, input.vals, input.size);
     }
 
     template<typename T, typename I, typename Ao, typename Ai>
-    void copy_submit_d2h(queue & q, Matrix_Dense<T,I,Ao> & output, const Matrix_Dense<T,I,Ai> & input)
+    void copy_submit(queue & q, Matrix_Dense<T,I,Ao> & output, const Matrix_Dense<T,I,Ai> & input)
     {
-        static_assert(Ao::is_data_host_accessible, "output matrix data has to be host accessible");
-        static_assert(Ai::is_data_device_accessible, "input matrix data has to be device accessible");
-        _copy_submit(output, input, cudaMemcpyDeviceToHost, q->stream);
+        if(output.nrows != input.nrows || output.ncols != input.ncols) eslog::error("copy submit: output matrix has wrong dimensions\n");
+        CHECK(cudaMemcpy2DAsync(output.vals, output.get_ld() * sizeof(T), input.vals, input.get_ld() * sizeof(T), input.ncols * sizeof(T), input.nrows, cudaMemcpyDefault, q->stream));
     }
 
     template<typename T, typename I, typename Ao, typename Ai>
-    void copy_submit_h2d(queue & q, Matrix_Dense<T,I,Ao> & output, const Matrix_Dense<T,I,Ai> & input)
+    void copy_submit(queue & q, Matrix_CSR<T,I,Ao> & output, const Matrix_CSR<T,I,Ai> & input, bool copy_pattern, bool copy_vals)
     {
-        static_assert(Ao::is_data_device_accessible, "output matrix data has to be device accessible");
-        static_assert(Ai::is_data_host_accessible, "input matrix data has to be host accessible");
-        _copy_submit(output, input, cudaMemcpyHostToDevice, q->stream);
-    }
-
-    template<typename T, typename I, typename Ao, typename Ai>
-    void copy_submit_d2h(queue & q, Matrix_CSR<T,I,Ao> & output, const Matrix_CSR<T,I,Ai> & input, bool copy_pattern, bool copy_vals)
-    {
-        static_assert(Ao::is_data_host_accessible, "output matrix data has to be host accessible");
-        static_assert(Ai::is_data_device_accessible, "input matrix data has to be device accessible");
-        _copy_submit(output, input, cudaMemcpyDeviceToHost, q->stream, copy_pattern, copy_vals);
-    }
-
-    template<typename T, typename I, typename Ao, typename Ai>
-    void copy_submit_h2d(queue & q, Matrix_CSR<T,I,Ao> & output, const Matrix_CSR<T,I,Ai> & input, bool copy_pattern, bool copy_vals)
-    {
-        static_assert(Ao::is_data_device_accessible, "output matrix data has to be device accessible");
-        static_assert(Ai::is_data_host_accessible, "input matrix data has to be host accessible");
-        _copy_submit(output, input, cudaMemcpyHostToDevice, q->stream, copy_pattern, copy_vals);
+        if(output.nrows != input.nrows || output.ncols != input.ncols || output.nnz != input.nnz) eslog::error("copy submit: output matrix has wrong dimensions\n");
+        if(copy_pattern) copy_submit(q, output.rows, input.rows, input.nrows+1);
+        if(copy_pattern) copy_submit(q, output.cols, input.cols, input.nnz);
+        if(copy_vals)    copy_submit(q, output.vals, input.vals, input.nnz);
     }
 
     void memset_submit(queue & q, void * ptr, size_t num_bytes, char val)
