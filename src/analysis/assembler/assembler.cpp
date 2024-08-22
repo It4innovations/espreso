@@ -79,9 +79,12 @@ void Assembler::assemble(const SubKernel::Action action)
                             boundary(action, r, i);
                         }
                     }
-                } else {
-                    nodes(action, r, t);
                 }
+            }
+        }
+        for (size_t r = 1; r < info::mesh->boundary.size(); ++r) {
+            for (int t = 0; t < info::env::threads; ++t) {
+                nodes(action, r, t); // never parallel
             }
         }
 
@@ -102,10 +105,9 @@ void Assembler::assemble(const SubKernel::Action action)
                         boundary(action, r, i);
                     }
                 }
-            } else {
-                for (int t = 0; t < info::env::threads; ++t) {
-                    nodes(action, r, t);
-                }
+            }
+            for (int t = 0; t < info::env::threads; ++t) {
+                nodes(action, r, t);
             }
         }
     }

@@ -42,10 +42,6 @@ public:
         static ElementData *translationMotion, *gradient, *flux;
     };
 
-    struct {
-        bool K, M, f, nf, dirichlet;
-    } constant;
-
 protected:
     step::Step step;
     step::Time time;
@@ -56,6 +52,7 @@ protected:
 
     std::vector<HeatTransferElementOperators> elementKernels;
     std::vector<std::vector<HeatTransferBoundaryOperators> > faceKernels;
+    std::vector<std::vector<HeatTransferNodeOperators> > nodeKernels;
 };
 
 }

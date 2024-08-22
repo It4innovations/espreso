@@ -109,7 +109,6 @@ struct StructuralMechanicsNodeOperators {
 
     struct {
         std::vector<ExternalEvaluator*> node;
-        std::vector<ExternalEvaluator*> gp;
     } expressions;
 };
 

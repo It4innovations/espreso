@@ -505,7 +505,7 @@ void runBoundaryKernel(const HeatTransferBoundaryOperators &operators, SubKernel
 }
 
 template <size_t ndim>
-void setNodeKernel(HeatTransferBoundaryOperators &operators, SubKernel::Action action)
+void setNodeKernel(HeatTransferNodeOperators &operators, SubKernel::Action action)
 {
     typedef HeatTransferNode<ndim> Element; Element element;
     if (operators.temperature.expression) {
@@ -541,7 +541,7 @@ void setNodeKernel(HeatTransferBoundaryOperators &operators, SubKernel::Action a
 }
 
 template <size_t ndim>
-void runNodeKernel(const HeatTransferBoundaryOperators &operators, SubKernel::Action action)
+void runNodeKernel(const HeatTransferNodeOperators &operators, SubKernel::Action action)
 {
     typedef HeatTransferNode<ndim> Element; Element element;
 

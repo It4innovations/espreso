@@ -80,6 +80,28 @@ struct HeatTransferBoundaryOperators {
     } expressions;
 };
 
+struct HeatTransferNodeOperators {
+    int code;
+    size_t elements, chunks;
+
+    size_t esize;
+
+    Basis basis;
+    Thickness thickness;
+    Coordinates coordinates;
+    Temperature initialTemperature;
+
+    ExternalExpression temperature;
+    ExternalHeat externalHeat;
+
+    DataFiller RHSfiller, dirichlet;
+
+    struct {
+        std::vector<ExternalEvaluator*> node;
+    } expressions;
+};
+
+
 }
 
 

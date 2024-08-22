@@ -58,10 +58,6 @@ public:
         static NodeData *fluidForce;
     };
 
-    struct {
-        bool K, M, C, f, nf, dirichlet;
-    } constant;
-
 protected:
     step::Step step;
     step::Time time;

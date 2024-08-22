@@ -75,10 +75,22 @@ protected:
 };
 
 template <typename T>
-static bool reset(T *t, bool constant)
+static bool isactive(T *t)
 {
     if (t) {
-        if (!t->filled || !constant) {
+        if (!t->filled || !t->constant) {
+            return true;
+        }
+        return false;
+    }
+    return false;
+}
+
+template <typename T>
+static bool reset(T *t)
+{
+    if (t) {
+        if (!t->filled || !t->constant) {
             t->set(0);
             t->updated = true;
             return true;
@@ -89,13 +101,25 @@ static bool reset(T *t, bool constant)
     return false;
 }
 
+template <typename T, typename... Other>
+static bool reset(T *t, Other... other)
+{
+    return reset(t) | reset(other...);
+}
+
 template <typename T>
-static void update(T *t, bool constant)
+static void update(T *t)
 {
     if (t && t->updated) {
         t->filled = true;
         t->synchronize();
     }
+}
+
+template <typename T, typename... Other>
+static void update(T *t, Other... other)
+{
+    update(t); update(other...);
 }
 
 }

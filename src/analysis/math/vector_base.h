@@ -17,7 +17,7 @@ template <template<typename, typename, typename> typename Vector, typename T> cl
 
 template <typename T> class Vector_Base {
 public:
-    Vector_Base(): filled(false), updated(false) {}
+    Vector_Base(): constant(false), filled(false), updated(false) {}
     virtual ~Vector_Base() {};
 
     virtual void synchronize() =0;
@@ -49,7 +49,7 @@ public:
     virtual void addTo(const T &alpha, Vector_FETI<Vector_Sparse, T> *a, const Selection &rows = Selection()) const =0;
 
     Mapping<T> mapping;
-    bool filled, updated;
+    bool constant, filled, updated;
 };
 
 }

@@ -35,12 +35,12 @@ HeatTransfer::HeatTransfer(HeatTransfer *previous, HeatTransferConfiguration &se
     threaded = configuration.solver == HeatTransferLoadStepConfiguration::SOLVER::FETI;
     elementKernels.resize(info::mesh->elements->eintervals.size());
     faceKernels.resize(info::mesh->boundary.size());
+    nodeKernels.resize(info::mesh->boundary.size());
     for (size_t r = 1; r < info::mesh->boundary.size(); ++r) {
         if (info::mesh->boundary[r]->dimension) {
             faceKernels[r].resize(info::mesh->boundary[r]->eintervals.size());
-        } else {
-            faceKernels[r].resize(info::env::threads);
         }
+        nodeKernels[r].resize(info::env::threads);
     }
 
     for (int t = 0; t < info::env::threads; ++t) {
@@ -62,15 +62,11 @@ HeatTransfer::HeatTransfer(HeatTransfer *previous, HeatTransferConfiguration &se
             }
         }
         for (size_t r = 1; r < info::mesh->boundary.size(); ++r) {
-            if (info::mesh->boundary[r]->dimension == 0) {
-                faceKernels[r][t].code = static_cast<int>(Element::CODE::POINT1);
-                faceKernels[r][t].elements = info::mesh->boundary[r]->nodes->datatarray().size(t);
-                faceKernels[r][t].chunks = faceKernels[r][t].elements / SIMD::size + (faceKernels[r][t].elements % SIMD::size ? 1 : 0);
-            }
+            nodeKernels[r][t].code = static_cast<int>(Element::CODE::POINT1);
+            nodeKernels[r][t].elements = info::mesh->boundary[r]->nodes->datatarray().size(t);
+            nodeKernels[r][t].chunks = nodeKernels[r][t].elements / SIMD::size + (nodeKernels[r][t].elements % SIMD::size ? 1 : 0);
         }
     }
-
-    constant.K = constant.M = constant.dirichlet = constant.f = constant.nf = false;
 
     GaussPoints<Element::CODE::LINE2    ,  2, HeatTransferGPC::LINE2    , 1>::set();
     GaussPoints<Element::CODE::TRIANGLE3,  3, HeatTransferGPC::TRIANGLE3, 2>::set();
@@ -297,15 +293,15 @@ bool HeatTransfer::analyze()
 
     for(size_t r = 1; r < info::mesh->boundary.size(); ++r) {
         const BoundaryRegionStore *region = info::mesh->boundary[r];
-        if (info::mesh->boundary[r]->dimension) {
-            for(size_t i = 0; i < info::mesh->boundary[r]->eintervals.size(); ++i) {
+        if (region->dimension) {
+            for(size_t i = 0; i < region->eintervals.size(); ++i) {
                 if (info::mesh->dimension == 2) {
                     faceKernels[r][i].thickness.activate(region->elements->cbegin() + region->eintervals[i].begin, region->elements->cbegin() + region->eintervals[i].end, Results::thickness->data.data());
                 }
-                faceKernels[r][i].heatFlow.activate(getExpression(info::mesh->boundary[r]->name, configuration.heat_flow));
-                faceKernels[r][i].heatFlux.activate(getExpression(info::mesh->boundary[r]->name, configuration.heat_flux));
+                faceKernels[r][i].heatFlow.activate(getExpression(region->name, configuration.heat_flow));
+                faceKernels[r][i].heatFlux.activate(getExpression(region->name, configuration.heat_flux));
 
-                auto convection = configuration.convection.find(info::mesh->boundary[r]->name);
+                auto convection = configuration.convection.find(region->name);
                 if (convection != configuration.convection.end()) {
                     faceKernels[r][i].htc.activate(&convection->second.heat_transfer_coefficient);
                     faceKernels[r][i].externalTemperature.activate(&convection->second.external_temperature);
@@ -323,10 +319,9 @@ bool HeatTransfer::analyze()
 
                 faceKernels[r][i].coordinates.activate(region->elements->cbegin() + region->eintervals[i].begin, region->elements->cbegin() + region->eintervals[i].end, gpcoords);
             }
-        } else {
-            for(size_t t = 0; t < info::mesh->boundary[r]->nodes->threads(); ++t) {
-                faceKernels[r][t].coordinates.activate(region->nodes->cbegin(t), region->nodes->cend(), false);
-            }
+        }
+        for(size_t t = 0; t < region->nodes->threads(); ++t) {
+            nodeKernels[r][t].coordinates.activate(region->nodes->cbegin(t), region->nodes->cend(), false);
         }
     }
 
@@ -334,9 +329,9 @@ bool HeatTransfer::analyze()
         size_t r = info::mesh->bregionIndex(it->first);
         const BoundaryRegionStore *region = info::mesh->boundary[r];
         for (size_t t = 0; t < region->nodes->threads(); ++t) {
-            faceKernels[r][t].temperature.activate(it->second);
+            nodeKernels[r][t].temperature.activate(it->second);
             if (settings.init_temp_respect_bc) {
-                faceKernels[r][t].initialTemperature.activate(region->nodes->cbegin(t), region->nodes->cend(), Results::temperature->data.data(), false);
+                nodeKernels[r][t].initialTemperature.activate(region->nodes->cbegin(t), region->nodes->cend(), Results::temperature->data.data(), false);
             }
         }
     }
@@ -363,37 +358,6 @@ bool HeatTransfer::analyze()
     }
     Results::initialTemperature->data = Results::temperature->data;
 
-    constant.K = true; // currently everything or nothing
-    for (size_t i = 0; i < elementKernels.size(); ++i) {
-        for (size_t e = 0; e < elementKernels[i].expressions.node.size(); ++e) {
-            constant.K &= elementKernels[i].expressions.node[e]->evaluator->isConst();
-        }
-        for (size_t e = 0; e < elementKernels[i].expressions.gp.size(); ++e) {
-            constant.K &= elementKernels[i].expressions.gp[e]->evaluator->isConst();
-        }
-    }
-    constant.M = constant.f = constant.K;
-
-    constant.f = true;
-    for (size_t r = 1; r < faceKernels.size(); ++r) {
-        for (size_t i = 0; i < faceKernels[r].size(); ++i) {
-            for (size_t e = 0; e < faceKernels[r][i].expressions.node.size(); ++e) {
-                constant.f = faceKernels[r][i].expressions.node[e]->evaluator->isConst();
-            }
-            for (size_t e = 0; e < faceKernels[r][i].expressions.gp.size(); ++e) {
-                constant.f = faceKernels[r][i].expressions.gp[e]->evaluator->isConst();
-            }
-        }
-    }
-    constant.dirichlet = constant.f;
-
-    std::string constants;
-    if (constant.K)         { constants += "K"; }
-    if (constant.M)         { if (constants.size()) constants += ", "; constants += "M"; }
-    if (constant.f)         { if (constants.size()) constants += ", "; constants += "f"; }
-    if (constant.nf)        { if (constants.size()) constants += ", "; constants += "nf"; }
-    if (constant.dirichlet) { if (constants.size()) constants += ", "; constants += "dirichlet"; }
-
     eslog::info("  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  \n");
     if (BEM.front()) {
         eslog::info("  ASSEMBLER                                                                               BEM \n");
@@ -403,7 +367,7 @@ bool HeatTransfer::analyze()
     }
     eslog::info("  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  \n");
     eslog::info("  PHYSICS ANALYZED                                                                 %8.3f s \n", eslog::time() - start);
-    eslog::info("  CONSTANT MATRICES, VECTORS         %*s  [ %s ] \n", 50 - constants.size(), " ", constants.c_str());
+
     eslog::info(" ============================================================================================= \n");
     return correct;
 }
@@ -434,9 +398,74 @@ void HeatTransfer::connect(Matrix_Base<double> *K, Matrix_Base<double> *M, Vecto
     for (auto it = configuration.temperature.begin(); it != configuration.temperature.end(); ++it) {
         size_t r = info::mesh->bregionIndex(it->first);
         for (size_t t = 0; t < info::mesh->boundaryRegions[r]->nodes->threads(); ++t) {
-            faceKernels[r][t].dirichlet.activate(r, t, 1, faceKernels[r][t].elements, dirichlet);
+            nodeKernels[r][t].dirichlet.activate(r, t, 1, nodeKernels[r][t].elements, dirichlet);
         }
     }
+
+    std::string constants;
+
+    if (K) {
+        K->constant = configuration.mode == LoadStepSolverConfiguration::MODE::LINEAR;
+
+        for (size_t i = 0; i < elementKernels.size(); ++i) {
+            for (size_t e = 0; e < elementKernels[i].expressions.node.size(); ++e) {
+                K->constant &= elementKernels[i].expressions.node[e]->evaluator->isConst();
+            }
+            for (size_t e = 0; e < elementKernels[i].expressions.gp.size(); ++e) {
+                K->constant &= elementKernels[i].expressions.gp[e]->evaluator->isConst();
+            }
+        }
+        if (K->constant) { constants += "K "; }
+    }
+    if (M) {
+        M->constant = true;
+        if (M->constant) { constants += "M "; }
+    }
+    if (f) {
+        for (size_t i = 0; i < elementKernels.size(); ++i) {
+            for (size_t e = 0; e < elementKernels[i].expressions.node.size(); ++e) {
+                f->constant &= elementKernels[i].expressions.node[e]->evaluator->isConst();
+            }
+            for (size_t e = 0; e < elementKernels[i].expressions.gp.size(); ++e) {
+                f->constant &= elementKernels[i].expressions.gp[e]->evaluator->isConst();
+            }
+        }
+        for (size_t i = 0; i < faceKernels.size(); ++i) {
+            for (size_t j = 0; j < faceKernels[i].size(); ++j) {
+                for (size_t e = 0; e < faceKernels[i][j].expressions.node.size(); ++e) {
+                    f->constant &= faceKernels[i][j].expressions.node[e]->evaluator->isConst();
+                }
+                for (size_t e = 0; e < faceKernels[i][j].expressions.gp.size(); ++e) {
+                    f->constant &= faceKernels[i][j].expressions.gp[e]->evaluator->isConst();
+                }
+            }
+        }
+        for (size_t i = 0; i < nodeKernels.size(); ++i) {
+            for (size_t j = 0; j < nodeKernels[i].size(); ++j) {
+                for (size_t e = 0; e < nodeKernels[i][j].expressions.node.size(); ++e) {
+                    f->constant &= nodeKernels[i][j].expressions.node[e]->evaluator->isConst();
+                }
+            }
+        }
+        if (f->constant) { constants += "f "; }
+    }
+    if (nf) {
+        nf->constant = false;
+        if (nf->constant) { constants += "nf "; }
+    }
+    if (dirichlet) {
+        dirichlet->constant = true;
+        for (size_t i = 0; i < nodeKernels.size(); ++i) {
+            for (size_t j = 0; j < nodeKernels[i].size(); ++j) {
+                for (size_t e = 0; e < nodeKernels[i][j].expressions.node.size(); ++e) {
+                    dirichlet->constant &= nodeKernels[i][j].expressions.node[e]->evaluator->isConst();
+                }
+            }
+        }
+        if (dirichlet->constant) { constants += "dirichlet "; }
+    }
+
+    eslog::info("  CONSTANT MATRICES, VECTORS          %*s  [ %s] \n", 50 - constants.size(), " ", constants.c_str());
 }
 
 void HeatTransfer::elements(SubKernel::Action action, size_t interval)
@@ -471,8 +500,8 @@ void HeatTransfer::boundary(SubKernel::Action action, size_t region, size_t inte
 
 void HeatTransfer::nodes(SubKernel::Action action, size_t region, size_t interval)
 {
-    switch (faceKernels[region][interval].code) {
-    case static_cast<size_t>(Element::CODE::POINT1   ): runBoundary<Element::CODE::POINT1   >(step, time, faceKernels[region][interval], action); break;
+    switch (nodeKernels[region][interval].code) {
+    case static_cast<size_t>(Element::CODE::POINT1   ): runNode<Element::CODE::POINT1   >(step, time, nodeKernels[region][interval], action); break;
     }
 }
 
@@ -543,40 +572,53 @@ void HeatTransfer::evaluate(const step::Step &step, step::Time &time, Matrix_Bas
         for (size_t e = 0; e < elementKernels[i].expressions.node.size(); ++e) {
             #pragma omp parallel for
             for (int t = 0; t < info::env::threads; ++t) {
+                elementKernels[i].expressions.node[e]->evaluator->getSubstep(t) = (step.substep + 1) / (double)step.substeps;
                 elementKernels[i].expressions.node[e]->evaluator->getTime(t) = time.current;
             }
         }
         for (size_t e = 0; e < elementKernels[i].expressions.gp.size(); ++e) {
             #pragma omp parallel for
             for (int t = 0; t < info::env::threads; ++t) {
+                elementKernels[i].expressions.gp[e]->evaluator->getSubstep(t) = (step.substep + 1) / (double)step.substeps;
                 elementKernels[i].expressions.gp[e]->evaluator->getTime(t) = time.current;
             }
         }
+
+        elementKernels[i].K.isactive = isactive(K);
+        elementKernels[i].Kfiller.isactive = isactive(K);
+        elementKernels[i].M.isactive = isactive(M);
+        elementKernels[i].Mfiller.isactive = isactive(M);
+        elementKernels[i].RHSfiller.isactive = isactive(f);
+        elementKernels[i].nRHSfiller.isactive = isactive(nf);
     }
     for (size_t i = 0; i < faceKernels.size(); ++i) {
         for (size_t j = 0; j < faceKernels[i].size(); ++j) {
             for (size_t e = 0; e < faceKernels[i][j].expressions.node.size(); ++e) {
                 #pragma omp parallel for
                 for (int t = 0; t < info::env::threads; ++t) {
+                    faceKernels[i][j].expressions.node[e]->evaluator->getSubstep(t) = (step.substep + 1) / (double)step.substeps;
                     faceKernels[i][j].expressions.node[e]->evaluator->getTime(t) = time.current;
                 }
             }
             for (size_t e = 0; e < faceKernels[i][j].expressions.gp.size(); ++e) {
                 #pragma omp parallel for
                 for (int t = 0; t < info::env::threads; ++t) {
+                    faceKernels[i][j].expressions.gp[e]->evaluator->getSubstep(t) = (step.substep + 1) / (double)step.substeps;
                     faceKernels[i][j].expressions.gp[e]->evaluator->getTime(t) = time.current;
                 }
             }
+            faceKernels[i][j].RHSfiller.isactive = isactive(f);
+        }
+    }
+    for (size_t i = 0; i < nodeKernels.size(); ++i) {
+        for (size_t j = 0; j < nodeKernels[i].size(); ++j) {
+            nodeKernels[i][j].dirichlet.isactive = isactive(dirichlet);
         }
     }
 
-    bool run = reset(K, constant.K) | reset(M, constant.M) | reset(f, constant.f) | reset(nf, constant.nf) | reset(dirichlet, constant.dirichlet);
-    if (run) { assemble(SubKernel::ASSEMBLE); }
-    update(K, constant.K);
-    update(M, constant.M);
-    update(f, constant.f);
-    update(nf, constant.nf);
-    update(dirichlet, constant.dirichlet);
+    reset(K, M, f, nf, dirichlet);
+    assemble(SubKernel::ASSEMBLE);
+    update(K, M, f, nf, dirichlet);
 }
 
 void HeatTransfer::getInitialTemperature(Vector_Base<double> *x)

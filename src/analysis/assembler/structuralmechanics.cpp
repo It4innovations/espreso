@@ -100,8 +100,6 @@ StructuralMechanics::StructuralMechanics(StructuralMechanics *previous, Structur
 
 bool StructuralMechanics::analyze(const step::Step &step)
 {
-    constant.K = constant.M = constant.f = constant.nf = constant.dirichlet = false;
-
     double start = eslog::time();
     eslog::info("\n ============================================================================================= \n");
 
@@ -541,12 +539,12 @@ void StructuralMechanics::evaluate(const step::Step &step, const step::Time &tim
             }
         }
 
-        elementKernels[i].K.isactive = K && !constant.K;
-        elementKernels[i].Kfiller.isactive = K && !constant.K;
-        elementKernels[i].M.isactive = M && !constant.M;
-        elementKernels[i].Mfiller.isactive = M && !constant.M;
-        elementKernels[i].reRHSfiller.isactive = f && !constant.f;
-        elementKernels[i].reNRHSfiller.isactive = nf && !constant.nf;
+        elementKernels[i].K.isactive = isactive(K);
+        elementKernels[i].Kfiller.isactive = isactive(K);
+        elementKernels[i].M.isactive = isactive(M);
+        elementKernels[i].Mfiller.isactive = isactive(M);
+        elementKernels[i].reRHSfiller.isactive = isactive(f);
+        elementKernels[i].reNRHSfiller.isactive = isactive(nf);
     }
     for (size_t i = 0; i < faceKernels.size(); ++i) {
         for (size_t j = 0; j < faceKernels[i].size(); ++j) {
@@ -564,19 +562,18 @@ void StructuralMechanics::evaluate(const step::Step &step, const step::Time &tim
                     faceKernels[i][j].expressions.gp[e]->evaluator->getTime(t) = time.current;
                 }
             }
-            faceKernels[i][j].reRHSfiller.isactive = f && !constant.f;
+            faceKernels[i][j].reRHSfiller.isactive = isactive(f);
         }
     }
-
     for (size_t i = 0; i < nodeKernels.size(); ++i) {
         for (size_t j = 0; j < nodeKernels[i].size(); ++j) {
-            nodeKernels[i][j].reDirichlet.isactive = dirichlet && !constant.dirichlet;
+            nodeKernels[i][j].reDirichlet.isactive = isactive(dirichlet);
         }
     }
 
-    reset(K, constant.K); reset(M, constant.M); reset(f, constant.f); reset(nf, constant.nf); reset(dirichlet, constant.dirichlet);
+    reset(K, M, f, nf, dirichlet);
     assemble(SubKernel::ASSEMBLE);
-    update(K, constant.K); update(M, constant.M); update(f, constant.f); update(nf, constant.nf); update(dirichlet, constant.dirichlet);
+    update(K, M, f, nf, dirichlet);
 }
 
 void StructuralMechanics::evaluate(const step::Step &step, const step::Frequency &freq, Matrix_Base<double> *K, Matrix_Base<double> *M, Matrix_Base<double> *C, Vector_Base<double> *ref, Vector_Base<double> *imf, Vector_Base<double> *renf, Vector_Base<double> *imnf, Vector_Base<double> *reDirichlet, Vector_Base<double> *imDirichlet)
@@ -614,9 +611,9 @@ void StructuralMechanics::evaluate(const step::Step &step, const step::Frequency
         }
     }
 
-    bool run = reset(K, constant.K) | reset(M, constant.M) | reset(C, constant.C) | reset(ref, constant.f) | reset(imf, constant.f) | reset(renf, constant.nf) | reset(imnf, constant.nf) | reset(reDirichlet, constant.dirichlet) | reset(imDirichlet, constant.dirichlet);
-    if (run) { assemble(SubKernel::ASSEMBLE); }
-    update(K, constant.K); update(M, constant.M); update(C, constant.C); update(ref, constant.f); update(imf, constant.f); update(renf, constant.nf); update(imnf, constant.nf); update(reDirichlet, constant.dirichlet); update(imDirichlet, constant.dirichlet);
+    reset(K, M, C, ref, imf, renf, imnf, reDirichlet, imDirichlet);
+    assemble(SubKernel::ASSEMBLE);
+    update(K, M, C, ref, imf, renf, imnf, reDirichlet, imDirichlet);
 }
 
 void StructuralMechanics::elements(SubKernel::Action action, size_t interval)
