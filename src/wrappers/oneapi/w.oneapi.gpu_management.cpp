@@ -40,7 +40,8 @@ namespace mgm {
     void queue_create(queue & q)
     {
         q = std::make_shared<_queue>(sycl::queue(default_device->c, default_device->d, sycl::property::queue::in_order()));
-        default_device->qs.push_back(q);
+        q->d = default_device;
+        q->d->qs.push_back(q);
     }
 
     void queue_destroy(queue & q)
@@ -52,7 +53,14 @@ namespace mgm {
 
     void queue_async_barrier(const std::vector<queue> & waitfor, const std::vector<queue> & waitin)
     {
-        throw std::runtime_error("unimplemented");
+        std::vector<sycl::event> events;
+        events.reserve(waitfor.size());
+        for(const queue & q : waitfor) {
+            events.push_back(q->q.single_task([](){}));
+        }
+        for(const queue & q : waitin) {
+            q->q.single_task(events, [](){});
+        }
     }
 
     void queue_wait(queue & q)
@@ -62,8 +70,7 @@ namespace mgm {
 
     void device_wait()
     {
-        for(queue & q : default_device->qs)
-        {
+        for(queue & q : default_device->qs) {
             queue_wait(q);
         }
     }

@@ -17,13 +17,13 @@ namespace mgm {
 
     struct _queue {};
 
-    device get_device_by_mpi(int mpi_rank, int mpi_size) { return device{}; }
+    device get_device_by_mpi(int mpi_rank, int mpi_size) { eslog::error("calling empty GPU wrapper.\n"); }
 
-    void init_gpu(device & d) {}
+    void init_gpu(device & d) { eslog::error("calling empty GPU wrapper.\n"); }
 
-    void set_device(device & d) {}
+    void set_device(device & d) { eslog::error("calling empty GPU wrapper.\n"); }
 
-    void queue_create(queue & q) {}
+    void queue_create(queue & q) { eslog::error("calling empty GPU wrapper.\n"); }
 
     void queue_destroy(queue & q) {}
 

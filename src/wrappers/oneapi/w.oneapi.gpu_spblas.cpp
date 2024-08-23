@@ -91,6 +91,7 @@ namespace spblas {
         void * colidxs = nullptr;
         void * vals = nullptr;
         int64_t nrows = -1;
+        int64_t ncols = -1;
         int64_t nnz = -1;
         char fill = '_';
     };
@@ -116,9 +117,15 @@ namespace spblas {
         void * vals = nullptr;
     };
 
-    struct _descr_sparse_trsv {};
+    struct _descr_sparse_trsv
+    {
+        onesparse::matrix_handle_t d_matrix;
+    };
 
-    struct _descr_sparse_trsm {};
+    struct _descr_sparse_trsm
+    {
+        onesparse::matrix_handle_t d_matrix;
+    };
 
     struct _descr_sparse_mv {};
 
@@ -140,6 +147,7 @@ namespace spblas {
         descr = std::make_shared<_descr_matrix_csr>();
         onesparse::init_matrix_handle(&descr->d);
         descr->nrows = nrows;
+        descr->ncols = ncols;
         descr->nnz = nnz;
         descr->fill = fill;
     }
@@ -151,14 +159,14 @@ namespace spblas {
         descr->rowptrs = matrix.rows;
         descr->colidxs = matrix.cols;
         descr->vals = matrix.vals;
-        if(descr->fill != 'N') onesparse::set_matrix_property(descr->d, onesparse::property::symmetric);
         onesparse::set_matrix_property(descr->d, onesparse::property::sorted);
     }
 
     void descr_matrix_csr_destroy(handle & h, descr_matrix_csr & descr)
     {
-        onesparse::release_matrix_handle(h->qq, &descr->d);
+        if(descr.get() == nullptr) return;
 
+        onesparse::release_matrix_handle(h->qq, &descr->d);
         descr.reset();
     }
 
@@ -180,6 +188,8 @@ namespace spblas {
 
     void descr_matrix_dense_destroy(handle & h, descr_matrix_dense & descr)
     {
+        if(descr.get() == nullptr) return;
+
         descr.reset();
     }
 
@@ -203,16 +213,38 @@ namespace spblas {
 
     void descr_vector_dense_destroy(handle & h, descr_vector_dense & descr)
     {
+        if(descr.get() == nullptr) return;
+
         descr.reset();
     }
 
-    void descr_sparse_trsv_create(handle & h, descr_sparse_trsv & descr) {}
+    void descr_sparse_trsv_create(handle & h, descr_sparse_trsv & descr)
+    {
+        descr = std::make_shared<_descr_sparse_trsv>();
+        onesparse::init_matrix_handle(&descr->d_matrix);
+    }
 
-    void descr_sparse_trsv_destroy(handle & h, descr_sparse_trsv & descr) {}
+    void descr_sparse_trsv_destroy(handle & h, descr_sparse_trsv & descr)
+    {
+        if(descr.get() == nullptr) return;
 
-    void descr_sparse_trsm_create(handle & h, descr_sparse_trsm & descr) {}
+        onesparse::release_matrix_handle(h->qq, &descr->d_matrix);
+        descr.reset();
+    }
 
-    void descr_sparse_trsm_destroy(handle & h, descr_sparse_trsm & descr) {}
+    void descr_sparse_trsm_create(handle & h, descr_sparse_trsm & descr)
+    {
+        descr = std::make_shared<_descr_sparse_trsm>();
+        onesparse::init_matrix_handle(&descr->d_matrix);
+    }
+
+    void descr_sparse_trsm_destroy(handle & h, descr_sparse_trsm & descr)
+    {
+        if(descr.get() == nullptr) return;
+
+        onesparse::release_matrix_handle(h->qq, &descr->d_matrix);
+        descr.reset();
+    }
 
     void descr_sparse_mv_create(handle & h, descr_sparse_mv & descr) {}
 
@@ -255,13 +287,23 @@ namespace spblas {
     }
 
     template<typename T, typename I>
-    void trsv(handle & h, char op, descr_matrix_csr & matrix, descr_vector_dense & rhs, descr_vector_dense & sol, descr_sparse_trsv & /*descr_trsv*/, size_t & buffersize, void * /*buffer*/, char stage)
+    void trsv(handle & h, char op, descr_matrix_csr & matrix, descr_vector_dense & rhs, descr_vector_dense & sol, descr_sparse_trsv & descr_trsv, size_t & buffersize, void * /*buffer*/, char stage)
     {
+        if(op != 'N') {
+            eslog::error("gpu::spblas::trsv in oneapi: only 'N' is supported for parameter op\n");
+        }
+
         T one = 1.0;
         if(stage == 'B') buffersize = 0;
-        if(stage == 'P') onesparse::optimize_trsv(h->qq, _char_to_uplofill(matrix->fill), _char_to_operation(op), onemkl::diag::nonunit, matrix->d);
-        // if(stage == 'U') ;
-        if(stage == 'C') onesparse::trsv(h->qq, _char_to_uplofill(matrix->fill), _char_to_operation(op), onemkl::diag::nonunit, one, matrix->d, (T*)rhs->vals, (T*)sol->vals);
+        // if(stage == 'P') ;
+        if(stage == 'U') {
+            onesparse::release_matrix_handle(h->qq, &descr_trsv->d_matrix);
+            onesparse::init_matrix_handle(&descr_trsv->d_matrix);
+            onesparse::set_csr_data(h->qq, descr_trsv->d_matrix, matrix->nrows, matrix->ncols, onemkl::index_base::zero, (I*)matrix->rowptrs, (I*)matrix->colidxs, (T*)matrix->vals);
+            onesparse::set_matrix_property(descr_trsv->d_matrix, onesparse::property::sorted);
+            onesparse::optimize_trsv(h->qq, _char_to_uplofill(matrix->fill), _char_to_operation(op), onemkl::diag::nonunit, descr_trsv->d_matrix);
+        }
+        if(stage == 'C') onesparse::trsv(h->qq, _char_to_uplofill(matrix->fill), _char_to_operation(op), onemkl::diag::nonunit, one, descr_trsv->d_matrix, (T*)rhs->vals, (T*)sol->vals);
     }
 
     template<typename T, typename I>
@@ -269,11 +311,24 @@ namespace spblas {
     {
         if(op_sol == 'N') {
             if(rhs->order == sol->order) {
+                if(op_mat != 'N') {
+                    eslog::error("gpu::spblas::trsm in oneapi: only 'N' is supported for parameter op_mat\n");
+                }
+                if(op_rhs != 'N') {
+                    eslog::error("gpu::spblas::trsm in oneapi: only 'N' is supported for parameter op_rhs\n");
+                }
+
                 T one = 1.0;
                 if(stage == 'B') buffersize = 0;
-                if(stage == 'P') onesparse::optimize_trsm(h->qq, _char_to_layout(sol->order), _char_to_uplofill(matrix->fill), _char_to_operation(op_mat), onemkl::diag::nonunit, matrix->d, sol->ncols);
-                // if(stage == 'U') ;
-                if(stage == 'C') onesparse::trsm(h->qq, _char_to_layout(sol->order), _char_to_operation(op_mat), _char_to_operation(op_rhs), _char_to_uplofill(matrix->fill), onemkl::diag::nonunit, one, matrix->d, (T*)rhs->vals, sol->ncols, rhs->ld, (T*)sol->vals, sol->ld);
+                // if(stage == 'P') ;
+                if(stage == 'U') {
+                    onesparse::release_matrix_handle(h->qq, &descr_trsm->d_matrix);
+                    onesparse::init_matrix_handle(&descr_trsm->d_matrix);
+                    onesparse::set_csr_data(h->qq, descr_trsm->d_matrix, matrix->nrows, matrix->ncols, onemkl::index_base::zero, (I*)matrix->rowptrs, (I*)matrix->colidxs, (T*)matrix->vals);
+                    onesparse::set_matrix_property(descr_trsm->d_matrix, onesparse::property::sorted);
+                    onesparse::optimize_trsm(h->qq, _char_to_layout(sol->order), _char_to_uplofill(matrix->fill), _char_to_operation(op_mat), onemkl::diag::nonunit, descr_trsm->d_matrix, sol->ncols);
+                }
+                if(stage == 'C') onesparse::trsm(h->qq, _char_to_layout(sol->order), _char_to_operation(op_mat), _char_to_operation(op_rhs), _char_to_uplofill(matrix->fill), onemkl::diag::nonunit, one, descr_trsm->d_matrix, (T*)rhs->vals, sol->ncols, rhs->ld, (T*)sol->vals, sol->ld);
             }
             else {
                 descr_matrix_dense rhs_compl = std::make_shared<_descr_matrix_dense>(rhs->get_complementary());
@@ -309,6 +364,10 @@ namespace spblas {
     void mm(handle & h, char op_A, char op_B, descr_matrix_csr & A, descr_matrix_dense & B, descr_matrix_dense & C, size_t & buffersize, void * buffer, char stage)
     {
         if(B->order == C->order) {
+            if(op_B != 'N') {
+                eslog::error("gpu::spblas::mm in oneapi: only 'N' is supported for parameter op_B\n");
+            }
+
             T zero = 0.0;
             T one = 1.0;
             if(stage == 'B') buffersize = 0;
