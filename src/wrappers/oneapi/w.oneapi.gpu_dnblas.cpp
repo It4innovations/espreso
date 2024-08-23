@@ -48,6 +48,7 @@ namespace dnblas {
     {
         mgm::queue q;
         sycl::queue qq;
+        bool is_collecting_buffersize = false;
     };
 
     void handle_create(handle & h, mgm::queue & q)
@@ -64,17 +65,21 @@ namespace dnblas {
 
     void buffer_collect_size(handle & h, size_t & buffersize, const std::function<void(void)> & f)
     {
+        h->is_collecting_buffersize = true;
         f();
+        h->is_collecting_buffersize = false;
         buffersize = 0;
     }
 
-    void buffer_set(handle & h, void * ptr, size_t size) {}
+    void buffer_set(handle & /*h*/, void * /*ptr*/, size_t /*size*/) {}
 
-    void buffer_unset(handle & h) {}
+    void buffer_unset(handle & /*h*/) {}
 
     template<typename T, typename I>
     void trsv(handle & h, I n, T * A, I ld_A, char order_A, char op_A, char fill_A, T * x)
     {
+        if(h->is_collecting_buffersize) return;
+
         if(op_A == 'C') {
             char order_A_compl = mgm::order_change(order_A);
             char op_A_compl = mgm::operation_combine(op_A, 'T');
@@ -97,6 +102,8 @@ namespace dnblas {
     template<typename T, typename I>
     void trsm(handle & h, char side, I n, I nrhs, T * A, I ld_A, char order_A, char op_A, char fill_A, T * X, I ld_X, char order_X, char op_X)
     {
+        if(h->is_collecting_buffersize) return;
+
         if(order_X == order_A) {
             if(op_X == 'N') {
                 if(op_A == 'C') {
@@ -145,6 +152,8 @@ namespace dnblas {
     template<typename T, typename I>
     void herk(handle & h, I n, I k, T * A, I ld_A, char order_A, char op_A, T * C, I ld_C, char order_C, char fill_C)
     {
+        if(h->is_collecting_buffersize) return;
+
         if(order_C == order_A) {
             T zero = 0.0;
             T one = 1.0;
@@ -174,6 +183,8 @@ namespace dnblas {
     template<typename T, typename I>
     void hemv(handle & h, I n, T * A, I ld_A, char order_A, char op_A, char fill_A, T * x, T * y)
     {
+        if(h->is_collecting_buffersize) return;
+
         if(op_A == 'N') {
             T zero = 0.0;
             T one = 1.0;
@@ -197,6 +208,8 @@ namespace dnblas {
     template<typename T, typename I>
     void gemv(handle & h, I m, I n, T * A, I ld_A, char order_A, char op_A, T * x, T * y)
     {
+        if(h->is_collecting_buffersize) return;
+
         T zero = 0.0;
         T one = 1.0;
         if(order_A == 'R') {

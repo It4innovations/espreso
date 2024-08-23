@@ -109,7 +109,7 @@ namespace kernels {
                     I idxinsg = sg.get_local_linear_id();
                     #pragma unroll
                     for(int stage = 0; stage <= 1; stage++) {
-                        if(stage == 1 && g.get_group_linear_id() == n/2) return;
+                        if(stage == 1 && wgidx == n/2) return;
                         I r = (stage == 0) ? (wgidx) : (n - wgidx - 1);
                         I chunk_idx = (stage == 0) ? (sgidx) : (sgcount - sgidx - 1);
                         I myidx = chunk_idx * sgsize + idxinsg;

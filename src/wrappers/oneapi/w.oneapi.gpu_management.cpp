@@ -7,6 +7,8 @@
 #pragma clang diagnostic push
 #pragma clang diagnostic ignored "-Wunused-function"
 #pragma clang diagnostic ignored "-Wunneeded-internal-declaration"
+#pragma clang diagnostic ignored "-Wunused-parameter"
+#pragma clang diagnostic ignored "-Wsign-compare"
 #include <dpct/dpct.hpp>
 #pragma clang diagnostic pop
 
@@ -21,7 +23,7 @@ namespace mgm {
         return gpu_wrapper_impl::ONEAPI;
     }
 
-    device get_device_by_mpi(int mpi_rank, int mpi_size)
+    device get_device_by_mpi(int /*mpi_rank*/, int /*mpi_size*/)
     {
         // TODO: select with knowledge of mpi
         sycl::device d = sycl::device(sycl::gpu_selector_v);
@@ -30,7 +32,7 @@ namespace mgm {
         return dev;
     }
 
-    void init_gpu(device & d) {}
+    void init_gpu(device & /*d*/) {}
 
     void set_device(device & d)
     {

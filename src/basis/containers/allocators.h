@@ -55,7 +55,7 @@ public:
     { 
         free(ptr);
     }
-    bool operator==(const cpu_allocator & other)
+    bool operator==(const cpu_allocator & /*other*/)
     {
         return true;
     }
