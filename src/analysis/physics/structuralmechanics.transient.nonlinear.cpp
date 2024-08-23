@@ -216,9 +216,8 @@ bool StructuralMechanicsTransientNonLinear::run(step::Step &step)
         double a4 = ((1 - alphaF) * time.shift) / alpha - 1;
         double a5 = (1 - alphaF) * (time.shift / (2 * alpha) - 1) * time.shift;
 
-
         if (precice.requiresWritingCheckpoint()) {
-//            prev->copy(U);
+            // previous data are stored in *_old
         }
         precice.read(StructuralMechanics::Results::fluidForce->data.data(), time.shift);
 
@@ -234,7 +233,7 @@ bool StructuralMechanicsTransientNonLinear::run(step::Step &step)
         solver->b->updated = true;
 
         solver->dirichlet->copy(dirichlet);
-        solver->dirichlet->add(-1, U);
+        solver->dirichlet->add(-1, U_old);
         solver->dirichlet->updated = true;
 
         storeSystem(step);
@@ -298,7 +297,6 @@ bool StructuralMechanicsTransientNonLinear::run(step::Step &step)
             A->set(0);
             A->add(1. / (alpha * time.shift * time.shift), U)->add(-1. / (alpha * time.shift * time.shift), U_old);
             A->add(-1. / (alpha * time.shift), V_old)->add(-1. / (2 * alpha) + 1, A_old);
-            assembler.updateSolution(U);
             eslog::checkpointln("SIMULATION: SOLUTION UPDATED");
 
             if ((converged = checkDisplacement(step, f_norm))) {
@@ -309,7 +307,7 @@ bool StructuralMechanicsTransientNonLinear::run(step::Step &step)
         precice.advance(time.shift);
         eslog::info(" ============================================================================================= \n");
         if (precice.requiresReadingCheckpoint()) {
-//            x->copy(prev);
+            assembler.updateSolution(U_old);
 
             eslog::info(" = TIME STEP RESTARTED                                                   %8.5f / %8.5f  = \n", time.current, time.final);
             eslog::info(" = ----------------------------------------------------------------------------------------- = \n");
