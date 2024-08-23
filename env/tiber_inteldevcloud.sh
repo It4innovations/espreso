@@ -86,3 +86,4 @@ export OMP_NUM_THREADS=24,1
 
 export ESPRESO_FORBID_MKL_PARDISO="1"
 export ESPRESO_RANK_TO_GPU_MAP="0"
+# export ESPRESO_SYCL_TARGETS="intel_gpu_pvc"

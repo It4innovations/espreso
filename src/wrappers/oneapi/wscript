@@ -2,7 +2,8 @@
 import os
 
 def options(opt):
-    pass
+    sycl_targets_default = os.getenv("ESPRESO_SYCL_TARGETS")
+    opt.compiler.add_option("--sycl-targets", action="store", type="string", default=sycl_targets_default, help="Targets to compile SYCL kernels for.")
 
 def configure(ctx):
     # assuming only intel oneapi for now
@@ -10,13 +11,17 @@ def configure(ctx):
 
     ctx.env.append_unique("CXXFLAGS", [ "-fsycl" ])
 
-    headers = [ "sycl/sycl.hpp", "oneapi/mkl.hpp" ]
-    libs = [ "sycl", "mkl_sycl_blas", "mkl_sycl_sparse", "mkl_core", "mkl_sequential", "mkl_intel_lp64" ]
+    headers = [ "sycl/sycl.hpp", "dpct/dpct.hpp", "oneapi/mkl.hpp" ]
+    libs = [ "mkl_sycl_blas", "mkl_sycl_sparse", "mkl_core", "mkl_sequential", "mkl_intel_lp64" ]
     ctx.check_cxx(mandatory=False, msg="Checking for 'oneapi'", okmsg=" ".join(libs), define_name="HAVE_ONEAPI", header_name=headers, lib=libs, uselib_store="ONEAPI", global_define=0)
 
     ctx.env.CXXFLAGS.remove("-fsycl")
 
     if ctx.env.HAVE_ONEAPI:
         ctx.env.append_unique("CXXFLAGS_ONEAPI", [ "-fsycl" ])
+        ctx.env.append_unique("LINKFLAGS_ONEAPI", [ "-fsycl" ])
+        if ctx.options.sycl_targets != None:
+            ctx.env.append_unique("CXXFLAGS_ONEAPI", [ "-fsycl-targets=" + ctx.options.sycl_targets ])
+            ctx.env.append_unique("LINKFLAGS_ONEAPI", [ "-fsycl-targets=" + ctx.options.sycl_targets ])
         ctx.env.append_unique("CXXFLAGS_ONEAPI", [ "-DESPRESO_RANK_TO_GPU_MAP=" + ctx.options.rank_to_gpu_map ])
         
