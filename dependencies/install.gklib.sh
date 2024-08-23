@@ -20,5 +20,5 @@ then
 fi
 
 export CPATH="${GKLIB_ROOT}/$1/include:${CPATH}"
-export LIBRARY_PATH="${GKLIB_ROOT}/$1/lib:${LIBRARY_PATH}"
-export LD_LIBRARY_PATH="${GKLIB_ROOT}/$1/lib:${LD_LIBRARY_PATH}"
+export LIBRARY_PATH="${GKLIB_ROOT}/$1/lib:${GKLIB_ROOT}/$1/lib64:${LIBRARY_PATH}"
+export LD_LIBRARY_PATH="${GKLIB_ROOT}/$1/lib:${GKLIB_ROOT}/$1/lib64:${LD_LIBRARY_PATH}"
