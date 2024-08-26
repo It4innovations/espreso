@@ -196,7 +196,6 @@ bool StructuralMechanicsTransientNonLinear::run(step::Step &step)
     A_old->copy(A);
 
     eslog::info(" = INITIALIZATION                                                                 %8.3f s = \n", eslog::time() - tinit);
-    eslog::info(" = ----------------------------------------------------------------------------------------- = \n");
     eslog::checkpointln("SIMULATION: TRANSIENT SOLVER INITIALIZED");
 
     step.substep = 0;
@@ -206,8 +205,9 @@ bool StructuralMechanicsTransientNonLinear::run(step::Step &step)
         time.shift = precice.timeStep(time.shift);
         time.current = time.previous + time.shift;
 
-        eslog::info("      == SUBSTEP   %3d         TIME %8.5f  TIME SHIFT %8.5f  FINAL TIME %8.5f == \n", step.substep, time.current, time.shift, time.final);
-        eslog::info("      == ----------------------------------------------------------------------------- == \n");
+        eslog::info(" ============================================================================================= \n");
+        eslog::info(" == SUBSTEP   %3d               TIME %8.5f    TIME SHIFT %8.5f    FINAL TIME %8.5f == \n", step.substep, time.current, time.shift, time.final);
+        eslog::info(" ============================================================================================= \n");
 
         double a0 = (1. - alphaM) / (alpha * time.shift * time.shift);
         double a1 = ((1 - alphaF) * time.shift) / (alpha * time.shift);
@@ -305,13 +305,10 @@ bool StructuralMechanicsTransientNonLinear::run(step::Step &step)
         }
         precice.write(StructuralMechanics::Results::displacement->data.data());
         precice.advance(time.shift);
-        eslog::info(" ============================================================================================= \n");
         if (precice.requiresReadingCheckpoint()) {
             assembler.updateSolution(U_old);
-
-            eslog::info(" = TIME STEP RESTARTED                                                   %8.5f / %8.5f  = \n", time.current, time.final);
-            eslog::info(" = ----------------------------------------------------------------------------------------- = \n");
-            eslog::info(" ====================================================================== solved in %8.3f s = \n\n", eslog::time() - start);
+            eslog::info("      = TIME STEP RESTARTED ====================================== solved in %8.3f s = \n", eslog::time() - start);
+            eslog::info("      =================================================================================== \n\n");
             eslog::checkpointln("SIMULATION: SOLUTION RESTARTED");
             time.current = time.previous;
         } else {
@@ -322,9 +319,8 @@ bool StructuralMechanicsTransientNonLinear::run(step::Step &step)
             A_old->copy(A);
             f_old->copy(f);
 
-            eslog::info(" = TIME STEP FINISHED                                                   %8.5f / %8.5f  = \n", time.current, time.final);
-            eslog::info(" = ----------------------------------------------------------------------------------------- = \n");
-            eslog::info(" ====================================================================== solved in %8.3f s = \n\n", eslog::time() - start);
+            eslog::info("      = TIME STEP FINISHED ======================================= solved in %8.3f s = \n", eslog::time() - start);
+            eslog::info("      =================================================================================== \n\n");
             eslog::checkpointln("SIMULATION: SOLUTION PROCESSED");
             time.previous = time.current;
             ++step.substep;
@@ -345,7 +341,7 @@ bool StructuralMechanicsTransientNonLinear::checkDisplacement(step::Step &step, 
         return false;
     } else {
         eslog::info("      == DISPLACEMENT NORM, CRITERIA [CONVERGED]             %.5e / %.5e == \n", nR, configuration.nonlinear_solver.requested_first_residual);
-        eslog::info("      =================================================================================== \n\n");
+        eslog::info("      =================================================================================== \n");
         assembler.updateSolution(U);
         return true;
     }
