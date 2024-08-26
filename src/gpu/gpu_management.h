@@ -4,8 +4,8 @@
 
 #include <vector>
 #include <functional>
-#include <cstring>
 
+#include "math/math.h"
 #include "math/primitives/vector_dense.h"
 #include "math/primitives/matrix_dense.h"
 #include "math/primitives/matrix_csr.h"
@@ -176,21 +176,7 @@ namespace mgm {
     void print_vector(queue & q, Vector_Dense<T,I,A> & vec, const char * name = "")
     {
         if constexpr(A::is_data_host_accessible) {
-            printf("Vector %s, size %lld\n", name, (long long)vec.size);
-            for(I i = 0; i < vec.size; i++) {
-                if constexpr(std::is_floating_point_v<T>) {
-                    double v = (double)vec.vals[i];
-                    char str[100];
-                    snprintf(str, sizeof(str), "%+11.3e", v);
-                    if(strstr(str, "nan") != nullptr) printf("   nan      ");
-                    else if(strstr(str, "inf") != nullptr) printf("  %cinf      ", v > 0 ? '+' : '-');
-                    else if(v == 0) printf("   0        ");
-                    else printf(" %+11.3e", v);
-                }
-                if constexpr(std::is_integral_v<T>) printf(" %+11lld", (long long)vec.vals[i]);
-            }
-            printf("\n");
-            fflush(stdout);
+            math::print_vector(vec, name);
         }
         else if constexpr(A::is_data_device_accessible) {
             Vector_Dense<T,I,Ah> vec_host;
@@ -208,23 +194,7 @@ namespace mgm {
     void print_matrix_dense(queue & q, Matrix_Dense<T,I,A> & matrix, const char * name = "")
     {
         if constexpr(A::is_data_host_accessible) {
-            printf("Dense matrix %s, size %lldx%lld, ld %lld\n", name, (long long)matrix.nrows, (long long)matrix.ncols, (long long)matrix.get_ld());
-            for(I r = 0; r < matrix.nrows; r++) {
-                for(I c = 0; c < matrix.ncols; c++) {
-                    if constexpr(std::is_floating_point_v<T>) {
-                        double v = (double)matrix.vals[r * matrix.get_ld() + c];
-                        char str[100];
-                        snprintf(str, sizeof(str), "%+11.3e", v);
-                        if(strstr(str, "nan") != nullptr) printf("   nan      ");
-                        else if(strstr(str, "inf") != nullptr) printf("  %cinf      ", v > 0 ? '+' : '-');
-                        else if(v == 0) printf("   0        ");
-                        else printf(" %+11.3e", v);
-                    }
-                    if constexpr(std::is_integral_v<T>) printf(" %+11lld", (long long)matrix.vals[r * matrix.get_ld() + c]);
-                }
-                printf("\n");
-            }
-            fflush(stdout);
+            math::print_matrix_dense(matrix, name);
         }
         else if constexpr(A::is_data_device_accessible) {
             Matrix_Dense<T,I,Ah> matrix_host;
@@ -242,27 +212,7 @@ namespace mgm {
     void print_matrix_csr_as_dense(queue & q, Matrix_CSR<T,I,A> & matrix, const char * name = "")
     {
         if constexpr(A::is_data_host_accessible) {
-            printf("CSR matrix %s, size %lldx%lld, nnz %lld\n", name, (long long)matrix.nrows, (long long)matrix.ncols, (long long)matrix.nnz);
-            for(I r = 0; r < matrix.nrows; r++) {
-                I start = matrix.rows[r];
-                I end = matrix.rows[r+1];
-                I curr_col = 0;
-                for(I i = start; i <= end; i++) {
-                    I col = matrix.ncols;
-                    if(i < end) col = matrix.cols[i];
-                    for(I c = curr_col; c < col; c++) {
-                        printf("    .       ");
-                    }
-                    if(i < end) {
-                        double val = matrix.vals[i];
-                        if(val == 0) printf("    0       ");
-                        else printf(" %+11.3e", val);
-                        curr_col = col + 1;
-                    }
-                }
-                printf("\n");
-            }
-            fflush(stdout);
+            math::print_matrix_csr_as_dense(matrix, name);
         }
         else if constexpr(A::is_data_device_accessible) {
             Matrix_CSR<T,I,Ah> matrix_host;
@@ -280,17 +230,7 @@ namespace mgm {
     void print_matrix_csr_arrays(queue & q, Matrix_CSR<T,I,A> & matrix, const char * name = "")
     {
         if constexpr(A::is_data_host_accessible) {
-            printf("CSR matrix %s, size %lldx%lld, nnz %lld\n", name, (long long)matrix.nrows, (long long)matrix.ncols, (long long)matrix.nnz);
-            printf("row ptrs: ");
-            for(I r = 0; r <= matrix.nrows; r++) printf("%lld ", (long long)matrix.rows[r]);
-            printf("\n");
-            printf("col idxs: ");
-            for(I i = 0; i < matrix.nnz; i++) printf("%lld ", (long long)matrix.cols[i]);
-            printf("\n");
-            printf("vals:     ");
-            for(I i = 0; i < matrix.nnz; i++) printf("%+.3e ", (double)matrix.vals[i]);
-            printf("\n");
-            fflush(stdout);
+            math::print_matrix_csr_arrays(matrix, name);
         }
         else if constexpr(A::is_data_device_accessible) {
             Matrix_CSR<T,I,Ah> matrix_host;
