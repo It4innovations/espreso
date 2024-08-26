@@ -48,7 +48,7 @@ esint METIS::call(
 	}
 
 	moptions[METIS_OPTION_CTYPE]     = METIS_CTYPE_SHEM;
-	moptions[METIS_OPTION_IPTYPE]    = METIS_IPTYPE_EDGE;
+	moptions[METIS_OPTION_IPTYPE]    = METIS_IPTYPE_GROW;
 	moptions[METIS_OPTION_RTYPE]     = METIS_RTYPE_FM;
 	moptions[METIS_OPTION_NITER]     = 20;
 	moptions[METIS_OPTION_UFACTOR]   = 100; // imbalance (1 + x) / 1000
