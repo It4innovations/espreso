@@ -268,18 +268,18 @@ namespace spblas {
         // if(stage == 'P') ;
         if(stage == 'C') {
             if(op == 'N') {
-                h->qq.fill(dense->vals, T{0}, dense->nrows * dense->ld);
-
                 I avg_nnz_per_row = sparse->nnz / sparse->nrows;
                 int workitems_in_workgroup = std::clamp(avg_nnz_per_row, 64, 1024);
                 sycl::nd_range<1> range(sycl::range<1>(sparse->nrows * workitems_in_workgroup), sycl::range<1>(workitems_in_workgroup));
                 if(dense->order == 'R') {
+                    h->qq.fill(dense->vals, T{0}, dense->nrows * dense->ld);
                     h->qq.parallel_for(
                         range,
                         kernel_functor_sp2dn<T,I,'R'>((I*)sparse->rowptrs, (I*)sparse->colidxs, (T*)sparse->vals, (T*)dense->vals, dense->ld)
                     );
                 }
                 else if(dense->order == 'C') {
+                    h->qq.fill(dense->vals, T{0}, dense->ncols * dense->ld);
                     h->qq.parallel_for(
                         range,
                         kernel_functor_sp2dn<T,I,'C'>((I*)sparse->rowptrs, (I*)sparse->colidxs, (T*)sparse->vals, (T*)dense->vals, dense->ld)

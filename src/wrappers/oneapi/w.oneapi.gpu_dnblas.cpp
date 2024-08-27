@@ -80,6 +80,10 @@ namespace dnblas {
     {
         if(h->is_collecting_buffersize) return;
 
+        if constexpr(utils::is_real<T>()) {
+            op_A = mgm::operation_remove_conj(op_A);
+        }
+
         if(op_A == 'C') {
             char order_A_compl = mgm::order_change(order_A);
             char op_A_compl = mgm::operation_combine(op_A, 'T');
@@ -103,6 +107,11 @@ namespace dnblas {
     void trsm(handle & h, char side, I n, I nrhs, T * A, I ld_A, char order_A, char op_A, char fill_A, T * X, I ld_X, char order_X, char op_X)
     {
         if(h->is_collecting_buffersize) return;
+
+        if constexpr(utils::is_real<T>()) {
+            op_A = mgm::operation_remove_conj(op_A);
+            op_X = mgm::operation_remove_conj(op_X);
+        }
 
         if(order_X == order_A) {
             if(op_X == 'N') {
