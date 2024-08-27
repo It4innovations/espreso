@@ -80,13 +80,13 @@ STRUCTURAL_MECHANICS {
 
   LOAD_STEPS_SETTINGS {
     1 {
-      DURATION_TIME  .001;
+      DURATION_TIME   .01;
       TYPE      TRANSIENT;
       MODE         LINEAR;
       SOLVER       [ARG7];
 
       TRANSIENT_SOLVER {
-        TIME_STEP     .0001;
+        TIME_STEP    .001;
       }
 
       FETI {
@@ -102,7 +102,7 @@ STRUCTURAL_MECHANICS {
       }
 
       NORMAL_PRESSURE {
-        Y1    1;
+        Y1    1e7;
       }
     }
   }
