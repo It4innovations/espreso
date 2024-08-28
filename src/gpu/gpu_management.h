@@ -244,6 +244,24 @@ namespace mgm {
         }
     }
 
+    template<typename T, typename I, typename A>
+    void print_matrix_csr_by_rows(queue & q, Matrix_CSR<T,I,A> & matrix, const char * name = "")
+    {
+        if constexpr(A::is_data_host_accessible) {
+            math::print_matrix_csr_by_rows(matrix, name);
+        }
+        else if constexpr(A::is_data_device_accessible) {
+            Matrix_CSR<T,I,Ah> matrix_host;
+            matrix_host.resize(matrix);
+            copy_submit(q, matrix_host, matrix);
+            queue_wait(q);
+            print_matrix_csr_by_rows(q, matrix_host, name);
+        }
+        else {
+            static_assert(true, "weird matrix with inaccessible data");
+        }
+    }
+
 }
 }
 }

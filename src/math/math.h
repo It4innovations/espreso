@@ -384,6 +384,27 @@ namespace math {
         fflush(stdout);
     }
 
+    template<typename T, typename I, typename A>
+    void print_matrix_csr_by_rows(Matrix_CSR<T,I,A> & matrix, const char * name = "")
+    {
+        static_assert(A::is_data_host_accessible);
+
+        eslog::info("CSR matrix %s, size %lldx%lld, nnz %lld\n", name, (long long)matrix.nrows, (long long)matrix.ncols, (long long)matrix.nnz);
+        for(I r = 0; r <= matrix.nrows; r++)
+        {
+            I start = matrix.rows[r];
+            I end = matrix.rows[r+1];
+            eslog::info("row %lld, indexes %lld--%lld:\n", (long long)r, (long long)start, (long long)end);
+            eslog::info("colidxs:");
+            for(I i = start; i < end; i++) eslog::info("%12lld, ", (long long)matrix.cols[i]);
+            eslog::info("\n");
+            eslog::info("vals:   ");
+            for(I i = start; i < end; i++) eslog::info("%+12.3e, ", (double)matrix.vals[i]);
+            eslog::info("\n");
+        }
+        fflush(stdout);
+    }
+
 } // math
 } // espreso
 
