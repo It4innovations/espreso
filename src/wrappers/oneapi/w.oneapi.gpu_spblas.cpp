@@ -5,6 +5,13 @@
 #include "w.oneapi.gpu_management.h"
 #include "basis/utilities/utils.h"
 #include <oneapi/mkl.hpp>
+#pragma clang diagnostic push
+#pragma clang diagnostic ignored "-Wunused-local-typedef"
+#include <oneapi/dpl/execution>
+#pragma clang diagnostic pop
+#include <oneapi/dpl/async>
+
+
 
 namespace espreso {
 namespace gpu {
@@ -12,6 +19,7 @@ namespace spblas {
 
     namespace onemkl = oneapi::mkl;
     namespace onesparse = onemkl::sparse;
+    namespace onedpl = oneapi::dpl;
 
     namespace
     {
@@ -255,14 +263,91 @@ namespace spblas {
     void descr_sparse_mv_destroy(handle & /*h*/, descr_sparse_mv & /*descr*/) {}
 
     template<typename T, typename I>
-    void transpose(handle & h, descr_matrix_csr & output, descr_matrix_csr & input, bool conjugate, size_t & buffersize, void * /*buffer*/, char stage)
+    void transpose(handle & h, descr_matrix_csr & output, descr_matrix_csr & input, bool conjugate, size_t & buffersize, void * buffer, char stage)
     {
-        if constexpr(utils::is_real<T>()) conjugate = false;
-        char op = (conjugate ? 'H' : 'T');
-        if(stage == 'B') buffersize = 0;
-#warning TODO do it my way and compare
-        if(stage == 'P') onesparse::omatcopy(h->qq, _char_to_operation(op), input->d, output->d);
-        if(stage == 'C') onesparse::omatcopy(h->qq, _char_to_operation(op), input->d, output->d);
+        auto exec_pol = onedpl::execution::make_device_policy(h->qq);
+
+        if(stage == 'B') {
+            buffersize = 0;
+            buffersize += input->nnz * sizeof(I); // map
+            buffersize += input->nnz * sizeof(I); // output_ijv_rowidxs
+        }
+        if(stage == 'P') {
+            I * map = (I*)buffer;
+            buffer = (char*)buffer + input->nnz * sizeof(I);
+            I * output_ijv_rowidxs = (I*)buffer;
+            I * output_ijv_colidxs = (I*)output->colidxs;
+            I * input_ijv_rowidxs = output_ijv_colidxs;
+            const I * input_ijv_colidxs = (I*)input->colidxs;
+
+            auto counting_begin = onedpl::counting_iterator<I>(0);
+            onedpl::experimental::copy_async(exec_pol, counting_begin, counting_begin + input->nnz, map);
+
+            {
+                I * csr_rowptrs = (I*)input->rowptrs;
+                I * ijv_rowidxs = input_ijv_rowidxs;
+                int wpw = 64;
+                int wpk = input->nrows;
+                h->qq.parallel_for(
+                    sycl::nd_range<1>(sycl::range<1>(wpk*wpw), sycl::range<1>(wpw)),
+                    [=](sycl::nd_item<1> item) {
+                        I row = item.get_group_linear_id();
+                        I start = csr_rowptrs[row];
+                        I end = csr_rowptrs[row+1];
+                        for(I i = start + item.get_local_linear_id(); i < end; i += item.get_group().get_local_linear_range()) {
+                            ijv_rowidxs[i] = row;
+                        }
+                    }
+                );
+            }
+
+            h->qq.copy<I>(input_ijv_colidxs, output_ijv_rowidxs, input->nnz);
+
+            // cant use stable_sort_by_key or sort_by_key, because asynchronicity is not specified
+            auto zip_iter = onedpl::make_zip_iterator(output_ijv_rowidxs, output_ijv_colidxs, map);
+            onedpl::experimental::sort_async(exec_pol, zip_iter, zip_iter + input->nnz, [](auto l, auto r){
+                if(onedpl::get<0>(l) == onedpl::get<0>(r)) {
+                    return onedpl::get<1>(l) < onedpl::get<1>(r);
+                }
+                return onedpl::get<0>(l) < onedpl::get<0>(r);
+            });
+
+            {
+                I * ijv_rowidxs = output_ijv_rowidxs;
+                I * csr_rowptrs = (I*)output->rowptrs;
+                I nrows = output->nrows;
+                I nnz = input->nnz;
+                I wpw = 256;
+                I wpk = 64;
+                h->qq.parallel_for(
+                    sycl::nd_range<1>(sycl::range<1>(wpk*wpw), sycl::range<1>(wpw)),
+                    [=](sycl::nd_item<1> item) {
+                        for(I i = item.get_global_linear_id(); i < nnz-1; i += item.get_global_range(0)) {
+                            I curr_row = ijv_rowidxs[i];
+                            I next_row = ijv_rowidxs[i+1];
+                            for(I r = curr_row; r < next_row; r++) csr_rowptrs[r+1] = i+1;
+                        }
+                        if(item.get_global_linear_id() == item.get_global_range(0)-1) {
+                            I lastrow = ijv_rowidxs[nnz-1];
+                            for(I r = lastrow; r < nrows; r++) csr_rowptrs[r+1] = nnz;
+                            I firstrow = ijv_rowidxs[0];
+                            for(I r = 0; r <= firstrow; r++) csr_rowptrs[r] = 0;
+                        }
+                    }
+                );
+            }
+        }
+        if(stage == 'C') {
+            I * map = (I*)buffer;
+            auto perm_iter = onedpl::make_permutation_iterator((T*)input->vals, map);
+            if(utils::is_complex<T>() && conjugate) {
+                auto perm_conj_iter = onedpl::make_transform_iterator(perm_iter, [](T x){ if constexpr(utils::is_complex<T>()){ utils::imag_ref(x) *= -1; } return x; });
+                onedpl::experimental::copy_async(exec_pol, perm_conj_iter, perm_conj_iter + output->nnz, (T*)output->vals);
+            }
+            else {
+                onedpl::experimental::copy_async(exec_pol, perm_iter, perm_iter + output->nnz, (T*)output->vals);
+            }
+        }
     }
 
     template<typename T, typename I>
