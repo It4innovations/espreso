@@ -51,6 +51,19 @@ namespace dnblas {
         bool is_collecting_buffersize = false;
     };
 
+    void init_library(mgm::queue & q)
+    {
+        double * A = (double*)mgm::memalloc_device(sizeof(double));
+        double * C = (double*)mgm::memalloc_device(sizeof(double));
+        double one = 1.0;
+        double zero = 0.0;
+        mgm::copy_submit<double>(q, A, &one, 1);
+        oneblas::column_major::syrk(q->q, onemkl::uplo::upper, onemkl::transpose::nontrans, 1, 1, one, A, 1, zero, C, 1);
+        q->q.wait();
+        mgm::memfree_device(A);
+        mgm::memfree_device(C);
+    }
+
     void handle_create(handle & h, mgm::queue & q)
     {
         h = std::make_shared<_handle>();

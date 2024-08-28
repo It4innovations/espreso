@@ -119,12 +119,12 @@ namespace spblas {
 
     struct _descr_sparse_trsv
     {
-        onesparse::matrix_handle_t d_matrix;
+        descr_matrix_csr d_matrix;
     };
 
     struct _descr_sparse_trsm
     {
-        onesparse::matrix_handle_t d_matrix;
+        descr_matrix_csr d_matrix;
     };
 
     struct _descr_sparse_mv {};
@@ -152,14 +152,20 @@ namespace spblas {
         descr->fill = fill;
     }
 
+    template<typename T, typename I>
+    void descr_matrix_csr_link_data_internal(handle & h, descr_matrix_csr & descr, I * rowptrs, I * colidxs, T * vals)
+    {
+        onesparse::set_csr_data(h->qq, descr->d, descr->nrows, descr->ncols, onemkl::index_base::zero, rowptrs, colidxs, vals);
+        descr->rowptrs = rowptrs;
+        descr->colidxs = colidxs;
+        descr->vals = vals;
+        onesparse::set_matrix_property(descr->d, onesparse::property::sorted);
+    }
+
     template<typename T, typename I, typename A>
     void descr_matrix_csr_link_data(handle & h, descr_matrix_csr & descr, Matrix_CSR<T,I,A> & matrix)
     {
-        onesparse::set_csr_data(h->qq, descr->d, matrix.nrows, matrix.ncols, onemkl::index_base::zero, matrix.rows, matrix.cols, matrix.vals);
-        descr->rowptrs = matrix.rows;
-        descr->colidxs = matrix.cols;
-        descr->vals = matrix.vals;
-        onesparse::set_matrix_property(descr->d, onesparse::property::sorted);
+        descr_matrix_csr_link_data_internal(h, descr, matrix.rows, matrix.cols, matrix.vals);
     }
 
     void descr_matrix_csr_destroy(handle & h, descr_matrix_csr & descr)
@@ -221,28 +227,26 @@ namespace spblas {
     void descr_sparse_trsv_create(handle & /*h*/, descr_sparse_trsv & descr)
     {
         descr = std::make_shared<_descr_sparse_trsv>();
-        onesparse::init_matrix_handle(&descr->d_matrix);
     }
 
     void descr_sparse_trsv_destroy(handle & h, descr_sparse_trsv & descr)
     {
         if(descr.get() == nullptr) return;
 
-        onesparse::release_matrix_handle(h->qq, &descr->d_matrix);
+        descr_matrix_csr_destroy(h, descr->d_matrix);
         descr.reset();
     }
 
     void descr_sparse_trsm_create(handle & /*h*/, descr_sparse_trsm & descr)
     {
         descr = std::make_shared<_descr_sparse_trsm>();
-        onesparse::init_matrix_handle(&descr->d_matrix);
     }
 
     void descr_sparse_trsm_destroy(handle & h, descr_sparse_trsm & descr)
     {
         if(descr.get() == nullptr) return;
 
-        onesparse::release_matrix_handle(h->qq, &descr->d_matrix);
+        descr_matrix_csr_destroy(h, descr->d_matrix);
         descr.reset();
     }
 
@@ -317,13 +321,14 @@ namespace spblas {
         if(stage == 'B') buffersize = 0;
         // if(stage == 'P') ;
         if(stage == 'U') {
-            onesparse::release_matrix_handle(h->qq, &descr_trsv->d_matrix);
-            onesparse::init_matrix_handle(&descr_trsv->d_matrix);
-            onesparse::set_csr_data(h->qq, descr_trsv->d_matrix, matrix->nrows, matrix->ncols, onemkl::index_base::zero, (I*)matrix->rowptrs, (I*)matrix->colidxs, (T*)matrix->vals);
-            onesparse::set_matrix_property(descr_trsv->d_matrix, onesparse::property::sorted);
-            onesparse::optimize_trsv(h->qq, _char_to_uplofill(matrix->fill), _char_to_operation(op), onemkl::diag::nonunit, descr_trsv->d_matrix);
+            // data in sparse matrix cannot change, according to the matrix handle contract. So I have to create a new matrix handle, and possibly preprocess again
+            // the operation descriptor contains the matrix handle
+            descr_matrix_csr_destroy(h, descr_trsv->d_matrix);
+            descr_matrix_csr_create<T,I>(h, descr_trsv->d_matrix, matrix->nrows, matrix->ncols, matrix->nnz, matrix->fill);
+            descr_matrix_csr_link_data_internal<T,I>(h, descr_trsv->d_matrix, (I*)matrix->rowptrs, (I*)matrix->colidxs, (T*)matrix->vals);
+            // onesparse::optimize_trsv(h->qq, _char_to_uplofill(matrix->fill), _char_to_operation(op), onemkl::diag::nonunit, descr_trsv->d_matrix);
         }
-        if(stage == 'C') onesparse::trsv(h->qq, _char_to_uplofill(matrix->fill), _char_to_operation(op), onemkl::diag::nonunit, one, descr_trsv->d_matrix, (T*)rhs->vals, (T*)sol->vals);
+        if(stage == 'C') onesparse::trsv(h->qq, _char_to_uplofill(matrix->fill), _char_to_operation(op), onemkl::diag::nonunit, one, descr_trsv->d_matrix->d, (T*)rhs->vals, (T*)sol->vals);
     }
 
     template<typename T, typename I>
@@ -342,13 +347,14 @@ namespace spblas {
                 if(stage == 'B') buffersize = 0;
                 // if(stage == 'P') ;
                 if(stage == 'U') {
-                    onesparse::release_matrix_handle(h->qq, &descr_trsm->d_matrix);
-                    onesparse::init_matrix_handle(&descr_trsm->d_matrix);
-                    onesparse::set_csr_data(h->qq, descr_trsm->d_matrix, matrix->nrows, matrix->ncols, onemkl::index_base::zero, (I*)matrix->rowptrs, (I*)matrix->colidxs, (T*)matrix->vals);
-                    onesparse::set_matrix_property(descr_trsm->d_matrix, onesparse::property::sorted);
-                    onesparse::optimize_trsm(h->qq, _char_to_layout(sol->order), _char_to_uplofill(matrix->fill), _char_to_operation(op_mat), onemkl::diag::nonunit, descr_trsm->d_matrix, sol->ncols);
+                    // data in sparse matrix cannot change, according to the matrix handle contract. So I have to create a new matrix handle, and possibly preprocess again
+                    // the operation descriptor contains the matrix handle
+                    descr_matrix_csr_destroy(h, descr_trsm->d_matrix);
+                    descr_matrix_csr_create<T,I>(h, descr_trsm->d_matrix, matrix->nrows, matrix->ncols, matrix->nnz, matrix->fill);
+                    descr_matrix_csr_link_data_internal<T,I>(h, descr_trsm->d_matrix, (I*)matrix->rowptrs, (I*)matrix->colidxs, (T*)matrix->vals);
+                    // onesparse::optimize_trsm(h->qq, _char_to_layout(sol->order), _char_to_uplofill(matrix->fill), _char_to_operation(op_mat), onemkl::diag::nonunit, descr_trsm->d_matrix, sol->ncols);
                 }
-                if(stage == 'C') onesparse::trsm(h->qq, _char_to_layout(sol->order), _char_to_operation(op_mat), _char_to_operation(op_rhs), _char_to_uplofill(matrix->fill), onemkl::diag::nonunit, one, descr_trsm->d_matrix, (T*)rhs->vals, sol->ncols, rhs->ld, (T*)sol->vals, sol->ld);
+                if(stage == 'C') onesparse::trsm(h->qq, _char_to_layout(sol->order), _char_to_operation(op_mat), _char_to_operation(op_rhs), _char_to_uplofill(matrix->fill), onemkl::diag::nonunit, one, descr_trsm->d_matrix->d, (T*)rhs->vals, sol->ncols, rhs->ld, (T*)sol->vals, sol->ld);
             }
             else {
                 descr_matrix_dense rhs_compl = std::make_shared<_descr_matrix_dense>(rhs->get_complementary());

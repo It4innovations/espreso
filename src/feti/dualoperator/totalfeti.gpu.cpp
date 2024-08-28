@@ -313,7 +313,7 @@ void TotalFETIGpu<T,I>::set(const step::Step &step)
 {
     if(stage != 1) eslog::error("set: invalid order of operations in dualop\n");
 
-    my_timer tm_total(timers_basic), tm_gpuinit(timers_basic), tm_gpuset(timers_basic), tm_vecresize(timers_basic), tm_sizecalc(timers_basic), tm_gpucreate(timers_basic), tm_mainloop_outer(timers_basic), tm_applystuff(timers_basic), tm_poolalloc(timers_basic), tm_preprocess(timers_basic), tm_wait(timers_basic);
+    my_timer tm_total(timers_basic), tm_gpuinit(timers_basic), tm_gpuset(timers_basic), tm_vecresize(timers_basic), tm_sizecalc(timers_basic), tm_gpucreate(timers_basic), tm_libinit(timers_basic), tm_mainloop_outer(timers_basic), tm_applystuff(timers_basic), tm_poolalloc(timers_basic), tm_preprocess(timers_basic), tm_wait(timers_basic);
     my_timer tm_mainloop_inner(timers_detailed), tm_Kreg_combine(timers_detailed), tm_solver_commit(timers_detailed), tm_fact_symbolic(timers_detailed), tm_descriptors(timers_detailed), tm_buffersize(timers_detailed), tm_alloc(timers_detailed), tm_alloc_host(timers_detailed), tm_alloc_device(timers_detailed), tm_setpointers(timers_detailed), tm_Bperm(timers_detailed), tm_get_factors(timers_detailed), tm_extract(timers_detailed), tm_trans_cpu(timers_detailed), tm_copyin(timers_detailed), tm_kernels_preprocess(timers_detailed), tm_trans_gpu(timers_detailed), tm_trsm1(timers_detailed), tm_trsm2(timers_detailed), tm_gemm(timers_detailed), tm_allocinpool(timers_detailed), tm_freeinpool(timers_detailed), tm_spmv1(timers_detailed), tm_spmv2(timers_detailed), tm_trsv1(timers_detailed), tm_trsv2(timers_detailed);
 
     tm_total.start();
@@ -403,6 +403,11 @@ void TotalFETIGpu<T,I>::set(const step::Step &step)
     for(size_t i = 0; i < n_queues; i++) gpu::dnblas::handle_create(handles_dense[i], queues[i]);
     for(size_t i = 0; i < n_queues; i++) gpu::spblas::handle_create(handles_sparse[i], queues[i]);
     tm_gpucreate.stop();
+
+    tm_libinit.start();
+    gpu::dnblas::init_library(main_q);
+    gpu::mgm::queue_wait(main_q);
+    tm_libinit.stop();
 
     tm_mainloop_outer.start();
     #pragma omp parallel for schedule(static,1) if(config->concurrency_set == CONCURRENCY::PARALLEL)
@@ -882,6 +887,7 @@ void TotalFETIGpu<T,I>::set(const step::Step &step)
     print_timer("Set       vecresize", tm_vecresize);
     print_timer("Set       sizecalc", tm_sizecalc);
     print_timer("Set       gpucreate", tm_gpucreate);
+    print_timer("Set       libinit", tm_libinit);
     print_timer("Set       mainloop_outer", tm_mainloop_outer);
     print_timer("Set         mainloop_inner", tm_mainloop_inner);
     print_timer("Set           Kreg_combine", tm_Kreg_combine);
@@ -1039,6 +1045,7 @@ void TotalFETIGpu<T,I>::update(const step::Step &step)
                 if(need_Y) gpu::spblas::descr_matrix_dense_link_data(hs, data.descr_Y, *data.d_Y);
                 if(need_f_tmp) gpu::spblas::descr_matrix_dense_link_data(hs, data.descr_F_tmp, *data.d_F_tmp);
             }
+            if(config->concurrency_update == CONCURRENCY::SEQ_WAIT) gpu::mgm::queue_wait(q);
         }
         tm_setpointers.stop();
 
@@ -1047,6 +1054,7 @@ void TotalFETIGpu<T,I>::update(const step::Step &step)
         {
             if(do_conjtrans_L2LH_d) gpu::spblas::transpose<T,I>(hs, data.descr_LH_sp, data.descr_L_sp, true, data.buffersize_transL2LH, data.buffer_transL2LH, 'C');
             if(do_conjtrans_U2UH_d) gpu::spblas::transpose<T,I>(hs, data.descr_UH_sp, data.descr_U_sp, true, data.buffersize_transU2UH, data.buffer_transU2UH, 'C');
+            if(config->concurrency_update == CONCURRENCY::SEQ_WAIT) gpu::mgm::queue_wait(q);
         }
         tm_trans_gpu.stop();
 

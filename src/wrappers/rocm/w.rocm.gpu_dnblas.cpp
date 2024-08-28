@@ -135,6 +135,8 @@ namespace dnblas {
         rocblas_handle h;
     };
 
+    void init_library(mgm::queue & q) {}
+
     void handle_create(handle & h, mgm::queue & q)
     {
         h = std::make_shared<_handle>();

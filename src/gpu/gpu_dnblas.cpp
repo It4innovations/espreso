@@ -9,6 +9,8 @@ namespace dnblas {
 
     struct _handle {};
 
+    void init_library(mgm::queue & /*q*/) {}
+
     void handle_create(handle & /*h*/, mgm::queue & /*q*/) {}
 
     void handle_destroy(handle & /*h*/) {}
