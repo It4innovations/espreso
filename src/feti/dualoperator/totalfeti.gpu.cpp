@@ -565,21 +565,6 @@ void TotalFETIGpu<T,I>::set(const step::Step &step)
         }
         tm_alloc.stop();
 
-        // set the pointers inside the descriptors of some matrices
-        tm_setpointers.start();
-        {
-            if(do_descr_sp_L)  gpu::spblas::descr_matrix_csr_link_data(hs, data.descr_L_sp,  data.d_L_sp);
-            if(do_descr_sp_LH) gpu::spblas::descr_matrix_csr_link_data(hs, data.descr_LH_sp, data.d_LH_sp);
-            if(do_descr_sp_U)  gpu::spblas::descr_matrix_csr_link_data(hs, data.descr_U_sp,  data.d_U_sp);
-            if(do_descr_sp_UH) gpu::spblas::descr_matrix_csr_link_data(hs, data.descr_UH_sp, data.d_UH_sp);
-            gpu::spblas::descr_matrix_csr_link_data(hs, data.descr_Bperm_sp, data.d_Bperm_sp);
-            if(is_implicit) gpu::spblas::descr_vector_dense_link_data(hs, data.descr_xvec, data.d_apply_x);
-            if(is_implicit) gpu::spblas::descr_vector_dense_link_data(hs, data.descr_yvec, data.d_apply_y);
-            if(is_implicit) gpu::spblas::descr_vector_dense_link_data(hs, data.descr_zvec, data.d_apply_z);
-            if(is_implicit) gpu::spblas::descr_vector_dense_link_data(hs, data.descr_wvec, data.d_apply_w);
-        }
-        tm_setpointers.stop();
-
         // prepare matrices on host
         tm_Bperm.start();
         {
@@ -621,6 +606,21 @@ void TotalFETIGpu<T,I>::set(const step::Step &step)
             if(config->concurrency_set == CONCURRENCY::SEQ_WAIT) gpu::mgm::queue_wait(q);
         }
         tm_copyin.stop();
+
+        // set the pointers inside the descriptors of some matrices
+        tm_setpointers.start();
+        {
+            if(do_descr_sp_L)  gpu::spblas::descr_matrix_csr_link_data(hs, data.descr_L_sp,  data.d_L_sp);
+            if(do_descr_sp_LH) gpu::spblas::descr_matrix_csr_link_data(hs, data.descr_LH_sp, data.d_LH_sp);
+            if(do_descr_sp_U)  gpu::spblas::descr_matrix_csr_link_data(hs, data.descr_U_sp,  data.d_U_sp);
+            if(do_descr_sp_UH) gpu::spblas::descr_matrix_csr_link_data(hs, data.descr_UH_sp, data.d_UH_sp);
+            gpu::spblas::descr_matrix_csr_link_data(hs, data.descr_Bperm_sp, data.d_Bperm_sp);
+            if(is_implicit) gpu::spblas::descr_vector_dense_link_data(hs, data.descr_xvec, data.d_apply_x);
+            if(is_implicit) gpu::spblas::descr_vector_dense_link_data(hs, data.descr_yvec, data.d_apply_y);
+            if(is_implicit) gpu::spblas::descr_vector_dense_link_data(hs, data.descr_zvec, data.d_apply_z);
+            if(is_implicit) gpu::spblas::descr_vector_dense_link_data(hs, data.descr_wvec, data.d_apply_w);
+        }
+        tm_setpointers.stop();
 
         tm_mainloop_inner.stop();
     }
@@ -892,12 +892,12 @@ void TotalFETIGpu<T,I>::set(const step::Step &step)
     print_timer("Set           alloc", tm_alloc);
     print_timer("Set             alloc_host", tm_alloc_host);
     print_timer("Set             alloc_device", tm_alloc_device);
-    print_timer("Set           setpointers", tm_setpointers);
     print_timer("Set           Bperm", tm_Bperm);
     print_timer("Set           get_factors", tm_get_factors);
     print_timer("Set             extract", tm_extract);
     print_timer("Set             trans_cpu", tm_trans_cpu);
     print_timer("Set           copyin", tm_copyin);
+    print_timer("Set           setpointers", tm_setpointers);
     print_timer("Set       applystuff", tm_applystuff);
     print_timer("Set       poolalloc", tm_poolalloc);
     print_timer("Set       preprocess", tm_preprocess);
@@ -1016,6 +1016,17 @@ void TotalFETIGpu<T,I>::update(const step::Step &step)
             gpu::dnblas::buffer_set(hd, buffer_other, data.buffersize_other);
         }
 
+        // copy the new factors to device
+        tm_copyin.start();
+        {
+            if(do_copyin_L)  gpu::mgm::copy_submit(q, data.d_L_sp,  data.h_L_sp,  false, true);
+            if(do_copyin_U)  gpu::mgm::copy_submit(q, data.d_U_sp,  data.h_U_sp,  false, true);
+            if(do_copyin_LH) gpu::mgm::copy_submit(q, data.d_LH_sp, data.h_LH_sp, false, true);
+            if(do_copyin_UH) gpu::mgm::copy_submit(q, data.d_UH_sp, data.h_UH_sp, false, true);
+            if(config->concurrency_update == CONCURRENCY::SEQ_WAIT) gpu::mgm::queue_wait(q);
+        }
+        tm_copyin.stop();
+
         // set the pointers inside the descriptors of the rest of the matrices
         tm_setpointers.start();
         {
@@ -1030,17 +1041,6 @@ void TotalFETIGpu<T,I>::update(const step::Step &step)
             }
         }
         tm_setpointers.stop();
-
-        // copy the new factors to device
-        tm_copyin.start();
-        {
-            if(do_copyin_L)  gpu::mgm::copy_submit(q, data.d_L_sp,  data.h_L_sp,  false, true);
-            if(do_copyin_U)  gpu::mgm::copy_submit(q, data.d_U_sp,  data.h_U_sp,  false, true);
-            if(do_copyin_LH) gpu::mgm::copy_submit(q, data.d_LH_sp, data.h_LH_sp, false, true);
-            if(do_copyin_UH) gpu::mgm::copy_submit(q, data.d_UH_sp, data.h_UH_sp, false, true);
-            if(config->concurrency_update == CONCURRENCY::SEQ_WAIT) gpu::mgm::queue_wait(q);
-        }
-        tm_copyin.stop();
 
         // transpose csr matrices on device
         tm_trans_gpu.start();
@@ -1190,8 +1190,8 @@ void TotalFETIGpu<T,I>::update(const step::Step &step)
     print_timer("Update          extract", tm_extract);
     print_timer("Update          trans_cpu", tm_trans_cpu);
     print_timer("Update        allocinpool", tm_allocinpool);
-    print_timer("Update        setpointers", tm_setpointers);
     print_timer("Update        copyin", tm_copyin);
+    print_timer("Update        setpointers", tm_setpointers);
     print_timer("Update        trans_gpu", tm_trans_gpu);
     print_timer("Update        descr_update", tm_descr_update);
     print_timer("Update          descr_update_trsm1", tm_descr_update_trsm1);
