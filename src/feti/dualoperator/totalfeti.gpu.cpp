@@ -1327,9 +1327,10 @@ void TotalFETIGpu<T,I>::apply_explicit_sggpu(const Vector_Dual<T> &x_cluster, Ve
     if(config->concurrency_apply == CONCURRENCY::SEQ_WAIT) gpu::mgm::queue_wait(main_q);
     tm_scatter.stop();
 
+    gpu::mgm::queue_async_barrier({main_q}, queues);
+
     // apply
     tm_mv_outer.start();
-    gpu::mgm::queue_async_barrier({main_q}, queues);
     #pragma omp parallel for schedule(static,1) if(config->concurrency_apply == CONCURRENCY::PARALLEL)
     for(size_t di = 0; di < n_domains; di++) {
         gpu::mgm::queue & q = queues[di % n_queues];
@@ -1819,6 +1820,22 @@ void TotalFETIGpu<T,I>::config_replace_defaults()
         replace_if_auto(config->trs1_solve_type,            native_trs1_solve_type);
         replace_if_auto(config->trs2_solve_type,            native_trs2_solve_type);
         replace_if_auto(config->trsm_rhs_sol_order,         MATRIX_ORDER::ROW_MAJOR);
+        replace_if_auto(config->path_if_hermitian,          PATH_IF_HERMITIAN::HERK);
+        replace_if_auto(config->f_sharing_if_hermitian,     TRIANGLE_MATRIX_SHARING::SHARED);
+        replace_if_auto(config->queue_count,                QUEUE_COUNT::PER_THREAD);
+        replace_if_auto(config->apply_scatter_gather_where, DEVICE::GPU);
+        replace_if_auto(config->transpose_where,            DEVICE::GPU);
+    }
+    if(gpu::mgm::get_implementation() == gpu::mgm::gpu_wrapper_impl::ONEAPI)
+    {
+        replace_if_auto(config->concurrency_set,            CONCURRENCY::PARALLEL);
+        replace_if_auto(config->concurrency_update,         CONCURRENCY::PARALLEL);
+        replace_if_auto(config->concurrency_apply,          CONCURRENCY::PARALLEL);
+        replace_if_auto(config->trs1_factor_storage,        MATRIX_STORAGE::DENSE);
+        replace_if_auto(config->trs2_factor_storage,        MATRIX_STORAGE::DENSE);
+        replace_if_auto(config->trs1_solve_type,            native_trs1_solve_type);
+        replace_if_auto(config->trs2_solve_type,            native_trs2_solve_type);
+        replace_if_auto(config->trsm_rhs_sol_order,         MATRIX_ORDER::COL_MAJOR);
         replace_if_auto(config->path_if_hermitian,          PATH_IF_HERMITIAN::HERK);
         replace_if_auto(config->f_sharing_if_hermitian,     TRIANGLE_MATRIX_SHARING::SHARED);
         replace_if_auto(config->queue_count,                QUEUE_COUNT::PER_THREAD);
