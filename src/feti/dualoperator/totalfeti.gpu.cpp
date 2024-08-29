@@ -1830,7 +1830,7 @@ void TotalFETIGpu<T,I>::config_replace_defaults()
     {
         replace_if_auto(config->concurrency_set,            CONCURRENCY::PARALLEL);
         replace_if_auto(config->concurrency_update,         CONCURRENCY::PARALLEL);
-        replace_if_auto(config->concurrency_apply,          CONCURRENCY::PARALLEL);
+        replace_if_auto(config->concurrency_apply,          CONCURRENCY::SEQ_WAIT);
         replace_if_auto(config->trs1_factor_storage,        MATRIX_STORAGE::DENSE);
         replace_if_auto(config->trs2_factor_storage,        MATRIX_STORAGE::DENSE);
         replace_if_auto(config->trs1_solve_type,            native_trs1_solve_type);
