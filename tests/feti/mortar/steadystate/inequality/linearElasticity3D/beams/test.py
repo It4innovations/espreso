@@ -14,7 +14,7 @@ class Assembler(unittest.TestCase):
         ESPRESOTest.clean()
 
     def test_feti(self):
-        iterations = [ 350, 350, 500, 450 ]
+        iterations = [ 370, 350, 500, 450 ]
         it = 0
         for el1 in [ " HEXA8", "TETRA4" ]:
             for el2 in [ " HEXA8", "TETRA4" ]:

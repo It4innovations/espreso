@@ -42,7 +42,7 @@ GENERATOR {
     }
 
     FACES {
-      WALL  <0 , 1> <0 , 0> <0 , 1>;
+      CONTACT  <0 , 1> <0 , 0> <0 , 1>;
     }
 
     ELEMENT_TYPE          [ARG0];
@@ -119,7 +119,7 @@ STRUCTURAL_MECHANICS {
       }
 
       FIXED_WALL {
-        WALL {
+        CONTACT {
           NORMAL  { Y 1; Z -0.05; }
           POINT   { X 0; Y -.06; Z .05; };
         }

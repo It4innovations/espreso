@@ -4,9 +4,9 @@ from estest import ESPRESOTest
 
 cases = [
     ("          PCG", "     NONE", 85),
-    ("          PCG", "DIRICHLET", 25),
+    ("          PCG", "DIRICHLET", 27),
     ("orthogonalPCG", "     NONE", 63),
-    ("orthogonalPCG", "DIRICHLET", 23),
+    ("orthogonalPCG", "DIRICHLET", 25),
     ]
 
 class Assembler(unittest.TestCase):

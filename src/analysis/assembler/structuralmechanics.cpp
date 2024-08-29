@@ -118,7 +118,7 @@ bool StructuralMechanics::analyze(const step::Step &step)
         faceMultiplicity.resize(info::mesh->nodes->size);
         for(size_t r = 1; r < info::mesh->boundary.size(); ++r) {
             const BoundaryRegionStore *region = info::mesh->boundary[r];
-            if (info::mesh->boundary[r]->dimension) {
+            if (info::mesh->boundary[r]->dimension && StringCompare::caseInsensitivePreffix("CONTACT", region->name)) {
                 for (auto face = region->elements->cbegin(); face != region->elements->cend(); ++face) {
                     for (auto n = face->begin(); n != face->end(); ++n) {
                         faceMultiplicity[*n] += 1;
@@ -396,7 +396,7 @@ bool StructuralMechanics::analyze(const step::Step &step)
             for (size_t i = 0; i < info::mesh->boundary[r]->eintervals.size(); ++i) {
                 faceKernels[r][i].coordinates.activate(region->elements->cbegin() + region->eintervals[i].begin, region->elements->cbegin() + region->eintervals[i].end, settings.element_behaviour == StructuralMechanicsGlobalSettings::ELEMENT_BEHAVIOUR::AXISYMMETRIC);
                 faceKernels[r][i].normalPressure.activate(getExpression(region->name, configuration.normal_pressure), settings.element_behaviour);
-                if (settings.contact_interfaces) {
+                if (settings.contact_interfaces && StringCompare::caseInsensitivePreffix("CONTACT", region->name)) {
                     faceKernels[r][i].normal.activate(region->elements->cbegin() + region->eintervals[i].begin, region->elements->cbegin() + region->eintervals[i].end, Results::normal->data.data(), faceMultiplicity.data());
                 }
                 auto pressure = configuration.pressure.find(region->name);
