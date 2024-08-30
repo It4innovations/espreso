@@ -148,8 +148,8 @@ bool _set(MKLPDSS<T> &mklpdss, const Matrix_Distributed<T> &A)
     // Matrix input format.
     mklpdss.external->iparm[34] = 1 - Indexing::CSR; // 0- or 1- based indexing
     mklpdss.external->iparm[39] = 2; // distributed A, x, rhs
-    mklpdss.external->iparm[40] = A.decomposition->begin + 1;
-    mklpdss.external->iparm[41] = A.decomposition->end;
+    mklpdss.external->iparm[40] = A.decomposition->begin + Indexing::CSR;
+    mklpdss.external->iparm[41] = A.decomposition->end - 1 + Indexing::CSR;
 
     mklpdss.external->msglvl = 0;
     mklpdss.external->comm = MPI_Comm_c2f(info::mpi::comm);

@@ -34,24 +34,24 @@ void DirectLinearSystemSolver<T>::setDirichlet()
         b.cluster.vals[dirichlet.cluster.indices[i]] = dirichlet.cluster.vals[i];
         esint col = 0;
         if (dirichlet.cluster.indices[i] < nhalo) {
-            col = A.decomposition->halo[dirichlet.cluster.indices[i]] + 1;
+            col = A.decomposition->halo[dirichlet.cluster.indices[i]] + Indexing::CSR;
         } else {
-            col = A.decomposition->begin + dirichlet.cluster.indices[i] - nhalo + 1;
+            col = A.decomposition->begin + dirichlet.cluster.indices[i] - nhalo + Indexing::CSR;
         }
         for (esint j = A.cluster.rows[dirichlet.cluster.indices[i]]; j < A.cluster.rows[dirichlet.cluster.indices[i] + 1]; j++) {
-            if (A.cluster.cols[j - 1] == col) {
-                A.cluster.vals[j - 1] = 1;
+            if (A.cluster.cols[j - Indexing::CSR] == col) {
+                A.cluster.vals[j - Indexing::CSR] = 1;
             } else {
-                A.cluster.vals[j - 1] = 0;
-                esint row = getrow(A.cluster.cols[j - 1] - 1);
+                A.cluster.vals[j - Indexing::CSR] = 0;
+                esint row = getrow(A.cluster.cols[j - Indexing::CSR] - Indexing::CSR);
                 if (row != -1 && !std::binary_search(dirichlet.cluster.indices, dirichlet.cluster.indices + dirichlet.cluster.nnz, row)) {
                     for (esint c = A.cluster.rows[row]; c < A.cluster.rows[row + 1]; c++) {
-                        if (A.cluster.cols[c - 1] == col) {
+                        if (A.cluster.cols[c - Indexing::CSR] == col) {
                             if (row < nhalo) {
-                                tosend.push_back({A.cluster.vals[c - 1] * b.cluster.vals[dirichlet.cluster.indices[i]], A.cluster.cols[j - 1] - 1, A.cluster.cols[c - 1] - 1});
+                                tosend.push_back({A.cluster.vals[c - Indexing::CSR] * b.cluster.vals[dirichlet.cluster.indices[i]], A.cluster.cols[j - Indexing::CSR] - Indexing::CSR, A.cluster.cols[c - Indexing::CSR] - Indexing::CSR});
                             }
-                            b.cluster.vals[row] -= A.cluster.vals[c - 1] * b.cluster.vals[dirichlet.cluster.indices[i]];
-                            A.cluster.vals[c - 1] = 0;
+                            b.cluster.vals[row] -= A.cluster.vals[c - Indexing::CSR] * b.cluster.vals[dirichlet.cluster.indices[i]];
+                            A.cluster.vals[c - Indexing::CSR] = 0;
                         }
                     }
                 } else {
@@ -85,7 +85,7 @@ void DirectLinearSystemSolver<T>::setDirichlet()
             if (row == -1) {
                 row = getrow(rBuffer[n][i].row);
                 b.cluster.vals[row] -= rBuffer[n][i].value;
-                esint c = std::lower_bound(A.cluster.cols + A.cluster.rows[row] - 1, A.cluster.cols + A.cluster.rows[row + 1] - 1, rBuffer[n][i].column + 1) - A.cluster.cols;
+                esint c = std::lower_bound(A.cluster.cols + A.cluster.rows[row] - Indexing::CSR, A.cluster.cols + A.cluster.rows[row + 1] - Indexing::CSR, rBuffer[n][i].column + Indexing::CSR) - A.cluster.cols;
                 A.cluster.vals[c] = 0;
             }
         }
