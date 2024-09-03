@@ -687,6 +687,8 @@ void TotalFETIGpu<T,I>::set(const step::Step &step)
     }
     tm_applystuff.stop();
 
+    size_t free_memory_before_pool = gpu::mgm::get_device_memory_free();
+
     // memory pool alloc
     tm_poolalloc.start();
     {
@@ -871,6 +873,7 @@ void TotalFETIGpu<T,I>::set(const step::Step &step)
         eslog::info("rank %4d   GPU memory used for buffers spmm [MiB]:      %9zu\n", info::mpi::rank, mem_buffer_spmm >> 20);
         eslog::info("rank %4d   GPU memory used for buffers transL2LH [MiB]: %9zu\n", info::mpi::rank, mem_buffer_transL2LH >> 20);
         eslog::info("rank %4d   GPU memory used for buffers transU2UH [MiB]: %9zu\n", info::mpi::rank, mem_buffer_transU2UH >> 20);
+        eslog::info("rank %4d GPU memory free for pool and more [MiB]:       %9zu\n", info::mpi::rank, free_memory_before_pool >> 20);
         eslog::info("rank %4d GPU memory used for memory pool [MiB]:         %9zu\n", info::mpi::rank, cbmba_res_device->get_max_capacity() >> 20);
     }
 

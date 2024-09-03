@@ -52,6 +52,8 @@ namespace mgm {
 
     size_t get_device_memory_capacity();
 
+    size_t get_device_memory_free();
+
     void * memalloc_device(size_t num_bytes);
 
     void memfree_device(void * ptr);

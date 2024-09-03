@@ -108,6 +108,14 @@ namespace mgm {
         return props.totalGlobalMem;
     }
 
+    size_t get_device_memory_free()
+    {
+        size_t size_free;
+        size_t size_total;
+        CHECK(hipMemGetInfo(&size_free, &size_total));
+        return size_free;
+    }
+
     void * memalloc_device(size_t num_bytes)
     {
         void * ptr;
