@@ -11,7 +11,7 @@ def configure(ctx):
 
     ctx.env.append_unique("CXXFLAGS", [ "-fsycl" ])
 
-    headers = [ "sycl/sycl.hpp", "dpct/dpct.hpp", "oneapi/mkl.hpp" ]
+    headers = [ "sycl/sycl.hpp", "dpct/dpct.hpp", "oneapi/mkl.hpp", "oneapi/dpl/execution", "oneapi/dpl/async" ]
     libs = [ "mkl_sycl_blas", "mkl_sycl_sparse", "mkl_core", "mkl_sequential", "mkl_intel_lp64" ]
     ctx.check_cxx(mandatory=False, msg="Checking for 'oneapi'", okmsg=" ".join(libs), define_name="HAVE_ONEAPI", header_name=headers, lib=libs, uselib_store="ONEAPI", global_define=0)
 
