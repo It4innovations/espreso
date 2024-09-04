@@ -1,9 +1,15 @@
 #!/bin/bash
 
-if [[ "$(which icpx)" != *"2024.2"* ]]
+intel_version=$(icpx --version | head -n 1 | cut -d'(' -f3 | cut -d')' -f1)
+intel_version_year=$(echo "${intel_version}" | cut -d. -f1)
+intel_version_major=$(echo "${intel_version}" | cut -d. -f2)
+intel_version_minor=$(echo "${intel_version}" | cut -d. -f3)
+intel_version_numeric="${intel_version_year}${intel_version_major}${intel_version_minor}"
+if [ "${intel_version_numeric}" -ge 202421 ]
 then
     echo
-    echo "Warning, default Intel toolkit changed, things might work differently"
+    echo "Warning, the code will probably not work"
+    echo "  see https://community.intel.com/t5/Intel-oneAPI-DPC-C-Compiler/icpx-2024-2-1-sycl-event-dependency-ignored-across-queues/m-p/1627371"
     echo
 fi
 
