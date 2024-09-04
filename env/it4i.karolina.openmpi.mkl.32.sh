@@ -8,7 +8,7 @@ ml Eigen/3.4.0-GCCcore-13.2.0
 ml Python/3.11.5-GCCcore-13.2.0
 ml Boost.Python-NumPy
 
-. dependencies/install.suitesparse.sh gcc
+. dependencies/install.suitesparse.sh gcc gfortran
 . dependencies/install.gklib.sh gcc
 . dependencies/install.metis32.sh gcc
 . dependencies/install.parmetis32.sh mpicc

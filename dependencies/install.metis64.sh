@@ -2,26 +2,33 @@
 
 DEPENDENCIES_DIR="${PWD}/dependencies"
 
+COMPILER_C="${1}"
+
 METIS_ROOT="${DEPENDENCIES_DIR}/metis"
 if [ ! -d "${METIS_ROOT}" ]
 then
     sh ${DEPENDENCIES_DIR}/clone.metis.sh
 fi
 
-if [ ! -d "${METIS_ROOT}/$1_64" ]
+INSTALL_DIR="${METIS_ROOT}/install_${COMPILER_C}_64"
+if [ ! -d "${INSTALL_DIR}" ]
 then
     (
         cd "${METIS_ROOT}"
         sed -i 's/add_subdirectory(\"programs\")/#add_subdirectory(\"programs\")/'g CMakeLists.txt
-        make config shared=1 cc=$1 i64=1 prefix="${PWD}/$1_64"
+        make clean
+        make config shared=1 cc=${COMPILER_C} i64=1 prefix="${INSTALL_DIR}"
         make -j$(nproc)
         make install
     )
 fi
 
-export CPATH="${METIS_ROOT}/$1_64/include:${CPATH}"
-export LIBRARY_PATH="${METIS_ROOT}/$1_64/lib:${METIS_ROOT}/$1_32/lib64:${LIBRARY_PATH}"
-export LD_LIBRARY_PATH="${METIS_ROOT}/$1_64/lib:${METIS_ROOT}/$1_32/lib64:${LD_LIBRARY_PATH}"
-echo "          CPATH+=${METIS_ROOT}/$1_64/include"
-echo "   LIBRARY_PATH+=${METIS_ROOT}/$1_64/lib"
-echo "LD_LIBRARY_PATH+=${METIS_ROOT}/$1_64/lib"
+prepend_to_CPATH="${INSTALL_DIR}/include"
+prepend_to_LIBRARY_PATH="${INSTALL_DIR}/lib:${INSTALL_DIR}/lib64"
+prepend_to_LD_LIBRARY_PATH="${INSTALL_DIR}/lib:${INSTALL_DIR}/lib64"
+export CPATH="${prepend_to_CPATH}:${CPATH}"
+export LIBRARY_PATH="${prepend_to_LIBRARY_PATH}:${LIBRARY_PATH}"
+export LD_LIBRARY_PATH="${prepend_to_LD_LIBRARY_PATH}:${LD_LIBRARY_PATH}"
+echo "          CPATH+=${prepend_to_CPATH}"
+echo "   LIBRARY_PATH+=${prepend_to_LIBRARY_PATH}"
+echo "LD_LIBRARY_PATH+=${prepend_to_LD_LIBRARY_PATH}"

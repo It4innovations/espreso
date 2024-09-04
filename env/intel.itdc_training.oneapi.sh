@@ -15,7 +15,7 @@ fi
 
 
 
-. dependencies/install.suitesparse.sh icx
+. dependencies/install.suitesparse.sh icx ifx
 . dependencies/install.gklib.sh icx
 . dependencies/install.metis32.sh icx
 . dependencies/install.parmetis32.sh mpiicx

@@ -1,5 +1,5 @@
 
-. dependencies/install.suitesparse.sh gcc
+. dependencies/install.suitesparse.sh gcc gfortran
 . dependencies/install.gklib.sh gcc
 . dependencies/install.metis32.sh gcc
 . dependencies/install.parmetis32.sh mpicc
