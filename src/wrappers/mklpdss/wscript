@@ -12,7 +12,7 @@ def configure(ctx):
     if ctx.options.intwidth == "64":
         suffix = '_ilp64'
 
-    if ctx.env.COMPILER_CXX == "icpc":
+    if ctx.env.COMPILER_CXX == "icpc" or ctx.env.COMPILER_CXX == "icpx":
         lib = prefix + "intelmpi" + suffix
     else:
         lib = prefix + "openmpi" + suffix
