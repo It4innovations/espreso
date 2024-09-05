@@ -110,6 +110,11 @@ OutputConfiguration::OutputConfiguration(const ECF *root)
 			.setdescription({ "Store decomposition." })
 			.setdatatype({ ECFDataType::NONNEGATIVE_INTEGER }));
 
+	print_precision = 15;
+    REGISTER(print_precision, ECFMetaData()
+            .setdescription({ "Precision of output matrices." })
+            .setdatatype({ ECFDataType::NONNEGATIVE_INTEGER }));
+
 	path = "results";
 	REGISTER(path, ECFMetaData()
 			.setdescription({ "Path" })

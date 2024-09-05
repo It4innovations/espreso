@@ -3,6 +3,7 @@
 #include "analysis/math/matrix_feti.h"
 #include "analysis/math/vector_distributed.h"
 #include "analysis/math/vector_feti.h"
+#include "esinfo/ecfinfo.h"
 #include "math/math.h"
 #include "math/primitives/vector_dense.h"
 #include "feti/common/vector_dual.h"
@@ -19,7 +20,7 @@ template <typename T>
 void _store(const Vector_Dense<T> &x, const char* file)
 {
     std::ofstream os(std::string(file) + ".txt");
-    os.precision(15);
+    os.precision(info::ecf->output.print_precision);
     os << std::showpos;
 
     for (esint i = 0; i < x.size; i++) {
@@ -35,7 +36,7 @@ template <typename T, typename I>
 void _store(const Vector_Sparse<T, I> &x, const char* file)
 {
     std::ofstream os(std::string(file) + ".txt");
-    os.precision(15);
+    os.precision(info::ecf->output.print_precision);
     os << std::showpos;
 
     for (I i = 0; i < x.nnz; i++) {
@@ -78,8 +79,12 @@ template <> void store(const Vector_Distributed<Vector_Sparse, std::complex<doub
 template <typename T>
 void _store(const Vector_FETI<Vector_Dense, T> &x, const char* file)
 {
-    for (size_t d = 0; d < x.domains.size(); ++d) {
-        store(x.domains[d], (std::string(file) + std::to_string(d)).c_str());
+    if (x.domains.size() == 1) {
+        store(x.domains[0], file);
+    } else {
+        for (size_t d = 0; d < x.domains.size(); ++d) {
+            store(x.domains[d], (std::string(file) + std::to_string(d)).c_str());
+        }
     }
 }
 
@@ -103,7 +108,7 @@ void _store(const Matrix_Dense<T> &A, const char* file)
     std::ofstream os(std::string(file) + ".txt");
     os << std::setw(6) << A.nrows << " " << std::setw(6) << A.ncols << "\n";
 
-    os.precision(15);
+    os.precision(info::ecf->output.print_precision);
     os << std::showpos;
     for (esint r = 0, i = 0; r < A.nrows; r++) {
         for (esint c = A.shape == Matrix_Shape::FULL ? 0 : r; c < A.ncols; c++, i++) {
@@ -122,7 +127,7 @@ void _store(const Matrix_CSR<T, I> &A, const char* file, esint offset = 0)
     std::ofstream os(std::string(file) + ".txt");
     os << std::setw(6) << A.nrows << " " << std::setw(6) << A.ncols << " " << std::setw(6) << A.nnz << "\n";
 
-    os.precision(15);
+    os.precision(info::ecf->output.print_precision);
     os << std::showpos;
     int indexing = A.rows[0];
     for (esint r = 0; r < A.nrows; r++) {
@@ -143,7 +148,7 @@ void _store(const Matrix_IJV<T> &A, const char* file)
     std::ofstream os(std::string(file) + ".txt");
     os << std::setw(6) << A.nrows << " " << std::setw(6) << A.ncols << " " << std::setw(6) << A.nnz << "\n";
 
-    os.precision(15);
+    os.precision(info::ecf->output.print_precision);
     os << std::showpos;
     for (esint i = 0; i < A.nnz; i++) {
         os << std::setw(6) << A.rows[i]<< " ";
@@ -174,8 +179,12 @@ template <> void store(const Matrix_Distributed<std::complex<double> > &A, const
 template <typename T>
 void _store(const Matrix_FETI<T> &A, const char* file)
 {
-    for (size_t d = 0; d < A.domains.size(); ++d) {
-        store(A.domains[d], (std::string(file) + std::to_string(d)).c_str());
+    if (A.domains.size() == 1) {
+        store(A.domains[0], file);
+    } else {
+        for (size_t d = 0; d < A.domains.size(); ++d) {
+            store(A.domains[d], (std::string(file) + std::to_string(d)).c_str());
+        }
     }
 }
 

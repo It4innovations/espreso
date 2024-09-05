@@ -119,7 +119,7 @@ struct OutputConfiguration: public ECFDescription {
 	std::string papi_events, papi_codes;
 	LOGGER logger;
 
-	size_t print_matrices, store_decomposition;
+	size_t print_matrices, store_decomposition, print_precision;
 
 	FORMAT format;
 	MODE mode;
