@@ -630,6 +630,20 @@ OptimizationProxy::OptimizationProxy(
 			m_config.improved_micro_pso.BETA, m_config.improved_micro_pso.RHO_START,
 			m_config.improved_micro_pso.S_C, m_config.improved_micro_pso.F_C);
 		break;
+	case AutoOptimizationConfiguration::ALGORITHM::MICRO_PSO:
+		this->m_alg = new MicroPSOAlgorithm(m_manager, m_output,
+			m_config.population, m_config.micro_pso.C1,
+			m_config.micro_pso.C2, m_config.micro_pso.W_START,
+			m_config.micro_pso.W_END, m_config.micro_pso.POPULATION_CONVERGENCE,
+			m_config.micro_pso.CONVERGENCE_THRESHOLD, m_config.micro_pso.M,
+			m_config.micro_pso.BETA, m_config.micro_pso.RHO_START,
+			m_config.micro_pso.S_C, m_config.micro_pso.F_C);
+		break;
+	case AutoOptimizationConfiguration::ALGORITHM::MICRO_GA:
+		this->m_alg = new MicroGAAlgorithm(m_manager, m_output, m_config.population,
+			m_config.micro_ga.K, m_config.micro_ga.CONVERGENCE_THRESHOLD, 
+			m_config.micro_ga.POPULATION_CONVERGENCE);
+		break;
 	default:;
 	}
 }

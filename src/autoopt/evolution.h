@@ -87,6 +87,56 @@ private:
 };
 
 // Source papers:
+// [1] microPSO, DOI: 10.1016/j.amc.2006.01.088
+// [2] Definition of rho, s_c, f_c, DOI: 10.1109/SIS.2003.1202274
+class MicroPSOAlgorithm : public EvolutionAlgorithm
+{
+public:
+	MicroPSOAlgorithm(ParameterManager& manager, OutputManager& output,
+		int population, double C1, double C2,
+		double W_START, double W_END, double pop_convergence, 
+		double convergence_threshold, int M, double BETA, 
+		double RHO_START, double S_c, double F_c);
+
+	std::vector<double>& getCurrentSpecimen() override;
+	void evaluateCurrentSpecimen(double value) override;
+
+private:
+	const int population;
+	const int dimension;
+
+	int generation;
+	std::vector<std::vector<double> >::iterator current;
+	bool isInitializing;
+
+	const double C1;
+	const double C2;
+	double w;
+	const double W_START;
+	const double W_END;
+	const double POP_CONVERGENCE;
+	const double CONVERGENCE_THRESHOLD;
+	const int M;
+	const double BETA;
+	const double RHO_START;
+	double rho;
+	int best_successes;
+	const int best_S_c;
+	int best_failures;
+	const int best_F_c;
+
+	std::vector<std::vector<double> > pBest;
+	std::vector<std::vector<double> > velocity;
+	std::vector<double> gBest;
+	int gBest_index;
+	std::vector<double> total_gBest;
+	std::vector<std::vector<double> > blacklist;
+
+	void migrateSpecimen();
+	bool detectRestartAndPerform();
+};
+
+// Source papers:
 // [1] Improved microPSO, DOI: 10.1002/etep.1704
 // [2] Original microPSO, DOI: 10.1016/j.amc.2006.01.088
 // [3] Definition of rho, s_c, f_c, DOI: 10.1109/SIS.2003.1202274
@@ -239,6 +289,66 @@ private:
 
 	void mutateSpecimen();
 };
+
+// Sources:
+// [1] Simple continuous GA:
+//   Simon, Dan. Evolutionary optimization algorithms. ISBN 978-0-470-93741-9.
+// [2] Tournament strategy: https://cstheory.stackexchange.com/questions/14758/tournament-selection-in-genetic-algorithms
+class GAAlgorithm : public EvolutionAlgorithm
+{
+public:
+	GAAlgorithm(ParameterManager& manager, OutputManager& output,
+	int population, int K, double CROSSOVER_RATE, double MUTATION_RATE);
+
+	std::vector<double>& getCurrentSpecimen() override;
+	void evaluateCurrentSpecimen(double value) override;
+
+private:
+	const int population;
+	const int dimension;
+	const int K;
+	const double CROSSOVER_RATE;
+	const double MUTATION_RATE;
+	int generation;
+
+	std::vector<std::vector<double> >::iterator current;
+
+	void produceChildren();
+};
+
+// Sources:
+// [1] microGA, DOI: 10.1117/12.969927 (original paid paper)
+// Free alternatives with a short description only
+// [2] Golshan, A. et al., A Comparison of Optimization Methods in Cutting
+//   Parameters Using Non-dominated Sorting Genetic Algorithm (NSGA-II)
+//   and Micro Genetic Algorithm (MGA)
+// [3] Coello, C. et al., Multiobjective Optimization using a Micro-Genetic
+//   Algorithm, DOI: 10.1007/3-540-44719-9_9
+class MicroGAAlgorithm : public EvolutionAlgorithm
+{
+public:
+	MicroGAAlgorithm(ParameterManager& manager, OutputManager& output,
+	int population, int K, double CONVERGENCE_THRESHOLD,
+	double POP_CONVERGENCE);
+
+	std::vector<double>& getCurrentSpecimen() override;
+	void evaluateCurrentSpecimen(double value) override;
+
+private:
+	const int population;
+	const int dimension;
+	const int K;
+	const double CONVERGENCE_THRESHOLD;
+	const double POP_CONVERGENCE;
+	int generation;
+	bool isInitializing;
+
+	std::vector<std::vector<double> >::iterator current;
+
+	void produceChildren();
+	bool detectRestartAndPerform();
+};
+
 
 class SOMAAlgorithm : public EvolutionAlgorithm
 {

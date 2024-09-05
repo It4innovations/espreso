@@ -17,6 +17,23 @@ struct PSOConfiguration : public ECFDescription
 	PSOConfiguration();
 };
 
+struct MicroPSOConfiguration : public ECFDescription
+{
+	double C1;
+	double C2;
+	double W_START;
+	double W_END;
+	double POPULATION_CONVERGENCE;
+	double CONVERGENCE_THRESHOLD;
+	int M;
+	double BETA;
+	double RHO_START;
+	double S_C;
+	double F_C;
+
+	MicroPSOConfiguration();
+};
+
 struct ImprovedMicroPSOConfiguration : public ECFDescription
 {
 	double C1;
@@ -52,6 +69,15 @@ struct MicroDERConfiguration : public ECFDescription
 	MicroDERConfiguration();
 };
 
+struct MicroGAConfiguration : public ECFDescription
+{
+	int K;
+	double POPULATION_CONVERGENCE;
+	double CONVERGENCE_THRESHOLD;
+
+	MicroGAConfiguration();
+};
+
 struct SOMAT3AConfiguration : public ECFDescription
 {
 	// TODO
@@ -78,7 +104,9 @@ struct AutoOptimizationConfiguration : public ECFDescription
 		RANDOM,
 		ALL_PERMUTATIONS,
 		MICRO_DER,
-		IMPROVED_MICRO_PSO
+		IMPROVED_MICRO_PSO,
+		MICRO_PSO,
+		MICRO_GA
 	};
 
 	ALGORITHM algorithm;
@@ -91,6 +119,8 @@ struct AutoOptimizationConfiguration : public ECFDescription
 	SOMAT3AConfiguration somat3a;
 	MicroDERConfiguration micro_der;
 	ImprovedMicroPSOConfiguration improved_micro_pso;
+	MicroPSOConfiguration micro_pso;
+	MicroGAConfiguration micro_ga;
 
 	AutoOptimizationConfiguration();
 };

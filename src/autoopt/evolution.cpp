@@ -175,6 +175,217 @@ void PSOAlgorithm::migrateSpecimen()
 }
 
 
+MicroPSOAlgorithm::MicroPSOAlgorithm(ParameterManager& manager, OutputManager& output,
+	int population, double C1, double C2, double W_START,
+	double W_END, double pop_convergence, double convergence_threshold, 
+	int M, double BETA, double RHO_START, double S_c, double F_c)
+: EvolutionAlgorithm(manager, output),
+  population(population), dimension(manager.count()),
+  generation(0), isInitializing(true),
+  C1(C1), C2(C2),
+  w(W_START), W_START(W_START), W_END(W_END),
+  POP_CONVERGENCE(pop_convergence), CONVERGENCE_THRESHOLD(convergence_threshold),
+  M(M), BETA(BETA), RHO_START(RHO_START), rho(RHO_START), best_successes(0), best_S_c(S_c), 
+  best_failures(0), best_F_c(F_c), gBest_index(0)
+{
+	// POPULATION GENERATION
+	for (int s = 0; s < population; s++)
+	{ m_specimens.push_back(m_manager.generateConfiguration()); }
+	this->current = m_specimens.begin();
+
+	this->velocity.resize(this->population);
+	for (size_t s = 0; s < m_specimens.size(); s++)
+	{
+		// VELOCITY GENERATION
+		std::vector<double> velocity_vector(dimension, 0.0f);
+		for (int d = 0; d < dimension; d++)
+		{ velocity_vector[d] = m_manager.generateDecimal(); }
+		this->velocity[s] = velocity_vector;
+	}
+}
+
+std::vector<double>& MicroPSOAlgorithm::getCurrentSpecimen()
+{
+	if (isInitializing)
+	{
+		m_output.writeConfiguration('I', *current, dimension);
+		return *current;
+	}
+	else
+	{
+		m_output.writeConfiguration('N', *current, dimension);
+		return *current;
+	}
+}
+
+void MicroPSOAlgorithm::evaluateCurrentSpecimen(double value)
+{
+	if (isInitializing)
+	{
+		current->push_back(value);
+		m_output.writeEvaluation(value);
+		this->pBest.push_back(*current);
+		if (!gBest.size()) gBest = *current;
+
+		// SEARCH OF gBest
+		if (this->gBest.back() > value)
+		{
+			this->gBest = *current;
+			this->gBest_index = std::distance(m_specimens.begin(), current);
+		}
+
+		if (++current == m_specimens.end())
+		{
+			isInitializing = false;
+			current = m_specimens.begin();
+			if (generation == 0) { total_gBest = gBest; }
+			this->migrateSpecimen();
+		}
+	} else {
+		int s = std::distance(m_specimens.begin(), current);
+
+		(*current)[this->dimension] = value;
+		m_output.writeEvaluation(value);
+
+		// pBest
+		if ((*current)[this->dimension] < this->pBest[s].back())
+		{
+			this->pBest[s] = *current;
+			if (s == gBest_index)
+			{ this->best_successes++; this->best_failures = 0; }
+		}
+		else if (s == gBest_index)
+		{ this->best_failures++; this->best_successes = 0; }
+
+		// gBest
+		if (this->pBest[s].back() < this->gBest.back())
+		{
+			this->gBest = this->pBest[s];
+			if (s != this->gBest_index)
+			{ this->best_successes = 0; this->best_failures = 0; }
+			this->gBest_index = s;
+		}
+
+		bool restart = false;
+		if (++current == m_specimens.end())
+		{
+			current = m_specimens.begin();
+			this->generation++;
+
+			// RHO UPDATE
+			if (best_successes > best_S_c) { rho = 2.0f * rho; }
+			else if (best_failures > best_F_c) { rho = 0.5f * rho; }
+
+			restart = this->detectRestartAndPerform();
+		}
+
+		if (!restart) this->migrateSpecimen();
+	}
+}
+
+void MicroPSOAlgorithm::migrateSpecimen()
+{
+	double r1 = m_manager.generateDecimal();
+	double r2 = m_manager.generateDecimal();
+	double r3 = m_manager.generateDecimal();
+	int s = std::distance(m_specimens.begin(), current);
+
+	// REPULSION COMPUTATION
+	std::vector<double> repulsion(this->dimension, 0.0f);
+	for (size_t l = 0; l < blacklist.size(); l++)
+	{
+		std::vector<double> d_li(this->dimension, 0.0f);
+		for (int i = 0; i < dimension; i++)
+		{ d_li[i] = current->at(i) - blacklist[l][i]; }
+
+		double d_li_size = 0.0f;
+		for (int i = 0; i < dimension; i++)
+		{ d_li_size += d_li[i] * d_li[i]; }
+		d_li_size = sqrt(d_li_size);
+		double d_li_size_m = pow(d_li_size, M + 1);
+
+		for (int i = 0; i < dimension; i++)
+		{ d_li[i] = d_li[i] / d_li_size_m; }
+
+		for (int i = 0; i < dimension; i++)
+		{ repulsion[i] += d_li[i]; }
+	}
+	for (int i = 0; i < dimension; i++)
+	{ repulsion[i] *= dimension; }
+
+	// NEW VELOCITY COMPUTATION AND A PARTICLE MOVE
+	for (int v_i = 0; v_i < this->dimension; v_i++)
+	{
+		// BEST PARTICLE (s==gBest_index) OR A REGULAR PARTICLE
+		this->velocity[s][v_i] = (s == gBest_index) ?
+			w * velocity[s][v_i]
+			+ gBest[v_i] - m_specimens[s][v_i]
+			+ rho * (1 - 2 * r3) + repulsion[v_i]
+			:
+			w * velocity[s][v_i]
+			+ C1 * r1 * (pBest[s][v_i] - m_specimens[s][v_i])
+			+ C2 * r2 * (gBest[v_i] - m_specimens[s][v_i])
+			+ repulsion[v_i];
+
+		double new_value = m_manager.checkParameter(
+			v_i,
+			m_specimens[s][v_i] + velocity[s][v_i]
+		);
+		m_specimens[s][v_i] = new_value;
+	}
+}
+
+bool MicroPSOAlgorithm::detectRestartAndPerform()
+{
+	// DETECT RESTART
+	int n_converged_specimens = 0;
+	for (int s = 0; s < population; s++)
+	{
+		if (s == gBest_index) continue;
+
+		double sum_diffsquared = 0;
+		for (int i = 0; i < dimension; i++)
+		{
+			double diff = m_specimens[s][i] - gBest[i];
+			sum_diffsquared += pow(diff, 2);
+		}
+		double standarddev = sqrt(sum_diffsquared / (double)dimension);
+		if (standarddev < CONVERGENCE_THRESHOLD) n_converged_specimens++;
+	}
+
+	double ratio_converged = (double)(n_converged_specimens + 1) / (double)population;
+	// RESTART?
+	if (ratio_converged < POP_CONVERGENCE) return false;
+
+	// IS CONVERGED SOLUTION BETTER?
+	bool found_better = (gBest.back() < total_gBest.back()) ? true : false;
+	if (!found_better) this->blacklist.push_back(gBest);
+	else total_gBest = gBest;
+
+	// UPDATE W
+	this->w = found_better ? this->W_START : std::min(this->w * (1.0f + BETA), this->W_END);
+
+	// RE-INITIALIZATION
+	m_specimens.clear();
+	for (int s = 0; s < population; s++)
+	{
+		// INDIVIDUAL
+		m_specimens.push_back(m_manager.generateConfiguration());
+
+		// VELOCITY
+		for (int i = 0; i < dimension; i++)
+		{ velocity[s][i] = m_manager.generateDecimal(); }
+	}
+	this->current = m_specimens.begin();
+	this->pBest.clear();
+	this->gBest.clear(); this->gBest_index = 0;
+	this->isInitializing = true;
+	this->rho = RHO_START; best_failures = 0; best_successes = 0;
+
+	return true;
+}
+
+
 ImprovedMicroPSOAlgorithm::ImprovedMicroPSOAlgorithm(ParameterManager& manager, OutputManager& output,
 	int population, double C1, double C2, double W_START,
 	double W_END, double pop_convergence, double convergence_threshold, 
@@ -885,6 +1096,249 @@ void DEOldAlgorithm::mutateSpecimen()
 	trial_vector[random] =
 	m_manager.generateDecimal() < CR
 	? trial_vector[random] : (*current)[random];
+}
+
+
+GAAlgorithm::GAAlgorithm(ParameterManager& manager, OutputManager& output,
+	int population, int K, double CROSSOVER_RATE, double MUTATION_RATE)
+: EvolutionAlgorithm(manager, output), population(population),
+	K(K), CROSSOVER_RATE(CROSSOVER_RATE), MUTATION_RATE(MUTATION_RATE), 
+	dimension(manager.count()), generation(0)
+{
+	// POPULATION INIT
+	for (int s = 0; s < population; s++)
+	{ m_specimens.push_back(m_manager.generateConfiguration()); }
+	this->current = m_specimens.begin();
+}
+
+std::vector<double>& GAAlgorithm::getCurrentSpecimen()
+{
+	if (generation == 0) {
+		m_output.writeConfiguration('I', *current, dimension);
+		return *current;
+	}
+	else {
+		m_output.writeConfiguration('N', *current, dimension);
+		return *current;
+	}
+}
+
+void GAAlgorithm::evaluateCurrentSpecimen(double value)
+{
+	current->push_back(value);
+	m_output.writeEvaluation(value);
+
+	if (++current == m_specimens.end())
+	{
+		std::sort(m_specimens.begin(), m_specimens.end(), 
+			[] (std::vector<double>& s1, std::vector<double>& s2) -> bool 
+			{ return s1.back() < s2.back(); }
+		);
+
+		current = m_specimens.begin();
+		produceChildren();
+		generation++;
+	}
+}
+
+void GAAlgorithm::produceChildren()
+{
+	std::vector<std::vector<double >> children;
+
+	// ELITISM
+	children.push_back(m_specimens.front());
+
+	// TOURNAMENT SELECTION FUNCTION
+	auto tournament_fn = [&] (int k) {
+		// Reference: https://cstheory.stackexchange.com/questions/14758/tournament-selection-in-genetic-algorithms
+		int best = this->m_manager.generateSpecimenNumber();
+		for (int i = 1; i < k; i++)
+		{
+			int r_idx = this->m_manager.generateSpecimenNumber();
+			if (this->m_specimens[best].back() > this->m_specimens[r_idx].back())
+			{ best = r_idx; }
+		}
+
+		return best;
+	};
+
+	while (children.size() < m_specimens.size())
+	{
+		// SELECTION
+		int parent1 = tournament_fn(K);
+		int parent2 = tournament_fn(K);
+
+		// MATING - CROSSOVER
+		std::vector<double> child1, child2;
+		double rand = m_manager.generateDecimal();
+		if (rand < CROSSOVER_RATE)
+		{
+			int crossover_point = m_manager.generateInt(1, dimension - 1);
+			for (int i = 0; i < crossover_point; i++)
+			{
+				child1.push_back(m_specimens[parent1][i]);
+				child2.push_back(m_specimens[parent2][i]);
+			}
+			for (int i = crossover_point; crossover_point < dimension; i++)
+			{
+				child1.push_back(m_specimens[parent2][i]);
+				child2.push_back(m_specimens[parent1][i]);
+			}
+		}
+		else
+		{
+			child1 = m_specimens[parent1];
+			child2 = m_specimens[parent2];
+		}
+
+		children.push_back(child1);
+		children.push_back(child2);
+	}
+
+	// MUTATION
+	for (auto c = children.begin(); c != children.end(); c++)
+	{
+		for (int d = 0; d < dimension; d++)
+		{
+			double rand = m_manager.generateDecimal();
+			if (rand < MUTATION_RATE)
+			{ (*c)[d] = m_manager.generateParameter(d); }
+		}
+	}
+
+	this->m_specimens = children;
+	current = this->m_specimens.begin();
+	current++;
+}
+
+MicroGAAlgorithm::MicroGAAlgorithm(ParameterManager& manager, OutputManager& output,
+	int population, int K, double CONVERGENCE_THRESHOLD, double POP_CONVERGENCE)
+: EvolutionAlgorithm(manager, output), population(population),
+	K(K), dimension(manager.count()), CONVERGENCE_THRESHOLD(0.1f),
+	POP_CONVERGENCE(0.8f), generation(0), isInitializing(true)
+{
+	// POPULATION INIT
+	for (int s = 0; s < population; s++)
+	{ m_specimens.push_back(m_manager.generateConfiguration()); }
+	this->current = m_specimens.begin();
+}
+
+std::vector<double>& MicroGAAlgorithm::getCurrentSpecimen()
+{
+	if (generation == 0 || isInitializing) {
+		m_output.writeConfiguration('I', *current, dimension);
+		return *current;
+	}
+	else {
+		m_output.writeConfiguration('N', *current, dimension);
+		return *current;
+	}
+}
+
+void MicroGAAlgorithm::evaluateCurrentSpecimen(double value)
+{
+	current->push_back(value);
+	m_output.writeEvaluation(value);
+
+	if (++current == m_specimens.end())
+	{
+		isInitializing = false;	
+		std::sort(m_specimens.begin(), m_specimens.end(),
+			[] (std::vector<double>& s1, std::vector<double>& s2) -> bool
+			{ return s1.back() < s2.back(); }
+		);
+
+		bool restart = detectRestartAndPerform();
+
+		current = m_specimens.begin();
+		if (restart) { current++; }
+		else { produceChildren(); }
+
+		generation++;
+	}
+}
+
+void MicroGAAlgorithm::produceChildren()
+{
+	std::vector<std::vector<double >> children;
+
+	// ELITISM
+	children.push_back(m_specimens.front());
+
+	// TOURNAMENT SELECTION FUNCTION
+	auto tournament_fn = [&] (int k) {
+		// Reference: https://cstheory.stackexchange.com/questions/14758/tournament-selection-in-genetic-algorithms
+		int best = this->m_manager.generateSpecimenNumber();
+		for (int i = 1; i < k; i++)
+		{
+			int r_idx = this->m_manager.generateSpecimenNumber();
+			if (this->m_specimens[best].back() > this->m_specimens[r_idx].back())
+			{ best = r_idx; }
+		}
+
+		return best;
+	};
+
+	while (children.size() < m_specimens.size())
+	{
+		// SELECTION
+		int parent1 = tournament_fn(K);
+		int parent2 = tournament_fn(K);
+
+		// MATING - CROSSOVER
+		int crossover_point = m_manager.generateInt(1, dimension - 1);
+		std::vector<double> child1, child2;
+		for (int i = 0; i < crossover_point; i++)
+		{
+			child1.push_back(m_specimens[parent1][i]);
+			child2.push_back(m_specimens[parent2][i]);
+		}
+		for (int i = crossover_point; crossover_point < dimension; i++)
+		{
+			child1.push_back(m_specimens[parent2][i]);
+			child2.push_back(m_specimens[parent1][i]);
+		}
+
+		children.push_back(child1);
+		children.push_back(child2);
+	}
+
+	this->m_specimens = children;
+	current = this->m_specimens.begin();
+	current++;
+}
+
+bool MicroGAAlgorithm::detectRestartAndPerform()
+{
+	// DETECT RESTART
+	int n_converged_specimens = 0;
+	for (int s = 1; s < population; s++)
+	{
+		double sum_diffsquared = 0;
+		for (int i = 0; i < dimension; i++)
+		{
+			// m_specimens[0] == best
+			double diff = m_specimens[s][i] - m_specimens[0][i];
+			sum_diffsquared += pow(diff, 2);
+		}
+		double standarddev = sqrt(sum_diffsquared / (double)dimension);
+		if (standarddev < CONVERGENCE_THRESHOLD) n_converged_specimens++;
+	}
+
+	double ratio_converged = (double)(n_converged_specimens + 1) / (double)population;
+	// RESTART?
+	if (ratio_converged < POP_CONVERGENCE) return false;
+
+	// RE-INITIALIZATION
+	std::vector<std::vector<double> > new_population;
+	new_population.push_back(m_specimens[0]); // KEEP THE BEST
+	for (int s = 1; s < population; s++)
+	{ new_population.push_back(m_manager.generateConfiguration()); }
+	this->m_specimens = new_population;
+
+	isInitializing = true;
+
+	return true;
 }
 
 SOMAAlgorithm::SOMAAlgorithm(ParameterManager& manager, OutputManager& output,
