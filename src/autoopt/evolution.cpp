@@ -1180,7 +1180,7 @@ void GAAlgorithm::produceChildren()
 				child1.push_back(m_specimens[parent1][i]);
 				child2.push_back(m_specimens[parent2][i]);
 			}
-			for (int i = crossover_point; crossover_point < dimension; i++)
+			for (int i = crossover_point; i < dimension; i++)
 			{
 				child1.push_back(m_specimens[parent2][i]);
 				child2.push_back(m_specimens[parent1][i]);
@@ -1295,7 +1295,7 @@ void MicroGAAlgorithm::produceChildren()
 			child1.push_back(m_specimens[parent1][i]);
 			child2.push_back(m_specimens[parent2][i]);
 		}
-		for (int i = crossover_point; crossover_point < dimension; i++)
+		for (int i = crossover_point; i < dimension; i++)
 		{
 			child1.push_back(m_specimens[parent2][i]);
 			child2.push_back(m_specimens[parent1][i]);
