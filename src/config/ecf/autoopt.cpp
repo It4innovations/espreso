@@ -186,7 +186,7 @@ MicroDERConfiguration::MicroDERConfiguration()
 
 MicroGAConfiguration::MicroGAConfiguration()
 {
-	this->K = 4;
+	this->K = 2;
 	REGISTER(K, ECFMetaData()
 		.setdescription({"K-TOURNAMENTS"})
 		.setdatatype({ECFDataType::POSITIVE_INTEGER}));

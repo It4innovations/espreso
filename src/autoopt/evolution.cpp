@@ -1167,6 +1167,7 @@ void GAAlgorithm::produceChildren()
 		// SELECTION
 		int parent1 = tournament_fn(K);
 		int parent2 = tournament_fn(K);
+		while (parent1 == parent2) parent2 = tournament_fn(K);
 
 		// MATING - CROSSOVER
 		std::vector<double> child1, child2;
@@ -1284,6 +1285,7 @@ void MicroGAAlgorithm::produceChildren()
 		// SELECTION
 		int parent1 = tournament_fn(K);
 		int parent2 = tournament_fn(K);
+		while (parent1 == parent2) parent2 = tournament_fn(K);
 
 		// MATING - CROSSOVER
 		int crossover_point = m_manager.generateInt(1, dimension - 1);
