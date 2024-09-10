@@ -2,6 +2,7 @@
 #include "dualoperator.h"
 #include "totalfeti.implicit.h"
 #include "totalfeti.explicit.h"
+#include "totalfeti.explicit.sc.h"
 #include "totalfeti.gpu.h"
 #include "hybridfeti.implicit.h"
 #include "feti/projector/projector.h"
@@ -49,6 +50,13 @@ DualOperator<T>* DualOperator<T>::create(FETI<T> &feti, const step::Step &step)
             eslog::info(" = DUAL OPERATOR                                                  IMPLICIT TOTAL FETI ON GPU = \n");
             dual = new TotalFETIGpu<T,int>(feti, DualOperatorStrategy::IMPLICIT);
             break;
+        case FETIConfiguration::DUAL_OPERATOR::EXPLICIT_SC:
+            if(!DirectSparseSolver<T,int>::provideSC()) {
+                eslog::globalerror("Sparse solver does not provide Shur complement.\n");
+            }
+            eslog::info(" = DUAL OPERATOR                           EXPLICIT TOTAL FETI USING SPBLAS SCHUR COMPLEMENT = \n");
+            dual = new TotalFETIExplicitSc<T,int>(feti);
+            break;
         }
         break;
 
@@ -61,6 +69,7 @@ DualOperator<T>* DualOperator<T>::create(FETI<T> &feti, const step::Step &step)
         case FETIConfiguration::DUAL_OPERATOR::EXPLICIT:
         case FETIConfiguration::DUAL_OPERATOR::EXPLICIT_GPU:
         case FETIConfiguration::DUAL_OPERATOR::IMPLICIT_GPU:
+        case FETIConfiguration::DUAL_OPERATOR::EXPLICIT_SC:
             eslog::error("not implemented dual operator\n");
             break;
         }

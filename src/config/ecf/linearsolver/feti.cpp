@@ -19,7 +19,8 @@ espreso::FETIConfiguration::FETIConfiguration()
             .addoption(ECFOption().setname("IMPLICIT").setdescription("Implicit F with sparse direct solver."))
             .addoption(ECFOption().setname("EXPLICIT").setdescription("Explicit F with BLAS."))
             .addoption(ECFOption().setname("EXPLICIT_GPU").setdescription("Explicit F on GPU."))
-            .addoption(ECFOption().setname("IMPLICIT_GPU").setdescription("Implicit F on GPU.")));
+            .addoption(ECFOption().setname("IMPLICIT_GPU").setdescription("Implicit F on GPU."))
+            .addoption(ECFOption().setname("EXPLICIT_SC").setdescription("Excplicit F using Schur complement from SparseBLAS.")));
 
     projector = PROJECTOR::ORTHOGONAL;
     REGISTER(projector, ECFMetaData()

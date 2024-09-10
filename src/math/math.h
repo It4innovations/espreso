@@ -238,53 +238,210 @@ namespace math {
         if constexpr(utils::is_complex<T>()) return std::conj(val);
     }
 
-    template<typename T, typename I, typename Ao, typename Am, typename Ai>
-    void conjTransposeMapSetup(Matrix_CSR<T,I,Ao> & output, Vector_Dense<I,I,Am> & map, const Matrix_CSR<T,I,Ai> & input)
+    enum struct CsrTransposeStage {
+        All,
+        Pattern,
+        Values
+    };
+
+    template<typename T, typename I, typename Ao, typename Ai, typename Am>
+    void csrTranspose(Matrix_CSR<T,I,Ao> & output, const Matrix_CSR<T,I,Ai> & input, Vector_Dense<I,I,Am> & map, CsrTransposeStage stage, bool conj)
     {
-        static_assert(Ao::is_data_host_accessible, "conjTransposeMapSetup: the allocator does not provide host-accessible memory");
-        static_assert(Am::is_data_host_accessible, "conjTransposeMapSetup: the allocator does not provide host-accessible memory");
-        static_assert(Ai::is_data_host_accessible, "conjTransposeMapSetup: the allocator does not provide host-accessible memory");
-        if(output.nrows != input.ncols || output.ncols != input.nrows || output.nnz != input.nnz) eslog::error("conjTransposeMapSetup: output matrix has wrong dimensions\n");
-        if(input.nnz != map.size) eslog::error("conjTransposeMapSetup: input map has wrong dimensions\n");
+        static_assert(Ao::is_data_host_accessible, "csrTranspose: the allocator does not provide host-accessible memory");
+        static_assert(Am::is_data_host_accessible, "csrTranspose: the allocator does not provide host-accessible memory");
+        static_assert(Ai::is_data_host_accessible, "csrTranspose: the allocator does not provide host-accessible memory");
+        if(output.nrows != input.ncols || output.ncols != input.nrows || output.nnz != input.nnz) eslog::error("csrTranspose: output matrix has wrong dimensions\n");
+        if(input.nnz != map.size) eslog::error("csrTranspose: input map has wrong dimensions\n");
 
-        std::vector<I> out_nnz_in_rows(output.nrows, I{0});
+        if(stage == CsrTransposeStage::All) {
+            csrTranspose(output, input, map, CsrTransposeStage::Pattern, conj);
+            csrTranspose(output, input, map, CsrTransposeStage::Values, conj);
+        }
+        else if(stage == CsrTransposeStage::Pattern) {
+            std::vector<I> out_nnz_in_rows(output.nrows, I{0});
 
-        for(I i = 0; i < input.nnz; i++) out_nnz_in_rows[input.cols[i]]++;
+            for(I i = 0; i < input.nnz; i++) out_nnz_in_rows[input.cols[i]]++;
 
-        output.rows[0] = 0;
-        for(I r = 0; r < output.nrows; r++) output.rows[r+1] = output.rows[r] + out_nnz_in_rows[r];
+            output.rows[0] = 0;
+            for(I r = 0; r < output.nrows; r++) output.rows[r+1] = output.rows[r] + out_nnz_in_rows[r];
 
-        std::vector<I> curr_out_row_idxs(output.nrows);
-        std::copy_n(output.rows, output.nrows, curr_out_row_idxs.begin());
+            std::vector<I> curr_out_row_idxs(output.nrows);
+            std::copy_n(output.rows, output.nrows, curr_out_row_idxs.begin());
 
-        for(I r_in = 0; r_in < input.nrows; r_in++)
-        {
-            I start = input.rows[r_in];
-            I end = input.rows[r_in+1];
-            for(I i = start; i < end; i++)
+            for(I r_in = 0; r_in < input.nrows; r_in++)
             {
-                I c_in = input.cols[i];
-                I out_index = curr_out_row_idxs[c_in];
-                curr_out_row_idxs[c_in]++;
-                output.cols[out_index] = r_in;
-                output.vals[out_index] = my_conj(input.vals[i]);
-                map.vals[out_index] = i;
+                I start = input.rows[r_in];
+                I end = input.rows[r_in+1];
+                for(I i = start; i < end; i++)
+                {
+                    I c_in = input.cols[i];
+                    I out_index = curr_out_row_idxs[c_in];
+                    curr_out_row_idxs[c_in]++;
+                    output.cols[out_index] = r_in;
+                    map.vals[out_index] = i;
+                }
             }
+        }
+        else if(stage == CsrTransposeStage::Values) {
+            if(conj) {
+                for(I i = 0; i < map.size; i++) {
+                    output.vals[i] = my_conj(input.vals[map.vals[i]]);
+                }
+            }
+            else {
+                for(I i = 0; i < map.size; i++) {
+                    output.vals[i] = input.vals[map.vals[i]];
+                }
+            }
+        }
+        else {
+            eslog::error("csrTranspose: invalid stage %d\n", (int)stage);
         }
     }
 
-    template<typename T, typename I, typename Ao, typename Am, typename Ai>
-    void conjTransposeMapUse(Matrix_CSR<T,I,Ao> & output, const Vector_Dense<I,I,Am> & map, const Matrix_CSR<T,I,Ai> & input)
-    {
-        static_assert(Ao::is_data_host_accessible, "conjTransposeMapUse: the allocator does not provide host-accessible memory");
-        static_assert(Am::is_data_host_accessible, "conjTransposeMapUse: the allocator does not provide host-accessible memory");
-        static_assert(Ai::is_data_host_accessible, "conjTransposeMapUse: the allocator does not provide host-accessible memory");
-        if(output.nrows != input.ncols || output.ncols != input.nrows || output.nnz != input.nnz) eslog::error("conjTransposeMapUse: output matrix has wrong dimensions\n");
-        if(input.nnz != map.size) eslog::error("conjTransposeMapUse: input map has wrong dimensions\n");
+    enum struct CsrTriangleToFullStage {
+        All,
+        Pattern,
+        Values
+    };
 
-        for(I i = 0; i < map.size; i++)
-        {
-            output.vals[i] = my_conj(input.vals[map.vals[i]]);
+    template<typename T, typename I, typename Ao, typename Ai, typename Am>
+    void csrTriangleToFull(Matrix_CSR<T,I,Ao> & output, const Matrix_CSR<T,I,Ai> & input, Vector_Dense<I,I,Am> & map, CsrTriangleToFullStage stage)
+    {
+        static_assert(Ao::is_data_host_accessible, "csrTriangleToFull: the allocator does not provide host-accessible memory");
+        static_assert(Ai::is_data_host_accessible, "csrTriangleToFull: the allocator does not provide host-accessible memory");
+        static_assert(Am::is_data_host_accessible, "csrTriangleToFull: the allocator does not provide host-accessible memory");
+
+        if(output.nrows != input.nrows || output.ncols != input.ncols) eslog::error("csrTriangleToFull: output matrix has wrong size\n");
+
+        if(stage == CsrTriangleToFullStage::All) {
+            csrTriangleToFull(output, input, map, CsrTriangleToFullStage::Pattern);
+            csrTriangleToFull(output, input, map, CsrTriangleToFullStage::Values);
+        }
+        else if(stage == CsrTriangleToFullStage::Pattern) {
+            struct rci { I r; I c; I i; };
+
+            std::vector<rci> rcis;
+            rcis.reserve(2 * input.nnz);
+
+            for(I r = 0; r < input.nrows; r++) {
+                I start = input.rows[r];
+                I end = input.rows[r+1];
+                for(I i = start; i < end; i++) {
+                    I c = input.cols[i];
+                    rcis.push_back(rci{r,c,i});
+                    if(r != c) rcis.push_back(rci{c,r,i});
+                }
+            }
+            I nnz = rcis.size();
+            
+            if(output.nnz != nnz) eslog::error("csrTriangleToFull: output matrix has wrong size (nnz)\n");
+            if(map.size != nnz) eslog::error("csrTriangleToFull: map has wrong size\n");
+
+            std::sort(rcis.begin(), rcis.end(), [](const rci & l, const rci & r) {
+                if(l.r < r.r) return true;
+                if(l.r > r.r) return false;
+                return l.c < r.c;
+            });
+
+            I curr_idx = 0;
+            output.rows[0] = 0;
+            for(I r = 0; r < output.nrows; r++)
+            {
+                while(curr_idx < output.nnz && rcis[curr_idx].r == r) {
+                    curr_idx++;
+                }
+                output.rows[r+1] = curr_idx;
+            }
+            for(I i = 0; i < output.nnz; i++) output.cols[i] = rcis[i].c;
+            for(I i = 0; i < output.nnz; i++) map.vals[i] = rcis[i].i;
+        }
+        else if(stage == CsrTriangleToFullStage::Values) {
+            for(I i = 0; i < output.nnz; i++) {
+                output.vals[i] = input.vals[map.vals[i]];
+            }
+        }
+        else {
+            eslog::error("csrTriangleToFull: invalid stage %d\n", (int)stage);
+        }
+    }
+
+    enum struct CsrMatrixConcatStage {
+        All,
+        Pattern,
+        Values
+    };
+
+    template<typename T, typename I, typename Ao, typename Ai, typename Am>
+    void csrMatrixConcat(Matrix_CSR<T,I,Ao> & output, const Matrix_CSR<T,I,Ai> & A11, const Matrix_CSR<T,I,Ai> & A12, const Matrix_CSR<T,I,Ai> & A21, const Matrix_CSR<T,I,Ai> & A22, Vector_Dense<I,I,Am> & map, CsrMatrixConcatStage stage)
+    {
+        static_assert(Ao::is_data_host_accessible, "csrMatrixConcat: the allocator does not provide host-accessible memory");
+        static_assert(Ai::is_data_host_accessible, "csrMatrixConcat: the allocator does not provide host-accessible memory");
+        static_assert(Am::is_data_host_accessible, "csrMatrixConcat: the allocator does not provide host-accessible memory");
+
+        I ncols_L = A11.ncols;
+        I ncols_R = A12.ncols;
+        I nrows_T = A11.nrows;
+        I nrows_B = A21.nrows;
+        if(A11.nrows != nrows_T || A11.ncols != ncols_L || A12.nrows != nrows_T || A12.ncols != ncols_R || A21.nrows != nrows_B || A21.ncols != ncols_L || A22.nrows != nrows_B || A22.ncols != ncols_R) eslog::error("csrMatrixConcat: incompatible input matrix sizes\n");
+        I nrows = nrows_T + nrows_B;
+        I ncols = ncols_L + ncols_R;
+        I nnz = A11.nnz + A12.nnz + A21.nnz + A22.nnz;
+        if(output.nrows != nrows || output.ncols != ncols || output.nnz != nnz) eslog::error("csrMatrixConcat: output matrix has wrong size\n");
+        if(map.size != 2 * nnz) eslog::error("csrMatrixConcat: map has wrong size, needs 2*outputnnz\n");
+
+        if(stage == CsrMatrixConcatStage::All) {
+            csrMatrixConcat(output, A11, A12, A21, A22, map, CsrMatrixConcatStage::Pattern);
+            csrMatrixConcat(output, A11, A12, A21, A22, map, CsrMatrixConcatStage::Values);
+        }
+        else if(stage == CsrMatrixConcatStage::Pattern) {
+            struct rcim { I r; I c; I i; I m; };
+
+            const Matrix_CSR<T,I,Ai> * mats[4] = {&A11, &A12, &A21, &A22};
+
+            std::vector<rcim> rcims;
+            rcims.reserve(nnz);
+            for(I mi = 0; mi < 4; mi++) {
+                const Matrix_CSR<T,I,Ai> & m = *mats[mi];
+                for(I r = 0; r < m.nrows; r++) {
+                    I start = m.rows[r];
+                    I end = m.rows[r+1];
+                    for(I i = start; i < end; i++) {
+                        I c = m.cols[i];
+                        I new_row = r + (mi >= 2 ? nrows_T : 0);
+                        I new_col = c + (mi % 2 == 1 ? ncols_L : 0);
+                        rcims.push_back(rcim{new_row,new_col,i,mi});
+                    }
+                }
+            }
+
+            std::sort(rcims.begin(), rcims.end(), [](const rcim & l, const rcim & r){
+                if(l.r < r.r) return true;
+                if(l.r > r.r) return false;
+                return l.c < r.c;
+            });
+
+            I curr_idx = 0;
+            output.rows[0] = 0;
+            for(I r = 0; r < output.nrows; r++)
+            {
+                while(curr_idx < output.nnz && rcims[curr_idx].r == r) curr_idx++;
+                output.rows[r+1] = curr_idx;
+            }
+            for(I i = 0; i < output.nnz; i++) output.cols[i] = rcims[i].c;
+            for(I i = 0; i < output.nnz; i++) map.vals[2 * i + 0] = rcims[i].m;
+            for(I i = 0; i < output.nnz; i++) map.vals[2 * i + 1] = rcims[i].i;
+        }
+        else if(stage == CsrMatrixConcatStage::Values) {
+            const Matrix_CSR<T,I,Ai> * mats[4] = {&A11, &A12, &A21, &A22};
+            for(I i = 0; i < nnz; i++) {
+                I mat_idx = map.vals[2 * i + 0];
+                I src_idx = map.vals[2 * i + 1];
+                output.vals[i] = mats[mat_idx]->vals[src_idx];
+            }
+        }
+        else {
+            eslog::error("csrMatrixConcat: invalid stage %d\n", (int)stage);
         }
     }
 
@@ -375,7 +532,7 @@ namespace math {
         for(I i = 0; i < matrix.nnz; i++) eslog::info("%lld ", (long long)matrix.cols[i]);
         eslog::info("\n");
         eslog::info("vals:     ");
-        for(I i = 0; i < matrix.nnz; i++) eslog::info("%+.3e ", (double)matrix.vals[i]);
+        for(I i = 0; i < matrix.nnz; i++) eslog::info("%+.13e ", (double)matrix.vals[i]);
         eslog::info("\n");
         fflush(stdout);
     }

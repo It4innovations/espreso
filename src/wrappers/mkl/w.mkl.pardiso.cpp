@@ -246,21 +246,32 @@ void DirectSparseSolver<T, I>::getPermutation(Vector_Dense<I> &perm)
 }
 
 template <typename T, typename I>
-void DirectSparseSolver<T, I>::getSC(Matrix_Dense<T, I> &sc, std::vector<int> &indices)
+void DirectSparseSolver<T, I>::getSC(Matrix_Dense<T, I> &sc, std::vector<int> &indices, bool symmetric_packed)
 {
-    Matrix_Dense<T, I> full; full.resize(sc.nrows, sc.nrows);
+    Matrix_Dense<T, I> full;
+    T * out_vals = sc.vals;
+    if(symmetric_packed) {
+        full.resize(sc.nrows, sc.nrows);
+        out_vals = full.vals;
+    }
 
     ext->pp.iparm[35] = 1;
     I *perm = ext->pp.perm;
     ext->pp.perm = indices.data();
-    _callPardiso<T>(12, ext, 0, nullptr, full.vals);
+    _callPardiso<T>(12, ext, 0, nullptr, out_vals);
     ext->pp.perm = perm;
     ext->pp.iparm[35] = 0;
 
-    for (I r = 0, i = 0; r < full.nrows; ++r) {
-        for (I c = r; c < full.ncols; ++c, ++i) {
-            sc.vals[i] = full.vals[r * full.ncols + c];
+    if(symmetric_packed) {
+        for (I r = 0, i = 0; r < full.nrows; ++r) {
+            for (I c = r; c < full.ncols; ++c, ++i) {
+                sc.vals[i] = full.vals[r * full.ncols + c];
+            }
         }
+    }
+
+    if(ext->matrix->shape != Matrix_Shape::FULL) {
+        sc.shape = ext->matrix->shape;
     }
 }
 

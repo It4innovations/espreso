@@ -73,7 +73,7 @@ struct DirectSparseSolver {
     void getFactorU(Matrix_CSR<T,I,A> &U, bool copyPattern = true, bool copyValues = true);
     void getPermutation(Permutation<I> &perm);
     void getPermutation(Vector_Dense<I> &perm);
-    void getSC(Matrix_Dense<T,I> &sc, std::vector<int> &indices);
+    void getSC(Matrix_Dense<T,I> &sc, std::vector<int> &indices, bool symmetric_packed = true);
 
 private:
     std::unique_ptr<Solver_External_Representation<T,I>> ext;

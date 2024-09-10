@@ -590,11 +590,11 @@ void TotalFETIGpu<T,I>::set(const step::Step &step)
             tm_trans_cpu.start();
             if(do_conjtrans_L2LH_h) {
                 data.transmap_L2LH.resize(data.h_L_sp.nnz);
-                math::conjTransposeMapSetup(data.h_LH_sp, data.transmap_L2LH, data.h_L_sp);
+                math::csrTranspose(data.h_LH_sp, data.h_L_sp, data.transmap_L2LH, math::CsrTransposeStage::Pattern, true);
             }
             if(do_conjtrans_U2UH_h) {
                 data.transmap_U2UH.resize(data.h_U_sp.nnz);
-                math::conjTransposeMapSetup(data.h_UH_sp, data.transmap_U2UH, data.h_U_sp);
+                math::csrTranspose(data.h_UH_sp, data.h_U_sp, data.transmap_U2UH, math::CsrTransposeStage::Pattern, true);
             }
             tm_trans_cpu.stop();
         }
@@ -965,8 +965,8 @@ void TotalFETIGpu<T,I>::update(const step::Step &step)
             if(solver_get_U) data.solver_Kreg.getFactorU(data.h_U_sp, false, true);
             tm_extract.stop();
             tm_trans_cpu.start();
-            if(do_conjtrans_L2LH_h) math::conjTransposeMapUse(data.h_LH_sp, data.transmap_L2LH, data.h_L_sp);
-            if(do_conjtrans_U2UH_h) math::conjTransposeMapUse(data.h_UH_sp, data.transmap_U2UH, data.h_U_sp);
+            if(do_conjtrans_L2LH_h) math::csrTranspose(data.h_LH_sp, data.h_L_sp, data.transmap_L2LH, math::CsrTransposeStage::Values, true);
+            if(do_conjtrans_U2UH_h) math::csrTranspose(data.h_UH_sp, data.h_U_sp, data.transmap_U2UH, math::CsrTransposeStage::Values, true);
             tm_trans_cpu.stop();
         }
         tm_get_factors.stop();
