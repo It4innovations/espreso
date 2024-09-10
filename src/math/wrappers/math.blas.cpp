@@ -45,140 +45,76 @@ namespace espreso {
 namespace math {
 namespace blas {
 
-template <>
-void copy(const int size, double *x, const int incX, const double *y, const int incY)
+template <typename T>
+void copy(const int size, T *x, const int incX, const T *y, const int incY)
 {
     eslog::error("calling of empty BLAS wrapper.\n");
 }
 
-template <>
-void copy(const int size, std::complex<double> *x, const int incX, const std::complex<double> *y, const int incY)
+template <typename T>
+void scale(const int size, const T &alpha, T *x, const int incX)
 {
     eslog::error("calling of empty BLAS wrapper.\n");
 }
 
-template <>
-void scale(const int size, const float &alpha, float *x, const int incX)
+template <typename T>
+void add(const int size, T *x, const int incX, const T &alpha, const T *y, const int incY);
 {
     eslog::error("calling of empty BLAS wrapper.\n");
 }
 
-template <>
-void scale(const int size, const double &alpha, double *x, const int incX)
-{
-    eslog::error("calling of empty BLAS wrapper.\n");
-}
-
-template <>
-void scale(const int size, const std::complex<double> &alpha, std::complex<double> *x, const int incX)
-{
-    eslog::error("calling of empty BLAS wrapper.\n");
-}
-
-template <>
-void add(const int size, double *x, const int incX, const double &alpha, const double *y, const int incY)
-{
-    eslog::error("calling of empty BLAS wrapper.\n");
-}
-
-template <>
-void add(const int size, std::complex<double> *x, const int incX, const std::complex<double> &alpha, const std::complex<double> *y, const int incY)
-{
-    eslog::error("calling of empty BLAS wrapper.\n");
-}
-
-template <>
-double dot(const int size, const double *x, const int incX, const double *y, const int incY)
+template <typename T>
+T dot(const int size, const T *x, const int incX, const T *y, const int incY)
 {
     eslog::error("calling of empty BLAS wrapper.\n");
     return 0;
 }
 
-template <>
-std::complex<double> dot(const int size, const std::complex<double> *x, const int incX, const std::complex<double> *y, const int incY)
+template <typename T>
+utils::remove_complex_t<T> norm(const int size, const T *x, const int incX);
 {
     eslog::error("calling of empty BLAS wrapper.\n");
     return 0;
 }
 
-template <>
-float norm(const int size, const float *x, const int incX)
-{
-        eslog::error("calling of empty BLAS wrapper.\n");
-        return 0;
-}
-
-template <>
-double norm(const int size, const double *x, const int incX)
-{
-    eslog::error("calling of empty BLAS wrapper.\n");
-    return 0;
-}
-
-template <>
-float norm(const int size, const std::complex<float> *x, const int incX)
-{
-    eslog::error("calling of empty BLAS wrapper.\n");
-    return 0;
-}
-
-template <>
-double norm(const int size, const std::complex<double> *x, const int incX)
-{
-    eslog::error("calling of empty BLAS wrapper.\n");
-    return 0;
-}
-
-template <>
-void apply(Vector_Dense<double, int> &y, const double &alpha, const Matrix_Dense<double, int> &a, const double &beta, const Vector_Dense<double, int> &x)
+template <typename T, typename I>
+void apply(Vector_Dense<T, I> &y, const T &alpha, const Matrix_Dense<T, I> &a, const T &beta, const Vector_Dense<T, I> &x)
 {
     eslog::error("calling of empty BLAS wrapper.\n");
 }
 
-template <>
-void apply(Vector_Dense<std::complex<double>, int> &y, const std::complex<double> &alpha, const Matrix_Dense<std::complex<double>, int> &a, const std::complex<double> &beta, const Vector_Dense<std::complex<double>, int> &x)
+template <typename T, typename I>
+void applyT(Vector_Dense<T, I> &y, const T &alpha, const Matrix_Dense<T, I> &a, const T &beta, const Vector_Dense<T, I> &x)
 {
     eslog::error("calling of empty BLAS wrapper.\n");
 }
 
-template <>
-void applyT(Vector_Dense<double, int> &y, const double &alpha, const Matrix_Dense<double, int> &a, const double &beta, const Vector_Dense<double, int> &x)
+template <typename T, typename I>
+void apply_hermitian(Vector_Dense<T, I> &y, const T &alpha, const Matrix_Dense<T, I> &a, const T &beta, const Vector_Dense<T, I> &x)
 {
     eslog::error("calling of empty BLAS wrapper.\n");
 }
 
-template <>
-void applyT(Vector_Dense<std::complex<double> > &y, const std::complex<double> &alpha, const Matrix_Dense<std::complex<double> > &a, const std::complex<double> &beta, const Vector_Dense<std::complex<double> > &x)
+template <typename T, typename I>
+void AAt(const Matrix_Dense<T, I> &A, Matrix_Dense<T, I> &AAt, bool trans)
 {
     eslog::error("calling of empty BLAS wrapper.\n");
 }
 
-template <>
-void AAt(const Matrix_Dense<double> &A, Matrix_Dense<double> &AAt, bool trans)
+template <typename T, typename I>
+void multiply(T alpha, const Matrix_Dense<T, I> &A, const Matrix_Dense<T, I> &B, T beta, Matrix_Dense<T, I> &C, bool transA, bool transB)
 {
     eslog::error("calling of empty BLAS wrapper.\n");
 }
 
-template <>
-void multiply(double alpha, const Matrix_Dense<double> &A, const Matrix_Dense<double> &B, double beta, Matrix_Dense<double> &C, bool transA, bool transB)
+template <typename T, typename I>
+void multiply(T alpha, const Matrix_Dense<T, I> &A, const Vector_Dense<T, I> &B, T beta, Vector_Dense<T, I> &C, bool transA)
 {
     eslog::error("calling of empty BLAS wrapper.\n");
 }
 
-template <>
-void multiply(double alpha, const Matrix_Dense<double> &A, const Vector_Dense<double> &B, double beta, Vector_Dense<double> &C, bool transA)
-{
-    eslog::error("calling of empty BLAS wrapper.\n");
-}
-
-template <>
-void multiply(double alpha, const Vector_Dense<double> &A, const Vector_Dense<double> &B, double beta, double &out)
-{
-    eslog::error("calling of empty BLAS wrapper.\n");
-}
-
-template <>
-void multiply(std::complex<double> alpha, const Vector_Dense<std::complex<double> > &A, const Vector_Dense<std::complex<double> > &B, std::complex<double> beta, std::complex<double> &out)
+template <typename T, typename I>
+void multiply(T alpha, const Vector_Dense<T, I> &A, const Vector_Dense<T, I> &B, T beta, T &out);
 {
     eslog::error("calling of empty BLAS wrapper.\n");
 }
@@ -186,6 +122,8 @@ void multiply(std::complex<double> alpha, const Vector_Dense<std::complex<double
 }
 }
 }
+
+#include "math.blas.inst.hpp"
 
 #endif
 #endif

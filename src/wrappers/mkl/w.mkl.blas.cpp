@@ -12,96 +12,50 @@ namespace espreso {
 namespace math {
 namespace blas {
 
-template <>
-void copy(const int size, double *x, const int incX, const double *y, const int incY)
+template <typename T>
+void copy(const int size, T *x, const int incX, const T *y, const int incY)
 {
-    cblas_dcopy(size, y, incY, x, incX);
+    if constexpr(std::is_same_v<T, float>)                cblas_scopy(size, y, incY, x, incX);
+    if constexpr(std::is_same_v<T, double>)               cblas_dcopy(size, y, incY, x, incX);
+    if constexpr(std::is_same_v<T, std::complex<float>>)  cblas_ccopy(size, y, incY, x, incX);
+    if constexpr(std::is_same_v<T, std::complex<double>>) cblas_zcopy(size, y, incY, x, incX);
 }
 
-template <>
-void copy(const int size, std::complex<double> *x, const int incX, const std::complex<double> *y, const int incY)
+template <typename T>
+void scale(const int size, const T &alpha, T *x, const int incX)
 {
-    cblas_zcopy(size, y, incY, x, incX);
+    if constexpr(std::is_same_v<T, float>)                cblas_sscal(size,  alpha, x, incX);
+    if constexpr(std::is_same_v<T, double>)               cblas_dscal(size,  alpha, x, incX);
+    if constexpr(std::is_same_v<T, std::complex<float>>)  cblas_cscal(size, &alpha, x, incX);
+    if constexpr(std::is_same_v<T, std::complex<double>>) cblas_zscal(size, &alpha, x, incX);
 }
 
-template <>
-void scale(const int size, const float &alpha, float *x, const int incX)
+template <typename T>
+void add(const int size, T *x, const int incX, const T &alpha, const T *y, const int incY)
 {
-    cblas_sscal(size, alpha, x, incX);
+    if constexpr(std::is_same_v<T, float>)                cblas_saxpy(size,  alpha, y, incY, x, incX);
+    if constexpr(std::is_same_v<T, double>)               cblas_daxpy(size,  alpha, y, incY, x, incX);
+    if constexpr(std::is_same_v<T, std::complex<float>>)  cblas_caxpy(size, &alpha, y, incY, x, incX);
+    if constexpr(std::is_same_v<T, std::complex<double>>) cblas_zaxpy(size, &alpha, y, incY, x, incX);
 }
 
-template <>
-void scale(const int size, const double &alpha, double *x, const int incX)
+template <typename T>
+T dot(const int size, const T *x, const int incX, const T *y, const int incY)
 {
-    cblas_dscal(size, alpha, x, incX);
-}
-
-template <>
-void scale(const int size, const std::complex<double> &alpha, std::complex<double> *x, const int incX)
-{
-    cblas_zscal(size, &alpha, x, incX);
-}
-
-template <>
-void add(const int size, float *x, const int incX, const float &alpha, const float *y, const int incY)
-{
-    cblas_saxpy(size, alpha, y, incY, x, incX);
-}
-
-template <>
-void add(const int size, double *x, const int incX, const double &alpha, const double *y, const int incY)
-{
-    cblas_daxpy(size, alpha, y, incY, x, incX);
-}
-
-template <>
-void add(const int size, std::complex<float> *x, const int incX, const std::complex<float> &alpha, const std::complex<float> *y, const int incY)
-{
-    cblas_caxpy(size, &alpha, y, incY, x, incX);
-}
-
-template <>
-void add(const int size, std::complex<double> *x, const int incX, const std::complex<double> &alpha, const std::complex<double> *y, const int incY)
-{
-    cblas_zaxpy(size, &alpha, y, incY, x, incX);
-}
-
-template <>
-double dot(const int size, const double *x, const int incX, const double *y, const int incY)
-{
-    return cblas_ddot(size, x, incX, y, incY);
-}
-
-template <>
-std::complex<double> dot(const int size, const std::complex<double> *x, const int incX, const std::complex<double> *y, const int incY)
-{
-    std::complex<double> dot = 0;
+    if constexpr(std::is_same_v<T, float>)                return cblas_sdot(size, x, incX, y, incY);
+    if constexpr(std::is_same_v<T, double>)               return cblas_ddot(size, x, incX, y, incY);
+    if constexpr(std::is_same_v<T, std::complex<float>>)  eslog::error("not implemented BLAS routine.\n");
+    if constexpr(std::is_same_v<T, std::complex<double>>) eslog::error("not implemented BLAS routine.\n");
 //    return cblas_cdotu_sub(size, x, incX, y, incY, &dot);
-    return dot;
 }
 
-template <>
-float norm(const int size, const float *x, const int incX)
+template <typename T>
+utils::remove_complex_t<T> norm(const int size, const T *x, const int incX)
 {
-    return cblas_snrm2(size, x, incX);
-}
-
-template <>
-double norm(const int size, const double *x, const int incX)
-{
-    return cblas_dnrm2(size, x, incX);
-}
-
-template <>
-float norm(const int size, const std::complex<float> *x, const int incX)
-{
-    return cblas_scnrm2(size, x, incX);
-}
-
-template <>
-double norm(const int size, const std::complex<double> *x, const int incX)
-{
-    return cblas_dznrm2(size, x, incX);
+    if constexpr(std::is_same_v<T, float>)                return cblas_snrm2(size, x, incX);
+    if constexpr(std::is_same_v<T, double>)               return cblas_dnrm2(size, x, incX);
+    if constexpr(std::is_same_v<T, std::complex<float>>)  return cblas_scnrm2(size, x, incX);
+    if constexpr(std::is_same_v<T, std::complex<double>>) return cblas_dznrm2(size, x, incX);
 }
 
 template <>
@@ -141,6 +95,12 @@ void apply(Vector_Dense<std::complex<double> > &y, const std::complex<double> &a
     }
 }
 
+template <typename T, typename I>
+void apply(Vector_Dense<T, I> &y, const T &alpha, const Matrix_Dense<T, I> &a, const T &beta, const Vector_Dense<T, I> &x)
+{
+    eslog::error("blas apply: unimplemented instantiation");
+}
+
 template <>
 void applyT(Vector_Dense<double> &y, const double &alpha, const Matrix_Dense<double> &a, const double &beta, const Vector_Dense<double> &x)
 {
@@ -178,70 +138,81 @@ void applyT(Vector_Dense<std::complex<double> > &y, const std::complex<double> &
     }
 }
 
-template <>
-void AAt(const Matrix_Dense<double> &A, Matrix_Dense<double> &AAt, bool trans)
+template <typename T, typename I>
+void applyT(Vector_Dense<T, I> &y, const T &alpha, const Matrix_Dense<T, I> &a, const T &beta, const Vector_Dense<T, I> &x)
 {
-    int size = trans ? A.ncols : A.nrows;
+    eslog::error("blas applyT: unimplemented instantiation");
+}
+
+template <typename T, typename I>
+void apply_hermitian(Vector_Dense<T, I> &y, const T &alpha, const Matrix_Dense<T, I> &a, const T &beta, const Vector_Dense<T, I> &x)
+{
+    CBLAS_UPLO uplo;
+    if(a.shape == Matrix_Shape::UPPER) uplo = CblasUpper;
+    else if(a.shape == Matrix_Shape::LOWER) uplo = CblasLower;
+    else eslog::error("blas apply_hermitian: invalid matrix shape\n");
+    if(a.nrows != a.ncols) eslog::error("blas apply_hermitian: matrix is not square\n");
+    if(x.size != a.ncols || y.size != a.nrows) eslog::error("blas apply_hermitian: incompatible vector size\n");
+    if constexpr(std::is_same_v<T, float>)                cblas_ssymv(CblasRowMajor, uplo, a.nrows,  alpha, a.vals, a.get_ld(), x.vals, 1,  beta, y.vals, 1);
+    if constexpr(std::is_same_v<T, double>)               cblas_dsymv(CblasRowMajor, uplo, a.nrows,  alpha, a.vals, a.get_ld(), x.vals, 1,  beta, y.vals, 1);
+    if constexpr(std::is_same_v<T, std::complex<float>>)  cblas_chemv(CblasRowMajor, uplo, a.nrows, &alpha, a.vals, a.get_ld(), x.vals, 1, &beta, y.vals, 1);
+    if constexpr(std::is_same_v<T, std::complex<double>>) cblas_zhemv(CblasRowMajor, uplo, a.nrows, &alpha, a.vals, a.get_ld(), x.vals, 1, &beta, y.vals, 1);
+}
+
+template <typename T, typename I>
+void AAt(const Matrix_Dense<T, I> &A, Matrix_Dense<T, I> &AAt, bool trans)
+{
+    I size = trans ? A.ncols : A.nrows;
     if (AAt.nrows != AAt.ncols) eslog::error("invalid AAt dimension.\n");
     if (size != AAt.ncols) eslog::error("invalid AAt dimension.\n");
-    cblas_dsyrk(CblasRowMajor, CblasUpper, trans ? CblasTrans : CblasNoTrans, AAt.nrows, trans ? A.nrows : A.ncols, 1, A.vals, A.ncols, 0, AAt.vals, AAt.ncols);
+    T one = 1;
+    T zero = 0;
+    if constexpr(std::is_same_v<T, float>)                cblas_ssyrk(CblasRowMajor, CblasUpper, trans ? CblasTrans : CblasNoTrans, AAt.nrows, trans ? A.nrows : A.ncols,  one, A.vals, A.ncols,  zero, AAt.vals, AAt.ncols);
+    if constexpr(std::is_same_v<T, double>)               cblas_dsyrk(CblasRowMajor, CblasUpper, trans ? CblasTrans : CblasNoTrans, AAt.nrows, trans ? A.nrows : A.ncols,  one, A.vals, A.ncols,  zero, AAt.vals, AAt.ncols);
+    if constexpr(std::is_same_v<T, std::complex<float>>)  cblas_csyrk(CblasRowMajor, CblasUpper, trans ? CblasTrans : CblasNoTrans, AAt.nrows, trans ? A.nrows : A.ncols, &one, A.vals, A.ncols, &zero, AAt.vals, AAt.ncols);
+    if constexpr(std::is_same_v<T, std::complex<double>>) cblas_zsyrk(CblasRowMajor, CblasUpper, trans ? CblasTrans : CblasNoTrans, AAt.nrows, trans ? A.nrows : A.ncols, &one, A.vals, A.ncols, &zero, AAt.vals, AAt.ncols);
 }
 
-template <>
-void multiply(double alpha, const Matrix_Dense<double> &A, const Matrix_Dense<double> &B, double beta, Matrix_Dense<double> &C, bool transA, bool transB)
+template <typename T, typename I>
+void multiply(T alpha, const Matrix_Dense<T, I> &A, const Matrix_Dense<T, I> &B, T beta, Matrix_Dense<T, I> &C, bool transA, bool transB)
 {
-    int rows = transA ? A.ncols : A.nrows, cols = transB ? B.nrows : B.ncols;
+    I rows = transA ? A.ncols : A.nrows, cols = transB ? B.nrows : B.ncols;
     if (C.nrows != rows || C.ncols != cols) eslog::error("invalid dimension.\n");
     if (A.shape != Matrix_Shape::FULL) eslog::error("invalid shape.\n");
     if (B.shape != Matrix_Shape::FULL) eslog::error("invalid shape.\n");
-    cblas_dgemm(CblasRowMajor, transA ? CblasTrans : CblasNoTrans, transB ? CblasTrans : CblasNoTrans, C.nrows, C.ncols, transA ? A.nrows : A.ncols, alpha, A.vals, A.ncols, B.vals, B.ncols, beta, C.vals, C.ncols);
+    if constexpr(std::is_same_v<T, float>)                cblas_sgemm(CblasRowMajor, transA ? CblasTrans : CblasNoTrans, transB ? CblasTrans : CblasNoTrans, C.nrows, C.ncols, transA ? A.nrows : A.ncols,  alpha, A.vals, A.ncols, B.vals, B.ncols,  beta, C.vals, C.ncols);
+    if constexpr(std::is_same_v<T, double>)               cblas_dgemm(CblasRowMajor, transA ? CblasTrans : CblasNoTrans, transB ? CblasTrans : CblasNoTrans, C.nrows, C.ncols, transA ? A.nrows : A.ncols,  alpha, A.vals, A.ncols, B.vals, B.ncols,  beta, C.vals, C.ncols);
+    if constexpr(std::is_same_v<T, std::complex<float>>)  cblas_cgemm(CblasRowMajor, transA ? CblasTrans : CblasNoTrans, transB ? CblasTrans : CblasNoTrans, C.nrows, C.ncols, transA ? A.nrows : A.ncols, &alpha, A.vals, A.ncols, B.vals, B.ncols, &beta, C.vals, C.ncols);
+    if constexpr(std::is_same_v<T, std::complex<double>>) cblas_zgemm(CblasRowMajor, transA ? CblasTrans : CblasNoTrans, transB ? CblasTrans : CblasNoTrans, C.nrows, C.ncols, transA ? A.nrows : A.ncols, &alpha, A.vals, A.ncols, B.vals, B.ncols, &beta, C.vals, C.ncols);
 }
 
-template <>
-void multiply(std::complex<double> alpha, const Matrix_Dense<std::complex<double> > &A, const Matrix_Dense<std::complex<double> > &B, std::complex<double> beta, Matrix_Dense<std::complex<double> > &C, bool transA, bool transB)
+template <typename T, typename I>
+void multiply(T alpha, const Matrix_Dense<T, I> &A, const Vector_Dense<T, I> &B, T beta, Vector_Dense<T, I> &C, bool transA)
 {
-    int rows = transA ? A.ncols : A.nrows, cols = transB ? B.nrows : B.ncols;
-    if (C.nrows != rows || C.ncols != cols) eslog::error("invalid dimension.\n");
-    if (A.shape != Matrix_Shape::FULL) eslog::error("invalid shape.\n");
-    if (B.shape != Matrix_Shape::FULL) eslog::error("invalid shape.\n");
-    cblas_zgemm(CblasRowMajor, transA ? CblasTrans : CblasNoTrans, transB ? CblasTrans : CblasNoTrans, C.nrows, C.ncols, transA ? A.nrows : A.ncols, &alpha, A.vals, A.ncols, B.vals, B.ncols, &beta, C.vals, C.ncols);
-}
-
-template <>
-void multiply(double alpha, const Matrix_Dense<double> &A, const Vector_Dense<double> &B, double beta, Vector_Dense<double> &C, bool transA)
-{
-    int rows = transA ? A.ncols : A.nrows;
+    I rows = transA ? A.ncols : A.nrows;
     if (C.size != rows) eslog::error("invalid dimension.\n");
     if (A.shape != Matrix_Shape::FULL) eslog::error("invalid shape.\n");
-    cblas_dgemm(CblasRowMajor, transA ? CblasTrans : CblasNoTrans, CblasNoTrans, C.size, 1, transA ? A.nrows : A.ncols, alpha, A.vals, A.ncols, B.vals, 1, beta, C.vals, 1);
+    if constexpr(std::is_same_v<T, float>)                cblas_sgemm(CblasRowMajor, transA ? CblasTrans : CblasNoTrans, CblasNoTrans, C.size, 1, transA ? A.nrows : A.ncols,  alpha, A.vals, A.ncols, B.vals, 1,  beta, C.vals, 1);
+    if constexpr(std::is_same_v<T, double>)               cblas_dgemm(CblasRowMajor, transA ? CblasTrans : CblasNoTrans, CblasNoTrans, C.size, 1, transA ? A.nrows : A.ncols,  alpha, A.vals, A.ncols, B.vals, 1,  beta, C.vals, 1);
+    if constexpr(std::is_same_v<T, std::complex<float>>)  cblas_cgemm(CblasRowMajor, transA ? CblasTrans : CblasNoTrans, CblasNoTrans, C.size, 1, transA ? A.nrows : A.ncols, &alpha, A.vals, A.ncols, B.vals, 1, &beta, C.vals, 1);
+    if constexpr(std::is_same_v<T, std::complex<double>>) cblas_zgemm(CblasRowMajor, transA ? CblasTrans : CblasNoTrans, CblasNoTrans, C.size, 1, transA ? A.nrows : A.ncols, &alpha, A.vals, A.ncols, B.vals, 1, &beta, C.vals, 1);
 }
 
-template <>
-void multiply(std::complex<double> alpha, const Matrix_Dense<std::complex<double> > &A, const Vector_Dense<std::complex<double> > &B, std::complex<double> beta, Vector_Dense<std::complex<double> > &C, bool transA)
-{
-    int rows = transA ? A.ncols : A.nrows;
-    if (C.size != rows) eslog::error("invalid dimension.\n");
-    if (A.shape != Matrix_Shape::FULL) eslog::error("invalid shape.\n");
-    cblas_zgemm(CblasRowMajor, transA ? CblasTrans : CblasNoTrans, CblasNoTrans, C.size, 1, transA ? A.nrows : A.ncols, &alpha, A.vals, A.ncols, B.vals, 1, &beta, C.vals, 1);
-}
-
-template <>
-void multiply(double alpha, const Vector_Dense<double> &A, const Vector_Dense<double> &B, double beta, double &out)
+template <typename T, typename I>
+void multiply(T alpha, const Vector_Dense<T, I> &A, const Vector_Dense<T, I> &B, T beta, T &out)
 {
     if (A.size != B.size) eslog::error("invalid dimension.\n");
-    cblas_dgemv(CblasRowMajor, CblasNoTrans, 1, A.size, alpha, A.vals, A.size, B.vals, 1, beta, &out, 1);
-}
-
-template <>
-void multiply(std::complex<double> alpha, const Vector_Dense<std::complex<double> > &A, const Vector_Dense<std::complex<double> > &B, std::complex<double> beta, std::complex<double> &out)
-{
-    if (A.size != B.size) eslog::error("invalid dimension.\n");
-    cblas_zgemv(CblasRowMajor, CblasNoTrans, 1, A.size, &alpha, A.vals, A.size, B.vals, 1, &beta, &out, 1);
+    if constexpr(std::is_same_v<T, float>)                cblas_sgemv(CblasRowMajor, CblasNoTrans, 1, A.size,  alpha, A.vals, A.size, B.vals, 1,  beta, &out, 1);
+    if constexpr(std::is_same_v<T, double>)               cblas_dgemv(CblasRowMajor, CblasNoTrans, 1, A.size,  alpha, A.vals, A.size, B.vals, 1,  beta, &out, 1);
+    if constexpr(std::is_same_v<T, std::complex<float>>)  cblas_cgemv(CblasRowMajor, CblasNoTrans, 1, A.size, &alpha, A.vals, A.size, B.vals, 1, &beta, &out, 1);
+    if constexpr(std::is_same_v<T, std::complex<double>>) cblas_zgemv(CblasRowMajor, CblasNoTrans, 1, A.size, &alpha, A.vals, A.size, B.vals, 1, &beta, &out, 1);
 }
 
 }
 }
 }
+
+#include "math/wrappers/math.blas.inst.hpp"
 
 #endif
 

@@ -7,6 +7,7 @@
 #include "math/primitives/matrix_dense.h"
 #include "math/primitives/matrix_csr.h"
 #include "math/primitives/matrix_ijv.h"
+#include "basis/utilities/utils.h"
 
 #include <complex>
 
@@ -30,10 +31,7 @@ namespace blas {
     T dot(const int size, const T *x, const int incX, const T *y, const int incY);
 
     template <typename T>
-    T norm(const int size, const T *x, const int incX);
-
-    template <typename T>
-    T norm(const int size, const std::complex<T> *x, const int incX);
+    utils::remove_complex_t<T> norm(const int size, const T *x, const int incX);
 
     // y = alpha * A * x + beta * y
     template <typename T, typename I>
@@ -42,6 +40,9 @@ namespace blas {
     // y = alpha * At * x + beta * y
     template <typename T, typename I>
     void applyT(Vector_Dense<T, I> &y, const T &alpha, const Matrix_Dense<T, I> &a, const T &beta, const Vector_Dense<T, I> &x);
+
+    template <typename T, typename I>
+    void apply_hermitian(Vector_Dense<T, I> &y, const T &alpha, const Matrix_Dense<T, I> &a, const T &beta, const Vector_Dense<T, I> &x);
 
     template <typename T, typename I>
     void AAt(const Matrix_Dense<T, I> &A, Matrix_Dense<T, I> &AAt, bool trans = false);
