@@ -78,7 +78,7 @@ class ESPRESOTest:
 
         output, error = ESPRESOTest.run_program(program)
         if error != "":
-            ESPRESOTest.raise_error(error, output)
+            ESPRESOTest.raise_error(error)
         return output
 
     @staticmethod
