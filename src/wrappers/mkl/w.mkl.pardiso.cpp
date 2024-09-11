@@ -269,10 +269,6 @@ void DirectSparseSolver<T, I>::getSC(Matrix_Dense<T, I> &sc, std::vector<int> &i
             }
         }
     }
-
-    if(ext->matrix->shape != Matrix_Shape::FULL) {
-        sc.shape = ext->matrix->shape;
-    }
 }
 
 }

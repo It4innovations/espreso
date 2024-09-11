@@ -40,13 +40,12 @@ private:
         Vector_Dense<T,I> x;
         Vector_Dense<T,I> y;
         Matrix_CSR<T,I> Kreg;
-        Matrix_CSR<T,I> Kreg_full;
         Matrix_CSR<T,I> Bt;
         Matrix_CSR<T,I> concat_matrix; // Kreg Bt B O
-        Matrix_CSR<T,I> null_matrix;
+        Matrix_CSR<T,I> null_matrix_A22;
+        Matrix_CSR<T,I> null_matrix_A21;
         Vector_Dense<I,I> map_B_transpose;
         Vector_Dense<I,I> map_concat;
-        Vector_Dense<I,I> map_Kreg_to_full;
         DirectSparseSolver<T,I> solver_sc;
         DirectSparseSolver<T,I> solver_Kreg;
         I n_dofs_interface;

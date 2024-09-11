@@ -46,6 +46,10 @@ void TotalFETIExplicitSc<T,I>::set(const step::Step &step)
     for(size_t di = 0; di < n_domains; di++) {
         auto & data = domain_data[di];
 
+        if(getSymmetry(feti.K[di].type) != Matrix_Symmetry::HERMITIAN || feti.K[di].shape != Matrix_Shape::UPPER) {
+            eslog::error("implemented only for hermitian K matrices stored in upper triangle\n");
+        }
+
         data.n_dofs_interface = feti.B1[di].nrows;
         data.n_dofs_domain = feti.B1[di].ncols;
 
@@ -53,33 +57,33 @@ void TotalFETIExplicitSc<T,I>::set(const step::Step &step)
         data.Kreg.shape = feti.K[di].shape;
         math::combine(data.Kreg, feti.K[di], feti.RegMat[di]);
 
-        data.Kreg_full.resize(data.Kreg.nrows, data.Kreg.ncols, 2 * data.Kreg.nnz - data.Kreg.nrows);
-        data.map_Kreg_to_full.resize(data.Kreg_full.nnz);
-        math::csrTriangleToFull(data.Kreg_full, data.Kreg, data.map_Kreg_to_full, math::CsrTriangleToFullStage::Pattern);
-
         Matrix_CSR<T,I> & B = feti.B1[di];
         data.Bt.resize(B.ncols, B.nrows, B.nnz);
         data.map_B_transpose.resize(B.nnz);
         math::csrTranspose(data.Bt, B, data.map_B_transpose, math::CsrTransposeStage::Pattern, true);
 
         I n_dofs_total = data.n_dofs_domain + data.n_dofs_interface;
-        data.concat_matrix.resize(n_dofs_total, n_dofs_total, data.Kreg_full.nnz + 2 * B.nnz);
+        if constexpr(utils::is_real<T>())    data.concat_matrix.type = Matrix_Type::REAL_SYMMETRIC_INDEFINITE;
+        if constexpr(utils::is_complex<T>()) data.concat_matrix.type = Matrix_Type::COMPLEX_HERMITIAN_INDEFINITE;
+        data.concat_matrix.shape = Matrix_Shape::UPPER;
+        data.concat_matrix.resize(n_dofs_total, n_dofs_total, data.Kreg.nnz + B.nnz);
         data.map_concat.resize(2 * data.concat_matrix.nnz);
-        data.null_matrix.resize(data.n_dofs_interface, data.n_dofs_interface, 0);
-        std::fill_n(data.null_matrix.rows, data.null_matrix.nrows + 1, 0);
-        math::csrMatrixConcat(data.concat_matrix, data.Kreg_full, data.Bt, B, data.null_matrix, data.map_concat, math::CsrMatrixConcatStage::Pattern);
+        data.null_matrix_A21.resize(data.n_dofs_interface, data.n_dofs_domain, 0);
+        std::fill_n(data.null_matrix_A21.rows, data.null_matrix_A21.nrows + 1, 0);
+        data.null_matrix_A22.resize(data.n_dofs_interface, data.n_dofs_interface, 0);
+        std::fill_n(data.null_matrix_A22.rows, data.null_matrix_A22.nrows + 1, 0);
+        math::csrMatrixConcat(data.concat_matrix, data.Kreg, data.Bt, data.null_matrix_A21, data.null_matrix_A22, data.map_concat, math::CsrMatrixConcatStage::Pattern);
 
         data.F.resize(data.n_dofs_interface, data.n_dofs_interface);
+        if constexpr(utils::is_real<T>())    data.F.type = Matrix_Type::REAL_SYMMETRIC_INDEFINITE;
+        if constexpr(utils::is_complex<T>()) data.F.type = Matrix_Type::COMPLEX_HERMITIAN_INDEFINITE;
+        data.F.shape = Matrix_Shape::UPPER;
 
         data.x.resize(data.n_dofs_interface);
         data.y.resize(data.n_dofs_interface);
 
         data.solver_Kreg.commit(data.Kreg);
         data.solver_Kreg.symbolicFactorization();
-        
-        if constexpr(utils::is_real<T>())    data.concat_matrix.type = Matrix_Type::REAL_SYMMETRIC_INDEFINITE;
-        if constexpr(utils::is_complex<T>()) data.concat_matrix.type = Matrix_Type::COMPLEX_HERMITIAN_INDEFINITE;
-        data.concat_matrix.shape = Matrix_Shape::FULL;
 
         // data.solver_sc.commit(data.concat_matrix);
         // data.solver_sc.symbolicFactorization();
@@ -99,25 +103,16 @@ void TotalFETIExplicitSc<T,I>::update(const step::Step &step)
 
         math::sumCombined(data.Kreg, T{1.0}, feti.K[di], feti.RegMat[di]);
 
-        math::csrTriangleToFull(data.Kreg_full, data.Kreg, data.map_Kreg_to_full, math::CsrTriangleToFullStage::Values);
-
         Matrix_CSR<T,I> & B = feti.B1[di];
         math::csrTranspose(data.Bt, B, data.map_B_transpose, math::CsrTransposeStage::Values, true);
 
-        math::csrMatrixConcat(data.concat_matrix, data.Kreg_full, data.Bt, B, data.null_matrix, data.map_concat, math::CsrMatrixConcatStage::Values);
-
-        // math::print_matrix_csr_as_dense(data.Kreg_full, "Kreg_full");
-        // math::print_matrix_csr_as_dense(data.Bt, "Bt");
-        // math::print_matrix_csr_as_dense(B, "B");
-        // math::print_matrix_csr_arrays(data.concat_matrix, "concated matrix");
-        // math::print_matrix_csr_as_dense(data.concat_matrix, "concated matrix");
+        math::csrMatrixConcat(data.concat_matrix, data.Kreg, data.Bt, data.null_matrix_A21, data.null_matrix_A22, data.map_concat, math::CsrMatrixConcatStage::Values);
 
         data.solver_sc.commit(data.concat_matrix);
-printf("XXX\n");
         data.solver_sc.getSC(data.F, false);
-printf("YYY\n");
-        
-        data.solver_Kreg.commit(data.Kreg);
+
+        math::blas::scale(data.F.nrows * data.F.get_ld(), T{-1}, data.F.vals, 1);
+
         data.solver_Kreg.numericalFactorization();
     }
 }
@@ -146,6 +141,8 @@ void TotalFETIExplicitSc<T,I>::_apply(const Vector_Dual<T> &x_cluster, Vector_Du
             y_cluster.vals[D2C[i]] += data.y.vals[i];
         }
     }
+
+    y_cluster.synchronize();
 }
 
 

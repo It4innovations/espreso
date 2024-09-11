@@ -39,9 +39,9 @@ static inline Matrix_Symmetry getSymmetry(Matrix_Type mt) {
     switch(mt) {
     case Matrix_Type::COMPLEX_HERMITIAN_POSITIVE_DEFINITE:
     case Matrix_Type::COMPLEX_HERMITIAN_INDEFINITE:
-        return Matrix_Symmetry::HERMITIAN;
-    case Matrix_Type::REAL_SYMMETRIC_POSITIVE_DEFINITE:
+    case Matrix_Type::REAL_SYMMETRIC_POSITIVE_DEFINITE:   // real symmetric is actually also hermitian
     case Matrix_Type::REAL_SYMMETRIC_INDEFINITE:
+        return Matrix_Symmetry::HERMITIAN;
     case Matrix_Type::COMPLEX_SYMMETRIC:
         return Matrix_Symmetry::SYMMETRIC;
     case Matrix_Type::REAL_STRUCTURALLY_SYMMETRIC:

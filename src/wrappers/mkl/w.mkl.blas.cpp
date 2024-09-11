@@ -147,6 +147,7 @@ void applyT(Vector_Dense<T, I> &y, const T &alpha, const Matrix_Dense<T, I> &a, 
 template <typename T, typename I>
 void apply_hermitian(Vector_Dense<T, I> &y, const T &alpha, const Matrix_Dense<T, I> &a, const T &beta, const Vector_Dense<T, I> &x)
 {
+    if(getSymmetry(a.type) != Matrix_Symmetry::HERMITIAN) eslog::error("blas apply_hermitian: matrix has to be hermitian\n");
     CBLAS_UPLO uplo;
     if(a.shape == Matrix_Shape::UPPER) uplo = CblasUpper;
     else if(a.shape == Matrix_Shape::LOWER) uplo = CblasLower;
