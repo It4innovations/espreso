@@ -77,7 +77,6 @@ void TotalFETIExplicitSc<T,I>::set(const step::Step &step)
         data.F.resize(data.n_dofs_interface, data.n_dofs_interface);
         if constexpr(utils::is_real<T>())    data.F.type = Matrix_Type::REAL_SYMMETRIC_INDEFINITE;
         if constexpr(utils::is_complex<T>()) data.F.type = Matrix_Type::COMPLEX_HERMITIAN_INDEFINITE;
-        data.F.shape = Matrix_Shape::UPPER;
 
         data.x.resize(data.n_dofs_interface);
         data.y.resize(data.n_dofs_interface);
@@ -134,7 +133,7 @@ void TotalFETIExplicitSc<T,I>::_apply(const Vector_Dual<T> &x_cluster, Vector_Du
             data.x.vals[i] = x_cluster.vals[D2C[i]];
         }
 
-        math::blas::apply_hermitian(data.y, T{1}, data.F, T{0}, data.x);
+        math::blas::apply_hermitian(data.y, T{1}, data.F, 'U', T{0}, data.x);
 
         for(I i = 0; i < data.n_dofs_interface; i++) {
             #pragma omp atomic

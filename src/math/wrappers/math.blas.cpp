@@ -90,7 +90,7 @@ void applyT(Vector_Dense<T, I> &y, const T &alpha, const Matrix_Dense<T, I> &a, 
 }
 
 template <typename T, typename I>
-void apply_hermitian(Vector_Dense<T, I> &y, const T &alpha, const Matrix_Dense<T, I> &a, const T &beta, const Vector_Dense<T, I> &x)
+void apply_hermitian(Vector_Dense<T, I> &y, const T &alpha, const Matrix_Dense<T, I> &a, char uplo, const T &beta, const Vector_Dense<T, I> &x)
 {
     eslog::error("calling of empty BLAS wrapper.\n");
 }

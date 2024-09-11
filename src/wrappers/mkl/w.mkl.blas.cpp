@@ -145,19 +145,19 @@ void applyT(Vector_Dense<T, I> &y, const T &alpha, const Matrix_Dense<T, I> &a, 
 }
 
 template <typename T, typename I>
-void apply_hermitian(Vector_Dense<T, I> &y, const T &alpha, const Matrix_Dense<T, I> &a, const T &beta, const Vector_Dense<T, I> &x)
+void apply_hermitian(Vector_Dense<T, I> &y, const T &alpha, const Matrix_Dense<T, I> &a, char uplo, const T &beta, const Vector_Dense<T, I> &x)
 {
     if(getSymmetry(a.type) != Matrix_Symmetry::HERMITIAN) eslog::error("blas apply_hermitian: matrix has to be hermitian\n");
-    CBLAS_UPLO uplo;
-    if(a.shape == Matrix_Shape::UPPER) uplo = CblasUpper;
-    else if(a.shape == Matrix_Shape::LOWER) uplo = CblasLower;
+    CBLAS_UPLO uplo_val;
+    if(uplo == 'U') uplo_val = CblasUpper;
+    else if(uplo == 'L') uplo_val = CblasLower;
     else eslog::error("blas apply_hermitian: invalid matrix shape\n");
     if(a.nrows != a.ncols) eslog::error("blas apply_hermitian: matrix is not square\n");
     if(x.size != a.ncols || y.size != a.nrows) eslog::error("blas apply_hermitian: incompatible vector size\n");
-    if constexpr(std::is_same_v<T, float>)                cblas_ssymv(CblasRowMajor, uplo, a.nrows,  alpha, a.vals, a.get_ld(), x.vals, 1,  beta, y.vals, 1);
-    if constexpr(std::is_same_v<T, double>)               cblas_dsymv(CblasRowMajor, uplo, a.nrows,  alpha, a.vals, a.get_ld(), x.vals, 1,  beta, y.vals, 1);
-    if constexpr(std::is_same_v<T, std::complex<float>>)  cblas_chemv(CblasRowMajor, uplo, a.nrows, &alpha, a.vals, a.get_ld(), x.vals, 1, &beta, y.vals, 1);
-    if constexpr(std::is_same_v<T, std::complex<double>>) cblas_zhemv(CblasRowMajor, uplo, a.nrows, &alpha, a.vals, a.get_ld(), x.vals, 1, &beta, y.vals, 1);
+    if constexpr(std::is_same_v<T, float>)                cblas_ssymv(CblasRowMajor, uplo_val, a.nrows,  alpha, a.vals, a.get_ld(), x.vals, 1,  beta, y.vals, 1);
+    if constexpr(std::is_same_v<T, double>)               cblas_dsymv(CblasRowMajor, uplo_val, a.nrows,  alpha, a.vals, a.get_ld(), x.vals, 1,  beta, y.vals, 1);
+    if constexpr(std::is_same_v<T, std::complex<float>>)  cblas_chemv(CblasRowMajor, uplo_val, a.nrows, &alpha, a.vals, a.get_ld(), x.vals, 1, &beta, y.vals, 1);
+    if constexpr(std::is_same_v<T, std::complex<double>>) cblas_zhemv(CblasRowMajor, uplo_val, a.nrows, &alpha, a.vals, a.get_ld(), x.vals, 1, &beta, y.vals, 1);
 }
 
 template <typename T, typename I>
