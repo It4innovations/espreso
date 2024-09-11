@@ -21,6 +21,12 @@ void get_eig_sym(Matrix_Dense<T, I> &A, Vector_Dense<T, I> &values);
 template <typename T, typename I>
 void get_eig_sym(Matrix_Dense<T, I> &A, Vector_Dense<T, I> &values, Matrix_Dense<T, I> &vectors);
 
+template <typename T, typename I>
+void get_eig_sym(Matrix_Dense<T, I> &A, Vector_Dense<T, I> &values, I begin, I end);
+
+template <typename T, typename I>
+void get_eig_sym(Matrix_Dense<T, I> &A, Vector_Dense<T, I> &values, Matrix_Dense<T, I> &vectors, I begin, I end);
+
 }
 }
 }
