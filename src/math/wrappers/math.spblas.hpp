@@ -7,6 +7,8 @@
 #include <vector>
 
 namespace espreso {
+namespace math {
+namespace spblas {
 
 template<Matrix_Shape Shape, typename I>
 static I denseMatCalcIndexRowMajor(I r, I c, I ncols)
@@ -41,14 +43,16 @@ static void _submatrix(const Matrix_CSR<T, I> &input, Matrix_Dense<T, I> &output
     output.shape = OutShape;
     if(is_out_block_symmetric) {
         output.type = input.type;
-    }
-    else {
+    } else {
         if constexpr (is_T_real)    { output.type = Matrix_Type::REAL_NONSYMMETRIC; }
         if constexpr (is_T_complex) { output.type = Matrix_Type::COMPLEX_NONSYMMETRIC; }
     }
 
-    if constexpr(DoTrans) { output.resize(out_cols, out_rows); }
-    else { output.resize(out_rows, out_cols); }
+    if constexpr(DoTrans) {
+        output.resize(out_cols, out_rows);
+    } else {
+        output.resize(out_rows, out_cols);
+    }
     std::fill(output.vals, output.vals + output.nnz, T(0));
 
     constexpr bool do_copy                  = ((OutSymmetry == Matrix_Symmetry::NONE || OutSymmetry == Matrix_Symmetry::STRUCTURALLY_SYMMETRIC) && !DoTrans && !DoConj) || (OutSymmetry == Matrix_Symmetry::SYMMETRIC && !DoConj && (OutShape == Matrix_Shape::FULL || InShape == OutShape)) || (OutSymmetry == Matrix_Symmetry::HERMITIAN && DoTrans == DoConj && (OutShape == Matrix_Shape::FULL || InShape == OutShape));
@@ -56,16 +60,15 @@ static void _submatrix(const Matrix_CSR<T, I> &input, Matrix_Dense<T, I> &output
     constexpr bool do_copy_conjugated       = ((OutSymmetry == Matrix_Symmetry::NONE || OutSymmetry == Matrix_Symmetry::STRUCTURALLY_SYMMETRIC) && !DoTrans &&  DoConj) || (OutSymmetry == Matrix_Symmetry::SYMMETRIC &&  DoConj && (OutShape == Matrix_Shape::FULL || InShape == OutShape)) || (OutSymmetry == Matrix_Symmetry::HERMITIAN && DoTrans != DoConj && (OutShape == Matrix_Shape::FULL || InShape == OutShape));
     constexpr bool do_transposed_conjugated = ((OutSymmetry == Matrix_Symmetry::NONE || OutSymmetry == Matrix_Symmetry::STRUCTURALLY_SYMMETRIC) &&  DoTrans &&  DoConj) || (OutSymmetry == Matrix_Symmetry::SYMMETRIC &&  DoConj &&                                    InShape != OutShape)  || (OutSymmetry == Matrix_Symmetry::HERMITIAN && DoTrans == DoConj &&                                    InShape != OutShape);
 
-    for(I out_r = 0; out_r < out_rows; ++out_r)
-    {
+    for(I out_r = 0; out_r < out_rows; ++out_r) {
         I in_r = out_r + start_row;
-        I in_row_start_idx = input.rows[in_r];
-        I in_row_end_idx = input.rows[in_r+1];
+        I in_row_start_idx = input.rows[in_r] - Indexing::CSR;
+        I in_row_end_idx = input.rows[in_r + 1] - Indexing::CSR;
 
         I i = in_row_start_idx;
-        while(i < in_row_end_idx && input.cols[i] < start_col) { i++; }
+        while(i < in_row_end_idx && input.cols[i] - Indexing::CSR < start_col) { i++; }
         for(; i < in_row_end_idx; i++) {
-            I c = input.cols[i];
+            I c = input.cols[i] - Indexing::CSR;
             if(c >= end_col) {
                 break;
             }
@@ -144,8 +147,7 @@ static void _submatrix(const Matrix_CSR<T, I> &input, Matrix_Dense<T, I> &output
 {
     if(conj) {
         _submatrix<T, I, DoTrans, true >(input, output, start_row, end_row, start_col, end_col, out_shape, in_shape, out_symmetry);
-    }
-    else {
+    } else {
         _submatrix<T, I, DoTrans, false>(input, output, start_row, end_row, start_col, end_col, out_shape, in_shape, out_symmetry);
     }
 }
@@ -155,8 +157,7 @@ static void _submatrix(const Matrix_CSR<T, I> &input, Matrix_Dense<T, I> &output
 {
     if(trans) {
         _submatrix<T, I, true >(input, output, start_row, end_row, start_col, end_col, out_shape, in_shape, out_symmetry, conj);
-    }
-    else {
+    } else {
         _submatrix<T, I, false>(input, output, start_row, end_row, start_col, end_col, out_shape, in_shape, out_symmetry, conj);
     }
 }
@@ -178,11 +179,10 @@ static void _submatrix(const Matrix_CSR<T, I> &input, Matrix_CSR<T, I> &output, 
     // bool is_output_symmetric = (is_out_block_symmetric && getSymmetry(input.type) == Matrix_Symmetry::SYMMETRIC);
     // bool is_output_hermitian = (is_out_block_symmetric && getSymmetry(input.type) == Matrix_Symmetry::HERMITIAN);
 
-    if(is_out_block_symmetric) {
+    if (is_out_block_symmetric) {
         output.type = input.type;
         output.shape = input.shape;
-    }
-    else {
+    } else {
         if constexpr (is_T_real)    { output.type = Matrix_Type::REAL_NONSYMMETRIC; }
         if constexpr (is_T_complex) { output.type = Matrix_Type::COMPLEX_NONSYMMETRIC; }
         output.shape = Matrix_Shape::FULL;
@@ -193,12 +193,12 @@ static void _submatrix(const Matrix_CSR<T, I> &input, Matrix_CSR<T, I> &output, 
 
     for(I out_r = 0; out_r < out_rows; out_r++) {
         I r = out_r + start_row;
-        I row_start_idx = input.rows[r];
-        I row_end_idx = input.rows[r+1];
+        I row_start_idx = input.rows[r] - Indexing::CSR;
+        I row_end_idx = input.rows[r + 1] - Indexing::CSR;
         I i = row_start_idx;
-        while(i < row_end_idx && input.cols[i] < start_col) { i++; }
+        while(i < row_end_idx && input.cols[i] - Indexing::CSR < start_col) { i++; }
         colidx_starts[out_r] = i;
-        while(i < row_end_idx && input.cols[i] < end_col) { i++; }
+        while(i < row_end_idx && input.cols[i] - Indexing::CSR < end_col) { i++; }
         colidx_ends[out_r] = i;
     }
 
@@ -211,69 +211,60 @@ static void _submatrix(const Matrix_CSR<T, I> &input, Matrix_CSR<T, I> &output, 
 
     I curr_idx = 0;
     for(I out_r = 0; out_r < out_rows; out_r++) {
-        output.rows[out_r] = curr_idx;
+        output.rows[out_r] = curr_idx + Indexing::CSR;
         I colidx_start = colidx_starts[out_r];
         I colidx_end = colidx_ends[out_r];
-        for(I i = colidx_start; i < colidx_end; i++)
-        {
+        for(I i = colidx_start; i < colidx_end; i++) {
             output.cols[curr_idx] = input.cols[i] - start_col;
             if constexpr(is_T_complex && DoConj) { output.vals[curr_idx] = std::conj(input.vals[i]); }
             else { output.vals[curr_idx] = input.vals[i]; }
             curr_idx++;
         }
     }
-    output.rows[out_rows] = curr_idx;
+    output.rows[out_rows] = curr_idx + Indexing::CSR;
 }
 
 
-template <template <typename, typename, typename> class Matrix, typename T, typename I>
-void SpBLAS<Matrix, T, I>::submatrix(Matrix_Dense<T, I> &output, I start_row, I end_row, I start_col, I end_col, bool trans, bool conj, bool output_force_full)
-{
-    submatrix(*matrix, output, start_row, end_row, start_col, end_col, trans, conj, output_force_full);
-}
-
-template <template <typename, typename, typename> class Matrix, typename T, typename I>
-void SpBLAS<Matrix, T, I>::submatrix(Matrix_CSR<T, I> &output, I start_row, I end_row, I start_col, I end_col, bool trans, bool conj, bool output_force_full)
-{
-    submatrix(*matrix, output, start_row, end_row, start_col, end_col, trans, conj, output_force_full);
-}
-
-template <template <typename, typename, typename> class Matrix, typename T, typename I>
-void SpBLAS<Matrix, T, I>::submatrix(const Matrix_CSR<T, I> &input, Matrix_Dense<T, I> &output, I start_row, I end_row, I start_col, I end_col, bool trans, bool conj, bool output_force_full)
+template <typename T, typename I>
+void submatrix(const Matrix_CSR<T, I> &input, Matrix_Dense<T, I> &output, I start_row, I end_row, I start_col, I end_col, bool trans, bool conj, bool output_force_full)
 {
     // I out_rows = end_row - start_row;
     // I out_cols = end_col - start_col;
     bool is_out_block_symmetric = (start_row == start_col && end_row == end_col);
 
     Matrix_Symmetry out_symmetry;
-    if(is_out_block_symmetric) { out_symmetry = getSymmetry(input.type); }
-    else { out_symmetry = Matrix_Symmetry::NONE; }
+    if(is_out_block_symmetric) {
+        out_symmetry = getSymmetry(input.type);
+    } else {
+        out_symmetry = Matrix_Symmetry::NONE;
+    }
 
-    Matrix_Shape in_shape = input.shape;
+    Matrix_Shape in_shape = input.shape, out_shape = in_shape;
 
-    Matrix_Shape out_shape;
-    if(output_force_full || out_symmetry == Matrix_Symmetry::NONE || out_symmetry == Matrix_Symmetry::STRUCTURALLY_SYMMETRIC) { out_shape = Matrix_Shape::FULL; }
-    else { out_shape = in_shape; }
+    if (output_force_full || out_symmetry == Matrix_Symmetry::NONE || out_symmetry == Matrix_Symmetry::STRUCTURALLY_SYMMETRIC) {
+        out_shape = Matrix_Shape::FULL;
+    }
 
     _submatrix<T, I>(input, output, start_row, end_row, start_col, end_col, out_shape, in_shape, out_symmetry, conj, trans);
 }
 
-template <template <typename, typename, typename> class Matrix, typename T, typename I>
-void SpBLAS<Matrix, T, I>::submatrix(const Matrix_CSR<T, I> &input, Matrix_CSR<T, I> &output, I start_row, I end_row, I start_col, I end_col, bool trans, bool conj, bool output_force_full)
+template <typename T, typename I>
+void submatrix(const Matrix_CSR<T, I> &input, Matrix_CSR<T, I> &output, I start_row, I end_row, I start_col, I end_col, bool trans, bool conj, bool output_force_full)
 {
-    if(trans) {
+    if (trans) {
         eslog::error("Submatrix CSR->CSR: transposition is not supported.\n");
     }
-    if(output_force_full) {
+    if (output_force_full) {
         eslog::error("Submatrix CSR->CSR: forcing full output matrices is not supported.\n");
     }
 
-    if(conj) {
+    if (conj) {
         _submatrix<T, I, true >(input, output, start_row, end_row, start_col, end_col);
-    }
-    else {
+    } else {
         _submatrix<T, I, false>(input, output, start_row, end_row, start_col, end_col);
     }
 }
 
+}
+}
 }

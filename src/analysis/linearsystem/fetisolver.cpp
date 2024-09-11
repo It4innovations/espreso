@@ -17,7 +17,7 @@ namespace espreso {
 
 template <typename T>
 FETILinearSystemSolver<T>::FETILinearSystemSolver(PhysicsConfiguration &physics, LoadStepSolverConfiguration &loadStep)
-: physics(physics), loadStep(loadStep), feti(loadStep.feti), bem(false)
+: physics(physics), loadStep(loadStep), feti(loadStep.feti), bem(false), postponed_set(loadStep.feti.regularization == FETIConfiguration::REGULARIZATION::ALGEBRAIC)
 {
     LinearSystemSolver<T>::A = &A;
     LinearSystemSolver<T>::x = &x;
@@ -60,7 +60,9 @@ void FETILinearSystemSolver<T>::set(step::Step &step)
     constrains.set(step, feti, dirichlet);
     eslog::checkpointln("FETI: SET B1");
     eslog::info(" = ----------------------------------------------------------------------------------------- = \n");
-    feti.set(step);
+    if (!postponed_set) {
+        feti.set(step);
+    }
     eslog::endln("FETI: LINEAR SYSTEM SET");
 }
 
@@ -99,6 +101,13 @@ void FETILinearSystemSolver<T>::update(step::Step &step)
             math::blas::multiply(T{1.}, P, KP, T{0}, K);
             math::copy(feti.K[d], K);
         }
+        eslog::checkpointln("FETI: K PROJECTED");
+    }
+
+    if (postponed_set) {
+        feti.set(step);
+        postponed_set = false;
+        eslog::checkpointln("FETI: FETI SET");
     }
 
     if (info::ecf->output.print_matrices) {

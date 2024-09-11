@@ -5249,7 +5249,7 @@ if (defect_K_in == 0){
 //
 	Kplus_R.GramSchmidtOrtho();
 	SEQ_VECTOR <esint > null_pivots;
-//  Kplus_R.getNullPivots(null_pivots);
+	Kplus_R.getNullPivots(null_pivots);
 
 #if VERBOSE_KERNEL>0
 //10 - R - Gram Schmidt Orthogonalization

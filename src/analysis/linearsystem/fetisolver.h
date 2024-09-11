@@ -35,7 +35,7 @@ private:
     Constrains<T> constrains;
 
     FETI<T> feti;
-    bool bem;
+    bool bem, postponed_set;
 };
 
 }

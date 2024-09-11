@@ -6,6 +6,7 @@
 
 #include <complex>
 
+#ifndef HAVE_MKL
 #ifdef HAVE_SUITESPARSE
 
 #include "math/wrappers/math.spsolver.h"
@@ -389,10 +390,10 @@ void DirectSparseSolver<T, I>::getSC(Matrix_Dense<T,I> &sc)
     Matrix_CSR<T, I> A21t_sp; // = A12c_sp
     Matrix_Dense<T, I> A22t_dn;
     Matrix_Dense<T, I> A12t_dn;
-    SpBLAS<Matrix_CSR, T, I>::submatrix(*ext->matrix, A11_sp, 0, size_A11, 0, size_A11);
-    SpBLAS<Matrix_CSR, T, I>::submatrix(*ext->matrix, A21t_sp, 0, size_A11, size_A11, size, false, true); // = A12c_sp
-    SpBLAS<Matrix_CSR, T, I>::submatrix(*ext->matrix, A22t_dn, size_A11, size, size_A11, size, true, false, true);
-    SpBLAS<Matrix_CSR, T, I>::submatrix(*ext->matrix, A12t_dn, 0, size_A11, size_A11, size, true, false, true);
+    math::spblas::submatrix(*ext->matrix, A11_sp, 0, size_A11, 0, size_A11);
+    math::spblas::submatrix(*ext->matrix, A21t_sp, 0, size_A11, size_A11, size, false, true); // = A12c_sp
+    math::spblas::submatrix(*ext->matrix, A22t_dn, size_A11, size, size_A11, size, true, false, true);
+    math::spblas::submatrix(*ext->matrix, A12t_dn, 0, size_A11, size_A11, size, true, false, true);
 
     cholmod_sparse *cm_A11_sp = nullptr;
     cholmod_sparse *cm_A21_sp = nullptr;
@@ -438,5 +439,6 @@ void DirectSparseSolver<T, I>::getSC(Matrix_Dense<T,I> &sc)
 
 #include "math/wrappers/math.spsolver.inst.hpp"
 
+#endif
 #endif
 

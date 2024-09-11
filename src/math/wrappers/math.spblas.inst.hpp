@@ -1,4 +1,6 @@
 
+#include "math.spblas.h"
+
 namespace espreso {
 
     #define INSTANTIATE_T_I_M(T,I,M) \
@@ -20,4 +22,19 @@ namespace espreso {
         #undef INSTANTIATE_T_I
     #undef INSTANTIATE_T_I_M
 
+
+namespace math {
+namespace spblas {
+
+#define INSTANTIATE_SUBMATRIX(T, I) \
+template void submatrix<T, I>(const Matrix_CSR<T, I>&, Matrix_Dense<T, I>&, I, I, I, I, bool, bool, bool); \
+template void submatrix<T, I>(const Matrix_CSR<T, I>&, Matrix_CSR<T, I>&  , I, I, I, I, bool, bool, bool);
+
+INSTANTIATE_SUBMATRIX(double, int)
+INSTANTIATE_SUBMATRIX(std::complex<double>, int)
+
+#undef INSTANTIATE_T_I
+
+}
+}
 }

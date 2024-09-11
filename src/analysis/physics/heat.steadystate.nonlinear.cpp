@@ -98,6 +98,7 @@ bool HeatSteadyStateNonLinear::run(step::Step &step)
     time.timeIntegrationConstantK = 1;
 
     assembler.connect(K, nullptr, f, R, dirichlet);
+    R->set(0);
 
     if (MPITools::node->rank == 0) {
         info::system::memory::physics = info::system::memoryAvail();
