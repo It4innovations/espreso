@@ -21,6 +21,19 @@ struct ClippingBox: public ECFDescription {
 	ClippingBox();
 };
 
+struct SelectionConfiguration: public ECFDescription {
+
+    struct Sphere: public ECFDescription {
+        double cx, cy, cz, r;
+
+        Sphere();
+    };
+
+    std::map<std::string, Sphere> sphere;
+
+    SelectionConfiguration();
+};
+
 struct InputConfiguration: public ECFDescription {
 
 	enum class FORMAT {
@@ -64,6 +77,7 @@ struct InputConfiguration: public ECFDescription {
 	DecompositionConfiguration decomposition;
 	MeshGenerationConfiguration generation;
 	std::map<std::string, ContactInterfaceConfiguration> contact_interfaces;
+	SelectionConfiguration selection;
 
 	InputConfiguration();
 };

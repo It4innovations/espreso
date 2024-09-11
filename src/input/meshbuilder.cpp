@@ -1,11 +1,15 @@
 
 #include "meshbuilder.h"
+#include "basis/containers/serializededata.h"
 #include "basis/logging/profiler.h"
 #include "wrappers/mpi/communication.h"
 #include "esinfo/eslog.h"
 #include "esinfo/ecfinfo.h"
+#include "esinfo/envinfo.h"
 #include "esinfo/mpiinfo.h"
 #include "esinfo/meshinfo.h"
+#include "mesh/store/nodestore.h"
+#include "mesh/store/boundaryregionstore.h"
 #include "input/builders/sequentialinput.h"
 #include "input/builders/scatteredinput.h"
 #include "input/builders/generatedinput.h"
@@ -129,6 +133,21 @@ void MeshBuilder::build()
 		GeneratedInput{*this, false};
 	}
 	info::mesh->orientation = orientation;
+
+	const auto &selection = info::ecf->input.selection;
+	for (auto sphere = selection.sphere.cbegin(); sphere != selection.sphere.cend(); ++sphere) {
+	    Point center(sphere->second.cx, sphere->second.cy, sphere->second.cz);
+	    std::vector<esint> nodes;
+	    for (esint n = 0; n < info::mesh->nodes->size; ++n) {
+	        if ((info::mesh->nodes->coordinates->datatarray()[n] - center).length() < sphere->second.r) {
+	            nodes.push_back(n);
+	        }
+	    }
+	    info::mesh->boundaryRegions.push_back(new BoundaryRegionStore(sphere->first));
+	    info::mesh->boundaryRegions.back()->dimension = 1;
+	    info::mesh->boundaryRegions.back()->nodes = new serializededata<esint, esint>(1, { (size_t)info::env::threads, nodes });
+	}
+
 	profiler::syncend("build_mesh");
 }
 

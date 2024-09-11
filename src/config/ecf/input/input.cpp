@@ -21,6 +21,34 @@ ClippingBox::ClippingBox()
 	ecfdescription->registerParameter("max_z", max[2], ECFMetaData().setdescription({ "MAX.Z" }).setdatatype({ ECFDataType::FLOAT }));
 }
 
+SelectionConfiguration::Sphere::Sphere()
+{
+    cx = 0;
+    REGISTER(cx, ECFMetaData()
+            .setdescription({ "Center X." })
+            .setdatatype({ ECFDataType::FLOAT }));
+    cy = 0;
+    REGISTER(cy, ECFMetaData()
+            .setdescription({ "Center Y." })
+            .setdatatype({ ECFDataType::FLOAT }));
+    cz = 0;
+    REGISTER(cz, ECFMetaData()
+            .setdescription({ "Center Z." })
+            .setdatatype({ ECFDataType::FLOAT }));
+    r = 0;
+    REGISTER(r, ECFMetaData()
+            .setdescription({ "Radius." })
+            .setdatatype({ ECFDataType::FLOAT }));
+}
+
+SelectionConfiguration::SelectionConfiguration()
+{
+    REGISTER(sphere, ECFMetaData()
+                .setdescription({ "Region name.", "Sphere definition." })
+                .setdatatype({ ECFDataType::STRING })
+                .setpattern({ "Sphere" }));
+}
+
 InputConfiguration::InputConfiguration()
 {
 	path = ".";
@@ -120,5 +148,8 @@ InputConfiguration::InputConfiguration()
 				.setdescription({ "List of contact interfaces", "Contact interface definition" })
 				.setdatatype({ ECFDataType::STRING })
 				.setpattern({ "CONTACT_1" }));
+
+	REGISTER(selection, ECFMetaData()
+	        .setdescription({ "Region selection." }));
 }
 
