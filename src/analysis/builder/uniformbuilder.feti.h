@@ -144,7 +144,8 @@ struct UniformBuilderFETI: UniformBuilderFETIPattern, SparseMatrixBuilder<T> {
             for (esint i = info::mesh->elements->eintervalsDistribution[domain], offset = 0; i < info::mesh->elements->eintervalsDistribution[domain + 1]; ++i) {
                 _v->mapping.elements[i].data = _v->domains[domain].vals;
                 _v->mapping.elements[i].position = elements[domain].f.data() + offset;
-                offset += (info::mesh->elements->eintervals[i].end - info::mesh->elements->eintervals[i].begin) * Mesh::edata[info::mesh->elements->eintervals[i].code].nodes;
+                esint esize = this->dofs * Mesh::edata[info::mesh->elements->eintervals[i].code].nodes;
+                offset += (info::mesh->elements->eintervals[i].end - info::mesh->elements->eintervals[i].begin) * esize;
             }
         }
 
@@ -156,7 +157,8 @@ struct UniformBuilderFETI: UniformBuilderFETIPattern, SparseMatrixBuilder<T> {
                     for (esint i = info::mesh->boundaryRegions[r]->eintervalsDistribution[domain], offset = 0; i < info::mesh->boundaryRegions[r]->eintervalsDistribution[domain + 1]; ++i) {
                         _v->mapping.boundary[r][i].data = _v->domains[domain].vals;
                         _v->mapping.boundary[r][i].position = bregion[domain][r].f.data() + offset;
-                        offset += (info::mesh->boundaryRegions[r]->eintervals[i].end - info::mesh->boundaryRegions[r]->eintervals[i].begin) * Mesh::edata[info::mesh->boundaryRegions[r]->eintervals[i].code].nodes;
+                        esint esize = this->dofs * Mesh::edata[info::mesh->boundaryRegions[r]->eintervals[i].code].nodes;
+                        offset += (info::mesh->boundaryRegions[r]->eintervals[i].end - info::mesh->boundaryRegions[r]->eintervals[i].begin) * esize;
                     }
                 }
             }
