@@ -3,7 +3,7 @@
 #define SRC_FETI_DUALOPERATOR_TOTALFETI_EXPLICIT_SC_H_
 
 #include "dualoperator.h"
-#include "math/wrappers/math.spsolver.h"
+#include "math/wrappers/math.sc_solver.h"
 
 #include "math/math.h"
 
@@ -46,8 +46,7 @@ private:
         Matrix_CSR<T,I> null_matrix_A21;
         Vector_Dense<I,I> map_B_transpose;
         Vector_Dense<I,I> map_concat;
-        DirectSparseSolver<T,I> solver_sc;
-        DirectSparseSolver<T,I> solver_Kreg;
+        SchurComplementSolver<T,I> sc_solver;
         I n_dofs_interface;
         I n_dofs_domain;
     };
