@@ -87,9 +87,12 @@ void TotalFETIExplicitSc<T,I>::set(const step::Step &step)
         }
     }
 
+    my_timer tm_total, tm_inner, tm_trans, tm_commit, tm_symbfact;
 
+    tm_total.start();
     #pragma omp parallel for
     for(size_t di = 0; di < n_domains; di++) {
+        tm_inner.start();
         auto & data = domain_data[di];
 
         if(getSymmetry(feti.K[di].type) != Matrix_Symmetry::HERMITIAN || feti.K[di].shape != Matrix_Shape::UPPER) {
@@ -110,13 +113,23 @@ void TotalFETIExplicitSc<T,I>::set(const step::Step &step)
         data.null_matrix_A22.resize(data.n_dofs_interface, data.n_dofs_interface, 0);
         std::fill_n(data.null_matrix_A22.rows, data.null_matrix_A22.nrows + 1, 0);
 
+        tm_commit.start();
         data.sc_solver.commitMatrix(data.Kreg, data.Bt, data.null_matrix_A21, data.null_matrix_A22);
+        tm_commit.stop();
+        tm_symbfact.start();
         data.sc_solver.factorizeSymbolic();
+        tm_symbfact.stop();
 
         data.x.resize(data.n_dofs_interface);
         data.y.resize(data.n_dofs_interface);
+        tm_inner.stop();
     }
+    tm_total.stop();
 
+    print_timer("Set     total", tm_total);
+    print_timer("Set       inner", tm_inner);
+    print_timer("Set         commit", tm_commit);
+    print_timer("Set         symbfact", tm_symbfact);
 }
 
 
@@ -124,9 +137,12 @@ void TotalFETIExplicitSc<T,I>::set(const step::Step &step)
 template<typename T, typename I>
 void TotalFETIExplicitSc<T,I>::update(const step::Step &step)
 {
+    my_timer tm_total, tm_inner, tm_updatevals, tm_factnumer, tm_maked;
 
+    tm_total.start();
     #pragma omp parallel for
     for(size_t di = 0; di < n_domains; di++) {
+        tm_inner.start();
         auto & data = domain_data[di];
 
         math::sumCombined(data.Kreg, T{1.0}, feti.K[di], feti.RegMat[di]);
@@ -134,10 +150,17 @@ void TotalFETIExplicitSc<T,I>::update(const step::Step &step)
         Matrix_CSR<T,I> & B = feti.B1[di];
         math::csrTranspose(data.Bt, B, data.map_B_transpose, math::CsrTransposeStage::Values, true);
 
+        tm_updatevals.start();
         data.sc_solver.updateMatrixValues();
+        tm_updatevals.stop();
+        tm_factnumer.start();
         data.sc_solver.factorizeNumericAndGetSc(data.F, data.F_fill, T{-1});
+        tm_factnumer.stop();
+        tm_inner.stop();
     }
+    tm_total.stop();
 
+    tm_maked.start();
     {
         std::vector<Vector_Dense<T,I>> Kplus_fs(n_domains);
         #pragma omp parallel for schedule(static,1)
@@ -149,7 +172,13 @@ void TotalFETIExplicitSc<T,I>::update(const step::Step &step)
         applyB(feti, Kplus_fs, d);
         math::add(d, T{-1}, feti.c);
     }
+    tm_maked.stop();
 
+    print_timer("Update  total", tm_total);
+    print_timer("Update    inner", tm_inner);
+    print_timer("Update      updatevals", tm_updatevals);
+    print_timer("Update      factnumer", tm_factnumer);
+    print_timer("Update  maked", tm_maked);
 }
 
 
@@ -157,7 +186,9 @@ void TotalFETIExplicitSc<T,I>::update(const step::Step &step)
 template<typename T, typename I>
 void TotalFETIExplicitSc<T,I>::_apply(const Vector_Dual<T> &x_cluster, Vector_Dual<T> &y_cluster)
 {
+    my_timer tm_total, tm_mv;
 
+    tm_total.start();
     memset(y_cluster.vals, 0, y_cluster.size * sizeof(T));
 
     #pragma omp parallel for
@@ -170,16 +201,21 @@ void TotalFETIExplicitSc<T,I>::_apply(const Vector_Dual<T> &x_cluster, Vector_Du
             data.x.vals[i] = x_cluster.vals[D2C[i]];
         }
 
+        tm_mv.start();
         math::blas::apply_hermitian(data.y, T{1}, data.F, data.F_fill, T{0}, data.x);
+        tm_mv.stop();
 
         for(I i = 0; i < data.n_dofs_interface; i++) {
             #pragma omp atomic
             y_cluster.vals[D2C[i]] += data.y.vals[i];
         }
     }
+    tm_total.stop();
 
     y_cluster.synchronize();
 
+    print_timer("Apply   total", tm_total);
+    print_timer("Apply     mv", tm_mv);
 }
 
 
