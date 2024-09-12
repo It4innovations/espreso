@@ -15,7 +15,7 @@ template <typename T, typename I> void _orthonormalize(Matrix_Dense<T, I> &A)
 //    Vector_Dense<T, I> mlt; mlt.resize(A.nrows);
 //    Vector_Dense<T, I> row; row.size = A.ncols;
 //    Matrix_Dense<T, I> mat; mat.ncols = A.ncols; mat.vals = A.vals;
-//    for (esint r = 0; r < A.nrows; ++r) {
+//    for (I r = 0; r < A.nrows; ++r) {
 //        row.vals  = A.vals + r * A.ncols;
 //        mat.nrows = r;
 //        mlt.size  = r;
@@ -25,8 +25,8 @@ template <typename T, typename I> void _orthonormalize(Matrix_Dense<T, I> &A)
 //    }
 
     // MGS
-    for (esint r = 0; r < A.nrows; ++r) {
-        for (esint rr = 0; rr < r; ++rr) {
+    for (I r = 0; r < A.nrows; ++r) {
+        for (I rr = 0; rr < r; ++rr) {
             T scale = math::blas::dot(A.ncols, A.vals + rr * A.ncols, 1, A.vals + r * A.ncols, 1);
             math::blas::add(A.ncols, A.vals + r * A.ncols, 1, -scale, A.vals + rr * A.ncols, 1);
         }
@@ -105,7 +105,7 @@ template <typename T, typename I> void _getKernel(Matrix_CSR<T, I> &A, Matrix_De
 //    2) permutVectorActive
 //  random selection of singular DOFs
 // 0 - no permut., 1 - std::vector shuffle
-    esint permutVectorActive                            = 0;
+    int permutVectorActive                            = 0;
 
 //    3) use_null_pivots_or_s_set
 // NtN_Mat from null pivots or fixing DOFs
@@ -119,22 +119,22 @@ template <typename T, typename I> void _getKernel(Matrix_CSR<T, I> &A, Matrix_De
 
 //    5) get_n_first_and_n_last_eigenvals_from_dense_A
 // get and print 2*n K eigenvalues (K is temporarily converted to dense);
-//    esint get_n_first_and_n_last_eigenvals_from_dense_A = 10;
+//    I get_n_first_and_n_last_eigenvals_from_dense_A = 10;
 
 //    6) get_n_first_and_n_last_eigenvals_from_dense_S
 // get and print 2*n S eigenvalues
-//    esint get_n_first_and_n_last_eigenvals_from_dense_S = 10;
+//    I get_n_first_and_n_last_eigenvals_from_dense_S = 10;
 
 //    7) plot_n_first_n_last_eigenvalues
 // get of K eigenvalues (K is temporarily converted to dense matrix);
-//    esint plot_n_first_n_last_eigenvalues               = 0;
+//    I plot_n_first_n_last_eigenvalues               = 0;
 
 //    8) fixing_nodes_or_dof
 // non-singular part determined by fixing nodes (FN),
 // min(fixing_nodes_or_dof)>=3; if variable is nonzero,
 // parameter sc_size is set to fixing_nodes_or_dof*dofPerNode
-//    esint fixing_nodes_or_dof                           = 0;
-//    esint dofPerNode                                    = 3;
+//    I fixing_nodes_or_dof                           = 0;
+//    I dofPerNode                                    = 3;
 ///////////////////////////////////////////////////////////////////////////////////////////////////////
 ///////////////////////////////////////////////////////////////////////////////////////////////////////
 //
@@ -145,20 +145,20 @@ template <typename T, typename I> void _getKernel(Matrix_CSR<T, I> &A, Matrix_De
 //    2) check_nonsing
 // if check_nonsing>0, checking of A_rr non-singularity is activated and it is repeated
 // (check_nonsing) times.
-//    esint check_nonsing                                 = 0;
+//    I check_nonsing                                 = 0;
 
 //    3) max_size_of_dense_matrix_to_get_eigs
 // if size of K is less then CHECA_N..., K is converted to dense format to get eigenvalues.
-//    esint max_size_of_dense_matrix_to_get_eigs          = 2500;
+//    I max_size_of_dense_matrix_to_get_eigs          = 2500;
 
 //    4) sc_size
 // specification of size of Schur complement used for detection of zero eigenvalues.
-//esint  sc_size >= expected defect 'd' (e.g. in elasticity d=6).
-//    esint sc_size                                       = scSize;
+//I  sc_size >= expected defect 'd' (e.g. in elasticity d=6).
+//    I sc_size                                       = scSize;
 
 //    5) twenty
 // testing last twenty eigenvalues of S to distinguish, if d-last ones are zero or not.
-//    esint twenty                                        = 20;
+//    I twenty                                        = 20;
 // twenty eigenvalues are ascstd::endly ordered in d = d[0],d[1], ..., d[n-2],d[n-1]
 
 //    6) jump_in_eigenvalues_alerting_singularity
@@ -169,7 +169,7 @@ template <typename T, typename I> void _getKernel(Matrix_CSR<T, I> &A, Matrix_De
 ///////////////////////////////////////////////////////////////////////////////////////////////////////
 
     double rho = A.vals[0]; // max value on diagonal
-    for (esint r = 0; r < A.nrows; ++r) {
+    for (I r = 0; r < A.nrows; ++r) {
         rho = std::max(rho, A.vals[A.rows[r] - Indexing::CSR]);
     }
 
@@ -177,9 +177,9 @@ template <typename T, typename I> void _getKernel(Matrix_CSR<T, I> &A, Matrix_De
 
     // scaling
     double di = 1, dj = 1;
-    for (esint r = 0; r < _A.nrows; r++) {
+    for (I r = 0; r < _A.nrows; r++) {
         if (diagonalScaling) { di = _A.vals[_A.rows[r] - Indexing::CSR]; }
-        for (esint c = _A.rows[r]; c < _A.rows[r + 1]; c++){
+        for (I c = _A.rows[r]; c < _A.rows[r + 1]; c++){
             if (diagonalScaling) {
                 dj = _A.vals[_A.rows[_A.cols[c - Indexing::CSR] - Indexing::CSR] - Indexing::CSR];
             }
@@ -191,7 +191,7 @@ template <typename T, typename I> void _getKernel(Matrix_CSR<T, I> &A, Matrix_De
         scSize = A.nrows;
     }
 
-    esint nonsing_size = A.nrows - scSize;
+    I nonsing_size = A.nrows - scSize;
     std::vector<I> permVec(A.nrows);
 
     // permutation
@@ -238,12 +238,12 @@ template <typename T, typename I> void _getKernel(Matrix_CSR<T, I> &A, Matrix_De
     math::lapack::get_eig_sym(A_ss, eigval, eigvec, 1, maxDefect + 1);
 //    printf("TIME %f\n", eslog::time() - tt);
 //
-//    for (esint i = 0; i < std::min(maxDefect + 1, eigval.size); ++i) {
+//    for (I i = 0; i < std::min(maxDefect + 1, eigval.size); ++i) {
 //       printf("%+e\n", eigval.vals[i]);
 //    }
 
     // identification of defect in K
-    esint defect = std::min(maxDefect + 1, A_ss.nrows) - 1;
+    I defect = std::min(maxDefect + 1, A_ss.nrows) - 1;
     while (defect && std::fabs(eigval.vals[defect - 1] / eigval.vals[defect]) > jump_in_eigenvalues_alerting_singularity) {
         --defect;
     }
@@ -278,7 +278,7 @@ template <typename T, typename I> void _getKernel(Matrix_CSR<T, I> &A, Matrix_De
             }
             R.vals[r * R.ncols + permVec[c]] = R_r.vals[r * R_r.ncols + c] / sqrt(di);
         }
-        for (esint c = 0; c < R_s.ncols; c++) {
+        for (I c = 0; c < R_s.ncols; c++) {
             if (diagonalScaling) {
                 di = A.vals[A.rows[permVec[c + R_r.ncols]] - Indexing::CSR];
             }
