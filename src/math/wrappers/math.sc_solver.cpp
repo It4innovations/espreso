@@ -48,7 +48,7 @@ void SchurComplementSolver<T,I>::updateMatrixValues()
 
 template<typename T, typename I>
 template<typename A>
-void SchurComplementSolver<T,I>::factorizeNumericAndGetSc(Matrix_Dense<T,I,A> & /*sc*/, char /*uplo*/)
+void SchurComplementSolver<T,I>::factorizeNumericAndGetSc(Matrix_Dense<T,I,A> & /*sc*/, char /*uplo*/, T /*alpha*/)
 {
     eslog::error("Error: empty SchurComplementSolver implementation\n");
 }

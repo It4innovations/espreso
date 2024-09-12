@@ -32,7 +32,7 @@ public:
     void updateMatrixValues();
     // stage = 3
     template<typename A>
-    void factorizeNumericAndGetSc(Matrix_Dense<T,I,A> & sc, char uplo);
+    void factorizeNumericAndGetSc(Matrix_Dense<T,I,A> & sc, char uplo, T alpha = T{1});
     // stage = 4
     void solveA11(const Vector_Dense<T,I> & rhs, Vector_Dense<T,I> & sol);
 

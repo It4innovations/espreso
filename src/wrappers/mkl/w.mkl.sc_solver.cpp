@@ -47,8 +47,7 @@ SchurComplementSolver<T,I>::SchurComplementSolver()
     ext->iparm[0] = 1; // I did popullate iparm
     ext->iparm[1] = 2; // metis fill reduction
     ext->iparm[34] = 1; // zero-based indexing
-    // ext->iparm[35] = 1; // schur complement, dont compute factors
-    ext->iparm[35] = 2; // schur complement, please compute factors
+    ext->iparm[35] = 1; // schur complement
 
     ext->provided_as_four_small_matrices = false;
 }
@@ -161,7 +160,7 @@ void SchurComplementSolver<T,I>::updateMatrixValues()
 
 template<typename T, typename I>
 template<typename A>
-void SchurComplementSolver<T,I>::factorizeNumericAndGetSc(Matrix_Dense<T,I,A> & sc, char uplo)
+void SchurComplementSolver<T,I>::factorizeNumericAndGetSc(Matrix_Dense<T,I,A> & sc, char uplo, T alpha)
 {
     if(ext->stage != 3) eslog::error("SchurComplementSolver::factorizeNumericAndGetSc(): wrong stage\n");
     if(sc.nrows != ext->sc_size || sc.ncols != ext->sc_size) eslog::error("SchurComplementSolver::factorizeNumericAndGetSc(): output SC matrix has wrong size\n");
@@ -182,7 +181,7 @@ void SchurComplementSolver<T,I>::factorizeNumericAndGetSc(Matrix_Dense<T,I,A> & 
             T * row_in = sc_tmp.vals + r * sc_tmp.get_ld();
             T * row_out = sc.vals + r * sc.get_ld();
             for(I c = 0; c <= r; c++) {
-                row_out[c] = row_in[c];
+                row_out[c] = alpha * row_in[c];
             }
         }
     }
@@ -191,21 +190,16 @@ void SchurComplementSolver<T,I>::factorizeNumericAndGetSc(Matrix_Dense<T,I,A> & 
             T * row_in = sc_tmp.vals + r * sc_tmp.get_ld();
             T * row_out = sc.vals + r * sc.get_ld();
             for(I c = r; c < sc.ncols; c++) {
-                row_out[c] = row_in[c];
+                row_out[c] = alpha * row_in[c];
             }
         }
     }
     else { // 'F'
-        if(sc.get_ld() == sc_tmp.get_ld()) {
-            std::copy_n(sc_tmp.vals, sc.nrows * sc.get_ld(), sc.vals);
-        }
-        else {
-            for(I r = 0; r < sc.nrows; r++) {
-                T * row_in = sc_tmp.vals + r * sc_tmp.get_ld();
-                T * row_out = sc.vals + r * sc.get_ld();
-                for(I c = 0; c < sc.ncols; c++) {
-                    row_out[c] = row_in[c];
-                }
+        for(I r = 0; r < sc.nrows; r++) {
+            T * row_in = sc_tmp.vals + r * sc_tmp.get_ld();
+            T * row_out = sc.vals + r * sc.get_ld();
+            for(I c = 0; c < sc.ncols; c++) {
+                row_out[c] = alpha * row_in[c];
             }
         }
     }

@@ -2,6 +2,7 @@
 #include "totalfeti.explicit.sc.h"
 #include "math/wrappers/math.blas.h"
 #include "feti/common/applyB.h"
+#include "my_timer.h"
 
 
 
@@ -39,19 +40,61 @@ void TotalFETIExplicitSc<T,I>::set(const step::Step &step)
 {
     n_domains = feti.K.size();
     domain_data.resize(n_domains);
+    for(size_t di = 0; di < n_domains; di++) {
+        domain_data[di].n_dofs_interface = feti.B1[di].nrows;
+        domain_data[di].n_dofs_domain = feti.B1[di].ncols;
+    }
 
-    // todo share memory of F triangles
+    constexpr bool Fs_share_memory = true;
 
-    #pragma omp parallel for schedule(static,1)
+    if constexpr(Fs_share_memory) {
+        Fs_allocated.resize((n_domains - 1) / 2 + 1);
+        std::vector<size_t> domain_idxs_sorted_by_f_size_desc(n_domains);
+        for(size_t di = 0; di < n_domains; di++) {
+            domain_idxs_sorted_by_f_size_desc[di] = di;
+        }
+        std::sort(domain_idxs_sorted_by_f_size_desc.rbegin(), domain_idxs_sorted_by_f_size_desc.rend(), [&](size_t dl, size_t dr){ return domain_data[dl].n_dofs_interface < domain_data[dr].n_dofs_interface; });
+        for(size_t i = 0; i < n_domains; i++) {
+            size_t di = domain_idxs_sorted_by_f_size_desc[i];
+            auto & data = domain_data[di];
+
+            if(i % 2 == 0) {
+                Fs_allocated[i / 2].resize(data.n_dofs_interface + 1, data.n_dofs_interface);
+                data.F_fill = 'U';
+                data.F.shallowCopy(Fs_allocated[i / 2]);
+                data.F.nrows = data.n_dofs_interface;
+                data.F.ncols = data.n_dofs_interface;
+            }
+            else {
+                data.F_fill = 'L';
+                data.F.shallowCopy(Fs_allocated[i / 2]);
+                data.F.nrows = data.n_dofs_interface;
+                data.F.ncols = data.n_dofs_interface;
+                data.F.vals += data.F.get_ld();
+            }
+            if constexpr(utils::is_real<T>())    data.F.type = Matrix_Type::REAL_SYMMETRIC_INDEFINITE;
+            if constexpr(utils::is_complex<T>()) data.F.type = Matrix_Type::COMPLEX_HERMITIAN_INDEFINITE;
+        }
+    }
+    else {
+        for(size_t di = 0; di < n_domains; di++) {
+            auto & data = domain_data[di];
+
+            data.F_fill = 'U';
+            data.F.resize(data.n_dofs_interface, data.n_dofs_interface, data.n_dofs_interface);
+            if constexpr(utils::is_real<T>())    data.F.type = Matrix_Type::REAL_SYMMETRIC_INDEFINITE;
+            if constexpr(utils::is_complex<T>()) data.F.type = Matrix_Type::COMPLEX_HERMITIAN_INDEFINITE;
+        }
+    }
+
+
+    #pragma omp parallel for
     for(size_t di = 0; di < n_domains; di++) {
         auto & data = domain_data[di];
 
         if(getSymmetry(feti.K[di].type) != Matrix_Symmetry::HERMITIAN || feti.K[di].shape != Matrix_Shape::UPPER) {
-            eslog::error("implemented only for hermitian K matrices stored in upper triangle\n");
+            eslog::error("implemented only for hermitian K matrices stored in upper triangle. TODO\n");
         }
-
-        data.n_dofs_interface = feti.B1[di].nrows;
-        data.n_dofs_domain = feti.B1[di].ncols;
 
         data.Kreg.type = feti.K[di].type;
         data.Kreg.shape = feti.K[di].shape;
@@ -70,13 +113,10 @@ void TotalFETIExplicitSc<T,I>::set(const step::Step &step)
         data.sc_solver.commitMatrix(data.Kreg, data.Bt, data.null_matrix_A21, data.null_matrix_A22);
         data.sc_solver.factorizeSymbolic();
 
-        data.F.resize(data.n_dofs_interface, data.n_dofs_interface);
-        if constexpr(utils::is_real<T>())    data.F.type = Matrix_Type::REAL_SYMMETRIC_INDEFINITE;
-        if constexpr(utils::is_complex<T>()) data.F.type = Matrix_Type::COMPLEX_HERMITIAN_INDEFINITE;
-
         data.x.resize(data.n_dofs_interface);
         data.y.resize(data.n_dofs_interface);
     }
+
 }
 
 
@@ -84,11 +124,10 @@ void TotalFETIExplicitSc<T,I>::set(const step::Step &step)
 template<typename T, typename I>
 void TotalFETIExplicitSc<T,I>::update(const step::Step &step)
 {
-    #pragma omp parallel for schedule(static,1)
+
+    #pragma omp parallel for
     for(size_t di = 0; di < n_domains; di++) {
         auto & data = domain_data[di];
-
-        // when new SCsolver will exist, have something like prefered_fill (uplo), preferred_input (one big or 4 small matrices), etc.
 
         math::sumCombined(data.Kreg, T{1.0}, feti.K[di], feti.RegMat[di]);
 
@@ -96,11 +135,9 @@ void TotalFETIExplicitSc<T,I>::update(const step::Step &step)
         math::csrTranspose(data.Bt, B, data.map_B_transpose, math::CsrTransposeStage::Values, true);
 
         data.sc_solver.updateMatrixValues();
-        data.sc_solver.factorizeNumericAndGetSc(data.F, 'U');
-
-        math::blas::scale(data.F.nrows * data.F.get_ld(), T{-1}, data.F.vals, 1);
+        data.sc_solver.factorizeNumericAndGetSc(data.F, data.F_fill, T{-1});
     }
-    
+
     {
         std::vector<Vector_Dense<T,I>> Kplus_fs(n_domains);
         #pragma omp parallel for schedule(static,1)
@@ -112,6 +149,7 @@ void TotalFETIExplicitSc<T,I>::update(const step::Step &step)
         applyB(feti, Kplus_fs, d);
         math::add(d, T{-1}, feti.c);
     }
+
 }
 
 
@@ -119,9 +157,10 @@ void TotalFETIExplicitSc<T,I>::update(const step::Step &step)
 template<typename T, typename I>
 void TotalFETIExplicitSc<T,I>::_apply(const Vector_Dual<T> &x_cluster, Vector_Dual<T> &y_cluster)
 {
+
     memset(y_cluster.vals, 0, y_cluster.size * sizeof(T));
 
-    #pragma omp parallel for schedule(static,1)
+    #pragma omp parallel for
     for(size_t di = 0; di < n_domains; di++) {
         auto & data = domain_data[di];
 
@@ -131,7 +170,7 @@ void TotalFETIExplicitSc<T,I>::_apply(const Vector_Dual<T> &x_cluster, Vector_Du
             data.x.vals[i] = x_cluster.vals[D2C[i]];
         }
 
-        math::blas::apply_hermitian(data.y, T{1}, data.F, 'U', T{0}, data.x);
+        math::blas::apply_hermitian(data.y, T{1}, data.F, data.F_fill, T{0}, data.x);
 
         for(I i = 0; i < data.n_dofs_interface; i++) {
             #pragma omp atomic
@@ -140,6 +179,7 @@ void TotalFETIExplicitSc<T,I>::_apply(const Vector_Dual<T> &x_cluster, Vector_Du
     }
 
     y_cluster.synchronize();
+
 }
 
 

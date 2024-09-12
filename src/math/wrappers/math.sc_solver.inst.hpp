@@ -4,7 +4,7 @@
 namespace espreso {
 
     #define INSTANTIATE_T_I_A(T,I,A) \
-    template void SchurComplementSolver<T, I>::factorizeNumericAndGetSc<A>(Matrix_Dense<T,I,A> & sc, char uplo);
+    template void SchurComplementSolver<T, I>::factorizeNumericAndGetSc<A>(Matrix_Dense<T,I,A> & sc, char uplo, T alpha);
 
         #define INSTANTIATE_T_I(T,I) \
         INSTANTIATE_T_I_A(T,I,cpu_allocator) \

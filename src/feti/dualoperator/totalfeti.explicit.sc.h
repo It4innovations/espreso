@@ -49,8 +49,10 @@ private:
         SchurComplementSolver<T,I> sc_solver;
         I n_dofs_interface;
         I n_dofs_domain;
+        char F_fill;
     };
     std::vector<per_domain_stuff> domain_data;
+    std::vector<Matrix_Dense<T,I>> Fs_allocated;
     size_t n_domains;
 };
 
