@@ -23,6 +23,29 @@ void solve_general(Matrix_Dense<double> &A, Matrix_Dense<double> &rhs)
     eslog::error("calling of empty LAPACK wrapper.\n");
 }
 
+template <>
+void get_eig_sym(Matrix_Dense<double, int> &A, Vector_Dense<double, int> &values)
+{
+    eslog::error("calling of empty LAPACK wrapper.\n");
+}
+
+template <>
+void get_eig_sym(Matrix_Dense<double, int> &A, Vector_Dense<double, int> &values, Matrix_Dense<double, int> &vectors)
+{
+    eslog::error("calling of empty LAPACK wrapper.\n");
+}
+
+template <>
+void get_eig_sym(Matrix_Dense<double, int> &A, Vector_Dense<double, int> &values, int begin, int end)
+{
+    eslog::error("calling of empty LAPACK wrapper.\n");
+}
+
+template <>
+void get_eig_sym(Matrix_Dense<double, int> &A, Vector_Dense<double, int> &values, Matrix_Dense<double, int> &vectors, int begin, int end)
+{
+    eslog::error("calling of empty LAPACK wrapper.\n");
+}
 
 }
 }
