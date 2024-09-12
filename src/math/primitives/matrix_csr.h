@@ -20,12 +20,12 @@ template <typename T, typename I = int, typename A = cpu_allocator>
 class Matrix_CSR: public _Matrix_CSR<T, I>
 {
 public:
-    Matrix_CSR(const A &ator_ = A()): _Matrix_CSR<T, I>{}, type{Matrix_Type::REAL_STRUCTURALLY_SYMMETRIC}, shape{Matrix_Shape::FULL}, _allocated{}, ator(ator_)
+    Matrix_CSR(const A &ator_ = A()): _Matrix_CSR<T, I>{}, type{Matrix_Type::UNSET_INVALID_NONE}, shape{Matrix_Shape::FULL}, _allocated{}, ator(ator_)
     {
 
     }
 
-    Matrix_CSR(const Matrix_CSR &other): _Matrix_CSR<T, I>{}, type{Matrix_Type::REAL_STRUCTURALLY_SYMMETRIC}, shape{Matrix_Shape::FULL}, _allocated{}, ator(other.ator)
+    Matrix_CSR(const Matrix_CSR &other): _Matrix_CSR<T, I>{}, type{Matrix_Type::UNSET_INVALID_NONE}, shape{Matrix_Shape::FULL}, _allocated{}, ator(other.ator)
     {
         type = other.type;
         shape = other.shape;
@@ -40,7 +40,7 @@ public:
         }
     }
 
-    Matrix_CSR(Matrix_CSR &&other): _Matrix_CSR<T, I>{}, type{Matrix_Type::REAL_STRUCTURALLY_SYMMETRIC}, shape{Matrix_Shape::FULL}, _allocated{}, ator(std::move(other.ator))
+    Matrix_CSR(Matrix_CSR &&other): _Matrix_CSR<T, I>{}, type{Matrix_Type::UNSET_INVALID_NONE}, shape{Matrix_Shape::FULL}, _allocated{}, ator(std::move(other.ator))
     {
         swap(*static_cast<_Matrix_CSR<T, I>*>(this), *static_cast<_Matrix_CSR<T, I>*>(&other));
         type = other.type;

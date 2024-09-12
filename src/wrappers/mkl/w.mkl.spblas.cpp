@@ -122,6 +122,9 @@ void SpBLAS<Matrix, T, I>::insert(MatrixType &a, bool trans)
 static void setDescription(matrix_descr &descr, Matrix_Type type, Matrix_Shape shape)
 {
     switch (type) {
+    case Matrix_Type::UNSET_INVALID_NONE:
+        eslog::error("Invalid/unset matrix type\n");
+        break;
     case Matrix_Type::REAL_SYMMETRIC_POSITIVE_DEFINITE:
     case Matrix_Type::REAL_SYMMETRIC_INDEFINITE:
     case Matrix_Type::COMPLEX_HERMITIAN_POSITIVE_DEFINITE:

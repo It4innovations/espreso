@@ -18,12 +18,12 @@ template <typename T, typename I = int, typename A = cpu_allocator>
 class Matrix_IJV: public _Matrix_IJV<T, I>
 {
 public:
-    Matrix_IJV(const A &ator_ = A()): _Matrix_IJV<T, I>{}, type{Matrix_Type::REAL_NONSYMMETRIC}, shape{Matrix_Shape::FULL}, _allocated{}, ator(ator_)
+    Matrix_IJV(const A &ator_ = A()): _Matrix_IJV<T, I>{}, type{Matrix_Type::UNSET_INVALID_NONE}, shape{Matrix_Shape::FULL}, _allocated{}, ator(ator_)
     {
 
     }
 
-    Matrix_IJV(const Matrix_IJV &other): _Matrix_IJV<T, I>{}, type{Matrix_Type::REAL_NONSYMMETRIC}, shape{Matrix_Shape::FULL}, _allocated{}, ator(other.ator)
+    Matrix_IJV(const Matrix_IJV &other): _Matrix_IJV<T, I>{}, type{Matrix_Type::UNSET_INVALID_NONE}, shape{Matrix_Shape::FULL}, _allocated{}, ator(other.ator)
     {
         this->type = other.type;
         this->shape = other.shape;
@@ -36,7 +36,7 @@ public:
         }
     }
 
-    Matrix_IJV(Matrix_IJV &&other): _Matrix_IJV<T, I>{}, type{Matrix_Type::REAL_NONSYMMETRIC}, shape{Matrix_Shape::FULL}, _allocated{}, ator(std::move(other.ator))
+    Matrix_IJV(Matrix_IJV &&other): _Matrix_IJV<T, I>{}, type{Matrix_Type::UNSET_INVALID_NONE}, shape{Matrix_Shape::FULL}, _allocated{}, ator(std::move(other.ator))
     {
         this->type = other.type;
         this->shape = other.shape;

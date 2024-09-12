@@ -2,6 +2,8 @@
 #ifndef SRC_MATH2_PRIMITIVES_MATRIX_INFO_H_
 #define SRC_MATH2_PRIMITIVES_MATRIX_INFO_H_
 
+#include "esinfo/eslog.h"
+
 namespace espreso {
 
 struct Indexing {
@@ -10,6 +12,8 @@ struct Indexing {
 };
 
 enum struct Matrix_Type: int {
+    UNSET_INVALID_NONE,
+
     REAL_SYMMETRIC_POSITIVE_DEFINITE,
     REAL_SYMMETRIC_INDEFINITE,
     REAL_STRUCTURALLY_SYMMETRIC,
@@ -37,6 +41,8 @@ enum struct Matrix_Symmetry: int {
 
 static inline Matrix_Symmetry getSymmetry(Matrix_Type mt) {
     switch(mt) {
+    case Matrix_Type::UNSET_INVALID_NONE:
+        eslog::error("Invalid/unset matrix type\n");
     case Matrix_Type::COMPLEX_HERMITIAN_POSITIVE_DEFINITE:
     case Matrix_Type::COMPLEX_HERMITIAN_INDEFINITE:
     case Matrix_Type::REAL_SYMMETRIC_POSITIVE_DEFINITE:   // real symmetric is actually also hermitian

@@ -99,6 +99,9 @@ static void _info(const Matrix_Distributed<T> &A)
 {
     eslog::info(" = LINEAR SOLVER :: MKL                                TYPE :: PARALLEL DIRECT SPARSE SOLVER = \n");
     switch (A.cluster.type) {
+    case Matrix_Type::UNSET_INVALID_NONE:
+        eslog::error("Invalid/unset matrix type\n");
+        break;
     case Matrix_Type::REAL_SYMMETRIC_POSITIVE_DEFINITE:
         eslog::info(" = MATRIX TYPE ::                                           REAL SYMMETRIC POSITIVE DEFINITE = \n");
         break;
@@ -159,6 +162,7 @@ bool MKLPDSS<T>::set(const Matrix_Distributed<T> &A)
     external->comm = MPI_Comm_c2f(info::mpi::comm);
 
     switch (A.cluster.type) {
+    case Matrix_Type::UNSET_INVALID_NONE:                  eslog::error("Invalid/unset matrix type\n");
     case Matrix_Type::REAL_SYMMETRIC_POSITIVE_DEFINITE:    external->mtype =  2; break;
     case Matrix_Type::REAL_SYMMETRIC_INDEFINITE:           external->mtype = -2; break;
     case Matrix_Type::REAL_STRUCTURALLY_SYMMETRIC:         external->mtype =  1; break;
