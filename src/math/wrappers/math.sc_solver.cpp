@@ -23,6 +23,12 @@ SchurComplementSolver<T,I>::~SchurComplementSolver()
 }
 
 template<typename T, typename I>
+SchurComplementSolver<T,I>::SchurComplementSolver(SchurComplementSolver && other) = default;
+
+template<typename T, typename I>
+SchurComplementSolver<T,I> & SchurComplementSolver<T,I>::operator=(SchurComplementSolver && other) = default;
+
+template<typename T, typename I>
 void SchurComplementSolver<T,I>::commitMatrix(const Matrix_CSR<T,I> & /*A*/, I /*sc_size*/)
 {
     eslog::error("Error: empty SchurComplementSolver implementation\n");
