@@ -82,7 +82,7 @@ template <> void SMALBE<double>::solve(const step::Step &step, IterativeSolverIn
         }
         math::add(mprgp.x0, -1., x_im);
     } else {
-        math::set(x_im, 1.);
+        math::set(x_im, 0.);
     }
 
     // constraints=initialize_slip_bound(); coulomb, later
