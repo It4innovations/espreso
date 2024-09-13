@@ -154,18 +154,15 @@ template <typename T>
 bool FETILinearSystemSolver<T>::solve(step::Step &step)
 {
     eslog::startln("FETI: RUN LINEAR SYSTEM", "FETI[SOLVE]");
-    if (feti.solve(step)) {
-        if (info::ecf->output.print_matrices) {
-            eslog::storedata(" STORE: system/{x}\n");
-            for (size_t d = 0; d < feti.x.size(); ++d) {
-                math::store(feti.x[d], utils::filename(utils::debugDirectory(step) + "/system", "x" + std::to_string(d)).c_str());
-            }
+    bool result = feti.solve(step);
+    if (info::ecf->output.print_matrices) {
+        eslog::storedata(" STORE: system/{x}\n");
+        for (size_t d = 0; d < feti.x.size(); ++d) {
+            math::store(feti.x[d], utils::filename(utils::debugDirectory(step) + "/system", "x" + std::to_string(d)).c_str());
         }
-        eslog::endln("FETI: LINEAR SYSTEM SOLVED");
-        return true;
     }
     eslog::endln("FETI: LINEAR SYSTEM SOLVED");
-    return false;
+    return result;
 }
 
 template struct FETILinearSystemSolver<double>;
