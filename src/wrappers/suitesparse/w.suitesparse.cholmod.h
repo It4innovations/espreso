@@ -152,6 +152,56 @@ static inline void setAsymmetric(cholmod_sparse* &A, cholmod_common &common, con
     }
 }
 
+template<typename T, typename I>
+static void popullateCholmodSparse(cholmod_sparse & cm_A, const Matrix_CSR<T,I> & A)
+{
+    cm_A.nrow = A.ncols;
+    cm_A.ncol = A.nrows;
+    cm_A.nzmax = A.nnz;
+    cm_A.nz = nullptr;
+    cm_A.z = nullptr;
+    cm_A.stype = (-1) * _getCholmodStype(A.shape); // (-1)* <=> CSR -> CSC
+    cm_A.itype = _getCholmodItype<I>();
+    cm_A.xtype = _getCholmodXtype<T>();
+    cm_A.dtype = _getCholmodDtype<T>();
+    cm_A.sorted = 1;
+    cm_A.packed = 1;
+    cm_A.p = A.rows;
+    cm_A.i = A.cols;
+    cm_A.x = A.vals;
+}
+
+template<typename T, typename I>
+static void popullateCholmodDense(cholmod_dense & cm_A, const Matrix_Dense<T,I> & A)
+{
+    cm_A.nrow = A.ncols;
+    cm_A.ncol = A.nrows;
+    cm_A.d = A.get_ld();
+    cm_A.x = A.vals;
+    cm_A.z = nullptr;
+    cm_A.xtype = _getCholmodXtype<T>();
+    cm_A.dtype = _getCholmodDtype<T>();
+}
+
+template<typename T, typename I>
+static void popullateCholmodDense(cholmod_dense & cm_x, const Vector_Dense<T,I> & x)
+{
+    cm_x.nrow = x.size;
+    cm_x.ncol = 1;
+    cm_x.d = x.size;
+    cm_x.x = x.vals;
+    cm_x.z = nullptr;
+    cm_x.xtype = _getCholmodXtype<T>();
+    cm_x.dtype = _getCholmodDtype<T>();
+}
+
+template <typename T, typename I>
+static inline void updateSymmetric(cholmod_sparse *A, const Matrix_CSR<T, I> &M)
+{
+    A->x = M.vals;
+    A->xtype = _getCholmodXtype<T>();
+}
+
 template <typename T, typename I>
 static inline void update(cholmod_dense* &A, const Matrix_Dense<T, I> &M)
 {

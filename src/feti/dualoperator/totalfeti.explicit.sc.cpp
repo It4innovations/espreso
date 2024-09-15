@@ -105,13 +105,20 @@ void TotalFETIExplicitSc<T,I>::set(const step::Step &step)
 
         Matrix_CSR<T,I> & B = feti.B1[di];
         data.Bt.resize(B.ncols, B.nrows, B.nnz);
+        if constexpr(utils::is_real<T>())    data.Bt.type = Matrix_Type::REAL_NONSYMMETRIC;
+        if constexpr(utils::is_complex<T>()) data.Bt.type = Matrix_Type::COMPLEX_NONSYMMETRIC;
         data.map_B_transpose.resize(B.nnz);
         math::csrTranspose(data.Bt, B, data.map_B_transpose, math::CsrTransposeStage::Pattern, true);
 
         data.null_matrix_A21.resize(data.n_dofs_interface, data.n_dofs_domain, 0);
         std::fill_n(data.null_matrix_A21.rows, data.null_matrix_A21.nrows + 1, 0);
+        if constexpr(utils::is_real<T>())    data.null_matrix_A21.type = Matrix_Type::REAL_NONSYMMETRIC;
+        if constexpr(utils::is_complex<T>()) data.null_matrix_A21.type = Matrix_Type::COMPLEX_NONSYMMETRIC;
         data.null_matrix_A22.resize(data.n_dofs_interface, data.n_dofs_interface, 0);
         std::fill_n(data.null_matrix_A22.rows, data.null_matrix_A22.nrows + 1, 0);
+        if constexpr(utils::is_real<T>())    data.null_matrix_A22.type = Matrix_Type::REAL_SYMMETRIC_INDEFINITE;
+        if constexpr(utils::is_complex<T>()) data.null_matrix_A22.type = Matrix_Type::COMPLEX_HERMITIAN_INDEFINITE;
+        data.null_matrix_A22.shape = Matrix_Shape::UPPER;
 
         tm_commit.start();
         data.sc_solver.commitMatrix(data.Kreg, data.Bt, data.null_matrix_A21, data.null_matrix_A22);

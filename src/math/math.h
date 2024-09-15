@@ -100,6 +100,44 @@ namespace math {
         }
     }
 
+    template<typename T, typename I, typename Ao, typename Ai>
+    void copyMatrixDense(Matrix_Dense<T,I,Ao> & output, const Matrix_Dense<T,I,Ai> & input, char triangle_uplo = 'F', const T & alpha = T{1})
+    {
+        static_assert(Ao::is_data_host_accessible, "copyMatrixDense: the allocator does not provide host-accessible memory");
+        static_assert(Ai::is_data_host_accessible, "copyMatrixDense: the allocator does not provide host-accessible memory");
+        if(output.nrows != input.nrows || output.ncols != input.ncols) eslog::error("copyTriangle(): output matrix has wrong size\n");
+        I nrows = output.nrows;
+        I ncols = output.ncols;
+
+        if(triangle_uplo == 'L') {
+            for(I r = 0; r < nrows; r++) {
+                T * row_in = input.vals + r * input.get_ld();
+                T * row_out = output.vals + r * output.get_ld();
+                for(I c = 0; c <= r; c++) {
+                    row_out[c] = alpha * row_in[c];
+                }
+            }
+        }
+        else if(triangle_uplo == 'U') {
+            for(I r = 0; r < nrows; r++) {
+                T * row_in = input.vals + r * input.get_ld();
+                T * row_out = output.vals + r * output.get_ld();
+                for(I c = r; c < ncols; c++) {
+                    row_out[c] = alpha * row_in[c];
+                }
+            }
+        }
+        else { // 'F'
+            for(I r = 0; r < nrows; r++) {
+                T * row_in = input.vals + r * input.get_ld();
+                T * row_out = output.vals + r * output.get_ld();
+                for(I c = 0; c < ncols; c++) {
+                    row_out[c] = alpha * row_in[c];
+                }
+            }
+        }
+    }
+
     template <typename T, typename I> void eye(Matrix_Dense<T, I>  &x, const T &value)
     {
         math::set(x, 0.);
@@ -442,6 +480,55 @@ namespace math {
         }
         else {
             eslog::error("csrMatrixConcat: invalid stage %d\n", (int)stage);
+        }
+    }
+
+    enum struct CsrToDenseStage {
+        All,
+        ZeroFill,
+        ValuesCopy
+    };
+
+    template<typename T, typename I, typename Ao, typename Ai>
+    void csrToDense(Matrix_Dense<T,I,Ao> & output, const Matrix_CSR<T,I,Ai> & input, bool transpose_input, CsrToDenseStage stage)
+    {
+        if(!transpose_input && (output.nrows != input.nrows || output.ncols != input.ncols)) eslog::error("csrToDense: output matrix has wrong size\n");
+        if( transpose_input && (output.nrows != input.ncols || output.ncols != input.nrows)) eslog::error("csrToDense: output matrix has wrong size\n");
+
+        if(stage == CsrToDenseStage::All) {
+            csrToDense(output, input, transpose_input, CsrToDenseStage::ZeroFill);
+            csrToDense(output, input, transpose_input, CsrToDenseStage::ValuesCopy);
+        }
+        else if(stage == CsrToDenseStage::ZeroFill) {
+            std::fill_n(output.vals, output.nrows * output.get_ld(), T{0});
+        }
+        else if(stage == CsrToDenseStage::ValuesCopy) {
+            if(transpose_input) {
+                for(I r = 0; r < input.nrows; r++) {
+                    I start = input.rows[r];
+                    I end = input.rows[r+1];
+                    for(I i = start; i < end; i++) {
+                        I c = input.cols[i];
+                        T v = input.vals[i];
+                        output.vals[c * output.get_ld() + r] = v;
+                    }
+                }
+            }
+            else {
+                for(I r = 0; r < input.nrows; r++) {
+                    I start = input.rows[r];
+                    I end = input.rows[r+1];
+                    T * row = output.vals + r * output.get_ld();
+                    for(I i = start; i < end; i++) {
+                        I c = input.cols[i];
+                        T v = input.vals[i];
+                        row[c] = v;
+                    }
+                }
+            }
+        }
+        else {
+            eslog::error("csrToDense: invalid stage %d\n", (int)stage);
         }
     }
 

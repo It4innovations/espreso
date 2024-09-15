@@ -176,33 +176,7 @@ void SchurComplementSolver<T,I>::factorizeNumericAndGetSc(Matrix_Dense<T,I,A> & 
         eslog::error("SchurComplementSolver::factorizeNumericAndGetSc(): pardiso error %d\n", (int)ext->error);
     }
 
-    if(uplo == 'L') {
-        for(I r = 0; r < sc.nrows; r++) {
-            T * row_in = sc_tmp.vals + r * sc_tmp.get_ld();
-            T * row_out = sc.vals + r * sc.get_ld();
-            for(I c = 0; c <= r; c++) {
-                row_out[c] = alpha * row_in[c];
-            }
-        }
-    }
-    else if(uplo == 'U') {
-        for(I r = 0; r < sc.nrows; r++) {
-            T * row_in = sc_tmp.vals + r * sc_tmp.get_ld();
-            T * row_out = sc.vals + r * sc.get_ld();
-            for(I c = r; c < sc.ncols; c++) {
-                row_out[c] = alpha * row_in[c];
-            }
-        }
-    }
-    else { // 'F'
-        for(I r = 0; r < sc.nrows; r++) {
-            T * row_in = sc_tmp.vals + r * sc_tmp.get_ld();
-            T * row_out = sc.vals + r * sc.get_ld();
-            for(I c = 0; c < sc.ncols; c++) {
-                row_out[c] = alpha * row_in[c];
-            }
-        }
-    }
+    math::copyMatrixDense(sc, sc_tmp, uplo, alpha);
 
     ext->stage = 4;
 }

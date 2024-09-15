@@ -1,7 +1,8 @@
-#include "math.sc_solver.h"
+#include "math/wrappers/math.sc_solver.h"
 
 #ifndef HAVE_MKL
 #ifndef HAVE_PARDISO
+#ifndef HAVE_SUITESPARSE
 
 
 
@@ -69,5 +70,6 @@ void SchurComplementSolver<T,I>::solveA11(const Vector_Dense<T,I> & /*rhs*/, Vec
 
 #include "math/wrappers/math.sc_solver.inst.hpp"
 
+#endif
 #endif
 #endif
