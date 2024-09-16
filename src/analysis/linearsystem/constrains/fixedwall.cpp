@@ -16,6 +16,7 @@ template <typename T>
 void FixedWall<T>::set(const step::Step &step, FETI<T> &feti, const Vector_Distributed<Vector_Sparse, T> &dirichlet)
 {
     StructuralMechanicsLoadStepConfiguration &loadstep = info::ecf->structural_mechanics.load_steps_settings.at(step.loadstep + 1);
+    std::vector<double> &normal = StructuralMechanics::Results::normal->data;
 
     if (loadstep.fixed_wall.empty()) {
         return;
@@ -34,9 +35,22 @@ void FixedWall<T>::set(const step::Step &step, FETI<T> &feti, const Vector_Distr
 
     int cc = 0;
     for (auto wall = loadstep.fixed_wall.begin(); wall != loadstep.fixed_wall.end(); ++wall) {
+        Point pn, pp;
+        pn.x = wall->second.normal.x.evaluator->evaluate();
+        pn.y = wall->second.normal.y.evaluator->evaluate();
+        pn.z = wall->second.normal.z.evaluator->evaluate();
+        pp.x = wall->second.point.x.evaluator->evaluate();
+        pp.y = wall->second.point.y.evaluator->evaluate();
+        pp.z = wall->second.point.z.evaluator->evaluate();
+
         const BoundaryRegionStore *region = info::mesh->bregion(wall->first);
         int dindex = 0;
         for (auto n = region->nodes->datatarray().begin(); n < region->nodes->datatarray().end(); ++n, ++cc) {
+            Point nn(normal[*n * dim + 0], normal[*n * dim + 1], normal[*n * dim + 2]);
+            Point w = info::mesh->nodes->coordinates->datatarray()[*n] - pp;
+            if (pn * w > wall->second.gap || pn * nn > -0.1) { // over the gap or large angle
+                continue;
+            }
             auto dmap = feti.decomposition->dmap->cbegin() + *n * dim;
             for (int d = 0; d < dim; ++d, ++dmap) {
                 while (dindex < dirichlet.cluster.nnz && dirichlet.cluster.indices[dindex] < *n * dim + d) { ++dindex; }
@@ -163,16 +177,21 @@ void FixedWall<T>::update(const step::Step &step, FETI<T> &feti, const Vector_Di
         esint dindex = 0;
         std::vector<double> nv; nv.reserve(3);
         for (auto n = region->nodes->datatarray().begin(); n < region->nodes->datatarray().end(); ++n) {
+            Point nn(normal[*n * dim + 0], normal[*n * dim + 1], normal[*n * dim + 2]);
+            Point w = info::mesh->nodes->coordinates->datatarray()[*n] - pp;
+            if (pn * w > wall->second.gap || pn * nn > -0.1) { // over the gap or large angle
+                continue;
+            }
             auto dmap = feti.decomposition->dmap->cbegin() + *n * dim;
             double sum = 0;
             nv.clear();
-            Point nn;
             for (int d = 0; d < dim; ++d, ++dmap) {
                 while (dindex < dirichlet.cluster.nnz && dirichlet.cluster.indices[dindex] < *n * dim + d) { ++dindex; }
                 if (dindex == dirichlet.cluster.nnz || dirichlet.cluster.indices[dindex] != *n * dim + d) {
-                    nv.push_back(normal[*n * dim + d]);
-                    sum += dmap->size() * normal[*n * dim + d] * normal[*n * dim + d];
-                    nn[d] = normal[*n * dim + d];
+                    nv.push_back(nn[d]);
+                    sum += dmap->size() * nn[d] * nn[d];
+                } else {
+                    nn[d] = 0;
                 }
             }
             double norm = std::sqrt(sum);
@@ -193,12 +212,7 @@ void FixedWall<T>::update(const step::Step &step, FETI<T> &feti, const Vector_Di
                         d2c = feti.D2C[dd][row];
                     }
                 }
-                if (nn * pn == 0) {
-                    feti.c.vals[d2c] = std::numeric_limits<T>::max(); // TODO: set correct value
-                } else {
-                    Point w = info::mesh->nodes->coordinates->datatarray()[*n] - pp;
-                    feti.c.vals[d2c] = -(pn * w) / (pn * nn);
-                }
+                feti.c.vals[d2c] = -(pn * w) / (pn * nn);
             }
         }
     }

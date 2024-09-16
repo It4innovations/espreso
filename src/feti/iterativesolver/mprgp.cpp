@@ -194,8 +194,8 @@ template <> void MPRGP<double>::run(const step::Step &step, MPRGPSolverInfo &inf
                     if (feti.configuration.gradproj) {
                         math::add(x, -alpha, g_red);
                     } else {
-                        math::add(x, -alpha, g_red);
                         multByFree(g_red, free);
+                        math::add(x, -alpha, g_red);
                     }
                     H(x, g);
                     math::add(g, 1., g0);
@@ -215,8 +215,8 @@ template <> void MPRGP<double>::run(const step::Step &step, MPRGPSolverInfo &inf
             if (feti.configuration.gradproj) {
                 math::add(x, -alpha, g_red);
             } else {
+                multByFree(g_red, active);
                 math::add(x, -alpha, g_red);
-                multByFree(x, active);
             }
             H(x, g);
             math::add(g, 1., g0);

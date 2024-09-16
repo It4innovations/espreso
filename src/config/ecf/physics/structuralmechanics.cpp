@@ -148,10 +148,11 @@ NonlinerSpringConfiguration::NonlinerSpringConfiguration()
 	REGISTER(force_derivative, ECFMetaData().setdescription({ "Force derivative." }).setdatatype({ ECFDataType::EXPRESSION }));
 }
 
-FixedWallConfiguration::FixedWallConfiguration()
+FixedWallConfiguration::FixedWallConfiguration(): gap(1)
 {
 	REGISTER(normal, ECFMetaData().setdescription({ "Normal." }));
 	REGISTER(point, ECFMetaData().setdescription({ "Point in the plane." }));
+	REGISTER(gap, ECFMetaData().setdescription({ "Maximal distance from the wall to be considered in computation." }).setdatatype({ ECFDataType::FLOAT }));
 }
 
 PressureConfiguration::PressureConfiguration()
