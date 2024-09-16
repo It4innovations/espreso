@@ -58,7 +58,7 @@ void scale(const int size, const T &alpha, T *x, const int incX)
 }
 
 template <typename T>
-void add(const int size, T *x, const int incX, const T &alpha, const T *y, const int incY);
+void add(const int size, T *x, const int incX, const T &alpha, const T *y, const int incY)
 {
     eslog::error("calling of empty BLAS wrapper.\n");
 }
@@ -71,7 +71,7 @@ T dot(const int size, const T *x, const int incX, const T *y, const int incY)
 }
 
 template <typename T>
-utils::remove_complex_t<T> norm(const int size, const T *x, const int incX);
+utils::remove_complex_t<T> norm(const int size, const T *x, const int incX)
 {
     eslog::error("calling of empty BLAS wrapper.\n");
     return 0;
@@ -114,7 +114,7 @@ void multiply(T alpha, const Matrix_Dense<T, I> &A, const Vector_Dense<T, I> &B,
 }
 
 template <typename T, typename I>
-void multiply(T alpha, const Vector_Dense<T, I> &A, const Vector_Dense<T, I> &B, T beta, T &out);
+void multiply(T alpha, const Vector_Dense<T, I> &A, const Vector_Dense<T, I> &B, T beta, T &out)
 {
     eslog::error("calling of empty BLAS wrapper.\n");
 }
