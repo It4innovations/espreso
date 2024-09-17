@@ -74,7 +74,7 @@ STRUCTURAL_MECHANICS {
 
       FETI {
         METHOD          TOTAL_FETI;
-        DUAL_OPERATOR EXPLICIT_GPU;
+        DUAL_OPERATOR      [ARG21];
         PRECONDITIONER        NONE;
         ITERATIVE_SOLVER       PCG;
         REGULARIZATION    ANALYTIC;
@@ -82,15 +82,15 @@ STRUCTURAL_MECHANICS {
         MAX_ITERATIONS          12;
         EXIT_ON_NONCONVERGENCE FALSE;
 
-        DUAL_OPERATOR_EXPLICIT_GPU_CONFIG {
+        DUAL_OPERATOR_GPU_CONFIG {
           CONCURRENCY_SET                 [ARG9];
           CONCURRENCY_UPDATE             [ARG10];
           CONCURRENCY_APPLY              [ARG11];
           SYNCHRONIZE_UPDATE                TRUE;
-          TRSM1_FACTOR_STORAGE           [ARG12];
-          TRSM2_FACTOR_STORAGE           [ARG13];
-          TRSM1_SOLVE_TYPE               [ARG14];
-          TRSM2_SOLVE_TYPE               [ARG15];
+          TRS1_FACTOR_STORAGE           [ARG12];
+          TRS2_FACTOR_STORAGE           [ARG13];
+          TRS1_SOLVE_TYPE               [ARG14];
+          TRS2_SOLVE_TYPE               [ARG15];
           TRSM_RHS_SOL_ORDER             [ARG16];
           PATH_IF_HERMITIAN              [ARG17];
           F_SHARING_IF_HERMITIAN         [ARG18];
@@ -98,6 +98,7 @@ STRUCTURAL_MECHANICS {
           APPLY_SCATTER_GATHER_WHERE     [ARG19];
           TRANSPOSE_WHERE                [ARG20];
           TIMERS                             ALL;
+          MEMORY_INFO                        ALL;
         }
       }
 

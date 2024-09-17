@@ -7,7 +7,7 @@
 
 
 
-module load HyperQueue/0.18.0
+module load HyperQueue/0.19.0
 
 export ROCR_VISIBLE_DEVICES=""
 

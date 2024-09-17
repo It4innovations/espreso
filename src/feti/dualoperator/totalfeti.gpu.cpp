@@ -793,37 +793,6 @@ void TotalFETIGpu<T,I>::set(const step::Step &step)
     }
     tm_poolalloc.stop();
 
-    // roughly guess if there is not enough memory in the pool
-    {
-        size_t min_mem = std::numeric_limits<size_t>::max();
-        size_t max_mem = std::numeric_limits<size_t>::min();
-        size_t avg_mem = 0;
-        for(size_t di = 0; di < n_domains; di++) {
-            per_domain_stuff & data = domain_data[di];
-            size_t mem = 0;
-            if(do_alloc_d_dn_L)   mem += Matrix_Dense<T,I>::memoryRequirement(data.n_dofs_domain, data.n_dofs_domain, data.ld_domain);
-            if(do_alloc_d_dn_U)   mem += Matrix_Dense<T,I>::memoryRequirement(data.n_dofs_domain, data.n_dofs_domain, data.ld_domain);
-            if(do_alloc_d_dn_LH)  mem += Matrix_Dense<T,I>::memoryRequirement(data.n_dofs_domain, data.n_dofs_domain, data.ld_domain);
-            if(do_alloc_d_dn_UH)  mem += Matrix_Dense<T,I>::memoryRequirement(data.n_dofs_domain, data.n_dofs_domain, data.ld_domain);
-            if(need_X && order_X == 'R') mem += Matrix_Dense<T,I>::memoryRequirement(data.n_dofs_domain,    data.n_dofs_interface, data.ld_X);
-            if(need_X && order_X == 'C') mem += Matrix_Dense<T,I>::memoryRequirement(data.n_dofs_interface, data.n_dofs_domain,    data.ld_X);
-            if(need_Y && order_X == 'R') mem += Matrix_Dense<T,I>::memoryRequirement(data.n_dofs_domain,    data.n_dofs_interface, data.ld_X);
-            if(need_Y && order_X == 'C') mem += Matrix_Dense<T,I>::memoryRequirement(data.n_dofs_interface, data.n_dofs_domain,    data.ld_X);
-            if(need_f_tmp) mem += Matrix_Dense<T,I>::memoryRequirement(data.n_dofs_interface, data.n_dofs_interface, data.ld_F);
-            mem += data.buffersize_other;
-            min_mem = std::min(min_mem, mem);
-            max_mem = std::max(max_mem, mem);
-            avg_mem += mem;
-        }
-        avg_mem /= n_domains;
-        if(memory_info_basic) {
-            eslog::info("rank %4d GPU memory from mempool requirements per domain [MiB]: %9zu < %9zu - %9zu >\n", info::mpi::rank, avg_mem >> 20, min_mem >> 20, max_mem >> 20);
-        }
-        if(max_mem > cbmba_res_device->get_max_capacity()) {
-            eslog::error("There is not enough memory in the GPU mempool\n");
-        }
-    }
-
     if(memory_info_basic) {
         size_t total_mem_sp_factors = 0;
         size_t mem_buffer_sptrs1 = 0;
@@ -858,6 +827,37 @@ void TotalFETIGpu<T,I>::set(const step::Step &step)
         eslog::info("rank %4d   GPU memory used for buffers transU2UH [MiB]: %9zu\n", info::mpi::rank, mem_buffer_transU2UH >> 20);
         eslog::info("rank %4d GPU memory free for pool and more [MiB]:       %9zu\n", info::mpi::rank, free_memory_before_pool >> 20);
         eslog::info("rank %4d GPU memory used for memory pool [MiB]:         %9zu\n", info::mpi::rank, cbmba_res_device->get_max_capacity() >> 20);
+    }
+
+    // roughly guess if there is not enough memory in the pool
+    {
+        size_t min_mem = std::numeric_limits<size_t>::max();
+        size_t max_mem = std::numeric_limits<size_t>::min();
+        size_t avg_mem = 0;
+        for(size_t di = 0; di < n_domains; di++) {
+            per_domain_stuff & data = domain_data[di];
+            size_t mem = 0;
+            if(do_alloc_d_dn_L)   mem += Matrix_Dense<T,I>::memoryRequirement(data.n_dofs_domain, data.n_dofs_domain, data.ld_domain);
+            if(do_alloc_d_dn_U)   mem += Matrix_Dense<T,I>::memoryRequirement(data.n_dofs_domain, data.n_dofs_domain, data.ld_domain);
+            if(do_alloc_d_dn_LH)  mem += Matrix_Dense<T,I>::memoryRequirement(data.n_dofs_domain, data.n_dofs_domain, data.ld_domain);
+            if(do_alloc_d_dn_UH)  mem += Matrix_Dense<T,I>::memoryRequirement(data.n_dofs_domain, data.n_dofs_domain, data.ld_domain);
+            if(need_X && order_X == 'R') mem += Matrix_Dense<T,I>::memoryRequirement(data.n_dofs_domain,    data.n_dofs_interface, data.ld_X);
+            if(need_X && order_X == 'C') mem += Matrix_Dense<T,I>::memoryRequirement(data.n_dofs_interface, data.n_dofs_domain,    data.ld_X);
+            if(need_Y && order_X == 'R') mem += Matrix_Dense<T,I>::memoryRequirement(data.n_dofs_domain,    data.n_dofs_interface, data.ld_X);
+            if(need_Y && order_X == 'C') mem += Matrix_Dense<T,I>::memoryRequirement(data.n_dofs_interface, data.n_dofs_domain,    data.ld_X);
+            if(need_f_tmp) mem += Matrix_Dense<T,I>::memoryRequirement(data.n_dofs_interface, data.n_dofs_interface, data.ld_F);
+            mem += data.buffersize_other;
+            min_mem = std::min(min_mem, mem);
+            max_mem = std::max(max_mem, mem);
+            avg_mem += mem;
+        }
+        avg_mem /= n_domains;
+        if(memory_info_basic) {
+            eslog::info("rank %4d GPU memory from mempool requirements per domain [MiB]: %9zu < %9zu - %9zu >\n", info::mpi::rank, avg_mem >> 20, min_mem >> 20, max_mem >> 20);
+        }
+        if(max_mem > cbmba_res_device->get_max_capacity()) {
+            eslog::error("There is not enough memory in the GPU mempool\n");
+        }
     }
 
     tm_wait.start();

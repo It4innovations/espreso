@@ -37,7 +37,7 @@ then
     exit 4
 fi
 
-module load HyperQueue/0.18.0
+module load HyperQueue/0.19.0
 if ! hq server info > /dev/null 2> /dev/null
 then
     echo "HyperQueue server is not running"
@@ -80,7 +80,6 @@ function submit_hq_job
         "${machine}" \
         "${tool}" \
         "${ecf_file}" \
-        "${factor_symmetry_fake}" \
         "${output_path}" \
         "${uniform_clusters_domains}" \
         "${element_type}" \
@@ -93,15 +92,16 @@ function submit_hq_job
         "${concurrency_set}" \
         "${concurrency_update}" \
         "${concurrency_apply}" \
-        "${trsm1_factor_storage}" \
-        "${trsm2_factor_storage}" \
-        "${trsm1_solve_type}" \
-        "${trsm2_solve_type}" \
+        "${trs1_factor_storage}" \
+        "${trs2_factor_storage}" \
+        "${trs1_solve_type}" \
+        "${trs2_solve_type}" \
         "${trsm_rhs_sol_order}" \
         "${path_if_hermitian}" \
         "${f_sharing_if_hermitian}" \
         "${apply_scatter_gather_where}" \
-        "${transpose_where}"
+        "${transpose_where}" \
+        "${dualoperator}"
 }
 
 
@@ -114,14 +114,18 @@ sbatch_command_normal="sbatch -o ${slurm_outdir}/slurm-%j.out -e ${slurm_outdir}
 sbatch_command_exp="sbatch --partition=qgpu_exp --time=1:00:00 -o ${slurm_outdir}/slurm-%j.out -e ${slurm_outdir}/slurm-%j.err ${basedir}/karolina_slurmjob.sh"
 sbatch_command_array="sbatch --array=1-100 -o ${slurm_outdir}/slurm-%A-%a.out -e ${slurm_outdir}/slurm-%A-%a.err ${basedir}/karolina_slurmjob.sh"
 
+echo
 echo "sbatch command for later, normal job:"
 echo "    ${sbatch_command_normal}"
+echo
 echo "sbatch command for later, exp job:"
 echo "    ${sbatch_command_exp}"
+echo
 echo "sbatch command for later, array job:"
 echo "    ${sbatch_command_array}"
+echo
 
-${sbatch_command_array}
+# ${sbatch_command_array}
 
 
 
@@ -133,12 +137,12 @@ array_ecf_file_2d=("${basedir}/espreso.heat_transfer_2d.ecf" "${basedir}/espreso
 array_ecf_file_3d=("${basedir}/espreso.heat_transfer_3d.ecf" "${basedir}/espreso.linear_elasticity_3d.ecf")
 array_element_type_2d=(TRIANGLE3 TRIANGLE6)
 array_element_type_3d=(TETRA4 TETRA10)
-array_domains_x_2d=(32 23 16 11 8)
-array_domains_y_2d=(32 22 16 11 8)
-array_domains_z_2d=( 1  1  1  1 1)
-array_domains_x_3d=(10 8 7 5 4)
-array_domains_y_3d=(10 8 6 5 4)
-array_domains_z_3d=(10 8 6 5 4)
+array_domains_x_2d=(45 32 23 16 11     8     6  4)
+array_domains_y_2d=(45 32 22 16 11     8     5  4)
+array_domains_z_2d=( 1  1  1  1  1     1     1  1)
+array_domains_x_3d=(13 10  8  7  5     4     3  4)
+array_domains_y_3d=(13 10  8  6  5     4     3  2)
+array_domains_z_3d=(12 10  8  6  5     4     3  2)
 array_ecf_file=()
 array_element_type=()
 array_elements_x=()
@@ -152,9 +156,9 @@ array_domains_z=()
 
 
 
-# set and update
 f_sharing_if_hermitian="SHARED"
-transpose_where="GPU"
+transpose_where="CPU"
+uniform_clusters_domains="TRUE"
 for dim in 2 3
 do
     if [ "${dim}" == "2" ]; then array_ecf_file=("${array_ecf_file_2d[@]}"); else array_ecf_file=("${array_ecf_file_3d[@]}"); fi
@@ -167,36 +171,53 @@ do
     do
         for element_type in "${array_element_type[@]}"
         do
-            if [[ "${ecf_file}" == *"heat_transfer_2d"* ]]; then
-                array_elements_x=(8 16 32 64 128)
-                array_elements_y=(8 16 32 64 128)
-                array_elements_z=(1  1  1  1   1)
+            if [[ "${ecf_file}" == *"heat_transfer_2d"*     && "${element_type}" == "TRIANGLE3" ]]; then
+                array_elements_x=(  64  90 128 181 256 362 512 724)
+                array_elements_y=(  64  90 128 181 256 362 512 724)
+                array_elements_z=(   1   1   1   1   1   1   1   1)
             fi
-            if [[ "${ecf_file}" == *"linear_elasticity_2d"* ]]; then
-                array_elements_x=(8 16 32 64 128)
-                array_elements_y=(8 16 32 64 128)
-                array_elements_z=(1  1  1  1   1)
+            if [[ "${ecf_file}" == *"heat_transfer_2d"*     && "${element_type}" == "TRIANGLE6" ]]; then
+                array_elements_x=(  32  45  64  90 128 181 256 362)
+                array_elements_y=(  32  45  64  90 128 181 256 362)
+                array_elements_z=(   1   1   1   1   1   1   1   1)
             fi
-            if [[ "${ecf_file}" == *"heat_transfer_3d"* && "${element_type}" == "TETRA4" ]]; then
-                array_elements_x=(4 6 10 16 25)
-                array_elements_y=(4 6 10 16 25)
-                array_elements_z=(4 6 10 16 25)
+            if [[ "${ecf_file}" == *"linear_elasticity_2d"* && "${element_type}" == "TRIANGLE3" ]]; then
+                array_elements_x=(  45  64  90 128 181 256 362 512)
+                array_elements_y=(  45  64  90 128 181 256 362 512)
+                array_elements_z=(   1   1   1   1   1   1   1   1)
             fi
-            if [[ "${ecf_file}" == *"heat_transfer_3d"* && "${element_type}" == "TETRA10" ]]; then
-                array_elements_x=(3 4 6 10 16)
-                array_elements_y=(3 4 6 10 16)
-                array_elements_z=(3 4 6 10 16)
+            if [[ "${ecf_file}" == *"linear_elasticity_2d"* && "${element_type}" == "TRIANGLE6" ]]; then
+                array_elements_x=(  23  32  45  64  90 128 181 256)
+                array_elements_y=(  23  32  45  64  90 128 181 256)
+                array_elements_z=(   1   1   1   1   1   1   1   1)
             fi
-            if [[ "${ecf_file}" == *"linear_elasticity_3d"* && "${element_type}" == "TETRA4" ]]; then
-                array_elements_x=(3 4 6 10 16)
-                array_elements_y=(3 4 6 10 16)
-                array_elements_z=(3 4 6 10 16)
+            if [[ "${ecf_file}" == *"heat_transfer_3d"*     && "${element_type}" == "TETRA4"    ]]; then
+                array_elements_x=(   8  10  13  16  20  25  32  40)
+                array_elements_y=(   8  10  13  16  20  25  32  40)
+                array_elements_z=(   8  10  13  16  20  25  32  40)
             fi
-            if [[ "${ecf_file}" == *"linear_elasticity_3d"* && "${element_type}" == "TETRA10" ]]; then
-                array_elements_x=(3 4 5 6 8)
-                array_elements_y=(3 4 5 6 8)
-                array_elements_z=(3 4 5 6 8)
+            if [[ "${ecf_file}" == *"heat_transfer_3d"*     && "${element_type}" == "TETRA10"   ]]; then
+                array_elements_x=(   5   6   8  10  13  16  20  25)
+                array_elements_y=(   5   6   8  10  13  16  20  25)
+                array_elements_z=(   5   6   8  10  13  16  20  25)
             fi
+            if [[ "${ecf_file}" == *"linear_elasticity_3d"* && "${element_type}" == "TETRA4"    ]]; then
+                array_elements_x=(   5   6   8  10  13  16  20  25)
+                array_elements_y=(   5   6   8  10  13  16  20  25)
+                array_elements_z=(   5   6   8  10  13  16  20  25)
+            fi
+            if [[ "${ecf_file}" == *"linear_elasticity_3d"* && "${element_type}" == "TETRA10"   ]]; then
+                array_elements_x=(   3   4   5   6   8  10  13  16)
+                array_elements_y=(   3   4   5   6   8  10  13  16)
+                array_elements_z=(   3   4   5   6   8  10  13  16)
+            fi
+            
+            # array_elements_x=(   6   8  11  16  23  32  45  64  90 128 181 256 362 512 724 1024)
+            # array_elements_y=(   6   8  11  16  23  32  45  64  90 128 181 256 362 512 724 1024)
+            # array_elements_z=(   1   1   1   1   1   1   1   1   1   1   1   1   1   1   1    1)
+            # array_elements_x=(   3   4   5   6   8  10  13  16  20  25  32  40  50  64  80  101)
+            # array_elements_y=(   3   4   5   6   8  10  13  16  20  25  32  40  50  64  80  101)
+            # array_elements_z=(   3   4   5   6   8  10  13  16  20  25  32  40  50  64  80  101)
 
             for i in ${!array_domains_x[@]}
             do
@@ -207,40 +228,32 @@ do
                 domains_y="${array_domains_y[$i]}"
                 domains_z="${array_domains_z[$i]}"
 
+                dualoperator="EXPLICIT_GPU"
                 benchmarking_for="setupdate"
                 apply_scatter_gather_where="GPU"
-                for uniform_clusters_domains in TRUE FALSE
+                for concurrency in SEQ_WAIT SEQ_CONTINUE PARALLEL
                 do
-                    for concurrency in SEQ_WAIT SEQ_CONTINUE PARALLEL
+                    concurrency_set="${concurrency}"
+                    concurrency_update="${concurrency}"
+                    concurrency_apply="${concurrency}"
+
+                    for trs1_factor_storage in SPARSE DENSE
                     do
-                        concurrency_set="${concurrency}"
-                        concurrency_update="${concurrency}"
-                        concurrency_apply="${concurrency}"
-
-                        for factor_symmetry_fake in L U B
+                        for trsm_rhs_sol_order in ROW_MAJOR COL_MAJOR
                         do
-                            for trsm1_factor_storage in SPARSE DENSE
+                            for trs1_solve_type in L LHH
                             do
-                                for trsm1_solve_type in L LHH
-                                do
-                                    for trsm_rhs_sol_order in ROW_MAJOR COL_MAJOR
-                                    do
-                                        if [[ "${factor_symmetry_fake}" != "B" ]]
-                                        then
-                                            path_if_hermitian="HERK"
-                                            trsm2_factor_storage="SPARSE"
-                                            trsm2_solve_type="U"
-                                            submit_hq_job
-                                        fi
+                                path_if_hermitian="HERK"
+                                trs2_factor_storage="SPARSE"
+                                trs2_solve_type="U"
+                                submit_hq_job
 
-                                        path_if_hermitian="TRSM"
-                                        for trsm2_factor_storage in SPARSE DENSE
-                                        do
-                                            for trsm2_solve_type in U UHH
-                                            do
-                                                submit_hq_job
-                                            done
-                                        done
+                                path_if_hermitian="TRSM"
+                                for trs2_factor_storage in SPARSE DENSE
+                                do
+                                    for trs2_solve_type in U UHH
+                                    do
+                                        submit_hq_job
                                     done
                                 done
                             done
@@ -248,28 +261,52 @@ do
                     done
                 done
 
+                dualoperator="EXPLICIT_GPU"
                 benchmarking_for="apply"
-                factor_symmetry_fake="U"
-                trsm1_factor_storage="SPARSE"
-                trsm1_solve_type="LHH"
+                trs1_factor_storage="SPARSE"
+                trs1_solve_type="LHH"
                 path_if_hermitian="HERK"
-                trsm2_factor_storage="SPARSE"
-                trsm2_solve_type="U"
+                trs2_factor_storage="SPARSE"
+                trs2_solve_type="U"
                 trsm_rhs_sol_order="ROW_MAJOR"
-                for uniform_clusters_domains in TRUE FALSE
+                for concurrency in SEQ_WAIT SEQ_CONTINUE PARALLEL
                 do
-                    for concurrency in SEQ_WAIT SEQ_CONTINUE PARALLEL
-                    do
-                        concurrency_set="PARALLEL"
-                        concurrency_update="PARALLEL"
-                        concurrency_apply="${concurrency}"
+                    concurrency_set="PARALLEL"
+                    concurrency_update="PARALLEL"
+                    concurrency_apply="${concurrency}"
 
-                        for apply_scatter_gather_where in CPU GPU
+                    for apply_scatter_gather_where in CPU GPU
+                    do
+                        submit_hq_job
+                    done
+                done
+
+                dualoperator="IMPLICIT_GPU"
+                benchmarking_for="setupdateapply"
+                apply_scatter_gather_where="GPU"
+                path_if_hermitian="TRSM"
+                trsm_rhs_sol_order="ROW_MAJOR"
+                for concurrency in SEQ_WAIT SEQ_CONTINUE PARALLEL
+                do
+                    concurrency_set="${concurrency}"
+                    concurrency_update="${concurrency}"
+                    concurrency_apply="${concurrency}"
+
+                    for trs1_factor_storage in SPARSE DENSE
+                    do
+                        for trs1_solve_type in L LHH
                         do
-                            submit_hq_job
+                            for trs2_factor_storage in SPARSE DENSE
+                            do
+                                for trs2_solve_type in U UHH
+                                do
+                                    submit_hq_job
+                                done
+                            done
                         done
                     done
                 done
+
             done
         done
     done
@@ -279,9 +316,15 @@ done
 
 
 
+echo
 echo "sbatch command for later, normal job:"
 echo "    ${sbatch_command_normal}"
+echo
 echo "sbatch command for later, exp job:"
 echo "    ${sbatch_command_exp}"
+echo
 echo "sbatch command for later, array job:"
 echo "    ${sbatch_command_array}"
+echo
+
+echo "number of jobs: ${id_num}"
