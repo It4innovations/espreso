@@ -9,12 +9,13 @@ namespace espreso {
 
 template <typename T>
 struct Preconditioner {
-    static Preconditioner<T>* set(FETI<T> &feti, const step::Step &step);
+    static Preconditioner<T>* create(FETI<T> &feti, const step::Step &step);
 
     Preconditioner(FETI<T> &feti): feti(feti) {}
     virtual ~Preconditioner() {}
 
     virtual void info() =0;
+    virtual void set(const step::Step &step) { }
     virtual void update(const step::Step &step) =0;
 
     // y = S * x

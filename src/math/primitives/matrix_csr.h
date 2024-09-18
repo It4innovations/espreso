@@ -159,11 +159,16 @@ protected:
             if (m.cols) { ator.deallocate(m.cols); m.cols = nullptr; }
             if (m.vals) { ator.deallocate(m.vals); m.vals = nullptr; }
         }
-        if (m.cols == nullptr) {
-            m.cols = ator.template allocate<I>(nnz);
-        }
-        if (m.vals == nullptr) {
-            m.vals = ator.template allocate<T>(nnz);
+        if (nnz) {
+            if (m.cols == nullptr) {
+                m.cols = ator.template allocate<I>(nnz);
+            }
+            if (m.vals == nullptr) {
+                m.vals = ator.template allocate<T>(nnz);
+            }
+        } else {
+            m.cols = nullptr;
+            m.vals = nullptr;
         }
         m.nrows = nrows;
         m.ncols = ncols;

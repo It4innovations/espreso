@@ -9,8 +9,8 @@ namespace espreso {
 template <typename T>
 struct Regularization {
 
-    static void set(const step::Step &step, FETI<T> &feti);
-    static void update(const step::Step &step, FETI<T> &feti);
+    void set(const step::Step &step, FETI<T> &feti);
+    void update(const step::Step &step, FETI<T> &feti);
 };
 
 }

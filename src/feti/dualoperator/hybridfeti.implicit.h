@@ -55,7 +55,7 @@ protected:
     std::vector<DirectSparseSolver<T> > KSolver;
 
     std::vector<std::vector<int> > permutation;
-    std::vector<Matrix_Dense<T> > dB0, dKB0, dF0;
+    std::vector<Matrix_Dense<T> > dB0, dKB0, dF0, origR1;
     std::vector<int> G0offset;
     Matrix_CSR<T> F0, G0;
     DirectSparseSolver<T> F0Solver;

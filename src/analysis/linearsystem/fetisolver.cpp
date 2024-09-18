@@ -17,7 +17,7 @@ namespace espreso {
 
 template <typename T>
 FETILinearSystemSolver<T>::FETILinearSystemSolver(PhysicsConfiguration &physics, LoadStepSolverConfiguration &loadStep)
-: physics(physics), loadStep(loadStep), feti(loadStep.feti), bem(false), postponed_set(loadStep.feti.regularization == FETIConfiguration::REGULARIZATION::ALGEBRAIC)
+: physics(physics), loadStep(loadStep), feti(loadStep.feti), bem(false)
 {
     LinearSystemSolver<T>::A = &A;
     LinearSystemSolver<T>::x = &x;
@@ -55,14 +55,12 @@ void FETILinearSystemSolver<T>::set(step::Step &step)
         feti.x[di].shallowCopy(x.domains[di]);
     }
     feti.decomposition = A.decomposition;
-    Regularization<T>::set(step, feti);
+    regularization.set(step, feti);
     eslog::checkpointln("FETI: SET KERNELS");
     constrains.set(step, feti, dirichlet);
     eslog::checkpointln("FETI: SET B1");
     eslog::info(" = ----------------------------------------------------------------------------------------- = \n");
-    if (!postponed_set) {
-        feti.set(step);
-    }
+    feti.set(step);
     eslog::endln("FETI: LINEAR SYSTEM SET");
 }
 
@@ -70,10 +68,8 @@ template <typename T>
 void FETILinearSystemSolver<T>::update(step::Step &step)
 {
     eslog::startln("FETI: UPDATING LINEAR SYSTEM", "FETI[UPDATE]");
-    if (A.updated) {
-        Regularization<T>::update(step, feti);
-        eslog::checkpointln("FETI: UPDATE KERNELS");
-    }
+    regularization.update(step, feti);
+    eslog::checkpointln("FETI: UPDATE KERNELS");
 
     constrains.update(step, feti, dirichlet);
     eslog::checkpointln("FETI: UPDATE B1");
@@ -102,12 +98,6 @@ void FETILinearSystemSolver<T>::update(step::Step &step)
             math::copy(feti.K[d], K);
         }
         eslog::checkpointln("FETI: K PROJECTED");
-    }
-
-    if (postponed_set) {
-        feti.set(step);
-        postponed_set = false;
-        eslog::checkpointln("FETI: FETI SET");
     }
 
     if (info::ecf->output.print_matrices) {

@@ -15,7 +15,7 @@ template <typename T> int Projector<T>::Kernel::rsize   = 0;
 template <typename T> int Projector<T>::Kernel::total   = 0;
 
 template <typename T>
-Projector<T>* Projector<T>::set(FETI<T> &feti, const step::Step &step)
+Projector<T>* Projector<T>::create(FETI<T> &feti, const step::Step &step)
 {
     switch (feti.configuration.method) {
     case FETIConfiguration::METHOD::TOTAL_FETI: {

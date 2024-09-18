@@ -12,6 +12,13 @@ public:
     PCPG(FETI<T> &feti);
 
     void info();
+
+    void update(const step::Step &step)
+    {
+        IterativeSolver<T>::resize(l, r, w, y, z, p);
+        IterativeSolver<T>::resize(x, Fp);
+    }
+
     void solve(const step::Step &step, IterativeSolverInfo &info);
 
     using IterativeSolver<T>::feti;

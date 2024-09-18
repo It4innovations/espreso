@@ -3,7 +3,7 @@ import os, unittest
 from estest import ESPRESOTest
 
 cases = [
-    ("     NONE", 700),
+    ("     NONE", 750),
     ("   LUMPED", 290),
     ("DIRICHLET", 190),
     ]

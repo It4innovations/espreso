@@ -47,6 +47,12 @@ void get_eig_sym(Matrix_Dense<double, int> &A, Vector_Dense<double, int> &values
     eslog::error("calling of empty LAPACK wrapper.\n");
 }
 
+template <>
+void submatrix(const Matrix_Dense<double, int> &input, Matrix_Dense<double, int> &output, int start_row, int end_row, int start_col, int end_col)
+{
+    eslog::error("calling of empty LAPACK wrapper.\n");
+}
+
 }
 }
 }

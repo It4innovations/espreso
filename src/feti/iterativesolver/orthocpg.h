@@ -13,6 +13,13 @@ public:
     OrthogonalizedCPG(FETI<T> &feti);
 
     void info();
+
+    void update(const step::Step &step)
+    {
+        IterativeSolver<T>::resize(l, r, w, x);
+        IterativeSolver<T>::resize(pi, Fpi);
+    }
+
     void solve(const step::Step &step, IterativeSolverInfo &info);
 
     using IterativeSolver<T>::feti;

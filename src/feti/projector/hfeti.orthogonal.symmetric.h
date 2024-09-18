@@ -27,6 +27,7 @@ struct HFETIOrthogonalSymmetric: public Projector<T> {
     HFETIOrthogonalSymmetric(FETI<T> &feti);
     ~HFETIOrthogonalSymmetric();
 
+    void set(const step::Step &step);
     void update(const step::Step &step);
 
 protected:

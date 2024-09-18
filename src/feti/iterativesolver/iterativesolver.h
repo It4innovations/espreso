@@ -41,7 +41,20 @@ struct IterativeSolverInfo {
 template <typename T>
 class IterativeSolver {
 public:
-    static IterativeSolver<T>* set(FETI<T> &feti, const step::Step &step);
+    static IterativeSolver<T>* create(FETI<T> &feti, const step::Step &step);
+
+    template <typename Vector>
+    void resize(Vector &v)
+    {
+        v.resize();
+    }
+
+    template <typename Vector, typename... Other>
+    void resize(Vector &v, Other&... other)
+    {
+        v.resize();
+        resize(other...);
+    }
 
     IterativeSolver(FETI<T> &feti): feti(feti)
     {
@@ -58,6 +71,8 @@ public:
     virtual ~IterativeSolver() {}
 
     virtual void info() =0;
+    virtual void set(const step::Step &step) { }
+    virtual void update(const step::Step &step) =0;
     virtual void solve(const step::Step &step, IterativeSolverInfo &info) =0;
 
     void setInfo(IterativeSolverInfo &info, const FETIConfiguration &configuration, const T &ww);

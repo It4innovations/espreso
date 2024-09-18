@@ -64,7 +64,11 @@ void HybridFETIImplicit<T>::set(const step::Step &step)
         KSolver[di].symbolicFactorization();
     }
     eslog::checkpointln("FETI: TFETI SYMBOLIC FACTORIZATION");
+}
 
+template <typename T>
+void HybridFETIImplicit<T>::update(const step::Step &step)
+{
     int dB0max = 0, dKmax = 0;
     std::vector<std::vector<int> > csr(feti.cluster.gl_size);
     for (size_t di = 0; di < feti.K.size(); ++di) {
@@ -77,7 +81,6 @@ void HybridFETIImplicit<T>::set(const step::Step &step)
         dKmax = std::max(dKmax, feti.K[di].nrows);
         dKB0[di].resize(feti.B0[di].nrows, feti.B0[di].ncols);
     }
-
 
     dB0.resize(info::env::threads);
     dF0.resize(info::env::threads);
@@ -141,11 +144,7 @@ void HybridFETIImplicit<T>::set(const step::Step &step)
     F0Solver.commit(F0);
     F0Solver.symbolicFactorization();
     eslog::checkpointln("FETI: F0 SYMBOLIC FACTORIZATION");
-}
 
-template <typename T>
-void HybridFETIImplicit<T>::update(const step::Step &step)
-{
     if (feti.updated.K) {
         #pragma omp parallel for
         for (size_t di = 0; di < feti.K.size(); ++di) {
@@ -217,7 +216,7 @@ void HybridFETIImplicit<T>::update(const step::Step &step)
     Matrix_Dense<T> dG0, dF0G0;
     math::copy(dG0, G0);
     F0Solver.solve(dG0, dF0G0);
-    Matrix_Dense<T> S0; S0.resize(G0.nrows, G0.nrows);
+    Matrix_Dense<T> S0; S0.resize(G0.nrows, G0.nrows); S0.type = Matrix_Type::REAL_SYMMETRIC_POSITIVE_DEFINITE;
     math::blas::multiply(T{1}, dG0, dF0G0, T{0}, S0, false, true); // TODO: use sparse G0?
 
     if (info::ecf->output.print_matrices) {
@@ -225,31 +224,64 @@ void HybridFETIImplicit<T>::update(const step::Step &step)
         math::store(S0, utils::filename(utils::debugDirectory(step) + "/feti/dualop", "S0").c_str());
     }
 
-    T avg = 0;
-    for (int r = 0; r < S0.nrows; ++r) {
-        avg += S0.vals[S0.nrows * r + r];
-    }
-    avg /= S0.nrows;
-
-    // kernels: [3, 2, 3]
-    // 1 0 0   *  1 0 0 1 0 1 0 0  =   1 0 0 1 0 1 0 0
-    // 0 1 0      0 1 0 0 1 0 1 0      0 1 0 0 1 0 1 0
-    // 0 0 1      0 0 1 0 0 0 0 1      0 0 1 0 0 0 0 1
-    // 1 0 0                           1 0 0 1 0 1 0 0
-    // 0 1 0                           0 1 0 0 1 0 1 0
-    // 1 0 0                           1 0 0 1 0 1 0 0
-    // 0 1 0                           0 1 0 0 1 0 1 0
-    // 0 0 1                           0 0 1 0 0 0 0 1
-
+    origR1.resize(feti.K.size());
     // make S0 regular
-    for (size_t di = 0, ri = 0; di < feti.K.size(); ++di) {
-        for (int r = 0; r < feti.R1[di].nrows; ++r, ++ri) {
-            for (size_t dj = 0; dj < feti.K.size(); ++dj) {
-                if (r < feti.R1[dj].nrows) {
-                    S0.vals[ri * S0.ncols + G0offset[dj] + r] += 0.5 * avg;
+    switch (feti.configuration.regularization) {
+    case FETIConfiguration::REGULARIZATION::ANALYTIC: {
+        T avg = 0;
+        for (int r = 0; r < S0.nrows; ++r) {
+            avg += S0.vals[S0.nrows * r + r];
+        }
+        avg /= S0.nrows;
+
+        // kernels: [3, 2, 3]
+        // 1 0 0   *  1 0 0 1 0 1 0 0  =   1 0 0 1 0 1 0 0
+        // 0 1 0      0 1 0 0 1 0 1 0      0 1 0 0 1 0 1 0
+        // 0 0 1      0 0 1 0 0 0 0 1      0 0 1 0 0 0 0 1
+        // 1 0 0                           1 0 0 1 0 1 0 0
+        // 0 1 0                           0 1 0 0 1 0 1 0
+        // 1 0 0                           1 0 0 1 0 1 0 0
+        // 0 1 0                           0 1 0 0 1 0 1 0
+        // 0 0 1                           0 0 1 0 0 0 0 1
+
+        for (size_t di = 0, ri = 0; di < feti.K.size(); ++di) {
+            origR1[di].shallowCopy(feti.R1[di]);
+            for (int r = 0; r < feti.R1[di].nrows; ++r, ++ri) {
+                for (size_t dj = 0; dj < feti.K.size(); ++dj) {
+                    if (r < feti.R1[dj].nrows) {
+                        S0.vals[ri * S0.ncols + G0offset[dj] + r] += 0.5 * avg;
+                    }
                 }
             }
         }
+    } break;
+    case FETIConfiguration::REGULARIZATION::ALGEBRAIC: {
+        int maxDefect = 0;
+        for (size_t di = 0; di < feti.K.size(); ++di) {
+            maxDefect = std::max(maxDefect, feti.R1[di].nrows);
+            if (maxDefect != feti.R1[di].nrows) {
+                eslog::error("Some domains are regular\n");
+            }
+        }
+        Matrix_Dense<T> R;
+        Matrix_IJV<T> regMat;
+        math::getKernel<T, int>(S0, R, regMat, maxDefect, feti.configuration.sc_size);
+        for (int i = 0; i < regMat.nnz; ++i) {
+            S0.vals[(regMat.rows[i] - Indexing::IJV) * S0.ncols + regMat.cols[i] - Indexing::IJV] += regMat.vals[i];
+        }
+        for (size_t di = 0; di < feti.K.size(); ++di) {
+            if (feti.configuration.projector_opt & FETIConfiguration::PROJECTOR_OPT::FULL) {
+                origR1[di].shallowCopy(feti.R1[di]);
+            } else {
+                // orthogonalize R for HFETI projector
+                origR1[di].resize(feti.R1[di].nrows, feti.R1[di].ncols);
+                math::copy(origR1[di], feti.R1[di]);
+                Matrix_Dense<T> _R;
+                math::lapack::submatrix<T, int>(R, _R, 0, R.nrows, di * R.nrows, (di + 1) * R.nrows);
+                math::blas::multiply(T{1}, _R, origR1[di], T{0}, feti.R1[di]);
+            }
+        }
+    } break;
     }
 
     eslog::checkpointln("FETI: S0 ASSEMBLE");
@@ -315,9 +347,9 @@ void HybridFETIImplicit<T>::_applyK(std::vector<Vector_Dense<T> > &x, std::vecto
         }
         // e = Rt * b
         Vector_Dense<T> _e;
-        _e.size = feti.R1[di].nrows;
+        _e.size = origR1[di].nrows;
         _e.vals = beta.vals + G0offset[di];
-        math::blas::multiply(T{1}, feti.R1[di], x[di], T{0}, _e); // assemble -e
+        math::blas::multiply(T{1}, origR1[di], x[di], T{0}, _e); // assemble -e
     }
 
     auto &F0g = mu; // mu is tmp variable that can be used here
@@ -339,9 +371,9 @@ void HybridFETIImplicit<T>::_applyK(std::vector<Vector_Dense<T> > &x, std::vecto
         KSolver[di].solve(x[di], y[di]);
         // x += R * beta
         Vector_Dense<T> _beta;
-        _beta.size = feti.R1[di].nrows;
+        _beta.size = origR1[di].nrows;
         _beta.vals = beta.vals + G0offset[di];
-        math::blas::multiply(T{1}, feti.R1[di], _beta, T{1}, y[di], true);
+        math::blas::multiply(T{1}, origR1[di], _beta, T{1}, y[di], true);
     }
 }
 

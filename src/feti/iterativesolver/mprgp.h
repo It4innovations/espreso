@@ -19,6 +19,15 @@ public:
     MPRGP(FETI<T> &feti);
 
     void info();
+
+    void update(const step::Step &step)
+    {
+        IterativeSolver<T>::resize(b, x, x0, nx, ng, ngg0, xp, g_red, g_free, g_stop);
+        IterativeSolver<T>::resize(z, p, Fp, g, g0, gg0);
+        IterativeSolver<T>::resize(free, active);
+        IterativeSolver<T>::resize(Gx);
+    }
+
     void solve(const step::Step &step, IterativeSolverInfo &info);
 
     void run(const step::Step &step, MPRGPSolverInfo &info, double alpha, std::function<void(Vector_Dual<T> &in, Vector_Dual<T> &out)> H, std::function<bool(const Vector_Dual<T> &x, const Vector_Dual<T> &g_stop)> stop);

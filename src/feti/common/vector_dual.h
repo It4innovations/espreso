@@ -17,6 +17,7 @@ struct Vector_Dual: public Vector_Dense<T> {
 
     Vector_Dual();
 
+    void resize();
     void synchronize();
     void copyToWithoutHalo(Vector_Dense<T> &to) const;
     T dot(const Vector_Dense<T> &other) const;

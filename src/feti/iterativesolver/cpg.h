@@ -12,6 +12,12 @@ public:
     CPG(FETI<T> &feti);
 
     void info();
+
+    void update(const step::Step &step)
+    {
+        IterativeSolver<T>::resize(l, r, w, p, x, Fp);
+    }
+
     void solve(const step::Step &step, IterativeSolverInfo &info);
 
     using IterativeSolver<T>::feti;

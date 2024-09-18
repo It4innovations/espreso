@@ -9,8 +9,6 @@
 
 namespace espreso {
 
-
-
 template <typename T>
 void Regularization<T>::set(const step::Step &step, FETI<T> &feti)
 {
@@ -36,7 +34,12 @@ void Regularization<T>::set(const step::Step &step, FETI<T> &feti)
         }
         break;
     case FETIConfiguration::REGULARIZATION::ALGEBRAIC:
-        break;
+        // we need matrices K, set only sizes that we know surely
+        for (size_t d = 0; d < feti.K.size(); ++d) {
+            feti.R1[d].resize(0, feti.K[d].ncols);
+            feti.RegMat[d].resize(feti.K[d].nrows, feti.K[d].ncols, 0);
+            math::set(feti.RegMat[d].nrows + 1, feti.RegMat[d].rows, 1, Indexing::CSR);
+        }
     }
 }
 
@@ -86,7 +89,7 @@ void Regularization<T>::update(const step::Step &step, FETI<T> &feti)
         break;
     }
 
-    if (feti.updated.K) {
+    if (feti.updated.K && feti.configuration.regularization == FETIConfiguration::REGULARIZATION::ANALYTIC) {
         std::vector<int> offset;
         Matrix_Dense<T> _R1;
         bool fetiProjection =
@@ -94,11 +97,9 @@ void Regularization<T>::update(const step::Step &step, FETI<T> &feti)
                 (feti.configuration.projector_opt & FETIConfiguration::PROJECTOR_OPT::FULL);
 
         if (fetiProjection) {
-            if (feti.configuration.regularization != FETIConfiguration::REGULARIZATION::ALGEBRAIC) {
-                #pragma omp parallel for
-                for (size_t d = 0; d < feti.R1.size(); ++d) {
-                    math::orthonormalize(feti.R1[d]);
-                }
+            #pragma omp parallel for
+            for (size_t d = 0; d < feti.R1.size(); ++d) {
+                math::orthonormalize(feti.R1[d]);
             }
         } else {
             for (size_t d = 0; d < feti.R1.size(); ++d) {

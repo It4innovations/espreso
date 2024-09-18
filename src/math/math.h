@@ -193,7 +193,9 @@ namespace math {
 
     template <typename T, typename I> void orthonormalize(Matrix_Dense<T, I> &A);
     template <typename T, typename I> void permute(Matrix_CSR<T, I> &A, const std::vector<I> &perm);
+    template <typename T, typename I> void permute(Matrix_Dense<T, I> &A, const std::vector<I> &perm);
     template <typename T, typename I> void getKernel(Matrix_CSR<T, I> &A, Matrix_Dense<T, I> &R, Matrix_CSR<T, I> &regMat, I maxDefect, I scSize);
+    template <typename T, typename I> void getKernel(Matrix_Dense<T, I> &A, Matrix_Dense<T, I> &R, Matrix_IJV<T, I> &regMat, I maxDefect, I scSize);
 
     template <class T> void store(const T &x, const char* file);
 

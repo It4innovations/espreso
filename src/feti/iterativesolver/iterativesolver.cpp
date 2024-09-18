@@ -20,7 +20,7 @@
 namespace espreso {
 
 template <typename T>
-IterativeSolver<T>* IterativeSolver<T>::set(FETI<T> &feti, const step::Step &step)
+IterativeSolver<T>* IterativeSolver<T>::create(FETI<T> &feti, const step::Step &step)
 {
     if (feti.lambdas.equalities != feti.lambdas.size) {
         if (

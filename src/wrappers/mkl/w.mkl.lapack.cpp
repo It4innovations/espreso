@@ -1,6 +1,5 @@
 
 #include "math/math.h"
-#include "math/math.h"
 #include "esinfo/eslog.h"
 
 #ifdef HAVE_MKL
@@ -31,7 +30,7 @@ template <>
 void get_eig_sym(Matrix_Dense<double> &A, Vector_Dense<double> &values)
 {
     switch (A.shape) {
-    case Matrix_Shape::FULL: break;
+    case Matrix_Shape::FULL:  LAPACKE_dsyev(LAPACK_ROW_MAJOR, 'V', 'U', A.nrows, A.vals, A.ncols, values.vals); break;
     case Matrix_Shape::UPPER: LAPACKE_dspev(LAPACK_ROW_MAJOR, 'N', 'U', A.nrows, A.vals, values.vals, nullptr, A.ncols); break;
     case Matrix_Shape::LOWER: LAPACKE_dspev(LAPACK_ROW_MAJOR, 'N', 'L', A.nrows, A.vals, values.vals, nullptr, A.ncols); break;
     }
@@ -42,7 +41,7 @@ void get_eig_sym(Matrix_Dense<double> &A, Vector_Dense<double> &values, Matrix_D
 {
     // LAPACK_COL_MAJOR and swap 'L' and 'U' to get vectors in rows
     switch (A.shape) {
-    case Matrix_Shape::FULL: break;
+    case Matrix_Shape::FULL: math::copy(vectors, A); LAPACKE_dsyev(LAPACK_ROW_MAJOR, 'V', 'U', A.nrows, vectors.vals, A.ncols, values.vals); break;
     case Matrix_Shape::UPPER: LAPACKE_dspev(LAPACK_ROW_MAJOR, 'V', 'U', A.nrows, A.vals, values.vals, vectors.vals, A.ncols); break;
     case Matrix_Shape::LOWER: LAPACKE_dspev(LAPACK_ROW_MAJOR, 'V', 'L', A.nrows, A.vals, values.vals, vectors.vals, A.ncols); break;
     }
@@ -51,9 +50,9 @@ void get_eig_sym(Matrix_Dense<double> &A, Vector_Dense<double> &values, Matrix_D
 template <>
 void get_eig_sym(Matrix_Dense<double> &A, Vector_Dense<double> &values, int begin, int end)
 {
-    int m; Vector_Dense<int, int> fail; fail.resize(A.ncols);
+    int m; Vector_Dense<int, int> fail; fail.resize(2 * A.ncols);
     switch (A.shape) {
-    case Matrix_Shape::FULL: break;
+    case Matrix_Shape::FULL:  LAPACKE_dsyevr(LAPACK_ROW_MAJOR, 'N', 'I', 'U', A.nrows, A.vals, A.ncols, 0, 0, begin, end, LAPACKE_dlamch('S'), &m, values.vals, nullptr, A.ncols, fail.vals); break;
     case Matrix_Shape::UPPER: LAPACKE_dspevx(LAPACK_ROW_MAJOR, 'N', 'I', 'U', A.nrows, A.vals, 0, 0, begin, end, 2 * LAPACKE_dlamch('S'), &m, values.vals, nullptr, A.ncols, fail.vals); break;
     case Matrix_Shape::LOWER: LAPACKE_dspevx(LAPACK_ROW_MAJOR, 'N', 'I', 'L', A.nrows, A.vals, 0, 0, begin, end, 2 * LAPACKE_dlamch('S'), &m, values.vals, nullptr, A.ncols, fail.vals); break;
     }
@@ -62,12 +61,21 @@ void get_eig_sym(Matrix_Dense<double> &A, Vector_Dense<double> &values, int begi
 template <>
 void get_eig_sym(Matrix_Dense<double> &A, Vector_Dense<double> &values, Matrix_Dense<double> &vectors, int begin, int end)
 {
-    int m; Vector_Dense<int, int> fail; fail.resize(A.ncols);
+    int m; Vector_Dense<int, int> fail; fail.resize(2 * A.ncols);
     switch (A.shape) {
-    case Matrix_Shape::FULL: break;
+    case Matrix_Shape::FULL:  LAPACKE_dsyevr(LAPACK_ROW_MAJOR, 'V', 'I', 'U', A.nrows, A.vals, A.ncols, 0, 0, begin, end, LAPACKE_dlamch('S'), &m, values.vals, vectors.vals, vectors.ncols, fail.vals); break;
     case Matrix_Shape::UPPER: LAPACKE_dspevx(LAPACK_ROW_MAJOR, 'V', 'I', 'U', A.nrows, A.vals, 0, 0, begin, end, 2 * LAPACKE_dlamch('S'), &m, values.vals, vectors.vals, A.ncols, fail.vals); break;
     case Matrix_Shape::LOWER: LAPACKE_dspevx(LAPACK_ROW_MAJOR, 'V', 'I', 'L', A.nrows, A.vals, 0, 0, begin, end, 2 * LAPACKE_dlamch('S'), &m, values.vals, vectors.vals, A.ncols, fail.vals); break;
     }
+}
+
+template <>
+void submatrix(const Matrix_Dense<double, int> &input, Matrix_Dense<double, int> &output, int start_row, int end_row, int start_col, int end_col)
+{
+    if (input.shape != Matrix_Shape::FULL) eslog::error("Cannot copy triangular matrix.\n");
+
+    output.resize(end_row - start_row, end_col - start_col);
+    LAPACKE_dlacpy(LAPACK_ROW_MAJOR, ' ', end_row - start_row, end_col - start_col, input.vals + start_row * input.ncols + start_col, input.ncols, output.vals, output.ncols);
 }
 
 //void MATH::upDense3x3EigenValues(double *mVals, double *eigenValues)

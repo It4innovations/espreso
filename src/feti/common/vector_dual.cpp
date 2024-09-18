@@ -16,6 +16,12 @@ Vector_Dual<T>::Vector_Dual()
 }
 
 template <typename T>
+void Vector_Dual<T>::resize()
+{
+    Vector_Dense<T>::resize(Dual_Map::size);
+}
+
+template <typename T>
 void Vector_Dual<T>::synchronize()
 {
     std::vector<int> offset(send.size());

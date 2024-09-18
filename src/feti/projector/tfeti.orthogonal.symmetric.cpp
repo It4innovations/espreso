@@ -12,7 +12,25 @@ namespace espreso {
 
 template<typename T>
 TFETIOrthogonalSymmetric<T>::TFETIOrthogonalSymmetric(FETI<T> &feti)
-: Projector<T>(feti)
+: Projector<T>(feti), domainOffset(0), GGtDataOffset(0), GGtDataSize(0), GGtNnz(0)
+{
+
+}
+
+template<typename T>
+TFETIOrthogonalSymmetric<T>::~TFETIOrthogonalSymmetric()
+{
+
+}
+
+template<typename T>
+void TFETIOrthogonalSymmetric<T>::set(const step::Step &step)
+{
+
+}
+
+template<typename T>
+void TFETIOrthogonalSymmetric<T>::update(const step::Step &step)
 {
     kernel.resize(feti.R1.size());
     for (size_t d = 0, offset = 0; d < feti.R1.size(); ++d) {
@@ -38,17 +56,9 @@ TFETIOrthogonalSymmetric<T>::TFETIOrthogonalSymmetric(FETI<T> &feti)
     _computeDualGraph();
     _setG();
     _setGGt();
-}
 
-template<typename T>
-TFETIOrthogonalSymmetric<T>::~TFETIOrthogonalSymmetric()
-{
+    /////
 
-}
-
-template<typename T>
-void TFETIOrthogonalSymmetric<T>::update(const step::Step &step)
-{
     #pragma omp parallel for
     for (size_t d = 0; d < dinfo.size(); ++d) {
         Vector_Dense<T> _e;

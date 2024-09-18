@@ -10,11 +10,12 @@ namespace espreso {
 
 template <typename T>
 struct Projector {
-    static Projector<T>* set(FETI<T> &feti, const step::Step &step);
+    static Projector<T>* create(FETI<T> &feti, const step::Step &step);
 
     Projector(FETI<T> &feti);
     virtual ~Projector() {}
 
+    virtual void set(const step::Step &step) =0;
     virtual void update(const step::Step &step) =0;
 
     void info();

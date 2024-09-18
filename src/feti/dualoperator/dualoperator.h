@@ -24,7 +24,7 @@ enum struct DualOperatorStrategy {
 template <typename T>
 class DualOperator {
 public:
-    static DualOperator<T>* set(FETI<T> &feti, const step::Step &step);
+    static DualOperator<T>* create(FETI<T> &feti, const step::Step &step);
 
     DualOperator(FETI<T> &feti): feti(feti) {}
     virtual ~DualOperator() {}

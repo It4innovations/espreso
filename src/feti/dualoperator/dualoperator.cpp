@@ -15,7 +15,7 @@
 namespace espreso {
 
 template<typename T>
-DualOperator<T>* DualOperator<T>::set(FETI<T> &feti, const step::Step &step)
+DualOperator<T>* DualOperator<T>::create(FETI<T> &feti, const step::Step &step)
 {
     DualOperator<T>* dual = nullptr;
     switch (feti.configuration.method) {
@@ -66,7 +66,6 @@ DualOperator<T>* DualOperator<T>::set(FETI<T> &feti, const step::Step &step)
         }
         break;
     }
-    dual->set(step);
     return dual;
 }
 

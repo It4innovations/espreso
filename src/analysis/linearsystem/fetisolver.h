@@ -7,6 +7,7 @@
 #include "analysis/math/vector_feti.h"
 #include "linearsystem.h"
 #include "constrains/constrains.h"
+#include "regularization/regularization.h"
 
 #include "basis/utilities/sysutils.h"
 #include "esinfo/ecfinfo.h"
@@ -33,9 +34,10 @@ private:
     Vector_Distributed<Vector_Sparse, T> dirichlet;
 
     Constrains<T> constrains;
+    Regularization<T> regularization;
 
     FETI<T> feti;
-    bool bem, postponed_set;
+    bool bem;
 };
 
 }

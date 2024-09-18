@@ -12,7 +12,7 @@
 namespace espreso {
 
 template <typename T>
-Preconditioner<T>* Preconditioner<T>::set(FETI<T> &feti, const step::Step &step)
+Preconditioner<T>* Preconditioner<T>::create(FETI<T> &feti, const step::Step &step)
 {
     switch (feti.configuration.preconditioner) {
     case FETIConfiguration::PRECONDITIONER::NONE:

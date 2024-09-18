@@ -13,7 +13,25 @@ namespace espreso {
 
 template<typename T>
 HFETIOrthogonalSymmetric<T>::HFETIOrthogonalSymmetric(FETI<T> &feti)
-: Projector<T>(feti)
+: Projector<T>(feti), domainOffset(0), GGtDataOffset(0), GGtDataSize(0), GGtNnz(0)
+{
+
+}
+
+template<typename T>
+HFETIOrthogonalSymmetric<T>::~HFETIOrthogonalSymmetric()
+{
+
+}
+
+template<typename T>
+void HFETIOrthogonalSymmetric<T>::set(const step::Step &step)
+{
+
+}
+
+template<typename T>
+void HFETIOrthogonalSymmetric<T>::update(const step::Step &step)
 {
     kernel.resize(feti.R1.size());
     for (size_t d = 0; d < feti.R1.size(); ++d) {
@@ -35,17 +53,9 @@ HFETIOrthogonalSymmetric<T>::HFETIOrthogonalSymmetric(FETI<T> &feti)
     _computeDualGraph();
     _setG();
     _setGGt();
-}
 
-template<typename T>
-HFETIOrthogonalSymmetric<T>::~HFETIOrthogonalSymmetric()
-{
+    /////
 
-}
-
-template<typename T>
-void HFETIOrthogonalSymmetric<T>::update(const step::Step &step)
-{
     Vector_Dense<T> _e;
     _e.size = Projector<T>::Kernel::rsize;
     _e.vals = e.vals + Projector<T>::Kernel::roffset;

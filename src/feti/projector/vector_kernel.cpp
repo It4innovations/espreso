@@ -32,6 +32,18 @@ Vector_Kernel<T>::Vector_Kernel()
 }
 
 template <typename T>
+void Vector_Kernel<T>::resize()
+{
+    Vector_Dense<T>::resize(Vector_Kernel<T>::totalSize);
+}
+
+template <typename T>
+void Vector_Kernel<T>::resize(int size)
+{
+    Vector_Dense<T>::resize(size);
+}
+
+template <typename T>
 void Vector_Kernel<T>::synchronize()
 {
     Communication::allGatherInplace(this->vals, Vector_Kernel<T>::offset, Vector_Kernel<T>::localSize);

@@ -17,6 +17,13 @@ public:
     SMALBE(FETI<T> &feti);
 
     void info();
+
+    void update(const step::Step &step)
+    {
+        IterativeSolver<T>::resize(Pb, b, y, z, x_im, Fx_im, bCtmu, bCtmu_prev, gbCtmu);
+        IterativeSolver<T>::resize(mu, invLce, Gx);
+    }
+
     void solve(const step::Step &step, IterativeSolverInfo &info);
 
     using IterativeSolver<T>::feti;

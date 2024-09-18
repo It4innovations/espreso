@@ -21,6 +21,9 @@ struct Vector_Kernel: public Vector_Dense<T, int> {
     static void set(int offset, int size, int totalSize);
 
     Vector_Kernel();
+
+    void resize();
+    void resize(int size);
     void synchronize();
 
     T dot(const Vector_Dense<T> &other) const;

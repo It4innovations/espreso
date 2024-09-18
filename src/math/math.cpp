@@ -64,6 +64,18 @@ template <typename T, typename I> void _permute(Matrix_CSR<T, I> &A, const std::
     }
 }
 
+template <typename T, typename I> void _permute(Matrix_Dense<T, I> &A, const std::vector<I> &perm)
+{
+    if (A.nrows != A.ncols) { eslog::error("cannot permute non-square matrix.\n"); }
+
+    Matrix_Dense<T, I> _A(A);
+    for (I r = 0; r < A.nrows; ++r) {
+        for (I c = 0; c < A.ncols; ++c) {
+            A.vals[r * A.ncols + c] = _A.vals[perm[r] * _A.ncols + perm[c]];
+        }
+    }
+}
+
 template <typename T, typename I> void _getNullPivots(Matrix_Dense<T, I> &R, std::vector<I> &pivots)
 {
     std::vector<T> N(R.vals, R.vals + R.nnz);
@@ -90,7 +102,6 @@ template <typename T, typename I> void _getNullPivots(Matrix_Dense<T, I> &R, std
     std::sort(pivots.begin(), pivots.end());
 }
 
-
 template <typename T, typename I> void _getKernel(Matrix_CSR<T, I> &A, Matrix_Dense<T, I> &R, Matrix_CSR<T, I> &regMat, I maxDefect, I scSize)
 {
 //
@@ -105,7 +116,7 @@ template <typename T, typename I> void _getKernel(Matrix_CSR<T, I> &A, Matrix_De
 //    2) permutVectorActive
 //  random selection of singular DOFs
 // 0 - no permut., 1 - std::vector shuffle
-    int permutVectorActive                            = 0;
+    int permutVectorActive                              = 1;
 
 //    3) use_null_pivots_or_s_set
 // NtN_Mat from null pivots or fixing DOFs
@@ -347,9 +358,158 @@ template <typename T, typename I> void _getKernel(Matrix_CSR<T, I> &A, Matrix_De
     }
 }
 
+template <typename T, typename I> void _getKernel(Matrix_Dense<T, I> &A, Matrix_Dense<T, I> &R, Matrix_IJV<T, I> &regMat, I maxDefect, I scSize)
+{
+    bool diagonalScaling                              = true;
+    int permutVectorActive                            = 1;
+    bool diagonalRegularization                       = true;
+    double jump_in_eigenvalues_alerting_singularity   = 1.0e-5;
+
+    if (A.shape != Matrix_Shape::FULL) {
+        eslog::error("implement _getKernel for non-full dense matrix.\n");
+    }
+
+    double rho = A.vals[0]; // max value on diagonal
+    for (I r = 0; r < A.nrows; ++r) {
+        rho = std::max(rho, A.vals[r * A.ncols + r]);
+    }
+
+    Matrix_Dense<T, I> _A; _A.resize(A.nrows, A.ncols);
+
+    // scaling
+    double dj = 1;
+    Vector_Dense<T, I> di; di.resize(A.nrows); math::set(di, T{1});
+    for (I r = 0; r < _A.nrows; r++) {
+        if (diagonalScaling) { di.vals[r] = A.vals[r * A.ncols + r]; }
+        for (I c = 0; c < r; ++c) {
+            if (diagonalScaling) { dj = di.vals[c]; }
+            _A.vals[r * A.ncols + c] = A.vals[r * A.ncols + c] / sqrt(di.vals[r] * dj);
+        }
+        for (I c = r; c < _A.ncols; ++c) {
+            if (diagonalScaling) { dj = A.vals[c * A.ncols + c]; }
+            _A.vals[r * A.ncols + c] = A.vals[r * A.ncols + c] / sqrt(di.vals[r] * dj);
+        }
+    }
+
+    if (A.nrows < scSize){
+        scSize = A.nrows;
+    }
+
+    I nonsing_size = A.nrows - scSize;
+    std::vector<I> permVec(A.nrows);
+
+    // permutation
+    std::iota(permVec.begin(), permVec.end(), 0);
+    if (permutVectorActive) {
+        std::random_device rd;
+        std::mt19937 g(rd());
+        std::shuffle(permVec.begin(), permVec.end(), g);
+        std::sort(permVec.begin(), permVec.begin() + nonsing_size);
+        std::sort(permVec.begin() + nonsing_size, permVec.end());
+        std::vector<I> reversePerm(A.nrows); std::iota(reversePerm.begin(), reversePerm.end(), 0);
+        std::sort(reversePerm.begin(), reversePerm.end(), [&] (int i, int j) { return permVec[i] < permVec[j]; });
+        math::permute(_A, reversePerm);
+    }
+
+    // | A_rr  A_rs |
+    // |       A_ss |
+    Matrix_Dense<T, I> A_rr, A_rs, A_ss;
+    math::lapack::submatrix(_A, A_rr, 0, nonsing_size, 0, nonsing_size);
+    math::lapack::submatrix(_A, A_rs, 0, nonsing_size, nonsing_size, nonsing_size + scSize);
+    math::lapack::submatrix(_A, A_ss, nonsing_size, nonsing_size + scSize, nonsing_size, nonsing_size + scSize);
+
+    DenseSolver<T, I> A_rr_solver(std::move(A_rr));
+    if (nonsing_size) {
+        Matrix_Dense<T, I> invKrrKrs(A_rs), KsrInvKrrKrs;
+        A_rr_solver.factorization();
+        A_rr_solver.solve(invKrrKrs);
+        KsrInvKrrKrs.resize(invKrrKrs.ncols, invKrrKrs.ncols);
+        math::blas::multiply(T{1}, A_rs, invKrrKrs, T{0}, KsrInvKrrKrs, true, false);
+        // A_ss -= KsrInvKrrKrs (A_ss is UPPER)
+        for (I r = 0; r < A_ss.nrows; ++r) {
+            for (I c = r; c < A_ss.ncols; ++c) {
+                A_ss.vals[r * A_ss.ncols + c] -= KsrInvKrrKrs.vals[r * KsrInvKrrKrs.ncols + c];
+            }
+        }
+    }
+
+    Vector_Dense<T, I> eigval; eigval.resize(A_ss.nrows);
+    Matrix_Dense<T, I> eigvec; eigvec.resize(A_ss.nrows, A_ss.nrows);
+//    double tt = eslog::time();
+//    math::lapack::get_eig_sym(A_ss, eigval, eigvec);
+    math::lapack::get_eig_sym(A_ss, eigval, eigvec, 1, std::min(eigval.size, maxDefect + 1));
+//    printf("TIME %f\n", eslog::time() - tt);
+//
+//    for (I i = 0; i < std::min(maxDefect + 1, eigval.size); ++i) {
+//       printf("%+e\n", eigval.vals[i]);
+//    }
+
+    // identification of defect in K
+    I defect = std::min(maxDefect + 1, A_ss.nrows) - 1;
+    while (defect && std::fabs(eigval.vals[defect - 1] / eigval.vals[defect]) > jump_in_eigenvalues_alerting_singularity) {
+        --defect;
+    }
+
+    if (defect == 0) {
+        return;
+    }
+
+    // CREATING KERNEL R_s FOR SINGULAR PART (SCHUR COMPLEMENT)
+    Matrix_Dense<T, I> R_s;
+    R_s.resize(defect, A_ss.ncols);
+    for (I r = 0; r < R_s.nrows; ++r) {
+        for (I c = 0; c < R_s.ncols; ++c) {
+            R_s.vals[r * R_s.ncols + c] = eigvec.vals[c * eigvec.ncols + r];
+        }
+    }
+
+    // CREATING KERNEL R_r FOR NON-SINGULAR PART
+    Matrix_Dense<T, I> R_r;
+    if (nonsing_size) {
+        R_r.resize(A_rs.nrows, R_s.nrows);
+        math::blas::multiply(T{1}, A_rs, R_s, T{0}, R_r, false, true);
+        A_rr_solver.solve(R_r); // inv(A_rr)*A_rs*R_s
+    }
+
+    // CREATING WHOLE KERNEL Kplus_R = [ (R_r)^T (R_s)^T ]^T
+    R.resize(R_s.nrows, A.ncols);
+    for (I r = 0; r < R.nrows; r++) {
+        T scale = T{1};
+        for (I c = 0; c < R_r.nrows; c++) {
+            if (diagonalScaling) { scale = A.vals[permVec[c] * A.ncols + permVec[c]]; }
+            R.vals[r * R.ncols + permVec[c]] = R_r.vals[c * R_r.ncols + r] / sqrt(scale);
+        }
+        for (I c = 0; c < R_s.ncols; c++) {
+            if (diagonalScaling) { scale = A.vals[permVec[c + R_r.nrows] * A.ncols + permVec[c + R_r.nrows]]; }
+            R.vals[r * R.ncols + permVec[c + R_r.nrows]] = -R_s.vals[r * R_s.ncols + c] / sqrt(scale);
+        }
+    }
+
+    math::orthonormalize(R);
+    std::vector<I> pivots;
+    _getNullPivots(R, pivots);
+
+    if (diagonalRegularization) {
+        regMat.resize(A.nrows, A.ncols, pivots.size());
+        regMat.type = Matrix_Type::REAL_SYMMETRIC_POSITIVE_DEFINITE;
+        regMat.shape = Matrix_Shape::UPPER;
+
+        for (size_t i = 0; i < pivots.size(); ++i) {
+            regMat.rows[i] = pivots[i] + Indexing::IJV;
+            regMat.cols[i] = pivots[i] + Indexing::IJV;
+            regMat.vals[i] = rho;
+        }
+    } else {
+        //
+    }
+}
+
 template <> void orthonormalize(Matrix_Dense<double, int> &A) { _orthonormalize(A); }
 template <> void permute(Matrix_CSR<double, int> &A, const std::vector<int> &perm) { _permute(A, perm); }
+template <> void permute(Matrix_Dense<double, int> &A, const std::vector<int> &perm) { _permute(A, perm); }
 template <> void getKernel<double, int>(Matrix_CSR<double, int> &A, Matrix_Dense<double, int> &R, Matrix_CSR<double, int> &regMat, int maxDefect, int scSize) { _getKernel<double, int>(A, R, regMat, maxDefect, scSize); };
+template <> void getKernel<double, int>(Matrix_Dense<double, int> &A, Matrix_Dense<double, int> &R, Matrix_IJV<double, int> &regMat, int maxDefect, int scSize) { _getKernel<double, int>(A, R, regMat, maxDefect, scSize); }
+
 
 }
 }

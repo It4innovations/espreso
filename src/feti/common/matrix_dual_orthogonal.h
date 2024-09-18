@@ -22,6 +22,11 @@ struct Matrix_Dual_Orthogonal: public Matrix_Dense<T, int> {
 
     Matrix_Dual_Orthogonal()
     {
+        resize();
+    }
+
+    void resize()
+    {
         // align matrix values ??
         Matrix_Dense<T>::resize(initial_space, Dual_Map::size);
         Matrix_Dense<T>::nrows = 0;
