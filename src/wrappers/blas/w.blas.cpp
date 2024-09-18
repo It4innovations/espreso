@@ -8,6 +8,10 @@
 #ifdef HAVE_BLAS
 #include "cblas.h"
 
+#if defined(BLIS_INT_TYPE_SIZE)
+using CBLAS_LAYOUT = CBLAS_ORDER;
+#endif
+
 namespace espreso {
 namespace math {
 namespace blas {

@@ -6,6 +6,7 @@ VERSION_SUITESPARSE=v7.6.0
 
 COMPILER_C="${1}"
 COMPILER_F="${2}"
+MORE_CMAKE_OPTIONS="${3}"
 
 SUITESPARSE_DIR="SuiteSparse_${VERSION_SUITESPARSE}"
 SUITESPARSE_ROOT="${DEPENDENCIES_DIR}/${SUITESPARSE_DIR}"
@@ -21,7 +22,7 @@ then
         cd "${SUITESPARSE_ROOT}"
         mkdir -p "build_${COMPILER_C}"
         cd "build_${COMPILER_C}"
-        cmake -DCMAKE_C_COMPILER="${COMPILER_C}" -DCMAKE_Fortran_COMPILER="${COMPILER_F}" -DENABLE_CUDA=false -DSUITESPARSE_ENABLE_PROJECTS="cholmod;umfpack" -DCMAKE_INSTALL_PREFIX=${INSTALL_DIR} ..
+        cmake -DCMAKE_C_COMPILER="${COMPILER_C}" -DCMAKE_Fortran_COMPILER="${COMPILER_F}" -DENABLE_CUDA=false -DSUITESPARSE_ENABLE_PROJECTS="cholmod;umfpack" ${MORE_CMAKE_OPTIONS} -DCMAKE_INSTALL_PREFIX=${INSTALL_DIR} ..
         cmake --build . -j $(nproc)
         cmake --install .
     )

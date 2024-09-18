@@ -5,7 +5,7 @@
 #include "w.rocm.gpu_management.h"
 #include "basis/utilities/utils.h"
 
-#include <rocblas.h>
+#include <rocblas/rocblas.h>
 
 
 
@@ -135,7 +135,20 @@ namespace dnblas {
         rocblas_handle h;
     };
 
-    void init_library(mgm::queue & q) {}
+    void init_library(mgm::queue & q)
+    {
+        int size = 100;
+        double * A = (double*)mgm::memalloc_device(size * size * sizeof(double));
+        double * C = (double*)mgm::memalloc_device(size * size * sizeof(double));
+        handle h;
+        handle_create(h, q);
+        mgm::memset_submit(q, A, size * size * sizeof(double), 0);
+        herk<double,int>(h, size, size, A, size, 'C', 'N', C, size, 'C', 'U');
+        mgm::queue_wait(q);
+        handle_destroy(h);
+        mgm::memfree_device(A);
+        mgm::memfree_device(C);
+    }
 
     void handle_create(handle & h, mgm::queue & q)
     {
@@ -260,11 +273,8 @@ namespace dnblas {
                 }
                 utils::remove_complex_t<T> zero = 0.0;
                 utils::remove_complex_t<T> one = 1.0;
-                #pragma omp critical(espreso_gpu_dnblas_rocm)
-                {
-                    if constexpr(utils::is_real<T>())    CHECK(_my_blas_xsyrk<T>(h->h, _char_to_fill(fill_C), _char_to_operation(op_A), n, k, &one, A, ld_A, &zero, C, ld_C));
-                    if constexpr(utils::is_complex<T>()) CHECK(_my_blas_xherk<T>(h->h, _char_to_fill(fill_C), _char_to_operation(op_A), n, k, &one, A, ld_A, &zero, C, ld_C));
-                }
+                if constexpr(utils::is_real<T>())    CHECK(_my_blas_xsyrk<T>(h->h, _char_to_fill(fill_C), _char_to_operation(op_A), n, k, &one, A, ld_A, &zero, C, ld_C));
+                if constexpr(utils::is_complex<T>()) CHECK(_my_blas_xherk<T>(h->h, _char_to_fill(fill_C), _char_to_operation(op_A), n, k, &one, A, ld_A, &zero, C, ld_C));
             }
             else if(order_A == 'R') {
                 char op_A_compl = mgm::operation_combine(op_A, 'T');

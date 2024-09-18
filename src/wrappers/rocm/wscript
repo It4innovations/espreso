@@ -8,7 +8,7 @@ def options(opt):
         default=os.getenv("ESPRESO_ROCM_ARCH") or "native")
 
 def configure(ctx):
-    headers = [ "hip/hip_runtime.h", "rocblas.h", "rocsparse.h" ]
+    headers = [ "hip/hip_runtime.h", "rocblas/rocblas.h", "rocsparse/rocsparse.h" ]
     libs = [ "rocblas", "rocsparse" ]
     ctx.check_cxx(mandatory=False, msg="Checking for 'rocm'", okmsg=" ".join(libs), define_name="HAVE_ROCM", header_name=headers, lib=libs, uselib_store="ROCM", global_define=0)
 
