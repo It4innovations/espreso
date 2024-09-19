@@ -25,7 +25,7 @@ struct IntegrationKernel<nodes, 2, 2>: Integration {
     template <typename Element>
     void simd(Element &element, size_t gp)
     {
-        SIMD jacobian0 = zeros(), jacobian1 = zeros(), jacobian2 = zeros(), jacobian3 = zeros();
+        SIMD J[4];
 
         for (size_t n = 0; n < nodes; ++n) {
             SIMD coordsX = element.coords.node[n][0];
@@ -33,19 +33,13 @@ struct IntegrationKernel<nodes, 2, 2>: Integration {
             SIMD dNX = load1(element.dN[gp][n][0]);
             SIMD dNY = load1(element.dN[gp][n][1]);
 
-            jacobian0 = jacobian0 + dNX * coordsX;
-            jacobian1 = jacobian1 + dNX * coordsY;
-            jacobian2 = jacobian2 + dNY * coordsX;
-            jacobian3 = jacobian3 + dNY * coordsY;
+            J[0] = J[0] + dNX * coordsX;
+            J[1] = J[1] + dNX * coordsY;
+            J[2] = J[2] + dNY * coordsX;
+            J[3] = J[3] + dNY * coordsY;
         }
 
-        element.det = jacobian0 * jacobian3 - jacobian1 * jacobian2;
-
-        SIMD detJx = ones() / element.det;
-        element.invJ[0] =  detJx * jacobian3;
-        element.invJ[1] = -detJx * jacobian1;
-        element.invJ[2] = -detJx * jacobian2;
-        element.invJ[3] =  detJx * jacobian0;
+        inv22(J, element.det, element.invJ);
 
         for (size_t n = 0; n < nodes; ++n) {
             SIMD dNX = load1(element.dN[gp][n][0]);
@@ -83,7 +77,7 @@ struct IntegrationKernel<nodes, 3, 3>: Integration {
             J[8] = J[8] + dNZ * coordsZ;
         }
 
-        inv(J, element.det, element.invJ);
+        inv33(J, element.det, element.invJ);
 
         for (size_t n = 0; n < nodes; ++n) {
             SIMD dNX = load1(element.dN[gp][n][0]);

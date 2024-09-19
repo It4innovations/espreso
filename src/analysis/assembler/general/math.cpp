@@ -5,7 +5,17 @@
 
 namespace espreso {
 
-void eigSym(const SIMD A[9], SIMD eVal[3])
+void eigSym22(const SIMD A[4], SIMD eVal[2])
+{
+
+}
+
+void eigSym22(const SIMD A[4], SIMD eVal[2], SIMD eVec[4])
+{
+
+}
+
+void eigSym33(const SIMD A[9], SIMD eVal[3])
 {
     // https://en.wikipedia.org/wiki/Eigenvalue_algorithm#3.C3.973_matrices
     // p1 = A(1,2)^2 + A(1,3)^2 + A(2,3)^2
@@ -57,9 +67,9 @@ void eigSym(const SIMD A[9], SIMD eVal[3])
     eVal[1] = load1(3) * q - eVal[0] - eVal[2];
 }
 
-void eigSym(const SIMD A[9], SIMD eVal[3], SIMD eVec[9])
+void eigSym33(const SIMD A[9], SIMD eVal[3], SIMD eVec[9])
 {
-    eigSym(A, eVal);
+    eigSym33(A, eVal);
 
     auto getVec = [] (SIMD* eVec, const SIMD A[9], const SIMD B[9]) {
         // sum up all columns to mitigate rounding errors

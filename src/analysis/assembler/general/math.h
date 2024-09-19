@@ -111,19 +111,42 @@ void multABAt(SIMD C[cols * cols], const SIMD A[rows * cols], const SIMD B[rows 
 }
 
 
-inline SIMD determinant(const SIMD J[9])
+void eigSym22(const SIMD A[4], SIMD eVal[2]);
+void eigSym22(const SIMD A[4], SIMD eVal[2], SIMD eVec[4]);
+
+void eigSym33(const SIMD A[9], SIMD eVal[3]);
+void eigSym33(const SIMD A[9], SIMD eVal[3], SIMD eVec[9]);
+
+inline SIMD determinant22(const SIMD J[4])
+{
+    return J[0] * J[3] - J[1] * J[2];
+}
+
+inline void inv22(const SIMD A[4], SIMD &det, SIMD invA[4])
+{
+    det = determinant22(A);
+    SIMD scale = ones() / det;
+    invA[0] =  scale * A[3];
+    invA[1] = -scale * A[1];
+    invA[2] = -scale * A[2];
+    invA[3] =  scale * A[0];
+}
+
+inline void inv22(const SIMD A[4], SIMD invA[4])
+{
+    SIMD det; inv22(A, det, invA);
+}
+
+inline SIMD determinant33(const SIMD J[9])
 {
     return
             + J[0] * J[4] * J[8] + J[1] * J[5] * J[6] + J[2] * J[3] * J[7]
             - J[2] * J[4] * J[6] - J[1] * J[3] * J[8] - J[0] * J[5] * J[7];
 }
 
-void eigSym(const SIMD A[9], SIMD eVal[3]);
-void eigSym(const SIMD A[9], SIMD eVal[3], SIMD eVec[9]);
-
-inline void inv(const SIMD A[9], SIMD &det, SIMD invA[9])
+inline void inv33(const SIMD A[9], SIMD &det, SIMD invA[9])
 {
-    det = determinant(A);
+    det = determinant33(A);
     SIMD scale = ones() / det;
     invA[0] = scale * ( A[8] * A[4] - A[7] * A[5]);
     invA[1] = scale * (-A[8] * A[1] + A[7] * A[2]);
@@ -136,9 +159,9 @@ inline void inv(const SIMD A[9], SIMD &det, SIMD invA[9])
     invA[8] = scale * ( A[4] * A[0] - A[3] * A[1]);
 }
 
-inline void inv(const SIMD A[9], SIMD invA[9])
+inline void inv33(const SIMD A[9], SIMD invA[9])
 {
-    SIMD det; inv(A, det, invA);
+    SIMD det; inv33(A, det, invA);
 }
 
 void print(size_t rows, size_t cols, const SIMD *A);
