@@ -19,6 +19,7 @@ struct Projector {
     virtual void update(const step::Step &step) =0;
 
     void info();
+    void reset();
 
     // I - Q
     void apply(const Vector_Dual<T> &x, Vector_Dual<T> &y);

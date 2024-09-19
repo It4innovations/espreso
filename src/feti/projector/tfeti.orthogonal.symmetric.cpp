@@ -32,32 +32,42 @@ void TFETIOrthogonalSymmetric<T>::set(const step::Step &step)
 template<typename T>
 void TFETIOrthogonalSymmetric<T>::update(const step::Step &step)
 {
-    kernel.resize(feti.R1.size());
-    for (size_t d = 0, offset = 0; d < feti.R1.size(); ++d) {
-        kernel[d].offset = offset;
-        offset += kernel[d].size = feti.R1[d].nrows;
-        Projector<T>::Kernel::total += feti.R1[d].nrows;
+    int reset = kernel.size() != feti.R1.size();
+    for (size_t i = 0; !reset && i < feti.R1.size(); ++i) {
+        reset |= kernel[i].size != feti.R1[i].nrows;
     }
-    Projector<T>::Kernel::roffset = Projector<T>::Kernel::rsize = Projector<T>::Kernel::total;
-    Projector<T>::Kernel::total = Communication::exscan(Projector<T>::Kernel::roffset);
-    Vector_Kernel<T>::set(Projector<T>::Kernel::roffset, Projector<T>::Kernel::rsize, Projector<T>::Kernel::total);
+    Communication::allReduce(&reset, nullptr, 1, MPITools::getType(reset).mpitype, MPI_SUM);
 
-    iGGtGx.resize(Projector<T>::Kernel::rsize);
-    Gx.resize(Projector<T>::Kernel::total);
-    e.resize(Projector<T>::Kernel::total);
+    if (reset) {
+        Projector<T>::reset();
+        domainOffset = GGtDataOffset = GGtDataSize = GGtNnz = 0;
+        kernel.clear();
+        kernel.resize(feti.R1.size());
+        for (size_t d = 0, offset = 0; d < feti.R1.size(); ++d) {
+            kernel[d].offset = offset;
+            offset += kernel[d].size = feti.R1[d].nrows;
+            Projector<T>::Kernel::total += feti.R1[d].nrows;
+        }
+        Projector<T>::Kernel::roffset = Projector<T>::Kernel::rsize = Projector<T>::Kernel::total;
+        Projector<T>::Kernel::total = Communication::exscan(Projector<T>::Kernel::roffset);
+        Vector_Kernel<T>::set(Projector<T>::Kernel::roffset, Projector<T>::Kernel::rsize, Projector<T>::Kernel::total);
 
-    domainOffset = feti.decomposition->dbegin;
-    dinfo.reserve(feti.R1.size());
-    for (size_t d = 0, koffset = Projector<T>::Kernel::roffset; d < feti.R1.size(); ++d) {
-        dinfo.push_back(DomainInfo((int)(domainOffset + d), koffset, feti.R1[d].nrows));
-        koffset += feti.R1[d].nrows;
+        iGGtGx.resize(Projector<T>::Kernel::rsize);
+        Gx.resize(Projector<T>::Kernel::total);
+        e.resize(Projector<T>::Kernel::total);
+
+        domainOffset = feti.decomposition->dbegin;
+        dinfo.clear();
+        dinfo.reserve(feti.R1.size());
+        for (size_t d = 0, koffset = Projector<T>::Kernel::roffset; d < feti.R1.size(); ++d) {
+            dinfo.push_back(DomainInfo((int)(domainOffset + d), koffset, feti.R1[d].nrows));
+            koffset += feti.R1[d].nrows;
+        }
+
+        _computeDualGraph();
+        _setG();
+        _setGGt();
     }
-
-    _computeDualGraph();
-    _setG();
-    _setGGt();
-
-    /////
 
     #pragma omp parallel for
     for (size_t d = 0; d < dinfo.size(); ++d) {
@@ -79,6 +89,7 @@ void TFETIOrthogonalSymmetric<T>::update(const step::Step &step)
 template<typename T>
 void TFETIOrthogonalSymmetric<T>::_computeDualGraph()
 {
+    dualGraph.clear();
     dualGraph.resize(dinfo.size());
     for (size_t i = 0; i < feti.lambdas.cmap.size(); ) {
         int domains = feti.lambdas.cmap[i + 1];
@@ -135,6 +146,8 @@ void TFETIOrthogonalSymmetric<T>::_computeDualGraph()
         }
     }
 
+    upinfo.clear();
+    downinfo.clear();
     downinfo.resize(feti.decomposition->neighbors.size());
     std::vector<int> cOffset(dinfo.size());
     for (size_t i = 0, offset = 0; i < feti.lambdas.cmap.size(); ) {

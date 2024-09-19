@@ -63,6 +63,17 @@ void Projector<T>::info()
     eslog::info(" =   NNZ                                                                           %9d = \n", GGt.nnz);
     eslog::info(" = ----------------------------------------------------------------------------------------- = \n");
 }
+template<typename T>
+void Projector<T>::reset()
+{
+    Kernel::roffset = Kernel::rsize = Kernel::total = 0;
+    G.clear(); Gt.clear();
+    GGt.clear();
+    invGGt.clear(); invL.clear(); invU.clear();
+
+    Gx.clear();
+    iGGtGx.clear();
+}
 
 template<typename T>
 void Projector<T>::apply(const Vector_Dual<T> &x, Vector_Dual<T> &y)

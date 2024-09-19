@@ -33,28 +33,38 @@ void HFETIOrthogonalSymmetric<T>::set(const step::Step &step)
 template<typename T>
 void HFETIOrthogonalSymmetric<T>::update(const step::Step &step)
 {
-    kernel.resize(feti.R1.size());
-    for (size_t d = 0; d < feti.R1.size(); ++d) {
-        kernel[d].offset = 0;
-        kernel[d].size = feti.R1[d].nrows;
-        Projector<T>::Kernel::total = std::max(feti.R1[d].nrows, Projector<T>::Kernel::total);
+    int reset = kernel.size() != feti.R1.size();
+    for (size_t i = 0; !reset && i < feti.R1.size(); ++i) {
+        reset |= kernel[i].size != feti.R1[i].nrows;
     }
-    Projector<T>::Kernel::roffset = Projector<T>::Kernel::rsize = Projector<T>::Kernel::total;
-    Projector<T>::Kernel::total = Communication::exscan(Projector<T>::Kernel::roffset);
-    Vector_Kernel<T>::set(Projector<T>::Kernel::roffset, Projector<T>::Kernel::rsize, Projector<T>::Kernel::total);
+    Communication::allReduce(&reset, nullptr, 1, MPITools::getType(reset).mpitype, MPI_SUM);
 
-    iGGtGx.resize(Projector<T>::Kernel::rsize);
-    Gx.resize(Projector<T>::Kernel::total);
-    e.resize(Projector<T>::Kernel::total);
+    if (reset) {
+        Projector<T>::reset();
+        domainOffset = GGtDataOffset = GGtDataSize = GGtNnz = 0;
+        kernel.clear();
+        kernel.resize(feti.R1.size());
+        for (size_t d = 0; d < feti.R1.size(); ++d) {
+            kernel[d].offset = 0;
+            kernel[d].size = feti.R1[d].nrows;
+            Projector<T>::Kernel::total = std::max(feti.R1[d].nrows, Projector<T>::Kernel::total);
+        }
+        Projector<T>::Kernel::roffset = Projector<T>::Kernel::rsize = Projector<T>::Kernel::total;
+        Projector<T>::Kernel::total = Communication::exscan(Projector<T>::Kernel::roffset);
+        Vector_Kernel<T>::set(Projector<T>::Kernel::roffset, Projector<T>::Kernel::rsize, Projector<T>::Kernel::total);
 
-    cinfo.reserve(1);
-    cinfo.push_back(ClusterInfo(info::mpi::rank, Projector<T>::Kernel::roffset, Projector<T>::Kernel::rsize));
+        iGGtGx.resize(Projector<T>::Kernel::rsize);
+        Gx.resize(Projector<T>::Kernel::total);
+        e.resize(Projector<T>::Kernel::total);
 
-    _computeDualGraph();
-    _setG();
-    _setGGt();
+        cinfo.clear();
+        cinfo.reserve(1);
+        cinfo.push_back(ClusterInfo(info::mpi::rank, Projector<T>::Kernel::roffset, Projector<T>::Kernel::rsize));
 
-    /////
+        _computeDualGraph();
+        _setG();
+        _setGGt();
+    }
 
     Vector_Dense<T> _e;
     _e.size = Projector<T>::Kernel::rsize;
@@ -86,7 +96,9 @@ void HFETIOrthogonalSymmetric<T>::_computeDualGraph()
         eslog::error("cannot exchange dual graph info\n");
     }
 
+    dualGraph.clear();
     dualGraph.resize(1);
+    neighInfo.clear();
     neighInfo.resize(feti.decomposition->neighbors.size());
     size_t n = 0;
     for (; n < feti.decomposition->neighbors.size() && feti.decomposition->neighbors[n] < info::mpi::rank; ++n) {
