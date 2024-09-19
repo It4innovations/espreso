@@ -4,7 +4,7 @@
 
 module load LUMI/24.03
 module load partition/G
-module load wget/1.21.4-cpeGNU-24.03
+# module load wget/1.21.4-cpeGNU-24.03
 module load rocm/6.0.3
 module load aocc/4.1.0
 
