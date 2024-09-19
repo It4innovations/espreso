@@ -202,6 +202,70 @@ struct GaussPoints<Element::CODE::TETRA4, 4, 4, 3> {
             w[gp] = 1.0 / 24.0;
             set(N + gp * nodes, dN + edim * gp * nodes, r[gp], s[gp], t[gp]);
         }
+        set(cN, cdN, 0.25, 0.25, 0.25);
+    }
+};
+
+template<>
+struct GaussPoints<Element::CODE::TETRA4, 4, 8, 3> {
+
+    constexpr static int nodes = 4, gps = 8, edim = 3;
+    static double w[gps], N[gps * nodes], dN[gps * nodes * edim];
+    static double cw, cN[nodes], cdN[nodes * edim];
+
+    static void set(double *_N, double *_dN, double r, double s, double t)
+    {
+        _N[0] = 0.125 * (1 - r) * (1 - s) * (1 - t);
+        _N[1] = 0.125 * (r + 1) * (1 - s) * (1 - t);
+        _N[2] = 0.125 * (r + 1) * (s + 1) * (1 - t)
+              + 0.125 * (1 - r) * (s + 1) * (1 - t);
+
+        _N[3] = 0.125 * (1 - r) * (1 - s) * (t + 1)
+              + 0.125 * (r + 1) * (1 - s) * (t + 1)
+              + 0.125 * (r + 1) * (s + 1) * (t + 1)
+              + 0.125 * (1 - r) * (s + 1) * (t + 1);
+
+        _dN[0 * nodes + 0] = 0.125 * (-(1 - s) * (1 - t));
+        _dN[0 * nodes + 1] = 0.125 * ( (1 - s) * (1 - t));
+        _dN[0 * nodes + 2] = 0.125 * ( (1 + s) * (1 - t))
+                           + 0.125 * (-(1 + s) * (1 - t));
+        _dN[0 * nodes + 3] = 0.125 * (-(1 - s) * (1 + t))
+                           + 0.125 * ( (1 - s) * (1 + t))
+                           + 0.125 * ( (1 + s) * (1 + t))
+                           + 0.125 * (-(1 + s) * (1 + t));
+
+        _dN[1 * nodes + 0] = 0.125 * (-(1 - r) * (1 - t));
+        _dN[1 * nodes + 1] = 0.125 * (-(1 + r) * (1 - t));
+        _dN[1 * nodes + 2] = 0.125 * ( (1 + r) * (1 - t))
+                           + 0.125 * ( (1 - r) * (1 - t));
+        _dN[1 * nodes + 3] = 0.125 * (-(1 - r) * (1 + t))
+                           + 0.125 * (-(1 + r) * (1 + t))
+                           + 0.125 * ( (1 + r) * (1 + t))
+                           + 0.125 * ( (1 - r) * (1 + t));
+
+        _dN[2 * nodes + 0] = 0.125 * (-(1 - r) * (1 - s));
+        _dN[2 * nodes + 1] = 0.125 * (-(1 + r) * (1 - s));
+        _dN[2 * nodes + 2] = 0.125 * (-(1 + r) * (1 + s))
+                           + 0.125 * (-(1 - r) * (1 + s));
+        _dN[2 * nodes + 3] = 0.125 * ( (1 - r) * (1 - s))
+                           + 0.125 * ( (1 + r) * (1 - s))
+                           + 0.125 * ( (1 + r) * (1 + s))
+                           + 0.125 * ( (1 - r) * (1 + s));
+    }
+
+    static void set()
+    {
+        double CsQ_scale = 1 / std::sqrt(3);
+        for (int gp = 0; gp < gps; gp++) {
+            double r = (gp & 4) ? CsQ_scale : -CsQ_scale;
+            double s = (gp & 2) ? CsQ_scale : -CsQ_scale;
+            double t = (gp & 1) ? CsQ_scale : -CsQ_scale;
+
+            w[gp] = 1.0;
+            set(N + gp * nodes, dN + edim * gp * nodes, r, s, t);
+        }
+        cw = 1;
+        set(cN, cdN, 0, 0, 0);
     }
 };
 
@@ -250,6 +314,8 @@ struct GaussPoints<Element::CODE::PYRAMID5, 5, 8, 3> {
             w[gp] = 1;
             set(N + gp * nodes, dN + edim * gp * nodes, r[gp], s[gp], t[gp]);
         }
+        cw = 1;
+        set(cN, cdN, 0, 0, 0);
     }
 };
 
@@ -317,6 +383,68 @@ struct GaussPoints<Element::CODE::PRISMA6, 6, 9, 3> {
 };
 
 template<>
+struct GaussPoints<Element::CODE::PRISMA6, 6, 8, 3> {
+
+    constexpr static int nodes = 6, gps = 8, edim = 3;
+    static double w[gps], N[gps * nodes], dN[gps * nodes * edim];
+    static double cw, cN[nodes], cdN[nodes * edim];
+
+    static void set(double *_N, double *_dN, double r, double s, double t)
+    {
+        _N[0] = 0.125 * (1 - r) * (1 - s) * (1 - t);
+        _N[1] = 0.125 * (r + 1) * (1 - s) * (1 - t);
+        _N[2] = 0.125 * (r + 1) * (s + 1) * (1 - t)
+              + 0.125 * (1 - r) * (s + 1) * (1 - t);
+        _N[3] = 0.125 * (1 - r) * (1 - s) * (t + 1);
+        _N[4] = 0.125 * (r + 1) * (1 - s) * (t + 1);
+        _N[5] = 0.125 * (r + 1) * (s + 1) * (t + 1)
+              + 0.125 * (1 - r) * (s + 1) * (t + 1);
+
+        _dN[0 * nodes + 0] = 0.125 * (-(1 - s) * (1 - t));
+        _dN[0 * nodes + 1] = 0.125 * ( (1 - s) * (1 - t));
+        _dN[0 * nodes + 2] = 0.125 * ( (1 + s) * (1 - t))
+                           + 0.125 * (-(1 + s) * (1 - t));
+        _dN[0 * nodes + 3] = 0.125 * (-(1 - s) * (1 + t));
+        _dN[0 * nodes + 4] = 0.125 * ( (1 - s) * (1 + t));
+        _dN[0 * nodes + 5] = 0.125 * ( (1 + s) * (1 + t))
+                           + 0.125 * (-(1 + s) * (1 + t));
+
+        _dN[1 * nodes + 0] = 0.125 * (-(1 - r) * (1 - t));
+        _dN[1 * nodes + 1] = 0.125 * (-(1 + r) * (1 - t));
+        _dN[1 * nodes + 2] = 0.125 * ( (1 + r) * (1 - t))
+                           + 0.125 * ( (1 - r) * (1 - t));
+        _dN[1 * nodes + 3] = 0.125 * (-(1 - r) * (1 + t));
+        _dN[1 * nodes + 4] = 0.125 * (-(1 + r) * (1 + t));
+        _dN[1 * nodes + 5] = 0.125 * ( (1 + r) * (1 + t))
+                           + 0.125 * ( (1 - r) * (1 + t));
+
+        _dN[2 * nodes + 0] = 0.125 * (-(1 - r) * (1 - s));
+        _dN[2 * nodes + 1] = 0.125 * (-(1 + r) * (1 - s));
+        _dN[2 * nodes + 2] = 0.125 * (-(1 + r) * (1 + s))
+                           + 0.125 * (-(1 - r) * (1 + s));
+        _dN[2 * nodes + 3] = 0.125 * ( (1 - r) * (1 - s));
+        _dN[2 * nodes + 4] = 0.125 * ( (1 + r) * (1 - s));
+        _dN[2 * nodes + 5] = 0.125 * ( (1 + r) * (1 + s))
+                           + 0.125 * ( (1 - r) * (1 + s));
+    }
+
+    static void set()
+    {
+        double CsQ_scale = 1 / std::sqrt(3);
+        for (int gp = 0; gp < gps; gp++) {
+            double r = (gp & 4) ? CsQ_scale : -CsQ_scale;
+            double s = (gp & 2) ? CsQ_scale : -CsQ_scale;
+            double t = (gp & 1) ? CsQ_scale : -CsQ_scale;
+
+            w[gp] = 1.0;
+            set(N + gp * nodes, dN + edim * gp * nodes, r, s, t);
+        }
+        cw = 1;
+        set(cN, cdN, 0, 0, 0);
+    }
+};
+
+template<>
 struct GaussPoints<Element::CODE::HEXA8, 8, 8, 3> {
 
     constexpr static int nodes = 8, gps = 8, edim = 3;
@@ -365,7 +493,6 @@ struct GaussPoints<Element::CODE::HEXA8, 8, 8, 3> {
     static void set()
     {
         double CsQ_scale = 1 / std::sqrt(3);
-
         for (int gp = 0; gp < gps; gp++) {
             double r = (gp & 4) ? CsQ_scale : -CsQ_scale;
             double s = (gp & 2) ? CsQ_scale : -CsQ_scale;

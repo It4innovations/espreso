@@ -23,9 +23,9 @@ struct StructuralMechanicsGPC {
         TRIANGLE6 =  6,
         SQUARE8   =  9,
 
-        TETRA4    =  4,
+        TETRA4    =  8,
         PYRAMID5  =  8,
-        PRISMA6   =  9,
+        PRISMA6   =  8,
         HEXA8     =  8,
 
         TETRA10   = 15,

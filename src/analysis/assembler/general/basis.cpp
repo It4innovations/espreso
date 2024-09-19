@@ -25,6 +25,13 @@ double GaussPoints<Element::CODE::SQUARE4, 4, 4, 2>::cw;
 double GaussPoints<Element::CODE::SQUARE4, 4, 4, 2>::cN[];
 double GaussPoints<Element::CODE::SQUARE4, 4, 4, 2>::cdN[];
 
+double GaussPoints<Element::CODE::TETRA4, 4, 8, 3>::w[];
+double GaussPoints<Element::CODE::TETRA4, 4, 8, 3>::N[];
+double GaussPoints<Element::CODE::TETRA4, 4, 8, 3>::dN[];
+double GaussPoints<Element::CODE::TETRA4, 4, 8, 3>::cw;
+double GaussPoints<Element::CODE::TETRA4, 4, 8, 3>::cN[];
+double GaussPoints<Element::CODE::TETRA4, 4, 8, 3>::cdN[];
+
 double GaussPoints<Element::CODE::TETRA4, 4, 4, 3>::w[];
 double GaussPoints<Element::CODE::TETRA4, 4, 4, 3>::N[];
 double GaussPoints<Element::CODE::TETRA4, 4, 4, 3>::dN[];
@@ -38,6 +45,13 @@ double GaussPoints<Element::CODE::PYRAMID5, 5, 8, 3>::dN[];
 double GaussPoints<Element::CODE::PYRAMID5, 5, 8, 3>::cw;
 double GaussPoints<Element::CODE::PYRAMID5, 5, 8, 3>::cN[];
 double GaussPoints<Element::CODE::PYRAMID5, 5, 8, 3>::cdN[];
+
+double GaussPoints<Element::CODE::PRISMA6, 6, 8, 3>::w[];
+double GaussPoints<Element::CODE::PRISMA6, 6, 8, 3>::N[];
+double GaussPoints<Element::CODE::PRISMA6, 6, 8, 3>::dN[];
+double GaussPoints<Element::CODE::PRISMA6, 6, 8, 3>::cw;
+double GaussPoints<Element::CODE::PRISMA6, 6, 8, 3>::cN[];
+double GaussPoints<Element::CODE::PRISMA6, 6, 8, 3>::cdN[];
 
 double GaussPoints<Element::CODE::PRISMA6, 6, 9, 3>::w[];
 double GaussPoints<Element::CODE::PRISMA6, 6, 9, 3>::N[];

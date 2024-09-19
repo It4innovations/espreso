@@ -23,7 +23,7 @@ struct HeatTransferGPC {
         TRIANGLE6 =  6,
         SQUARE8   =  9,
 
-        TETRA4    =  4,
+        TETRA4    =  8,
         PYRAMID5  =  8,
         PRISMA6   =  9,
         HEXA8     =  8,

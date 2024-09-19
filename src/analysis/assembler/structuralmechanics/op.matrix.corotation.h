@@ -71,9 +71,9 @@ struct MatrixCorotationKernel<code, nodes, gps, 3>: MatrixCorotation {
             SIMD dNX = load1(cdN[n][0]);
             SIMD dNY = load1(cdN[n][1]);
             SIMD dNZ = load1(cdN[n][2]);
-            cdND[n][0] = invJC[0] * dNX + invJC[1] * dNY + invJC[2] * dNZ;
-            cdND[n][1] = invJC[3] * dNX + invJC[4] * dNY + invJC[5] * dNZ;
-            cdND[n][2] = invJC[6] * dNX + invJC[7] * dNY + invJC[8] * dNZ;
+            cdND[n][0] = invJC[0] * dNX + invJC[3] * dNY + invJC[6] * dNZ;
+            cdND[n][1] = invJC[1] * dNX + invJC[4] * dNY + invJC[7] * dNZ;
+            cdND[n][2] = invJC[2] * dNX + invJC[5] * dNY + invJC[8] * dNZ;
         }
 
         SIMD F[9];
@@ -84,6 +84,7 @@ struct MatrixCorotationKernel<code, nodes, gps, 3>: MatrixCorotation {
                 }
             }
         }
+
         F[0] = F[0] + load1(1.0);
         F[4] = F[4] + load1(1.0);
         F[8] = F[8] + load1(1.0);
