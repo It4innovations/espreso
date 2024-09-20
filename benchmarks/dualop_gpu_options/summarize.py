@@ -31,7 +31,19 @@ def get_n_dofs_per_node(problem):
     elif problem == "linear_elasticity_3d":
         return 3
     else:
-        return -1
+        return 0
+
+def get_nnodes_per_side(nelems, element_type):
+    if element_type == "TRIANGLE3":
+        return nelems + 1
+    if element_type == "TRIANGLE6":
+        return 2 * nelems + 1
+    if element_type == "TETRA4":
+        return nelems + 1
+    if element_type == "TETRA10":
+        return 2 * nelems + 1
+    return 0
+
 
 
 
@@ -56,7 +68,7 @@ runs_setupdate = 0
 runs_apply = 0
 for dir_name in os.listdir(results_dir):
     dir_path = results_dir + "/" + dir_name
-    runs_setupdate += 2 * len(os.listdir(dir_path + "/setupdate")) + len(os.listdir(dir_path + "/setupdateapply"))
+    runs_setupdate += 2 * len(os.listdir(dir_path + "/setupdate")) + 2 * len(os.listdir(dir_path + "/setupdateapply"))
     runs_apply += len(os.listdir(dir_path + "/apply")) + len(os.listdir(dir_path + "/setupdateapply"))
 runs_total = runs_setupdate + runs_apply
 runs_finished = 0
@@ -67,7 +79,7 @@ runs_finished = 0
 
 outfile = summ_dir + "/set.csv"
 outstring = io.StringIO()
-cells_info = ["id", "str", "run_id", "machine", "tool", "dualoperator", "problem", "dofs_per_node", "element_type", "domains_x", "domains_y", "domains_z", "n_domains_total", "elements_x", "elements_y", "elements_z", "n_elements_per_domain", "avg_domain_surface", "avg_domain_volume_observed", "avg_domain_volume_calc", "factor_nnz", "concurrency_set", "concurrency_update", "concurrency_apply", "uniform_clusters_domains", "trs1_factor_storage", "trs2_factor_storage", "trs1_solve_type", "trs2_solve_type", "trsm_rhs_sol_order", "path_if_hermitian", "f_sharing_if_hermitian", "apply_scatter_gather_where", "transpose_where"]
+cells_info = ["id", "str", "run_id", "machine", "tool", "dualoperator", "problem", "physics", "dim", "dofs_per_node", "element_type", "domains_x", "domains_y", "domains_z", "n_domains_total", "elements_x", "elements_y", "elements_z", "n_elements_per_domain", "avg_domain_surface", "avg_domain_volume", "n_dofs", "factor_nnz", "concurrency_set", "concurrency_update", "concurrency_apply", "uniform_clusters_domains", "trs1_factor_storage", "trs2_factor_storage", "trs1_solve_type", "trs2_solve_type", "trsm_rhs_sol_order", "path_if_hermitian", "f_sharing_if_hermitian", "apply_scatter_gather_where", "transpose_where"]
 cells_timers = ["total", "gpuinit", "gpuset", "vecresize", "sizecalc", "gpucreate", "libinit", "mainloop_outer", "mainloop_inner", "Kreg_combine", "solver_commit", "fact_symbolic", "descriptors", "buffersize", "alloc", "alloc_host", "alloc_device", "setpointers", "Bperm", "get_factors", "extract", "trans_cpu", "copyin", "kernels_preprocess", "trans_gpu", "trsm1", "trsm2", "gemm", "trsv1", "trsv2", "spmv1", "spmv2", "applystuff", "poolalloc", "wait"]
 outstring.write(";".join(cells_info))
 outstring.write(";;")
@@ -86,16 +98,28 @@ for dir_name in os.listdir(results_dir):
             output_lines = read_file_to_string(run_path + "/last/espreso." + problem + ".log").split("\n")
             n_domains_total = 1
             n_elements_per_domain = 1
+            n_dofs_per_domain = 1
+            elem_type = ""
             for field in cells_info:
-                if field == "id" or field == "str" or field == "n_domains_total" or field == "n_elements_per_domain" or field == "avg_domain_volume_calc":
+                if field == "id" or field == "str":
                     val = ""
+                elif field == "physics":
+                    val = problem[:-3]
+                elif field == "dim":
+                    val = problem[-2:-1]
+                elif field == "n_domains_total":
+                    val = str(n_domains_total)
+                elif field == "n_elements_per_domain":
+                    val = str(n_elements_per_domain)
+                elif field == "n_dofs":
+                    val = str(n_dofs_per_domain * get_n_dofs_per_node(problem))
                 elif field == "run_id":
                     val = run_id
                 elif field == "problem":
                     val = problem
                 elif field == "dofs_per_node":
                     val = str(get_n_dofs_per_node(problem))
-                elif field == "avg_domain_volume_observed":
+                elif field == "avg_domain_volume":
                     lines = list(filter(lambda line: "Domain volume [dofs]" in line, output_lines))
                     if len(lines) > 0: val = lines[0].split("<")[0][-15:].replace(" ", "")
                     else:              val = ""
@@ -109,6 +133,14 @@ for dir_name in os.listdir(results_dir):
                     else:              val = ""
                 else:
                     val = list(filter(lambda line: field in line, info_lines))[0].split(" ")[1]
+                    if field == "element_type":
+                        elem_type = val
+                    if field.startswith("domains_"):
+                        n_domains_total = n_domains_total * int(val)
+                    if field.startswith("elements_"):
+                        n_elements_per_domain = n_elements_per_domain * int(val)
+                        if not (problem[-2:-1] == "2" and field == "elements_z"):
+                            n_dofs_per_domain = n_dofs_per_domain * get_nnodes_per_side(int(val), elem_type)
                 outstring.write(val)
                 outstring.write(";")
 
@@ -137,7 +169,7 @@ outstring.close()
 
 outfile = summ_dir + "/update.csv"
 outstring = io.StringIO()
-cells_info = ["id", "str", "run_id", "machine", "tool", "dualoperator", "problem", "dofs_per_node", "element_type", "domains_x", "domains_y", "domains_z", "n_domains_total", "elements_x", "elements_y", "elements_z", "n_elements_per_domain", "avg_domain_surface", "avg_domain_volume_observed", "avg_domain_volume_calc", "factor_nnz", "concurrency_set", "concurrency_update", "concurrency_apply", "uniform_clusters_domains", "trs1_factor_storage", "trs2_factor_storage", "trs1_solve_type", "trs2_solve_type", "trsm_rhs_sol_order", "path_if_hermitian", "f_sharing_if_hermitian", "apply_scatter_gather_where", "transpose_where"]
+cells_info = ["id", "str", "run_id", "machine", "tool", "dualoperator", "problem", "physics", "dim", "dofs_per_node", "element_type", "domains_x", "domains_y", "domains_z", "n_domains_total", "elements_x", "elements_y", "elements_z", "n_elements_per_domain", "avg_domain_surface", "avg_domain_volume", "n_dofs", "factor_nnz", "concurrency_set", "concurrency_update", "concurrency_apply", "uniform_clusters_domains", "trs1_factor_storage", "trs2_factor_storage", "trs1_solve_type", "trs2_solve_type", "trsm_rhs_sol_order", "path_if_hermitian", "f_sharing_if_hermitian", "apply_scatter_gather_where", "transpose_where"]
 cells_timers = ["total", "mainloop_outer", "mainloop_inner", "Kreg_combine", "solver_commit", "fact_numeric", "get_factors", "extract", "trans_cpu", "allocinpool", "setpointers", "copyin", "trans_gpu", "descr_update", "descr_update_trsm1", "descr_update_trsm2", "descr_update_trsv1", "descr_update_trsv2", "sp2dn", "kernels_compute", "trsm1", "trsm2", "gemm", "fcopy", "syrk", "freeinpool", "compute_d", "wait"]
 outstring.write(";".join(cells_info))
 outstring.write(";;")
@@ -156,16 +188,28 @@ for dir_name in os.listdir(results_dir):
             output_lines = read_file_to_string(run_path + "/last/espreso." + problem + ".log").split("\n")
             n_domains_total = 1
             n_elements_per_domain = 1
+            n_dofs_per_domain = 1
+            elem_type = ""
             for field in cells_info:
-                if field == "id" or field == "str" or field == "n_domains_total" or field == "n_elements_per_domain" or field == "avg_domain_volume_calc":
+                if field == "id" or field == "str":
                     val = ""
+                elif field == "physics":
+                    val = problem[:-3]
+                elif field == "dim":
+                    val = problem[-2:-1]
+                elif field == "n_domains_total":
+                    val = str(n_domains_total)
+                elif field == "n_elements_per_domain":
+                    val = str(n_elements_per_domain)
+                elif field == "n_dofs":
+                    val = str(n_dofs_per_domain * get_n_dofs_per_node(problem))
                 elif field == "run_id":
                     val = run_id
                 elif field == "problem":
                     val = problem
                 elif field == "dofs_per_node":
                     val = str(get_n_dofs_per_node(problem))
-                elif field == "avg_domain_volume_observed":
+                elif field == "avg_domain_volume":
                     lines = list(filter(lambda line: "Domain volume [dofs]" in line, output_lines))
                     if len(lines) > 0: val = lines[0].split("<")[0][-15:].replace(" ", "")
                     else:              val = ""
@@ -179,6 +223,14 @@ for dir_name in os.listdir(results_dir):
                     else:              val = ""
                 else:
                     val = list(filter(lambda line: field in line, info_lines))[0].split(" ")[1]
+                    if field == "element_type":
+                        elem_type = val
+                    if field.startswith("domains_"):
+                        n_domains_total = n_domains_total * int(val)
+                    if field.startswith("elements_"):
+                        n_elements_per_domain = n_elements_per_domain * int(val)
+                        if not (problem[-2:-1] == "2" and field == "elements_z"):
+                            n_dofs_per_domain = n_dofs_per_domain * get_nnodes_per_side(int(val), elem_type)
                 outstring.write(val)
                 outstring.write(";")
 
@@ -207,7 +259,7 @@ outstring.close()
 
 outfile = summ_dir + "/apply.csv"
 outstring = io.StringIO()
-cells_info = ["id", "str", "run_id", "machine", "tool", "dualoperator", "problem", "dofs_per_node", "element_type", "domains_x", "domains_y", "domains_z", "n_domains_total", "elements_x", "elements_y", "elements_z", "n_elements_per_domain", "avg_domain_surface", "avg_domain_volume_observed", "avg_domain_volume_calc", "factor_nnz", "concurrency_set", "concurrency_update", "concurrency_apply", "uniform_clusters_domains", "trs1_factor_storage", "trs2_factor_storage", "trs1_solve_type", "trs2_solve_type", "trsm_rhs_sol_order", "path_if_hermitian", "f_sharing_if_hermitian", "apply_scatter_gather_where", "transpose_where"]
+cells_info = ["id", "str", "run_id", "machine", "tool", "dualoperator", "problem", "physics", "dim", "dofs_per_node", "element_type", "domains_x", "domains_y", "domains_z", "n_domains_total", "elements_x", "elements_y", "elements_z", "n_elements_per_domain", "avg_domain_surface", "avg_domain_volume", "n_dofs", "factor_nnz", "concurrency_set", "concurrency_update", "concurrency_apply", "uniform_clusters_domains", "trs1_factor_storage", "trs2_factor_storage", "trs1_solve_type", "trs2_solve_type", "trsm_rhs_sol_order", "path_if_hermitian", "f_sharing_if_hermitian", "apply_scatter_gather_where", "transpose_where"]
 cells_timers = ["total", "copyin", "scatter", "mv_outer", "mv", "apply_outer", "allocinpool", "setpointers", "sp2dn", "compute", "spmv1", "trsv1", "trsv2", "spmv2", "freeinpool", "zerofill", "gather", "copyout", "wait"]
 outstring.write(";".join(cells_info))
 outstring.write(";;")
@@ -226,16 +278,28 @@ for dir_name in os.listdir(results_dir):
             output_lines = read_file_to_string(run_path + "/last/espreso." + problem + ".log").split("\n")
             n_domains_total = 1
             n_elements_per_domain = 1
+            n_dofs_per_domain = 1
+            elem_type = ""
             for field in cells_info:
-                if field == "id" or field == "str" or field == "n_domains_total" or field == "n_elements_per_domain" or field == "avg_domain_volume_calc":
+                if field == "id" or field == "str":
                     val = ""
+                elif field == "physics":
+                    val = problem[:-3]
+                elif field == "dim":
+                    val = problem[-2:-1]
+                elif field == "n_domains_total":
+                    val = str(n_domains_total)
+                elif field == "n_elements_per_domain":
+                    val = str(n_elements_per_domain)
+                elif field == "n_dofs":
+                    val = str(n_dofs_per_domain * get_n_dofs_per_node(problem))
                 elif field == "run_id":
                     val = run_id
                 elif field == "problem":
                     val = problem
                 elif field == "dofs_per_node":
                     val = str(get_n_dofs_per_node(problem))
-                elif field == "avg_domain_volume_observed":
+                elif field == "avg_domain_volume":
                     lines = list(filter(lambda line: "Domain volume [dofs]" in line, output_lines))
                     if len(lines) > 0: val = lines[0].split("<")[0][-15:].replace(" ", "")
                     else:              val = ""
@@ -249,6 +313,14 @@ for dir_name in os.listdir(results_dir):
                     else:              val = ""
                 else:
                     val = list(filter(lambda line: field in line, info_lines))[0].split(" ")[1]
+                    if field == "element_type":
+                        elem_type = val
+                    if field.startswith("domains_"):
+                        n_domains_total = n_domains_total * int(val)
+                    if field.startswith("elements_"):
+                        n_elements_per_domain = n_elements_per_domain * int(val)
+                        if not (problem[-2:-1] == "2" and field == "elements_z"):
+                            n_dofs_per_domain = n_dofs_per_domain * get_nnodes_per_side(int(val), elem_type)
                 outstring.write(val)
                 outstring.write(";")
 
