@@ -116,6 +116,16 @@ ALWAYS_INLINE SIMD rsqrt14(const SIMD& v) noexcept
 	};
 }
 
+ALWAYS_INLINE SIMD log(const SIMD& v) noexcept
+{
+    return __m256d{
+        std::log(v.data[0]),
+        std::log(v.data[1]),
+        std::log(v.data[2]),
+        std::log(v.data[3])
+    };
+}
+
 ALWAYS_INLINE SIMD positive_guarded_recip(const SIMD& v) noexcept // TODO: improve it
 {
 	return __m256d{

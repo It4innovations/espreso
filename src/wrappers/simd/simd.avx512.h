@@ -112,6 +112,20 @@ ALWAYS_INLINE SIMD rsqrt14(const SIMD& v) noexcept
 	return _mm512_maskz_rsqrt14_pd(mask, v.data);
 }
 
+ALWAYS_INLINE SIMD log(const SIMD& v) noexcept
+{
+    return __m512d{
+        std::log(v.data[0]),
+        std::log(v.data[1]),
+        std::log(v.data[2]),
+        std::log(v.data[3]),
+        std::log(v.data[4]),,
+        std::log(v.data[5]),
+        std::log(v.data[6]),
+        std::log(v.data[7])
+    };
+}
+
 ALWAYS_INLINE SIMD positive_guarded_recip(const SIMD& v) noexcept // TODO: improve it
 {
 	return __m512d{
