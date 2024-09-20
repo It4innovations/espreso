@@ -246,10 +246,10 @@ template <typename T, typename I> void _getKernel(Matrix_CSR<T, I> &A, Matrix_De
     Matrix_Dense<T, I> eigvec; eigvec.resize(A_ss.nrows, A_ss.nrows);
 //    double tt = eslog::time();
 //    math::lapack::get_eig_sym(A_ss, eigval, eigvec);
-    math::lapack::get_eig_sym(A_ss, eigval, eigvec, 1, maxDefect + 1);
+    math::lapack::get_eig_sym(A_ss, eigval, eigvec, 1, 2 * maxDefect + 1);
 //    printf("TIME %f\n", eslog::time() - tt);
-//
-//    for (I i = 0; i < std::min(maxDefect + 1, eigval.size); ++i) {
+
+//    for (I i = 0; i < std::min(2 * maxDefect + 1, eigval.size); ++i) {
 //       printf("%+e\n", eigval.vals[i]);
 //    }
 
