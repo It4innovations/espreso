@@ -142,12 +142,21 @@ array_ecf_file_2d=("${basedir}/espreso.heat_transfer_2d.ecf" "${basedir}/espreso
 array_ecf_file_3d=("${basedir}/espreso.heat_transfer_3d.ecf" "${basedir}/espreso.linear_elasticity_3d.ecf")
 array_element_type_2d=(TRIANGLE3 TRIANGLE6)
 array_element_type_3d=(TETRA4 TETRA10)
-array_domains_x_2d=(45 32 23 16 11     8     6  4)
-array_domains_y_2d=(45 32 22 16 11     8     5  4)
-array_domains_z_2d=( 1  1  1  1  1     1     1  1)
-array_domains_x_3d=(13 10  8  7  5     4     3  4)
-array_domains_y_3d=(13 10  8  6  5     4     3  2)
-array_domains_z_3d=(12 10  8  6  5     4     3  2)
+array_domains_x_2d=(4 6  8 11 16 23 32 45)
+array_domains_y_2d=(4 5  8 11 16 22 32 45)
+array_domains_z_2d=(1 1  1  1  1  1  1  1)
+array_domains_x_3d=(4 3  4  5  7  8 10 13)
+array_domains_y_3d=(2 3  4  5  6  8 10 13)
+array_domains_z_3d=(2 3  4  5  6  8 10 12)
+array_domains_size=${#array_domains_x_2d[@]}
+# indexes:              0   1   2   3   4   5   6   7   8   9  10  11  12  13  14  15
+array_elements_x_2d=(1024 724 512 362 256 181 128  90  64  45  32  23  16  11   8   6)
+array_elements_y_2d=(1024 724 512 362 256 181 128  90  64  45  32  23  16  11   8   6)
+array_elements_z_2d=(   1   1   1   1   1   1   1   1   1   1   1   1   1   1   1   1)
+array_elements_x_3d=( 101  80  64  50  40  32  25  20  16  13  10   8   6   5   4   3)
+array_elements_y_3d=( 101  80  64  50  40  32  25  20  16  13  10   8   6   5   4   3)
+array_elements_z_3d=( 101  80  64  50  40  32  25  20  16  13  10   8   6   5   4   3)
+array_elements_size=${#array_elements_x_2d[@]}
 array_ecf_file=()
 array_element_type=()
 array_elements_x=()
@@ -171,67 +180,41 @@ do
     if [ "${dim}" == "2" ]; then array_domains_x=("${array_domains_x_2d[@]}"); else array_domains_x=("${array_domains_x_3d[@]}"); fi
     if [ "${dim}" == "2" ]; then array_domains_y=("${array_domains_y_2d[@]}"); else array_domains_y=("${array_domains_y_3d[@]}"); fi
     if [ "${dim}" == "2" ]; then array_domains_z=("${array_domains_z_2d[@]}"); else array_domains_z=("${array_domains_z_3d[@]}"); fi
+    if [ "${dim}" == "2" ]; then array_elements_x=("${array_elements_x_2d[@]}"); else array_elements_x=("${array_elements_x_3d[@]}"); fi
+    if [ "${dim}" == "2" ]; then array_elements_y=("${array_elements_y_2d[@]}"); else array_elements_y=("${array_elements_y_3d[@]}"); fi
+    if [ "${dim}" == "2" ]; then array_elements_z=("${array_elements_z_2d[@]}"); else array_elements_z=("${array_elements_z_3d[@]}"); fi
 
     for ecf_file in "${array_ecf_file[@]}"
     do
         for element_type in "${array_element_type[@]}"
         do
-            if [[ "${ecf_file}" == *"heat_transfer_2d"*     && "${element_type}" == "TRIANGLE3" ]]; then
-                array_elements_x=(  64  90 128 181 256 362 512 724)
-                array_elements_y=(  64  90 128 181 256 362 512 724)
-                array_elements_z=(   1   1   1   1   1   1   1   1)
-            fi
-            if [[ "${ecf_file}" == *"heat_transfer_2d"*     && "${element_type}" == "TRIANGLE6" ]]; then
-                array_elements_x=(  32  45  64  90 128 181 256 362)
-                array_elements_y=(  32  45  64  90 128 181 256 362)
-                array_elements_z=(   1   1   1   1   1   1   1   1)
-            fi
-            if [[ "${ecf_file}" == *"linear_elasticity_2d"* && "${element_type}" == "TRIANGLE3" ]]; then
-                array_elements_x=(  45  64  90 128 181 256 362 512)
-                array_elements_y=(  45  64  90 128 181 256 362 512)
-                array_elements_z=(   1   1   1   1   1   1   1   1)
-            fi
-            if [[ "${ecf_file}" == *"linear_elasticity_2d"* && "${element_type}" == "TRIANGLE6" ]]; then
-                array_elements_x=(  23  32  45  64  90 128 181 256)
-                array_elements_y=(  23  32  45  64  90 128 181 256)
-                array_elements_z=(   1   1   1   1   1   1   1   1)
-            fi
-            if [[ "${ecf_file}" == *"heat_transfer_3d"*     && "${element_type}" == "TETRA4"    ]]; then
-                array_elements_x=(   8  10  13  16  20  25  32  40)
-                array_elements_y=(   8  10  13  16  20  25  32  40)
-                array_elements_z=(   8  10  13  16  20  25  32  40)
-            fi
-            if [[ "${ecf_file}" == *"heat_transfer_3d"*     && "${element_type}" == "TETRA10"   ]]; then
-                array_elements_x=(   5   6   8  10  13  16  20  25)
-                array_elements_y=(   5   6   8  10  13  16  20  25)
-                array_elements_z=(   5   6   8  10  13  16  20  25)
-            fi
-            if [[ "${ecf_file}" == *"linear_elasticity_3d"* && "${element_type}" == "TETRA4"    ]]; then
-                array_elements_x=(   5   6   8  10  13  16  20  25)
-                array_elements_y=(   5   6   8  10  13  16  20  25)
-                array_elements_z=(   5   6   8  10  13  16  20  25)
-            fi
-            if [[ "${ecf_file}" == *"linear_elasticity_3d"* && "${element_type}" == "TETRA10"   ]]; then
-                array_elements_x=(   3   4   5   6   8  10  13  16)
-                array_elements_y=(   3   4   5   6   8  10  13  16)
-                array_elements_z=(   3   4   5   6   8  10  13  16)
-            fi
-            
-            # array_elements_x=(   6   8  11  16  23  32  45  64  90 128 181 256 362 512 724 1024)
-            # array_elements_y=(   6   8  11  16  23  32  45  64  90 128 181 256 362 512 724 1024)
-            # array_elements_z=(   1   1   1   1   1   1   1   1   1   1   1   1   1   1   1    1)
-            # array_elements_x=(   3   4   5   6   8  10  13  16  20  25  32  40  50  64  80  101)
-            # array_elements_y=(   3   4   5   6   8  10  13  16  20  25  32  40  50  64  80  101)
-            # array_elements_z=(   3   4   5   6   8  10  13  16  20  25  32  40  50  64  80  101)
+            array_elements_starting_index=20
+            if [[ "${ecf_file}" == *"heat_transfer_2d"*     && "${element_type}" == "TRIANGLE3" ]]; then array_elements_starting_index=1; fi
+            if [[ "${ecf_file}" == *"heat_transfer_2d"*     && "${element_type}" == "TRIANGLE6" ]]; then array_elements_starting_index=3; fi
+            if [[ "${ecf_file}" == *"linear_elasticity_2d"* && "${element_type}" == "TRIANGLE3" ]]; then array_elements_starting_index=2; fi
+            if [[ "${ecf_file}" == *"linear_elasticity_2d"* && "${element_type}" == "TRIANGLE6" ]]; then array_elements_starting_index=4; fi
+            if [[ "${ecf_file}" == *"heat_transfer_3d"*     && "${element_type}" == "TETRA4"    ]]; then array_elements_starting_index=4; fi
+            if [[ "${ecf_file}" == *"heat_transfer_3d"*     && "${element_type}" == "TETRA10"   ]]; then array_elements_starting_index=6; fi
+            if [[ "${ecf_file}" == *"linear_elasticity_3d"* && "${element_type}" == "TETRA4"    ]]; then array_elements_starting_index=6; fi
+            if [[ "${ecf_file}" == *"linear_elasticity_3d"* && "${element_type}" == "TETRA10"   ]]; then array_elements_starting_index=8; fi
 
-            for i in ${!array_domains_x[@]}
+            index=-1
+            while true
             do
-                elements_x="${array_elements_x[$i]}"
-                elements_y="${array_elements_y[$i]}"
-                elements_z="${array_elements_z[$i]}"
-                domains_x="${array_domains_x[$i]}"
-                domains_y="${array_domains_y[$i]}"
-                domains_z="${array_domains_z[$i]}"
+                index=$((${index}+1))
+
+                array_elements_index=$((${array_elements_starting_index}+${index}))
+                array_domains_index=${index}
+                if [ "${array_domains_index}" -ge "${array_domains_size}" ]; then array_domains_index=$((${array_domains_size}-1)); fi
+
+                if [ "${array_elements_index}" -ge "${array_elements_size}" ]; then break; fi
+
+                elements_x="${array_elements_x[$array_elements_index]}"
+                elements_y="${array_elements_y[$array_elements_index]}"
+                elements_z="${array_elements_z[$array_elements_index]}"
+                domains_x="${array_domains_x[$array_domains_index]}"
+                domains_y="${array_domains_y[$array_domains_index]}"
+                domains_z="${array_domains_z[$array_domains_index]}"
 
                 dualoperator="EXPLICIT_GPU"
                 benchmarking_for="setupdate"
