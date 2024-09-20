@@ -173,6 +173,7 @@ bool StructuralMechanicsSteadyStateNonLinear::run(step::Step &step)
 
             start = eslog::time();
             U->copy(solver->x);
+            storeSolution(step);
             assembler.evaluate(step, time, K, nullptr, f, R, dirichlet);
             storeSystem(step);
             solver->A->copy(K);
