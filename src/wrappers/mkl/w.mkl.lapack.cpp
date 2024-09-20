@@ -29,44 +29,52 @@ void solve_general(Matrix_Dense<double> &A, Matrix_Dense<double> &rhs)
 template <>
 void get_eig_sym(Matrix_Dense<double> &A, Vector_Dense<double> &values)
 {
+    int ret = 0;
     switch (A.shape) {
-    case Matrix_Shape::FULL:  LAPACKE_dsyev(LAPACK_ROW_MAJOR, 'V', 'U', A.nrows, A.vals, A.ncols, values.vals); break;
-    case Matrix_Shape::UPPER: LAPACKE_dspev(LAPACK_ROW_MAJOR, 'N', 'U', A.nrows, A.vals, values.vals, nullptr, A.ncols); break;
-    case Matrix_Shape::LOWER: LAPACKE_dspev(LAPACK_ROW_MAJOR, 'N', 'L', A.nrows, A.vals, values.vals, nullptr, A.ncols); break;
+    case Matrix_Shape::FULL:  ret = LAPACKE_dsyev(LAPACK_ROW_MAJOR, 'V', 'U', A.nrows, A.vals, A.ncols, values.vals); break;
+    case Matrix_Shape::UPPER: ret = LAPACKE_dspev(LAPACK_ROW_MAJOR, 'N', 'U', A.nrows, A.vals, values.vals, nullptr, A.ncols); break;
+    case Matrix_Shape::LOWER: ret = LAPACKE_dspev(LAPACK_ROW_MAJOR, 'N', 'L', A.nrows, A.vals, values.vals, nullptr, A.ncols); break;
     }
+    if (ret) eslog::error("eigen values do not converge\n");
 }
 
 template <>
 void get_eig_sym(Matrix_Dense<double> &A, Vector_Dense<double> &values, Matrix_Dense<double> &vectors)
 {
+    int ret = 0;
     // LAPACK_COL_MAJOR and swap 'L' and 'U' to get vectors in rows
     switch (A.shape) {
-    case Matrix_Shape::FULL: math::copy(vectors, A); LAPACKE_dsyev(LAPACK_ROW_MAJOR, 'V', 'U', A.nrows, vectors.vals, A.ncols, values.vals); break;
-    case Matrix_Shape::UPPER: LAPACKE_dspev(LAPACK_ROW_MAJOR, 'V', 'U', A.nrows, A.vals, values.vals, vectors.vals, A.ncols); break;
-    case Matrix_Shape::LOWER: LAPACKE_dspev(LAPACK_ROW_MAJOR, 'V', 'L', A.nrows, A.vals, values.vals, vectors.vals, A.ncols); break;
+    case Matrix_Shape::FULL: math::copy(vectors, A); ret = LAPACKE_dsyev(LAPACK_ROW_MAJOR, 'V', 'U', A.nrows, vectors.vals, A.ncols, values.vals); break;
+    case Matrix_Shape::UPPER: ret = LAPACKE_dspev(LAPACK_ROW_MAJOR, 'V', 'U', A.nrows, A.vals, values.vals, vectors.vals, A.ncols); break;
+    case Matrix_Shape::LOWER: ret = LAPACKE_dspev(LAPACK_ROW_MAJOR, 'V', 'L', A.nrows, A.vals, values.vals, vectors.vals, A.ncols); break;
     }
+    if (ret) eslog::error("eigen values do not converge\n");
 }
 
 template <>
 void get_eig_sym(Matrix_Dense<double> &A, Vector_Dense<double> &values, int begin, int end)
 {
     int m; Vector_Dense<int, int> fail; fail.resize(2 * A.ncols);
+    int ret = 0;
     switch (A.shape) {
-    case Matrix_Shape::FULL:  LAPACKE_dsyevr(LAPACK_ROW_MAJOR, 'N', 'I', 'U', A.nrows, A.vals, A.ncols, 0, 0, begin, end, LAPACKE_dlamch('S'), &m, values.vals, nullptr, A.ncols, fail.vals); break;
-    case Matrix_Shape::UPPER: LAPACKE_dspevx(LAPACK_ROW_MAJOR, 'N', 'I', 'U', A.nrows, A.vals, 0, 0, begin, end, 2 * LAPACKE_dlamch('S'), &m, values.vals, nullptr, A.ncols, fail.vals); break;
-    case Matrix_Shape::LOWER: LAPACKE_dspevx(LAPACK_ROW_MAJOR, 'N', 'I', 'L', A.nrows, A.vals, 0, 0, begin, end, 2 * LAPACKE_dlamch('S'), &m, values.vals, nullptr, A.ncols, fail.vals); break;
+    case Matrix_Shape::FULL:  ret = LAPACKE_dsyevr(LAPACK_ROW_MAJOR, 'N', 'I', 'U', A.nrows, A.vals, A.ncols, 0, 0, begin, end, LAPACKE_dlamch('S'), &m, values.vals, nullptr, A.ncols, fail.vals); break;
+    case Matrix_Shape::UPPER: ret = LAPACKE_dspevx(LAPACK_ROW_MAJOR, 'N', 'I', 'U', A.nrows, A.vals, 0, 0, begin, end, 2 * LAPACKE_dlamch('S'), &m, values.vals, nullptr, A.ncols, fail.vals); break;
+    case Matrix_Shape::LOWER: ret = LAPACKE_dspevx(LAPACK_ROW_MAJOR, 'N', 'I', 'L', A.nrows, A.vals, 0, 0, begin, end, 2 * LAPACKE_dlamch('S'), &m, values.vals, nullptr, A.ncols, fail.vals); break;
     }
+    if (ret) eslog::error("eigen values do not converge\n");
 }
 
 template <>
 void get_eig_sym(Matrix_Dense<double> &A, Vector_Dense<double> &values, Matrix_Dense<double> &vectors, int begin, int end)
 {
     int m; Vector_Dense<int, int> fail; fail.resize(2 * A.ncols);
+    int ret = 0;
     switch (A.shape) {
-    case Matrix_Shape::FULL:  LAPACKE_dsyevr(LAPACK_ROW_MAJOR, 'V', 'I', 'U', A.nrows, A.vals, A.ncols, 0, 0, begin, end, LAPACKE_dlamch('S'), &m, values.vals, vectors.vals, vectors.ncols, fail.vals); break;
-    case Matrix_Shape::UPPER: LAPACKE_dspevx(LAPACK_ROW_MAJOR, 'V', 'I', 'U', A.nrows, A.vals, 0, 0, begin, end, 2 * LAPACKE_dlamch('S'), &m, values.vals, vectors.vals, A.ncols, fail.vals); break;
-    case Matrix_Shape::LOWER: LAPACKE_dspevx(LAPACK_ROW_MAJOR, 'V', 'I', 'L', A.nrows, A.vals, 0, 0, begin, end, 2 * LAPACKE_dlamch('S'), &m, values.vals, vectors.vals, A.ncols, fail.vals); break;
+    case Matrix_Shape::FULL:  ret = LAPACKE_dsyevr(LAPACK_ROW_MAJOR, 'V', 'I', 'U', A.nrows, A.vals, A.ncols, 0, 0, begin, end, LAPACKE_dlamch('S'), &m, values.vals, vectors.vals, vectors.ncols, fail.vals); break;
+    case Matrix_Shape::UPPER: ret = LAPACKE_dspevx(LAPACK_ROW_MAJOR, 'V', 'I', 'U', A.nrows, A.vals, 0, 0, begin, end, 2 * LAPACKE_dlamch('S'), &m, values.vals, vectors.vals, A.ncols, fail.vals); break;
+    case Matrix_Shape::LOWER: ret = LAPACKE_dspevx(LAPACK_ROW_MAJOR, 'V', 'I', 'L', A.nrows, A.vals, 0, 0, begin, end, 2 * LAPACKE_dlamch('S'), &m, values.vals, vectors.vals, A.ncols, fail.vals); break;
     }
+    if (ret) eslog::error("eigen values do not converge\n");
 }
 
 template <>
