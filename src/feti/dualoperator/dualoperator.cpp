@@ -133,7 +133,7 @@ void DualOperator<T>::printInfo(std::vector<DirectSparseSolver<T> > &KSolver, Du
 //        eslog::info(" =   K+ FACTORIZATION                                                        RESPECT SURFACE = \n");
 //    }
     if (feti.configuration.exhaustive_info) {
-        T norm, min = T{1e9}, max = T{0}, sum = T{0}, normK = T{0};
+        T min = T{1e9}, max = T{0}, sum = T{0}, normK = T{0};
         for (size_t di = 0; di < feti.K.size(); ++di) {
             SpBLAS<Matrix_CSR, T> spblas(feti.K[di]);
             for (int r = 0; r < feti.K[di].nrows; ++r) {
@@ -141,6 +141,7 @@ void DualOperator<T>::printInfo(std::vector<DirectSparseSolver<T> > &KSolver, Du
             }
             normK = std::sqrt(normK);
             Vector_Dense<T> R, KR; KR.resize(feti.R1[di].ncols);
+            T norm = T{0};
             for (int r = 0; r < feti.R1[di].nrows; ++r) {
                 R.size = feti.R1[di].ncols; R.vals = feti.R1[di].vals + feti.R1[di].ncols * r;
                 spblas.apply(KR, T{1}, T{0}, R);
@@ -155,6 +156,7 @@ void DualOperator<T>::printInfo(std::vector<DirectSparseSolver<T> > &KSolver, Du
         Communication::allReduce(&max, nullptr, 1, MPITools::getType<T>().mpitype, MPI_MAX);
         Communication::allReduce(&sum, nullptr, 1, MPITools::getType<T>().mpitype, MPI_SUM);
         eslog::info("      =  NORM(K * R) / NORM(DIAG(K))                    %.2e <%.2e - %.2e>  = \n", (double)sum / feti.sinfo.domains, min, max);
+
         // power method to Eigen values
         // B * Bt = eye
         // pseudo inverse
