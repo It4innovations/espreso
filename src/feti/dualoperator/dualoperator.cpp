@@ -120,18 +120,41 @@ void DualOperator<T>::reduceInfo(std::vector<DirectSparseSolver<T> > &KSolver, D
 template<typename T>
 void DualOperator<T>::printInfo(std::vector<DirectSparseSolver<T> > &KSolver, DualOperatorInfo &sum, DualOperatorInfo &min, DualOperatorInfo &max)
 {
-    eslog::info(" =   DOMAINS TOTAL                                                                 %9d = \n", feti.sinfo.domains);
-    eslog::info(" =   DUAL SIZE                                                                     %9d = \n", Dual_Map::total);
-    eslog::info(" =   B1 ROWS                                                  %8.0f <%8d - %8d> = \n", (double)sum.dualA / feti.sinfo.domains, min.dualA, max.dualA);
-    eslog::info(" =   K+ SURFACE                                               %8.0f <%8d - %8d> = \n", (double)sum.surfaceA / feti.sinfo.domains, min.surfaceA, max.surfaceA);
-    eslog::info(" =   K+ ROWS                                                  %8.0f <%8d - %8d> = \n", (double)sum.rows / feti.sinfo.domains, min.rows, max.rows);
-    eslog::info(" =   K+ NNZ                                                   %8.0f <%8d - %8d> = \n", (double)sum.nnzA / feti.sinfo.domains, min.nnzA, max.nnzA);
-    eslog::info(" =   K+ FACTORS NNZ                                           %8.0f <%8d - %8d> = \n", (double)sum.nnzL / feti.sinfo.domains, min.nnzL, max.nnzL);
-    // eslog::info(" =   K+ SOLVER MEMORY [MB]                                    %8.2f <%8.2f - %8.2f> = \n", (double)sum.memoryL / feti.sinfo.domains / 1024. / 1024., min.memoryL / 1024. / 1024., max.memoryL / 1024. / 1024.);
+    eslog::info("      =  DOMAINS TOTAL                                                       %9d  = \n", feti.sinfo.domains);
+    eslog::info("      =  DUAL SIZE                                                           %9d  = \n", Dual_Map::total);
+    eslog::info("      =  B1 ROWS                                        %8.0f <%8d - %8d>  = \n", (double)sum.dualA / feti.sinfo.domains, min.dualA, max.dualA);
+    eslog::info("      =  K+ SURFACE                                     %8.0f <%8d - %8d>  = \n", (double)sum.surfaceA / feti.sinfo.domains, min.surfaceA, max.surfaceA);
+    eslog::info("      =  K+ ROWS                                        %8.0f <%8d - %8d>  = \n", (double)sum.rows / feti.sinfo.domains, min.rows, max.rows);
+    eslog::info("      =  K+ NNZ                                         %8.0f <%8d - %8d>  = \n", (double)sum.nnzA / feti.sinfo.domains, min.nnzA, max.nnzA);
+    eslog::info("      =  K+ FACTORS NNZ                                 %8.0f <%8d - %8d>  = \n", (double)sum.nnzL / feti.sinfo.domains, min.nnzL, max.nnzL);
+
+// eslog::info(" =   K+ SOLVER MEMORY [MB]                                    %8.2f <%8.2f - %8.2f> = \n", (double)sum.memoryL / feti.sinfo.domains / 1024. / 1024., min.memoryL / 1024. / 1024., max.memoryL / 1024. / 1024.);
 //    if (sparsity != DirectSparseSolver<T>::VectorSparsity::DENSE) {
 //        eslog::info(" =   K+ FACTORIZATION                                                        RESPECT SURFACE = \n");
 //    }
     if (feti.configuration.exhaustive_info) {
+        T norm, min = T{1e9}, max = T{0}, sum = T{0}, normK = T{0};
+        for (size_t di = 0; di < feti.K.size(); ++di) {
+            SpBLAS<Matrix_CSR, T> spblas(feti.K[di]);
+            for (int r = 0; r < feti.K[di].nrows; ++r) {
+                normK += feti.K[di].vals[feti.K[di].rows[r - Indexing::CSR]] * feti.K[di].vals[feti.K[di].rows[r - Indexing::CSR]];
+            }
+            normK = std::sqrt(normK);
+            Vector_Dense<T> R, KR; KR.resize(feti.R1[di].ncols);
+            for (int r = 0; r < feti.R1[di].nrows; ++r) {
+                R.size = feti.R1[di].ncols; R.vals = feti.R1[di].vals + feti.R1[di].ncols * r;
+                spblas.apply(KR, T{1}, T{0}, R);
+                norm += math::norm(KR);
+            }
+            norm /= normK;
+            min = std::min(min, norm);
+            max = std::max(max, norm);
+            sum += norm;
+        }
+        Communication::allReduce(&min, nullptr, 1, MPITools::getType<T>().mpitype, MPI_MIN);
+        Communication::allReduce(&max, nullptr, 1, MPITools::getType<T>().mpitype, MPI_MAX);
+        Communication::allReduce(&sum, nullptr, 1, MPITools::getType<T>().mpitype, MPI_SUM);
+        eslog::info("      =  NORM(K * R) / NORM(DIAG(K))                    %.2e <%.2e - %.2e>  = \n", (double)sum / feti.sinfo.domains, min, max);
         // power method to Eigen values
         // B * Bt = eye
         // pseudo inverse

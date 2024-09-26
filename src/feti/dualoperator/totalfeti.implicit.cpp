@@ -28,9 +28,10 @@ void TotalFETIImplicit<T>::info()
     DualOperatorInfo sum, min, max;
     DualOperator<T>::reduceInfo(KSolver, sum, min, max);
 
-    eslog::info(" = IMPLICIT TOTAL FETI OPERATOR                                                              = \n");
+    eslog::info("      = ------------------------------------------------------------------------------- = \n");
+    eslog::info("      = IMPLICIT TOTAL FETI OPERATOR                                                    = \n");
     DualOperator<T>::printInfo(KSolver, sum, min, max);
-    eslog::info(" = ----------------------------------------------------------------------------------------- = \n");
+    eslog::info("      = ------------------------------------------------------------------------------- = \n");
 }
 
 /*
@@ -108,6 +109,8 @@ void TotalFETIImplicit<T>::update(const step::Step &step)
         eslog::storedata(" STORE: feti/dualop/{d}\n");
         math::store(d, utils::filename(utils::debugDirectory(step) + "/feti/dualop", "d").c_str());
     }
+
+    info();
 }
 
 
