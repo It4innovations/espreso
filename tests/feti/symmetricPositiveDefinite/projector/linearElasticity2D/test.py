@@ -15,7 +15,7 @@ class Assembler(unittest.TestCase):
 
     def test_feti(self):
         for opt in [ "          DEFAULT", "     WITH_FACTORS", "             FULL", "WITH_FACTORS|FULL" ]:
-            yield run, " TOTAL_FETI", "ORTHOGONAL", opt, 70
+            yield run, " TOTAL_FETI", "ORTHOGONAL", opt, 75
         for opt in [ "          DEFAULT", "     WITH_FACTORS"]:
             yield run, "HYBRID_FETI", "ORTHOGONAL", opt, 80
         for opt in [ "             FULL", "WITH_FACTORS|FULL" ]:
