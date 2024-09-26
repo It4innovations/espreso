@@ -173,7 +173,6 @@ bool StructuralMechanicsSteadyStateNonLinear::run(step::Step &step)
 
             start = eslog::time();
             U->copy(solver->x);
-            storeSolution(step);
             assembler.evaluate(step, time, K, nullptr, f, R, dirichlet);
             storeSystem(step);
             solver->A->copy(K);
@@ -204,6 +203,7 @@ bool StructuralMechanicsSteadyStateNonLinear::checkDisplacement(step::Step &step
     double solutionNumerator = solver->x->norm();
     solver->x->add(1, U);
     x->copy(solver->x);
+    storeSolution(step);
 
     double solutionDenominator = std::max(solver->x->norm(), 1e-3);
     double norm = solutionNumerator / solutionDenominator;
