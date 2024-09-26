@@ -25,6 +25,8 @@ struct FETILinearSystemSolver: LinearSystemSolver<T> {
     void update(step::Step &step);
     bool solve(step::Step &step);
 
+    T rhs_norm();
+
 private:
     PhysicsConfiguration &physics;
     LoadStepSolverConfiguration &loadStep;

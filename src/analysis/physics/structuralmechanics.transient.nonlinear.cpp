@@ -331,7 +331,7 @@ bool StructuralMechanicsTransientNonLinear::run(step::Step &step)
 
 bool StructuralMechanicsTransientNonLinear::checkDisplacement(step::Step &step, double f_norm)
 {
-    double b_norm = solver->b->norm();
+    double b_norm = solver->rhs_norm();
     double nR = b_norm / (1 + f_norm);
 
     if (nR > configuration.nonlinear_solver.requested_first_residual) {

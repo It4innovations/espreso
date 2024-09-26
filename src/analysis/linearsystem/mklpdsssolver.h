@@ -51,6 +51,11 @@ struct MKLPDSSLinearSystemSolver: DirectLinearSystemSolver<T> {
         return false;
     }
 
+    T rhs_norm()
+    {
+        return this->b.norm();
+    }
+
 private:
     MKLPDSS<T> mklpdss;
 };

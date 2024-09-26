@@ -29,7 +29,7 @@ public:
 //        synchronization->scatterToUpper(*static_cast<Vector_FETI<Vector, T>*>(this));
     }
 
-    Vector_Base<T>* copyPattern()
+    Vector_FETI<Vector, T>* copyPattern()
     {
         Vector_FETI<Vector, T> *m = new Vector_FETI<Vector, T>();
         m->domains.resize(domains.size());

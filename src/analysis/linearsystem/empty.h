@@ -42,6 +42,11 @@ struct EmptySystemSolver: LinearSystemSolver<T> {
         return true;
     }
 
+    T rhs_norm()
+    {
+        return T{};
+    }
+
 protected:
 //    void setDirichlet() {}
 

@@ -20,6 +20,8 @@ struct LinearSystemSolver {
 
     Matrix_Base<T> *A;
     Vector_Base<T> *x, *b, *dirichlet;
+
+    virtual T rhs_norm() =0;
 };
 
 }
