@@ -61,7 +61,12 @@ void Regularization<T>::update(const step::Step &step, FETI<T> &feti)
             case StructuralMechanicsLoadStepConfiguration::TYPE::STEADY_STATE: RegularizationElasticity<T>::update(feti); break;
             case StructuralMechanicsLoadStepConfiguration::TYPE::TRANSIENT:    RegularizationEmpty<T>::update(feti); break;
             default: break;
-            } break;
+            }
+            if (step.iteration) {
+                // TODO: remove rotations and implement conjugate projector
+                // TODO: keeping rotations is probably non-general solution that works for the cubic domains only
+            }
+            break;
         }
         break;
     case FETIConfiguration::REGULARIZATION::ALGEBRAIC:
