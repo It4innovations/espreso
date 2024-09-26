@@ -97,13 +97,16 @@ bool FETI<T>::solve(const step::Step &step)
     iterativeSolver->solve(step, info);
 
     T kkt[2] = { T{0}, T{0} };
+    #pragma omp parallel for
     for (size_t di = 0; di < K.size(); ++di) {
         SpBLAS<Matrix_CSR, T> spblas(K[di]);
         Vector_Dense<T> Ku; Ku.resize(K[di].nrows);
         spblas.apply(Ku, T{1}, T{0}, x[di]);
         math::add(BtL[di], T{-1}, f[di]);
+        #pragma omp atomic
         kkt[1] += math::dot(BtL[di], BtL[di]);
         math::add(Ku, T{1}, BtL[di]);
+        #pragma omp atomic
         kkt[0] += math::dot(Ku, Ku);
     }
     Communication::allReduce(kkt, nullptr, 2, MPITools::getType<T>().mpitype, MPI_SUM);
