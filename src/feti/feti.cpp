@@ -36,12 +36,14 @@ bool FETI<T>::set(const step::Step &step)
         configuration.method = FETIConfiguration::METHOD::TOTAL_FETI;
     }
 
+    BtL.resize(K.size());
     for (size_t d = 0; d < K.size(); ++d) {
         if (K[d].nrows < x[d].size) { // it is possible when the solver is called with BEM
             math::set(x[d], 0.); // set inner DOFs to zero and resize 'f' to correct size
             f[d].size = K[d].nrows;
             x[d].size = K[d].nrows;
         }
+        BtL[d].resize(K[d].nrows);
     }
 
     int size = K.size();
@@ -94,10 +96,23 @@ bool FETI<T>::solve(const step::Step &step)
     IterativeSolverInfo info;
     iterativeSolver->solve(step, info);
 
+    T kkt[2] = { T{0}, T{0} };
+    for (size_t di = 0; di < K.size(); ++di) {
+        SpBLAS<Matrix_CSR, T> spblas(K[di]);
+        Vector_Dense<T> Ku; Ku.resize(K[di].nrows);
+        spblas.apply(Ku, T{1}, T{0}, x[di]);
+        math::add(BtL[di], T{-1}, f[di]);
+        kkt[1] += math::dot(BtL[di], BtL[di]);
+        math::add(Ku, T{1}, BtL[di]);
+        kkt[0] += math::dot(Ku, Ku);
+    }
+    Communication::allReduce(kkt, nullptr, 2, MPITools::getType<T>().mpitype, MPI_SUM);
+
     std::string error;
     switch (info.error) {
     case IterativeSolverInfo::ERROR::OK:{
         eslog::info("       = ITERATIONS TOTAL                                                    %9d = \n", info.iterations);
+        eslog::info("       = NORM(K * U - F + BT * LAMBDA) / NORM(F - BT * LAMBDA)               %.3e = \n", std::sqrt(kkt[0]) / std::sqrt(kkt[1]));
         eslog::info("       = FETI SOLVER TIME                                                   %8.3f s = \n", eslog::time() - start);
         eslog::info("       = ----------------------------------------------------------------------------- = \n");
         return true;

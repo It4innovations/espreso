@@ -38,7 +38,7 @@ struct FETI {
 
     FETIDecomposition *decomposition;
     std::vector<Matrix_CSR<T> > K;
-    std::vector<Vector_Dense<T> > f, x;
+    std::vector<Vector_Dense<T> > f, x, BtL;
 
     std::vector<Matrix_Dense<T> > R1, R2;
     std::vector<Matrix_CSR<T> > RegMat;
