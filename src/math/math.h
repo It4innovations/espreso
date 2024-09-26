@@ -61,6 +61,7 @@ namespace math {
     template <typename T, typename I> T dot(const Vector_Dense<T, I>  &x, const Vector_Dense<T, I>  &y) { return blas::dot(x.size, x.vals, 1, y.vals, 1); }
     template <typename T, typename I> T dot(const Vector_Sparse<T, I> &x, const Vector_Sparse<T, I> &y) { return blas::dot(x.nnz , x.vals, 1, y.vals, 1); }
 
+    template <typename T, typename I> T norm(const Matrix_Dense<T, I>  &x) { return blas::norm(x.nnz , x.vals, 1); }
     template <typename T, typename I> T norm(const Vector_Dense<T, I>  &x) { return blas::norm(x.size, x.vals, 1); }
     template <typename T, typename I> T norm(const Vector_Sparse<T, I> &x) { return blas::norm(x.nnz , x.vals, 1); }
 
