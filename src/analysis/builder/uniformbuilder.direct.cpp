@@ -67,6 +67,10 @@ UniformBuilderDirectPattern::UniformBuilderDirectPattern(StructuralMechanicsLoad
     shape = Matrix_Shape::UPPER;
     type = Matrix_Type::REAL_SYMMETRIC_POSITIVE_DEFINITE;
 
+    if (configuration.large_displacement || configuration.corotation) {
+        type = Matrix_Type::REAL_SYMMETRIC_INDEFINITE;
+    }
+
     std::vector<esint> indices;
     bregion.resize(info::mesh->boundaryRegions.size());
     for (size_t r = 1; r < info::mesh->boundaryRegions.size(); ++r) {
