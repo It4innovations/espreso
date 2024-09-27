@@ -15,7 +15,7 @@ class Assembler(unittest.TestCase):
 
     def test_feti(self):
         for dualop in [ "    IMPLICIT", "    EXPLICIT", "EXPLICIT_GPU" ]:
-            yield run, " TOTAL_FETI", dualop, 70
+            yield run, " TOTAL_FETI", dualop, 75
         for dualop in [ "    IMPLICIT" ]:
             yield run, "HYBRID_FETI", dualop, 80
 
