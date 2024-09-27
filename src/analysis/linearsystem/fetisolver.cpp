@@ -47,7 +47,7 @@ T FETILinearSystemSolver<T>::rhs_norm()
 {
     Vector_FETI<Vector_Dense, T> *rhs = b.copyPattern();
     for (size_t di = 0; di < b.domains.size(); ++di) {
-        math::add(rhs->domains[di], T{1}, b.domains[di]);
+        math::copy(rhs->domains[di], b.domains[di]);
         math::add(rhs->domains[di], T{-1}, feti.BtL[di]);
     }
     T norm = rhs->norm();
