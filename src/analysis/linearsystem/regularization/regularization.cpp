@@ -65,6 +65,10 @@ void Regularization<T>::update(const step::Step &step, FETI<T> &feti)
             if (step.iteration) {
                 // TODO: remove rotations and implement conjugate projector
                 // TODO: keeping rotations is probably non-general solution that works for the cubic domains only
+//                for (size_t d = 0; d < feti.K.size(); ++d) {
+//                    math::blas::copy(feti.R1[d].ncols, feti.R1[d].vals + 3 * feti.R1[d].ncols, 1, feti.R1[d].vals + 4 * feti.R1[d].ncols, 1);
+//                    feti.R1[d].resize(3, feti.K[d].ncols);
+//                }
             }
             break;
         }

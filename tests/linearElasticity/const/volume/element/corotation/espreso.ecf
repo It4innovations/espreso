@@ -83,8 +83,8 @@ STRUCTURAL_MECHANICS {
 
   LOAD_STEPS_SETTINGS {
     1 {
-      DURATION_TIME     0.1;
-      TYPE        TRANSIENT;
+      DURATION_TIME       1;
+      TYPE     STEADY_STATE;
       MODE        NONLINEAR;
       SOLVER        MKLPDSS;
 

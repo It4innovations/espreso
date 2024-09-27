@@ -26,7 +26,7 @@ class DualOperator {
 public:
     static DualOperator<T>* create(FETI<T> &feti, const step::Step &step);
 
-    DualOperator(FETI<T> &feti): feti(feti) {}
+    DualOperator(FETI<T> &feti): feti(feti), infoPrinted(false) {}
     virtual ~DualOperator() {}
 
     virtual void info() =0;
@@ -46,6 +46,8 @@ public:
     Vector_Dual<T> d;
 
 protected:
+    bool infoPrinted;
+
     void getInitVector(Vector_Dual<T> &v);
 
     void reduceInfo(std::vector<DirectSparseSolver<T> > &KSolver, DualOperatorInfo &sum, DualOperatorInfo &min, DualOperatorInfo &max);

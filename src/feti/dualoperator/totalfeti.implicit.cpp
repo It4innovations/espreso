@@ -25,6 +25,11 @@ TotalFETIImplicit<T>::~TotalFETIImplicit()
 template <typename T>
 void TotalFETIImplicit<T>::info()
 {
+    if (this->infoPrinted) {
+        return;
+    }
+    this->infoPrinted = true;
+
     DualOperatorInfo sum, min, max;
     DualOperator<T>::reduceInfo(KSolver, sum, min, max);
 
