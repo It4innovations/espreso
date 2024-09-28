@@ -67,6 +67,9 @@ csv_data0 = csv_data
 subplots_counts = [12,16]
 my_figsize_x = 8000
 my_figsize_y = 4500
+# subplots_counts = [2,3]
+# my_figsize_x = 1920
+# my_figsize_y = 1080
 #######################
 subplot_is_alone = (subplots_counts[0] == 1 and subplots_counts[1] == 1)
 
@@ -104,6 +107,9 @@ for problem in problems:
                     csv_data5 = list(filter(lambda row: row[dualoperator_col] == dualoperator, csv_data4))
                     plt.figure()
                     fig, axs = plt.subplots(subplots_counts[0], subplots_counts[1], figsize=(my_figsize_x/100.0, my_figsize_y/100.0))
+
+                    best_x_vals = ""
+                    best_y_vals = ""
 
                     concurrencies = ["SEQ_WAIT", "SEQ_CONTINUE", "PARALLEL"]
                     # concurrencies = ["PARALLEL"]
@@ -160,15 +166,31 @@ for problem in problems:
                                                 trsm_rhs_sol_order = trsm_rhs_sol_order_options[trsm_rhs_sol_order_idx]
                                                 csv_data14 = list(filter(lambda row: row[trsm_rhs_sol_order_col] == trsm_rhs_sol_order, csv_data13))
 
-                                                # apply_scatter_gather_where_options = ["CPU", "GPU"]
-                                                apply_scatter_gather_where_options = ["GPU"]
-                                                for apply_scatter_gather_where in apply_scatter_gather_where_options:
+                                                apply_scatter_gather_where_options = ["CPU", "GPU"]
+                                                # apply_scatter_gather_where_options = ["GPU"]
+                                                for apply_scatter_gather_where_idx in range(0,len(apply_scatter_gather_where_options)):
+                                                    apply_scatter_gather_where = apply_scatter_gather_where_options[apply_scatter_gather_where_idx]
                                                     csv_data15 = list(filter(lambda row: row[apply_scatter_gather_where_col] == apply_scatter_gather_where, csv_data14))
 
                                                     csv_data16 = sorted(csv_data15, key=lambda row: int(row[n_dofs_col]))
                                                     x_vals = [int(row[n_dofs_col]) for row in csv_data16]
                                                     y_vals = [(float(row[total_col]) if len(row[total_col])>0 else float("nan")) for row in csv_data16]
                                                     if len(x_vals) > 0:
+                                                        if best_x_vals == "":
+                                                            best_x_vals = list(x_vals)
+                                                            best_y_vals = list(best_x_vals)
+                                                        if concurrency == "PARALLEL" and trsm_rhs_sol_order == "ROW_MAJOR" and path == "HERK":
+                                                            if problem[-2:-1] == "2" and trs1_factor_storage == "SPARSE" and trs1_solve_type == "L":
+                                                                best_y_vals = list(y_vals)
+                                                            if problem[-2:-1] == "3" and trs1_factor_storage == "SPARSE" and trs1_solve_type == "L":
+                                                                for j in range(0,len(x_vals)):
+                                                                    if x_vals[j] > 12000:
+                                                                        best_y_vals[j] = y_vals[j]
+                                                            if problem[-2:-1] == "3" and trs1_factor_storage == "DENSE" and trs1_solve_type == "LHH":
+                                                                for j in range(0,len(x_vals)):
+                                                                    if x_vals[j] <= 12000:
+                                                                        best_y_vals[j] = y_vals[j]
+
                                                         linestyle = "-"
                                                         color = "black"
                                                         label = None
@@ -178,7 +200,7 @@ for problem in problems:
                                                         # color = "red" if concurrency == "SEQ_WAIT" else ("green" if concurrency == "SEQ_CONTINUE" else "blue")
                                                         # linestyle = "-" if path == "TRSM" else "--"
                                                         # color = "red" if trsm_rhs_sol_order == "ROW_MAJOR" else "blue"
-                                                        # linestyle = "-" if trsm_rhs_sol_order == "COL_MAJOR" else "--"
+                                                        # linestyle = "-" if trsm_rhs_sol_order == "ROW_MAJOR" else "--"
                                                         # color = "red" if trs1_factor_storage == "SPARSE" else "blue"
                                                         # linestyle = "-" if trs1_factor_storage == "SPARSE" else "--"
                                                         # color = "red" if trs1_solve_type == "L" else "blue"
@@ -187,11 +209,15 @@ for problem in problems:
                                                         # linestyle = "-" if trs2_factor_storage == "SPARSE" else "--"
                                                         # color = "red" if trs2_solve_type == "U" else "blue"
                                                         # linestyle = "-" if trs2_solve_type == "U" else "--"
+                                                        # color = "red" if apply_scatter_gather_where == "CPU" else "blue"
                                                         # linestyle = "-" if apply_scatter_gather_where == "CPU" else "--"
-                                                        label = "placeholder"
-                                                        title = concurrency + "-" + path + "-" + trsm_rhs_sol_order + "-" + trs1_factor_storage + "-" + trs2_factor_storage + "-" + trs1_solve_type + "-" + trs2_solve_type
+                                                        color = "blue"
+                                                        label = "this one"
+                                                        title = concurrency + "-" + path + "-" + trsm_rhs_sol_order + "-" + trs1_factor_storage + "-" + trs2_factor_storage + "-" + trs1_solve_type + "-" + trs2_solve_type + "-" + "sg" + apply_scatter_gather_where
                                                         row = 4 * concurrency_idx + 2 * path_idx + trsm_rhs_sol_order_idx
                                                         col = 8 * trs1_factor_storage_idx + 4 * trs2_factor_storage_idx + 2 * trs1_solve_type_idx + trs2_solve_type_idx
+                                                        # row = apply_scatter_gather_where_idx
+                                                        # col = concurrency_idx
                                                         myaxs = axs[row,col]
                                                         myaxs.loglog(x_vals, y_vals, base=2, color=color, linestyle=linestyle, label=label)
                                                         if title != None: myaxs.set_title(title, fontsize="medium")
@@ -208,6 +234,7 @@ for problem in problems:
                         # a.set_xlabel('n_dofs')
                         # a.set_ylabel('update time [ms]')
                         if a.lines:
+                            a.loglog(best_x_vals, best_y_vals, base=2, color="red", linestyle="--", label="optimal")
                             a.legend(loc="upper left")
                             xlim_min = min(xlim_min, a.get_xlim()[0])
                             xlim_max = max(xlim_max, a.get_xlim()[1])
