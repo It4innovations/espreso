@@ -166,6 +166,20 @@ bool FETILinearSystemSolver<T>::solve(step::Step &step)
     eslog::startln("FETI: RUN LINEAR SYSTEM", "FETI[SOLVE]");
     bool result = feti.solve(step);
     constrains.eq.enforce(step, feti, dirichlet);
+
+    if (false) {
+        double x1 = 1e15, x2 = 1 / x1;
+        for (size_t d = 0; d < feti.x.size(); ++d) {
+            for (int i = 0; i < feti.x[d].size; ++i) {
+                if (std::fabs(feti.x[d].vals[i]) < x2) {
+                    feti.x[d].vals[i] = 0;
+                } else {
+                    feti.x[d].vals[i] = std::ceil(x1 * feti.x[d].vals[i]) * x2;
+                }
+            }
+        }
+    }
+
     if (info::ecf->output.print_matrices) {
         eslog::storedata(" STORE: system/{x}\n");
         if (feti.x.size() == 1) {

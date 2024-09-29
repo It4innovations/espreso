@@ -42,6 +42,18 @@ struct MKLPDSSLinearSystemSolver: DirectLinearSystemSolver<T> {
     {
         if (mklpdss.solve(this->b, this->x)) {
             this->x.scatter();
+
+            if (false) {
+                double x1 = 1e15, x2 = 1 / x1;
+                for (int i = 0; i < this->x.cluster.size; ++i) {
+                    if (std::fabs(this->x.cluster.vals[i]) < x2) {
+                        this->x.cluster.vals[i] = 0;
+                    } else {
+                        this->x.cluster.vals[i] = std::ceil(x1 * this->x.cluster.vals[i]) * x2;
+                    }
+                }
+            }
+
             if (info::ecf->output.print_matrices) {
                 eslog::storedata(" STORE: system/{x}\n");
                 math::store(this->x, utils::filename(utils::debugDirectory(step) + "/system", "x").c_str());
