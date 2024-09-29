@@ -147,6 +147,22 @@ void EqualityConstrains<T>::update(const step::Step &step, FETI<T> &feti, const 
     }
 }
 
+template <typename T>
+void EqualityConstrains<T>::enforce(const step::Step &step, FETI<T> &feti, const Vector_Distributed<Vector_Sparse, T> &dirichlet)
+{
+    if (dirichlet.cluster.nnz) {
+        auto map = feti.decomposition->dmap->cbegin();
+        for (esint i = 0, prev = 0; i < dirichlet.cluster.nnz; prev = dirichlet.cluster.indices[i++]) {
+            map += dirichlet.cluster.indices[i] - prev;
+            for (auto di = map->begin(); di != map->end(); ++di) {
+                if (feti.decomposition->ismy(di->domain)) {
+                    feti.x[di->domain - feti.decomposition->dbegin].vals[di->index] = dirichlet.cluster.vals[i];
+                }
+            }
+        }
+    }
+}
+
 template struct EqualityConstrains<double>;
 
 }

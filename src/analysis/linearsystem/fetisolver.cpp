@@ -165,6 +165,7 @@ bool FETILinearSystemSolver<T>::solve(step::Step &step)
 {
     eslog::startln("FETI: RUN LINEAR SYSTEM", "FETI[SOLVE]");
     bool result = feti.solve(step);
+    constrains.eq.enforce(step, feti, dirichlet);
     if (info::ecf->output.print_matrices) {
         eslog::storedata(" STORE: system/{x}\n");
         if (feti.x.size() == 1) {
