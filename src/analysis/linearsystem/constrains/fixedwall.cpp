@@ -160,6 +160,7 @@ void FixedWall<T>::update(const step::Step &step, FETI<T> &feti, const Vector_Di
 {
     StructuralMechanicsLoadStepConfiguration &loadstep = info::ecf->structural_mechanics.load_steps_settings.at(step.loadstep + 1);
     std::vector<double> &normal = StructuralMechanics::Results::normal->data;
+    std::vector<double> &disp = StructuralMechanics::Results::displacement->data;
 
     int dim = info::mesh->dimension;
     std::vector<int> cc(cindex.size());
@@ -178,7 +179,9 @@ void FixedWall<T>::update(const step::Step &step, FETI<T> &feti, const Vector_Di
         std::vector<double> nv; nv.reserve(3);
         for (auto n = region->nodes->datatarray().begin(); n < region->nodes->datatarray().end(); ++n) {
             Point nn(normal[*n * dim + 0], normal[*n * dim + 1], normal[*n * dim + 2]);
-            Point w = info::mesh->nodes->coordinates->datatarray()[*n] - pp;
+            Point coo(disp[*n * dim + 0], disp[*n * dim + 1], disp[*n * dim + 2]);
+            coo += info::mesh->nodes->coordinates->datatarray()[*n];
+            Point w = coo - pp;
             if (pn * w > wall->second.gap || pn * nn > -0.1) { // over the gap or large angle
                 continue;
             }

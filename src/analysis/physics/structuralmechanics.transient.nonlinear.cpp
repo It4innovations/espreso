@@ -201,6 +201,7 @@ bool StructuralMechanicsTransientNonLinear::run(step::Step &step)
     step.substep = 0;
     bool converged = true;
     while (converged && time.current + time.shift <= time.final + time.precision) {
+        step.iteration = 0;
         double start = eslog::time();
         time.shift = precice.timeStep(time.shift);
         time.current = time.previous + time.shift;
@@ -261,7 +262,6 @@ bool StructuralMechanicsTransientNonLinear::run(step::Step &step)
         eslog::info("       = ----------------------------------------------------------------------------- = \n");
 
         // NEWTON RAPHSON
-        step.iteration = 0;
         converged = false;
         double f_norm = f->norm();
         while (step.iteration++ < configuration.nonlinear_solver.max_iterations) {

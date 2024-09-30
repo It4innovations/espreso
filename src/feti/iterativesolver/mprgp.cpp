@@ -134,7 +134,7 @@ template <> void MPRGP<double>::run(const step::Step &step, MPRGPSolverInfo &inf
 {
     Preconditioner<double> *M = feti.preconditioner;
 
-    const char *cg = "   cg", *mixed = "cg-gp", *prop = "   gp", *opt = cg;
+    const char *cg = "cg   ", *mixed = "cg-gp", *prop = "   gp", *opt = cg;
     info.n_cg = info.n_mixed = info.n_gproj = 0;
 
     math::copy(g0, b);

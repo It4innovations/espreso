@@ -172,14 +172,14 @@ void DualOperator<T>::estimateMaxEigenValue(double &lambda, int &iterations, dou
     Vector_Dual<T> y, v;
     getInitVector(y);
 
-    lambda = std::sqrt(v.dot());
+    lambda = std::sqrt(y.dot());
     double err = std::numeric_limits<T>::max();
     for (iterations = 0; iterations <= maxIterations && epsilon < err; ++iterations) {
-        math::copy(y, v);
-        math::scale(1 / lambda, y);
-        F->apply(y, v);
+        math::copy(v, y);
+        math::scale(1 / lambda, v);
+        F->apply(v, y);
         double _lambda = lambda;
-        lambda = std::sqrt(v.dot());
+        lambda = std::sqrt(y.dot());
         err = std::fabs(lambda - _lambda) / std::fabs(lambda);
     }
 }
