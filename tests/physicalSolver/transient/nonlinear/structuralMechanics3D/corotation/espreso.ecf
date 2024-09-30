@@ -7,13 +7,13 @@ DEFAULT_ARGS {
   2        1;
   3        1;
 
-  4        1;
-  5        1;
-  6        1;
+  4        2;
+  5        2;
+  6        2;
 
-  7        5;
-  8        1;
-  9        1;
+  7       20;
+  8        4;
+  9        4;
 }
 
 INPUT_TYPE              GENERATOR;
@@ -83,10 +83,10 @@ STRUCTURAL_MECHANICS {
 
   LOAD_STEPS_SETTINGS {
     1 {
-      DURATION_TIME   0.1;
+      DURATION_TIME    1e-2;
       TYPE        TRANSIENT;
       MODE        NONLINEAR;
-      SOLVER        MKLPDSS;
+      SOLVER        [ARG10];
 
       COROTATION              TRUE;
 
@@ -95,23 +95,23 @@ STRUCTURAL_MECHANICS {
         PRECONDITIONER   DIRICHLET;
         ITERATIVE_SOLVER       PCG;
         REGULARIZATION    ANALYTIC;
-        PRECISION             1e-9;
+        PRECISION            1e-15;
       }
 
       NONLINEAR_SOLVER {
         MAX_ITERATIONS                     15;
-        REQUESTED_DISPLACEMENT_RESIDUAL  1e-3;
+        REQUESTED_DISPLACEMENT_RESIDUAL  1e-4;
       }
 
       TRANSIENT_SOLVER {
-        TIME_STEP    0.001;
+        TIME_STEP      1e-3;
 
         DAMPING {
           RAYLEIGH {
             TYPE   DIRECT;
             DIRECT_DAMPING {
-              STIFFNESS   0;
-              MASS        0;
+              STIFFNESS    0;
+              MASS         0;
             }
           }
         }
@@ -123,7 +123,7 @@ STRUCTURAL_MECHANICS {
 
       PRESSURE {
         PRESS {
-          PRESSURE     1e9;
+          PRESSURE     1e7;
           DIRECTION { Z -1; }
         }
       }

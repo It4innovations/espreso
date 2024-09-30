@@ -85,12 +85,11 @@ STRUCTURAL_MECHANICS {
 
   LOAD_STEPS_SETTINGS {
     1 {
-      DURATION_TIME    0.1;
+      DURATION_TIME    1e-2;
       TYPE        TRANSIENT;
       MODE        NONLINEAR;
-      SOLVER        MKLPDSS;
+      SOLVER         [ARG7];
 
-#      COROTATION          TRUE;
       LARGE_DISPLACEMENT  TRUE;
 
       FETI {
@@ -98,16 +97,16 @@ STRUCTURAL_MECHANICS {
         PRECONDITIONER   DIRICHLET;
         ITERATIVE_SOLVER       PCG;
         REGULARIZATION    ANALYTIC;
-        PRECISION             1e-9;
+        PRECISION            1e-12;
       }
 
       NONLINEAR_SOLVER {
         MAX_ITERATIONS                     15;
-        REQUESTED_DISPLACEMENT_RESIDUAL  1e-3;
+        REQUESTED_DISPLACEMENT_RESIDUAL  1e-4;
       }
 
       TRANSIENT_SOLVER {
-        TIME_STEP    0.001;
+        TIME_STEP     1e-3;
 
         DAMPING {
           RAYLEIGH {
@@ -126,7 +125,7 @@ STRUCTURAL_MECHANICS {
 
       PRESSURE {
         PRESS {
-          PRESSURE    1e9;
+          PRESSURE    1e8;
           DIRECTION { Y -1; }
         }
       }
