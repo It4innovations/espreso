@@ -714,14 +714,18 @@ void StructuralMechanics::updateSolution(Vector_Base<double> *rex, Vector_Base<d
 {
     rex->storeTo(Results::cosDisplacement->data);
     imx->storeTo(Results::sinDisplacement->data);
-    std::fill(Results::normal->data.begin(), Results::normal->data.end(), 0);
+    if (Results::normal) {
+        std::fill(Results::normal->data.begin(), Results::normal->data.end(), 0);
+    }
     assemble(SubKernel::SOLUTION);
 }
 
 void StructuralMechanics::nextIteration(Vector_Base<double> *x)
 {
     x->storeTo(Results::displacement->data);
-    std::fill(Results::normal->data.begin(), Results::normal->data.end(), 0);
+    if (Results::normal) {
+        std::fill(Results::normal->data.begin(), Results::normal->data.end(), 0);
+    }
     assemble(SubKernel::ITERATION);
 }
 
