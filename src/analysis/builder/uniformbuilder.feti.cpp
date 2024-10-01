@@ -97,6 +97,10 @@ UniformBuilderFETIPattern::UniformBuilderFETIPattern(StructuralMechanicsLoadStep
         type = Matrix_Type::REAL_SYMMETRIC_INDEFINITE;
     }
 
+    if (configuration.type == LoadStepSolverConfiguration::TYPE::TRANSIENT) {
+        type = Matrix_Type::REAL_SYMMETRIC_POSITIVE_DEFINITE;
+    }
+
     dirichletInfo.resize(info::mesh->boundaryRegions.size());
     for (size_t r = 1; r < info::mesh->boundaryRegions.size(); ++r) {
         const BoundaryRegionStore *region = info::mesh->boundaryRegions[r];
