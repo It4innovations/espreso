@@ -77,6 +77,7 @@ struct StructuralMechanicsFaceOperators {
     Thickness thickness;
     Coordinates coordinates;
     Integration integration;
+    Displacement displacement;
     Normal normal;
 
     Pressure pressure;

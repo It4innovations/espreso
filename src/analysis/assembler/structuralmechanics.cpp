@@ -396,6 +396,7 @@ bool StructuralMechanics::analyze(const step::Step &step)
             for (size_t i = 0; i < info::mesh->boundary[r]->eintervals.size(); ++i) {
                 faceKernels[r][i].coordinates.activate(region->elements->cbegin() + region->eintervals[i].begin, region->elements->cbegin() + region->eintervals[i].end, settings.element_behaviour == StructuralMechanicsGlobalSettings::ELEMENT_BEHAVIOUR::AXISYMMETRIC);
                 faceKernels[r][i].normalPressure.activate(getExpression(region->name, configuration.normal_pressure), settings.element_behaviour);
+                faceKernels[r][i].displacement.activate(region->elements->cbegin() + region->eintervals[i].begin, region->elements->cbegin() + region->eintervals[i].end, Results::displacement->data.data());
                 if (settings.contact_interfaces && StringCompare::caseInsensitivePreffix("CONTACT", region->name)) {
                     faceKernels[r][i].normal.activate(region->elements->cbegin() + region->eintervals[i].begin, region->elements->cbegin() + region->eintervals[i].end, Results::normal->data.data(), faceMultiplicity.data());
                 }
@@ -713,12 +714,14 @@ void StructuralMechanics::updateSolution(Vector_Base<double> *rex, Vector_Base<d
 {
     rex->storeTo(Results::cosDisplacement->data);
     imx->storeTo(Results::sinDisplacement->data);
+    std::fill(Results::normal->data.begin(), Results::normal->data.end(), 0);
     assemble(SubKernel::SOLUTION);
 }
 
 void StructuralMechanics::nextIteration(Vector_Base<double> *x)
 {
     x->storeTo(Results::displacement->data);
+    std::fill(Results::normal->data.begin(), Results::normal->data.end(), 0);
     assemble(SubKernel::ITERATION);
 }
 

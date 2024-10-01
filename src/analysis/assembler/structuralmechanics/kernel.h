@@ -469,9 +469,9 @@ void setBoundaryKernel(StructuralMechanicsFaceOperators &operators, SubKernel::A
     BasisKernel<code, nodes, gps, edim> basis(operators.basis);
     CoordinatesKernel<nodes, ndim> coordinates(operators.coordinates);
     IntegrationKernel<nodes, ndim, edim> integration(operators.integration);
-    StoreNormalKernel<nodes, ndim> storeNornal(operators.normal);
+    NormalKernel<nodes, ndim, edim> normal(operators.normal);
 
-    storeNornal.setActiveness(action);
+    normal.setActiveness(action);
 
     SIMD surface;
     basis.simd(element);
@@ -480,9 +480,13 @@ void setBoundaryKernel(StructuralMechanicsFaceOperators &operators, SubKernel::A
         for (size_t gp = 0; gp < gps; ++gp) {
             integration.simd(element, gp);
             surface = surface + element.det * load1(element.w[gp]);
+
+            if (normal.isactive) {
+                normal.simd(element, gp);
+            }
         }
-        if (storeNornal.isactive) {
-            storeNornal.simd(element);
+        if (normal.isactive) {
+            normal.simd(element);
         }
     }
 
@@ -500,9 +504,11 @@ void runBoundaryKernel(const StructuralMechanicsFaceOperators &operators, SubKer
     BasisKernel<code, nodes, gps, edim> basis(operators.basis);
     CoordinatesKernel<nodes, ndim> coordinates(operators.coordinates);
     CoordinatesToGPsKernel<nodes, ndim> coordinatesToGPs(operators.coordinates);
+    DisplacementKernel<nodes, ndim> displacement(operators.displacement);
     ThicknessFromNodes<nodes, ndim> thickness(operators.thickness);
     ThicknessToGp<nodes, ndim> thicknessToGPs(operators.thickness);
     IntegrationKernel<nodes, ndim, edim> integration(operators.integration);
+    NormalKernel<nodes, ndim, edim> normal(operators.normal);
     NormalPressureKernel<nodes, ndim> normalPressure(operators.normalPressure);
     FluidForceGatherKernel<nodes, ndim> fluidForceGather(operators.fluidForce);
     FluidForceKernel<nodes, ndim> fluidForce(operators.fluidForce);
@@ -522,14 +528,20 @@ void runBoundaryKernel(const StructuralMechanicsFaceOperators &operators, SubKer
 
     basis.simd(element);
     thickness.setActiveness(action);
+    displacement.setActiveness(action);
     fluidForceGather.setActiveness(action);
     fluidForce.setActiveness(action);
+    normal.setActiveness(action);
 
     outReRHS.setActiveness(action);
     outImRHS.setActiveness(action);
 
     for (size_t c = 0; c < operators.chunks; ++c) {
         coordinates.simd(element);
+
+        if (displacement.isactive) {
+            displacement.simd(element);
+        }
 
         if (fluidForceGather.isactive) {
             fluidForceGather.simd(element);
@@ -554,6 +566,10 @@ void runBoundaryKernel(const StructuralMechanicsFaceOperators &operators, SubKer
 
             integration.simd(element, gp);
 
+            if (normal.isactive) {
+                normal.simd(element, gp);
+            }
+
             if (normalPressure.isactive) {
                 normalPressure.simd(element, gp);
             }
@@ -563,6 +579,10 @@ void runBoundaryKernel(const StructuralMechanicsFaceOperators &operators, SubKer
             if (fluidForce.isactive) {
                 fluidForce.simd(element, gp);
             }
+        }
+
+        if (normal.isactive) {
+            normal.simd(element);
         }
 
         if (outReRHS.isactive) {
