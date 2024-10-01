@@ -91,7 +91,7 @@ STRUCTURAL_MECHANICS {
         PROJECTOR           [ARG8];
         PROJECTOR_OPT       [ARG9];
         ITERATIVE_SOLVER       PCG;
-        REGULARIZATION   ALGEBRAIC;
+        REGULARIZATION    ANALYTIC;
         PRECISION             1e-7;
         MAX_ITERATIONS     [ARG10];
       }
