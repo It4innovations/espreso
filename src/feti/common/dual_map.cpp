@@ -24,7 +24,9 @@ void Dual_Map::set(FETI<T> &feti) {
 
     neighbors = feti.decomposition->neighbors;
 
+    nsize.clear();
     nsize.resize(neighbors.size());
+    nmap.clear();
     for (size_t i = 0, offset = 0; i < feti.lambdas.cmap.size(); ) {
         int lambdas =  feti.lambdas.cmap[i];
         int domains =  feti.lambdas.cmap[i + 1];

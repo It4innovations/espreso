@@ -193,6 +193,10 @@ void TotalFETIImplicit<T>::set(const step::Step &step)
 template <typename T>
 void TotalFETIImplicit<T>::update(const step::Step &step)
 {
+    if (feti.updated.B) {
+        d.resize();
+    }
+
     if (feti.updated.K) {
         #pragma omp parallel for
         for (size_t di = 0; di < feti.K.size(); ++di) {

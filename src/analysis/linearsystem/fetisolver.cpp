@@ -154,9 +154,10 @@ void FETILinearSystemSolver<T>::update(step::Step &step)
         }
     }
     feti.updated.K = A.updated;
-    feti.updated.B = step.substep == 0;
+    feti.updated.B |= step.substep == 0;
     feti.update(step);
     A.updated = b.updated = dirichlet.updated = false;
+    feti.updated.K = feti.updated.B = false;
     eslog::endln("FETI: LINEAR SYSTEM UPDATED");
 }
 

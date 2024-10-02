@@ -49,9 +49,6 @@ bool FETI<T>::set(const step::Step &step)
     int size = K.size();
     Communication::allReduce(&size, &sinfo.domains, 1, MPITools::getType(size).mpitype, MPI_SUM);
 
-    Dual_Map::set(*this);
-    Vector_Dual<T>::initBuffers();
-
     eslog::checkpointln("FETI: SET INFO");
 
     dualOperator = DualOperator<T>::create(*this, step);
@@ -81,6 +78,11 @@ template <typename T>
 bool FETI<T>::update(const step::Step &step)
 {
     double start = eslog::time();
+    if (updated.B) {
+        Dual_Map::set(*this);
+        Vector_Dual<T>::initBuffers();
+    }
+
     dualOperator->update(step);
     projector->update(step);
     preconditioner->update(step);

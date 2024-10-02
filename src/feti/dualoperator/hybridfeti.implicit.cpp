@@ -69,6 +69,10 @@ void HybridFETIImplicit<T>::set(const step::Step &step)
 template <typename T>
 void HybridFETIImplicit<T>::update(const step::Step &step)
 {
+    if (feti.updated.B) {
+        d.resize();
+    }
+
     int dB0max = 0, dKmax = 0;
     std::vector<std::vector<int> > csr(feti.cluster.gl_size);
     for (size_t di = 0; di < feti.K.size(); ++di) {

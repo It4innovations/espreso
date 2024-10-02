@@ -53,6 +53,15 @@ static void _print(const char *name, const IterativeSolverInfo &info, const step
     }
 }
 
+template <typename T>
+static void _print(const char *name, const step::Step &step, const Vector_Dual<T> &v)
+{
+    if (info::ecf->output.print_matrices > 1) {
+        eslog::storedata(" STORE: feti/MPRGP/{%s}\n", name);
+        math::store(v, utils::filename(utils::debugDirectory(step) + "/feti/MPRGP", std::string(name)).c_str());
+    }
+}
+
 template <>
 void MPRGP<double>::restrictToFeasibleSet(Vector_Dual<double> &x)
 {
@@ -137,6 +146,9 @@ template <> void MPRGP<double>::run(const step::Step &step, MPRGPSolverInfo &inf
     const char *cg = "cg   ", *mixed = "cg-gp", *prop = "   gp", *opt = cg;
     info.n_cg = info.n_mixed = info.n_gproj = 0;
 
+    _print("x0", step, x0);
+    _print("b", step, b);
+
     math::copy(g0, b);
     math::scale(-1., g0);
     H(x0, g);
@@ -152,6 +164,9 @@ template <> void MPRGP<double>::run(const step::Step &step, MPRGPSolverInfo &inf
 
     while (info.iterations++ < feti.configuration.max_iterations && !stop(x, g_stop)) {
         info.time.current = eslog::time();
+        _print("p", info, step, p);
+        _print("g", info, step, g);
+
         // PROPORTIONALITY TEST
         if (2 * feti.configuration.delta * std::max(0., g_stop.dot(g)) <= std::max(0., g_stop.dot(g_free))) {
             H(p, Fp);
@@ -278,6 +293,8 @@ template <> void MPRGP<double>::solve(const step::Step &step, IterativeSolverInf
 
     eslog::endln("mprgp: finished");
     eslog::checkpointln("FETI: MPRGP ITERATIONS");
+    _print("x", step, x);
+    _print("z", step, z);
     reconstructSolution(x, z, step);
     eslog::checkpointln("FETI: SOLUTION RECONSTRUCTION");
     eslog::info("       = ----------------------------------------------------------------------------- = \n");
