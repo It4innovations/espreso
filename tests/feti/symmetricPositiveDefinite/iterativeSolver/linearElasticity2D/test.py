@@ -9,7 +9,7 @@ cases = [
     ("orthogonalPCG", "DIRICHLET ", 60),
     ]
 
-class Assembler(unittest.TestCase):
+class Solver(unittest.TestCase):
 
     def setUp(self):
         ESPRESOTest.path = os.path.dirname(__file__)

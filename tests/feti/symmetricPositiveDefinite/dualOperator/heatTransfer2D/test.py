@@ -2,7 +2,7 @@
 import os, unittest
 from estest import ESPRESOTest
 
-class Assembler(unittest.TestCase):
+class Solver(unittest.TestCase):
 
     def setUp(self):
         ESPRESOTest.path = os.path.dirname(__file__)
