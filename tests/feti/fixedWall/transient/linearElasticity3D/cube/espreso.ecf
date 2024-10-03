@@ -11,9 +11,9 @@ DEFAULT_ARGS {
   5        2;
   6        2;
 
-  7       20;
-  8        4;
-  9        4;
+  7        8;
+  8        8;
+  9        8;
 }
 
 INPUT_TYPE              GENERATOR;
@@ -27,17 +27,13 @@ GENERATOR {
     START_Y                    0;
     START_Z                    0;
 
-    LENGTH_X                   5;
+    LENGTH_X                   1;
     LENGTH_Y                   1;
     LENGTH_Z                   1;
 
-    NODES {
-      FIX   <0 , 0> <0 , 1> <0 , 1>;
-    }
-
     FACES {
-      PRESS   <5 , 5> <0 , 1> <0 , 1>;
-      CONTACT <0 , 5> <0 , 1> <0 , 0>;
+      PRESS   <0 , 1> <0 , 1> <1 , 1>;
+      CONTACT <0 , 1> <0 , 1> <0 , 0>;
     }
 
     ELEMENT_TYPE          [ARG0];
@@ -71,7 +67,7 @@ STRUCTURAL_MECHANICS {
         MODEL   ISOTROPIC;
 
         MIXY          0.3;
-        EX         2.1E11;
+        EX         2.1E10;
       }
 
       THERMAL_EXPANSION {
@@ -86,7 +82,7 @@ STRUCTURAL_MECHANICS {
 
   LOAD_STEPS_SETTINGS {
     1 {
-      DURATION_TIME    4e-3;
+      DURATION_TIME    1e-2;
       TYPE        TRANSIENT;
       MODE        NONLINEAR;
       SOLVER           FETI;
@@ -99,6 +95,7 @@ STRUCTURAL_MECHANICS {
         ITERATIVE_SOLVER     MPRGP;
         REGULARIZATION    ANALYTIC;
         PRECISION            1e-06;
+        PRECISION_IN         1e-08;
         MAX_ITERATIONS         500;
       }
 
@@ -108,7 +105,7 @@ STRUCTURAL_MECHANICS {
       }
 
       TRANSIENT_SOLVER {
-        TIME_STEP      2e-4;
+        TIME_STEP      5e-4;
 
         DAMPING {
           RAYLEIGH {
@@ -122,21 +119,18 @@ STRUCTURAL_MECHANICS {
       }
 
       DISPLACEMENT {
-        FIX   { X 0 ; Y 0 ; Z 0; }
+        PRESS   { X 0 ; Y 0 ; }
       }
 
-      PRESSURE {
-        PRESS {
-          PRESSURE     1e9;
-          DIRECTION { Z -1; }
-        }
+      NORMAL_PRESSURE {
+        PRESS   1e8;
       }
 
       FIXED_WALL {
         CONTACT {
-          GAP                  .5;
-          NORMAL          { Z   1; }
-          POINT { X 0; Y 0; Z -.2; }
+          GAP                   .1;
+          NORMAL          { Z    1; }
+          POINT { X 0; Y 0; Z -.05; }
         }
       }
     }
