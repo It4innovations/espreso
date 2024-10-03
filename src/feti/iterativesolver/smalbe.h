@@ -23,6 +23,7 @@ public:
         IterativeSolver<T>::resize(Pb, b, y, z, x_im, Fx_im, bCtmu, bCtmu_prev, gbCtmu);
         IterativeSolver<T>::resize(mu, invLce, Gx);
         mprgp.update(step);
+        info();
     }
 
     void solve(const step::Step &step, IterativeSolverInfo &info);
