@@ -268,10 +268,21 @@ template <> void MPRGP<double>::solve(const step::Step &step, IterativeSolverInf
     math::set(x0, 0.);
     math::copy(b, F->d);
 
+    int lambdas[2] = { 0, 0 }, size = 0;
+    for (size_t i = 0; i < feti.lambdas.intervals.size(); ++i) {
+        size += feti.lambdas.intervals[i].size + feti.lambdas.intervals[i].halo;
+        if (size <= feti.lambdas.equalities) {
+            lambdas[0] += feti.lambdas.intervals[i].size;
+        } else {
+            lambdas[1] += feti.lambdas.intervals[i].size;
+        }
+    }
+    Communication::allReduce(lambdas, nullptr, 2, MPI_INT, MPI_SUM);
+
     eslog::info("       - ESTIMATED MAX EIGEN VALUE                             %.3e in %4d steps - \n", maxEIG, nIt);
     eslog::info("       -   -   -   -   -   -   -   -   -   -   -   -   -   -   -   -   -   -   -   -   - \n");
-    eslog::info("       - EQUALITIES                                               %20d - \n", feti.lambdas.equalities);
-    eslog::info("       - INEQUALITIES                                             %20d - \n", feti.lambdas.size - feti.lambdas.equalities);
+    eslog::info("       - EQUALITIES                                               %20d - \n", lambdas[0]);
+    eslog::info("       - INEQUALITIES                                             %20d - \n", lambdas[1]);
     eslog::info("       - ----------------------------------------------------------------------------- - \n");
     eslog::info("       - ITERATION        STEP                 NORM(G)         TOLERANCE      TIME [s] - \n");
     eslog::info("       - ----------------------------------------------------------------------------- - \n");
