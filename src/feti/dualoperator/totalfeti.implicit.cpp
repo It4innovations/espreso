@@ -25,7 +25,7 @@ TotalFETIImplicit<T>::~TotalFETIImplicit()
 template <typename T>
 void TotalFETIImplicit<T>::info()
 {
-    if (this->infoPrinted) {
+    if (this->infoPrinted && !feti.updated.K && !feti.updated.B) {
         return;
     }
     this->infoPrinted = true;

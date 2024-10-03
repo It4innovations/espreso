@@ -162,6 +162,11 @@ template <> void MPRGP<double>::run(const step::Step &step, MPRGPSolverInfo &inf
     multByFree(z, free);
     math::copy(p, z);
 
+    Vector_Dense<double> eq_d;
+    eq_d.size = feti.lambdas.equalities;
+    eq_d.vals = feti.dualOperator->d.vals;
+    double tolerance = feti.configuration.precision * math::norm(eq_d);
+
     while (info.iterations++ < feti.configuration.max_iterations && !stop(x, g_stop)) {
         info.time.current = eslog::time();
         _print("p", info, step, p);
@@ -244,7 +249,7 @@ template <> void MPRGP<double>::run(const step::Step &step, MPRGPSolverInfo &inf
         }
         updateStoppingGradient(g_stop, g, x, alpha);
         if (info.print) {
-            eslog::info("       - %9d    %9s             %9.4e        %9.4e      %7.2e - \n", info.iterations, opt, std::sqrt(g_stop.dot()), feti.configuration.precision * std::sqrt(feti.dualOperator->d.dot()), eslog::time() - info.time.current);
+            eslog::info("       - %9d    %9s             %9.4e        %9.4e      %7.2e - \n", info.iterations, opt, std::sqrt(g_stop.dot()), tolerance, eslog::time() - info.time.current);
         }
     }
 }
@@ -264,6 +269,9 @@ template <> void MPRGP<double>::solve(const step::Step &step, IterativeSolverInf
     math::copy(b, F->d);
 
     eslog::info("       - ESTIMATED MAX EIGEN VALUE                             %.3e in %4d steps - \n", maxEIG, nIt);
+    eslog::info("       -   -   -   -   -   -   -   -   -   -   -   -   -   -   -   -   -   -   -   -   - \n");
+    eslog::info("       - EQUALITIES                                               %20d - \n", feti.lambdas.equalities);
+    eslog::info("       - INEQUALITIES                                             %20d - \n", feti.lambdas.size - feti.lambdas.equalities);
     eslog::info("       - ----------------------------------------------------------------------------- - \n");
     eslog::info("       - ITERATION        STEP                 NORM(G)         TOLERANCE      TIME [s] - \n");
     eslog::info("       - ----------------------------------------------------------------------------- - \n");

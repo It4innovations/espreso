@@ -45,10 +45,7 @@ void FixedWall<T>::update(const step::Step &step, FETI<T> &feti, const Vector_Di
     if (loadstep.fixed_wall.empty()) {
         return;
     }
-
-    if (feti.lambdas.size != feti.lambdas.equalities) {
-        feti.updated.B = true;
-    }
+    feti.updated.B = true;
 
     // we need to reset due to different number of equalities
     feti.lambdas.size = feti.lambdas.equalities;
@@ -217,7 +214,6 @@ void FixedWall<T>::update(const step::Step &step, FETI<T> &feti, const Vector_Di
     math::set(feti.ub, std::numeric_limits<T>::max());
 
     feti.lambdas.intervals.back().size = feti.lambdas.size - feti.lambdas.equalities - feti.lambdas.intervals.back().halo;
-    feti.updated.B = true;
 }
 
 template class FixedWall<double>;
