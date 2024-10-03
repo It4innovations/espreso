@@ -138,6 +138,10 @@ bool StructuralMechanicsTransientNonLinear::run(step::Step &step)
     double dampingK = configuration.transient_solver.damping.rayleigh.direct_damping.stiffness.evaluator->evaluate();
     double dampingM = configuration.transient_solver.damping.rayleigh.direct_damping.mass.evaluator->evaluate();
 
+    double nd = configuration.transient_solver.numerical_damping;
+    alpha *= (1 + nd) * (1 + nd);
+    delta += nd;
+
     assembler.connect(K, M, f, R, dirichlet);
 
     if (MPITools::node->rank == 0) {
