@@ -19,6 +19,9 @@ struct FixedWall {
     std::vector<std::vector<esint> > cindex;
     std::vector<size_t> dsize;
     size_t interval, cmapsize;
+
+private:
+    void _store(const Point &normal, const Point &point, double gap);
 };
 
 }

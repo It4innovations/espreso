@@ -5,10 +5,12 @@
 #include "esinfo/ecfinfo.h"
 #include "esinfo/meshinfo.h"
 #include "mesh/store/boundaryregionstore.h"
+#include "mesh/store/elementsregionstore.h"
 #include "math/math.h"
 
 #include <climits>
 #include <numeric>
+#include <fstream>
 
 namespace espreso {
 
@@ -77,6 +79,8 @@ void FixedWall<T>::update(const step::Step &step, FETI<T> &feti, const Vector_Di
         pp.x = wall->second.point.x.evaluator->evaluate();
         pp.y = wall->second.point.y.evaluator->evaluate();
         pp.z = wall->second.point.z.evaluator->evaluate();
+
+        _store(pn, pp, wall->second.gap);
 
         const BoundaryRegionStore *region = info::mesh->bregion(wall->first);
         int dindex = 0;
@@ -214,6 +218,59 @@ void FixedWall<T>::update(const step::Step &step, FETI<T> &feti, const Vector_Di
     math::set(feti.ub, std::numeric_limits<T>::max());
 
     feti.lambdas.intervals.back().size = feti.lambdas.size - feti.lambdas.equalities - feti.lambdas.intervals.back().halo;
+}
+
+template <typename T>
+void FixedWall<T>::_store(const Point &normal, const Point &point, double gap)
+{
+    Point t(1, 1, (normal.x + normal.y) / normal.z);
+    t.normalize();
+    Point s = Point::cross(normal, t);
+    const auto &size = info::mesh->elementsRegions.front()->nodeInfo;
+    t *= (size.max - size.min).length();
+    s *= (size.max - size.min).length();
+    Point p0 = point + t;
+    Point p1 = point + s;
+    Point p2 = point - t;
+    Point p3 = point - s;
+
+    {
+        std::ofstream os(info::ecf->outpath + "/fixed_wall.vtk");
+        os << "# vtk DataFile Version 2.0\n";
+        os << "EXAMPLE\n";
+        os << "ASCII\n";
+        os << "DATASET UNSTRUCTURED_GRID\n";
+        os << "POINTS 4 float\n";
+        os << p0.x << " " << p0.y << " " << p0.z << "\n";
+        os << p1.x << " " << p1.y << " " << p1.z << "\n";
+        os << p2.x << " " << p2.y << " " << p2.z << "\n";
+        os << p3.x << " " << p3.y << " " << p3.z << "\n";
+        os << "CELLS 1 5\n";
+        os << "4 0 1 2 3\n";;
+        os << "CELL_TYPES 1\n";
+        os << "9\n";
+    }
+
+    p0 += normal * gap;
+    p1 += normal * gap;
+    p2 += normal * gap;
+    p3 += normal * gap;
+    {
+        std::ofstream os(info::ecf->outpath + "/fixed_wall_gap.vtk");
+        os << "# vtk DataFile Version 2.0\n";
+        os << "EXAMPLE\n";
+        os << "ASCII\n";
+        os << "DATASET UNSTRUCTURED_GRID\n";
+        os << "POINTS 4 float\n";
+        os << p0.x << " " << p0.y << " " << p0.z << "\n";
+        os << p1.x << " " << p1.y << " " << p1.z << "\n";
+        os << p2.x << " " << p2.y << " " << p2.z << "\n";
+        os << p3.x << " " << p3.y << " " << p3.z << "\n";
+        os << "CELLS 1 5\n";
+        os << "4 0 1 2 3\n";;
+        os << "CELL_TYPES 1\n";
+        os << "9\n";
+    }
 }
 
 template class FixedWall<double>;
