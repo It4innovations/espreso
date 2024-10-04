@@ -69,6 +69,8 @@ namespace spblas {
 
     void descr_sparse_mv_destroy(handle & /*h*/, descr_sparse_mv & /*descr*/) {}
 
+    place get_place_trsm() { return place::NONE; }
+
     template<typename T, typename I>
     void transpose(handle & /*h*/, descr_matrix_csr & /*output*/, descr_matrix_csr & /*input*/, bool /*conjugate*/, size_t & /*buffersize*/, void * /*buffer*/, char /*stage*/) {}
 

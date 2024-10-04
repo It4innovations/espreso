@@ -382,6 +382,11 @@ namespace spblas {
 
     void descr_sparse_mv_destroy(handle & /*h*/, descr_sparse_mv & /*descr*/) { }
 
+    place get_place_trsm()
+    {
+        return place::IN_PLACE;
+    }
+
     template<typename T, typename I>
     void transpose(handle & h, descr_matrix_csr & output, descr_matrix_csr & input, bool conjugate, size_t & buffersize, void * buffer, char stage)
     {
@@ -429,6 +434,8 @@ namespace spblas {
     template<typename T, typename I>
     void trsm(handle & h, char transpose_mat, char transpose_rhs, char transpose_sol, descr_matrix_csr & matrix, descr_matrix_dense & rhs, descr_matrix_dense & sol, descr_sparse_trsm & descr_trsm, buffer_info & buffers, char stage)
     {
+        if(rhs.get() != sol.get()) eslog::error("wrong rhs and sol parameters: have to be the same, because trsm in cusparse legacy is in-place\n");
+
         // legacy cusparse assumes colmajor for both dense matrices
         // legacy cusparse api has the transB on the rhs as well as on the solution
         if(rhs->order == sol->order) {
@@ -441,7 +448,6 @@ namespace spblas {
                     if(stage == 'B') CHECK((_my_sparse_trsm_buffersize<T,I>)(h->h, algo, _char_to_operation<T>(transpose_mat), _char_to_operation<T>(transpose_rhs), matrix->nrows, nrhs, matrix->nnz, &one, matrix->d_leg, (T*)matrix->vals, (I*)matrix->rowptrs, (I*)matrix->colidxs, (T*)sol->vals, sol->ld, descr_trsm->i, policy, &buffers.size.tmp_preprocess));
                     if(stage == 'P') CHECK((_my_sparse_trsm_analysis<T,I>)  (h->h, algo, _char_to_operation<T>(transpose_mat), _char_to_operation<T>(transpose_rhs), matrix->nrows, nrhs, matrix->nnz, &one, matrix->d_leg, (T*)matrix->vals, (I*)matrix->rowptrs, (I*)matrix->colidxs, (T*)sol->vals, sol->ld, descr_trsm->i, policy, buffers.ptrs.tmp));
                     // if(stage == 'U') ; // I can just modify the values behind the pointer, and cusparse will notice
-                    if(stage == 'C') CHECK(cudaMemcpy2DAsync(sol->vals, sol->ld * sizeof(T), rhs->vals, rhs->ld * sizeof(T), sol->nrows * sizeof(T), sol->ncols, cudaMemcpyDeviceToDevice, h->get_stream()));
                     if(stage == 'C') CHECK((_my_sparse_trsm_solve<T,I>)     (h->h, algo, _char_to_operation<T>(transpose_mat), _char_to_operation<T>(transpose_rhs), matrix->nrows, nrhs, matrix->nnz, &one, matrix->d_leg, (T*)matrix->vals, (I*)matrix->rowptrs, (I*)matrix->colidxs, (T*)sol->vals, sol->ld, descr_trsm->i, policy, buffers.ptrs.tmp));
                     
                     if(stage == 'B') {
@@ -451,23 +457,21 @@ namespace spblas {
                     }
                 }
                 else if(rhs->order == 'R') {
-                    descr_matrix_dense descr_rhs_compl = std::make_shared<_descr_matrix_dense>(rhs->get_complementary());
-                    descr_matrix_dense descr_sol_compl = std::make_shared<_descr_matrix_dense>(sol->get_complementary());
+                    descr_matrix_dense descr_rhs_sol_compl = std::make_shared<_descr_matrix_dense>(sol->get_complementary());
                     char transpose_compl = mgm::operation_combine(transpose_rhs, 'T');
-                    trsm<T,I>(h, transpose_mat, transpose_compl, transpose_compl, matrix, descr_rhs_compl, descr_sol_compl, descr_trsm, buffers, stage);
+                    trsm<T,I>(h, transpose_mat, transpose_compl, transpose_compl, matrix, descr_rhs_sol_compl, descr_rhs_sol_compl, descr_trsm, buffers, stage);
                 }
                 else {
                     eslog::error("wrong dense matrix order '%c'\n", rhs->order);
                 }
             }
             else {
-                eslog::error("unsupported combimation of matrix orders and transpositions '%c'\n", rhs->order);
+                eslog::error("transpose_rhs and transpose_sol must be equal\n");
             }
         }
         else {
-            descr_matrix_dense descr_rhs_compl = std::make_shared<_descr_matrix_dense>(rhs->get_complementary());
-            char transpose_rhs_compl = mgm::operation_combine(transpose_rhs, 'T');
-            trsm<T,I>(h, transpose_mat, transpose_rhs_compl, transpose_sol, matrix, descr_rhs_compl, sol, descr_trsm, buffers, stage);
+            // will never trigger because rhs and sol are the same descriptors
+            eslog::error("rhs order and sol order must be equal\n");
         }
     }
 

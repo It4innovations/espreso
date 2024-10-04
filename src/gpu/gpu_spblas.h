@@ -20,6 +20,14 @@ namespace spblas {
         ONEMKL_SPARSE
     };
 
+    // if function is in-place, both the in and out parameters have to be passed and be the same
+    // if function is out-of-place, in and out parameters must not be the same
+    enum struct place {
+        NONE,
+        IN_PLACE,
+        OUT_OF_PLACE
+    };
+
     spblas_wrapper_impl get_implementation();
 
     struct _handle;
@@ -103,6 +111,8 @@ namespace spblas {
     void descr_sparse_mv_create(handle & h, descr_sparse_mv & descr);
 
     void descr_sparse_mv_destroy(handle & h, descr_sparse_mv & descr);
+
+    place get_place_trsm();
 
     // stages: Buffersize, Preprocess, Compute
     template<typename T, typename I>

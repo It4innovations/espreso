@@ -50,12 +50,20 @@ TotalFETIGpu<T,I>::TotalFETIGpu(FETI<T> &feti, DualOperatorStrategy strategy)
     is_path_trsm = (config->path_if_hermitian == PATH_IF_HERMITIAN::TRSM);
     is_path_herk = (config->path_if_hermitian == PATH_IF_HERMITIAN::HERK);
     do_herk = (is_path_herk && is_explicit);
+
+    bool is_sptrsm_inplace = (gpu::spblas::get_place_trsm() == gpu::spblas::place::IN_PLACE);
+    // bool is_sptrsm_outofplace = (gpu::spblas::get_place_trsm() == gpu::spblas::place::OUT_OF_PLACE);
+    is_trsm1_inplace = (is_factor1_dense || (is_factor1_sparse && is_sptrsm_inplace));
+    is_trsm2_inplace = (is_factor2_dense || (is_factor2_sparse && is_sptrsm_inplace));
+    is_trsm1_outofplace = !is_trsm1_inplace; // or, equivalently, is_factor1_sparse && is_sptrsm_outofplace
+    is_trsm2_outofplace = !is_trsm2_inplace; // or, equivalently, is_factor2_sparse && is_sptrsm_outofplace
+
     bool trs1_use_L  = (config->trs1_solve_type == TRS1_SOLVE_TYPE::L);
     bool trs1_use_LH = (config->trs1_solve_type == TRS1_SOLVE_TYPE::LHH);
     bool trs2_use_U  = (config->trs2_solve_type == TRS2_SOLVE_TYPE::U   && (is_path_trsm || is_implicit));
     bool trs2_use_UH = (config->trs2_solve_type == TRS2_SOLVE_TYPE::UHH && (is_path_trsm || is_implicit));
     need_X = is_explicit;
-    need_Y = (is_explicit && (is_factor1_sparse || is_factor2_sparse));
+    need_Y = (is_explicit && (is_trsm1_outofplace || is_trsm2_outofplace));
     need_F = is_explicit;
     Solver_Factors sym = DirectSparseSolver<T,I>::factorsSymmetry();
     solver_get_L = (sym == Solver_Factors::HERMITIAN_LOWER || sym == Solver_Factors::NONSYMMETRIC_BOTH);
@@ -425,8 +433,8 @@ void TotalFETIGpu<T,I>::set(const step::Step &step)
         per_domain_stuff & data = domain_data[di];
 
         gpu::spblas::descr_matrix_dense & descr_X = data.descr_X;
-        gpu::spblas::descr_matrix_dense & descr_W = (is_factor1_sparse ? data.descr_Y : data.descr_X);
-        gpu::spblas::descr_matrix_dense & descr_Z = (is_factor1_sparse == is_factor2_sparse ? data.descr_X : data.descr_Y);
+        gpu::spblas::descr_matrix_dense & descr_W = (is_trsm1_outofplace ? data.descr_Y : data.descr_X);
+        gpu::spblas::descr_matrix_dense & descr_Z = (is_trsm1_outofplace == is_trsm2_outofplace ? data.descr_X : data.descr_Y);
 
         // Kreg = K + RegMat symbolic pattern
         tm_Kreg_combine.start();
@@ -731,8 +739,8 @@ void TotalFETIGpu<T,I>::set(const step::Step &step)
             per_domain_stuff & data = domain_data[di];
 
             gpu::spblas::descr_matrix_dense & descr_X = data.descr_X;
-            gpu::spblas::descr_matrix_dense & descr_W = (is_factor1_sparse ? data.descr_Y : data.descr_X);
-            gpu::spblas::descr_matrix_dense & descr_Z = (is_factor1_sparse == is_factor2_sparse ? data.descr_X : data.descr_Y);
+            gpu::spblas::descr_matrix_dense & descr_W = (is_trsm1_outofplace ? data.descr_Y : data.descr_X);
+            gpu::spblas::descr_matrix_dense & descr_Z = (is_trsm1_outofplace == is_trsm2_outofplace ? data.descr_X : data.descr_Y);
 
             tm_prepr_allocinpool.start();
             cbmba_res_preprocess.do_transaction([&](){
@@ -1009,11 +1017,11 @@ void TotalFETIGpu<T,I>::update(const step::Step &step)
         per_domain_stuff & data = domain_data[di];
 
         std::unique_ptr<Matrix_Dense<T,I,cbmba_d>> & d_X = data.d_X;
-        std::unique_ptr<Matrix_Dense<T,I,cbmba_d>> & d_W = (is_factor1_sparse ? data.d_Y : data.d_X);
-        // std::unique_ptr<Matrix_Dense<T,I,cbmba_d>> & d_Z = (is_factor1_sparse == is_factor2_sparse ? data.d_X : data.d_Y);
+        std::unique_ptr<Matrix_Dense<T,I,cbmba_d>> & d_W = (is_trsm1_outofplace ? data.d_Y : data.d_X);
+        // std::unique_ptr<Matrix_Dense<T,I,cbmba_d>> & d_Z = (is_trsm1_outofplace == is_trsm2_outofplace ? data.d_X : data.d_Y);
         gpu::spblas::descr_matrix_dense & descr_X = data.descr_X;
-        gpu::spblas::descr_matrix_dense & descr_W = (is_factor1_sparse ? data.descr_Y : data.descr_X);
-        gpu::spblas::descr_matrix_dense & descr_Z = (is_factor1_sparse == is_factor2_sparse ? data.descr_X : data.descr_Y);
+        gpu::spblas::descr_matrix_dense & descr_W = (is_trsm1_outofplace ? data.descr_Y : data.descr_X);
+        gpu::spblas::descr_matrix_dense & descr_Z = (is_trsm1_outofplace == is_trsm2_outofplace ? data.descr_X : data.descr_Y);
 
         void * buffer_other = nullptr;
 

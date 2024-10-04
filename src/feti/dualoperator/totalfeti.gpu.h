@@ -158,6 +158,7 @@ protected:
     bool do_trs1_sp, do_trs2_sp, do_mm;
     bool do_trsm1_sp, do_trsm2_sp;
     bool do_trsv1_sp, do_trsv2_sp;
+    bool is_trsm1_inplace, is_trsm1_outofplace, is_trsm2_inplace, is_trsm2_outofplace;
     bool need_X, need_Y, need_F;
     bool solver_get_L, solver_get_U;
     bool can_use_LH_is_U_h_sp, can_use_UH_is_L_h_sp;

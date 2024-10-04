@@ -282,6 +282,11 @@ namespace spblas {
 #endif
     }
 
+    place get_place_trsm()
+    {
+        return place::OUT_OF_PLACE;
+    }
+
     template<typename T, typename I>
     void transpose(handle & h, descr_matrix_csr & output, descr_matrix_csr & input, bool conjugate, size_t & buffersize, void * buffer, char stage)
     {
@@ -339,6 +344,8 @@ namespace spblas {
     template<typename T, typename I>
     void trsm(handle & h, char transpose_mat, char transpose_rhs, char transpose_sol, descr_matrix_csr & matrix, descr_matrix_dense & rhs, descr_matrix_dense & sol, descr_sparse_trsm & descr_trsm, buffer_info & buffers, char stage)
     {
+        if(rhs.get() == sol.get()) eslog::error("wrong rhs and sol parameters: must not be the same, because trsm in cusparse modern is out-of-place\n");
+
         if(transpose_sol == 'N') {
             T one = 1.0;
             if(stage == 'B') CHECK(cusparseSpSM_bufferSize  (h->h, _char_to_operation<T>(transpose_mat), _char_to_operation<T>(transpose_rhs), &one, matrix->d, rhs->d, sol->d, _sparse_data_type<T>(), CUSPARSE_SPSM_ALG_DEFAULT, descr_trsm->d, &buffers.size.persistent));

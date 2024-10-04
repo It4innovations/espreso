@@ -366,6 +366,11 @@ namespace spblas {
 #endif
     }
 
+    place get_place_trsm()
+    {
+        return place::OUT_OF_PLACE;
+    }
+
     template<typename T, typename I>
     void transpose(handle & h, descr_matrix_csr & output, descr_matrix_csr & input, bool conjugate, size_t & buffersize, void * buffer, char stage)
     {
@@ -417,6 +422,8 @@ namespace spblas {
     template<typename T, typename I>
     void trsm(handle & h, char op_mat, char op_rhs, char op_sol, descr_matrix_csr & matrix, descr_matrix_dense & rhs, descr_matrix_dense & sol, descr_sparse_trsm & descr_trsm, buffer_info & buffers, char stage)
     {
+        if(rhs.get() == sol.get()) eslog::error("wrong rhs and sol parameters: must not be the same, because trsm in rocsparse is out-of-place\n");
+
         if constexpr(utils::is_real<T>()) {
             op_mat = mgm::operation_remove_conj(op_mat);
             op_rhs = mgm::operation_remove_conj(op_rhs);
