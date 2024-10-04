@@ -246,12 +246,22 @@ do
 
                 dualoperator="EXPLICIT_GPU"
                 benchmarking_for="apply"
-                trs1_factor_storage="SPARSE"
-                trs1_solve_type="LHH"
-                path_if_hermitian="HERK"
-                trs2_factor_storage="SPARSE"
-                trs2_solve_type="U"
-                trsm_rhs_sol_order="ROW_MAJOR"
+                if [ "${tool}" == "cudalegacy" ]
+                then
+                    trs1_factor_storage="SPARSE"
+                    trs1_solve_type="LHH"
+                    path_if_hermitian="HERK"
+                    trs2_factor_storage="SPARSE"
+                    trs2_solve_type="U"
+                    trsm_rhs_sol_order="ROW_MAJOR"
+                else
+                    trs1_factor_storage="DENSE"
+                    trs1_solve_type="LHH"
+                    path_if_hermitian="HERK"
+                    trs2_factor_storage="DENSE"
+                    trs2_solve_type="U"
+                    trsm_rhs_sol_order="ROW_MAJOR"
+                fi
                 for concurrency in SEQ_WAIT SEQ_CONTINUE PARALLEL
                 do
                     concurrency_set="PARALLEL"
