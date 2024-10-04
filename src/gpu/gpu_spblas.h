@@ -43,6 +43,24 @@ namespace spblas {
     struct _descr_sparse_mv;
     using descr_sparse_mv = std::shared_ptr<_descr_sparse_mv>;
 
+    struct buffer_info
+    {
+        struct buffer_size
+        {
+            size_t persistent = 0;
+            size_t tmp_preprocess = 0;
+            size_t tmp_update = 0;
+            size_t tmp_compute = 0;
+        };
+        struct buffer_ptrs
+        {
+            void * persistent = nullptr;
+            void * tmp = nullptr;
+        };
+        buffer_size size;
+        buffer_ptrs ptrs;
+    };
+
     void handle_create(handle & h, mgm::queue & q);
 
     void handle_destroy(handle & h);
@@ -96,11 +114,11 @@ namespace spblas {
 
     // stages: Buffersize, Preprocess, Update, Compute
     template<typename T, typename I>
-    void trsv(handle & h, char transpose, descr_matrix_csr & matrix, descr_vector_dense & rhs, descr_vector_dense & sol, descr_sparse_trsv & descr_trsv, size_t & buffersize, void * buffer, char stage);
+    void trsv(handle & h, char transpose, descr_matrix_csr & matrix, descr_vector_dense & rhs, descr_vector_dense & sol, descr_sparse_trsv & descr_trsv, buffer_info & buffers, char stage);
 
     // stages: Buffersize, Preprocess, Update, Compute
     template<typename T, typename I>
-    void trsm(handle & h, char transpose_mat, char transpose_rhs, char transpose_sol, descr_matrix_csr & matrix, descr_matrix_dense & rhs, descr_matrix_dense & sol, descr_sparse_trsm & descr_trsm, size_t & buffersize, void * buffer, char stage);
+    void trsm(handle & h, char transpose_mat, char transpose_rhs, char transpose_sol, descr_matrix_csr & matrix, descr_matrix_dense & rhs, descr_matrix_dense & sol, descr_sparse_trsm & descr_trsm, buffer_info & buffers, char stage);
 
     // stages: Buffersize, Preprocess, Compute
     template<typename T, typename I>

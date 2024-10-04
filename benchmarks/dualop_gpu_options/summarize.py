@@ -80,8 +80,8 @@ runs_finished = 0
 outfile = summ_dir + "/set.csv"
 outstring = io.StringIO()
 cells_info = ["id", "str", "run_id", "machine", "tool", "dualoperator", "problem", "physics", "dim", "dofs_per_node", "element_type", "domains_x", "domains_y", "domains_z", "n_domains_total", "elements_x", "elements_y", "elements_z", "n_elements_per_domain", "avg_domain_surface", "avg_domain_volume", "n_dofs", "factor_nnz", "concurrency_set", "concurrency_update", "concurrency_apply", "uniform_clusters_domains", "trs1_factor_storage", "trs2_factor_storage", "trs1_solve_type", "trs2_solve_type", "trsm_rhs_sol_order", "path_if_hermitian", "f_sharing_if_hermitian", "apply_scatter_gather_where", "transpose_where"]
-cells_timers = ["total", "gpuinit", "gpuset", "vecresize", "sizecalc", "gpucreate", "libinit", "mainloop_outer", "mainloop_inner", "Kreg_combine", "solver_commit", "fact_symbolic", "descriptors", "buffersize", "alloc", "alloc_host", "alloc_device", "setpointers", "Bperm", "get_factors", "extract", "trans_cpu", "copyin", "kernels_preprocess", "trans_gpu", "trsm1", "trsm2", "gemm", "trsv1", "trsv2", "spmv1", "spmv2", "applystuff", "poolalloc", "wait"]
-cells_memory = ["F matrices", "sparse factors", "persistent buffers", "buffers sptrs1", "buffers sptrs2", "buffers spmm", "free for pool and more"]
+cells_timers = ["total", "gpuinit", "gpuset", "vecresize", "sizecalc", "gpucreate", "libinit", "mainloop_outer", "mainloop_inner", "Kreg_combine", "solver_commit", "fact_symbolic", "descriptors", "buffersize", "alloc", "alloc_host", "alloc_device", "Bperm", "get_factors", "extract", "trans_cpu", "copyin", "setpointers", "applystuff", "preprocess", "prepr_poolalloc", "prepr_work", "prepr_allocinpool", "prepr_kernels", "trans_gpu", "trsm1", "trsm2", "gemm", "trsv1", "trsv2", "spmv1", "spmv2", "prepr_pooldelete", "poolalloc", "wait"]
+cells_memory = ["F matrices", "sparse factors", "persistent buffers", "buffers sptrsm1", "buffers sptrsm2", "buffers sptrsv1", "buffers sptrsv2", "buffers spmm", "free for pool and more"]
 outstring.write(";".join(cells_info))
 outstring.write(";;")
 outstring.write("error;timeout")
@@ -185,7 +185,7 @@ outfile = summ_dir + "/update.csv"
 outstring = io.StringIO()
 cells_info = ["id", "str", "run_id", "machine", "tool", "dualoperator", "problem", "physics", "dim", "dofs_per_node", "element_type", "domains_x", "domains_y", "domains_z", "n_domains_total", "elements_x", "elements_y", "elements_z", "n_elements_per_domain", "avg_domain_surface", "avg_domain_volume", "n_dofs", "factor_nnz", "concurrency_set", "concurrency_update", "concurrency_apply", "uniform_clusters_domains", "trs1_factor_storage", "trs2_factor_storage", "trs1_solve_type", "trs2_solve_type", "trsm_rhs_sol_order", "path_if_hermitian", "f_sharing_if_hermitian", "apply_scatter_gather_where", "transpose_where"]
 cells_timers = ["total", "mainloop_outer", "mainloop_inner", "Kreg_combine", "solver_commit", "fact_numeric", "get_factors", "extract", "trans_cpu", "allocinpool", "setpointers", "copyin", "trans_gpu", "descr_update", "descr_update_trsm1", "descr_update_trsm2", "descr_update_trsv1", "descr_update_trsv2", "sp2dn", "kernels_compute", "trsm1", "trsm2", "gemm", "fcopy", "syrk", "freeinpool", "compute_d", "wait"]
-cells_memory = ["F matrices", "sparse factors", "persistent buffers", "buffers sptrs1", "buffers sptrs2", "buffers spmm", "free for pool and more"]
+cells_memory = ["F matrices", "sparse factors", "persistent buffers", "buffers sptrsm1", "buffers sptrsm2", "buffers sptrsv1", "buffers sptrsv2", "buffers spmm", "free for pool and more"]
 outstring.write(";".join(cells_info))
 outstring.write(";;")
 outstring.write("error;timeout")
@@ -289,7 +289,7 @@ outfile = summ_dir + "/apply.csv"
 outstring = io.StringIO()
 cells_info = ["id", "str", "run_id", "machine", "tool", "dualoperator", "problem", "physics", "dim", "dofs_per_node", "element_type", "domains_x", "domains_y", "domains_z", "n_domains_total", "elements_x", "elements_y", "elements_z", "n_elements_per_domain", "avg_domain_surface", "avg_domain_volume", "n_dofs", "factor_nnz", "concurrency_set", "concurrency_update", "concurrency_apply", "uniform_clusters_domains", "trs1_factor_storage", "trs2_factor_storage", "trs1_solve_type", "trs2_solve_type", "trsm_rhs_sol_order", "path_if_hermitian", "f_sharing_if_hermitian", "apply_scatter_gather_where", "transpose_where"]
 cells_timers = ["total", "copyin", "scatter", "mv_outer", "mv", "apply_outer", "allocinpool", "setpointers", "sp2dn", "compute", "spmv1", "trsv1", "trsv2", "spmv2", "freeinpool", "zerofill", "gather", "copyout", "wait"]
-cells_memory = ["F matrices", "sparse factors", "persistent buffers", "buffers sptrs1", "buffers sptrs2", "buffers spmm", "free for pool and more"]
+cells_memory = ["F matrices", "sparse factors", "persistent buffers", "buffers sptrsm1", "buffers sptrsm2", "buffers sptrsv1", "buffers sptrsv2", "buffers spmm", "free for pool and more"]
 outstring.write(";".join(cells_info))
 outstring.write(";;")
 outstring.write("error;timeout")

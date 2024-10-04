@@ -74,6 +74,22 @@ namespace espreso {
 			else static_assert(sizeof(T*) == 0 /* aka false */, "minmaxavg is unable to print the type"); // https://stackoverflow.com/questions/38304847/constexpr-if-and-static-assert, https://www.open-std.org/jtc1/sc22/wg21/docs/papers/2022/p2593r0.html
 			return std::string(str);
 		}
+
+		std::string to_string_plain()
+		{
+			char str[200];
+			if constexpr(std::is_same_v<T,float>)                   snprintf(str, sizeof(str), "%8.2f <%8.2f - %8.2f>", avg, min, max);
+			else if constexpr(std::is_same_v<T,double>)             snprintf(str, sizeof(str), "%8.2f <%8.2f - %8.2f>", avg, min, max);
+			else if constexpr(std::is_same_v<T,int>)                snprintf(str, sizeof(str), "%8d <%8d - %8d>", avg, min, max);
+			else if constexpr(std::is_same_v<T,unsigned int>)       snprintf(str, sizeof(str), "%8u <%8u - %8u>", avg, min, max);
+			else if constexpr(std::is_same_v<T,long>)               snprintf(str, sizeof(str), "%8ld <%8ld - %8ld>", avg, min, max);
+			else if constexpr(std::is_same_v<T,unsigned long>)      snprintf(str, sizeof(str), "%8lu <%8lu - %8lu>", avg, min, max);
+			else if constexpr(std::is_same_v<T,long long>)          snprintf(str, sizeof(str), "%8lld <%8lld - %8lld>", avg, min, max);
+			else if constexpr(std::is_same_v<T,unsigned long long>) snprintf(str, sizeof(str), "%8llu <%8llu - %8llu>", avg, min, max);
+			else if constexpr(std::is_same_v<T,size_t>)             snprintf(str, sizeof(str), "%8zu <%8zu - %8zu>", avg, min, max);
+			else static_assert(sizeof(T*) == 0 /* aka false */, "minmaxavg is unable to print the type"); // https://stackoverflow.com/questions/38304847/constexpr-if-and-static-assert, https://www.open-std.org/jtc1/sc22/wg21/docs/papers/2022/p2593r0.html
+			return std::string(str);
+		}
 	};
 }
 
