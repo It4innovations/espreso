@@ -162,10 +162,10 @@ template <> void MPRGP<double>::run(const step::Step &step, MPRGPSolverInfo &inf
     multByFree(z, free);
     math::copy(p, z);
 
-    Vector_Dense<double> eq_d;
-    eq_d.size = feti.lambdas.equalities;
-    eq_d.vals = feti.dualOperator->d.vals;
-    double tolerance = feti.configuration.precision * math::norm(eq_d);
+    Vector_Dual<double> eq_d;
+    math::copy(eq_d, feti.dualOperator->d);
+    math::set(feti.lambdas.size - feti.lambdas.equalities, eq_d.vals + feti.lambdas.equalities, 1, .0);
+    double tolerance = feti.configuration.precision * std::sqrt(eq_d.dot());
 
     while (info.iterations++ < feti.configuration.max_iterations && !stop(x, g_stop)) {
         info.time.current = eslog::time();
