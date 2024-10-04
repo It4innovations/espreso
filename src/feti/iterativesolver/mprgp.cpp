@@ -143,7 +143,6 @@ template <> void MPRGP<double>::run(const step::Step &step, MPRGPSolverInfo &inf
 {
     Preconditioner<double> *M = feti.preconditioner;
 
-    const char *cg = "cg   ", *mixed = "cg-gp", *prop = "   gp", *opt = cg;
     info.n_cg = info.n_mixed = info.n_gproj = 0;
 
     _print("x0", step, x0);
@@ -162,12 +161,7 @@ template <> void MPRGP<double>::run(const step::Step &step, MPRGPSolverInfo &inf
     multByFree(z, free);
     math::copy(p, z);
 
-    Vector_Dual<double> eq_d;
-    math::copy(eq_d, feti.dualOperator->d);
-    math::set(feti.lambdas.size - feti.lambdas.equalities, eq_d.vals + feti.lambdas.equalities, 1, .0);
-    double tolerance = feti.configuration.precision * std::sqrt(eq_d.dot());
-
-    while (info.iterations++ < feti.configuration.max_iterations && !stop(x, g_stop)) {
+    while (!stop(x, g_stop) && info.iterations++ < feti.configuration.max_iterations) {
         info.time.current = eslog::time();
         _print("p", info, step, p);
         _print("g", info, step, g);
@@ -180,7 +174,6 @@ template <> void MPRGP<double>::run(const step::Step &step, MPRGPSolverInfo &inf
             double alpha_f = getFeasibleStepLength(x, p);
             if (alpha_cg <= alpha_f) { // Conjugate gradient step
                 ++info.n_cg;
-                opt = cg;
                 math::add(x, -alpha_cg, p);
                 math::add(g, -alpha_cg, Fp);
                 updateReducedGradient(g_red, g, x, alpha);
@@ -193,7 +186,6 @@ template <> void MPRGP<double>::run(const step::Step &step, MPRGPSolverInfo &inf
                 math::copy(p, z);
             } else { // Mixed step
                 ++info.n_mixed;
-                opt = mixed;
                 math::copy(gg0, g0); math::add(gg0, 1., g);
                 double fx = .5 * x.dot(gg0);
                 math::copy(nx, x); math::add(nx, -alpha_cg, p);
@@ -230,7 +222,6 @@ template <> void MPRGP<double>::run(const step::Step &step, MPRGPSolverInfo &inf
             }
         } else {
             ++info.n_gproj;
-            opt = prop;
             // Proportioning step
             if (feti.configuration.gradproj) {
                 math::add(x, -alpha, g_red);
@@ -248,9 +239,6 @@ template <> void MPRGP<double>::run(const step::Step &step, MPRGPSolverInfo &inf
             math::copy(p, z);
         }
         updateStoppingGradient(g_stop, g, x, alpha);
-        if (info.print) {
-            eslog::info("       - %9d    %9s             %9.4e        %9.4e      %7.2e - \n", info.iterations, opt, std::sqrt(g_stop.dot()), tolerance, eslog::time() - info.time.current);
-        }
     }
 }
 
@@ -284,28 +272,38 @@ template <> void MPRGP<double>::solve(const step::Step &step, IterativeSolverInf
     eslog::info("       - EQUALITIES                                               %20d - \n", lambdas[0]);
     eslog::info("       - INEQUALITIES                                             %20d - \n", lambdas[1]);
     eslog::info("       - ----------------------------------------------------------------------------- - \n");
-    eslog::info("       - ITERATION        STEP                 NORM(G)         TOLERANCE      TIME [s] - \n");
+    eslog::info("       - ITERATION     CG  MIXED  GPROJ        NORM(G)         TOLERANCE      TIME [s] - \n");
     eslog::info("       - ----------------------------------------------------------------------------- - \n");
 
     double alpha = feti.configuration.alpham / maxEIG;
+
+    MPRGPSolverInfo mprgp_info;
+
+    Vector_Dual<double> eq_d;
+    math::copy(eq_d, feti.dualOperator->d);
+    math::set(feti.lambdas.size - feti.lambdas.equalities, eq_d.vals + feti.lambdas.equalities, 1, .0);
+    double tolerance = std::max(1e-15, feti.configuration.precision * std::sqrt(eq_d.dot()));
 
     auto F_apply = [&] (Vector_Dual<double> &in, Vector_Dual<double> &out) {
         F->apply(in, out);
     };
 
     auto stop = [&] (const Vector_Dual<double> &x, const Vector_Dual<double> &g_stop) {
-        return std::sqrt(g_stop.dot()) <= feti.configuration.precision * std::sqrt(feti.dualOperator->d.dot());
+        double norm = std::sqrt(g_stop.dot());
+        int it = mprgp_info.iterations;
+        if (norm <= tolerance || (it && (it % feti.configuration.print_iteration == 0))) {
+            eslog::info("       - %9d %6d %6d %6d     %9.4e        %9.4e      %7.2e - \n", it, mprgp_info.n_cg, mprgp_info.n_mixed, mprgp_info.n_gproj, norm, tolerance, eslog::time() - mprgp_info.time.current);
+        }
+        return norm <= tolerance;
     };
 
     eslog::checkpointln("FETI: MPRGP INITIALIZATION");
     eslog::startln("MPRGP: ITERATIONS STARTED", "mprgp");
 
-    MPRGPSolverInfo mprgp_info;
-    mprgp_info.print = true;
     run(step, mprgp_info, alpha, F_apply, stop);
     info = mprgp_info;
 
-    info.converged = stop(x, g_stop);
+    info.converged = mprgp_info.iterations < feti.configuration.max_iterations;
     if (!info.converged && feti.configuration.max_iterations <= info.iterations) {
         info.error = IterativeSolverInfo::ERROR::MAX_ITERATIONS_REACHED;
     }

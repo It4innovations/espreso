@@ -9,7 +9,6 @@ namespace espreso {
 // Modified Proportioning with Reduced Gradient Projection
 
 struct MPRGPSolverInfo: IterativeSolverInfo {
-    bool print;
     int n_cg, n_mixed, n_gproj, n_hess;
 };
 

@@ -63,7 +63,6 @@ template <> void SMALBE<double>::solve(const step::Step &step, IterativeSolverIn
     DualOperator<double> *F = feti.dualOperator;
     Projector<double> *P = feti.projector;
     MPRGPSolverInfo mprgp_info;
-    mprgp_info.print = false;
     mprgp_info.converged = false;
     info.time.current = eslog::time();
 
