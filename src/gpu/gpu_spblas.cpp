@@ -78,10 +78,10 @@ namespace spblas {
     void sparse_to_dense(handle & /*h*/, char /*transpose*/, descr_matrix_csr & /*sparse*/, descr_matrix_dense & /*dense*/, size_t & /*buffersize*/, void * /*buffer*/, char /*stage*/) {}
 
     template<typename T, typename I>
-    void trsv(handle & /*h*/, char /*transpose*/, descr_matrix_csr & /*matrix*/, descr_vector_dense & /*rhs*/, descr_vector_dense & /*sol*/, descr_sparse_trsv & /*descr_trsv*/, buffer_info & /*buffers*/, char /*stage*/) {}
+    void trsv(handle & /*h*/, char /*transpose*/, descr_matrix_csr & /*matrix*/, descr_vector_dense & /*rhs*/, descr_vector_dense & /*sol*/, descr_sparse_trsv & /*descr_trsv*/, buffer_sizes & /*buffersizes*/, void * /*buffer_persistent*/, void * /*buffer_tmp*/, char /*stage*/) {}
 
     template<typename T, typename I>
-    void trsm(handle & /*h*/, char /*transpose_mat*/, char /*transpose_rhs*/, char /*transpose_sol*/, descr_matrix_csr & /*matrix*/, descr_matrix_dense & /*rhs*/, descr_matrix_dense & /*sol*/, descr_sparse_trsm & /*descr_trsm*/, buffer_info & /*buffers*/, char /*stage*/) {}
+    void trsm(handle & /*h*/, char /*transpose_mat*/, char /*transpose_rhs*/, char /*transpose_sol*/, descr_matrix_csr & /*matrix*/, descr_matrix_dense & /*rhs*/, descr_matrix_dense & /*sol*/, descr_sparse_trsm & /*descr_trsm*/, buffer_sizes & /*buffersizes*/, void * /*buffer_persistent*/, void * /*buffer_tmp*/, char /*stage*/) {}
 
     template<typename T, typename I>
     void mv(handle & /*h*/, char /*transpose*/, descr_matrix_csr & /*A*/, descr_vector_dense & /*x*/, descr_vector_dense & /*y*/, descr_sparse_mv & /*descr_mv*/, size_t & /*buffersize*/, void * /*buffer*/, char /*stage*/) {}

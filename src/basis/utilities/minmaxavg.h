@@ -20,7 +20,7 @@ namespace espreso {
 		T max;
 		T avg;
 
-		static minmaxavg<T> reduce_and_return(T min, T max, T sum, size_t n)
+		static minmaxavg<T> mpi_reduce_and_return(T min, T max, T sum, size_t n)
 		{
 			Communication::allReduce(&min, nullptr, 1, MPITools::getType<T>().mpitype, MPI_MIN);
 			Communication::allReduce(&max, nullptr, 1, MPITools::getType<T>().mpitype, MPI_MAX);
@@ -36,7 +36,31 @@ namespace espreso {
 
 		static minmaxavg<T> compute_from_allranks(T val)
 		{
-			return reduce_and_return(val, val, val, 1);
+			return mpi_reduce_and_return(val, val, val, 1);
+		}
+
+		template<typename ITER>
+		static minmaxavg<T> compute_from_my_rank_only(ITER begin, ITER end, std::function<T(const typename ITER::value_type &)> f = [](typename ITER::value_type val){ return val; })
+		{
+			T min = std::numeric_limits<T>::max();
+			T max = std::numeric_limits<T>::min();
+			T sum = 0;
+			size_t n = 0;
+
+			for(ITER it = begin; it != end; ++it)
+			{
+				T val = f(*it);
+				min = std::min(min, val);
+				max = std::max(max, val);
+				sum += val;
+				n += 1;
+			}
+
+			minmaxavg<T> mma;
+			mma.min = min;
+			mma.max = max;
+			mma.avg = sum / n;
+			return mma;
 		}
 
 		template<typename ITER>
@@ -56,7 +80,7 @@ namespace espreso {
 				n += 1;
 			}
 
-			return reduce_and_return(min, max, sum, n);
+			return mpi_reduce_and_return(min, max, sum, n);
 		}
 
 		std::string to_string(const char * description)

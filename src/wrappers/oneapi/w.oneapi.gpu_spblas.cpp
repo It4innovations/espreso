@@ -401,7 +401,7 @@ namespace spblas {
 
 
     template<typename T, typename I>
-    void trsv(handle & h, char op, descr_matrix_csr & matrix, descr_vector_dense & rhs, descr_vector_dense & sol, descr_sparse_trsv & descr_trsv, buffer_info & /*buffers*/, char stage)
+    void trsv(handle & h, char op, descr_matrix_csr & matrix, descr_vector_dense & rhs, descr_vector_dense & sol, descr_sparse_trsv & descr_trsv, buffer_sizes & buffersizes, void * /*buffer_persistent*/, void * /*buffer_tmp*/, char stage)
     {
         if(op != 'N') {
             eslog::error("gpu::spblas::trsv in oneapi: only 'N' is supported for parameter op\n");
@@ -409,10 +409,10 @@ namespace spblas {
 
         T one = 1.0;
         if(stage == 'B') {
-            buffers.size.persistent = 0;
-            buffers.size.tmp_preprocess = 0;
-            buffers.size.tmp_update = 0;
-            buffers.size.tmp_compute = 0;
+            buffersizes.persistent = 0;
+            buffersizes.tmp_preprocess = 0;
+            buffersizes.tmp_update = 0;
+            buffersizes.tmp_compute = 0;
         }
         // if(stage == 'P') ;
         if(stage == 'U') {
@@ -427,7 +427,7 @@ namespace spblas {
     }
 
     template<typename T, typename I>
-    void trsm(handle & h, char op_mat, char op_rhs, char op_sol, descr_matrix_csr & matrix, descr_matrix_dense & rhs, descr_matrix_dense & sol, descr_sparse_trsm & descr_trsm, buffer_info & buffers, char stage)
+    void trsm(handle & h, char op_mat, char op_rhs, char op_sol, descr_matrix_csr & matrix, descr_matrix_dense & rhs, descr_matrix_dense & sol, descr_sparse_trsm & descr_trsm, buffer_sizes & buffersizes, void * buffer_persistent, void * buffer_tmp, char stage)
     {
         if(rhs.get() == sol.get()) eslog::error("wrong rhs and sol parameters: must not be the same, because trsm in oneapi::sparse is out-of-place\n");
 
@@ -442,10 +442,10 @@ namespace spblas {
 
                 T one = 1.0;
                 if(stage == 'B') {
-                    buffers.size.persistent = 0;
-                    buffers.size.tmp_preprocess = 0;
-                    buffers.size.tmp_update = 0;
-                    buffers.size.tmp_compute = 0;
+                    buffersizes.persistent = 0;
+                    buffersizes.tmp_preprocess = 0;
+                    buffersizes.tmp_update = 0;
+                    buffersizes.tmp_compute = 0;
                 }
                 // if(stage == 'P') ;
                 if(stage == 'U') {
@@ -461,20 +461,20 @@ namespace spblas {
             else {
                 descr_matrix_dense rhs_compl = std::make_shared<_descr_matrix_dense>(rhs->get_complementary());
                 char op_rhs_compl = mgm::operation_combine(op_rhs, 'T');
-                trsm<T,I>(h, op_mat, op_rhs_compl, op_sol, matrix, rhs_compl, sol, descr_trsm, buffers, stage);
+                trsm<T,I>(h, op_mat, op_rhs_compl, op_sol, matrix, rhs_compl, sol, descr_trsm, buffersizes, buffer_persistent, buffer_tmp, stage);
             }
         }
         else if(op_sol == 'T') {
             descr_matrix_dense sol_compl = std::make_shared<_descr_matrix_dense>(sol->get_complementary());
             char op_sol_compl = mgm::operation_combine(op_sol, 'T'); // 'N'
-            trsm<T,I>(h, op_mat, op_rhs, op_sol_compl, matrix, rhs, sol_compl, descr_trsm, buffers, stage);
+            trsm<T,I>(h, op_mat, op_rhs, op_sol_compl, matrix, rhs, sol_compl, descr_trsm, buffersizes, buffer_persistent, buffer_tmp, stage);
         }
         else {
             eslog::error("op_sol '%c' not supported\n", op_sol);
             // char op_mat_compl = mgm::operation_combine(op_mat, 'C');
             // char op_rhs_compl = mgm::operation_combine(op_rhs, 'C');
             // char op_sol_compl = mgm::operation_combine(op_sol, 'C');
-            // trsm<T,I>(h, op_mat_compl, op_rhs_compl, op_sol_compl, matrix, rhs, sol, descr_trsm, buffers, stage);
+            // trsm<T,I>(h, op_mat_compl, op_rhs_compl, op_sol_compl, matrix, rhs, sol, descr_trsm, buffersizes, buffer_persistend, buffer_tmp, stage);
         }
     }
 

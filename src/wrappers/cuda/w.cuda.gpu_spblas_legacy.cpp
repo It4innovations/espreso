@@ -413,26 +413,26 @@ namespace spblas {
     }
 
     template<typename T, typename I>
-    void trsv(handle & h, char transpose, descr_matrix_csr & matrix, descr_vector_dense & rhs, descr_vector_dense & sol, descr_sparse_trsv & descr_trsv, buffer_info & buffers, char stage)
+    void trsv(handle & h, char transpose, descr_matrix_csr & matrix, descr_vector_dense & rhs, descr_vector_dense & sol, descr_sparse_trsv & descr_trsv, buffer_sizes & buffersizes, void * /*buffer_persistent*/, void * buffer_tmp, char stage)
     {
         cusparseSolvePolicy_t policy = CUSPARSE_SOLVE_POLICY_USE_LEVEL;
-        int bfsz = buffers.size.tmp_preprocess;
+        int bfsz = buffersizes.tmp_preprocess;
         T one = 1.0;
         if(stage == 'B') CHECK((_my_sparse_trsv_buffersize<T,I>)(h->h, _char_to_operation<T>(transpose), matrix->nrows, matrix->nnz,       matrix->d_leg, (T*)matrix->vals, (I*)matrix->rowptrs, (I*)matrix->colidxs, descr_trsv->i, &bfsz));
-        if(stage == 'P') CHECK((_my_sparse_trsv_analysis<T,I>)  (h->h, _char_to_operation<T>(transpose), matrix->nrows, matrix->nnz,       matrix->d_leg, (T*)matrix->vals, (I*)matrix->rowptrs, (I*)matrix->colidxs, descr_trsv->i, policy, buffers.ptrs.tmp));
+        if(stage == 'P') CHECK((_my_sparse_trsv_analysis<T,I>)  (h->h, _char_to_operation<T>(transpose), matrix->nrows, matrix->nnz,       matrix->d_leg, (T*)matrix->vals, (I*)matrix->rowptrs, (I*)matrix->colidxs, descr_trsv->i, policy, buffer_tmp));
         // if(stage == 'U') ;
-        if(stage == 'C') CHECK((_my_sparse_trsv_solve<T,I>)     (h->h, _char_to_operation<T>(transpose), matrix->nrows, matrix->nnz, &one, matrix->d_leg, (T*)matrix->vals, (I*)matrix->rowptrs, (I*)matrix->colidxs, descr_trsv->i, (T*)rhs->vals, (T*)sol->vals, policy, buffers.ptrs.tmp));
+        if(stage == 'C') CHECK((_my_sparse_trsv_solve<T,I>)     (h->h, _char_to_operation<T>(transpose), matrix->nrows, matrix->nnz, &one, matrix->d_leg, (T*)matrix->vals, (I*)matrix->rowptrs, (I*)matrix->colidxs, descr_trsv->i, (T*)rhs->vals, (T*)sol->vals, policy, buffer_tmp));
         
         if(stage == 'B') {
-            buffers.size.persistent = 0;
-            buffers.size.tmp_preprocess = bfsz;
-            buffers.size.tmp_update = 0;
-            buffers.size.tmp_compute = bfsz;
+            buffersizes.persistent = 0;
+            buffersizes.tmp_preprocess = bfsz;
+            buffersizes.tmp_update = 0;
+            buffersizes.tmp_compute = bfsz;
         }
     }
 
     template<typename T, typename I>
-    void trsm(handle & h, char transpose_mat, char transpose_rhs, char transpose_sol, descr_matrix_csr & matrix, descr_matrix_dense & rhs, descr_matrix_dense & sol, descr_sparse_trsm & descr_trsm, buffer_info & buffers, char stage)
+    void trsm(handle & h, char transpose_mat, char transpose_rhs, char transpose_sol, descr_matrix_csr & matrix, descr_matrix_dense & rhs, descr_matrix_dense & sol, descr_sparse_trsm & descr_trsm, buffer_sizes & buffersizes, void * buffer_persistent, void * buffer_tmp, char stage)
     {
         if(rhs.get() != sol.get()) eslog::error("wrong rhs and sol parameters: have to be the same, because trsm in cusparse legacy is in-place\n");
 
@@ -445,21 +445,23 @@ namespace spblas {
                     int algo = 1;
                     cusparseSolvePolicy_t policy = CUSPARSE_SOLVE_POLICY_USE_LEVEL;
                     I nrhs = (transpose_rhs == 'T' ? sol->nrows : sol->ncols);
-                    if(stage == 'B') CHECK((_my_sparse_trsm_buffersize<T,I>)(h->h, algo, _char_to_operation<T>(transpose_mat), _char_to_operation<T>(transpose_rhs), matrix->nrows, nrhs, matrix->nnz, &one, matrix->d_leg, (T*)matrix->vals, (I*)matrix->rowptrs, (I*)matrix->colidxs, (T*)sol->vals, sol->ld, descr_trsm->i, policy, &buffers.size.tmp_preprocess));
-                    if(stage == 'P') CHECK((_my_sparse_trsm_analysis<T,I>)  (h->h, algo, _char_to_operation<T>(transpose_mat), _char_to_operation<T>(transpose_rhs), matrix->nrows, nrhs, matrix->nnz, &one, matrix->d_leg, (T*)matrix->vals, (I*)matrix->rowptrs, (I*)matrix->colidxs, (T*)sol->vals, sol->ld, descr_trsm->i, policy, buffers.ptrs.tmp));
+                    size_t bfs = buffersizes.tmp_preprocess;
+                    if(stage == 'B') CHECK((_my_sparse_trsm_buffersize<T,I>)(h->h, algo, _char_to_operation<T>(transpose_mat), _char_to_operation<T>(transpose_rhs), matrix->nrows, nrhs, matrix->nnz, &one, matrix->d_leg, (T*)matrix->vals, (I*)matrix->rowptrs, (I*)matrix->colidxs, (T*)sol->vals, sol->ld, descr_trsm->i, policy, &bfs));
+                    if(stage == 'P') CHECK((_my_sparse_trsm_analysis<T,I>)  (h->h, algo, _char_to_operation<T>(transpose_mat), _char_to_operation<T>(transpose_rhs), matrix->nrows, nrhs, matrix->nnz, &one, matrix->d_leg, (T*)matrix->vals, (I*)matrix->rowptrs, (I*)matrix->colidxs, (T*)sol->vals, sol->ld, descr_trsm->i, policy, buffer_tmp));
                     // if(stage == 'U') ; // I can just modify the values behind the pointer, and cusparse will notice
-                    if(stage == 'C') CHECK((_my_sparse_trsm_solve<T,I>)     (h->h, algo, _char_to_operation<T>(transpose_mat), _char_to_operation<T>(transpose_rhs), matrix->nrows, nrhs, matrix->nnz, &one, matrix->d_leg, (T*)matrix->vals, (I*)matrix->rowptrs, (I*)matrix->colidxs, (T*)sol->vals, sol->ld, descr_trsm->i, policy, buffers.ptrs.tmp));
+                    if(stage == 'C') CHECK((_my_sparse_trsm_solve<T,I>)     (h->h, algo, _char_to_operation<T>(transpose_mat), _char_to_operation<T>(transpose_rhs), matrix->nrows, nrhs, matrix->nnz, &one, matrix->d_leg, (T*)matrix->vals, (I*)matrix->rowptrs, (I*)matrix->colidxs, (T*)sol->vals, sol->ld, descr_trsm->i, policy, buffer_tmp));
                     
                     if(stage == 'B') {
                         buffers.size.persistent = 0;
+                        buffers.size.tmp_preprocess = bfs;
                         buffers.size.tmp_update = 0;
-                        buffers.size.tmp_compute = buffers.size.tmp_preprocess;
+                        buffers.size.tmp_compute = bfs;
                     }
                 }
                 else if(rhs->order == 'R') {
                     descr_matrix_dense descr_rhs_sol_compl = std::make_shared<_descr_matrix_dense>(sol->get_complementary());
                     char transpose_compl = mgm::operation_combine(transpose_rhs, 'T');
-                    trsm<T,I>(h, transpose_mat, transpose_compl, transpose_compl, matrix, descr_rhs_sol_compl, descr_rhs_sol_compl, descr_trsm, buffers, stage);
+                    trsm<T,I>(h, transpose_mat, transpose_compl, transpose_compl, matrix, descr_rhs_sol_compl, descr_rhs_sol_compl, descr_trsm, buffersizes, buffer_persistent, buffer_tmp, stage);
                 }
                 else {
                     eslog::error("wrong dense matrix order '%c'\n", rhs->order);

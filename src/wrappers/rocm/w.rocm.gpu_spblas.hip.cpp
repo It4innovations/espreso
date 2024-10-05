@@ -404,25 +404,25 @@ namespace spblas {
     }
 
     template<typename T, typename I>
-    void trsv(handle & h, char transpose, descr_matrix_csr & matrix, descr_vector_dense & rhs, descr_vector_dense & sol, descr_sparse_trsv & /*descr_trsv*/, buffer_info & buffers, char stage)
+    void trsv(handle & h, char transpose, descr_matrix_csr & matrix, descr_vector_dense & rhs, descr_vector_dense & sol, descr_sparse_trsv & /*descr_trsv*/, buffer_sizes & buffersizes, void * /*buffer_persistent*/, void * buffer_tmp, char stage)
     {
         T one = 1.0;
-        size_t bfs = buffers.size.tmp_preprocess;
-        if(stage == 'B') CHECK(rocsparse_spsv(h->h, _char_to_operation(transpose), &one, matrix->d, rhs->d, sol->d, _sparse_data_type<T>(), rocsparse_spsv_alg_default, rocsparse_spsv_stage_buffer_size, &bfs, buffers.ptrs.tmp));
-        if(stage == 'P') CHECK(rocsparse_spsv(h->h, _char_to_operation(transpose), &one, matrix->d, rhs->d, sol->d, _sparse_data_type<T>(), rocsparse_spsv_alg_default, rocsparse_spsv_stage_preprocess,  &bfs, buffers.ptrs.tmp));
+        size_t bfs = buffersizes.tmp_preprocess;
+        if(stage == 'B') CHECK(rocsparse_spsv(h->h, _char_to_operation(transpose), &one, matrix->d, rhs->d, sol->d, _sparse_data_type<T>(), rocsparse_spsv_alg_default, rocsparse_spsv_stage_buffer_size, &bfs, buffer_tmp));
+        if(stage == 'P') CHECK(rocsparse_spsv(h->h, _char_to_operation(transpose), &one, matrix->d, rhs->d, sol->d, _sparse_data_type<T>(), rocsparse_spsv_alg_default, rocsparse_spsv_stage_preprocess,  &bfs, buffer_tmp));
         // if(stage == 'U') ; // no update matrix function, hopefully dont need to to anything. otherwise redo preprocessing
-        if(stage == 'C') CHECK(rocsparse_spsv(h->h, _char_to_operation(transpose), &one, matrix->d, rhs->d, sol->d, _sparse_data_type<T>(), rocsparse_spsv_alg_default, rocsparse_spsv_stage_compute,     &bfs, buffers.ptrs.tmp));
+        if(stage == 'C') CHECK(rocsparse_spsv(h->h, _char_to_operation(transpose), &one, matrix->d, rhs->d, sol->d, _sparse_data_type<T>(), rocsparse_spsv_alg_default, rocsparse_spsv_stage_compute,     &bfs, buffer_tmp));
 
         if(stage == 'B') {
-            buffers.size.persistent = 0;
-            buffers.size.tmp_preprocess = bfs;
-            buffers.size.tmp_update = 0;
-            buffers.size.tmp_compute = bfs;
+            buffersizes.persistent = 0;
+            buffersizes.tmp_preprocess = bfs;
+            buffersizes.tmp_update = 0;
+            buffersizes.tmp_compute = bfs;
         }
     }
 
     template<typename T, typename I>
-    void trsm(handle & h, char op_mat, char op_rhs, char op_sol, descr_matrix_csr & matrix, descr_matrix_dense & rhs, descr_matrix_dense & sol, descr_sparse_trsm & descr_trsm, buffer_info & buffers, char stage)
+    void trsm(handle & h, char op_mat, char op_rhs, char op_sol, descr_matrix_csr & matrix, descr_matrix_dense & rhs, descr_matrix_dense & sol, descr_sparse_trsm & descr_trsm, buffer_sizes & buffersizes, void * buffer_persistent, void * buffer_tmp, char stage)
     {
         if(rhs.get() == sol.get()) eslog::error("wrong rhs and sol parameters: must not be the same, because trsm in rocsparse is out-of-place\n");
 
@@ -446,17 +446,17 @@ namespace spblas {
                 }
                 else {
                     T one = 1.0;
-                    size_t bfs = buffers.size.tmp_preprocess;
-                    if(stage == 'B') CHECK(rocsparse_spsm(h->h, _char_to_operation(op_mat), _char_to_operation(op_rhs), &one, matrix->d, rhs->d, sol->d, _sparse_data_type<T>(), rocsparse_spsm_alg_default, rocsparse_spsm_stage_buffer_size, &bfs, buffers.ptrs.tmp));
-                    if(stage == 'P') CHECK(rocsparse_spsm(h->h, _char_to_operation(op_mat), _char_to_operation(op_rhs), &one, matrix->d, rhs->d, sol->d, _sparse_data_type<T>(), rocsparse_spsm_alg_default, rocsparse_spsm_stage_preprocess,  &bfs, buffers.ptrs.tmp));
+                    size_t bfs = buffersizes.tmp_preprocess;
+                    if(stage == 'B') CHECK(rocsparse_spsm(h->h, _char_to_operation(op_mat), _char_to_operation(op_rhs), &one, matrix->d, rhs->d, sol->d, _sparse_data_type<T>(), rocsparse_spsm_alg_default, rocsparse_spsm_stage_buffer_size, &bfs, buffer_tmp));
+                    if(stage == 'P') CHECK(rocsparse_spsm(h->h, _char_to_operation(op_mat), _char_to_operation(op_rhs), &one, matrix->d, rhs->d, sol->d, _sparse_data_type<T>(), rocsparse_spsm_alg_default, rocsparse_spsm_stage_preprocess,  &bfs, buffer_tmp));
                     // if(stage == 'U') ; // no update matrix function, hopefully dont need to to anything. otherwise redo preprocessing
-                    if(stage == 'C') CHECK(rocsparse_spsm(h->h, _char_to_operation(op_mat), _char_to_operation(op_rhs), &one, matrix->d, rhs->d, sol->d, _sparse_data_type<T>(), rocsparse_spsm_alg_default, rocsparse_spsm_stage_compute,     &bfs, buffers.ptrs.tmp));
+                    if(stage == 'C') CHECK(rocsparse_spsm(h->h, _char_to_operation(op_mat), _char_to_operation(op_rhs), &one, matrix->d, rhs->d, sol->d, _sparse_data_type<T>(), rocsparse_spsm_alg_default, rocsparse_spsm_stage_compute,     &bfs, buffer_tmp));
 
                     if(stage == 'B') {
-                        buffers.size.persistent = 0;
-                        buffers.size.tmp_preprocess = bfs;
-                        buffers.size.tmp_update = 0;
-                        buffers.size.tmp_compute = bfs;
+                        buffersizes.persistent = 0;
+                        buffersizes.tmp_preprocess = bfs;
+                        buffersizes.tmp_update = 0;
+                        buffersizes.tmp_compute = bfs;
                     }
                 }
             }
@@ -464,12 +464,12 @@ namespace spblas {
         else if(op_sol == 'T' || op_sol == 'H') {
             descr_matrix_dense descr_sol_compl = std::make_shared<_descr_matrix_dense>(sol->get_complementary());
             char op_sol_compl = mgm::operation_combine(op_sol, 'T');
-            trsm<T,I>(h, op_mat, op_rhs, op_sol_compl, matrix, rhs, descr_sol_compl, descr_trsm, buffers, stage);
+            trsm<T,I>(h, op_mat, op_rhs, op_sol_compl, matrix, rhs, descr_sol_compl, descr_trsm, buffersizes, buffer_persistent, buffer_tmp, stage);
         }
         else if(op_sol == 'C') {
             char op_mat_compl = mgm::operation_combine(op_mat, 'C');
             char op_rhs_compl = mgm::operation_combine(op_rhs, 'C');
-            trsm<T,I>(h, op_mat_compl, op_rhs_compl, op_sol, matrix, rhs, sol, descr_trsm, buffers, stage);
+            trsm<T,I>(h, op_mat_compl, op_rhs_compl, op_sol, matrix, rhs, sol, descr_trsm, buffersizes, buffer_persistent, buffer_tmp, stage);
         }
         else {
             eslog::error("wrong operation on solution matrix '%c'\n", op_sol);
@@ -484,24 +484,24 @@ namespace spblas {
             if(op_rhs == op_sol) {
                 if(rhs->order == 'C') {
                     T one = 1.0;
-                    size_t bfs = buffers.size.tmp_preprocess;
-                    if(stage == 'B') CHECK(rocsparse_spsm(h->h, _char_to_operation(op_mat), _char_to_operation(op_rhs), &one, matrix->d, rhs->d, sol->d, _sparse_data_type<T>(), rocsparse_spsm_alg_default, rocsparse_spsm_stage_buffer_size, &bfs, buffers.ptrs.tmp));
-                    if(stage == 'P') CHECK(rocsparse_spsm(h->h, _char_to_operation(op_mat), _char_to_operation(op_rhs), &one, matrix->d, rhs->d, sol->d, _sparse_data_type<T>(), rocsparse_spsm_alg_default, rocsparse_spsm_stage_preprocess,  &bfs, buffers.ptrs.tmp));
+                    size_t bfs = buffersizes.tmp_preprocess;
+                    if(stage == 'B') CHECK(rocsparse_spsm(h->h, _char_to_operation(op_mat), _char_to_operation(op_rhs), &one, matrix->d, rhs->d, sol->d, _sparse_data_type<T>(), rocsparse_spsm_alg_default, rocsparse_spsm_stage_buffer_size, &bfs, buffer_tmp));
+                    if(stage == 'P') CHECK(rocsparse_spsm(h->h, _char_to_operation(op_mat), _char_to_operation(op_rhs), &one, matrix->d, rhs->d, sol->d, _sparse_data_type<T>(), rocsparse_spsm_alg_default, rocsparse_spsm_stage_preprocess,  &bfs, buffer_tmp));
                     // if(stage == 'U') ; // no update matrix function, hopefully dont need to to anything. otherwise redo preprocessing
-                    if(stage == 'C') CHECK(rocsparse_spsm(h->h, _char_to_operation(op_mat), _char_to_operation(op_rhs), &one, matrix->d, rhs->d, sol->d, _sparse_data_type<T>(), rocsparse_spsm_alg_default, rocsparse_spsm_stage_compute,     &bfs, buffers.ptrs.tmp));
+                    if(stage == 'C') CHECK(rocsparse_spsm(h->h, _char_to_operation(op_mat), _char_to_operation(op_rhs), &one, matrix->d, rhs->d, sol->d, _sparse_data_type<T>(), rocsparse_spsm_alg_default, rocsparse_spsm_stage_compute,     &bfs, buffer_tmp));
 
                     if(stage == 'B') {
-                        buffers.size.persistent = 0;
-                        buffers.size.tmp_preprocess = bfs;
-                        buffers.size.tmp_update = 0;
-                        buffers.size.tmp_compute = bfs;
+                        buffersizes.persistent = 0;
+                        buffersizes.tmp_preprocess = bfs;
+                        buffersizes.tmp_update = 0;
+                        buffersizes.tmp_compute = bfs;
                     }
                 }
                 else if(rhs->order == 'R') {
                     descr_matrix_dense descr_rhs_compl = std::make_shared<_descr_matrix_dense>(rhs->get_complementary());
                     descr_matrix_dense descr_sol_compl = std::make_shared<_descr_matrix_dense>(sol->get_complementary());
                     char op_compl = mgm::operation_combine(op_rhs, 'T');
-                    trsm<T,I>(h, op_mat, op_compl, op_compl, matrix, descr_rhs_compl, descr_sol_compl, descr_trsm, buffers, stage);
+                    trsm<T,I>(h, op_mat, op_compl, op_compl, matrix, descr_rhs_compl, descr_sol_compl, descr_trsm, buffersizes, buffer_persistent, buffer_tmp, stage);
                 }
                 else {
                     eslog::error("wrong dense matrix order '%c'\n", rhs->order);
@@ -514,7 +514,7 @@ namespace spblas {
         else {
             descr_matrix_dense descr_rhs_compl = std::make_shared<_descr_matrix_dense>(rhs->get_complementary());
             char op_rhs_compl = mgm::operation_combine(op_rhs, 'T');
-            trsm<T,I>(h, op_mat, op_rhs_compl, op_sol, matrix, descr_rhs_compl, sol, descr_trsm, buffers, stage);
+            trsm<T,I>(h, op_mat, op_rhs_compl, op_sol, matrix, descr_rhs_compl, sol, descr_trsm, buffersizes, buffer_persistent, buffer_tmp, stage);
         }
 #endif
     }

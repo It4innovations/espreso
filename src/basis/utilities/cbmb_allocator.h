@@ -68,7 +68,7 @@ namespace espreso {
         cbmba_resource & operator=(cbmba_resource &&) = delete;
         void * allocate(size_t num_bytes, size_t align = 1)
         {
-            if(num_bytes == 0) num_bytes = 1;
+            if(num_bytes == 0) return nullptr;
             if(num_bytes > memory_pool_size) eslog::error("Not enough memory in the pool, capacity is %zu B = %zu MiB\n", memory_pool_size, memory_pool_size >> 20);
             if(memory_pool_size % align != 0) eslog::error("Align has to divide memory_pool_size\n");
             if(reinterpret_cast<std::uintptr_t>(memory_pool) % align != 0) eslog::error("Memory pool has to be aligned the same way as is the requested align\n");
