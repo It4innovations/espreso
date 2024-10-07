@@ -1872,8 +1872,14 @@ void TotalFETIGpu<T,I>::clear_gpu_cache()
     bool alloc_from_pool = true;
     if(size > cbmba_res_device->get_max_capacity() / 2) alloc_from_pool = false;
     void * data;
-    if(alloc_from_pool) cbmba_res_device->do_transaction([&](){ data = cbmba_res_device->allocate(size, align_B); });
-    else data = gpu::mgm::memalloc_device(size);
+    if(alloc_from_pool) {
+        cbmba_res_device->do_transaction([&](){ data = cbmba_res_device->allocate(size, align_B); });
+    }
+    else {
+        size_t allocated = 0;
+        gpu::mgm::memalloc_device_max(data, allocated, size);
+        if(allocated < size) size = allocated;
+    }
     gpu::mgm::memset_submit(main_q, data, size, 0);
     gpu::mgm::device_wait();
     if(alloc_from_pool) cbmba_res_device->deallocate(data);

@@ -452,10 +452,10 @@ namespace spblas {
                     if(stage == 'C') CHECK((_my_sparse_trsm_solve<T,I>)     (h->h, algo, _char_to_operation<T>(transpose_mat), _char_to_operation<T>(transpose_rhs), matrix->nrows, nrhs, matrix->nnz, &one, matrix->d_leg, (T*)matrix->vals, (I*)matrix->rowptrs, (I*)matrix->colidxs, (T*)sol->vals, sol->ld, descr_trsm->i, policy, buffer_tmp));
                     
                     if(stage == 'B') {
-                        buffers.size.persistent = 0;
-                        buffers.size.tmp_preprocess = bfs;
-                        buffers.size.tmp_update = 0;
-                        buffers.size.tmp_compute = bfs;
+                        buffersizes.persistent = 0;
+                        buffersizes.tmp_preprocess = bfs;
+                        buffersizes.tmp_update = 0;
+                        buffersizes.tmp_compute = bfs;
                     }
                 }
                 else if(rhs->order == 'R') {
