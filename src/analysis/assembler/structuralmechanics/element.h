@@ -58,6 +58,7 @@ template <size_t nodes, size_t gps, size_t ndim, size_t edim> struct StructuralM
 
     // PLANE = 9, AXISYMMETRIC = 16, VOLUME = 36
     alignas(SIMD::size * sizeof(double)) SIMD elasticity[ndim * ndim * 4]; // 2D = 16, 3D = 36
+    alignas(SIMD::size * sizeof(double)) SIMD S[6];
 
     struct {
         alignas(SIMD::size * sizeof(double)) SIMD center[ndim];

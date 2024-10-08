@@ -21,9 +21,11 @@
 #include "analysis/assembler/structuralmechanics/op.smallstraintensor.h"
 #include "analysis/assembler/structuralmechanics/op.sigma.h"
 #include "analysis/assembler/structuralmechanics/op.stress.h"
-#include "analysis/assembler/structuralmechanics/op.elasticity.h"
+#include "analysis/assembler/structuralmechanics/op.linearelasticity.h"
+#include "analysis/assembler/structuralmechanics/op.hyperelasticity.h"
 #include "analysis/assembler/structuralmechanics/op.plasticity.h"
-#include "analysis/assembler/structuralmechanics/op.matrix.elasticity.h"
+#include "analysis/assembler/structuralmechanics/op.matrix.linearelasticity.h"
+#include "analysis/assembler/structuralmechanics/op.matrix.hyperelasticity.h"
 #include "analysis/assembler/structuralmechanics/op.matrix.largedisplacement.h"
 #include "analysis/assembler/structuralmechanics/op.matrix.corotation.h"
 #include "analysis/assembler/structuralmechanics/op.normalpressure.h"
@@ -48,9 +50,11 @@ struct StructuralMechanicsElementOperators {
     SmallStrainTensor smallStrainTensor;
     Temperature temperature;
     Integration integration;
-    Elasticity elasticity;
+    LinearElasticity linearElasticity;
+    HyperElasticity hyperElasticity;
     Plasticity plasticity;
-    MatrixElasticity K;
+    MatrixLinearElasticity matrixLinearElasticity;
+    MatrixHyperElasticity matrixHyperElasticity;
     MatrixLargeDisplacement largeDisplacement;
     MatrixCorotation corotation;
     MatrixMass M;

@@ -365,15 +365,25 @@ bool StructuralMechanics::analyze(const step::Step &step)
         }
 
         elementKernels[i].coordinates.activate(info::mesh->elements->nodes->cbegin() + ebegin, info::mesh->elements->nodes->cbegin() + eend, !cartesian || gpcoo);
-        elementKernels[i].elasticity.activate(settings.element_behaviour, &mat->linear_elastic_properties, &mat->coordinate_system);
-        if (mat->material_model == MaterialBaseConfiguration::MATERIAL_MODEL::PLASTICITY) {
-            elementKernels[i].smallStrainTensor.activate();
+        switch (mat->material_model) {
+        case MaterialBaseConfiguration::MATERIAL_MODEL::LINEAR_ELASTIC:
+            elementKernels[i].linearElasticity.activate(settings.element_behaviour, &mat->linear_elastic_properties, &mat->coordinate_system);
+            elementKernels[i].matrixLinearElasticity.activate(settings.element_behaviour, mat->linear_elastic_properties.model, elementKernels[i].linearElasticity.rotated);
+            break;
+        case MaterialBaseConfiguration::MATERIAL_MODEL::HYPER_ELASTIC:
+            elementKernels[i].hyperElasticity.activate(settings.element_behaviour, &mat->hyper_elastic_properties);
+            elementKernels[i].matrixHyperElasticity.activate(settings.element_behaviour);
+            break;
+        case MaterialBaseConfiguration::MATERIAL_MODEL::PLASTICITY:
+            elementKernels[i].linearElasticity.activate(settings.element_behaviour, &mat->linear_elastic_properties, &mat->coordinate_system);
             elementKernels[i].plasticity.activate(i, settings.element_behaviour, &mat->plasticity_properties, Results::isPlastized);
+            elementKernels[i].smallStrainTensor.activate();
             elementKernels[i].displacement.activate(info::mesh->elements->nodes->cbegin() + ebegin, info::mesh->elements->nodes->cbegin() + eend, Results::displacement->data.data());
+            elementKernels[i].matrixLinearElasticity.activate(settings.element_behaviour, mat->linear_elastic_properties.model, elementKernels[i].linearElasticity.rotated);
         }
         elementKernels[i].material.activate(mat);
 
-        elementKernels[i].K.activate(settings.element_behaviour, mat->linear_elastic_properties.model, elementKernels[i].elasticity.rotated);
+
         if (configuration.type != LoadStepSolverConfiguration::TYPE::STEADY_STATE) {
             elementKernels[i].M.activate();
         }
@@ -382,9 +392,9 @@ bool StructuralMechanics::analyze(const step::Step &step)
         if (Results::principalStress) {
             elementKernels[i].displacement.activate(info::mesh->elements->nodes->cbegin() + ebegin, info::mesh->elements->nodes->cbegin() + eend, Results::displacement->data.data());
             elementKernels[i].smallStrainTensor.activate();
-            elementKernels[i].sigma.activate(settings.element_behaviour, mat->linear_elastic_properties.model, elementKernels[i].elasticity.rotated);
+            elementKernels[i].sigma.activate(settings.element_behaviour, mat->linear_elastic_properties.model, elementKernels[i].linearElasticity.rotated);
             elementKernels[i].stress.activate(i, Results::principalStress, Results::componentStress, Results::vonMisesStress);
-            elementKernels[i].elasticity.action |= SubKernel::SOLUTION;
+            elementKernels[i].linearElasticity.action |= SubKernel::SOLUTION;
         }
     }
 
@@ -544,7 +554,7 @@ void StructuralMechanics::evaluate(const step::Step &step, const step::Time &tim
             }
         }
 
-        elementKernels[i].K.isactive = isactive(K);
+        elementKernels[i].matrixLinearElasticity.isactive = isactive(K);
         elementKernels[i].Kfiller.isactive = isactive(K);
         elementKernels[i].M.isactive = isactive(M);
         elementKernels[i].Mfiller.isactive = isactive(M);
@@ -666,8 +676,8 @@ void StructuralMechanics::bem(SubKernel::Action action, size_t domain, double *B
         esint ne = info::mesh->domainsSurface->edistribution[domain + 1] - info::mesh->domainsSurface->edistribution[domain];
         esint *elemNodes = info::mesh->domainsSurface->denodes[domain].data();
 
-        double ex = elementKernels[domain].elasticity.configuration->young_modulus.get(0, 0).evaluator->evaluate();
-        double mu = elementKernels[domain].elasticity.configuration->poisson_ratio.get(0, 0).evaluator->evaluate();
+        double ex = elementKernels[domain].linearElasticity.configuration->young_modulus.get(0, 0).evaluator->evaluate();
+        double mu = elementKernels[domain].linearElasticity.configuration->poisson_ratio.get(0, 0).evaluator->evaluate();
 
         Matrix_Dense<double> K; K.resize(3 * np, 3 * np);
         BEM3DElasticity(K.vals, np, points, ne, elemNodes, ex, mu);
@@ -694,8 +704,8 @@ void StructuralMechanics::updateSolution(Vector_Base<double> *x)
             esint *elemNodes = info::mesh->domainsSurface->denodes[i].data();
             esint ni = info::mesh->domainsSurface->coordinates[i].size() - info::mesh->domainsSurface->dnodes[i].size();
             double *inner = points + 3 * np;
-            double ex = elementKernels[i].elasticity.configuration->young_modulus.get(0, 0).evaluator->evaluate();
-            double mu = elementKernels[i].elasticity.configuration->poisson_ratio.get(0, 0).evaluator->evaluate();
+            double ex = elementKernels[i].linearElasticity.configuration->young_modulus.get(0, 0).evaluator->evaluate();
+            double mu = elementKernels[i].linearElasticity.configuration->poisson_ratio.get(0, 0).evaluator->evaluate();
             std::vector<double> xx(xBEM->domains[i].size);
             for (esint p = 0; p < np; ++p) {
                 xx[0 * np + p] = xBEM->domains[i].vals[3 * p + 0];

@@ -1,20 +1,20 @@
 
-#ifndef SRC_ANALYSIS_ASSEMBLER_STRUCTURALMECHANICS_OP_MATRIX_ELASTICITY_H_
-#define SRC_ANALYSIS_ASSEMBLER_STRUCTURALMECHANICS_OP_MATRIX_ELASTICITY_H_
+#ifndef SRC_ANALYSIS_ASSEMBLER_STRUCTURALMECHANICS_OP_MATRIX_LINEARELASTICITY_H_
+#define SRC_ANALYSIS_ASSEMBLER_STRUCTURALMECHANICS_OP_MATRIX_LINEARELASTICITY_H_
 
 #include "analysis/assembler/general/subkernel.h"
 #include "config/ecf/physics/structuralmechanics.h"
 
 namespace espreso {
 
-struct MatrixElasticity: SubKernel {
+struct MatrixLinearElasticity: SubKernel {
     const char* name() const { return "StructuralMechanicsMatrixElasticity"; }
 
     StructuralMechanicsGlobalSettings::ELEMENT_BEHAVIOUR behaviour;
     LinearElasticPropertiesConfiguration::MODEL model;
     bool rotated;
 
-    MatrixElasticity()
+    MatrixLinearElasticity()
     : behaviour(StructuralMechanicsGlobalSettings::ELEMENT_BEHAVIOUR::PLANE_STRAIN),
       model(LinearElasticPropertiesConfiguration::MODEL::ANISOTROPIC),
       rotated(false)
@@ -32,11 +32,11 @@ struct MatrixElasticity: SubKernel {
     }
 };
 
-template <size_t nodes, size_t ndim> struct MatrixElasticityKernel;
+template <size_t nodes, size_t ndim> struct MatrixLinearElasticityKernel;
 
 template <size_t nodes>
-struct MatrixElasticityKernel<nodes, 2>: MatrixElasticity {
-    MatrixElasticityKernel(const MatrixElasticity &base): MatrixElasticity(base) {}
+struct MatrixLinearElasticityKernel<nodes, 2>: MatrixLinearElasticity {
+    MatrixLinearElasticityKernel(const MatrixLinearElasticity &base): MatrixLinearElasticity(base) {}
 
     template <typename Element>
     void simd(Element &element, size_t gp)
@@ -150,8 +150,8 @@ struct MatrixElasticityKernel<nodes, 2>: MatrixElasticity {
 };
 
 template <size_t nodes>
-struct MatrixElasticityKernel<nodes, 3>: MatrixElasticity {
-    MatrixElasticityKernel(const MatrixElasticity &base): MatrixElasticity(base) {}
+struct MatrixLinearElasticityKernel<nodes, 3>: MatrixLinearElasticity {
+    MatrixLinearElasticityKernel(const MatrixLinearElasticity &base): MatrixLinearElasticity(base) {}
 
     template <typename Element>
     void simd(Element &element, size_t gp)
@@ -412,4 +412,4 @@ struct MatrixElasticityKernel<nodes, 3>: MatrixElasticity {
 
 }
 
-#endif /* SRC_ANALYSIS_ASSEMBLER_STRUCTURALMECHANICS_OP_MATRIX_ELASTICITY_H_ */
+#endif /* SRC_ANALYSIS_ASSEMBLER_STRUCTURALMECHANICS_OP_MATRIX_LINEARELASTICITY_H_ */

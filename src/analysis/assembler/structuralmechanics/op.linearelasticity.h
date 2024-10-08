@@ -1,6 +1,6 @@
 
-#ifndef SRC_ANALYSIS_ASSEMBLER_STRUCTURALMECHANICS_OP_ELASTICITY_H_
-#define SRC_ANALYSIS_ASSEMBLER_STRUCTURALMECHANICS_OP_ELASTICITY_H_
+#ifndef SRC_ANALYSIS_ASSEMBLER_STRUCTURALMECHANICS_OP_LINEARELASTICITY_H_
+#define SRC_ANALYSIS_ASSEMBLER_STRUCTURALMECHANICS_OP_LINEARELASTICITY_H_
 
 #include "analysis/assembler/general/subkernel.h"
 #include "analysis/assembler/general/op.coordinatesystem.h"
@@ -8,10 +8,10 @@
 
 namespace espreso {
 
-struct Elasticity: SubKernel {
+struct LinearElasticity: SubKernel {
     const char* name() const { return "Elasticity"; }
 
-    Elasticity()
+    LinearElasticity()
     : behaviour(StructuralMechanicsGlobalSettings::ELEMENT_BEHAVIOUR::PLANE_STRAIN),
       configuration(nullptr),
       coordinateSystem(nullptr),
@@ -42,10 +42,10 @@ struct Elasticity: SubKernel {
     bool rotated, constRotation;
 };
 
-template <size_t ndim> struct ElasticityKernel;
+template <size_t ndim> struct LinearElasticityKernel;
 
-template <> struct ElasticityKernel<2>: Elasticity {
-    ElasticityKernel(const Elasticity &base): Elasticity(base) {}
+template <> struct LinearElasticityKernel<2>: LinearElasticity {
+    LinearElasticityKernel(const LinearElasticity &base): LinearElasticity(base) {}
 
     template <typename Element>
     void simd(Element &element)
@@ -146,8 +146,8 @@ template <> struct ElasticityKernel<2>: Elasticity {
     }
 };
 
-template <> struct ElasticityKernel<3>: Elasticity {
-    ElasticityKernel(const Elasticity &base): Elasticity(base) {}
+template <> struct LinearElasticityKernel<3>: LinearElasticity {
+    LinearElasticityKernel(const LinearElasticity &base): LinearElasticity(base) {}
 
     template <typename Element>
     void simd(Element &element)
@@ -560,4 +560,4 @@ template <> struct ElasticityKernel<3>: Elasticity {
 
 }
 
-#endif /* SRC_ANALYSIS_ASSEMBLER_STRUCTURALMECHANICS_OP_ELASTICITY_H_ */
+#endif /* SRC_ANALYSIS_ASSEMBLER_STRUCTURALMECHANICS_OP_LINEARELASTICITY_H_ */
