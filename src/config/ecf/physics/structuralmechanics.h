@@ -144,15 +144,17 @@ struct StructuralMechanicsOutputSettings: public virtual ECFDescription {
 
 	static void addMonitorableProperties(ECFMetaData &metadata, const ECF *root);
 
-	bool displacement, stress;
+	bool displacement, stress, reactions;
 
 	void basic() {
 		displacement = true;
 		stress = false;
+		reactions = false;
 	}
 	void all() {
 		displacement = true;
 		stress = true;
+		reactions = true;
 	}
 
 	static void activate();

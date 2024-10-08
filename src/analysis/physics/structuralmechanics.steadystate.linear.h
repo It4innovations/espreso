@@ -28,7 +28,7 @@ public:
     StructuralMechanics assembler;
 
     Matrix_Base<double> *K;
-    Vector_Base<double> *f, *x, *dirichlet;
+    Vector_Base<double> *f, *x, *dirichlet, *forces;
 
     SparseMatrixBuilder<double> *builder;
     LinearSystemSolver<double> *solver;

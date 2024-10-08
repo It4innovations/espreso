@@ -40,6 +40,7 @@ NodeData* StructuralMechanics::Results::velocity = nullptr;
 NodeData* StructuralMechanics::Results::velocityAmplitude = nullptr;
 NodeData* StructuralMechanics::Results::acceleration = nullptr;
 NodeData* StructuralMechanics::Results::accelerationAmplitude = nullptr;
+NodeData* StructuralMechanics::Results::reactionForce = nullptr;
 
 NodeData* StructuralMechanics::Results::fluidForce = nullptr;
 
@@ -169,6 +170,9 @@ bool StructuralMechanics::analyze(const step::Step &step)
             Results::principalStress = info::mesh->elements->appendData(info::mesh->dimension    , NamedData::DataType::NUMBERED   , "PRINCIPAL_STRESS");
             Results::componentStress = info::mesh->elements->appendData(info::mesh->dimension * 2, NamedData::DataType::TENSOR_SYMM, "COMPONENT_STRESS");
             Results::vonMisesStress  = info::mesh->elements->appendData(                        1, NamedData::DataType::SCALAR     , "VON_MISES_STRESS");
+        }
+        if (info::ecf->output.results_selection.reactions && Results::reactionForce == nullptr) {
+            Results::reactionForce = info::mesh->nodes->appendData(info::mesh->dimension, NamedData::DataType::VECTOR, "REACTION_FORCES");
         }
 
         for (size_t i = 0; i < info::mesh->materials.size(); ++i) {

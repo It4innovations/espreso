@@ -18,7 +18,7 @@
 using namespace espreso;
 
 StructuralMechanicsSteadyStateLinear::StructuralMechanicsSteadyStateLinear(StructuralMechanicsConfiguration &settings, StructuralMechanicsLoadStepConfiguration &configuration)
-: settings(settings), configuration(configuration), assembler{nullptr, settings, configuration}, K{}, f{}, x{}, dirichlet{}, builder{}, solver{}
+: settings(settings), configuration(configuration), assembler{nullptr, settings, configuration}, K{}, f{}, x{}, dirichlet{}, forces{}, builder{}, solver{}
 {
 
 }
@@ -29,6 +29,7 @@ StructuralMechanicsSteadyStateLinear::~StructuralMechanicsSteadyStateLinear()
     if (f) { delete f; }
     if (x) { delete x; }
     if (dirichlet) { delete dirichlet; }
+    if (forces) { delete forces; }
     if (builder) { delete builder; }
     if (solver) { delete solver; }
 }
@@ -74,6 +75,7 @@ bool StructuralMechanicsSteadyStateLinear::analyze(step::Step &step)
     f = solver->b->copyPattern();
     x = solver->x->copyPattern();
     dirichlet = solver->dirichlet->copyPattern();
+    forces = solver->x->copyPattern();
 
     builder->fillMatrixMap(K);
     builder->fillVectorMap(f);
@@ -128,6 +130,10 @@ bool StructuralMechanicsSteadyStateLinear::run(step::Step &step)
 
     double solution = eslog::time();
     x->copy(solver->x);
+    if (StructuralMechanics::Results::reactionForce) {
+        K->apply(1., x, 0., forces);
+        forces->storeTo(StructuralMechanics::Results::reactionForce->data);
+    }
     storeSolution(step);
     assembler.updateSolution(x);
     info::mesh->output->updateSolution(step, time);
