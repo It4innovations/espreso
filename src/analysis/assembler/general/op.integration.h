@@ -34,8 +34,8 @@ struct IntegrationKernel<nodes, 2, 2>: Integration {
             SIMD dNY = load1(element.dN[gp][n][1]);
 
             J[0] = J[0] + dNX * coordsX;
-            J[1] = J[1] + dNX * coordsY;
-            J[2] = J[2] + dNY * coordsX;
+            J[2] = J[2] + dNX * coordsY;
+            J[1] = J[1] + dNY * coordsX;
             J[3] = J[3] + dNY * coordsY;
         }
 
@@ -44,8 +44,8 @@ struct IntegrationKernel<nodes, 2, 2>: Integration {
         for (size_t n = 0; n < nodes; ++n) {
             SIMD dNX = load1(element.dN[gp][n][0]);
             SIMD dNY = load1(element.dN[gp][n][1]);
-            element.dND[n * 2 + 0] = element.invJ[0] * dNX + element.invJ[1] * dNY;
-            element.dND[n * 2 + 1] = element.invJ[2] * dNX + element.invJ[3] * dNY;
+            element.dND[n * 2 + 0] = element.invJ[0] * dNX + element.invJ[2] * dNY;
+            element.dND[n * 2 + 1] = element.invJ[1] * dNX + element.invJ[3] * dNY;
         }
     }
 };
@@ -67,13 +67,13 @@ struct IntegrationKernel<nodes, 3, 3>: Integration {
             SIMD dNZ = load1(element.dN[gp][n][2]);
 
             J[0] = J[0] + dNX * coordsX;
-            J[1] = J[1] + dNX * coordsY;
-            J[2] = J[2] + dNX * coordsZ;
-            J[3] = J[3] + dNY * coordsX;
+            J[3] = J[3] + dNX * coordsY;
+            J[6] = J[6] + dNX * coordsZ;
+            J[1] = J[1] + dNY * coordsX;
             J[4] = J[4] + dNY * coordsY;
-            J[5] = J[5] + dNY * coordsZ;
-            J[6] = J[6] + dNZ * coordsX;
-            J[7] = J[7] + dNZ * coordsY;
+            J[7] = J[7] + dNY * coordsZ;
+            J[2] = J[2] + dNZ * coordsX;
+            J[5] = J[5] + dNZ * coordsY;
             J[8] = J[8] + dNZ * coordsZ;
         }
 
@@ -83,9 +83,9 @@ struct IntegrationKernel<nodes, 3, 3>: Integration {
             SIMD dNX = load1(element.dN[gp][n][0]);
             SIMD dNY = load1(element.dN[gp][n][1]);
             SIMD dNZ = load1(element.dN[gp][n][2]);
-            element.dND[n * 3 + 0] = element.invJ[0] * dNX + element.invJ[1] * dNY + element.invJ[2] * dNZ;
-            element.dND[n * 3 + 1] = element.invJ[3] * dNX + element.invJ[4] * dNY + element.invJ[5] * dNZ;
-            element.dND[n * 3 + 2] = element.invJ[6] * dNX + element.invJ[7] * dNY + element.invJ[8] * dNZ;
+            element.dND[n * 3 + 0] = element.invJ[0] * dNX + element.invJ[3] * dNY + element.invJ[6] * dNZ;
+            element.dND[n * 3 + 1] = element.invJ[1] * dNX + element.invJ[4] * dNY + element.invJ[7] * dNZ;
+            element.dND[n * 3 + 2] = element.invJ[2] * dNX + element.invJ[5] * dNY + element.invJ[8] * dNZ;
         }
     }
 };
