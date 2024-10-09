@@ -256,9 +256,9 @@ template <size_t nodes> struct PlasticityKernel<nodes, 3>: PlasticityStorage {
         //      0  0 dZ  0 dY dX
         SIMD scale = element.det * load1(element.w[gp]);
         for (size_t n = 0; n < nodes; ++n) {
-            element.nf[0 * nodes + n] = element.nf[0 * nodes + n] + scale * (element.dND[n][0] * sigma0 + element.dND[n][1] * sigma3 + element.dND[n][2] * sigma5);
-            element.nf[1 * nodes + n] = element.nf[1 * nodes + n] + scale * (element.dND[n][1] * sigma1 + element.dND[n][0] * sigma3 + element.dND[n][2] * sigma4);
-            element.nf[2 * nodes + n] = element.nf[2 * nodes + n] + scale * (element.dND[n][2] * sigma2 + element.dND[n][1] * sigma4 + element.dND[n][0] * sigma5);
+            element.nf[0 * nodes + n] = element.nf[0 * nodes + n] + scale * (element.dND[n * 3 + 0] * sigma0 + element.dND[n * 3 + 1] * sigma3 + element.dND[n * 3 + 2] * sigma5);
+            element.nf[1 * nodes + n] = element.nf[1 * nodes + n] + scale * (element.dND[n * 3 + 1] * sigma1 + element.dND[n * 3 + 0] * sigma3 + element.dND[n * 3 + 2] * sigma4);
+            element.nf[2 * nodes + n] = element.nf[2 * nodes + n] + scale * (element.dND[n * 3 + 2] * sigma2 + element.dND[n * 3 + 1] * sigma4 + element.dND[n * 3 + 0] * sigma5);
         }
 
         if (this->save) {

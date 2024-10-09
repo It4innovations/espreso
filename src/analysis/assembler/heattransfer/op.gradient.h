@@ -38,8 +38,8 @@ struct TemperatureGradientKernel<nodes, gps, 2>: TemperatureGradient {
     void simd(Element &element, size_t gp)
     {
         for (size_t n = 0; n < nodes; ++n) {
-            element.gradient[0] = element.gradient[0] + element.dND[n][0] * element.temperature.node[n];
-            element.gradient[1] = element.gradient[1] + element.dND[n][1] * element.temperature.node[n];
+            element.gradient[0] = element.gradient[0] + element.dND[n * 2 + 0] * element.temperature.node[n];
+            element.gradient[1] = element.gradient[1] + element.dND[n * 2 + 1] * element.temperature.node[n];
         }
     }
 
@@ -68,9 +68,9 @@ struct TemperatureGradientKernel<nodes, gps, 3>: TemperatureGradient {
     void simd(Element &element, size_t gp)
     {
         for (size_t n = 0; n < nodes; ++n) {
-            element.gradient[0] = element.gradient[0] + element.dND[n][0] * element.temperature.node[n];
-            element.gradient[1] = element.gradient[1] + element.dND[n][1] * element.temperature.node[n];
-            element.gradient[2] = element.gradient[2] + element.dND[n][2] * element.temperature.node[n];
+            element.gradient[0] = element.gradient[0] + element.dND[n * 3 + 0] * element.temperature.node[n];
+            element.gradient[1] = element.gradient[1] + element.dND[n * 3 + 1] * element.temperature.node[n];
+            element.gradient[2] = element.gradient[2] + element.dND[n * 3 + 2] * element.temperature.node[n];
         }
     }
 

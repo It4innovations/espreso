@@ -37,7 +37,7 @@ template <size_t nodes> struct AdvectionKernel<nodes, 2>: Advection {
         SIMD usq = ux * ux + uy * uy;
         SIMD besq;
         for (size_t n = 0; n < nodes; ++n) {
-            SIMD be = ux * element.dND[n][0] + uy * element.dND[n][1];
+            SIMD be = ux * element.dND[n * 2 + 0] + uy * element.dND[n * 2 + 1];
             besq = besq + be * be;
         }
 
@@ -58,9 +58,9 @@ template <size_t nodes> struct AdvectionKernel<nodes, 2>: Advection {
         element.conductivity[3] = element.conductivity[3] + stabilization;
 
         for (size_t n = 0; n < nodes; ++n) {
-            SIMD scale = element.det * load1(element.w[gp]) * (load1(element.N[gp][n]) + advection * (ux * element.dND[n][0] + uy * element.dND[n][1]));
+            SIMD scale = element.det * load1(element.w[gp]) * (load1(element.N[gp][n]) + advection * (ux * element.dND[n * 2 + 0] + uy * element.dND[n * 2 + 1]));
             for (size_t m = 0; m < nodes; ++m) {
-                element.K[n * nodes + m] = element.K[n * nodes + m] + scale * (ux * element.dND[m][0] + uy * element.dND[m][1]);
+                element.K[n * nodes + m] = element.K[n * nodes + m] + scale * (ux * element.dND[m * 2 + 0] + uy * element.dND[m * 2 + 1]);
             }
         }
     }
@@ -79,7 +79,7 @@ template <size_t nodes> struct AdvectionKernel<nodes, 3>: Advection {
         SIMD usq = ux * ux + uy * uy + uz * uz;
         SIMD besq;
         for (size_t n = 0; n < nodes; ++n) {
-            SIMD be = ux * element.dND[n][0] + uy * element.dND[n][1] + uz * element.dND[n][2];
+            SIMD be = ux * element.dND[n * 3 +0] + uy * element.dND[n * 3 +1] + uz * element.dND[n * 3 +2];
             besq = besq + be * be;
         }
 
@@ -101,9 +101,9 @@ template <size_t nodes> struct AdvectionKernel<nodes, 3>: Advection {
         element.conductivity[8] = element.conductivity[8] + stabilization;
 
         for (size_t n = 0; n < nodes; ++n) {
-            SIMD scale = element.det * load1(element.w[gp]) * (load1(element.N[gp][n]) + advection * (ux * element.dND[n][0] + uy * element.dND[n][1] + uz * element.dND[n][2]));
+            SIMD scale = element.det * load1(element.w[gp]) * (load1(element.N[gp][n]) + advection * (ux * element.dND[n * 2 + 0] + uy * element.dND[n * 3 + 1] + uz * element.dND[n * 3 + 2]));
             for (size_t m = 0; m < nodes; ++m) {
-                element.K[n * nodes + m] = element.K[n * nodes + m] + scale * (ux * element.dND[m][0] + uy * element.dND[m][1] + uz * element.dND[m][2]);
+                element.K[n * nodes + m] = element.K[n * nodes + m] + scale * (ux * element.dND[m * 3 + 0] + uy * element.dND[m * 3 + 1] + uz * element.dND[m * 3 + 2]);
             }
         }
     }

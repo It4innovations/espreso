@@ -45,8 +45,8 @@ struct TemperatureFluxKernel<nodes, gps, 2>: TemperatureFlux {
         {
             SIMD fgp0 = zeros(), fgp1 = zeros();
             for (size_t n = 0; n < nodes; ++n) {
-                fgp0 = fgp0 + element.dND[n][0] * element.temperature.node[n];
-                fgp1 = fgp1 + element.dND[n][1] * element.temperature.node[n];
+                fgp0 = fgp0 + element.dND[n * 2 + 0] * element.temperature.node[n];
+                fgp1 = fgp1 + element.dND[n * 2 + 1] * element.temperature.node[n];
             }
             element.flux[0] = element.flux[0] + fgp0 * element.conductivity[0];
             element.flux[1] = element.flux[1] + fgp1 * element.conductivity[0];
@@ -55,8 +55,8 @@ struct TemperatureFluxKernel<nodes, gps, 2>: TemperatureFlux {
         {
             SIMD fgp0 = zeros(), fgp1 = zeros();
             for (size_t n = 0; n < nodes; ++n) {
-                fgp0 = fgp0 + element.dND[n][0] * element.temperature.node[n];
-                fgp1 = fgp1 + element.dND[n][1] * element.temperature.node[n];
+                fgp0 = fgp0 + element.dND[n * 2 + 0] * element.temperature.node[n];
+                fgp1 = fgp1 + element.dND[n * 2 + 1] * element.temperature.node[n];
             }
             element.flux[0] = element.flux[0] + fgp0 * element.conductivity[0];
             element.flux[1] = element.flux[1] + fgp1 * element.conductivity[3];
@@ -65,8 +65,8 @@ struct TemperatureFluxKernel<nodes, gps, 2>: TemperatureFlux {
         {
             SIMD fgp0 = zeros(), fgp1 = zeros();
             for (size_t n = 0; n < nodes; ++n) {
-                fgp0 = fgp0 + element.dND[n][0] * element.temperature.node[n];
-                fgp1 = fgp1 + element.dND[n][1] * element.temperature.node[n];
+                fgp0 = fgp0 + element.dND[n * 2 + 0] * element.temperature.node[n];
+                fgp1 = fgp1 + element.dND[n * 2 + 1] * element.temperature.node[n];
             }
             element.flux[0] = element.flux[0] + fgp0 * element.conductivity[0] + fgp1 * element.conductivity[1];
             element.flux[1] = element.flux[1] + fgp0 * element.conductivity[1] + fgp1 * element.conductivity[3];
@@ -75,8 +75,8 @@ struct TemperatureFluxKernel<nodes, gps, 2>: TemperatureFlux {
         {
             SIMD fgp0 = zeros(), fgp1 = zeros();
             for (size_t n = 0; n < nodes; ++n) {
-                fgp0 = fgp0 + element.dND[n][0] * element.temperature.node[n];
-                fgp1 = fgp1 + element.dND[n][1] * element.temperature.node[n];
+                fgp0 = fgp0 + element.dND[n * 2 + 0] * element.temperature.node[n];
+                fgp1 = fgp1 + element.dND[n * 2 + 1] * element.temperature.node[n];
             }
             element.flux[0] = element.flux[0] + fgp0 * element.conductivity[0] + fgp1 * element.conductivity[1];
             element.flux[1] = element.flux[1] + fgp0 * element.conductivity[2] + fgp1 * element.conductivity[3];
@@ -113,9 +113,9 @@ struct TemperatureFluxKernel<nodes, gps, 3>: TemperatureFlux {
         {
             SIMD fgp0 = zeros(), fgp1 = zeros(), fgp2 = zeros();
             for (size_t n = 0; n < nodes; ++n) {
-                fgp0 = fgp0 + element.dND[n][0] * element.temperature.node[n];
-                fgp1 = fgp1 + element.dND[n][1] * element.temperature.node[n];
-                fgp2 = fgp2 + element.dND[n][2] * element.temperature.node[n];
+                fgp0 = fgp0 + element.dND[n * 3 + 0] * element.temperature.node[n];
+                fgp1 = fgp1 + element.dND[n * 3 + 1] * element.temperature.node[n];
+                fgp2 = fgp2 + element.dND[n * 3 + 2] * element.temperature.node[n];
             }
             element.flux[0] = element.flux[0] + fgp0 * element.conductivity[0];
             element.flux[1] = element.flux[1] + fgp1 * element.conductivity[0];
@@ -125,9 +125,9 @@ struct TemperatureFluxKernel<nodes, gps, 3>: TemperatureFlux {
         {
             SIMD fgp0 = zeros(), fgp1 = zeros(), fgp2 = zeros();
             for (size_t n = 0; n < nodes; ++n) {
-                fgp0 = fgp0 + element.dND[n][0] * element.temperature.node[n];
-                fgp1 = fgp1 + element.dND[n][1] * element.temperature.node[n];
-                fgp2 = fgp2 + element.dND[n][2] * element.temperature.node[n];
+                fgp0 = fgp0 + element.dND[n * 3 + 0] * element.temperature.node[n];
+                fgp1 = fgp1 + element.dND[n * 3 + 1] * element.temperature.node[n];
+                fgp2 = fgp2 + element.dND[n * 3 + 2] * element.temperature.node[n];
             }
             element.flux[0] = element.flux[0] + fgp0 * element.conductivity[0];
             element.flux[1] = element.flux[1] + fgp1 * element.conductivity[4];
@@ -137,9 +137,9 @@ struct TemperatureFluxKernel<nodes, gps, 3>: TemperatureFlux {
         {
             SIMD fgp0 = zeros(), fgp1 = zeros(), fgp2 = zeros();
             for (size_t n = 0; n < nodes; ++n) {
-                fgp0 = fgp0 + element.dND[n][0] * element.temperature.node[n];
-                fgp1 = fgp1 + element.dND[n][1] * element.temperature.node[n];
-                fgp2 = fgp2 + element.dND[n][2] * element.temperature.node[n];
+                fgp0 = fgp0 + element.dND[n * 3 + 0] * element.temperature.node[n];
+                fgp1 = fgp1 + element.dND[n * 3 + 1] * element.temperature.node[n];
+                fgp2 = fgp2 + element.dND[n * 3 + 2] * element.temperature.node[n];
             }
             element.flux[0] = element.flux[0] + fgp0 * element.conductivity[0] + fgp1 * element.conductivity[1] + fgp2 * element.conductivity[2];
             element.flux[1] = element.flux[1] + fgp0 * element.conductivity[1] + fgp1 * element.conductivity[4] + fgp2 * element.conductivity[5];
@@ -149,9 +149,9 @@ struct TemperatureFluxKernel<nodes, gps, 3>: TemperatureFlux {
         {
             SIMD fgp0 = zeros(), fgp1 = zeros(), fgp2 = zeros();
             for (size_t n = 0; n < nodes; ++n) {
-                fgp0 = fgp0 + element.dND[n][0] * element.temperature.node[n];
-                fgp1 = fgp1 + element.dND[n][1] * element.temperature.node[n];
-                fgp2 = fgp2 + element.dND[n][2] * element.temperature.node[n];
+                fgp0 = fgp0 + element.dND[n * 3 + 0] * element.temperature.node[n];
+                fgp1 = fgp1 + element.dND[n * 3 + 1] * element.temperature.node[n];
+                fgp2 = fgp2 + element.dND[n * 3 + 2] * element.temperature.node[n];
             }
             element.flux[0] = element.flux[0] + fgp0 * element.conductivity[0] + fgp1 * element.conductivity[1] + fgp2 * element.conductivity[2];
             element.flux[1] = element.flux[1] + fgp0 * element.conductivity[3] + fgp1 * element.conductivity[4] + fgp2 * element.conductivity[5];

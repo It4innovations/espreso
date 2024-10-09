@@ -44,8 +44,8 @@ struct IntegrationKernel<nodes, 2, 2>: Integration {
         for (size_t n = 0; n < nodes; ++n) {
             SIMD dNX = load1(element.dN[gp][n][0]);
             SIMD dNY = load1(element.dN[gp][n][1]);
-            element.dND[n][0] = element.invJ[0] * dNX + element.invJ[1] * dNY;
-            element.dND[n][1] = element.invJ[2] * dNX + element.invJ[3] * dNY;
+            element.dND[n * 2 + 0] = element.invJ[0] * dNX + element.invJ[1] * dNY;
+            element.dND[n * 2 + 1] = element.invJ[2] * dNX + element.invJ[3] * dNY;
         }
     }
 };
@@ -83,9 +83,9 @@ struct IntegrationKernel<nodes, 3, 3>: Integration {
             SIMD dNX = load1(element.dN[gp][n][0]);
             SIMD dNY = load1(element.dN[gp][n][1]);
             SIMD dNZ = load1(element.dN[gp][n][2]);
-            element.dND[n][0] = element.invJ[0] * dNX + element.invJ[1] * dNY + element.invJ[2] * dNZ;
-            element.dND[n][1] = element.invJ[3] * dNX + element.invJ[4] * dNY + element.invJ[5] * dNZ;
-            element.dND[n][2] = element.invJ[6] * dNX + element.invJ[7] * dNY + element.invJ[8] * dNZ;
+            element.dND[n * 3 + 0] = element.invJ[0] * dNX + element.invJ[1] * dNY + element.invJ[2] * dNZ;
+            element.dND[n * 3 + 1] = element.invJ[3] * dNX + element.invJ[4] * dNY + element.invJ[5] * dNZ;
+            element.dND[n * 3 + 2] = element.invJ[6] * dNX + element.invJ[7] * dNY + element.invJ[8] * dNZ;
         }
     }
 };

@@ -63,31 +63,31 @@ struct MatrixElasticityKernel<nodes, 2>: MatrixElasticity {
             SIMD c2 = element.elasticity[8];
             for (size_t n = 0, _n, _m; n < nodes; ++n) {
                 _n = n; _m = n + 1;
-                SIMD a = element.dND[n][0] * c0;
+                SIMD a = element.dND[n * 2 + 0] * c0;
                 SIMD b;
-                SIMD c = element.dND[n][1] * c2;
-                element.K[_n * 2 * nodes + _n] = element.K[_n * 2 * nodes + _n] + scale * (a * element.dND[n][0] + c * element.dND[n][1]);
+                SIMD c = element.dND[n * 2 + 1] * c2;
+                element.K[_n * 2 * nodes + _n] = element.K[_n * 2 * nodes + _n] + scale * (a * element.dND[n * 2 + 0] + c * element.dND[n * 2 + 1]);
                 for (size_t m = n + 1; m < nodes; ++m, ++_m) {
-                    SIMD xx = scale * (a * element.dND[m][0] + c * element.dND[m][1]);
+                    SIMD xx = scale * (a * element.dND[m * 2 + 0] + c * element.dND[m * 2 + 1]);
                     element.K[_n * 2 * nodes + _m] = element.K[_n * 2 * nodes + _m] + xx;
                     element.K[_m * 2 * nodes + _n] = element.K[_m * 2 * nodes + _n] + xx;
                 }
 
                 _n = n; _m = nodes;
-                b = element.dND[n][0] * c1;
-                c = element.dND[n][1] * c2;
+                b = element.dND[n * 2 + 0] * c1;
+                c = element.dND[n * 2 + 1] * c2;
                 for (size_t m = 0; m < nodes; ++m, ++_m) {
-                    SIMD xy = scale * (b * element.dND[m][1] + c * element.dND[m][0]);
+                    SIMD xy = scale * (b * element.dND[m * 2 + 1] + c * element.dND[m * 2 + 0]);
                     element.K[_n * 2 * nodes + _m] = element.K[_n * 2 * nodes + _m] + xy;
                     element.K[_m * 2 * nodes + _n] = element.K[_m * 2 * nodes + _n] + xy;
                 }
 
                 _n = n + nodes; _m = n + nodes + 1;
-                b = element.dND[n][1] * c0;
-                c = element.dND[n][0] * c2;
-                element.K[_n * 2 * nodes + _n] = element.K[_n * 2 * nodes + _n] + scale * (b * element.dND[n][1] + c * element.dND[n][0]);
+                b = element.dND[n * 2 + 1] * c0;
+                c = element.dND[n * 2 + 0] * c2;
+                element.K[_n * 2 * nodes + _n] = element.K[_n * 2 * nodes + _n] + scale * (b * element.dND[n * 2 + 1] + c * element.dND[n * 2 + 0]);
                 for (size_t m = n + 1; m < nodes; ++m, ++_m) {
-                    SIMD yy = scale * (b * element.dND[m][1] + c * element.dND[m][0]);
+                    SIMD yy = scale * (b * element.dND[m * 2 + 1] + c * element.dND[m * 2 + 0]);
                     element.K[_n * 2 * nodes + _m] = element.K[_n * 2 * nodes + _m] + yy;
                     element.K[_m * 2 * nodes + _n] = element.K[_m * 2 * nodes + _n] + yy;
                 }
@@ -114,32 +114,32 @@ struct MatrixElasticityKernel<nodes, 2>: MatrixElasticity {
                 SIMD coo = load1(element.N[gp][n]) / element.coords.gp[0];
 
                 _n = n; _m = n + 1;
-                SIMD a = element.dND[n][0] * c0 + coo * c1;
+                SIMD a = element.dND[n * 2 + 0] * c0 + coo * c1;
                 SIMD b;
-                SIMD c = element.dND[n][0] * c1 + coo * c0;
-                SIMD d = element.dND[n][1] * c2;
-                element.K[_n * 2 * nodes + _n] = element.K[_n * 2 * nodes + _n] + scale * (a * element.dND[n][0] + c * coo + d * element.dND[n][1]);
+                SIMD c = element.dND[n * 2 + 0] * c1 + coo * c0;
+                SIMD d = element.dND[n * 2 + 1] * c2;
+                element.K[_n * 2 * nodes + _n] = element.K[_n * 2 * nodes + _n] + scale * (a * element.dND[n * 2 + 0] + c * coo + d * element.dND[n * 2 + 1]);
                 for (size_t m = n + 1; m < nodes; ++m, ++_m) {
-                    SIMD xx = scale * (a * element.dND[m][0] + c * load1(element.N[gp][m]) / element.coords.gp[0] + d * element.dND[m][1]);
+                    SIMD xx = scale * (a * element.dND[m * 2 + 0] + c * load1(element.N[gp][m]) / element.coords.gp[0] + d * element.dND[m * 2 + 1]);
                     element.K[_n * 2 * nodes + _m] = element.K[_n * 2 * nodes + _m] + xx;
                     element.K[_m * 2 * nodes + _n] = element.K[_m * 2 * nodes + _n] + xx;
                 }
 
                 _n = n; _m = nodes;
-                b = element.dND[n][0] * c1 + coo * c1;
-                d = element.dND[n][1] * c2;
+                b = element.dND[n * 2 + 0] * c1 + coo * c1;
+                d = element.dND[n * 2 + 1] * c2;
                 for (size_t m = 0; m < nodes; ++m, ++_m) {
-                    SIMD xy = scale * (b * element.dND[m][1] + d * element.dND[m][0]);
+                    SIMD xy = scale * (b * element.dND[m * 2 + 1] + d * element.dND[m * 2 + 0]);
                     element.K[_n * 2 * nodes + _m] = element.K[_n * 2 * nodes + _m] + xy;
                     element.K[_m * 2 * nodes + _n] = element.K[_m * 2 * nodes + _n] + xy;
                 }
 
                 _n = n + nodes; _m = n + nodes + 1;
-                b = element.dND[n][1] * c0;
-                d = element.dND[n][0] * c2;
-                element.K[_n * 2 * nodes + _n] = element.K[_n * 2 * nodes + _n] + scale * (b * element.dND[n][1] + d * element.dND[n][0]);
+                b = element.dND[n * 2 + 1] * c0;
+                d = element.dND[n * 2 + 0] * c2;
+                element.K[_n * 2 * nodes + _n] = element.K[_n * 2 * nodes + _n] + scale * (b * element.dND[n * 2 + 1] + d * element.dND[n * 2 + 0]);
                 for (size_t m = n + 1; m < nodes; ++m, ++_m) {
-                    SIMD yy = scale * (b * element.dND[m][1] + d * element.dND[m][0]);
+                    SIMD yy = scale * (b * element.dND[m * 2 + 1] + d * element.dND[m * 2 + 0]);
                     element.K[_n * 2 * nodes + _m] = element.K[_n * 2 * nodes + _m] + yy;
                     element.K[_m * 2 * nodes + _n] = element.K[_m * 2 * nodes + _n] + yy;
                 }
@@ -165,29 +165,29 @@ struct MatrixElasticityKernel<nodes, 3>: MatrixElasticity {
             SIMD c04 = element.elasticity[4], c14 = element.elasticity[10], c24 = element.elasticity[16], c34 = element.elasticity[22], c44 = element.elasticity[28];
             SIMD c05 = element.elasticity[5], c15 = element.elasticity[11], c25 = element.elasticity[17], c35 = element.elasticity[23], c45 = element.elasticity[29], c55 = element.elasticity[35];
             for (size_t n = 0, _n, _m, _p; n < nodes; ++n) {
-                SIMD a = element.dND[n][0] * c00 + element.dND[n][1] * c03 + element.dND[n][2] * c05;
+                SIMD a = element.dND[n * 3 + 0] * c00 + element.dND[n * 3 + 1] * c03 + element.dND[n * 3 + 2] * c05;
                 SIMD b;
                 SIMD c;
-                SIMD d = element.dND[n][0] * c03 + element.dND[n][1] * c33 + element.dND[n][2] * c35;
+                SIMD d = element.dND[n * 3 + 0] * c03 + element.dND[n * 3 + 1] * c33 + element.dND[n * 3 + 2] * c35;
                 SIMD e;
-                SIMD f = element.dND[n][0] * c05 + element.dND[n][1] * c35 + element.dND[n][2] * c55;
+                SIMD f = element.dND[n * 3 + 0] * c05 + element.dND[n * 3 + 1] * c35 + element.dND[n * 3 + 2] * c55;
                 _n = n; _m = n + 1;
-                element.K[_n * 3 * nodes + _n] = element.K[_n * 3 * nodes + _n] + scale * (a * element.dND[n][0] + d * element.dND[n][1] + f * element.dND[n][2]);
+                element.K[_n * 3 * nodes + _n] = element.K[_n * 3 * nodes + _n] + scale * (a * element.dND[n * 3 + 0] + d * element.dND[n * 3 + 1] + f * element.dND[n * 3 + 2]);
                 for (size_t m = n + 1; m < nodes; ++m, ++_m) {
-                    SIMD xx = scale * (a * element.dND[m][0] + d * element.dND[m][1] + f * element.dND[m][2]);
+                    SIMD xx = scale * (a * element.dND[m * 3 + 0] + d * element.dND[m * 3 + 1] + f * element.dND[m * 3 + 2]);
                     element.K[_n * 3 * nodes + _m] = element.K[_n * 3 * nodes + _m] + xx;
                     element.K[_m * 3 * nodes + _n] = element.K[_m * 3 * nodes + _n] + xx;
                 }
 
                 _n = n; _m = nodes, _p = 2 * nodes;
-                b = element.dND[n][0] * c01 + element.dND[n][1] * c13 + element.dND[n][2] * c15;
-                c = element.dND[n][0] * c02 + element.dND[n][1] * c23 + element.dND[n][2] * c25;
-                d = element.dND[n][0] * c03 + element.dND[n][1] * c33 + element.dND[n][2] * c35;
-                e = element.dND[n][0] * c04 + element.dND[n][1] * c34 + element.dND[n][2] * c45;
-                f = element.dND[n][0] * c05 + element.dND[n][1] * c35 + element.dND[n][2] * c55;
+                b = element.dND[n * 3 + 0] * c01 + element.dND[n * 3 + 1] * c13 + element.dND[n * 3 + 2] * c15;
+                c = element.dND[n * 3 + 0] * c02 + element.dND[n * 3 + 1] * c23 + element.dND[n * 3 + 2] * c25;
+                d = element.dND[n * 3 + 0] * c03 + element.dND[n * 3 + 1] * c33 + element.dND[n * 3 + 2] * c35;
+                e = element.dND[n * 3 + 0] * c04 + element.dND[n * 3 + 1] * c34 + element.dND[n * 3 + 2] * c45;
+                f = element.dND[n * 3 + 0] * c05 + element.dND[n * 3 + 1] * c35 + element.dND[n * 3 + 2] * c55;
                 for (size_t m = 0; m < nodes; ++m, ++_m, ++_p) {
-                    SIMD xy = scale * (b * element.dND[m][1] + d * element.dND[m][0] + e * element.dND[m][2]);
-                    SIMD xz = scale * (c * element.dND[m][2] + e * element.dND[m][1] + f * element.dND[m][0]);
+                    SIMD xy = scale * (b * element.dND[m * 3 + 1] + d * element.dND[m * 3 + 0] + e * element.dND[m * 3 + 2]);
+                    SIMD xz = scale * (c * element.dND[m * 3 + 2] + e * element.dND[m * 3 + 1] + f * element.dND[m * 3 + 0]);
                     element.K[_n * 3 * nodes + _m] = element.K[_n * 3 * nodes + _m] + xy;
                     element.K[_m * 3 * nodes + _n] = element.K[_m * 3 * nodes + _n] + xy;
                     element.K[_n * 3 * nodes + _p] = element.K[_n * 3 * nodes + _p] + xz;
@@ -195,33 +195,33 @@ struct MatrixElasticityKernel<nodes, 3>: MatrixElasticity {
                 }
 
                 _n = n + nodes; _m = n + nodes + 1;
-                b = element.dND[n][1] * c11 + element.dND[n][0] * c13 + element.dND[n][2] * c14;
-                d = element.dND[n][1] * c13 + element.dND[n][0] * c33 + element.dND[n][2] * c34;
-                e = element.dND[n][1] * c14 + element.dND[n][0] * c34 + element.dND[n][2] * c44;
-                element.K[_n * 3 * nodes + _n] = element.K[_n * 3 * nodes + _n] + scale * (b * element.dND[n][1] + d * element.dND[n][0] + e * element.dND[n][2]);
+                b = element.dND[n * 3 + 1] * c11 + element.dND[n * 3 + 0] * c13 + element.dND[n * 3 + 2] * c14;
+                d = element.dND[n * 3 + 1] * c13 + element.dND[n * 3 + 0] * c33 + element.dND[n * 3 + 2] * c34;
+                e = element.dND[n * 3 + 1] * c14 + element.dND[n * 3 + 0] * c34 + element.dND[n * 3 + 2] * c44;
+                element.K[_n * 3 * nodes + _n] = element.K[_n * 3 * nodes + _n] + scale * (b * element.dND[n * 3 + 1] + d * element.dND[n * 3 + 0] + e * element.dND[n * 3 + 2]);
                 for (size_t m = n + 1; m < nodes; ++m, ++_m) {
-                    SIMD yy = scale * (b * element.dND[m][1] + d * element.dND[m][0] + e * element.dND[m][2]);
+                    SIMD yy = scale * (b * element.dND[m * 3 + 1] + d * element.dND[m * 3 + 0] + e * element.dND[m * 3 + 2]);
                     element.K[_n * 3 * nodes + _m] = element.K[_n * 3 * nodes + _m] + yy;
                     element.K[_m * 3 * nodes + _n] = element.K[_m * 3 * nodes + _n] + yy;
                 }
 
                 _n = n + nodes; _m = nodes * 2;
-                c = element.dND[n][1] * c12 + element.dND[n][0] * c23 + element.dND[n][2] * c24;
-                e = element.dND[n][1] * c14 + element.dND[n][0] * c34 + element.dND[n][2] * c44;
-                f = element.dND[n][1] * c15 + element.dND[n][0] * c35 + element.dND[n][2] * c45;
+                c = element.dND[n * 3 + 1] * c12 + element.dND[n * 3 + 0] * c23 + element.dND[n * 3 + 2] * c24;
+                e = element.dND[n * 3 + 1] * c14 + element.dND[n * 3 + 0] * c34 + element.dND[n * 3 + 2] * c44;
+                f = element.dND[n * 3 + 1] * c15 + element.dND[n * 3 + 0] * c35 + element.dND[n * 3 + 2] * c45;
                 for (size_t m = 0; m < nodes; ++m, ++_m) {
-                    SIMD yz = scale * (c * element.dND[m][2] + e * element.dND[m][1] + f * element.dND[m][0]);
+                    SIMD yz = scale * (c * element.dND[m * 3 + 2] + e * element.dND[m * 3 + 1] + f * element.dND[m * 3 + 0]);
                     element.K[_n * 3 * nodes + _m] = element.K[_n * 3 * nodes + _m] + yz;
                     element.K[_m * 3 * nodes + _n] = element.K[_m * 3 * nodes + _n] + yz;
                 }
 
                 _n = n + nodes * 2; _m = n + nodes * 2 + 1;
-                c = element.dND[n][2] * c22 + element.dND[n][1] * c24 + element.dND[n][0] * c25;
-                e = element.dND[n][2] * c24 + element.dND[n][1] * c44 + element.dND[n][0] * c45;
-                f = element.dND[n][2] * c25 + element.dND[n][1] * c45 + element.dND[n][0] * c55;
-                element.K[_n * 3 * nodes + _n] = element.K[_n * 3 * nodes + _n] + scale * (c * element.dND[n][2] + e * element.dND[n][1] + f * element.dND[n][0]);
+                c = element.dND[n * 3 + 2] * c22 + element.dND[n * 3 + 1] * c24 + element.dND[n * 3 + 0] * c25;
+                e = element.dND[n * 3 + 2] * c24 + element.dND[n * 3 + 1] * c44 + element.dND[n * 3 + 0] * c45;
+                f = element.dND[n * 3 + 2] * c25 + element.dND[n * 3 + 1] * c45 + element.dND[n * 3 + 0] * c55;
+                element.K[_n * 3 * nodes + _n] = element.K[_n * 3 * nodes + _n] + scale * (c * element.dND[n * 3 + 2] + e * element.dND[n * 3 + 1] + f * element.dND[n * 3 + 0]);
                 for (size_t m = n + 1; m < nodes; ++m, ++_m) {
-                    SIMD zz = scale * (c * element.dND[m][2] + e * element.dND[m][1] + f * element.dND[m][0]);
+                    SIMD zz = scale * (c * element.dND[m * 3 + 2] + e * element.dND[m * 3 + 1] + f * element.dND[m * 3 + 0]);
                     element.K[_n * 3 * nodes + _m] = element.K[_n * 3 * nodes + _m] + zz;
                     element.K[_m * 3 * nodes + _n] = element.K[_m * 3 * nodes + _n] + zz;
                 }
@@ -254,28 +254,28 @@ struct MatrixElasticityKernel<nodes, 3>: MatrixElasticity {
             SIMD c1 = element.elasticity[1];
             SIMD c2 = element.elasticity[21];
             for (size_t n = 0, _n, _m, _p; n < nodes; ++n) {
-                SIMD a = element.dND[n][0] * c0;
+                SIMD a = element.dND[n * 3 + 0] * c0;
                 SIMD b;
                 SIMD c;
-                SIMD d = element.dND[n][1] * c2;
+                SIMD d = element.dND[n * 3 + 1] * c2;
                 SIMD e;
-                SIMD f = element.dND[n][2] * c2;
+                SIMD f = element.dND[n * 3 + 2] * c2;
                 _n = n; _m = n + 1;
-                element.K[_n * 3 * nodes + _n] = element.K[_n * 3 * nodes + _n] + scale * (a * element.dND[n][0] + d * element.dND[n][1] + f * element.dND[n][2]);
+                element.K[_n * 3 * nodes + _n] = element.K[_n * 3 * nodes + _n] + scale * (a * element.dND[n * 3 + 0] + d * element.dND[n * 3 + 1] + f * element.dND[n * 3 + 2]);
                 for (size_t m = n + 1; m < nodes; ++m, ++_m) {
-                    SIMD xx = scale * (a * element.dND[m][0] + d * element.dND[m][1] + f * element.dND[m][2]);
+                    SIMD xx = scale * (a * element.dND[m * 3 + 0] + d * element.dND[m * 3 + 1] + f * element.dND[m * 3 + 2]);
                     element.K[_n * 3 * nodes + _m] = element.K[_n * 3 * nodes + _m] + xx;
                     element.K[_m * 3 * nodes + _n] = element.K[_m * 3 * nodes + _n] + xx;
                 }
 
                 _n = n; _m = nodes, _p = 2 * nodes;
-                b = element.dND[n][0] * c1;
-                c = element.dND[n][0] * c1;
-                d = element.dND[n][1] * c2;
-                f = element.dND[n][2] * c2;
+                b = element.dND[n * 3 + 0] * c1;
+                c = element.dND[n * 3 + 0] * c1;
+                d = element.dND[n * 3 + 1] * c2;
+                f = element.dND[n * 3 + 2] * c2;
                 for (size_t m = 0; m < nodes; ++m, ++_m, ++_p) {
-                    SIMD xy = scale * (b * element.dND[m][1] + d * element.dND[m][0]);
-                    SIMD xz = scale * (c * element.dND[m][2] + f * element.dND[m][0]);
+                    SIMD xy = scale * (b * element.dND[m * 3 + 1] + d * element.dND[m * 3 + 0]);
+                    SIMD xz = scale * (c * element.dND[m * 3 + 2] + f * element.dND[m * 3 + 0]);
                     element.K[_n * 3 * nodes + _m] = element.K[_n * 3 * nodes + _m] + xy;
                     element.K[_m * 3 * nodes + _n] = element.K[_m * 3 * nodes + _n] + xy;
                     element.K[_n * 3 * nodes + _p] = element.K[_n * 3 * nodes + _p] + xz;
@@ -283,32 +283,32 @@ struct MatrixElasticityKernel<nodes, 3>: MatrixElasticity {
                 }
 
                 _n = n + nodes; _m = n + nodes + 1;
-                b = element.dND[n][1] * c0;
-                d = element.dND[n][0] * c2;
-                e = element.dND[n][2] * c2;
-                element.K[_n * 3 * nodes + _n] = element.K[_n * 3 * nodes + _n] + scale * (b * element.dND[n][1] + d * element.dND[n][0] + e * element.dND[n][2]);
+                b = element.dND[n * 3 + 1] * c0;
+                d = element.dND[n * 3 + 0] * c2;
+                e = element.dND[n * 3 + 2] * c2;
+                element.K[_n * 3 * nodes + _n] = element.K[_n * 3 * nodes + _n] + scale * (b * element.dND[n * 3 + 1] + d * element.dND[n * 3 + 0] + e * element.dND[n * 3 + 2]);
                 for (size_t m = n + 1; m < nodes; ++m, ++_m) {
-                    SIMD yy = scale * (b * element.dND[m][1] + d * element.dND[m][0] + e * element.dND[m][2]);
+                    SIMD yy = scale * (b * element.dND[m * 3 + 1] + d * element.dND[m * 3 + 0] + e * element.dND[m * 3 + 2]);
                     element.K[_n * 3 * nodes + _m] = element.K[_n * 3 * nodes + _m] + yy;
                     element.K[_m * 3 * nodes + _n] = element.K[_m * 3 * nodes + _n] + yy;
                 }
 
                 _n = n + nodes; _m = nodes * 2;
-                c = element.dND[n][1] * c1;
-                e = element.dND[n][2] * c2;
+                c = element.dND[n * 3 + 1] * c1;
+                e = element.dND[n * 3 + 2] * c2;
                 for (size_t m = 0; m < nodes; ++m, ++_m) {
-                    SIMD yz = scale * (c * element.dND[m][2] + e * element.dND[m][1]);
+                    SIMD yz = scale * (c * element.dND[m * 3 + 2] + e * element.dND[m * 3 + 1]);
                     element.K[_n * 3 * nodes + _m] = element.K[_n * 3 * nodes + _m] + yz;
                     element.K[_m * 3 * nodes + _n] = element.K[_m * 3 * nodes + _n] + yz;
                 }
 
                 _n = n + nodes * 2; _m = n + nodes * 2 + 1;
-                c = element.dND[n][2] * c0;
-                e = element.dND[n][1] * c2;
-                f = element.dND[n][0] * c2;
-                element.K[_n * 3 * nodes + _n] = element.K[_n * 3 * nodes + _n] + scale * (c * element.dND[n][2] + e * element.dND[n][1] + f * element.dND[n][0]);
+                c = element.dND[n * 3 + 2] * c0;
+                e = element.dND[n * 3 + 1] * c2;
+                f = element.dND[n * 3 + 0] * c2;
+                element.K[_n * 3 * nodes + _n] = element.K[_n * 3 * nodes + _n] + scale * (c * element.dND[n * 3 + 2] + e * element.dND[n * 3 + 1] + f * element.dND[n * 3 + 0]);
                 for (size_t m = n + 1; m < nodes; ++m, ++_m) {
-                    SIMD zz = scale * (c * element.dND[m][2] + e * element.dND[m][1] + f * element.dND[m][0]);
+                    SIMD zz = scale * (c * element.dND[m * 3 + 2] + e * element.dND[m * 3 + 1] + f * element.dND[m * 3 + 0]);
                     element.K[_n * 3 * nodes + _m] = element.K[_n * 3 * nodes + _m] + zz;
                     element.K[_m * 3 * nodes + _n] = element.K[_m * 3 * nodes + _n] + zz;
                 }
@@ -342,61 +342,61 @@ struct MatrixElasticityKernel<nodes, 3>: MatrixElasticity {
             SIMD c44 = element.elasticity[28];
             SIMD c55 = element.elasticity[35];
             for (size_t n = 0, _n, _m, _p; n < nodes; ++n) {
-                SIMD a = element.dND[n][0] * c00;
+                SIMD a = element.dND[n * 3 + 0] * c00;
                 SIMD b;
                 SIMD c;
-                SIMD d = element.dND[n][1] * c33;
+                SIMD d = element.dND[n * 3 + 1] * c33;
                 SIMD e;
-                SIMD f = element.dND[n][2] * c55;
+                SIMD f = element.dND[n * 3 + 2] * c55;
                 _n = n; _m = n + 1;
-                element.K[_n * 3 * nodes + _n] = element.K[_n * 3 * nodes + _n] + scale * (a * element.dND[n][0] + d * element.dND[n][1] + f * element.dND[n][2]);
+                element.K[_n * 3 * nodes + _n] = element.K[_n * 3 * nodes + _n] + scale * (a * element.dND[n * 3 + 0] + d * element.dND[n * 3 + 1] + f * element.dND[n * 3 + 2]);
                 for (size_t m = n + 1; m < nodes; ++m, ++_m) {
-                    SIMD xx = scale * (a * element.dND[m][0] + d * element.dND[m][1] + f * element.dND[m][2]);
+                    SIMD xx = scale * (a * element.dND[m * 3 + 0] + d * element.dND[m * 3 + 1] + f * element.dND[m * 3 + 2]);
                     element.K[_n * 3 * nodes + _m] = element.K[_n * 3 * nodes + _m] + xx;
                     element.K[_m * 3 * nodes + _n] = element.K[_m * 3 * nodes + _n] + xx;
                 }
 
-                b = element.dND[n][0] * c01;
-                c = element.dND[n][0] * c02;
-                d = element.dND[n][1] * c33;
-                f = element.dND[n][2] * c55;
+                b = element.dND[n * 3 + 0] * c01;
+                c = element.dND[n * 3 + 0] * c02;
+                d = element.dND[n * 3 + 1] * c33;
+                f = element.dND[n * 3 + 2] * c55;
                 _n = n; _m = nodes; _p = nodes * 2;
                 for (size_t m = 0; m < nodes; ++m, ++_m, ++_p) {
-                    SIMD xy = scale * (b * element.dND[m][1] + d * element.dND[m][0]);
-                    SIMD xz = scale * (c * element.dND[m][2] + f * element.dND[m][0]);
+                    SIMD xy = scale * (b * element.dND[m * 3 + 1] + d * element.dND[m * 3 + 0]);
+                    SIMD xz = scale * (c * element.dND[m * 3 + 2] + f * element.dND[m * 3 + 0]);
                     element.K[_n * 3 * nodes + _m] = element.K[_n * 3 * nodes + _m] + xy;
                     element.K[_m * 3 * nodes + _n] = element.K[_m * 3 * nodes + _n] + xy;
                     element.K[_n * 3 * nodes + _p] = element.K[_n * 3 * nodes + _p] + xz;
                     element.K[_p * 3 * nodes + _n] = element.K[_p * 3 * nodes + _n] + xz;
                 }
 
-                b = element.dND[n][1] * c11;
-                d = element.dND[n][0] * c33;
-                e = element.dND[n][2] * c44;
+                b = element.dND[n * 3 + 1] * c11;
+                d = element.dND[n * 3 + 0] * c33;
+                e = element.dND[n * 3 + 2] * c44;
                 _n = n + nodes; _m = n + nodes + 1;
-                element.K[_n * 3 * nodes + _n] = element.K[_n * 3 * nodes + _n] + scale * (b * element.dND[n][1] + d * element.dND[n][0] + e * element.dND[n][2]);
+                element.K[_n * 3 * nodes + _n] = element.K[_n * 3 * nodes + _n] + scale * (b * element.dND[n * 3 + 1] + d * element.dND[n * 3 + 0] + e * element.dND[n * 3 + 2]);
                 for (size_t m = n + 1; m < nodes; ++m, ++_m) {
-                    SIMD yy = scale * (b * element.dND[m][1] + d * element.dND[m][0] + e * element.dND[m][2]);
+                    SIMD yy = scale * (b * element.dND[m * 3 + 1] + d * element.dND[m * 3 + 0] + e * element.dND[m * 3 + 2]);
                     element.K[_n * 3 * nodes + _m] = element.K[_n * 3 * nodes + _m] + yy;
                     element.K[_m * 3 * nodes + _n] = element.K[_m * 3 * nodes + _n] + yy;
                 }
 
-                c = element.dND[n][1] * c12;
-                e = element.dND[n][2] * c44;
+                c = element.dND[n * 3 + 1] * c12;
+                e = element.dND[n * 3 + 2] * c44;
                 _n = n + nodes; _m = nodes * 2;
                 for (size_t m = 0; m < nodes; ++m, ++_m) {
-                    SIMD yz = scale * (c * element.dND[m][2] + e * element.dND[m][1]);
+                    SIMD yz = scale * (c * element.dND[m * 3 + 2] + e * element.dND[m * 3 + 1]);
                     element.K[_n * 3 * nodes + _m] = element.K[_n * 3 * nodes + _m] + yz;
                     element.K[_m * 3 * nodes + _n] = element.K[_m * 3 * nodes + _n] + yz;
                 }
 
-                c = element.dND[n][2] * c22;
-                e = element.dND[n][1] * c44;
-                f = element.dND[n][0] * c55;
+                c = element.dND[n * 3 + 2] * c22;
+                e = element.dND[n * 3 + 1] * c44;
+                f = element.dND[n * 3 + 0] * c55;
                 _n = n + nodes * 2; _m = n + nodes * 2 + 1;
-                element.K[_n * 3 * nodes + _n] = element.K[_n * 3 * nodes + _n] + scale * (c * element.dND[n][2] + e * element.dND[n][1] + f * element.dND[n][0]);;
+                element.K[_n * 3 * nodes + _n] = element.K[_n * 3 * nodes + _n] + scale * (c * element.dND[n * 3 + 2] + e * element.dND[n * 3 + 1] + f * element.dND[n * 3 + 0]);;
                 for (size_t m = n + 1; m < nodes; ++m, ++_m) {
-                    SIMD zz = scale * (c * element.dND[m][2] + e * element.dND[m][1] + f * element.dND[m][0]);
+                    SIMD zz = scale * (c * element.dND[m * 3 + 2] + e * element.dND[m * 3 + 1] + f * element.dND[m * 3 + 0]);
                     element.K[_n * 3 * nodes + _m] = element.K[_n * 3 * nodes + _m] + zz;
                     element.K[_m * 3 * nodes + _n] = element.K[_m * 3 * nodes + _n] + zz;
                 }

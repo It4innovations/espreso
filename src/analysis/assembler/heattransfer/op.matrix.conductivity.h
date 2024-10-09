@@ -43,12 +43,12 @@ struct MatrixConductivityKernel<nodes, 2>: MatrixConductivity {
         {
             SIMD scale = element.thickness.gp * element.det * load1(element.w[gp]) * element.conductivity[0];
             for (size_t n = 0; n < nodes; ++n) {
-                SIMD nx = element.dND[n][0];
-                SIMD ny = element.dND[n][1];
+                SIMD nx = element.dND[n * 2 + 0];
+                SIMD ny = element.dND[n * 2 + 1];
                 element.K[(n * nodes + n)] = element.K[(n * nodes + n)] + scale * (nx * nx + ny * ny);
                 for (size_t m = n + 1; m < nodes; ++m) {
-                    SIMD mx = element.dND[m][0];
-                    SIMD my = element.dND[m][1];
+                    SIMD mx = element.dND[m * 2 + 0];
+                    SIMD my = element.dND[m * 2 + 1];
                     SIMD k = scale * (nx * mx + ny * my);
 
                     element.K[(n * nodes + m)] = element.K[(n * nodes + m)] + k;
@@ -62,14 +62,14 @@ struct MatrixConductivityKernel<nodes, 2>: MatrixConductivity {
             SIMD c11 = element.conductivity[3];
             SIMD scale = element.thickness.gp * element.det * load1(element.w[gp]);
             for (size_t n = 0; n < nodes; ++n) {
-                SIMD nx = element.dND[n][0];
-                SIMD ny = element.dND[n][1];
+                SIMD nx = element.dND[n * 2 + 0];
+                SIMD ny = element.dND[n * 2 + 1];
                 SIMD a = c00 * nx;
                 SIMD b = c11 * ny;
                 element.K[(n * nodes + n)] = element.K[(n * nodes + n)] + scale * (a * nx + b * ny);
                 for (size_t m = n + 1; m < nodes; ++m) {
-                    SIMD mx = element.dND[m][0];
-                    SIMD my = element.dND[m][1];
+                    SIMD mx = element.dND[m * 2 + 0];
+                    SIMD my = element.dND[m * 2 + 1];
                     SIMD k = scale * (a * mx + b * my);
 
                     element.K[(n * nodes + m)] = element.K[(n * nodes + m)] + k;
@@ -83,14 +83,14 @@ struct MatrixConductivityKernel<nodes, 2>: MatrixConductivity {
             SIMD c10 = element.conductivity[1], c11 = element.conductivity[3];
             SIMD scale = element.thickness.gp * element.det * load1(element.w[gp]);
             for (size_t n = 0; n < nodes; ++n) {
-                SIMD nx = element.dND[n][0];
-                SIMD ny = element.dND[n][1];
+                SIMD nx = element.dND[n * 2 + 0];
+                SIMD ny = element.dND[n * 2 + 1];
                 SIMD a = nx * c00 + ny * c10;
                 SIMD b = nx * c10 + ny * c11;
                 element.K[(n * nodes + n)] = element.K[(n * nodes + n)] + scale * (a * nx + b * ny);
                 for (size_t m = n + 1; m < nodes; ++m) {
-                    SIMD mx = element.dND[m][0];
-                    SIMD my = element.dND[m][1];
+                    SIMD mx = element.dND[m * 2 + 0];
+                    SIMD my = element.dND[m * 2 + 1];
                     SIMD k = scale * (a * mx + b * my);
 
                     element.K[(n * nodes + m)] = element.K[(n * nodes + m)] + k;
@@ -104,13 +104,13 @@ struct MatrixConductivityKernel<nodes, 2>: MatrixConductivity {
             SIMD c10 = element.conductivity[1], c11 = element.conductivity[3];
             SIMD scale = element.thickness.gp * element.det * load1(element.w[gp]);
             for (size_t n = 0; n < nodes; ++n) {
-                SIMD nx = element.dND[n][0];
-                SIMD ny = element.dND[n][1];
+                SIMD nx = element.dND[n * 2 + 0];
+                SIMD ny = element.dND[n * 2 + 1];
                 SIMD a = nx * c00 + ny * c01;
                 SIMD b = nx * c10 + ny * c11;
                 for (size_t m = 0; m < nodes; ++m) {
-                    SIMD mx = element.dND[m][0];
-                    SIMD my = element.dND[m][1];
+                    SIMD mx = element.dND[m * 2 + 0];
+                    SIMD my = element.dND[m * 2 + 1];
 
                     element.K[(n * nodes + m)] = element.K[(n * nodes + m)] + scale * (a * mx + b * my);
                 }
@@ -132,14 +132,14 @@ struct MatrixConductivityKernel<nodes, 3>: MatrixConductivity {
         {
             SIMD scale = element.det * load1(element.w[gp]) * element.conductivity[0];
             for (size_t n = 0; n < nodes; ++n) {
-                SIMD nx = element.dND[n][0];
-                SIMD ny = element.dND[n][1];
-                SIMD nz = element.dND[n][2];
+                SIMD nx = element.dND[n * 3 + 0];
+                SIMD ny = element.dND[n * 3 + 1];
+                SIMD nz = element.dND[n * 3 + 2];
                 element.K[(n * nodes + n)] = element.K[(n * nodes + n)] + scale * (nx * nx + ny * ny + nz * nz);
                 for (size_t m = n + 1; m < nodes; ++m) {
-                    SIMD mx = element.dND[m][0];
-                    SIMD my = element.dND[m][1];
-                    SIMD mz = element.dND[m][2];
+                    SIMD mx = element.dND[m * 3 + 0];
+                    SIMD my = element.dND[m * 3 + 1];
+                    SIMD mz = element.dND[m * 3 + 2];
                     SIMD k = scale * (nx * mx + ny * my + nz * mz);
 
                     element.K[(n * nodes + m)] = element.K[(n * nodes + m)] + k;
@@ -154,17 +154,17 @@ struct MatrixConductivityKernel<nodes, 3>: MatrixConductivity {
             SIMD c22 = element.conductivity[8];
             SIMD scale = element.det * load1(element.w[gp]);
             for (size_t n = 0; n < nodes; ++n) {
-                SIMD nx = element.dND[n][0];
-                SIMD ny = element.dND[n][1];
-                SIMD nz = element.dND[n][2];
+                SIMD nx = element.dND[n * 3 + 0];
+                SIMD ny = element.dND[n * 3 + 1];
+                SIMD nz = element.dND[n * 3 + 2];
                 SIMD a = c00 * nx;
                 SIMD b = c11 * ny;
                 SIMD c = c22 * nz;
                 element.K[(n * nodes + n)] = element.K[(n * nodes + n)] + scale * (a * nx + b * ny + c * nz);
                 for (size_t m = n + 1; m < nodes; ++m) {
-                    SIMD mx = element.dND[m][0];
-                    SIMD my = element.dND[m][1];
-                    SIMD mz = element.dND[m][2];
+                    SIMD mx = element.dND[m * 3 + 0];
+                    SIMD my = element.dND[m * 3 + 1];
+                    SIMD mz = element.dND[m * 3 + 2];
                     SIMD k = scale * (a * mx + b * my + c * mz);
 
                     element.K[(n * nodes + m)] = element.K[(n * nodes + m)] + k;
@@ -179,17 +179,17 @@ struct MatrixConductivityKernel<nodes, 3>: MatrixConductivity {
             SIMD c20 = element.conductivity[2], c21 = element.conductivity[5], c22 = element.conductivity[8];
             SIMD scale = element.det * load1(element.w[gp]);
             for (size_t n = 0; n < nodes; ++n) {
-                SIMD nx = element.dND[n][0];
-                SIMD ny = element.dND[n][1];
-                SIMD nz = element.dND[n][2];
+                SIMD nx = element.dND[n * 3 + 0];
+                SIMD ny = element.dND[n * 3 + 1];
+                SIMD nz = element.dND[n * 3 + 2];
                 SIMD a = nx * c00 + ny * c10 + nz * c20;
                 SIMD b = nx * c10 + ny * c11 + nz * c21;
                 SIMD c = nx * c20 + ny * c21 + nz * c22;
                 element.K[(n * nodes + n)] = element.K[(n * nodes + n)] + scale * (a * nx + b * ny + c * nz);
                 for (size_t m = n + 1; m < nodes; ++m) {
-                    SIMD mx = element.dND[m][0];
-                    SIMD my = element.dND[m][1];
-                    SIMD mz = element.dND[m][2];
+                    SIMD mx = element.dND[m * 3 + 0];
+                    SIMD my = element.dND[m * 3 + 1];
+                    SIMD mz = element.dND[m * 3 + 2];
                     SIMD k = scale * (a * mx + b * my + c * mz);
 
                     element.K[(n * nodes + m)] = element.K[(n * nodes + m)] + k;
@@ -204,16 +204,16 @@ struct MatrixConductivityKernel<nodes, 3>: MatrixConductivity {
             SIMD c20 = element.conductivity[2], c21 = element.conductivity[5], c22 = element.conductivity[8];
             SIMD scale = element.det * load1(element.w[gp]);
             for (size_t n = 0; n < nodes; ++n) {
-                SIMD nx = element.dND[n][0];
-                SIMD ny = element.dND[n][1];
-                SIMD nz = element.dND[n][2];
+                SIMD nx = element.dND[n * 3 + 0];
+                SIMD ny = element.dND[n * 3 + 1];
+                SIMD nz = element.dND[n * 3 + 2];
                 SIMD a = nx * c00 + ny * c01 + nz * c02;
                 SIMD b = nx * c10 + ny * c11 + nz * c12;
                 SIMD c = nx * c20 + ny * c21 + nz * c22;
                 for (size_t m = 0; m < nodes; ++m) {
-                    SIMD mx = element.dND[m][0];
-                    SIMD my = element.dND[m][1];
-                    SIMD mz = element.dND[m][2];
+                    SIMD mx = element.dND[m * 3 + 0];
+                    SIMD my = element.dND[m * 3 + 1];
+                    SIMD mz = element.dND[m * 3 + 2];
 
                     element.K[(n * nodes + m)] = element.K[(n * nodes + m)] + scale * (a * mx + b * my + c * mz);
                 }

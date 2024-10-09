@@ -34,11 +34,11 @@ struct SmallStrainTensorKernel<nodes, 2>: SmallStrainTensor {
             element.smallStrainTensor[1] = zeros();
             element.smallStrainTensor[2] = zeros();
             for (size_t n = 0; n < nodes; ++n) {
-                element.smallStrainTensor[0] = element.smallStrainTensor[0] + element.dND[n][0] * element.displacement[n][0];
-                element.smallStrainTensor[1] = element.smallStrainTensor[1] + element.dND[n][1] * element.displacement[n][1];
+                element.smallStrainTensor[0] = element.smallStrainTensor[0] + element.dND[n * 2 + 0] * element.displacement[n][0];
+                element.smallStrainTensor[1] = element.smallStrainTensor[1] + element.dND[n * 2 + 1] * element.displacement[n][1];
 
-                element.smallStrainTensor[2] = element.smallStrainTensor[2] + element.dND[n][1] * element.displacement[n][0];
-                element.smallStrainTensor[2] = element.smallStrainTensor[2] + element.dND[n][0] * element.displacement[n][1];
+                element.smallStrainTensor[2] = element.smallStrainTensor[2] + element.dND[n * 2 + 1] * element.displacement[n][0];
+                element.smallStrainTensor[2] = element.smallStrainTensor[2] + element.dND[n * 2 + 0] * element.displacement[n][1];
             }
         }
 };
@@ -57,18 +57,18 @@ struct SmallStrainTensorKernel<nodes, 3>: SmallStrainTensor {
         element.smallStrainTensor[4] = zeros();
         element.smallStrainTensor[5] = zeros();
         for (size_t n = 0; n < nodes; ++n) {
-            element.smallStrainTensor[0] = element.smallStrainTensor[0] + element.dND[n][0] * element.displacement[n][0];
-            element.smallStrainTensor[1] = element.smallStrainTensor[1] + element.dND[n][1] * element.displacement[n][1];
-            element.smallStrainTensor[2] = element.smallStrainTensor[2] + element.dND[n][2] * element.displacement[n][2];
+            element.smallStrainTensor[0] = element.smallStrainTensor[0] + element.dND[n * 3 + 0] * element.displacement[n][0];
+            element.smallStrainTensor[1] = element.smallStrainTensor[1] + element.dND[n * 3 + 1] * element.displacement[n][1];
+            element.smallStrainTensor[2] = element.smallStrainTensor[2] + element.dND[n * 3 + 2] * element.displacement[n][2];
 
-            element.smallStrainTensor[3] = element.smallStrainTensor[3] + element.dND[n][1] * element.displacement[n][0];
-            element.smallStrainTensor[3] = element.smallStrainTensor[3] + element.dND[n][0] * element.displacement[n][1];
+            element.smallStrainTensor[3] = element.smallStrainTensor[3] + element.dND[n * 3 + 1] * element.displacement[n][0];
+            element.smallStrainTensor[3] = element.smallStrainTensor[3] + element.dND[n * 3 + 0] * element.displacement[n][1];
 
-            element.smallStrainTensor[4] = element.smallStrainTensor[4] + element.dND[n][2] * element.displacement[n][1];
-            element.smallStrainTensor[4] = element.smallStrainTensor[4] + element.dND[n][1] * element.displacement[n][2];
+            element.smallStrainTensor[4] = element.smallStrainTensor[4] + element.dND[n * 3 + 2] * element.displacement[n][1];
+            element.smallStrainTensor[4] = element.smallStrainTensor[4] + element.dND[n * 3 + 1] * element.displacement[n][2];
 
-            element.smallStrainTensor[5] = element.smallStrainTensor[5] + element.dND[n][2] * element.displacement[n][0];
-            element.smallStrainTensor[5] = element.smallStrainTensor[5] + element.dND[n][0] * element.displacement[n][2];
+            element.smallStrainTensor[5] = element.smallStrainTensor[5] + element.dND[n * 3 + 2] * element.displacement[n][0];
+            element.smallStrainTensor[5] = element.smallStrainTensor[5] + element.dND[n * 3 + 0] * element.displacement[n][2];
         }
     }
 };
