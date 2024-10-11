@@ -263,7 +263,7 @@ void runElementKernel(const step::Step &step, StructuralMechanicsElementOperator
     DisplacementKernel<nodes, ndim> displacement(operators.displacement);
     SmallStrainTensorKernel<nodes, ndim> smallStrainTensor(operators.smallStrainTensor);
     LinearElasticityKernel<ndim> linearElasticity(operators.linearElasticity);
-    HyperElasticityKernel<ndim> hyperElasticity(operators.hyperElasticity);
+    HyperElasticityKernel<nodes, ndim> hyperElasticity(operators.hyperElasticity);
     PlasticityKernel<nodes, ndim> plasticity(operators.plasticity, action);
     MatrixLinearElasticityKernel<nodes, ndim> matrixLinearElasticity(operators.matrixLinearElasticity);
     MatrixHyperElasticityKernel<nodes, ndim> matrixHyperElasticity(operators.matrixHyperElasticity);

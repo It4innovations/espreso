@@ -8,6 +8,7 @@ espreso::HyperElasticPropertiesConfiguration::HyperElasticPropertiesConfiguratio
 	REGISTER(model, ECFMetaData()
 			.setdescription({ "Material model." })
 			.setdatatype({ ECFDataType::OPTION })
+			.addoption(ECFOption().setname("KIRCHHOFF").setdescription("Kirchhoff linear"))
 			.addoption(ECFOption().setname("NEO_HOOKEN_CMP").setdescription("Neo-Hooken-compressible"))
 			.addoption(ECFOption().setname("NEO_HOOKEN_INC").setdescription("Neo-Hooken-incompresible"))
 			.addoption(ECFOption().setname("MOONEY_RIVLIN_2PARAMS").setdescription("Mooney-Rivlin with 2 parameters"))
@@ -97,8 +98,8 @@ espreso::HyperElasticPropertiesConfiguration::HyperElasticPropertiesConfiguratio
 			.setdescription({ "E parameter." })
 			.setdatatype({ ECFDataType::EXPRESSION }));
 
-	REGISTER(mi, ECFMetaData()
-			.setdescription({ "mi parameter." })
+	REGISTER(mu, ECFMetaData()
+			.setdescription({ "mu parameter." })
 			.setdatatype({ ECFDataType::EXPRESSION }));
 
 	REGISTER(d, ECFMetaData()
@@ -109,7 +110,7 @@ espreso::HyperElasticPropertiesConfiguration::HyperElasticPropertiesConfiguratio
 			.setdescription({ "Initial share modulus." })
 			.setdatatype({ ECFDataType::EXPRESSION }));
 
-	REGISTER(lambdaL, ECFMetaData()
+	REGISTER(lambda, ECFMetaData()
 			.setdescription({ "Limiting network stretch." })
 			.setdatatype({ ECFDataType::EXPRESSION }));
 }

@@ -10,6 +10,7 @@ namespace espreso {
 struct HyperElasticPropertiesConfiguration: public ECFDescription {
 
 	enum class MODEL {
+	    KIRCHHOFF,
 		NEO_HOOKEN_CMP,
 		NEO_HOOKEN_INC,
 		MOONEY_RIVLIN_2PARAMS,
@@ -26,8 +27,8 @@ struct HyperElasticPropertiesConfiguration: public ECFDescription {
 
 	MODEL model;
 
-	ECFExpression E, mi;
-	ECFExpression d, G, lambdaL;
+	ECFExpression E, mu;
+	ECFExpression d, G, lambda;
 	ECFExpression C10, C01, C11, C02, C20, C30, C21, C12, C03;
 
 	HyperElasticPropertiesConfiguration();

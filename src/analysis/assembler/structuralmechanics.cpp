@@ -365,17 +365,17 @@ bool StructuralMechanics::analyze(const step::Step &step)
         }
 
         elementKernels[i].coordinates.activate(info::mesh->elements->nodes->cbegin() + ebegin, info::mesh->elements->nodes->cbegin() + eend, !cartesian || gpcoo);
+        elementKernels[i].linearElasticity.activate(settings.element_behaviour, &mat->linear_elastic_properties, &mat->coordinate_system);
         switch (mat->material_model) {
         case MaterialBaseConfiguration::MATERIAL_MODEL::LINEAR_ELASTIC:
-            elementKernels[i].linearElasticity.activate(settings.element_behaviour, &mat->linear_elastic_properties, &mat->coordinate_system);
             elementKernels[i].matrixLinearElasticity.activate(settings.element_behaviour, mat->linear_elastic_properties.model, elementKernels[i].linearElasticity.rotated);
             break;
         case MaterialBaseConfiguration::MATERIAL_MODEL::HYPER_ELASTIC:
+            elementKernels[i].displacement.activate(info::mesh->elements->nodes->cbegin() + ebegin, info::mesh->elements->nodes->cbegin() + eend, Results::displacement->data.data());
             elementKernels[i].hyperElasticity.activate(settings.element_behaviour, &mat->hyper_elastic_properties);
             elementKernels[i].matrixHyperElasticity.activate(settings.element_behaviour);
             break;
         case MaterialBaseConfiguration::MATERIAL_MODEL::PLASTICITY:
-            elementKernels[i].linearElasticity.activate(settings.element_behaviour, &mat->linear_elastic_properties, &mat->coordinate_system);
             elementKernels[i].plasticity.activate(i, settings.element_behaviour, &mat->plasticity_properties, Results::isPlastized);
             elementKernels[i].smallStrainTensor.activate();
             elementKernels[i].displacement.activate(info::mesh->elements->nodes->cbegin() + ebegin, info::mesh->elements->nodes->cbegin() + eend, Results::displacement->data.data());

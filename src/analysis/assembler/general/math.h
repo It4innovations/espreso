@@ -17,41 +17,41 @@ void set(SIMD M[rows * cols], const SIMD &v)
 template <size_t rows, size_t common, size_t cols>
 void multAB(SIMD C[rows * cols], const SIMD A[rows * common], const SIMD B[common * cols], const SIMD &scale = load1(1.))
 {
-    for (size_t i = 0; i < rows; ++i) {
-        for (size_t j = 0; j < cols; ++j) {
+    for (size_t r = 0; r < rows; ++r) {
+        for (size_t c = 0; c < cols; ++c) {
             SIMD res;
             for (size_t k = 0; k < common; ++k) {
-                res = res + A[i * common + k] * B[k * cols + j];
+                res = res + A[r * common + k] * B[k * cols + c];
             }
-            C[i * cols + j] = C[i * cols + j] + scale * res;
+            C[r * cols + c] = C[r * cols + c] + scale * res;
         }
     }
 }
 
 template <size_t rows, size_t common, size_t cols>
-void multAtB(SIMD C[rows * cols], const SIMD A[rows * common], const SIMD B[common * cols], const SIMD &scale = load1(1.))
+void multAtB(SIMD C[rows * cols], const SIMD A[common * rows], const SIMD B[common * cols], const SIMD &scale = load1(1.))
 {
-    for (size_t k = 0; k < common; ++k) {
-        for (size_t j = 0; j < cols; ++j) {
+    for (size_t r = 0; r < rows; ++r) {
+        for (size_t c = 0; c < cols; ++c) {
             SIMD res;
-            for (size_t i = 0; i < rows; ++i) {
-                res = res + A[i * common + k] * B[i * cols + j];
+            for (size_t k = 0; k < common; ++k) {
+                res = res + A[k * rows + r] * B[k * cols + c];
             }
-            C[k * cols + j] = C[k * cols + j] + scale * res;
+            C[r * cols + c] = C[r * cols + c] + scale * res;
         }
     }
 }
 
 template <size_t rows, size_t common, size_t cols>
-void multABt(SIMD C[rows * cols], const SIMD A[rows * common], const SIMD B[common * cols], const SIMD &scale = load1(1.))
+void multABt(SIMD C[rows * cols], const SIMD A[rows * common], const SIMD B[cols * common], const SIMD &scale = load1(1.))
 {
-    for (size_t i = 0; i < rows; ++i) {
-        for (size_t j = 0; j < cols; ++j) {
+    for (size_t r = 0; r < rows; ++r) {
+        for (size_t c = 0; c < cols; ++c) {
             SIMD res;
             for (size_t k = 0; k < common; ++k) {
-                res = res + A[i * common + k] * B[j * common + k];
+                res = res + A[r * common + k] * B[c * common + k];
             }
-            C[i * cols + j] = C[i * cols + j] + scale * res;
+            C[r * cols + c] = C[r * cols + c] + scale * res;
         }
     }
 }
@@ -59,13 +59,13 @@ void multABt(SIMD C[rows * cols], const SIMD A[rows * common], const SIMD B[comm
 template <size_t rows, size_t common, size_t cols>
 void multAtBt(SIMD C[rows * cols], const SIMD A[rows * common], const SIMD B[common * cols], const SIMD &scale = load1(1.))
 {
-    for (size_t i = 0; i < rows; ++i) {
-        for (size_t j = 0; j < cols; ++j) {
+    for (size_t r = 0; r < rows; ++r) {
+        for (size_t c = 0; c < cols; ++c) {
             SIMD res;
             for (size_t k = 0; k < common; ++k) {
-                res = res + A[k * rows + i] * B[j * common + k];
+                res = res + A[k * rows + r] * B[c * common + k];
             }
-            C[i * cols + j] = C[i * cols + j] + scale * res;
+            C[r * cols + c] = C[r * cols + c] + scale * res;
         }
     }
 }
@@ -73,19 +73,19 @@ void multAtBt(SIMD C[rows * cols], const SIMD A[rows * common], const SIMD B[com
 template <size_t rows, size_t cols>
 void multAtBA(SIMD C[cols * cols], const SIMD A[rows * cols], const SIMD B[rows * rows], const SIMD &scale = load1(1.))
 {
-    for (size_t n = 0; n < cols; ++n) {
+    for (size_t r = 0; r < cols; ++r) {
         SIMD AtB[rows];
         for (size_t i = 0; i < rows; ++i) {
             for (size_t j = 0; j < rows; ++j) {
-                AtB[j] = AtB[j] + A[i * cols + n] * B[i * rows + j];
+                AtB[i] = AtB[i] + A[j * cols + r] * B[j * rows + i];
             }
         }
-        for (size_t m = 0; m < cols; ++m) {
-            SIMD nm;
+        for (size_t c = 0; c < cols; ++c) {
+            SIMD res;
             for (size_t k = 0; k < rows; ++k) {
-                nm = nm + AtB[k] * A[k * cols + m];
+                res = res + AtB[k] * A[k * cols + c];
             }
-            C[n * cols + m] = C[n * cols + m] + scale * nm;
+            C[r * cols + c] = C[r * cols + c] + scale * res;
         }
     }
 }
@@ -162,6 +162,23 @@ inline void inv33(const SIMD A[9], SIMD &det, SIMD invA[9])
 inline void inv33(const SIMD A[9], SIMD invA[9])
 {
     SIMD det; inv33(A, det, invA);
+}
+
+inline void matrix33ToVoigt6(const SIMD A[9], SIMD voigt[6])
+{
+    voigt[0] = A[0];
+    voigt[1] = A[4];
+    voigt[2] = A[8];
+    voigt[3] = A[1];
+    voigt[4] = A[5];
+    voigt[5] = A[2];
+}
+
+inline void voigt6ToMatrix33(const SIMD voigt[6], SIMD A[9])
+{
+    A[0] = voigt[0]; A[1] = voigt[3]; A[2] = voigt[5];
+    A[3] = voigt[3]; A[4] = voigt[1]; A[5] = voigt[4];
+    A[6] = voigt[5]; A[7] = voigt[4]; A[8] = voigt[2];
 }
 
 void print(size_t rows, size_t cols, const SIMD *A);
