@@ -47,8 +47,8 @@ template <size_t nodes> struct HyperElasticityKernel<nodes, 2>: HyperElasticity 
         case HyperElasticPropertiesConfiguration::MODEL::MOONEY_RIVLIN_3PARAMS:
         case HyperElasticPropertiesConfiguration::MODEL::MOONEY_RIVLIN_5PARAMS:
         case HyperElasticPropertiesConfiguration::MODEL::MOONEY_RIVLIN_9PARAMS:
-        case HyperElasticPropertiesConfiguration::MODEL::NEO_HOOKEN_CMP:
-        case HyperElasticPropertiesConfiguration::MODEL::NEO_HOOKEN_INC:
+        case HyperElasticPropertiesConfiguration::MODEL::NEO_HOOKEAN_CMP:
+        case HyperElasticPropertiesConfiguration::MODEL::NEO_HOOKEAN_INC:
         case HyperElasticPropertiesConfiguration::MODEL::OGDEN_1:
         case HyperElasticPropertiesConfiguration::MODEL::OGDEN_2:
         case HyperElasticPropertiesConfiguration::MODEL::OGDEN_3:
@@ -107,43 +107,60 @@ template <size_t nodes> struct HyperElasticityKernel<nodes, 3>: HyperElasticity 
         case HyperElasticPropertiesConfiguration::MODEL::MOONEY_RIVLIN_3PARAMS:
         case HyperElasticPropertiesConfiguration::MODEL::MOONEY_RIVLIN_5PARAMS:
         case HyperElasticPropertiesConfiguration::MODEL::MOONEY_RIVLIN_9PARAMS:
-        case HyperElasticPropertiesConfiguration::MODEL::NEO_HOOKEN_CMP:
+        case HyperElasticPropertiesConfiguration::MODEL::NEO_HOOKEAN_CMP:
         {
-            SIMD vC[6], lambda;
-            SIMD C05 = load1(.5);
-            SIMD J2 = vC[0] * vC[1] * vC[2] + load1(2) * vC[3] * vC[4] * vC[5] - vC[0] * vC[5] * vC[5] - vC[1] * vC[4] * vC[4] - vC[2] * vC[3] * vC[3];
-//            SIMD J  = sqrt(J2);
-            SIMD rJ2 = load1(1) / J2;
+            SIMD E = element.ecf.youngModulus[0];
+            SIMD nu = element.ecf.poissonRatio[0]; // https://en.wikipedia.org/wiki/Lam%C3%A9_parameters
+            SIMD lambda = E * nu / ((load1(1.) + nu) * (load1(1.) - load1(2.) * nu));
+            SIMD mu = E / (load1(2.) + load1(2.) * nu);
 
+            SIMD J2 = C2[0] * C2[4] * C2[8] + load1(2) * C2[1] * C2[5] * C2[2] - C2[0] * C2[2] * C2[2] - C2[4] * C2[5] * C2[5] - C2[8] * C2[1] * C2[1];
+            SIMD rJ2 = load1(1) / J2;
             SIMD vCinv[6] = {
-                (vC[1] * vC[2] - vC[5] * vC[5] ) * rJ2,
-                (vC[0] * vC[2] - vC[4] * vC[4] ) * rJ2,
-                (vC[0] * vC[1] - vC[3] * vC[3] ) * rJ2,
-                (vC[4] * vC[5] - vC[2] * vC[3] ) * rJ2,
-                (vC[3] * vC[5] - vC[1] * vC[4] ) * rJ2,
-                (vC[3] * vC[4] - vC[0] * vC[5] ) * rJ2,
+                (C2[4] * C2[8] - C2[2] * C2[2] ) * rJ2,
+                (C2[0] * C2[8] - C2[5] * C2[5] ) * rJ2,
+                (C2[0] * C2[4] - C2[1] * C2[1] ) * rJ2,
+                (C2[5] * C2[2] - C2[8] * C2[1] ) * rJ2,
+                (C2[1] * C2[2] - C2[4] * C2[5] ) * rJ2,
+                (C2[1] * C2[5] - C2[0] * C2[2] ) * rJ2,
             };
-            SIMD symodot_vCinv[36] = {
-                (vCinv[1] * vCinv[1] + vCinv[1] * vCinv[1]) * C05, (vCinv[4] * vCinv[4] + vCinv[4] * vCinv[4]) * C05, (vCinv[5] * vCinv[5] + vCinv[5] * vCinv[5]) * C05, (vCinv[1] * vCinv[4] + vCinv[4] * vCinv[1]) * C05, (vCinv[1] * vCinv[5] + vCinv[5] * vCinv[1]) * C05, (vCinv[4] * vCinv[5] + vCinv[5] * vCinv[4]) * C05,
-                (vCinv[4] * vCinv[4] + vCinv[4] * vCinv[4]) * C05, (vCinv[2] * vCinv[2] + vCinv[2] * vCinv[2]) * C05, (vCinv[6] * vCinv[6] + vCinv[6] * vCinv[6]) * C05, (vCinv[4] * vCinv[2] + vCinv[2] * vCinv[4]) * C05, (vCinv[4] * vCinv[6] + vCinv[6] * vCinv[4]) * C05, (vCinv[2] * vCinv[6] + vCinv[6] * vCinv[2]) * C05,
-                (vCinv[5] * vCinv[5] + vCinv[5] * vCinv[5]) * C05, (vCinv[6] * vCinv[6] + vCinv[6] * vCinv[6]) * C05, (vCinv[3] * vCinv[3] + vCinv[3] * vCinv[3]) * C05, (vCinv[5] * vCinv[6] + vCinv[6] * vCinv[5]) * C05, (vCinv[5] * vCinv[3] + vCinv[3] * vCinv[5]) * C05, (vCinv[6] * vCinv[3] + vCinv[3] * vCinv[6]) * C05,
-                (vCinv[1] * vCinv[4] + vCinv[1] * vCinv[4]) * C05, (vCinv[4] * vCinv[2] + vCinv[4] * vCinv[2]) * C05, (vCinv[5] * vCinv[6] + vCinv[5] * vCinv[6]) * C05, (vCinv[1] * vCinv[2] + vCinv[4] * vCinv[4]) * C05, (vCinv[1] * vCinv[6] + vCinv[5] * vCinv[4]) * C05, (vCinv[4] * vCinv[6] + vCinv[5] * vCinv[2]) * C05,
-                (vCinv[1] * vCinv[5] + vCinv[1] * vCinv[5]) * C05, (vCinv[4] * vCinv[6] + vCinv[4] * vCinv[6]) * C05, (vCinv[5] * vCinv[3] + vCinv[5] * vCinv[3]) * C05, (vCinv[1] * vCinv[6] + vCinv[4] * vCinv[5]) * C05, (vCinv[1] * vCinv[3] + vCinv[5] * vCinv[5]) * C05, (vCinv[4] * vCinv[3] + vCinv[5] * vCinv[6]) * C05,
-                (vCinv[4] * vCinv[5] + vCinv[4] * vCinv[5]) * C05, (vCinv[2] * vCinv[6] + vCinv[2] * vCinv[6]) * C05, (vCinv[6] * vCinv[3] + vCinv[6] * vCinv[3]) * C05, (vCinv[4] * vCinv[6] + vCinv[2] * vCinv[5]) * C05, (vCinv[4] * vCinv[3] + vCinv[6] * vCinv[5]) * C05, (vCinv[2] * vCinv[3] + vCinv[6] * vCinv[6]) * C05
-            };
-//            double I1 = vC[0] + vC[1] + vC[3];
-//            double I2 = vC[0] * vC[1] + vC[0] * vC[2] + vC[1] * vC[2] - vC[3] * vC[3] - vC[4] * vC[4] - vC[5] * vC[5];
+
+            SIMD C05 = load1(.5);
             SIMD logJ2 = log(J2);
-            SIMD al3 = C05 * (lambda * logJ2) - element.ecf.poissonRatio[0];
-            element.vS[0] = al3 * vCinv[0] + element.ecf.poissonRatio[0];
-            element.vS[1] = al3 * vCinv[1] + element.ecf.poissonRatio[0];
-            element.vS[2] = al3 * vCinv[2] + element.ecf.poissonRatio[0];
+            SIMD al3 = C05 * (lambda * logJ2) - mu;
+            element.vS[0] = al3 * vCinv[0] + mu;
+            element.vS[1] = al3 * vCinv[1] + mu;
+            element.vS[2] = al3 * vCinv[2] + mu;
             element.vS[3] = al3 * vCinv[3];
             element.vS[4] = al3 * vCinv[4];
             element.vS[5] = al3 * vCinv[5];
 
+            auto ij = [] (int i, int j) { return (i - 1) * 6 + j - 1; };
+            SIMD symodot_vCinv[36];
+            symodot_vCinv[ij(1,1)] =  vCinv[0] * vCinv[0];
+            symodot_vCinv[ij(1,2)] =  vCinv[3] * vCinv[3];                                      symodot_vCinv[ij(2,1)] = symodot_vCinv[ij(1,2)];
+            symodot_vCinv[ij(1,3)] =  vCinv[5] * vCinv[5];                                      symodot_vCinv[ij(3,1)] = symodot_vCinv[ij(1,3)];
+            symodot_vCinv[ij(1,4)] =  vCinv[0] * vCinv[3];                                      symodot_vCinv[ij(4,1)] = symodot_vCinv[ij(1,4)];
+            symodot_vCinv[ij(1,5)] =  vCinv[3] * vCinv[5];                                      symodot_vCinv[ij(5,1)] = symodot_vCinv[ij(1,5)];
+            symodot_vCinv[ij(1,6)] =  vCinv[0] * vCinv[5];                                      symodot_vCinv[ij(6,1)] = symodot_vCinv[ij(1,6)];
+            symodot_vCinv[ij(2,2)] =  vCinv[1] * vCinv[1];
+            symodot_vCinv[ij(2,3)] =  vCinv[4] * vCinv[4];                                      symodot_vCinv[ij(3,2)] = symodot_vCinv[ij(2,3)];
+            symodot_vCinv[ij(2,4)] =  vCinv[1] * vCinv[3];                                      symodot_vCinv[ij(4,2)] = symodot_vCinv[ij(2,4)];
+            symodot_vCinv[ij(2,5)] =  vCinv[1] * vCinv[4];                                      symodot_vCinv[ij(5,2)] = symodot_vCinv[ij(2,5)];
+            symodot_vCinv[ij(2,6)] =  vCinv[3] * vCinv[4];                                      symodot_vCinv[ij(6,2)] = symodot_vCinv[ij(2,6)];
+            symodot_vCinv[ij(3,3)] =  vCinv[2] * vCinv[2];
+            symodot_vCinv[ij(3,4)] =  vCinv[4] * vCinv[5];                                      symodot_vCinv[ij(4,3)] = symodot_vCinv[ij(3,4)];
+            symodot_vCinv[ij(3,5)] =  vCinv[2] * vCinv[4];                                      symodot_vCinv[ij(5,3)] = symodot_vCinv[ij(3,5)];
+            symodot_vCinv[ij(3,6)] =  vCinv[2] * vCinv[5];                                      symodot_vCinv[ij(6,3)] = symodot_vCinv[ij(3,6)];
+            symodot_vCinv[ij(4,4)] = (vCinv[0] * vCinv[1] + vCinv[3] * vCinv[3]) * load1(.5);
+            symodot_vCinv[ij(4,5)] = (vCinv[3] * vCinv[4] + vCinv[1] * vCinv[5]) * load1(.5);   symodot_vCinv[ij(5,4)] = symodot_vCinv[ij(4,5)];
+            symodot_vCinv[ij(4,6)] = (vCinv[0] * vCinv[4] + vCinv[3] * vCinv[5]) * load1(.5);   symodot_vCinv[ij(6,4)] = symodot_vCinv[ij(4,6)];
+            symodot_vCinv[ij(5,5)] = (vCinv[1] * vCinv[2] + vCinv[4] * vCinv[4]) * load1(.5);
+            symodot_vCinv[ij(5,6)] = (vCinv[2] * vCinv[3] + vCinv[4] * vCinv[5]) * load1(.5);   symodot_vCinv[ij(6,5)] = symodot_vCinv[ij(5,6)];
+            symodot_vCinv[ij(6,6)] = (vCinv[0] * vCinv[2] + vCinv[5] * vCinv[5]) * load1(.5);
+
             SIMD be6 = lambda;
-            SIMD be7 = load1(2) * element.ecf.poissonRatio[0] - lambda * logJ2;
+            SIMD be7 = load1(2) * mu - lambda * logJ2;
             for (int i = 0; i < 6; i++) {
                 for (int j = 0; j < 6; j++) {
                     element.elasticity[i * 6 + j] = be6 * vCinv[i] * vCinv[j] + be7 * symodot_vCinv[i * 6 + j];
@@ -151,7 +168,7 @@ template <size_t nodes> struct HyperElasticityKernel<nodes, 3>: HyperElasticity 
             }
         }
         break;
-        case HyperElasticPropertiesConfiguration::MODEL::NEO_HOOKEN_INC:
+        case HyperElasticPropertiesConfiguration::MODEL::NEO_HOOKEAN_INC:
         case HyperElasticPropertiesConfiguration::MODEL::OGDEN_1:
         case HyperElasticPropertiesConfiguration::MODEL::OGDEN_2:
         case HyperElasticPropertiesConfiguration::MODEL::OGDEN_3:

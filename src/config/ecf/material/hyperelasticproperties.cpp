@@ -3,14 +3,14 @@
 #include "config/configuration.hpp"
 
 espreso::HyperElasticPropertiesConfiguration::HyperElasticPropertiesConfiguration()
-: model(MODEL::NEO_HOOKEN_CMP)
+: model(MODEL::KIRCHHOFF)
 {
 	REGISTER(model, ECFMetaData()
 			.setdescription({ "Material model." })
 			.setdatatype({ ECFDataType::OPTION })
 			.addoption(ECFOption().setname("KIRCHHOFF").setdescription("Kirchhoff linear"))
-			.addoption(ECFOption().setname("NEO_HOOKEN_CMP").setdescription("Neo-Hooken-compressible"))
-			.addoption(ECFOption().setname("NEO_HOOKEN_INC").setdescription("Neo-Hooken-incompresible"))
+			.addoption(ECFOption().setname("NEO_HOOKEAN_CMP").setdescription("Neo-Hookean-compressible"))
+			.addoption(ECFOption().setname("NEO_HOOKEAN_INC").setdescription("Neo-Hookean-incompresible"))
 			.addoption(ECFOption().setname("MOONEY_RIVLIN_2PARAMS").setdescription("Mooney-Rivlin with 2 parameters"))
 			.addoption(ECFOption().setname("MOONEY_RIVLIN_3PARAMS").setdescription("Mooney-Rivlin with 3 parameters"))
 			.addoption(ECFOption().setname("MOONEY_RIVLIN_5PARAMS").setdescription("Mooney-Rivlin with 5 parameters"))

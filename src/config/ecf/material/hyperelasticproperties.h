@@ -11,8 +11,8 @@ struct HyperElasticPropertiesConfiguration: public ECFDescription {
 
 	enum class MODEL {
 	    KIRCHHOFF,
-		NEO_HOOKEN_CMP,
-		NEO_HOOKEN_INC,
+		NEO_HOOKEAN_CMP,
+		NEO_HOOKEAN_INC,
 		MOONEY_RIVLIN_2PARAMS,
 		MOONEY_RIVLIN_3PARAMS,
 		MOONEY_RIVLIN_5PARAMS,
