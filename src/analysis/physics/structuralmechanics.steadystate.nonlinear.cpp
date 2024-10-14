@@ -203,6 +203,9 @@ bool StructuralMechanicsSteadyStateNonLinear::checkDisplacement(step::Step &step
     double solutionNumerator = solver->x->norm();
     solver->x->add(1, U);
     x->copy(solver->x);
+    if (StructuralMechanics::Results::reactionForce) {
+        R->storeTo(StructuralMechanics::Results::reactionForce->data);
+    }
     storeSolution(step);
 
     double solutionDenominator = std::max(solver->x->norm(), 1e-3);
