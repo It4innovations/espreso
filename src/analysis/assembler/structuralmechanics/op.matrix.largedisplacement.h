@@ -40,10 +40,6 @@ struct MatrixLargeDisplacementKernel<nodes, 2>: MatrixLargeDisplacement {
     template <typename Element>
     void simd(Element &element, size_t gp)
     {
-        for (size_t n = 0; n < nodes; ++n) {
-
-        }
-
         SIMD JC[4];
         for (size_t n = 0; n < nodes; ++n) {
             for (int i = 0; i < 2; ++i) {
@@ -62,22 +58,11 @@ struct MatrixLargeDisplacementKernel<nodes, 2>: MatrixLargeDisplacement {
         SIMD sVec[3];
         multAB<3, 3, 1>(sVec, element.elasticity, eVec, load1(1.0));
 
-//        SIMD fbar[12] = {
-//            F(1,1) , zeros(), F(2,1) , zeros(),
-//            zeros(), F(1,2) , zeros(), F(2,2) ,
-//            F(1,2) , F(1,1) , F(2,2) , F(2,1) ,
-//        };
         SIMD fbar[12] = {
             F[0]   , zeros(), F[2]   , zeros(),
             zeros(), F[1]   , zeros(), F[3]   ,
             F[1]   , F[0]   , F[3]   , F[2]   ,
         };
-//        SIMD bt[4 * 2 * nodes] = {
-//            dnx(1), 0     , dnx(2), 0     , dnx(3), 0     , dnx(4), 0     ,
-//            dny(1), 0     , dny(2), 0     , dny(3), 0     , dny(4), 0     ,
-//            0     , dnx(1), 0     , dnx(2), 0     , dnx(3), 0     , dnx(4),
-//            0     , dny(1), 0     , dny(2), 0     , dny(3), 0     , dny(4),
-//        };
         SIMD bt[4 * 2 * nodes];
         for (size_t n = 0; n < nodes; ++n) {
             bt[0 * 2 * nodes + 2 * n] = element.dND[n * 2 + 0];
@@ -86,17 +71,7 @@ struct MatrixLargeDisplacementKernel<nodes, 2>: MatrixLargeDisplacement {
             bt[3 * 2 * nodes + 2 * n + 1] = element.dND[n * 2 + 1];
         }
 
-        // GT = fbar * bt
         SIMD GT[3 * 2 * nodes]; multAB<3, 4, 2 * nodes>(GT, fbar, bt);
-//        for (size_t n = 0; n < nodes; n++) {
-//            GT[0 * 2 * nodes + n        ] = F[0] * element.dND[n * 2 + 0];
-//            GT[0 * 2 * nodes + n + nodes] = F[2] * element.dND[n * 2 + 0];
-//            GT[1 * 2 * nodes + n        ] = F[1] * element.dND[n * 2 + 1];
-//            GT[1 * 2 * nodes + n + nodes] = F[3] * element.dND[n * 2 + 1];
-//            GT[2 * 2 * nodes + n        ] = F[1] * element.dND[n * 2 + 0] + F[0] * element.dND[n * 2 + 1];
-//            GT[2 * 2 * nodes + n + nodes] = F[3] * element.dND[n * 2 + 0] + F[1] * element.dND[n * 2 + 1];
-//        }
-
         SIMD KK[2 * nodes * 2 * nodes];
 
         SIMD scale = element.thickness.gp * element.det * load1(element.w[gp]);
@@ -125,26 +100,9 @@ struct MatrixLargeDisplacementKernel<nodes, 2>: MatrixLargeDisplacement {
                 element.K[r * 2 * nodes + nodes * 2 * nodes + c + nodes] = element.K[r * 2 * nodes + nodes * 2 * nodes + c + nodes] + KK[(2 * r + 1) * 2 * nodes + (2 * c + 1)];
             }
         }
-
-//        for (size_t n = 0; n < nodes; ++n) {
-//            SIMD a = element.dND[n * 2 + 0] * sVec[0] + element.dND[n * 2 + 1] * sVec[2];
-//            SIMD b = element.dND[n * 2 + 0] * sVec[2] + element.dND[n * 2 + 1] * sVec[1];
-//
-//            SIMD nm = a * element.dND[n * 2 + 0] + b * element.dND[n * 2 + 1];
-//            element.K[(n + 0 * nodes) * 2 * nodes + (n + 0 * nodes)] = element.K[(n + 0 * nodes) * 2 * nodes + (n + 0 * nodes)] + scale * nm;
-//            element.K[(n + 1 * nodes) * 2 * nodes + (n + 1 * nodes)] = element.K[(n + 1 * nodes) * 2 * nodes + (n + 1 * nodes)] + scale * nm;
-//            for (size_t m = n + 1; m < nodes; ++m) {
-//                SIMD nm = a * element.dND[m * 2 +0] + b * element.dND[m * 2 +1];
-//                element.K[(n + 0 * nodes) * 2 * nodes + (m + 0 * nodes)] = element.K[(n + 0 * nodes) * 2 * nodes + (m + 0 * nodes)] + scale * nm;
-//                element.K[(n + 1 * nodes) * 2 * nodes + (m + 1 * nodes)] = element.K[(n + 1 * nodes) * 2 * nodes + (m + 1 * nodes)] + scale * nm;
-//                element.K[(m + 0 * nodes) * 2 * nodes + (n + 0 * nodes)] = element.K[(m + 0 * nodes) * 2 * nodes + (n + 0 * nodes)] + scale * nm;
-//                element.K[(m + 1 * nodes) * 2 * nodes + (n + 1 * nodes)] = element.K[(m + 1 * nodes) * 2 * nodes + (n + 1 * nodes)] + scale * nm;
-//            }
-//        }
-
-        SIMD RR[2 * nodes];
         // G * sVec
-        multAtB<3, 2 * nodes, 1>(RR, GT, sVec, scale);
+        SIMD RR[2 * nodes];
+        multAtB<2 * nodes, 3, 1>(RR, GT, sVec, scale);
 
         for (size_t r = 0; r < nodes; ++r) {
             element.nf[r]         = element.nf[r]         + RR[2 * r];
@@ -219,7 +177,7 @@ struct MatrixLargeDisplacementKernel<nodes, 3>: MatrixLargeDisplacement {
         }
 
         // BLt * sVec
-        multAtB<6, 3 * nodes, 1>(element.nf, BL, sVec, scale);
+        multAtB<3 * nodes, 6, 1>(element.nf, BL, sVec, scale);
     }
 };
 
