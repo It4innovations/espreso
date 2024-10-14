@@ -48,8 +48,11 @@ void Analysis::run()
         case LoadStepSolverConfiguration::TYPE::TRANSIENT:
             switch (info::ecf->heat_transfer.load_steps_settings.at(1).mode) {
             case LoadStepSolverConfiguration::MODE::LINEAR: physics = new HeatTransientLinear(info::ecf->heat_transfer, info::ecf->heat_transfer.load_steps_settings.at(1)); break;
-//            case LoadStepSolverConfiguration::MODE::NONLINEAR: physics = new HeatSteadyStateNonLinear(info::ecf->heat_transfer_2d, info::ecf->heat_transfer_2d.load_steps_settings.at(1)); break;
+            case LoadStepSolverConfiguration::MODE::NONLINEAR: eslog::globalerror("implement HeatTransientNonLinear solver.\n"); break; // physics = new HeatSteadyStateNonLinear(info::ecf->heat_transfer, info::ecf->heat_transfer.load_steps_settings.at(1)); break;
             } break;
+        case LoadStepSolverConfiguration::TYPE::HARMONIC:
+            eslog::globalerror("invalid combination: HARMONIC -- HEAT_TRANSFER.\n");
+            break;
         }
 
         break;

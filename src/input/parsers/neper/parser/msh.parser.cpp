@@ -175,8 +175,8 @@ void NeperMshMesh::parseASCII(MeshBuilder &mesh)
 	mesh.esize.reserve(mesh.eIDs.capacity());
 	mesh.enodes.reserve(mesh.eIDs.capacity() * 8);
 	for (size_t i = 0; i < edata.size(); ) {
-		esint id, type, dim, enodes = 0;
-		size_t tag0, tag1;
+		esint id = 0, type = 0, dim = 0, enodes = 0;
+		size_t tag0 = 0, tag1 = 0;
 		id = edata[i++];
 		switch (edata[i++]) {
 		case 15: dim = 0; type = (int)Element::CODE::POINT1;    enodes =  1; break;

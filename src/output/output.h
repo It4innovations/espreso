@@ -13,7 +13,7 @@ class AsyncOutputExecutor;
 
 class OutputWriter {
 public:
-	virtual bool storeStep() { return true; }
+	virtual bool storeStep(const step::Step &step) { return true; }
 
 	virtual void updateMesh() =0;
 	virtual void updateMonitors(const step::Step &step) =0;

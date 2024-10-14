@@ -201,9 +201,6 @@ espreso::FETIConfiguration::FETIConfiguration()
 			.setdescription({ "SMALSE inner max iterations" })
 			.setdatatype({ ECFDataType::NONNEGATIVE_INTEGER }));
 
-	// SMALSE
-	int th, no_enlarg_exp, no_enlarg_prop, optimset;
-
 	gamma = 1;
 	REGISTER(gamma, ECFMetaData()
 			.setdescription({ "SMALSE gamma" })

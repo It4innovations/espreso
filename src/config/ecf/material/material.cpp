@@ -27,7 +27,7 @@ MaterialBaseConfiguration::MaterialBaseConfiguration(PHYSICAL_MODEL physicalMode
 	ecfdescription->registerParameter("speed_of_sound", speed_of_sound, ECFMetaData()
 			.setdescription({ "Speed of sound" })
 			.setdatatype({ ECFDataType::EXPRESSION })
-			.allowonly([&] () { return !*_phase_change && PHYSICAL_MODEL::ACOUSTICS; }));
+			.allowonly([&] () { return !*_phase_change && physical_model == PHYSICAL_MODEL::ACOUSTICS; }));
 			/*
 			.addconstraint(ECFCondition(*_phase_change, ECFCondition::EQUALS, false)));
 			*/
