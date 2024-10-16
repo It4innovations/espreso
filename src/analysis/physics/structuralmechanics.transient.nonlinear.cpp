@@ -187,7 +187,7 @@ bool StructuralMechanicsTransientNonLinear::run(step::Step &step)
     C->set(0);
     dU->set(0);
     U->set(0);
-    V->set(0);
+    assembler.getInitialVelocity(V);
     A->set(0);
     solver->set(step);
 

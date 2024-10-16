@@ -32,6 +32,7 @@
 #include "analysis/assembler/structuralmechanics/op.pressure.h"
 #include "analysis/assembler/structuralmechanics/op.harmonicforce.h"
 #include "analysis/assembler/structuralmechanics/op.fluidforce.h"
+#include "analysis/assembler/structuralmechanics/op.velocity.h"
 
 namespace espreso {
 
@@ -49,10 +50,12 @@ struct StructuralMechanicsElementOperators {
     Displacement displacement;
     SmallStrainTensor smallStrainTensor;
     Temperature temperature;
+    Velocity velocity;
     Integration integration;
     LinearElasticity linearElasticity;
     HyperElasticity hyperElasticity;
     Plasticity plasticity;
+    BoundaryCondition initVelocity;
     MatrixLinearElasticity matrixLinearElasticity;
     MatrixHyperElasticity matrixHyperElasticity;
     MatrixLargeDisplacement largeDisplacement;

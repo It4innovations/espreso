@@ -28,6 +28,7 @@ public:
     StructuralMechanics(StructuralMechanics *previous, StructuralMechanicsConfiguration &settings, StructuralMechanicsLoadStepConfiguration &configuration);
 
     bool analyze(const step::Step &step);
+    void getInitialVelocity(Vector_Base<double> *x);
 
     void connect(Matrix_Base<double> *K, Matrix_Base<double> *M, Vector_Base<double> *f, Vector_Base<double> *nf, Vector_Base<double> *dirichlet);
     void evaluate(const step::Step &step, const step::Time &time, Matrix_Base<double> *K, Matrix_Base<double> *M, Vector_Base<double> *f, Vector_Base<double> *nf, Vector_Base<double> *dirichlet);
@@ -44,6 +45,7 @@ public:
     struct Results {
         static NodeData *thickness;
         static NodeData *normal;
+        static NodeData *initialVelocity;
 
         // steady state, transient
         static NodeData *displacement;

@@ -86,6 +86,15 @@ void setElementKernel(StructuralMechanicsElementOperators &operators, SubKernel:
                     operators.angularVelocity.expressionVector->z.evaluator,
                     [] (Element &element, size_t &gp, size_t &s, double value) { element.ecf.angularVelocity[2][s] = value; }));
         }
+
+        if (operators.initVelocity.expressionVector) {
+            operators.expressions.node.push_back(new ExternalNodeExpression<ndim, Element>(
+                    operators.initVelocity.expressionVector->x.evaluator,
+                    [] (Element &element, size_t &n, size_t &s, double value) { element.velocity[n][0][s] = value; }));
+            operators.expressions.node.push_back(new ExternalNodeExpression<ndim, Element>(
+                    operators.initVelocity.expressionVector->y.evaluator,
+                    [] (Element &element, size_t &n, size_t &s, double value) { element.velocity[n][1][s] = value; }));
+        }
     }
 
     if constexpr(ndim == 3) {
@@ -212,6 +221,18 @@ void setElementKernel(StructuralMechanicsElementOperators &operators, SubKernel:
                     operators.angularVelocity.expressionVector->z.evaluator,
                     [] (Element &element, size_t &gp, size_t &s, double value) { element.ecf.angularVelocity[2][s] = value; }));
         }
+
+        if (operators.initVelocity.expressionVector) {
+            operators.expressions.node.push_back(new ExternalNodeExpression<ndim, Element>(
+                    operators.initVelocity.expressionVector->x.evaluator,
+                    [] (Element &element, size_t &n, size_t &s, double value) { element.velocity[n][0][s] = value; }));
+            operators.expressions.node.push_back(new ExternalNodeExpression<ndim, Element>(
+                    operators.initVelocity.expressionVector->y.evaluator,
+                    [] (Element &element, size_t &n, size_t &s, double value) { element.velocity[n][1][s] = value; }));
+            operators.expressions.node.push_back(new ExternalNodeExpression<ndim, Element>(
+                    operators.initVelocity.expressionVector->z.evaluator,
+                    [] (Element &element, size_t &n, size_t &s, double value) { element.velocity[n][2][s] = value; }));
+        }
     }
 
     if (operators.material.configuration->density.isset) {
@@ -227,14 +248,41 @@ void setElementKernel(StructuralMechanicsElementOperators &operators, SubKernel:
 
     BasisKernel<code, nodes, gps, edim> basis(operators.basis);
     CoordinatesKernel<nodes, ndim> coordinates(operators.coordinates);
+    InitialVelocityKernel<nodes, ndim> velocity(operators.velocity);
     IntegrationKernel<nodes, ndim, edim> integration(operators.integration);
     ThicknessToNodes<nodes, ndim> thickness(operators.thickness);
+
+    struct {
+        std::vector<ExternalNodeExpression<ndim, Element>*> node;
+        std::vector<ExternalGPsExpression<ndim, Element>*> gp;
+    } nonconst;
+
+    for (size_t i = 0; i < operators.expressions.node.size(); ++i) {
+        ExternalNodeExpression<ndim, Element>* exp = dynamic_cast<ExternalNodeExpression<ndim, Element>*>(operators.expressions.node[i]);
+        if (operators.expressions.node[i]->evaluator->isConst()) {
+            for (size_t n = 0; n < nodes; ++n) {
+                exp->simd(element, n);
+            }
+        } else {
+            nonconst.node.push_back(exp);
+        }
+    }
 
     SIMD volume;
     basis.simd(element);
     for (size_t c = 0; c < operators.chunks; ++c) {
         coordinates.simd(element);
         thickness.simd(element);
+
+        for (size_t i = 0; i < nonconst.node.size(); ++i) {
+            for (size_t n = 0; n < nodes; ++n) {
+                nonconst.node[i]->simd(element, n);
+            }
+        }
+
+        if (velocity.isactive) {
+            velocity.simd(element);
+        }
 
         for (size_t gp = 0; gp < gps; ++gp) {
             integration.simd(element, gp);

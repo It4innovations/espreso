@@ -308,7 +308,13 @@ StructuralMechanicsGlobalSettings::StructuralMechanicsGlobalSettings(ECFObject *
 			.addoption(ECFOption().setname("AXISYMMETRIC").setdescription("Axisymmetric."))
 			.addoption(ECFOption().setname("PLANE_STRESS").setdescription("Plane stress."))
 			.addoption(ECFOption().setname("PLANE_STRESS_WITH_THICKNESS").setdescription("Plane stress with thickness.")));
+
+	REGISTER(initial_velocity, ECFMetaData()
+            .setdescription({ "The name of a region.", "Initial velocity." })
+            .setdatatype({ ECFDataType::ELEMENTS_REGION })
+            .setpattern({ "MY_REGION" }));
 }
+
 
 StructuralMechanicsConfiguration::StructuralMechanicsConfiguration()
 : PhysicsConfiguration(MaterialConfiguration::PHYSICAL_MODEL::STRUCTURAL_MECHANICS),

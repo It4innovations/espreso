@@ -141,7 +141,7 @@ bool StructuralMechanicsTransientLinear::run(step::Step &step)
 
     dU->set(0);
     U->set(0);
-    V->set(0);
+    assembler.getInitialVelocity(V);
     W->set(0);
     Z->set(0);
     bool solved = true;

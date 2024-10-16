@@ -120,6 +120,8 @@ struct StructuralMechanicsGlobalSettings {
 
 	ELEMENT_BEHAVIOUR element_behaviour;
 
+	std::map<std::string, ECFExpressionVector> initial_velocity;
+
 	StructuralMechanicsGlobalSettings(ECFObject *ecfdescription);
 };
 

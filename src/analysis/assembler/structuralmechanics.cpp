@@ -24,6 +24,7 @@ namespace espreso {
 
 NodeData* StructuralMechanics::Results::thickness = nullptr;
 NodeData* StructuralMechanics::Results::normal = nullptr;
+NodeData* StructuralMechanics::Results::initialVelocity = nullptr;
 
 ElementData* StructuralMechanics::Results::principalStress = nullptr;
 ElementData* StructuralMechanics::Results::componentStress = nullptr;
@@ -105,12 +106,18 @@ bool StructuralMechanics::analyze(const step::Step &step)
     eslog::info("\n ============================================================================================= \n");
 
     validateRegionSettings("MATERIAL", settings.material_set);
-    validateRegionSettings("INITIAL TEMPERATURE", settings.initial_temperature);
+//    validateRegionSettings("INITIAL TEMPERATURE", settings.initial_temperature);
+    validateRegionSettings("INITIAL VELOCITY", settings.initial_velocity);
     validateRegionSettings("THICKNESS", settings.thickness);
 
     if (Results::thickness == nullptr && info::mesh->dimension == 2) {
         Results::thickness = info::mesh->nodes->appendData(1, NamedData::DataType::SCALAR, "THICKNESS");
     }
+    if (Results::initialVelocity== nullptr) {
+        Results::initialVelocity = info::mesh->nodes->appendData(info::mesh->dimension, NamedData::DataType::VECTOR, "INITIAL_VELOCITY");
+    }
+
+    bool correct = true;
 
     if (settings.contact_interfaces) {
         if (Results::normal == nullptr) {
@@ -184,9 +191,13 @@ bool StructuralMechanics::analyze(const step::Step &step)
         }
     }
 
+    if (settings.initial_temperature.size()) {
+        correct &= checkElementParameter("INITIAL TEMPERATURE", settings.initial_temperature);
+    }
+
 
     eslog::info(" ============================================================================================= \n");
-    bool correct = true;
+
     if (configuration.displacement.size()) {
         correct &= checkBoundaryParameter("FIXED DISPLACEMENT", configuration.displacement);
 //        generateBoundaryExpression<ExternalNodeExpression>(axisymmetric, boundaryOps, configuration.displacement, 0, [] (auto &element, const size_t &n, const size_t &s, const double &value) { element.displacement[n][0][s] = value; });
@@ -396,6 +407,9 @@ bool StructuralMechanics::analyze(const step::Step &step)
             elementKernels[i].stress.activate(i, Results::principalStress, Results::componentStress, Results::vonMisesStress);
             elementKernels[i].linearElasticity.action |= SubKernel::SOLUTION;
         }
+
+        elementKernels[i].initVelocity.activate(getExpression(i, settings.initial_velocity));
+        elementKernels[i].velocity.activate(info::mesh->elements->nodes->cbegin() + ebegin, info::mesh->elements->nodes->cbegin() + eend, Results::initialVelocity->data.data());
     }
 
     for (auto wall = configuration.fixed_wall.begin(); wall != configuration.fixed_wall.end(); ++wall) {
@@ -690,6 +704,11 @@ void StructuralMechanics::bem(SubKernel::Action action, size_t domain, double *B
             }
         }
     }
+}
+
+void StructuralMechanics::getInitialVelocity(Vector_Base<double> *x)
+{
+    x->setFrom(Results::initialVelocity->data);
 }
 
 void StructuralMechanics::updateSolution(Vector_Base<double> *x)
