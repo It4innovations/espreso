@@ -144,10 +144,10 @@ espreso::FETIConfiguration::FETIConfiguration()
 			.setdescription({ "Number of restarts" })
 			.setdatatype({ ECFDataType::POSITIVE_INTEGER }));
 
-	exhaustive_info = false;
+	exhaustive_info = 0;
 	REGISTER(exhaustive_info, ECFMetaData()
 			.setdescription({ "Print all FETI solver input properties." })
-			.setdatatype({ ECFDataType::BOOL }));
+			.setdatatype({ ECFDataType::POSITIVE_INTEGER }));
 
 	orthogonal_K_kernels = false;
 	REGISTER(orthogonal_K_kernels, ECFMetaData()

@@ -36,7 +36,7 @@ void TotalFETIImplicit<T>::info()
     eslog::info("      = ------------------------------------------------------------------------------- = \n");
     eslog::info("      = IMPLICIT TOTAL FETI OPERATOR                                                    = \n");
     DualOperator<T>::printInfo(KSolver, sum, min, max);
-    if (feti.configuration.exhaustive_info) {
+    if (feti.configuration.exhaustive_info > 2) {
         eslog::info("      =  A = K, B = REG(K), Y = A+                                                      = \n");
 
         std::vector<Matrix_Dense<T> > A(feti.K.size()), B(feti.K.size()), Y(feti.K.size());
