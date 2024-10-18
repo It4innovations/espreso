@@ -82,7 +82,7 @@ STRUCTURAL_MECHANICS {
       DURATION_TIME     1;
       TYPE   STEADY_STATE;
       MODE      NONLINEAR;
-      SOLVER         FETI;
+      SOLVER      MKLPDSS;
 
       LARGE_DISPLACEMENT      TRUE;
 
