@@ -1,6 +1,8 @@
 
 #include "physics.h"
 #include "heat.transient.linear.h"
+#include "heat.steadystate.linear.h"
+#include "heat.steadystate.nonlinear.h"
 
 #include "analysis/builder/uniformbuilder.direct.h"
 #include "analysis/builder/uniformbuilder.feti.h"
@@ -122,12 +124,39 @@ bool HeatTransientLinear::analyze(step::Step &step)
     return true;
 }
 
-bool HeatTransientLinear::run(step::Step &step)
+bool HeatTransientLinear::run(step::Step &step, Physics *prev)
 {
-    time.shift = configuration.transient_solver.time_step;
     time.start = 0;
+    if (prev) {
+        bool correct = false;
+        if (dynamic_cast<HeatTransientLinear*>(prev)) {
+            correct = true;
+            HeatTransientLinear* _prev = dynamic_cast<HeatTransientLinear*>(prev);
+            time.start = _prev->time.final;
+            U->copy(_prev->x);
+        }
+        if (dynamic_cast<HeatSteadyStateLinear*>(prev)) {
+            correct = true;
+            HeatSteadyStateLinear* _prev = dynamic_cast<HeatSteadyStateLinear*>(prev);
+            time.start = _prev->time.final;
+            U->copy(_prev->x);
+        }
+        if (dynamic_cast<HeatSteadyStateNonLinear*>(prev)) {
+            correct = true;
+            HeatSteadyStateNonLinear* _prev = dynamic_cast<HeatSteadyStateNonLinear*>(prev);
+            time.start = _prev->time.final;
+            U->copy(_prev->x);
+        }
+        if (!correct) {
+            eslog::globalerror("Incompatible load steps.\n");
+        }
+        assembler.updateSolution(U);
+    } else {
+        assembler.getInitialTemperature(U);
+    }
+    time.shift = configuration.transient_solver.time_step;
     time.current = time.start + time.shift;
-    time.final = configuration.duration_time;
+    time.final   = time.start + configuration.duration_time;
 
     double alpha = 1;
     switch (configuration.transient_solver.method) {
@@ -154,7 +183,6 @@ bool HeatTransientLinear::run(step::Step &step)
     eslog::checkpointln("SIMULATION: LINEAR SYSTEM SET");
 
     dU->set(0);
-    assembler.getInitialTemperature(U);
     V->set(0);
     bool solved = true;
     while (solved && time.current <= time.final + time.precision) {

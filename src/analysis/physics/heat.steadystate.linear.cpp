@@ -83,10 +83,16 @@ bool HeatSteadyStateLinear::analyze(step::Step &step)
     return true;
 }
 
-bool HeatSteadyStateLinear::run(step::Step &step)
+bool HeatSteadyStateLinear::run(step::Step &step, Physics *prev)
 {
-    time.shift = configuration.duration_time;
     time.start = 0;
+    if (prev) {
+        bool correct = false;
+        if (!correct) {
+            eslog::globalerror("Incompatible load steps.\n");
+        }
+    }
+    time.shift = configuration.duration_time;
     time.current = configuration.duration_time;
     time.final = configuration.duration_time;
 

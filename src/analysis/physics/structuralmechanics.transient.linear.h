@@ -19,7 +19,7 @@ public:
     ~StructuralMechanicsTransientLinear();
 
     bool analyze(step::Step &step);
-    bool run(step::Step &step);
+    bool run(step::Step &step, Physics *prev);
 
     step::Time time;
     StructuralMechanicsConfiguration &settings;
@@ -28,7 +28,7 @@ public:
     StructuralMechanics assembler;
 
     Matrix_Base<double> *K, *M;
-    Vector_Base<double> *f, *x, *dirichlet, *prev;
+    Vector_Base<double> *f, *x, *dirichlet, *checkpoint;
     Vector_Base<double> *U, *dU, *V, *W, *X, *Y, *Z, *dTK, *dTM;
 
     SparseMatrixBuilder<double> *builder;

@@ -20,7 +20,7 @@ public:
     ~HeatSteadyStateNonLinear();
 
     bool analyze(step::Step &step);
-    bool run(step::Step &step);
+    bool run(step::Step &step, Physics *prev);
 
     step::Time time;
     HeatTransferConfiguration &settings;

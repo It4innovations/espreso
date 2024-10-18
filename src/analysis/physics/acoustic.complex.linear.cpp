@@ -33,7 +33,7 @@ bool AcousticComplexLinear::analyze(step::Step &step)
     return false;
 }
 
-bool AcousticComplexLinear::run(step::Step &step)
+bool AcousticComplexLinear::run(step::Step &step, Physics *prev)
 {
 //    switch (configuration.solver) {
 //    case LoadStepSolverConfiguration::SOLVER::FETI:    system = new FETISystem<AcousticComplexLinear>(this); break;

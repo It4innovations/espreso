@@ -89,12 +89,19 @@ bool HeatSteadyStateNonLinear::analyze(step::Step &step)
     return true;
 }
 
-bool HeatSteadyStateNonLinear::run(step::Step &step)
+bool HeatSteadyStateNonLinear::run(step::Step &step, Physics *prev)
 {
-    time.shift = configuration.duration_time;
     time.start = 0;
-    time.current = configuration.duration_time;
-    time.final = configuration.duration_time;
+    if (prev) {
+        bool correct = false;
+        if (!correct) {
+            eslog::globalerror("Incompatible load steps.\n");
+        }
+    }
+
+    time.shift = configuration.transient_solver.time_step;
+    time.current = time.start + time.shift;
+    time.final   = time.start + configuration.duration_time;
     time.timeIntegrationConstantK = 1;
 
     assembler.connect(K, nullptr, f, R, dirichlet);

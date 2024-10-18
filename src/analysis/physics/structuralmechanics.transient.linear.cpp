@@ -1,5 +1,7 @@
 
 #include "structuralmechanics.transient.linear.h"
+#include "structuralmechanics.steadystate.linear.h"
+#include "structuralmechanics.steadystate.nonlinear.h"
 
 #include "analysis/builder/uniformbuilder.direct.h"
 #include "analysis/builder/uniformbuilder.feti.h"
@@ -21,7 +23,7 @@ using namespace espreso;
 
 StructuralMechanicsTransientLinear::StructuralMechanicsTransientLinear(StructuralMechanicsConfiguration &settings, StructuralMechanicsLoadStepConfiguration &configuration)
 : settings(settings), configuration(configuration), assembler{nullptr, settings, configuration},
-  K{}, M{}, f{}, x{}, dirichlet{}, prev{},
+  K{}, M{}, f{}, x{}, dirichlet{}, checkpoint{},
   U{}, dU{}, V{}, W{}, X{}, Y{}, Z{}, dTK{}, dTM{},
   builder{}, solver{}
 {
@@ -35,7 +37,7 @@ StructuralMechanicsTransientLinear::~StructuralMechanicsTransientLinear()
     if (f) { delete f; }
     if (x) { delete x; }
     if (dirichlet) { delete dirichlet; }
-    if (prev) { delete prev; }
+    if (checkpoint) { delete checkpoint; }
 
     if (  U) { delete   U; }
     if ( dU) { delete  dU; }
@@ -92,7 +94,7 @@ bool StructuralMechanicsTransientLinear::analyze(step::Step &step)
     M = solver->A->copyPattern();
     f = solver->b->copyPattern();
     x = solver->x->copyPattern();
-    prev = solver->x->copyPattern();
+    checkpoint = solver->x->copyPattern();
     dirichlet = solver->dirichlet->copyPattern();
 
       U = solver->b->copyPattern();
@@ -113,13 +115,46 @@ bool StructuralMechanicsTransientLinear::analyze(step::Step &step)
     return true;
 }
 
-bool StructuralMechanicsTransientLinear::run(step::Step &step)
+bool StructuralMechanicsTransientLinear::run(step::Step &step, Physics *prev)
 {
     Precice precice;
 
     time.start = time.previous = time.current = 0;
+    U->set(0);
+    V->set(0);
+    W->set(0);
+    if (prev) {
+        bool correct = false;
+        if (dynamic_cast<StructuralMechanicsTransientLinear*>(prev)) {
+            correct = true;
+            StructuralMechanicsTransientLinear* _prev = dynamic_cast<StructuralMechanicsTransientLinear*>(prev);
+            time.start = time.previous = time.current = _prev->time.final;
+            U->copy(_prev->U);
+            V->copy(_prev->V);
+            W->copy(_prev->W);
+        }
+        if (dynamic_cast<StructuralMechanicsSteadyStateLinear*>(prev)) {
+            correct = true;
+            StructuralMechanicsSteadyStateLinear* _prev = dynamic_cast<StructuralMechanicsSteadyStateLinear*>(prev);
+            time.start = time.previous = time.current = _prev->time.final;
+            U->copy(_prev->x);
+        }
+        if (dynamic_cast<StructuralMechanicsSteadyStateNonLinear*>(prev)) {
+            correct = true;
+            StructuralMechanicsSteadyStateNonLinear* _prev = dynamic_cast<StructuralMechanicsSteadyStateNonLinear*>(prev);
+            time.start = time.previous = time.current = _prev->time.final;
+            U->copy(_prev->x);
+        }
+        if (!correct) {
+            eslog::globalerror("Incompatible load steps.\n");
+        }
+        assembler.updateSolution(U);
+    } else {
+        assembler.getInitialVelocity(V);
+    }
+
     time.shift = configuration.transient_solver.time_step;
-    time.final = configuration.duration_time;
+    time.final = time.start + configuration.duration_time;
 
     double alpha = configuration.transient_solver.alpha;
     double delta = configuration.transient_solver.delta;
@@ -140,9 +175,6 @@ bool StructuralMechanicsTransientLinear::run(step::Step &step)
     eslog::checkpointln("SIMULATION: LINEAR SYSTEM SET");
 
     dU->set(0);
-    U->set(0);
-    assembler.getInitialVelocity(V);
-    W->set(0);
     Z->set(0);
     bool solved = true;
     while (solved && time.current + time.shift <= time.final + time.precision) {
@@ -164,7 +196,7 @@ bool StructuralMechanicsTransientLinear::run(step::Step &step)
         eslog::info(" = ----------------------------------------------------------------------------------------- = \n");
         double start = eslog::time();
         if (precice.requiresWritingCheckpoint()) {
-            prev->copy(x);
+            checkpoint->copy(x);
         }
         precice.read(StructuralMechanics::Results::fluidForce->data.data(), time.shift);
         assembler.evaluate(step, time, K, M, f, nullptr, dirichlet);
@@ -206,7 +238,7 @@ bool StructuralMechanicsTransientLinear::run(step::Step &step)
         precice.write(StructuralMechanics::Results::displacement->data.data());
         precice.advance(time.shift);
         if (precice.requiresReadingCheckpoint()) {
-            x->copy(prev);
+            x->copy(checkpoint);
 
             eslog::info("       = TIME STEP RESTARTED                                                %8.3f s = \n", eslog::time() - solution);
             eslog::info("       = ----------------------------------------------------------------------------- = \n");

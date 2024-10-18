@@ -29,69 +29,82 @@ void Analysis::run()
 //    }
 
     step::Step step;
-    Physics *physics = nullptr;
+    Physics *current = nullptr, *prev = nullptr;
+
+    auto solve = [&] () {
+        if (current == nullptr) {
+            eslog::globalerror("not implemented physics\n");
+        }
+
+        if (!current->analyze(step)) {
+            eslog::globalerror("physical analysis failed\n");
+        }
+        eslog::checkpointln("SIMULATION: PHYSICS ANALYSED");
+        if (!current->run(step, prev)) {
+            eslog::globalerror("physical solver failed\n");
+        }
+        eslog::checkpointln("SIMULATION: PHYSICS SOLVED");
+
+        if (prev) delete prev;
+        prev = current;
+        current = nullptr;
+    };
 
     switch (info::ecf->physics) {
 //    case PhysicsConfiguration::TYPE::ACOUSTICS:
-//        switch (info::ecf->acoustics.load_steps_settings.at(1).system) {
-//        case AcousticLoadStepConfiguration::SYSTEM::REAL: physics = new AcousticRealLinear(info::ecf->acoustics, info::ecf->acoustics.load_steps_settings.at(1)); break;
-//        case AcousticLoadStepConfiguration::SYSTEM::COMPLEX: physics = new AcousticComplexLinear(info::ecf->acoustics, info::ecf->acoustics.load_steps_settings.at(1)); break;
+//        switch (info::ecf->acoustics.load_steps_settings.at(s).system) {
+//        case AcousticLoadStepConfiguration::SYSTEM::REAL: physics = new AcousticRealLinear(info::ecf->acoustics, info::ecf->acoustics.load_steps_settings.at(s)); break;
+//        case AcousticLoadStepConfiguration::SYSTEM::COMPLEX: physics = new AcousticComplexLinear(info::ecf->acoustics, info::ecf->acoustics.load_steps_settings.at(s)); break;
 //        }
 //        break;
     case PhysicsConfiguration::TYPE::HEAT_TRANSFER:
-        for (int s = 0; s < info::ecf->heat_transfer.load_steps; ++s, ++step.loadstep) {
-            switch (info::ecf->heat_transfer.load_steps_settings.at(1).type) {
+        step.loadsteps = info::ecf->heat_transfer.load_steps;
+        for (int s = 1; s <= step.loadsteps; ++s, ++step.loadstep) {
+            switch (info::ecf->heat_transfer.load_steps_settings.at(s).type) {
             case LoadStepSolverConfiguration::TYPE::STEADY_STATE:
-                switch (info::ecf->heat_transfer.load_steps_settings.at(1).mode) {
-                case LoadStepSolverConfiguration::MODE::LINEAR: physics = new HeatSteadyStateLinear(info::ecf->heat_transfer, info::ecf->heat_transfer.load_steps_settings.at(1)); break;
-                case LoadStepSolverConfiguration::MODE::NONLINEAR: physics = new HeatSteadyStateNonLinear(info::ecf->heat_transfer, info::ecf->heat_transfer.load_steps_settings.at(1)); break;
+                switch (info::ecf->heat_transfer.load_steps_settings.at(s).mode) {
+                case LoadStepSolverConfiguration::MODE::LINEAR: current = new HeatSteadyStateLinear(info::ecf->heat_transfer, info::ecf->heat_transfer.load_steps_settings.at(s)); break;
+                case LoadStepSolverConfiguration::MODE::NONLINEAR: current = new HeatSteadyStateNonLinear(info::ecf->heat_transfer, info::ecf->heat_transfer.load_steps_settings.at(s)); break;
                 } break;
             case LoadStepSolverConfiguration::TYPE::TRANSIENT:
-                switch (info::ecf->heat_transfer.load_steps_settings.at(1).mode) {
-                case LoadStepSolverConfiguration::MODE::LINEAR: physics = new HeatTransientLinear(info::ecf->heat_transfer, info::ecf->heat_transfer.load_steps_settings.at(1)); break;
-                case LoadStepSolverConfiguration::MODE::NONLINEAR: eslog::globalerror("implement HeatTransientNonLinear solver.\n"); break; // physics = new HeatSteadyStateNonLinear(info::ecf->heat_transfer, info::ecf->heat_transfer.load_steps_settings.at(1)); break;
+                switch (info::ecf->heat_transfer.load_steps_settings.at(s).mode) {
+                case LoadStepSolverConfiguration::MODE::LINEAR: current = new HeatTransientLinear(info::ecf->heat_transfer, info::ecf->heat_transfer.load_steps_settings.at(s)); break;
+                case LoadStepSolverConfiguration::MODE::NONLINEAR: eslog::globalerror("implement HeatTransientNonLinear solver.\n"); break; // physics = new HeatSteadyStateNonLinear(info::ecf->heat_transfer, info::ecf->heat_transfer.load_steps_settings.at(s)); break;
                 } break;
             case LoadStepSolverConfiguration::TYPE::HARMONIC:
                 eslog::globalerror("invalid combination: HARMONIC -- HEAT_TRANSFER.\n");
                 break;
             }
+
+            solve();
         }
         break;
     case PhysicsConfiguration::TYPE::STRUCTURAL_MECHANICS:
-        switch (info::ecf->structural_mechanics.load_steps_settings.at(1).type) {
-        case LoadStepSolverConfiguration::TYPE::HARMONIC:
-            switch (info::ecf->structural_mechanics.load_steps_settings.at(1).mode) {
-            case LoadStepSolverConfiguration::MODE::LINEAR: physics = new StructuralMechanicsHarmonicRealLinear(info::ecf->structural_mechanics, info::ecf->structural_mechanics.load_steps_settings.at(1)); break;
-            case LoadStepSolverConfiguration::MODE::NONLINEAR:  break;
-            } break;
-        case LoadStepSolverConfiguration::TYPE::STEADY_STATE:
-            switch (info::ecf->structural_mechanics.load_steps_settings.at(1).mode) {
-            case LoadStepSolverConfiguration::MODE::LINEAR: physics = new StructuralMechanicsSteadyStateLinear(info::ecf->structural_mechanics, info::ecf->structural_mechanics.load_steps_settings.at(1)); break;
-            case LoadStepSolverConfiguration::MODE::NONLINEAR: physics = new StructuralMechanicsSteadyStateNonLinear(info::ecf->structural_mechanics, info::ecf->structural_mechanics.load_steps_settings.at(1)); break;
-            } break;
-        case LoadStepSolverConfiguration::TYPE::TRANSIENT:
-            switch (info::ecf->structural_mechanics.load_steps_settings.at(1).mode) {
-            case LoadStepSolverConfiguration::MODE::LINEAR:    physics = new StructuralMechanicsTransientLinear(info::ecf->structural_mechanics, info::ecf->structural_mechanics.load_steps_settings.at(1)); break;
-            case LoadStepSolverConfiguration::MODE::NONLINEAR: physics = new StructuralMechanicsTransientNonLinear(info::ecf->structural_mechanics, info::ecf->structural_mechanics.load_steps_settings.at(1)); break;
-            } break;
-        } break;
+        step.loadsteps = info::ecf->structural_mechanics.load_steps;
+        for (int s = 1; s <= step.loadsteps; ++s, ++step.loadstep) {
+            switch (info::ecf->structural_mechanics.load_steps_settings.at(s).type) {
+            case LoadStepSolverConfiguration::TYPE::HARMONIC:
+                switch (info::ecf->structural_mechanics.load_steps_settings.at(s).mode) {
+                case LoadStepSolverConfiguration::MODE::LINEAR: current = new StructuralMechanicsHarmonicRealLinear(info::ecf->structural_mechanics, info::ecf->structural_mechanics.load_steps_settings.at(s)); break;
+                case LoadStepSolverConfiguration::MODE::NONLINEAR:  break;
+                } break;
+            case LoadStepSolverConfiguration::TYPE::STEADY_STATE:
+                switch (info::ecf->structural_mechanics.load_steps_settings.at(s).mode) {
+                case LoadStepSolverConfiguration::MODE::LINEAR: current = new StructuralMechanicsSteadyStateLinear(info::ecf->structural_mechanics, info::ecf->structural_mechanics.load_steps_settings.at(s)); break;
+                case LoadStepSolverConfiguration::MODE::NONLINEAR: current = new StructuralMechanicsSteadyStateNonLinear(info::ecf->structural_mechanics, info::ecf->structural_mechanics.load_steps_settings.at(s)); break;
+                } break;
+            case LoadStepSolverConfiguration::TYPE::TRANSIENT:
+                switch (info::ecf->structural_mechanics.load_steps_settings.at(s).mode) {
+                case LoadStepSolverConfiguration::MODE::LINEAR:    current = new StructuralMechanicsTransientLinear(info::ecf->structural_mechanics, info::ecf->structural_mechanics.load_steps_settings.at(s)); break;
+                case LoadStepSolverConfiguration::MODE::NONLINEAR: current = new StructuralMechanicsTransientNonLinear(info::ecf->structural_mechanics, info::ecf->structural_mechanics.load_steps_settings.at(s)); break;
+                } break;
+            }
+
+            solve();
+        }
         break;
     }
 
-    if (physics == nullptr) {
-        eslog::globalerror("not implemented physics\n");
-    }
-
-    if (!physics->analyze(step)) {
-        eslog::globalerror("physical analysis failed\n");
-    }
-    eslog::checkpointln("SIMULATION: PHYSICS ANALYSED");
-    step.loadstep = 0;
-    step.loadsteps = 1;
-    if (!physics->run(step)) {
-        eslog::globalerror("physical solver failed\n");
-    }
-
-    delete physics;
-    eslog::endln("SIMULATION: DATA CLEARED");
+    if (prev) delete prev;
+    eslog::endln("SIMULATION: SIMULATION FINISHED");
 }

@@ -84,12 +84,18 @@ bool StructuralMechanicsSteadyStateLinear::analyze(step::Step &step)
     return true;
 }
 
-bool StructuralMechanicsSteadyStateLinear::run(step::Step &step)
+bool StructuralMechanicsSteadyStateLinear::run(step::Step &step, Physics *prev)
 {
     step.substep = 0;
     step.substeps = 1;
     time.shift = configuration.duration_time;
     time.start = 0;
+    if (prev) {
+        bool correct = false;
+        if (!correct) {
+            eslog::globalerror("Incompatible load steps.\n");
+        }
+    }
     time.current = configuration.duration_time;
     time.final = configuration.duration_time;
 

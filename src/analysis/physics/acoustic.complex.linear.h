@@ -19,7 +19,7 @@ public:
     AcousticComplexLinear(AcousticConfiguration &settings, AcousticLoadStepConfiguration &configuration);
 
     bool analyze(step::Step &step);
-    bool run(step::Step &step);
+    bool run(step::Step &step, Physics *prev);
 
     step::Frequency frequency;
     AcousticConfiguration &settings;

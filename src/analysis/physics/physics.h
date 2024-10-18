@@ -12,7 +12,7 @@ struct Physics {
     virtual ~Physics() {}
 
     virtual bool analyze(step::Step &step) =0;
-    virtual bool run(step::Step &step) =0;
+    virtual bool run(step::Step &step, Physics *prev) =0;
 };
 
 }

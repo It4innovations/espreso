@@ -1,6 +1,8 @@
 
 
 #include "structuralmechanics.transient.nonlinear.h"
+#include "structuralmechanics.steadystate.linear.h"
+#include "structuralmechanics.steadystate.nonlinear.h"
 
 #include "analysis/builder/uniformbuilder.direct.h"
 #include "analysis/builder/uniformbuilder.feti.h"
@@ -21,7 +23,7 @@ using namespace espreso;
 
 StructuralMechanicsTransientNonLinear::StructuralMechanicsTransientNonLinear(StructuralMechanicsConfiguration &settings, StructuralMechanicsLoadStepConfiguration &configuration)
 : settings(settings), configuration(configuration), assembler{nullptr, settings, configuration},
-  K{}, M{}, C{}, f{}, f_old{}, dirichlet{}, prev{},
+  K{}, M{}, C{}, f{}, f_old{}, dirichlet{},
   R{}, R_old{}, dU{}, U{}, V{}, A{}, U_old{}, V_old{}, A_old{}, X{},
   builder{}, solver{}
 {
@@ -36,7 +38,6 @@ StructuralMechanicsTransientNonLinear::~StructuralMechanicsTransientNonLinear()
     if (f) { delete f; }
     if (f_old) { delete f_old; }
     if (dirichlet) { delete dirichlet; }
-    if (prev) { delete prev; }
 
     if (  R) { delete   R; }
     if (R_old) { delete R_old; }
@@ -98,7 +99,6 @@ bool StructuralMechanicsTransientNonLinear::analyze(step::Step &step)
     C = solver->A->copyPattern();
     f = solver->b->copyPattern();
     f_old = solver->b->copyPattern();
-    prev = solver->x->copyPattern();
     dirichlet = solver->dirichlet->copyPattern();
 
     R = solver->b->copyPattern();
@@ -122,13 +122,46 @@ bool StructuralMechanicsTransientNonLinear::analyze(step::Step &step)
     return true;
 }
 
-bool StructuralMechanicsTransientNonLinear::run(step::Step &step)
+bool StructuralMechanicsTransientNonLinear::run(step::Step &step, Physics *prev)
 {
     Precice precice;
 
     time.start = time.previous = time.current = 0;
+    U->set(0);
+    V->set(0);
+    A->set(0);
+    if (prev) {
+        bool correct = false;
+        if (dynamic_cast<StructuralMechanicsTransientNonLinear*>(prev)) {
+            correct = true;
+            StructuralMechanicsTransientNonLinear* _prev = dynamic_cast<StructuralMechanicsTransientNonLinear*>(prev);
+            time.start = time.previous = time.current = _prev->time.final;
+            U->copy(_prev->U);
+            V->copy(_prev->V);
+            A->copy(_prev->A);
+        }
+        if (dynamic_cast<StructuralMechanicsSteadyStateLinear*>(prev)) {
+            correct = true;
+            StructuralMechanicsSteadyStateLinear* _prev = dynamic_cast<StructuralMechanicsSteadyStateLinear*>(prev);
+            time.start = time.previous = time.current = _prev->time.final;
+            U->copy(_prev->x);
+        }
+        if (dynamic_cast<StructuralMechanicsSteadyStateNonLinear*>(prev)) {
+            correct = true;
+            StructuralMechanicsSteadyStateNonLinear* _prev = dynamic_cast<StructuralMechanicsSteadyStateNonLinear*>(prev);
+            time.start = time.previous = time.current = _prev->time.final;
+            U->copy(_prev->x);
+        }
+        if (!correct) {
+            eslog::globalerror("Incompatible load steps.\n");
+        }
+        assembler.updateSolution(U);
+    } else {
+        assembler.getInitialVelocity(V);
+    }
+
     time.shift = configuration.transient_solver.time_step;
-    time.final = configuration.duration_time;
+    time.final = time.start + configuration.duration_time;
 
     double alpha = configuration.transient_solver.alpha;
     double delta = configuration.transient_solver.delta;

@@ -103,7 +103,7 @@ bool StructuralMechanicsHarmonicRealLinear::analyze(step::Step &step)
     return true;
 }
 
-bool StructuralMechanicsHarmonicRealLinear::run(step::Step &step)
+bool StructuralMechanicsHarmonicRealLinear::run(step::Step &step, Physics *prev)
 {
     step.substep = 0;
     step.substeps = configuration.harmonic_solver.num_samples;

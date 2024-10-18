@@ -90,8 +90,15 @@ bool StructuralMechanicsSteadyStateNonLinear::analyze(step::Step &step)
     return true;
 }
 
-bool StructuralMechanicsSteadyStateNonLinear::run(step::Step &step)
+bool StructuralMechanicsSteadyStateNonLinear::run(step::Step &step, Physics *prev)
 {
+    if (prev) {
+        bool correct = false;
+        if (!correct) {
+            eslog::globalerror("Incompatible load steps.\n");
+        }
+    }
+
     assembler.connect(K, nullptr, f, R, dirichlet);
 
     if (MPITools::node->rank == 0) {

@@ -19,7 +19,7 @@ public:
     ~StructuralMechanicsHarmonicRealLinear();
 
     bool analyze(step::Step &step);
-    bool run(step::Step &step);
+    bool run(step::Step &step, Physics *prev);
 
     step::Frequency frequency;
     StructuralMechanicsConfiguration &settings;
