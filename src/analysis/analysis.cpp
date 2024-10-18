@@ -39,22 +39,23 @@ void Analysis::run()
 //        }
 //        break;
     case PhysicsConfiguration::TYPE::HEAT_TRANSFER:
-        switch (info::ecf->heat_transfer.load_steps_settings.at(1).type) {
-        case LoadStepSolverConfiguration::TYPE::STEADY_STATE:
-            switch (info::ecf->heat_transfer.load_steps_settings.at(1).mode) {
-            case LoadStepSolverConfiguration::MODE::LINEAR: physics = new HeatSteadyStateLinear(info::ecf->heat_transfer, info::ecf->heat_transfer.load_steps_settings.at(1)); break;
-            case LoadStepSolverConfiguration::MODE::NONLINEAR: physics = new HeatSteadyStateNonLinear(info::ecf->heat_transfer, info::ecf->heat_transfer.load_steps_settings.at(1)); break;
-            } break;
-        case LoadStepSolverConfiguration::TYPE::TRANSIENT:
-            switch (info::ecf->heat_transfer.load_steps_settings.at(1).mode) {
-            case LoadStepSolverConfiguration::MODE::LINEAR: physics = new HeatTransientLinear(info::ecf->heat_transfer, info::ecf->heat_transfer.load_steps_settings.at(1)); break;
-            case LoadStepSolverConfiguration::MODE::NONLINEAR: eslog::globalerror("implement HeatTransientNonLinear solver.\n"); break; // physics = new HeatSteadyStateNonLinear(info::ecf->heat_transfer, info::ecf->heat_transfer.load_steps_settings.at(1)); break;
-            } break;
-        case LoadStepSolverConfiguration::TYPE::HARMONIC:
-            eslog::globalerror("invalid combination: HARMONIC -- HEAT_TRANSFER.\n");
-            break;
+        for (int s = 0; s < info::ecf->heat_transfer.load_steps; ++s, ++step.loadstep) {
+            switch (info::ecf->heat_transfer.load_steps_settings.at(1).type) {
+            case LoadStepSolverConfiguration::TYPE::STEADY_STATE:
+                switch (info::ecf->heat_transfer.load_steps_settings.at(1).mode) {
+                case LoadStepSolverConfiguration::MODE::LINEAR: physics = new HeatSteadyStateLinear(info::ecf->heat_transfer, info::ecf->heat_transfer.load_steps_settings.at(1)); break;
+                case LoadStepSolverConfiguration::MODE::NONLINEAR: physics = new HeatSteadyStateNonLinear(info::ecf->heat_transfer, info::ecf->heat_transfer.load_steps_settings.at(1)); break;
+                } break;
+            case LoadStepSolverConfiguration::TYPE::TRANSIENT:
+                switch (info::ecf->heat_transfer.load_steps_settings.at(1).mode) {
+                case LoadStepSolverConfiguration::MODE::LINEAR: physics = new HeatTransientLinear(info::ecf->heat_transfer, info::ecf->heat_transfer.load_steps_settings.at(1)); break;
+                case LoadStepSolverConfiguration::MODE::NONLINEAR: eslog::globalerror("implement HeatTransientNonLinear solver.\n"); break; // physics = new HeatSteadyStateNonLinear(info::ecf->heat_transfer, info::ecf->heat_transfer.load_steps_settings.at(1)); break;
+                } break;
+            case LoadStepSolverConfiguration::TYPE::HARMONIC:
+                eslog::globalerror("invalid combination: HARMONIC -- HEAT_TRANSFER.\n");
+                break;
+            }
         }
-
         break;
     case PhysicsConfiguration::TYPE::STRUCTURAL_MECHANICS:
         switch (info::ecf->structural_mechanics.load_steps_settings.at(1).type) {

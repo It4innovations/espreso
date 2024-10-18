@@ -75,8 +75,8 @@ template <size_t nodes, size_t gps, size_t ndim, size_t edim> struct StructuralM
     alignas(SIMD::size * sizeof(double)) SIMD displacement[nodes][ndim];
     alignas(SIMD::size * sizeof(double)) SIMD velocity[nodes][ndim];
 
-    alignas(SIMD::size * sizeof(double)) SIMD smallStrainTensor[ndim * (ndim - 1)]; // dND * displacement
-    alignas(SIMD::size * sizeof(double)) SIMD sigma            [ndim * (ndim - 1)]; // elasticity * smallStrainTensor
+    alignas(SIMD::size * sizeof(double)) SIMD smallStrainTensor[ndim + ndim * (ndim - 1) / 2]; // dND * displacement
+    alignas(SIMD::size * sizeof(double)) SIMD sigma            [ndim + ndim * (ndim - 1) / 2]; // elasticity * smallStrainTensor
 
     StructuralMechanicsElement()
     {

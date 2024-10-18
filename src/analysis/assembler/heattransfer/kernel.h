@@ -136,7 +136,7 @@ void setElementKernel(HeatTransferElementOperators &operators, SubKernel::Action
 
         if (operators.conductivity.conductivity->model == ThermalConductivityConfiguration::MODEL::ISOTROPIC) {
             operators.expressions.gp.push_back(new ExternalGPsExpression<ndim, Element>(
-                kxx, [] (Element &element, size_t &gp, size_t &s, double value) { element.ecf.conductivity[0][s] = element.ecf.conductivity[4][s] = element.ecf.conductivity[9][s] = value; }));
+                kxx, [] (Element &element, size_t &gp, size_t &s, double value) { element.ecf.conductivity[0][s] = element.ecf.conductivity[4][s] = element.ecf.conductivity[8][s] = value; }));
         } else {
             operators.expressions.gp.push_back(new ExternalGPsExpression<ndim, Element>(
                 kxx, [] (Element &element, size_t &gp, size_t &s, double value) { element.ecf.conductivity[0][s] = value; }));

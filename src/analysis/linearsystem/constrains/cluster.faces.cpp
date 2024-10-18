@@ -37,13 +37,13 @@ void ClusterFacesGluing<T>::update(const step::Step &step, FETI<T> &feti)
         }
     };
 
-    std::vector<esint> rindex;
+    std::vector<int> rindex;
     std::vector<std::vector<__ijv__> > B0(feti.B0.size());
 
     auto dual = info::mesh->domains->localDual->begin();
-    std::vector<esint> rows(info::mesh->clusters->size);
-    for (esint d1 = 0; d1 < info::mesh->domains->size; ++d1, ++dual) {
-        esint cluster = info::mesh->domains->cluster[d1];
+    std::vector<int> rows(info::mesh->clusters->size);
+    for (int d1 = 0; d1 < info::mesh->domains->size; ++d1, ++dual) {
+        int cluster = info::mesh->domains->cluster[d1];
         for (auto dit = dual->begin(); dit != dual->end(); ++dit) {
             if (d1 < *dit) {
                 rindex.push_back(rows[cluster]);
@@ -72,7 +72,7 @@ void ClusterFacesGluing<T>::update(const step::Step &step, FETI<T> &feti)
                             di2->domain - feti.decomposition->dbegin);
 
                     if (it != (dual + (di1->domain - feti.decomposition->dbegin))->end() && *it == di2->domain - feti.decomposition->dbegin) {
-                        esint d1, d2, d1index, d2index;
+                        int d1, d2, d1index, d2index;
                         if (di1->domain < di2->domain) {
                             d1 = di1->domain - feti.decomposition->dbegin;
                             d2 = di2->domain - feti.decomposition->dbegin;
@@ -85,7 +85,7 @@ void ClusterFacesGluing<T>::update(const step::Step &step, FETI<T> &feti)
                             d2index = di1->index;
                         }
                         if (feti.R1[d1].nrows) {
-                            for (esint r = 0; r < feti.R1[d1].nrows; ++r) {
+                            for (int r = 0; r < feti.R1[d1].nrows; ++r) {
                                 B0[d1].push_back({rindex[it - dual->begin()] + r, d1index,  feti.R1[d1].vals[feti.R1[d1].ncols * r + d1index]});
                                 B0[d2].push_back({rindex[it - dual->begin()] + r, d2index, -feti.R1[d1].vals[feti.R1[d1].ncols * r + d1index]});
                             }
@@ -100,7 +100,7 @@ void ClusterFacesGluing<T>::update(const step::Step &step, FETI<T> &feti)
     }
 
     #pragma omp parallel for
-    for (esint d = 0; d < info::mesh->domains->size; ++d) {
+    for (int d = 0; d < info::mesh->domains->size; ++d) {
         std::sort(B0[d].begin(), B0[d].end());
         if (B0[d].size()) {
             feti.D2C0[d].push_back(B0[d][0].i);
