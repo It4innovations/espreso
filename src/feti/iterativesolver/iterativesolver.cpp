@@ -94,6 +94,8 @@ void IterativeSolver<T>::reconstructSolution(const Vector_Dual<T> &l, const Vect
     for (size_t d = 0; d < feti.K.size(); ++d) {
         math::copy(feti.x[d], iKfBtL[d]);
         math::add(feti.x[d], T{1}, Ra[d]);
+        math::set(feti.BtL[d], T{0});
+        math::spblas::applyT(feti.BtL[d], T{1}, feti.B1[d], feti.D2C[d].data(), l);
     }
 }
 
