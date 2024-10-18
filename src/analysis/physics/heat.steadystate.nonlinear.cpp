@@ -99,7 +99,7 @@ bool HeatSteadyStateNonLinear::run(step::Step &step, Physics *prev)
         }
     }
 
-    time.shift = configuration.transient_solver.time_step;
+    time.shift = configuration.duration_time;
     time.current = time.start + time.shift;
     time.final   = time.start + configuration.duration_time;
     time.timeIntegrationConstantK = 1;
