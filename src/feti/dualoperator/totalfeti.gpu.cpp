@@ -1,5 +1,6 @@
 
 #include <numeric>
+#include <limits>
 
 #include "totalfeti.gpu.h"
 #include "feti/common/applyB.h"
@@ -34,13 +35,14 @@ TotalFETIGpu<T,I>::TotalFETIGpu(FETI<T> &feti, DualOperatorStrategy strategy)
 : DualOperator<T>(feti), n_domains(0), n_queues(0), mem_pool_device(nullptr)
 {
     if(stage != 0) eslog::error("init: invalid order of operations in dualop\n");
+    
+    is_explicit = (strategy == DualOperatorStrategy::EXPLICIT);
+    is_implicit = (strategy == DualOperatorStrategy::IMPLICIT);
 
     config = &feti.configuration.dual_operator_gpu_config;
     config_replace_defaults();
     if(config->trsm_rhs_sol_order == MATRIX_ORDER::ROW_MAJOR) order_X = 'R';
     if(config->trsm_rhs_sol_order == MATRIX_ORDER::COL_MAJOR) order_X = 'C';
-    is_explicit = (strategy == DualOperatorStrategy::EXPLICIT);
-    is_implicit = (strategy == DualOperatorStrategy::IMPLICIT);
     order_F = order_X;
     is_system_hermitian = (DirectSparseSolver<T,I>::factorsSymmetry() == Solver_Factors::HERMITIAN_LOWER || DirectSparseSolver<T,I>::factorsSymmetry() == Solver_Factors::HERMITIAN_UPPER);
     is_factor1_dense = (config->trs1_factor_storage == MATRIX_STORAGE::DENSE);
@@ -1947,117 +1949,339 @@ void replace_if_auto(U & val, U replace_with)
 
 
 
+static TRS2_SOLVE_TYPE use_same_factor(TRS1_SOLVE_TYPE trs1type)
+{
+    switch(trs1type) {
+        case TRS1_SOLVE_TYPE::L: return TRS2_SOLVE_TYPE::UHH;
+        case TRS1_SOLVE_TYPE::LHH: return TRS2_SOLVE_TYPE::U;
+        default: eslog::error("Invalid trs1type in use_same_factor()\n");
+    }
+}
+
+
+
 template <typename T, typename I>
 void TotalFETIGpu<T,I>::config_replace_defaults()
 {
     int dimension = info::mesh->dimension;
     [[maybe_unused]] size_t avg_ndofs_per_domain = std::accumulate(feti.K.begin(), feti.K.end(), size_t{0}, [](size_t s, const Matrix_CSR<T,I> & k){ return s + k.nrows; }) / feti.K.size();
+    [[maybe_unused]] size_t max_ndofs_per_domain = std::max_element(feti.K.begin(), feti.K.end(), [](const auto & l, const auto & r){ return l.nrows < r.nrows; })->nrows;
+    bool is_dense_possible = (max_ndofs_per_domain * max_ndofs_per_domain < (size_t)std::numeric_limits<I>::max());
 
-    TRS1_SOLVE_TYPE native_trs1_solve_type;
-    switch(DirectSparseSolver<T,I>::factorsSymmetry()) {
-        case Solver_Factors::HERMITIAN_UPPER:
-            native_trs1_solve_type = TRS1_SOLVE_TYPE::LHH;
-            break;
-        case Solver_Factors::HERMITIAN_LOWER:
-            native_trs1_solve_type = TRS1_SOLVE_TYPE::L;
-            break;
-        case Solver_Factors::NONSYMMETRIC_BOTH:
-            native_trs1_solve_type = TRS1_SOLVE_TYPE::L;
-            break;
-        default:
-            eslog::error("Invalid direct sparse solver factors symmetry\n");
+    if(DirectSparseSolver<T,I>::factorsSymmetry() == Solver_Factors::HERMITIAN_LOWER) {
+        std::runtime_error("AUTO gpu options not implemented for lower triangular matrices, todo\n");
+        // I could just remove this error (uncomment the if) and use the same options as in the upper triangular case
+        //   this would bring a possibly unnecessary transposition, which, if done on the CPU, is hidden behind GPU computations anyway
+    }
+    if(DirectSparseSolver<T,I>::factorsSymmetry() == Solver_Factors::NONSYMMETRIC_BOTH) {
+        std::runtime_error("AUTO gpu options not implemented for unsymmetric systems, todo\n");
     }
 
-    TRS2_SOLVE_TYPE native_trs2_solve_type;
-    switch(DirectSparseSolver<T,I>::factorsSymmetry()) {
-        case Solver_Factors::HERMITIAN_UPPER:
-            native_trs2_solve_type = TRS2_SOLVE_TYPE::U;
-            break;
-        case Solver_Factors::HERMITIAN_LOWER:
-            native_trs2_solve_type = TRS2_SOLVE_TYPE::UHH;
-            break;
-        case Solver_Factors::NONSYMMETRIC_BOTH:
-            native_trs2_solve_type = TRS2_SOLVE_TYPE::U;
-            break;
-        default:
-            eslog::error("Invalid direct sparse solver factors symmetry\n");
-    }
+    // order of popullating the AUTO options (later can have dependencies on the previous):
+    // explicit:
+    //   general options:
+    //     - F_SHARING_IF_HERMITIAN
+    //     - QUEUE_COUNT
+    //   set options:
+    //     - CONCURRENCY_SET
+    //   update options:
+    //     - CONCURRENCY_UPDATE
+    //     - TRANSPOSE_WHERE
+    //     - PATH_IF_HERMITIAN
+    //     - TRS1_FACTOR_STORAGE
+    //     - TRS2_FACTOR_STORAGE
+    //     - TRSM_RHS_SOL_ORDER
+    //     - TRS1_SOLVE_TYPE
+    //     - TRS2_SOLVE_TYPE
+    //   apply options:
+    //     - CONCURRENCY_APPLY
+    //     - APPLY_SCATTER_GATHER_WHERE
+    // implicit:
+    //   general+unused options:
+    //     - F_SHARING_IF_HERMITIAN
+    //     - QUEUE_COUNT
+    //     - PATH_IF_HERMITIAN
+    //     - TRSM_RHS_SOL_ORDER
+    //   set options:
+    //     - CONCURRENCY_SET
+    //   update options:
+    //     - CONCURRENCY_UPDATE
+    //   apply options:
+    //     - CONCURRENCY_APPLY
+    //     - APPLY_SCATTER_GATHER_WHERE
+    //     - TRANSPOSE_WHERE
+    //     - TRS1_FACTOR_STORAGE
+    //     - TRS2_FACTOR_STORAGE
+    //     - TRS1_SOLVE_TYPE
+    //     - TRS2_SOLVE_TYPE
 
-    if(gpu::mgm::get_implementation() == gpu::mgm::gpu_wrapper_impl::CUDA)
-    {
-        if(gpu::spblas::get_implementation() == gpu::spblas::spblas_wrapper_impl::CUSPARSE_LEGACY) {
-            replace_if_auto(config->concurrency_set,            CONCURRENCY::PARALLEL);
-            replace_if_auto(config->concurrency_update,         CONCURRENCY::PARALLEL);
-            replace_if_auto(config->concurrency_apply,          CONCURRENCY::SEQ_CONTINUE);
-            if(dimension == 2) replace_if_auto(config->trs1_factor_storage, MATRIX_STORAGE::SPARSE);
-            if(dimension == 3) replace_if_auto(config->trs1_factor_storage, MATRIX_STORAGE::DENSE);
-            if(dimension == 2) replace_if_auto(config->trs2_factor_storage, MATRIX_STORAGE::SPARSE);
-            if(dimension == 3) replace_if_auto(config->trs2_factor_storage, MATRIX_STORAGE::DENSE);
-            replace_if_auto(config->trs1_solve_type,            native_trs1_solve_type);
-            replace_if_auto(config->trs2_solve_type,            native_trs2_solve_type);
-            replace_if_auto(config->trsm_rhs_sol_order,         MATRIX_ORDER::ROW_MAJOR);
-            replace_if_auto(config->path_if_hermitian,          PATH_IF_HERMITIAN::HERK);
-            replace_if_auto(config->f_sharing_if_hermitian,     TRIANGLE_MATRIX_SHARING::SHARED);
-            replace_if_auto(config->queue_count,                QUEUE_COUNT::PER_THREAD);
-            replace_if_auto(config->apply_scatter_gather_where, DEVICE::GPU);
-            replace_if_auto(config->transpose_where,            DEVICE::GPU);
+    if(is_explicit) {
+        if(gpu::mgm::get_implementation() == gpu::mgm::gpu_wrapper_impl::CUDA)
+        {
+            if(gpu::spblas::get_implementation() == gpu::spblas::spblas_wrapper_impl::CUSPARSE_LEGACY) {
+                // general
+                {
+                    replace_if_auto(config->f_sharing_if_hermitian, TRIANGLE_MATRIX_SHARING::SHARED);
+                    replace_if_auto(config->queue_count, QUEUE_COUNT::PER_THREAD);
+                }
+
+                // set
+                {
+                    replace_if_auto(config->concurrency_set, CONCURRENCY::PARALLEL);
+                }
+
+                // update
+                {
+                    replace_if_auto(config->concurrency_update, CONCURRENCY::PARALLEL);
+                    replace_if_auto(config->transpose_where, DEVICE::CPU);
+                    replace_if_auto(config->path_if_hermitian, PATH_IF_HERMITIAN::HERK);
+
+                    MATRIX_STORAGE select_trsm_storage = MATRIX_STORAGE::AUTO;
+                    if(dimension == 2)                                  select_trsm_storage = MATRIX_STORAGE::SPARSE;
+                    if(dimension == 3 && avg_ndofs_per_domain <  12000) select_trsm_storage = MATRIX_STORAGE::DENSE;
+                    if(dimension == 3 && avg_ndofs_per_domain >= 12000) select_trsm_storage = MATRIX_STORAGE::SPARSE;
+                    if(!is_dense_possible) select_trsm_storage = MATRIX_STORAGE::SPARSE;
+                    replace_if_auto(config->trs1_factor_storage, select_trsm_storage);
+                    replace_if_auto(config->trs2_factor_storage, select_trsm_storage);
+
+                    replace_if_auto(config->trsm_rhs_sol_order, MATRIX_ORDER::ROW_MAJOR);
+
+                    TRS1_SOLVE_TYPE select_trsm1_solve_type;
+                    bool is_path_herk_used = (config->path_if_hermitian == PATH_IF_HERMITIAN::HERK && DirectSparseSolver<T,I>::factorsSymmetry() != Solver_Factors::NONSYMMETRIC_BOTH);
+                    bool is_path_trsm_used = !is_path_herk_used;
+                    if(is_path_herk_used && config->trs1_factor_storage == MATRIX_STORAGE::SPARSE) select_trsm1_solve_type = TRS1_SOLVE_TYPE::L;
+                    if(is_path_herk_used && config->trs1_factor_storage == MATRIX_STORAGE::DENSE) select_trsm1_solve_type = TRS1_SOLVE_TYPE::LHH;
+                    if(is_path_trsm_used) select_trsm1_solve_type = TRS1_SOLVE_TYPE::LHH;
+                    replace_if_auto(config->trs1_solve_type, select_trsm1_solve_type);
+
+                    TRS2_SOLVE_TYPE select_trsm2_solve_type = use_same_factor(config->trs1_solve_type);
+                    replace_if_auto(config->trs2_solve_type, select_trsm2_solve_type);
+                }
+
+                // apply
+                {
+                    replace_if_auto(config->concurrency_apply, CONCURRENCY::PARALLEL);
+                    replace_if_auto(config->apply_scatter_gather_where, DEVICE::GPU);
+                }
+            }
+            else if(gpu::spblas::get_implementation() == gpu::spblas::spblas_wrapper_impl::CUSPARSE_MODERN) {
+                // general
+                {
+                    replace_if_auto(config->f_sharing_if_hermitian, TRIANGLE_MATRIX_SHARING::SHARED);
+                    replace_if_auto(config->queue_count, QUEUE_COUNT::PER_THREAD);
+                }
+
+                // set
+                {
+                    replace_if_auto(config->concurrency_set, CONCURRENCY::PARALLEL);
+                }
+
+                // update
+                {
+                    replace_if_auto(config->concurrency_update, CONCURRENCY::PARALLEL);
+                    replace_if_auto(config->transpose_where, DEVICE::CPU);
+                    replace_if_auto(config->path_if_hermitian, PATH_IF_HERMITIAN::HERK);
+
+                    MATRIX_STORAGE select_trsm_storage = MATRIX_STORAGE::DENSE;
+                    if(!is_dense_possible) select_trsm_storage = MATRIX_STORAGE::SPARSE;
+                    replace_if_auto(config->trs1_factor_storage, select_trsm_storage);
+                    replace_if_auto(config->trs2_factor_storage, select_trsm_storage);
+
+                    MATRIX_ORDER select_order = MATRIX_ORDER::AUTO;
+                    if(dimension == 2) select_order = MATRIX_ORDER::COL_MAJOR;
+                    if(dimension == 3) select_order = MATRIX_ORDER::ROW_MAJOR;
+                    replace_if_auto(config->trsm_rhs_sol_order, select_order);
+
+                    replace_if_auto(config->trs1_solve_type, TRS1_SOLVE_TYPE::LHH);
+                    replace_if_auto(config->trs2_solve_type, TRS2_SOLVE_TYPE::U);
+                }
+
+                // apply
+                {
+                    replace_if_auto(config->concurrency_apply, CONCURRENCY::PARALLEL);
+                    replace_if_auto(config->apply_scatter_gather_where, DEVICE::GPU);
+                }
+            }
+            else {
+                eslog::error("Unexpected gpu sparse blas implementation\n");
+            }
         }
-        else if(gpu::spblas::get_implementation() == gpu::spblas::spblas_wrapper_impl::CUSPARSE_MODERN) {
-            replace_if_auto(config->concurrency_set,            CONCURRENCY::PARALLEL);
-            replace_if_auto(config->concurrency_update,         CONCURRENCY::PARALLEL);
-            replace_if_auto(config->concurrency_apply,          CONCURRENCY::SEQ_CONTINUE);
-            replace_if_auto(config->trs1_factor_storage,        MATRIX_STORAGE::DENSE);
-            replace_if_auto(config->trs2_factor_storage,        MATRIX_STORAGE::DENSE);
-            replace_if_auto(config->trs1_solve_type,            native_trs1_solve_type);
-            replace_if_auto(config->trs2_solve_type,            native_trs2_solve_type);
-            if(dimension == 2) replace_if_auto(config->trsm_rhs_sol_order, MATRIX_ORDER::COL_MAJOR);
-            if(dimension == 3) replace_if_auto(config->trsm_rhs_sol_order, MATRIX_ORDER::ROW_MAJOR);
-            replace_if_auto(config->path_if_hermitian,          PATH_IF_HERMITIAN::HERK);
-            replace_if_auto(config->f_sharing_if_hermitian,     TRIANGLE_MATRIX_SHARING::SHARED);
-            replace_if_auto(config->queue_count,                QUEUE_COUNT::PER_THREAD);
-            replace_if_auto(config->apply_scatter_gather_where, DEVICE::GPU);
-            replace_if_auto(config->transpose_where,            DEVICE::GPU);
+        if(gpu::mgm::get_implementation() == gpu::mgm::gpu_wrapper_impl::ROCM) {
+            // general
+            {
+                replace_if_auto(config->f_sharing_if_hermitian, TRIANGLE_MATRIX_SHARING::SHARED);
+                replace_if_auto(config->queue_count, QUEUE_COUNT::PER_THREAD);
+            }
+
+            // set
+            {
+                replace_if_auto(config->concurrency_set, CONCURRENCY::PARALLEL);
+            }
+
+            // update
+            {
+                replace_if_auto(config->concurrency_update, CONCURRENCY::PARALLEL);
+                replace_if_auto(config->transpose_where, DEVICE::CPU);
+                replace_if_auto(config->path_if_hermitian, PATH_IF_HERMITIAN::HERK);
+
+                MATRIX_STORAGE select_trsm1_storage = MATRIX_STORAGE::SPARSE;
+                if(dimension == 3 && avg_ndofs_per_domain < 32000) select_trsm1_storage = MATRIX_STORAGE::DENSE;
+                if(!is_dense_possible) select_trsm1_storage = MATRIX_STORAGE::SPARSE;
+                replace_if_auto(config->trs1_factor_storage, select_trsm1_storage);
+
+                MATRIX_STORAGE select_trsm2_storage = MATRIX_STORAGE::DENSE;
+                if(dimension == 2 && avg_ndofs_per_domain > 46000) select_trsm2_storage = MATRIX_STORAGE::SPARSE;
+                if(!is_dense_possible) select_trsm2_storage = MATRIX_STORAGE::SPARSE;
+                replace_if_auto(config->trs2_factor_storage, select_trsm2_storage);
+
+                replace_if_auto(config->trsm_rhs_sol_order, MATRIX_ORDER::ROW_MAJOR);
+
+                TRS1_SOLVE_TYPE select_trsm1_solve_type = TRS1_SOLVE_TYPE::L;
+                bool is_path_herk_used = (config->path_if_hermitian == PATH_IF_HERMITIAN::HERK && DirectSparseSolver<T,I>::factorsSymmetry() != Solver_Factors::NONSYMMETRIC_BOTH);
+                bool is_path_trsm_used = !is_path_herk_used;
+                if(is_path_trsm_used && config->trs1_factor_storage == MATRIX_STORAGE::SPARSE) select_trsm1_solve_type = TRS1_SOLVE_TYPE::LHH;
+                replace_if_auto(config->trs1_solve_type, select_trsm1_solve_type);
+
+                replace_if_auto(config->trs2_solve_type, TRS2_SOLVE_TYPE::U);
+            }
+
+            // apply
+            {
+                replace_if_auto(config->concurrency_apply, CONCURRENCY::PARALLEL);
+                replace_if_auto(config->apply_scatter_gather_where, DEVICE::GPU);
+            }
         }
-        else {
-            eslog::error("Unexpected gpu sparse blas implementation\n");
+        if(gpu::mgm::get_implementation() == gpu::mgm::gpu_wrapper_impl::ONEAPI) {
+            eslog::error("not implemented\n");
         }
     }
-    if(gpu::mgm::get_implementation() == gpu::mgm::gpu_wrapper_impl::ROCM)
-    {
-        replace_if_auto(config->concurrency_set,            CONCURRENCY::PARALLEL);
-        replace_if_auto(config->concurrency_update,         CONCURRENCY::PARALLEL);
-        replace_if_auto(config->concurrency_apply,          CONCURRENCY::SEQ_CONTINUE);
-        if(dimension == 3 || (dimension == 2 && avg_ndofs_per_domain < 2048)) {
-            replace_if_auto(config->trs1_factor_storage,        MATRIX_STORAGE::DENSE);
+    if(is_implicit) {
+        if(gpu::mgm::get_implementation() == gpu::mgm::gpu_wrapper_impl::CUDA)
+        {
+            if(gpu::spblas::get_implementation() == gpu::spblas::spblas_wrapper_impl::CUSPARSE_LEGACY) {
+                // general+unused
+                {
+                    // replace_if_auto(config->f_sharing_if_hermitian, TRIANGLE_MATRIX_SHARING::SHARED);
+                    replace_if_auto(config->queue_count, QUEUE_COUNT::PER_THREAD);
+                    // replace_if_auto(config->path_if_hermitian, PATH_IF_HERMITIAN::TRSM);
+                    // replace_if_auto(config->trsm_rhs_sol_order, MATRIX_ORDER::ROW_MAJOR);
+                }
+
+                // set
+                {
+                    replace_if_auto(config->concurrency_set, CONCURRENCY::PARALLEL);
+                }
+
+                // update
+                {
+                    replace_if_auto(config->concurrency_update, CONCURRENCY::PARALLEL);
+                }
+
+                // apply
+                {
+                    replace_if_auto(config->concurrency_apply, CONCURRENCY::PARALLEL);
+                    replace_if_auto(config->apply_scatter_gather_where, DEVICE::GPU);
+                    replace_if_auto(config->transpose_where, DEVICE::CPU);
+
+                    MATRIX_STORAGE select_trsv1_storage = MATRIX_STORAGE::DENSE;
+                    if(dimension == 2 && avg_ndofs_per_domain > 8000) select_trsv1_storage = MATRIX_STORAGE::SPARSE;
+                    if(!is_dense_possible) select_trsv1_storage = MATRIX_STORAGE::SPARSE;
+                    replace_if_auto(config->trs1_factor_storage, select_trsv1_storage);
+
+                    MATRIX_STORAGE select_trsv2_storage = MATRIX_STORAGE::DENSE;
+                    if(dimension == 2 && avg_ndofs_per_domain > 23000) select_trsv2_storage = MATRIX_STORAGE::SPARSE;
+                    if(!is_dense_possible) select_trsv2_storage = MATRIX_STORAGE::SPARSE;
+                    replace_if_auto(config->trs2_factor_storage, select_trsv2_storage);
+
+                    replace_if_auto(config->trs1_solve_type, TRS1_SOLVE_TYPE::L);
+
+                    TRS2_SOLVE_TYPE select_trsv2_solve_type = TRS2_SOLVE_TYPE::AUTO;
+                    if(config->trs2_factor_storage == MATRIX_STORAGE::SPARSE) select_trsv2_solve_type = TRS2_SOLVE_TYPE::U;
+                    if(config->trs2_factor_storage == MATRIX_STORAGE::DENSE)  select_trsv2_solve_type = TRS2_SOLVE_TYPE::UHH;
+                    replace_if_auto(config->trs2_solve_type, select_trsv2_solve_type);
+                }
+            }
+            else if(gpu::spblas::get_implementation() == gpu::spblas::spblas_wrapper_impl::CUSPARSE_MODERN) {
+                // general+unused
+                {
+                    // replace_if_auto(config->f_sharing_if_hermitian, TRIANGLE_MATRIX_SHARING::SHARED);
+                    replace_if_auto(config->queue_count, QUEUE_COUNT::PER_THREAD);
+                    // replace_if_auto(config->path_if_hermitian, PATH_IF_HERMITIAN::TRSM);
+                    // replace_if_auto(config->trsm_rhs_sol_order, MATRIX_ORDER::ROW_MAJOR);
+                }
+
+                // set
+                {
+                    replace_if_auto(config->concurrency_set, CONCURRENCY::PARALLEL);
+                }
+
+                // update
+                {
+                    replace_if_auto(config->concurrency_update, CONCURRENCY::PARALLEL);
+                }
+
+                // apply
+                {
+                    replace_if_auto(config->concurrency_apply, CONCURRENCY::SEQ_CONTINUE);
+                    replace_if_auto(config->apply_scatter_gather_where, DEVICE::GPU);
+                    replace_if_auto(config->transpose_where, DEVICE::CPU);
+
+                    MATRIX_STORAGE select_trsv_storage = MATRIX_STORAGE::SPARSE;
+                    if(dimension == 3 && avg_ndofs_per_domain < 8000) select_trsv_storage = MATRIX_STORAGE::DENSE;
+                    if(!is_dense_possible) select_trsv_storage = MATRIX_STORAGE::SPARSE;
+                    replace_if_auto(config->trs1_factor_storage, select_trsv_storage);
+                    replace_if_auto(config->trs2_factor_storage, select_trsv_storage);
+
+                    replace_if_auto(config->trs1_solve_type, TRS1_SOLVE_TYPE::L);
+                    replace_if_auto(config->trs2_solve_type, TRS2_SOLVE_TYPE::UHH);
+                }
+            }
+            else {
+                eslog::error("Unexpected gpu sparse blas implementation\n");
+            }
         }
-        else {
-            replace_if_auto(config->trs1_factor_storage,        MATRIX_STORAGE::SPARSE);
+        if(gpu::mgm::get_implementation() == gpu::mgm::gpu_wrapper_impl::ROCM) {
+            // general+unused
+            {
+                // replace_if_auto(config->f_sharing_if_hermitian, TRIANGLE_MATRIX_SHARING::SHARED);
+                replace_if_auto(config->queue_count, QUEUE_COUNT::PER_THREAD);
+                // replace_if_auto(config->path_if_hermitian, PATH_IF_HERMITIAN::TRSM);
+                // replace_if_auto(config->trsm_rhs_sol_order, MATRIX_ORDER::ROW_MAJOR);
+            }
+
+            // set
+            {
+                replace_if_auto(config->concurrency_set, CONCURRENCY::PARALLEL);
+            }
+
+            // update
+            {
+                replace_if_auto(config->concurrency_update, CONCURRENCY::PARALLEL);
+            }
+
+            // apply
+            {
+                replace_if_auto(config->concurrency_apply, CONCURRENCY::SEQ_CONTINUE);
+                replace_if_auto(config->apply_scatter_gather_where, DEVICE::GPU);
+                replace_if_auto(config->transpose_where, DEVICE::CPU);
+
+                MATRIX_STORAGE select_trsv_storage = MATRIX_STORAGE::SPARSE;
+                if(dimension == 3 && avg_ndofs_per_domain < 16000) select_trsv_storage = MATRIX_STORAGE::DENSE;
+                if(!is_dense_possible) select_trsv_storage = MATRIX_STORAGE::SPARSE;
+                replace_if_auto(config->trs1_factor_storage, select_trsv_storage);
+                replace_if_auto(config->trs2_factor_storage, select_trsv_storage);
+
+                TRS1_SOLVE_TYPE select_trsv1_solve_type = TRS1_SOLVE_TYPE::AUTO;
+                if(config->trs1_factor_storage == MATRIX_STORAGE::SPARSE) select_trsv1_solve_type = TRS1_SOLVE_TYPE::L;
+                if(config->trs1_factor_storage == MATRIX_STORAGE::DENSE)  select_trsv1_solve_type = TRS1_SOLVE_TYPE::LHH;
+                replace_if_auto(config->trs1_solve_type, select_trsv1_solve_type);
+
+                replace_if_auto(config->trs2_solve_type, TRS2_SOLVE_TYPE::U);
+            }
         }
-        replace_if_auto(config->trs2_factor_storage,        MATRIX_STORAGE::DENSE);
-        replace_if_auto(config->trs1_solve_type,            native_trs1_solve_type);
-        replace_if_auto(config->trs2_solve_type,            native_trs2_solve_type);
-        replace_if_auto(config->trsm_rhs_sol_order,         MATRIX_ORDER::ROW_MAJOR);
-        replace_if_auto(config->path_if_hermitian,          PATH_IF_HERMITIAN::HERK);
-        replace_if_auto(config->f_sharing_if_hermitian,     TRIANGLE_MATRIX_SHARING::SHARED);
-        replace_if_auto(config->queue_count,                QUEUE_COUNT::PER_THREAD);
-        replace_if_auto(config->apply_scatter_gather_where, DEVICE::GPU);
-        replace_if_auto(config->transpose_where,            DEVICE::GPU);
-    }
-    if(gpu::mgm::get_implementation() == gpu::mgm::gpu_wrapper_impl::ONEAPI)
-    {
-        replace_if_auto(config->concurrency_set,            CONCURRENCY::PARALLEL);
-        replace_if_auto(config->concurrency_update,         CONCURRENCY::PARALLEL);
-        replace_if_auto(config->concurrency_apply,          CONCURRENCY::SEQ_WAIT);
-        replace_if_auto(config->trs1_factor_storage,        MATRIX_STORAGE::DENSE);
-        replace_if_auto(config->trs2_factor_storage,        MATRIX_STORAGE::DENSE);
-        replace_if_auto(config->trs1_solve_type,            native_trs1_solve_type);
-        replace_if_auto(config->trs2_solve_type,            native_trs2_solve_type);
-        replace_if_auto(config->trsm_rhs_sol_order,         MATRIX_ORDER::COL_MAJOR);
-        replace_if_auto(config->path_if_hermitian,          PATH_IF_HERMITIAN::HERK);
-        replace_if_auto(config->f_sharing_if_hermitian,     TRIANGLE_MATRIX_SHARING::SHARED);
-        replace_if_auto(config->queue_count,                QUEUE_COUNT::PER_THREAD);
-        replace_if_auto(config->apply_scatter_gather_where, DEVICE::GPU);
-        replace_if_auto(config->transpose_where,            DEVICE::GPU);
+        if(gpu::mgm::get_implementation() == gpu::mgm::gpu_wrapper_impl::ONEAPI) {
+            eslog::error("not implemented\n");
+        }
     }
 }
 

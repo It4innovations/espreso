@@ -300,6 +300,24 @@ do
                     done
                 done
 
+
+
+                # for dualoperator in EXPLICIT_GPU IMPLICIT_GPU
+                # do
+                #     benchmarking_for="setupdateapply"
+                #     apply_scatter_gather_where="AUTO"
+                #     concurrency_set="AUTO"
+                #     concurrency_update="AUTO"
+                #     concurrency_apply="AUTO"
+                #     path_if_hermitian="AUTO"
+                #     trs1_factor_storage="AUTO"
+                #     trs2_factor_storage="AUTO"
+                #     trsm_rhs_sol_order="AUTO"
+                #     trs1_solve_type="AUTO"
+                #     trs2_solve_type="AUTO"
+                #     submit_hq_job
+                # done
+
             done
         done
     done
