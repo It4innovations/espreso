@@ -169,7 +169,7 @@ void SchurComplementSolver<T,I>::factorizeSymbolic()
 template<typename T, typename I>
 void SchurComplementSolver<T,I>::updateMatrixValues()
 {
-    if(ext->stage != 2) eslog::error("SchurComplementSolver::updateMatrixValues(): wrong stage\n");
+    if(ext->stage < 2) eslog::error("SchurComplementSolver::updateMatrixValues(): wrong stage\n");
 
     if(ext->provided_as_one_large_matrix) {
         extract_submatrices(*ext->A, *ext->A11_my, *ext->A12_my, *ext->A22_my, ext->sc_size);

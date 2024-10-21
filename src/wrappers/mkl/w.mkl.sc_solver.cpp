@@ -146,7 +146,7 @@ void SchurComplementSolver<T,I>::factorizeSymbolic()
 template<typename T, typename I>
 void SchurComplementSolver<T,I>::updateMatrixValues()
 {
-    if(ext->stage != 2 && ext->stage != 4) eslog::error("SchurComplementSolver::updateMatrixValues(): wrong stage\n");
+    if(ext->stage < 2) eslog::error("SchurComplementSolver::updateMatrixValues(): wrong stage\n");
 
     if(ext->provided_as_four_small_matrices) {
         auto & As = ext->As;
