@@ -195,6 +195,8 @@ void TotalFETIExplicitSc<T,I>::_apply(const Vector_Dual<T> &x_cluster, Vector_Du
 {
     my_timer tm_total, tm_mv;
 
+    double start = eslog::time();
+
     tm_total.start();
     memset(y_cluster.vals, 0, y_cluster.size * sizeof(T));
 
@@ -218,6 +220,9 @@ void TotalFETIExplicitSc<T,I>::_apply(const Vector_Dual<T> &x_cluster, Vector_Du
         }
     }
     tm_total.stop();
+
+    double stop = eslog::time();
+    printf("TMP DUAL OPERATOR APPLY TIME:  %12.6f ms\n", (stop - start) * 1000.0);
 
     y_cluster.synchronize();
 
