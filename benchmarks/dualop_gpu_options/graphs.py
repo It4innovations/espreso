@@ -33,7 +33,7 @@ graphdir = basedir + "/graphs/" + datestr
 os.makedirs(graphdir, exist_ok=True)
 
 
-summarize_datestr = "20241015_110851"
+summarize_datestr = "20241020_192350"
 summarize_stage = "update"
 
 
@@ -85,8 +85,9 @@ image_index = -1
 problems = ["heat_transfer_2d", "heat_transfer_3d", "linear_elasticity_2d", "linear_elasticity_3d"]
 for problem in problems:
 
-    if problem[-2:] == "2d": element_types = ["TRIANGLE3", "TRIANGLE6"]
-    if problem[-2:] == "3d": element_types = ["TETRA4", "TETRA10"]
+    dim = int(problem[-2:-1])
+    if dim == 2: element_types = ["TRIANGLE3", "TRIANGLE6"]
+    if dim == 3: element_types = ["TETRA4", "TETRA10"]
     for element_type in element_types:
         image_index = image_index + 1
         if MPI.COMM_WORLD.Get_rank() != image_index:
@@ -118,8 +119,10 @@ for problem in problems:
 
                     best_x_vals = ""
                     best_y_vals = ""
+                    auto_x_vals = ""
+                    auto_y_vals = ""
 
-                    concurrencies = ["SEQ_WAIT", "SEQ_CONTINUE", "PARALLEL"]
+                    concurrencies = ["SEQ_WAIT", "SEQ_CONTINUE", "PARALLEL", "AUTO"]
                     # concurrencies = ["PARALLEL"]
                     # concurrencies = ["SEQ_WAIT"]
                     for concurrency_idx in range(0,len(concurrencies)):
@@ -133,20 +136,20 @@ for problem in problems:
                         csv_data7 = list(filter(lambda row: row[concurrency_update_col] == concurrency_update, csv_data6))
                         csv_data8 = list(filter(lambda row: row[concurrency_apply_col]  == concurrency_apply,  csv_data7))
 
-                        paths = ["TRSM", "HERK"]
+                        paths = ["TRSM", "HERK", "AUTO"]
                         for path_idx in range(0,len(paths)):
                             path = paths[path_idx]
                             # if path != "TRSM": continue
                             # if path != "HERK": continue
                             csv_data9 = list(filter(lambda row: row[path_if_hermitian_col] == path, csv_data8))
 
-                            trs1_factor_storage_options = ["SPARSE", "DENSE"]
+                            trs1_factor_storage_options = ["SPARSE", "DENSE", "AUTO"]
                             for trs1_factor_storage_idx in range(0,len(trs1_factor_storage_options)):
                                 trs1_factor_storage = trs1_factor_storage_options[trs1_factor_storage_idx]
                                 csv_data10 = list(filter(lambda row: row[trs1_factor_storage_col] == trs1_factor_storage, csv_data9))
                                 # if trs1_factor_storage != "DENSE": continue
 
-                                trs2_factor_storage_options = ["SPARSE", "DENSE"]
+                                trs2_factor_storage_options = ["SPARSE", "DENSE", "AUTO"]
                                 # trs2_factor_storage_options = ["SPARSE"]
                                 for trs2_factor_storage_idx in range(0,len(trs2_factor_storage_options)):
                                     trs2_factor_storage = trs2_factor_storage_options[trs2_factor_storage_idx]
@@ -155,13 +158,13 @@ for problem in problems:
                                     # if trs2_factor_storage != "DENSE": continue
                                     # if trs1_factor_storage != trs2_factor_storage: continue
 
-                                    trs1_solve_type_options = ["L", "LHH"]
+                                    trs1_solve_type_options = ["L", "LHH", "AUTO"]
                                     # trs1_solve_type_options = ["L"]
                                     for trs1_solve_type_idx in range(0,len(trs1_solve_type_options)):
                                         trs1_solve_type = trs1_solve_type_options[trs1_solve_type_idx]
                                         csv_data12 = list(filter(lambda row: row[trs1_solve_type_col] == trs1_solve_type, csv_data11))
 
-                                        trs2_solve_type_options = ["U", "UHH"]
+                                        trs2_solve_type_options = ["U", "UHH", "AUTO"]
                                         # trs2_solve_type_options = ["U"]
                                         # if trs1_solve_type == "L": trs2_solve_type_options = ["UHH"]
                                         # if trs1_solve_type == "LHH": trs2_solve_type_options = ["U"]
@@ -172,7 +175,7 @@ for problem in problems:
                                             # if trs1_solve_type == "L" and trs2_solve_type != "UHH": continue
                                             # if trs1_solve_type == "LHH" and trs2_solve_type != "U": continue
 
-                                            trsm_rhs_sol_order_options = ["ROW_MAJOR", "COL_MAJOR"]
+                                            trsm_rhs_sol_order_options = ["ROW_MAJOR", "COL_MAJOR", "AUTO"]
                                             # trsm_rhs_sol_order_options = ["ROW_MAJOR"]
                                             for trsm_rhs_sol_order_idx in range(0,len(trsm_rhs_sol_order_options)):
                                                 trsm_rhs_sol_order = trsm_rhs_sol_order_options[trsm_rhs_sol_order_idx]
@@ -186,7 +189,7 @@ for problem in problems:
                                                 # if trsm_rhs_sol_order == "ROW_MAJOR" and trs1_solve_type != "L": continue
                                                 # if trsm_rhs_sol_order == "COL_MAJOR" and trs1_solve_type != "LHH": continue
 
-                                                apply_scatter_gather_where_options = ["CPU", "GPU"]
+                                                apply_scatter_gather_where_options = ["CPU", "GPU", "AUTO"]
                                                 # apply_scatter_gather_where_options = ["GPU"]
                                                 for apply_scatter_gather_where_idx in range(0,len(apply_scatter_gather_where_options)):
                                                     apply_scatter_gather_where = apply_scatter_gather_where_options[apply_scatter_gather_where_idx]
@@ -205,6 +208,15 @@ for problem in problems:
                                                         # if best_x_vals == "":
                                                         #     best_x_vals = list(x_vals)
                                                         #     best_y_vals = list(best_x_vals)
+                                                        # if auto_x_vals == "":
+                                                        #     auto_x_vals = list(x_vals)
+                                                        #     auto_y_vals = list(auto_x_vals)
+                                                        is_all_auto = (concurrency == "AUTO" and path == "AUTO" and trs1_factor_storage == "AUTO" and trs2_factor_storage == "AUTO" and trs1_solve_type == "AUTO" and trs2_solve_type == "AUTO" and trsm_rhs_sol_order == "AUTO" and apply_scatter_gather_where == "AUTO")
+                                                        if is_all_auto:
+                                                            auto_y_vals = list(y_vals)
+                                                            continue
+                                                        # ####################
+                                                        # # implicit lumi rocm
                                                         # if concurrency_apply == "SEQ_CONTINUE" and trs2_solve_type == "U":
                                                         #     if problem[-2:-1] == "2":
                                                         #         if trs1_factor_storage == "SPARSE" and trs2_factor_storage == "SPARSE" and trs1_solve_type == "L":
@@ -218,6 +230,8 @@ for problem in problems:
                                                         #             for j in range(0,len(x_vals)):
                                                         #                 if x_vals[j] > 16000:
                                                         #                     best_y_vals[j] = y_vals[j]
+                                                        # ###########################
+                                                        # # implicit karolina cudamod
                                                         # if concurrency_apply == "SEQ_CONTINUE" and trs1_solve_type == "L" and trs2_solve_type == "UHH":
                                                         #     if problem[-2:-1] == "2":
                                                         #         if trs1_factor_storage == "SPARSE" and trs2_factor_storage == "SPARSE":
@@ -231,6 +245,8 @@ for problem in problems:
                                                         #             for j in range(0,len(x_vals)):
                                                         #                 if x_vals[j] > 8000:
                                                         #                     best_y_vals[j] = y_vals[j]
+                                                        # ###########################
+                                                        # # implicit karolina cudaleg
                                                         # if concurrency_apply == "PARALLEL" and trs1_solve_type == "L":
                                                         #     if problem[-2:-1] == "3":
                                                         #         if trs1_factor_storage == "DENSE" and trs2_factor_storage == "DENSE" and trs2_solve_type == "UHH":
@@ -248,6 +264,8 @@ for problem in problems:
                                                         #             for j in range(0,len(x_vals)):
                                                         #                 if x_vals[j] > 23000:
                                                         #                     best_y_vals[j] = y_vals[j]
+                                                        # ####################
+                                                        # # explicit lumi rocm
                                                         # if concurrency_update == "PARALLEL" and path == "HERK" and trsm_rhs_sol_order == "ROW_MAJOR" and trs1_solve_type == "L":
                                                         #     if problem[-2:-1] == "2" and trs1_factor_storage == "SPARSE":
                                                         #         best_y_vals = list(y_vals)
@@ -260,11 +278,15 @@ for problem in problems:
                                                         #             for j in range(0,len(x_vals)):
                                                         #                 if x_vals[j] <= 32000:
                                                         #                     best_y_vals[j] = y_vals[j]
+                                                        # ###########################
+                                                        # # explicit karolina cudamod
                                                         # if concurrency_update == "PARALLEL" and path == "HERK" and trs1_factor_storage == "DENSE" and trs1_solve_type == "LHH":
                                                         #     if problem[-2:-1] == "2" and trsm_rhs_sol_order == "COL_MAJOR":
                                                         #         best_y_vals = list(y_vals)
                                                         #     if problem[-2:-1] == "3" and trsm_rhs_sol_order == "ROW_MAJOR":
                                                         #         best_y_vals = list(y_vals)
+                                                        # ###########################
+                                                        # # explicit karolina cudaleg
                                                         # if concurrency == "PARALLEL" and trsm_rhs_sol_order == "ROW_MAJOR" and path == "HERK":
                                                         #     if problem[-2:-1] == "2" and trs1_factor_storage == "SPARSE" and trs1_solve_type == "L":
                                                         #         best_y_vals = list(y_vals)
@@ -323,6 +345,7 @@ for problem in problems:
                         # a.set_ylabel('update time [ms]')
                         if a.lines:
                             # a.loglog(best_x_vals, best_y_vals, base=2, color="red", linestyle="--", label="optimal")
+                            # a.loglog(auto_x_vals, auto_y_vals, base=2, color="green", linestyle=":", label="auto", linewidth=5)
                             a.legend(loc="upper left")
                             xlim_min = min(xlim_min, a.get_xlim()[0])
                             xlim_max = max(xlim_max, a.get_xlim()[1])

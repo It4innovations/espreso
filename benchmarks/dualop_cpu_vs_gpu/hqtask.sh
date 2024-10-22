@@ -1,0 +1,96 @@
+#!/bin/bash
+
+cd "${SLURM_SUBMIT_DIR}"
+
+machine="${1}"
+tool="${2}"
+ecf_file="${3}"
+output_path="${4}"
+uniform_clusters_domains="${5}"
+element_type="${6}"
+domains_x="${7}"
+domains_y="${8}"
+domains_z="${9}"
+elements_x="${10}"
+elements_y="${11}"
+elements_z="${12}"
+dual_operator="${13}"
+
+shift 3
+
+
+
+
+
+mkdir -p "${output_path}"
+
+infofile="${output_path}/info.txt"
+echo -n > "${infofile}"
+echo -n "datestr " >> "${infofile}"; date +%Y%m%d_%H%M%S >> "${infofile}"
+echo "machine ${machine}" >> "${infofile}"
+echo "tool ${tool}" >> "${infofile}"
+echo -n "node " >> "${infofile}"; hostname >> "${infofile}"
+
+if [[ "${dual_operator}" == *"GPU"* ]]; then
+    if [ "${machine}" == "karolina" ]; then
+        echo -n "gpu " >> "${infofile}"; nvidia-smi -L >> "${infofile}"
+    elif [ "${machine}" == "lumi" ]; then
+        gpuinfo=$(rocm-smi --showproductname | grep GPU | head -n 1 | cut -d: -f3);
+        echo -n "gpu " >> "${infofile}"; echo $gpuinfo >> "${infofile}"
+    fi
+else
+    echo "cpu" >> "${infofile}"
+fi
+
+echo -n "cpus " >> "${infofile}"; numactl -s | grep physcpubind | cut -d' ' -f2- >> "${infofile}"
+echo "ecf_file ${ecf_file}" >> "${infofile}"
+echo "output_path ${output_path}" >> "${infofile}"
+echo "uniform_clusters_domains ${uniform_clusters_domains}" >> "${infofile}"
+echo "element_type ${element_type}" >> "${infofile}"
+echo "domains_x ${domains_x}" >> "${infofile}"
+echo "domains_y ${domains_y}" >> "${infofile}"
+echo "domains_z ${domains_z}" >> "${infofile}"
+echo "elements_x ${elements_x}" >> "${infofile}"
+echo "elements_y ${elements_y}" >> "${infofile}"
+echo "elements_z ${elements_z}" >> "${infofile}"
+echo "dual_operator ${dual_operator}" >> "${infofile}"
+
+
+
+
+
+command=""
+if [ "${machine}" == "karolina" ] && [ "${tool}" == "cudalegacy" ]; then
+    source env/it4i.karolina.cuda.gcc.32.sh legacy
+    command="mpirun -n 1 --bind-to numa ./build/espreso -c \"${ecf_file}\" $@ > \"${output_path}/stdout.txt\" 2> \"${output_path}/stderr.txt\""
+elif [ "${machine}" == "karolina" ] && [ "${tool}" == "cudamodern" ]; then
+    source env/it4i.karolina.cuda.gcc.32.sh modern
+    command="mpirun -n 1 --bind-to numa ./build/espreso -c \"${ecf_file}\" $@ > \"${output_path}/stdout.txt\" 2> \"${output_path}/stderr.txt\""
+elif [ "${machine}" == "karolina" ] && [ "${tool}" == "suitesparse" ]; then
+    source env/it4i.karolina.cuda.gcc.32.sh legacy
+    command="mpirun -n 1 --bind-to numa ./build/espreso -c \"${ecf_file}\" $@ > \"${output_path}/stdout.txt\" 2> \"${output_path}/stderr.txt\""
+elif [ "${machine}" == "karolina" ] && [ "${tool}" == "mklpardiso" ]; then
+    source env/it4i.karolina.intel.32.sh
+    export OMP_NUM_THREADS="$(nproc),1"
+    command="mpirun -n 1 ./build/espreso -c \"${ecf_file}\" $@ > \"${output_path}/stdout.txt\" 2> \"${output_path}/stderr.txt\""
+elif [ "${machine}" == "lumi" ]; then
+    echo not implemented
+    exit 73
+    # source env/lumi.clang.aocl.mpich.suitesparsenew.rocm.sh
+    # command="srun -n 1 ./build/espreso -c \"${ecf_file}\" $@ > \"${output_path}/stdout.txt\" 2> \"${output_path}/stderr.txt\""
+fi
+
+
+
+
+
+timeout -v 300s bash -c "${command}" 2> "${output_path}/timeout.txt"
+exitcode=$?
+
+
+
+
+
+rm -f core*
+
+exit ${exitcode}

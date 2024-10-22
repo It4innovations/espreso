@@ -68,8 +68,14 @@ runs_setupdate = 0
 runs_apply = 0
 for dir_name in os.listdir(results_dir):
     dir_path = results_dir + "/" + dir_name
-    runs_setupdate += 2 * len(os.listdir(dir_path + "/setupdate")) + 2 * len(os.listdir(dir_path + "/setupdateapply"))
-    runs_apply += len(os.listdir(dir_path + "/apply")) + len(os.listdir(dir_path + "/setupdateapply"))
+    path_setupdate = dir_path + "/setupdate"
+    path_setupdateapply = dir_path + "/setupdateapply"
+    path_apply = dir_path + "/apply"
+    results_setupdate      = len(os.listdir(path_setupdate))      if os.path.exists(path_setupdate)      else 0
+    results_setupdateapply = len(os.listdir(path_setupdateapply)) if os.path.exists(path_setupdateapply) else 0
+    results_apply          = len(os.listdir(path_apply))          if os.path.exists(path_apply)          else 0
+    runs_setupdate += 2 * results_setupdate + 2 * results_setupdateapply
+    runs_apply += results_apply + results_setupdateapply
 runs_total = runs_setupdate + runs_apply
 runs_finished = 0
 
@@ -94,6 +100,8 @@ for dir_name in os.listdir(results_dir):
     dir_path = results_dir + "/" + dir_name
     subdirs = ["setupdate", "setupdateapply"]
     for subdir in subdirs:
+        if not os.path.exists(dir_path + "/" + subdir):
+            continue
         for run_id in os.listdir(dir_path + "/" + subdir):
             run_path = dir_path + "/" + subdir + "/" + run_id
             info_lines = read_file_to_string(run_path + "/info.txt").split("\n")
@@ -201,6 +209,8 @@ for dir_name in os.listdir(results_dir):
     dir_path = results_dir + "/" + dir_name
     subdirs = ["setupdate", "setupdateapply"]
     for subdir in subdirs:
+        if not os.path.exists(dir_path + "/" + subdir):
+            continue
         for run_id in os.listdir(dir_path + "/" + subdir):
             run_path = dir_path + "/" + subdir + "/" + run_id
             info_lines = read_file_to_string(run_path + "/info.txt").split("\n")
@@ -308,6 +318,8 @@ for dir_name in os.listdir(results_dir):
     dir_path = results_dir + "/" + dir_name
     subdirs = ["apply", "setupdateapply"]
     for subdir in subdirs:
+        if not os.path.exists(dir_path + "/" + subdir):
+            continue
         for run_id in os.listdir(dir_path + "/" + subdir):
             run_path = dir_path + "/" + subdir + "/" + run_id
             info_lines = read_file_to_string(run_path + "/info.txt").split("\n")

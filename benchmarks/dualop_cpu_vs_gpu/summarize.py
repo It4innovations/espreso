@@ -33,10 +33,21 @@ def get_n_dofs_per_node(problem):
     else:
         return -1
 
+def get_nnodes_per_side(nelems, element_type):
+    if element_type == "TRIANGLE3":
+        return nelems + 1
+    if element_type == "TRIANGLE6":
+        return 2 * nelems + 1
+    if element_type == "TETRA4":
+        return nelems + 1
+    if element_type == "TETRA10":
+        return 2 * nelems + 1
+    return 0
 
 
 
-basedir = "benchmarks/dualop_cpuimpl_vs_gpuexpl"
+
+basedir = "benchmarks/dualop_cpu_vs_gpu"
 if not os.path.exists(basedir + "/summarize.py"):
     print("The script must be run from the espreso root folder")
     sys.exit(1)
@@ -58,12 +69,12 @@ os.makedirs(summ_dir, exist_ok=True)
 
 outfile = summ_dir + "/compare.csv"
 outstring = io.StringIO()
-cells_info = ["id", "str", "run_id", "machine", "tool", "problem", "element_type", "domains_x", "domains_y", "domains_z", "n_domains_total", "elements_x", "elements_y", "elements_z", "n_elements_per_domain", "max_dofs_per_domain", "uniform_clusters_domains", "dual_operator"]
+cells_info = ["id", "str", "run_id", "machine", "tool", "dual_operator", "problem", "physics", "dim", "dofs_per_node", "element_type", "domains_x", "domains_y", "domains_z", "n_domains_total", "elements_x", "elements_y", "elements_z", "n_elements_per_domain", "avg_domain_surface", "avg_domain_volume", "n_dofs"]
 outstring.write(";".join(cells_info))
 outstring.write(";;")
 outstring.write("error;timeout")
 outstring.write(";;")
-outstring.write("set;update1;update2;apply")
+outstring.write("set;update;apply")
 outstring.write("\n")
 for dir_name in os.listdir(results_dir):
     dir_path = results_dir + "/" + dir_name
@@ -71,32 +82,49 @@ for dir_name in os.listdir(results_dir):
         run_path = dir_path + "/" + run_id
         info_lines = read_file_to_string(run_path + "/info.txt").split("\n")
         problem = list(filter(lambda line: "ecf_file" in line, info_lines))[0].split(".")[1]
-        output_lines = read_file_to_string(run_path + "/stdout.txt").split("\n")
+        output_lines = read_file_to_string(run_path + "/last/espreso." + problem + ".log").split("\n")
         timer_lines = list(filter(lambda line: "TMP DUAL OPERATOR" in line, output_lines))
         n_domains_total = 1
         n_elements_per_domain = 1
+        n_dofs_per_domain = 1
+        elem_type = ""
         for field in cells_info:
             if field == "id" or field == "str":
                 val = ""
-            elif field == "run_id":
-                val = run_id
-            elif field == "problem":
-                val = problem
+            elif field == "physics":
+                val = problem[:-3]
+            elif field == "dim":
+                val = problem[-2:-1]
             elif field == "n_domains_total":
                 val = str(n_domains_total)
             elif field == "n_elements_per_domain":
                 val = str(n_elements_per_domain)
-            elif field == "max_dofs_per_domain":
-                n_nodes_per_domain = int(list(filter(lambda line: "NODES                    :" in line, output_lines))[1][45:55].replace(",",""))
-                n_dofs_per_node = get_n_dofs_per_node(problem)
-                max_dofs_per_domain = n_nodes_per_domain * n_dofs_per_node
-                val = str(max_dofs_per_domain)
+            elif field == "n_dofs":
+                val = str(n_dofs_per_domain * get_n_dofs_per_node(problem))
+            elif field == "run_id":
+                val = run_id
+            elif field == "problem":
+                val = problem
+            elif field == "dofs_per_node":
+                val = str(get_n_dofs_per_node(problem))
+            elif field == "avg_domain_volume":
+                lines = list(filter(lambda line: "Domain volume [dofs]" in line, output_lines))
+                if len(lines) > 0: val = lines[0].split("<")[0][-15:].replace(" ", "")
+                else:              val = ""
+            elif field == "avg_domain_surface":
+                lines = list(filter(lambda line: "Domain surface [dofs]" in line, output_lines))
+                if len(lines) > 0: val = lines[0].split("<")[0][-15:].replace(" ", "")
+                else:              val = ""
             else:
                 val = list(filter(lambda line: field in line, info_lines))[0].split(" ")[1]
-                if field == "domains_x" or field == "domains_y" or field == "domains_z":
-                    n_domains_total *= int(val)
-                elif field == "elements_x" or field == "elements_y" or field == "elements_z":
-                    n_elements_per_domain *= int(val)
+                if field == "element_type":
+                    elem_type = val
+                if field.startswith("domains_"):
+                    n_domains_total = n_domains_total * int(val)
+                if field.startswith("elements_"):
+                    n_elements_per_domain = n_elements_per_domain * int(val)
+                    if not (problem[-2:-1] == "2" and field == "elements_z"):
+                        n_dofs_per_domain = n_dofs_per_domain * get_nnodes_per_side(int(val), elem_type)
             outstring.write(val)
             outstring.write(";")
 
@@ -108,15 +136,13 @@ for dir_name in os.listdir(results_dir):
         set_lines = list(filter(lambda line: "TMP DUAL OPERATOR SET TIME:" in line, timer_lines))
         set_time = set_lines[0][31:43].replace(" ", "") if len(set_lines) > 0 else ""
         update_lines = list(filter(lambda line: "TMP DUAL OPERATOR UPDATE TIME:" in line, timer_lines))
-        update1_time = update_lines[0][31:43].replace(" ", "") if len(update_lines) > 0 else ""
-        update2_time = update_lines[-1][31:43].replace(" ", "") if len(update_lines) > 0 else ""
+        update_time = update_lines[-1][31:43].replace(" ", "") if len(update_lines) > 0 else ""
         apply_lines = list(filter(lambda line: "TMP DUAL OPERATOR APPLY TIME:" in line, timer_lines))
         apply_times = [float(line[31:43]) for line in apply_lines[-10:]] if len(apply_lines) > 0 else []
         apply_avg = sum(apply_times) / len(apply_times) if len(apply_lines) > 0 else 0
         apply_avg_str = str(apply_avg) if len(apply_lines) > 0 else ""
         outstring.write(set_time + ";")
-        outstring.write(update1_time + ";")
-        outstring.write(update2_time + ";")
+        outstring.write(update_time + ";")
         outstring.write(apply_avg_str)
 
         outstring.write("\n")

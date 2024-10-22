@@ -82,8 +82,9 @@ STRUCTURAL_MECHANICS {
         MAX_ITERATIONS          12;
         EXIT_ON_NONCONVERGENCE FALSE;
 
-        DUAL_OPERATOR_EXPLICIT_GPU_CONFIG {
+        DUAL_OPERATOR_GPU_CONFIG {
           SYNCHRONIZE_UPDATE                TRUE;
+          TIMERS                             ALL;
           MEMORY_INFO                        ALL;
         }
       }

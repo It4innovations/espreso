@@ -3,8 +3,8 @@
 DEFAULT_ARGS {
 }
 
-INPUT_TYPE              GENERATOR;
-PHYSICS   STRUCTURAL_MECHANICS;
+INPUT_TYPE            GENERATOR;
+PHYSICS        HEAT_TRANSFER;
 
 GENERATOR {
   SHAPE   GRID;
@@ -13,19 +13,20 @@ GENERATOR {
   UNIFORM_DOMAINS         [ARG1];
 
   GRID {
-    START_X                    0;
-    START_Y                    0;
-    START_Z                    0;
-
-    LENGTH_X                 100;
-    LENGTH_Y                 100;
-    LENGTH_Z                 100;
+    LENGTH_X                   1;
+    LENGTH_Y                   1;
+    LENGTH_Z                   1;
 
     NODES {
-      Z0   <0 , 100> <0 , 100> <0 , 0>;
+      BOTTOM   <1 , 1> <0 , 1> <0 , 1>;
+      TOP      <0 , 0> <0 , 1> <0 , 1>;
     }
 
     ELEMENT_TYPE          [ARG2];
+
+    BLOCKS_X                   1;
+    BLOCKS_Y                   1;
+    BLOCKS_Z                   1;
 
     CLUSTERS_X                 1;
     CLUSTERS_Y                 1;
@@ -41,30 +42,31 @@ GENERATOR {
   }
 }
 
-STRUCTURAL_MECHANICS {
-  LOAD_STEPS   1;
+HEAT_TRANSFER {
+  LOAD_STEPS        1;
 
   MATERIALS {
     1 {
-
-      DENS   7850;
-      CP        1;
-
-      LINEAR_ELASTIC_PROPERTIES {
-        MODEL   ISOTROPIC;
-
-        MIXY          0.3;
-        EX          2.1E9;
+      COORDINATE_SYSTEM {
+        TYPE       CARTESIAN;
+        ROTATION    { X 35; Y 15; Z 255; }
       }
+      THERMAL_CONDUCTIVITY {
+        MODEL   DIAGONAL;
 
-      THERMAL_EXPANSION {
-        TEX             0;
+        KXX            5;
+        KYY           10;
+        KZZ            2;
       }
     }
   }
 
   MATERIAL_SET {
     ALL_ELEMENTS   1;
+  }
+
+  INITIAL_TEMPERATURE {
+    ALL_ELEMENTS   200;
   }
 
   LOAD_STEPS_SETTINGS {
@@ -78,23 +80,22 @@ STRUCTURAL_MECHANICS {
         METHOD          TOTAL_FETI;
         DUAL_OPERATOR       [ARG9];
         PRECONDITIONER        NONE;
+        PRECISION            1E-09;
         ITERATIVE_SOLVER       PCG;
         REGULARIZATION    ANALYTIC;
         MAX_ITERATIONS          12;
         EXIT_ON_NONCONVERGENCE FALSE;
 
-        DUAL_OPERATOR_EXPLICIT_GPU_CONFIG {
+        DUAL_OPERATOR_GPU_CONFIG {
           SYNCHRONIZE_UPDATE                TRUE;
+          TIMERS                             ALL;
           MEMORY_INFO                        ALL;
         }
       }
 
-      DISPLACEMENT {
-        Z0   { X 0 ; Y 0 ; Z 0; }
-      }
-
-      ACCELERATION {
-        ALL_ELEMENTS   { Z 9.8066; };
+      TEMPERATURE {
+        TOP      100;
+        BOTTOM   300;
       }
     }
   }
@@ -107,21 +108,21 @@ OUTPUT {
 
   MONITORING {
     1 {
-      REGION        ALL_NODES;
-      STATISTICS          MIN;
-      PROPERTY   DISPLACEMENT;
+      REGION            TOP;
+      STATISTICS        MAX;
+      PROPERTY  TEMPERATURE;
     }
 
     2 {
-      REGION        ALL_NODES;
-      STATISTICS          MAX;
-      PROPERTY   DISPLACEMENT;
+      REGION         BOTTOM;
+      STATISTICS        MIN;
+      PROPERTY  TEMPERATURE;
     }
 
     3 {
-      REGION        ALL_NODES;
-      STATISTICS          AVG;
-      PROPERTY   DISPLACEMENT;
+      REGION   ALL_ELEMENTS;
+      STATISTICS        AVG;
+      PROPERTY  TEMPERATURE;
     }
   }
 }
