@@ -73,11 +73,15 @@ elif [ "${machine}" == "karolina" ] && [ "${tool}" == "mklpardiso" ]; then
     source env/it4i.karolina.intel.32.sh
     export OMP_NUM_THREADS="$(nproc),1"
     command="mpirun -n 1 ./build/espreso -c \"${ecf_file}\" $@ > \"${output_path}/stdout.txt\" 2> \"${output_path}/stderr.txt\""
-elif [ "${machine}" == "lumi" ]; then
+elif [ "${machine}" == "lumi" ] && [ "${tool}" == "rocm" ]; then
+    source env/csc.lumi.rocm.mpich.sh
+    command="srun -n 1 ./build/espreso -c \"${ecf_file}\" $@ > \"${output_path}/stdout.txt\" 2> \"${output_path}/stderr.txt\""
+elif [ "${machine}" == "lumi" ] && [ "${tool}" == "suitesparse" ]; then
+    source env/csc.lumi.rocm.mpich.sh
+    command="srun -n 1 ./build/espreso -c \"${ecf_file}\" $@ > \"${output_path}/stdout.txt\" 2> \"${output_path}/stderr.txt\""
+else
     echo not implemented
     exit 73
-    # source env/lumi.clang.aocl.mpich.suitesparsenew.rocm.sh
-    # command="srun -n 1 ./build/espreso -c \"${ecf_file}\" $@ > \"${output_path}/stdout.txt\" 2> \"${output_path}/stderr.txt\""
 fi
 
 

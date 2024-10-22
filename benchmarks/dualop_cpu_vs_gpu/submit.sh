@@ -68,7 +68,7 @@ elif [ "${machine}" == "lumi" ]; then
     HQBIN="${hq_bin_dir}/hq"
 fi
 
-if ! hq server info > /dev/null 2> /dev/null
+if ! ${HQBIN} server info > /dev/null 2> /dev/null
 then
     echo "HyperQueue server is not running"
     echo "Start the server on this login node using 'hq server start' inside tmux"
@@ -106,7 +106,7 @@ function submit_hq_job
     id_str=$(printf '%06d' ${id_num})
     output_path="${espreso_outdir}/${id_str}"
     echo "Submitting task ${id_str}"
-    hq submit \
+    ${HQBIN} submit \
         --time-request=6m \
         --cpus="${num_cores_for_job} compact" \
         --stdout="${hq_outdir}/job-%{JOB_ID}-%{TASK_ID}.o.txt" \
@@ -218,18 +218,14 @@ do
         for element_type in "${array_element_type[@]}"
         do
             array_elements_starting_index=20
-            if [ "${machine}" == "karolina" ]; then
-                if [[ "${ecf_file}" == *"heat_transfer_2d"*     && "${element_type}" == "TRIANGLE3" ]]; then array_elements_starting_index=1; fi
-                if [[ "${ecf_file}" == *"heat_transfer_2d"*     && "${element_type}" == "TRIANGLE6" ]]; then array_elements_starting_index=3; fi
-                if [[ "${ecf_file}" == *"linear_elasticity_2d"* && "${element_type}" == "TRIANGLE3" ]]; then array_elements_starting_index=2; fi
-                if [[ "${ecf_file}" == *"linear_elasticity_2d"* && "${element_type}" == "TRIANGLE6" ]]; then array_elements_starting_index=4; fi
-                if [[ "${ecf_file}" == *"heat_transfer_3d"*     && "${element_type}" == "TETRA4"    ]]; then array_elements_starting_index=4; fi
-                if [[ "${ecf_file}" == *"heat_transfer_3d"*     && "${element_type}" == "TETRA10"   ]]; then array_elements_starting_index=6; fi
-                if [[ "${ecf_file}" == *"linear_elasticity_3d"* && "${element_type}" == "TETRA4"    ]]; then array_elements_starting_index=6; fi
-                if [[ "${ecf_file}" == *"linear_elasticity_3d"* && "${element_type}" == "TETRA10"   ]]; then array_elements_starting_index=8; fi
-            elif [ "${machine}" == "lumi" ]; then
-                echo not implemented
-            fi
+            if [[ "${ecf_file}" == *"heat_transfer_2d"*     && "${element_type}" == "TRIANGLE3" ]]; then array_elements_starting_index=1; fi
+            if [[ "${ecf_file}" == *"heat_transfer_2d"*     && "${element_type}" == "TRIANGLE6" ]]; then array_elements_starting_index=3; fi
+            if [[ "${ecf_file}" == *"linear_elasticity_2d"* && "${element_type}" == "TRIANGLE3" ]]; then array_elements_starting_index=2; fi
+            if [[ "${ecf_file}" == *"linear_elasticity_2d"* && "${element_type}" == "TRIANGLE6" ]]; then array_elements_starting_index=4; fi
+            if [[ "${ecf_file}" == *"heat_transfer_3d"*     && "${element_type}" == "TETRA4"    ]]; then array_elements_starting_index=4; fi
+            if [[ "${ecf_file}" == *"heat_transfer_3d"*     && "${element_type}" == "TETRA10"   ]]; then array_elements_starting_index=6; fi
+            if [[ "${ecf_file}" == *"linear_elasticity_3d"* && "${element_type}" == "TETRA4"    ]]; then array_elements_starting_index=6; fi
+            if [[ "${ecf_file}" == *"linear_elasticity_3d"* && "${element_type}" == "TETRA10"   ]]; then array_elements_starting_index=8; fi
 
             index=-1
             while true

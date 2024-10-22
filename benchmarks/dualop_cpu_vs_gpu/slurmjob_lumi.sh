@@ -1,5 +1,5 @@
 #!/bin/bash
-#SBATCH --account project_465000572
+#SBATCH --account project_465001013
 #SBATCH --partition small-g
 #SBATCH --ntasks 1
 #SBATCH --gpus-per-task 1
