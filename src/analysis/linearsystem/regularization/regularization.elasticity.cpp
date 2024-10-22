@@ -311,7 +311,7 @@ void RegularizationElasticity<T>::set2D(FETI<T> &feti, esint domain)
     const Matrix_CSR<T> &K = feti.K[domain];
     Matrix_Dense<T> &R = feti.R1[domain];
     Matrix_CSR<T> &RegMat = feti.RegMat[domain];
-    const FETIDecomposition *decomposition = feti.decomposition;
+    const DecompositionFETI *decomposition = feti.decomposition;
 
     struct __fix__ { int col; double value[3]; }; // reorder DOFs to get sorted output
     std::vector<__fix__> fix(2 * fixPoints.size());
@@ -389,7 +389,7 @@ void RegularizationElasticity<T>::set3D(FETI<T> &feti, esint domain, bool onSurf
     const Matrix_CSR<T> &K = feti.K[domain];
     Matrix_Dense<T> &R = feti.R1[domain];
     Matrix_CSR<T> &RegMat = feti.RegMat[domain];
-    const FETIDecomposition *decomposition = feti.decomposition;
+    const DecompositionFETI *decomposition = feti.decomposition;
 
     struct __fix__ { int col; double value[6]; }; // reorder DOFs to get sorted output
     std::vector<__fix__> fix(3 * fixPoints.size());

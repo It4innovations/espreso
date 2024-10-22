@@ -4,7 +4,8 @@
 
 #include "analysis/physics/physics.h"
 #include "analysis/assembler/heattransfer.h"
-#include "analysis/builder/builder.h"
+#include "analysis/pattern/pattern.h"
+#include "analysis/math/vector_distributed.h"
 #include "analysis/linearsystem/linearsystem.h"
 
 namespace espreso {
@@ -28,9 +29,10 @@ public:
     HeatTransfer assembler;
 
     Matrix_Base<double> *K;
-    Vector_Base<double> *f, *x, *dirichlet;
+    Vector_Distributed<Vector_Dense, double> *f, *x;
+    Vector_Distributed<Vector_Sparse, double> *dirichlet;
 
-    SparseMatrixBuilder<double> *builder;
+    Pattern<double> *pattern;
     LinearSystemSolver<double> *solver;
 
 protected:

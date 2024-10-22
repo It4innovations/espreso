@@ -5,7 +5,9 @@
 #include "analysis/math/math.physics.h"
 #include "analysis/math/matrix_base.h"
 #include "analysis/math/vector_feti.h"
-#include "analysis/builder/feti.decomposition.h"
+#include "analysis/math/vector_distributed.h"
+#include "analysis/pattern/apply.h"
+#include "analysis/pattern/decomposition.feti.h"
 #include "math/primitives/matrix_dense.h"
 #include "math/primitives/matrix_csr.h"
 #include "math/math.h"
@@ -34,6 +36,8 @@ public:
             m->domains[d].shape = domains[d].shape;
             m->domains[d].pattern(domains[d]);
         }
+        m->decomposition = decomposition;
+        m->applyMatrix = applyMatrix;
         return m;
     }
 
@@ -65,23 +69,10 @@ public:
 
     void apply(const T &alpha, const Vector_Base<T> *in, const T &beta, Vector_Base<T> *out)
     {
-        if (spblas.size() == 0) {
-            spblas.resize(domains.size());
-            #pragma omp parallel for
-            for (size_t i = 0; i < spblas.size(); ++i) {
-                spblas[i].insert(domains[i]);
-            }
-        }
-
-        const Vector_FETI<Vector_Dense, T> *_in = dynamic_cast<const Vector_FETI<Vector_Dense, T>*>(in);
-        Vector_FETI<Vector_Dense, T> *_out = dynamic_cast<Vector_FETI<Vector_Dense, T>*>(out);
-        if (_in && _out) {
-            #pragma omp parallel for
-            for (size_t i = 0; i < spblas.size(); ++i) {
-                spblas[i].apply(_out->domains[i], alpha, beta, _in->domains[i]);
-            }
+        if (dynamic_cast<const Vector_Distributed<Vector_Dense, T>*>(in) && dynamic_cast<Vector_Distributed<Vector_Dense, T>*>(out)) {
+            applyMatrix->apply(*this, *static_cast<Vector_Distributed<Vector_Dense, T>*>(out), alpha, beta, *static_cast<const Vector_Distributed<Vector_Dense, T>*>(in));
         } else {
-            eslog::error("call empty function Matrix_FETI::apply\n");
+            eslog::error("call empty function Matrix_Distributed::apply\n");
         }
     }
 
@@ -112,8 +103,9 @@ public:
     }
 
     std::vector<Matrix_CSR<T, int> > domains;
-    std::vector<SpBLAS<Matrix_CSR, T, int> > spblas;
-    FETIDecomposition *decomposition;
+    DecompositionFETI *decomposition;
+
+    ApplyMatrix<Matrix_FETI<T>, T> *applyMatrix;
 };
 
 }

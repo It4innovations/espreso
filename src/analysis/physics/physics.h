@@ -2,7 +2,11 @@
 #ifndef SRC_ANALYSIS_ANALYSIS_ANALYSIS_H_
 #define SRC_ANALYSIS_ANALYSIS_ANALYSIS_H_
 
-#include "analysis/linearsystem/linearsystem.h"
+#include "analysis/linearsystem/empty.h"
+#include "analysis/linearsystem/fetisolver.h"
+#include "analysis/linearsystem/mklpdsssolver.h"
+
+#include "analysis/pattern/pattern.h"
 
 namespace espreso {
 
@@ -14,6 +18,21 @@ struct Physics {
     virtual bool analyze(step::Step &step) =0;
     virtual bool run(step::Step &step, Physics *prev) =0;
 };
+
+template <typename T, typename Settings, typename Configuration>
+LinearSystemSolver<T>* setSolver(Settings &settings, Configuration &configuration)
+{
+    switch (configuration.solver) {
+    case LoadStepSolverConfiguration::SOLVER::FETI:    return new FETILinearSystemSolver<T>(settings, configuration);
+    case LoadStepSolverConfiguration::SOLVER::HYPRE:   break;
+    case LoadStepSolverConfiguration::SOLVER::MKLPDSS: return new MKLPDSSLinearSystemSolver<T>(configuration.mklpdss);
+    case LoadStepSolverConfiguration::SOLVER::PARDISO: break;
+    case LoadStepSolverConfiguration::SOLVER::SUPERLU: break;
+    case LoadStepSolverConfiguration::SOLVER::WSMP:    break;
+    case LoadStepSolverConfiguration::SOLVER::NONE:    break;
+    }
+    return new EmptySystemSolver<T>();
+}
 
 }
 

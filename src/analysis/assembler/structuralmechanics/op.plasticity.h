@@ -28,7 +28,7 @@ struct Plasticity: SubKernel {
         this->isactive = true;
         this->isPlastized = isPlastized->data.data() + info::mesh->elements->eintervals[interval].begin;
         this->isPlastizedEnd = isPlastized->data.data() + isPlastized->data.size();
-        this->nrhs = nrhs;
+//        this->nrhs = nrhs;
     }
 
     StructuralMechanicsConfiguration::ELEMENT_BEHAVIOUR behaviour;

@@ -6,12 +6,17 @@
 
 #include "basis/utilities/sysutils.h"
 #include "esinfo/ecfinfo.h"
+#include "esinfo/meshinfo.h"
+#include "mesh/store/nodestore.h"
 #include "wrappers/mklpdss/w.mkl.pdss.h"
 
 namespace espreso {
 
 template <typename T>
 struct MKLPDSSLinearSystemSolver: DirectLinearSystemSolver<T> {
+
+    Pattern<T>* getPattern(HeatTransferLoadStepConfiguration &configuration       , int multiplicity) { return new PatternUniformDirect<T>(configuration, multiplicity); }
+    Pattern<T>* getPattern(StructuralMechanicsLoadStepConfiguration &configuration, int multiplicity) { return new PatternUniformDirect<T>(configuration, multiplicity); }
 
     MKLPDSSLinearSystemSolver(MKLPDSSConfiguration &configuration): mklpdss(configuration) {}
     ~MKLPDSSLinearSystemSolver() {}
@@ -23,6 +28,11 @@ struct MKLPDSSLinearSystemSolver: DirectLinearSystemSolver<T> {
 
     void update(step::Step &step)
     {
+//        printf("RHS\n");
+//        for (esint n = 0; n < info::mesh->nodes->size; ++n) {
+//            printf("%2d [%+.14e %+.14e %+.14e]\n", n, this->b.cluster.vals[3 * n + 0], this->b.cluster.vals[3 * n + 1], this->b.cluster.vals[3 * n + 2]);
+//        }
+
         if (this->A.updated || this->b.updated || this->dirichlet.updated) {
             this->setDirichlet();
             mklpdss.update(this->A);
@@ -43,8 +53,8 @@ struct MKLPDSSLinearSystemSolver: DirectLinearSystemSolver<T> {
         if (mklpdss.solve(this->b, this->x)) {
             this->x.scatter();
 
-            if (false) {
-                double x1 = 1e15, x2 = 1 / x1;
+            if (true) {
+                double x1 = 1e12, x2 = 1 / x1;
                 for (int i = 0; i < this->x.cluster.size; ++i) {
                     if (std::fabs(this->x.cluster.vals[i]) < x2) {
                         this->x.cluster.vals[i] = 0;
@@ -58,6 +68,13 @@ struct MKLPDSSLinearSystemSolver: DirectLinearSystemSolver<T> {
                 eslog::storedata(" STORE: system/{x}\n");
                 math::store(this->x, utils::filename(utils::debugDirectory(step) + "/system", "x").c_str());
             }
+//            printf("SOLUTION\n");
+//            for (esint n = 0; n < info::mesh->nodes->size; ++n) {
+//                printf("%2d [%+.14e %+.14e %+.14e]\n", n, this->x.cluster.vals[3 * n + 0], this->x.cluster.vals[3 * n + 1], this->x.cluster.vals[3 * n + 2]);
+//                if (n == 1 || n == 4 || n == 7 || n == 10) {
+//                    printf("%2d [%+.14e %+.14e %+.14e]\n", n, this->x.cluster.vals[3 * n + 0], this->x.cluster.vals[3 * n + 1], this->x.cluster.vals[3 * n + 2]);
+//                }
+//            }
             return true;
         }
         return false;

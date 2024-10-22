@@ -3,7 +3,7 @@
 #define SRC_ANALYSIS_MATH_VECTOR_BASE_H_
 
 #include "selection.h"
-#include "analysis/builder/mapping.h"
+#include "mapping.h"
 #include "math/primitives/vector_dense.h"
 #include "math/primitives/vector_sparse.h"
 
@@ -47,6 +47,8 @@ public:
     virtual void addTo(const T &alpha, Vector_Distributed<Vector_Sparse, T> *a, const Selection &rows = Selection()) const =0;
     virtual void addTo(const T &alpha, Vector_FETI<Vector_Dense , T> *a, const Selection &rows = Selection()) const =0;
     virtual void addTo(const T &alpha, Vector_FETI<Vector_Sparse, T> *a, const Selection &rows = Selection()) const =0;
+
+    virtual void print() const =0;
 
     Mapping<T> mapping;
     bool constant, filled, updated;

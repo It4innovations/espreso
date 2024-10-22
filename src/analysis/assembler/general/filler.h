@@ -93,6 +93,7 @@ struct RHSFillerKernel: DataFiller {
         size_t count = std::min((size_t)SIMD::size, elements);
         for (size_t s = 0, i = 0; s < count; ++s) {
             for (size_t r = 0; r < size; ++r, ++i) {
+                #pragma omp atomic
                 out[position[i]] += vector[r][s];
             }
         }

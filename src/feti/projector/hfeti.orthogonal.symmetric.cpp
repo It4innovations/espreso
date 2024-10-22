@@ -187,7 +187,7 @@ void HFETIOrthogonalSymmetric<T>::_updateG()
         }
     }
 
-    const FETIDecomposition *decomposition = feti.decomposition;
+    const DecompositionFETI *decomposition = feti.decomposition;
     std::vector<std::vector<T> > sBuffer(decomposition->neighbors.size()), rBuffer(decomposition->neighbors.size());
     for (size_t n = 0; n < decomposition->neighbors.size(); ++n) {
         if (feti.decomposition->neighbors[n] < info::mpi::rank) {

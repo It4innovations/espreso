@@ -1,11 +1,6 @@
 
 #include "structuralmechanics.harmonic.real.linear.h"
 
-#include "analysis/builder/uniformbuilder.direct.h"
-#include "analysis/builder/uniformbuilder.feti.h"
-#include "analysis/linearsystem/fetisolver.h"
-#include "analysis/linearsystem/mklpdsssolver.h"
-#include "analysis/linearsystem/empty.h"
 #include "config/ecf/physics/structuralmechanics.h"
 #include "esinfo/meshinfo.h"
 #include "esinfo/eslog.hpp"
@@ -18,10 +13,11 @@
 using namespace espreso;
 
 StructuralMechanicsHarmonicRealLinear::StructuralMechanicsHarmonicRealLinear(StructuralMechanicsConfiguration &settings, StructuralMechanicsLoadStepConfiguration &configuration)
-: settings(settings), configuration(configuration), assembler{nullptr, settings, configuration}, K{}, M{}, C{}, builderAssembler{}, builderSolver{}, solver{}
+: settings(settings), configuration(configuration), assembler{nullptr, settings, configuration}, K{}, M{}, C{}, patternAssembler{}, patternSolver{}, solver{}
 {
-    re.f = re.x = re.dirichlet = nullptr;
-    im.f = im.x = im.dirichlet = nullptr;
+    re.f = re.x = nullptr;
+    im.f = im.x = nullptr;
+    re.dirichlet = im.dirichlet = nullptr;
 }
 
 StructuralMechanicsHarmonicRealLinear::~StructuralMechanicsHarmonicRealLinear()
@@ -35,8 +31,8 @@ StructuralMechanicsHarmonicRealLinear::~StructuralMechanicsHarmonicRealLinear()
     if (im.x) { delete im.x; }
     if (re.dirichlet) { delete re.dirichlet; }
     if (im.dirichlet) { delete im.dirichlet; }
-    if (builderAssembler) { delete builderAssembler; }
-    if (builderSolver) { delete builderSolver; }
+    if (patternAssembler) { delete patternAssembler; }
+    if (patternSolver) { delete patternSolver; }
     if (solver) { delete solver; }
 }
 
@@ -53,33 +49,16 @@ bool StructuralMechanicsHarmonicRealLinear::analyze(step::Step &step)
     }
     info::mesh->output->updateMonitors(step);
 
-    switch (configuration.solver) {
-    case LoadStepSolverConfiguration::SOLVER::FETI:
-        builderAssembler = new UniformBuilderFETI<double>(configuration, 1);
-        builderSolver = new UniformBuilderFETI<double>(configuration, 2);
-        solver = new FETILinearSystemSolver<double>(settings, configuration);
-        break;
-    case LoadStepSolverConfiguration::SOLVER::HYPRE:   break;
-    case LoadStepSolverConfiguration::SOLVER::MKLPDSS:
-        builderAssembler = new UniformBuilderDirect<double>(configuration, 1);
-        builderSolver = new UniformBuilderDirect<double>(configuration, 2);
-        solver = new MKLPDSSLinearSystemSolver<double>(configuration.mklpdss);
-        break;
-    case LoadStepSolverConfiguration::SOLVER::PARDISO: break;
-    case LoadStepSolverConfiguration::SOLVER::SUPERLU: break;
-    case LoadStepSolverConfiguration::SOLVER::WSMP:    break;
-    case LoadStepSolverConfiguration::SOLVER::NONE:
-        builderAssembler = new UniformBuilderDirect<double>(configuration, 1);
-        builderSolver = new UniformBuilderDirect<double>(configuration, 2);
-        solver = new EmptySystemSolver<double>();
-    }
+    solver = setSolver<double>(settings, configuration);
+    patternAssembler = solver->getPattern(configuration, 1);
+    patternSolver = solver->getPattern(configuration, 2);
 
     K = solver->A->copyPattern();
     re.f = solver->b->copyPattern();
     re.dirichlet = solver->dirichlet->copyPattern();
-    builderAssembler->fillMatrix(K);
-    builderAssembler->fillVector(re.f);
-    builderAssembler->fillDirichlet(re.dirichlet);
+    patternAssembler->set(K);
+    patternAssembler->set(re.f);
+    patternAssembler->set(re.dirichlet);
     M = K->copyPattern();
     C = K->copyPattern();
     im.f = re.f->copyPattern();
@@ -87,18 +66,18 @@ bool StructuralMechanicsHarmonicRealLinear::analyze(step::Step &step)
     im.x = re.f->copyPattern();
     im.dirichlet = re.dirichlet->copyPattern();
 
-    builderSolver->fillMatrix(solver->A);
-    builderSolver->fillVector(solver->b);
-    builderSolver->fillVector(solver->x);
-    builderSolver->fillDirichlet(solver->dirichlet);
+    patternSolver->set(solver->A);
+    patternSolver->set(solver->b);
+    patternSolver->set(solver->x);
+    patternSolver->set(solver->dirichlet);
 
-    builderAssembler->fillMatrixMap(K);
-    builderAssembler->fillMatrixMap(M);
-    builderAssembler->fillMatrixMap(C);
-    builderAssembler->fillVectorMap(re.f);
-    builderAssembler->fillVectorMap(im.f);
-    builderAssembler->fillDirichletMap(re.dirichlet);
-    builderAssembler->fillDirichletMap(im.dirichlet);
+    patternAssembler->map(K);
+    patternAssembler->map(M);
+    patternAssembler->map(C);
+    patternAssembler->map(re.f);
+    patternAssembler->map(im.f);
+    patternAssembler->map(re.dirichlet);
+    patternAssembler->map(im.dirichlet);
     eslog::checkpointln("SIMULATION: LINEAR SYSTEM BUILT");
     return true;
 }

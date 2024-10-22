@@ -3,7 +3,6 @@
 #include "analysis/assembler/structuralmechanics.h"
 #include "analysis/math/vector_distributed.h"
 #include "basis/containers/allocators.h"
-#include "analysis/builder/feti.decomposition.h"
 
 #include <algorithm>
 #include <numeric>

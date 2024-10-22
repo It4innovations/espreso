@@ -4,7 +4,7 @@
 
 #include "analysis/physics/physics.h"
 #include "analysis/assembler/structuralmechanics.h"
-#include "analysis/builder/builder.h"
+#include "analysis/pattern/pattern.h"
 #include "analysis/linearsystem/linearsystem.h"
 
 namespace espreso {
@@ -28,10 +28,11 @@ public:
     StructuralMechanics assembler;
 
     Matrix_Base<double> *K, *M;
-    Vector_Base<double> *f, *x, *dirichlet, *checkpoint;
-    Vector_Base<double> *U, *dU, *V, *W, *X, *Y, *Z, *dTK, *dTM;
+    Vector_Distributed<Vector_Dense, double> *f, *x, *checkpoint;
+    Vector_Distributed<Vector_Dense, double> *U, *dU, *V, *W, *X, *Y, *Z, *dTK, *dTM;
+    Vector_Distributed<Vector_Sparse, double> *dirichlet;
 
-    SparseMatrixBuilder<double> *builder;
+    Pattern<double> *pattern;
     LinearSystemSolver<double> *solver;
 
 protected:

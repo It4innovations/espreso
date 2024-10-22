@@ -4,8 +4,6 @@
 #include "heat.steadystate.linear.h"
 #include "heat.steadystate.nonlinear.h"
 
-#include "analysis/builder/uniformbuilder.direct.h"
-#include "analysis/builder/uniformbuilder.feti.h"
 #include "analysis/linearsystem/mklpdsssolver.h"
 #include "analysis/linearsystem/fetisolver.h"
 #include "analysis/linearsystem/empty.h"
@@ -22,9 +20,10 @@ using namespace espreso;
 
 HeatTransientLinear::HeatTransientLinear(HeatTransferConfiguration &settings, HeatTransferLoadStepConfiguration &configuration)
 : settings(settings), configuration(configuration), assembler{nullptr, settings, configuration},
-  K{}, M{}, f{}, x{}, dirichlet{},
+  K{}, M{}, f{}, x{},
   U{}, dU{}, V{}, X{}, Y{}, dTK{}, dTM{},
-  builder{}, solver{}
+  dirichlet{},
+  pattern{}, solver{}
 {
 
 }
@@ -45,7 +44,7 @@ HeatTransientLinear::~HeatTransientLinear()
     if (dTK) { delete dTK; }
     if (dTM) { delete dTM; }
 
-    if (builder) { delete builder; }
+    if (pattern) { delete pattern; }
     if (solver) { delete solver; }
 }
 
@@ -79,28 +78,13 @@ bool HeatTransientLinear::analyze(step::Step &step)
     }
     info::mesh->output->updateMonitors(step);
 
-    switch (configuration.solver) {
-    case LoadStepSolverConfiguration::SOLVER::FETI:
-        builder = new UniformBuilderFETI<double>(configuration);
-        solver = new FETILinearSystemSolver<double>(settings, configuration);
-        break;
-    case LoadStepSolverConfiguration::SOLVER::HYPRE:   break;
-    case LoadStepSolverConfiguration::SOLVER::MKLPDSS:
-        builder = new UniformBuilderDirect<double>(configuration);
-        solver = new MKLPDSSLinearSystemSolver<double>(configuration.mklpdss);
-        break;
-    case LoadStepSolverConfiguration::SOLVER::PARDISO: break;
-    case LoadStepSolverConfiguration::SOLVER::SUPERLU: break;
-    case LoadStepSolverConfiguration::SOLVER::WSMP:    break;
-    case LoadStepSolverConfiguration::SOLVER::NONE:
-        builder = new UniformBuilderDirect<double>(configuration);
-        solver = new EmptySystemSolver<double>();
-    }
+    solver = setSolver<double>(settings, configuration);
+    pattern = solver->getPattern(configuration, 1);
 
-    builder->fillMatrix(solver->A);
-    builder->fillVector(solver->b);
-    builder->fillVector(solver->x);
-    builder->fillDirichlet(solver->dirichlet);
+    pattern->set(solver->A);
+    pattern->set(solver->b);
+    pattern->set(solver->x);
+    pattern->set(solver->dirichlet);
 
     K = solver->A->copyPattern();
     M = solver->A->copyPattern();
@@ -116,10 +100,10 @@ bool HeatTransientLinear::analyze(step::Step &step)
     dTK = solver->b->copyPattern();
     dTM = solver->b->copyPattern();
 
-    builder->fillMatrixMap(K);
-    builder->fillMatrixMap(M);
-    builder->fillVectorMap(f);
-    builder->fillDirichletMap(dirichlet);
+    pattern->map(K);
+    pattern->map(M);
+    pattern->map(f);
+    pattern->map(dirichlet);
     eslog::checkpointln("SIMULATION: LINEAR SYSTEM BUILT");
     return true;
 }

@@ -1,6 +1,6 @@
 
-#ifndef SRC_ANALYSIS_BUILDER_MAPPING_H_
-#define SRC_ANALYSIS_BUILDER_MAPPING_H_
+#ifndef SRC_ANALYSIS_MATH_MAPPING_H_
+#define SRC_ANALYSIS_MATH_MAPPING_H_
 
 #include <cstddef>
 #include <vector>
@@ -24,4 +24,4 @@ struct Mapping {
 
 }
 
-#endif /* SRC_ANALYSIS_BUILDER_MAPPING_H_ */
+#endif /* SRC_ANALYSIS_MATH_MAPPING_H_ */

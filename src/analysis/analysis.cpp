@@ -11,7 +11,6 @@
 #include "physics/structuralmechanics.transient.nonlinear.h"
 #include "physics/structuralmechanics.harmonic.real.linear.h"
 
-#include "basis/utilities/parser.h"
 #include "esinfo/ecfinfo.h"
 #include "esinfo/eslog.h"
 #include "esinfo/meshinfo.h"

@@ -4,7 +4,7 @@
 
 #include "selection.h"
 #include "vector_base.h"
-#include "analysis/builder/mapping.h"
+#include "mapping.h"
 #include "math/primitives/matrix_info.h"
 #include "math/primitives/matrix_csr.h"
 #include "math/primitives/matrix_dense.h"

@@ -20,8 +20,8 @@ FETILinearSystemSolver<T>::FETILinearSystemSolver(PhysicsConfiguration &physics,
 : physics(physics), loadStep(loadStep), feti(loadStep.feti), bem(false)
 {
     LinearSystemSolver<T>::A = &A;
-    LinearSystemSolver<T>::x = &x;
-    LinearSystemSolver<T>::b = &b;
+    LinearSystemSolver<T>::x = &x.physics;
+    LinearSystemSolver<T>::b = &b.physics;
     LinearSystemSolver<T>::dirichlet = &dirichlet;
 
     for (auto disc = info::ecf->heat_transfer.discretization.cbegin(); disc != info::ecf->heat_transfer.discretization.cend(); ++disc) {
@@ -45,9 +45,9 @@ FETILinearSystemSolver<T>::~FETILinearSystemSolver()
 template <typename T>
 T FETILinearSystemSolver<T>::rhs_norm()
 {
-    Vector_FETI<Vector_Dense, T> *rhs = b.copyPattern();
-    for (size_t di = 0; di < b.domains.size(); ++di) {
-        math::copy(rhs->domains[di], b.domains[di]);
+    Vector_FETI<Vector_Dense, T> *rhs = b.feti.copyPattern();
+    for (size_t di = 0; di < b.feti.domains.size(); ++di) {
+        math::copy(rhs->domains[di], b.feti.domains[di]);
         math::add(rhs->domains[di], T{-1}, feti.BtL[di]);
     }
     T norm = rhs->norm();
@@ -62,10 +62,16 @@ void FETILinearSystemSolver<T>::set(step::Step &step)
     feti.K.resize(A.domains.size());
     feti.x.resize(A.domains.size());
     feti.f.resize(A.domains.size());
+
+    b.feti.decomposition = x.feti.decomposition = A.decomposition;
+    b.feti.domains.resize(A.domains.size());
+    x.feti.domains.resize(A.domains.size());
     for (size_t di = 0; di < A.domains.size(); ++di) {
+        b.feti.domains[di].resize(A.decomposition->dsize[di]);
+        x.feti.domains[di].resize(A.decomposition->dsize[di]);
         feti.K[di].shallowCopy(A.domains[di]);
-        feti.f[di].shallowCopy(b.domains[di]);
-        feti.x[di].shallowCopy(x.domains[di]);
+        feti.f[di].shallowCopy(b.feti.domains[di]);
+        feti.x[di].shallowCopy(x.feti.domains[di]);
     }
     feti.decomposition = A.decomposition;
     regularization.set(step, feti);
@@ -81,6 +87,8 @@ template <typename T>
 void FETILinearSystemSolver<T>::update(step::Step &step)
 {
     eslog::startln("FETI: UPDATING LINEAR SYSTEM", "FETI[UPDATE]");
+    this->b.physics.spliteTo(&this->b.feti);
+
     regularization.update(step, feti);
     eslog::checkpointln("FETI: UPDATE KERNELS");
 
@@ -156,7 +164,7 @@ void FETILinearSystemSolver<T>::update(step::Step &step)
     feti.updated.K = A.updated;
     feti.updated.B |= step.substep == 0;
     feti.update(step);
-    A.updated = b.updated = dirichlet.updated = false;
+    A.updated = b.physics.updated = b.feti.updated = dirichlet.updated = false;
     feti.updated.K = feti.updated.B = false;
     eslog::endln("FETI: LINEAR SYSTEM UPDATED");
 }
@@ -165,11 +173,33 @@ template <typename T>
 bool FETILinearSystemSolver<T>::solve(step::Step &step)
 {
     eslog::startln("FETI: RUN LINEAR SYSTEM", "FETI[SOLVE]");
+
+    if (false) {
+        printf("RHS\n");
+        auto dd = info::mesh->nodes->domains->begin();
+        for (esint n = 0; n < info::mesh->nodes->size; ++n, ++dd) {
+            std::vector<Point> pp(dd->size());
+            for (int d = 0; d < 3; ++d) {
+                auto dmap = feti.decomposition->dmap->cbegin() + 3 * n + d;
+                int ii = 0;
+                for (auto di = dmap->begin(); di != dmap->end(); ++di) {
+                    if (feti.decomposition->ismy(di->domain)) {
+                        pp[ii++][d] = feti.f[di->domain - feti.decomposition->dbegin].vals[di->index];
+                    }
+                }
+            }
+            for (size_t i = 1; i < pp.size(); ++i) {
+                pp[0] += pp[i];
+            }
+            printf("%2d [%+.14e %+.14e %+.14e]\n", n, pp[0].x, pp[0].y, pp[0].z);
+        }
+    }
+
     bool result = feti.solve(step);
     constrains.eq.enforce(step, feti, dirichlet);
 
-    if (false) {
-        double x1 = 1e15, x2 = 1 / x1;
+    if (true) {
+        double x1 = 1e12, x2 = 1 / x1;
         for (size_t d = 0; d < feti.x.size(); ++d) {
             for (int i = 0; i < feti.x[d].size; ++i) {
                 if (std::fabs(feti.x[d].vals[i]) < x2) {
@@ -181,6 +211,8 @@ bool FETILinearSystemSolver<T>::solve(step::Step &step)
         }
     }
 
+    this->x.feti.averageTo(&this->x.physics);
+
     if (info::ecf->output.print_matrices) {
         eslog::storedata(" STORE: system/{x}\n");
         if (feti.x.size() == 1) {
@@ -191,6 +223,27 @@ bool FETILinearSystemSolver<T>::solve(step::Step &step)
             }
         }
     }
+
+    if (false) {
+        printf("SOLUTION\n");
+        auto dd = info::mesh->nodes->domains->begin();
+        for (esint n = 0; n < info::mesh->nodes->size; ++n, ++dd) {
+            std::vector<Point> pp(dd->size());
+            for (int d = 0; d < 3; ++d) {
+                auto dmap = feti.decomposition->dmap->cbegin() + 3 * n + d;
+                int ii = 0;
+                for (auto di = dmap->begin(); di != dmap->end(); ++di) {
+                    if (feti.decomposition->ismy(di->domain)) {
+                        pp[ii++][d] = feti.x[di->domain - feti.decomposition->dbegin].vals[di->index];
+                    }
+                }
+            }
+            for (size_t i = 0; i < pp.size(); ++i) {
+                printf("%2d [%+.14e %+.14e %+.14e]\n", n, pp[i].x, pp[i].y, pp[i].z);
+            }
+        }
+    }
+
     eslog::endln("FETI: LINEAR SYSTEM SOLVED");
     return result;
 }

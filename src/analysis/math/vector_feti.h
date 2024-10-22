@@ -4,8 +4,10 @@
 
 #include "analysis/math/math.physics.h"
 #include "analysis/math/vector_base.h"
-#include "analysis/builder/feti.decomposition.h"
 #include "esinfo/eslog.h"
+#include "esinfo/meshinfo.h"
+#include "mesh/store/nodestore.h"
+#include "analysis/pattern/decomposition.feti.h"
 #include "wrappers/mpi/communication.h"
 
 #include <vector>
@@ -21,7 +23,12 @@ class Vector_FETI: public Vector_Base<T> {
 public:
     void synchronize()
     {
-//        synchronization->synchronize(*static_cast<Vector_FETI<Vector, T>*>(this));
+//        _sync->synchronize(*static_cast<Vector_FETI<Vector, T>*>(this));
+    }
+
+    void split()
+    {
+//        _sync->split(*static_cast<Vector_FETI<Vector, T>*>(this));
     }
 
     void scatter()
@@ -38,6 +45,7 @@ public:
             m->domains[d].pattern(domains[d]);
         }
         m->decomposition = decomposition;
+//        m->_sync = _sync;
         return m;
     }
 
@@ -146,7 +154,38 @@ public:
 
     void copyTo(Vector_Distributed<Vector_Dense , T> *a, const Selection &rows = Selection()) const
     {
-        eslog::error("call empty function\n");
+        esint index = 0;
+        for (auto dmap = decomposition->dmap->cbegin(); dmap != decomposition->dmap->cend(); ++dmap, ++index) {
+            for (auto di = dmap->begin(); di != dmap->end(); ++di) {
+                if (decomposition->ismy(di->domain)) {
+                    a->cluster.vals[index] = domains[di->domain - decomposition->dbegin].vals[di->index];
+                    break;
+                }
+            }
+        }
+    }
+
+    void averageTo(Vector_Distributed<Vector_Dense , T> *a, const Selection &rows = Selection()) const
+    {
+        sumTo(a, rows);
+        esint index = 0;
+        for (auto dmap = decomposition->dmap->cbegin(); dmap != decomposition->dmap->cend(); ++dmap, ++index) {
+            a->cluster.vals[index] /= dmap->size();
+        }
+    }
+
+    void sumTo(Vector_Distributed<Vector_Dense , T> *a, const Selection &rows = Selection()) const
+    {
+        math::set(a->cluster, 0.);
+        esint index = 0;
+        for (auto dmap = decomposition->dmap->cbegin(); dmap != decomposition->dmap->cend(); ++dmap, ++index) {
+            for (auto di = dmap->begin(); di != dmap->end(); ++di) {
+                if (decomposition->ismy(di->domain)) {
+                    a->cluster.vals[index] += domains[di->domain - decomposition->dbegin].vals[di->index];
+                }
+            }
+        }
+        a->synchronize();
     }
 
     void copyTo(Vector_Distributed<Vector_Sparse, T> *a, const Selection &rows = Selection()) const
@@ -213,8 +252,29 @@ public:
         }
     }
 
+    void print() const
+    {
+        auto dd = info::mesh->nodes->domains->begin();
+        for (esint n = 0; n < info::mesh->nodes->size; ++n, ++dd) {
+            std::vector<Point> pp(dd->size());
+            for (int d = 0; d < 3; ++d) {
+                auto dmap = decomposition->dmap->cbegin() + 3 * n + d;
+                int ii = 0;
+                for (auto di = dmap->begin(); di != dmap->end(); ++di) {
+                    if (decomposition->ismy(di->domain)) {
+                        pp[ii++][d] = domains[di->domain - decomposition->dbegin].vals[di->index];
+                    }
+                }
+            }
+            for (size_t i = 0; i < pp.size(); ++i) {
+                printf("%2d [%+.14e %+.14e %+.14e]\n", n, pp[i].x, pp[i].y, pp[i].z);
+            }
+        }
+    }
+
     std::vector<Vector<T, int, cpu_allocator> > domains;
-    FETIDecomposition *decomposition;
+    DecompositionFETI *decomposition;
+//    Vector_Sync<Vector, T> *_sync;
 };
 
 }

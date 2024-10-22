@@ -4,7 +4,7 @@
 
 #include "config/ecf/linearsolver/feti.h"
 #include "esinfo/stepinfo.h"
-#include "analysis/builder/feti.decomposition.h"
+#include "analysis/pattern/decomposition.feti.h"
 #include "math/primitives/vector_dense.h"
 #include "math/primitives/matrix_dense.h"
 #include "math/primitives/matrix_csr.h"
@@ -36,7 +36,7 @@ struct FETI {
     FETIConfiguration &configuration;
     SystemInfo sinfo;
 
-    FETIDecomposition *decomposition;
+    DecompositionFETI *decomposition;
     std::vector<Matrix_CSR<T> > K;
     std::vector<Vector_Dense<T> > f, x, BtL;
 

@@ -2,11 +2,6 @@
 #include "physics.h"
 #include "heat.steadystate.linear.h"
 
-#include "analysis/builder/uniformbuilder.direct.h"
-#include "analysis/builder/uniformbuilder.feti.h"
-#include "analysis/linearsystem/mklpdsssolver.h"
-#include "analysis/linearsystem/fetisolver.h"
-#include "analysis/linearsystem/empty.h"
 #include "config/ecf/physics/heattransfer.h"
 #include "esinfo/meshinfo.h"
 #include "esinfo/eslog.hpp"
@@ -19,7 +14,7 @@
 using namespace espreso;
 
 HeatSteadyStateLinear::HeatSteadyStateLinear(HeatTransferConfiguration &settings, HeatTransferLoadStepConfiguration &configuration)
-: settings(settings), configuration(configuration), assembler{nullptr, settings, configuration}, K{}, f{}, x{}, dirichlet{}, builder{}, solver{}
+: settings(settings), configuration(configuration), assembler{nullptr, settings, configuration}, K{}, f{}, x{}, dirichlet{}, pattern{}, solver{}
 {
 
 }
@@ -30,7 +25,7 @@ HeatSteadyStateLinear::~HeatSteadyStateLinear()
     if (f) { delete f; }
     if (x) { delete x; }
     if (dirichlet) { delete dirichlet; }
-    if (builder) { delete builder; }
+    if (pattern) { delete pattern; }
     if (solver) { delete solver; }
 }
 
@@ -48,37 +43,23 @@ bool HeatSteadyStateLinear::analyze(step::Step &step)
     }
     info::mesh->output->updateMonitors(step);
 
-    switch (configuration.solver) {
-    case LoadStepSolverConfiguration::SOLVER::FETI:
-        builder = new UniformBuilderFETI<double>(configuration);
-        solver = new FETILinearSystemSolver<double>(settings, configuration);
-        break;
-    case LoadStepSolverConfiguration::SOLVER::HYPRE:   break;
-    case LoadStepSolverConfiguration::SOLVER::MKLPDSS:
-        builder = new UniformBuilderDirect<double>(configuration);
-        solver = new MKLPDSSLinearSystemSolver<double>(configuration.mklpdss);
-        break;
-    case LoadStepSolverConfiguration::SOLVER::PARDISO: break;
-    case LoadStepSolverConfiguration::SOLVER::SUPERLU: break;
-    case LoadStepSolverConfiguration::SOLVER::WSMP:    break;
-    case LoadStepSolverConfiguration::SOLVER::NONE:
-        builder = new UniformBuilderDirect<double>(configuration);
-        solver = new EmptySystemSolver<double>();
-    }
+    solver = setSolver<double>(settings, configuration);
+    pattern = solver->getPattern(configuration, 1);
 
-    builder->fillMatrix(solver->A);
-    builder->fillVector(solver->b);
-    builder->fillVector(solver->x);
-    builder->fillDirichlet(solver->dirichlet);
+    // builder->fillMatrix(solver->A);
+    pattern->set(solver->A);
+    pattern->set(solver->b);
+    pattern->set(solver->x);
+    pattern->set(solver->dirichlet);
 
     K = solver->A->copyPattern();
     f = solver->b->copyPattern();
     x = solver->x->copyPattern();
     dirichlet = solver->dirichlet->copyPattern();
 
-    builder->fillMatrixMap(K);
-    builder->fillVectorMap(f);
-    builder->fillDirichletMap(dirichlet);
+    pattern->map(K);
+    pattern->map(f);
+    pattern->map(dirichlet);
     eslog::checkpointln("SIMULATION: LINEAR SYSTEM BUILT");
     return true;
 }

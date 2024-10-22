@@ -3,11 +3,6 @@
 #include "structuralmechanics.steadystate.linear.h"
 #include "structuralmechanics.steadystate.nonlinear.h"
 
-#include "analysis/builder/uniformbuilder.direct.h"
-#include "analysis/builder/uniformbuilder.feti.h"
-#include "analysis/linearsystem/mklpdsssolver.h"
-#include "analysis/linearsystem/fetisolver.h"
-#include "analysis/linearsystem/empty.h"
 #include "config/ecf/physics/heattransfer.h"
 #include "esinfo/meshinfo.h"
 #include "esinfo/eslog.hpp"
@@ -23,9 +18,10 @@ using namespace espreso;
 
 StructuralMechanicsTransientLinear::StructuralMechanicsTransientLinear(StructuralMechanicsConfiguration &settings, StructuralMechanicsLoadStepConfiguration &configuration)
 : settings(settings), configuration(configuration), assembler{nullptr, settings, configuration},
-  K{}, M{}, f{}, x{}, dirichlet{}, checkpoint{},
+  K{}, M{}, f{}, x{}, checkpoint{},
   U{}, dU{}, V{}, W{}, X{}, Y{}, Z{}, dTK{}, dTM{},
-  builder{}, solver{}
+  dirichlet{},
+  pattern{}, solver{}
 {
 
 }
@@ -49,7 +45,7 @@ StructuralMechanicsTransientLinear::~StructuralMechanicsTransientLinear()
     if (dTK) { delete dTK; }
     if (dTM) { delete dTM; }
 
-    if (builder) { delete builder; }
+    if (pattern) { delete pattern; }
     if (solver) { delete solver; }
 }
 
@@ -67,28 +63,13 @@ bool StructuralMechanicsTransientLinear::analyze(step::Step &step)
     }
     info::mesh->output->updateMonitors(step);
 
-    switch (configuration.solver) {
-    case LoadStepSolverConfiguration::SOLVER::FETI:
-        builder = new UniformBuilderFETI<double>(configuration, 1);
-        solver = new FETILinearSystemSolver<double>(settings, configuration);
-        break;
-    case LoadStepSolverConfiguration::SOLVER::HYPRE:   break;
-    case LoadStepSolverConfiguration::SOLVER::MKLPDSS:
-        builder = new UniformBuilderDirect<double>(configuration, 1);
-        solver = new MKLPDSSLinearSystemSolver<double>(configuration.mklpdss);
-        break;
-    case LoadStepSolverConfiguration::SOLVER::PARDISO: break;
-    case LoadStepSolverConfiguration::SOLVER::SUPERLU: break;
-    case LoadStepSolverConfiguration::SOLVER::WSMP:    break;
-    case LoadStepSolverConfiguration::SOLVER::NONE:
-        builder = new UniformBuilderDirect<double>(configuration, 1);
-        solver = new EmptySystemSolver<double>();
-    }
+    solver = setSolver<double>(settings, configuration);
+    pattern = solver->getPattern(configuration, 1);
 
-    builder->fillMatrix(solver->A);
-    builder->fillVector(solver->b);
-    builder->fillVector(solver->x);
-    builder->fillDirichlet(solver->dirichlet);
+    pattern->set(solver->A);
+    pattern->set(solver->b);
+    pattern->set(solver->x);
+    pattern->set(solver->dirichlet);
 
     K = solver->A->copyPattern();
     M = solver->A->copyPattern();
@@ -107,10 +88,10 @@ bool StructuralMechanicsTransientLinear::analyze(step::Step &step)
     dTK = solver->b->copyPattern();
     dTM = solver->b->copyPattern();
 
-    builder->fillMatrixMap(K);
-    builder->fillMatrixMap(M);
-    builder->fillVectorMap(f);
-    builder->fillDirichletMap(dirichlet);
+    pattern->map(K);
+    pattern->map(M);
+    pattern->map(f);
+    pattern->map(dirichlet);
     eslog::checkpointln("SIMULATION: LINEAR SYSTEM BUILT");
     return true;
 }

@@ -4,11 +4,6 @@
 #include "structuralmechanics.steadystate.linear.h"
 #include "structuralmechanics.steadystate.nonlinear.h"
 
-#include "analysis/builder/uniformbuilder.direct.h"
-#include "analysis/builder/uniformbuilder.feti.h"
-#include "analysis/linearsystem/mklpdsssolver.h"
-#include "analysis/linearsystem/fetisolver.h"
-#include "analysis/linearsystem/empty.h"
 #include "config/ecf/physics/heattransfer.h"
 #include "esinfo/meshinfo.h"
 #include "esinfo/eslog.hpp"
@@ -23,9 +18,10 @@ using namespace espreso;
 
 StructuralMechanicsTransientNonLinear::StructuralMechanicsTransientNonLinear(StructuralMechanicsConfiguration &settings, StructuralMechanicsLoadStepConfiguration &configuration)
 : settings(settings), configuration(configuration), assembler{nullptr, settings, configuration},
-  K{}, M{}, C{}, f{}, f_old{}, dirichlet{},
+  K{}, M{}, C{}, f{}, f_old{},
   R{}, R_old{}, dU{}, U{}, V{}, A{}, U_old{}, V_old{}, A_old{}, X{},
-  builder{}, solver{}
+  dirichlet{},
+  pattern{}, solver{}
 {
 
 }
@@ -50,7 +46,7 @@ StructuralMechanicsTransientNonLinear::~StructuralMechanicsTransientNonLinear()
     if (A_old) { delete A_old; }
     if (X) { delete X; }
 
-    if (builder) { delete builder; }
+    if (pattern) { delete pattern; }
     if (solver) { delete solver; }
 }
 
@@ -71,28 +67,13 @@ bool StructuralMechanicsTransientNonLinear::analyze(step::Step &step)
         configuration.nonlinear_solver.substeps = 1;
     }
 
-    switch (configuration.solver) {
-    case LoadStepSolverConfiguration::SOLVER::FETI:
-        builder = new UniformBuilderFETI<double>(configuration, 1);
-        solver = new FETILinearSystemSolver<double>(settings, configuration);
-        break;
-    case LoadStepSolverConfiguration::SOLVER::HYPRE:   break;
-    case LoadStepSolverConfiguration::SOLVER::MKLPDSS:
-        builder = new UniformBuilderDirect<double>(configuration, 1);
-        solver = new MKLPDSSLinearSystemSolver<double>(configuration.mklpdss);
-        break;
-    case LoadStepSolverConfiguration::SOLVER::PARDISO: break;
-    case LoadStepSolverConfiguration::SOLVER::SUPERLU: break;
-    case LoadStepSolverConfiguration::SOLVER::WSMP:    break;
-    case LoadStepSolverConfiguration::SOLVER::NONE:
-        builder = new UniformBuilderDirect<double>(configuration, 1);
-        solver = new EmptySystemSolver<double>();
-    }
+    solver = setSolver<double>(settings, configuration);
+    pattern = solver->getPattern(configuration, 1);
 
-    builder->fillMatrix(solver->A);
-    builder->fillVector(solver->b);
-    builder->fillVector(solver->x);
-    builder->fillDirichlet(solver->dirichlet);
+    pattern->set(solver->A);
+    pattern->set(solver->b);
+    pattern->set(solver->x);
+    pattern->set(solver->dirichlet);
 
     K = solver->A->copyPattern();
     M = solver->A->copyPattern();
@@ -112,12 +93,12 @@ bool StructuralMechanicsTransientNonLinear::analyze(step::Step &step)
     A_old = solver->b->copyPattern();
     X = solver->b->copyPattern();
 
-    builder->fillMatrixMap(K);
-    builder->fillMatrixMap(M);
-    builder->fillMatrixMap(C);
-    builder->fillVectorMap(f);
-    builder->fillVectorMap(R);
-    builder->fillDirichletMap(dirichlet);
+    pattern->map(K);
+    pattern->map(M);
+    pattern->map(C);
+    pattern->map(f);
+    pattern->map(R);
+    pattern->map(dirichlet);
     eslog::checkpointln("SIMULATION: LINEAR SYSTEM BUILT");
     return true;
 }
@@ -219,9 +200,6 @@ bool StructuralMechanicsTransientNonLinear::run(step::Step &step, Physics *prev)
     double tinit = eslog::time();
     C->set(0);
     dU->set(0);
-    U->set(0);
-    assembler.getInitialVelocity(V);
-    A->set(0);
     solver->set(step);
 
     assembler.evaluate(step, time, K, M, f, nullptr, dirichlet);
@@ -265,7 +243,10 @@ bool StructuralMechanicsTransientNonLinear::run(step::Step &step, Physics *prev)
         solver->A->set(0)->add(a0, M)->add(a1, C)->add(1 - alphaF, K);
         solver->A->updated = true;
 
+        printf("F\n"); f->print();
+        printf("R\n"); R->print();
         solver->b->set(0)->add(1 - alphaF, f)->add(alphaF, f_old)->add(-1., R);
+        printf("B\n"); solver->b->print();
         X->set(0)->add(a2, V_old)->add(a3, A_old); M->apply(1., X, 1., solver->b);
         X->set(0)->add(a4, V_old)->add(a5, A_old); C->apply(1., X, 1., solver->b);
         solver->b->updated = true;
@@ -312,11 +293,19 @@ bool StructuralMechanicsTransientNonLinear::run(step::Step &step, Physics *prev)
             solver->A->set(0)->add(a0, M)->add(a1, C)->add(1 - alphaF, K);
             solver->A->updated = true;
 
+            printf("F\n"); f->print();
+            printf("R\n"); R->print();
             // rEffCor = (1 - alphaF) * (f_ext_new - f_int_new - C * v_new) + alphaF * (f_ext_old - f_int_old - C * v_old) - M * ((1 - alphaM) * a_new + alphaM * a_old);
             solver->b->set(0);
             solver->b->add(1 - alphaF, f)->add(alphaF - 1, R); C->apply(alphaF - 1, V, 1., solver->b);
+            printf("BA\n"); solver->b->print();
             solver->b->add(alphaF, f_old)->add(-alphaF, R_old); C->apply(-alphaF, V_old, 1., solver->b);
+            printf("BB\n"); solver->b->print();
+            printf("A\n"); A->print();
+            printf("A_old\n"); A_old->print();
             X->set(0)->add(1 - alphaM, A)->add(alphaM, A_old); M->apply(-1., X, 1., solver->b);
+            printf("BX\n"); X->print();
+            printf("BC\n"); solver->b->print();
             solver->b->updated = true;
 
             storeSystem(step);
@@ -370,6 +359,7 @@ bool StructuralMechanicsTransientNonLinear::checkDisplacement(step::Step &step, 
 {
     double b_norm = solver->rhs_norm();
     double nR = b_norm / (1 + f_norm);
+    printf("%+.10e / %+.10e\n", b_norm, f_norm);
 
     if (nR > configuration.nonlinear_solver.requested_first_residual) {
         eslog::info("      == DISPLACEMENT NORM, CRITERIA                         %.5e / %.5e == \n", nR, configuration.nonlinear_solver.requested_first_residual);
