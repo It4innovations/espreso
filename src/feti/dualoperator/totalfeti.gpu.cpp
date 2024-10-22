@@ -312,7 +312,7 @@ void TotalFETIGpu<T,I>::info()
         for(char & c : name) c = std::toupper(c);
         eslog::info(" =   %-50s       %+30s = \n", name.c_str(), param->getValue().c_str());
     });
-    eslog::info(minmaxavg<double>::compute_from_allranks(domain_data.begin(), domain_data.end(), [](const per_domain_stuff & data){ return data.d_F.nrows * data.d_F.ncols * sizeof(T) / (1024.0 * 1024.0); }).to_string("  F MEMORY [MB]").c_str());
+    eslog::info(minmaxavg<double>::compute_from_allranks(domain_data.begin(), domain_data.end(), [](const per_domain_stuff & data){ return data.d_F.nrows * data.d_F.get_ld() * sizeof(T) / (1024.0 * 1024.0); }).to_string("  F MEMORY [MB]").c_str());
     eslog::info(minmaxavg<size_t>::compute_from_allranks(domain_data.begin(), domain_data.end(), [](const per_domain_stuff & data){ return data.n_dofs_domain; }).to_string("  Domain volume [dofs]").c_str());
     eslog::info(minmaxavg<size_t>::compute_from_allranks(domain_data.begin(), domain_data.end(), [](const per_domain_stuff & data){ return data.n_dofs_interface; }).to_string("  Domain surface [dofs]").c_str());
     eslog::info(minmaxavg<size_t>::compute_from_allranks(domain_data.begin(), domain_data.end(), [](const per_domain_stuff & data){ return data.n_nz_factor; }).to_string("  Factor nnz").c_str());
@@ -1844,7 +1844,7 @@ void TotalFETIGpu<T,I>::_apply(const Vector_Dual<T> &x_cluster, Vector_Dual<T> &
     if(is_implicit && config->apply_scatter_gather_where == DEVICE::GPU) apply_implicit_sggpu(x_cluster, y_cluster);
 
     double stop = eslog::time();
-    printf("TMP DUAL OPERATOR APPLY TIME:  %12.6f ms\n", (stop - start) * 1000.0);
+    eslog::info("TMP DUAL OPERATOR APPLY TIME:  %12.6f ms\n", (stop - start) * 1000.0);
 }
 
 template <typename T, typename I>

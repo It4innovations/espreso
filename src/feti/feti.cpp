@@ -63,7 +63,7 @@ bool FETI<T>::set(const step::Step &step)
     double dualop_start = eslog::time();
     dualOperator->set(step);
     double dualop_stop = eslog::time();
-    printf("TMP DUAL OPERATOR SET TIME:    %12.6f ms\n", (dualop_stop - dualop_start) * 1000.0);
+    eslog::info("TMP DUAL OPERATOR SET TIME:    %12.6f ms\n", (dualop_stop - dualop_start) * 1000.0);
     projector->set(step);
     preconditioner->set(step);
     iterativeSolver->set(step);
@@ -94,7 +94,7 @@ bool FETI<T>::update(const step::Step &step)
         double start = eslog::time();
         dualOperator->update(step);
         double stop = eslog::time();
-        printf("TMP DUAL OPERATOR UPDATE TIME: %12.6f ms\n", (stop - start) * 1000.0);
+        eslog::info("TMP DUAL OPERATOR UPDATE TIME: %12.6f ms\n", (stop - start) * 1000.0);
         if(rep == 0)
         {
             // try to clear cpu cache

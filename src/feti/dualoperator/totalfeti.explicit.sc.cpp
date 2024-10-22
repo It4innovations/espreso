@@ -2,6 +2,7 @@
 #include "totalfeti.explicit.sc.h"
 #include "math/wrappers/math.blas.h"
 #include "feti/common/applyB.h"
+#include "basis/utilities/minmaxavg.h"
 #include "my_timer.h"
 
 
@@ -30,7 +31,11 @@ TotalFETIExplicitSc<T,I>::~TotalFETIExplicitSc()
 template<typename T, typename I>
 void TotalFETIExplicitSc<T,I>::info()
 {
-    // TODO
+    eslog::info(" = EXPLICIT TOTAL FETI OPERATOR USING SPBLAS SCHUR COMPLEMENT                                = \n");
+    eslog::info(minmaxavg<double>::compute_from_allranks(domain_data.begin(), domain_data.end(), [](const per_domain_stuff & data){ return data.F.nrows * data.F.get_ld() * sizeof(T) / (1024.0 * 1024.0); }).to_string("  F MEMORY [MB]").c_str());
+    eslog::info(minmaxavg<size_t>::compute_from_allranks(domain_data.begin(), domain_data.end(), [](const per_domain_stuff & data){ return data.n_dofs_domain; }).to_string("  Domain volume [dofs]").c_str());
+    eslog::info(minmaxavg<size_t>::compute_from_allranks(domain_data.begin(), domain_data.end(), [](const per_domain_stuff & data){ return data.n_dofs_interface; }).to_string("  Domain surface [dofs]").c_str());
+    eslog::info(" = ----------------------------------------------------------------------------------------- = \n");
 }
 
 
@@ -222,7 +227,7 @@ void TotalFETIExplicitSc<T,I>::_apply(const Vector_Dual<T> &x_cluster, Vector_Du
     tm_total.stop();
 
     double stop = eslog::time();
-    printf("TMP DUAL OPERATOR APPLY TIME:  %12.6f ms\n", (stop - start) * 1000.0);
+    eslog::info("TMP DUAL OPERATOR APPLY TIME:  %12.6f ms\n", (stop - start) * 1000.0);
 
     y_cluster.synchronize();
 

@@ -288,6 +288,8 @@ void DirectSparseSolver<T, I>::symbolicFactorization()
         if (ext->cholmod.stage != 2) eslog::error("symbolicFactorization: invalid order of operations in spsolver\n");
 
         ext->cholmod.cm_factor_super = _analyze<I>(ext->cholmod.cm_matrix_view, ext->cholmod.cm_common);
+
+        if(ext->cholmod.cm_common.lnz > (double)std::numeric_limits<I>::max()) eslog::error("symbolicFactorization: factor nnz too large for the used integer type\n");
         ext->cholmod.factor_nnz = static_cast<I>(ext->cholmod.cm_common.lnz);
 
         if (!ext->cholmod.getfactor_preprocess_lazy) getfactor_preprocess(ext);

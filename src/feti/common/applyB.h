@@ -44,7 +44,7 @@ static void applyB(FETI<T> &feti, const std::vector<Vector_Dense<T> > &in, Vecto
     if(apply_start_time != nullptr)
     {
         double stop = eslog::time();
-        printf("TMP DUAL OPERATOR APPLY TIME:  %12.6f ms\n", (stop - *apply_start_time) * 1000.0);
+        eslog::info("TMP DUAL OPERATOR APPLY TIME:  %12.6f ms\n", (stop - *apply_start_time) * 1000.0);
     }
 }
 

@@ -162,7 +162,7 @@ protected:
 
     void realloc(_Matrix_Dense<T, I> &m, const Matrix_Shape &shape, I nrows, I ncols)
     {
-        if((size_t)nrows * ncols > (size_t)std::numeric_limits<I>::max()) eslog::error("matrix too large for the used integer type\n");
+        if((size_t)nrows * ncols > (size_t)std::numeric_limits<I>::max()) eslog::error("matrix too large for the used integer type (%zux%zu=%zu > %zu)\n", (size_t)nrows, (size_t)ncols, (size_t)nrows * ncols, (size_t)std::numeric_limits<I>::max());
         I nnz;
         if (shape == Matrix_Shape::FULL) {
             nnz = nrows * ncols;
