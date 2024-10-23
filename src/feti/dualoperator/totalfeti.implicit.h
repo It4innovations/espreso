@@ -41,7 +41,6 @@ protected:
     std::vector<Matrix_CSR<T> > Kplus;
     std::vector<Vector_Dense<T> > Btx, KplusBtx;
     std::vector<DirectSparseSolver<T> > KSolver;
-    int sparsity;
 };
 
 }

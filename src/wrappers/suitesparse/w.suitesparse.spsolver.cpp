@@ -213,13 +213,13 @@ static void DSSsolve(std::unique_ptr<Solver_External_Representation<T,I>> &ext, 
 }
 
 template <typename T, typename I>
-void DirectSparseSolver<T, I>::solve(Vector_Dense<T, I> &rhs, Vector_Dense<T, I> &solution, int sparsity)
+void DirectSparseSolver<T, I>::solve(Vector_Dense<T, I> &rhs, Vector_Dense<T, I> &solution)
 {
     DSSsolve(ext, rhs, solution, CHOLMOD_A);
 }
 
 template <typename T, typename I>
-void DirectSparseSolver<T, I>::solveForward (Vector_Dense<T, I> &rhs, Vector_Dense<T, I> &solution, int sparsity)
+void DirectSparseSolver<T, I>::solveForward (Vector_Dense<T, I> &rhs, Vector_Dense<T, I> &solution)
 {
     Vector_Dense<T, I> tmp;
     DSSsolve(ext, rhs, solution, CHOLMOD_P);
@@ -228,7 +228,7 @@ void DirectSparseSolver<T, I>::solveForward (Vector_Dense<T, I> &rhs, Vector_Den
 }
 
 template <typename T, typename I>
-void DirectSparseSolver<T, I>::solveBackward(Vector_Dense<T, I> &rhs, Vector_Dense<T, I> &solution, int sparsity)
+void DirectSparseSolver<T, I>::solveBackward(Vector_Dense<T, I> &rhs, Vector_Dense<T, I> &solution)
 {
     Vector_Dense<T, I> tmp;
     DSSsolve(ext, rhs, solution, CHOLMOD_Pt);
@@ -237,7 +237,7 @@ void DirectSparseSolver<T, I>::solveBackward(Vector_Dense<T, I> &rhs, Vector_Den
 }
 
 template <typename T, typename I>
-void DirectSparseSolver<T, I>::solveDiagonal(Vector_Dense<T, I> &rhs, Vector_Dense<T, I> &solution, int sparsity)
+void DirectSparseSolver<T, I>::solveDiagonal(Vector_Dense<T, I> &rhs, Vector_Dense<T, I> &solution)
 {
     eslog::error("implement solveDiagonal for SuiteSparse.\n");
 }
@@ -266,13 +266,13 @@ static void DSSsolve(std::unique_ptr<Solver_External_Representation<T,I>> &ext, 
 }
 
 template <typename T, typename I>
-void DirectSparseSolver<T, I>::solve(Matrix_Dense<T, I> &rhs, Matrix_Dense<T, I> &solution, int sparsity)
+void DirectSparseSolver<T, I>::solve(Matrix_Dense<T, I> &rhs, Matrix_Dense<T, I> &solution)
 {
     DSSsolve(ext, rhs, solution, CHOLMOD_A);
 }
 
 template <typename T, typename I>
-void DirectSparseSolver<T, I>::solveForward (Matrix_Dense<T, I> &rhs, Matrix_Dense<T, I> &solution, int sparsity)
+void DirectSparseSolver<T, I>::solveForward (Matrix_Dense<T, I> &rhs, Matrix_Dense<T, I> &solution)
 {
     // U
     Matrix_Dense<T, I> tmp;
@@ -282,7 +282,7 @@ void DirectSparseSolver<T, I>::solveForward (Matrix_Dense<T, I> &rhs, Matrix_Den
 }
 
 template <typename T, typename I>
-void DirectSparseSolver<T, I>::solveBackward(Matrix_Dense<T, I> &rhs, Matrix_Dense<T, I> &solution, int sparsity)
+void DirectSparseSolver<T, I>::solveBackward(Matrix_Dense<T, I> &rhs, Matrix_Dense<T, I> &solution)
 {
     // L
     Matrix_Dense<T, I> tmp;
@@ -292,7 +292,7 @@ void DirectSparseSolver<T, I>::solveBackward(Matrix_Dense<T, I> &rhs, Matrix_Den
 }
 
 template <typename T, typename I>
-void DirectSparseSolver<T, I>::solveDiagonal(Matrix_Dense<T, I> &rhs, Matrix_Dense<T, I> &solution, int sparsity)
+void DirectSparseSolver<T, I>::solveDiagonal(Matrix_Dense<T, I> &rhs, Matrix_Dense<T, I> &solution)
 {
     eslog::error("implement solveDiagonal for SuiteSparse.\n");
 }

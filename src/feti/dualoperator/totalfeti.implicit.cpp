@@ -11,7 +11,7 @@ namespace espreso {
 
 template <typename T>
 TotalFETIImplicit<T>::TotalFETIImplicit(FETI<T> &feti)
-: DualOperator<T>(feti), sparsity(DirectSparseSolver<T>::VectorSparsity::DENSE)
+: DualOperator<T>(feti)
 {
 
 }
@@ -157,8 +157,6 @@ void TotalFETIImplicit<T>::info()
 template <typename T>
 void TotalFETIImplicit<T>::set(const step::Step &step)
 {
-    sparsity = feti.configuration.partial_dual ? DirectSparseSolver<T>::VectorSparsity::SPARSE_RHS | DirectSparseSolver<T>::VectorSparsity::SPARSE_SOLUTION : DirectSparseSolver<T>::VectorSparsity::DENSE;
-
     Kplus.resize(feti.K.size());
     Btx.resize(feti.K.size());
     KplusBtx.resize(feti.K.size());
@@ -179,13 +177,7 @@ void TotalFETIImplicit<T>::set(const step::Step &step)
     #pragma omp parallel for
     for (size_t di = 0; di < feti.K.size(); ++di) {
         KSolver[di].commit(Kplus[di]);
-
-        int suffix = 0;
-        if (sparsity != DirectSparseSolver<T>::VectorSparsity::DENSE) {
-            suffix = *std::min_element(feti.B1[di].cols, feti.B1[di].cols + feti.B1[di].nnz);
-        }
-
-        KSolver[di].symbolicFactorization(suffix);
+        KSolver[di].symbolicFactorization();
     }
     eslog::checkpointln("FETI: TFETI SYMBOLIC FACTORIZATION");
 }
@@ -221,7 +213,7 @@ void TotalFETIImplicit<T>::update(const step::Step &step)
 
     #pragma omp parallel for
     for (size_t di = 0; di < feti.K.size(); ++di) {
-        KSolver[di].solve(feti.f[di], KplusBtx[di], sparsity);
+        KSolver[di].solve(feti.f[di], KplusBtx[di]);
     }
     applyB(feti, KplusBtx, d);
     math::add(d, T{-1}, feti.c);
@@ -241,7 +233,7 @@ void TotalFETIImplicit<T>::apply(const Vector_Dual<T> &x, Vector_Dual<T> &y)
     #pragma omp parallel for
     for (size_t di = 0; di < feti.K.size(); ++di) {
         applyBt(feti, di, x, Btx[di]);
-        KSolver[di].solve(Btx[di], KplusBtx[di], sparsity);
+        KSolver[di].solve(Btx[di], KplusBtx[di]);
     }
     applyB(feti, KplusBtx, y);
 }

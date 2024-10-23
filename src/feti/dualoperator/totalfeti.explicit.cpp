@@ -68,13 +68,7 @@ void TotalFETIExplicit<T>::set(const step::Step &step)
     #pragma omp parallel for
     for (size_t di = 0; di < feti.K.size(); ++di) {
         KSolver[di].commit(Kplus[di]);
-
-        int suffix = 0;
-//        if (sparsity != DirectSolver<T, Matrix_CSR>::VectorSparsity::DENSE) {
-//            suffix = *std::min_element(feti.B1[di].cols, feti.B1[di].cols + feti.B1[di].nnz);
-//        }
-
-        KSolver[di].symbolicFactorization(suffix);
+        KSolver[di].symbolicFactorization();
     }
     eslog::checkpointln("FETI: TFETI SYMBOLIC FACTORIZATION");
 

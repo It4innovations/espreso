@@ -28,11 +28,11 @@ struct Solver_External_Representation;
 
 template <typename T, typename I = int>
 struct DirectSparseSolver {
-    struct VectorSparsity {
-        static const int DENSE           = 0;
-        static const int SPARSE_RHS      = 1 << 0;
-        static const int SPARSE_SOLUTION = 2 << 0;
-    };
+//    struct VectorSparsity {
+//        static const int DENSE           = 0;
+//        static const int SPARSE_RHS      = 1 << 0;
+//        static const int SPARSE_SOLUTION = 2 << 0;
+//    };
 
     static const char* name();
     static bool provideFactors();
@@ -49,18 +49,18 @@ struct DirectSparseSolver {
 
     void commit(const Matrix_CSR<T, I> &a);
 
-    void symbolicFactorization(int fixedSuffix = 0); // do not permute suffix
+    void symbolicFactorization();
     void numericalFactorization();
 
-    void solve(Vector_Dense<T, I> &rhs, Vector_Dense<T, I> &solution, int sparsity = VectorSparsity::DENSE);
-    void solve(Matrix_Dense<T, I> &rhs, Matrix_Dense<T, I> &solution, int sparsity = VectorSparsity::DENSE);
+    void solve(Vector_Dense<T, I> &rhs, Vector_Dense<T, I> &solution);
+    void solve(Matrix_Dense<T, I> &rhs, Matrix_Dense<T, I> &solution);
 
-    void solveForward (Vector_Dense<T, I> &rhs, Vector_Dense<T, I> &solution, int sparsity = VectorSparsity::DENSE);
-    void solveDiagonal(Vector_Dense<T, I> &rhs, Vector_Dense<T, I> &solution, int sparsity = VectorSparsity::DENSE);
-    void solveBackward(Vector_Dense<T, I> &rhs, Vector_Dense<T, I> &solution, int sparsity = VectorSparsity::DENSE);
-    void solveForward (Matrix_Dense<T, I> &rhs, Matrix_Dense<T, I> &solution, int sparsity = VectorSparsity::DENSE);
-    void solveDiagonal(Matrix_Dense<T, I> &rhs, Matrix_Dense<T, I> &solution, int sparsity = VectorSparsity::DENSE);
-    void solveBackward(Matrix_Dense<T, I> &rhs, Matrix_Dense<T, I> &solution, int sparsity = VectorSparsity::DENSE);
+    void solveForward (Vector_Dense<T, I> &rhs, Vector_Dense<T, I> &solution);
+    void solveDiagonal(Vector_Dense<T, I> &rhs, Vector_Dense<T, I> &solution);
+    void solveBackward(Vector_Dense<T, I> &rhs, Vector_Dense<T, I> &solution);
+    void solveForward (Matrix_Dense<T, I> &rhs, Matrix_Dense<T, I> &solution);
+    void solveDiagonal(Matrix_Dense<T, I> &rhs, Matrix_Dense<T, I> &solution);
+    void solveBackward(Matrix_Dense<T, I> &rhs, Matrix_Dense<T, I> &solution);
 
 
     I getMatrixSize();
