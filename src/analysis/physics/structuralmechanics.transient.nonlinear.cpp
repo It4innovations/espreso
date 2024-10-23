@@ -243,10 +243,7 @@ bool StructuralMechanicsTransientNonLinear::run(step::Step &step, Physics *prev)
         solver->A->set(0)->add(a0, M)->add(a1, C)->add(1 - alphaF, K);
         solver->A->updated = true;
 
-        printf("F\n"); f->print();
-        printf("R\n"); R->print();
         solver->b->set(0)->add(1 - alphaF, f)->add(alphaF, f_old)->add(-1., R);
-        printf("B\n"); solver->b->print();
         X->set(0)->add(a2, V_old)->add(a3, A_old); M->apply(1., X, 1., solver->b);
         X->set(0)->add(a4, V_old)->add(a5, A_old); C->apply(1., X, 1., solver->b);
         solver->b->updated = true;
@@ -293,19 +290,11 @@ bool StructuralMechanicsTransientNonLinear::run(step::Step &step, Physics *prev)
             solver->A->set(0)->add(a0, M)->add(a1, C)->add(1 - alphaF, K);
             solver->A->updated = true;
 
-            printf("F\n"); f->print();
-            printf("R\n"); R->print();
             // rEffCor = (1 - alphaF) * (f_ext_new - f_int_new - C * v_new) + alphaF * (f_ext_old - f_int_old - C * v_old) - M * ((1 - alphaM) * a_new + alphaM * a_old);
             solver->b->set(0);
             solver->b->add(1 - alphaF, f)->add(alphaF - 1, R); C->apply(alphaF - 1, V, 1., solver->b);
-            printf("BA\n"); solver->b->print();
             solver->b->add(alphaF, f_old)->add(-alphaF, R_old); C->apply(-alphaF, V_old, 1., solver->b);
-            printf("BB\n"); solver->b->print();
-            printf("A\n"); A->print();
-            printf("A_old\n"); A_old->print();
             X->set(0)->add(1 - alphaM, A)->add(alphaM, A_old); M->apply(-1., X, 1., solver->b);
-            printf("BX\n"); X->print();
-            printf("BC\n"); solver->b->print();
             solver->b->updated = true;
 
             storeSystem(step);
@@ -359,7 +348,6 @@ bool StructuralMechanicsTransientNonLinear::checkDisplacement(step::Step &step, 
 {
     double b_norm = solver->rhs_norm();
     double nR = b_norm / (1 + f_norm);
-    printf("%+.10e / %+.10e\n", b_norm, f_norm);
 
     if (nR > configuration.nonlinear_solver.requested_first_residual) {
         eslog::info("      == DISPLACEMENT NORM, CRITERIA                         %.5e / %.5e == \n", nR, configuration.nonlinear_solver.requested_first_residual);

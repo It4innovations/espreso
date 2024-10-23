@@ -123,6 +123,7 @@ void FETILinearSystemSolver<T>::update(step::Step &step)
 
     if (info::ecf->output.print_matrices) {
         eslog::storedata(" STORE: system/{K, f, R, RegMat}\n");
+        math::store(b.physics, utils::filename(utils::debugDirectory(step) + "/system", "b").c_str());
         if (feti.K.size() == 1) {
             math::store(feti.K[0], utils::filename(utils::debugDirectory(step) + "/system", "K").c_str());
             math::store(feti.f[0], utils::filename(utils::debugDirectory(step) + "/system", "f").c_str());
@@ -177,7 +178,7 @@ bool FETILinearSystemSolver<T>::solve(step::Step &step)
     constrains.eq.enforce(step, feti, dirichlet);
 
     if (false) {
-        double x1 = 1e12, x2 = 1 / x1;
+        double x1 = 1e15, x2 = 1 / x1;
         for (size_t d = 0; d < feti.x.size(); ++d) {
             for (int i = 0; i < feti.x[d].size; ++i) {
                 if (std::fabs(feti.x[d].vals[i]) < x2) {
@@ -193,12 +194,9 @@ bool FETILinearSystemSolver<T>::solve(step::Step &step)
 
     if (info::ecf->output.print_matrices) {
         eslog::storedata(" STORE: system/{x}\n");
-        if (feti.x.size() == 1) {
-            math::store(feti.x[0], utils::filename(utils::debugDirectory(step) + "/system", "x").c_str());
-        } else {
-            for (size_t d = 0; d < feti.x.size(); ++d) {
-                math::store(feti.x[d], utils::filename(utils::debugDirectory(step) + "/system", "x" + std::to_string(d)).c_str());
-            }
+        math::store(this->x.physics, utils::filename(utils::debugDirectory(step) + "/system", "x").c_str());
+        for (size_t d = 0; d < feti.x.size(); ++d) {
+            math::store(feti.x[d], utils::filename(utils::debugDirectory(step) + "/system", "x" + std::to_string(d)).c_str());
         }
     }
 

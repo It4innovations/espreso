@@ -14,6 +14,8 @@ DEFAULT_ARGS {
   7       10;
   8        2;
   9        2;
+
+ 10  MKLPDSS;
 }
 
 INPUT_TYPE              GENERATOR;
@@ -64,6 +66,12 @@ STRUCTURAL_MECHANICS {
       DENS   7850;
       CP        1;
 
+      MATERIAL_MODEL  HYPER_ELASTIC;
+
+      HYPER_ELASTIC_PROPERTIES {
+        MODEL     KIRCHHOFF;
+      }
+
       LINEAR_ELASTIC_PROPERTIES {
         MODEL   ISOTROPIC;
 
@@ -85,16 +93,8 @@ STRUCTURAL_MECHANICS {
     1 {
       DURATION_TIME       1;
       TYPE     STEADY_STATE;
-      MODE           LINEAR;
-      SOLVER           FETI;
-
-      FETI {
-        METHOD          TOTAL_FETI;
-        PRECONDITIONER   DIRICHLET;
-        ITERATIVE_SOLVER       PCG;
-        REGULARIZATION    ANALYTIC;
-        PRECISION             1e-9;
-      }
+      MODE        NONLINEAR;
+      SOLVER        MKLPDSS;
 
       DISPLACEMENT {
         FIX   { X 0 ; Y 0 ; Z 0; }
@@ -102,19 +102,19 @@ STRUCTURAL_MECHANICS {
 
       PRESSURE {
         PRESS {
-          PRESSURE     1e9;
+          PRESSURE     5e8;
           DIRECTION { Z -1; }
         }
       }
     }
     2 {
-      DURATION_TIME       1;
+      DURATION_TIME    1e-1;
       TYPE        TRANSIENT;
-      MODE           LINEAR;
-      SOLVER           FETI;
+      MODE        NONLINEAR;
+      SOLVER        [ARG10];
 
       TRANSIENT_SOLVER {
-        TIME_STEP      0.01;
+        TIME_STEP      1e-3;
       }
 
       FETI {
@@ -122,7 +122,7 @@ STRUCTURAL_MECHANICS {
         PRECONDITIONER   DIRICHLET;
         ITERATIVE_SOLVER       PCG;
         REGULARIZATION    ANALYTIC;
-        PRECISION             1e-9;
+        PRECISION            1e-12;
       }
 
       DISPLACEMENT {

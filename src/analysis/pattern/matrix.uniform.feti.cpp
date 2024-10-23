@@ -341,14 +341,15 @@ template <typename T>
 void MatrixUniformFETI::Apply<T>::init(MatrixUniformFETI &m)
 {
     in.decomposition = &m.decomposition;
-    out.decomposition = &m.decomposition;
+    out.feti.decomposition = &m.decomposition;
+    out.direct.resize(m.decomposition.halo.size() + m.decomposition.end - m.decomposition.begin);
 
     spblas.resize(m.decomposition.dsize.size());
     in.domains.resize(m.decomposition.dsize.size());
-    out.domains.resize(m.decomposition.dsize.size());
+    out.feti.domains.resize(m.decomposition.dsize.size());
     for (size_t d = 0; d < m.decomposition.dsize.size(); ++d) {
         in.domains[d].resize(m.decomposition.dsize[d]);
-        out.domains[d].resize(m.decomposition.dsize[d]);
+        out.feti.domains[d].resize(m.decomposition.dsize[d]);
     }
 }
 
@@ -356,13 +357,15 @@ template <typename T>
 void MatrixUniformFETI::Apply<T>::apply(Matrix_FETI<T> &m, Vector_Distributed<Vector_Dense, T> &y, const T &alpha, const T &beta, const Vector_Distributed<Vector_Dense, T> &x)
 {
     x.copyTo(&in);
+    math::copy(out.direct, y.cluster);
 
     #pragma omp parallel for
     for (size_t i = 0; i < spblas.size(); ++i) {
         spblas[i].insert(m.domains[i]);
-        spblas[i].apply(out.domains[i], alpha, beta, in.domains[i]);
+        spblas[i].apply(out.feti.domains[i], alpha, 0., in.domains[i]);
     }
-    out.sumTo(&y);
+    out.feti.sumTo(&y);
+    math::add(y.cluster, beta, out.direct);
 }
 
 template struct MatrixUniformFETI::Sync<double>;

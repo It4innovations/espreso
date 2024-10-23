@@ -25,7 +25,11 @@ struct MatrixUniformFETI {
     template <typename T>
     struct Apply: public ApplyMatrix<Matrix_FETI<T>, T> {
         std::vector<SpBLAS<Matrix_CSR, T, int> > spblas;
-        Vector_FETI<Vector_Dense, T> in, out;
+        Vector_FETI<Vector_Dense, T> in;
+        struct {
+            Vector_FETI<Vector_Dense, T> feti;
+            Vector_Dense<T> direct;
+        } out;
 
         void init(MatrixUniformFETI &m);
         void apply(Matrix_FETI<T> &m, Vector_Distributed<Vector_Dense, T> &y, const T &alpha, const T &beta, const Vector_Distributed<Vector_Dense, T> &x);

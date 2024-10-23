@@ -38,7 +38,7 @@ struct MKLPDSSLinearSystemSolver: DirectLinearSystemSolver<T> {
         if (info::ecf->output.print_matrices) {
             eslog::storedata(" STORE: system/{A, b, dirichlet}\n");
             math::store(this->A, utils::filename(utils::debugDirectory(step) + "/system", "K").c_str());
-            math::store(this->b, utils::filename(utils::debugDirectory(step) + "/system", "f").c_str());
+            math::store(this->b, utils::filename(utils::debugDirectory(step) + "/system", "b").c_str());
             math::store(this->dirichlet, utils::filename(utils::debugDirectory(step) + "/system", "BC").c_str());
         }
     }
@@ -49,7 +49,7 @@ struct MKLPDSSLinearSystemSolver: DirectLinearSystemSolver<T> {
             this->x.scatter();
 
             if (false) {
-                double x1 = 1e12, x2 = 1 / x1;
+                double x1 = 1e15, x2 = 1 / x1;
                 for (int i = 0; i < this->x.cluster.size; ++i) {
                     if (std::fabs(this->x.cluster.vals[i]) < x2) {
                         this->x.cluster.vals[i] = 0;
