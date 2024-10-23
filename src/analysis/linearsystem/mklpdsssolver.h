@@ -28,11 +28,6 @@ struct MKLPDSSLinearSystemSolver: DirectLinearSystemSolver<T> {
 
     void update(step::Step &step)
     {
-//        printf("RHS\n");
-//        for (esint n = 0; n < info::mesh->nodes->size; ++n) {
-//            printf("%2d [%+.14e %+.14e %+.14e]\n", n, this->b.cluster.vals[3 * n + 0], this->b.cluster.vals[3 * n + 1], this->b.cluster.vals[3 * n + 2]);
-//        }
-
         if (this->A.updated || this->b.updated || this->dirichlet.updated) {
             this->setDirichlet();
             mklpdss.update(this->A);
@@ -53,7 +48,7 @@ struct MKLPDSSLinearSystemSolver: DirectLinearSystemSolver<T> {
         if (mklpdss.solve(this->b, this->x)) {
             this->x.scatter();
 
-            if (true) {
+            if (false) {
                 double x1 = 1e12, x2 = 1 / x1;
                 for (int i = 0; i < this->x.cluster.size; ++i) {
                     if (std::fabs(this->x.cluster.vals[i]) < x2) {
@@ -68,13 +63,6 @@ struct MKLPDSSLinearSystemSolver: DirectLinearSystemSolver<T> {
                 eslog::storedata(" STORE: system/{x}\n");
                 math::store(this->x, utils::filename(utils::debugDirectory(step) + "/system", "x").c_str());
             }
-//            printf("SOLUTION\n");
-//            for (esint n = 0; n < info::mesh->nodes->size; ++n) {
-//                printf("%2d [%+.14e %+.14e %+.14e]\n", n, this->x.cluster.vals[3 * n + 0], this->x.cluster.vals[3 * n + 1], this->x.cluster.vals[3 * n + 2]);
-//                if (n == 1 || n == 4 || n == 7 || n == 10) {
-//                    printf("%2d [%+.14e %+.14e %+.14e]\n", n, this->x.cluster.vals[3 * n + 0], this->x.cluster.vals[3 * n + 1], this->x.cluster.vals[3 * n + 2]);
-//                }
-//            }
             return true;
         }
         return false;

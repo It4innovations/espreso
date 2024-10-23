@@ -173,32 +173,10 @@ template <typename T>
 bool FETILinearSystemSolver<T>::solve(step::Step &step)
 {
     eslog::startln("FETI: RUN LINEAR SYSTEM", "FETI[SOLVE]");
-
-    if (false) {
-        printf("RHS\n");
-        auto dd = info::mesh->nodes->domains->begin();
-        for (esint n = 0; n < info::mesh->nodes->size; ++n, ++dd) {
-            std::vector<Point> pp(dd->size());
-            for (int d = 0; d < 3; ++d) {
-                auto dmap = feti.decomposition->dmap->cbegin() + 3 * n + d;
-                int ii = 0;
-                for (auto di = dmap->begin(); di != dmap->end(); ++di) {
-                    if (feti.decomposition->ismy(di->domain)) {
-                        pp[ii++][d] = feti.f[di->domain - feti.decomposition->dbegin].vals[di->index];
-                    }
-                }
-            }
-            for (size_t i = 1; i < pp.size(); ++i) {
-                pp[0] += pp[i];
-            }
-            printf("%2d [%+.14e %+.14e %+.14e]\n", n, pp[0].x, pp[0].y, pp[0].z);
-        }
-    }
-
     bool result = feti.solve(step);
     constrains.eq.enforce(step, feti, dirichlet);
 
-    if (true) {
+    if (false) {
         double x1 = 1e12, x2 = 1 / x1;
         for (size_t d = 0; d < feti.x.size(); ++d) {
             for (int i = 0; i < feti.x[d].size; ++i) {
@@ -220,26 +198,6 @@ bool FETILinearSystemSolver<T>::solve(step::Step &step)
         } else {
             for (size_t d = 0; d < feti.x.size(); ++d) {
                 math::store(feti.x[d], utils::filename(utils::debugDirectory(step) + "/system", "x" + std::to_string(d)).c_str());
-            }
-        }
-    }
-
-    if (false) {
-        printf("SOLUTION\n");
-        auto dd = info::mesh->nodes->domains->begin();
-        for (esint n = 0; n < info::mesh->nodes->size; ++n, ++dd) {
-            std::vector<Point> pp(dd->size());
-            for (int d = 0; d < 3; ++d) {
-                auto dmap = feti.decomposition->dmap->cbegin() + 3 * n + d;
-                int ii = 0;
-                for (auto di = dmap->begin(); di != dmap->end(); ++di) {
-                    if (feti.decomposition->ismy(di->domain)) {
-                        pp[ii++][d] = feti.x[di->domain - feti.decomposition->dbegin].vals[di->index];
-                    }
-                }
-            }
-            for (size_t i = 0; i < pp.size(); ++i) {
-                printf("%2d [%+.14e %+.14e %+.14e]\n", n, pp[i].x, pp[i].y, pp[i].z);
             }
         }
     }
