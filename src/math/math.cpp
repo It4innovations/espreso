@@ -510,6 +510,8 @@ template <> void permute(Matrix_Dense<double, int> &A, const std::vector<int> &p
 template <> void getKernel<double, int>(Matrix_CSR<double, int> &A, Matrix_Dense<double, int> &R, Matrix_CSR<double, int> &regMat, int maxDefect, int scSize) { _getKernel<double, int>(A, R, regMat, maxDefect, scSize); };
 template <> void getKernel<double, int>(Matrix_Dense<double, int> &A, Matrix_Dense<double, int> &R, Matrix_IJV<double, int> &regMat, int maxDefect, int scSize) { _getKernel<double, int>(A, R, regMat, maxDefect, scSize); }
 
+template <> void permute(Matrix_CSR<std::complex<double>, int> &A, const std::vector<int> &perm) { _permute(A, perm); }
+template <> void permute(Matrix_Dense<std::complex<double>, int> &A, const std::vector<int> &perm) { _permute(A, perm); }
 
 }
 }

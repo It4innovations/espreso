@@ -20,17 +20,13 @@ Dirichlet<T>::Dirichlet(FETI<T> &feti)
     Btx.resize(feti.K.size());
     KBtx.resize(feti.K.size());
     sc.resize(feti.K.size());
-    Ksolver.resize(feti.K.size());
+    indices.resize(feti.K.size());
 
     #pragma omp parallel for
     for (size_t d = 0; d < feti.K.size(); ++d) {
-        Ksolver[d].commit(feti.K[d]);
         Btx[d].resize(feti.K[d].nrows);
         KBtx[d].resize(feti.K[d].nrows);
         sc[d].shape = Matrix_Shape::UPPER;
-
-        int sc_size = feti.B1[d].ncols - *std::min_element(feti.B1[d].cols, feti.B1[d].cols + feti.B1[d].nnz);
-        sc[d].resize(sc_size, sc_size);
     }
 
     eslog::checkpointln("FETI: SET DIRICHLET PRECONDITIONER");
@@ -57,10 +53,26 @@ void Dirichlet<T>::update(const step::Step &step)
     if (feti.updated.K || feti.updated.B) {
         #pragma omp parallel for
         for (size_t d = 0; d < feti.K.size(); ++d) {
-            int sc_size = feti.B1[d].ncols - *std::min_element(feti.B1[d].cols, feti.B1[d].cols + feti.B1[d].nnz);
-            sc[d].resize(sc_size, sc_size);
+            std::vector<int> permutation(feti.B1[d].ncols);
+            for (int i = 0; i < feti.B1[d].nnz; ++i) {
+                permutation[feti.B1[d].cols[i]] = 1;
+            }
+            indices[d].clear();
+            for (size_t i = 0; i < permutation.size(); ++i) {
+                if (permutation[i] == 1) {
+                    indices[d].push_back(i);
+                }
+            }
+            for (size_t i = 0, j = 0, k = feti.B1[d].ncols - indices[d].size(); i < permutation.size(); ++i) {
+                permutation[i] = (permutation[i] == 1 ? k++ : j++);
+            }
+            Matrix_CSR<T> pK(feti.K[d]);
+            math::permute(pK, permutation);
 
-            Ksolver[d].getSC(sc[d]);
+            sc[d].resize(indices[d].size(), indices[d].size());
+            DirectSparseSolver<T> Ksolver;
+            Ksolver.commit(pK);
+            Ksolver.getSC(sc[d]);
         }
     }
     _print(step);
@@ -72,10 +84,13 @@ void Dirichlet<T>::apply(const Vector_Dual<T> &x, Vector_Dual<T> &y)
     #pragma omp parallel for
     for (size_t d = 0; d < feti.K.size(); ++d) {
         applyBt(feti, d, x, Btx[d]);
-        Vector_Dense<T> _y, _x;
-        _y.vals = KBtx[d].vals + KBtx[d].size - sc[d].nrows;
-        _x.vals = Btx[d].vals + Btx[d].size - sc[d].nrows;
-        math::blas::apply(_y, T{1}, sc[d], T{0}, _x);
+        for (size_t i = 0; i < indices[d].size(); ++i) {
+            Btx[d].vals[i] = Btx[d].vals[indices[d][i]];
+        }
+        math::blas::apply(KBtx[d], T{1}, sc[d], T{0}, Btx[d]);
+        for (size_t i = indices[d].size(); i > 0; --i) {
+            KBtx[d].vals[indices[d][i - 1]] = KBtx[d].vals[i - 1];
+        }
     }
     applyB(feti, KBtx, y);
 }
