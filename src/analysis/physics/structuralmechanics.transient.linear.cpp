@@ -236,6 +236,13 @@ bool StructuralMechanicsTransientLinear::run(step::Step &step, Physics *prev)
             V->add(newmark[6], W)->add(newmark[7], Z);
             W->copy(Z);
 
+            if (StructuralMechanics::Results::acceleration) {
+                W->storeTo(StructuralMechanics::Results::acceleration->data);
+            }
+            if (StructuralMechanics::Results::velocity) {
+                V->storeTo(StructuralMechanics::Results::velocity->data);
+            }
+
             eslog::info("       = PROCESS SOLUTION                                                   %8.3f s = \n", eslog::time() - solution);
             eslog::info("       = ----------------------------------------------------------------------------- = \n");
             eslog::info(" ====================================================================== solved in %8.3f s = \n\n", eslog::time() - start);

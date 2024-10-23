@@ -173,6 +173,12 @@ bool StructuralMechanics::analyze(const step::Step &step)
         if (Results::fluidForce == nullptr) {
             Results::fluidForce = info::mesh->nodes->appendData(info::mesh->dimension, NamedData::DataType::VECTOR, "FLUID_FORCE");
         }
+        if (Results::velocity == nullptr) {
+            Results::velocity = info::mesh->nodes->appendData(info::mesh->dimension, NamedData::DataType::VECTOR, "VELOCITY");
+        }
+        if (Results::acceleration == nullptr) {
+            Results::acceleration = info::mesh->nodes->appendData(info::mesh->dimension, NamedData::DataType::VECTOR, "ACCELERATION");
+        }
         if (info::ecf->output.results_selection.stress && Results::principalStress == nullptr) {
             Results::principalStress = info::mesh->elements->appendData(info::mesh->dimension    , NamedData::DataType::NUMBERED   , "PRINCIPAL_STRESS");
             Results::componentStress = info::mesh->elements->appendData(info::mesh->dimension * 2, NamedData::DataType::TENSOR_SYMM, "COMPONENT_STRESS");

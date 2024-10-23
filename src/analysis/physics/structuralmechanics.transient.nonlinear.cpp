@@ -334,6 +334,13 @@ bool StructuralMechanicsTransientNonLinear::run(step::Step &step, Physics *prev)
             A_old->copy(A);
             f_old->copy(f);
 
+            if (StructuralMechanics::Results::acceleration) {
+                A->storeTo(StructuralMechanics::Results::acceleration->data);
+            }
+            if (StructuralMechanics::Results::velocity) {
+                V->storeTo(StructuralMechanics::Results::velocity->data);
+            }
+
             eslog::info("      = TIME STEP FINISHED ======================================= solved in %8.3f s = \n", eslog::time() - start);
             eslog::info("      =================================================================================== \n\n");
             eslog::checkpointln("SIMULATION: SOLUTION PROCESSED");
