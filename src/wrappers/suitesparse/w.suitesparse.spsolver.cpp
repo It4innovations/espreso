@@ -166,10 +166,8 @@ void DirectSparseSolver<T, I>::commit(const Matrix_CSR<T,I> &a)
 }
 
 template <typename T, typename I>
-void DirectSparseSolver<T, I>::symbolicFactorization(int fixedSuffix)
+void DirectSparseSolver<T, I>::symbolicFactorization()
 {
-    if(fixedSuffix != 0) eslog::error("symbolicFactorization: dont know what to do with that. TODO\n");
-
     if(ext->stage != 2) throw std::runtime_error("symbolicFactorization: invalid order of operations in spsolver\n");
 
     ext->cm_factor_super = _analyze<I>(ext->cm_matrix_view, ext->cm_common);
