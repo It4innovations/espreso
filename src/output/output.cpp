@@ -61,14 +61,18 @@ public:
 	virtual void solution(const step::Step &step, const step::Time &time)
 	{
 		for (size_t i = 0; i < writers.size(); ++i) {
-			writers[i]->updateSolution(step, time);
+		    if (writers[i]->storeStep(step)) {
+		        writers[i]->updateSolution(step, time);
+		    }
 		}
 	}
 
 	virtual void solution(const step::Step &step, const step::Frequency &frequency)
 	{
 		for (size_t i = 0; i < writers.size(); ++i) {
-			writers[i]->updateSolution(step, frequency);
+		    if (writers[i]->storeStep(step)) {
+		        writers[i]->updateSolution(step, frequency);
+		    }
 		}
 	}
 };

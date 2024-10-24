@@ -48,7 +48,7 @@ bool Monitoring::storeStep(const step::Step &step)
 		case OutputConfiguration::STORE_FREQUENCY::EVERY_SUBSTEP:
 			return true;
 		case OutputConfiguration::STORE_FREQUENCY::EVERY_NTH_SUBSTEP:
-			return step.substep % info::ecf->output.monitors_nth_stepping == 0;
+			return (step.substep + 1) % info::ecf->output.monitors_nth_stepping == 0;
 		case OutputConfiguration::STORE_FREQUENCY::LAST_SUBSTEP:
 			return step::isLast(step);
 		default:
@@ -322,9 +322,6 @@ void Monitoring::updateMonitors(const step::Step &step)
 
 void Monitoring::updateSolution(const step::Step &step, const step::Time &time)
 {
-	if (!storeStep(step)) {
-		return;
-	}
 	updateSolution(step);
 
 	if (info::mpi::rank == 0) {
@@ -336,9 +333,6 @@ void Monitoring::updateSolution(const step::Step &step, const step::Time &time)
 
 void Monitoring::updateSolution(const step::Step &step, const step::Frequency &frequency)
 {
-	if (!storeStep(step)) {
-		return;
-	}
 	updateSolution(step);
 
 	if (info::mpi::rank == 0) {

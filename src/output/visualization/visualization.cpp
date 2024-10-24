@@ -44,7 +44,7 @@ bool Visualization::storeStep(const step::Step &step)
 		case OutputConfiguration::STORE_FREQUENCY::EVERY_SUBSTEP:
 			return true;
 		case OutputConfiguration::STORE_FREQUENCY::EVERY_NTH_SUBSTEP:
-			return step.substep % info::ecf->output.results_nth_stepping == 0;
+			return (step.substep + 1) % info::ecf->output.results_nth_stepping == 0;
 		case OutputConfiguration::STORE_FREQUENCY::LAST_SUBSTEP:
 			return step::isLast(step);
 
