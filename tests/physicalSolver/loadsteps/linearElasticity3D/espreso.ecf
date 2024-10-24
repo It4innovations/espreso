@@ -108,10 +108,20 @@ STRUCTURAL_MECHANICS {
       }
     }
     2 {
-      DURATION_TIME    1e-1;
+      DURATION_TIME    2e-3;
       TYPE        TRANSIENT;
       MODE        NONLINEAR;
       SOLVER        [ARG10];
+
+      NONLINEAR_SOLVER {
+        MAX_ITERATIONS                         10;
+
+        CHECK_DISPLACEMENT                   TRUE;
+        REQUESTED_DISPLACEMENT_RESIDUAL      1e-6;
+
+        CHECK_FORCES                         TRUE;
+        REQUESTED_FORCES_RESIDUAL            1e-3;
+      }
 
       TRANSIENT_SOLVER {
         TIME_STEP      1e-3;
@@ -122,7 +132,7 @@ STRUCTURAL_MECHANICS {
         PRECONDITIONER   DIRICHLET;
         ITERATIVE_SOLVER       PCG;
         REGULARIZATION    ANALYTIC;
-        PRECISION            1e-12;
+        PRECISION            1e-15;
       }
 
       DISPLACEMENT {
@@ -133,8 +143,11 @@ STRUCTURAL_MECHANICS {
 }
 
 OUTPUT {
-#  RESULTS_STORE_FREQUENCY           NEVER;
-  MONITORS_STORE_FREQUENCY   EVERY_SUBSTEP;
+  RESULTS_STORE_FREQUENCY    EVERY_NTH_SUBSTEP;
+  MONITORS_STORE_FREQUENCY   EVERY_NTH_SUBSTEP;
+
+  RESULTS_NTH_STEPPING                       1;
+  MONITORS_NTH_STEPPING                     10;
 
   MONITORING {
     1 {
