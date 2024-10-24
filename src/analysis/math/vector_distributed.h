@@ -165,13 +165,6 @@ public:
         eslog::error("call empty function\n");
     }
 
-    void print() const
-    {
-        for (esint n = 0; n < info::mesh->nodes->size; ++n) {
-            printf("%2d [%+.14e %+.14e %+.14e]\n", n, cluster.vals[3 * n + 0], cluster.vals[3 * n + 1], cluster.vals[3 * n + 2]);
-        }
-    }
-
     Vector<T, esint, cpu_allocator> cluster;
     DecompositionDirect *decomposition;
     Synchronization<Vector_Distributed<Vector, T> > *sync;

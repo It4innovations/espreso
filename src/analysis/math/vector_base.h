@@ -48,8 +48,6 @@ public:
     virtual void addTo(const T &alpha, Vector_FETI<Vector_Dense , T> *a, const Selection &rows = Selection()) const =0;
     virtual void addTo(const T &alpha, Vector_FETI<Vector_Sparse, T> *a, const Selection &rows = Selection()) const =0;
 
-    virtual void print() const =0;
-
     Mapping<T> mapping;
     bool constant, filled, updated;
 };

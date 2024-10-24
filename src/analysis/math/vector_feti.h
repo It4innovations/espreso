@@ -252,26 +252,6 @@ public:
         }
     }
 
-    void print() const
-    {
-        auto dd = info::mesh->nodes->domains->begin();
-        for (esint n = 0; n < info::mesh->nodes->size; ++n, ++dd) {
-            std::vector<Point> pp(dd->size());
-            for (int d = 0; d < 3; ++d) {
-                auto dmap = decomposition->dmap->cbegin() + 3 * n + d;
-                int ii = 0;
-                for (auto di = dmap->begin(); di != dmap->end(); ++di) {
-                    if (decomposition->ismy(di->domain)) {
-                        pp[ii++][d] = domains[di->domain - decomposition->dbegin].vals[di->index];
-                    }
-                }
-            }
-            for (size_t i = 0; i < pp.size(); ++i) {
-                printf("%2d [%+.14e %+.14e %+.14e]\n", n, pp[i].x, pp[i].y, pp[i].z);
-            }
-        }
-    }
-
     std::vector<Vector<T, int, cpu_allocator> > domains;
     DecompositionFETI *decomposition;
 //    Vector_Sync<Vector, T> *_sync;
