@@ -113,7 +113,7 @@ HEAT_TRANSFER {
     }
 
     2 {
-      DURATION_TIME    .2;
+      DURATION_TIME     5;
       TYPE      TRANSIENT;
       MODE         LINEAR;
       SOLVER       [ARG7];
