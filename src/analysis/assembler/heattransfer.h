@@ -4,6 +4,7 @@
 
 #include "analysis/math/matrix_base.h"
 #include "analysis/math/vector_base.h"
+#include "analysis/math/vector_feti.h"
 #include "assembler.h"
 #include "analysis/assembler/heattransfer/operators.h"
 #include "config/ecf/physics/heattransfer.h"
@@ -32,7 +33,7 @@ public:
 
     void connect(Matrix_Base<double> *K, Matrix_Base<double> *M, Vector_Base<double> *f, Vector_Base<double> *nf, Vector_Base<double> *dirichlet);
     void evaluate(const step::Step &step, step::Time &time, Matrix_Base<double> *K, Matrix_Base<double> *M, Vector_Base<double> *f, Vector_Base<double> *nf, Vector_Base<double> *dirichlet);
-    void updateSolution(Vector_Base<double> *x);
+    void updateSolution(Vector_Distributed<Vector_Dense, double> *x);
 
     HeatTransferConfiguration &settings;
     HeatTransferLoadStepConfiguration &configuration;
@@ -53,6 +54,8 @@ protected:
     std::vector<HeatTransferElementOperators> elementKernels;
     std::vector<std::vector<HeatTransferBoundaryOperators> > faceKernels;
     std::vector<std::vector<HeatTransferNodeOperators> > nodeKernels;
+
+    Vector_FETI<Vector_Dense, double> xBEM;
 };
 
 }

@@ -4,6 +4,7 @@
 
 #include "analysis/math/matrix_base.h"
 #include "analysis/math/vector_base.h"
+#include "analysis/math/vector_distributed.h"
 #include "assembler.h"
 #include "analysis/assembler/structuralmechanics/operators.h"
 #include "config/ecf/physics/structuralmechanics.h"
@@ -32,8 +33,8 @@ public:
 
     void connect(Matrix_Base<double> *K, Matrix_Base<double> *M, Vector_Base<double> *f, Vector_Base<double> *nf, Vector_Base<double> *dirichlet);
     void evaluate(const step::Step &step, const step::Time &time, Matrix_Base<double> *K, Matrix_Base<double> *M, Vector_Base<double> *f, Vector_Base<double> *nf, Vector_Base<double> *dirichlet);
-    void updateSolution(Vector_Base<double> *x);
-    void nextIteration(Vector_Base<double> *x);
+    void updateSolution(Vector_Distributed<Vector_Dense, double> *x);
+    void nextIteration(Vector_Distributed<Vector_Dense, double> *x);
 
     void connect(Matrix_Base<double> *K, Matrix_Base<double> *M, Matrix_Base<double> *C, Vector_Base<double> *ref, Vector_Base<double> *imf, Vector_Base<double> *renf, Vector_Base<double> *imnf, Vector_Base<double> *reDirichlet, Vector_Base<double> *imDirichlet);
     void evaluate(const step::Step &step, const step::Frequency &freq, Matrix_Base<double> *K, Matrix_Base<double> *M, Matrix_Base<double> *C, Vector_Base<double> *ref, Vector_Base<double> *imf, Vector_Base<double> *renf, Vector_Base<double> *imnf, Vector_Base<double> *reDirichlet, Vector_Base<double> *imDirichlet);
@@ -74,6 +75,8 @@ protected:
     std::vector<std::vector<StructuralMechanicsFaceOperators> > faceKernels;
     std::vector<std::vector<StructuralMechanicsNodeOperators> > nodeKernels;
     std::vector<double> faceMultiplicity;
+
+    Vector_FETI<Vector_Dense, double> xBEM;
 };
 
 }

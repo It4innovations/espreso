@@ -494,6 +494,15 @@ void StructuralMechanics::connect(Matrix_Base<double> *K, Matrix_Base<double> *M
     for (size_t i = 0; i < BEM.size(); ++i) { // when BEM, K is FETI matrix
         if (BEM[i]) {
             BETI[i] = KBEM->domains[i].vals;
+            withBEM = true;
+        }
+    }
+
+    if (withBEM) {
+        xBEM.decomposition = KBEM->decomposition;
+        xBEM.domains.resize(KBEM->domains.size());
+        for (size_t di = 0; di < KBEM->domains.size(); ++di) {
+            xBEM.domains[di].resize(KBEM->decomposition->dsize[di]);
         }
     }
 
@@ -718,9 +727,11 @@ void StructuralMechanics::getInitialVelocity(Vector_Base<double> *x)
     x->setFrom(Results::initialVelocity->data);
 }
 
-void StructuralMechanics::updateSolution(Vector_Base<double> *x)
+void StructuralMechanics::updateSolution(Vector_Distributed<Vector_Dense, double> *x)
 {
-    Vector_FETI<Vector_Dense, double> *xBEM = dynamic_cast<Vector_FETI<Vector_Dense, double>*>(x);
+    if (withBEM) {
+        x->copyTo(&xBEM);
+    }
     #pragma omp parallel for
     for (size_t i = 0; i < BEM.size(); ++i) {
         if (BEM[i]) {
@@ -732,19 +743,22 @@ void StructuralMechanics::updateSolution(Vector_Base<double> *x)
             double *inner = points + 3 * np;
             double ex = elementKernels[i].linearElasticity.configuration->young_modulus.get(0, 0).evaluator->evaluate();
             double mu = elementKernels[i].linearElasticity.configuration->poisson_ratio.get(0, 0).evaluator->evaluate();
-            std::vector<double> xx(xBEM->domains[i].size);
+            std::vector<double> xx(xBEM.domains[i].size);
             for (esint p = 0; p < np; ++p) {
-                xx[0 * np + p] = xBEM->domains[i].vals[3 * p + 0];
-                xx[1 * np + p] = xBEM->domains[i].vals[3 * p + 1];
-                xx[2 * np + p] = xBEM->domains[i].vals[3 * p + 2];
+                xx[0 * np + p] = xBEM.domains[i].vals[3 * p + 0];
+                xx[1 * np + p] = xBEM.domains[i].vals[3 * p + 1];
+                xx[2 * np + p] = xBEM.domains[i].vals[3 * p + 2];
             }
             BEM3DElasticityEval(xx.data() + 3 * np, np, points, ne, elemNodes, ni, inner, ex, mu, xx.data());
             for (esint p = 0; p < ni; ++p) {
-                xBEM->domains[i].vals[3 * (p + np) + 0] = xx[3 * np + 0 * ni + p];
-                xBEM->domains[i].vals[3 * (p + np) + 1] = xx[3 * np + 1 * ni + p];
-                xBEM->domains[i].vals[3 * (p + np) + 2] = xx[3 * np + 2 * ni + p];
+                xBEM.domains[i].vals[3 * (p + np) + 0] = xx[3 * np + 0 * ni + p];
+                xBEM.domains[i].vals[3 * (p + np) + 1] = xx[3 * np + 1 * ni + p];
+                xBEM.domains[i].vals[3 * (p + np) + 2] = xx[3 * np + 2 * ni + p];
             }
         }
+    }
+    if (withBEM) {
+        xBEM.copyTo(x);
     }
     x->storeTo(Results::displacement->data);
     assemble(SubKernel::SOLUTION);
@@ -760,7 +774,7 @@ void StructuralMechanics::updateSolution(Vector_Base<double> *rex, Vector_Base<d
     assemble(SubKernel::SOLUTION);
 }
 
-void StructuralMechanics::nextIteration(Vector_Base<double> *x)
+void StructuralMechanics::nextIteration(Vector_Distributed<Vector_Dense, double> *x)
 {
     x->storeTo(Results::displacement->data);
     if (Results::normal) {

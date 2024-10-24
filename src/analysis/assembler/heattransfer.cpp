@@ -378,6 +378,15 @@ void HeatTransfer::connect(Matrix_Base<double> *K, Matrix_Base<double> *M, Vecto
     for (size_t i = 0; i < BEM.size(); ++i) { // when BEM, K is FETI matrix
         if (BEM[i]) {
             BETI[i] = KBEM->domains[i].vals;
+            withBEM = true;
+        }
+    }
+
+    if (withBEM) {
+        xBEM.decomposition = KBEM->decomposition;
+        xBEM.domains.resize(KBEM->domains.size());
+        for (size_t di = 0; di < KBEM->domains.size(); ++di) {
+            xBEM.domains[di].resize(KBEM->decomposition->dsize[di]);
         }
     }
 
@@ -626,10 +635,12 @@ void HeatTransfer::getInitialTemperature(Vector_Base<double> *x)
     x->setFrom(Results::initialTemperature->data);
 }
 
-void HeatTransfer::updateSolution(Vector_Base<double> *x)
+void HeatTransfer::updateSolution(Vector_Distributed<Vector_Dense, double> *x)
 {
     this->step = step;
-    Vector_FETI<Vector_Dense, double> *xBEM = dynamic_cast<Vector_FETI<Vector_Dense, double>*>(x);
+    if (withBEM) {
+        x->copyTo(&xBEM);
+    }
     #pragma omp parallel for
     for (size_t i = 0; i < BEM.size(); ++i) {
         if (BEM[i]) {
@@ -641,8 +652,11 @@ void HeatTransfer::updateSolution(Vector_Base<double> *x)
             double *inner = points + 3 * np;
 
             double c = elementKernels[i].conductivity.conductivity->values.get(0, 0).evaluator->evaluate();
-            BEM3DLaplaceEval(xBEM->domains[i].vals + np, np, points, ne, elemNodes, ni, inner, c, xBEM->domains[i].vals);
+            BEM3DLaplaceEval(xBEM.domains[i].vals + np, np, points, ne, elemNodes, ni, inner, c, xBEM.domains[i].vals);
         }
+    }
+    if (withBEM) {
+        xBEM.copyTo(x);
     }
     x->storeTo(Results::temperature->data);
     assemble(SubKernel::SOLUTION);

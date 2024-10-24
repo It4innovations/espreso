@@ -26,7 +26,7 @@
 using namespace espreso;
 
 Assembler::Assembler(PhysicsConfiguration &settings)
-: settings(settings), threaded(false)
+: settings(settings), withBEM(false), threaded(false)
 {
     BEM.resize(info::mesh->domains->size);
     BETI.resize(info::mesh->domains->size);

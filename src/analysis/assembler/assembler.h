@@ -69,6 +69,7 @@ protected:
 
     bool isBEM(size_t interval);
 
+    bool withBEM;
     std::vector<int> BEM;
     std::vector<double*> BETI;
     bool threaded;
