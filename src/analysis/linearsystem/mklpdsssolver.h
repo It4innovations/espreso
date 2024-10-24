@@ -68,7 +68,7 @@ struct MKLPDSSLinearSystemSolver: DirectLinearSystemSolver<T> {
         return false;
     }
 
-    T rhs_norm()
+    T rhs_without_dirichlet_norm()
     {
         return this->b.norm();
     }

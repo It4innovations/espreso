@@ -47,7 +47,7 @@ struct EmptySystemSolver: LinearSystemSolver<T> {
         return true;
     }
 
-    T rhs_norm()
+    T rhs_without_dirichlet_norm()
     {
         return T{};
     }

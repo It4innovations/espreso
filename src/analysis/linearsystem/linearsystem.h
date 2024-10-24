@@ -28,7 +28,7 @@ struct LinearSystemSolver {
     Vector_Distributed<Vector_Dense, T> *x, *b;
     Vector_Distributed<Vector_Sparse, T> *dirichlet;
 
-    virtual T rhs_norm() =0;
+    virtual T rhs_without_dirichlet_norm() =0;
 };
 
 }

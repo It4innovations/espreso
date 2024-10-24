@@ -382,7 +382,7 @@ bool StructuralMechanicsTransientNonLinear::checkStress(step::Step &step, double
     if (!configuration.nonlinear_solver.check_second_residual) {
         return true;
     }
-    double b_norm = solver->rhs_norm();
+    double b_norm = solver->rhs_without_dirichlet_norm();
     double nR = b_norm / (1 + f_norm);
 
     if (nR > configuration.nonlinear_solver.requested_second_residual) {

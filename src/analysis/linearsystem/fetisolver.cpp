@@ -43,16 +43,17 @@ FETILinearSystemSolver<T>::~FETILinearSystemSolver()
 }
 
 template <typename T>
-T FETILinearSystemSolver<T>::rhs_norm()
+T FETILinearSystemSolver<T>::rhs_without_dirichlet_norm()
 {
-    Vector_FETI<Vector_Dense, T> *rhs = b.feti.copyPattern();
-    for (size_t di = 0; di < b.feti.domains.size(); ++di) {
-        math::copy(rhs->domains[di], b.feti.domains[di]);
-        math::add(rhs->domains[di], T{-1}, feti.BtL[di]);
+    T sum = 0;
+    for (esint i = b.physics.decomposition->halo.size(), j = 0; i < b.physics.cluster.size; ++i) {
+        while (j < dirichlet.cluster.nnz && dirichlet.cluster.indices[j] < i) ++j;
+        if (j == dirichlet.cluster.nnz || dirichlet.cluster.indices[j] != i) {
+            sum += b.physics.cluster.vals[i] * b.physics.cluster.vals[i];
+        }
     }
-    T norm = rhs->norm();
-    delete rhs;
-    return norm;
+    Communication::allReduce(&sum, NULL, 1, MPITools::getType(sum).mpitype, MPI_SUM);
+    return std::sqrt(sum);
 }
 
 template <typename T>
