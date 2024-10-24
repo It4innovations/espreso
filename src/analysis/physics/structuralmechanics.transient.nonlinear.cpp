@@ -222,7 +222,7 @@ bool StructuralMechanicsTransientNonLinear::run(step::Step &step, Physics *prev)
         time.current = time.previous + time.shift;
 
         eslog::info(" ============================================================================================= \n");
-        eslog::info(" == SUBSTEP   %3d               TIME %8.5f    TIME SHIFT %8.5f    FINAL TIME %8.5f == \n", step.substep, time.current, time.shift, time.final);
+        eslog::info(" == SUBSTEP   %3d               TIME %8.5f    TIME SHIFT %8.5f    FINAL TIME %8.5f == \n", step.substep + 1, time.current, time.shift, time.final);
         eslog::info(" ============================================================================================= \n");
 
         double a0 = (1. - alphaM) / (alpha * time.shift * time.shift);
