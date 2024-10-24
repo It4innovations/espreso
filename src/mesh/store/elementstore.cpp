@@ -347,9 +347,9 @@ void ElementStore::reindex(const serializededata<esint, esint> *nIDs)
 	}
 }
 
-ElementData* ElementStore::appendData(int dimension, NamedData::DataType datatype, const std::string &name, step::TYPE restriction)
+ElementData* ElementStore::appendData(int dimension, NamedData::DataType datatype, const std::string &name, step::TYPE restriction, bool toOutput)
 {
-	this->data.push_back(new ElementData(dimension, datatype, name));
+	this->data.push_back(new ElementData(dimension, datatype, toOutput ? name : std::string()));
 	data.back()->restriction = restriction;
 	data.back()->data.reserve((distribution.process.size + SIMD::size) * dimension);
 	data.back()->data.resize(distribution.process.size * dimension);

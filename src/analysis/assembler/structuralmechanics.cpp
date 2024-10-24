@@ -111,16 +111,16 @@ bool StructuralMechanics::analyze(const step::Step &step)
     validateRegionSettings("THICKNESS", settings.thickness);
 
     if (Results::thickness == nullptr && info::mesh->dimension == 2) {
-        Results::thickness = info::mesh->nodes->appendData(1, NamedData::DataType::SCALAR, "THICKNESS");
+        Results::thickness = info::mesh->nodes->appendData(1, NamedData::DataType::SCALAR, "THICKNESS", step::TYPE::TIME, info::ecf->output.results_selection.thickness);
     }
     if (Results::initialVelocity== nullptr) {
-        Results::initialVelocity = info::mesh->nodes->appendData(info::mesh->dimension, NamedData::DataType::VECTOR, "INITIAL_VELOCITY");
+        Results::initialVelocity = info::mesh->nodes->appendData(info::mesh->dimension, NamedData::DataType::VECTOR, "INITIAL_VELOCITY", step::TYPE::TIME, info::ecf->output.results_selection.initial_values);
     }
 
     bool correct = true;
 
     if (settings.contact_interfaces) {
-        if (Results::normal == nullptr) {
+        if (info::ecf->output.results_selection.normal && Results::normal == nullptr) {
             Results::normal = info::mesh->nodes->appendData(info::mesh->dimension, NamedData::DataType::VECTOR, "NORMAL");
         }
         faceMultiplicity.resize(info::mesh->nodes->size);
@@ -143,49 +143,50 @@ bool StructuralMechanics::analyze(const step::Step &step)
 
     if (configuration.type == StructuralMechanicsLoadStepConfiguration::TYPE::HARMONIC) {
         if (Results::cosDisplacement == nullptr) {
-            Results::cosDisplacement = info::mesh->nodes->appendData(info::mesh->dimension, NamedData::DataType::VECTOR, "DISPLACEMENT_COS", step::TYPE::FREQUENCY);
+            Results::cosDisplacement = info::mesh->nodes->appendData(info::mesh->dimension, NamedData::DataType::VECTOR, "DISPLACEMENT_COS", step::TYPE::FREQUENCY, info::ecf->output.results_selection.displacement);
         }
         if (Results::sinDisplacement == nullptr) {
-            Results::sinDisplacement = info::mesh->nodes->appendData(info::mesh->dimension, NamedData::DataType::VECTOR, "DISPLACEMENT_SIN", step::TYPE::FREQUENCY);
+            Results::sinDisplacement = info::mesh->nodes->appendData(info::mesh->dimension, NamedData::DataType::VECTOR, "DISPLACEMENT_SIN", step::TYPE::FREQUENCY, info::ecf->output.results_selection.displacement);
         }
         if (Results::displacementAmplitude == nullptr) {
-            Results::displacementAmplitude = info::mesh->nodes->appendData(info::mesh->dimension, NamedData::DataType::SCALAR, "DISPLACEMENT_AMPLITUDE", step::TYPE::FREQUENCY);
+            Results::displacementAmplitude = info::mesh->nodes->appendData(info::mesh->dimension, NamedData::DataType::SCALAR, "DISPLACEMENT_AMPLITUDE", step::TYPE::FREQUENCY, info::ecf->output.results_selection.displacement);
         }
         if (Results::phase == nullptr) {
-            Results::phase = info::mesh->nodes->appendData(info::mesh->dimension, NamedData::DataType::SCALAR, "PHASE", step::TYPE::FREQUENCY);
+            Results::phase = info::mesh->nodes->appendData(info::mesh->dimension, NamedData::DataType::SCALAR, "PHASE", step::TYPE::FREQUENCY, info::ecf->output.results_selection.displacement);
         }
+
         if (Results::velocity == nullptr) {
-            Results::velocity = info::mesh->nodes->appendData(info::mesh->dimension, NamedData::DataType::VECTOR, "VELOCITY", step::TYPE::FREQUENCY);
+            Results::velocity = info::mesh->nodes->appendData(info::mesh->dimension, NamedData::DataType::VECTOR, "VELOCITY", step::TYPE::FREQUENCY, info::ecf->output.results_selection.velocity);
         }
         if (Results::velocityAmplitude == nullptr) {
-            Results::velocityAmplitude = info::mesh->nodes->appendData(info::mesh->dimension, NamedData::DataType::SCALAR, "VELOCITY_AMPLITUDE", step::TYPE::FREQUENCY);
+            Results::velocityAmplitude = info::mesh->nodes->appendData(info::mesh->dimension, NamedData::DataType::SCALAR, "VELOCITY_AMPLITUDE", step::TYPE::FREQUENCY, info::ecf->output.results_selection.velocity);
         }
         if (Results::acceleration == nullptr) {
-            Results::acceleration = info::mesh->nodes->appendData(info::mesh->dimension, NamedData::DataType::VECTOR, "ACCELERATION", step::TYPE::FREQUENCY);
+            Results::acceleration = info::mesh->nodes->appendData(info::mesh->dimension, NamedData::DataType::VECTOR, "ACCELERATION", step::TYPE::FREQUENCY, info::ecf->output.results_selection.acceleration);
         }
         if (Results::accelerationAmplitude == nullptr) {
-            Results::accelerationAmplitude = info::mesh->nodes->appendData(info::mesh->dimension, NamedData::DataType::SCALAR, "ACCELERATION_AMPLITUDE", step::TYPE::FREQUENCY);
+            Results::accelerationAmplitude = info::mesh->nodes->appendData(info::mesh->dimension, NamedData::DataType::SCALAR, "ACCELERATION_AMPLITUDE", step::TYPE::FREQUENCY, info::ecf->output.results_selection.acceleration);
         }
     } else {
         if (Results::displacement == nullptr) {
-            Results::displacement = info::mesh->nodes->appendData(info::mesh->dimension, NamedData::DataType::VECTOR, "DISPLACEMENT");
+            Results::displacement = info::mesh->nodes->appendData(info::mesh->dimension, NamedData::DataType::VECTOR, "DISPLACEMENT", step::TYPE::TIME, info::ecf->output.results_selection.displacement);
         }
         if (Results::fluidForce == nullptr) {
-            Results::fluidForce = info::mesh->nodes->appendData(info::mesh->dimension, NamedData::DataType::VECTOR, "FLUID_FORCE");
+            Results::fluidForce = info::mesh->nodes->appendData(info::mesh->dimension, NamedData::DataType::VECTOR, "FLUID_FORCE", step::TYPE::TIME, info::ecf->output.results_selection.fluid_interaction);
         }
         if (Results::velocity == nullptr) {
-            Results::velocity = info::mesh->nodes->appendData(info::mesh->dimension, NamedData::DataType::VECTOR, "VELOCITY");
+            Results::velocity = info::mesh->nodes->appendData(info::mesh->dimension, NamedData::DataType::VECTOR, "VELOCITY", step::TYPE::TIME, info::ecf->output.results_selection.velocity);
         }
         if (Results::acceleration == nullptr) {
-            Results::acceleration = info::mesh->nodes->appendData(info::mesh->dimension, NamedData::DataType::VECTOR, "ACCELERATION");
+            Results::acceleration = info::mesh->nodes->appendData(info::mesh->dimension, NamedData::DataType::VECTOR, "ACCELERATION", step::TYPE::TIME, info::ecf->output.results_selection.acceleration);
         }
         if (info::ecf->output.results_selection.stress && Results::principalStress == nullptr) {
-            Results::principalStress = info::mesh->elements->appendData(info::mesh->dimension    , NamedData::DataType::NUMBERED   , "PRINCIPAL_STRESS");
-            Results::componentStress = info::mesh->elements->appendData(info::mesh->dimension * 2, NamedData::DataType::TENSOR_SYMM, "COMPONENT_STRESS");
-            Results::vonMisesStress  = info::mesh->elements->appendData(                        1, NamedData::DataType::SCALAR     , "VON_MISES_STRESS");
+            Results::principalStress = info::mesh->elements->appendData(info::mesh->dimension    , NamedData::DataType::NUMBERED   , "PRINCIPAL_STRESS", step::TYPE::TIME, info::ecf->output.results_selection.stress);
+            Results::componentStress = info::mesh->elements->appendData(info::mesh->dimension * 2, NamedData::DataType::TENSOR_SYMM, "COMPONENT_STRESS", step::TYPE::TIME, info::ecf->output.results_selection.stress);
+            Results::vonMisesStress  = info::mesh->elements->appendData(                        1, NamedData::DataType::SCALAR     , "VON_MISES_STRESS", step::TYPE::TIME, info::ecf->output.results_selection.stress);
         }
-        if (info::ecf->output.results_selection.reactions && Results::reactionForce == nullptr) {
-            Results::reactionForce = info::mesh->nodes->appendData(info::mesh->dimension, NamedData::DataType::VECTOR, "REACTION_FORCES");
+        if (Results::reactionForce == nullptr) {
+            Results::reactionForce = info::mesh->nodes->appendData(info::mesh->dimension, NamedData::DataType::VECTOR, "REACTION_FORCES", step::TYPE::TIME, info::ecf->output.results_selection.reactions);
         }
 
         for (size_t i = 0; i < info::mesh->materials.size(); ++i) {

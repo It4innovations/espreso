@@ -39,6 +39,10 @@ ResultsSelectionConfiguration::ResultsSelectionConfiguration(const PhysicsConfig
 	REGISTER(thickness, ECFMetaData()
 			.setdescription({ "Element thickness." })
 			.setdatatype({ ECFDataType::BOOL }));
+
+    REGISTER(initial_values, ECFMetaData()
+            .setdescription({ "Initial values." })
+            .setdatatype({ ECFDataType::BOOL }));
 }
 
 HarmonicOuputConfiguration::HarmonicOuputConfiguration()

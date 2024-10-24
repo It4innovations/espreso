@@ -34,7 +34,7 @@ struct ElementStore {
 
 	void reindex(const serializededata<esint, esint> *nIDs);
 
-	ElementData* appendData(int dimension, NamedData::DataType datatype, const std::string &name = "", step::TYPE restriction = step::TYPE::TIME);
+	ElementData* appendData(int dimension, NamedData::DataType datatype, const std::string &name = "", step::TYPE restriction = step::TYPE::TIME, bool toOutput = true);
 
 	ElementsDistributionInfo distribution;
 

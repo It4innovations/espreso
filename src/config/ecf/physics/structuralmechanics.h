@@ -146,17 +146,27 @@ struct StructuralMechanicsOutputSettings: public virtual ECFDescription {
 
 	static void addMonitorableProperties(ECFMetaData &metadata, const ECF *root);
 
-	bool displacement, stress, reactions;
+	bool normal;
+	bool displacement, velocity, acceleration, stress, reactions;
+	bool fluid_interaction;
 
 	void basic() {
+	    normal = false;
 		displacement = true;
+		velocity = false;
+		acceleration = false;
 		stress = false;
 		reactions = false;
+		fluid_interaction = false;
 	}
 	void all() {
-		displacement = true;
-		stress = true;
-		reactions = true;
+        normal = true;
+        displacement = true;
+        velocity = true;
+        acceleration = true;
+        stress = true;
+        reactions = true;
+        fluid_interaction = true;
 	}
 
 	static void activate();

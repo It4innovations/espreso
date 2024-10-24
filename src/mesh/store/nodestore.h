@@ -33,7 +33,7 @@ struct NodeStore {
 	void permute(const std::vector<esint> &permutation) { permute(permutation, distribution); }
 	void permute(const std::vector<esint> &permutation, const std::vector<size_t> &distribution);
 
-	NodeData* appendData(int dimension, NamedData::DataType datatype, const std::string &name = "", step::TYPE restriction = step::TYPE::TIME);
+	NodeData* appendData(int dimension, NamedData::DataType datatype, const std::string &name = "", step::TYPE restriction = step::TYPE::TIME, bool toOutput = true);
 
 	std::vector<esint> gatherNodeDistribution();
 	std::vector<esint> gatherUniqueNodeDistribution();

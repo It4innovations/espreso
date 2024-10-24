@@ -49,6 +49,7 @@ struct ResultsSelectionConfiguration: public HeatTransferOutputSettings, public 
 	}
 
 	bool thickness;
+	bool initial_values;
 
 	ResultsSelectionConfiguration(const PhysicsConfiguration::TYPE &physics);
 protected:

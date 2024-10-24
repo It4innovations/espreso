@@ -287,15 +287,40 @@ StructuralMechanicsOutputSettings::StructuralMechanicsOutputSettings()
 {
 	basic();
 
+	REGISTER(normal, ECFMetaData()
+                .setdescription({ "Normal." })
+                .setdatatype({ ECFDataType::BOOL })
+                .allowonly([&] () { return _activated; }));
+
 	REGISTER(displacement, ECFMetaData()
 				.setdescription({ "Displacement." })
 				.setdatatype({ ECFDataType::BOOL })
 				.allowonly([&] () { return _activated; }));
 
+	REGISTER(velocity, ECFMetaData()
+                .setdescription({ "Velocity" })
+                .setdatatype({ ECFDataType::BOOL })
+                .allowonly([&] () { return _activated; }));
+
+	REGISTER(acceleration, ECFMetaData()
+                .setdescription({ "Acceleration." })
+                .setdatatype({ ECFDataType::BOOL })
+                .allowonly([&] () { return _activated; }));
+
 	REGISTER(stress, ECFMetaData()
 				.setdescription({ "Stress." })
 				.setdatatype({ ECFDataType::BOOL })
 				.allowonly([&] () { return _activated; }));
+
+	REGISTER(reactions, ECFMetaData()
+                .setdescription({ "Reaction forces." })
+                .setdatatype({ ECFDataType::BOOL })
+                .allowonly([&] () { return _activated; }));
+
+	REGISTER(fluid_interaction, ECFMetaData()
+                .setdescription({ "FSI values." })
+                .setdatatype({ ECFDataType::BOOL })
+                .allowonly([&] () { return _activated; }));
 }
 
 StructuralMechanicsGlobalSettings::StructuralMechanicsGlobalSettings(ECFObject *ecfdescription)

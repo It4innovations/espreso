@@ -269,9 +269,9 @@ std::vector<esint> NodeStore::gatherUniqueNodeDistribution()
 	return Store::gatherDistribution(uniqInfo.size);
 }
 
-NodeData* NodeStore::appendData(int dimension, NamedData::DataType datatype, const std::string &name, step::TYPE restriction)
+NodeData* NodeStore::appendData(int dimension, NamedData::DataType datatype, const std::string &name, step::TYPE restriction, bool toOutput)
 {
-	data.push_back(new NodeData(dimension, datatype, name));
+	data.push_back(new NodeData(dimension, datatype, toOutput ? name : std::string()));
 	data.back()->restriction = restriction;
 	data.back()->data.reserve(dimension * (size + SIMD::size));
 	data.back()->data.resize(dimension * size);
