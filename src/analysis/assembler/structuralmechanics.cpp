@@ -120,8 +120,8 @@ bool StructuralMechanics::analyze(const step::Step &step)
     bool correct = true;
 
     if (settings.contact_interfaces) {
-        if (info::ecf->output.results_selection.normal && Results::normal == nullptr) {
-            Results::normal = info::mesh->nodes->appendData(info::mesh->dimension, NamedData::DataType::VECTOR, "NORMAL");
+        if (Results::normal == nullptr) {
+            Results::normal = info::mesh->nodes->appendData(info::mesh->dimension, NamedData::DataType::VECTOR, "NORMAL", step::TYPE::TIME, info::ecf->output.results_selection.normal);
         }
         faceMultiplicity.resize(info::mesh->nodes->size);
         for(size_t r = 1; r < info::mesh->boundary.size(); ++r) {
@@ -180,7 +180,7 @@ bool StructuralMechanics::analyze(const step::Step &step)
         if (Results::acceleration == nullptr) {
             Results::acceleration = info::mesh->nodes->appendData(info::mesh->dimension, NamedData::DataType::VECTOR, "ACCELERATION", step::TYPE::TIME, info::ecf->output.results_selection.acceleration);
         }
-        if (info::ecf->output.results_selection.stress && Results::principalStress == nullptr) {
+        if (Results::principalStress == nullptr) {
             Results::principalStress = info::mesh->elements->appendData(info::mesh->dimension    , NamedData::DataType::NUMBERED   , "PRINCIPAL_STRESS", step::TYPE::TIME, info::ecf->output.results_selection.stress);
             Results::componentStress = info::mesh->elements->appendData(info::mesh->dimension * 2, NamedData::DataType::TENSOR_SYMM, "COMPONENT_STRESS", step::TYPE::TIME, info::ecf->output.results_selection.stress);
             Results::vonMisesStress  = info::mesh->elements->appendData(                        1, NamedData::DataType::SCALAR     , "VON_MISES_STRESS", step::TYPE::TIME, info::ecf->output.results_selection.stress);
