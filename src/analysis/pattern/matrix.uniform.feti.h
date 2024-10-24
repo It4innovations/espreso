@@ -28,7 +28,7 @@ struct MatrixUniformFETI {
         Vector_FETI<Vector_Dense, T> in;
         struct {
             Vector_FETI<Vector_Dense, T> feti;
-            Vector_Dense<T> direct;
+            Vector_Dense<T, esint> direct;
         } out;
 
         void init(MatrixUniformFETI &m);

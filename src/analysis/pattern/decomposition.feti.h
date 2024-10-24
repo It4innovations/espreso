@@ -18,7 +18,7 @@ struct DecompositionFETI: public DecompositionDirect {
     std::vector<int> neighDomain; // first domain index per neighbor, the last is MY OFFSET
     std::vector<int> dsize;
 
-    serializededata<int, DIndex> *dmap = nullptr;
+    serializededata<esint, DIndex> *dmap = nullptr;
 
     bool ismy(int domain) const
     {
