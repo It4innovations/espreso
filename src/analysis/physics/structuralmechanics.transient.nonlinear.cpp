@@ -279,7 +279,8 @@ bool StructuralMechanicsTransientNonLinear::run(step::Step &step, Physics *prev)
         // NEWTON RAPHSON
         converged = false;
         double f_norm = f->norm();
-        while (step.iteration++ < configuration.nonlinear_solver.max_iterations) {
+        double U_norm = dU->norm(); // U from the predictor step
+        while (!converged && step.iteration++ < configuration.nonlinear_solver.max_iterations) {
             double istart = eslog::time();
             eslog::info("      ==                                                    %3d. EQUILIBRIUM ITERATION == \n", step.iteration);
 
@@ -314,8 +315,15 @@ bool StructuralMechanicsTransientNonLinear::run(step::Step &step, Physics *prev)
             A->add(-1. / (alpha * time.shift), V_old)->add(-1. / (2 * alpha) + 1, A_old);
             eslog::checkpointln("SIMULATION: SOLUTION UPDATED");
 
-            if ((converged = checkDisplacement(step, f_norm))) {
-                break;
+            bool norm1 = checkDisplacement(step, U_norm);
+            bool norm2 = checkStress(step, f_norm);
+            converged = norm1 && norm2;
+            if (converged) {
+                eslog::info("      =================================================================================== \n\n");
+                assembler.updateSolution(U);
+            } else {
+                eslog::info("       = ----------------------------------------------------------------------------- = \n");
+                assembler.nextIteration(U);
             }
         }
         precice.write(StructuralMechanics::Results::displacement->data.data());
@@ -351,20 +359,37 @@ bool StructuralMechanicsTransientNonLinear::run(step::Step &step, Physics *prev)
     return converged;
 }
 
-bool StructuralMechanicsTransientNonLinear::checkDisplacement(step::Step &step, double f_norm)
+bool StructuralMechanicsTransientNonLinear::checkDisplacement(step::Step &step, double U_norm)
 {
+    if (!configuration.nonlinear_solver.check_first_residual) {
+        return true;
+    }
+    double solutionNumerator = solver->x->norm();
+    double solutionDenominator = std::max(U_norm, 1e-3);
+    double norm = solutionNumerator / solutionDenominator;
+
+    if (norm > configuration.nonlinear_solver.requested_first_residual) {
+        eslog::info("      == DISPLACEMENT NORM / CRITERIA                        %.5e / %.5e == \n", norm, configuration.nonlinear_solver.requested_first_residual);
+        return false;
+    } else {
+        eslog::info("      == DISPLACEMENT NORM / CRITERIA [CONVERGED]            %.5e / %.5e == \n", norm, configuration.nonlinear_solver.requested_first_residual);
+        return true;
+    }
+}
+
+bool StructuralMechanicsTransientNonLinear::checkStress(step::Step &step, double f_norm)
+{
+    if (!configuration.nonlinear_solver.check_second_residual) {
+        return true;
+    }
     double b_norm = solver->rhs_norm();
     double nR = b_norm / (1 + f_norm);
 
-    if (nR > configuration.nonlinear_solver.requested_first_residual) {
-        eslog::info("      == DISPLACEMENT NORM, CRITERIA                         %.5e / %.5e == \n", nR, configuration.nonlinear_solver.requested_first_residual);
-        eslog::info("       = ----------------------------------------------------------------------------- = \n");
-        assembler.nextIteration(U);
+    if (nR > configuration.nonlinear_solver.requested_second_residual) {
+        eslog::info("      == STRESS NORM       / CRITERIA                        %.5e / %.5e == \n", nR, configuration.nonlinear_solver.requested_second_residual);
         return false;
     } else {
-        eslog::info("      == DISPLACEMENT NORM, CRITERIA [CONVERGED]             %.5e / %.5e == \n", nR, configuration.nonlinear_solver.requested_first_residual);
-        eslog::info("      =================================================================================== \n");
-        assembler.updateSolution(U);
+        eslog::info("      == STRESS NORM       / CRITERIA [CONVERGED]            %.5e / %.5e == \n", nR, configuration.nonlinear_solver.requested_second_residual);
         return true;
     }
 }

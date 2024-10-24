@@ -36,7 +36,8 @@ public:
     LinearSystemSolver<double> *solver;
 
 protected:
-    bool checkDisplacement(step::Step &step, double f_norm);
+    bool checkDisplacement(step::Step &step, double U_norm);
+    bool checkStress(step::Step &step, double f_norm);
     void storeSystem(step::Step &step);
     void storeSolution(step::Step &step);
 };
