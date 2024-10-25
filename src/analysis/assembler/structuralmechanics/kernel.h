@@ -671,6 +671,14 @@ void setNodeKernel(StructuralMechanicsNodeOperators &operators, SubKernel::Actio
                         [] (Element &element, size_t &n, size_t &s, double value) { element.displacement.node[1][s] = value; }));
             }
         }
+        if (operators.force.expressionVector) {
+            operators.expressions.node.push_back(new ExternalNodeExpression<ndim, Element>(
+                    operators.force.expressionVector->x.evaluator,
+                    [] (Element &element, size_t &gp, size_t &s, double value) { element.ecf.force[0][s] = value; }));
+            operators.expressions.node.push_back(new ExternalNodeExpression<ndim, Element>(
+                    operators.force.expressionVector->y.evaluator,
+                    [] (Element &element, size_t &gp, size_t &s, double value) { element.ecf.force[1][s] = value; }));
+        }
         if (operators.harmonicForce.magnitude.expressionVector) {
             operators.expressions.node.push_back(new ExternalNodeExpression<ndim, Element>(
                     operators.harmonicForce.magnitude.expressionVector->x.evaluator,
@@ -707,6 +715,17 @@ void setNodeKernel(StructuralMechanicsNodeOperators &operators, SubKernel::Actio
                         [] (Element &element, size_t &n, size_t &s, double value) { element.displacement.node[2][s] = value; }));
             }
         }
+        if (operators.force.expressionVector) {
+            operators.expressions.node.push_back(new ExternalNodeExpression<ndim, Element>(
+                    operators.force.expressionVector->x.evaluator,
+                    [] (Element &element, size_t &gp, size_t &s, double value) { element.ecf.force[0][s] = value; }));
+            operators.expressions.node.push_back(new ExternalNodeExpression<ndim, Element>(
+                    operators.force.expressionVector->y.evaluator,
+                    [] (Element &element, size_t &gp, size_t &s, double value) { element.ecf.force[1][s] = value; }));
+            operators.expressions.node.push_back(new ExternalNodeExpression<ndim, Element>(
+                    operators.force.expressionVector->z.evaluator,
+                    [] (Element &element, size_t &gp, size_t &s, double value) { element.ecf.force[2][s] = value; }));
+        }
         if (operators.harmonicForce.magnitude.expressionVector) {
             operators.expressions.node.push_back(new ExternalNodeExpression<ndim, Element>(
                     operators.harmonicForce.magnitude.expressionVector->x.evaluator,
@@ -738,11 +757,13 @@ void runNodeKernel(const StructuralMechanicsNodeOperators &operators, SubKernel:
     typedef StructuralMechanicsDirichlet<ndim> Element; Element element;
 
     CoordinatesKernel<1, ndim> coordinates(operators.coordinates);
+    ForceKernel<ndim> force(operators.force);
     HarmonicForceKernel<ndim> harmonicForce(operators.harmonicForce);
     RHSFillerKernel<1> outReRHS(operators.reRHSfiller);
     RHSFillerKernel<1> outImRHS(operators.imRHSfiller);
     VectorSetterKernel<1, Element> set(operators.reDirichlet, [] (auto &element, size_t &n, size_t &d, size_t &s) { return element.displacement.node[d][s]; });
 
+    force.setActiveness(action);
     harmonicForce.setActiveness(action);
     outReRHS.setActiveness(action);
     outImRHS.setActiveness(action);
@@ -762,6 +783,10 @@ void runNodeKernel(const StructuralMechanicsNodeOperators &operators, SubKernel:
         coordinates.simd(element);
         for (size_t i = 0; i < nonconst.size(); ++i) {
             nonconst[i]->simd(element, 0);
+        }
+
+        if (force.isactive) {
+            force.simd(element);
         }
 
         if (harmonicForce.isactive) {

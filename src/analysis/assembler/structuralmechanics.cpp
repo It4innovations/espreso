@@ -354,6 +354,9 @@ bool StructuralMechanics::analyze(const step::Step &step)
     if (configuration.normal_pressure.size()) {
         correct &= checkBoundaryParameter("NORMAL_PRESSURE", configuration.normal_pressure);
     }
+    if (configuration.force.size()) {
+        correct &= checkBoundaryParameter("FORCE", configuration.force);
+    }
     if (configuration.harmonic_force.size()) {
         correct &= checkBoundaryParameter("HARMONIC_FORCE", configuration.harmonic_force);
     }
@@ -445,6 +448,7 @@ bool StructuralMechanics::analyze(const step::Step &step)
             }
         }
         for (size_t t = 0; t < region->nodes->threads(); ++t) {
+            nodeKernels[r][t].force.activate(getExpression(region->name, configuration.force));
             nodeKernels[r][t].harmonicForce.activate(getExpression(region->name, configuration.harmonic_force), settings.element_behaviour);
             nodeKernels[r][t].coordinates.activate(region->nodes->cbegin(t), region->nodes->cend(), false);
         }
@@ -521,6 +525,9 @@ void StructuralMechanics::connect(Matrix_Base<double> *K, Matrix_Base<double> *M
             for (size_t i = 0; i < info::mesh->boundaryRegions[r]->eintervals.size(); ++i) {
                 faceKernels[r][i].reRHSfiller.activate(r, i, info::mesh->dimension, faceKernels[r][i].elements, f);
             }
+        }
+        for (size_t t = 0; t < info::mesh->boundaryRegions[r]->nodes->threads(); ++t) {
+            nodeKernels[r][t].reRHSfiller.activate(r, t, info::mesh->dimension, nodeKernels[r][t].elements, f);
         }
     }
     for (auto it = configuration.displacement.begin(); it != configuration.displacement.end(); ++it) {

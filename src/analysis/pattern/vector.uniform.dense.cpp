@@ -42,8 +42,8 @@ void VectorUniformDense::buildPattern(int dofs)
 
     boundary.resize(info::mesh->boundaryRegions.size());
     for (size_t r = 1; r < info::mesh->boundaryRegions.size(); ++r) {
+        const BoundaryRegionStore *region = info::mesh->boundaryRegions[r];
         if (info::mesh->boundaryRegions[r]->dimension) {
-            const BoundaryRegionStore *region = info::mesh->boundaryRegions[r];
             for (size_t i = 0; i < region->eintervals.size(); ++i) {
                 boundary[r].offset.push_back(boundary[r].permutation.size());
                 for (auto e = region->elements->cbegin() + region->eintervals[i].begin; e != region->elements->cbegin() + region->eintervals[i].end; ++e) {
@@ -51,6 +51,15 @@ void VectorUniformDense::buildPattern(int dofs)
                         for (auto from = e->begin(); from != e->end(); ++from) {
                             boundary[r].permutation.push_back(*from * dofs + rd);
                         }
+                    }
+                }
+            }
+        } else {
+            for (size_t t = 0; t < region->nodes->threads(); ++t) {
+                boundary[r].offset.push_back(boundary[r].permutation.size());
+                for (auto n = region->nodes->datatarray().cbegin(t); n != region->nodes->datatarray().cend(t); ++n) {
+                    for (int d = 0; d < dofs; ++d) {
+                        boundary[r].permutation.push_back(*n * dofs + d);
                     }
                 }
             }

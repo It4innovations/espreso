@@ -30,6 +30,7 @@
 #include "analysis/assembler/structuralmechanics/op.matrix.corotation.h"
 #include "analysis/assembler/structuralmechanics/op.normalpressure.h"
 #include "analysis/assembler/structuralmechanics/op.pressure.h"
+#include "analysis/assembler/structuralmechanics/op.force.h"
 #include "analysis/assembler/structuralmechanics/op.harmonicforce.h"
 #include "analysis/assembler/structuralmechanics/op.fluidforce.h"
 #include "analysis/assembler/structuralmechanics/op.velocity.h"
@@ -111,6 +112,7 @@ struct StructuralMechanicsNodeOperators {
     Normal normal;
 
     ExternalExpressionVector displacement;
+    Force force;
     HarmonicForce harmonicForce;
 
     DataFiller reRHSfiller, imRHSfiller, reDirichlet, imDirichlet;

@@ -194,6 +194,9 @@ bool Assembler::checkExpression(const std::string &name, ECFExpressionVector &ex
 
 bool Assembler::checkElementParameter(const std::string &name, std::map<std::string, ECFExpression> &settings)
 {
+    for (auto s = settings.begin(); s != settings.end(); ++s) {
+        info::mesh->bregion(s->first);
+    }
     if (settings.size() == 1 && StringCompare::caseInsensitiveEq(settings.begin()->first, "ALL_ELEMENTS")) {
         return checkExpression(name, settings.begin()->second);
     } else {
@@ -211,6 +214,9 @@ bool Assembler::checkElementParameter(const std::string &name, std::map<std::str
 
 bool Assembler::checkElementParameter(const std::string &name, std::map<std::string, ECFExpressionVector> &settings)
 {
+    for (auto s = settings.begin(); s != settings.end(); ++s) {
+        info::mesh->bregion(s->first);
+    }
     if (settings.size() == 1 && StringCompare::caseInsensitiveEq(settings.begin()->first, "ALL_ELEMENTS")) {
         switch (info::mesh->dimension) {
         case 2: if (!checkExpression(name + ".X", settings.begin()->second.x) || !checkExpression(name + ".Y", settings.begin()->second.y)) { return false; } break;
@@ -234,6 +240,9 @@ bool Assembler::checkElementParameter(const std::string &name, std::map<std::str
 
 bool Assembler::checkElementParameter(const std::string &name, std::map<std::string, ECFExpressionVector> &settings, int dim)
 {
+    for (auto s = settings.begin(); s != settings.end(); ++s) {
+        info::mesh->bregion(s->first);
+    }
     if (settings.size() == 1 && StringCompare::caseInsensitiveEq(settings.begin()->first, "ALL_ELEMENTS")) {
         return checkExpression(name, settings.begin()->second.data[dim]);
     } else {
@@ -251,6 +260,9 @@ bool Assembler::checkElementParameter(const std::string &name, std::map<std::str
 
 bool Assembler::checkBoundaryParameter(const std::string &name, std::map<std::string, ECFExpression> &settings)
 {
+    for (auto s = settings.begin(); s != settings.end(); ++s) {
+        info::mesh->bregion(s->first);
+    }
     eslog::info("  %s%*s \n", name.c_str(), 91 - name.size(), "");
     for (auto region = info::mesh->boundaryRegions.crbegin(); region != info::mesh->boundaryRegions.crend(); ++region) {
         auto it = settings.find((*region)->name);
@@ -264,6 +276,9 @@ bool Assembler::checkBoundaryParameter(const std::string &name, std::map<std::st
 
 bool Assembler::checkBoundaryParameter(const std::string &name, std::map<std::string, ECFExpressionVector> &settings)
 {
+    for (auto s = settings.begin(); s != settings.end(); ++s) {
+        info::mesh->bregion(s->first);
+    }
     eslog::info("  %s%*s \n", name.c_str(), 91 - name.size(), "");
     for (auto region = info::mesh->boundaryRegions.crbegin(); region != info::mesh->boundaryRegions.crend(); ++region) {
         auto it = settings.find((*region)->name);
@@ -280,6 +295,9 @@ bool Assembler::checkBoundaryParameter(const std::string &name, std::map<std::st
 
 bool Assembler::checkBoundaryParameter(const std::string &name, std::map<std::string, ECFExpressionOptionalVector> &settings)
 {
+    for (auto s = settings.begin(); s != settings.end(); ++s) {
+        info::mesh->bregion(s->first);
+    }
     eslog::info("  %s%*s \n", name.c_str(), 91 - name.size(), "");
     for (auto region = info::mesh->boundaryRegions.crbegin(); region != info::mesh->boundaryRegions.crend(); ++region) {
         auto it = settings.find((*region)->name);
@@ -296,6 +314,9 @@ bool Assembler::checkBoundaryParameter(const std::string &name, std::map<std::st
 
 bool Assembler::checkBoundaryParameter(const std::string &name, std::map<std::string, ECFHarmonicExpressionVector> &settings)
 {
+    for (auto s = settings.begin(); s != settings.end(); ++s) {
+        info::mesh->bregion(s->first);
+    }
     eslog::info("  %s%*s \n", name.c_str(), 91 - name.size(), "");
     for (auto region = info::mesh->boundaryRegions.crbegin(); region != info::mesh->boundaryRegions.crend(); ++region) {
         auto it = settings.find((*region)->name);

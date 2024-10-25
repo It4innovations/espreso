@@ -201,7 +201,7 @@ size_t Mesh::bregionIndex(const std::string &name)
 			return r;
 		}
 	}
-	eslog::error("Unknown boundary region '%s'\n.", name.c_str());
+	eslog::error("Unknown boundary region '%s'.\n", name.c_str());
 	return 0;
 }
 

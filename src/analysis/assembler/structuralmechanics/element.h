@@ -108,6 +108,7 @@ template <size_t nodes, size_t gps, size_t ndim, size_t edim> struct StructuralM
 
 template <size_t ndim> struct StructuralMechanicsDirichlet: public GeneralNode<ndim> {
     struct {
+        alignas(SIMD::size * sizeof(double)) SIMD force[ndim];
         alignas(SIMD::size * sizeof(double)) SIMD harmonicForceMag[ndim];
         alignas(SIMD::size * sizeof(double)) SIMD harmonicForceCos[ndim];
         alignas(SIMD::size * sizeof(double)) SIMD harmonicForceSin[ndim];
