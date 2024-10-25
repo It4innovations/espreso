@@ -29,7 +29,7 @@ def configure(ctx):
         ctx.env.append_unique("CXXFLAGS", [ "-qopenmp" ])
         ctx.env.append_unique("LINKFLAGS", [ "-qopenmp" ])
     if ctx.env.COMPILER_CXX == "nvc++":
-        ctx.env.append_unique("CXXFLAGS", [ "-fopenmp" ])
+        ctx.env.append_unique("CXXFLAGS", [ "-fopenmp", "--diag_suppress initialization_not_reachable", "--diag_suppress code_is_unreachable" ])
         ctx.env.append_unique("LINKFLAGS", [ "-fopenmp" ])
 
     if ctx.options.flavor == "fujitsu":

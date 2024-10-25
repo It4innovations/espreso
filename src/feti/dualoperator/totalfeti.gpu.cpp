@@ -403,7 +403,7 @@ void TotalFETIGpu<T,I>::set(const step::Step &step)
     else
     {
         for(size_t di = 0; di < n_domains; di++) {
-            domain_data[di].allocated_F_index = -1;
+            domain_data[di].allocated_F_index = std::numeric_limits<size_t>::max();
             domain_data[di].hermitian_F_fill = '_';
             domain_data[di].ld_F = 0;
             domain_data[di].should_allocate_d_F = false;

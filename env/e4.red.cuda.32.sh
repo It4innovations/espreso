@@ -30,8 +30,8 @@ export CXX=mpic++
 export CXXFLAGS+=" -fmax-errors=1"
 
 export OMP_PLACES=cores
-export OMP_PROC_BIND=close
-export OMP_NUM_THREADS=72,1
+export OMP_PROC_BIND=spread
+export OMP_NUM_THREADS=18,1 # 72 would be too much, the code is gpu-bound anyway
 
 export BLAS_LIBRARIES="nvpl_blas_lp64_seq"
 

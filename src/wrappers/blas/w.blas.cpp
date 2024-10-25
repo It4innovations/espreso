@@ -8,7 +8,7 @@
 #ifdef HAVE_BLAS
 #include "cblas.h"
 
-#if defined(BLIS_INT_TYPE_SIZE)
+#if defined(BLIS_INT_TYPE_SIZE) or defined(NVPL_BLAS_API)
 using CBLAS_LAYOUT = CBLAS_ORDER;
 #endif
 
