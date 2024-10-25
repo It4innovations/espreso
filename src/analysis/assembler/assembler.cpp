@@ -195,7 +195,7 @@ bool Assembler::checkExpression(const std::string &name, ECFExpressionVector &ex
 bool Assembler::checkElementParameter(const std::string &name, std::map<std::string, ECFExpression> &settings)
 {
     for (auto s = settings.begin(); s != settings.end(); ++s) {
-        info::mesh->bregion(s->first);
+        info::mesh->eregion(s->first);
     }
     if (settings.size() == 1 && StringCompare::caseInsensitiveEq(settings.begin()->first, "ALL_ELEMENTS")) {
         return checkExpression(name, settings.begin()->second);
@@ -215,7 +215,7 @@ bool Assembler::checkElementParameter(const std::string &name, std::map<std::str
 bool Assembler::checkElementParameter(const std::string &name, std::map<std::string, ECFExpressionVector> &settings)
 {
     for (auto s = settings.begin(); s != settings.end(); ++s) {
-        info::mesh->bregion(s->first);
+        info::mesh->eregion(s->first);
     }
     if (settings.size() == 1 && StringCompare::caseInsensitiveEq(settings.begin()->first, "ALL_ELEMENTS")) {
         switch (info::mesh->dimension) {
@@ -241,7 +241,7 @@ bool Assembler::checkElementParameter(const std::string &name, std::map<std::str
 bool Assembler::checkElementParameter(const std::string &name, std::map<std::string, ECFExpressionVector> &settings, int dim)
 {
     for (auto s = settings.begin(); s != settings.end(); ++s) {
-        info::mesh->bregion(s->first);
+        info::mesh->eregion(s->first);
     }
     if (settings.size() == 1 && StringCompare::caseInsensitiveEq(settings.begin()->first, "ALL_ELEMENTS")) {
         return checkExpression(name, settings.begin()->second.data[dim]);
