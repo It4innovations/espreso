@@ -18,6 +18,9 @@ def configure(ctx):
         else:
             ctx.env.append_unique("CXXFLAGS", [ "-mcpu=a64fx", "-msve-vector-bits=512" ])
 
+    if os.getenv("ESPRESO_FORBID_CHECK_SIMD").upper() in ["1", "TRUE", "ON"]:
+        return
+
     # Check SIMD instruction set
     code = '''
         #include <cstdio>

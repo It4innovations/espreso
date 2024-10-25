@@ -36,6 +36,7 @@ export OMP_NUM_THREADS=72,1
 export BLAS_LIBRARIES="nvpl_blas_lp64_seq"
 
 export ESPRESO_RANK_TO_GPU_MAP="0"
+export ESPRESO_FORBID_CHECK_SIMD="1" # temporary workaround
 
 
 
