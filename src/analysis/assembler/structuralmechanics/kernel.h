@@ -569,8 +569,10 @@ void runBoundaryKernel(const StructuralMechanicsFaceOperators &operators, SubKer
     IntegrationKernel<nodes, ndim, edim> integration(operators.integration);
     NormalKernel<nodes, ndim, edim> normal(operators.normal);
     NormalPressureKernel<nodes, ndim> normalPressure(operators.normalPressure);
-    FluidForceGatherKernel<nodes, ndim> fluidForceGather(operators.fluidForce);
-    FluidForceKernel<nodes, ndim> fluidForce(operators.fluidForce);
+    FluidPressureGatherKernel<nodes, ndim> fluidPressureGather(operators.fluidPressure);
+    FluidStressGatherKernel<nodes, ndim> fluidStressGather(operators.fluidStress);
+    FluidPressureKernel<nodes, ndim> fluidPressure(operators.fluidPressure);
+    FluidStressKernel<nodes, ndim> fluidStress(operators.fluidStress);
     PressureKernel<nodes, ndim> pressure(operators.pressure);
     RHSFillerKernel<nodes> outReRHS(operators.reRHSfiller);
     RHSFillerKernel<nodes> outImRHS(operators.imRHSfiller);
@@ -588,8 +590,10 @@ void runBoundaryKernel(const StructuralMechanicsFaceOperators &operators, SubKer
     basis.simd(element);
     thickness.setActiveness(action);
     displacement.setActiveness(action);
-    fluidForceGather.setActiveness(action);
-    fluidForce.setActiveness(action);
+    fluidPressureGather.setActiveness(action);
+    fluidStressGather.setActiveness(action);
+    fluidPressure.setActiveness(action);
+    fluidStress.setActiveness(action);
     normal.setActiveness(action);
 
     outReRHS.setActiveness(action);
@@ -602,8 +606,11 @@ void runBoundaryKernel(const StructuralMechanicsFaceOperators &operators, SubKer
             displacement.simd(element);
         }
 
-        if (fluidForceGather.isactive) {
-            fluidForceGather.simd(element);
+        if (fluidPressureGather.isactive) {
+            fluidPressureGather.simd(element);
+        }
+        if (fluidStressGather.isactive) {
+            fluidStressGather.simd(element);
         }
 
         if (thickness.isactive) {
@@ -635,8 +642,11 @@ void runBoundaryKernel(const StructuralMechanicsFaceOperators &operators, SubKer
             if (pressure.isactive) {
                 pressure.simd(element, gp);
             }
-            if (fluidForce.isactive) {
-                fluidForce.simd(element, gp);
+            if (fluidPressure.isactive) {
+                fluidPressure.simd(element, gp);
+            }
+            if (fluidStress.isactive) {
+                fluidStress.simd(element, gp);
             }
         }
 
@@ -759,12 +769,14 @@ void runNodeKernel(const StructuralMechanicsNodeOperators &operators, SubKernel:
     CoordinatesKernel<1, ndim> coordinates(operators.coordinates);
     ForceKernel<ndim> force(operators.force);
     HarmonicForceKernel<ndim> harmonicForce(operators.harmonicForce);
+    FluidForceKernel<ndim> fluidForce(operators.fluidForce);
     RHSFillerKernel<1> outReRHS(operators.reRHSfiller);
     RHSFillerKernel<1> outImRHS(operators.imRHSfiller);
     VectorSetterKernel<1, Element> set(operators.reDirichlet, [] (auto &element, size_t &n, size_t &d, size_t &s) { return element.displacement.node[d][s]; });
 
     force.setActiveness(action);
     harmonicForce.setActiveness(action);
+    fluidForce.setActiveness(action);
     outReRHS.setActiveness(action);
     outImRHS.setActiveness(action);
     set.setActiveness(action);
@@ -791,6 +803,10 @@ void runNodeKernel(const StructuralMechanicsNodeOperators &operators, SubKernel:
 
         if (harmonicForce.isactive) {
             harmonicForce.simd(element);
+        }
+
+        if (fluidForce.isactive) {
+            fluidForce.simd(element);
         }
 
         if (set.isactive) {

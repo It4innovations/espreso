@@ -179,7 +179,7 @@ bool StructuralMechanicsTransientLinear::run(step::Step &step, Physics *prev)
         if (precice.requiresWritingCheckpoint()) {
             checkpoint->copy(x);
         }
-        precice.read(StructuralMechanics::Results::fluidForce->data.data(), time.shift);
+        precice.read(time.shift);
         assembler.evaluate(step, time, K, M, f, nullptr, dirichlet);
         eslog::checkpointln("SIMULATION: PHYSICS ASSEMBLED");
 
@@ -216,7 +216,7 @@ bool StructuralMechanicsTransientLinear::run(step::Step &step, Physics *prev)
         storeSolution(step);
         assembler.updateSolution(x);
 
-        precice.write(StructuralMechanics::Results::displacement->data.data());
+        precice.write();
         precice.advance(time.shift);
         if (precice.requiresReadingCheckpoint()) {
             x->copy(checkpoint);

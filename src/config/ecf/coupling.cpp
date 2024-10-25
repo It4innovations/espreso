@@ -4,6 +4,34 @@
 
 using namespace espreso;
 
+CouplingDataInConfiguration::CouplingDataInConfiguration()
+{
+    force = false;
+    REGISTER(force, ECFMetaData()
+            .setdescription({ "Read FORCE." })
+            .setdatatype({ ECFDataType::BOOL }));
+    pressure = false;
+    REGISTER(pressure, ECFMetaData()
+            .setdescription({ "Read PRESSURE." })
+            .setdatatype({ ECFDataType::BOOL }));
+    stress = false;
+    REGISTER(stress, ECFMetaData()
+            .setdescription({ "Read STRESS." })
+            .setdatatype({ ECFDataType::BOOL }));
+}
+
+CouplingDataOutConfiguration::CouplingDataOutConfiguration()
+{
+    displacement = false;
+    REGISTER(displacement, ECFMetaData()
+            .setdescription({ "Write DISPLACEMENT." })
+            .setdatatype({ ECFDataType::BOOL }));
+    velocity = false;
+    REGISTER(velocity, ECFMetaData()
+            .setdescription({ "Write VELOCITY." })
+            .setdatatype({ ECFDataType::BOOL }));
+}
+
 CouplingSettings::CouplingSettings()
 {
     REGISTER(configuration, ECFMetaData()
@@ -15,21 +43,15 @@ CouplingSettings::CouplingSettings()
     REGISTER(mesh, ECFMetaData()
             .setdescription({ "Mesh name." })
             .setdatatype({ ECFDataType::STRING }));
+
     REGISTER(data_in, ECFMetaData()
-            .setdescription({ "Data to be read from other solver." })
-            .setdatatype({ ECFDataType::STRING }));
+            .setdescription({ "Read data." }));
     REGISTER(data_out, ECFMetaData()
-            .setdescription({ "Data to be write from espreso." })
-            .setdatatype({ ECFDataType::STRING }));
+            .setdescription({ "Writted data." }));
 }
 
 CouplingConfiguration::CouplingConfiguration()
 {
-    active = false;
-    REGISTER(active, ECFMetaData()
-            .setdescription({ "Activate coupling with PreCICE." })
-            .setdatatype({ ECFDataType::BOOL }));
-
     REGISTER(dummy, ECFMetaData()
             .setdescription({ "Settings for dummy-coupler." }));
 }

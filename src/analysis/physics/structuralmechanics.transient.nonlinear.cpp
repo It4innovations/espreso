@@ -235,7 +235,7 @@ bool StructuralMechanicsTransientNonLinear::run(step::Step &step, Physics *prev)
         if (precice.requiresWritingCheckpoint()) {
             // previous data are stored in *_old
         }
-        precice.read(StructuralMechanics::Results::fluidForce->data.data(), time.shift);
+        precice.read(time.shift);
 
         assembler.evaluate(step, time, K, nullptr, f, R, dirichlet);
         eslog::info("       = SYSTEM ASSEMBLY                                                    %8.3f s = \n", eslog::time() - start);
@@ -326,7 +326,7 @@ bool StructuralMechanicsTransientNonLinear::run(step::Step &step, Physics *prev)
                 assembler.nextIteration(U);
             }
         }
-        precice.write(StructuralMechanics::Results::displacement->data.data());
+        precice.write();
         precice.advance(time.shift);
         if (precice.requiresReadingCheckpoint()) {
             assembler.updateSolution(U_old);

@@ -136,6 +136,7 @@ def build(ctx):
     ctx.build_espreso(ctx.path.ant_glob('src/wrappers/lapack/**/*.cpp'), "wlapack", [ "LAPACK", "MKL" ])
     ctx.build_espreso(ctx.path.ant_glob('src/wrappers/mkl/**/*.cpp'), "wmkl", [ "MKL" ])
     ctx.build_espreso(ctx.path.ant_glob('src/wrappers/precice/**/*.cpp'), "wprecice", [ "PRECICE" ])
+    ctx.build_espreso(ctx.path.ant_glob('src/wrappers/precice-dummy/**/*.cpp'), "wprecicedummy", [ "PRECICE" ])
     if ctx.env.HAVE_CUDA:
         ctx.build_espreso(ctx.path.ant_glob('src/wrappers/cuda/**/*.(cu|cpp)'), "wcuda", [ "CUDA" ])
 #     ctx.build_espreso(ctx.path.ant_glob('src/wrappers/hypre/**/*.cpp'), "whypre", [ "HYPRE" ])

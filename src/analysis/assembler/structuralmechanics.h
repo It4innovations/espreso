@@ -59,7 +59,7 @@ public:
         static NodeData *reactionForce;
 
         // FSI
-        static NodeData *fluidForce;
+        static NodeData *fluidForce, *fluidPressure, *fluidStress;
     };
 
 protected:

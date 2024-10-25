@@ -292,7 +292,7 @@ void Mesh::analyze()
 				bregion(bc->first)->dimension = dimension - 1;
 			}
 		}
-		if (info::ecf->coupling.active) {
+		if (info::ecf->coupling.isactive()) {
 		    withSurface = true;
 		}
 	}

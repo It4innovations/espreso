@@ -44,6 +44,8 @@ NodeData* StructuralMechanics::Results::accelerationAmplitude = nullptr;
 NodeData* StructuralMechanics::Results::reactionForce = nullptr;
 
 NodeData* StructuralMechanics::Results::fluidForce = nullptr;
+NodeData* StructuralMechanics::Results::fluidPressure = nullptr;
+NodeData* StructuralMechanics::Results::fluidStress = nullptr;
 
 StructuralMechanics::StructuralMechanics(StructuralMechanics *previous, StructuralMechanicsConfiguration &settings, StructuralMechanicsLoadStepConfiguration &configuration)
 : Assembler(settings), settings(settings), configuration(configuration)
@@ -173,6 +175,12 @@ bool StructuralMechanics::analyze(const step::Step &step)
         }
         if (Results::fluidForce == nullptr) {
             Results::fluidForce = info::mesh->nodes->appendData(info::mesh->dimension, NamedData::DataType::VECTOR, "FLUID_FORCE", step::TYPE::TIME, info::ecf->output.results_selection.fluid_interaction);
+        }
+        if (Results::fluidPressure == nullptr) {
+            Results::fluidPressure = info::mesh->nodes->appendData(1, NamedData::DataType::SCALAR, "FLUID_PRESSURE", step::TYPE::TIME, info::ecf->output.results_selection.fluid_interaction);
+        }
+        if (Results::fluidStress == nullptr) {
+            Results::fluidStress = info::mesh->nodes->appendData(info::mesh->dimension, NamedData::DataType::VECTOR, "FLUID_STRESS", step::TYPE::TIME, info::ecf->output.results_selection.fluid_interaction);
         }
         if (Results::velocity == nullptr) {
             Results::velocity = info::mesh->nodes->appendData(info::mesh->dimension, NamedData::DataType::VECTOR, "VELOCITY", step::TYPE::TIME, info::ecf->output.results_selection.velocity);
@@ -442,8 +450,13 @@ bool StructuralMechanics::analyze(const step::Step &step)
                 if (pressure != configuration.pressure.end()) {
                     faceKernels[r][i].pressure.activate(pressure->second.pressure, pressure->second.direction, settings.element_behaviour);
                 }
-                if (info::ecf->coupling.active && StringCompare::caseInsensitiveEq(region->name, "SURFACE")) {
-                    faceKernels[r][i].fluidForce.activate(region->elements->cbegin() + region->eintervals[i].begin, region->elements->cbegin() + region->eintervals[i].end, Results::fluidForce->data.data());
+                if (StringCompare::caseInsensitiveEq(region->name, "SURFACE")) {
+                    if (info::ecf->coupling.data_in.stress) {
+                        faceKernels[r][i].fluidStress.activate(region->elements->cbegin() + region->eintervals[i].begin, region->elements->cbegin() + region->eintervals[i].end, Results::fluidStress->data.data());
+                    }
+                    if (info::ecf->coupling.data_in.pressure) {
+                        faceKernels[r][i].fluidPressure.activate(region->elements->cbegin() + region->eintervals[i].begin, region->elements->cbegin() + region->eintervals[i].end, Results::fluidPressure->data.data());
+                    }
                 }
             }
         }
@@ -451,6 +464,11 @@ bool StructuralMechanics::analyze(const step::Step &step)
             nodeKernels[r][t].force.activate(getExpression(region->name, configuration.force));
             nodeKernels[r][t].harmonicForce.activate(getExpression(region->name, configuration.harmonic_force), settings.element_behaviour);
             nodeKernels[r][t].coordinates.activate(region->nodes->cbegin(t), region->nodes->cend(), false);
+            if (StringCompare::caseInsensitiveEq(region->name, "SURFACE")) {
+                if (info::ecf->coupling.data_in.force) {
+                    nodeKernels[r][t].fluidForce.activate(region->nodes->cbegin(t), region->nodes->cend(), Results::fluidForce->data.data());
+                }
+            }
         }
     }
 

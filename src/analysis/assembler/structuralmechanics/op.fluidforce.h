@@ -34,35 +34,17 @@ struct FluidForce: SubKernel {
     }
 };
 
-template <size_t nodes, size_t ndim>
-struct FluidForceGatherKernel: FluidForce {
-    FluidForceGatherKernel(const FluidForce &base): FluidForce(base) {}
+template <size_t ndim>
+struct FluidForceKernel: FluidForce {
+    FluidForceKernel(const FluidForce &base): FluidForce(base) {}
 
     template <typename Element>
     void simd(Element &element)
     {
         for (size_t s = 0; s < SIMD::size; ++s, ++enodes) {
             if (enodes == end) break;
-            for (size_t n = 0; n < nodes; ++n) {
-                for (size_t d = 0; d < ndim; ++d) {
-                    element.coupling.pressure[n][d][s] = source[ndim * enodes->at(n) + d];
-                }
-            }
-        }
-    }
-};
-
-template <size_t nodes, size_t ndim>
-struct FluidForceKernel: FluidForce {
-    FluidForceKernel(const FluidForce &base): FluidForce(base) {}
-
-    template <typename Element>
-    void simd(Element &element, size_t gp)
-    {
-        for (size_t n = 0; n < nodes; ++n) {
-            SIMD scale = element.det * load1(element.w[gp]) * load1(element.N[gp][n]);
             for (size_t d = 0; d < ndim; ++d) {
-                element.f[d * nodes + n] = element.f[d * nodes + n] + scale * element.coupling.pressure[n][d];
+                element.f[d][s] = element.f[d][s] + source[ndim * enodes->at(0) + d];
             }
         }
     }
