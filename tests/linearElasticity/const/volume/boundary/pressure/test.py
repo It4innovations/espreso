@@ -6,7 +6,7 @@ class Assembler(unittest.TestCase):
 
     def setUp(self):
         ESPRESOTest.path = os.path.dirname(__file__)
-        ESPRESOTest.args = [ "etype", 2, 2, 1, 2, 2, 2, 4, 4, 8 ]
+        ESPRESOTest.args = [ "etype", 2, 2, 1, 2, 1, 2, 10, 4, 4 ]
         ESPRESOTest.processes = 4
         ESPRESOTest.set_threads(2)
 
@@ -21,7 +21,7 @@ def run(etype):
     ESPRESOTest.processes = 4
     ESPRESOTest.args[0] = etype
     ESPRESOTest.run()
-    ESPRESOTest.compare_emr("espreso.emr")
+    ESPRESOTest.compare_emr(".".join([etype, "emr"]))
 
 run.assembler = 1
 run.correcness = 1
