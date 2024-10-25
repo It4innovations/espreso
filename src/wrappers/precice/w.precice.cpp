@@ -102,12 +102,14 @@ bool Precice::requiresReadingCheckpoint()
 
 void Precice::_read(double *data, const std::string &name, double dt)
 {
+#ifdef HAVE_PRECICE
     _data->precice.readData(info::ecf->coupling.mesh, name, _data->ids, dt, _data->data);
     for (size_t n = 0; n < _data->size; ++n) {
         for (int d = 0; d < info::mesh->dimension; ++d) {
             data[info::mesh->surface->nIDs->datatarray()[n] * info::mesh->dimension + d] = _data->data[n * info::mesh->dimension + d];
         }
     }
+#endif
 }
 
 void Precice::read(double dt)
@@ -123,12 +125,14 @@ void Precice::read(double dt)
 
 void Precice::_write(double *data, const std::string &name)
 {
+#ifdef HAVE_PRECICE
     for (size_t n = 0; n < _data->size; ++n) {
         for (int d = 0; d < info::mesh->dimension; ++d) {
             _data->data[n * info::mesh->dimension + d] = data[info::mesh->surface->nIDs->datatarray()[n] * info::mesh->dimension + d];
         }
     }
     _data->precice.writeData(info::ecf->coupling.mesh, name, _data->ids, _data->data);
+#endif
 }
 
 void Precice::write()
