@@ -10,6 +10,7 @@ def configure(ctx):
         ctx.load("compiler_cxx")
 
     detect_intel_oneapi_compiler(ctx)
+    detect_nvcpp_compiler(ctx)
 
     if ctx.options.static:
         ctx.env.append_unique("LIB", [ "dl" ])
@@ -27,6 +28,9 @@ def configure(ctx):
     if ctx.env.COMPILER_CXX == "icpx":
         ctx.env.append_unique("CXXFLAGS", [ "-qopenmp" ])
         ctx.env.append_unique("LINKFLAGS", [ "-qopenmp" ])
+    if ctx.env.COMPILER_CXX == "nvc++":
+        ctx.env.append_unique("CXXFLAGS", [ "-fopenmp" ])
+        ctx.env.append_unique("LINKFLAGS", [ "-fopenmp" ])
 
     if ctx.options.flavor == "fujitsu":
         ctx.env.append_unique("CXXFLAGS" , [ "-Kopenmp", "-SSL2" ])
@@ -406,3 +410,8 @@ def detect_intel_oneapi_compiler(ctx):
     ec = os.system(ctx.env.CXX[0] + " --version 2>/dev/null | grep -q \"oneAPI DPC++/C++ Compiler\"")
     if ec != 0: return
     ctx.env.COMPILER_CXX = "icpx"
+    
+def detect_nvcpp_compiler(ctx):
+    ec = os.system(ctx.env.CXX[0] + " --version | grep -q nvc++")
+    if ec != 0: return
+    ctx.env.COMPILER_CXX = "nvc++"
