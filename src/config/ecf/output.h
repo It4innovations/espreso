@@ -39,6 +39,7 @@ struct ResultsSelectionConfiguration: public HeatTransferOutputSettings, public 
 		HeatTransferOutputSettings::basic();
 		StructuralMechanicsOutputSettings::basic();
 		thickness = false;
+		initial_values = false;
 	}
 
 	void all()
@@ -46,6 +47,7 @@ struct ResultsSelectionConfiguration: public HeatTransferOutputSettings, public 
 		HeatTransferOutputSettings::all();
 		StructuralMechanicsOutputSettings::all();
 		thickness = true;
+		initial_values = true;
 	}
 
 	bool thickness;
