@@ -54,13 +54,12 @@ void VectorUniformDense::buildPattern(int dofs)
                     }
                 }
             }
-        } else {
-            for (size_t t = 0; t < region->nodes->threads(); ++t) {
-                boundary[r].offset.push_back(boundary[r].permutation.size());
-                for (auto n = region->nodes->datatarray().cbegin(t); n != region->nodes->datatarray().cend(t); ++n) {
-                    for (int d = 0; d < dofs; ++d) {
-                        boundary[r].permutation.push_back(*n * dofs + d);
-                    }
+        }
+        for (size_t t = 0; t < region->nodes->threads(); ++t) {
+            boundary[r].offset.push_back(boundary[r].permutation.size());
+            for (auto n = region->nodes->datatarray().cbegin(t); n != region->nodes->datatarray().cend(t); ++n) {
+                for (int d = 0; d < dofs; ++d) {
+                    boundary[r].permutation.push_back(*n * dofs + d);
                 }
             }
         }
