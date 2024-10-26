@@ -9,6 +9,13 @@ namespace espreso {
 
 struct PlasticityPropertiesConfiguration: public ECFDescription {
 
+    enum class MODEL {
+        LINEAR,
+        BONETWOOD
+    };
+
+    MODEL model;
+
 	ECFExpression initial_yield_stress, isotropic_hardening, kinematic_hardening;
 
 	PlasticityPropertiesConfiguration();
