@@ -53,16 +53,6 @@ GENERATOR {
   }
 }
 
-COUPLING {
-  active                         FALSE;
-
-  configuration   ../precice-config.xml;
-  solver                          Solid;
-  mesh                       Solid-Mesh;
-  data_in                         Force;
-  data_out                 Displacement;
-}
-
 STRUCTURAL_MECHANICS {
   LOAD_STEPS   1;
 
