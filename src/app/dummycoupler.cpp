@@ -5,12 +5,12 @@
 #include "esinfo/ecfinfo.h"
 #include "esinfo/meshinfo.h"
 #include "esinfo/systeminfo.h"
+
 #include "wrappers/mpi/communication.h"
 
 #include "basis/logging/logger.h"
 #include "basis/logging/progresslogger.h"
 #include "basis/logging/timelogger.h"
-#include "basis/logging/profiler.h"
 
 #include "config/reader/reader.h"
 #include "config/configuration.h"
@@ -32,8 +32,6 @@ int main(int argc, char **argv)
     ECF::init(&argc, &argv, "dummycoupler");
     MPITools::setSubset(info::ecf->input.third_party_scalability_limit);
     eslog::initFiles();
-    info::ecf->output.results_store_frequency = OutputConfiguration::STORE_FREQUENCY::NEVER;
-    info::ecf->output.mode = OutputConfiguration::MODE::SYNC;
     eslog::checkpointln("COUPLER: CONFIGURATION READ");
 
     eslog::printRunInfo(&argc, &argv);
@@ -55,9 +53,6 @@ int main(int argc, char **argv)
     eslog::finish();
     MPITools::finish();
     ECF::finish();
-
-    profiler::syncend("mesio");
-    profiler::print(); // need to be printed before MPI_Finalize
 
     info::mpi::finish();
 }

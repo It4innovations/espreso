@@ -208,6 +208,9 @@ void ECF::fill(int *argc, char ***argv, const std::string &app)
 {
 	ecffile = ECFReader::read(*this->ecfdescription, argc, argv, this->ranges, this->default_args, this->variables);
 	exe = std::string(info::system::buildpath()) + "/" + app;
+	if (StringCompare::caseInsensitiveEq("dummycoupler", app)) {
+	    info::ecf->output.path = "dummy";
+	}
 	set();
 }
 

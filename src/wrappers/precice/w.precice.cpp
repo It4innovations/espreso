@@ -10,6 +10,7 @@
 #include "mesh/store/surfacestore.h"
 
 #include <iostream>
+#include <filesystem>
 
 #ifdef HAVE_PRECICE
 #include <precice/precice.hpp>
@@ -17,7 +18,7 @@
 namespace espreso {
 struct PreciceData {
     PreciceData()
-    : precice(info::ecf->coupling.solver, info::ecf->coupling.configuration, info::mpi::rank, info::mpi::size),
+    : precice(info::ecf->coupling.solver, std::filesystem::path(info::ecf->ecffile).parent_path().append(info::ecf->coupling.configuration).c_str(), info::mpi::rank, info::mpi::size),
       size(0)
     {
 

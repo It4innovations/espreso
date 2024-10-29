@@ -174,13 +174,13 @@ bool StructuralMechanics::analyze(const step::Step &step)
             Results::displacement = info::mesh->nodes->appendData(info::mesh->dimension, NamedData::DataType::VECTOR, "DISPLACEMENT", step::TYPE::TIME, info::ecf->output.results_selection.displacement);
         }
         if (Results::fluidForce == nullptr) {
-            Results::fluidForce = info::mesh->nodes->appendData(info::mesh->dimension, NamedData::DataType::VECTOR, "FLUID_FORCE", step::TYPE::TIME, info::ecf->output.results_selection.fluid_interaction);
+            Results::fluidForce = info::mesh->nodes->appendData(info::mesh->dimension, NamedData::DataType::VECTOR, "FLUID_FORCE", step::TYPE::TIME, info::ecf->output.results_selection.fluid_interaction && info::ecf->coupling.data_in.force);
         }
         if (Results::fluidPressure == nullptr) {
-            Results::fluidPressure = info::mesh->nodes->appendData(1, NamedData::DataType::SCALAR, "FLUID_PRESSURE", step::TYPE::TIME, info::ecf->output.results_selection.fluid_interaction);
+            Results::fluidPressure = info::mesh->nodes->appendData(1, NamedData::DataType::SCALAR, "FLUID_PRESSURE", step::TYPE::TIME, info::ecf->output.results_selection.fluid_interaction && info::ecf->coupling.data_in.pressure);
         }
         if (Results::fluidStress == nullptr) {
-            Results::fluidStress = info::mesh->nodes->appendData(info::mesh->dimension, NamedData::DataType::VECTOR, "FLUID_STRESS", step::TYPE::TIME, info::ecf->output.results_selection.fluid_interaction);
+            Results::fluidStress = info::mesh->nodes->appendData(info::mesh->dimension, NamedData::DataType::VECTOR, "FLUID_STRESS", step::TYPE::TIME, info::ecf->output.results_selection.fluid_interaction && info::ecf->coupling.data_in.stress);
         }
         if (Results::velocity == nullptr) {
             Results::velocity = info::mesh->nodes->appendData(info::mesh->dimension, NamedData::DataType::VECTOR, "VELOCITY", step::TYPE::TIME, info::ecf->output.results_selection.velocity);
