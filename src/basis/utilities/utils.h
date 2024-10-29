@@ -70,6 +70,9 @@ namespace utils {
 	template<typename Ttype>
 	void mergeAppendedData(std::vector<Ttype> &data, const std::vector<size_t> &distribution);
 
+	template<typename Ttype>
+	Ttype* getAligned(size_t alignment, std::vector<Ttype> &data);
+
 	template<typename I>
 	constexpr I my_int_pow(I base, I exponent)
 	{

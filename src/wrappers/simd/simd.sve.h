@@ -122,6 +122,17 @@ ALWAYS_INLINE SIMD log(const SIMD& v) noexcept
     return __sved{};
 }
 
+ALWAYS_INLINE SIMD exp(const SIMD& v) noexcept
+{
+    return __sved{};
+}
+
+ALWAYS_INLINE SIMD abs(const SIMD& v) noexcept
+{
+    return __sved{};
+}
+
+
 ALWAYS_INLINE SIMD positive_guarded_recip(const SIMD& value) noexcept // TODO: improve it
 {
 	return svrsqrte_f64(value.data);

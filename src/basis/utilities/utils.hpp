@@ -3,6 +3,7 @@
 
 #include <algorithm>
 #include <cstdio>
+#include <memory>
 #include <omp.h>
 
 namespace espreso {
@@ -236,6 +237,14 @@ void mergeAppendedData(std::vector<Ttype> &data, const std::vector<size_t> &dist
 			data.data(),
 			data.data() + _distribution.front(),
 			data.data() + _distribution.back());
+}
+
+template<typename Ttype>
+Ttype* getAligned(size_t alignment, std::vector<Ttype> &data)
+{
+    void *_data = static_cast<void*>(data.data());
+    size_t size = sizeof(Ttype) * data.size();
+    return static_cast<double*>(std::align(alignment, sizeof(Ttype) * data.size(), _data, size));
 }
 
 [[maybe_unused]]

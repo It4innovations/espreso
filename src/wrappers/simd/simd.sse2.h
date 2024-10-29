@@ -124,6 +124,22 @@ ALWAYS_INLINE SIMD log(const SIMD& v) noexcept
     };
 }
 
+ALWAYS_INLINE SIMD exp(const SIMD& v) noexcept
+{
+    return __m128d{
+        std::exp(v.data[0]),
+        std::exp(v.data[1])
+    };
+}
+
+ALWAYS_INLINE SIMD abs(const SIMD& v) noexcept
+{
+    return __m128d{
+        std::abs(v.data[0]),
+        std::abs(v.data[1])
+    };
+}
+
 ALWAYS_INLINE SIMD positive_guarded_recip(const SIMD& v) noexcept // TODO: improve it
 {
 	return __m128d{

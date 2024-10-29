@@ -405,7 +405,8 @@ bool StructuralMechanics::analyze(const step::Step &step)
             elementKernels[i].matrixHyperElasticity.activate(settings.element_behaviour);
             break;
         case MaterialBaseConfiguration::MATERIAL_MODEL::PLASTICITY:
-            elementKernels[i].plasticity.activate(i, settings.element_behaviour, &mat->plasticity_properties, Results::isPlastized);
+//            elementKernels[i].plasticity.activate(i, settings.element_behaviour, &mat->plasticity_properties, Results::isPlastized);
+            elementKernels[i].plasticityMultiplicative.activate(i, settings.element_behaviour, &mat->plasticity_properties, Results::isPlastized);
             elementKernels[i].smallStrainTensor.activate();
             elementKernels[i].displacement.activate(info::mesh->elements->nodes->cbegin() + ebegin, info::mesh->elements->nodes->cbegin() + eend, Results::displacement->data.data());
             elementKernels[i].matrixLinearElasticity.activate(settings.element_behaviour, mat->linear_elastic_properties.model, elementKernels[i].linearElasticity.rotated);

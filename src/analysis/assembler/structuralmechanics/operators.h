@@ -24,6 +24,7 @@
 #include "analysis/assembler/structuralmechanics/op.linearelasticity.h"
 #include "analysis/assembler/structuralmechanics/op.hyperelasticity.h"
 #include "analysis/assembler/structuralmechanics/op.plasticity.h"
+#include "analysis/assembler/structuralmechanics/op.plasticity.multiplicative.h"
 #include "analysis/assembler/structuralmechanics/op.matrix.linearelasticity.h"
 #include "analysis/assembler/structuralmechanics/op.matrix.hyperelasticity.h"
 #include "analysis/assembler/structuralmechanics/op.matrix.largedisplacement.h"
@@ -58,6 +59,7 @@ struct StructuralMechanicsElementOperators {
     LinearElasticity linearElasticity;
     HyperElasticity hyperElasticity;
     Plasticity plasticity;
+    PlasticityMultiplicative plasticityMultiplicative;
     BoundaryCondition initVelocity;
     MatrixLinearElasticity matrixLinearElasticity;
     MatrixHyperElasticity matrixHyperElasticity;

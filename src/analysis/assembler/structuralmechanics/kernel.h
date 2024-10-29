@@ -187,8 +187,13 @@ void setElementKernel(StructuralMechanicsElementOperators &operators, SubKernel:
             operators.expressions.gp.push_back(new ExternalGPsExpression<ndim, Element>(
                     operators.plasticity.configuration->kinematic_hardening.evaluator,
                     [] (Element &element, size_t &gp, size_t &s, double value) { element.ecf.kinematicHardening[s] = value; }));
+
             operators.plasticity.smallStrainTensorPlastic.resize(gps * (operators.chunks + 1) * SIMD::size * 6);
-            operators.plasticity.xi.resize(gps * (operators.chunks + 1) * SIMD::size * 6 + SIMD::size);
+            operators.plasticity.xi.resize                      (gps * (operators.chunks + 1) * SIMD::size * 6 + SIMD::size);
+        }
+
+        if (operators.plasticityMultiplicative.isactive) {
+            operators.plasticityMultiplicative.init(operators.chunks, gps);
         }
 
         if (operators.acceleration.expressionVector) {
@@ -313,6 +318,7 @@ void runElementKernel(const step::Step &step, StructuralMechanicsElementOperator
     LinearElasticityKernel<ndim> linearElasticity(operators.linearElasticity);
     HyperElasticityKernel<nodes, ndim> hyperElasticity(operators.hyperElasticity);
     PlasticityKernel<nodes, ndim> plasticity(operators.plasticity, action);
+    PlasticityMultiplicativeKernel<nodes, gps, ndim> plasticityMultiplicative(operators.plasticityMultiplicative, action);
     MatrixLinearElasticityKernel<nodes, ndim> matrixLinearElasticity(operators.matrixLinearElasticity);
     MatrixHyperElasticityKernel<nodes, ndim> matrixHyperElasticity(operators.matrixHyperElasticity);
     MatrixLargeDisplacementKernel<nodes, ndim> largeDisplacement(operators.largeDisplacement);
@@ -368,6 +374,7 @@ void runElementKernel(const step::Step &step, StructuralMechanicsElementOperator
     linearElasticity.setActiveness(action);
     hyperElasticity.setActiveness(action);
     plasticity.setActiveness(action);
+    plasticityMultiplicative.setActiveness(action);
     displacement.setActiveness(action);
     smallStrainTensor.setActiveness(action);
     largeDisplacement.setActiveness(action, step.loadstep || step.substep || step.iteration);
@@ -407,6 +414,10 @@ void runElementKernel(const step::Step &step, StructuralMechanicsElementOperator
             }
         }
 
+        if (plasticityMultiplicative.isactive) {
+            plasticityMultiplicative.simd(element);
+        }
+
         for (size_t gp = 0; gp < gps; ++gp) {
             integration.simd(element, gp);
 
@@ -435,6 +446,9 @@ void runElementKernel(const step::Step &step, StructuralMechanicsElementOperator
             }
             if (plasticity.isactive) {
                 plasticity.simd(element, gp);
+            }
+            if (plasticityMultiplicative.isactive) {
+                plasticityMultiplicative.simd(element, gp);
             }
             if (matrixLinearElasticity.isactive) {
                 matrixLinearElasticity.simd(element, gp);

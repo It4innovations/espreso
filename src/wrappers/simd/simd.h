@@ -126,6 +126,16 @@ ALWAYS_INLINE SIMD log(const SIMD& value) noexcept
     return std::log(value.data);
 }
 
+ALWAYS_INLINE SIMD exp(const SIMD& value) noexcept
+{
+    return std::exp(value.data);
+}
+
+ALWAYS_INLINE SIMD abs(const SIMD& value) noexcept
+{
+    return std::abs(value.data);
+}
+
 ALWAYS_INLINE SIMD positive_guarded_recip(const SIMD& v) noexcept // TODO: improve it
 {
 	return v.data > 0. ? 1. / v.data : 0.;
