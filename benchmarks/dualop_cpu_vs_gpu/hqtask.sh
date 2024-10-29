@@ -32,7 +32,7 @@ echo "tool ${tool}" >> "${infofile}"
 echo -n "node " >> "${infofile}"; hostname >> "${infofile}"
 
 if [[ "${dual_operator}" == *"GPU"* ]]; then
-    if [ "${machine}" == "karolina" ]; then
+    if [ "${machine}" == "karolina" ] || [ "${machine}" == "e4red" ]; then
         echo -n "gpu " >> "${infofile}"; nvidia-smi -L >> "${infofile}"
     elif [ "${machine}" == "lumi" ]; then
         gpuinfo=$(rocm-smi --showproductname | grep GPU | head -n 1 | cut -d: -f3);
@@ -79,6 +79,14 @@ elif [ "${machine}" == "lumi" ] && [ "${tool}" == "rocm" ]; then
 elif [ "${machine}" == "lumi" ] && [ "${tool}" == "suitesparse" ]; then
     source env/csc.lumi.rocm.mpich.sh
     command="srun -n 1 ./build/espreso -c \"${ecf_file}\" $@ > \"${output_path}/stdout.txt\" 2> \"${output_path}/stderr.txt\""
+    command="mpirun -n 1 --bind-to numa ./build/espreso -c \"${ecf_file}\" $@ > \"${output_path}/stdout.txt\" 2> \"${output_path}/stderr.txt\""
+elif [ "${machine}" == "e4red" ] && [ "${tool}" == "cudamodern" ]; then
+    source env/e4.red.cuda.32.sh
+    command="mpirun -n 1 --bind-to numa ./build/espreso -c \"${ecf_file}\" $@ > \"${output_path}/stdout.txt\" 2> \"${output_path}/stderr.txt\""
+elif [ "${machine}" == "e4red" ] && [ "${tool}" == "suitesparse" ]; then
+    source env/e4.red.cuda.32.sh
+    export OMP_NUM_THREADS=72,1 # for cpu-only work, use all the threads
+    command="mpirun -n 1 --bind-to numa ./build/espreso -c \"${ecf_file}\" $@ > \"${output_path}/stdout.txt\" 2> \"${output_path}/stderr.txt\""
 else
     echo not implemented
     exit 73

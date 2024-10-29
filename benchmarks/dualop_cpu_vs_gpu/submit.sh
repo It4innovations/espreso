@@ -2,6 +2,7 @@
 
 machine="karolina"
 # machine="lumi"
+# machine="e4red"
 
 # have to make sure the same version is compiled
 # tool="cudalegacy"
@@ -26,7 +27,7 @@ then
 fi
 
 slurm_outdir_root="${basedir}/slurm_outerr"
-if [[ ! -d "${slurm_outdir_root}"   ||   ! ( -L "${slurm_outdir_root}" && -d "${slurm_outdir_root}" ) ]]
+if [[ ! -d "${slurm_outdir_root}"   &&   ! ( -L "${slurm_outdir_root}" && -d "$(readlink ${slurm_outdir_root})" ) ]]
 then
     echo "Slurm output directory '${slurm_outdir_root}' does not exist"
     echo "Please create it"
@@ -34,7 +35,7 @@ then
 fi
 
 espreso_outdir_root="${basedir}/espreso_results"
-if [[ ! -d "${espreso_outdir_root}"   ||   ! ( -L "${espreso_outdir_root}" && -d "${espreso_outdir_root}" ) ]]
+if [[ ! -d "${espreso_outdir_root}"   &&   ! ( -L "${espreso_outdir_root}" && -d "$(readlink ${espreso_outdir_root})" ) ]]
 then
     echo "Espreso output directory '${espreso_outdir_root}' does not exist"
     echo "Please create it"
@@ -42,7 +43,7 @@ then
 fi
 
 hq_outdir_root="${basedir}/hq_outerr"
-if [[ ! -d "${hq_outdir_root}"   ||   ! ( -L "${hq_outdir_root}" && -d "${hq_outdir_root}" ) ]]
+if [[ ! -d "${hq_outdir_root}"   &&   ! ( -L "${hq_outdir_root}" && -d "$(readlink ${hq_outdir_root})" ) ]]
 then
     echo "HyperQueue output directory '${hq_outdir_root}' does not exist"
     echo "Please create it"
@@ -63,6 +64,19 @@ elif [ "${machine}" == "lumi" ]; then
             cd "${hq_bin_dir}"
             wget https://github.com/It4innovations/hyperqueue/releases/download/v0.19.0/hq-v0.19.0-linux-x64.tar.gz
             tar -xf hq-v0.19.0-linux-x64.tar.gz
+        )
+    fi
+    HQBIN="${hq_bin_dir}/hq"
+elif [ "${machine}" == "e4red" ]; then
+    hq_bin_dir="dependencies/HyperQueue"
+    if [[ ! -d "${hq_bin_dir}" ]]
+    then
+        (
+            echo "HyperQueue not downloaded, downloading"
+            mkdir -p "${hq_bin_dir}"
+            cd "${hq_bin_dir}"
+            wget https://github.com/It4innovations/hyperqueue/releases/download/v0.19.0/hq-v0.19.0-linux-arm64-linux.tar.gz
+            tar -xf hq-v0.19.0-linux-arm64-linux.tar.gz
         )
     fi
     HQBIN="${hq_bin_dir}/hq"
@@ -96,6 +110,8 @@ if [ "${machine}" == "karolina" ]; then
     num_cores_for_job="16"
 elif [ "${machine}" == "lumi" ]; then
     num_cores_for_job="7"
+elif [ "${machine}" == "e4red" ]; then
+    num_cores_for_job="72"
 fi
 
 
@@ -133,12 +149,14 @@ function submit_hq_job
 
 
 if [ "${machine}" == "karolina" ]; then
-    sbatch_command_normal="sbatch -o ${slurm_outdir}/slurm-%j.out -e ${slurm_outdir}/slurm-%j.err ${basedir}/slurmjob_karolina.sh"
+    sbatch_command_normal="sbatch -o ${slurm_outdir}/slurm-%j.out -e ${slurm_outdir}/slurm-%j.err ${basedir}/slurmjob_${machine}.sh"
     sbatch_command_exp="sbatch --partition=qgpu_exp --time=1:00:00 -o ${slurm_outdir}/slurm-%j.out -e ${slurm_outdir}/slurm-%j.err ${basedir}/slurmjob_karolina.sh"
     sbatch_command_array="sbatch --array=1-10 -o ${slurm_outdir}/slurm-%A-%a.out -e ${slurm_outdir}/slurm-%A-%a.err ${basedir}/slurmjob_karolina.sh"
 elif [ "${machine}" == "lumi" ]; then
-    sbatch_command_normal="sbatch -o ${slurm_outdir}/slurm-%j.out -e ${slurm_outdir}/slurm-%j.err ${basedir}/slurmjob_lumi.sh"
+    sbatch_command_normal="sbatch -o ${slurm_outdir}/slurm-%j.out -e ${slurm_outdir}/slurm-%j.err ${basedir}/slurmjob_${machine}.sh"
     sbatch_command_array="sbatch --array=1-10 -o ${slurm_outdir}/slurm-%A-%a.out -e ${slurm_outdir}/slurm-%A-%a.err ${basedir}/slurmjob_lumi.sh"
+elif [ "${machine}" == "e4red" ]; then
+    sbatch_command_normal="sbatch -o ${slurm_outdir}/slurm-%j.out -e ${slurm_outdir}/slurm-%j.err ${basedir}/slurmjob_${machine}.sh"
 fi
 
 if [ "${machine}" == "karolina" ]; then
@@ -153,6 +171,9 @@ elif [ "${machine}" == "lumi" ]; then
     echo "    ${sbatch_command_normal}"
     echo "sbatch command for later, array job:"
     echo "    ${sbatch_command_array}"
+elif [ "${machine}" == "e4red" ]; then
+    echo "sbatch command for later, normal job:"
+    echo "    ${sbatch_command_normal}"
 fi
 
 
@@ -178,6 +199,14 @@ elif [ "${machine}" == "lumi" ]; then
     array_domains_x_3d=( 3  4  4   7   8   8  14  16)
     array_domains_y_3d=( 2  3  4   4   7   8   8  14)
     array_domains_z_3d=( 2  2  3   4   4   7   8   8)
+elif [ "${machine}" == "e4red" ]; then
+    # approx:           24 48 96 192 384 768 1536 3072
+    array_domains_x_2d=( 6  8 12  16  24  32   48   64)
+    array_domains_y_2d=( 4  6  8  12  16  24   32   48)
+    array_domains_z_2d=( 1  1  1   1   1   1   1     1)
+    array_domains_x_3d=( 4  4  6   8   8  12  16    16)
+    array_domains_y_3d=( 3  4  4   6   8   8  12    16)
+    array_domains_z_3d=( 2  3  4   4   6   8   8    12)
 fi
 # indexes:              0   1   2   3   4   5   6   7   8   9  10  11  12  13  14  15
 array_elements_x_2d=(1024 724 512 362 256 181 128  90  64  45  32  23  16  11   8   6)
@@ -272,6 +301,9 @@ elif [ "${machine}" == "lumi" ]; then
     echo "    ${sbatch_command_normal}"
     echo "sbatch command for later, array job:"
     echo "    ${sbatch_command_array}"
+elif [ "${machine}" == "e4red" ]; then
+    echo "sbatch command for later, normal job:"
+    echo "    ${sbatch_command_normal}"
 fi
 
 echo "number of jobs: ${id_num}"
