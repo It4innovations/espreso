@@ -30,7 +30,7 @@ def configure(ctx):
         ctx.env.append_unique("LINKFLAGS", [ "-qopenmp" ])
     if ctx.env.COMPILER_CXX == "nvc++":
         ctx.env.append_unique("CXXFLAGS", [ "-fopenmp", "--diag_suppress initialization_not_reachable", "--diag_suppress code_is_unreachable" ])
-        ctx.env.append_unique("LINKFLAGS", [ "-fopenmp" ])
+        ctx.env.append_unique("LINKFLAGS", [ "-fopenmp", "-fortranlibs" ])
 
     if ctx.options.flavor == "fujitsu":
         ctx.env.append_unique("CXXFLAGS" , [ "-Kopenmp", "-SSL2" ])
