@@ -3,6 +3,7 @@
 #define SRC_CONFIG_ECF_INPUT_INPUT_H_
 
 #include "config/description.h"
+#include "config/holders/expression.h"
 #include "contactinterface.h"
 #include "decomposition.h"
 #include "meshgeneration.h"
@@ -77,6 +78,7 @@ struct InputConfiguration: public ECFDescription {
 	DecompositionConfiguration decomposition;
 	MeshGenerationConfiguration generation;
 	std::map<std::string, ContactInterfaceConfiguration> contact_interfaces;
+	std::map<std::string, ECFExpressionVector> noise;
 	SelectionConfiguration selection;
 
 	InputConfiguration();

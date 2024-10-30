@@ -13,6 +13,8 @@ DEFAULT_ARGS {
   6       15;
 
   7  MKLPDSS;
+  
+  8     0.01;
 }
 
 INPUT_TYPE              GENERATOR;
@@ -30,6 +32,7 @@ GENERATOR {
 
     NODES {
       X0   <-0.05 , 0.05> <0 , 0> <0 , 0>;
+      X1   < 0.05 , 0.05> (0 , 1) <0 , 0>;
     }
 
     ELEMENT_TYPE          [ARG0];
@@ -45,6 +48,12 @@ GENERATOR {
     ELEMENTS_X            [ARG5];
     ELEMENTS_Y            [ARG6];
     ELEMENTS_Z                 1;
+  }
+}
+
+INPUT {
+  NOISE {
+    X1 { Y [ARG8]; }
   }
 }
 

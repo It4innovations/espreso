@@ -2,8 +2,9 @@
 #include "meshbuilder.h"
 #include "basis/containers/serializededata.h"
 #include "basis/logging/profiler.h"
+#include "basis/evaluator/evaluator.h"
 #include "wrappers/mpi/communication.h"
-#include "esinfo/eslog.h"
+#include "esinfo/eslog.hpp"
 #include "esinfo/ecfinfo.h"
 #include "esinfo/envinfo.h"
 #include "esinfo/mpiinfo.h"
@@ -15,6 +16,7 @@
 #include "input/builders/generatedinput.h"
 
 #include <algorithm>
+#include <cstdlib>
 
 //#include "wrappers/mpi/communication.h"
 //#include "basis/utilities/print.h"
@@ -94,6 +96,40 @@ void MeshBuilder::build()
 		}
 	}
 	profiler::synccheckpoint("node_regions");
+
+    for (auto noise = info::ecf->input.noise.cbegin(); noise != info::ecf->input.noise.end(); ++noise) {
+        auto region = nregions.find(noise->first);
+        if (region == nregions.end()) {
+            eslog::globalerror("cannot set noise to the region '%s'. The region does not exist.\n", noise->first.c_str());
+        } else {
+            double &xx = noise->second.x.evaluator->getX();
+            double &xy = noise->second.x.evaluator->getY();
+            double &xz = noise->second.x.evaluator->getZ();
+            double &yx = noise->second.x.evaluator->getX();
+            double &yy = noise->second.x.evaluator->getY();
+            double &yz = noise->second.x.evaluator->getZ();
+            double &zx = noise->second.x.evaluator->getX();
+            double &zy = noise->second.x.evaluator->getY();
+            double &zz = noise->second.x.evaluator->getZ();
+            for (size_t n = 0; n < region->second.size(); ++n) {
+                const Point &p = coordinates[region->second[n]];
+                xx = yx = zx = p.x;
+                xy = yy = zy = p.y;
+                xz = yz = zz = p.z;
+                // to get deterministic noise to all processes
+                std::srand(nIDs[region->second[n]]);
+                int scale = std::rand() % 201 - 100;
+                Point pp(noise->second.x.evaluator->evaluate(), noise->second.y.evaluator->evaluate(), noise->second.z.evaluator->evaluate());
+                printf("%.3f %.3f %.3f >> ", pp.x, pp.y, pp.z);
+                pp *= (scale / 100.);
+                printf("%.3f %.3f %.3f (%d)\n", pp.x, pp.y, pp.z, scale);
+                coordinates[region->second[n]] += Point(noise->second.x.evaluator->evaluate(), noise->second.y.evaluator->evaluate(), noise->second.z.evaluator->evaluate()) * (scale / 100.);
+            }
+        }
+
+    }
+
+    profiler::synccheckpoint("noise");
 
 //	Communication::serialize([&] () {
 ////		{ std::ofstream os("XnIDs", std::ofstream::app); os << nIDs; os.close(); }

@@ -145,9 +145,14 @@ InputConfiguration::InputConfiguration()
 			.setdescription({ "Mesh generation settings." }));
 
 	REGISTER(contact_interfaces, ECFMetaData()
-				.setdescription({ "List of contact interfaces", "Contact interface definition" })
-				.setdatatype({ ECFDataType::STRING })
-				.setpattern({ "CONTACT_1" }));
+            .setdescription({ "List of contact interfaces", "Contact interface definition" })
+            .setdatatype({ ECFDataType::STRING })
+            .setpattern({ "CONTACT_1" }));
+
+    REGISTER(noise, ECFMetaData()
+            .setdescription({ "The name of a region.", "Noise of a given region." })
+            .setdatatype({ ECFDataType::BOUNDARY_REGION })
+            .setpattern({ "MY_REGION" }));
 
 	REGISTER(selection, ECFMetaData()
 	        .setdescription({ "Region selection." }));
