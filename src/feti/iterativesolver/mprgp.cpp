@@ -139,10 +139,8 @@ double MPRGP<double>::getFeasibleStepLength(Vector_Dual<double> &x, Vector_Dual<
     return alpha;
 }
 
-template <> void MPRGP<double>::run(const step::Step &step, MPRGPSolverInfo &info, double alpha, std::function<void(Vector_Dual<double> &in, Vector_Dual<double> &out)> H, std::function<bool(const Vector_Dual<double> &x, const Vector_Dual<double> &g_stop)> stop)
+template <> void MPRGP<double>::run(const step::Step &step, MPRGPSolverInfo &info, double alpha, std::function<void(Vector_Dual<double> &in, Vector_Dual<double> &out)> H, std::function<void(Vector_Dual<double> &in, Vector_Dual<double> &out)> Hprec, std::function<bool(Vector_Dual<double> &x, Vector_Dual<double> &g_stop)> stop)
 {
-    Preconditioner<double> *M = feti.preconditioner;
-
     info.n_cg = info.n_mixed = info.n_gproj = 0;
 
     _print("x0", step, x0);
@@ -157,7 +155,7 @@ template <> void MPRGP<double>::run(const step::Step &step, MPRGPSolverInfo &inf
     updateStoppingGradient(g_stop, g, x0, alpha);
     updateFreeGradient(g_free, g, free);
     math::copy(x, x0); // to feasible?
-    M->apply(g_free, z);
+    Hprec(g_free, z);
     multByFree(z, free);
     math::copy(p, z);
 
@@ -179,7 +177,7 @@ template <> void MPRGP<double>::run(const step::Step &step, MPRGPSolverInfo &inf
                 updateReducedGradient(g_red, g, x, alpha);
                 updateFreeAndActiveSet(free, active, x);
                 updateFreeGradient(g_free, g, free);
-                M->apply(g_free, z);
+                Hprec(g_free, z);
                 multByFree(z, free);
                 double gamma_cg = z.dot(Fp) / pFp;
                 math::add(z, -gamma_cg, p);
@@ -216,7 +214,7 @@ template <> void MPRGP<double>::run(const step::Step &step, MPRGPSolverInfo &inf
                 updateReducedGradient(g_red, g, x, alpha);
                 updateFreeAndActiveSet(free, active, x);
                 updateFreeGradient(g_free, g, free);
-                M->apply(g_free, z);
+                Hprec(g_free, z);
                 multByFree(z, free);
                 math::copy(p, z);
             }
@@ -234,7 +232,7 @@ template <> void MPRGP<double>::run(const step::Step &step, MPRGPSolverInfo &inf
             updateReducedGradient(g_red, g, x, alpha);
             updateFreeAndActiveSet(free, active, x);
             updateFreeGradient(g_free, g, free);
-            M->apply(g_free, z);
+            Hprec(g_free, z);
             multByFree(z, free);
             math::copy(p, z);
         }
@@ -245,7 +243,7 @@ template <> void MPRGP<double>::run(const step::Step &step, MPRGPSolverInfo &inf
 template <> void MPRGP<double>::solve(const step::Step &step, IterativeSolverInfo &info)
 {
     DualOperator<double> *F = feti.dualOperator;
-//    Preconditioner<double> *M = feti.preconditioner;
+    Preconditioner<double> *M = feti.preconditioner;
     // Projector<double> *P = feti.projector;
 
     eslog::info("       = ----------------------------------------------------------------------------- = \n");
@@ -288,7 +286,11 @@ template <> void MPRGP<double>::solve(const step::Step &step, IterativeSolverInf
         F->apply(in, out);
     };
 
-    auto stop = [&] (const Vector_Dual<double> &x, const Vector_Dual<double> &g_stop) {
+    auto Fprec_apply = [&] (Vector_Dual<double> &in, Vector_Dual<double> &out) {
+        M->apply(in, out);
+    };
+
+    auto stop = [&] (Vector_Dual<double> &x, Vector_Dual<double> &g_stop) {
         double norm = std::sqrt(g_stop.dot());
         int it = mprgp_info.iterations;
         if (norm <= tolerance || (it && (it % feti.configuration.print_iteration == 0))) {
@@ -300,7 +302,7 @@ template <> void MPRGP<double>::solve(const step::Step &step, IterativeSolverInf
     eslog::checkpointln("FETI: MPRGP INITIALIZATION");
     eslog::startln("MPRGP: ITERATIONS STARTED", "mprgp");
 
-    run(step, mprgp_info, alpha, F_apply, stop);
+    run(step, mprgp_info, alpha, F_apply, Fprec_apply, stop);
     info = mprgp_info;
 
     info.converged = mprgp_info.iterations < feti.configuration.max_iterations;
@@ -317,7 +319,7 @@ template <> void MPRGP<double>::solve(const step::Step &step, IterativeSolverInf
     eslog::info("       = ----------------------------------------------------------------------------- = \n");
 }
 
-template <> void MPRGP<std::complex<double> >::run(const step::Step &step, MPRGPSolverInfo &info, double alpha, std::function<void(Vector_Dual<std::complex<double>> &in, Vector_Dual<std::complex<double>> &out)> H, std::function<bool(const Vector_Dual<std::complex<double>> &x, const Vector_Dual<std::complex<double>> &g_stop)> stop)
+template <> void MPRGP<std::complex<double> >::run(const step::Step &step, MPRGPSolverInfo &info, double alpha, std::function<void(Vector_Dual<std::complex<double>> &in, Vector_Dual<std::complex<double>> &out)> H, std::function<void(Vector_Dual<std::complex<double>> &in, Vector_Dual<std::complex<double>> &out)> Hprec, std::function<bool(Vector_Dual<std::complex<double>> &x, Vector_Dual<std::complex<double>> &g_stop)> stop)
 {
 
 }

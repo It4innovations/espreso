@@ -29,7 +29,10 @@ public:
 
     void solve(const step::Step &step, IterativeSolverInfo &info);
 
-    void run(const step::Step &step, MPRGPSolverInfo &info, double alpha, std::function<void(Vector_Dual<T> &in, Vector_Dual<T> &out)> H, std::function<bool(const Vector_Dual<T> &x, const Vector_Dual<T> &g_stop)> stop);
+    void run(const step::Step &step, MPRGPSolverInfo &info, double alpha,
+            std::function<void(Vector_Dual<T> &in, Vector_Dual<T> &out)> H,
+            std::function<void(Vector_Dual<T> &in, Vector_Dual<T> &out)> Hprec,
+            std::function<bool(Vector_Dual<T> &x , Vector_Dual<T> &g_stop)> stop);
 
     using IterativeSolver<T>::feti;
     Vector_Dual<T> b, x, x0, nx, ng, ngg0, xp, g_red, g_free, g_stop;

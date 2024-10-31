@@ -6,6 +6,7 @@
 #include "esinfo/eslog.hpp"
 #include "math/math.h"
 #include "feti/projector/projector.h"
+#include "feti/preconditioner/preconditioner.h"
 #include "feti/dualoperator/dualoperator.h"
 
 namespace espreso {
@@ -61,6 +62,7 @@ static void _print(const char *name, const IterativeSolverInfo &info, const step
 template <> void SMALBE<double>::solve(const step::Step &step, IterativeSolverInfo &info)
 {
     DualOperator<double> *F = feti.dualOperator;
+    Preconditioner<double> *M = feti.preconditioner;
     Projector<double> *P = feti.projector;
     MPRGPSolverInfo mprgp_info;
     mprgp_info.converged = false;
@@ -129,6 +131,14 @@ template <> void SMALBE<double>::solve(const step::Step &step, IterativeSolverIn
         math::add(out, -rho, y);
         ++mprgp_info.n_hess;
     };
+    auto Aprec_apply = [&] (Vector_Dual<double> &in, Vector_Dual<double> &out) {
+        P->apply(in, y);
+        M->apply(y, z);
+        P->apply(z, out);
+        math::scale(normPFP, out);
+        math::add(out,  1 / rho, in);
+        math::add(out, -1 / rho, y);
+    };
 
     auto stop = [&] (const Vector_Dual<double> &x, const Vector_Dual<double> &g_stop) {
         double norm_g_stop = std::sqrt(g_stop.dot());
@@ -156,7 +166,7 @@ template <> void SMALBE<double>::solve(const step::Step &step, IterativeSolverIn
     for (int i = 0; mprgp_info.iterations <= feti.configuration.max_iterations; ++i) {
 
         math::copy(mprgp.b, bCtmu);
-        mprgp.run(step, mprgp_info, alpha, A_apply, stop);
+        mprgp.run(step, mprgp_info, alpha, A_apply, Aprec_apply, stop);
         math::copy(mprgp.x0, mprgp.x);
         mprgp.updateStoppingGradient(mprgp.g_stop, mprgp.g, mprgp.x, alpha);
         P->apply_invLG(mprgp.x, Gx);
