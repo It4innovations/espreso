@@ -19,6 +19,8 @@ public:
     {
         math::copy(y, x);
     }
+
+    virtual bool isset() const { return false; }
 };
 
 }

@@ -21,6 +21,8 @@ struct Preconditioner {
     // y = S * x
     virtual void apply(const Vector_Dual<T> &x, Vector_Dual<T> &y) =0;
 
+    virtual bool isset() const { return true; }
+
 protected:
     FETI<T> &feti;
 };

@@ -132,12 +132,16 @@ template <> void SMALBE<double>::solve(const step::Step &step, IterativeSolverIn
         ++mprgp_info.n_hess;
     };
     auto Aprec_apply = [&] (Vector_Dual<double> &in, Vector_Dual<double> &out) {
-        P->apply(in, y);
-        M->apply(y, z);
-        P->apply(z, out);
-        math::scale(normPFP, out);
-        math::add(out,  1 / rho, in);
-        math::add(out, -1 / rho, y);
+        if (M->isset()) {
+            P->apply(in, y);
+            M->apply(y, z);
+            P->apply(z, out);
+            math::scale(normPFP, out);
+            math::add(out,  1 / rho, in);
+            math::add(out, -1 / rho, y);
+        } else {
+            math::copy(out, in);
+        }
     };
 
     auto stop = [&] (const Vector_Dual<double> &x, const Vector_Dual<double> &g_stop) {
