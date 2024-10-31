@@ -16,4 +16,4 @@ lib64/*
 /*.ecf
 
 # ignore the locally-installed dependencies
-dependencies/
+dependencies/*/
