@@ -119,10 +119,6 @@ void MeshBuilder::build()
                 // to get deterministic noise to all processes
                 std::srand(nIDs[region->second[n]]);
                 int scale = std::rand() % 201 - 100;
-                Point pp(noise->second.x.evaluator->evaluate(), noise->second.y.evaluator->evaluate(), noise->second.z.evaluator->evaluate());
-                printf("%.3f %.3f %.3f >> ", pp.x, pp.y, pp.z);
-                pp *= (scale / 100.);
-                printf("%.3f %.3f %.3f (%d)\n", pp.x, pp.y, pp.z, scale);
                 coordinates[region->second[n]] += Point(noise->second.x.evaluator->evaluate(), noise->second.y.evaluator->evaluate(), noise->second.z.evaluator->evaluate()) * (scale / 100.);
             }
         }
