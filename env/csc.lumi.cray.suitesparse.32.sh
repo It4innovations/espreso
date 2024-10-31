@@ -7,6 +7,8 @@ ml Eigen/3.4.0
 ml buildtools-python/24.03-cray-python3.11
 
 export CXX=CC
+export BLAS_LIBRARIES=sci_cray
+export LAPACK_LIBRARIES=sci_cray
 
 . dependencies/install.gklib.sh cc
 . dependencies/install.metis32.sh cc
