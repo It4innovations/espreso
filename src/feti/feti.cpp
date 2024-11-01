@@ -60,6 +60,7 @@ bool FETI<T>::set(const step::Step &step)
     eslog::info(" = EXTERNAL LINEAR SOLVER %*s = \n", 66, DirectSparseSolver<T>::name());
     eslog::info(" = ----------------------------------------------------------------------------------------- = \n");
 
+
     dualOperator->set(step);
     projector->set(step);
     preconditioner->set(step);
