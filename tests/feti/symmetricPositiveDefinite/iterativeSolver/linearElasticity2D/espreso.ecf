@@ -87,6 +87,7 @@ STRUCTURAL_MECHANICS {
         METHOD          TOTAL_FETI;
         DUAL_OPERATOR     IMPLICIT;
         PRECISION            1E-09;
+        PRECISION_IN         1E-09;
         REGULARIZATION    ANALYTIC;
         MAX_STAGNATION        1000;
         ITERATIVE_SOLVER    [ARG7];

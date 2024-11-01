@@ -98,6 +98,7 @@ HEAT_TRANSFER {
         METHOD          TOTAL_FETI;
         DUAL_OPERATOR     IMPLICIT;
         PRECISION            1E-09;
+        PRECISION_IN         1E-09;
         REGULARIZATION   ALGEBRAIC;
         ITERATIVE_SOLVER    [ARG7];
         PRECONDITIONER      [ARG8];
