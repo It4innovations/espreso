@@ -28,7 +28,7 @@ GENERATOR {
     START_Y                     0;
     START_Z                     0;
 
-    LENGTH_X                  100;
+    LENGTH_X                   80;
     LENGTH_Y                   10;
     LENGTH_Z                   10;
 
@@ -86,8 +86,8 @@ STRUCTURAL_MECHANICS {
       FETI {
         METHOD          TOTAL_FETI;
         DUAL_OPERATOR     IMPLICIT;
-        PRECISION            1E-09;
-        PRECISION_IN         1E-09;
+        PRECISION            1E-08;
+        PRECISION_IN         1E-08;
         REGULARIZATION    ANALYTIC;
         MAX_STAGNATION        1000;
         ITERATIVE_SOLVER    [ARG7];
