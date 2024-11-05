@@ -1,9 +1,16 @@
 #!/bin/bash
 
+if [ $# -lt 1 ]
+then
+    echo "architecture not specified"
+    return 1
+fi
+arch="${1}"
+
 DEPENDENCIES_DIR="${PWD}/dependencies"
 
 VERSION_CMAKE="3.30.5"
-version_name="cmake-${VERSION_CMAKE}-linux-aarch64"
+version_name="cmake-${VERSION_CMAKE}-linux-${arch}"
 tarball_url="https://github.com/Kitware/CMake/releases/download/v${VERSION_CMAKE}/${version_name}.tar.gz"
 
 CMAKE_DIR="${version_name}"

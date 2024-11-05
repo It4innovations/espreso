@@ -10,7 +10,7 @@ module load aocc/4.1.0
 
 
 
-. dependencies/install.cmake.sh
+. dependencies/install.cmake.sh x86_64
 . dependencies/install.aocl.sh
 . dependencies/install.suitesparse.sh hipcc hipfc "-DLAPACK_LIBRARIES=${PWD}/dependencies/aocl-linux-aocc-4.1.0/install/4.1.0/aocc/lib/libflame.so.4.1.0"
 . dependencies/install.gklib.sh hipcc
