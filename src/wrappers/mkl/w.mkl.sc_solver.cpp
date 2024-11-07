@@ -68,9 +68,9 @@ template<typename T, typename I>
 SchurComplementSolver<T,I>::~SchurComplementSolver()
 {
     MKL_INT neg_one = -1;
-    pardiso(ext->pt, nullptr, nullptr, nullptr, &neg_one, &ext->matrix->nrows, nullptr, nullptr, nullptr, nullptr, nullptr, ext->iparm, &ext->msglvl, nullptr, nullptr, &ext->error);
+    pardiso(ext->pt, nullptr, nullptr, &ext->mtype, &neg_one, &ext->matrix->nrows, nullptr, nullptr, nullptr, nullptr, nullptr, ext->iparm, &ext->msglvl, nullptr, nullptr, &ext->error);
     if(ext->error != 0) {
-        eslog::error("SchurComplementSolver::factorizeSymbolic(): pardiso error %d\n", (int)ext->error);
+        eslog::error("SchurComplementSolver::dtor(): pardiso error %d\n", (int)ext->error);
     }
 }
 

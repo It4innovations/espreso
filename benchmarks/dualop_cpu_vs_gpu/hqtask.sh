@@ -79,7 +79,9 @@ elif [ "${machine}" == "lumi" ] && [ "${tool}" == "rocm" ]; then
 elif [ "${machine}" == "lumi" ] && [ "${tool}" == "suitesparse" ]; then
     source env/csc.lumi.rocm.mpich.sh
     command="srun -n 1 ./build/espreso -c \"${ecf_file}\" $@ > \"${output_path}/stdout.txt\" 2> \"${output_path}/stderr.txt\""
-    command="mpirun -n 1 --bind-to numa ./build/espreso -c \"${ecf_file}\" $@ > \"${output_path}/stdout.txt\" 2> \"${output_path}/stderr.txt\""
+elif [ "${machine}" == "lumi" ] && [ "${tool}" == "mklpardiso" ]; then
+    source env/csc.lumi.rocm.mpich.mkl.sh
+    command="srun -n 1 ./build/espreso -c \"${ecf_file}\" $@ > \"${output_path}/stdout.txt\" 2> \"${output_path}/stderr.txt\""
 elif [ "${machine}" == "e4red" ] && [ "${tool}" == "cudamodern" ]; then
     source env/e4.red.cuda.32.sh
     command="mpirun -n 1 --bind-to numa ./build/espreso -c \"${ecf_file}\" $@ > \"${output_path}/stdout.txt\" 2> \"${output_path}/stderr.txt\""
