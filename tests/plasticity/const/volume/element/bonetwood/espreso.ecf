@@ -29,15 +29,13 @@ GENERATOR {
     START_Y                    0;
     START_Z                    0;
 
-    LENGTH_X            0.006413;
-    LENGTH_Y            0.006413;
-    LENGTH_Z            0.053334;
+    LENGTH_X                   1;
+    LENGTH_Y                   1;
+    LENGTH_Z                   2;
 
     NODES {
-      X0   <0 , 0> <0 , 0.006413> <0 , 0.053334>;
-      Y0   <0 , 0.006413> <0 , 0> <0 , 0.053334>;
-      Z0   <0 , 0.006413> <0 , 0.006413> <0 , 0>;
-      Z1   <0 , 0.006413> <0 , 0.006413> <0.053334 , 0.053334>;
+      Z0   <0 , 1> <0 , 1> <0 , 0>;
+      Z1   <0 , 1> <0 , 1> <2 , 2>;
     }
 
     ELEMENT_TYPE          [ARG0];
@@ -70,7 +68,7 @@ STRUCTURAL_MECHANICS {
         MODEL   ISOTROPIC;
 
         MIXY          0.3;
-        EX          2.1E9;
+        EX           7E10;
       }
 
       PLASTICITY_PROPERTIES {
@@ -89,10 +87,10 @@ STRUCTURAL_MECHANICS {
 
   LOAD_STEPS_SETTINGS {
     1 {
-      DURATION_TIME     1;
+      DURATION_TIME  1e-3;
       TYPE   STEADY_STATE;
-      MODE         LINEAR;
-      SOLVER       [ARG10];
+      MODE      NONLINEAR;
+      SOLVER      MKLPDSS;
 
       FETI {
         METHOD          TOTAL_FETI;
@@ -101,19 +99,25 @@ STRUCTURAL_MECHANICS {
         REGULARIZATION    ANALYTIC;
         B0_TYPE            KERNELS;
       }
+      
+      TRANSIENT_SOLVER {
+        TIME_STEP      1e-3;
+      }
 
+      NONLINEAR_SOLVER {
+        MAX_ITERATIONS   1;
+      }
+ 
       DISPLACEMENT {
-        X0   { X 0; }
-        Y0   { Y 0; }
-        Z0   { Z 0; }
-        Z1   { Z 0.007; }
+        Z0   { X 0; Y 0; Z         0; }
+        Z1   { X 0; Y 0; Z 10 * TIME; }
       }
     }
   }
 }
 
 OUTPUT {
-  RESULTS_STORE_FREQUENCY    EVERY_SUBSTEP;
+#  RESULTS_STORE_FREQUENCY            NEVER;
   MONITORS_STORE_FREQUENCY   EVERY_SUBSTEP;
 
   STORE_RESULTS         ALL;

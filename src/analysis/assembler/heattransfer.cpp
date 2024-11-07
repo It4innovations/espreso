@@ -621,6 +621,13 @@ void HeatTransfer::evaluate(const step::Step &step, step::Time &time, Matrix_Bas
     }
     for (size_t i = 0; i < nodeKernels.size(); ++i) {
         for (size_t j = 0; j < nodeKernels[i].size(); ++j) {
+            for (size_t e = 0; e < nodeKernels[i][j].expressions.node.size(); ++e) {
+                #pragma omp parallel for
+                for (int t = 0; t < info::env::threads; ++t) {
+                    nodeKernels[i][j].expressions.node[e]->evaluator->getSubstep(t) = (step.substep + 1) / (double)step.substeps;
+                    nodeKernels[i][j].expressions.node[e]->evaluator->getTime(t) = time.current;
+                }
+            }
             nodeKernels[i][j].dirichlet.isactive = isactive(dirichlet);
         }
     }
