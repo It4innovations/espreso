@@ -13,7 +13,7 @@
 using namespace espreso;
 
 StructuralMechanicsSteadyStateLinear::StructuralMechanicsSteadyStateLinear(StructuralMechanicsConfiguration &settings, StructuralMechanicsLoadStepConfiguration &configuration)
-: settings(settings), configuration(configuration), assembler{nullptr, settings, configuration}, K{}, f{}, x{}, forces{}, dirichlet{}, pattern{}, solver{}
+: settings(settings), configuration(configuration), assembler{nullptr, settings, configuration}, K{}, f{}, U{}, forces{}, dirichlet{}, pattern{}, solver{}
 {
 
 }
@@ -22,7 +22,7 @@ StructuralMechanicsSteadyStateLinear::~StructuralMechanicsSteadyStateLinear()
 {
     if (K) { delete K; }
     if (f) { delete f; }
-    if (x) { delete x; }
+    if (U) { delete U; }
     if (forces) { delete forces; }
     if (dirichlet) { delete dirichlet; }
     if (pattern) { delete pattern; }
@@ -53,7 +53,7 @@ bool StructuralMechanicsSteadyStateLinear::analyze(step::Step &step)
 
     K = solver->A->copyPattern();
     f = solver->b->copyPattern();
-    x = solver->x->copyPattern();
+    U = solver->x->copyPattern();
     dirichlet = solver->dirichlet->copyPattern();
     forces = solver->x->copyPattern();
 
@@ -115,13 +115,13 @@ bool StructuralMechanicsSteadyStateLinear::run(step::Step &step, Physics *prev)
     eslog::checkpointln("SIMULATION: LINEAR SYSTEM SOLVED");
 
     double solution = eslog::time();
-    x->copy(solver->x);
+    U->copy(solver->x);
     if (StructuralMechanics::Results::reactionForce) {
-        K->apply(1., x, 0., forces);
+        K->apply(1., U, 0., forces);
         forces->storeTo(StructuralMechanics::Results::reactionForce->data);
     }
     storeSolution(step);
-    assembler.updateSolution(x);
+    assembler.updateSolution(U);
     info::mesh->output->updateSolution(step, time);
 
     eslog::info("       = PROCESS SOLUTION                                                   %8.3f s = \n", eslog::time() - solution);
@@ -146,6 +146,6 @@ void StructuralMechanicsSteadyStateLinear::storeSolution(step::Step &step)
 {
     if (info::ecf->output.print_matrices) {
         eslog::storedata(" STORE: scheme/{x}\n");
-        x->store(utils::filename(utils::debugDirectory(step) + "/scheme", "x").c_str());
+        U->store(utils::filename(utils::debugDirectory(step) + "/scheme", "U").c_str());
     }
 }

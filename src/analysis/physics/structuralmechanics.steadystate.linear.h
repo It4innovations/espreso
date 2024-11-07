@@ -28,7 +28,7 @@ public:
     StructuralMechanics assembler;
 
     Matrix_Base<double> *K;
-    Vector_Distributed<Vector_Dense, double> *f, *x, *forces;
+    Vector_Distributed<Vector_Dense, double> *f, *U, *forces;
     Vector_Distributed<Vector_Sparse, double> *dirichlet;
 
     Pattern<double> *pattern;

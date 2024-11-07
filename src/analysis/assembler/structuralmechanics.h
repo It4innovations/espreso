@@ -51,7 +51,7 @@ public:
         // steady state, transient
         static NodeData *displacement;
         static ElementData *principalStress, *componentStress, *vonMisesStress;
-        static ElementData *isPlastized;
+//        static ElementData *isPlastized;
 
         // harmonic
         static NodeData *cosDisplacement, *sinDisplacement, *displacementAmplitude;

@@ -118,13 +118,13 @@ bool StructuralMechanicsTransientLinear::run(step::Step &step, Physics *prev)
             correct = true;
             StructuralMechanicsSteadyStateLinear* _prev = dynamic_cast<StructuralMechanicsSteadyStateLinear*>(prev);
             time.start = time.previous = time.current = _prev->time.final;
-            U->copy(_prev->x);
+            U->copy(_prev->U);
         }
         if (dynamic_cast<StructuralMechanicsSteadyStateNonLinear*>(prev)) {
             correct = true;
             StructuralMechanicsSteadyStateNonLinear* _prev = dynamic_cast<StructuralMechanicsSteadyStateNonLinear*>(prev);
             time.start = time.previous = time.current = _prev->time.final;
-            U->copy(_prev->x);
+            U->copy(_prev->U);
         }
         if (!correct) {
             eslog::globalerror("Incompatible load steps.\n");

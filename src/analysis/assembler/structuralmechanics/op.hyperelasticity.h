@@ -8,7 +8,7 @@
 namespace espreso {
 
 struct HyperElasticity: SubKernel {
-    const char* name() const { return "Elasticity"; }
+    const char* name() const { return "HyperElasticity"; }
 
     HyperElasticity()
     : behaviour(StructuralMechanicsGlobalSettings::ELEMENT_BEHAVIOUR::PLANE_STRAIN),

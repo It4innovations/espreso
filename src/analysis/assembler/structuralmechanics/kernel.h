@@ -416,6 +416,7 @@ void runElementKernel(const step::Step &step, StructuralMechanicsElementOperator
 
         if (plasticityMultiplicative.isactive) {
             plasticityMultiplicative.simd(element);
+//            printf("K_MEAN\n"); print(3 * nodes, 3 * nodes, element.K);
         }
 
         for (size_t gp = 0; gp < gps; ++gp) {
@@ -475,6 +476,10 @@ void runElementKernel(const step::Step &step, StructuralMechanicsElementOperator
             if (sigma.isactive) {
                 sigma.simd(element, gp);
             }
+        }
+
+        if (plasticityMultiplicative.isactive) {
+//            printf("K_FINAL\n"); print(3 * nodes, 3 * nodes, element.K);
         }
 
         if (corotation.isactive) {

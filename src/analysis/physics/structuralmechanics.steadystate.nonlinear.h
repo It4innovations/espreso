@@ -28,14 +28,15 @@ public:
     StructuralMechanics assembler;
 
     Matrix_Base<double> *K;
-    Vector_Distributed<Vector_Dense, double> *U, *R, *f, *x;
+    Vector_Distributed<Vector_Dense, double> *U, *R, *f;
     Vector_Distributed<Vector_Sparse, double> *dirichlet;
 
     Pattern<double> *pattern;
     LinearSystemSolver<double> *solver;
 
 protected:
-    bool checkDisplacement(step::Step &step);
+    bool checkDisplacement(step::Step &step, double U_norm);
+    bool checkStress(step::Step &step, double f_norm);
 
     void storeSystem(step::Step &step);
     void storeSolution(step::Step &step);

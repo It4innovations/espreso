@@ -29,7 +29,7 @@ NodeData* StructuralMechanics::Results::initialVelocity = nullptr;
 ElementData* StructuralMechanics::Results::principalStress = nullptr;
 ElementData* StructuralMechanics::Results::componentStress = nullptr;
 ElementData* StructuralMechanics::Results::vonMisesStress = nullptr;
-ElementData* StructuralMechanics::Results::isPlastized = nullptr;
+//ElementData* StructuralMechanics::Results::isPlastized = nullptr;
 
 NodeData* StructuralMechanics::Results::displacement = nullptr;
 
@@ -197,13 +197,13 @@ bool StructuralMechanics::analyze(const step::Step &step)
             Results::reactionForce = info::mesh->nodes->appendData(info::mesh->dimension, NamedData::DataType::VECTOR, "REACTION_FORCES", step::TYPE::TIME, info::ecf->output.results_selection.reactions);
         }
 
-        for (size_t i = 0; i < info::mesh->materials.size(); ++i) {
-            if (info::mesh->materials[i]->material_model == MaterialConfiguration::MATERIAL_MODEL::PLASTICITY) {
-                if (Results::isPlastized == nullptr) {
-                    Results::isPlastized = info::mesh->elements->appendData(1, NamedData::DataType::SCALAR, "IS_PLASTIZED");
-                }
-            }
-        }
+//        for (size_t i = 0; i < info::mesh->materials.size(); ++i) {
+//            if (info::mesh->materials[i]->material_model == MaterialConfiguration::MATERIAL_MODEL::PLASTICITY) {
+//                if (Results::isPlastized == nullptr) {
+//                    Results::isPlastized = info::mesh->elements->appendData(1, NamedData::DataType::SCALAR, "IS_PLASTIZED");
+//                }
+//            }
+//        }
     }
 
     if (settings.initial_temperature.size()) {
@@ -406,10 +406,9 @@ bool StructuralMechanics::analyze(const step::Step &step)
             break;
         case MaterialBaseConfiguration::MATERIAL_MODEL::PLASTICITY:
 //            elementKernels[i].plasticity.activate(i, settings.element_behaviour, &mat->plasticity_properties, Results::isPlastized);
-            elementKernels[i].plasticityMultiplicative.activate(i, settings.element_behaviour, &mat->plasticity_properties, Results::isPlastized);
-            elementKernels[i].smallStrainTensor.activate();
+            elementKernels[i].plasticityMultiplicative.activate(i, settings.element_behaviour, &mat->plasticity_properties);
+//            elementKernels[i].smallStrainTensor.activate();
             elementKernels[i].displacement.activate(info::mesh->elements->nodes->cbegin() + ebegin, info::mesh->elements->nodes->cbegin() + eend, Results::displacement->data.data());
-            elementKernels[i].matrixLinearElasticity.activate(settings.element_behaviour, mat->linear_elastic_properties.model, elementKernels[i].linearElasticity.rotated);
         }
         elementKernels[i].material.activate(mat);
 
@@ -610,9 +609,7 @@ void StructuralMechanics::evaluate(const step::Step &step, const step::Time &tim
             }
         }
 
-        elementKernels[i].matrixLinearElasticity.isactive = isactive(K);
         elementKernels[i].Kfiller.isactive = isactive(K);
-        elementKernels[i].M.isactive = isactive(M);
         elementKernels[i].Mfiller.isactive = isactive(M);
         elementKernels[i].reRHSfiller.isactive = isactive(f);
         elementKernels[i].reNRHSfiller.isactive = isactive(nf);
@@ -638,6 +635,13 @@ void StructuralMechanics::evaluate(const step::Step &step, const step::Time &tim
     }
     for (size_t i = 0; i < nodeKernels.size(); ++i) {
         for (size_t j = 0; j < nodeKernels[i].size(); ++j) {
+            for (size_t e = 0; e < nodeKernels[i][j].expressions.node.size(); ++e) {
+                #pragma omp parallel for
+                for (int t = 0; t < info::env::threads; ++t) {
+                    nodeKernels[i][j].expressions.node[e]->evaluator->getSubstep(t) = (step.substep + 1) / (double)step.substeps;
+                    nodeKernels[i][j].expressions.node[e]->evaluator->getTime(t) = time.current;
+                }
+            }
             nodeKernels[i][j].reDirichlet.isactive = isactive(dirichlet);
         }
     }

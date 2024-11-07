@@ -116,6 +116,7 @@ void eigSym22(const SIMD A[4], SIMD eVal[2], SIMD eVec[4]);
 
 void eigSym33(const SIMD A[9], SIMD eVal[3]);
 void eigSym33(const SIMD A[9], SIMD eVal[3], SIMD eVec[9]);
+void eigSym33B(const SIMD A[9], SIMD eVal[3], SIMD eVec[9]);
 
 inline SIMD determinant22(const SIMD J[4])
 {

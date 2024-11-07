@@ -13,7 +13,7 @@
 using namespace espreso;
 
 StructuralMechanicsSteadyStateNonLinear::StructuralMechanicsSteadyStateNonLinear(StructuralMechanicsConfiguration &settings, StructuralMechanicsLoadStepConfiguration &configuration)
-: settings(settings), configuration(configuration), assembler{nullptr, settings, configuration}, K{}, U{}, R{}, f{}, x{}, dirichlet{}, pattern{}, solver{}
+: settings(settings), configuration(configuration), assembler{nullptr, settings, configuration}, K{}, U{}, R{}, f{}, dirichlet{}, pattern{}, solver{}
 {
 
 }
@@ -24,7 +24,6 @@ StructuralMechanicsSteadyStateNonLinear::~StructuralMechanicsSteadyStateNonLinea
     if (U) { delete U; }
     if (R) { delete R; }
     if (f) { delete f; }
-    if (x) { delete x; }
     if (dirichlet) { delete dirichlet; }
     if (pattern) { delete pattern; }
     if (solver) { delete solver; }
@@ -59,7 +58,6 @@ bool StructuralMechanicsSteadyStateNonLinear::analyze(step::Step &step)
     R = solver->b->copyPattern();
     U = solver->b->copyPattern();
     f = solver->b->copyPattern();
-    x = solver->x->copyPattern();
     dirichlet = solver->dirichlet->copyPattern();
 
     pattern->map(K);
@@ -120,6 +118,7 @@ bool StructuralMechanicsSteadyStateNonLinear::run(step::Step &step, Physics *pre
     time.shift = configuration.duration_time / configuration.nonlinear_solver.substeps;
     time.final = configuration.duration_time;
     step.substeps = configuration.nonlinear_solver.substeps;
+    U->set(0);
     bool converged = true;
     for (step.substep = 0; converged && step.substep < configuration.nonlinear_solver.substeps; ++step.substep) {
         if (configuration.nonlinear_solver.substeps > 1) {
@@ -135,12 +134,14 @@ bool StructuralMechanicsSteadyStateNonLinear::run(step::Step &step, Physics *pre
             time.current = time.final;
         }
 
-        assembler.evaluate(step, time, K, nullptr, f, nullptr, dirichlet);
+        assembler.evaluate(step, time, K, nullptr, f, R, dirichlet);
         storeSystem(step);
         solver->A->copy(K);
         solver->A->updated = true;
         solver->b->copy(f);
         solver->dirichlet->copy(dirichlet);
+        solver->dirichlet->add(-1, U);
+        solver->dirichlet->updated = true;
         eslog::info("      == ----------------------------------------------------------------------------- == \n");
         eslog::info("      == SYSTEM ASSEMBLY                                                    %8.3f s = \n", eslog::time() - start);
 
@@ -148,18 +149,19 @@ bool StructuralMechanicsSteadyStateNonLinear::run(step::Step &step, Physics *pre
         solver->solve(step);
 
         double solution = eslog::time();
-        x->copy(solver->x);
+        U->copy(solver->x);
         storeSolution(step);
-        assembler.updateSolution(x);
+        assembler.nextIteration(U);
         eslog::info("      == PROCESS SOLUTION                                                   %8.3f s == \n", eslog::time() - solution);
         eslog::info("      == ----------------------------------------------------------------------------- == \n");
 
         converged = false;
-        while (step.iteration++ < configuration.nonlinear_solver.max_iterations) {
+        double f_norm = f->norm();
+        double U_norm = U->norm(); // U from the linear step
+        while (!converged && step.iteration++ < configuration.nonlinear_solver.max_iterations) {
             eslog::info("\n      ==                                                    %3d. EQUILIBRIUM ITERATION == \n", step.iteration);
 
             start = eslog::time();
-            U->copy(solver->x);
             assembler.evaluate(step, time, K, nullptr, f, R, dirichlet);
             storeSystem(step);
             solver->A->copy(K);
@@ -174,9 +176,19 @@ bool StructuralMechanicsSteadyStateNonLinear::run(step::Step &step, Physics *pre
 
             solver->update(step);
             solver->solve(step);
+            U->add(1., solver->x);
 
-            if ((converged = checkDisplacement(step))) {
-                break;
+            bool norm1 = checkDisplacement(step, U_norm);
+            bool norm2 = checkStress(step, f_norm);
+            converged = norm1 && norm2;
+            if (converged) {
+                eslog::info("      =================================================================================== \n\n");
+                storeSolution(step);
+                assembler.updateSolution(U);
+            } else {
+                eslog::info("       = ----------------------------------------------------------------------------- = \n");
+                storeSolution(step);
+                assembler.nextIteration(U);
             }
         }
         info::mesh->output->updateSolution(step, time);
@@ -184,31 +196,38 @@ bool StructuralMechanicsSteadyStateNonLinear::run(step::Step &step, Physics *pre
     return converged;
 }
 
-bool StructuralMechanicsSteadyStateNonLinear::checkDisplacement(step::Step &step)
+bool StructuralMechanicsSteadyStateNonLinear::checkDisplacement(step::Step &step, double U_norm)
 {
-    double solution = eslog::time();
-    double solutionNumerator = solver->x->norm();
-    solver->x->add(1, U);
-    x->copy(solver->x);
-    if (StructuralMechanics::Results::reactionForce) {
-        R->storeTo(StructuralMechanics::Results::reactionForce->data);
+    if (!configuration.nonlinear_solver.check_first_residual) {
+        return true;
     }
-    storeSolution(step);
-
-    double solutionDenominator = std::max(solver->x->norm(), 1e-3);
+    double solutionNumerator = solver->x->norm();
+    double solutionDenominator = std::max(U_norm, 1e-3);
+    printf("%+.10e / %+.10e\n", solutionNumerator, U_norm);
     double norm = solutionNumerator / solutionDenominator;
 
-    eslog::info("      == PROCESS SOLUTION                                                   %8.3f s == \n", eslog::time() - solution);
-    eslog::info("      == ----------------------------------------------------------------------------- == \n");
-
     if (norm > configuration.nonlinear_solver.requested_first_residual) {
-        eslog::info("      == DISPLACEMENT NORM, CRITERIA                         %.5e / %.5e == \n", solutionNumerator, solutionDenominator * configuration.nonlinear_solver.requested_first_residual);
-        assembler.nextIteration(x);
+        eslog::info("      == DISPLACEMENT NORM / CRITERIA                        %.5e / %.5e == \n", norm, configuration.nonlinear_solver.requested_first_residual);
         return false;
     } else {
-        eslog::info("      == DISPLACEMENT NORM, CRITERIA [CONVERGED]             %.5e / %.5e == \n", solutionNumerator, solutionDenominator * configuration.nonlinear_solver.requested_first_residual);
-        eslog::info("      =================================================================================== \n\n");
-        assembler.updateSolution(x);
+        eslog::info("      == DISPLACEMENT NORM / CRITERIA [CONVERGED]            %.5e / %.5e == \n", norm, configuration.nonlinear_solver.requested_first_residual);
+        return true;
+    }
+}
+
+bool StructuralMechanicsSteadyStateNonLinear::checkStress(step::Step &step, double f_norm)
+{
+    if (!configuration.nonlinear_solver.check_second_residual) {
+        return true;
+    }
+    double b_norm = solver->rhs_without_dirichlet_norm();
+    double nR = b_norm / (1 + f_norm);
+
+    if (nR > configuration.nonlinear_solver.requested_second_residual) {
+        eslog::info("      == STRESS NORM       / CRITERIA                        %.5e / %.5e == \n", nR, configuration.nonlinear_solver.requested_second_residual);
+        return false;
+    } else {
+        eslog::info("      == STRESS NORM       / CRITERIA [CONVERGED]            %.5e / %.5e == \n", nR, configuration.nonlinear_solver.requested_second_residual);
         return true;
     }
 }
@@ -228,6 +247,6 @@ void StructuralMechanicsSteadyStateNonLinear::storeSolution(step::Step &step)
 {
     if (info::ecf->output.print_matrices) {
         eslog::storedata(" STORE: scheme/{x}\n");
-        x->store(utils::filename(utils::debugDirectory(step) + "/scheme", "x").c_str());
+        U->store(utils::filename(utils::debugDirectory(step) + "/scheme", "U").c_str());
     }
 }
