@@ -114,6 +114,7 @@ void DirectSparseSolver<T, I>::commit(const Matrix_CSR<T, I> &a)
     pardisoinit(ext->pp.pt, &ext->pp.mtype, ext->pp.iparm);
     ext->pp.iparm[0] = 1;            /* No solver default */
     ext->pp.iparm[1] = 2;            /* Fill-in reordering from METIS */
+    ext->pp.iparm[7] = 0;            /* Max number of refinement iterations (default changed between 2024.2 and 2025.0) */
     ext->pp.iparm[9] = 13;           /* Perturb the pivot elements with 1E-13 */
 
     ext->pp.iparm[4] = 2;            /* Return permutation vector */
