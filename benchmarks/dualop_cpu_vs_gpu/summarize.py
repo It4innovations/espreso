@@ -78,11 +78,14 @@ os.makedirs(summ_dir, exist_ok=True)
 outfile = summ_dir + "/timings.csv"
 outstring = io.StringIO()
 cells_info = ["id", "str", "run_id", "machine", "tool", "dual_operator", "problem", "physics", "dim", "dofs_per_node", "element_type", "domains_x", "domains_y", "domains_z", "n_domains_total", "elements_x", "elements_y", "elements_z", "n_elements_per_domain", "avg_domain_surface", "avg_domain_volume", "n_dofs"]
+cells_options = ["CONCURRENCY_SET", "CONCURRENCY_UPDATE", "TRS1_FACTOR_STORAGE", "TRS1_SOLVE_TYPE", "TRS2_FACTOR_STORAGE", "TRS2_SOLVE_TYPE", "TRSM_RHS_SOL_ORDER", "PATH_IF_HERMITIAN", "CONCURRENCY_APPLY", "APPLY_SCATTER_GATHER_WHERE"]
 outstring.write(";".join(cells_info))
 outstring.write(";;")
 outstring.write("error;timeout")
 outstring.write(";;")
 outstring.write("set;update;apply;;set/subdomain;update/subdomain;apply/subdomain")
+outstring.write(";;")
+outstring.write(";".join(cells_options))
 outstring.write("\n")
 for dir_name in os.listdir(results_dir):
     dir_path = results_dir + "/" + dir_name
@@ -160,7 +163,14 @@ for dir_name in os.listdir(results_dir):
         outstring.write(";")
         outstring.write(set_time_perdom + ";")
         outstring.write(update_time_perdom + ";")
-        outstring.write(apply_avg_perdom_str)
+        outstring.write(apply_avg_perdom_str + ";")
+        outstring.write(";")
+
+        for opt in cells_options:
+            lines = list(filter(lambda line: opt in line, output_lines))
+            if len(lines) > 0:
+                outstring.write(lines[0][70:-2].replace(" ", ""))
+            outstring.write(";")
 
         outstring.write("\n")
 write_string_to_file(outfile, outstring.getvalue())
@@ -198,8 +208,14 @@ machines_tools_dualops = [
     ("karolina", "suitesparse",  "IMPLICIT"),
     ("lumi",     "rocm",         "EXPLICIT_GPU"),
     ("lumi",     "rocm",         "IMPLICIT_GPU"),
+    ("lumi",     "mklpardiso",   "EXPLICIT_SC"),
+    ("lumi",     "mklpardiso",   "IMPLICIT"),
     ("lumi",     "suitesparse",  "EXPLICIT_SC"),
-    ("lumi",     "suitesparse",  "IMPLICIT")
+    ("lumi",     "suitesparse",  "IMPLICIT"),
+    ("e4red",    "cudamodern",   "EXPLICIT_GPU"),
+    ("e4red",    "cudamodern",   "IMPLICIT_GPU"),
+    ("e4red",    "suitesparse",  "EXPLICIT_SC"),
+    ("e4red",    "suitesparse",  "IMPLICIT")
 ]
 
 csv_all = read_csv_to_arrays(summ_dir + "/timings.csv")

@@ -6,6 +6,7 @@ import csv
 import matplotlib.pyplot as plt
 import matplotlib
 from datetime import datetime
+from mpi4py import MPI
 
 
 
@@ -32,8 +33,14 @@ machines_tools_dualops = [
     ("karolina", "suitesparse",  "IMPLICIT"),
     ("lumi",     "rocm",         "EXPLICIT_GPU"),
     ("lumi",     "rocm",         "IMPLICIT_GPU"),
+    ("lumi",     "mklpardiso",   "EXPLICIT_SC"),
+    ("lumi",     "mklpardiso",   "IMPLICIT"),
     ("lumi",     "suitesparse",  "EXPLICIT_SC"),
-    ("lumi",     "suitesparse",  "IMPLICIT")
+    ("lumi",     "suitesparse",  "IMPLICIT"),
+    ("e4red",    "cudamodern",   "EXPLICIT_GPU"),
+    ("e4red",    "cudamodern",   "IMPLICIT_GPU"),
+    ("e4red",    "suitesparse",  "EXPLICIT_SC"),
+    ("e4red",    "suitesparse",  "IMPLICIT")
 ]
 
 
@@ -49,7 +56,7 @@ datestr = datetime.now().strftime("%Y%m%d_%H%M%S")
 graphdir = basedir + "/graphs/" + datestr
 os.makedirs(graphdir, exist_ok=True)
 
-summarize_datestr = "20241024_172736"
+summarize_datestr = "20241110_210703"
 
 csv_all = read_csv_to_arrays(basedir + "/summary/" + summarize_datestr + "/timings.csv")
 csv_header = csv_all[0]
@@ -64,6 +71,17 @@ n_dofs_col = csv_header.index("n_dofs")
 set_col = csv_header.index("set/subdomain")
 update_col = csv_header.index("update/subdomain")
 apply_col = csv_header.index("apply/subdomain")
+trs1storage_col = csv_header.index("TRS1_FACTOR_STORAGE")
+
+image_index = -1
+
+
+
+
+
+
+
+
 
 
 
@@ -72,9 +90,14 @@ apply_col = csv_header.index("apply/subdomain")
 min_y_val = 1
 max_y_val = 1024
 
-problems = ["heat_transfer_2d", "heat_transfer_3d", "linear_elasticity_2d", "linear_elasticity_3d"]
-machines = list(set([mtd[0] for mtd in machines_tools_dualops]))
+# problems = ["heat_transfer_2d", "heat_transfer_3d", "linear_elasticity_2d", "linear_elasticity_3d"]
+problems = ["linear_elasticity_2d", "linear_elasticity_3d"]
+machines = sorted(list(set([mtd[0] for mtd in machines_tools_dualops])))
 for machine in machines:
+    image_index += 1
+    if image_index != MPI.COMM_WORLD.Get_rank():
+        continue
+
     tools_dualops = list(filter(lambda mtd: mtd[0] == machine, machines_tools_dualops))
     ngraphs = len(tools_dualops)
 
@@ -88,8 +111,10 @@ for machine in machines:
         
         physics = problem[0:-3]
         dim = int(problem[-2:-1])
-        if dim == 2: element_types = ["TRIANGLE3", "TRIANGLE6"]
-        if dim == 3: element_types = ["TETRA4", "TETRA10"]
+        # if dim == 2: element_types = ["TRIANGLE3", "TRIANGLE6"]
+        # if dim == 3: element_types = ["TETRA4", "TETRA10"]
+        if dim == 2: element_types = ["TRIANGLE3"]
+        if dim == 3: element_types = ["TETRA4"]
         for element_type in element_types:
             csv_data_element = list(filter(lambda row: row[element_type_col] == element_type, csv_data_problem))
 
@@ -145,11 +170,11 @@ for machine in machines:
                         
                     linestyle = "-" if physics == "heat_transfer" else "--"
                     color = "blue" if dim == 2 else "red"
-                    label = str(dim) + "D-" + physics + "-" + element_type
+                    # label = str(dim) + "D-" + physics + "-" + element_type
+                    label = str(dim) + "D"
                     title = tool_i + "-" + dualop_i + " VS " + tool_j + "-" + dualop_j
                     axs[i,j].loglog(x_vals, y_vals, base=2, color=color, linestyle=linestyle, label=label)
                     axs[i,j].set_title(title, fontsize="medium")
-
     
     xlim_min = (1 << 30)
     xlim_max = 0
@@ -160,7 +185,7 @@ for machine in machines:
         # a.set_xlabel('n_dofs')
         # a.set_ylabel('iterations until amortization')
         if a.lines:
-            # a.legend(loc="upper left")
+            a.legend(loc="upper left")
             xlim_min = min(xlim_min, a.get_xlim()[0])
             xlim_max = max(xlim_max, a.get_xlim()[1])
             ylim_min = min(ylim_min, a.get_ylim()[0])
@@ -169,20 +194,238 @@ for machine in machines:
         a.set_yscale("log", base=2)
     plt.setp(axs, xlim=[xlim_min,xlim_max], ylim=[ylim_min,ylim_max])
     fig.tight_layout()
-    plt.savefig(graphdir + "/" + machine + ".png")
+    plt.savefig(graphdir + "/amort_iters-" + machine + ".png")
     plt.close()
 
 
 
-# for each machine a separate image (results between machines are not really comparable in terms of amortization niters)
-#   grid of nxn graphs (n = all  tools and dualoperators)
-#     graph_row = this is better
-#     graph_col = than that
-#   in each graph:
-#     x = ndofs
-#     y = iterations until amortization
-#     all 8 combinations of dimension, physics and element
-#     if not better, use some max value for the num iters, like 1024
 
 
 
+
+
+
+
+
+
+
+problems = ["heat_transfer_2d", "heat_transfer_3d", "linear_elasticity_2d", "linear_elasticity_3d"]
+for problem in problems:
+    csv_data_problem = list(filter(lambda row: row[problem_col] == problem, csv_data))
+
+    physics = problem[0:-3]
+    dim = int(problem[-2:-1])
+    if dim == 2: element_types = ["TRIANGLE3", "TRIANGLE6"]
+    if dim == 3: element_types = ["TETRA4", "TETRA10"]
+    for element_type in element_types:
+        image_index += 1
+        if image_index != MPI.COMM_WORLD.Get_rank():
+            continue
+
+        csv_data_element = list(filter(lambda row: row[element_type_col] == element_type, csv_data_problem))
+
+        stages = ["update", "apply"]
+        approaches = ["IMPLICIT", "EXPLICIT"]
+        
+        ndofs_list = sorted(list(set([int(row[n_dofs_col]) for row in csv_data_element])))
+        
+        plt.figure()
+        fig, axs = plt.subplots(len(approaches), len(stages), figsize=(1920/100.0, 1080/100.0))
+
+        for stage_idx in range(len(stages)):
+            stage = stages[stage_idx]
+            if stage == "update": select_col = update_col
+            if stage == "apply":  select_col = apply_col
+
+            for approach_idx in range(len(approaches)):
+                approach = approaches[approach_idx]
+                mtds = list(filter(lambda mtd: approach in mtd[2], machines_tools_dualops))
+
+                csv_data_approach = list(filter(lambda row: approach in row[dualop_col], csv_data_element))
+
+                for mtd in mtds:
+                    machine = mtd[0]
+                    tool = mtd[1]
+                    dualop = mtd[2]
+                    
+                    csv_data_machine = list(filter(lambda row: row[machine_col] == machine, csv_data_approach))
+                    csv_data_tool = list(filter(lambda row: row[tool_col] == tool, csv_data_machine))
+                    csv_data_sorted = sorted(csv_data_tool, key=lambda row: int(row[n_dofs_col]))
+
+                    x_vals = ndofs_list
+                    y_vals_str = [row[select_col] for row in csv_data_sorted]
+                    y_vals = [float(v) if len(v)>0 else float("NaN") for v in y_vals_str]
+
+                    linestyle = None
+                    if machine == "karolina": linestyle = "-"
+                    if machine == "e4red": linestyle = "--"
+                    if machine == "lumi": linestyle = "-."
+                    if machine == "tiber": linestyle = ":"
+                    color = "black"
+                    if tool == "cudalegacy": color = "green"
+                    if tool == "cudamodern": color = "lawngreen"
+                    if tool == "rocm": color = "darkorange"
+                    if tool == "oneapi": color = "blue"
+                    if tool == "suitesparse": color = "magenta"
+                    if tool == "mklpardiso": color = "cyan"
+                    linewidth = 2
+                    marker = None
+                    label = machine + "-" + tool
+                    title = stage + "-" + approach
+                    axs[stage_idx,approach_idx].loglog(x_vals, y_vals, base=2, color=color, linestyle=linestyle, linewidth=linewidth, marker=marker, label=label)
+                    axs[stage_idx,approach_idx].set_title(title, fontsize="medium")
+
+                    trs1storages = [row[trs1storage_col] for row in csv_data_sorted]
+                    for i in range(len(x_vals)):
+                        if trs1storages[i] == "DENSE":  axs[stage_idx,approach_idx].plot(x_vals[i], y_vals[i], color=color, marker="s")
+                        if trs1storages[i] == "SPARSE": axs[stage_idx,approach_idx].plot(x_vals[i], y_vals[i], color=color, marker="P")
+
+        xlim_min = (1 << 30)
+        xlim_max = 0
+        ylim_min = (1 << 30)
+        ylim_max = 0
+        for a in axs.flat:
+            a.grid(True)
+            # a.set_xlabel('n_dofs')
+            # a.set_ylabel('time/subdomain')
+            if a.lines:
+                a.legend(loc="upper left")
+                xlim_min = min(xlim_min, a.get_xlim()[0])
+                xlim_max = max(xlim_max, a.get_xlim()[1])
+                ylim_min = min(ylim_min, a.get_ylim()[0])
+                ylim_max = max(ylim_max, a.get_ylim()[1])
+            a.set_xscale("log", base=2)
+            a.set_yscale("log", base=2)
+        plt.setp(axs, xlim=[xlim_min,xlim_max], ylim=[ylim_min,ylim_max])
+        fig.tight_layout()
+        plt.savefig(graphdir + "/compare_times-" + problem + "-" + element_type + ".png")
+        plt.close()
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+problems = ["heat_transfer_2d", "heat_transfer_3d", "linear_elasticity_2d", "linear_elasticity_3d"]
+for problem in problems:
+    csv_data_problem = list(filter(lambda row: row[problem_col] == problem, csv_data))
+
+    physics = problem[0:-3]
+    dim = int(problem[-2:-1])
+    if dim == 2: element_types = ["TRIANGLE3", "TRIANGLE6"]
+    if dim == 3: element_types = ["TETRA4", "TETRA10"]
+    for element_type in element_types:
+        image_index += 1
+        if image_index != MPI.COMM_WORLD.Get_rank():
+            continue
+
+        csv_data_element = list(filter(lambda row: row[element_type_col] == element_type, csv_data_problem))
+
+        stages = ["update", "apply"]
+        approaches = ["IMPLICIT", "EXPLICIT"]
+        
+        ndofs_list = sorted(list(set([int(row[n_dofs_col]) for row in csv_data_element])))
+        
+        plt.figure()
+        fig, axs = plt.subplots(len(approaches), len(stages), figsize=(1920/100.0, 1080/100.0))
+
+        for stage_idx in range(len(stages)):
+            stage = stages[stage_idx]
+            if stage == "update": select_col = update_col
+            if stage == "apply":  select_col = apply_col
+
+            for approach_idx in range(len(approaches)):
+                approach = approaches[approach_idx]
+                mtds = list(filter(lambda mtd: approach in mtd[2], machines_tools_dualops))
+
+                csv_data_approach = list(filter(lambda row: approach in row[dualop_col], csv_data_element))
+
+                tograph_y_vals = list()
+                tograph_machines = list()
+                tograph_tools = list()
+                tograph_storages = list()
+
+                for mtd in mtds:
+                    machine = mtd[0]
+                    tool = mtd[1]
+                    dualop = mtd[2]
+                    
+                    csv_data_machine = list(filter(lambda row: row[machine_col] == machine, csv_data_approach))
+                    csv_data_tool = list(filter(lambda row: row[tool_col] == tool, csv_data_machine))
+                    csv_data_sorted = sorted(csv_data_tool, key=lambda row: int(row[n_dofs_col]))
+
+                    y_vals_str = [row[select_col] for row in csv_data_sorted]
+                    y_vals = [float(v) if len(v)>0 else float("NaN") for v in y_vals_str]
+                    trs1storages = [row[trs1storage_col] for row in csv_data_sorted]
+
+                    tograph_y_vals.append(y_vals)
+                    tograph_machines.append(machine)
+                    tograph_tools.append(tool)
+                    tograph_storages.append(trs1storages)
+
+                for i in range(len(tograph_y_vals)):
+                    if tograph_machines[i] == "karolina" and tograph_tools[i] == "mklpardiso":
+                        reference_y_vals = list(tograph_y_vals[i])
+                        for j in range(len(tograph_y_vals)):
+                            for k in range(len(reference_y_vals)):
+                                tograph_y_vals[j][k] /= reference_y_vals[k]
+                        break
+
+                for i in range(len(tograph_y_vals)):
+                    x_vals = ndofs_list
+                    y_vals = tograph_y_vals[i]
+                    machine = tograph_machines[i]
+                    tool = tograph_tools[i]
+                    trs1storages = tograph_storages[i]
+
+                    linestyle = None
+                    if machine == "karolina": linestyle = "-"
+                    if machine == "e4red": linestyle = "--"
+                    if machine == "lumi": linestyle = "-."
+                    if machine == "tiber": linestyle = ":"
+                    color = "black"
+                    if tool == "cudalegacy": color = "green"
+                    if tool == "cudamodern": color = "lawngreen"
+                    if tool == "rocm": color = "darkorange"
+                    if tool == "oneapi": color = "blue"
+                    if tool == "suitesparse": color = "magenta"
+                    if tool == "mklpardiso": color = "cyan"
+                    linewidth = 2
+                    marker = None
+                    label = machine + "-" + tool
+                    title = stage + "-" + approach
+                    axs[stage_idx,approach_idx].loglog(x_vals, y_vals, base=2, color=color, linestyle=linestyle, linewidth=linewidth, marker=marker, label=label)
+                    axs[stage_idx,approach_idx].set_title(title, fontsize="medium")
+
+                    for i in range(len(x_vals)):
+                        if trs1storages[i] == "DENSE":  axs[stage_idx,approach_idx].plot(x_vals[i], y_vals[i], color=color, marker="s")
+                        if trs1storages[i] == "SPARSE": axs[stage_idx,approach_idx].plot(x_vals[i], y_vals[i], color=color, marker="P")
+
+        xlim_min = (1 << 30)
+        xlim_max = 0
+        ylim_min = (1 << 30)
+        ylim_max = 0
+        for a in axs.flat:
+            a.grid(True)
+            # a.set_xlabel('n_dofs')
+            # a.set_ylabel('time/subdomain')
+            if a.lines:
+                a.legend(loc="upper left")
+                xlim_min = min(xlim_min, a.get_xlim()[0])
+                xlim_max = max(xlim_max, a.get_xlim()[1])
+                ylim_min = min(ylim_min, a.get_ylim()[0])
+                ylim_max = max(ylim_max, a.get_ylim()[1])
+            a.set_xscale("log", base=2)
+            a.set_yscale("log", base=2)
+        plt.setp(axs, xlim=[xlim_min,xlim_max], ylim=[ylim_min,ylim_max])
+        fig.tight_layout()
+        plt.savefig(graphdir + "/compare_normalized-" + problem + "-" + element_type + ".png")
+        plt.close()

@@ -2,6 +2,7 @@
 
 # assuming Karolina
 
+ml mpi4py
 ml matplotlib
 
-python3 benchmarks/dualop_cpu_vs_gpu/graphs.py
+mpirun -n 19 python3 benchmarks/dualop_cpu_vs_gpu/graphs.py
