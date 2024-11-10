@@ -2152,7 +2152,7 @@ void TotalFETIGpu<T,I>::config_replace_defaults()
             }
         }
         if(gpu::mgm::get_implementation() == gpu::mgm::gpu_wrapper_impl::ONEAPI) {
-            eslog::error("not implemented\n");
+            // eslog::error("not implemented\n");
         }
     }
     if(is_implicit) {
@@ -2280,7 +2280,7 @@ void TotalFETIGpu<T,I>::config_replace_defaults()
             }
         }
         if(gpu::mgm::get_implementation() == gpu::mgm::gpu_wrapper_impl::ONEAPI) {
-            eslog::error("not implemented\n");
+            // eslog::error("not implemented\n");
         }
     }
 }
