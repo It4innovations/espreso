@@ -80,7 +80,8 @@ elif [ "${machine}" == "lumi" ] && [ "${tool}" == "suitesparse" ]; then
     source env/csc.lumi.rocm.mpich.sh
     command="srun -n 1 ./build/espreso -c \"${ecf_file}\" $@ > \"${output_path}/stdout.txt\" 2> \"${output_path}/stderr.txt\""
 elif [ "${machine}" == "lumi" ] && [ "${tool}" == "mklpardiso" ]; then
-    source env/csc.lumi.rocm.mpich.mkl.sh
+    source env/csc.lumi.intel.sh
+    export OMP_NUM_THREADS=7,1
     command="srun -n 1 ./build/espreso -c \"${ecf_file}\" $@ > \"${output_path}/stdout.txt\" 2> \"${output_path}/stderr.txt\""
 elif [ "${machine}" == "e4red" ] && [ "${tool}" == "cudamodern" ]; then
     source env/e4.red.cuda.32.sh
