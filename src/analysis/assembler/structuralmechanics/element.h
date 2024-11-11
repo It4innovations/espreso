@@ -44,7 +44,6 @@ template <size_t nodes, size_t gps, size_t ndim, size_t edim> struct StructuralM
         alignas(SIMD::size * sizeof(double)) SIMD youngModulus[ndim];
         alignas(SIMD::size * sizeof(double)) SIMD poissonRatio[ndim];
         alignas(SIMD::size * sizeof(double)) SIMD shearModulus[ndim];
-        alignas(SIMD::size * sizeof(double)) SIMD elasticity  [ndim * ndim * 4];
 
         // plasticity
         alignas(SIMD::size * sizeof(double)) SIMD initialYieldStress;
@@ -57,9 +56,9 @@ template <size_t nodes, size_t gps, size_t ndim, size_t edim> struct StructuralM
     } ecf;
 
     // PLANE = 9, AXISYMMETRIC = 16, VOLUME = 36
-    alignas(SIMD::size * sizeof(double)) SIMD elasticity[ndim * ndim * 4]; // 2D = 16, 3D = 36
-    alignas(SIMD::size * sizeof(double)) SIMD F[9];
-    alignas(SIMD::size * sizeof(double)) SIMD vS[6];
+    alignas(SIMD::size * sizeof(double)) SIMD vC4[ndim * ndim * 4]; // 2D = 16, 3D = 36
+    alignas(SIMD::size * sizeof(double)) SIMD vS[ndim + ndim * (ndim - 1) / 2];
+    alignas(SIMD::size * sizeof(double)) SIMD F[ndim * ndim];
 
     struct {
         alignas(SIMD::size * sizeof(double)) SIMD center[ndim];

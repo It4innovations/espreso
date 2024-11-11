@@ -21,13 +21,8 @@
 #include "analysis/assembler/structuralmechanics/op.smallstraintensor.h"
 #include "analysis/assembler/structuralmechanics/op.sigma.h"
 #include "analysis/assembler/structuralmechanics/op.stress.h"
-#include "analysis/assembler/structuralmechanics/op.linearelasticity.h"
-#include "analysis/assembler/structuralmechanics/op.hyperelasticity.h"
-#include "analysis/assembler/structuralmechanics/op.plasticity.h"
-#include "analysis/assembler/structuralmechanics/op.plasticity.multiplicative.h"
-#include "analysis/assembler/structuralmechanics/op.matrix.linearelasticity.h"
-#include "analysis/assembler/structuralmechanics/op.matrix.hyperelasticity.h"
-#include "analysis/assembler/structuralmechanics/op.matrix.largedisplacement.h"
+#include "analysis/assembler/structuralmechanics/op.material.h"
+#include "analysis/assembler/structuralmechanics/op.matrix.elasticity.h"
 #include "analysis/assembler/structuralmechanics/op.matrix.corotation.h"
 #include "analysis/assembler/structuralmechanics/op.normalpressure.h"
 #include "analysis/assembler/structuralmechanics/op.pressure.h"
@@ -49,22 +44,16 @@ struct StructuralMechanicsElementOperators {
 
     Basis basis;
     Thickness thickness;
-    Material material;
     Coordinates coordinates;
     Displacement displacement;
     SmallStrainTensor smallStrainTensor;
     Temperature temperature;
     Velocity velocity;
     Integration integration;
-    LinearElasticity linearElasticity;
-    HyperElasticity hyperElasticity;
-    Plasticity plasticity;
-    PlasticityMultiplicative plasticityMultiplicative;
+    MaterialStructuralMechanics material;
     BoundaryCondition initVelocity;
-    MatrixLinearElasticity matrixLinearElasticity;
-    MatrixHyperElasticity matrixHyperElasticity;
-    MatrixLargeDisplacement largeDisplacement;
-    MatrixCorotation corotation;
+    MatrixElasticity matrixElasticity;
+    MatrixCorotation matrixCorotation;
     MatrixMass M;
     ElementCondition acceleration, angularVelocity;
     Sigma sigma;

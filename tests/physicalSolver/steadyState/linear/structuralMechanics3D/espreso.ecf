@@ -66,28 +66,13 @@ STRUCTURAL_MECHANICS {
 
   MATERIALS {
     1 {
-      COORDINATE_SYSTEM {
-        TYPE       CARTESIAN;
-        ROTATION    { X 0; }
-      }
-
       DENS   7850;
-      CP        1;
 
-      LINEAR_ELASTIC_PROPERTIES {
-#        MODEL   ORTHOTROPIC;
+      ELASTICITY_PROPERTIES {
+        MATERIAL_MODEL   KIRCHHOFF;
 
-        EX         2.0E10;
-        EY         7.0E10;
-        EZ         1.0E10;
-
-        MIXY          0.1;
-        MIXZ          0.4;
-        MIYZ          0.3;
-
-        GXY        8.1E10;
-        GXZ        8.1E10;
-        GYZ        8.1E10;
+        MIXY                   0.1;
+        EX                  2.0E10;
       }
     }
   }

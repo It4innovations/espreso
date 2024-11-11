@@ -20,23 +20,23 @@ void setElementKernel(StructuralMechanicsElementOperators &operators, SubKernel:
                     [] (Element &element, size_t &n, size_t &s, double value) { element.thickness.node[n][s] = value; }));
         }
 
-        switch (operators.linearElasticity.coordinateSystem->type) {
+        switch (operators.material.configuration->coordinate_system.type) {
         case CoordinateSystemConfiguration::TYPE::CARTESIAN:
-            if (operators.linearElasticity.coordinateSystem->rotation.z.isset) {
+            if (operators.material.configuration->coordinate_system.rotation.z.isset) {
                 operators.expressions.gp.push_back(new ExternalGPsExpression<ndim, Element>(
-                    operators.linearElasticity.coordinateSystem->rotation.z.evaluator,
+                    operators.material.configuration->coordinate_system.rotation.z.evaluator,
                     [] (Element &element, size_t &gp, size_t &s, double value) { element.rotation.center[0][s] = value; }));
             }
             break;
         case CoordinateSystemConfiguration::TYPE::CYLINDRICAL:
-            if (operators.linearElasticity.coordinateSystem->center.x.isset) {
+            if (operators.material.configuration->coordinate_system.center.x.isset) {
                 operators.expressions.gp.push_back(new ExternalGPsExpression<ndim, Element>(
-                    operators.linearElasticity.coordinateSystem->center.x.evaluator,
+                    operators.material.configuration->coordinate_system.center.x.evaluator,
                     [] (Element &element, size_t &gp, size_t &s, double value) { element.rotation.center[0][s] = value; }));
             }
-            if (operators.linearElasticity.coordinateSystem->center.y.isset) {
+            if (operators.material.configuration->coordinate_system.center.y.isset) {
                 operators.expressions.gp.push_back(new ExternalGPsExpression<ndim, Element>(
-                    operators.linearElasticity.coordinateSystem->center.y.evaluator,
+                    operators.material.configuration->coordinate_system.center.y.evaluator,
                     [] (Element &element, size_t &gp, size_t &s, double value) { element.rotation.center[1][s] = value; }));
             }
             break;
@@ -45,25 +45,25 @@ void setElementKernel(StructuralMechanicsElementOperators &operators, SubKernel:
         }
 
         operators.expressions.gp.push_back(new ExternalGPsExpression<ndim, Element>(
-                operators.linearElasticity.configuration->young_modulus.get(0, 0).evaluator,
+                operators.material.configuration->elasticity_properties.young_modulus.get(0, 0).evaluator,
                 [] (Element &element, size_t &gp, size_t &s, double value) { element.ecf.youngModulus[0][s] = value; }));
-        operators.expressions.gp.push_back(new ExternalGPsExpression<ndim, Element>(
-                operators.linearElasticity.configuration->young_modulus.get(1, 1).evaluator,
-                [] (Element &element, size_t &gp, size_t &s, double value) { element.ecf.youngModulus[1][s] = value; }));
+//        operators.expressions.gp.push_back(new ExternalGPsExpression<ndim, Element>(
+//                operators.material.configuration->elasticity_properties.young_modulus.get(1, 1).evaluator,
+//                [] (Element &element, size_t &gp, size_t &s, double value) { element.ecf.youngModulus[1][s] = value; }));
 
         operators.expressions.gp.push_back(new ExternalGPsExpression<ndim, Element>(
-                operators.linearElasticity.configuration->poisson_ratio.get(0, 0).evaluator,
+                operators.material.configuration->elasticity_properties.poisson_ratio.get(0, 0).evaluator,
                 [] (Element &element, size_t &gp, size_t &s, double value) { element.ecf.poissonRatio[0][s] = value; }));
-        operators.expressions.gp.push_back(new ExternalGPsExpression<ndim, Element>(
-                operators.linearElasticity.configuration->poisson_ratio.get(1, 1).evaluator,
-                [] (Element &element, size_t &gp, size_t &s, double value) { element.ecf.poissonRatio[1][s] = value; }));
+//        operators.expressions.gp.push_back(new ExternalGPsExpression<ndim, Element>(
+//                operators.material.configuration->elasticity_properties.poisson_ratio.get(1, 1).evaluator,
+//                [] (Element &element, size_t &gp, size_t &s, double value) { element.ecf.poissonRatio[1][s] = value; }));
 
         operators.expressions.gp.push_back(new ExternalGPsExpression<ndim, Element>(
-                operators.linearElasticity.configuration->shear_modulus.get(0, 0).evaluator,
+                operators.material.configuration->elasticity_properties.shear_modulus.get(0, 0).evaluator,
                 [] (Element &element, size_t &gp, size_t &s, double value) { element.ecf.shearModulus[0][s] = value; }));
-        operators.expressions.gp.push_back(new ExternalGPsExpression<ndim, Element>(
-                operators.linearElasticity.configuration->shear_modulus.get(1, 1).evaluator,
-                [] (Element &element, size_t &gp, size_t &s, double value) { element.ecf.shearModulus[1][s] = value; }));
+//        operators.expressions.gp.push_back(new ExternalGPsExpression<ndim, Element>(
+//                operators.material.configuration->elasticity_properties.shear_modulus.get(1, 1).evaluator,
+//                [] (Element &element, size_t &gp, size_t &s, double value) { element.ecf.shearModulus[1][s] = value; }));
 
         if (operators.acceleration.expressionVector) {
             operators.expressions.gp.push_back(new ExternalGPsExpression<ndim, Element>(
@@ -98,103 +98,86 @@ void setElementKernel(StructuralMechanicsElementOperators &operators, SubKernel:
     }
 
     if constexpr(ndim == 3) {
-        switch (operators.linearElasticity.coordinateSystem->type) {
+        switch (operators.material.configuration->coordinate_system.type) {
         case CoordinateSystemConfiguration::TYPE::CARTESIAN:
-            if (operators.linearElasticity.coordinateSystem->rotation.x.isset) {
+            if (operators.material.configuration->coordinate_system.rotation.x.isset) {
                 operators.expressions.gp.push_back(new ExternalGPsExpression<ndim, Element>(
-                    operators.linearElasticity.coordinateSystem->rotation.x.evaluator,
+                    operators.material.configuration->coordinate_system.rotation.x.evaluator,
                     [] (Element &element, size_t &gp, size_t &s, double value) { element.rotation.center[0][s] = value; }));
             }
-            if (operators.linearElasticity.coordinateSystem->rotation.y.isset) {
+            if (operators.material.configuration->coordinate_system.rotation.y.isset) {
                 operators.expressions.gp.push_back(new ExternalGPsExpression<ndim, Element>(
-                    operators.linearElasticity.coordinateSystem->rotation.y.evaluator,
+                    operators.material.configuration->coordinate_system.rotation.y.evaluator,
                     [] (Element &element, size_t &gp, size_t &s, double value) { element.rotation.center[1][s] = value; }));
             }
-            if (operators.linearElasticity.coordinateSystem->rotation.z.isset) {
+            if (operators.material.configuration->coordinate_system.rotation.z.isset) {
                 operators.expressions.gp.push_back(new ExternalGPsExpression<ndim, Element>(
-                    operators.linearElasticity.coordinateSystem->rotation.z.evaluator,
+                    operators.material.configuration->coordinate_system.rotation.z.evaluator,
                     [] (Element &element, size_t &gp, size_t &s, double value) { element.rotation.center[2][s] = value; }));
             }
             break;
         case CoordinateSystemConfiguration::TYPE::CYLINDRICAL:
-            if (operators.linearElasticity.coordinateSystem->center.x.isset) {
+            if (operators.material.configuration->coordinate_system.center.x.isset) {
                 operators.expressions.gp.push_back(new ExternalGPsExpression<ndim, Element>(
-                    operators.linearElasticity.coordinateSystem->center.x.evaluator,
+                    operators.material.configuration->coordinate_system.center.x.evaluator,
                     [] (Element &element, size_t &gp, size_t &s, double value) { element.rotation.center[0][s] = value; }));
             }
-            if (operators.linearElasticity.coordinateSystem->center.y.isset) {
+            if (operators.material.configuration->coordinate_system.center.y.isset) {
                 operators.expressions.gp.push_back(new ExternalGPsExpression<ndim, Element>(
-                    operators.linearElasticity.coordinateSystem->center.y.evaluator,
+                    operators.material.configuration->coordinate_system.center.y.evaluator,
                     [] (Element &element, size_t &gp, size_t &s, double value) { element.rotation.center[1][s] = value; }));
             }
             break;
         case CoordinateSystemConfiguration::TYPE::SPHERICAL:
-            if (operators.linearElasticity.coordinateSystem->center.x.isset) {
+            if (operators.material.configuration->coordinate_system.center.x.isset) {
                 operators.expressions.gp.push_back(new ExternalGPsExpression<ndim, Element>(
-                    operators.linearElasticity.coordinateSystem->center.x.evaluator,
+                    operators.material.configuration->coordinate_system.center.x.evaluator,
                     [] (Element &element, size_t &gp, size_t &s, double value) { element.rotation.center[0][s] = value; }));
             }
-            if (operators.linearElasticity.coordinateSystem->center.y.isset) {
+            if (operators.material.configuration->coordinate_system.center.y.isset) {
                 operators.expressions.gp.push_back(new ExternalGPsExpression<ndim, Element>(
-                    operators.linearElasticity.coordinateSystem->center.y.evaluator,
+                    operators.material.configuration->coordinate_system.center.y.evaluator,
                     [] (Element &element, size_t &gp, size_t &s, double value) { element.rotation.center[1][s] = value; }));
             }
-            if (operators.linearElasticity.coordinateSystem->center.z.isset) {
+            if (operators.material.configuration->coordinate_system.center.z.isset) {
                 operators.expressions.gp.push_back(new ExternalGPsExpression<ndim, Element>(
-                    operators.linearElasticity.coordinateSystem->center.z.evaluator,
+                    operators.material.configuration->coordinate_system.center.z.evaluator,
                     [] (Element &element, size_t &gp, size_t &s, double value) { element.rotation.center[2][s] = value; }));
             }
             break;
         }
 
         operators.expressions.gp.push_back(new ExternalGPsExpression<ndim, Element>(
-                operators.linearElasticity.configuration->young_modulus.get(0, 0).evaluator,
+                operators.material.configuration->elasticity_properties.young_modulus.get(0, 0).evaluator,
                 [] (Element &element, size_t &gp, size_t &s, double value) { element.ecf.youngModulus[0][s] = value; }));
         operators.expressions.gp.push_back(new ExternalGPsExpression<ndim, Element>(
-                operators.linearElasticity.configuration->young_modulus.get(1, 1).evaluator,
+                operators.material.configuration->elasticity_properties.young_modulus.get(1, 1).evaluator,
                 [] (Element &element, size_t &gp, size_t &s, double value) { element.ecf.youngModulus[1][s] = value; }));
         operators.expressions.gp.push_back(new ExternalGPsExpression<ndim, Element>(
-                operators.linearElasticity.configuration->young_modulus.get(2, 2).evaluator,
+                operators.material.configuration->elasticity_properties.young_modulus.get(2, 2).evaluator,
                 [] (Element &element, size_t &gp, size_t &s, double value) { element.ecf.youngModulus[2][s] = value; }));
 
         operators.expressions.gp.push_back(new ExternalGPsExpression<ndim, Element>(
-                operators.linearElasticity.configuration->poisson_ratio.get(0, 0).evaluator,
+                operators.material.configuration->elasticity_properties.poisson_ratio.get(0, 0).evaluator,
                 [] (Element &element, size_t &gp, size_t &s, double value) { element.ecf.poissonRatio[0][s] = value; }));
         operators.expressions.gp.push_back(new ExternalGPsExpression<ndim, Element>(
-                operators.linearElasticity.configuration->poisson_ratio.get(1, 1).evaluator,
+                operators.material.configuration->elasticity_properties.poisson_ratio.get(1, 1).evaluator,
                 [] (Element &element, size_t &gp, size_t &s, double value) { element.ecf.poissonRatio[1][s] = value; }));
         operators.expressions.gp.push_back(new ExternalGPsExpression<ndim, Element>(
-                operators.linearElasticity.configuration->poisson_ratio.get(2, 2).evaluator,
+                operators.material.configuration->elasticity_properties.poisson_ratio.get(2, 2).evaluator,
                 [] (Element &element, size_t &gp, size_t &s, double value) { element.ecf.poissonRatio[2][s] = value; }));
 
         operators.expressions.gp.push_back(new ExternalGPsExpression<ndim, Element>(
-                operators.linearElasticity.configuration->shear_modulus.get(0, 0).evaluator,
+                operators.material.configuration->elasticity_properties.shear_modulus.get(0, 0).evaluator,
                 [] (Element &element, size_t &gp, size_t &s, double value) { element.ecf.shearModulus[0][s] = value; }));
         operators.expressions.gp.push_back(new ExternalGPsExpression<ndim, Element>(
-                operators.linearElasticity.configuration->shear_modulus.get(1, 1).evaluator,
+                operators.material.configuration->elasticity_properties.shear_modulus.get(1, 1).evaluator,
                 [] (Element &element, size_t &gp, size_t &s, double value) { element.ecf.shearModulus[1][s] = value; }));
         operators.expressions.gp.push_back(new ExternalGPsExpression<ndim, Element>(
-                operators.linearElasticity.configuration->shear_modulus.get(2, 2).evaluator,
+                operators.material.configuration->elasticity_properties.shear_modulus.get(2, 2).evaluator,
                 [] (Element &element, size_t &gp, size_t &s, double value) { element.ecf.shearModulus[2][s] = value; }));
 
-        if (operators.plasticity.isactive) {
-            operators.expressions.gp.push_back(new ExternalGPsExpression<ndim, Element>(
-                    operators.plasticity.configuration->initial_yield_stress.evaluator,
-                    [] (Element &element, size_t &gp, size_t &s, double value) { element.ecf.initialYieldStress[s] = value; }));
-            operators.expressions.gp.push_back(new ExternalGPsExpression<ndim, Element>(
-                    operators.plasticity.configuration->isotropic_hardening.evaluator,
-                    [] (Element &element, size_t &gp, size_t &s, double value) { element.ecf.isotropicHardening[s] = value; }));
-            operators.expressions.gp.push_back(new ExternalGPsExpression<ndim, Element>(
-                    operators.plasticity.configuration->kinematic_hardening.evaluator,
-                    [] (Element &element, size_t &gp, size_t &s, double value) { element.ecf.kinematicHardening[s] = value; }));
-
-            operators.plasticity.smallStrainTensorPlastic.resize(gps * (operators.chunks + 1) * SIMD::size * 6);
-            operators.plasticity.xi.resize                      (gps * (operators.chunks + 1) * SIMD::size * 6 + SIMD::size);
-        }
-
-        if (operators.plasticityMultiplicative.isactive) {
-            operators.plasticityMultiplicative.init(operators.chunks, gps);
-        }
+        operators.material.init(operators.chunks, gps);
 
         if (operators.acceleration.expressionVector) {
             operators.expressions.gp.push_back(new ExternalGPsExpression<ndim, Element>(
@@ -315,14 +298,9 @@ void runElementKernel(const step::Step &step, StructuralMechanicsElementOperator
     IntegrationKernel<nodes, ndim, edim> integration(operators.integration);
     DisplacementKernel<nodes, ndim> displacement(operators.displacement);
     SmallStrainTensorKernel<nodes, ndim> smallStrainTensor(operators.smallStrainTensor);
-    LinearElasticityKernel<ndim> linearElasticity(operators.linearElasticity);
-    HyperElasticityKernel<nodes, ndim> hyperElasticity(operators.hyperElasticity);
-    PlasticityKernel<nodes, ndim> plasticity(operators.plasticity, action);
-    PlasticityMultiplicativeKernel<nodes, gps, ndim> plasticityMultiplicative(operators.plasticityMultiplicative, action);
-    MatrixLinearElasticityKernel<nodes, ndim> matrixLinearElasticity(operators.matrixLinearElasticity);
-    MatrixHyperElasticityKernel<nodes, ndim> matrixHyperElasticity(operators.matrixHyperElasticity);
-    MatrixLargeDisplacementKernel<nodes, ndim> largeDisplacement(operators.largeDisplacement);
-    MatrixCorotationKernel<code, nodes, gps, ndim> corotation(operators.corotation);
+    MaterialStructuralMechanicsKernel<nodes, gps, ndim> material(operators.material);
+    MatrixElasticityKernel<nodes, ndim> matrixElasticity(operators.matrixElasticity);
+    MatrixCorotationKernel<code, nodes, gps, ndim> matrixCorotation(operators.matrixCorotation);
     MatrixMassKernel<nodes, ndim> M(operators.M);
     AccelerationKernel<nodes, ndim> acceleration(operators.acceleration);
     AngularVelocityKernel<nodes, ndim> angularVelocity(operators.angularVelocity);
@@ -365,22 +343,16 @@ void runElementKernel(const step::Step &step, StructuralMechanicsElementOperator
 
     // pre-processing of possible constant parameters from ecf
     basis.simd(element);
-    linearElasticity.simd(element);
     thickness.simd(element, 0);
 
     coordinatesToGPs.setActiveness(action);
     thickness.setActiveness(action);
     temperature.setActiveness(action);
-    linearElasticity.setActiveness(action);
-    hyperElasticity.setActiveness(action);
-    plasticity.setActiveness(action);
-    plasticityMultiplicative.setActiveness(action);
+    material.setActiveness(action);
     displacement.setActiveness(action);
     smallStrainTensor.setActiveness(action);
-    largeDisplacement.setActiveness(action, step.loadstep || step.substep || step.iteration);
-    corotation.setActiveness(action, step.loadstep || step.substep || step.iteration);
-    matrixLinearElasticity.setActiveness(action, !largeDisplacement.isactive);
-    matrixHyperElasticity.setActiveness(action);
+    matrixCorotation.setActiveness(action, step.loadstep || step.substep || step.iteration);
+    matrixElasticity.setActiveness(action);
     M.setActiveness(action);
 //    C.setActiveness(action);
     acceleration.setActiveness(action);
@@ -414,9 +386,8 @@ void runElementKernel(const step::Step &step, StructuralMechanicsElementOperator
             }
         }
 
-        if (plasticityMultiplicative.isactive) {
-            plasticityMultiplicative.simd(element);
-//            printf("K_MEAN\n"); print(3 * nodes, 3 * nodes, element.K);
+        if (material.isactive) {
+            material.simd(element);
         }
 
         for (size_t gp = 0; gp < gps; ++gp) {
@@ -436,29 +407,14 @@ void runElementKernel(const step::Step &step, StructuralMechanicsElementOperator
                     nonconst.gp[i]->simd(element, n);
                 }
             }
-            if (linearElasticity.isactive) {
-                linearElasticity.simd(element, gp);
-            }
-            if (hyperElasticity.isactive) {
-                hyperElasticity.simd(element, gp);
-            }
             if (smallStrainTensor.isactive) {
                 smallStrainTensor.simd(element, gp);
             }
-            if (plasticity.isactive) {
-                plasticity.simd(element, gp);
+            if (material.isactive) {
+                material.simd(element, gp);
             }
-            if (plasticityMultiplicative.isactive) {
-                plasticityMultiplicative.simd(element, gp);
-            }
-            if (matrixLinearElasticity.isactive) {
-                matrixLinearElasticity.simd(element, gp);
-            }
-            if (matrixHyperElasticity.isactive) {
-                matrixHyperElasticity.simd(element, gp);
-            }
-            if (largeDisplacement.isactive) {
-                largeDisplacement.simd(element, gp);
+            if (matrixElasticity.isactive) {
+                matrixElasticity.simd(element, gp);
             }
             if (M.isactive) {
                 M.simd(element, gp);
@@ -478,12 +434,8 @@ void runElementKernel(const step::Step &step, StructuralMechanicsElementOperator
             }
         }
 
-        if (plasticityMultiplicative.isactive) {
-//            printf("K_FINAL\n"); print(3 * nodes, 3 * nodes, element.K);
-        }
-
-        if (corotation.isactive) {
-            corotation.simd(element);
+        if (matrixCorotation.isactive) {
+            matrixCorotation.simd(element);
         }
 
         if (outK.isactive) {

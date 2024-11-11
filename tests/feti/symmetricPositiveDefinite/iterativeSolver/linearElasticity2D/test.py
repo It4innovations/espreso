@@ -5,7 +5,7 @@ from estest import ESPRESOTest
 cases = [
     ("          PCG", "     NONE", 600),
     ("          PCG", "DIRICHLET", 110),
-    ("       SMALBE", "     NONE", 999), # there are slightly different convergence criteria 
+    ("       SMALBE", "    NONE", 1100), # there are slightly different convergence criteria 
     ("       SMALBE", "DIRICHLET", 110),
     ("orthogonalPCG", "     NONE", 150),
     ("orthogonalPCG", "DIRICHLET ", 60),

@@ -1,5 +1,0 @@
-         ;          ;              ;    ALL_NODES   ;    ALL_NODES   ;       X0       ;
-loadstep ;  substep ;         time ;  DISPLACEMENT  ;  DISPLACEMENT  ;  DISPLACEMENT  ;
-         ;          ;              ;    <AVERAGE>   ;      <MAX>     ;      <MAX>     ;
-
-       1 ;        1 ;     1.000000 ;   1.100190e+02 ;   2.796018e+02 ;   4.076896e-06 ; 

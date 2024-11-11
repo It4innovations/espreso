@@ -16,7 +16,7 @@ void eigSym22(const SIMD A[4], SIMD eVal[2], SIMD eVec[4])
 
 }
 
-void eigSym33(const SIMD A[9], SIMD eVal[3])
+void eigSym33Desc(const SIMD A[9], SIMD eVal[3])
 {
     // https://en.wikipedia.org/wiki/Eigenvalue_algorithm#3.C3.973_matrices
     // p1 = A(1,2)^2 + A(1,3)^2 + A(2,3)^2
@@ -48,27 +48,39 @@ void eigSym33(const SIMD A[9], SIMD eVal[3])
     //    eig2 = 3 * q - eig1 - eig3     % since trace(A) = eig1 + eig2 + eig3
     // end
 
-    SIMD p1 = A[1] * A[1] + A[5] * A[5] + A[2] * A[2];
-    SIMD q  = load1(1. / 3) * (A[0] + A[4] + A[8]);
-    SIMD p2 = load1(1. / 6) * ((A[0] - q) * (A[0] - q) + (A[4] - q) * (A[4] - q) + (A[8] - q) * (A[8] - q) + load1(2) * p1);
-    SIMD p  = sqrt(p2);
-    SIMD rp = load1(1.) / p;
-    SIMD B0 = rp * (A[0] - q);
-    SIMD B1 = rp * (A[4] - q);
-    SIMD B2 = rp * (A[8] - q);
-    SIMD B3 = rp * A[1];
-    SIMD B4 = rp * A[5];
-    SIMD B5 = rp * A[2];
+//    SIMD p1 = A[1] * A[1] + A[5] * A[5] + A[2] * A[2];
+//    SIMD q  = load1(1. / 3) * (A[0] + A[4] + A[8]);
+//    SIMD p2 = load1(1. / 6) * ((A[0] - q) * (A[0] - q) + (A[4] - q) * (A[4] - q) + (A[8] - q) * (A[8] - q) + load1(2) * p1);
+//    SIMD p  = sqrt(p2);
+//    SIMD rp = load1(1.) / p;
+//    SIMD B0 = rp * (A[0] - q);
+//    SIMD B1 = rp * (A[4] - q);
+//    SIMD B2 = rp * (A[8] - q);
+//    SIMD B3 = rp * A[1];
+//    SIMD B4 = rp * A[5];
+//    SIMD B5 = rp * A[2];
+//
+//    SIMD r = load1(1. / 2) * (B0 * B1 * B2 + load1(2) * B3 * B4 * B5 - B5 * B5 * B1 - B3 * B3 * B2 - B4 * B4 * B0);
+//    SIMD phi = load1(1. / 3) * acos(r);
+//
+//    eVal[0] = q + load1(2) * p * cos(phi);
+//    eVal[2] = q + load1(2) * p * cos(phi + load1(2) * load1(M_PI) * load1(1. / 3));
+//    eVal[1] = load1(3) * q - eVal[0] - eVal[2];
 
-    SIMD r = load1(1. / 2) * (B0 * B1 * B2 + load1(2) * B3 * B4 * B5 - B5 * B5 * B1 - B3 * B3 * B2 - B4 * B4 * B0);
-    SIMD phi = load1(1. / 3) * acos(r);
-
-    eVal[0] = q + load1(2) * p * cos(phi);
-    eVal[2] = q + load1(2) * p * cos(phi + load1(2) * load1(M_PI) * load1(1. / 3));
-    eVal[1] = load1(3) * q - eVal[0] - eVal[2];
+    for (size_t s = 0; s < SIMD::size && !std::isnan(A[0][s]); ++s) {
+        double _VAL[3], _VEC[9], _A[9] = {
+                A[0][s], A[1][s], A[2][s],
+                A[3][s], A[4][s], A[5][s],
+                A[6][s], A[7][s], A[8][s],
+        };
+        Matrix_Dense<double> _in; _in.nrows = 3; _in.ncols = 3; _in.nnz = 9; _in.vals = _A;
+        Vector_Dense<double> val; val.size  = 3; val.vals = _VAL;
+        math::lapack::get_eig_sym(_in, val);
+        eVal[0][s] = _VAL[0]; eVal[1][s] = _VAL[1]; eVal[2][s] = _VAL[2];
+    }
 }
 
-void eigSym33B(const SIMD A[9], SIMD eVal[3], SIMD eVec[9])
+void eigSym33Asc(const SIMD A[9], SIMD eVal[3], SIMD eVec[9])
 {
     for (size_t s = 0; s < SIMD::size && !std::isnan(A[0][s]); ++s) {
         double _VAL[3], _VEC[9], _A[9] = {
@@ -88,7 +100,7 @@ void eigSym33B(const SIMD A[9], SIMD eVal[3], SIMD eVec[9])
     }
 }
 
-void eigSym33(const SIMD A[9], SIMD eVal[3], SIMD eVec[9])
+void eigSym33Desc(const SIMD A[9], SIMD eVal[3], SIMD eVec[9])
 {
     for (size_t s = 0; s < SIMD::size && !std::isnan(A[0][s]); ++s) {
         double _VAL[3], _VEC[9], _A[9] = {

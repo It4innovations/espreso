@@ -290,43 +290,56 @@ bool StructuralMechanics::analyze(const step::Step &step)
             correct &= checkExpression("HEAT CAPACITY", mat->heat_capacity);
             eslog::info("                                                                                               \n");
 
-            switch (mat->material_model) {
-            case MaterialConfiguration::MATERIAL_MODEL::PLASTICITY:
-                eslog::info("     PLASTICITY MODEL:                                                               ISOTROPIC \n");
+            switch (mat->elasticity_properties.material_model) {
+            case ElasticityPropertiesConfiguration::MATERIAL_MODEL::KIRCHHOFF:
+                eslog::info("       MATERIAL MODEL:                                                               KIRCHHOFF \n");
                 eslog::info("                                                                                               \n");
-                correct &= checkExpression("INITIAL_YIELD_STRESS", mat->plasticity_properties.initial_yield_stress);
-                correct &= checkExpression("ISOTROPIC_HARDENING", mat->plasticity_properties.isotropic_hardening);
-                correct &= checkExpression("KINEMATIC_HARDENING", mat->plasticity_properties.kinematic_hardening);
-                eslog::info("                                                                                               \n");
-                /* no break */
-            case MaterialConfiguration::MATERIAL_MODEL::LINEAR_ELASTIC:
-                switch (mat->linear_elastic_properties.model) {
-                case LinearElasticPropertiesConfiguration::MODEL::ISOTROPIC:
-                    eslog::info(" LINEAR ELASTIC MODEL:                                                              ISOTROPIC \n");
-                    correct &= checkExpression("EX", mat->linear_elastic_properties.young_modulus.get(0, 0));
-                    correct &= checkExpression("MI", mat->linear_elastic_properties.poisson_ratio.get(0, 0));
-                    break;
-                case LinearElasticPropertiesConfiguration::MODEL::ORTHOTROPIC:
-                    eslog::info("                MODEL:                                                            ORTHOTROPIC \n");
-                    correct &= checkExpression("EX", mat->linear_elastic_properties.young_modulus.get(0, 0));
-                    correct &= checkExpression("EY", mat->linear_elastic_properties.young_modulus.get(1, 1));
-                    correct &= checkExpression("EZ", mat->linear_elastic_properties.young_modulus.get(2, 2));
-                    correct &= checkExpression("MIXY", mat->linear_elastic_properties.poisson_ratio.get(0, 0));
-                    correct &= checkExpression("MIXZ", mat->linear_elastic_properties.poisson_ratio.get(1, 1));
-                    correct &= checkExpression("MIYZ", mat->linear_elastic_properties.poisson_ratio.get(2, 2));
-                    correct &= checkExpression("GXY", mat->linear_elastic_properties.shear_modulus.get(0, 0));
-                    correct &= checkExpression("GXZ", mat->linear_elastic_properties.shear_modulus.get(1, 1));
-                    correct &= checkExpression("GYZ", mat->linear_elastic_properties.shear_modulus.get(2, 2));
-                    break;
-                case LinearElasticPropertiesConfiguration::MODEL::ANISOTROPIC:
-                    eslog::info("                MODEL:                                                            ANISOTROPIC \n");
-                    break;
-                }
                 break;
-            case MaterialConfiguration::MATERIAL_MODEL::HYPER_ELASTIC:
-                eslog::info("                                                                                HYPER ELASTIC \n");
+            case ElasticityPropertiesConfiguration::MATERIAL_MODEL::NEO_HOOKEAN_CMP:
+                eslog::info("       MATERIAL MODEL:                                                COMPRESSIBLE NEO-HOOKEAN \n");
+                eslog::info("                                                                                               \n");
+                break;
+            case ElasticityPropertiesConfiguration::MATERIAL_MODEL::BONET_WOOD:
+                eslog::info("       MATERIAL MODEL:                                                              BONET-WOOD \n");
+                eslog::info("                                                                                               \n");
                 break;
             }
+            correct &= checkExpression("EX", mat->elasticity_properties.young_modulus.get(0, 0));
+            correct &= checkExpression("MI", mat->elasticity_properties.poisson_ratio.get(0, 0));
+//                correct &= checkExpression("INITIAL_YIELD_STRESS", mat->plasticity_properties.initial_yield_stress);
+//                correct &= checkExpression("ISOTROPIC_HARDENING", mat->plasticity_properties.isotropic_hardening);
+//                correct &= checkExpression("KINEMATIC_HARDENING", mat->plasticity_properties.kinematic_hardening);
+//                eslog::info("                                                                                               \n");
+                /* no break */
+
+//            case MaterialConfiguration::MATERIAL_MODEL::LINEAR_ELASTIC:
+//                switch (mat->linear_elastic_properties.model) {
+//                case LinearElasticPropertiesConfiguration::MODEL::ISOTROPIC:
+//                    eslog::info(" LINEAR ELASTIC MODEL:                                                              ISOTROPIC \n");
+//                    correct &= checkExpression("EX", mat->linear_elastic_properties.young_modulus.get(0, 0));
+//                    correct &= checkExpression("MI", mat->linear_elastic_properties.poisson_ratio.get(0, 0));
+//                    break;
+//                case LinearElasticPropertiesConfiguration::MODEL::ORTHOTROPIC:
+//                    eslog::info("                MODEL:                                                            ORTHOTROPIC \n");
+//                    correct &= checkExpression("EX", mat->linear_elastic_properties.young_modulus.get(0, 0));
+//                    correct &= checkExpression("EY", mat->linear_elastic_properties.young_modulus.get(1, 1));
+//                    correct &= checkExpression("EZ", mat->linear_elastic_properties.young_modulus.get(2, 2));
+//                    correct &= checkExpression("MIXY", mat->linear_elastic_properties.poisson_ratio.get(0, 0));
+//                    correct &= checkExpression("MIXZ", mat->linear_elastic_properties.poisson_ratio.get(1, 1));
+//                    correct &= checkExpression("MIYZ", mat->linear_elastic_properties.poisson_ratio.get(2, 2));
+//                    correct &= checkExpression("GXY", mat->linear_elastic_properties.shear_modulus.get(0, 0));
+//                    correct &= checkExpression("GXZ", mat->linear_elastic_properties.shear_modulus.get(1, 1));
+//                    correct &= checkExpression("GYZ", mat->linear_elastic_properties.shear_modulus.get(2, 2));
+//                    break;
+//                case LinearElasticPropertiesConfiguration::MODEL::ANISOTROPIC:
+//                    eslog::info("                MODEL:                                                            ANISOTROPIC \n");
+//                    break;
+//                }
+//                break;
+//            case MaterialConfiguration::MATERIAL_MODEL::HYPER_ELASTIC:
+//                eslog::info("                                                                                HYPER ELASTIC \n");
+//                break;
+//            }
             eslog::info("                                                                                               \n");
         }
 
@@ -373,7 +386,7 @@ bool StructuralMechanics::analyze(const step::Step &step)
         BEM[info::mesh->elements->eintervals[i].domain - info::mesh->domains->offset] = isBEM(i);
         const MaterialConfiguration *mat = info::mesh->materials[info::mesh->elements->eintervals[i].material];
         bool cartesian = mat->coordinate_system.type == CoordinateSystemConfiguration::TYPE::CARTESIAN;
-        bool gpcoo = mat->linear_elastic_properties.needCoordinates() || getExpression(i, configuration.angular_velocity);
+        bool gpcoo = mat->elasticity_properties.needCoordinates() || getExpression(i, configuration.angular_velocity);
         gpcoo |= settings.element_behaviour == StructuralMechanicsGlobalSettings::ELEMENT_BEHAVIOUR::AXISYMMETRIC;
         gpcoo |= mat->coordinate_system.type != CoordinateSystemConfiguration::TYPE::CARTESIAN;
 //        bool gptemp = mat->linear_elastic_properties.needTemperature();
@@ -383,35 +396,14 @@ bool StructuralMechanics::analyze(const step::Step &step)
             elementKernels[i].thickness.activate(getExpression(i, settings.thickness), info::mesh->elements->nodes->cbegin() + ebegin, info::mesh->elements->nodes->cbegin() + eend, Results::thickness->data.data());
         }
 
-        if (configuration.large_displacement) {
-            elementKernels[i].displacement.activate(info::mesh->elements->nodes->cbegin() + ebegin, info::mesh->elements->nodes->cbegin() + eend, Results::displacement->data.data());
-            elementKernels[i].largeDisplacement.activate(settings.element_behaviour, mat->linear_elastic_properties.model);
-
-        }
-        if (configuration.corotation) {
-            elementKernels[i].displacement.activate(info::mesh->elements->nodes->cbegin() + ebegin, info::mesh->elements->nodes->cbegin() + eend, Results::displacement->data.data());
-            elementKernels[i].corotation.activate();
-        }
-
         elementKernels[i].coordinates.activate(info::mesh->elements->nodes->cbegin() + ebegin, info::mesh->elements->nodes->cbegin() + eend, !cartesian || gpcoo);
-        elementKernels[i].linearElasticity.activate(settings.element_behaviour, &mat->linear_elastic_properties, &mat->coordinate_system);
-        switch (mat->material_model) {
-        case MaterialBaseConfiguration::MATERIAL_MODEL::LINEAR_ELASTIC:
-            elementKernels[i].matrixLinearElasticity.activate(settings.element_behaviour, mat->linear_elastic_properties.model, elementKernels[i].linearElasticity.rotated);
-            break;
-        case MaterialBaseConfiguration::MATERIAL_MODEL::HYPER_ELASTIC:
-            elementKernels[i].displacement.activate(info::mesh->elements->nodes->cbegin() + ebegin, info::mesh->elements->nodes->cbegin() + eend, Results::displacement->data.data());
-            elementKernels[i].hyperElasticity.activate(settings.element_behaviour, &mat->hyper_elastic_properties);
-            elementKernels[i].matrixHyperElasticity.activate(settings.element_behaviour);
-            break;
-        case MaterialBaseConfiguration::MATERIAL_MODEL::PLASTICITY:
-//            elementKernels[i].plasticity.activate(i, settings.element_behaviour, &mat->plasticity_properties, Results::isPlastized);
-            elementKernels[i].plasticityMultiplicative.activate(i, settings.element_behaviour, &mat->plasticity_properties);
-//            elementKernels[i].smallStrainTensor.activate();
-            elementKernels[i].displacement.activate(info::mesh->elements->nodes->cbegin() + ebegin, info::mesh->elements->nodes->cbegin() + eend, Results::displacement->data.data());
-        }
-        elementKernels[i].material.activate(mat);
+        elementKernels[i].displacement.activate(info::mesh->elements->nodes->cbegin() + ebegin, info::mesh->elements->nodes->cbegin() + eend, Results::displacement->data.data());
+        elementKernels[i].material.activate(mat, settings.element_behaviour, configuration.mode == LoadStepSolverConfiguration::MODE::NONLINEAR && !configuration.corotation);
 
+        elementKernels[i].matrixElasticity.activate(settings.element_behaviour, configuration.mode == LoadStepSolverConfiguration::MODE::NONLINEAR && !configuration.corotation);
+        if (configuration.corotation) {
+            elementKernels[i].matrixCorotation.activate();
+        }
 
         if (configuration.type != LoadStepSolverConfiguration::TYPE::STEADY_STATE) {
             elementKernels[i].M.activate();
@@ -421,9 +413,8 @@ bool StructuralMechanics::analyze(const step::Step &step)
         if (Results::principalStress) {
             elementKernels[i].displacement.activate(info::mesh->elements->nodes->cbegin() + ebegin, info::mesh->elements->nodes->cbegin() + eend, Results::displacement->data.data());
             elementKernels[i].smallStrainTensor.activate();
-            elementKernels[i].sigma.activate(settings.element_behaviour, mat->linear_elastic_properties.model, elementKernels[i].linearElasticity.rotated);
+            elementKernels[i].sigma.activate(settings.element_behaviour);
             elementKernels[i].stress.activate(i, Results::principalStress, Results::componentStress, Results::vonMisesStress);
-            elementKernels[i].linearElasticity.action |= SubKernel::SOLUTION;
         }
 
         elementKernels[i].initVelocity.activate(getExpression(i, settings.initial_velocity));
@@ -736,8 +727,8 @@ void StructuralMechanics::bem(SubKernel::Action action, size_t domain, double *B
         esint ne = info::mesh->domainsSurface->edistribution[domain + 1] - info::mesh->domainsSurface->edistribution[domain];
         esint *elemNodes = info::mesh->domainsSurface->denodes[domain].data();
 
-        double ex = elementKernels[domain].linearElasticity.configuration->young_modulus.get(0, 0).evaluator->evaluate();
-        double mu = elementKernels[domain].linearElasticity.configuration->poisson_ratio.get(0, 0).evaluator->evaluate();
+        double ex = elementKernels[domain].material.configuration->elasticity_properties.young_modulus.get(0, 0).evaluator->evaluate();
+        double mu = elementKernels[domain].material.configuration->elasticity_properties.poisson_ratio.get(0, 0).evaluator->evaluate();
 
         Matrix_Dense<double> K; K.resize(3 * np, 3 * np);
         BEM3DElasticity(K.vals, np, points, ne, elemNodes, ex, mu);
@@ -771,8 +762,8 @@ void StructuralMechanics::updateSolution(Vector_Distributed<Vector_Dense, double
             esint *elemNodes = info::mesh->domainsSurface->denodes[i].data();
             esint ni = info::mesh->domainsSurface->coordinates[i].size() - info::mesh->domainsSurface->dnodes[i].size();
             double *inner = points + 3 * np;
-            double ex = elementKernels[i].linearElasticity.configuration->young_modulus.get(0, 0).evaluator->evaluate();
-            double mu = elementKernels[i].linearElasticity.configuration->poisson_ratio.get(0, 0).evaluator->evaluate();
+            double ex = elementKernels[i].material.configuration->elasticity_properties.young_modulus.get(0, 0).evaluator->evaluate();
+            double mu = elementKernels[i].material.configuration->elasticity_properties.poisson_ratio.get(0, 0).evaluator->evaluate();
             std::vector<double> xx(xBEM.domains[i].size);
             for (esint p = 0; p < np; ++p) {
                 xx[0 * np + p] = xBEM.domains[i].vals[3 * p + 0];

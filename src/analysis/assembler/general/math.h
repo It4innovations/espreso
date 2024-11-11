@@ -114,9 +114,9 @@ void multABAt(SIMD C[cols * cols], const SIMD A[rows * cols], const SIMD B[rows 
 void eigSym22(const SIMD A[4], SIMD eVal[2]);
 void eigSym22(const SIMD A[4], SIMD eVal[2], SIMD eVec[4]);
 
-void eigSym33(const SIMD A[9], SIMD eVal[3]);
-void eigSym33(const SIMD A[9], SIMD eVal[3], SIMD eVec[9]);
-void eigSym33B(const SIMD A[9], SIMD eVal[3], SIMD eVec[9]);
+void eigSym33Desc(const SIMD A[9], SIMD eVal[3]);
+void eigSym33Desc(const SIMD A[9], SIMD eVal[3], SIMD eVec[9]);
+void eigSym33Asc(const SIMD A[9], SIMD eVal[3], SIMD eVec[9]);
 
 inline SIMD determinant22(const SIMD J[4])
 {
@@ -181,6 +181,13 @@ inline void voigt6ToMatrix33(const SIMD voigt[6], SIMD A[9])
     A[3] = voigt[3]; A[4] = voigt[1]; A[5] = voigt[4];
     A[6] = voigt[5]; A[7] = voigt[4]; A[8] = voigt[2];
 }
+
+inline void voigt3ToMatrix22(const SIMD voigt[3], SIMD A[4])
+{
+    A[0] = voigt[0]; A[1] = voigt[2];
+    A[2] = voigt[2]; A[3] = voigt[1];
+}
+
 
 void print(size_t rows, size_t cols, const SIMD *A);
 

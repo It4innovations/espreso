@@ -59,19 +59,13 @@ STRUCTURAL_MECHANICS {
 
   MATERIALS {
     1 {
-
       DENS   7850;
-      CP        1;
 
-      LINEAR_ELASTIC_PROPERTIES {
-        MODEL   ISOTROPIC;
+      ELASTICITY_PROPERTIES {
+        MATERIAL_MODEL   KIRCHHOFF;
 
-        MIXY          0.3;
-        EX         2.1E10;
-      }
-
-      THERMAL_EXPANSION {
-        TEX             0;
+        MIXY                   0.3;
+        EX                  2.1E10;
       }
     }
   }

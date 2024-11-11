@@ -75,7 +75,7 @@ struct StressKernel<nodes, gps, 3>: Stress {
         }
 
         SIMD e[3];
-        eigSym33(CuB, e);
+        eigSym33Desc(CuB, e);
 
         double * __restrict__ principal = principalStress;
         for (size_t s = 0; s < size; ++s) {

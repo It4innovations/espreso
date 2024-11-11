@@ -60,7 +60,7 @@ STRUCTURAL_MECHANICS {
       DENS   7850;
       CP        1;
 
-      LINEAR_ELASTIC_PROPERTIES {
+      ELASTICITY_PROPERTIES {
         MODEL   ISOTROPIC;
 
         MIXY          0.3;

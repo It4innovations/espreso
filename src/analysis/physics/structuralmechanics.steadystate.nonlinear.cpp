@@ -203,7 +203,6 @@ bool StructuralMechanicsSteadyStateNonLinear::checkDisplacement(step::Step &step
     }
     double solutionNumerator = solver->x->norm();
     double solutionDenominator = std::max(U_norm, 1e-3);
-    printf("%+.10e / %+.10e\n", solutionNumerator, U_norm);
     double norm = solutionNumerator / solutionDenominator;
 
     if (norm > configuration.nonlinear_solver.requested_first_residual) {

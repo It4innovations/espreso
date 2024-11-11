@@ -3,9 +3,7 @@
 #define SRC_CONFIG_ECF_MATERIAL_MATERIAL_H_
 
 #include "coordinatesystem.h"
-#include "linearelasticproperties.h"
-#include "plasticityproperties.h"
-#include "hyperelasticproperties.h"
+#include "elasticityproperties.h"
 #include "thermalexpansion.h"
 #include "thermalconductivity.h"
 
@@ -21,23 +19,14 @@ struct MaterialBaseConfiguration: public ECFDescription {
 		ACOUSTICS            = 1 << 2
 	};
 
-	enum class MATERIAL_MODEL {
-		LINEAR_ELASTIC,
-		PLASTICITY,
-		HYPER_ELASTIC
-	};
-
 	PHYSICAL_MODEL physical_model;
-	MATERIAL_MODEL material_model;
 
 	CoordinateSystemConfiguration coordinate_system;
 
 	ECFExpression density;
 	ECFExpression speed_of_sound;
 	ECFExpression heat_capacity;
-	LinearElasticPropertiesConfiguration linear_elastic_properties;
-	PlasticityPropertiesConfiguration plasticity_properties;
-	HyperElasticPropertiesConfiguration hyper_elastic_properties;
+	ElasticityPropertiesConfiguration elasticity_properties;
 	ThermalExpansionConfiguration thermal_expansion;
 	ThermalConductivityConfiguration thermal_conductivity;
 

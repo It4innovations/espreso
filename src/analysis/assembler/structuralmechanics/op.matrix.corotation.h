@@ -242,7 +242,7 @@ struct MatrixCorotationKernel<code, nodes, gps, 3>: MatrixCorotation {
         // R = F * (F' * F)^(-1/2)
         SIMD FF[9]; multAtB<3, 3, 3>(FF, F, F);
         SIMD eigVal[3], eigVec[9];
-        eigSym33(FF, eigVal, eigVec);
+        eigSym33Desc(FF, eigVal, eigVec);
         SIMD FD[9] = { sqrt(eigVal[0]), zeros(), zeros(), zeros(), sqrt(eigVal[1]), zeros(), zeros(), zeros(), sqrt(eigVal[2]) };
         set<3, 3>(FF, zeros());
         multAtBA<3, 3>(FF, eigVec, FD);
