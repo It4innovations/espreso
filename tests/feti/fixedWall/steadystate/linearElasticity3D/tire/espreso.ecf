@@ -79,19 +79,13 @@ STRUCTURAL_MECHANICS {
     }
 
     2 {
-
-      DENS   7850;
-      CP        1;
+      DENS   1000;
 
       ELASTICITY_PROPERTIES {
-        MODEL   ISOTROPIC;
+        MATERIAL_MODEL   NEO_HOOKEAN_CMP;
 
-        MIXY          0.3;
-        EX         2.1E11;
-      }
-
-      THERMAL_EXPANSION {
-        TEX             0;
+        MIXY                   0.3;
+        EX                  2.1E09;
       }
     }
   }

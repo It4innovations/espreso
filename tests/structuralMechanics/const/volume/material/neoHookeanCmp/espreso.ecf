@@ -63,10 +63,10 @@ STRUCTURAL_MECHANICS {
       DENS   7850;
 
       ELASTICITY_PROPERTIES {
-        MATERIAL_MODEL   KIRCHHOFF;
+        MATERIAL_MODEL   NEO_HOOKEAN_CMP;
 
-        MIXY                   0.3;
-        EX                  2.1E11;
+        MIXY                         0.3;
+        EX                        2.1E11;
       }
     }
   }

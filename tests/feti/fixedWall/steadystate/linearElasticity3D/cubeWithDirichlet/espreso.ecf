@@ -81,9 +81,6 @@ STRUCTURAL_MECHANICS {
       MODE        NONLINEAR;
       SOLVER           FETI;
 
-#      COROTATION              TRUE;
-      LARGE_DISPLACEMENT      TRUE;
-
       FETI {
         METHOD          TOTAL_FETI;
         PRECONDITIONER   DIRICHLET;
