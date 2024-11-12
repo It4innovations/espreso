@@ -637,6 +637,33 @@ void StructuralMechanics::evaluate(const step::Step &step, const step::Time &tim
         }
     }
 
+    for (auto wall = configuration.fixed_wall.begin(); wall != configuration.fixed_wall.end(); ++wall) {
+        wall->second.normal.x.evaluator->getSubstep() = (step.substep + 1) / (double)step.substeps;
+        wall->second.normal.y.evaluator->getSubstep() = (step.substep + 1) / (double)step.substeps;
+        wall->second.normal.z.evaluator->getSubstep() = (step.substep + 1) / (double)step.substeps;
+        wall->second.point.x.evaluator->getSubstep() = (step.substep + 1) / (double)step.substeps;
+        wall->second.point.y.evaluator->getSubstep() = (step.substep + 1) / (double)step.substeps;
+        wall->second.point.z.evaluator->getSubstep() = (step.substep + 1) / (double)step.substeps;
+        wall->second.normal.x.evaluator->getTime() = time.current;
+        wall->second.normal.y.evaluator->getTime() = time.current;
+        wall->second.normal.z.evaluator->getTime() = time.current;
+        wall->second.point.x.evaluator->getTime() = time.current;
+        wall->second.point.y.evaluator->getTime() = time.current;
+        wall->second.point.z.evaluator->getTime() = time.current;
+    }
+
+    for (auto sphere = configuration.fixed_sphere.begin(); sphere != configuration.fixed_sphere.end(); ++sphere) {
+        sphere->second.center.x.evaluator->getSubstep() = (step.substep + 1) / (double)step.substeps;
+        sphere->second.center.y.evaluator->getSubstep() = (step.substep + 1) / (double)step.substeps;
+        sphere->second.center.z.evaluator->getSubstep() = (step.substep + 1) / (double)step.substeps;
+        sphere->second.center.x.evaluator->getTime() = time.current;
+        sphere->second.center.y.evaluator->getTime() = time.current;
+        sphere->second.center.z.evaluator->getTime() = time.current;
+    }
+
+    if (Results::normal) {
+        std::fill(Results::normal->data.begin(), Results::normal->data.end(), 0);
+    }
     reset(K, M, f, nf, dirichlet);
     assemble(SubKernel::ASSEMBLE);
     update(K, M, f, nf, dirichlet);
@@ -677,6 +704,9 @@ void StructuralMechanics::evaluate(const step::Step &step, const step::Frequency
         }
     }
 
+    if (Results::normal) {
+        std::fill(Results::normal->data.begin(), Results::normal->data.end(), 0);
+    }
     reset(K, M, C, ref, imf, renf, imnf, reDirichlet, imDirichlet);
     assemble(SubKernel::ASSEMBLE);
     update(K, M, C, ref, imf, renf, imnf, reDirichlet, imDirichlet);
@@ -789,18 +819,12 @@ void StructuralMechanics::updateSolution(Vector_Base<double> *rex, Vector_Base<d
 {
     rex->storeTo(Results::cosDisplacement->data);
     imx->storeTo(Results::sinDisplacement->data);
-    if (Results::normal) {
-        std::fill(Results::normal->data.begin(), Results::normal->data.end(), 0);
-    }
     assemble(SubKernel::SOLUTION);
 }
 
 void StructuralMechanics::nextIteration(Vector_Distributed<Vector_Dense, double> *x)
 {
     x->storeTo(Results::displacement->data);
-    if (Results::normal) {
-        std::fill(Results::normal->data.begin(), Results::normal->data.end(), 0);
-    }
     assemble(SubKernel::ITERATION);
 }
 

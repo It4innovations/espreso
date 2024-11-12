@@ -217,7 +217,7 @@ void FixedWall<T>::update(const step::Step &step, FETI<T> &feti, const Vector_Di
     math::set(feti.lb, T{0});
     math::set(feti.ub, std::numeric_limits<T>::max());
 
-    feti.lambdas.intervals.back().size = feti.lambdas.size - feti.lambdas.equalities - feti.lambdas.intervals.back().halo;
+    feti.lambdas.intervals[interval].size = feti.lambdas.size - feti.lambdas.equalities - feti.lambdas.intervals.back().halo;
 }
 
 template <typename T>

@@ -102,6 +102,14 @@ struct FixedWallConfiguration: public ECFDescription {
 	FixedWallConfiguration();
 };
 
+struct FixedSphereConfiguration: public ECFDescription {
+    ECFExpressionVector center;
+    double radius, gap;
+
+    FixedSphereConfiguration();
+};
+
+
 struct PressureConfiguration: public ECFDescription {
     ECFExpression pressure;
     ECFExpressionVector direction;
@@ -127,12 +135,13 @@ struct StructuralMechanicsGlobalSettings {
 
 struct StructuralMechanicsLoadStepConfiguration: public StructuralMechanicsLoadStepSolverConfiguration {
 
-	bool large_displacement, corotation;
+	bool corotation;
 
 	std::map<std::string, ECFExpression> temperature, normal_pressure;
 	std::map<std::string, PressureConfiguration> pressure;
 	std::map<std::string, ECFExpressionVector> force, angular_velocity, acceleration;
 	std::map<std::string, FixedWallConfiguration> fixed_wall;
+	std::map<std::string, FixedSphereConfiguration> fixed_sphere;
 	std::map<std::string, ECFHarmonicExpressionVector> harmonic_force, harmonic_acceleration;
 	std::map<std::string, ECFExpressionOptionalVector> displacement;
 	std::map<std::string, RotatingForceConfiguration> rotating_force;

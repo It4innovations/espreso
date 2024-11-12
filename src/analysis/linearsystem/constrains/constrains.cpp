@@ -18,6 +18,7 @@ void Constrains<T>::set(const step::Step &step, FETI<T> &feti, const Vector_Dist
         break;
     case PhysicsConfiguration::TYPE::STRUCTURAL_MECHANICS:
         fw.set(step, feti, dirichlet);
+        fs.set(step, feti, dirichlet);
         break;
     }
 
@@ -36,6 +37,7 @@ void Constrains<T>::update(const step::Step &step, FETI<T> &feti, const Vector_D
         break;
     case PhysicsConfiguration::TYPE::STRUCTURAL_MECHANICS:
         fw.update(step, feti, dirichlet);
+        fs.update(step, feti, dirichlet);
         break;
     }
 

@@ -155,6 +155,13 @@ FixedWallConfiguration::FixedWallConfiguration(): gap(1)
 	REGISTER(gap, ECFMetaData().setdescription({ "Maximal distance from the wall to be considered in computation." }).setdatatype({ ECFDataType::FLOAT }));
 }
 
+FixedSphereConfiguration::FixedSphereConfiguration(): radius(1)
+{
+    REGISTER(center, ECFMetaData().setdescription({ "Center of the sphere." }));
+    REGISTER(radius, ECFMetaData().setdescription({ "Radius of the sphere." }).setdatatype({ ECFDataType::FLOAT }));
+    REGISTER(gap, ECFMetaData().setdescription({ "Gap over the sphere that is considered in contacts." }).setdatatype({ ECFDataType::FLOAT }));
+}
+
 PressureConfiguration::PressureConfiguration()
 {
     REGISTER(direction, ECFMetaData().setdescription({ "Pressure direction." }));
@@ -163,11 +170,6 @@ PressureConfiguration::PressureConfiguration()
 
 StructuralMechanicsLoadStepConfiguration::StructuralMechanicsLoadStepConfiguration()
 {
-	large_displacement = false;
-	REGISTER(large_displacement, ECFMetaData()
-			.setdescription({ "Turn on large displacement." })
-			.setdatatype({ ECFDataType::BOOL }));
-
 	corotation = false;
     REGISTER(corotation, ECFMetaData()
             .setdescription({ "Turn on corotation formulation." })
@@ -200,6 +202,11 @@ StructuralMechanicsLoadStepConfiguration::StructuralMechanicsLoadStepConfigurati
 			.setdescription({ "The name of a region.", "Fixed wall settings." })
 			.setdatatype({ ECFDataType::BOUNDARY_REGION })
 			.setpattern({ "MY_REGION", }));
+
+	REGISTER(fixed_sphere, ECFMetaData()
+            .setdescription({ "The name of a region.", "Fixed sphere settings." })
+            .setdatatype({ ECFDataType::BOUNDARY_REGION })
+            .setpattern({ "MY_REGION", }));
 
 	REGISTER(acceleration, ECFMetaData()
 			.setdescription({ "The name of a region.", "Acceleration of a given region." })

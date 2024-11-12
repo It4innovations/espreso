@@ -8,6 +8,7 @@
 #include "equalityconstrains.h"
 #include "mortar.h"
 #include "fixedwall.h"
+#include "fixedsphere.h"
 
 namespace espreso {
 
@@ -20,6 +21,7 @@ struct Constrains {
     EqualityConstrains<T> eq;
     MortarContact<T> mortar;
     FixedWall<T> fw;
+    FixedSphere<T> fs;
     ClusterFacesGluing<T> cfg;
 };
 

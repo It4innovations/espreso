@@ -23,7 +23,7 @@ struct Normal: SubKernel {
       multiplicity(nullptr)
     {
         isconst = false;
-        action = SubKernel::PREPROCESS | SubKernel::ASSEMBLE | SubKernel::REASSEMBLE | SubKernel::ITERATION | SubKernel::SOLUTION;
+        action = SubKernel::PREPROCESS | SubKernel::ASSEMBLE | SubKernel::REASSEMBLE;
     }
 
     void activate(serializededata<esint, esint>::const_iterator enodes, serializededata<esint, esint>::const_iterator end, double *target, double *multiplicity)
