@@ -4,6 +4,7 @@
 
 #include "analysis/assembler/general/subkernel.h"
 #include "analysis/assembler/general/basis.h"
+#include "analysis/assembler/general/basefunctions.h"
 #include "analysis/assembler/general/boundarycondition.h"
 #include "analysis/assembler/general/material.h"
 #include "analysis/assembler/general/filler.h"

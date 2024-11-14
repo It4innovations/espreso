@@ -7,8 +7,6 @@
 
 namespace espreso {
 
-struct BaseFunctions;
-class MatrixDense;
 template <typename TEBoundaries, typename TEData> class serializededata;
 template <typename TEData> class edata;
 
