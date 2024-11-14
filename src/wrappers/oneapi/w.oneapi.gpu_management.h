@@ -3,6 +3,8 @@
 #define SRC_WRAPPERS_ONEAPI_W_ONEAPI_GPU_MANAGEMENT_H_
 
 #include <sycl/sycl.hpp>
+#include <unordered_map>
+#include <mutex>
 
 
 
@@ -15,6 +17,9 @@ namespace mgm {
         sycl::device d;
         sycl::context c;
         std::vector<queue> qs;
+        std::mutex mtx_alloc;
+        size_t mem_allocated = 0;
+        std::unordered_map<void*,size_t> alloc_sizes;
         _device(sycl::device & dev, sycl::context & ctx) : d(dev), c(ctx) {}
         _device(sycl::device && dev, sycl::context && ctx) : d(dev), c(ctx) {}
     };
