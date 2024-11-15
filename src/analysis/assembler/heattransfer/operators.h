@@ -3,7 +3,7 @@
 #define SRC_ANALYSIS_ASSEMBLER_HEATTRANSFER_OPERATORS_H_
 
 #include "analysis/assembler/general/subkernel.h"
-#include "analysis/assembler/general/basis.h"
+#include "analysis/assembler/general/basefunctions.h"
 #include "analysis/assembler/general/boundarycondition.h"
 #include "analysis/assembler/general/material.h"
 #include "analysis/assembler/general/filler.h"
@@ -31,7 +31,6 @@ struct HeatTransferElementOperators {
     size_t esize;
     double volume;
 
-    Basis basis;
     Thickness thickness;
     Material material;
     Coordinates coordinates;
@@ -62,7 +61,6 @@ struct HeatTransferBoundaryOperators {
     size_t esize;
     double surface;
 
-    Basis basis;
     Thickness thickness;
     Coordinates coordinates;
     Temperature initialTemperature;
@@ -86,7 +84,6 @@ struct HeatTransferNodeOperators {
 
     size_t esize;
 
-    Basis basis;
     Thickness thickness;
     Coordinates coordinates;
     Temperature initialTemperature;

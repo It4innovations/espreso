@@ -67,21 +67,6 @@ HeatTransfer::HeatTransfer(HeatTransfer *previous, HeatTransferConfiguration &se
             nodeKernels[r][t].chunks = nodeKernels[r][t].elements / SIMD::size + (nodeKernels[r][t].elements % SIMD::size ? 1 : 0);
         }
     }
-
-    GaussPoints<Element::CODE::LINE2    ,  2, HeatTransferGPC::LINE2    , 1>::set();
-    GaussPoints<Element::CODE::TRIANGLE3,  3, HeatTransferGPC::TRIANGLE3, 2>::set();
-    GaussPoints<Element::CODE::SQUARE4  ,  4, HeatTransferGPC::SQUARE4  , 2>::set();
-    GaussPoints<Element::CODE::TETRA4   ,  4, HeatTransferGPC::TETRA4   , 3>::set();
-    GaussPoints<Element::CODE::PYRAMID5 ,  5, HeatTransferGPC::PYRAMID5 , 3>::set();
-    GaussPoints<Element::CODE::PRISMA6  ,  6, HeatTransferGPC::PRISMA6  , 3>::set();
-    GaussPoints<Element::CODE::HEXA8    ,  8, HeatTransferGPC::HEXA8    , 3>::set();
-    GaussPoints<Element::CODE::LINE3    ,  3, HeatTransferGPC::LINE3    , 1>::set();
-    GaussPoints<Element::CODE::TRIANGLE6,  6, HeatTransferGPC::TRIANGLE6, 2>::set();
-    GaussPoints<Element::CODE::SQUARE8  ,  8, HeatTransferGPC::SQUARE8  , 2>::set();
-    GaussPoints<Element::CODE::TETRA10  , 10, HeatTransferGPC::TETRA10  , 3>::set();
-    GaussPoints<Element::CODE::PYRAMID13, 13, HeatTransferGPC::PYRAMID13, 3>::set();
-    GaussPoints<Element::CODE::PRISMA15 , 15, HeatTransferGPC::PRISMA15 , 3>::set();
-    GaussPoints<Element::CODE::HEXA20   , 20, HeatTransferGPC::HEXA20   , 3>::set();
 }
 
 bool HeatTransfer::analyze()

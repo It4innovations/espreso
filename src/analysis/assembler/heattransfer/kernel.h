@@ -194,7 +194,6 @@ void setElementKernel(HeatTransferElementOperators &operators, SubKernel::Action
                 [] (Element &element, size_t &gp, size_t &s, double value) { element.ecf.heatCapacity[s] = value; }));
     }
 
-    BasisKernel<code, nodes, gps, edim> basis(operators.basis);
     CoordinatesKernel<nodes, ndim> coordinates(operators.coordinates);
     InitialTemperatureKernel<nodes> temperature(operators.temperature);
     IntegrationKernel<nodes, ndim, edim> integration(operators.integration);
@@ -217,7 +216,7 @@ void setElementKernel(HeatTransferElementOperators &operators, SubKernel::Action
     }
 
     SIMD volume;
-    basis.simd(element);
+    BaseFunctions<code, gps>::simd(element);
     for (size_t c = 0; c < operators.chunks; ++c) {
         coordinates.simd(element);
         thickness.simd(element);
@@ -247,7 +246,6 @@ void runElementKernel(const step::Step &step, const step::Time &time, const Heat
 {
     typedef HeatTransferElement<nodes, gps, ndim, edim> Element; Element element;
 
-    BasisKernel<code, nodes, gps, edim> basis(operators.basis);
     CoordinatesKernel<nodes, ndim> coordinates(operators.coordinates);
     CoordinatesToGPsKernel<nodes, ndim> coordinatesToGPs(operators.coordinates);
     ThicknessToGp<nodes, ndim> thickness(operators.thickness);
@@ -295,7 +293,7 @@ void runElementKernel(const step::Step &step, const step::Time &time, const Heat
     }
 
     // pre-processing of possible constant parameters from ecf
-    basis.simd(element);
+    BaseFunctions<code, gps>::simd(element);
     conductivity.simd(element);
     thickness.simd(element, 0);
 
@@ -422,12 +420,11 @@ void setBoundaryKernel(HeatTransferBoundaryOperators &operators, SubKernel::Acti
                 [] (Element &element, size_t &gp, size_t &s, double value) { element.ecf.extTemp[s] = value; }));
     }
 
-    BasisKernel<code, nodes, gps, edim> basis(operators.basis);
     CoordinatesKernel<nodes, ndim> coordinates(operators.coordinates);
     IntegrationKernel<nodes, ndim, edim> integration(operators.integration);
 
     SIMD surface;
-    basis.simd(element);
+    BaseFunctions<code, gps>::simd(element);
     for (size_t c = 0; c < operators.chunks; ++c) {
         coordinates.simd(element);
         for (size_t gp = 0; gp < gps; ++gp) {
@@ -447,7 +444,6 @@ void runBoundaryKernel(const HeatTransferBoundaryOperators &operators, SubKernel
 {
     typedef HeatTransferBoundary<nodes, gps, ndim, edim> Element; Element element;
 
-    BasisKernel<code, nodes, gps, edim> basis(operators.basis);
     CoordinatesKernel<nodes, ndim> coordinates(operators.coordinates);
     CoordinatesToGPsKernel<nodes, ndim> coordinatesToGPs(operators.coordinates);
     ThicknessFromNodes<nodes, ndim> thickness(operators.thickness);
@@ -466,7 +462,7 @@ void runBoundaryKernel(const HeatTransferBoundaryOperators &operators, SubKernel
         }
     }
 
-    basis.simd(element);
+    BaseFunctions<code, gps>::simd(element);
     thickness.setActiveness(action);
 
     outRHS.setActiveness(action);

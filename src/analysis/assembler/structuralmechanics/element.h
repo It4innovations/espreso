@@ -15,23 +15,20 @@ struct StructuralMechanicsGPC {
         POINT1    =  1,
 
         LINE2     =  2,
-        LINE3     =  3,
-
-        TRIANGLE3 =  6,
+        TRIANGLE3 =  4,
         SQUARE4   =  4,
-
-        TRIANGLE6 =  6,
-        SQUARE8   =  9,
-
         TETRA4    =  8,
         PYRAMID5  =  8,
         PRISMA6   =  8,
         HEXA8     =  8,
 
-        TETRA10   = 15,
-        PYRAMID13 = 14,
-        PRISMA15  =  9,
-        HEXA20    =  8,
+        LINE3     =  4,
+        TRIANGLE6 = 16,
+        SQUARE8   = 16,
+        TETRA10   = 64,
+        PYRAMID13 = 64,
+        PRISMA15  = 64,
+        HEXA20    = 64,
     };
 };
 

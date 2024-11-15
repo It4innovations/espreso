@@ -3,7 +3,6 @@
 #define SRC_ANALYSIS_ASSEMBLER_STRUCTURALMECHANICS_OPERATORS_H_
 
 #include "analysis/assembler/general/subkernel.h"
-#include "analysis/assembler/general/basis.h"
 #include "analysis/assembler/general/basefunctions.h"
 #include "analysis/assembler/general/boundarycondition.h"
 #include "analysis/assembler/general/material.h"
@@ -43,7 +42,6 @@ struct StructuralMechanicsElementOperators {
     size_t esize;
     double volume;
 
-    Basis basis;
     Thickness thickness;
     Coordinates coordinates;
     Displacement displacement;
@@ -75,7 +73,6 @@ struct StructuralMechanicsFaceOperators {
     size_t esize;
     double surface;
 
-    Basis basis;
     Thickness thickness;
     Coordinates coordinates;
     Integration integration;
@@ -101,7 +98,6 @@ struct StructuralMechanicsNodeOperators {
 
     size_t esize;
 
-    Basis basis;
     Thickness thickness;
     Coordinates coordinates;
     Normal normal;

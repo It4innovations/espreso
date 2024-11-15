@@ -29,11 +29,11 @@ template <Element::CODE code, size_t nodes, size_t gps>
 struct MatrixCorotationKernel<code, nodes, gps, 2>: MatrixCorotation {
     MatrixCorotationKernel(const MatrixCorotation &base): MatrixCorotation(base)
     {
-        BasisKernel<code, nodes, gps, 2>::setCenter(cw, cN, cdN);
+        BaseFunctions<code, gps>::set(cN, cdN, 0, 0);
         n_div = 1. / nodes;
     }
 
-    double cw, cN[nodes], cdN[nodes][2];
+    double cN[nodes], cdN[nodes][2];
     double n_div;
 
     template <typename Element>
@@ -195,11 +195,11 @@ template <Element::CODE code, size_t nodes, size_t gps>
 struct MatrixCorotationKernel<code, nodes, gps, 3>: MatrixCorotation {
     MatrixCorotationKernel(const MatrixCorotation &base): MatrixCorotation(base)
     {
-        BasisKernel<code, nodes, gps, 3>::setCenter(cw, cN, cdN);
+        BaseFunctions<code, gps>::set(cN, cdN, 0, 0, 0);
         n_div = 1. / nodes;
     }
 
-    double cw, cN[nodes], cdN[nodes][3];
+    double cN[nodes], cdN[nodes][3];
     double n_div;
 
     template <typename Element>

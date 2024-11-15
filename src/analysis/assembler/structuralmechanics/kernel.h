@@ -233,8 +233,17 @@ void setElementKernel(StructuralMechanicsElementOperators &operators, SubKernel:
                 operators.material.configuration->heat_capacity.evaluator,
                 [] (Element &element, size_t &gp, size_t &s, double value) { element.ecf.heatCapacity[s] = value; }));
     }
+    if (operators.material.configuration->elasticity_properties.sigma.isset) {
+        operators.expressions.gp.push_back(new ExternalGPsExpression<ndim, Element>(
+                operators.material.configuration->elasticity_properties.sigma.evaluator,
+                [] (Element &element, size_t &gp, size_t &s, double value) { element.ecf.sigma[s] = value; }));
+    }
+    if (operators.material.configuration->elasticity_properties.Hisotropic.isset) {
+        operators.expressions.gp.push_back(new ExternalGPsExpression<ndim, Element>(
+                operators.material.configuration->elasticity_properties.Hisotropic.evaluator,
+                [] (Element &element, size_t &gp, size_t &s, double value) { element.ecf.isotropicHardening[s] = value; }));
+    }
 
-    BasisKernel<code, nodes, gps, edim> basis(operators.basis);
     CoordinatesKernel<nodes, ndim> coordinates(operators.coordinates);
     InitialVelocityKernel<nodes, ndim> velocity(operators.velocity);
     IntegrationKernel<nodes, ndim, edim> integration(operators.integration);
@@ -257,7 +266,7 @@ void setElementKernel(StructuralMechanicsElementOperators &operators, SubKernel:
     }
 
     SIMD volume;
-    basis.simd(element);
+    BaseFunctions<code, gps>::simd(element);
     for (size_t c = 0; c < operators.chunks; ++c) {
         coordinates.simd(element);
         thickness.simd(element);
@@ -289,7 +298,6 @@ void runElementKernel(const step::Step &step, StructuralMechanicsElementOperator
 {
     typedef StructuralMechanicsElement<nodes, gps, ndim, edim> Element; Element element;
 
-    BasisKernel<code, nodes, gps, edim> basis(operators.basis);
     CoordinatesKernel<nodes, ndim> coordinates(operators.coordinates);
     CoordinatesToGPsKernel<nodes, ndim> coordinatesToGPs(operators.coordinates);
     ThicknessToGp<nodes, ndim> thickness(operators.thickness);
@@ -342,7 +350,7 @@ void runElementKernel(const step::Step &step, StructuralMechanicsElementOperator
     }
 
     // pre-processing of possible constant parameters from ecf
-    basis.simd(element);
+    BaseFunctions<code, gps>::simd(element);
     thickness.simd(element, 0);
 
     coordinatesToGPs.setActiveness(action);
@@ -390,6 +398,8 @@ void runElementKernel(const step::Step &step, StructuralMechanicsElementOperator
             material.simd(element);
         }
 
+//        printf("K\n"); print(3 * nodes, 3 * nodes, element.K);
+
         for (size_t gp = 0; gp < gps; ++gp) {
             integration.simd(element, gp);
 
@@ -433,6 +443,8 @@ void runElementKernel(const step::Step &step, StructuralMechanicsElementOperator
                 sigma.simd(element, gp);
             }
         }
+
+//        printf("K\n"); print(3 * nodes, 3 * nodes, element.K);
 
         if (matrixCorotation.isactive) {
             matrixCorotation.simd(element);
@@ -496,7 +508,6 @@ void setBoundaryKernel(StructuralMechanicsFaceOperators &operators, SubKernel::A
         }
     }
 
-    BasisKernel<code, nodes, gps, edim> basis(operators.basis);
     CoordinatesKernel<nodes, ndim> coordinates(operators.coordinates);
     IntegrationKernel<nodes, ndim, edim> integration(operators.integration);
     NormalKernel<nodes, ndim, edim> normal(operators.normal);
@@ -504,7 +515,7 @@ void setBoundaryKernel(StructuralMechanicsFaceOperators &operators, SubKernel::A
     normal.setActiveness(action);
 
     SIMD surface;
-    basis.simd(element);
+    BaseFunctions<code, gps>::simd(element);
     for (size_t c = 0; c < operators.chunks; ++c) {
         coordinates.simd(element);
         for (size_t gp = 0; gp < gps; ++gp) {
@@ -531,7 +542,6 @@ void runBoundaryKernel(const StructuralMechanicsFaceOperators &operators, SubKer
 {
     typedef StructuralMechanicsBoundary<nodes, gps, ndim, edim> Element; Element element;
 
-    BasisKernel<code, nodes, gps, edim> basis(operators.basis);
     CoordinatesKernel<nodes, ndim> coordinates(operators.coordinates);
     CoordinatesToGPsKernel<nodes, ndim> coordinatesToGPs(operators.coordinates);
     DisplacementKernel<nodes, ndim> displacement(operators.displacement);
@@ -558,7 +568,8 @@ void runBoundaryKernel(const StructuralMechanicsFaceOperators &operators, SubKer
         }
     }
 
-    basis.simd(element);
+    BaseFunctions<code, gps>::simd(element);
+
     thickness.setActiveness(action);
     displacement.setActiveness(action);
     fluidPressureGather.setActiveness(action);
