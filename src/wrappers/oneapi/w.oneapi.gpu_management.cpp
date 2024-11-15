@@ -131,6 +131,9 @@ namespace mgm {
         std::lock_guard<std::mutex> lock(default_device->mtx_alloc);
 
         void * ptr = sycl::malloc_device(num_bytes, default_device->d, default_device->c);
+        if(ptr == nullptr) {
+            eslog::error("memalloc_device: failed to allocate memory\n");
+        }
         default_device->mem_allocated += num_bytes;
         default_device->alloc_sizes.insert({ptr,num_bytes});
         return ptr;

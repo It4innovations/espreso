@@ -83,13 +83,13 @@ namespace kernels {
         if(output.nrows != input.nrows || output.ncols != input.ncols || input.nrows != input.ncols) eslog::error("matrix dimensions do not match\n");
 
         if(order == 'R') {
-            int wpw = 256;
-            int ngroups = (input.nrows - 1) / 2 + 1;
             T * output_vals = output.vals;
             T * input_vals = input.vals;
             I output_ld = output.get_ld();
             I input_ld = input.get_ld();
             I n = input.nrows;
+            int wpw = 256;
+            int ngroups = (n - 1) / 2 + 1;
             q->q.parallel_for(
                 sycl::nd_range(sycl::range<1>(ngroups * wpw), sycl::range<1>(wpw)),
                 [=](sycl::nd_item<1> item) {
@@ -99,10 +99,9 @@ namespace kernels {
                     // in stage=0, warps are normally sequential next to each other
                     // in stage=1, the order of warps is reversed for better load balance between warps
 
-                    sycl::group g = item.get_group();
                     sycl::sub_group sg = item.get_sub_group();
-                    I wgidx = g.get_group_linear_id();
-                    I wgsize = g.get_group_linear_range();
+                    I wgidx = item.get_group_linear_id();
+                    I wgsize = item.get_local_range().size();
                     I sgidx = sg.get_group_linear_id();
                     I sgcount = sg.get_group_linear_range();
                     I sgsize = sg.get_max_local_range()[0];

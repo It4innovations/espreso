@@ -175,7 +175,7 @@ namespace mgm {
     };
 
     template<typename T, typename I, typename A>
-    void print_vector(queue & q, Vector_Dense<T,I,A> & vec, const char * name = "")
+    void print_vector(queue & q, const Vector_Dense<T,I,A> & vec, const char * name = "")
     {
         if constexpr(A::is_data_host_accessible) {
             math::print_vector(vec, name);
@@ -193,7 +193,7 @@ namespace mgm {
     }
 
     template<typename T, typename I, typename A>
-    void print_matrix_dense(queue & q, Matrix_Dense<T,I,A> & matrix, const char * name = "")
+    void print_matrix_dense(queue & q, const Matrix_Dense<T,I,A> & matrix, const char * name = "")
     {
         if constexpr(A::is_data_host_accessible) {
             math::print_matrix_dense(matrix, name);
@@ -211,7 +211,7 @@ namespace mgm {
     }
 
     template<typename T, typename I, typename A>
-    void print_matrix_csr_as_dense(queue & q, Matrix_CSR<T,I,A> & matrix, const char * name = "")
+    void print_matrix_csr_as_dense(queue & q, const Matrix_CSR<T,I,A> & matrix, const char * name = "")
     {
         if constexpr(A::is_data_host_accessible) {
             math::print_matrix_csr_as_dense(matrix, name);
@@ -229,7 +229,7 @@ namespace mgm {
     }
 
     template<typename T, typename I, typename A>
-    void print_matrix_csr_arrays(queue & q, Matrix_CSR<T,I,A> & matrix, const char * name = "")
+    void print_matrix_csr_arrays(queue & q, const Matrix_CSR<T,I,A> & matrix, const char * name = "")
     {
         if constexpr(A::is_data_host_accessible) {
             math::print_matrix_csr_arrays(matrix, name);
@@ -247,7 +247,7 @@ namespace mgm {
     }
 
     template<typename T, typename I, typename A>
-    void print_matrix_csr_by_rows(queue & q, Matrix_CSR<T,I,A> & matrix, const char * name = "")
+    void print_matrix_csr_by_rows(queue & q, const Matrix_CSR<T,I,A> & matrix, const char * name = "")
     {
         if constexpr(A::is_data_host_accessible) {
             math::print_matrix_csr_by_rows(matrix, name);
