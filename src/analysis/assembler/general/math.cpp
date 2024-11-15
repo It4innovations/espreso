@@ -68,7 +68,7 @@ void eigSym33Desc(const SIMD A[9], SIMD eVal[3])
 //    eVal[1] = load1(3) * q - eVal[0] - eVal[2];
 
     for (size_t s = 0; s < SIMD::size && !std::isnan(A[0][s]); ++s) {
-        double _VAL[3], _VEC[9], _A[9] = {
+        double _VAL[3], _A[9] = {
                 A[0][s], A[1][s], A[2][s],
                 A[3][s], A[4][s], A[5][s],
                 A[6][s], A[7][s], A[8][s],

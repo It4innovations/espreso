@@ -196,6 +196,16 @@ espreso::ElasticityPropertiesConfiguration::ElasticityPropertiesConfiguration()
 //            .setdatatype({ ECFDataType::EXPRESSION })
 //            .settensor(anisotropic, 5, 5)
 //            .allowonly([&] () { return model == MODEL::ANISOTROPIC; }));
+
+    REGISTER(sigma, ECFMetaData()
+            .setname("SigmaY0")
+            .setdescription({ "Sigma Y0 parameter." })
+            .setdatatype({ ECFDataType::EXPRESSION }));
+
+    REGISTER(Hisotropic, ECFMetaData()
+            .setname("Hisotropic")
+            .setdescription({ "Hisotropic parameter." })
+            .setdatatype({ ECFDataType::EXPRESSION }));
 }
 
 bool espreso::ElasticityPropertiesConfiguration::needCoordinates() const

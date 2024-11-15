@@ -39,6 +39,9 @@ struct ElasticityPropertiesConfiguration: public ECFDescription {
     TensorConfiguration shear_modulus;
     TensorConfiguration anisotropic;
 
+    ECFExpression sigma;
+    ECFExpression Hisotropic;
+
     ElasticityPropertiesConfiguration();
 
     bool needCoordinates() const;

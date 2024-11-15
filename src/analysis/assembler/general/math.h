@@ -188,6 +188,165 @@ inline void voigt3ToMatrix22(const SIMD voigt[3], SIMD A[4])
     A[2] = voigt[2]; A[3] = voigt[1];
 }
 
+inline int voigt36ToMatrix3333(int i)
+{
+    switch (i) {
+    case  0: return  0;
+    case  1: return  4;
+    case  2: return  8;
+    case  3: return  1;
+    case  4: return  5;
+    case  5: return  2;
+    case  6: return  4;
+    case  7: return 40;
+    case  8: return 44;
+    case  9: return 37;
+    case 10: return 41;
+    case 11: return 38;
+    case 12: return  8;
+    case 13: return 44;
+    case 14: return 80;
+    case 15: return 73;
+    case 16: return 77;
+    case 17: return 74;
+    case 18: return  1;
+    case 19: return 37;
+    case 20: return 73;
+    case 21: return 10;
+    case 22: return 14;
+    case 23: return 11;
+    case 24: return  5;
+    case 25: return 41;
+    case 26: return 77;
+    case 27: return 14;
+    case 28: return 50;
+    case 29: return 47;
+    case 30: return  2;
+    case 31: return 38;
+    case 32: return 74;
+    case 33: return 11;
+    case 34: return 47;
+    case 35: return 20;
+    }
+    return -1;
+}
+
+inline int matrix33ToVoigh6(int i)
+{
+    switch (i) {
+    case  0: return  0;
+    case  1: return  3;
+    case  2: return  5;
+    case  3: return  3;
+    case  4: return  1;
+    case  5: return  4;
+    case  6: return  5;
+    case  7: return  4;
+    case  8: return  2;
+    }
+    return -1;
+}
+
+inline int voigt6ToMatrix33(int i)
+{
+    switch (i) {
+    case  0: return  0;
+    case  1: return  4;
+    case  2: return  8;
+    case  3: return  1;
+    case  4: return  5;
+    case  5: return  2;
+    }
+    return -1;
+}
+
+inline int matrix3333ToVoigh36(int i)
+{
+    switch (i) {
+    case  0: return  0;
+    case  1: return  3;
+    case  2: return  5;
+    case  3: return  3;
+    case  4: return  1;
+    case  5: return  4;
+    case  6: return  5;
+    case  7: return  4;
+    case  8: return  2;
+    case  9: return  3;
+    case 10: return 21;
+    case 11: return 23;
+    case 12: return 21;
+    case 13: return  9;
+    case 14: return 22;
+    case 15: return 23;
+    case 16: return 22;
+    case 17: return 15;
+    case 18: return  5;
+    case 19: return 23;
+    case 20: return 35;
+    case 21: return 23;
+    case 22: return 11;
+    case 23: return 29;
+    case 24: return 35;
+    case 25: return 29;
+    case 26: return 17;
+    case 27: return  3;
+    case 28: return 21;
+    case 29: return 23;
+    case 30: return 21;
+    case 31: return  9;
+    case 32: return 22;
+    case 33: return 23;
+    case 34: return 22;
+    case 35: return 15;
+    case 36: return  1;
+    case 37: return  9;
+    case 38: return 11;
+    case 39: return  9;
+    case 40: return  7;
+    case 41: return 10;
+    case 42: return 11;
+    case 43: return 10;
+    case 44: return  8;
+    case 45: return  4;
+    case 46: return 22;
+    case 47: return 29;
+    case 48: return 22;
+    case 49: return 10;
+    case 50: return 28;
+    case 51: return 29;
+    case 52: return 28;
+    case 53: return 16;
+    case 54: return  5;
+    case 55: return 23;
+    case 56: return 35;
+    case 57: return 23;
+    case 58: return 11;
+    case 59: return 29;
+    case 60: return 35;
+    case 61: return 29;
+    case 62: return 17;
+    case 63: return  4;
+    case 64: return 22;
+    case 65: return 29;
+    case 66: return 22;
+    case 67: return 10;
+    case 68: return 28;
+    case 69: return 29;
+    case 70: return 28;
+    case 71: return 16;
+    case 72: return  2;
+    case 73: return 15;
+    case 74: return 17;
+    case 75: return 15;
+    case 76: return  8;
+    case 77: return 16;
+    case 78: return 17;
+    case 79: return 16;
+    case 80: return 14;
+    }
+    return -1;
+}
 
 void print(size_t rows, size_t cols, const SIMD *A);
 

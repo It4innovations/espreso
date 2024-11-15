@@ -360,13 +360,16 @@ template <size_t nodes, size_t gps> struct MaterialStructuralMechanicsKernel<nod
         break;
         case ElasticityPropertiesConfiguration::MATERIAL_MODEL::BONET_WOOD:
         {
-            SIMD sigmaY0 = load1(1e8);
-            SIMD Hisotropic = load1(2.4e9);
+            size_t ggp = 10;
+            SIMD sigmaY0 = element.ecf.sigma;
+            SIMD Hisotropic = element.ecf.isotropicHardening;
             SIMD mu = element.ecf.youngModulus[0] / (load1(2.) + load1(2.) * element.ecf.poissonRatio[0]);
             SIMD bulk_modulus = element.ecf.youngModulus[0] / (load1(3) - load1(6) * element.ecf.poissonRatio[0]);
 
             SIMD detF, invF[9];
             inv33(element.F, detF, invF);
+
+            if (gp == ggp) { printf("F\n"); print(3, 3, element.F); }
 
             SIMD alpha = load(this->alpha);
             SIMD invCp[9] = {
@@ -379,50 +382,23 @@ template <size_t nodes, size_t gps> struct MaterialStructuralMechanicsKernel<nod
             SIMD detC2, invC2[9];
             inv33(C2, detC2, invC2);
 
-            // 0 1 2   0 3 5
-            // 3 4 5     1 4
-            // 6 7 8       2
-
-            //  0  1  2  3  4  5
-            //  6  7  8  9 10 11
-            // 12 13 14 15 16 17
-            // 18 19 20 21 22 23
-            // 24 25 26 27 28 29
-            // 30 31 32 33 34 35
-
             SIMD pbar = bulk_modulus * logJbarDivJbar;
-            element.vC4[ 0] =                          pbar * detF * (invC2[0] * invC2[0] -            load1(2) * invC2[0] * invC2[0]);
-            element.vC4[ 1] = element.vC4[ 6] = pbar * detF * (invC2[0] * invC2[4] -            load1(2) * invC2[1] * invC2[1]);
-            element.vC4[ 2] = element.vC4[12] = pbar * detF * (invC2[0] * invC2[8] -            load1(2) * invC2[2] * invC2[2]);
-            element.vC4[ 3] = element.vC4[18] = pbar * detF * (invC2[0] * invC2[1] -            load1(2) * invC2[0] * invC2[1]);
-            element.vC4[ 4] = element.vC4[24] = pbar * detF * (invC2[0] * invC2[5] -            load1(2) * invC2[1] * invC2[2]);
-            element.vC4[ 5] = element.vC4[30] = pbar * detF * (invC2[0] * invC2[2] -            load1(2) * invC2[0] * invC2[2]);
-            element.vC4[ 7] =                          pbar * detF * (invC2[4] * invC2[4] -            load1(2) * invC2[4] * invC2[4]);
-            element.vC4[ 8] = element.vC4[13] = pbar * detF * (invC2[4] * invC2[8] -            load1(2) * invC2[5] * invC2[5]);
-            element.vC4[ 9] = element.vC4[19] = pbar * detF * (invC2[4] * invC2[1] -            load1(2) * invC2[4] * invC2[1]);
-            element.vC4[10] = element.vC4[25] = pbar * detF * (invC2[4] * invC2[5] -            load1(2) * invC2[4] * invC2[5]);
-            element.vC4[11] = element.vC4[31] = pbar * detF * (invC2[4] * invC2[2] -            load1(2) * invC2[1] * invC2[5]);
-            element.vC4[14] =                          pbar * detF * (invC2[8] * invC2[8] -            load1(2) * invC2[8] * invC2[8]);
-            element.vC4[15] = element.vC4[20] = pbar * detF * (invC2[8] * invC2[1] -            load1(2) * invC2[2] * invC2[5]);
-            element.vC4[16] = element.vC4[26] = pbar * detF * (invC2[8] * invC2[5] -            load1(2) * invC2[8] * invC2[5]);
-            element.vC4[17] = element.vC4[32] = pbar * detF * (invC2[8] * invC2[2] -            load1(2) * invC2[8] * invC2[2]);
-            element.vC4[21] =                          pbar * detF * (invC2[1] * invC2[1] - invC2[1] * invC2[1] - invC2[0] * invC2[4]);
-            element.vC4[22] = element.vC4[27] = pbar * detF * (invC2[1] * invC2[5] - invC2[1] * invC2[5] - invC2[2] * invC2[4]);
-            element.vC4[23] = element.vC4[33] = pbar * detF * (invC2[1] * invC2[2] - invC2[1] * invC2[2] - invC2[0] * invC2[5]);
-            element.vC4[28] =                          pbar * detF * (invC2[5] * invC2[5] - invC2[5] * invC2[5] - invC2[4] * invC2[8]);
-            element.vC4[29] = element.vC4[34] = pbar * detF * (invC2[5] * invC2[2] - invC2[2] * invC2[5] - invC2[1] * invC2[8]);
-            element.vC4[35] =                          pbar * detF * (invC2[2] * invC2[2] - invC2[2] * invC2[2] - invC2[0] * invC2[8]);
+            for (int i = 0; i < 6; ++i) {
+                for (int j = 0; j < 6; ++j) {
+                    element.vC4[i * 6 + j] = zeros();
+                    if (i < 3 && j < 3) {
+                        element.vC4[i * 6 + j] = pbar;
+                    }
+                    if (i == j) {
+                        element.vC4[i * 6 + j] = -pbar;
+                    }
+                }
+            }
 
             SIMD be_trial[9]; multABAt<3, 3>(be_trial, element.F, invCp);
-            SIMD eigVal[3], n_trial[9], N_trial[9];
+            SIMD eigVal[3], n_trial[9];
             eigSym33Asc(be_trial, eigVal, n_trial);
             SIMD lambda_trial[3] = { sqrt(eigVal[0]), sqrt(eigVal[1]), sqrt(eigVal[2]) };
-            SIMD N_tmp[9] = {
-                    lambda_trial[0] * n_trial[0], lambda_trial[1] * n_trial[3], lambda_trial[2] * n_trial[6],
-                    lambda_trial[0] * n_trial[1], lambda_trial[1] * n_trial[4], lambda_trial[2] * n_trial[7],
-                    lambda_trial[0] * n_trial[2], lambda_trial[1] * n_trial[5], lambda_trial[2] * n_trial[8]
-            };
-            multAB<3, 3, 3>(N_trial, invF, N_tmp);
 
             SIMD tau_trial_devdiag[3] = {
                     load1(2) * mu * log(lambda_trial[0]) - load1(2/3.) * mu * log(detF),
@@ -509,24 +485,124 @@ template <size_t nodes, size_t gps> struct MaterialStructuralMechanicsKernel<nod
             }
 
             SIMD sigma_diag[3] = { sigma_devdiag[0] + pbar, sigma_devdiag[1] + pbar, sigma_devdiag[2] + pbar };
-            SIMD sigma[9];
-            multABt<3, 1, 3>(sigma, n_trial + 0, n_trial + 0, sigma_diag[0]);
-            multABt<3, 1, 3>(sigma, n_trial + 3, n_trial + 3, sigma_diag[1]);
-            multABt<3, 1, 3>(sigma, n_trial + 6, n_trial + 6, sigma_diag[2]);
-
             for (int i = 0; i < 6; ++i) {
                 element.vS[i] = zeros();
             }
-            for (int a = 0; a < 3; ++a) {
-                element.vS[0] = element.vS[0] + sigma_diag[a] * N_trial[0 * 3 + a] * N_trial[0 * 3 + a];
-                element.vS[1] = element.vS[1] + sigma_diag[a] * N_trial[1 * 3 + a] * N_trial[1 * 3 + a];
-                element.vS[2] = element.vS[2] + sigma_diag[a] * N_trial[2 * 3 + a] * N_trial[2 * 3 + a];
-                element.vS[3] = element.vS[3] + sigma_diag[a] * N_trial[0 * 3 + a] * N_trial[1 * 3 + a];
-                element.vS[4] = element.vS[4] + sigma_diag[a] * N_trial[1 * 3 + a] * N_trial[2 * 3 + a];
-                element.vS[5] = element.vS[5] + sigma_diag[a] * N_trial[0 * 3 + a] * N_trial[2 * 3 + a];
+            for (int a = 0; a < 3; ++a) {  // element.vS is now element.vs
+                element.vS[0] = element.vS[0] + sigma_diag[a] * n_trial[a * 3 + 0] * n_trial[a * 3 + 0];
+                element.vS[1] = element.vS[1] + sigma_diag[a] * n_trial[a * 3 + 1] * n_trial[a * 3 + 1];
+                element.vS[2] = element.vS[2] + sigma_diag[a] * n_trial[a * 3 + 2] * n_trial[a * 3 + 2];
+                element.vS[3] = element.vS[3] + sigma_diag[a] * n_trial[a * 3 + 0] * n_trial[a * 3 + 1];
+                element.vS[4] = element.vS[4] + sigma_diag[a] * n_trial[a * 3 + 1] * n_trial[a * 3 + 2];
+                element.vS[5] = element.vS[5] + sigma_diag[a] * n_trial[a * 3 + 0] * n_trial[a * 3 + 2];
+            }
+            if (gp == ggp) { printf("s\n"); print(1, 6, element.vS); }
+            SIMD SA[3 * 3], SB[3 * 3]; // element.vs --> element.s
+            for (int i = 0; i < 3; ++i) {
+                for (int j = 0; j < 3; ++j) {
+                    SA[i * 3 + j] = element.vS[matrix33ToVoigh6(i * 3 + j)];
+                }
+            }
+            // pullback(invF, s, 'sharp')
+            for (int i = 0; i < 3; ++i) {
+                for (int j = 0; j < 3; ++j) {
+                    SIMD sum;
+                    for (int n = 0; n < 3; ++n) {
+                        sum = sum + invF[i * 3 + n] * SA[n * 3 + j];
+                    }
+                    SB[i * 3 + j] = sum;
+                }
+            }
+            for (int i = 0; i < 3; ++i) {
+                for (int j = 0; j < 3; ++j) {
+                    SIMD sum;
+                    for (int n = 0; n < 3; ++n) {
+                        sum = sum + invF[j * 3 + n] * SB[i * 3 + n];
+                    }
+                    SA[i * 3 + j] = sum;
+                }
+            }
+            for (int i = 0; i < 6; ++i) {
+                element.vS[i] = detF * SA[voigt6ToMatrix33(i)];
+            }
+            if (gp == ggp) { printf("S\n"); print(1, 6, element.vS); }
+
+            n4_otimes_symallcomb(cc1, cc3, n_trial, element.vC4, gp); // element.vC4 is now element.vc4
+            SIMD C4A[3 * 3 * 3 * 3], C4B[3 * 3 * 3 * 3]; // element.vc4 --> element.c4
+
+            if (gp == ggp) { printf("c4\n"); print(6, 6, element.vC4); }
+
+            for (int i = 0; i < 3; ++i) {
+                for (int j = 0; j < 3; ++j) {
+                    for (int k = 0; k < 3; ++k) {
+                        for (int l = 0; l < 3; ++l) {
+                            C4A[i * 3 * 3 * 3 + j * 3 * 3 + k * 3 + l] = element.vC4[matrix3333ToVoigh36(i * 3 * 3 * 3 + j * 3 * 3 + k * 3 + l)];
+                        }
+                    }
+                }
             }
 
-            n4_otimes_symallcomb(cc1, cc3, N_trial, element.vC4, gp);
+            // pullback(invF, c4, 'sharp')
+            for (int i = 0; i < 3; ++i) {
+                for (int j = 0; j < 3; ++j) {
+                    for (int k = 0; k < 3; ++k) {
+                        for (int l = 0; l < 3; ++l) {
+                            SIMD sum;
+                            for (int n = 0; n < 3; ++n) {
+                                sum = sum + invF[i * 3 + n] * C4A[n * 3 * 3 * 3 + j * 3 * 3 + k * 3 + l];
+                            }
+                            C4B[i * 3 * 3 * 3 + j * 3 * 3 + k * 3 + l] = sum;
+                        }
+                    }
+                }
+            }
+            for (int i = 0; i < 3; ++i) {
+                for (int j = 0; j < 3; ++j) {
+                    for (int k = 0; k < 3; ++k) {
+                        for (int l = 0; l < 3; ++l) {
+                            SIMD sum;
+                            for (int n = 0; n < 3; ++n) {
+                                sum = sum + invF[j * 3 + n] * C4B[i * 3 * 3 * 3 + n * 3 * 3 + k * 3 + l];
+                            }
+                            C4A[i * 3 * 3 * 3 + j * 3 * 3 + k * 3 + l] = sum;
+                        }
+                    }
+                }
+            }
+            for (int i = 0; i < 3; ++i) {
+                for (int j = 0; j < 3; ++j) {
+                    for (int k = 0; k < 3; ++k) {
+                        for (int l = 0; l < 3; ++l) {
+                            SIMD sum;
+                            for (int n = 0; n < 3; ++n) {
+                                sum = sum + invF[k * 3 + n] * C4A[i * 3 * 3 * 3 + j * 3 * 3 + n * 3 + l];
+                            }
+                            C4B[i * 3 * 3 * 3 + j * 3 * 3 + k * 3 + l] = sum;
+                        }
+                    }
+                }
+            }
+            for (int i = 0; i < 3; ++i) {
+                for (int j = 0; j < 3; ++j) {
+                    for (int k = 0; k < 3; ++k) {
+                        for (int l = 0; l < 3; ++l) {
+                            SIMD sum;
+                            for (int n = 0; n < 3; ++n) {
+                                sum = sum + invF[l * 3 + n] * C4B[i * 3 * 3 * 3 + j * 3 * 3 + k * 3 + n];
+                            }
+                            C4A[i * 3 * 3 * 3 + j * 3 * 3 + k * 3 + l] = sum;
+                        }
+                    }
+                }
+            }
+
+            for (int i = 0; i < 6; ++i) {
+                for (int j = 0; j < 6; ++j) {
+                    element.vC4[i * 6 + j] = detF * C4A[voigt36ToMatrix3333(i * 6 + j)];
+                }
+            }
+
+            if (gp == ggp) { printf("C4\n"); print(6, 6, element.vC4); }
 
             // move to the next GP
             this->alpha += SIMD::size;
@@ -548,27 +624,27 @@ template <size_t nodes, size_t gps> struct MaterialStructuralMechanicsKernel<nod
     void n4_otimes_symallcomb(SIMD cc1[3], SIMD cc3[3], SIMD n[9], SIMD vc4m_hat[6*6], size_t gp)
     {
         for (int a = 0; a < 3; ++a) {
-            vc4m_hat[0 * 6 + 0] = vc4m_hat[0 * 6 + 0] + cc1[a] * n[0 * 3 + a] * n[0 * 3 + a] * n[0 * 3 + a] * n[0 * 3 + a];
-            vc4m_hat[0 * 6 + 1] = vc4m_hat[0 * 6 + 1] + cc1[a] * n[0 * 3 + a] * n[0 * 3 + a] * n[1 * 3 + a] * n[1 * 3 + a];
-            vc4m_hat[0 * 6 + 2] = vc4m_hat[0 * 6 + 2] + cc1[a] * n[0 * 3 + a] * n[0 * 3 + a] * n[2 * 3 + a] * n[2 * 3 + a];
-            vc4m_hat[0 * 6 + 3] = vc4m_hat[0 * 6 + 3] + cc1[a] * n[0 * 3 + a] * n[0 * 3 + a] * n[0 * 3 + a] * n[1 * 3 + a];
-            vc4m_hat[0 * 6 + 4] = vc4m_hat[0 * 6 + 4] + cc1[a] * n[0 * 3 + a] * n[0 * 3 + a] * n[1 * 3 + a] * n[2 * 3 + a];
-            vc4m_hat[0 * 6 + 5] = vc4m_hat[0 * 6 + 5] + cc1[a] * n[0 * 3 + a] * n[0 * 3 + a] * n[0 * 3 + a] * n[2 * 3 + a];
-            vc4m_hat[1 * 6 + 1] = vc4m_hat[1 * 6 + 1] + cc1[a] * n[1 * 3 + a] * n[1 * 3 + a] * n[1 * 3 + a] * n[1 * 3 + a];
-            vc4m_hat[1 * 6 + 2] = vc4m_hat[1 * 6 + 2] + cc1[a] * n[1 * 3 + a] * n[1 * 3 + a] * n[2 * 3 + a] * n[2 * 3 + a];
-            vc4m_hat[1 * 6 + 3] = vc4m_hat[1 * 6 + 3] + cc1[a] * n[1 * 3 + a] * n[1 * 3 + a] * n[0 * 3 + a] * n[1 * 3 + a];
-            vc4m_hat[1 * 6 + 4] = vc4m_hat[1 * 6 + 4] + cc1[a] * n[1 * 3 + a] * n[1 * 3 + a] * n[1 * 3 + a] * n[2 * 3 + a];
-            vc4m_hat[1 * 6 + 5] = vc4m_hat[1 * 6 + 5] + cc1[a] * n[1 * 3 + a] * n[1 * 3 + a] * n[0 * 3 + a] * n[2 * 3 + a];
-            vc4m_hat[2 * 6 + 2] = vc4m_hat[2 * 6 + 2] + cc1[a] * n[2 * 3 + a] * n[2 * 3 + a] * n[2 * 3 + a] * n[2 * 3 + a];
-            vc4m_hat[2 * 6 + 3] = vc4m_hat[2 * 6 + 3] + cc1[a] * n[2 * 3 + a] * n[2 * 3 + a] * n[0 * 3 + a] * n[1 * 3 + a];
-            vc4m_hat[2 * 6 + 4] = vc4m_hat[2 * 6 + 4] + cc1[a] * n[2 * 3 + a] * n[2 * 3 + a] * n[1 * 3 + a] * n[2 * 3 + a];
-            vc4m_hat[2 * 6 + 5] = vc4m_hat[2 * 6 + 5] + cc1[a] * n[2 * 3 + a] * n[2 * 3 + a] * n[0 * 3 + a] * n[2 * 3 + a];
-            vc4m_hat[3 * 6 + 3] = vc4m_hat[3 * 6 + 3] + cc1[a] * n[0 * 3 + a] * n[1 * 3 + a] * n[0 * 3 + a] * n[1 * 3 + a];
-            vc4m_hat[3 * 6 + 4] = vc4m_hat[3 * 6 + 4] + cc1[a] * n[0 * 3 + a] * n[1 * 3 + a] * n[1 * 3 + a] * n[2 * 3 + a];
-            vc4m_hat[3 * 6 + 5] = vc4m_hat[3 * 6 + 5] + cc1[a] * n[0 * 3 + a] * n[1 * 3 + a] * n[0 * 3 + a] * n[2 * 3 + a];
-            vc4m_hat[4 * 6 + 4] = vc4m_hat[4 * 6 + 4] + cc1[a] * n[1 * 3 + a] * n[2 * 3 + a] * n[1 * 3 + a] * n[2 * 3 + a];
-            vc4m_hat[4 * 6 + 5] = vc4m_hat[4 * 6 + 5] + cc1[a] * n[1 * 3 + a] * n[2 * 3 + a] * n[0 * 3 + a] * n[2 * 3 + a];
-            vc4m_hat[5 * 6 + 5] = vc4m_hat[5 * 6 + 5] + cc1[a] * n[0 * 3 + a] * n[2 * 3 + a] * n[0 * 3 + a] * n[2 * 3 + a];
+            vc4m_hat[0 * 6 + 0] = vc4m_hat[0 * 6 + 0] + cc1[a] * n[0 + 3 * a] * n[0 + 3 * a] * n[0 + 3 * a] * n[0 + 3 * a];
+            vc4m_hat[0 * 6 + 1] = vc4m_hat[0 * 6 + 1] + cc1[a] * n[0 + 3 * a] * n[0 + 3 * a] * n[1 + 3 * a] * n[1 + 3 * a];
+            vc4m_hat[0 * 6 + 2] = vc4m_hat[0 * 6 + 2] + cc1[a] * n[0 + 3 * a] * n[0 + 3 * a] * n[2 + 3 * a] * n[2 + 3 * a];
+            vc4m_hat[0 * 6 + 3] = vc4m_hat[0 * 6 + 3] + cc1[a] * n[0 + 3 * a] * n[0 + 3 * a] * n[0 + 3 * a] * n[1 + 3 * a];
+            vc4m_hat[0 * 6 + 4] = vc4m_hat[0 * 6 + 4] + cc1[a] * n[0 + 3 * a] * n[0 + 3 * a] * n[1 + 3 * a] * n[2 + 3 * a];
+            vc4m_hat[0 * 6 + 5] = vc4m_hat[0 * 6 + 5] + cc1[a] * n[0 + 3 * a] * n[0 + 3 * a] * n[0 + 3 * a] * n[2 + 3 * a];
+            vc4m_hat[1 * 6 + 1] = vc4m_hat[1 * 6 + 1] + cc1[a] * n[1 + 3 * a] * n[1 + 3 * a] * n[1 + 3 * a] * n[1 + 3 * a];
+            vc4m_hat[1 * 6 + 2] = vc4m_hat[1 * 6 + 2] + cc1[a] * n[1 + 3 * a] * n[1 + 3 * a] * n[2 + 3 * a] * n[2 + 3 * a];
+            vc4m_hat[1 * 6 + 3] = vc4m_hat[1 * 6 + 3] + cc1[a] * n[1 + 3 * a] * n[1 + 3 * a] * n[0 + 3 * a] * n[1 + 3 * a];
+            vc4m_hat[1 * 6 + 4] = vc4m_hat[1 * 6 + 4] + cc1[a] * n[1 + 3 * a] * n[1 + 3 * a] * n[1 + 3 * a] * n[2 + 3 * a];
+            vc4m_hat[1 * 6 + 5] = vc4m_hat[1 * 6 + 5] + cc1[a] * n[1 + 3 * a] * n[1 + 3 * a] * n[0 + 3 * a] * n[2 + 3 * a];
+            vc4m_hat[2 * 6 + 2] = vc4m_hat[2 * 6 + 2] + cc1[a] * n[2 + 3 * a] * n[2 + 3 * a] * n[2 + 3 * a] * n[2 + 3 * a];
+            vc4m_hat[2 * 6 + 3] = vc4m_hat[2 * 6 + 3] + cc1[a] * n[2 + 3 * a] * n[2 + 3 * a] * n[0 + 3 * a] * n[1 + 3 * a];
+            vc4m_hat[2 * 6 + 4] = vc4m_hat[2 * 6 + 4] + cc1[a] * n[2 + 3 * a] * n[2 + 3 * a] * n[1 + 3 * a] * n[2 + 3 * a];
+            vc4m_hat[2 * 6 + 5] = vc4m_hat[2 * 6 + 5] + cc1[a] * n[2 + 3 * a] * n[2 + 3 * a] * n[0 + 3 * a] * n[2 + 3 * a];
+            vc4m_hat[3 * 6 + 3] = vc4m_hat[3 * 6 + 3] + cc1[a] * n[0 + 3 * a] * n[1 + 3 * a] * n[0 + 3 * a] * n[1 + 3 * a];
+            vc4m_hat[3 * 6 + 4] = vc4m_hat[3 * 6 + 4] + cc1[a] * n[0 + 3 * a] * n[1 + 3 * a] * n[1 + 3 * a] * n[2 + 3 * a];
+            vc4m_hat[3 * 6 + 5] = vc4m_hat[3 * 6 + 5] + cc1[a] * n[0 + 3 * a] * n[1 + 3 * a] * n[0 + 3 * a] * n[2 + 3 * a];
+            vc4m_hat[4 * 6 + 4] = vc4m_hat[4 * 6 + 4] + cc1[a] * n[1 + 3 * a] * n[2 + 3 * a] * n[1 + 3 * a] * n[2 + 3 * a];
+            vc4m_hat[4 * 6 + 5] = vc4m_hat[4 * 6 + 5] + cc1[a] * n[1 + 3 * a] * n[2 + 3 * a] * n[0 + 3 * a] * n[2 + 3 * a];
+            vc4m_hat[5 * 6 + 5] = vc4m_hat[5 * 6 + 5] + cc1[a] * n[0 + 3 * a] * n[2 + 3 * a] * n[0 + 3 * a] * n[2 + 3 * a];
         }
         for (int k = 3, a, b; k < 6; ++k) {
             switch (k) {
@@ -576,27 +652,27 @@ template <size_t nodes, size_t gps> struct MaterialStructuralMechanicsKernel<nod
             case 4: a = 1; b = 2; break;
             case 5: a = 0; b = 2; break;
             }
-            vc4m_hat[0 * 6 + 0] = vc4m_hat[0 * 6 + 0] + cc1[k] * (n[0 * 3 + a] * n[0 * 3 + a] *  n[0 * 3 + b] * n[0 * 3 + b] * load1(2));
-            vc4m_hat[0 * 6 + 1] = vc4m_hat[0 * 6 + 1] + cc1[k] * (n[0 * 3 + a] * n[0 * 3 + a] *  n[1 * 3 + b] * n[1 * 3 + b] + n[0 * 3 + b] * n[0 * 3 + b] * n[1 * 3 + a] * n[1 * 3 + a]);
-            vc4m_hat[0 * 6 + 2] = vc4m_hat[0 * 6 + 2] + cc1[k] * (n[0 * 3 + a] * n[0 * 3 + a] *  n[2 * 3 + b] * n[2 * 3 + b] + n[0 * 3 + b] * n[0 * 3 + b] * n[2 * 3 + a] * n[2 * 3 + a]);
-            vc4m_hat[0 * 6 + 3] = vc4m_hat[0 * 6 + 3] + cc1[k] * (n[0 * 3 + a] * n[0 * 3 + b] * (n[0 * 3 + a] * n[1 * 3 + b] + n[0 * 3 + b] * n[1 * 3 + a]));
-            vc4m_hat[0 * 6 + 4] = vc4m_hat[0 * 6 + 4] + cc1[k] * (n[0 * 3 + a] * n[0 * 3 + a] *  n[1 * 3 + b] * n[2 * 3 + b] + n[0 * 3 + b] * n[0 * 3 + b] * n[1 * 3 + a] * n[2 * 3 + a]);
-            vc4m_hat[0 * 6 + 5] = vc4m_hat[0 * 6 + 5] + cc1[k] * (n[0 * 3 + a] * n[0 * 3 + b] * (n[0 * 3 + a] * n[2 * 3 + b] + n[0 * 3 + b] * n[2 * 3 + a]));
-            vc4m_hat[1 * 6 + 1] = vc4m_hat[1 * 6 + 1] + cc1[k] * (n[1 * 3 + a] * n[1 * 3 + a] *  n[1 * 3 + b] * n[1 * 3 + b] * load1(2));
-            vc4m_hat[1 * 6 + 2] = vc4m_hat[1 * 6 + 2] + cc1[k] * (n[1 * 3 + a] * n[1 * 3 + a] *  n[2 * 3 + b] * n[2 * 3 + b] + n[1 * 3 + b] * n[1 * 3 + b] * n[2 * 3 + a] * n[2 * 3 + a]);
-            vc4m_hat[1 * 6 + 3] = vc4m_hat[1 * 6 + 3] + cc1[k] * (n[1 * 3 + a] * n[1 * 3 + b] * (n[0 * 3 + b] * n[1 * 3 + a] + n[1 * 3 + b] * n[0 * 3 + a]));
-            vc4m_hat[1 * 6 + 4] = vc4m_hat[1 * 6 + 4] + cc1[k] * (n[1 * 3 + a] * n[1 * 3 + b] * (n[1 * 3 + a] * n[2 * 3 + b] + n[1 * 3 + b] * n[2 * 3 + a]));
-            vc4m_hat[1 * 6 + 5] = vc4m_hat[1 * 6 + 5] + cc1[k] * (n[1 * 3 + a] * n[1 * 3 + a] *  n[0 * 3 + b] * n[2 * 3 + b] + n[1 * 3 + b] * n[1 * 3 + b] * n[0 * 3 + a] * n[2 * 3 + a]);
-            vc4m_hat[2 * 6 + 2] = vc4m_hat[2 * 6 + 2] + cc1[k] * (n[2 * 3 + a] * n[2 * 3 + a] *  n[2 * 3 + b] * n[2 * 3 + b] * load1(2));
-            vc4m_hat[2 * 6 + 3] = vc4m_hat[2 * 6 + 3] + cc1[k] * (n[2 * 3 + a] * n[2 * 3 + a] *  n[0 * 3 + b] * n[1 * 3 + b] + n[2 * 3 + b] * n[2 * 3 + b] * n[0 * 3 + a] * n[1 * 3 + a]);
-            vc4m_hat[2 * 6 + 4] = vc4m_hat[2 * 6 + 4] + cc1[k] * (n[2 * 3 + a] * n[2 * 3 + b] * (n[1 * 3 + b] * n[2 * 3 + a] + n[2 * 3 + b] * n[1 * 3 + a]));
-            vc4m_hat[2 * 6 + 5] = vc4m_hat[2 * 6 + 5] + cc1[k] * (n[2 * 3 + a] * n[2 * 3 + b] * (n[0 * 3 + b] * n[2 * 3 + a] + n[2 * 3 + b] * n[0 * 3 + a]));
-            vc4m_hat[3 * 6 + 3] = vc4m_hat[3 * 6 + 3] + cc1[k] * (n[0 * 3 + a] * n[0 * 3 + b] *  n[1 * 3 + a] * n[1 * 3 + b] * load1(2));
-            vc4m_hat[3 * 6 + 4] = vc4m_hat[3 * 6 + 4] + cc1[k] * (n[1 * 3 + a] * n[1 * 3 + b] * (n[0 * 3 + a] * n[2 * 3 + b] + n[0 * 3 + b] * n[2 * 3 + a]));
-            vc4m_hat[3 * 6 + 5] = vc4m_hat[3 * 6 + 5] + cc1[k] * (n[0 * 3 + a] * n[0 * 3 + b] * (n[1 * 3 + a] * n[2 * 3 + b] + n[1 * 3 + b] * n[2 * 3 + a]));
-            vc4m_hat[4 * 6 + 4] = vc4m_hat[4 * 6 + 4] + cc1[k] * (n[1 * 3 + a] * n[1 * 3 + b] * (n[2 * 3 + a] * n[2 * 3 + b] + n[2 * 3 + b] * n[2 * 3 + a]));
-            vc4m_hat[4 * 6 + 5] = vc4m_hat[4 * 6 + 5] + cc1[k] * (n[2 * 3 + a] * n[2 * 3 + b] * (n[1 * 3 + a] * n[0 * 3 + b] + n[1 * 3 + b] * n[0 * 3 + a]));
-            vc4m_hat[5 * 6 + 5] = vc4m_hat[5 * 6 + 5] + cc1[k] * (n[2 * 3 + a] * n[2 * 3 + b] *  n[0 * 3 + a] * n[0 * 3 + b] * load1(2));
+            vc4m_hat[0 * 6 + 0] = vc4m_hat[0 * 6 + 0] + cc1[k] * (n[0 + 3 * a] * n[0 + 3 * a] *  n[0 + 3 * b] * n[0 + 3 * b] * load1(2));
+            vc4m_hat[0 * 6 + 1] = vc4m_hat[0 * 6 + 1] + cc1[k] * (n[0 + 3 * a] * n[0 + 3 * a] *  n[1 + 3 * b] * n[1 + 3 * b] + n[0 + 3 * b] * n[0 + 3 * b] * n[1 + 3 * a] * n[1 + 3 * a]);
+            vc4m_hat[0 * 6 + 2] = vc4m_hat[0 * 6 + 2] + cc1[k] * (n[0 + 3 * a] * n[0 + 3 * a] *  n[2 + 3 * b] * n[2 + 3 * b] + n[0 + 3 * b] * n[0 + 3 * b] * n[2 + 3 * a] * n[2 + 3 * a]);
+            vc4m_hat[0 * 6 + 3] = vc4m_hat[0 * 6 + 3] + cc1[k] * (n[0 + 3 * a] * n[0 + 3 * b] * (n[0 + 3 * a] * n[1 + 3 * b] + n[0 + 3 * b] * n[1 + 3 * a]));
+            vc4m_hat[0 * 6 + 4] = vc4m_hat[0 * 6 + 4] + cc1[k] * (n[0 + 3 * a] * n[0 + 3 * a] *  n[1 + 3 * b] * n[2 + 3 * b] + n[0 + 3 * b] * n[0 + 3 * b] * n[1 + 3 * a] * n[2 + 3 * a]);
+            vc4m_hat[0 * 6 + 5] = vc4m_hat[0 * 6 + 5] + cc1[k] * (n[0 + 3 * a] * n[0 + 3 * b] * (n[0 + 3 * a] * n[2 + 3 * b] + n[0 + 3 * b] * n[2 + 3 * a]));
+            vc4m_hat[1 * 6 + 1] = vc4m_hat[1 * 6 + 1] + cc1[k] * (n[1 + 3 * a] * n[1 + 3 * a] *  n[1 + 3 * b] * n[1 + 3 * b] * load1(2));
+            vc4m_hat[1 * 6 + 2] = vc4m_hat[1 * 6 + 2] + cc1[k] * (n[1 + 3 * a] * n[1 + 3 * a] *  n[2 + 3 * b] * n[2 + 3 * b] + n[1 + 3 * b] * n[1 + 3 * b] * n[2 + 3 * a] * n[2 + 3 * a]);
+            vc4m_hat[1 * 6 + 3] = vc4m_hat[1 * 6 + 3] + cc1[k] * (n[1 + 3 * a] * n[1 + 3 * b] * (n[0 + 3 * b] * n[1 + 3 * a] + n[1 + 3 * b] * n[0 + 3 * a]));
+            vc4m_hat[1 * 6 + 4] = vc4m_hat[1 * 6 + 4] + cc1[k] * (n[1 + 3 * a] * n[1 + 3 * b] * (n[1 + 3 * a] * n[2 + 3 * b] + n[1 + 3 * b] * n[2 + 3 * a]));
+            vc4m_hat[1 * 6 + 5] = vc4m_hat[1 * 6 + 5] + cc1[k] * (n[1 + 3 * a] * n[1 + 3 * a] *  n[0 + 3 * b] * n[2 + 3 * b] + n[1 + 3 * b] * n[1 + 3 * b] * n[0 + 3 * a] * n[2 + 3 * a]);
+            vc4m_hat[2 * 6 + 2] = vc4m_hat[2 * 6 + 2] + cc1[k] * (n[2 + 3 * a] * n[2 + 3 * a] *  n[2 + 3 * b] * n[2 + 3 * b] * load1(2));
+            vc4m_hat[2 * 6 + 3] = vc4m_hat[2 * 6 + 3] + cc1[k] * (n[2 + 3 * a] * n[2 + 3 * a] *  n[0 + 3 * b] * n[1 + 3 * b] + n[2 + 3 * b] * n[2 + 3 * b] * n[0 + 3 * a] * n[1 + 3 * a]);
+            vc4m_hat[2 * 6 + 4] = vc4m_hat[2 * 6 + 4] + cc1[k] * (n[2 + 3 * a] * n[2 + 3 * b] * (n[1 + 3 * b] * n[2 + 3 * a] + n[2 + 3 * b] * n[1 + 3 * a]));
+            vc4m_hat[2 * 6 + 5] = vc4m_hat[2 * 6 + 5] + cc1[k] * (n[2 + 3 * a] * n[2 + 3 * b] * (n[0 + 3 * b] * n[2 + 3 * a] + n[2 + 3 * b] * n[0 + 3 * a]));
+            vc4m_hat[3 * 6 + 3] = vc4m_hat[3 * 6 + 3] + cc1[k] * (n[0 + 3 * a] * n[0 + 3 * b] *  n[1 + 3 * a] * n[1 + 3 * b] * load1(2));
+            vc4m_hat[3 * 6 + 4] = vc4m_hat[3 * 6 + 4] + cc1[k] * (n[1 + 3 * a] * n[1 + 3 * b] * (n[0 + 3 * a] * n[2 + 3 * b] + n[0 + 3 * b] * n[2 + 3 * a]));
+            vc4m_hat[3 * 6 + 5] = vc4m_hat[3 * 6 + 5] + cc1[k] * (n[0 + 3 * a] * n[0 + 3 * b] * (n[1 + 3 * a] * n[2 + 3 * b] + n[1 + 3 * b] * n[2 + 3 * a]));
+            vc4m_hat[4 * 6 + 4] = vc4m_hat[4 * 6 + 4] + cc1[k] * (n[1 + 3 * a] * n[1 + 3 * b] * (n[2 + 3 * a] * n[2 + 3 * b] + n[2 + 3 * b] * n[2 + 3 * a]));
+            vc4m_hat[4 * 6 + 5] = vc4m_hat[4 * 6 + 5] + cc1[k] * (n[2 + 3 * a] * n[2 + 3 * b] * (n[1 + 3 * a] * n[0 + 3 * b] + n[1 + 3 * b] * n[0 + 3 * a]));
+            vc4m_hat[5 * 6 + 5] = vc4m_hat[5 * 6 + 5] + cc1[k] * (n[2 + 3 * a] * n[2 + 3 * b] *  n[0 + 3 * a] * n[0 + 3 * b] * load1(2));
         }
         for (int k = 6, a, b; k < 9; ++k) {
             switch (k) {
@@ -604,27 +680,27 @@ template <size_t nodes, size_t gps> struct MaterialStructuralMechanicsKernel<nod
             case 7: a = 1; b = 2; break;
             case 8: a = 0; b = 2; break;
             }
-            vc4m_hat[0 * 6 + 0] = vc4m_hat[0 * 6 + 0] + cc3[k - 6] * (n[0 * 3 + a] * n[0 * 3 + b] *  n[0 * 3 + a] * n[0 * 3 + b] * load1(4));
-            vc4m_hat[0 * 6 + 1] = vc4m_hat[0 * 6 + 1] + cc3[k - 6] * (n[0 * 3 + a] * n[0 * 3 + b] *  n[1 * 3 + a] * n[1 * 3 + b] * load1(4));
-            vc4m_hat[0 * 6 + 2] = vc4m_hat[0 * 6 + 2] + cc3[k - 6] * (n[0 * 3 + a] * n[0 * 3 + b] *  n[2 * 3 + a] * n[2 * 3 + b] * load1(4));
-            vc4m_hat[0 * 6 + 3] = vc4m_hat[0 * 6 + 3] + cc3[k - 6] * (n[0 * 3 + a] * n[0 * 3 + b] * (n[0 * 3 + a] * n[1 * 3 + b] + n[0 * 3 + b] * n[1 * 3 + a]) * load1(2));
-            vc4m_hat[0 * 6 + 4] = vc4m_hat[0 * 6 + 4] + cc3[k - 6] * (n[0 * 3 + a] * n[0 * 3 + b] * (n[1 * 3 + a] * n[2 * 3 + b] + n[1 * 3 + b] * n[2 * 3 + a]) * load1(2));
-            vc4m_hat[0 * 6 + 5] = vc4m_hat[0 * 6 + 5] + cc3[k - 6] * (n[0 * 3 + a] * n[0 * 3 + b] * (n[0 * 3 + a] * n[2 * 3 + b] + n[0 * 3 + b] * n[2 * 3 + a]) * load1(2));
-            vc4m_hat[1 * 6 + 1] = vc4m_hat[1 * 6 + 1] + cc3[k - 6] * (n[1 * 3 + a] * n[1 * 3 + b] *  n[1 * 3 + a] * n[1 * 3 + b] * load1(4));
-            vc4m_hat[1 * 6 + 2] = vc4m_hat[1 * 6 + 2] + cc3[k - 6] * (n[1 * 3 + a] * n[1 * 3 + b] *  n[2 * 3 + a] * n[2 * 3 + b] * load1(4));
-            vc4m_hat[1 * 6 + 3] = vc4m_hat[1 * 6 + 3] + cc3[k - 6] * (n[1 * 3 + a] * n[1 * 3 + b] * (n[0 * 3 + a] * n[1 * 3 + b] + n[0 * 3 + b] * n[1 * 3 + a]) * load1(2));
-            vc4m_hat[1 * 6 + 4] = vc4m_hat[1 * 6 + 4] + cc3[k - 6] * (n[1 * 3 + a] * n[1 * 3 + b] * (n[1 * 3 + a] * n[2 * 3 + b] + n[1 * 3 + b] * n[2 * 3 + a]) * load1(2));
-            vc4m_hat[1 * 6 + 5] = vc4m_hat[1 * 6 + 5] + cc3[k - 6] * (n[1 * 3 + a] * n[1 * 3 + b] * (n[0 * 3 + a] * n[2 * 3 + b] + n[0 * 3 + b] * n[2 * 3 + a]) * load1(2));
-            vc4m_hat[2 * 6 + 2] = vc4m_hat[2 * 6 + 2] + cc3[k - 6] * (n[2 * 3 + a] * n[2 * 3 + b] *  n[2 * 3 + a] * n[2 * 3 + b] * load1(4));
-            vc4m_hat[2 * 6 + 3] = vc4m_hat[2 * 6 + 3] + cc3[k - 6] * (n[2 * 3 + a] * n[2 * 3 + b] * (n[0 * 3 + a] * n[1 * 3 + b] + n[0 * 3 + b] * n[1 * 3 + a]) * load1(2));
-            vc4m_hat[2 * 6 + 4] = vc4m_hat[2 * 6 + 4] + cc3[k - 6] * (n[2 * 3 + a] * n[2 * 3 + b] * (n[1 * 3 + a] * n[2 * 3 + b] + n[1 * 3 + b] * n[2 * 3 + a]) * load1(2));
-            vc4m_hat[2 * 6 + 5] = vc4m_hat[2 * 6 + 5] + cc3[k - 6] * (n[2 * 3 + a] * n[2 * 3 + b] * (n[0 * 3 + a] * n[2 * 3 + b] + n[0 * 3 + b] * n[2 * 3 + a]) * load1(2));
-            vc4m_hat[3 * 6 + 3] = vc4m_hat[3 * 6 + 3] + cc3[k - 6] * (n[0 * 3 + a] * n[1 * 3 + b] * (n[0 * 3 + a] * n[1 * 3 + b] + n[0 * 3 + b] * n[1 * 3 + a]) + n[0 * 3 + b] * n[1 * 3 + a] * (n[0 * 3 + b] * n[1 * 3 + a] + n[0 * 3 + a] * n[1 * 3 + b]));
-            vc4m_hat[3 * 6 + 4] = vc4m_hat[3 * 6 + 4] + cc3[k - 6] * (n[0 * 3 + a] * n[1 * 3 + b] * (n[1 * 3 + a] * n[2 * 3 + b] + n[1 * 3 + b] * n[2 * 3 + a]) + n[0 * 3 + b] * n[1 * 3 + a] * (n[1 * 3 + b] * n[2 * 3 + a] + n[1 * 3 + a] * n[2 * 3 + b]));
-            vc4m_hat[3 * 6 + 5] = vc4m_hat[3 * 6 + 5] + cc3[k - 6] * (n[0 * 3 + a] * n[1 * 3 + b] * (n[0 * 3 + a] * n[2 * 3 + b] + n[0 * 3 + b] * n[2 * 3 + a]) + n[0 * 3 + b] * n[1 * 3 + a] * (n[0 * 3 + b] * n[2 * 3 + a] + n[0 * 3 + a] * n[2 * 3 + b]));
-            vc4m_hat[4 * 6 + 4] = vc4m_hat[4 * 6 + 4] + cc3[k - 6] * (n[1 * 3 + a] * n[2 * 3 + b] * (n[1 * 3 + a] * n[2 * 3 + b] + n[1 * 3 + b] * n[2 * 3 + a]) + n[1 * 3 + b] * n[2 * 3 + a] * (n[1 * 3 + b] * n[2 * 3 + a] + n[1 * 3 + a] * n[2 * 3 + b]));
-            vc4m_hat[4 * 6 + 5] = vc4m_hat[4 * 6 + 5] + cc3[k - 6] * (n[1 * 3 + a] * n[2 * 3 + b] * (n[0 * 3 + a] * n[2 * 3 + b] + n[0 * 3 + b] * n[2 * 3 + a]) + n[1 * 3 + b] * n[2 * 3 + a] * (n[0 * 3 + b] * n[2 * 3 + a] + n[0 * 3 + a] * n[2 * 3 + b]));
-            vc4m_hat[5 * 6 + 5] = vc4m_hat[5 * 6 + 5] + cc3[k - 6] * (n[0 * 3 + a] * n[2 * 3 + b] * (n[0 * 3 + a] * n[2 * 3 + b] + n[0 * 3 + b] * n[2 * 3 + a]) + n[0 * 3 + b] * n[2 * 3 + a] * (n[0 * 3 + b] * n[2 * 3 + a] + n[0 * 3 + a] * n[2 * 3 + b]));
+            vc4m_hat[0 * 6 + 0] = vc4m_hat[0 * 6 + 0] + cc3[k - 6] * (n[0 + 3 * a] * n[0 + 3 * b] *  n[0 + 3 * a] * n[0 + 3 * b] * load1(4));
+            vc4m_hat[0 * 6 + 1] = vc4m_hat[0 * 6 + 1] + cc3[k - 6] * (n[0 + 3 * a] * n[0 + 3 * b] *  n[1 + 3 * a] * n[1 + 3 * b] * load1(4));
+            vc4m_hat[0 * 6 + 2] = vc4m_hat[0 * 6 + 2] + cc3[k - 6] * (n[0 + 3 * a] * n[0 + 3 * b] *  n[2 + 3 * a] * n[2 + 3 * b] * load1(4));
+            vc4m_hat[0 * 6 + 3] = vc4m_hat[0 * 6 + 3] + cc3[k - 6] * (n[0 + 3 * a] * n[0 + 3 * b] * (n[0 + 3 * a] * n[1 + 3 * b] + n[0 + 3 * b] * n[1 + 3 * a]) * load1(2));
+            vc4m_hat[0 * 6 + 4] = vc4m_hat[0 * 6 + 4] + cc3[k - 6] * (n[0 + 3 * a] * n[0 + 3 * b] * (n[1 + 3 * a] * n[2 + 3 * b] + n[1 + 3 * b] * n[2 + 3 * a]) * load1(2));
+            vc4m_hat[0 * 6 + 5] = vc4m_hat[0 * 6 + 5] + cc3[k - 6] * (n[0 + 3 * a] * n[0 + 3 * b] * (n[0 + 3 * a] * n[2 + 3 * b] + n[0 + 3 * b] * n[2 + 3 * a]) * load1(2));
+            vc4m_hat[1 * 6 + 1] = vc4m_hat[1 * 6 + 1] + cc3[k - 6] * (n[1 + 3 * a] * n[1 + 3 * b] *  n[1 + 3 * a] * n[1 + 3 * b] * load1(4));
+            vc4m_hat[1 * 6 + 2] = vc4m_hat[1 * 6 + 2] + cc3[k - 6] * (n[1 + 3 * a] * n[1 + 3 * b] *  n[2 + 3 * a] * n[2 + 3 * b] * load1(4));
+            vc4m_hat[1 * 6 + 3] = vc4m_hat[1 * 6 + 3] + cc3[k - 6] * (n[1 + 3 * a] * n[1 + 3 * b] * (n[0 + 3 * a] * n[1 + 3 * b] + n[0 + 3 * b] * n[1 + 3 * a]) * load1(2));
+            vc4m_hat[1 * 6 + 4] = vc4m_hat[1 * 6 + 4] + cc3[k - 6] * (n[1 + 3 * a] * n[1 + 3 * b] * (n[1 + 3 * a] * n[2 + 3 * b] + n[1 + 3 * b] * n[2 + 3 * a]) * load1(2));
+            vc4m_hat[1 * 6 + 5] = vc4m_hat[1 * 6 + 5] + cc3[k - 6] * (n[1 + 3 * a] * n[1 + 3 * b] * (n[0 + 3 * a] * n[2 + 3 * b] + n[0 + 3 * b] * n[2 + 3 * a]) * load1(2));
+            vc4m_hat[2 * 6 + 2] = vc4m_hat[2 * 6 + 2] + cc3[k - 6] * (n[2 + 3 * a] * n[2 + 3 * b] *  n[2 + 3 * a] * n[2 + 3 * b] * load1(4));
+            vc4m_hat[2 * 6 + 3] = vc4m_hat[2 * 6 + 3] + cc3[k - 6] * (n[2 + 3 * a] * n[2 + 3 * b] * (n[0 + 3 * a] * n[1 + 3 * b] + n[0 + 3 * b] * n[1 + 3 * a]) * load1(2));
+            vc4m_hat[2 * 6 + 4] = vc4m_hat[2 * 6 + 4] + cc3[k - 6] * (n[2 + 3 * a] * n[2 + 3 * b] * (n[1 + 3 * a] * n[2 + 3 * b] + n[1 + 3 * b] * n[2 + 3 * a]) * load1(2));
+            vc4m_hat[2 * 6 + 5] = vc4m_hat[2 * 6 + 5] + cc3[k - 6] * (n[2 + 3 * a] * n[2 + 3 * b] * (n[0 + 3 * a] * n[2 + 3 * b] + n[0 + 3 * b] * n[2 + 3 * a]) * load1(2));
+            vc4m_hat[3 * 6 + 3] = vc4m_hat[3 * 6 + 3] + cc3[k - 6] * (n[0 + 3 * a] * n[1 + 3 * b] * (n[0 + 3 * a] * n[1 + 3 * b] + n[0 + 3 * b] * n[1 + 3 * a]) + n[0 + 3 * b] * n[1 + 3 * a] * (n[0 + 3 * b] * n[1 + 3 * a] + n[0 + 3 * a] * n[1 + 3 * b]));
+            vc4m_hat[3 * 6 + 4] = vc4m_hat[3 * 6 + 4] + cc3[k - 6] * (n[0 + 3 * a] * n[1 + 3 * b] * (n[1 + 3 * a] * n[2 + 3 * b] + n[1 + 3 * b] * n[2 + 3 * a]) + n[0 + 3 * b] * n[1 + 3 * a] * (n[1 + 3 * b] * n[2 + 3 * a] + n[1 + 3 * a] * n[2 + 3 * b]));
+            vc4m_hat[3 * 6 + 5] = vc4m_hat[3 * 6 + 5] + cc3[k - 6] * (n[0 + 3 * a] * n[1 + 3 * b] * (n[0 + 3 * a] * n[2 + 3 * b] + n[0 + 3 * b] * n[2 + 3 * a]) + n[0 + 3 * b] * n[1 + 3 * a] * (n[0 + 3 * b] * n[2 + 3 * a] + n[0 + 3 * a] * n[2 + 3 * b]));
+            vc4m_hat[4 * 6 + 4] = vc4m_hat[4 * 6 + 4] + cc3[k - 6] * (n[1 + 3 * a] * n[2 + 3 * b] * (n[1 + 3 * a] * n[2 + 3 * b] + n[1 + 3 * b] * n[2 + 3 * a]) + n[1 + 3 * b] * n[2 + 3 * a] * (n[1 + 3 * b] * n[2 + 3 * a] + n[1 + 3 * a] * n[2 + 3 * b]));
+            vc4m_hat[4 * 6 + 5] = vc4m_hat[4 * 6 + 5] + cc3[k - 6] * (n[1 + 3 * a] * n[2 + 3 * b] * (n[0 + 3 * a] * n[2 + 3 * b] + n[0 + 3 * b] * n[2 + 3 * a]) + n[1 + 3 * b] * n[2 + 3 * a] * (n[0 + 3 * b] * n[2 + 3 * a] + n[0 + 3 * a] * n[2 + 3 * b]));
+            vc4m_hat[5 * 6 + 5] = vc4m_hat[5 * 6 + 5] + cc3[k - 6] * (n[0 + 3 * a] * n[2 + 3 * b] * (n[0 + 3 * a] * n[2 + 3 * b] + n[0 + 3 * b] * n[2 + 3 * a]) + n[0 + 3 * b] * n[2 + 3 * a] * (n[0 + 3 * b] * n[2 + 3 * a] + n[0 + 3 * a] * n[2 + 3 * b]));
         }
         vc4m_hat[1 * 6 + 0] = vc4m_hat[0 * 6 + 1];
         vc4m_hat[2 * 6 + 0] = vc4m_hat[0 * 6 + 2];
