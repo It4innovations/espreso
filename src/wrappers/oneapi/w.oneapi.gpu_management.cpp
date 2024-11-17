@@ -163,13 +163,23 @@ namespace mgm {
 
     void * memalloc_hostpinned(size_t num_bytes)
     {
-        void * ptr = sycl::malloc_host(num_bytes, default_device->c);
+        if(num_bytes == 0) return nullptr;
+
+        // void * ptr = sycl::malloc_host(num_bytes, default_device->c);
+        // if(ptr == nullptr) {
+        //     eslog::error("memalloc_hostpinned: failed to allocate memory\n");
+        // }
+
+        void * ptr = malloc(num_bytes);
+
         return ptr;
     }
 
     void memfree_hostpinned(void * ptr)
     {
-        sycl::free(ptr, default_device->c);
+        // sycl::free(ptr, default_device->c);
+
+        free(ptr);
     }
 
     void submit_host_function(queue & q, const std::function<void(void)> & f)

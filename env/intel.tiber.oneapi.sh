@@ -48,7 +48,13 @@ then
     export ESPRESO_FORBID_MKL_PARDISO="1"
 fi
 export ESPRESO_RANK_TO_GPU_MAP="$(seq -s, 0 15)"
+# export ESPRESO_RANK_TO_GPU_MAP="0"
 # in benchmarks I will set the visible devices to only one for each hq worker
 
 export ZE_FLAT_DEVICE_HIERARCHY="FLAT"
-# export ESPRESO_SYCL_TARGETS="intel_gpu_pvc"
+
+#https://www.intel.com/content/www/us/en/docs/oneapi/optimization-guide-gpu/2024-2/ahead-of-time-compilation.html
+# export ESPRESO_SYCL_TARGETS="spir64_gen"
+# export ESPRESO_SYCL_BACKEND_OPTIONS="-device pvc"
+# icpx: warning: argument unused during compilation: '-Xs -device pvc' [-Wunused-command-line-argument]
+# i dont understand ...

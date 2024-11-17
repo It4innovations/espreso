@@ -4,6 +4,8 @@ import os
 def options(opt):
     sycl_targets_default = os.getenv("ESPRESO_SYCL_TARGETS")
     opt.compiler.add_option("--sycl-targets", action="store", type="string", default=sycl_targets_default, help="Targets to compile SYCL kernels for.")
+    sycl_backend_options_default = os.getenv("ESPRESO_SYCL_BACKEND_OPTIONS")
+    opt.compiler.add_option("--sycl-backend-options", action="store", type="string", default=sycl_backend_options_default, help="Options provided to the SYCL backend.")
 
 def configure(ctx):
     # assuming only intel oneapi for now
@@ -25,5 +27,7 @@ def configure(ctx):
         if ctx.options.sycl_targets != None:
             ctx.env.append_unique("CXXFLAGS_ONEAPI", [ "-fsycl-targets=" + ctx.options.sycl_targets ])
             ctx.env.append_unique("LINKFLAGS_ONEAPI", [ "-fsycl-targets=" + ctx.options.sycl_targets ])
+        if ctx.options.sycl_backend_options != None:
+            ctx.env.append_unique("CXXFLAGS_ONEAPI", [ "-Xs", ctx.options.sycl_backend_options ])
+            ctx.env.append_unique("LINKFLAGS_ONEAPI", [ "-Xs", ctx.options.sycl_backend_options ])
         ctx.env.append_unique("CXXFLAGS_ONEAPI", [ "-DESPRESO_RANK_TO_GPU_MAP=" + ctx.options.rank_to_gpu_map ])
-        
