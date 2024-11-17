@@ -360,7 +360,6 @@ template <size_t nodes, size_t gps> struct MaterialStructuralMechanicsKernel<nod
         break;
         case ElasticityPropertiesConfiguration::MATERIAL_MODEL::BONET_WOOD:
         {
-            size_t ggp = 10;
             SIMD sigmaY0 = element.ecf.sigma;
             SIMD Hisotropic = element.ecf.isotropicHardening;
             SIMD mu = element.ecf.youngModulus[0] / (load1(2.) + load1(2.) * element.ecf.poissonRatio[0]);
@@ -368,8 +367,6 @@ template <size_t nodes, size_t gps> struct MaterialStructuralMechanicsKernel<nod
 
             SIMD detF, invF[9];
             inv33(element.F, detF, invF);
-
-            if (gp == ggp) { printf("F\n"); print(3, 3, element.F); }
 
             SIMD alpha = load(this->alpha);
             SIMD invCp[9] = {
@@ -496,7 +493,6 @@ template <size_t nodes, size_t gps> struct MaterialStructuralMechanicsKernel<nod
                 element.vS[4] = element.vS[4] + sigma_diag[a] * n_trial[a * 3 + 1] * n_trial[a * 3 + 2];
                 element.vS[5] = element.vS[5] + sigma_diag[a] * n_trial[a * 3 + 0] * n_trial[a * 3 + 2];
             }
-            if (gp == ggp) { printf("s\n"); print(1, 6, element.vS); }
             SIMD SA[3 * 3], SB[3 * 3]; // element.vs --> element.s
             for (int i = 0; i < 3; ++i) {
                 for (int j = 0; j < 3; ++j) {
@@ -525,12 +521,9 @@ template <size_t nodes, size_t gps> struct MaterialStructuralMechanicsKernel<nod
             for (int i = 0; i < 6; ++i) {
                 element.vS[i] = detF * SA[voigt6ToMatrix33(i)];
             }
-            if (gp == ggp) { printf("S\n"); print(1, 6, element.vS); }
 
             n4_otimes_symallcomb(cc1, cc3, n_trial, element.vC4, gp); // element.vC4 is now element.vc4
             SIMD C4A[3 * 3 * 3 * 3], C4B[3 * 3 * 3 * 3]; // element.vc4 --> element.c4
-
-            if (gp == ggp) { printf("c4\n"); print(6, 6, element.vC4); }
 
             for (int i = 0; i < 3; ++i) {
                 for (int j = 0; j < 3; ++j) {
@@ -601,8 +594,6 @@ template <size_t nodes, size_t gps> struct MaterialStructuralMechanicsKernel<nod
                     element.vC4[i * 6 + j] = detF * C4A[voigt36ToMatrix3333(i * 6 + j)];
                 }
             }
-
-            if (gp == ggp) { printf("C4\n"); print(6, 6, element.vC4); }
 
             // move to the next GP
             this->alpha += SIMD::size;

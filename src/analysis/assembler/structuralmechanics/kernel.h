@@ -398,8 +398,6 @@ void runElementKernel(const step::Step &step, StructuralMechanicsElementOperator
             material.simd(element);
         }
 
-//        printf("K\n"); print(3 * nodes, 3 * nodes, element.K);
-
         for (size_t gp = 0; gp < gps; ++gp) {
             integration.simd(element, gp);
 
@@ -443,8 +441,6 @@ void runElementKernel(const step::Step &step, StructuralMechanicsElementOperator
                 sigma.simd(element, gp);
             }
         }
-
-//        printf("K\n"); print(3 * nodes, 3 * nodes, element.K);
 
         if (matrixCorotation.isactive) {
             matrixCorotation.simd(element);
