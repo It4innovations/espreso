@@ -421,7 +421,7 @@ namespace spblas {
             descr_matrix_csr_destroy(h, descr_trsv->d_matrix);
             descr_matrix_csr_create<T,I>(h, descr_trsv->d_matrix, matrix->nrows, matrix->ncols, matrix->nnz, matrix->fill);
             descr_matrix_csr_link_data_internal<T,I>(h, descr_trsv->d_matrix, (I*)matrix->rowptrs, (I*)matrix->colidxs, (T*)matrix->vals);
-            // onesparse::optimize_trsv(h->qq, _char_to_uplofill(matrix->fill), _char_to_operation(op), onemkl::diag::nonunit, descr_trsv->d_matrix);
+            onesparse::optimize_trsv(h->qq, _char_to_uplofill(matrix->fill), _char_to_operation(op), onemkl::diag::nonunit, descr_trsv->d_matrix->d);
         }
         if(stage == 'C') onesparse::trsv(h->qq, _char_to_uplofill(matrix->fill), _char_to_operation(op), onemkl::diag::nonunit, one, descr_trsv->d_matrix->d, (T*)rhs->vals, (T*)sol->vals);
     }
