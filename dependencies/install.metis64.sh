@@ -22,3 +22,6 @@ fi
 export CPATH="${METIS_ROOT}/$1_64/include:${CPATH}"
 export LIBRARY_PATH="${METIS_ROOT}/$1_64/lib:${METIS_ROOT}/$1_32/lib64:${LIBRARY_PATH}"
 export LD_LIBRARY_PATH="${METIS_ROOT}/$1_64/lib:${METIS_ROOT}/$1_32/lib64:${LD_LIBRARY_PATH}"
+echo "          CPATH+=${METIS_ROOT}/$1_64/include"
+echo "   LIBRARY_PATH+=${METIS_ROOT}/$1_64/lib"
+echo "LD_LIBRARY_PATH+=${METIS_ROOT}/$1_64/lib"

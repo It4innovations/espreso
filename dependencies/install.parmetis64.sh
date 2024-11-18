@@ -23,4 +23,6 @@ fi
 export CPATH="${PARMETIS_ROOT}/$1_64/include:${CPATH}"
 export LIBRARY_PATH="${PARMETIS_ROOT}/$1_64/lib:${PARMETIS_ROOT}/$1_32/lib64:${LIBRARY_PATH}"
 export LD_LIBRARY_PATH="${PARMETIS_ROOT}/$1_64/lib:${PARMETIS_ROOT}/$1_32/lib64:${LD_LIBRARY_PATH}"
-
+echo "          CPATH+=${PARMETIS_ROOT}/$1_64/include"
+echo "   LIBRARY_PATH+=${PARMETIS_ROOT}/$1_64/lib"
+echo "LD_LIBRARY_PATH+=${PARMETIS_ROOT}/$1_64/lib"
