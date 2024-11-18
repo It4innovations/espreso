@@ -28,6 +28,10 @@ struct MKLPDSSLinearSystemSolver: DirectLinearSystemSolver<T> {
 
     void update(step::Step &step)
     {
+        if (info::ecf->output.print_eigen_values) {
+            this->A.printEigenValues("A[SOL]", 20);
+        }
+
         if (this->A.updated || this->b.updated || this->dirichlet.updated) {
             this->setDirichlet();
             mklpdss.update(this->A);

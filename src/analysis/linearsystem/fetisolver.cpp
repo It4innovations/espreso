@@ -163,6 +163,9 @@ void FETILinearSystemSolver<T>::update(step::Step &step)
             }
         }
     }
+    if (info::ecf->output.print_eigen_values) {
+        A.printEigenValues("A[SOL]", 8);
+    }
     feti.updated.K = A.updated;
     feti.updated.B |= step.substep == 0;
     feti.update(step);

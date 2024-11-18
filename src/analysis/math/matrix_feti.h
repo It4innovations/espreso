@@ -102,6 +102,34 @@ public:
         }
     }
 
+    void printEigenValues(const char *name, size_t n) const
+    {
+        std::vector<Vector_Dense<T> > e(domains.size());
+        for (size_t d = 0; d < domains.size(); ++d) {
+            Matrix_Dense<T> m; m.resize(domains[d].nrows, domains[d].ncols); math::set(m, T{0});
+            e[d].resize(domains[d].nrows);
+
+            for (esint r = 0; r < domains[d].nrows; ++r) {
+                for (esint c = domains[d].rows[r]; c < domains[d].rows[r + 1]; ++c) {
+                    m.vals[r * domains[d].ncols + domains[d].cols[c - Indexing::CSR]] = domains[d].vals[c - Indexing::CSR];
+                }
+            }
+            math::lapack::get_eig_sym(m, e[d]);
+        }
+        Communication::serialize([&] () {
+            for (size_t d = 0; d < domains.size(); ++d) {
+                printf("%s:", name);
+                for (size_t v = 0; v < n; ++v) {
+                    printf(" %+.5e", e[d].vals[v]);
+                }
+                if (n < (size_t)e[d].size) {
+                    printf(" ... %+.5e", e[d].vals[e[d].size - 1]);
+                }
+                printf("\n");
+            }
+        });
+    }
+
     std::vector<Matrix_CSR<T, int> > domains;
     DecompositionFETI *decomposition;
 

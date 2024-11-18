@@ -109,6 +109,11 @@ OutputConfiguration::OutputConfiguration(const ECF *root)
 			.setdescription({ "Print assembler matrices for debugging." })
 			.setdatatype({ ECFDataType::NONNEGATIVE_INTEGER }));
 
+    print_eigen_values = 0;
+    REGISTER(print_eigen_values, ECFMetaData()
+            .setdescription({ "Print eigen values of matrices for debugging." })
+            .setdatatype({ ECFDataType::NONNEGATIVE_INTEGER }));
+
 	store_decomposition = 0;
 	REGISTER(store_decomposition, ECFMetaData()
 			.setdescription({ "Store decomposition." })

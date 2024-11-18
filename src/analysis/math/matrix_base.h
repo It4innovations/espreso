@@ -41,6 +41,8 @@ public:
 
     virtual void apply(const T &alpha, const Vector_Base<T> *in, const T &beta, Vector_Base<T> *out) =0;
 
+    virtual void printEigenValues(const char *name, size_t n) const =0;
+
     Matrix_Type type;
     Matrix_Shape shape;
     Mapping<T> mapping;

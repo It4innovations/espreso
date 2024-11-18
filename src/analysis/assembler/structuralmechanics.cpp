@@ -404,6 +404,10 @@ bool StructuralMechanics::analyze(const step::Step &step)
 
         elementKernels[i].initVelocity.activate(getExpression(i, settings.initial_velocity));
         elementKernels[i].velocity.activate(info::mesh->elements->nodes->cbegin() + ebegin, info::mesh->elements->nodes->cbegin() + eend, Results::initialVelocity->data.data());
+
+        if (info::ecf->output.print_eigen_values > 2) {
+            elementKernels[i].print.activate();
+        }
     }
 
     for (auto wall = configuration.fixed_wall.begin(); wall != configuration.fixed_wall.end(); ++wall) {
@@ -652,6 +656,15 @@ void StructuralMechanics::evaluate(const step::Step &step, const step::Time &tim
     reset(K, M, f, nf, dirichlet);
     assemble(SubKernel::ASSEMBLE);
     update(K, M, f, nf, dirichlet);
+
+    if (info::ecf->output.print_eigen_values > 1) {
+        if (M && M->updated) {
+            M->printEigenValues("M[ASM]", 8);
+        }
+        if (K && K->updated) {
+            K->printEigenValues("K[ASM]", 8);
+        }
+    }
 }
 
 void StructuralMechanics::evaluate(const step::Step &step, const step::Frequency &freq, Matrix_Base<double> *K, Matrix_Base<double> *M, Matrix_Base<double> *C, Vector_Base<double> *ref, Vector_Base<double> *imf, Vector_Base<double> *renf, Vector_Base<double> *imnf, Vector_Base<double> *reDirichlet, Vector_Base<double> *imDirichlet)

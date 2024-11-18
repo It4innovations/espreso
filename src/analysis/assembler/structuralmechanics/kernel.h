@@ -321,6 +321,7 @@ void runElementKernel(const step::Step &step, StructuralMechanicsElementOperator
     RHSFillerKernel<nodes> outReNRHS(operators.reNRHSfiller);
     RHSFillerKernel<nodes> outImRHS(operators.imRHSfiller);
     RHSFillerKernel<nodes> outImNRHS(operators.imRHSfiller);
+    PrintEigenValuesKernel eigvals(operators.print);
 
     struct {
         std::vector<ExternalNodeExpression<ndim, Element>*> node;
@@ -447,9 +448,11 @@ void runElementKernel(const step::Step &step, StructuralMechanicsElementOperator
         }
 
         if (outK.isactive) {
+            if (eigvals.isactive) eigvals.simd("K[ELM]", ndim * nodes, element.K, 8);
             outK.simd(element.K);
         }
         if (outM.isactive) {
+            if (eigvals.isactive) eigvals.simd("M[ELM]", ndim * nodes, element.M, 8);
             outM.simd(element.M);
         }
         if (outC.isactive) {

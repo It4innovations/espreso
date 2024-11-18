@@ -15,6 +15,7 @@
 #include "analysis/assembler/general/op.thickness.h"
 #include "analysis/assembler/general/op.thickness.h"
 #include "analysis/assembler/general/op.matrix.mass.h"
+#include "analysis/assembler/general/op.print.eigenvalues.h"
 #include "analysis/assembler/structuralmechanics/op.angularvelocity.h"
 #include "analysis/assembler/structuralmechanics/op.acceleration.h"
 #include "analysis/assembler/structuralmechanics/op.displacement.h"
@@ -57,6 +58,7 @@ struct StructuralMechanicsElementOperators {
     ElementCondition acceleration, angularVelocity;
     Sigma sigma;
     Stress stress;
+    PrintEigenValues print;
 
     DataFiller Kfiller, Mfiller, Cfiller, reRHSfiller, imRHSfiller, reNRHSfiller, imNRHSfiller;
 

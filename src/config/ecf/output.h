@@ -123,6 +123,7 @@ struct OutputConfiguration: public ECFDescription {
 	LOGGER logger;
 
 	size_t print_matrices, store_decomposition, print_precision;
+	size_t print_eigen_values;
 
 	FORMAT format;
 	MODE mode;

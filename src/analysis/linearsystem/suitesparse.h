@@ -28,6 +28,10 @@ struct SuiteSparseLinearSystemSolver: DirectLinearSystemSolver<T> {
 
     void update(step::Step &step)
     {
+        if (info::ecf->output.print_eigen_values) {
+            this->A.printEigenValues("A[SOL]", 8);
+        }
+
         if (this->A.updated || this->b.updated || this->dirichlet.updated) {
             this->setDirichlet();
             suitesparse.update(this->A);

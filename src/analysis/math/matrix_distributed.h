@@ -87,6 +87,29 @@ public:
         eslog::error("call empty function\n");
     }
 
+    void printEigenValues(const char *name, size_t n) const
+    {
+        if (info::mpi::size > 1) {
+            eslog::error("cannot print eigen values of matrix distributed to more MPI processes.\n");
+        }
+        Matrix_Dense<T> m; m.resize(cluster.nrows, cluster.ncols); math::set(m, T{0});
+        Vector_Dense<T> e; e.resize(cluster.nrows);
+        for (esint r = 0; r < cluster.nrows; ++r) {
+            for (esint c = cluster.rows[r]; c < cluster.rows[r + 1]; ++c) {
+                m.vals[r * cluster.ncols + cluster.cols[c - Indexing::CSR]] = cluster.vals[c - Indexing::CSR];
+            }
+        }
+        math::lapack::get_eig_sym(m, e);
+        printf("%s:", name);
+        for (size_t v = 0; v < n; ++v) {
+            printf(" %+.5e", e.vals[v]);
+        }
+        if (n < (size_t)e.size) {
+            printf(" ... %+.5e", e.vals[e.size - 1]);
+        }
+        printf("\n");
+    }
+
     Matrix_CSR<T, esint> cluster;
     DecompositionDirect *decomposition;
 
