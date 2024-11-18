@@ -91,7 +91,7 @@ bool _call(MKLPDSS<T> &mklpdss, esint phase)
 }
 
 template<typename T>
-void _info(const Matrix_Distributed<T> &A)
+static void _info(const Matrix_Distributed<T> &A)
 {
     eslog::info(" = LINEAR SOLVER :: MKL                                TYPE :: PARALLEL DIRECT SPARSE SOLVER = \n");
     switch (A.cluster.type) {

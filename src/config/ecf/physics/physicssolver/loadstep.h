@@ -11,6 +11,7 @@
 #include "config/ecf/linearsolver/mklpdss.h"
 #include "config/ecf/linearsolver/pardiso.h"
 #include "config/ecf/linearsolver/superlu.h"
+#include "config/ecf/linearsolver/suitesparse.h"
 #include "config/ecf/linearsolver/wsmp.h"
 
 namespace espreso {
@@ -112,6 +113,7 @@ struct LoadStepSolverConfiguration: public ECFDescription {
 		MKLPDSS,
 		PARDISO,
 		SUPERLU,
+		SUITESPARSE,
 		WSMP,
 		NONE
 	};
@@ -130,6 +132,7 @@ struct LoadStepSolverConfiguration: public ECFDescription {
 	MKLPDSSConfiguration mklpdss;
 	PARDISOConfiguration pardiso;
 	SuperLUConfiguration superlu;
+	SuiteSparseConfiguration suitesparse;
 	WSMPConfiguration wsmp;
 
 	LoadStepSolverConfiguration();
