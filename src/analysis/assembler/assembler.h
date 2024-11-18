@@ -105,7 +105,9 @@ static bool reset(T *t)
 template <typename T, typename... Other>
 static bool reset(T *t, Other... other)
 {
-    return reset(t) | reset(other...);
+    bool a = reset(t);
+    bool b = reset(other...);
+    return a || b;
 }
 
 template <typename T>

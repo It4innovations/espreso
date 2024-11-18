@@ -291,7 +291,7 @@ bool HeatTransfer::analyze()
                     faceKernels[r][i].htc.activate(&convection->second.heat_transfer_coefficient);
                     faceKernels[r][i].externalTemperature.activate(&convection->second.external_temperature);
                 }
-                if (faceKernels[r][i].heatFlow.isactive | faceKernels[r][i].heatFlux.isactive | faceKernels[r][i].htc.isactive) {
+                if (faceKernels[r][i].heatFlow.isactive || faceKernels[r][i].heatFlux.isactive || faceKernels[r][i].htc.isactive) {
                     faceKernels[r][i].externalHeat.activate();
                 }
 
@@ -629,7 +629,6 @@ void HeatTransfer::getInitialTemperature(Vector_Base<double> *x)
 
 void HeatTransfer::updateSolution(Vector_Distributed<Vector_Dense, double> *x)
 {
-    this->step = step;
     if (withBEM) {
         x->copyTo(&xBEM);
     }

@@ -728,6 +728,6 @@ void MortarContact<T>::update(const step::Step &step, FETI<T> &feti)
     }
 }
 
-template class MortarContact<double>;
+template struct MortarContact<double>;
 
 }

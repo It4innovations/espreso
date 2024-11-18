@@ -547,6 +547,8 @@ constexpr size_t getorder()
         case 125: return 5;
         case 216: return 6;
         case 343: return 7;
+        case 512: return 8;
+        default: return -1;
         }; break;
     case 2:
         switch (gps) {
@@ -557,6 +559,8 @@ constexpr size_t getorder()
         case  25: return 5;
         case  36: return 6;
         case  49: return 7;
+        case  64: return 8;
+        default: return -1;
         }; break;
     case 1:
         return gps;
@@ -654,7 +658,7 @@ struct BaseFunctions<Element::CODE::HEXA20   , ngps>: GaussPointsDegraded<BaseFu
 
 template<typename E> struct GaussPointsDegradedSetter<E, 2, 1>
 {
-    static void set(double N[E::nodes], double dN[E::nodes][1], double r)
+    static void set(double N[], double dN[][1], double r)
     {
         for (size_t n = 0; n < E::nodes; ++n) {
             N[n] = dN[n][0] = 0;
@@ -670,7 +674,7 @@ template<typename E> struct GaussPointsDegradedSetter<E, 2, 1>
 
 template<typename E> struct GaussPointsDegradedSetter<E, 3, 1>
 {
-    static void set(double N[E::nodes], double dN[E::nodes][1], double r)
+    static void set(double N[], double dN[][1], double r)
     {
         for (size_t n = 0; n < E::nodes; ++n) {
             N[n] = dN[n][0] = 0;
@@ -688,7 +692,7 @@ template<typename E> struct GaussPointsDegradedSetter<E, 3, 1>
 
 template<typename E> struct GaussPointsDegradedSetter<E, 4, 2>
 {
-    static void set(double N[E::nodes], double dN[E::nodes][2], double r, double s)
+    static void set(double N[], double dN[][2], double r, double s)
     {
         for (size_t n = 0; n < E::nodes; ++n) {
             N[n] = dN[n][0] = dN[n][1] = 0;
@@ -713,7 +717,7 @@ template<typename E> struct GaussPointsDegradedSetter<E, 4, 2>
 
 template<typename E> struct GaussPointsDegradedSetter<E, 8, 2>
 {
-    static void set(double N[E::nodes], double dN[E::nodes][2], double r, double s)
+    static void set(double N[], double dN[][2], double r, double s)
     {
         for (size_t n = 0; n < E::nodes; ++n) {
             N[n] = dN[n][0] = dN[n][1] = 0;
@@ -750,7 +754,7 @@ template<typename E> struct GaussPointsDegradedSetter<E, 8, 2>
 
 template<typename E> struct GaussPointsDegradedSetter<E, 8, 3>
 {
-    static void set(double N[E::nodes], double dN[E::nodes][3], double r, double s, double t)
+    static void set(double N[], double dN[][3], double r, double s, double t)
     {
         for (size_t n = 0; n < E::nodes; ++n) {
             N[n] = dN[n][0] = dN[n][1] = dN[n][2] = 0;
@@ -795,7 +799,7 @@ template<typename E> struct GaussPointsDegradedSetter<E, 8, 3>
 
 template<typename E> struct GaussPointsDegradedSetter<E, 20, 3>
 {
-    static void set(double N[E::nodes], double dN[E::nodes][3], double r, double s, double t)
+    static void set(double N[], double dN[][3], double r, double s, double t)
     {
         for (size_t n = 0; n < E::nodes; ++n) {
             N[n] = dN[n][0] = dN[n][1] = dN[n][2] = 0;

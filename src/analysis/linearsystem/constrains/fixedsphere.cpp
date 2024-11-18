@@ -364,6 +364,6 @@ void FixedSphere<T>::_store(const std::vector<Point> &coords, const std::vector<
     }
 }
 
-template class FixedSphere<double>;
+template struct FixedSphere<double>;
 
 }
