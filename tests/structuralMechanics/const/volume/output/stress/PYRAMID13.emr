@@ -2,4 +2,4 @@
 loadstep ;  substep ;         time ;  DISPLACEMENT  ;  DISPLACEMENT  ;  DISPLACEMENT  ;  VON_MISES_STRESS  ;  VON_MISES_STRESS  ;  VON_MISES_STRESS  ;
          ;          ;              ;      <MIN>     ;      <MAX>     ;    <AVERAGE>   ;        <MIN>       ;        <MAX>       ;      <AVERAGE>     ;
 
-       1 ;        1 ;     1.000000 ;   0.000000e+00 ;   1.802440e-01 ;   1.145277e-01 ;       1.185155e+05 ;       9.595105e+06 ;       1.570571e+06 ; 
+       1 ;        1 ;     1.000000 ;   0.000000e+00 ;   1.802239e-01 ;   1.144608e-01 ;       1.087389e+05 ;       9.708028e+06 ;       1.569726e+06 ; 

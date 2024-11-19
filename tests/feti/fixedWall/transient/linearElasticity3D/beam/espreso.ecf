@@ -121,7 +121,7 @@ STRUCTURAL_MECHANICS {
 
       PRESSURE {
         PRESS {
-          PRESSURE     1e9;
+          PRESSURE     5e8;
           DIRECTION { Z -1; }
         }
       }

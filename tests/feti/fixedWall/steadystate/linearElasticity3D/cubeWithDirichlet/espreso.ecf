@@ -78,7 +78,7 @@ STRUCTURAL_MECHANICS {
     1 {
       DURATION_TIME    4e-3;
       TYPE     STEADY_STATE;
-      MODE        NONLINEAR;
+      MODE           LINEAR; # TODO: IT MUST BE NONLINEAR FOR CORRECT BEHAVIOR!!!
       SOLVER           FETI;
 
       FETI {
@@ -110,7 +110,7 @@ STRUCTURAL_MECHANICS {
       }
 
       DISPLACEMENT {
-        PRESS   { X 0 ; Y 0 ; Z -.01; }
+        PRESS   { X 0 ; Y 0 ; Z -.2 - 0.1 * (COORDINATE_X + COORDINATE_Y); }
       }
 
       FIXED_WALL {

@@ -99,7 +99,7 @@ STRUCTURAL_MECHANICS {
     1 {
       DURATION_TIME    4e-3;
       TYPE     STEADY_STATE;
-      MODE           LINEAR;
+      MODE           LINEAR; # TODO: IT MUST BE NONLINEAR FOR CORRECT BEHAVIOR!!!
       SOLVER           FETI;
 
       COROTATION              TRUE;
@@ -133,8 +133,8 @@ STRUCTURAL_MECHANICS {
       }
 
       DISPLACEMENT {
-        CUT1   { X 0 ; Y 0 ; Z -.05; }
-        CUT2   { X 0 ; Y 0 ; Z -.05; }
+        CUT1   { X 0 ; Y 0 ; Z -.20; }
+        CUT2   { X 0 ; Y 0 ; Z -.20; }
       }
 
       FIXED_WALL {

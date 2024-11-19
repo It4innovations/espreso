@@ -31,7 +31,7 @@ struct HeatTransferGPC {
         TETRA10   = 15,
         PYRAMID13 = 14,
         PRISMA15  =  9,
-        HEXA20    =  8,
+        HEXA20    = 27,
     };
 };
 
