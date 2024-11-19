@@ -32,13 +32,13 @@ void TFETIOrthogonalSymmetric<T>::set(const step::Step &step)
 template<typename T>
 void TFETIOrthogonalSymmetric<T>::update(const step::Step &step)
 {
-    int reset = kernel.size() != feti.R1.size();
+    int reset = kernel.size() != feti.R1.size() || Gt.ncols != feti.lambdas.size;
     for (size_t i = 0; !reset && i < feti.R1.size(); ++i) {
         reset |= kernel[i].size != feti.R1[i].nrows;
     }
-    Communication::allReduce(&reset, nullptr, 1, MPITools::getType(reset).mpitype, MPI_SUM);
+    Communication::allReduce(&reset, nullptr, 1, MPITools::getType(reset).mpitype, MPI_MAX);
 
-    if (reset) {
+    if (reset) { // only different number of kernels
         Projector<T>::reset();
         domainOffset = GGtDataOffset = GGtDataSize = GGtNnz = 0;
         kernel.clear();
@@ -63,7 +63,6 @@ void TFETIOrthogonalSymmetric<T>::update(const step::Step &step)
             dinfo.push_back(DomainInfo((int)(domainOffset + d), koffset, feti.R1[d].nrows));
             koffset += feti.R1[d].nrows;
         }
-
         _computeDualGraph();
         _setG();
         _setGGt();
