@@ -88,6 +88,12 @@ void TFETIOrthogonalSymmetric<T>::update(const step::Step &step)
 template<typename T>
 void TFETIOrthogonalSymmetric<T>::_computeDualGraph()
 {
+    for (size_t d = 0; d < feti.R1.size(); ++d) {
+        dual.pushVertex(feti.decomposition->dbegin + d, feti.R1[d].nrows);
+    }
+    dual.initVertices();
+    dual.setFromDomains(feti.decomposition, feti.lambdas.cmap);
+
     dualGraph.clear();
     dualGraph.resize(dinfo.size());
     for (size_t i = 0; i < feti.lambdas.cmap.size(); ) {

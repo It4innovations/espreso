@@ -3,6 +3,7 @@
 #define SRC_FETI_PROJECTOR_TFETI_ORTHOGONAL_SYMMETRIC_H_
 
 #include "projector.h"
+#include "dualgraph.h"
 
 #include <map>
 
@@ -83,6 +84,8 @@ protected:
     std::vector<std::vector<DomainInfo> > dualGraph;
     std::map<int, NeighborDomainInfo> upinfo;
     std::vector<std::map<int, NeighborDomainInfo> > downinfo;
+
+    DualGraph dual;
 };
 
 }

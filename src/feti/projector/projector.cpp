@@ -2,6 +2,7 @@
 #include "projector.h"
 #include "hfeti.orthogonal.symmetric.h"
 #include "tfeti.orthogonal.symmetric.h"
+#include "tfeti.conjugate.symmetric.h"
 #include "basis/utilities/sysutils.h"
 #include "basis/utilities/utils.h"
 #include "esinfo/ecfinfo.h"
@@ -23,6 +24,9 @@ Projector<T>* Projector<T>::create(FETI<T> &feti, const step::Step &step)
         case FETIConfiguration::PROJECTOR::ORTHOGONAL:
             eslog::info(" = PROJECTOR                                                             EXPLICIT ORTHOGONAL = \n");
             return new TFETIOrthogonalSymmetric<T>(feti);
+        case FETIConfiguration::PROJECTOR::CONJUGATE:
+            eslog::info(" = PROJECTOR                                                              EXPLICIT CONJUGATE = \n");
+            return new TFETIConjugateSymmetric<T>(feti);
         default: return nullptr;
         }
     } break;
@@ -35,6 +39,11 @@ Projector<T>* Projector<T>::create(FETI<T> &feti, const step::Step &step)
             } else {
                 eslog::info(" = PROJECTOR                                                      HYBRID EXPLICIT ORTHOGONAL = \n");
                 return new HFETIOrthogonalSymmetric<T>(feti);
+            }
+        case FETIConfiguration::PROJECTOR::CONJUGATE:
+            if (feti.configuration.projector_opt & FETIConfiguration::PROJECTOR_OPT::FULL) {
+                eslog::info(" = PROJECTOR                                                         FULL EXPLICIT CONJUGATE = \n");
+                return new TFETIConjugateSymmetric<T>(feti);
             }
         default: return nullptr;
         }
