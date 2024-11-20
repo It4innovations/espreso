@@ -213,7 +213,7 @@ template <size_t nodes, size_t gps> struct MaterialStructuralMechanicsKernel<nod
                     JX[5] = JX[5] + dNZ * coordsY;
                     JX[8] = JX[8] + dNZ * coordsZ;
                 }
-                Ve = Ve + determinant33(JX);
+                Ve = Ve + load1(element.w[gp]) * determinant33(JX);
 
                 SIMD Jx[9];
                 for (size_t n = 0; n < nodes; ++n) {
@@ -235,15 +235,16 @@ template <size_t nodes, size_t gps> struct MaterialStructuralMechanicsKernel<nod
                 }
                 SIMD detJx, invJx[9];
                 inv33(Jx, detJx, invJx);
-                ve = ve + detJx;
+                SIMD detJxW = detJx * load1(element.w[gp]);
+                ve = ve + detJxW;
 
                 for (size_t n = 0; n < nodes; ++n) {
                     SIMD dNX = load1(element.dN[gp][n][0]);
                     SIMD dNY = load1(element.dN[gp][n][1]);
                     SIMD dNZ = load1(element.dN[gp][n][2]);
-                    mean_dNdx[0 * nodes + n] = mean_dNdx[0 * nodes + n] + detJx * (invJx[0] * dNX + invJx[3] * dNY + invJx[6] * dNZ);
-                    mean_dNdx[1 * nodes + n] = mean_dNdx[1 * nodes + n] + detJx * (invJx[1] * dNX + invJx[4] * dNY + invJx[7] * dNZ);
-                    mean_dNdx[2 * nodes + n] = mean_dNdx[2 * nodes + n] + detJx * (invJx[2] * dNX + invJx[5] * dNY + invJx[8] * dNZ);
+                    mean_dNdx[0 * nodes + n] = mean_dNdx[0 * nodes + n] + detJxW * (invJx[0] * dNX + invJx[3] * dNY + invJx[6] * dNZ);
+                    mean_dNdx[1 * nodes + n] = mean_dNdx[1 * nodes + n] + detJxW * (invJx[1] * dNX + invJx[4] * dNY + invJx[7] * dNZ);
+                    mean_dNdx[2 * nodes + n] = mean_dNdx[2 * nodes + n] + detJxW * (invJx[2] * dNX + invJx[5] * dNY + invJx[8] * dNZ);
                 }
             }
             SIMD Jbar = ve / Ve;
