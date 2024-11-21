@@ -1,5 +1,8 @@
 
 #include "structuralmechanics.steadystate.nonlinear.h"
+#include "structuralmechanics.steadystate.linear.h"
+#include "structuralmechanics.transient.linear.h"
+#include "structuralmechanics.transient.nonlinear.h"
 
 #include "config/ecf/physics/structuralmechanics.h"
 #include "esinfo/meshinfo.h"
@@ -70,12 +73,41 @@ bool StructuralMechanicsSteadyStateNonLinear::analyze(step::Step &step)
 
 bool StructuralMechanicsSteadyStateNonLinear::run(step::Step &step, Physics *prev)
 {
+    time.start = 0;
+    time.shift = configuration.duration_time / configuration.nonlinear_solver.substeps;
+    U->set(0);
     if (prev) {
         bool correct = false;
+        if (dynamic_cast<StructuralMechanicsTransientLinear*>(prev)) {
+            correct = true;
+            StructuralMechanicsTransientLinear* _prev = dynamic_cast<StructuralMechanicsTransientLinear*>(prev);
+            time.start = time.previous = time.current = _prev->time.final;
+            U->copy(_prev->U);
+        }
+        if (dynamic_cast<StructuralMechanicsTransientNonLinear*>(prev)) {
+            correct = true;
+            StructuralMechanicsTransientNonLinear* _prev = dynamic_cast<StructuralMechanicsTransientNonLinear*>(prev);
+            time.start = time.previous = time.current = _prev->time.final;
+            U->copy(_prev->U);
+        }
+        if (dynamic_cast<StructuralMechanicsSteadyStateLinear*>(prev)) {
+            correct = true;
+            StructuralMechanicsSteadyStateLinear* _prev = dynamic_cast<StructuralMechanicsSteadyStateLinear*>(prev);
+            time.start = time.previous = time.current = _prev->time.final;
+            U->copy(_prev->U);
+        }
+        if (dynamic_cast<StructuralMechanicsSteadyStateNonLinear*>(prev)) {
+            correct = true;
+            StructuralMechanicsSteadyStateNonLinear* _prev = dynamic_cast<StructuralMechanicsSteadyStateNonLinear*>(prev);
+            time.start = time.previous = time.current = _prev->time.final;
+            U->copy(_prev->U);
+        }
         if (!correct) {
             eslog::globalerror("Incompatible load steps.\n");
         }
+        assembler.updateSolution(U);
     }
+    time.final = time.start + configuration.duration_time;
 
     assembler.connect(K, nullptr, f, R, dirichlet);
 
@@ -114,11 +146,7 @@ bool StructuralMechanicsSteadyStateNonLinear::run(step::Step &step, Physics *pre
     }
     eslog::info("      =================================================================================== \n\n");
 
-    time.start = 0;
-    time.shift = configuration.duration_time / configuration.nonlinear_solver.substeps;
-    time.final = configuration.duration_time;
     step.substeps = configuration.nonlinear_solver.substeps;
-    U->set(0);
     bool converged = true;
     for (step.substep = 0; converged && step.substep < configuration.nonlinear_solver.substeps; ++step.substep) {
         if (configuration.nonlinear_solver.substeps > 1) {
@@ -129,7 +157,7 @@ bool StructuralMechanicsSteadyStateNonLinear::run(step::Step &step, Physics *pre
 
         double start = eslog::time();
         step.iteration = 0;
-        time.current = (step.substep + 1) * time.shift;
+        time.current += time.shift;
         if (step.substep + 1 == configuration.nonlinear_solver.substeps) {
             time.current = time.final;
         }
