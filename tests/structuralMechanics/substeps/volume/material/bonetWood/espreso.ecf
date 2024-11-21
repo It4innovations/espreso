@@ -1,0 +1,206 @@
+# ESPRESO Configuration File
+
+DEFAULT_ARGS {
+  0    HEXA8;
+
+  1        1;
+  2        1;
+  3        1;
+
+  4        1;
+  5        1;
+  6        2;
+
+  7        2;
+  8        4;
+  9        8;
+
+  10 MKLPDSS;
+}
+
+INPUT_TYPE              GENERATOR;
+PHYSICS      STRUCTURAL_MECHANICS;
+
+GENERATOR {
+  SHAPE   GRID;
+
+  GRID {
+    START_X                    0;
+    START_Y                    0;
+    START_Z                   -2;
+
+    LENGTH_X                   1;
+    LENGTH_Y                   1;
+    LENGTH_Z                   4;
+
+    PROJECTION_X      (X + 1) * cos((Y / 2) * PI) / 2;
+    PROJECTION_Y      (X + 1) * sin((Y / 2) * PI) / 2;
+
+    NODES {
+      X0   <0 , 0> <0 , 1> <-2 ,  2>;
+      Y0   <0 , 1> <0 , 0> <-2 ,  2>;
+      Y1   <0 , 1> <1 , 1> <-2 ,  2>;
+      Z0   <0 , 1> <0 , 1> <-2 , -2>;
+      Z1   <0 , 1> <0 , 1> < 2 ,  2>;
+      Z0X  <0 ,.1> <0 , 1> <-2 , -2>;
+      Z1X  <0 ,.1> <0 , 1> < 2 ,  2>;
+    }
+
+    ELEMENT_TYPE          [ARG0];
+
+    CLUSTERS_X            [ARG1];
+    CLUSTERS_Y            [ARG2];
+    CLUSTERS_Z            [ARG3];
+
+    DOMAINS_X             [ARG4];
+    DOMAINS_Y             [ARG5];
+    DOMAINS_Z             [ARG6];
+
+    ELEMENTS_X            [ARG7];
+    ELEMENTS_Y            [ARG8];
+    ELEMENTS_Z            [ARG9];
+  }
+}
+
+STRUCTURAL_MECHANICS {
+  LOAD_STEPS   2;
+
+  MATERIALS {
+    1 {
+      DENS                    15220;
+
+      ELASTICITY_PROPERTIES {
+        MATERIAL_MODEL   BONET_WOOD;
+
+        MIXY                    0.3;
+        EX                     7E10;
+
+        SIGMA   1e08 + 1e8 * ABS(COORDINATE_Z);
+        HISOTROPIC           2.4e09;
+      }
+    }
+  }
+
+  MATERIAL_SET {
+    ALL_ELEMENTS   1;
+  }
+
+  LOAD_STEPS_SETTINGS {
+    1 {
+      DURATION_TIME  1e-3;
+      TYPE   STEADY_STATE;
+      MODE      NONLINEAR;
+      SOLVER      MKLPDSS;
+
+      FETI {
+        METHOD          TOTAL_FETI;
+        PRECONDITIONER   DIRICHLET;
+        ITERATIVE_SOLVER       PCG;
+        REGULARIZATION    ANALYTIC;
+      }
+
+      TRANSIENT_SOLVER {
+        TIME_STEP        1e-3;
+      }
+
+      NONLINEAR_SOLVER {
+        CHECK_DISPLACEMENT                 TRUE;
+        CHECK_FORCES                      FALSE;
+        REQUESTED_DISPLACEMENT_RESIDUAL    1e-5;
+        REQUESTED_FORCES_RESIDUAL          1e-5;
+
+        MAX_ITERATIONS                       30;
+        STEPPING                           TRUE;
+        SUBSTEPS                              5;
+      }
+ 
+      DISPLACEMENT {
+        X0   { X 0; Y 0; }
+        Y0   { Y 0; }
+        Y1   { X 0; }
+        Z0   { Z -.01 * SUBSTEP; }
+        Z1   { Z  .01 * SUBSTEP; }
+      }
+    }
+
+    2 {
+      DURATION_TIME  1e-3;
+      TYPE   STEADY_STATE;
+      MODE      NONLINEAR;
+      SOLVER      MKLPDSS;
+
+      FETI {
+        METHOD          TOTAL_FETI;
+        PRECONDITIONER   DIRICHLET;
+        ITERATIVE_SOLVER       PCG;
+        REGULARIZATION    ANALYTIC;
+      }
+
+      TRANSIENT_SOLVER {
+        TIME_STEP        1e-3;
+      }
+
+      NONLINEAR_SOLVER {
+        CHECK_DISPLACEMENT                 TRUE;
+        CHECK_FORCES                      FALSE;
+        REQUESTED_DISPLACEMENT_RESIDUAL    1e-5;
+        REQUESTED_FORCES_RESIDUAL          1e-5;
+
+        MAX_ITERATIONS                       30;
+        STEPPING                           TRUE;
+        SUBSTEPS                              5;
+      }
+ 
+      DISPLACEMENT {
+        X0   { X 0; Y 0; }
+        Y0   { Y 0; }
+        Y1   { X 0; }
+        Z0   { Z -.01 * (1 - SUBSTEP); }
+        Z1   { Z  .01 * (1 - SUBSTEP); }
+
+#        THIS IS CORRECT
+#        Z0   { Z -.01 - .01 * SUBSTEP; }
+#        Z1   { Z  .01 + .01 * SUBSTEP; }
+      }
+    }
+  }
+}
+
+OUTPUT {
+#  RESULTS_STORE_FREQUENCY            NEVER;
+  MONITORS_STORE_FREQUENCY   EVERY_SUBSTEP;
+
+  STORE_RESULTS         ALL;
+
+  MONITORING {
+    1 {
+      REGION        ALL_NODES;
+      STATISTICS          MIN;
+      PROPERTY   DISPLACEMENT;
+    }
+
+    2 {
+      REGION        ALL_NODES;
+      STATISTICS          MAX;
+      PROPERTY   DISPLACEMENT;
+    }
+
+    3 {
+      REGION        ALL_NODES;
+      STATISTICS          AVG;
+      PROPERTY   DISPLACEMENT;
+    }
+
+    4 {
+      REGION               Y0;
+      STATISTICS          MAX;
+      PROPERTY DISPLACEMENT_Y;
+    }
+
+    5 {
+      REGION               Y1;
+      STATISTICS          MAX;
+      PROPERTY DISPLACEMENT_X;
+    }
+  }
+}

@@ -34,8 +34,6 @@ GENERATOR {
     LENGTH_Z                   2;
 
     NODES {
-      X0   <0 , 0> <0 , 1> <0 , 2>;
-      Y0   <0 , 1> <0 , 0> <0 , 2>;
       Z0   <0 , 1> <0 , 1> <0 , 0>;
       Z1   <0 , 1> <0 , 1> <2 , 2>;
     }
@@ -99,16 +97,12 @@ STRUCTURAL_MECHANICS {
         REQUESTED_DISPLACEMENT_RESIDUAL    1e-5;
         REQUESTED_FORCES_RESIDUAL          1e-5;
 
-        MAX_ITERATIONS                       10;
-        STEPPING                          FALSE;
-        SUBSTEPS                             10;
+        MAX_ITERATIONS                       15;
       }
  
       DISPLACEMENT {
-        X0   { X 0; }
-        Y0   { Y 0; }
-        Z0   { X 0; Y 0; Z 0; }
-        Z1   { Z 0.1; }
+        Z0   { X 0; Y 0; Z .00; }
+        Z1   { X 0; Y 0; Z .1; }
       }
     }
   }
