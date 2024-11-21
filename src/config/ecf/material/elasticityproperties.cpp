@@ -231,6 +231,14 @@ bool espreso::ElasticityPropertiesConfiguration::needCoordinates() const
 //        }
 //    }
 
+    if (sigma.evaluator && sigma.evaluator->needCoordinates()) {
+        return true;
+    }
+
+    if (Hisotropic.evaluator && Hisotropic.evaluator->needCoordinates()) {
+        return true;
+    }
+
     return false;
 }
 
@@ -256,6 +264,14 @@ bool espreso::ElasticityPropertiesConfiguration::needTemperature() const
 //            return true;
 //        }
 //    }
+
+    if (sigma.evaluator && sigma.evaluator->needTemperature()) {
+        return true;
+    }
+
+    if (Hisotropic.evaluator && Hisotropic.evaluator->needTemperature()) {
+        return true;
+    }
     return false;
 }
 
