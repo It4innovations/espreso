@@ -308,6 +308,7 @@ done
 echo
 echo "run workers using:"
 echo "    ./benchmarks/dualop_gpu_options/tiber_run_hqworkers.sh"
+echo "inside tmux"
 echo
 
 echo "number of jobs: ${id_num}"

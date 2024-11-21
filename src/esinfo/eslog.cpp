@@ -1,4 +1,5 @@
 
+#include <mutex>
 #include "eslog.hpp"
 #include "basis/logging/logger.h"
 #include "basis/logging/timelogger.h"
@@ -300,6 +301,9 @@ void internalFailure(const char* msg)
 
 void error(const char* msg)
 {
+	static std::mutex mtx;
+	std::lock_guard<std::mutex> lock(mtx);
+
 	logger->error(msg);
 	utils::printStack();
 	fflush(stderr);

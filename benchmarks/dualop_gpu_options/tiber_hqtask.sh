@@ -29,7 +29,14 @@ transpose_where="${24}"
 dualoperator="${25}"
 shift 3
 
+if [ -f "${output_path}/finished" ]
+then
+    exit 0
+fi
+
+rm -rf "${output_path}"
 mkdir -p "${output_path}"
+touch "${output_path}/started"
 
 infofile="${output_path}/info.txt"
 echo -n > "${infofile}"
@@ -71,5 +78,7 @@ timeout -v 300s bash -c "${command}" 2> "${output_path}/timeout.txt"
 exitcode=$?
 
 rm -f core*
+
+touch "${output_path}/finished"
 
 exit ${exitcode}

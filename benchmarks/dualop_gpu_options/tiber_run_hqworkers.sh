@@ -59,7 +59,7 @@ do
     export ONEAPI_DEVICE_SELECTOR="level_zero:${ii}"
     outfile="${workers_outdir_root}/last/worker${i}_out.txt"
     errfile="${workers_outdir_root}/last/worker${i}_err.txt"
-    numactl -C "${startcore}-${endcore}" "${HQBIN}" worker start --time-limit=168h --idle-timeout=1m > "${outfile}" 2> "${errfile}" &
+    numactl -C "${startcore}-${endcore}" "${HQBIN}" worker start --time-limit=168h --idle-timeout=10m > "${outfile}" 2> "${errfile}" &
     sleep 1
 done
 

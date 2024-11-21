@@ -47,8 +47,8 @@ if [ "${cpu_spsolver}" == "suitesparse" ]
 then
     export ESPRESO_FORBID_MKL_PARDISO="1"
 fi
-export ESPRESO_RANK_TO_GPU_MAP="$(seq -s, 0 15)"
-# export ESPRESO_RANK_TO_GPU_MAP="0"
+# export ESPRESO_RANK_TO_GPU_MAP="$(seq -s, 0 15)"
+export ESPRESO_RANK_TO_GPU_MAP="0"
 # in benchmarks I will set the visible devices to only one for each hq worker
 
 export ZE_FLAT_DEVICE_HIERARCHY="FLAT"
