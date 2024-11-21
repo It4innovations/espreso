@@ -14,7 +14,7 @@ then
 fi
 
 slurm_outdir_root="${basedir}/slurm_outerr"
-if [[ ! -d "${slurm_outdir_root}"   ||   ! ( -L "${slurm_outdir_root}" && -d "${slurm_outdir_root}" ) ]]
+if [[ ! -d "${slurm_outdir_root}" ]]
 then
     echo "Slurm output directory '${slurm_outdir_root}' does not exist"
     echo "Please create it"
@@ -22,7 +22,7 @@ then
 fi
 
 espreso_outdir_root="${basedir}/espreso_results"
-if [[ ! -d "${espreso_outdir_root}"   ||   ! ( -L "${espreso_outdir_root}" && -d "${espreso_outdir_root}" ) ]]
+if [[ ! -d "${espreso_outdir_root}" ]]
 then
     echo "Espreso output directory '${espreso_outdir_root}' does not exist"
     echo "Please create it"
@@ -30,7 +30,7 @@ then
 fi
 
 hq_outdir_root="${basedir}/hq_outerr"
-if [[ ! -d "${hq_outdir_root}"   ||   ! ( -L "${hq_outdir_root}" && -d "${hq_outdir_root}" ) ]]
+if [[ ! -d "${hq_outdir_root}" ]]
 then
     echo "HyperQueue output directory '${hq_outdir_root}' does not exist"
     echo "Please create it"
