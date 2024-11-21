@@ -160,7 +160,7 @@ template <size_t nodes, size_t gps> struct MaterialStructuralMechanicsKernel<nod
     : MaterialStructuralMechanics(base),
       invCp(base.invCp.data()),
       alpha(base.alpha.data()),
-      save(action == SubKernel::SOLUTION)
+      save(false)
     {
         switch (configuration->elasticity_properties.material_model) {
         case ElasticityPropertiesConfiguration::MATERIAL_MODEL::KIRCHHOFF:
@@ -178,6 +178,12 @@ template <size_t nodes, size_t gps> struct MaterialStructuralMechanicsKernel<nod
 
     double *invCp, *alpha;
     bool save;
+
+    void setActiveness(Action action)
+    {
+        save = action == SubKernel::Action::SOLUTION;
+        SubKernel::setActiveness(action);
+    }
 
     template <typename Element>
     void simd(Element &element)
@@ -247,6 +253,27 @@ template <size_t nodes, size_t gps> struct MaterialStructuralMechanicsKernel<nod
                     mean_dNdx[2 * nodes + n] = mean_dNdx[2 * nodes + n] + detJxW * (invJx[2] * dNX + invJx[5] * dNY + invJx[8] * dNZ);
                 }
             }
+//            for (size_t s = 0; s < SIMD::size; ++s) {
+//                if (ve[s] < 0) {
+//                    printf("NEGATIVE\n");
+//                    std::ofstream os("negative.vtk");
+//                    os << "# vtk DataFile Version 2.0\n";
+//                    os << "EXAMPLE\n";
+//                    os << "ASCII\n";
+//                    os << "DATASET UNSTRUCTURED_GRID\n";
+//                    os << "POINTS 8 float\n";
+//                    for (size_t n = 0; n < nodes; ++n) {
+//                        SIMD coordsX = element.coords.node[n][0] + element.displacement[n][0];
+//                        SIMD coordsY = element.coords.node[n][1] + element.displacement[n][1];
+//                        SIMD coordsZ = element.coords.node[n][2] + element.displacement[n][2];
+//                        os << coordsX[s] << " " << coordsY[s] << " " << coordsZ[s] << "\n";
+//                    }
+//                    os << "CELLS 1 9\n";
+//                    os << "8 0 1 2 3 4 5 6 7\n";;
+//                    os << "CELL_TYPES 1\n";
+//                    os << "12\n";
+//                }
+//            }
             SIMD Jbar = ve / Ve;
             divJbar = load1(1) / Jbar;
             logJbarDivJbar = log(Jbar) * divJbar;
