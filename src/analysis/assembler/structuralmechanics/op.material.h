@@ -42,15 +42,17 @@ struct MaterialStructuralMechanics: Material {
         case ElasticityPropertiesConfiguration::MATERIAL_MODEL::NEO_HOOKEAN_CMP:
             break;
         case ElasticityPropertiesConfiguration::MATERIAL_MODEL::BONET_WOOD:
-            invCp.resize(chunks * gps * SIMD::size * 6 + SIMD::size);
-            alpha.resize(chunks * gps * SIMD::size * 1 + SIMD::size);
-            double *_invCp = utils::getAligned(SIMD::size, invCp);
-            for (size_t c = 0; c < chunks; ++c) {
-                for (size_t i = 0; i < gps; ++i) {
-                    for (size_t s = 0; s < SIMD::size; ++s) { // eye in Voigh notation
-                        _invCp[c * gps * SIMD::size * 6 + i * SIMD::size * 6 + 0 * SIMD::size + s] = 1;
-                        _invCp[c * gps * SIMD::size * 6 + i * SIMD::size * 6 + 1 * SIMD::size + s] = 1;
-                        _invCp[c * gps * SIMD::size * 6 + i * SIMD::size * 6 + 2 * SIMD::size + s] = 1;
+            if (invCp.empty()) {
+                invCp.resize(chunks * gps * SIMD::size * 6 + SIMD::size);
+                alpha.resize(chunks * gps * SIMD::size * 1 + SIMD::size);
+                double *_invCp = utils::getAligned(SIMD::size, invCp);
+                for (size_t c = 0; c < chunks; ++c) {
+                    for (size_t i = 0; i < gps; ++i) {
+                        for (size_t s = 0; s < SIMD::size; ++s) { // eye in Voigh notation
+                            _invCp[c * gps * SIMD::size * 6 + i * SIMD::size * 6 + 0 * SIMD::size + s] = 1;
+                            _invCp[c * gps * SIMD::size * 6 + i * SIMD::size * 6 + 1 * SIMD::size + s] = 1;
+                            _invCp[c * gps * SIMD::size * 6 + i * SIMD::size * 6 + 2 * SIMD::size + s] = 1;
+                        }
                     }
                 }
             }
@@ -61,7 +63,7 @@ struct MaterialStructuralMechanics: Material {
     StructuralMechanicsGlobalSettings::ELEMENT_BEHAVIOUR behaviour;
     bool nonlinear;
 
-    std::vector<double> invCp, alpha;
+    static std::vector<double> invCp, alpha;
 };
 
 template <size_t nodes, size_t gps, size_t ndim> struct MaterialStructuralMechanicsKernel;
@@ -274,6 +276,35 @@ template <size_t nodes, size_t gps> struct MaterialStructuralMechanicsKernel<nod
 //                    os << "12\n";
 //                }
 //            }
+//            if (step.iteration == 0) {
+//                for (size_t s = 0; s < SIMD::size; ++s) {
+//                    std::ofstream os("alpha_" + std::to_string(chunk) + "_" + std::to_string(s) + ".txt", std::ofstream::app);
+//                    os << std::showpos;
+//                    os << step.loadstep << " X " << step.substep << " X " << step.iteration << "\n";
+//                    for (size_t gp = 0; gp < gps; ++gp) {
+//                        os << std::setw(5) << std::scientific << this->alpha[gp * SIMD::size + s] << " ";
+//                    }
+//                    os << "\n";
+//                }
+//                for (size_t s = 0; s < SIMD::size; ++s) {
+//                    std::ofstream os("invCp_" + std::to_string(chunk) + "_" + std::to_string(s) + ".txt", std::ofstream::app);
+//                    os << std::showpos;
+//                    os << step.loadstep << " X " << step.substep << " X " << step.iteration << "\n";
+//                    for (int r = 0; r < 3; ++r) {
+//                        for (size_t gp = 0; gp < gps; ++gp) {
+//    //                        os << std::setw(5) << std::scientific << this->alpha + gp * SIMD::size + s << "\n";
+//                            SIMD invCp[9] = {
+//                                    load(this->invCp + 0 * SIMD::size + gp * 6 * SIMD::size), load(this->invCp + 3 * SIMD::size + gp * 6 * SIMD::size), load(this->invCp + 5 * SIMD::size + gp * 6 * SIMD::size),
+//                                    load(this->invCp + 3 * SIMD::size + gp * 6 * SIMD::size), load(this->invCp + 1 * SIMD::size + gp * 6 * SIMD::size), load(this->invCp + 4 * SIMD::size + gp * 6 * SIMD::size),
+//                                    load(this->invCp + 5 * SIMD::size + gp * 6 * SIMD::size), load(this->invCp + 4 * SIMD::size + gp * 6 * SIMD::size), load(this->invCp + 2 * SIMD::size + gp * 6 * SIMD::size)
+//                            };
+//                            os << std::setw(5) << std::scientific << invCp[r * 3 + 0][s] << " " << invCp[r * 3 + 1][s] << " " << invCp[r * 3 + 2][s] << " | ";
+//                        }
+//                        os << "\n";
+//                    }
+//                    os << "\n";
+//                }
+//            }
             SIMD Jbar = ve / Ve;
             divJbar = load1(1) / Jbar;
             logJbarDivJbar = log(Jbar) * divJbar;
@@ -430,6 +461,7 @@ template <size_t nodes, size_t gps> struct MaterialStructuralMechanicsKernel<nod
                     load1(2) * mu * log(lambda_trial[1]) - load1(2/3.) * mu * log(detF),
                     load1(2) * mu * log(lambda_trial[2]) - load1(2/3.) * mu * log(detF)
             };
+
             SIMD norm_tau_trial_dev = sqrt(tau_trial_devdiag[0] * tau_trial_devdiag[0] + tau_trial_devdiag[1] * tau_trial_devdiag[1] + tau_trial_devdiag[2] * tau_trial_devdiag[2]);
             SIMD f_trial = load1(std::sqrt(3/2.)) * norm_tau_trial_dev - (sigmaY0 * detF + Hisotropic * alpha);
             double eye3_13[9] = { 2/3., -1/3., -1/3., -1/3., 2/3., -1/3., -1/3., -1/3., 2/3. };

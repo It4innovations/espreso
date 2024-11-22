@@ -14,7 +14,7 @@
 using namespace espreso;
 
 HeatSteadyStateLinear::HeatSteadyStateLinear(HeatTransferConfiguration &settings, HeatTransferLoadStepConfiguration &configuration)
-: settings(settings), configuration(configuration), assembler{nullptr, settings, configuration}, K{}, f{}, x{}, dirichlet{}, pattern{}, solver{}
+: settings(settings), configuration(configuration), assembler{settings, configuration}, K{}, f{}, x{}, dirichlet{}, pattern{}, solver{}
 {
 
 }
@@ -38,7 +38,7 @@ bool HeatSteadyStateLinear::analyze(step::Step &step)
     eslog::info(" ============================================================================================= \n");
 
     step.type = step::TYPE::TIME;
-    if (!assembler.analyze()) {
+    if (!assembler.analyze(step)) {
         return false;
     }
     info::mesh->output->updateMonitors(step);
@@ -116,7 +116,7 @@ bool HeatSteadyStateLinear::run(step::Step &step, Physics *prev)
 
     x->copy(solver->x);
     storeSolution(step);
-    assembler.updateSolution(x);
+    assembler.updateSolution(step, x);
     info::mesh->output->updateSolution(step, time);
     eslog::info("       = PROCESS SOLUTION                                                   %8.3f s = \n", eslog::time() - solution);
     eslog::info("       = ----------------------------------------------------------------------------- = \n");

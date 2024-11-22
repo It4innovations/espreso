@@ -17,7 +17,7 @@
 using namespace espreso;
 
 StructuralMechanicsTransientNonLinear::StructuralMechanicsTransientNonLinear(StructuralMechanicsConfiguration &settings, StructuralMechanicsLoadStepConfiguration &configuration)
-: settings(settings), configuration(configuration), assembler{nullptr, settings, configuration},
+: settings(settings), configuration(configuration), assembler{settings, configuration},
   K{}, M{}, C{}, f{}, f_old{},
   R{}, R_old{}, dU{}, U{}, V{}, A{}, U_old{}, V_old{}, A_old{}, X{},
   dirichlet{},
@@ -136,7 +136,7 @@ bool StructuralMechanicsTransientNonLinear::run(step::Step &step, Physics *prev)
         if (!correct) {
             eslog::globalerror("Incompatible load steps.\n");
         }
-        assembler.updateSolution(U);
+        assembler.updateSolution(step, U);
     } else {
         assembler.getInitialVelocity(V);
     }
@@ -271,7 +271,7 @@ bool StructuralMechanicsTransientNonLinear::run(step::Step &step, Physics *prev)
         A->add(-1. / (2 * alpha) - 1, A_old);
         R_old->copy(R);
 
-        assembler.updateSolution(U);
+        assembler.updateSolution(step, U);
         eslog::checkpointln("SIMULATION: SOLUTION UPDATED");
         eslog::info("       = PREDICTOR COMPUTED                                                 %8.3f s = \n", eslog::time() - start);
         eslog::info("       = ----------------------------------------------------------------------------- = \n");
@@ -320,16 +320,16 @@ bool StructuralMechanicsTransientNonLinear::run(step::Step &step, Physics *prev)
             converged = norm1 && norm2;
             if (converged) {
                 eslog::info("      =================================================================================== \n\n");
-                assembler.updateSolution(U);
+                assembler.updateSolution(step, U);
             } else {
                 eslog::info("       = ----------------------------------------------------------------------------- = \n");
-                assembler.nextIteration(U);
+                assembler.nextIteration(step, U);
             }
         }
         precice.write();
         precice.advance(time.shift);
         if (precice.requiresReadingCheckpoint()) {
-            assembler.updateSolution(U_old);
+            assembler.updateSolution(step, U_old);
             eslog::info("      = TIME STEP RESTARTED ====================================== solved in %8.3f s = \n", eslog::time() - start);
             eslog::info("      =================================================================================== \n\n");
             eslog::checkpointln("SIMULATION: SOLUTION RESTARTED");

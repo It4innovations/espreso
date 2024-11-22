@@ -13,7 +13,7 @@
 using namespace espreso;
 
 StructuralMechanicsSteadyStateLinear::StructuralMechanicsSteadyStateLinear(StructuralMechanicsConfiguration &settings, StructuralMechanicsLoadStepConfiguration &configuration)
-: settings(settings), configuration(configuration), assembler{nullptr, settings, configuration}, K{}, f{}, U{}, forces{}, dirichlet{}, pattern{}, solver{}
+: settings(settings), configuration(configuration), assembler{settings, configuration}, K{}, f{}, U{}, forces{}, dirichlet{}, pattern{}, solver{}
 {
 
 }
@@ -121,7 +121,7 @@ bool StructuralMechanicsSteadyStateLinear::run(step::Step &step, Physics *prev)
         forces->storeTo(StructuralMechanics::Results::reactionForce->data);
     }
     storeSolution(step);
-    assembler.updateSolution(U);
+    assembler.updateSolution(step, U);
     info::mesh->output->updateSolution(step, time);
 
     eslog::info("       = PROCESS SOLUTION                                                   %8.3f s = \n", eslog::time() - solution);

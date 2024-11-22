@@ -47,7 +47,10 @@ NodeData* StructuralMechanics::Results::fluidForce = nullptr;
 NodeData* StructuralMechanics::Results::fluidPressure = nullptr;
 NodeData* StructuralMechanics::Results::fluidStress = nullptr;
 
-StructuralMechanics::StructuralMechanics(StructuralMechanics *previous, StructuralMechanicsConfiguration &settings, StructuralMechanicsLoadStepConfiguration &configuration)
+std::vector<double> MaterialStructuralMechanics::invCp;
+std::vector<double> MaterialStructuralMechanics::alpha;
+
+StructuralMechanics::StructuralMechanics(StructuralMechanicsConfiguration &settings, StructuralMechanicsLoadStepConfiguration &configuration)
 : Assembler(settings), settings(settings), configuration(configuration)
 {
     threaded = configuration.solver == StructuralMechanicsLoadStepConfiguration::SOLVER::FETI;
@@ -459,7 +462,7 @@ bool StructuralMechanics::analyze(const step::Step &step)
         }
     }
 
-    assemble(SubKernel::PREPROCESS);
+    assemble(SubKernel::PREPROCESS, step);
     size_t esize = 0;
     std::vector<double> volume(elementKernels.size()), surface(faceKernels.size());
     for (size_t i = 0; i < elementKernels.size(); ++i) {
@@ -571,8 +574,6 @@ void StructuralMechanics::connect(Matrix_Base<double> *K, Matrix_Base<double> *M
 
 void StructuralMechanics::evaluate(const step::Step &step, const step::Time &time, Matrix_Base<double> *K, Matrix_Base<double> *M, Vector_Base<double> *f, Vector_Base<double> *nf, Vector_Base<double> *dirichlet)
 {
-    this->step = step;
-    this->time = time;
     for (size_t i = 0; i < elementKernels.size(); ++i) {
         for (size_t e = 0; e < elementKernels[i].expressions.node.size(); ++e) {
             #pragma omp parallel for
@@ -654,7 +655,7 @@ void StructuralMechanics::evaluate(const step::Step &step, const step::Time &tim
         std::fill(Results::normal->data.begin(), Results::normal->data.end(), 0);
     }
     reset(K, M, f, nf, dirichlet);
-    assemble(SubKernel::ASSEMBLE);
+    assemble(SubKernel::ASSEMBLE, step);
     update(K, M, f, nf, dirichlet);
 
     if (info::ecf->output.print_eigen_values > 1) {
@@ -669,8 +670,6 @@ void StructuralMechanics::evaluate(const step::Step &step, const step::Time &tim
 
 void StructuralMechanics::evaluate(const step::Step &step, const step::Frequency &freq, Matrix_Base<double> *K, Matrix_Base<double> *M, Matrix_Base<double> *C, Vector_Base<double> *ref, Vector_Base<double> *imf, Vector_Base<double> *renf, Vector_Base<double> *imnf, Vector_Base<double> *reDirichlet, Vector_Base<double> *imDirichlet)
 {
-    this->step = step;
-    this->frequency = freq;
     for (size_t i = 0; i < elementKernels.size(); ++i) {
         for (size_t e = 0; e < elementKernels[i].expressions.node.size(); ++e) {
             #pragma omp parallel for
@@ -706,11 +705,11 @@ void StructuralMechanics::evaluate(const step::Step &step, const step::Frequency
         std::fill(Results::normal->data.begin(), Results::normal->data.end(), 0);
     }
     reset(K, M, C, ref, imf, renf, imnf, reDirichlet, imDirichlet);
-    assemble(SubKernel::ASSEMBLE);
+    assemble(SubKernel::ASSEMBLE, step);
     update(K, M, C, ref, imf, renf, imnf, reDirichlet, imDirichlet);
 }
 
-void StructuralMechanics::elements(SubKernel::Action action, size_t interval)
+void StructuralMechanics::elements(SubKernel::Action action, const step::Step &step, size_t interval)
 {
     switch (elementKernels[interval].code) {
     case static_cast<size_t>(Element::CODE::TRIANGLE3): runElement<Element::CODE::TRIANGLE3>(step, elementKernels[interval], action); break;
@@ -728,7 +727,7 @@ void StructuralMechanics::elements(SubKernel::Action action, size_t interval)
     }
 }
 
-void StructuralMechanics::boundary(SubKernel::Action action, size_t region, size_t interval)
+void StructuralMechanics::boundary(SubKernel::Action action, const step::Step &step, size_t region, size_t interval)
 {
     switch (faceKernels[region][interval].code) {
     case static_cast<size_t>(Element::CODE::LINE2    ): runBoundary<Element::CODE::LINE2    >(step, faceKernels[region][interval], action); break;
@@ -740,7 +739,7 @@ void StructuralMechanics::boundary(SubKernel::Action action, size_t region, size
     }
 }
 
-void StructuralMechanics::nodes(SubKernel::Action action, size_t region, size_t interval)
+void StructuralMechanics::nodes(SubKernel::Action action, const step::Step &step, size_t region, size_t interval)
 {
     switch (nodeKernels[region][interval].code) {
     case static_cast<size_t>(Element::CODE::POINT1   ): runNode<Element::CODE::POINT1   >(step, nodeKernels[region][interval], action); break;
@@ -776,7 +775,7 @@ void StructuralMechanics::getInitialVelocity(Vector_Base<double> *x)
     x->setFrom(Results::initialVelocity->data);
 }
 
-void StructuralMechanics::updateSolution(Vector_Distributed<Vector_Dense, double> *x)
+void StructuralMechanics::updateSolution(const step::Step &step, Vector_Distributed<Vector_Dense, double> *x)
 {
     if (withBEM) {
         x->copyTo(&xBEM);
@@ -810,20 +809,20 @@ void StructuralMechanics::updateSolution(Vector_Distributed<Vector_Dense, double
         xBEM.copyTo(x);
     }
     x->storeTo(Results::displacement->data);
-    assemble(SubKernel::SOLUTION);
+    assemble(SubKernel::SOLUTION, step);
 }
 
-void StructuralMechanics::updateSolution(Vector_Base<double> *rex, Vector_Base<double> *imx)
+void StructuralMechanics::updateSolution(const step::Step &step, Vector_Base<double> *rex, Vector_Base<double> *imx)
 {
     rex->storeTo(Results::cosDisplacement->data);
     imx->storeTo(Results::sinDisplacement->data);
-    assemble(SubKernel::SOLUTION);
+    assemble(SubKernel::SOLUTION, step);
 }
 
-void StructuralMechanics::nextIteration(Vector_Distributed<Vector_Dense, double> *x)
+void StructuralMechanics::nextIteration(const step::Step &step, Vector_Distributed<Vector_Dense, double> *x)
 {
     x->storeTo(Results::displacement->data);
-    assemble(SubKernel::ITERATION);
+    assemble(SubKernel::ITERATION, step);
 }
 
 }

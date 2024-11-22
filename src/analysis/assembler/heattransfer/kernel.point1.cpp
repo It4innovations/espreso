@@ -5,7 +5,7 @@
 namespace espreso {
 
 template <>
-void runNode<Element::CODE::POINT1>(const step::Step &step, const step::Time &time, HeatTransferNodeOperators &operators, SubKernel::Action action)
+void runNode<Element::CODE::POINT1>(const step::Step &step, HeatTransferNodeOperators &operators, SubKernel::Action action)
 {
     switch (info::mesh->dimension) {
     case 2:

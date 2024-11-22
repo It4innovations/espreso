@@ -86,9 +86,9 @@ template <size_t ndim> struct HeatTransferNode: public GeneralNode<ndim> {
 
 };
 
-template <Element::CODE code> void runElement(const step::Step &step, const step::Time &time, HeatTransferElementOperators &operators, SubKernel::Action action);
-template <Element::CODE code> void runBoundary(const step::Step &step, const step::Time &time, HeatTransferBoundaryOperators &operators, SubKernel::Action action);
-template <Element::CODE code> void runNode(const step::Step &step, const step::Time &time, HeatTransferNodeOperators &operators, SubKernel::Action action);
+template <Element::CODE code> void runElement(const step::Step &step, HeatTransferElementOperators &operators, SubKernel::Action action);
+template <Element::CODE code> void runBoundary(const step::Step &step, HeatTransferBoundaryOperators &operators, SubKernel::Action action);
+template <Element::CODE code> void runNode(const step::Step &step, HeatTransferNodeOperators &operators, SubKernel::Action action);
 
 }
 

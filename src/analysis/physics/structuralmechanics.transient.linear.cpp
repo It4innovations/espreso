@@ -17,7 +17,7 @@
 using namespace espreso;
 
 StructuralMechanicsTransientLinear::StructuralMechanicsTransientLinear(StructuralMechanicsConfiguration &settings, StructuralMechanicsLoadStepConfiguration &configuration)
-: settings(settings), configuration(configuration), assembler{nullptr, settings, configuration},
+: settings(settings), configuration(configuration), assembler{settings, configuration},
   K{}, M{}, f{}, x{}, checkpoint{},
   U{}, dU{}, V{}, W{}, X{}, Y{}, Z{}, dTK{}, dTM{},
   dirichlet{},
@@ -129,7 +129,7 @@ bool StructuralMechanicsTransientLinear::run(step::Step &step, Physics *prev)
         if (!correct) {
             eslog::globalerror("Incompatible load steps.\n");
         }
-        assembler.updateSolution(U);
+        assembler.updateSolution(step, U);
     } else {
         assembler.getInitialVelocity(V);
     }
@@ -214,7 +214,7 @@ bool StructuralMechanicsTransientLinear::run(step::Step &step, Physics *prev)
 
         x->copy(solver->x);
         storeSolution(step);
-        assembler.updateSolution(x);
+        assembler.updateSolution(step, x);
 
         precice.write();
         precice.advance(time.shift);

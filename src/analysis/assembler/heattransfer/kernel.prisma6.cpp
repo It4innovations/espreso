@@ -5,7 +5,7 @@
 namespace espreso {
 
 template <>
-void runElement<Element::CODE::PRISMA6>(const step::Step &step, const step::Time &time, HeatTransferElementOperators &operators, SubKernel::Action action)
+void runElement<Element::CODE::PRISMA6>(const step::Step &step, HeatTransferElementOperators &operators, SubKernel::Action action)
 {
     switch (action) {
     case SubKernel::Action::PREPROCESS:
@@ -14,7 +14,7 @@ void runElement<Element::CODE::PRISMA6>(const step::Step &step, const step::Time
     case SubKernel::Action::REASSEMBLE:
     case SubKernel::Action::ITERATION:
     case SubKernel::Action::SOLUTION:
-        runElementKernel<Element::CODE::PRISMA6, 6, HeatTransferGPC::PRISMA6, 3, 3>(step, time, operators, action); break;
+        runElementKernel<Element::CODE::PRISMA6, 6, HeatTransferGPC::PRISMA6, 3, 3>(step, operators, action); break;
     default: break;
     }
 }

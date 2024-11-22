@@ -13,7 +13,7 @@
 using namespace espreso;
 
 StructuralMechanicsHarmonicRealLinear::StructuralMechanicsHarmonicRealLinear(StructuralMechanicsConfiguration &settings, StructuralMechanicsLoadStepConfiguration &configuration)
-: settings(settings), configuration(configuration), assembler{nullptr, settings, configuration}, K{}, M{}, C{}, patternAssembler{}, patternSolver{}, solver{}
+: settings(settings), configuration(configuration), assembler{settings, configuration}, K{}, M{}, C{}, patternAssembler{}, patternSolver{}, solver{}
 {
     re.f = re.x = nullptr;
     im.f = im.x = nullptr;
@@ -143,7 +143,7 @@ bool StructuralMechanicsHarmonicRealLinear::run(step::Step &step, Physics *prev)
         re.x->copy(solver->x, s1);
         im.x->copy(solver->x, s2);
         storeSolution(step);
-        assembler.updateSolution(re.x, im.x);
+        assembler.updateSolution(step, re.x, im.x);
         info::mesh->output->updateSolution(step, frequency);
         eslog::info("       = PROCESS SOLUTION                                                   %8.3f s = \n", eslog::time() - solution);
         eslog::info("       = ----------------------------------------------------------------------------- = \n");

@@ -16,7 +16,7 @@
 using namespace espreso;
 
 StructuralMechanicsSteadyStateNonLinear::StructuralMechanicsSteadyStateNonLinear(StructuralMechanicsConfiguration &settings, StructuralMechanicsLoadStepConfiguration &configuration)
-: settings(settings), configuration(configuration), assembler{nullptr, settings, configuration}, K{}, U{}, R{}, f{}, dirichlet{}, pattern{}, solver{}
+: settings(settings), configuration(configuration), assembler{settings, configuration}, K{}, U{}, R{}, f{}, dirichlet{}, pattern{}, solver{}
 {
 
 }
@@ -105,7 +105,7 @@ bool StructuralMechanicsSteadyStateNonLinear::run(step::Step &step, Physics *pre
         if (!correct) {
             eslog::globalerror("Incompatible load steps.\n");
         }
-        assembler.updateSolution(U);
+        assembler.updateSolution(step, U);
     }
     time.final = time.start + configuration.duration_time;
 
@@ -179,7 +179,7 @@ bool StructuralMechanicsSteadyStateNonLinear::run(step::Step &step, Physics *pre
         double solution = eslog::time();
         U->copy(solver->x);
         storeSolution(step);
-        assembler.nextIteration(U);
+        assembler.nextIteration(step, U);
         eslog::info("      == PROCESS SOLUTION                                                   %8.3f s == \n", eslog::time() - solution);
         eslog::info("      == ----------------------------------------------------------------------------- == \n");
 
@@ -212,11 +212,11 @@ bool StructuralMechanicsSteadyStateNonLinear::run(step::Step &step, Physics *pre
             if (converged) {
                 eslog::info("      =================================================================================== \n\n");
                 storeSolution(step);
-                assembler.updateSolution(U);
+                assembler.updateSolution(step, U);
             } else {
                 eslog::info("       = ----------------------------------------------------------------------------- = \n");
                 storeSolution(step);
-                assembler.nextIteration(U);
+                assembler.nextIteration(step, U);
             }
         }
         info::mesh->output->updateSolution(step, time);

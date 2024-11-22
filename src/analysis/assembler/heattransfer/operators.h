@@ -31,6 +31,8 @@ struct HeatTransferElementOperators {
     size_t esize;
     double volume;
 
+    double timeIntegrationConstantK, timeIntegrationConstantM;
+
     Thickness thickness;
     Material material;
     Coordinates coordinates;

@@ -15,7 +15,7 @@
 using namespace espreso;
 
 AcousticRealLinear::AcousticRealLinear(AcousticConfiguration &settings, AcousticLoadStepConfiguration &configuration)
-: settings(settings), configuration(configuration), assembler{nullptr, settings, configuration}, K{}, M{}, C{}, re{}, im{}
+: settings(settings), configuration(configuration), assembler{settings, configuration}, K{}, M{}, C{}, re{}, im{}
 {
 
 }

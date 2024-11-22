@@ -19,7 +19,7 @@ using namespace espreso;
 NodeData* Acoustic::Results::pressure = nullptr;
 NodeData* Acoustic::Results::initialPressure = nullptr;
 
-Acoustic::Acoustic(Acoustic *previous, AcousticConfiguration &settings, AcousticLoadStepConfiguration &configuration)
+Acoustic::Acoustic(AcousticConfiguration &settings, AcousticLoadStepConfiguration &configuration)
 : Assembler(settings), settings(settings), configuration(configuration)
 {
 

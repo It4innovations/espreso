@@ -29,7 +29,7 @@ ElementData* HeatTransfer::Results::translationMotion = nullptr;
 ElementData* HeatTransfer::Results::gradient = nullptr;
 ElementData* HeatTransfer::Results::flux = nullptr;
 
-HeatTransfer::HeatTransfer(HeatTransfer *previous, HeatTransferConfiguration &settings, HeatTransferLoadStepConfiguration &configuration)
+HeatTransfer::HeatTransfer(HeatTransferConfiguration &settings, HeatTransferLoadStepConfiguration &configuration)
 : Assembler(settings), settings(settings), configuration(configuration)
 {
     threaded = configuration.solver == HeatTransferLoadStepConfiguration::SOLVER::FETI;
@@ -69,7 +69,7 @@ HeatTransfer::HeatTransfer(HeatTransfer *previous, HeatTransferConfiguration &se
     }
 }
 
-bool HeatTransfer::analyze()
+bool HeatTransfer::analyze(const step::Step &step)
 {
     double start = eslog::time();
     eslog::info("\n ============================================================================================= \n");
@@ -321,7 +321,7 @@ bool HeatTransfer::analyze()
         }
     }
 
-    assemble(SubKernel::Action::PREPROCESS);
+    assemble(SubKernel::Action::PREPROCESS, step);
     size_t esize = 0;
     std::vector<double> volume(elementKernels.size()), surface(faceKernels.size());
     for (size_t i = 0; i < elementKernels.size(); ++i) {
@@ -462,40 +462,40 @@ void HeatTransfer::connect(Matrix_Base<double> *K, Matrix_Base<double> *M, Vecto
     eslog::info("  CONSTANT MATRICES, VECTORS          %*s  [ %s] \n", 50 - constants.size(), " ", constants.c_str());
 }
 
-void HeatTransfer::elements(SubKernel::Action action, size_t interval)
+void HeatTransfer::elements(SubKernel::Action action, const step::Step &step, size_t interval)
 {
     switch (elementKernels[interval].code) {
-    case static_cast<size_t>(Element::CODE::TRIANGLE3): runElement<Element::CODE::TRIANGLE3>(step, time, elementKernels[interval], action); break;
-    case static_cast<size_t>(Element::CODE::TRIANGLE6): runElement<Element::CODE::TRIANGLE6>(step, time, elementKernels[interval], action); break;
-    case static_cast<size_t>(Element::CODE::SQUARE4  ): runElement<Element::CODE::SQUARE4  >(step, time, elementKernels[interval], action); break;
-    case static_cast<size_t>(Element::CODE::SQUARE8  ): runElement<Element::CODE::SQUARE8  >(step, time, elementKernels[interval], action); break;
-    case static_cast<size_t>(Element::CODE::TETRA4   ): runElement<Element::CODE::TETRA4   >(step, time, elementKernels[interval], action); break;
-    case static_cast<size_t>(Element::CODE::TETRA10  ): runElement<Element::CODE::TETRA10  >(step, time, elementKernels[interval], action); break;
-    case static_cast<size_t>(Element::CODE::PYRAMID5 ): runElement<Element::CODE::PYRAMID5 >(step, time, elementKernels[interval], action); break;
-    case static_cast<size_t>(Element::CODE::PYRAMID13): runElement<Element::CODE::PYRAMID13>(step, time, elementKernels[interval], action); break;
-    case static_cast<size_t>(Element::CODE::PRISMA6  ): runElement<Element::CODE::PRISMA6  >(step, time, elementKernels[interval], action); break;
-    case static_cast<size_t>(Element::CODE::PRISMA15 ): runElement<Element::CODE::PRISMA15 >(step, time, elementKernels[interval], action); break;
-    case static_cast<size_t>(Element::CODE::HEXA8    ): runElement<Element::CODE::HEXA8    >(step, time, elementKernels[interval], action); break;
-    case static_cast<size_t>(Element::CODE::HEXA20   ): runElement<Element::CODE::HEXA20   >(step, time, elementKernels[interval], action); break;
+    case static_cast<size_t>(Element::CODE::TRIANGLE3): runElement<Element::CODE::TRIANGLE3>(step, elementKernels[interval], action); break;
+    case static_cast<size_t>(Element::CODE::TRIANGLE6): runElement<Element::CODE::TRIANGLE6>(step, elementKernels[interval], action); break;
+    case static_cast<size_t>(Element::CODE::SQUARE4  ): runElement<Element::CODE::SQUARE4  >(step, elementKernels[interval], action); break;
+    case static_cast<size_t>(Element::CODE::SQUARE8  ): runElement<Element::CODE::SQUARE8  >(step, elementKernels[interval], action); break;
+    case static_cast<size_t>(Element::CODE::TETRA4   ): runElement<Element::CODE::TETRA4   >(step, elementKernels[interval], action); break;
+    case static_cast<size_t>(Element::CODE::TETRA10  ): runElement<Element::CODE::TETRA10  >(step, elementKernels[interval], action); break;
+    case static_cast<size_t>(Element::CODE::PYRAMID5 ): runElement<Element::CODE::PYRAMID5 >(step, elementKernels[interval], action); break;
+    case static_cast<size_t>(Element::CODE::PYRAMID13): runElement<Element::CODE::PYRAMID13>(step, elementKernels[interval], action); break;
+    case static_cast<size_t>(Element::CODE::PRISMA6  ): runElement<Element::CODE::PRISMA6  >(step, elementKernels[interval], action); break;
+    case static_cast<size_t>(Element::CODE::PRISMA15 ): runElement<Element::CODE::PRISMA15 >(step, elementKernels[interval], action); break;
+    case static_cast<size_t>(Element::CODE::HEXA8    ): runElement<Element::CODE::HEXA8    >(step, elementKernels[interval], action); break;
+    case static_cast<size_t>(Element::CODE::HEXA20   ): runElement<Element::CODE::HEXA20   >(step, elementKernels[interval], action); break;
     }
 }
 
-void HeatTransfer::boundary(SubKernel::Action action, size_t region, size_t interval)
+void HeatTransfer::boundary(SubKernel::Action action, const step::Step &step, size_t region, size_t interval)
 {
     switch (faceKernels[region][interval].code) {
-    case static_cast<size_t>(Element::CODE::LINE2    ): runBoundary<Element::CODE::LINE2    >(step, time, faceKernels[region][interval], action); break;
-    case static_cast<size_t>(Element::CODE::LINE3    ): runBoundary<Element::CODE::LINE3    >(step, time, faceKernels[region][interval], action); break;
-    case static_cast<size_t>(Element::CODE::TRIANGLE3): runBoundary<Element::CODE::TRIANGLE3>(step, time, faceKernels[region][interval], action); break;
-    case static_cast<size_t>(Element::CODE::TRIANGLE6): runBoundary<Element::CODE::TRIANGLE6>(step, time, faceKernels[region][interval], action); break;
-    case static_cast<size_t>(Element::CODE::SQUARE4  ): runBoundary<Element::CODE::SQUARE4  >(step, time, faceKernels[region][interval], action); break;
-    case static_cast<size_t>(Element::CODE::SQUARE8  ): runBoundary<Element::CODE::SQUARE8  >(step, time, faceKernels[region][interval], action); break;
+    case static_cast<size_t>(Element::CODE::LINE2    ): runBoundary<Element::CODE::LINE2    >(step, faceKernels[region][interval], action); break;
+    case static_cast<size_t>(Element::CODE::LINE3    ): runBoundary<Element::CODE::LINE3    >(step, faceKernels[region][interval], action); break;
+    case static_cast<size_t>(Element::CODE::TRIANGLE3): runBoundary<Element::CODE::TRIANGLE3>(step, faceKernels[region][interval], action); break;
+    case static_cast<size_t>(Element::CODE::TRIANGLE6): runBoundary<Element::CODE::TRIANGLE6>(step, faceKernels[region][interval], action); break;
+    case static_cast<size_t>(Element::CODE::SQUARE4  ): runBoundary<Element::CODE::SQUARE4  >(step, faceKernels[region][interval], action); break;
+    case static_cast<size_t>(Element::CODE::SQUARE8  ): runBoundary<Element::CODE::SQUARE8  >(step, faceKernels[region][interval], action); break;
     }
 }
 
-void HeatTransfer::nodes(SubKernel::Action action, size_t region, size_t interval)
+void HeatTransfer::nodes(SubKernel::Action action, const step::Step &step, size_t region, size_t interval)
 {
     switch (nodeKernels[region][interval].code) {
-    case static_cast<size_t>(Element::CODE::POINT1   ): runNode<Element::CODE::POINT1   >(step, time, nodeKernels[region][interval], action); break;
+    case static_cast<size_t>(Element::CODE::POINT1   ): runNode<Element::CODE::POINT1   >(step, nodeKernels[region][interval], action); break;
     }
 }
 
@@ -560,8 +560,6 @@ void HeatTransfer::bem(SubKernel::Action action, size_t domain, double *BETI)
 
 void HeatTransfer::evaluate(const step::Step &step, step::Time &time, Matrix_Base<double> *K, Matrix_Base<double> *M, Vector_Base<double> *f, Vector_Base<double> *nf, Vector_Base<double> *dirichlet)
 {
-    this->step = step;
-    this->time = time;
     for (size_t i = 0; i < elementKernels.size(); ++i) {
         for (size_t e = 0; e < elementKernels[i].expressions.node.size(); ++e) {
             #pragma omp parallel for
@@ -584,6 +582,8 @@ void HeatTransfer::evaluate(const step::Step &step, step::Time &time, Matrix_Bas
         elementKernels[i].Mfiller.isactive = isactive(M);
         elementKernels[i].RHSfiller.isactive = isactive(f);
         elementKernels[i].nRHSfiller.isactive = isactive(nf);
+        elementKernels[i].timeIntegrationConstantK = time.timeIntegrationConstantK;
+        elementKernels[i].timeIntegrationConstantM = time.timeIntegrationConstantM;
     }
     for (size_t i = 0; i < faceKernels.size(); ++i) {
         for (size_t j = 0; j < faceKernels[i].size(); ++j) {
@@ -618,7 +618,7 @@ void HeatTransfer::evaluate(const step::Step &step, step::Time &time, Matrix_Bas
     }
 
     reset(K, M, f, nf, dirichlet);
-    assemble(SubKernel::ASSEMBLE);
+    assemble(SubKernel::ASSEMBLE, step);
     update(K, M, f, nf, dirichlet);
 }
 
@@ -627,7 +627,7 @@ void HeatTransfer::getInitialTemperature(Vector_Base<double> *x)
     x->setFrom(Results::initialTemperature->data);
 }
 
-void HeatTransfer::updateSolution(Vector_Distributed<Vector_Dense, double> *x)
+void HeatTransfer::updateSolution(const step::Step &step, Vector_Distributed<Vector_Dense, double> *x)
 {
     if (withBEM) {
         x->copyTo(&xBEM);
@@ -650,7 +650,7 @@ void HeatTransfer::updateSolution(Vector_Distributed<Vector_Dense, double> *x)
         xBEM.copyTo(x);
     }
     x->storeTo(Results::temperature->data);
-    assemble(SubKernel::SOLUTION);
+    assemble(SubKernel::SOLUTION, step);
 }
 
 }

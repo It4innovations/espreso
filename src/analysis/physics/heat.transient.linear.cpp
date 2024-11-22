@@ -19,7 +19,7 @@
 using namespace espreso;
 
 HeatTransientLinear::HeatTransientLinear(HeatTransferConfiguration &settings, HeatTransferLoadStepConfiguration &configuration)
-: settings(settings), configuration(configuration), assembler{nullptr, settings, configuration},
+: settings(settings), configuration(configuration), assembler{settings, configuration},
   K{}, M{}, f{}, x{},
   U{}, dU{}, V{}, X{}, Y{}, dTK{}, dTM{},
   dirichlet{},
@@ -73,7 +73,7 @@ bool HeatTransientLinear::analyze(step::Step &step)
     eslog::info(" ============================================================================================= \n");
 
     step.type = step::TYPE::TIME;
-    if (!assembler.analyze()) {
+    if (!assembler.analyze(step)) {
         return false;
     }
     info::mesh->output->updateMonitors(step);
@@ -134,7 +134,7 @@ bool HeatTransientLinear::run(step::Step &step, Physics *prev)
         if (!correct) {
             eslog::globalerror("Incompatible load steps.\n");
         }
-        assembler.updateSolution(U);
+        assembler.updateSolution(step, U);
     } else {
         assembler.getInitialTemperature(U);
     }
@@ -207,7 +207,7 @@ bool HeatTransientLinear::run(step::Step &step, Physics *prev)
 
         x->copy(solver->x);
         storeSolution(step);
-        assembler.updateSolution(x);
+        assembler.updateSolution(step, x);
         info::mesh->output->updateSolution(step, time);
 
         dU->copy(solver->x);

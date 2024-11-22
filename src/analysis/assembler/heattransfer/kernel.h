@@ -242,7 +242,7 @@ void setElementKernel(HeatTransferElementOperators &operators, SubKernel::Action
 }
 
 template <Element::CODE code, size_t nodes, size_t gps, size_t ndim, size_t edim>
-void runElementKernel(const step::Step &step, const step::Time &time, const HeatTransferElementOperators &operators, SubKernel::Action action)
+void runElementKernel(const step::Step &step, const HeatTransferElementOperators &operators, SubKernel::Action action)
 {
     typedef HeatTransferElement<nodes, gps, ndim, edim> Element; Element element;
 
@@ -377,11 +377,11 @@ void runElementKernel(const step::Step &step, const step::Time &time, const Heat
         }
 
         if (outK.isactive) {
-            tempResidual.simd(element.nf, element.K, element.temperature.node, time.timeIntegrationConstantK);
+            tempResidual.simd(element.nf, element.K, element.temperature.node, operators.timeIntegrationConstantK);
             outK.simd(element.K);
         }
         if (outM.isactive) {
-            tempResidual.simd(element.nf, element.M, element.temperature.node, time.timeIntegrationConstantM);
+            tempResidual.simd(element.nf, element.M, element.temperature.node, operators.timeIntegrationConstantM);
             outM.simd(element.M);
         }
         if (outRHS.isactive) {

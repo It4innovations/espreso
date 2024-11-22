@@ -17,7 +17,7 @@
 using namespace espreso;
 
 HeatSteadyStateNonLinear::HeatSteadyStateNonLinear(HeatTransferConfiguration &settings, HeatTransferLoadStepConfiguration &configuration)
-: settings(settings), configuration(configuration), assembler{nullptr, settings, configuration}, K{}, U{}, R{}, f{}, x{}, dirichlet{}, pattern{}, solver{}
+: settings(settings), configuration(configuration), assembler{settings, configuration}, K{}, U{}, R{}, f{}, x{}, dirichlet{}, pattern{}, solver{}
 
 {
 
@@ -44,7 +44,7 @@ bool HeatSteadyStateNonLinear::analyze(step::Step &step)
     eslog::info(" ============================================================================================= \n");
 
     step.type = step::TYPE::TIME;
-    if (!assembler.analyze()) {
+    if (!assembler.analyze(step)) {
         return false;
     }
     info::mesh->output->updateMonitors(step);
@@ -138,7 +138,7 @@ bool HeatSteadyStateNonLinear::run(step::Step &step, Physics *prev)
     double solution = eslog::time();
     x->copy(solver->x);
     storeSolution(step);
-    assembler.updateSolution(x);
+    assembler.updateSolution(step, x);
     eslog::info("      == PROCESS SOLUTION                                                   %8.3f s == \n", eslog::time() - solution);
     eslog::info("      == ----------------------------------------------------------------------------- == \n");
 
@@ -190,7 +190,7 @@ bool HeatSteadyStateNonLinear::checkTemp(step::Step &step)
         eslog::info("      == TEMPERATURE NORM, CRITERIA [CONVERGED]              %.5e / %.5e == \n", solutionNumerator, solutionDenominator * configuration.nonlinear_solver.requested_first_residual);
     }
 
-    assembler.updateSolution(x);
+    assembler.updateSolution(step, x);
     return !(norm > configuration.nonlinear_solver.requested_first_residual);
 }
 

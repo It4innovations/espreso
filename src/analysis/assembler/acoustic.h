@@ -43,7 +43,7 @@ public:
         static const size_t HEXA20    = 8;
     };
 
-    Acoustic(Acoustic *previous, AcousticConfiguration &settings, AcousticLoadStepConfiguration &configuration);
+    Acoustic(AcousticConfiguration &settings, AcousticLoadStepConfiguration &configuration);
 
     void analyze(const step::Step &step);
 
@@ -123,9 +123,9 @@ public:
         static NodeData *pressure, *initialPressure;
     };
 protected:
-    void elements(SubKernel::Action action, size_t interval) { }
-    void boundary(SubKernel::Action action, size_t region, size_t interval) { }
-    void nodes(SubKernel::Action action, size_t region, size_t interval) { }
+    void elements(SubKernel::Action action, const step::Step &step, size_t interval) { }
+    void boundary(SubKernel::Action action, const step::Step &step, size_t region, size_t interval) { }
+    void nodes(SubKernel::Action action, const step::Step &step, size_t region, size_t interval) { }
 
     void initParameters();
 };
