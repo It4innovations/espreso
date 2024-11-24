@@ -23,6 +23,8 @@ public:
     SchurComplementSolver & operator=(SchurComplementSolver && other);
     ~SchurComplementSolver();
 
+    static const char * name();
+
     // stage = 0
     void commitMatrix(const Matrix_CSR<T,I> & A, I sc_size);
     void commitMatrix(const Matrix_CSR<T,I> & A11, const Matrix_CSR<T,I> & A12, const Matrix_CSR<T,I> & A21, const Matrix_CSR<T,I> & A22);

@@ -3,6 +3,7 @@
 machine="karolina"
 # machine="lumi"
 # machine="e4red"
+# machine="tiber"
 
 # have to make sure the same version is compiled
 # tool="cudalegacy"
@@ -10,6 +11,7 @@ machine="karolina"
 # tool="suitesparse"
 tool="mklpardiso"
 # tool="rocm"
+# tool="oneapi"
 
 dualoperators=""
 # dualoperators="${dualoperators} EXPLICIT_GPU"
@@ -26,12 +28,22 @@ then
     exit 1
 fi
 
-slurm_outdir_root="${basedir}/slurm_outerr"
-if [[ ! -d "${slurm_outdir_root}"   &&   ! ( -L "${slurm_outdir_root}" && -d "$(readlink ${slurm_outdir_root})" ) ]]
-then
-    echo "Slurm output directory '${slurm_outdir_root}' does not exist"
-    echo "Please create it"
-    exit 2
+if [ "${machine}" == "tiber" ]; then
+    workers_outdir_root="${basedir}/workers_outerr"
+    if [[ ! -d "${workers_outdir_root}" ]]
+    then
+        echo "Workers output directory '${workers_outdir_root}' does not exist"
+        echo "Please create it"
+        exit 2
+    fi
+else
+    slurm_outdir_root="${basedir}/slurm_outerr"
+    if [[ ! -d "${slurm_outdir_root}"   &&   ! ( -L "${slurm_outdir_root}" && -d "$(readlink ${slurm_outdir_root})" ) ]]
+    then
+        echo "Slurm output directory '${slurm_outdir_root}' does not exist"
+        echo "Please create it"
+        exit 2
+    fi
 fi
 
 espreso_outdir_root="${basedir}/espreso_results"
@@ -54,38 +66,25 @@ HQBIN=""
 if [ "${machine}" == "karolina" ]; then
     module load HyperQueue/0.19.0
     HQBIN="hq"
-elif [ "${machine}" == "lumi" ]; then
+else
     hq_bin_dir="dependencies/HyperQueue"
-    if [[ ! -d "${hq_bin_dir}" ]]
-    then
-        (
-            echo "HyperQueue not downloaded, downloading"
-            mkdir -p "${hq_bin_dir}"
-            cd "${hq_bin_dir}"
-            wget https://github.com/It4innovations/hyperqueue/releases/download/v0.19.0/hq-v0.19.0-linux-x64.tar.gz
-            tar -xf hq-v0.19.0-linux-x64.tar.gz
-        )
-    fi
     HQBIN="${hq_bin_dir}/hq"
-elif [ "${machine}" == "e4red" ]; then
-    hq_bin_dir="dependencies/HyperQueue"
-    if [[ ! -d "${hq_bin_dir}" ]]
-    then
-        (
-            echo "HyperQueue not downloaded, downloading"
-            mkdir -p "${hq_bin_dir}"
-            cd "${hq_bin_dir}"
-            wget https://github.com/It4innovations/hyperqueue/releases/download/v0.19.0/hq-v0.19.0-linux-arm64-linux.tar.gz
-            tar -xf hq-v0.19.0-linux-arm64-linux.tar.gz
-        )
-    fi
-    HQBIN="${hq_bin_dir}/hq"
+
+    # can download HQ using e.g.:
+    # mkdir -p "${hq_bin_dir}"
+    # cd "${hq_bin_dir}"
+    # wget https://github.com/It4innovations/hyperqueue/releases/download/v0.19.0/hq-v0.19.0-linux-arm64-linux.tar.gz
+    # tar -xf hq-v0.19.0-linux-arm64-linux.tar.gz
 fi
 
 if ! ${HQBIN} server info > /dev/null 2> /dev/null
 then
     echo "HyperQueue server is not running"
-    echo "Start the server on this login node using 'hq server start' inside tmux"
+    if [ "${machine}" == "tiber" ]; then
+        echo "Start the server using 'numactl -C 0-5 ${HQBIN} server start' inside tmux"
+    else
+        echo "Start the server on this login node using 'hq server start' inside tmux"
+    fi
     exit 5
 fi
 
@@ -99,8 +98,14 @@ mkdir -p "${hq_outdir}"
 espreso_outdir="${espreso_outdir_root}/${machine}_${tool}_${datestr}"
 mkdir -p "${espreso_outdir}"
 
-slurm_outdir="${slurm_outdir_root}/${machine}_${tool}_${datestr}"
-mkdir -p "${slurm_outdir}"
+if [ "${machine}" == "tiber" ]; then
+    workers_outerr="${workers_outdir_root}/${machine}_${tool}_${datestr}"
+    mkdir -p "${workers_outerr}"
+    ln -f -s -T "${machine}_${tool}_${datestr}" "${workers_outdir_root}/last"
+else
+    slurm_outdir="${slurm_outdir_root}/${machine}_${tool}_${datestr}"
+    mkdir -p "${slurm_outdir}"
+fi
 
 
 
@@ -112,6 +117,8 @@ elif [ "${machine}" == "lumi" ]; then
     num_cores_for_job="7"
 elif [ "${machine}" == "e4red" ]; then
     num_cores_for_job="72"
+elif [ "${machine}" == "tiber" ]; then
+    num_cores_for_job="6"
 fi
 
 
@@ -174,6 +181,10 @@ elif [ "${machine}" == "lumi" ]; then
 elif [ "${machine}" == "e4red" ]; then
     echo "sbatch command for later, normal job:"
     echo "    ${sbatch_command_normal}"
+elif [ "${machine}" == "tiber" ]; then
+    echo "run workers using:"
+    echo "    ./benchmarks/dualop_gpu_options/tiber_run_hqworkers.sh"
+    echo "inside tmux"
 fi
 
 
@@ -207,6 +218,14 @@ elif [ "${machine}" == "e4red" ]; then
     array_domains_x_3d=( 4  4  6   8   8  12  16    16)
     array_domains_y_3d=( 3  4  4   6   8   8  12    16)
     array_domains_z_3d=( 2  3  4   4   6   8   8    12)
+elif [ "${machine}" == "tiber" ]; then
+    #                   24 48 96 192 384 768 1536 3072
+    array_domains_x_2d=( 6  8 12  16  24  32   48  64)
+    array_domains_y_2d=( 4  6  8  12  16  24   32  48)
+    array_domains_z_2d=( 1  1  1   1   1   1    1   1)
+    array_domains_x_3d=( 4  4  6   8   8  12   16  16)
+    array_domains_y_3d=( 3  4  4   6   8   8   12  16)
+    array_domains_z_3d=( 2  3  4   4   6   8    8  12)
 fi
 # indexes:              0   1   2   3   4   5   6   7   8   9  10  11  12  13  14  15
 array_elements_x_2d=(1024 724 512 362 256 181 128  90  64  45  32  23  16  11   8   6)
@@ -304,6 +323,10 @@ elif [ "${machine}" == "lumi" ]; then
 elif [ "${machine}" == "e4red" ]; then
     echo "sbatch command for later, normal job:"
     echo "    ${sbatch_command_normal}"
+elif [ "${machine}" == "tiber" ]; then
+    echo "run workers using:"
+    echo "    ./benchmarks/dualop_gpu_options/tiber_run_hqworkers.sh"
+    echo "inside tmux"
 fi
 
 echo "number of jobs: ${id_num}"

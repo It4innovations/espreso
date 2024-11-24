@@ -51,7 +51,8 @@ fi
 export ESPRESO_RANK_TO_GPU_MAP="0"
 # in benchmarks I will set the visible devices to only one for each hq worker
 
-export ZE_FLAT_DEVICE_HIERARCHY="FLAT"
+export ZE_FLAT_DEVICE_HIERARCHY="FLAT" # two stacks on a GPU card appear each as a single GPU device
+export ZES_ENABLE_SYSMAN="1" # to make free_memory device info available
 
 #https://www.intel.com/content/www/us/en/docs/oneapi/optimization-guide-gpu/2024-2/ahead-of-time-compilation.html
 # export ESPRESO_SYCL_TARGETS="spir64_gen"

@@ -65,6 +65,16 @@ SchurComplementSolver<T,I>::SchurComplementSolver()
 
 
 template<typename T, typename I>
+SchurComplementSolver<T,I>::SchurComplementSolver(SchurComplementSolver && other) = default;
+
+
+
+template<typename T, typename I>
+SchurComplementSolver<T,I> & SchurComplementSolver<T,I>::operator=(SchurComplementSolver && other) = default;
+
+
+
+template<typename T, typename I>
 SchurComplementSolver<T,I>::~SchurComplementSolver()
 {
     _free<I>(ext->cm_factor, ext->cm_common);
@@ -77,13 +87,11 @@ SchurComplementSolver<T,I>::~SchurComplementSolver()
 
 
 
-template<typename T, typename I>
-SchurComplementSolver<T,I>::SchurComplementSolver(SchurComplementSolver && other) = default;
-
-
-
-template<typename T, typename I>
-SchurComplementSolver<T,I> & SchurComplementSolver<T,I>::operator=(SchurComplementSolver && other) = default;
+template <typename T, typename I>
+const char * DirectSparseSolver<T,I>::name()
+{
+    return "SUITESPARSE";
+}
 
 
 

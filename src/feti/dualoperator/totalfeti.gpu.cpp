@@ -1994,8 +1994,8 @@ void TotalFETIGpu<T,I>::config_replace_defaults()
     //     - TRS1_SOLVE_TYPE
     //     - TRS2_SOLVE_TYPE
     //   apply options:
-    //     - CONCURRENCY_APPLY
     //     - APPLY_SCATTER_GATHER_WHERE
+    //     - CONCURRENCY_APPLY
     // implicit:
     //   general+unused options:
     //     - F_SHARING_IF_HERMITIAN
@@ -2060,8 +2060,8 @@ void TotalFETIGpu<T,I>::config_replace_defaults()
 
                 // apply
                 {
-                    replace_if_auto(config->concurrency_apply, CONCURRENCY::PARALLEL);
                     replace_if_auto(config->apply_scatter_gather_where, DEVICE::GPU);
+                    replace_if_auto(config->concurrency_apply, CONCURRENCY::PARALLEL);
                 }
             }
             else if(gpu::spblas::get_implementation() == gpu::spblas::spblas_wrapper_impl::CUSPARSE_MODERN) {
@@ -2098,8 +2098,8 @@ void TotalFETIGpu<T,I>::config_replace_defaults()
 
                 // apply
                 {
-                    replace_if_auto(config->concurrency_apply, CONCURRENCY::PARALLEL);
                     replace_if_auto(config->apply_scatter_gather_where, DEVICE::GPU);
+                    replace_if_auto(config->concurrency_apply, CONCURRENCY::PARALLEL);
                 }
             }
             else {
@@ -2147,12 +2147,58 @@ void TotalFETIGpu<T,I>::config_replace_defaults()
 
             // apply
             {
-                replace_if_auto(config->concurrency_apply, CONCURRENCY::PARALLEL);
                 replace_if_auto(config->apply_scatter_gather_where, DEVICE::GPU);
+                replace_if_auto(config->concurrency_apply, CONCURRENCY::PARALLEL);
             }
         }
         if(gpu::mgm::get_implementation() == gpu::mgm::gpu_wrapper_impl::ONEAPI) {
-            // eslog::error("not implemented\n");
+            // general
+            {
+                replace_if_auto(config->f_sharing_if_hermitian, TRIANGLE_MATRIX_SHARING::SHARED);
+                replace_if_auto(config->queue_count, QUEUE_COUNT::PER_THREAD);
+            }
+
+            // set
+            {
+                replace_if_auto(config->concurrency_set, CONCURRENCY::PARALLEL);
+            }
+
+            // update
+            {
+                replace_if_auto(config->concurrency_update, CONCURRENCY::PARALLEL);
+                replace_if_auto(config->transpose_where, DEVICE::CPU);
+                replace_if_auto(config->path_if_hermitian, PATH_IF_HERMITIAN::HERK);
+
+                MATRIX_STORAGE select_trsm1_storage = MATRIX_STORAGE::DENSE;
+                if(!is_dense_possible) select_trsm1_storage = MATRIX_STORAGE::SPARSE;
+                replace_if_auto(config->trs1_factor_storage, select_trsm1_storage);
+
+                MATRIX_STORAGE select_trsm2_storage = MATRIX_STORAGE::DENSE;
+                if(!is_dense_possible) select_trsm2_storage = MATRIX_STORAGE::SPARSE;
+                replace_if_auto(config->trs2_factor_storage, select_trsm2_storage);
+
+                replace_if_auto(config->trsm_rhs_sol_order, MATRIX_ORDER::ROW_MAJOR);
+
+                TRS1_SOLVE_TYPE select_trsm1_solve_type = TRS1_SOLVE_TYPE::AUTO;
+                if(config->trs1_factor_storage == MATRIX_STORAGE::SPARSE) select_trsm1_solve_type = TRS1_SOLVE_TYPE::L;
+                if(config->trs1_factor_storage == MATRIX_STORAGE::DENSE)  select_trsm1_solve_type = TRS1_SOLVE_TYPE::LHH;
+                replace_if_auto(config->trs1_solve_type, select_trsm1_solve_type);
+
+                TRS2_SOLVE_TYPE select_trsm2_solve_type = TRS2_SOLVE_TYPE::AUTO;
+                if(config->trs2_factor_storage == MATRIX_STORAGE::SPARSE) select_trsm2_solve_type = TRS2_SOLVE_TYPE::U;
+                if(config->trs2_factor_storage == MATRIX_STORAGE::DENSE)  select_trsm2_solve_type = use_same_factor(config->trs1_solve_type);
+                replace_if_auto(config->trs2_solve_type, select_trsm2_solve_type);
+            }
+
+            // apply
+            {
+                replace_if_auto(config->apply_scatter_gather_where, DEVICE::GPU);
+
+                CONCURRENCY select_concurrency = CONCURRENCY::AUTO;
+                if(config->apply_scatter_gather_where == DEVICE::CPU) select_concurrency = CONCURRENCY::PARALLEL;
+                if(config->apply_scatter_gather_where == DEVICE::GPU) select_concurrency = CONCURRENCY::SEQ_CONTINUE;
+                replace_if_auto(config->concurrency_apply, select_concurrency);
+            }
         }
     }
     if(is_implicit) {
@@ -2280,7 +2326,45 @@ void TotalFETIGpu<T,I>::config_replace_defaults()
             }
         }
         if(gpu::mgm::get_implementation() == gpu::mgm::gpu_wrapper_impl::ONEAPI) {
-            // eslog::error("not implemented\n");
+            // general+unused
+            {
+                // replace_if_auto(config->f_sharing_if_hermitian, TRIANGLE_MATRIX_SHARING::SHARED);
+                replace_if_auto(config->queue_count, QUEUE_COUNT::PER_THREAD);
+                // replace_if_auto(config->path_if_hermitian, PATH_IF_HERMITIAN::TRSM);
+                // replace_if_auto(config->trsm_rhs_sol_order, MATRIX_ORDER::ROW_MAJOR);
+            }
+
+            // set
+            {
+                replace_if_auto(config->concurrency_set, CONCURRENCY::PARALLEL);
+            }
+
+            // update
+            {
+                replace_if_auto(config->concurrency_update, CONCURRENCY::PARALLEL);
+            }
+
+            // apply
+            {
+                replace_if_auto(config->concurrency_apply, CONCURRENCY::PARALLEL);
+                replace_if_auto(config->apply_scatter_gather_where, DEVICE::GPU);
+                replace_if_auto(config->transpose_where, DEVICE::CPU);
+
+                MATRIX_STORAGE select_trsv_storage = MATRIX_STORAGE::DENSE;
+                if(!is_dense_possible) select_trsv_storage = MATRIX_STORAGE::SPARSE;
+                replace_if_auto(config->trs1_factor_storage, select_trsv_storage);
+                replace_if_auto(config->trs2_factor_storage, select_trsv_storage);
+
+                TRS1_SOLVE_TYPE select_trsv1_solve_type = TRS1_SOLVE_TYPE::AUTO;
+                if(config->trs1_factor_storage == MATRIX_STORAGE::SPARSE) select_trsv1_solve_type = TRS1_SOLVE_TYPE::L;
+                if(config->trs1_factor_storage == MATRIX_STORAGE::DENSE)  select_trsv1_solve_type = TRS1_SOLVE_TYPE::LHH;
+                replace_if_auto(config->trs1_solve_type, select_trsv1_solve_type);
+
+                TRS2_SOLVE_TYPE select_trsv2_solve_type = TRS2_SOLVE_TYPE::AUTO;
+                if(config->trs2_factor_storage == MATRIX_STORAGE::SPARSE) select_trsv2_solve_type = TRS2_SOLVE_TYPE::U;
+                if(config->trs1_factor_storage == MATRIX_STORAGE::DENSE)  select_trsv2_solve_type = use_same_factor(config->trs1_solve_type);
+                replace_if_auto(config->trs2_solve_type, select_trsv2_solve_type);
+            }
         }
     }
 }

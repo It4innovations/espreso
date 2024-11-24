@@ -234,7 +234,7 @@ do
 
                 dualoperator="EXPLICIT_GPU"
                 benchmarking_for="apply"
-                trs1_factor_storage="SPARSE"
+                trs1_factor_storage="DENSE"
                 trs1_solve_type="LHH"
                 path_if_hermitian="HERK"
                 trs2_factor_storage="SPARSE"

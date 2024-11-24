@@ -60,38 +60,67 @@ echo "dual_operator ${dual_operator}" >> "${infofile}"
 
 
 command=""
-if [ "${machine}" == "karolina" ] && [ "${tool}" == "cudalegacy" ]; then
-    source env/it4i.karolina.cuda.gcc.32.sh legacy
-    command="mpirun -n 1 --bind-to numa ./build/espreso -c \"${ecf_file}\" $@ > \"${output_path}/stdout.txt\" 2> \"${output_path}/stderr.txt\""
-elif [ "${machine}" == "karolina" ] && [ "${tool}" == "cudamodern" ]; then
-    source env/it4i.karolina.cuda.gcc.32.sh modern
-    command="mpirun -n 1 --bind-to numa ./build/espreso -c \"${ecf_file}\" $@ > \"${output_path}/stdout.txt\" 2> \"${output_path}/stderr.txt\""
-elif [ "${machine}" == "karolina" ] && [ "${tool}" == "suitesparse" ]; then
-    source env/it4i.karolina.cuda.gcc.32.sh legacy
-    command="mpirun -n 1 --bind-to numa ./build/espreso -c \"${ecf_file}\" $@ > \"${output_path}/stdout.txt\" 2> \"${output_path}/stderr.txt\""
-elif [ "${machine}" == "karolina" ] && [ "${tool}" == "mklpardiso" ]; then
-    source env/it4i.karolina.intel.32.sh
-    export OMP_NUM_THREADS="$(nproc),1"
-    command="mpirun -n 1 ./build/espreso -c \"${ecf_file}\" $@ > \"${output_path}/stdout.txt\" 2> \"${output_path}/stderr.txt\""
-elif [ "${machine}" == "lumi" ] && [ "${tool}" == "rocm" ]; then
-    source env/csc.lumi.rocm.mpich.sh
-    command="srun -n 1 ./build/espreso -c \"${ecf_file}\" $@ > \"${output_path}/stdout.txt\" 2> \"${output_path}/stderr.txt\""
-elif [ "${machine}" == "lumi" ] && [ "${tool}" == "suitesparse" ]; then
-    source env/csc.lumi.rocm.mpich.sh
-    command="srun -n 1 ./build/espreso -c \"${ecf_file}\" $@ > \"${output_path}/stdout.txt\" 2> \"${output_path}/stderr.txt\""
-elif [ "${machine}" == "lumi" ] && [ "${tool}" == "mklpardiso" ]; then
-    source env/csc.lumi.intel.sh
-    export OMP_NUM_THREADS=7,1
-    command="srun -n 1 ./build/espreso -c \"${ecf_file}\" $@ > \"${output_path}/stdout.txt\" 2> \"${output_path}/stderr.txt\""
-elif [ "${machine}" == "e4red" ] && [ "${tool}" == "cudamodern" ]; then
-    source env/e4.red.cuda.32.sh
-    command="mpirun -n 1 --bind-to numa ./build/espreso -c \"${ecf_file}\" $@ > \"${output_path}/stdout.txt\" 2> \"${output_path}/stderr.txt\""
-elif [ "${machine}" == "e4red" ] && [ "${tool}" == "suitesparse" ]; then
-    source env/e4.red.cuda.32.sh
-    export OMP_NUM_THREADS=72,1 # for cpu-only work, use all the threads
-    command="mpirun -n 1 --bind-to numa ./build/espreso -c \"${ecf_file}\" $@ > \"${output_path}/stdout.txt\" 2> \"${output_path}/stderr.txt\""
+if [ "${machine}" == "karolina" ]; then
+    if [ "${tool}" == "cudalegacy" ]; then
+        source env/it4i.karolina.cuda.gcc.32.sh legacy
+        command="mpirun -n 1 --bind-to numa ./build/espreso -c \"${ecf_file}\" $@ > \"${output_path}/stdout.txt\" 2> \"${output_path}/stderr.txt\""
+    elif [ "${tool}" == "cudamodern" ]; then
+        source env/it4i.karolina.cuda.gcc.32.sh modern
+        command="mpirun -n 1 --bind-to numa ./build/espreso -c \"${ecf_file}\" $@ > \"${output_path}/stdout.txt\" 2> \"${output_path}/stderr.txt\""
+    elif [ "${tool}" == "suitesparse" ]; then
+        source env/it4i.karolina.cuda.gcc.32.sh legacy
+        command="mpirun -n 1 --bind-to numa ./build/espreso -c \"${ecf_file}\" $@ > \"${output_path}/stdout.txt\" 2> \"${output_path}/stderr.txt\""
+    elif [ "${tool}" == "mklpardiso" ]; then
+        source env/it4i.karolina.intel.32.sh
+        export OMP_NUM_THREADS="$(nproc),1"
+        command="mpirun -n 1 ./build/espreso -c \"${ecf_file}\" $@ > \"${output_path}/stdout.txt\" 2> \"${output_path}/stderr.txt\""
+    else
+        echo wrong tool
+        exit 72
+    fi
+elif [ "${machine}" == "lumi" ]; then
+    if [ "${tool}" == "rocm" ]; then
+        source env/csc.lumi.rocm.mpich.sh
+        command="srun -n 1 ./build/espreso -c \"${ecf_file}\" $@ > \"${output_path}/stdout.txt\" 2> \"${output_path}/stderr.txt\""
+    elif [ "${tool}" == "suitesparse" ]; then
+        source env/csc.lumi.rocm.mpich.sh
+        command="srun -n 1 ./build/espreso -c \"${ecf_file}\" $@ > \"${output_path}/stdout.txt\" 2> \"${output_path}/stderr.txt\""
+    elif [ "${tool}" == "mklpardiso" ]; then
+        source env/csc.lumi.intel.sh
+        export OMP_NUM_THREADS=7,1
+        command="srun -n 1 ./build/espreso -c \"${ecf_file}\" $@ > \"${output_path}/stdout.txt\" 2> \"${output_path}/stderr.txt\""
+    else
+        echo wrong tool
+        exit 72
+    fi
+elif [ "${machine}" == "e4red" ]; then
+    if [ "${tool}" == "cudamodern" ]; then
+        source env/e4.red.cuda.32.sh
+        command="mpirun -n 1 --bind-to numa ./build/espreso -c \"${ecf_file}\" $@ > \"${output_path}/stdout.txt\" 2> \"${output_path}/stderr.txt\""
+    elif [ "${tool}" == "suitesparse" ]; then
+        source env/e4.red.cuda.32.sh
+        export OMP_NUM_THREADS=72,1 # for cpu-only work, use all the threads
+        command="mpirun -n 1 --bind-to numa ./build/espreso -c \"${ecf_file}\" $@ > \"${output_path}/stdout.txt\" 2> \"${output_path}/stderr.txt\""
+    else
+        echo wrong tool
+        exit 72
+    fi
+elif [ "${machine}" == "tiber" ]; then
+    if [ "${tool}" == "oneapi" ]; then
+        source env/intel.tiber.oneapi.sh suitesparse
+        command="mpirun -n 1 ./build/espreso -c \"${ecf_file}\" $@ > \"${output_path}/stdout.txt\" 2> \"${output_path}/stderr.txt\""
+    elif [ "${tool}" == "suitesparse" ]; then
+        source env/intel.tiber.oneapi.sh suitesparse
+        command="mpirun -n 1 ./build/espreso -c \"${ecf_file}\" $@ > \"${output_path}/stdout.txt\" 2> \"${output_path}/stderr.txt\""
+    elif [ "${tool}" == "mklpardiso" ]; then
+        source env/intel.tiber.oneapi.sh mklpardiso
+        command="mpirun -n 1 ./build/espreso -c \"${ecf_file}\" $@ > \"${output_path}/stdout.txt\" 2> \"${output_path}/stderr.txt\""
+    else
+        echo wrong tool
+        exit 72
+    fi
 else
-    echo not implemented
+    echo wrong machine
     exit 73
 fi
 

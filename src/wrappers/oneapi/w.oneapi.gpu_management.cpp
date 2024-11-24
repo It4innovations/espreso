@@ -112,6 +112,9 @@ namespace mgm {
 
     size_t get_device_memory_free()
     {
+        // this works wrong on 2-stack GPU, dont use
+        // return default_device->d.get_info<sycl::ext::intel::info::device::free_memory>();
+
         size_t capacity = get_device_memory_capacity();
         size_t capacity_with_margin = (capacity * 95) / 100;
         size_t allocated = default_device->mem_allocated;
@@ -171,6 +174,7 @@ namespace mgm {
         // }
 
         void * ptr = malloc(num_bytes);
+        sycl::ext::oneapi::experimental::prepare_for_device_copy(ptr, num_bytes, default_device->c);
 
         return ptr;
     }
@@ -179,6 +183,7 @@ namespace mgm {
     {
         // sycl::free(ptr, default_device->c);
 
+        sycl::ext::oneapi::experimental::release_from_device_copy(ptr, default_device->c);
         free(ptr);
     }
 

@@ -1,6 +1,7 @@
 #include "math/wrappers/math.sc_solver.h"
 
 #ifdef HAVE_MKL
+#ifndef ESPRESO_FORBID_MKL_PARDISO
 
 #include <memory>
 #include <mkl.h>
@@ -72,6 +73,14 @@ SchurComplementSolver<T,I>::~SchurComplementSolver()
     if(ext->error != 0) {
         eslog::error("SchurComplementSolver::dtor(): pardiso error %d\n", (int)ext->error);
     }
+}
+
+
+
+template <typename T, typename I>
+const char * DirectSparseSolver<T,I>::name()
+{
+    return "MKL PARDISO";
 }
 
 
@@ -215,4 +224,5 @@ void SchurComplementSolver<T,I>::solveA11(const Vector_Dense<T,I> & rhs, Vector_
 
 #include "math/wrappers/math.sc_solver.inst.hpp"
 
+#endif
 #endif
