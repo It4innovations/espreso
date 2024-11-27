@@ -16,8 +16,8 @@
 namespace espreso {
 
 template <typename T>
-FETILinearSystemSolver<T>::FETILinearSystemSolver(PhysicsConfiguration &physics, LoadStepSolverConfiguration &loadStep)
-: physics(physics), loadStep(loadStep), feti(loadStep.feti), bem(false)
+FETILinearSystemSolver<T>::FETILinearSystemSolver(FETIConfiguration &configuration)
+: feti(configuration), bem(false)
 {
     LinearSystemSolver<T>::A = &A;
     LinearSystemSolver<T>::x = &x.physics;

@@ -21,7 +21,7 @@ struct FETILinearSystemSolver: LinearSystemSolver<T> {
     Pattern<T>* getPattern(HeatTransferLoadStepConfiguration &configuration       , int multiplicity) { return new PatternUniformFETI<T>(configuration, multiplicity); }
     Pattern<T>* getPattern(StructuralMechanicsLoadStepConfiguration &configuration, int multiplicity) { return new PatternUniformFETI<T>(configuration, multiplicity); }
 
-    FETILinearSystemSolver(PhysicsConfiguration &physics, LoadStepSolverConfiguration &loadStep);
+    FETILinearSystemSolver(FETIConfiguration &configuration);
     ~FETILinearSystemSolver();
 
     void set(step::Step &step);
@@ -31,9 +31,6 @@ struct FETILinearSystemSolver: LinearSystemSolver<T> {
     T rhs_without_dirichlet_norm();
 
 private:
-    PhysicsConfiguration &physics;
-    LoadStepSolverConfiguration &loadStep;
-
     Matrix_FETI<T> A;
     struct {
         Vector_FETI<Vector_Dense, T> feti;

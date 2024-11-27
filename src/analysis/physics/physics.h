@@ -24,7 +24,7 @@ template <typename T, typename Settings, typename Configuration>
 LinearSystemSolver<T>* setSolver(Settings &settings, Configuration &configuration)
 {
     switch (configuration.solver) {
-    case LoadStepSolverConfiguration::SOLVER::FETI:        return new FETILinearSystemSolver<T>(settings, configuration);
+    case LoadStepSolverConfiguration::SOLVER::FETI:        return new FETILinearSystemSolver<T>(configuration.feti);
     case LoadStepSolverConfiguration::SOLVER::HYPRE:       break;
     case LoadStepSolverConfiguration::SOLVER::MKLPDSS:     return new MKLPDSSLinearSystemSolver<T>(configuration.mklpdss);
     case LoadStepSolverConfiguration::SOLVER::PARDISO:     break;
