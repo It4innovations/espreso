@@ -22,7 +22,9 @@ public:
 
     ~MKLPDSS()
     {
-        call(-1);
+        if (external) {
+            call(-1);
+        }
         clear();
     }
 
