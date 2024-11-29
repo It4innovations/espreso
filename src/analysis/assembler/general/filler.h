@@ -8,6 +8,7 @@
 #include "wrappers/simd/simd.h"
 
 #include <functional>
+#include <cstdio>
 
 namespace espreso {
 
@@ -15,16 +16,18 @@ template <typename T> class Vector_Base;
 template <typename T> class Matrix_Base;
 
 struct DataFiller: SubKernel {
-    const char* name() const { return "MatrixFiller"; }
+    const char* name() const { return "DataFiller"; }
 
     size_t dofs, filter, elements;
     double *out;
     const esint *position;
+    esint size;
     Matrix_Shape shape;
 
     DataFiller()
     : dofs(0), filter(0), elements(0),
       out(nullptr), position(nullptr),
+      size(0),
       shape(Matrix_Shape::FULL)
     {
         isconst = false;
@@ -95,6 +98,25 @@ struct RHSFillerKernel: DataFiller {
             for (size_t r = 0; r < size; ++r, ++i) {
                 #pragma omp atomic
                 out[position[i]] += vector[r][s];
+            }
+        }
+        position += count * size;
+        elements -= count;
+        for (size_t i = 0; i < size; ++i) {
+            vector[i] = zeros();
+        }
+    }
+
+    void simd(SIMD vector[], int nrhs)
+    {
+        size_t size = nodes * dofs;
+        size_t count = std::min((size_t)SIMD::size, elements);
+        for (size_t s = 0, i = 0; s < count; ++s) {
+            for (size_t r = 0; r < nodes * dofs; ++r, ++i) {
+                for (int n = 0; n < nrhs; ++n) {
+                    #pragma omp atomic
+                    out[n * this->size + position[i]] += vector[n * nodes * dofs + r][s];
+                }
             }
         }
         position += count * size;

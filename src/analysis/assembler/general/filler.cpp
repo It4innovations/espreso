@@ -13,7 +13,8 @@ void DataFiller::activate(size_t interval, size_t dofs, size_t elements, Matrix_
     this->dofs = dofs;
     this->elements = elements;
     this->out = A->mapping.elements[interval].data;
-    this->position = A->mapping.elements[interval].position;
+    this->position = A->mapping.elements[interval].position;;
+    this->size = A->size();
     this->isactive = 1;
     this->shape = A->shape;
 }
@@ -27,6 +28,7 @@ void DataFiller::activate(size_t interval, size_t dofs, size_t elements, Vector_
     this->elements = elements;
     this->out = A->mapping.elements[interval].data;
     this->position = A->mapping.elements[interval].position;
+    this->size = A->size();
     this->isactive = 1;
 }
 
@@ -40,6 +42,7 @@ void DataFiller::activate(size_t region, size_t interval, size_t dofs, size_t el
     this->elements = elements;
     this->out = A->mapping.boundary[region][interval].data;
     this->position = A->mapping.boundary[region][interval].position;
+    this->size = A->size();
     this->isactive = 1;
 }
 
