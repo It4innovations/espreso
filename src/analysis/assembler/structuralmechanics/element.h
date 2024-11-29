@@ -52,10 +52,12 @@ template <size_t nodes, size_t gps, size_t ndim, size_t edim> struct StructuralM
         alignas(SIMD::size * sizeof(double)) SIMD angularVelocity[3];
     } ecf;
 
+
+    alignas(SIMD::size * sizeof(double)) SIMD F[ndim * ndim];
+    alignas(SIMD::size * sizeof(double)) SIMD C2[ndim * ndim]; // 2D = 16, 3D = 36
     // PLANE = 9, AXISYMMETRIC = 16, VOLUME = 36
     alignas(SIMD::size * sizeof(double)) SIMD vC4[ndim * ndim * 4]; // 2D = 16, 3D = 36
     alignas(SIMD::size * sizeof(double)) SIMD vS[ndim + ndim * (ndim - 1) / 2];
-    alignas(SIMD::size * sizeof(double)) SIMD F[ndim * ndim];
 
     struct {
         alignas(SIMD::size * sizeof(double)) SIMD center[ndim];
@@ -67,12 +69,10 @@ template <size_t nodes, size_t gps, size_t ndim, size_t edim> struct StructuralM
     alignas(SIMD::size * sizeof(double)) SIMD C[ndim * nodes * ndim * nodes];
     alignas(SIMD::size * sizeof(double)) SIMD f[ndim * nodes], imf[ndim * nodes];
     alignas(SIMD::size * sizeof(double)) SIMD nf[ndim * nodes];
+    alignas(SIMD::size * sizeof(double)) SIMD stress[nodes * 13];
 
     alignas(SIMD::size * sizeof(double)) SIMD displacement[nodes][ndim];
     alignas(SIMD::size * sizeof(double)) SIMD velocity[nodes][ndim];
-
-    alignas(SIMD::size * sizeof(double)) SIMD smallStrainTensor[ndim + ndim * (ndim - 1) / 2]; // dND * displacement
-    alignas(SIMD::size * sizeof(double)) SIMD sigma            [ndim + ndim * (ndim - 1) / 2]; // elasticity * smallStrainTensor
 
     StructuralMechanicsElement()
     {

@@ -334,7 +334,8 @@ template <size_t nodes, size_t gps> struct MaterialStructuralMechanicsKernel<nod
 
         // Voigt   0  1  2  3  4  5
         //        11 22 33 12 13 23
-        SIMD C2[9]; multAtB<3, 3, 3>(C2, element.F, element.F); // Right Cauchy-Green tensor
+        set<3, 3>(element.C2, zeros());
+        multAtB<3, 3, 3>(element.C2, element.F, element.F); // Right Cauchy-Green tensor
 
         switch (configuration->elasticity_properties.material_model) {
         case ElasticityPropertiesConfiguration::MATERIAL_MODEL::KIRCHHOFF:
@@ -347,13 +348,13 @@ template <size_t nodes, size_t gps> struct MaterialStructuralMechanicsKernel<nod
             element.vC4[ 1] = element.vC4[ 2] = element.vC4[ 8] = lambda;
             element.vC4[21] = element.vC4[28] = element.vC4[35] = mu;
 
-            SIMD al0 = load1(.5) * (C2[0] + C2[4] + C2[8]) * lambda - mu - load1(.5) * load1(3) * lambda;
-            element.vS[0] = al0 + mu * C2[0];
-            element.vS[1] = al0 + mu * C2[4];
-            element.vS[2] = al0 + mu * C2[8];
-            element.vS[3] = mu * C2[1];
-            element.vS[4] = mu * C2[5];
-            element.vS[5] = mu * C2[2];
+            SIMD al0 = load1(.5) * (element.C2[0] + element.C2[4] + element.C2[8]) * lambda - mu - load1(.5) * load1(3) * lambda;
+            element.vS[0] = al0 + mu * element.C2[0];
+            element.vS[1] = al0 + mu * element.C2[4];
+            element.vS[2] = al0 + mu * element.C2[8];
+            element.vS[3] = mu * element.C2[1];
+            element.vS[4] = mu * element.C2[5];
+            element.vS[5] = mu * element.C2[2];
         }
         break;
         case ElasticityPropertiesConfiguration::MATERIAL_MODEL::NEO_HOOKEAN_CMP:
@@ -363,15 +364,15 @@ template <size_t nodes, size_t gps> struct MaterialStructuralMechanicsKernel<nod
             SIMD lambda = E * nu / ((load1(1.) + nu) * (load1(1.) - load1(2.) * nu));
             SIMD mu = E / (load1(2.) + load1(2.) * nu);
 
-            SIMD J2 = C2[0] * C2[4] * C2[8] + load1(2) * C2[1] * C2[5] * C2[2] - C2[0] * C2[2] * C2[2] - C2[4] * C2[5] * C2[5] - C2[8] * C2[1] * C2[1];
+            SIMD J2 = element.C2[0] * element.C2[4] * element.C2[8] + load1(2) * element.C2[1] * element.C2[5] * element.C2[2] - element.C2[0] * element.C2[2] * element.C2[2] - element.C2[4] * element.C2[5] * element.C2[5] - element.C2[8] * element.C2[1] * element.C2[1];
             SIMD rJ2 = load1(1) / J2;
             SIMD vCinv[6] = {
-                (C2[4] * C2[8] - C2[2] * C2[2] ) * rJ2,
-                (C2[0] * C2[8] - C2[5] * C2[5] ) * rJ2,
-                (C2[0] * C2[4] - C2[1] * C2[1] ) * rJ2,
-                (C2[5] * C2[2] - C2[8] * C2[1] ) * rJ2,
-                (C2[1] * C2[2] - C2[4] * C2[5] ) * rJ2,
-                (C2[1] * C2[5] - C2[0] * C2[2] ) * rJ2,
+                (element.C2[4] *element.C2[8] - element.C2[2] * element.C2[2] ) * rJ2,
+                (element.C2[0] *element.C2[8] - element.C2[5] * element.C2[5] ) * rJ2,
+                (element.C2[0] *element.C2[4] - element.C2[1] * element.C2[1] ) * rJ2,
+                (element.C2[5] *element.C2[2] - element.C2[8] * element.C2[1] ) * rJ2,
+                (element.C2[1] *element.C2[2] - element.C2[4] * element.C2[5] ) * rJ2,
+                (element.C2[1] *element.C2[5] - element.C2[0] * element.C2[2] ) * rJ2,
             };
 
             SIMD C05 = load1(.5);
@@ -582,7 +583,7 @@ template <size_t nodes, size_t gps> struct MaterialStructuralMechanicsKernel<nod
                 element.vS[i] = detF * SA[voigt6ToMatrix33(i)];
             }
 
-            n4_otimes_symallcomb(cc1, cc3, n_trial, element.vC4, gp); // element.vC4 is now element.vc4
+            n4_otimes_symallcomb(cc1, cc3, n_trial, element.vC4); // element.vC4 is now element.vc4
             SIMD C4A[3 * 3 * 3 * 3], C4B[3 * 3 * 3 * 3]; // element.vc4 --> element.c4
 
             for (int i = 0; i < 3; ++i) {
@@ -672,7 +673,7 @@ template <size_t nodes, size_t gps> struct MaterialStructuralMechanicsKernel<nod
         element.vC4[30] = element.vC4[ 5]; element.vC4[31] = element.vC4[11]; element.vC4[32] = element.vC4[17]; element.vC4[33] = element.vC4[23]; element.vC4[34] = element.vC4[29];
     }
 
-    void n4_otimes_symallcomb(SIMD cc1[3], SIMD cc3[3], SIMD n[9], SIMD vc4m_hat[6*6], size_t gp)
+    void n4_otimes_symallcomb(SIMD cc1[3], SIMD cc3[3], SIMD n[9], SIMD vc4m_hat[6*6])
     {
         for (int a = 0; a < 3; ++a) {
             vc4m_hat[0 * 6 + 0] = vc4m_hat[0 * 6 + 0] + cc1[a] * n[0 + 3 * a] * n[0 + 3 * a] * n[0 + 3 * a] * n[0 + 3 * a];
