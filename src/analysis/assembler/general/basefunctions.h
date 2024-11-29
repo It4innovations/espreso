@@ -14,6 +14,9 @@ template <Element::CODE code, size_t gps> struct BaseFunctions;
 template<>
 struct BaseFunctions<Element::CODE::TRIANGLE3, 6> {
     constexpr static size_t nodes = 3, gps = 6, edim = 2;
+    constexpr static double nr[3] = { 1, 0, 0 };
+    constexpr static double ns[3] = { 0, 1, 0 };
+    constexpr static double nt[3] = { 0, 0, 1 };
 
     static void set(double N[nodes], double dN[nodes][edim], double r, double s)
     {
@@ -47,6 +50,9 @@ struct BaseFunctions<Element::CODE::TRIANGLE3, 6> {
 template<>
 struct BaseFunctions<Element::CODE::TRIANGLE6, 6> {
     constexpr static size_t nodes = 6, gps = 6, edim = 2;
+    constexpr static double nr[6] = { -1,  1, -1,  1, -1,  1 };
+    constexpr static double ns[6] = { -1, -1,  1,  1, -1, -1 };
+    constexpr static double nt[6] = { -1, -1, -1, -1, -1, -1 };
 
     static void set(double N[nodes], double dN[nodes][edim], double r, double s)
     {
@@ -89,6 +95,9 @@ struct BaseFunctions<Element::CODE::TRIANGLE6, 6> {
 template<>
 struct BaseFunctions<Element::CODE::TETRA4, 4> {
     constexpr static size_t nodes = 4, gps = 4, edim = 3;
+    constexpr static double nr[4] = { 1, 0, 0, 0 };
+    constexpr static double ns[4] = { 0, 1, 0, 0 };
+    constexpr static double nt[4] = { 0, 0, 1, 0 };
 
     static void set(double N[nodes], double dN[nodes][edim], double r, double s, double t)
     {
@@ -130,6 +139,9 @@ struct BaseFunctions<Element::CODE::TETRA4, 4> {
 template<>
 struct BaseFunctions<Element::CODE::TETRA10, 15> {
     constexpr static size_t nodes = 10, gps = 15, edim = 3;
+    constexpr static double nr[10] = { 1, 0, 0, 0,  .5,  0, .5, .5,  0, .5 };
+    constexpr static double ns[10] = { 0, 1, 0, 0,   0, .5, .5,  0, .5, .5 };
+    constexpr static double nt[10] = { 0, 0, 1, 0,   0,  0,  0, .5, .5, .5 };
 
     static void set(double N[nodes], double dN[nodes][edim], double r, double s, double t)
     {
@@ -212,6 +224,9 @@ struct BaseFunctions<Element::CODE::TETRA10, 15> {
 template<>
 struct BaseFunctions<Element::CODE::PYRAMID13, 14> {
     constexpr static size_t nodes = 13, gps = 14, edim = 3;
+    constexpr static double nr[13] = { -1,  1,  1, -1,  0,   0,  1,  0, -1,  -.5,  .5,  .5, -.5 };
+    constexpr static double ns[13] = { -1, -1,  1,  1,  0,  -1,  0,  1,  0,  -.5, -.5,  .5,  .5 };
+    constexpr static double nt[13] = { -1, -1, -1, -1,  1,  -1, -1, -1, -1,    0,   0,   0,   0 };
 
     static void set(double N[nodes], double dN[nodes][edim], double r, double s, double t)
     {
@@ -348,6 +363,10 @@ struct BaseFunctions<Element::CODE::PRISMA6, 9> {
 template<>
 struct BaseFunctions<Element::CODE::PRISMA15, 9> {
     constexpr static size_t nodes = 15, gps = 9, edim = 3;
+    // TODO: FIX!!
+    constexpr static double nr[15] = { 0, 0, 0, 0, 0, 0,   0, 0, 0,   0, 0, 0,   0, 0, 0 };
+    constexpr static double ns[15] = { 0, 0, 0, 0, 0, 0,   0, 0, 0,   0, 0, 0,   0, 0, 0 };
+    constexpr static double nt[15] = { 0, 0, 0, 0, 0, 0,   0, 0, 0,   0, 0, 0,   0, 0, 0 };
 
     static void set(double N[nodes], double dN[nodes][edim], double r, double s, double t)
     {
@@ -587,6 +606,10 @@ template <size_t ngps>
 struct BaseFunctions<Element::CODE::TRIANGLE3, ngps>: GaussPointsDegraded<BaseFunctions<Element::CODE::TRIANGLE3, ngps>, 4, 2> {
     constexpr static size_t nodes = 3, gps = ngps, edim = 2, order = getorder<gps, edim>();
     constexpr static std::array<int, 4> n_order = { 0, 1, 2, 2 };
+
+    constexpr static double nr[3] = { -1,  1, -1 };
+    constexpr static double ns[3] = { -1, -1,  1 };
+    constexpr static double nt[3] = { -1, -1, -1 };
 };
 
 
@@ -594,66 +617,110 @@ template <size_t ngps>
 struct BaseFunctions<Element::CODE::SQUARE4  , ngps>: GaussPointsDegraded<BaseFunctions<Element::CODE::SQUARE4  , ngps>, 4, 2> {
     constexpr static size_t nodes = 4, gps = ngps, edim = 2, order = getorder<gps, edim>();
     constexpr static std::array<int, 4> n_order = { 0, 1, 2, 3 };
+
+    constexpr static double nr[4] = { -1,  1, -1,  1 };
+    constexpr static double ns[4] = { -1, -1,  1,  1 };
+    constexpr static double nt[4] = { -1, -1, -1, -1 };
 };
 
 template <size_t ngps>
 struct BaseFunctions<Element::CODE::TRIANGLE6, ngps>: GaussPointsDegraded<BaseFunctions<Element::CODE::TRIANGLE6, ngps>, 8, 2> {
     constexpr static size_t nodes = 6, gps = ngps, edim = 2, order = getorder<gps, edim>();
     constexpr static std::array<int, 8> n_order = { 0, 1, 2, 2, 3, 4, 2, 5 };
+
+    constexpr static double nr[6] = { -1,  1, -1,  1, -1,  1 };
+    constexpr static double ns[6] = { -1, -1,  1,  1, -1, -1 };
+    constexpr static double nt[6] = { -1, -1, -1, -1, -1, -1 };
 };
 
 template <size_t ngps>
 struct BaseFunctions<Element::CODE::SQUARE8  , ngps>: GaussPointsDegraded<BaseFunctions<Element::CODE::SQUARE8  , ngps>, 8, 2> {
     constexpr static size_t nodes = 8, gps = ngps, edim = 2, order = getorder<gps, edim>();
     constexpr static std::array<int, 8> n_order = { 0, 1, 2, 3, 4, 5, 6, 7 };
+
+    constexpr static double nr[8] = { -1,  1, -1,  1, -1,  1, -1,  1 };
+    constexpr static double ns[8] = { -1, -1,  1,  1, -1, -1,  1,  1 };
+    constexpr static double nt[8] = { -1, -1, -1, -1, -1, -1, -1, -1 };
 };
 
 template <size_t ngps>
 struct BaseFunctions<Element::CODE::TETRA4  , ngps>: GaussPointsDegraded<BaseFunctions<Element::CODE::TETRA4   , ngps>, 8, 3> {
     constexpr static size_t nodes = 4, gps = ngps, edim = 3, order = getorder<gps, edim>();
     constexpr static std::array<int, 8> n_order = { 0, 1, 2, 2, 3, 3, 3, 3 };
+
+    constexpr static double nr[4] = { -1,  1, -1,  1 };
+    constexpr static double ns[4] = { -1, -1,  1,  1 };
+    constexpr static double nt[4] = { -1, -1, -1, -1 };
 };
 
 template <size_t ngps>
 struct BaseFunctions<Element::CODE::PYRAMID5, ngps>: GaussPointsDegraded<BaseFunctions<Element::CODE::PYRAMID5 , ngps>, 8, 3> {
     constexpr static size_t nodes = 5, gps = ngps, edim = 3, order = getorder<gps, edim>();
     constexpr static std::array<int, 8> n_order = { 0, 1, 2, 3, 4, 4, 4, 4 };
+
+    constexpr static double nr[5] = { -1,  1, -1,  1, -1};
+    constexpr static double ns[5] = { -1, -1,  1,  1, -1};
+    constexpr static double nt[5] = { -1, -1, -1, -1,  1};
 };
 
 template <size_t ngps>
 struct BaseFunctions<Element::CODE::PRISMA6 , ngps>: GaussPointsDegraded<BaseFunctions<Element::CODE::PRISMA6  , ngps>, 8, 3> {
     constexpr static size_t nodes = 6, gps = ngps, edim = 3, order = getorder<gps, edim>();
     constexpr static std::array<int, 8> n_order = { 0, 1, 2, 2, 3, 4, 5, 5 };
+
+    constexpr static double nr[6] = { -1,  1, -1,  1, -1,  1 };
+    constexpr static double ns[6] = { -1, -1,  1,  1, -1, -1 };
+    constexpr static double nt[6] = { -1, -1, -1, -1,  1,  1 };
 };
 
 template <size_t ngps>
 struct BaseFunctions<Element::CODE::HEXA8   , ngps>: GaussPointsDegraded<BaseFunctions<Element::CODE::HEXA8    , ngps>, 8, 3> {
     constexpr static size_t nodes = 8, gps = ngps, edim = 3, order = getorder<gps, edim>();
     constexpr static std::array<int, 8> n_order = { 0, 1, 2, 3, 4, 5, 6, 7 };
+
+    constexpr static double nr[8] = { -1,  1, -1,  1, -1,  1, -1,  1 };
+    constexpr static double ns[8] = { -1, -1,  1,  1, -1, -1,  1,  1 };
+    constexpr static double nt[8] = { -1, -1, -1, -1,  1,  1,  1,  1 };
 };
 
 template <size_t ngps>
 struct BaseFunctions<Element::CODE::TETRA10  , ngps>: GaussPointsDegraded<BaseFunctions<Element::CODE::TETRA10  , ngps>, 20, 3> {
     constexpr static size_t nodes = 10, gps = ngps, edim = 3, order = getorder<gps, edim>();
     constexpr static std::array<int, 20> n_order = { 0, 1, 2, 2, 3, 3, 3, 3, 4, 5, 2, 6, 3, 3, 3, 3, 7, 8, 9, 9 };
+
+    constexpr static double nr[10] = { -1,  1, -1,  1, -1,  1, -1,  1,  0,  1 };
+    constexpr static double ns[10] = { -1, -1,  1,  1, -1, -1,  1,  1, -1,  0 };
+    constexpr static double nt[10] = { -1, -1, -1, -1,  1,  1,  1,  1, -1, -1 };
 };
 
 template <size_t ngps>
 struct BaseFunctions<Element::CODE::PYRAMID13, ngps>: GaussPointsDegraded<BaseFunctions<Element::CODE::PYRAMID13, ngps>, 20, 3> {
     constexpr static size_t nodes = 13, gps = ngps, edim = 3, order = getorder<gps, edim>();
     constexpr static std::array<int, 20> n_order = { 0, 1, 2, 3, 4, 4, 4, 4, 5, 6, 7, 8, 4, 4, 4, 4, 9, 10, 11, 12 };
+
+    constexpr static double nr[13] = { -1,  1, -1,  1, -1,  1, -1,  1,  0,  1,  0, -1,  0 };
+    constexpr static double ns[13] = { -1, -1,  1,  1, -1, -1,  1,  1, -1,  0,  1,  0, -1 };
+    constexpr static double nt[13] = { -1, -1, -1, -1,  1,  1,  1,  1, -1, -1, -1, -1,  1 };
 };
 
 template <size_t ngps>
 struct BaseFunctions<Element::CODE::PRISMA15 , ngps>: GaussPointsDegraded<BaseFunctions<Element::CODE::PRISMA15 , ngps>, 20, 3> {
     constexpr static size_t nodes = 15, gps = ngps, edim = 3, order = getorder<gps, edim>();
     constexpr static std::array<int, 20> n_order = { 0, 1, 2, 2, 3, 4, 5, 5, 6, 7, 2, 8, 9, 10, 5, 11, 12, 13, 14, 14 };
+
+    constexpr static double nr[15] = { -1,  1, -1,  1, -1,  1, -1,  1,  0,  1,  0, -1,  0,  1, 0 };
+    constexpr static double ns[15] = { -1, -1,  1,  1, -1, -1,  1,  1, -1,  0,  1,  0, -1,  0, 1 };
+    constexpr static double nt[15] = { -1, -1, -1, -1,  1,  1,  1,  1, -1, -1, -1, -1,  1,  1, 1 };
 };
 
 template <size_t ngps>
 struct BaseFunctions<Element::CODE::HEXA20   , ngps>: GaussPointsDegraded<BaseFunctions<Element::CODE::HEXA20   , ngps>, 20, 3> {
     constexpr static size_t nodes = 20, gps = ngps, edim = 3, order = getorder<gps, edim>();
     constexpr static std::array<int, 20> n_order = { 0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19 };
+
+    constexpr static double nr[20] = { -1,  1, -1,  1, -1,  1, -1,  1,   0,  1,  0, -1,   0,  1,  0, -1,  -1,  1, -1,  1 };
+    constexpr static double ns[20] = { -1, -1,  1,  1, -1, -1,  1,  1,  -1,  0,  1,  0,  -1,  0,  1,  0,  -1, -1,  1,  1 };
+    constexpr static double nt[20] = { -1, -1, -1, -1,  1,  1,  1,  1,  -1, -1, -1, -1,   1,  1,  1,  1,   0,  0,  0,  0 };
 };
 
 template<typename E> struct GaussPointsDegradedSetter<E, 2, 1>
