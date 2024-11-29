@@ -38,8 +38,6 @@ public:
     // stage = 4
     void solveA11(const Vector_Dense<T,I> & rhs, Vector_Dense<T,I> & sol);
 
-    void say_hello();
-
 private:
     std::unique_ptr<Schur_Complement_Solver_External_Representation<T,I>> ext;
 };

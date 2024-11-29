@@ -56,10 +56,6 @@ bool FETI<T>::set(const step::Step &step)
     preconditioner = Preconditioner<T>::create(*this, step);
     iterativeSolver = IterativeSolver<T>::create(*this, step);
 
-    eslog::info(" = ----------------------------------------------------------------------------------------- = \n");
-    eslog::info(" = EXTERNAL LINEAR SOLVER %*s = \n", 66, DirectSparseSolver<T>::name());
-    eslog::info(" = ----------------------------------------------------------------------------------------- = \n");
-
     double dualop_start = eslog::time();
     dualOperator->set(step);
     double dualop_stop = eslog::time();
@@ -67,6 +63,14 @@ bool FETI<T>::set(const step::Step &step)
     projector->set(step);
     preconditioner->set(step);
     iterativeSolver->set(step);
+
+    eslog::info(" = ----------------------------------------------------------------------------------------- = \n");
+    eslog::info(" = EXTERNAL LINEAR SOLVER %*s = \n", 66, DirectSparseSolver<T>::name());
+    eslog::info(" = ----------------------------------------------------------------------------------------- = \n");
+    iterativeSolver->info();
+    projector->info();
+    dualOperator->info();
+    preconditioner->info();
 
     eslog::info(" = FETI SOLVER SET                                                                %8.3f s = \n", eslog::time() - start);
     if (MPITools::node->rank == 0) {

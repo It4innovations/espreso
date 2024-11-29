@@ -54,7 +54,7 @@ DualOperator<T>* DualOperator<T>::create(FETI<T> &feti, const step::Step &step)
             if(!DirectSparseSolver<T,int>::provideSC()) {
                 eslog::globalerror("Sparse solver does not provide Shur complement.\n");
             }
-            eslog::info(" = DUAL OPERATOR                           EXPLICIT TOTAL FETI USING SPBLAS SCHUR COMPLEMENT = \n");
+            eslog::info(" = DUAL OPERATOR                                  EXPLICIT TOTAL FETI USING SCHUR COMPLEMENT = \n");
             dual = new TotalFETIExplicitSc<T,int>(feti);
             break;
         }

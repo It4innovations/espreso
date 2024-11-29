@@ -29,6 +29,12 @@ SchurComplementSolver<T,I>::SchurComplementSolver(SchurComplementSolver && other
 template<typename T, typename I>
 SchurComplementSolver<T,I> & SchurComplementSolver<T,I>::operator=(SchurComplementSolver && other) = default;
 
+template <typename T, typename I>
+const char * SchurComplementSolver<T,I>::name()
+{
+    return "EMPTY";
+}
+
 template<typename T, typename I>
 void SchurComplementSolver<T,I>::commitMatrix(const Matrix_CSR<T,I> & /*A*/, I /*sc_size*/)
 {

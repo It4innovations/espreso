@@ -78,7 +78,7 @@ SchurComplementSolver<T,I>::~SchurComplementSolver()
 
 
 template <typename T, typename I>
-const char * DirectSparseSolver<T,I>::name()
+const char * SchurComplementSolver<T,I>::name()
 {
     return "MKL PARDISO";
 }
@@ -130,7 +130,7 @@ void SchurComplementSolver<T,I>::commitMatrix(const Matrix_CSR<T,I> & A11, const
     math::csrMatrixConcat(ext->concat_matrix, *As[0], *As[1], *As[2], *As[3], ext->map_concat, math::CsrMatrixConcatStage::Pattern);
     ext->concat_matrix.type = Matrix_Type::REAL_SYMMETRIC_INDEFINITE;
 
-    commitMatrix(ext->concat_matrix, A22.nrows);
+    setMatrixNnzStructure(ext->concat_matrix, A22.nrows);
 }
 
 

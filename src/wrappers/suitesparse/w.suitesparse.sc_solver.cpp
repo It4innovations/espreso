@@ -88,7 +88,7 @@ SchurComplementSolver<T,I>::~SchurComplementSolver()
 
 
 template <typename T, typename I>
-const char * DirectSparseSolver<T,I>::name()
+const char * SchurComplementSolver<T,I>::name()
 {
     return "SUITESPARSE";
 }
