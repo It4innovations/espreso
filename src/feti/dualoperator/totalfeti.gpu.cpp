@@ -1302,6 +1302,9 @@ void TotalFETIGpu<T,I>::update(const step::Step &step)
 
     tm_compute_d.start();
     {
+        if (feti.updated.B) {
+            d.resize();
+        }
         // just use the cpu solver
         std::vector<Vector_Dense<T,I>> Kplus_fs(n_domains);
         #pragma omp parallel for schedule(static,1) if(config->concurrency_update == CONCURRENCY::PARALLEL)

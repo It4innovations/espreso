@@ -175,6 +175,9 @@ void TotalFETIExplicitSc<T,I>::update(const step::Step &step)
 
     tm_maked.start();
     {
+        if (feti.updated.B) {
+            d.resize();
+        }
         std::vector<Vector_Dense<T,I>> Kplus_fs(n_domains);
         #pragma omp parallel for schedule(static,1)
         for(size_t di = 0; di < n_domains; di++) {

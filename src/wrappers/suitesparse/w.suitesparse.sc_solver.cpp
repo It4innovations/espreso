@@ -13,9 +13,9 @@ static void extract_submatrices(const Matrix_CSR<T,I> & A, Matrix_CSR<T,I> & A11
 {
     I other_size = A.nrows - sc_size;
 
-    SpBLAS<Matrix_CSR,T,I>::submatrix(A, A11, 0,          other_size, 0,          other_size);
-    SpBLAS<Matrix_CSR,T,I>::submatrix(A, A12, 0,          other_size, other_size, A.nrows);
-    SpBLAS<Matrix_CSR,T,I>::submatrix(A, A22, other_size, A.nrows,    other_size, A.nrows);
+    math::spblas::submatrix(A, A11, 0,          other_size, 0,          other_size);
+    math::spblas::submatrix(A, A12, 0,          other_size, other_size, A.nrows);
+    math::spblas::submatrix(A, A22, other_size, A.nrows,    other_size, A.nrows);
 }
 
 

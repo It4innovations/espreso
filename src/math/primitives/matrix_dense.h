@@ -5,7 +5,7 @@
 #include "matrix_info.h"
 #include "slice.h"
 #include "basis/containers/allocators.h"
-#include "esinfo/eslog.h"
+#include "esinfo/eslog.hpp"
 
 #include <limits>
 
