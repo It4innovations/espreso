@@ -29,12 +29,14 @@ public:
     StructuralMechanics(StructuralMechanicsConfiguration &settings, StructuralMechanicsLoadStepConfiguration &configuration);
 
     bool analyze(const step::Step &step);
+    int  postProcessSolverSize();
     void getInitialVelocity(Vector_Base<double> *x);
 
-    void connect(Matrix_Base<double> *K, Matrix_Base<double> *M, Vector_Base<double> *f, Vector_Base<double> *nf, Vector_Base<double> *dirichlet);
+    void connect(Matrix_Base<double> *K, Matrix_Base<double> *M, Vector_Base<double> *f, Vector_Base<double> *nf, Vector_Base<double> *dirichlet, Matrix_Base<double> *postM = nullptr, Vector_Base<double> *postB = nullptr);
     void evaluate(const step::Step &step, const step::Time &time, Matrix_Base<double> *K, Matrix_Base<double> *M, Vector_Base<double> *f, Vector_Base<double> *nf, Vector_Base<double> *dirichlet);
-    void updateSolution(const step::Step &step, Vector_Distributed<Vector_Dense, double> *x);
+    void updateSolution(const step::Step &step, Vector_Distributed<Vector_Dense, double> *x, Matrix_Base<double> *M = nullptr, Vector_Base<double> *B = nullptr);
     void nextIteration(const step::Step &step, Vector_Distributed<Vector_Dense, double> *x);
+    void updateStress(const step::Step &step, Vector_Base<double> *x);
 
     void connect(Matrix_Base<double> *K, Matrix_Base<double> *M, Matrix_Base<double> *C, Vector_Base<double> *ref, Vector_Base<double> *imf, Vector_Base<double> *renf, Vector_Base<double> *imnf, Vector_Base<double> *reDirichlet, Vector_Base<double> *imDirichlet);
     void evaluate(const step::Step &step, const step::Frequency &freq, Matrix_Base<double> *K, Matrix_Base<double> *M, Matrix_Base<double> *C, Vector_Base<double> *ref, Vector_Base<double> *imf, Vector_Base<double> *renf, Vector_Base<double> *imnf, Vector_Base<double> *reDirichlet, Vector_Base<double> *imDirichlet);
@@ -56,6 +58,7 @@ public:
         // harmonic
         static NodeData *cosDisplacement, *sinDisplacement, *displacementAmplitude;
         static NodeData *phase, *velocity, *velocityAmplitude, *acceleration, *accelerationAmplitude;
+        static NodeData *avgStress;
         static NodeData *reactionForce;
 
         // FSI

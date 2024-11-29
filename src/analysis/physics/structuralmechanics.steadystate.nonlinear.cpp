@@ -16,7 +16,7 @@
 using namespace espreso;
 
 StructuralMechanicsSteadyStateNonLinear::StructuralMechanicsSteadyStateNonLinear(StructuralMechanicsConfiguration &settings, StructuralMechanicsLoadStepConfiguration &configuration)
-: settings(settings), configuration(configuration), assembler{settings, configuration}, K{}, U{}, R{}, f{}, dirichlet{}, pattern{}, solver{}
+: settings(settings), configuration(configuration), assembler{settings, configuration}, K{}, postM{}, U{}, R{}, f{}, dirichlet{}, postB{}, postX{}, pattern{}, postPattern{}, solver{}, postSolver{}
 {
 
 }
@@ -30,6 +30,11 @@ StructuralMechanicsSteadyStateNonLinear::~StructuralMechanicsSteadyStateNonLinea
     if (dirichlet) { delete dirichlet; }
     if (pattern) { delete pattern; }
     if (solver) { delete solver; }
+    if (postM) { delete postM; }
+    if (postB) { delete postB; }
+    if (postX) { delete postX; }
+    if (postPattern) { delete postPattern; }
+    if (postSolver) { delete postSolver; }
 }
 
 bool StructuralMechanicsSteadyStateNonLinear::analyze(step::Step &step)
@@ -49,13 +54,9 @@ bool StructuralMechanicsSteadyStateNonLinear::analyze(step::Step &step)
         configuration.nonlinear_solver.substeps = 1;
     }
 
-    solver = setSolver<double>(settings, configuration);
+    solver = setSolver<double>(configuration);
     pattern = solver->getPattern(configuration, 1);
-
-    pattern->set(solver->A);
-    pattern->set(solver->b);
-    pattern->set(solver->x);
-    pattern->set(solver->dirichlet);
+    pattern->set(solver);
 
     K = solver->A->copyPattern();
     R = solver->b->copyPattern();
@@ -67,12 +68,32 @@ bool StructuralMechanicsSteadyStateNonLinear::analyze(step::Step &step)
     pattern->map(f);
     pattern->map(R);
     pattern->map(dirichlet);
+
+    int postSize = assembler.postProcessSolverSize();
+    if (postSize) {
+        postSolver = setSolver<double>(configuration);
+        postPattern = postSolver->getPattern(1);
+        postPattern->set(postSolver);
+        postPattern->set(postSolver->B, postSize);
+        postPattern->set(postSolver->X, postSize);
+
+        postM = postSolver->A->copyPattern();
+        postB = postSolver->B->copyPattern();
+        postX = postSolver->X->copyPattern();
+
+        postPattern->map(postM);
+        postPattern->map(postB);
+        postPattern->map(postX);
+    }
+
     eslog::checkpointln("SIMULATION: LINEAR SYSTEM BUILT");
     return true;
 }
 
 bool StructuralMechanicsSteadyStateNonLinear::run(step::Step &step, Physics *prev)
 {
+    int postSize = assembler.postProcessSolverSize();
+
     time.start = 0;
     time.shift = configuration.duration_time / configuration.nonlinear_solver.substeps;
     U->set(0);
@@ -109,7 +130,7 @@ bool StructuralMechanicsSteadyStateNonLinear::run(step::Step &step, Physics *pre
     }
     time.final = time.start + configuration.duration_time;
 
-    assembler.connect(K, nullptr, f, R, dirichlet);
+    assembler.connect(K, nullptr, f, R, dirichlet, postM, postB);
 
     if (MPITools::node->rank == 0) {
         info::system::memory::physics = info::system::memoryAvail();
@@ -125,6 +146,9 @@ bool StructuralMechanicsSteadyStateNonLinear::run(step::Step &step, Physics *pre
     eslog::info(" = MAX ITERATIONS                                                                 %10d = \n", configuration.nonlinear_solver.max_iterations);
     eslog::info(" = ----------------------------------------------------------------------------------------- = \n");
     solver->set(step);
+    if (postSize) {
+        postSolver->set(step);
+    }
     eslog::info(" ============================================================================================= \n\n");
     eslog::checkpointln("SIMULATION: LINEAR SYSTEM SET");
 
@@ -212,7 +236,16 @@ bool StructuralMechanicsSteadyStateNonLinear::run(step::Step &step, Physics *pre
             if (converged) {
                 eslog::info("      =================================================================================== \n\n");
                 storeSolution(step);
-                assembler.updateSolution(step, U);
+                assembler.updateSolution(step, U, postM, postB);
+                if (postSize) {
+                    storePostSystem(step);
+                    postSolver->A->copy(postM);
+                    postSolver->B->copy(postB);
+                    postSolver->postSolve(step);
+                    postX->copy(postSolver->X);
+                    storePostSolution(step);
+                    assembler.updateStress(step, postX);
+                }
             } else {
                 eslog::info("       = ----------------------------------------------------------------------------- = \n");
                 storeSolution(step);
@@ -270,10 +303,27 @@ void StructuralMechanicsSteadyStateNonLinear::storeSystem(step::Step &step)
     }
 }
 
+void StructuralMechanicsSteadyStateNonLinear::storePostSystem(step::Step &step)
+{
+    if (info::ecf->output.print_matrices) {
+        eslog::storedata(" STORE: scheme/{postM, postB}\n");
+        postM->store(utils::filename(utils::debugDirectory(step) + "/scheme", "postM").c_str());
+        postB->store(utils::filename(utils::debugDirectory(step) + "/scheme", "postB").c_str());
+    }
+}
+
 void StructuralMechanicsSteadyStateNonLinear::storeSolution(step::Step &step)
 {
     if (info::ecf->output.print_matrices) {
         eslog::storedata(" STORE: scheme/{x}\n");
         U->store(utils::filename(utils::debugDirectory(step) + "/scheme", "U").c_str());
+    }
+}
+
+void StructuralMechanicsSteadyStateNonLinear::storePostSolution(step::Step &step)
+{
+    if (info::ecf->output.print_matrices) {
+        eslog::storedata(" STORE: scheme/{postX}\n");
+        postX->store(utils::filename(utils::debugDirectory(step) + "/scheme", "postX").c_str());
     }
 }

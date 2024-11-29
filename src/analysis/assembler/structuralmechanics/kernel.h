@@ -305,15 +305,12 @@ void runElementKernel(const step::Step &step, StructuralMechanicsElementOperator
     TemperatureToGPsKernel<nodes> temperatureToGPs(operators.temperature);
     IntegrationKernel<nodes, ndim, edim> integration(operators.integration);
     DisplacementKernel<nodes, ndim> displacement(operators.displacement);
-    SmallStrainTensorKernel<nodes, ndim> smallStrainTensor(operators.smallStrainTensor);
     MaterialStructuralMechanicsKernel<nodes, gps, ndim> material(operators.material);
     MatrixElasticityKernel<nodes, ndim> matrixElasticity(operators.matrixElasticity);
     MatrixCorotationKernel<code, nodes, gps, ndim> matrixCorotation(operators.matrixCorotation);
     MatrixMassKernel<nodes, ndim> M(operators.M);
     AccelerationKernel<nodes, ndim> acceleration(operators.acceleration);
     AngularVelocityKernel<nodes, ndim> angularVelocity(operators.angularVelocity);
-    SigmaKernel<nodes, ndim> sigma(operators.sigma);
-    StressKernel<nodes, gps, ndim> stress(operators.stress);
     MatrixFillerKernel<nodes> outK(operators.Kfiller);
     MatrixFillerKernel<nodes> outM(operators.Mfiller);
     MatrixFillerKernel<nodes> outC(operators.Cfiller);
@@ -359,15 +356,12 @@ void runElementKernel(const step::Step &step, StructuralMechanicsElementOperator
     temperature.setActiveness(action);
     material.setActiveness(action);
     displacement.setActiveness(action);
-    smallStrainTensor.setActiveness(action);
     matrixCorotation.setActiveness(action, step.loadstep || step.substep || step.iteration);
     matrixElasticity.setActiveness(action);
     M.setActiveness(action);
 //    C.setActiveness(action);
     acceleration.setActiveness(action);
     angularVelocity.setActiveness(action);
-    sigma.setActiveness(action);
-    stress.setActiveness(action);
 
     outK.setActiveness(action);
     outM.setActiveness(action);
@@ -378,9 +372,6 @@ void runElementKernel(const step::Step &step, StructuralMechanicsElementOperator
     outImNRHS.setActiveness(action);
 
     for (size_t c = 0; c < operators.chunks; ++c) {
-        if (sigma.isactive) {
-            sigma.reset(element);
-        }
         coordinates.simd(element);
         if (temperature.isactive) {
             temperature.simd(element);
@@ -416,9 +407,6 @@ void runElementKernel(const step::Step &step, StructuralMechanicsElementOperator
                     nonconst.gp[i]->simd(element, n);
                 }
             }
-            if (smallStrainTensor.isactive) {
-                smallStrainTensor.simd(element, gp);
-            }
             if (material.isactive) {
                 material.simd(element, gp);
             }
@@ -437,9 +425,6 @@ void runElementKernel(const step::Step &step, StructuralMechanicsElementOperator
             }
             if (angularVelocity.isactive) {
                 angularVelocity.simd(element, gp);
-            }
-            if (sigma.isactive) {
-                sigma.simd(element, gp);
             }
         }
 
@@ -469,9 +454,6 @@ void runElementKernel(const step::Step &step, StructuralMechanicsElementOperator
         }
         if (outImNRHS.isactive) {
             outImNRHS.simd(element.nf);
-        }
-        if (stress.isactive) {
-            stress.simd(element);
         }
     }
 }

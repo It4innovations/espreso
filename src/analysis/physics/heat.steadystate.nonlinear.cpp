@@ -49,13 +49,10 @@ bool HeatSteadyStateNonLinear::analyze(step::Step &step)
     }
     info::mesh->output->updateMonitors(step);
 
-    solver = setSolver<double>(settings, configuration);
+    solver = setSolver<double>(configuration);
     pattern = solver->getPattern(configuration, 1);
 
-    pattern->set(solver->A);
-    pattern->set(solver->b);
-    pattern->set(solver->x);
-    pattern->set(solver->dirichlet);
+    pattern->set(solver);
 
     K = solver->A->copyPattern();
     R = solver->b->copyPattern();

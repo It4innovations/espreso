@@ -27,12 +27,13 @@ public:
 
     StructuralMechanics assembler;
 
-    Matrix_Base<double> *K;
+    Matrix_Base<double> *K, *postM;
     Vector_Distributed<Vector_Dense, double> *U, *R, *f;
     Vector_Distributed<Vector_Sparse, double> *dirichlet;
+    Vector_Distributed<Matrix_Dense, double> *postB, *postX;
 
-    Pattern<double> *pattern;
-    LinearSystemSolver<double> *solver;
+    Pattern<double> *pattern, *postPattern;
+    LinearSystemSolver<double> *solver, *postSolver;
 
 protected:
     bool checkDisplacement(step::Step &step, double U_norm);
@@ -40,6 +41,8 @@ protected:
 
     void storeSystem(step::Step &step);
     void storeSolution(step::Step &step);
+    void storePostSystem(step::Step &step);
+    void storePostSolution(step::Step &step);
 };
 
 }

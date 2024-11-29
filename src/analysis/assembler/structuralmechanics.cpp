@@ -29,6 +29,8 @@ NodeData* StructuralMechanics::Results::initialVelocity = nullptr;
 ElementData* StructuralMechanics::Results::principalStress = nullptr;
 ElementData* StructuralMechanics::Results::componentStress = nullptr;
 ElementData* StructuralMechanics::Results::vonMisesStress = nullptr;
+
+NodeData* StructuralMechanics::Results::avgStress = nullptr;
 //ElementData* StructuralMechanics::Results::isPlastized = nullptr;
 
 NodeData* StructuralMechanics::Results::displacement = nullptr;
@@ -88,6 +90,14 @@ StructuralMechanics::StructuralMechanics(StructuralMechanicsConfiguration &setti
             nodeKernels[r][t].chunks = nodeKernels[r][t].elements / SIMD::size + (nodeKernels[r][t].elements % SIMD::size ? 1 : 0);
         }
     }
+}
+
+int StructuralMechanics::postProcessSolverSize()
+{
+    if (Results::avgStress) {
+        return 13;
+    }
+    return 0;
 }
 
 bool StructuralMechanics::analyze(const step::Step &step)
@@ -180,6 +190,9 @@ bool StructuralMechanics::analyze(const step::Step &step)
             Results::principalStress = info::mesh->elements->appendData(info::mesh->dimension    , NamedData::DataType::NUMBERED   , "PRINCIPAL_STRESS", step::TYPE::TIME, info::ecf->output.results_selection.stress);
             Results::componentStress = info::mesh->elements->appendData(info::mesh->dimension * 2, NamedData::DataType::TENSOR_SYMM, "COMPONENT_STRESS", step::TYPE::TIME, info::ecf->output.results_selection.stress);
             Results::vonMisesStress  = info::mesh->elements->appendData(                        1, NamedData::DataType::SCALAR     , "VON_MISES_STRESS", step::TYPE::TIME, info::ecf->output.results_selection.stress);
+        }
+        if (Results::avgStress == nullptr) {
+            Results::avgStress = info::mesh->nodes->appendData(info::mesh->dimension, NamedData::DataType::NUMBERED, "STRESS", step::TYPE::TIME, info::ecf->output.results_selection.stress);
         }
         if (Results::reactionForce == nullptr) {
             Results::reactionForce = info::mesh->nodes->appendData(info::mesh->dimension, NamedData::DataType::VECTOR, "REACTION_FORCES", step::TYPE::TIME, info::ecf->output.results_selection.reactions);
@@ -396,12 +409,14 @@ bool StructuralMechanics::analyze(const step::Step &step)
         if (configuration.type != LoadStepSolverConfiguration::TYPE::STEADY_STATE) {
             elementKernels[i].M.activate();
         }
+        if (Results::avgStress) {
+            elementKernels[i].postM.activate();
+            elementKernels[i].postM.action = SubKernel::SOLUTION;
+        }
         elementKernels[i].acceleration.activate(getExpression(i, configuration.acceleration), settings.element_behaviour);
         elementKernels[i].angularVelocity.activate(getExpression(i, configuration.angular_velocity), settings.element_behaviour);
         if (Results::principalStress) {
             elementKernels[i].displacement.activate(info::mesh->elements->nodes->cbegin() + ebegin, info::mesh->elements->nodes->cbegin() + eend, Results::displacement->data.data());
-            elementKernels[i].smallStrainTensor.activate();
-            elementKernels[i].sigma.activate(settings.element_behaviour);
             elementKernels[i].stress.activate(i, Results::principalStress, Results::componentStress, Results::vonMisesStress);
         }
 
@@ -493,7 +508,7 @@ bool StructuralMechanics::analyze(const step::Step &step)
     return correct;
 }
 
-void StructuralMechanics::connect(Matrix_Base<double> *K, Matrix_Base<double> *M, Vector_Base<double> *f, Vector_Base<double> *nf, Vector_Base<double> *dirichlet)
+void StructuralMechanics::connect(Matrix_Base<double> *K, Matrix_Base<double> *M, Vector_Base<double> *f, Vector_Base<double> *nf, Vector_Base<double> *dirichlet, Matrix_Base<double> *postM, Vector_Base<double> *postB)
 {
     Matrix_FETI<double> *KBEM = dynamic_cast<Matrix_FETI<double>*>(K);
     for (size_t i = 0; i < BEM.size(); ++i) { // when BEM, K is FETI matrix
@@ -515,10 +530,14 @@ void StructuralMechanics::connect(Matrix_Base<double> *K, Matrix_Base<double> *M
         if (!BEM[info::mesh->elements->eintervals[i].domain - info::mesh->domains->offset]) {
             elementKernels[i].Kfiller.activate(i, info::mesh->dimension, elementKernels[i].elements, K);
             elementKernels[i].Mfiller.activate(i, info::mesh->dimension, elementKernels[i].elements, M);
+            elementKernels[i].postMfiller.activate(i, 1, elementKernels[i].elements, postM);
+            elementKernels[i].postMfiller.action = SubKernel::SOLUTION;
         }
 
         elementKernels[i].reRHSfiller.activate(i, info::mesh->dimension, elementKernels[i].elements, f);
         elementKernels[i].reNRHSfiller.activate(i, info::mesh->dimension, elementKernels[i].elements, nf);
+        elementKernels[i].postBfiller.activate(i, 1, elementKernels[i].elements, postB);
+        elementKernels[i].postBfiller.action = SubKernel::SOLUTION;
     }
 
     for(size_t r = 1; r < info::mesh->boundaryRegions.size(); ++r) {
@@ -775,7 +794,7 @@ void StructuralMechanics::getInitialVelocity(Vector_Base<double> *x)
     x->setFrom(Results::initialVelocity->data);
 }
 
-void StructuralMechanics::updateSolution(const step::Step &step, Vector_Distributed<Vector_Dense, double> *x)
+void StructuralMechanics::updateSolution(const step::Step &step, Vector_Distributed<Vector_Dense, double> *x, Matrix_Base<double> *M, Vector_Base<double> *B)
 {
     if (withBEM) {
         x->copyTo(&xBEM);
@@ -809,7 +828,14 @@ void StructuralMechanics::updateSolution(const step::Step &step, Vector_Distribu
         xBEM.copyTo(x);
     }
     x->storeTo(Results::displacement->data);
+    reset(M, B);
     assemble(SubKernel::SOLUTION, step);
+    update(M, B);
+}
+
+void StructuralMechanics::updateStress(const step::Step &step, Vector_Base<double> *x)
+{
+    // TODO
 }
 
 void StructuralMechanics::updateSolution(const step::Step &step, Vector_Base<double> *rex, Vector_Base<double> *imx)

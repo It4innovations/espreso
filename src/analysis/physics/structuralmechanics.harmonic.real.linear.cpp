@@ -49,7 +49,7 @@ bool StructuralMechanicsHarmonicRealLinear::analyze(step::Step &step)
     }
     info::mesh->output->updateMonitors(step);
 
-    solver = setSolver<double>(settings, configuration);
+    solver = setSolver<double>(configuration);
     patternAssembler = solver->getPattern(configuration, 1);
     patternSolver = solver->getPattern(configuration, 2);
 
@@ -66,10 +66,7 @@ bool StructuralMechanicsHarmonicRealLinear::analyze(step::Step &step)
     im.x = re.f->copyPattern();
     im.dirichlet = re.dirichlet->copyPattern();
 
-    patternSolver->set(solver->A);
-    patternSolver->set(solver->b);
-    patternSolver->set(solver->x);
-    patternSolver->set(solver->dirichlet);
+    patternSolver->set(solver);
 
     patternAssembler->map(K);
     patternAssembler->map(M);

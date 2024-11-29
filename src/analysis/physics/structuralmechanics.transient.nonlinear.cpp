@@ -67,13 +67,10 @@ bool StructuralMechanicsTransientNonLinear::analyze(step::Step &step)
         configuration.nonlinear_solver.substeps = 1;
     }
 
-    solver = setSolver<double>(settings, configuration);
+    solver = setSolver<double>(configuration);
     pattern = solver->getPattern(configuration, 1);
 
-    pattern->set(solver->A);
-    pattern->set(solver->b);
-    pattern->set(solver->x);
-    pattern->set(solver->dirichlet);
+    pattern->set(solver);
 
     K = solver->A->copyPattern();
     M = solver->A->copyPattern();

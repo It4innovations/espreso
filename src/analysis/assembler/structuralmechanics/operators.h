@@ -19,8 +19,6 @@
 #include "analysis/assembler/structuralmechanics/op.angularvelocity.h"
 #include "analysis/assembler/structuralmechanics/op.acceleration.h"
 #include "analysis/assembler/structuralmechanics/op.displacement.h"
-#include "analysis/assembler/structuralmechanics/op.smallstraintensor.h"
-#include "analysis/assembler/structuralmechanics/op.sigma.h"
 #include "analysis/assembler/structuralmechanics/op.stress.h"
 #include "analysis/assembler/structuralmechanics/op.material.h"
 #include "analysis/assembler/structuralmechanics/op.matrix.elasticity.h"
@@ -46,7 +44,6 @@ struct StructuralMechanicsElementOperators {
     Thickness thickness;
     Coordinates coordinates;
     Displacement displacement;
-    SmallStrainTensor smallStrainTensor;
     Temperature temperature;
     Velocity velocity;
     Integration integration;
@@ -54,13 +51,13 @@ struct StructuralMechanicsElementOperators {
     BoundaryCondition initVelocity;
     MatrixElasticity matrixElasticity;
     MatrixCorotation matrixCorotation;
-    MatrixMass M;
+    MatrixMass M, postM;
     ElementCondition acceleration, angularVelocity;
-    Sigma sigma;
     Stress stress;
     PrintEigenValues print;
 
     DataFiller Kfiller, Mfiller, Cfiller, reRHSfiller, imRHSfiller, reNRHSfiller, imNRHSfiller;
+    DataFiller postMfiller, postBfiller;
 
     struct {
         std::vector<ExternalEvaluator*> node;

@@ -20,8 +20,8 @@ struct Physics {
     virtual bool run(step::Step &step, Physics *prev) =0;
 };
 
-template <typename T, typename Settings, typename Configuration>
-LinearSystemSolver<T>* setSolver(Settings &settings, Configuration &configuration)
+template <typename T, typename Configuration>
+LinearSystemSolver<T>* setSolver(Configuration &configuration)
 {
     switch (configuration.solver) {
     case LoadStepSolverConfiguration::SOLVER::FETI:        return new FETILinearSystemSolver<T>(configuration.feti);
