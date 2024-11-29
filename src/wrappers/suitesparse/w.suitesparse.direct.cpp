@@ -234,6 +234,34 @@ bool SuiteSparseDirectSolver<T>::solve(const Vector_Distributed<Vector_Dense, T>
 }
 
 template <typename T>
+bool SuiteSparseDirectSolver<T>::solve(const Vector_Distributed<Matrix_Dense, T> &B, Vector_Distributed<Matrix_Dense, T> &X)
+{
+#ifdef HAVE_SUITESPARSE
+    double start = eslog::time();
+
+    if(external->stage < 2) eslog::error("solve: invalid order of operations in SuiteSparse solver\n");
+
+    for (int r = 0; r < B.cluster.nrows; ++r) {
+        cholmod_dense cm_rhs;
+        cm_rhs.nrow = cm_rhs.d = cm_rhs.nzmax = B.cluster.ncols;
+        cm_rhs.ncol = 1;
+        cm_rhs.x = B.cluster.vals + B.decomposition->halo.size() + r * B.cluster.ncols;
+        cm_rhs.xtype = _getCholmodXtype<T>();
+        cm_rhs.dtype = _getCholmodDtype<T>();
+
+        cholmod_dense * cm_sol = _solve<int>(CHOLMOD_A, external->cm_factor, &cm_rhs, external->cm_common);
+
+        std::copy_n(reinterpret_cast<T*>(cm_sol->x), cm_sol->nrow, X.cluster.vals + X.decomposition->halo.size() + r * X.cluster.ncols);
+
+        _free<int>(cm_sol, external->cm_common);
+    }
+    eslog::solver("       - SOLVER TIME                                                        %8.3f s -  \n", eslog::time() - start);
+    return true;
+#endif
+    return false;
+}
+
+template <typename T>
 void SuiteSparseDirectSolver<T>::clear()
 {
 #ifdef HAVE_SUITESPARSE

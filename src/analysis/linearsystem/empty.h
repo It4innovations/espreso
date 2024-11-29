@@ -3,6 +3,7 @@
 #define SRC_ANALYSIS_LINEARSYSTEM_EMPTY_H_
 
 #include "linearsystem.h"
+#include "analysis/pattern/pattern.h"
 #include "basis/utilities/utils.h"
 #include "basis/utilities/sysutils.h"
 
@@ -11,6 +12,7 @@ namespace espreso {
 template <typename T>
 struct EmptySystemSolver: LinearSystemSolver<T> {
 
+    Pattern<T>* getPattern(int DOFs)                                                                  { return new PatternUniformDirect<T>(DOFs); }
     Pattern<T>* getPattern(HeatTransferLoadStepConfiguration &configuration       , int multiplicity) { return new PatternUniformDirect<T>(configuration, multiplicity); }
     Pattern<T>* getPattern(StructuralMechanicsLoadStepConfiguration &configuration, int multiplicity) { return new PatternUniformDirect<T>(configuration, multiplicity); }
 
@@ -43,6 +45,11 @@ struct EmptySystemSolver: LinearSystemSolver<T> {
     }
 
     bool solve(step::Step &step)
+    {
+        return true;
+    }
+
+    bool postSolve(step::Step &step)
     {
         return true;
     }

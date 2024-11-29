@@ -12,6 +12,12 @@
 
 using namespace espreso;
 
+VectorUniformDense::VectorUniformDense(int DOFs)
+{
+    dofs = DOFs;
+    buildPattern(dofs);
+}
+
 VectorUniformDense::VectorUniformDense(HeatTransferLoadStepConfiguration &configuration, int multiplicity)
 {
     dofs = 1;
@@ -67,74 +73,113 @@ void VectorUniformDense::buildPattern(int dofs)
 }
 
 template <typename T>
-void VectorUniformDense::Sync<T>::init(DecompositionDirect &decomposition)
+void VectorUniformDense::SyncData<T>::init(DecompositionDirect &decomposition)
 {
-    if (info::mpi::size == 1 || neighbors.size()) {
+    if (info::mpi::size == 1 || this->neighbors.size()) {
         return;
     }
-    neighbors = decomposition.neighbors;
-    sBuffer.resize(neighbors.size());
-    rBuffer.resize(neighbors.size());
-    rOffset.resize(neighbors.size());
+    this->neighbors = decomposition.neighbors;
+    this->sBuffer.resize(this->neighbors.size());
+    this->rBuffer.resize(this->neighbors.size());
+    this->rOffset.resize(this->neighbors.size());
 
-    std::vector<std::vector<esint> > sbuffer(neighbors.size()), rbuffer(neighbors.size());
+    std::vector<std::vector<esint> > sbuffer(this->neighbors.size()), rbuffer(this->neighbors.size());
 
-    for (size_t n = 0, r = 0; n < neighbors.size() && neighbors[n] < info::mpi::rank; ++n) {
-        nOffset.push_back(r);
+    for (size_t n = 0, r = 0; n < this->neighbors.size() && this->neighbors[n] < info::mpi::rank; ++n) {
+        this->nOffset.push_back(r);
         while (r < decomposition.halo.size() && decomposition.halo[r] < decomposition.neighDOF[n + 1]) {
             sbuffer[n].push_back(decomposition.halo[r++]);
         }
-        sBuffer[n].resize(r - nOffset.back());
+        this->sBuffer[n].resize(r - this->nOffset.back());
     }
 
-    if (!Communication::receiveUpperUnknownSize(sbuffer, rbuffer, neighbors)) {
+    if (!Communication::receiveUpperUnknownSize(sbuffer, rbuffer, this->neighbors)) {
         eslog::internalFailure("receive MatrixDenseDistributed pattern.\n");
     }
 
-    for (size_t n = 0; n < neighbors.size(); ++n) {
+    for (size_t n = 0; n < this->neighbors.size(); ++n) {
         for (size_t i = 0; i < rbuffer[n].size(); ++i) {
-            rOffset[n].push_back(rbuffer[n][i] - decomposition.begin + decomposition.halo.size());
+            this->rOffset[n].push_back(rbuffer[n][i] - decomposition.begin + decomposition.halo.size());
         }
-        rBuffer[n].resize(rOffset[n].size());
+        this->rBuffer[n].resize(this->rOffset[n].size());
     }
 }
 
 template <typename T>
-void VectorUniformDense::Sync<T>::gatherFromUpper(Vector_Distributed<Vector_Dense, T> &v)
+void VectorUniformDense::SyncVector<T>::gatherFromUpper(Vector_Distributed<Vector_Dense, T> &v)
 {
-    for (size_t n = 0; n < info::mesh->neighbors.size() && info::mesh->neighbors[n] < info::mpi::rank; ++n) {
-        memcpy(sBuffer[n].data(), v.cluster.vals + nOffset[n], sizeof(double) * sBuffer[n].size());
+    for (size_t n = 0; n < this->neighbors.size() && this->neighbors[n] < info::mpi::rank; ++n) {
+        memcpy(this->sBuffer[n].data(), v.cluster.vals + this->nOffset[n], sizeof(double) * this->sBuffer[n].size());
     }
 
-    if (!Communication::receiveUpperUnknownSize(sBuffer, rBuffer, info::mesh->neighbors)) {
+    if (!Communication::receiveUpperUnknownSize(this->sBuffer, this->rBuffer, this->neighbors)) {
         eslog::internalFailure("receive MatrixCSRDistribution data.\n");
     }
 
-    for (size_t n = 0; n < info::mesh->neighbors.size(); ++n) {
-        for (size_t i = 0; i < rOffset[n].size(); ++i) {
-            v.cluster.vals[rOffset[n][i]] += rBuffer[n][i];
+    for (size_t n = 0; n < this->neighbors.size(); ++n) {
+        for (size_t i = 0; i < this->rOffset[n].size(); ++i) {
+            v.cluster.vals[this->rOffset[n][i]] += this->rBuffer[n][i];
         }
     }
 }
 
 template <typename T>
-void VectorUniformDense::Sync<T>::scatterToUpper(Vector_Distributed<Vector_Dense, T> &v)
+void VectorUniformDense::SyncVector<T>::scatterToUpper(Vector_Distributed<Vector_Dense, T> &v)
 {
-    for (size_t n = 0; n < info::mesh->neighbors.size(); ++n) {
-        for (size_t i = 0; i < rOffset[n].size(); ++i) {
-            rBuffer[n][i] = v.cluster.vals[rOffset[n][i]];
+    for (size_t n = 0; n < this->neighbors.size(); ++n) {
+        for (size_t i = 0; i < this->rOffset[n].size(); ++i) {
+            this->rBuffer[n][i] = v.cluster.vals[this->rOffset[n][i]];
         }
     }
 
-    if (!Communication::receiveLowerKnownSize(rBuffer, sBuffer, neighbors)) {
+    if (!Communication::receiveLowerKnownSize(this->rBuffer, this->sBuffer, this->neighbors)) {
         eslog::internalFailure("scatter VectorDenseDistributed data.\n");
     }
 
-    for (size_t n = 0; n < neighbors.size() && neighbors[n] < info::mpi::rank; ++n) {
-        memcpy(v.cluster.vals + nOffset[n], sBuffer[n].data(), sizeof(double) * sBuffer[n].size());
+    for (size_t n = 0; n < this->neighbors.size() && this->neighbors[n] < info::mpi::rank; ++n) {
+        memcpy(v.cluster.vals + this->nOffset[n], this->sBuffer[n].data(), sizeof(double) * this->sBuffer[n].size());
     }
 }
 
-template struct VectorUniformDense::Sync<double>;
+template <typename T>
+void VectorUniformDense::SyncMatrix<T>::gatherFromUpper(Vector_Distributed<Matrix_Dense, T> &v)
+{
+    for (size_t n = 0; n < this->neighbors.size() && this->neighbors[n] < info::mpi::rank; ++n) {
+        memcpy(this->sBuffer[n].data(), v.cluster.vals + this->nOffset[n], sizeof(double) * this->sBuffer[n].size());
+    }
+
+    if (!Communication::receiveUpperUnknownSize(this->sBuffer, this->rBuffer, this->neighbors)) {
+        eslog::internalFailure("receive MatrixCSRDistribution data.\n");
+    }
+
+    for (size_t n = 0; n < this->neighbors.size(); ++n) {
+        for (size_t i = 0; i < this->rOffset[n].size(); ++i) {
+            v.cluster.vals[this->rOffset[n][i]] += this->rBuffer[n][i];
+        }
+    }
+}
+
+template <typename T>
+void VectorUniformDense::SyncMatrix<T>::scatterToUpper(Vector_Distributed<Matrix_Dense, T> &v)
+{
+    for (size_t n = 0; n < this->neighbors.size(); ++n) {
+        for (size_t i = 0; i < this->rOffset[n].size(); ++i) {
+            this->rBuffer[n][i] = v.cluster.vals[this->rOffset[n][i]];
+        }
+    }
+
+    if (!Communication::receiveLowerKnownSize(this->rBuffer, this->sBuffer, this->neighbors)) {
+        eslog::internalFailure("scatter VectorDenseDistributed data.\n");
+    }
+
+    for (size_t n = 0; n < this->neighbors.size() && this->neighbors[n] < info::mpi::rank; ++n) {
+        memcpy(v.cluster.vals + this->nOffset[n], this->sBuffer[n].data(), sizeof(double) * this->sBuffer[n].size());
+    }
+}
+
+template struct VectorUniformDense::SyncData<double>;
+template struct VectorUniformDense::SyncVector<double>;
+template struct VectorUniformDense::SyncMatrix<double>;
+
 
 

@@ -39,6 +39,8 @@ public:
     virtual void addTo(const T &alpha, Matrix_Distributed<T> *a, const Selection &rows = Selection(), const Selection &cols = Selection()) const =0;
     virtual void addTo(const T &alpha, Matrix_FETI<T> *a, const Selection &rows = Selection(), const Selection &cols = Selection()) const =0;
 
+    virtual esint size() =0;
+
     virtual void apply(const T &alpha, const Vector_Base<T> *in, const T &beta, Vector_Base<T> *out) =0;
 
     virtual void printEigenValues(const char *name, size_t n) const =0;

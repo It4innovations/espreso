@@ -5,6 +5,7 @@
 #include "analysis/math/matrix_feti.h"
 #include "analysis/math/vector_distributed.h"
 #include "analysis/math/vector_feti.h"
+#include "analysis/pattern/pattern.h"
 #include "linearsystem.h"
 #include "constrains/constrains.h"
 #include "regularization/regularization.h"
@@ -18,6 +19,7 @@ namespace espreso {
 template <typename T>
 struct FETILinearSystemSolver: LinearSystemSolver<T> {
 
+    Pattern<T>* getPattern(int DOFs)                                                                  { return new PatternUniformFETI<T>(DOFs); }
     Pattern<T>* getPattern(HeatTransferLoadStepConfiguration &configuration       , int multiplicity) { return new PatternUniformFETI<T>(configuration, multiplicity); }
     Pattern<T>* getPattern(StructuralMechanicsLoadStepConfiguration &configuration, int multiplicity) { return new PatternUniformFETI<T>(configuration, multiplicity); }
 
@@ -27,6 +29,7 @@ struct FETILinearSystemSolver: LinearSystemSolver<T> {
     void set(step::Step &step);
     void update(step::Step &step);
     bool solve(step::Step &step);
+    bool postSolve(step::Step &step);
 
     T rhs_without_dirichlet_norm();
 

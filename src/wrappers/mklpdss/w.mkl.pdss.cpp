@@ -255,6 +255,24 @@ bool MKLPDSS<T>::solve(const Vector_Distributed<Vector_Dense, T> &b, Vector_Dist
 }
 
 template<typename T>
+bool MKLPDSS<T>::solve(const Vector_Distributed<Matrix_Dense, T> &B, Vector_Distributed<Matrix_Dense, T> &X)
+{
+#ifdef HAVE_MKLPDSS
+    bool status = true;
+    double start = eslog::time();
+    for (int r = 0; r < B.cluster.nrows; ++r) {
+        external->b.vals = B.cluster.vals + B.decomposition->halo.size() + r * B.cluster.ncols;
+        external->x.vals = X.cluster.vals + X.decomposition->halo.size() + r * B.cluster.ncols;
+
+        status |= call(33); // solve at once
+    }
+    eslog::solver("       - SOLVER TIME                                                        %8.3f s -  \n", eslog::time() - start);
+    return status;
+#endif
+    return false;
+}
+
+template<typename T>
 void MKLPDSS<T>::clear()
 {
 #ifdef HAVE_MKLPDSS

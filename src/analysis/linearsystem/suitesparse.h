@@ -3,7 +3,7 @@
 #define SRC_ANALYSIS_LINEARSYSTEM_SUITESPARSE_H_
 
 #include "directsolver.h"
-
+#include "analysis/pattern/pattern.h"
 #include "basis/utilities/sysutils.h"
 #include "esinfo/ecfinfo.h"
 #include "esinfo/meshinfo.h"
@@ -15,6 +15,7 @@ namespace espreso {
 template <typename T>
 struct SuiteSparseLinearSystemSolver: DirectLinearSystemSolver<T> {
 
+    Pattern<T>* getPattern(int DOFs)                                                                  { return new PatternUniformDirect<T>(DOFs); }
     Pattern<T>* getPattern(HeatTransferLoadStepConfiguration &configuration       , int multiplicity) { return new PatternUniformDirect<T>(configuration, multiplicity); }
     Pattern<T>* getPattern(StructuralMechanicsLoadStepConfiguration &configuration, int multiplicity) { return new PatternUniformDirect<T>(configuration, multiplicity); }
 
@@ -70,6 +71,13 @@ struct SuiteSparseLinearSystemSolver: DirectLinearSystemSolver<T> {
             return true;
         }
         return false;
+    }
+
+    bool postSolve(step::Step &step)
+    {
+        suitesparse.update(this->A);
+        suitesparse.solve(this->B, this->X);
+        return true;
     }
 
     T rhs_without_dirichlet_norm()

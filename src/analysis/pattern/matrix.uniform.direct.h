@@ -43,6 +43,7 @@ struct MatrixUniformDirect {
         void apply(Matrix_Distributed<T> &m, Vector_Distributed<Vector_Dense, T> &y, const T &alpha, const T &beta, const Vector_Distributed<Vector_Dense, T> &x);
     };
 
+    MatrixUniformDirect(int DOFs);
     MatrixUniformDirect(HeatTransferLoadStepConfiguration &configuration, int multiplicity);
     MatrixUniformDirect(StructuralMechanicsLoadStepConfiguration &configuration, int multiplicity);
 

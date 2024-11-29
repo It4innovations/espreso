@@ -20,6 +20,7 @@ struct VectorUniformSparse {
         void scatterToUpper(Vector_Distributed<Vector_Sparse, T> &o) {}
     }; // no need for synchronization
 
+    VectorUniformSparse(int DOFs);
     VectorUniformSparse(HeatTransferLoadStepConfiguration &configuration, int multiplicity);
     VectorUniformSparse(StructuralMechanicsLoadStepConfiguration &configuration, int multiplicity);
 

@@ -17,6 +17,8 @@ struct DirectLinearSystemSolver: LinearSystemSolver<T> {
         LinearSystemSolver<T>::A = &A;
         LinearSystemSolver<T>::x = &x;
         LinearSystemSolver<T>::b = &b;
+        LinearSystemSolver<T>::X = &X;
+        LinearSystemSolver<T>::B = &B;
         LinearSystemSolver<T>::dirichlet = &dirichlet;
     }
 
@@ -30,6 +32,7 @@ protected:
 
     Matrix_Distributed<T> A;
     Vector_Distributed<Vector_Dense, T> x, b;
+    Vector_Distributed<Matrix_Dense, T> X, B;
     Vector_Distributed<Vector_Sparse, T> dirichlet;
 };
 

@@ -4,6 +4,7 @@
 
 #include "selection.h"
 #include "mapping.h"
+#include "math/primitives/matrix_dense.h"
 #include "math/primitives/vector_dense.h"
 #include "math/primitives/vector_sparse.h"
 
@@ -33,19 +34,24 @@ public:
     virtual Vector_Base<T>* copy(const Vector_Base<T> *a, const Selection &rows = Selection()) =0;
     virtual Vector_Base<T>* add(const T &alpha, const Vector_Base<T> *a, const Selection &rows = Selection()) =0;
 
+    virtual esint size() =0;
     virtual T norm() =0;
     virtual T max() =0;
     virtual T absmax() =0;
     virtual T dot(const Vector_Base<T> *other) =0;
 
     virtual void copyTo(Vector_Distributed<Vector_Dense , T> *a, const Selection &rows = Selection()) const =0;
+    virtual void copyTo(Vector_Distributed<Matrix_Dense , T> *a, const Selection &rows = Selection()) const =0;
     virtual void copyTo(Vector_Distributed<Vector_Sparse, T> *a, const Selection &rows = Selection()) const =0;
     virtual void copyTo(Vector_FETI<Vector_Dense , T> *a, const Selection &rows = Selection()) const =0;
+    virtual void copyTo(Vector_FETI<Matrix_Dense , T> *a, const Selection &rows = Selection()) const =0;
     virtual void copyTo(Vector_FETI<Vector_Sparse, T> *a, const Selection &rows = Selection()) const =0;
 
     virtual void addTo(const T &alpha, Vector_Distributed<Vector_Dense , T> *a, const Selection &rows = Selection()) const =0;
+    virtual void addTo(const T &alpha, Vector_Distributed<Matrix_Dense , T> *a, const Selection &rows = Selection()) const =0;
     virtual void addTo(const T &alpha, Vector_Distributed<Vector_Sparse, T> *a, const Selection &rows = Selection()) const =0;
     virtual void addTo(const T &alpha, Vector_FETI<Vector_Dense , T> *a, const Selection &rows = Selection()) const =0;
+    virtual void addTo(const T &alpha, Vector_FETI<Matrix_Dense , T> *a, const Selection &rows = Selection()) const =0;
     virtual void addTo(const T &alpha, Vector_FETI<Vector_Sparse, T> *a, const Selection &rows = Selection()) const =0;
 
     Mapping<T> mapping;

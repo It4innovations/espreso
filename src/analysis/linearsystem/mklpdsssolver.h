@@ -3,7 +3,7 @@
 #define SRC_ANALYSIS_LINEARSYSTEM_MKLPDSSSOLVER_H_
 
 #include "directsolver.h"
-
+#include "analysis/pattern/pattern.h"
 #include "basis/utilities/sysutils.h"
 #include "esinfo/ecfinfo.h"
 #include "esinfo/meshinfo.h"
@@ -17,6 +17,7 @@ struct MKLPDSSLinearSystemSolver: DirectLinearSystemSolver<T> {
 
     Pattern<T>* getPattern(HeatTransferLoadStepConfiguration &configuration       , int multiplicity) { return new PatternUniformDirect<T>(configuration, multiplicity); }
     Pattern<T>* getPattern(StructuralMechanicsLoadStepConfiguration &configuration, int multiplicity) { return new PatternUniformDirect<T>(configuration, multiplicity); }
+    Pattern<T>* getPattern(int DOFs)                                                                  { return new PatternUniformDirect<T>(DOFs); }
 
     MKLPDSSLinearSystemSolver(MKLPDSSConfiguration &configuration): mklpdss(configuration) {}
     ~MKLPDSSLinearSystemSolver() {}
@@ -70,6 +71,13 @@ struct MKLPDSSLinearSystemSolver: DirectLinearSystemSolver<T> {
             return true;
         }
         return false;
+    }
+
+    bool postSolve(step::Step &step)
+    {
+        mklpdss.update(this->A);
+        mklpdss.solve(this->B, this->X);
+        return true;
     }
 
     T rhs_without_dirichlet_norm()

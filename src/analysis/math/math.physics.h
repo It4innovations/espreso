@@ -52,6 +52,30 @@ template <typename T, typename I> void copy(Vector_Dense<T, I> &x, const Vector_
     }
 }
 
+template <typename T, typename I> void copy(Matrix_Dense<T, I> &x, const Matrix_Dense<T, I> &y, const Selection &rows)
+{
+    if (rows == Selection()) {
+        math::copy(x, y);
+    } else {
+        eslog::error("implement Matrix_Dense to Matrix_Dense with Selection.\n");
+    }
+}
+
+template <typename T, typename I> void copy(Matrix_Dense<T, I> &x, const Vector_Dense<T, I> &y, const Selection &rows)
+{
+    eslog::error("cannot copy Vector_Dense to Matrix_Dense.\n");
+}
+
+template <typename T, typename I> void copy(Vector_Dense<T, I> &x, const Matrix_Dense<T, I> &y, const Selection &rows)
+{
+    eslog::error("cannot copy Matrix_Dense to Vector_Dense.\n");
+}
+
+template <typename T, typename I> void copy(Vector_Sparse<T, I> &x, const Matrix_Dense<T, I> &y, const Selection &rows)
+{
+    eslog::error("cannot copy Matrix_Dense to Vector_Sparse.\n");
+}
+
 template <typename T, typename I> void copy(Vector_Sparse<T, I> &x, const Vector_Sparse<T, I> &y, const Selection &rows)
 {
     if (rows == Selection()) {
@@ -78,6 +102,11 @@ template <typename T, typename I> void copy(Vector_Dense<T, I> &x, const Vector_
     for (esint i = 0; i < y.nnz; ++i) {
         x.vals[y.indices[i]] = y.vals[i];
     }
+}
+
+template <typename T, typename I> void copy(Matrix_Dense<T, I> &x, const Vector_Sparse<T, I> &y, const Selection &rows)
+{
+    eslog::error("cannot copy Matrix_Dense to Vector_Sparse.\n");
 }
 
 template <typename T, typename I> void copy(Vector_Sparse<T, I> &x, const Vector_Dense<T, I> &y, const Selection &rows)
@@ -131,6 +160,30 @@ template <typename T, typename I> void add(Vector_Dense<T, I> &x, const T &alpha
     }
 }
 
+template <typename T, typename I> void add(Matrix_Dense<T, I> &x, const T &alpha, const Matrix_Dense<T, I> &y, const Selection &rows)
+{
+    if (rows == Selection()) {
+        math::add(x, alpha, y);
+    } else {
+        eslog::error("implement add Matrix_Dense to Matrix_Dense with Selection.\n");
+    }
+}
+
+template <typename T, typename I> void add(Matrix_Dense<T, I> &x, const T &alpha, const Vector_Dense<T, I> &y, const Selection &rows)
+{
+    eslog::error("cannot add Vector_Dense to Matrix_Dense.\n");
+}
+
+template <typename T, typename I> void add(Vector_Dense<T, I> &x, const T &alpha, const Matrix_Dense<T, I> &y, const Selection &rows)
+{
+    eslog::error("cannot add Matrix_Dense to Vector_Dense.\n");
+}
+
+template <typename T, typename I> void add(Vector_Sparse<T, I> &x, const T &alpha, const Matrix_Dense<T, I> &y, const Selection &rows)
+{
+    eslog::error("cannot add Matrix_Dense to Vector_Sparse.\n");
+}
+
 template <typename T, typename I> void add(Vector_Sparse<T, I> &x, const T &alpha, const Vector_Sparse<T, I> &y, const Selection &rows)
 {
     if (rows == Selection()) {
@@ -158,11 +211,17 @@ template <typename T, typename I> void add(Vector_Sparse<T, I> &x, const T &alph
         x.vals[i] += alpha * y.vals[x.indices[i]];
     }
 }
+
 template <typename T, typename I> void add(Vector_Dense<T, I> &x, const T &alpha, const Vector_Sparse<T, I> &y, const Selection &rows)
 {
     for (esint i = 0; i < y.nnz; ++i) {
         x.vals[y.indices[i]] += alpha * y.vals[i];
     }
+}
+
+template <typename T, typename I> void add(Matrix_Dense<T, I> &x, const T &alpha, const Vector_Sparse<T, I> &y, const Selection &rows)
+{
+    eslog::error("cannot add Matrix_Dense to Vector_Sparse.\n");
 }
 
 }

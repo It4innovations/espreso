@@ -208,6 +208,13 @@ bool FETILinearSystemSolver<T>::solve(step::Step &step)
     return result;
 }
 
+template <typename T>
+bool FETILinearSystemSolver<T>::postSolve(step::Step &step)
+{
+    eslog::error("implement FETI post solver\n");
+    return false;
+}
+
 template struct FETILinearSystemSolver<double>;
 
 }

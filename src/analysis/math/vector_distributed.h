@@ -81,11 +81,33 @@ public:
         return this;
     }
 
-    T norm()
+    esint size()
+    {
+        return decomposition->halo.size() + (decomposition->end - decomposition->begin);
+    }
+
+    T _norm(Vector_Sparse<T> &cluster)
+    {
+        eslog::error("call dot for Vector_Sparse\n");
+        return T{0};
+    }
+
+    T _norm(Vector_Dense<T> &cluster)
     {
         T dot = math::blas::dot(cluster.size - decomposition->halo.size(), cluster.vals + decomposition->halo.size(), 1, cluster.vals + decomposition->halo.size(), 1);
         Communication::allReduce(&dot, NULL, 1, MPI_DOUBLE, MPI_SUM);
         return std::sqrt(dot);
+    }
+
+    T _norm(Matrix_Dense<T> &cluster)
+    {
+        eslog::error("call dot for matrix\n");
+        return T{0};
+    }
+
+    T norm()
+    {
+        return _norm(cluster);
     }
 
     T max()
@@ -111,6 +133,11 @@ public:
         math::copy(a->cluster, cluster, rows);
     }
 
+    void copyTo(Vector_Distributed<Matrix_Dense , T> *a, const Selection &rows = Selection()) const
+    {
+        math::copy(a->cluster, cluster, rows);
+    }
+
     void copyTo(Vector_Distributed<Vector_Sparse, T> *a, const Selection &rows = Selection()) const
     {
         math::copy(a->cluster, cluster, rows);
@@ -126,6 +153,11 @@ public:
                 }
             }
         }
+    }
+
+    void copyTo(Vector_FETI<Matrix_Dense , T> *a, const Selection &rows = Selection()) const
+    {
+        eslog::error("call empty function\n");
     }
 
     void spliteTo(Vector_FETI<Vector_Dense , T> *a, const Selection &rows = Selection()) const
@@ -150,12 +182,22 @@ public:
         math::add(a->cluster, alpha, cluster, rows);
     }
 
+    void addTo(const T &alpha, Vector_Distributed<Matrix_Dense, T> *a, const Selection &rows = Selection()) const
+    {
+        math::add(a->cluster, alpha, cluster, rows);
+    }
+
     void addTo(const T &alpha, Vector_Distributed<Vector_Sparse, T> *a, const Selection &rows = Selection()) const
     {
         math::add(a->cluster, alpha, cluster, rows);
     }
 
     void addTo(const T &alpha, Vector_FETI<Vector_Dense, T> *a, const Selection &rows = Selection()) const
+    {
+        eslog::error("call empty function\n");
+    }
+
+    void addTo(const T &alpha, Vector_FETI<Matrix_Dense, T> *a, const Selection &rows = Selection()) const
     {
         eslog::error("call empty function\n");
     }

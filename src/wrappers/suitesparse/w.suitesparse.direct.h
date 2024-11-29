@@ -25,6 +25,7 @@ public:
     bool set(const Matrix_Distributed<T> &A);
     bool update(const Matrix_Distributed<T> &A);
     bool solve(const Vector_Distributed<Vector_Dense, T> &b, Vector_Distributed<Vector_Dense, T> &x);
+    bool solve(const Vector_Distributed<Matrix_Dense, T> &B, Vector_Distributed<Matrix_Dense, T> &X);
 
 protected:
     SuiteSparseConfiguration &configuration;

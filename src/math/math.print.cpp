@@ -63,6 +63,21 @@ template <> void store(const Vector_Distributed<Vector_Dense, double> &x, const 
 template <> void store(const Vector_Distributed<Vector_Dense, std::complex<double> > &x, const char* file) { _store(x, file); }
 
 template <typename T>
+void _store(const Vector_Distributed<Matrix_Dense, T> &x, const char* file)
+{
+    Matrix_Dense<T> _x; _x.resize(x.cluster.nrows - x.decomposition->halo.size(), x.cluster.ncols);
+    for (int r = 0; r < _x.nrows; ++r) {
+        for (int c = 0; c < _x.ncols; ++c) {
+            _x.vals[r * _x.ncols + c] = x.cluster.vals[r * x.cluster.ncols + c];
+        }
+    }
+    store(_x, file);
+}
+
+template <> void store(const Vector_Distributed<Matrix_Dense, double> &x, const char* file) { _store(x, file); }
+template <> void store(const Vector_Distributed<Matrix_Dense, std::complex<double> > &x, const char* file) { _store(x, file); }
+
+template <typename T>
 void _store(const Vector_Distributed<Vector_Sparse, T> &x, const char* file)
 {
     Vector_Sparse<T, esint> _x;

@@ -9,6 +9,13 @@
 
 using namespace espreso;
 
+VectorUniformSparse::VectorUniformSparse(int DOFs)
+{
+    dirichlet.resize(info::mesh->boundaryRegions.size());
+    std::vector<int> isset(DOFs * info::mesh->nodes->size);
+    buildPattern(isset);
+}
+
 VectorUniformSparse::VectorUniformSparse(HeatTransferLoadStepConfiguration &configuration, int multiplicity)
 {
     int dofs = multiplicity;

@@ -35,6 +35,7 @@ struct MatrixUniformFETI {
         void apply(Matrix_FETI<T> &m, Vector_Distributed<Vector_Dense, T> &y, const T &alpha, const T &beta, const Vector_Distributed<Vector_Dense, T> &x);
     };
 
+    MatrixUniformFETI(int DOFs);
     MatrixUniformFETI(HeatTransferLoadStepConfiguration &configuration, int multiplicity);
     MatrixUniformFETI(StructuralMechanicsLoadStepConfiguration &configuration, int multiplicity);
 
@@ -136,7 +137,7 @@ protected:
     std::vector<std::vector<RegionInfo> > boundary; // RegionInfo per domain per boundary region
 
 private:
-    void fillDecomposition(FETIConfiguration &feti, int dofs);
+    void fillDecomposition(int dofs);
     void buildPattern(int dofs, Matrix_Shape shape, int domain);
 };
 

@@ -58,6 +58,11 @@ public:
         return this;
     }
 
+    esint size()
+    {
+        return cluster.nnz;
+    }
+
     void apply(const T &alpha, const Vector_Base<T> *in, const T &beta, Vector_Base<T> *out)
     {
         if (dynamic_cast<const Vector_Distributed<Vector_Dense, T>*>(in) && dynamic_cast<Vector_Distributed<Vector_Dense, T>*>(out)) {

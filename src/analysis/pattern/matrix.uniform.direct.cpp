@@ -19,6 +19,14 @@
 
 using namespace espreso;
 
+MatrixUniformDirect::MatrixUniformDirect(int DOFs)
+{
+    dofs = DOFs;
+    shape = Matrix_Shape::UPPER;
+    type = Matrix_Type::REAL_SYMMETRIC_POSITIVE_DEFINITE;
+    buildPattern(dofs);
+}
+
 MatrixUniformDirect::MatrixUniformDirect(HeatTransferLoadStepConfiguration &configuration, int multiplicity)
 {
     dofs = multiplicity;

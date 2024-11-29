@@ -12,17 +12,28 @@ namespace espreso {
 struct VectorUniformDense {
 
     template <typename T>
-    struct Sync: public Synchronization<Vector_Distributed<Vector_Dense, T> > {
+    struct SyncData {
         std::vector<std::vector<T> > sBuffer, rBuffer;
         std::vector<std::vector<esint> > rOffset;
         std::vector<esint> nOffset;
         std::vector<int> neighbors;
 
         void init(DecompositionDirect &decomposition);
+    };
+
+    template <typename T>
+    struct SyncVector: public SyncData<T>, public Synchronization<Vector_Distributed<Vector_Dense, T> > {
         void gatherFromUpper(Vector_Distributed<Vector_Dense, T> &v);
         void scatterToUpper(Vector_Distributed<Vector_Dense, T> &v);
     };
 
+    template <typename T>
+    struct SyncMatrix: public SyncData<T>, public Synchronization<Vector_Distributed<Matrix_Dense, T> > {
+        void gatherFromUpper(Vector_Distributed<Matrix_Dense, T> &v);
+        void scatterToUpper(Vector_Distributed<Matrix_Dense, T> &v);
+    };
+
+    VectorUniformDense(int DOFs);
     VectorUniformDense(HeatTransferLoadStepConfiguration &configuration, int multiplicity);
     VectorUniformDense(StructuralMechanicsLoadStepConfiguration &configuration, int multiplicity);
 
@@ -34,7 +45,33 @@ struct VectorUniformDense {
     }
 
     template <typename T>
+    void set(DecompositionDirect &decomposition, Vector_Distributed<Matrix_Dense, T> *v, int nrhs)
+    {
+        v->decomposition = &decomposition;
+        v->cluster.resize(nrhs, decomposition.halo.size() + decomposition.end - decomposition.begin);
+    }
+
+    template <typename T>
     void map(Vector_Distributed<Vector_Dense, T> *v)
+    {
+        v->mapping.elements.resize(elements.offset.size());
+        for (size_t i = 0; i < elements.offset.size(); ++i) {
+            v->mapping.elements[i].data = v->cluster.vals;
+            v->mapping.elements[i].position = elements.permutation.data() + elements.offset[i];
+        }
+
+        v->mapping.boundary.resize(boundary.size());
+        for (size_t r = 0; r < boundary.size(); ++r) {
+            v->mapping.boundary[r].resize(boundary[r].offset.size());
+            for (size_t i = 0; i < boundary[r].offset.size(); ++i) {
+                v->mapping.boundary[r][i].data = v->cluster.vals;
+                v->mapping.boundary[r][i].position = boundary[r].permutation.data() + boundary[r].offset[i];
+            }
+        }
+    }
+
+    template <typename T>
+    void map(Vector_Distributed<Matrix_Dense, T> *v)
     {
         v->mapping.elements.resize(elements.offset.size());
         for (size_t i = 0; i < elements.offset.size(); ++i) {

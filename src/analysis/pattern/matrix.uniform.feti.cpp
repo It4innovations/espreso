@@ -21,6 +21,19 @@
 
 using namespace espreso;
 
+MatrixUniformFETI::MatrixUniformFETI(int DOFs)
+{
+    dofs = DOFs;
+    shape = Matrix_Shape::UPPER;
+    type = Matrix_Type::REAL_SYMMETRIC_POSITIVE_DEFINITE;
+
+    fillDecomposition(DOFs);
+    #pragma omp parallel for
+    for (esint domain = 0; domain < info::mesh->domains->size; ++domain) {
+        buildPattern(DOFs, shape, domain);
+    }
+}
+
 MatrixUniformFETI::MatrixUniformFETI(HeatTransferLoadStepConfiguration &configuration, int multiplicity)
 {
     dofs = 1;
@@ -47,7 +60,7 @@ MatrixUniformFETI::MatrixUniformFETI(HeatTransferLoadStepConfiguration &configur
     }
     BEM = surface.size();
 
-    fillDecomposition(configuration.feti, dofs);
+    fillDecomposition(dofs);
     #pragma omp parallel for
     for (esint domain = 0; domain < info::mesh->domains->size; ++domain) {
         buildPattern(dofs, shape, domain);
@@ -82,14 +95,14 @@ MatrixUniformFETI::MatrixUniformFETI(StructuralMechanicsLoadStepConfiguration &c
     }
     BEM = surface.size();
 
-    fillDecomposition(configuration.feti, dofs * multiplicity);
+    fillDecomposition(dofs * multiplicity);
     #pragma omp parallel for
     for (esint domain = 0; domain < info::mesh->domains->size; ++domain) {
         buildPattern(dofs * multiplicity, shape, domain);
     }
 }
 
-void MatrixUniformFETI::fillDecomposition(FETIConfiguration &feti, int dofs)
+void MatrixUniformFETI::fillDecomposition(int dofs)
 {
     elements.resize(info::mesh->domains->size);
     boundary.resize(info::mesh->domains->size);
