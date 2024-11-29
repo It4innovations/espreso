@@ -72,13 +72,13 @@ template <size_t nodes, size_t gps> struct MaterialStructuralMechanicsKernel<nod
     MaterialStructuralMechanicsKernel(const MaterialStructuralMechanics &base): MaterialStructuralMechanics(base) {}
 
     template <typename Element>
-    void simd(Element &element)
+    void init(Element &element)
     {
 
     }
 
     template <typename Element>
-    void simd(Element &element, size_t gp)
+    void simd(Element &element)
     {
         for (int i = 0; i < 2; ++i) {
             for (int j = 0; j < 2; ++j) {
@@ -188,7 +188,7 @@ template <size_t nodes, size_t gps> struct MaterialStructuralMechanicsKernel<nod
     }
 
     template <typename Element>
-    void simd(Element &element)
+    void init(Element &element)
     {
         switch (configuration->elasticity_properties.material_model) {
         case ElasticityPropertiesConfiguration::MATERIAL_MODEL::KIRCHHOFF:
@@ -318,7 +318,7 @@ template <size_t nodes, size_t gps> struct MaterialStructuralMechanicsKernel<nod
     }
 
     template <typename Element>
-    void simd(Element &element, size_t gp)
+    void simd(Element &element)
     {
         for (int i = 0; i < 3; ++i) {
             for (int j = 0; j < 3; ++j) {

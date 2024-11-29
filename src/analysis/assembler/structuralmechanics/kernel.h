@@ -282,7 +282,7 @@ void setElementKernel(StructuralMechanicsElementOperators &operators, SubKernel:
         }
 
         for (size_t gp = 0; gp < gps; ++gp) {
-            integration.simd(element, gp);
+            integration.coords(element, gp);
             volume = volume + element.det * load1(element.w[gp]);
         }
     }
@@ -309,15 +309,19 @@ void runElementKernel(const step::Step &step, StructuralMechanicsElementOperator
     MatrixElasticityKernel<nodes, ndim> matrixElasticity(operators.matrixElasticity);
     MatrixCorotationKernel<code, nodes, gps, ndim> matrixCorotation(operators.matrixCorotation);
     MatrixMassKernel<nodes, ndim> M(operators.M);
+    MatrixMassKernel<nodes, 1> postM(operators.postM);
     AccelerationKernel<nodes, ndim> acceleration(operators.acceleration);
     AngularVelocityKernel<nodes, ndim> angularVelocity(operators.angularVelocity);
+    StressKernel<nodes, ndim> stress(operators.stress);
     MatrixFillerKernel<nodes> outK(operators.Kfiller);
     MatrixFillerKernel<nodes> outM(operators.Mfiller);
     MatrixFillerKernel<nodes> outC(operators.Cfiller);
+    MatrixFillerKernel<nodes> outPostM(operators.postMfiller);
     RHSFillerKernel<nodes> outReRHS(operators.reRHSfiller);
     RHSFillerKernel<nodes> outReNRHS(operators.reNRHSfiller);
     RHSFillerKernel<nodes> outImRHS(operators.imRHSfiller);
     RHSFillerKernel<nodes> outImNRHS(operators.imRHSfiller);
+    RHSFillerKernel<nodes> outPostB(operators.postBfiller);
     PrintEigenValuesKernel eigvals(operators.print);
 
     struct {
@@ -359,17 +363,21 @@ void runElementKernel(const step::Step &step, StructuralMechanicsElementOperator
     matrixCorotation.setActiveness(action, step.loadstep || step.substep || step.iteration);
     matrixElasticity.setActiveness(action);
     M.setActiveness(action);
+    postM.setActiveness(action);
 //    C.setActiveness(action);
     acceleration.setActiveness(action);
     angularVelocity.setActiveness(action);
+    stress.setActiveness(action);
 
     outK.setActiveness(action);
     outM.setActiveness(action);
     outC.setActiveness(action);
+    outPostM.setActiveness(action);
     outReRHS.setActiveness(action);
     outReNRHS.setActiveness(action, step.loadstep || step.substep || step.iteration);
     outImRHS.setActiveness(action);
     outImNRHS.setActiveness(action);
+    outPostB.setActiveness(action);
 
     for (size_t c = 0; c < operators.chunks; ++c) {
         coordinates.simd(element);
@@ -387,11 +395,11 @@ void runElementKernel(const step::Step &step, StructuralMechanicsElementOperator
         }
 
         if (material.isactive) {
-            material.simd(element);
+            material.init(element);
         }
 
         for (size_t gp = 0; gp < gps; ++gp) {
-            integration.simd(element, gp);
+            integration.coords(element, gp);
 
             if (coordinatesToGPs.isactive) {
                 coordinatesToGPs.simd(element, gp);
@@ -408,7 +416,7 @@ void runElementKernel(const step::Step &step, StructuralMechanicsElementOperator
                 }
             }
             if (material.isactive) {
-                material.simd(element, gp);
+                material.simd(element);
             }
             if (matrixElasticity.isactive) {
                 matrixElasticity.simd(element, gp);
@@ -425,6 +433,11 @@ void runElementKernel(const step::Step &step, StructuralMechanicsElementOperator
             }
             if (angularVelocity.isactive) {
                 angularVelocity.simd(element, gp);
+            }
+
+            if (postM.isactive) {
+                integration.displacement(element, gp);
+                postM.simd(element, gp, element.det * load1(element.w[gp]));
             }
         }
 
@@ -443,6 +456,9 @@ void runElementKernel(const step::Step &step, StructuralMechanicsElementOperator
         if (outC.isactive) {
             outC.simd(element.C);
         }
+        if (outPostM.isactive) {
+            outPostM.simd(element.M);
+        }
         if (outReRHS.isactive) {
             outReRHS.simd(element.f);
         }
@@ -454,6 +470,19 @@ void runElementKernel(const step::Step &step, StructuralMechanicsElementOperator
         }
         if (outImNRHS.isactive) {
             outImNRHS.simd(element.nf);
+        }
+
+        for (size_t n = 0; n < nodes; ++n) {
+            // TODO: re-evaluate all parameters dependent on coordinates
+            if (stress.isactive) {
+                integration.displacementInNodes(element, n);
+                material.simd(element);
+                stress.simd(element, n);
+            }
+        }
+
+        if (outPostB.isactive) {
+            outPostB.simd(element.stress, 13);
         }
     }
 }
@@ -500,7 +529,7 @@ void setBoundaryKernel(StructuralMechanicsFaceOperators &operators, SubKernel::A
     for (size_t c = 0; c < operators.chunks; ++c) {
         coordinates.simd(element);
         for (size_t gp = 0; gp < gps; ++gp) {
-            integration.simd(element, gp);
+            integration.coords(element, gp);
             surface = surface + element.det * load1(element.w[gp]);
 
             if (normal.isactive) {
@@ -593,7 +622,7 @@ void runBoundaryKernel(const StructuralMechanicsFaceOperators &operators, SubKer
                 thicknessToGPs.simd(element, gp);
             }
 
-            integration.simd(element, gp);
+            integration.coords(element, gp);
 
             if (normal.isactive) {
                 normal.simd(element, gp);

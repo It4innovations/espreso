@@ -32,13 +32,12 @@ struct MatrixMassKernel<nodes, 1>: MatrixMass {
     template <typename Element>
     void simd(Element &element, size_t gp)
     {
-        simd(element, gp, element.ecf.density);
+        simd(element, gp, element.det * load1(element.w[gp]) * element.ecf.density);
     }
 
     template <typename Element>
-    void simd(Element &element, size_t gp, SIMD density) // it allows to call it with arbitrary density, e.g., in averaging output values
+    void simd(Element &element, size_t gp, SIMD scale) // it allows to call it with arbitrary density, e.g., in averaging output values
     {
-        SIMD scale = element.det * load1(element.w[gp]) * density;
         for (size_t n1 = 0; n1 < nodes; ++n1) {
             element.M[n1 * nodes + n1] = element.M[n1 * nodes + n1] + scale * load1(element.N[gp][n1] * element.N[gp][n1]);
             for (size_t m1 = n1 + 1; m1 < nodes; ++m1) {

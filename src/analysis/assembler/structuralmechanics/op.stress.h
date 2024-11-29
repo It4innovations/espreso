@@ -5,6 +5,8 @@
 #include "analysis/assembler/general/element.h"
 #include "analysis/assembler/general/subkernel.h"
 #include "analysis/assembler/general/math.h"
+#include "analysis/assembler/general/op.integration.h"
+#include "analysis/assembler/structuralmechanics/op.material.h"
 #include "config/ecf/physics/structuralmechanics.h"
 #include "esinfo/meshinfo.h"
 #include "mesh/store/nameddata.h"
@@ -15,16 +17,29 @@ struct Stress: SubKernel {
     const char* name() const { return "Stress"; }
 
     Stress()
-    : principalStress(nullptr), componentStress(nullptr), vonMisesStress(nullptr), vonMisesStressEnd(nullptr)
+    : enodes(info::mesh->elements->nodes->cbegin()),
+      end(info::mesh->elements->nodes->cend()),
+      target(nullptr),
+      multiplicity(nullptr),
+      principalStress(nullptr),
+      componentStress(nullptr),
+      vonMisesStress(nullptr),
+      vonMisesStressEnd(nullptr)
     {
         isconst = false;
         action = SubKernel::SOLUTION;
     }
 
+    serializededata<esint, esint>::const_iterator enodes, end;
+    double *target, *multiplicity;
     double* principalStress, *componentStress, *vonMisesStress, *vonMisesStressEnd;
 
-    void activate(size_t interval, NamedData *principalStress, NamedData *componentStress, NamedData *vonMisesStress)
+    void activate(serializededata<esint, esint>::const_iterator enodes, serializededata<esint, esint>::const_iterator end, double *target, double *multiplicity, size_t interval, NamedData *principalStress, NamedData *componentStress, NamedData *vonMisesStress)
     {
+        this->enodes = enodes;
+        this->end = end;
+        this->target = target;
+        this->multiplicity = multiplicity;
         this->principalStress = principalStress->data.data() + info::mesh->dimension * info::mesh->elements->eintervals[interval].begin;
         this->componentStress = componentStress->data.data() + 2 * info::mesh->dimension * info::mesh->elements->eintervals[interval].begin;
         this->vonMisesStress = vonMisesStress->data.data() + info::mesh->elements->eintervals[interval].begin;
@@ -33,67 +48,59 @@ struct Stress: SubKernel {
     }
 };
 
-template <size_t nodes, size_t gps, size_t ndim> struct StressKernel;
+template <size_t nodes, size_t ndim> struct StressKernel;
 
-template <size_t nodes, size_t gps>
-struct StressKernel<nodes, gps, 2>: Stress {
+template <size_t nodes>
+struct StressKernel<nodes, 2>: Stress {
     StressKernel(const Stress &base): Stress(base) {}
 
     template <typename Element>
-    void simd(Element &element)
+    void simd(Element &element, size_t n)
     {
         // TODO
     }
 };
 
-template <size_t nodes, size_t gps>
-struct StressKernel<nodes, gps, 3>: Stress {
+template <size_t nodes>
+struct StressKernel<nodes, 3>: Stress {
     StressKernel(const Stress &base): Stress(base) {}
 
-    const double rgps = 1.0 / gps;
+    template <typename Element>
+    void simd(Element &element, size_t n)
+    {
+        element.stress[ 0 * nodes + n] = element.vS[0];
+        element.stress[ 1 * nodes + n] = element.vS[1];
+        element.stress[ 2 * nodes + n] = element.vS[2];
+        element.stress[ 3 * nodes + n] = element.vS[3];
+        element.stress[ 4 * nodes + n] = element.vS[4];
+        element.stress[ 5 * nodes + n] = element.vS[5];
+        element.stress[ 6 * nodes + n] = load1(.5) * element.C2[0] - load1(.5);
+        element.stress[ 7 * nodes + n] = load1(.5) * element.C2[4] - load1(.5);
+        element.stress[ 8 * nodes + n] = load1(.5) * element.C2[8] - load1(.5);
+        element.stress[ 9 * nodes + n] = load1(.5) * element.C2[1];
+        element.stress[10 * nodes + n] = load1(.5) * element.C2[5];
+        element.stress[11 * nodes + n] = load1(.5) * element.C2[2];
+        element.stress[12 * nodes + n] = zeros();
+
+//        printf("stress:");
+//        for (int i = 0; i < 12; ++i) {
+//            printf(" %+.5e", element.stress[i * nodes + n][0]);
+//        }
+//        printf("\n");
+    }
 
     template <typename Element>
-    void simd(Element &element)
+    void store(Element &element)
     {
-        size_t size = std::min((size_t)SIMD::size, (size_t)(vonMisesStressEnd - vonMisesStress));
-
-        SIMD scale = load1(rgps);
-        SIMD CuB[9] = {
-                element.sigma[0] * scale, element.sigma[3] * scale, element.sigma[5] * scale,
-                element.sigma[3] * scale, element.sigma[1] * scale, element.sigma[4] * scale,
-                element.sigma[5] * scale, element.sigma[4] * scale, element.sigma[2] * scale
-        };
-
-        double * __restrict__ component = componentStress;
-        for (size_t s = 0; s < size; ++s) {
-            component[6 * s + 0] = CuB[0][s];
-            component[6 * s + 1] = CuB[4][s];
-            component[6 * s + 2] = CuB[8][s];
-            component[6 * s + 3] = CuB[1][s];
-            component[6 * s + 4] = CuB[5][s];
-            component[6 * s + 5] = CuB[2][s];
+        // TODO: compute normal in nodes
+        for (size_t s = 0; s < SIMD::size; ++s, ++enodes) {
+            if (enodes == end) break;
+            for (size_t n = 0; n < nodes; ++n) {
+                for (size_t d = 0; d < 3; ++d) {
+                    target[3 * enodes->at(n) + d] += element.stress[d][s] * multiplicity[enodes->at(n)];
+                }
+            }
         }
-
-        SIMD e[3];
-        eigSym33Desc(CuB, e);
-
-        double * __restrict__ principal = principalStress;
-        for (size_t s = 0; s < size; ++s) {
-            principal[3 * s + 0] = e[0][s];
-            principal[3 * s + 1] = e[1][s];
-            principal[3 * s + 2] = e[2][s];
-        }
-
-        SIMD vm = (e[0] - e[1]) * (e[0] - e[1]) + (e[0] - e[2]) * (e[0] - e[2]) + (e[1] - e[2]) * (e[1] - e[2]);
-        vm = sqrt(load1(1. / 2) * vm);
-        double * __restrict__ vonMises = vonMisesStress;
-        for (size_t s = 0; s < size; ++s) {
-            vonMises[s] = vm[s];
-        }
-
-        principalStress += 3 * SIMD::size;
-        componentStress += 6 * SIMD::size;
-        vonMisesStress  += 1 * SIMD::size;
     }
 };
 

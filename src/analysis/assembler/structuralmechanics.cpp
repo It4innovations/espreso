@@ -94,6 +94,7 @@ StructuralMechanics::StructuralMechanics(StructuralMechanicsConfiguration &setti
 
 int StructuralMechanics::postProcessSolverSize()
 {
+    return 0;
     if (Results::avgStress) {
         return 13;
     }
@@ -118,28 +119,6 @@ bool StructuralMechanics::analyze(const step::Step &step)
     }
 
     bool correct = true;
-
-    if (settings.contact_interfaces) {
-        if (Results::normal == nullptr) {
-            Results::normal = info::mesh->nodes->appendData(info::mesh->dimension, NamedData::DataType::VECTOR, "NORMAL", step::TYPE::TIME, info::ecf->output.results_selection.normal);
-        }
-        faceMultiplicity.resize(info::mesh->nodes->size);
-        for(size_t r = 1; r < info::mesh->boundary.size(); ++r) {
-            const BoundaryRegionStore *region = info::mesh->boundary[r];
-            if (info::mesh->boundary[r]->dimension && StringCompare::caseInsensitivePreffix("CONTACT", region->name)) {
-                for (auto face = region->elements->cbegin(); face != region->elements->cend(); ++face) {
-                    for (auto n = face->begin(); n != face->end(); ++n) {
-                        faceMultiplicity[*n] += 1;
-                    }
-                }
-            }
-        }
-        for (size_t i = 0; i < faceMultiplicity.size(); ++i) {
-            if (faceMultiplicity[i] != 0) {
-                faceMultiplicity[i] = 1 / faceMultiplicity[i];
-            }
-        }
-    }
 
     if (configuration.type == StructuralMechanicsLoadStepConfiguration::TYPE::HARMONIC) {
         if (Results::cosDisplacement == nullptr) {
@@ -205,6 +184,41 @@ bool StructuralMechanics::analyze(const step::Step &step)
 //                }
 //            }
 //        }
+    }
+
+
+    if (settings.contact_interfaces) {
+        if (Results::normal == nullptr) {
+            Results::normal = info::mesh->nodes->appendData(info::mesh->dimension, NamedData::DataType::VECTOR, "NORMAL", step::TYPE::TIME, info::ecf->output.results_selection.normal);
+        }
+        faceMultiplicity.resize(info::mesh->nodes->size);
+        for(size_t r = 1; r < info::mesh->boundary.size(); ++r) {
+            const BoundaryRegionStore *region = info::mesh->boundary[r];
+            if (info::mesh->boundary[r]->dimension && StringCompare::caseInsensitivePreffix("CONTACT", region->name)) {
+                for (auto face = region->elements->cbegin(); face != region->elements->cend(); ++face) {
+                    for (auto n = face->begin(); n != face->end(); ++n) {
+                        faceMultiplicity[*n] += 1;
+                    }
+                }
+            }
+        }
+        for (size_t i = 0; i < faceMultiplicity.size(); ++i) {
+            if (faceMultiplicity[i] != 0) {
+                faceMultiplicity[i] = 1 / faceMultiplicity[i];
+            }
+        }
+    }
+
+    if (Results::avgStress) {
+        nodeMultiplicity.resize(info::mesh->nodes->size);
+        for (auto enodes = info::mesh->elements->nodes->cbegin(); enodes != info::mesh->elements->nodes->cend(); ++enodes) {
+            for (auto n = enodes->begin(); n != enodes->end(); ++n) {
+                nodeMultiplicity[*n] += 1;
+            }
+        }
+        for (size_t i = 0; i < nodeMultiplicity.size(); ++i) {
+            nodeMultiplicity[i] = 1 / nodeMultiplicity[i];
+        }
     }
 
     if (settings.initial_temperature.size()) {
@@ -409,15 +423,15 @@ bool StructuralMechanics::analyze(const step::Step &step)
         if (configuration.type != LoadStepSolverConfiguration::TYPE::STEADY_STATE) {
             elementKernels[i].M.activate();
         }
-        if (Results::avgStress) {
-            elementKernels[i].postM.activate();
-            elementKernels[i].postM.action = SubKernel::SOLUTION;
-        }
+//        if (Results::avgStress) {
+//            elementKernels[i].postM.activate();
+//            elementKernels[i].postM.action = SubKernel::SOLUTION;
+//        }
         elementKernels[i].acceleration.activate(getExpression(i, configuration.acceleration), settings.element_behaviour);
         elementKernels[i].angularVelocity.activate(getExpression(i, configuration.angular_velocity), settings.element_behaviour);
         if (Results::principalStress) {
             elementKernels[i].displacement.activate(info::mesh->elements->nodes->cbegin() + ebegin, info::mesh->elements->nodes->cbegin() + eend, Results::displacement->data.data());
-            elementKernels[i].stress.activate(i, Results::principalStress, Results::componentStress, Results::vonMisesStress);
+            elementKernels[i].stress.activate(info::mesh->elements->nodes->cbegin() + ebegin, info::mesh->elements->nodes->cbegin() + eend, Results::avgStress->data.data(), nodeMultiplicity.data(), i, Results::principalStress, Results::componentStress, Results::vonMisesStress);
         }
 
         elementKernels[i].initVelocity.activate(getExpression(i, settings.initial_velocity));

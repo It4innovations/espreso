@@ -11,6 +11,9 @@ template <size_t nodes, size_t gps, size_t ndim, size_t edim> struct GeneralElem
     alignas(SIMD::size * sizeof(double)) double  N[gps][nodes];
     alignas(SIMD::size * sizeof(double)) double dN[gps][nodes][edim];
 
+    alignas(SIMD::size * sizeof(double)) double  NN[nodes][nodes];
+    alignas(SIMD::size * sizeof(double)) double dNN[nodes][nodes][edim];
+
     alignas(SIMD::size * sizeof(double)) SIMD dND[nodes * edim];
     alignas(SIMD::size * sizeof(double)) SIMD det;
     alignas(SIMD::size * sizeof(double)) SIMD invJ[ndim * ndim];
@@ -44,6 +47,9 @@ template <size_t nodes, size_t gps, size_t ndim, size_t edim> struct GeneralBoun
     alignas(SIMD::size * sizeof(double)) double  w[gps];
     alignas(SIMD::size * sizeof(double)) double  N[gps][nodes];
     alignas(SIMD::size * sizeof(double)) double dN[gps][nodes][edim];
+
+    alignas(SIMD::size * sizeof(double)) double  NN[nodes][nodes];
+    alignas(SIMD::size * sizeof(double)) double dNN[nodes][nodes][edim];
 
     alignas(SIMD::size * sizeof(double)) SIMD det;
 

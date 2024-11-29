@@ -230,7 +230,7 @@ void setElementKernel(HeatTransferElementOperators &operators, SubKernel::Action
         temperature.simd(element);
 
         for (size_t gp = 0; gp < gps; ++gp) {
-            integration.simd(element, gp);
+            integration.coords(element, gp);
             volume = volume + element.det * load1(element.w[gp]);
         }
     }
@@ -325,7 +325,7 @@ void runElementKernel(const step::Step &step, const HeatTransferElementOperators
         }
 
         for (size_t gp = 0; gp < gps; ++gp) {
-            integration.simd(element, gp);
+            integration.coords(element, gp);
 
             if (coordinatesToGPs.isactive) {
                 coordinatesToGPs.simd(element, gp);
@@ -428,7 +428,7 @@ void setBoundaryKernel(HeatTransferBoundaryOperators &operators, SubKernel::Acti
     for (size_t c = 0; c < operators.chunks; ++c) {
         coordinates.simd(element);
         for (size_t gp = 0; gp < gps; ++gp) {
-            integration.simd(element, gp);
+            integration.coords(element, gp);
             surface = surface + element.det * load1(element.w[gp]);
         }
     }
@@ -487,7 +487,7 @@ void runBoundaryKernel(const HeatTransferBoundaryOperators &operators, SubKernel
                 thicknessToGPs.simd(element, gp);
             }
 
-            integration.simd(element, gp);
+            integration.coords(element, gp);
 
             if (externalHeat.isactive) {
                 externalHeat.simd(element, gp);

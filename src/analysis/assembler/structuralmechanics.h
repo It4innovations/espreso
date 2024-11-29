@@ -74,7 +74,7 @@ protected:
     std::vector<StructuralMechanicsElementOperators> elementKernels;
     std::vector<std::vector<StructuralMechanicsFaceOperators> > faceKernels;
     std::vector<std::vector<StructuralMechanicsNodeOperators> > nodeKernels;
-    std::vector<double> faceMultiplicity;
+    std::vector<double> faceMultiplicity, nodeMultiplicity;
 
     Vector_FETI<Vector_Dense, double> xBEM;
 };
