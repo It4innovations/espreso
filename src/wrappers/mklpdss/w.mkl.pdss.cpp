@@ -59,7 +59,7 @@ bool _isSymmetric(Matrix_Type type)
 }
 
 template<typename T>
-bool MKLPDSS<T>::call(esint phase)
+bool MKLPDSS<T>::call(int phase)
 {
 #ifdef HAVE_MKLPDSS
     external->phase = phase;

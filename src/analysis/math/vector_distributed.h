@@ -86,20 +86,20 @@ public:
         return decomposition->halo.size() + (decomposition->end - decomposition->begin);
     }
 
-    T _norm(Vector_Sparse<T> &cluster)
+    T _norm(Vector_Sparse<T, esint> &cluster)
     {
         eslog::error("call dot for Vector_Sparse\n");
         return T{0};
     }
 
-    T _norm(Vector_Dense<T> &cluster)
+    T _norm(Vector_Dense<T, esint> &cluster)
     {
         T dot = math::blas::dot(cluster.size - decomposition->halo.size(), cluster.vals + decomposition->halo.size(), 1, cluster.vals + decomposition->halo.size(), 1);
         Communication::allReduce(&dot, NULL, 1, MPI_DOUBLE, MPI_SUM);
         return std::sqrt(dot);
     }
 
-    T _norm(Matrix_Dense<T> &cluster)
+    T _norm(Matrix_Dense<T, esint> &cluster)
     {
         eslog::error("call dot for matrix\n");
         return T{0};
