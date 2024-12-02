@@ -32,7 +32,6 @@ struct TFETIOrthogonalSymmetric: public Projector<T> {
     void update(const step::Step &step);
 
 protected:
-    void _computeDualGraph();
     void _setG();
     void _setGGt();
     void _updateG();
@@ -51,39 +50,7 @@ protected:
     using Projector<T>::Gx;
     using Projector<T>::iGGtGx;
 
-    size_t domainOffset;
-    size_t GGtDataOffset, GGtDataSize, GGtNnz;
-
-    struct DomainInfo {
-        int domain, koffset, kernels;
-
-        DomainInfo() = default;
-        DomainInfo(int domain, int koffset, int kernels): domain(domain), koffset(koffset), kernels(kernels) {}
-
-        bool operator< (const DomainInfo &other) const { return domain <  other.domain; }
-        bool operator<=(const DomainInfo &other) const { return domain <= other.domain; }
-        bool operator!=(const DomainInfo &other) const { return domain != other.domain; }
-    };
-
-    struct NeighborDomainInfo: DomainInfo {
-        struct CIndices { int offset, count; };
-        std::vector<CIndices> cindices;
-        int ncols;
-
-        NeighborDomainInfo() = default;
-
-        NeighborDomainInfo& operator=(const DomainInfo &other) {
-            this->domain = other.domain;
-            this->koffset = other.koffset;
-            this->kernels = other.kernels;
-            return *this;
-        }
-    };
-
-    std::vector<DomainInfo> dinfo;
-    std::vector<std::vector<DomainInfo> > dualGraph;
-    std::map<int, NeighborDomainInfo> upinfo;
-    std::vector<std::map<int, NeighborDomainInfo> > downinfo;
+    size_t GGtDataOffset, GGtDataSize;
 
     DualGraph dual;
 };

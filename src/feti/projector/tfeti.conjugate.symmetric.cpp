@@ -109,7 +109,7 @@ void TFETIConjugateSymmetric<T>::_setG()
         }
     }
     for (auto v = dual.vertices.find(feti.decomposition->dend); v != dual.vertices.end(); ++v) {
-        v->second.kernel.offset = ri; // TODO: global to local in DualGraph
+        v->second.kernel.goffset = ri; // TODO: global to local in DualGraph
         for (int kr = 0; kr < v->second.kernel.size; ++kr, ++ri) {
             Gt.rows[ri + 1] = Gt.rows[ri] + v->second.lambdas.total;
             for (size_t ci = 0, c = 0; ci < v->second.lambdas.indices.size(); ++ci) {

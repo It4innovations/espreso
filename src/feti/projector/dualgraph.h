@@ -19,24 +19,17 @@ struct DualGraph {
 
     struct VertexInfo {
         struct {
-            int offset, size;
+            int goffset, loffset, size;
         } kernel;
 
         struct {
-            struct Indices { int offset, size; };
+            struct Indices { int offset, size; std::vector<int> lower_neighs; };
             std::vector<Indices> indices;
             int total;
         } lambdas;
-    //
-    //    VertexInfo(): domain(0), koffset(0), kernels(0), ncols(0) {}
-    //    VertexInfo(int domain, int koffset, int kernels): domain(domain), koffset(koffset), kernels(kernels), ncols(0) {}
-    //
-    //    bool operator< (const DomainInfo &other) const { return domain <  other.domain; }
-    //    bool operator<=(const DomainInfo &other) const { return domain <= other.domain; }
-    //    bool operator!=(const DomainInfo &other) const { return domain != other.domain; }
     };
 
-    std::map<int, VertexInfo> vertices, local;
+    std::map<int, VertexInfo> vertices;
     std::map<int, std::vector<int> > edges;
 };
 
