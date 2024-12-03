@@ -1,9 +1,7 @@
 
 #include "iterativesolver.h"
 
-#include "cpg.h"
 #include "pcpg.h"
-#include "orthocpg.h"
 #include "orthopcpg.h"
 #include "smalbe.h"
 #include "mprgp.h"
@@ -31,34 +29,10 @@ IterativeSolver<T>* IterativeSolver<T>::create(FETI<T> &feti, const step::Step &
     }
 
     switch (feti.configuration.iterative_solver) {
-    case FETIConfiguration::ITERATIVE_SOLVER::PCG:
-        if (feti.configuration.preconditioner == FETIConfiguration::PRECONDITIONER::NONE) {
-            eslog::info(" = ITERATIVE SOLVER                                             CONJUGATE PROJECTED GRADIENT = \n");
-            return new CPG<T>(feti);
-        } else {
-            eslog::info(" = ITERATIVE SOLVER                              PRECONDITIONED CONJUGATE PROJECTED GRADIENT = \n");
-            return new PCPG<T>(feti);
-        }
-    case FETIConfiguration::ITERATIVE_SOLVER::pipePCG:
-    case FETIConfiguration::ITERATIVE_SOLVER::orthogonalPCG:
-        if (feti.configuration.preconditioner == FETIConfiguration::PRECONDITIONER::NONE) {
-            eslog::info(" = ITERATIVE SOLVER                      CONJUGATE PROJECTED GRADIENT WITH ORTHOGONALIZATION = \n");
-            return new OrthogonalizedCPG<T>(feti);
-        } else {
-            eslog::info(" = ITERATIVE SOLVER       PRECONDITIONED CONJUGATE PROJECTED GRADIENT WITH ORTHOGONALIZATION = \n");
-            return new OrthogonalizedPCPG<T>(feti);
-        }
-    case FETIConfiguration::ITERATIVE_SOLVER::GMRES:
-    case FETIConfiguration::ITERATIVE_SOLVER::BICGSTAB:
-    case FETIConfiguration::ITERATIVE_SOLVER::QPCE:
-    case FETIConfiguration::ITERATIVE_SOLVER::orthogonalPCG_CP:
-    case FETIConfiguration::ITERATIVE_SOLVER::PCG_CP:
-    case FETIConfiguration::ITERATIVE_SOLVER::SMALBE:
-    eslog::info(" = ITERATIVE SOLVER       SEMI-MONOTONIC AUGMENTED LAGRANGIAN ALG. FOR BOUND & EQUALITY CNST = \n");
-        return new SMALBE<T>(feti);
-    case FETIConfiguration::ITERATIVE_SOLVER::MPRGP:
-    eslog::info(" = ITERATIVE SOLVER                  MODIFIED PROPORTIONING WITH REDUCED GRADIENT PROJECTION = \n");
-        return new MPRGP<T>(feti);
+    case FETIConfiguration::ITERATIVE_SOLVER::PCG:           return new PCPG<T>(feti);
+    case FETIConfiguration::ITERATIVE_SOLVER::orthogonalPCG: return new OrthogonalizedPCPG<T>(feti);
+    case FETIConfiguration::ITERATIVE_SOLVER::SMALBE:        return new SMALBE<T>(feti);
+    case FETIConfiguration::ITERATIVE_SOLVER::MPRGP:         return new MPRGP<T>(feti);
     default: return nullptr;
     }
 }

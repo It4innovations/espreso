@@ -15,7 +15,7 @@ template <typename T>
 SMALBE<T>::SMALBE(FETI<T> &feti)
 : IterativeSolver<T>(feti), mprgp(feti)
 {
-
+    eslog::info(" = ITERATIVE SOLVER       SEMI-MONOTONIC AUGMENTED LAGRANGIAN ALG. FOR BOUND & EQUALITY CNST = \n");
 }
 
 template <typename T>

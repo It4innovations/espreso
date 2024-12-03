@@ -18,6 +18,7 @@ template <typename T>
 MPRGP<T>::MPRGP(FETI<T> &feti)
 : IterativeSolver<T>(feti)
 {
+    eslog::info(" = ITERATIVE SOLVER                  MODIFIED PROPORTIONING WITH REDUCED GRADIENT PROJECTION = \n");
     Vector_Dual<int>::initBuffers();
 }
 

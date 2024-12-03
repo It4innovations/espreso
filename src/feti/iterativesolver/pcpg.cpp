@@ -80,8 +80,12 @@ template <> void PCPG<double>::solve(const step::Step &step, IterativeSolverInfo
     math::add(r, 1., F->d);                //
 
     P->apply(r, w);                        // w = P * r
-    S->apply(w, z);                        // z = S * w
-    P->apply(z, y);                        // y = P * z (y = P * S * w)
+    if (S->isset()) {
+        S->apply(w, z);                        // z = S * w
+        P->apply(z, y);                        // y = P * z (y = P * S * w)
+    } else {
+        math::copy(y, w);
+    }
 
     math::copy(p, y);                      // p = w
     math::copy(x, l);                      // x = l
@@ -113,13 +117,17 @@ template <> void PCPG<double>::solve(const step::Step &step, IterativeSolverInfo
         P->apply(r, w);
         eslog::accumulatedln("pcpg: apply P * r");
 
-        // z = S * w
-        S->apply(w, z);
-        eslog::accumulatedln("pcpg: apply S * w");
+        if (S->isset()) {
+            // z = S * w
+            S->apply(w, z);
+            eslog::accumulatedln("pcpg: apply S * w");
 
-        // y = P * z
-        P->apply(z, y);
-        eslog::accumulatedln("pcpg: apply P * z");
+            // y = P * z
+            P->apply(z, y);
+            eslog::accumulatedln("pcpg: apply P * z");
+        } else {
+            math::copy(y, w);
+        }
 
         // beta = (y+1, w+1) / (y, w)
         double _yw = y.dot(w), beta = _yw / yw;

@@ -45,13 +45,12 @@ struct FETIConfiguration: public ECFDescription {
 
 	enum class ITERATIVE_SOLVER {
 		PCG = 0,
-		pipePCG,
-		orthogonalPCG = 2,
-		GMRES,
-		BICGSTAB,
-		QPCE,
-		orthogonalPCG_CP,
-		PCG_CP,
+		orthogonalPCG,
+//		GMRES,
+//		BICGSTAB,
+//		QPCE,
+//		orthogonalPCG_CP,
+//		PCG_CP,
 		SMALBE,
 		MPRGP
 	};
