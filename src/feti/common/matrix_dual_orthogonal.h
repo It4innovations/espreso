@@ -3,9 +3,9 @@
 #define SRC_MATH_FETI_MATRIX_DUAL_ORTHOGONAL_H_
 
 #include "vector_dual.h"
+#include "matrix_dual.h"
 #include "esinfo/envinfo.h"
 #include "math/math.h"
-#include "math/primitives/matrix_dense.h"
 #include "wrappers/mpi/communication.h"
 
 #include <vector>
@@ -14,23 +14,7 @@
 namespace espreso {
 
 template <typename T>
-struct Matrix_Dual_Orthogonal: public Matrix_Dense<T, int> {
-
-    enum: size_t {
-        initial_space = 32
-    };
-
-    Matrix_Dual_Orthogonal()
-    {
-        resize();
-    }
-
-    void resize()
-    {
-        // align matrix values ??
-        Matrix_Dense<T>::resize(initial_space, Dual_Map::size);
-        Matrix_Dense<T>::nrows = 0;
-    }
+struct Matrix_Dual_Orthogonal: public Matrix_Dual<T> {
 
     void next(Vector_Dual<T> &v)
     {

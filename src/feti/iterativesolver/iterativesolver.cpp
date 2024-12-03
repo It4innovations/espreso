@@ -44,7 +44,7 @@ void IterativeSolver<T>::reconstructSolution(const Vector_Dual<T> &l, const Vect
     DualOperator<T> *F = feti.dualOperator;
 
     F->toPrimal(l, iKfBtL);
-    P->apply_RinvGGtG(r, Ra);
+    P->apply_RinvGGtG(r, Ra); // 0
     print(step);
     #pragma omp parallel for
     for (size_t d = 0; d < feti.K.size(); ++d) {

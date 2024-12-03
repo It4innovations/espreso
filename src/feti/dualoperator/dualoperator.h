@@ -4,6 +4,7 @@
 
 #include "feti/feti.h"
 #include "feti/common/vector_dual.h"
+#include "feti/common/matrix_dual.h"
 #include "math/wrappers/math.spsolver.h"
 
 #include <vector>
@@ -35,6 +36,7 @@ public:
 
     // y = F * x
     virtual void apply(const Vector_Dual<T> &x, Vector_Dual<T> &y) =0;
+    virtual void apply(const Matrix_Dual<T> &x, Matrix_Dual<T> &y) =0;
 
     // y = K+(f - Bt * x)
     virtual void toPrimal(const Vector_Dual<T> &x, std::vector<Vector_Dense<T> > &y) =0;

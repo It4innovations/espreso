@@ -11,13 +11,20 @@ namespace espreso {
 
 struct DualGraph {
 
+    void clear();
     void pushVertex(int index, int size);
     void initVertices();
 
     void setFromDomains(const DecompositionFETI *decomposition, const std::vector<int> &lMap);
     void setFromClusters(const DecompositionFETI *decomposition, const std::vector<int> &lMap);
 
+    void spread(const DecompositionFETI *decomposition);
+
+    void print();
+
     struct VertexInfo {
+        int rank;
+
         struct {
             int goffset, loffset, size;
         } kernel;

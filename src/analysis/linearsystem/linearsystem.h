@@ -29,7 +29,7 @@ struct LinearSystemSolver {
 
     Pattern<T> *assember, *solver;
 
-    Matrix_Base<T> *A;
+    Matrix_Base<T> *A, *assembledA;
     Vector_Distributed<Vector_Dense, T> *x, *b;
     Vector_Distributed<Matrix_Dense, T> *X, *B;
     Vector_Distributed<Vector_Sparse, T> *dirichlet;

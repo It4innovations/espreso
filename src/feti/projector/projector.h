@@ -23,6 +23,8 @@ struct Projector {
 
     // I - Q
     void apply(const Vector_Dual<T> &x, Vector_Dual<T> &y);
+    void applyT(const Vector_Dual<T> &x, Vector_Dual<T> &y);
+    void apply_GtintGGtG(const Vector_Dual<T> &x, Vector_Dual<T> &y);
     void apply_GtintGGt(const Vector_Kernel<T> &x, Vector_Dual<T> &y);
     void apply_R(const Vector_Kernel<T> &x, std::vector<Vector_Dense<T> > &y);
     void apply_RinvGGtG(const Vector_Dual<T> &x, std::vector<Vector_Dense<T> > &y);
@@ -61,6 +63,7 @@ protected:
 
     Vector_Kernel<T> Gx; // we need whole vector
     Vector_Dense<T> iGGtGx; // only local part is sufficient
+    Vector_Dual<T> Fx;
 };
 
 }

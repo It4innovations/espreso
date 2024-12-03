@@ -31,10 +31,14 @@ public:
 
     // y = F * x
     void apply(const Vector_Dual<T> &x, Vector_Dual<T> &y);
+    void apply(const Matrix_Dual<T> &x, Matrix_Dual<T> &y);
+
     // y = K+(f - Bt * x)
     void toPrimal(const Vector_Dual<T> &x, std::vector<Vector_Dense<T> > &y);
 
 protected:
+    void _apply(const Vector_Dual<T> &x, Vector_Dual<T> &y);
+
     void print(const step::Step &step);
 
     using DualOperator<T>::feti;

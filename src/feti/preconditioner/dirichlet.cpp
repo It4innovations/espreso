@@ -93,6 +93,7 @@ void Dirichlet<T>::apply(const Vector_Dual<T> &x, Vector_Dual<T> &y)
         }
     }
     applyB(feti, KBtx, y);
+    y.synchronize();
 }
 
 template <typename T>

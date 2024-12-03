@@ -22,13 +22,26 @@ void Regularization<T>::set(const step::Step &step, FETI<T> &feti)
         case PhysicsConfiguration::TYPE::HEAT_TRANSFER:
             switch (info::ecf->heat_transfer.load_steps_settings.at(step.loadstep + 1).type) {
             case HeatTransferLoadStepConfiguration::TYPE::STEADY_STATE: RegularizationHeatTransfer<T>::set(feti); break;
-            case HeatTransferLoadStepConfiguration::TYPE::TRANSIENT:    RegularizationEmpty<T>::set(feti); break;
+            case HeatTransferLoadStepConfiguration::TYPE::TRANSIENT:
+                if (feti.configuration.projector == FETIConfiguration::PROJECTOR::CONJUGATE) {
+                    RegularizationHeatTransfer<T>::set(feti);
+                } else {
+                    RegularizationEmpty<T>::set(feti);
+                }
+                break;
             default: eslog::error("unknown regularization\n"); break;
             } break;
         case PhysicsConfiguration::TYPE::STRUCTURAL_MECHANICS:
             switch (info::ecf->structural_mechanics.load_steps_settings.at(step.loadstep + 1).type) {
             case StructuralMechanicsLoadStepConfiguration::TYPE::STEADY_STATE: RegularizationElasticity<T>::set(feti); break;
-            case StructuralMechanicsLoadStepConfiguration::TYPE::TRANSIENT:    RegularizationEmpty<T>::set(feti); break;
+            case StructuralMechanicsLoadStepConfiguration::TYPE::TRANSIENT:
+                if (feti.configuration.projector == FETIConfiguration::PROJECTOR::CONJUGATE) {
+                    RegularizationEmpty<T>::set(feti);
+                    RegularizationElasticity<T>::set(feti);
+                } else {
+                    RegularizationEmpty<T>::set(feti);
+                }
+                break;
             default: eslog::error("unknown regularization\n"); break;
             } break;
         }
@@ -52,14 +65,26 @@ void Regularization<T>::update(const step::Step &step, FETI<T> &feti)
         case PhysicsConfiguration::TYPE::HEAT_TRANSFER:
             switch (info::ecf->heat_transfer.load_steps_settings.at(step.loadstep + 1).type) {
             case HeatTransferLoadStepConfiguration::TYPE::STEADY_STATE: RegularizationHeatTransfer<T>::update(feti); break;
-            case HeatTransferLoadStepConfiguration::TYPE::TRANSIENT:    RegularizationEmpty<T>::update(feti); break;
+            case HeatTransferLoadStepConfiguration::TYPE::TRANSIENT:
+                if (feti.configuration.projector == FETIConfiguration::PROJECTOR::CONJUGATE) {
+                    RegularizationHeatTransfer<T>::update(feti);
+                } else {
+                    RegularizationEmpty<T>::update(feti);
+                }
+                break;
             default: break;
             } break;
 
         case PhysicsConfiguration::TYPE::STRUCTURAL_MECHANICS:
             switch (info::ecf->structural_mechanics.load_steps_settings.at(step.loadstep + 1).type) {
             case StructuralMechanicsLoadStepConfiguration::TYPE::STEADY_STATE: RegularizationElasticity<T>::update(feti); break;
-            case StructuralMechanicsLoadStepConfiguration::TYPE::TRANSIENT:    RegularizationEmpty<T>::update(feti); break;
+            case StructuralMechanicsLoadStepConfiguration::TYPE::TRANSIENT:
+                if (feti.configuration.projector == FETIConfiguration::PROJECTOR::CONJUGATE) {
+//                    RegularizationElasticity<T>::update(feti);
+                } else {
+                    RegularizationEmpty<T>::update(feti);
+                }
+                break;
             default: break;
             }
             if (step.iteration) {

@@ -13,8 +13,6 @@ namespace espreso {
 template <typename T>
 struct Vector_Dual: public Vector_Dense<T> {
 
-    template <typename Type> friend struct Matrix_Dual_Orthogonal;
-
     Vector_Dual();
 
     void resize();
@@ -22,6 +20,8 @@ struct Vector_Dual: public Vector_Dense<T> {
     void copyToWithoutHalo(Vector_Dense<T> &to) const;
     T dot(const Vector_Dense<T> &other) const;
     T dot() const;
+
+    static void bulkSynchronize(const std::vector<int> &filter, std::vector<Vector_Dual<T> > &v);
 
     using Vector_Dense<T>::size;
     using Vector_Dense<T>::vals;

@@ -40,6 +40,8 @@ public:
 
     // y = F * x
     virtual void apply(const Vector_Dual<T> &x, Vector_Dual<T> &y) override;
+    virtual void apply(const Matrix_Dual<T> &x, Matrix_Dual<T> &y) override;
+
     // y = K+(f - Bt * x)
     virtual void toPrimal(const Vector_Dual<T> &x, std::vector<Vector_Dense<T> > &y) override;
 
@@ -52,6 +54,8 @@ private:
 
 protected:
     void print(const step::Step &step);
+
+    void _apply(const Vector_Dual<T> &x, Vector_Dual<T> &y);
 
     void config_replace_defaults();
 

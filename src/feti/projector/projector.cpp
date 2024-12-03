@@ -3,6 +3,8 @@
 #include "hfeti.orthogonal.symmetric.h"
 #include "tfeti.orthogonal.symmetric.h"
 #include "tfeti.conjugate.symmetric.h"
+
+#include "feti/dualoperator/dualoperator.h"
 #include "basis/utilities/sysutils.h"
 #include "basis/utilities/utils.h"
 #include "esinfo/ecfinfo.h"
@@ -82,15 +84,48 @@ void Projector<T>::reset()
 
     Gx.clear();
     iGGtGx.clear();
+    Fx.resize();
 }
 
 template<typename T>
 void Projector<T>::apply(const Vector_Dual<T> &x, Vector_Dual<T> &y)
 {
     x.copyToWithoutHalo(y);
-    _apply_G(x, Gx);
+    if (feti.configuration.projector == FETIConfiguration::PROJECTOR::CONJUGATE) {
+        feti.dualOperator->apply(x, Fx);
+    } else {
+        math::copy(Fx, x);
+    }
+    _apply_G(Fx, Gx);
     _apply_invGGt(Gx, iGGtGx);
     _apply_Gt(iGGtGx, T{-1}, y);
+}
+
+template<typename T>
+void Projector<T>::applyT(const Vector_Dual<T> &x, Vector_Dual<T> &y)
+{
+    if (feti.configuration.projector == FETIConfiguration::PROJECTOR::CONJUGATE) {
+        _apply_G(x, Gx);
+        _apply_invGGt(Gx, iGGtGx);
+        math::set(Fx, T{0});
+        _apply_Gt(iGGtGx, T{-1}, Fx);
+        feti.dualOperator->apply(Fx, y);
+        math::add(y, T{1}, x);
+    } else {
+        x.copyToWithoutHalo(y);
+        _apply_G(x, Gx);
+        _apply_invGGt(Gx, iGGtGx);
+        _apply_Gt(iGGtGx, T{-1}, y);
+    }
+}
+
+template<typename T>
+void Projector<T>::apply_GtintGGtG(const Vector_Dual<T> &x, Vector_Dual<T> &y)
+{
+    _apply_G(x, Gx);
+    _apply_invGGt(Gx, iGGtGx);
+    math::set(y, T{0});
+    _apply_Gt(iGGtGx, T{1}, y);
 }
 
 template<typename T>
@@ -120,7 +155,7 @@ void Projector<T>::apply_R(const Vector_Kernel<T> &x, std::vector<Vector_Dense<T
 template<typename T>
 void Projector<T>::apply_RinvGGtG(const Vector_Dual<T> &x, std::vector<Vector_Dense<T> > &y)
 {
-    if (GGTtype != GGT_TYPE::NONE) { // avoid this condition
+    if (GGTtype != GGT_TYPE::NONE && feti.configuration.projector != FETIConfiguration::PROJECTOR::CONJUGATE) { // avoid this condition
         _apply_G(x, Gx);
         _apply_invGGt(Gx, iGGtGx);
         _apply_R(iGGtGx, y);

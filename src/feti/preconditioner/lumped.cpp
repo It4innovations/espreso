@@ -55,6 +55,7 @@ Lumped<T>::apply(const Vector_Dual<T> &x, Vector_Dual<T> &y)
         KSpBlas[d].apply(KBtx[d], T{1}, T{0}, Btx[d]);
     }
     applyB(feti, KBtx, y);
+    y.synchronize();
 }
 
 template struct Lumped<double>;

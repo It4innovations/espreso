@@ -53,6 +53,7 @@ bool HeatSteadyStateLinear::analyze(step::Step &step)
     f = solver->b->copyPattern();
     x = solver->x->copyPattern();
     dirichlet = solver->dirichlet->copyPattern();
+    solver->assembledA = K;
 
     pattern->map(K);
     pattern->map(f);

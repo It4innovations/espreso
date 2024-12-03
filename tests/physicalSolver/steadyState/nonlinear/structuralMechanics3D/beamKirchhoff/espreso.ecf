@@ -94,6 +94,11 @@ STRUCTURAL_MECHANICS {
 
       NONLINEAR_SOLVER {
         MAX_ITERATIONS   15;
+
+        CHECK_DISPLACEMENT                  FALSE;
+        REQUESTED_DISPLACEMENT_RESIDUAL      1e-6;
+        CHECK_FORCES                         TRUE;
+        REQUESTED_FORCES_RESIDUAL            1e-9;
       }
 
       DISPLACEMENT {

@@ -53,6 +53,7 @@ bool StructuralMechanicsSteadyStateLinear::analyze(step::Step &step)
     U = solver->x->copyPattern();
     dirichlet = solver->dirichlet->copyPattern();
     forces = solver->x->copyPattern();
+    solver->assembledA = K;
 
     pattern->map(K);
     pattern->map(f);

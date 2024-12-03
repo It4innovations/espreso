@@ -74,6 +74,7 @@ bool StructuralMechanicsTransientLinear::analyze(step::Step &step)
     x = solver->x->copyPattern();
     checkpoint = solver->x->copyPattern();
     dirichlet = solver->dirichlet->copyPattern();
+    solver->assembledA = K;
 
       U = solver->b->copyPattern();
      dU = solver->b->copyPattern();

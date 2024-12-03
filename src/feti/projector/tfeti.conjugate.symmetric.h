@@ -35,10 +35,10 @@ protected:
     using Projector<T>::Gx;
     using Projector<T>::iGGtGx;
 
-    size_t domainOffset;
-    size_t GGtDataOffset, GGtDataSize, GGtNnz;
+    size_t GGtDataOffset, GGtDataSize;
 
     DualGraph dual;
+    std::vector<int> nonzeros, distributed;
 };
 
 }

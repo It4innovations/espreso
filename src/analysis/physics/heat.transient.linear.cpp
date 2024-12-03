@@ -88,6 +88,7 @@ bool HeatTransientLinear::analyze(step::Step &step)
     f = solver->b->copyPattern();
     x = solver->x->copyPattern();
     dirichlet = solver->dirichlet->copyPattern();
+    solver->assembledA = K;
 
       U = solver->b->copyPattern();
      dU = solver->b->copyPattern();
@@ -226,12 +227,13 @@ bool HeatTransientLinear::run(step::Step &step, Physics *prev)
 void HeatTransientLinear::storeSystem(step::Step &step)
 {
     if (info::ecf->output.print_matrices) {
-        eslog::storedata(" STORE: scheme/{K, f}\n");
+        eslog::storedata(" STORE: scheme/{K, M, f, dirichlet}\n");
         K->store(utils::filename(utils::debugDirectory(step) + "/scheme", "K").c_str());
         M->store(utils::filename(utils::debugDirectory(step) + "/scheme", "M").c_str());
         f->store(utils::filename(utils::debugDirectory(step) + "/scheme", "f").c_str());
         dirichlet->store(utils::filename(utils::debugDirectory(step) + "/scheme", "dirichlet").c_str());
 
+        eslog::storedata(" STORE: scheme/{X, Y, U, V, dU}\n");
         X->store(utils::filename(utils::debugDirectory(step) + "/scheme", "X").c_str());
         Y->store(utils::filename(utils::debugDirectory(step) + "/scheme", "Y").c_str());
         U->store(utils::filename(utils::debugDirectory(step) + "/scheme", "U").c_str());

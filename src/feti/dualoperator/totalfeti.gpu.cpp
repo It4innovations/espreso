@@ -1177,6 +1177,7 @@ void TotalFETIGpu<T,I>::update(const step::Step &step)
             domain_data[di].solver_Kreg.solve(feti.f[di], Kplus_fs[di]);
         }
         applyB(feti, Kplus_fs, d);
+        d.synchronize();
         math::add(d, T{-1}, feti.c);
     }
     tm_compute_d.stop();
@@ -1655,7 +1656,7 @@ void TotalFETIGpu<T,I>::apply_implicit_compute(size_t di, my_timer & tm_allocinp
 }
 
 template <typename T, typename I>
-void TotalFETIGpu<T,I>::apply(const Vector_Dual<T> &x_cluster, Vector_Dual<T> &y_cluster)
+void TotalFETIGpu<T,I>::_apply(const Vector_Dual<T> &x_cluster, Vector_Dual<T> &y_cluster)
 {
     if(stage != 3) eslog::error("invalid stage when calling apply\n");
 
@@ -1665,7 +1666,25 @@ void TotalFETIGpu<T,I>::apply(const Vector_Dual<T> &x_cluster, Vector_Dual<T> &y
     if(is_explicit && config->apply_scatter_gather_where == DEVICE::GPU) apply_explicit_sggpu(x_cluster, y_cluster);
     if(is_implicit && config->apply_scatter_gather_where == DEVICE::CPU) apply_implicit_sgcpu(x_cluster, y_cluster);
     if(is_implicit && config->apply_scatter_gather_where == DEVICE::GPU) apply_implicit_sggpu(x_cluster, y_cluster);
+}
 
+template <typename T, typename I>
+void TotalFETIGpu<T,I>::apply(const Vector_Dual<T> &x_cluster, Vector_Dual<T> &y_cluster)
+{
+    apply(x_cluster, y_cluster);
+    y_cluster.synchronize();
+}
+
+template <typename T, typename I>
+void TotalFETIGpu<T,I>::apply(const Matrix_Dual<T> &x_cluster, Matrix_Dual<T> &y_cluster)
+{
+    Vector_Dual<T> _x, _y;
+    _x.size = _y.size = x_cluster.ncols;
+    for (int r = 0; r < x_cluster.nrows; ++r) {
+        _x.vals = x_cluster.vals + x_cluster.ncols * r;
+        _y.vals = y_cluster.vals + y_cluster.ncols * r;
+        _apply(_x, _y);
+    }
     y_cluster.synchronize();
 }
 

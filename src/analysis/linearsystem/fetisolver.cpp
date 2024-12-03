@@ -61,6 +61,7 @@ void FETILinearSystemSolver<T>::set(step::Step &step)
 {
     eslog::startln("FETI: SETTING LINEAR SYSTEM", "FETI[SET]");
     feti.K.resize(A.domains.size());
+    feti.assembledK.resize(A.domains.size());
     feti.x.resize(A.domains.size());
     feti.f.resize(A.domains.size());
 
@@ -71,6 +72,7 @@ void FETILinearSystemSolver<T>::set(step::Step &step)
         b.feti.domains[di].resize(A.decomposition->dsize[di]);
         x.feti.domains[di].resize(A.decomposition->dsize[di]);
         feti.K[di].shallowCopy(A.domains[di]);
+        feti.assembledK[di].shallowCopy(dynamic_cast<Matrix_FETI<T>* >(LinearSystemSolver<T>::assembledA)->domains[di]);
         feti.f[di].shallowCopy(b.feti.domains[di]);
         feti.x[di].shallowCopy(x.feti.domains[di]);
     }

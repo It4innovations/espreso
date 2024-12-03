@@ -37,6 +37,7 @@ public:
 
     // y = (B1 * K+ * B1t) * x + (B1 * K+ * B0) * u + (B1 * R * b)
     void apply(const Vector_Dual<T> &x, Vector_Dual<T> &y);
+    void apply(const Matrix_Dual<T> &x, Matrix_Dual<T> &y);
 
     // y = K+(f - Bt * x)
     void toPrimal(const Vector_Dual<T> &x, std::vector<Vector_Dense<T> > &y);
@@ -45,6 +46,7 @@ protected:
     void reduceInfo(DualOperatorInfo &sum, DualOperatorInfo &min, DualOperatorInfo &max);
     void printInfo(DualOperatorInfo &sum, DualOperatorInfo &min, DualOperatorInfo &max);
 
+    void _apply(const Vector_Dual<T> &x, Vector_Dual<T> &y);
     void _applyK(std::vector<Vector_Dense<T> > &x, std::vector<Vector_Dense<T> > &y);
 
     using DualOperator<T>::feti;

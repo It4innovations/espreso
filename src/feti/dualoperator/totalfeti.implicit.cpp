@@ -216,6 +216,7 @@ void TotalFETIImplicit<T>::update(const step::Step &step)
         KSolver[di].solve(feti.f[di], KplusBtx[di]);
     }
     applyB(feti, KplusBtx, d);
+    d.synchronize();
     math::add(d, T{-1}, feti.c);
     eslog::checkpointln("FETI: COMPUTE DUAL RHS [d]");
     if (info::ecf->output.print_matrices) {
@@ -228,7 +229,7 @@ void TotalFETIImplicit<T>::update(const step::Step &step)
 
 
 template <typename T>
-void TotalFETIImplicit<T>::apply(const Vector_Dual<T> &x, Vector_Dual<T> &y)
+void TotalFETIImplicit<T>::_apply(const Vector_Dual<T> &x, Vector_Dual<T> &y)
 {
     #pragma omp parallel for
     for (size_t di = 0; di < feti.K.size(); ++di) {
@@ -236,6 +237,26 @@ void TotalFETIImplicit<T>::apply(const Vector_Dual<T> &x, Vector_Dual<T> &y)
         KSolver[di].solve(Btx[di], KplusBtx[di]);
     }
     applyB(feti, KplusBtx, y);
+}
+
+template <typename T>
+void TotalFETIImplicit<T>::apply(const Vector_Dual<T> &x, Vector_Dual<T> &y)
+{
+    _apply(x, y);
+    y.synchronize();
+}
+
+template <typename T>
+void TotalFETIImplicit<T>::apply(const Matrix_Dual<T> &x, Matrix_Dual<T> &y)
+{
+    Vector_Dual<T> _x, _y;
+    _x.size = _y.size = x.ncols;
+    for (int r = 0; r < x.nrows; ++r) {
+        _x.vals = x.vals + x.ncols * r;
+        _y.vals = y.vals + y.ncols * r;
+        _apply(_x, _y);
+    }
+    y.synchronize();
 }
 
 template <typename T>

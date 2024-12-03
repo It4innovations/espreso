@@ -31,12 +31,16 @@ public:
 
     // y = B * K+ * Bt * x
     void apply(const Vector_Dual<T> &x, Vector_Dual<T> &y);
+    void apply(const Matrix_Dual<T> &x, Matrix_Dual<T> &y);
+
     // y = K+(f - Bt * x)
     void toPrimal(const Vector_Dual<T> &x, std::vector<Vector_Dense<T> > &y);
 
 protected:
     using DualOperator<T>::feti;
     using DualOperator<T>::d;
+
+    void _apply(const Vector_Dual<T> &x, Vector_Dual<T> &y);
 
     std::vector<Matrix_CSR<T> > Kplus;
     std::vector<Vector_Dense<T> > Btx, KplusBtx;
