@@ -41,6 +41,7 @@ struct CoordinatesKernel: Coordinates {
     template <typename Element>
     void simd(Element &element)
     {
+        element.elements = 0;
         for (size_t s = 0; s < SIMD::size; ++s, ++enodes) {
             if (enodes == end) {
                 for (size_t n = 0; n < nodes; ++n) {
@@ -50,6 +51,7 @@ struct CoordinatesKernel: Coordinates {
                 }
                 break;
             } else {
+                ++element.elements;
                 for (size_t n = 0; n < nodes; ++n) {
                     for (size_t d = 0; d < ndim; ++d) {
                         element.coords.node[n][d][s] = info::mesh->nodes->coordinates->datatarray()[enodes->at(n)][d];

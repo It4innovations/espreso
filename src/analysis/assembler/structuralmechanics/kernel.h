@@ -312,7 +312,7 @@ void runElementKernel(const step::Step &step, StructuralMechanicsElementOperator
     MatrixMassKernel<nodes, 1> postM(operators.postM);
     AccelerationKernel<nodes, ndim> acceleration(operators.acceleration);
     AngularVelocityKernel<nodes, ndim> angularVelocity(operators.angularVelocity);
-    StressKernel<nodes, ndim> stress(operators.stress);
+    StressKernel<nodes, gps, ndim> stress(operators.stress);
     MatrixFillerKernel<nodes> outK(operators.Kfiller);
     MatrixFillerKernel<nodes> outM(operators.Mfiller);
     MatrixFillerKernel<nodes> outC(operators.Cfiller);
@@ -398,6 +398,10 @@ void runElementKernel(const step::Step &step, StructuralMechanicsElementOperator
             material.init(element);
         }
 
+        if (stress.isactive) {
+            stress.init(element);
+        }
+
         for (size_t gp = 0; gp < gps; ++gp) {
             integration.coords(element, gp);
 
@@ -418,6 +422,10 @@ void runElementKernel(const step::Step &step, StructuralMechanicsElementOperator
             if (material.isactive) {
                 material.simd(element);
             }
+            if (stress.isactive) {
+                stress.element(element);
+            }
+
             if (matrixElasticity.isactive) {
                 matrixElasticity.simd(element, gp);
             }
@@ -475,14 +483,18 @@ void runElementKernel(const step::Step &step, StructuralMechanicsElementOperator
         for (size_t n = 0; n < nodes; ++n) {
             // TODO: re-evaluate all parameters dependent on coordinates
             if (stress.isactive) {
-                integration.displacementInNodes(element, n);
+                integration.coordsInNodes(element, n);
                 material.simd(element);
-                stress.simd(element, n);
+                stress.node(element, n);
             }
         }
 
         if (outPostB.isactive) {
             outPostB.simd(element.stress, 13);
+        }
+
+        if (stress.isactive) {
+            stress.move(element);
         }
     }
 }

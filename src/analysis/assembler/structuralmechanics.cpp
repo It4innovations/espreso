@@ -27,10 +27,18 @@ NodeData* StructuralMechanics::Results::normal = nullptr;
 NodeData* StructuralMechanics::Results::initialVelocity = nullptr;
 
 ElementData* StructuralMechanics::Results::principalStress = nullptr;
+ElementData* StructuralMechanics::Results::principalStrain = nullptr;
 ElementData* StructuralMechanics::Results::componentStress = nullptr;
+ElementData* StructuralMechanics::Results::componentStrain = nullptr;
 ElementData* StructuralMechanics::Results::vonMisesStress = nullptr;
+ElementData* StructuralMechanics::Results::vonMisesStrain = nullptr;
 
-NodeData* StructuralMechanics::Results::avgStress = nullptr;
+NodeData* StructuralMechanics::Results::principalStressAvg = nullptr;
+NodeData* StructuralMechanics::Results::principalStrainAvg = nullptr;
+NodeData* StructuralMechanics::Results::componentStressAvg = nullptr;
+NodeData* StructuralMechanics::Results::componentStrainAvg = nullptr;
+NodeData* StructuralMechanics::Results::vonMisesStressAvg = nullptr;
+NodeData* StructuralMechanics::Results::vonMisesStrainAvg = nullptr;
 //ElementData* StructuralMechanics::Results::isPlastized = nullptr;
 
 NodeData* StructuralMechanics::Results::displacement = nullptr;
@@ -94,11 +102,7 @@ StructuralMechanics::StructuralMechanics(StructuralMechanicsConfiguration &setti
 
 int StructuralMechanics::postProcessSolverSize()
 {
-    return 0;
-    if (Results::avgStress) {
-        return 13;
-    }
-    return 0;
+    return info::ecf->output.results_selection.stress && info::ecf->output.results_selection.global_average ? 13 : 0;
 }
 
 bool StructuralMechanics::analyze(const step::Step &step)
@@ -165,13 +169,22 @@ bool StructuralMechanics::analyze(const step::Step &step)
         if (Results::acceleration == nullptr) {
             Results::acceleration = info::mesh->nodes->appendData(info::mesh->dimension, NamedData::DataType::VECTOR, "ACCELERATION", step::TYPE::TIME, info::ecf->output.results_selection.acceleration);
         }
-        if (Results::principalStress == nullptr) {
-            Results::principalStress = info::mesh->elements->appendData(info::mesh->dimension    , NamedData::DataType::NUMBERED   , "PRINCIPAL_STRESS", step::TYPE::TIME, info::ecf->output.results_selection.stress);
-            Results::componentStress = info::mesh->elements->appendData(info::mesh->dimension * 2, NamedData::DataType::TENSOR_SYMM, "COMPONENT_STRESS", step::TYPE::TIME, info::ecf->output.results_selection.stress);
-            Results::vonMisesStress  = info::mesh->elements->appendData(                        1, NamedData::DataType::SCALAR     , "VON_MISES_STRESS", step::TYPE::TIME, info::ecf->output.results_selection.stress);
+        int tensor = info::mesh->dimension == 3 ? 6 : 3;
+        if (info::ecf->output.results_selection.stress && Results::principalStress == nullptr) {
+            Results::principalStress = info::mesh->elements->appendData(info::mesh->dimension, NamedData::DataType::NUMBERED   , "PRINCIPAL_STRESS");
+            Results::principalStrain = info::mesh->elements->appendData(info::mesh->dimension, NamedData::DataType::NUMBERED   , "PRINCIPAL_STRAIN");
+            Results::componentStress = info::mesh->elements->appendData(               tensor, NamedData::DataType::TENSOR_SYMM, "COMPONENT_STRESS");
+            Results::componentStrain = info::mesh->elements->appendData(               tensor, NamedData::DataType::TENSOR_SYMM, "COMPONENT_STRAIN");
+            Results::vonMisesStress  = info::mesh->elements->appendData(                    1, NamedData::DataType::SCALAR     , "VON_MISES_STRESS");
+            Results::vonMisesStrain  = info::mesh->elements->appendData(                    1, NamedData::DataType::SCALAR     , "VON_MISES_STRAIN");
         }
-        if (Results::avgStress == nullptr) {
-            Results::avgStress = info::mesh->nodes->appendData(info::mesh->dimension, NamedData::DataType::NUMBERED, "STRESS", step::TYPE::TIME, info::ecf->output.results_selection.stress);
+        if (info::ecf->output.results_selection.stress && Results::principalStressAvg == nullptr) {
+            Results::principalStressAvg = info::mesh->nodes->appendData(info::mesh->dimension, NamedData::DataType::NUMBERED   , "AVG_PRINCIPAL_STRESS");
+            Results::principalStrainAvg = info::mesh->nodes->appendData(info::mesh->dimension, NamedData::DataType::NUMBERED   , "AVG_PRINCIPAL_STRAIN");
+            Results::componentStressAvg = info::mesh->nodes->appendData(               tensor, NamedData::DataType::TENSOR_SYMM, "AVG_COMPONENT_STRESS");
+            Results::componentStrainAvg = info::mesh->nodes->appendData(               tensor, NamedData::DataType::TENSOR_SYMM, "AVG_COMPONENT_STRAIN");
+            Results::vonMisesStressAvg  = info::mesh->nodes->appendData(                    1, NamedData::DataType::SCALAR     , "AVG_VON_MISES_STRESS");
+            Results::vonMisesStrainAvg  = info::mesh->nodes->appendData(                    1, NamedData::DataType::SCALAR     , "AVG_VON_MISES_STRAIN");
         }
         if (Results::reactionForce == nullptr) {
             Results::reactionForce = info::mesh->nodes->appendData(info::mesh->dimension, NamedData::DataType::VECTOR, "REACTION_FORCES", step::TYPE::TIME, info::ecf->output.results_selection.reactions);
@@ -209,7 +222,7 @@ bool StructuralMechanics::analyze(const step::Step &step)
         }
     }
 
-    if (Results::avgStress) {
+    if (info::ecf->output.results_selection.stress) {
         nodeMultiplicity.resize(info::mesh->nodes->size);
         for (auto enodes = info::mesh->elements->nodes->cbegin(); enodes != info::mesh->elements->nodes->cend(); ++enodes) {
             for (auto n = enodes->begin(); n != enodes->end(); ++n) {
@@ -431,7 +444,7 @@ bool StructuralMechanics::analyze(const step::Step &step)
         elementKernels[i].angularVelocity.activate(getExpression(i, configuration.angular_velocity), settings.element_behaviour);
         if (Results::principalStress) {
             elementKernels[i].displacement.activate(info::mesh->elements->nodes->cbegin() + ebegin, info::mesh->elements->nodes->cbegin() + eend, Results::displacement->data.data());
-            elementKernels[i].stress.activate(info::mesh->elements->nodes->cbegin() + ebegin, info::mesh->elements->nodes->cbegin() + eend, Results::avgStress->data.data(), nodeMultiplicity.data(), i, Results::principalStress, Results::componentStress, Results::vonMisesStress);
+            elementKernels[i].stress.activate(info::mesh->elements->nodes->cbegin() + ebegin, info::mesh->elements->nodes->cbegin() + eend, i, nodeMultiplicity.data());
         }
 
         elementKernels[i].initVelocity.activate(getExpression(i, settings.initial_velocity));
@@ -843,6 +856,14 @@ void StructuralMechanics::updateSolution(const step::Step &step, Vector_Distribu
     }
     x->storeTo(Results::displacement->data);
     reset(M, B);
+    if (info::ecf->output.results_selection.stress) {
+        std::fill(StructuralMechanics::Results::principalStressAvg->data.begin(), StructuralMechanics::Results::principalStressAvg->data.end(), 0);
+        std::fill(StructuralMechanics::Results::principalStrainAvg->data.begin(), StructuralMechanics::Results::principalStrainAvg->data.end(), 0);
+        std::fill(StructuralMechanics::Results::componentStressAvg->data.begin(), StructuralMechanics::Results::componentStressAvg->data.end(), 0);
+        std::fill(StructuralMechanics::Results::componentStrainAvg->data.begin(), StructuralMechanics::Results::componentStrainAvg->data.end(), 0);
+        std::fill(StructuralMechanics::Results::vonMisesStressAvg->data.begin(), StructuralMechanics::Results::vonMisesStressAvg->data.end(), 0);
+        std::fill(StructuralMechanics::Results::vonMisesStrainAvg->data.begin(), StructuralMechanics::Results::vonMisesStrainAvg->data.end(), 0);
+    }
     assemble(SubKernel::SOLUTION, step);
     update(M, B);
 }

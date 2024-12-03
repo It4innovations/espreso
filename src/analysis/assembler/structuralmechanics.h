@@ -52,13 +52,13 @@ public:
 
         // steady state, transient
         static NodeData *displacement;
-        static ElementData *principalStress, *componentStress, *vonMisesStress;
+        static ElementData *principalStress, *principalStrain, *componentStress, *componentStrain, *vonMisesStress, *vonMisesStrain;
 //        static ElementData *isPlastized;
 
         // harmonic
         static NodeData *cosDisplacement, *sinDisplacement, *displacementAmplitude;
         static NodeData *phase, *velocity, *velocityAmplitude, *acceleration, *accelerationAmplitude;
-        static NodeData *avgStress;
+        static NodeData *principalStressAvg, *principalStrainAvg, *componentStressAvg, *componentStrainAvg, *vonMisesStressAvg, *vonMisesStrainAvg;
         static NodeData *reactionForce;
 
         // FSI

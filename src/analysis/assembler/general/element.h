@@ -7,6 +7,8 @@
 namespace espreso {
 
 template <size_t nodes, size_t gps, size_t ndim, size_t edim> struct GeneralElement {
+    int elements;
+
     alignas(SIMD::size * sizeof(double)) double  w[gps];
     alignas(SIMD::size * sizeof(double)) double  N[gps][nodes];
     alignas(SIMD::size * sizeof(double)) double dN[gps][nodes][edim];
@@ -36,6 +38,7 @@ template <size_t nodes, size_t gps, size_t ndim, size_t edim> struct GeneralElem
 
     GeneralElement()
     {
+        elements = 0;
         for (size_t n = 0; n < nodes; ++n) {
             thickness.node[n] = load1(1);
         }
@@ -44,6 +47,8 @@ template <size_t nodes, size_t gps, size_t ndim, size_t edim> struct GeneralElem
 };
 
 template <size_t nodes, size_t gps, size_t ndim, size_t edim> struct GeneralBoundary {
+    int elements;
+
     alignas(SIMD::size * sizeof(double)) double  w[gps];
     alignas(SIMD::size * sizeof(double)) double  N[gps][nodes];
     alignas(SIMD::size * sizeof(double)) double dN[gps][nodes][edim];
@@ -72,6 +77,7 @@ template <size_t nodes, size_t gps, size_t ndim, size_t edim> struct GeneralBoun
 
     GeneralBoundary()
     {
+        elements = 0;
         for (size_t n = 0; n < nodes; ++n) {
             thickness.node[n] = load1(1);
         }
@@ -80,6 +86,8 @@ template <size_t nodes, size_t gps, size_t ndim, size_t edim> struct GeneralBoun
 };
 
 template <size_t ndim> struct GeneralNode {
+    int elements;
+
     struct {
         alignas(SIMD::size * sizeof(double)) SIMD node[1][ndim];
     } coords;

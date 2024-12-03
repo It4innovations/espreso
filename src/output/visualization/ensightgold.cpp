@@ -88,6 +88,11 @@ void EnSightGold::updateMonitors(const step::Step &step)
 		if (!storeData(data, step)) {
 			return;
 		}
+		if (data->dataType == NamedData::DataType::TENSOR_SYMM) {
+            std::string name = dataname(data, 0);
+            variables.push_back("tensor symm per " + var + ": " + spaces(var, 8) + "1 " + name + spaces(name, 30) + " " + _directory + name + ".****");
+            return;
+        }
 		if (data->dataType == NamedData::DataType::VECTOR) {
 			std::string name = dataname(data, 0);
 			variables.push_back("vector per " + var + ": " + spaces(var, 8) + "1 " + name + spaces(name, 30) + " " + _directory + name + ".****");
@@ -181,6 +186,9 @@ void EnSightGold::updateSolution(const step::Step &step)
 
 std::string EnSightGold::dataname(const NamedData *data, int d)
 {
+    if (data->dataType == NamedData::DataType::TENSOR_SYMM) {
+        return data->name;
+    }
 	if (data->dataType == NamedData::DataType::VECTOR) {
 		return data->name;
 	}
@@ -370,7 +378,7 @@ int EnSightGold::ndata(const NamedData *data, const step::Step &step)
 		_writer.groupData();
 	};
 
-	if (data->dataType == NamedData::DataType::VECTOR) {
+	if (data->dataType == NamedData::DataType::VECTOR || data->dataType == NamedData::DataType::TENSOR_SYMM) {
 		std::stringstream file;
 		file << _path + _directory + dataname(data, 0) + "." << std::setw(4) << std::setfill('0') << _times.size(); // + step::outduplicate.offset;
 
@@ -489,7 +497,7 @@ int EnSightGold::edata(const NamedData *data, const step::Step &step)
 		_writer.groupData();
 	};
 
-	if (data->dataType == NamedData::DataType::VECTOR) {
+	if (data->dataType == NamedData::DataType::VECTOR || data->dataType == NamedData::DataType::TENSOR_SYMM) {
 		std::stringstream file;
 		file << _path + _directory + dataname(data, 0) + "." << std::setw(4) << std::setfill('0') << _times.size(); // + step::outduplicate.offset;
 		if (isRoot()) {

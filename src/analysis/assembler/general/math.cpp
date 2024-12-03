@@ -76,7 +76,7 @@ void eigSym33Desc(const SIMD A[9], SIMD eVal[3])
         Matrix_Dense<double> _in; _in.nrows = 3; _in.ncols = 3; _in.nnz = 9; _in.vals = _A;
         Vector_Dense<double> val; val.size  = 3; val.vals = _VAL;
         math::lapack::get_eig_sym(_in, val);
-        eVal[0][s] = _VAL[0]; eVal[1][s] = _VAL[1]; eVal[2][s] = _VAL[2];
+        eVal[0][s] = _VAL[2]; eVal[1][s] = _VAL[1]; eVal[2][s] = _VAL[0];
     }
 }
 

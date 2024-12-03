@@ -328,6 +328,12 @@ StructuralMechanicsOutputSettings::StructuralMechanicsOutputSettings()
                 .setdescription({ "FSI values." })
                 .setdatatype({ ECFDataType::BOOL })
                 .allowonly([&] () { return _activated; }));
+
+	global_average = false;
+	REGISTER(global_average, ECFMetaData()
+                .setdescription({ "Global average of stress." })
+                .setdatatype({ ECFDataType::BOOL })
+                .allowonly([&] () { return _activated; }));
 }
 
 StructuralMechanicsGlobalSettings::StructuralMechanicsGlobalSettings(ECFObject *ecfdescription)

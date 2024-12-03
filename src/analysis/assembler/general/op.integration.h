@@ -77,13 +77,13 @@ struct IntegrationKernel<nodes, 2, 2>: Integration {
     }
 
     template <typename Element>
-    void displacementInNodes(Element &element, size_t node)
+    void coordsInNodes(Element &element, size_t node)
     {
         SIMD J[4];
 
         for (size_t n = 0; n < nodes; ++n) {
-            SIMD coordsX = element.coords.node[n][0] + element.displacement[n][0];
-            SIMD coordsY = element.coords.node[n][1] + element.displacement[n][1];
+            SIMD coordsX = element.coords.node[n][0];
+            SIMD coordsY = element.coords.node[n][1];
             SIMD dNX = load1(element.dNN[node][n][0]);
             SIMD dNY = load1(element.dNN[node][n][1]);
 
@@ -179,13 +179,13 @@ struct IntegrationKernel<nodes, 3, 3>: Integration {
     }
 
     template <typename Element>
-    void displacementInNodes(Element &element, size_t node)
+    void coordsInNodes(Element &element, size_t node)
     {
         SIMD J[9];
         for (size_t n = 0; n < nodes; ++n) {
-            SIMD coordsX = element.coords.node[n][0] + element.displacement[n][0];
-            SIMD coordsY = element.coords.node[n][1] + element.displacement[n][1];
-            SIMD coordsZ = element.coords.node[n][2] + element.displacement[n][2];
+            SIMD coordsX = element.coords.node[n][0];
+            SIMD coordsY = element.coords.node[n][1];
+            SIMD coordsZ = element.coords.node[n][2];
             SIMD dNX = load1(element.dNN[node][n][0]);
             SIMD dNY = load1(element.dNN[node][n][1]);
             SIMD dNZ = load1(element.dNN[node][n][2]);
