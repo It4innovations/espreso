@@ -35,25 +35,113 @@ struct StressKernel<nodes, gps, 2>: Stress {
     template <typename Element>
     void init(Element &element)
     {
+        for (int e = 0; e < element.elements; ++e) {
+            principalStress[2 * e + 0] = 0;
+            principalStress[2 * e + 1] = 0;
+            principalStrain[2 * e + 0] = 0;
+            principalStrain[2 * e + 1] = 0;
 
+            componentStress[3 * e + 0] = 0;
+            componentStress[3 * e + 1] = 0;
+            componentStress[3 * e + 2] = 0;
+            componentStrain[3 * e + 0] = 0;
+            componentStrain[3 * e + 1] = 0;
+            componentStrain[3 * e + 2] = 0;
+
+            vonMisesStress[e] = 0;
+            vonMisesStrain[e] = 0;
+        }
     }
 
     template <typename Element>
     void move(Element &element)
     {
+        principalStress += SIMD::size * 2;
+        principalStrain += SIMD::size * 2;
+        componentStress += SIMD::size * 3;
+        componentStrain += SIMD::size * 3;
+        vonMisesStress  += SIMD::size;
+        vonMisesStrain  += SIMD::size;
 
+        for (int e = 0; e < element.elements; ++e) {
+            ++enodes;
+        }
     }
 
     template <typename Element>
     void element(Element &element)
     {
-        // TODO
+        constexpr double rgps = 1.0 / gps;
+        SIMD eig[2], nu = element.ecf.poissonRatio[0];
+        SIMD S[4] = {
+                element.vS[0], element.vS[2],
+                element.vS[2], element.vS[1],
+        };
+        eigSym22Desc(S, eig);
+        for (int e = 0; e < element.elements; ++e) {
+            principalStress[2 * e + 0] += rgps * eig[0][e];
+            principalStress[2 * e + 1] += rgps * eig[1][e];
+
+            componentStress[3 * e + 0] += rgps * S[0][e];
+            componentStress[3 * e + 1] += rgps * S[3][e];
+            componentStress[3 * e + 2] += rgps * S[1][e];
+
+            vonMisesStress[e] += rgps * sqrt(.5 * ((eig[0][e] - eig[1][e]) * (eig[0][e] - eig[1][e])));
+        }
+
+        SIMD E[4] = {
+                load1(.5) * element.C2[0] - load1(.5), load1(.5) * element.C2[1]            ,
+                load1(.5) * element.C2[2]            , load1(.5) * element.C2[3] - load1(.5),
+        };
+        eigSym22Desc(E, eig);
+        for (int e = 0; e < element.elements; ++e) {
+            principalStrain[2 * e + 0] += rgps * eig[0][e];
+            principalStrain[2 * e + 1] += rgps * eig[1][e];
+
+            componentStrain[3 * e + 0] += rgps * E[0][e];
+            componentStrain[3 * e + 1] += rgps * E[3][e];
+            componentStrain[3 * e + 2] += rgps * E[1][e];
+
+            vonMisesStrain[e] += rgps * sqrt(.5 * ((eig[0][e] - eig[1][e]) * (eig[0][e] - eig[1][e]))) / (1 + nu[e]);
+        }
     }
 
     template <typename Element>
     void node(Element &element, size_t n)
     {
-        // TODO
+        size_t index = 0;
+        for (size_t nn = 0; nn < nodes; ++nn) {
+            index += nn * element.NN[n][nn]; // get node index, only one values in NN is 1, other are 0
+        }
+        SIMD nu = element.ecf.poissonRatio[0];
+        SIMD eigS[2], S[4] = {
+                element.vS[0], element.vS[2],
+                element.vS[2], element.vS[1],
+        };
+        eigSym22Desc(S, eigS);
+        SIMD eigE[2], E[4] = {
+                load1(.5) * element.C2[0] - load1(.5), load1(.5) * element.C2[1]            ,
+                load1(.5) * element.C2[2]            , load1(.5) * element.C2[3] - load1(.5),
+        };
+        eigSym22Desc(E, eigE);
+        auto enodes = this->enodes;
+        for (int e = 0; e < element.elements; ++e, ++enodes) {
+            size_t node = enodes->at(index);
+            double scale = multiplicity[node];
+            principalStressAvg[2 * node + 0] += scale * eigS[0][e];
+            principalStressAvg[2 * node + 1] += scale * eigS[1][e];
+            componentStressAvg[3 * node + 0] += scale * S[0][e];
+            componentStressAvg[3 * node + 1] += scale * S[3][e];
+            componentStressAvg[3 * node + 2] += scale * S[1][e];
+            vonMisesStressAvg [    node    ] += scale * sqrt(.5 * ((eigS[0][e] - eigS[1][e]) * (eigS[0][e] - eigS[1][e])));
+
+            principalStrainAvg[2 * node + 0] += scale * eigE[0][e];
+            principalStrainAvg[2 * node + 1] += scale * eigE[1][e];
+            componentStrainAvg[3 * node + 0] += scale * E[0][e];
+            componentStrainAvg[3 * node + 1] += scale * E[3][e];
+            componentStrainAvg[3 * node + 2] += scale * E[1][e];
+            vonMisesStrainAvg [    node    ] += scale * sqrt(.5 * ((eigE[0][e] - eigE[1][e]) * (eigE[0][e] - eigE[1][e]))) / (1 + nu[e]);
+        }
     }
 };
 
@@ -199,19 +287,6 @@ struct StressKernel<nodes, gps, 3>: Stress {
             componentStrainAvg[6 * node + 5] += scale * E[2][e];
             vonMisesStrainAvg [    node    ] += scale * sqrt(.5 * ((eigE[0][e] - eigE[1][e]) * (eigE[0][e] - eigE[1][e]) + (eigE[1][e] - eigE[2][e]) * (eigE[1][e] - eigE[2][e]) + (eigE[2][e] - eigE[0][e]) * (eigE[2][e] - eigE[0][e]))) / (1 + nu[e]);
         }
-//        element.stress[ 0 * nodes + n] = element.vS[0];
-//        element.stress[ 1 * nodes + n] = element.vS[1];
-//        element.stress[ 2 * nodes + n] = element.vS[2];
-//        element.stress[ 3 * nodes + n] = element.vS[3];
-//        element.stress[ 4 * nodes + n] = element.vS[4];
-//        element.stress[ 5 * nodes + n] = element.vS[5];
-//        element.stress[ 6 * nodes + n] = load1(.5) * element.C2[0] - load1(.5);
-//        element.stress[ 7 * nodes + n] = load1(.5) * element.C2[4] - load1(.5);
-//        element.stress[ 8 * nodes + n] = load1(.5) * element.C2[8] - load1(.5);
-//        element.stress[ 9 * nodes + n] = element.C2[1];
-//        element.stress[10 * nodes + n] = element.C2[5];
-//        element.stress[11 * nodes + n] = element.C2[2];
-//        element.stress[12 * nodes + n] = sqrt(load1(.5) * ((eig[0] - eig[1]) * (eig[0] - eig[1]) + (eig[1] - eig[2]) * (eig[1] - eig[2]) + (eig[2] - eig[0]) * (eig[2] - eig[0]))) / (load1(1) + nu);
     }
 
     void final()

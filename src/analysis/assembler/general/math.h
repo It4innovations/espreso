@@ -113,6 +113,7 @@ void multABAt(SIMD C[cols * cols], const SIMD A[rows * cols], const SIMD B[rows 
 
 void eigSym22(const SIMD A[4], SIMD eVal[2]);
 void eigSym22(const SIMD A[4], SIMD eVal[2], SIMD eVec[4]);
+void eigSym22Desc(const SIMD A[4], SIMD eVal[2]);
 
 void eigSym33Desc(const SIMD A[9], SIMD eVal[3]);
 void eigSym33Desc(const SIMD A[9], SIMD eVal[3], SIMD eVec[9]);

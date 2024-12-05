@@ -126,6 +126,7 @@ void TFETIConjugateSymmetric<T>::_setG()
             }
         }
     }
+    Gt.shallowCopy(G);
     eslog::checkpointln("FETI: SET G");
 }
 

@@ -91,6 +91,11 @@ template <size_t nodes, size_t gps> struct MaterialStructuralMechanicsKernel<nod
         element.F[0] = element.F[0] + load1(1.);
         element.F[3] = element.F[3] + load1(1.);
 
+        // Voigt   0  1  2
+        //        11 22 12
+        set<2, 2>(element.C2, zeros());
+        multAtB<2, 2, 2>(element.C2, element.F, element.F); // Right Cauchy-Green tensor
+
         switch (configuration->elasticity_properties.material_model) {
         case ElasticityPropertiesConfiguration::MATERIAL_MODEL::KIRCHHOFF:
             switch (behaviour) {
@@ -127,25 +132,19 @@ template <size_t nodes, size_t gps> struct MaterialStructuralMechanicsKernel<nod
                 element.vC4[15] = k * (C1 - C2 * mi) * C05;
             } break;
             }
-            if (nonlinear) {
-                switch (behaviour) {
-                case StructuralMechanicsConfiguration::ELEMENT_BEHAVIOUR::PLANE_STRAIN:
-                case StructuralMechanicsConfiguration::ELEMENT_BEHAVIOUR::PLANE_STRESS:
-                case StructuralMechanicsConfiguration::ELEMENT_BEHAVIOUR::PLANE_STRESS_WITH_THICKNESS:
-                {
-                    SIMD eHat[4]; multAtB<2, 2, 2>(eHat, element.F, element.F, load1(.5));
-                    SIMD eVec[3], C05 = load1(0.5);
-                    eVec[0] = -C05 + eHat[0];
-                    eVec[1] = -C05 + eHat[3];
-                    eVec[2] = eHat[1] + eHat[2];
-                    set<1, 3>(element.vS, load1(0));
-                    multAB<3, 3, 1>(element.vS, element.vC4, eVec, load1(1.0));
-                } break;
-                case StructuralMechanicsConfiguration::ELEMENT_BEHAVIOUR::AXISYMMETRIC:
-                {
-                    eslog::error("not implemented material behaviour\n");
-                } break;
-                }
+            switch (behaviour) {
+            case StructuralMechanicsConfiguration::ELEMENT_BEHAVIOUR::PLANE_STRAIN:
+            case StructuralMechanicsConfiguration::ELEMENT_BEHAVIOUR::PLANE_STRESS:
+            case StructuralMechanicsConfiguration::ELEMENT_BEHAVIOUR::PLANE_STRESS_WITH_THICKNESS:
+            {
+                SIMD eVec[3] = { load1(.5) * (element.C2[0] - load1(1)), load1(.5) * (element.C2[3] - load1(1)), element.C2[1] + element.C2[2] };
+                set<1, 3>(element.vS, load1(0));
+                multAB<3, 3, 1>(element.vS, element.vC4, eVec, load1(1.0));
+            } break;
+            case StructuralMechanicsConfiguration::ELEMENT_BEHAVIOUR::AXISYMMETRIC:
+            {
+                eslog::error("not implemented material behaviour\n");
+            } break;
             }
             break;
         case ElasticityPropertiesConfiguration::MATERIAL_MODEL::NEO_HOOKEAN_CMP:

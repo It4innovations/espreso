@@ -16,6 +16,20 @@ void eigSym22(const SIMD A[4], SIMD eVal[2], SIMD eVec[4])
 
 }
 
+void eigSym22Desc(const SIMD A[4], SIMD eVal[2])
+{
+    for (size_t s = 0; s < SIMD::size && !std::isnan(A[0][s]); ++s) {
+        double _VAL[2], _A[4] = {
+                A[0][s], A[1][s],
+                A[2][s], A[3][s],
+        };
+        Matrix_Dense<double> _in; _in.nrows = 2; _in.ncols = 2; _in.nnz = 4; _in.vals = _A;
+        Vector_Dense<double> val; val.size  = 2; val.vals = _VAL;
+        math::lapack::get_eig_sym(_in, val);
+        eVal[0][s] = _VAL[1]; eVal[1][s] = _VAL[0];
+    }
+}
+
 void eigSym33Desc(const SIMD A[9], SIMD eVal[3])
 {
     // https://en.wikipedia.org/wiki/Eigenvalue_algorithm#3.C3.973_matrices
