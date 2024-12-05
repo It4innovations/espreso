@@ -42,12 +42,10 @@ struct BaseFunctions<Element::CODE::TRIANGLE3, 6> {
             set(element.N[gp], element.dN[gp], r[gp], s[gp]);
         }
 
-        double nr[nodes] = { 1, 0, 0 };
-        double ns[nodes] = { 0, 1, 0 };
-
-        for (size_t n = 0; n < nodes; ++n) {
-            set(element.NN[n], element.dNN[n], nr[n], ns[n]);
-        }
+        double nn[2] = { 0, 1 };
+        set(element.NN[0], element.dNN[0], nn[0], nn[0]);
+        set(element.NN[1], element.dNN[1], nn[0], nn[1]);
+        set(element.NN[2], element.dNN[2], nn[1], nn[0]);
     }
 };
 
@@ -91,12 +89,13 @@ struct BaseFunctions<Element::CODE::TRIANGLE6, 6> {
             set(element.N[gp], element.dN[gp], r[gp], s[gp]);
         }
 
-        double nr[nodes] = { -1,  1, 0,  1, -1,  1 };
-        double ns[nodes] = { -1, -1, 0,  1, -1, -1 };
-
-        for (size_t n = 0; n < nodes; ++n) {
-            set(element.NN[n], element.dNN[n], nr[n], ns[n]);
-        }
+        double nn[3] = { 0, 1, .5 };
+        set(element.NN[0], element.dNN[0], nn[0], nn[0]);
+        set(element.NN[1], element.dNN[1], nn[1], nn[0]);
+        set(element.NN[2], element.dNN[2], nn[0], nn[1]);
+        set(element.NN[3], element.dNN[3], nn[2], nn[0]);
+        set(element.NN[4], element.dNN[4], nn[2], nn[2]);
+        set(element.NN[5], element.dNN[5], nn[0], nn[2]);
     }
 };
 
@@ -139,13 +138,11 @@ struct BaseFunctions<Element::CODE::TETRA4, 4> {
             set(element.N[gp], element.dN[gp], r[gp], s[gp], t[gp]);
         }
 
-        double nr[nodes] = { 1, 0, 0, 0 };
-        double ns[nodes] = { 0, 1, 0, 0 };
-        double nt[nodes] = { 0, 0, 1, 0 };
-
-        for (size_t n = 0; n < nodes; ++n) {
-            set(element.NN[n], element.dNN[n], nr[n], ns[n], nt[n]);
-        }
+        double nn[2] = { 0, 1 };
+        set(element.NN[0], element.dNN[0], nn[1], nn[0], nn[0]);
+        set(element.NN[1], element.dNN[1], nn[0], nn[1], nn[0]);
+        set(element.NN[2], element.dNN[2], nn[0], nn[0], nn[1]);
+        set(element.NN[3], element.dNN[3], nn[0], nn[0], nn[0]);
     }
 };
 
@@ -229,13 +226,18 @@ struct BaseFunctions<Element::CODE::TETRA10, 15> {
             set(element.N[gp], element.dN[gp], r[gp], s[gp], t[gp]);
         }
 
-        double nr[nodes] = { 1, 0, 0, 0,  .5,  0, .5, .5,  0, .5 };
-        double ns[nodes] = { 0, 1, 0, 0,   0, .5, .5,  0, .5, .5 };
-        double nt[nodes] = { 0, 0, 1, 0,   0,  0,  0, .5, .5, .5 };
+        double nn[3] = { 0, 1, .5 };
+        set(element.NN[0], element.dNN[0], nn[1], nn[0], nn[0]);
+        set(element.NN[1], element.dNN[1], nn[0], nn[1], nn[0]);
+        set(element.NN[2], element.dNN[2], nn[0], nn[0], nn[1]);
+        set(element.NN[3], element.dNN[3], nn[0], nn[0], nn[0]);
 
-        for (size_t n = 0; n < nodes; ++n) {
-            set(element.NN[n], element.dNN[n], nr[n], ns[n], nt[n]);
-        }
+        set(element.NN[4], element.dNN[4], nn[2], nn[2], nn[0]);
+        set(element.NN[5], element.dNN[5], nn[0], nn[2], nn[2]);
+        set(element.NN[6], element.dNN[6], nn[2], nn[0], nn[2]);
+        set(element.NN[7], element.dNN[7], nn[2], nn[0], nn[0]);
+        set(element.NN[8], element.dNN[8], nn[0], nn[2], nn[0]);
+        set(element.NN[9], element.dNN[9], nn[0], nn[0], nn[2]);
     }
 };
 
@@ -320,13 +322,21 @@ struct BaseFunctions<Element::CODE::PYRAMID13, 14> {
             set(element.N[gp], element.dN[gp], r[gp], s[gp], t[gp]);
         }
 
-        double nr[nodes] = { -1,  1,  1, -1,  0,   0,  1,  0, -1,  -.5,  .5,  .5, -.5 };
-        double ns[nodes] = { -1, -1,  1,  1,  0,  -1,  0,  1,  0,  -.5, -.5,  .5,  .5 };
-        double nt[nodes] = { -1, -1, -1, -1,  1,  -1, -1, -1, -1,    0,   0,   0,   0 };
+        double nn[3] = { -1, 1, 0 };
+        set(element.NN[ 0], element.dNN[ 0], nn[0], nn[0], nn[0]);
+        set(element.NN[ 1], element.dNN[ 1], nn[1], nn[0], nn[0]);
+        set(element.NN[ 2], element.dNN[ 2], nn[1], nn[1], nn[0]);
+        set(element.NN[ 3], element.dNN[ 3], nn[0], nn[1], nn[0]);
+        set(element.NN[ 4], element.dNN[ 4], nn[2], nn[2], nn[1]);
 
-        for (size_t n = 0; n < nodes; ++n) {
-            set(element.NN[n], element.dNN[n], nr[n], ns[n], nt[n]);
-        }
+        set(element.NN[ 5], element.dNN[ 5], nn[2], nn[0], nn[0]);
+        set(element.NN[ 6], element.dNN[ 6], nn[1], nn[2], nn[0]);
+        set(element.NN[ 7], element.dNN[ 7], nn[2], nn[1], nn[0]);
+        set(element.NN[ 8], element.dNN[ 8], nn[0], nn[2], nn[0]);
+        set(element.NN[ 9], element.dNN[ 9], nn[0], nn[0], nn[2]);
+        set(element.NN[10], element.dNN[10], nn[1], nn[0], nn[2]);
+        set(element.NN[11], element.dNN[11], nn[1], nn[1], nn[2]);
+        set(element.NN[12], element.dNN[12], nn[0], nn[1], nn[2]);
     }
 };
 
@@ -381,13 +391,13 @@ struct BaseFunctions<Element::CODE::PRISMA6, 9> {
             set(element.N[gp], element.dN[gp], r[gp], s[gp], t[gp]);
         }
 
-        double nr[nodes] = { -1,  1,  1, -1,  0,  0 };
-        double ns[nodes] = { -1, -1,  1,  1,  0, -1 };
-        double nt[nodes] = { -1, -1, -1,  1,  1,  1 };
-
-        for (size_t n = 0; n < nodes; ++n) {
-            set(element.NN[n], element.dNN[n], nr[n], ns[n], nt[n]);
-        }
+        double nn[3] = { -1, 0, 1 };
+        set(element.NN[0], element.dNN[0], nn[1], nn[1], nn[0]);
+        set(element.NN[1], element.dNN[1], nn[2], nn[1], nn[0]);
+        set(element.NN[2], element.dNN[2], nn[1], nn[2], nn[0]);
+        set(element.NN[3], element.dNN[3], nn[1], nn[1], nn[2]);
+        set(element.NN[4], element.dNN[4], nn[2], nn[1], nn[2]);
+        set(element.NN[5], element.dNN[5], nn[1], nn[2], nn[2]);
     }
 };
 
@@ -481,13 +491,23 @@ struct BaseFunctions<Element::CODE::PRISMA15, 9> {
             set(element.N[gp], element.dN[gp], r[gp], s[gp], t[gp]);
         }
 
-        double nr[nodes] = { 0, 0, 0, 0, 0, 0,   0, 0, 0,   0, 0, 0,   0, 0, 0 };
-        double ns[nodes] = { 0, 0, 0, 0, 0, 0,   0, 0, 0,   0, 0, 0,   0, 0, 0 };
-        double nt[nodes] = { 0, 0, 0, 0, 0, 0,   0, 0, 0,   0, 0, 0,   0, 0, 0 };
+        double nn[4] = { -1, 0, 1, .5 };
+        set(element.NN[ 0], element.dNN[ 0], nn[1], nn[1], nn[0]);
+        set(element.NN[ 1], element.dNN[ 1], nn[2], nn[1], nn[0]);
+        set(element.NN[ 2], element.dNN[ 2], nn[1], nn[2], nn[0]);
+        set(element.NN[ 3], element.dNN[ 3], nn[1], nn[1], nn[2]);
+        set(element.NN[ 4], element.dNN[ 4], nn[2], nn[1], nn[2]);
+        set(element.NN[ 5], element.dNN[ 5], nn[1], nn[2], nn[2]);
 
-        for (size_t n = 0; n < nodes; ++n) {
-            set(element.NN[n], element.dNN[n], nr[n], ns[n], nt[n]);
-        }
+        set(element.NN[ 6], element.dNN[ 6], nn[3], nn[1], nn[0]);
+        set(element.NN[ 7], element.dNN[ 7], nn[3], nn[3], nn[0]);
+        set(element.NN[ 8], element.dNN[ 8], nn[1], nn[3], nn[0]);
+        set(element.NN[ 9], element.dNN[ 9], nn[3], nn[1], nn[2]);
+        set(element.NN[10], element.dNN[10], nn[3], nn[3], nn[2]);
+        set(element.NN[11], element.dNN[11], nn[1], nn[3], nn[2]);
+        set(element.NN[12], element.dNN[12], nn[1], nn[1], nn[1]);
+        set(element.NN[13], element.dNN[13], nn[2], nn[1], nn[1]);
+        set(element.NN[14], element.dNN[14], nn[1], nn[2], nn[1]);
     }
 };
 
@@ -979,8 +999,15 @@ struct GaussPointsDegraded<E, nodes, 2>: GaussPointsDegradedSetter<E, nodes, 2> 
 
         double nn[3] = { -1, 1, 0 };
 
-        for (size_t n = 0; n < nodes; ++n) {
-            GaussPointsDegradedSetter<E, nodes, 2>::set(element.NN[n], element.dNN[n], nn[n], nn[n]);
+        GaussPointsDegradedSetter<E, nodes, 2>::set(element.NN[E::n_order[0]], element.dNN[E::n_order[0]], nn[0], nn[0]);
+        GaussPointsDegradedSetter<E, nodes, 2>::set(element.NN[E::n_order[1]], element.dNN[E::n_order[1]], nn[1], nn[0]);
+        GaussPointsDegradedSetter<E, nodes, 2>::set(element.NN[E::n_order[2]], element.dNN[E::n_order[2]], nn[1], nn[1]);
+        GaussPointsDegradedSetter<E, nodes, 2>::set(element.NN[E::n_order[3]], element.dNN[E::n_order[3]], nn[0], nn[1]);
+        if constexpr (nodes == 8) {
+            GaussPointsDegradedSetter<E, nodes, 2>::set(element.NN[E::n_order[4]], element.dNN[E::n_order[4]], nn[2], nn[0]);
+            GaussPointsDegradedSetter<E, nodes, 2>::set(element.NN[E::n_order[5]], element.dNN[E::n_order[5]], nn[1], nn[2]);
+            GaussPointsDegradedSetter<E, nodes, 2>::set(element.NN[E::n_order[6]], element.dNN[E::n_order[6]], nn[2], nn[1]);
+            GaussPointsDegradedSetter<E, nodes, 2>::set(element.NN[E::n_order[7]], element.dNN[E::n_order[7]], nn[0], nn[2]);
         }
     }
 };
@@ -1002,17 +1029,28 @@ struct GaussPointsDegraded<E, nodes, 3>: GaussPointsDegradedSetter<E, nodes, 3> 
 
         double nn[3] = { -1, 1, 0 };
 
-        GaussPointsDegradedSetter<E, nodes, 3>::set(element.NN[0], element.dNN[0], nn[0], nn[0], nn[0]);
-        GaussPointsDegradedSetter<E, nodes, 3>::set(element.NN[1], element.dNN[1], nn[1], nn[0], nn[0]);
-        GaussPointsDegradedSetter<E, nodes, 3>::set(element.NN[2], element.dNN[2], nn[0], nn[1], nn[0]);
-        GaussPointsDegradedSetter<E, nodes, 3>::set(element.NN[3], element.dNN[3], nn[1], nn[1], nn[0]);
-        GaussPointsDegradedSetter<E, nodes, 3>::set(element.NN[4], element.dNN[4], nn[0], nn[0], nn[1]);
-        GaussPointsDegradedSetter<E, nodes, 3>::set(element.NN[5], element.dNN[5], nn[1], nn[0], nn[1]);
-        GaussPointsDegradedSetter<E, nodes, 3>::set(element.NN[6], element.dNN[6], nn[0], nn[1], nn[1]);
-        GaussPointsDegradedSetter<E, nodes, 3>::set(element.NN[7], element.dNN[7], nn[1], nn[1], nn[1]);
+        GaussPointsDegradedSetter<E, nodes, 3>::set(element.NN[E::n_order[0]], element.dNN[E::n_order[0]], nn[0], nn[0], nn[0]);
+        GaussPointsDegradedSetter<E, nodes, 3>::set(element.NN[E::n_order[1]], element.dNN[E::n_order[1]], nn[1], nn[0], nn[0]);
+        GaussPointsDegradedSetter<E, nodes, 3>::set(element.NN[E::n_order[2]], element.dNN[E::n_order[2]], nn[1], nn[1], nn[0]);
+        GaussPointsDegradedSetter<E, nodes, 3>::set(element.NN[E::n_order[3]], element.dNN[E::n_order[3]], nn[0], nn[1], nn[0]);
+        GaussPointsDegradedSetter<E, nodes, 3>::set(element.NN[E::n_order[4]], element.dNN[E::n_order[4]], nn[0], nn[0], nn[1]);
+        GaussPointsDegradedSetter<E, nodes, 3>::set(element.NN[E::n_order[5]], element.dNN[E::n_order[5]], nn[1], nn[0], nn[1]);
+        GaussPointsDegradedSetter<E, nodes, 3>::set(element.NN[E::n_order[6]], element.dNN[E::n_order[6]], nn[1], nn[1], nn[1]);
+        GaussPointsDegradedSetter<E, nodes, 3>::set(element.NN[E::n_order[7]], element.dNN[E::n_order[7]], nn[0], nn[1], nn[1]);
 
         if constexpr(nodes == 20) {
-
+            GaussPointsDegradedSetter<E, nodes, 3>::set(element.NN[E::n_order[ 8]], element.dNN[E::n_order[ 8]], nn[2], nn[0], nn[0]);
+            GaussPointsDegradedSetter<E, nodes, 3>::set(element.NN[E::n_order[ 9]], element.dNN[E::n_order[ 9]], nn[1], nn[2], nn[0]);
+            GaussPointsDegradedSetter<E, nodes, 3>::set(element.NN[E::n_order[10]], element.dNN[E::n_order[10]], nn[2], nn[1], nn[0]);
+            GaussPointsDegradedSetter<E, nodes, 3>::set(element.NN[E::n_order[11]], element.dNN[E::n_order[11]], nn[0], nn[2], nn[0]);
+            GaussPointsDegradedSetter<E, nodes, 3>::set(element.NN[E::n_order[12]], element.dNN[E::n_order[12]], nn[2], nn[0], nn[1]);
+            GaussPointsDegradedSetter<E, nodes, 3>::set(element.NN[E::n_order[13]], element.dNN[E::n_order[13]], nn[1], nn[2], nn[1]);
+            GaussPointsDegradedSetter<E, nodes, 3>::set(element.NN[E::n_order[14]], element.dNN[E::n_order[14]], nn[2], nn[1], nn[1]);
+            GaussPointsDegradedSetter<E, nodes, 3>::set(element.NN[E::n_order[15]], element.dNN[E::n_order[15]], nn[0], nn[2], nn[1]);
+            GaussPointsDegradedSetter<E, nodes, 3>::set(element.NN[E::n_order[16]], element.dNN[E::n_order[16]], nn[0], nn[0], nn[2]);
+            GaussPointsDegradedSetter<E, nodes, 3>::set(element.NN[E::n_order[17]], element.dNN[E::n_order[17]], nn[1], nn[0], nn[2]);
+            GaussPointsDegradedSetter<E, nodes, 3>::set(element.NN[E::n_order[18]], element.dNN[E::n_order[18]], nn[1], nn[1], nn[2]);
+            GaussPointsDegradedSetter<E, nodes, 3>::set(element.NN[E::n_order[19]], element.dNN[E::n_order[19]], nn[0], nn[1], nn[2]);
         }
     }
 };
