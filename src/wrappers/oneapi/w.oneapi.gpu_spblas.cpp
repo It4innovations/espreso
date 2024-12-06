@@ -272,6 +272,9 @@ namespace spblas {
     {
         auto exec_pol = onedpl::execution::make_device_policy(h->qq);
 
+        if(stage == 'A') {
+            buffersize = 0;
+        }
         if(stage == 'B') {
             buffersize = 0;
             buffersize += input->nnz * sizeof(I); // map
@@ -365,6 +368,9 @@ namespace spblas {
     template<typename T, typename I>
     void sparse_to_dense(handle & h, char op, descr_matrix_csr & sparse, descr_matrix_dense & dense, size_t & buffersize, void * buffer, char stage)
     {
+        if(stage == 'A') {
+            buffersize = 0;
+        }
         // if(stage == 'B') ;
         // if(stage == 'P') ;
         if(stage == 'C') {
@@ -415,6 +421,10 @@ namespace spblas {
         }
 
         T one = 1.0;
+        if(stage == 'A') {
+            // no idea and hard to figure out, just guess and hope
+            buffersizes.allocsize_internal = ((gpu::mgm::operation_remove_conj(transpose) == 'N') ? (0) : (8 * matrix->nnz));
+        }
         if(stage == 'B') {
             buffersizes.persistent = 0;
             buffersizes.tmp_preprocess = 0;
@@ -448,6 +458,10 @@ namespace spblas {
                 }
 
                 T one = 1.0;
+                if(stage == 'A') {
+                    // no idea and hard to figure out, just guess and hope
+                    buffersizes.allocsize_internal = 8 * matrix->nnz;
+                }
                 if(stage == 'B') {
                     buffersizes.persistent = 0;
                     buffersizes.tmp_preprocess = 0;
@@ -490,6 +504,7 @@ namespace spblas {
     {
         T zero = 0.0;
         T one = 1.0;
+        if(stage == 'A') buffersize = 0;
         if(stage == 'B') buffersize = 0;
         if(stage == 'P') onesparse::optimize_gemv(h->qq, _char_to_operation(op), A->d);
         if(stage == 'C') onesparse::gemv(h->qq, _char_to_operation(op), one, A->d, (T*)x->vals, zero, (T*)y->vals);
@@ -505,6 +520,7 @@ namespace spblas {
 
             T zero = 0.0;
             T one = 1.0;
+            if(stage == 'A') buffersize = 0;
             if(stage == 'B') buffersize = 0;
             // if(stage == 'P') ;
             if(stage == 'C') onesparse::gemm(h->qq, _char_to_layout(C->order), _char_to_operation(op_A), _char_to_operation(op_B), one, A->d, (T*)B->vals, C->ncols, B->ld, zero, (T*)C->vals, C->ld);

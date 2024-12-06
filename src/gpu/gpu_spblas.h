@@ -53,6 +53,7 @@ namespace spblas {
 
     struct buffer_sizes
     {
+        size_t allocsize_internal = 0;
         size_t persistent = 0;
         size_t tmp_preprocess = 0;
         size_t tmp_update = 0;
@@ -104,27 +105,27 @@ namespace spblas {
 
     place get_place_trsm();
 
-    // stages: Buffersize, Preprocess, Compute
+    // stages: Allocsize, Buffersize, Preprocess, Compute
     template<typename T, typename I>
     void transpose(handle & h, descr_matrix_csr & output, descr_matrix_csr & input, bool conjugate, size_t & buffersize, void * buffer, char stage);
 
-    // stages: Buffersize, Compute
+    // stages: Allocsize, Buffersize, Compute
     template<typename T, typename I>
     void sparse_to_dense(handle & h, char transpose, descr_matrix_csr & sparse, descr_matrix_dense & dense, size_t & buffersize, void * buffer, char stage);
 
-    // stages: Buffersize, Preprocess, Update, Compute
+    // stages: Allocsize, Buffersize, Preprocess, Update, Compute
     template<typename T, typename I>
     void trsv(handle & h, char transpose, descr_matrix_csr & matrix, descr_vector_dense & rhs, descr_vector_dense & sol, descr_sparse_trsv & descr_trsv, buffer_sizes & buffersizes, void * buffer_persistent, void * buffer_tmp, char stage);
 
-    // stages: Buffersize, Preprocess, Update, Compute
+    // stages: Allocsize, Buffersize, Preprocess, Update, Compute
     template<typename T, typename I>
     void trsm(handle & h, char transpose_mat, char transpose_rhs, char transpose_sol, descr_matrix_csr & matrix, descr_matrix_dense & rhs, descr_matrix_dense & sol, descr_sparse_trsm & descr_trsm, buffer_sizes & buffersizes, void * buffer_persistent, void * buffer_tmp, char stage);
 
-    // stages: Buffersize, Preprocess, Compute
+    // stages: Allocsize, Buffersize, Preprocess, Compute
     template<typename T, typename I>
     void mv(handle & h, char transpose, descr_matrix_csr & A, descr_vector_dense & x, descr_vector_dense & y, descr_sparse_mv & descr_mv, size_t & buffersize, void * buffer, char stage);
 
-    // stages: Buffersize, Preprocess, Compute
+    // stages: Allocsize, Buffersize, Preprocess, Compute
     template<typename T, typename I>
     void mm(handle & h, char transpose_A, char transpose_B, descr_matrix_csr & A, descr_matrix_dense & B, descr_matrix_dense & C, size_t & buffersize, void * buffer, char stage);
 

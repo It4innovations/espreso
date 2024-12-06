@@ -26,6 +26,15 @@ public:
 
     }
 
+    Matrix_Dense(I nrows_, I ncols_, I ld_, const A &ator_ = A()): Matrix_Dense(ator_)
+    {
+        resize(nrows_, ncols_, ld_);
+    }
+
+    Matrix_Dense(I nrows_, I ncols_, const A &ator_ = A()): Matrix_Dense(nrows_, ncols_, ncols_, ator_)
+    {
+    }
+
     Matrix_Dense(const Matrix_Dense &other): _Matrix_Dense<T, I>{}, _allocated{}, ator(other.ator)
     {
         this->type = other.type;

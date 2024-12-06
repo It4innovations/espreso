@@ -1,4 +1,7 @@
 
+#include "basis/utilities/cbmb_allocator.h"
+#include "basis/utilities/arena_allocator.h"
+
 namespace espreso {
 namespace gpu {
 namespace mgm {
@@ -16,8 +19,9 @@ namespace mgm {
 
             #define INSTANTIATE_T_I(T,I) \
             INSTANTIATE_T_I_A1_A2(T, I, mgm::Ah,       mgm::Ad) \
+            INSTANTIATE_T_I_A1_A2(T, I, mgm::Ah,       arena_d) \
             INSTANTIATE_T_I_A1_A2(T, I, mgm::Ah,       cbmba_d) \
-            INSTANTIATE_T_I_A1_A2(T, I, cpu_allocator, mgm::Ad) \
+            INSTANTIATE_T_I_A1_A2(T, I, cpu_allocator, arena_d) \
             INSTANTIATE_T_I_A1_A2(T, I, cpu_allocator, cbmba_d)
 
                 #define INSTANTIATE_T(T) \

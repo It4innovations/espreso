@@ -25,6 +25,11 @@ public:
 
     }
 
+    Matrix_CSC(I nrows_, I ncols_, I nnz_, const A &ator_ = A()): Matrix_CSC(ator_)
+    {
+        resize(nrows_, ncols_, nnz_);
+    }
+
     Matrix_CSC(const Matrix_CSC &other): _Matrix_CSC<T, I>{}, type{Matrix_Type::UNSET_INVALID_NONE}, shape{Matrix_Shape::FULL}, _allocated{}, ator(other.ator)
     {
         type = other.type;

@@ -382,6 +382,7 @@ namespace spblas {
         CHECK(rocsparse_csr_get(output->d, &out_nrows, &out_ncols, &out_nnz, &out_rowptrs, &out_colidxs, &out_vals, &rowptrtype, &colindtype, &idxbase, &type));
         CHECK(rocsparse_csr_get(input->d,  &in_nrows,  &in_ncols,  &in_nnz,  &in_rowptrs,  &in_colidxs,  &in_vals,  &rowptrtype, &colindtype, &idxbase, &type));
         hipStream_t stream = h->get_stream();
+        if(stage == 'A') buffersize = 0;
         if(stage == 'B') my_csr_transpose_buffersize<I>(stream, in_nrows, in_ncols, in_nnz, buffersize);
         if(stage == 'P') my_csr_transpose_preprocess<I>(stream, in_nrows, in_ncols, in_nnz, (I*)in_rowptrs, (I*)in_colidxs, (I*)out_rowptrs, (I*)out_colidxs, buffersize, buffer);
         if(stage == 'C') my_csr_transpose_compute<T,I>(stream, in_nnz, (T*)in_vals, (T*)out_vals, conjugate, buffer);
@@ -391,6 +392,7 @@ namespace spblas {
     void sparse_to_dense(handle & h, char transpose, descr_matrix_csr & sparse, descr_matrix_dense & dense, size_t & buffersize, void * buffer, char stage)
     {
         if(transpose == 'N') {
+            if(stage == 'A') buffersize = 0;
             if(stage == 'B') CHECK(rocsparse_sparse_to_dense(h->h, sparse->d, dense->d, rocsparse_sparse_to_dense_alg_default, &buffersize, nullptr));
             if(stage == 'C') CHECK(rocsparse_sparse_to_dense(h->h, sparse->d, dense->d, rocsparse_sparse_to_dense_alg_default, &buffersize, buffer));
         }
@@ -408,6 +410,7 @@ namespace spblas {
     {
         T one = 1.0;
         size_t bfs = buffersizes.tmp_preprocess;
+        if(stage == 'A') buffersizes.allocsize_internal = ((gpu::mgm::operation_remove_conj(transpose) == 'N') ? (0) : (8 * matrix->nnz));
         if(stage == 'B') CHECK(rocsparse_spsv(h->h, _char_to_operation(transpose), &one, matrix->d, rhs->d, sol->d, _sparse_data_type<T>(), rocsparse_spsv_alg_default, rocsparse_spsv_stage_buffer_size, &bfs, buffer_tmp));
         if(stage == 'P') CHECK(rocsparse_spsv(h->h, _char_to_operation(transpose), &one, matrix->d, rhs->d, sol->d, _sparse_data_type<T>(), rocsparse_spsv_alg_default, rocsparse_spsv_stage_preprocess,  &bfs, buffer_tmp));
         // if(stage == 'U') ; // no update matrix function, hopefully dont need to to anything. otherwise redo preprocessing
@@ -447,6 +450,7 @@ namespace spblas {
                 else {
                     T one = 1.0;
                     size_t bfs = buffersizes.tmp_preprocess;
+                    if(stage == 'A') buffersizes.allocsize_internal = ((gpu::mgm::operation_remove_conj(transpose_mat) == 'N') ? (0) : (8 * matrix->nnz));
                     if(stage == 'B') CHECK(rocsparse_spsm(h->h, _char_to_operation(op_mat), _char_to_operation(op_rhs), &one, matrix->d, rhs->d, sol->d, _sparse_data_type<T>(), rocsparse_spsm_alg_default, rocsparse_spsm_stage_buffer_size, &bfs, buffer_tmp));
                     if(stage == 'P') CHECK(rocsparse_spsm(h->h, _char_to_operation(op_mat), _char_to_operation(op_rhs), &one, matrix->d, rhs->d, sol->d, _sparse_data_type<T>(), rocsparse_spsm_alg_default, rocsparse_spsm_stage_preprocess,  &bfs, buffer_tmp));
                     // if(stage == 'U') ; // no update matrix function, hopefully dont need to to anything. otherwise redo preprocessing
@@ -548,14 +552,17 @@ namespace spblas {
         T zero = 0.0;
 // should check for ROCSPARSE_VERSION_*, but I don't understand their versioning
 #if HIP_VERSION_MAJOR >= 6 // rocparse that comes with hip/rocm 6.0.x, replaced old spmv with new spmv with stage (aka renamed the previous spmv_ex)
+        if(stage == 'A') buffersize = 0;
         if(stage == 'B') CHECK(rocsparse_spmv(h->h, _char_to_operation(transpose), &one, *Ad, x->d, &zero, y->d, _sparse_data_type<T>(), rocsparse_spmv_alg_default, rocsparse_spmv_stage_buffer_size, &buffersize, buffer));
         if(stage == 'P') CHECK(rocsparse_spmv(h->h, _char_to_operation(transpose), &one, *Ad, x->d, &zero, y->d, _sparse_data_type<T>(), rocsparse_spmv_alg_default, rocsparse_spmv_stage_preprocess,  &buffersize, buffer));
         if(stage == 'C') CHECK(rocsparse_spmv(h->h, _char_to_operation(transpose), &one, *Ad, x->d, &zero, y->d, _sparse_data_type<T>(), rocsparse_spmv_alg_default, rocsparse_spmv_stage_compute,     &buffersize, buffer));
 #elif HIP_VERSION_MAJOR == 5 && HIP_VERSION_MINOR >= 4 // rocsparse that comes with hip/rocm 5.4.x, deprecated original spmv and added spmv_ex with stage
+        if(stage == 'A') buffersize = 0;
         if(stage == 'B') CHECK(rocsparse_spmv_ex(h->h, _char_to_operation(transpose), &one, *Ad, x->d, &zero, y->d, _sparse_data_type<T>(), rocsparse_spmv_alg_default, rocsparse_spmv_stage_buffer_size, &buffersize, buffer));
         if(stage == 'P') CHECK(rocsparse_spmv_ex(h->h, _char_to_operation(transpose), &one, *Ad, x->d, &zero, y->d, _sparse_data_type<T>(), rocsparse_spmv_alg_default, rocsparse_spmv_stage_preprocess,  &buffersize, buffer));
         if(stage == 'C') CHECK(rocsparse_spmv_ex(h->h, _char_to_operation(transpose), &one, *Ad, x->d, &zero, y->d, _sparse_data_type<T>(), rocsparse_spmv_alg_default, rocsparse_spmv_stage_compute,     &buffersize, buffer));
 #else // older
+        if(stage == 'A') buffersize = 0;
         if(stage == 'B') CHECK(rocsparse_spmv(h->h, _char_to_operation(transpose), &one, *Ad, x->d, &zero, y->d, _sparse_data_type<T>(), rocsparse_spmv_alg_default, &buffersize, nullptr));
         // if(stage == 'P') ;
         if(stage == 'C') CHECK(rocsparse_spmv(h->h, _char_to_operation(transpose), &one, *Ad, x->d, &zero, y->d, _sparse_data_type<T>(), rocsparse_spmv_alg_default, &buffersize, buffer));
@@ -567,6 +574,7 @@ namespace spblas {
     {
         T zero = 0.0;
         T one = 1.0;
+        if(stage == 'A') buffersize = 0;
         if(stage == 'B') CHECK(rocsparse_spmm(h->h, _char_to_operation(transpose_A), _char_to_operation(transpose_B), &one, A->d, B->d, &zero, C->d, _sparse_data_type<T>(), rocsparse_spmm_alg_default, rocsparse_spmm_stage_buffer_size, &buffersize, buffer));
         if(stage == 'P') CHECK(rocsparse_spmm(h->h, _char_to_operation(transpose_A), _char_to_operation(transpose_B), &one, A->d, B->d, &zero, C->d, _sparse_data_type<T>(), rocsparse_spmm_alg_default, rocsparse_spmm_stage_preprocess,  &buffersize, buffer));
         if(stage == 'C') CHECK(rocsparse_spmm(h->h, _char_to_operation(transpose_A), _char_to_operation(transpose_B), &one, A->d, B->d, &zero, C->d, _sparse_data_type<T>(), rocsparse_spmm_alg_default, rocsparse_spmm_stage_compute,     &buffersize, buffer));

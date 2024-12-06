@@ -391,6 +391,7 @@ namespace spblas {
     void transpose(handle & h, descr_matrix_csr & output, descr_matrix_csr & input, bool conjugate, size_t & buffersize, void * buffer, char stage)
     {
         cudaStream_t stream = h->get_stream();
+        if(stage == 'A') buffersize = 0;
         if(stage == 'B') my_csr_transpose_buffersize<I>(stream, input->nrows, input->ncols, input->nnz, buffersize);
         if(stage == 'P') my_csr_transpose_preprocess<I>(stream, input->nrows, input->ncols, input->nnz, (I*)input->rowptrs, (I*)input->colidxs, (I*)output->rowptrs, (I*)output->colidxs, buffersize, buffer);
         if(stage == 'C') my_csr_transpose_compute<T,I>(stream, input->nnz, (T*)input->vals, (T*)output->vals, conjugate, buffer);
@@ -400,6 +401,7 @@ namespace spblas {
     void sparse_to_dense(handle & h, char transpose, descr_matrix_csr & sparse, descr_matrix_dense & dense, size_t & buffersize, void * buffer, char stage)
     {
         if(transpose == 'N') {
+            if(stage == 'A') buffersize = 0;
             if(stage == 'B') CHECK(cusparseSparseToDense_bufferSize(h->h, sparse->d_new, dense->d_new, CUSPARSE_SPARSETODENSE_ALG_DEFAULT, &buffersize));
             if(stage == 'C') CHECK(cusparseSparseToDense           (h->h, sparse->d_new, dense->d_new, CUSPARSE_SPARSETODENSE_ALG_DEFAULT, buffer));
         }
@@ -418,6 +420,7 @@ namespace spblas {
         cusparseSolvePolicy_t policy = CUSPARSE_SOLVE_POLICY_USE_LEVEL;
         int bfsz = buffersizes.tmp_preprocess;
         T one = 1.0;
+        if(stage == 'A') buffersizes.allocsize_internal = ((gpu::mgm::operation_remove_conj(transpose) == 'N') ? (0) : (8 * matrix->nnz));
         if(stage == 'B') CHECK((_my_sparse_trsv_buffersize<T,I>)(h->h, _char_to_operation<T>(transpose), matrix->nrows, matrix->nnz,       matrix->d_leg, (T*)matrix->vals, (I*)matrix->rowptrs, (I*)matrix->colidxs, descr_trsv->i, &bfsz));
         if(stage == 'P') CHECK((_my_sparse_trsv_analysis<T,I>)  (h->h, _char_to_operation<T>(transpose), matrix->nrows, matrix->nnz,       matrix->d_leg, (T*)matrix->vals, (I*)matrix->rowptrs, (I*)matrix->colidxs, descr_trsv->i, policy, buffer_tmp));
         // if(stage == 'U') ;
@@ -446,6 +449,7 @@ namespace spblas {
                     cusparseSolvePolicy_t policy = CUSPARSE_SOLVE_POLICY_USE_LEVEL;
                     I nrhs = (transpose_rhs == 'T' ? sol->nrows : sol->ncols);
                     size_t bfs = buffersizes.tmp_preprocess;
+                    if(stage == 'A') buffersizes.allocsize_internal = ((gpu::mgm::operation_remove_conj(transpose_mat) == 'N') ? (0) : (8 * matrix->nnz));
                     if(stage == 'B') CHECK((_my_sparse_trsm_buffersize<T,I>)(h->h, algo, _char_to_operation<T>(transpose_mat), _char_to_operation<T>(transpose_rhs), matrix->nrows, nrhs, matrix->nnz, &one, matrix->d_leg, (T*)matrix->vals, (I*)matrix->rowptrs, (I*)matrix->colidxs, (T*)sol->vals, sol->ld, descr_trsm->i, policy, &bfs));
                     if(stage == 'P') CHECK((_my_sparse_trsm_analysis<T,I>)  (h->h, algo, _char_to_operation<T>(transpose_mat), _char_to_operation<T>(transpose_rhs), matrix->nrows, nrhs, matrix->nnz, &one, matrix->d_leg, (T*)matrix->vals, (I*)matrix->rowptrs, (I*)matrix->colidxs, (T*)sol->vals, sol->ld, descr_trsm->i, policy, buffer_tmp));
                     // if(stage == 'U') ; // I can just modify the values behind the pointer, and cusparse will notice
@@ -482,6 +486,7 @@ namespace spblas {
     {
         T one = 1.0;
         T zero = 0.0;
+        if(stage == 'A') buffersize = 0;
         if(stage == 'B') CHECK(cusparseSpMV_bufferSize(h->h, _char_to_operation<T>(transpose), &one, A->d_new, x->d_new, &zero, y->d_new, _sparse_data_type<T>(), CUSPARSE_SPMV_ALG_DEFAULT, &buffersize));
         // if(stage == 'P') ; // no preprocess function exists in CUDA < 12.4. Also, no macro check needed for >=12.4, since legacy cuda will be always <12
         if(stage == 'C') CHECK(cusparseSpMV           (h->h, _char_to_operation<T>(transpose), &one, A->d_new, x->d_new, &zero, y->d_new, _sparse_data_type<T>(), CUSPARSE_SPMV_ALG_DEFAULT, buffer));
@@ -492,6 +497,7 @@ namespace spblas {
     {
         T zero = 0.0;
         T one = 1.0;
+        if(stage == 'A') buffersize = 0;
         if(stage == 'B') CHECK(cusparseSpMM_bufferSize(h->h, _char_to_operation<T>(transpose_A), _char_to_operation<T>(transpose_B), &one, A->d_new, B->d_new, &zero, C->d_new, _sparse_data_type<T>(), CUSPARSE_SPMM_ALG_DEFAULT, &buffersize));
         if(stage == 'P') CHECK(cusparseSpMM_preprocess(h->h, _char_to_operation<T>(transpose_A), _char_to_operation<T>(transpose_B), &one, A->d_new, B->d_new, &zero, C->d_new, _sparse_data_type<T>(), CUSPARSE_SPMM_ALG_DEFAULT, buffer));
         if(stage == 'C') CHECK(cusparseSpMM           (h->h, _char_to_operation<T>(transpose_A), _char_to_operation<T>(transpose_B), &one, A->d_new, B->d_new, &zero, C->d_new, _sparse_data_type<T>(), CUSPARSE_SPMM_ALG_DEFAULT, buffer));

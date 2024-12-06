@@ -25,9 +25,10 @@ namespace kernels {
         }
     }
 
-    template<typename T, typename I>
-    void DCmap_scatter(mgm::queue & q, Vector_Dense<T*,I,mgm::Ad> & domain_vector_pointers, const Vector_Dense<I,I,mgm::Ad> & n_dofs_interfaces, const Vector_Dense<T,I,mgm::Ad> & cluster_vector, const Vector_Dense<I*,I,mgm::Ad> & D2Cs)
+    template<typename T, typename I, typename A>
+    void DCmap_scatter(mgm::queue & q, Vector_Dense<T*,I,A> & domain_vector_pointers, const Vector_Dense<I,I,A> & n_dofs_interfaces, const Vector_Dense<T,I,A> & cluster_vector, const Vector_Dense<I*,I,A> & D2Cs)
     {
+        static_assert(A::is_data_device_accessible, "data has to be device accessible");
         int wpw = 256;
         I n_domains = domain_vector_pointers.size;
         sycl::nd_range<1> range(sycl::range<1>(n_domains * wpw), sycl::range<1>(wpw));
@@ -50,9 +51,10 @@ namespace kernels {
         );
     }
 
-    template<typename T, typename I>
-    void DCmap_gather(mgm::queue & q, const Vector_Dense<T*,I,mgm::Ad> & domain_vector_pointers, const Vector_Dense<I,I,mgm::Ad> & n_dofs_interfaces, Vector_Dense<T,I,mgm::Ad> & cluster_vector, const Vector_Dense<I*,I,mgm::Ad> & D2Cs)
+    template<typename T, typename I, typename A>
+    void DCmap_gather(mgm::queue & q, const Vector_Dense<T*,I,A> & domain_vector_pointers, const Vector_Dense<I,I,A> & n_dofs_interfaces, Vector_Dense<T,I,A> & cluster_vector, const Vector_Dense<I*,I,A> & D2Cs)
     {
+        static_assert(A::is_data_device_accessible, "data has to be device accessible");
         int wpw = 256;
         I n_domains = domain_vector_pointers.size;
         sycl::nd_range<1> range(sycl::range<1>(n_domains * wpw), sycl::range<1>(wpw));

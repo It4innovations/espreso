@@ -22,6 +22,11 @@ public:
 
     }
 
+    Vector_Dense(I size_, const A &ator_ = A()): Vector_Dense(ator_)
+    {
+        resize(size_);
+    }
+
     Vector_Dense(const Vector_Dense &other): _Vector_Dense<T, I>{}, _allocated{}, ator(other.ator)
     {
         realloc(_allocated, other.size);

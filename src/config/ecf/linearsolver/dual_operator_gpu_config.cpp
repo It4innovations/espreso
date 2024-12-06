@@ -16,6 +16,15 @@ DualOperatorGpuConfig::DualOperatorGpuConfig()
 			.addoption(ECFOption().setname("SEQ_CONTINUE").setdescription("Sequential factorization and submitting, asynchronous execution on gpu."))
 			.addoption(ECFOption().setname("SEQ_WAIT").setdescription("Sequential factorization and submitting, synchronous gpu execution.")));
 
+	concurrency_dualbgn = CONCURRENCY::AUTO;
+	REGISTER(concurrency_dualbgn, ECFMetaData()
+			.setdescription({ "Concurrency during dualbgn." })
+			.setdatatype({ ECFDataType::OPTION })
+			.addoption(ECFOption().setname("AUTO").setdescription("Automatic selection based on the GPU vendor, libraries, and problem solved."))
+			.addoption(ECFOption().setname("PARALLEL").setdescription("Parallel factorization and submitting, asynchronous execution on gpu."))
+			.addoption(ECFOption().setname("SEQ_CONTINUE").setdescription("Sequential factorization and submitting, asynchronous execution on gpu."))
+			.addoption(ECFOption().setname("SEQ_WAIT").setdescription("Sequential factorization and submitting, synchronous gpu execution.")));
+
 	concurrency_update = CONCURRENCY::AUTO;
 	REGISTER(concurrency_update, ECFMetaData()
 			.setdescription({ "Concurrency during update." })

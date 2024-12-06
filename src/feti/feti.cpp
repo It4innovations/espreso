@@ -115,6 +115,7 @@ bool FETI<T>::update(const step::Step &step)
             // try to clear gpu cache
             dualOperator->clear_gpu_cache();
         }
+        updated.B = false;
     }
 
     // dualOperator->update(step);

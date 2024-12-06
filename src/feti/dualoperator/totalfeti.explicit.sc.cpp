@@ -13,9 +13,6 @@ template<typename T, typename I>
 TotalFETIExplicitSc<T,I>::TotalFETIExplicitSc(FETI<T> &feti)
 : DualOperator<T>(feti)
 {
-    if(!DirectSparseSolver<T,I>::provideSC()) {
-        eslog::error("Cannot use explicit sc dual operator, sparse solver does not provide schur complement\n");
-    }
 }
 
 

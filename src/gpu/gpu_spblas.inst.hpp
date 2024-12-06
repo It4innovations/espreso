@@ -1,4 +1,7 @@
 
+#include "basis/utilities/cbmb_allocator.h"
+#include "basis/utilities/arena_allocator.h"
+
 namespace espreso {
 namespace gpu {
 namespace spblas {
@@ -20,6 +23,7 @@ namespace spblas {
         template void mv<T,I>(handle & h, char transpose, descr_matrix_csr & A, descr_vector_dense & x, descr_vector_dense & y, descr_sparse_mv & descr_mv, size_t & buffersize, void * buffer, char stage); \
         template void mm<T,I>(handle & h, char transpose_A, char transpose_B, descr_matrix_csr & A, descr_matrix_dense & B, descr_matrix_dense & C, size_t & buffersize, void * buffer, char stage); \
         INSTANTIATE_T_I_ADEVICE(T, I, mgm::Ad) \
+        INSTANTIATE_T_I_ADEVICE(T, I, arena_d) \
         INSTANTIATE_T_I_ADEVICE(T, I, cbmba_d)
 
             #define INSTANTIATE_T(T) \

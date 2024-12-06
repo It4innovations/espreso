@@ -57,6 +57,9 @@ static void _info(const Matrix_Distributed<T> &A)
 {
     eslog::info(" = LINEAR SOLVER :: SUITE SPARSE                                                             = \n");
     switch (A.cluster.type) {
+    case Matrix_Type::UNSET_INVALID_NONE:
+        eslog::info(" = MATRIX TYPE ::                                                         UNSET INVALID NONE = \n");
+        break;
     case Matrix_Type::REAL_SYMMETRIC_POSITIVE_DEFINITE:
         eslog::info(" = MATRIX TYPE ::                                           REAL SYMMETRIC POSITIVE DEFINITE = \n");
         break;

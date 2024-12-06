@@ -23,6 +23,11 @@ public:
 
     }
 
+    Matrix_IJV(I nrows_, I ncols_, I nnz_, const A &ator_ = A()): Matrix_IJV(ator_)
+    {
+        resize(nrows_, ncols_, nnz_);
+    }
+
     Matrix_IJV(const Matrix_IJV &other): _Matrix_IJV<T, I>{}, type{Matrix_Type::UNSET_INVALID_NONE}, shape{Matrix_Shape::FULL}, _allocated{}, ator(other.ator)
     {
         this->type = other.type;

@@ -25,6 +25,11 @@ public:
 
     }
 
+    Matrix_CSR(I nrows_, I ncols_, I nnz_, const A &ator_ = A()): Matrix_CSR(ator_)
+    {
+        resize(nrows_, ncols_, nnz_);
+    }
+
     Matrix_CSR(const Matrix_CSR &other): _Matrix_CSR<T, I>{}, type{Matrix_Type::UNSET_INVALID_NONE}, shape{Matrix_Shape::FULL}, _allocated{}, ator(other.ator)
     {
         type = other.type;

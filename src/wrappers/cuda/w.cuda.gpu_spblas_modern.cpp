@@ -284,7 +284,8 @@ namespace spblas {
 
     place get_place_trsm()
     {
-        return place::OUT_OF_PLACE;
+        // supports both, but inplace is better
+        return place::IN_PLACE;
     }
 
     template<typename T, typename I>
@@ -298,6 +299,7 @@ namespace spblas {
         CHECK(cusparseCsrGet(output->d, &out_nrows, &out_ncols, &out_nnz, &out_rowptrs, &out_colidxs, &out_vals, &rowoffsettype, &colindtype, &idxbase, &type));
         CHECK(cusparseCsrGet(input->d,  &in_nrows,  &in_ncols,  &in_nnz,  &in_rowptrs,  &in_colidxs,  &in_vals,  &rowoffsettype, &colindtype, &idxbase, &type));
         cudaStream_t stream = h->get_stream();
+        if(stage == 'A') buffersize = 0;
         if(stage == 'B') my_csr_transpose_buffersize<I>(stream, in_nrows, in_ncols, in_nnz, buffersize);
         if(stage == 'P') my_csr_transpose_preprocess<I>(stream, in_nrows, in_ncols, in_nnz, (I*)in_rowptrs, (I*)in_colidxs, (I*)out_rowptrs, (I*)out_colidxs, buffersize, buffer);
         if(stage == 'C') my_csr_transpose_compute<T,I>(stream, in_nnz, (T*)in_vals, (T*)out_vals, conjugate, buffer);
@@ -307,6 +309,7 @@ namespace spblas {
     void sparse_to_dense(handle & h, char transpose, descr_matrix_csr & sparse, descr_matrix_dense & dense, size_t & buffersize, void * buffer, char stage)
     {
         if(transpose == 'N') {
+            if(stage == 'A') buffersize = 0;
             if(stage == 'B') CHECK(cusparseSparseToDense_bufferSize(h->h, sparse->d_for_sp2dn, dense->d, CUSPARSE_SPARSETODENSE_ALG_DEFAULT, &buffersize));
             if(stage == 'C') CHECK(cusparseSparseToDense           (h->h, sparse->d_for_sp2dn, dense->d, CUSPARSE_SPARSETODENSE_ALG_DEFAULT, buffer));
         }
@@ -324,6 +327,7 @@ namespace spblas {
     void trsv(handle & h, char transpose, descr_matrix_csr & matrix, descr_vector_dense & rhs, descr_vector_dense & sol, descr_sparse_trsv & descr_trsv, buffer_sizes & buffersizes, void * buffer_persistent, void * /*buffer_tmp*/, char stage)
     {
         T one = 1.0;
+        if(stage == 'A') buffersizes.allocsize_internal = 0;
         if(stage == 'B') CHECK(cusparseSpSV_bufferSize  (h->h, _char_to_operation<T>(transpose), &one, matrix->d, rhs->d, sol->d, _sparse_data_type<T>(), CUSPARSE_SPSV_ALG_DEFAULT, descr_trsv->d, &buffersizes.persistent));
 #if CUDART_VERSION >= 12020 // cusparseSpSV_updateMatrix available since CUDA/12.1.1, but no way to check for the .1 update
         if(stage == 'P') CHECK(cusparseSpSV_analysis    (h->h, _char_to_operation<T>(transpose), &one, matrix->d, rhs->d, sol->d, _sparse_data_type<T>(), CUSPARSE_SPSV_ALG_DEFAULT, descr_trsv->d, buffer_persistent));
@@ -344,10 +348,11 @@ namespace spblas {
     template<typename T, typename I>
     void trsm(handle & h, char transpose_mat, char transpose_rhs, char transpose_sol, descr_matrix_csr & matrix, descr_matrix_dense & rhs, descr_matrix_dense & sol, descr_sparse_trsm & descr_trsm, buffer_sizes & buffersizes, void * buffer_persistent, void * buffer_tmp, char stage)
     {
-        if(rhs.get() == sol.get()) eslog::error("wrong rhs and sol parameters: must not be the same, because trsm in cusparse modern is out-of-place\n");
+        if(rhs.get() != sol.get()) eslog::error("wrong rhs and sol parameters: must be the same, because trsm in cusparse modern is in-place\n");
 
         if(transpose_sol == 'N') {
             T one = 1.0;
+            if(stage == 'A') buffersizes.allocsize_internal = 0;
             if(stage == 'B') CHECK(cusparseSpSM_bufferSize  (h->h, _char_to_operation<T>(transpose_mat), _char_to_operation<T>(transpose_rhs), &one, matrix->d, rhs->d, sol->d, _sparse_data_type<T>(), CUSPARSE_SPSM_ALG_DEFAULT, descr_trsm->d, &buffersizes.persistent));
 #if CUDART_VERSION >= 12040
             if(stage == 'P') CHECK(cusparseSpSM_analysis    (h->h, _char_to_operation<T>(transpose_mat), _char_to_operation<T>(transpose_rhs), &one, matrix->d, rhs->d, sol->d, _sparse_data_type<T>(), CUSPARSE_SPSM_ALG_DEFAULT, descr_trsm->d, buffer_persistent));
@@ -402,6 +407,7 @@ namespace spblas {
 
         T one = 1.0;
         T zero = 0.0;
+        if(stage == 'A') buffersize = 0;
         if(stage == 'B') CHECK(cusparseSpMV_bufferSize(h->h, _char_to_operation<T>(transpose), &one, *Ad, x->d, &zero, y->d, _sparse_data_type<T>(), CUSPARSE_SPMV_ALG_DEFAULT, &buffersize));
 #if CUDART_VERSION >= 12040
         if(stage == 'P') CHECK(cusparseSpMV_preprocess(h->h, _char_to_operation<T>(transpose), &one, *Ad, x->d, &zero, y->d, _sparse_data_type<T>(), CUSPARSE_SPMV_ALG_DEFAULT, buffer));
@@ -416,6 +422,7 @@ namespace spblas {
     {
         T zero = 0.0;
         T one = 1.0;
+        if(stage == 'A') buffersize = 0;
         if(stage == 'B') CHECK(cusparseSpMM_bufferSize(h->h, _char_to_operation<T>(transpose_A), _char_to_operation<T>(transpose_B), &one, A->d, B->d, &zero, C->d, _sparse_data_type<T>(), CUSPARSE_SPMM_ALG_DEFAULT, &buffersize));
         if(stage == 'P') CHECK(cusparseSpMM_preprocess(h->h, _char_to_operation<T>(transpose_A), _char_to_operation<T>(transpose_B), &one, A->d, B->d, &zero, C->d, _sparse_data_type<T>(), CUSPARSE_SPMM_ALG_DEFAULT, buffer));
         if(stage == 'C') CHECK(cusparseSpMM           (h->h, _char_to_operation<T>(transpose_A), _char_to_operation<T>(transpose_B), &one, A->d, B->d, &zero, C->d, _sparse_data_type<T>(), CUSPARSE_SPMM_ALG_DEFAULT, buffer));

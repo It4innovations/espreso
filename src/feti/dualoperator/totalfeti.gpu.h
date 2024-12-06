@@ -12,6 +12,7 @@
 #include "gpu/gpu_spblas.h"
 #include "gpu/gpu_kernels.h"
 #include "basis/utilities/cbmb_allocator.h"
+#include "basis/utilities/arena_allocator.h"
 #include "my_timer.h"
 
 namespace espreso {
@@ -48,6 +49,9 @@ public:
     virtual void toPrimal(const Vector_Dual<T> &x, std::vector<Vector_Dense<T> > &y) override;
 
 private:
+    void create_dual_things();
+    void destroy_dual_things();
+
     void apply_explicit_sggpu(const Vector_Dual<T> &x_cluster, Vector_Dual<T> &y_cluster);
     void apply_explicit_sgcpu(const Vector_Dual<T> &x_cluster, Vector_Dual<T> &y_cluster);
     void apply_implicit_sggpu(const Vector_Dual<T> &x_cluster, Vector_Dual<T> &y_cluster);
@@ -69,19 +73,19 @@ protected:
 
     struct per_domain_stuff {
         DirectSparseSolver<T> solver_Kreg;
-        Matrix_Dense<T,I,Ad> d_F;
+        std::unique_ptr<Matrix_Dense<T,I,arena_d>> d_F;
         std::unique_ptr<Matrix_Dense<T,I,cbmba_d>> d_F_tmp;
         Matrix_CSR<T,I> Kreg;
         Matrix_CSR<T,I,Ah> h_L_sp;
         Matrix_CSR<T,I,Ah> h_LH_sp;
         Matrix_CSR<T,I,Ah> h_U_sp;
-        Matrix_CSR<T,I,Ah> h_UH_sp;
-        Matrix_CSR<T,I,Ah> h_Bperm_sp;    
+        Matrix_CSR<T,I,Ah> h_UH_sp;   
         Matrix_CSR<T,I,Ad> d_L_sp;
         Matrix_CSR<T,I,Ad> d_LH_sp;
         Matrix_CSR<T,I,Ad> d_U_sp;
         Matrix_CSR<T,I,Ad> d_UH_sp;
-        Matrix_CSR<T,I,Ad> d_Bperm_sp;
+        Matrix_CSR<T,I,Ah> h_Bperm_sp; 
+        std::unique_ptr<Matrix_CSR<T,I,arena_d>> d_Bperm_sp;
         std::unique_ptr<Matrix_Dense<T,I,cbmba_d>> d_L_dn;
         std::unique_ptr<Matrix_Dense<T,I,cbmba_d>> d_LH_dn;
         std::unique_ptr<Matrix_Dense<T,I,cbmba_d>> d_U_dn;
@@ -125,23 +129,20 @@ protected:
         size_t buffersize_spmm = 0;
         size_t buffersize_spmv1 = 0;
         size_t buffersize_spmv2 = 0;
-        size_t buffersize_tmp_max_set = 0;
+        size_t buffersize_tmp_max_preprocess = 0;
         size_t buffersize_tmp_max_update = 0;
         size_t buffersize_tmp_max_apply = 0;
         gpu::spblas::buffer_sizes buffersizes_sptrsm1;
         gpu::spblas::buffer_sizes buffersizes_sptrsm2;
         gpu::spblas::buffer_sizes buffersizes_sptrsv1;
         gpu::spblas::buffer_sizes buffersizes_sptrsv2;
-        size_t mempool_requirement_set = 0;
-        size_t mempool_requirement_update = 0;
-        size_t mempool_requirement_apply = 0;
         Vector_Dense<I,I> transmap_L2LH;
         Vector_Dense<I,I> transmap_U2UH;
-        Vector_Dense<I,I,Ad> d_applyg_D2C;
-        Vector_Dense<T,I,Ad> d_apply_x;
-        Vector_Dense<T,I,Ad> d_apply_y;
-        Vector_Dense<T,I,Ad> d_apply_z;
-        Vector_Dense<T,I,Ad> d_apply_w;
+        std::unique_ptr<Vector_Dense<I,I,arena_d>> d_applyg_D2C;
+        std::unique_ptr<Vector_Dense<T,I,arena_d>> d_apply_x;
+        std::unique_ptr<Vector_Dense<T,I,arena_d>> d_apply_y;
+        std::unique_ptr<Vector_Dense<T,I,arena_d>> d_apply_z;
+        std::unique_ptr<Vector_Dense<T,I,arena_d>> d_apply_w;
         Vector_Dense<T,I,Ah> h_applyc_x;
         Vector_Dense<T,I,Ah> h_applyc_y;
         size_t allocated_F_index;
@@ -186,29 +187,32 @@ protected:
     bool do_alloc_d_dn_L, do_alloc_d_dn_U, do_alloc_d_dn_LH, do_alloc_d_dn_UH, do_link_d_dn_LH_U, do_link_d_dn_UH_L;
     bool do_copyin_L, do_copyin_U, do_copyin_LH, do_copyin_UH;
     bool do_apply_hemv, do_apply_gemv;
-    size_t mempool_min_size_set = 0;
-    size_t mempool_min_size_update = 0;
-    size_t mempool_min_size_apply = 0;
+    bool parallel_set, parallel_dualbgn, parallel_update, parallel_apply;
+    bool wait_set, wait_dualbgn, wait_update, wait_apply;
+    size_t allocsize_internal_total;
     static constexpr size_t align_B = 512;
     static constexpr size_t align_elem = align_B / sizeof(T);
     int stage = 0;
+    int num_updates_after_set = 0;
     gpu::mgm::device device;
-    size_t n_domains;
-    size_t n_queues;
-    void * mem_pool_device;
+    size_t n_domains = 0;
+    size_t n_queues = 0;
+    void * mempool_gpu_arena = nullptr;
+    std::unique_ptr<arena_d> arena_device;
+    void * mempool_gpu_cbmba = nullptr;
     std::unique_ptr<cbmba_resource> cbmba_res_device;
     gpu::mgm::queue main_q;
     std::vector<gpu::mgm::queue> queues;
     std::vector<gpu::dnblas::handle> handles_dense;
     std::vector<gpu::spblas::handle> handles_sparse;
     std::vector<per_domain_stuff> domain_data;
-    std::vector<Matrix_Dense<T,I,Ad>> d_Fs_allocated;
-    Vector_Dense<T,I,Ad> d_applyg_x_cluster;
-    Vector_Dense<T,I,Ad> d_applyg_y_cluster;
-    Vector_Dense<T*,I,Ad> d_applyg_xs_pointers;
-    Vector_Dense<T*,I,Ad> d_applyg_ys_pointers;
-    Vector_Dense<I,I,Ad> d_applyg_n_dofs_interfaces;
-    Vector_Dense<I*,I,Ad> d_applyg_D2Cs_pointers;
+    std::vector<std::unique_ptr<Matrix_Dense<T,I,arena_d>>> d_Fs_allocated;
+    std::unique_ptr<Vector_Dense<T,I,arena_d>> d_applyg_x_cluster;
+    std::unique_ptr<Vector_Dense<T,I,arena_d>> d_applyg_y_cluster;
+    std::unique_ptr<Vector_Dense<T*,I,arena_d>> d_applyg_xs_pointers;
+    std::unique_ptr<Vector_Dense<T*,I,arena_d>> d_applyg_ys_pointers;
+    std::unique_ptr<Vector_Dense<I,I,arena_d>> d_applyg_n_dofs_interfaces;
+    std::unique_ptr<Vector_Dense<I*,I,arena_d>> d_applyg_D2Cs_pointers;
 
 };
 

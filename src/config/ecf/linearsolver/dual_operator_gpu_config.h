@@ -76,6 +76,7 @@ struct DualOperatorGpuConfig: public ECFDescription {
 	};
 
 	CONCURRENCY concurrency_set;
+	CONCURRENCY concurrency_dualbgn;
 	CONCURRENCY concurrency_update;
 	CONCURRENCY concurrency_apply;
 	bool synchronize_update;
