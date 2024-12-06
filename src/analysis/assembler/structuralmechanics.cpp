@@ -705,6 +705,12 @@ void StructuralMechanics::evaluate(const step::Step &step, const step::Time &tim
     reset(K, M, f, nf, dirichlet);
     assemble(SubKernel::ASSEMBLE, step);
     update(K, M, f, nf, dirichlet);
+    if (Results::normal) {
+        Results::normal->synchronize();
+    }
+    if (Results::reactionForce && nf) {
+        nf->storeTo(Results::reactionForce->data);
+    }
 
     if (info::ecf->output.print_eigen_values > 1) {
         if (M && M->updated) {
