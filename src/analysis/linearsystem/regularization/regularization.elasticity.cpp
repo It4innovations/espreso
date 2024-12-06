@@ -1,5 +1,5 @@
 
-#include "regularization.elasticity.h"
+#include "regularization.h"
 
 #include "basis/utilities/utils.h"
 #include "esinfo/ecfinfo.h"
@@ -21,8 +21,52 @@
 
 namespace espreso {
 
-template <typename T>
-void RegularizationElasticity<T>::getFixPoints(std::vector<esint> &fixPoints, int domain, bool onSurface)
+static void getCorners(std::vector<esint> &fixPoints, int domain)
+{
+    esint begin = info::mesh->domains->elements[domain];
+    esint end = info::mesh->domains->elements[domain + 1];
+    auto element = info::mesh->elements->nodes->begin() + begin;
+    auto *epointer = &info::mesh->elements->epointers->datatarray();
+
+    int ex = info::ecf->generator.grid.elements_x;
+    int ey = info::ecf->generator.grid.elements_y;
+    int ez = info::ecf->generator.grid.elements_z;
+
+    std::vector<esint> nodes;
+    for (esint e = 0; e < end - begin; ++e, ++element) {
+        for (int n = 0; n < (*epointer)[begin + e]->coarseNodes; ++n) {
+            nodes.push_back(element->at(n));
+        }
+    }
+    utils::sortAndRemoveDuplicates(nodes);
+    std::sort(nodes.begin(), nodes.end(), [&] (esint i, esint j) {
+        const Point &pi = info::mesh->nodes->coordinates->datatarray()[i];
+        const Point &pj = info::mesh->nodes->coordinates->datatarray()[j];
+        if (pi.z == pj.z) {
+            if (pi.y == pj.y) {
+                return pi.x < pj.x;
+            }
+            return pi.y < pj.y;
+        }
+        return pi.z < pj.z;
+    });
+
+    fixPoints.push_back(nodes[0]);
+    fixPoints.push_back(nodes[ex]);
+    fixPoints.push_back(nodes[(ex + 1) * ey]);
+    fixPoints.push_back(nodes[(ex + 1) * ey + ex]);
+
+    if (info::mesh->dimension == 3) {
+        fixPoints.push_back(nodes[ez * (ex + 1) * (ey + 1)]);
+        fixPoints.push_back(nodes[ez * (ex + 1) * (ey + 1) + ex]);
+        fixPoints.push_back(nodes[ez * (ex + 1) * (ey + 1) + (ex + 1) * ey]);
+        fixPoints.push_back(nodes[ez * (ex + 1) * (ey + 1) + (ex + 1) * ey + ex]);
+    }
+
+    std::sort(fixPoints.begin(), fixPoints.end());
+}
+
+static void getFixPoints(std::vector<esint> &fixPoints, int domain, bool onSurface)
 {
     if (
             info::ecf->input_type == ECF::INPUT_TYPE::GENERATOR &&
@@ -214,52 +258,6 @@ void RegularizationElasticity<T>::getFixPoints(std::vector<esint> &fixPoints, in
 }
 
 template <typename T>
-void RegularizationElasticity<T>::getCorners(std::vector<esint> &fixPoints, int domain)
-{
-    esint begin = info::mesh->domains->elements[domain];
-    esint end = info::mesh->domains->elements[domain + 1];
-    auto element = info::mesh->elements->nodes->begin() + begin;
-    auto *epointer = &info::mesh->elements->epointers->datatarray();
-
-    int ex = info::ecf->generator.grid.elements_x;
-    int ey = info::ecf->generator.grid.elements_y;
-    int ez = info::ecf->generator.grid.elements_z;
-
-    std::vector<esint> nodes;
-    for (esint e = 0; e < end - begin; ++e, ++element) {
-        for (int n = 0; n < (*epointer)[begin + e]->coarseNodes; ++n) {
-            nodes.push_back(element->at(n));
-        }
-    }
-    utils::sortAndRemoveDuplicates(nodes);
-    std::sort(nodes.begin(), nodes.end(), [&] (esint i, esint j) {
-        const Point &pi = info::mesh->nodes->coordinates->datatarray()[i];
-        const Point &pj = info::mesh->nodes->coordinates->datatarray()[j];
-        if (pi.z == pj.z) {
-            if (pi.y == pj.y) {
-                return pi.x < pj.x;
-            }
-            return pi.y < pj.y;
-        }
-        return pi.z < pj.z;
-    });
-
-    fixPoints.push_back(nodes[0]);
-    fixPoints.push_back(nodes[ex]);
-    fixPoints.push_back(nodes[(ex + 1) * ey]);
-    fixPoints.push_back(nodes[(ex + 1) * ey + ex]);
-
-    if (info::mesh->dimension == 3) {
-        fixPoints.push_back(nodes[ez * (ex + 1) * (ey + 1)]);
-        fixPoints.push_back(nodes[ez * (ex + 1) * (ey + 1) + ex]);
-        fixPoints.push_back(nodes[ez * (ex + 1) * (ey + 1) + (ex + 1) * ey]);
-        fixPoints.push_back(nodes[ez * (ex + 1) * (ey + 1) + (ex + 1) * ey + ex]);
-    }
-
-    std::sort(fixPoints.begin(), fixPoints.end());
-}
-
-template <typename T>
 static void getNtNNtN(Matrix_Dense<T> &N, Matrix_Dense<T> &NtNNtN)
 {
     NtNNtN.resize(N.ncols, N.ncols);
@@ -269,268 +267,239 @@ static void getNtNNtN(Matrix_Dense<T> &N, Matrix_Dense<T> &NtNNtN)
     math::blas::multiply(T{1}, N, _N, T{0}, NtNNtN, true);
 }
 
-template <typename TFix, typename T>
-static void setRegMat(std::vector<TFix> &fix, Matrix_CSR<T> &RegMat, esint size)
-{
-    RegMat.resize(size, size, (fix.size() - 1) * fix.size() / 2 + fix.size());
-    RegMat.type = Matrix_Type::REAL_SYMMETRIC_POSITIVE_DEFINITE;
-    RegMat.shape = Matrix_Shape::UPPER;
-
-    RegMat.rows[0] = Indexing::CSR;
-    esint r = 0;
-    for (size_t i = 0; i < fix.size(); ++i, ++r) {
-        while (r < fix[i].col) {
-            RegMat.rows[r + 1] = RegMat.rows[r];
-            ++r;
-        }
-        RegMat.rows[r + 1] = RegMat.rows[r] + fix.size() - i;
-        for (size_t j = i; j < fix.size(); ++j) {
-            RegMat.cols[RegMat.rows[r] + j - i - Indexing::CSR] = fix[j].col + Indexing::CSR;
-        }
-    }
-    while (r < RegMat.nrows) {
-        RegMat.rows[r + 1] = RegMat.rows[r];
-        ++r;
-    }
-}
-
-// RegMat = Nt * ((N * Nt)^-1 * N)
-//
-//    per Fix-Point
-// N = [  1  0
-//        0  1
-//       -y  x ]
-//
-
 template <typename T>
-void RegularizationElasticity<T>::set2D(FETI<T> &feti, esint domain)
+static void setRegMat(Matrix_CSR<T> &K, Matrix_CSR<T> &RegMat, Matrix_Dense<T> &NtNNtN, DecompositionFETI *decomposition, int domain, bool onSurface)
 {
     std::vector<esint> fixPoints;
-    getFixPoints(fixPoints, domain);
+    getFixPoints(fixPoints, domain, onSurface);
 
-    const Matrix_CSR<T> &K = feti.K[domain];
-    Matrix_Dense<T> &R = feti.R1[domain];
-    Matrix_CSR<T> &RegMat = feti.RegMat[domain];
-    const DecompositionFETI *decomposition = feti.decomposition;
-
-    if (feti.configuration.projector != FETIConfiguration::PROJECTOR::CONJUGATE) {
-        struct __fix__ { int col; double value[3]; }; // reorder DOFs to get sorted output
-        std::vector<__fix__> fix(2 * fixPoints.size());
+    std::vector<int> fixCols, permutation;
+    std::vector<double> fixVals;
+    if (info::mesh->dimension == 2) {
+        fixCols.resize(2 * fixPoints.size());
+        fixVals.resize(2 * fixPoints.size() * 3);
         for (size_t i = 0; i < fixPoints.size(); ++i) {
             auto dmap0 = decomposition->dmap->begin() + (2 * fixPoints[i] + 0);
             auto dmap1 = decomposition->dmap->begin() + (2 * fixPoints[i] + 1);
             for (auto di = dmap0->begin(); di != dmap0->end(); ++di) {
                 if (di->domain == domain + decomposition->dbegin) {
-                    fix[2 * i + 0].col = di->index;
-                    fix[2 * i + 0].value[0] = 1;
-                    fix[2 * i + 0].value[1] = 0;
-                    fix[2 * i + 0].value[2] = -info::mesh->nodes->coordinates->datatarray()[fixPoints[i]].y;
+                    fixCols[ 2 * i + 0         ] = di->index;
+                    fixVals[(2 * i + 0) * 3 + 0] = 1;
+                    fixVals[(2 * i + 0) * 3 + 1] = 0;
+                    fixVals[(2 * i + 0) * 3 + 2] = -info::mesh->nodes->coordinates->datatarray()[fixPoints[i]].y;
                 }
             }
             for (auto di = dmap1->begin(); di != dmap1->end(); ++di) {
                 if (di->domain == domain + decomposition->dbegin) {
-                    fix[2 * i + 1].col = di->index;
-                    fix[2 * i + 1].value[0] = 0;
-                    fix[2 * i + 1].value[1] = 1;
-                    fix[2 * i + 1].value[2] = info::mesh->nodes->coordinates->datatarray()[fixPoints[i]].x;
-                }
-            }
-        }
-        std::sort(fix.begin(), fix.end(), [] (const __fix__ &f1, const __fix__ &f2) { return f1.col < f2.col; });
-        setRegMat(fix, RegMat, K.nrows);
-
-        Matrix_Dense<T> N;
-        N.resize(3, fix.size());
-        for (size_t i = 0; i < fix.size(); ++i) {
-            N.vals[0 * N.ncols + i] = fix[i].value[0];
-            N.vals[1 * N.ncols + i] = fix[i].value[1];
-            N.vals[2 * N.ncols + i] = fix[i].value[2];
-        }
-        getNtNNtN(N, NtNNtN[domain]);
-    }
-
-    R.resize(3, K.nrows);
-    int i = 0;
-    for (auto dmap = decomposition->dmap->cbegin(); dmap != decomposition->dmap->cend(); ++dmap, ++i) {
-        for (auto di = dmap->begin(); di != dmap->end(); ++di) {
-            if (di->domain == domain + decomposition->dbegin) {
-                switch (i % 2) {
-                case 0:
-                    R.vals[0 * R.ncols + di->index] = 1;
-                    R.vals[1 * R.ncols + di->index] = 0;
-                    R.vals[2 * R.ncols + di->index] = -info::mesh->nodes->coordinates->datatarray()[i / 2].y;
-                    break;
-                case 1:
-                    R.vals[0 * R.ncols + di->index] = 0;
-                    R.vals[1 * R.ncols + di->index] = 1;
-                    R.vals[2 * R.ncols + di->index] =  info::mesh->nodes->coordinates->datatarray()[i / 2].x;
-                    break;
+                    fixCols[ 2 * i + 1         ] = di->index;
+                    fixVals[(2 * i + 1) * 3 + 0] = 0;
+                    fixVals[(2 * i + 1) * 3 + 1] = 1;
+                    fixVals[(2 * i + 1) * 3 + 2] = info::mesh->nodes->coordinates->datatarray()[fixPoints[i]].x;
                 }
             }
         }
     }
-}
-
-// RedMat = Nt * ((N * Nt)^-1 * N)
-//
-//      per Fix-Point
-// N = [  1  0  0
-//        0  1  0
-//        0  0  1
-//       -y  x  0
-//       -z  0  x
-//        0 -z  y ]
-//
-
-template <typename T>
-void RegularizationElasticity<T>::set3D(FETI<T> &feti, esint domain, bool onSurface)
-{
-    std::vector<esint> fixPoints;
-    getFixPoints(fixPoints, domain, onSurface);
-
-    const Matrix_CSR<T> &K = feti.K[domain];
-    Matrix_Dense<T> &R = feti.R1[domain];
-    Matrix_CSR<T> &RegMat = feti.RegMat[domain];
-    const DecompositionFETI *decomposition = feti.decomposition;
-
-    if (feti.configuration.projector != FETIConfiguration::PROJECTOR::CONJUGATE) {
-        struct __fix__ { int col; double value[6]; }; // reorder DOFs to get sorted output
-        std::vector<__fix__> fix(3 * fixPoints.size());
+    if (info::mesh->dimension == 3) {
+        fixCols.resize(3 * fixPoints.size());
+        fixVals.resize(3 * fixPoints.size() * 6);
         for (size_t i = 0; i < fixPoints.size(); ++i) {
             auto dmap0 = decomposition->dmap->begin() + (3 * fixPoints[i] + 0);
             auto dmap1 = decomposition->dmap->begin() + (3 * fixPoints[i] + 1);
             auto dmap2 = decomposition->dmap->begin() + (3 * fixPoints[i] + 2);
             for (auto di = dmap0->begin(); di != dmap0->end(); ++di) {
                 if (di->domain == domain + decomposition->dbegin) {
-                    fix[3 * i + 0].col = di->index;
-                    fix[3 * i + 0].value[0] = 1;
-                    fix[3 * i + 0].value[1] = 0;
-                    fix[3 * i + 0].value[2] = 0;
-                    fix[3 * i + 0].value[3] = -info::mesh->nodes->coordinates->datatarray()[fixPoints[i]].y;
-                    fix[3 * i + 0].value[4] = -info::mesh->nodes->coordinates->datatarray()[fixPoints[i]].z;
-                    fix[3 * i + 0].value[5] = 0;
+                    fixCols[ 3 * i + 0         ] = di->index;
+                    fixVals[(3 * i + 0) * 6 + 0] = 1;
+                    fixVals[(3 * i + 0) * 6 + 1] = 0;
+                    fixVals[(3 * i + 0) * 6 + 2] = 0;
+                    fixVals[(3 * i + 0) * 6 + 3] = -info::mesh->nodes->coordinates->datatarray()[fixPoints[i]].y;
+                    fixVals[(3 * i + 0) * 6 + 4] = -info::mesh->nodes->coordinates->datatarray()[fixPoints[i]].z;
+                    fixVals[(3 * i + 0) * 6 + 5] = 0;
                 }
             }
             for (auto di = dmap1->begin(); di != dmap1->end(); ++di) {
                 if (di->domain == domain + decomposition->dbegin) {
-                    fix[3 * i + 1].col = di->index;
-                    fix[3 * i + 1].value[0] = 0;
-                    fix[3 * i + 1].value[1] = 1;
-                    fix[3 * i + 1].value[2] = 0;
-                    fix[3 * i + 1].value[3] =  info::mesh->nodes->coordinates->datatarray()[fixPoints[i]].x;
-                    fix[3 * i + 1].value[4] = 0;
-                    fix[3 * i + 1].value[5] = -info::mesh->nodes->coordinates->datatarray()[fixPoints[i]].z;
+                    fixCols[ 3 * i + 1         ] = di->index;
+                    fixVals[(3 * i + 1) * 6 + 0] = 0;
+                    fixVals[(3 * i + 1) * 6 + 1] = 1;
+                    fixVals[(3 * i + 1) * 6 + 2] = 0;
+                    fixVals[(3 * i + 1) * 6 + 3] =  info::mesh->nodes->coordinates->datatarray()[fixPoints[i]].x;
+                    fixVals[(3 * i + 1) * 6 + 4] = 0;
+                    fixVals[(3 * i + 1) * 6 + 5] = -info::mesh->nodes->coordinates->datatarray()[fixPoints[i]].z;
                 }
             }
             for (auto di = dmap2->begin(); di != dmap2->end(); ++di) {
                 if (di->domain == domain + decomposition->dbegin) {
-                    fix[3 * i + 2].col = di->index;
-                    fix[3 * i + 2].value[0] = 0;
-                    fix[3 * i + 2].value[1] = 0;
-                    fix[3 * i + 2].value[2] = 1;
-                    fix[3 * i + 2].value[3] = 0;
-                    fix[3 * i + 2].value[4] =  info::mesh->nodes->coordinates->datatarray()[fixPoints[i]].x;
-                    fix[3 * i + 2].value[5] =  info::mesh->nodes->coordinates->datatarray()[fixPoints[i]].y;
-                }
-            }
-        }
-        std::sort(fix.begin(), fix.end(), [] (const __fix__ &f1, const __fix__ &f2) { return f1.col < f2.col; });
-        setRegMat<__fix__, T>(fix, RegMat, K.nrows);
-
-        Matrix_Dense<T> N;
-        N.resize(6, fix.size());
-        for (size_t i = 0; i < fix.size(); ++i) {
-            N.vals[0 * N.ncols + i] = fix[i].value[0];
-            N.vals[1 * N.ncols + i] = fix[i].value[1];
-            N.vals[2 * N.ncols + i] = fix[i].value[2];
-            N.vals[3 * N.ncols + i] = fix[i].value[3];
-            N.vals[4 * N.ncols + i] = fix[i].value[4];
-            N.vals[5 * N.ncols + i] = fix[i].value[5];
-        }
-        getNtNNtN(N, NtNNtN[domain]);
-    }
-
-    R.resize(6, K.nrows);
-    int i = 0;
-    for (auto dmap = decomposition->dmap->cbegin(); dmap != decomposition->dmap->cend(); ++dmap, ++i) {
-        for (auto di = dmap->begin(); di != dmap->end(); ++di) {
-            if (di->domain == domain + decomposition->dbegin && di->index < K.nrows) {
-                switch (i % 3) {
-                case 0:
-                    R.vals[0 * R.ncols + di->index] = 1;
-                    R.vals[1 * R.ncols + di->index] = 0;
-                    R.vals[2 * R.ncols + di->index] = 0;
-                    R.vals[3 * R.ncols + di->index] = -info::mesh->nodes->coordinates->datatarray()[i / 3].y;
-                    R.vals[4 * R.ncols + di->index] = -info::mesh->nodes->coordinates->datatarray()[i / 3].z;
-                    R.vals[5 * R.ncols + di->index] = 0;
-                    break;
-                case 1:
-                    R.vals[0 * R.ncols + di->index] = 0;
-                    R.vals[1 * R.ncols + di->index] = 1;
-                    R.vals[2 * R.ncols + di->index] = 0;
-                    R.vals[3 * R.ncols + di->index] =  info::mesh->nodes->coordinates->datatarray()[i / 3].x;
-                    R.vals[4 * R.ncols + di->index] = 0;
-                    R.vals[5 * R.ncols + di->index] = -info::mesh->nodes->coordinates->datatarray()[i / 3].z;
-                    break;
-                case 2:
-                    R.vals[0 * R.ncols + di->index] = 0;
-                    R.vals[1 * R.ncols + di->index] = 0;
-                    R.vals[2 * R.ncols + di->index] = 1;
-                    R.vals[3 * R.ncols + di->index] = 0;
-                    R.vals[4 * R.ncols + di->index] =  info::mesh->nodes->coordinates->datatarray()[i / 3].x;
-                    R.vals[5 * R.ncols + di->index] =  info::mesh->nodes->coordinates->datatarray()[i / 3].y;
-                    break;
+                    fixCols[ 3 * i + 2         ] = di->index;
+                    fixVals[(3 * i + 2) * 6 + 0] = 0;
+                    fixVals[(3 * i + 2) * 6 + 1] = 0;
+                    fixVals[(3 * i + 2) * 6 + 2] = 1;
+                    fixVals[(3 * i + 2) * 6 + 3] = 0;
+                    fixVals[(3 * i + 2) * 6 + 4] =  info::mesh->nodes->coordinates->datatarray()[fixPoints[i]].x;
+                    fixVals[(3 * i + 2) * 6 + 5] =  info::mesh->nodes->coordinates->datatarray()[fixPoints[i]].y;
                 }
             }
         }
     }
+
+    permutation.resize(fixCols.size());
+    std::iota(permutation.begin(), permutation.end(), 0);
+    std::sort(permutation.begin(), permutation.end(), [&fixCols] (int c1, int c2) { return fixCols[c1] < fixCols[c2]; });
+
+    RegMat.resize(K.nrows, K.nrows, (fixCols.size() - 1) * fixCols.size() / 2 + fixCols.size());
+    RegMat.type = Matrix_Type::REAL_SYMMETRIC_POSITIVE_DEFINITE;
+    RegMat.shape = Matrix_Shape::UPPER;
+
+    RegMat.rows[0] = Indexing::CSR;
+    esint r = 0;
+    for (size_t i = 0; i < permutation.size(); ++i, ++r) {
+        while (r < fixCols[permutation[i]]) {
+            RegMat.rows[r + 1] = RegMat.rows[r];
+            ++r;
+        }
+        RegMat.rows[r + 1] = RegMat.rows[r] + fixCols.size() - i;
+        for (size_t j = i; j < fixCols.size(); ++j) {
+            RegMat.cols[RegMat.rows[r] + j - i - Indexing::CSR] = fixCols[permutation[j]] + Indexing::CSR;
+        }
+    }
+    while (r < RegMat.nrows) {
+        RegMat.rows[r + 1] = RegMat.rows[r];
+        ++r;
+    }
+    Matrix_Dense<T> N;
+    if (info::mesh->dimension == 2) {
+        N.resize(3, fixCols.size());
+        for (size_t i = 0; i < permutation.size(); ++i) {
+            N.vals[0 * N.ncols + i] = fixVals[3 * permutation[i] + 0];
+            N.vals[1 * N.ncols + i] = fixVals[3 * permutation[i] + 1];
+            N.vals[2 * N.ncols + i] = fixVals[3 * permutation[i] + 2];
+        }
+    }
+    if (info::mesh->dimension == 3) {
+        N.resize(6, fixCols.size());
+        for (size_t i = 0; i < permutation.size(); ++i) {
+            N.vals[0 * N.ncols + i] = fixVals[6 * permutation[i] + 0];
+            N.vals[1 * N.ncols + i] = fixVals[6 * permutation[i] + 1];
+            N.vals[2 * N.ncols + i] = fixVals[6 * permutation[i] + 2];
+            N.vals[3 * N.ncols + i] = fixVals[6 * permutation[i] + 3];
+            N.vals[4 * N.ncols + i] = fixVals[6 * permutation[i] + 4];
+            N.vals[5 * N.ncols + i] = fixVals[6 * permutation[i] + 5];
+        }
+    }
+    getNtNNtN(N, NtNNtN);
 }
 
 template <typename T>
-void RegularizationElasticity<T>::set(FETI<T> &feti)
+static void updateRegMat(Matrix_CSR<T> &K, Matrix_CSR<T> &RegMat, Matrix_Dense<T> &NtNNtN)
 {
-    bool onSurface = false;
-    for (auto disc = info::ecf->structural_mechanics.discretization.cbegin(); disc != info::ecf->structural_mechanics.discretization.cend(); ++disc) {
-        if (disc->second == PhysicsConfiguration::DISCRETIZATION::BEM) {
-            onSurface = true;
-            break;
-        }
+    double max = 0;
+    for (esint r = 0; r < K.nrows; ++r) {
+        max = std::max(max, K.vals[K.rows[r] - Indexing::CSR]);
     }
 
-    NtNNtN.resize(feti.K.size());
-    #pragma omp parallel for
-    for (size_t d = 0; d < feti.K.size(); ++d) {
-        switch (info::mesh->dimension) {
-        case 2: set2D(feti, d); break;
-        case 3: set3D(feti, d, onSurface); break;
+    for (esint r = 0, i = 0; r < NtNNtN.nrows; ++r) {
+        for (esint c = r; c < NtNNtN.ncols; ++c, ++i) {
+            RegMat.vals[i] = max * NtNNtN.vals[r * NtNNtN.ncols + c];
         }
     }
 }
 
 template <typename T>
-void RegularizationElasticity<T>::update(FETI<T> &feti)
+static void setR1(Matrix_CSR<T> &K, Matrix_Dense<T> &R1, DecompositionFETI *decomposition, int domain)
 {
-    #pragma omp parallel for
-    for (size_t d = 0; d < feti.K.size(); ++d) {
-        const Matrix_CSR<T> &K = feti.K[d];
-        Matrix_CSR<T> &RegMat = feti.RegMat[d];
-
-        double max = 0;
-        for (esint r = 0; r < K.nrows; ++r) {
-            max = std::max(max, K.vals[K.rows[r] - Indexing::CSR]);
+    if (info::mesh->dimension == 2) {
+        R1.resize(3, K.nrows);
+        int i = 0;
+        for (auto dmap = decomposition->dmap->cbegin(); dmap != decomposition->dmap->cend(); ++dmap, ++i) {
+            for (auto di = dmap->begin(); di != dmap->end(); ++di) {
+                if (di->domain == domain + decomposition->dbegin) {
+                    switch (i % 2) {
+                    case 0:
+                        R1.vals[0 * R1.ncols + di->index] = 1;
+                        R1.vals[1 * R1.ncols + di->index] = 0;
+                        R1.vals[2 * R1.ncols + di->index] = -info::mesh->nodes->coordinates->datatarray()[i / 2].y;
+                        break;
+                    case 1:
+                        R1.vals[0 * R1.ncols + di->index] = 0;
+                        R1.vals[1 * R1.ncols + di->index] = 1;
+                        R1.vals[2 * R1.ncols + di->index] =  info::mesh->nodes->coordinates->datatarray()[i / 2].x;
+                        break;
+                    }
+                }
+            }
         }
-
-        for (esint r = 0, i = 0; r < NtNNtN[d].nrows; ++r) {
-            for (esint c = r; c < NtNNtN[d].ncols; ++c, ++i) {
-                RegMat.vals[i] = max * NtNNtN[d].vals[r * NtNNtN[d].ncols + c];
+    }
+    if (info::mesh->dimension == 3) {
+        R1.resize(6, K.nrows);
+        int i = 0;
+        for (auto dmap = decomposition->dmap->cbegin(); dmap != decomposition->dmap->cend(); ++dmap, ++i) {
+            for (auto di = dmap->begin(); di != dmap->end(); ++di) {
+                if (di->domain == domain + decomposition->dbegin && di->index < K.nrows) {
+                    switch (i % 3) {
+                    case 0:
+                        R1.vals[0 * R1.ncols + di->index] = 1;
+                        R1.vals[1 * R1.ncols + di->index] = 0;
+                        R1.vals[2 * R1.ncols + di->index] = 0;
+                        R1.vals[3 * R1.ncols + di->index] = -info::mesh->nodes->coordinates->datatarray()[i / 3].y;
+                        R1.vals[4 * R1.ncols + di->index] = -info::mesh->nodes->coordinates->datatarray()[i / 3].z;
+                        R1.vals[5 * R1.ncols + di->index] = 0;
+                        break;
+                    case 1:
+                        R1.vals[0 * R1.ncols + di->index] = 0;
+                        R1.vals[1 * R1.ncols + di->index] = 1;
+                        R1.vals[2 * R1.ncols + di->index] = 0;
+                        R1.vals[3 * R1.ncols + di->index] =  info::mesh->nodes->coordinates->datatarray()[i / 3].x;
+                        R1.vals[4 * R1.ncols + di->index] = 0;
+                        R1.vals[5 * R1.ncols + di->index] = -info::mesh->nodes->coordinates->datatarray()[i / 3].z;
+                        break;
+                    case 2:
+                        R1.vals[0 * R1.ncols + di->index] = 0;
+                        R1.vals[1 * R1.ncols + di->index] = 0;
+                        R1.vals[2 * R1.ncols + di->index] = 1;
+                        R1.vals[3 * R1.ncols + di->index] = 0;
+                        R1.vals[4 * R1.ncols + di->index] =  info::mesh->nodes->coordinates->datatarray()[i / 3].x;
+                        R1.vals[5 * R1.ncols + di->index] =  info::mesh->nodes->coordinates->datatarray()[i / 3].y;
+                        break;
+                    }
+                }
             }
         }
     }
 }
 
 template <typename T>
-std::vector<Matrix_Dense<T> > RegularizationElasticity<T>::NtNNtN;
+void Regularization<T>::set(FETI<T> &feti, StructuralMechanicsLoadStepConfiguration &configuration)
+{
+    if (feti.configuration.regularization == FETIConfiguration::REGULARIZATION::ANALYTIC) {
+        #pragma omp parallel for
+        for (size_t d = 0; d < feti.K.size(); ++d) {
+            if (R1)     setR1    (feti.K[d], feti.R1[d], feti.decomposition, d);
+            if (regMat) setRegMat(feti.K[d], feti.RegMat[d], NtNNtN[d], feti.decomposition, d, onSurface);
+        }
+        if (R1) {
+            orthonormalize(feti);
+        }
+    }
+}
 
-template struct RegularizationElasticity<double>;
+template <typename T>
+void Regularization<T>::update(FETI<T> &feti, StructuralMechanicsLoadStepConfiguration &configuration)
+{
+    if (feti.configuration.regularization == FETIConfiguration::REGULARIZATION::ANALYTIC) {
+        #pragma omp parallel for
+        for (size_t d = 0; d < feti.K.size(); ++d) {
+            if (regMat && feti.updated.K) updateRegMat(feti.K[d], feti.RegMat[d], NtNNtN[d]);
+        }
+    } else {
+        #pragma omp parallel for
+        for (size_t d = 0; d < feti.K.size(); ++d) {
+            algebraic(feti, 3 * (info::mesh->dimension - 1), feti.configuration.sc_size);
+        }
+    }
+}
+
+template void Regularization<double>::set    (FETI<double> &feti, StructuralMechanicsLoadStepConfiguration &configuration);
+template void Regularization<double>::update (FETI<double> &feti, StructuralMechanicsLoadStepConfiguration &configuration);
+
 
 }
