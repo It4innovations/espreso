@@ -33,6 +33,8 @@ IterativeSolver<T>* IterativeSolver<T>::create(FETI<T> &feti, const step::Step &
     case FETIConfiguration::ITERATIVE_SOLVER::orthogonalPCG: return new OrthogonalizedPCPG<T>(feti);
     case FETIConfiguration::ITERATIVE_SOLVER::SMALBE:        return new SMALBE<T>(feti);
     case FETIConfiguration::ITERATIVE_SOLVER::MPRGP:         return new MPRGP<T>(feti);
+    case FETIConfiguration::ITERATIVE_SOLVER::GMRES:
+    case FETIConfiguration::ITERATIVE_SOLVER::BICGSTAB:
     default: return nullptr;
     }
 }

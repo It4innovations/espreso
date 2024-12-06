@@ -19,7 +19,6 @@ espreso::FETI4ILibraryConfiguration::FETI4ILibraryConfiguration()
 				solver.ecfdescription->parameters[i]->data() == &solver.preconditioner ||
 				solver.ecfdescription->parameters[i]->data() == &solver.iterative_solver ||
 				solver.ecfdescription->parameters[i]->data() == &solver.precision ||
-				solver.ecfdescription->parameters[i]->data() == &solver.n_mics ||
 				solver.ecfdescription->parameters[i]->data() == &solver.sc_size) {
 
 			// keep only the above

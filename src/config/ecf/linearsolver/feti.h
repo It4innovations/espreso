@@ -13,204 +13,92 @@ namespace espreso {
 
 struct FETIConfiguration: public ECFDescription {
 
-	enum class METHOD {
-		/// Total FETI
-		TOTAL_FETI = 0,
-		/// Hybrid Total FETI
-		HYBRID_FETI = 1,
-	};
+    enum class METHOD {
+        /// Total FETI
+        TOTAL_FETI = 0,
+        /// Hybrid Total FETI
+        HYBRID_FETI = 1,
+    };
 
-	enum class ORDERING {
-		ORDERED = 0,
-		NATURAL = 1
-	};
+    enum class DUAL_OPERATOR {
+        IMPLICIT = 0,
+        EXPLICIT,
+        EXPLICIT_GPU,
+        IMPLICIT_GPU,
+    };
 
-	enum class DUAL_OPERATOR {
-		IMPLICIT = 0,
-		EXPLICIT,
-		EXPLICIT_GPU,
-		IMPLICIT_GPU,
-	};
+    enum class PROJECTOR {
+        ORTHOGONAL = 0,
+        CONJUGATE,
+    };
 
-	enum class PROJECTOR {
-		ORTHOGONAL = 0,
-		CONJUGATE,
-	};
+    enum PROJECTOR_OPT {
+        DEFAULT      = 1 << 0,
+        WITH_FACTORS = 1 << 1,
+        FULL         = 1 << 2
+    };
 
-	enum PROJECTOR_OPT {
-	    DEFAULT      = 1 << 0,
-	    WITH_FACTORS = 1 << 1,
-	    FULL         = 1 << 2
-	};
+    enum class ITERATIVE_SOLVER {
+        PCG = 0,
+        orthogonalPCG,
+        GMRES,
+        BICGSTAB,
+        SMALBE,
+        MPRGP
+    };
 
-	enum class ITERATIVE_SOLVER {
-		PCG = 0,
-		orthogonalPCG,
-//		GMRES,
-//		BICGSTAB,
-//		QPCE,
-//		orthogonalPCG_CP,
-//		PCG_CP,
-		SMALBE,
-		MPRGP
-	};
+    enum class PRECONDITIONER {
+        NONE,
+        LUMPED,
+        DIRICHLET
+    };
 
-	enum class PRECONDITIONER {
-		/// No preconditioner is used
-		NONE = 0,
-		/// Lumped preconditioner     S = K_ss
-		LUMPED = 1,
-		/// Weight function
-		WEIGHT_FUNCTION = 2,
-		/// Dirichlet preconditioner  S = K_ss - K_sr * inv(K_rr) * K_sr
-		DIRICHLET = 3,
-		/// simplified Dirichlet      S = K_ss - K_sr * 1/diag(K_rr) * K_sr
-		SUPER_DIRICHLET = 4,
-		/// Lubos's preconditioner
-		MAGIC = 5
-	};
+    enum class STOPPING_CRITERION {
+        RELATIVE,
+        ABSOLUTE,
+        ARIOLI // https://www.researchgate.net/publication/30411264_A_stopping_criterion_for_the_Conjugate_Gradient_algorithm_in_a_finite_element_method_framework
+    };
 
-	enum class STOPPING_CRITERION {
-		RELATIVE,
-		ABSOLUTE,
-		ARIOLI // https://www.researchgate.net/publication/30411264_A_stopping_criterion_for_the_Conjugate_Gradient_algorithm_in_a_finite_element_method_framework
-	};
+    enum class REGULARIZATION {
+        ANALYTIC = 0,
+        ALGEBRAIC = 1,
+    };
 
-	enum class CONJ_PROJECTOR {
-		/// No conj projector
-		NONE = 0,
-		/// Randomly found null pivots of stiffness matrix
-		GENEO,
-		/// Conjugate projector for transient problems
-		CONJ_R,
-		CONJ_K
-	};
+    double precision;
+    size_t print_iteration;
+    size_t max_iterations;
+    size_t max_stagnation;
+    bool exit_on_nonconvergence;
 
-	enum class REGULARIZATION {
-		/// Based on a physics
-		ANALYTIC = 0,
-		/// Randomly found null pivots of stiffness matrix
-		ALGEBRAIC = 1,
-	};
-	enum class REGULARIZATION_VERSION {
-		/// Based on a physics
-		FIX_POINTS = 0,
-		/// Randomly found null pivots of stiffness matrix
-		EIGEN_VECTORS = 1,
-		WAVE_DIRECTIONS = 2,
-	};
+    METHOD method;
+    DUAL_OPERATOR dual_operator;
+    PROJECTOR projector;
+    PROJECTOR_OPT projector_opt;
+    ITERATIVE_SOLVER iterative_solver;
+    PRECONDITIONER preconditioner;
+    REGULARIZATION regularization;
+    STOPPING_CRITERION stopping_criterion;
 
-	enum class B0_TYPE {
-		/// Gluing based on corners
-		CORNERS = 0,
-		/// Gluing based on kernels of faces
-		KERNELS = 1,
-	};
+    int exhaustive_info;
 
-	enum class FLOAT_PRECISION {
-		/// Double precision
-		DOUBLE = 0,
-		/// Single precision
-		SINGLE = 1
-	};
+    double precision_in, precision_set;
+    size_t max_iterations_in;
 
-	enum class KSOLVER {
-		/// A direct solver with double precision
-		DIRECT_DP = 0,
-		/// An iterative solver
-		ITERATIVE = 1,
-		/// A direct solver with single precision
-		DIRECT_SP = 2,
-		/// A direct solver with mixed precision
-		DIRECT_MP = 3
-	};
+    int power_maxit;
+    double power_precision;
 
-	enum class F0SOLVER_PRECISION {
-		/// The same precision as K solver
-		K_PRECISION = 0,
-		/// Double precision
-		DOUBLE = 1
-	};
+    // SMALSE
+    double gamma, M, rho, eta, beta, alpham, delta, rtol;
+    bool halfstep, exp_projgrad, prop_projgrad, proj_grad, gradproj, optimset;
+    int th, no_enlarg_exp, no_enlarg_prop;
 
-	enum class SASOLVER {
-		/// Dense on CPU
-		CPU_DENSE = 0,
-		/// Dense on accelerator
-		ACC_DENSE = 1,
-		/// Sparse on CPU
-		CPU_SPARSE = 2
-	};
+    size_t sc_size;
 
-	enum class MATRIX_STORAGE {
-		/// A full matrix is stored
-		GENERAL = 0,
-		/// Store only triangle
-		SYMMETRIC = 1
-	};
+    AutoOptimizationConfiguration auto_optimization;
 
-	double precision;
-	size_t print_iteration;
-	size_t max_iterations;
-	size_t max_stagnation;
-	bool exit_on_nonconvergence;
-	size_t num_directions;
+    DualOperatorGpuConfig dual_operator_gpu_config;
 
-	METHOD method;
-	ORDERING ordering;
-	DUAL_OPERATOR dual_operator;
-	PROJECTOR projector;
-	PROJECTOR_OPT projector_opt;
-	ITERATIVE_SOLVER iterative_solver;
-	PRECONDITIONER preconditioner;
-	REGULARIZATION regularization;
-	STOPPING_CRITERION stopping_criterion;
-	REGULARIZATION_VERSION regularization_version;
-	CONJ_PROJECTOR conjugate_projector;
-
-	size_t geneo_size, restart_iteration, num_restart;
-
-	int exhaustive_info;
-	bool orthogonal_K_kernels;
-	bool redundant_lagrange, scaling;
-	bool partial_dual;
-
-	B0_TYPE B0_type;
-
-	bool use_schur_complement;
-
-	double precision_in, precision_set;
-	size_t max_iterations_in;
-
-	int power_maxit;
-	double power_precision;
-
-	// SMALSE
-	double gamma, M, rho, eta, beta, alpham, delta, rtol;
-	bool halfstep, exp_projgrad, prop_projgrad, proj_grad, gradproj, optimset;
-	int th, no_enlarg_exp, no_enlarg_prop;
-
-	FLOAT_PRECISION schur_precision;
-	KSOLVER Ksolver;
-	size_t Ksolver_max_iterations;
-	double Ksolver_precision;
-	F0SOLVER_PRECISION F0_precision;
-	SASOLVER SAsolver;
-	MATRIX_STORAGE schur_type;
-
-	bool mp_pseudoinverse, combine_sc_and_spds, keep_factors;
-
-	size_t sc_size, n_mics;
-	bool load_balancing, load_balancing_preconditioner;
-	int allowed_gpu_memory_mb;
-	size_t num_info_objects;
-	double gpu_fragmentation_ratio;
-	size_t num_streams;
-
-	AutoOptimizationConfiguration auto_optimization;
-
-	DualOperatorGpuConfig dual_operator_gpu_config;
-
-	FETIConfiguration();
+    FETIConfiguration();
 };
 
 }

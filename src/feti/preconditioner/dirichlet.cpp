@@ -14,9 +14,6 @@ template <typename T>
 Dirichlet<T>::Dirichlet(FETI<T> &feti)
 : Preconditioner<T>(feti)
 {
-    if (feti.configuration.ordering == FETIConfiguration::ORDERING::NATURAL) {
-        eslog::error("natural ordering is not compatible with the Dirichlet preconditioner.\n");
-    }
     Btx.resize(feti.K.size());
     KBtx.resize(feti.K.size());
     sc.resize(feti.K.size());

@@ -1,9 +1,9 @@
 
 #include "preconditioner.h"
 
-#include "dirichlet.h"
 #include "emptypreconditioner.h"
 #include "lumped.h"
+#include "dirichlet.h"
 #include "esinfo/eslog.h"
 
 #include <complex>
@@ -23,9 +23,6 @@ Preconditioner<T>* Preconditioner<T>::create(FETI<T> &feti, const step::Step &st
     case FETIConfiguration::PRECONDITIONER::DIRICHLET:
         eslog::info(" = PRECONDITIONER                                                                  DIRICHLET = \n");
         return new Dirichlet<T>(feti);
-    case FETIConfiguration::PRECONDITIONER::WEIGHT_FUNCTION:
-    case FETIConfiguration::PRECONDITIONER::SUPER_DIRICHLET:
-    case FETIConfiguration::PRECONDITIONER::MAGIC:
     default: return nullptr;
     }
 }
