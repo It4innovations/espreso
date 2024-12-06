@@ -346,12 +346,12 @@ struct BaseFunctions<Element::CODE::PRISMA6, 9> {
 
     static void set(double N[nodes], double dN[nodes][edim], double r, double s, double t)
     {
-        N[0]     = 0.5 * ((1.0 - t) * (1.0 - r - s));
-        N[1]     = 0.5 * ((1.0 - t) * r);
-        N[2]     = 0.5 * ((1.0 - t) * s);
-        N[3]     = 0.5 * ((1.0 + t) * (1.0 - r - s));
-        N[4]     = 0.5 * ((1.0 + t) * r);
-        N[5]     = 0.5 * ((1.0 + t) * s);
+         N[0]    = 0.5 * ((1.0 - t) * (1.0 - r - s));
+         N[1]    = 0.5 * ((1.0 - t) * r);
+         N[2]    = 0.5 * ((1.0 - t) * s);
+         N[3]    = 0.5 * ((1.0 + t) * (1.0 - r - s));
+         N[4]    = 0.5 * ((1.0 + t) * r);
+         N[5]    = 0.5 * ((1.0 + t) * s);
 
         dN[0][0] =  t / 2.0 - 1.0 / 2.0;
         dN[1][0] = -t / 2.0 + 1.0 / 2.0;
@@ -382,12 +382,15 @@ struct BaseFunctions<Element::CODE::PRISMA6, 9> {
         double v2 = 4.0 / 6.0;
         double v3 = sqrt(3.0 / 5.0);
         double v4 = 0.0;
+        double w1 = 5.0 / 54.;
+        double w2 = 8.0 / 54.;
+        double w[gps] = {  w1,  w1,  w1,  w2,  w2,  w2,  w1,  w1,  w1 };
         double r[gps] = {  v1,  v2,  v1,  v1,  v2,  v1,  v1,  v2,  v1 };
         double s[gps] = {  v1,  v1,  v2,  v1,  v1,  v2,  v1,  v1,  v2 };
         double t[gps] = { -v3, -v3, -v3,  v4,  v4,  v4,  v3,  v3,  v3 };
 
         for (size_t gp = 0; gp < gps; gp++) {
-            element.w[gp] = 5.0 / 54.0;
+            element.w[gp] = w[gp];
             set(element.N[gp], element.dN[gp], r[gp], s[gp], t[gp]);
         }
 
