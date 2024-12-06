@@ -137,7 +137,7 @@ template <size_t nodes, size_t gps> struct MaterialStructuralMechanicsKernel<nod
             case StructuralMechanicsConfiguration::ELEMENT_BEHAVIOUR::PLANE_STRESS:
             case StructuralMechanicsConfiguration::ELEMENT_BEHAVIOUR::PLANE_STRESS_WITH_THICKNESS:
             {
-                SIMD eVec[3] = { load1(.5) * (element.C2[0] - load1(1)), load1(.5) * (element.C2[3] - load1(1)), element.C2[1] + element.C2[2] };
+                SIMD eVec[3] = { load1(.5) * (element.C2[0] - load1(1)), load1(.5) * (element.C2[3] - load1(1)), element.C2[1] };
                 set<1, 3>(element.vS, load1(0));
                 multAB<3, 3, 1>(element.vS, element.vC4, eVec, load1(1.0));
             } break;
