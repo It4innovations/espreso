@@ -87,7 +87,6 @@ HEAT_TRANSFER {
         PRECISION            1E-09;
         ITERATIVE_SOLVER       PCG;
         REGULARIZATION   ALGEBRAIC;
-        ORDERING           NATURAL;
       }
 
       NONLINEAR_SOLVER {
