@@ -1,0 +1,9 @@
+         ;          ;              ;    ALL_NODES   ;    ALL_NODES   ;    ALL_NODES   ;        ALL_NODES       ;        ALL_NODES       ;        ALL_NODES       ;    ALL_ELEMENTS    ;    ALL_ELEMENTS    ;    ALL_ELEMENTS    ;
+loadstep ;  substep ;         time ;  DISPLACEMENT  ;  DISPLACEMENT  ;  DISPLACEMENT  ;  AVG_VON_MISES_STRESS  ;  AVG_VON_MISES_STRESS  ;  AVG_VON_MISES_STRESS  ;  VON_MISES_STRESS  ;  VON_MISES_STRESS  ;  VON_MISES_STRESS  ;
+         ;          ;              ;      <MIN>     ;      <MAX>     ;    <AVERAGE>   ;          <MIN>         ;          <MAX>         ;        <AVERAGE>       ;        <MIN>       ;        <MAX>       ;      <AVERAGE>     ;
+
+       1 ;        1 ;     0.000200 ;   0.000000e+00 ;   3.566203e-03 ;   1.905085e-04 ;           4.687505e+02 ;           1.126920e+09 ;           6.380587e+07 ;       1.254261e+03 ;       7.774356e+08 ;       1.102687e+07 ; 
+       1 ;        2 ;     0.000400 ;   0.000000e+00 ;   1.184915e-02 ;   9.513233e-04 ;           8.060545e+03 ;           1.445433e+09 ;           1.806459e+08 ;       3.017814e+04 ;       1.254365e+09 ;       3.391579e+07 ; 
+       1 ;        3 ;     0.000600 ;   0.000000e+00 ;   2.282416e-02 ;   2.508298e-03 ;           1.238719e+05 ;           1.720137e+09 ;           3.088945e+08 ;       3.297937e+05 ;       1.416112e+09 ;       5.950147e+07 ; 
+       1 ;        4 ;     0.000800 ;   0.000000e+00 ;   3.675753e-02 ;   4.874301e-03 ;           7.512212e+05 ;           2.138945e+09 ;           4.486787e+08 ;       2.214829e+06 ;       1.782481e+09 ;       8.688453e+07 ; 
+       1 ;        5 ;     0.001000 ;   0.000000e+00 ;   5.230207e-02 ;   8.046730e-03 ;           3.061642e+06 ;           2.376598e+09 ;           5.835412e+08 ;       7.004687e+06 ;       1.992856e+09 ;       1.137487e+08 ; 
