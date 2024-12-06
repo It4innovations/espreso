@@ -215,6 +215,7 @@ bool StructuralMechanics::analyze(const step::Step &step)
                 }
             }
         }
+        NodeData::synchronize(faceMultiplicity, 1);
         for (size_t i = 0; i < faceMultiplicity.size(); ++i) {
             if (faceMultiplicity[i] != 0) {
                 faceMultiplicity[i] = 1 / faceMultiplicity[i];
@@ -229,6 +230,7 @@ bool StructuralMechanics::analyze(const step::Step &step)
                 nodeMultiplicity[*n] += 1;
             }
         }
+        NodeData::synchronize(nodeMultiplicity, 1);
         for (size_t i = 0; i < nodeMultiplicity.size(); ++i) {
             nodeMultiplicity[i] = 1 / nodeMultiplicity[i];
         }
@@ -752,6 +754,9 @@ void StructuralMechanics::evaluate(const step::Step &step, const step::Frequency
     }
     reset(K, M, C, ref, imf, renf, imnf, reDirichlet, imDirichlet);
     assemble(SubKernel::ASSEMBLE, step);
+    if (Results::normal) {
+        Results::normal->synchronize();
+    }
     update(K, M, C, ref, imf, renf, imnf, reDirichlet, imDirichlet);
 }
 
@@ -857,14 +862,22 @@ void StructuralMechanics::updateSolution(const step::Step &step, Vector_Distribu
     x->storeTo(Results::displacement->data);
     reset(M, B);
     if (info::ecf->output.results_selection.stress) {
-        std::fill(StructuralMechanics::Results::principalStressAvg->data.begin(), StructuralMechanics::Results::principalStressAvg->data.end(), 0);
-        std::fill(StructuralMechanics::Results::principalStrainAvg->data.begin(), StructuralMechanics::Results::principalStrainAvg->data.end(), 0);
-        std::fill(StructuralMechanics::Results::componentStressAvg->data.begin(), StructuralMechanics::Results::componentStressAvg->data.end(), 0);
-        std::fill(StructuralMechanics::Results::componentStrainAvg->data.begin(), StructuralMechanics::Results::componentStrainAvg->data.end(), 0);
-        std::fill(StructuralMechanics::Results::vonMisesStressAvg->data.begin(), StructuralMechanics::Results::vonMisesStressAvg->data.end(), 0);
-        std::fill(StructuralMechanics::Results::vonMisesStrainAvg->data.begin(), StructuralMechanics::Results::vonMisesStrainAvg->data.end(), 0);
+        std::fill(Results::principalStressAvg->data.begin(), Results::principalStressAvg->data.end(), 0);
+        std::fill(Results::principalStrainAvg->data.begin(), Results::principalStrainAvg->data.end(), 0);
+        std::fill(Results::componentStressAvg->data.begin(), Results::componentStressAvg->data.end(), 0);
+        std::fill(Results::componentStrainAvg->data.begin(), Results::componentStrainAvg->data.end(), 0);
+        std::fill(Results::vonMisesStressAvg->data.begin() , Results::vonMisesStressAvg->data.end(), 0);
+        std::fill(Results::vonMisesStrainAvg->data.begin() , Results::vonMisesStrainAvg->data.end(), 0);
     }
     assemble(SubKernel::SOLUTION, step);
+    if (info::ecf->output.results_selection.stress) {
+        Results::principalStressAvg->synchronize();
+        Results::principalStrainAvg->synchronize();
+        Results::componentStressAvg->synchronize();
+        Results::componentStrainAvg->synchronize();
+        Results::vonMisesStressAvg ->synchronize();
+        Results::vonMisesStrainAvg ->synchronize();
+    }
     update(M, B);
 }
 

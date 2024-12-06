@@ -5,6 +5,7 @@
 
 #include "mesh/mesh.h"
 
+#include "esinfo/eslog.h"
 #include "esinfo/mpiinfo.h"
 #include "esinfo/meshinfo.h"
 #include "esinfo/stepinfo.h"
@@ -320,6 +321,47 @@ void NodeData::statistics(const tarray<esint> &nodes, esint totalsize, Statistic
 		(statistics + i)->avg /= totalsize;
 		(statistics + i)->norm = std::sqrt((statistics + i)->norm);
 	}
+}
+
+void NodeData::synchronize()
+{
+    synchronize(data, dimension);
+}
+
+void NodeData::synchronize(std::vector<double> &data, int dimension)
+{
+    std::vector<std::vector<double> > sBuffer(info::mesh->neighbors.size()), rBuffer(info::mesh->neighbors.size());
+
+    auto nranks = info::mesh->nodes->ranks->begin();
+    for (esint n = 0; n < info::mesh->nodes->size; ++n, ++nranks) {
+        size_t i = 0;
+        for (auto r = nranks->begin(); r != nranks->end(); ++r) {
+            if (*r != info::mpi::rank) {
+                while (info::mesh->neighbors[i] < *r) ++i;
+                for (int d = 0; d < dimension; ++d) {
+                    sBuffer[i].push_back(data[n * dimension + d]);
+                }
+            }
+        }
+    }
+
+    if (!Communication::exchangeUnknownSize(sBuffer, rBuffer, info::mesh->neighbors)) {
+        eslog::error("cannot synchronize NodeData\n");
+    }
+
+    nranks = info::mesh->nodes->ranks->begin();
+    std::vector<int> offset(info::mesh->neighbors.size());
+    for (esint n = 0; n < info::mesh->nodes->size; ++n, ++nranks) {
+        size_t i = 0;
+        for (auto r = nranks->begin(); r != nranks->end(); ++r) {
+            if (*r != info::mpi::rank) {
+                while (info::mesh->neighbors[i] < *r) ++i;
+                for (int d = 0; d < dimension; ++d) {
+                    data[n * dimension + d] += rBuffer[i][offset[i]++];
+                }
+            }
+        }
+    }
 }
 
 

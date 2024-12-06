@@ -21,6 +21,8 @@ struct NodeData: public NamedData {
 	NodeData(const char* &packedData): NamedData(packedData) {}
 
 	void statistics(const tarray<esint> &nodes, esint totalsize, Statistics *statistics) const;
+	void synchronize();
+	static void synchronize(std::vector<double> &data, int dimension);
 };
 
 // store nodes held by lower ranks first, them all my nodes
