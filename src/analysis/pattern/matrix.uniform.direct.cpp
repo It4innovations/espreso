@@ -56,9 +56,9 @@ MatrixUniformDirect::MatrixUniformDirect(StructuralMechanicsLoadStepConfiguratio
         type = Matrix_Type::REAL_SYMMETRIC_INDEFINITE;
     }
 
-    if (configuration.type == LoadStepSolverConfiguration::TYPE::TRANSIENT) {
-        type = Matrix_Type::REAL_SYMMETRIC_POSITIVE_DEFINITE;
-    }
+//    if (configuration.type == LoadStepSolverConfiguration::TYPE::TRANSIENT) {
+//        type = Matrix_Type::REAL_SYMMETRIC_POSITIVE_DEFINITE;
+//    }
 
     buildPattern(dofs);
 }

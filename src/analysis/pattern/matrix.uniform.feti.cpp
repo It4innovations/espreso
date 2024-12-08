@@ -77,9 +77,9 @@ MatrixUniformFETI::MatrixUniformFETI(StructuralMechanicsLoadStepConfiguration &c
         type = Matrix_Type::REAL_SYMMETRIC_INDEFINITE;
     }
 
-    if (configuration.type == LoadStepSolverConfiguration::TYPE::TRANSIENT) {
-        type = Matrix_Type::REAL_SYMMETRIC_POSITIVE_DEFINITE;
-    }
+//    if (configuration.type == LoadStepSolverConfiguration::TYPE::TRANSIENT) {
+//        type = Matrix_Type::REAL_SYMMETRIC_POSITIVE_DEFINITE;
+//    }
 
     for (auto disc = info::ecf->structural_mechanics.discretization.cbegin(); disc != info::ecf->structural_mechanics.discretization.cend(); ++disc) {
         if (disc->second == PhysicsConfiguration::DISCRETIZATION::BEM) {

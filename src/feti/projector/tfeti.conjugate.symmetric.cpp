@@ -175,7 +175,7 @@ void TFETIConjugateSymmetric<T>::_setGGt()
     const int IDX = Indexing::CSR;
     GGt.resize(Projector<T>::Kernel::total, Projector<T>::Kernel::total, GGtNnz);
     GGt.shape = Matrix_Shape::UPPER;
-    GGt.type = Matrix_Type::REAL_SYMMETRIC_POSITIVE_DEFINITE;
+    GGt.type = Matrix_Type::REAL_SYMMETRIC_INDEFINITE; // set it according to type of K?
     GGt.rows[0] = IDX;
     GGt.rows[Projector<T>::Kernel::roffset] = GGtDataOffset + IDX;
     for (auto v = vbegin; v != vend; ++v) {
