@@ -64,7 +64,7 @@ STRUCTURAL_MECHANICS {
         MATERIAL_MODEL   KIRCHHOFF;
 
         MIXY                   0.3;
-        EX                  2.1E11;
+        EX                  2.1E09;
       }
     }
   }
@@ -79,7 +79,7 @@ STRUCTURAL_MECHANICS {
     1 {
       DURATION_TIME     1;
       TYPE      TRANSIENT;
-      MODE         LINEAR;
+      MODE      NONLINEAR;
       SOLVER         FETI;
 
       TRANSIENT_SOLVER {
@@ -104,7 +104,7 @@ STRUCTURAL_MECHANICS {
       }
 
       ACCELERATION {
-        ALL_ELEMENTS   { Y  9.8066; };
+        ALL_ELEMENTS   { Y  1e2; };
       }
     }
   }

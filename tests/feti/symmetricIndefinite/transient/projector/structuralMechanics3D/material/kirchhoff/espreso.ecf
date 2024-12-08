@@ -1,0 +1,151 @@
+# ESPRESO Configuration File
+
+DEFAULT_ARGS {
+  0    HEXA8;
+
+  1        2;
+  2        2;
+  3        1;
+
+  4        2;
+  5        2;
+  6        2;
+
+  7        4;
+  8        4;
+  9        8;
+  
+ 10 TOTAL_FETI;
+ 11 ORTHOGONAL;
+ 12    DEFAULT;
+ 13         15;
+}
+
+INPUT_TYPE              GENERATOR;
+PHYSICS      STRUCTURAL_MECHANICS;
+
+GENERATOR {
+  SHAPE   GRID;
+
+  GRID {
+    START_X                    0;
+    START_Y                    0;
+    START_Z                    0;
+
+    LENGTH_X                   5;
+    LENGTH_Y                   1;
+    LENGTH_Z                   1;
+
+    NODES {
+      FIX   <0 , 0> <0 , 1> <0 , 1>;
+    }
+
+    FACES {
+      PRESS <5 , 5> <0 , 1> <0 , 1>;
+    }
+
+    ELEMENT_TYPE          [ARG0];
+
+    CLUSTERS_X            [ARG1];
+    CLUSTERS_Y            [ARG2];
+    CLUSTERS_Z            [ARG3];
+
+    DOMAINS_X             [ARG4];
+    DOMAINS_Y             [ARG5];
+    DOMAINS_Z             [ARG6];
+
+    ELEMENTS_X            [ARG7];
+    ELEMENTS_Y            [ARG8];
+    ELEMENTS_Z            [ARG9];
+  }
+}
+
+STRUCTURAL_MECHANICS {
+  LOAD_STEPS   1;
+
+  MATERIALS {
+    1 {
+      DENS   7850;
+
+      ELASTICITY_PROPERTIES {
+        MATERIAL_MODEL   KIRCHHOFF;
+
+        MIXY                   0.3;
+        EX                  2.1E11;
+      }
+    }
+  }
+
+  MATERIAL_SET {
+    ALL_ELEMENTS   1;
+  }
+
+  LOAD_STEPS_SETTINGS {
+    1 {
+      DURATION_TIME  2e-2;
+      TYPE      TRANSIENT; # DUE TO ISSUES WITH KERNELS
+      MODE      NONLINEAR;
+      SOLVER         FETI;
+
+      FETI {
+        METHOD             [ARG10];
+        DUAL_OPERATOR     IMPLICIT;
+        PROJECTOR          [ARG11];
+        PROJECTOR_OPT      [ARG12];
+        PRECONDITIONER   DIRICHLET;
+        ITERATIVE_SOLVER       PCG;
+        REGULARIZATION    ANALYTIC;
+        MAX_ITERATIONS     [ARG13];
+        MAX_STAGNATION        2000;
+        PRECISION             1e-9;
+      }
+
+      TRANSIENT_SOLVER {
+        TIME_STEP       2e-3;
+      }
+
+      NONLINEAR_SOLVER {
+        MAX_ITERATIONS                     10;
+        REQUESTED_DISPLACEMENT_RESIDUAL  1e-4;
+      }
+
+      DISPLACEMENT {
+        FIX   { X 0 ; Y 0 ; Z 0; }
+      }
+
+      PRESSURE {
+        PRESS {
+          PRESSURE    5e8;
+          DIRECTION { Z -1; }
+        }
+      }
+    }
+  }
+}
+
+OUTPUT {
+#  RESULTS_STORE_FREQUENCY            NEVER;
+  MONITORS_STORE_FREQUENCY   EVERY_SUBSTEP;
+
+  STORE_RESULTS         ALL;
+
+  MONITORING {
+    1 {
+      REGION        ALL_NODES;
+      STATISTICS          MIN;
+      PROPERTY   DISPLACEMENT;
+    }
+
+    2 {
+      REGION        ALL_NODES;
+      STATISTICS          MAX;
+      PROPERTY   DISPLACEMENT;
+    }
+
+    3 {
+      REGION        ALL_NODES;
+      STATISTICS          AVG;
+      PROPERTY   DISPLACEMENT;
+    }
+  }
+}

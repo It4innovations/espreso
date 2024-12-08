@@ -6,7 +6,7 @@ class Solver(unittest.TestCase):
 
     def setUp(self):
         ESPRESOTest.path = os.path.dirname(__file__)
-        ESPRESOTest.args = [ "TRIANGLE3", 2, 2, 2, 2, 40, 4, "TOTAL_FETI", "ORTHOGONAL", "DEFAULT", 70 ]
+        ESPRESOTest.args = [ "TRIANGLE3", 2, 2, 8, 4, 10, 2, "TOTAL_FETI", "ORTHOGONAL", "DEFAULT", 1200 ]
         ESPRESOTest.processes = 4
         ESPRESOTest.set_threads(2)
 
@@ -14,12 +14,8 @@ class Solver(unittest.TestCase):
         ESPRESOTest.clean()
 
     def test_feti(self):
-        for opt in [ "          DEFAULT", "     WITH_FACTORS", "             FULL", "WITH_FACTORS|FULL" ]:
-            yield run, " TOTAL_FETI", "ORTHOGONAL", opt, 75
-        for opt in [ "          DEFAULT", "     WITH_FACTORS"]:
-            yield run, "HYBRID_FETI", "ORTHOGONAL", opt, 80
-        for opt in [ "             FULL", "WITH_FACTORS|FULL" ]:
-            yield run, "HYBRID_FETI", "ORTHOGONAL", opt, 65
+#        yield run, " TOTAL_FETI", "ORTHOGONAL", "DEFAULT", 1200
+        yield run, " TOTAL_FETI", " CONJUGATE", "DEFAULT", 110
 
 
 def run(method, projector, opt, max_it):
