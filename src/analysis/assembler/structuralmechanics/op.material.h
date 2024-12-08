@@ -143,7 +143,9 @@ template <size_t nodes, size_t gps> struct MaterialStructuralMechanicsKernel<nod
             } break;
             case StructuralMechanicsConfiguration::ELEMENT_BEHAVIOUR::AXISYMMETRIC:
             {
-                eslog::error("not implemented material behaviour\n");
+                if (nonlinear) {
+                    eslog::error("not implemented material behaviour\n");
+                }
             } break;
             }
             break;
