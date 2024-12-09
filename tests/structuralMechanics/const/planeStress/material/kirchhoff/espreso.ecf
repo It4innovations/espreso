@@ -32,7 +32,7 @@ GENERATOR {
       FIX   <0 , 0> <0 , 1> <0 , 0>;
     }
 
-    FACES {
+    EDGES {
       PRESS <5 , 5> <0 , 1> <0 , 0>;
     }
 
@@ -74,10 +74,10 @@ STRUCTURAL_MECHANICS {
 
   LOAD_STEPS_SETTINGS {
     1 {
-      DURATION_TIME  2e-3;
+      DURATION_TIME  5e-3;
       TYPE      TRANSIENT; # DUE TO ISSUES WITH KERNELS
       MODE      NONLINEAR;
-      SOLVER      MKLPDSS;
+      SOLVER         FETI;
 
       FETI {
         METHOD          TOTAL_FETI;
@@ -88,7 +88,7 @@ STRUCTURAL_MECHANICS {
       }
 
       TRANSIENT_SOLVER {
-        TIME_STEP       2e-4;
+        TIME_STEP       5e-4;
       }
 
       NONLINEAR_SOLVER {
@@ -103,7 +103,7 @@ STRUCTURAL_MECHANICS {
       PRESSURE {
         PRESS {
           PRESSURE    1e9;
-          DIRECTION { Z -1; }
+          DIRECTION { Y -1; }
         }
       }
     }

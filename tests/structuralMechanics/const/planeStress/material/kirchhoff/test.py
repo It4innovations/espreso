@@ -6,7 +6,7 @@ class Assembler(unittest.TestCase):
 
     def setUp(self):
         ESPRESOTest.path = os.path.dirname(__file__)
-        ESPRESOTest.args = [ "etype", 2, 2, 2, 2, 20, 20 ]
+        ESPRESOTest.args = [ "etype", 2, 2, 2, 2, 20, 4 ]
         ESPRESOTest.processes = 4
         ESPRESOTest.set_threads(2)
 
