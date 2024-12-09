@@ -42,23 +42,29 @@ static void updateRegMat(Matrix_CSR<T> &K, Matrix_CSR<T> &RegMat)
 template <typename T>
 void Regularization<T>::set(FETI<T> &feti, HeatTransferLoadStepConfiguration &configuration)
 {
-    #pragma omp parallel for
-    for (size_t d = 0; d < feti.K.size(); ++d) {
-        if (R1)     setR1    (feti.K[d], feti.R1[d]);
-        if (regMat) setRegMat(feti.K[d], feti.RegMat[d]);
+    if (feti.configuration.regularization == FETIConfiguration::REGULARIZATION::ANALYTIC) {
+        #pragma omp parallel for
+        for (size_t d = 0; d < feti.K.size(); ++d) {
+            if (R1)     setR1    (feti.K[d], feti.R1[d]);
+            if (regMat) setRegMat(feti.K[d], feti.RegMat[d]);
+        }
     }
 }
 
 template <typename T>
 void Regularization<T>::update(FETI<T> &feti, HeatTransferLoadStepConfiguration &configuration)
 {
-    #pragma omp parallel for
-    for (size_t d = 0; d < feti.K.size(); ++d) {
-        if (R1     && feti.updated.K) updateR1    (feti.K[d], feti.R1[d]);
-        if (regMat && feti.updated.K) updateRegMat(feti.K[d], feti.RegMat[d]);
-    }
-    if (R1 && feti.updated.K) {
-        orthonormalize(feti);
+    if (feti.configuration.regularization == FETIConfiguration::REGULARIZATION::ANALYTIC) {
+        #pragma omp parallel for
+        for (size_t d = 0; d < feti.K.size(); ++d) {
+            if (R1     && feti.updated.K) updateR1    (feti.K[d], feti.R1[d]);
+            if (regMat && feti.updated.K) updateRegMat(feti.K[d], feti.RegMat[d]);
+        }
+        if (R1) {
+            orthonormalize(feti);
+        }
+    } else {
+        algebraic(feti, 1, feti.configuration.sc_size);
     }
 }
 

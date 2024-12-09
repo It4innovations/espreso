@@ -470,6 +470,7 @@ static void setR1(Matrix_CSR<T> &K, Matrix_Dense<T> &R1, DecompositionFETI *deco
 template <typename T>
 void Regularization<T>::set(FETI<T> &feti, StructuralMechanicsLoadStepConfiguration &configuration)
 {
+    NtNNtN.resize(feti.K.size());
     if (feti.configuration.regularization == FETIConfiguration::REGULARIZATION::ANALYTIC) {
         #pragma omp parallel for
         for (size_t d = 0; d < feti.K.size(); ++d) {
@@ -491,10 +492,7 @@ void Regularization<T>::update(FETI<T> &feti, StructuralMechanicsLoadStepConfigu
             if (regMat && feti.updated.K) updateRegMat(feti.K[d], feti.RegMat[d], NtNNtN[d]);
         }
     } else {
-        #pragma omp parallel for
-        for (size_t d = 0; d < feti.K.size(); ++d) {
-            algebraic(feti, 3 * (info::mesh->dimension - 1), feti.configuration.sc_size);
-        }
+        algebraic(feti, 3 * (info::mesh->dimension - 1), feti.configuration.sc_size);
     }
 }
 
