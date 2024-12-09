@@ -77,13 +77,9 @@ template <> void OrthogonalizedPCPG<double>::solve(const step::Step &step, Itera
     math::scale(-1., r);                   //
     math::add(r, 1., F->d);                //
 
-    P->apply(r, w);                        // w = P * r
-    if (S->isset()) {
-        S->apply(w, z);                        // z = S * w
-        P->apply(z, y);                        // y = P * z (y = P * S * w)
-    } else {
-        math::copy(y, w);
-    }
+    P->applyT(r, w);                       // w = P * r
+    S->apply(w, z);                        // z = S * w
+    P->apply(z, y);                        // y = P * z (y = P * S * w)
 
     math::copy(p, y);                      // p = y
     math::copy(x, l);                      // x = l
@@ -108,21 +104,17 @@ template <> void OrthogonalizedPCPG<double>::solve(const step::Step &step, Itera
         math::add(r, -gamma, Fp);
         eslog::accumulatedln("orthopcpg: update x, r");
 
-        // w = P * r
-        P->apply(r, w);
+        // w = Pt * r
+        P->applyT(r, w);
         eslog::accumulatedln("orthopcpg: apply P");
 
-        if (S->isset()) {
-            // z = S * w
-            S->apply(w, z);
-            eslog::accumulatedln("orthopcpg: apply S * w");
+        // z = S * w
+        S->apply(w, z);
+        eslog::accumulatedln("orthopcpg: apply S * w");
 
-            // y = P * z
-            P->apply(z, y);
-            eslog::accumulatedln("orthopcpg: apply P * z");
-        } else {
-            math::copy(y, w);
-        }
+        // y = P * z
+        P->apply(z, y);
+        eslog::accumulatedln("orthopcpg: apply P * z");
 
         // p = w - SUM{0->i}[ ((w, F * p_i) / (p_i, F * p_i)) * p_i ]
         yFp.push_back(0); _yFp.vals = yFp.data(); _yFp.size = yFp.size();
