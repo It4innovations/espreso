@@ -4,6 +4,8 @@ machine="karolina"
 # machine="lumi"
 # machine="e4red"
 # machine="tiber"
+# machine="sprddr"
+# machine="sprhbm"
 
 # have to make sure the same version is compiled
 # tool="cudalegacy"
@@ -28,7 +30,7 @@ then
     exit 1
 fi
 
-if [ "${machine}" == "tiber" ]; then
+if [ "${machine}" == "tiber" ] || [[ "${machine}" == "spr"* ]]; then
     workers_outdir_root="${basedir}/workers_outerr"
     if [[ ! -d "${workers_outdir_root}" ]]
     then
@@ -36,7 +38,9 @@ if [ "${machine}" == "tiber" ]; then
         echo "Please create it"
         exit 2
     fi
-else
+fi
+
+if ! [ "${machine}" == "tiber" ]; then
     slurm_outdir_root="${basedir}/slurm_outerr"
     if [[ ! -d "${slurm_outdir_root}"   &&   ! ( -L "${slurm_outdir_root}" && -d "$(readlink ${slurm_outdir_root})" ) ]]
     then
@@ -98,11 +102,13 @@ mkdir -p "${hq_outdir}"
 espreso_outdir="${espreso_outdir_root}/${machine}_${tool}_${datestr}"
 mkdir -p "${espreso_outdir}"
 
-if [ "${machine}" == "tiber" ]; then
+if [ "${machine}" == "tiber" ] || [[ "${machine}" == "spr"* ]]; then
     workers_outerr="${workers_outdir_root}/${machine}_${tool}_${datestr}"
     mkdir -p "${workers_outerr}"
     ln -f -s -T "${machine}_${tool}_${datestr}" "${workers_outdir_root}/last"
-else
+fi
+
+if ! [ "${machine}" == "tiber" ]; then
     slurm_outdir="${slurm_outdir_root}/${machine}_${tool}_${datestr}"
     mkdir -p "${slurm_outdir}"
 fi
@@ -119,6 +125,8 @@ elif [ "${machine}" == "e4red" ]; then
     num_cores_for_job="72"
 elif [ "${machine}" == "tiber" ]; then
     num_cores_for_job="6"
+elif [[ "${machine}" == "spr"* ]]; then
+    num_cores_for_job="12"
 fi
 
 
@@ -164,6 +172,8 @@ elif [ "${machine}" == "lumi" ]; then
     sbatch_command_array="sbatch --array=1-10 -o ${slurm_outdir}/slurm-%A-%a.out -e ${slurm_outdir}/slurm-%A-%a.err ${basedir}/slurmjob_lumi.sh"
 elif [ "${machine}" == "e4red" ]; then
     sbatch_command_normal="sbatch -o ${slurm_outdir}/slurm-%j.out -e ${slurm_outdir}/slurm-%j.err ${basedir}/slurmjob_${machine}.sh"
+elif [[ "${machine}" == "spr"* ]]; then
+    sbatch_command_normal="sbatch -o ${slurm_outdir}/slurm-%j.out -e ${slurm_outdir}/slurm-%j.err ${basedir}/slurmjob_${machine}.sh"
 fi
 
 if [ "${machine}" == "karolina" ]; then
@@ -185,6 +195,9 @@ elif [ "${machine}" == "tiber" ]; then
     echo "run workers using:"
     echo "    ./benchmarks/dualop_gpu_options/tiber_run_hqworkers.sh"
     echo "inside tmux"
+elif [[ "${machine}" == "spr"* ]]; then
+    echo "sbatch command for later, normal job:"
+    echo "    ${sbatch_command_normal}"
 fi
 
 
@@ -226,6 +239,14 @@ elif [ "${machine}" == "tiber" ]; then
     array_domains_x_3d=( 4  4  6   8   8  12   16  16)
     array_domains_y_3d=( 3  4  4   6   8   8   12  16)
     array_domains_z_3d=( 2  3  4   4   6   8    8  12)
+elif [[ "${machine}" == "spr"* ]]; then
+    # approx:           12 24 48 96 192 384 768 1536
+    array_domains_x_2d=( 4  6  8 12  16  24  32   48)
+    array_domains_y_2d=( 3  4  6  8  12  16  24   32)
+    array_domains_z_2d=( 1  1  1  1   1   1   1    1)
+    array_domains_x_3d=( 3  4  4  6   8   8  12   16)
+    array_domains_y_3d=( 2  3  4  4   6   8   8   12)
+    array_domains_z_3d=( 2  2  3  4   4   6   8    8)
 fi
 # indexes:              0   1   2   3   4   5   6   7   8   9  10  11  12  13  14  15
 array_elements_x_2d=(1024 724 512 362 256 181 128  90  64  45  32  23  16  11   8   6)
@@ -327,6 +348,9 @@ elif [ "${machine}" == "tiber" ]; then
     echo "run workers using:"
     echo "    ./benchmarks/dualop_gpu_options/tiber_run_hqworkers.sh"
     echo "inside tmux"
+elif [[ "${machine}" == "spr"* ]]; then
+    echo "sbatch command for later, normal job:"
+    echo "    ${sbatch_command_normal}"
 fi
 
 echo "number of jobs: ${id_num}"

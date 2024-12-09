@@ -119,6 +119,17 @@ elif [ "${machine}" == "tiber" ]; then
         echo wrong tool
         exit 72
     fi
+elif [[ "${machine}" == "spr"* ]]; then
+    if [ "${tool}" == "suitesparse" ]; then
+        source env/it4i.cs.spr.sh suitesparse
+        command="./build/espreso -c \"${ecf_file}\" $@ > \"${output_path}/stdout.txt\" 2> \"${output_path}/stderr.txt\""
+    elif [ "${tool}" == "mklpardiso" ]; then
+        source env/it4i.cs.spr.sh mklpardiso
+        command="./build/espreso -c \"${ecf_file}\" $@ > \"${output_path}/stdout.txt\" 2> \"${output_path}/stderr.txt\""
+    else
+        echo wrong tool
+        exit 72
+    fi
 else
     echo wrong machine
     exit 73

@@ -311,10 +311,17 @@ namespace spblas {
             // cant use stable_sort_by_key or sort_by_key, because asynchronicity is not specified
             auto zip_iter = onedpl::make_zip_iterator(output_ijv_rowidxs, output_ijv_colidxs, map);
             onedpl::experimental::sort_async(exec_pol, zip_iter, zip_iter + input->nnz, [](auto l, auto r){
-                if(onedpl::get<0>(l) == onedpl::get<0>(r)) {
-                    return onedpl::get<1>(l) < onedpl::get<1>(r);
+                // if(onedpl::get<0>(l) == onedpl::get<0>(r)) {
+                //     return onedpl::get<1>(l) < onedpl::get<1>(r);
+                // }
+                // return onedpl::get<0>(l) < onedpl::get<0>(r);
+
+                auto [rowl, coll, mapl] = l;
+                auto [rowr, colr, mapr] = r;
+                if(rowl == rowr) {
+                    return coll < colr;
                 }
-                return onedpl::get<0>(l) < onedpl::get<0>(r);
+                return rowl < rowr;
             });
 
             {
