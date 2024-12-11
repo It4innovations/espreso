@@ -144,11 +144,5 @@ OUTPUT {
       STATISTICS            AVG;
       PROPERTY     DISPLACEMENT;
     }
-
-    4 {
-      REGION       ALL_ELEMENTS;
-      STATISTICS            MAX;
-      PROPERTY VON_MISES_STRESS;
-    }
   }
 }

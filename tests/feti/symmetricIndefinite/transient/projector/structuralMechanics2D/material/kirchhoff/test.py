@@ -11,11 +11,12 @@ class Solver(unittest.TestCase):
         ESPRESOTest.set_threads(2)
 
     def tearDown(self):
-        ESPRESOTest.clean()
+        pass
+        #ESPRESOTest.clean()
 
     def test_feti(self):
 #        yield run, " TOTAL_FETI", "ORTHOGONAL", "DEFAULT", 1200
-        yield run, " TOTAL_FETI", " CONJUGATE", "DEFAULT", 110
+        yield run, " TOTAL_FETI", " CONJUGATE", "DEFAULT", 85
 
 
 def run(method, projector, opt, max_it):

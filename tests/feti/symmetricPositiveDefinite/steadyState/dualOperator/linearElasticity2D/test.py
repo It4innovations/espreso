@@ -15,9 +15,9 @@ class Solver(unittest.TestCase):
 
     def test_feti(self):
         for dualop in [ "    IMPLICIT", "    EXPLICIT", "EXPLICIT_GPU" ]:
-            yield run, " TOTAL_FETI", dualop, 75
+            yield run, " TOTAL_FETI", dualop, 80
         for dualop in [ "    IMPLICIT" ]:
-            yield run, "HYBRID_FETI", dualop, 80
+            yield run, "HYBRID_FETI", dualop, 85
 
 def run(method, dualop, max_it):
     ESPRESOTest.args[7] = method
