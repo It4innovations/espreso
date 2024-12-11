@@ -170,7 +170,7 @@ void DirectSparseSolver<T, I>::getPermutation(Permutation<I> &/*perm*/)
 }
 
 template <typename T, typename I>
-void DirectSparseSolver<T, I>::getSC(Matrix_Dense<T,I> &/*sc*/)
+void DirectSparseSolver<T, I>::getSC(Matrix_Dense<T,I> &/*sc*/, std::vector<int> &/*indices*/)
 {
     eslog::error("calling of empty sparse solver wrapper.\n");
 }

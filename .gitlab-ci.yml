@@ -1,234 +1,251 @@
 
 stages:
-  - build
-  - solver_intel
-  - solver_ss
-  - solver_ss_mkl
-  - release
+  - DUMMY
+  - INTEL
+  - FOSS
+  - FOSS_MKL
 
-.ws_build:
-  stage: build
+.ws:
+  when: always
   tags:
     - ws
-  before_script:
-    - sh dependencies/clone.all.sh
-
-.ws_solver_intel:
-  extends: .ws_build
-  stage: solver_intel
-
-.ws_solver_ss:
-  extends: .ws_build
-  stage: solver_ss
-
-.ws_solver_ss_mkl:
-  extends: .ws_build
-  stage: solver_ss_mkl
-
-WS_DUMMY32:
-  extends: .ws_build
   script:
-    - . env/workstation.openmpi.32.sh
+    - ./waf configure
+    - ./waf -j8
+
+# ----------------------------------------------------------------------------------------------- #
+#                        DUMMY INSTALATION WITHOUT ANY THIRD-PARTY LIBRARY                        #
+# ----------------------------------------------------------------------------------------------- #
+
+INSTALL_32_DUMMY_WS:
+  extends: .ws
+  stage: DUMMY
+  cache:
+    key: deps-dummy-32
+    paths:
+      - dependencies
+      - build
+  before_script:
+    - . env/workstation.foss.32.sh
+  script:
     - ./waf configure --skip-suitesparse --skip-mkl --skip-blas --skip-lapack
     - ./waf -j8
 
-WS_DUMMY64:
-  extends: .ws_build
+INSTALL_64_DUMMY_WS:
+  extends: .ws
+  stage: DUMMY
+  cache:
+    key: deps-dummy-64
+    paths:
+      - dependencies
+      - build
+  before_script:
+    - . env/workstation.foss.64.sh
   script:
-    - . env/workstation.openmpi.64.sh
-    - ./waf configure --skip-suitesparse --skip-mkl --skip-blas --skip-lapack --intwidth=64
+    - ./waf configure --skip-suitesparse --skip-mkl --skip-blas --skip-lapack
     - ./waf -j8
 
-WS_FOSS32:
-  extends: .ws_build
-  script:
-    - . env/workstation.openmpi.32.sh
-    - ./waf configure
-    - ./waf -j 8
-    - sh tests/run.basic.sh
+# ----------------------------------------------------------------------------------------------- #
+#                                     INTEL MPI + INTEL MKL                                       #
+# ----------------------------------------------------------------------------------------------- #
 
-WS_FOSS64:
-  extends: .ws_build
-  script:
-    - . env/workstation.openmpi.64.sh
-    - ./waf configure --intwidth=64
-    - ./waf -j 8
-    - sh tests/run.basic.sh
-
-WS_MKL32:
-  extends: .ws_build
-  script:
-    - . env/workstation.openmpi.mkl.32.sh
-    - ./waf configure
-    - ./waf -j 8
-    - sh tests/run.basic.sh
-
-WS_MKL64:
-  extends: .ws_build
-  script:
-    - . env/workstation.openmpi.mkl.64.sh
-    - ./waf configure
-    - ./waf -j 8
-    - sh tests/run.basic.sh
-
-WS_INTEL32:
-  extends: .ws_build
-  script:
+INSTALL_32_WS_INTEL:
+  extends: .ws
+  stage: INTEL
+  cache:
+    key: deps-intel-32
+    paths:
+      - dependencies
+      - build
+  before_script:
     - . env/workstation.intel.32.sh
-    - ./waf configure
-    - ./waf -j 8
+
+BASIC_32_WS_INTEL:
+  extends: INSTALL_32_WS_INTEL
+  script:
     - sh tests/run.basic.sh
 
-WS_INTEL64:
-  extends: .ws_build
+ASSEMBLER_32_WS_INTEL:
+  extends: INSTALL_32_WS_INTEL
   script:
-    - . env/workstation.intel.64.sh
-    - ./waf configure --intwidth=64
-    - ./waf -j 8
-    - sh tests/run.basic.sh
-
-.ASSEMBLER: &ASSEMBLER
-  script:
-    - ./waf configure
-    - ./waf -j 8
     - sh tests/run.assembler.sh
 
-.ASSEMBLER_FETI: &ASSEMBLER_FETI
+PHYSICS_32_WS_INTEL:
+  extends: INSTALL_32_WS_INTEL
   script:
-    - ./waf configure
-    - ./waf -j 8
-    - sh tests/run.assembler.feti.sh
+    - sh tests/run.phycal_solver.sh
 
-WS_ASSEMBLER_INTEL_32:
-  <<: *ASSEMBLER
-  extends: .ws_solver_intel
-  before_script:
-    - . env/workstation.intel.32.sh
-
-WS_ASSEMBLER_INTEL_64:
-  <<: *ASSEMBLER
-  extends: .ws_solver_intel
-  before_script:
-    - . env/workstation.intel.64.sh
-
-WS_ASSEMBLER_SS_32:
-  <<: *ASSEMBLER_FETI
-  extends: .ws_solver_ss
-  before_script:
-    - . env/workstation.openmpi.32.sh
-
-WS_ASSEMBLER_SS_64:
-  <<: *ASSEMBLER_FETI
-  extends: .ws_solver_ss
-  before_script:
-    - . env/workstation.openmpi.64.sh
-
-WS_ASSEMBLER_SS_MKL_32:
-  <<: *ASSEMBLER_FETI
-  extends: .ws_solver_ss_mkl
-  before_script:
-    - . env/workstation.openmpi.mkl.32.sh
-
-WS_ASSEMBLER_SS_MKL_64:
-  <<: *ASSEMBLER_FETI
-  extends: .ws_solver_ss_mkl
-  before_script:
-    - . env/workstation.openmpi.mkl.64.sh
-
-.PHYSICAL_SOLVER: &PHYSICAL_SOLVER
+FETI_32_WS_INTEL:
+  extends: INSTALL_32_WS_INTEL
   script:
-    - ./waf -j 8
-    - sh tests/run.physical_solver.sh
-
-WS_PHYSICAL_SOLVER_INTEL_32:
-  <<: *PHYSICAL_SOLVER
-  extends: .ws_solver_intel
-  before_script:
-    - . env/workstation.intel.32.sh
-
-WS_PHYSICAL_SOLVER_INTEL_64:
-  <<: *PHYSICAL_SOLVER
-  extends: .ws_solver_intel
-  before_script:
-    - . env/workstation.intel.64.sh
-
-.FETI: &FETI
-  script:
-    - ./waf configure
-    - ./waf -j 8
     - sh tests/run.feti.sh
 
-WS_FETI_INTEL_32:
-  <<: *FETI
-  extends: .ws_solver_intel
-  script:
-    - . env/workstation.intel.32.sh
-
-WS_FETI_INTEL_64:
-  <<: *FETI
-  extends: .ws_solver_intel
+INSTALL_64_WS_INTEL:
+  extends: .ws
+  stage: INTEL
+  cache:
+    key: deps-intel-64
+    paths:
+      - dependencies
+      - build
   before_script:
     - . env/workstation.intel.64.sh
 
-WS_FETI_SS_32:
-  <<: *FETI
-  extends: .ws_solver_ss
+BASIC_64_WS_INTEL:
+  extends: INSTALL_64_WS_INTEL
   script:
-    - . env/workstation.openmpi.32.sh
+    - sh tests/run.basic.sh
 
-WS_FETI_SS_64:
-  <<: *FETI
-  extends: .ws_solver_ss
+ASSEMBLER_64_WS_INTEL:
+  extends: INSTALL_64_WS_INTEL
+  script:
+    - sh tests/run.assembler.sh
+
+PHYSICS_64_WS_INTEL:
+  extends: INSTALL_64_WS_INTEL
+  script:
+    - sh tests/run.phycal_solver.sh
+
+FETI_64_WS_INTEL:
+  extends: INSTALL_64_WS_INTEL
+  script:
+    - sh tests/run.feti.sh
+
+# ----------------------------------------------------------------------------------------------- #
+#                                    OPEN MPI + SUITESPARSE                                       #
+# ----------------------------------------------------------------------------------------------- #
+
+INSTALL_32_WS_FOSS:
+  extends: .ws
+  stage: FOSS
+  cache:
+    key: deps-foss-32
+    paths:
+      - dependencies
+      - build
   before_script:
-    - . env/workstation.openmpi.64.sh
+    - . env/workstation.foss.32.sh
 
-WS_FETI_SS_MKL_32:
-  <<: *FETI
-  extends: .ws_solver_ss_mkl
+BASIC_32_WS_FOSS:
+  extends: INSTALL_32_WS_FOSS
   script:
-    - . env/workstation.openmpi.mkl.32.sh
+    - sh tests/run.basic.sh
 
-WS_FETI_SS_MKL_64:
-  <<: *FETI
-  extends: .ws_solver_ss_mkl
+ASSEMBLER_32_WS_FOSS:
+  extends: INSTALL_32_WS_FOSS
+  script:
+    - sh tests/run.assembler.feti.sh
+
+# not all physical solvers are implemented with FOSS
+.PHYSICS_32_WS_FOSS:
+  extends: INSTALL_32_WS_FOSS
+  script:
+    - sh tests/run.phycal_solver.sh
+
+FETI_32_WS_FOSS:
+  extends: INSTALL_32_WS_FOSS
+  script:
+    - sh tests/run.feti.sh
+
+INSTALL_64_WS_FOSS:
+  extends: .ws
+  stage: FOSS
+  cache:
+    key: deps-foss-64
+    paths:
+      - dependencies
+      - build
   before_script:
-    - . env/workstation.openmpi.mkl.64.sh
+    - . env/workstation.foss.64.sh
 
-.cs_build:
-  stage: build
-  tags:
-    - cs
+BASIC_64_WS_FOSS:
+  extends: INSTALL_64_WS_FOSS
+  script:
+    - sh tests/run.basic.sh
+
+ASSEMBLER_64_WS_FOSS:
+  extends: INSTALL_64_WS_FOSS
+  script:
+    - sh tests/run.assembler.sh
+
+# not all physical solvers are implemented with FOSS
+.PHYSICS_64_WS_INTEL:
+  extends: INSTALL_64_WS_FOSS
+  script:
+    - sh tests/run.phycal_solver.sh
+
+FETI_64_WS_INTEL:
+  extends: INSTALL_64_WS_FOSS
+  script:
+    - sh tests/run.feti.sh
+
+# ----------------------------------------------------------------------------------------------- #
+#                                         OPEN MPI + MKL                                          #
+# ----------------------------------------------------------------------------------------------- #
+
+INSTALL_32_WS_FOSS_MKL:
+  extends: .ws
+  stage: FOSS_MKL
+  cache:
+    key: deps-foss-32
+    paths:
+      - dependencies
+      - build
   before_script:
-    - salloc -A $PROJECT_ID -p p01-arm -N 1 -n 48 -J $CI_JOB_ID --no-shell
-    - export SLURM_JOB_ID="$(squeue -o %A -h -t R -n $CI_JOB_ID)"
-    - sh dependencies/clone.all.sh
-    - export PATH=/mnt/proj3/open-28-64/gitlab-runner/aarch64/nose2/bin/:$PATH
-    - echo "#!/bin/bash" >> job.$CI_JOB_ID.sh
-    - echo ". env/it4i.cs.a64fx.modulepath.sh" >> job.$CI_JOB_ID.sh
-  after_script:
-    - scancel "$(squeue -o %A -h -t R -n $CI_JOB_ID)"
+    - . env/workstation.foss.mkl.32.sh
 
-.CS_FOSS32:
-  extends: .cs_build
+BASIC_32_WS_FOSS_MKL:
+  extends: INSTALL_32_WS_FOSS_MKL
   script:
-    - echo ". env/it4i.cs.a64fx.openmpi.32.sh" >> job.$CI_JOB_ID.sh
-    - echo "./waf configure" >> job.$CI_JOB_ID.sh
-    - echo "./waf" >> job.$CI_JOB_ID.sh
-    - echo "sh tests/run.basic.sh" >> job.$CI_JOB_ID.sh
-    - srun sh job.$CI_JOB_ID.sh
+    - sh tests/run.basic.sh
 
-.CS_FOSS64:
-  extends: .cs_build
+ASSEMBLER_32_WS_FOSS_MKL:
+  extends: INSTALL_32_WS_FOSS_MKL
   script:
-    - echo ". env/it4i.cs.a64fx.openmpi.64.sh" >> job.$CI_JOB_ID.sh
-    - echo "./waf configure --intwidth=64" >> job.$CI_JOB_ID.sh
-    - echo "./waf" >> job.$CI_JOB_ID.sh
-    - echo "sh tests/run.basic.sh" >> job.$CI_JOB_ID.sh
-    - srun sh job.$CI_JOB_ID.sh
+    - sh tests/run.assembler.feti.sh
 
-.GITHUB:
-  stage: release
+# not all physical solvers are implemented with FOSS
+.PHYSICS_32_WS_FOSS_MKL:
+  extends: INSTALL_32_WS_FOSS_MKL
   script:
-    - if ! git remote | grep release > /dev/null; then
-        git remote add release git@github.com:It4innovations/espreso.git;
-      fi
+    - sh tests/run.phycal_solver.sh
+
+FETI_32_WS_FOSS_MKL:
+  extends: INSTALL_32_WS_FOSS_MKL
+  script:
+    - sh tests/run.feti.sh
+
+INSTALL_64_WS_FOSS_MKL:
+  extends: .ws
+  stage: FOSS
+  cache:
+    key: deps-foss-64
+    paths:
+      - dependencies
+      - build
+  before_script:
+    - . env/workstation.foss.mkl.64.sh
+
+BASIC_64_WS_FOSS_MKL:
+  extends: INSTALL_64_WS_FOSS_MKL
+  script:
+    - sh tests/run.basic.sh
+
+ASSEMBLER_64_WS_FOSS_MKL:
+  extends: INSTALL_64_WS_FOSS_MKL
+  script:
+    - sh tests/run.assembler.sh
+
+# not all physical solvers are implemented with FOSS
+.PHYSICS_64_WS_INTEL_MKL:
+  extends: INSTALL_64_WS_FOSS_MKL
+  script:
+    - sh tests/run.phycal_solver.sh
+
+FETI_64_WS_INTEL_MKL:
+  extends: INSTALL_64_WS_FOSS_MKL
+  script:
+    - sh tests/run.feti.sh
+
+
+
