@@ -101,22 +101,22 @@ template <> void create<Matrix_CSR, std::complex<double>, int>(const Matrix_CSR<
 }
 
 template <template <typename, typename, typename> class Matrix, typename T, typename I>
-SpBLAS<Matrix, T, I>::SpBLAS(MatrixType &a)
+SpBLAS<Matrix, T, I>::SpBLAS(MatrixType &a, bool trans)
 : matrix{&a}, _spblas{}
 {
     _spblas = new Matrix_SpBLAS_External_Representation();
-    create<Matrix, T, I>(matrix, _spblas, false);
+    create<Matrix, T, I>(matrix, _spblas, trans);
 }
 
 template <template <typename, typename, typename> class Matrix, typename T, typename I>
-void SpBLAS<Matrix, T, I>::insert(MatrixType &a)
+void SpBLAS<Matrix, T, I>::insert(MatrixType &a, bool trans)
 {
     matrix = &a;
     if (_spblas) {
         checkStatus(mkl_sparse_destroy(_spblas->inspector));
     }
     _spblas = new Matrix_SpBLAS_External_Representation();
-    create<Matrix, T, I>(matrix, _spblas, false);
+    create<Matrix, T, I>(matrix, _spblas, trans);
 }
 
 static void setDescription(matrix_descr &descr, Matrix_Type type, Matrix_Shape shape)
@@ -173,6 +173,40 @@ void SpBLAS<Matrix_CSR, std::complex<double>, int>::apply(Vector_Dense<std::comp
 
 template <template <typename, typename, typename> class Matrix, typename T, typename I>
 void SpBLAS<Matrix, T, I>::apply(Vector_Dense<T, I> &y, const T &alpha, const T &beta, const Vector_Dense<T, I> &x)
+{
+    eslog::error("SpBLAS wrapper is incompatible with T=%dB, I=%dB\n", sizeof(T), sizeof(I));
+}
+
+template <>
+void SpBLAS<Matrix_CSR, float, int>::apply(Matrix_Dense<float> &y, const float &alpha, const float &beta, const Matrix_Dense<float> &x, bool trans)
+{
+    matrix_descr descr;
+    setDescription(descr, matrix->type, matrix->shape);
+    descr.diag = SPARSE_DIAG_NON_UNIT;
+    checkStatus(mkl_sparse_s_mv(SPARSE_OPERATION_NON_TRANSPOSE, alpha, _spblas->inspector, descr, x.vals, beta, y.vals));
+}
+
+template <>
+void SpBLAS<Matrix_CSR, double, int>::apply(Matrix_Dense<double> &y, const double &alpha, const double &beta, const Matrix_Dense<double> &x, bool trans)
+{
+    matrix_descr descr;
+    setDescription(descr, matrix->type, matrix->shape);
+    descr.diag = SPARSE_DIAG_NON_UNIT;
+    sparse_layout_t layout = trans ? SPARSE_LAYOUT_COLUMN_MAJOR : SPARSE_LAYOUT_ROW_MAJOR;
+    checkStatus(mkl_sparse_d_mm(SPARSE_OPERATION_NON_TRANSPOSE, alpha, _spblas->inspector, descr, layout, x.vals, y.ncols, x.ncols, beta, y.vals, y.ncols));
+}
+
+template <>
+void SpBLAS<Matrix_CSR, std::complex<double>, int>::apply(Matrix_Dense<std::complex<double> > &y, const std::complex<double> &alpha, const std::complex<double> &beta, const Matrix_Dense<std::complex<double> > &x, bool trans)
+{
+    matrix_descr descr;
+    setDescription(descr, matrix->type, matrix->shape);
+    descr.diag = SPARSE_DIAG_NON_UNIT;
+    checkStatus(mkl_sparse_z_mv(SPARSE_OPERATION_NON_TRANSPOSE, alpha, _spblas->inspector, descr, x.vals, beta, y.vals));
+}
+
+template <template <typename, typename, typename> class Matrix, typename T, typename I>
+void SpBLAS<Matrix, T, I>::apply(Matrix_Dense<T, I> &y, const T &alpha, const T &beta, const Matrix_Dense<T, I> &x, bool trans)
 {
     eslog::error("SpBLAS wrapper is incompatible with T=%dB, I=%dB\n", sizeof(T), sizeof(I));
 }

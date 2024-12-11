@@ -246,17 +246,15 @@ void DirectSparseSolver<T, I>::getPermutation(Vector_Dense<I> &perm)
 }
 
 template <typename T, typename I>
-void DirectSparseSolver<T, I>::getSC(Matrix_Dense<T, I> &sc)
+void DirectSparseSolver<T, I>::getSC(Matrix_Dense<T, I> &sc, std::vector<int> &indices)
 {
     Matrix_Dense<T, I> full; full.resize(sc.nrows, sc.nrows);
-    Vector_Dense<I> perm; perm.resize(ext->matrix->nrows);
-    for (I i = 0                            ; i < ext->matrix->nrows - sc.nrows; ++i) { perm.vals[i] = 0; }
-    for (I i = ext->matrix->nrows - sc.nrows; i < ext->matrix->nrows           ; ++i) { perm.vals[i] = 1; }
 
     ext->pp.iparm[35] = 1;
-    std::swap(ext->pp.perm, perm.vals);
+    I *perm = ext->pp.perm;
+    ext->pp.perm = indices.data();
     _callPardiso<T>(12, ext, 0, nullptr, full.vals);
-    std::swap(ext->pp.perm, perm.vals);
+    ext->pp.perm = perm;
     ext->pp.iparm[35] = 0;
 
     for (I r = 0, i = 0; r < full.nrows; ++r) {

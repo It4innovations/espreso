@@ -63,7 +63,8 @@ void Dirichlet<T>::update(const step::Step &step)
             if (DirectSparseSolver<T>::provideSC()) {
                 DirectSparseSolver<T> Ksolver;
                 Ksolver.commit(feti.K[d]);
-                Ksolver.getSC(sc[d]);
+                sc[d].resize(indices[d].size(), indices[d].size());
+                Ksolver.getSC(sc[d], permutation);
             } else {
                 for (size_t i = 0, j = 0, k = feti.B1[d].ncols - indices[d].size(); i < permutation.size(); ++i) {
                     permutation[i] = (permutation[i] == 1 ? k++ : j++);
