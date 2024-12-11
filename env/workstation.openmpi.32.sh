@@ -6,3 +6,4 @@
 . dependencies/install.precice.sh mpic++
 
 export CXX=mpic++
+export ES_INT_WIDTH=32

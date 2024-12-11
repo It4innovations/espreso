@@ -6,4 +6,5 @@
 . dependencies/install.precice.sh mpic++
 
 export CXX=mpic++
+export ES_INT_WIDTH=64
 export CPATH=/usr/include/mkl:$CPATH

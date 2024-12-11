@@ -49,6 +49,7 @@ if [ "${cusparse_version}" = "legacy" ]; then ml CUDA/11.7.0; fi
 if [ "${cusparse_version}" = "modern" ]; then ml CUDA/12.4.0; fi
 
 export CXX=mpic++
+export ES_INT_WIDTH=32
 export CXXFLAGS+=" -fmax-errors=1"
 export BLAS_LIBRARIES=openblas
 

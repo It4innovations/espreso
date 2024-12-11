@@ -10,5 +10,6 @@ ml CMake/3.23.1-GCCcore-11.3.0
 . dependencies/install.parmetis32.sh mpicc
 
 export CXX=mpic++
+export ES_INT_WIDTH=32
 export BLAS_LIBRARIES=openblas
 export LAPACK_LIBRARIES=openblas

@@ -7,3 +7,4 @@
 . dependencies/install.precice.sh mpiicpx
 
 export CXX=mpiicpx
+export ES_INT_WIDTH=64

@@ -15,6 +15,7 @@ ml Boost.Python-NumPy
 . dependencies/install.precice.sh mpic++
 
 export CXX=mpic++
+export ES_INT_WIDTH=32
 export BLAS_LIBRARIES=openblas
 export LAPACK_LIBRARIES=openblas
 

@@ -216,9 +216,9 @@ def options(opt):
 
     opt.compiler.add_option("--intwidth",
         action="store",
-        default="32",
+        default=os.getenv("ES_INT_WIDTH") or "32",
         choices=["32", "64"],
-        metavar="32,64",
+        metavar="$ES_INT_WIDTH",
         help="ESPRESO integer datatype width [default: %default]")
 
     opt.compiler.add_option("--simd-off",

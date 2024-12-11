@@ -8,3 +8,4 @@ ml intel/2023b CMake/3.27.6-GCCcore-13.2.0 Boost/1.83.0-GCC-13.2.0 Eigen/3.4.0-G
 . dependencies/install.precice.sh mpiicpx
 
 export CXX=mpiicpx
+export ES_INT_WIDTH=32

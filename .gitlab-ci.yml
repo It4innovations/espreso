@@ -1,7 +1,9 @@
 
 stages:
   - build
-  - solver
+  - solver_intel
+  - solver_ss
+  - solver_ss_mkl
   - release
 
 .ws_build:
@@ -9,12 +11,19 @@ stages:
   tags:
     - ws
   before_script:
-    - sh dependencies/clone.metis.sh
-    - sh dependencies/clone.parmetis.sh
+    - sh dependencies/clone.all.sh
 
-.ws_solver:
+.ws_solver_intel:
   extends: .ws_build
-  stage: solver
+  stage: solver_intel
+
+.ws_solver_ss:
+  extends: .ws_build
+  stage: solver_ss
+
+.ws_solver_ss_mkl:
+  extends: .ws_build
+  stage: solver_ss_mkl
 
 WS_DUMMY32:
   extends: .ws_build
@@ -78,37 +87,112 @@ WS_INTEL64:
     - ./waf -j 8
     - sh tests/run.basic.sh
 
-WS_ASSEMBLER32:
-  extends: .ws_solver
+.ASSEMBLER: &ASSEMBLER
   script:
-    - . env/workstation.intel.32.sh
     - ./waf configure
     - ./waf -j 8
     - sh tests/run.assembler.sh
 
-WS_PHYSICAL_SOLVER32:
-  extends: .ws_solver
+.ASSEMBLER_FETI: &ASSEMBLER_FETI
   script:
-    - . env/workstation.intel.32.sh
     - ./waf configure
+    - ./waf -j 8
+    - sh tests/run.assembler.feti.sh
+
+WS_ASSEMBLER_INTEL_32:
+  <<: *ASSEMBLER
+  extends: .ws_solver_intel
+  before_script:
+    - . env/workstation.intel.32.sh
+
+WS_ASSEMBLER_INTEL_64:
+  <<: *ASSEMBLER
+  extends: .ws_solver_intel
+  before_script:
+    - . env/workstation.intel.64.sh
+
+WS_ASSEMBLER_SS_32:
+  <<: *ASSEMBLER_FETI
+  extends: .ws_solver_ss
+  before_script:
+    - . env/workstation.openmpi.32.sh
+
+WS_ASSEMBLER_SS_64:
+  <<: *ASSEMBLER_FETI
+  extends: .ws_solver_ss
+  before_script:
+    - . env/workstation.openmpi.64.sh
+
+WS_ASSEMBLER_SS_MKL_32:
+  <<: *ASSEMBLER_FETI
+  extends: .ws_solver_ss_mkl
+  before_script:
+    - . env/workstation.openmpi.mkl.32.sh
+
+WS_ASSEMBLER_SS_MKL_64:
+  <<: *ASSEMBLER_FETI
+  extends: .ws_solver_ss_mkl
+  before_script:
+    - . env/workstation.openmpi.mkl.64.sh
+
+.PHYSICAL_SOLVER: &PHYSICAL_SOLVER
+  script:
     - ./waf -j 8
     - sh tests/run.physical_solver.sh
 
-WS_FETI32:
-  extends: .ws_solver
+WS_PHYSICAL_SOLVER_INTEL_32:
+  <<: *PHYSICAL_SOLVER
+  extends: .ws_solver_intel
+  before_script:
+    - . env/workstation.intel.32.sh
+
+WS_PHYSICAL_SOLVER_INTEL_64:
+  <<: *PHYSICAL_SOLVER
+  extends: .ws_solver_intel
+  before_script:
+    - . env/workstation.intel.64.sh
+
+.FETI: &FETI
   script:
-    - . env/workstation.openmpi.32.sh
     - ./waf configure
     - ./waf -j 8
     - sh tests/run.feti.sh
 
-WS_FETI64:
-  extends: .ws_solver
+WS_FETI_INTEL_32:
+  <<: *FETI
+  extends: .ws_solver_intel
   script:
+    - . env/workstation.intel.32.sh
+
+WS_FETI_INTEL_64:
+  <<: *FETI
+  extends: .ws_solver_intel
+  before_script:
+    - . env/workstation.intel.64.sh
+
+WS_FETI_SS_32:
+  <<: *FETI
+  extends: .ws_solver_ss
+  script:
+    - . env/workstation.openmpi.32.sh
+
+WS_FETI_SS_64:
+  <<: *FETI
+  extends: .ws_solver_ss
+  before_script:
     - . env/workstation.openmpi.64.sh
-    - ./waf configure --intwidth=64
-    - ./waf -j 8
-    - sh tests/run.feti.sh
+
+WS_FETI_SS_MKL_32:
+  <<: *FETI
+  extends: .ws_solver_ss_mkl
+  script:
+    - . env/workstation.openmpi.mkl.32.sh
+
+WS_FETI_SS_MKL_64:
+  <<: *FETI
+  extends: .ws_solver_ss_mkl
+  before_script:
+    - . env/workstation.openmpi.mkl.64.sh
 
 .cs_build:
   stage: build
