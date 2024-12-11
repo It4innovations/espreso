@@ -1,9 +1,13 @@
 
 stages:
-  - DUMMY
-  - INTEL
-  - FOSS
-  - FOSS_MKL
+  - DUMMY_32
+  - DUMMY_64
+  - INTEL_32
+  - INTEL_64
+  - FOSS_32
+  - FOSS_64
+  - FOSS_MKL_32
+  - FOSS_MKL_64
 
 .ws:
   when: always
@@ -19,7 +23,7 @@ stages:
 
 INSTALL_32_DUMMY_WS:
   extends: .ws
-  stage: DUMMY
+  stage: DUMMY_32
   cache:
     key: deps-dummy-32
     paths:
@@ -33,7 +37,7 @@ INSTALL_32_DUMMY_WS:
 
 INSTALL_64_DUMMY_WS:
   extends: .ws
-  stage: DUMMY
+  stage: DUMMY_64
   cache:
     key: deps-dummy-64
     paths:
@@ -51,7 +55,7 @@ INSTALL_64_DUMMY_WS:
 
 INSTALL_32_WS_INTEL:
   extends: .ws
-  stage: INTEL
+  stage: INTEL_32
   cache:
     key: deps-intel-32
     paths:
@@ -82,7 +86,7 @@ FETI_32_WS_INTEL:
 
 INSTALL_64_WS_INTEL:
   extends: .ws
-  stage: INTEL
+  stage: INTEL_64
   cache:
     key: deps-intel-64
     paths:
@@ -117,7 +121,7 @@ FETI_64_WS_INTEL:
 
 INSTALL_32_WS_FOSS:
   extends: .ws
-  stage: FOSS
+  stage: FOSS_32
   cache:
     key: deps-foss-32
     paths:
@@ -148,7 +152,7 @@ FETI_32_WS_FOSS:
 
 INSTALL_64_WS_FOSS:
   extends: .ws
-  stage: FOSS
+  stage: FOSS_64
   cache:
     key: deps-foss-64
     paths:
@@ -183,9 +187,9 @@ FETI_64_WS_INTEL:
 
 INSTALL_32_WS_FOSS_MKL:
   extends: .ws
-  stage: FOSS_MKL
+  stage: FOSS_MKL_32
   cache:
-    key: deps-foss-32
+    key: deps-foss-mkl-32
     paths:
       - dependencies
       - build
@@ -214,9 +218,9 @@ FETI_32_WS_FOSS_MKL:
 
 INSTALL_64_WS_FOSS_MKL:
   extends: .ws
-  stage: FOSS
+  stage: FOSS_MKL_64
   cache:
-    key: deps-foss-64
+    key: deps-foss-mkl-64
     paths:
       - dependencies
       - build
