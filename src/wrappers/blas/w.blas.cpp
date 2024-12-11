@@ -198,12 +198,31 @@ void multiply(double alpha, const Matrix_Dense<double> &A, const Matrix_Dense<do
 }
 
 template <>
+void multiply(std::complex<double> alpha, const Matrix_Dense<std::complex<double> > &A, const Matrix_Dense<std::complex<double> > &B, std::complex<double> beta, Matrix_Dense<std::complex<double> > &C, bool transA, bool transB)
+{
+    int rows = transA ? A.ncols : A.nrows, cols = transB ? B.nrows : B.ncols;
+    if (C.nrows != rows || C.ncols != cols) eslog::error("invalid dimension.\n");
+    if (A.shape != Matrix_Shape::FULL) eslog::error("invalid shape.\n");
+    if (B.shape != Matrix_Shape::FULL) eslog::error("invalid shape.\n");
+    cblas_zgemm(CblasRowMajor, transA ? CblasTrans : CblasNoTrans, transB ? CblasTrans : CblasNoTrans, C.nrows, C.ncols, transA ? A.nrows : A.ncols, &alpha, A.vals, A.ncols, B.vals, B.ncols, &beta, C.vals, C.ncols);
+}
+
+template <>
 void multiply(double alpha, const Matrix_Dense<double> &A, const Vector_Dense<double> &B, double beta, Vector_Dense<double> &C, bool transA)
 {
     int rows = transA ? A.ncols : A.nrows;
     if (C.size != rows) eslog::error("invalid dimension.\n");
     if (A.shape != Matrix_Shape::FULL) eslog::error("invalid shape.\n");
     cblas_dgemm(CblasRowMajor, transA ? CblasTrans : CblasNoTrans, CblasNoTrans, C.size, 1, transA ? A.nrows : A.ncols, alpha, A.vals, A.ncols, B.vals, 1, beta, C.vals, 1);
+}
+
+template <>
+void multiply(std::complex<double> alpha, const Matrix_Dense<std::complex<double> > &A, const Vector_Dense<std::complex<double> > &B, std::complex<double> beta, Vector_Dense<std::complex<double> > &C, bool transA)
+{
+    int rows = transA ? A.ncols : A.nrows;
+    if (C.size != rows) eslog::error("invalid dimension.\n");
+    if (A.shape != Matrix_Shape::FULL) eslog::error("invalid shape.\n");
+    cblas_zgemm(CblasRowMajor, transA ? CblasTrans : CblasNoTrans, CblasNoTrans, C.size, 1, transA ? A.nrows : A.ncols, &alpha, A.vals, A.ncols, B.vals, 1, &beta, C.vals, 1);
 }
 
 template <>
