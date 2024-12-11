@@ -60,19 +60,21 @@ void Dirichlet<T>::update(const step::Step &step)
                     indices[d].push_back(i);
                 }
             }
-            for (size_t i = 0, j = 0, k = feti.B1[d].ncols - indices[d].size(); i < permutation.size(); ++i) {
-                permutation[i] = (permutation[i] == 1 ? k++ : j++);
+            if (DirectSparseSolver<T>::provideSC()) {
+                DirectSparseSolver<T> Ksolver;
+                Ksolver.commit(feti.K[d]);
+                Ksolver.getSC(sc[d]);
+            } else {
+                for (size_t i = 0, j = 0, k = feti.B1[d].ncols - indices[d].size(); i < permutation.size(); ++i) {
+                    permutation[i] = (permutation[i] == 1 ? k++ : j++);
+                }
+                sc[d].resize(indices[d].size(), indices[d].size());
+                _manual(feti.K[d], sc[d], permutation);
             }
-            Matrix_CSR<T> pK(feti.K[d]);
-            math::permute(pK, permutation);
-
-            sc[d].resize(indices[d].size(), indices[d].size());
-            DirectSparseSolver<T> Ksolver;
-            Ksolver.commit(pK);
-            Ksolver.getSC(sc[d]);
         }
     }
     _print(step);
+    eslog::checkpointln("FETI: COMPUTE DIRICHLET PRECONDITIONER");
 }
 
 template <typename T>
@@ -91,6 +93,44 @@ void Dirichlet<T>::apply(const Vector_Dual<T> &x, Vector_Dual<T> &y)
     }
     applyB(feti, KBtx, y);
     y.synchronize();
+}
+
+template <typename T>
+void Dirichlet<T>::_manual(Matrix_CSR<T> &K, Matrix_Dense<T> &sc, std::vector<int> &permutation)
+{
+    Matrix_CSR<T> pK(K);
+    math::permute(pK, permutation);
+
+    int size_sc = sc.nrows;
+    int size = K.nrows;
+    int size_A11 = size - size_sc;
+
+    Matrix_CSR<T> A11_sp;
+    Matrix_CSR<T> A21_sp; // = A12c_sp
+    Matrix_Dense<T> A22t_dn;
+    Matrix_Dense<T> A12t_dn;
+    Matrix_Dense<T> A11iA12_dn;
+    math::spblas::submatrix(pK, A11_sp ,        0, size_A11,        0, size_A11);
+    math::spblas::submatrix(pK, A21_sp,         0, size_A11, size_A11,     size, false,  true); // = A12c_sp
+    math::spblas::submatrix(pK, A22t_dn, size_A11,     size, size_A11,     size,  true, false, true);
+    math::spblas::submatrix(pK, A12t_dn,        0, size_A11, size_A11,     size,  true, false, true);
+
+    DirectSparseSolver<T, int> solver;
+    solver.commit(A11_sp);
+    solver.symbolicFactorization();
+    solver.numericalFactorization();
+    solver.solve(A12t_dn, A11iA12_dn);
+
+    SpBLAS<Matrix_CSR, T> A21(A21_sp, true);
+    A21.apply(A22t_dn, T{-1}, T{1}, A11iA12_dn, true);
+
+    sc.shape = K.shape;
+    sc.resize(A22t_dn);
+    for(int r = 0, i = 0; r < sc.nrows; ++r) {
+        for(int c = sc.shape == Matrix_Shape::FULL ? 0 : r; c < sc.ncols; ++c, ++i) {
+            sc.vals[i] = A22t_dn.vals[r * sc.ncols + c];
+        }
+    }
 }
 
 template <typename T>

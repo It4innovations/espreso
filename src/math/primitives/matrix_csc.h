@@ -42,9 +42,9 @@ public:
 
     Matrix_CSC(Matrix_CSC &&other): _Matrix_CSC<T, I>{}, type{Matrix_Type::REAL_STRUCTURALLY_SYMMETRIC}, shape{Matrix_Shape::FULL}, _allocated{}, ator(std::move(other.ator))
     {
+        swap(*static_cast<_Matrix_CSC<T, I>*>(this), *static_cast<_Matrix_CSC<T, I>*>(&other));
         type = other.type;
         shape = other.shape;
-        swap(*this, other);
         swap(_allocated, other._allocated);
     }
 
@@ -112,6 +112,16 @@ public:
         this->cols = other.cols;
     }
 
+    template<typename T2>
+    void pattern(const Matrix_CSR<T2,I,A> &other) // do transpose
+    {
+        if constexpr(!A::always_equal) if(this->ator != other.ator) eslog::error("not implemented for unequal allocators\n");
+        realloc(_allocated, other);
+        _Matrix_CSC<T, I>::operator=(_allocated);
+        this->rows = other.rows;
+        this->cols = other.cols;
+    }
+
     template<typename A2>
     void shallowCopy(const Matrix_CSC<T,I,A2> &other)
     {
@@ -160,6 +170,20 @@ protected:
     }
 
     void realloc(_Matrix_CSC<T, I> &m, const _Matrix_CSC<T, I> &other)
+    {
+        if (m.rows) { ator.deallocate(m.rows); m.rows = nullptr; }
+        if (m.cols) { ator.deallocate(m.cols); m.cols = nullptr; }
+
+        if (m.nnz < other.nnz) {
+            clear(m);
+            m.vals = ator.template allocate<T>(other.nnz);
+        }
+        m.nrows = other.nrows;
+        m.ncols = other.ncols;
+        m.nnz = other.nnz;
+    }
+
+    void realloc(_Matrix_CSC<T, I> &m, const _Matrix_CSR<T, I> &other)
     {
         if (m.rows) { ator.deallocate(m.rows); m.rows = nullptr; }
         if (m.cols) { ator.deallocate(m.cols); m.cols = nullptr; }

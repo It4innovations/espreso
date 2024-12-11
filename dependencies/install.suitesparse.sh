@@ -17,7 +17,7 @@ then
         cd "${SUITESPARSE_ROOT}"
         mkdir -p build
         cd build
-        cmake -DCMAKE_C_COMPILER=$1 -DENABLE_CUDA=false -DSUITESPARSE_ENABLE_PROJECTS="cholmod" -DCMAKE_INSTALL_PREFIX=${SUITESPARSE_ROOT}/$1 $2 ..
+        cmake -DCMAKE_C_COMPILER=$1 -DENABLE_CUDA=false -DSUITESPARSE_ENABLE_PROJECTS="cholmod;umfpack" -DCMAKE_INSTALL_PREFIX=${SUITESPARSE_ROOT}/$1 $2 ..
         cmake --build . -j $(nproc)
         cmake --install .
     )

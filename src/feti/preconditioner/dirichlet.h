@@ -18,6 +18,7 @@ struct Dirichlet: public Preconditioner<T> {
     void apply(const Vector_Dual<T> &x, Vector_Dual<T> &y);
 
 protected:
+    void _manual(Matrix_CSR<T> &K, Matrix_Dense<T> &sc, std::vector<int> &permutation);
     void _print(const step::Step &step);
 
     using Preconditioner<T>::feti;
