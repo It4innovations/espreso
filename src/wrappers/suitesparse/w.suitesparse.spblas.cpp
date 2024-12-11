@@ -38,17 +38,14 @@ SpBLAS<Matrix, T, I>::~SpBLAS()
 }
 
 template <template <typename, typename, typename> class Matrix, typename T, typename I>
-SpBLAS<Matrix, T, I>::SpBLAS(MatrixType &a)
-: matrix(&a)
+SpBLAS<Matrix, T, I>::SpBLAS(MatrixType &a, bool trans)
+: matrix(&a), _spblas(nullptr)
 {
-    _spblas = new Matrix_SpBLAS_External_Representation();
-    _start<I>(_spblas->common);
-    setSymmetric(_spblas->A, *matrix);
-    updateSymmetric(_spblas->A, *matrix);
+    insert(a, trans);
 }
 
 template <template <typename, typename, typename> class Matrix, typename T, typename I>
-void SpBLAS<Matrix, T, I>::insert(MatrixType &a)
+void SpBLAS<Matrix, T, I>::insert(MatrixType &a, bool trans)
 {
     matrix = &a;
     if (_spblas) {
@@ -58,11 +55,10 @@ void SpBLAS<Matrix, T, I>::insert(MatrixType &a)
     _spblas = new Matrix_SpBLAS_External_Representation();
     _start<I>(_spblas->common);
     if (a.shape == Matrix_Shape::FULL) {
-        setAsymmetric(_spblas->A, _spblas->common, *matrix);
+        setAsymmetric(_spblas->A, _spblas->common, *matrix, trans);
         matrix = nullptr;
     } else {
-        setSymmetric(_spblas->A, *matrix);
-        updateSymmetric(_spblas->A, *matrix);
+        setSymmetric(_spblas->A, *matrix, trans);
     }
 }
 
@@ -100,6 +96,47 @@ void SpBLAS<Matrix_CSR, std::complex<double>, int>::apply(Vector_Dense<std::comp
 
 template <template <typename, typename, typename> class Matrix, typename T, typename I>
 void SpBLAS<Matrix, T, I>::apply(Vector_Dense<T, I> &y, const T &alpha, const T &beta, const Vector_Dense<T, I> &x)
+{
+    eslog::error("SpBLAS wrapper is incompatible with T=%dB, I=%dB\n", sizeof(T), sizeof(I));
+}
+
+template <>
+void SpBLAS<Matrix_CSR, float, int>::apply(Matrix_Dense<float> &y, const float &alpha, const float &beta, const Matrix_Dense<float> &x, bool trans)
+{
+    if (trans == false) eslog::error("implement SpBLAS::apply with non-transposed matrix\n");
+    update(_spblas->X, x);
+    update(_spblas->Y, y);
+    _spblas->alpha[0] = alpha;
+    _spblas->beta[0] = beta;
+    _apply<int>(_spblas->Y, _spblas->A, _spblas->X, _spblas->alpha, _spblas->beta, _spblas->common);
+}
+
+template <>
+void SpBLAS<Matrix_CSR, double, int>::apply(Matrix_Dense<double> &y, const double &alpha, const double &beta, const Matrix_Dense<double> &x, bool trans)
+{
+    if (trans == false) eslog::error("implement SpBLAS::apply with non-transposed matrix\n");
+    update(_spblas->X, x);
+    update(_spblas->Y, y);
+    _spblas->alpha[0] = alpha;
+    _spblas->beta[0] = beta;
+    _apply<int>(_spblas->Y, _spblas->A, _spblas->X, _spblas->alpha, _spblas->beta, _spblas->common);
+}
+
+template <>
+void SpBLAS<Matrix_CSR, std::complex<double>, int>::apply(Matrix_Dense<std::complex<double>, int> &y, const std::complex<double> &alpha, const std::complex<double> &beta, const Matrix_Dense<std::complex<double> > &x, bool trans)
+{
+    if (trans == false) eslog::error("implement SpBLAS::apply with non-transposed matrix\n");
+    update(_spblas->X, x);
+    update(_spblas->Y, y);
+    _spblas->alpha[0] = alpha.real();
+    _spblas->alpha[1] = alpha.imag();
+    _spblas->beta[0] = beta.real();
+    _spblas->beta[1] = beta.imag();
+    _apply<int>(_spblas->Y, _spblas->A, _spblas->X, _spblas->alpha, _spblas->beta, _spblas->common);
+}
+
+template <template <typename, typename, typename> class Matrix, typename T, typename I>
+void SpBLAS<Matrix, T, I>::apply(Matrix_Dense<T, I> &y, const T &alpha, const T &beta, const Matrix_Dense<T, I> &x, bool trans)
 {
     eslog::error("SpBLAS wrapper is incompatible with T=%dB, I=%dB\n", sizeof(T), sizeof(I));
 }

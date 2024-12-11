@@ -106,7 +106,7 @@ constexpr int _getCholmodStype(Matrix_Shape shape)
 }
 
 template <typename T, typename I>
-static inline void setSymmetric(cholmod_sparse* &A, const Matrix_CSR<T, I> &M)
+static inline void setSymmetric(cholmod_sparse* &A, const Matrix_CSR<T, I> &M, bool trans)
 {
     if (!A) A = new cholmod_sparse();
     A->nrow = M.ncols; // CSR -> CSC, it works only for symmetric matrices
@@ -117,15 +117,15 @@ static inline void setSymmetric(cholmod_sparse* &A, const Matrix_CSR<T, I> &M)
     A->i = M.cols;
     A->x = M.vals;
 
-    A->stype = (-1) * _getCholmodStype(M.shape); // (-1)* <=> CSR -> CSC
-    A->xtype = CHOLMOD_PATTERN;
+    A->stype = (trans ? 1 : -1) * _getCholmodStype(M.shape); // (-1)* <=> CSR -> CSC
+    A->xtype = _getCholmodXtype<T>();;
     A->dtype = _getCholmodDtype<T>();
     A->sorted = 1;
     A->packed = 1;
 }
 
 template <typename T, typename I>
-static inline void setAsymmetric(cholmod_sparse* &A, cholmod_common &common, const Matrix_CSR<T, I> &M)
+static inline void setAsymmetric(cholmod_sparse* &A, cholmod_common &common, const Matrix_CSR<T, I> &M, bool trans)
 {
     if (A) delete A;
     cholmod_sparse* At = new cholmod_sparse();
@@ -144,15 +144,12 @@ static inline void setAsymmetric(cholmod_sparse* &A, cholmod_common &common, con
     At->packed = 1;
 
     // CSR -> CSC
-    At = _transpose<I>(A, common);
-    delete At;
-}
-
-template <typename T, typename I>
-static inline void updateSymmetric(cholmod_sparse *A, const Matrix_CSR<T, I> &M)
-{
-    A->x = M.vals;
-    A->xtype = _getCholmodXtype<T>();
+    if (trans) {
+        A = At;
+    } else {
+        A = _transpose<I>(At, common);
+        delete At;
+    }
 }
 
 template <typename T, typename I>

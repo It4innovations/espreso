@@ -18,13 +18,14 @@ struct SpBLAS {
     using MatrixType = Matrix<T, I, cpu_allocator>;
 
     SpBLAS();
-    SpBLAS(MatrixType &a);
+    SpBLAS(MatrixType &a, bool trans = false);
     ~SpBLAS();
 
-    void insert(MatrixType &a);
+    void insert(MatrixType &a, bool trans = false);
 
     // y = alpha * A * x + beta * y
     void apply(Vector_Dense<T, I> &y, const T &alpha, const T &beta, const Vector_Dense<T, I> &x);
+    void apply(Matrix_Dense<T, I> &y, const T &alpha, const T &beta, const Matrix_Dense<T, I> &x, bool trans);
 
     MatrixType *matrix;
 
