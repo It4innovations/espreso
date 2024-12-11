@@ -84,8 +84,8 @@ STRUCTURAL_MECHANICS {
       FETI {
         METHOD          TOTAL_FETI;
         DUAL_OPERATOR     IMPLICIT;
-        PRECISION            1E-08;
-        PRECISION_IN         1E-08;
+        PRECISION            1E-07;
+        PRECISION_IN         1E-07;
         REGULARIZATION    ANALYTIC;
         MAX_STAGNATION        1000;
         ITERATIVE_SOLVER    [ARG7];
