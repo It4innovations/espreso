@@ -84,6 +84,7 @@ bool FETI<T>::update(const step::Step &step)
         Vector_Dual<T>::initBuffers();
     }
 
+    projector->orthonormalizeKernels(step);
     dualOperator->update(step);
     projector->update(step);
     preconditioner->update(step);

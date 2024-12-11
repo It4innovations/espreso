@@ -4,7 +4,6 @@
 
 #include "analysis/math/vector_distributed.h"
 #include "feti/feti.h"
-#include "cluster.faces.h"
 #include "equalityconstrains.h"
 #include "mortar.h"
 #include "fixedwall.h"
@@ -22,7 +21,6 @@ struct Constrains {
     MortarContact<T> mortar;
     FixedWall<T> fw;
     FixedSphere<T> fs;
-    ClusterFacesGluing<T> cfg;
 };
 
 }

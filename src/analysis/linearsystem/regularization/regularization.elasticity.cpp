@@ -477,9 +477,6 @@ void Regularization<T>::set(FETI<T> &feti, StructuralMechanicsLoadStepConfigurat
             if (R1)     setR1    (feti.K[d], feti.R1[d], feti.decomposition, d);
             if (regMat) setRegMat(feti.K[d], feti.RegMat[d], NtNNtN[d], feti.decomposition, d, onSurface);
         }
-        if (R1) {
-            orthonormalize(feti);
-        }
     }
 }
 

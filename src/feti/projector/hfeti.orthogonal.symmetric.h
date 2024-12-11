@@ -30,6 +30,8 @@ struct HFETIOrthogonalSymmetric: public Projector<T> {
     void set(const step::Step &step);
     void update(const step::Step &step);
 
+    void orthonormalizeKernels(const step::Step &step);
+
 protected:
     void _computeDualGraph();
     void _setG();

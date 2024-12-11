@@ -174,6 +174,30 @@ void HFETIOrthogonalSymmetric<T>::_setG()
 }
 
 template<typename T>
+void HFETIOrthogonalSymmetric<T>::orthonormalizeKernels(const step::Step &step)
+{
+    std::vector<int> offset;
+    Matrix_Dense<T> _R1;
+    for (size_t d = 0; d < feti.R1.size(); ++d) {
+        offset.push_back(_R1.ncols);
+        _R1.nrows = std::max(_R1.nrows, feti.R1[d].nrows);
+        _R1.ncols += feti.R1[d].ncols;
+    }
+    _R1.resize(_R1.nrows, _R1.ncols);
+    for (size_t d = 0; d < feti.R1.size(); ++d) {
+        for (int r = 0; r < feti.R1[d].nrows; ++r) {
+            math::blas::copy(feti.R1[d].ncols, _R1.vals + _R1.ncols * r + offset[d], 1, feti.R1[d].vals + feti.R1[d].ncols * r, 1);
+        }
+    }
+    math::orthonormalize(_R1);
+    for (size_t d = 0; d < feti.R1.size(); ++d) {
+        for (int r = 0; r < feti.R1[d].nrows; ++r) {
+            math::blas::copy(feti.R1[d].ncols, feti.R1[d].vals + feti.R1[d].ncols * r, 1, _R1.vals + _R1.ncols * r + offset[d], 1);
+        }
+    }
+}
+
+template<typename T>
 void HFETIOrthogonalSymmetric<T>::_updateG()
 {
     math::set(G, T{0});

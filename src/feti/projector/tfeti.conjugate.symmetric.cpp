@@ -131,6 +131,15 @@ void TFETIConjugateSymmetric<T>::_setG()
 }
 
 template<typename T>
+void TFETIConjugateSymmetric<T>::orthonormalizeKernels(const step::Step &step)
+{
+    #pragma omp parallel for
+    for (size_t d = 0; d < feti.R1.size(); ++d) {
+        math::orthonormalize(feti.R1[d]);
+    }
+}
+
+template<typename T>
 void TFETIConjugateSymmetric<T>::_updateG()
 {
     auto vbegin = dual.vertices.find(feti.decomposition->dbegin);

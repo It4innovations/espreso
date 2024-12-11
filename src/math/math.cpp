@@ -505,6 +505,7 @@ template <typename T, typename I> void _getKernel(Matrix_Dense<T, I> &A, Matrix_
 }
 
 template <> void orthonormalize(Matrix_Dense<double, int> &A) { _orthonormalize(A); }
+template <> void orthonormalize(Matrix_Dense<std::complex<double>, int> &A) { _orthonormalize(A); }
 template <> void permute(Matrix_CSR<double, int> &A, const std::vector<int> &perm) { _permute(A, perm); }
 template <> void permute(Matrix_Dense<double, int> &A, const std::vector<int> &perm) { _permute(A, perm); }
 template <> void getKernel<double, int>(Matrix_CSR<double, int> &A, Matrix_Dense<double, int> &R, Matrix_CSR<double, int> &regMat, int maxDefect, int scSize) { _getKernel<double, int>(A, R, regMat, maxDefect, scSize); };

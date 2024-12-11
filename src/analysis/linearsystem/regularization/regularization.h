@@ -18,7 +18,6 @@ protected:
     void analyze(FETI<T> &feti, Settings &settings, Configuration &configuration);
 
     void empty(FETI<T> &feti);
-    void orthonormalize(FETI<T> &feti);
     void algebraic(FETI<T> &feti, int defect, int sc_size);
 
     void set    (FETI<T> &feti, HeatTransferLoadStepConfiguration &configuration);

@@ -60,9 +60,6 @@ void Regularization<T>::update(FETI<T> &feti, HeatTransferLoadStepConfiguration 
             if (R1     && feti.updated.K) updateR1    (feti.K[d], feti.R1[d]);
             if (regMat && feti.updated.K) updateRegMat(feti.K[d], feti.RegMat[d]);
         }
-        if (R1) {
-            orthonormalize(feti);
-        }
     } else {
         algebraic(feti, 1, feti.configuration.sc_size);
     }

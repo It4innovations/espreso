@@ -18,6 +18,8 @@ struct Projector {
     virtual void set(const step::Step &step) =0;
     virtual void update(const step::Step &step) =0;
 
+    virtual void orthonormalizeKernels(const step::Step &step) =0;
+
     void info();
     void reset();
 

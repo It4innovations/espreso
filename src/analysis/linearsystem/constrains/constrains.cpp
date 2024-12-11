@@ -21,10 +21,6 @@ void Constrains<T>::set(const step::Step &step, FETI<T> &feti, const Vector_Dist
         fs.set(step, feti, dirichlet);
         break;
     }
-
-    if (feti.configuration.method == FETIConfiguration::METHOD::HYBRID_FETI) {
-        cfg.set(step, feti);
-    }
 }
 
 template <typename T>
@@ -39,10 +35,6 @@ void Constrains<T>::update(const step::Step &step, FETI<T> &feti, const Vector_D
         fw.update(step, feti, dirichlet);
         fs.update(step, feti, dirichlet);
         break;
-    }
-
-    if (feti.configuration.method == FETIConfiguration::METHOD::HYBRID_FETI) {
-        cfg.update(step, feti);
     }
 }
 

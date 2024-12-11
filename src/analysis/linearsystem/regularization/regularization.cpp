@@ -29,48 +29,6 @@ void Regularization<T>::empty(FETI<T> &feti)
 }
 
 template <typename T>
-void Regularization<T>::orthonormalize(FETI<T> &feti)
-{
-    if (!feti.updated.K) {
-        return;
-    }
-    if (feti.configuration.regularization == FETIConfiguration::REGULARIZATION::ALGEBRAIC) {
-        // automatically orthogonal
-        return;
-    }
-
-    bool cluster = (feti.configuration.method == FETIConfiguration::METHOD::TOTAL_FETI) || (feti.configuration.projector_opt & FETIConfiguration::PROJECTOR_OPT::FULL);
-
-    std::vector<int> offset;
-    Matrix_Dense<T> _R1;
-
-    if (cluster) {
-        for (size_t d = 0; d < feti.R1.size(); ++d) {
-            offset.push_back(_R1.ncols);
-            _R1.nrows = std::max(_R1.nrows, feti.R1[d].nrows);
-            _R1.ncols += feti.R1[d].ncols;
-        }
-        _R1.resize(_R1.nrows, _R1.ncols);
-        for (size_t d = 0; d < feti.R1.size(); ++d) {
-            for (int r = 0; r < feti.R1[d].nrows; ++r) {
-                math::blas::copy(feti.R1[d].ncols, _R1.vals + _R1.ncols * r + offset[d], 1, feti.R1[d].vals + feti.R1[d].ncols * r, 1);
-            }
-        }
-        math::orthonormalize(_R1);
-        for (size_t d = 0; d < feti.R1.size(); ++d) {
-            for (int r = 0; r < feti.R1[d].nrows; ++r) {
-                math::blas::copy(feti.R1[d].ncols, feti.R1[d].vals + feti.R1[d].ncols * r, 1, _R1.vals + _R1.ncols * r + offset[d], 1);
-            }
-        }
-    } else {
-        #pragma omp parallel for
-        for (size_t d = 0; d < feti.R1.size(); ++d) {
-            math::orthonormalize(feti.R1[d]);
-        }
-    }
-}
-
-template <typename T>
 void Regularization<T>::algebraic(FETI<T> &feti, int defect, int sc_size)
 {
     if (feti.configuration.projector == FETIConfiguration::PROJECTOR::CONJUGATE) {
