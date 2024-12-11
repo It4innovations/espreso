@@ -73,7 +73,7 @@ ASSEMBLER_32_WS_INTEL:
 PHYSICS_32_WS_INTEL:
   extends: INSTALL_32_WS_INTEL
   script:
-    - sh tests/run.phycal_solver.sh
+    - sh tests/run.physical_solver.sh
 
 FETI_32_WS_INTEL:
   extends: INSTALL_32_WS_INTEL
@@ -104,7 +104,7 @@ ASSEMBLER_64_WS_INTEL:
 PHYSICS_64_WS_INTEL:
   extends: INSTALL_64_WS_INTEL
   script:
-    - sh tests/run.phycal_solver.sh
+    - sh tests/run.physical_solver.sh
 
 FETI_64_WS_INTEL:
   extends: INSTALL_64_WS_INTEL
@@ -139,7 +139,7 @@ ASSEMBLER_32_WS_FOSS:
 PHYSICS_32_WS_FOSS:
   extends: INSTALL_32_WS_FOSS
   script:
-    - sh tests/run.phycal_solver.sh
+    - sh tests/run.physical_solver.sh
 
 FETI_32_WS_FOSS:
   extends: INSTALL_32_WS_FOSS
@@ -170,7 +170,7 @@ ASSEMBLER_64_WS_FOSS:
 PHYSICS_64_WS_INTEL:
   extends: INSTALL_64_WS_FOSS
   script:
-    - sh tests/run.phycal_solver.sh
+    - sh tests/run.physical_solver.sh
 
 FETI_64_WS_INTEL:
   extends: INSTALL_64_WS_FOSS
@@ -205,7 +205,7 @@ ASSEMBLER_32_WS_FOSS_MKL:
 PHYSICS_32_WS_FOSS_MKL:
   extends: INSTALL_32_WS_FOSS_MKL
   script:
-    - sh tests/run.phycal_solver.sh
+    - sh tests/run.physical_solver.sh
 
 FETI_32_WS_FOSS_MKL:
   extends: INSTALL_32_WS_FOSS_MKL
@@ -236,7 +236,7 @@ ASSEMBLER_64_WS_FOSS_MKL:
 PHYSICS_64_WS_INTEL_MKL:
   extends: INSTALL_64_WS_FOSS_MKL
   script:
-    - sh tests/run.phycal_solver.sh
+    - sh tests/run.physical_solver.sh
 
 FETI_64_WS_INTEL_MKL:
   extends: INSTALL_64_WS_FOSS_MKL
