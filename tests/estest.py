@@ -40,6 +40,9 @@ class ESPRESOTest:
         if error.find("GPU acceleration is not supported") != -1:
             error = error[error.find(":") + 2:error.find("\n")]
             raise NotSupportedConfiguration(error)
+        elif error.find("only sequential MKL PDSS interface is supported") != -1:
+            error = error[error.find(":") + 2:error.find("\n")]
+            raise NotSupportedConfiguration(error)
         else:
             raise Exception("\n {4} \n\nPath: {3}\n\nProgram: {2}\n\nERROR:{0}\n\nOUTPUT{1}\n\n {4} \n\n\n".format(
                 error, output, " ".join(ESPRESOTest._program), ESPRESOTest.path, "#" * 80))

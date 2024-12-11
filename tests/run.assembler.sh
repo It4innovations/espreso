@@ -1,3 +1,3 @@
 
-nose2 -v -s tests/heatTransfer/
-nose2 -v -s tests/structuralMechanics/
+nose2 -c tests/nose2.cfg -v -s tests/heatTransfer/
+nose2 -c tests/nose2.cfg -v -s tests/structuralMechanics/
