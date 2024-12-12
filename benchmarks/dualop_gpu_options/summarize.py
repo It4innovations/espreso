@@ -106,7 +106,9 @@ for dir_name in os.listdir(results_dir):
             run_path = dir_path + "/" + subdir + "/" + run_id
             info_lines = read_file_to_string(run_path + "/info.txt").split("\n")
             problem = list(filter(lambda line: "ecf_file" in line, info_lines))[0].split(".")[1]
-            output_lines = read_file_to_string(run_path + "/last/espreso." + problem + ".log").split("\n")
+            logfilepath = run_path + "/last/espreso." + problem + ".log"
+            if os.path.exists(logfilepath): output_lines = read_file_to_string(logfilepath).split("\n")
+            else: output_lines = ""
             n_domains_total = 1
             n_elements_per_domain = 1
             n_dofs_per_domain = 1
@@ -156,7 +158,10 @@ for dir_name in os.listdir(results_dir):
                 outstring.write(";")
 
             outstring.write(";")
-            outstring.write("\"" + read_file_to_string(run_path + "/last/espreso." + problem + ".err").split("\0")[0].replace("\n", ";").replace("\"", "\"\"") + "\";")
+            errfilepath = run_path + "/stderr.txt"
+            if os.path.exists(errfilepath): errfilecontent = read_file_to_string(errfilepath)
+            else: errfilecontent = "err file does not exist"
+            outstring.write("\"" + errfilecontent.split("\0")[0].replace("\n", ";").replace("\"", "\"\"") + "\";")
             outstring.write("\"" + read_file_to_string(run_path + "/timeout.txt").replace("\n", ";").replace("\"", "\"\"") + "\";")
             outstring.write(";")
         
@@ -215,7 +220,9 @@ for dir_name in os.listdir(results_dir):
             run_path = dir_path + "/" + subdir + "/" + run_id
             info_lines = read_file_to_string(run_path + "/info.txt").split("\n")
             problem = list(filter(lambda line: "ecf_file" in line, info_lines))[0].split(".")[1]
-            output_lines = read_file_to_string(run_path + "/last/espreso." + problem + ".log").split("\n")
+            logfilepath = run_path + "/last/espreso." + problem + ".log"
+            if os.path.exists(logfilepath): output_lines = read_file_to_string(logfilepath).split("\n")
+            else: output_lines = ""
             n_domains_total = 1
             n_elements_per_domain = 1
             n_dofs_per_domain = 1
@@ -265,7 +272,10 @@ for dir_name in os.listdir(results_dir):
                 outstring.write(";")
 
             outstring.write(";")
-            outstring.write("\"" + read_file_to_string(run_path + "/last/espreso." + problem + ".err").split("\0")[0].replace("\n", ";").replace("\"", "\"\"") + "\";")
+            errfilepath = run_path + "/stderr.txt"
+            if os.path.exists(errfilepath): errfilecontent = read_file_to_string(errfilepath)
+            else: errfilecontent = "err file does not exist"
+            outstring.write("\"" + errfilecontent.split("\0")[0].replace("\n", ";").replace("\"", "\"\"") + "\";")
             outstring.write("\"" + read_file_to_string(run_path + "/timeout.txt").replace("\n", ";").replace("\"", "\"\"") + "\";")
             outstring.write(";")
         
@@ -324,7 +334,9 @@ for dir_name in os.listdir(results_dir):
             run_path = dir_path + "/" + subdir + "/" + run_id
             info_lines = read_file_to_string(run_path + "/info.txt").split("\n")
             problem = list(filter(lambda line: "ecf_file" in line, info_lines))[0].split(".")[1]
-            output_lines = read_file_to_string(run_path + "/last/espreso." + problem + ".log").split("\n")
+            logfilepath = run_path + "/last/espreso." + problem + ".log"
+            if os.path.exists(logfilepath): output_lines = read_file_to_string(logfilepath).split("\n")
+            else: output_lines = ""
             n_domains_total = 1
             n_elements_per_domain = 1
             n_dofs_per_domain = 1
@@ -374,7 +386,10 @@ for dir_name in os.listdir(results_dir):
                 outstring.write(";")
 
             outstring.write(";")
-            outstring.write("\"" + read_file_to_string(run_path + "/last/espreso." + problem + ".err").split("\0")[0].replace("\n", ";").replace("\"", "\"\"") + "\";")
+            errfilepath = run_path + "/stderr.txt"
+            if os.path.exists(errfilepath): errfilecontent = read_file_to_string(errfilepath)
+            else: errfilecontent = "err file does not exist"
+            outstring.write("\"" + errfilecontent.split("\0")[0].replace("\n", ";").replace("\"", "\"\"") + "\";")
             outstring.write("\"" + read_file_to_string(run_path + "/timeout.txt").replace("\n", ";").replace("\"", "\"\"") + "\";")
             outstring.write(";")
         

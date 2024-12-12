@@ -40,7 +40,21 @@ machines_tools_dualops = [
     ("e4red",    "cudamodern",   "EXPLICIT_GPU"),
     ("e4red",    "cudamodern",   "IMPLICIT_GPU"),
     ("e4red",    "suitesparse",  "EXPLICIT_SC"),
-    ("e4red",    "suitesparse",  "IMPLICIT")
+    ("e4red",    "suitesparse",  "IMPLICIT"),
+    ("tiber",    "oneapi",       "EXPLICIT_GPU"),
+    ("tiber",    "oneapi",       "IMPLICIT_GPU"),
+    ("tiber",    "mklpardiso",   "EXPLICIT_SC"),
+    ("tiber",    "mklpardiso",   "IMPLICIT"),
+    ("tiber",    "suitesparse",  "EXPLICIT_SC"),
+    ("tiber",    "suitesparse",  "IMPLICIT"),
+    ("sprddr",   "mklpardiso",   "EXPLICIT_SC"),
+    ("sprddr",   "mklpardiso",   "IMPLICIT"),
+    ("sprddr",   "suitesparse",  "EXPLICIT_SC"),
+    ("sprddr",   "suitesparse",  "IMPLICIT"),
+    ("sprhbm",   "mklpardiso",   "EXPLICIT_SC"),
+    ("sprhbm",   "mklpardiso",   "IMPLICIT"),
+    ("sprhbm",   "suitesparse",  "EXPLICIT_SC"),
+    ("sprhbm",   "suitesparse",  "IMPLICIT")
 ]
 
 
@@ -56,7 +70,7 @@ datestr = datetime.now().strftime("%Y%m%d_%H%M%S")
 graphdir = basedir + "/graphs/" + datestr
 os.makedirs(graphdir, exist_ok=True)
 
-summarize_datestr = "20241110_210703"
+summarize_datestr = "20241209_183948"
 
 csv_all = read_csv_to_arrays(basedir + "/summary/" + summarize_datestr + "/timings.csv")
 csv_header = csv_all[0]
@@ -261,6 +275,7 @@ for problem in problems:
                     if machine == "e4red": linestyle = "--"
                     if machine == "lumi": linestyle = "-."
                     if machine == "tiber": linestyle = ":"
+                    if "spr" in machine: linestyle = (0, (3, 1, 1, 1, 1, 1))
                     color = "black"
                     if tool == "cudalegacy": color = "green"
                     if tool == "cudamodern": color = "lawngreen"
@@ -391,6 +406,7 @@ for problem in problems:
                     if machine == "e4red": linestyle = "--"
                     if machine == "lumi": linestyle = "-."
                     if machine == "tiber": linestyle = ":"
+                    if "spr" in machine: linestyle = (0, (3, 1, 1, 1, 1, 1))
                     color = "black"
                     if tool == "cudalegacy": color = "green"
                     if tool == "cudamodern": color = "lawngreen"

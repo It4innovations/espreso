@@ -33,7 +33,7 @@ graphdir = basedir + "/graphs/" + datestr
 os.makedirs(graphdir, exist_ok=True)
 
 
-summarize_datestr = "20241020_192350"
+summarize_datestr = "20241124_195027"
 summarize_stage = "update"
 
 
@@ -96,16 +96,16 @@ for problem in problems:
         csv_data1 = list(filter(lambda row: row[problem_col] == problem, csv_data0))
         csv_data2 = list(filter(lambda row: row[element_type_col] == element_type, csv_data1))
 
-        # machines = ["karolina", "lumi"]
         # machines = ["karolina"]
         machines = ["lumi"]
+        # machines = ["tiber"]
         for machine in machines:
             csv_data3 = list(filter(lambda row: row[machine_col] == machine, csv_data2))
 
-            # tools = ["cudalegacy", "cudamodern"]
             # tools = ["cudalegacy"]
             # tools = ["cudamodern"]
             tools = ["rocm"]
+            # tools = ["oneapi"]
             for tool in tools:
                 csv_data4 = list(filter(lambda row: row[tool_col] == tool, csv_data3))
 
@@ -212,8 +212,10 @@ for problem in problems:
                                                         #     auto_x_vals = list(x_vals)
                                                         #     auto_y_vals = list(auto_x_vals)
                                                         is_all_auto = (concurrency == "AUTO" and path == "AUTO" and trs1_factor_storage == "AUTO" and trs2_factor_storage == "AUTO" and trs1_solve_type == "AUTO" and trs2_solve_type == "AUTO" and trsm_rhs_sol_order == "AUTO" and apply_scatter_gather_where == "AUTO")
+                                                        is_any_auto = (concurrency == "AUTO" or  path == "AUTO" or  trs1_factor_storage == "AUTO" or  trs2_factor_storage == "AUTO" or  trs1_solve_type == "AUTO" or  trs2_solve_type == "AUTO" or  trsm_rhs_sol_order == "AUTO" or  apply_scatter_gather_where == "AUTO")
                                                         if is_all_auto:
                                                             auto_y_vals = list(y_vals)
+                                                        if is_any_auto:
                                                             continue
                                                         # ####################
                                                         # # implicit lumi rocm
@@ -298,6 +300,17 @@ for problem in problems:
                                                         #         for j in range(0,len(x_vals)):
                                                         #             if x_vals[j] <= 12000:
                                                         #                 best_y_vals[j] = y_vals[j]
+                                                        # ###########################
+                                                        # # explicit tiber oneapi
+                                                        # if concurrency == "PARALLEL" and trsm_rhs_sol_order == "ROW_MAJOR" and path == "HERK":
+                                                        #     if trs1_solve_type == "LHH" and trs1_factor_storage == "DENSE":
+                                                        #         best_y_vals = list(y_vals)
+                                                        # ###########################
+                                                        # # implicit tiber oneapi
+                                                        # if concurrency == "PARALLEL" and trs1_factor_storage == "DENSE" and trs2_factor_storage == "DENSE":
+                                                        #     if trs1_solve_type == "LHH" and trs2_solve_type == "U":
+                                                        #         best_y_vals = list(y_vals)
+
 
                                                         linestyle = "-"
                                                         color = "black"
@@ -321,15 +334,16 @@ for problem in problems:
                                                         color = "blue"
                                                         label = "this one"
                                                         title = concurrency + "-" + path + "-" + trsm_rhs_sol_order + "-" + trs1_factor_storage + "-" + trs2_factor_storage + "-" + trs1_solve_type + "-" + trs2_solve_type + "-" + "sg" + apply_scatter_gather_where
-                                                        # title = concurrency + "-" + trs1_factor_storage + "-" + trs2_factor_storage + "-" + trs1_solve_type + "-" + trs2_solve_type
                                                         row = 4 * concurrency_idx + 2 * path_idx + trsm_rhs_sol_order_idx
                                                         col = 8 * trs1_factor_storage_idx + 4 * trs2_factor_storage_idx + 2 * trs1_solve_type_idx + trs2_solve_type_idx
+                                                        # title = concurrency + "-" + trs1_factor_storage + "-" + trs2_factor_storage + "-" + trs1_solve_type + "-" + trs2_solve_type
                                                         # row = 2 * trs1_factor_storage_idx + trs2_factor_storage_idx
                                                         # col = 4 * concurrency_idx + 2 * trs1_solve_type_idx + trs2_solve_type_idx
+                                                        # title = apply_scatter_gather_where + "-" + concurrency
                                                         # row = apply_scatter_gather_where_idx
                                                         # col = concurrency_idx
                                                         myaxs = axs[row,col]
-                                                        myaxs.loglog(x_vals, y_vals, base=2, color=color, linestyle=linestyle, label=label)
+                                                        if any(y == y for y in y_vals): myaxs.loglog(x_vals, y_vals, base=2, color=color, linestyle=linestyle, label=label)
                                                         if title != None: myaxs.set_title(title, fontsize="medium")
 
                     axs_flat = []

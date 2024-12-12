@@ -215,7 +215,21 @@ machines_tools_dualops = [
     ("e4red",    "cudamodern",   "EXPLICIT_GPU"),
     ("e4red",    "cudamodern",   "IMPLICIT_GPU"),
     ("e4red",    "suitesparse",  "EXPLICIT_SC"),
-    ("e4red",    "suitesparse",  "IMPLICIT")
+    ("e4red",    "suitesparse",  "IMPLICIT"),
+    ("tiber",    "oneapi",       "EXPLICIT_GPU"),
+    ("tiber",    "oneapi",       "IMPLICIT_GPU"),
+    ("tiber",    "mklpardiso",   "EXPLICIT_SC"),
+    ("tiber",    "mklpardiso",   "IMPLICIT"),
+    ("tiber",    "suitesparse",  "EXPLICIT_SC"),
+    ("tiber",    "suitesparse",  "IMPLICIT"),
+    ("sprddr",   "mklpardiso",   "EXPLICIT_SC"),
+    ("sprddr",   "mklpardiso",   "IMPLICIT"),
+    ("sprddr",   "suitesparse",  "EXPLICIT_SC"),
+    ("sprddr",   "suitesparse",  "IMPLICIT"),
+    ("sprhbm",   "mklpardiso",   "EXPLICIT_SC"),
+    ("sprhbm",   "mklpardiso",   "IMPLICIT"),
+    ("sprhbm",   "suitesparse",  "EXPLICIT_SC"),
+    ("sprhbm",   "suitesparse",  "IMPLICIT")
 ]
 
 csv_all = read_csv_to_arrays(summ_dir + "/timings.csv")
