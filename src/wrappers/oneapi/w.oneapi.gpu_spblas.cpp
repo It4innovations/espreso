@@ -423,7 +423,7 @@ namespace spblas {
         T one = 1.0;
         if(stage == 'A') {
             // no idea and hard to figure out, just guess and hope
-            buffersizes.allocsize_internal = ((gpu::mgm::operation_remove_conj(transpose) == 'N') ? (0) : (8 * matrix->nnz));
+            buffersizes.allocsize_internal = ((gpu::mgm::operation_remove_conj(op) == 'N') ? (0) : (8 * matrix->nnz));
         }
         if(stage == 'B') {
             buffersizes.persistent = 0;

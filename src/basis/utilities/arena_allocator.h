@@ -24,10 +24,10 @@ namespace espreso {
     public:
         arena_allocator_resource() = delete;
         arena_allocator_resource(arena_allocator_resource const &) = delete;
-        arena_allocator_resource(arena_allocator_resource &&) = default;
+        arena_allocator_resource(arena_allocator_resource &&) = delete;
         ~arena_allocator_resource() = default;
         arena_allocator_resource & operator=(arena_allocator_resource const &) = delete;
-        arena_allocator_resource & operator=(arena_allocator_resource &&) = default;
+        arena_allocator_resource & operator=(arena_allocator_resource &&) = delete;
     public:
         arena_allocator_resource(void * mem_, size_t capacity_, size_t align_B_) : mem((char*)mem_), capacity(capacity_), align_B(align_B_)
         {
