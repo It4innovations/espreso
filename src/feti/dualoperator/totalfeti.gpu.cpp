@@ -1990,17 +1990,12 @@ void TotalFETIGpu<T,I>::_apply(const Vector_Dual<T> &x_cluster, Vector_Dual<T> &
 {
     if(stage != 4) eslog::error("invalid stage when calling apply\n");
 
-    double start = eslog::time();
-
     gpu::mgm::set_device(device);
 
     if(is_explicit && config->apply_scatter_gather_where == DEVICE::CPU) apply_explicit_sgcpu(x_cluster, y_cluster);
     if(is_explicit && config->apply_scatter_gather_where == DEVICE::GPU) apply_explicit_sggpu(x_cluster, y_cluster);
     if(is_implicit && config->apply_scatter_gather_where == DEVICE::CPU) apply_implicit_sgcpu(x_cluster, y_cluster);
     if(is_implicit && config->apply_scatter_gather_where == DEVICE::GPU) apply_implicit_sggpu(x_cluster, y_cluster);
-
-    double stop = eslog::time();
-    eslog::info("TMP DUAL OPERATOR APPLY TIME:  %12.6f ms\n", (stop - start) * 1000.0);
 }
 
 template <typename T, typename I>
@@ -2021,27 +2016,6 @@ void TotalFETIGpu<T,I>::apply(const Matrix_Dual<T> &x_cluster, Matrix_Dual<T> &y
         _apply(_x, _y);
     }
     y_cluster.synchronize();
-}
-
-template <typename T, typename I>
-void TotalFETIGpu<T,I>::clear_gpu_cache()
-{
-    size_t size = size_t{1} << 30;
-    bool alloc_from_pool = true;
-    if(size > cbmba_res_device->get_max_capacity() / 2) alloc_from_pool = false;
-    void * data;
-    if(alloc_from_pool) {
-        cbmba_res_device->do_transaction([&](){ data = cbmba_res_device->allocate(size, align_B); });
-    }
-    else {
-        size_t allocated = 0;
-        gpu::mgm::memalloc_device_max(data, allocated, size);
-        if(allocated < size) size = allocated;
-    }
-    gpu::mgm::memset_submit(main_q, data, size, 0);
-    gpu::mgm::device_wait();
-    if(alloc_from_pool) cbmba_res_device->deallocate(data);
-    else gpu::mgm::memfree_device(data);
 }
 
 template <typename T, typename I>

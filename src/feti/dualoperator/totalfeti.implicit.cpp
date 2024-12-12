@@ -231,13 +231,12 @@ void TotalFETIImplicit<T>::update(const step::Step &step)
 template <typename T>
 void TotalFETIImplicit<T>::_apply(const Vector_Dual<T> &x, Vector_Dual<T> &y)
 {
-    double start = eslog::time();
     #pragma omp parallel for
     for (size_t di = 0; di < feti.K.size(); ++di) {
         applyBt(feti, di, x, Btx[di]);
         KSolver[di].solve(Btx[di], KplusBtx[di]);
     }
-    applyB(feti, KplusBtx, y, &start);
+    applyB(feti, KplusBtx, y);
 }
 
 template <typename T>
