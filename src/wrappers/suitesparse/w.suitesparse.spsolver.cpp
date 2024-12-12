@@ -226,6 +226,8 @@ void DirectSparseSolver<T, I>::commit(const Matrix_CSR<T,I> &a)
         ext->umfpack.matrix = &a;
         _defaults<I>(ext->umfpack.control);
         switch (a.type) {
+        case Matrix_Type::UNSET_INVALID_NONE:
+            eslog::error("Invalid/unset matrix type\n");
         case Matrix_Type::REAL_SYMMETRIC_INDEFINITE:
         case Matrix_Type::REAL_SYMMETRIC_POSITIVE_DEFINITE:
         case Matrix_Type::COMPLEX_SYMMETRIC:
@@ -660,6 +662,8 @@ void DirectSparseSolver<T, I>::getSC(Matrix_Dense<T,I> &sc, std::vector<int> &in
 {
     // todo: can I use the existing factor so i don't have to factorize again?
     // computes the schur complement S = A22 - A21 * A11^{-1} * A12, where A = [A11, A12; A21, A22]
+
+    eslog::error("suitesparse spsolver getSC: not implemented\n");
 
     // generalized and moved to Dirichlet preconditioner
 //    switch (ext->solver) {

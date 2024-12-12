@@ -51,9 +51,6 @@ DualOperator<T>* DualOperator<T>::create(FETI<T> &feti, const step::Step &step)
             dual = new TotalFETIGpu<T,int>(feti, DualOperatorStrategy::IMPLICIT);
             break;
         case FETIConfiguration::DUAL_OPERATOR::EXPLICIT_SC:
-            if(!DirectSparseSolver<T,int>::provideSC()) {
-                eslog::globalerror("Sparse solver does not provide Shur complement.\n");
-            }
             eslog::info(" = DUAL OPERATOR                                  EXPLICIT TOTAL FETI USING SCHUR COMPLEMENT = \n");
             dual = new TotalFETIExplicitSc<T,int>(feti);
             break;

@@ -183,6 +183,7 @@ void TotalFETIExplicitSc<T,I>::update(const step::Step &step)
             data.sc_solver.solveA11(feti.f[di], Kplus_fs[di]);
         }
         applyB(feti, Kplus_fs, d);
+        d.synchronize();
         math::add(d, T{-1}, feti.c);
     }
     tm_maked.stop();

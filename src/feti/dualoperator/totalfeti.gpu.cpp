@@ -2006,7 +2006,7 @@ void TotalFETIGpu<T,I>::_apply(const Vector_Dual<T> &x_cluster, Vector_Dual<T> &
 template <typename T, typename I>
 void TotalFETIGpu<T,I>::apply(const Vector_Dual<T> &x_cluster, Vector_Dual<T> &y_cluster)
 {
-    apply(x_cluster, y_cluster);
+    _apply(x_cluster, y_cluster);
     y_cluster.synchronize();
 }
 
