@@ -1,7 +1,6 @@
 
 stages:
-  - DUMMY_32
-  - DUMMY_64
+  - DUMMY
   - INTEL_32
   - INTEL_64
   - FOSS_32
@@ -21,9 +20,9 @@ stages:
 #                        DUMMY INSTALATION WITHOUT ANY THIRD-PARTY LIBRARY                        #
 # ----------------------------------------------------------------------------------------------- #
 
-INSTALL_32_DUMMY_WS:
+D4W_INSTALL:
   extends: .ws
-  stage: DUMMY_32
+  stage: DUMMY
   cache:
     key: deps-dummy-32
     paths:
@@ -35,9 +34,9 @@ INSTALL_32_DUMMY_WS:
     - ./waf configure --skip-suitesparse --skip-mkl --skip-blas --skip-lapack
     - ./waf -j8
 
-INSTALL_64_DUMMY_WS:
+D8W_INSTALL:
   extends: .ws
-  stage: DUMMY_64
+  stage: DUMMY
   cache:
     key: deps-dummy-64
     paths:
@@ -53,7 +52,7 @@ INSTALL_64_DUMMY_WS:
 #                                     INTEL MPI + INTEL MKL                                       #
 # ----------------------------------------------------------------------------------------------- #
 
-INSTALL_32_WS_INTEL:
+I4W_INSTALL:
   extends: .ws
   stage: INTEL_32
   cache:
@@ -64,27 +63,27 @@ INSTALL_32_WS_INTEL:
   before_script:
     - . env/workstation.intel.32.sh
 
-BASIC_32_WS_INTEL:
-  extends: INSTALL_32_WS_INTEL
+I4W_BASIC:
+  extends: I4W_INSTALL
   script:
     - sh tests/run.basic.sh
 
-ASSEMBLER_32_WS_INTEL:
-  extends: INSTALL_32_WS_INTEL
+I4W_ASSEMBLER:
+  extends: I4W_INSTALL
   script:
     - sh tests/run.assembler.sh
 
-PHYSICS_32_WS_INTEL:
-  extends: INSTALL_32_WS_INTEL
+I4W_PHYSICS:
+  extends: I4W_INSTALL
   script:
     - sh tests/run.physical_solver.sh
 
-FETI_32_WS_INTEL:
-  extends: INSTALL_32_WS_INTEL
+I4W_FETI:
+  extends: I4W_INSTALL
   script:
     - sh tests/run.feti.sh
 
-INSTALL_64_WS_INTEL:
+I8W_INSTALL:
   extends: .ws
   stage: INTEL_64
   cache:
@@ -95,23 +94,23 @@ INSTALL_64_WS_INTEL:
   before_script:
     - . env/workstation.intel.64.sh
 
-BASIC_64_WS_INTEL:
-  extends: INSTALL_64_WS_INTEL
+I8W_BASIC:
+  extends: I8W_INSTALL
   script:
     - sh tests/run.basic.sh
 
-ASSEMBLER_64_WS_INTEL:
-  extends: INSTALL_64_WS_INTEL
+I8W_ASSEMBLER:
+  extends: I8W_INSTALL
   script:
     - sh tests/run.assembler.sh
 
-PHYSICS_64_WS_INTEL:
-  extends: INSTALL_64_WS_INTEL
+I8W_PHYSICS:
+  extends: I8W_INSTALL
   script:
     - sh tests/run.physical_solver.sh
 
-FETI_64_WS_INTEL:
-  extends: INSTALL_64_WS_INTEL
+I8W_FETI:
+  extends: I8W_INSTALL
   script:
     - sh tests/run.feti.sh
 
@@ -119,7 +118,7 @@ FETI_64_WS_INTEL:
 #                                    OPEN MPI + SUITESPARSE                                       #
 # ----------------------------------------------------------------------------------------------- #
 
-INSTALL_32_WS_FOSS:
+F4W_INSTALL:
   extends: .ws
   stage: FOSS_32
   cache:
@@ -130,27 +129,27 @@ INSTALL_32_WS_FOSS:
   before_script:
     - . env/workstation.foss.32.sh
 
-BASIC_32_WS_FOSS:
-  extends: INSTALL_32_WS_FOSS
+F4W_BASIC:
+  extends: F4W_INSTALL
   script:
     - sh tests/run.basic.sh
 
-ASSEMBLER_32_WS_FOSS:
-  extends: INSTALL_32_WS_FOSS
+F4W_ASSEMBLER:
+  extends: F4W_INSTALL
   script:
     - sh tests/run.assembler.sh
 
-PHYSICS_32_WS_FOSS:
-  extends: INSTALL_32_WS_FOSS
+F4W_PHYSICS:
+  extends: F4W_INSTALL
   script:
     - sh tests/run.physical_solver.sh
 
-FETI_32_WS_FOSS:
-  extends: INSTALL_32_WS_FOSS
+F4W_FETI:
+  extends: F4W_INSTALL
   script:
     - sh tests/run.feti.sh
 
-INSTALL_64_WS_FOSS:
+F8W_INSTALL:
   extends: .ws
   stage: FOSS_64
   cache:
@@ -161,23 +160,23 @@ INSTALL_64_WS_FOSS:
   before_script:
     - . env/workstation.foss.64.sh
 
-BASIC_64_WS_FOSS:
-  extends: INSTALL_64_WS_FOSS
+F8W_BASIC:
+  extends: F8W_INSTALL
   script:
     - sh tests/run.basic.sh
 
-ASSEMBLER_64_WS_FOSS:
-  extends: INSTALL_64_WS_FOSS
+F8W_ASSEMBLER:
+  extends: F8W_INSTALL
   script:
     - sh tests/run.assembler.sh
 
-PHYSICS_64_WS_INTEL:
-  extends: INSTALL_64_WS_FOSS
+F8W_PHYSICS:
+  extends: F8W_INSTALL
   script:
     - sh tests/run.physical_solver.sh
 
-FETI_64_WS_INTEL:
-  extends: INSTALL_64_WS_FOSS
+F8W_FETI:
+  extends: F8W_INSTALL
   script:
     - sh tests/run.feti.sh
 
@@ -185,7 +184,7 @@ FETI_64_WS_INTEL:
 #                                         OPEN MPI + MKL                                          #
 # ----------------------------------------------------------------------------------------------- #
 
-INSTALL_32_WS_FOSS_MKL:
+M4W_INSTALL:
   extends: .ws
   stage: FOSS_MKL_32
   cache:
@@ -196,27 +195,27 @@ INSTALL_32_WS_FOSS_MKL:
   before_script:
     - . env/workstation.foss.mkl.32.sh
 
-BASIC_32_WS_FOSS_MKL:
-  extends: INSTALL_32_WS_FOSS_MKL
+M4W_BASIC:
+  extends: M4W_INSTALL
   script:
     - sh tests/run.basic.sh
 
-ASSEMBLER_32_WS_FOSS_MKL:
-  extends: INSTALL_32_WS_FOSS_MKL
+M4W_ASSEMBLER:
+  extends: M4W_INSTALL
   script:
     - sh tests/run.assembler.sh
 
-PHYSICS_32_WS_FOSS_MKL:
-  extends: INSTALL_32_WS_FOSS_MKL
+M4W_PHYSICS:
+  extends: M4W_INSTALL
   script:
     - sh tests/run.physical_solver.sh
 
-FETI_32_WS_FOSS_MKL:
-  extends: INSTALL_32_WS_FOSS_MKL
+M4W_FETI:
+  extends: M4W_INSTALL
   script:
     - sh tests/run.feti.sh
 
-INSTALL_64_WS_FOSS_MKL:
+M8W_INSTALL:
   extends: .ws
   stage: FOSS_MKL_64
   cache:
@@ -227,23 +226,23 @@ INSTALL_64_WS_FOSS_MKL:
   before_script:
     - . env/workstation.foss.mkl.64.sh
 
-BASIC_64_WS_FOSS_MKL:
-  extends: INSTALL_64_WS_FOSS_MKL
+M8W_BASIC:
+  extends: M8W_INSTALL
   script:
     - sh tests/run.basic.sh
 
-ASSEMBLER_64_WS_FOSS_MKL:
-  extends: INSTALL_64_WS_FOSS_MKL
+M8W_ASSEMBLER:
+  extends: M8W_INSTALL
   script:
     - sh tests/run.assembler.sh
 
-PHYSICS_64_WS_INTEL_MKL:
-  extends: INSTALL_64_WS_FOSS_MKL
+M8W_PHYSICS:
+  extends: M8W_INSTALL
   script:
     - sh tests/run.physical_solver.sh
 
-FETI_64_WS_INTEL_MKL:
-  extends: INSTALL_64_WS_FOSS_MKL
+M8W_FETI:
+  extends: M8W_INSTALL
   script:
     - sh tests/run.feti.sh
 
