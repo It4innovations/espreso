@@ -3,19 +3,19 @@ import os, unittest
 from estest import ESPRESOTest
 
 cases = [
-    ("          PCG", "     NONE", 500),
-    ("          PCG", "DIRICHLET",  90),
-    ("       SMALBE", "    NONE", 1000), # there are slightly different convergence criteria 
-    ("       SMALBE", "DIRICHLET",  90),
-    ("orthogonalPCG", "     NONE", 150),
-    ("orthogonalPCG", "DIRICHLET ", 50),
+    ("          PCG", "     NONE", "350"),
+    ("          PCG", "DIRICHLET", " 90"),
+    ("       SMALBE", "     NONE", "500"), # there are slightly different convergence criteria 
+    ("       SMALBE", "DIRICHLET", " 90"),
+    ("orthogonalPCG", "     NONE", "150"),
+    ("orthogonalPCG", "DIRICHLET", " 50"),
     ]
 
 class Solver(unittest.TestCase):
 
     def setUp(self):
         ESPRESOTest.path = os.path.dirname(__file__)
-        ESPRESOTest.args = [ "TRIANGLE3", 2, 2, 2, 2, 30, 20, "PCG", "NONE", 50 ]
+        ESPRESOTest.args = [ "TRIANGLE3", 2, 2, 2, 2, 40, 5, "PCG", "NONE", 50 ]
         ESPRESOTest.processes = 4
         ESPRESOTest.set_threads(2)
 
