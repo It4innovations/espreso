@@ -470,6 +470,7 @@ static void DSSsolve(std::unique_ptr<Solver_External_Representation<T,I>> &ext, 
     case Solver_External_Representation<T, I>::SOLVER::UMFPACK: {
         if (ext->umfpack.numeric == nullptr) eslog::error("solve: invalid order of operations in spsolver\n");
 
+        solution.resize(rhs.nrows, rhs.ncols);
         for (int c = 0; c < rhs.nrows; ++c) {
             _solve<T, I>(sys, ext->umfpack.full, solution.vals + c * solution.ncols, rhs.vals + c * rhs.ncols, ext->umfpack.numeric, ext->umfpack.control, ext->umfpack.info);
             check(ext->umfpack.info);
