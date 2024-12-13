@@ -87,7 +87,7 @@ STRUCTURAL_MECHANICS {
         METHOD          TOTAL_FETI;
         PRECONDITIONER   DIRICHLET;
         ITERATIVE_SOLVER       PCG;
-        REGULARIZATION   ALGEBRAIC;
+        REGULARIZATION    ANALYTIC;
         PRECISION             1e-7;
       }
 

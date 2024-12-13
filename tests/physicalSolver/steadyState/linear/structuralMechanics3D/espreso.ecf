@@ -94,7 +94,7 @@ STRUCTURAL_MECHANICS {
         PRECISION            1E-08;
         MAX_ITERATIONS         150;
         ITERATIVE_SOLVER       PCG;
-        REGULARIZATION   ALGEBRAIC;
+        REGULARIZATION    ANALYTIC;
       }
 
       DISPLACEMENT {

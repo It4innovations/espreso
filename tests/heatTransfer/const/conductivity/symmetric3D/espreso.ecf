@@ -97,7 +97,7 @@ HEAT_TRANSFER {
         PRECONDITIONER      LUMPED;
         PRECISION            1E-09;
         ITERATIVE_SOLVER       PCG;
-        REGULARIZATION   ALGEBRAIC;
+        REGULARIZATION    ANALYTIC;
         MAX_ITERATIONS         500;
       }
 
