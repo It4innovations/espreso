@@ -103,7 +103,7 @@ HEAT_TRANSFER {
         PROJECTOR_OPT       [ARG9];
         PRECISION            1E-09;
         ITERATIVE_SOLVER       PCG;
-        REGULARIZATION   ALGEBRAIC;
+#        REGULARIZATION   ALGEBRAIC;
         MAX_ITERATIONS     [ARG10];
       }
 
