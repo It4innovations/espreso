@@ -287,6 +287,7 @@ void DirectSparseSolver<T, I>::symbolicFactorization()
 {
     switch (ext->solver) {
     case Solver_External_Representation<T, I>::SOLVER::CHOLMOD: {
+        if (ext->cholmod.cm_matrix_view->nrow == 0 || ext->cholmod.cm_matrix_view->ncol == 0) return;
         if (ext->cholmod.stage != 2) eslog::error("symbolicFactorization: invalid order of operations in spsolver\n");
 
         ext->cholmod.cm_factor_super = _analyze<I>(ext->cholmod.cm_matrix_view, ext->cholmod.cm_common);
@@ -300,6 +301,7 @@ void DirectSparseSolver<T, I>::symbolicFactorization()
     } break;
 
     case Solver_External_Representation<T, I>::SOLVER::UMFPACK: {
+        if (ext->umfpack.full.nrows == 0 || ext->umfpack.full.ncols == 0) return;
         if (ext->umfpack.symbolic != nullptr) eslog::error("symbolicFactorization: invalid order of operations in spsolver\n");
 
         _symbolic<T, I>(ext->umfpack.full, &ext->umfpack.symbolic, ext->umfpack.control, ext->umfpack.info);
@@ -313,6 +315,7 @@ void DirectSparseSolver<T, I>::numericalFactorization()
 {
     switch (ext->solver) {
     case Solver_External_Representation<T, I>::SOLVER::CHOLMOD: {
+        if (ext->cholmod.cm_matrix_view->nrow == 0 || ext->cholmod.cm_matrix_view->ncol == 0) return;
         if (ext->cholmod.stage < 3) eslog::error("numericalFactorization: invalid order of operations in spsolver\n");
 
         _factorize<I>(ext->cholmod.cm_factor_super, ext->cholmod.cm_matrix_view, ext->cholmod.cm_common);
@@ -321,6 +324,7 @@ void DirectSparseSolver<T, I>::numericalFactorization()
     } break;
 
     case Solver_External_Representation<T, I>::SOLVER::UMFPACK: {
+        if (ext->umfpack.full.nrows == 0 || ext->umfpack.full.ncols == 0) return;
         if (ext->umfpack.symbolic == nullptr) eslog::error("numericalFactorization: invalid order of operations in spsolver\n");
 
         switch (ext->umfpack.matrix->shape) { // UMFPACK need fully stored matrix in CSC
@@ -370,8 +374,11 @@ void DirectSparseSolver<T, I>::numericalFactorization()
 template <typename T, typename I>
 static void DSSsolve(std::unique_ptr<Solver_External_Representation<T,I>> &ext, Vector_Dense<T, I> &rhs, Vector_Dense<T, I> &solution, int sys)
 {
+    if (rhs.size == 0 || rhs.size == 0) return;
+
     switch (ext->solver) {
     case Solver_External_Representation<T, I>::SOLVER::CHOLMOD: {
+        if (ext->cholmod.cm_matrix_view->nrow == 0 || ext->cholmod.cm_matrix_view->ncol == 0) return;
         if (ext->cholmod.stage < 4) eslog::error("solve: invalid order of operations in spsolver\n");
 
         cholmod_dense cm_rhs;
@@ -391,7 +398,9 @@ static void DSSsolve(std::unique_ptr<Solver_External_Representation<T,I>> &ext, 
         _free<I>(cm_sol, ext->cholmod.cm_common);
     } break;
     case Solver_External_Representation<T, I>::SOLVER::UMFPACK: {
+        if (ext->umfpack.full.nrows == 0 || ext->umfpack.full.ncols == 0) return;
         if (ext->umfpack.numeric == nullptr) eslog::error("solve: invalid order of operations in spsolver\n");
+
         _solve<T, I>(UMFPACK_A, ext->umfpack.full, solution.vals, rhs.vals, ext->umfpack.numeric, ext->umfpack.control, ext->umfpack.info);
         check(ext->umfpack.info);
     } break;
@@ -450,8 +459,11 @@ void DirectSparseSolver<T, I>::solveDiagonal(Vector_Dense<T, I> &rhs, Vector_Den
 template <typename T, typename I>
 static void DSSsolve(std::unique_ptr<Solver_External_Representation<T,I>> &ext, Matrix_Dense<T, I> &rhs, Matrix_Dense<T, I> &solution, int sys)
 {
+    if (rhs.nrows == 0 || rhs.ncols == 0) return;
+
     switch (ext->solver) {
     case Solver_External_Representation<T, I>::SOLVER::CHOLMOD: {
+        if (ext->cholmod.cm_matrix_view->nrow == 0 || ext->cholmod.cm_matrix_view->ncol == 0) return;
         if (ext->cholmod.stage < 4) eslog::error("solve: invalid order of operations in spsolver\n");
 
         cholmod_dense cm_rhs;
@@ -472,6 +484,7 @@ static void DSSsolve(std::unique_ptr<Solver_External_Representation<T,I>> &ext, 
         _free<I>(cm_sol, ext->cholmod.cm_common);
     } break;
     case Solver_External_Representation<T, I>::SOLVER::UMFPACK: {
+        if (ext->umfpack.full.nrows == 0 || ext->umfpack.full.ncols == 0) return;
         if (ext->umfpack.numeric == nullptr) eslog::error("solve: invalid order of operations in spsolver\n");
 
         solution.resize(rhs.nrows, rhs.ncols);

@@ -52,6 +52,7 @@ void SpBLAS<Matrix, T, I>::insert(MatrixType &a, bool trans)
         _finish<I>(_spblas->common);
         delete _spblas;
     }
+
     _spblas = new Matrix_SpBLAS_External_Representation();
     _start<I>(_spblas->common);
     if (a.shape == Matrix_Shape::FULL) {
@@ -65,6 +66,8 @@ void SpBLAS<Matrix, T, I>::insert(MatrixType &a, bool trans)
 template <>
 void SpBLAS<Matrix_CSR, float, int>::apply(Vector_Dense<float> &y, const float &alpha, const float &beta, const Vector_Dense<float> &x)
 {
+    if (_spblas->A->nrow == 0 || _spblas->A->ncol == 0) return;
+
     update(_spblas->X, x);
     update(_spblas->Y, y);
     _spblas->alpha[0] = alpha;
@@ -75,6 +78,8 @@ void SpBLAS<Matrix_CSR, float, int>::apply(Vector_Dense<float> &y, const float &
 template <>
 void SpBLAS<Matrix_CSR, double, int>::apply(Vector_Dense<double> &y, const double &alpha, const double &beta, const Vector_Dense<double> &x)
 {
+    if (_spblas->A->nrow == 0 || _spblas->A->ncol == 0) return;
+
     update(_spblas->X, x);
     update(_spblas->Y, y);
     _spblas->alpha[0] = alpha;
@@ -85,6 +90,8 @@ void SpBLAS<Matrix_CSR, double, int>::apply(Vector_Dense<double> &y, const doubl
 template <>
 void SpBLAS<Matrix_CSR, std::complex<double>, int>::apply(Vector_Dense<std::complex<double>, int> &y, const std::complex<double> &alpha, const std::complex<double> &beta, const Vector_Dense<std::complex<double> > &x)
 {
+    if (_spblas->A->nrow == 0 || _spblas->A->ncol == 0) return;
+
     update(_spblas->X, x);
     update(_spblas->Y, y);
     _spblas->alpha[0] = alpha.real();
@@ -103,7 +110,9 @@ void SpBLAS<Matrix, T, I>::apply(Vector_Dense<T, I> &y, const T &alpha, const T 
 template <>
 void SpBLAS<Matrix_CSR, float, int>::apply(Matrix_Dense<float> &y, const float &alpha, const float &beta, const Matrix_Dense<float> &x, bool trans)
 {
+    if (_spblas->A->nrow == 0 || _spblas->A->ncol == 0) return;
     if (trans == false) eslog::error("implement SpBLAS::apply with non-transposed matrix\n");
+
     update(_spblas->X, x);
     update(_spblas->Y, y);
     _spblas->alpha[0] = alpha;
@@ -114,7 +123,9 @@ void SpBLAS<Matrix_CSR, float, int>::apply(Matrix_Dense<float> &y, const float &
 template <>
 void SpBLAS<Matrix_CSR, double, int>::apply(Matrix_Dense<double> &y, const double &alpha, const double &beta, const Matrix_Dense<double> &x, bool trans)
 {
+    if (_spblas->A->nrow == 0 || _spblas->A->ncol == 0) return;
     if (trans == false) eslog::error("implement SpBLAS::apply with non-transposed matrix\n");
+
     update(_spblas->X, x);
     update(_spblas->Y, y);
     _spblas->alpha[0] = alpha;
@@ -125,7 +136,9 @@ void SpBLAS<Matrix_CSR, double, int>::apply(Matrix_Dense<double> &y, const doubl
 template <>
 void SpBLAS<Matrix_CSR, std::complex<double>, int>::apply(Matrix_Dense<std::complex<double>, int> &y, const std::complex<double> &alpha, const std::complex<double> &beta, const Matrix_Dense<std::complex<double> > &x, bool trans)
 {
+    if (_spblas->A->nrow == 0 || _spblas->A->ncol == 0) return;
     if (trans == false) eslog::error("implement SpBLAS::apply with non-transposed matrix\n");
+
     update(_spblas->X, x);
     update(_spblas->Y, y);
     _spblas->alpha[0] = alpha.real();

@@ -118,7 +118,7 @@ static inline void setSymmetric(cholmod_sparse* &A, const Matrix_CSR<T, I> &M, b
     A->x = M.vals;
 
     A->stype = (trans ? 1 : -1) * _getCholmodStype(M.shape); // (-1)* <=> CSR -> CSC
-    A->xtype = _getCholmodXtype<T>();;
+    A->xtype = _getCholmodXtype<T>();
     A->dtype = _getCholmodDtype<T>();
     A->sorted = 1;
     A->packed = 1;
