@@ -77,7 +77,7 @@ STRUCTURAL_MECHANICS {
 
   LOAD_STEPS_SETTINGS {
     1 {
-      DURATION_TIME     1;
+      DURATION_TIME  5e-1;
       TYPE      TRANSIENT;
       MODE      NONLINEAR;
       SOLVER         FETI;
