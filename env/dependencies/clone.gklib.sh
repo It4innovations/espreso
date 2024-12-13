@@ -1,6 +1,7 @@
 #!/bin/bash
 
 DEPENDENCIES_DIR="${PWD}/dependencies"
+mkdir -p "${DEPENDENCIES_DIR}"
 
 GKLIB_ROOT="${DEPENDENCIES_DIR}/gklib"
 if [ ! -d "${GKLIB_ROOT}" ]

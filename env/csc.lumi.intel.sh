@@ -14,10 +14,10 @@ source dependencies/oneAPI-2024.2.0/install/setvars.sh
 
 
 
-. dependencies/install.cmake.sh x86_64
-. dependencies/install.gklib.sh icx
-. dependencies/install.metis32.sh icx
-. dependencies/install.parmetis32.sh mpiicx
+. env/dependencies/install.cmake.sh x86_64
+. env/dependencies/install.gklib.sh icx
+. env/dependencies/install.metis32.sh icx
+. env/dependencies/install.parmetis32.sh mpiicx
 
 
 

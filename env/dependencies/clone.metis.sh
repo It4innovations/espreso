@@ -1,6 +1,7 @@
 #!/bin/bash
 
 DEPENDENCIES_DIR="${PWD}/dependencies"
+mkdir -p "${DEPENDENCIES_DIR}"
 
 METIS_ROOT="${DEPENDENCIES_DIR}/metis"
 if [ ! -d "${METIS_ROOT}" ]

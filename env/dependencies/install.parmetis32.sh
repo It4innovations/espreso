@@ -1,13 +1,14 @@
 #!/bin/bash
 
 DEPENDENCIES_DIR="${PWD}/dependencies"
+mkdir -p "${DEPENDENCIES_DIR}"
 
 COMPILER_C="${1}"
 
 PARMETIS_ROOT="${DEPENDENCIES_DIR}/parmetis"
 if [ ! -d "${PARMETIS_ROOT}" ]
 then
-    sh ${DEPENDENCIES_DIR}/clone.parmetis.sh
+    sh env/dependencies/clone.parmetis.sh
 fi
 
 INSTALL_DIR="${PARMETIS_ROOT}/install_${COMPILER_C}_32"

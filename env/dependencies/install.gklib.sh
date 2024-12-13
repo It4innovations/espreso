@@ -1,13 +1,14 @@
 #!/bin/bash
 
 DEPENDENCIES_DIR="${PWD}/dependencies"
+mkdir -p "${DEPENDENCIES_DIR}"
 
 COMPILER_C="${1}"
 
 GKLIB_ROOT="${DEPENDENCIES_DIR}/gklib"
 if [ ! -d "${GKLIB_ROOT}" ]
 then
-    sh ${DEPENDENCIES_DIR}/clone.gklib.sh
+    sh env/dependencies/clone.gklib.sh
 fi
 
 INSTALL_DIR="${GKLIB_ROOT}/install_${COMPILER_C}"

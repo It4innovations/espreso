@@ -1,6 +1,7 @@
 #!/bin/bash
 
 DEPENDENCIES_DIR="${PWD}/dependencies"
+mkdir -p "${DEPENDENCIES_DIR}"
 
 PRECICE_ROOT="${DEPENDENCIES_DIR}/precice-3.1.2"
 if [ ! -d "${PRECICE_ROOT}" ]

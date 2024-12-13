@@ -8,6 +8,7 @@ fi
 arch="${1}"
 
 DEPENDENCIES_DIR="${PWD}/dependencies"
+mkdir -p "${DEPENDENCIES_DIR}"
 
 VERSION_CMAKE="3.30.5"
 version_name="cmake-${VERSION_CMAKE}-linux-${arch}"

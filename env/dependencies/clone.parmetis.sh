@@ -1,6 +1,7 @@
 #!/bin/bash
 
 DEPENDENCIES_DIR="${PWD}/dependencies"
+mkdir -p "${DEPENDENCIES_DIR}"
 
 PARMETIS_ROOT="${DEPENDENCIES_DIR}/parmetis-4.0.3"
 if [ ! -d "${PARMETIS_ROOT}" ]

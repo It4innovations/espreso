@@ -11,8 +11,8 @@ export ES_INT_WIDTH=32
 export BLAS_LIBRARIES=sci_cray
 export LAPACK_LIBRARIES=sci_cray
 
-. dependencies/install.gklib.sh cc
-. dependencies/install.metis32.sh cc
-. dependencies/install.parmetis32.sh mpicc
-. dependencies/install.suitesparse.sh cc ftn "-DLAPACK_LIBRARIES=/opt/cray/pe/libsci/24.03.0/CRAYCLANG/17.0/x86_64/lib/libsci_cray.so -DBLAS_LIBRARIES=/opt/cray/pe/libsci/24.03.0/CRAYCLANG/17.0/x86_64/lib/libsci_cray.so"
-. dependencies/install.precice.sh mpic++
+. env/dependencies/install.gklib.sh cc
+. env/dependencies/install.metis32.sh cc
+. env/dependencies/install.parmetis32.sh mpicc
+. env/dependencies/install.suitesparse.sh cc ftn "-DLAPACK_LIBRARIES=/opt/cray/pe/libsci/24.03.0/CRAYCLANG/17.0/x86_64/lib/libsci_cray.so -DBLAS_LIBRARIES=/opt/cray/pe/libsci/24.03.0/CRAYCLANG/17.0/x86_64/lib/libsci_cray.so"
+. env/dependencies/install.precice.sh mpic++

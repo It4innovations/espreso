@@ -1,21 +1,23 @@
 #!/bin/bash
 
 DEPENDENCIES_DIR="${PWD}/dependencies"
+mkdir -p "${DEPENDENCIES_DIR}"
 
 COMPILER_C="${1}"
 
-METIS_ROOT="${DEPENDENCIES_DIR}/metis"
-if [ ! -d "${METIS_ROOT}" ]
+PARMETIS_ROOT="${DEPENDENCIES_DIR}/parmetis"
+if [ ! -d "${PARMETIS_ROOT}" ]
 then
-    sh ${DEPENDENCIES_DIR}/clone.metis.sh
+    sh env/dependencies/clone.parmetis.sh
 fi
 
-INSTALL_DIR="${METIS_ROOT}/install_${COMPILER_C}_32"
+INSTALL_DIR="${PARMETIS_ROOT}/install_${COMPILER_C}_64"
 if [ ! -d "${INSTALL_DIR}" ]
 then
     (
-        cd "${METIS_ROOT}"
-        sed -i 's/add_subdirectory(\"programs\")/#add_subdirectory(\"programs\")/'g CMakeLists.txt
+        cd "${PARMETIS_ROOT}"
+        sed -i 's/add_subdirectory(${METIS_PATH}/#add_subdirectory(${METIS_PATH}/'g CMakeLists.txt
+        sed -i 's/add_subdirectory(programs)/#add_subdirectory(programs)/'g CMakeLists.txt
         make clean
         make config shared=1 cc=${COMPILER_C} prefix="${INSTALL_DIR}"
         make -j$(nproc)
@@ -32,3 +34,4 @@ export LD_LIBRARY_PATH="${prepend_to_LD_LIBRARY_PATH}:${LD_LIBRARY_PATH}"
 echo "          CPATH+=${prepend_to_CPATH}"
 echo "   LIBRARY_PATH+=${prepend_to_LIBRARY_PATH}"
 echo "LD_LIBRARY_PATH+=${prepend_to_LD_LIBRARY_PATH}"
+

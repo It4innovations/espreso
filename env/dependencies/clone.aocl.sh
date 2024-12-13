@@ -1,6 +1,7 @@
 #!/bin/bash
 
 DEPENDENCIES_DIR="${PWD}/dependencies"
+mkdir -p "${DEPENDENCIES_DIR}"
 
 AOCL_ROOT="${DEPENDENCIES_DIR}/aocl-linux-aocc-4.1.0"
 if [ ! -d "${AOCL_ROOT}" ]

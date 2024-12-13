@@ -19,10 +19,10 @@ if [ "${cusparse_version}" = "modern" ]; then ml CUDA/12.4.0; fi
 
 
 
-. dependencies/install.suitesparse.sh gcc gfortran
-. dependencies/install.gklib.sh gcc
-. dependencies/install.metis32.sh gcc
-. dependencies/install.parmetis32.sh mpicc
+. env/dependencies/install.suitesparse.sh gcc gfortran
+. env/dependencies/install.gklib.sh gcc
+. env/dependencies/install.metis32.sh gcc
+. env/dependencies/install.parmetis32.sh mpicc
 
 
 

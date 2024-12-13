@@ -1,11 +1,12 @@
 #!/bin/bash
 
 DEPENDENCIES_DIR="${PWD}/dependencies"
+mkdir -p "${DEPENDENCIES_DIR}"
 
 AOCL_ROOT="${DEPENDENCIES_DIR}/aocl-linux-aocc-4.1.0"
 if [ ! -d "${AOCL_ROOT}" ]
 then
-    sh ${DEPENDENCIES_DIR}/clone.aocl.sh
+    sh env/dependencies/clone.aocl.sh
 fi
 
 INSTALL_DIR="${AOCL_ROOT}/install"

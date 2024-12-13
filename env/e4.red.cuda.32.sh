@@ -24,11 +24,11 @@ export LD_LIBRARY_PATH="/opt/share/libs/nvidia/hpc_sdk//Linux_aarch64/23.11/math
 
 
 
-. dependencies/install.cmake.sh aarch64
-. dependencies/install.suitesparse.sh gcc gfortran "-DBLAS_LIBRARIES=libblas.so -DLAPACK_LIBRARIES=liblapack.so"
-. dependencies/install.gklib.sh gcc
-. dependencies/install.metis32.sh gcc
-. dependencies/install.parmetis32.sh mpicc
+. env/dependencies/install.cmake.sh aarch64
+. env/dependencies/install.suitesparse.sh gcc gfortran "-DBLAS_LIBRARIES=libblas.so -DLAPACK_LIBRARIES=liblapack.so"
+. env/dependencies/install.gklib.sh gcc
+. env/dependencies/install.metis32.sh gcc
+. env/dependencies/install.parmetis32.sh mpicc
 
 
 

@@ -30,9 +30,9 @@ if [ "${cpu_spsolver}" == "suitesparse" ]
 then
     . dependencies/install.suitesparse.sh icx ifx
 fi
-. dependencies/install.gklib.sh icx
-. dependencies/install.metis32.sh icx
-. dependencies/install.parmetis32.sh mpiicx
+. env/dependencies/install.gklib.sh icx
+. env/dependencies/install.metis32.sh icx
+. env/dependencies/install.parmetis32.sh mpiicx
 
 
 

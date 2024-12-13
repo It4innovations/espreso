@@ -10,12 +10,12 @@ module load aocc/4.1.0
 
 
 
-. dependencies/install.cmake.sh x86_64
-. dependencies/install.aocl.sh
-. dependencies/install.suitesparse.sh hipcc hipfc "-DLAPACK_LIBRARIES=${PWD}/dependencies/aocl-linux-aocc-4.1.0/install/4.1.0/aocc/lib/libflame.so.4.1.0"
-. dependencies/install.gklib.sh hipcc
-. dependencies/install.metis32.sh hipcc
-. dependencies/install.parmetis32.sh mpicc
+. env/dependencies/install.cmake.sh x86_64
+. env/dependencies/install.aocl.sh
+. env/dependencies/install.suitesparse.sh hipcc hipfc "-DLAPACK_LIBRARIES=${PWD}/dependencies/aocl-linux-aocc-4.1.0/install/4.1.0/aocc/lib/libflame.so.4.1.0"
+. env/dependencies/install.gklib.sh hipcc
+. env/dependencies/install.metis32.sh hipcc
+. env/dependencies/install.parmetis32.sh mpicc
 
 
 

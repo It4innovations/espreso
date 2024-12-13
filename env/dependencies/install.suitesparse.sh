@@ -1,6 +1,7 @@
 #!/bin/bash
 
 DEPENDENCIES_DIR="${PWD}/dependencies"
+mkdir -p "${DEPENDENCIES_DIR}"
 
 VERSION_SUITESPARSE=v7.6.0
 
@@ -12,7 +13,7 @@ SUITESPARSE_DIR="SuiteSparse_${VERSION_SUITESPARSE}"
 SUITESPARSE_ROOT="${DEPENDENCIES_DIR}/${SUITESPARSE_DIR}"
 if [ ! -d "${SUITESPARSE_ROOT}" ]
 then
-  sh ${DEPENDENCIES_DIR}/clone.suitesparse.sh
+  sh env/dependencies/clone.suitesparse.sh
 fi
 
 INSTALL_DIR="${SUITESPARSE_ROOT}/install_${COMPILER_C}"

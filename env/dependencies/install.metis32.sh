@@ -1,23 +1,24 @@
 #!/bin/bash
 
 DEPENDENCIES_DIR="${PWD}/dependencies"
+mkdir -p "${DEPENDENCIES_DIR}"
 
 COMPILER_C="${1}"
 
 METIS_ROOT="${DEPENDENCIES_DIR}/metis"
 if [ ! -d "${METIS_ROOT}" ]
 then
-    sh ${DEPENDENCIES_DIR}/clone.metis.sh
+    sh env/dependencies/clone.metis.sh
 fi
 
-INSTALL_DIR="${METIS_ROOT}/install_${COMPILER_C}_64"
+INSTALL_DIR="${METIS_ROOT}/install_${COMPILER_C}_32"
 if [ ! -d "${INSTALL_DIR}" ]
 then
     (
         cd "${METIS_ROOT}"
         sed -i 's/add_subdirectory(\"programs\")/#add_subdirectory(\"programs\")/'g CMakeLists.txt
         make clean
-        make config shared=1 cc=${COMPILER_C} i64=1 prefix="${INSTALL_DIR}"
+        make config shared=1 cc=${COMPILER_C} prefix="${INSTALL_DIR}"
         make -j$(nproc)
         make install
     )
