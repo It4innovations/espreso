@@ -65,21 +65,25 @@ I4W_INSTALL:
 
 I4W_BASIC:
   extends: I4W_INSTALL
+  needs: ["I4W_INSTALL"]
   script:
     - sh tests/run.basic.sh
 
 I4W_ASSEMBLER:
   extends: I4W_INSTALL
+  needs: ["I4W_INSTALL"]
   script:
     - sh tests/run.assembler.sh
 
 I4W_PHYSICS:
   extends: I4W_INSTALL
+  needs: ["I4W_INSTALL"]
   script:
     - sh tests/run.physical_solver.sh
 
 I4W_FETI:
   extends: I4W_INSTALL
+  needs: ["I4W_INSTALL"]
   script:
     - sh tests/run.feti.sh
 
@@ -96,21 +100,25 @@ I8W_INSTALL:
 
 I8W_BASIC:
   extends: I8W_INSTALL
+  needs: ["I8W_INSTALL"]
   script:
     - sh tests/run.basic.sh
 
 I8W_ASSEMBLER:
   extends: I8W_INSTALL
+  needs: ["I8W_INSTALL"]
   script:
     - sh tests/run.assembler.sh
 
 I8W_PHYSICS:
   extends: I8W_INSTALL
+  needs: ["I8W_INSTALL"]
   script:
     - sh tests/run.physical_solver.sh
 
 I8W_FETI:
   extends: I8W_INSTALL
+  needs: ["I8W_INSTALL"]
   script:
     - sh tests/run.feti.sh
 
@@ -131,21 +139,25 @@ F4W_INSTALL:
 
 F4W_BASIC:
   extends: F4W_INSTALL
+  needs: ["F4W_INSTALL"]
   script:
     - sh tests/run.basic.sh
 
 F4W_ASSEMBLER:
   extends: F4W_INSTALL
+  needs: ["F4W_INSTALL"]
   script:
     - sh tests/run.assembler.sh
 
 F4W_PHYSICS:
   extends: F4W_INSTALL
+  needs: ["F4W_INSTALL"]
   script:
     - sh tests/run.physical_solver.sh
 
 F4W_FETI:
   extends: F4W_INSTALL
+  needs: ["F4W_INSTALL"]
   script:
     - sh tests/run.feti.sh
 
@@ -162,21 +174,25 @@ F8W_INSTALL:
 
 F8W_BASIC:
   extends: F8W_INSTALL
+  needs: ["F8W_INSTALL"]
   script:
     - sh tests/run.basic.sh
 
 F8W_ASSEMBLER:
   extends: F8W_INSTALL
+  needs: ["F8W_INSTALL"]
   script:
     - sh tests/run.assembler.sh
 
 F8W_PHYSICS:
   extends: F8W_INSTALL
+  needs: ["F8W_INSTALL"]
   script:
     - sh tests/run.physical_solver.sh
 
 F8W_FETI:
   extends: F8W_INSTALL
+  needs: ["F8W_INSTALL"]
   script:
     - sh tests/run.feti.sh
 
@@ -197,21 +213,25 @@ M4W_INSTALL:
 
 M4W_BASIC:
   extends: M4W_INSTALL
+  needs: ["M4W_INSTALL"]
   script:
     - sh tests/run.basic.sh
 
 M4W_ASSEMBLER:
   extends: M4W_INSTALL
+  needs: ["M4W_INSTALL"]
   script:
     - sh tests/run.assembler.sh
 
 M4W_PHYSICS:
   extends: M4W_INSTALL
+  needs: ["M4W_INSTALL"]
   script:
     - sh tests/run.physical_solver.sh
 
 M4W_FETI:
   extends: M4W_INSTALL
+  needs: ["M4W_INSTALL"]
   script:
     - sh tests/run.feti.sh
 
@@ -228,21 +248,25 @@ M8W_INSTALL:
 
 M8W_BASIC:
   extends: M8W_INSTALL
+  needs: ["M8W_INSTALL"]
   script:
     - sh tests/run.basic.sh
 
 M8W_ASSEMBLER:
   extends: M8W_INSTALL
+  needs: ["M8W_INSTALL"]
   script:
     - sh tests/run.assembler.sh
 
 M8W_PHYSICS:
   extends: M8W_INSTALL
+  needs: ["M8W_INSTALL"]
   script:
     - sh tests/run.physical_solver.sh
 
 M8W_FETI:
   extends: M8W_INSTALL
+  needs: ["M8W_INSTALL"]
   script:
     - sh tests/run.feti.sh
 
