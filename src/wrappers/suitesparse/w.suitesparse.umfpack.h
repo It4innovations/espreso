@@ -2,11 +2,7 @@
 #ifndef SRC_WRAPPERS_SUITESPARSE_W_SUITESPARSE_UMFPACK_H_
 #define SRC_WRAPPERS_SUITESPARSE_W_SUITESPARSE_UMFPACK_H_
 
-#ifdef SUITESPARSE_HEADER_SUBDIR
 #include "suitesparse/umfpack.h"
-#else // SUITESPARSE_HEADER_DIRECT
-#include "umfpack.h"
-#endif
 
 #include <complex>
 

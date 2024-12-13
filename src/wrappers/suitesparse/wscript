@@ -6,10 +6,6 @@ def configure(ctx):
     if (ctx.options.skip_suitesparse):
         return
 
-    headers_direct = "cholmod.h umfpack.h"
-    headers_subdir = "suitesparse/cholmod.h suitesparse/umfpack.h"
+    headers = "suitesparse/cholmod.h suitesparse/umfpack.h"
     libs = ["cholmod", "umfpack"]
-    if ctx.check_cxx(mandatory=False, msg="Checking for 'suitesparse'", okmsg=" ".join(libs), define_name="HAVE_SUITESPARSE", header_name=headers_direct, lib=libs, uselib_store="SUITESPARSE", global_define=0):
-        ctx.env.append_unique("DEFINES_SUITESPARSE", "SUITESPARSE_HEADER_DIRECT")
-    elif ctx.check_cxx(mandatory=False, msg="Checking for 'suitesparse'", okmsg=" ".join(libs), define_name="HAVE_SUITESPARSE", header_name=headers_subdir, lib=libs, uselib_store="SUITESPARSE", global_define=0):
-        ctx.env.append_unique("DEFINES_SUITESPARSE", "SUITESPARSE_HEADER_SUBDIR")
+    ctx.check_cxx(mandatory=False, msg="Checking for 'suitesparse'", okmsg=" ".join(libs), define_name="HAVE_SUITESPARSE", header_name=headers, lib=libs, uselib_store="SUITESPARSE", global_define=0)
