@@ -6,7 +6,7 @@
 
 #include <complex>
 
-#ifndef HAVE_MKL
+#if defined ESPRESO_FORBID_MKL_PARDISO || not defined HAVE_MKL
 #ifdef HAVE_SUITESPARSE
 
 #include "math/wrappers/math.spsolver.h"
