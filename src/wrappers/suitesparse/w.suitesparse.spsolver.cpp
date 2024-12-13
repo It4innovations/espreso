@@ -6,8 +6,8 @@
 
 #include <complex>
 
-#if defined ESPRESO_FORBID_MKL_PARDISO || not defined HAVE_MKL
 #ifdef HAVE_SUITESPARSE
+#ifdef ESPRESO_USE_WRAPPER_SPSOLVER_SUITESPARSE
 
 #include "math/wrappers/math.spsolver.h"
 #include "w.suitesparse.cholmod.h"
@@ -746,4 +746,3 @@ void DirectSparseSolver<T, I>::getSC(Matrix_Dense<T,I> &sc, std::vector<int> &in
 
 #endif
 #endif
-

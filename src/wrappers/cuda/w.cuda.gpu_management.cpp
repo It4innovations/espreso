@@ -1,5 +1,6 @@
 
 #ifdef HAVE_CUDA
+#ifdef ESPRESO_USE_WRAPPER_GPU_CUDA
 
 #include "gpu/gpu_management.h"
 #include "w.cuda.gpu_management.h"
@@ -206,4 +207,5 @@ namespace mgm {
 
 #include "gpu/gpu_management.inst.hpp"
 
+#endif
 #endif

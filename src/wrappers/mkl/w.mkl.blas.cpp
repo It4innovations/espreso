@@ -5,6 +5,8 @@
 #include <complex>
 
 #ifdef HAVE_MKL
+#ifdef ESPRESO_USE_WRAPPER_DNBLAS_MKL
+
 #include "mkl_blas.h"
 #include "mkl_cblas.h"
 
@@ -208,6 +210,4 @@ void multiply(T alpha, const Vector_Dense<T, I> &A, const Vector_Dense<T, I> &B,
 #include "math/wrappers/math.blas.inst.hpp"
 
 #endif
-
-
-
+#endif

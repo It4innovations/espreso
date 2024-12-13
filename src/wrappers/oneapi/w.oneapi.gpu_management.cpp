@@ -1,5 +1,6 @@
 
 #ifdef HAVE_ONEAPI
+#ifdef ESPRESO_USE_WRAPPER_GPU_ONEAPI
 
 #include "gpu/gpu_management.h"
 #include "w.oneapi.gpu_management.h"
@@ -241,4 +242,5 @@ namespace mgm {
 
 #include "gpu/gpu_management.inst.hpp"
 
+#endif
 #endif

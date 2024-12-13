@@ -1,5 +1,5 @@
 
-import sys, os, logging, subprocess, types, copy
+import sys, os, logging, subprocess, types, copy, waflib
 
 def configure(ctx):
     """ Set compilers """
@@ -62,6 +62,30 @@ def configure(ctx):
 
     """ Recurse to third party libraries wrappers"""
     recurse(ctx)
+
+    # check wrappers and setup defines
+    def setup_wrapper(wrapper_name, requested_lib, all_libs):
+        if requested_lib == "auto":
+            for lib in all_libs:
+                if ctx.env["HAVE_" + lib.upper()]:
+                    requested_lib = lib
+                    break
+            else:
+                requested_lib = "empty"
+        if requested_lib != "empty":
+            if not ctx.env["HAVE_" + requested_lib.upper()]:
+                raise waflib.Errors.ConfigurationError("Requested library " + requested_lib + " for wrapper " + wrapper_name + " is not available")
+        define_string = "ESPRESO_USE_WRAPPER_" + wrapper_name.upper() + "_" + requested_lib.upper() + "=1"
+        if requested_lib != "empty":
+            ctx.env.append_unique("DEFINES", [ define_string ] )
+
+    setup_wrapper("dnblas",   ctx.options.wrapper_dnblas,   ["mkl", "blas"])
+    setup_wrapper("dnsolver", ctx.options.wrapper_dnsolver, ["mkl", "lapack"])
+    setup_wrapper("lapack",   ctx.options.wrapper_lapack,   ["mkl", "lapack"])
+    setup_wrapper("spblas",   ctx.options.wrapper_spblas,   ["mkl", "suitesparse"])
+    setup_wrapper("spsolver", ctx.options.wrapper_spsolver, ["mkl", "suitesparse"])
+    setup_wrapper("scsolver", ctx.options.wrapper_scsolver, ["mkl", "suitesparse"])
+    setup_wrapper("gpu",      ctx.options.wrapper_gpu,      ["cuda", "rocm", "oneapi"])
 
     ctx.env.intwidth = ctx.options.intwidth
     ctx.env.mode = ctx.options.mode
@@ -180,6 +204,7 @@ def build(ctx):
 def options(opt):
     opt.load("compiler_cxx")
     opt.compiler = opt.add_option_group("Compiler options")
+    opt.wrappers = opt.add_option_group("Selection of implementation")
     opt.decomposers = opt.add_option_group("Third party graph partition tools")
     opt.math = opt.add_option_group("Third party math libraries")
     opt.solvers = opt.add_option_group("Third party sparse solvers")
@@ -246,6 +271,41 @@ def options(opt):
         action="store_true",
         default=False,
         help="Build ESPRESO with GUI (Qt5 is needed).")
+    
+    opt.wrappers.add_option("--wrapper-dnblas",
+        action="store",
+        default=os.getenv("ESPRESO_USE_WRAPPER_DNBLAS") or "auto",
+        help="Implementation of dense blas: {mkl,blas,auto,empty}")
+    
+    opt.wrappers.add_option("--wrapper-dnsolver",
+        action="store",
+        default=os.getenv("ESPRESO_USE_WRAPPER_DNSOLVER") or "auto",
+        help="Implementation of dense solver: {mkl,lapack,auto,empty}")
+    
+    opt.wrappers.add_option("--wrapper-lapack",
+        action="store",
+        default=os.getenv("ESPRESO_USE_WRAPPER_LAPACK") or "auto",
+        help="Implementation of lapack: {mkl,lapack,auto,empty}")
+    
+    opt.wrappers.add_option("--wrapper-spblas",
+        action="store",
+        default=os.getenv("ESPRESO_USE_WRAPPER_SPBLAS") or "auto",
+        help="Implementation of sparse blas: {mkl,suitesparse,auto,empty}")
+    
+    opt.wrappers.add_option("--wrapper-spsolver",
+        action="store",
+        default=os.getenv("ESPRESO_USE_WRAPPER_SPSOLVER") or "auto",
+        help="Implementation of sparse solver: {mkl,suitesparse,auto,empty}")
+    
+    opt.wrappers.add_option("--wrapper-scsolver",
+        action="store",
+        default=os.getenv("ESPRESO_USE_WRAPPER_SCSOLVER") or "auto",
+        help="Implementation of solver for Schur complement of sparse matrices: {mkl,suitesparse,auto,empty}")
+    
+    opt.wrappers.add_option("--wrapper-gpu",
+        action="store",
+        default=os.getenv("ESPRESO_USE_WRAPPER_GPU") or "auto",
+        help="Implementation of GPU functionality: {cuda,rocm,oneapi,auto,empty}")
 
     opt.other.add_option("--use-cusparse-legacy",
         action="store_true",
@@ -267,6 +327,18 @@ def settings(ctx):
         libs = [ lib for lib in libs if lib in libraries ]
         ctx.start_msg(msg)
         ctx.end_msg("[ " + ", ".join(libs) + " ]", color="BLUE")
+    
+    def wraper_msg(wrapper_name):
+        prefix = "ESPRESO_USE_WRAPPER_" + wrapper_name.upper() + "_"
+        defines = [ x for x in ctx.env["DEFINES"] if x.startswith(prefix) ]
+        if len(defines) == 0:
+            lib = " "
+        elif len(defines) == 1:
+            lib = defines[0].replace(prefix, "").split("=")[0].replace("EMPTY", " ").lower()
+        else:
+            raise waflib.Errors.ConfigurationError("Unexpected wrapper use defines: " + ",".join(libs))
+        ctx.start_msg(wrapper_name.rjust(40))
+        ctx.end_msg(lib, color="BLUE")
 
     ctx.msg("                                CXXFLAGS", ctx.env.CXXFLAGS)
     ctx.msg("                               LINKFLAGS", ctx.env.LINKFLAGS)
@@ -277,6 +349,7 @@ def settings(ctx):
     ctx.msg("                                    mode", ctx.env.mode)
     ctx.msg("                                    SIMD", ctx.env.SIMD)
     ctx.msg("                               ASSEMBLER", ctx.env.SIMD_ASSEMBLER)
+    print("                      -------- libraries detected ---------")
     libsmsg("                         mesh generators", [ "gmsh", "nglib" ])
     libsmsg("                      graph partitioners", [ "metis", "scotch", "kahip"])
     libsmsg("          distributed graph partitioners", [ "parmetis", "ptscotch" ])
@@ -287,6 +360,14 @@ def settings(ctx):
     libsmsg("              distributed sparse solvers", [ "mklpdss", "hypre", "superlu", "wsmp" ])
     libsmsg("                           GPU libraries", [ "cuda", "rocm", "oneapi" ])
     libsmsg("                                coupling", [ "precice" ])
+    print("                      --------- wrappers used -------------")
+    wraper_msg("dnblas")
+    wraper_msg("dnsolver")
+    wraper_msg("lapack")
+    wraper_msg("spblas")
+    wraper_msg("spsolver")
+    wraper_msg("scsolver")
+    wraper_msg("gpu")
 
 """ Recurse to third party libraries wrappers"""
 def recurse(ctx):

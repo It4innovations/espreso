@@ -4,8 +4,9 @@
 
 #include <complex>
 
-#ifndef HAVE_MKL
 #ifdef HAVE_LAPACK
+#ifdef ESPRESO_USE_WRAPPER_LAPACK_LAPACK
+
 #include "lapacke.h"
 
 namespace espreso {

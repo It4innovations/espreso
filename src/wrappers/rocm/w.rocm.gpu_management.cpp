@@ -1,5 +1,6 @@
 
 #ifdef HAVE_ROCM
+#ifdef ESPRESO_USE_WRAPPER_GPU_ROCM
 
 #include "gpu/gpu_management.h"
 #include "w.rocm.gpu_management.h"
@@ -208,4 +209,5 @@ namespace mgm {
 
 #include "gpu/gpu_management.inst.hpp"
 
+#endif
 #endif

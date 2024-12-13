@@ -1,10 +1,7 @@
 #include "math/wrappers/math.sc_solver.h"
 
-#ifndef HAVE_MKL
-#ifndef HAVE_PARDISO
-#ifndef HAVE_SUITESPARSE
-
-
+#ifndef ESPRESO_USE_WRAPPER_SPBLAS_MKL
+#ifndef ESPRESO_USE_WRAPPER_SPBLAS_SUITESPARSE
 
 namespace espreso {
 
@@ -76,6 +73,5 @@ void SchurComplementSolver<T,I>::solveA11(const Vector_Dense<T,I> & /*rhs*/, Vec
 
 #include "math/wrappers/math.sc_solver.inst.hpp"
 
-#endif
 #endif
 #endif

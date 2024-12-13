@@ -1,5 +1,6 @@
 
 #ifdef HAVE_ONEAPI
+#ifdef ESPRESO_USE_WRAPPER_GPU_ONEAPI
 
 #include "gpu/gpu_kernels.h"
 #include "w.oneapi.gpu_management.h"
@@ -143,4 +144,5 @@ namespace kernels {
 
 #include "gpu/gpu_kernels.inst.hpp"
 
+#endif
 #endif

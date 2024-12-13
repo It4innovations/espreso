@@ -1,5 +1,7 @@
 
-#if !defined(HAVE_CUDA) && !defined(HAVE_ROCM) && !defined(HAVE_ONEAPI)
+#ifndef ESPRESO_USE_WRAPPER_GPU_CUDA
+#ifndef ESPRESO_USE_WRAPPER_GPU_ROCM
+#ifndef ESPRESO_USE_WRAPPER_GPU_ONEAPI
 
 #include "gpu_dnblas.h"
 
@@ -42,4 +44,6 @@ namespace dnblas {
 
 #include "gpu/gpu_dnblas.inst.hpp"
 
+#endif
+#endif
 #endif

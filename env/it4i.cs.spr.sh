@@ -2,13 +2,13 @@
 
 if [ $# -lt 1 ]
 then
-    echo "ERROR: You have to specify which cpu spsolver to use (mklpardiso/suitesparse)"
+    echo "ERROR: You have to specify which cpu spsolver to use (mkl/suitesparse)"
     return 1
 fi
 cpu_spsolver="${1}"
 if [ "${cpu_spsolver}" == "ss" ]; then cpu_spsolver="suitesparse"; fi
-if [ "${cpu_spsolver}" == "mkl" ]; then cpu_spsolver="mklpardiso"; fi
-if [ "${cpu_spsolver}" != "suitesparse" ] && [ "${cpu_spsolver}" != "mklpardiso" ]
+if [ "${cpu_spsolver}" == "mklpardiso" ]; then cpu_spsolver="mkl"; fi
+if [ "${cpu_spsolver}" != "suitesparse" ] && [ "${cpu_spsolver}" != "mkl" ]
 then
     echo "ERROR: wrong cpu spsolver"
     return 2
@@ -43,7 +43,9 @@ export OMP_PLACES=cores
 export OMP_PROC_BIND=close
 export OMP_NUM_THREADS=12,1
 
-if [ "${cpu_spsolver}" == "suitesparse" ]
-then
-    export ESPRESO_FORBID_MKL_PARDISO="1"
-fi
+export ESPRESO_USE_WRAPPER_DNBLAS=mkl
+export ESPRESO_USE_WRAPPER_DNSOLVER=mkl
+export ESPRESO_USE_WRAPPER_LAPACK=mkl
+export ESPRESO_USE_WRAPPER_SPBLAS=mkl
+export ESPRESO_USE_WRAPPER_SPSOLVER="${cpu_spsolver}"
+export ESPRESO_USE_WRAPPER_SCSOLVER="${cpu_spsolver}"

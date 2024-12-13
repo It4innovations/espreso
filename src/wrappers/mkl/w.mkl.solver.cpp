@@ -3,6 +3,8 @@
 #include "math/wrappers/math.solver.h"
 
 #ifdef HAVE_MKL
+#ifdef ESPRESO_USE_WRAPPER_DNSOLVER_MKL
+
 #include "mkl_lapacke.h"
 
 namespace espreso {
@@ -67,4 +69,5 @@ template struct DenseSolver<double, int>;
 
 }
 
+#endif
 #endif

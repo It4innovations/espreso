@@ -7,6 +7,8 @@
 #include <complex>
 
 #ifdef HAVE_MKL
+#ifdef ESPRESO_USE_WRAPPER_SPBLAS_MKL
+
 #include "mkl_spblas.h"
 
 namespace espreso {
@@ -218,4 +220,5 @@ void SpBLAS<Matrix, T, I>::apply(Matrix_Dense<T, I> &y, const T &alpha, const T 
 
 #include "math/wrappers/math.spblas.inst.hpp"
 
+#endif
 #endif

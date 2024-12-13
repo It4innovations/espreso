@@ -3,6 +3,8 @@
 #include "esinfo/eslog.h"
 
 #ifdef HAVE_MKL
+#ifdef ESPRESO_USE_WRAPPER_LAPACK_MKL
+
 #include "mkl_lapacke.h"
 
 namespace espreso {
@@ -142,4 +144,5 @@ void submatrix(const Matrix_Dense<double, int> &input, Matrix_Dense<double, int>
 }
 }
 
+#endif
 #endif

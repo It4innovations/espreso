@@ -6,7 +6,7 @@
 #include <numeric>
 
 #ifdef HAVE_MKL
-#ifndef ESPRESO_FORBID_MKL_PARDISO
+#ifdef ESPRESO_USE_WRAPPER_SPSOLVER_MKL
 
 #include "wrappers/pardiso/w.pardiso.type.h"
 #include "wrappers/pardiso/w.pardiso.h"

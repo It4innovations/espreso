@@ -1,5 +1,6 @@
 
 #ifdef HAVE_ROCM
+#ifdef ESPRESO_USE_WRAPPER_GPU_ROCM
 
 #include "gpu/gpu_kernels.h"
 #include "w.rocm.gpu_management.h"
@@ -134,4 +135,5 @@ namespace kernels {
 
 #include "gpu/gpu_kernels.inst.hpp"
 
+#endif
 #endif

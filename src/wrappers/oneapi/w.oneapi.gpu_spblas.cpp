@@ -1,5 +1,6 @@
 
 #ifdef HAVE_ONEAPI
+#ifdef ESPRESO_USE_WRAPPER_GPU_ONEAPI
 
 #include "gpu/gpu_spblas.h"
 #include "w.oneapi.gpu_management.h"
@@ -538,4 +539,5 @@ namespace spblas {
 
 #include "gpu/gpu_spblas.inst.hpp"
 
+#endif
 #endif

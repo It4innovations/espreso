@@ -1,5 +1,6 @@
 
 #ifdef HAVE_CUDA
+#ifdef ESPRESO_USE_WRAPPER_GPU_CUDA
 
 #include "gpu/gpu_kernels.h"
 #include "w.cuda.gpu_management.h"
@@ -156,4 +157,5 @@ namespace kernels {
 
 #include "gpu/gpu_kernels.inst.hpp"
 
+#endif
 #endif

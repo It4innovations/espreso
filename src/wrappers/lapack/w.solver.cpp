@@ -2,8 +2,9 @@
 #include "math/math.h"
 #include "math/wrappers/math.solver.h"
 
-#ifndef HAVE_MKL
 #ifdef HAVE_LAPACK
+#ifdef ESPRESO_USE_WRAPPER_DNSOLVER_LAPACK
+
 #include "lapacke.h"
 
 namespace espreso {

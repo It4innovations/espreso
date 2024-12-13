@@ -1,7 +1,7 @@
 #include "math/wrappers/math.sc_solver.h"
 
 #ifdef HAVE_MKL
-#ifndef ESPRESO_FORBID_MKL_PARDISO
+#ifdef ESPRESO_USE_WRAPPER_SCSOLVER_MKL
 
 #include <memory>
 #include <mkl.h>

@@ -6,8 +6,8 @@
 
 #include <complex>
 
-#ifndef HAVE_MKL
-#ifndef HAVE_SUITESPARSE
+#ifndef ESPRESO_USE_WRAPPER_SPBLAS_MKL
+#ifndef ESPRESO_USE_WRAPPER_SPBLAS_SUITESPARSE
 
 namespace espreso {
 

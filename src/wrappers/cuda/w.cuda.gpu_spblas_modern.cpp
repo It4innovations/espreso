@@ -1,5 +1,6 @@
 
 #ifdef HAVE_CUDA
+#ifdef ESPRESO_USE_WRAPPER_GPU_CUDA
 #ifndef USE_CUSPARSE_LEGACY
 
 #include "gpu/gpu_spblas.h"
@@ -434,5 +435,6 @@ namespace spblas {
 
 #include "gpu/gpu_spblas.inst.hpp"
 
+#endif
 #endif
 #endif

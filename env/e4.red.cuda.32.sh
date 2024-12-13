@@ -42,6 +42,14 @@ export OMP_NUM_THREADS=12,1
 export ESPRESO_RANK_TO_GPU_MAP="0"
 export ESPRESO_FORBID_CHECK_SIMD="1" # temporary workaround
 
+export ESPRESO_USE_WRAPPER_DNBLAS=blas
+export ESPRESO_USE_WRAPPER_DNSOLVER=lapack
+export ESPRESO_USE_WRAPPER_LAPACK=lapack
+export ESPRESO_USE_WRAPPER_SPBLAS=suitesparse
+export ESPRESO_USE_WRAPPER_SPSOLVER=suitesparse
+export ESPRESO_USE_WRAPPER_SCSOLVER=suitesparse
+export ESPRESO_USE_WRAPPER_GPU=cuda
+
 
 
 # mpirun -n 1 --bind-to numa ./build/espreso -c espreso.ecf

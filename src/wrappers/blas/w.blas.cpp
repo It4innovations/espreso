@@ -4,8 +4,9 @@
 
 #include <complex>
 
-#ifndef HAVE_MKL
 #ifdef HAVE_BLAS
+#ifdef ESPRESO_USE_WRAPPER_DNBLAS_BLAS
+
 #include "cblas.h"
 
 #if defined(BLIS_INT_TYPE_SIZE) or defined(NVPL_BLAS_API)

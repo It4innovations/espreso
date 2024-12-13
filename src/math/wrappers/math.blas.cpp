@@ -38,8 +38,8 @@ void add(const int size, int *x, const int incX, const int &alpha, const int *y,
 }
 }
 
-#ifndef HAVE_MKL
-#ifndef HAVE_BLAS
+#ifndef ESPRESO_USE_WRAPPER_DNBLAS_MKL
+#ifndef ESPRESO_USE_WRAPPER_DNBLAS_BLAS
 
 namespace espreso {
 namespace math {
@@ -127,4 +127,3 @@ void multiply(T alpha, const Vector_Dense<T, I> &A, const Vector_Dense<T, I> &B,
 
 #endif
 #endif
-

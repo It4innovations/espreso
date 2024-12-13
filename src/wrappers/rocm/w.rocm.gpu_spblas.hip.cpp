@@ -1,5 +1,6 @@
 
 #ifdef HAVE_ROCM
+#ifdef ESPRESO_USE_WRAPPER_GPU_ROCM
 
 #include "gpu/gpu_spblas.h"
 #include "w.rocm.gpu_management.h"
@@ -586,4 +587,5 @@ namespace spblas {
 
 #include "gpu/gpu_spblas.inst.hpp"
 
+#endif
 #endif

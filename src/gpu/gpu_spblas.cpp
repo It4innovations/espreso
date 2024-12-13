@@ -1,5 +1,7 @@
 
-#if !defined(HAVE_CUDA) && !defined(HAVE_ROCM) && !defined(HAVE_ONEAPI)
+#ifndef ESPRESO_USE_WRAPPER_GPU_CUDA
+#ifndef ESPRESO_USE_WRAPPER_GPU_ROCM
+#ifndef ESPRESO_USE_WRAPPER_GPU_ONEAPI
 
 #include "gpu_spblas.h"
 
@@ -95,4 +97,6 @@ namespace spblas {
 
 #include "gpu/gpu_spblas.inst.hpp"
 
+#endif
+#endif
 #endif

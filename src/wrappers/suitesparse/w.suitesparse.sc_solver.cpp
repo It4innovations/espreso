@@ -1,6 +1,7 @@
 #include "math/wrappers/math.sc_solver.h"
 
 #ifdef HAVE_SUITESPARSE
+#ifdef ESPRESO_USE_WRAPPER_SCSOLVER_SUITESPARSE
 
 #include "w.suitesparse.cholmod.h"
 
@@ -237,4 +238,5 @@ void SchurComplementSolver<T,I>::solveA11(const Vector_Dense<T,I> & rhs, Vector_
 
 #include "math/wrappers/math.sc_solver.inst.hpp"
 
+#endif
 #endif

@@ -4,8 +4,8 @@
 
 #include <complex>
 
-#ifndef HAVE_MKL
 #ifdef HAVE_SUITESPARSE
+#ifdef ESPRESO_USE_WRAPPER_SPBLAS_SUITESPARSE
 
 #include "w.suitesparse.cholmod.h"
 

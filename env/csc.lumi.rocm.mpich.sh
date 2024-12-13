@@ -38,6 +38,14 @@ export ESPRESO_RANK_TO_GPU_MAP="0"
 
 export ESPRESO_ROCM_ARCH="gfx90a:sramecc+:xnack-"
 
+export ESPRESO_USE_WRAPPER_DNBLAS=blas
+export ESPRESO_USE_WRAPPER_DNSOLVER=lapack
+export ESPRESO_USE_WRAPPER_LAPACK=lapack
+export ESPRESO_USE_WRAPPER_SPBLAS=suitesparse
+export ESPRESO_USE_WRAPPER_SPSOLVER=suitesparse
+export ESPRESO_USE_WRAPPER_SCSOLVER=suitesparse
+export ESPRESO_USE_WRAPPER_GPU=rocm
+
 
 
 # always use slurm options --gpus-per-task=1 --cpus-per-task=7

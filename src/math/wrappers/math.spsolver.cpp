@@ -6,9 +6,8 @@
 
 #include <complex>
 
-#ifndef HAVE_MKL
-#ifndef HAVE_PARDISO
-#ifndef HAVE_SUITESPARSE
+#ifndef ESPRESO_USE_WRAPPER_SPBLAS_MKL
+#ifndef ESPRESO_USE_WRAPPER_SPBLAS_SUITESPARSE
 
 namespace espreso {
 
@@ -179,6 +178,5 @@ void DirectSparseSolver<T, I>::getSC(Matrix_Dense<T,I> &/*sc*/, std::vector<int>
 
 #include "math/wrappers/math.spsolver.inst.hpp"
 
-#endif
 #endif
 #endif

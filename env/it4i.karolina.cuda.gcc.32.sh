@@ -41,6 +41,14 @@ if [ "${cusparse_version}" = "legacy" ]; then
     export ESPRESO_USE_CUSPARSE_LEGACY="true"
 fi
 
+export ESPRESO_USE_WRAPPER_DNBLAS=blas
+export ESPRESO_USE_WRAPPER_DNSOLVER=lapack
+export ESPRESO_USE_WRAPPER_LAPACK=lapack
+export ESPRESO_USE_WRAPPER_SPBLAS=suitesparse
+export ESPRESO_USE_WRAPPER_SPSOLVER=suitesparse
+export ESPRESO_USE_WRAPPER_SCSOLVER=suitesparse
+export ESPRESO_USE_WRAPPER_GPU=cuda
+
 
 
 # mpirun -n 8 --bind-to numa ./build/espreso -c espreso.ecf

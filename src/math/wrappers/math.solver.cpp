@@ -1,8 +1,8 @@
 
 #include "math.solver.h"
 
-#ifndef HAVE_MKL
-#ifndef HAVE_LAPACK
+#ifndef ESPRESO_USE_WRAPPER_LAPACK_MKL
+#ifndef ESPRESO_USE_WRAPPER_LAPACK_LAPACK
 
 namespace espreso {
 

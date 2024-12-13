@@ -3,18 +3,10 @@ import os
 
 def options(opt):
     opt.math.add_option("--skip-mkl", action="store_true", default=False, help="Skip search for MKL library.")
-    default_forbid_pardiso = False
-    forbid_env = os.getenv("ESPRESO_FORBID_MKL_PARDISO")
-    if forbid_env != None:
-        if forbid_env == "1" or forbid_env.lower() == "true" or forbid_env.lower() == "yes" or forbid_env.lower() == "on":
-            default_forbid_pardiso = True
-    opt.math.add_option("--forbid-mkl-pardiso", action="store_true", default=default_forbid_pardiso, help="Don't compile MKL pardiso.")
 
 def configure(ctx):
     if (ctx.options.skip_mkl):
         return
-    if (ctx.options.forbid_mkl_pardiso):
-        ctx.env.append_unique("DEFINES_MKL", [ "ESPRESO_FORBID_MKL_PARDISO" ])
 
     # currently it seems that there is a bug in OpenMP version (use gomp + gnu_threads)
     libs = []

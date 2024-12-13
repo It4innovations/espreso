@@ -1,5 +1,6 @@
 
 #ifdef HAVE_ONEAPI
+#ifdef ESPRESO_USE_WRAPPER_GPU_ONEAPI
 
 #include "gpu/gpu_dnblas.h"
 #include "w.oneapi.gpu_management.h"
@@ -251,4 +252,5 @@ namespace dnblas {
 
 #include "gpu/gpu_dnblas.inst.hpp"
 
+#endif
 #endif

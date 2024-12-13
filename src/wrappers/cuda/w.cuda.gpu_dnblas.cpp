@@ -1,5 +1,6 @@
 
 #ifdef HAVE_CUDA
+#ifdef ESPRESO_USE_WRAPPER_GPU_CUDA
 
 #include "gpu/gpu_dnblas.h"
 #include "w.cuda.gpu_management.h"
@@ -340,4 +341,5 @@ namespace dnblas {
 
 #include "gpu/gpu_dnblas.inst.hpp"
 
+#endif
 #endif

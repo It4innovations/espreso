@@ -2,13 +2,13 @@
 
 if [ $# -lt 1 ]
 then
-    echo "ERROR: You have to specify which cpu spsolver to use (mklpardiso/suitesparse)"
+    echo "ERROR: You have to specify which cpu spsolver to use (mkl/suitesparse)"
     return 1
 fi
 cpu_spsolver="${1}"
 if [ "${cpu_spsolver}" == "ss" ]; then cpu_spsolver="suitesparse"; fi
-if [ "${cpu_spsolver}" == "mkl" ]; then cpu_spsolver="mklpardiso"; fi
-if [ "${cpu_spsolver}" != "suitesparse" ] && [ "${cpu_spsolver}" != "mklpardiso" ]
+if [ "${cpu_spsolver}" == "mklpardiso" ]; then cpu_spsolver="mkl"; fi
+if [ "${cpu_spsolver}" != "suitesparse" ] && [ "${cpu_spsolver}" != "mkl" ]
 then
     echo "ERROR: wrong cpu spsolver"
     return 2
@@ -43,10 +43,6 @@ export OMP_PLACES=cores
 export OMP_PROC_BIND=close
 export OMP_NUM_THREADS=6,1
 
-if [ "${cpu_spsolver}" == "suitesparse" ]
-then
-    export ESPRESO_FORBID_MKL_PARDISO="1"
-fi
 # export ESPRESO_RANK_TO_GPU_MAP="$(seq -s, 0 15)"
 export ESPRESO_RANK_TO_GPU_MAP="0"
 # in benchmarks I will set the visible devices to only one for each hq worker
@@ -59,3 +55,11 @@ export ZES_ENABLE_SYSMAN="1" # to make free_memory device info available
 # export ESPRESO_SYCL_BACKEND_OPTIONS="-device pvc"
 # icpx: warning: argument unused during compilation: '-Xs -device pvc' [-Wunused-command-line-argument]
 # i dont understand ...
+
+export ESPRESO_USE_WRAPPER_DNBLAS=mkl
+export ESPRESO_USE_WRAPPER_DNSOLVER=mkl
+export ESPRESO_USE_WRAPPER_LAPACK=mkl
+export ESPRESO_USE_WRAPPER_SPBLAS=mkl
+export ESPRESO_USE_WRAPPER_SPSOLVER="${cpu_spsolver}"
+export ESPRESO_USE_WRAPPER_SCSOLVER="${cpu_spsolver}"
+export ESPRESO_USE_WRAPPER_GPU=oneapi
