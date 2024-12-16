@@ -346,7 +346,11 @@ template<typename T>
 void Projector<T>::_print(const step::Step &step)
 {
     if (info::ecf->output.print_matrices) {
-        eslog::storedata(" STORE: feti/projector/{G, e, GGt, invGGt}\n");
+        eslog::storedata(" STORE: feti/projector/{R_orth, G, e, GGt, invGGt}\n");
+        for (size_t d = 0; d < feti.K.size(); ++d) {
+            math::store(feti.R1[d], utils::filename(utils::debugDirectory(step) + "/feti/projector", "R_orth" + std::to_string(d)).c_str());
+        }
+
         math::store(G, utils::filename(utils::debugDirectory(step) + "/feti/projector", "G").c_str());
         math::store(Gt, utils::filename(utils::debugDirectory(step) + "/feti/projector", "Gt").c_str());
         math::store(e, utils::filename(utils::debugDirectory(step) + "/feti/projector", "e").c_str());
