@@ -5,8 +5,8 @@ stages:
   - INTEL_64
   - FOSS_32
   - FOSS_64
-  - FOSS_MKL_32
-  - FOSS_MKL_64
+  - MKL_32
+  - MKL_64
 
 .ws:
   when: always
@@ -202,14 +202,14 @@ F8W_FETI:
 
 M4W_INSTALL:
   extends: .ws
-  stage: FOSS_MKL_32
+  stage: MKL_32
   cache:
-    key: deps-foss-mkl-32
+    key: deps-mkl-32
     paths:
       - dependencies
       - build
   before_script:
-    - . env/workstation.foss.mkl.32.sh
+    - . env/workstation.openmpi.mkl.32.sh
 
 M4W_BASIC:
   extends: M4W_INSTALL
@@ -237,14 +237,14 @@ M4W_FETI:
 
 M8W_INSTALL:
   extends: .ws
-  stage: FOSS_MKL_64
+  stage: MKL_64
   cache:
-    key: deps-foss-mkl-64
+    key: deps-mkl-64
     paths:
       - dependencies
       - build
   before_script:
-    - . env/workstation.foss.mkl.64.sh
+    - . env/workstation.openmpi.mkl.64.sh
 
 M8W_BASIC:
   extends: M8W_INSTALL
