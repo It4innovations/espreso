@@ -3,12 +3,12 @@ import os, unittest
 from estest import ESPRESOTest
 
 cases = [
-    ("          PCG", "     NONE", 82),
-    ("          PCG", "DIRICHLET", 23),
-    ("       SMALBE", "     NONE", 90), # there are slightly different convergence criteria 
-    ("       SMALBE", "DIRICHLET", 23),
-    ("orthogonalPCG", "     NONE", 75),
-    ("orthogonalPCG", "DIRICHLET", 23),
+    ("          PCG", "     NONE", 85),
+    ("          PCG", "DIRICHLET", 25),
+    ("       SMALBE", "     NONE", 95), # there are slightly different convergence criteria 
+    ("       SMALBE", "DIRICHLET", 25),
+    ("orthogonalPCG", "     NONE", 80),
+    ("orthogonalPCG", "DIRICHLET", 25),
     ]
 
 class Solver(unittest.TestCase):

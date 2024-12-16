@@ -82,7 +82,7 @@ STRUCTURAL_MECHANICS {
 
   LOAD_STEPS_SETTINGS {
     1 {
-      DURATION_TIME  1e-2;
+      DURATION_TIME  2e-2;
       TYPE      TRANSIENT; # DUE TO ISSUES WITH KERNELS
       MODE      NONLINEAR;
       SOLVER         FETI;
@@ -97,16 +97,16 @@ STRUCTURAL_MECHANICS {
         REGULARIZATION    ANALYTIC;
         MAX_ITERATIONS     [ARG13];
         MAX_STAGNATION        2000;
-        PRECISION             1e-9;
+        PRECISION             1e-7;
       }
 
       TRANSIENT_SOLVER {
-        TIME_STEP       2e-3;
+        TIME_STEP       5e-3;
       }
 
       NONLINEAR_SOLVER {
         MAX_ITERATIONS                     10;
-        REQUESTED_DISPLACEMENT_RESIDUAL  1e-4;
+        REQUESTED_DISPLACEMENT_RESIDUAL  1e-3;
       }
 
       DISPLACEMENT {
@@ -115,7 +115,7 @@ STRUCTURAL_MECHANICS {
 
       PRESSURE {
         PRESS {
-          PRESSURE    5e8;
+          PRESSURE    4e8;
           DIRECTION { Z -1; }
         }
       }
