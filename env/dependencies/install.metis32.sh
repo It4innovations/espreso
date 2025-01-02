@@ -3,7 +3,8 @@
 DEPENDENCIES_DIR="${PWD}/dependencies"
 mkdir -p "${DEPENDENCIES_DIR}"
 
-COMPILER_C="${1}"
+PREFIX="${1}"
+COMPILER_C="${2}"
 
 METIS_ROOT="${DEPENDENCIES_DIR}/metis"
 if [ ! -d "${METIS_ROOT}" ]

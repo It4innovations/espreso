@@ -3,7 +3,8 @@
 DEPENDENCIES_DIR="${PWD}/dependencies"
 mkdir -p "${DEPENDENCIES_DIR}"
 
-COMPILER_C="${1}"
+PREFIX="${1}"
+COMPILER_C="${2}"
 
 GKLIB_ROOT="${DEPENDENCIES_DIR}/gklib"
 if [ ! -d "${GKLIB_ROOT}" ]
@@ -11,7 +12,7 @@ then
     sh env/dependencies/clone.gklib.sh
 fi
 
-INSTALL_DIR="${GKLIB_ROOT}/install_${COMPILER_C}"
+INSTALL_DIR="${GKLIB_ROOT}/install_${PREFIX}_${COMPILER_C}"
 if [ ! -d "${INSTALL_DIR}" ]
 then
     (

@@ -1,9 +1,9 @@
 
-. env/dependencies/install.suitesparse.sh gcc gfortran
-. env/dependencies/install.gklib.sh gcc
-. env/dependencies/install.metis64.sh gcc
-. env/dependencies/install.parmetis64.sh mpicc
-. env/dependencies/install.precice.sh mpic++
+. env/dependencies/install.suitesparse.sh mkl gcc gfortran
+. env/dependencies/install.gklib.sh mkl gcc
+. env/dependencies/install.metis64.sh mkl gcc
+. env/dependencies/install.parmetis64.sh mkl mpicc
+. env/dependencies/install.precice.sh mkl mpic++
 
 export CXX=mpic++
 export ES_INT_WIDTH=64
