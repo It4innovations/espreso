@@ -7,6 +7,11 @@ stages:
   - FOSS_64
   - MKL_32
   - MKL_64
+  - CS01_A64FX
+  - CS03_AMD_MI100
+  - CS08_AMD_L3
+  - CS10_SPR_HBM
+  - CS11_NVIDIA_GRACE
 
 .ws:
   when: always
@@ -270,5 +275,122 @@ M8W_FETI:
   script:
     - sh tests/run.feti.sh
 
+# ----------------------------------------------------------------------------------------------- #
+#                                       COMPLEMENTARY SYSTEMS                                     #
+# ----------------------------------------------------------------------------------------------- #
 
+.cs:
+  when: always
+  id_tokens:
+    SITE_ID_TOKEN:
+      aud: https://code.it4i.cz/
+  tags:
+    - it4i
+    - compsys
+    - slurmjob
+  variables:
+    CUSTOM_CI_BUILDS_DIR: /mnt/proj3/open-28-64
+  stage: COMPSYS
+  script:
+    - ./waf configure
+    - ./waf -j8
+
+CS01_INSTALL:
+  extends: .cs
+  stage: CS01_A64FX
+  variables:
+    SCHEDULER_PARAMETERS: '-A OPEN-28-64 -p p01-arm -N 1 --ntasks-per-node=48'
+  cache:
+    key: deps-cs01
+    paths:
+      - dependencies
+      - build
+  before_script:
+    - . env/it4i.cs.p01.a64fx.32.sh
+
+CS01_BASIC:
+  extends: CS01_INSTALL
+  needs: ["CS01_INSTALL"]
+  script:
+    - sh tests/run.basic.sh
+
+
+CS03_INSTALL:
+  extends: .cs
+  stage: CS03_AMD_MI100
+  variables:
+    SCHEDULER_PARAMETERS: '-A OPEN-28-64 -p p03-amd -N 1 --ntasks-per-node=64 -G 4'
+  cache:
+    key: deps-cs03
+    paths:
+      - dependencies
+      - build
+  before_script:
+    - . env/it4i.cs.p03.amd.mi100.32.sh
+
+CS03_BASIC:
+  extends: CS03_INSTALL
+  needs: ["CS03_INSTALL"]
+  script:
+    - sh tests/run.basic.sh
+
+
+CS08_INSTALL:
+  extends: .cs
+  stage: CS08_AMD_L3
+  variables:
+    SCHEDULER_PARAMETERS: '-A OPEN-28-64 -p p08-amd -N 1 --ntasks-per-node=128'
+  cache:
+    key: deps-cs08
+    paths:
+      - dependencies
+      - build
+  before_script:
+    - . env/it4i.cs.p08.amd.l3.32.sh
+
+CS08_BASIC:
+  extends: CS08_INSTALL
+  needs: ["CS08_INSTALL"]
+  script:
+    - sh tests/run.basic.sh
+
+
+.CS10_INSTALL:
+  extends: .cs
+  stage: CS10_SPR_HBM
+  variables:
+    SCHEDULER_PARAMETERS: '-A OPEN-28-64 -p p10-intel -N 1 --ntasks-per-node=96'
+  cache:
+    key: deps-cs10
+    paths:
+      - dependencies
+      - build
+  before_script:
+    - . env/it4i.cs.p10.spr.hbm.32.sh
+
+.CS10_BASIC:
+  extends: CS10_INSTALL
+  needs: ["CS10_INSTALL"]
+  script:
+    - sh tests/run.basic.sh
+
+
+.CS11_INSTALL:
+  extends: .cs
+  stage: CS11_NVIDIA_GRACE
+  variables:
+    SCHEDULER_PARAMETERS: '-A OPEN-28-64 -p p11-grace -N 1 --ntasks-per-node=144'
+  cache:
+    key: deps-cs11
+    paths:
+      - dependencies
+      - build
+  before_script:
+    - . env/it4i.cs.p11.nvidia.grace.32.sh
+
+.CS11_BASIC:
+  extends: CS11_INSTALL
+  needs: ["CS11_INSTALL"]
+  script:
+    - sh tests/run.basic.sh
 
