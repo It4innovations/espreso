@@ -3,7 +3,7 @@
 DEPENDENCIES_DIR="${PWD}/dependencies"
 mkdir -p "${DEPENDENCIES_DIR}"
 
-PARMETIS_ROOT="${DEPENDENCIES_DIR}/parmetis-4.0.3"
+PARMETIS_ROOT="${DEPENDENCIES_DIR}/parmetis"
 if [ ! -d "${PARMETIS_ROOT}" ]
 then
     (
