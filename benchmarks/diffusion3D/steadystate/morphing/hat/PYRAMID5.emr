@@ -1,5 +1,0 @@
-         ;          ;              ;  ALL_ELEMENTS  ;  ALL_ELEMENTS  ;  ALL_ELEMENTS  ;  ALL_ELEMENTS  ;
-loadstep ;  substep ;         time ;   TEMPERATURE  ;   TEMPERATURE  ;  RBF_MORPHING  ;  RBF_MORPHING  ;
-         ;          ;              ;      <MAX>     ;      <MIN>     ;    <AVERAGE>   ;      <MAX>     ;
-
-       1 ;        1 ;     1.000000 ;   4.000000e+02 ;   3.000000e+02 ;   1.584755e+00 ;   2.826260e+00 ; 

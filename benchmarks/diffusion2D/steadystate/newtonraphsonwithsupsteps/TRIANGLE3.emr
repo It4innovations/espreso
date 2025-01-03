@@ -1,8 +1,0 @@
-
-         ;         ;         ;      LEFT     ;   ALL_NODES   ;  ALL_ELEMENTS  ;  ALL_ELEMENTS  ;
-loadstep ; substep ;    time ;  TEMPERATURE  ;  TEMPERATURE  ;    GRADIENT    ;      FLUX      ;
-         ;         ;         ;   <AVERAGE>   ;     <MAX>     ;      <MIN>     ;      <MIN>     ;
-
-       1 ;       1 ;  0.3333 ;  1.000000e+02 ;  1.320760e+02 ;  5.717068e-01  ;  1.178143e+01  ;
-       1 ;       2 ;  0.6667 ;  2.000000e+02 ;  2.000000e+02 ;  1.190148e+00  ;  7.508359e+01  ;
-       1 ;       3 ;  1.0000 ;  3.000000e+02 ;  3.000000e+02 ;  1.356346e+00  ;  1.724150e+02  ;

@@ -1,5 +1,0 @@
-         ;          ;              ;      TOP      ;     BOTTOM    ;     ALL_ELEMENTS     ; --- ;  ALL_ELEMENTS  ;
-loadstep ;  substep ;         time ;  TEMPERATURE  ;  TEMPERATURE  ;  TRANSLATION_MOTION  ;  -  ;   TEMPERATURE  ;
-         ;          ;              ;     <MAX>     ;     <MIN>     ;         <MAX>        ;     ;    <AVERAGE>   ;
-
-       1 ;        1 ;     1.000000 ;  2.500000e+02 ;  2.500000e+02 ;         4.479962e+02 ;     ;   3.681244e+02 ; 
