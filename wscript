@@ -350,7 +350,7 @@ def settings(ctx):
     ctx.msg("                                    SIMD", ctx.env.SIMD)
     ctx.msg("                               ASSEMBLER", ctx.env.SIMD_ASSEMBLER)
     ctx.msg("  DETECTED LIBRARIES -------------------", "--------------------------", color="NORMAL")
-    libsmsg("                         mesh generators", [ "gmsh", "nglib" ])
+    # libsmsg("                         mesh generators", [ "gmsh", "nglib" ])
     libsmsg("                      graph partitioners", [ "metis", "scotch", "kahip"])
     libsmsg("          distributed graph partitioners", [ "parmetis", "ptscotch" ])
     libsmsg("                          BLAS libraries", [ "mkl", "blas" ])
@@ -392,9 +392,9 @@ def recurse(ctx):
 
     """ Solvers """
     ctx.recurse("src/wrappers/mklpdss")
-    ctx.recurse("src/wrappers/hypre")
-    ctx.recurse("src/wrappers/superlu")
-    ctx.recurse("src/wrappers/wsmp")
+    # ctx.recurse("src/wrappers/hypre")
+    # ctx.recurse("src/wrappers/superlu")
+    # ctx.recurse("src/wrappers/wsmp")
     ctx.recurse("src/wrappers/openlb")
 
     """ Other """
