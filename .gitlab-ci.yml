@@ -369,8 +369,8 @@ CS08_BASIC:
     - . env/it4i.cs.p10.spr.hbm.32.sh
 
 .CS10_BASIC:
-  extends: CS10_INSTALL
-  needs: ["CS10_INSTALL"]
+  extends: .CS10_INSTALL
+  needs: [".CS10_INSTALL"]
   script:
     - sh tests/run.basic.sh
 
@@ -389,8 +389,8 @@ CS08_BASIC:
     - . env/it4i.cs.p11.nvidia.grace.32.sh
 
 .CS11_BASIC:
-  extends: CS11_INSTALL
-  needs: ["CS11_INSTALL"]
+  extends: .CS11_INSTALL
+  needs: [".CS11_INSTALL"]
   script:
     - sh tests/run.basic.sh
 
