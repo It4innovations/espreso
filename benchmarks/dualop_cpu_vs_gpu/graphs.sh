@@ -1,8 +1,19 @@
-#/bin/bash
+#!/bin/bash
 
 # assuming Karolina
 
 ml mpi4py
 ml matplotlib
 
-mpirun -n 19 python3 benchmarks/dualop_cpu_vs_gpu/graphs.py
+summarize_datestr=20241209_183948
+datestr="$(date +%Y%m%d_%H%M%S)"
+
+mpirun -n 6 python3 benchmarks/dualop_cpu_vs_gpu/graphs_amort.py "${summarize_datestr}" "${datestr}" &
+mpirun -n 48 python3 benchmarks/dualop_cpu_vs_gpu/graphs_time_machines.py "${summarize_datestr}" "${datestr}" &
+mpirun -n 16 python3 benchmarks/dualop_cpu_vs_gpu/graphs_time_dualops.py "${summarize_datestr}" "${datestr}" &
+mpirun -n 8 python3 benchmarks/dualop_cpu_vs_gpu/graphs_time_all.py "${summarize_datestr}" "${datestr}" &
+mpirun -n 6 python3 benchmarks/dualop_cpu_vs_gpu/graphs_bestdualop.py "${summarize_datestr}" "${datestr}" &
+mpirun -n 6 python3 benchmarks/dualop_cpu_vs_gpu/graphs_speedup.py "${summarize_datestr}" "${datestr}" &
+mpirun -n 48 python3 benchmarks/dualop_cpu_vs_gpu/graphs_time_ndofs.py "${summarize_datestr}" "${datestr}" &
+
+wait
