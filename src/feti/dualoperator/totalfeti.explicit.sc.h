@@ -4,6 +4,8 @@
 
 #include "dualoperator.h"
 #include "math/wrappers/math.sc_solver.h"
+#include "gpu/gpu_management.h"
+#include "gpu/gpu_dnblas.h"
 
 #include "math/math.h"
 
@@ -12,7 +14,7 @@ namespace espreso {
 template <typename T, typename I>
 class TotalFETIExplicitSc: public DualOperator<T> {
 public:
-    TotalFETIExplicitSc(FETI<T> &feti);
+    TotalFETIExplicitSc(FETI<T> &feti, bool apply_on_gpu_ = false);
     ~TotalFETIExplicitSc();
 
     void info();
@@ -30,6 +32,9 @@ protected:
 
     using DualOperator<T>::feti;
     using DualOperator<T>::d;
+
+    void _apply_cpu(const Vector_Dual<T> &x, Vector_Dual<T> &y);
+    void _apply_gpu(const Vector_Dual<T> &x, Vector_Dual<T> &y);
 
     void _apply(const Vector_Dual<T> &x, Vector_Dual<T> &y);
 
@@ -50,10 +55,36 @@ private:
         I n_dofs_interface;
         I n_dofs_domain;
         char F_fill;
+        Matrix_Dense<T,I,gpu::mgm::Ad> d_F;
+        Vector_Dense<I,I,gpu::mgm::Ad> d_applyg_D2C;
+        Vector_Dense<T,I,gpu::mgm::Ad> d_apply_x;
+        Vector_Dense<T,I,gpu::mgm::Ad> d_apply_y;
+        Vector_Dense<T,I,gpu::mgm::Ad> d_apply_z;
+        Vector_Dense<T,I,gpu::mgm::Ad> d_apply_w;
+        size_t buffersize_tmp_apply;
     };
     std::vector<per_domain_stuff> domain_data;
     std::vector<Matrix_Dense<T,I>> Fs_allocated;
+    std::vector<Matrix_Dense<T,I,gpu::mgm::Ad>> d_Fs_allocated;
+    Vector_Dense<T,I,gpu::mgm::Ad> d_applyg_x_cluster;
+    Vector_Dense<T,I,gpu::mgm::Ad> d_applyg_y_cluster;
+    Vector_Dense<T*,I,gpu::mgm::Ad> d_applyg_xs_pointers;
+    Vector_Dense<T*,I,gpu::mgm::Ad> d_applyg_ys_pointers;
+    Vector_Dense<I,I,gpu::mgm::Ad> d_applyg_n_dofs_interfaces;
+    Vector_Dense<I*,I,gpu::mgm::Ad> d_applyg_D2Cs_pointers;
+    gpu::mgm::device device;
+    size_t n_queues;
+    gpu::mgm::queue main_q;
+    std::vector<gpu::mgm::queue> queues;
+    std::vector<gpu::dnblas::handle> handles_dense;
+    std::vector<void*> d_buffers_dense;
     size_t n_domains;
+    bool apply_on_gpu;
+    bool gpu_wait_update;
+    bool gpu_wait_apply;
+    bool gpu_apply_parallel;
+    bool is_system_hermitian;
+    bool Fs_share_memory;
 };
 
 }

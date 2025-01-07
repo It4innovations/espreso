@@ -21,6 +21,7 @@ namespace mgm {
             INSTANTIATE_T_I_A1_A2(T, I, mgm::Ah,       mgm::Ad) \
             INSTANTIATE_T_I_A1_A2(T, I, mgm::Ah,       arena_d) \
             INSTANTIATE_T_I_A1_A2(T, I, mgm::Ah,       cbmba_d) \
+            INSTANTIATE_T_I_A1_A2(T, I, cpu_allocator, mgm::Ad) \
             INSTANTIATE_T_I_A1_A2(T, I, cpu_allocator, arena_d) \
             INSTANTIATE_T_I_A1_A2(T, I, cpu_allocator, cbmba_d)
 

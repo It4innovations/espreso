@@ -21,7 +21,7 @@ template <typename T, typename I = int, typename A = cpu_allocator>
 class Matrix_Dense: public _Matrix_Dense<T, I>
 {
 public:
-    Matrix_Dense(const A &ator_ = A()): _Matrix_Dense<T, I>{}, type{Matrix_Type::REAL_NONSYMMETRIC}, shape{Matrix_Shape::FULL}, _allocated{}, ator(ator_)
+    Matrix_Dense(const A &ator_ = A()): _Matrix_Dense<T, I>{}, type{Matrix_Type::UNSET_INVALID_NONE}, shape{Matrix_Shape::FULL}, _allocated{}, ator(ator_)
     {
 
     }

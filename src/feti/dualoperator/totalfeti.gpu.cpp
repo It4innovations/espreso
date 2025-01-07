@@ -907,7 +907,7 @@ void TotalFETIGpu<T,I>::create_dual_things()
         for(size_t di = 0; di < n_domains; di++) {
             gpu::mgm::copy_submit(main_q, domain_data[di].d_applyg_D2C->vals, feti.D2C[di].data(), feti.D2C[di].size());
         }
-        if(wait_dualbgn) gpu::mgm::queue_wait(main_q);
+        gpu::mgm::queue_wait(main_q); // have to wait
     }
     tm_applystuff.stop();
 
@@ -1001,7 +1001,7 @@ void TotalFETIGpu<T,I>::create_dual_things()
             tm_prepr_kernels.stop();
 
             tm_prepr_freeinpool.start();
-            gpu::mgm::submit_host_function(q, [&,buffer_tmp,di](){
+            gpu::mgm::submit_host_function(q, [&,buffer_tmp](){
                 void * buffer_tmp_ = buffer_tmp;
                 cbmba_res_device->deallocate(buffer_tmp_);
             });

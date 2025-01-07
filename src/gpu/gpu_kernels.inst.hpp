@@ -36,7 +36,8 @@ namespace kernels {
     template void DCmap_gather<T,I,A>(mgm::queue & q, const Vector_Dense<T*,I,A> & domain_vector_pointers, const Vector_Dense<I,I,A> & n_dofs_interfaces, Vector_Dense<T,I,A> & cluster_vector, const Vector_Dense<I*,I,A> & D2Cs);
 
             #define INSTANTIATE_T_I(T,I) \
-            INSTANTIATE_T_I_A(T,I,arena_d) \
+            INSTANTIATE_T_I_A(T, I, arena_d) \
+            INSTANTIATE_T_I_A(T, I, mgm::Ad)
 
                 #define INSTANTIATE_T(T) \
                 INSTANTIATE_T_I(T, int32_t) \

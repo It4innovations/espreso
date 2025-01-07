@@ -52,7 +52,11 @@ DualOperator<T>* DualOperator<T>::create(FETI<T> &feti, const step::Step &step)
             break;
         case FETIConfiguration::DUAL_OPERATOR::EXPLICIT_SC:
             eslog::info(" = DUAL OPERATOR                                  EXPLICIT TOTAL FETI USING SCHUR COMPLEMENT = \n");
-            dual = new TotalFETIExplicitSc<T,int>(feti);
+            dual = new TotalFETIExplicitSc<T,int>(feti, false);
+            break;
+        case FETIConfiguration::DUAL_OPERATOR::EXPLICIT_SC_GPUAPPLY:
+            eslog::info(" = DUAL OPERATOR         EXPLICIT TOTAL FETI USING SCHUR COMPLEMENT, ASSEMBLE CPU, APPLY GPU = \n");
+            dual = new TotalFETIExplicitSc<T,int>(feti, true);
             break;
         }
         break;
@@ -67,6 +71,7 @@ DualOperator<T>* DualOperator<T>::create(FETI<T> &feti, const step::Step &step)
         case FETIConfiguration::DUAL_OPERATOR::EXPLICIT_GPU:
         case FETIConfiguration::DUAL_OPERATOR::IMPLICIT_GPU:
         case FETIConfiguration::DUAL_OPERATOR::EXPLICIT_SC:
+        case FETIConfiguration::DUAL_OPERATOR::EXPLICIT_SC_GPUAPPLY:
             eslog::error("not implemented dual operator\n");
             break;
         }
