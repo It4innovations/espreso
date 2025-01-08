@@ -330,7 +330,7 @@ def settings(ctx):
     
     def wraper_msg(wrapper_name):
         prefix = "ESPRESO_USE_WRAPPER_" + wrapper_name.upper() + "_"
-        defines = [ x for x in ctx.env["DEFINES"] if x.startswith(prefix) ]
+        defines = [ x for x in ctx.env["DEFINES_WRAPPERS"] if x.startswith(prefix) ]
         if len(defines) == 0:
             lib = " "
         elif len(defines) == 1:
