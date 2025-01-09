@@ -5,18 +5,23 @@
 module load LUMI/24.03
 module load partition/G
 module load rocm/6.0.3
-module load aocc/4.1.0
+
+if [ ! -d "dependencies/oneAPI-2024.2.0/install" ]
+then
+    echo "intel toolkit not installed in dependencies, please install it manually"
+    return 1
+fi
+source dependencies/oneAPI-2024.2.0/install/mkl/2024.2/env/vars.sh
 
 
 
-. env/dependencies/install.cmake.sh rocm x86_64
-. env/dependencies/install.aocl.sh
-. env/dependencies/install.suitesparse.sh rocm hipcc hipfc "-DLAPACK_LIBRARIES=${PWD}/dependencies/aocl-linux-aocc-4.1.0/install/4.1.0/aocc/lib/libflame.so.4.1.0"
 . env/dependencies/install.gklib.sh rocm hipcc
 . env/dependencies/install.metis32.sh rocm hipcc
 . env/dependencies/install.parmetis32.sh rocm mpicc
 
 
+
+export LD_LIBRARY_PATH="/opt/rocm-6.0.3/lib/llvm/bin/../lib:${LD_LIBRARY_PATH}" # workaround
 
 export LIBRARIES=mpich
 export CPATH="${CRAY_MPICH_DIR}/include:${CPATH}"
@@ -25,8 +30,6 @@ export LD_LIBRARY_PATH="${CRAY_MPICH_DIR}/lib:${LD_LIBRARY_PATH}"
 
 export CXX=hipcc
 export CXXFLAGS+=" -ferror-limit=1"
-export BLAS_LIBRARIES=blis
-export LAPACK_LIBRARIES=flame
 
 export OMP_PLACES=cores
 export OMP_PROC_BIND=close
@@ -37,12 +40,12 @@ export ESPRESO_RANK_TO_GPU_MAP="0"
 
 export ESPRESO_ROCM_ARCH="gfx90a:sramecc+:xnack-"
 
-export ESPRESO_USE_WRAPPER_DNBLAS=blas
-export ESPRESO_USE_WRAPPER_DNSOLVER=lapack
-export ESPRESO_USE_WRAPPER_LAPACK=lapack
-export ESPRESO_USE_WRAPPER_SPBLAS=suitesparse
-export ESPRESO_USE_WRAPPER_SPSOLVER=suitesparse
-export ESPRESO_USE_WRAPPER_SCSOLVER=suitesparse
+export ESPRESO_USE_WRAPPER_DNBLAS=mkl
+export ESPRESO_USE_WRAPPER_DNSOLVER=mkl
+export ESPRESO_USE_WRAPPER_LAPACK=mkl
+export ESPRESO_USE_WRAPPER_SPBLAS=mkl
+export ESPRESO_USE_WRAPPER_SPSOLVER=mkl
+export ESPRESO_USE_WRAPPER_SCSOLVER=mkl
 export ESPRESO_USE_WRAPPER_GPU=rocm
 
 

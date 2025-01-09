@@ -197,6 +197,7 @@ namespace spblas {
     struct _descr_matrix_csr
     {
         rocsparse_spmat_descr d;
+        size_t nnz;
     };
 
     struct _descr_matrix_dense
@@ -252,6 +253,7 @@ namespace spblas {
         descr = std::make_shared<_descr_matrix_csr>();
         void * dummyptr = reinterpret_cast<void*>(1);
         CHECK(rocsparse_create_csr_descr(&descr->d, nrows, ncols, nnz, dummyptr, dummyptr, dummyptr, _sparse_index_type<I>(), _sparse_index_type<I>(), rocsparse_index_base_zero, _sparse_data_type<T>()));
+        descr->nnz = nnz;
         
         rocsparse_fill_mode upper = rocsparse_fill_mode_upper;
         rocsparse_fill_mode lower = rocsparse_fill_mode_lower;
