@@ -9,7 +9,7 @@ then
     (
         echo "PreCICE not installed, cloning..."
         cd "${DEPENDENCIES_DIR}"
-        wget https://github.com/precice/precice/archive/v3.1.2.tar.gz
+        ../env/dependencies/download.sh https://github.com/precice/precice/archive/v3.1.2.tar.gz
         tar -xzvf v3.1.2.tar.gz
         rm v3.1.2.tar.gz
     )

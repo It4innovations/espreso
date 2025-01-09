@@ -21,7 +21,7 @@ then
     (
         echo "CMake ${VERSION_CMAKE} not found, downloading..."
         cd "${DEPENDENCIES_DIR}"
-        wget "${tarball_url}"
+        ../env/dependencies/download.sh "${tarball_url}"
         tar -xf "${version_name}.tar.gz"
         rm "${version_name}.tar.gz"
     )

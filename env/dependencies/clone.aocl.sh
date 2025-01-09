@@ -9,7 +9,7 @@ then
     (
         echo "AOCL 4.1.0 not found, downloading..."
         cd "${DEPENDENCIES_DIR}"
-        wget https://download.amd.com/developer/eula/aocl/aocl-4-1/aocl-linux-aocc-4.1.0.tar.gz
+        ../env/dependencies/download.sh https://download.amd.com/developer/eula/aocl/aocl-4-1/aocl-linux-aocc-4.1.0.tar.gz
         tar -xf aocl-linux-aocc-4.1.0.tar.gz
         rm aocl-linux-aocc-4.1.0.tar.gz
     )
