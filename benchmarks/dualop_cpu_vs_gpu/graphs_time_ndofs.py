@@ -129,7 +129,7 @@ for machine in machines:
         if dim == 3: element_types = element_types_3d
         for element_type in element_types:
             image_index += 1
-            if image_index != MPI.COMM_WORLD.Get_rank():
+            if image_index % MPI.COMM_WORLD.Get_size() != MPI.COMM_WORLD.Get_rank():
                 continue
 
             csv_data_element = list(filter(lambda row: row[element_type_col] == element_type, csv_data_problem))

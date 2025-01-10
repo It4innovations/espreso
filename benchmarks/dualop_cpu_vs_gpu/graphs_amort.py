@@ -113,7 +113,7 @@ problems = ["heat_transfer_2d", "heat_transfer_3d", "linear_elasticity_2d", "lin
 machines = sorted(list(set([mtd[0] for mtd in machines_tools_dualops])))
 for machine in machines:
     image_index += 1
-    if image_index != MPI.COMM_WORLD.Get_rank():
+    if image_index % MPI.COMM_WORLD.Get_size() != MPI.COMM_WORLD.Get_rank():
         continue
 
     tools_dualops = list(filter(lambda mtd: mtd[0] == machine, machines_tools_dualops))

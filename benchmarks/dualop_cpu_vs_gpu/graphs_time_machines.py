@@ -7,6 +7,7 @@ import matplotlib.pyplot as plt
 import matplotlib
 from datetime import datetime
 from mpi4py import MPI
+import mytikzplot
 
 
 
@@ -104,6 +105,13 @@ image_index = -1
 
 
 
+graph_logx = 2
+graph_logy = 10
+graph_xlabel = "Number of DOFs per subdomain"
+graph_ylabel = "Time per subdomain [ms]"
+graph_legendpos = "upper left"
+
+problems = ["heat_transfer_2d", "heat_transfer_3d", "linear_elasticity_2d", "linear_elasticity_3d"]
 element_types_2d = ["TRIANGLE3", "TRIANGLE6"]
 element_types_3d = ["TETRA4", "TETRA10"]
 # element_types_2d = ["TRIANGLE3"]
@@ -115,9 +123,10 @@ for machine in machines:
     
     csv_data_machine = list(filter(lambda row: row[machine_col] == machine, csv_data))
     machine_outdir = outdir + "/" + machine
+    machine_tikz_outdir = outdir + "/" + machine + "/tikz"
     os.makedirs(machine_outdir, exist_ok=True)
+    os.makedirs(machine_tikz_outdir, exist_ok=True)
 
-    problems = ["heat_transfer_2d", "heat_transfer_3d", "linear_elasticity_2d", "linear_elasticity_3d"]
     for problem in problems:
         csv_data_problem = list(filter(lambda row: row[problem_col] == problem, csv_data_machine))
 
@@ -127,7 +136,7 @@ for machine in machines:
         if dim == 3: element_types = element_types_3d
         for element_type in element_types:
             image_index += 1
-            if image_index != MPI.COMM_WORLD.Get_rank():
+            if image_index % MPI.COMM_WORLD.Get_size() != MPI.COMM_WORLD.Get_rank():
                 continue
 
             csv_data_element = list(filter(lambda row: row[element_type_col] == element_type, csv_data_problem))
@@ -138,6 +147,7 @@ for machine in machines:
             
             plt.figure()
             fig, axs = plt.subplots(1, len(stages), figsize=(1200/100.0, 500/100.0))
+            tikzplotters = mytikzplot.tikzplotter.create_table_of_plotters(1, len(stages))
 
             for stage_idx in range(len(stages)):
                 stage = stages[stage_idx]
@@ -169,6 +179,7 @@ for machine in machines:
                     marker = None
                     label = tool + "-" + dualop
                     title = machine + "-" + stage
+                    tikzplotters[0][stage_idx].add_line(mytikzplot.line(x_vals, y_vals, color, linestyle, marker, label))
                     axs[stage_idx].loglog(x_vals, y_vals, base=2, color=color, linestyle=linestyle, linewidth=linewidth, marker=marker, label=label)
                     axs[stage_idx].set_title(title, fontsize="medium")
 
@@ -183,20 +194,31 @@ for machine in machines:
             ylim_max = 0
             for a in axs.flat:
                 a.grid(True)
-                # a.set_xlabel('n_dofs')
-                # a.set_ylabel('time/subdomain [ms]')
+                # a.set_xlabel(graph_xlabel)
+                # a.set_ylabel(graph_ylabel)
                 if a.lines:
-                    a.legend(loc="upper left")
+                    a.legend(loc=graph_legendpos)
                     xlim_min = min(xlim_min, a.get_xlim()[0])
                     xlim_max = max(xlim_max, a.get_xlim()[1])
                     ylim_min = min(ylim_min, a.get_ylim()[0])
                     ylim_max = max(ylim_max, a.get_ylim()[1])
-                a.set_xscale("log", base=2)
-                a.set_yscale("log", base=10)
+                a.set_xscale("log", base=graph_logx)
+                a.set_yscale("log", base=graph_logy)
             plt.setp(axs, xlim=[xlim_min,xlim_max], ylim=[ylim_min,ylim_max])
             fig.tight_layout()
             plt.savefig(machine_outdir + "/" + problem + "-" + element_type + ".png")
             plt.close()
+
+            for stage_idx in range(len(stages)):
+                stage = stages[stage_idx]
+                tp = tikzplotters[0][stage_idx]
+                # tp.set_legendpos(graph_legendpos)
+                tp.set_bounds(xlim_min, xlim_max, ylim_min, ylim_max)
+                tp.logx = graph_logx
+                tp.logy = graph_logy
+                tp.xlabel = graph_xlabel
+                tp.ylabel = graph_ylabel
+                tp.save(machine_tikz_outdir + "/" + problem + "-" + element_type + "-" + stage + ".tex")
 
 
 
@@ -220,7 +242,7 @@ for machine in machines:
 #         if dim == 3: element_types = ["TETRA4", "TETRA10"]
 #         for element_type in element_types:
 #             image_index += 1
-#             if image_index != MPI.COMM_WORLD.Get_rank():
+#             if image_index % MPI.COMM_WORLD.Get_size() != MPI.COMM_WORLD.Get_rank():
 #                 continue
 
 #             csv_data_element = list(filter(lambda row: row[element_type_col] == element_type, csv_data_problem))
