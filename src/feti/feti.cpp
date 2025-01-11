@@ -56,7 +56,10 @@ bool FETI<T>::set(const step::Step &step)
     preconditioner = Preconditioner<T>::create(*this, step);
     iterativeSolver = IterativeSolver<T>::create(*this, step);
 
+    double dualop_start = eslog::time();
     dualOperator->set(step);
+    double dualop_stop = eslog::time();
+    eslog::info("TMP DUAL OPERATOR SET TIME:    %12.6f ms\n", (dualop_stop - dualop_start) * 1000.0);
     projector->set(step);
     preconditioner->set(step);
     iterativeSolver->set(step);
@@ -88,7 +91,14 @@ bool FETI<T>::update(const step::Step &step)
     }
 
     projector->orthonormalizeKernels(step);
-    dualOperator->update(step);
+
+    for(int rep = 0; rep < 2; rep++) {
+        double start = eslog::time();
+        dualOperator->update(step);
+        double stop = eslog::time();
+        eslog::info("TMP DUAL OPERATOR UPDATE TIME: %12.6f ms\n", (stop - start) * 1000.0);
+    }
+
     projector->update(step);
     preconditioner->update(step);
     iterativeSolver->update(step);

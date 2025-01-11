@@ -528,7 +528,10 @@ void TotalFETIExplicitSc<T,I>::_apply(const Vector_Dual<T> &x_cluster, Vector_Du
 template <typename T, typename I>
 void TotalFETIExplicitSc<T,I>::apply(const Vector_Dual<T> &x, Vector_Dual<T> &y)
 {
+    double start = eslog::time();
     _apply(x, y);
+    double stop = eslog::time();
+    eslog::info("TMP DUAL OPERATOR APPLY TIME:  %12.6f ms\n", (stop - start) * 1000.0);
     y.synchronize();
 }
 
