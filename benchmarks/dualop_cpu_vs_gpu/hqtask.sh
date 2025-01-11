@@ -62,18 +62,21 @@ echo "dual_operator ${dual_operator}" >> "${infofile}"
 command=""
 if [ "${machine}" == "karolina" ]; then
     if [ "${tool}" == "cudalegacy" ]; then
-        source env/it4i.karolina.cuda.gcc.32.sh legacy
+        source env/it4i.karolina.cuda.gcc.suitesparse.sh legacy
         command="mpirun -n 1 --bind-to numa ./build/espreso -c \"${ecf_file}\" $@ > \"${output_path}/stdout.txt\" 2> \"${output_path}/stderr.txt\""
     elif [ "${tool}" == "cudamodern" ]; then
-        source env/it4i.karolina.cuda.gcc.32.sh modern
+        source env/it4i.karolina.cuda.gcc.suitesparse.sh modern
         command="mpirun -n 1 --bind-to numa ./build/espreso -c \"${ecf_file}\" $@ > \"${output_path}/stdout.txt\" 2> \"${output_path}/stderr.txt\""
     elif [ "${tool}" == "suitesparse" ]; then
-        source env/it4i.karolina.cuda.gcc.32.sh legacy
+        source env/it4i.karolina.cuda.gcc.suitesparse.sh legacy
         command="mpirun -n 1 --bind-to numa ./build/espreso -c \"${ecf_file}\" $@ > \"${output_path}/stdout.txt\" 2> \"${output_path}/stderr.txt\""
     elif [ "${tool}" == "mklpardiso" ]; then
         source env/it4i.karolina.intel.32.sh
         export OMP_NUM_THREADS="$(nproc),1"
         command="mpirun -n 1 ./build/espreso -c \"${ecf_file}\" $@ > \"${output_path}/stdout.txt\" 2> \"${output_path}/stderr.txt\""
+    elif [ "${tool}" == "hybrid" ]; then
+        source env/it4i.karolina.cuda.gcc.mkl.sh
+        command="mpirun -n 1 --bind-to numa ./build/espreso -c \"${ecf_file}\" $@ > \"${output_path}/stdout.txt\" 2> \"${output_path}/stderr.txt\""
     else
         echo wrong tool
         exit 72
@@ -89,6 +92,9 @@ elif [ "${machine}" == "lumi" ]; then
         source env/csc.lumi.intel.sh
         export OMP_NUM_THREADS=7,1
         command="srun -n 1 ./build/espreso -c \"${ecf_file}\" $@ > \"${output_path}/stdout.txt\" 2> \"${output_path}/stderr.txt\""
+    elif [ "${tool}" == "hybrid" ]; then
+        source env/csc.lumi.rocm.mkl.sh
+        command="srun -n 1 ./build/espreso -c \"${ecf_file}\" $@ > \"${output_path}/stdout.txt\" 2> \"${output_path}/stderr.txt\""
     else
         echo wrong tool
         exit 72
@@ -98,6 +104,10 @@ elif [ "${machine}" == "e4red" ]; then
         source env/e4.red.cuda.32.sh
         command="mpirun -n 1 --bind-to numa ./build/espreso -c \"${ecf_file}\" $@ > \"${output_path}/stdout.txt\" 2> \"${output_path}/stderr.txt\""
     elif [ "${tool}" == "suitesparse" ]; then
+        source env/e4.red.cuda.32.sh
+        export OMP_NUM_THREADS=72,1 # for cpu-only work, use all the threads
+        command="mpirun -n 1 --bind-to numa ./build/espreso -c \"${ecf_file}\" $@ > \"${output_path}/stdout.txt\" 2> \"${output_path}/stderr.txt\""
+    elif [ "${tool}" == "hybrid" ]; then
         source env/e4.red.cuda.32.sh
         export OMP_NUM_THREADS=72,1 # for cpu-only work, use all the threads
         command="mpirun -n 1 --bind-to numa ./build/espreso -c \"${ecf_file}\" $@ > \"${output_path}/stdout.txt\" 2> \"${output_path}/stderr.txt\""
@@ -113,6 +123,9 @@ elif [ "${machine}" == "tiber" ]; then
         source env/intel.tiber.oneapi.sh suitesparse
         command="mpirun -n 1 ./build/espreso -c \"${ecf_file}\" $@ > \"${output_path}/stdout.txt\" 2> \"${output_path}/stderr.txt\""
     elif [ "${tool}" == "mklpardiso" ]; then
+        source env/intel.tiber.oneapi.sh mklpardiso
+        command="mpirun -n 1 ./build/espreso -c \"${ecf_file}\" $@ > \"${output_path}/stdout.txt\" 2> \"${output_path}/stderr.txt\""
+    elif [ "${tool}" == "hybrid" ]; then
         source env/intel.tiber.oneapi.sh mklpardiso
         command="mpirun -n 1 ./build/espreso -c \"${ecf_file}\" $@ > \"${output_path}/stdout.txt\" 2> \"${output_path}/stderr.txt\""
     else

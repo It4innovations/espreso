@@ -14,12 +14,14 @@ machine="karolina"
 tool="mklpardiso"
 # tool="rocm"
 # tool="oneapi"
+# tool="hybrid"
 
 dualoperators=""
 # dualoperators="${dualoperators} EXPLICIT_GPU"
 # dualoperators="${dualoperators} IMPLICIT_GPU"
 dualoperators="${dualoperators} EXPLICIT_SC"
 dualoperators="${dualoperators} IMPLICIT"
+# dualoperators="${dualoperators} EXPLICIT_SC_GPUAPPLY"
 
 
 
