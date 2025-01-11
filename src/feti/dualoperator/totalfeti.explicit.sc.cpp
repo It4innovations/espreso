@@ -83,7 +83,7 @@ void TotalFETIExplicitSc<T,I>::info()
 template<typename T, typename I>
 void TotalFETIExplicitSc<T,I>::set(const step::Step &step)
 {
-    gpu_wait_update = true;
+    gpu_wait_update = false;
     gpu_wait_apply = false;
     gpu_apply_parallel = (gpu::mgm::get_implementation() != gpu::mgm::gpu_wrapper_impl::ONEAPI);
     is_system_hermitian = std::all_of(feti.K.begin(), feti.K.end(), [](Matrix_CSR<T,I> & K){ return getSymmetry(K.type) == Matrix_Symmetry::HERMITIAN; });
