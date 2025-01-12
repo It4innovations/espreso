@@ -11,7 +11,7 @@ then
     echo "intel toolkit not installed in dependencies, please install it manually"
     return 1
 fi
-source dependencies/oneAPI-2024.2.0/install/mkl/2024.2/env/vars.sh
+source dependencies/oneAPI-2024.2.0/install/setvars.sh
 
 
 
