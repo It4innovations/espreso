@@ -80,6 +80,7 @@ else
     # mkdir -p "${hq_bin_dir}"
     # cd "${hq_bin_dir}"
     # wget https://github.com/It4innovations/hyperqueue/releases/download/v0.19.0/hq-v0.19.0-linux-arm64-linux.tar.gz
+    # wget https://github.com/It4innovations/hyperqueue/releases/download/v0.19.0/hq-v0.19.0-linux-x64.tar.gz
     # tar -xf hq-v0.19.0-linux-arm64-linux.tar.gz
 fi
 
@@ -195,7 +196,7 @@ elif [ "${machine}" == "e4red" ]; then
     echo "    ${sbatch_command_normal}"
 elif [ "${machine}" == "tiber" ]; then
     echo "run workers using:"
-    echo "    ./benchmarks/dualop_gpu_options/tiber_run_hqworkers.sh"
+    echo "    ./benchmarks/dualop_cpu_vs_gpu/run_hqworkers_tiber.sh"
     echo "inside tmux"
 elif [[ "${machine}" == "spr"* ]]; then
     echo "sbatch command for later, normal job:"
@@ -348,7 +349,7 @@ elif [ "${machine}" == "e4red" ]; then
     echo "    ${sbatch_command_normal}"
 elif [ "${machine}" == "tiber" ]; then
     echo "run workers using:"
-    echo "    ./benchmarks/dualop_gpu_options/tiber_run_hqworkers.sh"
+    echo "    ./benchmarks/dualop_cpu_vs_gpu/run_hqworkers_tiber.sh"
     echo "inside tmux"
 elif [[ "${machine}" == "spr"* ]]; then
     echo "sbatch command for later, normal job:"
