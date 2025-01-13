@@ -83,6 +83,7 @@ fi
 
 export CXX=mpic++
 export CXXFLAGS+=" -fmax-errors=1"
+export LINKFLAGS+=" -Wl,--no-as-needed -lnvf"
 
 export OMP_PLACES=cores
 export OMP_PROC_BIND=spread

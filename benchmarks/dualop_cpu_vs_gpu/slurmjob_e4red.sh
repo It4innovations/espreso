@@ -1,5 +1,5 @@
 #!/bin/bash
-#SBATCH --account eupex
+#SBATCH --account eupuser
 #SBATCH --partition t-gpu-gh200
 #SBATCH --nodes 1
 #SBATCH --ntasks-per-node 1
