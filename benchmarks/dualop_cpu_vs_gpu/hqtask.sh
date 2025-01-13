@@ -100,16 +100,19 @@ elif [ "${machine}" == "lumi" ]; then
         exit 72
     fi
 elif [ "${machine}" == "e4red" ]; then
-    if [ "${tool}" == "cudamodern" ]; then
-        source env/e4.red.cuda.32.sh
+    if [ "${tool}" == "cudalegacy" ]; then
+        source env/e4.red.cuda.32.sh legacy
+        command="mpirun -n 1 --bind-to numa ./build/espreso -c \"${ecf_file}\" $@ > \"${output_path}/stdout.txt\" 2> \"${output_path}/stderr.txt\""
+    elif [ "${tool}" == "cudamodern" ]; then
+        source env/e4.red.cuda.32.sh modern
         command="mpirun -n 1 --bind-to numa ./build/espreso -c \"${ecf_file}\" $@ > \"${output_path}/stdout.txt\" 2> \"${output_path}/stderr.txt\""
     elif [ "${tool}" == "suitesparse" ]; then
-        source env/e4.red.cuda.32.sh
+        source env/e4.red.cuda.32.sh modern
         export OMP_NUM_THREADS=72,1 # for cpu-only work, use all the threads
         command="mpirun -n 1 --bind-to numa ./build/espreso -c \"${ecf_file}\" $@ > \"${output_path}/stdout.txt\" 2> \"${output_path}/stderr.txt\""
     elif [ "${tool}" == "hybrid" ]; then
-        source env/e4.red.cuda.32.sh
-        export OMP_NUM_THREADS=72,1 # for cpu-only work, use all the threads
+        source env/e4.red.cuda.32.sh modern
+        export OMP_NUM_THREADS=72,1 # for cpu-only work, use all the threads. It will use too many gpu queues, but whatever.
         command="mpirun -n 1 --bind-to numa ./build/espreso -c \"${ecf_file}\" $@ > \"${output_path}/stdout.txt\" 2> \"${output_path}/stderr.txt\""
     else
         echo wrong tool
