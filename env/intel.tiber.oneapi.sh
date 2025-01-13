@@ -28,7 +28,7 @@ source dependencies/oneAPI-2024.2.0/install/setvars.sh
 . env/dependencies/install.cmake.sh oneapi x86_64
 if [ "${cpu_spsolver}" == "suitesparse" ]
 then
-    . env/dependencies/install.suitesparse.sh icx ifx
+    . env/dependencies/install.suitesparse.sh oneapi icx ifx
 fi
 . env/dependencies/install.gklib.sh oneapi icx
 . env/dependencies/install.metis32.sh oneapi icx
