@@ -32,22 +32,26 @@ machines_tools_dualops = [
     ("karolina", "mklpardiso",   "IMPLICIT"),
     ("karolina", "suitesparse",  "EXPLICIT_SC"),
     ("karolina", "suitesparse",  "IMPLICIT"),
+    ("karolina", "hybrid",       "EXPLICIT_SC_GPUAPPLY"),
     ("lumi",     "rocm",         "EXPLICIT_GPU"),
     ("lumi",     "rocm",         "IMPLICIT_GPU"),
     ("lumi",     "mklpardiso",   "EXPLICIT_SC"),
     ("lumi",     "mklpardiso",   "IMPLICIT"),
     ("lumi",     "suitesparse",  "EXPLICIT_SC"),
     ("lumi",     "suitesparse",  "IMPLICIT"),
+    ("lumi",     "hybrid",       "EXPLICIT_SC_GPUAPPLY"),
     ("e4red",    "cudamodern",   "EXPLICIT_GPU"),
     ("e4red",    "cudamodern",   "IMPLICIT_GPU"),
     ("e4red",    "suitesparse",  "EXPLICIT_SC"),
     ("e4red",    "suitesparse",  "IMPLICIT"),
+    ("e4red",    "hybrid",       "EXPLICIT_SC_GPUAPPLY"),
     ("tiber",    "oneapi",       "EXPLICIT_GPU"),
     ("tiber",    "oneapi",       "IMPLICIT_GPU"),
     ("tiber",    "mklpardiso",   "EXPLICIT_SC"),
     ("tiber",    "mklpardiso",   "IMPLICIT"),
     ("tiber",    "suitesparse",  "EXPLICIT_SC"),
     ("tiber",    "suitesparse",  "IMPLICIT"),
+    ("tiber",    "hybrid",       "EXPLICIT_SC_GPUAPPLY"),
     ("sprddr",   "mklpardiso",   "EXPLICIT_SC"),
     ("sprddr",   "mklpardiso",   "IMPLICIT"),
     ("sprddr",   "suitesparse",  "EXPLICIT_SC"),
@@ -166,6 +170,7 @@ for machine in machines:
                     linestyle = ":"
                     if "IMPLICIT" in dualop: linestyle = "--"
                     if "EXPLICIT" in dualop: linestyle = "-"
+                    if tool == "hybrid": linestyle = ":"
                     color = "black"
                     if tool == "cudalegacy": color = "green"
                     if tool == "cudamodern": color = "lawngreen"
@@ -173,6 +178,7 @@ for machine in machines:
                     if tool == "oneapi": color = "blue"
                     if tool == "suitesparse": color = "magenta"
                     if tool == "mklpardiso": color = "cyan"
+                    if tool == "hybrid": color = "black"
                     linewidth = 2
                     marker = None
                     label = tool + "-" + dualop

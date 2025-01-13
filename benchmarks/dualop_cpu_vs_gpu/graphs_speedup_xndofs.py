@@ -33,22 +33,26 @@ machines_tools_dualops = [
     ("karolina", "mklpardiso",   "IMPLICIT"),
     ("karolina", "suitesparse",  "EXPLICIT_SC"),
     ("karolina", "suitesparse",  "IMPLICIT"),
+    ("karolina", "hybrid",       "EXPLICIT_SC_GPUAPPLY"),
     ("lumi",     "rocm",         "EXPLICIT_GPU"),
     ("lumi",     "rocm",         "IMPLICIT_GPU"),
     ("lumi",     "mklpardiso",   "EXPLICIT_SC"),
     ("lumi",     "mklpardiso",   "IMPLICIT"),
     ("lumi",     "suitesparse",  "EXPLICIT_SC"),
     ("lumi",     "suitesparse",  "IMPLICIT"),
+    ("lumi",     "hybrid",       "EXPLICIT_SC_GPUAPPLY"),
     ("e4red",    "cudamodern",   "EXPLICIT_GPU"),
     ("e4red",    "cudamodern",   "IMPLICIT_GPU"),
     ("e4red",    "suitesparse",  "EXPLICIT_SC"),
     ("e4red",    "suitesparse",  "IMPLICIT"),
+    ("e4red",    "hybrid",       "EXPLICIT_SC_GPUAPPLY"),
     ("tiber",    "oneapi",       "EXPLICIT_GPU"),
     ("tiber",    "oneapi",       "IMPLICIT_GPU"),
     ("tiber",    "mklpardiso",   "EXPLICIT_SC"),
     ("tiber",    "mklpardiso",   "IMPLICIT"),
     ("tiber",    "suitesparse",  "EXPLICIT_SC"),
     ("tiber",    "suitesparse",  "IMPLICIT"),
+    ("tiber",    "hybrid",       "EXPLICIT_SC_GPUAPPLY"),
     ("sprddr",   "mklpardiso",   "EXPLICIT_SC"),
     ("sprddr",   "mklpardiso",   "IMPLICIT"),
     ("sprddr",   "suitesparse",  "EXPLICIT_SC"),
@@ -120,7 +124,7 @@ problems = ["heat_transfer_2d", "heat_transfer_3d", "linear_elasticity_2d", "lin
 # element_types_3d = ["TETRA4", "TETRA10"]
 element_types_2d = ["TRIANGLE3"]
 element_types_3d = ["TETRA4"]
-niters_list = [10, 30, 100, 300, 1000, 3000, 10000]
+niters_list = [1, 3, 10, 30, 100, 300, 1000, 3000, 10000]
 
 machines = sorted(list(set([mtd[0] for mtd in machines_tools_dualops])))
 for machine in machines:
@@ -205,6 +209,7 @@ for machine in machines:
                 axs_x = element_type_idx
                 if "linear_elasticity" in problem: axs_x += len(element_types)
                 if color == "red": color = "blue"
+                elif color == "blue": color = "green"
                 else: color = "red"
                 linestyle = "-"
                 linewidth = 2

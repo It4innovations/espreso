@@ -33,22 +33,26 @@ machines_tools_dualops = [
     ("karolina", "mklpardiso",   "IMPLICIT"),
     ("karolina", "suitesparse",  "EXPLICIT_SC"),
     ("karolina", "suitesparse",  "IMPLICIT"),
+    ("karolina", "hybrid",       "EXPLICIT_SC_GPUAPPLY"),
     ("lumi",     "rocm",         "EXPLICIT_GPU"),
     ("lumi",     "rocm",         "IMPLICIT_GPU"),
     ("lumi",     "mklpardiso",   "EXPLICIT_SC"),
     ("lumi",     "mklpardiso",   "IMPLICIT"),
     ("lumi",     "suitesparse",  "EXPLICIT_SC"),
     ("lumi",     "suitesparse",  "IMPLICIT"),
+    ("lumi",     "hybrid",       "EXPLICIT_SC_GPUAPPLY"),
     ("e4red",    "cudamodern",   "EXPLICIT_GPU"),
     ("e4red",    "cudamodern",   "IMPLICIT_GPU"),
     ("e4red",    "suitesparse",  "EXPLICIT_SC"),
     ("e4red",    "suitesparse",  "IMPLICIT"),
+    ("e4red",    "hybrid",       "EXPLICIT_SC_GPUAPPLY"),
     ("tiber",    "oneapi",       "EXPLICIT_GPU"),
     ("tiber",    "oneapi",       "IMPLICIT_GPU"),
     ("tiber",    "mklpardiso",   "EXPLICIT_SC"),
     ("tiber",    "mklpardiso",   "IMPLICIT"),
     ("tiber",    "suitesparse",  "EXPLICIT_SC"),
     ("tiber",    "suitesparse",  "IMPLICIT"),
+    ("tiber",    "hybrid",       "EXPLICIT_SC_GPUAPPLY"),
     ("sprddr",   "mklpardiso",   "EXPLICIT_SC"),
     ("sprddr",   "mklpardiso",   "IMPLICIT"),
     ("sprddr",   "suitesparse",  "EXPLICIT_SC"),
@@ -124,7 +128,7 @@ problems = ["heat_transfer_2d", "heat_transfer_3d", "linear_elasticity_2d", "lin
 # element_types_3d = ["TETRA4", "TETRA10"]
 element_types_2d = ["TRIANGLE3"]
 element_types_3d = ["TETRA4"]
-min_niters = 10
+min_niters = 1
 max_niters = 10000
 step = 1.1
 nintervals = int((math.log(max_niters) - math.log(min_niters)) / math.log(step)) + 1
@@ -214,12 +218,17 @@ for machine in machines:
                 axs_x = element_type_idx
                 if "linear_elasticity" in problem: axs_x += len(element_types)
                 if color == "red": color = "blue"
+                elif color == "blue": color = "green"
                 else: color = "red"
                 linestyle = "-"
                 linewidth = 2
                 title = problem + "-" + element_type
-                tikzplotters[axs_y][axs_x].add_line(mytikzplot.line(niters_list, ys, color, linestyle, None, None))
-                axs[axs_y,axs_x].plot(niters_list, ys, color=color, linestyle=linestyle, linewidth=linewidth)
+                xs = list(niters_list)
+                last_one = (len(ys) - ys[::-1].index(1.0) - 1) if (1.0 in ys) else 0
+                xs = xs[last_one:]
+                ys = ys[last_one:]
+                tikzplotters[axs_y][axs_x].add_line(mytikzplot.line(xs, ys, color, linestyle, None, None))
+                axs[axs_y,axs_x].plot(xs, ys, color=color, linestyle=linestyle, linewidth=linewidth)
                 axs[axs_y,axs_x].set_title(title, fontsize="medium")
                 if niters == niters_list[-1]:
                     text = str(ndofs) + " DOFs"

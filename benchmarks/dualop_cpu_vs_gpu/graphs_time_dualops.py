@@ -31,22 +31,26 @@ machines_tools_dualops = [
     ("karolina", "mklpardiso",   "IMPLICIT"),
     ("karolina", "suitesparse",  "EXPLICIT_SC"),
     ("karolina", "suitesparse",  "IMPLICIT"),
+    ("karolina", "hybrid",       "EXPLICIT_SC_GPUAPPLY"),
     ("lumi",     "rocm",         "EXPLICIT_GPU"),
     ("lumi",     "rocm",         "IMPLICIT_GPU"),
     ("lumi",     "mklpardiso",   "EXPLICIT_SC"),
     ("lumi",     "mklpardiso",   "IMPLICIT"),
     ("lumi",     "suitesparse",  "EXPLICIT_SC"),
     ("lumi",     "suitesparse",  "IMPLICIT"),
+    ("lumi",     "hybrid",       "EXPLICIT_SC_GPUAPPLY"),
     ("e4red",    "cudamodern",   "EXPLICIT_GPU"),
     ("e4red",    "cudamodern",   "IMPLICIT_GPU"),
     ("e4red",    "suitesparse",  "EXPLICIT_SC"),
     ("e4red",    "suitesparse",  "IMPLICIT"),
+    ("e4red",    "hybrid",       "EXPLICIT_SC_GPUAPPLY"),
     ("tiber",    "oneapi",       "EXPLICIT_GPU"),
     ("tiber",    "oneapi",       "IMPLICIT_GPU"),
     ("tiber",    "mklpardiso",   "EXPLICIT_SC"),
     ("tiber",    "mklpardiso",   "IMPLICIT"),
     ("tiber",    "suitesparse",  "EXPLICIT_SC"),
     ("tiber",    "suitesparse",  "IMPLICIT"),
+    ("tiber",    "hybrid",       "EXPLICIT_SC_GPUAPPLY"),
     ("sprddr",   "mklpardiso",   "EXPLICIT_SC"),
     ("sprddr",   "mklpardiso",   "IMPLICIT"),
     ("sprddr",   "suitesparse",  "EXPLICIT_SC"),
@@ -163,6 +167,7 @@ for device in ["CPU", "GPU"]:
                         if tool == "oneapi": linestyle = "-"
                         if tool == "suitesparse": linestyle = "--"
                         if tool == "mklpardiso": linestyle = ":"
+                        if tool == "hybrid": linestyle = (0, (3, 1, 1, 1, 1, 1))
                         color = "black"
                         if machine == "karolina": color = "green"
                         if machine == "e4red": color = "lawngreen"

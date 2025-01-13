@@ -33,22 +33,26 @@ machines_tools_dualops = [
     ("karolina", "mklpardiso",   "IMPLICIT"),
     ("karolina", "suitesparse",  "EXPLICIT_SC"),
     ("karolina", "suitesparse",  "IMPLICIT"),
+    ("karolina", "hybrid",       "EXPLICIT_SC_GPUAPPLY"),
     ("lumi",     "rocm",         "EXPLICIT_GPU"),
     ("lumi",     "rocm",         "IMPLICIT_GPU"),
     ("lumi",     "mklpardiso",   "EXPLICIT_SC"),
     ("lumi",     "mklpardiso",   "IMPLICIT"),
     ("lumi",     "suitesparse",  "EXPLICIT_SC"),
     ("lumi",     "suitesparse",  "IMPLICIT"),
+    ("lumi",     "hybrid",       "EXPLICIT_SC_GPUAPPLY"),
     ("e4red",    "cudamodern",   "EXPLICIT_GPU"),
     ("e4red",    "cudamodern",   "IMPLICIT_GPU"),
     ("e4red",    "suitesparse",  "EXPLICIT_SC"),
     ("e4red",    "suitesparse",  "IMPLICIT"),
+    ("e4red",    "hybrid",       "EXPLICIT_SC_GPUAPPLY"),
     ("tiber",    "oneapi",       "EXPLICIT_GPU"),
     ("tiber",    "oneapi",       "IMPLICIT_GPU"),
     ("tiber",    "mklpardiso",   "EXPLICIT_SC"),
     ("tiber",    "mklpardiso",   "IMPLICIT"),
     ("tiber",    "suitesparse",  "EXPLICIT_SC"),
     ("tiber",    "suitesparse",  "IMPLICIT"),
+    ("tiber",    "hybrid",       "EXPLICIT_SC_GPUAPPLY"),
     ("sprddr",   "mklpardiso",   "EXPLICIT_SC"),
     ("sprddr",   "mklpardiso",   "IMPLICIT"),
     ("sprddr",   "suitesparse",  "EXPLICIT_SC"),
@@ -220,9 +224,11 @@ for machine in machines:
                     if curr_mtd[1] == "oneapi": color = "blue"
                     if curr_mtd[1] == "suitesparse": color = "magenta"
                     if curr_mtd[1] == "mklpardiso": color = "cyan"
+                    if curr_mtd[1] == "hybrid": color = "black"
                     linestyle = ":"
                     if "IMPLICIT" in curr_mtd[2]: linestyle = "--"
                     if "EXPLICIT" in curr_mtd[2]: linestyle = "-"
+                    if curr_mtd[1] == "hybrid": linestyle = ":"
                     linewidth = 2
                     marker = None
                     label = curr_mtd[1] + "-" + curr_mtd[2]
@@ -237,7 +243,8 @@ for machine in machines:
                     tikzplotters[axs_y][axs_x].add_line(mytikzplot.line(xs, ys, color, linestyle, marker, label))
                     axs[axs_y,axs_x].plot(xs, ys, color=color, linestyle=linestyle, linewidth=linewidth, marker=marker, label=label)
                     axs[axs_y,axs_x].set_title(title, fontsize="medium")
-                    if next_niters >= max_niters and ys[-1] > 1.7 * prev_ndofs_label:
+                    # if next_niters >= max_niters and ys[-1] > 1.7 * prev_ndofs_label:
+                    if next_niters >= max_niters:
                         x = xs[-1] * 1.1
                         y = ys[-1]
                         text = str(ndofs) + " DOFs"

@@ -5,7 +5,7 @@
 ml mpi4py
 ml matplotlib
 
-summarize_datestr=20241209_183948
+summarize_datestr=20250113_233607
 datestr="$(date +%Y%m%d_%H%M%S)"
 
 mpirun -n 6 python3 benchmarks/dualop_cpu_vs_gpu/graphs_amort.py "${summarize_datestr}" "${datestr}" &
