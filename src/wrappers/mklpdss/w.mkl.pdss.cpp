@@ -48,7 +48,9 @@ void MKLPDSS<T>::check()
     eslog::globalerror("ESPRESO run-time error: cannot call MKL PDSS solver (the library with the solver is not linked).\n");
 #endif
 #ifndef HAVE_MKLPDSS_PARALLEL
-    eslog::globalerror("ESPRESO run-time error: only sequential MKL PDSS interface is supported.\n");
+    if (info::mpi::size > 1) {
+        eslog::globalerror("ESPRESO run-time error: only sequential MKL PDSS interface is supported.\n");
+    }
 #endif
 }
 
