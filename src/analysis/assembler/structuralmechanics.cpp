@@ -671,6 +671,7 @@ void StructuralMechanics::evaluate(const step::Step &step, const step::Time &tim
                     nodeKernels[i][j].expressions.node[e]->evaluator->getTime(t) = time.current;
                 }
             }
+            nodeKernels[i][j].reRHSfiller.isactive = isactive(f);
             nodeKernels[i][j].reDirichlet.isactive = isactive(dirichlet);
         }
     }
@@ -737,6 +738,12 @@ void StructuralMechanics::evaluate(const step::Step &step, const step::Frequency
                 elementKernels[i].expressions.gp[e]->evaluator->getFrequency(t) = freq.current;
             }
         }
+        elementKernels[i].Kfiller.isactive = isactive(K);
+        elementKernels[i].Mfiller.isactive = isactive(M);
+        elementKernels[i].reRHSfiller.isactive = isactive(ref);
+        elementKernels[i].imRHSfiller.isactive = isactive(imf);
+        elementKernels[i].reNRHSfiller.isactive = isactive(renf);
+        elementKernels[i].imNRHSfiller.isactive = isactive(imnf);
     }
     for (size_t i = 0; i < faceKernels.size(); ++i) {
         for (size_t j = 0; j < faceKernels[i].size(); ++j) {
@@ -752,6 +759,23 @@ void StructuralMechanics::evaluate(const step::Step &step, const step::Frequency
                     faceKernels[i][j].expressions.gp[e]->evaluator->getFrequency(t) = freq.current;
                 }
             }
+            faceKernels[i][j].reRHSfiller.isactive = isactive(ref);
+            faceKernels[i][j].imRHSfiller.isactive = isactive(imf);
+        }
+    }
+
+    for (size_t i = 0; i < nodeKernels.size(); ++i) {
+        for (size_t j = 0; j < nodeKernels[i].size(); ++j) {
+            for (size_t e = 0; e < nodeKernels[i][j].expressions.node.size(); ++e) {
+                #pragma omp parallel for
+                for (int t = 0; t < info::env::threads; ++t) {
+                    nodeKernels[i][j].expressions.node[e]->evaluator->getFrequency(t) = freq.current;
+                }
+            }
+            nodeKernels[i][j].reRHSfiller.isactive = isactive(ref);
+            nodeKernels[i][j].imRHSfiller.isactive = isactive(imf);
+            nodeKernels[i][j].reDirichlet.isactive = isactive(reDirichlet);
+            nodeKernels[i][j].imDirichlet.isactive = isactive(imDirichlet);
         }
     }
 
