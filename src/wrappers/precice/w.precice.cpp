@@ -43,7 +43,7 @@ Precice::Precice()
         _data = new PreciceData();
 
         _data->size = info::mesh->surface->nIDs->datatarray().size();
-        _data->ids.insert(_data->ids.end(), info::mesh->surface->nIDs->datatarray().begin(), info::mesh->surface->nIDs->datatarray().end());
+        _data->ids.resize(_data->size);
 
         if (info::mesh->dimension == 2) {
             std::vector<double> coords; coords.reserve(info::mesh->dimension * _data->size);
@@ -52,6 +52,13 @@ Precice::Precice()
                 coords.push_back(info::mesh->surface->coordinates->datatarray()[n].y);
             }
             _data->precice.setMeshVertices(info::ecf->coupling.mesh, coords, _data->ids);
+            std::vector<esint> edges;
+            for (auto e = info::mesh->surface->enodes->cbegin(); e != info::mesh->surface->enodes->cend(); ++e) {
+                for (auto n = e->begin(); n != e->end(); ++n) {
+                    edges.push_back(*n);
+                }
+            }
+            _data->precice.setMeshEdges(info::ecf->coupling.mesh, edges);
         } else {
             double *coords = &info::mesh->surface->coordinates->datatarray().data()->x;
             _data->precice.setMeshVertices(info::ecf->coupling.mesh, precice::span(coords, coords + info::mesh->dimension * _data->size), _data->ids);
