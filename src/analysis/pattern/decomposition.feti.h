@@ -32,6 +32,8 @@ struct DecompositionFETI: public DecompositionDirect {
         return n;
     }
 
+    void update(std::vector<int> &neighbors);
+
     ~DecompositionFETI()
     {
         if (dmap) delete dmap;

@@ -19,7 +19,8 @@ struct ContactInterfaceConfiguration: public ECFDescription {
 
 	enum class CRITERION {
 		BOUND,
-		GAP
+		GAP,
+		SKIP
 	};
 
 	DETECTION detection;

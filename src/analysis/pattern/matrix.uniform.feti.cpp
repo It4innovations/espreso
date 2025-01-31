@@ -110,19 +110,9 @@ void MatrixUniformFETI::fillDecomposition(int dofs)
     decomposition.dbegin = info::mesh->domains->offset;
     decomposition.dend = info::mesh->domains->offset + info::mesh->domains->size;
     decomposition.dtotal = info::mesh->domains->totalSize;
-    decomposition.neighDomain.resize(info::mesh->neighbors.size() + 1);
-    auto ddist = info::mesh->domains->gatherProcDistribution(); // remove this
-    for (size_t n = 0; n < info::mesh->neighbors.size(); ++n) {
-        decomposition.neighDomain[n] = ddist[info::mesh->neighbors[n]];
-    }
-    decomposition.neighDomain.back() = decomposition.dbegin;
-
     decomposition.begin = dofs * info::mesh->nodes->uniqInfo.offset;
     decomposition.end = dofs * (info::mesh->nodes->uniqInfo.offset + info::mesh->nodes->uniqInfo.size);
     decomposition.totalSize = dofs * info::mesh->nodes->uniqInfo.totalSize;
-
-    decomposition.neighbors = info::mesh->neighbors;
-    decomposition.neighDOF.resize(decomposition.neighbors.size() + 1, decomposition.begin); // the last is my offset
     decomposition.halo.clear();
     decomposition.halo.reserve(dofs * info::mesh->nodes->uniqInfo.nhalo);
     for (esint n = 0; n < info::mesh->nodes->uniqInfo.nhalo; ++n) {
@@ -130,11 +120,7 @@ void MatrixUniformFETI::fillDecomposition(int dofs)
             decomposition.halo.push_back(dofs * info::mesh->nodes->uniqInfo.position[n] + dof);
         }
     }
-
-    std::vector<esint> dBuffer = { decomposition.begin };
-    if (!Communication::gatherUniformNeighbors(dBuffer, decomposition.neighDOF, decomposition.neighbors)) {
-        eslog::internalFailure("cannot exchange matrix distribution info.\n");
-    }
+    decomposition.update(info::mesh->neighbors);
 
     std::vector<esint> distribution(dofs * info::mesh->nodes->size + 1);
     auto domainmap = info::mesh->nodes->domains->begin();

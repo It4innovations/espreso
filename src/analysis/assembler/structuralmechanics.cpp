@@ -200,7 +200,7 @@ bool StructuralMechanics::analyze(const step::Step &step)
     }
 
 
-    if (settings.contact_interfaces) {
+    if (info::ecf->input.contact_interfaces.size()) {
         if (Results::normal == nullptr) {
             Results::normal = info::mesh->nodes->appendData(info::mesh->dimension, NamedData::DataType::VECTOR, "NORMAL", step::TYPE::TIME, info::ecf->output.results_selection.normal);
         }
@@ -470,7 +470,7 @@ bool StructuralMechanics::analyze(const step::Step &step)
                 faceKernels[r][i].coordinates.activate(region->elements->cbegin() + region->eintervals[i].begin, region->elements->cbegin() + region->eintervals[i].end, settings.element_behaviour == StructuralMechanicsGlobalSettings::ELEMENT_BEHAVIOUR::AXISYMMETRIC);
                 faceKernels[r][i].normalPressure.activate(getExpression(region->name, configuration.normal_pressure), settings.element_behaviour);
                 faceKernels[r][i].displacement.activate(region->elements->cbegin() + region->eintervals[i].begin, region->elements->cbegin() + region->eintervals[i].end, Results::displacement->data.data());
-                if (settings.contact_interfaces && StringCompare::caseInsensitivePreffix("CONTACT", region->name)) {
+                if (info::ecf->input.contact_interfaces.size() && StringCompare::caseInsensitivePreffix("CONTACT", region->name)) {
                     faceKernels[r][i].normal.activate(region->elements->cbegin() + region->eintervals[i].begin, region->elements->cbegin() + region->eintervals[i].end, Results::normal->data.data(), faceMultiplicity.data());
                 }
                 auto pressure = configuration.pressure.find(region->name);
@@ -507,6 +507,9 @@ bool StructuralMechanics::analyze(const step::Step &step)
     }
 
     assemble(SubKernel::PREPROCESS, step);
+    if (Results::normal) {
+        Results::normal->synchronize();
+    }
     size_t esize = 0;
     std::vector<double> volume(elementKernels.size()), surface(faceKernels.size());
     for (size_t i = 0; i < elementKernels.size(); ++i) {

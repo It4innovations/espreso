@@ -7,8 +7,13 @@
 #include "esinfo/mpiinfo.h"
 #include "mesh/store/contactstore.h"
 #include "mesh/store/nodestore.h"
+#include "mesh/store/domainstore.h"
 #include "math/math.h"
 #include "wrappers/mpi/communication.h"
+
+#include <set>
+#include <map>
+#include <numeric>
 
 namespace espreso {
 
@@ -333,20 +338,105 @@ void MortarContact<T>::assembleMortarInterface(std::vector<Mortar> &B)
 }
 
 template <typename T>
-void MortarContact<T>::synchronize(FETI<T> &feti, std::vector<Mortar> &B, std::vector<LambdaInfo> &lambdas, std::vector<int> &domains)
+void MortarContact<T>::synchronize(FETI<T> &feti, std::vector<Mortar> &B)
 {
-    // synchronize across neighbors
-    std::vector<std::vector<Mortar> > Bs(info::mesh->neighbors.size(), B), Br(info::mesh->neighbors.size());
+    std::vector<esint> idPerm(info::mesh->nodes->size);
+    std::iota(idPerm.begin(), idPerm.end(), 0);
+    std::sort(idPerm.begin(), idPerm.end(), [&] (esint i, esint j) { return info::mesh->nodes->IDs->datatarray()[i] < info::mesh->nodes->IDs->datatarray()[j]; });
 
-    if (!Communication::exchangeUnknownSize(Bs, Br, info::mesh->neighbors)) {
-        eslog::internalFailure("cannot synchronize mortars.\n");
+//    Communication::serialize([&] () {
+//        printf("%2d :: ", info::mpi::rank);
+//        for (size_t n = 0; n < info::mesh->neighbors.size(); ++n) {
+//            printf(" %d", info::mesh->neighbors[n]);
+//        }
+//        printf("\n");
+//    });
+
+//    Communication::serialize([&] () {
+//        printf("%2d ::\n", info::mpi::rank);
+//        for (size_t i = 0; i < B.size(); ++i) {
+//            printf("    :: %3d : %3d == %+.2e\n", B[i].from, B[i].to, B[i].value);
+//        }
+//    });
+
+    { // get node-to-domains map and duplicate gluing
+        std::map<esint, esint*> n2d;
+        for (size_t i = 0; i < B.size(); i++) {
+            n2d.insert(std::make_pair(B[i].to, nullptr));
+        }
+        std::vector<esint> nodes;
+        for (auto it = n2d.cbegin(); it != n2d.cend(); ++it) {
+            nodes.push_back(it->first);
+        }
+
+        std::vector<std::vector<esint> > sBuffer(info::mesh->neighborsWithMe.size(), nodes), rBuffer(info::mesh->neighborsWithMe.size());
+        if (!Communication::exchangeUnknownSize(sBuffer, rBuffer, info::mesh->neighborsWithMe)) {
+            eslog::internalFailure("cannot exchange mortar nodes.\n");
+        }
+
+        for (size_t n = 0; n < rBuffer.size(); ++n) {
+            sBuffer[n].clear();
+            auto &ids = info::mesh->nodes->IDs->datatarray();
+            for (size_t i = 0, j = 0; i < rBuffer[n].size(); ++i) {
+                while (j < idPerm.size() && ids[idPerm[j]] < rBuffer[n][i]) { ++j; }
+                if (j < idPerm.size() && ids[idPerm[j]] == rBuffer[n][i]) {
+                    auto dmap = info::mesh->nodes->domains->begin() + idPerm[j];
+                    sBuffer[n].push_back(rBuffer[n][i]);
+                    sBuffer[n].push_back(dmap->size());
+                    for (auto d = dmap->begin(); d != dmap->end(); ++d) {
+                        sBuffer[n].push_back(*d);
+                    }
+                }
+            }
+        }
+
+        if (!Communication::exchangeUnknownSize(sBuffer, rBuffer, info::mesh->neighborsWithMe)) {
+            eslog::internalFailure("cannot exchange mortar nodes-to-domain map.\n");
+        }
+
+        for (size_t n = 0; n < rBuffer.size(); ++n) {
+            for (size_t i = 0; i < rBuffer[n].size(); ) {
+                esint id = rBuffer[n][i++];
+                esint domains = rBuffer[n][i];
+                n2d[id] = rBuffer[n].data() + i;
+                i += domains + 1;
+            }
+        }
+
+        // duplicate data to domains (still per element data)
+        std::vector<Mortar> pure; B.swap(pure);
+        for (size_t i = 0; i < pure.size(); ++i) {
+            int *domains = n2d[pure[i].to];
+            for (int d = 0; d < domains[0]; ++d) {
+                B.push_back(pure[i]);
+                B.back().value /= domains[0];
+                B.back().domain = domains[1 + d];
+            }
+        }
     }
 
-    for (size_t n = 0; n < Br.size(); ++n) {
-        B.insert(B.end(), Br[n].begin(), Br[n].end());
-    }
+    { // exchange with common 'sparse' nodes
+        std::set<esint> local;
+        for (size_t i = 0; i < B.size(); ++i) {
+            local.insert(B[i].from);
+        }
 
-    // unique
+        std::vector<std::vector<Mortar> > rBuffer(info::mesh->neighbors.size());
+        if (!Communication::exchangeUnknownSize(B, rBuffer, info::mesh->neighbors)) {
+            eslog::internalFailure("cannot synchronize mortars.\n");
+        }
+
+        for (size_t n = 0; n < rBuffer.size(); ++n) {
+            for (size_t i = 0; i < rBuffer[n].size(); ++i) {
+                if (local.count(rBuffer[n][i].from)) {
+                    B.push_back(rBuffer[n][i]);
+                }
+            }
+        }
+    } // now all processes that generated mortar have complete mortars
+
+
+    // merge values
     std::sort(B.begin(), B.end());
     if (B.size()) {
         size_t unique = 0;
@@ -360,147 +450,227 @@ void MortarContact<T>::synchronize(FETI<T> &feti, std::vector<Mortar> &B, std::v
         B.resize(unique + 1);
     }
 
-    // remove non-local lambdas
-    for (auto it = B.begin(); it != B.end(); it++) {
-        auto &ids = info::mesh->nodes->IDs->datatarray();
-        auto nit = std::find(ids.begin(), ids.begin() + info::mesh->nodes->uniqInfo.nhalo, it->to);
-        if (nit == ids.begin() + info::mesh->nodes->uniqInfo.nhalo || *nit != it->to) {
-            nit = std::lower_bound(ids.begin() + info::mesh->nodes->uniqInfo.nhalo, ids.end(), it->to);
+//    Communication::serialize([&] () {
+//        printf("%2d ::\n", info::mpi::rank);
+//        for (size_t i = 0, j, n = 0; i < B.size(); ++n) {
+//            printf("    :: %3d ", B[i].from);
+//            for (j = i; j < B.size() && B[i].from == B[j].from; ++j) {
+//                if (j && B[j].to == B[j - 1].to) {
+//                    printf("[%2d,%+.2e]", B[j].domain, B[j].value);
+//                } else {
+//                    printf(" %3d[%2d,%+.2e]", B[j].to, B[j].domain, B[j].value);
+//                }
+//            }
+//            printf("\n");
+//            i = j;
+//        }
+//    });
+
+    // normalize values
+    for (size_t i = 0, j = 0; i < B.size(); i = j) {
+        while (j < B.size() && B[i].from == B[j].from) { ++j; }
+        double sum = 0;
+        for (size_t k = i; k < j; ++k) {
+            sum += B[k].value * B[k].value;
         }
-        if (nit != ids.end() && *nit == it->to) {
-            it->to = nit - ids.begin();
-            mortar.push_back(*it); // only local part is needed
+        double norm = 1 / std::sqrt(sum);
+        for (size_t k = i; k < j; ++k) {
+            B[k].value *= norm;
         }
     }
 
-    // compute lambda info
+//    std::map<int, double> check, norm;
+//    for (size_t i = 0; i < B.size(); ++i) {
+//        check[B[i].from] += B[i].value;
+//        norm[B[i].from] += B[i].value * B[i].value;
+//    }
+//    Communication::serialize([&] () {
+//        for (auto x = check.begin(); x != check.end(); ++x) {
+//            printf("%3d = %+.5e |%+.5e|\n", x->first, x->second, norm[x->first]);
+//        }
+//    });
 
-    // collect my lambdas
-    std::vector<Lambda> lmap;
-    if (mortar.size()) {
-        for (auto it = mortar.begin(), prev = it; it != mortar.end(); ++it) {
-            if (it == mortar.begin() || prev->pair != it->pair || prev->from != it->from) {
-                auto &myids = info::mesh->nodes->IDs->datatarray();
-                auto nit = std::lower_bound(myids.begin() + info::mesh->nodes->uniqInfo.nhalo, myids.end(), it->from);
-                if (nit != myids.end() && *nit == it->from) {
-                    lmap.push_back(Lambda(lmap.size(), it->pair, it->from));
-                    if (StructuralMechanics::Results::normal) { // make more robust
-                        lmap.back().normal.x = StructuralMechanics::Results::normal->data[info::mesh->dimension * (nit - myids.begin()) + 0];
-                        lmap.back().normal.y = StructuralMechanics::Results::normal->data[info::mesh->dimension * (nit - myids.begin()) + 1];
-                        lmap.back().normal.z = StructuralMechanics::Results::normal->data[info::mesh->dimension * (nit - myids.begin()) + 2];
+    { // exchange with neighbors-of-neighbors and pick only local part of the mortar
+        std::vector<int> neighbors = info::mesh->neighbors;
+        std::vector<std::vector<int> > rn(neighbors.size());
+        if (!Communication::exchangeUnknownSize(neighbors, rn, info::mesh->neighbors)) {
+            eslog::internalFailure("cannot exchange neighbors.\n");
+        }
+        for (size_t n = 0; n < rn.size(); ++n) {
+            neighbors.insert(neighbors.end(), rn[n].begin(), rn[n].end());
+        }
+        utils::sortAndRemoveDuplicates(neighbors);
+
+        std::set<esint> inserted;
+
+        std::vector<std::vector<Mortar> > rBuffer(neighbors.size());
+        if (!Communication::exchangeUnknownSize(B, rBuffer, neighbors)) {
+            eslog::internalFailure("cannot synchronize mortars.\n");
+        }
+
+        for (size_t n = 0; n < rBuffer.size(); ++n) {
+            auto &ids = info::mesh->nodes->IDs->datatarray();
+            for (size_t i = 0, j = 0; i < rBuffer[n].size(); i = j) {
+                while (j < rBuffer[n].size() && rBuffer[n][i].from == rBuffer[n][j].from) { ++j; }
+                if (inserted.count(rBuffer[n][i].from) == 0) { // new mortar (it is possible to receive the mortar with more processes)
+                    bool local = false;
+                    for (size_t k = i; !local && k < j; ++k) {
+                        auto it = std::lower_bound(idPerm.begin(), idPerm.end(), rBuffer[n][k].to, [&] (esint id, esint val) { return ids[id] < val; });
+                        if (it != idPerm.end() && ids[*it] == rBuffer[n][k].to) {
+                            local = true;
+                        }
                     }
+                    if (local) {
+                        mInfo[rBuffer[n][i].from].begin = mortar.size();
+                        for (size_t k = i; k < j; ++k) {
+                            mInfo[rBuffer[n][i].from].domains.push_back(rBuffer[n][k].domain);
+                            auto it = std::lower_bound(idPerm.begin(), idPerm.end(), rBuffer[n][k].to, [&] (esint id, esint val) { return ids[id] < val; });
+                            if (it != idPerm.end() && ids[*it] == rBuffer[n][k].to && feti.decomposition->ismy(rBuffer[n][k].domain)) {
+                                mortar.push_back(rBuffer[n][k]);
+                                mortar.back().to = *it; // global ID to local offset
+                            }
+                        }
+                        utils::sortAndRemoveDuplicates(mInfo[rBuffer[n][i].from].domains);
+                        mInfo[rBuffer[n][i].from].end = mortar.size();
+                    }
+                    inserted.insert(rBuffer[n][i].from);
                 }
-                prev = it;
             }
         }
-    }
-
-    esint loffset = lmap.size();
-    Communication::exscan(loffset);;
-    for (auto lit = lmap.begin(); lit != lmap.end(); ++lit) {
-        lit->lambda += loffset;
-    }
-
-    // synchronize lambda info
-    std::vector<std::vector<Lambda> > rLambdas(info::mesh->neighborsWithMe.size());
-    if (!Communication::exchangeUnknownSize(lmap, rLambdas, info::mesh->neighborsWithMe)) {
-        eslog::internalFailure("cannot exchange mortar lambdas.\n");
-    }
-
-
-    std::vector<esint> ldomains, sBuffer;
-    std::vector<double> sScale;
-    for (size_t n = 0; n < rLambdas.size(); ++n) {
-        auto mit = mortar.begin();
-        for (size_t i = 0; i < rLambdas[n].size(); ++i) {
-            ldomains.clear();
-            double scale = 0;
-            while (mit != mortar.end() && mit->from < rLambdas[n][i].id) { ++mit; }
-            if (mit != mortar.end() && mit->from == rLambdas[n][i].id) {
-                while (mit != mortar.end() && mit->from == rLambdas[n][i].id) {
-                    auto dmap = info::mesh->nodes->domains->begin() + mit->to;
-                    for (auto d = dmap->begin(); d != dmap->end(); ++d) {
-                        ldomains.push_back(*d);
-                    }
-                    utils::sortAndRemoveDuplicates(ldomains);
-                    if (feti.decomposition->ismy(ldomains.front())) {
-                        scale += dmap->size() * (mit->value / dmap->size()) * (mit->value / dmap->size());
-                    }
-                    ++mit;
-                }
-            }
-            if (ldomains.size()) {
-                lambdas.push_back(rLambdas[n][i]);
-                sScale.push_back(scale);
-                sBuffer.push_back(rLambdas[n][i].id);
-                sBuffer.push_back(ldomains.size());
-                for (size_t ld = 0; ld < ldomains.size(); ++ld) {
-                    sBuffer.push_back(ldomains[ld]);
-                }
-            }
-        }
-    }
-
-    std::vector<std::vector<esint> > rBuffer(info::mesh->neighborsWithMe.size());
-    std::vector<std::vector<double> > rScale(info::mesh->neighborsWithMe.size());
-    if (!Communication::exchangeUnknownSize(sBuffer, rBuffer, info::mesh->neighborsWithMe)) {
-        eslog::internalFailure("cannot exchange mortar lambda info.\n");
-    }
-    if (!Communication::exchangeUnknownSize(sScale, rScale, info::mesh->neighborsWithMe)) {
-        eslog::internalFailure("cannot exchange mortar lambda scale.\n");
-    }
-
-    // try to avoid maps if needed
-    std::map<esint, std::vector<esint> > idmap;
-    std::map<esint, double> idscale;
-    for (size_t n = 0; n < rScale.size(); ++n) {
-        for (size_t i = 0, j = 0; i < rScale[n].size(); ++i, j += rBuffer[n][j + 1] + 2) {
-            esint id = rBuffer[n][j];
-            esint ndomains = rBuffer[n][j + 1];
-            idmap[id].insert(idmap[id].end(), rBuffer[n].begin() + j + 2, rBuffer[n].begin() + j + 2 + ndomains);
-            idscale[id] += rScale[n][i];
-        }
-    }
-
-    for (auto ids = idscale.begin(); ids != idscale.end(); ++ids) {
-        ids->second = 1 / std::sqrt(ids->second);
-    }
-    for (auto idm = idmap.begin(); idm != idmap.end(); ++idm) {
-        utils::sortAndRemoveDuplicates(idm->second);
-    }
-    for (size_t i = 0; i < lambdas.size(); ++i) {
-        lambdas[i].doffset = domains.size();
-        lambdas[i].ndomains = idmap[lambdas[i].id].size();
-        for (size_t j = 0; j < idmap[lambdas[i].id].size(); ++j) {
-            domains.push_back(idmap[lambdas[i].id][j]);
-        }
-    }
-
-    for (size_t i = 0; i < mortar.size(); ++i) {
-        mortar[i].value *= idscale[mortar[i].from];
     }
 
 //    Communication::serialize([&] () {
-//        for (size_t i = 0; i < lambdas.size(); ++i) {
-//            printf("%d %3d :: ", info::mpi::rank, lambdas[i].id);
-//            printf("%.3f %.3f %.3f :: ", lambdas[i].normal.x, lambdas[i].normal.y, lambdas[i].normal.z);
-//            for (size_t j = 0; j < mortar.size(); ++j) {
-//                if (mortar[j].from == lambdas[i].id) {
-//                    printf("<%2d:%2d>=%+.3f", mortar[j].from, info::mesh->nodes->IDs->datatarray()[mortar[j].to], mortar[j].value);
+//        printf("%2d ::\n", info::mpi::rank);
+//        for (size_t i = 0, j, n = 0; i < mortar.size(); ++n) {
+//            printf("    :: %3d ", mortar[i].from);
+//            for (j = i; j < mortar.size() && mortar[i].from == mortar[j].from; ++j) {
+//                if (j && mortar[j].to == mortar[j - 1].to) {
+//                    printf("[%2d,%+.2e]", mortar[j].domain, mortar[j].value);
+//                } else {
+//                    printf(" %3d[%2d,%+.2e]", mortar[j].to, mortar[j].domain, mortar[j].value);
 //                }
 //            }
-//            for (esint j = 0; j < lambdas[i].ndomains; ++j) {
-//                printf(" %2d", domains[lambdas[i].doffset + j]);
-//            }
-//            printf("\n"); // it does not respect decomposition; hence, it is not 1
+//            printf("\n");
+//            i = j;
 //        }
 //    });
+
+    { // update neighbors since there can be new neighbors connected via the sparse side
+        std::set<esint> domains;
+        for (auto info = mInfo.cbegin(); info != mInfo.cend(); ++info) {
+            domains.insert(info->second.domains.begin(), info->second.domains.end());
+        }
+
+        auto ddist = info::mesh->domains->gatherProcDistribution(); // remove this
+        int ni = 0;
+        for (auto n = domains.begin(); n != domains.end(); ++n) {
+            while (ddist[ni] <= *n) ++ni;
+            if (info::mesh->neighborsWithMe.back() != ni - 1) {
+                info::mesh->neighborsWithMe.push_back(ni - 1);
+            }
+        }
+        utils::sortAndRemoveDuplicates(info::mesh->neighborsWithMe);
+        info::mesh->neighbors.clear();
+        for (size_t i = 0; i < info::mesh->neighborsWithMe.size(); ++i) {
+            if (info::mesh->neighborsWithMe[i] != info::mpi::rank) {
+                info::mesh->neighbors.push_back(info::mesh->neighborsWithMe[i]);
+            }
+        }
+
+//        Communication::serialize([&] () {
+//            printf("%2d :: ", info::mpi::rank);
+//            for (size_t n = 0; n < info::mesh->neighbors.size(); ++n) {
+//                printf(" %d", info::mesh->neighbors[n]);
+//            }
+//            printf("\n");
+//        });
+
+        feti.decomposition->update(info::mesh->neighbors);
+    }
+
+    { // compute mortar id
+        int id = 0;
+        std::vector<esint> idmap;
+        for (auto m = mInfo.cbegin(); m != mInfo.cend(); ++m) {
+            if (feti.decomposition->ismy(m->second.domains.front())) {
+                idmap.push_back(mortar[m->second.begin].from);
+                idmap.push_back(id++);
+            }
+        }
+
+        esint moffset = id;
+        Communication::exscan(moffset);;
+        for (size_t i = 0; i < idmap.size(); i += 2) {
+            idmap[i + 1] = mInfo[idmap[i]].id = moffset++;
+        }
+
+        std::vector<std::vector<esint> > rids(info::mesh->neighbors.size() + 1);
+
+        if (!Communication::exchangeUnknownSize(idmap, rids, info::mesh->neighbors)) {
+            eslog::internalFailure("cannot synchronize mortar ids.\n");
+        }
+        for (size_t n = 0; n < rids.size(); ++n) {
+            for (size_t i = 0; i < rids[n].size(); i += 2) {
+                if (mInfo.count(rids[n][i]) == 1) {
+                    mInfo[rids[n][i]].id = rids[n][i + 1];
+                }
+            }
+        }
+    }
+
+
+    { // exchange normals
+        // compute info
+        struct __mInfo__ {
+            int from; Point normal;
+            __mInfo__(): from(-1) {}
+            __mInfo__(int from): from(from) {}
+        };
+
+        std::vector<__mInfo__> info;
+        auto &ids = info::mesh->nodes->IDs->datatarray();
+        for (auto m = mInfo.cbegin(); m != mInfo.cend(); ++m) {
+            auto it = std::lower_bound(ids.begin() + info::mesh->nodes->uniqInfo.nhalo, ids.end(), m->first);
+            if (it != ids.end() && *it == m->first) {
+                info.push_back(__mInfo__(m->first));
+                if (StructuralMechanics::Results::normal) {
+                    info.back().normal.x = StructuralMechanics::Results::normal->data[info::mesh->dimension * (it - ids.begin()) + 0];
+                    info.back().normal.y = StructuralMechanics::Results::normal->data[info::mesh->dimension * (it - ids.begin()) + 1];
+                    if (info::mesh->dimension == 3) {
+                        info.back().normal.z = StructuralMechanics::Results::normal->data[info::mesh->dimension * (it - ids.begin()) + 2];
+                    }
+                }
+            }
+        }
+
+        // exchange info
+        std::vector<std::vector<__mInfo__> > rInfo(info::mesh->neighbors.size() + 1);
+
+        if (!Communication::exchangeUnknownSize(info, rInfo, info::mesh->neighbors)) {
+            eslog::internalFailure("cannot synchronize mortar info.\n");
+        }
+        info.swap(rInfo.back());
+
+        for (size_t n = 0; n < rInfo.size(); ++n) {
+            for (size_t i = 0; i < rInfo[n].size(); ++i) {
+                if (mInfo.count(rInfo[n][i].from) == 1) {
+                    mInfo[rInfo[n][i].from].normal = rInfo[n][i].normal;
+                }
+            }
+        }
+    }
 }
 
 template <typename T>
 void MortarContact<T>::set(const step::Step &step, FETI<T> &feti)
 {
-    if (info::mesh->contactInterfaces.size() == 0) {
+    bool run = false;
+    for (auto ci = info::ecf->input.contact_interfaces.cbegin(); ci != info::ecf->input.contact_interfaces.cend(); ++ci) {
+        if (ci->second.criterion != ContactInterfaceConfiguration::CRITERION::SKIP) {
+            run = true;
+        }
+    }
+    if (!run) {
         return;
     }
 
@@ -508,8 +678,31 @@ void MortarContact<T>::set(const step::Step &step, FETI<T> &feti)
     if (info::mesh->contact->sparseSide != NULL) {
         assembleMortarInterface(B);
     }
-    std::sort(B.begin(), B.end());
-    synchronize(feti, B, lambdas, domains);
+    synchronize(feti, B);
+
+//    Communication::serialize([&] () {
+//        printf("%2d ::\n", info::mpi::rank);
+//        for (size_t i = 0, j, n = 0; i < mortar.size(); ++n) {
+//            printf("    :: %3d [%d]<%+.2f> --", mortar[i].from, mInfo[mortar[i].from].id, mInfo[mortar[i].from].normal.z);
+//            for (size_t d = 0; d < mInfo[mortar[i].from].domains.size(); ++d) {
+//                printf(" %2d", mInfo[mortar[i].from].domains[d]);
+//            }
+//            printf(" -- ");
+//            for (j = i; j < mortar.size() && mortar[i].from == mortar[j].from; ++j) {
+//                if (j && mortar[j].to == mortar[j - 1].to) {
+//                    printf("[%2d]", mortar[j].domain);
+//                } else {
+//                    printf(" %3d[%2d]", info::mesh->nodes->IDs->datatarray()[mortar[j].to], mortar[j].domain);
+//                }
+//            }
+//            printf("\n");
+//            i = j;
+//        }
+//    });
+
+    if (info::ecf->input.contact_interfaces.size() > 1) {
+        eslog::globalerror("implemented support for more contact pairs\n");
+    }
 
     std::vector<int> bound, gap;
     for (auto it = info::ecf->input.contact_interfaces.begin(); it != info::ecf->input.contact_interfaces.end(); ++it) {
@@ -518,6 +711,8 @@ void MortarContact<T>::set(const step::Step &step, FETI<T> &feti)
             bound.insert(bound.end(), it->second.found_interfaces.begin(), it->second.found_interfaces.end()); break;
         case ContactInterfaceConfiguration::CRITERION::GAP:
             gap.insert(gap.end(), it->second.found_interfaces.begin(), it->second.found_interfaces.end()); break;
+        default:
+            break;
         }
     }
     std::sort(bound.begin(), bound.end());
@@ -532,112 +727,92 @@ void MortarContact<T>::set(const step::Step &step, FETI<T> &feti)
         dofs = 1;
     }
 
-    auto begin = mortar.begin(), end = begin;
-    auto getarray = [&] (const LambdaInfo &lambda, std::vector<int> &filter) {
-        if (!std::binary_search(filter.begin(), filter.end(), lambda.pair)) { return false; }
-        end = begin = std::lower_bound(mortar.begin(), mortar.end(), lambda.id, [] (const Mortar &m, esint id) { return m.from < id; });
-        while (  end != mortar.end() && end->from == lambda.id) ++end;
-        return true;
-    };
+    std::map<int, int> ids;
+    for (auto info = mInfo.cbegin(); info != mInfo.cend(); ++info) {
+        ids[info->second.id] = info->first;
+    }
 
-    auto initrow = [&] (const LambdaInfo &lambda) {
-        for (esint di = 0; di < lambda.ndomains; ++di) {
-            if (feti.decomposition->ismy(domains[lambda.doffset + di])) {
-                esint ldi = domains[lambda.doffset + di] - feti.decomposition->dbegin;
-                D2C [ldi].push_back(feti.lambdas.size);
-                ROWS[ldi].push_back(0);
-            }
-        }
-    };
-
+    // process mortars according to ID
+    feti.lambdas.intervals.push_back({ 0, 0 });
     size_t prevmap = feti.lambdas.cmap.size();
-    auto pushcmap = [&] (const LambdaInfo &lambda, int multiplier) {
-        bool pushcmap = true;
-        if (prevmap < feti.lambdas.cmap.size() && feti.lambdas.cmap[prevmap + 1] == lambda.ndomains) {
-            pushcmap = false;
-            for (esint di = 0; di < lambda.ndomains; ++di) {
-                if (domains[lambda.doffset + di] != feti.lambdas.cmap[prevmap + 2 + di]) {
-                    pushcmap = true;
+    ineq_begin = feti.lambdas.size;
+    for (auto id = ids.cbegin(); id != ids.cend(); ++id) {
+        MortarInfo &info = mInfo[id->second];
+
+        auto initrow = [&] () {
+            for (size_t d = 0; d < info.domains.size(); ++d) {
+                if (feti.decomposition->ismy(info.domains[d])) {
+                    D2C [info.domains[d] - feti.decomposition->dbegin].push_back(feti.lambdas.size);
+                    ROWS[info.domains[d] - feti.decomposition->dbegin].push_back(0);
                 }
             }
-        }
-        if (pushcmap) {
-            prevmap = feti.lambdas.cmap.size();
-            feti.lambdas.cmap.push_back(multiplier); // TODO: sum up the lambdas with the same map
-            feti.lambdas.cmap.push_back(lambda.ndomains);
-            for (esint di = 0; di < lambda.ndomains; ++di) {
-                feti.lambdas.cmap.push_back(domains[lambda.doffset + di]);
-            }
-        } else {
-            feti.lambdas.cmap[prevmap] += multiplier;
-        }
-        if (domains[lambda.doffset] < feti.decomposition->dbegin) {
-            feti.lambdas.intervals.back().halo += multiplier;
-        }
-    };
+        };
 
-    if (bound.size()) {
-        prevmap = feti.lambdas.cmap.size();
-        begin = mortar.begin(), end = begin;
-        feti.lambdas.intervals.push_back({ 0, 0 });
-        for (auto lambda = lambdas.begin(); lambda != lambdas.end(); ++lambda) { // equality constrains
-            if (!getarray(*lambda, bound)) { continue; }
+        auto push = [&] (const Mortar &m, int dof, double value) {
+            auto di = (feti.decomposition->dmap->begin() + dofs * m.to + dof)->begin();
+            while (di->domain < m.domain) { ++di; }
+            ROWS[m.domain - feti.decomposition->dbegin].back()++;
+            COLS[m.domain - feti.decomposition->dbegin].push_back(di->index);
+            VALS[m.domain - feti.decomposition->dbegin].push_back(value);
+        };
 
-            for (int dof = 0; dof < dofs; ++dof) {
-                initrow(*lambda);
-                for (auto it = begin; it != end; ++it) {
-                    auto dmap = feti.decomposition->dmap->begin() + dofs * it->to + dof;
-                    for (auto di = dmap->begin(); di != dmap->end(); ++di) {
-                        if (feti.decomposition->ismy(di->domain)) {
-                            esint ldi = di->domain - feti.decomposition->dbegin;
-                            ROWS[ldi].back()++;
-                            COLS[ldi].push_back(di->index);
-                            VALS[ldi].push_back(it->value / dmap->size());
-                        }
+        auto pushcmap = [&] (int multiplier) {
+            bool pushcmap = true;
+            if (prevmap < feti.lambdas.cmap.size() && feti.lambdas.cmap[prevmap + 1] == (int)info.domains.size()) {
+                pushcmap = false;
+                for (size_t di = 0; di < info.domains.size(); ++di) {
+                    if (info.domains[di] != feti.lambdas.cmap[prevmap + 2 + di]) {
+                        pushcmap = true;
                     }
+                }
+            }
+            if (pushcmap) {
+                prevmap = feti.lambdas.cmap.size();
+                feti.lambdas.cmap.push_back(multiplier);
+                feti.lambdas.cmap.push_back(info.domains.size());
+                for (size_t di = 0; di < info.domains.size(); ++di) {
+                    feti.lambdas.cmap.push_back(info.domains[di]);
+                }
+            } else {
+                feti.lambdas.cmap[prevmap] += multiplier;
+            }
+            if (info.domains.front() < feti.decomposition->dbegin) {
+                feti.lambdas.intervals.back().halo += multiplier;
+            }
+        };
+
+        if (bound.size()) {
+            for (int dof = 0; dof < dofs; ++dof) {
+                initrow();
+                for (esint i = info.begin; i < info.end; ++i) {
+                    push(mortar[i], dof, mortar[i].value);
                 }
                 feti.lambdas.size++;
                 feti.lambdas.intervals.back().size++;
             }
-            pushcmap(*lambda, dofs);
+            pushcmap(dofs);
+            feti.lambdas.equalities = feti.lambdas.size;
         }
-        feti.lambdas.equalities = feti.lambdas.size;
-    }
-
-    if (gap.size()) {
-        ineq_begin = feti.lambdas.size;
-        prevmap = feti.lambdas.cmap.size();
-        begin = mortar.begin(), end = begin;
-        feti.lambdas.intervals.push_back({ 0, 0 });
-        for (auto lambda = lambdas.begin(); lambda != lambdas.end(); ++lambda) { // equality constrains
-            if (!getarray(*lambda, gap)) { continue; }
-
-            initrow(*lambda);
-            for (auto it = begin; it != end; ++it) {
+        if (gap.size()) {
+            initrow();
+            for (esint i = info.begin; i < info.end; ++i) {
+                const Mortar &m = mortar[i];
                 for (int dof = 0; dof < dofs; ++dof) {
-                    if (std::fabs(lambda->normal[dof]) > BE_VALUE_TRESHOLD) {
-                        auto dmap = feti.decomposition->dmap->begin() + dofs * it->to + dof;
-                        for (auto di = dmap->begin(); di != dmap->end(); ++di) {
-                            if (feti.decomposition->ismy(di->domain)) {
-                                esint ldi = di->domain - feti.decomposition->dbegin;
-                                ROWS[ldi].back()++;
-                                COLS[ldi].push_back(di->index);
-                                VALS[ldi].push_back(lambda->normal[dof] * it->value / dmap->size());
-                            }
-                        }
+                    if (std::fabs(mInfo[m.from].normal[dof]) > BE_VALUE_TRESHOLD) {
+                        push(m, dof, mInfo[m.from].normal[dof] * m.value);
                     }
                 }
             }
             feti.lambdas.size++;
             feti.lambdas.intervals.back().size++;
-            pushcmap(*lambda, 1);
+            pushcmap(1);
         }
-        feti.lb.resize(feti.lambdas.size - feti.lambdas.equalities);
-        feti.ub.resize(feti.lambdas.size - feti.lambdas.equalities);
-        math::set(feti.lb, T{0});
-        math::set(feti.ub, std::numeric_limits<T>::max());
-        ineq_end = feti.lambdas.size;
     }
+    feti.lb.resize(feti.lambdas.size - feti.lambdas.equalities);
+    feti.ub.resize(feti.lambdas.size - feti.lambdas.equalities);
+    math::set(feti.lb, T{0});
+    math::set(feti.ub, std::numeric_limits<T>::max());
+    ineq_end = feti.lambdas.size;
 
     std::vector<Matrix_CSR<T> > B1(feti.B1.size());
     #pragma omp parallel for
@@ -662,7 +837,13 @@ void MortarContact<T>::set(const step::Step &step, FETI<T> &feti)
 template <typename T>
 void MortarContact<T>::update(const step::Step &step, FETI<T> &feti)
 {
-    if (info::mesh->contactInterfaces.size() == 0) {
+    bool run = false;
+    for (auto ci = info::ecf->input.contact_interfaces.cbegin(); ci != info::ecf->input.contact_interfaces.cend(); ++ci) {
+        if (ci->second.criterion != ContactInterfaceConfiguration::CRITERION::SKIP) {
+            run = true;
+        }
+    }
+    if (!run) {
         return;
     }
 
@@ -685,46 +866,46 @@ void MortarContact<T>::update(const step::Step &step, FETI<T> &feti)
 
     int dofs = info::mesh->dimension;
     std::vector<double> disp = StructuralMechanics::Results::displacement->data;
-    std::vector<std::pair<esint, double> > c;
+    std::map<esint, double> c;
 
-    auto begin = mortar.begin(), end = begin;
-    for (auto lambda = lambdas.begin(); lambda != lambdas.end(); ++lambda) { // equality constrains
-        if (!std::binary_search(gap.begin(), gap.end(), lambda->pair)) { continue; }
-        while (begin != mortar.end() && begin->from  < lambda->id) ++begin;
-        end = begin;
-        while (  end != mortar.end() &&   end->from == lambda->id) ++end;
+    std::map<int, int> ids;
+    for (auto info = mInfo.cbegin(); info != mInfo.cend(); ++info) {
+        ids[info->second.id] = info->first;
+    }
 
-        c.push_back(std::make_pair(begin->from, 0));
-        for (auto it = begin; it != end; ++it) {
+    for (auto id = ids.cbegin(); id != ids.cend(); ++id) {
+        MortarInfo &info = mInfo[id->second];
+
+        for (esint i = info.begin; i < info.end; ++i) {
+            const Mortar &m = mortar[i];
             for (int dof = 0; dof < dofs; ++dof) {
-                if (std::fabs(lambda->normal[dof]) > BE_VALUE_TRESHOLD) {
-                    auto dmap = feti.decomposition->dmap->begin() + dofs * it->to + dof;
-                    if (feti.decomposition->ismy(dmap->begin()->domain)) {
-                        c.back().second -= lambda->normal[dof] * it->value * (info::mesh->nodes->coordinates->datatarray()[it->to][dof] + disp[dofs * it->to + dof]);
-                    }
+                if (std::fabs(info.normal[dof]) > BE_VALUE_TRESHOLD) {
+                    auto di = (feti.decomposition->dmap->begin() + dofs * m.to + dof)->begin();
+                    while (di->domain < m.domain) { ++di; }
+                    c[id->second] -= info.normal[dof] * m.value * (info::mesh->nodes->coordinates->datatarray()[m.to][dof] + disp[dofs * m.to + dof]);
                 }
             }
         }
     }
 
-    Vector_Dense<T> cc; cc.vals = feti.c.vals + ineq_begin; cc.size = ineq_end - ineq_begin;
-    math::set(cc, T{0});
-
+    std::vector<std::pair<esint, double> > sc;
     std::vector<std::vector<std::pair<esint, double> > > rc(info::mesh->neighbors.size());
-    if (!Communication::exchangeUnknownSize(c, rc, info::mesh->neighbors)) {
+    for (auto it = c.cbegin(); it != c.cend(); ++it) {
+        sc.push_back(std::make_pair(it->first, it->second));
+    }
+    if (!Communication::exchangeUnknownSize(sc, rc, info::mesh->neighbors)) {
         eslog::internalFailure("cannot exchange gap.\n");
     }
+
     for (size_t n = 0; n < rc.size(); ++n) {
-        for (size_t i = 0, j = 0; i < rc[n].size(); ++i) {
-            while (j < c.size() && c[j].first < rc[n][i].first) { ++j; }
-            if (j < c.size() && c[j].first == rc[n][i].first) {
-                c[j].second += rc[n][i].second;
-            }
+        for (size_t i = 0; i < rc[n].size(); ++i) {
+            c[rc[n][i].first] += rc[n][i].second;
         }
     }
 
-    for (size_t i = 0; i < c.size(); ++i) {
-        cc.vals[i] += c[i].second;
+    double *cc = feti.c.vals + ineq_begin;
+    for (auto id = ids.cbegin(); id != ids.cend(); ++id, ++cc) {
+        *cc = c[id->second];
     }
 }
 

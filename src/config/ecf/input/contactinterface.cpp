@@ -20,7 +20,8 @@ ContactInterfaceConfiguration::ContactInterfaceConfiguration()
 			.setdescription({ "Criteria what is considered as contact." })
 			.setdatatype({ ECFDataType::OPTION })
 			.addoption(ECFOption().setname("BOUND").setdescription("Only bound faces are considered as contact."))
-			.addoption(ECFOption().setname("GAP").setdescription("All faces within a given gap are considered as contact.")));
+			.addoption(ECFOption().setname("GAP").setdescription("All faces within a given gap are considered as contact."))
+			.addoption(ECFOption().setname("SKIP").setdescription("Skip this contact interface.")));
 
 	REGISTER(body_list, ECFMetaData()
 			.setdescription({ "List of element regions considered for contact." })

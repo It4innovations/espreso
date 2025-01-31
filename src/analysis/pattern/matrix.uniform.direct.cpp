@@ -240,9 +240,6 @@ void MatrixUniformDirect::buildPattern(int dofs)
     decomposition.begin = dofs * info::mesh->nodes->uniqInfo.offset;
     decomposition.end = dofs * (info::mesh->nodes->uniqInfo.offset + info::mesh->nodes->uniqInfo.size);
     decomposition.totalSize = dofs * info::mesh->nodes->uniqInfo.totalSize;
-
-    decomposition.neighbors = info::mesh->neighbors;
-    decomposition.neighDOF.resize(decomposition.neighbors.size() + 1, decomposition.begin); // the last is my offset
     decomposition.halo.clear();
     decomposition.halo.reserve(dofs * info::mesh->nodes->uniqInfo.nhalo);
     for (esint n = 0; n < info::mesh->nodes->uniqInfo.nhalo; ++n) {
@@ -250,11 +247,7 @@ void MatrixUniformDirect::buildPattern(int dofs)
             decomposition.halo.push_back(dofs * info::mesh->nodes->uniqInfo.position[n] + dof);
         }
     }
-
-    std::vector<esint> dBuffer = { decomposition.begin };
-    if (!Communication::gatherUniformNeighbors(dBuffer, decomposition.neighDOF, decomposition.neighbors)) {
-        eslog::internalFailure("cannot exchange matrix decomposition info.\n");
-    }
+    decomposition.update(info::mesh->neighbors);
 
     size_t nonzeros = pattern.column.size();
     Communication::allReduce(&nonzeros, NULL, 1, MPITools::getType(nonzeros).mpitype, MPI_SUM);

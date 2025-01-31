@@ -11,6 +11,8 @@ struct DecompositionDirect {
     std::vector<esint> halo; // halo indices
     std::vector<esint> neighDOF; // first DOF index per neighbor, the last is MY OFFSET
     std::vector<int> neighbors; // all neighboring process
+
+    void update(std::vector<int> &neighbors);
 };
 
 }

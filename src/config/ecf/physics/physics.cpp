@@ -54,12 +54,6 @@ espreso::PhysicsConfiguration::PhysicsConfiguration(MaterialConfiguration::PHYSI
 
 	ecfdescription->addSeparator()->metadata.noexport();
 
-	contact_interfaces = false;
-	REGISTER(contact_interfaces, ECFMetaData()
-			.setdescription({ "Consistent stabilization" })
-			.setdatatype({ ECFDataType::BOOL })
-			.setform());
-
 	reassembling_optimization = true;
 	REGISTER(reassembling_optimization, ECFMetaData()
 			.setdescription({ "Store computed values for improving reassembling times in the cost of the memory." })
