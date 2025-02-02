@@ -406,7 +406,7 @@ void MortarContact<T>::synchronize(FETI<T> &feti, std::vector<Mortar> &B)
         // duplicate data to domains (still per element data)
         std::vector<Mortar> pure; B.swap(pure);
         for (size_t i = 0; i < pure.size(); ++i) {
-            int *domains = n2d[pure[i].to];
+            esint *domains = n2d[pure[i].to];
             for (int d = 0; d < domains[0]; ++d) {
                 B.push_back(pure[i]);
                 B.back().value /= domains[0];
