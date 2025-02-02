@@ -61,8 +61,6 @@ GENERATOR {
 STRUCTURAL_MECHANICS {
   LOAD_STEPS   1;
 
-  CONTACT_INTERFACES       TRUE;
-
   MATERIALS {
     1 {
       DENS                         15220;
