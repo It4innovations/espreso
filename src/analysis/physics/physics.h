@@ -5,7 +5,7 @@
 #include "analysis/linearsystem/empty.h"
 #include "analysis/linearsystem/fetisolver.h"
 #include "analysis/linearsystem/mklpdsssolver.h"
-#include "analysis/linearsystem/suitesparse.h"
+#include "analysis/linearsystem/sequentialsolver.h"
 
 #include "analysis/pattern/pattern.h"
 
@@ -29,7 +29,7 @@ LinearSystemSolver<T>* setSolver(Configuration &configuration)
     case LoadStepSolverConfiguration::SOLVER::MKLPDSS:     return new MKLPDSSLinearSystemSolver<T>(configuration.mklpdss);
     case LoadStepSolverConfiguration::SOLVER::PARDISO:     break;
     case LoadStepSolverConfiguration::SOLVER::SUPERLU:     break;
-    case LoadStepSolverConfiguration::SOLVER::SUITESPARSE: return new SuiteSparseLinearSystemSolver<T>(configuration.suitesparse);
+    case LoadStepSolverConfiguration::SOLVER::SEQUENTIAL:  return new SequentialLinearSystemSolver<T>(configuration.sequential);
     case LoadStepSolverConfiguration::SOLVER::WSMP:        break;
     case LoadStepSolverConfiguration::SOLVER::NONE:        break;
     }
