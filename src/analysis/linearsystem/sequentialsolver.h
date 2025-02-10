@@ -141,8 +141,8 @@ struct SequentialLinearSystemSolver: DirectLinearSystemSolver<T> {
     }
 
 private:
-    DirectSparseSolver<T> solver;
-    Matrix_CSR<T> _A;
+    DirectSparseSolver<T, esint> solver;
+    Matrix_CSR<T, esint> _A;
 };
 
 }

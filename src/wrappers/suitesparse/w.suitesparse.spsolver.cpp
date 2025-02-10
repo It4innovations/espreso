@@ -331,7 +331,7 @@ void DirectSparseSolver<T, I>::numericalFactorization()
         case Matrix_Shape::LOWER: eslog::error("implement DirectSparseSolver for LOWER triangular matrices.\n"); break;
         case Matrix_Shape::FULL: {
             eslog::error("check CORRECTNESS.\n");
-            const Matrix_CSR<T> *a = ext->umfpack.matrix;
+            const Matrix_CSR<T, I> *a = ext->umfpack.matrix;
             Matrix_CSC<T, I> &full = ext->umfpack.full;
 
             for (I r = 0; r < a->nrows; ++r) {
@@ -346,7 +346,7 @@ void DirectSparseSolver<T, I>::numericalFactorization()
             }
         } break;
         case Matrix_Shape::UPPER: {
-            const Matrix_CSR<T> *a = ext->umfpack.matrix;
+            const Matrix_CSR<T, I> *a = ext->umfpack.matrix;
             Matrix_CSC<T, I> &full = ext->umfpack.full;
 
             for (I r = 0; r < a->nrows; ++r) {
