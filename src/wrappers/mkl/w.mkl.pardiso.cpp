@@ -17,15 +17,14 @@ namespace espreso {
 template<typename T, typename I>
 struct Solver_External_Representation
 {
-    PARDISOParameters pp;
+    PARDISOParameters<I> pp;
     const Matrix_CSR<T, I> *matrix = nullptr;
     I rows, nnzA, nnzL;
 };
 
-template<typename T, typename I>
-bool _callPardiso(I phase, std::unique_ptr<Solver_External_Representation<T,I>> & ext, I nrhs, T *rhs, T *solution)
+template<typename T>
+void _pardiso(std::unique_ptr<Solver_External_Representation<T, int> > & ext, int nrhs, T *rhs, T *solution)
 {
-    ext->pp.phase = phase;
     pardiso(
             ext->pp.pt, &ext->pp.maxfct, &ext->pp.mnum,
             &ext->pp.mtype,
@@ -34,6 +33,27 @@ bool _callPardiso(I phase, std::unique_ptr<Solver_External_Representation<T,I>> 
             ext->pp.perm, &nrhs, ext->pp.iparm, &ext->pp.msglvl,
             rhs, solution,
             &ext->pp.error);
+}
+
+template<typename T>
+void _pardiso(std::unique_ptr<Solver_External_Representation<T, long> > & ext, long nrhs, T *rhs, T *solution)
+{
+    eslog::error("Implement MKL PARDISO 64bit interface.\n");
+//    pardiso_64(
+//            ext->pp.pt, &ext->pp.maxfct, &ext->pp.mnum,
+//            &ext->pp.mtype,
+//            &ext->pp.phase,
+//            &ext->matrix->nrows, ext->matrix->vals, ext->matrix->rows, ext->matrix->cols,
+//            ext->pp.perm, &nrhs, ext->pp.iparm, &ext->pp.msglvl,
+//            rhs, solution,
+//            &ext->pp.error);
+}
+
+template<typename T, typename I>
+bool _callPardiso(I phase, std::unique_ptr<Solver_External_Representation<T,I> > & ext, I nrhs, T *rhs, T *solution)
+{
+    ext->pp.phase = phase;
+    _pardiso(ext, nrhs, rhs, solution);
 
     switch (ext->pp.error) {
     case   0: break;
@@ -95,7 +115,7 @@ template <typename T, typename I>
 DirectSparseSolver<T, I>::~DirectSparseSolver()
 {
     if (ext) {
-        _callPardiso<T>(-1, ext, 0, nullptr, nullptr);
+        _callPardiso<T, I>(-1, ext, 0, nullptr, nullptr);
     }
 }
 
@@ -105,13 +125,26 @@ DirectSparseSolver<T, I>::DirectSparseSolver(const Matrix_CSR<T, I> &a)
     commit(a);
 }
 
+template<typename T>
+void _init(std::unique_ptr<Solver_External_Representation<T, int> > & ext)
+{
+    pardisoinit(ext->pp.pt, &ext->pp.mtype, ext->pp.iparm);
+}
+
+template<typename T>
+void _init(std::unique_ptr<Solver_External_Representation<T, long> > & ext)
+{
+    eslog::error("Implement MKL PARDISO 64bit interface.\n");
+    // pardisoinit(ext->pp.pt, &ext->pp.mtype, ext->pp.iparm);
+}
+
 template <typename T, typename I>
 void DirectSparseSolver<T, I>::commit(const Matrix_CSR<T, I> &a)
 {
     ext = std::make_unique<Solver_External_Representation<T,I>>();
     ext->matrix = &a;
     ext->pp.mtype = _pardisoType(*ext->matrix);
-    pardisoinit(ext->pp.pt, &ext->pp.mtype, ext->pp.iparm);
+    _init(ext);
     ext->pp.iparm[0] = 1;            /* No solver default */
     ext->pp.iparm[1] = 2;            /* Fill-in reordering from METIS */
     ext->pp.iparm[7] = 0;            /* Max number of refinement iterations (default changed between 2024.2 and 2025.0) */
@@ -125,7 +158,7 @@ void DirectSparseSolver<T, I>::commit(const Matrix_CSR<T, I> &a)
 template <typename T, typename I>
 void DirectSparseSolver<T, I>::symbolicFactorization()
 {
-    _callPardiso<T>(11, ext, 0, nullptr, nullptr);
+    _callPardiso<T, I>(11, ext, 0, nullptr, nullptr);
     ext->rows = ext->matrix->nrows;
     ext->nnzA = ext->matrix->nnz;
     // ext->memoryL = 1024 * (ext->pp.iparm[15] + ext->pp.iparm[16]);
@@ -135,63 +168,63 @@ void DirectSparseSolver<T, I>::symbolicFactorization()
 template <typename T, typename I>
 void DirectSparseSolver<T, I>::numericalFactorization()
 {
-    _callPardiso<T>(22, ext, 0, nullptr, nullptr);
+    _callPardiso<T, I>(22, ext, 0, nullptr, nullptr);
 }
 
 template <typename T, typename I>
 void DirectSparseSolver<T, I>::solve(Vector_Dense<T, I> &rhs, Vector_Dense<T, I> &solution)
 {
     solution.resize(rhs.size);
-    _callPardiso<T>(33, ext, 1, rhs.vals, solution.vals);
+    _callPardiso<T, I>(33, ext, 1, rhs.vals, solution.vals);
 }
 
 template <typename T, typename I>
 void DirectSparseSolver<T, I>::solve(Matrix_Dense<T, I> &rhs, Matrix_Dense<T, I> &solution)
 {
     solution.resize(rhs.nrows, rhs.ncols);
-    _callPardiso<T>(33, ext, rhs.nrows, rhs.vals, solution.vals);
+    _callPardiso<T, I>(33, ext, rhs.nrows, rhs.vals, solution.vals);
 }
 
 template <typename T, typename I>
 void DirectSparseSolver<T, I>::solveForward (Vector_Dense<T, I> &rhs, Vector_Dense<T, I> &solution)
 {
     solution.resize(rhs.size);
-    _callPardiso<T>(331, ext, 1, rhs.vals, solution.vals);
+    _callPardiso<T, I>(331, ext, 1, rhs.vals, solution.vals);
 }
 
 template <typename T, typename I>
 void DirectSparseSolver<T, I>::solveDiagonal(Vector_Dense<T, I> &rhs, Vector_Dense<T, I> &solution)
 {
     solution.resize(rhs.size);
-    _callPardiso<T>(332, ext, 1, rhs.vals, solution.vals);
+    _callPardiso<T, I>(332, ext, 1, rhs.vals, solution.vals);
 }
 
 template <typename T, typename I>
 void DirectSparseSolver<T, I>::solveBackward(Vector_Dense<T, I> &rhs, Vector_Dense<T, I> &solution)
 {
     solution.resize(rhs.size);
-    _callPardiso<T>(333, ext, 1, rhs.vals, solution.vals);
+    _callPardiso<T, I>(333, ext, 1, rhs.vals, solution.vals);
 }
 
 template <typename T, typename I>
 void DirectSparseSolver<T, I>::solveForward (Matrix_Dense<T, I> &rhs, Matrix_Dense<T, I> &solution)
 {
     solution.resize(rhs.nrows, rhs.ncols);
-    _callPardiso<T>(331, ext, rhs.nrows, rhs.vals, solution.vals);
+    _callPardiso<T, I>(331, ext, rhs.nrows, rhs.vals, solution.vals);
 }
 
 template <typename T, typename I>
 void DirectSparseSolver<T, I>::solveDiagonal(Matrix_Dense<T, I> &rhs, Matrix_Dense<T, I> &solution)
 {
     solution.resize(rhs.nrows, rhs.ncols);
-    _callPardiso<T>(332, ext, rhs.nrows, rhs.vals, solution.vals);
+    _callPardiso<T, I>(332, ext, rhs.nrows, rhs.vals, solution.vals);
 }
 
 template <typename T, typename I>
 void DirectSparseSolver<T, I>::solveBackward(Matrix_Dense<T, I> &rhs, Matrix_Dense<T, I> &solution)
 {
     solution.resize(rhs.nrows, rhs.ncols);
-    _callPardiso<T>(333, ext, rhs.nrows, rhs.vals, solution.vals);
+    _callPardiso<T, I>(333, ext, rhs.nrows, rhs.vals, solution.vals);
 }
 
 template <typename T, typename I>
@@ -247,7 +280,7 @@ void DirectSparseSolver<T, I>::getPermutation(Vector_Dense<I> &perm)
 }
 
 template <typename T, typename I>
-void DirectSparseSolver<T, I>::getSC(Matrix_Dense<T, I> &sc, std::vector<int> &indices, bool symmetric_packed)
+void DirectSparseSolver<T, I>::getSC(Matrix_Dense<T, I> &sc, std::vector<I> &indices, bool symmetric_packed)
 {
     Matrix_Dense<T, I> full;
     T * out_vals = sc.vals;
@@ -259,7 +292,7 @@ void DirectSparseSolver<T, I>::getSC(Matrix_Dense<T, I> &sc, std::vector<int> &i
     ext->pp.iparm[35] = 1;
     I *perm = ext->pp.perm;
     ext->pp.perm = indices.data();
-    _callPardiso<T>(12, ext, 0, nullptr, out_vals);
+    _callPardiso<T, I>(12, ext, 0, nullptr, out_vals);
     ext->pp.perm = perm;
     ext->pp.iparm[35] = 0;
 

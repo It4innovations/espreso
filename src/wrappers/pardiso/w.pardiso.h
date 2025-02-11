@@ -6,12 +6,13 @@
 
 namespace espreso {
 
+template <typename I>
 struct PARDISOParameters {
 	void* pt[64];
-	int maxfct, mnum, mtype, phase, iparm[64], msglvl, error, *perm;
+	I maxfct, mnum, mtype, phase, iparm[64], msglvl, error, *perm;
 	double dparm[64];
 
-	int called;
+	I called;
 
 	PARDISOParameters(): pt{}, called(0)
 	{
