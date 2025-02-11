@@ -309,7 +309,7 @@ struct StressKernel<nodes, gps, 3>: Stress {
         eigSym33Desc(S, eig);
 //        SIMD intensity = max(abs(eig[0] - eig[1]), abs(eig[1] - eig[2]), abs(eig[0] - eig[2]));
 
-        SIMD vonMissesStress = sqrt(load1(.5) * ((eig[0] - eig[1]) * (eig[0] - eig[1]) + (eig[1] - eig[2]) * (eig[1] - eig[2]) + (eig[2] - eig[0]) * (eig[2] - eig[0])));
+//        SIMD vonMissesStress = sqrt(load1(.5) * ((eig[0] - eig[1]) * (eig[0] - eig[1]) + (eig[1] - eig[2]) * (eig[1] - eig[2]) + (eig[2] - eig[0]) * (eig[2] - eig[0])));
     }
 };
 
