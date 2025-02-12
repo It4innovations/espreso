@@ -10,19 +10,19 @@ namespace espreso {
 
 struct InputTransformationConfiguration: public ECFDescription {
 
-	enum class TRANSFORMATION {
-		TRANSLATE,
-		ROTATE,
-		SCALE,
-		SHEAR
-	};
+    enum class TRANSFORMATION {
+        TRANSLATE,
+        ROTATE,
+        SCALE,
+        SHEAR
+    };
 
-	TRANSFORMATION transformation;
-	double x, y, z;
+    TRANSFORMATION transformation;
+    double x, y, z;
 
-	int instances;
+    int instances;
 
-	InputTransformationConfiguration();
+    InputTransformationConfiguration();
 };
 
 }

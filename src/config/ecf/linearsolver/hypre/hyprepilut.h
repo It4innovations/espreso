@@ -8,11 +8,11 @@ namespace espreso {
 
 struct HYPREPilutConfiguration: public ECFDescription {
 
-	int max_iter;
-	double drop_tol;
-	int row_size;
-	
-	HYPREPilutConfiguration();
+    int max_iter;
+    double drop_tol;
+    int row_size;
+    
+    HYPREPilutConfiguration();
 };
 
 }

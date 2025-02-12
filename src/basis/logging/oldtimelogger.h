@@ -12,80 +12,80 @@ namespace espreso {
 class OldTimeLogger: public Verbosity<OldTimeLogger, 'm'> {
 
 public:
-	void initOutput()
-	{
+    void initOutput()
+    {
 
-	}
+    }
 
-	void start(const char* region, const char* section)
-	{
+    void start(const char* region, const char* section)
+    {
 
-	}
+    }
 
-	void checkpoint(const char* region)
-	{
+    void checkpoint(const char* region)
+    {
 
-	}
+    }
 
-	void accumulated(const char* region)
-	{
+    void accumulated(const char* region)
+    {
 
-	}
+    }
 
-	void end(const char* region)
-	{
+    void end(const char* region)
+    {
 
-	}
+    }
 
-	void param(const char* name, const int &value)
-	{
+    void param(const char* name, const int &value)
+    {
 
-	}
+    }
 
-	void param(const char* name, const long &value)
-	{
+    void param(const char* name, const long &value)
+    {
 
-	}
+    }
 
-	void param(const char* name, const long unsigned int &value)
-	{
+    void param(const char* name, const long unsigned int &value)
+    {
 
-	}
+    }
 
-	void param(const char* name, const double &value)
-	{
+    void param(const char* name, const double &value)
+    {
 
-	}
+    }
 
-	void param(const char* name, const char* value)
-	{
+    void param(const char* name, const char* value)
+    {
 
-	}
+    }
 
-	void ln()
-	{
+    void ln()
+    {
 
-	}
+    }
 
-	void nextLoadStep(int step)
-	{
+    void nextLoadStep(int step)
+    {
 
-	}
+    }
 
-	void output(const char* msg, VerboseArg::COLOR color)
-	{
+    void output(const char* msg, VerboseArg::COLOR color)
+    {
 
-	}
+    }
 
-	void error(const char* msg)
-	{
+    void error(const char* msg)
+    {
 
-	}
+    }
 
-	void finish()
-	{
+    void finish()
+    {
 
-	}
+    }
 };
 
 }

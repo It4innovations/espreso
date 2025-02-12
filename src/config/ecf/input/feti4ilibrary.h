@@ -8,10 +8,10 @@ namespace espreso {
 
 struct FETI4ILibraryConfiguration: public ECFDescription {
 
-	size_t domains;
-	FETIConfiguration solver;
+    size_t domains;
+    FETIConfiguration solver;
 
-	FETI4ILibraryConfiguration();
+    FETI4ILibraryConfiguration();
 };
 
 }

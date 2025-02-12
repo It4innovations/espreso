@@ -46,8 +46,8 @@ namespace espreso
         virtual QString errorMessage() override;
         virtual QString data() = 0;
 
-	signals:
-		void cellChanged();
+    signals:
+        void cellChanged();
 
     protected:
         QTableView* mTable;
@@ -62,7 +62,7 @@ namespace espreso
         void onItemDoubleClick(const QModelIndex& index);
         void onContextMenu(const QPoint& point);
         void deleteItem();
-		void onDataChanged(QModelIndex, QModelIndex, QVector<int>);
+        void onDataChanged(QModelIndex, QModelIndex, QVector<int>);
 
     private:
         Ui::TableWidget *ui;

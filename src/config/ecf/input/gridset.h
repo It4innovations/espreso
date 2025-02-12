@@ -8,9 +8,9 @@ namespace espreso {
 
 struct GridSetGeneratorConfiguration: public ECFDescription {
 
-	std::map<esint, GridGeneratorConfiguration> grids;
+    std::map<esint, GridGeneratorConfiguration> grids;
 
-	GridSetGeneratorConfiguration();
+    GridSetGeneratorConfiguration();
 };
 
 }

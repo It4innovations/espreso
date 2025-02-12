@@ -11,15 +11,15 @@ class NonLinearSolverConfiguration;
 class PseudoTimeStepping: public LoadStepSolver {
 
 public:
-	PseudoTimeStepping(LinearSystem *system, SubStepSolver *subStepSolver, NonLinearSolverConfiguration &configuration, double duration);
+    PseudoTimeStepping(LinearSystem *system, SubStepSolver *subStepSolver, NonLinearSolverConfiguration &configuration, double duration);
 
-	void init(LoadStepSolver *previous);
-	void updateStructuralMatrices();
+    void init(LoadStepSolver *previous);
+    void updateStructuralMatrices();
 
 protected:
-	void runNextSubstep();
+    void runNextSubstep();
 
-	NonLinearSolverConfiguration &_configuration;
+    NonLinearSolverConfiguration &_configuration;
 };
 
 }

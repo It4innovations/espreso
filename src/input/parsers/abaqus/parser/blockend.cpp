@@ -20,9 +20,9 @@ BlockEnd::BlockEnd()
 
 BlockEnd& BlockEnd::parse(const char* begin)
 {
-	while (*(--begin) != '\n');
-	AbaqusParser::fillIndices(begin + 1, begin + 1);
-	return *this;
+    while (*(--begin) != '\n');
+    AbaqusParser::fillIndices(begin + 1, begin + 1);
+    return *this;
 }
 */
 
@@ -44,8 +44,8 @@ BlockFinish::BlockFinish()
 
 BlockFinish& BlockFinish::parse(const char* begin)
 {
-	while (*(--begin) != '\n');
-	AbaqusParser::fillIndices(begin + 1, begin + 1);
-	return *this;
+    while (*(--begin) != '\n');
+    AbaqusParser::fillIndices(begin + 1, begin + 1);
+    return *this;
 }
 

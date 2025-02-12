@@ -27,24 +27,24 @@ struct Elemat;
 
 class AbaqusLoader: public MeshBuilder {
 public:
-	AbaqusLoader(const InputConfiguration &configuration);
-	void load();
+    AbaqusLoader(const InputConfiguration &configuration);
+    void load();
 
 protected:
-	void scan();
-	void parse();
+    void scan();
+    void parse();
 
-	const InputConfiguration &_configuration;
+    const InputConfiguration &_configuration;
 
-	std::vector<NList> _NLists;
-	std::vector<EList> _ELists;
-	std::vector<BlockFinish> _blockFinishs;
-	std::vector<Eset> _Esets;
-	std::vector<SSection> _SSections;
-	std::vector<AbaqusMaterial> _Materials;
-	std::vector<Elemat> _Elemats;
-	std::vector<Nset> _Nsets;
-	InputFilePack _pfile;
+    std::vector<NList> _NLists;
+    std::vector<EList> _ELists;
+    std::vector<BlockFinish> _blockFinishs;
+    std::vector<Eset> _Esets;
+    std::vector<SSection> _SSections;
+    std::vector<AbaqusMaterial> _Materials;
+    std::vector<Elemat> _Elemats;
+    std::vector<Nset> _Nsets;
+    InputFilePack _pfile;
 };
 
 }

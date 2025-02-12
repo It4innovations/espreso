@@ -8,9 +8,9 @@ struct MeshData;
 
 class NGLib {
 public:
-	static bool islinked();
+    static bool islinked();
 
-	static void generate(MeshData &mesh);
+    static void generate(MeshData &mesh);
 };
 
 }

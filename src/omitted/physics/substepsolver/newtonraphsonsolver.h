@@ -13,20 +13,20 @@ class Vectors;
 class NewtonRaphson: public SubStepSolver {
 
 public:
-	NewtonRaphson(LinearSystem *system, NonLinearSolverConfiguration &configuration);
-	~NewtonRaphson();
+    NewtonRaphson(LinearSystem *system, NonLinearSolverConfiguration &configuration);
+    ~NewtonRaphson();
 
-	void init(SubStepSolver *previous);
-	bool hasSameMode(const LoadStepSolverConfiguration &configuration) const;
+    void init(SubStepSolver *previous);
+    bool hasSameMode(const LoadStepSolverConfiguration &configuration) const;
 
-	void solve(LoadStepSolver &loadStepSolver);
+    void solve(LoadStepSolver &loadStepSolver);
 
 protected:
-	NonLinearSolverConfiguration &_configuration;
+    NonLinearSolverConfiguration &_configuration;
 
-	Matrix *K;
-	Vectors *U, *R, *f, *BC;
-	Vectors *lsSolution, *lsRHS, *lsResidual;
+    Matrix *K;
+    Vectors *U, *R, *f, *BC;
+    Vectors *lsSolution, *lsRHS, *lsResidual;
 };
 
 }

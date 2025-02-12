@@ -27,72 +27,72 @@ using namespace espreso;
 
 void FETIComposerOpt::assemble(const Builder &builder)
 {
-	if (kernel) {
-		FETIComposer::assemble(builder);
-		return;
-	}
-	if (builder.matrices == Builder::Request::NONE) {
-		return;
-	}
+    if (kernel) {
+        FETIComposer::assemble(builder);
+        return;
+    }
+    if (builder.matrices == Builder::Request::NONE) {
+        return;
+    }
 
-	eslog::startln("FETI ASSEMBLER: STARTED", "ASSEMBLER");
+    eslog::startln("FETI ASSEMBLER: STARTED", "ASSEMBLER");
 
-	clearMatrices(builder.matrices, _data);
+    clearMatrices(builder.matrices, _data);
 
-	double start = eslog::time();
+    double start = eslog::time();
 
-	#pragma omp parallel for
-	for (int t = 0; t < info::env::threads; ++t) {
-		for (size_t d = info::mesh->domains->distribution[t]; d < info::mesh->domains->distribution[t + 1]; d++) {
-			bool omitLower = _data->K[d].type != MatrixType::REAL_UNSYMMETRIC;
-			esint *Kperm = _KPermutation[d].data();
-			esint *RHSperm = _RHSPermutation[d].data();
+    #pragma omp parallel for
+    for (int t = 0; t < info::env::threads; ++t) {
+        for (size_t d = info::mesh->domains->distribution[t]; d < info::mesh->domains->distribution[t + 1]; d++) {
+            bool omitLower = _data->K[d].type != MatrixType::REAL_UNSYMMETRIC;
+            esint *Kperm = _KPermutation[d].data();
+            esint *RHSperm = _RHSPermutation[d].data();
 
-			for (esint ii = info::mesh->elements->eintervalsDistribution[d]; ii < info::mesh->elements->eintervalsDistribution[d + 1]; ++ii) {
-				if (builder.matrices & Builder::Request::K) {
-					opt->updateStiffness(_data->K[d].vals, Kperm, ii);
-				}
-				if (builder.matrices & Builder::Request::M) {
-//					opt->updateStiffness(_data->M[d].vals, perm, ii);
-				}
-				if (builder.matrices & Builder::Request::f) {
-//					opt->updateStiffness(_data->M[d].vals, perm, ii);
-				}
-				Kperm += (info::mesh->elements->eintervals[ii].end - info::mesh->elements->eintervals[ii].begin) * getMatrixSize(esize(ii), omitLower);
-				RHSperm += (info::mesh->elements->eintervals[ii].end - info::mesh->elements->eintervals[ii].begin) * esize(ii);
-			}
-			for (size_t r = 0; r < info::mesh->boundaryRegions.size(); ++r) {
-				if (info::mesh->boundaryRegions[r]->dimension) {
-					for (esint ii = info::mesh->boundaryRegions[r]->eintervalsDistribution[d]; ii < info::mesh->boundaryRegions[r]->eintervalsDistribution[d + 1]; ++ii) {
-						if (builder.matrices & Builder::Request::K) {
-	//						opt->updateStiffness(_data->K[d].vals, Kperm, ii);
-						}
-						if (builder.matrices & Builder::Request::M) {
-		//					opt->updateStiffness(_data->M[d].vals, perm, ii);
-						}
-						if (builder.matrices & Builder::Request::f) {
-							opt->updateRHS(_data->f[0][d].vals, RHSperm, r, ii);
-						}
-						RHSperm += (info::mesh->boundaryRegions[r]->eintervals[ii].end - info::mesh->boundaryRegions[r]->eintervals[ii].begin) * bsize(r, ii);
-					}
-				}
-			}
-		}
-	}
+            for (esint ii = info::mesh->elements->eintervalsDistribution[d]; ii < info::mesh->elements->eintervalsDistribution[d + 1]; ++ii) {
+                if (builder.matrices & Builder::Request::K) {
+                    opt->updateStiffness(_data->K[d].vals, Kperm, ii);
+                }
+                if (builder.matrices & Builder::Request::M) {
+//                    opt->updateStiffness(_data->M[d].vals, perm, ii);
+                }
+                if (builder.matrices & Builder::Request::f) {
+//                    opt->updateStiffness(_data->M[d].vals, perm, ii);
+                }
+                Kperm += (info::mesh->elements->eintervals[ii].end - info::mesh->elements->eintervals[ii].begin) * getMatrixSize(esize(ii), omitLower);
+                RHSperm += (info::mesh->elements->eintervals[ii].end - info::mesh->elements->eintervals[ii].begin) * esize(ii);
+            }
+            for (size_t r = 0; r < info::mesh->boundaryRegions.size(); ++r) {
+                if (info::mesh->boundaryRegions[r]->dimension) {
+                    for (esint ii = info::mesh->boundaryRegions[r]->eintervalsDistribution[d]; ii < info::mesh->boundaryRegions[r]->eintervalsDistribution[d + 1]; ++ii) {
+                        if (builder.matrices & Builder::Request::K) {
+    //                        opt->updateStiffness(_data->K[d].vals, Kperm, ii);
+                        }
+                        if (builder.matrices & Builder::Request::M) {
+        //                    opt->updateStiffness(_data->M[d].vals, perm, ii);
+                        }
+                        if (builder.matrices & Builder::Request::f) {
+                            opt->updateRHS(_data->f[0][d].vals, RHSperm, r, ii);
+                        }
+                        RHSperm += (info::mesh->boundaryRegions[r]->eintervals[ii].end - info::mesh->boundaryRegions[r]->eintervals[ii].begin) * bsize(r, ii);
+                    }
+                }
+            }
+        }
+    }
 
-	printf("INSERT: %f\n", eslog::time() - start);
+    printf("INSERT: %f\n", eslog::time() - start);
 
-	if (builder.matrices & Builder::Request::BC) {
-		std::vector<double> values(_dirichletMap.size());
-		provider()->general->dirichletValues(values);
+    if (builder.matrices & Builder::Request::BC) {
+        std::vector<double> values(_dirichletMap.size());
+        provider()->general->dirichletValues(values);
 
-		for (size_t i = 0; i < values.size(); i++) {
-			values[i] *= builder.internalForceReduction;
-		}
+        for (size_t i = 0; i < values.size(); i++) {
+            values[i] *= builder.internalForceReduction;
+        }
 
-		fillPermutedSparseData(_data->BC[0].vals, _dirichletMap, _dirichletPermutation, values);
-		eslog::checkpointln("ASSEMBLER: DIRICHLET COMPUTED");
-	}
-	eslog::endln("ASSEMBLER: FINISHED");
+        fillPermutedSparseData(_data->BC[0].vals, _dirichletMap, _dirichletPermutation, values);
+        eslog::checkpointln("ASSEMBLER: DIRICHLET COMPUTED");
+    }
+    eslog::endln("ASSEMBLER: FINISHED");
 }
 

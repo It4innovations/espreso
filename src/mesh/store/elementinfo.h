@@ -11,12 +11,12 @@ namespace espreso {
 
 struct ElementsDistributionInfo {
 
-	std::vector<size_t> threads;
-	DistributedDataInfo process;
-	std::vector<DistributionInfo> code;
+    std::vector<size_t> threads;
+    DistributedDataInfo process;
+    std::vector<DistributionInfo> code;
 
-	ElementsDistributionInfo();
-	void clear();
+    ElementsDistributionInfo();
+    void clear();
 };
 
 }

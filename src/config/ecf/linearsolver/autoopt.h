@@ -8,61 +8,61 @@ namespace espreso
 {
 struct PSOConfiguration : public ECFDescription
 {
-	int generations;
-	double C1;
-	double C2;
-	double W_START;
-	double W_END;
+    int generations;
+    double C1;
+    double C2;
+    double W_START;
+    double W_END;
 
-	PSOConfiguration();
+    PSOConfiguration();
 };
 
 struct DEConfiguration : public ECFDescription
 {
-	double F;
-	double CR;
+    double F;
+    double CR;
 
-	DEConfiguration();
+    DEConfiguration();
 };
 
 
 struct SOMAT3AConfiguration : public ECFDescription
 {
-	// TODO
+    // TODO
 };
 
 struct SOMAConfiguration : public ECFDescription
 {
-	double PRT;
-	double STEP;
-	double PATH_LENGTH;
+    double PRT;
+    double STEP;
+    double PATH_LENGTH;
 
-	SOMAConfiguration();
+    SOMAConfiguration();
 };
 
 struct AutoOptimizationConfiguration : public ECFDescription
 {
-	enum class ALGORITHM
-	{
-		NONE,
-		PARTICLE_SWARM,
-		DIFFERENTIAL_EVOLUTION,
-		SOMAT3A,
-		SOMA,
-		RANDOM,
-		ALL_PERMUTATIONS
-	};
+    enum class ALGORITHM
+    {
+        NONE,
+        PARTICLE_SWARM,
+        DIFFERENTIAL_EVOLUTION,
+        SOMAT3A,
+        SOMA,
+        RANDOM,
+        ALL_PERMUTATIONS
+    };
 
-	ALGORITHM algorithm;
-	bool rounding_immediate;
-	int population;
+    ALGORITHM algorithm;
+    bool rounding_immediate;
+    int population;
 
-	PSOConfiguration particle_swarm;
-	DEConfiguration differential_evolution;
-	SOMAConfiguration soma;
-	SOMAT3AConfiguration somat3a;
+    PSOConfiguration particle_swarm;
+    DEConfiguration differential_evolution;
+    SOMAConfiguration soma;
+    SOMAT3AConfiguration somat3a;
 
-	AutoOptimizationConfiguration();
+    AutoOptimizationConfiguration();
 };
 
 }

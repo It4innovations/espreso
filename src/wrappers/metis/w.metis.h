@@ -7,14 +7,14 @@ namespace espreso {
 struct METISConfiguration;
 
 struct METIS {
-	static bool islinked();
+    static bool islinked();
 
-	static esint call(
-			const METISConfiguration &options,
-			esint verticesCount,
-			esint *eframes, esint *eneighbors,
-			esint verticesWeightCount, esint *verticesWeights, esint *edgeWeights,
-			esint parts, esint *partition);
+    static esint call(
+            const METISConfiguration &options,
+            esint verticesCount,
+            esint *eframes, esint *eneighbors,
+            esint verticesWeightCount, esint *verticesWeights, esint *edgeWeights,
+            esint parts, esint *partition);
 };
 
 }

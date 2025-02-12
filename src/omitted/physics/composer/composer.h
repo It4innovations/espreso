@@ -19,32 +19,32 @@ class SolverDataProvider;
 class Composer {
 
 public:
-	Composer(Kernel *kernel, ModuleOpt *opt);
+    Composer(Kernel *kernel, ModuleOpt *opt);
 
-	virtual void init() = 0;
-	virtual void assemble(const Builder &builder) = 0;
+    virtual void init() = 0;
+    virtual void assemble(const Builder &builder) = 0;
 
-	virtual int esize(esint interval) =0;
-	virtual int bsize(esint region, esint interval) =0;
-	SolverDataProvider* provider();
-	int solutions();
+    virtual int esize(esint interval) =0;
+    virtual int bsize(esint region, esint interval) =0;
+    SolverDataProvider* provider();
+    int solutions();
 
-	void solutionChanged(Vectors *solution);
-	void nextSubstep();
-	void processSolution();
+    void solutionChanged(Vectors *solution);
+    void nextSubstep();
+    void processSolution();
 
-	Kernel *kernel;
-	ModuleOpt *opt;
+    Kernel *kernel;
+    ModuleOpt *opt;
 
-	virtual ~Composer();
+    virtual ~Composer();
 protected:
-	esint getMatrixSize(esint size, bool omitLower);
-	void insertKPattern(IJ *target, const esint *begin, const esint *end, bool omitLower);
-	void clearMatrices(Builder::Request matrices, AssemblerData *data);
+    esint getMatrixSize(esint size, bool omitLower);
+    void insertKPattern(IJ *target, const esint *begin, const esint *end, bool omitLower);
+    void clearMatrices(Builder::Request matrices, AssemblerData *data);
 
-	void fillPermutedSparseData(double *target, const std::vector<esint> &indices, const std::vector<esint> &permutation, const std::vector<double> &values);
+    void fillPermutedSparseData(double *target, const std::vector<esint> &indices, const std::vector<esint> &permutation, const std::vector<double> &values);
 
-	std::vector<esint> _dirichletMap, _dirichletPermutation;
+    std::vector<esint> _dirichletMap, _dirichletPermutation;
 };
 
 }

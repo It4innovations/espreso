@@ -12,9 +12,9 @@ struct OpenFOAMData;
 
 struct OpenFOAMBoundary: public OpenFOAMSeparateParser {
 
-	OpenFOAMBoundary(const char *begin, const char *end): OpenFOAMSeparateParser(begin, end) {}
+    OpenFOAMBoundary(const char *begin, const char *end): OpenFOAMSeparateParser(begin, end) {}
 
-	bool readData(OpenFOAMData &data);
+    bool readData(OpenFOAMData &data);
 };
 
 }

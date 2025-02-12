@@ -7,10 +7,10 @@
 namespace espreso {
 
 struct EvaluatorParameter {
-	std::string name;
-	double value;
+    std::string name;
+    double value;
 
-	EvaluatorParameter(const std::string &name): name(name), value(0) {}
+    EvaluatorParameter(const std::string &name): name(name), value(0) {}
 };
 
 }

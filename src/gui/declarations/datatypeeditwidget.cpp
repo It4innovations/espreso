@@ -20,7 +20,7 @@ DataTypeEditWidget::DataTypeEditWidget(QWidget *parent) :
     this->m_cmb->setSizePolicy(QSizePolicy::Fixed, QSizePolicy::Fixed);
     this->m_cmb->hide();
 
-	this->m_datatype_empty << true << true << true;
+    this->m_datatype_empty << true << true << true;
 }
 
 DataTypeEditWidget::DataTypeEditWidget(const std::vector<std::string>& variables, QWidget* parent) :
@@ -33,10 +33,10 @@ DataTypeEditWidget::DataTypeEditWidget(const std::vector<std::string>& variables
     this->initExpression();
     this->activeType = 0;
 
-	connect(this->uiTable, SIGNAL(cellChanged()),
-			this, SLOT(onCellChange()));
-	connect(this->uiPiecewise, SIGNAL(cellChanged()),
-			this, SLOT(onCellChange()));
+    connect(this->uiTable, SIGNAL(cellChanged()),
+            this, SLOT(onCellChange()));
+    connect(this->uiPiecewise, SIGNAL(cellChanged()),
+            this, SLOT(onCellChange()));
 }
 
 DataTypeEditWidget::DataTypeEditWidget(ECFParameter* data, QWidget *parent) :
@@ -46,7 +46,7 @@ DataTypeEditWidget::DataTypeEditWidget(ECFParameter* data, QWidget *parent) :
     this->createUi();
 
     QString content = QString::fromStdString(data->getValue());
-	this->parseValue(content);
+    this->parseValue(content);
 }
 
 DataTypeEditWidget::~DataTypeEditWidget()
@@ -62,7 +62,7 @@ void DataTypeEditWidget::createUi()
                 this);
     function->hide();
 
-	TableTypeWidget* table = new TableTypeWidget(this);
+    TableTypeWidget* table = new TableTypeWidget(this);
     table->hide();
 
     PiecewiseTypeWidget* piecewise = new PiecewiseTypeWidget(
@@ -81,43 +81,43 @@ void DataTypeEditWidget::createUi()
 
 void DataTypeEditWidget::parseValue(const QString &value)
 {
-	QRegularExpression tableregex("tabular|TABULAR");
-	QRegularExpression piecewiseregex("if|IF");
+    QRegularExpression tableregex("tabular|TABULAR");
+    QRegularExpression piecewiseregex("if|IF");
 
-	if (tableregex.match(value).hasMatch())
-	{
-		this->initTable();
-		this->activeType = 1;
-	}
-	else if (piecewiseregex.match(value).hasMatch())
-	{
-		this->initPiecewise();
-		this->activeType = 2;
-	}
-	else
-	{
-		this->initExpression();
-		this->activeType = 0;
-	}
+    if (tableregex.match(value).hasMatch())
+    {
+        this->initTable();
+        this->activeType = 1;
+    }
+    else if (piecewiseregex.match(value).hasMatch())
+    {
+        this->initPiecewise();
+        this->activeType = 2;
+    }
+    else
+    {
+        this->initExpression();
+        this->activeType = 0;
+    }
 }
 
 int DataTypeEditWidget::checkDataType(const QString &data)
 {
-	QRegularExpression tableregex("tabular|TABULAR");
-	QRegularExpression piecewiseregex("if|IF");
+    QRegularExpression tableregex("tabular|TABULAR");
+    QRegularExpression piecewiseregex("if|IF");
 
-	if (tableregex.match(data).hasMatch())
-	{
-		return 1;
-	}
-	else if (piecewiseregex.match(data).hasMatch())
-	{
-		return 2;
-	}
-	else
-	{
-		return 0;
-	}
+    if (tableregex.match(data).hasMatch())
+    {
+        return 1;
+    }
+    else if (piecewiseregex.match(data).hasMatch())
+    {
+        return 2;
+    }
+    else
+    {
+        return 0;
+    }
 }
 
 void DataTypeEditWidget::initExpression()
@@ -143,7 +143,7 @@ void DataTypeEditWidget::initPiecewise()
 
 QString DataTypeEditWidget::param_getValue()
 {
-	if (!this->m_text.isEmpty()) return this->m_text;
+    if (!this->m_text.isEmpty()) return this->m_text;
     if (this->m_param != nullptr) return QString::fromStdString(m_param->getValue());
     return QString();
 }
@@ -178,9 +178,9 @@ void DataTypeEditWidget::setComboBox(bool show)
 
 void DataTypeEditWidget::setSharedData(DataTypeEditWidgetFactoryData *data)
 {
-	this->m_shared = data;
-	this->m_cmb->setCurrentIndex(data->type);
-	this->changeType(data->type);
+    this->m_shared = data;
+    this->m_cmb->setCurrentIndex(data->type);
+    this->changeType(data->type);
 }
 
 int DataTypeEditWidget::datatype()
@@ -240,15 +240,15 @@ void DataTypeEditWidget::save()
 
 void DataTypeEditWidget::setText(const QString &text)
 {
-	this->m_text = text;
+    this->m_text = text;
     if (!text.isEmpty() && this->m_datatype_empty[this->checkDataType(text)])
-	{
+    {
         this->parseValue(text);
         this->m_datatype_empty[this->activeType] = false;
         if (this->m_shared == nullptr) return;
         this->m_shared->valid = this->isValid();
         this->m_shared->error_message = this->errorMessage();
-	}
+    }
     else if (text.isEmpty() && this->activeType == 2)
     {
         this->m_datatype_empty[this->activeType] = false;
@@ -267,10 +267,10 @@ QString DataTypeEditWidget::text()
 
 void DataTypeEditWidget::onCellChange()
 {
-	if (!this->m_datatype_empty[this->activeType])
-	{
-		emit finished(this);
-	}
+    if (!this->m_datatype_empty[this->activeType])
+    {
+        emit finished(this);
+    }
 }
 
 void DataTypeEditWidget::changeType(int index)
@@ -299,7 +299,7 @@ void DataTypeEditWidget::changeType(int index)
     }
 
     this->activeType = index;
-	if (this->m_shared != nullptr) this->m_shared->type = index;
+    if (this->m_shared != nullptr) this->m_shared->type = index;
     emit finished(this);
 }
 

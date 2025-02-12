@@ -10,12 +10,12 @@ namespace espreso {
 
 struct SphereGeneratorConfiguration: public BlockGeneratorConfiguration {
 
-	double inner_radius, outer_radius;
-	size_t clusters, layers;
+    double inner_radius, outer_radius;
+    size_t clusters, layers;
 
-	std::map<std::string, std::string> nodes, edges, faces, elements;
+    std::map<std::string, std::string> nodes, edges, faces, elements;
 
-	SphereGeneratorConfiguration();
+    SphereGeneratorConfiguration();
 };
 
 }

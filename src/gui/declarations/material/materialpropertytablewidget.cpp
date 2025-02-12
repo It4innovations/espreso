@@ -45,7 +45,7 @@ void MaterialPropertyTableWidget::addProperty(ECFParameter* property)
     this->addRow(
                 QString::fromStdString(property->metadata.description.at(0)),
                 property,
-				QString::fromStdString("UNIT"), // QString::fromStdString(property->metadata.unit),
+                QString::fromStdString("UNIT"), // QString::fromStdString(property->metadata.unit),
                 QString::fromStdString(property->name)
                 );
 }

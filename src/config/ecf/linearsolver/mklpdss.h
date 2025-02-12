@@ -8,7 +8,7 @@ namespace espreso {
 
 struct MKLPDSSConfiguration: public ECFDescription {
 
-	MKLPDSSConfiguration() { };
+    MKLPDSSConfiguration() { };
 };
 
 }

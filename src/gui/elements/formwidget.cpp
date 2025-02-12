@@ -9,7 +9,7 @@ using namespace espreso;
 
 FormWidget::FormWidget(QWidget* parent) : QWidget(parent)
 {
-	this->m_layout = new QFormLayout;
+    this->m_layout = new QFormLayout;
     this->setLayout(m_layout);
     this->setSizePolicy(QSizePolicy::Ignored, QSizePolicy::Preferred);
 }

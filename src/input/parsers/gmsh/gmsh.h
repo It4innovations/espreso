@@ -10,11 +10,11 @@ struct InputConfiguration;
 
 class GMSHGenerator: public MeshBuilder {
 public:
-	GMSHGenerator(const InputConfiguration &configuration);
-	void load();
+    GMSHGenerator(const InputConfiguration &configuration);
+    void load();
 
 protected:
-	const InputConfiguration &_configuration;
+    const InputConfiguration &_configuration;
 };
 
 }

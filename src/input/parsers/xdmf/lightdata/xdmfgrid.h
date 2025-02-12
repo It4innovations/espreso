@@ -9,18 +9,18 @@ namespace espreso {
 
 class XDMFGrid: public XDMFElement {
 public:
-	enum class Type           { Uniform, Collection, Tree, Subset };
-	enum class CollectionType { Spatial, Temporal };
-	enum class Section        { DataItem, All };
+    enum class Type           { Uniform, Collection, Tree, Subset };
+    enum class CollectionType { Spatial, Temporal };
+    enum class Section        { DataItem, All };
 
-	std::string name;
-	std::string reference;
-	Type type;
-	CollectionType collectiontype;
-	Section section;
+    std::string name;
+    std::string reference;
+    Type type;
+    CollectionType collectiontype;
+    Section section;
 
-	XDMFGrid();
-	void parse(XML::Element *e);
+    XDMFGrid();
+    void parse(XML::Element *e);
 };
 
 }

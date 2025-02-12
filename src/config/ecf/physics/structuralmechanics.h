@@ -10,96 +10,96 @@ namespace espreso {
 struct ECF;
 
 struct RotorDynamicsConfiguration: public ECFDescription {
-	enum class TYPE {
-		FIXED,
-		COROTATING
-	};
+    enum class TYPE {
+        FIXED,
+        COROTATING
+    };
 
-	struct RotationConfiguration: public ECFDescription {
-		enum class TYPE {
-			FREQUENCY_RATIO,
-			TABLE
-		};
+    struct RotationConfiguration: public ECFDescription {
+        enum class TYPE {
+            FREQUENCY_RATIO,
+            TABLE
+        };
 
-		TYPE type;
-		double frequency_ratio;
-		std::vector<double> table;
+        TYPE type;
+        double frequency_ratio;
+        std::vector<double> table;
 
-		RotationConfiguration();
-	};
+        RotationConfiguration();
+    };
 
-	struct RotationAxisConfiguration: public ECFDescription {
-		ECFExpressionVector center, orientation;
+    struct RotationAxisConfiguration: public ECFDescription {
+        ECFExpressionVector center, orientation;
 
-		RotationAxisConfiguration();
-	};
+        RotationAxisConfiguration();
+    };
 
-	struct CorotatingRotorConfiguration: public ECFDescription {
-		bool coriolis_effect, spin_softening, rotating_damping, centrifugal_load;
-		RotationConfiguration rotation;
+    struct CorotatingRotorConfiguration: public ECFDescription {
+        bool coriolis_effect, spin_softening, rotating_damping, centrifugal_load;
+        RotationConfiguration rotation;
 
-		CorotatingRotorConfiguration();
-	};
+        CorotatingRotorConfiguration();
+    };
 
-	struct CorotatingConfiguration: public ECFDescription {
-		std::map<std::string, CorotatingRotorConfiguration> rotors_definitions;
-		RotationAxisConfiguration rotation_axis;
+    struct CorotatingConfiguration: public ECFDescription {
+        std::map<std::string, CorotatingRotorConfiguration> rotors_definitions;
+        RotationAxisConfiguration rotation_axis;
 
-		CorotatingConfiguration();
-	};
+        CorotatingConfiguration();
+    };
 
-	struct FixedRotorConfiguration: public ECFDescription {
-		bool gyroscopic_effect, centrifugal_load;
-//		bool rotating_damping;
-		RotationConfiguration rotation;
-		RotationAxisConfiguration rotation_axis;
+    struct FixedRotorConfiguration: public ECFDescription {
+        bool gyroscopic_effect, centrifugal_load;
+//        bool rotating_damping;
+        RotationConfiguration rotation;
+        RotationAxisConfiguration rotation_axis;
 
-		FixedRotorConfiguration();
-	};
+        FixedRotorConfiguration();
+    };
 
-	struct FixedConfiguration: public ECFDescription {
-		std::map<std::string, FixedRotorConfiguration> rotors_definitions;
+    struct FixedConfiguration: public ECFDescription {
+        std::map<std::string, FixedRotorConfiguration> rotors_definitions;
 
-		FixedConfiguration();
-	};
+        FixedConfiguration();
+    };
 
-	TYPE type;
-	FixedConfiguration fixed;
-	CorotatingConfiguration corotating;
+    TYPE type;
+    FixedConfiguration fixed;
+    CorotatingConfiguration corotating;
 
-	RotorDynamicsConfiguration();
+    RotorDynamicsConfiguration();
 };
 
 struct RotatingForceConfiguration: public ECFDescription {
 
-	ECFExpressionVector rotation_axis;
-	ECFExpression rotation_radius;
-	ECFExpression unbalance_mass;
-	ECFExpression unbalance_phase_angle;
-	ECFExpression location;
+    ECFExpressionVector rotation_axis;
+    ECFExpression rotation_radius;
+    ECFExpression unbalance_mass;
+    ECFExpression unbalance_phase_angle;
+    ECFExpression location;
 
-	RotatingForceConfiguration();
+    RotatingForceConfiguration();
 };
 
 struct NonlinerSpringConfiguration: public ECFDescription {
-	enum class Support {
-		FIXED,
-		SLIDING
-	};
+    enum class Support {
+        FIXED,
+        SLIDING
+    };
 
-	Support support;
-	ECFExpressionVector direction;
-	ECFExpression force;
-	ECFExpression force_derivative;
+    Support support;
+    ECFExpressionVector direction;
+    ECFExpression force;
+    ECFExpression force_derivative;
 
-	NonlinerSpringConfiguration();
+    NonlinerSpringConfiguration();
 };
 
 struct FixedWallConfiguration: public ECFDescription {
-	ECFExpressionVector normal, point;
-	double gap;
+    ECFExpressionVector normal, point;
+    double gap;
 
-	FixedWallConfiguration();
+    FixedWallConfiguration();
 };
 
 struct FixedSphereConfiguration: public ECFDescription {
@@ -119,58 +119,58 @@ struct PressureConfiguration: public ECFDescription {
 
 struct StructuralMechanicsGlobalSettings {
 
-	enum class ELEMENT_BEHAVIOUR {
-		PLANE_STRAIN = 0,
-		AXISYMMETRIC = 1,
-		PLANE_STRESS = 2,
-		PLANE_STRESS_WITH_THICKNESS = 3
-	};
+    enum class ELEMENT_BEHAVIOUR {
+        PLANE_STRAIN = 0,
+        AXISYMMETRIC = 1,
+        PLANE_STRESS = 2,
+        PLANE_STRESS_WITH_THICKNESS = 3
+    };
 
-	ELEMENT_BEHAVIOUR element_behaviour;
+    ELEMENT_BEHAVIOUR element_behaviour;
 
-	std::map<std::string, ECFExpressionVector> initial_velocity;
+    std::map<std::string, ECFExpressionVector> initial_velocity;
 
-	StructuralMechanicsGlobalSettings(ECFObject *ecfdescription);
+    StructuralMechanicsGlobalSettings(ECFObject *ecfdescription);
 };
 
 struct StructuralMechanicsLoadStepConfiguration: public StructuralMechanicsLoadStepSolverConfiguration {
 
-	bool corotation;
+    bool corotation;
 
-	std::map<std::string, ECFExpression> temperature, normal_pressure;
-	std::map<std::string, PressureConfiguration> pressure;
-	std::map<std::string, ECFExpressionVector> force, angular_velocity, acceleration;
-	std::map<std::string, FixedWallConfiguration> fixed_wall;
-	std::map<std::string, FixedSphereConfiguration> fixed_sphere;
-	std::map<std::string, ECFHarmonicExpressionVector> harmonic_force, harmonic_acceleration;
-	std::map<std::string, ECFExpressionOptionalVector> displacement;
-	std::map<std::string, RotatingForceConfiguration> rotating_force;
-	std::map<std::string, NonlinerSpringConfiguration> nonlinear_spring;
-	RotorDynamicsConfiguration rotor_dynamics;
+    std::map<std::string, ECFExpression> temperature, normal_pressure;
+    std::map<std::string, PressureConfiguration> pressure;
+    std::map<std::string, ECFExpressionVector> force, angular_velocity, acceleration;
+    std::map<std::string, FixedWallConfiguration> fixed_wall;
+    std::map<std::string, FixedSphereConfiguration> fixed_sphere;
+    std::map<std::string, ECFHarmonicExpressionVector> harmonic_force, harmonic_acceleration;
+    std::map<std::string, ECFExpressionOptionalVector> displacement;
+    std::map<std::string, RotatingForceConfiguration> rotating_force;
+    std::map<std::string, NonlinerSpringConfiguration> nonlinear_spring;
+    RotorDynamicsConfiguration rotor_dynamics;
 
-	StructuralMechanicsLoadStepConfiguration();
+    StructuralMechanicsLoadStepConfiguration();
 };
 
 struct StructuralMechanicsOutputSettings: public virtual ECFDescription {
 
-	static void addMonitorableProperties(ECFMetaData &metadata, const ECF *root);
+    static void addMonitorableProperties(ECFMetaData &metadata, const ECF *root);
 
-	bool normal;
-	bool displacement, velocity, acceleration, stress, reactions;
-	bool fluid_interaction;
+    bool normal;
+    bool displacement, velocity, acceleration, stress, reactions;
+    bool fluid_interaction;
 
-	bool global_average;
+    bool global_average;
 
-	void basic() {
-	    normal = false;
-		displacement = true;
-		velocity = false;
-		acceleration = false;
-		stress = false;
-		reactions = false;
-		fluid_interaction = false;
-	}
-	void all() {
+    void basic() {
+        normal = false;
+        displacement = true;
+        velocity = false;
+        acceleration = false;
+        stress = false;
+        reactions = false;
+        fluid_interaction = false;
+    }
+    void all() {
         normal = true;
         displacement = true;
         velocity = true;
@@ -178,21 +178,21 @@ struct StructuralMechanicsOutputSettings: public virtual ECFDescription {
         stress = true;
         reactions = true;
         fluid_interaction = true;
-	}
+    }
 
-	static void activate();
+    static void activate();
 
-	StructuralMechanicsOutputSettings();
+    StructuralMechanicsOutputSettings();
 
 protected:
-	static bool _activated;
+    static bool _activated;
 };
 
 struct StructuralMechanicsConfiguration: public PhysicsConfiguration, public StructuralMechanicsGlobalSettings {
 
-	std::map<size_t, StructuralMechanicsLoadStepConfiguration> load_steps_settings;
+    std::map<size_t, StructuralMechanicsLoadStepConfiguration> load_steps_settings;
 
-	StructuralMechanicsConfiguration();
+    StructuralMechanicsConfiguration();
 };
 
 }

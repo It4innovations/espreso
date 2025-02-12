@@ -211,7 +211,7 @@ QWidget* RegionPairDialog::uiValue(ECFDataType type)
             if (found) continue;
             cmb->addItem(QString::fromStdString((*it)->name));
         }
-		ui->formLayout->addRow(tr("Region:"), cmb);
+        ui->formLayout->addRow(tr("Region:"), cmb);
         ret = cmb;
     }
 
@@ -313,8 +313,8 @@ void RegionPairDialog::accept()
 
 void RegionPairDialog::reject()
 {
-	this->m_region = QString::fromStdString(this->getKey());
-	QDialog::reject();
+    this->m_region = QString::fromStdString(this->getKey());
+    QDialog::reject();
 }
 
 void RegionPairDialog::displayError(const QString& msg)

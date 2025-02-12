@@ -8,8 +8,8 @@ namespace espreso {
 
 struct Pyramid13: public Element {
 
-	static void setBaseFunctions(Element &self);
-	void setGaussPointsForOrder(int order);
+    static void setBaseFunctions(Element &self);
+    void setGaussPointsForOrder(int order);
 };
 
 }

@@ -24,7 +24,7 @@ AssemblerData::AssemblerData(Matrix *K, Matrix *M, Matrix *C, Matrix *CM, Vector
 
 AssemblerData::~AssemblerData()
 {
-	if (composer != NULL) { delete composer; }
+    if (composer != NULL) { delete composer; }
 }
 
 SolverData::SolverData(Matrix *K, Vectors *R, Vectors *f, Vectors *x, Vectors *y, Vectors *BC, SystemSolver *linearSolver)
@@ -36,138 +36,138 @@ SolverData::SolverData(Matrix *K, Vectors *R, Vectors *f, Vectors *x, Vectors *y
 
 SolverData::~SolverData()
 {
-//	if (provider != NULL) { delete provider; }
-//	if (linearSolver != NULL) { delete linearSolver; }
+//    if (provider != NULL) { delete provider; }
+//    if (linearSolver != NULL) { delete linearSolver; }
 }
 
 LinearSystem::~LinearSystem()
 {
-	if (builder) { delete builder; }
+    if (builder) { delete builder; }
 }
 
 void LinearSystem::init()
 {
-	assembler()->composer->init();
-	_builderInit();
-	for (esint i = 0; i < nsolvers(); ++i) {
-		solver(i)->linearSolver->init();
-	}
+    assembler()->composer->init();
+    _builderInit();
+    for (esint i = 0; i < nsolvers(); ++i) {
+        solver(i)->linearSolver->init();
+    }
 }
 
 void LinearSystem::nextSubstep()
 {
-	assembler()->composer->nextSubstep();
-	eslog::checkpointln("PHYSICS SOLVER: PARAMETERS EVALUATED");
+    assembler()->composer->nextSubstep();
+    eslog::checkpointln("PHYSICS SOLVER: PARAMETERS EVALUATED");
 }
 
 void LinearSystem::assemble()
 {
-	_builderReset();
+    _builderReset();
 
-	assembler()->composer->assemble(*builder);
-	_builderCreateSystem();
+    assembler()->composer->assemble(*builder);
+    _builderCreateSystem();
 
-	if (info::ecf->output.print_matrices) {
-		eslog::storedata(" STORE ASSEMBLED MATRICES\n");
-		if (nassemblers() == 1) {
-			std::string prefix = utils::debugDirectory() + "/assembler";
-			assembler()->print(builder, prefix.c_str(), "");
-		} else {
-			for (int i = 0; i < nassemblers(); i++) {
-				std::string prefix = utils::debugDirectory() + "/assembler" + std::to_string(i + 1);
-				assembler()->print(builder, prefix.c_str(), "");
-			}
-		}
-	}
+    if (info::ecf->output.print_matrices) {
+        eslog::storedata(" STORE ASSEMBLED MATRICES\n");
+        if (nassemblers() == 1) {
+            std::string prefix = utils::debugDirectory() + "/assembler";
+            assembler()->print(builder, prefix.c_str(), "");
+        } else {
+            for (int i = 0; i < nassemblers(); i++) {
+                std::string prefix = utils::debugDirectory() + "/assembler" + std::to_string(i + 1);
+                assembler()->print(builder, prefix.c_str(), "");
+            }
+        }
+    }
 
-	if (step::step.type == step::TYPE::FREQUENCY && builder->AFTSamples && (builder->matrices & Builder::Request::R)) {
-		step::step.type = step::TYPE::FTT;
-		step::ftt.steps = builder->AFTSamples;
-		step::ftt.period = 1 / step::frequency.current;
-		for (step::ftt.step = 0; step::ftt.step < step::ftt.steps; ++step::ftt.step) {
-			step::ftt.time = (double)step::ftt.step / step::ftt.steps;
+    if (step::step.type == step::TYPE::FREQUENCY && builder->AFTSamples && (builder->matrices & Builder::Request::R)) {
+        step::step.type = step::TYPE::FTT;
+        step::ftt.steps = builder->AFTSamples;
+        step::ftt.period = 1 / step::frequency.current;
+        for (step::ftt.step = 0; step::ftt.step < step::ftt.steps; ++step::ftt.step) {
+            step::ftt.time = (double)step::ftt.step / step::ftt.steps;
 
-			assembler()->composer->processSolution();
-			assembler()->composer->solutionChanged(NULL);
-			assembler()->composer->assemble(*builder);
-			_builderCreateSystem();
+            assembler()->composer->processSolution();
+            assembler()->composer->solutionChanged(NULL);
+            assembler()->composer->assemble(*builder);
+            _builderCreateSystem();
 
-			if (info::ecf->output.print_matrices) {
-				eslog::storedata(" STORE ASSEMBLED MATRICES\n");
-				if (nassemblers() == 1) {
-					std::string prefix = utils::debugDirectory() + "/assembler";
-					std::string suffix = "_aft" + std::to_string(step::ftt.step);
-					assembler()->print(builder, prefix.c_str(), suffix.c_str());
-				} else {
-					for (int i = 0; i < nassemblers(); i++) {
-						std::string prefix = utils::debugDirectory() + "/assembler" + std::to_string(i + 1);
-						std::string suffix = "_aft" + std::to_string(step::ftt.step);
-						assembler()->print(builder, prefix.c_str(), suffix.c_str());
-					}
-				}
-			}
-		}
+            if (info::ecf->output.print_matrices) {
+                eslog::storedata(" STORE ASSEMBLED MATRICES\n");
+                if (nassemblers() == 1) {
+                    std::string prefix = utils::debugDirectory() + "/assembler";
+                    std::string suffix = "_aft" + std::to_string(step::ftt.step);
+                    assembler()->print(builder, prefix.c_str(), suffix.c_str());
+                } else {
+                    for (int i = 0; i < nassemblers(); i++) {
+                        std::string prefix = utils::debugDirectory() + "/assembler" + std::to_string(i + 1);
+                        std::string suffix = "_aft" + std::to_string(step::ftt.step);
+                        assembler()->print(builder, prefix.c_str(), suffix.c_str());
+                    }
+                }
+            }
+        }
 
-		step::step.type = step::TYPE::FREQUENCY;
-	}
+        step::step.type = step::TYPE::FREQUENCY;
+    }
 
-	if (info::ecf->output.print_matrices) {
-		eslog::storedata(" STORE SOLVER MATRICES\n");
-		if (nassemblers() == 1) {
-			std::string prefix = utils::debugDirectory() + "/solver";
-			solver()->printData(builder, prefix.c_str());
-		} else {
-			for (int i = 0; i < nsolvers(); i++) {
-				std::string prefix = utils::debugDirectory() + "/solver" + std::to_string(i + 1);
-				solver()->printData(builder, prefix.c_str());
-			}
-		}
-	}
-	eslog::checkpointln("PHYSICS SOLVER: MATRICES ASSEMBLED");
+    if (info::ecf->output.print_matrices) {
+        eslog::storedata(" STORE SOLVER MATRICES\n");
+        if (nassemblers() == 1) {
+            std::string prefix = utils::debugDirectory() + "/solver";
+            solver()->printData(builder, prefix.c_str());
+        } else {
+            for (int i = 0; i < nsolvers(); i++) {
+                std::string prefix = utils::debugDirectory() + "/solver" + std::to_string(i + 1);
+                solver()->printData(builder, prefix.c_str());
+            }
+        }
+    }
+    eslog::checkpointln("PHYSICS SOLVER: MATRICES ASSEMBLED");
 }
 
 void LinearSystem::setDirichlet()
 {
-	solver()->setDirichlet(builder);
-	eslog::checkpointln("PHYSICS SOLVER: DIRICHLET SET");
+    solver()->setDirichlet(builder);
+    eslog::checkpointln("PHYSICS SOLVER: DIRICHLET SET");
 }
 
 void LinearSystem::solve()
 {
-	if (info::ecf->output.print_matrices) {
-		eslog::storedata(" STORE MATRICES FOR LINEAR SOLVER\n");
-		std::string prefix = utils::debugDirectory() + "/linsolver";
-		solver()->printData(builder, prefix.c_str());
-	}
+    if (info::ecf->output.print_matrices) {
+        eslog::storedata(" STORE MATRICES FOR LINEAR SOLVER\n");
+        std::string prefix = utils::debugDirectory() + "/linsolver";
+        solver()->printData(builder, prefix.c_str());
+    }
 
-	if (builder->matrices & Builder::Request::KCM) {
-		solver()->linearSolver->update();
-	}
-	solver()->linearSolver->solve();
+    if (builder->matrices & Builder::Request::KCM) {
+        solver()->linearSolver->update();
+    }
+    solver()->linearSolver->solve();
 
-	if (info::ecf->output.print_matrices) {
-		eslog::storedata(" STORE LINEAR SOLVER SOLUTION\n");
-		std::string prefix = utils::debugDirectory() + "/linsolver";
-		solver()->printSolution(builder, prefix.c_str());
-	}
-	eslog::checkpointln("PHYSICS SOLVER: SOLUTION COMPUTED");
+    if (info::ecf->output.print_matrices) {
+        eslog::storedata(" STORE LINEAR SOLVER SOLUTION\n");
+        std::string prefix = utils::debugDirectory() + "/linsolver";
+        solver()->printSolution(builder, prefix.c_str());
+    }
+    eslog::checkpointln("PHYSICS SOLVER: SOLUTION COMPUTED");
 }
 
 void LinearSystem::solutionChanged()
 {
-	_builderUpdateSolution();
-	eslog::checkpointln("PHYSICS SOLVER: SOLUTION UPDATED");
+    _builderUpdateSolution();
+    eslog::checkpointln("PHYSICS SOLVER: SOLUTION UPDATED");
 }
 
 void LinearSystem::processSolution()
 {
-	assembler()->composer->processSolution();
-	if (step::step.type == step::TYPE::TIME) {
-		info::mesh->output->updateSolution(step::step, step::time);
-	}
-	if (step::step.type == step::TYPE::FREQUENCY) {
-		info::mesh->output->updateSolution(step::step, step::frequency);
-	}
-	eslog::checkpointln("PHYSICS SOLVER: SOLUTION PROCESSED");
+    assembler()->composer->processSolution();
+    if (step::step.type == step::TYPE::TIME) {
+        info::mesh->output->updateSolution(step::step, step::time);
+    }
+    if (step::step.type == step::TYPE::FREQUENCY) {
+        info::mesh->output->updateSolution(step::step, step::frequency);
+    }
+    eslog::checkpointln("PHYSICS SOLVER: SOLUTION PROCESSED");
 }
 

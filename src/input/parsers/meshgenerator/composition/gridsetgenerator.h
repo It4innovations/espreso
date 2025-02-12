@@ -13,21 +13,21 @@ struct GridSetGeneratorConfiguration;
 class GridSetGenerator: public GridGenerator {
 
 public:
-	static void generate(const GridSetGeneratorConfiguration &configuration, MeshBuilder &mesh);
+    static void generate(const GridSetGeneratorConfiguration &configuration, MeshBuilder &mesh);
 
-	static esint grids(const GridSetGeneratorConfiguration &configuration);
-	static esint gridIndex(const GridSetGeneratorConfiguration &configuration);
+    static esint grids(const GridSetGeneratorConfiguration &configuration);
+    static esint gridIndex(const GridSetGeneratorConfiguration &configuration);
 
 protected:
-	GridSetGenerator(const GridSetGeneratorConfiguration &configuration);
-	virtual ~GridSetGenerator() {}
+    GridSetGenerator(const GridSetGeneratorConfiguration &configuration);
+    virtual ~GridSetGenerator() {}
 
-	void init(const GridSetGeneratorConfiguration &configuration);
-	void nodes(MeshBuilder &mesh);
-	void regions(const GridSetGeneratorConfiguration &configuration, MeshBuilder &mesh);
+    void init(const GridSetGeneratorConfiguration &configuration);
+    void nodes(MeshBuilder &mesh);
+    void regions(const GridSetGeneratorConfiguration &configuration, MeshBuilder &mesh);
 
-	esint _gridIndex;
-	esint _gridNodeOffset;
+    esint _gridIndex;
+    esint _gridNodeOffset;
 };
 
 }

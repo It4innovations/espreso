@@ -9,19 +9,19 @@ namespace espreso {
 
 class EnsightCasefile {
 public:
-	enum class Type {
-		Ensight_Gold
-	};
+    enum class Type {
+        Ensight_Gold
+    };
 
-	EnsightCasefile(const std::string &path);
+    EnsightCasefile(const std::string &path);
 
-	void parse();
+    void parse();
 
-	std::string path;
-	Type type;
-	std::string geometry;
-	std::vector<std::string> variables;
-	std::vector<double> times;
+    std::string path;
+    Type type;
+    std::string geometry;
+    std::vector<std::string> variables;
+    std::vector<double> times;
 };
 
 }

@@ -8,32 +8,32 @@ namespace espreso {
 
 template <typename I>
 struct PARDISOParameters {
-	void* pt[64];
-	I maxfct, mnum, mtype, phase, iparm[64], msglvl, error, *perm;
-	double dparm[64];
+    void* pt[64];
+    I maxfct, mnum, mtype, phase, iparm[64], msglvl, error, *perm;
+    double dparm[64];
 
-	I called;
+    I called;
 
-	PARDISOParameters(): pt{}, called(0)
-	{
-		for (int i = 0 ; i < 64; i++) {
-			pt[i] = NULL;
-			iparm[i] = 0;
-			dparm[i] = 0;
-		}
-		maxfct = 1;
-		mnum  = 1;
-		mtype = 11; // most general for us
-		phase = 0;
-		msglvl = 0;
-		error = 0;
-		perm = NULL;
-	}
+    PARDISOParameters(): pt{}, called(0)
+    {
+        for (int i = 0 ; i < 64; i++) {
+            pt[i] = NULL;
+            iparm[i] = 0;
+            dparm[i] = 0;
+        }
+        maxfct = 1;
+        mnum  = 1;
+        mtype = 11; // most general for us
+        phase = 0;
+        msglvl = 0;
+        error = 0;
+        perm = NULL;
+    }
 
-	~PARDISOParameters()
-	{
-		if (perm) delete[] perm;
-	}
+    ~PARDISOParameters()
+    {
+        if (perm) delete[] perm;
+    }
 };
 }
 

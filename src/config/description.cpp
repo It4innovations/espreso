@@ -6,10 +6,10 @@ using namespace espreso;
 
 ECFDescription::ECFDescription()
 {
-	ecfdescription = new ECFObject();
+    ecfdescription = new ECFObject();
 }
 
 ECFDescription::~ECFDescription()
 {
-	delete ecfdescription;
+    delete ecfdescription;
 }

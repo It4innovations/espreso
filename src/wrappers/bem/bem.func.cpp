@@ -137,17 +137,17 @@ void Insert (int *DOFsToDOFs1, int *nDOFsToDOFs1, int idx2)
   else
     for (i=0; i<n-1; i++)
       if (abs(idx2)>abs(DOFsToDOFs1[i]) && abs(idx2)<abs(DOFsToDOFs1[i+1]))
-	{
-	  memmove(DOFsToDOFs1+i+2,DOFsToDOFs1+i+1,(n-(i+1))*sizeof(int));
-	  DOFsToDOFs1[i+1] = idx2;
-	  (*nDOFsToDOFs1) ++;
-	}
+    {
+      memmove(DOFsToDOFs1+i+2,DOFsToDOFs1+i+1,(n-(i+1))*sizeof(int));
+      DOFsToDOFs1[i+1] = idx2;
+      (*nDOFsToDOFs1) ++;
+    }
 }
 
 
 void InsertSymmetric (int idx1, int *DOFsToDOFs1,
-  	              int *nDOFsToDOFs1, int idx2,
-		      int *DOFsToDOFs2, int *nDOFsToDOFs2)
+                    int *nDOFsToDOFs1, int idx2,
+              int *DOFsToDOFs2, int *nDOFsToDOFs2)
 {
   Insert(DOFsToDOFs1,nDOFsToDOFs1,idx2);
   Insert(DOFsToDOFs2,nDOFsToDOFs2,idx1);

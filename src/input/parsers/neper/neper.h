@@ -10,11 +10,11 @@ struct InputConfiguration;
 
 class NeperLoader: public MeshBuilder {
 public:
-	NeperLoader(InputConfiguration &configuration);
-	void load();
+    NeperLoader(InputConfiguration &configuration);
+    void load();
 
 protected:
-	InputConfiguration &_configuration;
+    InputConfiguration &_configuration;
 };
 
 }

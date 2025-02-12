@@ -9,31 +9,31 @@ namespace espreso {
 
 struct SuperLUSolverData: public DistributedSolverData {
 
-	SuperLUSolverData(SuperLUConfiguration &configuration)
-	: DistributedSolverData(&solver),
-	  solver(configuration, *this) {};
+    SuperLUSolverData(SuperLUConfiguration &configuration)
+    : DistributedSolverData(&solver),
+      solver(configuration, *this) {};
 
-	SuperLUSystemSolver solver;
+    SuperLUSystemSolver solver;
 };
 
 struct SuperLUSystem: public LinearSystem {
 
-	std::vector<DistributedAssemblerData> assemblers;
-	std::vector<SuperLUSolverData> solvers;
+    std::vector<DistributedAssemblerData> assemblers;
+    std::vector<SuperLUSolverData> solvers;
 
-	virtual int nassemblers() { return assemblers.size(); }
-	virtual int nsolvers() { return solvers.size(); }
+    virtual int nassemblers() { return assemblers.size(); }
+    virtual int nsolvers() { return solvers.size(); }
 
-	DistributedAssemblerData* assembler(int index = 0) { return assemblers.data() + index; }
-	SuperLUSolverData* solver(int index = 0) { return solvers.data() + index; }
+    DistributedAssemblerData* assembler(int index = 0) { return assemblers.data() + index; }
+    SuperLUSolverData* solver(int index = 0) { return solvers.data() + index; }
 
-	SuperLUSystem(int assemblers, int solvers, SuperLUConfiguration &configuration);
+    SuperLUSystem(int assemblers, int solvers, SuperLUConfiguration &configuration);
 
 protected:
-	void _builderInit();
-	void _builderReset();
-	void _builderCreateSystem();
-	void _builderUpdateSolution();
+    void _builderInit();
+    void _builderReset();
+    void _builderCreateSystem();
+    void _builderUpdateSolution();
 };
 
 }

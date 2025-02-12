@@ -67,7 +67,7 @@ public:
     virtual QString errorMessage() override;
 
 private:
-	DataTypeEditWidgetFactoryData m_data;
+    DataTypeEditWidgetFactoryData m_data;
     ECFParameter* m_expr;
 };
 

@@ -666,8 +666,8 @@ for (esint i = 0; i < nMatrices; i++){
     offset+=m_Kplus_size[i];
 }
 
-        double ddum   = 0;			/* Double dummy */
-        MKL_INT idum  = 0;			/* Integer dummy. */
+        double ddum   = 0;            /* Double dummy */
+        MKL_INT idum  = 0;            /* Integer dummy. */
         MKL_INT n_rhs = 1;
         msglvl        = 0;
         mnum = 1;
@@ -676,7 +676,7 @@ for (esint i = 0; i < nMatrices; i++){
         /* .. Back substitution and iterative refinement. */
         /* -------------------------------------------------------------------- */
 
-        //iparm[24] = 1;		// Parallel forward/backward solve control. - 1 - Intel MKL PARDISO uses the sequential forward and backward solve.
+        //iparm[24] = 1;        // Parallel forward/backward solve control. - 1 - Intel MKL PARDISO uses the sequential forward and backward solve.
 
 #pragma omp parallel //num_threads(21)
         {
@@ -724,7 +724,7 @@ myPhase = 33;
             /* .. Termination and release of memory. */
             /* -------------------------------------------------------------------- */
             /*
-               phase = -1;	 		
+               phase = -1;             
                MKL_INT nRhs = 1;
                for (esint i =0 ; i < nMatrices; i++ ) {
                pardiso (pt[i], &maxfct, &mnum, &mtype, &phase,
@@ -829,7 +829,7 @@ void SparseSolverMIC::Create_SC(
                     iparm[i][j] = 0;
                 }
 
-                esint 	mtype = 2;
+                esint     mtype = 2;
                 double ddum;
 
                 iparm[i][2] = 0;
@@ -1056,15 +1056,15 @@ void SparseSolverMIC::Create_SC_w_Mat(
             void *pt[64];
 
             /* Pardiso control parameters. */
-            esint 	iparm[64];
+            esint     iparm[64];
             double  dparm[65];
-            esint 	maxfct, mnum, phase, error;
+            esint     maxfct, mnum, phase, error;
 
             /* Auxiliary variables. */
-            esint 	j;
-            double 	ddum;			/* Double dummy */
-            esint 	idum;			/* Integer dummy. */
-            esint 	solver;
+            esint     j;
+            double     ddum;            /* Double dummy */
+            esint     idum;            /* Integer dummy. */
+            esint     solver;
 
             /* -------------------------------------------------------------------- */
             /* .. Setup Pardiso control parameters. */
@@ -1080,7 +1080,7 @@ void SparseSolverMIC::Create_SC_w_Mat(
             for (j = 0; j < 64; j++)
                 pt[j] = 0;
 
-            esint 	mtype = 2;
+            esint     mtype = 2;
 
             iparm[2] = 0;
 

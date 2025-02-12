@@ -40,26 +40,26 @@ void computeNodesDuplication(NodeStore *nodes, std::vector<int> &neighborsWithMe
 
 void linkNodesAndElements(ElementStore *elements, NodeStore *nodes, const std::vector<int> &neighbors);
 void linkNodesAndElements(
-		const NodeStore *nodes,
-		const std::vector<int> &neighbors,
-		serializededata<esint, esint>* &nelements,
-		serializededata<esint, esint> *enodes,
-		serializededata<esint, esint> *eIDs,
-		bool sortedIDs);
+        const NodeStore *nodes,
+        const std::vector<int> &neighbors,
+        serializededata<esint, esint>* &nelements,
+        serializededata<esint, esint> *enodes,
+        serializededata<esint, esint> *eIDs,
+        bool sortedIDs);
 
 void computeElementsFaceNeighbors(NodeStore *nodes, ElementStore *elements, const std::vector<int> &neighbors);
 void computeElementsEdgeNeighbors(NodeStore *nodes, ElementStore *elements, const std::vector<int> &neighbors);
 void computeElementsNeighbors(
-		NodeStore *nodes,
-		const std::vector<int> &neighbors,
-		serializededata<esint, esint>* &nelements,
-		serializededata<esint, esint>* &eneighbors,
-		serializededata<esint, esint> *enodes,
-		serializededata<esint, esint> *eIDs,
-		serializededata<esint, Element*> *epointers,
-		std::function<serializededata<int, int>*(Element*)> across,
-		bool insertNeighSize,
-		bool sortedIDs);
+        NodeStore *nodes,
+        const std::vector<int> &neighbors,
+        serializededata<esint, esint>* &nelements,
+        serializededata<esint, esint>* &eneighbors,
+        serializededata<esint, esint> *enodes,
+        serializededata<esint, esint> *eIDs,
+        serializededata<esint, Element*> *epointers,
+        std::function<serializededata<int, int>*(Element*)> across,
+        bool insertNeighSize,
+        bool sortedIDs);
 
 void computeElementsCenters(const NodeStore *nodes, ElementStore *elements);
 

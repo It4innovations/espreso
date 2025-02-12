@@ -12,28 +12,28 @@ class SuperClusterAcc : public SuperClusterBase
 
     SuperClusterAcc( const FETIConfiguration & configuration, DataHolder *instance_in ):
         SuperClusterBase( configuration, instance_in ), 
-       		cluster_time	("Cluster Timing "),
+               cluster_time    ("Cluster Timing "),
 
-        vec_fill_time	("Reseting vec_g0 and vec_e0"),
-        loop_1_1_time	("Loop 1: Kplus-sv, B0-mv, KpluR-mv"),
-        loop_1_2_time	("Loop 1: vec_e0 and vec_g0"),
+        vec_fill_time    ("Reseting vec_g0 and vec_e0"),
+        loop_1_1_time    ("Loop 1: Kplus-sv, B0-mv, KpluR-mv"),
+        loop_1_2_time    ("Loop 1: vec_e0 and vec_g0"),
 
-        clusCP_time		("Cluster CP - F0,GO,Sa,G0t,F0 "),
-        clus_F0_1_time	("F0 solve - 1st "),
-        clus_F0_2_time	("F0 solve - 2nd "),
-        clus_G0_time	("G0  Mult "),
-        clus_G0t_time	("G0t Mult "),
-        clus_Sa_time	("Sa solve "),
+        clusCP_time        ("Cluster CP - F0,GO,Sa,G0t,F0 "),
+        clus_F0_1_time    ("F0 solve - 1st "),
+        clus_F0_2_time    ("F0 solve - 2nd "),
+        clus_G0_time    ("G0  Mult "),
+        clus_G0t_time    ("G0t Mult "),
+        clus_Sa_time    ("Sa solve "),
 
-        loop_2_1_time	("Loop2: Kplus-sv, B0-mv, Kplus-mv")
+        loop_2_1_time    ("Loop2: Kplus-sv, B0-mv, Kplus-mv")
     {
         if (instance_in != NULL) {
             init();
         }
-	    this->deleteMatrices = false;
-		this->NUM_MICS = configuration.n_mics;
-		SetAcceleratorAffinity();
-		//ESINFO( DETAILS ) << "Number of Xeon Phi coprocessors: " << this->NUM_MICS;
+        this->deleteMatrices = false;
+        this->NUM_MICS = configuration.n_mics;
+        SetAcceleratorAffinity();
+        //ESINFO( DETAILS ) << "Number of Xeon Phi coprocessors: " << this->NUM_MICS;
     }
 
     virtual ~SuperClusterAcc();
@@ -74,18 +74,18 @@ class SuperClusterAcc : public SuperClusterBase
     SEQ_VECTOR <double> vec_lambda;
 
     // variables for time measurements
-	TimeEvent vec_fill_time;
-	TimeEvent loop_1_1_time;
-	TimeEvent loop_1_2_time;
+    TimeEvent vec_fill_time;
+    TimeEvent loop_1_1_time;
+    TimeEvent loop_1_2_time;
 
-	TimeEvent clusCP_time;
-	TimeEvent clus_F0_1_time;
-	TimeEvent clus_F0_2_time;
-	TimeEvent clus_G0_time;
-	TimeEvent clus_G0t_time;
-	TimeEvent clus_Sa_time;
+    TimeEvent clusCP_time;
+    TimeEvent clus_F0_1_time;
+    TimeEvent clus_F0_2_time;
+    TimeEvent clus_G0_time;
+    TimeEvent clus_G0t_time;
+    TimeEvent clus_Sa_time;
 
-	TimeEvent loop_2_1_time;
+    TimeEvent loop_2_1_time;
     TimeEvent cluster_time;
 
 

@@ -9,9 +9,9 @@ namespace espreso {
 class FETIComposerOpt: public FETIComposer {
 
 public:
-	using FETIComposer::FETIComposer;
+    using FETIComposer::FETIComposer;
 
-	void assemble(const Builder &builder);
+    void assemble(const Builder &builder);
 };
 
 }

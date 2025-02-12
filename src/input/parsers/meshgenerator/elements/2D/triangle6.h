@@ -8,9 +8,9 @@ namespace espreso {
 
 struct Triangle6Generator: public QuadraticPlaneGenerator {
 
-	Triangle6Generator();
+    Triangle6Generator();
 
-	void pushElements(std::vector<esint> &elements, const std::vector<esint> &indices) const;
+    void pushElements(std::vector<esint> &elements, const std::vector<esint> &indices) const;
 };
 
 }

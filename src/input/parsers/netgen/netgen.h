@@ -10,11 +10,11 @@ struct InputConfiguration;
 
 class NetgenNeutralLoader: public MeshBuilder {
 public:
-	NetgenNeutralLoader(const InputConfiguration &configuration);
-	void load();
+    NetgenNeutralLoader(const InputConfiguration &configuration);
+    void load();
 
 protected:
-	const InputConfiguration &_configuration;
+    const InputConfiguration &_configuration;
 };
 
 }

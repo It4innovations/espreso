@@ -11,17 +11,17 @@ using namespace espreso;
 
 int main(int argc, char **argv)
 {
-	info::system::setSignals();
-	info::mpi::init(&argc, &argv);
-	MPITools::init();
+    info::system::setSignals();
+    info::mpi::init(&argc, &argv);
+    MPITools::init();
 
-	eslog::init(new Logger<ProgressTerminalLogger>());
+    eslog::init(new Logger<ProgressTerminalLogger>());
 
-	ECF(&argc, &argv, "ecfchecker");
-	eslog::info("ECF syntax is correct\n");
+    ECF(&argc, &argv, "ecfchecker");
+    eslog::info("ECF syntax is correct\n");
 
-	info::mpi::finish();
-	return 0;
+    info::mpi::finish();
+    return 0;
 }
 
 

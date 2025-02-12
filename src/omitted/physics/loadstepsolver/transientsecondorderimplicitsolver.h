@@ -12,25 +12,25 @@ class TransientSecondOrderImplicitSolverConfiguration;
 class TransientSecondOrderImplicit: public LoadStepSolver {
 
 public:
-	TransientSecondOrderImplicit(LinearSystem *system, SubStepSolver *subStepSolver, TransientSecondOrderImplicitSolverConfiguration &configuration, double duration);
-	~TransientSecondOrderImplicit();
+    TransientSecondOrderImplicit(LinearSystem *system, SubStepSolver *subStepSolver, TransientSecondOrderImplicitSolverConfiguration &configuration, double duration);
+    ~TransientSecondOrderImplicit();
 
-	void init(LoadStepSolver *previous);
-	void updateStructuralMatrices();
+    void init(LoadStepSolver *previous);
+    void updateStructuralMatrices();
 
 protected:
-	void runNextSubstep();
+    void runNextSubstep();
 
-	void updateConstants();
-	void updateDamping();
+    void updateConstants();
+    void updateDamping();
 
-	TransientSecondOrderImplicitSolverConfiguration &_configuration;
-	double _alpha, _delta;
-	double _massDamping, _stiffnessDamping;
-	double _nTimeShift;
-	double _newmarkConsts[8];
+    TransientSecondOrderImplicitSolverConfiguration &_configuration;
+    double _alpha, _delta;
+    double _massDamping, _stiffnessDamping;
+    double _nTimeShift;
+    double _newmarkConsts[8];
 
-	Vectors *U, *dU, *V, *W, *X, *Y, *Z, *dTK, *dTM;
+    Vectors *U, *dU, *V, *W, *X, *Y, *Z, *dTK, *dTM;
 };
 
 }

@@ -15,28 +15,28 @@ template <typename TEBoundaries, typename TEData> class serializededata;
 struct SurfaceStore;
 
 struct ElementsRegionStore: public RegionStore {
-	serializededata<esint, esint>* elements;
+    serializededata<esint, esint>* elements;
 
-	std::vector<ElementsInterval> eintervals;
+    std::vector<ElementsInterval> eintervals;
 
-	SurfaceStore *surface;
+    SurfaceStore *surface;
 
-	std::vector<int> bodies;
-	std::vector<esint> bodyElements;
-	std::vector<esint> bodyFaces;
-	ContactInfo contact;
+    std::vector<int> bodies;
+    std::vector<esint> bodyElements;
+    std::vector<esint> bodyFaces;
+    ContactInfo contact;
 
-	size_t packedFullSize() const;
-	void packFull(char* &p) const;
-	void unpackFull(const char* &p);
+    size_t packedFullSize() const;
+    void packFull(char* &p) const;
+    void unpackFull(const char* &p);
 
-	size_t packedSize() const;
-	void pack(char* &p) const;
-	void unpack(const char* &p);
+    size_t packedSize() const;
+    void pack(char* &p) const;
+    void unpack(const char* &p);
 
-	ElementsRegionStore(const std::string &name);
-	ElementsRegionStore(const char* &packedData);
-	~ElementsRegionStore();
+    ElementsRegionStore(const std::string &name);
+    ElementsRegionStore(const char* &packedData);
+    ~ElementsRegionStore();
 };
 
 }

@@ -10,15 +10,15 @@ class ClusterCPU: public ClusterBase
 {
 
 public:
-	// Constructor
-//	ClusterCPU(const FETISolverConfiguration &configuration, esint cluster_index): ClusterBase(configuration, cluster_index) { };
-//	ClusterCPU(const FETISolverConfiguration &configuration): ClusterBase(configuration) {};
-	ClusterCPU(const FETIConfiguration &configuration, DataHolder *instance_in): ClusterBase(configuration, instance_in) {};
+    // Constructor
+//    ClusterCPU(const FETISolverConfiguration &configuration, esint cluster_index): ClusterBase(configuration, cluster_index) { };
+//    ClusterCPU(const FETISolverConfiguration &configuration): ClusterBase(configuration) {};
+    ClusterCPU(const FETIConfiguration &configuration, DataHolder *instance_in): ClusterBase(configuration, instance_in) {};
 
-	void Create_SC_perDomain( bool USE_FLOAT );
+    void Create_SC_perDomain( bool USE_FLOAT );
     void Create_Kinv_perDomain();
     void CreateDirichletPrec( DataHolder *instance );
-	void SetupKsolvers ( );
+    void SetupKsolvers ( );
 };
 
 }

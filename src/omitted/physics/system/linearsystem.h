@@ -13,69 +13,69 @@ class Builder;
 
 class SystemSolver {
 public:
-	virtual ~SystemSolver() {}
+    virtual ~SystemSolver() {}
 
-	virtual void init() =0;
-	virtual void update() =0;
-	virtual void solve() =0;
+    virtual void init() =0;
+    virtual void update() =0;
+    virtual void solve() =0;
 
-	virtual double& precision() =0;
+    virtual double& precision() =0;
 };
 
 struct AssemblerData {
-	Matrix *K, *M, *C, *CM;
-	Vectors *R, *f, *x;
-	Vectors *BC;
+    Matrix *K, *M, *C, *CM;
+    Vectors *R, *f, *x;
+    Vectors *BC;
 
-	AssemblerData(Matrix *K, Matrix *M, Matrix *C, Matrix *CM, Vectors *R, Vectors *f, Vectors *x, Vectors *BC);
-	virtual ~AssemblerData();
+    AssemblerData(Matrix *K, Matrix *M, Matrix *C, Matrix *CM, Vectors *R, Vectors *f, Vectors *x, Vectors *BC);
+    virtual ~AssemblerData();
 
-	virtual void print(const Builder *builder, const char* prefix, const char* suffix) =0;
+    virtual void print(const Builder *builder, const char* prefix, const char* suffix) =0;
 
-	Composer *composer;
+    Composer *composer;
 };
 
 struct SolverData {
-	Matrix *K;
-	Vectors *R, *f, *x, *y;
-	Vectors *BC;
+    Matrix *K;
+    Vectors *R, *f, *x, *y;
+    Vectors *BC;
 
-	SolverData(Matrix *K, Vectors *R, Vectors *f, Vectors *x, Vectors *y, Vectors *BC, SystemSolver *linearSolver);
-	virtual ~SolverData();
+    SolverData(Matrix *K, Vectors *R, Vectors *f, Vectors *x, Vectors *y, Vectors *BC, SystemSolver *linearSolver);
+    virtual ~SolverData();
 
-	virtual void setDirichlet(const Builder *builder) =0;
+    virtual void setDirichlet(const Builder *builder) =0;
 
-	virtual bool hasReactionForces() { return false; }
-	virtual void printData(const Builder *builder, const char* prefix) =0;
-	virtual void printSolution(const Builder *builder, const char* prefix) =0;
+    virtual bool hasReactionForces() { return false; }
+    virtual void printData(const Builder *builder, const char* prefix) =0;
+    virtual void printSolution(const Builder *builder, const char* prefix) =0;
 
-	SystemSolver *linearSolver;
+    SystemSolver *linearSolver;
 };
 
 struct LinearSystem {
-	Builder *builder;
+    Builder *builder;
 
-	virtual int nassemblers() =0;
-	virtual int nsolvers() =0;
+    virtual int nassemblers() =0;
+    virtual int nsolvers() =0;
 
-	virtual AssemblerData* assembler(int index = 0) =0;
-	virtual SolverData* solver(int index = 0) =0;
+    virtual AssemblerData* assembler(int index = 0) =0;
+    virtual SolverData* solver(int index = 0) =0;
 
-	void init();
-	void nextSubstep();
-	void assemble();
-	void setDirichlet();
-	void solve();
-	void solutionChanged();
-	void processSolution();
+    void init();
+    void nextSubstep();
+    void assemble();
+    void setDirichlet();
+    void solve();
+    void solutionChanged();
+    void processSolution();
 
-	virtual ~LinearSystem();
+    virtual ~LinearSystem();
 
 protected:
-	virtual void _builderInit() =0;
-	virtual void _builderReset() =0;
-	virtual void _builderCreateSystem() =0;
-	virtual void _builderUpdateSolution() =0;
+    virtual void _builderInit() =0;
+    virtual void _builderReset() =0;
+    virtual void _builderCreateSystem() =0;
+    virtual void _builderUpdateSolution() =0;
 
 };
 

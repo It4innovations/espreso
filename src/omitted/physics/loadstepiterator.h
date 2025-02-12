@@ -11,19 +11,19 @@ class LinearSystem;
 class LoadStepIterator {
 
 public:
-	LoadStepIterator();
-	~LoadStepIterator();
+    LoadStepIterator();
+    ~LoadStepIterator();
 
-	void prepareExpressions();
-	bool next();
+    void prepareExpressions();
+    bool next();
 
 protected:
 
-	template <typename TPhysics> bool next(TPhysics &configuration);
+    template <typename TPhysics> bool next(TPhysics &configuration);
 
-	LoadStepSolver *_loadStepSolver;
-	SubStepSolver *_subStepSolver;
-	LinearSystem *_system;
+    LoadStepSolver *_loadStepSolver;
+    SubStepSolver *_subStepSolver;
+    LinearSystem *_system;
 };
 
 }

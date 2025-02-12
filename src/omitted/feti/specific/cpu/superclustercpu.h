@@ -13,29 +13,29 @@ class SuperClusterCPU : public SuperClusterBase
     SuperClusterCPU( const FETIConfiguration & configuration, DataHolder *instance_in ):
         SuperClusterBase( configuration, instance_in ) { }
 
-	void Create_SC_perDomain(bool USE_FLOAT) {
-		//bool
-		USE_FLOAT = false;
-		if (configuration.schur_precision == FETIConfiguration::FLOAT_PRECISION::SINGLE) {
-			USE_FLOAT = true;
-		}
+    void Create_SC_perDomain(bool USE_FLOAT) {
+        //bool
+        USE_FLOAT = false;
+        if (configuration.schur_precision == FETIConfiguration::FLOAT_PRECISION::SINGLE) {
+            USE_FLOAT = true;
+        }
 
-		for (size_t c = 0; c < clusters.size(); c++) {
-			clusters[c].Create_SC_perDomain(USE_FLOAT);
-		}
-	}
+        for (size_t c = 0; c < clusters.size(); c++) {
+            clusters[c].Create_SC_perDomain(USE_FLOAT);
+        }
+    }
 
     void SetupKsolvers () {
-		for (size_t c = 0; c < clusters.size(); c++) {
-			clusters[c].SetupKsolvers();
-		}
-	}
+        for (size_t c = 0; c < clusters.size(); c++) {
+            clusters[c].SetupKsolvers();
+        }
+    }
     
     void SetupPreconditioner() {
-		for (size_t c = 0; c < clusters.size(); c++) {
-			clusters[c].SetupPreconditioner();
-		}
-	}
+        for (size_t c = 0; c < clusters.size(); c++) {
+            clusters[c].SetupPreconditioner();
+        }
+    }
 
 };
 

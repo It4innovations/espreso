@@ -9,19 +9,19 @@ namespace espreso {
 template<typename T, typename I = int>
 int _pardisoType(const Matrix_CSR<T, I> &x)
 {
-	switch (x.type) {
-	case Matrix_Type::UNSET_INVALID_NONE: 				   eslog::error("Invalid/unset matrix type\n");
-	case Matrix_Type::REAL_SYMMETRIC_POSITIVE_DEFINITE:    return  2;
-	case Matrix_Type::REAL_SYMMETRIC_INDEFINITE:           return -2;
-	case Matrix_Type::REAL_STRUCTURALLY_SYMMETRIC:         return  1;
-	case Matrix_Type::REAL_NONSYMMETRIC:                   return 11;
-	case Matrix_Type::COMPLEX_HERMITIAN_POSITIVE_DEFINITE: return  4;
-	case Matrix_Type::COMPLEX_HERMITIAN_INDEFINITE:        return -4;
-	case Matrix_Type::COMPLEX_SYMMETRIC:                   return  6;
-	case Matrix_Type::COMPLEX_STRUCTURALLY_SYMMETRIC:      return  3;
-	case Matrix_Type::COMPLEX_NONSYMMETRIC:                return 13;
-	}
-	return 0;
+    switch (x.type) {
+    case Matrix_Type::UNSET_INVALID_NONE:                    eslog::error("Invalid/unset matrix type\n");
+    case Matrix_Type::REAL_SYMMETRIC_POSITIVE_DEFINITE:    return  2;
+    case Matrix_Type::REAL_SYMMETRIC_INDEFINITE:           return -2;
+    case Matrix_Type::REAL_STRUCTURALLY_SYMMETRIC:         return  1;
+    case Matrix_Type::REAL_NONSYMMETRIC:                   return 11;
+    case Matrix_Type::COMPLEX_HERMITIAN_POSITIVE_DEFINITE: return  4;
+    case Matrix_Type::COMPLEX_HERMITIAN_INDEFINITE:        return -4;
+    case Matrix_Type::COMPLEX_SYMMETRIC:                   return  6;
+    case Matrix_Type::COMPLEX_STRUCTURALLY_SYMMETRIC:      return  3;
+    case Matrix_Type::COMPLEX_NONSYMMETRIC:                return 13;
+    }
+    return 0;
 }
 
 }

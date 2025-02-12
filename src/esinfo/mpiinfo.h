@@ -7,30 +7,30 @@
 namespace espreso {
 namespace info {
 namespace mpi {
-	// instance MPI communication settings
-	extern int rank;
-	extern int size;
-	extern MPI_Comm comm;
+    // instance MPI communication settings
+    extern int rank;
+    extern int size;
+    extern MPI_Comm comm;
 
-	// inter-instances MPI communication settings
-	extern int irank;
-	extern int isize;
-	extern MPI_Comm icomm;
+    // inter-instances MPI communication settings
+    extern int irank;
+    extern int isize;
+    extern MPI_Comm icomm;
 
-	// global MPI communication settings
-	extern int grank;
-	extern int gsize;
-	extern MPI_Comm gcomm;
+    // global MPI communication settings
+    extern int grank;
+    extern int gsize;
+    extern MPI_Comm gcomm;
 
-	// MPI_Init_thread provided level
-	extern int threading;
+    // MPI_Init_thread provided level
+    extern int threading;
 
-	void init(int *argc, char ***argv);
-	void init(MPI_Comm comm);
-	bool divide(int meshDuplication);
-	void finish();
+    void init(int *argc, char ***argv);
+    void init(MPI_Comm comm);
+    bool divide(int meshDuplication);
+    void finish();
 
-	void print();
+    void print();
 }
 }
 }

@@ -11,128 +11,128 @@ namespace espreso {
 struct MeshBuilder;
 
 class NeperMshMesh {
-	struct Keyword {
-		size_t offset, begin, end;
-		int rbegin, rend;
+    struct Keyword {
+        size_t offset, begin, end;
+        int rbegin, rend;
 
-		Keyword(): offset((size_t)-1), begin((size_t)-1), end((size_t)-1), rbegin(-1), rend(-1) {}
-		Keyword(InputFilePack &pack, const char *c);
-	};
+        Keyword(): offset((size_t)-1), begin((size_t)-1), end((size_t)-1), rbegin(-1), rend(-1) {}
+        Keyword(InputFilePack &pack, const char *c);
+    };
 
-	struct KeywordWithSize: public Keyword {
-		size_t size;
+    struct KeywordWithSize: public Keyword {
+        size_t size;
 
-		KeywordWithSize(): size(0) {}
-		KeywordWithSize(InputFilePack &pack, const char *c, const std::string &open, const std::string &close);
-	};
+        KeywordWithSize(): size(0) {}
+        KeywordWithSize(InputFilePack &pack, const char *c, const std::string &open, const std::string &close);
+    };
 
-	struct Format: public Keyword {
-		static constexpr const char *open = "$MeshFormat", *close = "$EndMeshFormat";
+    struct Format: public Keyword {
+        static constexpr const char *open = "$MeshFormat", *close = "$EndMeshFormat";
 
-		enum File: int {
-			ASCII = 0,
-			binary = 1
-		};
+        enum File: int {
+            ASCII = 0,
+            binary = 1
+        };
 
-		double version;
-		int file_type, data_size;
+        double version;
+        int file_type, data_size;
 
-		Format(): version(-1), file_type(-1), data_size(-1) {}
-		Format(InputFilePack &pack, const char *c);
-	};
+        Format(): version(-1), file_type(-1), data_size(-1) {}
+        Format(InputFilePack &pack, const char *c);
+    };
 
-	struct Nodes: public KeywordWithSize {
-		static constexpr const char *open = "$Nodes", *close = "$EndNodes";
+    struct Nodes: public KeywordWithSize {
+        static constexpr const char *open = "$Nodes", *close = "$EndNodes";
 
-		Nodes() {}
-		Nodes(InputFilePack &pack, const char *c): KeywordWithSize(pack, c, open, close) {}
-	};
+        Nodes() {}
+        Nodes(InputFilePack &pack, const char *c): KeywordWithSize(pack, c, open, close) {}
+    };
 
-	struct Elements: public KeywordWithSize {
-		static constexpr const char *open = "$Elements", *close = "$EndElements";
+    struct Elements: public KeywordWithSize {
+        static constexpr const char *open = "$Elements", *close = "$EndElements";
 
-		Elements() {}
-		Elements(InputFilePack &pack, const char *c): KeywordWithSize(pack, c, open, close) {}
-	};
+        Elements() {}
+        Elements(InputFilePack &pack, const char *c): KeywordWithSize(pack, c, open, close) {}
+    };
 
-	struct Periodicity: public KeywordWithSize {
-		static constexpr const char *open = "$Periodicity", *close = "$EndPeriodicity";
+    struct Periodicity: public KeywordWithSize {
+        static constexpr const char *open = "$Periodicity", *close = "$EndPeriodicity";
 
-		Periodicity() {}
-		Periodicity(InputFilePack &pack, const char *c): KeywordWithSize(pack, c, open, close) {}
-	};
+        Periodicity() {}
+        Periodicity(InputFilePack &pack, const char *c): KeywordWithSize(pack, c, open, close) {}
+    };
 
-	struct NSets: public KeywordWithSize {
-		static constexpr const char *open = "$NSets", *close = "$EndNSets";
+    struct NSets: public KeywordWithSize {
+        static constexpr const char *open = "$NSets", *close = "$EndNSets";
 
-		NSets() {}
-		NSets(InputFilePack &pack, const char *c): KeywordWithSize(pack, c, open, close) {}
-	};
+        NSets() {}
+        NSets(InputFilePack &pack, const char *c): KeywordWithSize(pack, c, open, close) {}
+    };
 
-	struct Fasets: public KeywordWithSize {
-		static constexpr const char *open = "$Fasets", *close = "$EndFasets";
+    struct Fasets: public KeywordWithSize {
+        static constexpr const char *open = "$Fasets", *close = "$EndFasets";
 
-		Fasets() {}
-		Fasets(InputFilePack &pack, const char *c): KeywordWithSize(pack, c, open, close) {}
-	};
+        Fasets() {}
+        Fasets(InputFilePack &pack, const char *c): KeywordWithSize(pack, c, open, close) {}
+    };
 
-	struct NodePartitions: public KeywordWithSize {
-		static constexpr const char *open = "$NodePartitions", *close = "$EndNodePartitions";
+    struct NodePartitions: public KeywordWithSize {
+        static constexpr const char *open = "$NodePartitions", *close = "$EndNodePartitions";
 
-		NodePartitions() {}
-		NodePartitions(InputFilePack &pack, const char *c): KeywordWithSize(pack, c, open, close) {}
-	};
+        NodePartitions() {}
+        NodePartitions(InputFilePack &pack, const char *c): KeywordWithSize(pack, c, open, close) {}
+    };
 
-	struct PhysicalNames: public KeywordWithSize {
-		static constexpr const char *open = "$PhysicalNames", *close = "$EndPhysicalNames";
+    struct PhysicalNames: public KeywordWithSize {
+        static constexpr const char *open = "$PhysicalNames", *close = "$EndPhysicalNames";
 
-		PhysicalNames() {}
-		PhysicalNames(InputFilePack &pack, const char *c): KeywordWithSize(pack, c, open, close) {}
-	};
+        PhysicalNames() {}
+        PhysicalNames(InputFilePack &pack, const char *c): KeywordWithSize(pack, c, open, close) {}
+    };
 
-	struct ElsetOrientations: public KeywordWithSize {
-		static constexpr const char *open = "$ElsetOrientations", *close = "$EndElsetOrientations";
+    struct ElsetOrientations: public KeywordWithSize {
+        static constexpr const char *open = "$ElsetOrientations", *close = "$EndElsetOrientations";
 
-		ElsetOrientations() {}
-		ElsetOrientations(InputFilePack &pack, const char *c): KeywordWithSize(pack, c, open, close) {}
-	};
+        ElsetOrientations() {}
+        ElsetOrientations(InputFilePack &pack, const char *c): KeywordWithSize(pack, c, open, close) {}
+    };
 
-	struct ElementOrientations: public KeywordWithSize {
-		static constexpr const char *open = "$ElementOrientations", *close = "$EndElementOrientations";
+    struct ElementOrientations: public KeywordWithSize {
+        static constexpr const char *open = "$ElementOrientations", *close = "$EndElementOrientations";
 
-		ElementOrientations() {}
-		ElementOrientations(InputFilePack &pack, const char *c): KeywordWithSize(pack, c, open, close) {}
-	};
+        ElementOrientations() {}
+        ElementOrientations(InputFilePack &pack, const char *c): KeywordWithSize(pack, c, open, close) {}
+    };
 
-	struct Groups: public Keyword {
-		size_t size;
-		static constexpr const char *open = "$Groups", *close = "$EndGroups";
+    struct Groups: public Keyword {
+        size_t size;
+        static constexpr const char *open = "$Groups", *close = "$EndGroups";
 
-		Groups(): size(0) {}
-		Groups(InputFilePack &pack, const char *c);
-	};
+        Groups(): size(0) {}
+        Groups(InputFilePack &pack, const char *c);
+    };
 
 public:
-	NeperMshMesh(InputFilePack &meshfile);
+    NeperMshMesh(InputFilePack &meshfile);
 
-	void parse(MeshBuilder &mesh);
+    void parse(MeshBuilder &mesh);
 
 protected:
-	void scan();
-	void parseASCII(MeshBuilder &mesh);
+    void scan();
+    void parseASCII(MeshBuilder &mesh);
 
-	InputFilePack &_meshfile;
-	std::vector<Format> _format;
-	std::vector<Nodes> _nodes;
-	std::vector<Elements> _elements;
-	std::vector<Periodicity> _periodicity;
-	std::vector<NSets> _nsets;
-	std::vector<Fasets> _fasets;
-	std::vector<NodePartitions> _nodePartitions;
-	std::vector<PhysicalNames> _physicalNames;
-	std::vector<ElsetOrientations> _elsetOrientations;
-	std::vector<ElementOrientations> _elementOrientations;
-	std::vector<Groups> _groups;
+    InputFilePack &_meshfile;
+    std::vector<Format> _format;
+    std::vector<Nodes> _nodes;
+    std::vector<Elements> _elements;
+    std::vector<Periodicity> _periodicity;
+    std::vector<NSets> _nsets;
+    std::vector<Fasets> _fasets;
+    std::vector<NodePartitions> _nodePartitions;
+    std::vector<PhysicalNames> _physicalNames;
+    std::vector<ElsetOrientations> _elsetOrientations;
+    std::vector<ElementOrientations> _elementOrientations;
+    std::vector<Groups> _groups;
 };
 }
 

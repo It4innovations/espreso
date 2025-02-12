@@ -14,21 +14,21 @@ class ClusterAcc: public ClusterBase
 {
 
 public:
-	ClusterAcc(const FETIConfiguration &configuration, DataHolder *instance_in): ClusterBase(configuration, instance_in)
-	{
-			this->deleteMatrices = false;
-			this->NUM_MICS = configuration.n_mics;
-			SetAcceleratorAffinity();
-			//ESINFO( DETAILS ) << "MICS: " << this->NUM_MICS;
-	}
+    ClusterAcc(const FETIConfiguration &configuration, DataHolder *instance_in): ClusterBase(configuration, instance_in)
+    {
+            this->deleteMatrices = false;
+            this->NUM_MICS = configuration.n_mics;
+            SetAcceleratorAffinity();
+            //ESINFO( DETAILS ) << "MICS: " << this->NUM_MICS;
+    }
 
     virtual ~ClusterAcc();
 
     // creates Schur complement matrices
-	void Create_SC_perDomain( bool USE_FLOAT );
+    void Create_SC_perDomain( bool USE_FLOAT );
 
     // factorizes stiffness matrices
-	void SetupKsolvers ( );
+    void SetupKsolvers ( );
 
     // assembles Dirichlet preconditioner
     void CreateDirichletPrec( DataHolder *instance );

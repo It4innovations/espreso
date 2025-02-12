@@ -15,26 +15,26 @@ template <typename TEBoundaries, typename TEData> class serializededata;
 
 struct RegionStore {
 
-	std::string name;
+    std::string name;
 
-	ElementsDistributionInfo distribution;
+    ElementsDistributionInfo distribution;
 
-	serializededata<esint, esint>* nodes;
-	NodeUniquenessInfo nodeInfo;
+    serializededata<esint, esint>* nodes;
+    NodeUniquenessInfo nodeInfo;
 
-	esint getPosition(esint node) const;
+    esint getPosition(esint node) const;
 
-	size_t packedFullSize() const;
-	void packFull(char* &p) const;
-	void unpackFull(const char* &p);
+    size_t packedFullSize() const;
+    void packFull(char* &p) const;
+    void unpackFull(const char* &p);
 
-	size_t packedSize() const;
-	void pack(char* &p) const;
-	void unpack(const char* &p);
+    size_t packedSize() const;
+    void pack(char* &p) const;
+    void unpack(const char* &p);
 
-	RegionStore(const std::string &name);
-	RegionStore(const char* &packedData);
-	~RegionStore();
+    RegionStore(const std::string &name);
+    RegionStore(const char* &packedData);
+    ~RegionStore();
 };
 
 }

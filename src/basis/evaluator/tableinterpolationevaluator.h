@@ -12,13 +12,13 @@ namespace espreso {
 class TableInterpolationEvaluator: public Evaluator {
 
 public:
-	TableInterpolationEvaluator(const std::vector<std::pair<double, double> > &table);
+    TableInterpolationEvaluator(const std::vector<std::pair<double, double> > &table);
 
-	double evaluate(int t) const;
+    double evaluate(int t) const;
 
-	const char* expression() const { return "TABLE"; }
+    const char* expression() const { return "TABLE"; }
 protected:
-	std::vector<std::pair<double, double> > _table;
+    std::vector<std::pair<double, double> > _table;
 };
 
 }

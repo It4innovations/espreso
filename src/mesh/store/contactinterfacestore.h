@@ -8,15 +8,15 @@ namespace espreso {
 
 struct ContactInterfaceStore: public BoundaryRegionStore {
 
-	esint interfaceIndex;
+    esint interfaceIndex;
 
-	ContactInterfaceStore(const std::string &name, esint interfaceIndex);
-	ContactInterfaceStore(const char* &packedData);
-	~ContactInterfaceStore() {};
+    ContactInterfaceStore(const std::string &name, esint interfaceIndex);
+    ContactInterfaceStore(const char* &packedData);
+    ~ContactInterfaceStore() {};
 
-	size_t packedFullSize() const;
-	void packFull(char* &p) const;
-	void unpackFull(const char* &p);
+    size_t packedFullSize() const;
+    void packFull(char* &p) const;
+    void unpackFull(const char* &p);
 };
 
 }

@@ -5,23 +5,23 @@
 namespace espreso {
 
 struct DistributionInfo {
-	esint offset, size, totalSize;
+    esint offset, size, totalSize;
 
-	DistributionInfo(): offset(0), size(0), totalSize(0) {}
+    DistributionInfo(): offset(0), size(0), totalSize(0) {}
 };
 
 struct DistributedDataInfo: public DistributionInfo {
-	esint next;
+    esint next;
 
-	DistributedDataInfo(): next(0) {}
+    DistributedDataInfo(): next(0) {}
 
-	inline bool isLocal(const esint &index) const noexcept { return offset <= index && index < next; }
+    inline bool isLocal(const esint &index) const noexcept { return offset <= index && index < next; }
 };
 
 struct DuplicatedDataInfo: public DistributedDataInfo {
-	esint nhalo;
+    esint nhalo;
 
-	DuplicatedDataInfo(): nhalo(0) {}
+    DuplicatedDataInfo(): nhalo(0) {}
 };
 
 }

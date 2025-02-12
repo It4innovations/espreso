@@ -9,16 +9,16 @@ namespace espreso {
 
 struct ThermalExpansionConfiguration: public ECFDescription {
 
-	enum class MODEL {
-		ISOTROPIC,
-		ORTHOTROPIC
-	};
+    enum class MODEL {
+        ISOTROPIC,
+        ORTHOTROPIC
+    };
 
-	MODEL model;
+    MODEL model;
 
-	TensorConfiguration thermal_expansion;
+    TensorConfiguration thermal_expansion;
 
-	ThermalExpansionConfiguration();
+    ThermalExpansionConfiguration();
 };
 
 }

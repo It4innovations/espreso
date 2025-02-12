@@ -6,15 +6,15 @@ namespace espreso {
 namespace info {
 namespace env {
 
-	extern int MKL_NUM_THREADS;
-	extern int OMP_NUM_THREADS;
-	extern int SOLVER_NUM_THREADS;
-	extern int PAR_NUM_THREADS;
+    extern int MKL_NUM_THREADS;
+    extern int OMP_NUM_THREADS;
+    extern int SOLVER_NUM_THREADS;
+    extern int PAR_NUM_THREADS;
 
-	extern int threads;
+    extern int threads;
 
-	void set();
-	char* pwd();
+    void set();
+    char* pwd();
 }
 }
 }

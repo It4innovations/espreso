@@ -33,12 +33,12 @@ void DataSetsWidget::initMaterials()
         if (ok && mid > this->m_materials_id) this->m_materials_id = mid;
 
         ECFObject* material = static_cast<ECFObject*>(*m);
-		std::string m_name = material->getParameter("name")->getValue();
-		if (m_name.empty())
-		{
-			m_name = material->name;
-			material->getParameter("name")->setValue(m_name);
-		}
+        std::string m_name = material->getParameter("name")->getValue();
+        if (m_name.empty())
+        {
+            m_name = material->name;
+            material->getParameter("name")->setValue(m_name);
+        }
 
         this->m_materials_names.append(m_name);
         this->m_materials_ids.append((*m)->name);
@@ -79,7 +79,7 @@ QDialog* DataSetsWidget::createDialog(const QModelIndex& groupIndex, ECFParamete
         ECFObject* mc;
 
         if (param == nullptr) mc = this->newMaterial();
-		else mc = static_cast<ECFObject*>(param);
+        else mc = static_cast<ECFObject*>(param);
 
         int index = this->m_materials_names.indexOf(mc->name);
         if (index >= 0)
@@ -101,26 +101,26 @@ QDialog* DataSetsWidget::createDialog(const QModelIndex& groupIndex, ECFParamete
 QString DataSetsWidget::dialogResult(QDialog*)
 {
     std::string name = this->m_last_modified->getParameter("name")->getValue();
-	this->m_materials_names.append(name);
-	this->m_materials_ids.append(std::to_string(this->m_materials_id - 1));
+    this->m_materials_names.append(name);
+    this->m_materials_ids.append(std::to_string(this->m_materials_id - 1));
     return QString::fromStdString(name);
 }
 
 void DataSetsWidget::deleteItemAccepted(const QModelIndex& group, int, const QString& name)
 {
-	if (group.row() == 0)
-	{
-		int matIndex = this->m_materials_names.indexOf(name.toStdString());
-		this->m_materials_names.remove(matIndex);
-		this->m_materials_ids.remove(matIndex);
-	}
+    if (group.row() == 0)
+    {
+        int matIndex = this->m_materials_names.indexOf(name.toStdString());
+        this->m_materials_names.remove(matIndex);
+        this->m_materials_ids.remove(matIndex);
+    }
 }
 
 ECFObject* DataSetsWidget::newMaterial()
 {
     return static_cast<ECFObject*>(
-		this->m_materials->getParameter(std::to_string(this->m_materials_id++))
-	);
+        this->m_materials->getParameter(std::to_string(this->m_materials_id++))
+    );
 }
 
 void DataSetsWidget::newItemRejected(int group)

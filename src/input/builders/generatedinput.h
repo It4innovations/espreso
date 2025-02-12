@@ -8,11 +8,11 @@ namespace espreso {
 
 class GeneratedInput: public Input {
 public:
-	GeneratedInput(MeshBuilder &dMesh, bool needSynchronization);
+    GeneratedInput(MeshBuilder &dMesh, bool needSynchronization);
 
 protected:
-	void removeDanglingNodes();
-	void synchronizeGlobalIndices();
+    void removeDanglingNodes();
+    void synchronizeGlobalIndices();
 };
 
 }

@@ -10,11 +10,11 @@ struct InputConfiguration;
 
 class NGLibGenerator: public MeshBuilder {
 public:
-	NGLibGenerator(const InputConfiguration &configuration);
-	void load();
+    NGLibGenerator(const InputConfiguration &configuration);
+    void load();
 
 protected:
-	const InputConfiguration &_configuration;
+    const InputConfiguration &_configuration;
 };
 
 }

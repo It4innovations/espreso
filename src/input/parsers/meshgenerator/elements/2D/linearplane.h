@@ -8,13 +8,13 @@ namespace espreso {
 
 struct LinearPlaneGenerator: public ElementGenerator {
 
-	LinearPlaneGenerator();
+    LinearPlaneGenerator();
 
-	void pushNodes(std::vector<esint> &nodes, const std::vector<esint> &indices, CubeEdge edge) const;
-	void pushNodes(std::vector<esint> &nodes, const std::vector<esint> &indices, CubeFace face) const;
+    void pushNodes(std::vector<esint> &nodes, const std::vector<esint> &indices, CubeEdge edge) const;
+    void pushNodes(std::vector<esint> &nodes, const std::vector<esint> &indices, CubeFace face) const;
 
-	void pushEdge(std::vector<esint> &elements, std::vector<esint> &esize, std::vector<int> &etype, const std::vector<esint> &indices, CubeEdge edge) const;
-	void pushFace(std::vector<esint> &elements, std::vector<esint> &esize, std::vector<int> &etype, const std::vector<esint> &indices, CubeFace face) const;
+    void pushEdge(std::vector<esint> &elements, std::vector<esint> &esize, std::vector<int> &etype, const std::vector<esint> &indices, CubeEdge edge) const;
+    void pushFace(std::vector<esint> &elements, std::vector<esint> &esize, std::vector<int> &etype, const std::vector<esint> &indices, CubeFace face) const;
 };
 
 }

@@ -11,19 +11,19 @@ template <typename TEBoundaries, typename TEData> class serializededata;
 
 struct FETIDataStore {
 
-	// B0 from corners
-	std::vector<esint> corners;
+    // B0 from corners
+    std::vector<esint> corners;
 
-	// Regularization from fix points
-	std::vector<esint> surfaceFixPoints, sFixPointsDistribution;
-	std::vector<esint> innerFixPoints, iFixPointsDistribution;
+    // Regularization from fix points
+    std::vector<esint> surfaceFixPoints, sFixPointsDistribution;
+    std::vector<esint> innerFixPoints, iFixPointsDistribution;
 
-	FETIDataStore();
-	~FETIDataStore();
+    FETIDataStore();
+    ~FETIDataStore();
 
-	size_t packedFullSize() const;
-	void packFull(char* &p) const;
-	void unpackFull(const char* &p);
+    size_t packedFullSize() const;
+    void packFull(char* &p) const;
+    void unpackFull(const char* &p);
 };
 
 }

@@ -12,34 +12,34 @@ using namespace espreso;
 NeperLoader::NeperLoader(InputConfiguration &configuration)
 : _configuration(configuration)
 {
-	_configuration.insert_orientation = true;
+    _configuration.insert_orientation = true;
 }
 
 void NeperLoader::load()
 {
-	eslog::startln("NEPER PARSER: STARTED", "NEPER PARSER");
-	profiler::syncstart("neper");
+    eslog::startln("NEPER PARSER: STARTED", "NEPER PARSER");
+    profiler::syncstart("neper");
 
-	InputFilePack meshfile;
-	meshfile.commitFiles({ _configuration.path });
-	meshfile.prepare();
-	profiler::synccheckpoint("prepare_reader");
-	eslog::checkpointln("NEPER PARSER: MESH READER PREPARED");
+    InputFilePack meshfile;
+    meshfile.commitFiles({ _configuration.path });
+    meshfile.prepare();
+    profiler::synccheckpoint("prepare_reader");
+    eslog::checkpointln("NEPER PARSER: MESH READER PREPARED");
 
-	meshfile.read();
-	profiler::synccheckpoint("read");
-	eslog::checkpointln("NEPER PARSER: MESH READ");
+    meshfile.read();
+    profiler::synccheckpoint("read");
+    eslog::checkpointln("NEPER PARSER: MESH READ");
 
-	meshfile.next();
-	DistributedScanner::align(meshfile, "\n");
+    meshfile.next();
+    DistributedScanner::align(meshfile, "\n");
 
-	NeperMshMesh mesh(meshfile);
+    NeperMshMesh mesh(meshfile);
 
-	mesh.parse(*this);
-	body.resize(etype.size());
-	material.resize(etype.size());
-	profiler::synccheckpoint("parse");
-	meshfile.clear();
-	profiler::syncend("neper");
-	eslog::endln("NEPER PARSER: GEOMETRY PARSED");
+    mesh.parse(*this);
+    body.resize(etype.size());
+    material.resize(etype.size());
+    profiler::synccheckpoint("parse");
+    meshfile.clear();
+    profiler::syncend("neper");
+    eslog::endln("NEPER PARSER: GEOMETRY PARSED");
 }

@@ -9,20 +9,20 @@ namespace espreso {
 class SortedInput: public Input {
 
 public:
-	static void buildMesh(MeshBuilder &mesh);
+    static void buildMesh(MeshBuilder &mesh);
 
 protected:
-	SortedInput(MeshBuilder &mesh);
+    SortedInput(MeshBuilder &mesh);
 
-	void checkERegions();
+    void checkERegions();
 
-	void fillCoordinates();
-	void addNodeRegions();
-	void addBoundaryRegions();
-	void addElementRegions();
+    void fillCoordinates();
+    void addNodeRegions();
+    void addBoundaryRegions();
+    void addElementRegions();
 
-	std::vector<int> _targetRanks;
-	std::vector<std::vector<esint> > _rankNodeMap;
+    std::vector<int> _targetRanks;
+    std::vector<std::vector<esint> > _rankNodeMap;
 };
 
 }

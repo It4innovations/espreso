@@ -10,16 +10,16 @@ class Catalyst;
 
 struct InSitu: public Visualization {
 
-	InSitu();
-	~InSitu();
+    InSitu();
+    ~InSitu();
 
-	void updateMesh();
-	void updateMonitors(step::TYPE type);
-	void updateSolution(const step::Step &step, const step::Time &time);
-	void updateSolution(const step::Step &step, const step::Frequency &frequency);
+    void updateMesh();
+    void updateMonitors(step::TYPE type);
+    void updateSolution(const step::Step &step, const step::Time &time);
+    void updateSolution(const step::Step &step, const step::Frequency &frequency);
 
 protected:
-	Catalyst *_catalyst;
+    Catalyst *_catalyst;
 };
 
 }

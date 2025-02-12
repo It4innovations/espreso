@@ -18,19 +18,19 @@ namespace espreso {
 class ExpressionEvaluator: public Evaluator {
 
 public:
-	ExpressionEvaluator(const std::string &expression);
-	~ExpressionEvaluator();
+    ExpressionEvaluator(const std::string &expression);
+    ~ExpressionEvaluator();
 
-	double evaluate(int t) const
-	{
-		return _expression[t]->evaluate();
-	}
+    double evaluate(int t) const
+    {
+        return _expression[t]->evaluate();
+    }
 
-	const char* expression() const { return _expr; }
+    const char* expression() const { return _expr; }
 
 protected:
-	const char* _expr;
-	std::vector<Exprtk*> _expression;
+    const char* _expr;
+    std::vector<Exprtk*> _expression;
 };
 
 }

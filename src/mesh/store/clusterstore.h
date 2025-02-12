@@ -13,12 +13,12 @@ template <typename TEBoundaries, typename TEData> class serializededata;
 
 struct ClusterStore: DistributedDataInfo {
 
-	ClusterStore();
-	~ClusterStore();
+    ClusterStore();
+    ~ClusterStore();
 
-	size_t packedFullSize() const;
-	void packFull(char* &p) const;
-	void unpackFull(const char* &p);
+    size_t packedFullSize() const;
+    void packFull(char* &p) const;
+    void unpackFull(const char* &p);
 };
 
 }

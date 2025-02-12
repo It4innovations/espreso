@@ -9,9 +9,9 @@ using namespace espreso;
 
 Visualization::Visualization()
 {
-	if (info::ecf->output.results_store_frequency != OutputConfiguration::STORE_FREQUENCY::NEVER) {
-//		createOutputDirectory();
-	}
+    if (info::ecf->output.results_store_frequency != OutputConfiguration::STORE_FREQUENCY::NEVER) {
+//        createOutputDirectory();
+    }
 }
 
 Visualization::~Visualization()
@@ -21,52 +21,52 @@ Visualization::~Visualization()
 
 bool Visualization::isRoot()
 {
-	return info::mpi::rank == 0;
-//	if (info::mpi::rank == 0) {
-//		if (step::type == step::TYPE::FTT) {
-//			return true;
-//		}
-//		if (step::duplicate::instances == 1 && info::mpi::grank == 0) {
-//			return true;
-//		}
-//	}
-//	return false;
+    return info::mpi::rank == 0;
+//    if (info::mpi::rank == 0) {
+//        if (step::type == step::TYPE::FTT) {
+//            return true;
+//        }
+//        if (step::duplicate::instances == 1 && info::mpi::grank == 0) {
+//            return true;
+//        }
+//    }
+//    return false;
 }
 
 bool Visualization::storeStep(const step::Step &step)
 {
-	if (step.type == step::TYPE::FTT) {
-		return true;
-	} else {
-		switch (info::ecf->output.results_store_frequency) {
-		case OutputConfiguration::STORE_FREQUENCY::NEVER:
-			return false;
-		case OutputConfiguration::STORE_FREQUENCY::EVERY_SUBSTEP:
-			return true;
-		case OutputConfiguration::STORE_FREQUENCY::EVERY_NTH_SUBSTEP:
-			return (step.substep + 1) % info::ecf->output.results_nth_stepping == 0;
-		case OutputConfiguration::STORE_FREQUENCY::LAST_SUBSTEP:
-			return step::isLast(step);
+    if (step.type == step::TYPE::FTT) {
+        return true;
+    } else {
+        switch (info::ecf->output.results_store_frequency) {
+        case OutputConfiguration::STORE_FREQUENCY::NEVER:
+            return false;
+        case OutputConfiguration::STORE_FREQUENCY::EVERY_SUBSTEP:
+            return true;
+        case OutputConfiguration::STORE_FREQUENCY::EVERY_NTH_SUBSTEP:
+            return (step.substep + 1) % info::ecf->output.results_nth_stepping == 0;
+        case OutputConfiguration::STORE_FREQUENCY::LAST_SUBSTEP:
+            return step::isLast(step);
 
-		default:
-			return false;
-		}
-	}
+        default:
+            return false;
+        }
+    }
 }
 
 bool Visualization::storeData(const NamedData *data, const step::Step &step)
 {
-	if (static_cast<int>(data->restriction & step.type) == 0) {
-		return false;
-	}
-	if (data->name.size() == 0) {
-		return false;
-	}
-	return true;
+    if (static_cast<int>(data->restriction & step.type) == 0) {
+        return false;
+    }
+    if (data->name.size() == 0) {
+        return false;
+    }
+    return true;
 }
 
 Point Visualization::shrink(const Point &p, const Point &ccenter, const Point &dcenter, double cratio, double dratio) {
-	Point point = ccenter + (p - ccenter) * cratio;
-	point = dcenter + (point - dcenter) * dratio;
-	return point;
+    Point point = ccenter + (p - ccenter) * cratio;
+    point = dcenter + (point - dcenter) * dratio;
+    return point;
 }

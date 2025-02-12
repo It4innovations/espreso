@@ -5,10 +5,10 @@
 namespace espreso {
 
 struct Statistics {
-	double min, max, avg, norm, absmin, absmax;
+    double min, max, avg, norm, absmin, absmax;
 
-	Statistics();
-	void reset();
+    Statistics();
+    void reset();
 };
 
 }

@@ -10,10 +10,10 @@ namespace espreso {
 
 class LightData: public XDMFElement {
 public:
-	int version;
-	std::string filenane, dir;
+    int version;
+    std::string filenane, dir;
 
-	LightData(const std::string &filename);
+    LightData(const std::string &filename);
 };
 
 }

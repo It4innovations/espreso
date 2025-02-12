@@ -11,7 +11,7 @@ void Point1::setGaussPointsForOrder(int order)
 
 void Point1::setBaseFunctions(Element &self)
 {
-	BaseFunctions::created(self);
+    BaseFunctions::created(self);
 }
 
 

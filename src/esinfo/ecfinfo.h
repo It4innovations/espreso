@@ -6,7 +6,7 @@
 
 namespace espreso {
 namespace info {
-	extern ECF *ecf;
+    extern ECF *ecf;
 };
 
 }

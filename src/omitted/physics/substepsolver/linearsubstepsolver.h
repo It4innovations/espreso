@@ -9,12 +9,12 @@ namespace espreso {
 class LinearSubStep: public SubStepSolver {
 
 public:
-	LinearSubStep(LinearSystem *system);
+    LinearSubStep(LinearSystem *system);
 
-	void init(SubStepSolver *previous);
-	bool hasSameMode(const LoadStepSolverConfiguration &configuration) const;
+    void init(SubStepSolver *previous);
+    bool hasSameMode(const LoadStepSolverConfiguration &configuration) const;
 
-	void solve(LoadStepSolver &loadStepSolver);
+    void solve(LoadStepSolver &loadStepSolver);
 };
 
 }

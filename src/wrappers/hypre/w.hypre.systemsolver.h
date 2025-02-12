@@ -12,24 +12,24 @@ struct HYPREDataHolder;
 
 class HYPRESystemSolver: public SystemSolver {
 public:
-	HYPRESystemSolver(HYPREConfiguration &configuration, HYPRESolverData &data);
+    HYPRESystemSolver(HYPREConfiguration &configuration, HYPRESolverData &data);
 
-	void init();
-	void update();
-	void solve();
+    void init();
+    void update();
+    void solve();
 
-	double& precision();
+    double& precision();
 
-	~HYPRESystemSolver();
+    ~HYPRESystemSolver();
 
-	HYPREConfiguration &configuration;
+    HYPREConfiguration &configuration;
 
 protected:
-	esint _roffset, _nrows;
+    esint _roffset, _nrows;
 
-	HYPRESolverData &_data;
+    HYPRESolverData &_data;
 
-	HYPREDataHolder *_inner;
+    HYPREDataHolder *_inner;
 };
 
 }

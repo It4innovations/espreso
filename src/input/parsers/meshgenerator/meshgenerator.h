@@ -13,13 +13,13 @@ class Mesh;
 
 class MeshGenerator: public MeshBuilder {
 public:
-	static double precision;
+    static double precision;
 
-	MeshGenerator(const InputGeneratorConfiguration &configuration);
-	void load();
+    MeshGenerator(const InputGeneratorConfiguration &configuration);
+    void load();
 
 protected:
-	const InputGeneratorConfiguration &_configuration;
+    const InputGeneratorConfiguration &_configuration;
 };
 
 }

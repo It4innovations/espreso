@@ -12,13 +12,13 @@ struct SphereGeneratorConfiguration;
 
 struct GridSettings: public BlockSettings {
 
-	GridSettings(const GridGeneratorConfiguration &configuration);
-	GridSettings(const SphereGeneratorConfiguration &configuration);
+    GridSettings(const GridGeneratorConfiguration &configuration);
+    GridSettings(const SphereGeneratorConfiguration &configuration);
 
-	Triple<size_t> blocks, clusters;
+    Triple<size_t> blocks, clusters;
 
-	std::vector<bool> nonempty;
-	esint body;
+    std::vector<bool> nonempty;
+    esint body;
 };
 
 }

@@ -9,24 +9,24 @@ namespace espreso {
 
 class XDMFAttribute: public XDMFElement {
 public:
-	enum class Type          { Scalar, Vector, Tensor, Tensor6, Matrix, GlobalID };
-	enum class Center        { Node, Cell, Grid, Face, Edge, Other };
-	enum class ItemType      {};
-	enum class ElementFamily {};
-	enum class ElementDegree {};
-	enum class ElementCell   {};
+    enum class Type          { Scalar, Vector, Tensor, Tensor6, Matrix, GlobalID };
+    enum class Center        { Node, Cell, Grid, Face, Edge, Other };
+    enum class ItemType      {};
+    enum class ElementFamily {};
+    enum class ElementDegree {};
+    enum class ElementCell   {};
 
-	std::string name;
-	std::string reference;
-	Type type;
-	Center center;
-	ItemType itemtype;
-	ElementFamily efaminly;
-	ElementDegree edegree;
-	ElementCell ecell;
+    std::string name;
+    std::string reference;
+    Type type;
+    Center center;
+    ItemType itemtype;
+    ElementFamily efaminly;
+    ElementDegree edegree;
+    ElementCell ecell;
 
-	XDMFAttribute();
-	void parse(XML::Element *e);
+    XDMFAttribute();
+    void parse(XML::Element *e);
 };
 
 }

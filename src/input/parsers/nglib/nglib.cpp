@@ -14,15 +14,15 @@ NGLibGenerator::NGLibGenerator(const InputConfiguration &configuration)
 
 void NGLibGenerator::load()
 {
-	eslog::startln("NGLIB GENERATOR: STARTED", "NGLIB GENERATOR");
-	profiler::syncstart("nglib");
+    eslog::startln("NGLIB GENERATOR: STARTED", "NGLIB GENERATOR");
+    profiler::syncstart("nglib");
 
-	NGLib::generate(*this);
+    NGLib::generate(*this);
 
-	body.resize(etype.size());
-	material.resize(etype.size());
-	profiler::syncend("nglib");
-	eslog::endln("NGLIB GENERATOR: NGLIB GENERATED");
+    body.resize(etype.size());
+    material.resize(etype.size());
+    profiler::syncend("nglib");
+    eslog::endln("NGLIB GENERATOR: NGLIB GENERATED");
 }
 
 

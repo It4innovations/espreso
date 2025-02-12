@@ -12,24 +12,24 @@
 namespace espreso {
 
 enum class INPUT_GENERATOR_SHAPE {
-	GRID,
-	GRID_SET,
-	GRID_TOWER,
-	SPHERE
+    GRID,
+    GRID_SET,
+    GRID_TOWER,
+    SPHERE
 };
 
 struct InputGeneratorConfiguration: public ECFDescription {
 
-	INPUT_GENERATOR_SHAPE shape;
+    INPUT_GENERATOR_SHAPE shape;
 
-	bool uniform_clusters, uniform_domains;
+    bool uniform_clusters, uniform_domains;
 
-	GridGeneratorConfiguration grid;
-	GridSetGeneratorConfiguration grid_set;
-	GridTowerGeneratorConfiguration grid_tower;
-	SphereGeneratorConfiguration sphere;
+    GridGeneratorConfiguration grid;
+    GridSetGeneratorConfiguration grid_set;
+    GridTowerGeneratorConfiguration grid_tower;
+    SphereGeneratorConfiguration sphere;
 
-	InputGeneratorConfiguration();
+    InputGeneratorConfiguration();
 };
 
 }

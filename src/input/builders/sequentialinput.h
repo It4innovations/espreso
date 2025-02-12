@@ -8,14 +8,14 @@ namespace espreso {
 
 class SequentialInput: public Input {
 public:
-	SequentialInput(MeshBuilder &mesh);
+    SequentialInput(MeshBuilder &mesh);
 
 protected:
-	void removeDanglingNodes();
-	void reindexNRegions();
-	void reindexERegions();
+    void removeDanglingNodes();
+    void reindexNRegions();
+    void reindexERegions();
 
-	std::vector<esint> _dangling;
+    std::vector<esint> _dangling;
 };
 
 }

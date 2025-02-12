@@ -26,7 +26,7 @@ public:
     ~RegionPairDialog();
 
     void accept() override;
-	void reject() override;
+    void reject() override;
 
     QString region();
 

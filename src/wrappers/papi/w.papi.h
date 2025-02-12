@@ -7,15 +7,15 @@ namespace espreso {
 class PAPI {
 
 public:
-	PAPI();
-	~PAPI();
+    PAPI();
+    ~PAPI();
 
-	void init();
-	void read(long long *values);
+    void init();
+    void read(long long *values);
 
-	static int status, values;
+    static int status, values;
 private:
-	int set;
+    int set;
 };
 
 }

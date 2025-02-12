@@ -18,21 +18,21 @@ class HeatTransfer3DKernel;
 struct StructuralMechanics3DBaseKernel: public KernelExecutor<StructuralMechanics3DBaseKernel>
 {
 public:
-	StructuralMechanics3DBaseKernel(StructuralMechanics3DBaseKernel *previous, PhysicsConfiguration &physics, StructuralMechanicsGlobalSettings &gsettings, StructuralMechanicsLoadStepConfiguration &configuration);
-	StructuralMechanics3DBaseKernel(HeatTransfer3DKernel *previous, PhysicsConfiguration &physics, StructuralMechanicsGlobalSettings &gsettings, StructuralMechanicsLoadStepConfiguration &configuration);
-	virtual ~StructuralMechanics3DBaseKernel();
+    StructuralMechanics3DBaseKernel(StructuralMechanics3DBaseKernel *previous, PhysicsConfiguration &physics, StructuralMechanicsGlobalSettings &gsettings, StructuralMechanicsLoadStepConfiguration &configuration);
+    StructuralMechanics3DBaseKernel(HeatTransfer3DKernel *previous, PhysicsConfiguration &physics, StructuralMechanicsGlobalSettings &gsettings, StructuralMechanicsLoadStepConfiguration &configuration);
+    virtual ~StructuralMechanics3DBaseKernel();
 
-	virtual void processElement(const Builder &builder, const ElasticityElementIterator &iterator, InstanceFiller &filler) const = 0;
-	virtual void processFace(const Builder &builder, const ElasticityBoundaryIterator &iterator, InstanceFiller &filler) const = 0;
-	virtual void processEdge(const Builder &builder, const ElasticityBoundaryIterator &iterator, InstanceFiller &filler) const = 0;
-	virtual void processNode(const Builder &builder, const ElasticityBoundaryIterator &iterator, InstanceFiller &filler) const = 0;
+    virtual void processElement(const Builder &builder, const ElasticityElementIterator &iterator, InstanceFiller &filler) const = 0;
+    virtual void processFace(const Builder &builder, const ElasticityBoundaryIterator &iterator, InstanceFiller &filler) const = 0;
+    virtual void processEdge(const Builder &builder, const ElasticityBoundaryIterator &iterator, InstanceFiller &filler) const = 0;
+    virtual void processNode(const Builder &builder, const ElasticityBoundaryIterator &iterator, InstanceFiller &filler) const = 0;
 
-	virtual void elementSolution(ElasticityElementIterator &iterator) = 0;
-	virtual void nodeSolution(ElasticityElementIterator &iterator) = 0;
+    virtual void elementSolution(ElasticityElementIterator &iterator) = 0;
+    virtual void nodeSolution(ElasticityElementIterator &iterator) = 0;
 
-	StructuralMechanicsGlobalSettings &gsettings;
-	ElasticityElementIterator iterator;
-	std::vector<ElasticityBoundaryIterator> boundaries;
+    StructuralMechanicsGlobalSettings &gsettings;
+    ElasticityElementIterator iterator;
+    std::vector<ElasticityBoundaryIterator> boundaries;
 };
 }
 

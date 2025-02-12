@@ -14,19 +14,19 @@ enum Request: int;
 class LoadStepSolver {
 
 public:
-	LoadStepSolver(LinearSystem *system, SubStepSolver *subStepSolver, double duration);
-	virtual ~LoadStepSolver() {}
+    LoadStepSolver(LinearSystem *system, SubStepSolver *subStepSolver, double duration);
+    virtual ~LoadStepSolver() {}
 
-	void run();
-	virtual void runNextSubstep() =0;
+    void run();
+    virtual void runNextSubstep() =0;
 
-	virtual void init(LoadStepSolver *previous) =0;
-	virtual void updateStructuralMatrices() =0;
+    virtual void init(LoadStepSolver *previous) =0;
+    virtual void updateStructuralMatrices() =0;
 
 
 protected:
-	LinearSystem *_system;
-	SubStepSolver *_subStepSolver;
+    LinearSystem *_system;
+    SubStepSolver *_subStepSolver;
 };
 
 }

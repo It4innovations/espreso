@@ -12,25 +12,25 @@ struct WSMPDataHolder;
 
 class WSMPSystemSolver: public SystemSolver {
 public:
-	WSMPSystemSolver(WSMPConfiguration &configuration, WSMPSolverData &data);
+    WSMPSystemSolver(WSMPConfiguration &configuration, WSMPSolverData &data);
 
-	void init();
-	void update();
-	void solve();
+    void init();
+    void update();
+    void solve();
 
-	double& precision() { return _precision; }
+    double& precision() { return _precision; }
 
-	~WSMPSystemSolver();
+    ~WSMPSystemSolver();
 
-	WSMPConfiguration &configuration;
+    WSMPConfiguration &configuration;
 
 protected:
-	esint _roffset, _nrows;
-	double _precision; // dummy
+    esint _roffset, _nrows;
+    double _precision; // dummy
 
-	WSMPSolverData &_data;
+    WSMPSolverData &_data;
 
-	WSMPDataHolder *_inner;
+    WSMPDataHolder *_inner;
 };
 
 }

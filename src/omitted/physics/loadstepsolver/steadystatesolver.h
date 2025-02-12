@@ -9,13 +9,13 @@ namespace espreso {
 class SteadyStateSolver: public LoadStepSolver {
 
 public:
-	SteadyStateSolver(LinearSystem *system, SubStepSolver *subStepSolver, double duration);
+    SteadyStateSolver(LinearSystem *system, SubStepSolver *subStepSolver, double duration);
 
-	void init(LoadStepSolver *previous);
-	void updateStructuralMatrices();
+    void init(LoadStepSolver *previous);
+    void updateStructuralMatrices();
 
 protected:
-	void runNextSubstep();
+    void runNextSubstep();
 };
 
 }

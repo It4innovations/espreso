@@ -8,23 +8,23 @@ namespace espreso {
 
 struct GridTowerGeneratorConfiguration: public ECFDescription {
 
-	enum class DIRECTION {
-		X,
-		Y,
-		Z
-	};
+    enum class DIRECTION {
+        X,
+        Y,
+        Z
+    };
 
-	enum class COMPOSITION {
-		GLUED,
-		FREE
-	};
+    enum class COMPOSITION {
+        GLUED,
+        FREE
+    };
 
-	DIRECTION direction;
-	COMPOSITION composition;
+    DIRECTION direction;
+    COMPOSITION composition;
 
-	std::map<esint, GridGeneratorConfiguration> grids;
+    std::map<esint, GridGeneratorConfiguration> grids;
 
-	GridTowerGeneratorConfiguration();
+    GridTowerGeneratorConfiguration();
 };
 
 }

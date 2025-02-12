@@ -21,42 +21,42 @@ class XDMFTopology;
 
 class XDMFElement {
 public:
-	enum class EType {
-		Attribute,
-		DataItem,
-		Domain,
-		Geometry,
-		Grid,
-		Information,
-		Time,
-		Topology
-	};
+    enum class EType {
+        Attribute,
+        DataItem,
+        Domain,
+        Geometry,
+        Grid,
+        Information,
+        Time,
+        Topology
+    };
 
-	virtual void parse(XML::Element *e);
-	virtual ~XDMFElement();
+    virtual void parse(XML::Element *e);
+    virtual ~XDMFElement();
 
-	XDMFElement* get(const std::string &name);
-	void recurse(std::function<void(XDMFElement *e, EType type)> fnc);
+    XDMFElement* get(const std::string &name);
+    void recurse(std::function<void(XDMFElement *e, EType type)> fnc);
 
-	std::vector<XDMFAttribute*> attribute;
-	std::vector<XDMFDataItem*> dataitem;
-	std::vector<XDMFDomain*> domain;
-	std::vector<XDMFGeometry*> geomery;
-	std::vector<XDMFGrid*> grid;
-	std::vector<XDMFInformation*> information;
-	std::vector<XDMFTime*> time;
-	std::vector<XDMFTopology*> topology;
+    std::vector<XDMFAttribute*> attribute;
+    std::vector<XDMFDataItem*> dataitem;
+    std::vector<XDMFDomain*> domain;
+    std::vector<XDMFGeometry*> geomery;
+    std::vector<XDMFGrid*> grid;
+    std::vector<XDMFInformation*> information;
+    std::vector<XDMFTime*> time;
+    std::vector<XDMFTopology*> topology;
 
 protected:
-	template <typename TType>
-	bool set(const std::string &setting, const std::string &value, TType &parameter, TType pvalue)
-	{
-		if (StringCompare::caseInsensitiveEq(setting, value)) {
-			parameter = pvalue;
-			return true;
-		}
-		return false;
-	}
+    template <typename TType>
+    bool set(const std::string &setting, const std::string &value, TType &parameter, TType pvalue)
+    {
+        if (StringCompare::caseInsensitiveEq(setting, value)) {
+            parameter = pvalue;
+            return true;
+        }
+        return false;
+    }
 };
 
 }

@@ -11,14 +11,14 @@
 namespace espreso {
 
 struct Basis: public ElementOperatorBuilder {
-	Basis(): ElementOperatorBuilder("BASIC FUNCTIONS") {}
+    Basis(): ElementOperatorBuilder("BASIC FUNCTIONS") {}
 
-	bool build(HeatTransferModuleOpt &kernel) override;
+    bool build(HeatTransferModuleOpt &kernel) override;
 
-	void apply(int interval)
-	{
+    void apply(int interval)
+    {
 
-	}
+    }
 };
 
 }

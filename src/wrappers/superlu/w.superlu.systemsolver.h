@@ -11,25 +11,25 @@ struct SuperLUDataHolder;
 
 class SuperLUSystemSolver: public SystemSolver {
 public:
-	SuperLUSystemSolver(SuperLUConfiguration &configuration, SuperLUSolverData &data);
+    SuperLUSystemSolver(SuperLUConfiguration &configuration, SuperLUSolverData &data);
 
-	void init();
-	void update();
-	void solve();
+    void init();
+    void update();
+    void solve();
 
-	double& precision() { return _precision; }
+    double& precision() { return _precision; }
 
-	~SuperLUSystemSolver();
+    ~SuperLUSystemSolver();
 
-	SuperLUConfiguration &configuration;
+    SuperLUConfiguration &configuration;
 
 protected:
-	esint _roffset, _nrows;
-	double _precision; // dummy
+    esint _roffset, _nrows;
+    double _precision; // dummy
 
-	SuperLUSolverData &_data;
+    SuperLUSolverData &_data;
 
-	SuperLUDataHolder *_inner;
+    SuperLUDataHolder *_inner;
 };
 
 }

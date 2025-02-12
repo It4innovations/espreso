@@ -13,17 +13,17 @@ class MatrixDense;
 
 struct BaseFunctions: public Element {
 
-	static void setBaseFunctions();
-	static void created(Element &e);
+    static void setBaseFunctions();
+    static void created(Element &e);
 
-	virtual ~BaseFunctions();
+    virtual ~BaseFunctions();
 
-	virtual void computeReferenceCoords(const MatrixDense & vertices, const MatrixDense & points, MatrixDense & result) {}
-	static void recomputeDetJ(Element *e, MatrixDense& coords, MatrixDense& resdetJ, MatrixDense* points = NULL);
-	static void recomputeDetJN(Element *e, MatrixDense& coords, MatrixDense& resdetJ, MatrixDense& resN, MatrixDense& refPoints);
+    virtual void computeReferenceCoords(const MatrixDense & vertices, const MatrixDense & points, MatrixDense & result) {}
+    static void recomputeDetJ(Element *e, MatrixDense& coords, MatrixDense& resdetJ, MatrixDense* points = NULL);
+    static void recomputeDetJN(Element *e, MatrixDense& coords, MatrixDense& resdetJ, MatrixDense& resN, MatrixDense& refPoints);
 
 
-	virtual void setGaussPointsForOrder(int order) =0;
+    virtual void setGaussPointsForOrder(int order) =0;
 
 };
 

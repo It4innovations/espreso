@@ -7,8 +7,8 @@
 #include "cpu/DenseSolverMKL.h"
 
 namespace espreso {
-	typedef DenseSolverMKL DenseSolverCPU;
-	typedef DenseSolverMKL DenseSolverAcc;
+    typedef DenseSolverMKL DenseSolverCPU;
+    typedef DenseSolverMKL DenseSolverAcc;
 }
 
 #elif defined(SOLVER_PARDISO)
@@ -16,16 +16,16 @@ namespace espreso {
 #include "cpu/DenseSolverMKL.h"
 
 namespace espreso {
-	typedef DenseSolverMKL DenseSolverCPU;
-	typedef DenseSolverMKL DenseSolverAcc;
+    typedef DenseSolverMKL DenseSolverCPU;
+    typedef DenseSolverMKL DenseSolverAcc;
 }
 
 #elif defined(SOLVER_MUMPS)
 #include "cpu/solvermumps.h"
 
 namespace espreso {
-	typedef DenseSolverMUMPS DenseSolverCPU;
-	typedef DenseSolverMUMPS DenseSolverAcc;
+    typedef DenseSolverMUMPS DenseSolverCPU;
+    typedef DenseSolverMUMPS DenseSolverAcc;
 }
 
 #elif defined(SOLVER_MIC)
@@ -33,8 +33,8 @@ namespace espreso {
 //#include "acc/mic.h"
 
 namespace espreso {
-	typedef DenseSolverMKL DenseSolverCPU;
-	typedef DenseSolverMKL DenseSolverAcc;
+    typedef DenseSolverMKL DenseSolverCPU;
+    typedef DenseSolverMKL DenseSolverAcc;
 }
 
 #elif defined(SOLVER_CUDA)
@@ -42,9 +42,9 @@ namespace espreso {
 //#include "acc/DenseSolverCUDA.h"
 
 namespace espreso {
-	typedef DenseSolverMKL DenseSolverCPU;
+    typedef DenseSolverMKL DenseSolverCPU;
         typedef DenseSolverMKL DenseSolverAcc;
-//	typedef DenseSolverCUDA DenseSolverAcc;
+//    typedef DenseSolverCUDA DenseSolverAcc;
 }
 
 
@@ -55,16 +55,16 @@ namespace espreso {
 #include "acc/DenseSolverCUDA.h"
 
 namespace espreso {
-	typedef DenseSolverMKL DenseSolverCPU;
-	typedef DenseSolverCUDA DenseSolverAcc;
+    typedef DenseSolverMKL DenseSolverCPU;
+    typedef DenseSolverCUDA DenseSolverAcc;
 }
 
 #elif defined(SOLVER_DISSECTION)
 #include "cpu/DenseSolverMKL.h"
 
 namespace espreso {
-	typedef DenseSolverMKL DenseSolverCPU;
-	typedef DenseSolverMKL DenseSolverAcc;
+    typedef DenseSolverMKL DenseSolverCPU;
+    typedef DenseSolverMKL DenseSolverAcc;
 }
 
 

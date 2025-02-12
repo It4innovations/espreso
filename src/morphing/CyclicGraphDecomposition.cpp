@@ -2057,81 +2057,81 @@ std::vector<std::vector<esint>> WORKLOAD_DISTRIBUTION = {
 */
 
 void CyclicGraphDecomposition::define_workload(
-	std::vector<esint> &block_distribution,
-	std::vector<bool> &active_block_indices,
-	std::vector<std::vector<esint>> &block_processes,
-	std::vector<std::vector<esint>> &process_blocks,
-	esint nranks,
-	esint proc_idx
+    std::vector<esint> &block_distribution,
+    std::vector<bool> &active_block_indices,
+    std::vector<std::vector<esint>> &block_processes,
+    std::vector<std::vector<esint>> &process_blocks,
+    esint nranks,
+    esint proc_idx
 ){
-	
-	std::vector<esint> usedDiagonals(nranks);
-	std::fill( usedDiagonals.begin(), usedDiagonals.end(), 0 );
-	
+    
+    std::vector<esint> usedDiagonals(nranks);
+    std::fill( usedDiagonals.begin(), usedDiagonals.end(), 0 );
+    
 
-	esint diagIdx;
-	esint row_idx, col_idx, ri, ci;
+    esint diagIdx;
+    esint row_idx, col_idx, ri, ci;
 
-	block_distribution.resize(nranks * nranks);
-	active_block_indices.resize(nranks);
-	block_processes.resize(nranks);
-	process_blocks.resize(nranks);
-	
-	std::fill( active_block_indices.begin(), active_block_indices.end(), false );
-	
-	auto block_indices = WORKLOAD_DISTRIBUTION[nranks - 1];
-	
-	for ( esint i = 0; i < (esint)block_indices.size( ); i++ ) {
-		row_idx = block_indices[i];
-		
-		active_block_indices[(row_idx + proc_idx) % nranks] = true;
-		
-		for ( esint j = 0; j < (esint)block_indices.size( ); j++ ) {
-			col_idx = block_indices[j];
-			
-			diagIdx = ( nranks + col_idx - row_idx ) % nranks;
+    block_distribution.resize(nranks * nranks);
+    active_block_indices.resize(nranks);
+    block_processes.resize(nranks);
+    process_blocks.resize(nranks);
+    
+    std::fill( active_block_indices.begin(), active_block_indices.end(), false );
+    
+    auto block_indices = WORKLOAD_DISTRIBUTION[nranks - 1];
+    
+    for ( esint i = 0; i < (esint)block_indices.size( ); i++ ) {
+        row_idx = block_indices[i];
+        
+        active_block_indices[(row_idx + proc_idx) % nranks] = true;
+        
+        for ( esint j = 0; j < (esint)block_indices.size( ); j++ ) {
+            col_idx = block_indices[j];
+            
+            diagIdx = ( nranks + col_idx - row_idx ) % nranks;
 
-			if ( usedDiagonals[diagIdx] == 0 ) {
-				usedDiagonals[diagIdx] = 1;
-				
-				for(esint r = 0; r < nranks; ++r){
-					
-					ri = (row_idx + r) % nranks;
-					ci = (col_idx + r) % nranks;
-					
-					block_distribution[ci + ri * nranks] = r;
-				}
-			}
-		}
-	}
-	
-	for(esint r = 0; r < nranks; ++r){
-		for(esint c = 0; c < (esint)block_indices.size(); ++c){
-			process_blocks[r].push_back((block_indices[c] + r) % nranks);
-		}
-	}
-	
-	std::vector<bool> ai(nranks);
-	std::fill(ai.begin(), ai.end(), false);
-	for(esint c = 0; c < nranks; ++c){
-		ci = 0;
-		ri = c;
-		ai[block_distribution[ci + ri * nranks]] = true;
+            if ( usedDiagonals[diagIdx] == 0 ) {
+                usedDiagonals[diagIdx] = 1;
+                
+                for(esint r = 0; r < nranks; ++r){
+                    
+                    ri = (row_idx + r) % nranks;
+                    ci = (col_idx + r) % nranks;
+                    
+                    block_distribution[ci + ri * nranks] = r;
+                }
+            }
+        }
+    }
+    
+    for(esint r = 0; r < nranks; ++r){
+        for(esint c = 0; c < (esint)block_indices.size(); ++c){
+            process_blocks[r].push_back((block_indices[c] + r) % nranks);
+        }
+    }
+    
+    std::vector<bool> ai(nranks);
+    std::fill(ai.begin(), ai.end(), false);
+    for(esint c = 0; c < nranks; ++c){
+        ci = 0;
+        ri = c;
+        ai[block_distribution[ci + ri * nranks]] = true;
 
-		ci = c;
-		ri = 0;
-		ai[block_distribution[ci + ri * nranks]] = true;
-	}
-	
-	for(esint c = 0; c < nranks; ++c){
-		if(ai[c]){
-			block_processes[0].push_back(c);
-		}
-	}
+        ci = c;
+        ri = 0;
+        ai[block_distribution[ci + ri * nranks]] = true;
+    }
+    
+    for(esint c = 0; c < nranks; ++c){
+        if(ai[c]){
+            block_processes[0].push_back(c);
+        }
+    }
 
-	for(esint r = 1; r < nranks; ++r){
-		for(auto el: block_processes[0]){
-			block_processes[r].push_back((el + r) % nranks);
-		}
-	}
+    for(esint r = 1; r < nranks; ++r){
+        for(auto el: block_processes[0]){
+            block_processes[r].push_back((el + r) % nranks);
+        }
+    }
 }

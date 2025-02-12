@@ -37,88 +37,88 @@ class Output;
 class Mesh {
 public:
 
-	static bool convertDatabase();
+    static bool convertDatabase();
 
-	static void init();
-	static void finish();
-	static Element edata[(int)Element::CODE::SIZE];
+    static void init();
+    static void finish();
+    static Element edata[(int)Element::CODE::SIZE];
 
-	Mesh();
-	~Mesh();
-	void load();
-	void preprocess();
-	void preprocessForGUI()
-	{
-		_withGUI = true;
-		preprocess();
-	}
-	void partitiate(int ndomains);
-	void duplicate();
-	void toBuffer();
-	void printMeshStatistics();
-	void printDecompositionStatistics();
-	size_t meshSize();
+    Mesh();
+    ~Mesh();
+    void load();
+    void preprocess();
+    void preprocessForGUI()
+    {
+        _withGUI = true;
+        preprocess();
+    }
+    void partitiate(int ndomains);
+    void duplicate();
+    void toBuffer();
+    void printMeshStatistics();
+    void printDecompositionStatistics();
+    size_t meshSize();
 
-	ElementsRegionStore* allElements()
-	{
-		return eregion("ALL_ELEMENTS");
-	}
+    ElementsRegionStore* allElements()
+    {
+        return eregion("ALL_ELEMENTS");
+    }
 
-	BoundaryRegionStore* allNodes()
-	{
-		return bregion("ALL_NODES");
-	}
+    BoundaryRegionStore* allNodes()
+    {
+        return bregion("ALL_NODES");
+    }
 
-	ElementsRegionStore* eregion(const std::string &name);
-	BoundaryRegionStore* bregion(const std::string &name);
+    ElementsRegionStore* eregion(const std::string &name);
+    BoundaryRegionStore* bregion(const std::string &name);
 
-	size_t eregionIndex(const std::string &name);
-	size_t bregionIndex(const std::string &name);
+    size_t eregionIndex(const std::string &name);
+    size_t bregionIndex(const std::string &name);
 
-	bool onAllElements(const std::string &eregion) const;
+    bool onAllElements(const std::string &eregion) const;
 
-	bool hasPhaseChange() const;
+    bool hasPhaseChange() const;
 
-	int dimension;
-	size_t preferedDomains;
+    int dimension;
+    size_t preferedDomains;
 
-	ElementStore* elements;
-	NodeStore* nodes;
+    ElementStore* elements;
+    NodeStore* nodes;
 
-	std::vector<ElementsRegionStore*> elementsRegions;
-	std::vector<BoundaryRegionStore*> boundaryRegions;
-	std::vector<ContactInterfaceStore*> contactInterfaces;
-	std::vector<BoundaryRegionStore*> boundary; // boundaryRegions + contactInterfaces
+    std::vector<ElementsRegionStore*> elementsRegions;
+    std::vector<BoundaryRegionStore*> boundaryRegions;
+    std::vector<ContactInterfaceStore*> contactInterfaces;
+    std::vector<BoundaryRegionStore*> boundary; // boundaryRegions + contactInterfaces
 
-	DomainStore *domains;
-	ClusterStore *clusters;
-	BodyStore *bodies;
+    DomainStore *domains;
+    ClusterStore *clusters;
+    BodyStore *bodies;
 
-	FETIDataStore *FETIData;
+    FETIDataStore *FETIData;
 
-	SurfaceStore *surface;
-	DomainSurfaceStore *domainsSurface;
+    SurfaceStore *surface;
+    DomainSurfaceStore *domainsSurface;
 
-	ContactStore *contact;
+    ContactStore *contact;
 
-	std::vector<int> neighbors;
-	std::vector<int> neighborsWithMe;
+    std::vector<int> neighbors;
+    std::vector<int> neighborsWithMe;
 
-	std::vector<MaterialConfiguration*> materials;
-	std::map<std::string, Point > orientation;
+    std::vector<MaterialConfiguration*> materials;
+    std::map<std::string, Point > orientation;
 
-	Output *output;
+    Output *output;
 
-	bool withSurface;
+    bool withSurface;
 
 protected:
-	void analyze();
-	void setMaterials();
-	void reclusterize();
-	void computePersistentParameters();
+    void analyze();
+    void setMaterials();
+    void reclusterize();
+    void computePersistentParameters();
 
-	bool _omitClusterization, _omitDecomposition;
-	bool _withGUI, _withFETI, _withBEM, _withEdgeDual;
+    bool _omitClusterization, _omitDecomposition;
+    bool _withGUI, _withFETI, _withBEM, _withEdgeDual;
 };
 
 }

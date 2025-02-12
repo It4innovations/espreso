@@ -17,149 +17,149 @@
 namespace espreso {
 
 struct TopologyOptimizationOCSolverSettings: public ECFDescription {
-	double lower_bound;
-	double upper_bound;
-	double move;
-	double precision;
+    double lower_bound;
+    double upper_bound;
+    double move;
+    double precision;
 
-	TopologyOptimizationOCSolverSettings();
+    TopologyOptimizationOCSolverSettings();
 };
 
 struct TopologyOptimizationMMASolverSettings: public ECFDescription {
-	TopologyOptimizationMMASolverSettings();
+    TopologyOptimizationMMASolverSettings();
 };
 
 struct TopologyOptimizationSolverSettings: public ECFDescription {
-	enum class Type {
-		OC,
-		MMA
-	};
+    enum class Type {
+        OC,
+        MMA
+    };
 
-	Type type;
+    Type type;
 
-	double min_density;
-	double precision;
-	int max_iterations;
-	double penalty_factor;
+    double min_density;
+    double precision;
+    int max_iterations;
+    double penalty_factor;
 
-	TopologyOptimizationOCSolverSettings oc;
-	TopologyOptimizationMMASolverSettings mma;
+    TopologyOptimizationOCSolverSettings oc;
+    TopologyOptimizationMMASolverSettings mma;
 
-	TopologyOptimizationSolverSettings();
+    TopologyOptimizationSolverSettings();
 };
 
 struct TopologyOptimizationConstraint: public ECFDescription {
-	enum class Response {
-		VOLUME,
-		MASS
-	};
+    enum class Response {
+        VOLUME,
+        MASS
+    };
 
-	enum class PresetValues {
-		SOLID,
-		VOID
-	};
+    enum class PresetValues {
+        SOLID,
+        VOID
+    };
 
-	Response response;
-	double value;
-	std::map<std::string, PresetValues> preset_regions;
+    Response response;
+    double value;
+    std::map<std::string, PresetValues> preset_regions;
 
-	TopologyOptimizationConstraint();
+    TopologyOptimizationConstraint();
 };
 
 struct TopologyOptimizationFilteringDensity: public ECFDescription {
-	enum class Type {
-		LINEAR,
-		GAUSSIAN,
-		HEAVISIDE
-	};
+    enum class Type {
+        LINEAR,
+        GAUSSIAN,
+        HEAVISIDE
+    };
 
-	Type type;
+    Type type;
 
-	TopologyOptimizationFilteringDensity();
+    TopologyOptimizationFilteringDensity();
 };
 
 struct TopologyOptimizationFiltering: public ECFDescription {
-	double radius;
-	TopologyOptimizationFilteringDensity density;
+    double radius;
+    TopologyOptimizationFilteringDensity density;
 
-	TopologyOptimizationFiltering();
+    TopologyOptimizationFiltering();
 };
 
 struct TopologyOptimizationConfiguration: public ECFDescription {
 
-	TopologyOptimizationSolverSettings solver_settings;
-	TopologyOptimizationConstraint constraint;
-	TopologyOptimizationFiltering filtering;
+    TopologyOptimizationSolverSettings solver_settings;
+    TopologyOptimizationConstraint constraint;
+    TopologyOptimizationFiltering filtering;
 
-	TopologyOptimizationConfiguration();
+    TopologyOptimizationConfiguration();
 };
 
 struct LoadStepSolverConfiguration: public ECFDescription {
 
-	enum class TYPE {
-		STEADY_STATE,
-		TRANSIENT,
-		HARMONIC
-	};
+    enum class TYPE {
+        STEADY_STATE,
+        TRANSIENT,
+        HARMONIC
+    };
 
-	enum class MODE {
-		LINEAR,
-		NONLINEAR
-	};
+    enum class MODE {
+        LINEAR,
+        NONLINEAR
+    };
 
-	enum class SOLVER {
-		FETI,
-		HYPRE,
-		MKLPDSS,
-		PARDISO,
-		SUPERLU,
-		SEQUENTIAL,
-		WSMP,
-		NONE
-	};
+    enum class SOLVER {
+        FETI,
+        HYPRE,
+        MKLPDSS,
+        PARDISO,
+        SUPERLU,
+        SEQUENTIAL,
+        WSMP,
+        NONE
+    };
 
-	double duration_time;
-	bool topology_optimization;
+    double duration_time;
+    bool topology_optimization;
 
-	TYPE type;
-	MODE mode;
-	SOLVER solver;
+    TYPE type;
+    MODE mode;
+    SOLVER solver;
 
-	TopologyOptimizationConfiguration topology_optimization_settings;
+    TopologyOptimizationConfiguration topology_optimization_settings;
 
-	FETIConfiguration feti;
-	HYPREConfiguration hypre;
-	MKLPDSSConfiguration mklpdss;
-	PARDISOConfiguration pardiso;
-	SuperLUConfiguration superlu;
-	SequentialConfiguration sequential;
-	WSMPConfiguration wsmp;
+    FETIConfiguration feti;
+    HYPREConfiguration hypre;
+    MKLPDSSConfiguration mklpdss;
+    PARDISOConfiguration pardiso;
+    SuperLUConfiguration superlu;
+    SequentialConfiguration sequential;
+    WSMPConfiguration wsmp;
 
-	LoadStepSolverConfiguration();
+    LoadStepSolverConfiguration();
 };
 
 struct HeatTransferLoadStepSolverConfiguration: public LoadStepSolverConfiguration {
 
-	NonLinearSolverConfiguration nonlinear_solver;
-	TransientFirstOrderImplicitSolverConfiguration transient_solver;
+    NonLinearSolverConfiguration nonlinear_solver;
+    TransientFirstOrderImplicitSolverConfiguration transient_solver;
 
-	HeatTransferLoadStepSolverConfiguration();
+    HeatTransferLoadStepSolverConfiguration();
 };
 
 struct AcousticLoadStepSolverConfiguration: public LoadStepSolverConfiguration {
 
-	HarmonicSolverConfiguration harmonic_solver;
+    HarmonicSolverConfiguration harmonic_solver;
 
-	AcousticLoadStepSolverConfiguration();
+    AcousticLoadStepSolverConfiguration();
 };
 
 struct StructuralMechanicsLoadStepSolverConfiguration: public LoadStepSolverConfiguration {
 
-	NonLinearSolverConfiguration nonlinear_solver;
-	TransientSecondOrderImplicitSolverConfiguration transient_solver;
-	HarmonicSolverConfiguration harmonic_solver;
+    NonLinearSolverConfiguration nonlinear_solver;
+    TransientSecondOrderImplicitSolverConfiguration transient_solver;
+    HarmonicSolverConfiguration harmonic_solver;
 
-	StructuralMechanicsLoadStepSolverConfiguration();
+    StructuralMechanicsLoadStepSolverConfiguration();
 };
 
 }

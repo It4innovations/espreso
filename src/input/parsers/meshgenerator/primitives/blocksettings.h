@@ -13,16 +13,16 @@ class Evaluator;
 
 struct BlockSettings {
 
-	BlockSettings(const BlockGeneratorConfiguration &configuration);
+    BlockSettings(const BlockGeneratorConfiguration &configuration);
 
-	static size_t preferedDomains(const BlockGeneratorConfiguration &configuration);
+    static size_t preferedDomains(const BlockGeneratorConfiguration &configuration);
 
-	Triple<size_t> domains;
-	Triple<size_t> elements;
+    Triple<size_t> domains;
+    Triple<size_t> elements;
 
-	Triple<long> start, end;
+    Triple<long> start, end;
 
-	Evaluator *projection_x, *projection_y, *projection_z;
+    Evaluator *projection_x, *projection_y, *projection_z;
 };
 
 }

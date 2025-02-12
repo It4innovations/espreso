@@ -13,35 +13,35 @@ namespace espreso {
 class AutoOptimizer {
 
 public:
-	virtual ~AutoOptimizer() {}
+    virtual ~AutoOptimizer() {}
 
-	virtual bool set(std::function<bool(void)> fnc)=0;
-	virtual bool run(std::function<bool(void)> fnc)=0;
+    virtual bool set(std::function<bool(void)> fnc)=0;
+    virtual bool run(std::function<bool(void)> fnc)=0;
 
 protected:
-	AutoOptimizer() {}
+    AutoOptimizer() {}
 };
 
 class EmptyOptimizer : public AutoOptimizer {
 
 public:
-	EmptyOptimizer() {}
+    EmptyOptimizer() {}
 
-	bool set(std::function<bool(void)> fnc) override;
-	bool run(std::function<bool(void)> fnc) override;
+    bool set(std::function<bool(void)> fnc) override;
+    bool run(std::function<bool(void)> fnc) override;
 };
 
 class EvolutionaryOptimizer : public AutoOptimizer {
 
 public:
-	EvolutionaryOptimizer(const AutoOptimizationConfiguration& configuration, std::vector<ECFParameter*>& parameters);
+    EvolutionaryOptimizer(const AutoOptimizationConfiguration& configuration, std::vector<ECFParameter*>& parameters);
 
-	bool set(std::function<bool(void)> fnc) override;
-	bool run(std::function<bool(void)> fnc) override;
+    bool set(std::function<bool(void)> fnc) override;
+    bool run(std::function<bool(void)> fnc) override;
 
 protected:
-	OptimizationProxy m_proxy;
-	std::function<bool(void)> m_set_function;
+    OptimizationProxy m_proxy;
+    std::function<bool(void)> m_set_function;
 };
 
 }

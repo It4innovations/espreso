@@ -10,11 +10,11 @@ struct InputConfiguration;
 
 class XDMFLoader: public MeshBuilder {
 public:
-	XDMFLoader(const InputConfiguration &configuration);
-	void load();
+    XDMFLoader(const InputConfiguration &configuration);
+    void load();
 
 protected:
-	const InputConfiguration &_configuration;
+    const InputConfiguration &_configuration;
 };
 
 }

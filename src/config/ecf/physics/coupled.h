@@ -9,27 +9,27 @@ namespace espreso {
 
 struct CoupledPhysicsGlobalConfiguration {
 
-	enum class COUPLING {
-		WEAK = 0,
-		STRONG  = 1
-	};
+    enum class COUPLING {
+        WEAK = 0,
+        STRONG  = 1
+    };
 
-	COUPLING coupling;
+    COUPLING coupling;
 };
 
 struct ThermoElasticityLoadStepConfiguration: public CoupledPhysicsGlobalConfiguration, public ECFDescription {
 
-	HeatTransferLoadStepConfiguration heat_transfer;
-	StructuralMechanicsLoadStepConfiguration structural_mechanics;
+    HeatTransferLoadStepConfiguration heat_transfer;
+    StructuralMechanicsLoadStepConfiguration structural_mechanics;
 
-	ThermoElasticityLoadStepConfiguration();
+    ThermoElasticityLoadStepConfiguration();
 };
 
 struct ThermoElasticityConfiguration: public PhysicsConfiguration, public HeatTransferGlobalSettings, public StructuralMechanicsGlobalSettings {
 
-	std::map<size_t, ThermoElasticityLoadStepConfiguration> load_steps_settings;
+    std::map<size_t, ThermoElasticityLoadStepConfiguration> load_steps_settings;
 
-	ThermoElasticityConfiguration();
+    ThermoElasticityConfiguration();
 };
 
 }

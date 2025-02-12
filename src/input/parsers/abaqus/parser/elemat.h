@@ -13,14 +13,14 @@ struct AbaqusMaterial;
 
 struct Elemat: public AbaqusParser {
 
-	Elemat();
-	Elemat& create_dict(const std::vector<SSection> &ssection, const std::vector<AbaqusMaterial> &material);
+    Elemat();
+    Elemat& create_dict(const std::vector<SSection> &ssection, const std::vector<AbaqusMaterial> &material);
 
-	std::map<std::string, std::string> strig11;
-	std::string name_mat;
-	std::string namee;
-	std::string namee1;
-	std::vector<std::string> elset_mat_dict;
+    std::map<std::string, std::string> strig11;
+    std::string name_mat;
+    std::string namee;
+    std::string namee1;
+    std::vector<std::string> elset_mat_dict;
 
 };
 

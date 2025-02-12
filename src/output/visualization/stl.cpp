@@ -26,42 +26,42 @@ STL::~STL()
 
 void STL::updateMesh()
 {
-	std::string filename = _directory + "file.stl";
-	std::string name = _path + filename;
+    std::string filename = _directory + "file.stl";
+    std::string name = _path + filename;
 
-	int size, gsize;
-	size = info::mesh->surface->triangles->structures();
-	Communication::reduce(&size, &gsize, 1, MPI_INT, MPI_SUM, 0, MPITools::asynchronous);
+    int size, gsize;
+    size = info::mesh->surface->triangles->structures();
+    Communication::reduce(&size, &gsize, 1, MPI_INT, MPI_SUM, 0, MPITools::asynchronous);
 
-	if (info::mpi::rank == 0) {
-		_writer.storeHeader("surface");
-		_writer.storeSize(gsize);
-	}
+    if (info::mpi::rank == 0) {
+        _writer.storeHeader("surface");
+        _writer.storeSize(gsize);
+    }
 
-	for (auto t = info::mesh->surface->triangles->cbegin(); t != info::mesh->surface->triangles->cend(); ++t) {
-		Point p[3] = {
-				info::mesh->surface->coordinates->datatarray()[t->at(0)],
-				info::mesh->surface->coordinates->datatarray()[t->at(1)],
-				info::mesh->surface->coordinates->datatarray()[t->at(2)],
-		};
-		Point n = Point::cross(p[1] - p[0], p[2] - p[0]);
+    for (auto t = info::mesh->surface->triangles->cbegin(); t != info::mesh->surface->triangles->cend(); ++t) {
+        Point p[3] = {
+                info::mesh->surface->coordinates->datatarray()[t->at(0)],
+                info::mesh->surface->coordinates->datatarray()[t->at(1)],
+                info::mesh->surface->coordinates->datatarray()[t->at(2)],
+        };
+        Point n = Point::cross(p[1] - p[0], p[2] - p[0]);
 
-		_writer.beginFace(n.x, n.y, n.z);
-		_writer.addVertex(p[0].x, p[0].y, p[0].z);
-		_writer.addVertex(p[1].x, p[1].y, p[1].z);
-		_writer.addVertex(p[2].x, p[2].y, p[2].z);
-		_writer.endFace();
-	}
+        _writer.beginFace(n.x, n.y, n.z);
+        _writer.addVertex(p[0].x, p[0].y, p[0].z);
+        _writer.addVertex(p[1].x, p[1].y, p[1].z);
+        _writer.addVertex(p[2].x, p[2].y, p[2].z);
+        _writer.endFace();
+    }
 
-	_writer.groupData();
+    _writer.groupData();
 
-	if (info::mpi::rank + 1 == info::mpi::size) {
-		_writer.storeFooter("surface");
-	}
+    if (info::mpi::rank + 1 == info::mpi::size) {
+        _writer.storeFooter("surface");
+    }
 
-	_writer.commitFile(name);
-	_writer.reorder();
-	_writer.write();
+    _writer.commitFile(name);
+    _writer.reorder();
+    _writer.write();
 }
 
 void STL::updateMonitors(const step::Step &step)
@@ -71,10 +71,10 @@ void STL::updateMonitors(const step::Step &step)
 
 void STL::updateSolution(const step::Step &step, const step::Time &time)
 {
-	// TODO
+    // TODO
 }
 
 void STL::updateSolution(const step::Step &step, const step::Frequency &frequency)
 {
-	// TODO
+    // TODO
 }

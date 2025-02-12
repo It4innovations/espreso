@@ -8,13 +8,13 @@ namespace espreso {
 
 class XDMFTime: public XDMFElement {
 public:
-	enum class Type { Single, HyperSlab, List, Range };
+    enum class Type { Single, HyperSlab, List, Range };
 
-	Type type;
-	double value;
+    Type type;
+    double value;
 
-	XDMFTime();
-	void parse(XML::Element *e);
+    XDMFTime();
+    void parse(XML::Element *e);
 };
 
 }

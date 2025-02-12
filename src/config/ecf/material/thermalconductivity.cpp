@@ -7,88 +7,88 @@ espreso::ThermalConductivityConfiguration::ThermalConductivityConfiguration()
 : model(MODEL::ISOTROPIC),
   values(3)
 {
-	REGISTER(model, ECFMetaData()
-			.setdescription({ "Model" })
-			.setdatatype({ ECFDataType::OPTION })
-			.registertensor(values)
-			.addoption(ECFOption().setname("ISOTROPIC").setdescription("Isotropic model."))
-			.addoption(ECFOption().setname("DIAGONAL").setdescription("Orthotropic model."))
-			.addoption(ECFOption().setname("SYMMETRIC").setdescription("Symmetric model."))
-			.addoption(ECFOption().setname("ANISOTROPIC").setdescription("Anisotropic model.")));
+    REGISTER(model, ECFMetaData()
+            .setdescription({ "Model" })
+            .setdatatype({ ECFDataType::OPTION })
+            .registertensor(values)
+            .addoption(ECFOption().setname("ISOTROPIC").setdescription("Isotropic model."))
+            .addoption(ECFOption().setname("DIAGONAL").setdescription("Orthotropic model."))
+            .addoption(ECFOption().setname("SYMMETRIC").setdescription("Symmetric model."))
+            .addoption(ECFOption().setname("ANISOTROPIC").setdescription("Anisotropic model.")));
 
-	ecfdescription->registerParameter("KXX", values.get(0, 0), ECFMetaData()
-			.setdescription({ "KXX" })
-			.setdatatype({ ECFDataType::EXPRESSION })
-			.settensor(values, 0, 0));
-	ecfdescription->registerParameter("KYY", values.get(1, 1), ECFMetaData()
-			.setdescription({ "KYY" })
-			.setdatatype({ ECFDataType::EXPRESSION })
-			.settensor(values, 1, 1)
-			.allowonly([&] () { return model != MODEL::ISOTROPIC; })
-			.addconstraint(ECFCondition(model, ECFCondition::NOT_EQUALS, MODEL::ISOTROPIC)));
-	ecfdescription->registerParameter("KZZ", values.get(2, 2), ECFMetaData()
-			.addconstraint(ECFCondition(model, ECFCondition::NOT_EQUALS, MODEL::ISOTROPIC))
-			.setdescription({ "KZZ" })
-			.setdatatype({ ECFDataType::EXPRESSION })
-			.settensor(values, 2, 2)
-			.allowonly([&] () { return model != MODEL::ISOTROPIC; })
-			.addconstraint(ECFCondition(model, ECFCondition::NOT_EQUALS, MODEL::ISOTROPIC)));
+    ecfdescription->registerParameter("KXX", values.get(0, 0), ECFMetaData()
+            .setdescription({ "KXX" })
+            .setdatatype({ ECFDataType::EXPRESSION })
+            .settensor(values, 0, 0));
+    ecfdescription->registerParameter("KYY", values.get(1, 1), ECFMetaData()
+            .setdescription({ "KYY" })
+            .setdatatype({ ECFDataType::EXPRESSION })
+            .settensor(values, 1, 1)
+            .allowonly([&] () { return model != MODEL::ISOTROPIC; })
+            .addconstraint(ECFCondition(model, ECFCondition::NOT_EQUALS, MODEL::ISOTROPIC)));
+    ecfdescription->registerParameter("KZZ", values.get(2, 2), ECFMetaData()
+            .addconstraint(ECFCondition(model, ECFCondition::NOT_EQUALS, MODEL::ISOTROPIC))
+            .setdescription({ "KZZ" })
+            .setdatatype({ ECFDataType::EXPRESSION })
+            .settensor(values, 2, 2)
+            .allowonly([&] () { return model != MODEL::ISOTROPIC; })
+            .addconstraint(ECFCondition(model, ECFCondition::NOT_EQUALS, MODEL::ISOTROPIC)));
 
-	ecfdescription->registerParameter("KXY", values.get(0, 1), ECFMetaData()
-			.setdescription({ "KXY" })
-			.setdatatype({ ECFDataType::EXPRESSION })
-			.settensor(values, 0, 1)
-			.allowonly([&] () { return model == MODEL::SYMMETRIC || model == MODEL::ANISOTROPIC; })
-			.addconstraint(ECFCondition(model, ECFCondition::EQUALS, MODEL::SYMMETRIC) | ECFCondition(model, ECFCondition::EQUALS, MODEL::ANISOTROPIC)));
-	ecfdescription->registerParameter("KXZ", values.get(0, 2), ECFMetaData()
-			.setdescription({ "KXZ" })
-			.setdatatype({ ECFDataType::EXPRESSION })
-			.settensor(values, 0, 2)
-			.allowonly([&] () { return (model == MODEL::SYMMETRIC || model == MODEL::ANISOTROPIC); })
-			.addconstraint((ECFCondition(model, ECFCondition::EQUALS, MODEL::SYMMETRIC) | ECFCondition(model, ECFCondition::EQUALS, MODEL::ANISOTROPIC))));
-	ecfdescription->registerParameter("KYZ", values.get(1, 2), ECFMetaData()
-			.setdescription({ "KYZ" })
-			.setdatatype({ ECFDataType::EXPRESSION })
-			.settensor(values, 1, 2)
-			.allowonly([&] () { return (model == MODEL::SYMMETRIC || model == MODEL::ANISOTROPIC); })
-			.addconstraint((ECFCondition(model, ECFCondition::EQUALS, MODEL::SYMMETRIC) | ECFCondition(model, ECFCondition::EQUALS, MODEL::ANISOTROPIC))));
+    ecfdescription->registerParameter("KXY", values.get(0, 1), ECFMetaData()
+            .setdescription({ "KXY" })
+            .setdatatype({ ECFDataType::EXPRESSION })
+            .settensor(values, 0, 1)
+            .allowonly([&] () { return model == MODEL::SYMMETRIC || model == MODEL::ANISOTROPIC; })
+            .addconstraint(ECFCondition(model, ECFCondition::EQUALS, MODEL::SYMMETRIC) | ECFCondition(model, ECFCondition::EQUALS, MODEL::ANISOTROPIC)));
+    ecfdescription->registerParameter("KXZ", values.get(0, 2), ECFMetaData()
+            .setdescription({ "KXZ" })
+            .setdatatype({ ECFDataType::EXPRESSION })
+            .settensor(values, 0, 2)
+            .allowonly([&] () { return (model == MODEL::SYMMETRIC || model == MODEL::ANISOTROPIC); })
+            .addconstraint((ECFCondition(model, ECFCondition::EQUALS, MODEL::SYMMETRIC) | ECFCondition(model, ECFCondition::EQUALS, MODEL::ANISOTROPIC))));
+    ecfdescription->registerParameter("KYZ", values.get(1, 2), ECFMetaData()
+            .setdescription({ "KYZ" })
+            .setdatatype({ ECFDataType::EXPRESSION })
+            .settensor(values, 1, 2)
+            .allowonly([&] () { return (model == MODEL::SYMMETRIC || model == MODEL::ANISOTROPIC); })
+            .addconstraint((ECFCondition(model, ECFCondition::EQUALS, MODEL::SYMMETRIC) | ECFCondition(model, ECFCondition::EQUALS, MODEL::ANISOTROPIC))));
 
-	ecfdescription->registerParameter("KYX", values.get(1, 0), ECFMetaData()
-			.setdescription({ "KYX" })
-			.setdatatype({ ECFDataType::EXPRESSION })
-			.settensor(values, 1, 0)
-			.allowonly([&] () { return model == MODEL::ANISOTROPIC; })
-			.addconstraint(ECFCondition(model, ECFCondition::EQUALS, MODEL::ANISOTROPIC)));
-	ecfdescription->registerParameter("KZX", values.get(2, 0), ECFMetaData()
-			.setdescription({ "KZX" })
-			.setdatatype({ ECFDataType::EXPRESSION })
-			.settensor(values, 2, 0)
-			.allowonly([&] () { return model == MODEL::ANISOTROPIC; })
-			.addconstraint(ECFCondition(model, ECFCondition::EQUALS, MODEL::ANISOTROPIC)));
-	ecfdescription->registerParameter("KZY", values.get(2, 1), ECFMetaData()
-			.setdescription({ "KZY" })
-			.setdatatype({ ECFDataType::EXPRESSION })
-			.settensor(values, 2, 1)
-			.allowonly([&] () { return model == MODEL::ANISOTROPIC; })
-			.addconstraint(ECFCondition(model, ECFCondition::EQUALS, MODEL::ANISOTROPIC)));
+    ecfdescription->registerParameter("KYX", values.get(1, 0), ECFMetaData()
+            .setdescription({ "KYX" })
+            .setdatatype({ ECFDataType::EXPRESSION })
+            .settensor(values, 1, 0)
+            .allowonly([&] () { return model == MODEL::ANISOTROPIC; })
+            .addconstraint(ECFCondition(model, ECFCondition::EQUALS, MODEL::ANISOTROPIC)));
+    ecfdescription->registerParameter("KZX", values.get(2, 0), ECFMetaData()
+            .setdescription({ "KZX" })
+            .setdatatype({ ECFDataType::EXPRESSION })
+            .settensor(values, 2, 0)
+            .allowonly([&] () { return model == MODEL::ANISOTROPIC; })
+            .addconstraint(ECFCondition(model, ECFCondition::EQUALS, MODEL::ANISOTROPIC)));
+    ecfdescription->registerParameter("KZY", values.get(2, 1), ECFMetaData()
+            .setdescription({ "KZY" })
+            .setdatatype({ ECFDataType::EXPRESSION })
+            .settensor(values, 2, 1)
+            .allowonly([&] () { return model == MODEL::ANISOTROPIC; })
+            .addconstraint(ECFCondition(model, ECFCondition::EQUALS, MODEL::ANISOTROPIC)));
 }
 
 bool espreso::ThermalConductivityConfiguration::needCoordinates() const
 {
-	for (size_t i = 0; i < values.values.size(); ++i) {
-		if (values.values[i].evaluator && values.values[i].evaluator->needCoordinates()) {
-			return true;
-		}
-	}
-	return false;
+    for (size_t i = 0; i < values.values.size(); ++i) {
+        if (values.values[i].evaluator && values.values[i].evaluator->needCoordinates()) {
+            return true;
+        }
+    }
+    return false;
 }
 
 bool espreso::ThermalConductivityConfiguration::needTemperature() const
 {
-	for (size_t i = 0; i < values.values.size(); ++i) {
-		if (values.values[i].evaluator && values.values[i].evaluator->needTemperature()) {
-			return true;
-		}
-	}
-	return false;
+    for (size_t i = 0; i < values.values.size(); ++i) {
+        if (values.values[i].evaluator && values.values[i].evaluator->needTemperature()) {
+            return true;
+        }
+    }
+    return false;
 }

@@ -16,13 +16,13 @@ class HDF5;
 
 class GeometryData {
 public:
-	GeometryData(XDMFGeometry *geometry, XDMFDataItem *geometrydata);
-	void read(HDF5 &file);
+    GeometryData(XDMFGeometry *geometry, XDMFDataItem *geometrydata);
+    void read(HDF5 &file);
 
-	int dimension;
-	std::string name;
-	std::vector<esint> distribution;
-	std::vector<float, initless_allocator<float> > data;
+    int dimension;
+    std::string name;
+    std::vector<esint> distribution;
+    std::vector<float, initless_allocator<float> > data;
 };
 
 }

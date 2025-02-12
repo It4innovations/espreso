@@ -8,10 +8,10 @@ struct ECFObject;
 
 struct ECFDescription {
 
-	ECFDescription();
-	~ECFDescription();
+    ECFDescription();
+    ~ECFDescription();
 
-	ECFObject *ecfdescription;
+    ECFObject *ecfdescription;
 };
 
 }

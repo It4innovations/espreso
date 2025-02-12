@@ -11,31 +11,31 @@ namespace espreso {
 
 struct ContactInterfaceConfiguration: public ECFDescription {
 
-	enum class DETECTION {
-		ALL_BODIES,
-		BODY_LIST,
-		CONTACT_PAIR
-	};
+    enum class DETECTION {
+        ALL_BODIES,
+        BODY_LIST,
+        CONTACT_PAIR
+    };
 
-	enum class CRITERION {
-		BOUND,
-		GAP,
-		SKIP
-	};
+    enum class CRITERION {
+        BOUND,
+        GAP,
+        SKIP
+    };
 
-	DETECTION detection;
-	CRITERION criterion;
+    DETECTION detection;
+    CRITERION criterion;
 
-	std::vector<std::string> body_list;
+    std::vector<std::string> body_list;
 
-	bool self_contact;
+    bool self_contact;
 
-	float gap;
-	float angle;
+    float gap;
+    float angle;
 
-	std::vector<esint> found_interfaces;
+    std::vector<esint> found_interfaces;
 
-	ContactInterfaceConfiguration();
+    ContactInterfaceConfiguration();
 };
 
 }

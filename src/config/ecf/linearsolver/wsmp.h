@@ -8,7 +8,7 @@ namespace espreso {
 
 struct WSMPConfiguration: public ECFDescription {
 
-	WSMPConfiguration() {}
+    WSMPConfiguration() {}
 };
 
 }

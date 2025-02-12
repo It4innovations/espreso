@@ -13,22 +13,22 @@ struct GridTowerGeneratorConfiguration;
 class GridTowerGenerator: public GridGenerator {
 
 public:
-	static void generate(const GridTowerGeneratorConfiguration &configuration, MeshBuilder &mesh);
+    static void generate(const GridTowerGeneratorConfiguration &configuration, MeshBuilder &mesh);
 
-	static esint grids(const GridTowerGeneratorConfiguration &configuration);
-	static esint gridIndex(const GridTowerGeneratorConfiguration &configuration);
+    static esint grids(const GridTowerGeneratorConfiguration &configuration);
+    static esint gridIndex(const GridTowerGeneratorConfiguration &configuration);
 
 protected:
-	GridTowerGenerator(const GridTowerGeneratorConfiguration &configuration);
-	virtual ~GridTowerGenerator() {}
+    GridTowerGenerator(const GridTowerGeneratorConfiguration &configuration);
+    virtual ~GridTowerGenerator() {}
 
-	void init(const GridTowerGeneratorConfiguration &configuration);
-	void nodes(MeshBuilder &mesh);
-	void neighbors(const GridTowerGeneratorConfiguration &configuration, MeshBuilder &mesh);
-	void regions(const GridTowerGeneratorConfiguration &configuration, MeshBuilder &mesh);
+    void init(const GridTowerGeneratorConfiguration &configuration);
+    void nodes(MeshBuilder &mesh);
+    void neighbors(const GridTowerGeneratorConfiguration &configuration, MeshBuilder &mesh);
+    void regions(const GridTowerGeneratorConfiguration &configuration, MeshBuilder &mesh);
 
-	esint _gridIndex;
-	esint _gridNodeOffset;
+    esint _gridIndex;
+    esint _gridNodeOffset;
 };
 
 }

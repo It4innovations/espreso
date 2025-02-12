@@ -15,36 +15,36 @@ struct XDMFData;
 class XDMF: public Visualization {
 
 public:
-	struct HDF5MetaData {
-		std::string name;
-		int dimension;
-		esint offset, size, totalsize;
-	};
+    struct HDF5MetaData {
+        std::string name;
+        int dimension;
+        esint offset, size, totalsize;
+    };
 
-	struct Geometry: public HDF5MetaData {
-		std::vector<float> coordinates;
-	};
-	struct Topology: public HDF5MetaData {
-		std::vector<int> topology;
-	};
-	struct Attribute: public HDF5MetaData {
-		std::vector<float> values;
-	};
+    struct Geometry: public HDF5MetaData {
+        std::vector<float> coordinates;
+    };
+    struct Topology: public HDF5MetaData {
+        std::vector<int> topology;
+    };
+    struct Attribute: public HDF5MetaData {
+        std::vector<float> values;
+    };
 
-	XDMF();
-	~XDMF();
+    XDMF();
+    ~XDMF();
 
-	void updateMesh();
-	void updateMonitors(const step::Step &step);
-	void updateSolution(const step::Step &step, const step::Time &time);
-	void updateSolution(const step::Step &step, const step::Frequency &frequency);
+    void updateMesh();
+    void updateMonitors(const step::Step &step);
+    void updateSolution(const step::Step &step, const step::Time &time);
+    void updateSolution(const step::Step &step, const step::Frequency &frequency);
 
 protected:
-	void updateSolution(const step::Step &step);
+    void updateSolution(const step::Step &step);
 
-	HDF5 *_hdf5;
-	XML *_xml;
-	XDMFData *_data;
+    HDF5 *_hdf5;
+    XML *_xml;
+    XDMFData *_data;
 };
 
 }

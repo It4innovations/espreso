@@ -9,9 +9,9 @@ namespace espreso {
 // TODO: implement me
 
 struct NSet: public AbaqusParser {
-	static size_t size;
-	static const char* upper;
-	static const char* lower;
+    static size_t size;
+    static const char* upper;
+    static const char* lower;
 };
 
 }

@@ -11,21 +11,21 @@ namespace espreso {
 
 struct CoordinateSystemConfiguration: public ECFDescription {
 
-	enum class TYPE {
-		CARTESIAN,
-		CYLINDRICAL,
-		SPHERICAL
-	};
+    enum class TYPE {
+        CARTESIAN,
+        CYLINDRICAL,
+        SPHERICAL
+    };
 
-	TYPE type;
+    TYPE type;
 
-	ECFExpressionVector rotation;
-	ECFExpressionVector center;
+    ECFExpressionVector rotation;
+    ECFExpressionVector center;
 
-	CoordinateSystemConfiguration();
+    CoordinateSystemConfiguration();
 
-	bool isConst() const;
-	bool isRotated() const;
+    bool isConst() const;
+    bool isRotated() const;
 };
 
 

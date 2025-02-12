@@ -12,10 +12,10 @@ struct OpenFOAMData;
 
 struct OpenFOAMFaces: public OpenFOAMCollectiveParser {
 
-	OpenFOAMFaces(const char *begin, const char *end): OpenFOAMCollectiveParser(begin, end) {}
+    OpenFOAMFaces(const char *begin, const char *end): OpenFOAMCollectiveParser(begin, end) {}
 
-	bool readFaces(OpenFOAMData &data);
-	bool readParents(std::vector<esint> &data);
+    bool readFaces(OpenFOAMData &data);
+    bool readParents(std::vector<esint> &data);
 };
 
 }

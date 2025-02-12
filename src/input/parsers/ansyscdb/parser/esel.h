@@ -7,51 +7,51 @@
 namespace espreso {
 
 struct ESel: public WorkbenchParser {
-	enum class Type: int {
-		UNKNOWN,
-		S,
-		R,
-		A,
-		U,
-		ALL,
-		NONE,
-		INVE,
-		STAT
-	};
+    enum class Type: int {
+        UNKNOWN,
+        S,
+        R,
+        A,
+        U,
+        ALL,
+        NONE,
+        INVE,
+        STAT
+    };
 
-	enum class Item: int {
-		UNKNOWN,
-		ELEM,
-		ADJ,
-		CENT,
-		TYPE,
-		ENAME,
-		MAT,
-		REAL,
-		ESYS,
-		PART,
-		LIVE,
-		LAYER,
-		SEC,
-		STRA,
-		SFE,
-		BFE,
-		PATH,
-		ETAB
-	};
+    enum class Item: int {
+        UNKNOWN,
+        ELEM,
+        ADJ,
+        CENT,
+        TYPE,
+        ENAME,
+        MAT,
+        REAL,
+        ESYS,
+        PART,
+        LIVE,
+        LAYER,
+        SEC,
+        STRA,
+        SFE,
+        BFE,
+        PATH,
+        ETAB
+    };
 
-	enum class Comp: int {
-		UNKNOWN
-	};
+    enum class Comp: int {
+        UNKNOWN
+    };
 
-	Type type;
-	Item item;
-	Comp comp;
-	esint VMIN, VMAX, VINC;
-	bool KABS;
+    Type type;
+    Item item;
+    Comp comp;
+    esint VMIN, VMAX, VINC;
+    bool KABS;
 
-	ESel();
-	ESel& parse(const char* begin);
+    ESel();
+    ESel& parse(const char* begin);
 };
 
 }

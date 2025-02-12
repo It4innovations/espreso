@@ -8,16 +8,16 @@ namespace espreso {
 
 struct HYPREEuclidConfiguration: public ECFDescription {
 
-	int levels;
-	int stats;
-	int memory_stats;
-	double sparse_tol;
-	int row_scale;
-	int set_bj;
-	double ilut_tol;
+    int levels;
+    int stats;
+    int memory_stats;
+    double sparse_tol;
+    int row_scale;
+    int set_bj;
+    double ilut_tol;
 
-	
-	HYPREEuclidConfiguration();
+    
+    HYPREEuclidConfiguration();
 };
 
 }

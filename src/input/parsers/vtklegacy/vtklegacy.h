@@ -10,11 +10,11 @@ struct InputConfiguration;
 
 class VTKLegacyLoader: public MeshBuilder {
 public:
-	VTKLegacyLoader(const InputConfiguration &configuration);
-	void load();
+    VTKLegacyLoader(const InputConfiguration &configuration);
+    void load();
 
 protected:
-	const InputConfiguration &_configuration;
+    const InputConfiguration &_configuration;
 };
 
 }

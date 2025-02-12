@@ -63,7 +63,7 @@ void ECFObjectTreeWidget::add(ECFObject *obj)
 
 void ECFObjectTreeWidget::onActionNew()
 {
-	QModelIndex groupIndex = this->selectedGroupItem();
+    QModelIndex groupIndex = this->selectedGroupItem();
     if ( !(groupIndex.isValid()) ) return;
 
     QDialog* dialog = this->createDialog(groupIndex);
@@ -83,44 +83,44 @@ void ECFObjectTreeWidget::onActionNew()
 
 void ECFObjectTreeWidget::onActionEdit()
 {
-	QModelIndex groupIndex = this->selectedGroupItem();
+    QModelIndex groupIndex = this->selectedGroupItem();
     if ( !(groupIndex.isValid()) ) return;
 
     ECFParameter* param = this->selectedParam(groupIndex);
-	if (param == nullptr) return;
+    if (param == nullptr) return;
 
-	QModelIndexList indexList = m_view->selectionModel()->selectedIndexes();
-	QModelIndex clicked = indexList.at(0);
+    QModelIndexList indexList = m_view->selectionModel()->selectedIndexes();
+    QModelIndex clicked = indexList.at(0);
 
     QDialog* dialog = this->createDialog(groupIndex, param);
 
-	int res = dialog->exec();
-	QString item_name = this->dialogResult(dialog);
-	this->m_model->setData(clicked, item_name);
+    int res = dialog->exec();
+    QString item_name = this->dialogResult(dialog);
+    this->m_model->setData(clicked, item_name);
 
-	if (res == QDialog::Accepted) this->editItemAccepted(groupIndex, clicked, param);
-	else this->editItemRejected(groupIndex, clicked, param);
+    if (res == QDialog::Accepted) this->editItemAccepted(groupIndex, clicked, param);
+    else this->editItemRejected(groupIndex, clicked, param);
 }
 
 void ECFObjectTreeWidget::onActionDelete()
 {
-	QModelIndex groupIndex = this->selectedGroupItem();
+    QModelIndex groupIndex = this->selectedGroupItem();
     if ( !(groupIndex.isValid()) ) return;
 
     ECFParameter* param = this->selectedParam(groupIndex);
-	if (param == nullptr) return;
+    if (param == nullptr) return;
 
     this->m_objs[groupIndex.row()]->dropParameter(param);
 
     QModelIndexList indexList = m_view->selectionModel()->selectedIndexes();
     QModelIndex clicked = indexList.at(0);
 
-	int itemIndex = clicked.row();
-	QString itemName = clicked.data().toString();
+    int itemIndex = clicked.row();
+    QString itemName = clicked.data().toString();
 
     this->m_groups[groupIndex.row()]->removeRow(clicked.row());
 
-	this->deleteItemAccepted(groupIndex, itemIndex, itemName);
+    this->deleteItemAccepted(groupIndex, itemIndex, itemName);
 }
 
 ECFParameter* ECFObjectTreeWidget::selectedParam(const QModelIndex &groupIndex)

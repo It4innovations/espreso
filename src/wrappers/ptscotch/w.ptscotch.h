@@ -7,15 +7,15 @@ namespace espreso {
 struct MPIGroup;
 
 struct PTScotch {
-	static bool islinked();
+    static bool islinked();
 
-	static esint call(
-			MPIGroup &group,
-			esint *edistribution,
-			esint *eframes, esint *eneighbors,
-			esint dimensions, float *coordinates,
-			esint verticesWeightCount, esint *verticesWeights, esint *edgeWeights,
-			esint *partition);
+    static esint call(
+            MPIGroup &group,
+            esint *edistribution,
+            esint *eframes, esint *eneighbors,
+            esint dimensions, float *coordinates,
+            esint verticesWeightCount, esint *verticesWeights, esint *edgeWeights,
+            esint *partition);
 };
 
 }

@@ -7,8 +7,8 @@
 namespace espreso {
 
 struct BlockEnd: public WorkbenchParser {
-	BlockEnd();
-	BlockEnd& parse(const char* begin);
+    BlockEnd();
+    BlockEnd& parse(const char* begin);
 };
 
 }

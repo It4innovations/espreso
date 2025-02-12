@@ -12,20 +12,20 @@ class Vectors;
 class TransientFirstOrderImplicit: public LoadStepSolver {
 
 public:
-	TransientFirstOrderImplicit(LinearSystem *system, SubStepSolver *subStepSolver, TransientFirstOrderImplicitSolverConfiguration &configuration, double duration);
-	~TransientFirstOrderImplicit();
+    TransientFirstOrderImplicit(LinearSystem *system, SubStepSolver *subStepSolver, TransientFirstOrderImplicitSolverConfiguration &configuration, double duration);
+    ~TransientFirstOrderImplicit();
 
-	void init(LoadStepSolver *previous);
-	void updateStructuralMatrices();
+    void init(LoadStepSolver *previous);
+    void updateStructuralMatrices();
 
 protected:
-	void runNextSubstep();
+    void runNextSubstep();
 
-	TransientFirstOrderImplicitSolverConfiguration &_configuration;
-	double _alpha;
-	double _nTimeShift;
+    TransientFirstOrderImplicitSolverConfiguration &_configuration;
+    double _alpha;
+    double _nTimeShift;
 
-	Vectors *U, *dU, *V, *X, *Y, *dTK, *dTM;
+    Vectors *U, *dU, *V, *X, *Y, *dTK, *dTM;
 };
 
 }

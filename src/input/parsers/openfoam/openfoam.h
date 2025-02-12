@@ -16,33 +16,33 @@ class Mesh;
 struct OpenFOAMSet;
 
 struct OpenFOAMData: public MeshBuilder {
-	esint nelements;
-	std::vector<esint> fIDs, fsize, fnodes, owner, neighbor;
+    esint nelements;
+    std::vector<esint> fIDs, fsize, fnodes, owner, neighbor;
 };
 
 class OpenFOAMLoader: public OpenFOAMData {
 
 public:
-	static std::string cellprefix;
-	OpenFOAMLoader(const InputConfiguration &configuration);
-	void load();
+    static std::string cellprefix;
+    OpenFOAMLoader(const InputConfiguration &configuration);
+    void load();
 
 protected:
-	void readData();
-	void parseData();
+    void readData();
+    void parseData();
 
-	void buildFaces();
+    void buildFaces();
 
-	void collectFaces();
-	void buildElements();
+    void collectFaces();
+    void buildElements();
 
-	const InputConfiguration &_configuration;
+    const InputConfiguration &_configuration;
 
-	InputFile _points, _faces, _owner, _neighbor, _boundary;
-	InputFile _pointZones, _faceZones, _cellZones;
+    InputFile _points, _faces, _owner, _neighbor, _boundary;
+    InputFile _pointZones, _faceZones, _cellZones;
 
-	std::vector<OpenFOAMSet> _sets;
-	std::vector<esint> _fdist, _edist;
+    std::vector<OpenFOAMSet> _sets;
+    std::vector<esint> _fdist, _edist;
 };
 
 }

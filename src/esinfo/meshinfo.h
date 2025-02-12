@@ -7,7 +7,7 @@
 namespace espreso {
 namespace info {
 
-	extern Mesh *mesh;
+    extern Mesh *mesh;
 };
 
 }

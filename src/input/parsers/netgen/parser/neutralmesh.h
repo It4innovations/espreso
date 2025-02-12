@@ -11,12 +11,12 @@ struct MeshBuilder;
 class NetgenNeutralMesh {
 
 public:
-	NetgenNeutralMesh(InputFilePack &meshfile);
+    NetgenNeutralMesh(InputFilePack &meshfile);
 
-	void parse(MeshBuilder &mesh);
+    void parse(MeshBuilder &mesh);
 
 protected:
-	InputFilePack &_meshfile;
+    InputFilePack &_meshfile;
 };
 }
 

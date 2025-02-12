@@ -9,11 +9,11 @@ namespace espreso {
 
 class XDMFDomain: public XDMFElement {
 public:
-	std::string name;
-	std::string reference;
+    std::string name;
+    std::string reference;
 
-	XDMFDomain();
-	void parse(XML::Element *e);
+    XDMFDomain();
+    void parse(XML::Element *e);
 };
 
 }

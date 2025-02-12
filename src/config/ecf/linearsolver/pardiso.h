@@ -8,7 +8,7 @@ namespace espreso {
 
 struct PARDISOConfiguration: public ECFDescription {
 
-	PARDISOConfiguration() { };
+    PARDISOConfiguration() { };
 };
 
 }

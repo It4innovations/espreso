@@ -12,7 +12,7 @@
 #include "cpu/superclustercpu.h"
 
 namespace espreso {
-	typedef SuperClusterCPU	SuperCluster;
+    typedef SuperClusterCPU    SuperCluster;
 }
 
 
@@ -20,42 +20,42 @@ namespace espreso {
 #include "cpu/superclustercpu.h"
 
 namespace espreso {
-	typedef SuperClusterCPU	SuperCluster;
+    typedef SuperClusterCPU    SuperCluster;
 }
 
 #elif defined(SOLVER_MUMPS)
 #include "cpu/superclustercpu.h"
 
 namespace espreso {
-	typedef SuperClusterCPU	SuperCluster;
+    typedef SuperClusterCPU    SuperCluster;
 }
 
 #elif defined(SOLVER_MIC)
 #include "acc/superclusteracc.h"
 
 namespace espreso {
-	typedef SuperClusterAcc	SuperCluster;
+    typedef SuperClusterAcc    SuperCluster;
 }
 
 #elif defined(SOLVER_CUDA)
 #include "cpu/superclustercpu.h"
 
 namespace espreso {
-	typedef SuperClusterCPU	SuperCluster;
+    typedef SuperClusterCPU    SuperCluster;
 }
 
 #elif defined(SOLVER_CUDA_7)
 #include "cpu/superclustercpu.h"
 
 namespace espreso {
-	typedef SuperClusterCPU	SuperCluster;
+    typedef SuperClusterCPU    SuperCluster;
 }
 
 #elif defined(SOLVER_DISSECTION)
 #include "cpu/superclustercpu.h"
 
 namespace espreso {
-	typedef SuperClusterCPU	SuperCluster;
+    typedef SuperClusterCPU    SuperCluster;
 }
 
 

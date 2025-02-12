@@ -68,19 +68,19 @@ void BubbleSort (int n, C *array, int ascending=1, int *indices=0)
       {
         flag = 1;
         for (i=0; i<n-1; i++)
-	  if (array[i] > array[i+1])
-	    {
-	      tmp = array[i];
-	      array[i] = array[i+1];
-	      array[i+1] = tmp;
-	      flag = 0;
+      if (array[i] > array[i+1])
+        {
+          tmp = array[i];
+          array[i] = array[i+1];
+          array[i+1] = tmp;
+          flag = 0;
               if (indices)
                 {
                   tmpIdx = indices[i];
                   indices[i] = indices[i+1];
                   indices[i+1] = tmpIdx;
                 }
-	    }
+        }
       }
     while (!flag);
   else
@@ -88,19 +88,19 @@ void BubbleSort (int n, C *array, int ascending=1, int *indices=0)
       {
         flag = 1;
         for (i=0; i<n-1; i++)
-	  if (array[i] < array[i+1])
-	    {
-	      tmp = array[i];
-	      array[i] = array[i+1];
-	      array[i+1] = tmp;
-	      flag = 0;
+      if (array[i] < array[i+1])
+        {
+          tmp = array[i];
+          array[i] = array[i+1];
+          array[i+1] = tmp;
+          flag = 0;
               if (indices)
                 {
                   tmpIdx = indices[i];
                   indices[i] = indices[i+1];
                   indices[i+1] = tmpIdx;
                 }
-	    }
+        }
       }
     while (!flag);
 };
@@ -177,25 +177,25 @@ int InsertSorted (C elem, C *elems, int &nelems)
   while (i1-i0>1)
     {
       if (elem==elems[i])
-	return 0;
+    return 0;
       if (i==0 && elem<elems[i])
-	{
-	  memmove(elems+i+1,elems+i,(nelems-i)*sizeof(C));
-	  elems[i] = elem;
-	  nelems++;
-	  return 1;
-	}
+    {
+      memmove(elems+i+1,elems+i,(nelems-i)*sizeof(C));
+      elems[i] = elem;
+      nelems++;
+      return 1;
+    }
       if (i>0 && elems[i-1]<elem && elem<elems[i])
-	{
-	  memmove(elems+i+1,elems+i,(nelems-i)*sizeof(C));
-	  elems[i] = elem;
-	  nelems++;
-	  return 1;
-	}      
+    {
+      memmove(elems+i+1,elems+i,(nelems-i)*sizeof(C));
+      elems[i] = elem;
+      nelems++;
+      return 1;
+    }      
       if (elem<elems[i])
-	i1 = i;
+    i1 = i;
       else
-	i0 = i;
+    i0 = i;
       i = i0 + (i1-i0)/2;
     }
   if (elem==elems[i])
@@ -221,7 +221,7 @@ int InsertSorted (C elem, C *elems, int &nelems)
       return 1;
     }    
   return 0;
-};	  
+};      
 
 
 // Add newElems to elems and increase nelems while preserving unique and sorted
@@ -258,34 +258,34 @@ void InsertNonuniqueSorted (C elem, C *elems, int &nelems, int ascending=1,
       if ( i==0 &&
            ( ascending ? elem<=elems[i] : elem>=elems[i] ) )
         {
-	  memmove(elems+i+1,elems+i,(nelems-i)*sizeof(C));
-	  elems[i] = elem;
+      memmove(elems+i+1,elems+i,(nelems-i)*sizeof(C));
+      elems[i] = elem;
           if (indices)
             {
-	      memmove(indices+i+1,indices+i,(nelems-i)*sizeof(int));
-	      indices[i] = idx;
+          memmove(indices+i+1,indices+i,(nelems-i)*sizeof(int));
+          indices[i] = idx;
             }
-	  nelems++;
-	  return;
-	}
+      nelems++;
+      return;
+    }
       if ( i>0 &&
            ( ascending ? (elems[i-1]<=elem && elem<=elems[i])
                        : (elems[i-1]>=elem && elem>=elems[i]) ) )
-	{
-	  memmove(elems+i+1,elems+i,(nelems-i)*sizeof(C));
-	  elems[i] = elem;
+    {
+      memmove(elems+i+1,elems+i,(nelems-i)*sizeof(C));
+      elems[i] = elem;
           if (indices)
             {
-	      memmove(indices+i+1,indices+i,(nelems-i)*sizeof(int));
-	      indices[i] = idx;
+          memmove(indices+i+1,indices+i,(nelems-i)*sizeof(int));
+          indices[i] = idx;
             }
-	  nelems++;
-	  return;
-	}      
+      nelems++;
+      return;
+    }      
       if ( ascending ? elem<elems[i] : elem>elems[i] )
-	i1 = i;
+    i1 = i;
       else
-	i0 = i;
+    i0 = i;
       i = i0 + (i1-i0)/2;
     }
   if ( i==0 &&
@@ -324,7 +324,7 @@ void InsertNonuniqueSorted (C elem, C *elems, int &nelems, int ascending=1,
       elems[nelems++] = elem;
       return;
     }    
-};	  
+};      
 
 
 // Find elem in elems and return its index (indexed from 1) or 0 otherwise
@@ -344,8 +344,8 @@ int Find (C elem, C *elems, int nelems)
 void Insert (int *DOFsToDOFs1, int *nDOFsToDOFs1, int idx2);
 
 void InsertSymmetric (int idx1, int *DOFsToDOFs1,
-  	              int *nDOFsToDOFs1, int idx2,
-		      int *DOFsToDOFs2, int *nDOFsToDOFs2);
+                    int *nDOFsToDOFs1, int idx2,
+              int *DOFsToDOFs2, int *nDOFsToDOFs2);
 
 
 #endif

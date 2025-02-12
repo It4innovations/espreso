@@ -19,63 +19,63 @@ template <typename TEBoundaries, typename TEData> class serializededata;
 struct Statistics;
 
 struct ElementData: public NamedData {
-	ElementData(int dimension, DataType datatype, const std::string &name): NamedData(dimension, datatype, name) {}
-	ElementData(const char* &packedData): NamedData(packedData) {}
+    ElementData(int dimension, DataType datatype, const std::string &name): NamedData(dimension, datatype, name) {}
+    ElementData(const char* &packedData): NamedData(packedData) {}
 
-	void statistics(const tarray<esint> &elements, esint totalsize, Statistics *statistics) const;
+    void statistics(const tarray<esint> &elements, esint totalsize, Statistics *statistics) const;
 };
 
 struct ElementStore {
 
-	void store(const std::string &file);
+    void store(const std::string &file);
 
-	void permute(const std::vector<esint> &permutation) { permute(permutation, distribution.threads); }
-	void permute(const std::vector<esint> &permutation, const std::vector<size_t> &threading);
+    void permute(const std::vector<esint> &permutation) { permute(permutation, distribution.threads); }
+    void permute(const std::vector<esint> &permutation, const std::vector<size_t> &threading);
 
-	void reindex(const serializededata<esint, esint> *nIDs);
+    void reindex(const serializededata<esint, esint> *nIDs);
 
-	ElementData* appendData(int dimension, NamedData::DataType datatype, const std::string &name = "", step::TYPE restriction = step::TYPE::TIME, bool toOutput = true);
+    ElementData* appendData(int dimension, NamedData::DataType datatype, const std::string &name = "", step::TYPE restriction = step::TYPE::TIME, bool toOutput = true);
 
-	ElementsDistributionInfo distribution;
+    ElementsDistributionInfo distribution;
 
-	serializededata<esint, esint>* IDs;
-	serializededata<esint, esint>* nodes;
-	serializededata<esint, Point>* centers;
+    serializededata<esint, esint>* IDs;
+    serializededata<esint, esint>* nodes;
+    serializededata<esint, Point>* centers;
 
-	serializededata<esint, int>* body;
-	serializededata<esint, ContactInfo>* contact;
-	serializededata<esint, int>* material;
-	serializededata<esint, esint>* regions;
-	serializededata<esint, Element*>* epointers;
+    serializededata<esint, int>* body;
+    serializededata<esint, ContactInfo>* contact;
+    serializededata<esint, int>* material;
+    serializededata<esint, esint>* regions;
+    serializededata<esint, Element*>* epointers;
 
-	serializededata<esint, esint>* faceNeighbors;
-	serializededata<esint, esint>* edgeNeighbors;
+    serializededata<esint, esint>* faceNeighbors;
+    serializededata<esint, esint>* edgeNeighbors;
 
-	serializededata<esint, double>* stiffness;
+    serializededata<esint, double>* stiffness;
 
-	std::vector<ElementsInterval> eintervals;
-	std::vector<esint> eintervalsDistribution;
+    std::vector<ElementsInterval> eintervals;
+    std::vector<esint> eintervalsDistribution;
 
-	std::vector<ElementData*> data;
+    std::vector<ElementData*> data;
 
-	size_t packedFullSize() const;
-	void packFull(char* &p) const;
-	void unpackFull(const char* &p);
+    size_t packedFullSize() const;
+    void packFull(char* &p) const;
+    void unpackFull(const char* &p);
 
-	size_t packedSize() const;
-	void pack(char* &p) const;
-	void unpack(const char* &p);
+    size_t packedSize() const;
+    void pack(char* &p) const;
+    void unpack(const char* &p);
 
-	size_t packedDataHeaderSize() const;
-	void packDataHeader(char* &p) const;
-	void unpackDataHeader(const char* &p);
+    size_t packedDataHeaderSize() const;
+    void packDataHeader(char* &p) const;
+    void unpackDataHeader(const char* &p);
 
-	size_t packedDataSize() const;
-	void packData(char* &p) const;
-	void unpackData(const char* &p);
+    size_t packedDataSize() const;
+    void packData(char* &p) const;
+    void unpackData(const char* &p);
 
-	ElementStore();
-	~ElementStore();
+    ElementStore();
+    ~ElementStore();
 };
 
 }

@@ -10,16 +10,16 @@
 namespace espreso {
 
 struct NodeUniquenessInfo {
-	esint nhalo;
-	esint offset;
-	esint size;
-	esint totalSize;
+    esint nhalo;
+    esint offset;
+    esint size;
+    esint totalSize;
 
-	Point min, max;
+    Point min, max;
 
-	std::vector<esint> position;
+    std::vector<esint> position;
 
-	NodeUniquenessInfo(): nhalo(0), offset(0), size(0), totalSize(0), min(std::numeric_limits<double>::max()), max(-min) {}
+    NodeUniquenessInfo(): nhalo(0), offset(0), size(0), totalSize(0), min(std::numeric_limits<double>::max()), max(-min) {}
 };
 
 }

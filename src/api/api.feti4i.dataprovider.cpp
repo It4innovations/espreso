@@ -26,138 +26,138 @@ using namespace espreso;
 APIDataProvider::APIDataProvider()
 : kernel(NULL)
 {
-	info::system::setSignals();
-	eslog::startln("ESPRESO: STARTED", "ESPRESO");
+    info::system::setSignals();
+    eslog::startln("ESPRESO: STARTED", "ESPRESO");
 }
 
 APIDataProvider::~APIDataProvider()
 {
-	eslog::endln("ESPRESO: FINISHED");
+    eslog::endln("ESPRESO: FINISHED");
 }
 
 int APIDataProvider::nodesSize()
 {
-	return info::mesh->nodes->size;
+    return info::mesh->nodes->size;
 }
 
 int APIDataProvider::matrixType()
 {
-	return (int)kernel->solverDataProvider->feti->getMatrixType(0);
+    return (int)kernel->solverDataProvider->feti->getMatrixType(0);
 }
 
 int APIDataProvider::DOFs()
 {
-	switch (info::ecf->physics) {
-	case PhysicsConfiguration::TYPE::HEAT_TRANSFER: return 1; break;
-	case PhysicsConfiguration::TYPE::STRUCTURAL_MECHANICS: return info::mesh->dimension; break;
-	default: return 0;
-	}
+    switch (info::ecf->physics) {
+    case PhysicsConfiguration::TYPE::HEAT_TRANSFER: return 1; break;
+    case PhysicsConfiguration::TYPE::STRUCTURAL_MECHANICS: return info::mesh->dimension; break;
+    default: return 0;
+    }
 }
 
 void APIDataProvider::prepare(int* argc, char ***argv)
 {
-	info::ecf->ecffile = ECFReader::read(*info::ecf->ecfdescription, argc, argv, info::ecf->ranges, info::ecf->default_args, info::ecf->variables);
-	info::ecf->input.decomposition.domains = 1;
-	info::ecf->set();
-	Mesh::load();
-	info::mesh->preprocess();
-	info::mesh->printMeshStatistics();
+    info::ecf->ecffile = ECFReader::read(*info::ecf->ecfdescription, argc, argv, info::ecf->ranges, info::ecf->default_args, info::ecf->variables);
+    info::ecf->input.decomposition.domains = 1;
+    info::ecf->set();
+    Mesh::load();
+    info::mesh->preprocess();
+    info::mesh->printMeshStatistics();
 
-	info::mesh->output->updateMesh();
-	eslog::checkpointln("ESPRESO: MESH PREPARED");
+    info::mesh->output->updateMesh();
+    eslog::checkpointln("ESPRESO: MESH PREPARED");
 
-	switch (info::ecf->physics) {
-	case PhysicsConfiguration::TYPE::HEAT_TRANSFER:
-		kernel = new HeatTransferKernel(NULL, info::ecf->heat_transfer, info::ecf->heat_transfer, info::ecf->heat_transfer.load_steps_settings.at(step::step.loadstep + 1));
-		break;
-	case PhysicsConfiguration::TYPE::STRUCTURAL_MECHANICS:
-		kernel = new StructuralMechanicsKernel((StructuralMechanics2DKernel*)NULL, info::ecf->structural_mechanics, info::ecf->structural_mechanics, info::ecf->structural_mechanics.load_steps_settings.at(step::step.loadstep + 1));
-		break;
-	default:
-		eslog::globalerror("Physical solver: not implemented physical solver.\n");
-	}
-	info::mesh->output->updateMonitors(step::step.type);
+    switch (info::ecf->physics) {
+    case PhysicsConfiguration::TYPE::HEAT_TRANSFER:
+        kernel = new HeatTransferKernel(NULL, info::ecf->heat_transfer, info::ecf->heat_transfer, info::ecf->heat_transfer.load_steps_settings.at(step::step.loadstep + 1));
+        break;
+    case PhysicsConfiguration::TYPE::STRUCTURAL_MECHANICS:
+        kernel = new StructuralMechanicsKernel((StructuralMechanics2DKernel*)NULL, info::ecf->structural_mechanics, info::ecf->structural_mechanics, info::ecf->structural_mechanics.load_steps_settings.at(step::step.loadstep + 1));
+        break;
+    default:
+        eslog::globalerror("Physical solver: not implemented physical solver.\n");
+    }
+    info::mesh->output->updateMonitors(step::step.type);
 
-	rhs.resize(DOFs() * nodesSize());
+    rhs.resize(DOFs() * nodesSize());
 }
 
 void APIDataProvider::fillMatrix(std::function<void(FETI4IInt, FETI4IInt, FETI4IInt*, FETI4IReal*)> add)
 {
-	FETI4IInt type, size, *nodes;
-	TimeBuilder builder;
-	Kernel::InstanceFiller filler(1); // set correct number of solution vectors
+    FETI4IInt type, size, *nodes;
+    TimeBuilder builder;
+    Kernel::InstanceFiller filler(1); // set correct number of solution vectors
 
-	std::fill(rhs.begin(), rhs.end(), 0);
-	builder.matrices = Builder::Request::K | Builder::Request::f;
-	filler.begin = 0;
-	filler.end = 1;
-	filler.insert = [&] () {
-		for (auto n = 0; n < size; ++n) {
-			for (int d = 0; d < DOFs(); ++d) {
-				rhs[DOFs() * nodes[n] + d] += filler.Fe[0][size * d + n];
-			}
-		}
-		add(type, size, nodes, filler.Ke.vals);
-	};
-	auto enodes = info::mesh->elements->nodes->begin();
-	for (auto range = info::mesh->elements->eintervals.begin(); range != info::mesh->elements->eintervals.end(); ++range) {
-		for (esint e = range->begin; e < range->end; ++e, filler.begin = filler.end++, ++enodes) {
-			type = (int)Mesh::edata[range->code].type;
-			size = Mesh::edata[range->code].nodes;
-			nodes = enodes->data();
-			kernel->processElements(builder, filler);
-		}
-	}
+    std::fill(rhs.begin(), rhs.end(), 0);
+    builder.matrices = Builder::Request::K | Builder::Request::f;
+    filler.begin = 0;
+    filler.end = 1;
+    filler.insert = [&] () {
+        for (auto n = 0; n < size; ++n) {
+            for (int d = 0; d < DOFs(); ++d) {
+                rhs[DOFs() * nodes[n] + d] += filler.Fe[0][size * d + n];
+            }
+        }
+        add(type, size, nodes, filler.Ke.vals);
+    };
+    auto enodes = info::mesh->elements->nodes->begin();
+    for (auto range = info::mesh->elements->eintervals.begin(); range != info::mesh->elements->eintervals.end(); ++range) {
+        for (esint e = range->begin; e < range->end; ++e, filler.begin = filler.end++, ++enodes) {
+            type = (int)Mesh::edata[range->code].type;
+            size = Mesh::edata[range->code].nodes;
+            nodes = enodes->data();
+            kernel->processElements(builder, filler);
+        }
+    }
 }
 
 void APIDataProvider::fillDirichlet(std::vector<FETI4IInt> &indices, std::vector<FETI4IReal> &values)
 {
-	std::vector<std::pair<esint, esint> > dindices;
-	kernel->solverDataProvider->general->dirichletIndices(dindices);
-	std::vector<double > dvalues(dindices.size());
-	kernel->solverDataProvider->general->dirichletValues(dvalues);
+    std::vector<std::pair<esint, esint> > dindices;
+    kernel->solverDataProvider->general->dirichletIndices(dindices);
+    std::vector<double > dvalues(dindices.size());
+    kernel->solverDataProvider->general->dirichletValues(dvalues);
 
-	std::vector<esint> permutation(dvalues.size());
-	std::iota(permutation.begin(), permutation.end(), 0);
-	std::sort(permutation.begin(), permutation.end(), [&] (esint i, esint j) {
-		return dindices[i] < dindices[j];
-	});
+    std::vector<esint> permutation(dvalues.size());
+    std::iota(permutation.begin(), permutation.end(), 0);
+    std::sort(permutation.begin(), permutation.end(), [&] (esint i, esint j) {
+        return dindices[i] < dindices[j];
+    });
 
-	indices.clear(); values.clear();
-	for (size_t i = 0, j = 0; i < permutation.size(); i = j) {
-		double sum = 0;
-		while (j < permutation.size() && dindices[permutation[i]] == dindices[permutation[j]]) {
-			sum += dvalues[permutation[j++]];
-		}
-		sum /= j - i;
-		indices.push_back(dindices[permutation[i]].first * DOFs() + dindices[permutation[i]].second);
-		values.push_back(sum);
-	}
+    indices.clear(); values.clear();
+    for (size_t i = 0, j = 0; i < permutation.size(); i = j) {
+        double sum = 0;
+        while (j < permutation.size() && dindices[permutation[i]] == dindices[permutation[j]]) {
+            sum += dvalues[permutation[j++]];
+        }
+        sum /= j - i;
+        indices.push_back(dindices[permutation[i]].first * DOFs() + dindices[permutation[i]].second);
+        values.push_back(sum);
+    }
 }
 
 void APIDataProvider::fillL2G(std::vector<FETI4IInt> &l2g)
 {
-	l2g.assign(info::mesh->nodes->IDs->datatarray().begin(), info::mesh->nodes->IDs->datatarray().end());
+    l2g.assign(info::mesh->nodes->IDs->datatarray().begin(), info::mesh->nodes->IDs->datatarray().end());
 }
 
 void APIDataProvider::fillNeighbors(std::vector<FETI4IMPIInt> &neighbors)
 {
-	neighbors = info::mesh->neighbors;
+    neighbors = info::mesh->neighbors;
 }
 
 void APIDataProvider::fillRHS(std::vector<FETI4IReal> &rhs)
 {
-	rhs = this->rhs;
+    rhs = this->rhs;
 }
 
 void APIDataProvider::storeSolution(std::vector<FETI4IReal> &solution)
 {
-//	TODO: FIX ME
-//	memcpy(kernel->solutions.back().vals, solution.data(), sizeof(double) * solution.size());
-	if (step::step.type == step::TYPE::TIME) {
-		info::mesh->output->updateSolution(step::step, step::time);
-	}
-	if (step::step.type == step::TYPE::FREQUENCY) {
-		info::mesh->output->updateSolution(step::step, step::frequency);
-	}
+//    TODO: FIX ME
+//    memcpy(kernel->solutions.back().vals, solution.data(), sizeof(double) * solution.size());
+    if (step::step.type == step::TYPE::TIME) {
+        info::mesh->output->updateSolution(step::step, step::time);
+    }
+    if (step::step.type == step::TYPE::FREQUENCY) {
+        info::mesh->output->updateSolution(step::step, step::frequency);
+    }
 }

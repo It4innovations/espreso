@@ -10,18 +10,18 @@ namespace espreso {
 
 struct GridGeneratorConfiguration: public BlockGeneratorConfiguration {
 
-	size_t blocks_x, blocks_y, blocks_z;
-	size_t clusters_x, clusters_y, clusters_z;
+    size_t blocks_x, blocks_y, blocks_z;
+    size_t clusters_x, clusters_y, clusters_z;
 
-	std::map<size_t, bool> blocks;
-	std::map<size_t, size_t> noncontinuous;
+    std::map<size_t, bool> blocks;
+    std::map<size_t, size_t> noncontinuous;
 
-	std::map<std::string, std::string> nodes, edges, faces, elements;
+    std::map<std::string, std::string> nodes, edges, faces, elements;
 
-	size_t chessboard_size;
-	size_t nonuniform_nparts;
+    size_t chessboard_size;
+    size_t nonuniform_nparts;
 
-	GridGeneratorConfiguration();
+    GridGeneratorConfiguration();
 };
 
 }

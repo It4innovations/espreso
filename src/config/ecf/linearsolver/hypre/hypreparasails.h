@@ -8,22 +8,22 @@ namespace espreso {
 
 struct HYPREParaSailsConfiguration: public ECFDescription {
 
-	double threshold;
-	int n_levels;
-	double filter;
+    double threshold;
+    int n_levels;
+    double filter;
 
-	enum class SYMMETRY {
-		NON_INF,
-		SPD,
-		NON_DEF_SPD
-	};
-	SYMMETRY symmetry;
+    enum class SYMMETRY {
+        NON_INF,
+        SPD,
+        NON_DEF_SPD
+    };
+    SYMMETRY symmetry;
 
-	double loadbal;
-	int reuse;
-	int logging;
-	
-	HYPREParaSailsConfiguration();
+    double loadbal;
+    int reuse;
+    int logging;
+    
+    HYPREParaSailsConfiguration();
 };
 
 }

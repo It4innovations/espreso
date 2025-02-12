@@ -11,21 +11,21 @@ struct StructuralMechanicsLoadStepConfiguration;
 class HarmonicSolver: public LoadStepSolver {
 
 public:
-	HarmonicSolver(LinearSystem *system, SubStepSolver *subStepSolver, StructuralMechanicsLoadStepConfiguration &configuration, double duration);
+    HarmonicSolver(LinearSystem *system, SubStepSolver *subStepSolver, StructuralMechanicsLoadStepConfiguration &configuration, double duration);
 
-	void init(LoadStepSolver *previous);
-	void updateStructuralMatrices();
+    void init(LoadStepSolver *previous);
+    void updateStructuralMatrices();
 
 protected:
-	void runNextSubstep();
+    void runNextSubstep();
 
-	void updateDamping();
-	void store();
-	void ftt();
+    void updateDamping();
+    void store();
+    void ftt();
 
-	StructuralMechanicsLoadStepConfiguration &_configuration;
-	double *_fttRequestedFrequencies;
-	double *_fttRequestedFrequenciesEnd;
+    StructuralMechanicsLoadStepConfiguration &_configuration;
+    double *_fttRequestedFrequencies;
+    double *_fttRequestedFrequenciesEnd;
 };
 
 }

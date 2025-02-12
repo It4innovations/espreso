@@ -14,26 +14,26 @@ class MatrixCSR;
 
 class PARDISOSystemSolver: public SystemSolver {
 public:
-	PARDISOSystemSolver(PARDISOConfiguration &configuration, PARDISOSolverData &data);
+    PARDISOSystemSolver(PARDISOConfiguration &configuration, PARDISOSolverData &data);
 
-	void init();
-	void update();
-	void solve();
+    void init();
+    void update();
+    void solve();
 
-	double& precision() { return _precision; }
-	~PARDISOSystemSolver();
+    double& precision() { return _precision; }
+    ~PARDISOSystemSolver();
 
-	PARDISOConfiguration &configuration;
+    PARDISOConfiguration &configuration;
 
 protected:
-	void call(esint phase);
+    void call(esint phase);
 
-	double _precision; // dummy
+    double _precision; // dummy
 
-	PARDISOSolverData &_data;
+    PARDISOSolverData &_data;
 
-	MatrixCSR *_K;
-	VectorDense *_f, *_x;
+    MatrixCSR *_K;
+    VectorDense *_f, *_x;
 };
 
 }

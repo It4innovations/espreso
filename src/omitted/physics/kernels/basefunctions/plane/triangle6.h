@@ -8,8 +8,8 @@ namespace espreso {
 
 struct Triangle6: public Element {
 
-	static void setBaseFunctions(Element &self);
-	void setGaussPointsForOrder(int order);
+    static void setBaseFunctions(Element &self);
+    void setGaussPointsForOrder(int order);
 };
 
 }

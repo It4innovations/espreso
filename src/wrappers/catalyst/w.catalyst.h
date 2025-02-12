@@ -13,17 +13,17 @@ class Mesh;
 class Catalyst {
 
 public:
-	static constexpr bool islinked();
+    static constexpr bool islinked();
 
-	Catalyst();
-	~Catalyst();
+    Catalyst();
+    ~Catalyst();
 
-	void update();
+    void update();
 
 protected:
-	vtkCPProcessor *_processor;
-	vtkUnstructuredGrid *_VTKGrid;
-	vtkCPDataDescription *_dataDescription;
+    vtkCPProcessor *_processor;
+    vtkUnstructuredGrid *_VTKGrid;
+    vtkCPDataDescription *_dataDescription;
 };
 
 }

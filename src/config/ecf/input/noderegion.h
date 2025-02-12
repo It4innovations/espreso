@@ -10,15 +10,15 @@ namespace espreso {
 
 struct InputNodeRegionConfiguration: public ECFDescription {
 
-	enum class SHAPE {
-		CIRCLE,
-		BLOCK
-	};
+    enum class SHAPE {
+        CIRCLE,
+        BLOCK
+    };
 
-	SHAPE shape;
-	double x, y, z, lx, ly, lz, radius;
+    SHAPE shape;
+    double x, y, z, lx, ly, lz, radius;
 
-	InputNodeRegionConfiguration();
+    InputNodeRegionConfiguration();
 };
 
 }

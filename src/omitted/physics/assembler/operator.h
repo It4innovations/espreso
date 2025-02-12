@@ -9,48 +9,48 @@ namespace espreso {
 class HeatTransferModuleOpt;
 
 struct Operator {
-	static const int print = 2;
+    static const int print = 2;
 
-	const int interval, isconst, update;
+    const int interval, isconst, update;
 
-	Operator(int interval, bool isconst, bool update): interval(interval), isconst(isconst), update(update) {}
-	virtual ~Operator() {}
+    Operator(int interval, bool isconst, bool update): interval(interval), isconst(isconst), update(update) {}
+    virtual ~Operator() {}
 
-	virtual void operator++() =0;
+    virtual void operator++() =0;
 };
 
 struct OperatorBuilder {
-	const char *name;
+    const char *name;
 
-	OperatorBuilder(const char *name): name(name) {}
-	virtual ~OperatorBuilder() {}
+    OperatorBuilder(const char *name): name(name) {}
+    virtual ~OperatorBuilder() {}
 
-	virtual void now() =0;
-	virtual bool build(HeatTransferModuleOpt &kernel) =0;
+    virtual void now() =0;
+    virtual bool build(HeatTransferModuleOpt &kernel) =0;
 
-	void buildAndExecute(HeatTransferModuleOpt &kernel)
-	{
-		build(kernel);
-		now();
-	}
+    void buildAndExecute(HeatTransferModuleOpt &kernel)
+    {
+        build(kernel);
+        now();
+    }
 };
 
 struct ElementOperatorBuilder: public OperatorBuilder {
-	ElementOperatorBuilder(const char *name): OperatorBuilder(name) {}
-	virtual ~ElementOperatorBuilder() {}
+    ElementOperatorBuilder(const char *name): OperatorBuilder(name) {}
+    virtual ~ElementOperatorBuilder() {}
 
-	void now();
+    void now();
 
-	virtual void apply(int interval) =0;
+    virtual void apply(int interval) =0;
 };
 
 struct BoundaryOperatorBuilder: public OperatorBuilder {
-	BoundaryOperatorBuilder(const char *name): OperatorBuilder(name) {}
-	virtual ~BoundaryOperatorBuilder() {}
+    BoundaryOperatorBuilder(const char *name): OperatorBuilder(name) {}
+    virtual ~BoundaryOperatorBuilder() {}
 
-	void now();
+    void now();
 
-	virtual void apply(int region, int interval) =0;
+    virtual void apply(int region, int interval) =0;
 };
 
 }

@@ -7,14 +7,14 @@ namespace espreso {
 struct KaHIPConfiguration;
 
 struct KaHIP {
-	static bool islinked();
+    static bool islinked();
 
-	static esint call(
-		const KaHIPConfiguration &options,
-		esint verticesCount,
-		esint *eframes, esint *eneighbors,
-		esint verticesWeightCount, esint *verticesWeights, esint *edgeWeights,
-		esint parts, esint *partition);
+    static esint call(
+        const KaHIPConfiguration &options,
+        esint verticesCount,
+        esint *eframes, esint *eneighbors,
+        esint verticesWeightCount, esint *verticesWeights, esint *edgeWeights,
+        esint parts, esint *partition);
 };
 
 }

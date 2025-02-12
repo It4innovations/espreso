@@ -8,20 +8,20 @@ struct ThreadControl;
 
 class Pthread {
 public:
-	class Executor {
-	public:
-		virtual void call() = 0;
-		virtual void copy() = 0;
-		virtual ~Executor() {};
-	};
+    class Executor {
+    public:
+        virtual void call() = 0;
+        virtual void copy() = 0;
+        virtual ~Executor() {};
+    };
 
-	Pthread(Executor *executor);
-	~Pthread();
+    Pthread(Executor *executor);
+    ~Pthread();
 
-	void call();
+    void call();
 
 protected:
-	ThreadControl *_threadControl;
+    ThreadControl *_threadControl;
 };
 
 }

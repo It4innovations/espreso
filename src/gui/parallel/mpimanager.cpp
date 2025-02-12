@@ -114,11 +114,11 @@ void MpiManager::slaveGatherMesh()
 
 QMap<QString, QVector<float> >* MpiManager::_gatherMesh()
 {
-	Mesh::init();
-	Mesh::load();
-	info::mesh->preprocessForGUI();
+    Mesh::init();
+    Mesh::load();
+    info::mesh->preprocessForGUI();
 
-	QMap<QString, QVector<float> > regions;
+    QMap<QString, QVector<float> > regions;
 
     float axis_min = -1.0f;
     float axis_max = 1.0f;

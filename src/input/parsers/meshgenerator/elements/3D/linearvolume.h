@@ -8,15 +8,15 @@ namespace espreso {
 
 struct LinearVolumeGenerator: public ElementGenerator {
 
-	LinearVolumeGenerator();
+    LinearVolumeGenerator();
 
-	void pushNodes(std::vector<esint> &nodes, const std::vector<esint> &indices, CubeEdge edge) const;
-	void pushNodes(std::vector<esint> &nodes, const std::vector<esint> &indices, CubeFace face) const {}
-	void pushTriangleNodes(std::vector<esint> &nodes, const std::vector<esint> &indices, CubeFace face) const;
-	void pushSquareNodes(std::vector<esint> &nodes, const std::vector<esint> &indices, CubeFace face) const;
+    void pushNodes(std::vector<esint> &nodes, const std::vector<esint> &indices, CubeEdge edge) const;
+    void pushNodes(std::vector<esint> &nodes, const std::vector<esint> &indices, CubeFace face) const {}
+    void pushTriangleNodes(std::vector<esint> &nodes, const std::vector<esint> &indices, CubeFace face) const;
+    void pushSquareNodes(std::vector<esint> &nodes, const std::vector<esint> &indices, CubeFace face) const;
 
-	void pushEdge(std::vector<esint> &elements, std::vector<esint> &esize, std::vector<int> &etype, const std::vector<esint> &indices, CubeEdge edge) const;
-	void pushEdge(std::vector<esint> &elements, std::vector<esint> &esize, std::vector<int> &etype, const std::vector<esint> &indices, CubeFace face) const;
+    void pushEdge(std::vector<esint> &elements, std::vector<esint> &esize, std::vector<int> &etype, const std::vector<esint> &indices, CubeEdge edge) const;
+    void pushEdge(std::vector<esint> &elements, std::vector<esint> &esize, std::vector<int> &etype, const std::vector<esint> &indices, CubeFace face) const;
 };
 
 }

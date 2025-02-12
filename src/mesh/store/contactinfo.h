@@ -5,10 +5,10 @@
 namespace espreso {
 
 struct ContactInfo {
-	float gap, angle;
-	bool self_contact;
+    float gap, angle;
+    bool self_contact;
 
-	ContactInfo(): gap(0), angle(0), self_contact(false) {}
+    ContactInfo(): gap(0), angle(0), self_contact(false) {}
 };
 
 }

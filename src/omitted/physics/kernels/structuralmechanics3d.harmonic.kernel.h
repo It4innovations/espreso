@@ -17,17 +17,17 @@ struct Builder;
 struct HarmonicBalance3DKernel: public StructuralMechanics3DKernel
 {
 public:
-	HarmonicBalance3DKernel(HarmonicBalance3DKernel *previous, PhysicsConfiguration &physics, StructuralMechanicsGlobalSettings &gsettings, StructuralMechanicsLoadStepConfiguration &configuration);
-	HarmonicBalance3DKernel(StructuralMechanics3DKernel *previous, PhysicsConfiguration &physics, StructuralMechanicsGlobalSettings &gsettings, StructuralMechanicsLoadStepConfiguration &configuration);
-	virtual ~HarmonicBalance3DKernel();
+    HarmonicBalance3DKernel(HarmonicBalance3DKernel *previous, PhysicsConfiguration &physics, StructuralMechanicsGlobalSettings &gsettings, StructuralMechanicsLoadStepConfiguration &configuration);
+    HarmonicBalance3DKernel(StructuralMechanics3DKernel *previous, PhysicsConfiguration &physics, StructuralMechanicsGlobalSettings &gsettings, StructuralMechanicsLoadStepConfiguration &configuration);
+    virtual ~HarmonicBalance3DKernel();
 
-	virtual void processElement(const Builder &builder, const ElasticityElementIterator &iterator, InstanceFiller &filler) const;
-	virtual void processFace(const Builder &builder, const ElasticityBoundaryIterator &iterator, InstanceFiller &fillere) const;
-	virtual void processEdge(const Builder &builder, const ElasticityBoundaryIterator &iterator, InstanceFiller &filler) const;
-	virtual void processNode(const Builder &builder, const ElasticityBoundaryIterator &iterator, InstanceFiller &filler) const;
+    virtual void processElement(const Builder &builder, const ElasticityElementIterator &iterator, InstanceFiller &filler) const;
+    virtual void processFace(const Builder &builder, const ElasticityBoundaryIterator &iterator, InstanceFiller &fillere) const;
+    virtual void processEdge(const Builder &builder, const ElasticityBoundaryIterator &iterator, InstanceFiller &filler) const;
+    virtual void processNode(const Builder &builder, const ElasticityBoundaryIterator &iterator, InstanceFiller &filler) const;
 
-	virtual void elementSolution(ElasticityElementIterator &iterator);
-	virtual void nodeSolution(ElasticityElementIterator &iterator);
+    virtual void elementSolution(ElasticityElementIterator &iterator);
+    virtual void nodeSolution(ElasticityElementIterator &iterator);
 };
 }
 

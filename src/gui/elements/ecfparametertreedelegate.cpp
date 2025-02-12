@@ -42,7 +42,7 @@ void ECFParameterTreeDelegate::paint(QPainter *painter, const QStyleOptionViewIt
         && dynamic_cast<DataTypeEditWidgetFactory*>(this->m_editors[editorIndex]))
     {
         TextItemWidget *editor = this->m_editors[editorIndex]->create();
-		editor->setText(index.data(Qt::EditRole).toString());
+        editor->setText(index.data(Qt::EditRole).toString());
         editor->hide();
         editor->resize(option.rect.size());
         QPixmap pixmap(option.rect.size());

@@ -8,104 +8,104 @@
 namespace espreso {
 
 struct EnsightOutputWriter {
-	static std::string codetotype(int code)
-	{
-		switch (static_cast<Element::CODE>(code)) {
+    static std::string codetotype(int code)
+    {
+        switch (static_cast<Element::CODE>(code)) {
 
-		case Element::CODE::POINT1: return "point";
+        case Element::CODE::POINT1: return "point";
 
-		case Element::CODE::LINE2: return "bar2";
+        case Element::CODE::LINE2: return "bar2";
 
-		case Element::CODE::TRIANGLE3: return "tria3";
-		case Element::CODE::SQUARE4: return "quad4";
+        case Element::CODE::TRIANGLE3: return "tria3";
+        case Element::CODE::SQUARE4: return "quad4";
 
-		case Element::CODE::TETRA4: return "tetra4";
-		case Element::CODE::PYRAMID5: return "pyramid5";
-		case Element::CODE::PRISMA6: return "penta6";
-		case Element::CODE::HEXA8: return "hexa8";
+        case Element::CODE::TETRA4: return "tetra4";
+        case Element::CODE::PYRAMID5: return "pyramid5";
+        case Element::CODE::PRISMA6: return "penta6";
+        case Element::CODE::HEXA8: return "hexa8";
 
-		case Element::CODE::LINE3: return "bar3";
+        case Element::CODE::LINE3: return "bar3";
 
-		case Element::CODE::TRIANGLE6: return "tria6";
-		case Element::CODE::SQUARE8: return "quad8";
+        case Element::CODE::TRIANGLE6: return "tria6";
+        case Element::CODE::SQUARE8: return "quad8";
 
-		case Element::CODE::TETRA10: return "tetra10";
-		case Element::CODE::PYRAMID13: return "pyramid13";
-		case Element::CODE::PRISMA15: return "penta15";
-		case Element::CODE::HEXA20: return "hexa20";
+        case Element::CODE::TETRA10: return "tetra10";
+        case Element::CODE::PYRAMID13: return "pyramid13";
+        case Element::CODE::PRISMA15: return "penta15";
+        case Element::CODE::HEXA20: return "hexa20";
 
-		default:
-			return "";
-		}
-	}
+        default:
+            return "";
+        }
+    }
 };
 
 struct EnsightBinaryOutputWriter: public OutputFilePack {
 
-	void format()
-	{
-		description("C Binary");
-	}
+    void format()
+    {
+        description("C Binary");
+    }
 
-	void description(const std::string &description)
-	{
-		insert(description.size(), description.data());
-		insert(80 - description.size(), '\0');
-	}
+    void description(const std::string &description)
+    {
+        insert(description.size(), description.data());
+        insert(80 - description.size(), '\0');
+    }
 
-	void int32(int value)
-	{
-		insert(sizeof(int), &value);
-	}
+    void int32(int value)
+    {
+        insert(sizeof(int), &value);
+    }
 
-	void float32(float value)
-	{
-		insert(sizeof(float), &value);
-	}
+    void float32(float value)
+    {
+        insert(sizeof(float), &value);
+    }
 
-	void enode(int value)
-	{
-		insert(sizeof(int), &value);
-	}
+    void enode(int value)
+    {
+        insert(sizeof(int), &value);
+    }
 
-	void eend()
-	{
+    void eend()
+    {
 
-	}
+    }
 };
 
 struct EnsightASCIIOutputWriter: public OutputFilePack {
 
-	void format()
-	{
+    void format()
+    {
 
-	}
+    }
 
-	void description(const std::string &description)
-	{
-		insert(description.size(), description.data());
-		insert(1, '\n');
-	}
+    void description(const std::string &description)
+    {
+        insert(description.size(), description.data());
+        insert(1, '\n');
+    }
 
-	void int32(int value)
-	{
-		insert(snprintf(buffer, bsize, "%10d\n", value));
-	}
+    void int32(int value)
+    {
+        insert(snprintf(buffer, bsize, "%10d\n", value));
+    }
 
-	void float32(float value)
-	{
-		insert(snprintf(buffer, bsize, "%12.5e\n", value));
-	}
+    void float32(float value)
+    {
+        insert(snprintf(buffer, bsize, "%12.5e\n", value));
+    }
 
-	void enode(int value)
-	{
-		insert(snprintf(buffer, bsize, "%10d", value));
-	}
+    void enode(int value)
+    {
+        insert(snprintf(buffer, bsize, "%10d", value));
+    }
 
-	void eend()
-	{
-		insert(1, '\n');
-	}
+    void eend()
+    {
+        insert(1, '\n');
+    }
 };
 
 }

@@ -9,9 +9,9 @@ namespace espreso {
 class DistributedComposerOpt: public DistributedComposer {
 
 public:
-	using DistributedComposer::DistributedComposer;
+    using DistributedComposer::DistributedComposer;
 
-	void assemble(const Builder &builder);
+    void assemble(const Builder &builder);
 };
 
 }

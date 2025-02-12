@@ -11,15 +11,15 @@ struct FETISolverData;
 class NodesUniformAPIComposer: public NodesUniformFETIComposer {
 
 public:
-	NodesUniformAPIComposer(const FETIConfiguration &configuration, int DOFs);
+    NodesUniformAPIComposer(const FETIConfiguration &configuration, int DOFs);
 
-	void fill(FETISolverData &data);
+    void fill(FETISolverData &data);
 
-	const serializededata<esint, DI>* DOFMap() const { return _DOFMap; };
+    const serializededata<esint, DI>* DOFMap() const { return _DOFMap; };
 
 protected:
-	void _setDecomposition(FETISolverData &data);
-	void _setPattern(FETISolverData &data, esint domain);
+    void _setDecomposition(FETISolverData &data);
+    void _setPattern(FETISolverData &data, esint domain);
 };
 
 }

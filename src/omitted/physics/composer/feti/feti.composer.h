@@ -17,26 +17,26 @@ template <typename TEBoundaries, typename TEData> class serializededata;
 class FETIComposer: public Composer {
 
 public:
-	FETIComposer(const FETIConfiguration &configuration, Kernel *kernel, ModuleOpt *opt, FETIAssemblerData *data);
-	~FETIComposer();
+    FETIComposer(const FETIConfiguration &configuration, Kernel *kernel, ModuleOpt *opt, FETIAssemblerData *data);
+    ~FETIComposer();
 
-	void assemble(const Builder &builder);
+    void assemble(const Builder &builder);
 
-	virtual void buildB0FromCorners(MatrixIJVFETI &B0) =0;
+    virtual void buildB0FromCorners(MatrixIJVFETI &B0) =0;
 
 protected:
-	virtual void synchronize(const Builder &builder) =0;
+    virtual void synchronize(const Builder &builder) =0;
 
-	const FETIConfiguration &_configuration;
-	FETIAssemblerData *_data;
+    const FETIConfiguration &_configuration;
+    FETIAssemblerData *_data;
 
-	serializededata<esint, DI> *_DOFMap;
+    serializededata<esint, DI> *_DOFMap;
 
-//	FETISolverConfiguration &_configuration;
+//    FETISolverConfiguration &_configuration;
 
-	std::vector<std::vector<esint> > _KPermutation, _RHSPermutation;
-	std::vector<esint> _domainDOFsSize, _domainDirichletSize;
-	std::vector<int> _BEMDomain;
+    std::vector<std::vector<esint> > _KPermutation, _RHSPermutation;
+    std::vector<esint> _domainDOFsSize, _domainDirichletSize;
+    std::vector<int> _BEMDomain;
 };
 
 }

@@ -17,31 +17,31 @@ SuperClusterAcc::~SuperClusterAcc() {
 
 void SuperClusterAcc::SetAcceleratorAffinity() {
 
-    //        	Logical to Physical Processor Mapping
-    //        	? Hardware:
-    //        	? Physical Cores are 0..60
-    //        	? Logical Cores are 0..243
-    //        	? Mapping is not what you are used to!
-    //        	? Logical Core 0 maps to Physical core 60, thread context 0
-    //        	? Logical Core 1 maps to Physical core 0, thread context 0
-    //        	? Logical Core 2 maps to Physical core 0, thread context 1
-    //        	? Logical Core 3 maps to Physical core 0, thread context 2
-    //        	? Logical Core 4 maps to Physical core 0, thread context 3
-    //        	? Logical Core 5 maps to Physical core 1, thread context 0
-    //        	? ...
-    //        	? Logical Core 240 maps to Physical core 59, thread context 3
-    //        	? Logical Core 241 maps to Physical core 60, thread context 1
-    //        	? Logical Core 242 maps to Physical core 60, thread context 2
-    //        	? Logical Core 243 maps to Physical core 60, thread context 3
-    //        	? OpenMP threads start binding to logical core 1, not logical core 0
-    //        	? For compact mapping 240 OpenMP threads are mapped to the first 60 cores
-    //        	? No contention for the core containing logical core 0 ? the core that the O/S uses most
-    //        	? But for scatter and balanced mappings, contention for logical core 0 begins at 61 threads
-    //        	? Not much performance impact unless O/S is very busy
-    //        	? Best to avoid core 60 for offload jobs & MPI jobs with compute/communication overlap
-    //        	? KMP_PLACE_THREADS limits the range of cores & thread contexts
-    //        	? E.g., KMP_PLACE_THREADS=60c,2c with KMP_AFFINITY=compact and OMP_NUM_THREADS=120 places 2
-    //        	threads on each of the first 60 cores
+    //            Logical to Physical Processor Mapping
+    //            ? Hardware:
+    //            ? Physical Cores are 0..60
+    //            ? Logical Cores are 0..243
+    //            ? Mapping is not what you are used to!
+    //            ? Logical Core 0 maps to Physical core 60, thread context 0
+    //            ? Logical Core 1 maps to Physical core 0, thread context 0
+    //            ? Logical Core 2 maps to Physical core 0, thread context 1
+    //            ? Logical Core 3 maps to Physical core 0, thread context 2
+    //            ? Logical Core 4 maps to Physical core 0, thread context 3
+    //            ? Logical Core 5 maps to Physical core 1, thread context 0
+    //            ? ...
+    //            ? Logical Core 240 maps to Physical core 59, thread context 3
+    //            ? Logical Core 241 maps to Physical core 60, thread context 1
+    //            ? Logical Core 242 maps to Physical core 60, thread context 2
+    //            ? Logical Core 243 maps to Physical core 60, thread context 3
+    //            ? OpenMP threads start binding to logical core 1, not logical core 0
+    //            ? For compact mapping 240 OpenMP threads are mapped to the first 60 cores
+    //            ? No contention for the core containing logical core 0 ? the core that the O/S uses most
+    //            ? But for scatter and balanced mappings, contention for logical core 0 begins at 61 threads
+    //            ? Not much performance impact unless O/S is very busy
+    //            ? Best to avoid core 60 for offload jobs & MPI jobs with compute/communication overlap
+    //            ? KMP_PLACE_THREADS limits the range of cores & thread contexts
+    //            ? E.g., KMP_PLACE_THREADS=60c,2c with KMP_AFFINITY=compact and OMP_NUM_THREADS=120 places 2
+    //            threads on each of the first 60 cores
 
 
     // detect how many MPI processes is running per node
@@ -334,9 +334,9 @@ void SuperClusterAcc::SetupKsolvers ( ) {
             case FETIConfiguration::KSOLVER::DIRECT_MP:
                 domains[d]->Kplus.ImportMatrix_fl(domains[d]->K);
                 break;
-                //		case 4:
-                //			domains[d].Kplus.ImportMatrix_fl(domains[d].K);
-                //			break;
+                //        case 4:
+                //            domains[d].Kplus.ImportMatrix_fl(domains[d].K);
+                //            break;
             default:
                 //ESINFO(ERROR) << "Invalid KSOLVER value.";
                 exit(EXIT_FAILURE);
@@ -682,7 +682,7 @@ void SuperClusterAcc::CreateDirichletPrec( DataHolder *instance ) {
                     KsrInvKrrKrs.MatMat(K_sr,'N',K_rs);
                     domains[d]->Prec.MatAddInPlace(KsrInvKrrKrs,'N',-1);
                     //          if (!diagonalized_K_rr){
-                    //				    domains[d].Prec.ConvertCSRToDense(1);
+                    //                    domains[d].Prec.ConvertCSRToDense(1);
                     //          }
                 }
 
@@ -870,7 +870,7 @@ void SuperClusterAcc::CreateDirichletPrec( DataHolder *instance ) {
                 KsrInvKrrKrs.MatMat(K_sr,'N',K_rs);
                 domains[d]->Prec.MatAddInPlace(KsrInvKrrKrs,'N',-1);
                 //          if (!diagonalized_K_rr){
-                //				    domains[d]->Prec.ConvertCSRToDense(1);
+                //                    domains[d]->Prec.ConvertCSRToDense(1);
                 //          }
             }
 
@@ -906,17 +906,17 @@ void SuperClusterAcc::multKplusGlobal_l_Acc(SEQ_VECTOR<SEQ_VECTOR<double> *> & x
     SEQ_VECTOR<SEQ_VECTOR<double> > x_prim_cluster;
     x_prim_cluster.resize(number_of_subdomains_per_supercluster);
 
-		for (int c = 0; c < numClusters; c++) {
+        for (int c = 0; c < numClusters; c++) {
 
-			for (int d = 0; d < clusters[c].domains.size(); d++)
-				x_prim_cluster[d].swap( *x_in[clusters[c].domains[d].domain_global_index] );
+            for (int d = 0; d < clusters[c].domains.size(); d++)
+                x_prim_cluster[d].swap( *x_in[clusters[c].domains[d].domain_global_index] );
 
             clusters[c].multKplusGlobal_l_prepare_Acc( x_prim_cluster );
 
-			for (int d = 0; d < clusters[c].domains.size(); d++)
-				(*x_in[clusters[c].domains[d].domain_global_index]).swap( x_prim_cluster[d] );
+            for (int d = 0; d < clusters[c].domains.size(); d++)
+                (*x_in[clusters[c].domains[d].domain_global_index]).swap( x_prim_cluster[d] );
 
-		}
+        }
 
 
     esint maxDevNumber = this->acc_per_MPI;
@@ -982,7 +982,7 @@ void SuperClusterAcc::multKplusGlobal_l_Acc(SEQ_VECTOR<SEQ_VECTOR<double> *> & x
 
 //#pragma omp parallel for 
 //            for (size_t d = 0; d < domains.size(); d++) {
-//                esint e0_start	=  d	* domains[d]->Kplus_R.cols;
+//                esint e0_start    =  d    * domains[d]->Kplus_R.cols;
 //                esint domain_size = domains[d]->domain_prim_size;
 //
 //                domains[d]->Kplus_R.DenseMatVec(vec_alfa, *tm3[d],'N', e0_start);

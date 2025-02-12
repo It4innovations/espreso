@@ -19,17 +19,17 @@ NodesUniformAPIComposer::NodesUniformAPIComposer(const FETIConfiguration &config
 
 void NodesUniformAPIComposer::fill(FETISolverData &data)
 {
-	_initDOFMap();
+    _initDOFMap();
 
-	std::vector<esint> distribution = info::mesh->domains->gatherProcDistribution();
+    std::vector<esint> distribution = info::mesh->domains->gatherProcDistribution();
 
-	data.K.initDomains(info::mesh->domains->size);
-	data.K.fillDecomposition(
-				info::mpi::rank, info::mpi::size, info::mesh->neighbors.size(),
-				distribution.data(), info::mesh->neighbors.data(), _DOFMap);
-	data.f.initVectors(1);
-	data.f.initDomains(DataDecomposition::DUPLICATION::SPLIT_DOMAINS, info::mesh->domains->size);
-	data.f.fillDecomposition(
-			info::mpi::rank, info::mpi::size, info::mesh->neighbors.size(),
-			distribution.data(), info::mesh->neighbors.data(), _DOFMap);
+    data.K.initDomains(info::mesh->domains->size);
+    data.K.fillDecomposition(
+                info::mpi::rank, info::mpi::size, info::mesh->neighbors.size(),
+                distribution.data(), info::mesh->neighbors.data(), _DOFMap);
+    data.f.initVectors(1);
+    data.f.initDomains(DataDecomposition::DUPLICATION::SPLIT_DOMAINS, info::mesh->domains->size);
+    data.f.fillDecomposition(
+            info::mpi::rank, info::mpi::size, info::mesh->neighbors.size(),
+            distribution.data(), info::mesh->neighbors.data(), _DOFMap);
 }

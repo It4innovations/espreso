@@ -13,23 +13,23 @@ template <typename TEBoundaries, typename TEData> class serializededata;
 
 struct DomainStore: DistributedDataInfo {
 
-	std::vector<size_t> distribution;
+    std::vector<size_t> distribution;
 
-	std::vector<esint> gatherProcDistribution();
+    std::vector<esint> gatherProcDistribution();
 
-	serializededata<esint, esint>* nodes;
-	std::vector<esint> elements;
-	std::vector<int> cluster;
+    serializededata<esint, esint>* nodes;
+    std::vector<esint> elements;
+    std::vector<int> cluster;
 
-	serializededata<esint, esint> *dual;
-	serializededata<esint, esint> *localDual;
+    serializededata<esint, esint> *dual;
+    serializededata<esint, esint> *localDual;
 
-	DomainStore();
-	~DomainStore();
+    DomainStore();
+    ~DomainStore();
 
-	size_t packedFullSize() const;
-	void packFull(char* &p) const;
-	void unpackFull(const char* &p);
+    size_t packedFullSize() const;
+    void packFull(char* &p) const;
+    void unpackFull(const char* &p);
 };
 
 }

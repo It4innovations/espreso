@@ -11,19 +11,19 @@ struct DistributedAssemblerData;
 class FacesEdgesUniformDistributedComposer: public DistributedComposerOpt {
 
 public:
-	FacesEdgesUniformDistributedComposer(Kernel *kernel, ModuleOpt *opt, DistributedAssemblerData *data, int fDOFs, int eDOFs);
+    FacesEdgesUniformDistributedComposer(Kernel *kernel, ModuleOpt *opt, DistributedAssemblerData *data, int fDOFs, int eDOFs);
 
-	int esize(esint interval);
-	int bsize(esint region, esint interval);
+    int esize(esint interval);
+    int bsize(esint region, esint interval);
 
-	void init();
+    void init();
 
 protected:
-	void _initDOFMap();
-	void _buildPatterns();
-	void _buildDirichlet();
+    void _initDOFMap();
+    void _buildPatterns();
+    void _buildDirichlet();
 
-	int _fDOFs, _eDOFs;
+    int _fDOFs, _eDOFs;
 };
 
 }

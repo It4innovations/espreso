@@ -14,23 +14,23 @@ struct ExprtkData;
 class Exprtk {
 
 public:
-	static bool check(const std::string &expression)
-	{
-		std::vector<EvaluatorParameter> variables;
-		return check(expression, variables);
-	}
-	static bool check(const std::string &expression, std::vector<EvaluatorParameter> &variables);
+    static bool check(const std::string &expression)
+    {
+        std::vector<EvaluatorParameter> variables;
+        return check(expression, variables);
+    }
+    static bool check(const std::string &expression, std::vector<EvaluatorParameter> &variables);
 
-	Exprtk(const std::string &expression, std::vector<EvaluatorParameter> &variables);
+    Exprtk(const std::string &expression, std::vector<EvaluatorParameter> &variables);
 
-	Exprtk(const Exprtk &other) = delete;
-	Exprtk& operator=(const Exprtk &other) = delete;
+    Exprtk(const Exprtk &other) = delete;
+    Exprtk& operator=(const Exprtk &other) = delete;
 
-	~Exprtk();
+    ~Exprtk();
 
-	double evaluate() const;
+    double evaluate() const;
 protected:
-	ExprtkData *_exprtk;
+    ExprtkData *_exprtk;
 };
 
 }

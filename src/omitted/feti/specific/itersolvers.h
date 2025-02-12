@@ -6,7 +6,7 @@
 #include "cpu/itersolvercpu.h"
 
 namespace espreso {
-	typedef IterSolverCPU	IterSolver;
+    typedef IterSolverCPU    IterSolver;
 }
 
 
@@ -14,42 +14,42 @@ namespace espreso {
 #include "cpu/itersolvercpu.h"
 
 namespace espreso {
-	typedef IterSolverCPU	IterSolver;
+    typedef IterSolverCPU    IterSolver;
 }
 
 #elif defined(SOLVER_MUMPS)
 #include "cpu/itersolvercpu.h"
 
 namespace espreso {
-	typedef IterSolverCPU	IterSolver;
+    typedef IterSolverCPU    IterSolver;
 }
 
 #elif defined(SOLVER_MIC)
 #include "acc/itersolveracc.h"
 
 namespace espreso {
-	typedef IterSolverAcc	IterSolver;
+    typedef IterSolverAcc    IterSolver;
 }
 
 #elif defined(SOLVER_CUDA)
 #include "acc/itersolverGPU.h"
 
 namespace espreso {
-	typedef IterSolverGPU	IterSolver;
+    typedef IterSolverGPU    IterSolver;
 }
 
 #elif defined(SOLVER_CUDA_7)
 #include "acc/itersolverGPU.h"
 
 namespace espreso {
-	typedef IterSolverGPU	IterSolver;
+    typedef IterSolverGPU    IterSolver;
 }
 
 #elif defined(SOLVER_DISSECTION)
 #include "cpu/itersolvercpu.h"
 
 namespace espreso {
-	typedef IterSolverCPU	IterSolver;
+    typedef IterSolverCPU    IterSolver;
 }
 
 

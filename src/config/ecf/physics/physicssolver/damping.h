@@ -9,72 +9,72 @@ namespace espreso {
 
 struct DirectDampingConfiguration: public ECFDescription {
 
-	ECFExpression mass, stiffness;
+    ECFExpression mass, stiffness;
 
-	DirectDampingConfiguration();
+    DirectDampingConfiguration();
 };
 
 struct RatioDampingConfiguration: public ECFDescription {
 
-	ECFExpression ratio, frequency;
+    ECFExpression ratio, frequency;
 
-	RatioDampingConfiguration();
+    RatioDampingConfiguration();
 };
 
 struct RayleighDampingConfiguration: public ECFDescription {
 
-	enum class TYPE {
-		NONE,
-		DIRECT,
-		DAMPING_RATIO
-	};
+    enum class TYPE {
+        NONE,
+        DIRECT,
+        DAMPING_RATIO
+    };
 
-	TYPE type;
+    TYPE type;
 
-	DirectDampingConfiguration direct_damping;
-	RatioDampingConfiguration ratio_damping;
+    DirectDampingConfiguration direct_damping;
+    RatioDampingConfiguration ratio_damping;
 
-	RayleighDampingConfiguration();
+    RayleighDampingConfiguration();
 };
 
 struct HarmonicRayleighDampingConfiguration: public RayleighDampingConfiguration {
 
-	ECFExpression structural_damping_coefficient;
+    ECFExpression structural_damping_coefficient;
 
-	HarmonicRayleighDampingConfiguration();
+    HarmonicRayleighDampingConfiguration();
 };
 
 struct CoriolisEffectAxisConfiguration: public ECFDescription {
 
-	double x, y, z;
+    double x, y, z;
 
-	CoriolisEffectAxisConfiguration();
+    CoriolisEffectAxisConfiguration();
 };
 
 struct CoriolisEffectConfiguration: public ECFDescription {
 
-	bool coriolis_damping;
-	bool spin_softening;
+    bool coriolis_damping;
+    bool spin_softening;
 
-	CoriolisEffectAxisConfiguration rotation_axis;
+    CoriolisEffectAxisConfiguration rotation_axis;
 
-	CoriolisEffectConfiguration();
+    CoriolisEffectConfiguration();
 };
 
 struct DampingConfiguration: public ECFDescription {
 
-	RayleighDampingConfiguration rayleigh;
-//	CoriolisEffectConfiguration coriolis_effect;
+    RayleighDampingConfiguration rayleigh;
+//    CoriolisEffectConfiguration coriolis_effect;
 
-	DampingConfiguration();
+    DampingConfiguration();
 };
 
 struct HarmonicDampingConfiguration: public ECFDescription {
 
-	HarmonicRayleighDampingConfiguration rayleigh;
-//	CoriolisEffectConfiguration coriolis_effect;
+    HarmonicRayleighDampingConfiguration rayleigh;
+//    CoriolisEffectConfiguration coriolis_effect;
 
-	HarmonicDampingConfiguration();
+    HarmonicDampingConfiguration();
 };
 
 }

@@ -16,71 +16,71 @@ class StructuralMechanicsLoadStepConfiguration;
 class StructuralMechanicsConfiguration;
 
 struct ElasticityElementIterator: public ElementIterator {
-	MoverCoordinates coordinates;
+    MoverCoordinates coordinates;
 
-	MoverFullParameter<InputExpressionOptionalVectorMap, OutputNodes> displacement;
-	MoverFullParameter<InputExpressionOptionalVectorMap, OutputNodes> cos;
-	MoverFullParameter<InputExpressionOptionalVectorMap, OutputNodes> sin;
-	MoverFullParameter<InputExpressionVectorMap        , OutputNodes> acceleration;
-	MoverFullParameter<InputExpressionMap              , OutputElements> thickness;
+    MoverFullParameter<InputExpressionOptionalVectorMap, OutputNodes> displacement;
+    MoverFullParameter<InputExpressionOptionalVectorMap, OutputNodes> cos;
+    MoverFullParameter<InputExpressionOptionalVectorMap, OutputNodes> sin;
+    MoverFullParameter<InputExpressionVectorMap        , OutputNodes> acceleration;
+    MoverFullParameter<InputExpressionMap              , OutputElements> thickness;
 
-	MoverFullParameter<InputExpressionMap              , OutputNodes> temperature;
+    MoverFullParameter<InputExpressionMap              , OutputNodes> temperature;
 
-	MoverInputParameter<InputExpressionMap> initialTemperature;
-//	MoverInputParameter<InputExpressionMap> temperature;
-	MoverInputParameter<InputExpressionVectorMap> angularVelocity;
+    MoverInputParameter<InputExpressionMap> initialTemperature;
+//    MoverInputParameter<InputExpressionMap> temperature;
+    MoverInputParameter<InputExpressionVectorMap> angularVelocity;
 
-	MoverOutputParameter<OutputNodes> phase;
-	MoverOutputParameter<OutputNodes> displacementAmplitude;
-	MoverOutputParameter<OutputNodes> velocity;
-	MoverOutputParameter<OutputNodes> velocityAmplitude;
-	MoverOutputParameter<OutputNodes> accelerationAmplitude;
+    MoverOutputParameter<OutputNodes> phase;
+    MoverOutputParameter<OutputNodes> displacementAmplitude;
+    MoverOutputParameter<OutputNodes> velocity;
+    MoverOutputParameter<OutputNodes> velocityAmplitude;
+    MoverOutputParameter<OutputNodes> accelerationAmplitude;
 
-	MoverOutputParameter<OutputElements> principalStress;
-	MoverOutputParameter<OutputElements> componentStress;
-	MoverOutputParameter<OutputElements> vonMisesStress;
-	MoverOutputParameter<OutputElements> designVariable;
-	MoverOutputParameter<OutputElements> complianceDerivation;
-	MoverOutputParameter<OutputElements> compliance;
+    MoverOutputParameter<OutputElements> principalStress;
+    MoverOutputParameter<OutputElements> componentStress;
+    MoverOutputParameter<OutputElements> vonMisesStress;
+    MoverOutputParameter<OutputElements> designVariable;
+    MoverOutputParameter<OutputElements> complianceDerivation;
+    MoverOutputParameter<OutputElements> compliance;
 
-	double minDesignVariable;
-	double penaltyFactor;
+    double minDesignVariable;
+    double penaltyFactor;
 
-	bool harmonic, massStabilization;
-	bool largeDisplacement;
+    bool harmonic, massStabilization;
+    bool largeDisplacement;
 
-	StructuralMechanicsLoadStepConfiguration &configuration;
-	mutable RotorDynamicsConfiguration::CorotatingRotorConfiguration *corotating;
-	mutable RotorDynamicsConfiguration::RotationAxisConfiguration *rotationAxis;
-	mutable RotorDynamicsConfiguration::FixedRotorConfiguration *fixed;
+    StructuralMechanicsLoadStepConfiguration &configuration;
+    mutable RotorDynamicsConfiguration::CorotatingRotorConfiguration *corotating;
+    mutable RotorDynamicsConfiguration::RotationAxisConfiguration *rotationAxis;
+    mutable RotorDynamicsConfiguration::FixedRotorConfiguration *fixed;
 
-	ElasticityElementIterator(ElasticityElementIterator *previous, PhysicsConfiguration &physics, StructuralMechanicsGlobalSettings &gsettings, StructuralMechanicsLoadStepConfiguration &configuration, int dimension, bool omitTemp=false);
-	ElasticityElementIterator(HeatTransferElementIterator *previous, PhysicsConfiguration &physics, StructuralMechanicsGlobalSettings &gsettings, StructuralMechanicsLoadStepConfiguration &configuration, int dimension);
+    ElasticityElementIterator(ElasticityElementIterator *previous, PhysicsConfiguration &physics, StructuralMechanicsGlobalSettings &gsettings, StructuralMechanicsLoadStepConfiguration &configuration, int dimension, bool omitTemp=false);
+    ElasticityElementIterator(HeatTransferElementIterator *previous, PhysicsConfiguration &physics, StructuralMechanicsGlobalSettings &gsettings, StructuralMechanicsLoadStepConfiguration &configuration, int dimension);
 };
 
 struct ElasticityBoundaryIterator: public BoundaryIterator {
 
-	struct RotatingForce {
-		MoverInputParameter<InputExpressionVector> axis;
-		MoverInputParameter<InputExpression> radius;
-		MoverInputParameter<InputExpression> mass;
-		MoverInputParameter<InputExpression> phaseAngle;
-		MoverInputParameter<InputExpression> location;
+    struct RotatingForce {
+        MoverInputParameter<InputExpressionVector> axis;
+        MoverInputParameter<InputExpression> radius;
+        MoverInputParameter<InputExpression> mass;
+        MoverInputParameter<InputExpression> phaseAngle;
+        MoverInputParameter<InputExpression> location;
 
-		RotatingForce(int dimension);
-	};
+        RotatingForce(int dimension);
+    };
 
-	MoverCoordinates coordinates;
-	MoverReducedInputParameter<OutputElements> thickness;
+    MoverCoordinates coordinates;
+    MoverReducedInputParameter<OutputElements> thickness;
 
-	MoverInputParameter<InputExpression> normalPressure;
-	MoverInputParameter<InputExpressionVector> force;
-	MoverInputHarmonicParameter harmonicForce;
-	RotatingForce rotatingForce;
+    MoverInputParameter<InputExpression> normalPressure;
+    MoverInputParameter<InputExpressionVector> force;
+    MoverInputHarmonicParameter harmonicForce;
+    RotatingForce rotatingForce;
 
-	ElasticityBoundaryIterator(BoundaryRegionStore *region, ElasticityElementIterator &iterator, StructuralMechanicsLoadStepConfiguration &configuration, int dimension);
+    ElasticityBoundaryIterator(BoundaryRegionStore *region, ElasticityElementIterator &iterator, StructuralMechanicsLoadStepConfiguration &configuration, int dimension);
 
-	bool hasSettings();
+    bool hasSettings();
 };
 
 }

@@ -10,70 +10,70 @@ namespace espreso {
 
 struct ParMETISConfiguration: public ECFDescription {
 
-	bool refinement;
-	double tolerance;
+    bool refinement;
+    double tolerance;
 
-	ParMETISConfiguration();
+    ParMETISConfiguration();
 };
 
 struct METISConfiguration: public ECFDescription {
 
-	enum class OBJECTIVE_TYPE {
-		VOLUME, EDGECUT
-	};
+    enum class OBJECTIVE_TYPE {
+        VOLUME, EDGECUT
+    };
 
-	OBJECTIVE_TYPE objective_type;
-	int continuous;
+    OBJECTIVE_TYPE objective_type;
+    int continuous;
 
-	METISConfiguration();
+    METISConfiguration();
 };
 
 struct PTScotchConfiguration: public ECFDescription {
 
-	PTScotchConfiguration();
+    PTScotchConfiguration();
 };
 
 struct ScotchConfiguration: public ECFDescription {
 
-	ScotchConfiguration();
+    ScotchConfiguration();
 };
 
 struct KaHIPConfiguration: public ECFDescription {
 
-	KaHIPConfiguration();
+    KaHIPConfiguration();
 };
 
 struct DecompositionConfiguration: public ECFDescription {
 
-	enum class ParallelDecomposer {
-		NONE,
-		METIS,
-		PARMETIS,
-		PTSCOTCH,
-		HILBERT_CURVE
-	};
+    enum class ParallelDecomposer {
+        NONE,
+        METIS,
+        PARMETIS,
+        PTSCOTCH,
+        HILBERT_CURVE
+    };
 
-	enum class SequentialDecomposer {
-		NONE,
-		METIS,
-		SCOTCH,
-		KAHIP
-	};
+    enum class SequentialDecomposer {
+        NONE,
+        METIS,
+        SCOTCH,
+        KAHIP
+    };
 
-	ParallelDecomposer parallel_decomposer;
-	SequentialDecomposer sequential_decomposer;
-	int mesh_duplication;
-	int domains;
+    ParallelDecomposer parallel_decomposer;
+    SequentialDecomposer sequential_decomposer;
+    int mesh_duplication;
+    int domains;
 
-	bool force_continuity;
-	bool separate_materials, separate_regions, separate_etypes;
-	ParMETISConfiguration parmetis_options;
-	METISConfiguration metis_options;
-	PTScotchConfiguration ptscotch_options;
-	ScotchConfiguration scotch_options;
-	KaHIPConfiguration kahip_options;
+    bool force_continuity;
+    bool separate_materials, separate_regions, separate_etypes;
+    ParMETISConfiguration parmetis_options;
+    METISConfiguration metis_options;
+    PTScotchConfiguration ptscotch_options;
+    ScotchConfiguration scotch_options;
+    KaHIPConfiguration kahip_options;
 
-	DecompositionConfiguration();
+    DecompositionConfiguration();
 };
 
 }

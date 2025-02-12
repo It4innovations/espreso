@@ -29,837 +29,837 @@ using namespace espreso;
 
 void ClusterBase::ShowTiming()  {
 
-	cluster_time.addEvent(vec_fill_time);
-	cluster_time.addEvent(loop_1_1_time);
-	cluster_time.addEvent(loop_1_2_time);
+    cluster_time.addEvent(vec_fill_time);
+    cluster_time.addEvent(loop_1_1_time);
+    cluster_time.addEvent(loop_1_2_time);
 
-	cluster_time.addEvent(clus_F0_1_time);
-	cluster_time.addEvent(clus_G0_time);
-	cluster_time.addEvent(clus_Sa_time);
-	cluster_time.addEvent(clus_G0t_time);
-	cluster_time.addEvent(clus_F0_2_time);
+    cluster_time.addEvent(clus_F0_1_time);
+    cluster_time.addEvent(clus_G0_time);
+    cluster_time.addEvent(clus_Sa_time);
+    cluster_time.addEvent(clus_G0t_time);
+    cluster_time.addEvent(clus_F0_2_time);
 
-	cluster_time.addEvent(clusCP_time);
-	cluster_time.addEvent(loop_2_1_time);
+    cluster_time.addEvent(clusCP_time);
+    cluster_time.addEvent(loop_2_1_time);
 
-	cluster_time.printStatsMPI();
+    cluster_time.printStatsMPI();
 }
 
 
 void ClusterBase::InitClusterPC( esint * subdomains_global_indices, esint number_of_subdomains ) {
 
-	// *** Init the vector of domains *****************************************************
-	domains_in_global_index.resize( number_of_subdomains ) ;
+    // *** Init the vector of domains *****************************************************
+    domains_in_global_index.resize( number_of_subdomains ) ;
 
-	domains.reserve(number_of_subdomains);
-	for (esint d = 0; d < number_of_subdomains; d++) {
-		domains.push_back( (Domain(configuration, instance, subdomains_global_indices[d], USE_HFETI)) );
-		domains[d].domain_index = d;
+    domains.reserve(number_of_subdomains);
+    for (esint d = 0; d < number_of_subdomains; d++) {
+        domains.push_back( (Domain(configuration, instance, subdomains_global_indices[d], USE_HFETI)) );
+        domains[d].domain_index = d;
 
-		// Verbose level for K_plus
-		if ( d == 0 && info::mpi::rank == 0) {
-			domains[d].Kplus.msglvl = 0;
-		}
-	}
-
-
-
-	PUSH_RANGE("Solver - K factorization", 6)
-	#pragma omp parallel for
-	for (size_t d = 0; d < domains.size(); d++ ) {
-		domains_in_global_index[d] = subdomains_global_indices[d];
-		domains[d].SetDomain();
-	}
-	POP_RANGE // END Solver - K factorization
-
-	//// *** Alocate temporarly vectors for Temporary vectors for Apply_A function *********
-	//// *** - temporary vectors for work primal domain size *******************************
-	x_prim_cluster1.resize( domains.size() );
-	x_prim_cluster2.resize( domains.size() );
-	x_prim_cluster3.resize( domains.size() );
-
-	// *** Init all domains of the cluster ********************************************
-	#pragma omp parallel for
-	for (esint d = 0; d < number_of_subdomains; d++ ) {
-
-		// *** Temporary vectors for work primal domain size *******************************
-		x_prim_cluster1[d].resize( domains[d].domain_prim_size );
-    	x_prim_cluster2[d].resize( domains[d].domain_prim_size );
-    	x_prim_cluster3[d].resize( domains[d].domain_prim_size );
+        // Verbose level for K_plus
+        if ( d == 0 && info::mpi::rank == 0) {
+            domains[d].Kplus.msglvl = 0;
+        }
+    }
 
 
-		domains[d].USE_KINV    	 		= USE_KINV;
-		domains[d].USE_HFETI   	 		= USE_HFETI;
-		domains[d].domain_index  		= d;
 
-		// Verbose level for K_plus
-		if ( d == 0 && info::mpi::rank == 0) {
-			domains[d].Kplus.msglvl = 0;
-		}
+    PUSH_RANGE("Solver - K factorization", 6)
+    #pragma omp parallel for
+    for (size_t d = 0; d < domains.size(); d++ ) {
+        domains_in_global_index[d] = subdomains_global_indices[d];
+        domains[d].SetDomain();
+    }
+    POP_RANGE // END Solver - K factorization
 
-	}
+    //// *** Alocate temporarly vectors for Temporary vectors for Apply_A function *********
+    //// *** - temporary vectors for work primal domain size *******************************
+    x_prim_cluster1.resize( domains.size() );
+    x_prim_cluster2.resize( domains.size() );
+    x_prim_cluster3.resize( domains.size() );
 
-	//// *** Set up the dual size ********************************************************
-	dual_size = domains[0].B1.rows;
+    // *** Init all domains of the cluster ********************************************
+    #pragma omp parallel for
+    for (esint d = 0; d < number_of_subdomains; d++ ) {
 
-//	if (USE_HFETI == 1) {
+        // *** Temporary vectors for work primal domain size *******************************
+        x_prim_cluster1[d].resize( domains[d].domain_prim_size );
+        x_prim_cluster2[d].resize( domains[d].domain_prim_size );
+        x_prim_cluster3[d].resize( domains[d].domain_prim_size );
+
+
+        domains[d].USE_KINV                 = USE_KINV;
+        domains[d].USE_HFETI                = USE_HFETI;
+        domains[d].domain_index          = d;
+
+        // Verbose level for K_plus
+        if ( d == 0 && info::mpi::rank == 0) {
+            domains[d].Kplus.msglvl = 0;
+        }
+
+    }
+
+    //// *** Set up the dual size ********************************************************
+    dual_size = domains[0].B1.rows;
+
+//    if (USE_HFETI == 1) {
 //
-//		// *** Alocate temporarly vectors for inter-cluster processing *********************
-//		// *** - based on uncompressed matrix B0
-//		tm1.resize(domains.size());
-//		tm2.resize(domains.size());
-//		tm3.resize(domains.size());
+//        // *** Alocate temporarly vectors for inter-cluster processing *********************
+//        // *** - based on uncompressed matrix B0
+//        tm1.resize(domains.size());
+//        tm2.resize(domains.size());
+//        tm3.resize(domains.size());
 //
-//		#pragma omp parallel for
-//		for (size_t d = 0; d < domains.size(); d++) {
-//			esint max_tmp_vec_size = domains[d].B0.cols;
+//        #pragma omp parallel for
+//        for (size_t d = 0; d < domains.size(); d++) {
+//            esint max_tmp_vec_size = domains[d].B0.cols;
 //
-//			if (domains[d].B0.rows > domains[d].B0.cols)
-//				max_tmp_vec_size = domains[d].B0.rows;
+//            if (domains[d].B0.rows > domains[d].B0.cols)
+//                max_tmp_vec_size = domains[d].B0.rows;
 //
-//			tm1[d].resize( max_tmp_vec_size );
-//			tm2[d].resize( max_tmp_vec_size );
-//			tm3[d].resize( max_tmp_vec_size );
-//		}
-//		// *** END - Alocate temporarly vectors for inter-cluster processing *****************
-//	}
+//            tm1[d].resize( max_tmp_vec_size );
+//            tm2[d].resize( max_tmp_vec_size );
+//            tm3[d].resize( max_tmp_vec_size );
+//        }
+//        // *** END - Alocate temporarly vectors for inter-cluster processing *****************
+//    }
 
-	#pragma omp parallel for
-	for (size_t d = 0; d < domains.size(); d++ ) {
-//		if (USE_KINV == 1 ) {
-//			domains[d].compressed_tmp.resize( domains[d].B1.I_row_indices.size(), 0);
-//			domains[d].compressed_tmp2.resize( domains[d].B1.I_row_indices.size(), 0);
-//		} else {
-//			domains[d].compressed_tmp.resize( 1, 0);
-//			domains[d].compressed_tmp2.resize( 1, 0);
-//		}
-		domains[d].compressed_tmp.resize( domains[d].B1.I_row_indices.size(), 0);
-		domains[d].compressed_tmp2.resize( domains[d].B1.I_row_indices.size(), 0);
-	}
-
-
-	// local comm layer insode cluster
-
-	SEQ_VECTOR <esint> l_my_lamdas_indices;
-	for (size_t i = 0; i < instance->B1Map.size(); i += instance->B1Map[i + 1] + 2) {
-		l_my_lamdas_indices.push_back(instance->B1Map[i]);
-	}
-
-	compressed_tmp    .resize( l_my_lamdas_indices.size(), 0 );	// TODO: might not be necessary
-
-	// mapping/compression vector for domains
-	#pragma omp parallel for
-	for (size_t d = 0; d < domains.size(); d++) {
-		for (size_t j = 0; j < domains[d].lambda_map_sub.size(); j++) {
-			domains[d].my_lamdas_map_indices.insert(make_pair(domains[d].lambda_map_sub[j] ,j));
-		}
-	}
-
-	#pragma omp parallel for
-	for (size_t d = 0; d < domains.size(); d++) {
-		if (domains[d].lambda_map_sub.size() > 0 ) {
-			size_t i = 0;
-			size_t j = 0;
-			do
-			{
-				esint big_index   = l_my_lamdas_indices[i];
-				esint small_index = domains[d].lambda_map_sub[j];
-
-				if (big_index >  small_index) j++;
-
-				if (big_index  < small_index) i++;
-
-				if (big_index == small_index) {
-					domains[d].lambda_map_sub_local.push_back(i);
-					i++; j++;
-				}
+    #pragma omp parallel for
+    for (size_t d = 0; d < domains.size(); d++ ) {
+//        if (USE_KINV == 1 ) {
+//            domains[d].compressed_tmp.resize( domains[d].B1.I_row_indices.size(), 0);
+//            domains[d].compressed_tmp2.resize( domains[d].B1.I_row_indices.size(), 0);
+//        } else {
+//            domains[d].compressed_tmp.resize( 1, 0);
+//            domains[d].compressed_tmp2.resize( 1, 0);
+//        }
+        domains[d].compressed_tmp.resize( domains[d].B1.I_row_indices.size(), 0);
+        domains[d].compressed_tmp2.resize( domains[d].B1.I_row_indices.size(), 0);
+    }
 
 
-			} while ( i < l_my_lamdas_indices.size() && j < domains[d].lambda_map_sub.size() );
-		}
-	}
-	//// *** END - Detection of affinity of lag. multipliers to specific subdomains ***************
+    // local comm layer insode cluster
+
+    SEQ_VECTOR <esint> l_my_lamdas_indices;
+    for (size_t i = 0; i < instance->B1Map.size(); i += instance->B1Map[i + 1] + 2) {
+        l_my_lamdas_indices.push_back(instance->B1Map[i]);
+    }
+
+    compressed_tmp    .resize( l_my_lamdas_indices.size(), 0 );    // TODO: might not be necessary
+
+    // mapping/compression vector for domains
+    #pragma omp parallel for
+    for (size_t d = 0; d < domains.size(); d++) {
+        for (size_t j = 0; j < domains[d].lambda_map_sub.size(); j++) {
+            domains[d].my_lamdas_map_indices.insert(make_pair(domains[d].lambda_map_sub[j] ,j));
+        }
+    }
+
+    #pragma omp parallel for
+    for (size_t d = 0; d < domains.size(); d++) {
+        if (domains[d].lambda_map_sub.size() > 0 ) {
+            size_t i = 0;
+            size_t j = 0;
+            do
+            {
+                esint big_index   = l_my_lamdas_indices[i];
+                esint small_index = domains[d].lambda_map_sub[j];
+
+                if (big_index >  small_index) j++;
+
+                if (big_index  < small_index) i++;
+
+                if (big_index == small_index) {
+                    domains[d].lambda_map_sub_local.push_back(i);
+                    i++; j++;
+                }
 
 
-	//// *** Compression of Matrix B1 to work with compressed lambda vectors *****************
-//	ESLOG(MEMORY) << "B1 compression";
-//	ESLOG(MEMORY) << "process " << info::mpi::MPIrank << " uses " << Measure::processMemory() << " MB";
-//	ESLOG(MEMORY) << "Total used RAM " << Measure::usedRAM() << "/" << Measure::availableRAM() << " [MB]";
+            } while ( i < l_my_lamdas_indices.size() && j < domains[d].lambda_map_sub.size() );
+        }
+    }
+    //// *** END - Detection of affinity of lag. multipliers to specific subdomains ***************
 
-	#pragma omp parallel for
-	for (size_t d = 0; d < domains.size(); d++ ) {
 
-		domains[d].B1_comp_dom.I_row_indices = domains[d].B1.I_row_indices;
-		domains[d].B1_comp_dom.J_col_indices = domains[d].B1.J_col_indices;
-		domains[d].B1_comp_dom.V_values      = domains[d].B1.V_values;
+    //// *** Compression of Matrix B1 to work with compressed lambda vectors *****************
+//    ESLOG(MEMORY) << "B1 compression";
+//    ESLOG(MEMORY) << "process " << info::mpi::MPIrank << " uses " << Measure::processMemory() << " MB";
+//    ESLOG(MEMORY) << "Total used RAM " << Measure::usedRAM() << "/" << Measure::availableRAM() << " [MB]";
 
-		domains[d].B1_comp_dom.rows = domains[d].B1.rows;
-		domains[d].B1_comp_dom.cols = domains[d].B1.cols;
-		domains[d].B1_comp_dom.nnz  = domains[d].B1.nnz;
-		domains[d].B1_comp_dom.type = domains[d].B1.type;
+    #pragma omp parallel for
+    for (size_t d = 0; d < domains.size(); d++ ) {
 
-		for (size_t j = 0; j < domains[d].B1_comp_dom.I_row_indices.size(); j++ ) {
-			esint tmp_new = domains[d].my_lamdas_map_indices[domains[d].B1_comp_dom.I_row_indices [j] - 1] + 1;  // +1 means --> numbering from 1 in matrices
-			domains[d].B1_comp_dom.I_row_indices [j] = tmp_new;
-		}
+        domains[d].B1_comp_dom.I_row_indices = domains[d].B1.I_row_indices;
+        domains[d].B1_comp_dom.J_col_indices = domains[d].B1.J_col_indices;
+        domains[d].B1_comp_dom.V_values      = domains[d].B1.V_values;
 
-		domains[d].B1_comp_dom.rows = domains[d].lambda_map_sub.size();
-		domains[d].B1_comp_dom.ConvertToCSRwithSort( 1 );
+        domains[d].B1_comp_dom.rows = domains[d].B1.rows;
+        domains[d].B1_comp_dom.cols = domains[d].B1.cols;
+        domains[d].B1_comp_dom.nnz  = domains[d].B1.nnz;
+        domains[d].B1_comp_dom.type = domains[d].B1.type;
 
-		if (configuration.preconditioner == FETIConfiguration::PRECONDITIONER::DIRICHLET ||
+        for (size_t j = 0; j < domains[d].B1_comp_dom.I_row_indices.size(); j++ ) {
+            esint tmp_new = domains[d].my_lamdas_map_indices[domains[d].B1_comp_dom.I_row_indices [j] - 1] + 1;  // +1 means --> numbering from 1 in matrices
+            domains[d].B1_comp_dom.I_row_indices [j] = tmp_new;
+        }
+
+        domains[d].B1_comp_dom.rows = domains[d].lambda_map_sub.size();
+        domains[d].B1_comp_dom.ConvertToCSRwithSort( 1 );
+
+        if (configuration.preconditioner == FETIConfiguration::PRECONDITIONER::DIRICHLET ||
         configuration.preconditioner == FETIConfiguration::PRECONDITIONER::SUPER_DIRICHLET) {
 
-			domains[d].B1_comp_dom.MatTranspose(domains[d].B1t_DirPr);
-			utils::removeDuplicates(domains[d].B1t_DirPr.CSR_I_row_indices);
-			domains[d].B1t_DirPr.rows = domains[d].B1t_DirPr.CSR_I_row_indices.size() - 1;
+            domains[d].B1_comp_dom.MatTranspose(domains[d].B1t_DirPr);
+            utils::removeDuplicates(domains[d].B1t_DirPr.CSR_I_row_indices);
+            domains[d].B1t_DirPr.rows = domains[d].B1t_DirPr.CSR_I_row_indices.size() - 1;
 
-			domains[d].B1t_Dir_perm_vec = domains[d].B1_comp_dom.CSR_J_col_indices;
-			std::sort(domains[d].B1t_Dir_perm_vec.begin(), domains[d].B1t_Dir_perm_vec.end());
-			utils::removeDuplicates(domains[d].B1t_Dir_perm_vec);
+            domains[d].B1t_Dir_perm_vec = domains[d].B1_comp_dom.CSR_J_col_indices;
+            std::sort(domains[d].B1t_Dir_perm_vec.begin(), domains[d].B1t_Dir_perm_vec.end());
+            utils::removeDuplicates(domains[d].B1t_Dir_perm_vec);
 
-		}
+        }
 
-//		if (configuration.regularization == FETIConfiguration::REGULARIZATION::ANALYTIC) {
-//			domains[i].B1.Clear();
-//		}
+//        if (configuration.regularization == FETIConfiguration::REGULARIZATION::ANALYTIC) {
+//            domains[i].B1.Clear();
+//        }
 
-		domains[d].B1t.Clear();
-		domains[d].my_lamdas_map_indices.clear();
+        domains[d].B1t.Clear();
+        domains[d].my_lamdas_map_indices.clear();
 
-	}
-	//// *** END - Compression of Matrix B1 to work with compressed lambda vectors *************
+    }
+    //// *** END - Compression of Matrix B1 to work with compressed lambda vectors *************
 
 
-//	ESLOG(MEMORY) << "Lambdas end";
-//	ESLOG(MEMORY) << "process " << info::mpi::rank << " uses " << Measure::processMemory() << " MB";
-//	ESLOG(MEMORY) << "Total used RAM " << Measure::usedRAM() << "/" << Measure::availableRAM() << " [MB]";
+//    ESLOG(MEMORY) << "Lambdas end";
+//    ESLOG(MEMORY) << "process " << info::mpi::rank << " uses " << Measure::processMemory() << " MB";
+//    ESLOG(MEMORY) << "Total used RAM " << Measure::usedRAM() << "/" << Measure::availableRAM() << " [MB]";
 
 }
 
 void ClusterBase::SetClusterPC( ) {
 
-//	int MPIrank = info::mpi::MPIrank;
+//    int MPIrank = info::mpi::MPIrank;
 
-	//// *** Detection of affinity of lag. multipliers to specific subdomains **************
-	//// *** - will be used to compress vectors and matrices for higher efficiency
+    //// *** Detection of affinity of lag. multipliers to specific subdomains **************
+    //// *** - will be used to compress vectors and matrices for higher efficiency
 
-//	ESLOG(MEMORY) << "Setting vectors for lambdas";
-//	ESLOG(MEMORY) << "process " << info::mpi::rank << " uses " << Measure::processMemory() << " MB";
-//	ESLOG(MEMORY) << "Total used RAM " << Measure::usedRAM() << "/" << Measure::availableRAM() << " [MB]";
+//    ESLOG(MEMORY) << "Setting vectors for lambdas";
+//    ESLOG(MEMORY) << "process " << info::mpi::rank << " uses " << Measure::processMemory() << " MB";
+//    ESLOG(MEMORY) << "Total used RAM " << Measure::usedRAM() << "/" << Measure::availableRAM() << " [MB]";
 
-	for (size_t i = 0; i < instance->B1Map.size(); i += instance->B1Map[i + 1] + 2) {
-		my_lamdas_indices.push_back(instance->B1Map[i]);
-	}
+    for (size_t i = 0; i < instance->B1Map.size(); i += instance->B1Map[i + 1] + 2) {
+        my_lamdas_indices.push_back(instance->B1Map[i]);
+    }
 
-	SEQ_VECTOR< SEQ_VECTOR <esint> > lambdas_per_mpi(info::mpi::size);
-	my_lamdas_ddot_filter.resize(my_lamdas_indices.size(), 1);
-	for (size_t i = 0, index = 0; i < instance->B1Map.size(); i += instance->B1Map[i + 1] + 2, ++index) {
-		if (instance->B1Map[i + 1] && instance->B1Map[i + 2] < info::mpi::rank) {
-			my_lamdas_ddot_filter[index] = 0;
-		}
-		lambdas_per_mpi[info::mpi::rank].push_back(instance->B1Map[i]);
-		for (esint j = 0; j < instance->B1Map[i + 1]; ++j) {
-			lambdas_per_mpi[instance->B1Map[i + j + 2]].push_back(instance->B1Map[i]);
-		}
-	}
+    SEQ_VECTOR< SEQ_VECTOR <esint> > lambdas_per_mpi(info::mpi::size);
+    my_lamdas_ddot_filter.resize(my_lamdas_indices.size(), 1);
+    for (size_t i = 0, index = 0; i < instance->B1Map.size(); i += instance->B1Map[i + 1] + 2, ++index) {
+        if (instance->B1Map[i + 1] && instance->B1Map[i + 2] < info::mpi::rank) {
+            my_lamdas_ddot_filter[index] = 0;
+        }
+        lambdas_per_mpi[info::mpi::rank].push_back(instance->B1Map[i]);
+        for (esint j = 0; j < instance->B1Map[i + 1]; ++j) {
+            lambdas_per_mpi[instance->B1Map[i + j + 2]].push_back(instance->B1Map[i]);
+        }
+    }
 
-//	ESLOG(MEMORY) << "Setting vectors for lambdas communicators";
-//	ESLOG(MEMORY) << "process " << info::mpi::rank << " uses " << Measure::processMemory() << " MB";
-//	ESLOG(MEMORY) << "Total used RAM " << Measure::usedRAM() << "/" << Measure::availableRAM() << " [MB]";
+//    ESLOG(MEMORY) << "Setting vectors for lambdas communicators";
+//    ESLOG(MEMORY) << "process " << info::mpi::rank << " uses " << Measure::processMemory() << " MB";
+//    ESLOG(MEMORY) << "Total used RAM " << Measure::usedRAM() << "/" << Measure::availableRAM() << " [MB]";
 
-	my_comm_lambdas_indices .resize(my_neighs.size());
-	my_comm_lambdas			.resize(my_neighs.size());
-	my_recv_lambdas			.resize(my_neighs.size());
+    my_comm_lambdas_indices .resize(my_neighs.size());
+    my_comm_lambdas            .resize(my_neighs.size());
+    my_recv_lambdas            .resize(my_neighs.size());
 
-	//ESLOG(MEMORY) << "1 process " << info::mpi::MPIrank << " uses " << Measure::processMemory() << " MB";
+    //ESLOG(MEMORY) << "1 process " << info::mpi::MPIrank << " uses " << Measure::processMemory() << " MB";
 
-	#pragma omp parallel for
-	for (size_t i = 0; i < my_neighs.size(); i++) {
-		my_comm_lambdas_indices[i] = lambdas_per_mpi[my_neighs[i]];
-		my_comm_lambdas[i].resize(my_comm_lambdas_indices[i].size());
-		my_recv_lambdas[i].resize(my_comm_lambdas_indices[i].size());
-	}
+    #pragma omp parallel for
+    for (size_t i = 0; i < my_neighs.size(); i++) {
+        my_comm_lambdas_indices[i] = lambdas_per_mpi[my_neighs[i]];
+        my_comm_lambdas[i].resize(my_comm_lambdas_indices[i].size());
+        my_recv_lambdas[i].resize(my_comm_lambdas_indices[i].size());
+    }
 
-	//ESLOG(MEMORY) << "2 process " << info::mpi::MPIrank << " uses " << Measure::processMemory() << " MB";
+    //ESLOG(MEMORY) << "2 process " << info::mpi::MPIrank << " uses " << Measure::processMemory() << " MB";
 
-//	compressed_tmp    .resize( my_lamdas_indices.size(), 0 );
-//	//compressed_tmp2   .resize( my_lamdas_indices.size(), 0 );
+//    compressed_tmp    .resize( my_lamdas_indices.size(), 0 );
+//    //compressed_tmp2   .resize( my_lamdas_indices.size(), 0 );
 
-	//ESLOG(MEMORY) << "3 process " << info::mpi::MPIrank << " uses " << Measure::processMemory() << " MB";
+    //ESLOG(MEMORY) << "3 process " << info::mpi::MPIrank << " uses " << Measure::processMemory() << " MB";
 
 
-	// mapping/compression vector for cluster
-	for (size_t i = 0; i <my_lamdas_indices.size(); i++)
-		_my_lamdas_map_indices.insert(make_pair(my_lamdas_indices[i],i));
+    // mapping/compression vector for cluster
+    for (size_t i = 0; i <my_lamdas_indices.size(); i++)
+        _my_lamdas_map_indices.insert(make_pair(my_lamdas_indices[i],i));
 
-	//ESLOG(MEMORY) << "5 process " << info::mpi::MPIrank << " uses " << Measure::processMemory() << " MB";
+    //ESLOG(MEMORY) << "5 process " << info::mpi::MPIrank << " uses " << Measure::processMemory() << " MB";
 
-//	// mapping/compression vector for domains
-//	#pragma omp parallel for
-//	for (size_t i = 0; i < domains.size(); i++) {
-//		for (size_t j = 0; j < domains[i].lambda_map_sub.size(); j++) {
-//			domains[i].my_lamdas_map_indices.insert(make_pair(domains[i].lambda_map_sub[j] ,j));
-//		}
-//	}
+//    // mapping/compression vector for domains
+//    #pragma omp parallel for
+//    for (size_t i = 0; i < domains.size(); i++) {
+//        for (size_t j = 0; j < domains[i].lambda_map_sub.size(); j++) {
+//            domains[i].my_lamdas_map_indices.insert(make_pair(domains[i].lambda_map_sub[j] ,j));
+//        }
+//    }
 
-	//ESLOG(MEMORY) << "6 process " << info::mpi::MPIrank << " uses " << Measure::processMemory() << " MB";
+    //ESLOG(MEMORY) << "6 process " << info::mpi::MPIrank << " uses " << Measure::processMemory() << " MB";
 
-//	#pragma omp parallel for
-//	for (size_t d = 0; d < domains.size(); d++) {
+//    #pragma omp parallel for
+//    for (size_t d = 0; d < domains.size(); d++) {
 //
 //            if (domains[d].lambda_map_sub.size() > 0 ) {
 //
-//            	size_t i = 0;
-//            	size_t j = 0;
-//				do
-//				{
-//					esint big_index   = my_lamdas_indices[i];
-//					esint small_index = domains[d].lambda_map_sub[j];
+//                size_t i = 0;
+//                size_t j = 0;
+//                do
+//                {
+//                    esint big_index   = my_lamdas_indices[i];
+//                    esint small_index = domains[d].lambda_map_sub[j];
 //
-//					if (big_index >  small_index) j++;
+//                    if (big_index >  small_index) j++;
 //
-//					if (big_index  < small_index) i++;
+//                    if (big_index  < small_index) i++;
 //
-//					if (big_index == small_index) {
-//						domains[d].lambda_map_sub_local.push_back(i);
-//						i++; j++;
-//					}
+//                    if (big_index == small_index) {
+//                        domains[d].lambda_map_sub_local.push_back(i);
+//                        i++; j++;
+//                    }
 //
 //
-//				} while ( i < my_lamdas_indices.size() && j < domains[d].lambda_map_sub.size() );
+//                } while ( i < my_lamdas_indices.size() && j < domains[d].lambda_map_sub.size() );
 //            }
 //        }
-//	//// *** END - Detection of affinity of lag. multipliers to specific subdomains ***************
+//    //// *** END - Detection of affinity of lag. multipliers to specific subdomains ***************
 
-	//ESLOG(MEMORY) << "7 process " << info::mpi::MPIrank << " uses " << Measure::processMemory() << " MB";
-
-
-	//// *** Create a vector of communication pattern needed for AllReduceLambdas function *******
-	my_comm_lambdas_indices_comp.resize(my_neighs.size());
-	#pragma omp parallel for
-	for (size_t i = 0; i < my_neighs.size(); i++) {
-		my_comm_lambdas_indices_comp[i].resize( lambdas_per_mpi[my_neighs[i]].size() );
-		for (size_t j = 0; j < lambdas_per_mpi[my_neighs[i]].size(); j++ )
-			my_comm_lambdas_indices_comp[i][j] = _my_lamdas_map_indices[lambdas_per_mpi[my_neighs[i]][j]];
-	}
-	//// *** END - Create a vector of communication pattern needed for AllReduceLambdas function *
-
-	//ESLOG(MEMORY) << "8 process " << info::mpi::MPIrank << " uses " << Measure::processMemory() << " MB";
+    //ESLOG(MEMORY) << "7 process " << info::mpi::MPIrank << " uses " << Measure::processMemory() << " MB";
 
 
-//	//// *** Compression of Matrix B1 to work with compressed lambda vectors *****************
-//	ESLOG(MEMORY) << "B1 compression";
-//	ESLOG(MEMORY) << "process " << info::mpi::MPIrank << " uses " << Measure::processMemory() << " MB";
-//	ESLOG(MEMORY) << "Total used RAM " << Measure::usedRAM() << "/" << Measure::availableRAM() << " [MB]";
+    //// *** Create a vector of communication pattern needed for AllReduceLambdas function *******
+    my_comm_lambdas_indices_comp.resize(my_neighs.size());
+    #pragma omp parallel for
+    for (size_t i = 0; i < my_neighs.size(); i++) {
+        my_comm_lambdas_indices_comp[i].resize( lambdas_per_mpi[my_neighs[i]].size() );
+        for (size_t j = 0; j < lambdas_per_mpi[my_neighs[i]].size(); j++ )
+            my_comm_lambdas_indices_comp[i][j] = _my_lamdas_map_indices[lambdas_per_mpi[my_neighs[i]][j]];
+    }
+    //// *** END - Create a vector of communication pattern needed for AllReduceLambdas function *
+
+    //ESLOG(MEMORY) << "8 process " << info::mpi::MPIrank << " uses " << Measure::processMemory() << " MB";
+
+
+//    //// *** Compression of Matrix B1 to work with compressed lambda vectors *****************
+//    ESLOG(MEMORY) << "B1 compression";
+//    ESLOG(MEMORY) << "process " << info::mpi::MPIrank << " uses " << Measure::processMemory() << " MB";
+//    ESLOG(MEMORY) << "Total used RAM " << Measure::usedRAM() << "/" << Measure::availableRAM() << " [MB]";
 //
-//	#pragma omp parallel for
-//	for (size_t i = 0; i < domains_in_global_index.size(); i++ ) {
+//    #pragma omp parallel for
+//    for (size_t i = 0; i < domains_in_global_index.size(); i++ ) {
 //
-//		domains[i].B1_comp_dom.I_row_indices = domains[i].B1.I_row_indices;
-//		domains[i].B1_comp_dom.J_col_indices = domains[i].B1.J_col_indices;
-//		domains[i].B1_comp_dom.V_values      = domains[i].B1.V_values;
+//        domains[i].B1_comp_dom.I_row_indices = domains[i].B1.I_row_indices;
+//        domains[i].B1_comp_dom.J_col_indices = domains[i].B1.J_col_indices;
+//        domains[i].B1_comp_dom.V_values      = domains[i].B1.V_values;
 //
-//		domains[i].B1_comp_dom.rows = domains[i].B1.rows;
-//		domains[i].B1_comp_dom.cols = domains[i].B1.cols;
-//		domains[i].B1_comp_dom.nnz  = domains[i].B1.nnz;
-//		domains[i].B1_comp_dom.type = domains[i].B1.type;
+//        domains[i].B1_comp_dom.rows = domains[i].B1.rows;
+//        domains[i].B1_comp_dom.cols = domains[i].B1.cols;
+//        domains[i].B1_comp_dom.nnz  = domains[i].B1.nnz;
+//        domains[i].B1_comp_dom.type = domains[i].B1.type;
 //
-//		for (size_t j = 0; j < domains[i].B1_comp_dom.I_row_indices.size(); j++ ) {
-//			esint tmp_new = domains[i].my_lamdas_map_indices[domains[i].B1_comp_dom.I_row_indices [j] - 1] + 1;  // numbering from 1 in matrix
-//			domains[i].B1_comp_dom.I_row_indices [j] = tmp_new;									               // j + 1; // numbering matrix from 1
-//		}
+//        for (size_t j = 0; j < domains[i].B1_comp_dom.I_row_indices.size(); j++ ) {
+//            esint tmp_new = domains[i].my_lamdas_map_indices[domains[i].B1_comp_dom.I_row_indices [j] - 1] + 1;  // numbering from 1 in matrix
+//            domains[i].B1_comp_dom.I_row_indices [j] = tmp_new;                                                   // j + 1; // numbering matrix from 1
+//        }
 //
-//		domains[i].B1_comp_dom.rows = domains[i].lambda_map_sub.size();
-//		domains[i].B1_comp_dom.ConvertToCSRwithSort( 1 );
+//        domains[i].B1_comp_dom.rows = domains[i].lambda_map_sub.size();
+//        domains[i].B1_comp_dom.ConvertToCSRwithSort( 1 );
 //
-//		if (configuration.preconditioner == FETIConfiguration::PRECONDITIONER::DIRICHLET ||
+//        if (configuration.preconditioner == FETIConfiguration::PRECONDITIONER::DIRICHLET ||
 //        configuration.preconditioner == FETIConfiguration::PRECONDITIONER::SUPER_DIRICHLET) {
-//			domains[i].B1_comp_dom.MatTranspose(domains[i].B1t_DirPr);
-//			utils::removeDuplicates(domains[i].B1t_DirPr.CSR_I_row_indices);
-////			auto last = std::unique(domains[i].B1t_DirPr.CSR_I_row_indices.begin(), domains[i].B1t_DirPr.CSR_I_row_indices.end());
-////			domains[i].B1t_DirPr.CSR_I_row_indices.erase(last, domains[i].B1t_DirPr.CSR_I_row_indices.end());
-//			domains[i].B1t_DirPr.rows = domains[i].B1t_DirPr.CSR_I_row_indices.size() - 1;
+//            domains[i].B1_comp_dom.MatTranspose(domains[i].B1t_DirPr);
+//            utils::removeDuplicates(domains[i].B1t_DirPr.CSR_I_row_indices);
+////            auto last = std::unique(domains[i].B1t_DirPr.CSR_I_row_indices.begin(), domains[i].B1t_DirPr.CSR_I_row_indices.end());
+////            domains[i].B1t_DirPr.CSR_I_row_indices.erase(last, domains[i].B1t_DirPr.CSR_I_row_indices.end());
+//            domains[i].B1t_DirPr.rows = domains[i].B1t_DirPr.CSR_I_row_indices.size() - 1;
 //
-//			domains[i].B1t_Dir_perm_vec = domains[i].B1_comp_dom.CSR_J_col_indices;
-//			std::sort(domains[i].B1t_Dir_perm_vec.begin(), domains[i].B1t_Dir_perm_vec.end());
-//			utils::removeDuplicates(domains[i].B1t_Dir_perm_vec);
-////			last = std::unique(domains[i].B1t_Dir_perm_vec.begin(), domains[i].B1t_Dir_perm_vec.end());
-////			domains[i].B1t_Dir_perm_vec.erase(last, domains[i].B1t_Dir_perm_vec.end() );
-//		}
+//            domains[i].B1t_Dir_perm_vec = domains[i].B1_comp_dom.CSR_J_col_indices;
+//            std::sort(domains[i].B1t_Dir_perm_vec.begin(), domains[i].B1t_Dir_perm_vec.end());
+//            utils::removeDuplicates(domains[i].B1t_Dir_perm_vec);
+////            last = std::unique(domains[i].B1t_Dir_perm_vec.begin(), domains[i].B1t_Dir_perm_vec.end());
+////            domains[i].B1t_Dir_perm_vec.erase(last, domains[i].B1t_Dir_perm_vec.end() );
+//        }
 //
-////		if (configuration.regularization == FETIConfiguration::REGULARIZATION::ANALYTIC) {
-////			domains[i].B1.Clear();
-////		}
+////        if (configuration.regularization == FETIConfiguration::REGULARIZATION::ANALYTIC) {
+////            domains[i].B1.Clear();
+////        }
 //
-//		domains[i].B1t.Clear();
-//		domains[i].my_lamdas_map_indices.clear();
+//        domains[i].B1t.Clear();
+//        domains[i].my_lamdas_map_indices.clear();
 //
-//	}
-//	//// *** END - Compression of Matrix B1 to work with compressed lambda vectors *************
+//    }
+//    //// *** END - Compression of Matrix B1 to work with compressed lambda vectors *************
 //
 //
-//	ESLOG(MEMORY) << "Lambdas end";
-//	ESLOG(MEMORY) << "process " << info::mpi::MPIrank << " uses " << Measure::processMemory() << " MB";
-//	ESLOG(MEMORY) << "Total used RAM " << Measure::usedRAM() << "/" << Measure::availableRAM() << " [MB]";
+//    ESLOG(MEMORY) << "Lambdas end";
+//    ESLOG(MEMORY) << "process " << info::mpi::MPIrank << " uses " << Measure::processMemory() << " MB";
+//    ESLOG(MEMORY) << "Total used RAM " << Measure::usedRAM() << "/" << Measure::availableRAM() << " [MB]";
 
 }
 
 void ClusterBase::SetupPreconditioner ( ) {
 
-	switch (configuration.preconditioner) {
-	case FETIConfiguration::PRECONDITIONER::LUMPED:
-		// nothing needs to be done
+    switch (configuration.preconditioner) {
+    case FETIConfiguration::PRECONDITIONER::LUMPED:
+        // nothing needs to be done
 #ifdef BEM4I_TO_BE_REMOVED
-		//ESINFO(GLOBAL_ERROR) << "Memory efficient Lumped not possible for BEM, used fast Lumped --> MAGIC (or 5)";
+        //ESINFO(GLOBAL_ERROR) << "Memory efficient Lumped not possible for BEM, used fast Lumped --> MAGIC (or 5)";
 #endif
-		break;
-	case FETIConfiguration::PRECONDITIONER::WEIGHT_FUNCTION:
-		// nothing needs to be done
-		break;
-	case FETIConfiguration::PRECONDITIONER::DIRICHLET:
-		CreateDirichletPrec(instance);
-		break;
-	case FETIConfiguration::PRECONDITIONER::SUPER_DIRICHLET:
+        break;
+    case FETIConfiguration::PRECONDITIONER::WEIGHT_FUNCTION:
+        // nothing needs to be done
+        break;
+    case FETIConfiguration::PRECONDITIONER::DIRICHLET:
+        CreateDirichletPrec(instance);
+        break;
+    case FETIConfiguration::PRECONDITIONER::SUPER_DIRICHLET:
                 CreateDirichletPrec(instance);
-		break;
-	case FETIConfiguration::PRECONDITIONER::MAGIC: // Fast Lumped
-		#pragma omp parallel for
-		for (size_t d = 0; d < domains.size(); d++) {
-			if (domains[d]._RegMat.nnz > 0) {
+        break;
+    case FETIConfiguration::PRECONDITIONER::MAGIC: // Fast Lumped
+        #pragma omp parallel for
+        for (size_t d = 0; d < domains.size(); d++) {
+            if (domains[d]._RegMat.nnz > 0) {
 #ifdef BEM4I_TO_BE_REMOVED
-				domains[d]._RegMat.ConvertToCSR(1);
-				domains[d].K.ConvertDenseToCSR(0);
-				domains[d].Prec.MatAdd(domains[d].K, domains[d]._RegMat, 'N', -1);
-				SEQ_VECTOR<esint>().swap( domains[d].K.CSR_I_row_indices );
-				SEQ_VECTOR<esint>().swap( domains[d].K.CSR_J_col_indices );
-				SEQ_VECTOR<double>().swap( domains[d].K.CSR_V_values );
+                domains[d]._RegMat.ConvertToCSR(1);
+                domains[d].K.ConvertDenseToCSR(0);
+                domains[d].Prec.MatAdd(domains[d].K, domains[d]._RegMat, 'N', -1);
+                SEQ_VECTOR<esint>().swap( domains[d].K.CSR_I_row_indices );
+                SEQ_VECTOR<esint>().swap( domains[d].K.CSR_J_col_indices );
+                SEQ_VECTOR<double>().swap( domains[d].K.CSR_V_values );
 
-				domains[d]._RegMat.ConvertToCOO(1);
+                domains[d]._RegMat.ConvertToCOO(1);
 #else
-				domains[d]._RegMat.ConvertToCSR(1);
-				domains[d].Prec.MatAdd(domains[d].K, domains[d]._RegMat, 'N', -1);
-				domains[d]._RegMat.ConvertToCOO(1);
+                domains[d]._RegMat.ConvertToCSR(1);
+                domains[d].Prec.MatAdd(domains[d].K, domains[d]._RegMat, 'N', -1);
+                domains[d]._RegMat.ConvertToCOO(1);
 #endif
-			} else {
-				domains[d].Prec = domains[d].K;
-			}
-		}
-		break;
-	case FETIConfiguration::PRECONDITIONER::NONE:
-		break;
-	default:
-		eslog::error("Not implemented preconditioner.\n");
-	}
+            } else {
+                domains[d].Prec = domains[d].K;
+            }
+        }
+        break;
+    case FETIConfiguration::PRECONDITIONER::NONE:
+        break;
+    default:
+        eslog::error("Not implemented preconditioner.\n");
+    }
 
 }
 
 
 void ClusterBase::SetClusterHFETI () {
-	// *** Create Matrices and allocate vectors for Hybrid FETI **************************
-	if (USE_HFETI == 1) {
+    // *** Create Matrices and allocate vectors for Hybrid FETI **************************
+    if (USE_HFETI == 1) {
 
-		if (domains.size() > 1) {
+        if (domains.size() > 1) {
 
-			TimeEval HFETI_prec_timing (" HFETI - preprocessing timing");
-			HFETI_prec_timing.totalTime.start();
+            TimeEval HFETI_prec_timing (" HFETI - preprocessing timing");
+            HFETI_prec_timing.totalTime.start();
 
-//			//ESINFO(PROGRESS3) << "HFETI preprocessing start";
+//            //ESINFO(PROGRESS3) << "HFETI preprocessing start";
 
-			TimeEvent B0_time("Compress B0 per cluster");
-			B0_time.start();
+            TimeEvent B0_time("Compress B0 per cluster");
+            B0_time.start();
 
-			CompressB0();
+            CompressB0();
 
-			B0_time.end(); B0_time.printStatMPI(); HFETI_prec_timing.addEvent(B0_time);
+            B0_time.end(); B0_time.printStatMPI(); HFETI_prec_timing.addEvent(B0_time);
 
-			TimeEvent G0_time("Create G0 per cluster");
-			G0_time.start();
+            TimeEvent G0_time("Create G0 per cluster");
+            G0_time.start();
 
-			CreateG0();
+            CreateG0();
 
-			G0_time.end(); 	G0_time.printStatMPI();	HFETI_prec_timing.addEvent(G0_time);
-
-
-			TimeEvent F0_time("Create F0 per cluster");
-			F0_time.start();
-
-			CreateF0();
-
-			F0_time.end(); HFETI_prec_timing.addEvent(F0_time);
+            G0_time.end();     G0_time.printStatMPI();    HFETI_prec_timing.addEvent(G0_time);
 
 
-			TimeEvent Sa_time("Create Salfa per cluster");
-			Sa_time.start();
+            TimeEvent F0_time("Create F0 per cluster");
+            F0_time.start();
 
-			CreateSa();
+            CreateF0();
 
-			Sa_time.end(); HFETI_prec_timing.addEvent(Sa_time);
-
-			HFETI_prec_timing.totalTime.end(); HFETI_prec_timing.printStatsMPI();
-
-		} else {
-
-			////ESINFO(ALWAYS_ON_ROOT) << Info::TextColor::YELLOW
-//			std::cout << "Cluster " << cluster_global_index << " on MPI rank " << info::mpi::rank << " has only one domain -> Using TFETI" << std::endl;
-			USE_HFETI = 0;
-
-		}
+            F0_time.end(); HFETI_prec_timing.addEvent(F0_time);
 
 
-	}
-	// *** END - Create Matrices for Hybrid FETI *****************************************
+            TimeEvent Sa_time("Create Salfa per cluster");
+            Sa_time.start();
+
+            CreateSa();
+
+            Sa_time.end(); HFETI_prec_timing.addEvent(Sa_time);
+
+            HFETI_prec_timing.totalTime.end(); HFETI_prec_timing.printStatsMPI();
+
+        } else {
+
+            ////ESINFO(ALWAYS_ON_ROOT) << Info::TextColor::YELLOW
+//            std::cout << "Cluster " << cluster_global_index << " on MPI rank " << info::mpi::rank << " has only one domain -> Using TFETI" << std::endl;
+            USE_HFETI = 0;
+
+        }
+
+
+    }
+    // *** END - Create Matrices for Hybrid FETI *****************************************
 }
 
 void ClusterBase::multKplusGlobal(SEQ_VECTOR <double> & x_in, SEQ_VECTOR <double> & y_out, SEQ_VECTOR<esint> & cluster_map_vec) {
 
-//	vec_g0.resize(G0.cols);
-//	fill(vec_g0.begin(), vec_g0.end(), 0); // reset entire vector to 0
+//    vec_g0.resize(G0.cols);
+//    fill(vec_g0.begin(), vec_g0.end(), 0); // reset entire vector to 0
 //
-//	vec_e0.resize(G0.rows);
-//	fill(vec_e0.begin(), vec_e0.end(), 0); // reset entire vector to 0
+//    vec_e0.resize(G0.rows);
+//    fill(vec_e0.begin(), vec_e0.end(), 0); // reset entire vector to 0
 //
-//	//y_out.resize(x_clust_size);
+//    //y_out.resize(x_clust_size);
 //
-//	// temp vectors
-//	SEQ_VECTOR <double> t1,t2,t3;
-//
-//
-//	// loop over domains in the cluster
-//	for (esint d = 0; d < domains.size(); d++) {
-//		esint x_in_vector_start_index = x_clust_domain_map_vec[d] + cluster_map_vec[this->cluster_global_index-1];
-//		esint domain_size = domains[d].Kplus.m_Kplus_size;
-//
-//		t1.resize(domain_size);
-//		t2.resize(vec_g0.size());
-//		fill(t1.begin(), t1.end(), 0);
-//		fill(t2.begin(), t2.end(), 0);
+//    // temp vectors
+//    SEQ_VECTOR <double> t1,t2,t3;
 //
 //
-//		// g0
-//		domains[d].multKplusLocal( x_in, t1, x_in_vector_start_index, 0 );
+//    // loop over domains in the cluster
+//    for (esint d = 0; d < domains.size(); d++) {
+//        esint x_in_vector_start_index = x_clust_domain_map_vec[d] + cluster_map_vec[this->cluster_global_index-1];
+//        esint domain_size = domains[d].Kplus.m_Kplus_size;
 //
-//		//					  in   out trans
-//		domains[d].B0.MatVec( t1 , t2,  'N' );
-//
-//		for (esint i = 0; i < vec_g0.size(); i++ )
-//			vec_g0[i] = vec_g0[i] + t2[i];
-//
-//		// e0
-//		t2.resize(domains[d].Kplus_R.cols); // resize na pocet sloupcu matice Kplus_R - velikost jadra
-//		fill(t2.begin(), t2.end(), 0); // reset t2 - migh not be necessary
-//
-//		domains[d].Kplus_R.MatVec(x_in, t2, 'T', x_in_vector_start_index, 0);
-//
-//		esint e0_start	=  d	* domains[d].Kplus_R.cols;
-//		esint e0_end		= (d+1) * domains[d].Kplus_R.cols;
-//		for (esint i = e0_start; i < e0_end; i++ )
-//			vec_e0[i] = - t2[i - e0_start];
-//
-//	} // end loop over domains
+//        t1.resize(domain_size);
+//        t2.resize(vec_g0.size());
+//        fill(t1.begin(), t1.end(), 0);
+//        fill(t2.begin(), t2.end(), 0);
 //
 //
-//	// alfa
-//	t1.resize(F0.m_Kplus_size);
-//	fill(t1.begin(), t1.end(), 0);
+//        // g0
+//        domains[d].multKplusLocal( x_in, t1, x_in_vector_start_index, 0 );
 //
-//	F0.Solve(vec_g0, t1,0,0);
+//        //                      in   out trans
+//        domains[d].B0.MatVec( t1 , t2,  'N' );
 //
-//	t2.resize(G0.rows);
-//	fill(t2.begin(), t2.end(), 0);
+//        for (esint i = 0; i < vec_g0.size(); i++ )
+//            vec_g0[i] = vec_g0[i] + t2[i];
 //
-//	G0.MatVec(t1, t2, 'N');
-//	for (esint i = 0; i < vec_e0.size(); i++)
-//		t2[i] = t2[i] - vec_e0[i];
+//        // e0
+//        t2.resize(domains[d].Kplus_R.cols); // resize na pocet sloupcu matice Kplus_R - velikost jadra
+//        fill(t2.begin(), t2.end(), 0); // reset t2 - migh not be necessary
 //
-//	vec_alfa.resize(Sa.m_Kplus_size);
-//	Sa.Solve(t2, vec_alfa,0,0);
+//        domains[d].Kplus_R.MatVec(x_in, t2, 'T', x_in_vector_start_index, 0);
 //
-//	// lambda
-//	t1.resize(G0.cols);
-//	fill(t1.begin(), t1.end(), 0);
+//        esint e0_start    =  d    * domains[d].Kplus_R.cols;
+//        esint e0_end        = (d+1) * domains[d].Kplus_R.cols;
+//        for (esint i = e0_start; i < e0_end; i++ )
+//            vec_e0[i] = - t2[i - e0_start];
 //
-//	G0.MatVec(vec_alfa, t1, 'T');
+//    } // end loop over domains
 //
-//	for (esint i = 0; i < vec_g0.size(); i++)
-//		t1[i] = vec_g0[i] - t1[i];
 //
-//	vec_lambda.resize(F0.m_Kplus_size);
-//	F0.Solve(t1, vec_lambda,0,0);
+//    // alfa
+//    t1.resize(F0.m_Kplus_size);
+//    fill(t1.begin(), t1.end(), 0);
 //
-//	// Kplus_x
-//	for (esint d = 0; d < domains.size(); d++) {
-//		//esint x_in_vector_start_index = x_clust_domain_map_vec[d];
-//		esint x_in_vector_start_index = x_clust_domain_map_vec[d] + cluster_map_vec[this->cluster_global_index-1];
-//		esint domain_size = domains[d].Kplus.m_Kplus_size;
+//    F0.Solve(vec_g0, t1,0,0);
 //
-//		t1.resize(domain_size);
-//		fill(t1.begin(), t1.end(), 0);
+//    t2.resize(G0.rows);
+//    fill(t2.begin(), t2.end(), 0);
 //
-//		domains[d].B0.MatVec(vec_lambda, t1, 'T');
+//    G0.MatVec(t1, t2, 'N');
+//    for (esint i = 0; i < vec_e0.size(); i++)
+//        t2[i] = t2[i] - vec_e0[i];
 //
-//		for (esint i = 0; i < domain_size; i++)
-//			t1[i] = x_in[x_in_vector_start_index + i] - t1[i];
+//    vec_alfa.resize(Sa.m_Kplus_size);
+//    Sa.Solve(t2, vec_alfa,0,0);
 //
-//		t2.resize(domain_size);
-//		fill(t2.begin(), t2.end(), 0);
+//    // lambda
+//    t1.resize(G0.cols);
+//    fill(t1.begin(), t1.end(), 0);
 //
-//		domains[d].multKplusLocal(t1 , t2, 0, 0);
+//    G0.MatVec(vec_alfa, t1, 'T');
 //
-//		t3.resize(domain_size);
-//		fill(t3.begin(), t3.end(), 0);
+//    for (esint i = 0; i < vec_g0.size(); i++)
+//        t1[i] = vec_g0[i] - t1[i];
 //
-//		esint e0_start	=  d	* domains[d].Kplus_R.cols;
-//		esint e0_end		= (d+1) * domains[d].Kplus_R.cols;
-//		domains[d].Kplus_R.MatVec(vec_alfa, t3, 'N', e0_start,0);
+//    vec_lambda.resize(F0.m_Kplus_size);
+//    F0.Solve(t1, vec_lambda,0,0);
 //
-//		for (esint i = 0; i < domain_size; i++)
-//			y_out[x_in_vector_start_index + i] = t2[i] + t3[i];
+//    // Kplus_x
+//    for (esint d = 0; d < domains.size(); d++) {
+//        //esint x_in_vector_start_index = x_clust_domain_map_vec[d];
+//        esint x_in_vector_start_index = x_clust_domain_map_vec[d] + cluster_map_vec[this->cluster_global_index-1];
+//        esint domain_size = domains[d].Kplus.m_Kplus_size;
 //
-//		double t_sum = 0;
-//		for (esint i = 0; i < domain_size; i++)
-//			t_sum +=  (t2[i] + t3[i]);
+//        t1.resize(domain_size);
+//        fill(t1.begin(), t1.end(), 0);
 //
-//		t_sum = t_sum;
+//        domains[d].B0.MatVec(vec_lambda, t1, 'T');
 //
-//	}
+//        for (esint i = 0; i < domain_size; i++)
+//            t1[i] = x_in[x_in_vector_start_index + i] - t1[i];
 //
-//	t1.clear();
-//	t2.clear();
-//	t3.clear();
+//        t2.resize(domain_size);
+//        fill(t2.begin(), t2.end(), 0);
+//
+//        domains[d].multKplusLocal(t1 , t2, 0, 0);
+//
+//        t3.resize(domain_size);
+//        fill(t3.begin(), t3.end(), 0);
+//
+//        esint e0_start    =  d    * domains[d].Kplus_R.cols;
+//        esint e0_end        = (d+1) * domains[d].Kplus_R.cols;
+//        domains[d].Kplus_R.MatVec(vec_alfa, t3, 'N', e0_start,0);
+//
+//        for (esint i = 0; i < domain_size; i++)
+//            y_out[x_in_vector_start_index + i] = t2[i] + t3[i];
+//
+//        double t_sum = 0;
+//        for (esint i = 0; i < domain_size; i++)
+//            t_sum +=  (t2[i] + t3[i]);
+//
+//        t_sum = t_sum;
+//
+//    }
+//
+//    t1.clear();
+//    t2.clear();
+//    t3.clear();
 }
 
 void ClusterBase::multKplusGlobal_l(SEQ_VECTOR<SEQ_VECTOR<double> > & x_in) {
 
-	////ESINFO(PROGRESS3) << "K+ multiply HFETI";
-	mkl_set_num_threads(1);
+    ////ESINFO(PROGRESS3) << "K+ multiply HFETI";
+    mkl_set_num_threads(1);
 
-	if (true) { cluster_time.totalTime.start(); }
+    if (true) { cluster_time.totalTime.start(); }
 
-	if (true) { vec_fill_time.start(); }
-	fill(vec_g0.begin(), vec_g0.end(), 0); // reset entire vector to 0
-	//fill(vec_e0.begin(), vec_e0.end(), 0); // reset entire vector to 0
-	if (true) { vec_fill_time.end(); }
+    if (true) { vec_fill_time.start(); }
+    fill(vec_g0.begin(), vec_g0.end(), 0); // reset entire vector to 0
+    //fill(vec_e0.begin(), vec_e0.end(), 0); // reset entire vector to 0
+    if (true) { vec_fill_time.end(); }
 
-	// loop over domains in the cluster
-	if (true) { loop_1_1_time.start(); }
-	#pragma omp parallel for
-	for (size_t d = 0; d < domains.size(); d++)
-	{
-		domains[d].B0Kplus_comp.DenseMatVec(x_in[d], tm2[d]);			// g0 - with comp B0Kplus
-		if (SYMMETRIC_SYSTEM) {
-			domains[d].Kplus_R.DenseMatVec(x_in[d], tm3[d], 'T');			// e0
-		} else {
-			domains[d].Kplus_R2.DenseMatVec(x_in[d], tm3[d], 'T');			// e0
-		}
-	}
-	if (true) { loop_1_1_time.end();}
+    // loop over domains in the cluster
+    if (true) { loop_1_1_time.start(); }
+    #pragma omp parallel for
+    for (size_t d = 0; d < domains.size(); d++)
+    {
+        domains[d].B0Kplus_comp.DenseMatVec(x_in[d], tm2[d]);            // g0 - with comp B0Kplus
+        if (SYMMETRIC_SYSTEM) {
+            domains[d].Kplus_R.DenseMatVec(x_in[d], tm3[d], 'T');            // e0
+        } else {
+            domains[d].Kplus_R2.DenseMatVec(x_in[d], tm3[d], 'T');            // e0
+        }
+    }
+    if (true) { loop_1_1_time.end();}
 
-	if (true) { loop_1_2_time.start(); }
-	#pragma omp parallel for
-	for (size_t d = 0; d < domains.size(); d++)
-	{
+    if (true) { loop_1_2_time.start(); }
+    #pragma omp parallel for
+    for (size_t d = 0; d < domains.size(); d++)
+    {
 
-		SEQ_VECTOR <esint> kerindices (domains.size() + 1, 0);
-		kerindices[0] = 0;
-		for (size_t k = 1; k < kerindices.size(); k++) {
-			kerindices[k] = kerindices[k-1] + domains[k-1].Kplus_R.cols;
-		}
+        SEQ_VECTOR <esint> kerindices (domains.size() + 1, 0);
+        kerindices[0] = 0;
+        for (size_t k = 1; k < kerindices.size(); k++) {
+            kerindices[k] = kerindices[k-1] + domains[k-1].Kplus_R.cols;
+        }
 
-		esint e0_start	= kerindices[d];
-		esint e0_end		= kerindices[d+1];
+        esint e0_start    = kerindices[d];
+        esint e0_end        = kerindices[d+1];
 
-		//esint e0_start	=  d	* domains[d].Kplus_R.cols;
-		//esint e0_end		= (d+1) * domains[d].Kplus_R.cols;
+        //esint e0_start    =  d    * domains[d].Kplus_R.cols;
+        //esint e0_end        = (d+1) * domains[d].Kplus_R.cols;
 
-		for (esint i = e0_start; i < e0_end; i++ )
-			vec_e0[i] = - tm3[d][i - e0_start];
-	}
-
-
-	for (size_t d = 0; d < domains.size(); d++)
-		for (esint i = 0; i < domains[d].B0Kplus_comp.rows; i++)
-			vec_g0[ domains[d].B0_comp_map_vec[i] - 1 ] += tm2[d][i];
-
-	// end loop over domains
-	if (true) { loop_1_2_time.end(); }
-
-	mkl_set_num_threads(PAR_NUM_THREADS);
-	if (true) { clusCP_time.start(); }
+        for (esint i = e0_start; i < e0_end; i++ )
+            vec_e0[i] = - tm3[d][i - e0_start];
+    }
 
 
-//	for (int i = 0; i < vec_g0.size(); i++)
-//	printf (       "Test probe 1: %d norm = %1.30f \n", i, vec_g0[i] );
+    for (size_t d = 0; d < domains.size(); d++)
+        for (esint i = 0; i < domains[d].B0Kplus_comp.rows; i++)
+            vec_g0[ domains[d].B0_comp_map_vec[i] - 1 ] += tm2[d][i];
 
-	if (true) { clus_F0_1_time.start(); }
-	F0.Solve(vec_g0, tm1[0], 0, 0);
-	if (true) { clus_F0_1_time.end(); }
+    // end loop over domains
+    if (true) { loop_1_2_time.end(); }
 
-//	for (int i = 0; i < tm1[0].size(); i++)
-//	printf (       "Test probe 2: %d norm = %1.30f \n", i, tm1[0][i] );
+    mkl_set_num_threads(PAR_NUM_THREADS);
+    if (true) { clusCP_time.start(); }
 
-	if (true) { clus_G0_time.start(); }
-	if (SYMMETRIC_SYSTEM) {
-		G0.MatVec(tm1[0], tm2[0], 'N');
-	} else {
-		G02.MatVec(tm1[0], tm2[0], 'N');
-	}
 
-	if (true) { clus_G0_time.end(); }
+//    for (int i = 0; i < vec_g0.size(); i++)
+//    printf (       "Test probe 1: %d norm = %1.30f \n", i, vec_g0[i] );
 
-//	for (int i = 0; i < tm1[0].size(); i++)
-//	printf (       "Test probe 3: %d norm = %1.30f \n", i, tm1[0][i] );
+    if (true) { clus_F0_1_time.start(); }
+    F0.Solve(vec_g0, tm1[0], 0, 0);
+    if (true) { clus_F0_1_time.end(); }
 
-	#pragma omp parallel for
-	for (size_t i = 0; i < vec_e0.size(); i++)
-		tm2[0][i] = tm2[0][i] - vec_e0[i];
-	//cblas_daxpy(vec_e0.size(), -1.0, &vec_e0[0], 1, &tm2[0][0], 1);
+//    for (int i = 0; i < tm1[0].size(); i++)
+//    printf (       "Test probe 2: %d norm = %1.30f \n", i, tm1[0][i] );
 
-	if (true) { clus_Sa_time.start(); }
+    if (true) { clus_G0_time.start(); }
+    if (SYMMETRIC_SYSTEM) {
+        G0.MatVec(tm1[0], tm2[0], 'N');
+    } else {
+        G02.MatVec(tm1[0], tm2[0], 'N');
+    }
+
+    if (true) { clus_G0_time.end(); }
+
+//    for (int i = 0; i < tm1[0].size(); i++)
+//    printf (       "Test probe 3: %d norm = %1.30f \n", i, tm1[0][i] );
+
+    #pragma omp parallel for
+    for (size_t i = 0; i < vec_e0.size(); i++)
+        tm2[0][i] = tm2[0][i] - vec_e0[i];
+    //cblas_daxpy(vec_e0.size(), -1.0, &vec_e0[0], 1, &tm2[0][0], 1);
+
+    if (true) { clus_Sa_time.start(); }
 //#ifdef SPARSE_SA
-//	 Sa.Solve(tm2[0], vec_alfa,0,0);
+//     Sa.Solve(tm2[0], vec_alfa,0,0);
 //#else
-//	esint nrhs = 1;
-//	Sa_dense.Solve(tm2[0], vec_alfa, nrhs);
+//    esint nrhs = 1;
+//    Sa_dense.Solve(tm2[0], vec_alfa, nrhs);
 //#endif
 
-	switch (configuration.SAsolver) {
-	case FETIConfiguration::SASOLVER::CPU_SPARSE:
-		Sa.Solve(tm2[0], vec_alfa, 0, 0);
-		break;
-	case FETIConfiguration::SASOLVER::CPU_DENSE:
-		Sa_dense_cpu.Solve(tm2[0], vec_alfa, 1);
-		break;
-	case FETIConfiguration::SASOLVER::ACC_DENSE:
-		Sa_dense_acc.Solve(tm2[0], vec_alfa, 1);
-		break;
-	default:
-		eslog::error("Not implemented S alfa solver.\n");
-	}
+    switch (configuration.SAsolver) {
+    case FETIConfiguration::SASOLVER::CPU_SPARSE:
+        Sa.Solve(tm2[0], vec_alfa, 0, 0);
+        break;
+    case FETIConfiguration::SASOLVER::CPU_DENSE:
+        Sa_dense_cpu.Solve(tm2[0], vec_alfa, 1);
+        break;
+    case FETIConfiguration::SASOLVER::ACC_DENSE:
+        Sa_dense_acc.Solve(tm2[0], vec_alfa, 1);
+        break;
+    default:
+        eslog::error("Not implemented S alfa solver.\n");
+    }
 
 
-	if (true) { clus_Sa_time.end(); }
+    if (true) { clus_Sa_time.end(); }
 
-//		for (int i = 0; i < vec_alfa.size(); i++)
-//		printf (       "Test probe 4: %d norm = %1.30f \n", i, vec_alfa[i] );
+//        for (int i = 0; i < vec_alfa.size(); i++)
+//        printf (       "Test probe 4: %d norm = %1.30f \n", i, vec_alfa[i] );
 
-	if (true) { clus_G0t_time.start(); }
-	G0.MatVec(vec_alfa, tm1[0], 'T'); 	// lambda
-	if (true) {clus_G0t_time.end(); }
+    if (true) { clus_G0t_time.start(); }
+    G0.MatVec(vec_alfa, tm1[0], 'T');     // lambda
+    if (true) {clus_G0t_time.end(); }
 
-//		for (int i = 0; i < tm1[0].size(); i++)
-//		printf (       "Test probe 5: %d norm = %1.30f \n", i, tm1[0][i] );
+//        for (int i = 0; i < tm1[0].size(); i++)
+//        printf (       "Test probe 5: %d norm = %1.30f \n", i, tm1[0][i] );
 
-	#pragma omp parallel for
-	for (size_t i = 0; i < vec_g0.size(); i++)
-		tm1[0][i] = vec_g0[i] - tm1[0][i];
+    #pragma omp parallel for
+    for (size_t i = 0; i < vec_g0.size(); i++)
+        tm1[0][i] = vec_g0[i] - tm1[0][i];
 
 
-	if (true) { clus_F0_2_time.start(); }
-	F0.Solve(tm1[0], vec_lambda,0,0);
-	if (true) { clus_F0_2_time.end(); }
+    if (true) { clus_F0_2_time.start(); }
+    F0.Solve(tm1[0], vec_lambda,0,0);
+    if (true) { clus_F0_2_time.end(); }
 
-	if (true) { clusCP_time.end(); }
+    if (true) { clusCP_time.end(); }
 
-//	for (int i = 0; i < vec_lambda.size(); i++)
-//	printf (       "Test probe 6: %d norm = %1.30f \n", i, vec_lambda[i] );
+//    for (int i = 0; i < vec_lambda.size(); i++)
+//    printf (       "Test probe 6: %d norm = %1.30f \n", i, vec_lambda[i] );
 
-	// Kplus_x
-	mkl_set_num_threads(1);
-	if (true) { loop_2_1_time.start(); }
-	#pragma omp parallel for
-	for (size_t d = 0; d < domains.size(); d++)
-	{
-		esint domain_size = domains[d].domain_prim_size;
+    // Kplus_x
+    mkl_set_num_threads(1);
+    if (true) { loop_2_1_time.start(); }
+    #pragma omp parallel for
+    for (size_t d = 0; d < domains.size(); d++)
+    {
+        esint domain_size = domains[d].domain_prim_size;
 
-		SEQ_VECTOR < double > tmp_vec (domains[d].B0_comp_map_vec.size(), 0);
-		for (size_t i = 0; i < domains[d].B0_comp_map_vec.size(); i++)
-			tmp_vec[i] = vec_lambda[domains[d].B0_comp_map_vec[i] - 1] ;
-		//domains[d].B0t_comp.MatVec(tmp_vec, tm1[d], 'N');
-		domains[d].B0_comp.MatVec(tmp_vec, tm1[d], 'T');
+        SEQ_VECTOR < double > tmp_vec (domains[d].B0_comp_map_vec.size(), 0);
+        for (size_t i = 0; i < domains[d].B0_comp_map_vec.size(); i++)
+            tmp_vec[i] = vec_lambda[domains[d].B0_comp_map_vec[i] - 1] ;
+        //domains[d].B0t_comp.MatVec(tmp_vec, tm1[d], 'N');
+        domains[d].B0_comp.MatVec(tmp_vec, tm1[d], 'T');
 
-		for (esint i = 0; i < domain_size; i++)
-			tm1[d][i] = x_in[d][i] - tm1[d][i];
+        for (esint i = 0; i < domain_size; i++)
+            tm1[d][i] = x_in[d][i] - tm1[d][i];
 
-		domains[d].multKplusLocal(tm1[d] , tm2[d]);
+        domains[d].multKplusLocal(tm1[d] , tm2[d]);
 
-		SEQ_VECTOR <esint> kerindices (domains.size() + 1, 0);
-		kerindices[0] = 0;
-		for (size_t k = 1; k < kerindices.size(); k++) {
-			kerindices[k] = kerindices[k-1] + domains[k-1].Kplus_R.cols;
-		}
+        SEQ_VECTOR <esint> kerindices (domains.size() + 1, 0);
+        kerindices[0] = 0;
+        for (size_t k = 1; k < kerindices.size(); k++) {
+            kerindices[k] = kerindices[k-1] + domains[k-1].Kplus_R.cols;
+        }
 
-		esint e0_start	= kerindices[d];
-		//esint e0_start	=  d	* domains[d].Kplus_R.cols;
+        esint e0_start    = kerindices[d];
+        //esint e0_start    =  d    * domains[d].Kplus_R.cols;
 
-		domains[d].Kplus_R.DenseMatVec(vec_alfa, tm3[d],'N', e0_start);
+        domains[d].Kplus_R.DenseMatVec(vec_alfa, tm3[d],'N', e0_start);
 
-		for (esint i = 0; i < domain_size; i++)
-			x_in[d][i] = tm2[d][i] + tm3[d][i];
+        for (esint i = 0; i < domain_size; i++)
+            x_in[d][i] = tm2[d][i] + tm3[d][i];
 
-		////ESINFO(PROGRESS3) << Info::plain() << ".";
-	}
-	////ESINFO(PROGRESS3);
-	if (true) { loop_2_1_time.end(); }
+        ////ESINFO(PROGRESS3) << Info::plain() << ".";
+    }
+    ////ESINFO(PROGRESS3);
+    if (true) { loop_2_1_time.end(); }
 
-	if (true) { cluster_time.totalTime.end(); }
+    if (true) { cluster_time.totalTime.end(); }
 }
 
 void ClusterBase::multKplusGlobal_Kinv( SEQ_VECTOR<SEQ_VECTOR<double> > & x_in ) {
 
-	mkl_set_num_threads(1);
-	if (true) { cluster_time.totalTime.start(); }
+    mkl_set_num_threads(1);
+    if (true) { cluster_time.totalTime.start(); }
 
-	if (true) { vec_fill_time.start(); }
-	fill(vec_g0.begin(), vec_g0.end(), 0); // reset entire vector to 0
-	//fill(vec_e0.begin(), vec_e0.end(), 0); // reset entire vector to 0
-	if (true) { vec_fill_time.end(); }
+    if (true) { vec_fill_time.start(); }
+    fill(vec_g0.begin(), vec_g0.end(), 0); // reset entire vector to 0
+    //fill(vec_e0.begin(), vec_e0.end(), 0); // reset entire vector to 0
+    if (true) { vec_fill_time.end(); }
 
-	// loop over domains in the cluster
-	if (true) { loop_1_1_time.start(); }
-	#pragma omp parallel for
-	for (size_t d = 0; d < domains.size(); d++)
-	{
-   		domains[d].B0Kplus_comp.DenseMatVec(x_in[d], tm2[d]);			// g0 - with comp B0Kplus
-		domains[d].Kplus_R.     DenseMatVec(x_in[d], tm3[d], 'T');		// e0
-	}
-	if (true) { loop_1_1_time.end(); }
+    // loop over domains in the cluster
+    if (true) { loop_1_1_time.start(); }
+    #pragma omp parallel for
+    for (size_t d = 0; d < domains.size(); d++)
+    {
+           domains[d].B0Kplus_comp.DenseMatVec(x_in[d], tm2[d]);            // g0 - with comp B0Kplus
+        domains[d].Kplus_R.     DenseMatVec(x_in[d], tm3[d], 'T');        // e0
+    }
+    if (true) { loop_1_1_time.end(); }
 
-	if (true) { loop_1_2_time.start(); }
-	#pragma omp parallel for
-	for (size_t d = 0; d < domains.size(); d++)
-	{
-		esint e0_start	=  d	* domains[d].Kplus_R.cols;
-		esint e0_end		= (d+1) * domains[d].Kplus_R.cols;
+    if (true) { loop_1_2_time.start(); }
+    #pragma omp parallel for
+    for (size_t d = 0; d < domains.size(); d++)
+    {
+        esint e0_start    =  d    * domains[d].Kplus_R.cols;
+        esint e0_end        = (d+1) * domains[d].Kplus_R.cols;
 
-		for (esint i = e0_start; i < e0_end; i++ )
-			vec_e0[i] = - tm3[d][i - e0_start];
-	}
+        for (esint i = e0_start; i < e0_end; i++ )
+            vec_e0[i] = - tm3[d][i - e0_start];
+    }
 
-	for (size_t d = 0; d < domains.size(); d++)
-		for (esint i = 0; i < domains[d].B0Kplus_comp.rows; i++)
-			vec_g0[ domains[d].B0_comp_map_vec[i] - 1 ] += tm2[d][i];
+    for (size_t d = 0; d < domains.size(); d++)
+        for (esint i = 0; i < domains[d].B0Kplus_comp.rows; i++)
+            vec_g0[ domains[d].B0_comp_map_vec[i] - 1 ] += tm2[d][i];
 
-	// end loop over domains
-	if (true) { loop_1_2_time.end(); }
+    // end loop over domains
+    if (true) { loop_1_2_time.end(); }
 
-	mkl_set_num_threads(PAR_NUM_THREADS);
-	if (true) { clusCP_time.start(); }
+    mkl_set_num_threads(PAR_NUM_THREADS);
+    if (true) { clusCP_time.start(); }
 
-	if (true) { clus_F0_1_time.start(); }
-	F0.Solve(vec_g0, tm1[0], 0, 0);
-	if (true) { clus_F0_1_time.end(); }
+    if (true) { clus_F0_1_time.start(); }
+    F0.Solve(vec_g0, tm1[0], 0, 0);
+    if (true) { clus_F0_1_time.end(); }
 
-	if (true) { clus_G0_time.start(); }
-	G0.MatVec(tm1[0], tm2[0], 'N');
-	if (true) { clus_G0_time.end(); }
+    if (true) { clus_G0_time.start(); }
+    G0.MatVec(tm1[0], tm2[0], 'N');
+    if (true) { clus_G0_time.end(); }
 
-	#pragma omp parallel for
-	for (size_t i = 0; i < vec_e0.size(); i++) {
-		tm2[0][i] = tm2[0][i] - vec_e0[i];
-	}
-	//cblas_daxpy(vec_e0.size(), -1.0, &vec_e0[0], 1, &tm2[0][0], 1);
+    #pragma omp parallel for
+    for (size_t i = 0; i < vec_e0.size(); i++) {
+        tm2[0][i] = tm2[0][i] - vec_e0[i];
+    }
+    //cblas_daxpy(vec_e0.size(), -1.0, &vec_e0[0], 1, &tm2[0][0], 1);
 
-	if (true) { clus_Sa_time.start(); }
+    if (true) { clus_Sa_time.start(); }
 // #ifdef SPARSE_SA
 //    Sa.Solve(tm2[0], vec_alfa,0,0);
 // #else
@@ -867,2336 +867,2336 @@ void ClusterBase::multKplusGlobal_Kinv( SEQ_VECTOR<SEQ_VECTOR<double> > & x_in )
 //    Sa_dense.Solve(tm2[0], vec_alfa, nrhs);
 // #endif
 
-	switch (configuration.SAsolver) {
-	case FETIConfiguration::SASOLVER::CPU_SPARSE:
-		Sa.Solve(tm2[0], vec_alfa, 0, 0);
-		break;
-	case FETIConfiguration::SASOLVER::CPU_DENSE:
-		Sa_dense_cpu.Solve(tm2[0], vec_alfa, 1);
-		break;
-	case FETIConfiguration::SASOLVER::ACC_DENSE:
-		Sa_dense_acc.Solve(tm2[0], vec_alfa, 1);
-		break;
-	default:
-		eslog::error("Not implemented S alfa solver.\n");
-	}
+    switch (configuration.SAsolver) {
+    case FETIConfiguration::SASOLVER::CPU_SPARSE:
+        Sa.Solve(tm2[0], vec_alfa, 0, 0);
+        break;
+    case FETIConfiguration::SASOLVER::CPU_DENSE:
+        Sa_dense_cpu.Solve(tm2[0], vec_alfa, 1);
+        break;
+    case FETIConfiguration::SASOLVER::ACC_DENSE:
+        Sa_dense_acc.Solve(tm2[0], vec_alfa, 1);
+        break;
+    default:
+        eslog::error("Not implemented S alfa solver.\n");
+    }
 
-	if (true) { clus_Sa_time.end(); }
+    if (true) { clus_Sa_time.end(); }
 
-	if (true) { clus_G0t_time.start(); }
-	G0.MatVec(vec_alfa, tm1[0], 'T'); 	// lambda
-	if (true) { clus_G0t_time.end(); }
+    if (true) { clus_G0t_time.start(); }
+    G0.MatVec(vec_alfa, tm1[0], 'T');     // lambda
+    if (true) { clus_G0t_time.end(); }
 
-	#pragma omp parallel for
-	for (size_t i = 0; i < vec_g0.size(); i++) {
-		tm1[0][i] = vec_g0[i] - tm1[0][i];
-	}
-
-
-	if (true) { clus_F0_2_time.start(); }
-	F0.Solve(tm1[0], vec_lambda,0,0);
-	if (true) { clus_F0_2_time.end(); }
-
-	if (true) { clusCP_time.end(); }
+    #pragma omp parallel for
+    for (size_t i = 0; i < vec_g0.size(); i++) {
+        tm1[0][i] = vec_g0[i] - tm1[0][i];
+    }
 
 
-	// Kplus_x
-	mkl_set_num_threads(1);
-	if (true) { loop_2_1_time.start(); }
-	#pragma omp parallel for
-	for (size_t d = 0; d < domains.size(); d++)
-	{
-		esint domain_size = domains[d].domain_prim_size;
+    if (true) { clus_F0_2_time.start(); }
+    F0.Solve(tm1[0], vec_lambda,0,0);
+    if (true) { clus_F0_2_time.end(); }
 
-		SEQ_VECTOR < double > tmp_vec (domains[d].B0_comp_map_vec.size(), 0.0);
-		for (size_t i = 0; i < domains[d].B0_comp_map_vec.size(); i++) {
-			tmp_vec[i] = -1.0 * vec_lambda[domains[d].B0_comp_map_vec[i] - 1] ;
-		}
-		domains[d].B0Kplus_comp.DenseMatVec(tmp_vec, tm2[d], 'T' );
+    if (true) { clusCP_time.end(); }
 
-		esint e0_start	=  d	* domains[d].Kplus_R.cols;
-		domains[d].Kplus_R.DenseMatVec(vec_alfa, tm3[d],'N', e0_start);
 
-		for (esint i = 0; i < domain_size; i++)
-			x_in[d][i] = tm2[d][i] + tm3[d][i];
+    // Kplus_x
+    mkl_set_num_threads(1);
+    if (true) { loop_2_1_time.start(); }
+    #pragma omp parallel for
+    for (size_t d = 0; d < domains.size(); d++)
+    {
+        esint domain_size = domains[d].domain_prim_size;
 
-	}
-	if (true) { loop_2_1_time.end(); }
+        SEQ_VECTOR < double > tmp_vec (domains[d].B0_comp_map_vec.size(), 0.0);
+        for (size_t i = 0; i < domains[d].B0_comp_map_vec.size(); i++) {
+            tmp_vec[i] = -1.0 * vec_lambda[domains[d].B0_comp_map_vec[i] - 1] ;
+        }
+        domains[d].B0Kplus_comp.DenseMatVec(tmp_vec, tm2[d], 'T' );
 
-	if (true) { cluster_time.totalTime.end(); }
+        esint e0_start    =  d    * domains[d].Kplus_R.cols;
+        domains[d].Kplus_R.DenseMatVec(vec_alfa, tm3[d],'N', e0_start);
+
+        for (esint i = 0; i < domain_size; i++)
+            x_in[d][i] = tm2[d][i] + tm3[d][i];
+
+    }
+    if (true) { loop_2_1_time.end(); }
+
+    if (true) { cluster_time.totalTime.end(); }
 }
 
 void ClusterBase::multKplusGlobal_Kinv_2( SEQ_VECTOR<SEQ_VECTOR<double> > & x_in ) {
 
-	mkl_set_num_threads(1);
-	if (true) { cluster_time.totalTime.start(); }
+    mkl_set_num_threads(1);
+    if (true) { cluster_time.totalTime.start(); }
 
-	if (true) { vec_fill_time.start(); }
-	fill(vec_g0.begin(), vec_g0.end(), 0); // reset entire vector to 0
-	//fill(vec_e0.begin(), vec_e0.end(), 0); // reset entire vector to 0
-	if (true) { vec_fill_time.end(); }
+    if (true) { vec_fill_time.start(); }
+    fill(vec_g0.begin(), vec_g0.end(), 0); // reset entire vector to 0
+    //fill(vec_e0.begin(), vec_e0.end(), 0); // reset entire vector to 0
+    if (true) { vec_fill_time.end(); }
 
-	// loop over domains in the cluster
-	if (true) { loop_1_1_time.start(); }
-	#pragma omp parallel for
-	for (size_t d = 0; d < domains.size(); d++)
-	{
-   		//domains[d].B0Kplus_comp.DenseMatVec(x_in[d], tm2[d]);				// g0 - with comp B0Kplus
-		//domains[d].Kplus_R.     DenseMatVec(x_in[d], tm3[d], 'T');		// e0
-		domains[d].B0KplusB1_comp .DenseMatVec(x_in[d], tm2[d], 'N');		// g0 - with comp B0Kplus
-		domains[d].Kplus_R_B1_comp.DenseMatVec(x_in[d], tm3[d], 'N');		// e0
-	}
-	if (true) { loop_1_1_time.end(); }
+    // loop over domains in the cluster
+    if (true) { loop_1_1_time.start(); }
+    #pragma omp parallel for
+    for (size_t d = 0; d < domains.size(); d++)
+    {
+           //domains[d].B0Kplus_comp.DenseMatVec(x_in[d], tm2[d]);                // g0 - with comp B0Kplus
+        //domains[d].Kplus_R.     DenseMatVec(x_in[d], tm3[d], 'T');        // e0
+        domains[d].B0KplusB1_comp .DenseMatVec(x_in[d], tm2[d], 'N');        // g0 - with comp B0Kplus
+        domains[d].Kplus_R_B1_comp.DenseMatVec(x_in[d], tm3[d], 'N');        // e0
+    }
+    if (true) { loop_1_1_time.end(); }
 
-	if (true) { loop_1_2_time.start(); }
-	#pragma omp parallel for
-	for (size_t d = 0; d < domains.size(); d++)
-	{
-		esint e0_start	=  d	* domains[d].Kplus_R.cols;
-		esint e0_end		= (d+1) * domains[d].Kplus_R.cols;
+    if (true) { loop_1_2_time.start(); }
+    #pragma omp parallel for
+    for (size_t d = 0; d < domains.size(); d++)
+    {
+        esint e0_start    =  d    * domains[d].Kplus_R.cols;
+        esint e0_end        = (d+1) * domains[d].Kplus_R.cols;
 
-		for (esint i = e0_start; i < e0_end; i++ )
-			vec_e0[i] = - tm3[d][i - e0_start];
-	}
+        for (esint i = e0_start; i < e0_end; i++ )
+            vec_e0[i] = - tm3[d][i - e0_start];
+    }
 
-	for (size_t d = 0; d < domains.size(); d++)
-		for (esint i = 0; i < domains[d].B0Kplus_comp.rows; i++)
-			vec_g0[ domains[d].B0_comp_map_vec[i] - 1 ] += tm2[d][i];
+    for (size_t d = 0; d < domains.size(); d++)
+        for (esint i = 0; i < domains[d].B0Kplus_comp.rows; i++)
+            vec_g0[ domains[d].B0_comp_map_vec[i] - 1 ] += tm2[d][i];
 
-	// end loop over domains
-	if (true) { loop_1_2_time.end(); }
+    // end loop over domains
+    if (true) { loop_1_2_time.end(); }
 
-	mkl_set_num_threads(PAR_NUM_THREADS);
-	if (true) { clusCP_time.start(); }
+    mkl_set_num_threads(PAR_NUM_THREADS);
+    if (true) { clusCP_time.start(); }
 
-	if (true) { clus_F0_1_time.start(); }
-	F0.Solve(vec_g0, tm1[0], 0, 0);
-	if (true) { clus_F0_1_time.end(); }
+    if (true) { clus_F0_1_time.start(); }
+    F0.Solve(vec_g0, tm1[0], 0, 0);
+    if (true) { clus_F0_1_time.end(); }
 
-	if (true) { clus_G0_time.start(); }
-	G0.MatVec(tm1[0], tm2[0], 'N');
-	if (true) { clus_G0_time.end(); }
+    if (true) { clus_G0_time.start(); }
+    G0.MatVec(tm1[0], tm2[0], 'N');
+    if (true) { clus_G0_time.end(); }
 
-	#pragma omp parallel for
-	for (size_t i = 0; i < vec_e0.size(); i++)
-		tm2[0][i] = tm2[0][i] - vec_e0[i];
-	//cblas_daxpy(vec_e0.size(), -1.0, &vec_e0[0], 1, &tm2[0][0], 1);
+    #pragma omp parallel for
+    for (size_t i = 0; i < vec_e0.size(); i++)
+        tm2[0][i] = tm2[0][i] - vec_e0[i];
+    //cblas_daxpy(vec_e0.size(), -1.0, &vec_e0[0], 1, &tm2[0][0], 1);
 
-	if (true) { clus_Sa_time.start(); }
-//	Sa.Solve(tm2[0], vec_alfa,0,0);
+    if (true) { clus_Sa_time.start(); }
+//    Sa.Solve(tm2[0], vec_alfa,0,0);
 
-	switch (configuration.SAsolver) {
-	case FETIConfiguration::SASOLVER::CPU_SPARSE:
-		Sa.Solve(tm2[0], vec_alfa, 0, 0);
-		break;
-	case FETIConfiguration::SASOLVER::CPU_DENSE:
-		Sa_dense_cpu.Solve(tm2[0], vec_alfa, 1);
-		break;
-	case FETIConfiguration::SASOLVER::ACC_DENSE:
-		Sa_dense_acc.Solve(tm2[0], vec_alfa, 1);
-		break;
-	default:
-		eslog::error("Not implemented S alfa solver.\n");
-	}
+    switch (configuration.SAsolver) {
+    case FETIConfiguration::SASOLVER::CPU_SPARSE:
+        Sa.Solve(tm2[0], vec_alfa, 0, 0);
+        break;
+    case FETIConfiguration::SASOLVER::CPU_DENSE:
+        Sa_dense_cpu.Solve(tm2[0], vec_alfa, 1);
+        break;
+    case FETIConfiguration::SASOLVER::ACC_DENSE:
+        Sa_dense_acc.Solve(tm2[0], vec_alfa, 1);
+        break;
+    default:
+        eslog::error("Not implemented S alfa solver.\n");
+    }
 
-	if (true) { clus_Sa_time.end(); }
+    if (true) { clus_Sa_time.end(); }
 
-	if (true) { clus_G0t_time.start(); }
-	G0.MatVec(vec_alfa, tm1[0], 'T'); 	// lambda
-	if (true) { clus_G0t_time.end(); }
+    if (true) { clus_G0t_time.start(); }
+    G0.MatVec(vec_alfa, tm1[0], 'T');     // lambda
+    if (true) { clus_G0t_time.end(); }
 
-	#pragma omp parallel for
-	for (size_t i = 0; i < vec_g0.size(); i++) {
-		tm1[0][i] = vec_g0[i] - tm1[0][i];
-	}
-
-
-	if (true) { clus_F0_2_time.start(); }
-	F0.Solve(tm1[0], vec_lambda,0,0);
-	if (true) { clus_F0_2_time.end(); }
-
-	if (true) { clusCP_time.end(); }
+    #pragma omp parallel for
+    for (size_t i = 0; i < vec_g0.size(); i++) {
+        tm1[0][i] = vec_g0[i] - tm1[0][i];
+    }
 
 
-	// Kplus_x
-	mkl_set_num_threads(1);
-	if (true) { loop_2_1_time.start(); }
-	#pragma omp parallel for
-	for (size_t d = 0; d < domains.size(); d++)
-	{
-		esint domain_size = domains[d].domain_prim_size;
+    if (true) { clus_F0_2_time.start(); }
+    F0.Solve(tm1[0], vec_lambda,0,0);
+    if (true) { clus_F0_2_time.end(); }
 
-		SEQ_VECTOR < double > tmp_vec (domains[d].B0_comp_map_vec.size(), 0.0);
-		for (size_t i = 0; i < domains[d].B0_comp_map_vec.size(); i++) {
-			tmp_vec[i] = -1.0 * vec_lambda[domains[d].B0_comp_map_vec[i] - 1] ;
-		}
+    if (true) { clusCP_time.end(); }
 
-		//domains[d].B0Kplus_comp.DenseMatVec(tmp_vec, tm2[d], 'T' );
-		domains[d].B0KplusB1_comp .DenseMatVec(tmp_vec, tm2[d], 'T');
-		domains[d].B0KplusB1_comp .MatVec(tmp_vec, tm2[d], 'T');
 
-		esint e0_start	=  d	* domains[d].Kplus_R.cols;
+    // Kplus_x
+    mkl_set_num_threads(1);
+    if (true) { loop_2_1_time.start(); }
+    #pragma omp parallel for
+    for (size_t d = 0; d < domains.size(); d++)
+    {
+        esint domain_size = domains[d].domain_prim_size;
 
-		//domains[d].Kplus_R.DenseMatVec(vec_alfa, tm3[d],'N', e0_start);
-		domains[d].Kplus_R_B1_comp.DenseMatVec(vec_alfa, tm3[d], 'T', e0_start);
-		//domains[d].Kplus_R_B1_comp.MatVec(vec_alfa, tm3[d], 'T', e0_start);
+        SEQ_VECTOR < double > tmp_vec (domains[d].B0_comp_map_vec.size(), 0.0);
+        for (size_t i = 0; i < domains[d].B0_comp_map_vec.size(); i++) {
+            tmp_vec[i] = -1.0 * vec_lambda[domains[d].B0_comp_map_vec[i] - 1] ;
+        }
 
-		for (esint i = 0; i < domain_size; i++)
-			x_in[d][i] = tm2[d][i] + tm3[d][i];
+        //domains[d].B0Kplus_comp.DenseMatVec(tmp_vec, tm2[d], 'T' );
+        domains[d].B0KplusB1_comp .DenseMatVec(tmp_vec, tm2[d], 'T');
+        domains[d].B0KplusB1_comp .MatVec(tmp_vec, tm2[d], 'T');
 
-	}
-	if (true) { loop_2_1_time.end(); }
+        esint e0_start    =  d    * domains[d].Kplus_R.cols;
 
-	if (true) { cluster_time.totalTime.end(); }
+        //domains[d].Kplus_R.DenseMatVec(vec_alfa, tm3[d],'N', e0_start);
+        domains[d].Kplus_R_B1_comp.DenseMatVec(vec_alfa, tm3[d], 'T', e0_start);
+        //domains[d].Kplus_R_B1_comp.MatVec(vec_alfa, tm3[d], 'T', e0_start);
+
+        for (esint i = 0; i < domain_size; i++)
+            x_in[d][i] = tm2[d][i] + tm3[d][i];
+
+    }
+    if (true) { loop_2_1_time.end(); }
+
+    if (true) { cluster_time.totalTime.end(); }
 }
 
 
 ////backup March 31 2015
 //void ClusterBase::multKplusGlobal_l(SEQ_VECTOR<SEQ_VECTOR<double> > & x_in) {
 //
-//	//esint MPIrank;
-//	//MPI_Comm_rank (info::mpi::MPICommunicator, &MPIrank);
-//	//if (MPIrank == 0 ) { cout << "MultKplusGlobal - Cilk workers = " << __cilkrts_get_nworkers()      << endl; }
-//	//if (MPIrank == 0 ) { cout << "MultKplusGlobal - Cilk workers = " << __cilkrts_get_total_workers() << endl; }
-//	//
+//    //esint MPIrank;
+//    //MPI_Comm_rank (info::mpi::MPICommunicator, &MPIrank);
+//    //if (MPIrank == 0 ) { cout << "MultKplusGlobal - Cilk workers = " << __cilkrts_get_nworkers()      << endl; }
+//    //if (MPIrank == 0 ) { cout << "MultKplusGlobal - Cilk workers = " << __cilkrts_get_total_workers() << endl; }
+//    //
 //
-//	esint num_threads = domains.size();
+//    esint num_threads = domains.size();
 //
-//	//__cilkrts_set_param("nworkers", num_threads);
-//	mkl_set_num_threads(1);
+//    //__cilkrts_set_param("nworkers", num_threads);
+//    mkl_set_num_threads(1);
 //
-//	cluster_time.totalTime.start();
+//    cluster_time.totalTime.start();
 //
-//	vec_fill_time.start();
-//	fill(vec_g0.begin(), vec_g0.end(), 0); // reset entire vector to 0
-//	//fill(vec_e0.begin(), vec_e0.end(), 0); // reset entire vector to 0
-//	vec_fill_time.end();
+//    vec_fill_time.start();
+//    fill(vec_g0.begin(), vec_g0.end(), 0); // reset entire vector to 0
+//    //fill(vec_e0.begin(), vec_e0.end(), 0); // reset entire vector to 0
+//    vec_fill_time.end();
 //
-//	// loop over domains in the cluster
-//	loop_1_1_time.start();
-//	cilk_for (esint d = 0; d < domains.size(); d++)
-//	{
-//		//PROD - domains[d].B0Kplus.MatVec(x_in[d], tm2[d], 'N');			// g0 using B0Kplus
-//		//cout << "B0Klus - sparsity - " << 100.0 * (double)domains[d].B0Kplus.nnz / (double)(domains[d].B0Kplus.cols * domains[d].B0Kplus.rows) << endl;
+//    // loop over domains in the cluster
+//    loop_1_1_time.start();
+//    cilk_for (esint d = 0; d < domains.size(); d++)
+//    {
+//        //PROD - domains[d].B0Kplus.MatVec(x_in[d], tm2[d], 'N');            // g0 using B0Kplus
+//        //cout << "B0Klus - sparsity - " << 100.0 * (double)domains[d].B0Kplus.nnz / (double)(domains[d].B0Kplus.cols * domains[d].B0Kplus.rows) << endl;
 //
-//		//OLD - domains[d].multKplusLocal( x_in[d], tm1[d], 0, 0 );		// g0
-//		//OLD - domains[d].B0.MatVec( tm1[d] , tm2[d],  'N' );			// g0
+//        //OLD - domains[d].multKplusLocal( x_in[d], tm1[d], 0, 0 );        // g0
+//        //OLD - domains[d].B0.MatVec( tm1[d] , tm2[d],  'N' );            // g0
 //
-//		domains[d].B0Kplus_comp.DenseMatVec(x_in[d], tm2[d]);			// g0 - with comp B0
+//        domains[d].B0Kplus_comp.DenseMatVec(x_in[d], tm2[d]);            // g0 - with comp B0
 //
-//		//domains[d].Kplus_R.MatVec     (x_in[d], tm3[d], 'T');		        // e0
-//		domains[d].Kplus_R.DenseMatVec(x_in[d], tm3[d], 'T');
-//	}
-//	loop_1_1_time.end();
+//        //domains[d].Kplus_R.MatVec     (x_in[d], tm3[d], 'T');                // e0
+//        domains[d].Kplus_R.DenseMatVec(x_in[d], tm3[d], 'T');
+//    }
+//    loop_1_1_time.end();
 //
-//	loop_1_2_time.start();
-//	cilk_for (esint d = 0; d < domains.size(); d++)
-//	{
-//		esint e0_start	=  d	* domains[d].Kplus_R.cols;
-//		esint e0_end		= (d+1) * domains[d].Kplus_R.cols;
+//    loop_1_2_time.start();
+//    cilk_for (esint d = 0; d < domains.size(); d++)
+//    {
+//        esint e0_start    =  d    * domains[d].Kplus_R.cols;
+//        esint e0_end        = (d+1) * domains[d].Kplus_R.cols;
 //
-//		for (esint i = e0_start; i < e0_end; i++ )
-//			vec_e0[i] = - tm3[d][i - e0_start];
-//	}
-//
-//
-//	for (esint d = 0; d < domains.size(); d++)
-//		for (esint i = 0; i < domains[d].B0Kplus_comp.rows; i++)
-//			vec_g0[ domains[d].B0_comp_map_vec[i] - 1 ] += tm2[d][i];
+//        for (esint i = e0_start; i < e0_end; i++ )
+//            vec_e0[i] = - tm3[d][i - e0_start];
+//    }
 //
 //
-//	//PROD -
-//	//cilk_for (esint i = 0; i < vec_g0.size(); i++ )
-//	//{
-//	//	vec_g0[i] = tm2[0][i];
-//	//}
-//	//for (esint d = 1; d < domains.size(); d++) {
-//	//	cilk_for (esint i = 0; i < vec_g0.size(); i++ )
-//	//	{
-//	//		vec_g0[i] = vec_g0[i] + tm2[d][i];
-//	//	}
-//	//}
+//    for (esint d = 0; d < domains.size(); d++)
+//        for (esint i = 0; i < domains[d].B0Kplus_comp.rows; i++)
+//            vec_g0[ domains[d].B0_comp_map_vec[i] - 1 ] += tm2[d][i];
 //
 //
-//	// end loop over domains
-//	loop_1_2_time.end();
-//
-//	mkl_set_num_threads(24); //pozor
-//	clusCP_time.start();
-//
-//	clus_F0_1_time.start();
-//	F0.Solve(vec_g0, tm1[0], 0, 0);
-//	clus_F0_1_time.end();
-//
-//	clus_G0_time.start();
-//	G0.MatVec(tm1[0], tm2[0], 'N');
-//	clus_G0_time.end();
-//
-//	cilk_for (esint i = 0; i < vec_e0.size(); i++)
-//		tm2[0][i] = tm2[0][i] - vec_e0[i];
-//	//cblas_daxpy(vec_e0.size(), -1.0, &vec_e0[0], 1, &tm2[0][0], 1);
-//
-//	clus_Sa_time.start();
-//	Sa.Solve(tm2[0], vec_alfa,0,0);
-//	clus_Sa_time.end();
-//
-//	clus_G0t_time.start();
-//	G0.MatVec(vec_alfa, tm1[0], 'T'); 	// lambda
-//	clus_G0t_time.end();
-//
-//	cilk_for (esint i = 0; i < vec_g0.size(); i++)
-//		tm1[0][i] = vec_g0[i] - tm1[0][i];
+//    //PROD -
+//    //cilk_for (esint i = 0; i < vec_g0.size(); i++ )
+//    //{
+//    //    vec_g0[i] = tm2[0][i];
+//    //}
+//    //for (esint d = 1; d < domains.size(); d++) {
+//    //    cilk_for (esint i = 0; i < vec_g0.size(); i++ )
+//    //    {
+//    //        vec_g0[i] = vec_g0[i] + tm2[d][i];
+//    //    }
+//    //}
 //
 //
-//	clus_F0_2_time.start();
-//	F0.Solve(tm1[0], vec_lambda,0,0);
-//	clus_F0_2_time.end();
+//    // end loop over domains
+//    loop_1_2_time.end();
 //
-//	clusCP_time.end();
+//    mkl_set_num_threads(24); //pozor
+//    clusCP_time.start();
+//
+//    clus_F0_1_time.start();
+//    F0.Solve(vec_g0, tm1[0], 0, 0);
+//    clus_F0_1_time.end();
+//
+//    clus_G0_time.start();
+//    G0.MatVec(tm1[0], tm2[0], 'N');
+//    clus_G0_time.end();
+//
+//    cilk_for (esint i = 0; i < vec_e0.size(); i++)
+//        tm2[0][i] = tm2[0][i] - vec_e0[i];
+//    //cblas_daxpy(vec_e0.size(), -1.0, &vec_e0[0], 1, &tm2[0][0], 1);
+//
+//    clus_Sa_time.start();
+//    Sa.Solve(tm2[0], vec_alfa,0,0);
+//    clus_Sa_time.end();
+//
+//    clus_G0t_time.start();
+//    G0.MatVec(vec_alfa, tm1[0], 'T');     // lambda
+//    clus_G0t_time.end();
+//
+//    cilk_for (esint i = 0; i < vec_g0.size(); i++)
+//        tm1[0][i] = vec_g0[i] - tm1[0][i];
 //
 //
-//	// Kplus_x
-//	mkl_set_num_threads(1);
-//	loop_2_1_time.start();
-//	cilk_for (esint d = 0; d < domains.size(); d++)
-//	{
-//		esint domain_size = domains[d].domain_prim_size;
+//    clus_F0_2_time.start();
+//    F0.Solve(tm1[0], vec_lambda,0,0);
+//    clus_F0_2_time.end();
+//
+//    clusCP_time.end();
 //
 //
-//		SEQ_VECTOR < double > tmp_vec (domains[d].B0_comp_map_vec.size(), 0);
-//		for (esint i = 0; i < domains[d].B0_comp_map_vec.size(); i++)
-//			tmp_vec[i] = vec_lambda[domains[d].B0_comp_map_vec[i] - 1] ;
-//		domains[d].B0t_comp.MatVec(tmp_vec, tm1[d], 'N');
+//    // Kplus_x
+//    mkl_set_num_threads(1);
+//    loop_2_1_time.start();
+//    cilk_for (esint d = 0; d < domains.size(); d++)
+//    {
+//        esint domain_size = domains[d].domain_prim_size;
 //
 //
-//		//domains[d].B0.MatVec(vec_lambda, tm1[d], 'T');  // both about the same performance
-//		//domains[d].B0t.MatVec(vec_lambda, tm1[d], 'N');   // both about the same performance
+//        SEQ_VECTOR < double > tmp_vec (domains[d].B0_comp_map_vec.size(), 0);
+//        for (esint i = 0; i < domains[d].B0_comp_map_vec.size(); i++)
+//            tmp_vec[i] = vec_lambda[domains[d].B0_comp_map_vec[i] - 1] ;
+//        domains[d].B0t_comp.MatVec(tmp_vec, tm1[d], 'N');
 //
 //
-//		for (esint i = 0; i < domain_size; i++)
-//			tm1[d][i] = x_in[d][i] - tm1[d][i];
+//        //domains[d].B0.MatVec(vec_lambda, tm1[d], 'T');  // both about the same performance
+//        //domains[d].B0t.MatVec(vec_lambda, tm1[d], 'N');   // both about the same performance
 //
-//		domains[d].multKplusLocal(tm1[d] , tm2[d], 0, 0);
 //
-//		esint e0_start	=  d	* domains[d].Kplus_R.cols;
-//		esint e0_end		= (d+1) * domains[d].Kplus_R.cols;
+//        for (esint i = 0; i < domain_size; i++)
+//            tm1[d][i] = x_in[d][i] - tm1[d][i];
 //
-//		//domains[d].Kplus_R.MatVec(vec_alfa, tm3[d], 'N', e0_start,0);
-//		domains[d].Kplus_R.DenseMatVec(vec_alfa, tm3[d],'N', e0_start);
+//        domains[d].multKplusLocal(tm1[d] , tm2[d], 0, 0);
 //
-//		for (esint i = 0; i < domain_size; i++)
-//			x_in[d][i] = tm2[d][i] + tm3[d][i];
+//        esint e0_start    =  d    * domains[d].Kplus_R.cols;
+//        esint e0_end        = (d+1) * domains[d].Kplus_R.cols;
 //
-//	}
-//	loop_2_1_time.end();
+//        //domains[d].Kplus_R.MatVec(vec_alfa, tm3[d], 'N', e0_start,0);
+//        domains[d].Kplus_R.DenseMatVec(vec_alfa, tm3[d],'N', e0_start);
 //
-//	cluster_time.totalTime.end();
+//        for (esint i = 0; i < domain_size; i++)
+//            x_in[d][i] = tm2[d][i] + tm3[d][i];
+//
+//    }
+//    loop_2_1_time.end();
+//
+//    cluster_time.totalTime.end();
 //}
 
 
 void ClusterBase::CompressB0() {
 
-	#pragma omp parallel for
-	for (size_t d = 0; d < domains.size(); d++) {
+    #pragma omp parallel for
+    for (size_t d = 0; d < domains.size(); d++) {
 
-		//TODO: Need fix - dual copy - prepisuju data asembleru
-		domains[d].B0 = instance->B0[domains[d].domain_global_index];
-		domains[d].B0.type = 'G';
-		domains[d].B0.ConvertToCSRwithSort(1);
+        //TODO: Need fix - dual copy - prepisuju data asembleru
+        domains[d].B0 = instance->B0[domains[d].domain_global_index];
+        domains[d].B0.type = 'G';
+        domains[d].B0.ConvertToCSRwithSort(1);
 
 
-		domains[d].B0.MatTranspose(domains[d].B0t);
-		domains[d].B0_comp = domains[d].B0;
+        domains[d].B0.MatTranspose(domains[d].B0t);
+        domains[d].B0_comp = domains[d].B0;
 
-		for (esint i = 0; i < domains[d].B0_comp.rows; i++) {
-			if (domains[d].B0_comp.CSR_I_row_indices[i] != domains[d].B0_comp.CSR_I_row_indices[i + 1]) {
-				domains[d].B0_comp_map_vec.push_back(i + 1);
-			}
-		}
+        for (esint i = 0; i < domains[d].B0_comp.rows; i++) {
+            if (domains[d].B0_comp.CSR_I_row_indices[i] != domains[d].B0_comp.CSR_I_row_indices[i + 1]) {
+                domains[d].B0_comp_map_vec.push_back(i + 1);
+            }
+        }
 
-		size_t unique = 0;
-		for (size_t i = 1; i < domains[d].B0_comp.CSR_I_row_indices.size(); i++) {
-			if (domains[d].B0_comp.CSR_I_row_indices[unique] != domains[d].B0_comp.CSR_I_row_indices[i]) {
-				domains[d].B0_comp.CSR_I_row_indices[++unique] = domains[d].B0_comp.CSR_I_row_indices[i];
-			}
-		}
-		domains[d].B0_comp.rows = unique;
-		domains[d].B0_comp.CSR_I_row_indices.resize(unique + 1);
+        size_t unique = 0;
+        for (size_t i = 1; i < domains[d].B0_comp.CSR_I_row_indices.size(); i++) {
+            if (domains[d].B0_comp.CSR_I_row_indices[unique] != domains[d].B0_comp.CSR_I_row_indices[i]) {
+                domains[d].B0_comp.CSR_I_row_indices[++unique] = domains[d].B0_comp.CSR_I_row_indices[i];
+            }
+        }
+        domains[d].B0_comp.rows = unique;
+        domains[d].B0_comp.CSR_I_row_indices.resize(unique + 1);
 
-		// WARNING: There is a problem with 'std::unique'.
-		// WARNING: Combination of 'Cilk' and '-O2' results in memory error in 'std::unique'.
-		//
-		//auto it = std::unique(domains[d].B0_comp.CSR_I_row_indices.begin(), domains[d].B0_comp.CSR_I_row_indices.end());
-		//domains[d].B0_comp.rows = std::distance(domains[d].B0_comp.CSR_I_row_indices.begin(), it) - 1;
-		//domains[d].B0_comp.CSR_I_row_indices.resize(domains[d].B0_comp.rows + 1);
+        // WARNING: There is a problem with 'std::unique'.
+        // WARNING: Combination of 'Cilk' and '-O2' results in memory error in 'std::unique'.
+        //
+        //auto it = std::unique(domains[d].B0_comp.CSR_I_row_indices.begin(), domains[d].B0_comp.CSR_I_row_indices.end());
+        //domains[d].B0_comp.rows = std::distance(domains[d].B0_comp.CSR_I_row_indices.begin(), it) - 1;
+        //domains[d].B0_comp.CSR_I_row_indices.resize(domains[d].B0_comp.rows + 1);
 
-		domains[d].B0_comp.MatTranspose(domains[d].B0t_comp);
-	}
+        domains[d].B0_comp.MatTranspose(domains[d].B0t_comp);
+    }
 }
 
 void ClusterBase::CreateG0() {
 
-	mkl_set_num_threads(1);
+    mkl_set_num_threads(1);
 
-	SEQ_VECTOR <SparseMatrix> G0LocalTemp( domains.size() );
+    SEQ_VECTOR <SparseMatrix> G0LocalTemp( domains.size() );
 
-	#pragma omp parallel for
-	for (size_t i = 0; i<domains.size(); i++) {
-		domains[i].Kplus_R.ConvertDenseToCSR(0);
+    #pragma omp parallel for
+    for (size_t i = 0; i<domains.size(); i++) {
+        domains[i].Kplus_R.ConvertDenseToCSR(0);
 
-		G0LocalTemp[i].MatMat(domains[i].B0, 'N', domains[i].Kplus_R );
-		G0LocalTemp[i].MatTranspose(-1.0);
+        G0LocalTemp[i].MatMat(domains[i].B0, 'N', domains[i].Kplus_R );
+        G0LocalTemp[i].MatTranspose(-1.0);
 
-		SEQ_VECTOR<esint>().swap( domains[i].Kplus_R.CSR_I_row_indices );
-		SEQ_VECTOR<esint>().swap( domains[i].Kplus_R.CSR_J_col_indices );
-		SEQ_VECTOR<double> ().swap( domains[i].Kplus_R.CSR_V_values );
-	}
+        SEQ_VECTOR<esint>().swap( domains[i].Kplus_R.CSR_I_row_indices );
+        SEQ_VECTOR<esint>().swap( domains[i].Kplus_R.CSR_J_col_indices );
+        SEQ_VECTOR<double> ().swap( domains[i].Kplus_R.CSR_V_values );
+    }
 
-	for (size_t i = 0; i<domains.size(); i++) {
-		G0.MatAppend(G0LocalTemp[i]);
-		G0LocalTemp[i].Clear();
-	}
+    for (size_t i = 0; i<domains.size(); i++) {
+        G0.MatAppend(G0LocalTemp[i]);
+        G0LocalTemp[i].Clear();
+    }
 
-	if (!SYMMETRIC_SYSTEM) {
+    if (!SYMMETRIC_SYSTEM) {
 
-		SEQ_VECTOR <SparseMatrix> G0LocalTemp2( domains.size() );
+        SEQ_VECTOR <SparseMatrix> G0LocalTemp2( domains.size() );
 
-		#pragma omp parallel for
-		for (size_t i = 0; i<domains.size(); i++) {
-			domains[i].Kplus_R2.ConvertDenseToCSR(0);
+        #pragma omp parallel for
+        for (size_t i = 0; i<domains.size(); i++) {
+            domains[i].Kplus_R2.ConvertDenseToCSR(0);
 
-			G0LocalTemp2[i].MatMat(domains[i].B0, 'N', domains[i].Kplus_R2 );
-			G0LocalTemp2[i].MatTranspose(-1.0);
+            G0LocalTemp2[i].MatMat(domains[i].B0, 'N', domains[i].Kplus_R2 );
+            G0LocalTemp2[i].MatTranspose(-1.0);
 
-			SEQ_VECTOR<esint>().swap( domains[i].Kplus_R2.CSR_I_row_indices );
-			SEQ_VECTOR<esint>().swap( domains[i].Kplus_R2.CSR_J_col_indices );
-			SEQ_VECTOR<double> ().swap( domains[i].Kplus_R2.CSR_V_values );
-		}
+            SEQ_VECTOR<esint>().swap( domains[i].Kplus_R2.CSR_I_row_indices );
+            SEQ_VECTOR<esint>().swap( domains[i].Kplus_R2.CSR_J_col_indices );
+            SEQ_VECTOR<double> ().swap( domains[i].Kplus_R2.CSR_V_values );
+        }
 
-		for (size_t i = 0; i<domains.size(); i++) {
-			G02.MatAppend(G0LocalTemp2[i]);
-			G0LocalTemp2[i].Clear();
-		}
+        for (size_t i = 0; i<domains.size(); i++) {
+            G02.MatAppend(G0LocalTemp2[i]);
+            G0LocalTemp2[i].Clear();
+        }
 
-//		if (info::ecf->output.print_matrices) {
-//			SparseMatrix tmpG02 = G02;
-//			std::ofstream osG0(Logging::prepareFile("G02"));
-//			osG0 <<  tmpG02;
-//			osG0.close();
-//		}
-
-
-	}
+//        if (info::ecf->output.print_matrices) {
+//            SparseMatrix tmpG02 = G02;
+//            std::ofstream osG0(Logging::prepareFile("G02"));
+//            osG0 <<  tmpG02;
+//            osG0.close();
+//        }
 
 
-//	if (info::ecf->output.print_matrices) {
-//		SparseMatrix tmpG01 = G0;
-//		std::ofstream osG0(Logging::prepareFile("G01"));
-//		osG0 <<  tmpG01;
-//		osG0.close();
-//	}
+    }
 
-	vec_g0.resize(G0.cols);
-	vec_e0.resize(G0.rows);
+
+//    if (info::ecf->output.print_matrices) {
+//        SparseMatrix tmpG01 = G0;
+//        std::ofstream osG0(Logging::prepareFile("G01"));
+//        osG0 <<  tmpG01;
+//        osG0.close();
+//    }
+
+    vec_g0.resize(G0.cols);
+    vec_e0.resize(G0.rows);
 
 }
 
 void ClusterBase::CreateF0() {
 
-	 TimeEval F0_timing (" HFETI - F0 preprocessing timing");
-	 if (true) { F0_timing.totalTime.start(); }
+     TimeEval F0_timing (" HFETI - F0 preprocessing timing");
+     if (true) { F0_timing.totalTime.start(); }
 
-	mkl_set_num_threads(1);
+    mkl_set_num_threads(1);
 
-	int MPIrank; MPI_Comm_rank (info::mpi::comm, &MPIrank);
+    int MPIrank; MPI_Comm_rank (info::mpi::comm, &MPIrank);
 
-	SEQ_VECTOR <SparseMatrix> tmpF0v (domains.size());
+    SEQ_VECTOR <SparseMatrix> tmpF0v (domains.size());
 
-	eslog::checkpointln("HFETI - Create F0");
+    eslog::checkpointln("HFETI - Create F0");
 
-	 TimeEvent solve_F0_time("B0 compression; F0 multiple InitialCondition solve");
-	 if (true) { solve_F0_time.start(); }
+     TimeEvent solve_F0_time("B0 compression; F0 multiple InitialCondition solve");
+     if (true) { solve_F0_time.start(); }
 
-	#pragma omp parallel for
-	for (size_t d = 0; d < domains.size(); d++) {
+    #pragma omp parallel for
+    for (size_t d = 0; d < domains.size(); d++) {
 
-		if (MPIrank == 0 && d == 0)
-			domains[d].Kplus.msglvl=0;
-		else
-			domains[d].Kplus.msglvl=0;
+        if (MPIrank == 0 && d == 0)
+            domains[d].Kplus.msglvl=0;
+        else
+            domains[d].Kplus.msglvl=0;
 
-		// FO solve in double in case K is in single
-		if (
-				configuration.F0_precision == FETIConfiguration::F0SOLVER_PRECISION::DOUBLE
-				&& (configuration.Ksolver == FETIConfiguration::KSOLVER::DIRECT_SP
-				|| configuration.Ksolver == FETIConfiguration::KSOLVER::DIRECT_MP )
-			) {
-			SparseSolverCPU Ktmp;
-			Ktmp.ImportMatrix_wo_Copy(domains[d].K);
-			std::stringstream ss;
-			ss << "Create F0 -> rank: " << info::mpi::rank << ", subdomain: " << d;
-			Ktmp.Factorization(ss.str());
-			Ktmp.SolveMat_Dense(domains[d].B0t_comp, domains[d].B0Kplus_comp);
-			domains[d].B0Kplus = domains[d].B0Kplus_comp;
-		} else {
-			// F0 uses same precision as K
-			if (SYMMETRIC_SYSTEM) {
-				if(configuration.mp_pseudoinverse) {
-					domains[d].Kplus_R.ConvertDenseToCSR(0);
+        // FO solve in double in case K is in single
+        if (
+                configuration.F0_precision == FETIConfiguration::F0SOLVER_PRECISION::DOUBLE
+                && (configuration.Ksolver == FETIConfiguration::KSOLVER::DIRECT_SP
+                || configuration.Ksolver == FETIConfiguration::KSOLVER::DIRECT_MP )
+            ) {
+            SparseSolverCPU Ktmp;
+            Ktmp.ImportMatrix_wo_Copy(domains[d].K);
+            std::stringstream ss;
+            ss << "Create F0 -> rank: " << info::mpi::rank << ", subdomain: " << d;
+            Ktmp.Factorization(ss.str());
+            Ktmp.SolveMat_Dense(domains[d].B0t_comp, domains[d].B0Kplus_comp);
+            domains[d].B0Kplus = domains[d].B0Kplus_comp;
+        } else {
+            // F0 uses same precision as K
+            if (SYMMETRIC_SYSTEM) {
+                if(configuration.mp_pseudoinverse) {
+                    domains[d].Kplus_R.ConvertDenseToCSR(0);
 
-					SparseMatrix tmR, tmR2;
-					SparseMatrix B0tm;
+                    SparseMatrix tmR, tmR2;
+                    SparseMatrix B0tm;
 
-					B0tm = domains[d].B0t_comp;
-					tmR.MatMat(domains[d].Kplus_R,'T', domains[d].B0t_comp);
-					tmR2.MatMat(domains[d].Kplus_R,'N',tmR);
-					B0tm.MatAddInPlace(tmR2,'N', -1.0);
+                    B0tm = domains[d].B0t_comp;
+                    tmR.MatMat(domains[d].Kplus_R,'T', domains[d].B0t_comp);
+                    tmR2.MatMat(domains[d].Kplus_R,'N',tmR);
+                    B0tm.MatAddInPlace(tmR2,'N', -1.0);
 
-					domains[d].Kplus.SolveMat_Dense(B0tm, domains[d].B0Kplus_comp);
+                    domains[d].Kplus.SolveMat_Dense(B0tm, domains[d].B0Kplus_comp);
 
-					tmR.Clear();
-					tmR2.Clear();
-					B0tm.Clear();
-					B0tm = domains[d].B0Kplus_comp;
-					tmR.MatMat(domains[d].Kplus_R,'T', domains[d].B0Kplus_comp);
-					tmR2.MatMat(domains[d].Kplus_R,'N',tmR);
-					B0tm.MatAddInPlace(tmR2,'N', -1.0);
+                    tmR.Clear();
+                    tmR2.Clear();
+                    B0tm.Clear();
+                    B0tm = domains[d].B0Kplus_comp;
+                    tmR.MatMat(domains[d].Kplus_R,'T', domains[d].B0Kplus_comp);
+                    tmR2.MatMat(domains[d].Kplus_R,'N',tmR);
+                    B0tm.MatAddInPlace(tmR2,'N', -1.0);
 
-					domains[d].B0Kplus = B0tm;
-					domains[d].B0Kplus_comp = B0tm;
-
-
-
-				} else {
-					domains[d].Kplus.SolveMat_Dense(domains[d].B0t_comp, domains[d].B0Kplus_comp);
-					domains[d].B0Kplus = domains[d].B0Kplus_comp;
-
-//					//ESINFO(PROGRESS1) << domains[d].B0t_comp.SpyText();
-				}
-			} else {
-				//TODO: The Klus.Solve - does not have to be called twice here - can be done with Transpose
-				//TODO: Alex
-				esint set_bckp = domains[d].Kplus.iparm[11];
-				domains[d].Kplus.iparm[11] = 2;
-				domains[d].Kplus.SolveMat_Dense(domains[d].B0t_comp, domains[d].B0Kplus_comp);
-				domains[d].Kplus.iparm[11] = set_bckp;
-				domains[d].Kplus.SolveMat_Dense(domains[d].B0t_comp, domains[d].B0Kplus);
-			}
-		}
-
-		domains[d].B0t_comp.Clear();
+                    domains[d].B0Kplus = B0tm;
+                    domains[d].B0Kplus_comp = B0tm;
 
 
-		domains[d].B0Kplus_comp.MatTranspose();
-		domains[d].B0Kplus_comp.ConvertCSRToDense(1);
 
-		for (size_t i = 0; i < domains[d].B0Kplus.CSR_J_col_indices.size() - 1; i++) {
-			domains[d].B0Kplus.CSR_J_col_indices[i] = domains[d].B0_comp_map_vec [ domains[d].B0Kplus.CSR_J_col_indices[i] - 1 ];
-		}
+                } else {
+                    domains[d].Kplus.SolveMat_Dense(domains[d].B0t_comp, domains[d].B0Kplus_comp);
+                    domains[d].B0Kplus = domains[d].B0Kplus_comp;
 
-		domains[d].B0Kplus.cols = domains[d].B0.rows;;
+//                    //ESINFO(PROGRESS1) << domains[d].B0t_comp.SpyText();
+                }
+            } else {
+                //TODO: The Klus.Solve - does not have to be called twice here - can be done with Transpose
+                //TODO: Alex
+                esint set_bckp = domains[d].Kplus.iparm[11];
+                domains[d].Kplus.iparm[11] = 2;
+                domains[d].Kplus.SolveMat_Dense(domains[d].B0t_comp, domains[d].B0Kplus_comp);
+                domains[d].Kplus.iparm[11] = set_bckp;
+                domains[d].Kplus.SolveMat_Dense(domains[d].B0t_comp, domains[d].B0Kplus);
+            }
+        }
 
-		// Reduces the work for HFETI iteration - reduces the
-		// New multKlpusGlobal_Kinv2
-		if ( 0 == 1 ) {
-			domains[d].B0KplusB1_comp. MatMat(domains[d].B1_comp_dom, 'N', domains[d].B0Kplus);
-			domains[d].B0KplusB1_comp.ConvertCSRToDense(0);
-
-			domains[d].Kplus_R_B1_comp.MatMat(domains[d].B1_comp_dom, 'N', domains[d].Kplus_R);
-			domains[d].Kplus_R_B1_comp.ConvertCSRToDense(0);
-		}
-		// END - New multKlpusGlobal
-
-		tmpF0v[d].MatMat(domains[d].B0, 'N', domains[d].B0Kplus);
-		domains[d].B0Kplus.Clear();
-
-		domains[d].Kplus.msglvl=0;
-//		//ESINFO(PROGRESS3) << Info::plain() << ".";
-	}
-
-//	//ESINFO(PROGRESS3);
-
-	if (true) { solve_F0_time.end(); }
-	if (true) { solve_F0_time.printStatMPI(); }
-	if (true) {F0_timing.addEvent(solve_F0_time);}
-
-	TimeEvent reduction_F0_time("F0 reduction time");
-	if (true) {reduction_F0_time.start();}
-
-	for (size_t j = 1; j < tmpF0v.size(); j *= 2) {
-		#pragma omp parallel for
-		for (size_t i = 0; i <= tmpF0v.size() / (2 * j); i++) {
-			if (i * 2 * j + j < tmpF0v.size()) {
-				tmpF0v[i * 2 * j].MatAddInPlace( tmpF0v[i * 2 * j + j], 'N', 1.0 );
-				tmpF0v[i * 2 * j + j].Clear();
-			}
-		}
-	}
-	F0_Mat = tmpF0v[0];
-
-//	if (info::ecf->output.print_matrices) {
-//		SparseMatrix tmpF0 = F0_Mat;
-//		std::ofstream osF0(Logging::prepareFile("F0"));
-//		osF0 <<  tmpF0;
-//		osF0.close();
-//	}
-
-	if (true) { reduction_F0_time.end(); reduction_F0_time.printStatMPI(); F0_timing.addEvent(reduction_F0_time); }
+        domains[d].B0t_comp.Clear();
 
 
-	TimeEvent fact_F0_time("B0 Kplus Factorization ");
-	if (true) { fact_F0_time.start();}
+        domains[d].B0Kplus_comp.MatTranspose();
+        domains[d].B0Kplus_comp.ConvertCSRToDense(1);
 
-	mkl_set_num_threads(PAR_NUM_THREADS);
+        for (size_t i = 0; i < domains[d].B0Kplus.CSR_J_col_indices.size() - 1; i++) {
+            domains[d].B0Kplus.CSR_J_col_indices[i] = domains[d].B0_comp_map_vec [ domains[d].B0Kplus.CSR_J_col_indices[i] - 1 ];
+        }
 
-	if (SYMMETRIC_SYSTEM) {
-		F0_Mat.RemoveLower();
-	}
+        domains[d].B0Kplus.cols = domains[d].B0.rows;;
 
-	F0_Mat.mtype = mtype;
-	F0.ImportMatrix(F0_Mat);
+        // Reduces the work for HFETI iteration - reduces the
+        // New multKlpusGlobal_Kinv2
+        if ( 0 == 1 ) {
+            domains[d].B0KplusB1_comp. MatMat(domains[d].B1_comp_dom, 'N', domains[d].B0Kplus);
+            domains[d].B0KplusB1_comp.ConvertCSRToDense(0);
 
-//	bool PARDISO_SC = true;
-//	if (!PARDISO_SC)
-//		F0_fast.ImportMatrix(F0_Mat);
+            domains[d].Kplus_R_B1_comp.MatMat(domains[d].B1_comp_dom, 'N', domains[d].Kplus_R);
+            domains[d].Kplus_R_B1_comp.ConvertCSRToDense(0);
+        }
+        // END - New multKlpusGlobal
 
-	//F0_Mat.Clear();
-	F0.SetThreaded();
-	std::stringstream ss;
-	ss << "F0 -> rank: " << info::mpi::rank;
-	F0.Factorization(ss.str());
+        tmpF0v[d].MatMat(domains[d].B0, 'N', domains[d].B0Kplus);
+        domains[d].B0Kplus.Clear();
 
-	mkl_set_num_threads(1);
+        domains[d].Kplus.msglvl=0;
+//        //ESINFO(PROGRESS3) << Info::plain() << ".";
+    }
 
-	if (MPIrank == 0) F0.msglvl = 0;
+//    //ESINFO(PROGRESS3);
 
-	if (true) {fact_F0_time.end(); fact_F0_time.printStatMPI(); F0_timing.addEvent(fact_F0_time);}
+    if (true) { solve_F0_time.end(); }
+    if (true) { solve_F0_time.printStatMPI(); }
+    if (true) {F0_timing.addEvent(solve_F0_time);}
 
-	if (true) { F0_timing.totalTime.end(); }
-	//TODO: Need fix - for detailed measurements
-//	if (min_numClusters_per_MPI > cluster_local_index)
-//		F0_timing.printStatsMPI();
+    TimeEvent reduction_F0_time("F0 reduction time");
+    if (true) {reduction_F0_time.start();}
 
-	// *** POZOR **************************************************************
-	#pragma omp parallel for
-	for (size_t d = 0; d<domains.size(); d++) {
-		domains[d].B0.Clear();
-		domains[d].B0t.Clear();
-	}
+    for (size_t j = 1; j < tmpF0v.size(); j *= 2) {
+        #pragma omp parallel for
+        for (size_t i = 0; i <= tmpF0v.size() / (2 * j); i++) {
+            if (i * 2 * j + j < tmpF0v.size()) {
+                tmpF0v[i * 2 * j].MatAddInPlace( tmpF0v[i * 2 * j + j], 'N', 1.0 );
+                tmpF0v[i * 2 * j + j].Clear();
+            }
+        }
+    }
+    F0_Mat = tmpF0v[0];
 
-	vec_lambda.resize(F0.m_Kplus_size);
+//    if (info::ecf->output.print_matrices) {
+//        SparseMatrix tmpF0 = F0_Mat;
+//        std::ofstream osF0(Logging::prepareFile("F0"));
+//        osF0 <<  tmpF0;
+//        osF0.close();
+//    }
+
+    if (true) { reduction_F0_time.end(); reduction_F0_time.printStatMPI(); F0_timing.addEvent(reduction_F0_time); }
+
+
+    TimeEvent fact_F0_time("B0 Kplus Factorization ");
+    if (true) { fact_F0_time.start();}
+
+    mkl_set_num_threads(PAR_NUM_THREADS);
+
+    if (SYMMETRIC_SYSTEM) {
+        F0_Mat.RemoveLower();
+    }
+
+    F0_Mat.mtype = mtype;
+    F0.ImportMatrix(F0_Mat);
+
+//    bool PARDISO_SC = true;
+//    if (!PARDISO_SC)
+//        F0_fast.ImportMatrix(F0_Mat);
+
+    //F0_Mat.Clear();
+    F0.SetThreaded();
+    std::stringstream ss;
+    ss << "F0 -> rank: " << info::mpi::rank;
+    F0.Factorization(ss.str());
+
+    mkl_set_num_threads(1);
+
+    if (MPIrank == 0) F0.msglvl = 0;
+
+    if (true) {fact_F0_time.end(); fact_F0_time.printStatMPI(); F0_timing.addEvent(fact_F0_time);}
+
+    if (true) { F0_timing.totalTime.end(); }
+    //TODO: Need fix - for detailed measurements
+//    if (min_numClusters_per_MPI > cluster_local_index)
+//        F0_timing.printStatsMPI();
+
+    // *** POZOR **************************************************************
+    #pragma omp parallel for
+    for (size_t d = 0; d<domains.size(); d++) {
+        domains[d].B0.Clear();
+        domains[d].B0t.Clear();
+    }
+
+    vec_lambda.resize(F0.m_Kplus_size);
 
 };
 
 void ClusterBase::CreateSa() {
 
-	 TimeEval Sa_timing (" HFETI - Salfa preprocessing timing"); if (true) { Sa_timing.totalTime.start(); }
+     TimeEval Sa_timing (" HFETI - Salfa preprocessing timing"); if (true) { Sa_timing.totalTime.start(); }
 
-//	bool PARDISO_SC = true;
-//	bool get_kernel_from_mesh = configuration.regularization == FETIConfiguration::REGULARIZATION::ANALYTIC;
+//    bool PARDISO_SC = true;
+//    bool get_kernel_from_mesh = configuration.regularization == FETIConfiguration::REGULARIZATION::ANALYTIC;
 
-	MKL_Set_Num_Threads(PAR_NUM_THREADS);
-
-
-	SparseMatrix Salfa, tmpM;
+    MKL_Set_Num_Threads(PAR_NUM_THREADS);
 
 
-	 TimeEvent G0trans_Sa_time("G0 transpose"); if (true) { G0trans_Sa_time.start(); }
-	SparseMatrix G0t;
-	SparseMatrix G02t;
-	G0.MatTranspose(G0t);
-	if (!SYMMETRIC_SYSTEM) {
-		G02.MatTranspose(G02t);
-	}
-	 if (true) { G0trans_Sa_time.end(); G0trans_Sa_time.printStatMPI(); Sa_timing.addEvent(G0trans_Sa_time); }
+    SparseMatrix Salfa, tmpM;
 
 
-	 TimeEvent G0solve_Sa_time("SolveMatF with G0t as InitialCondition"); if (true) { G0solve_Sa_time.start(); }
-	SparseSolverCPU Salfa_SC_solver;
-	if (info::mpi::rank == 0) Salfa_SC_solver.msglvl = 0;
-	if (SYMMETRIC_SYSTEM) {
-		Salfa_SC_solver.Create_SC_w_Mat( F0_Mat, G0t, Salfa, true, 0 );
-		Salfa.ConvertDenseToCSR(1);
-		Salfa.RemoveLower();
-	} else {
-		Salfa_SC_solver.Create_non_sym_SC_w_Mat( F0_Mat, G0t, G02t, Salfa, true, 0 );
-		//TODO: SC je dive transponopvany
-		//Salfa.ConvertDenseToCSR(1);
-		//Salfa.MatTranspose();
-	}
-	 if (true) { G0solve_Sa_time.end(); G0solve_Sa_time.printStatMPI(); Sa_timing.addEvent(G0solve_Sa_time); }
+     TimeEvent G0trans_Sa_time("G0 transpose"); if (true) { G0trans_Sa_time.start(); }
+    SparseMatrix G0t;
+    SparseMatrix G02t;
+    G0.MatTranspose(G0t);
+    if (!SYMMETRIC_SYSTEM) {
+        G02.MatTranspose(G02t);
+    }
+     if (true) { G0trans_Sa_time.end(); G0trans_Sa_time.printStatMPI(); Sa_timing.addEvent(G0trans_Sa_time); }
 
-	Salfa.mtype = this->mtype;
-	F0_Mat.Clear();
 
-//	if (info::ecf->output.print_matrices) {
-//		std::ofstream osSa(Logging::prepareFile("Salfa"));
-//		osSa << Salfa;
-//		osSa.close();
-//	}
+     TimeEvent G0solve_Sa_time("SolveMatF with G0t as InitialCondition"); if (true) { G0solve_Sa_time.start(); }
+    SparseSolverCPU Salfa_SC_solver;
+    if (info::mpi::rank == 0) Salfa_SC_solver.msglvl = 0;
+    if (SYMMETRIC_SYSTEM) {
+        Salfa_SC_solver.Create_SC_w_Mat( F0_Mat, G0t, Salfa, true, 0 );
+        Salfa.ConvertDenseToCSR(1);
+        Salfa.RemoveLower();
+    } else {
+        Salfa_SC_solver.Create_non_sym_SC_w_Mat( F0_Mat, G0t, G02t, Salfa, true, 0 );
+        //TODO: SC je dive transponopvany
+        //Salfa.ConvertDenseToCSR(1);
+        //Salfa.MatTranspose();
+    }
+     if (true) { G0solve_Sa_time.end(); G0solve_Sa_time.printStatMPI(); Sa_timing.addEvent(G0solve_Sa_time); }
 
-//	if (!PARDISO_SC) {
-//		if (MPIrank == 0) { F0_fast.msglvl = Info::report(LIBRARIES) ? 1 : 0; }
+    Salfa.mtype = this->mtype;
+    F0_Mat.Clear();
+
+//    if (info::ecf->output.print_matrices) {
+//        std::ofstream osSa(Logging::prepareFile("Salfa"));
+//        osSa << Salfa;
+//        osSa.close();
+//    }
+
+//    if (!PARDISO_SC) {
+//        if (MPIrank == 0) { F0_fast.msglvl = Info::report(LIBRARIES) ? 1 : 0; }
 //
-//		//SolaveMatF is obsolete - use Schur Complement Instead
-//		F0_fast.SolveMatF(G0t,tmpM, true);
-//		if (MPIrank == 0) F0_fast.msglvl = 0;
+//        //SolaveMatF is obsolete - use Schur Complement Instead
+//        F0_fast.SolveMatF(G0t,tmpM, true);
+//        if (MPIrank == 0) F0_fast.msglvl = 0;
 //
-//		Salfa.MatMat(G0, 'N', tmpM);
-//		Salfa.RemoveLower();
-//		tmpM.Clear();
-//	}
+//        Salfa.MatMat(G0, 'N', tmpM);
+//        Salfa.RemoveLower();
+//        tmpM.Clear();
+//    }
 
-	// *** Regularization of Sa from NULL PIVOTS
-	if ( configuration.regularization == FETIConfiguration::REGULARIZATION::ALGEBRAIC ) {
+    // *** Regularization of Sa from NULL PIVOTS
+    if ( configuration.regularization == FETIConfiguration::REGULARIZATION::ALGEBRAIC ) {
 
-		SparseMatrix Kernel_Sa;
-		SparseMatrix Kernel_Sa2;
-		eslog::checkpointln("Salfa - regularization from matrix.");
+        SparseMatrix Kernel_Sa;
+        SparseMatrix Kernel_Sa2;
+        eslog::checkpointln("Salfa - regularization from matrix.");
 
-		double tmp_double;
-		esint tmp_int;
-		SparseMatrix _tmpSparseMat; // Regularization matrix for Salfa
+        double tmp_double;
+        esint tmp_int;
+        SparseMatrix _tmpSparseMat; // Regularization matrix for Salfa
 
-		if (SYMMETRIC_SYSTEM) {
+        if (SYMMETRIC_SYSTEM) {
 
-			int regularization_type = 1;
+            int regularization_type = 1;
 
-			switch (regularization_type) { //(configuration.SAsolver) {
+            switch (regularization_type) { //(configuration.SAsolver) {
 
-				case 0: { //FETI_SASOLVER::CPU_DENSE: {
-					// *** Get kernel from GGt - faster as GGt is very sparse matrix - works only for symmetric systems
-					//  - kernel G0*G0t is used as regularization matrix for Salfa - needs to be scaled as values of G0*G0t are 10^10 smaller than values of Salfa
-					SparseMatrix GGt;
-					GGt.MatMat(G0,'N',G0t);
-					GGt.RemoveLower();
-					GGt.get_kernel_from_K(GGt, _tmpSparseMat,Kernel_Sa,tmp_double, tmp_int, 1000000, configuration.sc_size);
-					_tmpSparseMat.ConvertToCSR(1);
-					// *** END - Get kernel from GGt - faster as GGt is very sparse matrix - works only for symmetric systems
-					break;
-				}
+                case 0: { //FETI_SASOLVER::CPU_DENSE: {
+                    // *** Get kernel from GGt - faster as GGt is very sparse matrix - works only for symmetric systems
+                    //  - kernel G0*G0t is used as regularization matrix for Salfa - needs to be scaled as values of G0*G0t are 10^10 smaller than values of Salfa
+                    SparseMatrix GGt;
+                    GGt.MatMat(G0,'N',G0t);
+                    GGt.RemoveLower();
+                    GGt.get_kernel_from_K(GGt, _tmpSparseMat,Kernel_Sa,tmp_double, tmp_int, 1000000, configuration.sc_size);
+                    _tmpSparseMat.ConvertToCSR(1);
+                    // *** END - Get kernel from GGt - faster as GGt is very sparse matrix - works only for symmetric systems
+                    break;
+                }
 
-				case 1: { //FETI_SASOLVER::CPU_SPARSE: {
-					// *** Get kernel from Salfa - slower as Salfa is dense and takes more resources to find kernel
-					Salfa.get_kernel_from_K(Salfa, _tmpSparseMat,Kernel_Sa,tmp_double, tmp_int, -1, configuration.sc_size);
-					// *** END - Get kernel from Salfa
-					break;
-				}
+                case 1: { //FETI_SASOLVER::CPU_SPARSE: {
+                    // *** Get kernel from Salfa - slower as Salfa is dense and takes more resources to find kernel
+                    Salfa.get_kernel_from_K(Salfa, _tmpSparseMat,Kernel_Sa,tmp_double, tmp_int, -1, configuration.sc_size);
+                    // *** END - Get kernel from Salfa
+                    break;
+                }
 
-				case 2: { //FETI_SASOLVER::ACC_DENSE: {
-					//TODO: Musi se zkonzultovat s Alexem - nefunguje na 100%
+                case 2: { //FETI_SASOLVER::ACC_DENSE: {
+                    //TODO: Musi se zkonzultovat s Alexem - nefunguje na 100%
 
-					// *** Regularization of Salfa from kernels of G0*G0t matrix - it is designed for Dissection solver - it does not provide regularization matrix
+                    // *** Regularization of Salfa from kernels of G0*G0t matrix - it is designed for Dissection solver - it does not provide regularization matrix
 
-					// *** Make regularization matrix from kernels - warning - output is dense matrix -- as it is added to the dense Salfa who gives a fuck
+                    // *** Make regularization matrix from kernels - warning - output is dense matrix -- as it is added to the dense Salfa who gives a fuck
 
-					SparseMatrix GGt;
-					GGt.MatMat(G0,'N',G0t);
-					GGt.RemoveLower();
+                    SparseMatrix GGt;
+                    GGt.MatMat(G0,'N',G0t);
+                    GGt.RemoveLower();
 
 //#if defined(SOLVER_DISSECTION)
-//					SparseSolverCPU GGt_solver;
-//					GGt_solver.ImportMatrix_wo_Copy(GGt);
-//					GGt_solver.Factorization ("G0G0t matrix");
-//					GGt_solver.GetKernel(Kernel_Sa); // TODO: Kplus.GetKernels(Kernel_Sa, Kernel_Sa2) - upravit na tuto funkci - v sym. pripade bude Kernel_Sa2 prazdna
+//                    SparseSolverCPU GGt_solver;
+//                    GGt_solver.ImportMatrix_wo_Copy(GGt);
+//                    GGt_solver.Factorization ("G0G0t matrix");
+//                    GGt_solver.GetKernel(Kernel_Sa); // TODO: Kplus.GetKernels(Kernel_Sa, Kernel_Sa2) - upravit na tuto funkci - v sym. pripade bude Kernel_Sa2 prazdna
 //#else
-					GGt.get_kernel_from_K(GGt, _tmpSparseMat,Kernel_Sa,tmp_double, tmp_int, -1, configuration.sc_size);
+                    GGt.get_kernel_from_K(GGt, _tmpSparseMat,Kernel_Sa,tmp_double, tmp_int, -1, configuration.sc_size);
 //#endif
 
-					SparseMatrix Kernel_Sat;
-					Kernel_Sa.MatTranspose(Kernel_Sat);
-					_tmpSparseMat.MatMat(Kernel_Sa, 'N',Kernel_Sat);
-					_tmpSparseMat.RemoveLower();
-					// *** END - Make regularization matrix from kernels
-					break;
-				}
+                    SparseMatrix Kernel_Sat;
+                    Kernel_Sa.MatTranspose(Kernel_Sat);
+                    _tmpSparseMat.MatMat(Kernel_Sa, 'N',Kernel_Sat);
+                    _tmpSparseMat.RemoveLower();
+                    // *** END - Make regularization matrix from kernels
+                    break;
+                }
 
-				case 3: { //FETI_SASOLVER::ACC_DENSE: {
-					//TODO: Musi se zkonzultovat s Alexem - nefunguje na 100%
+                case 3: { //FETI_SASOLVER::ACC_DENSE: {
+                    //TODO: Musi se zkonzultovat s Alexem - nefunguje na 100%
 
-					// *** Regularization of Salfa from kernels of G0*G0t matrix - it is designed for Dissection solver - it does not provide regularization matrix
+                    // *** Regularization of Salfa from kernels of G0*G0t matrix - it is designed for Dissection solver - it does not provide regularization matrix
 
-					// *** Make regularization matrix from kernels - warning - output is dense matrix -- as it is added to the dense Salfa who gives a fuck
+                    // *** Make regularization matrix from kernels - warning - output is dense matrix -- as it is added to the dense Salfa who gives a fuck
 
 //#if defined(SOLVER_DISSECTION)
-//					SparseSolverCPU GGt_solver;
-//					GGt_solver.ImportMatrix_wo_Copy(Salfa);
-//					GGt_solver.Factorization ("Salfa matrix");
-//					GGt_solver.GetKernel(Kernel_Sa); // TODO: Kplus.GetKernels(Kernel_Sa, Kernel_Sa2) - upravit na tuto funkci - v sym. pripade bude Kernel_Sa2 prazdna
+//                    SparseSolverCPU GGt_solver;
+//                    GGt_solver.ImportMatrix_wo_Copy(Salfa);
+//                    GGt_solver.Factorization ("Salfa matrix");
+//                    GGt_solver.GetKernel(Kernel_Sa); // TODO: Kplus.GetKernels(Kernel_Sa, Kernel_Sa2) - upravit na tuto funkci - v sym. pripade bude Kernel_Sa2 prazdna
 //#else
-					Salfa.get_kernel_from_K(Salfa, _tmpSparseMat,Kernel_Sa,tmp_double, tmp_int, -1, configuration.sc_size);
+                    Salfa.get_kernel_from_K(Salfa, _tmpSparseMat,Kernel_Sa,tmp_double, tmp_int, -1, configuration.sc_size);
 //#endif
 
-					SparseMatrix Kernel_Sat;
-					Kernel_Sa.MatTranspose(Kernel_Sat);
-					_tmpSparseMat.MatMat(Kernel_Sa, 'N',Kernel_Sat);
-					_tmpSparseMat.RemoveLower();
-					// *** END - Make regularization matrix from kernels
-					break;
-				}
+                    SparseMatrix Kernel_Sat;
+                    Kernel_Sa.MatTranspose(Kernel_Sat);
+                    _tmpSparseMat.MatMat(Kernel_Sa, 'N',Kernel_Sat);
+                    _tmpSparseMat.RemoveLower();
+                    // *** END - Make regularization matrix from kernels
+                    break;
+                }
 
-				default:
-					eslog::error("Unknown method for symmetric Salfa regularization.\n");
+                default:
+                    eslog::error("Unknown method for symmetric Salfa regularization.\n");
 
-			}
-
-
-			// *** Actuall Regularization of Salfa using regularization matrix
-			double ro = Salfa.GetMeanOfDiagonalOfSymmetricMatrix();
-			Salfa.MatAddInPlace(_tmpSparseMat,'N', ro);
-			// *** END - Actuall Regularization of Salfa using regularization matrix
+            }
 
 
+            // *** Actuall Regularization of Salfa using regularization matrix
+            double ro = Salfa.GetMeanOfDiagonalOfSymmetricMatrix();
+            Salfa.MatAddInPlace(_tmpSparseMat,'N', ro);
+            // *** END - Actuall Regularization of Salfa using regularization matrix
 
-//			if (1 == 1) {
-//				// *** Get kernel from GGt - faster as GGt is very sparse matrix - works only for symmetric systems
-//				//  - kernel G0*G0t is used as regularization matrix for Salfa - needs to be scaled as values of G0*G0t are 10^10 smaller than values of Salfa
-//				SparseMatrix GGt;
-//				GGt.MatMat(G0,'N',G0t);
-//				GGt.RemoveLower();
-//				GGt.get_kernel_from_K(GGt, _tmpSparseMat,Kernel_Sa,tmp_double, tmp_int, 1000000, configuration.sc_size);
-//				_tmpSparseMat.ConvertToCSR(1);
-//				// *** END - Get kernel from GGt - faster as GGt is very sparse matrix - works only for symmetric systems
-//			} else {
-//				// *** Get kernel from Salfa - slower as Salfa is dense and takes more resources to find kernel
-//				Salfa.get_kernel_from_K(Salfa, _tmpSparseMat,Kernel_Sa,tmp_double, tmp_int, -1, configuration.sc_size);
-//				// *** END - Get kernel from Salfa
-//			}
+
+
+//            if (1 == 1) {
+//                // *** Get kernel from GGt - faster as GGt is very sparse matrix - works only for symmetric systems
+//                //  - kernel G0*G0t is used as regularization matrix for Salfa - needs to be scaled as values of G0*G0t are 10^10 smaller than values of Salfa
+//                SparseMatrix GGt;
+//                GGt.MatMat(G0,'N',G0t);
+//                GGt.RemoveLower();
+//                GGt.get_kernel_from_K(GGt, _tmpSparseMat,Kernel_Sa,tmp_double, tmp_int, 1000000, configuration.sc_size);
+//                _tmpSparseMat.ConvertToCSR(1);
+//                // *** END - Get kernel from GGt - faster as GGt is very sparse matrix - works only for symmetric systems
+//            } else {
+//                // *** Get kernel from Salfa - slower as Salfa is dense and takes more resources to find kernel
+//                Salfa.get_kernel_from_K(Salfa, _tmpSparseMat,Kernel_Sa,tmp_double, tmp_int, -1, configuration.sc_size);
+//                // *** END - Get kernel from Salfa
+//            }
 //
-//			// *** Regularization of Salfa from kernels of G0*G0t matrix - it is designed for Dissection solver - it does not provide regularization matrix
-//			if (1 == 0) {
-//				// *** Make regularization matrix from kernels - warning - output is dense matrix -- as it is added to the dense Salfa who gives a fuck
-//				Kernel_Sa.Clear();
-//				_tmpSparseMat.Clear();
-//				SparseMatrix Kernel_Sat;
-//				Kernel_Sa.MatTranspose(Kernel_Sat);
-//				_tmpSparseMat.MatMat(Kernel_Sa, 'N',Kernel_Sat);
-//				_tmpSparseMat.RemoveLower();
-//				// *** END - Make regularization matrix from kernels
-//			}
+//            // *** Regularization of Salfa from kernels of G0*G0t matrix - it is designed for Dissection solver - it does not provide regularization matrix
+//            if (1 == 0) {
+//                // *** Make regularization matrix from kernels - warning - output is dense matrix -- as it is added to the dense Salfa who gives a fuck
+//                Kernel_Sa.Clear();
+//                _tmpSparseMat.Clear();
+//                SparseMatrix Kernel_Sat;
+//                Kernel_Sa.MatTranspose(Kernel_Sat);
+//                _tmpSparseMat.MatMat(Kernel_Sa, 'N',Kernel_Sat);
+//                _tmpSparseMat.RemoveLower();
+//                // *** END - Make regularization matrix from kernels
+//            }
 //
-//			// *** Regularization of Salfa
-//			double ro = Salfa.GetMeanOfDiagonalOfSymmetricMatrix();
-//			Salfa.MatAddInPlace(_tmpSparseMat,'N', ro);
-//			// *** END - Regularization of Salfa
+//            // *** Regularization of Salfa
+//            double ro = Salfa.GetMeanOfDiagonalOfSymmetricMatrix();
+//            Salfa.MatAddInPlace(_tmpSparseMat,'N', ro);
+//            // *** END - Regularization of Salfa
 
-		}
+        }
 
-		if (!SYMMETRIC_SYSTEM) {
+        if (!SYMMETRIC_SYSTEM) {
 
 
-			int regularization_type = 1;
+            int regularization_type = 1;
 
-			switch (regularization_type) { //(configuration.SAsolver) {
+            switch (regularization_type) { //(configuration.SAsolver) {
 
-				case 0: { //FETI_SASOLVER::CPU_DENSE: {
-					eslog::error("For non-symmetric systems G0*G0t cannot be used for regularization of Salfa - use direct regularization of Salfa.\n");
+                case 0: { //FETI_SASOLVER::CPU_DENSE: {
+                    eslog::error("For non-symmetric systems G0*G0t cannot be used for regularization of Salfa - use direct regularization of Salfa.\n");
 
-					// TODO: Alex prozatim nevi jak spocist regularizacni matici pro nesym. system z GGt
+                    // TODO: Alex prozatim nevi jak spocist regularizacni matici pro nesym. system z GGt
 
-					//			SparseMatrix GGt;
-					//			GGt.MatMat(G0,'N',G0t);
-					//			GGt.RemoveLower();
-					//			GGt.get_kernels_from_nonsym_K(GGt, _tmpSparseMat, Kernel_Sa, Kernel_Sa2, tmp_double, tmp_int, -1, configuration.sc_size);
+                    //            SparseMatrix GGt;
+                    //            GGt.MatMat(G0,'N',G0t);
+                    //            GGt.RemoveLower();
+                    //            GGt.get_kernels_from_nonsym_K(GGt, _tmpSparseMat, Kernel_Sa, Kernel_Sa2, tmp_double, tmp_int, -1, configuration.sc_size);
 
-					break;
-				}
+                    break;
+                }
 
-				case 1: { //FETI_SASOLVER::CPU_SPARSE: {
-					// *** Get kernel from Salfa - slower as Salfa is dense and takes more resources to find kernel
-					Salfa.get_kernels_from_nonsym_K(Salfa, _tmpSparseMat, Kernel_Sa, Kernel_Sa2, tmp_double, tmp_int, -1, configuration.sc_size);
-					// *** END - Get kernel from Salfa
-					break;
-				}
+                case 1: { //FETI_SASOLVER::CPU_SPARSE: {
+                    // *** Get kernel from Salfa - slower as Salfa is dense and takes more resources to find kernel
+                    Salfa.get_kernels_from_nonsym_K(Salfa, _tmpSparseMat, Kernel_Sa, Kernel_Sa2, tmp_double, tmp_int, -1, configuration.sc_size);
+                    // *** END - Get kernel from Salfa
+                    break;
+                }
 
-				case 2: { //FETI_SASOLVER::ACC_DENSE: {
-					// *** Regularization of Salfa from kernels of G0*G0t matrix - it is designed for Dissection solver - it does not provide regularization matrix
-					eslog::error("This type of Salfa regularization for nonsymmetric systems is not implemented yet.\n");
+                case 2: { //FETI_SASOLVER::ACC_DENSE: {
+                    // *** Regularization of Salfa from kernels of G0*G0t matrix - it is designed for Dissection solver - it does not provide regularization matrix
+                    eslog::error("This type of Salfa regularization for nonsymmetric systems is not implemented yet.\n");
 
-					// *** Make regularization matrix from kernels - warning - output is dense matrix -- as it is added to the dense Salfa who gives a fuck
+                    // *** Make regularization matrix from kernels - warning - output is dense matrix -- as it is added to the dense Salfa who gives a fuck
 
-//					SparseMatrix GGt;
-//					GGt.MatMat(G0,'N',G0t);
-//					GGt.RemoveLower();
-//
-////#if defined(SOLVER_DISSECTION)
-////					SparseSolverCPU GGt_solver;
-////					GGt_solver.ImportMatrix_wo_Copy(GGt);
-////					GGt_solver.Factorization ("G0G0t matrix");
-////					GGt_solver.GetKernel(Kernel_Sa); // TODO: Kplus.GetKernels(Kernel_Sa, Kernel_Sa2) - upravit na tuto funkci - v sym. pripade bude Kernel_Sa2 prazdna
-////#else
-//					GGt.get_kernel_from_K(GGt, _tmpSparseMat,Kernel_Sa,tmp_double, tmp_int, -1, configuration.sc_size);
-////#endif
-//
-//					SparseMatrix Kernel_Sat;
-//					Kernel_Sa.MatTranspose(Kernel_Sat);
-//					_tmpSparseMat.MatMat(Kernel_Sa, 'N',Kernel_Sat);
-//					_tmpSparseMat.RemoveLower();
-					// *** END - Make regularization matrix from kernels
-
-					break;
-				}
-
-				case 3: {//FETI_SASOLVER::ACC_DENSE: {
-					// *** Regularization of Salfa from kernels of G0*G0t matrix - it is designed for Dissection solver - it does not provide regularization matrix
-					eslog::error("This type of Salfa regularization for nonsymmetric systems is not implemented yet.\n");
-
-//					// *** Regularization of Salfa from kernels of G0*G0t matrix - it is designed for Dissection solver - it does not provide regularization matrix
-//
-//					// *** Make regularization matrix from kernels - warning - output is dense matrix -- as it is added to the dense Salfa who gives a fuck
+//                    SparseMatrix GGt;
+//                    GGt.MatMat(G0,'N',G0t);
+//                    GGt.RemoveLower();
 //
 ////#if defined(SOLVER_DISSECTION)
-////					SparseSolverCPU GGt_solver;
-////					GGt_solver.ImportMatrix_wo_Copy(Salfa);
-////					GGt_solver.Factorization ("Salfa matrix");
-////					GGt_solver.GetKernel(Kernel_Sa); // TODO: Kplus.GetKernels(Kernel_Sa, Kernel_Sa2) - upravit na tuto funkci - v sym. pripade bude Kernel_Sa2 prazdna
+////                    SparseSolverCPU GGt_solver;
+////                    GGt_solver.ImportMatrix_wo_Copy(GGt);
+////                    GGt_solver.Factorization ("G0G0t matrix");
+////                    GGt_solver.GetKernel(Kernel_Sa); // TODO: Kplus.GetKernels(Kernel_Sa, Kernel_Sa2) - upravit na tuto funkci - v sym. pripade bude Kernel_Sa2 prazdna
 ////#else
-//					Salfa.get_kernel_from_K(Salfa, _tmpSparseMat,Kernel_Sa,tmp_double, tmp_int, -1, configuration.sc_size);
+//                    GGt.get_kernel_from_K(GGt, _tmpSparseMat,Kernel_Sa,tmp_double, tmp_int, -1, configuration.sc_size);
 ////#endif
 //
-//					SparseMatrix Kernel_Sat;
-//					Kernel_Sa.MatTranspose(Kernel_Sat);
-//					_tmpSparseMat.MatMat(Kernel_Sa, 'N',Kernel_Sat);
-//					_tmpSparseMat.RemoveLower();
-//					// *** END - Make regularization matrix from kernels
+//                    SparseMatrix Kernel_Sat;
+//                    Kernel_Sa.MatTranspose(Kernel_Sat);
+//                    _tmpSparseMat.MatMat(Kernel_Sa, 'N',Kernel_Sat);
+//                    _tmpSparseMat.RemoveLower();
+                    // *** END - Make regularization matrix from kernels
 
-					break;
-				}
+                    break;
+                }
 
-				default:
-					eslog::error("Unknown method for symmetric Salfa regularization.\n");
+                case 3: {//FETI_SASOLVER::ACC_DENSE: {
+                    // *** Regularization of Salfa from kernels of G0*G0t matrix - it is designed for Dissection solver - it does not provide regularization matrix
+                    eslog::error("This type of Salfa regularization for nonsymmetric systems is not implemented yet.\n");
 
-			}
-
-
-		}
-		// *** END - Regularization of Sa from NULL PIVOTS
-
-//		if (info::ecf->output.print_matrices) {
-//			std::ofstream osSa(Logging::prepareFile("Kernel_Sa"));
-//			osSa << Kernel_Sa;
-//			osSa.close();
-//		}
+//                    // *** Regularization of Salfa from kernels of G0*G0t matrix - it is designed for Dissection solver - it does not provide regularization matrix
 //
-//		if (info::ecf->output.print_matrices) {
-//			std::ofstream osSa(Logging::prepareFile("Kernel_Sa2"));
-//			osSa << Kernel_Sa2;
-//			osSa.close();
-//		}
-
-		// *** Kernel (Kplus_R and Kplus_R2) correction for HTFETI method
-		if (SYMMETRIC_SYSTEM) {
-			for (size_t d = 0; d < domains.size(); d++) {
-				SparseMatrix tR;
-
-				SEQ_VECTOR < esint > rows_inds (Kernel_Sa.cols);
-
-				//TODO: Tady to asi neni dobre pro singu/regu
-				for (int i = 0; i < Kernel_Sa.cols; i++)
-					rows_inds[i] = 1 + d * Kernel_Sa.cols + i;
-
-				tR.CreateMatFromRowsFromMatrix_NewSize(Kernel_Sa,rows_inds);
-
-				SparseMatrix TmpR;
-				domains[d].Kplus_R.ConvertDenseToCSR(0);
-				TmpR.MatMat( domains[d].Kplus_R, 'N', tR );
-
-				if (TmpR.nnz == 0) {
-					; //domains[d].Kplus_Rb = domains[d].Kplus_R;
-				} else {
-					domains[d].Kplus_Rb = TmpR;
-					domains[d].Kplus_Rb.ConvertCSRToDense(0);
-				}
-			}
-		}
-
-
-		if (!SYMMETRIC_SYSTEM) {
-
-			SparseMatrix LAMN_RHS;
-			LAMN_RHS.MatMat(G02, 'T', Kernel_Sa2);
-
-			SparseMatrix LAMN;
-
-			esint set_bckp_F0 = F0.iparm[11];
-			F0.iparm[11] = 2;
-			F0.SolveMat_Sparse( LAMN_RHS, LAMN );
-			F0.iparm[11] = set_bckp_F0;
-
-			for (esint i = 0;i<LAMN.nnz;i++){
-				LAMN.CSR_V_values[i] *= -1;
-			}
-
-//			if (info::ecf->output.print_matrices) {
-//				std::ofstream osSa(Logging::prepareFile("LAMN"));
-//				osSa << LAMN;
-//				osSa.close();
-//			}
-
-			for (size_t d = 0; d < domains.size(); d++) {
-
-
-				SparseMatrix LAMN_local;
-				LAMN_local.CreateMatFromRowsFromMatrix_NewSize(LAMN, domains[d].B0_comp_map_vec);
-				SparseMatrix B0t_LAMNlocal;
-				B0t_LAMNlocal.MatMat(domains[d].B0_comp, 'T', LAMN_local);
-
-				esint set_bckp = domains[d].Kplus.iparm[11];
-				domains[d].Kplus.iparm[11] = 2;
-				domains[d].Kplus.SolveMat_Sparse(B0t_LAMNlocal);
-				domains[d].Kplus.iparm[11] = set_bckp;
-
-				SparseMatrix Rb2;
-				Rb2 = domains[d].Kplus_R2;
-				Rb2.ConvertDenseToCSR(1);
-
-
-				SparseMatrix tR; SparseMatrix tR2;
-
-				SEQ_VECTOR < esint > rows_inds (Kernel_Sa.cols);
-				for (int i = 0; i < Kernel_Sa.cols; i++)
-					rows_inds[i] = 1 + d * Kernel_Sa.cols + i;
-
-				tR. CreateMatFromRowsFromMatrix_NewSize(Kernel_Sa ,rows_inds);
-				tR2.CreateMatFromRowsFromMatrix_NewSize(Kernel_Sa2,rows_inds);
-
-				SparseMatrix TmpR;
-				domains[d].Kplus_R.ConvertDenseToCSR(0);
-				TmpR.MatMat( domains[d].Kplus_R, 'N', tR );
-
-				if (TmpR.nnz == 0) {
-					; //domains[d].Kplus_Rb = domains[d].Kplus_R;
-				} else {
-					domains[d].Kplus_Rb = TmpR;
-					domains[d].Kplus_Rb.ConvertCSRToDense(0);
-				}
-
-
-				SparseMatrix TmpR2;
-				domains[d].Kplus_R2.ConvertDenseToCSR(0);
-				TmpR2.MatMat( domains[d].Kplus_R2, 'N', tR2 );
-				TmpR2.MatAddInPlace(B0t_LAMNlocal,'N', 1.0);
-
-				if (TmpR2.nnz == 0) {
-					; //domains[d].Kplus_Rb = domains[d].Kplus_R;
-				} else {
-					domains[d].Kplus_Rb2 = TmpR2;
-					domains[d].Kplus_Rb2.ConvertCSRToDense(0);
-				}
-
-
-//				if (info::ecf->output.print_matrices) {
-//					std::ofstream osR(Logging::prepareFile(d, "Rb_").c_str());
-//					SparseMatrix tmpR = domains[d].Kplus_Rb;
-//					tmpR.ConvertDenseToCSR(0);
-//					osR << tmpR;
-//					osR.close();
+//                    // *** Make regularization matrix from kernels - warning - output is dense matrix -- as it is added to the dense Salfa who gives a fuck
 //
-//				}
+////#if defined(SOLVER_DISSECTION)
+////                    SparseSolverCPU GGt_solver;
+////                    GGt_solver.ImportMatrix_wo_Copy(Salfa);
+////                    GGt_solver.Factorization ("Salfa matrix");
+////                    GGt_solver.GetKernel(Kernel_Sa); // TODO: Kplus.GetKernels(Kernel_Sa, Kernel_Sa2) - upravit na tuto funkci - v sym. pripade bude Kernel_Sa2 prazdna
+////#else
+//                    Salfa.get_kernel_from_K(Salfa, _tmpSparseMat,Kernel_Sa,tmp_double, tmp_int, -1, configuration.sc_size);
+////#endif
 //
-//				if (info::ecf->output.print_matrices) {
-//					std::ofstream osR(Logging::prepareFile(d, "Rb2_").c_str());
-//					SparseMatrix tmpR = domains[d].Kplus_Rb2;
-//					tmpR.ConvertDenseToCSR(0);
-//					osR << tmpR;
-//					osR.close();
+//                    SparseMatrix Kernel_Sat;
+//                    Kernel_Sa.MatTranspose(Kernel_Sat);
+//                    _tmpSparseMat.MatMat(Kernel_Sa, 'N',Kernel_Sat);
+//                    _tmpSparseMat.RemoveLower();
+//                    // *** END - Make regularization matrix from kernels
+
+                    break;
+                }
+
+                default:
+                    eslog::error("Unknown method for symmetric Salfa regularization.\n");
+
+            }
+
+
+        }
+        // *** END - Regularization of Sa from NULL PIVOTS
+
+//        if (info::ecf->output.print_matrices) {
+//            std::ofstream osSa(Logging::prepareFile("Kernel_Sa"));
+//            osSa << Kernel_Sa;
+//            osSa.close();
+//        }
 //
-//				}
+//        if (info::ecf->output.print_matrices) {
+//            std::ofstream osSa(Logging::prepareFile("Kernel_Sa2"));
+//            osSa << Kernel_Sa2;
+//            osSa.close();
+//        }
+
+        // *** Kernel (Kplus_R and Kplus_R2) correction for HTFETI method
+        if (SYMMETRIC_SYSTEM) {
+            for (size_t d = 0; d < domains.size(); d++) {
+                SparseMatrix tR;
+
+                SEQ_VECTOR < esint > rows_inds (Kernel_Sa.cols);
+
+                //TODO: Tady to asi neni dobre pro singu/regu
+                for (int i = 0; i < Kernel_Sa.cols; i++)
+                    rows_inds[i] = 1 + d * Kernel_Sa.cols + i;
+
+                tR.CreateMatFromRowsFromMatrix_NewSize(Kernel_Sa,rows_inds);
+
+                SparseMatrix TmpR;
+                domains[d].Kplus_R.ConvertDenseToCSR(0);
+                TmpR.MatMat( domains[d].Kplus_R, 'N', tR );
+
+                if (TmpR.nnz == 0) {
+                    ; //domains[d].Kplus_Rb = domains[d].Kplus_R;
+                } else {
+                    domains[d].Kplus_Rb = TmpR;
+                    domains[d].Kplus_Rb.ConvertCSRToDense(0);
+                }
+            }
+        }
 
 
-			}
+        if (!SYMMETRIC_SYSTEM) {
 
-		}
-		// *** Kernel (Kplu_R and Kplus_R2) correction for HTFETI method
+            SparseMatrix LAMN_RHS;
+            LAMN_RHS.MatMat(G02, 'T', Kernel_Sa2);
 
-	}
+            SparseMatrix LAMN;
 
-	// *** END - Regularization of Sa from NULL PIVOTS
+            esint set_bckp_F0 = F0.iparm[11];
+            F0.iparm[11] = 2;
+            F0.SolveMat_Sparse( LAMN_RHS, LAMN );
+            F0.iparm[11] = set_bckp_F0;
 
+            for (esint i = 0;i<LAMN.nnz;i++){
+                LAMN.CSR_V_values[i] *= -1;
+            }
 
-	if ( configuration.regularization == FETIConfiguration::REGULARIZATION::ANALYTIC ) {
+//            if (info::ecf->output.print_matrices) {
+//                std::ofstream osSa(Logging::prepareFile("LAMN"));
+//                osSa << LAMN;
+//                osSa.close();
+//            }
 
-		// *** Regularization of Salfa from FIX points
-
-		// TODO: GENERALIZE
-
-		 TimeEvent reg_Sa_time("Salfa regularization "); if (true) { reg_Sa_time.start(); }
-
-		SparseMatrix N, Nt, NNt;
-
-		for (size_t i = 0; i < domains.size(); i++) {
-			SparseMatrix Eye;
-			Eye.CreateEye(domains[i].Kplus_R.cols);
-			N.MatAppend(Eye);
-			Nt.MatAppend(Eye);
-		}
-
-		Nt.MatTranspose();
-		NNt.MatMat(N, 'N', Nt);
-		NNt.RemoveLower();
-
-		double ro = Salfa.GetMeanOfDiagonalOfSymmetricMatrix();
-		ro = 0.5 * ro;
-
-		Salfa.MatAddInPlace(NNt,'N', ro);
-		Salfa.mtype = this->mtype;
-
-		 if (true) { reg_Sa_time.end(); reg_Sa_time.printStatMPI(); Sa_timing.addEvent(reg_Sa_time); }
-
-		// *** END - Regularization of Salfa from FIX points
-
-	}
-	// *** END - Sa regularization
+            for (size_t d = 0; d < domains.size(); d++) {
 
 
-//	if (info::ecf->output.print_matrices) {
-//		std::ofstream osSa(Logging::prepareFile("Salfa_reg"));
-//		osSa << Salfa;
-//		osSa.close();
-//	}
+                SparseMatrix LAMN_local;
+                LAMN_local.CreateMatFromRowsFromMatrix_NewSize(LAMN, domains[d].B0_comp_map_vec);
+                SparseMatrix B0t_LAMNlocal;
+                B0t_LAMNlocal.MatMat(domains[d].B0_comp, 'T', LAMN_local);
 
-	// *** Salfa import into dense|sparse|acc solver and factorization
-	switch (configuration.SAsolver) {
+                esint set_bckp = domains[d].Kplus.iparm[11];
+                domains[d].Kplus.iparm[11] = 2;
+                domains[d].Kplus.SolveMat_Sparse(B0t_LAMNlocal);
+                domains[d].Kplus.iparm[11] = set_bckp;
 
-		// Default settings and fastest for CPU
-		case FETIConfiguration::SASOLVER::CPU_DENSE: {
-			TimeEvent factd_Sa_time("Salfa factorization - dense ");
-			if (true) { factd_Sa_time.start(); }
-
-			Salfa.ConvertCSRToDense(1);
-
-			Sa_dense_cpu.ImportMatrix(Salfa);
-			Sa_dense_cpu.Factorization("Salfa - dense ");
-
-			if (true) { factd_Sa_time.end(); }//factd_Sa_time.printStatMPI();
-			if (true) { Sa_timing.addEvent(factd_Sa_time); }
-			break;
-		}
-
-		case FETIConfiguration::SASOLVER::CPU_SPARSE: {
-			TimeEvent fact_Sa_time("Salfa factorization ");
-			if (true) { fact_Sa_time.start(); }
-
-			if (info::mpi::rank == 0)  {
-				Sa.msglvl = 1;
-			}
-			Sa.ImportMatrix(Salfa);
-			Sa.Factorization("salfa");
-			if (info::mpi::rank == 0) {
-				Sa.msglvl = 0;
-			}
-			if (true) { fact_Sa_time.end(); } //fact_Sa_time.printStatMPI(); }
-			if (true) { Sa_timing.addEvent(fact_Sa_time); }
-			break;
-		}
-
-		case FETIConfiguration::SASOLVER::ACC_DENSE: {
-			TimeEvent factd_Sa_time("Salfa factorization - dense ");
-			if (true) {factd_Sa_time.start();}
-
-			//TODO: This works only for CuSolver
-			//TODO: Radim Vavrik
-			Salfa.type = 'G'; // for cuSolver only
-			Salfa.ConvertCSRToDense(1);
-			Salfa.type = 'S'; //for cuSolver only
-
-			Sa_dense_acc.ImportMatrix(Salfa);
-			Sa_dense_acc.Factorization("Salfa - dense ");
-
-			if (true) { factd_Sa_time.end(); } //factd_Sa_time.printStatMPI();
-			if (true) { Sa_timing.addEvent(factd_Sa_time); }
-			break;
-		}
-
-		default:
-			eslog::error("Not implemented Salfa solver.\n");
-
-	}
-	// *** END - Salfa import into dense|sparse|acc solver and factorization
+                SparseMatrix Rb2;
+                Rb2 = domains[d].Kplus_R2;
+                Rb2.ConvertDenseToCSR(1);
 
 
-	if (true) { Sa_timing.totalTime.end(); }
+                SparseMatrix tR; SparseMatrix tR2;
 
-	//TODO: Need fix - for detailed measurements
-	//	Sa_timing.printStatsMPI();
-	MKL_Set_Num_Threads(1);
+                SEQ_VECTOR < esint > rows_inds (Kernel_Sa.cols);
+                for (int i = 0; i < Kernel_Sa.cols; i++)
+                    rows_inds[i] = 1 + d * Kernel_Sa.cols + i;
 
-	Sa.m_Kplus_size = Salfa.cols;
-	vec_alfa.resize(Sa.m_Kplus_size);
+                tR. CreateMatFromRowsFromMatrix_NewSize(Kernel_Sa ,rows_inds);
+                tR2.CreateMatFromRowsFromMatrix_NewSize(Kernel_Sa2,rows_inds);
+
+                SparseMatrix TmpR;
+                domains[d].Kplus_R.ConvertDenseToCSR(0);
+                TmpR.MatMat( domains[d].Kplus_R, 'N', tR );
+
+                if (TmpR.nnz == 0) {
+                    ; //domains[d].Kplus_Rb = domains[d].Kplus_R;
+                } else {
+                    domains[d].Kplus_Rb = TmpR;
+                    domains[d].Kplus_Rb.ConvertCSRToDense(0);
+                }
+
+
+                SparseMatrix TmpR2;
+                domains[d].Kplus_R2.ConvertDenseToCSR(0);
+                TmpR2.MatMat( domains[d].Kplus_R2, 'N', tR2 );
+                TmpR2.MatAddInPlace(B0t_LAMNlocal,'N', 1.0);
+
+                if (TmpR2.nnz == 0) {
+                    ; //domains[d].Kplus_Rb = domains[d].Kplus_R;
+                } else {
+                    domains[d].Kplus_Rb2 = TmpR2;
+                    domains[d].Kplus_Rb2.ConvertCSRToDense(0);
+                }
+
+
+//                if (info::ecf->output.print_matrices) {
+//                    std::ofstream osR(Logging::prepareFile(d, "Rb_").c_str());
+//                    SparseMatrix tmpR = domains[d].Kplus_Rb;
+//                    tmpR.ConvertDenseToCSR(0);
+//                    osR << tmpR;
+//                    osR.close();
+//
+//                }
+//
+//                if (info::ecf->output.print_matrices) {
+//                    std::ofstream osR(Logging::prepareFile(d, "Rb2_").c_str());
+//                    SparseMatrix tmpR = domains[d].Kplus_Rb2;
+//                    tmpR.ConvertDenseToCSR(0);
+//                    osR << tmpR;
+//                    osR.close();
+//
+//                }
+
+
+            }
+
+        }
+        // *** Kernel (Kplu_R and Kplus_R2) correction for HTFETI method
+
+    }
+
+    // *** END - Regularization of Sa from NULL PIVOTS
+
+
+    if ( configuration.regularization == FETIConfiguration::REGULARIZATION::ANALYTIC ) {
+
+        // *** Regularization of Salfa from FIX points
+
+        // TODO: GENERALIZE
+
+         TimeEvent reg_Sa_time("Salfa regularization "); if (true) { reg_Sa_time.start(); }
+
+        SparseMatrix N, Nt, NNt;
+
+        for (size_t i = 0; i < domains.size(); i++) {
+            SparseMatrix Eye;
+            Eye.CreateEye(domains[i].Kplus_R.cols);
+            N.MatAppend(Eye);
+            Nt.MatAppend(Eye);
+        }
+
+        Nt.MatTranspose();
+        NNt.MatMat(N, 'N', Nt);
+        NNt.RemoveLower();
+
+        double ro = Salfa.GetMeanOfDiagonalOfSymmetricMatrix();
+        ro = 0.5 * ro;
+
+        Salfa.MatAddInPlace(NNt,'N', ro);
+        Salfa.mtype = this->mtype;
+
+         if (true) { reg_Sa_time.end(); reg_Sa_time.printStatMPI(); Sa_timing.addEvent(reg_Sa_time); }
+
+        // *** END - Regularization of Salfa from FIX points
+
+    }
+    // *** END - Sa regularization
+
+
+//    if (info::ecf->output.print_matrices) {
+//        std::ofstream osSa(Logging::prepareFile("Salfa_reg"));
+//        osSa << Salfa;
+//        osSa.close();
+//    }
+
+    // *** Salfa import into dense|sparse|acc solver and factorization
+    switch (configuration.SAsolver) {
+
+        // Default settings and fastest for CPU
+        case FETIConfiguration::SASOLVER::CPU_DENSE: {
+            TimeEvent factd_Sa_time("Salfa factorization - dense ");
+            if (true) { factd_Sa_time.start(); }
+
+            Salfa.ConvertCSRToDense(1);
+
+            Sa_dense_cpu.ImportMatrix(Salfa);
+            Sa_dense_cpu.Factorization("Salfa - dense ");
+
+            if (true) { factd_Sa_time.end(); }//factd_Sa_time.printStatMPI();
+            if (true) { Sa_timing.addEvent(factd_Sa_time); }
+            break;
+        }
+
+        case FETIConfiguration::SASOLVER::CPU_SPARSE: {
+            TimeEvent fact_Sa_time("Salfa factorization ");
+            if (true) { fact_Sa_time.start(); }
+
+            if (info::mpi::rank == 0)  {
+                Sa.msglvl = 1;
+            }
+            Sa.ImportMatrix(Salfa);
+            Sa.Factorization("salfa");
+            if (info::mpi::rank == 0) {
+                Sa.msglvl = 0;
+            }
+            if (true) { fact_Sa_time.end(); } //fact_Sa_time.printStatMPI(); }
+            if (true) { Sa_timing.addEvent(fact_Sa_time); }
+            break;
+        }
+
+        case FETIConfiguration::SASOLVER::ACC_DENSE: {
+            TimeEvent factd_Sa_time("Salfa factorization - dense ");
+            if (true) {factd_Sa_time.start();}
+
+            //TODO: This works only for CuSolver
+            //TODO: Radim Vavrik
+            Salfa.type = 'G'; // for cuSolver only
+            Salfa.ConvertCSRToDense(1);
+            Salfa.type = 'S'; //for cuSolver only
+
+            Sa_dense_acc.ImportMatrix(Salfa);
+            Sa_dense_acc.Factorization("Salfa - dense ");
+
+            if (true) { factd_Sa_time.end(); } //factd_Sa_time.printStatMPI();
+            if (true) { Sa_timing.addEvent(factd_Sa_time); }
+            break;
+        }
+
+        default:
+            eslog::error("Not implemented Salfa solver.\n");
+
+    }
+    // *** END - Salfa import into dense|sparse|acc solver and factorization
+
+
+    if (true) { Sa_timing.totalTime.end(); }
+
+    //TODO: Need fix - for detailed measurements
+    //    Sa_timing.printStatsMPI();
+    MKL_Set_Num_Threads(1);
+
+    Sa.m_Kplus_size = Salfa.cols;
+    vec_alfa.resize(Sa.m_Kplus_size);
 
 }
 
 void ClusterBase::Create_G_perCluster() {
 
-	SparseMatrix tmpM;
+    SparseMatrix tmpM;
 
-	TimeEvent G1_1_time ("Create G1 per clust t. : MatMat+MatTrans ");
-	if (true) { G1_1_time.start(); }
-	TimeEvent G1_1_mem  ("Create G1 per clust mem: MatMat+MatTrans ");
-	if (true) { G1_1_mem.startWithoutBarrier(GetProcessMemory_u()); }
+    TimeEvent G1_1_time ("Create G1 per clust t. : MatMat+MatTrans ");
+    if (true) { G1_1_time.start(); }
+    TimeEvent G1_1_mem  ("Create G1 per clust mem: MatMat+MatTrans ");
+    if (true) { G1_1_mem.startWithoutBarrier(GetProcessMemory_u()); }
 
-	int MPIrank;
-	MPI_Comm_rank (info::mpi::comm, &MPIrank);
+    int MPIrank;
+    MPI_Comm_rank (info::mpi::comm, &MPIrank);
 
-	PAR_VECTOR < SparseMatrix > tmp_Mat (domains.size());
-	PAR_VECTOR < SparseMatrix > tmp_Mat2 (domains.size());
+    PAR_VECTOR < SparseMatrix > tmp_Mat (domains.size());
+    PAR_VECTOR < SparseMatrix > tmp_Mat2 (domains.size());
 
-	#pragma omp parallel for
-	for (size_t j = 0; j < domains.size(); j++) {
-		if (info::ecf->output.print_matrices > 2) {
-			std::string prefix = utils::debugDirectory() + "/fetisolver/init";
-			{
-				std::ofstream os(utils::prepareFile(std::string(prefix), std::string("Kplus_R_") + std::to_string(j)));
-				os << domains[j].Kplus_R;
-			}
-			{
-				std::ofstream os(utils::prepareFile(std::string(prefix), std::string("Kplus_R2_") + std::to_string(j)));
-				os << domains[j].Kplus_R2;
-			}
-			{
-				std::ofstream os(utils::prepareFile(std::string(prefix), std::string("Kplus_origR_") + std::to_string(j)));
-				os << domains[j].Kplus_origR;
-			}
-		}
+    #pragma omp parallel for
+    for (size_t j = 0; j < domains.size(); j++) {
+        if (info::ecf->output.print_matrices > 2) {
+            std::string prefix = utils::debugDirectory() + "/fetisolver/init";
+            {
+                std::ofstream os(utils::prepareFile(std::string(prefix), std::string("Kplus_R_") + std::to_string(j)));
+                os << domains[j].Kplus_R;
+            }
+            {
+                std::ofstream os(utils::prepareFile(std::string(prefix), std::string("Kplus_R2_") + std::to_string(j)));
+                os << domains[j].Kplus_R2;
+            }
+            {
+                std::ofstream os(utils::prepareFile(std::string(prefix), std::string("Kplus_origR_") + std::to_string(j)));
+                os << domains[j].Kplus_origR;
+            }
+        }
 
-		if (	configuration.conjugate_projector == FETIConfiguration::CONJ_PROJECTOR::CONJ_R ||
-				configuration.conjugate_projector == FETIConfiguration::CONJ_PROJECTOR::CONJ_K)
-			domains[j].Kplus_R.swap(domains[j].Kplus_origR);
+        if (    configuration.conjugate_projector == FETIConfiguration::CONJ_PROJECTOR::CONJ_R ||
+                configuration.conjugate_projector == FETIConfiguration::CONJ_PROJECTOR::CONJ_K)
+            domains[j].Kplus_R.swap(domains[j].Kplus_origR);
 
-	 	if (domains[j].Kplus_R.nnz != 0) {
+         if (domains[j].Kplus_R.nnz != 0) {
 
-			SparseMatrix Rt;
-			SparseMatrix Rt2;
+            SparseMatrix Rt;
+            SparseMatrix Rt2;
 
-			SparseMatrix B;
-			B = domains[j].B1;
+            SparseMatrix B;
+            B = domains[j].B1;
 
-			switch (configuration.regularization) {
-			case FETIConfiguration::REGULARIZATION::ANALYTIC:
-				Rt = domains[j].Kplus_R;
-				Rt.ConvertDenseToCSR(1);
-				Rt.MatTranspose();
+            switch (configuration.regularization) {
+            case FETIConfiguration::REGULARIZATION::ANALYTIC:
+                Rt = domains[j].Kplus_R;
+                Rt.ConvertDenseToCSR(1);
+                Rt.MatTranspose();
 
-				if (!SYMMETRIC_SYSTEM) {
-					Rt2 = domains[j].Kplus_R2;
-					Rt2.ConvertDenseToCSR(1);
-					Rt2.MatTranspose();
-				}
+                if (!SYMMETRIC_SYSTEM) {
+                    Rt2 = domains[j].Kplus_R2;
+                    Rt2.ConvertDenseToCSR(1);
+                    Rt2.MatTranspose();
+                }
 
-				break;
-			case FETIConfiguration::REGULARIZATION::ALGEBRAIC:
-				Rt = domains[j].Kplus_Rb;
-				Rt.ConvertDenseToCSR(1);
-				Rt.MatTranspose();
+                break;
+            case FETIConfiguration::REGULARIZATION::ALGEBRAIC:
+                Rt = domains[j].Kplus_Rb;
+                Rt.ConvertDenseToCSR(1);
+                Rt.MatTranspose();
 
-				if (!SYMMETRIC_SYSTEM) {
-					Rt2 = domains[j].Kplus_Rb2;
-					Rt2.ConvertDenseToCSR(1);
-					Rt2.MatTranspose();
-				}
+                if (!SYMMETRIC_SYSTEM) {
+                    Rt2 = domains[j].Kplus_Rb2;
+                    Rt2.ConvertDenseToCSR(1);
+                    Rt2.MatTranspose();
+                }
 
-				break;
-			default:
-				eslog::error("Not implemented type of regularization.\n");
-			}
+                break;
+            default:
+                eslog::error("Not implemented type of regularization.\n");
+            }
 
-			Rt.ConvertCSRToDense(1);
-			//Create_G1_perSubdomain(Rt, domains[j].B1, tmp_Mat[j]);
-			Create_G_perSubdomain(Rt, B, tmp_Mat[j]);
+            Rt.ConvertCSRToDense(1);
+            //Create_G1_perSubdomain(Rt, domains[j].B1, tmp_Mat[j]);
+            Create_G_perSubdomain(Rt, B, tmp_Mat[j]);
 
-			if (!SYMMETRIC_SYSTEM) {
-				Rt2.ConvertCSRToDense(1);
-				//Create_G1_perSubdomain(Rt2, domains[j].B1, tmp_Mat2[j]);
-				Create_G_perSubdomain(Rt2, B, tmp_Mat2[j]);
-			}
+            if (!SYMMETRIC_SYSTEM) {
+                Rt2.ConvertCSRToDense(1);
+                //Create_G1_perSubdomain(Rt2, domains[j].B1, tmp_Mat2[j]);
+                Create_G_perSubdomain(Rt2, B, tmp_Mat2[j]);
+            }
 
-			if (info::ecf->output.print_matrices > 2) {
-			std::string prefix = utils::debugDirectory() + "/fetisolver/init";
-			{
-				std::ofstream os(utils::prepareFile(std::string(prefix), std::string("tmp_Mat_") + std::to_string(j)));
-				os << tmp_Mat[j];
-			}
-			if (!SYMMETRIC_SYSTEM){
-				std::ofstream os(utils::prepareFile(std::string(prefix), std::string("tmp_Mat2_") + std::to_string(j)));
-				os << tmp_Mat2[j];
-			}
-	}
+            if (info::ecf->output.print_matrices > 2) {
+            std::string prefix = utils::debugDirectory() + "/fetisolver/init";
+            {
+                std::ofstream os(utils::prepareFile(std::string(prefix), std::string("tmp_Mat_") + std::to_string(j)));
+                os << tmp_Mat[j];
+            }
+            if (!SYMMETRIC_SYSTEM){
+                std::ofstream os(utils::prepareFile(std::string(prefix), std::string("tmp_Mat2_") + std::to_string(j)));
+                os << tmp_Mat2[j];
+            }
+    }
 
-	 	} // END: if
+         } // END: if
 
-	 	if (	configuration.conjugate_projector == FETIConfiguration::CONJ_PROJECTOR::CONJ_R ||
-	 			configuration.conjugate_projector == FETIConfiguration::CONJ_PROJECTOR::CONJ_K)
-	 		domains[j].Kplus_R.swap(domains[j].Kplus_origR);
+         if (    configuration.conjugate_projector == FETIConfiguration::CONJ_PROJECTOR::CONJ_R ||
+                 configuration.conjugate_projector == FETIConfiguration::CONJ_PROJECTOR::CONJ_K)
+             domains[j].Kplus_R.swap(domains[j].Kplus_origR);
 
-	} //end cilk for
+    } //end cilk for
 
-	if (true) {
-		G1_1_time.end();
-		G1_1_time.printStatMPI();
-		//G1_1_time.printLastStatMPIPerNode();
-		G1_1_mem.endWithoutBarrier(GetProcessMemory_u());
-		G1_1_mem.printStatMPI();
-		//G1_1_mem.printLastStatMPIPerNode();
-	}
-	//G1_1_mem.printLastStatMPIPerNode();
-	TimeEvent G1_2_time ("Create G1 per clust t. : Par.red.+MatAdd ");
-	if (true) { G1_2_time.start(); }
-	TimeEvent G1_2_mem  ("Create G1 per clust mem: Par.red.+MatAdd ");
-	if (true) { G1_2_mem.startWithoutBarrier(GetProcessMemory_u()); }
+    if (true) {
+        G1_1_time.end();
+        G1_1_time.printStatMPI();
+        //G1_1_time.printLastStatMPIPerNode();
+        G1_1_mem.endWithoutBarrier(GetProcessMemory_u());
+        G1_1_mem.printStatMPI();
+        //G1_1_mem.printLastStatMPIPerNode();
+    }
+    //G1_1_mem.printLastStatMPIPerNode();
+    TimeEvent G1_2_time ("Create G1 per clust t. : Par.red.+MatAdd ");
+    if (true) { G1_2_time.start(); }
+    TimeEvent G1_2_mem  ("Create G1 per clust mem: Par.red.+MatAdd ");
+    if (true) { G1_2_mem.startWithoutBarrier(GetProcessMemory_u()); }
 
-	for (size_t j = 1; j < tmp_Mat.size(); j *= 2) {
-		#pragma omp parallel for
-		for (size_t i = 0; i <= tmp_Mat.size() / (2 * j); i++) {
+    for (size_t j = 1; j < tmp_Mat.size(); j *= 2) {
+        #pragma omp parallel for
+        for (size_t i = 0; i <= tmp_Mat.size() / (2 * j); i++) {
 
-			if (i * 2 * j + j < tmp_Mat.size()) {
-				if (USE_HFETI == 1) {
-					tmp_Mat[i * 2 * j].MatAddInPlace( tmp_Mat[i * 2 * j + j], 'N', 1.0 ); 	//Fixed for empty matrix in MatAddInPlace
-				} else {
-					tmp_Mat[i * 2 * j].MatAppend(tmp_Mat[i * 2 * j + j]); 					//Fixed for empty matrix in MatAddInPlace
-				}
-				tmp_Mat[i * 2 * j + j].Clear();
+            if (i * 2 * j + j < tmp_Mat.size()) {
+                if (USE_HFETI == 1) {
+                    tmp_Mat[i * 2 * j].MatAddInPlace( tmp_Mat[i * 2 * j + j], 'N', 1.0 );     //Fixed for empty matrix in MatAddInPlace
+                } else {
+                    tmp_Mat[i * 2 * j].MatAppend(tmp_Mat[i * 2 * j + j]);                     //Fixed for empty matrix in MatAddInPlace
+                }
+                tmp_Mat[i * 2 * j + j].Clear();
 
-				if (!SYMMETRIC_SYSTEM) {
-					if (USE_HFETI == 1) {
-						tmp_Mat2[i * 2 * j].MatAddInPlace(tmp_Mat2[i * 2 * j + j], 'N', 1.0 );	//Fixed for empty matrix in MatAddInPlace
-					} else {
-						tmp_Mat2[i * 2 * j].MatAppend(tmp_Mat2[i * 2 * j + j]);					//Fixed for empty matrix in MatAddInPlace
-					}
-					tmp_Mat2[i * 2 * j + j].Clear();
-				}
+                if (!SYMMETRIC_SYSTEM) {
+                    if (USE_HFETI == 1) {
+                        tmp_Mat2[i * 2 * j].MatAddInPlace(tmp_Mat2[i * 2 * j + j], 'N', 1.0 );    //Fixed for empty matrix in MatAddInPlace
+                    } else {
+                        tmp_Mat2[i * 2 * j].MatAppend(tmp_Mat2[i * 2 * j + j]);                    //Fixed for empty matrix in MatAddInPlace
+                    }
+                    tmp_Mat2[i * 2 * j + j].Clear();
+                }
 
-			}
-		}
-	}
+            }
+        }
+    }
 
-	if (true) {
-		G1_2_time.end();
-		G1_2_time.printStatMPI();
-		//G1_2_time.printLastStatMPIPerNode();
-		G1_2_mem.endWithoutBarrier(GetProcessMemory_u());
-		G1_2_mem.printStatMPI();
-		//G1_2_mem.printLastStatMPIPerNode();
-	}
+    if (true) {
+        G1_2_time.end();
+        G1_2_time.printStatMPI();
+        //G1_2_time.printLastStatMPIPerNode();
+        G1_2_mem.endWithoutBarrier(GetProcessMemory_u());
+        G1_2_mem.printStatMPI();
+        //G1_2_mem.printLastStatMPIPerNode();
+    }
 
-	// Save resulting matrix G1
-	G1.swap( tmp_Mat[0] );
+    // Save resulting matrix G1
+    G1.swap( tmp_Mat[0] );
 
-	for (size_t i = 0; i < G1.CSR_V_values.size(); i++) {
-		G1.CSR_V_values[i] = -1.0 * G1.CSR_V_values[i];
-	}
+    for (size_t i = 0; i < G1.CSR_V_values.size(); i++) {
+        G1.CSR_V_values[i] = -1.0 * G1.CSR_V_values[i];
+    }
 
 
-	if (!SYMMETRIC_SYSTEM) {
-		G2.swap( tmp_Mat2[0] );
-		for (size_t i = 0; i < G2.CSR_V_values.size(); i++) {
-			G2.CSR_V_values[i] = -1.0 * G2.CSR_V_values[i];
-		}
+    if (!SYMMETRIC_SYSTEM) {
+        G2.swap( tmp_Mat2[0] );
+        for (size_t i = 0; i < G2.CSR_V_values.size(); i++) {
+            G2.CSR_V_values[i] = -1.0 * G2.CSR_V_values[i];
+        }
 
-	}
+    }
 
 }
 
 void ClusterBase::Create_G_perSubdomain (SparseMatrix &R_in, SparseMatrix &B_in, SparseMatrix &G_out) {
 
-	if (B_in.nnz > 0) {
+    if (B_in.nnz > 0) {
 
-		SEQ_VECTOR < SEQ_VECTOR < double > > tmpG (B_in.nnz, SEQ_VECTOR <double> (R_in.rows,0));
-		SEQ_VECTOR <esint > G_I_row_indices;
+        SEQ_VECTOR < SEQ_VECTOR < double > > tmpG (B_in.nnz, SEQ_VECTOR <double> (R_in.rows,0));
+        SEQ_VECTOR <esint > G_I_row_indices;
 
-		G_I_row_indices.resize(B_in.nnz);
+        G_I_row_indices.resize(B_in.nnz);
 
-		esint indx = 0;
-		for (esint r = 0; r < R_in.rows; r++)
-			tmpG[indx][r] += B_in.V_values[0] * R_in.dense_values[R_in.rows * (B_in.J_col_indices[0]-1) + r];
+        esint indx = 0;
+        for (esint r = 0; r < R_in.rows; r++)
+            tmpG[indx][r] += B_in.V_values[0] * R_in.dense_values[R_in.rows * (B_in.J_col_indices[0]-1) + r];
 
-		G_I_row_indices[indx] = B_in.I_row_indices[0];
+        G_I_row_indices[indx] = B_in.I_row_indices[0];
 
-		for (size_t i = 1; i < B_in.I_row_indices.size(); i++) {
+        for (size_t i = 1; i < B_in.I_row_indices.size(); i++) {
 
-			if (B_in.I_row_indices[i-1] != B_in.I_row_indices[i])
-				indx++;
+            if (B_in.I_row_indices[i-1] != B_in.I_row_indices[i])
+                indx++;
 
-			for (esint r = 0; r < R_in.rows; r++)
-				tmpG[indx][r] += B_in.V_values[i] * R_in.dense_values[R_in.rows * (B_in.J_col_indices[i]-1) + r];
+            for (esint r = 0; r < R_in.rows; r++)
+                tmpG[indx][r] += B_in.V_values[i] * R_in.dense_values[R_in.rows * (B_in.J_col_indices[i]-1) + r];
 
-			G_I_row_indices[indx] = B_in.I_row_indices[i];
-		}
+            G_I_row_indices[indx] = B_in.I_row_indices[i];
+        }
 
-		G_I_row_indices.resize(indx+1);
-		tmpG.resize(indx+1);
+        G_I_row_indices.resize(indx+1);
+        tmpG.resize(indx+1);
 
-		SEQ_VECTOR <esint>    G_I; G_I.reserve( tmpG.size() * tmpG[0].size());
-		SEQ_VECTOR <esint>    G_J; G_J.reserve( tmpG.size() * tmpG[0].size());
-		SEQ_VECTOR <double> G_V; G_V.reserve( tmpG.size() * tmpG[0].size());
+        SEQ_VECTOR <esint>    G_I; G_I.reserve( tmpG.size() * tmpG[0].size());
+        SEQ_VECTOR <esint>    G_J; G_J.reserve( tmpG.size() * tmpG[0].size());
+        SEQ_VECTOR <double> G_V; G_V.reserve( tmpG.size() * tmpG[0].size());
 
-		for (size_t i = 0; i < tmpG.size(); i++) {
-			for (size_t j = 0; j < tmpG[i].size(); j++){
-				if (tmpG[i][j] != 0) {
-					G_I.push_back(G_I_row_indices[i]);
-					G_J.push_back(j+1);
-					G_V.push_back(tmpG[i][j]);
-				}
-			}
-		}
+        for (size_t i = 0; i < tmpG.size(); i++) {
+            for (size_t j = 0; j < tmpG[i].size(); j++){
+                if (tmpG[i][j] != 0) {
+                    G_I.push_back(G_I_row_indices[i]);
+                    G_J.push_back(j+1);
+                    G_V.push_back(tmpG[i][j]);
+                }
+            }
+        }
 
-		G_out.I_row_indices = G_J;
-		G_out.J_col_indices = G_I;
-		G_out.V_values      = G_V;
-		G_out.cols = B_in.rows;
-		G_out.rows = R_in.rows;
-		G_out.nnz  = G_I.size();
-		G_out.type = 'G';
+        G_out.I_row_indices = G_J;
+        G_out.J_col_indices = G_I;
+        G_out.V_values      = G_V;
+        G_out.cols = B_in.rows;
+        G_out.rows = R_in.rows;
+        G_out.nnz  = G_I.size();
+        G_out.type = 'G';
 
-	} else {
+    } else {
 
-		G_out.cols = B_in.rows;
-		G_out.rows = R_in.rows;
+        G_out.cols = B_in.rows;
+        G_out.rows = R_in.rows;
 
-		G_out.I_row_indices.resize(1,0);
-		G_out.J_col_indices.resize(1,0);
-		G_out.V_values.resize(0,0);
+        G_out.I_row_indices.resize(1,0);
+        G_out.J_col_indices.resize(1,0);
+        G_out.V_values.resize(0,0);
 
-		G_out.nnz  = 0;
-		G_out.type = 'G';
-	}
+        G_out.nnz  = 0;
+        G_out.type = 'G';
+    }
 
-	G_out.ConvertToCSRwithSort(1);
+    G_out.ConvertToCSRwithSort(1);
 
 }
 
 //void ClusterBase::Create_G1_perCluster() {
 //
-//	SparseMatrix tmpM;
+//    SparseMatrix tmpM;
 //
-//	if (USE_HFETI == 1) {
-//		//G1 = G1 + trans(B1 * domains[d].Kplus_R) for all domains
-//		//for (esint d = 0; d < domains.size(); d++)
-//		//{
-//		//	tmpM.MatMat( domains[d].B1, 'N', domains[d].Kplus_R);
-//		//	G1.MatAddInPlace( tmpM, 'N', 1.0 );
-//		//	tmpM.Clear();
-//		//}
-//		//G1.MatTranspose();
+//    if (USE_HFETI == 1) {
+//        //G1 = G1 + trans(B1 * domains[d].Kplus_R) for all domains
+//        //for (esint d = 0; d < domains.size(); d++)
+//        //{
+//        //    tmpM.MatMat( domains[d].B1, 'N', domains[d].Kplus_R);
+//        //    G1.MatAddInPlace( tmpM, 'N', 1.0 );
+//        //    tmpM.Clear();
+//        //}
+//        //G1.MatTranspose();
 //
-//		//// OK - but sequential
-//		//for (esint d = 0; d < domains.size(); d++)					//HFETI
-//		//{
-//		//	tmpM.MatMat( domains[d].B1t, 'T', domains[d].Kplus_R);
-//		//	G1.MatAddInPlace( tmpM, 'N', 1.0 );
-//		//	tmpM.Clear();
-//		//}
-//		//G1.MatTranspose();
-//
-//
-//
-//
-//		//esint threads = 24;
-//		//esint n_domains = domains.size();
-//		//vector < SparseMatrix > tmp_Mat (threads);
-//		//cilk_for (esint t = 0; t < threads; t++ ) {
-//		//	for (esint i = t*(n_domains/threads+1); i < (t+1)*(n_domains/threads+1); i++ ) {
-//		//		if (i < n_domains) {
-//		//			SparseMatrix tmpM_l;
-//		//			//tmpM_l.MatMat( domains[i].Kplus_R, 'T', domains[i].B1t);
-//		//			tmpM_l.MatMat( domains[i].B1t, 'T', domains[i].Kplus_R);
-//		//			tmpM_l.MatTranspose();
-//		//			tmp_Mat[t].MatAddInPlace( tmpM_l, 'N', 1.0 );
-//		//		}
-//		//	}
-//		//}
-//
-//		TimeEvent G1_1_time ("Create G1 per clust t. : MatMat+MatTrans ");
-//		G1_1_time.start();
-//		TimeEvent G1_1_mem  ("Create G1 per clust mem: MatMat+MatTrans ");
-//		G1_1_mem.startWithoutBarrier(GetProcessMemory_u());
-//
-//
-//		//SparseMatrix Rt;
-//		//SparseMatrix B;
-//		//
-//		//domains[0].Kplus_R.MatTranspose(Rt);
-//		//B = domains[0].B1;
-//		//Rt.ConvertCSRToDense(0);
-//		//
-//		//vector < vector < double > > tmpG (B.nnz, vector <double> (Rt.rows,0));
-//		//vector <esint > G_I_row_indices;
-//		//G_I_row_indices.resize(B.nnz);
-//
-//		//esint indx = 0;
-//		//for (esint r = 0; r < Rt.rows; r++)
-//		//	tmpG[indx][r] += B.V_values[0] * Rt.dense_values[Rt.rows * (B.J_col_indices[0]-1) + r];
-//		//
-//		//G_I_row_indices[indx] = B.I_row_indices[0];
-//
-//		//for (esint i = 1; i < B.I_row_indices.size(); i++) {
-//		//
-//		//	if (B.I_row_indices[i-1] != B.I_row_indices[i])
-//		//		indx++;
-//
-//		//	for (esint r = 0; r < Rt.rows; r++)
-//		//		tmpG[indx][r] += B.V_values[i] * Rt.dense_values[Rt.rows * (B.J_col_indices[i]-1) + r];
-//		//
-//		//	G_I_row_indices[indx] = B.I_row_indices[i];
-//		//}
-//		//
-//		//G_I_row_indices.resize(indx+1);
-//		//tmpG.resize(indx+1);
-//
-//		//vector <int>    G_I; G_I.reserve( tmpG.size() * tmpG[0].size());
-//		//vector <int>    G_J; G_J.reserve( tmpG.size() * tmpG[0].size());
-//		//vector <double> G_V; G_V.reserve( tmpG.size() * tmpG[0].size());
-//
-//		//for (esint i = 0; i < tmpG.size(); i++) {
-//		//	for (esint j = 0; j < tmpG[i].size(); j++){
-//		//		if (tmpG[i][j] != 0) {
-//		//			G_I.push_back(G_I_row_indices[i]);
-//		//			G_J.push_back(j+1);
-//		//			G_V.push_back(tmpG[i][j]);
-//		//		}
-//		//	}
-//		//}
-//
-//		//SparseMatrix Gcoo;
-//		//Gcoo.I_row_indices = G_J; //G_I;
-//		//Gcoo.J_col_indices = G_I; //G_J;
-//		//Gcoo.V_values      = G_V;
-//		//Gcoo.cols = B.rows; //R.cols;
-//		//Gcoo.rows = Rt.rows; //B.rows;
-//		//Gcoo.nnz  = G_I.size();
-//		//Gcoo.type = 'G';
-//		//
-//		//Gcoo.ConvertToCSRwithSort(1);
+//        //// OK - but sequential
+//        //for (esint d = 0; d < domains.size(); d++)                    //HFETI
+//        //{
+//        //    tmpM.MatMat( domains[d].B1t, 'T', domains[d].Kplus_R);
+//        //    G1.MatAddInPlace( tmpM, 'N', 1.0 );
+//        //    tmpM.Clear();
+//        //}
+//        //G1.MatTranspose();
 //
 //
 //
 //
-//		//SparseMatrix Gtmp;
-//		//SparseMatrix Gtmpt;
-//		//
-//		//Gtmp.MatMat( domains[0].B1t, 'T', domains[0].Kplus_R);
-//		//Gtmp.MatTranspose(Gtmpt);
-//		//
-//		//Gtmp.ConvertToCOO(0);
-//		//Gtmpt.ConvertToCOO(0);
+//        //esint threads = 24;
+//        //esint n_domains = domains.size();
+//        //vector < SparseMatrix > tmp_Mat (threads);
+//        //cilk_for (esint t = 0; t < threads; t++ ) {
+//        //    for (esint i = t*(n_domains/threads+1); i < (t+1)*(n_domains/threads+1); i++ ) {
+//        //        if (i < n_domains) {
+//        //            SparseMatrix tmpM_l;
+//        //            //tmpM_l.MatMat( domains[i].Kplus_R, 'T', domains[i].B1t);
+//        //            tmpM_l.MatMat( domains[i].B1t, 'T', domains[i].Kplus_R);
+//        //            tmpM_l.MatTranspose();
+//        //            tmp_Mat[t].MatAddInPlace( tmpM_l, 'N', 1.0 );
+//        //        }
+//        //    }
+//        //}
 //
-//		int MPIrank;
-//		MPI_Comm_rank (info::mpi::MPICommunicator, &MPIrank);
+//        TimeEvent G1_1_time ("Create G1 per clust t. : MatMat+MatTrans ");
+//        G1_1_time.start();
+//        TimeEvent G1_1_mem  ("Create G1 per clust mem: MatMat+MatTrans ");
+//        G1_1_mem.startWithoutBarrier(GetProcessMemory_u());
 //
-//		PAR_VECTOR < SparseMatrix > tmp_Mat (domains.size());
-//		#pragma omp parallel for
+//
+//        //SparseMatrix Rt;
+//        //SparseMatrix B;
+//        //
+//        //domains[0].Kplus_R.MatTranspose(Rt);
+//        //B = domains[0].B1;
+//        //Rt.ConvertCSRToDense(0);
+//        //
+//        //vector < vector < double > > tmpG (B.nnz, vector <double> (Rt.rows,0));
+//        //vector <esint > G_I_row_indices;
+//        //G_I_row_indices.resize(B.nnz);
+//
+//        //esint indx = 0;
+//        //for (esint r = 0; r < Rt.rows; r++)
+//        //    tmpG[indx][r] += B.V_values[0] * Rt.dense_values[Rt.rows * (B.J_col_indices[0]-1) + r];
+//        //
+//        //G_I_row_indices[indx] = B.I_row_indices[0];
+//
+//        //for (esint i = 1; i < B.I_row_indices.size(); i++) {
+//        //
+//        //    if (B.I_row_indices[i-1] != B.I_row_indices[i])
+//        //        indx++;
+//
+//        //    for (esint r = 0; r < Rt.rows; r++)
+//        //        tmpG[indx][r] += B.V_values[i] * Rt.dense_values[Rt.rows * (B.J_col_indices[i]-1) + r];
+//        //
+//        //    G_I_row_indices[indx] = B.I_row_indices[i];
+//        //}
+//        //
+//        //G_I_row_indices.resize(indx+1);
+//        //tmpG.resize(indx+1);
+//
+//        //vector <int>    G_I; G_I.reserve( tmpG.size() * tmpG[0].size());
+//        //vector <int>    G_J; G_J.reserve( tmpG.size() * tmpG[0].size());
+//        //vector <double> G_V; G_V.reserve( tmpG.size() * tmpG[0].size());
+//
+//        //for (esint i = 0; i < tmpG.size(); i++) {
+//        //    for (esint j = 0; j < tmpG[i].size(); j++){
+//        //        if (tmpG[i][j] != 0) {
+//        //            G_I.push_back(G_I_row_indices[i]);
+//        //            G_J.push_back(j+1);
+//        //            G_V.push_back(tmpG[i][j]);
+//        //        }
+//        //    }
+//        //}
+//
+//        //SparseMatrix Gcoo;
+//        //Gcoo.I_row_indices = G_J; //G_I;
+//        //Gcoo.J_col_indices = G_I; //G_J;
+//        //Gcoo.V_values      = G_V;
+//        //Gcoo.cols = B.rows; //R.cols;
+//        //Gcoo.rows = Rt.rows; //B.rows;
+//        //Gcoo.nnz  = G_I.size();
+//        //Gcoo.type = 'G';
+//        //
+//        //Gcoo.ConvertToCSRwithSort(1);
+//
+//
+//
+//
+//        //SparseMatrix Gtmp;
+//        //SparseMatrix Gtmpt;
+//        //
+//        //Gtmp.MatMat( domains[0].B1t, 'T', domains[0].Kplus_R);
+//        //Gtmp.MatTranspose(Gtmpt);
+//        //
+//        //Gtmp.ConvertToCOO(0);
+//        //Gtmpt.ConvertToCOO(0);
+//
+//        int MPIrank;
+//        MPI_Comm_rank (info::mpi::MPICommunicator, &MPIrank);
+//
+//        PAR_VECTOR < SparseMatrix > tmp_Mat (domains.size());
+//        #pragma omp parallel for
 //for (size_t j = 0; j < tmp_Mat.size(); j++) {
-//			// V1
-//			//tmp_Mat[j].MatMat( domains[j].B1t, 'T', domains[j].Kplus_R);
-//			//tmp_Mat[j].MatTranspose();
+//            // V1
+//            //tmp_Mat[j].MatMat( domains[j].B1t, 'T', domains[j].Kplus_R);
+//            //tmp_Mat[j].MatTranspose();
 //
-//			// V2 - not cool
-//			//tmp_Mat[j].MatMatSorted( domains[j].Kplus_R, 'T', domains[j].B1t); // - pozor mooooc pomale a MKL rutina zere mooooooc pameti
+//            // V2 - not cool
+//            //tmp_Mat[j].MatMatSorted( domains[j].Kplus_R, 'T', domains[j].B1t); // - pozor mooooc pomale a MKL rutina zere mooooooc pameti
 //
-//			// V3
-//			SparseMatrix Gcoo;
-//			if (domains[j].B1.nnz > 0) {
+//            // V3
+//            SparseMatrix Gcoo;
+//            if (domains[j].B1.nnz > 0) {
 //
-//				SparseMatrix Rt;
-//				SparseMatrix B;
+//                SparseMatrix Rt;
+//                SparseMatrix B;
 //
-//				switch (configuration.regularization) {
-//				case FETIConfiguration::REGULARIZATION::ANALYTIC:
-//					Rt = domains[j].Kplus_R;
-//					Rt.ConvertDenseToCSR(1);
-//					Rt.MatTranspose();
-//					//domains[j].Kplus_R.MatTranspose(Rt);
-//					break;
-//				case FETIConfiguration::REGULARIZATION::ALGEBRAIC:
-//					Rt = domains[j].Kplus_Rb;
-//					Rt.ConvertDenseToCSR(1);
-//					Rt.MatTranspose();
-//					//domains[j].Kplus_Rb.MatTranspose(Rt);
-//					break;
-//				default:
-//					//ESINFO(GLOBAL_ERROR) << "Not implemented regularization.";
-//				}
+//                switch (configuration.regularization) {
+//                case FETIConfiguration::REGULARIZATION::ANALYTIC:
+//                    Rt = domains[j].Kplus_R;
+//                    Rt.ConvertDenseToCSR(1);
+//                    Rt.MatTranspose();
+//                    //domains[j].Kplus_R.MatTranspose(Rt);
+//                    break;
+//                case FETIConfiguration::REGULARIZATION::ALGEBRAIC:
+//                    Rt = domains[j].Kplus_Rb;
+//                    Rt.ConvertDenseToCSR(1);
+//                    Rt.MatTranspose();
+//                    //domains[j].Kplus_Rb.MatTranspose(Rt);
+//                    break;
+//                default:
+//                    //ESINFO(GLOBAL_ERROR) << "Not implemented regularization.";
+//                }
 //
-//				//Rt = domains[j].Kplus_R;
-//				//Rt.MatTranspose();
+//                //Rt = domains[j].Kplus_R;
+//                //Rt.MatTranspose();
 //
-//				Rt.ConvertCSRToDense(1);
-//				B = domains[j].B1;
+//                Rt.ConvertCSRToDense(1);
+//                B = domains[j].B1;
 //
-//				SEQ_VECTOR < SEQ_VECTOR < double > > tmpG (B.nnz, SEQ_VECTOR <double> (Rt.rows,0));
-//				SEQ_VECTOR <esint > G_I_row_indices;
-//				G_I_row_indices.resize(B.nnz);
+//                SEQ_VECTOR < SEQ_VECTOR < double > > tmpG (B.nnz, SEQ_VECTOR <double> (Rt.rows,0));
+//                SEQ_VECTOR <esint > G_I_row_indices;
+//                G_I_row_indices.resize(B.nnz);
 //
-//				esint indx = 0;
-//				for (esint r = 0; r < Rt.rows; r++)
-//					tmpG[indx][r] += B.V_values[0] * Rt.dense_values[Rt.rows * (B.J_col_indices[0]-1) + r];
+//                esint indx = 0;
+//                for (esint r = 0; r < Rt.rows; r++)
+//                    tmpG[indx][r] += B.V_values[0] * Rt.dense_values[Rt.rows * (B.J_col_indices[0]-1) + r];
 //
-//				G_I_row_indices[indx] = B.I_row_indices[0];
+//                G_I_row_indices[indx] = B.I_row_indices[0];
 //
-//				for (size_t i = 1; i < B.I_row_indices.size(); i++) {
+//                for (size_t i = 1; i < B.I_row_indices.size(); i++) {
 //
-//					if (B.I_row_indices[i-1] != B.I_row_indices[i])
-//						indx++;
+//                    if (B.I_row_indices[i-1] != B.I_row_indices[i])
+//                        indx++;
 //
-//					for (esint r = 0; r < Rt.rows; r++)
-//						tmpG[indx][r] += B.V_values[i] * Rt.dense_values[Rt.rows * (B.J_col_indices[i]-1) + r];
+//                    for (esint r = 0; r < Rt.rows; r++)
+//                        tmpG[indx][r] += B.V_values[i] * Rt.dense_values[Rt.rows * (B.J_col_indices[i]-1) + r];
 //
-//					G_I_row_indices[indx] = B.I_row_indices[i];
-//				}
+//                    G_I_row_indices[indx] = B.I_row_indices[i];
+//                }
 //
-//				G_I_row_indices.resize(indx+1);
-//				tmpG.resize(indx+1);
+//                G_I_row_indices.resize(indx+1);
+//                tmpG.resize(indx+1);
 //
-//				SEQ_VECTOR <esint>    G_I; G_I.reserve( tmpG.size() * tmpG[0].size());
-//				SEQ_VECTOR <esint>    G_J; G_J.reserve( tmpG.size() * tmpG[0].size());
-//				SEQ_VECTOR <double> G_V; G_V.reserve( tmpG.size() * tmpG[0].size());
+//                SEQ_VECTOR <esint>    G_I; G_I.reserve( tmpG.size() * tmpG[0].size());
+//                SEQ_VECTOR <esint>    G_J; G_J.reserve( tmpG.size() * tmpG[0].size());
+//                SEQ_VECTOR <double> G_V; G_V.reserve( tmpG.size() * tmpG[0].size());
 //
-//				for (size_t i = 0; i < tmpG.size(); i++) {
-//					for (size_t j = 0; j < tmpG[i].size(); j++){
-//						if (tmpG[i][j] != 0) {
-//							G_I.push_back(G_I_row_indices[i]);
-//							G_J.push_back(j+1);
-//							G_V.push_back(tmpG[i][j]);
-//						}
-//					}
-//				}
-//
-//
+//                for (size_t i = 0; i < tmpG.size(); i++) {
+//                    for (size_t j = 0; j < tmpG[i].size(); j++){
+//                        if (tmpG[i][j] != 0) {
+//                            G_I.push_back(G_I_row_indices[i]);
+//                            G_J.push_back(j+1);
+//                            G_V.push_back(tmpG[i][j]);
+//                        }
+//                    }
+//                }
 //
 //
-//				Gcoo.I_row_indices = G_J; //G_I;
-//				Gcoo.J_col_indices = G_I; //G_J;
-//				Gcoo.V_values      = G_V;
-//				Gcoo.cols = B.rows; //R.cols;
-//				Gcoo.rows = Rt.rows; //B.rows;
-//				Gcoo.nnz  = G_I.size();
-//				Gcoo.type = 'G';
 //
-//				Gcoo.ConvertToCSRwithSort(1);
 //
-//			} else {
-//				Gcoo.cols = domains[j].B1.rows;
-//				if (configuration.regularization == FETIConfiguration::REGULARIZATION::ANALYTIC) {
-//					Gcoo.rows = domains[j].Kplus_R.rows;
-//				} else {
-//					Gcoo.rows = domains[j].Kplus_Rb.rows;
-//				}
-//				Gcoo.I_row_indices.resize(1,0);
-//				Gcoo.J_col_indices.resize(1,0);
-//				Gcoo.V_values.resize(0,0);
+//                Gcoo.I_row_indices = G_J; //G_I;
+//                Gcoo.J_col_indices = G_I; //G_J;
+//                Gcoo.V_values      = G_V;
+//                Gcoo.cols = B.rows; //R.cols;
+//                Gcoo.rows = Rt.rows; //B.rows;
+//                Gcoo.nnz  = G_I.size();
+//                Gcoo.type = 'G';
 //
-//				Gcoo.nnz  = 0;
-//				Gcoo.type = 'G';
+//                Gcoo.ConvertToCSRwithSort(1);
 //
-//				Gcoo.ConvertToCSRwithSort(1);
-//			}
+//            } else {
+//                Gcoo.cols = domains[j].B1.rows;
+//                if (configuration.regularization == FETIConfiguration::REGULARIZATION::ANALYTIC) {
+//                    Gcoo.rows = domains[j].Kplus_R.rows;
+//                } else {
+//                    Gcoo.rows = domains[j].Kplus_Rb.rows;
+//                }
+//                Gcoo.I_row_indices.resize(1,0);
+//                Gcoo.J_col_indices.resize(1,0);
+//                Gcoo.V_values.resize(0,0);
 //
-//			tmp_Mat[j] = Gcoo;
+//                Gcoo.nnz  = 0;
+//                Gcoo.type = 'G';
 //
-//			// END - V3
+//                Gcoo.ConvertToCSRwithSort(1);
+//            }
 //
-//			//if (MPIrank == 0)
-//			//	cout << j << endl;
+//            tmp_Mat[j] = Gcoo;
 //
-//		}
+//            // END - V3
 //
-//		G1_1_time.end();
-//		G1_1_time.printStatMPI();
-//		//G1_1_time.printLastStatMPIPerNode();
-//		G1_1_mem.endWithoutBarrier(GetProcessMemory_u());
-//		G1_1_mem.printStatMPI();
-//		//G1_1_mem.printLastStatMPIPerNode();
+//            //if (MPIrank == 0)
+//            //    cout << j << endl;
 //
-//		TimeEvent G1_2_time ("Create G1 per clust t. : Par.red.+MatAdd ");
-//		G1_2_time.start();
-//		TimeEvent G1_2_mem  ("Create G1 per clust mem: Par.red.+MatAdd ");
-//		G1_2_mem.startWithoutBarrier(GetProcessMemory_u());
+//        }
 //
-//		for (size_t j = 1; j < tmp_Mat.size(); j *= 2) {
-//			#pragma omp parallel for
+//        G1_1_time.end();
+//        G1_1_time.printStatMPI();
+//        //G1_1_time.printLastStatMPIPerNode();
+//        G1_1_mem.endWithoutBarrier(GetProcessMemory_u());
+//        G1_1_mem.printStatMPI();
+//        //G1_1_mem.printLastStatMPIPerNode();
+//
+//        TimeEvent G1_2_time ("Create G1 per clust t. : Par.red.+MatAdd ");
+//        G1_2_time.start();
+//        TimeEvent G1_2_mem  ("Create G1 per clust mem: Par.red.+MatAdd ");
+//        G1_2_mem.startWithoutBarrier(GetProcessMemory_u());
+//
+//        for (size_t j = 1; j < tmp_Mat.size(); j *= 2) {
+//            #pragma omp parallel for
 //for (size_t i = 0; i <= tmp_Mat.size() / (2 * j); i++) {
-//				if (i * 2 * j + j < tmp_Mat.size()) {
-//					tmp_Mat[i * 2 * j].MatAddInPlace(tmp_Mat[i * 2 * j + j], 'N', 1.0 ); //  MFETI - MatAppend(tmp_Mat[i + j]);
-//					tmp_Mat[i * 2 * j + j].Clear();
-//				}
-//			}
-//		}
+//                if (i * 2 * j + j < tmp_Mat.size()) {
+//                    tmp_Mat[i * 2 * j].MatAddInPlace(tmp_Mat[i * 2 * j + j], 'N', 1.0 ); //  MFETI - MatAppend(tmp_Mat[i + j]);
+//                    tmp_Mat[i * 2 * j + j].Clear();
+//                }
+//            }
+//        }
 //
-//		G1_2_time.end();
-//		G1_2_time.printStatMPI();
-//		//G1_2_time.printLastStatMPIPerNode();
+//        G1_2_time.end();
+//        G1_2_time.printStatMPI();
+//        //G1_2_time.printLastStatMPIPerNode();
 //
-//		G1_2_mem.endWithoutBarrier(GetProcessMemory_u());
-//		G1_2_mem.printStatMPI();
-//		//G1_2_mem.printLastStatMPIPerNode();
+//        G1_2_mem.endWithoutBarrier(GetProcessMemory_u());
+//        G1_2_mem.printStatMPI();
+//        //G1_2_mem.printLastStatMPIPerNode();
 //
-//		G1 = tmp_Mat[0];
-//		tmp_Mat[0].Clear();
-//		//G1.MatTranspose();
+//        G1 = tmp_Mat[0];
+//        tmp_Mat[0].Clear();
+//        //G1.MatTranspose();
 //
 //
-//	} else {
+//    } else {
 //
-//		PAR_VECTOR < SparseMatrix > tmp_Mat (domains.size());
-//		#pragma omp parallel for
+//        PAR_VECTOR < SparseMatrix > tmp_Mat (domains.size());
+//        #pragma omp parallel for
 //for (size_t j = 0; j < domains.size(); j++) {
 //
-//			// V1
-//			//tmp_Mat[j].MatMat( domains[j].B1t, 'T', domains[j].Kplus_R);
-//			//tmp_Mat[j].MatTranspose();
+//            // V1
+//            //tmp_Mat[j].MatMat( domains[j].B1t, 'T', domains[j].Kplus_R);
+//            //tmp_Mat[j].MatTranspose();
 //
-//			// V2
-//			//tmp_Mat[j].MatMat( domains[j].Kplus_R, 'T', domains[j].B1t);
+//            // V2
+//            //tmp_Mat[j].MatMat( domains[j].Kplus_R, 'T', domains[j].B1t);
 //
-//			// V3
-//			SparseMatrix Rt;
-//			SparseMatrix B;
+//            // V3
+//            SparseMatrix Rt;
+//            SparseMatrix B;
 //
-//			switch (configuration.regularization) {
-//			case FETIConfiguration::REGULARIZATION::ANALYTIC:
-//				Rt = domains[j].Kplus_R;
-//				Rt.ConvertDenseToCSR(1);
-//				Rt.MatTranspose();
-//				//domains[j].Kplus_R.MatTranspose(Rt);
-//				break;
-//			case FETIConfiguration::REGULARIZATION::ALGEBRAIC:
-//				Rt = domains[j].Kplus_Rb;
-//				Rt.ConvertDenseToCSR(1);
-//				Rt.MatTranspose();
-//				//domains[j].Kplus_Rb.MatTranspose(Rt);
-//				break;
-//			default:
-//				//ESINFO(GLOBAL_ERROR) << "Not implemented regularization.";
-//			}
+//            switch (configuration.regularization) {
+//            case FETIConfiguration::REGULARIZATION::ANALYTIC:
+//                Rt = domains[j].Kplus_R;
+//                Rt.ConvertDenseToCSR(1);
+//                Rt.MatTranspose();
+//                //domains[j].Kplus_R.MatTranspose(Rt);
+//                break;
+//            case FETIConfiguration::REGULARIZATION::ALGEBRAIC:
+//                Rt = domains[j].Kplus_Rb;
+//                Rt.ConvertDenseToCSR(1);
+//                Rt.MatTranspose();
+//                //domains[j].Kplus_Rb.MatTranspose(Rt);
+//                break;
+//            default:
+//                //ESINFO(GLOBAL_ERROR) << "Not implemented regularization.";
+//            }
 //
-//			Rt.ConvertCSRToDense(1);
-//			B = domains[j].B1;
+//            Rt.ConvertCSRToDense(1);
+//            B = domains[j].B1;
 //
-//			SEQ_VECTOR < SEQ_VECTOR < double > > tmpG (B.nnz, SEQ_VECTOR <double> (Rt.rows,0));
-//			SEQ_VECTOR <esint > G_I_row_indices;
-//			G_I_row_indices.resize(B.nnz);
+//            SEQ_VECTOR < SEQ_VECTOR < double > > tmpG (B.nnz, SEQ_VECTOR <double> (Rt.rows,0));
+//            SEQ_VECTOR <esint > G_I_row_indices;
+//            G_I_row_indices.resize(B.nnz);
 //
-//			esint indx = 0;
-//			for (esint r = 0; r < Rt.rows; r++)
-//				tmpG[indx][r] += B.V_values[0] * Rt.dense_values[Rt.rows * (B.J_col_indices[0]-1) + r];
+//            esint indx = 0;
+//            for (esint r = 0; r < Rt.rows; r++)
+//                tmpG[indx][r] += B.V_values[0] * Rt.dense_values[Rt.rows * (B.J_col_indices[0]-1) + r];
 //
-//			G_I_row_indices[indx] = B.I_row_indices[0];
+//            G_I_row_indices[indx] = B.I_row_indices[0];
 //
-//			for (size_t i = 1; i < B.I_row_indices.size(); i++) {
+//            for (size_t i = 1; i < B.I_row_indices.size(); i++) {
 //
-//				if (B.I_row_indices[i-1] != B.I_row_indices[i])
-//					indx++;
+//                if (B.I_row_indices[i-1] != B.I_row_indices[i])
+//                    indx++;
 //
-//				for (esint r = 0; r < Rt.rows; r++)
-//					tmpG[indx][r] += B.V_values[i] * Rt.dense_values[Rt.rows * (B.J_col_indices[i]-1) + r];
+//                for (esint r = 0; r < Rt.rows; r++)
+//                    tmpG[indx][r] += B.V_values[i] * Rt.dense_values[Rt.rows * (B.J_col_indices[i]-1) + r];
 //
-//				G_I_row_indices[indx] = B.I_row_indices[i];
-//			}
+//                G_I_row_indices[indx] = B.I_row_indices[i];
+//            }
 //
-//			G_I_row_indices.resize(indx+1);
-//			tmpG.resize(indx+1);
+//            G_I_row_indices.resize(indx+1);
+//            tmpG.resize(indx+1);
 //
-//			SEQ_VECTOR <esint>    G_I; G_I.reserve( tmpG.size() * tmpG[0].size());
-//			SEQ_VECTOR <esint>    G_J; G_J.reserve( tmpG.size() * tmpG[0].size());
-//			SEQ_VECTOR <double> G_V; G_V.reserve( tmpG.size() * tmpG[0].size());
+//            SEQ_VECTOR <esint>    G_I; G_I.reserve( tmpG.size() * tmpG[0].size());
+//            SEQ_VECTOR <esint>    G_J; G_J.reserve( tmpG.size() * tmpG[0].size());
+//            SEQ_VECTOR <double> G_V; G_V.reserve( tmpG.size() * tmpG[0].size());
 //
-//			for (size_t i = 0; i < tmpG.size(); i++) {
-//				for (size_t j = 0; j < tmpG[i].size(); j++){
-//					if (tmpG[i][j] != 0) {
-//						G_I.push_back(G_I_row_indices[i]);
-//						G_J.push_back(j+1);
-//						G_V.push_back(tmpG[i][j]);
-//					}
-//				}
-//			}
+//            for (size_t i = 0; i < tmpG.size(); i++) {
+//                for (size_t j = 0; j < tmpG[i].size(); j++){
+//                    if (tmpG[i][j] != 0) {
+//                        G_I.push_back(G_I_row_indices[i]);
+//                        G_J.push_back(j+1);
+//                        G_V.push_back(tmpG[i][j]);
+//                    }
+//                }
+//            }
 //
-//			SparseMatrix Gcoo;
-//			Gcoo.I_row_indices = G_J; //G_I;
-//			Gcoo.J_col_indices = G_I; //G_J;
-//			Gcoo.V_values      = G_V;
-//			Gcoo.cols = B.rows; //R.cols;
-//			Gcoo.rows = Rt.rows; //B.rows;
-//			Gcoo.nnz  = G_I.size();
-//			Gcoo.type = 'G';
+//            SparseMatrix Gcoo;
+//            Gcoo.I_row_indices = G_J; //G_I;
+//            Gcoo.J_col_indices = G_I; //G_J;
+//            Gcoo.V_values      = G_V;
+//            Gcoo.cols = B.rows; //R.cols;
+//            Gcoo.rows = Rt.rows; //B.rows;
+//            Gcoo.nnz  = G_I.size();
+//            Gcoo.type = 'G';
 //
-//			Gcoo.ConvertToCSRwithSort(1);
+//            Gcoo.ConvertToCSRwithSort(1);
 //
-//			tmp_Mat[j] = Gcoo;
+//            tmp_Mat[j] = Gcoo;
 //
-//		}
+//        }
 //
-//		for (size_t j = 1; j < tmp_Mat.size(); j *= 2) {
-//			#pragma omp parallel for
-//			for (size_t i = 0; i <= tmp_Mat.size() / (2 * j); i++) {
-//				if (i * 2 * j + j < tmp_Mat.size()) {
-//					tmp_Mat[i * 2 * j].MatAppend(tmp_Mat[i * 2 * j + j]);
-//					tmp_Mat[i * 2 * j + j].Clear();
-//				}
-//			}
-//		}
-//		G1.MatAppend(tmp_Mat[0]);
-//		//for (esint d = 0; d < domains.size(); d++)					//MFETI
-//		//{
-//		//	//tmpM.MatMat( domains[d].B1, 'N', domains[d].Kplus_R);
-//		//	tmpM.MatMat( domains[d].B1t, 'T', domains[d].Kplus_R);
-//		//	tmpM.MatTranspose();
-//		//	G1.MatAppend(tmpM);
-//		//	tmpM.Clear();
-//		//}
-//	}
+//        for (size_t j = 1; j < tmp_Mat.size(); j *= 2) {
+//            #pragma omp parallel for
+//            for (size_t i = 0; i <= tmp_Mat.size() / (2 * j); i++) {
+//                if (i * 2 * j + j < tmp_Mat.size()) {
+//                    tmp_Mat[i * 2 * j].MatAppend(tmp_Mat[i * 2 * j + j]);
+//                    tmp_Mat[i * 2 * j + j].Clear();
+//                }
+//            }
+//        }
+//        G1.MatAppend(tmp_Mat[0]);
+//        //for (esint d = 0; d < domains.size(); d++)                    //MFETI
+//        //{
+//        //    //tmpM.MatMat( domains[d].B1, 'N', domains[d].Kplus_R);
+//        //    tmpM.MatMat( domains[d].B1t, 'T', domains[d].Kplus_R);
+//        //    tmpM.MatTranspose();
+//        //    G1.MatAppend(tmpM);
+//        //    tmpM.Clear();
+//        //}
+//    }
 //
-//	// for both MFETI and HFETI
-//	for (size_t i = 0; i < G1.CSR_V_values.size(); i++) {
-//		G1.CSR_V_values[i] = -1.0 * G1.CSR_V_values[i];
-//	}
+//    // for both MFETI and HFETI
+//    for (size_t i = 0; i < G1.CSR_V_values.size(); i++) {
+//        G1.CSR_V_values[i] = -1.0 * G1.CSR_V_values[i];
+//    }
 //
 //
-////	std::stringstream ss;
-////	ss << "G" << ".txt";
-////	std::ofstream os(ss.str().c_str());
-////	os << G1;
-////	os.close();
+////    std::stringstream ss;
+////    ss << "G" << ".txt";
+////    std::ofstream os(ss.str().c_str());
+////    os << G1;
+////    os.close();
 //
 //}
 
 void ClusterBase::Compress_G1() {
 
-	G1_comp.Clear();
-	Compress_G(G1, G1_comp);
-	G1.Clear();
+    G1_comp.Clear();
+    Compress_G(G1, G1_comp);
+    G1.Clear();
 
-	if (!SYMMETRIC_SYSTEM) {
-		G2_comp.Clear();
-		Compress_G(G2, G2_comp);
-		G2.Clear();
-	}
+    if (!SYMMETRIC_SYSTEM) {
+        G2_comp.Clear();
+        Compress_G(G2, G2_comp);
+        G2.Clear();
+    }
 
 }
 
 void ClusterBase::Compress_G( SparseMatrix &G_in, SparseMatrix &G_comp_out ) {
 
-	G_in.ConvertToCOO( 1 );
+    G_in.ConvertToCOO( 1 );
 
-	#pragma omp parallel for
-	for (size_t j = 0; j < G_in.J_col_indices.size(); j++ ) {
-		G_in.J_col_indices[j] = _my_lamdas_map_indices[ G_in.J_col_indices[j] -1 ] + 1;  // numbering from 1 in matrix
-	}
+    #pragma omp parallel for
+    for (size_t j = 0; j < G_in.J_col_indices.size(); j++ ) {
+        G_in.J_col_indices[j] = _my_lamdas_map_indices[ G_in.J_col_indices[j] -1 ] + 1;  // numbering from 1 in matrix
+    }
 
-	G_in.cols = my_lamdas_indices.size();
-	G_in.ConvertToCSRwithSort( 1 );
+    G_in.cols = my_lamdas_indices.size();
+    G_in.ConvertToCSRwithSort( 1 );
 
-	G_comp_out.CSR_I_row_indices.swap( G_in.CSR_I_row_indices );
-	G_comp_out.CSR_J_col_indices.swap( G_in.CSR_J_col_indices );
-	G_comp_out.CSR_V_values     .swap( G_in.CSR_V_values		 );
+    G_comp_out.CSR_I_row_indices.swap( G_in.CSR_I_row_indices );
+    G_comp_out.CSR_J_col_indices.swap( G_in.CSR_J_col_indices );
+    G_comp_out.CSR_V_values     .swap( G_in.CSR_V_values         );
 
-	G_comp_out.rows = G_in.rows;
-	G_comp_out.cols = G_in.cols;
-	G_comp_out.nnz  = G_in.nnz;
-	G_comp_out.type = G_in.type;
+    G_comp_out.rows = G_in.rows;
+    G_comp_out.cols = G_in.cols;
+    G_comp_out.nnz  = G_in.nnz;
+    G_comp_out.type = G_in.type;
 
 }
 
 void ClusterBase::CreateVec_d_perCluster( SEQ_VECTOR<SEQ_VECTOR <double> > & f ) {
 
-	SEQ_VECTOR <esint> kerindices (domains.size() + 1, 0);
-	kerindices[0] = 0;
+    SEQ_VECTOR <esint> kerindices (domains.size() + 1, 0);
+    kerindices[0] = 0;
 
-	for (size_t k = 1; k < kerindices.size(); k++) {
-		kerindices[k] = kerindices[k-1] + domains[k-1].Kplus_R.cols;
-	}
+    for (size_t k = 1; k < kerindices.size(); k++) {
+        kerindices[k] = kerindices[k-1] + domains[k-1].Kplus_R.cols;
+    }
 
-	esint size_d = 0;
-	if ( USE_HFETI == 1 ) {
-		for (size_t d = 0; d < domains.size(); d++) {
-			if (size_d < domains[d].Kplus_R.cols)
-				size_d = domains[d].Kplus_R.cols;
-		}
-	} else {
-		for (size_t d = 0; d < domains.size(); d++) {
-				size_d += domains[d].Kplus_R.cols;
-		}
-	}
-	vec_d.resize( size_d );
+    esint size_d = 0;
+    if ( USE_HFETI == 1 ) {
+        for (size_t d = 0; d < domains.size(); d++) {
+            if (size_d < domains[d].Kplus_R.cols)
+                size_d = domains[d].Kplus_R.cols;
+        }
+    } else {
+        for (size_t d = 0; d < domains.size(); d++) {
+                size_d += domains[d].Kplus_R.cols;
+        }
+    }
+    vec_d.resize( size_d );
 
 
-	if (SYMMETRIC_SYSTEM) {
+    if (SYMMETRIC_SYSTEM) {
 
-		if ( USE_HFETI == 1) {
-			for (size_t d = 0; d < domains.size(); d++) {
-				if ( configuration.regularization == FETIConfiguration::REGULARIZATION::ANALYTIC ) {
-					domains[d].Kplus_R .DenseMatVec(f[domains[d].domain_global_index], vec_d, 'T', 0, 0         , 1.0 );
-				} else {
-					domains[d].Kplus_Rb.DenseMatVec(f[domains[d].domain_global_index], vec_d, 'T', 0, 0         , 1.0 );
-				}
-			}
-		} else {
-			for (size_t d = 0; d < domains.size(); d++) {											// MFETI
-				if ( configuration.regularization == FETIConfiguration::REGULARIZATION::ANALYTIC ) {
-					domains[d].Kplus_R. DenseMatVec(f[domains[d].domain_global_index], vec_d, 'T', 0, kerindices[d], 0.0 );				// MFETI
-				} else {
-					domains[d].Kplus_Rb.DenseMatVec(f[domains[d].domain_global_index], vec_d, 'T', 0, kerindices[d], 0.0 );				// MFETI
-				}
-			}
-		}
+        if ( USE_HFETI == 1) {
+            for (size_t d = 0; d < domains.size(); d++) {
+                if ( configuration.regularization == FETIConfiguration::REGULARIZATION::ANALYTIC ) {
+                    domains[d].Kplus_R .DenseMatVec(f[domains[d].domain_global_index], vec_d, 'T', 0, 0         , 1.0 );
+                } else {
+                    domains[d].Kplus_Rb.DenseMatVec(f[domains[d].domain_global_index], vec_d, 'T', 0, 0         , 1.0 );
+                }
+            }
+        } else {
+            for (size_t d = 0; d < domains.size(); d++) {                                            // MFETI
+                if ( configuration.regularization == FETIConfiguration::REGULARIZATION::ANALYTIC ) {
+                    domains[d].Kplus_R. DenseMatVec(f[domains[d].domain_global_index], vec_d, 'T', 0, kerindices[d], 0.0 );                // MFETI
+                } else {
+                    domains[d].Kplus_Rb.DenseMatVec(f[domains[d].domain_global_index], vec_d, 'T', 0, kerindices[d], 0.0 );                // MFETI
+                }
+            }
+        }
 
-	} else {
-		// NON-SYMMETRIC SYSTEM
-		if ( USE_HFETI == 1) {
-			for (size_t d = 0; d < domains.size(); d++) {
-				if ( configuration.regularization == FETIConfiguration::REGULARIZATION::ANALYTIC ) {
-					domains[d].Kplus_R2 .DenseMatVec(f[domains[d].domain_global_index], vec_d, 'T', 0, 0         , 1.0 );
-				} else {
-					domains[d].Kplus_Rb2.DenseMatVec(f[domains[d].domain_global_index], vec_d, 'T', 0, 0         , 1.0 );
-				}
-			}
-		} else {
-			for (size_t d = 0; d < domains.size(); d++) {											// MFETI
-				if ( configuration.regularization == FETIConfiguration::REGULARIZATION::ANALYTIC ) {
-					domains[d].Kplus_R2. DenseMatVec(f[domains[d].domain_global_index], vec_d, 'T', 0, kerindices[d], 0.0 );				// MFETI
-				} else {
-					domains[d].Kplus_Rb2.DenseMatVec(f[domains[d].domain_global_index], vec_d, 'T', 0, kerindices[d], 0.0 );				// MFETI
-				}
-			}
-		}
+    } else {
+        // NON-SYMMETRIC SYSTEM
+        if ( USE_HFETI == 1) {
+            for (size_t d = 0; d < domains.size(); d++) {
+                if ( configuration.regularization == FETIConfiguration::REGULARIZATION::ANALYTIC ) {
+                    domains[d].Kplus_R2 .DenseMatVec(f[domains[d].domain_global_index], vec_d, 'T', 0, 0         , 1.0 );
+                } else {
+                    domains[d].Kplus_Rb2.DenseMatVec(f[domains[d].domain_global_index], vec_d, 'T', 0, 0         , 1.0 );
+                }
+            }
+        } else {
+            for (size_t d = 0; d < domains.size(); d++) {                                            // MFETI
+                if ( configuration.regularization == FETIConfiguration::REGULARIZATION::ANALYTIC ) {
+                    domains[d].Kplus_R2. DenseMatVec(f[domains[d].domain_global_index], vec_d, 'T', 0, kerindices[d], 0.0 );                // MFETI
+                } else {
+                    domains[d].Kplus_Rb2.DenseMatVec(f[domains[d].domain_global_index], vec_d, 'T', 0, kerindices[d], 0.0 );                // MFETI
+                }
+            }
+        }
 
-	}
+    }
 
-	for (size_t i = 0; i < vec_d.size(); i++) {
-		vec_d[i] = (-1.0) *  vec_d[i];
-	}
+    for (size_t i = 0; i < vec_d.size(); i++) {
+        vec_d[i] = (-1.0) *  vec_d[i];
+    }
 
 }
 
 
 void ClusterBase::CreateVec_b_perCluster( SEQ_VECTOR<SEQ_VECTOR <double> > & f )  {
 
-	SEQ_VECTOR<SEQ_VECTOR<double> > x_prim_cluster ( domains.size() );
+    SEQ_VECTOR<SEQ_VECTOR<double> > x_prim_cluster ( domains.size() );
 
-	#pragma omp parallel for
-	for (size_t d = 0; d < domains.size(); d++) {
-		x_prim_cluster[d] = f[domains[d].domain_global_index];
-	}
+    #pragma omp parallel for
+    for (size_t d = 0; d < domains.size(); d++) {
+        x_prim_cluster[d] = f[domains[d].domain_global_index];
+    }
 
-	if (USE_HFETI == 0) {
-		#pragma omp parallel for
-		for (size_t d = 0; d < domains.size(); d++) {				// MFETI
-				domains[d].multKplusLocal( x_prim_cluster[d] );
-		}
-	} else {
-		multKplusGlobal_l( x_prim_cluster );						// HFETI
-	}
+    if (USE_HFETI == 0) {
+        #pragma omp parallel for
+        for (size_t d = 0; d < domains.size(); d++) {                // MFETI
+                domains[d].multKplusLocal( x_prim_cluster[d] );
+        }
+    } else {
+        multKplusGlobal_l( x_prim_cluster );                        // HFETI
+    }
 
-//	// pro ukoncovani v primaru - vypocet up0
-//	cilk_for (esint d = 0; d < domains.size(); d++) {
-//		domains[d].up0 = x_prim_cluster[d];
-//	}
+//    // pro ukoncovani v primaru - vypocet up0
+//    cilk_for (esint d = 0; d < domains.size(); d++) {
+//        domains[d].up0 = x_prim_cluster[d];
+//    }
 
-//	vec_b_compressed.clear();
-//	vec_b_compressed.resize(my_lamdas_indices.size(), 0.0);
+//    vec_b_compressed.clear();
+//    vec_b_compressed.resize(my_lamdas_indices.size(), 0.0);
 
-	SEQ_VECTOR < double > y_out_tmp (domains[0].B1_comp_dom.rows);
+    SEQ_VECTOR < double > y_out_tmp (domains[0].B1_comp_dom.rows);
 
-	for (size_t d = 0; d < domains.size(); d++) {
-		y_out_tmp.resize( domains[d].B1_comp_dom.rows );
-		domains[d].B1_comp_dom.MatVec (x_prim_cluster[d], y_out_tmp, 'N', 0, 0, 0.0); // will add (summation per elements) all partial results into y_out
+    for (size_t d = 0; d < domains.size(); d++) {
+        y_out_tmp.resize( domains[d].B1_comp_dom.rows );
+        domains[d].B1_comp_dom.MatVec (x_prim_cluster[d], y_out_tmp, 'N', 0, 0, 0.0); // will add (summation per elements) all partial results into y_out
 
-		for (size_t i = 0; i < domains[d].lambda_map_sub_local.size(); i++)
-			vec_b_compressed[ domains[d].lambda_map_sub_local[i] ] += y_out_tmp[i] - domains[d].vec_c[i];
+        for (size_t i = 0; i < domains[d].lambda_map_sub_local.size(); i++)
+            vec_b_compressed[ domains[d].lambda_map_sub_local[i] ] += y_out_tmp[i] - domains[d].vec_c[i];
 
-	}
+    }
 
 }
 
 
 void ClusterBase::CreateVec_c_perCluster( SEQ_VECTOR <double> & vec_c_out )  {
 
-	//vec_c_out.resize(my_lamdas_indices.size(), 0.0);
+    //vec_c_out.resize(my_lamdas_indices.size(), 0.0);
 
-	for (size_t d = 0; d < domains.size(); d++) {
-		for (size_t i = 0; i < domains[d].lambda_map_sub_local.size(); i++) {
-			vec_c_out[ domains[d].lambda_map_sub_local[i] ] = domains[d].vec_c[i];
-		}
-	}
+    for (size_t d = 0; d < domains.size(); d++) {
+        for (size_t i = 0; i < domains[d].lambda_map_sub_local.size(); i++) {
+            vec_c_out[ domains[d].lambda_map_sub_local[i] ] = domains[d].vec_c[i];
+        }
+    }
 
 
 }
 
 void ClusterBase::CreateVec_lb_perCluster( SEQ_VECTOR <double> & vec_lb_out )  {
 
-	//vec_lb_out.resize(my_lamdas_indices.size(), -std::numeric_limits<double>::infinity());
+    //vec_lb_out.resize(my_lamdas_indices.size(), -std::numeric_limits<double>::infinity());
 
-	for (size_t d = 0; d < domains.size(); d++) {
-		for (size_t i = 0; i < domains[d].lambda_map_sub_local.size(); i++){
-			vec_lb_out[ domains[d].lambda_map_sub_local[i] ] = domains[d].vec_lb[i];
-		}
-	}
+    for (size_t d = 0; d < domains.size(); d++) {
+        for (size_t i = 0; i < domains[d].lambda_map_sub_local.size(); i++){
+            vec_lb_out[ domains[d].lambda_map_sub_local[i] ] = domains[d].vec_lb[i];
+        }
+    }
 }
 
 
 void ClusterBase::compress_lambda_vector  ( SEQ_VECTOR <double> & decompressed_vec_lambda )
 {
-	//compress vector for CG in main loop
-	for (size_t i = 0; i < my_lamdas_indices.size(); i++)
-		decompressed_vec_lambda[i] = decompressed_vec_lambda[my_lamdas_indices[i]];
+    //compress vector for CG in main loop
+    for (size_t i = 0; i < my_lamdas_indices.size(); i++)
+        decompressed_vec_lambda[i] = decompressed_vec_lambda[my_lamdas_indices[i]];
 
-	decompressed_vec_lambda.resize(my_lamdas_indices.size());
+    decompressed_vec_lambda.resize(my_lamdas_indices.size());
 }
 
 void ClusterBase::decompress_lambda_vector( SEQ_VECTOR <double> &   compressed_vec_lambda )
 {
-	SEQ_VECTOR <double> decompressed_vec_lambda (domains[0].B1.rows,0);
+    SEQ_VECTOR <double> decompressed_vec_lambda (domains[0].B1.rows,0);
 
-	for (size_t i = 0; i < my_lamdas_indices.size(); i++)
-		decompressed_vec_lambda[my_lamdas_indices[i]] = compressed_vec_lambda[i];
+    for (size_t i = 0; i < my_lamdas_indices.size(); i++)
+        decompressed_vec_lambda[my_lamdas_indices[i]] = compressed_vec_lambda[i];
 
-	compressed_vec_lambda = decompressed_vec_lambda;
+    compressed_vec_lambda = decompressed_vec_lambda;
 }
 
 
 void ClusterBase::B1_comp_MatVecSum( SEQ_VECTOR < SEQ_VECTOR <double> > & x_in, SEQ_VECTOR <double> & y_out, char T_for_transpose_N_for_non_transpose ) {
 
-	eslog::error("B1_comp_MatVecSum - not implemented.\n");
-	exit(0);
+    eslog::error("B1_comp_MatVecSum - not implemented.\n");
+    exit(0);
 
-	//if (domains.size() <= 3) {
+    //if (domains.size() <= 3) {
 
-//		domains[0].B1_comp.MatVec (x_in[0], y_out, T_for_transpose_N_for_non_transpose, 0, 0, 0.0); // first vector overwrites temp vector
-//		for (esint d = 1; d < domains.size(); d++) // reduction
-//			domains[d].B1_comp.MatVec (x_in[d], y_out, T_for_transpose_N_for_non_transpose, 0, 0, 1.0); // will add (summation per elements) all partial results into y_out
+//        domains[0].B1_comp.MatVec (x_in[0], y_out, T_for_transpose_N_for_non_transpose, 0, 0, 0.0); // first vector overwrites temp vector
+//        for (esint d = 1; d < domains.size(); d++) // reduction
+//            domains[d].B1_comp.MatVec (x_in[d], y_out, T_for_transpose_N_for_non_transpose, 0, 0, 1.0); // will add (summation per elements) all partial results into y_out
 
-	//} else {
-	//
-	//	cilk_for (esint d = 0; d < domains.size(); d++) {
-	//		domains[d].B1_comp.MatVec (x_in[d], domains[d].compressed_tmp, T_for_transpose_N_for_non_transpose, 0, 0, 0.0);
-	//	}
+    //} else {
+    //
+    //    cilk_for (esint d = 0; d < domains.size(); d++) {
+    //        domains[d].B1_comp.MatVec (x_in[d], domains[d].compressed_tmp, T_for_transpose_N_for_non_transpose, 0, 0, 0.0);
+    //    }
 
-	//	for ( esint r = 2 * (domains.size() / 2);  r > 1;  r = r / 2 ) {
-	//		cilk_for ( esint d = 0;  d < r;  d++ ) {
-	//			if ( (r + d)  <  domains.size() ) {
-	//				for (esint i = 0; i < domains[d].compressed_tmp.size(); i++) {
-	//					domains[d].compressed_tmp[i] = domains[d].compressed_tmp[i] + domains[r + d].compressed_tmp[i];
-	//				}
-	//			}
-	//		}
-	//	}
+    //    for ( esint r = 2 * (domains.size() / 2);  r > 1;  r = r / 2 ) {
+    //        cilk_for ( esint d = 0;  d < r;  d++ ) {
+    //            if ( (r + d)  <  domains.size() ) {
+    //                for (esint i = 0; i < domains[d].compressed_tmp.size(); i++) {
+    //                    domains[d].compressed_tmp[i] = domains[d].compressed_tmp[i] + domains[r + d].compressed_tmp[i];
+    //                }
+    //            }
+    //        }
+    //    }
 
-	//	for (esint i = 0; i < domains[0].compressed_tmp.size(); i++)
-	//		y_out[i] = domains[0].compressed_tmp[i] + domains[1].compressed_tmp[i];
-	//
-	//}
+    //    for (esint i = 0; i < domains[0].compressed_tmp.size(); i++)
+    //        y_out[i] = domains[0].compressed_tmp[i] + domains[1].compressed_tmp[i];
+    //
+    //}
 
 }
 
 void ClusterBase::CreateDirichletPrec(DataHolder *instance)
 {
-	#pragma omp parallel for
-	//for (size_t d = 0; d < instance->K.size(); d++) {
-	for (size_t d = 0; d < domains.size(); d++) {
-		CreateDirichletPrec_perDomain(instance, d);
-	}
+    #pragma omp parallel for
+    //for (size_t d = 0; d < instance->K.size(); d++) {
+    for (size_t d = 0; d < domains.size(); d++) {
+        CreateDirichletPrec_perDomain(instance, d);
+    }
 }
 
 void ClusterBase::CreateDirichletPrec_perDomain(DataHolder *instance, size_t d)
 {
-	SEQ_VECTOR<esint> perm_vec = domains[d].B1t_Dir_perm_vec;
-	SEQ_VECTOR<esint> perm_vec_full(instance->K[domains[d].domain_global_index].rows);// (instance->K[d].rows);
-	SEQ_VECTOR<esint> perm_vec_diff(instance->K[domains[d].domain_global_index].rows);// (instance->K[d].rows);
+    SEQ_VECTOR<esint> perm_vec = domains[d].B1t_Dir_perm_vec;
+    SEQ_VECTOR<esint> perm_vec_full(instance->K[domains[d].domain_global_index].rows);// (instance->K[d].rows);
+    SEQ_VECTOR<esint> perm_vec_diff(instance->K[domains[d].domain_global_index].rows);// (instance->K[d].rows);
 
-	SEQ_VECTOR<esint> I_row_indices_p(instance->K[domains[d].domain_global_index].nnz);// (instance->K[d].nnz);
-	SEQ_VECTOR<esint> J_col_indices_p(instance->K[domains[d].domain_global_index].nnz);// (instance->K[d].nnz);
+    SEQ_VECTOR<esint> I_row_indices_p(instance->K[domains[d].domain_global_index].nnz);// (instance->K[d].nnz);
+    SEQ_VECTOR<esint> J_col_indices_p(instance->K[domains[d].domain_global_index].nnz);// (instance->K[d].nnz);
 
-	for (size_t i = 0; i < perm_vec.size(); i++) {
-		perm_vec[i] = perm_vec[i] - 1;
-	}
+    for (size_t i = 0; i < perm_vec.size(); i++) {
+        perm_vec[i] = perm_vec[i] - 1;
+    }
 
-	for (size_t i = 0; i < perm_vec_full.size(); i++) {
-		perm_vec_full[i] = i;
-	}
+    for (size_t i = 0; i < perm_vec_full.size(); i++) {
+        perm_vec_full[i] = i;
+    }
 
-	auto it = std::set_difference(perm_vec_full.begin(), perm_vec_full.end(), perm_vec.begin(), perm_vec.end(), perm_vec_diff.begin());
-	perm_vec_diff.resize(it - perm_vec_diff.begin());
+    auto it = std::set_difference(perm_vec_full.begin(), perm_vec_full.end(), perm_vec.begin(), perm_vec.end(), perm_vec_diff.begin());
+    perm_vec_diff.resize(it - perm_vec_diff.begin());
 
-	perm_vec_full = perm_vec_diff;
-	perm_vec_full.insert(perm_vec_full.end(), perm_vec.begin(), perm_vec.end());
+    perm_vec_full = perm_vec_diff;
+    perm_vec_full.insert(perm_vec_full.end(), perm_vec.begin(), perm_vec.end());
 
-	SparseMatrix K_modif = instance->K[domains[d].domain_global_index]; //[d];
+    SparseMatrix K_modif = instance->K[domains[d].domain_global_index]; //[d];
 #ifdef BEM4I_TO_BE_REMOVED
-	K_modif.ConvertToCSR(1);
+    K_modif.ConvertToCSR(1);
 #endif
-	SparseMatrix RegMatCRS = instance->RegMat[domains[d].domain_global_index]; //[d];
-	RegMatCRS.ConvertToCSRwithSort(0);
-	K_modif.MatAddInPlace(RegMatCRS, 'N', -1);
-	// K_modif.RemoveLower();
+    SparseMatrix RegMatCRS = instance->RegMat[domains[d].domain_global_index]; //[d];
+    RegMatCRS.ConvertToCSRwithSort(0);
+    K_modif.MatAddInPlace(RegMatCRS, 'N', -1);
+    // K_modif.RemoveLower();
 
-	SEQ_VECTOR<SEQ_VECTOR<esint >> vec_I1_i2(K_modif.rows, SEQ_VECTOR<esint >(2, 1));
-	esint offset = K_modif.CSR_I_row_indices[0] ? 1 : 0;
+    SEQ_VECTOR<SEQ_VECTOR<esint >> vec_I1_i2(K_modif.rows, SEQ_VECTOR<esint >(2, 1));
+    esint offset = K_modif.CSR_I_row_indices[0] ? 1 : 0;
 
-	for (esint i = 0; i < K_modif.rows; i++) {
-		vec_I1_i2[i][0] = perm_vec_full[i];
-		vec_I1_i2[i][1] = i; // position to create reverse permutation
-	}
+    for (esint i = 0; i < K_modif.rows; i++) {
+        vec_I1_i2[i][0] = perm_vec_full[i];
+        vec_I1_i2[i][1] = i; // position to create reverse permutation
+    }
 
-	std::sort(vec_I1_i2.begin(), vec_I1_i2.end(), [](const SEQ_VECTOR <esint >& a, const SEQ_VECTOR<esint>& b) {return a[0] < b[0];});
+    std::sort(vec_I1_i2.begin(), vec_I1_i2.end(), [](const SEQ_VECTOR <esint >& a, const SEQ_VECTOR<esint>& b) {return a[0] < b[0];});
 
-	// permutations made on matrix in COO format
-	K_modif.ConvertToCOO(0);
-	esint I_index, J_index;
-	bool unsymmetric = !SYMMETRIC_SYSTEM;
-	for (esint i = 0; i < K_modif.nnz; i++) {
-		I_index = vec_I1_i2[K_modif.I_row_indices[i] - offset][1] + offset;
-		J_index = vec_I1_i2[K_modif.J_col_indices[i] - offset][1] + offset;
-		if (unsymmetric || I_index <= J_index) {
-			I_row_indices_p[i] = I_index;
-			J_col_indices_p[i] = J_index;
-		} else {
-			I_row_indices_p[i] = J_index;
-			J_col_indices_p[i] = I_index;
-		}
-	}
-	for (esint i = 0; i < K_modif.nnz; i++) {
-		K_modif.I_row_indices[i] = I_row_indices_p[i];
-		K_modif.J_col_indices[i] = J_col_indices_p[i];
-	}
-	K_modif.ConvertToCSRwithSort(1);
-//		{
-//			if (info::ecf->output.print_matrices) {
-//				std::ofstream osS(Logging::prepareFile(d, "K_modif"));
-//				osS << K_modif;
-//				osS.close();
-//			}
-//		}
+    // permutations made on matrix in COO format
+    K_modif.ConvertToCOO(0);
+    esint I_index, J_index;
+    bool unsymmetric = !SYMMETRIC_SYSTEM;
+    for (esint i = 0; i < K_modif.nnz; i++) {
+        I_index = vec_I1_i2[K_modif.I_row_indices[i] - offset][1] + offset;
+        J_index = vec_I1_i2[K_modif.J_col_indices[i] - offset][1] + offset;
+        if (unsymmetric || I_index <= J_index) {
+            I_row_indices_p[i] = I_index;
+            J_col_indices_p[i] = J_index;
+        } else {
+            I_row_indices_p[i] = J_index;
+            J_col_indices_p[i] = I_index;
+        }
+    }
+    for (esint i = 0; i < K_modif.nnz; i++) {
+        K_modif.I_row_indices[i] = I_row_indices_p[i];
+        K_modif.J_col_indices[i] = J_col_indices_p[i];
+    }
+    K_modif.ConvertToCSRwithSort(1);
+//        {
+//            if (info::ecf->output.print_matrices) {
+//                std::ofstream osS(Logging::prepareFile(d, "K_modif"));
+//                osS << K_modif;
+//                osS.close();
+//            }
+//        }
 
-	// ------------------------------------------------------------------------------------------------------------------
-	bool diagonalized_K_rr = configuration.preconditioner == FETIConfiguration::PRECONDITIONER::SUPER_DIRICHLET;
-	//        PRECONDITIONER==NONE              - 0
-	//        PRECONDITIONER==LUMPED            - 1
-	//        PRECONDITIONER==WEIGHT_FUNCTION   - 2
-	//        PRECONDITIONER==DIRICHLET         - 3
-	//        PRECONDITIONER==SUPER_DIRICHLET   - 4
-	//
-	//        When next line is uncomment, var. PRECONDITIONER==DIRICHLET and PRECONDITIONER==SUPER_DIRICHLET provide identical preconditioner.
-	//        bool diagonalized_K_rr = false
-	// ------------------------------------------------------------------------------------------------------------------
+    // ------------------------------------------------------------------------------------------------------------------
+    bool diagonalized_K_rr = configuration.preconditioner == FETIConfiguration::PRECONDITIONER::SUPER_DIRICHLET;
+    //        PRECONDITIONER==NONE              - 0
+    //        PRECONDITIONER==LUMPED            - 1
+    //        PRECONDITIONER==WEIGHT_FUNCTION   - 2
+    //        PRECONDITIONER==DIRICHLET         - 3
+    //        PRECONDITIONER==SUPER_DIRICHLET   - 4
+    //
+    //        When next line is uncomment, var. PRECONDITIONER==DIRICHLET and PRECONDITIONER==SUPER_DIRICHLET provide identical preconditioner.
+    //        bool diagonalized_K_rr = false
+    // ------------------------------------------------------------------------------------------------------------------
 
-	esint sc_size = perm_vec.size();
+    esint sc_size = perm_vec.size();
 
-	if (sc_size == instance->K[domains[d].domain_global_index].rows) {
-		domains[d].Prec = instance->K[domains[d].domain_global_index];
-		domains[d].Prec.ConvertCSRToDense(1);
-		// if physics.K[d] does not contain inner DOF
-	} else {
+    if (sc_size == instance->K[domains[d].domain_global_index].rows) {
+        domains[d].Prec = instance->K[domains[d].domain_global_index];
+        domains[d].Prec.ConvertCSRToDense(1);
+        // if physics.K[d] does not contain inner DOF
+    } else {
 
-		if (configuration.preconditioner == FETIConfiguration::PRECONDITIONER::DIRICHLET) {
-			SparseSolverCPU createSchur;
+        if (configuration.preconditioner == FETIConfiguration::PRECONDITIONER::DIRICHLET) {
+            SparseSolverCPU createSchur;
 //          createSchur.msglvl=1;
-			esint sc_size = perm_vec.size();
-			createSchur.ImportMatrix_wo_Copy(K_modif);
-			createSchur.Create_SC(domains[d].Prec, sc_size, false);
-			domains[d].Prec.ConvertCSRToDense(1);
-		} else {
-			SparseMatrix K_rr;
-			SparseMatrix K_rs;
-			SparseMatrix K_sr;
-			SparseMatrix KsrInvKrrKrs;
+            esint sc_size = perm_vec.size();
+            createSchur.ImportMatrix_wo_Copy(K_modif);
+            createSchur.Create_SC(domains[d].Prec, sc_size, false);
+            domains[d].Prec.ConvertCSRToDense(1);
+        } else {
+            SparseMatrix K_rr;
+            SparseMatrix K_rs;
+            SparseMatrix K_sr;
+            SparseMatrix KsrInvKrrKrs;
 
-			esint i_start = 0;
-			esint nonsing_size = K_modif.rows - sc_size - i_start;
-			esint j_start = nonsing_size;
+            esint i_start = 0;
+            esint nonsing_size = K_modif.rows - sc_size - i_start;
+            esint j_start = nonsing_size;
 
-			K_rs.getSubBlockmatrix_rs(K_modif, K_rs, i_start, nonsing_size, j_start, sc_size);
+            K_rs.getSubBlockmatrix_rs(K_modif, K_rs, i_start, nonsing_size, j_start, sc_size);
 
-			if (SYMMETRIC_SYSTEM) {
-				K_rs.MatTranspose(K_sr);
-			} else {
-				K_sr.getSubBlockmatrix_rs(K_modif, K_sr, j_start, sc_size, i_start, nonsing_size);
-			}
+            if (SYMMETRIC_SYSTEM) {
+                K_rs.MatTranspose(K_sr);
+            } else {
+                K_sr.getSubBlockmatrix_rs(K_modif, K_sr, j_start, sc_size, i_start, nonsing_size);
+            }
 
-			domains[d].Prec.getSubDiagBlockmatrix(K_modif, domains[d].Prec, nonsing_size, sc_size);
-			SEQ_VECTOR<double> diagonals;
-			SparseSolverCPU K_rr_solver;
+            domains[d].Prec.getSubDiagBlockmatrix(K_modif, domains[d].Prec, nonsing_size, sc_size);
+            SEQ_VECTOR<double> diagonals;
+            SparseSolverCPU K_rr_solver;
 
-			// K_rs is replaced by:
-			// a) K_rs = 1/diag(K_rr) * K_rs          (simplified Dirichlet precond.)
-			// b) K_rs =    inv(K_rr) * K_rs          (classical Dirichlet precond. assembled by own - not via PardisoSC routine)
-			if (diagonalized_K_rr) {
-				diagonals = K_modif.getDiagonal();
-				// diagonals is obtained directly from K_modif (not from K_rr to avoid assembling) thanks to its structure
-				//      K_modif = [K_rr, K_rs]
-				//                [K_sr, K_ss]
-				//
-				for (esint i = 0; i < K_rs.rows; i++) {
-					for (esint j = K_rs.CSR_I_row_indices[i]; j < K_rs.CSR_I_row_indices[i + 1]; j++) {
-						K_rs.CSR_V_values[j - offset] /= diagonals[i];
-					}
-				}
-			} else {
-				K_rr.getSubDiagBlockmatrix(K_modif, K_rr, i_start, nonsing_size);
-				K_rr_solver.ImportMatrix_wo_Copy(K_rr);
+            // K_rs is replaced by:
+            // a) K_rs = 1/diag(K_rr) * K_rs          (simplified Dirichlet precond.)
+            // b) K_rs =    inv(K_rr) * K_rs          (classical Dirichlet precond. assembled by own - not via PardisoSC routine)
+            if (diagonalized_K_rr) {
+                diagonals = K_modif.getDiagonal();
+                // diagonals is obtained directly from K_modif (not from K_rr to avoid assembling) thanks to its structure
+                //      K_modif = [K_rr, K_rs]
+                //                [K_sr, K_ss]
+                //
+                for (esint i = 0; i < K_rs.rows; i++) {
+                    for (esint j = K_rs.CSR_I_row_indices[i]; j < K_rs.CSR_I_row_indices[i + 1]; j++) {
+                        K_rs.CSR_V_values[j - offset] /= diagonals[i];
+                    }
+                }
+            } else {
+                K_rr.getSubDiagBlockmatrix(K_modif, K_rr, i_start, nonsing_size);
+                K_rr_solver.ImportMatrix_wo_Copy(K_rr);
 //            K_rr_solver.msglvl = 1;
-				K_rr_solver.SolveMat_Dense(K_rs);
-			}
-		}
-	}
+                K_rr_solver.SolveMat_Dense(K_rs);
+            }
+        }
+    }
 
 // implemented in clustercpu.cpp
 
-//	#pragma omp parallel for
-//	for (size_t d = 0; d < instance->K.size(); d++) {
-//		SEQ_VECTOR<esint> perm_vec = domains[d].B1t_Dir_perm_vec;
-//		SEQ_VECTOR<esint> perm_vec_full(instance->K[d].rows);
-//		SEQ_VECTOR<esint> perm_vec_diff(instance->K[d].rows);
+//    #pragma omp parallel for
+//    for (size_t d = 0; d < instance->K.size(); d++) {
+//        SEQ_VECTOR<esint> perm_vec = domains[d].B1t_Dir_perm_vec;
+//        SEQ_VECTOR<esint> perm_vec_full(instance->K[d].rows);
+//        SEQ_VECTOR<esint> perm_vec_diff(instance->K[d].rows);
 //
-//		SEQ_VECTOR<esint> I_row_indices_p(instance->K[d].nnz);
-//		SEQ_VECTOR<esint> J_col_indices_p(instance->K[d].nnz);
+//        SEQ_VECTOR<esint> I_row_indices_p(instance->K[d].nnz);
+//        SEQ_VECTOR<esint> J_col_indices_p(instance->K[d].nnz);
 //
-//		for (size_t i = 0; i < perm_vec.size(); i++) {
-//			perm_vec[i] = perm_vec[i] - 1;
-//		}
+//        for (size_t i = 0; i < perm_vec.size(); i++) {
+//            perm_vec[i] = perm_vec[i] - 1;
+//        }
 //
-//		for (size_t i = 0; i < perm_vec_full.size(); i++) {
-//			perm_vec_full[i] = i;
-//		}
+//        for (size_t i = 0; i < perm_vec_full.size(); i++) {
+//            perm_vec_full[i] = i;
+//        }
 //
-//		auto it = std::set_difference(perm_vec_full.begin(), perm_vec_full.end(), perm_vec.begin(), perm_vec.end(), perm_vec_diff.begin());
-//		perm_vec_diff.resize(it - perm_vec_diff.begin());
+//        auto it = std::set_difference(perm_vec_full.begin(), perm_vec_full.end(), perm_vec.begin(), perm_vec.end(), perm_vec_diff.begin());
+//        perm_vec_diff.resize(it - perm_vec_diff.begin());
 //
-//		perm_vec_full = perm_vec_diff;
-//		perm_vec_full.insert(perm_vec_full.end(), perm_vec.begin(), perm_vec.end());
+//        perm_vec_full = perm_vec_diff;
+//        perm_vec_full.insert(perm_vec_full.end(), perm_vec.begin(), perm_vec.end());
 //
-//		SparseMatrix K_modif = instance->K[d];
-//		SparseMatrix RegMatCRS = instance->RegMat[d];
-//		RegMatCRS.ConvertToCSRwithSort(0);
-//		K_modif.MatAddInPlace(RegMatCRS, 'N', -1);
-//		// K_modif.RemoveLower();
+//        SparseMatrix K_modif = instance->K[d];
+//        SparseMatrix RegMatCRS = instance->RegMat[d];
+//        RegMatCRS.ConvertToCSRwithSort(0);
+//        K_modif.MatAddInPlace(RegMatCRS, 'N', -1);
+//        // K_modif.RemoveLower();
 //
-//		SEQ_VECTOR<SEQ_VECTOR<esint >> vec_I1_i2(K_modif.rows, SEQ_VECTOR<esint >(2, 1));
-//		esint offset = K_modif.CSR_I_row_indices[0] ? 1 : 0;
+//        SEQ_VECTOR<SEQ_VECTOR<esint >> vec_I1_i2(K_modif.rows, SEQ_VECTOR<esint >(2, 1));
+//        esint offset = K_modif.CSR_I_row_indices[0] ? 1 : 0;
 //
-//		for (esint i = 0; i < K_modif.rows; i++) {
-//			vec_I1_i2[i][0] = perm_vec_full[i];
-//			vec_I1_i2[i][1] = i; // position to create reverse permutation
-//		}
+//        for (esint i = 0; i < K_modif.rows; i++) {
+//            vec_I1_i2[i][0] = perm_vec_full[i];
+//            vec_I1_i2[i][1] = i; // position to create reverse permutation
+//        }
 //
-//		std::sort(vec_I1_i2.begin(), vec_I1_i2.end(), [](const SEQ_VECTOR <esint >& a, const SEQ_VECTOR<esint>& b) {return a[0] < b[0];});
+//        std::sort(vec_I1_i2.begin(), vec_I1_i2.end(), [](const SEQ_VECTOR <esint >& a, const SEQ_VECTOR<esint>& b) {return a[0] < b[0];});
 //
-//		// permutations made on matrix in COO format
-//		K_modif.ConvertToCOO(0);
-//		esint I_index, J_index;
-//		bool unsymmetric = !SYMMETRIC_SYSTEM;
-//		for (esint i = 0; i < K_modif.nnz; i++) {
-//			I_index = vec_I1_i2[K_modif.I_row_indices[i] - offset][1] + offset;
-//			J_index = vec_I1_i2[K_modif.J_col_indices[i] - offset][1] + offset;
-//			if (unsymmetric || I_index <= J_index) {
-//				I_row_indices_p[i] = I_index;
-//				J_col_indices_p[i] = J_index;
-//			} else {
-//				I_row_indices_p[i] = J_index;
-//				J_col_indices_p[i] = I_index;
-//			}
-//		}
-//		for (esint i = 0; i < K_modif.nnz; i++) {
-//			K_modif.I_row_indices[i] = I_row_indices_p[i];
-//			K_modif.J_col_indices[i] = J_col_indices_p[i];
-//		}
-//		K_modif.ConvertToCSRwithSort(1);
-//		{
-//			if (info::ecf->output.print_matrices) {
-//				std::ofstream osS(Logging::prepareFile(d, "K_modif"));
-//				osS << K_modif;
-//				osS.close();
-//			}
-//		}
+//        // permutations made on matrix in COO format
+//        K_modif.ConvertToCOO(0);
+//        esint I_index, J_index;
+//        bool unsymmetric = !SYMMETRIC_SYSTEM;
+//        for (esint i = 0; i < K_modif.nnz; i++) {
+//            I_index = vec_I1_i2[K_modif.I_row_indices[i] - offset][1] + offset;
+//            J_index = vec_I1_i2[K_modif.J_col_indices[i] - offset][1] + offset;
+//            if (unsymmetric || I_index <= J_index) {
+//                I_row_indices_p[i] = I_index;
+//                J_col_indices_p[i] = J_index;
+//            } else {
+//                I_row_indices_p[i] = J_index;
+//                J_col_indices_p[i] = I_index;
+//            }
+//        }
+//        for (esint i = 0; i < K_modif.nnz; i++) {
+//            K_modif.I_row_indices[i] = I_row_indices_p[i];
+//            K_modif.J_col_indices[i] = J_col_indices_p[i];
+//        }
+//        K_modif.ConvertToCSRwithSort(1);
+//        {
+//            if (info::ecf->output.print_matrices) {
+//                std::ofstream osS(Logging::prepareFile(d, "K_modif"));
+//                osS << K_modif;
+//                osS.close();
+//            }
+//        }
 //
-//		// ------------------------------------------------------------------------------------------------------------------
-//		bool diagonalized_K_rr = configuration.preconditioner == FETIConfiguration::PRECONDITIONER::SUPER_DIRICHLET;
-//		//        PRECONDITIONER==NONE              - 0
-//		//        PRECONDITIONER==LUMPED            - 1
-//		//        PRECONDITIONER==WEIGHT_FUNCTION   - 2
-//		//        PRECONDITIONER==DIRICHLET         - 3
-//		//        PRECONDITIONER==SUPER_DIRICHLET   - 4
-//		//
-//		//        When next line is uncomment, var. PRECONDITIONER==DIRICHLET and PRECONDITIONER==SUPER_DIRICHLET provide identical preconditioner.
-//		//        bool diagonalized_K_rr = false
-//		// ------------------------------------------------------------------------------------------------------------------
+//        // ------------------------------------------------------------------------------------------------------------------
+//        bool diagonalized_K_rr = configuration.preconditioner == FETIConfiguration::PRECONDITIONER::SUPER_DIRICHLET;
+//        //        PRECONDITIONER==NONE              - 0
+//        //        PRECONDITIONER==LUMPED            - 1
+//        //        PRECONDITIONER==WEIGHT_FUNCTION   - 2
+//        //        PRECONDITIONER==DIRICHLET         - 3
+//        //        PRECONDITIONER==SUPER_DIRICHLET   - 4
+//        //
+//        //        When next line is uncomment, var. PRECONDITIONER==DIRICHLET and PRECONDITIONER==SUPER_DIRICHLET provide identical preconditioner.
+//        //        bool diagonalized_K_rr = false
+//        // ------------------------------------------------------------------------------------------------------------------
 //
-//		esint sc_size = perm_vec.size();
+//        esint sc_size = perm_vec.size();
 //
-//		if (sc_size == instance->K[d].rows) {
-//			domains[d].Prec = instance->K[d];
-//			domains[d].Prec.ConvertCSRToDense(1);
-//			// if physics.K[d] does not contain inner DOF
-//		} else {
+//        if (sc_size == instance->K[d].rows) {
+//            domains[d].Prec = instance->K[d];
+//            domains[d].Prec.ConvertCSRToDense(1);
+//            // if physics.K[d] does not contain inner DOF
+//        } else {
 //
-//			if (configuration.preconditioner == FETIConfiguration::PRECONDITIONER::DIRICHLET) {
-//				SparseSolverCPU createSchur;
+//            if (configuration.preconditioner == FETIConfiguration::PRECONDITIONER::DIRICHLET) {
+//                SparseSolverCPU createSchur;
 ////          createSchur.msglvl=1;
-//				esint sc_size = perm_vec.size();
-//				createSchur.ImportMatrix_wo_Copy(K_modif);
-//				createSchur.Create_SC(domains[d].Prec, sc_size, false);
-//				domains[d].Prec.ConvertCSRToDense(1);
-//			} else {
-//				SparseMatrix K_rr;
-//				SparseMatrix K_rs;
-//				SparseMatrix K_sr;
-//				SparseMatrix KsrInvKrrKrs;
+//                esint sc_size = perm_vec.size();
+//                createSchur.ImportMatrix_wo_Copy(K_modif);
+//                createSchur.Create_SC(domains[d].Prec, sc_size, false);
+//                domains[d].Prec.ConvertCSRToDense(1);
+//            } else {
+//                SparseMatrix K_rr;
+//                SparseMatrix K_rs;
+//                SparseMatrix K_sr;
+//                SparseMatrix KsrInvKrrKrs;
 //
-//				esint i_start = 0;
-//				esint nonsing_size = K_modif.rows - sc_size - i_start;
-//				esint j_start = nonsing_size;
+//                esint i_start = 0;
+//                esint nonsing_size = K_modif.rows - sc_size - i_start;
+//                esint j_start = nonsing_size;
 //
-//				K_rs.getSubBlockmatrix_rs(K_modif, K_rs, i_start, nonsing_size, j_start, sc_size);
+//                K_rs.getSubBlockmatrix_rs(K_modif, K_rs, i_start, nonsing_size, j_start, sc_size);
 //
-//				if (SYMMETRIC_SYSTEM) {
-//					K_rs.MatTranspose(K_sr);
-//				} else {
-//					K_sr.getSubBlockmatrix_rs(K_modif, K_sr, j_start, sc_size, i_start, nonsing_size);
-//				}
+//                if (SYMMETRIC_SYSTEM) {
+//                    K_rs.MatTranspose(K_sr);
+//                } else {
+//                    K_sr.getSubBlockmatrix_rs(K_modif, K_sr, j_start, sc_size, i_start, nonsing_size);
+//                }
 //
-//				domains[d].Prec.getSubDiagBlockmatrix(K_modif, domains[d].Prec, nonsing_size, sc_size);
-//				SEQ_VECTOR<double> diagonals;
-//				SparseSolverCPU K_rr_solver;
+//                domains[d].Prec.getSubDiagBlockmatrix(K_modif, domains[d].Prec, nonsing_size, sc_size);
+//                SEQ_VECTOR<double> diagonals;
+//                SparseSolverCPU K_rr_solver;
 //
-//				// K_rs is replaced by:
-//				// a) K_rs = 1/diag(K_rr) * K_rs          (simplified Dirichlet precond.)
-//				// b) K_rs =    inv(K_rr) * K_rs          (classical Dirichlet precond. assembled by own - not via PardisoSC routine)
-//				if (diagonalized_K_rr) {
-//					diagonals = K_modif.getDiagonal();
-//					// diagonals is obtained directly from K_modif (not from K_rr to avoid assembling) thanks to its structure
-//					//      K_modif = [K_rr, K_rs]
-//					//                [K_sr, K_ss]
-//					//
-//					for (esint i = 0; i < K_rs.rows; i++) {
-//						for (esint j = K_rs.CSR_I_row_indices[i]; j < K_rs.CSR_I_row_indices[i + 1]; j++) {
-//							K_rs.CSR_V_values[j - offset] /= diagonals[i];
-//						}
-//					}
-//				} else {
-//					K_rr.getSubDiagBlockmatrix(K_modif, K_rr, i_start, nonsing_size);
-//					K_rr_solver.ImportMatrix_wo_Copy(K_rr);
+//                // K_rs is replaced by:
+//                // a) K_rs = 1/diag(K_rr) * K_rs          (simplified Dirichlet precond.)
+//                // b) K_rs =    inv(K_rr) * K_rs          (classical Dirichlet precond. assembled by own - not via PardisoSC routine)
+//                if (diagonalized_K_rr) {
+//                    diagonals = K_modif.getDiagonal();
+//                    // diagonals is obtained directly from K_modif (not from K_rr to avoid assembling) thanks to its structure
+//                    //      K_modif = [K_rr, K_rs]
+//                    //                [K_sr, K_ss]
+//                    //
+//                    for (esint i = 0; i < K_rs.rows; i++) {
+//                        for (esint j = K_rs.CSR_I_row_indices[i]; j < K_rs.CSR_I_row_indices[i + 1]; j++) {
+//                            K_rs.CSR_V_values[j - offset] /= diagonals[i];
+//                        }
+//                    }
+//                } else {
+//                    K_rr.getSubDiagBlockmatrix(K_modif, K_rr, i_start, nonsing_size);
+//                    K_rr_solver.ImportMatrix_wo_Copy(K_rr);
 ////            K_rr_solver.msglvl = 1;
-//					K_rr_solver.SolveMat_Dense(K_rs);
-//				}
+//                    K_rr_solver.SolveMat_Dense(K_rs);
+//                }
 //
-//				KsrInvKrrKrs.MatMat(K_sr, 'N', K_rs);
-//				domains[d].Prec.MatAddInPlace(KsrInvKrrKrs, 'N', -1);
+//                KsrInvKrrKrs.MatMat(K_sr, 'N', K_rs);
+//                domains[d].Prec.MatAddInPlace(KsrInvKrrKrs, 'N', -1);
 ////          if (!diagonalized_K_rr){
-////				    cluster.domains[d].Prec.ConvertCSRToDense(1);
+////                    cluster.domains[d].Prec.ConvertCSRToDense(1);
 ////          }
-//			}
+//            }
 //
-//		}
+//        }
 //
-//		if (info::ecf->output.print_matrices) {
-//			std::ofstream osS(Logging::prepareFile(d, "S"));
-//			SparseMatrix SC = domains[d].Prec;
-//			if (configuration.preconditioner == FETIConfiguration::PRECONDITIONER::DIRICHLET) {
-//				SC.ConvertDenseToCSR(1);
-//			}
-//			osS << SC;
-//			osS.close();
-//		}
+//        if (info::ecf->output.print_matrices) {
+//            std::ofstream osS(Logging::prepareFile(d, "S"));
+//            SparseMatrix SC = domains[d].Prec;
+//            if (configuration.preconditioner == FETIConfiguration::PRECONDITIONER::DIRICHLET) {
+//                SC.ConvertDenseToCSR(1);
+//            }
+//            osS << SC;
+//            osS.close();
+//        }
 //
-//		//ESINFO(PROGRESS3) << Info::plain() << ".";
-//	}
+//        //ESINFO(PROGRESS3) << Info::plain() << ".";
+//    }
 
 }
 

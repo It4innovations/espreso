@@ -10,16 +10,16 @@ namespace espreso {
 class Mesh;
 
 struct Netgen: public Visualization {
-	Netgen();
-	~Netgen();
+    Netgen();
+    ~Netgen();
 
-	void updateMesh();
-	void updateMonitors(const step::Step &step);
-	void updateSolution(const step::Step &step, const step::Time &time);
-	void updateSolution(const step::Step &step, const step::Frequency &frequency);
+    void updateMesh();
+    void updateMonitors(const step::Step &step);
+    void updateSolution(const step::Step &step, const step::Time &time);
+    void updateSolution(const step::Step &step, const step::Frequency &frequency);
 
 protected:
-	NetgenASCIIWritter _writer;
+    NetgenASCIIWritter _writer;
 };
 
 }

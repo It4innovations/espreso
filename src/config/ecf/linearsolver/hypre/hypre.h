@@ -14,27 +14,27 @@ namespace espreso {
 
 struct HYPREConfiguration: public ECFDescription {
 
-	enum class SOLVER_TYPE {
-		BoomerAMG,
-		PCG,
-		GMRES,
-		FlexGMRES,
-		LGMRES,
-		BiCGSTAB,
-		CGNR
-	};
+    enum class SOLVER_TYPE {
+        BoomerAMG,
+        PCG,
+        GMRES,
+        FlexGMRES,
+        LGMRES,
+        BiCGSTAB,
+        CGNR
+    };
 
-	SOLVER_TYPE solver_type;
+    SOLVER_TYPE solver_type;
 
-	HYPREBoomerAMGConfiguration boomeramg;
-	HYPREPCGConfiguration pcg;
-	HYPREGMRESConfiguration gmres;
-	HYPREFlexGMRESConfiguration flexgmres;
-	HYPRELGMRESConfiguration lgmres;
-	HYPREBiCGSTABConfiguration bicgstab;
-	HYPRECGNRConfiguration cgnr;
+    HYPREBoomerAMGConfiguration boomeramg;
+    HYPREPCGConfiguration pcg;
+    HYPREGMRESConfiguration gmres;
+    HYPREFlexGMRESConfiguration flexgmres;
+    HYPRELGMRESConfiguration lgmres;
+    HYPREBiCGSTABConfiguration bicgstab;
+    HYPRECGNRConfiguration cgnr;
 
-	HYPREConfiguration();
+    HYPREConfiguration();
 };
 
 }

@@ -12,18 +12,18 @@ class VectorDense;
 class TopologyOptimization: public LoadStepSolver {
 
 public:
-	TopologyOptimization(LinearSystem *system, SubStepSolver *subStepSolver, TopologyOptimizationConfiguration &configuration);
-	~TopologyOptimization();
+    TopologyOptimization(LinearSystem *system, SubStepSolver *subStepSolver, TopologyOptimizationConfiguration &configuration);
+    ~TopologyOptimization();
 
-	void init(LoadStepSolver *previous);
-	void updateStructuralMatrices();
+    void init(LoadStepSolver *previous);
+    void updateStructuralMatrices();
 
 protected:
-	void runNextSubstep();
+    void runNextSubstep();
 
-	TopologyOptimizationConfiguration &_configuration;
+    TopologyOptimizationConfiguration &_configuration;
 
-	VectorDense *xPhys, *x, *DC, *C, *DV;
+    VectorDense *xPhys, *x, *DC, *C, *DV;
 };
 
 }

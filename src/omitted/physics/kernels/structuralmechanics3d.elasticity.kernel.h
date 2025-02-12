@@ -17,22 +17,22 @@ class HeatTransfer3DKernel;
 
 struct StructuralMechanics3DKernel: public StructuralMechanics3DBaseKernel
 {
-	StructuralMechanics3DKernel(StructuralMechanics3DKernel *previous, PhysicsConfiguration &physics, StructuralMechanicsGlobalSettings &gsettings, StructuralMechanicsLoadStepConfiguration &configuration);
-	StructuralMechanics3DKernel(HeatTransfer3DKernel *previous, PhysicsConfiguration &physics, StructuralMechanicsGlobalSettings &gsettings, StructuralMechanicsLoadStepConfiguration &configuration);
-	virtual ~StructuralMechanics3DKernel();
+    StructuralMechanics3DKernel(StructuralMechanics3DKernel *previous, PhysicsConfiguration &physics, StructuralMechanicsGlobalSettings &gsettings, StructuralMechanicsLoadStepConfiguration &configuration);
+    StructuralMechanics3DKernel(HeatTransfer3DKernel *previous, PhysicsConfiguration &physics, StructuralMechanicsGlobalSettings &gsettings, StructuralMechanicsLoadStepConfiguration &configuration);
+    virtual ~StructuralMechanics3DKernel();
 
-	virtual void processElement(const Builder &builder, const ElasticityElementIterator &iterator, InstanceFiller &filler) const;
-	virtual void processFace(const Builder &builder, const ElasticityBoundaryIterator &iterator, InstanceFiller &filler) const;
-	virtual void processEdge(const Builder &builder, const ElasticityBoundaryIterator &iterator, InstanceFiller &filler) const;
-	virtual void processNode(const Builder &builder, const ElasticityBoundaryIterator &iterator, InstanceFiller &filler) const;
+    virtual void processElement(const Builder &builder, const ElasticityElementIterator &iterator, InstanceFiller &filler) const;
+    virtual void processFace(const Builder &builder, const ElasticityBoundaryIterator &iterator, InstanceFiller &filler) const;
+    virtual void processEdge(const Builder &builder, const ElasticityBoundaryIterator &iterator, InstanceFiller &filler) const;
+    virtual void processNode(const Builder &builder, const ElasticityBoundaryIterator &iterator, InstanceFiller &filler) const;
 
-	virtual void elementSolution(ElasticityElementIterator &iterator);
-	virtual void nodeSolution(ElasticityElementIterator &iterator);
+    virtual void elementSolution(ElasticityElementIterator &iterator);
+    virtual void nodeSolution(ElasticityElementIterator &iterator);
 protected:
-	void assembleLinearElasticMaterialMatrix(esint node, double *coordinates, const MaterialBaseConfiguration *mat, double time, double temp, MatrixDense &K, Point &orientation) const;
-	void assembleHyperElasticMaterialMatrix(const MaterialBaseConfiguration *mat, MatrixDense &F, MatrixDense &C, MatrixDense &S) const;
+    void assembleLinearElasticMaterialMatrix(esint node, double *coordinates, const MaterialBaseConfiguration *mat, double time, double temp, MatrixDense &K, Point &orientation) const;
+    void assembleHyperElasticMaterialMatrix(const MaterialBaseConfiguration *mat, MatrixDense &F, MatrixDense &C, MatrixDense &S) const;
 
-	ElementData *orientation;
+    ElementData *orientation;
 };
 
 }

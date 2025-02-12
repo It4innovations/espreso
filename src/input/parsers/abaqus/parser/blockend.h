@@ -7,14 +7,14 @@
 namespace espreso {
 
 struct BlockFinish: public AbaqusParser {
-	static size_t nSize;
-	static size_t ncSize;
+    static size_t nSize;
+    static size_t ncSize;
 
-	static const char* asterik;
-	static const char* comment;
+    static const char* asterik;
+    static const char* comment;
 
-	BlockFinish();
-	BlockFinish& parse(const char* begin);
+    BlockFinish();
+    BlockFinish& parse(const char* begin);
 };
 
 }
@@ -34,17 +34,17 @@ struct BlockFinish: public AbaqusParser {
 namespace espreso {
 
 struct BlockEnd: public AbaqusParser {
-	static size_t nSize;
-	static size_t unixSize;
-	static size_t winSize;
+    static size_t nSize;
+    static size_t unixSize;
+    static size_t winSize;
 
-	static const char* nUpper;
-	static const char* nLower;
-	static const char* unixEnd;
-	static const char* winEnd;
+    static const char* nUpper;
+    static const char* nLower;
+    static const char* unixEnd;
+    static const char* winEnd;
 
-	BlockEnd();
-	BlockEnd& parse(const char* begin);
+    BlockEnd();
+    BlockEnd& parse(const char* begin);
 };
 
 }

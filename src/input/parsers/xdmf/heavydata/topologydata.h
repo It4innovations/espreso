@@ -16,16 +16,16 @@ class HDF5;
 
 class TopologyData {
 public:
-	static int firstrank;
-	static const int align = 20;
+    static int firstrank;
+    static const int align = 20;
 
-	TopologyData(XDMFTopology *topology, XDMFDataItem *topologydata);
-	void read(HDF5 &file);
+    TopologyData(XDMFTopology *topology, XDMFDataItem *topologydata);
+    void read(HDF5 &file);
 
-	int etype, esize;
-	std::string name;
-	std::vector<esint> distribution;
-	std::vector<esint, initless_allocator<esint> > data;
+    int etype, esize;
+    std::string name;
+    std::vector<esint> distribution;
+    std::vector<esint, initless_allocator<esint> > data;
 };
 
 }

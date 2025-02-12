@@ -15,30 +15,30 @@ struct BoundaryRegionStore;
 
 class VTKLegacy: public Visualization {
 public:
-	VTKLegacy();
-	~VTKLegacy();
+    VTKLegacy();
+    ~VTKLegacy();
 
-	void updateMesh();
-	void updateMonitors(const step::Step &step);
-	void updateSolution(const step::Step &step, const step::Time &time);
-	void updateSolution(const step::Step &step, const step::Frequency &frequency);
+    void updateMesh();
+    void updateMonitors(const step::Step &step);
+    void updateSolution(const step::Step &step, const step::Time &time);
+    void updateSolution(const step::Step &step, const step::Frequency &frequency);
 
 protected:
-	void updateSolution(const step::Step &step, const std::string &dir, const std::string &name, const std::string &suffix);
+    void updateSolution(const step::Step &step, const std::string &dir, const std::string &name, const std::string &suffix);
 
-	void insertHeader();
-	void insertPoints(const RegionStore *store);
-	esint insertElements(const ElementsRegionStore *store, const std::vector<char, initless_allocator<char> > &data);
-	esint insertElements(const BoundaryRegionStore *store, const std::vector<char, initless_allocator<char> > &data);
+    void insertHeader();
+    void insertPoints(const RegionStore *store);
+    esint insertElements(const ElementsRegionStore *store, const std::vector<char, initless_allocator<char> > &data);
+    esint insertElements(const BoundaryRegionStore *store, const std::vector<char, initless_allocator<char> > &data);
 
-	void insertData(const step::Step &step, NamedData *data, esint nindices, esint *indices);
-	void insertDecomposition(const ElementsRegionStore *store);
+    void insertData(const step::Step &step, NamedData *data, esint nindices, esint *indices);
+    void insertDecomposition(const ElementsRegionStore *store);
 protected:
-	std::string _suffix;
-	VTKASCIIWritter _writer;
+    std::string _suffix;
+    VTKASCIIWritter _writer;
 
-	std::vector<char, initless_allocator<char> > _points, _esize, _ecode;
-	std::vector<std::vector<char, initless_allocator<char> > > _cells;
+    std::vector<char, initless_allocator<char> > _points, _esize, _ecode;
+    std::vector<std::vector<char, initless_allocator<char> > > _cells;
 };
 
 }

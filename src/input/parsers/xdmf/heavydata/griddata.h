@@ -16,27 +16,27 @@ class XDMFTopology;
 struct MeshBuilder;
 
 class GridData {
-	struct _Grid {
-		XDMFGrid *grid;
-		XDMFGeometry *geometry;
-		XDMFDataItem *geometrydata;
-		XDMFTopology *topology;
-		XDMFDataItem *topologydata;
-	};
+    struct _Grid {
+        XDMFGrid *grid;
+        XDMFGeometry *geometry;
+        XDMFDataItem *geometrydata;
+        XDMFTopology *topology;
+        XDMFDataItem *topologydata;
+    };
 
 public:
-	GridData(LightData &root);
+    GridData(LightData &root);
 
-	void scan();
-	void read();
-	void align();
-	void parse(MeshBuilder &mesh);
+    void scan();
+    void read();
+    void align();
+    void parse(MeshBuilder &mesh);
 
 protected:
-	LightData &_lightdata;
-	std::vector<_Grid> _grids;
-	std::vector<GeometryData> _geometry;
-	std::vector<TopologyData > _topology;
+    LightData &_lightdata;
+    std::vector<_Grid> _grids;
+    std::vector<GeometryData> _geometry;
+    std::vector<TopologyData > _topology;
 };
 
 }

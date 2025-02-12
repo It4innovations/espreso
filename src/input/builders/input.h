@@ -14,49 +14,49 @@ namespace espreso {
 class Input {
 
 protected:
-	Input(MeshBuilder &meshData)
-	: _meshData(meshData), _eregsize(1), _nregsize(1) {}
+    Input(MeshBuilder &meshData)
+    : _meshData(meshData), _eregsize(1), _nregsize(1) {}
 
-	void clip();
+    void clip();
 
-	void balance();
-	void balanceNodes();
-	void balancePermutedNodes();
-	void balanceElements();
-	void balancePermutedElements();
+    void balance();
+    void balanceNodes();
+    void balancePermutedNodes();
+    void balanceElements();
+    void balancePermutedElements();
 
-	void assignRegions(
-			std::map<std::string, std::vector<esint> > &regions, std::vector<esint> &IDs,
-			std::vector<esint> &distribution,
-			size_t &rsize, std::vector<esint> &rbits);
-	void fillRegions(std::map<std::string, std::vector<esint> > &regions, size_t &rsize, std::vector<esint> &rbits);
+    void assignRegions(
+            std::map<std::string, std::vector<esint> > &regions, std::vector<esint> &IDs,
+            std::vector<esint> &distribution,
+            size_t &rsize, std::vector<esint> &rbits);
+    void fillRegions(std::map<std::string, std::vector<esint> > &regions, size_t &rsize, std::vector<esint> &rbits);
 
-	void sortNodes(bool withElementNodes = false);
-	void sortElements();
-	void sortElements(const std::vector<esint> &permutation);
+    void sortNodes(bool withElementNodes = false);
+    void sortElements();
+    void sortElements(const std::vector<esint> &permutation);
 
-	void fillNodes();
-	void fillElements();
-	void fillNeighbors();
+    void fillNodes();
+    void fillElements();
+    void fillNeighbors();
 
-	void fillNodeRegions();
-	void fillBoundaryRegions();
-	void fillElementRegions();
+    void fillNodeRegions();
+    void fillBoundaryRegions();
+    void fillElementRegions();
 
-	void reindexElementNodes();
-	void reindexBoundaryNodes();
+    void reindexElementNodes();
+    void reindexBoundaryNodes();
 
-	void removeDuplicateElements();
-	void searchDuplicateNodes();
-	void coupleDuplicateNodes();
+    void removeDuplicateElements();
+    void searchDuplicateNodes();
+    void coupleDuplicateNodes();
 
-	void searchDuplicateNodes(std::vector<Point> &coordinates, std::vector<esint> &ids, std::function<void(esint id, esint target)> merge);
+    void searchDuplicateNodes(std::vector<Point> &coordinates, std::vector<esint> &ids, std::function<void(esint id, esint target)> merge);
 
-	MeshBuilder &_meshData;
-	std::vector<esint> _nDistribution, _eDistribution, _etypeDistribution;
+    MeshBuilder &_meshData;
+    std::vector<esint> _nDistribution, _eDistribution, _etypeDistribution;
 
-	size_t _eregsize, _nregsize;
-	std::vector<esint> _eregions, _nregions;
+    size_t _eregsize, _nregsize;
+    std::vector<esint> _eregions, _nregions;
 };
 
 }

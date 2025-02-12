@@ -15,71 +15,71 @@ struct BoundaryRegionStore;
 struct ElementsRegionStore;
 
 struct ECFExpression {
-	std::string value;
-	Evaluator *evaluator;
-	bool isset;
+    std::string value;
+    Evaluator *evaluator;
+    bool isset;
 
-	ECFExpression();
-	~ECFExpression();
+    ECFExpression();
+    ~ECFExpression();
 
-	ECFExpression(const ECFExpression &other) = delete;
-	ECFExpression& operator=(const ECFExpression &other) = delete;
+    ECFExpression(const ECFExpression &other) = delete;
+    ECFExpression& operator=(const ECFExpression &other) = delete;
 
-	static bool forall(const std::map<std::string, ECFExpression> &parameter, std::function<bool(const ECFExpression &expr)> fnc);
+    static bool forall(const std::map<std::string, ECFExpression> &parameter, std::function<bool(const ECFExpression &expr)> fnc);
 };
 
 struct ECFHarmonicExpression: public ECFDescription {
-	enum class Type {
-		COMPONENTS
-	};
+    enum class Type {
+        COMPONENTS
+    };
 
-	Type type;
-	ECFExpression magnitude, phase;
+    Type type;
+    ECFExpression magnitude, phase;
 
-	ECFHarmonicExpression();
+    ECFHarmonicExpression();
 
-	static bool forall(const std::map<std::string, ECFHarmonicExpression> &parameter, std::function<bool(const ECFExpression &expr)> fnc);
+    static bool forall(const std::map<std::string, ECFHarmonicExpression> &parameter, std::function<bool(const ECFExpression &expr)> fnc);
 };
 
 struct ECFExpressionVector: public ECFDescription {
-	ECFExpression data[3];
-	ECFExpression &x = data[0], &y = data[1], &z = data[2];
+    ECFExpression data[3];
+    ECFExpression &x = data[0], &y = data[1], &z = data[2];
 
-	ECFExpressionVector(const ECFExpressionVector &other) = delete;
-	ECFExpressionVector(const ECFExpressionVector &&other) = delete;
-	ECFExpressionVector& operator=(const ECFExpressionVector &other) = delete;
-	ECFExpressionVector& operator=(const ECFExpressionVector &&other) = delete;
+    ECFExpressionVector(const ECFExpressionVector &other) = delete;
+    ECFExpressionVector(const ECFExpressionVector &&other) = delete;
+    ECFExpressionVector& operator=(const ECFExpressionVector &other) = delete;
+    ECFExpressionVector& operator=(const ECFExpressionVector &&other) = delete;
 
-	ECFExpressionVector();
+    ECFExpressionVector();
 
-	static bool forall(const std::map<std::string, ECFExpressionVector> &parameter, std::function<bool(const ECFExpression &expr)> fnc);
+    static bool forall(const std::map<std::string, ECFExpressionVector> &parameter, std::function<bool(const ECFExpression &expr)> fnc);
 };
 
 struct ECFHarmonicExpressionVector: public ECFDescription {
-	enum class Type {
-		COMPONENTS
-	};
+    enum class Type {
+        COMPONENTS
+    };
 
-	Type type;
-	ECFExpressionVector magnitude, phase;
+    Type type;
+    ECFExpressionVector magnitude, phase;
 
-	ECFHarmonicExpressionVector();
+    ECFHarmonicExpressionVector();
 
-	ECFHarmonicExpressionVector(const ECFHarmonicExpressionVector &other) = delete;
-	ECFHarmonicExpressionVector& operator=(const ECFHarmonicExpressionVector &other) = delete;
+    ECFHarmonicExpressionVector(const ECFHarmonicExpressionVector &other) = delete;
+    ECFHarmonicExpressionVector& operator=(const ECFHarmonicExpressionVector &other) = delete;
 
-	static bool forall(const std::map<std::string, ECFHarmonicExpressionVector> &parameter, std::function<bool(const ECFExpression &expr)> fnc);
+    static bool forall(const std::map<std::string, ECFHarmonicExpressionVector> &parameter, std::function<bool(const ECFExpression &expr)> fnc);
 };
 
 struct ECFExpressionOptionalVector: public ECFExpressionVector {
-	ECFExpression all;
+    ECFExpression all;
 
-	ECFExpressionOptionalVector();
+    ECFExpressionOptionalVector();
 
-	ECFExpressionOptionalVector(const ECFExpressionOptionalVector &other) = delete;
-	ECFExpressionOptionalVector& operator=(const ECFExpressionOptionalVector &other) = delete;
+    ECFExpressionOptionalVector(const ECFExpressionOptionalVector &other) = delete;
+    ECFExpressionOptionalVector& operator=(const ECFExpressionOptionalVector &other) = delete;
 
-	static bool forall(const std::map<std::string, ECFExpressionOptionalVector> &parameter, std::function<bool(const ECFExpression &expr)> fnc);
+    static bool forall(const std::map<std::string, ECFExpressionOptionalVector> &parameter, std::function<bool(const ECFExpression &expr)> fnc);
 };
 
 }

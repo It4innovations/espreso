@@ -8,10 +8,10 @@ namespace espreso {
 
 struct SuperLUConfiguration: public ECFDescription {
 
-	int np_row;
-	int np_col;
+    int np_row;
+    int np_col;
 
-	SuperLUConfiguration();
+    SuperLUConfiguration();
 };
 
 }

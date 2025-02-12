@@ -17,10 +17,10 @@
 namespace espreso {
 
 enum struct Solver_Factors: int {
-	NONE,
-	NONSYMMETRIC_BOTH,
-	HERMITIAN_UPPER, // for non-complex matrices, hermitian and symmetric is equivalent
-	HERMITIAN_LOWER
+    NONE,
+    NONSYMMETRIC_BOTH,
+    HERMITIAN_UPPER, // for non-complex matrices, hermitian and symmetric is equivalent
+    HERMITIAN_LOWER
 };
 
 template<typename T, typename I>

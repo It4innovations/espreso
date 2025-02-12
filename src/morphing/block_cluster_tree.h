@@ -7,86 +7,86 @@
 #include "math/math.h"
 
 /*
-	premistit do: src/...
+    premistit do: src/...
 */
 
 namespace espreso {
 
 class BlockCluster{
 public:
-	
-	BlockCluster();
-	
-	~BlockCluster();
-	
-	BlockCluster(const Cluster* l, const Cluster* r, double eta);
-	
-	bool getIsAdmissible() const;
+    
+    BlockCluster();
+    
+    ~BlockCluster();
+    
+    BlockCluster(const Cluster* l, const Cluster* r, double eta);
+    
+    bool getIsAdmissible() const;
 
-	void setIsAdmissible(bool v);
+    void setIsAdmissible(bool v);
 
-	const Cluster* getLeftCluster() const;
+    const Cluster* getLeftCluster() const;
 
-	const Cluster* getRightCluster() const;
-	
-	esint createChildren();
-	
-	bool hasChildren();
-	
-	BlockCluster* getChild(int li, int ri);
+    const Cluster* getRightCluster() const;
+    
+    esint createChildren();
+    
+    bool hasChildren();
+    
+    BlockCluster* getChild(int li, int ri);
 
-	BlockCluster* getChild(int idx);
-	
+    BlockCluster* getChild(int idx);
+    
 
 private:
 
-	bool isAdmissible(double eta) const;
+    bool isAdmissible(double eta) const;
 
-	const Cluster *left_cluster = nullptr;
-	const Cluster *right_cluster = nullptr;
-	
-	//this block cluster is subdivided into 4 sub-blocks
-	BlockCluster* child_LL = nullptr;
-	BlockCluster* child_LR = nullptr;
-	BlockCluster* child_RL = nullptr;
-	BlockCluster* child_RR = nullptr;
+    const Cluster *left_cluster = nullptr;
+    const Cluster *right_cluster = nullptr;
+    
+    //this block cluster is subdivided into 4 sub-blocks
+    BlockCluster* child_LL = nullptr;
+    BlockCluster* child_LR = nullptr;
+    BlockCluster* child_RL = nullptr;
+    BlockCluster* child_RR = nullptr;
 
-	//this block cluster is subdivided into 2 sub-blocks, LEFt cluster is not subdivided
-	BlockCluster* child_lL = nullptr;
-	BlockCluster* child_lR = nullptr;
-	
-	//this block cluster is subdivided into 2 sub-blocks, RIGHT cluster is not subdivided
-	BlockCluster* child_Lr = nullptr;
-	BlockCluster* child_Rr = nullptr;
-	
-	bool is_admissible = false;
-	
-	double eta = 0.0f;
-	
+    //this block cluster is subdivided into 2 sub-blocks, LEFt cluster is not subdivided
+    BlockCluster* child_lL = nullptr;
+    BlockCluster* child_lR = nullptr;
+    
+    //this block cluster is subdivided into 2 sub-blocks, RIGHT cluster is not subdivided
+    BlockCluster* child_Lr = nullptr;
+    BlockCluster* child_Rr = nullptr;
+    
+    bool is_admissible = false;
+    
+    double eta = 0.0f;
+    
 };
 
 class BlockClusterTree{
 public:
-	
-	BlockClusterTree(
-		const ClusterTree &lT,
-		const ClusterTree &rT,
-		double eta
-	);
+    
+    BlockClusterTree(
+        const ClusterTree &lT,
+        const ClusterTree &rT,
+        double eta
+    );
 
-	~BlockClusterTree();
-	
-	esint leaf_size() const;
-	
-	const BlockCluster* get_leaf(esint idx);
-	
+    ~BlockClusterTree();
+    
+    esint leaf_size() const;
+    
+    const BlockCluster* get_leaf(esint idx);
+    
 private:
 
-	esint createTree( BlockCluster* C, esint depth = 0 );
+    esint createTree( BlockCluster* C, esint depth = 0 );
 
-	BlockCluster *root = nullptr;
-	
-	std::vector<BlockCluster*> leaf_clusters;
+    BlockCluster *root = nullptr;
+    
+    std::vector<BlockCluster*> leaf_clusters;
 
 };
 

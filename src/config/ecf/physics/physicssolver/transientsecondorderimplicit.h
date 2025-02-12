@@ -10,27 +10,27 @@ namespace espreso {
 
 struct TransientSecondOrderImplicitSolverConfiguration: public ECFDescription {
 
-	enum class METHOD {
-		NEWMARK
-	};
+    enum class METHOD {
+        NEWMARK
+    };
 
-	enum class MASS_MATRIX_TYPE {
-		CONSISTENT,
-		DIAGONAL,
-		HRZDIAGONAL
-	};
+    enum class MASS_MATRIX_TYPE {
+        CONSISTENT,
+        DIAGONAL,
+        HRZDIAGONAL
+    };
 
-	double numerical_damping;
+    double numerical_damping;
 
-	METHOD method;
-	AutoTimeSteppingConfiguration auto_time_stepping;
-	double alpha, delta, alphaF, alphaM, time_step;
+    METHOD method;
+    AutoTimeSteppingConfiguration auto_time_stepping;
+    double alpha, delta, alphaF, alphaM, time_step;
 
-	DampingConfiguration damping;
+    DampingConfiguration damping;
 
-	MASS_MATRIX_TYPE mass_matrix_type;
+    MASS_MATRIX_TYPE mass_matrix_type;
 
-	TransientSecondOrderImplicitSolverConfiguration();
+    TransientSecondOrderImplicitSolverConfiguration();
 };
 
 }

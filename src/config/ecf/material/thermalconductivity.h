@@ -9,21 +9,21 @@ namespace espreso {
 
 struct ThermalConductivityConfiguration: public ECFDescription {
 
-	enum class MODEL {
-		ISOTROPIC,
-		DIAGONAL,
-		SYMMETRIC,
-		ANISOTROPIC,
-	};
+    enum class MODEL {
+        ISOTROPIC,
+        DIAGONAL,
+        SYMMETRIC,
+        ANISOTROPIC,
+    };
 
-	MODEL model;
+    MODEL model;
 
-	TensorConfiguration values;
+    TensorConfiguration values;
 
-	ThermalConductivityConfiguration();
+    ThermalConductivityConfiguration();
 
-	bool needCoordinates() const;
-	bool needTemperature() const;
+    bool needCoordinates() const;
+    bool needTemperature() const;
 };
 
 }

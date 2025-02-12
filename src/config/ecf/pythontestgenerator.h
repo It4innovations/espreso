@@ -11,15 +11,15 @@ namespace espreso {
 
 struct PythonTestGenerator: public ECFDescription {
 
-	std::string output, env, warmup, run, exe, log, post;
-	size_t measure_repetition, gather_level;
+    std::string output, env, warmup, run, exe, log, post;
+    size_t measure_repetition, gather_level;
 
-	std::map<size_t, std::string> levels, args;
-	std::map<std::string, std::string> variables;
+    std::map<size_t, std::string> levels, args;
+    std::map<std::string, std::string> variables;
 
-	std::map<std::string, std::map<std::string, std::string> > tables;
+    std::map<std::string, std::map<std::string, std::string> > tables;
 
-	PythonTestGenerator();
+    PythonTestGenerator();
 };
 
 }

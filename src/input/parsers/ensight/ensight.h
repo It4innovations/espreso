@@ -10,11 +10,11 @@ struct InputConfiguration;
 
 class EnsightLoader: public MeshBuilder {
 public:
-	EnsightLoader(const InputConfiguration &configuration);
-	void load();
+    EnsightLoader(const InputConfiguration &configuration);
+    void load();
 
 protected:
-	const InputConfiguration &_configuration;
+    const InputConfiguration &_configuration;
 };
 
 }

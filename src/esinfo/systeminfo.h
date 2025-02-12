@@ -6,57 +6,57 @@ namespace espreso {
 namespace info {
 namespace system {
 
-	enum class OPERATIONSYSTEM {
-		UNIX
-	};
+    enum class OPERATIONSYSTEM {
+        UNIX
+    };
 
-	enum class BUILD_MODE {
-		RELEASE,
-		DEVEL,
-		DEBUG,
-		PROFILE
-	};
+    enum class BUILD_MODE {
+        RELEASE,
+        DEVEL,
+        DEBUG,
+        PROFILE
+    };
 
-	struct CPUInfo {
-		char modelName[200] = "UNKNOWN";
-		int sockets = 0;
-		int cores;
-		bool hyperthreading = 0;
-	};
+    struct CPUInfo {
+        char modelName[200] = "UNKNOWN";
+        int sockets = 0;
+        int cores;
+        bool hyperthreading = 0;
+    };
 
-	struct memory {
-		static long total, init, mesh, physics, solver;
-	};
+    struct memory {
+        static long total, init, mesh, physics, solver;
+    };
 
-	// dummy yet
-	OPERATIONSYSTEM os();
+    // dummy yet
+    OPERATIONSYSTEM os();
 
-	constexpr BUILD_MODE buildmode()
-	{
-		#ifdef __ESMODE__
-			return BUILD_MODE::__ESMODE__;
-		#else
-			return BUILD_MODE::RELEASE;
-		#endif
-	}
+    constexpr BUILD_MODE buildmode()
+    {
+        #ifdef __ESMODE__
+            return BUILD_MODE::__ESMODE__;
+        #else
+            return BUILD_MODE::RELEASE;
+        #endif
+    }
 
-	const char* commit();
-	const char* cxx();
-	const char* buildpath();
-	const char* cxxflags();
-	const char* simd();
+    const char* commit();
+    const char* cxx();
+    const char* buildpath();
+    const char* cxxflags();
+    const char* simd();
 
-	int MPI_Init_thread_provided_level();
+    int MPI_Init_thread_provided_level();
 
-	CPUInfo cpuinfo();
-	int hwthreads();
-	long pinnedDomainSize();
-	bool pinningIntersection();
-	long memoryTotal();
-	long memoryAvail();
+    CPUInfo cpuinfo();
+    int hwthreads();
+    long pinnedDomainSize();
+    bool pinningIntersection();
+    long memoryTotal();
+    long memoryAvail();
 
-	void setSignals();
-	void print();
+    void setSignals();
+    void print();
 }
 }
 }

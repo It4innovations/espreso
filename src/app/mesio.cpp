@@ -20,46 +20,46 @@ using namespace espreso;
 
 int main(int argc, char **argv)
 {
-	profiler::syncstart("mesio");
+    profiler::syncstart("mesio");
 
-	info::system::setSignals();
-	info::env::set();
-	info::mpi::init(&argc, &argv);
-	MPITools::init();
+    info::system::setSignals();
+    info::env::set();
+    info::mpi::init(&argc, &argv);
+    MPITools::init();
 
-	eslog::init(new Logger<TimeLogger, ProgressTerminalLogger, ProgressFileLogger>);
-	eslog::startln("MESIO: STARTED", "MESIO");
+    eslog::init(new Logger<TimeLogger, ProgressTerminalLogger, ProgressFileLogger>);
+    eslog::startln("MESIO: STARTED", "MESIO");
 
-	ECF::init(&argc, &argv, "mesio");
-	MPITools::setSubset(info::ecf->input.third_party_scalability_limit);
-	eslog::initFiles();
-	info::ecf->output.mode = OutputConfiguration::MODE::SYNC;
-	eslog::checkpointln("MESIO: CONFIGURATION READ");
+    ECF::init(&argc, &argv, "mesio");
+    MPITools::setSubset(info::ecf->input.third_party_scalability_limit);
+    eslog::initFiles();
+    info::ecf->output.mode = OutputConfiguration::MODE::SYNC;
+    eslog::checkpointln("MESIO: CONFIGURATION READ");
 
-	eslog::printRunInfo(&argc, &argv);
-	Mesh::init();
-	eslog::checkpointln("MESIO: RUN INITIALIZED");
+    eslog::printRunInfo(&argc, &argv);
+    Mesh::init();
+    eslog::checkpointln("MESIO: RUN INITIALIZED");
 
-	info::mesh->load();
-	eslog::checkpointln("MESIO: MESH LOADED");
+    info::mesh->load();
+    eslog::checkpointln("MESIO: MESH LOADED");
 
-	info::mesh->preprocess();
-	eslog::checkpointln("MESIO: MESH PREPROCESSED");
-	info::mesh->printMeshStatistics();
-	info::mesh->printDecompositionStatistics();
+    info::mesh->preprocess();
+    eslog::checkpointln("MESIO: MESH PREPROCESSED");
+    info::mesh->printMeshStatistics();
+    info::mesh->printDecompositionStatistics();
 
-	info::mesh->output->updateMesh();
-	eslog::endln("MESIO: MESH STORED");
+    info::mesh->output->updateMesh();
+    eslog::endln("MESIO: MESH STORED");
 
-	Mesh::finish();
-	eslog::finish();
-	MPITools::finish();
-	ECF::finish();
+    Mesh::finish();
+    eslog::finish();
+    MPITools::finish();
+    ECF::finish();
 
-	profiler::syncend("mesio");
-	profiler::print(); // need to be printed before MPI_Finalize
+    profiler::syncend("mesio");
+    profiler::print(); // need to be printed before MPI_Finalize
 
-	info::mpi::finish();
+    info::mpi::finish();
 
-	return 0;
+    return 0;
 }

@@ -12,17 +12,17 @@ namespace espreso {
 
 struct BlockGeneratorConfiguration: public ECFDescription {
 
-	GENERATOR_ELEMENT_TYPE element_type;
+    GENERATOR_ELEMENT_TYPE element_type;
 
-	ECFExpression start_x, start_y, start_z;
-	ECFExpression length_x, length_y, length_z;
+    ECFExpression start_x, start_y, start_z;
+    ECFExpression length_x, length_y, length_z;
 
-	ECFExpression projection_x, projection_y, projection_z;
+    ECFExpression projection_x, projection_y, projection_z;
 
-	size_t domains_x, domains_y, domains_z;
-	size_t elements_x, elements_y, elements_z;
+    size_t domains_x, domains_y, domains_z;
+    size_t elements_x, elements_y, elements_z;
 
-	BlockGeneratorConfiguration();
+    BlockGeneratorConfiguration();
 };
 
 }

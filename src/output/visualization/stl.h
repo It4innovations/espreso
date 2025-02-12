@@ -10,16 +10,16 @@ namespace espreso {
 class Mesh;
 
 struct STL: public Visualization {
-	STL();
-	~STL();
+    STL();
+    ~STL();
 
-	void updateMesh();
-	void updateMonitors(const step::Step &step);
-	void updateSolution(const step::Step &step, const step::Time &time);
-	void updateSolution(const step::Step &step, const step::Frequency &frequency);
+    void updateMesh();
+    void updateMonitors(const step::Step &step);
+    void updateSolution(const step::Step &step, const step::Time &time);
+    void updateSolution(const step::Step &step, const step::Frequency &frequency);
 
 protected:
-	STLBinaryOutputWriter _writer;
+    STLBinaryOutputWriter _writer;
 };
 
 }

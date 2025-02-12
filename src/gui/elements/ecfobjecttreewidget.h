@@ -32,15 +32,15 @@ protected:
     virtual QDialog* createDialog(const QModelIndex& groupIndex, ECFParameter* param = nullptr) = 0;
     virtual QString dialogResult(QDialog* dialog) = 0;
 
-	QModelIndex selectedGroupItem();
+    QModelIndex selectedGroupItem();
     ECFParameter* selectedParam(const QModelIndex& groupIndex);
     virtual std::string itemKeyInECFObject(QString nameInTree);
 
     virtual void newItemAccepted(int group, QString name) = 0;
     virtual void newItemRejected(int group) = 0;
-	virtual void editItemAccepted(const QModelIndex& group, const QModelIndex& item, ECFParameter* param) = 0;
-	virtual void editItemRejected(const QModelIndex& group, const QModelIndex& item, ECFParameter* param) = 0;
-	virtual void deleteItemAccepted(const QModelIndex& group, int index, const QString& name) = 0;
+    virtual void editItemAccepted(const QModelIndex& group, const QModelIndex& item, ECFParameter* param) = 0;
+    virtual void editItemRejected(const QModelIndex& group, const QModelIndex& item, ECFParameter* param) = 0;
+    virtual void deleteItemAccepted(const QModelIndex& group, int index, const QString& name) = 0;
 
 private slots:
     void onActionNew();

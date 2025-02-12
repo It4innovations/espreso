@@ -22,30 +22,30 @@ struct CM;
 struct BlockEnd;
 
 struct AnsysCDBData: public MeshBuilder {
-	std::vector<int> et;
+    std::vector<int> et;
 };
 
 class AnsysCDBLoader: public AnsysCDBData {
 public:
-	AnsysCDBLoader(const InputConfiguration &configuration);
-	void load();
+    AnsysCDBLoader(const InputConfiguration &configuration);
+    void load();
 
 protected:
-	void scan();
-	void parse();
+    void scan();
+    void parse();
 
-	const InputConfiguration &_configuration;
+    const InputConfiguration &_configuration;
 
-	std::vector<NBlock> _NBlocks;
-	std::vector<EBlock> _EBlocks;
-	std::vector<CMBlock> _CMBlocks;
-	std::vector<ET> _ET;
-	std::vector<ESel> _ESel;
-	std::vector<NSel> _NSel;
-	std::vector<CM> _CM;
-	std::vector<BlockEnd> _blockEnds;
+    std::vector<NBlock> _NBlocks;
+    std::vector<EBlock> _EBlocks;
+    std::vector<CMBlock> _CMBlocks;
+    std::vector<ET> _ET;
+    std::vector<ESel> _ESel;
+    std::vector<NSel> _NSel;
+    std::vector<CM> _CM;
+    std::vector<BlockEnd> _blockEnds;
 
-	InputFilePack _file;
+    InputFilePack _file;
 };
 
 }

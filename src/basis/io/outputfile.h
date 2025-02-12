@@ -15,50 +15,50 @@ class OutputFile {
 friend class OutputFilePack;
 
 public:
-	void insert(int n)
-	{
-		_buffer.insert(_buffer.end(), buffer, buffer + n);
-	}
+    void insert(int n)
+    {
+        _buffer.insert(_buffer.end(), buffer, buffer + n);
+    }
 
-	void insert(int n, char c)
-	{
-		_buffer.insert(_buffer.end(), n, c);
-	}
+    void insert(int n, char c)
+    {
+        _buffer.insert(_buffer.end(), n, c);
+    }
 
-	void insert(int size, const void *data)
-	{
-		_buffer.insert(_buffer.end(), reinterpret_cast<const char*>(data), reinterpret_cast<const char*>(data) + size);
-	}
+    void insert(int size, const void *data)
+    {
+        _buffer.insert(_buffer.end(), reinterpret_cast<const char*>(data), reinterpret_cast<const char*>(data) + size);
+    }
 
-	// temporary buffer that is used during conversion to string by snprintf
-	static const size_t bsize = 4 * 1024;
-	static char buffer[bsize];
+    // temporary buffer that is used during conversion to string by snprintf
+    static const size_t bsize = 4 * 1024;
+    static char buffer[bsize];
 
 protected:
-	OutputFile(): _offset(0) {}
+    OutputFile(): _offset(0) {}
 
-	void _group();
+    void _group();
 
-	std::string _name;
-	std::vector<char, initless_allocator<char> > _buffer;
+    std::string _name;
+    std::vector<char, initless_allocator<char> > _buffer;
 
-	int _offset;
-	std::vector<size_t> _distribution;
+    int _offset;
+    std::vector<size_t> _distribution;
 };
 
 class OutputFilePack: public OutputFile {
 public:
-	~OutputFilePack();
+    ~OutputFilePack();
 
-	void groupData();
-	void commitFile(const std::string &name);
+    void groupData();
+    void commitFile(const std::string &name);
 
-	void reorder();
-	void write();
+    void reorder();
+    void write();
 
 protected:
-	void clear();
-	std::vector<OutputFile*> _files;
+    void clear();
+    std::vector<OutputFile*> _files;
 };
 
 }

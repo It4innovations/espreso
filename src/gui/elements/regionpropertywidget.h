@@ -29,9 +29,9 @@ protected:
 
     virtual void newItemAccepted(int, QString) override {}
     virtual void newItemRejected(int) override {}
-	virtual void editItemAccepted(const QModelIndex&, const QModelIndex&, ECFParameter*) override {}
-	virtual void editItemRejected(const QModelIndex &group, const QModelIndex &item, ECFParameter *param) override {}
-	virtual void deleteItemAccepted(const QModelIndex& group, int index, const QString& name) override {}
+    virtual void editItemAccepted(const QModelIndex&, const QModelIndex&, ECFParameter*) override {}
+    virtual void editItemRejected(const QModelIndex &group, const QModelIndex &item, ECFParameter *param) override {}
+    virtual void deleteItemAccepted(const QModelIndex& group, int index, const QString& name) override {}
 };
 
 }

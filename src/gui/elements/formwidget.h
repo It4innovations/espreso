@@ -18,13 +18,13 @@ namespace espreso
 
     class FormWidget : public QWidget, public ISavableObject,
             public IValidatableObject
-	{
-		Q_OBJECT
+    {
+        Q_OBJECT
 
-	public:
-		explicit FormWidget(QWidget* = nullptr);
+    public:
+        explicit FormWidget(QWidget* = nullptr);
 
-		void appendString(ECFParameter*);
+        void appendString(ECFParameter*);
         void appendNonnegativeInteger(ECFParameter*);
         void appendPositiveInteger(ECFParameter*);
         void appendFloat(ECFParameter*);
@@ -38,8 +38,8 @@ namespace espreso
         bool isValid() override;
         QString errorMessage() override;
 
-	private:
-		QFormLayout* m_layout;
+    private:
+        QFormLayout* m_layout;
 
         QVector<QPair<ECFParameter*, FieldHandler*> > m_fields;
         int m_invalidIndex = 0;
@@ -49,7 +49,7 @@ namespace espreso
 
         QLabel* createLabel(const QString& text);
         void appendRow(QLabel*, QWidget*);
-	};
+    };
 
 }
 

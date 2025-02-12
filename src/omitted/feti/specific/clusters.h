@@ -6,7 +6,7 @@
 #include "cpu/clustercpu.h"
 
 namespace espreso {
-	typedef ClusterCPU	Cluster;
+    typedef ClusterCPU    Cluster;
 }
 
 
@@ -14,42 +14,42 @@ namespace espreso {
 #include "cpu/clustercpu.h"
 
 namespace espreso {
-	typedef ClusterCPU	Cluster;
+    typedef ClusterCPU    Cluster;
 }
 
 #elif defined(SOLVER_MUMPS)
 #include "cpu/clustercpu.h"
 
 namespace espreso {
-	typedef ClusterCPU	Cluster;
+    typedef ClusterCPU    Cluster;
 }
 
 #elif defined(SOLVER_MIC)
 #include "acc/clusteracc.h"
 
 namespace espreso {
-	typedef ClusterAcc	Cluster;
+    typedef ClusterAcc    Cluster;
 }
 
 #elif defined(SOLVER_CUDA)
 #include "acc/clusterGPU.h"
 
 namespace espreso {
-	typedef ClusterGPU	Cluster;
+    typedef ClusterGPU    Cluster;
 }
 
 #elif defined(SOLVER_CUDA_7)
 #include "acc/clusterGPU.h"
 
 namespace espreso {
-	typedef ClusterGPU	Cluster;
+    typedef ClusterGPU    Cluster;
 }
 
 #elif defined(SOLVER_DISSECTION)
 #include "cpu/clustercpu.h"
 
 namespace espreso {
-	typedef ClusterCPU	Cluster;
+    typedef ClusterCPU    Cluster;
 }
 
 

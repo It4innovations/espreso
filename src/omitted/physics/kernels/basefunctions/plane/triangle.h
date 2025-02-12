@@ -7,8 +7,8 @@
 namespace espreso {
 
 struct Triangle {
-	static int maxorder();
-	static bool gpw(int order, std::vector<double> &r, std::vector<double> &s, std::vector<double> &w);
+    static int maxorder();
+    static bool gpw(int order, std::vector<double> &r, std::vector<double> &s, std::vector<double> &w);
 };
 
 }

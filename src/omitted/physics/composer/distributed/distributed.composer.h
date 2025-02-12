@@ -14,19 +14,19 @@ template <typename TEBoundaries, typename TEData> class serializededata;
 class DistributedComposer: public Composer {
 
 public:
-	DistributedComposer(Kernel *kernel, ModuleOpt *opt, DistributedAssemblerData *data);
-	~DistributedComposer();
+    DistributedComposer(Kernel *kernel, ModuleOpt *opt, DistributedAssemblerData *data);
+    ~DistributedComposer();
 
-	void assemble(const Builder &builder);
+    void assemble(const Builder &builder);
 
 protected:
-	DistributedAssemblerData *_data;
+    DistributedAssemblerData *_data;
 
-	serializededata<esint, esint> *_DOFMap;
+    serializededata<esint, esint> *_DOFMap;
 
-	std::vector<esint> _tKOffsets, _tRHSOffsets;
-	std::vector<esint> _KPermutation, _RHSPermutation;
-	std::vector<esint> _nDistribution;
+    std::vector<esint> _tKOffsets, _tRHSOffsets;
+    std::vector<esint> _KPermutation, _RHSPermutation;
+    std::vector<esint> _nDistribution;
 };
 
 }

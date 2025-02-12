@@ -7,8 +7,8 @@
 namespace espreso {
 
 struct Line {
-	static int maxorder();
-	static bool gpw(int order, std::vector<double> &r, std::vector<double> &w);
+    static int maxorder();
+    static bool gpw(int order, std::vector<double> &r, std::vector<double> &w);
 };
 
 }

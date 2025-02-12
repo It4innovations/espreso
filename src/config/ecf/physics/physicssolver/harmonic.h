@@ -9,51 +9,51 @@ namespace espreso {
 
 struct AlternatingFrequencyTime : public ECFDescription
 {
-	enum class TYPE {
-		USER,
-		AUTOMATIC
-	};
+    enum class TYPE {
+        USER,
+        AUTOMATIC
+    };
 
-	TYPE type;
-	int time_samples;
+    TYPE type;
+    int time_samples;
 
-	AlternatingFrequencyTime();
+    AlternatingFrequencyTime();
 };
 
 struct HarmonicSolverConfiguration: public ECFDescription {
 
-	enum class INTERVAL_TYPE {
-		LINEAR,
-		LOGARITHMIC,
-		OCTAVE_BAND,
-//		USER
-	};
+    enum class INTERVAL_TYPE {
+        LINEAR,
+        LOGARITHMIC,
+        OCTAVE_BAND,
+//        USER
+    };
 
-	enum class OCTAVE_BAND {
-		BAND_1,
-		BAND_2,
-		BAND_3,
-		BAND_6,
-		BAND_12,
-		BAND_24,
-	};
+    enum class OCTAVE_BAND {
+        BAND_1,
+        BAND_2,
+        BAND_3,
+        BAND_6,
+        BAND_12,
+        BAND_24,
+    };
 
-	INTERVAL_TYPE frequency_interval_type;
+    INTERVAL_TYPE frequency_interval_type;
 
-	double central_frequency;
-	OCTAVE_BAND octave_band;
+    double central_frequency;
+    OCTAVE_BAND octave_band;
 
-	double min_frequency, max_frequency;
-	int num_samples;
+    double min_frequency, max_frequency;
+    int num_samples;
 
-	bool prestress;
-	bool mass_stabilization;
+    bool prestress;
+    bool mass_stabilization;
 
-	HarmonicDampingConfiguration damping;
+    HarmonicDampingConfiguration damping;
 
-	AlternatingFrequencyTime aft;
+    AlternatingFrequencyTime aft;
 
-	HarmonicSolverConfiguration();
+    HarmonicSolverConfiguration();
 };
 
 }

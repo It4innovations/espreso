@@ -10,38 +10,38 @@
 namespace espreso {
 
 struct NamedData {
-	static std::vector<std::string> coordinateSuffixes;
-	static std::vector<std::string> tensorSuffixes;
-	static std::vector<std::string> numberSuffixes;
+    static std::vector<std::string> coordinateSuffixes;
+    static std::vector<std::string> tensorSuffixes;
+    static std::vector<std::string> numberSuffixes;
 
-	enum class DataType {
-		SCALAR,
-		NUMBERED,
-		VECTOR,
-		TENSOR_SYMM,
-		TENSOR_ASYM
-	};
+    enum class DataType {
+        SCALAR,
+        NUMBERED,
+        VECTOR,
+        TENSOR_SYMM,
+        TENSOR_ASYM
+    };
 
-	int dimension, updated;
-	DataType dataType;
-	std::string name;
-	step::TYPE restriction;
+    int dimension, updated;
+    DataType dataType;
+    std::string name;
+    step::TYPE restriction;
 
-	std::vector<double> data, buffer, &store;
+    std::vector<double> data, buffer, &store;
 
-	NamedData(int dimension, DataType datatype, const std::string &name);
-	NamedData(const char* &packedData);
+    NamedData(int dimension, DataType datatype, const std::string &name);
+    NamedData(const char* &packedData);
 
-	bool withSuffixes() const;
-	bool onlySuffixed() const;
-	int nstatistics() const;
+    bool withSuffixes() const;
+    bool onlySuffixed() const;
+    int nstatistics() const;
 
-	void toBuffer();
+    void toBuffer();
 
-	std::string suffix(int index) const;
+    std::string suffix(int index) const;
 
-	size_t packedSize();
-	void pack(char *&p);
+    size_t packedSize();
+    void pack(char *&p);
 };
 
 }

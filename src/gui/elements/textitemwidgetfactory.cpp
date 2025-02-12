@@ -46,32 +46,32 @@ TextItemWidget* TextWidgetFactory::create(QWidget *parent)
 DataTypeEditWidgetFactory::DataTypeEditWidgetFactory(ECFParameter* expression)
 {
     this->m_expr = expression;
-	if (m_expr->getValue().empty()) this->m_expr->setValue("0");
+    if (m_expr->getValue().empty()) this->m_expr->setValue("0");
 
-	this->m_data.valid = true;
+    this->m_data.valid = true;
 
-	DataTypeEditWidget* w = new DataTypeEditWidget(this->m_expr);
-	int datatype = w->datatype();
-	w->hide();
-	delete w;
-	this->m_data.type = datatype;
+    DataTypeEditWidget* w = new DataTypeEditWidget(this->m_expr);
+    int datatype = w->datatype();
+    w->hide();
+    delete w;
+    this->m_data.type = datatype;
 }
 
 TextItemWidget* DataTypeEditWidgetFactory::create(QWidget* parent)
 {
-	DataTypeEditWidget* widget = new DataTypeEditWidget(this->m_expr->metadata.variables, parent);
+    DataTypeEditWidget* widget = new DataTypeEditWidget(this->m_expr->metadata.variables, parent);
     widget->setComboBox(true);
-	widget->setSharedData(&this->m_data);
+    widget->setSharedData(&this->m_data);
 
     return widget;
 }
 
 bool DataTypeEditWidgetFactory::isValid()
 {
-	return this->m_data.valid;
+    return this->m_data.valid;
 }
 
 QString DataTypeEditWidgetFactory::errorMessage()
 {
-	return this->m_data.error_message;
+    return this->m_data.error_message;
 }

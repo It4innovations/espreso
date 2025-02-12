@@ -17,62 +17,62 @@ template <typename TEBoundaries, typename TEData> class serializededata;
 struct Statistics;
 
 struct NodeData: public NamedData {
-	NodeData(int dimension, DataType datatype, const std::string &name): NamedData(dimension, datatype, name) {}
-	NodeData(const char* &packedData): NamedData(packedData) {}
+    NodeData(int dimension, DataType datatype, const std::string &name): NamedData(dimension, datatype, name) {}
+    NodeData(const char* &packedData): NamedData(packedData) {}
 
-	void statistics(const tarray<esint> &nodes, esint totalsize, Statistics *statistics) const;
-	void synchronize();
-	static void synchronize(std::vector<double> &data, int dimension);
+    void statistics(const tarray<esint> &nodes, esint totalsize, Statistics *statistics) const;
+    void synchronize();
+    static void synchronize(std::vector<double> &data, int dimension);
 };
 
 // store nodes held by lower ranks first, them all my nodes
 // i.e. nodes can be divided into two intervals: <0, nhalo> <nhalo, size>; second sorted according IDs
 struct NodeStore {
-	friend class Mesh;
+    friend class Mesh;
 
-	void store(const std::string &file);
+    void store(const std::string &file);
 
-	void permute(const std::vector<esint> &permutation) { permute(permutation, distribution); }
-	void permute(const std::vector<esint> &permutation, const std::vector<size_t> &distribution);
+    void permute(const std::vector<esint> &permutation) { permute(permutation, distribution); }
+    void permute(const std::vector<esint> &permutation, const std::vector<size_t> &distribution);
 
-	NodeData* appendData(int dimension, NamedData::DataType datatype, const std::string &name = "", step::TYPE restriction = step::TYPE::TIME, bool toOutput = true);
+    NodeData* appendData(int dimension, NamedData::DataType datatype, const std::string &name = "", step::TYPE restriction = step::TYPE::TIME, bool toOutput = true);
 
-	std::vector<esint> gatherNodeDistribution();
-	std::vector<esint> gatherUniqueNodeDistribution();
+    std::vector<esint> gatherNodeDistribution();
+    std::vector<esint> gatherUniqueNodeDistribution();
 
-	esint size;
-	std::vector<size_t> distribution;
+    esint size;
+    std::vector<size_t> distribution;
 
-	serializededata<esint, esint>* IDs;
-	serializededata<esint, esint>* elements;
+    serializededata<esint, esint>* IDs;
+    serializededata<esint, esint>* elements;
 
-	serializededata<esint, Point>* originCoordinates;
-	serializededata<esint, Point>* coordinates;
-	serializededata<esint, int>* ranks;
-	serializededata<esint, int>* domains;
+    serializededata<esint, Point>* originCoordinates;
+    serializededata<esint, Point>* coordinates;
+    serializededata<esint, int>* ranks;
+    serializededata<esint, int>* domains;
 
-	NodeUniquenessInfo uniqInfo;
+    NodeUniquenessInfo uniqInfo;
 
-	std::vector<NodeData*> data;
+    std::vector<NodeData*> data;
 
-	size_t packedFullSize() const;
-	void packFull(char* &p) const;
-	void unpackFull(const char* &p);
+    size_t packedFullSize() const;
+    void packFull(char* &p) const;
+    void unpackFull(const char* &p);
 
-	size_t packedSize() const;
-	void pack(char* &p) const;
-	void unpack(const char* &p);
+    size_t packedSize() const;
+    void pack(char* &p) const;
+    void unpack(const char* &p);
 
-	size_t packedDataHeaderSize() const;
-	void packDataHeader(char* &p) const;
-	void unpackDataHeader(const char* &p);
+    size_t packedDataHeaderSize() const;
+    void packDataHeader(char* &p) const;
+    void unpackDataHeader(const char* &p);
 
-	size_t packedDataSize() const;
-	void packData(char* &p) const;
-	void unpackData(const char* &p);
+    size_t packedDataSize() const;
+    void packData(char* &p) const;
+    void unpackData(const char* &p);
 
-	NodeStore();
-	~NodeStore();
+    NodeStore();
+    ~NodeStore();
 };
 
 }

@@ -7,8 +7,8 @@
 #include "cpu/SparseSolverMKL.h"
 
 namespace espreso {
-	typedef SparseSolverMKL SparseSolverCPU;
-	typedef SparseSolverMKL SparseSolverAcc;
+    typedef SparseSolverMKL SparseSolverCPU;
+    typedef SparseSolverMKL SparseSolverAcc;
 }
 
 
@@ -16,16 +16,16 @@ namespace espreso {
 #include "cpu/SparseSolverPARDISO.h"
 
 namespace espreso {
-	typedef SparseSolverPARDISO SparseSolverCPU;
-	typedef SparseSolverPARDISO SparseSolverAcc;
+    typedef SparseSolverPARDISO SparseSolverCPU;
+    typedef SparseSolverPARDISO SparseSolverAcc;
 }
 
 #elif defined(SOLVER_MUMPS)
 #include "cpu/solvermumps.h"
 
 namespace espreso {
-	typedef SparseSolverMUMPS SparseSolverCPU;
-	typedef SparseSolverMUMPS SparseSolverAcc;
+    typedef SparseSolverMUMPS SparseSolverCPU;
+    typedef SparseSolverMUMPS SparseSolverAcc;
 }
 
 #elif defined(SOLVER_MIC)
@@ -33,8 +33,8 @@ namespace espreso {
 #include "acc/mic.h"
 
 namespace espreso {
-	typedef SparseSolverMKL SparseSolverCPU;
-	typedef SparseSolverMIC SparseSolverAcc;
+    typedef SparseSolverMKL SparseSolverCPU;
+    typedef SparseSolverMIC SparseSolverAcc;
 }
 
 
@@ -43,16 +43,16 @@ namespace espreso {
 #include "acc/SparseSolverCUDA.h"
 
 namespace espreso {
-	typedef SparseSolverMKL SparseSolverCPU;
-	typedef SparseSolverCUDA SparseSolverAcc;
+    typedef SparseSolverMKL SparseSolverCPU;
+    typedef SparseSolverCUDA SparseSolverAcc;
 }
 
 #elif defined(SOLVER_CUDA)
 #include "cpu/SparseSolverMKL.h"
 
 namespace espreso {
-	typedef SparseSolverMKL SparseSolverCPU;
-	typedef SparseSolverMKL SparseSolverAcc;
+    typedef SparseSolverMKL SparseSolverCPU;
+    typedef SparseSolverMKL SparseSolverAcc;
 }
 
 #elif defined(SOLVER_DISSECTION)
@@ -60,8 +60,8 @@ namespace espreso {
 #include "cpu/SparseSolverMKL.h"
 
 namespace espreso {
-	typedef SparseSolverDissection SparseSolverCPU;
-	typedef SparseSolverDissection SparseSolverAcc;
+    typedef SparseSolverDissection SparseSolverCPU;
+    typedef SparseSolverDissection SparseSolverAcc;
 }
 
 

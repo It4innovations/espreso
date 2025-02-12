@@ -8,27 +8,27 @@ namespace espreso {
 
 struct HYPRECGNRConfiguration: public ECFDescription {
 
-	enum class PRECONDITIONER {
-		BoomerAMG,
-	
-		NONE
-	};
-	PRECONDITIONER preconditioner;
+    enum class PRECONDITIONER {
+        BoomerAMG,
+    
+        NONE
+    };
+    PRECONDITIONER preconditioner;
 
-	HYPREBoomerAMGConfiguration boomeramg;
+    HYPREBoomerAMGConfiguration boomeramg;
 
-	double relative_conv_tol, absolute_conv_tol;
-	int max_iterations;
-	
-	enum class SOLVER_INFO {
-		NO_INFO,
-		SETUP_INFO,
-		SOLVE_INFO,
-		SETUP_SOLVE_INFO
-	};
-	SOLVER_INFO solver_info;
+    double relative_conv_tol, absolute_conv_tol;
+    int max_iterations;
+    
+    enum class SOLVER_INFO {
+        NO_INFO,
+        SETUP_INFO,
+        SOLVE_INFO,
+        SETUP_SOLVE_INFO
+    };
+    SOLVER_INFO solver_info;
 
-	HYPRECGNRConfiguration();
+    HYPRECGNRConfiguration();
 };
 
 }

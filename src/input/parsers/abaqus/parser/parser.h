@@ -16,28 +16,28 @@ namespace espreso {
 struct BlockFinish;
 
 struct AbaqusParser {
-	static size_t offset;
-	static const char* begin;
-	static const char* end;
+    static size_t offset;
+    static const char* begin;
+    static const char* end;
 
-	size_t header;
-	size_t first, last;
-	int fRank, lRank;
+    size_t header;
+    size_t first, last;
+    int fRank, lRank;
 
-	AbaqusParser()
-	: header((size_t)-1),
-	  first((size_t)-1), last((size_t)-1), fRank(-1), lRank(-1) {}
+    AbaqusParser()
+    : header((size_t)-1),
+      first((size_t)-1), last((size_t)-1), fRank(-1), lRank(-1) {}
 
-	void fillIndices(const char* header, const char* data);
-	void fillIndices(const char* header, const char* first, const char* last);
+    void fillIndices(const char* header, const char* data);
+    void fillIndices(const char* header, const char* first, const char* last);
 
-	void fillDistribution(std::vector<BlockFinish> &blocksFinishs, std::vector<size_t> &distribution);
-	const char* getFirst() const;
-	const char* getLast() const;
+    void fillDistribution(std::vector<BlockFinish> &blocksFinishs, std::vector<size_t> &distribution);
+    const char* getFirst() const;
+    const char* getLast() const;
 
-	std::string command() const;
+    std::string command() const;
 
-	void print(const char* data);
+    void print(const char* data);
 };
 }
 

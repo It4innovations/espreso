@@ -5,7 +5,7 @@
 namespace espreso {
 
 struct BackWard {
-	static void call();
+    static void call();
 };
 
 }

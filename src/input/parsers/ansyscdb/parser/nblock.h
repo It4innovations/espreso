@@ -10,14 +10,14 @@ namespace espreso {
 struct AnsysCDBData;
 
 struct NBlock: public WorkbenchParser {
-	esint NUMFIELD, Solkey, NDMAX, NDSEL;
+    esint NUMFIELD, Solkey, NDMAX, NDSEL;
 
-	esint lineSize, lineEndSize;
-	esint indexSize, indexLength, valueSize, valueLength;
+    esint lineSize, lineEndSize;
+    esint indexSize, indexLength, valueSize, valueLength;
 
-	NBlock();
-	NBlock& parse(const char* begin);
-	bool readData(AnsysCDBData &mesh);
+    NBlock();
+    NBlock& parse(const char* begin);
+    bool readData(AnsysCDBData &mesh);
 };
 
 }

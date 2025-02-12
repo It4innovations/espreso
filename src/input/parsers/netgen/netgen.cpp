@@ -18,29 +18,29 @@ NetgenNeutralLoader::NetgenNeutralLoader(const InputConfiguration &configuration
 
 void NetgenNeutralLoader::load()
 {
-	eslog::startln("NETGEN PARSER: STARTED", "NETGEN PARSER");
-	profiler::syncstart("netgen");
+    eslog::startln("NETGEN PARSER: STARTED", "NETGEN PARSER");
+    profiler::syncstart("netgen");
 
-	InputFilePack meshfile;
-	meshfile.commitFiles({ _configuration.path });
-	meshfile.prepare();
-	profiler::synccheckpoint("prepare_reader");
-	eslog::checkpointln("NETGEN PARSER: MESH READER PREPARED");
+    InputFilePack meshfile;
+    meshfile.commitFiles({ _configuration.path });
+    meshfile.prepare();
+    profiler::synccheckpoint("prepare_reader");
+    eslog::checkpointln("NETGEN PARSER: MESH READER PREPARED");
 
-	meshfile.read();
-	profiler::synccheckpoint("read");
-	eslog::checkpointln("NETGEN PARSER: MESH READ");
+    meshfile.read();
+    profiler::synccheckpoint("read");
+    eslog::checkpointln("NETGEN PARSER: MESH READ");
 
-	meshfile.next();
-	DistributedScanner::align(meshfile, "\n");
+    meshfile.next();
+    DistributedScanner::align(meshfile, "\n");
 
-	NetgenNeutralMesh mesh(meshfile);
+    NetgenNeutralMesh mesh(meshfile);
 
-	mesh.parse(*this);
-	body.resize(etype.size());
-	material.resize(etype.size());
-	profiler::synccheckpoint("parse");
-	meshfile.clear();
-	profiler::syncend("netgen");
-	eslog::endln("NETGEN PARSER: GEOMETRY PARSED");
+    mesh.parse(*this);
+    body.resize(etype.size());
+    material.resize(etype.size());
+    profiler::synccheckpoint("parse");
+    meshfile.clear();
+    profiler::syncend("netgen");
+    eslog::endln("NETGEN PARSER: GEOMETRY PARSED");
 }
