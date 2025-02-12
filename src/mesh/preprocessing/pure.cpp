@@ -549,11 +549,9 @@ esint callParallelDecomposer(const ElementStore *elements, const NodeStore *node
         if (info::ecf->input.decomposition.parallel_decomposer == DecompositionConfiguration::ParallelDecomposer::METIS) {
             if (info::mpi::rank == 0) {
                 fixframes();
-                info::ecf->input.decomposition.metis_options.continuous = 0;
                 edgecut = METIS::call(info::ecf->input.decomposition.metis_options,
                         gpartition.size(), gframes.data(), gneighbors.data(),
                         0, NULL, NULL, info::mpi::size, gpartition.data());
-                info::ecf->input.decomposition.metis_options.continuous = 1;
                 profiler::checkpoint("metis");
             }
             profiler::synccheckpoint("synchronize");

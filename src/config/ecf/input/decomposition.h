@@ -18,12 +18,34 @@ struct ParMETISConfiguration: public ECFDescription {
 
 struct METISConfiguration: public ECFDescription {
 
-    enum class OBJECTIVE_TYPE {
-        VOLUME, EDGECUT
+    enum class PTYPE {
+        RB, KWAY
     };
 
-    OBJECTIVE_TYPE objective_type;
-    int continuous;
+    enum class OBJTYPE {
+        CUT, VOL, NODE
+    };
+
+    enum class CTYPE {
+        RM, SHEM
+    };
+
+    enum class IPTYPE {
+        GROW, RANDOM, EDGE, NODE
+    };
+
+    enum class RTYPE {
+        FM, GREEDY, SEP2SIDED, SEP1SIDED
+    };
+
+    PTYPE ptype;
+    OBJTYPE objtype;
+    CTYPE ctype;
+    IPTYPE iptype;
+    RTYPE rtype;
+
+    int ncuts, nseps, niter, seed, minconn, no2hp, contig, compress, ccorder, dbglvl;
+    double pfactor, ufactor;
 
     METISConfiguration();
 };
