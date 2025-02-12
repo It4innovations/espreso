@@ -671,7 +671,7 @@ void DirectSparseSolver<T, I>::getPermutation(Vector_Dense<I> &perm)
 }
 
 template <typename T, typename I>
-void DirectSparseSolver<T, I>::getSC(Matrix_Dense<T,I> &sc, std::vector<int> &indices, bool symmetric_packed)
+void DirectSparseSolver<T, I>::getSC(Matrix_Dense<T,I> &sc, std::vector<I> &indices, bool symmetric_packed)
 {
     // todo: can I use the existing factor so i don't have to factorize again?
     // computes the schur complement S = A22 - A21 * A11^{-1} * A12, where A = [A11, A12; A21, A22]
