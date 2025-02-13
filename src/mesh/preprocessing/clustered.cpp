@@ -749,11 +749,8 @@ void computeRegionsBoundaryParents(const NodeStore *nodes, const ElementStore *e
     eslog::checkpointln("MESH: BOUNDARY PARENTS COMPUTED");
 }
 
-
-void computeBodies(ElementStore *elements, BodyStore *bodies, std::vector<ElementsRegionStore*> &elementsRegions, std::vector<int> &neighbors)
+void computeBodies(ElementStore *elements, BodyStore *bodies, std::vector<int> &neighbors)
 {
-    profiler::syncstart("mesh_bodies_found");
-
     esint ebegin = elements->distribution.process.offset;
     esint eend = ebegin + elements->distribution.process.size;
     esint nbodies = 0, boffset;
@@ -1084,6 +1081,13 @@ void computeBodies(ElementStore *elements, BodyStore *bodies, std::vector<Elemen
     } else {
         memcpy(elements->body->datatarray().data(), body.data(), elements->distribution.process.size * sizeof(int));
     }
+}
+
+void computeBodies(ElementStore *elements, BodyStore *bodies, std::vector<ElementsRegionStore*> &elementsRegions, std::vector<int> &neighbors)
+{
+    profiler::syncstart("mesh_bodies_found");
+
+    computeBodies(elements, bodies, neighbors);
 
     int rsize = elements->regions->edataSize();
     std::vector<esint> bodyRegions(bodies->totalSize * rsize);

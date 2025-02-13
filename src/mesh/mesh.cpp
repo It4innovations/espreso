@@ -380,8 +380,11 @@ void Mesh::reclusterize()
         if (info::ecf->input.decomposition.parallel_decomposer == DecompositionConfiguration::ParallelDecomposer::HILBERT_CURVE) {
             mesh::computeElementsCenters(nodes, elements);
         }
+        if (info::ecf->input.decomposition.parallel_decomposer == DecompositionConfiguration::ParallelDecomposer::METIS && info::ecf->input.decomposition.metis_options.contig) {
+            mesh::computeBodies(elements, bodies, neighbors);
+        }
         std::vector<esint> partition;
-        mesh::computeElementsClusterization(elements, nodes, partition);
+        mesh::computeElementsClusterization(elements, bodies, nodes, partition);
         mesh::exchangeElements(elements, nodes, elementsRegions, boundaryRegions, neighbors, neighborsWithMe, partition);
         if (info::ecf->input.decomposition.force_continuity) {
             std::vector<int> component;

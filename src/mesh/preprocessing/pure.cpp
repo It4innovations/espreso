@@ -14,6 +14,7 @@
 
 #include "mesh/store/elementstore.h"
 #include "mesh/store/nodestore.h"
+#include "mesh/store/bodystore.h"
 #include "mesh/store/elementsregionstore.h"
 #include "mesh/store/boundaryregionstore.h"
 #include "output/visualization/debug.h"
@@ -456,7 +457,7 @@ esint getSFCDecomposition(const ElementStore *elements, const NodeStore *nodes, 
 //    return 0; // edge cut is not computed
 }
 
-esint callParallelDecomposer(const ElementStore *elements, const NodeStore *nodes, std::vector<esint> &eframes, std::vector<esint> &eneighbors, std::vector<esint> &partition)
+esint callParallelDecomposer(const ElementStore *elements, const NodeStore *nodes, std::vector<esint> &eframes, std::vector<esint> &eneighbors, std::vector<esint> &partition, int parts)
 {
     DebugOutput::meshDual(eframes, eneighbors);
 
@@ -551,7 +552,7 @@ esint callParallelDecomposer(const ElementStore *elements, const NodeStore *node
                 fixframes();
                 edgecut = METIS::call(info::ecf->input.decomposition.metis_options,
                         gpartition.size(), gframes.data(), gneighbors.data(),
-                        0, NULL, NULL, info::mpi::size, gpartition.data());
+                        0, NULL, NULL, parts, gpartition.data());
                 profiler::checkpoint("metis");
             }
             profiler::synccheckpoint("synchronize");
@@ -629,7 +630,7 @@ esint callParallelDecomposer(const ElementStore *elements, const NodeStore *node
     return edgecut;
 }
 
-void computeElementsClusterization(const ElementStore *elements, const NodeStore *nodes, std::vector<esint> &partition)
+void computeElementsClusterization(const ElementStore *elements, BodyStore *bodies, const NodeStore *nodes, std::vector<esint> &partition)
 {
     if (info::mpi::size == 1) {
         return;
@@ -642,28 +643,21 @@ void computeElementsClusterization(const ElementStore *elements, const NodeStore
 //        computeElementsCenters();
 //    }
 
-//    bool separateRegions = info::ecf->input.decomposition.separate_regions;
-//    bool separateMaterials = info::ecf->input.decomposition.separate_materials;
-//    bool separateEtypes = info::ecf->input.decomposition.separate_etypes;
-//    esint eoffset = elements->distribution.process.offset;
-
-    size_t threads = info::env::OMP_NUM_THREADS;
-
-    std::vector<esint> dDistribution(elements->epointers->datatarray().size() + 1);
-    std::vector<std::vector<esint> > dData(threads);
-
-    #pragma omp parallel for
-    for (size_t t = 0; t < threads; t++) {
-        std::vector<esint> tdata;
+//    size_t threads = info::env::OMP_NUM_THREADS;
+//
+//    std::vector<esint> dDistribution(elements->epointers->datatarray().size() + 1);
+//    std::vector<std::vector<esint> > dData(threads);
+//    #pragma omp parallel for
+//    for (size_t t = 0; t < threads; t++) {
+//        std::vector<esint> tdata;
 //        int mat1 = 0, mat2 = 0, reg = 0, etype1 = 0, etype2 = 0;
 //        int rsize = bitMastSize(elements->regions->datatarray().size() / elements->distribution.process.size);
 //        esint hindex = 0;
-
-        auto neighs = elements->faceNeighbors->cbegin(t);
-        for (size_t e = elements->epointers->datatarray().distribution()[t]; e < elements->epointers->datatarray().distribution()[t + 1]; ++e, ++neighs) {
-            for (auto n = neighs->begin(); n != neighs->end(); ++n) {
-                if (*n != -1) {
-                    tdata.push_back(*n);
+//
+//        auto neighs = elements->faceNeighbors->cbegin(t);
+//        for (size_t e = elements->epointers->datatarray().distribution()[t]; e < elements->epointers->datatarray().distribution()[t + 1]; ++e, ++neighs) {
+//            for (auto n = neighs->begin(); n != neighs->end(); ++n) {
+//                if (*n != -1) {
 //                    if ((separateRegions || separateMaterials || separateEtypes) && (*n < eoffset || eoffset + elements->distribution.process.size <= *n)) {
 //                        hindex = std::lower_bound(halo->IDs->datatarray().begin(), halo->IDs->datatarray().end(), *n) - halo->IDs->datatarray().begin();
 //                    }
@@ -694,26 +688,70 @@ void computeElementsClusterization(const ElementStore *elements, const NodeStore
 //                    if (mat1 == mat2 && !reg && etype1 == etype2) {
 //                        tdata.push_back(*n);
 //                    }
-                }
-            }
-            dDistribution[e + 1] = tdata.size();
-        }
+//                }
+//            }
+//            dDistribution[e + 1] = tdata.size();
+//        }
+//        dData[t].swap(tdata);
+//    }
+//
+//    utils::threadDistributionToFullDistribution(dDistribution, elements->epointers->datatarray().distribution());
+//    for (size_t t = 1; t < threads; t++) {
+//        dData[0].insert(dData[0].end(), dData[t].begin(), dData[t].end());
+//    }
 
-        dData[t].swap(tdata);
+    int parts = 1;
+    if (info::ecf->input.decomposition.parallel_decomposer == DecompositionConfiguration::ParallelDecomposer::METIS && info::ecf->input.decomposition.metis_options.contig) {
+        parts = bodies->totalSize;
     }
 
-    utils::threadDistributionToFullDistribution(dDistribution, elements->epointers->datatarray().distribution());
-    for (size_t t = 1; t < threads; t++) {
-        dData[0].insert(dData[0].end(), dData[t].begin(), dData[t].end());
+    std::vector<esint> psize(parts);
+    std::vector<std::vector<esint> > dist(parts, { 0 });
+    std::vector<std::vector<esint> > data(parts);
+    std::vector<std::vector<esint> > part(parts);
+
+    auto neighs = elements->faceNeighbors->cbegin();
+    for (esint e = 0; e < elements->distribution.process.size; ++e, ++neighs) {
+        int b = std::min(parts - 1, elements->body->datatarray()[e]);
+        for (auto n = neighs->begin(); n != neighs->end(); ++n) {
+            if (*n != -1) {
+                data[b].push_back(*n);
+            }
+        }
+        dist[b].push_back(data.size());
+    }
+    for (int p = 0; p < parts; ++p) {
+        psize[p] = dist[p].size() - 1;
+        part[p].resize(psize[p], info::mpi::rank);
+    }
+    Communication::allReduce(psize, Communication::OP::SUM);
+    esint totalsize = 0;
+    for (int p = 0; p < parts; ++p) {
+        totalsize += psize[p];
+    }
+    int rest = info::mpi::size;
+    for (int p = 0; p < parts; ++p) {
+        psize[p] = std::max(1, info::mpi::size * psize[p] / totalsize);
+        rest -= psize[p];
+    }
+    psize.back() += rest;
+
+    for (int p = 0; p < parts; ++p) {
+        callParallelDecomposer(elements, nodes, dist[p], data[p], part[p], psize[p]);
     }
 
     partition.clear();
-    partition.resize(elements->epointers->datatarray().size(), info::mpi::rank);
+    for (int p = 0, offset = 0; p < parts; ++p) {
+        for (size_t i = 0; i < part[p].size(); ++i) {
+            partition.push_back(part[p][i] + offset);
+        }
+        offset += psize[p];
+    }
 
     profiler::synccheckpoint("compute_dual");
     eslog::checkpointln("MESH: DUAL GRAPH COMPUTED");
 
-    callParallelDecomposer(elements, nodes, dDistribution, dData.front(), partition);
+
     profiler::synccheckpoint("decompose");
     profiler::syncend("reclusterize");
 }

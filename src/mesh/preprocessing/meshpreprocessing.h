@@ -66,7 +66,7 @@ void computeElementsCenters(const NodeStore *nodes, ElementStore *elements);
 int getStronglyConnectedComponents(const ElementStore *elements, std::vector<int> &component);
 void computeComponentDual(const ElementStore *elements, esint coffset, esint csize, const std::vector<int> &component, const std::vector<int> &neighbors, std::vector<esint> &dualDist, std::vector<esint> &dualData);
 
-void computeElementsClusterization(const ElementStore *elements, const NodeStore *nodes, std::vector<esint> &partition);
+void computeElementsClusterization(const ElementStore *elements, BodyStore *bodies, const NodeStore *nodes, std::vector<esint> &partition);
 void exchangeElements(ElementStore* &elements, NodeStore* &nodes, std::vector<ElementsRegionStore*> &elementsRegions, std::vector<BoundaryRegionStore*> &boundaryRegions, std::vector<int> &neighbors, std::vector<int> &neighborsWithMe, const std::vector<esint> &partition);
 void computeContinuousClusterization(const ElementStore *elements, const NodeStore *nodes, const std::vector<esint> &dualDist, const std::vector<esint> &dualData, esint coffset, esint csize, const std::vector<int> &component, const std::vector<int> &neighborsWithMe, std::vector<esint> &partition);
 
@@ -85,6 +85,7 @@ void processNamelessElements(ElementStore *elements, std::vector<ElementsRegionS
 
 ElementStore* exchangeHalo(ElementStore *elements, NodeStore *nodes, std::vector<int> &neighbors);
 
+void computeBodies(ElementStore *elements, BodyStore *bodies, std::vector<int> &neighbors);
 void computeBodies(ElementStore *elements, BodyStore *bodies, std::vector<ElementsRegionStore*> &elementsRegions, std::vector<int> &neighbors);
 void computeRegionsElementNodes(const NodeStore *nodes, const ElementStore *elements, const std::vector<int> &neighbors, std::vector<ElementsRegionStore*> &elementsRegions);
 void computeRegionsBoundaryNodes(const std::vector<int> &neighbors, NodeStore *nodes, std::vector<BoundaryRegionStore*> &boundaryRegions, std::vector<ContactInterfaceStore*> &contactInterfaces);
