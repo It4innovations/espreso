@@ -56,6 +56,14 @@ GENERATOR {
   }
 }
 
+INPUT {
+  DECOMPOSITION {
+    METIS_OPTIONS {
+      SEED      88123;
+    }
+  }
+}
+
 HEAT_TRANSFER {
   LOAD_STEPS        1;
 
