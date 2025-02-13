@@ -223,7 +223,7 @@ void FixedWall<T>::update(const step::Step &step, FETI<T> &feti, const Vector_Di
 template <typename T>
 void FixedWall<T>::_store(const Point &normal, const Point &point, double gap)
 {
-    Point t(1, 1, (normal.x + normal.y) / normal.z);
+    Point t(1, 1, -(normal.x + normal.y) / normal.z);
     t.normalize();
     Point s = Point::cross(normal, t);
     const auto &size = info::mesh->elementsRegions.front()->nodeInfo;
