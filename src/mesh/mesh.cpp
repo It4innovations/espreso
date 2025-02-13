@@ -384,7 +384,7 @@ void Mesh::reclusterize()
             mesh::computeBodies(elements, bodies, neighbors);
         }
         std::vector<esint> partition;
-        mesh::computeElementsClusterization(elements, bodies, nodes, partition);
+        mesh::computeElementsClusterization(elements, bodies, nodes, partition, neighbors);
         mesh::exchangeElements(elements, nodes, elementsRegions, boundaryRegions, neighbors, neighborsWithMe, partition);
         if (info::ecf->input.decomposition.force_continuity) {
             std::vector<int> component;

@@ -630,7 +630,7 @@ esint callParallelDecomposer(const ElementStore *elements, const NodeStore *node
     return edgecut;
 }
 
-void computeElementsClusterization(const ElementStore *elements, BodyStore *bodies, const NodeStore *nodes, std::vector<esint> &partition)
+void computeElementsClusterization(const ElementStore *elements, BodyStore *bodies, const NodeStore *nodes, std::vector<esint> &partition, std::vector<int> &neighbors)
 {
     if (info::mpi::size == 1) {
         return;
@@ -718,21 +718,63 @@ void computeElementsClusterization(const ElementStore *elements, BodyStore *bodi
                 data[b].push_back(*n);
             }
         }
-        dist[b].push_back(data.size());
+        dist[b].push_back(data[b].size());
     }
     for (int p = 0; p < parts; ++p) {
-        psize[p] = dist[p].size() - 1;
-        part[p].resize(psize[p], info::mpi::rank);
+        part[p].resize(dist[p].size() - 1, info::mpi::rank);
     }
-    Communication::allReduce(psize, Communication::OP::SUM);
-    esint totalsize = 0;
-    for (int p = 0; p < parts; ++p) {
-        totalsize += psize[p];
-    }
+
     int rest = info::mpi::size;
-    for (int p = 0; p < parts; ++p) {
-        psize[p] = std::max(1, info::mpi::size * psize[p] / totalsize);
-        rest -= psize[p];
+    if (parts > 1) {
+        std::vector<esint> poffset(parts);
+        for (int p = 0; p < parts; ++p) {
+            poffset[p] = part[p].size();
+        }
+        Communication::exscan(psize, poffset);
+        esint totalsize = 0;
+        for (int p = 0; p < parts; ++p) {
+            totalsize += psize[p];
+        }
+        for (int p = 0; p < parts; ++p) {
+            psize[p] = std::max((esint)1, info::mpi::size * psize[p] / totalsize);
+            rest -= psize[p];
+        }
+
+        // exchange new elements IDs
+        std::map<esint, esint> eid;
+
+        std::vector<esint> sBuffer;
+        std::vector<std::vector<esint> > rBuffer(neighbors.size());
+
+        auto enodes = elements->nodes->cbegin();
+        for (esint e = 0; e < elements->distribution.process.size; ++e, ++enodes) {
+            int b = elements->body->datatarray()[e];
+            bool halo = false; // overset
+            for (auto n = enodes->begin(); !halo && n != enodes->end(); ++n) {
+                if ((nodes->ranks->cbegin() + *n)->size() > 1) {
+                    halo = true;
+                }
+            }
+            sBuffer.push_back(elements->IDs->datatarray()[e]);
+            sBuffer.push_back(poffset[b]);
+            eid[elements->IDs->datatarray()[e]] = poffset[b]++;
+        }
+
+        if (!Communication::exchangeUnknownSize(sBuffer, rBuffer, neighbors)) {
+            eslog::error("cannot exchange new element IDs.\n");
+        }
+
+        for (size_t n = 0; n < neighbors.size(); ++n) {
+            for (size_t i = 0; i < rBuffer[n].size(); i += 2) {
+                eid[rBuffer[n][i]] = rBuffer[n][i + 1];
+            }
+        }
+
+        for (int p = 0; p < parts; ++p) {
+            for (size_t i = 0; i < data[p].size(); ++i) {
+                data[p][i] = eid[data[p][i]];
+            }
+        }
     }
     psize.back() += rest;
 
@@ -741,11 +783,11 @@ void computeElementsClusterization(const ElementStore *elements, BodyStore *bodi
     }
 
     partition.clear();
-    for (int p = 0, offset = 0; p < parts; ++p) {
-        for (size_t i = 0; i < part[p].size(); ++i) {
-            partition.push_back(part[p][i] + offset);
-        }
-        offset += psize[p];
+    utils::sizesToOffsets(psize);
+    std::vector<int> offset(parts);
+    for (esint e = 0; e < elements->distribution.process.size; ++e, ++neighs) {
+        int b = std::min(parts - 1, elements->body->datatarray()[e]);
+        partition.push_back(part[b][offset[b]++] + psize[b]);
     }
 
     profiler::synccheckpoint("compute_dual");
