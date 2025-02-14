@@ -105,7 +105,7 @@ METISConfiguration::METISConfiguration()
             .setdatatype({ ECFDataType::INTEGER }));
 
     dbglvl = 0;
-    REGISTER(ccorder, ECFMetaData()
+    REGISTER(dbglvl, ECFMetaData()
             .setdescription({ "Specifies the amount of progress/debugging information will be printed during the execution of the algorithms." })
             .setdatatype({ ECFDataType::INTEGER }));
 
