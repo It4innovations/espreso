@@ -131,6 +131,10 @@ public:
     {
         return _allocated.ncols;
     }
+    void set_ld(I ld)
+    {
+        _allocated.ncols = ld;
+    }
 
     template<typename A2>
     void shallowCopy(const Matrix_Dense<T,I,A2> &other)
