@@ -5,20 +5,25 @@
 
 
 template<typename T>
-struct MatrixBase_new
+class MatrixBase_new
 {
+public: // the user promises not to modify these values (I don't want to implement getters everywhere)
     size_t nrows = 0;
     size_t ncols = 0;
-    char diag = '_'; // Unit, Nonunit
-    char uplo = '_'; // Upper, Lower
-
-    MatrixBase_new() {}
-    virtual ~MatrixBase_new() {}
-
+public: // ok to modify
+    struct matrix_properties
+    {
+        char uplo = '_'; // Upper, Lower
+        char diag = '_'; // Unit, Nonunit
+        // TODO: symmetric, positive definite, ...
+    } prop;
+public:
+    MatrixBase_new() = default;
     MatrixBase_new(const MatrixBase_new &) = default;
     MatrixBase_new(MatrixBase_new &&) = default;
     MatrixBase_new & operator=(const MatrixBase_new &) = default;
     MatrixBase_new & operator=(MatrixBase_new &&) = default;
+    virtual ~MatrixBase_new() = default;
 };
 
 

@@ -3,37 +3,41 @@
 #define SRC_MATH_PRIMITIVES_NEW_MATRIX_DENSE_VIEW_NEW_H_
 
 #include "math/primitives_new/matrix_base_new.h"
-#include "math/primitives_new/allocator_new.h"
 
 
 
 
 template<typename T>
-struct MatrixDenseView_new : public MatrixBase_new
+class MatrixDenseView_new : public MatrixBase_new
 {
-    Allocator_new * ator;
+public: // the user promises not to modify these values (I don't want to implement getters everywhere)
     T * vals = nullptr;
     size_t ld = 0;
     char order = '_';
+    bool was_set = false;
+public:
     using MatrixBase_new::nrows;
     using MatrixBase_new::ncols;
-    using MatrixBase_new::diag;
-    using MatrixBase_new::uplo;
-
+    using MatrixBase_new::prop;
+public:
+    MatrixDenseView_new() = default;
     MatrixDenseView_new(const MatrixDenseView_new &) = default;
     MatrixDenseView_new(MatrixDenseView_new &&) = default;
     MatrixDenseView_new & operator=(const MatrixDenseView_new &) = default;
     MatrixDenseView_new & operator=(MatrixDenseView_new &&) = default;
-
-protected:
-    MatrixDenseView_new()
+    virtual ~MatrixDenseView_new() = default;
+public:
+    void set(size_t nrows_, size_t ncols_, size_t ld_, size_t order_, T * vals_)
     {
+        if(was_set) eslog::error("can only set yet-uninitialized matrix view\n");
+        nrows = nrows_;
+        ncols = ncols_;
+        ld = ld_;
+        order = order_;
+        vals = vals_;
+        was_set = true;
     }
 public:
-    virtual ~MatrixDenseView_new()
-    {
-    }
-
     size_t get_num_blocks() const
     {
         if(order == 'R') return nrows;
@@ -82,35 +86,32 @@ public:
         uplo = change_uplo(uplo);
     }
 
+    static bool are_interchangable(MatrixDenseView_new & A, MatrixDenseView_new & B)
+    {
+        return (A.nrows == B.nrows) && (A.ncols == B.ncols) && (A.order == B.order) && (A.prop.uplo == B.prop.uplo) && (A.prop.diag == B.prop.diag);
+    }
+
     template<typename I, typename A>
     static MatrixDenseView_new<T> from_old(MatrixDense<T,I,A> & M_old, char order = 'R')
     {
         MatrixDenseView_new<T> M_new;
-        M_new.ator = &AllocatorDummy_new::get_singleton(M_old::is_data_host_accessible, M_old::is_data_device_accessible);
-        M_new.vals = M_old.vals;
-        M_new.ld = M_old.get_ld();
-        M_new.order = order;
-        M_new.nrows = M_old.nrows;
-        M_new.ncols = M_old.ncols;
-        M_new.diag = '_';
-        M_new.shape = '_';
-        if(M_old.shape == Matrix_Shape::LOWER) M_new.uplo = 'L';
-        if(M_old.shape == Matrix_Shape::UPPER) M_new.uplo = 'U';
-        if(M_old.shape == Matrix_Shape::FULL) M_new.uplo = 'F';
+        M_new.set(M_old.nrows, M_old.ncols, M_old.ld, order, M_old.vals);
+        if(M_old.shape == Matrix_Shape::LOWER) M_new.prop.uplo = 'L';
+        if(M_old.shape == Matrix_Shape::UPPER) M_new.prop.uplo = 'U';
+        if(M_old.shape == Matrix_Shape::FULL) M_new.prop.uplo = 'F';
         return M_new;
     }
     template<typename I, typename A>
     static MatrixDense<T,I,A> to_old(MatrixDenseView_new<T> & M_new)
     {
-        if(M_new.ator.is_on_cpu() != A::is_data_host_accessible || M_new.ator.is_on_gpu() != A::is_data_device_accessible) eslog::error("allocators not compatible\n");
         MatrixDense<T,I,A> M_old;
         M_old.nrows = M_new.nrows;
         M_old.ncols = M_new.ncols;
         M_old.set_ld(M_new.ld);
         M_old.vals = M_new.vals;
-        if(M_new.uplo == 'U') M_old.shape == Matrix_Shape::UPPER;
-        if(M_new.uplo == 'L') M_old.shape == Matrix_Shape::LOWER;
-        if(M_new.uplo == 'F') M_old.shape == Matrix_Shape::FULL;
+        if(M_new.prop.uplo == 'U') M_old.shape == Matrix_Shape::UPPER;
+        if(M_new.prop.uplo == 'L') M_old.shape == Matrix_Shape::LOWER;
+        if(M_new.prop.uplo == 'F') M_old.shape == Matrix_Shape::FULL;
         return M_old;
     }
 };

@@ -3,13 +3,16 @@
 #define SRC_MATH_PRIMITIVES_NEW_MATRIX_CSX_DATA_NEW_H_
 
 #include "math/primitives_new/matrix_csx_view_new.h"
+#include "math/primitives_new/allocator_new.h"
 
 
 
 template<typename T, typename I>
 struct MatrixCsxData_new : public MatrixCsxView_new
 {
-    using MatrixCsxView_new::ator;
+public: // the user promises not to modify these values (I don't want to implement getters everywhere)
+    Allocator_new * ator;
+public:
     using MatrixCsxView_new::ptrs;
     using MatrixCsxView_new::idxs;
     using MatrixCsxView_new::vals;
@@ -17,9 +20,9 @@ struct MatrixCsxData_new : public MatrixCsxView_new
     using MatrixCsxView_new::order;
     using MatrixBase_new::nrows;
     using MatrixBase_new::ncols;
-    using MatrixBase_new::diag;
-    using MatrixBase_new::uplo;
-
+    using MatrixBase_new::prop;
+public:
+    MatrixCsxData_new() = default;
     MatrixCsxData_new(const MatrixCsxData_new &) = delete;
     MatrixCsxData_new(MatrixCsxData_new && other)
     {
@@ -32,32 +35,26 @@ struct MatrixCsxData_new : public MatrixCsxView_new
         std::swap(static_cast<MatrixCsxView_new&>(*this), static_cast<MatrixCsxView_new>(other));
         other.free();
     }
-
-    MatrixCsxData_new()
-    {
-    }
-    MatrixCsxData_new(size_t nrows_, size_t ncols_, size_t nnz_, char order_, Allocator_new * ator_ = AllocatorCPU_new::get_singleton())
-    {
-        realloc(nrows_, ncols_, nnz_, order_, ator_);
-    }
     virtual ~MatrixCsxData_new()
     {
         free();
     }
-    void resize(size_t nrows_, size_t ncols_, size_t nnz_, char order_, Allocator_new * ator_ = AllocatorCPU_new::get_singleton())
+public:
+    void set(size_t nrows_, size_t ncols_, size_t nnz_, char order_, Allocator_new * ator_)
     {
-        free();
-
+        if(was_set) eslog::error("can only set yet-uninitialized matrix view\n");
         nrows = nrows_;
         ncols = ncols_;
         nnz = nnz_;
         order = order_;
         ator = ator_;
-
-        alloc();
+        was_set = true;
     }
     void alloc()
     {
+        if(!was_set) eslog::error("matrix has not been set\n");
+        if(ator == nullptr) eslog::error("matrix data has not been set\n");
+        if(vals != nullptr) eslog::error("matrix is already allocated\n");
         if(nnz > 0) {
             ptrs = ator->alloc<I>(get_primary_size() + 1);
             idxs = ator->alloc<I>(nnz);
@@ -71,6 +68,14 @@ struct MatrixCsxData_new : public MatrixCsxView_new
             ator->free(idxs);
             ator->free(vals);
         }
+    }
+    void clear()
+    {
+        free();
+        nrows = 0;
+        ncols = 0;
+        ator = nullptr;
+        was_set = false;
     }
 };
 
