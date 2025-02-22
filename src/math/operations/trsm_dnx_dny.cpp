@@ -1,0 +1,46 @@
+
+#include "math/operations/trsm_dnx_dny.h"
+
+#include "math/wrappers/math.blas.h"
+
+
+
+template<typename T>
+void trsm_dnx_dny<T>::set_system_matrix(MatrixDenseData_new<T> * A_)
+{
+    A = A_;
+}
+
+
+
+template<typename T>
+void trsm_dnx_dny<T>::set_rhs_sol(MatrixDenseData_new<T> * X_)
+{
+    X = X_;
+}
+
+
+
+template<typename T>
+void trsm_dnx_dny<T>::perform()
+{
+    if(A == nullptr) eslog::error("system matrix is not set\n");
+    if(X == nullptr) eslog::error("rhs/sol matrix is not set\n");
+    if(A->nrows != A->ncols) eslog::error("system matrix has to be square\n");
+    if(X->nrows != A->nrows) eslog::error("matrices are incompatible\n");
+    if(A->prop.uplo != 'U' && A->prop.uplo != 'L') eslog::error("invalid A uplo\n");
+    if(A->prop.diag != 'U' && A->prop.diag != 'N') eslog::error("invalid A diag\n");
+
+    math::blas::trsm(*A, *M);
+}
+
+
+
+template<typename T>
+void trsm_dnx_dny<T>::do_all(MatrixDenseData_new<T> * A, MatrixDenseData_new<T> * X)
+{
+    trsm_dnx_dny<T> instance;
+    instance.set_system_matrix(A);
+    instance.set_rhs_sol(X);
+    instance.perform();
+}
