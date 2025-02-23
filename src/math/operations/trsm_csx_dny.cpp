@@ -6,7 +6,7 @@
 template<typename T, typename I>
 trsm_csx_dny<T,I>::~trsm_csx_dny()
 {
-    if(preprocess_called)
+    finalize();
 }
 
 
@@ -66,9 +66,8 @@ void trsm_csx_dny<T,I>::perform()
 template<typename T, typename I>
 void trsm_csx_dny<T,I>::finalize()
 {
-    if(A == nullptr) eslog::error("matrix A is not set\n");
-    if(X == nullptr) eslog::error("matrix X is not set\n");
-    if(!preprocess_called) eslog::error("preprocess has not been called\n");
-
-    math::spblas::trsm(*A, *X, Y, handle, 'F');
+    if(preprocess_called) {
+        math::spblas::trsm(*A, *X, Y, handle, 'F');
+    }
+    preprocess_called = false;
 }

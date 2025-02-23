@@ -1,4 +1,11 @@
 
+#ifndef SRC_MATH_OPERATIONS_AUXILIARY_TRSH_TRIRHS_CHUNK_SPLITFACTOR_H
+#define SRC_MATH_OPERATIONS_AUXILIARY_TRSH_TRIRHS_CHUNK_SPLITFACTOR_H
+
+#include "math/primitives_new/matrix_csx_data_new.h"
+#include "math/primitives_new/matrix_dense_data_new.h"
+#include "math/primitives_new/vector_dense_view_new.h"
+
 
 
 template<typename T, typename I>
@@ -14,6 +21,13 @@ public:
         char gemm_factor_prune = '_'; // Yes, No
     };
 public:
+    trsm_trirhs_chunk_splitfactor() = default;
+    trsm_trirhs_chunk_splitfactor(const trsm_trirhs_chunk_splitfactor &) = delete;
+    trsm_trirhs_chunk_splitfactor(trsm_trirhs_chunk_splitfactor &&) = delete;
+    trsm_trirhs_chunk_splitfactor & operator=(const trsm_trirhs_chunk_splitfactor &) = delete;
+    trsm_trirhs_chunk_splitfactor & operator=(trsm_trirhs_chunk_splitfactor &&) = delete;
+    ~trsm_trirhs_chunk_splitfactor();
+public:
     void set_config(config cfg_);
     void set_range(size_t k_start_, size_t k_end_);
     void set_L(MatrixCsxView_new<T,I> * L_);
@@ -23,13 +37,13 @@ public:
     void perform();
     void finalize();
 private:
-    config cfg;
     size_t k_start = 0;
     size_t k_end = 0;
     size_t k_size = 0;
     MatrixCsxView_new<T,I> * L = nullptr;
     MatrixDenseView_new<T> * X = nullptr;
     VectorDenseView_new<T> * B_rowtrails = nullptr;
+    config cfg;
     bool set_config_called = false;
     bool set_range_called = false;
     bool preprocess_called = false;
@@ -51,3 +65,7 @@ private:
         gemm_csx_dny_dny_prune_csx<T,I> prune;
     } op_gemm;
 };
+
+
+
+#endif /* SRC_MATH_OPERATIONS_AUXILIARY_TRSH_TRIRHS_CHUNK_SPLITFACTOR_H */

@@ -16,10 +16,7 @@ public:
     trsm_csx_dny(trsm_csx_dny &&) = delete;
     trsm_csx_dny & operator=(const trsm_csx_dny &) = delete;
     trsm_csx_dny & operator=(trsm_csx_dny &&) = delete;
-    ~trsm_csx_dny()
-    {
-        finalize();
-    }
+    ~trsm_csx_dny();
 public:
     void set_system_matrix(MatrixCsxView_new<T,I> * A_);
     void set_rhs_sol(MatrixDenseView_new<T> * X_);

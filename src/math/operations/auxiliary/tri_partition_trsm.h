@@ -14,8 +14,8 @@ public:
     void set_output_partition(VectorDenseView_new<size_t> * partition_);
     void perform();
 private:
-    char algorithm = '_';
-    char direction = '_';
+    char algorithm = '_'; // Uniform, Minimal work
+    char direction = '_'; // Horizontal, Vertical
     int parameter = 0;
     size_t sys_size = 0;
     size_t sys_nrhs = 0;

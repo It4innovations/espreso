@@ -93,7 +93,7 @@ void tri_partition_trsm::perform()
             }
             break;
         }
-        case 'M': // minimum possible amount of total work
+        case 'M': // Minimum possible amount of total work
         {
             // W = sum W[i]
             // W[i] = P[i]^2 * (P[i] - P[i-1]) // P[N]=0, P[0]=n, then need to flip and reverse

@@ -1,5 +1,13 @@
 
+#include "math/operations/auxiliary/trsm_trirhs_chunk_splitfactor.h"
 
+
+
+template<typename T, typename I>
+void trsm_trirhs_chunk_splitfactor<T,I>::~trsm_trirhs_chunk_splitfactor()
+{
+    finalize();
+}
 
 
 
@@ -17,6 +25,8 @@ template<typename T, typename I>
 void trsm_trirhs_chunk_splitfactor<T,I>::set_range(size_t k_start_, size_t k_end_)
 {
     k_start = k_start_;
+    k_end = k_end_;
+    k_size = k_end - k_start;
 
     set_range_called = true;
 }
@@ -71,6 +81,8 @@ void trsm_trirhs_chunk_splitfactor<T,I>::preprocess()
         size_t nnz = op_submatrix_L_top_sp.get_output_matrix_nnz();
 
         sub_L_top.sp.set(k_size, k_size, nnz, cfg.trsm_factor_order, AllocatorCPU_new::get_singleton());
+        sub_L_top.sp.diag = L->diag;
+        sub_L_top.sp.uplo = L->uplo;
 
         op_trsm_sp.set_system_matrix(sub_L_top.sp);
         op_trsm_sp.set_rhs_sol(sub_X_top);
@@ -82,6 +94,8 @@ void trsm_trirhs_chunk_splitfactor<T,I>::preprocess()
     }
     if(cfg.trsm_factor_spdn == 'D') {
         sub_L_top_dn.set(k_size, k_size, cfg.trsm_factor_order, AllocatorCPU_new::get_singleton());
+        sub_L_top.dn.diag = L->diag;
+        sub_L_top.dn.uplo = L->uplo;
     }
 
     if(cfg.gemm_factor_prune == 'Y' || cfg.gemm_factor_spdn == 'S') {

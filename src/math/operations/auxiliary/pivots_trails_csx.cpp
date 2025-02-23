@@ -6,10 +6,10 @@
 
 
 template<typename T, typaname I>
-void pivots_trails_csx<T,I>::set_mode(char pivots_trails_, char row_col_)
+void pivots_trails_csx<T,I>::set_mode(char row_col_, char pivots_trails_)
 {
-    pivots_trails = pivots_trails_;
     row_col = row_col_;
+    pivots_trails = pivots_trails_;
 }
 
 
@@ -35,7 +35,7 @@ void pivots_trails_csx<T,I>::perform()
 {
     if(M == nullptr) eslog::error("matrix is not set\n");
     if(vec == nullptr) eslog::error("vector is not set\n");
-    if(pivots_trails == '_' || row_col == '_') eslog::error("mode is not set\n");
+    if(row_col == '_' || pivots_trails == '_') eslog::error("mode is not set\n");
 
     bool need_reorder = (M->order == cfg.row_col);    
     if(need_reorder) {
@@ -59,12 +59,12 @@ void pivots_trails_csx<T,I>::perform()
 
 
 template<typename T, typaname I>
-void pivots_trails_csx<T,I>::do_all(MatrixCsxView_new<T,I> * M, VectorDenseView_new<I> * vec, char pivots_trails, char row_col)
+void pivots_trails_csx<T,I>::do_all(MatrixCsxView_new<T,I> * M, VectorDenseView_new<I> * vec, char row_col, char pivots_trails)
 {
     pivots_trails_csx<T,I> instance;
     instance.set_matrix(M);
     instance.set_output_vector(vec);
-    instance.set_mode(pivots_trails, row_col);
+    instance.set_mode(row_col, pivots_trails);
     instance.perform();
 }
 
