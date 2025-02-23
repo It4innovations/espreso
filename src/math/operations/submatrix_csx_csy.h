@@ -1,13 +1,13 @@
 
-#ifndef SRC_MATH_OPERATIONS_SUBMATRIX_CSX_CSX_H
-#define SRC_MATH_OPERATIONS_SUBMATRIX_CSX_CSX_H
+#ifndef SRC_MATH_OPERATIONS_SUBMATRIX_CSX_CSY_H
+#define SRC_MATH_OPERATIONS_SUBMATRIX_CSX_CSY_H
 
 #include "math/primitives_new/matrix_csx_view_new.h"
 
 
 
 template<typename T, typename I>
-class submatrix_csx_csx
+class submatrix_csx_csy
 {
 public:
     void set_matrix_src(MatrixCsxView_new<T,I> * M_src_);
@@ -29,8 +29,11 @@ private:
     size_t nnz_output = 0;
     bool bounds_set = false;
     bool setup_called = false;
+private:
+    void perform_same_order();
+    void perform_diff_order();
 };
 
 
 
-#endif /* SRC_MATH_OPERATIONS_SUBMATRIX_CSX_CSX_H */
+#endif /* SRC_MATH_OPERATIONS_SUBMATRIX_CSX_CSY_H */

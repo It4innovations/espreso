@@ -11,7 +11,7 @@ template<typename T>
 struct VectorDenseData_new : public VectorDenseView_new<T>
 {
 public: // the user promises not to modify these values (I don't want to implement getters everywhere)
-    Allocator_new * ator;
+    Allocator_new * ator = nullptr;
 public:
     using VectorDenseView_new::vals;
     using VectorBase_new::size;
@@ -21,12 +21,14 @@ public:
     VectorDenseData_new(VectorDenseData_new && other)
     {
         std::swap(static_cast<VectorDenseView_new&>(*this), static_cast<VectorDenseView_new>(other));
+        std::swap(ator, other.ator);
     }
     VectorDenseData_new & operator=(const VectorDenseData_new &) = delete;
     VectorDenseData_new & operator=(VectorDenseData_new && other)
     {
         if(this == &other) return;
         std::swap(static_cast<VectorDenseView_new&>(*this), static_cast<VectorDenseView_new>(other));
+        std::swap(ator, other.ator);
         other.free();
     }
     virtual ~VectorDenseData_new()

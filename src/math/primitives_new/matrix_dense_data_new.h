@@ -26,12 +26,14 @@ public:
     MatrixDenseData_new(MatrixDenseData_new && other)
     {
         std::swap(static_cast<MatrixDenseView_new&>(*this), static_cast<MatrixDenseView_new&>(other));
+        std::swap(ator, other.ator);
     }
     MatrixDenseData_new & operator=(const MatrixDenseData_new &) = delete;
     MatrixDenseData_new & operator=(MatrixDenseData_new && other)
     {
         if(this == &other) return;
         std::swap(static_cast<MatrixDenseView_new&>(*this), static_cast<MatrixDenseView_new&>(other));
+        std::swap(ator, other.ator);
         other.free();
     }
     virtual ~MatrixDenseData_new()

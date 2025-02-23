@@ -92,6 +92,18 @@ void applyT(Vector_Dense<T, I> &y, const T &alpha, Matrix_CSR<T, I> &A, const in
     }
 }
 
+struct _handle_trsm;
+using handle_trsm = std::shared_ptr<_handle_trsm>;
+
+template<typename T, typename I>
+void trsm(MatrixCsxView_new<T,I> & A, MatrixDenseView_new<T> & X, MatrixDenseView_new<T> & Y, handle_trsm & handle, char stage);
+
+struct _handle_mm;
+using handle_mm = std::shared_ptr<_handle_mm>;
+
+template<typename T, typename I>
+void mm(MatrixCsxView_new<T,I> & A, MatrixDenseView_new<T> & B, MatrixDenseView_new<T> & C, T alpha, T beta, handle_mm & handle, char stage);
+
 }
 }
 

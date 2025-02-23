@@ -203,6 +203,38 @@ void multiply(T alpha, const Vector_Dense<T, I> &A, const Vector_Dense<T, I> &B,
     if constexpr(std::is_same_v<T, std::complex<double>>) cblas_zgemv(CblasRowMajor, CblasNoTrans, 1, A.size, &alpha, A.vals, A.size, B.vals, 1, &beta, &out, 1);
 }
 
+template<typename T>
+void trsm(MatrixDenseView_new<T> & A, MatrixDenseView_new<T> & X, T alpha)
+{
+    if(A.nrows != A.ncols) eslog::error("system matrix has to be square\n");
+    if(X.nrows != A.nrows) eslog::error("matrices are incompatible\n");
+
+    auto layout = ((X.order == 'R') ? CblasRowMajor : CblasColMajor);
+    auto trans_A = ((A.order == X.order) ? CblasNoTrans : CblasTrans);
+    auto uplo_A = (((A.prop.uplo == 'U') == (A.order == X.order)) ? CblasUpper : CblasLower);
+    auto diag_A = ((A.diag == 'U') ? CblasUnit : CblasNonUnit);
+
+    if constexpr(std::is_same_v<T, float>)                cblas_strsm(layout, CblasLeft, uplo_A, trans_A, diag_A, X.nrows, X.ncols, alpha, A.vals, A.ld, X.vals, X.ld);
+    if constexpr(std::is_same_v<T, double>)               cblas_dtrsm(layout, CblasLeft, uplo_A, trans_A, diag_A, X.nrows, X.ncols, alpha, A.vals, A.ld, X.vals, X.ld);
+    if constexpr(std::is_same_v<T, std::complex<float>>)  cblas_ctrsm(layout, CblasLeft, uplo_A, trans_A, diag_A, X.nrows, X.ncols, alpha, A.vals, A.ld, X.vals, X.ld);
+    if constexpr(std::is_same_v<T, std::complex<double>>) cblas_ztrsm(layout, CblasLeft, uplo_A, trans_A, diag_A, X.nrows, X.ncols, alpha, A.vals, A.ld, X.vals, X.ld);
+}
+
+template<typename T>
+void gemm(MatrixDenseView_new<T> & A, MatrixDenseView_new<T> & B, MatrixDenseView_new<T> & C, T alpha, T beta)
+{
+    if(A->nrows != C->nrows || B->ncols != C.ncols || A->ncols != B.nrows) eslog::error("incompatible matrices");
+
+    auto layout = ((C.order == 'R') ? CblasRowMajor : CblasColMajor);
+    auto trans_A = ((A.order == C.order) ? CblasNoTrans : CblasTrans);
+    auto trans_B = ((B.order == C.order) ? CblasNoTrans : CblasTrans);
+
+    if constexpr(std::is_same_v<T, float>)                cblas_sgemm(layout, trans_A, trans_B, C.nrows, C.ncols, A.ncols, alpha, A.vals, A.ld, B.vals, B.ld, beta, C.vals, C.ld);
+    if constexpr(std::is_same_v<T, double>)               cblas_dgemm(layout, trans_A, trans_B, C.nrows, C.ncols, A.ncols, alpha, A.vals, A.ld, B.vals, B.ld, beta, C.vals, C.ld);
+    if constexpr(std::is_same_v<T, std::complex<float>>)  cblas_cgemm(layout, trans_A, trans_B, C.nrows, C.ncols, A.ncols, alpha, A.vals, A.ld, B.vals, B.ld, beta, C.vals, C.ld);
+    if constexpr(std::is_same_v<T, std::complex<double>>) cblas_zgemm(layout, trans_A, trans_B, C.nrows, C.ncols, A.ncols, alpha, A.vals, A.ld, B.vals, B.ld, beta, C.vals, C.ld);
+}
+
 }
 }
 }

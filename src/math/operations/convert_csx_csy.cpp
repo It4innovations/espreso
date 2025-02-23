@@ -37,8 +37,8 @@ void convert_csx_csy<T,I>::perform()
 
     size_t nrows_src = M_src->get_primary_size();
     size_t ncols_src = M_src->get_secondary_size();
-    size_t nrows_dst = M_dst->get_primary_size();
-    size_t ncols_dst = M_dst->get_secondary_size();
+    size_t nrows_dst = M_dst->get_secondary_size();
+    size_t ncols_dst = M_dst->get_primary_size();
     size_t nnz = M_src->nnz;
     I * src_ptrs = M_src->ptrs;
     I * src_idxs = M_src->idxs;
@@ -70,13 +70,13 @@ void convert_csx_csy<T,I>::perform()
     // fill dst idxs and vals
     for(size_t r = 0; r < nrows_src; r++)
     {
-        I start = src_ptrs[r_in];
-        I end = src_ptrs[r_in+1];
+        I start = src_ptrs[r];
+        I end = src_ptrs[r+1];
         for(I i_src = start; i_src < end; i_src++)
         {
-            I c = src_idxs[i];
-            T v = src_vals[i];
-            I i_dst = M_dst.ptrs[c];
+            I c = src_idxs[i_src];
+            T v = src_vals[i_src];
+            I i_dst = dst_ptrs[c];
             dst_ptrs[c]++;
             dst_idxs[i_dst] = r;
             dst_vals[i_dst] = v;

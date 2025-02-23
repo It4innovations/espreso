@@ -24,7 +24,7 @@ public:
     void set_system_matrix(MatrixCsxView_new<T,I> * A_);
     void set_rhs_sol(MatrixDenseView_new<T> * X_);
     void preprocess();
-    void compute();
+    void perform();
     void finalize();
 private:
     MatrixCsxView_new<T,I> * A = nullptr;

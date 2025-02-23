@@ -23,7 +23,7 @@ public:
     VectorDenseView_new & operator=(VectorDenseView_new &&) = default;
     virtual ~VectorDenseView_new() = default;
 public:
-    void set(size_t size_, size_t vals_)
+    void set_view(size_t size_, T * vals_)
     {
         if(was_set) eslog::error("can only set yet-uninitialized matrix view\n");
         size = size_;
@@ -37,12 +37,10 @@ public:
     }
 
     template<typename I, typename A>
-    static VectorDenseView_new<T> from_old(VectorDense<T,I,A> & V_old, char order = 'R')
+    static VectorDenseView_new<T> from_old(VectorDense<T,I,A> & V_old)
     {
         VectorDenseView_new<T> V_new;
-        V_new.ator = &AllocatorDummy_new::get_singleton(A::is_data_host_accessible, A::is_data_device_accessible);
-        V_new.vals = V_old.vals;
-        V_new.size = V_old.size;
+        V_new.set_view(V_old.size, V_old.vals);
         return V_new;
     }
     template<typename I, typename A>

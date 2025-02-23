@@ -44,7 +44,7 @@ void trsm_csx_dny<T,I>::preprocess()
 
 
 template<typename T, typename I>
-void trsm_csx_dny<T,I>::compute()
+void trsm_csx_dny<T,I>::perform()
 {
     if(A == nullptr) eslog::error("matrix A is not set\n");
     if(X == nullptr) eslog::error("matrix X is not set\n");

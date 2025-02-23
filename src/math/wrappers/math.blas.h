@@ -56,6 +56,12 @@ namespace blas {
 
     template <typename T, typename I>
     void multiply(T alpha, const Vector_Dense<T, I> &A, const Vector_Dense<T, I> &B, T beta, T &out);
+
+    template<typename T>
+    void trsm(MatrixDenseView_new<T> & A, MatrixDenseView_new<T> & X, T alpha = T{1});
+
+    template<typename T>
+    void gemm(MatrixDenseView_new<T> & A, MatrixDenseView_new<T> & B, MatrixDenseView_new<T> & C, T alpha = T{1}, T beta = T{0});
 }
 }
 }

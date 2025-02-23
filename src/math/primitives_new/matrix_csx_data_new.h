@@ -11,7 +11,7 @@ template<typename T, typename I>
 struct MatrixCsxData_new : public MatrixCsxView_new
 {
 public: // the user promises not to modify these values (I don't want to implement getters everywhere)
-    Allocator_new * ator;
+    Allocator_new * ator = nullptr;
 public:
     using MatrixCsxView_new::ptrs;
     using MatrixCsxView_new::idxs;
@@ -27,12 +27,14 @@ public:
     MatrixCsxData_new(MatrixCsxData_new && other)
     {
         std::swap(static_cast<MatrixCsxView_new&>(*this), static_cast<MatrixCsxView_new>(other));
+        std::swap(ator, other.ator);
     }
     MatrixCsxData_new & operator=(const MatrixCsxData_new &) = delete;
     MatrixCsxData_new & operator=(MatrixCsxData_new && other)
     {
         if(this == &other) return;
         std::swap(static_cast<MatrixCsxView_new&>(*this), static_cast<MatrixCsxView_new>(other));
+        std::swap(ator, other.ator);
         other.free();
     }
     virtual ~MatrixCsxData_new()

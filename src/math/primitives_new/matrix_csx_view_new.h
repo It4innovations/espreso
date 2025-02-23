@@ -28,7 +28,7 @@ public:
     MatrixCsxView_new & operator=(MatrixCsxView_new &&) = default;
     virtual ~MatrixCsxView_new() = default;
 public:
-    void set(size_t nrows_, size_t ncols_, size_t nnz_, char order_, I * ptrs_, I * idxs_, T * vals_)
+    void set_view(size_t nrows_, size_t ncols_, size_t nnz_, char order_, I * ptrs_, I * idxs_, T * vals_)
     {
         if(was_set) eslog::error("can only set yet-uninitialized matrix view\n");
         nrows = nrows_;
@@ -41,13 +41,13 @@ public:
         was_set = true;
     }
 public:
-    size_t get_primary_size()
+    size_t get_primary_size() const
     {
         if(order == 'R') return nrows;
         if(order == 'C') return ncols;
         return 0;
     }
-    size_t get_secondary_size()
+    size_t get_secondary_size() const
     {
         if(order == 'R') return ncols;
         if(order == 'C') return nrows;
@@ -76,7 +76,7 @@ public:
     static MatrixCsxView_new<T,I> from_old(Matrix_CSR<T,I,A> & M_old)
     {
         MatrixCsxView_new<T,I> M_new;
-        M_new.set(M_old.nrows, M_old.ncols, M_old.nnz, 'R', M_old.ptrs, M_old.idxs, M_old.vals);
+        M_new.set_view(M_old.nrows, M_old.ncols, M_old.nnz, 'R', M_old.ptrs, M_old.idxs, M_old.vals);
         if(M_old.shape == Matrix_Shape::LOWER) M_new.prop.uplo = 'L';
         if(M_old.shape == Matrix_Shape::UPPER) M_new.prop.uplo = 'U';
         if(M_old.shape == Matrix_Shape::FULL) M_new.prop.uplo = 'F';
