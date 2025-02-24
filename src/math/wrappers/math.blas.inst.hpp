@@ -19,7 +19,10 @@ namespace blas {
         template void scale(const int size, const T &alpha, T *x, const int incX); \
         template void add(const int size, T *x, const int incX, const T &alpha, const T *y, const int incY); \
         template T dot(const int size, const T *x, const int incX, const T *y, const int incY); \
-        template utils::remove_complex_t<T> norm(const int size, const T *x, const int incX);
+        template utils::remove_complex_t<T> norm(const int size, const T *x, const int incX); \
+        template void trsm(MatrixDenseView_new<T> & A, MatrixDenseView_new<T> & X, T alpha); \
+        template void gemm(MatrixDenseView_new<T> & A, MatrixDenseView_new<T> & B, MatrixDenseView_new<T> & C, T alpha, T beta); \
+        template void herk(MatrixDenseView_new<T> & A, MatrixDenseView_new<T> & C, herk_mode mode, T alpha, T beta);
 
             INSTANTIATE_T(float)
             INSTANTIATE_T(double)

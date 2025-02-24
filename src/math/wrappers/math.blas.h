@@ -62,6 +62,29 @@ namespace blas {
 
     template<typename T>
     void gemm(MatrixDenseView_new<T> & A, MatrixDenseView_new<T> & B, MatrixDenseView_new<T> & C, T alpha = T{1}, T beta = T{0});
+
+    enum struct herk_mode { AhA, AAh };
+
+    template<typename T>
+    void herk(MatrixDenseView_new<T> & A, MatrixDenseView_new<T> & C, herk_mode mode, T alpha = T{1}, T beta = T{0});
+
+    template<typename T, typename I>
+    void matrix_conj(T * A, I nrows, I ncols, I ld, char order, char uplo)
+    {
+        static_assert(utils::is_complex_v<T>(), "only complex types supported");
+        I size_primary = ((order == 'R') ? nrows : ncols);
+        I size_secdary = ((order == 'R') ? ncols : nrows);
+        utils::remove_complex_t<T> * A_real = reinterpret_cast<utils::remove_complex_t<T>>(A);
+        for(I ip = 0; ip < size_primary; ip++) {
+            I start_secdary = 0;
+            I end_secdary = size_secdary;
+            if((uplo == 'U' && order == 'R') || (uplo == 'L' && order == 'C')) start_secdary = ip;
+            if((uplo == 'U' && order == 'C') || (uplo == 'L' && order == 'R')) end_secdary = ip;
+            size_t use_size_secdary = end_secdary - start_secdary;
+            scale(use_size_secdary, utils::remove_complex_t<T>{-1}, A_real + 2 * ip * ld + 2 * start_secdary + 1, 2);
+        }
+    }
+
 }
 }
 }

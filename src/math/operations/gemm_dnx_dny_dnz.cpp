@@ -39,12 +39,22 @@ void gemm_dnx_dny_dnz<T>::set_coefficients(T alpha_, T beta_)
 
 
 template<typename T>
+void gemm_dnx_dny_dnz<T>::set_conj(bool conj_A_, bool conj_B_)
+{
+    conj_A = conj_A_;
+    conj_B = conj_B_;
+}
+
+
+
+template<typename T>
 void gemm_dnx_dny_dnz<T>::perform()
 {
     if(A == nullptr) eslog::error("matrix A is not set\n");
     if(B == nullptr) eslog::error("matrix B is not set\n");
     if(C == nullptr) eslog::error("matrix C is not set\n");
     if(A->nrows != C->nrows || B->ncols != C.ncols || A->ncols != B.nrows) eslog::error("incompatible matrices");
+    if(utils::is_complex<T> && (conj_A || conj_B)) eslog::error("conjugation not supported yet\n");
 
     math::blas::gemm(*A, *B, *C, alpha, beta);
 }
@@ -52,12 +62,13 @@ void gemm_dnx_dny_dnz<T>::perform()
 
 
 template<typename T>
-void gemm_dnx_dny_dnz<T>::do_all(MatrixDenseView_new<T,I> * A, MatrixDenseView_new<T,I> * B, MatrixDenseView_new<T,I> * C, T alpha, T beta)
+void gemm_dnx_dny_dnz<T>::do_all(MatrixDenseView_new<T,I> * A, MatrixDenseView_new<T,I> * B, MatrixDenseView_new<T,I> * C, T alpha, T beta, bool conj_A, bool conj_B)
 {
     gemm_dnx_dny_dnz<T> instance;
     instance.set_matrix_A(A);
     instance.set_matrix_B(B);
     instance.set_matrix_C(C);
     instance.set_coefficients(alpha, beta);
+    instance.set_conj(conj_A, conj_B);
     instance.perform();
 }

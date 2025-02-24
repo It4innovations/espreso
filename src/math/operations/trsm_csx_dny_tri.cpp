@@ -1,12 +1,12 @@
 
-#include "math/operations/trsm_csx_csy_dnz_trirhs.h"
+#include "math/operations/trsm_csx_dny_tri.h"
 
 
 
 
 
 template<typename T, typename I>
-trsm_csx_csy_dnz_trirhs<T,I>::~trsm_csx_csy_dnz_trirhs()
+trsm_csx_dny_tri<T,I>::~trsm_csx_dny_tri()
 {
     finalize();
 }
@@ -14,7 +14,7 @@ trsm_csx_csy_dnz_trirhs<T,I>::~trsm_csx_csy_dnz_trirhs()
 
 
 template<typename T, typename I>
-void trsm_csx_csy_dnz_trirhs<T,I>::set_config(config cfg_)
+void trsm_csx_dny_tri<T,I>::set_config(config cfg_)
 {
     cfg = cfg_;
 
@@ -24,7 +24,7 @@ void trsm_csx_csy_dnz_trirhs<T,I>::set_config(config cfg_)
 
 
 template<typename T, typename I>
-void trsm_csx_csy_dnz_trirhs<T,I>::set_L(MatrixCsxView<T,I> * L_)
+void trsm_csx_dny_tri<T,I>::set_L(MatrixCsxView<T,I> * L_)
 {
     L = L_;
 }
@@ -32,15 +32,7 @@ void trsm_csx_csy_dnz_trirhs<T,I>::set_L(MatrixCsxView<T,I> * L_)
 
 
 template<typename T, typename I>
-void trsm_csx_csy_dnz_trirhs<T,I>::set_B(MatrixCsxView<T,I> * B_)
-{
-    B = B_;
-}
-
-
-
-template<typename T, typename I>
-void trsm_csx_csy_dnz_trirhs<T,I>::set_X(MatrixDenseView<T> * X_)
+void trsm_csx_dny_tri<T,I>::set_X(MatrixDenseView<T> * X_)
 {
     X = X_;
 }
@@ -48,27 +40,56 @@ void trsm_csx_csy_dnz_trirhs<T,I>::set_X(MatrixDenseView<T> * X_)
 
 
 template<typename T, typename I>
-void trsm_csx_csy_dnz_trirhs<T,I>::preprocess()
+void trsm_csx_dny_tri<T,I>::set_X_pattern(MatrixCsxView_new<T,I> & X_pattern)
+{
+    if(called_set_pattern) eslog::error("X patern was already set\n");
+
+    X_colpivots.set(X_pattern.ncols, AllocatorCPU_new::get_singleton());
+    X_colpivots.alloc();
+    pivots_trails_csx<T,I>::do_all(&X_pattern, &X_colpivots, 'C', 'P');
+
+    X_rowtrails.set(X_pattern.nrows, AllocatorCPU_new::get_singleton());
+    X_rowtrails.alloc();
+    pivots_trails_csx<T,I>::do_all(&X_pattern, &X_rowtrails, 'R', 'T');
+
+    called_set_pattern = true;
+}
+
+
+
+template<typename T, typename I>
+void trsm_csx_dny_tri<T,I>::preprocess()
 {
     if(!called_set_config) eslog::error("set config was not called\n");
+    if(!called_set_pattern) eslog::error("X pattern was not set\n");
     if(called_preprocess) eslog::error("preproces was already called\n");
     if(L == nullptr) eslog::error("matrix L is not set\n");
-    if(B == nullptr) eslog::error("matrix B is not set\n");
     if(X == nullptr) eslog::error("matrix X is not set\n");
     if(L->nrows != L->ncols) eslog::error("L has to be square\n");
     if(L->uplo != 'L') eslog::error("matrix L has to have uplo=L\n");
-    if(X->nrows != B->nrows || X->ncols != B->ncols) eslog::error("size of matrices B and X must match\n");
-    if(B->nrows != L->nrows) eslog::error("incompatible matrices\n");
+    if(X->nrows != L->nrows) eslog::error("incompatible matrices\n");
+    if(X_colpivots == nullptr) eslog::error("X colpivots are not set\n");
+    if(X_row)
+    if(X_colpivots.size != X.ncols) eslog::error("wrong colpivots size\n");
+    if(X_rowtrails.size != X.nrows) eslog::error("wrong rowtrails size\n");
 
-    pivots_trails_csx<T,I>::do_all(B, B_colpivots, 'C', 'P');
-    pivots_trails_csx<T,I>::do_all(B, B_rowtrails, 'R', 'T');
+    for(size_t i = 1; i < X_colpivots.size; i++) {
+        if(X_colpivots.vals[i-1] > X_colpivots.vals[i]) {
+            eslog::error("X does not have lower triangular structure\n");
+        }
+    }
+    for(size_t i = 1; i < X_rowtrails.size; i++) {
+        if(X_rowtrails.vals[i-1] > X_rowtrails.vals[i]) {
+            eslog::error("X does not have lower triangular structure\n");
+        }
+    }
 
-    tri_partition_trsm<T,I> partitioner;
+    tri_partition_trsm partitioner;
     char partition_direction = '_';
     if(strategy == 'F') partition_direction = 'V';
     if(strategy == 'R') partition_direction = 'H';
     partitioner.set_config(cfg.partition.algorithm, partition_direction, cfg.partition.parameter);
-    partitioner.set_system(B->nrows, B->ncols);
+    partitioner.set_system(X->nrows, X->ncols);
     partitioner.set_output_partition(partition);
     partitioner.setup();
     num_chunks = partitioner.get_num_chunks();
@@ -97,11 +118,11 @@ void trsm_csx_csy_dnz_trirhs<T,I>::preprocess()
             }
             if(cfg.splitrhs.spdn_criteria == 'Z') {
                 double fraction_treshold = cfg.splitrhs.spdn_param;
-                double curr_fraction = (double)(rhs_start + rhs_end) / 2.0 / B->ncols;
+                double curr_fraction = (double)(rhs_start + rhs_end) / 2.0 / X->ncols;
                 op_config.factor_spdn = ((curr_fraction < fraction_treshold) ? 'S' : 'D');
             }
             if(cfg.splitrhs.spdn_criteria == 'T') {
-                size_t k_start = B_colpivots.vals[rhs_start];
+                size_t k_start = X_colpivots.vals[rhs_start];
                 size_t k_size = L->nrows - k_start;
                 submatrix_csx_csy<T,I> op_sub_L;
                 op_sub_L.set_matrix_src(L);
@@ -126,7 +147,7 @@ void trsm_csx_csy_dnz_trirhs<T,I>::preprocess()
             op_chunk.set_range(rhs_start, rhs_end);
             op_chunk.set_L(L);
             op_chunk.set_X(X);
-            op_chunk.set_B_colpivots(&B_colpivots);
+            op_chunk.set_X_colpivots(&X_colpivots);
             op_chunk.preproces();
         }
         if(strategy == 'F') {
@@ -151,7 +172,7 @@ void trsm_csx_csy_dnz_trirhs<T,I>::preprocess()
             }
             if(cfg.splitfactor.gemm_spdn_criteria == 'Z') {
                 double fraction_treshold = cfg.splitfactor.gemm_spdn_param;
-                double curr_fraction = (double)(rhs_start + rhs_end) / 2.0 / B->ncols;
+                double curr_fraction = (double)(rhs_start + rhs_end) / 2.0 / X->ncols;
                 op_config.gemm_factor_spdn = ((curr_fraction < fraction_treshold) ? 'S' : 'D');
             }
             if(cfg.splitfactor.gemm_spdn_criteria == 'T') {
@@ -178,7 +199,7 @@ void trsm_csx_csy_dnz_trirhs<T,I>::preprocess()
             op_chunk.set_range(k_start, k_end);
             op_chunk.set_L(L);
             op_chunk.set_X(X);
-            op_chunk.set_B_rowtrails(&B_rowtrails);
+            op_chunk.set_X_rowtrails(&X_rowtrails);
             op_chunk.preproces();
         }
     }
@@ -189,11 +210,9 @@ void trsm_csx_csy_dnz_trirhs<T,I>::preprocess()
 
 
 template<typename T, typename I>
-void trsm_csx_csy_dnz_trirhs<T,I>::compute()
+void trsm_csx_dny_tri<T,I>::perform()
 {
     if(!called_preprocess) eslog::error("preprocess was not called\n");
-
-    convert_csx_dny<T,I>::do_all(B, X);
 
     for(size_t ch = 0; ch < num_chunks; ch++) {
         if(strategy == 'R') {
@@ -208,7 +227,7 @@ void trsm_csx_csy_dnz_trirhs<T,I>::compute()
 
 
 template<typename T, typename I>
-void trsm_csx_csy_dnz_trirhs<T,I>::finalize()
+void trsm_csx_dny_tri<T,I>::finalize()
 {
     if(called_preprocess) {
         for(size_t ch = 0; ch < num_chunks; ch++) {
@@ -219,8 +238,14 @@ void trsm_csx_csy_dnz_trirhs<T,I>::finalize()
                 ops_chunks[ch].splitfactor.finalize();
             }
         }
-        ops_chunks.free();
-        partition.free();
+        ops_chunks.clear();
+        partition.clear();
     }
     called_preprocess = false;
+
+    if(called_set_pattern) {
+        X_colpivots.clear();
+        X_rowtrails.clear();
+    }
+    called_set_pattern = false;
 }

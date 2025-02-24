@@ -119,6 +119,24 @@ void multiply(T alpha, const Vector_Dense<T, I> &A, const Vector_Dense<T, I> &B,
     eslog::error("calling of empty BLAS wrapper.\n");
 }
 
+template<typename T>
+void trsm(MatrixDenseView_new<T> & A, MatrixDenseView_new<T> & X, T alpha)
+{
+    eslog::error("calling of empty BLAS wrapper.\n");
+}
+
+template<typename T>
+void gemm(MatrixDenseView_new<T> & A, MatrixDenseView_new<T> & B, MatrixDenseView_new<T> & C, T alpha, T beta)
+{
+    eslog::error("calling of empty BLAS wrapper.\n");
+}
+
+template<typename T>
+void herk(MatrixDenseView_new<T> & A, MatrixDenseView_new<T> & C, herk_mode mode, T alpha, T beta)
+{
+    eslog::error("calling of empty BLAS wrapper.\n");
+}
+
 }
 }
 }

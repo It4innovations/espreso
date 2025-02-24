@@ -66,6 +66,9 @@ void trsm_trirhs_chunk_splitrhs<T,I>::preprocess()
     if(L == nullptr) eslog::error("matrix L is not set\n");
     if(X == nullptr) eslog::error("matrix X is not set\n");
     if(B_colpivots == nullptr) eslog::error("B colpivots is not set\n");
+    if(L->nrows != L->ncols) eslog::error("matrix L must be square\n");
+    if(L->nrows != B->nrows) eslog::error("incompatible matrix sizes\n");
+    if(L->prop.uplo != 'L') eslog::error("matrix L must have uplo=L\n");
 
     k_start = B_colpivots[rhs_start];
     k_end = L->nrows;

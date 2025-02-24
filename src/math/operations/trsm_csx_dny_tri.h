@@ -1,6 +1,6 @@
 
-#ifndef SRC_MATH_OPERATIONS_TRSM_CSX_CSY_DNZ_TRIRHS_H
-#define SRC_MATH_OPERATIONS_TRSM_CSX_CSY_DNZ_TRIRHS_H
+#ifndef SRC_MATH_OPERATIONS_TRSM_CSX_DNY_TRI_H
+#define SRC_MATH_OPERATIONS_TRSM_CSX_DNY_TRI_H
 
 #include "math/primitives_new/matrix_csx_view_new.h"
 #include "math/primitives_new/matrix_dense_view_new.h"
@@ -8,7 +8,7 @@
 
 
 template<typename T, typename I>
-class trsm_csx_csy_dnz_trirhs
+class trsm_csx_dny_tri
 {
 public:
     struct config
@@ -35,38 +35,38 @@ public:
         } splitfactor;
     };
 public:
-    trsm_csx_csy_dnz_trirhs() = default;
-    trsm_csx_csy_dnz_trirhs(const trsm_csx_csy_dnz_trirhs &) = delete;
-    trsm_csx_csy_dnz_trirhs(trsm_csx_csy_dnz_trirhs &&) = delete;
-    trsm_csx_csy_dnz_trirhs & operator=(const trsm_csx_csy_dnz_trirhs &) = delete;
-    trsm_csx_csy_dnz_trirhs & operator=(trsm_csx_csy_dnz_trirhs &&) = delete;
-    ~trsm_csx_csy_dnz_trirhs();
+    trsm_csx_dny_tri() = default;
+    trsm_csx_dny_tri(const trsm_csx_dny_tri &) = delete;
+    trsm_csx_dny_tri(trsm_csx_dny_tri &&) = delete;
+    trsm_csx_dny_tri & operator=(const trsm_csx_dny_tri &) = delete;
+    trsm_csx_dny_tri & operator=(trsm_csx_dny_tri &&) = delete;
+    ~trsm_csx_dny_tri();
 public:
     void set_config(config cfg_);
     void set_L(MatrixCsxView<T,I> * L_);
-    void set_B(MatrixCsxView<T,I> * B_);
     void set_X(MatrixDenseView<T> * X_);
+    void set_X_pattern(MatrixCsxView_new<T,I> & X_pattern);
     void preprocess();
-    void compute();
+    void perform();
     void finalize();
 private:
     config cfg;
     MatrixCsxView<T,I> * L;
-    MatrixCsxView<T,I> * B;
     MatrixDenseView<T> * X;
     size_t num_chunks = 0;
     VectorDenseView_new<size_t> partition;
-    VectorDenseView_new<I> B_colpivots;
-    VectorDenseView_new<I> B_rowtrails;
+    VectorDenseData_new<I> X_colpivots;
+    VectorDenseData_new<I> X_rowtrails;
     union trsm_tri_rhs {
         trsm_trirhs_chunk_splitrhs<T,I> splitrhs;
         trsm_trirhs_chunk_splitfactor<T,I> splifactor;
     };
     VectorDenseData_new<trsm_tri_rhs> ops_chunks;
     bool called_set_config = false;
+    bool called_set_pattern = false;
     bool called_preprocess = false;
 };
 
 
 
-#endif /* SRC_MATH_OPERATIONS_TRSM_CSX_CSY_DNZ_TRIRHS_H */
+#endif /* SRC_MATH_OPERATIONS_TRSM_CSX_DNY_TRI_H */

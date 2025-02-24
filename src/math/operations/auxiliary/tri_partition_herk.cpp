@@ -1,36 +1,37 @@
 
-#include "math/operations/auxiliary/tri_partition_trsm.h"
+#include "math/operations/auxiliary/tri_partition_herk.h"
 
 
 
-void tri_partition_trsm::init(char algorithm_, char direction_, int parameter_)
+void tri_partition_herk::set_config(char algorithm_, char direction_, int parameter_, char herk_strategy_)
 {
     algorithm = algorithm_;
     direction = direction_;
     parameter = parameter_;
+    herk_strategy = herk_strategy_;
 
     set_config_called = true;
 }
 
 
 
-void tri_partition_trsm::set_system(size_t sys_size_, size_t sys_nrhs_)
+void tri_partition_herk::set_system(size_t size_n_, size_t size_k_)
 {
-    sys_size = sys_size_;
-    sys_nrhs = sys_nrhs_;
+    size_n = size_n_;
+    size_k = size_k_;
 
     set_system_called = true;
 }
 
 
 
-void tri_partition_trsm::setup()
+void tri_partition_herk::setup()
 {
     if(!set_config_called) eslog::error("config is not set\n");
     if(!set_system_called) eslog::error("system is not set\n");
 
-    if(direction == 'H') partition_range = sys_nrhs;
-    if(direction == 'V') partition_range = sys_size;
+    if(direction == 'N') partition_range = size_n;
+    if(direction == 'K') partition_range = size_k;
 
     switch(algorithm) {
         case 'U':
@@ -42,6 +43,7 @@ void tri_partition_trsm::setup()
             }
             if(parameter < 0) {
                 size_t approx_chunk_size = -parameter;
+                size_t partition_range = get_partition_range();
                 num_chunks = (partition_range - 1) / approx_chunk_size + 1;
                 break;
             }
@@ -58,7 +60,7 @@ void tri_partition_trsm::setup()
 
 
 
-size_t tri_partition_trsm::get_num_chunks()
+size_t tri_partition_herk::get_num_chunks()
 {
     if(!setup_called) eslog::error("setup was not called\n");
 
@@ -67,14 +69,14 @@ size_t tri_partition_trsm::get_num_chunks()
 
 
 
-void tri_partition_trsm::set_output_partition(VectorDenseView_new<size_t> * partition_)
+void tri_partition_herk::set_output_partition(VectorDenseView_new<size_t> * partition_)
 {
     partition = partition_;
 }
 
 
 
-void tri_partition_trsm::perform()
+void tri_partition_herk::perform()
 {
     if(!setup_called) eslog::error("setup was not called\n");
     if(partition == nullptr) eslog::error("partition is not set\n");
@@ -94,26 +96,30 @@ void tri_partition_trsm::perform()
         }
         case 'M': // Minimum possible amount of total work
         {
-            // W = sum W[i]
-            // W[i] = P[i]^2 * (P[i] - P[i-1]) // P[N]=0, P[0]=n, then need to flip and reverse
-            // P = arg min W   <===>   P solves dW/dP[j] = 0 for all j
-            // dW/dP[j] = -P[j+1]^2 + 2P[j]*(P[j]-P[j-1]) + P[j]^2   =0
-            // P[j+1] = sqrt(P[j] * (3P[j]+P[j-1]))
-            // not very rigorous, but it works
-            double * p = partition_double;
-            p[0] = 0.0;
-            p[1] = 1.0;
-            for(size_t i = 2; i <= num_chunks; i++) {
-                p[i] = std::sqrt(p[i-1] * (3 * p[i-1] - 2 * p[i-2]));
+            if(herk_strategy == 'T') {
+                // in the end, it is the same as uniform
+                for(size_t i = 0; i <= num_chunks; i++) {
+                    partition_double[i] = (double)i / num_chunks;
+                }
+                break;
             }
-            for(size_t i = 0; i <= num_chunks; i++) {
-                p[i] = p.back() - p[i];
+            if(herk_strategy == 'Q') {
+                // V = sum V[i]
+                // V[i] = P[i]^2 * (P[i] - P[i-1]) // P[0]=0, P[N]=n now
+                // P = arg min V   <===>   P solves dV/dP[j] = 0 for all j
+                // dV/dP[j] = -P[j+1]^2 + 2P[j]*(P[j]-P[j-1]) + P[j]^2   =0
+                // P[j+1] = sqrt(P[j] * (3P[j]-2P[j-1]))
+                // not very rigorous, but it works
+                double * p = partition_double;
+                p[0] = 0.0;
+                p[1] = 1.0;
+                for(size_t i = 2; i <= num_chunks; i++)
+                {
+                    p[i] = std::sqrt(p[i-1] * (3 * p[i-1] - 2 * p[i-2]));
+                }
+                break;
             }
-            std::reverse(p, p + partition->size);
-            for(size_t i = 0; i <= num_chunks; i++) {
-                p[i] = p.back() - p[i];
-            }
-            break;
+            eslog::error("wrong herk_strategy\n");
         }
         default:
         {
@@ -126,3 +132,7 @@ void tri_partition_trsm::perform()
         partition_sizet[i] = (size_t)(partition_range * (partition_double[i] / max_bound));
     }
 }
+
+
+
+
