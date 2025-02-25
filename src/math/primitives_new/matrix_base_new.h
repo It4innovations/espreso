@@ -4,6 +4,10 @@
 
 
 
+namespace espreso {
+
+
+
 class MatrixBase_new
 {
 public: // the user promises not to modify these values (I don't want to implement getters everywhere)
@@ -46,6 +50,10 @@ char change_order(char order)
         case 'C': return 'R';
         default: return '_';
     }
+}
+
+
+
 }
 
 

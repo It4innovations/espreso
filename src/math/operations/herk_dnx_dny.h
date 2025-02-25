@@ -6,6 +6,12 @@
 
 
 
+namespace espreso {
+namespace math {
+namespace operations {
+
+
+
 template<typename T>
 class herk_dnx_dny
 {
@@ -26,5 +32,9 @@ private:
 };
 
 
+
+}
+}
+}
 
 #endif /* SRC_MATH_OPERATIONS_SYRK_DNX_DNY_H */

@@ -5,6 +5,12 @@
 
 
 
+namespace espreso {
+namespace math {
+namespace operations {
+
+
+
 template<typename T, typaname I>
 void pivots_trails_csx<T,I>::set_mode(char row_col_, char pivots_trails_)
 {
@@ -92,4 +98,10 @@ void pivots_trails_csx<T,I>::perform_trails(MatrixCsxView_new<T,I> & A, VectorDe
     for(size_t i = 0; i < A_primary_size; i++) {
         trails[i] = A.idxs[A.ptrs[i + 1] - 1];
     }
+}
+
+
+
+}
+}
 }

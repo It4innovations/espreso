@@ -8,6 +8,12 @@
 
 
 
+namespace espreso {
+namespace math {
+namespace operations {
+
+
+
 template<typename T, typename I>
 class pivots_trails_csx
 {
@@ -28,5 +34,9 @@ private:
 };
 
 
+
+}
+}
+}
 
 #endif /* SRC_MATH_OPERATIONS_AUXILIARY_PIVOTS_TRAILS_CSX_H */

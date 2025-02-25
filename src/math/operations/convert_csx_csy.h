@@ -6,6 +6,12 @@
 
 
 
+namespace espreso {
+namespace math {
+namespace operations {
+
+
+
 template<typename T, typename I>
 class convert_csx_csy
 {
@@ -20,5 +26,9 @@ private:
 };
 
 
+
+}
+}
+}
 
 #endif /* SRC_MATH_OPERATIONS_COVNERT_CSX_CSY_H */

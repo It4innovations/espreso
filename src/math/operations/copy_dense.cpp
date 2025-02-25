@@ -3,6 +3,12 @@
 
 
 
+namespace espreso {
+namespace math {
+namespace operations {
+
+
+
 template<typename T>
 void copy_dense<T>::set_matrix_src(MatrixDenseView_new<T> * M_src_)
 {
@@ -45,3 +51,6 @@ void copy_dense<T>::do_all(MatrixDenseView_new<T> * M_src, MatrixDenseView_new<T
 
 
 
+}
+}
+}

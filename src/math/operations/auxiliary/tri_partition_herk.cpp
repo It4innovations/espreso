@@ -3,6 +3,12 @@
 
 
 
+namespace espreso {
+namespace math {
+namespace operations {
+
+
+
 void tri_partition_herk::set_config(char algorithm_, char direction_, int parameter_, char herk_strategy_)
 {
     algorithm = algorithm_;
@@ -135,4 +141,6 @@ void tri_partition_herk::perform()
 
 
 
-
+}
+}
+}

@@ -7,6 +7,12 @@
 
 
 
+namespace espreso {
+namespace math {
+namespace operations {
+
+
+
 template<typename T, typename I>
 class convert_csx_dny
 {
@@ -24,5 +30,9 @@ private:
 };
 
 
+
+}
+}
+}
 
 #endif /* SRC_MATH_OPERATIONS_CONVERT_CSX_DNY_H */

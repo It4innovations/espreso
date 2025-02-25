@@ -7,6 +7,12 @@
 
 
 
+namespace espreso {
+namespace math {
+namespace operations {
+
+
+
 template<typename T, typename I>
 class trsm_csx_dny
 {
@@ -30,6 +36,12 @@ private:
     math::spblas::trsm_handle handle;
     bool preprocess_called = false;
 };
+
+
+
+}
+}
+}
 
 
 

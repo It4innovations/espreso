@@ -8,6 +8,12 @@
 
 
 
+namespace espreso {
+namespace math {
+namespace operations {
+
+
+
 template<typename T, typename I>
 class gemm_csx_dny_dny_prune
 {
@@ -51,5 +57,9 @@ private:
 };
 
 
+
+}
+}
+}
 
 #endif /* SRC_MATH_OPERATIONS_GEMM_CSX_DNY_DNY_PRUNE_H */

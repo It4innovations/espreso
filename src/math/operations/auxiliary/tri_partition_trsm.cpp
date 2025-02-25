@@ -3,6 +3,12 @@
 
 
 
+namespace espreso {
+namespace math {
+namespace operations {
+
+
+
 void tri_partition_trsm::init(char algorithm_, char direction_, int parameter_)
 {
     algorithm = algorithm_;
@@ -125,4 +131,10 @@ void tri_partition_trsm::perform()
     for(size_t i = 0; i <= num_chunks; i++) {
         partition_sizet[i] = (size_t)(partition_range * (partition_double[i] / max_bound));
     }
+}
+
+
+
+}
+}
 }

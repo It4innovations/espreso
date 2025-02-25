@@ -6,6 +6,9 @@
 
 
 
+namespace espreso {
+
+
 
 template<typename T>
 class MatrixDenseView_new : public MatrixBase_new
@@ -115,6 +118,10 @@ public:
         return M_old;
     }
 };
+
+
+
+}
 
 
 

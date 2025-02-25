@@ -3,6 +3,12 @@
 
 
 
+namespace espreso {
+namespace math {
+namespace operations {
+
+
+
 template<typename T, typename I>
 void trsm_trirhs_chunk_splitfactor<T,I>::~trsm_trirhs_chunk_splitfactor()
 {
@@ -193,4 +199,10 @@ void trsm_trirhs_chunk_splitfactor<T,I>::finalize()
         }
     }
     preprocess_called = false;
+}
+
+
+
+}
+}
 }

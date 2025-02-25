@@ -6,6 +6,12 @@
 
 
 
+namespace espreso {
+namespace math {
+namespace operations {
+
+
+
 template<typename T>
 class gemm_dnx_dny_dnz
 {
@@ -28,5 +34,9 @@ private:
 };
 
 
+
+}
+}
+}
 
 #endif /* SRC_MATH_OPERATIONS_GEMM_DNX_DNY_DNZ_H */

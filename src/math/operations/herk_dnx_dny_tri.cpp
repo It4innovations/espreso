@@ -3,6 +3,12 @@
 
 
 
+namespace espreso {
+namespace math {
+namespace operations {
+
+
+
 template<typename T, typename I>
 herk_dnx_dny_tri<T>::~herk_dnx_dny_tri()
 {
@@ -256,4 +262,10 @@ void herk_dnx_dny_tri<T>::finalize()
         A_trails.clear();
     }
     pattern_set = false;
+}
+
+
+
+}
+}
 }

@@ -6,6 +6,12 @@
 
 
 
+namespace espreso {
+namespace math {
+namespace operations {
+
+
+
 template<typename T>
 class trsm_dnx_dny
 {
@@ -18,6 +24,12 @@ private:
     MatrixDenseData_new<T> * A;
     MatrixDenseData_new<T> * X;
 };
+
+
+
+}
+}
+}
 
 
 

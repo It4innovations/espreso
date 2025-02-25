@@ -4,6 +4,10 @@
 
 
 
+namespace espreso {
+
+
+
 class Allocator_new
 {
 public:
@@ -198,6 +202,10 @@ class AllocatorCBMB_new : public Allocator_new
 {
 
 };
+
+
+
+}
 
 
 

@@ -4,6 +4,10 @@
 
 
 
+namespace espreso {
+
+
+
 class VectorBase_new
 {
 public: // the user promises not to modify these values (I don't want to implement getters everywhere)
@@ -16,6 +20,10 @@ public:
     VectorBase_new & operator=(VectorBase_new &&) = default;
     virtual ~VectorBase_new() = default;
 };
+
+
+
+}
 
 
 

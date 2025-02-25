@@ -6,6 +6,10 @@
 
 
 
+namespace espreso {
+
+
+
 template<typename T>
 struct VectorDenseView_new : public VectorBase_new
 {
@@ -52,6 +56,10 @@ public:
         return V_old;
     }
 };
+
+
+
+}
 
 
 

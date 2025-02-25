@@ -5,6 +5,12 @@
 
 
 
+namespace espreso {
+namespace math {
+namespace operations {
+
+
+
 template<typename T, typename I>
 void convert_csx_csy<T,I>::set_matrix_src(MatrixCsxView_new<T,I> * M_src_)
 {
@@ -102,4 +108,10 @@ void convert_csx_csy<T,I>::do_all(MatrixCsxView_new<T,I> * M_src, MatrixCsxView_
     instance.set_matrix_src(M_src);
     instance.set_matrix_dst(M_dst);
     instance.perform();
+}
+
+
+
+}
+}
 }

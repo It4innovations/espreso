@@ -3,6 +3,12 @@
 
 
 
+namespace espreso {
+namespace math {
+namespace operations {
+
+
+
 template<typename T, typename I>
 gemm_csx_dny_dny<T,I>::~gemm_csx_dny_dny()
 {
@@ -98,4 +104,10 @@ void gemm_csx_dny_dny<T,I>::do_all(MatrixCsxView_new<T,I> * A, MatrixDenseView_n
     instance.preprocess();
     instance.perform();
     instance.finalize();
+}
+
+
+
+}
+}
 }

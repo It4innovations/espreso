@@ -3,6 +3,12 @@
 
 
 
+namespace espreso {
+namespace math {
+namespace operations {
+
+
+
 template<typename T, typename I>
 void submatrix_csx_dny<T,I>::set_matrix_src(const MatrixCsxView_new<T,I> & M_src_)
 {
@@ -128,4 +134,10 @@ void submatrix_csx_dny<T,I>::do_all(MatrixCsxView_new<T,I> * M_src, MatrixDenseV
     instance.set_bounds(row_start, row_end, col_start, col_end);
     instance.perform_zerofill();
     instance.perform_copyvals();
+}
+
+
+
+}
+}
 }

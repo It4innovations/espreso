@@ -6,6 +6,10 @@
 
 
 
+namespace espreso {
+
+
+
 template<typename I>
 struct PermutationView_new : public VectorBase_new
 {
@@ -69,6 +73,10 @@ public:
         }
     }
 };
+
+
+
+}
 
 
 

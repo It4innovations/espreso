@@ -7,6 +7,12 @@
 
 
 
+namespace espreso {
+namespace math {
+namespace operations {
+
+
+
 template<typename T, typename I>
 class permute_csx_csx
 {
@@ -29,5 +35,9 @@ private:
 };
 
 
+
+}
+}
+}
 
 #endif /* SRC_MATH_OPERATIONS_PERMUTE_CSX_CSX_H */

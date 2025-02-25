@@ -5,6 +5,12 @@
 
 
 
+namespace espreso {
+namespace math {
+namespace operations {
+
+
+
 template<typename T>
 void trsm_dnx_dny<T>::set_system_matrix(MatrixDenseData_new<T> * A_)
 {
@@ -43,4 +49,10 @@ void trsm_dnx_dny<T>::do_all(MatrixDenseData_new<T> * A, MatrixDenseData_new<T> 
     instance.set_system_matrix(A);
     instance.set_rhs_sol(X);
     instance.perform();
+}
+
+
+
+}
+}
 }

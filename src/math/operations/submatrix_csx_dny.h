@@ -7,6 +7,12 @@
 
 
 
+namespace espreso {
+namespace math {
+namespace operations {
+
+
+
 template<typename T, typename I>
 class submatrix_csx_dny
 {
@@ -32,5 +38,9 @@ private:
 };
 
 
+
+}
+}
+}
 
 #endif /* SRC_MATH_OPERATIONS_SUBMATRIX_CSX_DNY_H */

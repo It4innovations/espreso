@@ -3,6 +3,10 @@
 
 
 
+namespace espreso {
+namespace math {
+namespace operations {
+
 
 
 template<typename T, typename I>
@@ -248,4 +252,10 @@ void trsm_csx_dny_tri<T,I>::finalize()
         X_rowtrails.clear();
     }
     called_set_pattern = false;
+}
+
+
+
+}
+}
 }

@@ -3,6 +3,12 @@
 
 
 
+namespace espreso {
+namespace math {
+namespace operations {
+
+
+
 template<typename T, typename I>
 void convert_csx_dny<T,I>::set_matrix_src(MatrixCsxView_new<T,I> & M_src_)
 {
@@ -106,4 +112,10 @@ void convert_csx_dny<T,I>::do_all(MatrixCsxView_new<T,I> * M_src, MatrixDenseVie
     instance.set_matrix_dst(M_dst);
     instance.perform_zerofill();
     instance.perform_copyvals();
+}
+
+
+
+}
+}
 }

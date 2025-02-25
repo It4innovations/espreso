@@ -3,6 +3,12 @@
 
 
 
+namespace espreso {
+namespace math {
+namespace operations {
+
+
+
 template<typename T, typename I>
 void permute_csx_csx<T,I>::set_matrix_src(MatrixCsxView_new<T,I> * M_src_)
 {
@@ -221,4 +227,10 @@ void permute_csx_csx<T,I>::perform_both(PermutationView_new<I> & perm_primary, P
     dst_ptrs[size_primary] = i_dst;
 
     ivs.clear();
+}
+
+
+
+}
+}
 }

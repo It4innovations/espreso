@@ -6,6 +6,12 @@
 
 
 
+namespace espreso {
+namespace math {
+namespace operations {
+
+
+
 template<typename T, typename I>
 class sort_csx_csx_pivtrl
 {
@@ -25,5 +31,9 @@ private:
 };
 
 
+
+}
+}
+}
 
 #endif /* SRC_MATH_OPERATIONS_AUXILIARY_SORT_CSX_CSX_PIVTRL */

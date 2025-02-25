@@ -7,6 +7,10 @@
 
 
 
+namespace espreso {
+
+
+
 template<typename T>
 class MatrixDenseData_new : public MatrixDenseView_new<T>
 {
@@ -74,6 +78,10 @@ public:
         was_set = false;
     }
 };
+
+
+
+}
 
 
 

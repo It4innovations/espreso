@@ -5,6 +5,12 @@
 
 
 
+namespace espreso {
+namespace math {
+namespace operations {
+
+
+
 template<typename T, typename I>
 convert_csx_csy_map<T,I>::~convert_csx_csy_map()
 {
@@ -161,4 +167,10 @@ void convert_csx_csy_map<T,I>::do_all(MatrixCsxView_new<T,I> * M_src, MatrixCsxV
     instance.perform_pattern();
     instance.perform_values();
     instance.finalize();
+}
+
+
+
+}
+}
 }

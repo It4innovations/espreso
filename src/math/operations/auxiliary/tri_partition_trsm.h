@@ -4,6 +4,12 @@
 
 
 
+namespace espreso {
+namespace math {
+namespace operations {
+
+
+
 class tri_partition_trsm
 {
 public:
@@ -28,5 +34,9 @@ private:
 };
 
 
+
+}
+}
+}
 
 #endif /* SRC_MATH_OPERATIONS_AUXILIARY_TRI_PARTITION_TRSM_H */

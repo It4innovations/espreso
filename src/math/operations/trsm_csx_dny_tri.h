@@ -7,6 +7,12 @@
 
 
 
+namespace espreso {
+namespace math {
+namespace operations {
+
+
+
 template<typename T, typename I>
 class trsm_csx_dny_tri
 {
@@ -66,6 +72,12 @@ private:
     bool called_set_pattern = false;
     bool called_preprocess = false;
 };
+
+
+
+}
+}
+}
 
 
 

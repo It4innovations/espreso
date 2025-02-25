@@ -7,6 +7,10 @@
 
 
 
+namespace espreso {
+
+
+
 template<typename T>
 struct PermutationData_new : public PermutationView_new<T>
 {
@@ -69,6 +73,10 @@ public:
         was_set = false;
     }
 };
+
+
+
+}
 
 
 

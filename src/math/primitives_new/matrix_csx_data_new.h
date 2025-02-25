@@ -7,6 +7,10 @@
 
 
 
+namespace espreso {
+
+
+
 template<typename T, typename I>
 struct MatrixCsxData_new : public MatrixCsxView_new
 {
@@ -80,6 +84,10 @@ public:
         was_set = false;
     }
 };
+
+
+
+}
 
 
 

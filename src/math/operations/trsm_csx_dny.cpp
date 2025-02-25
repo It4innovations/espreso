@@ -3,6 +3,12 @@
 
 
 
+namespace espreso {
+namespace math {
+namespace operations {
+
+
+
 template<typename T, typename I>
 trsm_csx_dny<T,I>::~trsm_csx_dny()
 {
@@ -70,4 +76,10 @@ void trsm_csx_dny<T,I>::finalize()
         math::spblas::trsm(*A, *X, Y, handle, 'F');
     }
     preprocess_called = false;
+}
+
+
+
+}
+}
 }

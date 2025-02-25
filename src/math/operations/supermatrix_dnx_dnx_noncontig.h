@@ -7,6 +7,12 @@
 
 
 
+namespace espreso {
+namespace math {
+namespace operations {
+
+
+
 template<typename T>
 class supermatrix_dnx_dnx_noncontig
 {
@@ -25,5 +31,9 @@ private:
 };
 
 
+
+}
+}
+}
 
 #endif /* SRC_MATH_OPERATIONS_SUPERMATIX_DNX_DNX_NONCONTIG_H */

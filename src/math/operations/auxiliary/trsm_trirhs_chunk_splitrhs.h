@@ -8,6 +8,12 @@
 
 
 
+namespace espreso {
+namespace math {
+namespace operations {
+
+
+
 template<typename T, typename I>
 class trsm_trirhs_chunk_splitrhs
 {
@@ -57,5 +63,9 @@ private:
 };
 
 
+
+}
+}
+}
 
 #endif /* SRC_MATH_OPERATIONS_AUXILIARY_TRSM_TRIRHS_CHUNK_SPLITRHS_H */

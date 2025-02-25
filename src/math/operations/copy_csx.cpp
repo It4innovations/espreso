@@ -1,4 +1,11 @@
 
+#include "math/operations/copy_csx.h"
+
+
+
+namespace espreso {
+namespace math {
+namespace operations {
 
 
 
@@ -44,4 +51,6 @@ void copy_csx<T,I>::do_all(MatrixCsxView_new<T,I> * M_src, MatrixCsxView_new<T,I
 
 
 
-
+}
+}
+}

@@ -3,6 +3,12 @@
 
 
 
+namespace espreso {
+namespace math {
+namespace operations {
+
+
+
 template<typename T>
 void supermatrix_dnx_dnx_noncontig<T>::set_matrix_source(MatrixDenseView_new<T> * M_src_)
 {
@@ -103,3 +109,6 @@ void supermatrix_dnx_dnx_noncontig<T>::do_all(MatrixDenseView_new<T> * M_src, Ma
 
 
 
+}
+}
+}

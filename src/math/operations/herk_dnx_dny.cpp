@@ -3,6 +3,11 @@
 
 
 
+namespace espreso {
+namespace math {
+namespace operations {
+
+
 
 template<typename T>
 void herk_dnx_dny<T>::set_matrix_A(MatrixDenseView_new<T> * A_)
@@ -67,4 +72,6 @@ void herk_dnx_dny<T>::do_all(MatrixDenseView_new<T> * A, MatrixDenseView_new<T> 
 
 
 
-
+}
+}
+}

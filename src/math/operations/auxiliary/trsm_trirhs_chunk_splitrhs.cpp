@@ -3,6 +3,12 @@
 
 
 
+namespace espreso {
+namespace math {
+namespace operations {
+
+
+
 template<typename T, typename I>
 void trsm_trirhs_chunk_splitrhs<T,I>::~trsm_trirhs_chunk_splitrhs()
 {
@@ -138,4 +144,6 @@ void trsm_trirhs_chunk_splitrhs<T,I>::finalize()
 
 
 
-
+}
+}
+}

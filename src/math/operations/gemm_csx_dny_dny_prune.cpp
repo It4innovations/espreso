@@ -3,6 +3,12 @@
 
 
 
+namespace espreso {
+namespace math {
+namespace operations {
+
+
+
 template<typename T, typename I>
 gemm_csx_dny_dny_prune<T,I>::~gemm_csx_dny_dny_prune()
 {
@@ -211,4 +217,10 @@ void gemm_csx_dny_dny_prune<T,I>::do_all(MatrixCsxView_new<T,I> * A, MatrixDense
     instance.preprocess();
     instance.perform();
     instance.finalize();
+}
+
+
+
+}
+}
 }

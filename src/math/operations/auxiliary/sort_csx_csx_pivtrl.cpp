@@ -3,6 +3,12 @@
 
 
 
+namespace espreso {
+namespace math {
+namespace operations {
+
+
+
 template<typename T, typename I>
 void sort_csx_csx_pivtrl<T,I>::set_matrix_src(MatrixCsxView_new<T,I> * M_src_)
 {
@@ -87,4 +93,6 @@ void sort_csx_csx_pivtrl<T,I>::do_all(MatrixCsxView_new<T,I> * M_src, MatrixCsxV
 
 
 
-
+}
+}
+}

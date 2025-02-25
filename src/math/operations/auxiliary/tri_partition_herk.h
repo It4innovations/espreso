@@ -2,6 +2,14 @@
 #ifndef SRC_MATH_OPERATIONS_AUXILIARY_TRI_PARTITION_HERK_H
 #define SRC_MATH_OPERATIONS_AUXILIARY_TRI_PARTITION_HERK_H
 
+#include "math/primitives_new/vector_dense_view_new.h"
+
+
+
+namespace espreso {
+namespace math {
+namespace operations {
+
 
 
 class tri_partition_herk
@@ -29,5 +37,9 @@ private:
 };
 
 
+
+}
+}
+}
 
 #endif /* SRC_MATH_OPERATIONS_AUXILIARY_TRI_PARTITION_HERK_H */

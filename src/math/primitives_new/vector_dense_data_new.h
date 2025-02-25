@@ -7,6 +7,10 @@
 
 
 
+namespace espreso {
+
+
+
 template<typename T>
 struct VectorDenseData_new : public VectorDenseView_new<T>
 {
@@ -66,6 +70,10 @@ public:
         was_set = false;
     }
 };
+
+
+
+}
 
 
 

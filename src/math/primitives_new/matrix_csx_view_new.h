@@ -6,6 +6,10 @@
 
 
 
+namespace espreso {
+
+
+
 template<typename T, typename I>
 struct MatrixCsxView_new : public MatrixBase_new
 {
@@ -98,6 +102,10 @@ public:
         return M_old;
     }
 };
+
+
+
+}
 
 
 

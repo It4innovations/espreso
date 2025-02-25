@@ -2,6 +2,13 @@
 #include "math/operations/submatrix_csx_csy_map.h"
 
 
+
+namespace espreso {
+namespace math {
+namespace operations {
+
+
+
 template<typename T, typename I>
 void submatrix_csx_csy_map<T,I>::set_matrix_src(MatrixCsxView_new * M_src_)
 {
@@ -294,4 +301,10 @@ void submatrix_csx_csy_map<T,I>::perform_diff_order()
         dst_ptrs[ipd] = curr;
         curr += tmp;
     }
+}
+
+
+
+}
+}
 }

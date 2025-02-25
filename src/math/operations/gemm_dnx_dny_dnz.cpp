@@ -5,6 +5,12 @@
 
 
 
+namespace espreso {
+namespace math {
+namespace operations {
+
+
+
 template<typename T>
 void gemm_dnx_dny_dnz<T>::set_matrix_A(MatrixDenseView_new<T,I> * A_)
 {
@@ -71,4 +77,10 @@ void gemm_dnx_dny_dnz<T>::do_all(MatrixDenseView_new<T,I> * A, MatrixDenseView_n
     instance.set_coefficients(alpha, beta);
     instance.set_conj(conj_A, conj_B);
     instance.perform();
+}
+
+
+
+}
+}
 }
