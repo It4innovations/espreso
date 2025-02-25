@@ -1,7 +1,7 @@
 #include "math/wrappers/math.sc_solver.h"
 
-#ifndef ESPRESO_USE_WRAPPER_SPBLAS_MKL
-#ifndef ESPRESO_USE_WRAPPER_SPBLAS_SUITESPARSE
+#ifndef ESPRESO_USE_WRAPPER_SCSOLVER_MKL
+#ifndef ESPRESO_USE_WRAPPER_SCSOLVER_SUITESPARSE
 
 namespace espreso {
 

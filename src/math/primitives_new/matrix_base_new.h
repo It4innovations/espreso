@@ -4,7 +4,6 @@
 
 
 
-template<typename T>
 class MatrixBase_new
 {
 public: // the user promises not to modify these values (I don't want to implement getters everywhere)

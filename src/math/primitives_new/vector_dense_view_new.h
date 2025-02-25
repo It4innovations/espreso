@@ -6,9 +6,8 @@
 
 
 
-
 template<typename T>
-struct VectorDenseView_new : public VectorBase_new<T>
+struct VectorDenseView_new : public VectorBase_new
 {
 public: // the user promises not to modify these values (I don't want to implement getters everywhere)
     T * vals = nullptr;
@@ -25,7 +24,7 @@ public:
 public:
     void set_view(size_t size_, T * vals_)
     {
-        if(was_set) eslog::error("can only set yet-uninitialized matrix view\n");
+        if(was_set) eslog::error("can only set yet-uninitialized vector view\n");
         size = size_;
         vals = vals_;
         was_set = true;

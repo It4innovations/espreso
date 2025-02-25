@@ -92,13 +92,8 @@ void herk_dnx_dny_tri<T>::preprocess()
     if(!config_set) eslog::error("config is not set\n");
     if(!mode_set) eslog::error("mode is not set\n");
     if(!pattern_set) eslog::error("A pattern is not set\n");
-    if(A == nullptr) eslog::error("matrix A is not set\n");
-    if(C == nullptr) eslog::error("matrix C is not set\n");
     if(A_colpivots == nullptr) eslog::error("A colpivots are not set\n");
     if(A_rowtrails == nullptr) eslog::error("A rowtrails are not set\n");
-    if(C->nrows != C->ncols) eslog::error("C must be square\n");
-    if(C->uplo != 'U' && C->uplo != 'L') eslog::error("wrong C uplo\n");
-    if(A->ncols != C->ncols) eslog::error("incompatible matrices\n");
 
     for(size_t i = 1; i < A_pivots.size; i++) {
         if(A_pivots.vals[i-1] > A_pivots.vals[i]) {
@@ -136,6 +131,11 @@ template<typename T, typename I>
 void herk_dnx_dny_tri<T>::perform()
 {
     if(!preproces_called) eslog::error("preprocess was not called\n");
+    if(A == nullptr) eslog::error("matrix A is not set\n");
+    if(C == nullptr) eslog::error("matrix C is not set\n");
+    if(C->nrows != C->ncols) eslog::error("C must be square\n");
+    if(C->uplo != 'U' && C->uplo != 'L') eslog::error("wrong C uplo\n");
+    if(A->ncols != C->ncols) eslog::error("incompatible matrices\n");
 
     if(mode == blas::herk_mode::AAh) {
         perform_AAh();
