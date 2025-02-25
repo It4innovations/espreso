@@ -266,6 +266,22 @@ void herk_dnx_dny_tri<T>::finalize()
 
 
 
+#define INSTANTIATE_T(T) \
+template class herk_dnx_dny_tri<T>;
+
+    #define INSTANTIATE \
+    /* INSTANTIATE_T(float) */ \
+    INSTANTIATE_T(double) \
+    /* INSTANTIATE_T(std::complex<float>) */ \
+    /* INSTANTIATE_T(std::complex<double>) */
+
+        INSTANTIATE
+
+    #undef INSTANTIATE
+#undef INSTANTIATE_T
+
+
+
 }
 }
 }

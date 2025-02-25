@@ -51,6 +51,22 @@ void copy_dense<T>::do_all(MatrixDenseView_new<T> * M_src, MatrixDenseView_new<T
 
 
 
+#define INSTANTIATE_T(T) \
+template class copy_dense<T>;
+
+    #define INSTANTIATE \
+    /* INSTANTIATE_T(float) */ \
+    INSTANTIATE_T(double) \
+    /* INSTANTIATE_T(std::complex<float>) */ \
+    /* INSTANTIATE_T(std::complex<double>) */
+
+        INSTANTIATE
+
+    #undef INSTANTIATE
+#undef INSTANTIATE_T
+
+
+
 }
 }
 }

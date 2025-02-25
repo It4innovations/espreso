@@ -109,6 +109,22 @@ void submatrix_dnx_dnx_noncontig<T>::do_all(MatrixDenseView_new<T> * M_src, Matr
 
 
 
+#define INSTANTIATE_T(T) \
+template class submatrix_dnx_dnx_noncontig<T>;
+
+    #define INSTANTIATE \
+    /* INSTANTIATE_T(float) */ \
+    INSTANTIATE_T(double) \
+    /* INSTANTIATE_T(std::complex<float>) */ \
+    /* INSTANTIATE_T(std::complex<double>) */
+
+        INSTANTIATE
+
+    #undef INSTANTIATE
+#undef INSTANTIATE_T
+
+
+
 }
 }
 }

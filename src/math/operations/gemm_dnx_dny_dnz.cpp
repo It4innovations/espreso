@@ -81,6 +81,22 @@ void gemm_dnx_dny_dnz<T>::do_all(MatrixDenseView_new<T,I> * A, MatrixDenseView_n
 
 
 
+#define INSTANTIATE_T(T) \
+template class gemm_dnx_dny_dnz<T>;
+
+    #define INSTANTIATE \
+    /* INSTANTIATE_T(float) */ \
+    INSTANTIATE_T(double) \
+    /* INSTANTIATE_T(std::complex<float>) */ \
+    /* INSTANTIATE_T(std::complex<double>) */
+
+        INSTANTIATE
+
+    #undef INSTANTIATE
+#undef INSTANTIATE_T
+
+
+
 }
 }
 }

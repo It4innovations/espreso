@@ -53,6 +53,22 @@ void trsm_dnx_dny<T>::do_all(MatrixDenseData_new<T> * A, MatrixDenseData_new<T> 
 
 
 
+#define INSTANTIATE_T(T) \
+template class trsm_dnx_dny<T>;
+
+    #define INSTANTIATE \
+    /* INSTANTIATE_T(float) */ \
+    INSTANTIATE_T(double) \
+    /* INSTANTIATE_T(std::complex<float>) */ \
+    /* INSTANTIATE_T(std::complex<double>) */
+
+        INSTANTIATE
+
+    #undef INSTANTIATE
+#undef INSTANTIATE_T
+
+
+
 }
 }
 }
