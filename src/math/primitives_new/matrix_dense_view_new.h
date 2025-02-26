@@ -41,13 +41,13 @@ public:
         was_set = true;
     }
 public:
-    size_t get_num_blocks() const
+    size_t get_size_primary() const
     {
         if(order == 'R') return nrows;
         if(order == 'C') return ncols;
         return 0;
     }
-    size_t get_block_size() const
+    size_t get_size_secdary() const
     {
         if(order == 'R') return ncols;
         if(order == 'C') return nrows;

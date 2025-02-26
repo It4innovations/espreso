@@ -85,6 +85,9 @@ namespace blas {
         }
     }
 
+    template<typename T>
+    void transpose(size_t src_nrows, size_t src_ncols, const T * src, size_t src_ld, T * dst, size_t dst_ld, char order, bool conj);
+
 }
 }
 }

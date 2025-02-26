@@ -44,10 +44,12 @@ struct Schur_Complement_Solver_External_Representation
     Matrix_CSR<T,I> U11;
     Permutation<I> perm;
     PermutationView_new<I> perm_new;
+    PermutationData_new<I> perm_to_sort;
     MatrixCsxView_new<T,I> L_new;
     MatrixCsxView_new<T,I> U_new;
     MatrixCsxData_new<T,I> L_new_reordered;
     MatrixCsxView_new<T,I> * L_new_to_use;
+    MatrixCsxView_new<T,I> B_right_input;
     MatrixCsxData_new<T,I> B_right; // already permuted and sorted
     MatrixDenseData_new<T> X;
     convert_csx_csy_map<T,I> op_reorder_L;
@@ -178,24 +180,35 @@ void SchurComplementSolver<T,I>::factorizeSymbolic()
         }
 
         {
-            MatrixCsxView_new<T,I> my_A12;
             // determine which of A12 or A21 stores the B matrix based on their nnz
             if(ext->A12.nnz != 0) {
-                my_A12 = MatrixCsxView_new<T,I>::from_old(ext->A12);
+                ext->B_right_input = MatrixCsxView_new<T,I>::from_old(ext->A12);
             }
             if(ext->A21.nnz != 0) {
-                my_A12 = MatrixCsxView_new<T,I>::from_old(ext->A21).make_transposed_reordered();
+                ext->B_right_input = MatrixCsxView_new<T,I>::from_old(ext->A21).make_transposed_reordered();
             }
 
             MatrixCsxData_new<T,I> Bt_perm;
-            Bt_perm.set(my_A12.nrows, my_A12.ncols, my_A12.nnz, my_A12.order, AllocatorCPU_new::get_singleton());
+            Bt_perm.set(ext->B_right_input.nrows, ext->B_right_input.ncols, ext->B_right_input.nnz, ext->B_right_input.order, AllocatorCPU_new::get_singleton());
             Bt_perm.alloc();
-            petmute_csx_csx<T,I>::do_all(my_A12, Bt_perm, ext->perm_new, nullptr);
+            permute_csx_csx<T,I>::do_all(&ext->B_right_input, &Bt_perm, ext->perm_new, nullptr);
+
+            VectorDenseData_new<I> Bt_perm_colpivots;
+            Bt_perm_colpivots.set(Bt_perm.ncols, AllocatorCPU_new::get_singleton());
+            Bt_perm_colpivots.alloc();
+            pivots_trails_csx<T,I>::do_all(&Bt_perm, &Bt_perm_colpivots, 'C', 'P');
+
+            ext->perm_to_sort.set(Bt_perm.ncols, AllocatorCPU_new::get_singleton());
+            ext->perm_to_sort.alloc();
+
+            sorting_permutation<I,I>::do_all(Bt_perm_colpivots, ext->perm_to_sort);
 
             ext->B_right.set(Bt_perm.nrows, Bt_perm.ncols, Bt_perm.nnz, Bt_perm.order, AllocatorCPU_new::get_singleton());
             ext->B_right.alloc();
-            sort_csx_csx_pivtrl<T,I>::do_all(Bt_perm, ext->B_right, 'C', 'P', 'A');
+            
+            permute_csx_csx<T,I>::do_all(Bt_perm, ext->B_right, nullptr, ext->perm_to_sort);
 
+            Bt_perm_colpivots.clear();
             Bt_perm.clear();
         }
 
@@ -220,7 +233,7 @@ void SchurComplementSolver<T,I>::factorizeSymbolic()
         ext->op_herk_tri.set_config(ext->cfg.herk_tri_cfg);
         ext->op_herk_tri.set_matrix_A(&ext->X);
         // ext->op_herk_tri.set_matrix_C(); // do it in perform
-        // ext->op_herk_tri.set_coefficients(T{1}, T{0}); // do it in perform
+        ext->op_herk_tri.set_coefficients(T{1}, T{0});
         ext->op_herk_tri.set_mode(blas::herk_mode::AhA);
         ext->op_herk_tri.set_A_pattern(&ext->B_right);
         ext->op_herk_tri.preprocess();
@@ -244,25 +257,7 @@ void SchurComplementSolver<T,I>::updateMatrixValues()
     }
 
     if(ext->system_is_hermitian) {
-        {
-            MatrixCsxView_new<T,I> my_A12;
-            // determine which of A12 or A21 stores the B matrix based on their nnz
-            if(ext->A12.nnz != 0) {
-                my_A12 = MatrixCsxView_new<T,I>::from_old(ext->A12);
-            }
-            if(ext->A21.nnz != 0) {
-                my_A12 = MatrixCsxView_new<T,I>::from_old(ext->A21).make_transposed_reordered();
-            }
-
-            MatrixCsxData_new<T,I> Bt_perm;
-            Bt_perm.set(my_A12.nrows, my_A12.ncols, my_A12.nnz, my_A12.order, AllocatorCPU_new::get_singleton());
-            Bt_perm.alloc();
-            petmute_csx_csx<T,I>::do_all(my_A12, Bt_perm, ext->perm_new, nullptr);
-
-            sort_csx_csx_pivtrl<T,I>::do_all(Bt_perm, ext->B_right, 'C', 'P', 'A');
-
-            Bt_perm.clear();
-        }
+        permute_csx_csx<T,I>::do_all(&ext->B_right_input, &ext->B_right, ext->perm_new, ext->perm_to_sort);
     
         if(ext->L_new.order != ext->config.order_L) {
             ext->op_reorder_L.perform_values();
@@ -282,6 +277,8 @@ template<typename A>
 void SchurComplementSolver<T,I>::factorizeNumericAndGetSc(Matrix_Dense<T,I,A> & sc, char uplo, T alpha)
 {
     if(ext->stage != 3) eslog::error("SchurComplementSolver::factorizeNumericAndGetSc(): wrong stage\n");
+    if(sc.nrows != sc.ncols) eslog::error("sc matrix must be square\n");
+    if(sc.nrows != ext->sc_size) eslog::error("sc matrix does not match the previously given sc size\n");
 
     ext->A11_solver.numericalFactorization();
     if(ext->A11_solver_factors_get_L) {
@@ -297,16 +294,35 @@ void SchurComplementSolver<T,I>::factorizeNumericAndGetSc(Matrix_Dense<T,I,A> & 
 
         ext->op_trsm_tri_L.perform();
 
+        MatrixDenseData_new<T> sc_tmp1;
+        sc_tmp1.set(ext->sc_size, ext->sc_size, 'R', AllocatorCPU_new::get_singleton());
+        sc_tmp1.prop.uplo = uplo;
+        sc_tmp1.alloc();
+
+        ext->op_herk_tri.set_matrix_C(&sc_tmp1);
+        ext->op_herk_tri.perform();
+
+        ext->X.free();
+
+        complete_dnx<T>::do_all(sc_tmp1, true);
+
+        MatrixDenseData_new<T> sc_tmp2;
+        sc_tmp2.set(ext->sc_size, ext->sc_size, 'R', AllocatorCPU_new::get_singleton());
+        sc_tmp2.prop.uplo = uplo;
+        sc_tmp2.alloc();
+
+        permute_dnx_dnx<T>::do_all(sc_tmp1, sc_tmp2, ext->perm_to_sort, ext->perm_to_sort);
+
+        sc_tmp1.free();
+
         MatrixDenseView_new<T> sc_new = MatrixDenseView_new<T>::from_old(sc);
         sc_new.prop.uplo = uplo;
 
         convert_csx_dny<T,I>::do_all(ext->A22_new, sc_new);
 
-        ext->op_herk_tri.set_matrix_C(&sc_new);
-        ext->op_herk_tri.set_coefficients(alpha * T{-1}, alpha * T{1});
-        ext->op_herk_tri.perform();
+        lincomb_matrix_dnx<T>::do_all(&sc_new, alpha, &sc_new, -alpha, &sc_tmp2);
 
-        ext->X.free();
+        sc_tmp2.free();
     }
     else {
         eslog::error("not supported yet, todo\n");

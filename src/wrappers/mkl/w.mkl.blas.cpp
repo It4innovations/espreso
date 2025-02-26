@@ -259,6 +259,17 @@ void herk(MatrixDenseView_new<T> & A, MatrixDenseView_new<T> & C, herk_mode mode
     if constexpr(utils::is_complex_v<T>()) if(need_conj) matrix_conj(C.vals, C.nrows, C.ncols, C.ld, C.order, C.prop.uplo);
 }
 
+template<typename T>
+void transpose(size_t src_nrows, size_t src_ncols, const T * src, size_t src_ld, T * dst, size_t dst_ld, char order, bool conj)
+{
+    char trans = (conj ? 'C' : 'T');
+
+    if constexpr(std::is_same_v<T, float>)                mkl_somatcopy(order, trans, src_nrows, src_ncols, T{1}, src, src_ld, dst, dst_ld);
+    if constexpr(std::is_same_v<T, double>)               mkl_domatcopy(order, trans, src_nrows, src_ncols, T{1}, src, src_ld, dst, dst_ld);
+    if constexpr(std::is_same_v<T, std::complex<float>>)  mkl_comatcopy(order, trans, src_nrows, src_ncols, T{1}, src, src_ld, dst, dst_ld);
+    if constexpr(std::is_same_v<T, std::complex<double>>) mkl_zomatcopy(order, trans, src_nrows, src_ncols, T{1}, src, src_ld, dst, dst_ld);
+}
+
 }
 }
 }

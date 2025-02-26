@@ -262,6 +262,53 @@ void herk(MatrixDenseView_new<T> & A, MatrixDenseView_new<T> & C, herk_mode mode
     if constexpr(utils::is_complex_v<T>()) if(need_conj) matrix_conj(C.vals, C.nrows, C.ncols, C.ld, C.order, C.prop.uplo);
 }
 
+template<typename T, bool conj>
+static void transpose_internal(size_t src_nrows, size_t src_ncols, const T * src, size_t src_ld, T * dst, size_t dst_ld)
+{
+    // just a very basic tiled implementation. not tested.
+    constexpr size_t tile_size = 64;
+    size_t num_tiles_row = (src_nrows - 1) / tile_size + 1;
+    size_t num_tiles_col = (src_ncols - 1) / tile_size + 1;
+    for(size_t tile_row = 0; tile_row < num_tiles_row; tile_row++) {
+        size_t r_start = tile_row * tile_size;
+        size_t r_end = std::min(r_start + tile_size, src_nrows);
+        size_t curr_tile_nrows = r_end - r_start;
+        for(size_t tile_col = 0; tile_col < num_tiles_col; tile_col++) {
+            size_t c_start = tile_col * tile_size;
+            size_t c_end = std::min(c_start + tile_size, src_ncols);
+            size_t curr_tile_ncols = c_end - c_start;
+            T * sub_src = src + r_start * src_ld + c_start;
+            T * sub_dst = dst + c_start * dst_ld + r_start;
+            for(size_t r = 0; r < curr_tile_nrows; r++) {
+                for(size_t c = 0; c < curr_tile_ncols; c++) {
+                    if constexpr(conj) {
+                        sub_dst[c * dst_ld + r] = std::conj(sub_src[r * src_ld + c]);
+                    }
+                    else {
+                        sub_dst[c * dst_ld + r] = sub_src[r * src_ld + c];
+                    }
+                }
+            }
+        }
+    }
+}
+
+template<typename T>
+void transpose(size_t src_nrows, size_t src_ncols, const T * src, size_t src_ld, T * dst, size_t dst_ld, char order, bool conj)
+{
+    if(order == 'C') {
+        transpose<T>(src_ncols, src_nrows, src, src_ld, dst, dst_ld, 'R', conj);
+        return;
+    }
+
+    if(utils::is_complex<T>() && conj) {
+        transpose_internal<T,true>(src_ncols, src_nrows, src, src_ld, dst, dst_ld);
+    }
+    else {
+        transpose_internal<T,false>(src_ncols, src_nrows, src, src_ld, dst, dst_ld);
+    }
+}
+
 }
 }
 }

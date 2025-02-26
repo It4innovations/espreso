@@ -13,16 +13,18 @@ namespace operations {
 
 
 template<typename T>
-class copy_dense
+class copy_dnx
 {
 public:
     void set_matrix_src(MatrixDenseView_new<T> * M_src_);
     void set_matrix_dst(MatrixDenseView_new<T> * M_dst_);
+    void set_conj(bool do_conj_);
     void perform();
-    static void do_all(MatrixDenseView_new<T> * M_src, MatrixDenseView_new<T> * M_dst);
+    static void do_all(MatrixDenseView_new<T> * M_src, MatrixDenseView_new<T> * M_dst, bool do_conj);
 private:
     MatrixDenseView_new<T> * M_src = nullptr;
     MatrixDenseView_new<T> * M_dst = nullptr;
+    bool do_conj = false;
 };
 
 
