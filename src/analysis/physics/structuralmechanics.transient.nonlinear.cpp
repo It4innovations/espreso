@@ -296,6 +296,10 @@ bool StructuralMechanicsTransientNonLinear::run(step::Step &step, Physics *prev)
             X->set(0)->add(1 - alphaM, A)->add(alphaM, A_old); M->apply(-1., X, 1., solver->b);
             solver->b->updated = true;
 
+            solver->dirichlet->copy(dirichlet);
+            solver->dirichlet->add(-1, U);
+            solver->dirichlet->updated = true;
+
             storeSystem(step);
             solver->update(step);
             eslog::checkpointln("SIMULATION: LINEAR SYSTEM UPDATED");
