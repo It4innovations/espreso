@@ -1,6 +1,10 @@
 
 #include "math/operations/supermatrix_dnx_dnx_noncontig.h"
 
+#include <algorithm>
+
+#include "math/operations/copy_dnx.h"
+
 
 
 namespace espreso {
@@ -26,7 +30,7 @@ void supermatrix_dnx_dnx_noncontig<T>::set_matrix_destinatino(MatrixDenseView_ne
 
 
 template<typename T>
-void supermatrix_dnx_dnx_noncontig<T>::set_rows(VectorDenseView_new<size_t> * row_map_)
+void supermatrix_dnx_dnx_noncontig<T>::set_row_map(VectorDenseView_new<size_t> * row_map_)
 {
     row_map = row_map_;
 }
@@ -34,7 +38,7 @@ void supermatrix_dnx_dnx_noncontig<T>::set_rows(VectorDenseView_new<size_t> * ro
 
 
 template<typename T>
-void supermatrix_dnx_dnx_noncontig<T>::set_cols(VectorDenseView_new<size_t> * col_map_)
+void supermatrix_dnx_dnx_noncontig<T>::set_col_map(VectorDenseView_new<size_t> * col_map_)
 {
     col_map = col_map_;
 }
@@ -51,8 +55,8 @@ void supermatrix_dnx_dnx_noncontig<T>::perform()
     size_t ncols = ((col_map == nullptr) ? M_dst->ncols : col_map->size);
     if(M_src->nrows != nrows || M_src->ncols != ncols) eslog::error("wrong source matrix size\n");
 
-    size_t src_size_primary = M_src->get_num_blocks();
-    size_t src_size_secdary = M_src->get_block_size();
+    size_t src_size_primary = M_src->get_size_primary();
+    size_t src_size_secdary = M_src->get_size_secdary();
 
     T * src_vals = M_src->vals;
     T * dst_vals = M_dst->vals;
@@ -63,7 +67,7 @@ void supermatrix_dnx_dnx_noncontig<T>::perform()
     VectorDenseView_new<size_t> * secdary_map = ((M_dst->order == 'R') ? col_map : row_map);
 
     if(primary_map == nullptr && secdary_map == nullptr) {
-        copy_dense<T>::do_all(M_src, M_dst);
+        copy_dnx<T>::do_all(M_src, M_dst);
     }
     if(primary_map != nullptr && secdary_map == nullptr) {
         size_t * subset_primary = primary_map->vals;

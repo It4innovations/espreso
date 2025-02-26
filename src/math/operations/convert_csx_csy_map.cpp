@@ -2,6 +2,7 @@
 #include "math/operations/convert_csx_csy_map.h"
 
 #include "math/operations/copy_csx.h"
+#include "math/primitives_new/allocator_new.h"
 
 
 
@@ -44,17 +45,17 @@ void convert_csx_csy_map<T,I>::perform_pattern()
     if(M_dst->nrows != M_src->nrows || M_dst->ncols != M_src->ncols || M_dst->nnz != M_src->nnz) eslog::error("matrix sizes dont match\n");
 
     if(M_src->order == M_dst->order) {
-        std::copy_n(M_src->ptrs, M_src->get_primary_size() + 1, M_dst->ptrs);
+        std::copy_n(M_src->ptrs, M_src->get_size_primary() + 1, M_dst->ptrs);
         std::copy_n(M_src->idxs, M_src->nnz, M_dst->idxs);
         return;
     }
 
     // use terminology for CSR->CSC, the other way it works equally
 
-    size_t nrows_src = M_src->get_primary_size();
-    size_t ncols_src = M_src->get_secondary_size();
-    size_t nrows_dst = M_dst->get_primary_size();
-    size_t ncols_dst = M_dst->get_secondary_size();
+    size_t nrows_src = M_src->get_size_primary();
+    // size_t ncols_src = M_src->get_size_secdary();
+    // size_t nrows_dst = M_dst->get_size_primary();
+    size_t ncols_dst = M_dst->get_size_secdary();
     size_t nnz = M_src->nnz;
     I * src_ptrs = M_src->ptrs;
     I * src_idxs = M_src->idxs;
@@ -89,12 +90,12 @@ void convert_csx_csy_map<T,I>::perform_pattern()
     // fill dst idxs and map
     for(size_t r = 0; r < nrows_src; r++)
     {
-        I start = src_ptrs[r_in];
-        I end = src_ptrs[r_in+1];
+        I start = src_ptrs[r];
+        I end = src_ptrs[r+1];
         for(I i_src = start; i_src < end; i_src++)
         {
-            I c = src_idxs[i];
-            I i_dst = M_dst.ptrs[c];
+            I c = src_idxs[i_src];
+            I i_dst = dst_ptrs[c];
             dst_ptrs[c]++;
             dst_idxs[i_dst] = r;
             map_vals[i_dst] = i_src;
@@ -128,8 +129,8 @@ void convert_csx_csy_map<T,I>::perform_values()
         return;
     }
 
-    I * src_vals = M_src->vals;
-    I * dst_vals = M_dst->vals;
+    T * src_vals = M_src->vals;
+    T * dst_vals = M_dst->vals;
     I * map_vals = map.vals;
     I nnz = M_src->nnz;
 

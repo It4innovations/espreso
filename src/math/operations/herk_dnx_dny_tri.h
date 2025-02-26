@@ -3,7 +3,9 @@
 #define SRC_MATH_OPERATIONS_HERK_DNX_DNY_TRI_H
 
 #include "math/primitives_new/matrix_dense_view_new.h"
-#include "math/primitives_new/vector_dense_view_new.h"
+#include "math/primitives_new/vector_dense_data_new.h"
+#include "math/primitives_new/matrix_csx_view_new.h"
+#include "math/wrappers/math.blas.h"
 
 
 
@@ -13,7 +15,7 @@ namespace operations {
 
 
 
-template<typename T, typename I>
+template<typename T>
 class herk_dnx_dny_tri
 {
 public:
@@ -36,6 +38,7 @@ public:
     void set_matrix_C(MatrixDenseView_new<T> * C_);
     void set_coefficients(T alpha_, T beta_);
     void set_mode(blas::herk_mode mode_);
+    template<typename I>
     void set_A_pattern(MatrixCsxView_new<T,I> & A_pattern);
     void preprocess();
     void perform();
@@ -45,9 +48,9 @@ private:
     MatrixDenseView_new<T> * A = nullptr;
     MatrixDenseView_new<T> * C = nullptr;
     size_t num_chunks = 0;
-    VectorDenseView_new<size_t> partition;
-    VectorDenseData_new<I> A_pivots;
-    VectorDenseData_new<I> A_trails;
+    VectorDenseData_new<size_t> partition;
+    VectorDenseData_new<size_t> A_pivots;
+    VectorDenseData_new<size_t> A_trails;
     size_t n = 0;
     size_t k = 0;
     T alpha = T{1};

@@ -1,6 +1,9 @@
 
 #include "math/operations/auxiliary/tri_partition_trsm.h"
 
+#include <cmath>
+#include <algorithm>
+
 
 
 namespace espreso {
@@ -9,7 +12,7 @@ namespace operations {
 
 
 
-void tri_partition_trsm::init(char algorithm_, char direction_, int parameter_)
+void tri_partition_trsm::set_config(char algorithm_, char direction_, int parameter_)
 {
     algorithm = algorithm_;
     direction = direction_;
@@ -87,7 +90,7 @@ void tri_partition_trsm::perform()
     if(partition->size != num_chunks + 1) eslog::error("wrong partition size\n");
     if(sizeof(size_t) != sizeof(double)) eslog::error("incompatible types\n");
 
-    double * partition_sizet = partition->vals;
+    size_t * partition_sizet = partition->vals;
     double * partition_double = reinterpret_cast<double*>(partition->vals);
 
     switch(algorithm) {
@@ -113,11 +116,11 @@ void tri_partition_trsm::perform()
                 p[i] = std::sqrt(p[i-1] * (3 * p[i-1] - 2 * p[i-2]));
             }
             for(size_t i = 0; i <= num_chunks; i++) {
-                p[i] = p.back() - p[i];
+                p[i] = p[num_chunks] - p[i];
             }
             std::reverse(p, p + partition->size);
             for(size_t i = 0; i <= num_chunks; i++) {
-                p[i] = p.back() - p[i];
+                p[i] = p[num_chunks] - p[i];
             }
             break;
         }

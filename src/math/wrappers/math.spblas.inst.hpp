@@ -26,12 +26,14 @@ namespace espreso {
 namespace math {
 namespace spblas {
 
-#define INSTANTIATE_SUBMATRIX(T, I) \
+#define INSTANTIATE(T, I) \
 template void submatrix<T, I>(const Matrix_CSR<T, I>&, Matrix_Dense<T, I>&, I, I, I, I, bool, bool, bool); \
-template void submatrix<T, I>(const Matrix_CSR<T, I>&, Matrix_CSR<T, I>&  , I, I, I, I, bool, bool, bool);
+template void submatrix<T, I>(const Matrix_CSR<T, I>&, Matrix_CSR<T, I>&  , I, I, I, I, bool, bool, bool); \
+template void trsm(MatrixCsxView_new<T,I> & A, MatrixDenseView_new<T> & X, MatrixDenseView_new<T> & Y, handle_trsm & handle, char stage); \
+template void mm(MatrixCsxView_new<T,I> & A, MatrixDenseView_new<T> & B, MatrixDenseView_new<T> & C, T alpha, T beta, handle_mm & handle, char stage);
 
-INSTANTIATE_SUBMATRIX(double, int)
-INSTANTIATE_SUBMATRIX(std::complex<double>, int)
+INSTANTIATE(double, int)
+INSTANTIATE(std::complex<double>, int)
 
 #undef INSTANTIATE_T_I
 

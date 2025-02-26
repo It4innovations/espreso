@@ -20,7 +20,7 @@ public:
     void set_matrix_dst(MatrixDenseView_new<T> * M_dst_);
     void set_conj(bool do_conj_);
     void perform();
-    static void do_all(MatrixDenseView_new<T> * M_src, MatrixDenseView_new<T> * M_dst, bool do_conj);
+    static void do_all(MatrixDenseView_new<T> * M_src, MatrixDenseView_new<T> * M_dst, bool do_conj = false);
 private:
     MatrixDenseView_new<T> * M_src = nullptr;
     MatrixDenseView_new<T> * M_dst = nullptr;

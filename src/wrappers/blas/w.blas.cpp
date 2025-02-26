@@ -215,31 +215,31 @@ void trsm(MatrixDenseView_new<T> & A, MatrixDenseView_new<T> & X, T alpha)
     auto layout = ((X.order == 'R') ? CblasRowMajor : CblasColMajor);
     auto trans_A = ((A.order == X.order) ? CblasNoTrans : CblasTrans);
     auto uplo_A = (((A.prop.uplo == 'U') == (A.order == X.order)) ? CblasUpper : CblasLower);
-    auto diag_A = ((A.diag == 'U') ? CblasUnit : CblasNonUnit);
+    auto diag_A = ((A.prop.diag == 'U') ? CblasUnit : CblasNonUnit);
 
-    if constexpr(std::is_same_v<T, float>)                cblas_strsm(layout, CblasLeft, uplo_A, trans_A, diag_A, X.nrows, X.ncols, alpha, A.vals, A.ld, X.vals, X.ld);
-    if constexpr(std::is_same_v<T, double>)               cblas_dtrsm(layout, CblasLeft, uplo_A, trans_A, diag_A, X.nrows, X.ncols, alpha, A.vals, A.ld, X.vals, X.ld);
-    if constexpr(std::is_same_v<T, std::complex<float>>)  cblas_ctrsm(layout, CblasLeft, uplo_A, trans_A, diag_A, X.nrows, X.ncols, alpha, A.vals, A.ld, X.vals, X.ld);
-    if constexpr(std::is_same_v<T, std::complex<double>>) cblas_ztrsm(layout, CblasLeft, uplo_A, trans_A, diag_A, X.nrows, X.ncols, alpha, A.vals, A.ld, X.vals, X.ld);
+    if constexpr(std::is_same_v<T, float>)                cblas_strsm(layout, CblasLeft, uplo_A, trans_A, diag_A, X.nrows, X.ncols,  alpha, A.vals, A.ld, X.vals, X.ld);
+    if constexpr(std::is_same_v<T, double>)               cblas_dtrsm(layout, CblasLeft, uplo_A, trans_A, diag_A, X.nrows, X.ncols,  alpha, A.vals, A.ld, X.vals, X.ld);
+    if constexpr(std::is_same_v<T, std::complex<float>>)  cblas_ctrsm(layout, CblasLeft, uplo_A, trans_A, diag_A, X.nrows, X.ncols, &alpha, A.vals, A.ld, X.vals, X.ld);
+    if constexpr(std::is_same_v<T, std::complex<double>>) cblas_ztrsm(layout, CblasLeft, uplo_A, trans_A, diag_A, X.nrows, X.ncols, &alpha, A.vals, A.ld, X.vals, X.ld);
 }
 
 template<typename T>
 void gemm(MatrixDenseView_new<T> & A, MatrixDenseView_new<T> & B, MatrixDenseView_new<T> & C, T alpha, T beta)
 {
-    if(A->nrows != C->nrows || B->ncols != C.ncols || A->ncols != B.nrows) eslog::error("incompatible matrices");
+    if(A.nrows != C.nrows || B.ncols != C.ncols || A.ncols != B.nrows) eslog::error("incompatible matrices");
 
     auto layout = ((C.order == 'R') ? CblasRowMajor : CblasColMajor);
     auto trans_A = ((A.order == C.order) ? CblasNoTrans : CblasTrans);
     auto trans_B = ((B.order == C.order) ? CblasNoTrans : CblasTrans);
 
-    if constexpr(std::is_same_v<T, float>)                cblas_sgemm(layout, trans_A, trans_B, C.nrows, C.ncols, A.ncols, alpha, A.vals, A.ld, B.vals, B.ld, beta, C.vals, C.ld);
-    if constexpr(std::is_same_v<T, double>)               cblas_dgemm(layout, trans_A, trans_B, C.nrows, C.ncols, A.ncols, alpha, A.vals, A.ld, B.vals, B.ld, beta, C.vals, C.ld);
-    if constexpr(std::is_same_v<T, std::complex<float>>)  cblas_cgemm(layout, trans_A, trans_B, C.nrows, C.ncols, A.ncols, alpha, A.vals, A.ld, B.vals, B.ld, beta, C.vals, C.ld);
-    if constexpr(std::is_same_v<T, std::complex<double>>) cblas_zgemm(layout, trans_A, trans_B, C.nrows, C.ncols, A.ncols, alpha, A.vals, A.ld, B.vals, B.ld, beta, C.vals, C.ld);
+    if constexpr(std::is_same_v<T, float>)                cblas_sgemm(layout, trans_A, trans_B, C.nrows, C.ncols, A.ncols,  alpha, A.vals, A.ld, B.vals, B.ld,  beta, C.vals, C.ld);
+    if constexpr(std::is_same_v<T, double>)               cblas_dgemm(layout, trans_A, trans_B, C.nrows, C.ncols, A.ncols,  alpha, A.vals, A.ld, B.vals, B.ld,  beta, C.vals, C.ld);
+    if constexpr(std::is_same_v<T, std::complex<float>>)  cblas_cgemm(layout, trans_A, trans_B, C.nrows, C.ncols, A.ncols, &alpha, A.vals, A.ld, B.vals, B.ld, &beta, C.vals, C.ld);
+    if constexpr(std::is_same_v<T, std::complex<double>>) cblas_zgemm(layout, trans_A, trans_B, C.nrows, C.ncols, A.ncols, &alpha, A.vals, A.ld, B.vals, B.ld, &beta, C.vals, C.ld);
 }
 
 template<typename T>
-void herk(MatrixDenseView_new<T> & A, MatrixDenseView_new<T> & C, herk_mode mode, T alpha, T beta)
+void herk(MatrixDenseView_new<T> & A, MatrixDenseView_new<T> & C, herk_mode mode, utils::remove_complex_t<T> alpha, utils::remove_complex_t<T> beta)
 {
     if(C.nrows != C.ncols) eslog::error("matrix C must be square\n");
     if(C.prop.uplo != 'U' && C.prop.uplo != 'L') eslog::error("C does not have set uplo\n");
@@ -250,16 +250,16 @@ void herk(MatrixDenseView_new<T> & A, MatrixDenseView_new<T> & C, herk_mode mode
     size_t k = ((mode == herk_mode::AAh) ? A.ncols : A.nrows);
 
     auto layout = ((C.order == 'R') ? CblasRowMajor : CblasColMajor);
-    auto uplo = ((C.uplo == 'U') ? CblasUpper : CblasLower);
+    auto uplo = ((C.prop.uplo == 'U') ? CblasUpper : CblasLower);
     auto trans = (((A.order == C.order) == (mode == herk_mode::AAh)) ? CblasNoTrans : CblasConjTrans);
-    bool need_conj = (utils::is_complex_v<T>() && (A.order != C.order));
+    bool need_conj = (utils::is_complex<T>() && (A.order != C.order));
 
-    if constexpr(utils::is_complex_v<T>()) if(need_conj) matrix_conj(C.vals, C.nrows, C.ncols, C.ld, C.order, C.prop.uplo);
+    if constexpr(utils::is_complex<T>()) if(need_conj) matrix_conj(C.vals, C.nrows, C.ncols, C.ld, C.order, C.prop.uplo);
     if constexpr(std::is_same_v<T, float>)                cblas_ssyrk(layout, uplo, trans, n, k, alpha, A.vals, A.ld, beta, C.vals, C.ld);
     if constexpr(std::is_same_v<T, double>)               cblas_dsyrk(layout, uplo, trans, n, k, alpha, A.vals, A.ld, beta, C.vals, C.ld);
     if constexpr(std::is_same_v<T, std::complex<float>>)  cblas_cherk(layout, uplo, trans, n, k, alpha, A.vals, A.ld, beta, C.vals, C.ld);
     if constexpr(std::is_same_v<T, std::complex<double>>) cblas_zherk(layout, uplo, trans, n, k, alpha, A.vals, A.ld, beta, C.vals, C.ld);
-    if constexpr(utils::is_complex_v<T>()) if(need_conj) matrix_conj(C.vals, C.nrows, C.ncols, C.ld, C.order, C.prop.uplo);
+    if constexpr(utils::is_complex<T>()) if(need_conj) matrix_conj(C.vals, C.nrows, C.ncols, C.ld, C.order, C.prop.uplo);
 }
 
 template<typename T, bool conj>

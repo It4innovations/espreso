@@ -19,10 +19,10 @@ public:
     void set_matrix_src(MatrixCsxView_new<T,I> * M_src_);
     void set_bounds(size_t row_start_, size_t row_end_, size_t col_start_, size_t col_end_);
     void setup();
-    void get_output_matrix_nnz();
+    size_t get_output_matrix_nnz();
     void set_matrix_dst(MatrixCsxView_new<T,I> * M_dst_);
     void perform();
-    static void do_all(MatrixCsxView_new<T,I> * M_src, MatrixDenseView_new<T> * M_dst, size_t row_start, size_t row_end, size_t col_start, size_t col_end);
+    static void do_all(MatrixCsxView_new<T,I> * M_src, MatrixCsxView_new<T,I> * M_dst, size_t row_start, size_t row_end, size_t col_start, size_t col_end);
 private:
     MatrixCsxView_new<T,I> * M_src = nullptr;
     MatrixCsxView_new<T,I> * M_dst = nullptr;

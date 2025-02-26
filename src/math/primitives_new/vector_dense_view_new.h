@@ -3,6 +3,7 @@
 #define SRC_MATH_PRIMITIVES_NEW_VECTOR_DENSE_VIEW_NEW_H_
 
 #include "math/primitives_new/vector_base_new.h"
+#include "math/primitives/vector_dense.h"
 
 
 
@@ -40,17 +41,17 @@ public:
     }
 
     template<typename I, typename A>
-    static VectorDenseView_new<T> from_old(VectorDense<T,I,A> & V_old)
+    static VectorDenseView_new<T> from_old(Vector_Dense<T,I,A> & V_old)
     {
         VectorDenseView_new<T> V_new;
         V_new.set_view(V_old.size, V_old.vals);
         return V_new;
     }
     template<typename I, typename A>
-    static VectorDense<T,I,A> to_old(VectorDenseView_new<T> & V_new)
+    static Vector_Dense<T,I,A> to_old(VectorDenseView_new<T> & V_new)
     {
         if(V_new.ator.is_on_cpu() != A::is_data_host_accessible || V_new.ator.is_on_gpu() != A::is_data_device_accessible) eslog::error("allocators not compatible\n");
-        VectorDense<T,I,A> V_old;
+        Vector_Dense<T,I,A> V_old;
         V_old.size = V_new.size;
         V_old.vals = V_new.vals;
         return V_old;

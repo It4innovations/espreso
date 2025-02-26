@@ -1,6 +1,8 @@
 
 #include "math/operations/auxiliary/tri_partition_herk.h"
 
+#include <cmath>
+
 
 
 namespace espreso {
@@ -49,7 +51,6 @@ void tri_partition_herk::setup()
             }
             if(parameter < 0) {
                 size_t approx_chunk_size = -parameter;
-                size_t partition_range = get_partition_range();
                 num_chunks = (partition_range - 1) / approx_chunk_size + 1;
                 break;
             }
@@ -84,12 +85,12 @@ void tri_partition_herk::set_output_partition(VectorDenseView_new<size_t> * part
 
 void tri_partition_herk::perform()
 {
+    static_assert(sizeof(size_t) == sizeof(double), "incompatible types");
     if(!setup_called) eslog::error("setup was not called\n");
     if(partition == nullptr) eslog::error("partition is not set\n");
     if(partition->size != num_chunks + 1) eslog::error("wrong partition size\n");
-    if(sizeof(size_t) != sizeof(double)) eslog::error("incompatible types\n");
 
-    double * partition_sizet = partition->vals;
+    size_t * partition_sizet = partition->vals;
     double * partition_double = reinterpret_cast<double*>(partition->vals);
 
     switch(algorithm) {

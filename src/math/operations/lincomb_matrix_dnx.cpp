@@ -1,6 +1,8 @@
 
 #include "math/operations/lincomb_matrix_dnx.h"
 
+#include "math/operations/fill_dnx.h"
+
 
 
 namespace espreso {
@@ -81,7 +83,7 @@ void lincomb_matrix_dnx<T>::do_all(MatrixDenseView_new<T> * X, T alpha, MatrixDe
 template<typename T>
 void lincomb_matrix_dnx<T>::perform_zero(MatrixDenseView_new<T> & X)
 {
-    fill_dnx<T>(&X, T{0});
+    fill_dnx<T>::do_all(&X, T{0});
 }
 
 
@@ -96,14 +98,13 @@ void lincomb_matrix_dnx<T>::perform_one(MatrixDenseView_new<T> & X, T alpha, Mat
     T * vals_A = A.vals;
     size_t size_primary = X.get_size_primary();
     size_t size_secdary = X.get_size_secdary();
-    bool move_start = ((X.uplo == 'U' && X.order == 'R') || (X.uplo == 'L' && X.order == 'C'));
-    bool move_end   = ((X.uplo == 'L' && X.order == 'R') || (X.uplo == 'U' && X.order == 'C'));
+    bool move_start = ((X.prop.uplo == 'U' && X.order == 'R') || (X.prop.uplo == 'L' && X.order == 'C'));
+    bool move_end   = ((X.prop.uplo == 'L' && X.order == 'R') || (X.prop.uplo == 'U' && X.order == 'C'));
     for(size_t i = 0; i < size_primary; i++) {
         size_t start = 0;
         size_t end = size_secdary;
         if(move_start) start = i;
         if(move_end) end = i;
-        size_t size = end - start;
         T * sub_X = vals_X + i * X.ld;
         T * sub_A = vals_A + i * A.ld;
         for(size_t j = start; j < end; j++) {
@@ -127,14 +128,13 @@ void lincomb_matrix_dnx<T>::perform_two(MatrixDenseView_new<T> & X, T alpha, Mat
     T * vals_B = B.vals;
     size_t size_primary = X.get_size_primary();
     size_t size_secdary = X.get_size_secdary();
-    bool move_start = ((X.uplo == 'U' && X.order == 'R') || (X.uplo == 'L' && X.order == 'C'));
-    bool move_end   = ((X.uplo == 'L' && X.order == 'R') || (X.uplo == 'U' && X.order == 'C'));
+    bool move_start = ((X.prop.uplo == 'U' && X.order == 'R') || (X.prop.uplo == 'L' && X.order == 'C'));
+    bool move_end   = ((X.prop.uplo == 'L' && X.order == 'R') || (X.prop.uplo == 'U' && X.order == 'C'));
     for(size_t i = 0; i < size_primary; i++) {
         size_t start = 0;
         size_t end = size_secdary;
         if(move_start) start = i;
         if(move_end) end = i;
-        size_t size = end - start;
         T * sub_X = vals_X + i * X.ld;
         T * sub_A = vals_A + i * A.ld;
         T * sub_B = vals_B + i * B.ld;

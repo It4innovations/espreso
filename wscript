@@ -84,7 +84,7 @@ def configure(ctx):
     setup_wrapper("lapack",   ctx.options.wrapper_lapack,   ["mkl", "lapack"])
     setup_wrapper("spblas",   ctx.options.wrapper_spblas,   ["mkl", "suitesparse"])
     setup_wrapper("spsolver", ctx.options.wrapper_spsolver, ["mkl", "suitesparse"])
-    setup_wrapper("scsolver", ctx.options.wrapper_scsolver, ["mkl", "suitesparse"])
+    setup_wrapper("scsolver", ctx.options.wrapper_scsolver, ["mkl", "suitesparse", "scsolvertriangular"])
     setup_wrapper("gpu",      ctx.options.wrapper_gpu,      ["cuda", "rocm", "oneapi"])
 
     ctx.env.intwidth = ctx.options.intwidth
@@ -178,6 +178,7 @@ def build(ctx):
     ctx.build_espreso(ctx.path.ant_glob('src/wrappers/nvtx/**/*.cpp'), "wnvtx", [ "NVTX" ])
     ctx.build_espreso(ctx.path.ant_glob('src/wrappers/oneapi/**/*.cpp'), "woneapi", [ "WRAPPERS", "ONEAPI" ])
     ctx.build_espreso(ctx.path.ant_glob('src/wrappers/rocm/**/*.cpp'), "wrocm", [ "WRAPPERS", "ROCM" ])
+    ctx.build_espreso(ctx.path.ant_glob('src/wrappers/sc_solver_triangular/**/*.cpp'), "wscsolvertriangular", [ "WRAPPERS", "SCSOLVERTRIANGULAR" ])
 
     ctx.program(source="src/app/ecfchecker.cpp", target="ecfchecker", use=ctx.checker, stlib=ctx.options.stlibs, lib=ctx.options.libs)
     ctx.program(source="src/app/mesio.cpp", target="mesio", use=ctx.checker + ctx.mesio, stlib=ctx.options.stlibs, lib=ctx.options.libs)
@@ -389,6 +390,7 @@ def recurse(ctx):
     ctx.recurse("src/wrappers/pardiso")
     ctx.recurse("src/wrappers/mkl")
     ctx.recurse("src/wrappers/suitesparse")
+    ctx.recurse("src/wrappers/sc_solver_triangular")
 
     """ Solvers """
     ctx.recurse("src/wrappers/mklpdss")

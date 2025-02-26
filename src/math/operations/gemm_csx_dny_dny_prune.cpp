@@ -1,6 +1,10 @@
 
 #include "math/operations/gemm_csx_dny_dny_prune.h"
 
+#include "math/operations/submatrix_dnx_dnx_noncontig.h"
+#include "math/operations/supermatrix_dnx_dnx_noncontig.h"
+#include "math/operations/gemm_dnx_dny_dnz.h"
+
 
 
 namespace espreso {
@@ -18,7 +22,7 @@ gemm_csx_dny_dny_prune<T,I>::~gemm_csx_dny_dny_prune()
 
 
 template<typename T, typename I>
-gemm_csx_dny_dny_prune<T,I>::set_config(char spdn_A_)
+void gemm_csx_dny_dny_prune<T,I>::set_config(char spdn_A_)
 {
     spdn_A = spdn_A_;
 
@@ -71,7 +75,7 @@ void gemm_csx_dny_dny_prune<T,I>::preprocess()
     if(B->order != C->order) eslog::error("B and C order must match\n");
 
     size_t num_nonempty = 0;
-    size_t A_size_primary = A.get_primary_size();
+    size_t A_size_primary = A->get_size_primary();
     I * A_ptrs = A->ptrs;
     for(size_t ip = 0; ip < A_size_primary; ip++) {
         I start = A_ptrs[ip];
@@ -84,7 +88,7 @@ void gemm_csx_dny_dny_prune<T,I>::preprocess()
     nonempty.set(num_nonempty, AllocatorCPU_new::get_singleton());
 
     if(spdn_A == 'S') {
-        A_pruned_ptrs.set(num_nonempty + 1, AllocatorCPU_new::get_singleton());
+        A_pruned_sp_ptrs.set(num_nonempty + 1, AllocatorCPU_new::get_singleton());
     
         size_t idx_nonempty = 0;
         for(size_t ip = 0; ip < A_size_primary; ip++) {
@@ -92,11 +96,11 @@ void gemm_csx_dny_dny_prune<T,I>::preprocess()
             I end = A_ptrs[ip+1];
             if(start != end) {
                 nonempty.vals[idx_nonempty] = ip;
-                A_pruned_ptrs.vals[idx_nonempty] = start;
+                A_pruned_sp_ptrs.vals[idx_nonempty] = start;
                 idx_nonempty++;
             }
         }
-        A_pruned_ptrs.vals[num_nonempty] = A->nnz;
+        A_pruned_sp_ptrs.vals[num_nonempty] = A->nnz;
     }
     if(spdn_A == 'D') {
         size_t idx_nonempty = 0;
@@ -115,10 +119,10 @@ void gemm_csx_dny_dny_prune<T,I>::preprocess()
     size_t k = ((A->order == 'C') ? num_nonempty : A->ncols);
 
     if(spdn_A == 'S') {
-        A_pruned.sp.set_view(m, k, A->nnz, A->order, A_pruned_ptrs.vals, A->idxs, A->vals);
+        A_pruned_sp.set_view(m, k, A->nnz, A->order, A_pruned_sp_ptrs.vals, A->idxs, A->vals);
     }
     if(spdn_A == 'D') {
-        A_pruned.set(m, k, A->order, AllocatorCPU_new::get_singleton());
+        A_pruned_dn.set(m, k, A->order, AllocatorCPU_new::get_singleton());
     }
     B_pruned.set(k, n, B->order, AllocatorCPU_new::get_singleton());
     C_pruned.set(m, n, C->order, AllocatorCPU_new::get_singleton());
@@ -127,7 +131,7 @@ void gemm_csx_dny_dny_prune<T,I>::preprocess()
     C_to_use = ((A->order == 'R') ? C : &C_pruned);
     
     if(spdn_A == 'S') {
-        op_gemm_sp.set_matrix_A(&A_pruned);
+        op_gemm_sp.set_matrix_A(&A_pruned_sp);
         op_gemm_sp.set_matrix_B(B_to_use);
         op_gemm_sp.set_matrix_C(C_to_use);
         op_gemm_sp.set_coefficients(alpha, beta);
@@ -145,16 +149,19 @@ void gemm_csx_dny_dny_prune<T,I>::perform()
     if(!preprocess_called) eslog::error("preprocess was not called\n");
 
     if(spdn_A == 'D') {
-        A_pruned.dn.alloc();
-        std::fill_n(A_pruned.dn.vals, A_pruned.dn.get_num_blocks() * A_pruned.dn.ld, 0);
+        A_pruned_dn.alloc();
+        std::fill_n(A_pruned_dn.vals, A_pruned_dn.get_size_primary() * A_pruned_dn.ld, 0);
+        I * A_ptrs = A->ptrs;
+        I * A_idxs = A->idxs;
+        T * A_vals = A->vals;
         for(size_t idx_nonempty = 0; idx_nonempty < nonempty.size; idx_nonempty++) {
-            size_t ip = nonempty[idx_nonempty];
+            size_t ip = nonempty.vals[idx_nonempty];
             I start = A_ptrs[ip];
             I end = A_ptrs[ip+1];
             for(I i = start; i < end; i++) {
                 I is = A_idxs[i];
                 T v = A_vals[i];
-                A_pruned.dn.vals[ip * A_pruned.dn.ld + is] = v;
+                A_pruned_dn.vals[ip * A_pruned_dn.ld + is] = v;
             }
         }
     }
@@ -172,7 +179,7 @@ void gemm_csx_dny_dny_prune<T,I>::perform()
         op_gemm_sp.perform();
     }
     if(spdn_A == 'D') {
-        gemm_dnx_dny_dnz<T>::do_all(&A_pruned.dn, B_to_use, C_to_use, alpha, beta);
+        gemm_dnx_dny_dnz<T>::do_all(&A_pruned_dn, B_to_use, C_to_use, alpha, beta);
     }
 
     if(B_to_use == &B_pruned) {
@@ -184,7 +191,7 @@ void gemm_csx_dny_dny_prune<T,I>::perform()
     }
     
     if(spdn_A == 'D') {
-        A_pruned.dn.free();
+        A_pruned_dn.free();
     }
 }
 
@@ -196,27 +203,11 @@ void gemm_csx_dny_dny_prune<T,I>::finalize()
     if(preprocess_called) {
         if(spdn_A == 'S') {
             op_gemm_sp.finalize();
-            A_pruned_ptrs.clear();
+            A_pruned_sp_ptrs.clear();
         }
         nonempty.clear();
     }
     preprocess_called = false;
-}
-
-
-
-template<typename T, typename I>
-void gemm_csx_dny_dny_prune<T,I>::do_all(MatrixCsxView_new<T,I> * A, MatrixDenseView_new<T> * B, MatrixDenseView_new<T> * C, T alpha, T beta, char spdn_A)
-{
-    gemm_csx_dny_dny_prune<T,I> instance;
-    instance.set_config(spdn_A);
-    instance.set_matrix_A(A);
-    instance.set_matrix_B(B);
-    instance.set_matrix_C(C);
-    instance.set_coefficients(alpha, beta);
-    instance.preprocess();
-    instance.perform();
-    instance.finalize();
 }
 
 

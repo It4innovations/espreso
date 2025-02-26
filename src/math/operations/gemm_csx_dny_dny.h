@@ -4,6 +4,7 @@
 
 #include "math/primitives_new/matrix_csx_view_new.h"
 #include "math/primitives_new/matrix_dense_view_new.h"
+#include "math/wrappers/math.spblas.h"
 
 
 
@@ -33,7 +34,7 @@ public:
     void finalize();
     static void do_all(MatrixCsxView_new<T,I> * A, MatrixDenseView_new<T> * B, MatrixDenseView_new<T> * C, T alpha, T beta);
 private:
-    math::blas::handle_mm handle_abc;
+    spblas::handle_mm handle_abc;
     MatrixCsxView_new<T,I> * A = nullptr;
     MatrixDenseView_new<T> * B = nullptr;
     MatrixDenseView_new<T> * C = nullptr;

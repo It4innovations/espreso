@@ -1,6 +1,10 @@
 
 #include "math/operations/complete_dnx.h"
 
+#include "math/primitives_new/matrix_dense_data_new.h"
+#include "math/operations/convert_dnx_dny.h"
+#include "math/operations/copy_dnx.h"
+
 
 
 namespace espreso {
@@ -30,7 +34,7 @@ void complete_dnx<T>::perform()
 {
     if(M == nullptr) eslog::error("matrix is not set\n");
     if(M->nrows != M->ncols) eslog::error("matrix must be square\n");
-    if(M->uplo != 'L' && M->uplo != 'U') eslog::error("matrix must be upper or lower\n");
+    if(M->prop.uplo != 'L' && M->prop.uplo != 'U') eslog::error("matrix must be upper or lower\n");
 
     size_t size = M->nrows;
 
@@ -40,9 +44,9 @@ void complete_dnx<T>::perform()
 
     convert_dnx_dny<T>::do_all(M, &M2, do_conj);
 
-    M2.prop.uplo = change_uplo(M->uplo);
+    M2.prop.uplo = change_uplo(M->prop.uplo);
 
-    copy_dnx<T>::do_all(&M2, M, false);
+    copy_dnx<T>::do_all(&M2, M);
 
     M2.clear();
 }

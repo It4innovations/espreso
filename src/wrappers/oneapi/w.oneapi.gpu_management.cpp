@@ -143,6 +143,14 @@ namespace mgm {
         return ptr;
     }
 
+    void * memalloc_device_2d(size_t num_chunks, size_t bytes_per_chunk, size_t & pitch)
+    {
+        constexpr size_t align = 512;
+        size_t pitch = ((bytes_per_chunk - 1) / align + 1) * align;
+        size_t total_size = num_chunks * pitch;
+        return memalloc_device(total_size);
+    }
+
     void memfree_device(void * ptr)
     {
         if(ptr == nullptr) return;

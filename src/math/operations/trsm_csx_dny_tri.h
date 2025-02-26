@@ -4,6 +4,9 @@
 
 #include "math/primitives_new/matrix_csx_view_new.h"
 #include "math/primitives_new/matrix_dense_view_new.h"
+#include "math/primitives_new/vector_dense_data_new.h"
+#include "math/operations/auxiliary/trsm_trirhs_chunk_splitrhs.h"
+#include "math/operations/auxiliary/trsm_trirhs_chunk_splitfactor.h"
 
 
 
@@ -49,25 +52,22 @@ public:
     ~trsm_csx_dny_tri();
 public:
     void set_config(config cfg_);
-    void set_L(MatrixCsxView<T,I> * L_);
-    void set_X(MatrixDenseView<T> * X_);
+    void set_L(MatrixCsxView_new<T,I> * L_);
+    void set_X(MatrixDenseView_new<T> * X_);
     void set_X_pattern(MatrixCsxView_new<T,I> & X_pattern);
     void preprocess();
     void perform();
     void finalize();
 private:
     config cfg;
-    MatrixCsxView<T,I> * L;
-    MatrixDenseView<T> * X;
+    MatrixCsxView_new<T,I> * L;
+    MatrixDenseView_new<T> * X;
     size_t num_chunks = 0;
-    VectorDenseView_new<size_t> partition;
-    VectorDenseData_new<I> X_colpivots;
-    VectorDenseData_new<I> X_rowtrails;
-    union trsm_tri_rhs {
-        trsm_trirhs_chunk_splitrhs<T,I> splitrhs;
-        trsm_trirhs_chunk_splitfactor<T,I> splifactor;
-    };
-    VectorDenseData_new<trsm_tri_rhs> ops_chunks;
+    VectorDenseData_new<size_t> partition;
+    VectorDenseData_new<size_t> X_colpivots;
+    VectorDenseData_new<size_t> X_rowtrails;
+    VectorDenseData_new<trsm_trirhs_chunk_splitrhs<T,I>> ops_chunks_splitrhs;
+    VectorDenseData_new<trsm_trirhs_chunk_splitfactor<T,I>> ops_chunks_splifactor;
     bool called_set_config = false;
     bool called_set_pattern = false;
     bool called_preprocess = false;

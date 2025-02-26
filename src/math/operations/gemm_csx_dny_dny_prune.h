@@ -5,6 +5,7 @@
 #include "math/primitives_new/matrix_csx_view_new.h"
 #include "math/primitives_new/matrix_dense_data_new.h"
 #include "math/primitives_new/vector_dense_data_new.h"
+#include "math/operations/gemm_csx_dny_dny.h"
 
 
 
@@ -33,22 +34,19 @@ public:
     void preprocess();
     void perform();
     void finalize();
-    static void do_all(MatrixCsxView_new<T,I> * A, MatrixDenseView_new<T> * B, MatrixDenseView_new<T> * C, T alpha, T beta);
 private:
     MatrixCsxView_new<T,I> * A = nullptr;
     MatrixDenseView_new<T> * B = nullptr;
     MatrixDenseView_new<T> * C = nullptr;
     VectorDenseData_new<size_t> nonempty;
-    VectorDenseData_new<I> A_pruned_ptrs;
-    union {
-        MatrixCsxView_new<T,I> sp;
-        MatrixDenseData_new<T> dn;
-    } A_pruned;
+    VectorDenseData_new<I> A_pruned_sp_ptrs;
+    MatrixCsxView_new<T,I> A_pruned_sp;
+    MatrixDenseData_new<T> A_pruned_dn;
     MatrixDenseData_new<T> B_pruned;
     MatrixDenseData_new<T> C_pruned;
     MatrixDenseView_new<T> * B_to_use;
     MatrixDenseView_new<T> * C_to_use;
-    gemm_csx_dny_dny op_gemm_sp;
+    gemm_csx_dny_dny<T,I> op_gemm_sp;
     T alpha = T{1};
     T beta = T{0};
     char spdn_A = '_';

@@ -26,7 +26,7 @@ void herk_dnx_dny<T>::set_matrix_C(MatrixDenseView_new<T> * C_)
 
 
 template<typename T>
-void herk_dnx_dny<T>::set_mode(herk_mode mode_)
+void herk_dnx_dny<T>::set_mode(blas::herk_mode mode_)
 {
     mode = mode_;
     mode_set = true;
@@ -50,8 +50,8 @@ void herk_dnx_dny<T>::perform()
     if(C == nullptr) eslog::error("matrix C is not set\n");
     if(!mode_set) eslog::error("mode is not set");
     if(C->nrows != C->ncols) eslog::error("C must be square\n");
-    if(mode == herk_mode::AAh && A->nrows != C->nrows) eslog::error("incompatible matrix sizes\n");
-    if(mode == herk_mode::AhA && A->ncols != C->ncols) eslog::error("incompatible matrix sizes\n");
+    if(mode == blas::herk_mode::AAh && A->nrows != C->nrows) eslog::error("incompatible matrix sizes\n");
+    if(mode == blas::herk_mode::AhA && A->ncols != C->ncols) eslog::error("incompatible matrix sizes\n");
     if(C->prop.uplo != 'U' && C->prop.uplo != 'L') eslog::error("C uplo is not set\n");
 
     blas::herk(*A, *C, mode, alpha, beta);
@@ -60,13 +60,13 @@ void herk_dnx_dny<T>::perform()
 
 
 template<typename T>
-void herk_dnx_dny<T>::do_all(MatrixDenseView_new<T> * A, MatrixDenseView_new<T> * C, herk_mode mode, T alpha, T beta)
+void herk_dnx_dny<T>::do_all(MatrixDenseView_new<T> * A, MatrixDenseView_new<T> * C, blas::herk_mode mode, T alpha, T beta)
 {
     herk_dnx_dny<T> instance;
     instance.set_matrix_A(A);
     instance.set_matrix_C(C);
     instance.set_mode(mode);
-    instance.set_coefficients(alpha, beta)
+    instance.set_coefficients(alpha, beta);
     instance.perform();
 }
 

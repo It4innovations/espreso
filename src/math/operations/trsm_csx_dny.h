@@ -3,7 +3,7 @@
 #define SRC_MATH_OPERATIONS_TRSM_CSX_DNY_H
 
 #include "math/primitives_new/matrix_csx_view_new.h"
-#include "math/primitives_new/matrix_dense_view_new.h"
+#include "math/primitives_new/matrix_dense_data_new.h"
 
 
 
@@ -33,7 +33,7 @@ private:
     MatrixCsxView_new<T,I> * A = nullptr;
     MatrixDenseView_new<T> * X = nullptr;
     MatrixDenseData_new<T> Y;
-    math::spblas::trsm_handle handle;
+    spblas::handle_trsm handle;
     bool preprocess_called = false;
 };
 

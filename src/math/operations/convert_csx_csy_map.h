@@ -34,7 +34,7 @@ public:
 private:
     MatrixCsxView_new<T,I> * M_src = nullptr;
     MatrixCsxView_new<T,I> * M_dst = nullptr;
-    VectorDenseData<I> map;
+    VectorDenseData_new<I> map;
     bool perform_pattern_called = false;
 };
 

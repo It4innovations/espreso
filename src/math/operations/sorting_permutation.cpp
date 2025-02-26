@@ -1,5 +1,5 @@
 
-#include "math/operations/auxiliary/sorting_permutation.h"
+#include "math/operations/sorting_permutation.h"
 
 #include "math/primitives_new/vector_dense_data_new.h"
 

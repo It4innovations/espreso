@@ -8,6 +8,8 @@
 #include "math/primitives/matrix_csr.h"
 #include "math/primitives/matrix_csc.h"
 #include "math/primitives/matrix_ijv.h"
+#include "math/primitives_new/matrix_dense_view_new.h"
+#include "math/primitives_new/matrix_csx_view_new.h"
 
 namespace espreso {
 

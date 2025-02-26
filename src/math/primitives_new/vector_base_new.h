@@ -2,6 +2,8 @@
 #ifndef SRC_MATH_PRIMITIVES_NEW_VECTOR_BASE_NEW_H_
 #define SRC_MATH_PRIMITIVES_NEW_VECTOR_BASE_NEW_H_
 
+#include <cstddef>
+
 
 
 namespace espreso {

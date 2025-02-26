@@ -12,16 +12,17 @@ namespace espreso {
 
 
 template<typename T, typename I>
-struct MatrixCsxData_new : public MatrixCsxView_new
+struct MatrixCsxData_new : public MatrixCsxView_new<T,I>
 {
 public: // the user promises not to modify these values (I don't want to implement getters everywhere)
     Allocator_new * ator = nullptr;
 public:
-    using MatrixCsxView_new::ptrs;
-    using MatrixCsxView_new::idxs;
-    using MatrixCsxView_new::vals;
-    using MatrixCsxView_new::nnz;
-    using MatrixCsxView_new::order;
+    using MatrixCsxView_new<T,I>::ptrs;
+    using MatrixCsxView_new<T,I>::idxs;
+    using MatrixCsxView_new<T,I>::vals;
+    using MatrixCsxView_new<T,I>::nnz;
+    using MatrixCsxView_new<T,I>::order;
+    using MatrixCsxView_new<T,I>::was_set;
     using MatrixBase_new::nrows;
     using MatrixBase_new::ncols;
     using MatrixBase_new::prop;
@@ -30,14 +31,14 @@ public:
     MatrixCsxData_new(const MatrixCsxData_new &) = delete;
     MatrixCsxData_new(MatrixCsxData_new && other)
     {
-        std::swap(static_cast<MatrixCsxView_new&>(*this), static_cast<MatrixCsxView_new>(other));
+        std::swap(*static_cast<MatrixCsxView_new<T,I>*>(this), *static_cast<MatrixCsxView_new<T,I>*>(&other));
         std::swap(ator, other.ator);
     }
     MatrixCsxData_new & operator=(const MatrixCsxData_new &) = delete;
     MatrixCsxData_new & operator=(MatrixCsxData_new && other)
     {
         if(this == &other) return;
-        std::swap(static_cast<MatrixCsxView_new&>(*this), static_cast<MatrixCsxView_new>(other));
+        std::swap(*static_cast<MatrixCsxView_new<T,I>*>(this), *static_cast<MatrixCsxView_new<T,I>*>(&other));
         std::swap(ator, other.ator);
         other.free();
     }
@@ -62,7 +63,7 @@ public:
         if(ator == nullptr) eslog::error("matrix data has not been set\n");
         if(vals != nullptr) eslog::error("matrix is already allocated\n");
         if(nnz > 0) {
-            ptrs = ator->alloc<I>(get_primary_size() + 1);
+            ptrs = ator->alloc<I>(this->get_size_primary() + 1);
             idxs = ator->alloc<I>(nnz);
             vals = ator->alloc<T>(nnz);
         }

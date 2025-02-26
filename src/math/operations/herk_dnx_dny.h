@@ -3,6 +3,7 @@
 #define SRC_MATH_OPERATIONS_SYRK_DNX_DNY_H
 
 #include "math/primitives_new/matrix_dense_view_new.h"
+#include "math/wrappers/math.blas.h"
 
 
 
@@ -21,7 +22,7 @@ public:
     void set_mode(blas::herk_mode mode_);
     void set_coefficients(T alpha_, T beta_);
     void perform();
-    static void do_all(MatrixDenseView_new<T> * A, MatrixDenseView_new<T> * C, herk_mode mode, T alpha, T beta);
+    static void do_all(MatrixDenseView_new<T> * A, MatrixDenseView_new<T> * C, blas::herk_mode mode, T alpha, T beta);
 private:
     MatrixDenseView_new<T> * A = nullptr;
     MatrixDenseView_new<T> * C = nullptr;

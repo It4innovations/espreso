@@ -1,7 +1,6 @@
 
 #include "math/wrappers/math.spblas.h"
 #include "esinfo/eslog.h"
-#include "math/operations/copy_dense.h"
 
 #include <complex>
 
@@ -155,6 +154,9 @@ void SpBLAS<Matrix, T, I>::apply(Matrix_Dense<T, I> &y, const T &alpha, const T 
     eslog::error("SpBLAS wrapper is incompatible with T=%dB, I=%dB\n", sizeof(T), sizeof(I));
 }
 
+namespace math {
+namespace spblas {
+
 struct _handle_trsm
 {
     // cholmod_common cm_common;
@@ -164,7 +166,7 @@ struct _handle_trsm
 };
 
 template<typename T, typename I>
-void trsm(MatrixCsxView_new<T,I> & A, MatrixDenseView_new<T> & X, MatrixDenseView_new<T> & Y, handle_trsm & handle, char stage);
+void trsm(MatrixCsxView_new<T,I> & A, MatrixDenseView_new<T> & X, MatrixDenseView_new<T> & Y, handle_trsm & handle, char stage)
 {
     eslog::error("suitesparse spblas trsm not supported\n");
     // // WARNING: does not really make sense to use
@@ -302,6 +304,9 @@ void mm(MatrixCsxView_new<T,I> & A, MatrixDenseView_new<T> & B, MatrixDenseView_
     // if(stage == 'F') {
     //     _finish<I>(ext->cholmod.cm_common);
     // }
+}
+
+}
 }
 
 }

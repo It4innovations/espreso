@@ -1,6 +1,8 @@
 
 #include "math/operations/copy_dnx.h"
 
+#include "basis/utilities/utils.h"
+
 
 
 namespace espreso {
@@ -38,23 +40,28 @@ void copy_dnx<T>::perform()
 {
     if(M_src->nrows != M_dst->nrows || M_src->ncols != M_dst->ncols) eslog::error("matrix sizes dont match\n");
     if(M_src->order != M_dst->order) eslog::error("matrix order does not match\n");
-    if(M_src->prop.uplo != M_dst.prop.uplo) eslog::error("matrix uplo does not match\n");
+    if(M_src->prop.uplo != M_dst->prop.uplo) eslog::error("matrix uplo does not match\n");
 
-    size_t num_blocks = M_dst->get_num_blocks();
-    size_t block_size = M_dst->get_block_size();
-    bool move_start = ((M_dst->uplo == 'U' && M_dst->order == 'R') || (M_dst->uplo == 'L' && M_dst->order == 'C'));
-    bool move_end   = ((M_dst->uplo == 'L' && M_dst->order == 'R') || (M_dst->uplo == 'U' && M_dst->order == 'C'));
-    for(size_t i = 0; i < num_blocks; i++) {
+    size_t size_primary = M_dst->get_size_primary();
+    size_t size_secdary = M_dst->get_size_secdary();
+    bool move_start = ((M_dst->prop.uplo == 'U' && M_dst->order == 'R') || (M_dst->prop.uplo == 'L' && M_dst->order == 'C'));
+    bool move_end   = ((M_dst->prop.uplo == 'L' && M_dst->order == 'R') || (M_dst->prop.uplo == 'U' && M_dst->order == 'C'));
+    for(size_t i = 0; i < size_primary; i++) {
         size_t start = 0;
-        size_t end = block_size;
+        size_t end = size_secdary;
         if(move_start) start = i;
         if(move_end) end = i;
         size_t size = end - start;
-        if constexpr(utils::is_complex<T>()) if(do_conj) {
-            T * sub_src = M_src->vals + i * M_src->ld + start;
-            T * sub_dst = M_dst->vals + i * M_dst->ld + start;
-            for(size_t j = 0; j < size; j++) {
-                sub_dst[j] = std::conj(sub_src[j]);
+        if constexpr (utils::is_complex<T>()) {
+            if(do_conj) {
+                T * sub_src = M_src->vals + i * M_src->ld + start;
+                T * sub_dst = M_dst->vals + i * M_dst->ld + start;
+                for(size_t j = 0; j < size; j++) {
+                    sub_dst[j] = std::conj(sub_src[j]);
+                }
+            }
+            else {
+                std::copy_n(M_src->vals + i * M_src->ld + start, size, M_dst->vals + i * M_dst->ld + start);
             }
         }
         else {

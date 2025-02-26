@@ -1,6 +1,8 @@
 
 #include "math/operations/permute_dnx_dnx.h"
 
+#include "math/operations/copy_dnx.h"
+
 
 
 namespace espreso {
@@ -52,7 +54,7 @@ void permute_dnx_dnx<T,I>::perform()
     if(perm_cols != nullptr && perm_cols->size != M_src->ncols) eslog::error("wrong col perm size\n");
 
     if(perm_rows == nullptr && perm_cols == nullptr) {
-        copy_dense<T>::do_all(M_src, M_dst);
+        copy_dnx<T>::do_all(M_src, M_dst);
     }
     if(perm_rows != nullptr && perm_cols == nullptr) {
         if(M_src->order == 'R') {
@@ -146,11 +148,11 @@ void permute_dnx_dnx<T,I>::perform_both(PermutationView_new<I> & perm_primary, P
     size_t ld_dst = M_dst->ld;
 
     for(size_t ipd = 0; ipd < size_primary; ipd++) {
-        I ips = perm.dst_to_src[ipd];
+        I ips = perm_primary.dst_to_src[ipd];
         T * src_sub = src_vals + ips * ld_src;
         T * dst_sub = dst_vals + ipd * ld_dst;
         for(size_t isd = 0; isd < size_secdary; isd++) {
-            I iss = perm.dst_to_src[isd];
+            I iss = perm_secdary.dst_to_src[isd];
             dst_sub[isd] = src_sub[iss];
         }        
     }

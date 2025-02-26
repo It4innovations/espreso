@@ -132,7 +132,7 @@ void gemm(MatrixDenseView_new<T> & A, MatrixDenseView_new<T> & B, MatrixDenseVie
 }
 
 template<typename T>
-void herk(MatrixDenseView_new<T> & A, MatrixDenseView_new<T> & C, herk_mode mode, T alpha, T beta)
+void herk(MatrixDenseView_new<T> & A, MatrixDenseView_new<T> & C, herk_mode mode, utils::remove_complex_t<T> alpha, utils::remove_complex_t<T> beta)
 {
     eslog::error("calling of empty BLAS wrapper.\n");
 }

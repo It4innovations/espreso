@@ -49,6 +49,23 @@ void SpBLAS<Matrix, T, I>::apply(Matrix_Dense<T, I> &y, const T &alpha, const T 
     eslog::error("call empty SpBLAS wrapper\n");
 }
 
+struct _handle_trsm {};
+
+template<typename T, typename I>
+void trsm(MatrixCsxView_new<T,I> & /*A*/, MatrixDenseView_new<T> & /*X*/, MatrixDenseView_new<T> & /*Y*/, handle_trsm & /*handle*/, char /*stage*/)
+{
+    eslog::error("call empty SpBLAS wrapper\n");
+}
+
+struct _handle_mm {};
+
+template<typename T, typename I>
+void mm(MatrixCsxView_new<T,I> & /*A*/, MatrixDenseView_new<T> & /*B*/, MatrixDenseView_new<T> & /*C*/, T /*alpha*/, T /*beta*/, handle_mm & /*handle*/, char /*stage*/)
+{
+    eslog::error("call empty SpBLAS wrapper\n");
+}
+
+
 }
 
 #include "math/wrappers/math.spblas.inst.hpp"

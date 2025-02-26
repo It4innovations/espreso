@@ -1,6 +1,9 @@
 
 #include "math/operations/permute_csx_csx.h"
 
+#include "math/operations/copy_csx.h"
+#include "math/primitives_new/vector_dense_data_new.h"
+
 
 
 namespace espreso {
@@ -26,7 +29,7 @@ void permute_csx_csx<T,I>::set_matrix_dst(MatrixCsxView_new<T,I> * M_dst_)
 
 
 template<typename T, typename I>
-void permute_csx_csx<T,I>::set_perm_vector_rows(VectorDenseView_new<I> * perm_rows_)
+void permute_csx_csx<T,I>::set_perm_rows(PermutationView_new<I> * perm_rows_)
 {
     perm_rows = perm_rows_;
 }
@@ -34,7 +37,7 @@ void permute_csx_csx<T,I>::set_perm_vector_rows(VectorDenseView_new<I> * perm_ro
 
 
 template<typename T, typename I>
-void permute_csx_csx<T,I>::set_perm_vector_rows(VectorDenseView_new<I> * perm_cols_)
+void permute_csx_csx<T,I>::set_perm_cols(PermutationView_new<I> * perm_cols_)
 {
     perm_cols = perm_cols_;
 }
@@ -83,13 +86,13 @@ void permute_csx_csx<T,I>::perform()
 
 
 template<typename T, typename I>
-void permute_csx_csx<T,I>::do_all(MatrixCsxView_new<T,I> * M_src, MatrixCsxView_new<T,I> * M_dst, VectorDenseView_new<I> * perm_rows, VectorDenseView_new<I> * perm_cols)
+void permute_csx_csx<T,I>::do_all(MatrixCsxView_new<T,I> * M_src, MatrixCsxView_new<T,I> * M_dst, PermutationView_new<I> * perm_rows, PermutationView_new<I> * perm_cols)
 {
     permute_csx_csx<T,I> instance;
     instance.set_matrix_src(M_src);
     instance.set_matrix_dst(M_dst);
-    instance.set_perm_vector_rows(perm_rows);
-    instance.set_perm_vector_cols(perm_cols);
+    instance.set_perm_rows(perm_rows);
+    instance.set_perm_cols(perm_cols);
     instance.perform();
 }
 
@@ -104,8 +107,8 @@ void permute_csx_csx<T,I>::perform_primary(PermutationView_new<I> & perm)
     I * dst_ptrs = M_dst->ptrs;
     I * dst_idxs = M_dst->idxs;
     T * dst_vals = M_dst->vals;
-    size_t size_primary = M_src->get_primary_size();
-    size_t size_secdary = M_src->get_secondary_size();
+    size_t size_primary = M_src->get_size_primary();
+    // size_t size_secdary = M_src->get_size_secdary();
 
     I i_dst = 0;
     for(size_t ipd = 0; ipd < size_primary; ipd++) {
@@ -135,8 +138,8 @@ void permute_csx_csx<T,I>::perform_secdary(PermutationView_new<I> & perm)
     I * dst_ptrs = M_dst->ptrs;
     I * dst_idxs = M_dst->idxs;
     T * dst_vals = M_dst->vals;
-    size_t size_primary = M_src->get_primary_size();
-    size_t size_secdary = M_src->get_secondary_size();
+    size_t size_primary = M_src->get_size_primary();
+    // size_t size_secdary = M_src->get_size_secdary();
 
     std::copy_n(src_ptrs, size_primary + 1, dst_ptrs);
 
@@ -161,7 +164,7 @@ void permute_csx_csx<T,I>::perform_secdary(PermutationView_new<I> & perm)
             I iss = src_idxs[i];
             I isd = perm.src_to_dst[iss];
             T val = src_vals[i];
-            ivs[i - start] = isd_val{isd, val};
+            ivs.vals[i - start] = isd_val{isd, val};
         }
         std::sort(ivs.vals, ivs.vals + end - start, [](const isd_val & l, const isd_val & r){return l.isd < r.isd;});
         for(I i = start; i < end; i++) {
@@ -186,8 +189,8 @@ void permute_csx_csx<T,I>::perform_both(PermutationView_new<I> & perm_primary, P
     I * dst_ptrs = M_dst->ptrs;
     I * dst_idxs = M_dst->idxs;
     T * dst_vals = M_dst->vals;
-    size_t size_primary = M_src->get_primary_size();
-    size_t size_secdary = M_src->get_secondary_size();
+    size_t size_primary = M_src->get_size_primary();
+    // size_t size_secdary = M_src->get_size_secdary();
 
     I longest_secdary = 0;
     for(size_t ip = 0; ip < size_primary; ip++) {
@@ -213,14 +216,14 @@ void permute_csx_csx<T,I>::perform_both(PermutationView_new<I> & perm_primary, P
             I iss = src_idxs[i_src];
             I isd = perm_secdary.src_to_dst[iss];
             T val = src_vals[i_src];
-            ivs[i_src - start] = isd_val{isd, val};
+            ivs.vals[i_src - start] = isd_val{isd, val};
         }
         std::sort(ivs.vals, ivs.vals + end - start, [](const isd_val & l, const isd_val & r){return l.isd < r.isd;});
         for(I i_src = start; i_src < end; i_src++) {
             I isd = ivs.vals[i_src - start].isd;
             T val = ivs.vals[i_src - start].val;
             dst_idxs[i_dst] = isd;
-            dst_vals[i_dst] = vals;
+            dst_vals[i_dst] = val;
             i_dst++;
         }
     }

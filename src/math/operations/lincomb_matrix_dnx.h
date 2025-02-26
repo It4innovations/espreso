@@ -2,7 +2,7 @@
 #ifndef SRC_MATH_OPERATIONS_LINCOMB_MATRIX_DNX_H
 #define SRC_MATH_OPERATIONS_LINCOMB_MATRIX_DNX_H
 
-#include "math/primitivew_new/matrix_dense_view_new.h"
+#include "math/primitives_new/matrix_dense_view_new.h"
 
 
 

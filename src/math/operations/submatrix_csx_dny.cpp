@@ -10,7 +10,7 @@ namespace operations {
 
 
 template<typename T, typename I>
-void submatrix_csx_dny<T,I>::set_matrix_src(const MatrixCsxView_new<T,I> & M_src_)
+void submatrix_csx_dny<T,I>::set_matrix_src(MatrixCsxView_new<T,I> * M_src_)
 {
     M_src = M_src_;
 }
@@ -18,7 +18,7 @@ void submatrix_csx_dny<T,I>::set_matrix_src(const MatrixCsxView_new<T,I> & M_src
 
 
 template<typename T, typename I>
-void submatrix_csx_dny<T,I>::set_matrix_dst(const MatrixDenseView_new<T> & M_dst_)
+void submatrix_csx_dny<T,I>::set_matrix_dst(MatrixDenseView_new<T> * M_dst_)
 {
     M_dst = M_dst_;
 }
@@ -34,10 +34,10 @@ void submatrix_csx_dny<T,I>::set_bounds(size_t row_start_, size_t row_end_, size
     row_end = row_end_;
     col_start = col_start_;
     col_end = col_end_;
-    num_rows = end_row - start_row;
-    num_cols = end_col - start_col;
+    num_rows = row_end - row_start;
+    num_cols = col_end - col_start;
 
-    if(row_start > row_end || row_end > M_src->nrows || col_start > col_end || col_end > M_src.ncols) eslog::error("wrong bounds\n");
+    if(row_start > row_end || row_end > M_src->nrows || col_start > col_end || col_end > M_src->ncols) eslog::error("wrong bounds\n");
 
     bound_set = true;
 }
@@ -52,10 +52,10 @@ void submatrix_csx_dny<T,I>::perform_zerofill()
     if(!bound_set) eslog::error("bounds are not set\n");
     if(M_dst->nrows != num_rows || M_dst->ncols != num_cols) eslog::error("wrong output matrix size\n");
     
-    size_t num_blocks = M_dst->get_num_blocks();
-    size_t block_size = M_dst->get_block_size();
-    for(size_t i = 0; i < num_blocks; i++) {
-        std::fill_n(M_dst->vals + i * M_dst->ld, block_size, T{0});
+    size_t size_primary = M_dst->get_size_primary();
+    size_t size_secdary = M_dst->get_size_secdary();
+    for(size_t i = 0; i < size_primary; i++) {
+        std::fill_n(M_dst->vals + i * M_dst->ld, size_secdary, T{0});
     }
 
     zerofill_called = true;
@@ -77,16 +77,16 @@ void submatrix_csx_dny<T,I>::perform_copyvals()
     size_t start_sec = 0;
     size_t end_sec = 0;
     if(M_src->order == 'R') {
-        start_prim = start_row;
-        end_prim = end_row;
-        start_sec = start_col;
-        end_sec = end_col;
+        start_prim = row_start;
+        end_prim = row_end;
+        start_sec = col_start;
+        end_sec = col_end;
     }
     if(M_src->order == 'C') {
-        start_prim = start_col;
-        end_prim = end_col;
-        start_sec = start_row;
-        end_sec = end_row;
+        start_prim = col_start;
+        end_prim = col_end;
+        start_sec = row_start;
+        end_sec = row_end;
     }
 
     size_t stride_prim = ((M_src->order == M_dst->order) ? M_dst->ld : 1);

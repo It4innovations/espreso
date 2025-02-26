@@ -24,9 +24,9 @@ public:
     void perform();
     static void do_all(MatrixDenseView_new<T> * A, MatrixDenseView_new<T> * B, MatrixDenseView_new<T> * C, T alpha, T beta, bool conj_A = false, bool conj_B = false);
 private:
-    MatrixDenseView_new<T,I> * A = nullptr;
-    MatrixDenseView_new<T,I> * B = nullptr;
-    MatrixDenseView_new<T,I> * C = nullptr;
+    MatrixDenseView_new<T> * A = nullptr;
+    MatrixDenseView_new<T> * B = nullptr;
+    MatrixDenseView_new<T> * C = nullptr;
     T alpha = T{1};
     T beta = T{0};
     bool conj_A = false;

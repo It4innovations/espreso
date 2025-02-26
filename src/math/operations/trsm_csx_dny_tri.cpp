@@ -1,6 +1,9 @@
 
 #include "math/operations/trsm_csx_dny_tri.h"
 
+#include "math/operations/auxiliary/pivots_trails_csx.h"
+#include "math/operations/auxiliary/tri_partition_trsm.h"
+
 
 
 namespace espreso {
@@ -28,7 +31,7 @@ void trsm_csx_dny_tri<T,I>::set_config(config cfg_)
 
 
 template<typename T, typename I>
-void trsm_csx_dny_tri<T,I>::set_L(MatrixCsxView<T,I> * L_)
+void trsm_csx_dny_tri<T,I>::set_L(MatrixCsxView_new<T,I> * L_)
 {
     L = L_;
 }
@@ -36,7 +39,7 @@ void trsm_csx_dny_tri<T,I>::set_L(MatrixCsxView<T,I> * L_)
 
 
 template<typename T, typename I>
-void trsm_csx_dny_tri<T,I>::set_X(MatrixDenseView<T> * X_)
+void trsm_csx_dny_tri<T,I>::set_X(MatrixDenseView_new<T> * X_)
 {
     X = X_;
 }
@@ -70,12 +73,10 @@ void trsm_csx_dny_tri<T,I>::preprocess()
     if(L == nullptr) eslog::error("matrix L is not set\n");
     if(X == nullptr) eslog::error("matrix X is not set\n");
     if(L->nrows != L->ncols) eslog::error("L has to be square\n");
-    if(L->uplo != 'L') eslog::error("matrix L has to have uplo=L\n");
+    if(L->prop.uplo != 'L') eslog::error("matrix L has to have uplo=L\n");
     if(X->nrows != L->nrows) eslog::error("incompatible matrices\n");
-    if(X_colpivots == nullptr) eslog::error("X colpivots are not set\n");
-    if(X_row)
-    if(X_colpivots.size != X.ncols) eslog::error("wrong colpivots size\n");
-    if(X_rowtrails.size != X.nrows) eslog::error("wrong rowtrails size\n");
+    if(X_colpivots.size != X->ncols) eslog::error("wrong colpivots size\n");
+    if(X_rowtrails.size != X->nrows) eslog::error("wrong rowtrails size\n");
 
     for(size_t i = 1; i < X_colpivots.size; i++) {
         if(X_colpivots.vals[i-1] > X_colpivots.vals[i]) {
@@ -90,25 +91,32 @@ void trsm_csx_dny_tri<T,I>::preprocess()
 
     tri_partition_trsm partitioner;
     char partition_direction = '_';
-    if(strategy == 'F') partition_direction = 'V';
-    if(strategy == 'R') partition_direction = 'H';
+    if(cfg.strategy == 'F') partition_direction = 'V';
+    if(cfg.strategy == 'R') partition_direction = 'H';
     partitioner.set_config(cfg.partition.algorithm, partition_direction, cfg.partition.parameter);
     partitioner.set_system(X->nrows, X->ncols);
-    partitioner.set_output_partition(partition);
+    partitioner.set_output_partition(&partition);
     partitioner.setup();
     num_chunks = partitioner.get_num_chunks();
     partition.set(num_chunks + 1, AllocatorCPU_new::get_singleton());
     partition.alloc();
     partitioner.perform();
 
-    ops_chunks.set(num_chunks, AllocatorCPU_new::get_singleton());
-    ops_chunks.alloc();
+    if(cfg.strategy == 'R') {
+        ops_chunks_splitrhs.set(num_chunks, AllocatorCPU_new::get_singleton());
+        ops_chunks_splitrhs.alloc();
+    }
+    if(cfg.strategy == 'F') {
+        ops_chunks_splifactor.set(num_chunks, AllocatorCPU_new::get_singleton());
+        ops_chunks_splifactor.alloc();
+    }
+
     for(size_t ch = 0; ch < num_chunks; ch++) {
-        if(strategy == 'R') {
+        if(cfg.strategy == 'R') {
             size_t rhs_start = partition.vals[ch];
             size_t rhs_end = partition.vals[ch+1];
 
-            trsm_trirhs_chunk_splitrhs<T,I>::config op_config;
+            typename trsm_trirhs_chunk_splitrhs<T,I>::config op_config;
             if(cfg.splitrhs.spdn_criteria == 'S') {
                 op_config.factor_spdn = 'S';
             }
@@ -132,7 +140,7 @@ void trsm_csx_dny_tri<T,I>::preprocess()
                 op_sub_L.set_matrix_src(L);
                 op_sub_L.set_bounds(k_start, L->nrows, k_start, L->ncols);
                 op_sub_L.setup();
-                size_t nnz = op_sub_L.get_output_matrix_nnz() + (L->diag == 'U') * k_size;
+                size_t nnz = op_sub_L.get_output_matrix_nnz() + (L->prop.diag == 'U') * k_size;
                 size_t nvals = k_size * (k_size + 1) / 2;
                 double fraction_treshold = cfg.splitrhs.spdn_param;
                 double curr_fraction = (double)nnz / nvals;
@@ -146,19 +154,19 @@ void trsm_csx_dny_tri<T,I>::preprocess()
                 op_config.factor_order = cfg.splitrhs.factor_order_dn;
             }
 
-            trsm_trirhs_chunk_splitrhs<T,I> & op_chunk = ops_chunks[ch].splitrhs;
+            trsm_trirhs_chunk_splitrhs<T,I> & op_chunk = ops_chunks_splitrhs.vals[ch];
             op_chunk.set_config(op_config);
             op_chunk.set_range(rhs_start, rhs_end);
             op_chunk.set_L(L);
             op_chunk.set_X(X);
             op_chunk.set_X_colpivots(&X_colpivots);
-            op_chunk.preproces();
+            op_chunk.preprocess();
         }
-        if(strategy == 'F') {
+        if(cfg.strategy == 'F') {
             size_t k_start = partition.vals[ch];
             size_t k_end = partition.vals[ch+1];
 
-            trsm_trirhs_chunk_splitfactor<T,I>::config op_config;
+            typename trsm_trirhs_chunk_splitfactor<T,I>::config op_config;
             op_config.trsm_factor_spdn = cfg.splitfactor.trsm_factor_spdn;
             op_config.trsm_factor_order = cfg.splitfactor.trsm_factor_order;
             op_config.gemm_factor_prune = cfg.splitfactor.gemm_factor_prune;
@@ -176,7 +184,7 @@ void trsm_csx_dny_tri<T,I>::preprocess()
             }
             if(cfg.splitfactor.gemm_spdn_criteria == 'Z') {
                 double fraction_treshold = cfg.splitfactor.gemm_spdn_param;
-                double curr_fraction = (double)(rhs_start + rhs_end) / 2.0 / X->ncols;
+                double curr_fraction = (double)(k_start + k_end) / 2.0 / X->nrows;
                 op_config.gemm_factor_spdn = ((curr_fraction < fraction_treshold) ? 'S' : 'D');
             }
             if(cfg.splitfactor.gemm_spdn_criteria == 'T') {
@@ -198,13 +206,13 @@ void trsm_csx_dny_tri<T,I>::preprocess()
                 op_config.gemm_factor_order = cfg.splitfactor.gemm_factor_order_dn;
             }
 
-            trsm_trirhs_chunk_splitfactor<T,I> & op_chunk = ops_chunks[ch].splifactor;
+            trsm_trirhs_chunk_splitfactor<T,I> & op_chunk = ops_chunks_splifactor.vals[ch];
             op_chunk.set_config(op_config);
             op_chunk.set_range(k_start, k_end);
             op_chunk.set_L(L);
             op_chunk.set_X(X);
             op_chunk.set_X_rowtrails(&X_rowtrails);
-            op_chunk.preproces();
+            op_chunk.preprocess();
         }
     }
 
@@ -219,11 +227,11 @@ void trsm_csx_dny_tri<T,I>::perform()
     if(!called_preprocess) eslog::error("preprocess was not called\n");
 
     for(size_t ch = 0; ch < num_chunks; ch++) {
-        if(strategy == 'R') {
-            ops_chunks[ch].splitrhs.perform();
+        if(cfg.strategy == 'R') {
+            ops_chunks_splitrhs.vals[ch].perform();
         }
-        if(strategy == 'F') {
-            ops_chunks[ch].splitfactor.perform();
+        if(cfg.strategy == 'F') {
+            ops_chunks_splifactor.vals[ch].perform();
         }
     }
 }
@@ -234,15 +242,18 @@ template<typename T, typename I>
 void trsm_csx_dny_tri<T,I>::finalize()
 {
     if(called_preprocess) {
-        for(size_t ch = 0; ch < num_chunks; ch++) {
-            if(strategy == 'R') {
-                ops_chunks[ch].splitrhs.finalize();
+        if(cfg.strategy == 'R') {
+            for(size_t ch = 0; ch < num_chunks; ch++) {
+                ops_chunks_splitrhs.vals[ch].finalize();
             }
-            if(strategy == 'F') {
-                ops_chunks[ch].splitfactor.finalize();
-            }
+            ops_chunks_splitrhs.clear();
         }
-        ops_chunks.clear();
+        if(cfg.strategy == 'F') {
+            for(size_t ch = 0; ch < num_chunks; ch++) {
+                ops_chunks_splifactor.vals[ch].finalize();
+            }
+            ops_chunks_splifactor.clear();
+        }
         partition.clear();
     }
     called_preprocess = false;

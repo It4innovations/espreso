@@ -1,6 +1,8 @@
 
 #include "math/operations/convert_csx_dny.h"
 
+#include "math/operations/fill_dnx.h"
+
 
 
 namespace espreso {
@@ -10,7 +12,7 @@ namespace operations {
 
 
 template<typename T, typename I>
-void convert_csx_dny<T,I>::set_matrix_src(MatrixCsxView_new<T,I> & M_src_)
+void convert_csx_dny<T,I>::set_matrix_src(MatrixCsxView_new<T,I> * M_src_)
 {
     M_src = M_src_;
 }
@@ -18,7 +20,7 @@ void convert_csx_dny<T,I>::set_matrix_src(MatrixCsxView_new<T,I> & M_src_)
 
 
 template<typename T, typename I>
-void convert_csx_dny<T,I>::set_matrix_dst(const MatrixDenseView_new<T> * M_dst_)
+void convert_csx_dny<T,I>::set_matrix_dst(MatrixDenseView_new<T> * M_dst_)
 {
     M_dst = M_dst_;
 }
@@ -30,7 +32,7 @@ void convert_csx_dny<T,I>::perform_zerofill()
 {
     if(M_src->nrows != M_dst->nrows || M_src->ncols != M_dst->ncols) eslog::error("matrix dimensions don't match\n");
     if(M_src->prop.uplo != M_dst->prop.uplo) eslog::error("uplo of matrices does not match\n");
-    if((M_dst->uplo == 'L' || M_dst->uplo == 'U') && M_dst->nrows != M_dst->ncols) eslog::error("upper of lower matrix must be square\n");
+    if((M_dst->prop.uplo == 'L' || M_dst->prop.uplo == 'U') && M_dst->nrows != M_dst->ncols) eslog::error("upper of lower matrix must be square\n");
 
     fill_dnx<T>::do_all(M_dst, T{0});
 }
@@ -42,9 +44,9 @@ void convert_csx_dny<T,I>::perform_copyvals()
 {
     if(M_src->nrows != M_dst->nrows || M_src->ncols != M_dst->ncols) eslog::error("matrix dimensions don't match\n");
     if(M_src->prop.uplo != M_dst->prop.uplo) eslog::error("uplo of matrices does not match\n");
-    if((M_dst->uplo == 'L' || M_dst->uplo == 'U') && M_dst->nrows != M_dst->ncols) eslog::error("upper of lower matrix must be square\n");
+    if((M_dst->prop.uplo == 'L' || M_dst->prop.uplo == 'U') && M_dst->nrows != M_dst->ncols) eslog::error("upper of lower matrix must be square\n");
 
-    size_t primary_size = M_src->get_primary_size();
+    size_t primary_size = M_src->get_size_primary();
     size_t dstld = M_dst->ld;
     I * srcptrs = M_src->ptrs;
     I * srcidxs = M_src->idxs;

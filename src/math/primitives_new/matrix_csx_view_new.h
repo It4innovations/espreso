@@ -3,6 +3,7 @@
 #define SRC_MATH_PRIMITIVES_NEW_MATRIX_CSX_VIEW_NEW_H_
 
 #include "math/primitives_new/matrix_base_new.h"
+#include "math/primitives/matrix_csr.h"
 
 
 
@@ -58,7 +59,7 @@ public:
         return 0;
     }
 
-    MatrixCsxView_new<T,I> make_transposed_reordered() const
+    MatrixCsxView_new<T,I> get_transposed_reordered_view() const
     {
         MatrixCsxView_new M = *this;
         M.transpose_reorder_inplace();
@@ -76,7 +77,7 @@ public:
         return (A.nrows == B.nrows) && (A.ncols == B.ncols) && (A.nnz == B.nnz) && (A.order == B.order) && (A.prop.uplo == B.prop.uplo) && (A.prop.diag == B.prop.diag);
     }
 
-    template<typename I, typename A>
+    template<typename A>
     static MatrixCsxView_new<T,I> from_old(Matrix_CSR<T,I,A> & M_old)
     {
         MatrixCsxView_new<T,I> M_new;
@@ -86,7 +87,7 @@ public:
         if(M_old.shape == Matrix_Shape::FULL) M_new.prop.uplo = 'F';
         return M_new;
     }
-    template<typename I, typename A>
+    template<typename A>
     static Matrix_CSR<T,I,A> to_old(MatrixCsxView_new<T,I> & M_new)
     {
         Matrix_CSR<T,I,A> M_old;
@@ -97,8 +98,8 @@ public:
         M_old.cols = M_new.idxs;
         M_old.vals = M_new.vals;
         if(M_new.prop.uplo == 'U') M_old.shape == Matrix_Shape::UPPER;
-        if(M_new.prop.uplo == 'L') M_old.shape == Matrix_Shape::LOWER;
-        if(M_new.prop.uplo == 'F') M_old.shape == Matrix_Shape::FULL;
+        else if(M_new.prop.uplo == 'L') M_old.shape == Matrix_Shape::LOWER;
+        else M_old.shape == Matrix_Shape::FULL;
         return M_old;
     }
 };

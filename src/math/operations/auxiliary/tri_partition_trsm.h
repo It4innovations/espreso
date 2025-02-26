@@ -2,6 +2,8 @@
 #ifndef SRC_MATH_OPERATIONS_AUXILIARY_TRI_PARTITION_TRSM_H
 #define SRC_MATH_OPERATIONS_AUXILIARY_TRI_PARTITION_TRSM_H
 
+#include "math/primitives_new/vector_dense_view_new.h"
+
 
 
 namespace espreso {

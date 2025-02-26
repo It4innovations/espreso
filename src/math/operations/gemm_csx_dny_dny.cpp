@@ -57,10 +57,10 @@ void gemm_csx_dny_dny<T,I>::preprocess()
     if(A == nullptr) eslog::error("matrix A is not set\n");
     if(B == nullptr) eslog::error("matrix B is not set\n");
     if(C == nullptr) eslog::error("matrix C is not set\n");
-    if(A->nrows != C.nrows || B.ncols != C.ncols || A.ncols != B.nrows) eslog::error("incompatible matrix sizes\n");
-    if(B.order != C.order) eslog::error("order of B and C must match\n");
+    if(A->nrows != C->nrows || B->ncols != C->ncols || A->ncols != B->nrows) eslog::error("incompatible matrix sizes\n");
+    if(B->order != C->order) eslog::error("order of B and C must match\n");
 
-    math::blas::mm(*A, *B, *C, alpha, beta, handle_abc, 'P');
+    spblas::mm(*A, *B, *C, alpha, beta, handle_abc, 'P');
 
     preprocess_called = true;
 }
@@ -74,10 +74,10 @@ void gemm_csx_dny_dny<T,I>::perform()
     if(A == nullptr) eslog::error("matrix A is not set\n");
     if(B == nullptr) eslog::error("matrix B is not set\n");
     if(C == nullptr) eslog::error("matrix C is not set\n");
-    if(A->nrows != C.nrows || B.ncols != C.ncols || A.ncols != B.nrows) eslog::error("incompatible matrix sizes\n");
-    if(B.order != C.order) eslog::error("order of B and C must match\n");
+    if(A->nrows != C->nrows || B->ncols != C->ncols || A->ncols != B->nrows) eslog::error("incompatible matrix sizes\n");
+    if(B->order != C->order) eslog::error("order of B and C must match\n");
 
-    math::blas::mm(*A, *B, *C, alpha, beta, handle_abc, 'C');
+    spblas::mm(*A, *B, *C, alpha, beta, handle_abc, 'C');
 }
 
 
@@ -86,7 +86,7 @@ template<typename T, typename I>
 void gemm_csx_dny_dny<T,I>::finalize()
 {
     if(preprocess_called) {
-        math::blas::mm(*A, *B, *C, alpha, beta, handle_abc, 'F');
+        spblas::mm(*A, *B, *C, alpha, beta, handle_abc, 'F');
     }
     preprocess_called = false;
 }

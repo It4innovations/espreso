@@ -16,13 +16,13 @@ template<typename T>
 class trsm_dnx_dny
 {
 public:
-    void set_system_matrix(MatrixDenseData_new<T> * A_);
-    void set_rhs_sol(MatrixDenseData_new<T> * X_);
+    void set_system_matrix(MatrixDenseView_new<T> * A_);
+    void set_rhs_sol(MatrixDenseView_new<T> * X_);
     void perform();
-    static void do_all(MatrixDenseData_new<T> * A, MatrixDenseData_new<T> * X);
+    static void do_all(MatrixDenseView_new<T> * A, MatrixDenseView_new<T> * X);
 private:
-    MatrixDenseData_new<T> * A;
-    MatrixDenseData_new<T> * X;
+    MatrixDenseView_new<T> * A;
+    MatrixDenseView_new<T> * X;
 };
 
 

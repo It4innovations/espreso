@@ -124,6 +124,13 @@ namespace mgm {
         return ptr;
     }
 
+    void * memalloc_device_2d(size_t num_chunks, size_t bytes_per_chunk, size_t & pitch)
+    {
+        void * ptr;
+        CHECK(cudaMallocPitch(&ptr, &pitch, bytes_per_chunk, num_chunks));
+        return ptr;
+    }
+
     void memfree_device(void * ptr)
     {
         CHECK(cudaFree(ptr));

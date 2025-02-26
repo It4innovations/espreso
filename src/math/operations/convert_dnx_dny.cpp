@@ -1,6 +1,9 @@
 
 #include "math/operations/convert_dnx_dny.h"
 
+#include "math/operations/copy_dnx.h"
+#include "math/wrappers/math.blas.h"
+
 
 
 namespace espreso {

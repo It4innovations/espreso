@@ -2,6 +2,8 @@
 #ifndef SRC_MATH_PRIMITIVES_NEW_MATRIX_BASE_NEW_H_
 #define SRC_MATH_PRIMITIVES_NEW_MATRIX_BASE_NEW_H_
 
+#include <cstddef>
+
 
 
 namespace espreso {
@@ -31,7 +33,7 @@ public:
 
 
 
-char change_uplo(char uplo)
+inline char change_uplo(char uplo)
 {
     switch(uplo)
     {
@@ -42,7 +44,7 @@ char change_uplo(char uplo)
     }
 }
 
-char change_order(char order)
+inline char change_order(char order)
 {
     switch(order)
     {

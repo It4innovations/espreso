@@ -56,6 +56,8 @@ namespace mgm {
 
     void * memalloc_device(size_t num_bytes);
 
+    void * memalloc_device_2d(size_t num_chunks, size_t bytes_per_chunk, size_t & pitch);
+
     void memfree_device(void * ptr);
     
     void memalloc_device_max(void * & memory, size_t & memory_size_B, size_t max_needed);

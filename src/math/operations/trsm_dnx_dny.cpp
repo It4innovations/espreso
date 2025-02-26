@@ -12,7 +12,7 @@ namespace operations {
 
 
 template<typename T>
-void trsm_dnx_dny<T>::set_system_matrix(MatrixDenseData_new<T> * A_)
+void trsm_dnx_dny<T>::set_system_matrix(MatrixDenseView_new<T> * A_)
 {
     A = A_;
 }
@@ -20,7 +20,7 @@ void trsm_dnx_dny<T>::set_system_matrix(MatrixDenseData_new<T> * A_)
 
 
 template<typename T>
-void trsm_dnx_dny<T>::set_rhs_sol(MatrixDenseData_new<T> * X_)
+void trsm_dnx_dny<T>::set_rhs_sol(MatrixDenseView_new<T> * X_)
 {
     X = X_;
 }
@@ -37,13 +37,13 @@ void trsm_dnx_dny<T>::perform()
     if(A->prop.uplo != 'U' && A->prop.uplo != 'L') eslog::error("invalid A uplo\n");
     if(A->prop.diag != 'U' && A->prop.diag != 'N') eslog::error("invalid A diag\n");
 
-    math::blas::trsm(*A, *M);
+    math::blas::trsm(*A, *X);
 }
 
 
 
 template<typename T>
-void trsm_dnx_dny<T>::do_all(MatrixDenseData_new<T> * A, MatrixDenseData_new<T> * X)
+void trsm_dnx_dny<T>::do_all(MatrixDenseView_new<T> * A, MatrixDenseView_new<T> * X)
 {
     trsm_dnx_dny<T> instance;
     instance.set_system_matrix(A);

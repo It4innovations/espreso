@@ -2,6 +2,8 @@
 #ifndef SRC_MATH_PRIMITIVES_NEW_ALLOCATOR_NEW_H_
 #define SRC_MATH_PRIMITIVES_NEW_ALLOCATOR_NEW_H_
 
+#include "gpu/gpu_management.h"
+
 
 
 namespace espreso {
@@ -18,6 +20,11 @@ public:
     virtual bool is_on_cpu() = 0;
     virtual bool is_on_gpu() = 0;
 public:
+    template<typename T>
+    void free(T * & ptr)
+    {
+        free((void*&)ptr);
+    }
     virtual void * alloc_2d(size_t num_chunks, size_t bytes_per_chunk, size_t & pitch)
     {
         pitch = bytes_per_chunk;
@@ -52,7 +59,7 @@ private:
     static AllocatorDummy_new singleton_tt;
 public:
     AllocatorDummy_new(bool cpu, bool gpu) : on_cpu(cpu), on_gpu(gpu) {}
-    virtual ~AllocatorCPU_new() {}
+    virtual ~AllocatorDummy_new() {}
     virtual void * alloc(size_t num_bytes) override
     {
         eslog::error("dummy allocator cannot alloc\n");
@@ -96,7 +103,7 @@ public:
     }
     virtual void free(void * & ptr) override
     {
-        free(ptr);
+        ::free(ptr);
         ptr = nullptr;
     }
     virtual bool is_on_cpu() override
@@ -113,9 +120,9 @@ public:
         return alloc(num_chunks * bytes_per_chunk);
     }
 public:
-    static AllocatorCPU_new & get_singleton()
+    static AllocatorCPU_new * get_singleton()
     {
-        return AllocatorCPU_new::singleton;
+        return &AllocatorCPU_new::singleton;
     }
 };
 
@@ -150,9 +157,9 @@ public:
         return gpu::mgm::memalloc_device_2d(num_chunks, bytes_per_chunk, pitch);
     }
 public:
-    static AllocatorGPU_new & get_singleton()
+    static AllocatorGPU_new * get_singleton()
     {
-        return AllocatorGPU_new::singleton;
+        return &AllocatorGPU_new::singleton;
     }
 };
 
@@ -183,9 +190,9 @@ public:
         return false;
     }
 public:
-    static AllocatorHostPinned_new & get_singleton()
+    static AllocatorHostPinned_new * get_singleton()
     {
-        return AllocatorHostPinned_new::singleton;
+        return &AllocatorHostPinned_new::singleton;
     }
 };
 

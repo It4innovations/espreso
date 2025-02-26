@@ -2,7 +2,7 @@
 #ifndef SRC_MATH_PRIMITIVES_NEW_VECTOR_DENSE_NEW_H_
 #define SRC_MATH_PRIMITIVES_NEW_VECTOR_DENSE_NEW_H_
 
-#include "math/primitives_new/vector_base_view_new.h"
+#include "math/primitives_new/vector_dense_view_new.h"
 #include "math/primitives_new/allocator_new.h"
 
 
@@ -17,21 +17,22 @@ struct VectorDenseData_new : public VectorDenseView_new<T>
 public: // the user promises not to modify these values (I don't want to implement getters everywhere)
     Allocator_new * ator = nullptr;
 public:
-    using VectorDenseView_new::vals;
+    using VectorDenseView_new<T>::vals;
+    using VectorDenseView_new<T>::was_set;
     using VectorBase_new::size;
 public:
     VectorDenseData_new() = default;
     VectorDenseData_new(const VectorDenseData_new &) = delete;
     VectorDenseData_new(VectorDenseData_new && other)
     {
-        std::swap(static_cast<VectorDenseView_new&>(*this), static_cast<VectorDenseView_new>(other));
+        std::swap(*static_cast<VectorDenseView_new<T>*>(this), *static_cast<VectorDenseView_new<T>*>(&other));
         std::swap(ator, other.ator);
     }
     VectorDenseData_new & operator=(const VectorDenseData_new &) = delete;
     VectorDenseData_new & operator=(VectorDenseData_new && other)
     {
         if(this == &other) return;
-        std::swap(static_cast<VectorDenseView_new&>(*this), static_cast<VectorDenseView_new>(other));
+        std::swap(*static_cast<VectorDenseView_new<T>*>(this), *static_cast<VectorDenseView_new<T>*>(&other));
         std::swap(ator, other.ator);
         other.free();
     }

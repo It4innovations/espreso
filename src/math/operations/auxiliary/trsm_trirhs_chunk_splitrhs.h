@@ -5,6 +5,8 @@
 #include "math/primitives_new/matrix_csx_data_new.h"
 #include "math/primitives_new/matrix_dense_data_new.h"
 #include "math/primitives_new/vector_dense_view_new.h"
+#include "math/operations/submatrix_csx_csy.h"
+#include "math/operations/trsm_csx_dny.h"
 
 
 
@@ -32,10 +34,10 @@ public:
     ~trsm_trirhs_chunk_splitrhs();
 public:
     void set_config(config cfg_);
-    void set_range(size_t rhs_start, size_t rhs_end);
+    void set_range(size_t rhs_start_, size_t rhs_end_);
     void set_L(MatrixCsxView_new<T,I> * L_);
     void set_X(MatrixDenseView_new<T> * X_);
-    void set_B_colpivots(VectorDenseView_new<T> * B_colpivots_);
+    void set_X_colpivots(VectorDenseView_new<size_t> * X_colpivots_);
     void preprocess();
     void perform();
     void finalize();
@@ -48,15 +50,13 @@ private:
     size_t k_size = 0;
     MatrixCsxView_new<T,I> * L = nullptr;
     MatrixDenseView_new<T> * X = nullptr;
-    VectorDenseView_new<size_t> * B_colpivots = nullptr;
+    VectorDenseView_new<size_t> * X_colpivots = nullptr;
     config cfg;
     bool set_config_called = false;
     bool set_range_called = false;
     bool preprocess_called = false;
-    union {
-        MatrixCsxData_new<T,I> sp;
-        MatrixDenseData_new<T> dn;
-    } sub_L;
+    MatrixCsxData_new<T,I> sub_L_sp;
+    MatrixDenseData_new<T> sub_L_dn;
     MatrixDenseView_new<T> sub_X;
     submatrix_csx_csy<T,I> op_submatrix_L_sp;
     trsm_csx_dny<T,I> op_trsm_sp;

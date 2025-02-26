@@ -3,6 +3,7 @@
 #define SRC_MATH_PRIMITIVES_NEW_MATRIX_DENSE_VIEW_NEW_H_
 
 #include "math/primitives_new/matrix_base_new.h"
+#include "math/primitives/matrix_dense.h"
 
 
 
@@ -66,7 +67,7 @@ public:
         return 0;
     }
 
-    MatrixDenseView_new<T> make_submatrix(size_t row_start, size_t row_end, size_t col_start, size_t col_end) const
+    MatrixDenseView_new<T> get_submatrix_view(size_t row_start, size_t row_end, size_t col_start, size_t col_end) const
     {
         if(row_start > row_end || row_end > nrows || col_start > col_end || col_end > ncols) eslog::error("wrong submatrix");
 
@@ -76,7 +77,7 @@ public:
         M.vals = M.vals + row_start * M.get_stride_row() + col_start * M.get_stride_col();
         return M;
     }
-    MatrixDenseView_new<T> make_transposed_reordered() const
+    MatrixDenseView_new<T> get_transposed_reordered_view() const
     {
         MatrixDenseView_new<T> M = *this;
         M.transpose_reorder_inplace();
@@ -86,7 +87,7 @@ public:
     {
         std::swap(nrows, ncols);
         order = change_order(order);
-        uplo = change_uplo(uplo);
+        prop.uplo = change_uplo(prop.uplo);
     }
 
     static bool are_interchangable(MatrixDenseView_new & A, MatrixDenseView_new & B)
@@ -95,7 +96,7 @@ public:
     }
 
     template<typename I, typename A>
-    static MatrixDenseView_new<T> from_old(MatrixDense<T,I,A> & M_old, char order = 'R')
+    static MatrixDenseView_new<T> from_old(Matrix_Dense<T,I,A> & M_old, char order = 'R')
     {
         MatrixDenseView_new<T> M_new;
         M_new.set_view(M_old.nrows, M_old.ncols, M_old.ld, order, M_old.vals);
@@ -105,16 +106,16 @@ public:
         return M_new;
     }
     template<typename I, typename A>
-    static MatrixDense<T,I,A> to_old(MatrixDenseView_new<T> & M_new)
+    static Matrix_Dense<T,I,A> to_old(MatrixDenseView_new<T> & M_new)
     {
-        MatrixDense<T,I,A> M_old;
+        Matrix_Dense<T,I,A> M_old;
         M_old.nrows = M_new.nrows;
         M_old.ncols = M_new.ncols;
         M_old.set_ld(M_new.ld);
         M_old.vals = M_new.vals;
         if(M_new.prop.uplo == 'U') M_old.shape == Matrix_Shape::UPPER;
-        if(M_new.prop.uplo == 'L') M_old.shape == Matrix_Shape::LOWER;
-        if(M_new.prop.uplo == 'F') M_old.shape == Matrix_Shape::FULL;
+        else if(M_new.prop.uplo == 'L') M_old.shape == Matrix_Shape::LOWER;
+        else M_old.shape == Matrix_Shape::FULL;
         return M_old;
     }
 };

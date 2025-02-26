@@ -17,8 +17,8 @@ template<typename T, typename I>
 class submatrix_csx_dny
 {
 public:
-    void set_matrix_src(const MatrixCsxView_new<T,I> * M_src_);
-    void set_matrix_dst(const MatrixDenseView_new<T> * M_dst_);
+    void set_matrix_src(MatrixCsxView_new<T,I> * M_src_);
+    void set_matrix_dst(MatrixDenseView_new<T> * M_dst_);
     void set_bounds(size_t row_start_, size_t row_end_, size_t col_start_, size_t col_end_);
     void perform_zerofill();
     void perform_copyvals();

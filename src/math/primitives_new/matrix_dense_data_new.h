@@ -2,7 +2,7 @@
 #ifndef SRC_MATH_PRIMITIVES_NEW_MATRIX_DENSE_NEW_H_
 #define SRC_MATH_PRIMITIVES_NEW_MATRIX_DENSE_NEW_H_
 
-#include "math/primitives_new/matrix_base_view_new.h"
+#include "math/primitives_new/matrix_dense_view_new.h"
 #include "math/primitives_new/allocator_new.h"
 
 
@@ -17,10 +17,10 @@ class MatrixDenseData_new : public MatrixDenseView_new<T>
 public: // the user promises not to modify these values (I don't want to implement getters everywhere)
     Allocator_new * ator = nullptr;
 public:
-    using MatrixDenseView_new::vals;
-    using MatrixDenseView_new::ld;
-    using MatrixDenseView_new::order;
-    using MatrixDenseView_new::was_set;
+    using MatrixDenseView_new<T>::vals;
+    using MatrixDenseView_new<T>::ld;
+    using MatrixDenseView_new<T>::order;
+    using MatrixDenseView_new<T>::was_set;
     using MatrixBase_new::nrows;
     using MatrixBase_new::ncols;
     using MatrixBase_new::prop;
@@ -29,14 +29,14 @@ public:
     MatrixDenseData_new(const MatrixDenseData_new &) = delete;
     MatrixDenseData_new(MatrixDenseData_new && other)
     {
-        std::swap(static_cast<MatrixDenseView_new&>(*this), static_cast<MatrixDenseView_new&>(other));
+        std::swap(*static_cast<MatrixDenseView_new<T>*>(this), *static_cast<MatrixDenseView_new<T>*>(&other));
         std::swap(ator, other.ator);
     }
     MatrixDenseData_new & operator=(const MatrixDenseData_new &) = delete;
     MatrixDenseData_new & operator=(MatrixDenseData_new && other)
     {
         if(this == &other) return;
-        std::swap(static_cast<MatrixDenseView_new&>(*this), static_cast<MatrixDenseView_new&>(other));
+        std::swap(*static_cast<MatrixDenseView_new<T>*>(this), *static_cast<MatrixDenseView_new<T>*>(&other));
         std::swap(ator, other.ator);
         other.free();
     }
@@ -60,7 +60,7 @@ public:
         if(ator == nullptr) eslog::error("matrix data has not been set\n");
         if(vals != nullptr) eslog::error("matrix is already allocated\n");
         if(nrows > 0 && ncols > 0) {
-            vals = ator->alloc_2d<T>(get_num_blocks(), get_block_size(), ld);
+            vals = ator->alloc_2d<T>(this->get_size_primary(), this->get_size_secdary(), ld);
         }
     }
     void free()
