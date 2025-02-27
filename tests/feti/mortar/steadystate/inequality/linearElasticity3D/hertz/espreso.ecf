@@ -24,6 +24,12 @@ INPUT {
        GAP                 0.1;
     }
   }
+
+  DECOMPOSITION {
+    METIS_OPTIONS {
+      SEED   2131255;
+    }
+  }
 }
 
 GENERATOR {
