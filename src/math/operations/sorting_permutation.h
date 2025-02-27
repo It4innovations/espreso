@@ -1,6 +1,6 @@
 
-#ifndef SRC_MATH_OPERATIONS_AUXILIARY_SORTING_PERMUTATION_H
-#define SRC_MATH_OPERATIONS_AUXILIARY_SORTING_PERMUTATION_H
+#ifndef SRC_MATH_OPERATIONS_SORTING_PERMUTATION_H
+#define SRC_MATH_OPERATIONS_SORTING_PERMUTATION_H
 
 #include "math/primitives_new/vector_dense_view_new.h"
 #include "math/primitives_new/permutation_view_new.h"
@@ -32,4 +32,4 @@ private:
 }
 }
 
-#endif
+#endif /* SRC_MATH_OPERATIONS_SORTING_PERMUTATION_H */

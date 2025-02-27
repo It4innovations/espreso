@@ -60,7 +60,7 @@ void trsm_trirhs_chunk_splitfactor<T,I>::set_X(MatrixDenseView_new<T> * X_)
 
 
 template<typename T, typename I>
-void trsm_trirhs_chunk_splitfactor<T,I>::set_X_rowtrails(VectorDenseView_new<size_t> * X_rowtrails_)
+void trsm_trirhs_chunk_splitfactor<T,I>::set_X_rowtrails(VectorDenseView_new<I> * X_rowtrails_)
 {
     X_rowtrails = X_rowtrails_;
 }

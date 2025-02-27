@@ -1,7 +1,7 @@
 
 #include "math/operations/trsm_csx_dny_tri.h"
 
-#include "math/operations/auxiliary/pivots_trails_csx.h"
+#include "math/operations/pivots_trails_csx.h"
 #include "math/operations/auxiliary/tri_partition_trsm.h"
 
 
@@ -53,11 +53,11 @@ void trsm_csx_dny_tri<T,I>::set_X_pattern(MatrixCsxView_new<T,I> & X_pattern)
 
     X_colpivots.set(X_pattern.ncols, AllocatorCPU_new::get_singleton());
     X_colpivots.alloc();
-    pivots_trails_csx<T,I>::do_all(&X_pattern, &X_colpivots, 'C', 'P');
+    pivots_trails_csx<T,I>::do_all(&X_pattern, &X_colpivots, 'C', 'P', 'B');
 
     X_rowtrails.set(X_pattern.nrows, AllocatorCPU_new::get_singleton());
     X_rowtrails.alloc();
-    pivots_trails_csx<T,I>::do_all(&X_pattern, &X_rowtrails, 'R', 'T');
+    pivots_trails_csx<T,I>::do_all(&X_pattern, &X_rowtrails, 'R', 'T', 'F');
 
     called_set_pattern = true;
 }

@@ -52,15 +52,15 @@ struct DirectSparseSolver {
     void symbolicFactorization();
     void numericalFactorization();
 
-    void solve(Vector_Dense<T, I> &rhs, Vector_Dense<T, I> &solution);
-    void solve(Matrix_Dense<T, I> &rhs, Matrix_Dense<T, I> &solution);
+    void solve(const Vector_Dense<T, I> &rhs, Vector_Dense<T, I> &solution);
+    void solve(const Matrix_Dense<T, I> &rhs, Matrix_Dense<T, I> &solution);
 
-    void solveForward (Vector_Dense<T, I> &rhs, Vector_Dense<T, I> &solution);
-    void solveDiagonal(Vector_Dense<T, I> &rhs, Vector_Dense<T, I> &solution);
-    void solveBackward(Vector_Dense<T, I> &rhs, Vector_Dense<T, I> &solution);
-    void solveForward (Matrix_Dense<T, I> &rhs, Matrix_Dense<T, I> &solution);
-    void solveDiagonal(Matrix_Dense<T, I> &rhs, Matrix_Dense<T, I> &solution);
-    void solveBackward(Matrix_Dense<T, I> &rhs, Matrix_Dense<T, I> &solution);
+    void solveForward (const Vector_Dense<T, I> &rhs, Vector_Dense<T, I> &solution);
+    void solveDiagonal(const Vector_Dense<T, I> &rhs, Vector_Dense<T, I> &solution);
+    void solveBackward(const Vector_Dense<T, I> &rhs, Vector_Dense<T, I> &solution);
+    void solveForward (const Matrix_Dense<T, I> &rhs, Matrix_Dense<T, I> &solution);
+    void solveDiagonal(const Matrix_Dense<T, I> &rhs, Matrix_Dense<T, I> &solution);
+    void solveBackward(const Matrix_Dense<T, I> &rhs, Matrix_Dense<T, I> &solution);
 
 
     I getMatrixSize();

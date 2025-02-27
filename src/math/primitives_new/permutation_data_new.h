@@ -1,6 +1,6 @@
 
-#ifndef SRC_MATH_PRIMITIVES_NEW_VECTOR_DENSE_NEW_H_
-#define SRC_MATH_PRIMITIVES_NEW_VECTOR_DENSE_NEW_H_
+#ifndef SRC_MATH_PRIMITIVES_NEW_PERMUTATION_DATA_NEW_H_
+#define SRC_MATH_PRIMITIVES_NEW_PERMUTATION_DATA_NEW_H_
 
 #include "math/primitives_new/permutation_view_new.h"
 #include "math/primitives_new/allocator_new.h"
@@ -17,22 +17,23 @@ struct PermutationData_new : public PermutationView_new<T>
 public: // the user promises not to modify these values (I don't want to implement getters everywhere)
     Allocator_new * ator = nullptr;
 public:
-    using PermutationView_new::dst_to_src;
-    using PermutationView_new::src_to_dst;
+    using PermutationView_new<T>::dst_to_src;
+    using PermutationView_new<T>::src_to_dst;
+    using PermutationView_new<T>::was_set;
     using VectorBase_new::size;
 public:
     PermutationData_new() = default;
     PermutationData_new(const PermutationData_new &) = delete;
     PermutationData_new(PermutationData_new && other)
     {
-        std::swap(static_cast<PermutationView_new&>(*this), static_cast<PermutationView_new>(other));
+        std::swap(*static_cast<PermutationView_new<T>*>(this), *static_cast<PermutationView_new<T>*>(&other));
         std::swap(ator, other.ator);
     }
     PermutationData_new & operator=(const PermutationData_new &) = delete;
     PermutationData_new & operator=(PermutationData_new && other)
     {
         if(this == &other) return;
-        std::swap(static_cast<PermutationView_new&>(*this), static_cast<PermutationView_new>(other));
+        std::swap(*static_cast<PermutationView_new<T>*>(this), *static_cast<PermutationView_new<T>*>(&other));
         std::swap(ator, other.ator);
         other.free();
     }
@@ -80,4 +81,4 @@ public:
 
 
 
-#endif /* SRC_MATH_PRIMITIVES_NEW_VECTOR_DENSE_NEW_H_ */
+#endif /* SRC_MATH_PRIMITIVES_NEW_PERMUTATION_DATA_NEW_H_ */

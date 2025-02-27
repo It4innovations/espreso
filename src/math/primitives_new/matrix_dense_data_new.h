@@ -1,6 +1,6 @@
 
-#ifndef SRC_MATH_PRIMITIVES_NEW_MATRIX_DENSE_NEW_H_
-#define SRC_MATH_PRIMITIVES_NEW_MATRIX_DENSE_NEW_H_
+#ifndef SRC_MATH_PRIMITIVES_NEW_MATRIX_DENSE_DATA_NEW_H_
+#define SRC_MATH_PRIMITIVES_NEW_MATRIX_DENSE_DATA_NEW_H_
 
 #include "math/primitives_new/matrix_dense_view_new.h"
 #include "math/primitives_new/allocator_new.h"
@@ -85,4 +85,4 @@ public:
 
 
 
-#endif /* SRC_MATH_PRIMITIVES_NEW_MATRIX_DENSE_NEW_H_ */
+#endif /* SRC_MATH_PRIMITIVES_NEW_MATRIX_DENSE_DATA_NEW_H_ */

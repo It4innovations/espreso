@@ -1,6 +1,6 @@
 
-#ifndef SRC_MATH_PRIMITIVES_NEW_VECTOR_DENSE_NEW_H_
-#define SRC_MATH_PRIMITIVES_NEW_VECTOR_DENSE_NEW_H_
+#ifndef SRC_MATH_PRIMITIVES_NEW_VECTOR_DENSE_DATA_NEW_H_
+#define SRC_MATH_PRIMITIVES_NEW_VECTOR_DENSE_DATA_NEW_H_
 
 #include "math/primitives_new/vector_dense_view_new.h"
 #include "math/primitives_new/allocator_new.h"
@@ -78,4 +78,4 @@ public:
 
 
 
-#endif /* SRC_MATH_PRIMITIVES_NEW_VECTOR_DENSE_NEW_H_ */
+#endif /* SRC_MATH_PRIMITIVES_NEW_VECTOR_DENSE_DATA_NEW_H_ */

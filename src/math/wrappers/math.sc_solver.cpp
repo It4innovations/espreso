@@ -2,6 +2,7 @@
 
 #ifndef ESPRESO_USE_WRAPPER_SCSOLVER_MKL
 #ifndef ESPRESO_USE_WRAPPER_SCSOLVER_SUITESPARSE
+#ifndef ESPRESO_USE_WRAPPER_SCSOLVER_SCSOLVERTRIANGULAR
 
 namespace espreso {
 
@@ -73,5 +74,6 @@ void SchurComplementSolver<T,I>::solveA11(const Vector_Dense<T,I> & /*rhs*/, Vec
 
 #include "math/wrappers/math.sc_solver.inst.hpp"
 
+#endif
 #endif
 #endif

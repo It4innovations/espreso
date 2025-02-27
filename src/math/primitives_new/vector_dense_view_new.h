@@ -41,7 +41,7 @@ public:
     }
 
     template<typename I, typename A>
-    static VectorDenseView_new<T> from_old(Vector_Dense<T,I,A> & V_old)
+    static VectorDenseView_new<T> from_old(const Vector_Dense<T,I,A> & V_old)
     {
         VectorDenseView_new<T> V_new;
         V_new.set_view(V_old.size, V_old.vals);

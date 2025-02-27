@@ -59,7 +59,7 @@ void trsm_trirhs_chunk_splitrhs<T,I>::set_X(MatrixDenseView_new<T> * X_)
 
 
 template<typename T, typename I>
-void trsm_trirhs_chunk_splitrhs<T,I>::set_X_colpivots(VectorDenseView_new<size_t> * X_colpivots_)
+void trsm_trirhs_chunk_splitrhs<T,I>::set_X_colpivots(VectorDenseView_new<I> * X_colpivots_)
 {
     X_colpivots = X_colpivots_;
 }

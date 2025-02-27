@@ -42,7 +42,7 @@ public:
     void set_range(size_t k_start_, size_t k_end_);
     void set_L(MatrixCsxView_new<T,I> * L_);
     void set_X(MatrixDenseView_new<T> * X_);
-    void set_X_rowtrails(VectorDenseView_new<size_t> * X_rowtrails_);
+    void set_X_rowtrails(VectorDenseView_new<I> * X_rowtrails_);
     void preprocess();
     void perform();
     void finalize();
@@ -52,7 +52,7 @@ private:
     size_t k_size = 0;
     MatrixCsxView_new<T,I> * L = nullptr;
     MatrixDenseView_new<T> * X = nullptr;
-    VectorDenseView_new<size_t> * X_rowtrails = nullptr;
+    VectorDenseView_new<I> * X_rowtrails = nullptr;
     config cfg;
     bool set_config_called = false;
     bool set_range_called = false;

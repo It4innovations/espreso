@@ -64,8 +64,8 @@ private:
     MatrixDenseView_new<T> * X;
     size_t num_chunks = 0;
     VectorDenseData_new<size_t> partition;
-    VectorDenseData_new<size_t> X_colpivots;
-    VectorDenseData_new<size_t> X_rowtrails;
+    VectorDenseData_new<I> X_colpivots;
+    VectorDenseData_new<I> X_rowtrails;
     VectorDenseData_new<trsm_trirhs_chunk_splitrhs<T,I>> ops_chunks_splitrhs;
     VectorDenseData_new<trsm_trirhs_chunk_splitfactor<T,I>> ops_chunks_splifactor;
     bool called_set_config = false;

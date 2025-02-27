@@ -96,10 +96,10 @@ public:
     }
 
     template<typename I, typename A>
-    static MatrixDenseView_new<T> from_old(Matrix_Dense<T,I,A> & M_old, char order = 'R')
+    static MatrixDenseView_new<T> from_old(const Matrix_Dense<T,I,A> & M_old, char order = 'R')
     {
         MatrixDenseView_new<T> M_new;
-        M_new.set_view(M_old.nrows, M_old.ncols, M_old.ld, order, M_old.vals);
+        M_new.set_view(M_old.nrows, M_old.ncols, M_old.get_ld(), order, M_old.vals);
         if(M_old.shape == Matrix_Shape::LOWER) M_new.prop.uplo = 'L';
         if(M_old.shape == Matrix_Shape::UPPER) M_new.prop.uplo = 'U';
         if(M_old.shape == Matrix_Shape::FULL) M_new.prop.uplo = 'F';

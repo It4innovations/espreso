@@ -78,10 +78,10 @@ public:
     }
 
     template<typename A>
-    static MatrixCsxView_new<T,I> from_old(Matrix_CSR<T,I,A> & M_old)
+    static MatrixCsxView_new<T,I> from_old(const Matrix_CSR<T,I,A> & M_old)
     {
         MatrixCsxView_new<T,I> M_new;
-        M_new.set_view(M_old.nrows, M_old.ncols, M_old.nnz, 'R', M_old.ptrs, M_old.idxs, M_old.vals);
+        M_new.set_view(M_old.nrows, M_old.ncols, M_old.nnz, 'R', M_old.rows, M_old.cols, M_old.vals);
         if(M_old.shape == Matrix_Shape::LOWER) M_new.prop.uplo = 'L';
         if(M_old.shape == Matrix_Shape::UPPER) M_new.prop.uplo = 'U';
         if(M_old.shape == Matrix_Shape::FULL) M_new.prop.uplo = 'F';

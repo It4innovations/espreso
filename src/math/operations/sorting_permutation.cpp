@@ -42,14 +42,14 @@ void sorting_permutation<T,I>::perform()
 
     I size = vec->size;
     for(I i = 0; i < size; i++) {
-        idxsvals[i].idx = i;
-        idxsvals[i].val = vec->vals[i];
+        idxsvals.vals[i].idx = i;
+        idxsvals.vals[i].val = vec->vals[i];
     }
 
-    std::sort(idxsvals->vals, idxsvals->vals + idxsvals->size, [](const idx_val & l, const idx_val & r){ return l.val < r.val; });
+    std::sort(idxsvals.vals, idxsvals.vals + idxsvals.size, [](const idx_val & l, const idx_val & r){ return l.val < r.val; });
 
     for(I i = 0; i < size; i++) {
-        perm->dst_to_src[i] = idxsvals->vals[i].idx;
+        perm->dst_to_src[i] = idxsvals.vals[i].idx;
     }
     PermutationView_new<I>::invert(perm->dst_to_src, perm->src_to_dst, perm->size);
 
@@ -66,6 +66,31 @@ void sorting_permutation<T,I>::do_all(VectorDenseView_new<T> * vec, PermutationV
     instance.set_permutation(perm);
     instance.perform();
 }
+
+
+
+#define INSTANTIATE_T_I(T,I) \
+template class sorting_permutation<T,I>;
+
+    #define INSTANTIATE_T(T) \
+    INSTANTIATE_T_I(T,int32_t) \
+    /* INSTANTIATE_T_I(T,int64_t) */ \
+    INSTANTIATE_T_I(T,size_t)
+
+        #define INSTANTIATE \
+        INSTANTIATE_T(int32_t) \
+        /* INSTANTIATE_T(int64_t) */ \
+        /* INSTANTIATE_T(size_t) */ \
+        /* INSTANTIATE_T(float) */ \
+        INSTANTIATE_T(double) \
+        /* INSTANTIATE_T(std::complex<float>) */ \
+        /* INSTANTIATE_T(std::complex<double>) */
+
+            INSTANTIATE
+
+        #undef INSTANTIATE
+    #undef INSTANTIATE_T
+#undef INSTANTIATE_T_I
 
 
 

@@ -1,7 +1,7 @@
 
 #include "math/operations/herk_dnx_dny_tri.h"
 
-#include "math/operations/auxiliary/pivots_trails_csx.h"
+#include "math/operations/pivots_trails_csx.h"
 #include "math/operations/auxiliary/tri_partition_herk.h"
 #include "math/operations/herk_dnx_dny.h"
 #include "math/operations/gemm_dnx_dny_dnz.h"
@@ -14,16 +14,16 @@ namespace operations {
 
 
 
-template<typename T>
-herk_dnx_dny_tri<T>::~herk_dnx_dny_tri()
+template<typename T, typename I>
+herk_dnx_dny_tri<T,I>::~herk_dnx_dny_tri()
 {
     finalize();
 }
 
 
 
-template<typename T>
-void herk_dnx_dny_tri<T>::set_config(config cfg_)
+template<typename T, typename I>
+void herk_dnx_dny_tri<T,I>::set_config(config cfg_)
 {
     cfg = cfg_;
 
@@ -32,24 +32,24 @@ void herk_dnx_dny_tri<T>::set_config(config cfg_)
 
 
 
-template<typename T>
-void herk_dnx_dny_tri<T>::set_matrix_A(MatrixDenseView_new<T> * A_)
+template<typename T, typename I>
+void herk_dnx_dny_tri<T,I>::set_matrix_A(MatrixDenseView_new<T> * A_)
 {
     A = A_;
 }
 
 
 
-template<typename T>
-void herk_dnx_dny_tri<T>::set_matrix_C(MatrixDenseView_new<T> * C_)
+template<typename T, typename I>
+void herk_dnx_dny_tri<T,I>::set_matrix_C(MatrixDenseView_new<T> * C_)
 {
     C = C_;
 }
 
 
 
-template<typename T>
-void herk_dnx_dny_tri<T>::set_coefficients(T alpha_, T beta_)
+template<typename T, typename I>
+void herk_dnx_dny_tri<T,I>::set_coefficients(T alpha_, T beta_)
 {
     alpha = alpha_;
     beta = beta_;
@@ -57,8 +57,8 @@ void herk_dnx_dny_tri<T>::set_coefficients(T alpha_, T beta_)
 
 
 
-template<typename T>
-void herk_dnx_dny_tri<T>::set_mode(blas::herk_mode mode_)
+template<typename T, typename I>
+void herk_dnx_dny_tri<T,I>::set_mode(blas::herk_mode mode_)
 {
     mode = mode_;
 
@@ -67,9 +67,8 @@ void herk_dnx_dny_tri<T>::set_mode(blas::herk_mode mode_)
 
 
 
-template<typename T>
-template<typename I>
-void herk_dnx_dny_tri<T>::set_A_pattern(MatrixCsxView_new<T,I> & A_pattern)
+template<typename T, typename I>
+void herk_dnx_dny_tri<T,I>::set_A_pattern(MatrixCsxView_new<T,I> & A_pattern)
 {
     if(!mode_set) eslog::error("mode is not set\n");
     if(pattern_set) eslog::error("A pattern was already set\n");
@@ -77,20 +76,20 @@ void herk_dnx_dny_tri<T>::set_A_pattern(MatrixCsxView_new<T,I> & A_pattern)
     if(mode == blas::herk_mode::AhA) {
         A_pivots.set(A->ncols, AllocatorCPU_new::get_singleton());
         A_pivots.alloc();
-        pivots_trails_csx<T,I>::do_all(&A_pattern, &A_pivots, 'C', 'P');
+        pivots_trails_csx<T,I>::do_all(&A_pattern, &A_pivots, 'C', 'P', 'B');
 
         A_trails.set(A->nrows, AllocatorCPU_new::get_singleton());
         A_trails.alloc();
-        pivots_trails_csx<T,I>::do_all(&A_pattern, &A_trails, 'R', 'T');
+        pivots_trails_csx<T,I>::do_all(&A_pattern, &A_trails, 'R', 'T', 'F');
     }
     if(mode == blas::herk_mode::AAh) {
         A_pivots.set(A->nrows, AllocatorCPU_new::get_singleton());
         A_pivots.alloc();
-        pivots_trails_csx<T,I>::do_all(&A_pattern, &A_pivots, 'R', 'P');
+        pivots_trails_csx<T,I>::do_all(&A_pattern, &A_pivots, 'R', 'P', 'B');
 
         A_trails.set(A->ncols, AllocatorCPU_new::get_singleton());
         A_trails.alloc();
-        pivots_trails_csx<T,I>::do_all(&A_pattern, &A_trails, 'C', 'T');
+        pivots_trails_csx<T,I>::do_all(&A_pattern, &A_trails, 'C', 'T', 'F');
     }
 
     pattern_set = true;
@@ -98,8 +97,8 @@ void herk_dnx_dny_tri<T>::set_A_pattern(MatrixCsxView_new<T,I> & A_pattern)
 
 
 
-template<typename T>
-void herk_dnx_dny_tri<T>::preprocess()
+template<typename T, typename I>
+void herk_dnx_dny_tri<T,I>::preprocess()
 {
     if(!config_set) eslog::error("config is not set\n");
     if(!mode_set) eslog::error("mode is not set\n");
@@ -137,8 +136,8 @@ void herk_dnx_dny_tri<T>::preprocess()
 
 
 
-template<typename T>
-void herk_dnx_dny_tri<T>::perform()
+template<typename T, typename I>
+void herk_dnx_dny_tri<T,I>::perform()
 {
     if(!preproces_called) eslog::error("preprocess was not called\n");
     if(A == nullptr) eslog::error("matrix A is not set\n");
@@ -157,8 +156,8 @@ void herk_dnx_dny_tri<T>::perform()
 
 
 
-template<typename T>
-void herk_dnx_dny_tri<T>::perform_AhA()
+template<typename T, typename I>
+void herk_dnx_dny_tri<T,I>::perform_AhA()
 {
     MatrixDenseView_new<T> sub_A_trivial = A->get_submatrix_view(0, 0, 0, n);
     herk_dnx_dny<T>::do_all(&sub_A_trivial, C, blas::herk_mode::AhA, T{0}, beta);
@@ -205,8 +204,8 @@ void herk_dnx_dny_tri<T>::perform_AhA()
 
 
 
-template<typename T>
-void herk_dnx_dny_tri<T>::perform_AAh()
+template<typename T, typename I>
+void herk_dnx_dny_tri<T,I>::perform_AAh()
 {
     MatrixDenseView_new<T> sub_A_trivial = A->get_submatrix_view(0, n, 0, 0);
     herk_dnx_dny<T>::do_all(&sub_A_trivial, C, blas::herk_mode::AAh, T{0}, beta);
@@ -253,8 +252,8 @@ void herk_dnx_dny_tri<T>::perform_AAh()
 
 
 
-template<typename T>
-void herk_dnx_dny_tri<T>::finalize()
+template<typename T, typename I>
+void herk_dnx_dny_tri<T,I>::finalize()
 {
     if(preproces_called) {
         partition.clear();
@@ -271,10 +270,9 @@ void herk_dnx_dny_tri<T>::finalize()
 
 
 #define INSTANTIATE_T_I(T,I) \
-template void herk_dnx_dny_tri<T>::set_A_pattern<I>(MatrixCsxView_new<T,I> & A_pattern);
+template class herk_dnx_dny_tri<T,I>; \
 
     #define INSTANTIATE_T(T) \
-    template class herk_dnx_dny_tri<T>; \
     INSTANTIATE_T_I(T,int32_t) \
     /* INSTANTIATE_T_I(T,int64_t) */
 
@@ -289,21 +287,6 @@ template void herk_dnx_dny_tri<T>::set_A_pattern<I>(MatrixCsxView_new<T,I> & A_p
         #undef INSTANTIATE
     #undef INSTANTIATE_T
 #undef INSTANTIATE_T_I
-
-
-
-#define INSTANTIATE_T(T) \
-
-    #define INSTANTIATE \
-    /* INSTANTIATE_T(float) */ \
-    INSTANTIATE_T(double) \
-    /* INSTANTIATE_T(std::complex<float>) */ \
-    /* INSTANTIATE_T(std::complex<double>) */
-
-        INSTANTIATE
-
-    #undef INSTANTIATE
-#undef INSTANTIATE_T
 
 
 

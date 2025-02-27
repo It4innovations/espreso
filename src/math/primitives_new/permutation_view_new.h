@@ -50,7 +50,7 @@ public:
     }
 
     template<typename A>
-    static PermutationView_new<I> from_old(Permutation<I,A> & P_old)
+    static PermutationView_new<I> from_old(const Permutation<I,A> & P_old)
     {
         PermutationView_new<I> P_new;
         P_new.set_view(P_old.size, P_old.dst_to_src, P_old.src_to_dst);
