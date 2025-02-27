@@ -14,7 +14,7 @@ struct Pressure: public SubKernel {
     Pressure()
     : behaviour(StructuralMechanicsGlobalSettings::ELEMENT_BEHAVIOUR::PLANE_STRAIN)
     {
-
+        action = SubKernel::ASSEMBLE | SubKernel::REASSEMBLE | SubKernel::ITERATION;
     }
 
     void activate(ECFExpression &pressure, ECFExpressionVector &direction, StructuralMechanicsGlobalSettings::ELEMENT_BEHAVIOUR behaviour)

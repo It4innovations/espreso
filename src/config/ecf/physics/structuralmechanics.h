@@ -157,7 +157,7 @@ struct StructuralMechanicsOutputSettings: public virtual ECFDescription {
 
     bool normal;
     bool displacement, velocity, acceleration, stress, reactions;
-    bool fluid_interaction;
+    bool fluid_interaction, force;
 
     bool global_average;
 
@@ -169,6 +169,7 @@ struct StructuralMechanicsOutputSettings: public virtual ECFDescription {
         stress = false;
         reactions = false;
         fluid_interaction = false;
+        force = false;
     }
     void all() {
         normal = true;
@@ -178,6 +179,7 @@ struct StructuralMechanicsOutputSettings: public virtual ECFDescription {
         stress = true;
         reactions = true;
         fluid_interaction = true;
+        force = true;
     }
 
     static void activate();

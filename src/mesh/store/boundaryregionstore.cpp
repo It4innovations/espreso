@@ -4,8 +4,8 @@
 #include "esinfo/envinfo.h"
 #include "basis/containers/serializededata.h"
 #include "basis/utilities/packing.h"
-
 #include "mesh/mesh.h"
+#include "wrappers/simd/simd.h"
 
 using namespace espreso;
 
@@ -51,6 +51,16 @@ void BoundaryRegionStore::permute(const std::vector<esint> &permutation, const s
     if (emembership != NULL) {
         emembership->permute(permutation, distribution.threads);
     }
+}
+
+BoundaryElementData* BoundaryRegionStore::appendData(int dimension, BoundaryElementData::Type type, NamedData::DataType datatype, const std::string &name, step::TYPE restriction, bool toOutput)
+{
+    this->data.push_back(new BoundaryElementData(dimension, type, datatype, toOutput ? name : std::string()));
+    data.back()->restriction = restriction;
+    size_t size = type == BoundaryElementData::Type::NODES ? nodes->structures() : elements->structures();
+    data.back()->data.reserve((size + SIMD::size) * dimension);
+    data.back()->data.resize(size * dimension);
+    return this->data.back();
 }
 
 size_t BoundaryRegionStore::packedFullSize() const

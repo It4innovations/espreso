@@ -86,17 +86,14 @@ template <size_t nodes, size_t gps, size_t ndim, size_t edim> struct StructuralM
 
 template <size_t nodes, size_t gps, size_t ndim, size_t edim> struct StructuralMechanicsBoundary: public GeneralBoundary<nodes, gps, ndim, edim> {
     struct {
+        alignas(SIMD::size * sizeof(double)) SIMD force[ndim];
         alignas(SIMD::size * sizeof(double)) SIMD normalPressure;
+        alignas(SIMD::size * sizeof(double)) SIMD stress[ndim];
         struct {
             alignas(SIMD::size * sizeof(double)) SIMD pressure;
             alignas(SIMD::size * sizeof(double)) SIMD direction[ndim];
         } pressure;
     } ecf;
-
-    struct {
-        alignas(SIMD::size * sizeof(double)) SIMD pressure[nodes];
-        alignas(SIMD::size * sizeof(double)) SIMD stress[nodes][ndim];
-    } coupling;
 
     alignas(SIMD::size * sizeof(double)) SIMD displacement[nodes][ndim];
     alignas(SIMD::size * sizeof(double)) SIMD normal[ndim];

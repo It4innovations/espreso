@@ -27,9 +27,6 @@
 #include "analysis/assembler/structuralmechanics/op.pressure.h"
 #include "analysis/assembler/structuralmechanics/op.force.h"
 #include "analysis/assembler/structuralmechanics/op.harmonicforce.h"
-#include "analysis/assembler/structuralmechanics/op.fluidforce.h"
-#include "analysis/assembler/structuralmechanics/op.fluidpressure.h"
-#include "analysis/assembler/structuralmechanics/op.fluidstress.h"
 #include "analysis/assembler/structuralmechanics/op.velocity.h"
 
 namespace espreso {
@@ -78,10 +75,9 @@ struct StructuralMechanicsFaceOperators {
     Displacement displacement;
     Normal normal;
 
+    Force force;
     Pressure pressure;
     NormalPressure normalPressure;
-    FluidPressure fluidPressure;
-    FluidStress fluidStress;
 
     DataFiller reRHSfiller, imRHSfiller;
 
@@ -103,7 +99,6 @@ struct StructuralMechanicsNodeOperators {
 
     ExternalExpressionVector displacement;
     Force force;
-    FluidForce fluidForce;
     HarmonicForce harmonicForce;
 
     DataFiller reRHSfiller, imRHSfiller, reDirichlet, imDirichlet;

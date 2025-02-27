@@ -329,6 +329,11 @@ StructuralMechanicsOutputSettings::StructuralMechanicsOutputSettings()
                 .setdatatype({ ECFDataType::BOOL })
                 .allowonly([&] () { return _activated; }));
 
+    REGISTER(force, ECFMetaData()
+                .setdescription({ "RHS for the solver." })
+                .setdatatype({ ECFDataType::BOOL })
+                .allowonly([&] () { return _activated; }));
+
     global_average = false;
     REGISTER(global_average, ECFMetaData()
                 .setdescription({ "Global average of stress." })

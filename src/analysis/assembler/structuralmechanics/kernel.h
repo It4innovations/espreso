@@ -570,12 +570,10 @@ void runBoundaryKernel(const StructuralMechanicsFaceOperators &operators, SubKer
     ThicknessFromNodes<nodes, ndim> thickness(operators.thickness);
     ThicknessToGp<nodes, ndim> thicknessToGPs(operators.thickness);
     IntegrationKernel<nodes, ndim, edim> integration(operators.integration);
+    ForceSetter<nodes, ndim> forceSetter(operators.force);
+    ForceKernel<nodes, ndim> force(operators.force);
     NormalKernel<nodes, ndim, edim> normal(operators.normal);
     NormalPressureKernel<nodes, ndim> normalPressure(operators.normalPressure);
-    FluidPressureGatherKernel<nodes, ndim> fluidPressureGather(operators.fluidPressure);
-    FluidStressGatherKernel<nodes, ndim> fluidStressGather(operators.fluidStress);
-    FluidPressureKernel<nodes, ndim> fluidPressure(operators.fluidPressure);
-    FluidStressKernel<nodes, ndim> fluidStress(operators.fluidStress);
     PressureKernel<nodes, ndim> pressure(operators.pressure);
     RHSFillerKernel<nodes> outReRHS(operators.reRHSfiller);
     RHSFillerKernel<nodes> outImRHS(operators.imRHSfiller);
@@ -594,11 +592,11 @@ void runBoundaryKernel(const StructuralMechanicsFaceOperators &operators, SubKer
 
     thickness.setActiveness(action);
     displacement.setActiveness(action);
-    fluidPressureGather.setActiveness(action);
-    fluidStressGather.setActiveness(action);
-    fluidPressure.setActiveness(action);
-    fluidStress.setActiveness(action);
     normal.setActiveness(action);
+    normalPressure.setActiveness(action);
+    pressure.setActiveness(action);
+    forceSetter.setActiveness(action);
+    force.setActiveness(action);
 
     outReRHS.setActiveness(action);
     outImRHS.setActiveness(action);
@@ -608,13 +606,6 @@ void runBoundaryKernel(const StructuralMechanicsFaceOperators &operators, SubKer
 
         if (displacement.isactive) {
             displacement.simd(element);
-        }
-
-        if (fluidPressureGather.isactive) {
-            fluidPressureGather.simd(element);
-        }
-        if (fluidStressGather.isactive) {
-            fluidStressGather.simd(element);
         }
 
         if (thickness.isactive) {
@@ -646,12 +637,14 @@ void runBoundaryKernel(const StructuralMechanicsFaceOperators &operators, SubKer
             if (pressure.isactive) {
                 pressure.simd(element, gp);
             }
-            if (fluidPressure.isactive) {
-                fluidPressure.simd(element, gp);
-            }
-            if (fluidStress.isactive) {
-                fluidStress.simd(element, gp);
-            }
+        }
+
+        if (forceSetter.isactive) {
+            forceSetter.simd(element);
+        }
+
+        if (force.isactive) {
+            force.simd(element);
         }
 
         if (normal.isactive) {
@@ -771,16 +764,16 @@ void runNodeKernel(const StructuralMechanicsNodeOperators &operators, SubKernel:
     typedef StructuralMechanicsDirichlet<ndim> Element; Element element;
 
     CoordinatesKernel<1, ndim> coordinates(operators.coordinates);
-    ForceKernel<ndim> force(operators.force);
+    ForceSetter<1, ndim> forceSetter(operators.force);
+    ForceKernel<1, ndim> force(operators.force);
     HarmonicForceKernel<ndim> harmonicForce(operators.harmonicForce);
-    FluidForceKernel<ndim> fluidForce(operators.fluidForce);
     RHSFillerKernel<1> outReRHS(operators.reRHSfiller);
     RHSFillerKernel<1> outImRHS(operators.imRHSfiller);
     VectorSetterKernel<1, Element> set(operators.reDirichlet, [] (auto &element, size_t &n, size_t &d, size_t &s) { return element.displacement.node[d][s]; });
 
+    forceSetter.setActiveness(action);
     force.setActiveness(action);
     harmonicForce.setActiveness(action);
-    fluidForce.setActiveness(action);
     outReRHS.setActiveness(action);
     outImRHS.setActiveness(action);
     set.setActiveness(action);
@@ -801,16 +794,16 @@ void runNodeKernel(const StructuralMechanicsNodeOperators &operators, SubKernel:
             nonconst[i]->simd(element, 0);
         }
 
+        if (forceSetter.isactive) {
+            forceSetter.simd(element);
+        }
+
         if (force.isactive) {
             force.simd(element);
         }
 
         if (harmonicForce.isactive) {
             harmonicForce.simd(element);
-        }
-
-        if (fluidForce.isactive) {
-            fluidForce.simd(element);
         }
 
         if (set.isactive) {

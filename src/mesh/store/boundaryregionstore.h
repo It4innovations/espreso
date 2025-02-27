@@ -3,6 +3,8 @@
 #define SRC_MESH_STORE_BOUNDARYREGIONSTORE_H_
 
 #include "regionstore.h"
+#include "nameddata.h"
+
 #include <cstddef>
 #include <vector>
 #include <string>
@@ -12,9 +14,20 @@ namespace espreso {
 template <typename TEBoundaries, typename TEData> class serializededata;
 struct Element;
 
+struct BoundaryElementData: public NamedData {
+    enum class Type {
+        NODES,
+        ELEMENTS
+    };
+
+    BoundaryElementData(int dimension, Type type, DataType datatype, const std::string &name): NamedData(dimension, datatype, name) {}
+};
+
 struct BoundaryRegionStore: public RegionStore {
     int originalDimension, dimension;
     double area;
+
+    BoundaryElementData* appendData(int dimension, BoundaryElementData::Type type, NamedData::DataType datatype, const std::string &name = "", step::TYPE restriction = step::TYPE::TIME, bool toOutput = true);
 
     serializededata<esint, esint>* elements;
     serializededata<esint, esint>* triangles;
@@ -24,6 +37,8 @@ struct BoundaryRegionStore: public RegionStore {
 
     std::vector<ElementsInterval> eintervals;
     std::vector<esint> eintervalsDistribution;
+
+    std::vector<BoundaryElementData*> data;
 
     size_t packedFullSize() const;
     void packFull(char* &p) const;

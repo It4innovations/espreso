@@ -11,6 +11,7 @@
 #include "config/holders/expression.h"
 #include "mesh/store/nodestore.h"
 #include "mesh/store/elementstore.h"
+#include "mesh/store/boundaryregionstore.h"
 #include "math/primitives/vector_sparse.h"
 #include "math/primitives/matrix_info.h"
 
@@ -59,7 +60,8 @@ public:
         static NodeData *cosDisplacement, *sinDisplacement, *displacementAmplitude;
         static NodeData *phase, *velocity, *velocityAmplitude, *acceleration, *accelerationAmplitude;
         static NodeData *principalStressAvg, *principalStrainAvg, *componentStressAvg, *componentStrainAvg, *vonMisesStressAvg, *vonMisesStrainAvg;
-        static NodeData *reactionForce;
+
+        static NodeData *force, *reactionForce;
 
         // FSI
         static NodeData *fluidForce, *fluidPressure, *fluidStress;
