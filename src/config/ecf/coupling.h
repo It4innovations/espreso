@@ -5,48 +5,52 @@
 #include "config/description.h"
 
 #include <string>
+#include <map>
 
 namespace espreso {
 
-struct CouplingDataInConfiguration: public ECFDescription {
-    bool force, pressure, stress;
+struct DataExchangeConfiguration: public ECFDescription {
+    struct DataRead: public ECFDescription {
+        bool force, pressure, stress;
 
-    CouplingDataInConfiguration();
+        DataRead(): force(false), pressure(false), stress(false) {}
+    };
 
-    bool isactive()
+    struct DataWrite: public ECFDescription {
+        bool displacement, velocity;
+
+        DataWrite(): displacement(false), velocity(false) {}
+    };
+
+    bool direct;
+    bool centers;
+    DataRead read;
+    DataWrite write;
+
+    DataExchangeConfiguration();
+
+    bool isactive() const
     {
-        return force || pressure || stress;
+        return read.force || read.pressure || read.stress || write.displacement || write.velocity;
     }
 };
 
-struct CouplingDataOutConfiguration: public ECFDescription {
-    bool displacement, velocity;
+struct CouplingConfiguration: public ECFDescription {
 
-    CouplingDataOutConfiguration();
+    std::string configuration, solver, mesh, centers;
 
-    bool isactive()
-    {
-        return displacement || velocity;
-    }
-};
-
-struct CouplingSettings: public ECFDescription {
-    std::string configuration, solver, mesh;
-
-    CouplingDataInConfiguration data_in;
-    CouplingDataOutConfiguration data_out;
-
-    CouplingSettings();
-};
-
-struct CouplingConfiguration: public CouplingSettings {
-    CouplingSettings dummy;
+    std::map<std::string, DataExchangeConfiguration> exchange;
 
     CouplingConfiguration();
 
-    bool isactive()
+    bool isactive() const
     {
-        return data_in.isactive() || data_out.isactive();
+        for (auto data = exchange.cbegin(); data != exchange.cend(); ++data) {
+            if (data->second.isactive()) {
+                return true;
+            }
+        }
+        return false;
     }
 };
 

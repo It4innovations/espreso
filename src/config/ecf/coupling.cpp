@@ -4,35 +4,42 @@
 
 using namespace espreso;
 
-CouplingDataInConfiguration::CouplingDataInConfiguration()
+DataExchangeConfiguration::DataExchangeConfiguration()
 {
-    force = false;
-    REGISTER(force, ECFMetaData()
+    direct = false;
+    REGISTER(direct, ECFMetaData()
+            .setdescription({ "Direct read of data." })
+            .setdatatype({ ECFDataType::BOOL }));
+
+    centers = false;
+    REGISTER(centers, ECFMetaData()
+            .setdescription({ "Exchange data on edge/face centers." })
+            .setdatatype({ ECFDataType::BOOL }));
+
+    read.force = false;
+    ecfdescription->registerParameter("force", read.force, ECFMetaData()
             .setdescription({ "Read FORCE." })
             .setdatatype({ ECFDataType::BOOL }));
-    pressure = false;
-    REGISTER(pressure, ECFMetaData()
+    read.pressure = false;
+    ecfdescription->registerParameter("pressure", read.pressure, ECFMetaData()
             .setdescription({ "Read PRESSURE." })
             .setdatatype({ ECFDataType::BOOL }));
-    stress = false;
-    REGISTER(stress, ECFMetaData()
+    read.stress = false;
+    ecfdescription->registerParameter("stress", read.stress, ECFMetaData()
             .setdescription({ "Read STRESS." })
             .setdatatype({ ECFDataType::BOOL }));
-}
 
-CouplingDataOutConfiguration::CouplingDataOutConfiguration()
-{
-    displacement = false;
-    REGISTER(displacement, ECFMetaData()
+    write.displacement = false;
+    ecfdescription->registerParameter("displacement", write.displacement, ECFMetaData()
             .setdescription({ "Write DISPLACEMENT." })
             .setdatatype({ ECFDataType::BOOL }));
-    velocity = false;
-    REGISTER(velocity, ECFMetaData()
+    write.velocity = false;
+    ecfdescription->registerParameter("velocity", write.velocity, ECFMetaData()
             .setdescription({ "Write VELOCITY." })
             .setdatatype({ ECFDataType::BOOL }));
 }
 
-CouplingSettings::CouplingSettings()
+CouplingConfiguration::CouplingConfiguration()
 {
     REGISTER(configuration, ECFMetaData()
             .setdescription({ "PreCICE configuration file." })
@@ -43,15 +50,12 @@ CouplingSettings::CouplingSettings()
     REGISTER(mesh, ECFMetaData()
             .setdescription({ "Mesh name." })
             .setdatatype({ ECFDataType::STRING }));
+    REGISTER(centers, ECFMetaData()
+            .setdescription({ "Mesh centers name." })
+            .setdatatype({ ECFDataType::STRING }));
 
-    REGISTER(data_in, ECFMetaData()
-            .setdescription({ "Read data." }));
-    REGISTER(data_out, ECFMetaData()
-            .setdescription({ "Writted data." }));
-}
-
-CouplingConfiguration::CouplingConfiguration()
-{
-    REGISTER(dummy, ECFMetaData()
-            .setdescription({ "Settings for dummy-coupler." }));
+    REGISTER(exchange, ECFMetaData()
+            .setdescription({ "Mesh name.", "Data settings" })
+            .setdatatype({ ECFDataType::STRING })
+            .setpattern({ "Mesh-Solid" }));
 }

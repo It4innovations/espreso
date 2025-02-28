@@ -137,6 +137,9 @@ void ECF::_init()
     REGISTER(coupling, ECFMetaData()
             .setdescription({ "Settings for coupling." }));
 
+    REGISTER(coupling_dummy, ECFMetaData()
+            .setdescription({ "Settings for coupling dummy." }));
+
     dryrun = 0;
     REGISTER(dryrun, ECFMetaData()
             .setdescription({ "Just for testing assembler" })

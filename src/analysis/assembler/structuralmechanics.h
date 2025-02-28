@@ -62,9 +62,6 @@ public:
         static NodeData *principalStressAvg, *principalStrainAvg, *componentStressAvg, *componentStrainAvg, *vonMisesStressAvg, *vonMisesStrainAvg;
 
         static NodeData *force, *reactionForce;
-
-        // FSI
-        static NodeData *fluidForce, *fluidPressure, *fluidStress;
     };
 
 protected:

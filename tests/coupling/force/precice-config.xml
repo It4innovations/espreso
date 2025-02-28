@@ -10,55 +10,46 @@
   <data:vector name="Force" />
   <data:vector name="Displacement" />
 
-  <mesh name="Fluid-Mesh" dimensions="2">
-    <use-data name="Force" />
-    <use-data name="Displacement" />
-  </mesh>
-
   <mesh name="Solid-Mesh" dimensions="2">
     <use-data name="Displacement" />
+  </mesh>
+
+  <mesh name="Fluid-Mesh-Nodes" dimensions="2">
+    <use-data name="Displacement" />
+  </mesh>
+
+  <mesh name="Fluid-Mesh-Centers" dimensions="2">
     <use-data name="Force" />
   </mesh>
 
-  <participant name="Fluid">
-    <provide-mesh name="Fluid-Mesh" />
-    <receive-mesh name="Solid-Mesh" from="Solid" />
-    <write-data name="Force" mesh="Fluid-Mesh" />
-    <read-data name="Displacement" mesh="Fluid-Mesh" />
-    <mapping:rbf direction="write" from="Fluid-Mesh" to="Solid-Mesh" constraint="conservative">
-      <basis-function:compact-polynomial-c6 support-radius="0.1" />
-    </mapping:rbf>
-    <mapping:rbf direction="read" from="Solid-Mesh" to="Fluid-Mesh" constraint="consistent">
-      <basis-function:compact-polynomial-c6 support-radius="0.1" />
-    </mapping:rbf>
-  </participant>
-
   <participant name="Solid">
+    <export:vtk directory="precice-exports" />
     <provide-mesh name="Solid-Mesh" />
+    <receive-mesh name="Fluid-Mesh-Nodes" from="Fluid" direct-access="true"/>
+    <receive-mesh name="Fluid-Mesh-Centers" from="Fluid" direct-access="true"/>
+    <read-data name="Force" mesh="Fluid-Mesh-Centers" />
     <write-data name="Displacement" mesh="Solid-Mesh" />
-    <read-data name="Force" mesh="Solid-Mesh" />
-    <watch-point mesh="Solid-Mesh" name="Flap-Tip" coordinate="0.0;1" />
   </participant>
 
-  <m2n:sockets acceptor="Fluid" connector="Solid" exchange-directory="." />
+  <participant name="Fluid">
+    <export:vtk directory="precice-exports" />
+    <provide-mesh name="Fluid-Mesh-Nodes" />
+    <provide-mesh name="Fluid-Mesh-Centers" />
+    <receive-mesh name="Solid-Mesh" from="Solid" />
+    <write-data name="Force" mesh="Fluid-Mesh-Centers" />
+    <read-data name="Displacement" mesh="Fluid-Mesh-Nodes" />
+    <mapping:rbf direction="read" from="Solid-Mesh" to="Fluid-Mesh-Nodes" constraint="consistent">
+      <basis-function:compact-polynomial-c6 support-radius="0.1" />
+    </mapping:rbf>
+  </participant>
 
-  <coupling-scheme:parallel-implicit>
-    <time-window-size value="0.01" />
-    <max-time value="0.1" />
+  <m2n:sockets acceptor="Solid" connector="Fluid" exchange-directory="." />
+
+  <coupling-scheme:serial-explicit>
     <participants first="Fluid" second="Solid" />
-    <exchange data="Force" mesh="Solid-Mesh" from="Fluid" to="Solid" />
+    <max-time-windows value="1" />
+    <time-window-size value="1" />
+    <exchange data="Force" mesh="Fluid-Mesh-Centers" from="Fluid" to="Solid" />
     <exchange data="Displacement" mesh="Solid-Mesh" from="Solid" to="Fluid" />
-    <max-iterations value="50" />
-    <relative-convergence-measure limit="5e-3" data="Displacement" mesh="Solid-Mesh" />
-    <relative-convergence-measure limit="5e-3" data="Force" mesh="Solid-Mesh" />
-    <acceleration:IQN-ILS>
-      <data name="Displacement" mesh="Solid-Mesh" />
-      <data name="Force" mesh="Solid-Mesh" />
-      <preconditioner type="residual-sum" />
-      <filter type="QR2" limit="1e-2" />
-      <initial-relaxation value="0.5" />
-      <max-used-iterations value="100" />
-      <time-windows-reused value="15" />
-    </acceleration:IQN-ILS>
-  </coupling-scheme:parallel-implicit>
+  </coupling-scheme:serial-explicit>
 </precice-configuration>

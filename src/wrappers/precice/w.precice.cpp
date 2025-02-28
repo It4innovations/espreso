@@ -16,148 +16,278 @@
 #include <precice/precice.hpp>
 
 namespace espreso {
-struct PreciceData {
-    PreciceData()
-    : precice(info::ecf->coupling.solver, std::filesystem::path(info::ecf->ecffile).parent_path().append(info::ecf->coupling.configuration).c_str(), info::mpi::rank, info::mpi::size),
-      size(0)
+struct PreciceWrapper {
+    PreciceWrapper(const CouplingConfiguration &configuration)
+    : configuration(configuration),
+      precice(configuration.solver, std::filesystem::path(info::ecf->ecffile).parent_path().append(configuration.configuration).c_str(), info::mpi::rank, info::mpi::size)
     {
-
+        surface = info::mesh->bregion("SURFACE");
     }
 
+    const CouplingConfiguration &configuration;
     precice::Participant precice;
-    size_t size;
-    std::vector<esint> ids;
-    std::vector<double> data;
+
+    BoundaryRegionStore *surface;
+
+    struct Mesh {
+        std::map<std::string, BoundaryElementData* > data;
+        std::vector<precice::VertexID> ids;
+        std::vector<double> buffer; // used for exchange other data via PreCICE
+    };
+
+    std::map<std::string, Mesh> mesh;
 };
+
+static void setMesh2D(PreciceWrapper &w)
+{
+    Point min(1e20, 1e20, 0), max(-1e20, -1e20, 0);
+
+    if (w.configuration.mesh.size()) {
+        size_t size = info::mesh->surface->nIDs->datatarray().size();
+
+        std::vector<double> coords;
+        coords.reserve(info::mesh->dimension * size);
+        for (size_t n = 0; n < size; ++n) {
+            info::mesh->surface->coordinates->datatarray()[n].minmax(min, max);
+            coords.push_back(info::mesh->surface->coordinates->datatarray()[n].x);
+            coords.push_back(info::mesh->surface->coordinates->datatarray()[n].y);
+        }
+        w.mesh[w.configuration.mesh].ids.resize(size);
+        w.precice.setMeshVertices(w.configuration.mesh, coords, w.mesh[w.configuration.mesh].ids);
+
+        std::vector<precice::VertexID> edges;
+        for (auto e = info::mesh->surface->enodes->cbegin(); e != info::mesh->surface->enodes->cend(); ++e) {
+            for (auto n = e->begin(); n != e->end(); ++n) {
+                edges.push_back(*n);
+            }
+        }
+         w.precice.setMeshEdges(w.configuration.mesh, edges);
+    }
+
+     if (w.configuration.centers.size()) {
+         size_t size = info::mesh->surface->enodes->structures();
+
+         std::vector<double> coords;
+         coords.reserve(info::mesh->dimension * size);
+         for (auto e = info::mesh->surface->enodes->cbegin(); e != info::mesh->surface->enodes->cend(); ++e) {
+             Point c;
+             for (auto n = e->begin(); n != e->end(); ++n) {
+                 c += info::mesh->surface->coordinates->datatarray()[*n];
+             }
+             c /= e->size();
+             c.minmax(min, max);
+             coords.push_back(c.x);
+             coords.push_back(c.y);
+         }
+         w.mesh[w.configuration.centers].ids.resize(size);
+         w.precice.setMeshVertices(w.configuration.centers, coords, w.mesh[w.configuration.centers].ids);
+     }
+
+
+     for (auto data = w.configuration.exchange.cbegin(); data != w.configuration.exchange.cend(); ++data) {
+         if (data->second.direct) {
+             printf("add %s\n", data->first.c_str());
+             w.precice.setMeshAccessRegion(data->first, std::vector<double>{ min.x, max.x, min.y, max.y });
+         }
+     }
+}
+
+static void getMesh2D(PreciceWrapper &w)
+{
+    PreciceWrapper::Mesh *nodes = nullptr;
+    PreciceWrapper::Mesh *centers = nullptr;
+
+    for (auto data = w.configuration.exchange.cbegin(); data != w.configuration.exchange.cend(); ++data) {
+        if (data->second.direct) {
+            w.mesh[data->first].ids.resize(w.precice.getMeshVertexSize(data->first));
+            w.mesh[data->first].buffer.resize(w.mesh[data->first].ids.size() * 2);
+            w.precice.getMeshVertexIDsAndCoordinates(data->first, w.mesh[data->first].ids, w.mesh[data->first].buffer);
+
+            if (data->second.centers) {
+                if (centers != nullptr) eslog::error("only one center mesh can be set.\n");
+                centers = &w.mesh[data->first];
+            } else {
+                if (nodes != nullptr) eslog::error("only one node mesh can be set.\n");
+                nodes = &w.mesh[data->first];
+            }
+        }
+    }
+
+
+}
+
+static void setMesh3D(PreciceWrapper &w)
+{
+
+}
+
+static void getMesh3D(PreciceWrapper &w)
+{
+
+}
+
+static void readData(PreciceWrapper &w, double dt)
+{
+    auto read = [&] (const std::string &mesh, const std::string &data) {
+        w.precice.readData(mesh, data, w.mesh[mesh].ids, dt, w.mesh[mesh].data[data]->data);
+    };
+
+    auto readDirect = [&] (const std::string &mesh, const std::string &data) {
+        w.precice.readData(mesh, data, w.mesh[mesh].ids, dt, w.mesh[mesh].buffer);
+        // mortar mapping
+    };
+
+    for (auto data = w.configuration.exchange.cbegin(); data != w.configuration.exchange.cend(); ++data) {
+        if (0 && data->second.direct) { // TODO: mortar mapping
+            if (data->second.read.force)    { readDirect(data->first, "Force"); }
+            if (data->second.read.pressure) { readDirect(data->first, "Pressure"); }
+            if (data->second.read.stress)   { readDirect(data->first, "Stress"); }
+        } else {
+            if (data->second.read.force)    { read(data->first, "Force"); }
+            if (data->second.read.pressure) { read(data->first, "Pressure"); }
+            if (data->second.read.stress)   { read(data->first, "Stress"); }
+        }
+    }
+}
+
+static void writeData(PreciceWrapper &w)
+{
+    auto write = [&] (const std::string &mesh, const std::string &data) {
+        w.precice.writeData(mesh, data, w.mesh[mesh].ids, w.mesh[mesh].data[data]->data);
+    };
+
+    for (auto data = w.configuration.exchange.cbegin(); data != w.configuration.exchange.cend(); ++data) {
+        if (data->second.write.displacement) { write(data->first, "Displacement");}
+        if (data->second.write.velocity)     { write(data->first, "Velocity"); }
+    }
+}
+
 }
 
 #endif
 
 using namespace espreso;
 
-Precice::Precice()
-: _data(nullptr)
+Precice::Precice(const CouplingConfiguration &configuration)
+: wrapper(nullptr)
 {
+    if (!configuration.isactive()) { return; }
+
 #ifdef HAVE_PRECICE
-    if (info::ecf->coupling.isactive()) {
-        _data = new PreciceData();
+    wrapper = new PreciceWrapper(configuration);
 
-        _data->size = info::mesh->surface->nIDs->datatarray().size();
-        _data->ids.resize(_data->size);
+    switch (info::mesh->dimension) {
+    case 2: setMesh2D(*wrapper); break;
+    case 3: setMesh3D(*wrapper); break;
+    }
 
-        if (info::mesh->dimension == 2) {
-            std::vector<double> coords; coords.reserve(info::mesh->dimension * _data->size);
-            for (size_t n = 0; n < _data->size; ++n) {
-                coords.push_back(info::mesh->surface->coordinates->datatarray()[n].x);
-                coords.push_back(info::mesh->surface->coordinates->datatarray()[n].y);
-            }
-            _data->precice.setMeshVertices(info::ecf->coupling.mesh, coords, _data->ids);
-            std::vector<esint> edges;
-            for (auto e = info::mesh->surface->enodes->cbegin(); e != info::mesh->surface->enodes->cend(); ++e) {
-                for (auto n = e->begin(); n != e->end(); ++n) {
-                    edges.push_back(*n);
-                }
-            }
-            _data->precice.setMeshEdges(info::ecf->coupling.mesh, edges);
-        } else {
-            double *coords = &info::mesh->surface->coordinates->datatarray().data()->x;
-            _data->precice.setMeshVertices(info::ecf->coupling.mesh, precice::span(coords, coords + info::mesh->dimension * _data->size), _data->ids);
-        }
-        _data->precice.initialize();
-        _data->data.resize(info::mesh->dimension * _data->size);
+    wrapper->precice.initialize();
+
+    switch (info::mesh->dimension) {
+    case 2: getMesh2D(*wrapper); break;
+    case 3: getMesh3D(*wrapper); break;
+    }
+
+    auto resize = [&] (const std::string &mesh, const std::string &data, int dim, bool center) {
+        BoundaryElementData::Type type = center ? BoundaryElementData::Type::ELEMENTS : BoundaryElementData::Type::NODES;
+        NamedData::DataType datatype = dim == 1 ? NamedData::DataType::SCALAR : NamedData::DataType::VECTOR;
+        wrapper->mesh[mesh].data[data] = wrapper->surface->appendData(dim, type, datatype, data);
+    };
+
+    for (auto data = configuration.exchange.cbegin(); data != configuration.exchange.cend(); ++data) {
+        if (data->second.read.force)         { resize(data->first, "Force"       , info::mesh->dimension, data->second.centers); }
+        if (data->second.read.pressure)      { resize(data->first, "Pressure"    ,                     1, data->second.centers); }
+        if (data->second.read.stress)        { resize(data->first, "Stress"      , info::mesh->dimension, data->second.centers); }
+        if (data->second.write.displacement) { resize(data->first, "Displacement", info::mesh->dimension, data->second.centers); }
+        if (data->second.write.velocity)     { resize(data->first, "Velocity"    , info::mesh->dimension, data->second.centers); }
     }
 #endif
 }
 
 Precice::~Precice()
 {
+    if (wrapper == nullptr) { return; }
 #ifdef HAVE_PRECICE
-    if (_data) {
-        delete _data;
-    }
+    delete wrapper;
 #endif
 }
 
 double Precice::timeStep(double dt)
 {
+    if (wrapper == nullptr) { return dt; }
 #ifdef HAVE_PRECICE
-    if (_data) {
-        return std::min(dt, _data->precice.getMaxTimeStepSize());
-    }
+    return std::min(dt, wrapper->precice.getMaxTimeStepSize());
 #endif
-    return dt;
 }
 
 bool Precice::requiresWritingCheckpoint()
 {
+    if (wrapper == nullptr) { return false; }
 #ifdef HAVE_PRECICE
-    if (_data) {
-        return _data->precice.requiresWritingCheckpoint();
-    }
+    return wrapper->precice.requiresWritingCheckpoint();
 #endif
-    return false;
 }
 
 bool Precice::requiresReadingCheckpoint()
 {
+    if (wrapper == nullptr) { return false; }
 #ifdef HAVE_PRECICE
-    if (_data) {
-        return _data->precice.requiresReadingCheckpoint();
-    }
-#endif
-    return false;
-}
-
-void Precice::_read(double *data, const std::string &name, double dt)
-{
-#ifdef HAVE_PRECICE
-    _data->precice.readData(info::ecf->coupling.mesh, name, _data->ids, dt, _data->data);
-    for (size_t n = 0; n < _data->size; ++n) {
-        for (int d = 0; d < info::mesh->dimension; ++d) {
-            data[info::mesh->surface->nIDs->datatarray()[n] * info::mesh->dimension + d] = _data->data[n * info::mesh->dimension + d];
-        }
-    }
+    return wrapper->precice.requiresReadingCheckpoint();
 #endif
 }
 
 void Precice::read(double dt)
 {
+    if (wrapper == nullptr) { return; }
 #ifdef HAVE_PRECICE
-    if (_data) {
-        if (info::ecf->coupling.data_in.force)    { _read(StructuralMechanics::Results::fluidForce->data.data()   , "Force"   , dt); }
-        if (info::ecf->coupling.data_in.pressure) { _read(StructuralMechanics::Results::fluidPressure->data.data(), "Pressure", dt); }
-        if (info::ecf->coupling.data_in.stress)   { _read(StructuralMechanics::Results::fluidStress->data.data()  , "Stress"  , dt); }
-    }
-#endif
-}
-
-void Precice::_write(double *data, const std::string &name)
-{
-#ifdef HAVE_PRECICE
-    for (size_t n = 0; n < _data->size; ++n) {
-        for (int d = 0; d < info::mesh->dimension; ++d) {
-            _data->data[n * info::mesh->dimension + d] = data[info::mesh->surface->nIDs->datatarray()[n] * info::mesh->dimension + d];
-        }
-    }
-    _data->precice.writeData(info::ecf->coupling.mesh, name, _data->ids, _data->data);
+    readData(*wrapper, dt);
 #endif
 }
 
 void Precice::write()
 {
+    if (wrapper == nullptr) { return; }
 #ifdef HAVE_PRECICE
-    if (_data) {
-        if (info::ecf->coupling.data_out.displacement) { _write(StructuralMechanics::Results::displacement->data.data(), "Displacement"); }
-        if (info::ecf->coupling.data_out.velocity)     { _write(StructuralMechanics::Results::velocity->data.data()    , "Velocity"); }
-    }
+    writeData(*wrapper);
 #endif
 }
 
 void Precice::advance(double dt)
 {
+    if (wrapper == nullptr) { return; }
 #ifdef HAVE_PRECICE
-    if (_data) {
-        _data->precice.advance(dt);
+    wrapper->precice.advance(dt);
+#endif
+}
+
+void Precice::dummy()
+{
+    if (wrapper == nullptr) { return; }
+#ifdef HAVE_PRECICE
+    auto _read = [&] () {
+//        wrapper.precice.writeData(mesh, data, w.mesh[mesh].ids, w.mesh[mesh].data[data]->data);
+    };
+
+    while (wrapper->precice.isCouplingOngoing()) {
+        if (wrapper->precice.requiresWritingCheckpoint()) {
+            // checkpoint
+        }
+        double dt = wrapper->precice.getMaxTimeStepSize();
+
+//        for (auto data = wrapper->configuration.exchange.cbegin(); data != wrapper->configuration.exchange.cend(); ++data) {
+//            if (data->second.read.force)         { resize(data->first, "Force"       , info::mesh->dimension, data->second.centers); }
+//            if (data->second.read.pressure)      { resize(data->first, "Pressure"    ,                     1, data->second.centers); }
+//            if (data->second.read.stress)        { resize(data->first, "Stress"      , info::mesh->dimension, data->second.centers); }
+//            if (data->second.write.displacement) { resize(data->first, "Displacement", info::mesh->dimension, data->second.centers); }
+//            if (data->second.write.velocity)     { resize(data->first, "Velocity"    , info::mesh->dimension, data->second.centers); }
+//        }
+        wrapper->precice.advance(dt);
+
+        if (wrapper->precice.requiresReadingCheckpoint()) {
+            // checkpoint
+        } else {
+            // advance
+        }
     }
 #endif
 }

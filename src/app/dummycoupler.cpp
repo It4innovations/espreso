@@ -15,7 +15,7 @@
 #include "config/reader/reader.h"
 #include "config/configuration.h"
 #include "output/output.h"
-#include "wrappers/precice-dummy/w.precice.dummy.h"
+#include "wrappers/precice/w.precice.h"
 
 using namespace espreso;
 
@@ -46,7 +46,9 @@ int main(int argc, char **argv)
     eslog::checkpointln("COUPLER: MESH PREPROCESSED");
     info::mesh->printMeshStatistics();
 
-    PreciceDummy::run();
+    Precice precice(info::ecf->coupling_dummy);
+    precice.dummy();
+
     eslog::endln("COUPLER: PRECICE STARTED");
 
     Mesh::finish();

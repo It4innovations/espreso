@@ -72,7 +72,7 @@ struct ECF: public ECFDescription {
     InputGeneratorConfiguration generator;
 
     MeshMorphing mesh_morphing;
-    CouplingConfiguration coupling;
+    CouplingConfiguration coupling, coupling_dummy;
 
     bool simple_output, always_update_conductivity;
     size_t dryrun;

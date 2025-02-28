@@ -96,7 +96,7 @@ bool StructuralMechanicsTransientLinear::analyze(step::Step &step)
 
 bool StructuralMechanicsTransientLinear::run(step::Step &step, Physics *prev)
 {
-    Precice precice;
+    Precice precice(info::ecf->coupling);
 
     time.start = time.previous = time.current = 0;
     U->set(0);
