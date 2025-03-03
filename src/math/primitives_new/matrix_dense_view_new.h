@@ -2,8 +2,11 @@
 #ifndef SRC_MATH_PRIMITIVES_NEW_MATRIX_DENSE_VIEW_NEW_H_
 #define SRC_MATH_PRIMITIVES_NEW_MATRIX_DENSE_VIEW_NEW_H_
 
+#include <cstring>
+
 #include "math/primitives_new/matrix_base_new.h"
 #include "math/primitives/matrix_dense.h"
+#include "basis/utilities/utils.h"
 
 
 
@@ -69,7 +72,7 @@ public:
 
     MatrixDenseView_new<T> get_submatrix_view(size_t row_start, size_t row_end, size_t col_start, size_t col_end) const
     {
-        if(row_start > row_end || row_end > nrows || col_start > col_end || col_end > ncols) eslog::error("wrong submatrix");
+        if(row_start > row_end || row_end > nrows || col_start > col_end || col_end > ncols) eslog::error("wrong submatrix\n");
 
         MatrixDenseView_new<T> M = *this;
         M.nrows = row_end - row_start;
@@ -117,6 +120,35 @@ public:
         else if(M_new.prop.uplo == 'L') M_old.shape == Matrix_Shape::LOWER;
         else M_old.shape == Matrix_Shape::FULL;
         return M_old;
+    }
+
+    void print(const char * name = "")
+    {
+        if constexpr(utils::is_real<T>()) {
+            eslog::info("Dense matrix %s, size %zux%zu, ld %zu, order '%c', uplo '%c', diag '%c'\n", name, nrows, ncols, ld, order, prop.uplo, prop.diag);
+            for(size_t r = 0; r < nrows; r++) {
+                for(size_t c = 0; c < ncols; c++) {
+                    if constexpr(std::is_floating_point_v<T>) {
+                        double v = (double)vals[r * get_stride_row() + c * get_stride_col()];
+                        char str[100];
+                        snprintf(str, sizeof(str), "%+11.3e", v);
+                        if(strstr(str, "nan") != nullptr) eslog::info("   nan      ");
+                        else if(strstr(str, "inf") != nullptr) eslog::info("  %cinf      ", v > 0 ? '+' : '-');
+                        else if(v == 0) eslog::info("   0        ");
+                        else eslog::info(" %+11.3e", v);
+                    }
+                    if constexpr(std::is_integral_v<T>) {
+                        long long v = (long long)vals[r * get_stride_row() + c * get_stride_col()];
+                        eslog::info(" %+11lld", v);
+                    }
+                }
+                eslog::info("\n");
+            }
+            fflush(stdout);
+        }
+        if constexpr(utils::is_complex<T>()) {
+            eslog::error("matrix print not yet supported for complex matrices\n");
+        }
     }
 };
 

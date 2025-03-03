@@ -20,6 +20,10 @@ public:
     virtual bool is_on_cpu() = 0;
     virtual bool is_on_gpu() = 0;
 public:
+    virtual size_t get_align()
+    {
+        return 1;
+    }
     template<typename T>
     void free(T * & ptr)
     {
@@ -28,21 +32,12 @@ public:
     virtual void * alloc_2d(size_t num_chunks, size_t bytes_per_chunk, size_t & pitch)
     {
         pitch = bytes_per_chunk;
-        return alloc(num_chunks * bytes_per_chunk);
+        return alloc(num_chunks * pitch);
     }
     template<typename T>
     T * alloc(size_t num_elements)
     {
         return reinterpret_cast<T*>(alloc(num_elements * sizeof(T)));
-    }
-    template<typename T>
-    T * alloc_2d(size_t num_chunks, size_t elements_per_chunk, size_t & ld)
-    {
-        size_t pitch;
-        T * ptr = reinterpret_cast<T*>(alloc_2d(num_chunks, elements_per_chunk * sizeof(T), pitch));
-        if(pitch % sizeof(T) != 0) eslog::error("bad alloc_2d - sizeof(T) does not divide pitch\n");
-        pitch = ld / sizeof(T);
-        return ptr;
     }
 };
 
@@ -92,10 +87,10 @@ public:
 class AllocatorCPU_new : public Allocator_new
 {
 private:
-    size_t align = 1;
+    static constexpr size_t align = 64;
     static AllocatorCPU_new singleton;
 public:
-    AllocatorCPU_new(size_t align_ = 1) : align(align_) {}
+    AllocatorCPU_new() {}
     virtual ~AllocatorCPU_new() {}
     virtual void * alloc(size_t num_bytes) override
     {
@@ -114,10 +109,9 @@ public:
     {
         return false;
     }
-    virtual void * alloc_2d(size_t num_chunks, size_t bytes_per_chunk, size_t & pitch) override
+    virtual size_t get_align() override
     {
-        pitch = ((bytes_per_chunk - 1) / 64 + 1) * 64;
-        return alloc(num_chunks * bytes_per_chunk);
+        return align;
     }
 public:
     static AllocatorCPU_new * get_singleton()
@@ -152,9 +146,9 @@ public:
     {
         return true;
     }
-    virtual void * alloc_2d(size_t num_chunks, size_t bytes_per_chunk, size_t & pitch) override
+    virtual size_t get_align() override
     {
-        return gpu::mgm::memalloc_device_2d(num_chunks, bytes_per_chunk, pitch);
+        eslog::error("todo\n");
     }
 public:
     static AllocatorGPU_new * get_singleton()
@@ -188,6 +182,10 @@ public:
     virtual bool is_on_gpu() override
     {
         return false;
+    }
+    virtual size_t get_align() override
+    {
+        eslog::error("todo\n");
     }
 public:
     static AllocatorHostPinned_new * get_singleton()

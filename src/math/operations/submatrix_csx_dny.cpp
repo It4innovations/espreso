@@ -97,18 +97,20 @@ void submatrix_csx_dny<T,I>::perform_copyvals()
     T * srcvals = M_src->vals;
     T * dstvals = M_dst->vals;
 
-    for(size_t ip = start_prim; ip < end_prim; ip++)
+    for(size_t ips = start_prim; ips < end_prim; ips++)
     {
-        I start = srcptrs[ip];
-        I end = srcptrs[ip+1];
+        size_t ipd = ips - start_prim;
+        I start = srcptrs[ips];
+        I end = srcptrs[ips+1];
         I i = start;
         while(i < end && srcidxs[i] < start_sec) {
             i++;
         }
         while(i < end && srcidxs[i] < end_sec) {
-            I is = srcidxs[i];
+            I iss = srcidxs[i];
+            I isd = iss - start_sec;
             T v = srcvals[i];
-            dstvals[ip * stride_prim + is * stride_sec] = v;
+            dstvals[ipd * stride_prim + isd * stride_sec] = v;
             i++;
         }
     }

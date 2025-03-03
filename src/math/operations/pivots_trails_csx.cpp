@@ -44,7 +44,7 @@ void pivots_trails_csx<T,I>::perform()
     if(vec == nullptr) eslog::error("vector is not set\n");
     if(row_col == '_' || pivots_trails == '_') eslog::error("mode is not set\n");
 
-    bool need_reorder = (M->order == row_col);
+    bool need_reorder = (M->order != row_col);
     if(need_reorder) {
         MatrixCsxData_new<T,I> M_reordered;
         M_reordered.set(M->nrows, M->ncols, M->nnz, change_order(M->order), AllocatorCPU_new::get_singleton());

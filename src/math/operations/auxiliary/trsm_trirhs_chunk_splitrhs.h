@@ -6,7 +6,10 @@
 #include "math/primitives_new/matrix_dense_data_new.h"
 #include "math/primitives_new/vector_dense_view_new.h"
 #include "math/operations/submatrix_csx_csy.h"
-#include "math/operations/trsm_csx_dny.h"
+#include "math/operations/submatrix_csx_dny.h"
+#include "math/operations/submatrix_dnx_dnx_view.h"
+#include "math/operations/trsm_csx_dny_dny.h"
+#include "math/operations/trsm_dnx_dny.h"
 
 
 
@@ -26,13 +29,6 @@ public:
         char factor_order = '_';
     };
 public:
-    trsm_trirhs_chunk_splitrhs() = default;
-    trsm_trirhs_chunk_splitrhs(const trsm_trirhs_chunk_splitrhs &) = delete;
-    trsm_trirhs_chunk_splitrhs(trsm_trirhs_chunk_splitrhs &&) = delete;
-    trsm_trirhs_chunk_splitrhs & operator=(const trsm_trirhs_chunk_splitrhs &) = delete;
-    trsm_trirhs_chunk_splitrhs & operator=(trsm_trirhs_chunk_splitrhs &&) = delete;
-    ~trsm_trirhs_chunk_splitrhs();
-public:
     void set_config(config cfg_);
     void set_range(size_t rhs_start_, size_t rhs_end_);
     void set_L(MatrixCsxView_new<T,I> * L_);
@@ -40,7 +36,6 @@ public:
     void set_X_colpivots(VectorDenseView_new<I> * X_colpivots_);
     void preprocess();
     void perform();
-    void finalize();
 private:
     size_t rhs_start = 0;
     size_t rhs_end = 0;
@@ -59,7 +54,10 @@ private:
     MatrixDenseData_new<T> sub_L_dn;
     MatrixDenseView_new<T> sub_X;
     submatrix_csx_csy<T,I> op_submatrix_L_sp;
-    trsm_csx_dny<T,I> op_trsm_sp;
+    submatrix_csx_dny<T,I> op_submatrix_L_dn;
+    submatrix_dnx_dnx_view<T> op_submatrix_X;
+    trsm_csx_dny_dny<T,I> op_trsm_sp;
+    trsm_dnx_dny<T> op_trsm_dn;
 };
 
 

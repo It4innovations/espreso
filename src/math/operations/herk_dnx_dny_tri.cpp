@@ -127,7 +127,7 @@ void herk_dnx_dny_tri<T,I>::preprocess()
     partitioner.set_output_partition(&partition);
     partitioner.setup();
     num_chunks = partitioner.get_num_chunks();
-    partition.set(num_chunks, AllocatorCPU_new::get_singleton());
+    partition.set(num_chunks + 1, AllocatorCPU_new::get_singleton());
     partition.alloc();
     partitioner.perform();
 
@@ -149,8 +149,8 @@ void herk_dnx_dny_tri<T,I>::perform()
     if(mode == blas::herk_mode::AAh) {
         perform_AAh();
     }
-    if(mode == blas::herk_mode::AAh) {
-        perform_AAh();
+    if(mode == blas::herk_mode::AhA) {
+        perform_AhA();
     }    
 }
 

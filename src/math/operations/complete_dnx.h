@@ -17,11 +17,13 @@ class complete_dnx
 {
 public:
     void set_matrix(MatrixDenseView_new<T> * M_);
+    void set_orig_uplo(char orig_uplo_);
     void set_conj(bool do_conj_);
     void perform();
-    static void do_all(MatrixDenseView_new<T> * M, bool do_conj);
+    static void do_all(MatrixDenseView_new<T> * M, char orig_uplo, bool do_conj);
 private:
     MatrixDenseView_new<T> * M;
+    char orig_uplo = '_';
     bool do_conj = true;
 };
 

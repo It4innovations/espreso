@@ -104,7 +104,7 @@ void lincomb_matrix_dnx<T>::perform_one(MatrixDenseView_new<T> & X, T alpha, Mat
         size_t start = 0;
         size_t end = size_secdary;
         if(move_start) start = i;
-        if(move_end) end = i;
+        if(move_end) end = i+1;
         T * sub_X = vals_X + i * X.ld;
         T * sub_A = vals_A + i * A.ld;
         for(size_t j = start; j < end; j++) {
@@ -134,7 +134,7 @@ void lincomb_matrix_dnx<T>::perform_two(MatrixDenseView_new<T> & X, T alpha, Mat
         size_t start = 0;
         size_t end = size_secdary;
         if(move_start) start = i;
-        if(move_end) end = i;
+        if(move_end) end = i+1;
         T * sub_X = vals_X + i * X.ld;
         T * sub_A = vals_A + i * A.ld;
         T * sub_B = vals_B + i * B.ld;

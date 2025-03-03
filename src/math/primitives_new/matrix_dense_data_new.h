@@ -52,6 +52,10 @@ public:
         ncols = ncols_;
         order = order_;
         ator = ator_;
+        size_t align = ator->get_align();
+        if(align % sizeof(T) != 0) eslog::error("incompatible allocator alignment and sizeof(T)\n");
+        align /= sizeof(T);
+        ld = ((this->get_size_secdary() - 1) / align + 1) * align;
         was_set = true;
     }
     void alloc()
@@ -60,7 +64,7 @@ public:
         if(ator == nullptr) eslog::error("matrix data has not been set\n");
         if(vals != nullptr) eslog::error("matrix is already allocated\n");
         if(nrows > 0 && ncols > 0) {
-            vals = ator->alloc_2d<T>(this->get_size_primary(), this->get_size_secdary(), ld);
+            vals = ator->alloc<T>(this->get_size_primary() * ld);
         }
     }
     void free()

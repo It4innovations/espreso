@@ -1,5 +1,5 @@
 
-#include "math/operations/trsm_csx_dny.h"
+#include "math/operations/trsm_csx_dny_staged.h"
 
 #include "math/operations/copy_dnx.h"
 
@@ -12,7 +12,7 @@ namespace operations {
 
 
 template<typename T, typename I>
-trsm_csx_dny<T,I>::~trsm_csx_dny()
+trsm_csx_dny_staged<T,I>::~trsm_csx_dny_staged()
 {
     finalize();
 }
@@ -20,7 +20,7 @@ trsm_csx_dny<T,I>::~trsm_csx_dny()
 
 
 template<typename T, typename I>
-void trsm_csx_dny<T,I>::set_system_matrix(MatrixCsxView_new<T,I> * A_)
+void trsm_csx_dny_staged<T,I>::set_system_matrix(MatrixCsxView_new<T,I> * A_)
 {
     A = A_;
 }
@@ -28,7 +28,7 @@ void trsm_csx_dny<T,I>::set_system_matrix(MatrixCsxView_new<T,I> * A_)
 
 
 template<typename T, typename I>
-void trsm_csx_dny<T,I>::set_rhs_sol(MatrixDenseView_new<T> * X_)
+void trsm_csx_dny_staged<T,I>::set_rhs_sol(MatrixDenseView_new<T> * X_)
 {
     X = X_;
 }
@@ -36,7 +36,7 @@ void trsm_csx_dny<T,I>::set_rhs_sol(MatrixDenseView_new<T> * X_)
 
 
 template<typename T, typename I>
-void trsm_csx_dny<T,I>::preprocess()
+void trsm_csx_dny_staged<T,I>::preprocess()
 {
     if(A == nullptr) eslog::error("matrix A is not set\n");
     if(X == nullptr) eslog::error("matrix X is not set\n");
@@ -47,12 +47,14 @@ void trsm_csx_dny<T,I>::preprocess()
     Y.set(X->nrows, X->ncols, X->order, AllocatorCPU_new::get_singleton());
 
     math::spblas::trsm(*A, *X, Y, handle, 'P');
+
+    preprocess_called = true;
 }
 
 
 
 template<typename T, typename I>
-void trsm_csx_dny<T,I>::perform()
+void trsm_csx_dny_staged<T,I>::perform()
 {
     if(A == nullptr) eslog::error("matrix A is not set\n");
     if(X == nullptr) eslog::error("matrix X is not set\n");
@@ -72,7 +74,7 @@ void trsm_csx_dny<T,I>::perform()
 
 
 template<typename T, typename I>
-void trsm_csx_dny<T,I>::finalize()
+void trsm_csx_dny_staged<T,I>::finalize()
 {
     if(preprocess_called) {
         math::spblas::trsm(*A, *X, Y, handle, 'F');
@@ -83,7 +85,7 @@ void trsm_csx_dny<T,I>::finalize()
 
 
 #define INSTANTIATE_T_I(T,I) \
-template class trsm_csx_dny<T,I>;
+template class trsm_csx_dny_staged<T,I>;
 
     #define INSTANTIATE_T(T) \
     INSTANTIATE_T_I(T,int32_t) \

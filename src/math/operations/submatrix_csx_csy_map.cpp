@@ -237,7 +237,7 @@ void submatrix_csx_csy_map<T,I>::perform_pattern_same_order()
             i++;
         }
     }
-    dst_ptrs[curr_nnz] = nnz_output;
+    dst_ptrs[M_dst->get_size_primary()] = nnz_output;
 }
 
 
@@ -321,7 +321,7 @@ void submatrix_csx_csy_map<T,I>::perform_pattern_diff_order()
     {
         I tmp = dst_ptrs[ipd];
         dst_ptrs[ipd] = curr;
-        curr += tmp;
+        curr = tmp;
     }
 }
 

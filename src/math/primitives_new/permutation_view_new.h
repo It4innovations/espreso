@@ -42,10 +42,10 @@ public:
         return (A.size == B.size);
     }
 
-    Permutation<I> get_inverse_view()
+    PermutationView_new<I> get_inverse_view()
     {
-        Permutation<I> ret;
-        ret.set(size, src_to_dst, dst_to_src);
+        PermutationView_new<I> ret;
+        ret.set_view(size, src_to_dst, dst_to_src);
         return ret;
     }
 
@@ -59,7 +59,6 @@ public:
     template<typename A>
     static Permutation<I,A> to_old(PermutationView_new<I> & P_new)
     {
-        if(P_new.ator.is_on_cpu() != A::is_data_host_accessible || P_new.ator.is_on_gpu() != A::is_data_device_accessible) eslog::error("allocators not compatible\n");
         Permutation<I,A> P_old;
         P_old.size = P_new.size;
         P_old.dst_to_src = P_new.dst_to_src;

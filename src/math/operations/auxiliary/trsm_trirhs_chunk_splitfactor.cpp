@@ -1,10 +1,6 @@
 
 #include "math/operations/auxiliary/trsm_trirhs_chunk_splitfactor.h"
 
-#include "math/operations/submatrix_csx_dny.h"
-#include "math/operations/trsm_dnx_dny.h"
-#include "math/operations/gemm_dnx_dny_dnz.h"
-
 
 
 namespace espreso {
@@ -80,8 +76,16 @@ void trsm_trirhs_chunk_splitfactor<T,I>::preprocess()
     size_t rhs_start = 0;
     size_t rhs_end = X_rowtrails->vals[k_end - 1] + 1;
     size_t rhs_size = rhs_end - rhs_start;
-    sub_X_top.set_view(k_size, rhs_size, X->ld, X->order, X->vals + k_start * X->get_stride_row() + rhs_start * X->get_stride_col());
-    sub_X_bot.set_view(X->nrows - k_end, rhs_size, X->ld, X->order, X->vals + k_end * X->get_stride_row() + rhs_start * X->get_stride_col());
+
+    sub_X_top.set_view(k_size, rhs_size, X->ld, X->order, nullptr);
+    op_submatrix_X_top.set_matrix_src(X);
+    op_submatrix_X_top.set_matrix_dst(&sub_X_top);
+    op_submatrix_X_top.set_bounds(k_start, k_end, rhs_start, rhs_end);
+
+    sub_X_bot.set_view(X->nrows - k_end, rhs_size, X->ld, X->order, nullptr);
+    op_submatrix_X_bot.set_matrix_src(X);
+    op_submatrix_X_bot.set_matrix_dst(&sub_X_bot);
+    op_submatrix_X_bot.set_bounds(k_end, X->nrows, rhs_start, rhs_end);
 
     if(cfg.trsm_factor_spdn == 'S') {
         op_submatrix_L_top_sp.set_matrix_src(L);
@@ -95,54 +99,66 @@ void trsm_trirhs_chunk_splitfactor<T,I>::preprocess()
         sub_L_top_sp.prop.uplo = L->prop.uplo;
 
         op_trsm_sp.set_system_matrix(&sub_L_top_sp);
-        op_trsm_sp.set_rhs_sol(&sub_X_top);
-
-        sub_L_top_sp.alloc();
-        op_submatrix_L_top_sp.perform();
-        op_trsm_sp.preprocess();
-        sub_L_top_sp.free();
+        op_trsm_sp.set_rhs_matrix(&sub_X_top);
+        op_trsm_sp.set_solution_matrix(&sub_X_top);
     }
     if(cfg.trsm_factor_spdn == 'D') {
+        op_submatrix_L_top_dn.set_matrix_src(L);
+        op_submatrix_L_top_dn.set_matrix_dst(&sub_L_top_dn);
+        op_submatrix_L_top_dn.set_bounds(k_start, k_end, k_start, k_end);
+
         sub_L_top_dn.set(k_size, k_size, cfg.trsm_factor_order, AllocatorCPU_new::get_singleton());
         sub_L_top_dn.prop.diag = L->prop.diag;
         sub_L_top_dn.prop.uplo = L->prop.uplo;
+
+        op_trsm_dn.set_system_matrix(&sub_L_top_dn);
+        op_trsm_dn.set_rhs_sol(&sub_X_top);
     }
 
-    if(cfg.gemm_factor_prune == 'Y' || cfg.gemm_factor_spdn == 'S') {
-        op_submatrix_L_bot_sp.set_matrix_src(L);
-        op_submatrix_L_bot_sp.set_matrix_dst(&sub_L_bot_sp);
-        op_submatrix_L_bot_sp.set_bounds(k_end, L->nrows, k_start, k_end);
-        op_submatrix_L_bot_sp.setup();
-        size_t nnz = op_submatrix_L_bot_sp.get_output_matrix_nnz();
+    if(sub_X_bot.nrows > 0) {
+        if(cfg.gemm_factor_prune != 'N' || cfg.gemm_factor_spdn == 'S') {
+            op_submatrix_L_bot_sp.set_matrix_src(L);
+            op_submatrix_L_bot_sp.set_matrix_dst(&sub_L_bot_sp);
+            op_submatrix_L_bot_sp.set_bounds(k_end, L->nrows, k_start, k_end);
+            op_submatrix_L_bot_sp.setup();
+            size_t nnz = op_submatrix_L_bot_sp.get_output_matrix_nnz();
 
-        sub_L_bot_sp.set(sub_X_bot.nrows, k_size, nnz, cfg.gemm_factor_order, AllocatorCPU_new::get_singleton());
-    }
+            sub_L_bot_sp.set(sub_X_bot.nrows, k_size, nnz, cfg.gemm_factor_order, AllocatorCPU_new::get_singleton());
+        }
 
-    if(cfg.gemm_factor_prune == 'N' && cfg.gemm_factor_spdn == 'S') {
-        op_gemm_normal_sp.set_matrix_A(&sub_L_bot_sp);
-        op_gemm_normal_sp.set_matrix_B(&sub_X_top);
-        op_gemm_normal_sp.set_matrix_C(&sub_X_bot);
-        op_gemm_normal_sp.set_coefficients(T{-1}, T{1});
+        if(cfg.gemm_factor_prune == 'N' && cfg.gemm_factor_spdn == 'S') {
+            op_gemm_normal_sp.set_matrix_A(&sub_L_bot_sp);
+            op_gemm_normal_sp.set_matrix_B(&sub_X_top);
+            op_gemm_normal_sp.set_matrix_C(&sub_X_bot);
+            op_gemm_normal_sp.set_coefficients(T{-1}, T{1});
+        }
+        if(cfg.gemm_factor_prune == 'N' && cfg.gemm_factor_spdn == 'D') {
+            op_submatrix_L_bot_dn.set_matrix_src(L);
+            op_submatrix_L_bot_dn.set_matrix_dst(&sub_L_bot_dn);
+            op_submatrix_L_bot_dn.set_bounds(k_end, L->nrows, k_start, k_end);
 
-        sub_L_bot_sp.alloc();
-        op_submatrix_L_bot_sp.perform();
-        op_gemm_normal_sp.preprocess();
-        sub_L_bot_sp.free();
-    }
-    if(cfg.gemm_factor_prune == 'N' && cfg.gemm_factor_spdn == 'D') {
-        sub_L_bot_dn.set(sub_X_bot.nrows, k_size, cfg.gemm_factor_order, AllocatorCPU_new::get_singleton());
-    }
-    if(cfg.gemm_factor_prune == 'Y') {
-        op_gemm_prune.set_config(cfg.gemm_factor_spdn);
-        op_gemm_prune.set_matrix_A(&sub_L_bot_sp);
-        op_gemm_prune.set_matrix_B(&sub_X_top);
-        op_gemm_prune.set_matrix_C(&sub_X_bot);
-        op_gemm_prune.set_coefficients(T{-1}, T{1});
-        
-        sub_L_bot_sp.alloc();
-        op_submatrix_L_bot_sp.perform();
-        op_gemm_prune.preprocess();
-        sub_L_bot_sp.free();
+            sub_L_bot_dn.set(sub_X_bot.nrows, k_size, cfg.gemm_factor_order, AllocatorCPU_new::get_singleton());
+
+            op_gemm_normal_dn.set_matrix_A(&sub_L_bot_dn);
+            op_gemm_normal_dn.set_matrix_B(&sub_X_top);
+            op_gemm_normal_dn.set_matrix_C(&sub_X_bot);
+            op_gemm_normal_dn.set_coefficients(T{-1}, T{1});
+            op_gemm_normal_dn.set_conj(false, false);
+        }
+        if(cfg.gemm_factor_prune != 'N') {
+            bool prune_rows = (cfg.gemm_factor_prune == 'R') || (cfg.gemm_factor_prune == 'A');
+            bool prune_cols = (cfg.gemm_factor_prune == 'C') || (cfg.gemm_factor_prune == 'A');
+            op_gemm_prune.set_config(cfg.gemm_factor_spdn, prune_rows, prune_cols);
+            op_gemm_prune.set_matrix_A(&sub_L_bot_sp);
+            op_gemm_prune.set_matrix_B(&sub_X_top);
+            op_gemm_prune.set_matrix_C(&sub_X_bot);
+            op_gemm_prune.set_coefficients(T{-1}, T{1});
+
+            sub_L_bot_sp.alloc();
+            op_submatrix_L_bot_sp.perform();
+            op_gemm_prune.preprocess();
+            sub_L_bot_sp.free();
+        }
     }
 
     preprocess_called = true;
@@ -155,6 +171,9 @@ void trsm_trirhs_chunk_splitfactor<T,I>::perform()
 {
     if(!preprocess_called) eslog::error("preprocess was not called\n");
 
+    op_submatrix_X_top.perform();
+    op_submatrix_X_bot.perform();
+
     if(cfg.trsm_factor_spdn == 'S') {
         sub_L_top_sp.alloc();
         op_submatrix_L_top_sp.perform();
@@ -163,28 +182,30 @@ void trsm_trirhs_chunk_splitfactor<T,I>::perform()
     }
     if(cfg.trsm_factor_spdn == 'D') {
         sub_L_top_dn.alloc();
-        submatrix_csx_dny<T,I>::do_all(L, &sub_L_top_dn, k_start, k_end, k_start, k_end);
-        trsm_dnx_dny<T>::do_all(&sub_L_top_dn, &sub_X_top);
+        op_submatrix_L_top_dn.perform_all();
+        op_trsm_dn.perform();
         sub_L_top_dn.free();
     }
 
-    if(cfg.gemm_factor_prune == 'N' && cfg.gemm_factor_spdn == 'S') {
-        sub_L_bot_sp.alloc();
-        op_submatrix_L_bot_sp.perform();
-        op_gemm_normal_sp.perform();
-        sub_L_bot_sp.free();
-    }
-    if(cfg.gemm_factor_prune == 'N' && cfg.gemm_factor_spdn == 'D') {
-        sub_L_bot_dn.alloc();
-        submatrix_csx_dny<T,I>::do_all(L, &sub_L_bot_dn, k_end, L->nrows, k_start, k_end);
-        gemm_dnx_dny_dnz<T>::do_all(&sub_L_bot_dn, &sub_X_top, &sub_X_bot, T{-1}, T{1});
-        sub_L_bot_dn.free();
-    }
-    if(cfg.gemm_factor_prune == 'Y') {
-        sub_L_bot_sp.alloc();
-        op_submatrix_L_bot_sp.perform();
-        op_gemm_prune.perform();
-        sub_L_bot_sp.free();
+    if(sub_X_bot.nrows > 0) {
+        if(cfg.gemm_factor_prune == 'N' && cfg.gemm_factor_spdn == 'S') {
+            sub_L_bot_sp.alloc();
+            op_submatrix_L_bot_sp.perform();
+            op_gemm_normal_sp.perform();
+            sub_L_bot_sp.free();
+        }
+        if(cfg.gemm_factor_prune == 'N' && cfg.gemm_factor_spdn == 'D') {
+            sub_L_bot_dn.alloc();
+            op_submatrix_L_bot_dn.perform_all();
+            op_gemm_normal_dn.perform();
+            sub_L_bot_dn.free();
+        }
+        if(cfg.gemm_factor_prune != 'N') {
+            sub_L_bot_sp.alloc();
+            op_submatrix_L_bot_sp.perform();
+            op_gemm_prune.perform();
+            sub_L_bot_sp.free();
+        }
     }
 }
 
@@ -194,12 +215,10 @@ template<typename T, typename I>
 void trsm_trirhs_chunk_splitfactor<T,I>::finalize()
 {
     if(preprocess_called) {
-        op_trsm_sp.finalize();
-        if(cfg.gemm_factor_prune == 'N' && cfg.gemm_factor_spdn == 'S') {
-            op_gemm_normal_sp.finalize();
-        }
-        if(cfg.gemm_factor_prune == 'Y') {
-            op_gemm_prune.finalize();
+        if(sub_X_bot.nrows > 0) {
+            if(cfg.gemm_factor_prune != 'N') {
+                op_gemm_prune.finalize();
+            }
         }
     }
     preprocess_called = false;

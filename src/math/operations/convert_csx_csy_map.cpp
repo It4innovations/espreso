@@ -47,15 +47,14 @@ void convert_csx_csy_map<T,I>::perform_pattern()
     if(M_src->order == M_dst->order) {
         std::copy_n(M_src->ptrs, M_src->get_size_primary() + 1, M_dst->ptrs);
         std::copy_n(M_src->idxs, M_src->nnz, M_dst->idxs);
+        perform_pattern_called = true;
         return;
     }
 
     // use terminology for CSR->CSC, the other way it works equally
 
-    size_t nrows_src = M_src->get_size_primary();
-    // size_t ncols_src = M_src->get_size_secdary();
-    // size_t nrows_dst = M_dst->get_size_primary();
-    size_t ncols_dst = M_dst->get_size_secdary();
+    size_t nrows = M_src->get_size_primary();
+    size_t ncols = M_src->get_size_secdary();
     size_t nnz = M_src->nnz;
     I * src_ptrs = M_src->ptrs;
     I * src_idxs = M_src->idxs;
@@ -66,9 +65,9 @@ void convert_csx_csy_map<T,I>::perform_pattern()
     map.set(nnz, AllocatorCPU_new::get_singleton());
     map.alloc();
     I * map_vals = map.vals;
-    
+
     // initialize nnz per dst col to 0
-    for(size_t c = 0; c <= ncols_dst; c++) {
+    for(size_t c = 0; c <= ncols; c++) {
         dst_ptrs[c] = 0;
     }
 
@@ -80,7 +79,7 @@ void convert_csx_csy_map<T,I>::perform_pattern()
 
     // exclusive cumulative sum
     I curr = 0;
-    for(size_t c = 0; c <= ncols_dst; c++)
+    for(size_t c = 0; c <= ncols; c++)
     {
         I tmp = dst_ptrs[c];
         dst_ptrs[c] = curr;
@@ -88,7 +87,7 @@ void convert_csx_csy_map<T,I>::perform_pattern()
     }
 
     // fill dst idxs and map
-    for(size_t r = 0; r < nrows_src; r++)
+    for(size_t r = 0; r < nrows; r++)
     {
         I start = src_ptrs[r];
         I end = src_ptrs[r+1];
@@ -104,11 +103,11 @@ void convert_csx_csy_map<T,I>::perform_pattern()
 
     // fix (shift) dst ptrs
     curr = 0;
-    for(size_t c = 0; c <= ncols_dst; c++)
+    for(size_t c = 0; c <= ncols; c++)
     {
         I tmp = dst_ptrs[c];
         dst_ptrs[c] = curr;
-        curr += tmp;
+        curr = tmp;
     }
 
     perform_pattern_called = true;
@@ -119,10 +118,14 @@ void convert_csx_csy_map<T,I>::perform_pattern()
 template<typename T, typename I>
 void convert_csx_csy_map<T,I>::perform_values()
 {
-    if(perform_pattern_called) eslog::error("pattern computation has not been performed\n");
+    if(!perform_pattern_called) eslog::error("pattern computation has not been performed\n");
     if(M_src == nullptr) eslog::error("source matrix is not set\n");
     if(M_dst == nullptr) eslog::error("destination matrix is not set\n");
     if(M_dst->nrows != M_src->nrows || M_dst->ncols != M_src->ncols || M_dst->nnz != M_src->nnz) eslog::error("matrix sizes dont match\n");
+
+    if(M_src->nnz == 0) {
+        return;
+    }
 
     if(M_src->order == M_dst->order) {
         std::copy_n(M_src->vals, M_src->nnz, M_dst->vals);

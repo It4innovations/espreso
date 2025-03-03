@@ -8,7 +8,11 @@
 #include "math/operations/gemm_csx_dny_dny.h"
 #include "math/operations/gemm_csx_dny_dny_prune.h"
 #include "math/operations/submatrix_csx_csy.h"
-#include "math/operations/trsm_csx_dny.h"
+#include "math/operations/submatrix_csx_dny.h"
+#include "math/operations/submatrix_dnx_dnx_view.h"
+#include "math/operations/trsm_csx_dny_dny.h"
+#include "math/operations/trsm_dnx_dny.h"
+#include "math/operations/gemm_dnx_dny_dnz.h"
 
 
 
@@ -28,7 +32,7 @@ public:
         char trsm_factor_order = '_'; // Rowmajor, Colmajor
         char gemm_factor_spdn = '_'; // Sparse, Dense
         char gemm_factor_order = '_'; // Rowmajor, Colmajor
-        char gemm_factor_prune = '_'; // Yes, No
+        char gemm_factor_prune = '_'; // No, Rows only, Cols only, All
     };
 public:
     trsm_trirhs_chunk_splitfactor() = default;
@@ -64,9 +68,15 @@ private:
     MatrixDenseView_new<T> sub_X_top;
     MatrixDenseView_new<T> sub_X_bot;
     submatrix_csx_csy<T,I> op_submatrix_L_top_sp;
+    submatrix_csx_dny<T,I> op_submatrix_L_top_dn;
     submatrix_csx_csy<T,I> op_submatrix_L_bot_sp;
-    trsm_csx_dny<T,I> op_trsm_sp;
+    submatrix_csx_dny<T,I> op_submatrix_L_bot_dn;
+    submatrix_dnx_dnx_view<T> op_submatrix_X_top;
+    submatrix_dnx_dnx_view<T> op_submatrix_X_bot;
+    trsm_csx_dny_dny<T,I> op_trsm_sp;
+    trsm_dnx_dny<T> op_trsm_dn;
     gemm_csx_dny_dny<T,I> op_gemm_normal_sp;
+    gemm_dnx_dny_dnz<T> op_gemm_normal_dn;
     gemm_csx_dny_dny_prune<T,I> op_gemm_prune;
 };
 

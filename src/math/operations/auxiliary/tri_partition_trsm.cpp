@@ -119,9 +119,6 @@ void tri_partition_trsm::perform()
                 p[i] = p[num_chunks] - p[i];
             }
             std::reverse(p, p + partition->size);
-            for(size_t i = 0; i <= num_chunks; i++) {
-                p[i] = p[num_chunks] - p[i];
-            }
             break;
         }
         default:
@@ -132,7 +129,7 @@ void tri_partition_trsm::perform()
 
     double max_bound = partition_double[num_chunks];
     for(size_t i = 0; i <= num_chunks; i++) {
-        partition_sizet[i] = (size_t)(partition_range * (partition_double[i] / max_bound));
+        partition_sizet[i] = (size_t)(partition_range * (partition_double[i] / max_bound) + 0.5);
     }
 }
 

@@ -1,22 +1,11 @@
 
 #include "math/operations/auxiliary/trsm_trirhs_chunk_splitrhs.h"
 
-#include "math/operations/submatrix_csx_dny.h"
-#include "math/operations/trsm_dnx_dny.h"
-
 
 
 namespace espreso {
 namespace math {
 namespace operations {
-
-
-
-template<typename T, typename I>
-trsm_trirhs_chunk_splitrhs<T,I>::~trsm_trirhs_chunk_splitrhs()
-{
-    finalize();
-}
 
 
 
@@ -83,7 +72,10 @@ void trsm_trirhs_chunk_splitrhs<T,I>::preprocess()
     k_end = L->nrows;
     k_size = k_end - k_start;
 
-    sub_X = X->get_submatrix_view(k_start, k_end, rhs_start, rhs_size);
+    sub_X.set_view(k_size, rhs_size, X->ld, X->order, nullptr);
+    op_submatrix_X.set_matrix_src(X);
+    op_submatrix_X.set_matrix_dst(&sub_X);
+    op_submatrix_X.set_bounds(k_start, k_end, rhs_start, rhs_end);
 
     if(cfg.factor_spdn == 'S') {
         op_submatrix_L_sp.set_matrix_src(L);
@@ -97,17 +89,20 @@ void trsm_trirhs_chunk_splitrhs<T,I>::preprocess()
         sub_L_sp.prop.uplo = L->prop.uplo;
 
         op_trsm_sp.set_system_matrix(&sub_L_sp);
-        op_trsm_sp.set_rhs_sol(&sub_X);
-        
-        sub_L_sp.alloc();
-        op_submatrix_L_sp.perform();
-        op_trsm_sp.preprocess();
-        sub_L_sp.free();
+        op_trsm_sp.set_rhs_matrix(&sub_X);
+        op_trsm_sp.set_solution_matrix(&sub_X);
     }
     if(cfg.factor_spdn == 'D') {
+        op_submatrix_L_dn.set_matrix_src(L);
+        op_submatrix_L_dn.set_matrix_dst(&sub_L_dn);
+        op_submatrix_L_dn.set_bounds(k_start, k_end, k_start, k_end);
+
         sub_L_dn.set(k_size, k_size, cfg.factor_order, AllocatorCPU_new::get_singleton());
         sub_L_dn.prop.diag = L->prop.diag;
         sub_L_dn.prop.uplo = L->prop.uplo;
+
+        op_trsm_dn.set_system_matrix(&sub_L_dn);
+        op_trsm_dn.set_rhs_sol(&sub_X);
     }
 
     preprocess_called = true;
@@ -120,6 +115,8 @@ void trsm_trirhs_chunk_splitrhs<T,I>::perform()
 {
     if(!preprocess_called) eslog::error("preprocess was not called\n");
 
+    op_submatrix_X.perform();
+
     if(cfg.factor_spdn == 'S') {
         sub_L_sp.alloc();
         op_submatrix_L_sp.perform();
@@ -128,21 +125,10 @@ void trsm_trirhs_chunk_splitrhs<T,I>::perform()
     }
     if(cfg.factor_spdn == 'D') {
         sub_L_dn.alloc();
-        submatrix_csx_dny<T,I>::do_all(L, &sub_L_dn, k_start, k_end, k_start, k_end);
-        trsm_dnx_dny<T>::do_all(&sub_L_dn, &sub_X);
+        op_submatrix_L_dn.perform_all();
+        op_trsm_dn.perform();
         sub_L_dn.free();
     }
-}
-
-
-
-template<typename T, typename I>
-void trsm_trirhs_chunk_splitrhs<T,I>::finalize()
-{
-    if(preprocess_called) {
-        op_trsm_sp.finalize();
-    }
-    preprocess_called = false;
 }
 
 

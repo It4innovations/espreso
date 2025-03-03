@@ -225,12 +225,7 @@ struct _handle_trsm
     sparse_matrix_t A_mkl;
     matrix_descr A_descr;
     sparse_layout_t dense_layout;
-    bool preprocess_called = 0;
-    ~_handle_trsm() {
-        if(preprocess_called) {
-            checkStatus(mkl_sparse_destroy(A_mkl));
-        }
-    }
+    void * A_vals;
 };
 
 template<typename T, typename I>
@@ -251,9 +246,15 @@ void trsm(MatrixCsxView_new<T,I> & A, MatrixDenseView_new<T> & X, MatrixDenseVie
     if(X.order != Y.order) eslog::error("X and Y orders must match\n");
     if(A.nrows != X.nrows) eslog::error("incompatible matrix sizes\n");
 
-    if(stage == 'P') { // Preprocess
-        if(handle->preprocess_called) eslog::error("preprocess was already called\n");
-        handle->preprocess_called = true;
+    if(stage == 'A') { // All at once
+        trsm<T,I>(A, X, Y, handle, 'p'); // no need to optimize for a single call
+        trsm<T,I>(A, X, Y, handle, 'C');
+        trsm<T,I>(A, X, Y, handle, 'F');
+    }
+    if(stage == 'P' || stage == 'p') { // Preprocess
+        if(handle.get() != nullptr) eslog::error("preprocess was already called\n");
+        handle = std::make_unique<_handle_trsm>();
+        handle->A_vals = A.vals;
         if(A.order == 'R') handle->op = SPARSE_OPERATION_NON_TRANSPOSE;
         if(A.order == 'C') handle->op = SPARSE_OPERATION_TRANSPOSE;
         create_mkl_csr_matrix(handle->A_mkl, A);
@@ -264,20 +265,23 @@ void trsm(MatrixCsxView_new<T,I> & A, MatrixDenseView_new<T> & X, MatrixDenseVie
         if(A.prop.diag == 'N') handle->A_descr.diag = SPARSE_DIAG_NON_UNIT;
         if(X.order == 'R') handle->dense_layout = SPARSE_LAYOUT_ROW_MAJOR;
         if(X.order == 'C') handle->dense_layout = SPARSE_LAYOUT_COLUMN_MAJOR;
-        checkStatus(mkl_sparse_set_sm_hint(handle->A_mkl, handle->op, handle->A_descr, handle->dense_layout, X.ncols, 1000));
-        checkStatus(mkl_sparse_optimize(handle->A_mkl));
+        if(stage == 'P') { // optimize only for capical P
+            mkl_sparse_set_sm_hint(handle->A_mkl, handle->op, handle->A_descr, handle->dense_layout, X.ncols, 1000);
+            checkStatus(mkl_sparse_optimize(handle->A_mkl));
+        }
     }
     if(stage == 'C') { // Compute
-        if(!handle->preprocess_called) eslog::error("preprocess has not been called\n");
+        if(handle.get() == nullptr) eslog::error("preprocess has not been called\n");
+        if(handle->A_vals != A.vals) eslog::error("matrix reallocation is not supported\n");
         if constexpr(std::is_same_v<T,float>)                checkStatus(mkl_sparse_s_trsm(handle->op, 1.0, handle->A_mkl, handle->A_descr, handle->dense_layout, X.vals, X.ncols, X.ld, Y.vals, Y.ld));
         if constexpr(std::is_same_v<T,double>)               checkStatus(mkl_sparse_d_trsm(handle->op, 1.0, handle->A_mkl, handle->A_descr, handle->dense_layout, X.vals, X.ncols, X.ld, Y.vals, Y.ld));
         if constexpr(std::is_same_v<T,std::complex<float>>)  checkStatus(mkl_sparse_c_trsm(handle->op, 1.0, handle->A_mkl, handle->A_descr, handle->dense_layout, X.vals, X.ncols, X.ld, Y.vals, Y.ld));
         if constexpr(std::is_same_v<T,std::complex<double>>) checkStatus(mkl_sparse_z_trsm(handle->op, 1.0, handle->A_mkl, handle->A_descr, handle->dense_layout, X.vals, X.ncols, X.ld, Y.vals, Y.ld));
     }
     if(stage == 'F') { // Finalize, Free
-        if(!handle->preprocess_called) eslog::error("preprocess has not been called\n");
-        handle->preprocess_called = false;
+        if(handle.get() == nullptr) eslog::error("preprocess has not been called\n");
         checkStatus(mkl_sparse_destroy(handle->A_mkl));
+        handle.reset();
     }
 }
 
@@ -287,12 +291,7 @@ struct _handle_mm
     sparse_matrix_t A_mkl;
     matrix_descr A_descr;
     sparse_layout_t dense_layout;
-    bool preprocess_called = 0;
-    ~_handle_mm() {
-        if(preprocess_called) {
-            checkStatus(mkl_sparse_destroy(A_mkl));
-        }
-    }
+    void * A_vals;
 };
 
 template<typename T, typename I>
@@ -301,27 +300,36 @@ void mm(MatrixCsxView_new<T,I> & A, MatrixDenseView_new<T> & B, MatrixDenseView_
     if(A.nrows != C.nrows || B.ncols != C.ncols || A.ncols != B.nrows) eslog::error("incompatible matrices\n");
     if(B.order != C.order) eslog::error("B and C order must match\n");
 
-    if(stage == 'P') {
-        if(handle->preprocess_called) eslog::error("preprocess was already called\n");
-        handle->preprocess_called = true;
+    if(stage == 'A') { // All at once
+        mm<T,I>(A, B, C, alpha, beta, handle, 'p'); // no need to optimize for a single call
+        mm<T,I>(A, B, C, alpha, beta, handle, 'C');
+        mm<T,I>(A, B, C, alpha, beta, handle, 'F');
+    }
+    if(stage == 'P' || stage == 'p') { // Preprocess
+        if(handle.get() != nullptr) eslog::error("preprocess was already called\n");
+        handle = std::make_unique<_handle_mm>();
+        handle->A_vals = A.vals;
         handle->op = ((A.order == 'R') ? SPARSE_OPERATION_NON_TRANSPOSE : SPARSE_OPERATION_TRANSPOSE);
         create_mkl_csr_matrix(handle->A_mkl, A);
         handle->A_descr.type = SPARSE_MATRIX_TYPE_GENERAL;
         handle->dense_layout = ((B.order == 'R') ? SPARSE_LAYOUT_ROW_MAJOR : SPARSE_LAYOUT_COLUMN_MAJOR);
-        checkStatus(mkl_sparse_set_mm_hint(handle->A_mkl, handle->op, handle->A_descr, handle->dense_layout, B.ncols, 1000));
-        checkStatus(mkl_sparse_optimize(handle->A_mkl));
+        if(stage == 'P') { // optimize only for capical P
+            checkStatus(mkl_sparse_set_mm_hint(handle->A_mkl, handle->op, handle->A_descr, handle->dense_layout, B.ncols, 1000));
+            checkStatus(mkl_sparse_optimize(handle->A_mkl));
+        }
     }
-    if(stage == 'C') {
-        if(!handle->preprocess_called) eslog::error("preprocess has not been called\n");
+    if(stage == 'C') { // Compute
+        if(handle.get() == nullptr) eslog::error("preprocess has not been called\n");
+        if(handle->A_vals != A.vals) eslog::error("matrix reallocation is not supported\n");
         if constexpr(std::is_same_v<T,float>)                checkStatus(mkl_sparse_s_mm(handle->op, alpha, handle->A_mkl, handle->A_descr, handle->dense_layout, B.vals, B.ncols, B.ld, beta, C.vals, C.ld));
         if constexpr(std::is_same_v<T,double>)               checkStatus(mkl_sparse_d_mm(handle->op, alpha, handle->A_mkl, handle->A_descr, handle->dense_layout, B.vals, B.ncols, B.ld, beta, C.vals, C.ld));
         if constexpr(std::is_same_v<T,std::complex<float>>)  checkStatus(mkl_sparse_c_mm(handle->op, alpha, handle->A_mkl, handle->A_descr, handle->dense_layout, B.vals, B.ncols, B.ld, beta, C.vals, C.ld));
         if constexpr(std::is_same_v<T,std::complex<double>>) checkStatus(mkl_sparse_z_mm(handle->op, alpha, handle->A_mkl, handle->A_descr, handle->dense_layout, B.vals, B.ncols, B.ld, beta, C.vals, C.ld));
     }
-    if(stage == 'F') {
-        if(!handle->preprocess_called) eslog::error("preprocess has not been called\n");
-        handle->preprocess_called = false;
+    if(stage == 'F') { // Finalize
+        if(handle.get() == nullptr) eslog::error("preprocess has not been called\n");
         checkStatus(mkl_sparse_destroy(handle->A_mkl));
+        handle.reset();
     }
 }
 

@@ -13,40 +13,40 @@ namespace operations {
 
 
 
-template<typename T>
-void submatrix_dnx_dnx_noncontig<T>::set_matrix_source(MatrixDenseView_new<T> * M_src_)
+template<typename T, typename I>
+void submatrix_dnx_dnx_noncontig<T,I>::set_matrix_source(MatrixDenseView_new<T> * M_src_)
 {
     M_src = M_src_;
 }
 
 
 
-template<typename T>
-void submatrix_dnx_dnx_noncontig<T>::set_matrix_destinatino(MatrixDenseView_new<T> * M_dst_)
+template<typename T, typename I>
+void submatrix_dnx_dnx_noncontig<T,I>::set_matrix_destination(MatrixDenseView_new<T> * M_dst_)
 {
     M_dst = M_dst_;
 }
 
 
 
-template<typename T>
-void submatrix_dnx_dnx_noncontig<T>::set_row_map(VectorDenseView_new<size_t> * row_map_)
+template<typename T, typename I>
+void submatrix_dnx_dnx_noncontig<T,I>::set_row_map(VectorDenseView_new<I> * row_map_)
 {
     row_map = row_map_;
 }
 
 
 
-template<typename T>
-void submatrix_dnx_dnx_noncontig<T>::set_col_map(VectorDenseView_new<size_t> * col_map_)
+template<typename T, typename I>
+void submatrix_dnx_dnx_noncontig<T,I>::set_col_map(VectorDenseView_new<I> * col_map_)
 {
     col_map = col_map_;
 }
 
 
 
-template<typename T>
-void submatrix_dnx_dnx_noncontig<T>::perform()
+template<typename T, typename I>
+void submatrix_dnx_dnx_noncontig<T,I>::perform()
 {
     if(M_src == nullptr) eslog::error("source matrix is not set\n");
     if(M_dst == nullptr) eslog::error("destination matrix is not set\n");
@@ -63,21 +63,21 @@ void submatrix_dnx_dnx_noncontig<T>::perform()
     size_t src_ld = M_src->ld;
     size_t dst_ld = M_dst->ld;
 
-    VectorDenseView_new<size_t> * primary_map = ((M_src->order == 'R') ? row_map : col_map);
-    VectorDenseView_new<size_t> * secdary_map = ((M_src->order == 'R') ? col_map : row_map);
+    VectorDenseView_new<I> * primary_map = ((M_src->order == 'R') ? row_map : col_map);
+    VectorDenseView_new<I> * secdary_map = ((M_src->order == 'R') ? col_map : row_map);
 
     if(primary_map == nullptr && secdary_map == nullptr) {
         copy_dnx<T>::do_all(M_src, M_dst);
     }
     if(primary_map != nullptr && secdary_map == nullptr) {
-        size_t * subset_primary = primary_map->vals;
+        I * subset_primary = primary_map->vals;
         for(size_t ipd = 0; ipd < dst_size_primary; ipd++) {
             size_t ips = subset_primary[ipd];
             std::copy_n(src_vals + ips * src_ld, dst_size_secdary, dst_vals + ipd * dst_ld);
         }
     }
     if(primary_map == nullptr && secdary_map != nullptr) {
-        size_t * subset_secdary = secdary_map->vals;
+        I * subset_secdary = secdary_map->vals;
         for(size_t ip = 0; ip < dst_size_primary; ip++) {
             for(size_t isd = 0; isd < dst_size_secdary; isd++) {
                 size_t iss = subset_secdary[isd];
@@ -86,8 +86,8 @@ void submatrix_dnx_dnx_noncontig<T>::perform()
         }
     }
     if(primary_map != nullptr && secdary_map != nullptr) {
-        size_t * subset_primary = primary_map->vals;
-        size_t * subset_secdary = secdary_map->vals;
+        I * subset_primary = primary_map->vals;
+        I * subset_secdary = secdary_map->vals;
         for(size_t ipd = 0; ipd < dst_size_primary; ipd++) {
             size_t ips = subset_primary[ipd];
             for(size_t isd = 0; isd < dst_size_secdary; isd++) {
@@ -100,12 +100,12 @@ void submatrix_dnx_dnx_noncontig<T>::perform()
 
 
 
-template<typename T>
-void submatrix_dnx_dnx_noncontig<T>::do_all(MatrixDenseView_new<T> * M_src, MatrixDenseView_new<T> * M_dst, VectorDenseView_new<size_t> * row_map, VectorDenseView_new<size_t> * col_map)
+template<typename T, typename I>
+void submatrix_dnx_dnx_noncontig<T,I>::do_all(MatrixDenseView_new<T> * M_src, MatrixDenseView_new<T> * M_dst, VectorDenseView_new<I> * row_map, VectorDenseView_new<I> * col_map)
 {
-    submatrix_dnx_dnx_noncontig<T> instance;
+    submatrix_dnx_dnx_noncontig<T,I> instance;
     instance.set_matrix_source(M_src);
-    instance.set_matrix_destinatino(M_dst);
+    instance.set_matrix_destination(M_dst);
     instance.set_row_map(row_map);
     instance.set_col_map(col_map);
     instance.perform();
@@ -113,19 +113,24 @@ void submatrix_dnx_dnx_noncontig<T>::do_all(MatrixDenseView_new<T> * M_src, Matr
 
 
 
-#define INSTANTIATE_T(T) \
-template class submatrix_dnx_dnx_noncontig<T>;
+#define INSTANTIATE_T_I(T,I) \
+template class submatrix_dnx_dnx_noncontig<T,I>;
 
-    #define INSTANTIATE \
-    /* INSTANTIATE_T(float) */ \
-    INSTANTIATE_T(double) \
-    /* INSTANTIATE_T(std::complex<float>) */ \
-    /* INSTANTIATE_T(std::complex<double>) */
+    #define INSTANTIATE_T(T) \
+    INSTANTIATE_T_I(T,int32_t) \
+    /* INSTANTIATE_T_I(T,int64_t) */
 
-        INSTANTIATE
+        #define INSTANTIATE \
+        /* INSTANTIATE_T(float) */ \
+        INSTANTIATE_T(double) \
+        /* INSTANTIATE_T(std::complex<float>) */ \
+        /* INSTANTIATE_T(std::complex<double>) */
 
-    #undef INSTANTIATE
-#undef INSTANTIATE_T
+            INSTANTIATE
+
+        #undef INSTANTIATE
+    #undef INSTANTIATE_T
+#undef INSTANTIATE_T_I
 
 
 

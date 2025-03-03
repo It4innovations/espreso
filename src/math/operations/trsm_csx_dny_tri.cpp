@@ -1,6 +1,8 @@
 
 #include "math/operations/trsm_csx_dny_tri.h"
 
+#include <memory>
+
 #include "math/operations/pivots_trails_csx.h"
 #include "math/operations/auxiliary/tri_partition_trsm.h"
 
@@ -105,10 +107,12 @@ void trsm_csx_dny_tri<T,I>::preprocess()
     if(cfg.strategy == 'R') {
         ops_chunks_splitrhs.set(num_chunks, AllocatorCPU_new::get_singleton());
         ops_chunks_splitrhs.alloc();
+        std::uninitialized_default_construct_n(ops_chunks_splitrhs.vals, ops_chunks_splitrhs.size);
     }
     if(cfg.strategy == 'F') {
         ops_chunks_splifactor.set(num_chunks, AllocatorCPU_new::get_singleton());
         ops_chunks_splifactor.alloc();
+        std::uninitialized_default_construct_n(ops_chunks_splifactor.vals, ops_chunks_splifactor.size);
     }
 
     for(size_t ch = 0; ch < num_chunks; ch++) {
@@ -193,10 +197,30 @@ void trsm_csx_dny_tri<T,I>::preprocess()
                 op_sub_L_bot.set_bounds(k_end, L->nrows, k_start, k_end);
                 op_sub_L_bot.setup();
                 size_t nnz = op_sub_L_bot.get_output_matrix_nnz();
-                size_t nvals = (L->nrows - k_end) * (k_end - k_start);
-                double fraction_treshold = cfg.splitfactor.gemm_spdn_param;
-                double curr_fraction = (double)nnz / nvals;
-                op_config.gemm_factor_spdn = ((curr_fraction < fraction_treshold) ? 'S' : 'D');
+                if(cfg.splitfactor.gemm_factor_prune == 'N') {
+                    size_t nvals = (L->nrows - k_end) * (k_end - k_start);
+                    double fraction_treshold = cfg.splitfactor.gemm_spdn_param;
+                    double curr_fraction = (double)nnz / nvals;
+                    op_config.gemm_factor_spdn = ((curr_fraction < fraction_treshold) ? 'S' : 'D');
+                }
+                if(cfg.splitfactor.gemm_factor_prune != 'N') {
+                    MatrixCsxData_new<T,I> sub_L_bot_test;
+                    sub_L_bot_test.set(L->nrows - k_end, k_end - k_start, nnz, 'R', AllocatorCPU_new::get_singleton());
+                    sub_L_bot_test.alloc();
+                    op_sub_L_bot.set_matrix_dst(&sub_L_bot_test);
+                    op_sub_L_bot.perform();
+                    pruning_subset_csx<T,I> op_pruning_subset;
+                    op_pruning_subset.set_matrix(&sub_L_bot_test);
+                    char pm = cfg.splitfactor.gemm_factor_prune;
+                    op_pruning_subset.set_pruning_mode(pm == 'R' || pm == 'A', pm == 'C' || pm == 'A');
+                    op_pruning_subset.preprocess();
+                    size_t nvals = op_pruning_subset.get_pruned_nrows() * op_pruning_subset.get_pruned_ncols();
+                    sub_L_bot_test.clear();
+                    op_pruning_subset.finalize();
+                    double fraction_treshold = cfg.splitfactor.gemm_spdn_param;
+                    double curr_fraction = (double)nnz / nvals;
+                    op_config.gemm_factor_spdn = ((curr_fraction < fraction_treshold) ? 'S' : 'D');
+                }
             }
             
             if(op_config.gemm_factor_spdn == 'S') {
@@ -243,15 +267,14 @@ void trsm_csx_dny_tri<T,I>::finalize()
 {
     if(called_preprocess) {
         if(cfg.strategy == 'R') {
-            for(size_t ch = 0; ch < num_chunks; ch++) {
-                ops_chunks_splitrhs.vals[ch].finalize();
-            }
+            std::destroy_n(ops_chunks_splitrhs.vals, ops_chunks_splitrhs.size);
             ops_chunks_splitrhs.clear();
         }
         if(cfg.strategy == 'F') {
             for(size_t ch = 0; ch < num_chunks; ch++) {
                 ops_chunks_splifactor.vals[ch].finalize();
             }
+            std::destroy_n(ops_chunks_splifactor.vals, ops_chunks_splifactor.size);
             ops_chunks_splifactor.clear();
         }
         partition.clear();

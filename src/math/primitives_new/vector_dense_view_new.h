@@ -50,7 +50,6 @@ public:
     template<typename I, typename A>
     static Vector_Dense<T,I,A> to_old(VectorDenseView_new<T> & V_new)
     {
-        if(V_new.ator.is_on_cpu() != A::is_data_host_accessible || V_new.ator.is_on_gpu() != A::is_data_device_accessible) eslog::error("allocators not compatible\n");
         Vector_Dense<T,I,A> V_old;
         V_old.size = V_new.size;
         V_old.vals = V_new.vals;

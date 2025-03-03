@@ -62,8 +62,8 @@ public:
         if(!was_set) eslog::error("matrix has not been set\n");
         if(ator == nullptr) eslog::error("matrix data has not been set\n");
         if(vals != nullptr) eslog::error("matrix is already allocated\n");
+        ptrs = ator->alloc<I>(this->get_size_primary() + 1);
         if(nnz > 0) {
-            ptrs = ator->alloc<I>(this->get_size_primary() + 1);
             idxs = ator->alloc<I>(nnz);
             vals = ator->alloc<T>(nnz);
         }

@@ -50,7 +50,7 @@ void copy_dnx<T>::perform()
         size_t start = 0;
         size_t end = size_secdary;
         if(move_start) start = i;
-        if(move_end) end = i;
+        if(move_end) end = i+1;
         size_t size = end - start;
         if constexpr (utils::is_complex<T>()) {
             if(do_conj) {

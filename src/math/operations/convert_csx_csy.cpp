@@ -41,10 +41,8 @@ void convert_csx_csy<T,I>::perform()
 
     // use terminology for CSR->CSC, the other way it works equally
 
-    size_t nrows_src = M_src->get_size_primary();
-    // size_t ncols_src = M_src->get_size_secdary();
-    // size_t nrows_dst = M_dst->get_size_secdary();
-    size_t ncols_dst = M_dst->get_size_primary();
+    size_t nrows = M_src->get_size_primary();
+    size_t ncols = M_src->get_size_secdary();
     size_t nnz = M_src->nnz;
     I * src_ptrs = M_src->ptrs;
     I * src_idxs = M_src->idxs;
@@ -54,7 +52,7 @@ void convert_csx_csy<T,I>::perform()
     T * dst_vals = M_dst->vals;
     
     // initialize nnz per dst col to 0
-    for(size_t c = 0; c <= ncols_dst; c++) {
+    for(size_t c = 0; c <= ncols; c++) {
         dst_ptrs[c] = 0;
     }
 
@@ -66,7 +64,7 @@ void convert_csx_csy<T,I>::perform()
 
     // exclusive cumulative sum
     I curr = 0;
-    for(size_t c = 0; c <= ncols_dst; c++)
+    for(size_t c = 0; c <= ncols; c++)
     {
         I tmp = dst_ptrs[c];
         dst_ptrs[c] = curr;
@@ -74,7 +72,7 @@ void convert_csx_csy<T,I>::perform()
     }
 
     // fill dst idxs and vals
-    for(size_t r = 0; r < nrows_src; r++)
+    for(size_t r = 0; r < nrows; r++)
     {
         I start = src_ptrs[r];
         I end = src_ptrs[r+1];
@@ -91,11 +89,11 @@ void convert_csx_csy<T,I>::perform()
 
     // fix (shift) dst ptrs
     curr = 0;
-    for(size_t c = 0; c <= ncols_dst; c++)
+    for(size_t c = 0; c <= ncols; c++)
     {
         I tmp = dst_ptrs[c];
         dst_ptrs[c] = curr;
-        curr += tmp;
+        curr = tmp;
     }
 }
 

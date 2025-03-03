@@ -136,7 +136,7 @@ void tri_partition_herk::perform()
 
     double max_bound = partition_double[num_chunks];
     for(size_t i = 0; i <= num_chunks; i++) {
-        partition_sizet[i] = (size_t)(partition_range * (partition_double[i] / max_bound));
+        partition_sizet[i] = (size_t)(partition_range * (partition_double[i] / max_bound) + 0.5);
     }
 }
 

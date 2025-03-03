@@ -3,6 +3,7 @@
 #ifdef ESPRESO_USE_WRAPPER_SCSOLVER_SCSOLVERTRIANGULAR
 
 #include <cstdlib>
+#include <omp.h>
 
 #include "math/primitives_new/matrix_csx_data_new.h"
 #include "math/primitives_new/matrix_dense_data_new.h"
@@ -17,6 +18,9 @@
 #include "math/operations/convert_csx_dny.h"
 #include "math/operations/complete_dnx.h"
 #include "math/operations/lincomb_matrix_dnx.h"
+#include "math/operations/herk_dnx_dny.h"
+#include "math/operations/fill_dnx.h"
+#include "esinfo/mpiinfo.h"
 
 
 
@@ -84,13 +88,13 @@ struct Schur_Complement_Solver_External_Representation
 
 
 template<typename T>
-static void set_by_env(T var, const char * env_var)
+static void set_by_env(T & var, const char * env_var)
 {
-    const char * env_val = std::getenv(env_var);
-    if(env_val != nullptr) {
-        if constexpr(std::is_same_v<T,char>) var = *env_val;
-        if constexpr(std::is_same_v<T,int>) var = atoi(env_val);
-        if constexpr(std::is_same_v<T,double>) var = atof(env_val);
+    const char * str = std::getenv(env_var);
+    if(str != nullptr) {
+        if constexpr(std::is_same_v<T,char>) var = *str;
+        if constexpr(std::is_same_v<T,int>) var = atoi(str);
+        if constexpr(std::is_same_v<T,double>) var = atof(str);
     }
 }
 
@@ -117,9 +121,30 @@ static void init_config(typename Schur_Complement_Solver_External_Representation
     set_by_env(cfg.trsm_tri_cfg.splitfactor.gemm_spdn_criteria, "ESPRESO_SCSOLVERTRIANGULAR_CONFIG_trsm_splitfactor_gemm_spdn_criteria");
     set_by_env(cfg.trsm_tri_cfg.splitfactor.gemm_spdn_param, "ESPRESO_SCSOLVERTRIANGULAR_CONFIG_trsm_splitfactor_gemm_spdn_param");
 
-    set_by_env(cfg.herk_tri_cfg.strategy, "ESPRESO_SCSOLVERTRIANGULAR_CONFIG_trsm_splitfactor_gemm_spdn_param");
-    set_by_env(cfg.herk_tri_cfg.partition_algorithm, "ESPRESO_SCSOLVERTRIANGULAR_CONFIG_trsm_splitfactor_gemm_spdn_param");
-    set_by_env(cfg.herk_tri_cfg.partition_parameter, "ESPRESO_SCSOLVERTRIANGULAR_CONFIG_trsm_splitfactor_gemm_spdn_param");
+    set_by_env(cfg.herk_tri_cfg.strategy, "ESPRESO_SCSOLVERTRIANGULAR_CONFIG_herk_strategy");
+    set_by_env(cfg.herk_tri_cfg.partition_algorithm, "ESPRESO_SCSOLVERTRIANGULAR_CONFIG_herk_partition_algorithm");
+    set_by_env(cfg.herk_tri_cfg.partition_parameter, "ESPRESO_SCSOLVERTRIANGULAR_CONFIG_herk_partition_parameter");
+
+    printf("config:\n");
+    printf("  order_X = %c\n", cfg.order_X);
+    printf("  order_L = %c\n", cfg.order_L);
+    printf("  trsm_strategy = %c\n", cfg.trsm_tri_cfg.strategy);
+    printf("  trsm_partition_algorithm = %c\n", cfg.trsm_tri_cfg.partition.algorithm);
+    printf("  trsm_partition_parameter = %d\n", cfg.trsm_tri_cfg.partition.parameter);
+    printf("  trsm_splitrhs_factor_order_sp = %c\n", cfg.trsm_tri_cfg.splitrhs.factor_order_sp);
+    printf("  trsm_splitrhs_factor_order_dn = %c\n", cfg.trsm_tri_cfg.splitrhs.factor_order_dn);
+    printf("  trsm_splitrhs_spdn_criteria = %c\n", cfg.trsm_tri_cfg.splitrhs.spdn_criteria);
+    printf("  trsm_splitrhs_spdn_param = %f\n", cfg.trsm_tri_cfg.splitrhs.spdn_param);
+    printf("  trsm_splitfactor_trsm_factor_spdn = %c\n", cfg.trsm_tri_cfg.splitfactor.trsm_factor_spdn);
+    printf("  trsm_splitfactor_trsm_factor_order = %c\n", cfg.trsm_tri_cfg.splitfactor.trsm_factor_order);
+    printf("  trsm_splitfactor_gemm_factor_prune = %c\n", cfg.trsm_tri_cfg.splitfactor.gemm_factor_prune);
+    printf("  trsm_splitfactor_gemm_factor_order_sp = %c\n", cfg.trsm_tri_cfg.splitfactor.gemm_factor_order_sp);
+    printf("  trsm_splitfactor_gemm_factor_order_dn = %c\n", cfg.trsm_tri_cfg.splitfactor.gemm_factor_order_dn);
+    printf("  trsm_splitfactor_gemm_spdn_criteria = %c\n", cfg.trsm_tri_cfg.splitfactor.gemm_spdn_criteria);
+    printf("  trsm_splitfactor_gemm_spdn_param = %f\n", cfg.trsm_tri_cfg.splitfactor.gemm_spdn_param);
+    printf("  herk_strategy = %c\n", cfg.herk_tri_cfg.strategy);
+    printf("  herk_partition_algorithm = %c\n", cfg.herk_tri_cfg.partition_algorithm);
+    printf("  herk_partition_parameter = %d\n", cfg.herk_tri_cfg.partition_parameter);
 }
 
 
@@ -175,7 +200,7 @@ void SchurComplementSolver<T,I>::commitMatrix(const Matrix_CSR<T,I> & A, I sc_si
 
     ext->A_whole = &A;
     ext->sc_size = sc_size;
-    ext->other_size = A.nrows * sc_size;
+    ext->other_size = A.nrows - sc_size;
 
     extract_submatrices(*ext->A_whole, ext->A11_my, ext->A12_my, ext->A21_my, ext->A22_my, ext->sc_size);
 
@@ -193,6 +218,11 @@ template<typename T, typename I>
 void SchurComplementSolver<T,I>::commitMatrix(const Matrix_CSR<T,I> & A11, const Matrix_CSR<T,I> & A12, const Matrix_CSR<T,I> & A21, const Matrix_CSR<T,I> & A22)
 {
     if(ext->stage != 0) eslog::error("SchurComplementSolver::commitMatrix(): wrong stage\n");
+    if(A11.nrows != A11.ncols || A22.nrows != A22.ncols) eslog::error("A11 and A22 must be square\n");
+    if(A11.nrows != A12.nrows || A21.nrows != A22.nrows || A11.ncols != A21.ncols || A12.ncols != A22.ncols) eslog::error("incompatible matrices\n");
+
+    ext->sc_size = A22.nrows;
+    ext->other_size = A11.nrows;
 
     ext->A11 = &A11;
     ext->A12 = &A12;
@@ -219,12 +249,14 @@ void SchurComplementSolver<T,I>::factorizeSymbolic()
     ext->perm_new = PermutationView_new<I>::from_old(ext->perm);
 
     if(ext->A11_solver_factors_get_L) {
+        ext->L11.resize(ext->other_size, ext->other_size, ext->A11_solver.getFactorNnz());
         ext->A11_solver.getFactorL(ext->L11, true, false);
         ext->L_new = MatrixCsxView_new<T,I>::from_old(ext->L11);
         ext->L_new.prop.uplo = 'L';
         ext->L_new.prop.diag = 'N';
     }
     if(ext->A11_solver_factors_get_U) {
+        ext->U11.resize(ext->other_size, ext->other_size, ext->A11_solver.getFactorNnz());
         ext->A11_solver.getFactorU(ext->U11, true, false);
         ext->U_new = MatrixCsxView_new<T,I>::from_old(ext->U11);
         ext->U_new.prop.uplo = 'U';
@@ -232,6 +264,13 @@ void SchurComplementSolver<T,I>::factorizeSymbolic()
     }
 
     if(ext->system_is_hermitian) {
+        if(ext->A11_solver_factors_get_L) {
+            ext->A22_new.prop.uplo = 'L';
+        }
+        if(ext->A11_solver_factors_get_U) {
+            ext->A22_new.prop.uplo = 'U';
+        }
+
         if(ext->A11_solver_factors_get_U) {
             ext->L_new = ext->U_new.get_transposed_reordered_view();
             // todo complex: also conjugation
@@ -275,9 +314,10 @@ void SchurComplementSolver<T,I>::factorizeSymbolic()
         ext->L_new_to_use = &ext->L_new;
         if(ext->L_new.order != ext->cfg.order_L) {
             ext->L_new_reordered.set(ext->L_new.nrows, ext->L_new.ncols, ext->L_new.nnz, ext->cfg.order_L, AllocatorCPU_new::get_singleton());
+            ext->L_new_reordered.prop = ext->L_new.prop;
             ext->L_new_reordered.alloc();
             ext->op_reorder_L.set_matrix_src(&ext->L_new);
-            ext->op_reorder_L.set_matrix_src(&ext->L_new_reordered);
+            ext->op_reorder_L.set_matrix_dst(&ext->L_new_reordered);
             ext->op_reorder_L.perform_pattern();
             ext->L_new_to_use = &ext->L_new_reordered;
         }
@@ -290,7 +330,7 @@ void SchurComplementSolver<T,I>::factorizeSymbolic()
 
         ext->op_herk_tri.set_config(ext->cfg.herk_tri_cfg);
         ext->op_herk_tri.set_matrix_A(&ext->X);
-        // ext->op_herk_tri.set_matrix_C(); // do it in perform
+        // ext->op_herk_tri.set_matrix_C(); // do it right before perform
         ext->op_herk_tri.set_coefficients(T{1}, T{0});
         ext->op_herk_tri.set_mode(math::blas::herk_mode::AhA);
         ext->op_herk_tri.set_A_pattern(ext->B_right);
@@ -316,10 +356,6 @@ void SchurComplementSolver<T,I>::updateMatrixValues()
 
     if(ext->system_is_hermitian) {
         math::operations::permute_csx_csx<T,I>::do_all(&ext->B_right_input, &ext->B_right, &ext->perm_new, &ext->perm_to_sort);
-    
-        if(ext->L_new.order != ext->cfg.order_L) {
-            ext->op_reorder_L.perform_values();
-        }
     }
     else {
         eslog::error("not supported yet, todo\n");
@@ -347,6 +383,10 @@ void SchurComplementSolver<T,I>::factorizeNumericAndGetSc(Matrix_Dense<T,I,A> & 
     }
 
     if(ext->system_is_hermitian) {
+        if(ext->L_new.order != ext->cfg.order_L) {
+            ext->op_reorder_L.perform_values();
+        }
+
         ext->X.alloc();
         math::operations::convert_csx_dny<T,I>::do_all(&ext->B_right, &ext->X);
 
@@ -354,29 +394,36 @@ void SchurComplementSolver<T,I>::factorizeNumericAndGetSc(Matrix_Dense<T,I,A> & 
 
         MatrixDenseData_new<T> sc_tmp1;
         sc_tmp1.set(ext->sc_size, ext->sc_size, 'R', AllocatorCPU_new::get_singleton());
-        sc_tmp1.prop.uplo = uplo;
         sc_tmp1.alloc();
+        sc_tmp1.prop.uplo = uplo;
 
         ext->op_herk_tri.set_matrix_C(&sc_tmp1);
         ext->op_herk_tri.perform();
 
         ext->X.free();
 
-        math::operations::complete_dnx<T>::do_all(&sc_tmp1, true);
+        math::operations::complete_dnx<T>::do_all(&sc_tmp1, uplo, true);
 
         MatrixDenseData_new<T> sc_tmp2;
         sc_tmp2.set(ext->sc_size, ext->sc_size, 'R', AllocatorCPU_new::get_singleton());
         sc_tmp2.prop.uplo = uplo;
         sc_tmp2.alloc();
 
-        math::operations::permute_dnx_dnx<T,I>::do_all(&sc_tmp1, &sc_tmp2, &ext->perm_to_sort, &ext->perm_to_sort);
+        PermutationView_new<I> inv_perm_to_sort = ext->perm_to_sort.get_inverse_view();
+        math::operations::permute_dnx_dnx<T,I>::do_all(&sc_tmp1, &sc_tmp2, &inv_perm_to_sort, &inv_perm_to_sort);
 
         sc_tmp1.free();
 
         MatrixDenseView_new<T> sc_new = MatrixDenseView_new<T>::from_old(sc);
         sc_new.prop.uplo = uplo;
 
-        math::operations::convert_csx_dny<T,I>::do_all(&ext->A22_new, &sc_new);
+        if(ext->A22_new.prop.uplo == sc_new.prop.uplo) {
+            math::operations::convert_csx_dny<T,I>::do_all(&ext->A22_new, &sc_new);
+        }
+        else {
+            MatrixDenseView_new<T> sc_new_reordered = sc_new.get_transposed_reordered_view();
+            math::operations::convert_csx_dny<T,I>::do_all(&ext->A22_new, &sc_new_reordered);
+        }
 
         math::operations::lincomb_matrix_dnx<T>::do_all(&sc_new, alpha, &sc_new, -alpha, &sc_tmp2);
 

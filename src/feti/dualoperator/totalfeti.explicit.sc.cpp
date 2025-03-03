@@ -93,7 +93,9 @@ void TotalFETIExplicitSc<T,I>::set(const step::Step &step)
 
     // my_timer tm_total, tm_gpuinit, tm_gpuset, tm_gpucreate, tm_alloc_Fs, tm_mainloop, tm_inner, tm_prepare, tm_commit, tm_symbfact, tm_gpualloc, tm_gpuapplystuff;
 
-    device = gpu::mgm::get_device_by_mpi(info::mpi::rank, info::mpi::size);
+    if(apply_on_gpu) {
+        device = gpu::mgm::get_device_by_mpi(info::mpi::rank, info::mpi::size);
+    }
 
     // tm_total.start();
 

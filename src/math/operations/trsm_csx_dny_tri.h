@@ -36,7 +36,7 @@ public:
         struct {
             char trsm_factor_spdn = '_'; // Sparse, Dense
             char trsm_factor_order = '_'; // Rowmajor, Colmajor
-            char gemm_factor_prune = '_'; // Yes, No
+            char gemm_factor_prune = '_'; // No, Rows only, Cols only, All
             char gemm_factor_order_sp = '_'; // Rowmajor, Colmajor
             char gemm_factor_order_dn = '_'; // Rowmajor, Colmajor
             char gemm_spdn_criteria = '_'; // Sparse only, Dense only, fraction of Chunks is sparse, fraction of siZe is sparse, densiTy of factor part

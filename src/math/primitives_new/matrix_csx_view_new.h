@@ -2,8 +2,11 @@
 #ifndef SRC_MATH_PRIMITIVES_NEW_MATRIX_CSX_VIEW_NEW_H_
 #define SRC_MATH_PRIMITIVES_NEW_MATRIX_CSX_VIEW_NEW_H_
 
+#include <vector>
+
 #include "math/primitives_new/matrix_base_new.h"
 #include "math/primitives/matrix_csr.h"
+#include "basis/utilities/utils.h"
 
 
 
@@ -101,6 +104,73 @@ public:
         else if(M_new.prop.uplo == 'L') M_old.shape == Matrix_Shape::LOWER;
         else M_old.shape == Matrix_Shape::FULL;
         return M_old;
+    }
+
+    void print(const char * name = "", char method = 'A')
+    {
+        if constexpr(utils::is_real<T>()) {
+            eslog::info("CSX matrix %s, size %lldx%lld, nnz %lld, order '%c', uplo '%c', diag '%c'\n", name, nrows, ncols, nnz, order, prop.uplo, prop.diag);
+            if(method == 'A') {
+                eslog::info("ptrs: ");
+                for(I ip = 0; ip <= get_size_primary(); ip++) eslog::info("%lld ", (long long)ptrs[ip]);
+                eslog::info("\n");
+                eslog::info("idxs: ");
+                for(I i = 0; i < nnz; i++) eslog::info("%lld ", (long long)idxs[i]);
+                eslog::info("\n");
+                eslog::info("vals: ");
+                for(I i = 0; i < nnz; i++) eslog::info("%+.3e ", (double)vals[i]);
+                eslog::info("\n");
+            }
+            if(method == 'D') {
+                struct rcv { I r; I c; T v; };
+                std::vector<rcv> rcvs;
+                for(I ip = 0; ip < get_size_primary(); ip++) {
+                    I start = ptrs[ip];
+                    I end = ptrs[ip+1];
+                    for(I i = start; i < end; i++) {
+                        I is = idxs[i];
+                        T v = vals[i];
+                        if(order == 'R') rcvs.push_back(rcv{ip,is,v});
+                        if(order == 'C') rcvs.push_back(rcv{is,ip,v});
+                    }
+                }
+                std::stable_sort(rcvs.begin(), rcvs.end(), [](const rcv & l, const rcv & r){ return l.c < r.c;});
+                std::stable_sort(rcvs.begin(), rcvs.end(), [](const rcv & l, const rcv & r){ return l.r < r.r;});
+                size_t curr_row = 0;
+                size_t curr_col = 0;
+                size_t curr_idx = 0;
+                while(true) {
+                    if(curr_idx < rcvs.size()) {
+                        rcv & x = rcvs[curr_idx];
+                        if(x.r == curr_row && x.c == curr_col) {
+                            T v = x.v;
+                            if(v == 0) eslog::info("    0       ");
+                            else eslog::info(" %+11.3e", v);
+                            curr_idx++;
+                        }
+                        else {
+                            eslog::info("    .       ");
+                        }
+                    }
+                    else {
+                        eslog::info("    .       ");
+                    }
+                    curr_col++;
+                    if(curr_col == ncols) {
+                        curr_col = 0;
+                        curr_row++;
+                        eslog::info("\n");
+                    }
+                    if(curr_row == nrows) {
+                        break;
+                    }
+                }
+            }
+            fflush(stdout);
+        }
+        if constexpr(utils::is_complex<T>()) {
+            eslog::error("matrix print not supported for complex matrices\n");
+        }
     }
 };
 

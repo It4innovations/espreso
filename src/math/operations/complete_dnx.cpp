@@ -22,6 +22,14 @@ void complete_dnx<T>::set_matrix(MatrixDenseView_new<T> * M_)
 
 
 template<typename T>
+void complete_dnx<T>::set_orig_uplo(char orig_uplo_)
+{
+    orig_uplo = orig_uplo_;
+}
+
+
+
+template<typename T>
 void complete_dnx<T>::set_conj(bool do_conj_)
 {
     do_conj = do_conj_;
@@ -34,30 +42,37 @@ void complete_dnx<T>::perform()
 {
     if(M == nullptr) eslog::error("matrix is not set\n");
     if(M->nrows != M->ncols) eslog::error("matrix must be square\n");
-    if(M->prop.uplo != 'L' && M->prop.uplo != 'U') eslog::error("matrix must be upper or lower\n");
+    if(orig_uplo != 'L' && orig_uplo != 'U') eslog::error("original uplo is not set\n");
 
     size_t size = M->nrows;
 
-    MatrixDenseData_new<T> M2;
-    M2.set(size, size, change_order(M->order), AllocatorCPU_new::get_singleton());
-    M2.alloc();
+    MatrixDenseView_new<T> M2 = *M; // same as M, but ignore uplo
+    M2.prop.uplo = 'F';
 
-    convert_dnx_dny<T>::do_all(M, &M2, do_conj);
+    MatrixDenseData_new<T> M3; // M2 but converted to the other order
+    M3.set(size, size, change_order(M2.order), AllocatorCPU_new::get_singleton());
+    M3.alloc();
+    convert_dnx_dny<T>::do_all(&M2, &M3, do_conj);
 
-    M2.prop.uplo = change_uplo(M->prop.uplo);
+    MatrixDenseView_new<T> M4 = M3.get_transposed_reordered_view(); // same order as M, but the uplo is opposite
+    M4.prop.uplo = change_uplo(orig_uplo);
 
-    copy_dnx<T>::do_all(&M2, M);
+    MatrixDenseView_new<T> M5 = *M; // same as M, but has opposite uplo
+    M5.prop.uplo = change_uplo(orig_uplo);
 
-    M2.clear();
+    copy_dnx<T>::do_all(&M4, &M5);
+
+    M3.clear();
 }
 
 
 
 template<typename T>
-void complete_dnx<T>::do_all(MatrixDenseView_new<T> * M, bool do_conj)
+void complete_dnx<T>::do_all(MatrixDenseView_new<T> * M, char orig_uplo, bool do_conj)
 {
     complete_dnx<T> instance;
     instance.set_matrix(M);
+    instance.set_orig_uplo(orig_uplo);
     instance.set_conj(do_conj);
     instance.perform();
 }
