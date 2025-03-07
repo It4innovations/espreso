@@ -2,6 +2,7 @@
 #include "math/operations/copy_dnx.h"
 
 #include "basis/utilities/utils.h"
+#include "basis/utilities/stacktimer.h"
 
 
 
@@ -42,6 +43,8 @@ void copy_dnx<T>::perform()
     if(M_src->order != M_dst->order) eslog::error("matrix order does not match\n");
     if(M_src->prop.uplo != M_dst->prop.uplo) eslog::error("matrix uplo does not match\n");
 
+    stacktimer::push("copy_dnx::perform");
+
     size_t size_primary = M_dst->get_size_primary();
     size_t size_secdary = M_dst->get_size_secdary();
     bool move_start = ((M_dst->prop.uplo == 'U' && M_dst->order == 'R') || (M_dst->prop.uplo == 'L' && M_dst->order == 'C'));
@@ -68,6 +71,8 @@ void copy_dnx<T>::perform()
             std::copy_n(M_src->vals + i * M_src->ld + start, size, M_dst->vals + i * M_dst->ld + start);
         }
     }
+
+    stacktimer::pop();
 }
 
 

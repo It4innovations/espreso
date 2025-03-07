@@ -1,6 +1,8 @@
 
 #include "math/operations/submatrix_csx_csy_map.h"
 
+#include "basis/utilities/stacktimer.h"
+
 
 
 namespace espreso {
@@ -50,6 +52,8 @@ void submatrix_csx_csy_map<T,I>::setup()
     if(M_src == nullptr) eslog::error("source matrix has not been set\n");
     if(!set_bounds_called) eslog::error("bounds have not been set\n");
 
+    stacktimer::push("submatrix_csx_csy_map::setup");
+
     size_t start_prim = 0;
     size_t end_prim = 0;
     size_t start_sec = 0;
@@ -85,6 +89,8 @@ void submatrix_csx_csy_map<T,I>::setup()
         }
     }
 
+    stacktimer::pop();
+
     setup_called = true;
 }
 
@@ -117,6 +123,8 @@ void submatrix_csx_csy_map<T,I>::perform_pattern()
     if(M_dst->nrows != num_rows || M_dst->ncols != num_cols) eslog::error("matrix sizes dont match\n");
     if(M_dst->nnz != nnz_output) eslog::error("wrong nnz in output matrix\n");
 
+    stacktimer::push("submatrix_csx_csy_map::perform_pattern");
+
     map.set(nnz_output, AllocatorCPU_new::get_singleton());
     map.alloc();
 
@@ -126,6 +134,8 @@ void submatrix_csx_csy_map<T,I>::perform_pattern()
     else {
         perform_pattern_diff_order();
     }
+
+    stacktimer::pop();
 
     perform_pattern_called = true;
 }
@@ -137,6 +147,8 @@ void submatrix_csx_csy_map<T,I>::perform_values()
 {
     if(!perform_pattern_called) eslog::error("perform pattern has not been called\n");
 
+    stacktimer::push("submatrix_csx_csy_map::perform_values");
+
     T * src_vals = M_src->vals;
     T * dst_vals = M_dst->vals;
 
@@ -144,6 +156,8 @@ void submatrix_csx_csy_map<T,I>::perform_values()
         I i_src = map.vals[i_dst];
         dst_vals[i_dst] = src_vals[i_src];
     }
+
+    stacktimer::pop();
 }
 
 

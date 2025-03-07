@@ -14,6 +14,7 @@
 #include "basis/logging/timelogger.h"
 #include "basis/logging/papicounters.h"
 #include "basis/logging/profiler.h"
+#include "basis/utilities/stacktimer.h"
 
 #include "config/reader/reader.h"
 #include "config/configuration.h"
@@ -28,6 +29,7 @@ int main(int argc, char **argv)
     profiler::syncstart("espreso");
 
     profiler::syncstart("initialization");
+    stacktimer::init();
     info::system::setSignals();
     info::env::set();
     profiler::synccheckpoint("set_signals_and_env");
@@ -108,5 +110,6 @@ int main(int argc, char **argv)
     ECF::finish();
     MPITools::finish();
     info::mpi::finish();
+    stacktimer::finish();
     return 0;
 }

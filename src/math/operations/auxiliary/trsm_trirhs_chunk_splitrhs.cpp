@@ -1,6 +1,8 @@
 
 #include "math/operations/auxiliary/trsm_trirhs_chunk_splitrhs.h"
 
+#include "basis/utilities/stacktimer.h"
+
 
 
 namespace espreso {
@@ -68,6 +70,8 @@ void trsm_trirhs_chunk_splitrhs<T,I>::preprocess()
     if(L->nrows != X->nrows) eslog::error("incompatible matrix sizes\n");
     if(L->prop.uplo != 'L') eslog::error("matrix L must have uplo=L\n");
 
+    stacktimer::push("trsm_trirhs_chunk_splitrhs::preprocess");
+
     k_start = X_colpivots->vals[rhs_start];
     k_end = L->nrows;
     k_size = k_end - k_start;
@@ -105,6 +109,8 @@ void trsm_trirhs_chunk_splitrhs<T,I>::preprocess()
         op_trsm_dn.set_rhs_sol(&sub_X);
     }
 
+    stacktimer::pop();
+
     preprocess_called = true;
 }
 
@@ -114,6 +120,8 @@ template<typename T, typename I>
 void trsm_trirhs_chunk_splitrhs<T,I>::perform()
 {
     if(!preprocess_called) eslog::error("preprocess was not called\n");
+
+    stacktimer::push("trsm_trirhs_chunk_splitrhs::perform");
 
     op_submatrix_X.perform();
 
@@ -129,6 +137,8 @@ void trsm_trirhs_chunk_splitrhs<T,I>::perform()
         op_trsm_dn.perform();
         sub_L_dn.free();
     }
+
+    stacktimer::pop();
 }
 
 

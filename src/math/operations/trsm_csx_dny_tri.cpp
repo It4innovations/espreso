@@ -5,6 +5,7 @@
 
 #include "math/operations/pivots_trails_csx.h"
 #include "math/operations/auxiliary/tri_partition_trsm.h"
+#include "basis/utilities/stacktimer.h"
 
 
 
@@ -49,9 +50,11 @@ void trsm_csx_dny_tri<T,I>::set_X(MatrixDenseView_new<T> * X_)
 
 
 template<typename T, typename I>
-void trsm_csx_dny_tri<T,I>::set_X_pattern(MatrixCsxView_new<T,I> & X_pattern)
+void trsm_csx_dny_tri<T,I>::calc_X_pattern(MatrixCsxView_new<T,I> & X_pattern)
 {
     if(called_set_pattern) eslog::error("X patern was already set\n");
+
+    stacktimer::push("trsm_csx_dny_tri::calc_X_pattern");
 
     X_colpivots.set(X_pattern.ncols, AllocatorCPU_new::get_singleton());
     X_colpivots.alloc();
@@ -60,6 +63,8 @@ void trsm_csx_dny_tri<T,I>::set_X_pattern(MatrixCsxView_new<T,I> & X_pattern)
     X_rowtrails.set(X_pattern.nrows, AllocatorCPU_new::get_singleton());
     X_rowtrails.alloc();
     pivots_trails_csx<T,I>::do_all(&X_pattern, &X_rowtrails, 'R', 'T', 'F');
+
+    stacktimer::pop();
 
     called_set_pattern = true;
 }
@@ -79,6 +84,8 @@ void trsm_csx_dny_tri<T,I>::preprocess()
     if(X->nrows != L->nrows) eslog::error("incompatible matrices\n");
     if(X_colpivots.size != X->ncols) eslog::error("wrong colpivots size\n");
     if(X_rowtrails.size != X->nrows) eslog::error("wrong rowtrails size\n");
+
+    stacktimer::push("trsm_csx_dny_tri::preprocess");
 
     for(size_t i = 1; i < X_colpivots.size; i++) {
         if(X_colpivots.vals[i-1] > X_colpivots.vals[i]) {
@@ -240,6 +247,8 @@ void trsm_csx_dny_tri<T,I>::preprocess()
         }
     }
 
+    stacktimer::pop();
+
     called_preprocess = true;
 }
 
@@ -250,6 +259,8 @@ void trsm_csx_dny_tri<T,I>::perform()
 {
     if(!called_preprocess) eslog::error("preprocess was not called\n");
 
+    stacktimer::push("trsm_csx_dny_tri::perform");
+
     for(size_t ch = 0; ch < num_chunks; ch++) {
         if(cfg.strategy == 'R') {
             ops_chunks_splitrhs.vals[ch].perform();
@@ -258,6 +269,8 @@ void trsm_csx_dny_tri<T,I>::perform()
             ops_chunks_splifactor.vals[ch].perform();
         }
     }
+
+    stacktimer::pop();
 }
 
 

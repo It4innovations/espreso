@@ -91,13 +91,13 @@ void TotalFETIExplicitSc<T,I>::set(const step::Step &step)
 
 
 
-    // my_timer tm_total, tm_gpuinit, tm_gpuset, tm_gpucreate, tm_alloc_Fs, tm_mainloop, tm_inner, tm_prepare, tm_commit, tm_symbfact, tm_gpualloc, tm_gpuapplystuff;
+    my_timer tm_total, tm_gpuinit, tm_gpuset, tm_gpucreate, tm_alloc_Fs, tm_mainloop, tm_inner, tm_prepare, tm_commit, tm_symbfact, tm_gpualloc, tm_gpuapplystuff;
 
     if(apply_on_gpu) {
         device = gpu::mgm::get_device_by_mpi(info::mpi::rank, info::mpi::size);
     }
 
-    // tm_total.start();
+    tm_total.start();
 
     n_domains = feti.K.size();
     domain_data.resize(n_domains);
@@ -107,15 +107,15 @@ void TotalFETIExplicitSc<T,I>::set(const step::Step &step)
     }
 
     if(apply_on_gpu) {
-        // tm_gpuinit.start();
+        tm_gpuinit.start();
         gpu::mgm::init_gpu(device);
-        // tm_gpuinit.stop();
+        tm_gpuinit.stop();
 
-        // tm_gpuset.start();
+        tm_gpuset.start();
         gpu::mgm::set_device(device);
-        // tm_gpuset.stop();
+        tm_gpuset.stop();
 
-        // tm_gpucreate.start();
+        tm_gpucreate.start();
         n_queues = omp_get_max_threads();
         queues.resize(n_queues);
         handles_dense.resize(n_queues);
@@ -123,10 +123,10 @@ void TotalFETIExplicitSc<T,I>::set(const step::Step &step)
         gpu::mgm::queue_create(main_q);
         for(gpu::mgm::queue & q : queues) gpu::mgm::queue_create(q);
         for(size_t i = 0; i < n_queues; i++) gpu::dnblas::handle_create(handles_dense[i], queues[i]);
-        // tm_gpucreate.stop();
+        tm_gpucreate.stop();
     }
 
-    // tm_alloc_Fs.start();
+    tm_alloc_Fs.start();
     if(Fs_share_memory) {
         Fs_allocated.resize((n_domains - 1) / 2 + 1);
         std::vector<size_t> domain_idxs_sorted_by_f_size_desc(n_domains);
@@ -202,19 +202,19 @@ void TotalFETIExplicitSc<T,I>::set(const step::Step &step)
             }
         }
     }
-    // tm_alloc_Fs.stop();
+    tm_alloc_Fs.stop();
 
-    // tm_mainloop.start();
+    tm_mainloop.start();
     #pragma omp parallel for schedule(static,1)
     for(size_t di = 0; di < n_domains; di++) {
-        // tm_inner.start();
+        tm_inner.start();
         auto & data = domain_data[di];
 
         if(getSymmetry(feti.K[di].type) != Matrix_Symmetry::HERMITIAN || feti.K[di].shape != Matrix_Shape::UPPER) {
             eslog::error("implemented only for hermitian K matrices stored in upper triangle. TODO\n");
         }
 
-        // tm_prepare.start();
+        tm_prepare.start();
         data.Kreg.type = feti.K[di].type;
         data.Kreg.shape = feti.K[di].shape;
         math::combine(data.Kreg, feti.K[di], feti.RegMat[di]);
@@ -235,14 +235,14 @@ void TotalFETIExplicitSc<T,I>::set(const step::Step &step)
         if constexpr(utils::is_real<T>())    data.null_matrix_A22.type = Matrix_Type::REAL_SYMMETRIC_INDEFINITE;
         if constexpr(utils::is_complex<T>()) data.null_matrix_A22.type = Matrix_Type::COMPLEX_HERMITIAN_INDEFINITE;
         data.null_matrix_A22.shape = Matrix_Shape::UPPER;
-        // tm_prepare.stop();
+        tm_prepare.stop();
 
-        // tm_commit.start();
+        tm_commit.start();
         data.sc_solver.commitMatrix(data.Kreg, data.Bt, data.null_matrix_A21, data.null_matrix_A22);
-        // tm_commit.stop();
-        // tm_symbfact.start();
+        tm_commit.stop();
+        tm_symbfact.start();
         data.sc_solver.factorizeSymbolic();
-        // tm_symbfact.stop();
+        tm_symbfact.stop();
 
         if(apply_on_gpu) {
             gpu::dnblas::handle & hd = handles_dense[di % n_queues];
@@ -252,21 +252,21 @@ void TotalFETIExplicitSc<T,I>::set(const step::Step &step)
                 if(!is_system_hermitian) gpu::dnblas::gemv(hd, data.n_dofs_interface, data.n_dofs_interface, dummyptrT, data.d_F.get_ld(), 'R', 'N', dummyptrT, dummyptrT);
             });
 
-            // tm_gpualloc.start();
+            tm_gpualloc.start();
             data.d_applyg_D2C.resize(data.n_dofs_interface);
             data.d_apply_x.resize(data.n_dofs_interface);
             data.d_apply_y.resize(data.n_dofs_interface);
             data.d_apply_z.resize(data.n_dofs_domain);
             data.d_apply_w.resize(data.n_dofs_domain);
-            // tm_gpualloc.stop();
+            tm_gpualloc.stop();
         }
         else {
             data.x.resize(data.n_dofs_interface);
             data.y.resize(data.n_dofs_interface);
         }
-        // tm_inner.stop();
+        tm_inner.stop();
     }
-    // tm_mainloop.stop();
+    tm_mainloop.stop();
 
     if(apply_on_gpu) {
         for(size_t qi = 0; qi < n_queues; qi++) {
@@ -277,7 +277,7 @@ void TotalFETIExplicitSc<T,I>::set(const step::Step &step)
             d_buffers_dense[qi] = gpu::mgm::memalloc_device(buffersize_tmp_apply_max);
             gpu::dnblas::buffer_set(handles_dense[qi], d_buffers_dense[qi], buffersize_tmp_apply_max);
         }
-        // tm_gpuapplystuff.start();
+        tm_gpuapplystuff.start();
         d_applyg_x_cluster.resize(feti.lambdas.size);
         d_applyg_y_cluster.resize(feti.lambdas.size);
         Vector_Dense<T*,I,gpu::mgm::Ah> h_applyg_xs_pointers;
@@ -306,23 +306,23 @@ void TotalFETIExplicitSc<T,I>::set(const step::Step &step)
             gpu::mgm::copy_submit(main_q, domain_data[di].d_applyg_D2C.vals, feti.D2C[di].data(), feti.D2C[di].size());
         }
         gpu::mgm::queue_wait(main_q);
-        // tm_gpuapplystuff.stop();
+        tm_gpuapplystuff.stop();
     }
 
-    // tm_total.stop();
+    tm_total.stop();
 
-    // print_timer("Set     total", tm_total);
-    // print_timer("Set       gpuinit", tm_gpuinit);
-    // print_timer("Set       gpuset", tm_gpuset);
-    // print_timer("Set       gpucreate", tm_gpucreate);
-    // print_timer("Set       alloc_Fs", tm_alloc_Fs);
-    // print_timer("Set       mainloop", tm_mainloop);
-    // print_timer("Set         inner", tm_inner);
-    // print_timer("Set           prepare", tm_prepare);
-    // print_timer("Set           commit", tm_commit);
-    // print_timer("Set           symbfact", tm_symbfact);
-    // print_timer("Set           gpualloc", tm_gpualloc);
-    // print_timer("Set       gpuapplystuff", tm_gpuapplystuff);
+    print_timer("Set     total", tm_total);
+    print_timer("Set       gpuinit", tm_gpuinit);
+    print_timer("Set       gpuset", tm_gpuset);
+    print_timer("Set       gpucreate", tm_gpucreate);
+    print_timer("Set       alloc_Fs", tm_alloc_Fs);
+    print_timer("Set       mainloop", tm_mainloop);
+    print_timer("Set         inner", tm_inner);
+    print_timer("Set           prepare", tm_prepare);
+    print_timer("Set           commit", tm_commit);
+    print_timer("Set           symbfact", tm_symbfact);
+    print_timer("Set           gpualloc", tm_gpualloc);
+    print_timer("Set       gpuapplystuff", tm_gpuapplystuff);
 }
 
 
@@ -330,13 +330,13 @@ void TotalFETIExplicitSc<T,I>::set(const step::Step &step)
 template<typename T, typename I>
 void TotalFETIExplicitSc<T,I>::update(const step::Step &step)
 {
-    // my_timer tm_total, tm_assemble, tm_inner, tm_updatevals, tm_factnumer, tm_copyF, tm_maked, tm_wait;
+    my_timer tm_total, tm_assemble, tm_inner, tm_updatevals, tm_factnumer, tm_copyF, tm_maked, tm_wait;
 
-    // tm_total.start();
-    // tm_assemble.start();
+    tm_total.start();
+    tm_assemble.start();
     #pragma omp parallel for schedule(static,1)
     for(size_t di = 0; di < n_domains; di++) {
-        // tm_inner.start();
+        tm_inner.start();
         auto & data = domain_data[di];
 
         math::sumCombined(data.Kreg, T{1.0}, feti.K[di], feti.RegMat[di]);
@@ -344,27 +344,27 @@ void TotalFETIExplicitSc<T,I>::update(const step::Step &step)
         Matrix_CSR<T,I> & B = feti.B1[di];
         math::csrTranspose(data.Bt, B, data.map_B_transpose, math::CsrTransposeStage::Values, true);
 
-        // tm_updatevals.start();
+        tm_updatevals.start();
         data.sc_solver.updateMatrixValues();
-        // tm_updatevals.stop();
-        // tm_factnumer.start();
+        tm_updatevals.stop();
+        tm_factnumer.start();
         data.sc_solver.factorizeNumericAndGetSc(data.F, data.F_fill, T{-1});
-        // tm_factnumer.stop();
-        // tm_inner.stop();
+        tm_factnumer.stop();
+        tm_inner.stop();
     }
-    // tm_assemble.stop();
+    tm_assemble.stop();
 
     if(apply_on_gpu) {
-        // tm_copyF.start();
+        tm_copyF.start();
         for(size_t i = 0; i < d_Fs_allocated.size(); i++) {
             gpu::mgm::copy_submit(main_q, d_Fs_allocated[i], Fs_allocated[i]);
         }
         if(gpu_wait_update) gpu::mgm::queue_wait(main_q);
-        // tm_copyF.stop();
+        tm_copyF.stop();
     }
-    // tm_total.stop();
+    tm_total.stop();
 
-    // tm_maked.start();
+    tm_maked.start();
     {
         if (feti.updated.B) {
             d.resize();
@@ -380,22 +380,22 @@ void TotalFETIExplicitSc<T,I>::update(const step::Step &step)
         d.synchronize();
         math::add(d, T{-1}, feti.c);
     }
-    // tm_maked.stop();
+    tm_maked.stop();
 
-    // tm_wait.start();
+    tm_wait.start();
     if(apply_on_gpu) {
         gpu::mgm::queue_wait(main_q);
     }
-    // tm_wait.stop();
+    tm_wait.stop();
 
-    // print_timer("Update  total", tm_total);
-    // print_timer("Update    assemble", tm_assemble);
-    // print_timer("Update      inner", tm_inner);
-    // print_timer("Update        updatevals", tm_updatevals);
-    // print_timer("Update        factnumer", tm_factnumer);
-    // print_timer("Update    copyF", tm_copyF);
-    // print_timer("Update  maked", tm_maked);
-    // print_timer("Update  wait", tm_wait);
+    print_timer("Update  total", tm_total);
+    print_timer("Update    assemble", tm_assemble);
+    print_timer("Update      inner", tm_inner);
+    print_timer("Update        updatevals", tm_updatevals);
+    print_timer("Update        factnumer", tm_factnumer);
+    print_timer("Update    copyF", tm_copyF);
+    print_timer("Update  maked", tm_maked);
+    print_timer("Update  wait", tm_wait);
 }
 
 
@@ -403,12 +403,12 @@ void TotalFETIExplicitSc<T,I>::update(const step::Step &step)
 template<typename T, typename I>
 void TotalFETIExplicitSc<T,I>::_apply_cpu(const Vector_Dual<T> &x_cluster, Vector_Dual<T> &y_cluster)
 {
-    // my_timer tm_total, tm_mv;
+    my_timer tm_total, tm_mv;
 
-    // tm_total.start();
+    tm_total.start();
     memset(y_cluster.vals, 0, y_cluster.size * sizeof(T));
 
-    // #pragma omp parallel for schedule(static,1)
+    #pragma omp parallel for schedule(static,1)
     for(size_t di = 0; di < n_domains; di++) {
         auto & data = domain_data[di];
 
@@ -418,20 +418,20 @@ void TotalFETIExplicitSc<T,I>::_apply_cpu(const Vector_Dual<T> &x_cluster, Vecto
             data.x.vals[i] = x_cluster.vals[D2C[i]];
         }
 
-        // tm_mv.start();
+        tm_mv.start();
         if( is_system_hermitian) math::blas::apply_hermitian(data.y, T{1}, data.F, data.F_fill, T{0}, data.x);
         if(!is_system_hermitian) eslog::error("not implemented for non-hermitian\n");
-        // tm_mv.stop();
+        tm_mv.stop();
 
         for(I i = 0; i < data.n_dofs_interface; i++) {
             #pragma omp atomic
             y_cluster.vals[D2C[i]] += data.y.vals[i];
         }
     }
-    // tm_total.stop();
+    tm_total.stop();
 
-    // print_timer("ApplyC  total", tm_total);
-    // print_timer("ApplyC    mv", tm_mv);
+    print_timer("ApplyC  total", tm_total);
+    print_timer("ApplyC    mv", tm_mv);
 }
 
 
@@ -439,77 +439,77 @@ void TotalFETIExplicitSc<T,I>::_apply_cpu(const Vector_Dual<T> &x_cluster, Vecto
 template<typename T, typename I>
 void TotalFETIExplicitSc<T,I>::_apply_gpu(const Vector_Dual<T> &x_cluster, Vector_Dual<T> &y_cluster)
 {
-    // my_timer tm_total;
-    // my_timer tm_copyin, tm_scatter, tm_mv_outer, tm_mv, tm_zerofill, tm_gather, tm_copyout, tm_wait;
+    my_timer tm_total;
+    my_timer tm_copyin, tm_scatter, tm_mv_outer, tm_mv, tm_zerofill, tm_gather, tm_copyout, tm_wait;
 
-    // tm_total.start();
+    tm_total.start();
 
     // copy x_cluster to device
-    // tm_copyin.start();
+    tm_copyin.start();
     gpu::mgm::copy_submit(main_q, d_applyg_x_cluster, x_cluster);
     if(gpu_wait_apply) gpu::mgm::queue_wait(main_q);
-    // tm_copyin.stop();
+    tm_copyin.stop();
 
     // scatter
-    // tm_scatter.start();
+    tm_scatter.start();
     gpu::kernels::DCmap_scatter(main_q, d_applyg_xs_pointers, d_applyg_n_dofs_interfaces, d_applyg_x_cluster, d_applyg_D2Cs_pointers);
     if(gpu_wait_apply) gpu::mgm::queue_wait(main_q);
-    // tm_scatter.stop();
+    tm_scatter.stop();
 
     gpu::mgm::queue_async_barrier({main_q}, queues);
 
     // apply
-    // tm_mv_outer.start();
+    tm_mv_outer.start();
     #pragma omp parallel for schedule(static,1) if(gpu_apply_parallel)
     for(size_t di = 0; di < n_domains; di++) {
         gpu::mgm::queue & q = queues[di % n_queues];
         gpu::dnblas::handle & hd = handles_dense[di % n_queues];
         per_domain_stuff & data = domain_data[di];
 
-        // tm_mv.start();
+        tm_mv.start();
         if( is_system_hermitian) gpu::dnblas::hemv<T,I>(hd, data.d_F.nrows, data.d_F.vals, data.d_F.get_ld(), 'R', 'N', data.F_fill, data.d_apply_x.vals, data.d_apply_y.vals);
         if(!is_system_hermitian) gpu::dnblas::gemv<T,I>(hd, data.d_F.nrows, data.d_F.ncols, data.d_F.vals, data.d_F.get_ld(), 'R', 'N', data.d_apply_x.vals, data.d_apply_y.vals);
         if(gpu_wait_apply) gpu::mgm::queue_wait(q);
-        // tm_mv.stop();
+        tm_mv.stop();
     }
-    // tm_mv_outer.stop();
+    tm_mv_outer.stop();
 
     // zerofill y_cluster on device
-    // tm_zerofill.start();
+    tm_zerofill.start();
     gpu::mgm::memset_submit(main_q, d_applyg_y_cluster.vals, d_applyg_y_cluster.size * sizeof(T), 0);
     if(gpu_wait_apply) gpu::mgm::queue_wait(main_q);
-    // tm_zerofill.stop();
+    tm_zerofill.stop();
 
     gpu::mgm::queue_async_barrier(queues, {main_q});
 
     // gather
-    // tm_gather.start();
+    tm_gather.start();
     gpu::kernels::DCmap_gather(main_q, d_applyg_ys_pointers, d_applyg_n_dofs_interfaces, d_applyg_y_cluster, d_applyg_D2Cs_pointers);
     if(gpu_wait_apply) gpu::mgm::queue_wait(main_q);
-    // tm_gather.stop();
+    tm_gather.stop();
 
     // copy y_cluster from device
-    // tm_copyout.start();
+    tm_copyout.start();
     gpu::mgm::copy_submit(main_q, y_cluster, d_applyg_y_cluster);
     if(gpu_wait_apply) gpu::mgm::queue_wait(main_q);
-    // tm_copyout.stop();
+    tm_copyout.stop();
 
     // wait
-    // tm_wait.start();
+    tm_wait.start();
     gpu::mgm::device_wait();
-    // tm_wait.stop();
+    tm_wait.stop();
 
-    // tm_total.stop();
+    tm_total.stop();
 
-    // print_timer("ApplyG  total", tm_total);
-    // print_timer("ApplyG    copyin", tm_copyin);
-    // print_timer("ApplyG    scatter", tm_scatter);
-    // print_timer("ApplyG    mv_outer", tm_mv_outer);
-    // print_timer("ApplyG      mv", tm_mv);
-    // print_timer("ApplyG    zerofill", tm_zerofill);
-    // print_timer("ApplyG    gather", tm_gather);
-    // print_timer("ApplyG    copyout", tm_copyout);
-    // print_timer("ApplyG    wait", tm_wait);
+    print_timer("ApplyG  total", tm_total);
+    print_timer("ApplyG    copyin", tm_copyin);
+    print_timer("ApplyG    scatter", tm_scatter);
+    print_timer("ApplyG    mv_outer", tm_mv_outer);
+    print_timer("ApplyG      mv", tm_mv);
+    print_timer("ApplyG    zerofill", tm_zerofill);
+    print_timer("ApplyG    gather", tm_gather);
+    print_timer("ApplyG    copyout", tm_copyout);
+    print_timer("ApplyG    wait", tm_wait);
 }
 
 

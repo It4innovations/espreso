@@ -3,6 +3,7 @@
 
 #include "math/operations/copy_csx.h"
 #include "math/primitives_new/allocator_new.h"
+#include "basis/utilities/stacktimer.h"
 
 
 
@@ -44,9 +45,12 @@ void convert_csx_csy_map<T,I>::perform_pattern()
     if(M_dst == nullptr) eslog::error("destination matrix is not set\n");
     if(M_dst->nrows != M_src->nrows || M_dst->ncols != M_src->ncols || M_dst->nnz != M_src->nnz) eslog::error("matrix sizes dont match\n");
 
+    stacktimer::push("convert_csx_csy_map::perform_pattern");
+
     if(M_src->order == M_dst->order) {
         std::copy_n(M_src->ptrs, M_src->get_size_primary() + 1, M_dst->ptrs);
         std::copy_n(M_src->idxs, M_src->nnz, M_dst->idxs);
+        stacktimer::pop();
         perform_pattern_called = true;
         return;
     }
@@ -110,6 +114,8 @@ void convert_csx_csy_map<T,I>::perform_pattern()
         curr = tmp;
     }
 
+    stacktimer::pop();
+
     perform_pattern_called = true;
 }
 
@@ -123,12 +129,11 @@ void convert_csx_csy_map<T,I>::perform_values()
     if(M_dst == nullptr) eslog::error("destination matrix is not set\n");
     if(M_dst->nrows != M_src->nrows || M_dst->ncols != M_src->ncols || M_dst->nnz != M_src->nnz) eslog::error("matrix sizes dont match\n");
 
-    if(M_src->nnz == 0) {
-        return;
-    }
+    stacktimer::push("convert_csx_csy_map::perform_values");
 
     if(M_src->order == M_dst->order) {
         std::copy_n(M_src->vals, M_src->nnz, M_dst->vals);
+        stacktimer::pop();
         return;
     }
 
@@ -141,6 +146,8 @@ void convert_csx_csy_map<T,I>::perform_values()
         I i_src = map_vals[i_dst];
         dst_vals[i_dst] = src_vals[i_src];
     }
+
+    stacktimer::pop();
 }
 
 

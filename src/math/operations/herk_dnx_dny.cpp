@@ -1,6 +1,8 @@
 
 #include "math/operations/herk_dnx_dny.h"
 
+#include "basis/utilities/stacktimer.h"
+
 
 
 namespace espreso {
@@ -54,7 +56,11 @@ void herk_dnx_dny<T>::perform()
     if(mode == blas::herk_mode::AhA && A->ncols != C->ncols) eslog::error("incompatible matrix sizes\n");
     if(C->prop.uplo != 'U' && C->prop.uplo != 'L') eslog::error("C uplo is not set\n");
 
+    stacktimer::push("herk_dnx_dny::perform");
+
     blas::herk(*A, *C, mode, alpha, beta);
+
+    stacktimer::pop();
 }
 
 

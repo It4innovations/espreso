@@ -1,6 +1,8 @@
 
 #include "math/operations/gemm_csx_dny_dny_staged.h"
 
+#include "basis/utilities/stacktimer.h"
+
 
 
 namespace espreso {
@@ -60,7 +62,11 @@ void gemm_csx_dny_dny_staged<T,I>::preprocess()
     if(A->nrows != C->nrows || B->ncols != C->ncols || A->ncols != B->nrows) eslog::error("incompatible matrix sizes\n");
     if(B->order != C->order) eslog::error("order of B and C must match\n");
 
+    stacktimer::push("gemm_csx_dny_dny_staged::preprocess");
+
     spblas::mm(*A, *B, *C, alpha, beta, handle_abc, 'P');
+
+    stacktimer::pop();
 
     preprocess_called = true;
 }
@@ -77,7 +83,11 @@ void gemm_csx_dny_dny_staged<T,I>::perform()
     if(A->nrows != C->nrows || B->ncols != C->ncols || A->ncols != B->nrows) eslog::error("incompatible matrix sizes\n");
     if(B->order != C->order) eslog::error("order of B and C must match\n");
 
+    stacktimer::push("gemm_csx_dny_dny_staged::perform");
+
     spblas::mm(*A, *B, *C, alpha, beta, handle_abc, 'C');
+
+    stacktimer::pop();
 }
 
 

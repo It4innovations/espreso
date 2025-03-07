@@ -22,7 +22,7 @@ public:
     void perform();
     static void do_all(MatrixDenseView_new<T> * M, char orig_uplo, bool do_conj);
 private:
-    MatrixDenseView_new<T> * M;
+    MatrixDenseView_new<T> * M = nullptr;
     char orig_uplo = '_';
     bool do_conj = true;
 };

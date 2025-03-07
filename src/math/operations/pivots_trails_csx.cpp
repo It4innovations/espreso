@@ -2,6 +2,7 @@
 #include "math/operations/pivots_trails_csx.h"
 
 #include "math/operations/convert_csx_csy.h"
+#include "basis/utilities/stacktimer.h"
 
 
 
@@ -44,6 +45,8 @@ void pivots_trails_csx<T,I>::perform()
     if(vec == nullptr) eslog::error("vector is not set\n");
     if(row_col == '_' || pivots_trails == '_') eslog::error("mode is not set\n");
 
+    stacktimer::push("pivots_trails_csx::perform");
+
     bool need_reorder = (M->order != row_col);
     if(need_reorder) {
         MatrixCsxData_new<T,I> M_reordered;
@@ -69,6 +72,8 @@ void pivots_trails_csx<T,I>::perform()
     if(completion == 'B') {
         complete_backward(*vec, end_val);
     }
+
+    stacktimer::pop();
 }
 
 

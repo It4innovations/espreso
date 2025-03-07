@@ -2,6 +2,7 @@
 #include "math/operations/sorting_permutation.h"
 
 #include "math/primitives_new/vector_dense_data_new.h"
+#include "basis/utilities/stacktimer.h"
 
 
 
@@ -34,6 +35,8 @@ void sorting_permutation<T,I>::perform()
     if(perm == nullptr) eslog::error("permutation is not set\n");
     if(vec->size != perm->size) eslog::error("vector and permutation sizes dont match\n");
 
+    stacktimer::push("sorting_permutation::perform");
+
     struct idx_val { I idx; T val; };
 
     VectorDenseData_new<idx_val> idxsvals;
@@ -54,6 +57,8 @@ void sorting_permutation<T,I>::perform()
     PermutationView_new<I>::invert(perm->dst_to_src, perm->src_to_dst, perm->size);
 
     idxsvals.clear();
+
+    stacktimer::pop();
 }
 
 

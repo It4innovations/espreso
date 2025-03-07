@@ -3,6 +3,7 @@
 
 #include "math/operations/copy_csx.h"
 #include "math/primitives_new/vector_dense_data_new.h"
+#include "basis/utilities/stacktimer.h"
 
 
 
@@ -54,6 +55,8 @@ void permute_csx_csx<T,I>::perform()
     if(perm_rows != nullptr && perm_rows->size != M_src->nrows) eslog::error("wrong row perm size\n");
     if(perm_cols != nullptr && perm_cols->size != M_src->ncols) eslog::error("wrong col perm size\n");
 
+    stacktimer::push("permute_csx_csx::perform");
+
     if(perm_rows == nullptr && perm_cols == nullptr) {
         copy_csx<T,I>::do_all(M_src, M_dst);
     }
@@ -81,6 +84,8 @@ void permute_csx_csx<T,I>::perform()
             perform_both(*perm_cols, *perm_rows);
         }
     }
+
+    stacktimer::pop();
 }
 
 

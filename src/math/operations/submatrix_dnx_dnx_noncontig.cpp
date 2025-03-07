@@ -4,6 +4,7 @@
 #include <algorithm>
 
 #include "math/operations/copy_dnx.h"
+#include "basis/utilities/stacktimer.h"
 
 
 
@@ -55,6 +56,8 @@ void submatrix_dnx_dnx_noncontig<T,I>::perform()
     size_t ncols = ((col_map == nullptr) ? M_src->ncols : col_map->size);
     if(M_dst->nrows != nrows || M_dst->ncols != ncols) eslog::error("wrong destination matrix size\n");
 
+    stacktimer::push("submatrix_dnx_dnx_noncontig::perform");
+
     size_t dst_size_primary = M_dst->get_size_primary();
     size_t dst_size_secdary = M_dst->get_size_secdary();
 
@@ -96,6 +99,8 @@ void submatrix_dnx_dnx_noncontig<T,I>::perform()
             }
         }
     }
+
+    stacktimer::pop();
 }
 
 

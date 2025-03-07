@@ -3,6 +3,8 @@
 
 #include <cmath>
 
+#include "basis/utilities/stacktimer.h"
+
 
 
 namespace espreso {
@@ -90,6 +92,8 @@ void tri_partition_herk::perform()
     if(partition == nullptr) eslog::error("partition is not set\n");
     if(partition->size != num_chunks + 1) eslog::error("wrong partition size\n");
 
+    stacktimer::push("tri_partition_herk::perform");
+
     size_t * partition_sizet = partition->vals;
     double * partition_double = reinterpret_cast<double*>(partition->vals);
 
@@ -138,6 +142,8 @@ void tri_partition_herk::perform()
     for(size_t i = 0; i <= num_chunks; i++) {
         partition_sizet[i] = (size_t)(partition_range * (partition_double[i] / max_bound) + 0.5);
     }
+
+    stacktimer::pop();
 }
 
 

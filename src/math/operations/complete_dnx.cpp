@@ -4,6 +4,7 @@
 #include "math/primitives_new/matrix_dense_data_new.h"
 #include "math/operations/convert_dnx_dny.h"
 #include "math/operations/copy_dnx.h"
+#include "basis/utilities/stacktimer.h"
 
 
 
@@ -44,6 +45,8 @@ void complete_dnx<T>::perform()
     if(M->nrows != M->ncols) eslog::error("matrix must be square\n");
     if(orig_uplo != 'L' && orig_uplo != 'U') eslog::error("original uplo is not set\n");
 
+    stacktimer::push("complete_dnx::perform");
+
     size_t size = M->nrows;
 
     MatrixDenseView_new<T> M2 = *M; // same as M, but ignore uplo
@@ -63,6 +66,8 @@ void complete_dnx<T>::perform()
     copy_dnx<T>::do_all(&M4, &M5);
 
     M3.clear();
+
+    stacktimer::pop();
 }
 
 

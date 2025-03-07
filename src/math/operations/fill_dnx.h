@@ -22,7 +22,7 @@ public:
     void perform();
     static void do_all(MatrixDenseView_new<T> * M, T val);
 private:
-    MatrixDenseView_new<T> * M;
+    MatrixDenseView_new<T> * M = nullptr;
     T val = 0;
 };
 

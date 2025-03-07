@@ -1,6 +1,8 @@
 
 #include "math/operations/fill_dnx.h"
 
+#include "basis/utilities/stacktimer.h"
+
 
 
 namespace espreso {
@@ -31,6 +33,8 @@ void fill_dnx<T>::perform()
     if(M == nullptr) eslog::error("matrix is not set\n");
     if((M->prop.uplo == 'U' || M->prop.uplo == 'L') && M->nrows != M->ncols) eslog::error("uplo matrix must be square\n");
 
+    stacktimer::push("fill_dnx::perform");
+
     size_t size_primary = M->get_size_primary();
     size_t size_secdary = M->get_size_secdary();
     bool move_start = ((M->prop.uplo == 'U' && M->order == 'R') || (M->prop.uplo == 'L' && M->order == 'C'));
@@ -43,6 +47,8 @@ void fill_dnx<T>::perform()
         size_t size = end - start;
         std::fill_n(M->vals + i * M->ld + start, size, val);
     }
+
+    stacktimer::pop();
 }
 
 

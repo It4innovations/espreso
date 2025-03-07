@@ -2,6 +2,7 @@
 #include "math/operations/submatrix_dnx_dnx_view.h"
 
 #include "math/primitives_new/matrix_dense_data_new.h"
+#include "basis/utilities/stacktimer.h"
 
 
 
@@ -53,7 +54,11 @@ void submatrix_dnx_dnx_view<T>::perform()
     if(M_src->ld != M_dst->ld) eslog::error("leading dimensions must match\n");
     if(dynamic_cast<MatrixDenseData_new<T>*>(M_dst) != nullptr) eslog::error("cannot be used with data as destination\n");
 
+    stacktimer::push("submatrix_dnx_dnx_view::perform");
+
     M_dst->vals = M_src->vals + row_start * M_src->get_stride_row() + col_start * M_dst->get_stride_col();
+
+    stacktimer::pop();
 }
 
 

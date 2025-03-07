@@ -22,8 +22,8 @@ public:
     void perform();
     static void do_all(MatrixDenseView_new<T> * M_src, MatrixDenseView_new<T> * M_dst, size_t row_start, size_t row_end, size_t col_start, size_t col_end);
 private:
-    MatrixDenseView_new<T> * M_src;
-    MatrixDenseView_new<T> * M_dst;
+    MatrixDenseView_new<T> * M_src = nullptr;
+    MatrixDenseView_new<T> * M_dst = nullptr;
     size_t row_start = 0;
     size_t row_end = 0;
     size_t col_start = 0;

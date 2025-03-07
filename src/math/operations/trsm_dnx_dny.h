@@ -21,8 +21,8 @@ public:
     void perform();
     static void do_all(MatrixDenseView_new<T> * A, MatrixDenseView_new<T> * X);
 private:
-    MatrixDenseView_new<T> * A;
-    MatrixDenseView_new<T> * X;
+    MatrixDenseView_new<T> * A = nullptr;
+    MatrixDenseView_new<T> * X = nullptr;
 };
 
 

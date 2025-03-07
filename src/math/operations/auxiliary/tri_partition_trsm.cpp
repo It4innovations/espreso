@@ -4,6 +4,8 @@
 #include <cmath>
 #include <algorithm>
 
+#include "basis/utilities/stacktimer.h"
+
 
 
 namespace espreso {
@@ -90,6 +92,8 @@ void tri_partition_trsm::perform()
     if(partition->size != num_chunks + 1) eslog::error("wrong partition size\n");
     if(sizeof(size_t) != sizeof(double)) eslog::error("incompatible types\n");
 
+    stacktimer::push("tri_partition_trsm::perform");
+
     size_t * partition_sizet = partition->vals;
     double * partition_double = reinterpret_cast<double*>(partition->vals);
 
@@ -131,6 +135,8 @@ void tri_partition_trsm::perform()
     for(size_t i = 0; i <= num_chunks; i++) {
         partition_sizet[i] = (size_t)(partition_range * (partition_double[i] / max_bound) + 0.5);
     }
+
+    stacktimer::pop();
 }
 
 

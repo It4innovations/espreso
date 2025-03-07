@@ -2,6 +2,7 @@
 #include "math/operations/trsm_csx_dny_staged.h"
 
 #include "math/operations/copy_dnx.h"
+#include "basis/utilities/stacktimer.h"
 
 
 
@@ -44,9 +45,13 @@ void trsm_csx_dny_staged<T,I>::preprocess()
     if(A->prop.uplo != 'U' && A->prop.uplo != 'L') eslog::error("invalid A uplo\n");
     if(A->prop.diag != 'U' && A->prop.diag != 'N') eslog::error("invalid A diag\n");
 
+    stacktimer::push("trsm_csx_dny_staged::preprocess");
+
     Y.set(X->nrows, X->ncols, X->order, AllocatorCPU_new::get_singleton());
 
     math::spblas::trsm(*A, *X, Y, handle, 'P');
+
+    stacktimer::pop();
 
     preprocess_called = true;
 }
@@ -62,6 +67,8 @@ void trsm_csx_dny_staged<T,I>::perform()
     if(A->prop.uplo != 'U' && A->prop.uplo != 'L') eslog::error("invalid A uplo\n");
     if(A->prop.diag != 'U' && A->prop.diag != 'N') eslog::error("invalid A diag\n");
 
+    stacktimer::push("trsm_csx_dny_staged::perform");
+
     Y.alloc();
 
     math::spblas::trsm(*A, *X, Y, handle, 'C');
@@ -69,6 +76,8 @@ void trsm_csx_dny_staged<T,I>::perform()
     copy_dnx<T>::do_all(X, &Y);
 
     Y.free();
+
+    stacktimer::pop();
 }
 
 

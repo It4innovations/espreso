@@ -54,14 +54,14 @@ public:
     void set_config(config cfg_);
     void set_L(MatrixCsxView_new<T,I> * L_);
     void set_X(MatrixDenseView_new<T> * X_);
-    void set_X_pattern(MatrixCsxView_new<T,I> & X_pattern);
+    void calc_X_pattern(MatrixCsxView_new<T,I> & X_pattern);
     void preprocess();
     void perform();
     void finalize();
 private:
     config cfg;
-    MatrixCsxView_new<T,I> * L;
-    MatrixDenseView_new<T> * X;
+    MatrixCsxView_new<T,I> * L = nullptr;
+    MatrixDenseView_new<T> * X = nullptr;
     size_t num_chunks = 0;
     VectorDenseData_new<size_t> partition;
     VectorDenseData_new<I> X_colpivots;

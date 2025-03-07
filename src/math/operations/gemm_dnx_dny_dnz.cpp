@@ -2,6 +2,7 @@
 #include "math/operations/gemm_dnx_dny_dnz.h"
 
 #include "math/wrappers/math.blas.h"
+#include "basis/utilities/stacktimer.h"
 
 
 
@@ -62,7 +63,11 @@ void gemm_dnx_dny_dnz<T>::perform()
     if(A->nrows != C->nrows || B->ncols != C->ncols || A->ncols != B->nrows) eslog::error("incompatible matrices");
     if(utils::is_complex<T>() && (conj_A || conj_B)) eslog::error("conjugation not supported yet\n");
 
+    stacktimer::push("gemm_dnx_dny_dnz::perform");
+
     math::blas::gemm(*A, *B, *C, alpha, beta);
+
+    stacktimer::pop();
 }
 
 

@@ -1,6 +1,7 @@
 
 #include "math/operations/pruning_subset_csx.h"
 
+#include "basis/utilities/stacktimer.h"
 
 
 
@@ -35,6 +36,8 @@ void pruning_subset_csx<T,I>::preprocess()
     if(!called_set_pruning_mode) eslog::error("pruning mode is not set\n");
     if(called_preprocess) eslog::error("preprocess was already called\n");
     if(M == nullptr) eslog::error("matrix is not set\n");
+
+    stacktimer::push("pruning_subset_csx::preprocess");
 
     size_t size_primary = M->get_size_primary();
     size_t size_secdary = M->get_size_secdary();
@@ -77,6 +80,8 @@ void pruning_subset_csx<T,I>::preprocess()
     else {
         pruned_size_secdary = size_secdary;
     }
+
+    stacktimer::pop();
 
     called_preprocess = true;
 }
@@ -130,6 +135,8 @@ void pruning_subset_csx<T,I>::perform()
     if(prune_rows && nonempty_rows == nullptr) eslog::error("nonempty rows vector is not set\n");
     if(prune_cols && nonempty_cols == nullptr) eslog::error("nonempty cols vector is not set\n");
 
+    stacktimer::push("pruning_subset_csx::perform");
+
     size_t size_primary = M->get_size_primary();
     size_t size_secdary = M->get_size_secdary();
     I * ptrs = M->ptrs;
@@ -175,6 +182,8 @@ void pruning_subset_csx<T,I>::perform()
             }
         }
     }
+
+    stacktimer::pop();
 }
 
 

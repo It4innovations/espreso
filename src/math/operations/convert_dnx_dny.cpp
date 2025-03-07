@@ -3,6 +3,7 @@
 
 #include "math/operations/copy_dnx.h"
 #include "math/wrappers/math.blas.h"
+#include "basis/utilities/stacktimer.h"
 
 
 
@@ -43,12 +44,16 @@ void convert_dnx_dny<T>::perform()
     if(M_dst == nullptr) eslog::error("destination matrix is not set\n");
     if(M_src->nrows != M_dst->nrows || M_src->ncols != M_dst->ncols) eslog::error("matrix sizes dont match\n");
 
+    stacktimer::push("convert_dnx_dny::perform");
+
     if(M_src->order == M_dst->order) {
         copy_dnx<T>::do_all(M_src, M_dst, do_conj);
     }
     else {
         blas::transpose(M_src->nrows, M_src->ncols, M_src->vals, M_src->ld, M_dst->vals, M_dst->ld, M_src->order, do_conj);
     }
+
+    stacktimer::pop();
 }
 
 

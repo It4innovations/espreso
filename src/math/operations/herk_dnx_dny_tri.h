@@ -38,7 +38,7 @@ public:
     void set_matrix_C(MatrixDenseView_new<T> * C_);
     void set_coefficients(T alpha_, T beta_);
     void set_mode(blas::herk_mode mode_);
-    void set_A_pattern(MatrixCsxView_new<T,I> & A_pattern);
+    void calc_A_pattern(MatrixCsxView_new<T,I> & A_pattern);
     void preprocess();
     void perform();
     void finalize();

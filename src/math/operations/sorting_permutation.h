@@ -22,8 +22,8 @@ public:
     void perform();
     static void do_all(VectorDenseView_new<T> * vec, PermutationView_new<I> * perm);
 private:
-    VectorDenseView_new<T> * vec;
-    PermutationView_new<I> * perm;
+    VectorDenseView_new<T> * vec = nullptr;
+    PermutationView_new<I> * perm = nullptr;
 };
 
 

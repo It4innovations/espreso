@@ -2,6 +2,7 @@
 #include "math/operations/lincomb_matrix_dnx.h"
 
 #include "math/operations/fill_dnx.h"
+#include "basis/utilities/stacktimer.h"
 
 
 
@@ -51,6 +52,8 @@ void lincomb_matrix_dnx<T>::perform()
     if(alpha != 0 && A == nullptr) eslog::error("matrix A is not set\n");
     if(beta != 0 && B == nullptr) eslog::error("matrix B is not set\n");
 
+    stacktimer::push("lincomb_matrix_dnx::perform");
+
     if(alpha == 0 && beta == 0) {
         lincomb_matrix_dnx<T>::perform_zero(*X);
     }
@@ -63,6 +66,8 @@ void lincomb_matrix_dnx<T>::perform()
     if(alpha != 0 && beta != 0) {
         lincomb_matrix_dnx<T>::perform_two(*X, alpha, *A, beta, *B);
     }
+
+    stacktimer::pop();
 }
 
 

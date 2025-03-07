@@ -21,6 +21,7 @@
 #include "math/operations/herk_dnx_dny.h"
 #include "math/operations/fill_dnx.h"
 #include "esinfo/mpiinfo.h"
+#include "basis/utilities/stacktimer.h"
 
 
 
@@ -198,6 +199,9 @@ void SchurComplementSolver<T,I>::commitMatrix(const Matrix_CSR<T,I> & A, I sc_si
     if(ext->stage != 0) eslog::error("SchurComplementSolver::commitMatrix(): wrong stage\n");
     if(A.nrows != A.ncols) eslog::error("matrix has to be square\n");
 
+    stacktimer::enable();
+    stacktimer::push("SchurComplementSolver::commitMatrix1");
+
     ext->A_whole = &A;
     ext->sc_size = sc_size;
     ext->other_size = A.nrows - sc_size;
@@ -208,6 +212,9 @@ void SchurComplementSolver<T,I>::commitMatrix(const Matrix_CSR<T,I> & A, I sc_si
     ext->A12 = &ext->A12_my;
     ext->A21 = &ext->A21_my;
     ext->A22 = &ext->A22_my;
+
+    stacktimer::pop();
+    stacktimer::disable();
     
     ext->stage = 1;
 }
@@ -221,6 +228,9 @@ void SchurComplementSolver<T,I>::commitMatrix(const Matrix_CSR<T,I> & A11, const
     if(A11.nrows != A11.ncols || A22.nrows != A22.ncols) eslog::error("A11 and A22 must be square\n");
     if(A11.nrows != A12.nrows || A21.nrows != A22.nrows || A11.ncols != A21.ncols || A12.ncols != A22.ncols) eslog::error("incompatible matrices\n");
 
+    stacktimer::enable();
+    stacktimer::push("SchurComplementSolver::commitMatrix4");
+
     ext->sc_size = A22.nrows;
     ext->other_size = A11.nrows;
 
@@ -228,6 +238,9 @@ void SchurComplementSolver<T,I>::commitMatrix(const Matrix_CSR<T,I> & A11, const
     ext->A12 = &A12;
     ext->A21 = &A21;
     ext->A22 = &A22;
+
+    stacktimer::pop();
+    stacktimer::disable();
     
     ext->stage = 1;
 }
@@ -241,13 +254,19 @@ void SchurComplementSolver<T,I>::factorizeSymbolic()
 
     if(utils::is_complex<T>()) eslog::error("I dont support complex systems\n"); // todo, will need to add conjugations to some places
 
+    stacktimer::enable();
+    stacktimer::push("SchurComplementSolver::factorizeSymbolic");
+
     ext->A22_new = MatrixCsxView_new<T,I>::from_old(*ext->A22);
 
     ext->A11_solver.commit(*ext->A11);
+    stacktimer::push("SchurComplementSolver::factorizeSymbolic_symbfact");
     ext->A11_solver.symbolicFactorization();
+    stacktimer::pop();
     ext->A11_solver.getPermutation(ext->perm);
     ext->perm_new = PermutationView_new<I>::from_old(ext->perm);
 
+    stacktimer::push("SchurComplementSolver::factorizeSymbolic_getfactor");
     if(ext->A11_solver_factors_get_L) {
         ext->L11.resize(ext->other_size, ext->other_size, ext->A11_solver.getFactorNnz());
         ext->A11_solver.getFactorL(ext->L11, true, false);
@@ -262,6 +281,7 @@ void SchurComplementSolver<T,I>::factorizeSymbolic()
         ext->U_new.prop.uplo = 'U';
         ext->U_new.prop.diag = 'N';
     }
+    stacktimer::pop();
 
     if(ext->system_is_hermitian) {
         if(ext->A11_solver_factors_get_L) {
@@ -325,7 +345,7 @@ void SchurComplementSolver<T,I>::factorizeSymbolic()
         ext->op_trsm_tri_L.set_config(ext->cfg.trsm_tri_cfg);
         ext->op_trsm_tri_L.set_L(ext->L_new_to_use);
         ext->op_trsm_tri_L.set_X(&ext->X);
-        ext->op_trsm_tri_L.set_X_pattern(ext->B_right);
+        ext->op_trsm_tri_L.calc_X_pattern(ext->B_right);
         ext->op_trsm_tri_L.preprocess();
 
         ext->op_herk_tri.set_config(ext->cfg.herk_tri_cfg);
@@ -333,12 +353,15 @@ void SchurComplementSolver<T,I>::factorizeSymbolic()
         // ext->op_herk_tri.set_matrix_C(); // do it right before perform
         ext->op_herk_tri.set_coefficients(T{1}, T{0});
         ext->op_herk_tri.set_mode(math::blas::herk_mode::AhA);
-        ext->op_herk_tri.set_A_pattern(ext->B_right);
+        ext->op_herk_tri.calc_A_pattern(ext->B_right);
         ext->op_herk_tri.preprocess();
     }
     else {
         eslog::error("not supported yet, todo\n");
     }
+
+    stacktimer::pop();
+    stacktimer::disable();
 
     ext->stage = 2;
 }
@@ -350,6 +373,9 @@ void SchurComplementSolver<T,I>::updateMatrixValues()
 {
     if(ext->stage < 2) eslog::error("SchurComplementSolver::updateMatrixValues(): wrong stage\n");
 
+    stacktimer::enable();
+    stacktimer::push("SchurComplementSolver::updateMatrixValues");
+
     if(ext->A_whole != nullptr) {
         extract_submatrices(*ext->A_whole, ext->A11_my, ext->A12_my, ext->A21_my, ext->A22_my, ext->sc_size);
     }
@@ -360,6 +386,9 @@ void SchurComplementSolver<T,I>::updateMatrixValues()
     else {
         eslog::error("not supported yet, todo\n");
     }
+
+    stacktimer::pop();
+    stacktimer::disable();
     
     ext->stage = 3;
 }
@@ -373,6 +402,9 @@ void SchurComplementSolver<T,I>::factorizeNumericAndGetSc(Matrix_Dense<T,I,A> & 
     if(ext->stage != 3) eslog::error("SchurComplementSolver::factorizeNumericAndGetSc(): wrong stage\n");
     if(sc.nrows != sc.ncols) eslog::error("sc matrix must be square\n");
     if(sc.nrows != ext->sc_size) eslog::error("sc matrix does not match the previously given sc size\n");
+
+    stacktimer::enable();
+    stacktimer::push("SchurComplementSolver::factorizeNumericAndGetSc");
 
     ext->A11_solver.numericalFactorization();
     if(ext->A11_solver_factors_get_L) {
@@ -433,6 +465,9 @@ void SchurComplementSolver<T,I>::factorizeNumericAndGetSc(Matrix_Dense<T,I,A> & 
         eslog::error("not supported yet, todo\n");
     }
 
+    stacktimer::pop();
+    stacktimer::disable();
+
     ext->stage = 4;
 }
 
@@ -441,9 +476,15 @@ void SchurComplementSolver<T,I>::factorizeNumericAndGetSc(Matrix_Dense<T,I,A> & 
 template<typename T, typename I>
 void SchurComplementSolver<T,I>::solveA11(const Vector_Dense<T,I> & rhs, Vector_Dense<T,I> & sol)
 {
-    if(ext->stage != 4) eslog::error("SchurComplementSolver::factorizeNumericAndGetSc(): wrong stage\n");
+    if(ext->stage != 4) eslog::error("SchurComplementSolver::solveA11(): wrong stage\n");
     
+    stacktimer::enable();
+    stacktimer::push("SchurComplementSolver::solveA11");
+
     ext->A11_solver.solve(rhs, sol);
+
+    stacktimer::pop();
+    stacktimer::disable();
 }
 
 

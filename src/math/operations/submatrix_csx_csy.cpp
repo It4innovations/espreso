@@ -1,6 +1,8 @@
 
 #include "math/operations/submatrix_csx_csy.h"
 
+#include "basis/utilities/stacktimer.h"
+
 
 
 namespace espreso {
@@ -42,6 +44,8 @@ void submatrix_csx_csy<T,I>::setup()
     if(M_src == nullptr) eslog::error("source matrix has not been set\n");
     if(!bounds_set) eslog::error("bounds have not been set\n");
 
+    stacktimer::push("submatrix_csx_csy::setup");
+
     size_t start_prim = 0;
     size_t end_prim = 0;
     size_t start_sec = 0;
@@ -77,6 +81,8 @@ void submatrix_csx_csy<T,I>::setup()
         }
     }
 
+    stacktimer::pop();
+
     setup_called = true;
 }
 
@@ -109,12 +115,16 @@ void submatrix_csx_csy<T,I>::perform()
     if(M_dst->nrows != num_rows || M_dst->ncols != num_cols) eslog::error("destination matrix size does not match bounds\n");
     if(M_dst->nnz != nnz_output) eslog::error("wrong nnz in output matrix\n");
 
+    stacktimer::push("submatrix_csx_csy::perform");
+
     if(M_src->order == M_dst->order) {
         perform_same_order();
     }
     else {
         perform_diff_order();
     }
+
+    stacktimer::pop();
 }
 
 

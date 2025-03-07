@@ -2,6 +2,7 @@
 #include "math/operations/convert_csx_csy.h"
 
 #include "math/operations/copy_csx.h"
+#include "basis/utilities/stacktimer.h"
 
 
 
@@ -34,8 +35,11 @@ void convert_csx_csy<T,I>::perform()
     if(M_dst == nullptr) eslog::error("destination matrix is not set\n");
     if(M_dst->nrows != M_src->nrows || M_dst->ncols != M_src->ncols || M_dst->nnz != M_src->nnz) eslog::error("matrix sizes dont match\n");
 
+    stacktimer::push("convert_csx_csy::perform");
+
     if(M_src->order == M_dst->order) {
         copy_csx<T,I>::do_all(M_src, M_dst);
+        stacktimer::pop();
         return;
     }
 
@@ -95,6 +99,8 @@ void convert_csx_csy<T,I>::perform()
         dst_ptrs[c] = curr;
         curr = tmp;
     }
+
+    stacktimer::pop();
 }
 
 

@@ -2,6 +2,7 @@
 #include "math/operations/trsm_dnx_dny.h"
 
 #include "math/wrappers/math.blas.h"
+#include "basis/utilities/stacktimer.h"
 
 
 
@@ -37,7 +38,11 @@ void trsm_dnx_dny<T>::perform()
     if(A->prop.uplo != 'U' && A->prop.uplo != 'L') eslog::error("invalid A uplo\n");
     if(A->prop.diag != 'U' && A->prop.diag != 'N') eslog::error("invalid A diag\n");
 
+    stacktimer::push("trsm_dnx_dny::perform");
+
     math::blas::trsm(*A, *X);
+
+    stacktimer::pop();
 }
 
 

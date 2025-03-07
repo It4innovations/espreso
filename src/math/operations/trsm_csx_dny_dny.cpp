@@ -2,6 +2,7 @@
 #include "math/operations/trsm_csx_dny_dny.h"
 
 #include "math/operations/copy_dnx.h"
+#include "basis/utilities/stacktimer.h"
 
 
 
@@ -46,6 +47,8 @@ void trsm_csx_dny_dny<T,I>::perform()
     if(X->order != B->order) eslog::error("rhs and sol orders dont match\n");
     if(A->nrows != X->nrows) eslog::error("incompatible matrices\n");
 
+    stacktimer::push("trsm_csx_dny_dny::perform");
+
     if(X == B) { // in-place
         MatrixDenseData_new<T> Y;
         Y.set(X->nrows, X->ncols, X->order, AllocatorCPU_new::get_singleton());
@@ -58,6 +61,8 @@ void trsm_csx_dny_dny<T,I>::perform()
         spblas::handle_trsm handle;
         math::spblas::trsm(*A, *X, *B, handle, 'A');
     }
+
+    stacktimer::pop();
 }
 
 

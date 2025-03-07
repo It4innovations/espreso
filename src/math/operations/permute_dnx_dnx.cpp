@@ -2,6 +2,7 @@
 #include "math/operations/permute_dnx_dnx.h"
 
 #include "math/operations/copy_dnx.h"
+#include "basis/utilities/stacktimer.h"
 
 
 
@@ -53,6 +54,8 @@ void permute_dnx_dnx<T,I>::perform()
     if(perm_rows != nullptr && perm_rows->size != M_src->nrows) eslog::error("wrong row perm size\n");
     if(perm_cols != nullptr && perm_cols->size != M_src->ncols) eslog::error("wrong col perm size\n");
 
+    stacktimer::push("permute_dnx_dnx::perform");
+
     if(perm_rows == nullptr && perm_cols == nullptr) {
         copy_dnx<T>::do_all(M_src, M_dst);
     }
@@ -80,6 +83,8 @@ void permute_dnx_dnx<T,I>::perform()
             perform_both(*perm_cols, *perm_rows);
         }
     }
+
+    stacktimer::pop();
 }
 
 

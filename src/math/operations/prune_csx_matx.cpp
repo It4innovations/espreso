@@ -2,6 +2,7 @@
 #include "math/operations/prune_csx_matx.h"
 
 #include "math/operations/fill_dnx.h"
+#include "basis/utilities/stacktimer.h"
 
 
 
@@ -44,6 +45,8 @@ void prune_csx_matx<T,I>::preprocess()
     if(!called_set_pruning_mode) eslog::error("pruning mode is not set\n");
     if(M_src == nullptr) eslog::error("source matrix is not set\n");
 
+    stacktimer::push("prune_csx_matx::preprocess");
+
     if(M_src->order == 'R') {
         prune_primary = prune_rows;
         prune_secdary = prune_cols;
@@ -58,6 +61,8 @@ void prune_csx_matx<T,I>::preprocess()
     op_pruning_subset.preprocess();
     pruned_nrows = op_pruning_subset.get_pruned_nrows();
     pruned_ncols = op_pruning_subset.get_pruned_ncols();
+
+    stacktimer::pop();
 
     called_preprocess = true;
 }
@@ -110,6 +115,8 @@ void prune_csx_matx<T,I>::prepare()
     if(prune_rows && pruned_rows_vec->size != pruned_nrows) eslog::error("wrong size of pruned rows vector\n");
     if(prune_cols && pruned_cols_vec->size != pruned_ncols) eslog::error("wrong size of pruned cols vector\n");
 
+    stacktimer::push("prune_csx_matx::prepare");
+
     if(prune_rows) {
         op_pruning_subset.set_vector_pruned_rows(pruned_rows_vec);
     }
@@ -138,6 +145,8 @@ void prune_csx_matx<T,I>::prepare()
         }
     }
 
+    stacktimer::pop();
+
     called_prepare = true;
 }
 
@@ -164,12 +173,16 @@ void prune_csx_matx<T,I>::perform()
 {
     if(!called_prepare) eslog::error("prepare was not called\n");
 
+    stacktimer::push("prune_csx_matx::perform");
+
     if(M_dst_sp != nullptr) {
         perform_sparse();
     }
     if(M_dst_dn != nullptr) {
         perform_dense();
     }
+
+    stacktimer::pop();
 }
 
 

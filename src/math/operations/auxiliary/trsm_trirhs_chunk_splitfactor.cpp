@@ -1,6 +1,8 @@
 
 #include "math/operations/auxiliary/trsm_trirhs_chunk_splitfactor.h"
 
+#include "basis/utilities/stacktimer.h"
+
 
 
 namespace espreso {
@@ -72,6 +74,8 @@ void trsm_trirhs_chunk_splitfactor<T,I>::preprocess()
     if(L == nullptr) eslog::error("matrix L is not set\n");
     if(X == nullptr) eslog::error("matrix X is not set\n");
     if(X_rowtrails == nullptr) eslog::error("B rowtrails is not set\n");
+
+    stacktimer::push("trsm_trirhs_chunk_splitfactor::preprocess");
 
     size_t rhs_start = 0;
     size_t rhs_end = X_rowtrails->vals[k_end - 1] + 1;
@@ -161,6 +165,8 @@ void trsm_trirhs_chunk_splitfactor<T,I>::preprocess()
         }
     }
 
+    stacktimer::pop();
+
     preprocess_called = true;
 }
 
@@ -170,6 +176,8 @@ template<typename T, typename I>
 void trsm_trirhs_chunk_splitfactor<T,I>::perform()
 {
     if(!preprocess_called) eslog::error("preprocess was not called\n");
+
+    stacktimer::push("trsm_trirhs_chunk_splitfactor::perform");
 
     op_submatrix_X_top.perform();
     op_submatrix_X_bot.perform();
@@ -207,6 +215,8 @@ void trsm_trirhs_chunk_splitfactor<T,I>::perform()
             sub_L_bot_sp.free();
         }
     }
+
+    stacktimer::pop();
 }
 
 

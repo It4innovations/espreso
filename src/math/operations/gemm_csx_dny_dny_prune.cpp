@@ -3,6 +3,7 @@
 
 #include "math/operations/submatrix_dnx_dnx_noncontig.h"
 #include "math/operations/supermatrix_dnx_dnx_noncontig.h"
+#include "basis/utilities/stacktimer.h"
 
 
 
@@ -75,6 +76,8 @@ void gemm_csx_dny_dny_prune<T,I>::preprocess()
     if(A->nrows != C->nrows || B->ncols != C->ncols || A->ncols != B->nrows) eslog::error("incompatible matrices\n");
     if(B->order != C->order) eslog::error("B and C order must match\n");
 
+    stacktimer::push("gemm_csx_dny_dny_prune::preprocess");
+
     op_prune_A.set_matrix_src(A);
     op_prune_A.set_pruning_mode(prune_rows, prune_cols);
     op_prune_A.preprocess();
@@ -82,6 +85,8 @@ void gemm_csx_dny_dny_prune<T,I>::preprocess()
     m = op_prune_A.get_dst_matrix_nrows();
     n = B->ncols;
     k = op_prune_A.get_dst_matrix_ncols();
+
+    stacktimer::info("m %zu n %zu k %zu orderA %c orderBC %c spdnA %c", m, n, k, A->order, B->order, spdn_A);
 
     if(prune_rows) {
         pruned_rows.set(m, AllocatorCPU_new::get_singleton());
@@ -125,6 +130,8 @@ void gemm_csx_dny_dny_prune<T,I>::preprocess()
         op_gemm_dn.set_coefficients(alpha, beta);
     }
 
+    stacktimer::pop();
+
     preprocess_called = true;
 }
 
@@ -134,6 +141,9 @@ template<typename T, typename I>
 void gemm_csx_dny_dny_prune<T,I>::perform()
 {
     if(!preprocess_called) eslog::error("preprocess was not called\n");
+
+    stacktimer::push("gemm_csx_dny_dny_prune::perform");
+    stacktimer::info("m %zu n %zu k %zu orderA %c orderBC %c spdnA %c", m, n, k, A->order, B->order, spdn_A);
 
     if(spdn_A == 'S') {
         A_pruned_sp.alloc();
@@ -173,6 +183,8 @@ void gemm_csx_dny_dny_prune<T,I>::perform()
     if(spdn_A == 'D') {
         A_pruned_dn.free();
     }
+
+    stacktimer::pop();
 }
 
 

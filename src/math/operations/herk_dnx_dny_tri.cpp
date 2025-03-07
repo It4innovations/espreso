@@ -5,6 +5,7 @@
 #include "math/operations/auxiliary/tri_partition_herk.h"
 #include "math/operations/herk_dnx_dny.h"
 #include "math/operations/gemm_dnx_dny_dnz.h"
+#include "basis/utilities/stacktimer.h"
 
 
 
@@ -68,10 +69,12 @@ void herk_dnx_dny_tri<T,I>::set_mode(blas::herk_mode mode_)
 
 
 template<typename T, typename I>
-void herk_dnx_dny_tri<T,I>::set_A_pattern(MatrixCsxView_new<T,I> & A_pattern)
+void herk_dnx_dny_tri<T,I>::calc_A_pattern(MatrixCsxView_new<T,I> & A_pattern)
 {
     if(!mode_set) eslog::error("mode is not set\n");
     if(pattern_set) eslog::error("A pattern was already set\n");
+
+    stacktimer::push("herk_dnx_dny_tri::calc_A_pattern");
 
     if(mode == blas::herk_mode::AhA) {
         A_pivots.set(A->ncols, AllocatorCPU_new::get_singleton());
@@ -92,6 +95,8 @@ void herk_dnx_dny_tri<T,I>::set_A_pattern(MatrixCsxView_new<T,I> & A_pattern)
         pivots_trails_csx<T,I>::do_all(&A_pattern, &A_trails, 'C', 'T', 'F');
     }
 
+    stacktimer::pop();
+
     pattern_set = true;
 }
 
@@ -103,6 +108,8 @@ void herk_dnx_dny_tri<T,I>::preprocess()
     if(!config_set) eslog::error("config is not set\n");
     if(!mode_set) eslog::error("mode is not set\n");
     if(!pattern_set) eslog::error("A pattern is not set\n");
+
+    stacktimer::push("herk_dnx_dny_tri::preprocess");
 
     for(size_t i = 1; i < A_pivots.size; i++) {
         if(A_pivots.vals[i-1] > A_pivots.vals[i]) {
@@ -131,6 +138,8 @@ void herk_dnx_dny_tri<T,I>::preprocess()
     partition.alloc();
     partitioner.perform();
 
+    stacktimer::pop();
+
     preproces_called = true;
 }
 
@@ -146,12 +155,16 @@ void herk_dnx_dny_tri<T,I>::perform()
     if(C->prop.uplo != 'U' && C->prop.uplo != 'L') eslog::error("wrong C uplo\n");
     if(A->ncols != C->ncols) eslog::error("incompatible matrices\n");
 
+    stacktimer::push("herk_dnx_dny_tri::perform");
+
     if(mode == blas::herk_mode::AAh) {
         perform_AAh();
     }
     if(mode == blas::herk_mode::AhA) {
         perform_AhA();
-    }    
+    }
+
+    stacktimer::pop();
 }
 
 

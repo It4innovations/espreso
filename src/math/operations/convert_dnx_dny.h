@@ -22,8 +22,8 @@ public:
     void perform();
     static void do_all(MatrixDenseView_new<T> * M_src, MatrixDenseView_new<T> * M_dst, bool do_conj);
 private:
-    MatrixDenseView_new<T> * M_src;
-    MatrixDenseView_new<T> * M_dst;
+    MatrixDenseView_new<T> * M_src = nullptr;
+    MatrixDenseView_new<T> * M_dst = nullptr;
     bool do_conj = true;
 };
 
