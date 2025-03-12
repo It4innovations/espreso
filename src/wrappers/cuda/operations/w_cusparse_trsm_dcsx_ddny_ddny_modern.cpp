@@ -16,7 +16,6 @@ namespace operations {
 
 
 
-template<typename T, typename I>
 struct w_cusparse_trsm_dcsx_ddny_ddny_data
 {
     cusparseHandle_t handle_cusparse;
@@ -27,8 +26,15 @@ struct w_cusparse_trsm_dcsx_ddny_ddny_data
     cusparseOperation_t op_A;
     cusparseOperation_t op_B;
     cusparseSpSMAlg_t spsm_alg;
-    T alpha = T{0}:
 };
+
+
+
+template<typename T, typename I>
+w_cusparse_trsm_dcsx_ddny_ddny<T,I>::w_cusparse_trsm_dcsx_ddny_ddny()
+{
+    data = std::make_unique<w_cusparse_trsm_dcsx_ddny_ddny_data>();
+}
 
 
 
@@ -47,6 +53,8 @@ w_cusparse_trsm_dcsx_ddny_ddny<T,I>::~w_cusparse_trsm_dcsx_ddny_ddny()
     if(called_setup) {
         CHECK(cusparseSpSM_destroyDescr(data->descr_spsm));
     }
+
+    data.reset();
 }
 
 
@@ -115,6 +123,8 @@ void w_cusparse_trsm_dcsx_ddny_ddny<T,I>::internal_setup()
 
     CHECK(cusparseSpSM_createDescr(&descr_spsm));
 
+    T alpha = T{1};
+
     wss_internal = 0;
     CHECK(cusparseSpSM_bufferSize(data->handle_cusparse, data->op_A, data->op_B, &alpha, data->descr_A, data->descr_B, data->descr_C, cusparse_data_type<T>(), data->spsm_alg, data->descr_spsm, &wss_persistent));
     wss_tmp_preprocess = 0;
@@ -126,6 +136,7 @@ void w_cusparse_trsm_dcsx_ddny_ddny<T,I>::internal_setup()
 template<typename T, typename I>
 void w_cusparse_trsm_dcsx_ddny_ddny<T,I>::internal_preprocess(void * /*ws_tmp*/)
 {
+    T alpha = T{1};
     CHECK(cusparseSpSM_analysis(data->handle_cusparse, data->op_A, data->op_B, &alpha, data->descr_A, data->descr_B, data->descr_C, cusparse_data_type<T>(), data->spsm_alg, data->descr_spsm, ws_persistent));
 }
 
@@ -137,6 +148,7 @@ void w_cusparse_trsm_dcsx_ddny_ddny<T,I>::internal_update()
 #if CUDART_VERSION >= 12040
     CHECK(cusparseSpSM_updateMatrix(data->handle_cusparse, data->descr_spsm, A.vals, CUSPARSE_SPSM_UPDATE_GENERAL));
 #else
+    T alpha = T{1};
     CHECK(cusparseSpSM_analysis(data->handle_cusparse, data->op_A, data->op_B, &alpha, data->descr_A, data->descr_B, data->descr_C, cusparse_data_type<T>(), data->spsm_alg, data->descr_spsm, ws_persistent));
 #endif
 }
@@ -146,6 +158,7 @@ void w_cusparse_trsm_dcsx_ddny_ddny<T,I>::internal_update()
 template<typename T, typename I>
 void w_cusparse_trsm_dcsx_ddny_ddny<T,I>::internal_perform(void * /*ws_tmp*/)
 {
+    T alpha = T{1};
     CHECK(cusparseSpSM_solve(data->handle_cusparse, data->op_A, data->op_B, &alpha, data->descr_A, data->descr_B, data->descr_C, cusparse_data_type<T>(), data->spsm_alg, data->descr_spsm));
 }
 

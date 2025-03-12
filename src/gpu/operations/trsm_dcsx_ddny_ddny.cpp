@@ -9,6 +9,12 @@
 
 
 
+namespace espreso {
+namespace gpu {
+namespace operations {
+
+
+
 template<typename T, typename I>
 std::unique_ptr<trsm_dcsx_ddny_ddny<T,I>> trsm_dcsx_ddny_ddny<T,I>::make()
 {
@@ -40,8 +46,8 @@ void trsm_dcsx_ddny_ddny<T,I>::set_handles(gpu::mgm::queue q_, gpu::spblas::hand
 {
     if(called_set_handles) eslog::error("handles are already set\n");
 
-    spblas_handle = spblas_handle_;
     q = q_;
+    spblas_handle = spblas_handle_;
 
     called_set_handles = true;
 }
@@ -97,10 +103,11 @@ template<typename T, typename I>
 void trsm_dcsx_ddny_ddny<T,I>::setup()
 {
     if(!called_set_handles) eslog::error("handles are not set\n");
-    if(called_set_A) eslog::error("matrix A is not set\n");
-    if(called_set_B) eslog::error("matrix B is not set\n");
-    if(called_set_C) eslog::error("matrix C is not set\n");
+    if(!called_set_A) eslog::error("matrix A is not set\n");
+    if(!called_set_B) eslog::error("matrix B is not set\n");
+    if(!called_set_C) eslog::error("matrix C is not set\n");
     if(called_setup) eslog::error("setup was already called\n");
+    if(A.nrows != A.ncols) eslog::error("matrix A is not square\n");
     if(X.nrows != B.nrows || X.ncols != B.ncols) eslog::error("X and B matrix sizes dont match\n");
     if(X.order != B.order) eslog::error("X and B order does not match\n");
     if(A.nrows != B.nrows) eslog::error("incompatible matrices\n");
@@ -117,6 +124,8 @@ void trsm_dcsx_ddny_ddny<T,I>::setup()
 template<typename T, typename I>
 size_t trsm_dcsx_ddny_ddny<T,I>::get_wss_internal()
 {
+    if(!called_setup) eslog::error("setup was not called\n");
+
     return wss_internal;
 }
 
@@ -125,6 +134,8 @@ size_t trsm_dcsx_ddny_ddny<T,I>::get_wss_internal()
 template<typename T, typename I>
 size_t trsm_dcsx_ddny_ddny<T,I>::get_wss_persistent()
 {
+    if(!called_setup) eslog::error("setup was not called\n");
+
     return wss_persistent;
 }
 
@@ -133,6 +144,8 @@ size_t trsm_dcsx_ddny_ddny<T,I>::get_wss_persistent()
 template<typename T, typename I>
 size_t trsm_dcsx_ddny_ddny<T,I>::get_wss_tmp_preprocess()
 {
+    if(!called_setup) eslog::error("setup was not called\n");
+
     return wss_tmp_preprocess;
 }
 
@@ -141,6 +154,8 @@ size_t trsm_dcsx_ddny_ddny<T,I>::get_wss_tmp_preprocess()
 template<typename T, typename I>
 size_t trsm_dcsx_ddny_ddny<T,I>::get_wss_tmp_perform()
 {
+    if(!called_setup) eslog::error("setup was not called\n");
+
     return wss_tmp_perform;
 }
 
@@ -193,13 +208,13 @@ void trsm_dcsx_ddny_ddny<T,I>::perform_submit(void * ws_tmp)
 
 
 template<typename T, typename I>
-void trsm_dcsx_ddny_ddny<T,I>::submit_all(MatrixCsxView_new<T,I> A, MatrixDenseView_new<T> x, MatrixDenseView_new<T> B, gpu::spblas::handle spblas_handle, Allocator_new * ator_gpu)
+void trsm_dcsx_ddny_ddny<T,I>::submit_all(gpu::mgm::queue q, gpu::spblas::handle spblas_handle, MatrixCsxView_new<T,I> A, MatrixDenseView_new<T> x, MatrixDenseView_new<T> B, Allocator_new * ator_gpu)
 {
     trsm_dcsx_ddny_ddny<T,I> instance;
+    instance.set_handles(q, spblas_handle);
     instance.set_matrix_A(A);
     instance.set_matrix_X(X);
     instance.set_matrix_B(B);
-    instance.set_handle(q, spblas_handle);
     instance.setup();
     size_t wss_persistent = instance.get_wss_persistent();
     size_t wss_tmp_preprocess = instance.get_wss_tmp_preprocess();
@@ -218,13 +233,27 @@ void trsm_dcsx_ddny_ddny<T,I>::submit_all(MatrixCsxView_new<T,I> A, MatrixDenseV
 
 
 
-template<typename T, typename I>
-void trsm_dcsx_ddny_ddny<T,I>::do_all(MatrixCsxView_new<T,I> A, MatrixDenseView_new<T> X, MatrixDenseView_new<T> B, gpu::spblas::handle spblas_handle, Allocator_new * ator_gpu)
-{
-    trsm_dcsx_ddny_ddny<T,I>::do_all(A, X, B, q, spblas_handle, ator_gpu);
-    gpu::mgm::queue_wait(q);
+#define INSTANTIATE_T_I(T,I) \
+template class trsm_dcsx_ddny_ddny<T,I>;
+
+    #define INSTANTIATE_T(T) \
+    INSTANTIATE_T_I(T,int32_t) \
+    /* INSTANTIATE_T_I(T,int64_t) */
+
+        #define INSTANTIATE \
+        /* INSTANTIATE_T(float) */ \
+        INSTANTIATE_T(double) \
+        /* INSTANTIATE_T(std::complex<float>) */ \
+        INSTANTIATE_T(std::complex<double>)
+
+            INSTANTIATE
+
+        #undef INSTANTIATE
+    #undef INSTANTIATE_T
+#undef INSTANTIATE_T_I
+
+
+
 }
-
-
-
-
+}
+}

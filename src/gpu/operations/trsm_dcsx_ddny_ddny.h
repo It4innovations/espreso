@@ -4,6 +4,8 @@
 
 #include "math/primitives_new/matrix_csx_view_new.h"
 #include "math/primitives_new/matrix_dense_view_new.h"
+#include "gpu/gpu_management.h"
+#include "gpu/gpu_spblas.h"
 
 
 
@@ -25,7 +27,7 @@ public:
     trsm_dcsx_ddny_ddny(trsm_dcsx_ddny_ddny &&) = delete;
     trsm_dcsx_ddny_ddny & operator=(const trsm_dcsx_ddny_ddny &) = delete;
     trsm_dcsx_ddny_ddny & operator=(trsm_dcsx_ddny_ddny &&) = delete;
-    virtual ~trsm_dcsx_ddny_ddny() = default;
+    virtual ~trsm_dcsx_ddny_ddny() = 0;
 public:
     static std::unique_ptr<trsm_dcsx_ddny_ddny<T,I>> make();
 public:
@@ -43,9 +45,8 @@ public:
     void preprocess_submit(void * ws_tmp);
     void update_submit();
     void perform_submit(void * ws_tmp);
-    static void submit_all(MatrixCsxView_new<T,I> A, MatrixDenseView_new<T> x, MatrixDenseView_new<T> B, gpu::spblas::handle spblas_handle, Allocator_new * ator_gpu);
-    static void do_all(MatrixCsxView_new<T,I> A, MatrixDenseView_new<T> X, MatrixDenseView_new<T> B, gpu::spblas::handle spblas_handle, Allocator_new * ator_gpu);
-private:
+    static void submit_all(gpu::mgm::queue q, gpu::spblas::handle spblas_handle, MatrixCsxView_new<T,I> A, MatrixDenseView_new<T> x, MatrixDenseView_new<T> B, Allocator_new * ator_gpu);
+protected:
     gpu::mgm::queue q;
     gpu::spblas::handle spblas_handle;
     MatrixCsxView_new<T,I> A;
@@ -57,10 +58,10 @@ private:
     size_t wss_tmp_preprocess = 0;
     size_t wss_tmp_perform = 0;
     char place = '_';
+    bool called_set_handles = false;
     bool called_set_A = false;
     bool called_set_X = false;
     bool called_set_B = false;
-    bool called_set_handles = false;
     bool called_setup = false;
     bool called_preprocess = false;
 protected:
@@ -73,6 +74,8 @@ protected:
     virtual void internal_update() {}
     virtual void internal_perform(void * /*ws_tmp*/) {}
 };
+
+trsm_dcsx_ddny_ddny::~trsm_dcsx_ddny_ddny() = default;
 
 
 

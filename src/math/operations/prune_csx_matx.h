@@ -28,12 +28,12 @@ public:
 public:
     void set_pruning_mode(bool prune_rows_, bool prune_cols_);
     void set_matrix_src(MatrixCsxView_new<T,I> * M_src_);
-    void preprocess();
+    void setup();
     size_t get_dst_matrix_nrows();
     size_t get_dst_matrix_ncols();
     void set_vector_pruned_rows(VectorDenseView_new<I> * pruned_rows_);
     void set_vector_pruned_cols(VectorDenseView_new<I> * pruned_cols_);
-    void prepare();
+    void preprocess2();
     void set_matrix_dst_sp(MatrixCsxView_new<T,I> * M_dst_sp_);
     void set_matrix_dst_dn(MatrixDenseView_new<T> * M_dst_dn_);
     void perform();
@@ -57,8 +57,8 @@ private:
     bool prune_primary = false;
     bool prune_secdary = false;
     bool called_set_pruning_mode = false;
-    bool called_preprocess = false;
-    bool called_prepare = false;
+    bool called_setup = false;
+    bool called_preprocess2 = false;
 private:
     void perform_sparse();
     void perform_dense();

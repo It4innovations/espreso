@@ -103,7 +103,7 @@ void w_cusparse_gemm_dcsx_ddny_ddnz<T,I>::internal_setup()
     data->op_B = CUSPARSE_OPERATION_NON_TRANSPOSE;
     data->spmm_alg = CUSPARSE_SPMM_ALG_DEFAULT;
 
-    data->handle_cusparse = dynamic_cast<handle_cusparse_new*>(handle.get())->internal.h;
+    data->handle_cusparse = handle_spblas->h;
 
     wss_internal = 0; // TODO check
     CHECK(cusparseSpMM_bufferSize(data->handle_cusparse, data->op_A, data->op_B, &alpha, data->descr_A, data->descr_B, &beta, data->descr_C, cusparse_data_type<T>(), data->spmm_alg, &wss_persistent));

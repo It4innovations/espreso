@@ -6,18 +6,10 @@
 #include "gpu/gpu_spblas.h"
 #include "w.cuda.gpu_management.h"
 #include "basis/utilities/utils.h"
+#include "common_cusparse.h"
 
 #include <cusparse.h>
 #include <complex>
-
-
-
-inline void _check(cusparseStatus_t status, const char *file, int line)
-{
-    if (status != CUSPARSE_STATUS_SUCCESS) {
-        espreso::eslog::error("CUSPARSE Error %d %s: %s. In file '%s' on line %d\n", status, cusparseGetErrorName(status), cusparseGetErrorString(status), file, line);
-    }
-}
 
 
 
@@ -74,17 +66,6 @@ namespace spblas {
             eslog::error("invalid type\n");
         }
     }
-
-    struct _handle
-    {
-        cusparseHandle_t h;
-        cudaStream_t get_stream()
-        {
-            cudaStream_t stream;
-            CHECK(cusparseGetStream(h, &stream));
-            return stream;
-        }
-    };
 
     struct _descr_matrix_csr
     {

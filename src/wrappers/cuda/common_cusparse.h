@@ -20,13 +20,6 @@ inline void _check(cusparseStatus_t status, const char *file, int line)
 
 
 
-struct handle_cublas_new_internal
-{
-    cusparseHandle_t h;
-};
-
-
-
 template<typename I>
 inline cusparseIndexType_t cusparse_index_type()
 {
@@ -43,11 +36,6 @@ inline cudaDataType_t cusparse_data_type()
     if constexpr(std::is_same_v<T, std::complex<double>>) return CUDA_C_64F;
 }
 
-template<typename T> struct cpp_to_cusparse_type { using type = T; };
-template<> struct cpp_to_cusparse_type<std::complex<float>> { using type = cuComplex; };
-template<> struct cpp_to_cusparse_type<std::complex<double>> { using type = cuDoubleComplex; };
-template<typename T> using cpp_to_cusparse_type_t = typename cpp_to_cusparse_type<T>::type;
-
 inline cusparseOrder_t cusparse_order(char order)
 {
     if(order == 'R') return CUSPARSE_ORDER_ROW;
@@ -56,5 +44,31 @@ inline cusparseOrder_t cusparse_order(char order)
 }
 
 
+
+template<typename T> struct cpp_to_cusparse_type { using type = T; };
+template<> struct cpp_to_cusparse_type<std::complex<float>> { using type = cuComplex; };
+template<> struct cpp_to_cusparse_type<std::complex<double>> { using type = cuDoubleComplex; };
+template<typename T> using cpp_to_cusparse_type_t = typename cpp_to_cusparse_type<T>::type;
+
+
+
+namespace espreso {
+namespace gpu {
+namespace spblas {
+
+    struct _handle
+    {
+        cusparseHandle_t h;
+        cudaStream_t get_stream()
+        {
+            cudaStream_t stream;
+            CHECK(cusparseGetStream(h, &stream));
+            return stream;
+        }
+    };
+
+}
+}
+}
 
 #endif /* SRC_WRAPPERS_CUDA_COMMON_CUSPARSE_H */

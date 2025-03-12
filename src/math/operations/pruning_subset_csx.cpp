@@ -31,13 +31,13 @@ void pruning_subset_csx<T,I>::set_pruning_mode(bool prune_rows_, bool prune_cols
 
 
 template<typename T, typename I>
-void pruning_subset_csx<T,I>::preprocess()
+void pruning_subset_csx<T,I>::setup()
 {
     if(!called_set_pruning_mode) eslog::error("pruning mode is not set\n");
-    if(called_preprocess) eslog::error("preprocess was already called\n");
+    if(called_setup) eslog::error("setup was already called\n");
     if(M == nullptr) eslog::error("matrix is not set\n");
 
-    stacktimer::push("pruning_subset_csx::preprocess");
+    stacktimer::push("pruning_subset_csx::setup");
 
     size_t size_primary = M->get_size_primary();
     size_t size_secdary = M->get_size_secdary();
@@ -83,7 +83,7 @@ void pruning_subset_csx<T,I>::preprocess()
 
     stacktimer::pop();
 
-    called_preprocess = true;
+    called_setup = true;
 }
 
 
@@ -91,7 +91,7 @@ void pruning_subset_csx<T,I>::preprocess()
 template<typename T, typename I>
 size_t pruning_subset_csx<T,I>::get_pruned_nrows()
 {
-    if(!called_preprocess) eslog::error("preprocess was not called\n");
+    if(!called_setup) eslog::error("setup was not called\n");
 
     if(M->order == 'R') return pruned_size_primary;
     if(M->order == 'C') return pruned_size_secdary;
@@ -103,7 +103,7 @@ size_t pruning_subset_csx<T,I>::get_pruned_nrows()
 template<typename T, typename I>
 size_t pruning_subset_csx<T,I>::get_pruned_ncols()
 {
-    if(!called_preprocess) eslog::error("preprocess was not called\n");
+    if(!called_setup) eslog::error("setup was not called\n");
 
     if(M->order == 'R') return pruned_size_secdary;
     if(M->order == 'C') return pruned_size_primary;
@@ -131,7 +131,7 @@ void pruning_subset_csx<T,I>::set_vector_pruned_cols(VectorDenseView_new<I> * no
 template<typename T, typename I>
 void pruning_subset_csx<T,I>::perform()
 {
-    if(!called_preprocess) eslog::error("preprocess was not called\n");
+    if(!called_setup) eslog::error("setup was not called\n");
     if(prune_rows && nonempty_rows == nullptr) eslog::error("nonempty rows vector is not set\n");
     if(prune_cols && nonempty_cols == nullptr) eslog::error("nonempty cols vector is not set\n");
 
@@ -191,10 +191,10 @@ void pruning_subset_csx<T,I>::perform()
 template<typename T, typename I>
 void pruning_subset_csx<T,I>::finalize()
 {
-    if(called_preprocess) {
+    if(called_setup) {
         nnz_per_secdary.clear();
     }
-    called_preprocess = false;
+    called_setup = false;
 }
 
 

@@ -1,8 +1,6 @@
 
 #include "gpu/operations/gemm_dcsx_ddny_ddnz.h"
 
-#include "gpu/gpu_spblas.h"
-
 #include "wrappers/cuda/operations/w_cusparse_gemm_dcsx_ddny_ddnz.h"
 // #include "wrappers/rocm/operations/w_rocsparse_gemm_dcsx_ddny_ddnz.h"
 // #include "wrappers/oneapi/operations/w_oneapisparse_gemm_dcsx_ddny_ddnz.h"
@@ -34,10 +32,11 @@ std::unique_ptr<gemm_dcsx_ddny_ddnz<T,I>> gemm_dcsx_ddny_ddnz<T,I>::make()
 
 
 template<typename T, typename I>
-void gemm_dcsx_ddny_ddnz<T,I>::set_handles(gpu::spblas::handle spblas_handle_)
+void gemm_dcsx_ddny_ddnz<T,I>::set_handle(gpu::mgm::queue q_, gpu::spblas::handle spblas_handle_)
 {
     if(called_set_handles) eslog::error("handles are already set\n");
 
+    q = q_;
     spblas_handle = spblas_handle_;
 
     called_set_handles = true;
@@ -49,7 +48,7 @@ template<typename T, typename I>
 void gemm_dcsx_ddny_ddnz<T,I>::set_matrix_A(MatrixCsxView_new<T,I> A_)
 {
     if(!called_set_handles) eslog::error("handles are not set\n");
-    if(called_set_A) eslog::error("forbidden to re-set matrix A\n");
+    if(called_set_A && !MatrixCsxView_new<T>::are_interchangable(A, A_)) eslog::error("invalid replacement for matrix A\n");
 
     A = A_;
 
@@ -119,6 +118,8 @@ void gemm_dcsx_ddny_ddnz<T,I>::setup()
 template<typename T, typename I>
 size_t gemm_dcsx_ddny_ddnz<T,I>::get_wss_internal()
 {
+    if(!called_setup) eslog::error("setup was not called\n");
+
     return wss_internal;
 }
 
@@ -127,6 +128,8 @@ size_t gemm_dcsx_ddny_ddnz<T,I>::get_wss_internal()
 template<typename T, typename I>
 size_t gemm_dcsx_ddny_ddnz<T,I>::get_wss_persistent()
 {
+    if(!called_setup) eslog::error("setup was not called\n");
+
     return wss_persistent;
 }
 
@@ -135,6 +138,8 @@ size_t gemm_dcsx_ddny_ddnz<T,I>::get_wss_persistent()
 template<typename T, typename I>
 size_t gemm_dcsx_ddny_ddnz<T,I>::get_wss_tmp_preprocess()
 {
+    if(!called_setup) eslog::error("setup was not called\n");
+
     return wss_tmp_preprocess;
 }
 
@@ -143,6 +148,8 @@ size_t gemm_dcsx_ddny_ddnz<T,I>::get_wss_tmp_preprocess()
 template<typename T, typename I>
 size_t gemm_dcsx_ddny_ddnz<T,I>::get_wss_tmp_perform()
 {
+    if(!called_setup) eslog::error("setup was not called\n");
+
     return wss_tmp_perform;
 }
 
@@ -185,13 +192,13 @@ void gemm_dcsx_ddny_ddnz<T,I>::perform_submit(void * ws_tmp)
 
 
 template<typename T, typename I>
-void gemm_dcsx_ddny_ddnz<T,I>::submit_all(MatrixCsxView_new<T,I> A, MatrixDenseView_new<T> B, MatrixDenseView_new<T> C, gpu::mgm::queue q, gpu::spblas::handle spblas_handle, T alpha, T beta, Allocator_new * ator_gpu)
+void gemm_dcsx_ddny_ddnz<T,I>::submit_all(gpu::mgm::queue q, gpu::spblas::handle handle_spblas, MatrixCsxView_new<T,I> A, MatrixDenseView_new<T> B, MatrixDenseView_new<T> C, T alpha, T beta, Allocator_new * ator_gpu)
 {
     gemm_dcsx_ddny_ddnz<T,I> instance;
+    instance.set_handles(q, handle_spblas);
     instance.set_matrix_A(A);
     instance.set_matrix_B(B);
     instance.set_matrix_C(C);
-    instance.set_handle(q, spblas_handle);
     instance.set_coefficients(alpha, beta);
     instance.setup();
     size_t wss_persistent = instance.get_wss_persistent();
@@ -207,15 +214,6 @@ void gemm_dcsx_ddny_ddnz<T,I>::submit_all(MatrixCsxView_new<T,I> A, MatrixDenseV
         ator_gpu->free(ws_persistent);
         ator_gpu->free(ws_tmp);
     });
-}
-
-
-
-template<typename T, typename I>
-void gemm_dcsx_ddny_ddnz<T,I>::submit_all(MatrixCsxView_new<T,I> A, MatrixDenseView_new<T> B, MatrixDenseView_new<T> C, gpu::mgm::queue q, gpu::spblas::handle spblas_handle, T alpha, T beta, Allocator_new * ator_gpu)
-{
-    gemm_dcsx_ddny_ddnz<T,I>::do_all(A, B, C, q, spblas_handle, alpha, beta, ator_gpu);
-    gpu::mgm::queue_wait(q);
 }
 
 

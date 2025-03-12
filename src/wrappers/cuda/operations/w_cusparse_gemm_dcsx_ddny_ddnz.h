@@ -1,6 +1,6 @@
 
-#ifndef SRC_WRAPPERS_CUDA_OPERATIONS_GEMM_DCSX_DDNY_DDNZ_H
-#define SRC_WRAPPERS_CUDA_OPERATIONS_GEMM_DCSX_DDNY_DDNZ_H
+#ifndef SRC_WRAPPERS_CUDA_OPERATIONS_W_CUSPARSE_GEMM_DCSX_DDNY_DDNZ_H
+#define SRC_WRAPPERS_CUDA_OPERATIONS_W_CUSPARSE_GEMM_DCSX_DDNY_DDNZ_H
 
 #include "gpu/operations/gemm_dcsx_ddny_ddnz.h"
 
@@ -25,7 +25,7 @@ class w_cusparse_gemm_dcsx_ddny_ddnz : public gemm_dcsx_ddny_ddnz<T,I>
 public:
     w_cusparse_gemm_dcsx_ddny_ddnz();
     virtual ~w_cusparse_gemm_dcsx_ddny_ddnz();
-public:
+protected:
     virtual void internal_set_matrix_A() override;
     virtual void internal_set_matrix_B() override;
     virtual void internal_set_matrix_C() override;
@@ -60,4 +60,4 @@ public:
 }
 }
 
-#endif /* SRC_WRAPPERS_CUDA_OPERATIONS_GEMM_DCSX_DDNY_DDNZ_H */
+#endif /* SRC_WRAPPERS_CUDA_OPERATIONS_W_CUSPARSE_GEMM_DCSX_DDNY_DDNZ_H */

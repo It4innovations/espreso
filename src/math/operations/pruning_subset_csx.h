@@ -19,7 +19,7 @@ class pruning_subset_csx
 public:
     void set_matrix(MatrixCsxView_new<T,I> * M_);
     void set_pruning_mode(bool prune_rows_, bool prune_cols_);
-    void preprocess();
+    void setup();
     size_t get_pruned_nrows();
     size_t get_pruned_ncols();
     void set_vector_pruned_rows(VectorDenseView_new<I> * nonempty_rows_);
@@ -38,7 +38,7 @@ private:
     bool prune_primary = false;
     bool prune_secdary = false;
     bool called_set_pruning_mode = false;
-    bool called_preprocess = false;
+    bool called_setup = false;
 };
 
 

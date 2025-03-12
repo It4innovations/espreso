@@ -40,12 +40,12 @@ void prune_csx_matx<T,I>::set_matrix_src(MatrixCsxView_new<T,I> * M_src_)
 
 
 template<typename T, typename I>
-void prune_csx_matx<T,I>::preprocess()
+void prune_csx_matx<T,I>::setup()
 {
     if(!called_set_pruning_mode) eslog::error("pruning mode is not set\n");
     if(M_src == nullptr) eslog::error("source matrix is not set\n");
 
-    stacktimer::push("prune_csx_matx::preprocess");
+    stacktimer::push("prune_csx_matx::setup");
 
     if(M_src->order == 'R') {
         prune_primary = prune_rows;
@@ -58,13 +58,13 @@ void prune_csx_matx<T,I>::preprocess()
 
     op_pruning_subset.set_matrix(M_src);
     op_pruning_subset.set_pruning_mode(prune_rows, prune_cols);
-    op_pruning_subset.preprocess();
+    op_pruning_subset.setup();
     pruned_nrows = op_pruning_subset.get_pruned_nrows();
     pruned_ncols = op_pruning_subset.get_pruned_ncols();
 
     stacktimer::pop();
 
-    called_preprocess = true;
+    called_setup = true;
 }
 
 
@@ -72,7 +72,7 @@ void prune_csx_matx<T,I>::preprocess()
 template<typename T, typename I>
 size_t prune_csx_matx<T,I>::get_dst_matrix_nrows()
 {
-    if(!called_preprocess) eslog::error("preprocess was not called\n");
+    if(!called_setup) eslog::error("setup was not called\n");
 
     return pruned_nrows;
 }
@@ -82,7 +82,7 @@ size_t prune_csx_matx<T,I>::get_dst_matrix_nrows()
 template<typename T, typename I>
 size_t prune_csx_matx<T,I>::get_dst_matrix_ncols()
 {
-    if(!called_preprocess) eslog::error("preprocess was not called\n");
+    if(!called_setup) eslog::error("setup was not called\n");
 
     return pruned_ncols;
 }
@@ -106,16 +106,16 @@ void prune_csx_matx<T,I>::set_vector_pruned_cols(VectorDenseView_new<I> * pruned
 
 
 template<typename T, typename I>
-void prune_csx_matx<T,I>::prepare()
+void prune_csx_matx<T,I>::preprocess()
 {
-    if(!called_preprocess) eslog::error("preprocess was not called\n");
+    if(!called_preprocess) eslog::error("setup was not called\n");
     if(M_src == nullptr) eslog::error("source matrix is not set\n");
     if(prune_rows && pruned_rows_vec == nullptr) eslog::error("vector for pruned rows is not set\n");
     if(prune_cols && pruned_cols_vec == nullptr) eslog::error("vector for pruned cols is not set\n");
     if(prune_rows && pruned_rows_vec->size != pruned_nrows) eslog::error("wrong size of pruned rows vector\n");
     if(prune_cols && pruned_cols_vec->size != pruned_ncols) eslog::error("wrong size of pruned cols vector\n");
 
-    stacktimer::push("prune_csx_matx::prepare");
+    stacktimer::push("prune_csx_matx::preprocess");
 
     if(prune_rows) {
         op_pruning_subset.set_vector_pruned_rows(pruned_rows_vec);
@@ -147,7 +147,7 @@ void prune_csx_matx<T,I>::prepare()
 
     stacktimer::pop();
 
-    called_prepare = true;
+    called_preprocess2 = true;
 }
 
 
@@ -171,7 +171,7 @@ void prune_csx_matx<T,I>::set_matrix_dst_dn(MatrixDenseView_new<T> * M_dst_dn_)
 template<typename T, typename I>
 void prune_csx_matx<T,I>::perform()
 {
-    if(!called_prepare) eslog::error("prepare was not called\n");
+    if(!called_preprocess2) eslog::error("preprocess was not called\n");
 
     stacktimer::push("prune_csx_matx::perform");
 
@@ -300,7 +300,7 @@ void prune_csx_matx<T,I>::finalize()
     pruned_idxs_secdary_inverse.clear();
     op_pruning_subset.finalize();
 
-    called_preprocess = false;
+    called_setup = false;
 }
 
 

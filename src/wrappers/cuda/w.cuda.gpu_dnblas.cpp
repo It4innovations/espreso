@@ -132,12 +132,6 @@ namespace dnblas {
         }
     }
 
-    struct _handle
-    {
-        cublasHandle_t h;
-        bool collecting_buffersize;
-    };
-
     void init_library(mgm::queue & q) {}
 
     void handle_create(handle & h, mgm::queue & q)
@@ -145,7 +139,6 @@ namespace dnblas {
         h = std::make_shared<_handle>();
         CHECK(cublasCreate(&h->h));
         CHECK(cublasSetStream(h->h, q->stream));
-        h->collecting_buffersize = false;
     }
 
     void handle_destroy(handle & h)
@@ -160,9 +153,6 @@ namespace dnblas {
     {
         // https://docs.nvidia.com/cuda/cublas/index.html#cublassetworkspace
         // no manual workspace needed if I use just a single stream with this handle
-        // h->collecting_buffersize = true;
-        // f();
-        // h->collecting_buffersize = false;
         buffersize = 0;
     }
 

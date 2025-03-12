@@ -80,13 +80,13 @@ void gemm_csx_dny_dny_prune<T,I>::preprocess()
 
     op_prune_A.set_matrix_src(A);
     op_prune_A.set_pruning_mode(prune_rows, prune_cols);
-    op_prune_A.preprocess();
+    op_prune_A.setup();
 
     m = op_prune_A.get_dst_matrix_nrows();
     n = B->ncols;
     k = op_prune_A.get_dst_matrix_ncols();
 
-    stacktimer::info("m %zu n %zu k %zu orderA %c orderBC %c spdnA %c", m, n, k, A->order, B->order, spdn_A);
+    // stacktimer::info("m %zu n %zu k %zu orderA %c orderBC %c spdnA %c", m, n, k, A->order, B->order, spdn_A);
 
     if(prune_rows) {
         pruned_rows.set(m, AllocatorCPU_new::get_singleton());
@@ -99,7 +99,7 @@ void gemm_csx_dny_dny_prune<T,I>::preprocess()
         op_prune_A.set_vector_pruned_cols(&pruned_cols);
     }
 
-    op_prune_A.prepare();
+    op_prune_A.preprocess2();
 
     if(spdn_A == 'S') {
         A_pruned_sp.set(m, k, A->nnz, A->order, AllocatorCPU_new::get_singleton());

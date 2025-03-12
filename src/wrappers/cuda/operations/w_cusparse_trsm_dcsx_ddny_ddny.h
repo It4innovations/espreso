@@ -1,6 +1,6 @@
 
-#ifndef SRC_WRAPPERS_CUDA_OPERATIONS_TRSM_DCSX_DDNY_DDNY_H
-#define SRC_WRAPPERS_CUDA_OPERATIONS_TRSM_DCSX_DDNY_DDNY_H
+#ifndef SRC_WRAPPERS_CUDA_OPERATIONS_W_CUSPARSE_TRSM_DCSX_DDNY_DDNY_H
+#define SRC_WRAPPERS_CUDA_OPERATIONS_W_CUSPARSE_TRSM_DCSX_DDNY_DDNY_H
 
 #include "gpu/operations/trsm_dcsx_ddny_ddny.h"
 
@@ -16,16 +16,15 @@ namespace operations {
 
 
 
-template<typename T, typename I>
 struct w_cusparse_trsm_dcsx_ddny_ddny_data;
 
 template<typename T, typename I>
 class w_cusparse_trsm_dcsx_ddny_ddny : public trsm_dcsx_ddny_ddny<T,I>
 {
 public:
-    w_cusparse_trsm_dcsx_ddny_ddny() = default;
-    virtual ~w_cusparse_trsm_dcsx_ddny_ddny() = default;
-public:
+    w_cusparse_trsm_dcsx_ddny_ddny();
+    virtual ~w_cusparse_trsm_dcsx_ddny_ddny();
+protected:
     virtual char internal_get_native_place() override;
     virtual void internal_set_matrix_A() override;
     virtual void internal_set_matrix_B() override;
@@ -35,7 +34,7 @@ public:
     virtual void internal_update() override;
     virtual void internal_perform(void * ws_tmp) override;
 private:
-    std::unique_ptr<w_cusparse_trsm_dcsx_ddny_ddny_data<T,I>> data;
+    std::unique_ptr<w_cusparse_trsm_dcsx_ddny_ddny_data> data;
 };
 
 
@@ -62,4 +61,4 @@ public:
 }
 }
 
-#endif /* SRC_WRAPPERS_CUDA_OPERATIONS_GEMM_DCSX_DDNY_DDNY_H */
+#endif /* SRC_WRAPPERS_CUDA_OPERATIONS_W_CUSPARSE_TRSM_DCSX_DDNY_DDNY_H */
