@@ -117,6 +117,11 @@ namespace mgm {
         return size_free;
     }
 
+    size_t get_natural_pitch_align()
+    {
+        return 512;
+    }
+
     void * memalloc_device(size_t num_bytes)
     {
         void * ptr;
@@ -203,6 +208,24 @@ namespace mgm {
         if(copy_pattern) copy_submit(q, output.rows, input.rows, input.nrows+1);
         if(copy_pattern) copy_submit(q, output.cols, input.cols, input.nnz);
         if(copy_vals)    copy_submit(q, output.vals, input.vals, input.nnz);
+    }
+
+    template<typename T>
+    void copy_submit(queue & /*q*/, VectorDenseView_new<T> & /*src*/, VectorDenseView_new<T> & /*dst*/)
+    {
+        eslog::error("not supported yet\n");
+    }
+
+    template<typename T>
+    void copy_submit(queue & /*q*/, MatrixDenseView_new<T> & /*src*/, MatrixDenseView_new<T> & /*dst*/)
+    {
+        eslog::error("not supported yet\n");
+    }
+
+    template<typename T, typename I>
+    void copy_submit(queue & /*q*/, MatrixCsxView_new<T,I> & /*src*/, MatrixCsxView_new<T,I> & /*dst*/, bool /*copy_pattern*/, bool /*copy_vals*/)
+    {
+        eslog::error("not supported yet\n");
     }
 
     void memset_submit(queue & q, void * ptr, size_t num_bytes, char val)

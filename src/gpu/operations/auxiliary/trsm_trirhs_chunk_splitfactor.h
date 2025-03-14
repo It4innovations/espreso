@@ -36,10 +36,10 @@ public:
 public:
     void set_config(config cfg_);
     void set_range(size_t k_start_, size_t k_end_);
-    void set_handles(gpu::mgm::queue q_, gpu::spblas::handle spblas_handle_, gpu::dnblas::handle dnblas_handle_);
-    void set_matrix_h_L(MatrixCsxView_new<T,I> h_L_);
-    void set_matrix_d_X(MatrixDenseView_new<T> d_X_);
-    void set_h_X_rowtrails(VectorDenseView_new<I> h_X_rowtrails_);
+    void set_handles(gpu::mgm::queue q_, gpu::spblas::handle handle_spblas_, gpu::dnblas::handle handle_dnblas_);
+    void set_matrix_h_L(MatrixCsxView_new<T,I> * h_L_);
+    void set_matrix_d_X(MatrixDenseView_new<T> * d_X_);
+    void set_h_X_rowtrails(VectorDenseView_new<I> * h_X_rowtrails_);
     void setup();
     size_t get_wss_internal();
     size_t get_wss_persistent();
@@ -47,19 +47,19 @@ public:
     size_t get_wss_tmp_perform();
     void set_ws_persistent(void * ws_persistent_);
     void preprocess_submit(void * ws_tmp);
-    void update_submit();
     void perform_submit(void * ws_tmp);
 private:
     config cfg;
     size_t k_start = 0;
     size_t k_end = 0;
     size_t k_size = 0;
+    size_t rhs_end = 0;
     gpu::mgm::queue q;
     gpu::spblas::handle handle_spblas;
     gpu::dnblas::handle handle_dnblas;
-    MatrixCsxView_new<T,I> h_L;
-    MatrixDenseView_new<T> d_X;
-    VectorDenseView_new<I> h_X_rowtrails;
+    MatrixCsxView_new<T,I> * h_L = nullptr;
+    MatrixDenseView_new<T> * d_X = nullptr;
+    VectorDenseView_new<I> * h_X_rowtrails = nullptr;
     void * ws_persistent = nullptr;
     size_t wss_internal = 0;
     size_t wss_persistent = 0;
@@ -68,24 +68,26 @@ private:
     bool called_set_config = false;
     bool called_set_range = false;
     bool called_set_handles = false;
-    bool called_set_L = false;
-    bool called_set_X = false;
-    bool called_set_X_rowtrails = false;
     bool called_setup = false;
     bool called_preprocess = false;
 private:
     std::unique_ptr<AllocatorArena_new> ator_ws_persistent;
+    std::unique_ptr<AllocatorArena_new> ator_ws_tmp_linear;
+    std::unique_ptr<AllocatorSinglePointer_new> ator_ws_tmp_overlap;
+    size_t wss_tmp_preprocess_linear = 0;
+    size_t wss_tmp_preprocess_overlap = 0;
+    size_t wss_tmp_peform_linear = 0;
+    size_t wss_tmp_peform_overlap = 0;
     math::operations::submatrix_csx_csy_map<T,I> op_h_submatrix_L_top;
     math::operations::submatrix_csx_csy_map<T,I> op_h_submatrix_L_bot;
     math::operations::submatrix_dnx_dnx_view<T> op_submatrix_d_X_top;
     math::operations::submatrix_dnx_dnx_view<T> op_submatrix_d_X_bot;
-    // trsm_dcsx_ddny_ddny<T,I> op_d_trsm_sp;
+    trsm_hcsx_ddny_ddny<T,I> op_trsm;
+    gemm_hcsx_ddny_ddnz_prune<T,I> op_gemm;
     MatrixCsxData_new<T,I> h_sub_L_top_sp;
     MatrixCsxData_new<T,I> h_sub_L_bot_sp;
-    MatrixCsxData_new<T,I> d_sub_L_top_sp;
-    MatrixCsxData_new<T,I> d_sub_L_bot_sp;
-    // MatrixDenseView_new<T> d_sub_L_top_dn;
-    // MatrixDenseView_new<T> d_sub_X_top;
+    MatrixDenseView_new<T> d_sub_X_top;
+    MatrixDenseView_new<T> d_sub_X_bot;
 };
 
 

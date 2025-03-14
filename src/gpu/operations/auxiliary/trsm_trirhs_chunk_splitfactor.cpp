@@ -36,13 +36,13 @@ void trsm_trirhs_chunk_splitfactor<T,I>::set_range(size_t k_start_, size_t k_end
 
 
 template<typename T, typename I>
-void trsm_trirhs_chunk_splitfactor<T,I>::set_handles(gpu::mgm::queue q_, gpu::spblas::handle spblas_handle_, gpu::dnblas::handle dnblas_handle_)
+void trsm_trirhs_chunk_splitfactor<T,I>::set_handles(gpu::mgm::queue q_, gpu::spblas::handle handle_spblas_, gpu::dnblas::handle handle_dnblas_)
 {
     if(called_set_handles) eslog::error("handles have already been set\n");
 
     q = q_;
-    handle_spblas = spblas_handle_;
-    handle_dnblas = dnblas_handle_;
+    handle_spblas = handle_spblas_;
+    handle_dnblas = handle_dnblas_;
 
     called_set_handles = true;
 }
@@ -50,16 +50,12 @@ void trsm_trirhs_chunk_splitfactor<T,I>::set_handles(gpu::mgm::queue q_, gpu::sp
 
 
 template<typename T, typename I>
-void trsm_trirhs_chunk_splitfactor<T,I>::set_matrix_h_L(MatrixCsxView_new<T,I> h_L_)
+void trsm_trirhs_chunk_splitfactor<T,I>::set_matrix_h_L(MatrixCsxView_new<T,I> * h_L_)
 {
-    if(called_set_L && !MatrixCsxView_new<T,I>::are_interchangable(h_L, h_L_)) eslog::error("invalid replacement for matrix L\n");
+    if(h_L != nullptr) eslog::error("matrix h_L is already set\n");
+    if(h_L_ == nullptr) eslog::error("h_L cannot be nullptr\n");
 
     h_L = h_L_;
-
-    op_h_submatrix_L_top.set_matrix_src(&h_L);
-    op_h_submatrix_L_bot.set_matrix_src(&h_L);
-
-    called_set_L = true;
 }
 
 
@@ -67,14 +63,10 @@ void trsm_trirhs_chunk_splitfactor<T,I>::set_matrix_h_L(MatrixCsxView_new<T,I> h
 template<typename T, typename I>
 void trsm_trirhs_chunk_splitfactor<T,I>::set_matrix_d_X(MatrixDenseView_new<T> d_X_)
 {
-    if(called_set_X && !MatrixCsxView_new<T,I>::are_interchangable(d_X, d_X_)) eslog::error("invalid replacement for matrix X\n");
+    if(d_X != nullptr) eslog::error("matrix d_X is already set\n");
+    if(d_X_ == nullptr) eslog::error("d_X cannot be nullptr\n");
 
     d_X = d_X_;
-
-    op_submatrix_d_X_top.set_matrix_src(&d_X);
-    op_submatrix_d_X_bot.set_matrix_src(&d_X);
-
-    called_set_X = true;
 }
 
 
@@ -82,11 +74,10 @@ void trsm_trirhs_chunk_splitfactor<T,I>::set_matrix_d_X(MatrixDenseView_new<T> d
 template<typename T, typename I>
 void trsm_trirhs_chunk_splitfactor<T,I>::set_h_X_rowtrails(VectorDenseView_new<I> h_X_rowtrails_)
 {
-    if(called_set_X_rowtrails) eslog::error("X rowtrails have already been set\n");
+    if(h_X_rowtrails != nullptr) eslog::error("X rowtrails are already set\n");
+    if(h_X_rowtrails_ == nullptr) eslog::error("X rowtrails cannot be nullptr\n");
 
     h_X_rowtrails = h_X_rowtrails_;
-
-    called_set_X_rowtrails = true;
 }
 
 
@@ -97,30 +88,75 @@ void trsm_trirhs_chunk_splitfactor<T,I>::setup()
     if(!called_set_config) eslog::error("config is not set\n");
     if(!called_set_range) eslog::error("range is not set\n");
     if(!called_set_handles) eslog::error("handles are not set\n");
-    if(!called_set_L) eslog::error("matrix L is not set\n");
-    if(!called_set_X) eslog::error("matrix X is not set\n");
-    if(!called_set_X_rowtrails) eslog::error("X rowtrails are not set\n");
-    if(L.nrows != L.ncols) eslog::error("L is not square\n");
-    if(L.nrows != X.nrows) eslog::error("incompatible matrices\n");
-    if(h_X_rowtrails.size != X.nrows) eslog::error("wrong X rowtrails size\n");
+    if(h_L == nullptr) eslog::error("matrix L is not set\n");
+    if(d_X == nullptr) eslog::error("matrix X is not set\n");
+    if(h_X_rowtrails == nullptr) eslog::error("X rowtrails are not set\n");
+    if(L->nrows != L->ncols) eslog::error("L is not square\n");
+    if(L->nrows != X->nrows) eslog::error("incompatible matrices\n");
+    if(h_X_rowtrails->size != X->nrows) eslog::error("wrong X rowtrails size\n");
 
+    ator_ws_persistent = std::make_unique<AllocatorArena_new>(false, true, gpu::mgm::get_natural_pitch_align());
+    ator_ws_tmp_linear = std::make_unique<AllocatorArena_new>(false, true, gpu::mgm::get_natural_pitch_align());
+    ator_ws_tmp_overlap = std::make_unique<AllocatorSinglePointer_new>(false, true, gpu::mgm::get_natural_pitch_align());
+
+    op_h_submatrix_L_top.set_matrix_src(h_L);
     op_h_submatrix_L_top.set_bounds(k_start, k_end, k_start, k_end);
     op_h_submatrix_L_top.setup();
     size_t nnz_L_top = op_h_submatrix_L_top.get_output_matrix_nnz();
+    h_sub_L_top_sp.set(k_size, k_size, nnz_L_top, cfg.trsm_factor_order, AllocatorHostPinend_new::get_singleton());
+    op_h_submatrix_L_top.set_matrix_dst(h_sub_L_top_sp);
 
-    op_h_submatrix_L_bot.set_bounds(k_end, h_L.nrows, k_start, k_end);
+    op_h_submatrix_L_bot.set_matrix_src(h_L);
+    op_h_submatrix_L_bot.set_bounds(k_end, h_L->nrows, k_start, k_end);
     op_h_submatrix_L_bot.setup();
     size_t nnz_L_bot = op_h_submatrix_L_bot.get_output_matrix_nnz();
+    h_sub_L_bot_sp.set(h_L.nrows - k_end, k_size, nnz_L_bot, cfg.gemm_factor_order, AllocatorHostPinned_new::get_singleton());
+    op_h_submatrix_L_bot.set_matrix_dst(h_sub_L_bot_sp);
 
-    h_sub_L_top_sp.set(k_size, k_size, nnz_L_top, cfg.trsm_factor_order, AllocatorCPU_new::get_singleton());
-    h_sub_L_bot_sp.set(h_L.nrows - k_end, k_size, nnz_L_bot, cfg.gemm_factor_order, AllocatorCPU_new::get_singleton());
+    rhs_end = h_X_rowtrails.vals[k_end - 1] + 1;
 
-    d_sub_L_top_sp.set(h_sub_L_top_sp.nrows, h_sub_L_top_sp.ncols, h_sub_L_top_sp.nnz, h_sub_L_top_sp.order, ator_ws_persistent.get());
-    d_sub_L_bot_sp.set(h_sub_L_bot_sp.nrows, h_sub_L_bot_sp.ncols, h_sub_L_bot_sp.nnz, h_sub_L_bot_sp.order, ator_ws_persistent.get());
+    d_sub_X_top.set_view(k_size, rhs_end, d_X->order, nullptr);
+    op_submatrix_d_X_top.set_matrix_src(d_X);
+    op_submatrix_d_X_top.set_matrix_dst(&d_sub_X_top);
+    op_submatrix_d_X_top.set_bounds(k_start, k_end, 0, rhs_end);
 
+    d_sub_X_bot.set_view(d_X->nrows - k_end, rhs_end, d_X->order, nullptr);
+    op_submatrix_d_X_bot.set_matrix_src(d_X);
+    op_submatrix_d_X_bot.set_matrix_dst(&d_sub_X_bot);
+    op_submatrix_d_X_bot.set_bounds(k_end, X->nrows, 0, rhs_end);
 
+    op_trsm.set_config(cfg.trsm_factor_spdn);
+    op_trsm.set_handles(q, handle_spblas, handle_dnblas);
+    op_trsm.set_matrix_h_A(&h_sub_L_top_sp);
+    op_trsm.set_matrix_d_X(&d_sub_X_top);
+    op_trsm.set_matrix_d_B(&d_sub_X_top);
+    op_trsm.setup();
+    wss_internal += op_trsm.get_wss_internal();
+    wss_persistent += op_trsm.get_wss_persistent();
+    wss_tmp_preprocess_overlap = std::max(wss_tmp_preprocess_overlap, op_trsm.get_wss_tmp_preprocess());
+    wss_tmp_perform_overlap = std::max(wss_tmp_perform_overlap, op_trsm.get_wss_tmp_perform());
 
-    // todo
+    if(d_sub_X_bot.nrows > 0) {
+        bool prune_rows = ((cfg.gemm_factor_prune == 'R') || (cfg.gemm_factor_prune == 'A'));
+        bool prune_cols = ((cfg.gemm_factor_prune == 'C') || (cfg.gemm_factor_prune == 'A'));
+        op_gemm.set_config(cfg.gemm_factor_spdn, prune_rows, prune_cols);
+        op_gemm.set_handles(q, handle_spblas, handle_dnblas);
+        op_gemm.set_matrix_h_A(&h_sub_L_bot_sp);
+        op_gemm.set_matrix_d_B(d_sub_X_top);
+        op_gemm.set_matrix_d_C(d_sub_X_bot);
+        op_gemm.set_coefficients(T{-1}, T{1});
+        op_gemm.setup();
+        wss_internal += op_gemm.get_wss_internal();
+        wss_persistent += op_gemm.get_wss_persistent();
+        wss_tmp_preprocess_overlap = std::max(wss_tmp_preprocess_overlap, op_gemm.get_wss_tmp_preprocess());
+        wss_tmp_perform_overlap = std::max(wss_tmp_perform_overlap, op_gemm.get_wss_tmp_perform());
+    }
+
+    wss_tmp_preprocess_linear = ((wss_tmp_preprocess_linear - 1) / ator_ws_tmp_linear->get_align() + 1) * ator_ws_tmp_linear->get_align();
+    wss_tmp_perform_linear = ((wss_tmp_perform_linear - 1) / ator_ws_tmp_linear->get_align() + 1) * ator_ws_tmp_linear->get_align();
+
+    wss_tmp_preprocess = wss_tmp_preprocess_linear + wss_tmp_preprocess_overlap;
+    wss_tmp_perform = wss_tmp_perform_linear + wss_tmp_perform_overlap;
 
     called_setup = true;
 }
@@ -185,50 +221,31 @@ void trsm_trirhs_chunk_splitfactor<T,I>::preprocess_submit(void * ws_tmp)
     if(called_preprocess) eslog::error("preprocess has already been called\n");
     if(ws_tmp == nullptr && wss_tmp_preprocess > 0) eslog::error("temporary workspace is null\n");
 
-    ator_ws_persistent = std::make_unique<AllocatorArena_new>(ws_persistent, wss_persistent, gpu::mgm::get_natural_pitch_align(), false, true);
+    ator_ws_persistent.set(ws_persistent, wss_persistent);
+
+    ator_ws_tmp_linear.set(ws_tmp, wss_tmp_preprocess_linear);
+    ator_ws_tmp_overlap.set(ws_tmp + wss_tmp_preprocess_linear, wss_tmp_preprocess_overlap);
 
     h_sub_L_top_sp.alloc();
     op_h_submatrix_L_top.set_matrix_dst(&h_sub_L_top_sp);
     op_h_submatrix_L_top.perform_pattern();
-    d_sub_L_top_sp.alloc();
-    gpu::mgm::copy_submit(q, h_sub_L_top_sp, d_sub_L_top_sp, true, false);
 
     h_sub_L_bot_sp.alloc();
     op_h_submatrix_L_bot.set_matrix_dst(&h_sub_L_bot_sp);
     op_h_submatrix_L_bot.perform_pattern();
-    d_sub_L_bot_sp.alloc();
-    gpu::mgm::copy_submit(q, h_sub_L_bot_sp, d_sub_L_bot_sp, true, false);
 
+    op_trsm.set_ws_persistent(ator_ws_persistent->alloc(op_trsm.get_wss_persistent()));
+    op_trsm.preprocess_submit(ator_ws_tmp_overlap->alloc(op_trsm.get_wss_tmp_preprocess()));
 
-    
+    if(d_sub_X_bot.nrows > 0) {
+        op_gemm.set_ws_persistent(ator_ws_persistent->alloc(op_gemm.get_wss_persistent()));
+        op_gemm.preprocess_submit(ator_ws_tmp_overlap->alloc(op_trsm.get_wss_tmp_preprocess()));
+    }
 
+    ator_ws_tmp_linear.unset();
+    ator_ws_tmp_overlap.unset();
 
-
-    size_t rhs_end = h_X_rowtrails.vals[k_end - 1] + 1;
-
-    d_sub_X_top.set_view(k_size, rhs_end, d_X.order, nullptr);
-
-    op_submatrix_d_X_top.set_matrix_src(&d_X);
-    op_submatrix_d_X_top.set_matrix_dst(&d_sub_X_top);
-    op_submatrix_d_X_top.set_bounds(k_start, k_end, 0, rhs_end);
-
-    op_d_trsm_sp.set_handles(q, handle_spblas);
-    op_d_trsm_sp.set_matrix_A(d_sub_L_top_sp);
-    op_d_trsm_sp.set_matrix_X(d_sub_X_top);
-    op_d_trsm_sp.set_matrix_B(d_sub_X_top);
-    op_d_trsm_sp.setup();
-
-    // todo
-}
-
-
-
-template<typename T, typename I>
-void trsm_trirhs_chunk_splitfactor<T,I>::update_submit()
-{
-    if(!called_preprocess) eslog::error("preprocess has not been called\n");
-
-    // todo
+    called_preprocess = true;
 }
 
 
@@ -239,27 +256,25 @@ void trsm_trirhs_chunk_splitfactor<T,I>::perform_submit(void * ws_tmp)
     if(!called_preprocess) eslog::error("preprocess has not been called\n");
     if(ws_tmp == nullptr && wss_tmp_perform > 0) eslog::error("temporary workspace is null\n");
 
-    op_submatrix_d_X_top.perform();
-
-    // trsm top (sparse/dense)
-    // optionally convert to dense
-    // trsm Ltop Xtop
+    ator_ws_tmp_linear.set(ws_tmp, wss_tmp_preprocess_linear);
+    ator_ws_tmp_overlap.set(ws_tmp + wss_tmp_preprocess_linear, wss_tmp_preprocess_overlap);
 
     op_h_submatrix_L_top.perform_values();
-    gpu::mgm::copy_submit(q, h_sub_L_top_sp, d_sub_L_top_sp, false, true);
 
     op_h_submatrix_L_bot.perform_values();
-    gpu::mgm::copy_submit(q, h_sub_L_bot_sp, d_sub_L_bot_sp, false, true);
 
-    if(cfg.trsm_factor_spdn == 'S') {
+    op_submatrix_d_X_top.perform();
 
+    op_submatrix_d_X_bot.perform();
+
+    op_trsm.perform_submit(ator_ws_tmp_overlap->alloc(op_trsm.get_wss_tmp_perform()));
+
+    if(d_sub_X_bot.nrows > 0) {
+        op_gemm.perform_submit(ator_ws_tmp_overlap->alloc(op_trsm.get_wss_tmp_perform()));
     }
-    if(cfg.trsm_factor_spdn == 'D') {
-        
-    }
 
-
-    // gemm bot (sparse/dense, prune/noprune)
+    ator_ws_tmp_linear.unset();
+    ator_ws_tmp_overlap.unset();
 }
 
 

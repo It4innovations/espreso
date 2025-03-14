@@ -46,12 +46,12 @@ void w_cublas_gemm_ddnx_ddny_ddnz<T>::internal_setup()
     // no manual workspace needed if I use just a single stream with this handle, which I do
     wss_tmp_perform = 0;
 
-    data->swap_a_b = (C.order == 'R');
-    data->op_A = (((A.order == 'C') == (C.order == 'C')) ? CUBLAS_OP_N : CUBLAS_OP_T);
-    data->op_B = (((A.order == 'C') == (C.order == 'C')) ? CUBLAS_OP_N : CUBLAS_OP_T);
-    data->m = C.nrows;
-    data->n = C.ncols;
-    data->k = A.ncols;
+    data->swap_a_b = (C->order == 'R');
+    data->op_A = (((A->order == 'C') == (C->order == 'C')) ? CUBLAS_OP_N : CUBLAS_OP_T);
+    data->op_B = (((A->order == 'C') == (C->order == 'C')) ? CUBLAS_OP_N : CUBLAS_OP_T);
+    data->m = C->nrows;
+    data->n = C->ncols;
+    data->k = A->ncols;
     if(swap_a_b) std::swap(data->m, data->n);
 }
 
@@ -61,12 +61,12 @@ template<typename T>
 void w_cublas_gemm_ddnx_ddny_ddnz<T>::internal_perform(void * /*ws_tmp*/)
 {
     using U = cpp_to_cublas_type_t<T>;
-    U * A_vals = (U*)A.vals;
-    size_t A_ld = A.ld;
-    U * B_vals = (U*)B.vals;
-    size_t B_ld = B.ld;
-    U * C_vals = (U*)C.vals;
-    size_t C_ld = C.ld;
+    U * A_vals = (U*)A->vals;
+    size_t A_ld = A->ld;
+    U * B_vals = (U*)B->vals;
+    size_t B_ld = B->ld;
+    U * C_vals = (U*)C->vals;
+    size_t C_ld = C->ld;
     if(data->swap_a_b) {
         std::swap(A_vals, B_vals);
         std::swap(A_ld, B_ld);

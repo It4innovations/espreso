@@ -1,8 +1,6 @@
 
 #include "gpu/operations/trsm_dcsx_ddny_ddny.h"
 
-#include "gpu/gpu_spblas.h"
-
 #include "wrappers/cuda/operations/w_cusparse_trsm_dcsx_ddny_ddny.h"
 // #include "wrappers/rocm/operations/w_rocsparse_trsm_dcsx_ddny_ddny.h"
 // #include "wrappers/oneapi/operations/w_oneapisparse_trsm_dcsx_ddny_ddny.h"
@@ -55,46 +53,37 @@ void trsm_dcsx_ddny_ddny<T,I>::set_handles(gpu::mgm::queue q_, gpu::spblas::hand
 
 
 template<typename T, typename I>
-void trsm_dcsx_ddny_ddny<T,I>::set_matrix_A(MatrixCsxView_new<T,I> A_)
+void trsm_dcsx_ddny_ddny<T,I>::set_matrix_A(MatrixCsxView_new<T,I> * A_)
 {
     if(!called_set_handles) eslog::error("handles are not set\n");
-    if(called_set_A) eslog::error("forbidden to re-set matrix A\n");
+    if(A != nullptr) eslog::error("matrix A is already set\n");
+    if(A_ == nullptr) eslog::error("A cannot be nullptr\n");
 
     A = A_;
-
-    internal_set_matrix_A();
-
-    called_set_A = true;
 }
 
 
 
 template<typename T, typename I>
-void trsm_dcsx_ddny_ddny<T,I>::set_matrix_X(MatrixDenseView_new<T> X_)
+void trsm_dcsx_ddny_ddny<T,I>::set_matrix_X(MatrixDenseView_new<T> * X_)
 {
     if(!called_set_handles) eslog::error("handles are not set\n");
-    if(called_set_X && !MatrixDenseView_new<T>::are_interchangable(X, X_)) eslog::error("invalid replacement for matrix X\n");
+    if(X != nullptr) eslog::error("matrix X is already set\n");
+    if(X_ == nullptr) eslog::error("X cannot be nullptr\n");
 
     X = X_;
-
-    internal_set_matrix_X();
-
-    called_set_X = true;
 }
 
 
 
 template<typename T, typename I>
-void trsm_dcsx_ddny_ddny<T,I>::set_matrix_B(MatrixDenseView_new<T> B_)
+void trsm_dcsx_ddny_ddny<T,I>::set_matrix_B(MatrixDenseView_new<T> * B_)
 {
     if(!called_set_handles) eslog::error("handles are not set\n");
-    if(called_set_B && !MatrixDenseView_new<T>::are_interchangable(B, B_)) eslog::error("invalid replacement for matrix B\n");
+    if(B != nullptr) eslog::error("matrix B is already set\n");
+    if(B_ == nullptr) eslog::error("B cannot be nullptr\n");
 
     B = B_;
-
-    internal_set_matrix_B();
-
-    called_set_B = true;
 }
 
 
@@ -103,16 +92,16 @@ template<typename T, typename I>
 void trsm_dcsx_ddny_ddny<T,I>::setup()
 {
     if(!called_set_handles) eslog::error("handles are not set\n");
-    if(!called_set_A) eslog::error("matrix A is not set\n");
-    if(!called_set_B) eslog::error("matrix B is not set\n");
-    if(!called_set_C) eslog::error("matrix C is not set\n");
+    if(A == nullptr) eslog::error("matrix A is not set\n");
+    if(X == nullptr) eslog::error("matrix B is not set\n");
+    if(B == nullptr) eslog::error("matrix C is not set\n");
     if(called_setup) eslog::error("setup was already called\n");
-    if(A.nrows != A.ncols) eslog::error("matrix A is not square\n");
-    if(X.nrows != B.nrows || X.ncols != B.ncols) eslog::error("X and B matrix sizes dont match\n");
-    if(X.order != B.order) eslog::error("X and B order does not match\n");
-    if(A.nrows != B.nrows) eslog::error("incompatible matrices\n");
+    if(A->nrows != A->ncols) eslog::error("matrix A is not square\n");
+    if(X->nrows != B->nrows || X->ncols != B->ncols) eslog::error("X and B matrix sizes dont match\n");
+    if(X->order != B->order) eslog::error("X and B order does not match\n");
+    if(A->nrows != B->nrows) eslog::error("incompatible matrices\n");
 
-    place = ((X.vals == B.vals) ? 'I' : 'O');
+    place = ((X == B) ? 'I' : 'O');
 
     this->internal_setup();
 
@@ -187,16 +176,6 @@ void trsm_dcsx_ddny_ddny<T,I>::preprocess_submit(void * ws_tmp)
 
 
 template<typename T, typename I>
-void trsm_dcsx_ddny_ddny<T,I>::update_submit()
-{
-    if(!called_preprocess) eslog::error("preprocess has not been called\n");
-
-    this->internal_update();
-}
-
-
-
-template<typename T, typename I>
 void trsm_dcsx_ddny_ddny<T,I>::perform_submit(void * ws_tmp)
 {
     if(!called_preprocess) eslog::error("preprocess has not been called\n");
@@ -208,7 +187,7 @@ void trsm_dcsx_ddny_ddny<T,I>::perform_submit(void * ws_tmp)
 
 
 template<typename T, typename I>
-void trsm_dcsx_ddny_ddny<T,I>::submit_all(gpu::mgm::queue q, gpu::spblas::handle spblas_handle, MatrixCsxView_new<T,I> A, MatrixDenseView_new<T> x, MatrixDenseView_new<T> B, Allocator_new * ator_gpu)
+void trsm_dcsx_ddny_ddny<T,I>::submit_all(gpu::mgm::queue q, gpu::spblas::handle spblas_handle, MatrixCsxView_new<T,I> * A, MatrixDenseView_new<T> * X, MatrixDenseView_new<T> * B, Allocator_new * ator_gpu)
 {
     trsm_dcsx_ddny_ddny<T,I> instance;
     instance.set_handles(q, spblas_handle);

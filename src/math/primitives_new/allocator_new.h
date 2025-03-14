@@ -148,7 +148,7 @@ public:
     }
     virtual size_t get_align() override
     {
-        eslog::error("todo\n");
+        return gpu::mgm::get_natural_pitch_align();
     }
 public:
     static AllocatorGPU_new * get_singleton()
@@ -185,7 +185,7 @@ public:
     }
     virtual size_t get_align() override
     {
-        eslog::error("todo\n");
+        return 64;
     }
 public:
     static AllocatorHostPinned_new * get_singleton()
@@ -198,7 +198,114 @@ public:
 
 class AllocatorArena_new : public Allocator_new
 {
+private:
+    void * start_ptr = nullptr;
+    size_t capacity = 0;
+    size_t curr_used = 0;
+    size_t align_B = 1;
+    bool on_cpu;
+    bool on_gpu;
+public:
+    AllocatorArena_new(bool on_cpu_, bool on_gpu_, size_t align_B_) : on_cpu(on_cpu_), on_gpu(on_gpu_), align_B(align_B_) { }
+    virtual ~AllocatorArena_new() {}
+    void set(void * ptr_, size_t capacity_)
+    {
+        if(start_ptr != nullptr) eslog::error("arena allocator has already been set\n");
+        if(start_ptr_ % align_B_ != 0) eslog::error("arena buffer pointer must be a multiple of align\n");
 
+        start_ptr = ptr_;
+        capacity = capacity_;
+        curr_used = 0;
+    }
+    void clear()
+    {
+        curr_used = 0;
+    }
+    void unset()
+    {
+        start_ptr = nullptr;
+    }
+    virtual void * alloc(size_t num_bytes) override
+    {
+        if(start_ptr == nullptr) eslog::error("arena allocator has not been set yet\n");
+        if(num_bytes == 0) return nullptr;
+
+        void * ptr = start_ptr + curr_used;
+        curr_used += num_bytes;
+        if(curr_used > capacity) {
+            eslog::error("arena allocator exceeded its capacity\n");
+        }
+        curr_used = ((curr_used - 1) / align_B + 1) * align_B;
+        return ptr;
+    }
+    virtual void free(void * & ptr) override
+    {
+        ptr = nullptr;
+    }
+    virtual bool is_on_cpu() override
+    {
+        return on_cpu;
+    }
+    virtual bool is_on_gpu() override
+    {
+        return on_gpu;
+    }
+    virtual size_t get_align() override
+    {
+        return align_B;
+    }
+};
+
+
+
+class AllocatorSinglePointer_new : public Allocator_new
+{
+private:
+    void * pointer = nullptr;
+    size_t capacity = 0;
+    size_t align_B = 1;
+    bool on_cpu;
+    bool on_gpu;
+public:
+    AllocatorArena_new(bool on_cpu_, bool on_gpu_, size_t align_B_) : on_cpu(on_cpu_), on_gpu(on_gpu_), align_B(align_B_) { }
+    virtual ~AllocatorArena_new() {}
+    void set(void * ptr_, size_t capacity_)
+    {
+        if(start_ptr != nullptr) eslog::error("singlepointer allocator has already been set\n");
+        if(start_ptr_ % align_B_ != 0) eslog::error("singlepointer buffer pointer must be a multiple of align\n");
+
+        start_ptr = ptr_;
+        capacity = capacity_;
+        curr_used = 0;
+    }
+    void unset()
+    {
+        start_ptr = nullptr;
+    }
+    virtual void * alloc(size_t num_bytes) override
+    {
+        if(start_ptr == nullptr) eslog::error("singlepointer allocator has not been set yet\n");
+        if(num_bytes > capacity) {
+            eslog::error("singlepointer allocator exceeded its capacity\n");
+        }
+        return pointer;
+    }
+    virtual void free(void * & ptr) override
+    {
+        ptr = nullptr;
+    }
+    virtual bool is_on_cpu() override
+    {
+        return on_cpu;
+    }
+    virtual bool is_on_gpu() override
+    {
+        return on_gpu;
+    }
+    virtual size_t get_align() override
+    {
+        return align_B;
+    }
 };
 
 

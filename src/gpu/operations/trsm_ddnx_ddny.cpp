@@ -36,31 +36,25 @@ void trsm_ddnx_ddny<T>::set_handles(gpu::mgm::queue q_, gpu::dnblas::handle dnbl
 
 
 template<typename T>
-void trsm_ddnx_ddny<T>::set_matrix_A(MatrixDenseView_new<T,I> A_);
+void trsm_ddnx_ddny<T>::set_matrix_A(MatrixDenseView_new<T,I> * A_);
 {
     if(!called_set_handles) eslog::error("handles are not set\n");
-    if(called_set_A && !MatrixDenseView_new<T>::are_interchangable(A, A_)) eslog::error("invalid replacement for matrix A\n");
+    if(A != nullptr) eslog::error("matrix A is already set\n");
+    if(A_ == nullptr) eslog::error("A cannot be nullptr\n");
 
     A = A_;
-
-    internal_set_matrix_A();
-
-    called_set_A = true;
 }
 
 
 
 template<typename T>
-void trsm_ddnx_ddny<T>::set_matrix_X(MatrixDenseView_new<T> X_);
+void trsm_ddnx_ddny<T>::set_matrix_X(MatrixDenseView_new<T> * X_);
 {
     if(!called_set_handles) eslog::error("handles are not set\n");
-    if(called_set_X && !MatrixDenseView_new<T>::are_interchangable(X, X_)) eslog::error("invalid replacement for matrix X\n");
+    if(X != nullptr) eslog::error("matrix X is already set\n");
+    if(X_ == nullptr) eslog::error("X cannot be nullptr\n");
 
     X = X_;
-
-    internal_set_matrix_X();
-
-    called_set_X = true;
 }
 
 
@@ -69,12 +63,12 @@ template<typename T>
 void trsm_ddnx_ddny<T>::setup();
 {
     if(!called_set_handles) eslog::error("handles are not set\n");
-    if(!called_set_A) eslog::error("matrix A is not set\n");
-    if(!called_set_X) eslog::error("matrix X is not set\n");
+    if(A == nullptr) eslog::error("matrix A is not set\n");
+    if(X == nullptr) eslog::error("matrix X is not set\n");
     if(called_setup) eslog::error("setup was already called\n");
-    if(A.nrows != A.ncols) eslog::error("matrix A is not square\n");
-    if(A.nrows != X.nrows) eslog::error("incompatible matrices\n");
-    if(A.prop.uplo != 'L' && A.prop.uplo != 'U') eslog::error("invalid matrix A uplo\n");
+    if(A->nrows != A->ncols) eslog::error("matrix A is not square\n");
+    if(A->nrows != X->nrows) eslog::error("incompatible matrices\n");
+    if(A->prop.uplo != 'L' && A->prop.uplo != 'U') eslog::error("invalid matrix A uplo\n");
 
     this->internal_setup();
 
@@ -105,7 +99,7 @@ void trsm_ddnx_ddny<T>::perform_submit(void * ws_tmp);
 
 
 template<typename T>
-void trsm_ddnx_ddny<T>::submit_all(gpu::mgm::queue q, gpu::dnblas::handle handle_dnblas, MatrixDenseView_new<T> A, MatrixDenseView_new<T> X, Allocator_new * ator_gpu);
+void trsm_ddnx_ddny<T>::submit_all(gpu::mgm::queue q, gpu::dnblas::handle handle_dnblas, MatrixDenseView_new<T> * A, MatrixDenseView_new<T> * X, Allocator_new * ator_gpu);
 {
     trsm_ddnx_ddny<T> instance;
     instance.set_handles(q, handle_dnblas);

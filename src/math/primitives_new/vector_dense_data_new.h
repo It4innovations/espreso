@@ -70,6 +70,13 @@ public:
         ator = nullptr;
         was_set = false;
     }
+public:
+    size_t get_memory_impact()
+    {
+        size_t mem = size * sizeof(T);
+        mem = ((mem - 1) / ator->get_align() + 1) * ator->get_align();
+        return mem;
+    }
 };
 
 

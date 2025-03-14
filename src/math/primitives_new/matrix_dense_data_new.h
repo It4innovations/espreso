@@ -81,6 +81,14 @@ public:
         ator = nullptr;
         was_set = false;
     }
+public:
+    void get_memory_impact() const
+    {
+        size_t mem_secdary = this->get_size_secdary() * sizeof(T);
+        mem_secdary = ((mem_secdary - 1) / ator->get_align() + 1) * ator->get_align();
+        size_t mem_total = mem_secdary * this->get_size_primary();
+        return mem_total;
+    }
 };
 
 

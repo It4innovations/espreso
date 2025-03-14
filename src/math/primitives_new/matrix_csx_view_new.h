@@ -75,7 +75,7 @@ public:
         prop.uplo = change_uplo(prop.uplo);
     }
 
-    static bool are_interchangable(MatrixCsxView_new & A, MatrixCsxView_new & B)
+    static bool are_interchangable(const MatrixCsxView_new & A, const MatrixCsxView_new & B)
     {
         return (A.nrows == B.nrows) && (A.ncols == B.ncols) && (A.nnz == B.nnz) && (A.order == B.order) && (A.prop.uplo == B.prop.uplo) && (A.prop.diag == B.prop.diag);
     }

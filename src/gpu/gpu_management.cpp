@@ -39,6 +39,8 @@ namespace mgm {
 
     size_t get_device_memory_free() { return 0; }
 
+    size_t get_natural_pitch_align() { return 1; }
+
     void * memalloc_device(size_t /*num_bytes*/) { return nullptr; }
 
     void * memalloc_device_2d(size_t /*num_chunks*/, size_t /*bytes_per_chunk*/, size_t & /*pitch*/) { return nullptr; }
@@ -64,6 +66,15 @@ namespace mgm {
     
     template<typename T, typename I, typename Ao, typename Ai>
     void copy_submit(queue & /*q*/, Matrix_CSR<T,I,Ao> & /*output*/, const Matrix_CSR<T,I,Ai> & /*input*/, bool /*copy_pattern*/, bool /*copy_vals*/) {}
+
+    template<typename T>
+    void copy_submit(queue & /*q*/, VectorDenseView_new<T> & /*src*/, char /*src_mrm*/, VectorDenseView_new<T> & /*dst*/, char /*dst_mem*/) {}
+
+    template<typename T>
+    void copy_submit(queue & /*q*/, MatrixDenseView_new<T> & /*src*/, char /*src_mrm*/, MatrixDenseView_new<T> & /*dst*/, char /*dst_mem*/) {}
+
+    template<typename T, typename I>
+    void copy_submit(queue & /*q*/, MatrixCsxView_new<T,I> & /*src*/, char /*src_mrm*/, MatrixCsxView_new<T,I> & /*dst*/, char /*dst_mem*/, bool /*copy_pattern*/, bool /*copy_vals*/) {}
 
     void memset_submit(queue & /*q*/, void * /*ptr*/, size_t /*num_bytes*/, char /*val*/) {}
 

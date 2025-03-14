@@ -26,9 +26,6 @@ public:
     virtual ~w_cusparse_trsm_dcsx_ddny_ddny();
 protected:
     virtual char internal_get_native_place() override;
-    virtual void internal_set_matrix_A() override;
-    virtual void internal_set_matrix_B() override;
-    virtual void internal_set_matrix_C() override;
     virtual void internal_setup() override;
     virtual void internal_preprocess(void * ws_tmp) override;
     virtual void internal_update() override;

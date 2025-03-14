@@ -17,7 +17,7 @@ std::unique_ptr<gemm_ddnx_ddny_ddnz<T>> gemm_ddnx_ddny_ddnz<T>::make()
     #ifdef ESPRESO_USE_WRAPPER_GPU_CUDA
         return std::make_unique<w_cublas_gemm_ddnx_ddny_ddnz<T>>();
     #endif
-    eslog::error("wrapper for gemm_dcsx_ddny_ddnz not available\n");
+    eslog::error("wrapper for gemm_ddnx_ddny_ddnz not available\n");
 }
 
 
@@ -36,46 +36,37 @@ void gemm_ddnx_ddny_ddnz<T>::set_handle(gpu::mgm::queue q_, gpu::dnblas::handle 
 
 
 template<typename T>
-void gemm_ddnx_ddny_ddnz<T>::set_matrix_A(MatrixDenseView_new<T> A_)
+void gemm_ddnx_ddny_ddnz<T>::set_matrix_A(MatrixDenseView_new<T> * A_)
 {
     if(!called_set_handles) eslog::error("handles are not set\n");
-    if(called_set_A && !MatrixDenseView_new<T>::are_interchangable(A, A_)) eslog::error("invalid replacement for matrix A\n");
+    if(A != nullptr) eslog::error("matrix A is already set\n");
+    if(A_ == nullptr) eslog::error("A cannot be nullptr\n");
 
     A = A_;
-
-    internal_set_matrix_A();
-
-    called_set_A = true;
 }
 
 
 
 template<typename T>
-void gemm_ddnx_ddny_ddnz<T>::set_matrix_B(MatrixDenseView_new<T> B_)
+void gemm_ddnx_ddny_ddnz<T>::set_matrix_B(MatrixDenseView_new<T> * B_)
 {
     if(!called_set_handles) eslog::error("handles are not set\n");
-    if(called_set_B && !MatrixDenseView_new<T>::are_interchangable(B, B_)) eslog::error("invalid replacement for matrix B\n");
+    if(B != nullptr) eslog::error("matrix B is already set\n");
+    if(B_ == nullptr) eslog::error("B cannot be nullptr\n");
 
     B = B_;
-
-    internal_set_matrix_B();
-
-    called_set_B = true;
 }
 
 
 
 template<typename T>
-void gemm_ddnx_ddny_ddnz<T>::set_matrix_C(MatrixDenseView_new<T> C_)
+void gemm_ddnx_ddny_ddnz<T>::set_matrix_C(MatrixDenseView_new<T> * C_)
 {
     if(!called_set_handles) eslog::error("handles are not set\n");
-    if(called_set_C && !MatrixDenseView_new<T>::are_interchangable(C, C_)) eslog::error("invalid replacement for matrix C\n");
+    if(C != nullptr) eslog::error("matrix C is already set\n");
+    if(C_ == nullptr) eslog::error("C cannot be nullptr\n");
 
     C = C_;
-
-    internal_set_matrix_C();
-
-    called_set_C = true;
 }
 
 
@@ -93,11 +84,11 @@ template<typename T>
 void gemm_ddnx_ddny_ddnz<T>::setup()
 {
     if(!called_set_handles) eslog::error("handles are not set\n");
-    if(called_set_A) eslog::error("matrix A is not set\n");
-    if(called_set_B) eslog::error("matrix B is not set\n");
-    if(called_set_C) eslog::error("matrix C is not set\n");
+    if(A == nullptr) eslog::error("matrix A is not set\n");
+    if(B == nullptr) eslog::error("matrix B is not set\n");
+    if(C == nullptr) eslog::error("matrix C is not set\n");
     if(called_setup) eslog::error("setup was already called\n");
-    if(A.nrows != C.nrows || B.ncols != C.ncols || A.ncols != B.nrows) eslog::error("incompatible matrices\n");
+    if(A->nrows != C->nrows || B->ncols != C->ncols || A->ncols != B->nrows) eslog::error("incompatible matrices\n");
 
     this->internal_setup();
 
@@ -128,7 +119,7 @@ void gemm_ddnx_ddny_ddnz<T>::perform_submit(void * ws_tmp)
 
 
 template<typename T>
-static void gemm_ddnx_ddny_ddnz<T>::submit_all(gpu::mgm::queue q, gpu::dnblas::handle handle_dnblas, MatrixDenseView_new<T> A, MatrixDenseView_new<T> B, MatrixDenseView_new<T> C, T alpha, T beta, Allocator_new * ator_gpu)
+static void gemm_ddnx_ddny_ddnz<T>::submit_all(gpu::mgm::queue q, gpu::dnblas::handle handle_dnblas, MatrixDenseView_new<T> * A, MatrixDenseView_new<T> * B, MatrixDenseView_new<T> * C, T alpha, T beta, Allocator_new * ator_gpu)
 {
     gemm_ddnx_ddny_ddnz<T> instance;
     instance.set_handles(q, handle_dnblas);

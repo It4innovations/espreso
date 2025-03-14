@@ -54,6 +54,8 @@ namespace mgm {
 
     size_t get_device_memory_free();
 
+    size_t get_natural_pitch_align();
+
     void * memalloc_device(size_t num_bytes);
 
     void * memalloc_device_2d(size_t num_chunks, size_t bytes_per_chunk, size_t & pitch);
@@ -79,6 +81,15 @@ namespace mgm {
 
     template<typename T, typename I, typename Ao, typename Ai>
     void copy_submit(queue & q, Matrix_CSR<T,I,Ao> & output, const Matrix_CSR<T,I,Ai> & input, bool copy_pattern = true, bool copy_vals = true);
+
+    template<typename T>
+    void copy_submit(queue & q, VectorDenseView_new<T> & src, VectorDenseView_new<T> & dst);
+
+    template<typename T>
+    void copy_submit(queue & q, MatrixDenseView_new<T> & src, MatrixDenseView_new<T> & dst);
+
+    template<typename T, typename I>
+    void copy_submit(queue & q, MatrixCsxView_new<T,I> & src, MatrixCsxView_new<T,I> & dst, bool copy_pattern = true, bool copy_vals = true);
 
     void memset_submit(queue & q, void * ptr, size_t num_bytes, char val);
 

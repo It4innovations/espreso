@@ -93,7 +93,7 @@ public:
         prop.uplo = change_uplo(prop.uplo);
     }
 
-    static bool are_interchangable(MatrixDenseView_new & A, MatrixDenseView_new & B)
+    static bool are_interchangable(const MatrixDenseView_new & A, const MatrixDenseView_new & B)
     {
         return (A.nrows == B.nrows) && (A.ncols == B.ncols) && (A.order == B.order) && (A.prop.uplo == B.prop.uplo) && (A.prop.diag == B.prop.diag);
     }

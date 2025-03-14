@@ -18,6 +18,7 @@ namespace mgm {
         /* INSTANTIATE_T_I_Ao_Ai(T, I, A2, A2) */
 
             #define INSTANTIATE_T_I(T,I) \
+            tempalte void copy_submit<T,I>(queue & q, MatrixCsxView_new<T,I> & src, MatrixCsxView_new<T,I> & dst, bool copy_pattern, bool copy_vals); \
             INSTANTIATE_T_I_A1_A2(T, I, mgm::Ah,       mgm::Ad) \
             INSTANTIATE_T_I_A1_A2(T, I, mgm::Ah,       arena_d) \
             INSTANTIATE_T_I_A1_A2(T, I, mgm::Ah,       cbmba_d) \
@@ -27,6 +28,8 @@ namespace mgm {
 
                 #define INSTANTIATE_T(T) \
                 template void copy_submit<T>(queue & q, T * dst, T const * src, size_t num_elements); \
+                template void copy_submit<T>(queue & q, VectorDenseView_new<T> & src, VectorDenseView_new<T> & dst); \
+                template void copy_submit<T>(queue & q, MatrixDenseView_new<T> & src, MatrixDenseView_new<T> & dst); \
                 INSTANTIATE_T_I(T, int32_t) \
                 /* INSTANTIATE_T_I(T, int64_t) */
 

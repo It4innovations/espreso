@@ -26,9 +26,6 @@ public:
     w_cusparse_gemm_dcsx_ddny_ddnz();
     virtual ~w_cusparse_gemm_dcsx_ddny_ddnz();
 protected:
-    virtual void internal_set_matrix_A() override;
-    virtual void internal_set_matrix_B() override;
-    virtual void internal_set_matrix_C() override;
     virtual void internal_setup() override;
     virtual void internal_preprocess(void * ws_tmp) override;
     virtual void internal_perform(void * ws_tmp) override;

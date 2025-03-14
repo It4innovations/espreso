@@ -44,10 +44,10 @@ void w_cublas_herk_ddnx_ddny<T>::internal_setup()
     // no manual workspace needed if I use just a single stream with this handle, which I do
     wss_tmp_perform = 0;
 
-    data->uplo_C = (((C.prop.uplo == 'L') == (C.order == 'C')) ? CUBLAS_FILL_MODE_LOWER : CUBLAS_FILL_MODE_UPPER);
-    data->trans_mode = (((mode == herk_mode::AAh) == (A.order == 'C')) ? CUBLAS_OP_N : CUBLAS_OP_T);
-    data->n = A.nrows;
-    data->k = A.ncols;
+    data->uplo_C = (((C->prop.uplo == 'L') == (C->order == 'C')) ? CUBLAS_FILL_MODE_LOWER : CUBLAS_FILL_MODE_UPPER);
+    data->trans_mode = (((mode == herk_mode::AAh) == (A->order == 'C')) ? CUBLAS_OP_N : CUBLAS_OP_T);
+    data->n = A->nrows;
+    data->k = A->ncols;
     if(mode == herk_mode::AAh) {
         std::swap(data->n, data->k);
     }
@@ -60,10 +60,10 @@ void w_cublas_herk_ddnx_ddny<T>::internal_perform(void * /*ws_tmp*/)
 {
     if(utils::is_complex<T>()) eslog::error("complex types not yet supported in herk\n");
     using U = cpp_to_cublas_type_t<T>;
-    if constexpr(std::is_same_v<T,float>)                CHECK(cublasSsyrk(handle_dnblas->h, data->uplo_C, data->trans_mode, data->n, data->k, &alpha, (U*)A.vals, A.ld, &beta, (U*)C.vals, C.ld));
-    if constexpr(std::is_same_v<T,double>)               CHECK(cublasDsyrk(handle_dnblas->h, data->uplo_C, data->trans_mode, data->n, data->k, &alpha, (U*)A.vals, A.ld, &beta, (U*)C.vals, C.ld));
-    if constexpr(std::is_same_v<T,std::complex<float>>)  CHECK(cublasCherk(handle_dnblas->h, data->uplo_C, data->trans_mode, data->n, data->k, &alpha, (U*)A.vals, A.ld, &beta, (U*)C.vals, C.ld));
-    if constexpr(std::is_same_v<T,std::complex<double>>) CHECK(cublasZherk(handle_dnblas->h, data->uplo_C, data->trans_mode, data->n, data->k, &alpha, (U*)A.vals, A.ld, &beta, (U*)C.vals, C.ld));
+    if constexpr(std::is_same_v<T,float>)                CHECK(cublasSsyrk(handle_dnblas->h, data->uplo_C, data->trans_mode, data->n, data->k, &alpha, (U*)A->vals, A->ld, &beta, (U*)C->vals, C->ld));
+    if constexpr(std::is_same_v<T,double>)               CHECK(cublasDsyrk(handle_dnblas->h, data->uplo_C, data->trans_mode, data->n, data->k, &alpha, (U*)A->vals, A->ld, &beta, (U*)C->vals, C->ld));
+    if constexpr(std::is_same_v<T,std::complex<float>>)  CHECK(cublasCherk(handle_dnblas->h, data->uplo_C, data->trans_mode, data->n, data->k, &alpha, (U*)A->vals, A->ld, &beta, (U*)C->vals, C->ld));
+    if constexpr(std::is_same_v<T,std::complex<double>>) CHECK(cublasZherk(handle_dnblas->h, data->uplo_C, data->trans_mode, data->n, data->k, &alpha, (U*)A->vals, A->ld, &beta, (U*)C->vals, C->ld));
 }
 
 

@@ -1,0 +1,318 @@
+
+#include "gpu/operations/trsm_hcsx_ddny_ddny.h"
+
+
+
+namespace espreso {
+namespace gpu {
+namespace operations {
+
+
+
+template<typename T, typename I>
+char trsm_hcsx_ddny_ddny<T,I>::get_native_place()
+{
+    return inner_trsm.internal_get_native_place();
+}
+
+
+
+template<typename T, typename I>
+void trsm_hcsx_ddny_ddny<T,I>::set_config(char spdn_A_)
+{
+    if(called_set_config) eslog::error("config is already set\n");
+
+    spdn_A = spdn_A_;
+
+    called_set_config = true;
+}
+
+
+
+template<typename T, typename I>
+void trsm_hcsx_ddny_ddny<T,I>::set_handles(gpu::mgm::queue q_, gpu::spblas::handle handle_spblas_, gpu::dnblas::handle handle_dnblas_)
+{
+    if(called_set_handles) eslog::error("handles are already set\n");
+
+    q = q_;
+    handle_spblas = handle_spblas_;
+    handle_dnblas = handle_dnblas_;
+
+    called_set_handles = true;
+}
+
+
+
+template<typename T, typename I>
+void trsm_hcsx_ddny_ddny<T,I>::set_matrix_h_A(MatrixCsxView_new<T,I> * h_A_)
+{
+    if(!called_set_handles) eslog::error("handles are not set\n");
+    if(h_A != nullptr) eslog::error("matrix h_A is already set\n");
+    if(h_A_ == nullptr) eslog::error("h_A cannot be nullptr\n");
+
+    h_A = h_A_;
+}
+
+
+
+template<typename T, typename I>
+void trsm_hcsx_ddny_ddny<T,I>::set_matrix_d_X(MatrixDenseView_new<T> * d_X_)
+{
+    if(!called_set_handles) eslog::error("handles are not set\n");
+    if(d_X != nullptr) eslog::error("matrix d_X is already set\n");
+    if(d_X_ == nullptr) eslog::error("d_X cannot be nullptr\n");
+
+    d_X = d_X_;
+}
+
+
+
+template<typename T, typename I>
+void trsm_hcsx_ddny_ddny<T,I>::set_matrix_d_B(MatrixDenseView_new<T> * d_B_)
+{
+    if(!called_set_handles) eslog::error("handles are not set\n");
+    if(d_B != nullptr) eslog::error("matrix d_B is already set\n");
+    if(d_B_ == nullptr) eslog::error("d_B cannot be nullptr\n");
+
+    d_B = d_B_;
+}
+
+
+
+template<typename T, typename I>
+void trsm_hcsx_ddny_ddny<T,I>::setup()
+{
+    if(!called_set_config) eslog::error("config is not set\n");
+    if(!called_set_handles) eslog::error("handles are not set\n");
+    if(h_A == nullptr) eslog::error("matrix h_A is not set\n");
+    if(d_X == nullptr) eslog::error("matrix d_B is not set\n");
+    if(d_B == nullptr) eslog::error("matrix d_C is not set\n");
+    if(called_setup) eslog::error("setup was already called\n");
+    if(h_A->nrows != h_A->ncols) eslog::error("matrix A is not square\n");
+    if(d_X->nrows != d_B->nrows || d_X->ncols != d_B->ncols) eslog::error("X and B matrix sizes dont match\n");
+    if(d_X->order != d_B->order) eslog::error("X and B order does not match\n");
+    if(h_A->nrows != B->nrows) eslog::error("incompatible matrices\n");
+
+    ator_ws_persistent = std::make_unique<AllocatorArena_new>(false, true, gpu::mgm::get_natural_pitch_align());
+
+    ator_ws_tmp_linear = std::make_unique<AllocatorArena_new>(false, true, gpu::mgm::get_natural_pitch_align());
+    ator_ws_tmp_overlap = std::make_unique<AllocatorSinglePointer_new>(false, true, gpu::mgm::get_natural_pitch_align());
+
+    d_A_sp.set(h_A->nrows, h_A->ncols, h_A->nnz, h_A->order, ator_ws_tmp_linear.get());
+    wss_tmp_preprocess_linear += d_A.get_memory_impact();
+    wss_tmp_perform_linear += d_A.get_memory_impact();
+
+    if(spdn_A == 'D') {
+        d_A_dn.set()
+    }
+
+    if(spdn_A == 'D') {
+        op_d_sp2dn_A.set_handles(q, handle_spblas);
+        op_d_sp2dn_A.set_matrix_src(&d_A_sp);
+        op_d_sp2dn_A.set_matrix_dst(&d_A_dn);
+        op_d_sp2dn_A.setup();
+        wss_internal += op_d_sp2dn_A.get_wss_internal();
+        wss_persistent += op_d_sp2dn_A.get_wss_persistent();
+        wss_tmp_preprocess_overlap = std::max(wss_tmp_preprocess_overlap, op_d_sp2dn_A.get_wss_tmp_preprocess());
+        wss_tmp_perform_overlap = std::max(wss_tmp_perform_overlap, op_d_sp2dn_A.get_wss_tmp_perform());
+    }
+
+    if(spdn_A == 'S') {
+        op_d_inner_trsm_sp.set_handles(q, handle_spblas);
+        op_d_inner_trsm_sp.set_matrix_A(&d_A);
+        op_d_inner_trsm_sp.set_matrix_X(d_X);
+        op_d_inner_trsm_sp.set_matrix_B(d_B);
+        op_d_inner_trsm_sp.setup();
+        wss_internal += op_d_inner_trsm_sp.get_wss_internal();
+        wss_persistent += op_d_inner_trsm_sp.get_wss_persistent();
+        wss_tmp_preprocess_overlap = std::max(wss_tmp_preprocess_overlap, op_d_inner_trsm_sp.get_wss_tmp_preprocess());
+        wss_tmp_perform_overlap = std::max(wss_tmp_perform_overlap, op_d_inner_trsm_sp.get_wss_tmp_perform());
+    }
+    if(spdn_A == 'D') {
+        op_d_inner_trsm_dn.set_handles(q, handle_dnblas);
+        op_d_inner_trsm_dn.set_matrix_A(&d_A_dn);
+        op_d_inner_trsm_dn.set_matrix_X(d_X);
+        op_d_inner_trsm_dn.setup();
+        wss_tmp_perform_overlap = std::max(wss_tmp_perform_overlap, op_d_inner_trsm_dn.get_wss_tmp_perform());
+    }
+
+    wss_tmp_preprocess_linear = ((wss_tmp_preprocess_linear - 1) / ator_ws_tmp_linear->get_align() + 1) * ator_ws_tmp_linear->get_align();
+    wss_tmp_perform_linear = ((wss_tmp_perform_linear - 1) / ator_ws_tmp_linear->get_align() + 1) * ator_ws_tmp_linear->get_align();
+
+    wss_tmp_preprocess = wss_tmp_preprocess_linear + wss_tmp_preprocess_overlap;
+    wss_tmp_perform = wss_tmp_perform_linear + wss_tmp_perform_overlap;
+
+    called_setup = true;
+}
+
+
+
+template<typename T, typename I>
+size_t trsm_hcsx_ddny_ddny<T,I>::get_wss_internal()
+{
+    if(!called_setup) eslog::error("setup was not called\n");
+
+    return wss_internal;
+}
+
+
+
+template<typename T, typename I>
+size_t trsm_hcsx_ddny_ddny<T,I>::get_wss_persistent()
+{
+    if(!called_setup) eslog::error("setup was not called\n");
+
+    return wss_persistent;
+}
+
+
+
+template<typename T, typename I>
+size_t trsm_hcsx_ddny_ddny<T,I>::get_wss_tmp_preprocess()
+{
+    if(!called_setup) eslog::error("setup was not called\n");
+
+    return wss_tmp_preprocess;
+}
+
+
+
+template<typename T, typename I>
+size_t trsm_hcsx_ddny_ddny<T,I>::get_wss_tmp_perform()
+{
+    if(!called_setup) eslog::error("setup was not called\n");
+
+    return wss_tmp_perform;
+}
+
+
+
+template<typename T, typename I>
+void trsm_hcsx_ddny_ddny<T,I>::set_ws_persistent(void * ws_persistent_)
+{
+    if(ws_persistent_ == nullptr && wss_persistent > 0) eslog::error("persistent workspace is null\n");
+    if(ws_persistent != nullptr) eslog::error("cannot re-set persistent workspace\n");
+
+    ws_persistent = ws_persistent_;
+}
+
+
+
+template<typename T, typename I>
+void trsm_hcsx_ddny_ddny<T,I>::preprocess_submit(void * ws_tmp)
+{
+    if(!called_setup) eslog::error("setup has not been called\n");
+    if(called_preprocess) eslog::error("preprocess has already been called\n");
+    if(ws_tmp == nullptr && wss_tmp_preprocess > 0) eslog::error("temporary workspace is null\n");
+
+    ator_ws_persistent.set(ws_persistent);
+
+    ator_ws_tmp_linear.set(ws_tmp, wss_tmp_preprocess_linear);
+    ator_ws_tmp_overlap.set(ws_tmp + wss_tmp_preprocess_linear, wss_tmp_preprocess_overlap);
+
+    d_A.alloc();
+
+    gpu::mgm::copy_submit(q, *h_A, d_A, true, false);
+
+    if(spdn_A == 'D') {
+        op_d_sp2dn_A.set_ws_persistent(ator_ws_persistent->alloc(op_d_sp2dn_A.get_wss_persistent()));
+        op_d_sp2dn_A.preprocess_submit(ator_ws_tmp_overlap->alloc(op_d_sp2dn_A.get_wss_tmp_preprocess()));
+    }
+
+    if(spdn_A == 'S') {
+        op_d_inner_trsm_sp.set_ws_persistent(ator_ws_persistent->alloc(op_d_inner_trsm_sp.get_wss_persistent()));
+        op_d_inner_trsm_sp.preprocess_submit(ator_ws_tmp_overlap->alloc(op_d_inner_trsm_sp.get_wss_tmp_preprocess()));
+    }
+
+    d_A.free();
+
+    ator_ws_tmp_linear.unset();
+    ator_ws_tmp_overlap.unset();
+
+    called_preprocess = true;
+}
+
+
+
+template<typename T, typename I>
+void trsm_hcsx_ddny_ddny<T,I>::perform_submit(void * ws_tmp)
+{
+    if(!called_preprocess) eslog::error("preprocess has not been called\n");
+    if(ws_tmp == nullptr && wss_tmp_perform > 0) eslog::error("temporary workspace is null\n");
+
+    ator_ws_tmp_linear.set(ws_tmp, wss_tmp_perform_linear);
+    ator_ws_tmp_overlap.set(ws_tmp + wss_tmp_perform_linear, wss_tmp_perform_overlap);
+
+    d_A.alloc();
+
+    gpu::mgm::copy_submit(q, *h_A, d_A, true, true);
+
+    if(spdn_A == 'D') {
+        op_d_sp2dn_A.perform_submit(ator_ws_tmp_overlap->alloc(op_d_sp2dn_A.get_wss_tmp_perform()));
+    }
+
+    if(spdn_A == 'S') {
+        op_d_inner_trsm_sp.perform_submit(ator_ws_tmp_overlap->alloc(op_d_inner_trsm_sp.get_wss_tmp_perform()));
+    }
+    if(spdn_A == 'D') {
+        op_d_inner_trsm_dn.perform_submit(ator_ws_tmp_overlap->alloc(op_d_inner_trsm_dn.get_wss_tmp_perform()));
+    }
+
+    d_A.free();
+
+    ator_ws_tmp_linear.unset();
+    ator_ws_tmp_overlap.unset();
+}
+
+
+
+template<typename T, typename I>
+void trsm_hcsx_ddny_ddny<T,I>::submit_all(gpu::mgm::queue q, gpu::spblas::handle spblas_handle, MatrixCsxView_new<T,I> * h_A, MatrixDenseView_new<T> * d_X, MatrixDenseView_new<T> * d_B, Allocator_new * ator_gpu)
+{
+    trsm_hcsx_ddny_ddny<T,I> instance;
+    instance.set_handles(q, spblas_handle);
+    instance.set_matrix_h_A(h_A);
+    instance.set_matrix_d_X(d_X);
+    instance.set_matrix_d_B(d_B);
+    instance.setup();
+    size_t wss_persistent = instance.get_wss_persistent();
+    size_t wss_tmp_preprocess = instance.get_wss_tmp_preprocess();
+    size_t wss_tmp_perform = instance.get_wss_tmp_perform();
+    size_t wss_tmp = std::max(wss_tmp_preprocess, wss_tmp_perform);
+    void * ws_persistent = ator_gpu->alloc(wss_persistent);
+    void * ws_tmp = ator_gpu->alloc(wss_tmp);
+    instance.set_ws_persistent(ws_persistent);
+    instance.preprocess_submit(ws_tmp);
+    instance.perform_submit(ws_tmp);
+    gpu::mgm::submit_host_function(q, [ator_gpu,ws_persistent,ws_tmp](){
+        ator_gpu->free(ws_persistent);
+        ator_gpu->free(ws_tmp);
+    });
+}
+
+
+
+#define INSTANTIATE_T_I(T,I) \
+template class trsm_hcsx_ddny_ddny<T,I>;
+
+    #define INSTANTIATE_T(T) \
+    INSTANTIATE_T_I(T,int32_t) \
+    /* INSTANTIATE_T_I(T,int64_t) */
+
+        #define INSTANTIATE \
+        /* INSTANTIATE_T(float) */ \
+        INSTANTIATE_T(double) \
+        /* INSTANTIATE_T(std::complex<float>) */ \
+        INSTANTIATE_T(std::complex<double>)
+
+            INSTANTIATE
+
+        #undef INSTANTIATE
+    #undef INSTANTIATE_T
+#undef INSTANTIATE_T_I
+
+
+
+}
+}
+}

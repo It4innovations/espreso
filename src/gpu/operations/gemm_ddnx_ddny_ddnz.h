@@ -30,32 +30,26 @@ public:
     static std::unique_ptr<gemm_ddnx_ddny_ddnz<T>> make();
 public:
     void set_handles(gpu::mgm::queue q_, gpu::dnblas::handle dnblas_handle_);
-    void set_matrix_A(MatrixDenseView_new<T,I> A_);
-    void set_matrix_B(MatrixDenseView_new<T> B_);
-    void set_matrix_C(MatrixDenseView_new<T> C_);
+    void set_matrix_A(MatrixDenseView_new<T> * A_);
+    void set_matrix_B(MatrixDenseView_new<T> * B_);
+    void set_matrix_C(MatrixDenseView_new<T> * C_);
     void set_coefficients(T alpha_, T beta_);
     void setup();
     size_t get_wss_tmp_perform();
     void perform_submit(void * ws_tmp);
-    static void submit_all(gpu::mgm::queue q, gpu::dnblas::handle handle_dnblas, MatrixDenseView_new<T> A, MatrixDenseView_new<T> B, MatrixDenseView_new<T> C, T alpha, T beta, Allocator_new * ator_gpu);
+    static void submit_all(gpu::mgm::queue q, gpu::dnblas::handle handle_dnblas, MatrixDenseView_new<T> * A, MatrixDenseView_new<T> * B, MatrixDenseView_new<T> * C, T alpha, T beta, Allocator_new * ator_gpu);
 protected:
     gpu::mgm::queue q;
     gpu::dnblas::handle handle_dnblas;
-    MatrixDenseView_new<T> A;
-    MatrixDenseView_new<T> B;
-    MatrixDenseView_new<T> C;
+    MatrixDenseView_new<T> * A = nullptr;
+    MatrixDenseView_new<T> * B = nullptr;
+    MatrixDenseView_new<T> * C = nullptr;
     size_t wss_tmp_perform = 0;
     T alpha = T{1};
     T beta = T{0};
     bool called_set_handles = false;
-    bool called_set_A = false;
-    bool called_set_B = false;
-    bool called_set_C = false;
     bool called_setup = false;
 protected:
-    virtual void internal_set_matrix_A() {}
-    virtual void internal_set_matrix_B() {}
-    virtual void internal_set_matrix_C() {}
     virtual void internal_setup() {}
     virtual void internal_perform(void * /*ws_tmp*/) {}
 };

@@ -354,6 +354,9 @@ void TotalFETIExplicitSc<T,I>::update(const step::Step &step)
     }
     tm_assemble.stop();
 
+    // clean up the mess from buggy openmp in clang
+    utils::run_dummy_parallel_region();
+
     if(apply_on_gpu) {
         tm_copyF.start();
         for(size_t i = 0; i < d_Fs_allocated.size(); i++) {
