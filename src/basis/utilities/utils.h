@@ -115,6 +115,14 @@ namespace utils {
 
     template<typename T> struct remove_complex { using type = decltype(std::real(T{})); };
     template<typename T> using remove_complex_t = typename remove_complex<T>::type;
+
+    template<typename I>
+    I round_up(I num, I align)
+    {
+        static_assert(std::is_integral_v<I>);
+        if constexpr(std::is_signed_v<I>) if(num == 0) return 0;
+        return ((num - 1) / align + 1) * align;
+    }
 }
 
 }

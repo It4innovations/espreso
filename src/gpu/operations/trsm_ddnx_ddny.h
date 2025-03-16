@@ -25,7 +25,7 @@ public:
     trsm_ddnx_ddny(trsm_ddnx_ddny &&) = delete;
     trsm_ddnx_ddny & operator=(const trsm_ddnx_ddny &) = delete;
     trsm_ddnx_ddny & operator=(trsm_ddnx_ddny &&) = delete;
-    virtual ~trsm_ddnx_ddny() = 0;
+    virtual ~trsm_ddnx_ddny() = default;
 public:
     static std::unique_ptr<trsm_ddnx_ddny<T>> make();
 public:
@@ -48,8 +48,6 @@ protected:
     virtual void internal_setup() {}
     virtual void internal_perform(void * /*ws_tmp*/) {}
 };
-
-trsm_ddnx_ddny::~trsm_ddnx_ddny() = default;
 
 
 

@@ -29,7 +29,7 @@ public:
     herk_ddnx_ddny(herk_ddnx_ddny &&) = delete;
     herk_ddnx_ddny & operator=(const herk_ddnx_ddny &) = delete;
     herk_ddnx_ddny & operator=(herk_ddnx_ddny &&) = delete;
-    virtual ~herk_ddnx_ddny() = 0;
+    virtual ~herk_ddnx_ddny() = default;
 public:
     static std::unique_ptr<herk_ddnx_ddny<T,I>> make();
 public:
@@ -58,8 +58,6 @@ protected:
     virtual void internal_setup() {}
     virtual void internal_perform(void * /*ws_tmp*/) {}
 };
-
-herk_ddnx_ddny::~herk_ddnx_ddny() = default;
 
 
 

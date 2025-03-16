@@ -1,6 +1,6 @@
 
-#ifndef SRC_GPU_OPERATIONS_AUXILIARY_TRSM_TRIRHS_CHUNK_SPLITFACTOR_H
-#define SRC_GPU_OPERATIONS_AUXILIARY_TRSM_TRIRHS_CHUNK_SPLITFACTOR_H
+#ifndef SRC_GPU_OPERATIONS_AUXILIARY_GPU_TRSM_TRIRHS_CHUNK_SPLITFACTOR_H
+#define SRC_GPU_OPERATIONS_AUXILIARY_GPU_TRSM_TRIRHS_CHUNK_SPLITFACTOR_H
 
 #include "math/primitives_new/matrix_csx_data_new.h"
 #include "math/primitives_new/matrix_dense_data_new.h"
@@ -15,7 +15,7 @@ namespace operations {
 
 
 template<typename T, typename I>
-class trsm_trirhs_chunk_splitfactor
+class gpu_trsm_trirhs_chunk_splitfactor
 {
 public:
     struct config
@@ -27,12 +27,12 @@ public:
         char gemm_factor_prune = '_'; // No, Rows only, Cols only, All
     };
 public:
-    trsm_trirhs_chunk_splitfactor() = default;
-    trsm_trirhs_chunk_splitfactor(const trsm_trirhs_chunk_splitfactor &) = delete;
-    trsm_trirhs_chunk_splitfactor(trsm_trirhs_chunk_splitfactor &&) = delete;
-    trsm_trirhs_chunk_splitfactor & operator=(const trsm_trirhs_chunk_splitfactor &) = delete;
-    trsm_trirhs_chunk_splitfactor & operator=(trsm_trirhs_chunk_splitfactor &&) = delete;
-    ~trsm_trirhs_chunk_splitfactor() = default;
+    gpu_trsm_trirhs_chunk_splitfactor() = default;
+    gpu_trsm_trirhs_chunk_splitfactor(const gpu_trsm_trirhs_chunk_splitfactor &) = delete;
+    gpu_trsm_trirhs_chunk_splitfactor(gpu_trsm_trirhs_chunk_splitfactor &&) = delete;
+    gpu_trsm_trirhs_chunk_splitfactor & operator=(const gpu_trsm_trirhs_chunk_splitfactor &) = delete;
+    gpu_trsm_trirhs_chunk_splitfactor & operator=(gpu_trsm_trirhs_chunk_splitfactor &&) = delete;
+    ~gpu_trsm_trirhs_chunk_splitfactor() = default;
 public:
     void set_config(config cfg_);
     void set_range(size_t k_start_, size_t k_end_);
@@ -96,4 +96,4 @@ private:
 }
 }
 
-#endif /* SRC_GPU_OPERATIONS_AUXILIARY_TRSM_TRIRHS_CHUNK_SPLITFACTOR_H */
+#endif /* SRC_GPU_OPERATIONS_AUXILIARY_GPU_TRSM_TRIRHS_CHUNK_SPLITFACTOR_H */

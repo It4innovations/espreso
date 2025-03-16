@@ -26,7 +26,7 @@ public:
     gemm_dcsx_ddny_ddnz(gemm_dcsx_ddny_ddnz &&) = delete;
     gemm_dcsx_ddny_ddnz & operator=(const gemm_dcsx_ddny_ddnz &) = delete;
     gemm_dcsx_ddny_ddnz & operator=(gemm_dcsx_ddny_ddnz &&) = delete;
-    virtual ~gemm_dcsx_ddny_ddnz() = 0;
+    virtual ~gemm_dcsx_ddny_ddnz() = default;
 public:
     static std::unique_ptr<gemm_dcsx_ddny_ddnz<T,I>> make();
 public:
@@ -65,8 +65,6 @@ protected:
     virtual void internal_preprocess(void * /*ws_tmp*/) {}
     virtual void internal_perform(void * /*ws_tmp*/) {}
 };
-
-gemm_dcsx_ddny_ddnz::~gemm_dcsx_ddny_ddnz() = default;
 
 
 

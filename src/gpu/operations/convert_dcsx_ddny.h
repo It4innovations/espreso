@@ -26,7 +26,7 @@ public:
     convert_dcsx_ddny(convert_dcsx_ddny &&) = delete;
     convert_dcsx_ddny & operator=(const convert_dcsx_ddny &) = delete;
     convert_dcsx_ddny & operator=(convert_dcsx_ddny &&) = delete;
-    virtual ~convert_dcsx_ddny() = 0;
+    virtual ~convert_dcsx_ddny() = default;
 public:
     static std::unique_ptr<convert_dcsx_ddny<T,I>> make();
 public:
@@ -61,8 +61,6 @@ protected:
     virtual void internal_perform(void * /*ws_tmp*/) {}
 
 };
-
-convert_dcsx_ddny::~convert_dcsx_ddny() = default;
 
 
 

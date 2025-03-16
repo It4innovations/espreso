@@ -1,5 +1,5 @@
 
-#include "gpu/operations/auxliary/trsm_trirhs_chunk_splitfactor.h"
+#include "gpu/operations/auxliary/gpu_trsm_trirhs_chunk_splitfactor.h"
 
 
 
@@ -10,7 +10,7 @@ namespace operations {
 
 
 template<typename T, typename I>
-void trsm_trirhs_chunk_splitfactor<T,I>::set_config(config cfg_)
+void gpu_trsm_trirhs_chunk_splitfactor<T,I>::set_config(config cfg_)
 {
     if(called_set_config) eslog::error("config has already been set\n");
 
@@ -22,7 +22,7 @@ void trsm_trirhs_chunk_splitfactor<T,I>::set_config(config cfg_)
 
 
 template<typename T, typename I>
-void trsm_trirhs_chunk_splitfactor<T,I>::set_range(size_t k_start_, size_t k_end_)
+void gpu_trsm_trirhs_chunk_splitfactor<T,I>::set_range(size_t k_start_, size_t k_end_)
 {
     if(called_set_range) eslog::error("range has already been set\n");
 
@@ -36,7 +36,7 @@ void trsm_trirhs_chunk_splitfactor<T,I>::set_range(size_t k_start_, size_t k_end
 
 
 template<typename T, typename I>
-void trsm_trirhs_chunk_splitfactor<T,I>::set_handles(gpu::mgm::queue q_, gpu::spblas::handle handle_spblas_, gpu::dnblas::handle handle_dnblas_)
+void gpu_trsm_trirhs_chunk_splitfactor<T,I>::set_handles(gpu::mgm::queue q_, gpu::spblas::handle handle_spblas_, gpu::dnblas::handle handle_dnblas_)
 {
     if(called_set_handles) eslog::error("handles have already been set\n");
 
@@ -50,7 +50,7 @@ void trsm_trirhs_chunk_splitfactor<T,I>::set_handles(gpu::mgm::queue q_, gpu::sp
 
 
 template<typename T, typename I>
-void trsm_trirhs_chunk_splitfactor<T,I>::set_matrix_h_L(MatrixCsxView_new<T,I> * h_L_)
+void gpu_trsm_trirhs_chunk_splitfactor<T,I>::set_matrix_h_L(MatrixCsxView_new<T,I> * h_L_)
 {
     if(h_L != nullptr) eslog::error("matrix h_L is already set\n");
     if(h_L_ == nullptr) eslog::error("h_L cannot be nullptr\n");
@@ -61,7 +61,7 @@ void trsm_trirhs_chunk_splitfactor<T,I>::set_matrix_h_L(MatrixCsxView_new<T,I> *
 
 
 template<typename T, typename I>
-void trsm_trirhs_chunk_splitfactor<T,I>::set_matrix_d_X(MatrixDenseView_new<T> d_X_)
+void gpu_trsm_trirhs_chunk_splitfactor<T,I>::set_matrix_d_X(MatrixDenseView_new<T> d_X_)
 {
     if(d_X != nullptr) eslog::error("matrix d_X is already set\n");
     if(d_X_ == nullptr) eslog::error("d_X cannot be nullptr\n");
@@ -72,7 +72,7 @@ void trsm_trirhs_chunk_splitfactor<T,I>::set_matrix_d_X(MatrixDenseView_new<T> d
 
 
 template<typename T, typename I>
-void trsm_trirhs_chunk_splitfactor<T,I>::set_h_X_rowtrails(VectorDenseView_new<I> h_X_rowtrails_)
+void gpu_trsm_trirhs_chunk_splitfactor<T,I>::set_h_X_rowtrails(VectorDenseView_new<I> h_X_rowtrails_)
 {
     if(h_X_rowtrails != nullptr) eslog::error("X rowtrails are already set\n");
     if(h_X_rowtrails_ == nullptr) eslog::error("X rowtrails cannot be nullptr\n");
@@ -83,7 +83,7 @@ void trsm_trirhs_chunk_splitfactor<T,I>::set_h_X_rowtrails(VectorDenseView_new<I
 
 
 template<typename T, typename I>
-void trsm_trirhs_chunk_splitfactor<T,I>::setup()
+void gpu_trsm_trirhs_chunk_splitfactor<T,I>::setup()
 {
     if(!called_set_config) eslog::error("config is not set\n");
     if(!called_set_range) eslog::error("range is not set\n");
@@ -94,6 +94,7 @@ void trsm_trirhs_chunk_splitfactor<T,I>::setup()
     if(L->nrows != L->ncols) eslog::error("L is not square\n");
     if(L->nrows != X->nrows) eslog::error("incompatible matrices\n");
     if(h_X_rowtrails->size != X->nrows) eslog::error("wrong X rowtrails size\n");
+    if(h_L->prop.uplo != 'L') eslog::error("matrix L must have uplo=L\n");
 
     ator_ws_persistent = std::make_unique<AllocatorArena_new>(false, true, gpu::mgm::get_natural_pitch_align());
     ator_ws_tmp_linear = std::make_unique<AllocatorArena_new>(false, true, gpu::mgm::get_natural_pitch_align());
@@ -104,6 +105,8 @@ void trsm_trirhs_chunk_splitfactor<T,I>::setup()
     op_h_submatrix_L_top.setup();
     size_t nnz_L_top = op_h_submatrix_L_top.get_output_matrix_nnz();
     h_sub_L_top_sp.set(k_size, k_size, nnz_L_top, cfg.trsm_factor_order, AllocatorHostPinend_new::get_singleton());
+    h_sub_L_top_sp.prop.uplo = h_L->prop.uplo;
+    h_sub_L_top_sp.prop.diag = h_L->prop.diag;
     op_h_submatrix_L_top.set_matrix_dst(h_sub_L_top_sp);
 
     op_h_submatrix_L_bot.set_matrix_src(h_L);
@@ -164,7 +167,7 @@ void trsm_trirhs_chunk_splitfactor<T,I>::setup()
 
 
 template<typename T, typename I>
-size_t trsm_trirhs_chunk_splitfactor<T,I>::get_wss_internal()
+size_t gpu_trsm_trirhs_chunk_splitfactor<T,I>::get_wss_internal()
 {
     if(!called_setup) eslog::error("setup was not called\n");
 
@@ -174,7 +177,7 @@ size_t trsm_trirhs_chunk_splitfactor<T,I>::get_wss_internal()
 
 
 template<typename T, typename I>
-size_t trsm_trirhs_chunk_splitfactor<T,I>::get_wss_persistent()
+size_t gpu_trsm_trirhs_chunk_splitfactor<T,I>::get_wss_persistent()
 {
     if(!called_setup) eslog::error("setup was not called\n");
 
@@ -184,7 +187,7 @@ size_t trsm_trirhs_chunk_splitfactor<T,I>::get_wss_persistent()
 
 
 template<typename T, typename I>
-size_t trsm_trirhs_chunk_splitfactor<T,I>::get_wss_tmp_preprocess()
+size_t gpu_trsm_trirhs_chunk_splitfactor<T,I>::get_wss_tmp_preprocess()
 {
     if(!called_setup) eslog::error("setup was not called\n");
 
@@ -194,7 +197,7 @@ size_t trsm_trirhs_chunk_splitfactor<T,I>::get_wss_tmp_preprocess()
 
 
 template<typename T, typename I>
-size_t trsm_trirhs_chunk_splitfactor<T,I>::get_wss_tmp_perform()
+size_t gpu_trsm_trirhs_chunk_splitfactor<T,I>::get_wss_tmp_perform()
 {
     if(!called_setup) eslog::error("setup was not called\n");
 
@@ -204,7 +207,7 @@ size_t trsm_trirhs_chunk_splitfactor<T,I>::get_wss_tmp_perform()
 
 
 template<typename T, typename I>
-void trsm_trirhs_chunk_splitfactor<T,I>::set_ws_persistent(void * ws_persistent_)
+void gpu_trsm_trirhs_chunk_splitfactor<T,I>::set_ws_persistent(void * ws_persistent_)
 {
     if(ws_persistent_ == nullptr && wss_persistent > 0) eslog::error("persistent workspace is null\n");
     if(ws_persistent != nullptr) eslog::error("cannot re-set persistent workspace\n");
@@ -215,7 +218,7 @@ void trsm_trirhs_chunk_splitfactor<T,I>::set_ws_persistent(void * ws_persistent_
 
 
 template<typename T, typename I>
-void trsm_trirhs_chunk_splitfactor<T,I>::preprocess_submit(void * ws_tmp)
+void gpu_trsm_trirhs_chunk_splitfactor<T,I>::preprocess_submit(void * ws_tmp)
 {
     if(!called_setup) eslog::error("setup has not been called\n");
     if(called_preprocess) eslog::error("preprocess has already been called\n");
@@ -251,13 +254,13 @@ void trsm_trirhs_chunk_splitfactor<T,I>::preprocess_submit(void * ws_tmp)
 
 
 template<typename T, typename I>
-void trsm_trirhs_chunk_splitfactor<T,I>::perform_submit(void * ws_tmp)
+void gpu_trsm_trirhs_chunk_splitfactor<T,I>::perform_submit(void * ws_tmp)
 {
     if(!called_preprocess) eslog::error("preprocess has not been called\n");
     if(ws_tmp == nullptr && wss_tmp_perform > 0) eslog::error("temporary workspace is null\n");
 
-    ator_ws_tmp_linear.set(ws_tmp, wss_tmp_preprocess_linear);
-    ator_ws_tmp_overlap.set(ws_tmp + wss_tmp_preprocess_linear, wss_tmp_preprocess_overlap);
+    ator_ws_tmp_linear.set(ws_tmp, wss_tmp_perform_linear);
+    ator_ws_tmp_overlap.set(ws_tmp + wss_tmp_perform_linear, wss_tmp_preprocess_overlap);
 
     op_h_submatrix_L_top.perform_values();
 
@@ -280,7 +283,7 @@ void trsm_trirhs_chunk_splitfactor<T,I>::perform_submit(void * ws_tmp)
 
 
 #define INSTANTIATE_T_I(T,I) \
-template class trsm_trirhs_chunk_splitfactor<T,I>;
+template class gpu_trsm_trirhs_chunk_splitfactor<T,I>;
 
     #define INSTANTIATE_T(T) \
     INSTANTIATE_T_I(T,int32_t) \
