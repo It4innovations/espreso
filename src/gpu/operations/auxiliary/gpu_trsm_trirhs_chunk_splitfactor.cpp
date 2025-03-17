@@ -260,7 +260,7 @@ void gpu_trsm_trirhs_chunk_splitfactor<T,I>::perform_submit(void * ws_tmp)
     if(ws_tmp == nullptr && wss_tmp_perform > 0) eslog::error("temporary workspace is null\n");
 
     ator_ws_tmp_linear.set(ws_tmp, wss_tmp_perform_linear);
-    ator_ws_tmp_overlap.set(ws_tmp + wss_tmp_perform_linear, wss_tmp_preprocess_overlap);
+    ator_ws_tmp_overlap.set(ws_tmp + wss_tmp_perform_linear, wss_tmp_perform_overlap);
 
     op_h_submatrix_L_top.perform_values();
 

@@ -1,6 +1,6 @@
 
-#ifndef SRC_GPU_OPERATIONS_TRSM_HCSX_DDNY_DDNY_TRI_H
-#define SRC_GPU_OPERATIONS_TRSM_HCSX_DDNY_DDNY_TRI_H
+#ifndef SRC_GPU_OPERATIONS_AUXILIARY_TRSM_HCSX_DDNY_DDNY_TRI_SPLITRHS_H
+#define SRC_GPU_OPERATIONS_AUXILIARY_TRSM_HCSX_DDNY_DDNY_TRI_SPLITRHS_H
 
 #include "math/primitives_new/matrix_csx_view_new.h"
 #include "math/primitives_new/matrix_dense_view_new.h"
@@ -18,45 +18,34 @@ namespace operations {
 
 
 template<typename T, typename I>
-class trsm_hcsx_ddny_tri
+class trsm_hcsx_ddny_tri_splitrhs
 {
     // solve A * X = B
 public:
     struct config
     {
-        char strategy = '_'; // split Rhs, split Factor
         struct {
             char algorithm = '_'; // Uniform, Minimum work
             int parameter = 0; // meaning depends on algorithm
         } partition;
-        struct {
-            char factor_order_sp = '_'; // Rowmajor, Colmajor
-            char factor_order_dn = '_'; // Rowmajor, Colmajor
-            char spdn_criteria = '_'; // Sparse only, Dense only, fraction of Chunks is sparse, fraction of siZe is sparse, densiTy of factor part
-            double spdn_param = 0;
-        } splitrhs;
-        struct {
-            char trsm_factor_spdn = '_'; // Sparse, Dense
-            char trsm_factor_order = '_'; // Rowmajor, Colmajor
-            char gemm_factor_prune = '_'; // No, Rows only, Cols only, All
-            char gemm_factor_order_sp = '_'; // Rowmajor, Colmajor
-            char gemm_factor_order_dn = '_'; // Rowmajor, Colmajor
-            char gemm_spdn_criteria = '_'; // Sparse only, Dense only, fraction of Chunks is sparse, fraction of siZe is sparse, densiTy of factor part
-            double gemm_spdn_param = 0;
-        } splitfactor;
+        char factor_order_sp = '_'; // Rowmajor, Colmajor
+        char factor_order_dn = '_'; // Rowmajor, Colmajor
+        char spdn_criteria = '_'; // Sparse only, Dense only, fraction of Chunks is sparse, fraction of siZe is sparse, densiTy of factor part
+        double spdn_param = 0;
     };
 public:
-    trsm_hcsx_ddny_tri() = default;
-    trsm_hcsx_ddny_tri(const trsm_hcsx_ddny_tri &) = delete;
-    trsm_hcsx_ddny_tri(trsm_hcsx_ddny_tri &&) = delete;
-    trsm_hcsx_ddny_tri & operator=(const trsm_hcsx_ddny_tri &) = delete;
-    trsm_hcsx_ddny_tri & operator=(trsm_hcsx_ddny_tri &&) = delete;
-    ~trsm_hcsx_ddny_tri() = default;
+    trsm_hcsx_ddny_tri_splitrhs() = default;
+    trsm_hcsx_ddny_tri_splitrhs(const trsm_hcsx_ddny_tri_splitrhs &) = delete;
+    trsm_hcsx_ddny_tri_splitrhs(trsm_hcsx_ddny_tri_splitrhs &&) = delete;
+    trsm_hcsx_ddny_tri_splitrhs & operator=(const trsm_hcsx_ddny_tri_splitrhs &) = delete;
+    trsm_hcsx_ddny_tri_splitrhs & operator=(trsm_hcsx_ddny_tri_splitrhs &&) = delete;
+    ~trsm_hcsx_ddny_tri_splitrhs() = default;
 public:
+    void set_config(config cfg_);
     void set_handles(gpu::mgm::queue q_, gpu::spblas::handle spblas_handle_, gpu::dnblas::handle dnblas_handle_);
     void set_matrix_h_L(MatrixCsxView_new<T,I> * h_L_);
     void set_matrix_d_X(MatrixDenseView_new<T> * d_X_);
-    void set_X_pattern(MatrixCsxView<T,I> * h_X_pattern_);
+    void calc_X_pattern(MatrixCsxView<T,I> & X_pattern_host);
     void setup();
     size_t get_wss_internal();
     size_t get_wss_persistent();
@@ -72,7 +61,6 @@ private:
     gpu::dnblas::handle handle_dnblas;
     MatrixCsxView_new<T,I> * h_L = nullptr;
     MatrixDenseView_new<T> * d_X = nullptr;
-    MatrixCsxView<T,I> * h_X_pattern = nullptr;
     void * ws_persistent = nullptr;
     size_t wss_internal = 0;
     size_t wss_persistent = 0;
@@ -91,8 +79,19 @@ private:
     std::unique_ptr<AllocatorArena_new> ator_ws_persistent;
     std::unique_ptr<AllocatorArena_new> ator_ws_tmp_linear;
     std::unique_ptr<AllocatorSinglePointer_new> ator_ws_tmp_overlap;
-    std::unique_ptr<trsm_hcsx_ddny_tri_splitrhs<T,I>> trsm_splitrhs;
-    std::unique_ptr<trsm_hcsx_ddny_tri_splitfactor<T,I>> trsm_splitfactor;
+    VectorDenseView_new<I> h_X_colpivots;
+    VectorDenseView_new<I> h_X_rowtrails;
+    VectorDenseView_new<I> h_partition;
+    VectorDenseView_new<I> h_L_nnzinsubs_splitrhs;
+    size_t num_chunks = 0;
+    size_t first_dense_chunk;
+    std::vector<gpu_trsm_trirhs_chunk_splitrhs<T,I>> ops_chunks;
+    MatrixCsxData_new<T,I> h_L_reordered;
+    MatrixCsxData_new<T,I> * h_L_to_use = nullptr;
+    MatrixCsxData_new<T,I> d_L_sp;
+    MatrixDenseData_new<T> d_L_dn;
+    convert_csx_csy_map<T,I> op_h_L_reorder;
+    submatrix_dcsx_ddny<T,I> op_d_sub_L_sp2dn;
 };
 
 
@@ -104,4 +103,4 @@ private:
 
 
 
-#endif /* SRC_GPU_OPERATIONS_TRSM_HCSX_DDNY_DDNY_TRI_H */
+#endif /* SRC_GPU_OPERATIONS_AUXILIARY_TRSM_HCSX_DDNY_DDNY_TRI_SPLITRHS_H */

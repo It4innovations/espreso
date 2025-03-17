@@ -151,9 +151,11 @@ void gpu_trsm_trirhs_chunk_splitrhs<T,I>::setup()
         wss_tmp_peform_overlap = std::max(wss_tmp_peform_overlap, op_d_sub_L_sp.get_wss_tmp_perform());
     }
     if(cfg.factor_spdn == 'D') {
+        size_t dense_size = d_L_dn->nrows;
+        size_t dense_start = dense_size - k_size;
         op_sub_L_dn.set_matrix_src(d_L_dn);
         op_sub_L_dn.set_matrix_dst(d_sub_L_dn);
-        op_sub_L_dn.set_bounds(k_start, d_L->nrows, k_start, d_L->ncols);
+        op_sub_L_dn.set_bounds(dense_start, d_L_dn->nrows, dense_start, d_L_dn->ncols);
     }
 
     d_sub_X.set_view(k_size, rhs_size, d_X->ld, d_X->order, nullptr);
@@ -280,7 +282,7 @@ void gpu_trsm_trirhs_chunk_splitrhs<T,I>::perform_submit(void * ws_tmp)
     if(ws_tmp == nullptr && wss_tmp_perform > 0) eslog::error("temporary workspace is null\n");
 
     ator_ws_tmp_linear.set(ws_tmp, wss_tmp_perform_linear);
-    ator_ws_tmp_overlap.set(ws_tmp + wss_tmp_perform_linear, wss_tmp_preprocess_overlap);
+    ator_ws_tmp_overlap.set(ws_tmp + wss_tmp_perform_linear, wss_tmp_perform_overlap);
 
     if(cfg.factor_spdn == 'S') {
         d_sub_L_sp.alloc();
