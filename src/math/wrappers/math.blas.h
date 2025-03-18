@@ -64,8 +64,6 @@ namespace blas {
     template<typename T>
     void gemm(MatrixDenseView_new<T> & A, MatrixDenseView_new<T> & B, MatrixDenseView_new<T> & C, T alpha = T{1}, T beta = T{0});
 
-    enum struct herk_mode { AhA, AAh };
-
     template<typename T>
     void herk(MatrixDenseView_new<T> & A, MatrixDenseView_new<T> & C, herk_mode mode, utils::remove_complex_t<T> alpha, utils::remove_complex_t<T> beta);
 

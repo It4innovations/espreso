@@ -40,6 +40,8 @@ namespace math { // interface to wrappers
 namespace espreso {
 namespace math {
 
+    enum struct herk_mode { AhA, AAh };
+
     template <typename T, typename I> void copy(Vector_Dense<T, I>  &x, const Vector_Dense<T, I>  &y) { blas::copy(x.size           , x.vals, 1, y.vals, 1); }
     template <typename T, typename I> void copy(Vector_Sparse<T, I> &x, const Vector_Sparse<T, I> &y) { blas::copy(x.nnz            , x.vals, 1, y.vals, 1); }
     template <typename T, typename I> void copy(Matrix_Dense<T, I>  &x, const Matrix_Dense<T, I>  &y) { blas::copy(x.nrows * x.ncols, x.vals, 1, y.vals, 1); }

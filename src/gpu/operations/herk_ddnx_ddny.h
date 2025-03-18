@@ -5,6 +5,7 @@
 #include "math/primitives_new/matrix_dense_view_new.h"
 #include "gpu/gpu_management.h"
 #include "gpu/gpu_dnblas.h"
+#include "math/math.h"
 
 
 
@@ -20,7 +21,6 @@ class herk_ddnx_ddny
     // C = alpha * A * Ah + beta * C
     // C = alpha * Ah * A + beta * C
 public:
-    enum struct herk_mode { AhA, AAh };
     using Treal = utils::remove_complex_t<T>;
 protected:
     herk_ddnx_ddny() = default;
@@ -37,11 +37,11 @@ public:
     void set_matrix_A(MatrixDenseView_new<T> * A_);
     void set_matrix_C(MatrixDenseView_new<T> * C_);
     void set_coefficients(Treal alpha_, Treal beta_);
-    void set_mode(herk_mode mode_);
+    void set_mode(math::herk_mode mode_);
     void setup();
     size_t get_wss_tmp_perform();
     void perform_submit(void * ws_tmp);
-    static void submit_all(gpu::mgm::queue q, gpu::dnblas::handle handle_dnblas, MatrixDenseView_new<T> * A, MatrixDenseView_new<T> * C, Treal alpha, Treal beta, herk_mode mode, Allocator_new * ator_gpu);
+    static void submit_all(gpu::mgm::queue q, gpu::dnblas::handle handle_dnblas, MatrixDenseView_new<T> * A, MatrixDenseView_new<T> * C, Treal alpha, Treal beta, math::herk_mode mode, Allocator_new * ator_gpu);
 protected:
     gpu::mgm::queue q;
     gpu::dnblas::handle handle_dnblas;
@@ -49,7 +49,7 @@ protected:
     MatrixDenseView_new<T> * C = nullptr;
     Treal alpha = Treal{1};
     Treal beta = Treal{0};
-    herk_mode mode;
+    math::herk_mode mode;
     size_t wss_tmp_perform = 0;
     bool called_set_handles = false;
     bool called_set_mode = false;
