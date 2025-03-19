@@ -1,6 +1,6 @@
 
-#ifndef SRC_GPU_OPERATIONS_AUXILIARY_SC_SYMM_HCSX_DDNY_TRIA_H
-#define SRC_GPU_OPERATIONS_AUXILIARY_SC_SYMM_HCSX_DDNY_TRIA_H
+#ifndef SRC_GPU_OPERATIONS_SC_SYMM_HCSX_DDNY_TRIA_H
+#define SRC_GPU_OPERATIONS_SC_SYMM_HCSX_DDNY_TRIA_H
 
 #include "math/primitives_new/matrix_csx_view_new.h"
 #include "math/primitives_new/matrix_dense_view_new.h"
@@ -39,8 +39,8 @@ public:
     void set_config(config cfg_);
     void set_handles(gpu::mgm::queue q_, gpu::spblas::handle spblas_handle_, gpu::dnblas::handle dnblas_handle_);
     void set_coefficients(Treal alpha_);
-    void set_h_A11_solver(DirectSparseSolver<T,I> * A11_solver_);
-    void set_A12(MatrixCsxView_new<T,I> * A12_);
+    void set_h_A11_solver(DirectSparseSolver<T,I> * h_A11_solver_);
+    void set_h_A12(MatrixCsxView_new<T,I> * h_A12_);
     // void set_A22(MatrixCsxView_new<T,I> * A22); // assume it is full of zeros
     void set_d_sc(MatrixDenseView_new<T> * d_sc_);
     void setup();
@@ -56,8 +56,8 @@ private:
     gpu::mgm::queue q;
     gpu::spblas::handle handle_spblas;
     gpu::dnblas::handle handle_dnblas;
-    DirectSparseSolver<T,I> * A11_solver = nullptr;
-    MatrixCsxView_new<T,I> * A12 = nullptr;
+    DirectSparseSolver<T,I> * h_A11_solver = nullptr;
+    MatrixCsxView_new<T,I> * h_A12 = nullptr;
     MatrixDenseView_new<T> * d_sc = nullptr;
     Treal alpha = T{1};
     void * ws_persistent = nullptr;
@@ -111,4 +111,4 @@ private:
 }
 }
 
-#endif /* SRC_GPU_OPERATIONS_AUXILIARY_SC_SYMM_HCSX_DDNY_TRIA_H */
+#endif /* SRC_GPU_OPERATIONS_SC_SYMM_HCSX_DDNY_TRIA_H */

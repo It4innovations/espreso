@@ -4,6 +4,7 @@
 #include "totalfeti.explicit.h"
 #include "totalfeti.explicit.sc.h"
 #include "totalfeti.gpu.h"
+#include "totalfeti.explicit.gpusctria.h"
 #include "hybridfeti.implicit.h"
 #include "feti/projector/projector.h"
 
@@ -57,6 +58,10 @@ DualOperator<T>* DualOperator<T>::create(FETI<T> &feti, const step::Step &step)
         case FETIConfiguration::DUAL_OPERATOR::EXPLICIT_SC_GPUAPPLY:
             eslog::info(" = DUAL OPERATOR         EXPLICIT TOTAL FETI USING SCHUR COMPLEMENT, ASSEMBLE CPU, APPLY GPU = \n");
             dual = new TotalFETIExplicitSc<T,int>(feti, true);
+            break;
+        case FETIConfiguration::DUAL_OPERATOR::EXPLICIT_GPU_SCTRIA:
+            eslog::info(" = DUAL OPERATOR                               EXPLICIT TOTAL FETI ON GPU USING TRIANGULAR B = \n");
+            dual = new TotalFETIExplicitGpuScTria<T,int>(feti);
             break;
         }
         break;

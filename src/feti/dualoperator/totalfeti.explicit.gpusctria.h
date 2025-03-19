@@ -1,0 +1,84 @@
+
+#ifndef SRC_FETI_DUALOPERATOR_TOTALFETI_EXPLICIT_GPU_SCTRIA_H_
+#define SRC_FETI_DUALOPERATOR_TOTALFETI_EXPLICIT_GPU_SCTRIA_H_
+
+#include "dualoperator.h"
+#include "math/wrappers/math.sc_solver.h"
+#include "gpu/gpu_management.h"
+#include "gpu/gpu_dnblas.h"
+
+#include "math/math.h"
+
+namespace espreso {
+
+template <typename T, typename I>
+class TotalFETIExplicitGpuScTria: public DualOperator<T> {
+public:
+    TotalFETIExplicitGpuScTria(FETI<T> &feti);
+    ~TotalFETIExplicitGpuScTria();
+
+    void info();
+    void set(const step::Step &step);
+    void update(const step::Step &step);
+
+    // y = F * x
+    void apply(const Vector_Dual<T> &x, Vector_Dual<T> &y);
+    void apply(const Matrix_Dual<T> &x, Matrix_Dual<T> &y);
+    // y = K+(f - Bt * x)
+    void toPrimal(const Vector_Dual<T> &x, std::vector<Vector_Dense<T> > &y);
+
+protected:
+    void print(const step::Step &step);
+
+    using DualOperator<T>::feti;
+    using DualOperator<T>::d;
+
+    void _apply_cpu(const Vector_Dual<T> &x, Vector_Dual<T> &y);
+    void _apply_gpu(const Vector_Dual<T> &x, Vector_Dual<T> &y);
+
+    void _apply(const Vector_Dual<T> &x, Vector_Dual<T> &y);
+
+private:
+    struct per_domain_stuff
+    {
+        Matrix_CSR<T,I> Kreg;
+        DirectSparseSolver<T> solver_Kreg;
+        I n_dofs_domain;
+        I n_dofs_interface;
+        I n_nz_factor;
+        MatrixCsxView_new<T,I> h_Bt;
+        MatrixDenseView_new<T> d_F;
+        Matrix_Dense<T,I> d_F_old;
+        gpu::operations::sc_symm_hcsx_ddny_tria<T,I> op_sc;
+        Vector_Dense<T,I,gpu::mgm::Ad> d_apply_x;
+        Vector_Dense<T,I,gpu::mgm::Ad> d_apply_y;
+        Vector_Dense<T,I,gpu::mgm::Ad> d_apply_z;
+        Vector_Dense<T,I,gpu::mgm::Ad> d_apply_w;
+        Vector_Dense<T,I,gpu::mgm::Ad> d_applyg_D2C;
+    };
+    gpu::mgm::queue main_q;
+    std::vector<gpu::mgm::queue> queues;
+    std::vector<gpu::dnblas::handle> handles_dense;
+    std::vector<gpu::spblas::handle> handles_sparse;
+    std::vector<per_domain_stuff> domain_data;
+    size_t n_domains = 0;
+    size_t n_queues = 0;
+    std::vector<MatrixDenseData_new<T,I>> d_Fs_allocated;
+    size_t total_wss_internal = 0;
+    size_t total_wss_persistent = 0;
+    void * ws_persistent = nullptr;
+    std::unique_ptr<AllocatorArena_new> ator_ws_persistent;
+    size_t wss_tmp_for_cbmba = 0;
+    void * ws_tmp_for_cbmba = nullptr;
+    std::unique_ptr<AllocatorCBMB_new> ator_tmp_cbmba;
+    Vector_Dense<T,I,Ad> d_applyg_x_cluster;
+    Vector_Dense<T,I,Ad> d_applyg_y_cluster;
+    Vector_Dense<T*,I,Ad> d_applyg_xs_pointers;
+    Vector_Dense<T*,I,Ad> d_applyg_ys_pointers;
+    Vector_Dense<I,I,Ad> d_applyg_n_dofs_interfaces;
+    Vector_Dense<I*,I,Ad> d_applyg_D2Cs_pointers;
+};
+
+}
+
+#endif /* SRC_FETI_DUALOPERATOR_TOTALFETI_EXPLICIT_GPU_SCTRIA_H_ */

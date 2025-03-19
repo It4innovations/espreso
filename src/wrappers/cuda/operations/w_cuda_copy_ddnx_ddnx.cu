@@ -34,7 +34,9 @@ static void copy_emptyfirst(T * src, size_t ld_src, T * dst, size_t ld_dst, size
     T * sub_dst = dst + ld_dst * ip;
     size_t start = (ip / warpSize) * warpSize;
     for(size_t is = start + threadIdx.x; is < size_secdary; is += blockDim.x) {
-        sub_dst[is] = sub_src[is];
+        if(is >= sp) {
+            sub_dst[is] = sub_src[is];
+        }
     }
 }
 

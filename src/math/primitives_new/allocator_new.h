@@ -3,6 +3,7 @@
 #define SRC_MATH_PRIMITIVES_NEW_ALLOCATOR_NEW_H_
 
 #include "gpu/gpu_management.h"
+#include "basis/utilities/cbmb_allocator.h"
 
 
 
@@ -312,7 +313,40 @@ public:
 
 class AllocatorCBMB_new : public Allocator_new
 {
-
+private:
+    size_t align_B = 1;
+    bool on_cpu;
+    bool on_gpu;
+    cbmba_resource resource;
+    cbmba ator;
+public:
+    AllocatorCBMB_new(bool on_cpu_, bool on_gpu_, size_t align_B_, void * memory, size_t capacity) : on_cpu(on_cpu_), on_gpu(on_gpu_), align_B(align_B_), resource(memory, capacity), ator(resource, align_B_) {}
+    AllocatorCBMB_new(const AllocatorCBMB_new & other) = delete;
+    AllocatorCBMB_new(AllocatorCBMB_new && other) = delete;
+    AllocatorCBMB_new & operator=(const AllocatorCBMB_new & other) = delete;
+    AllocatorCBMB_new & operator=(AllocatorCBMB_new && other) = delete;
+    virtual ~AllocatorCBMB_new() {}
+    virtual void * alloc(size_t num_bytes) override
+    {
+        ator.allocate(num_bytes);
+    }
+    virtual void free(void * & ptr) override
+    {
+        ator.deallocate(ptr);
+        ptr = nullptr;
+    }
+    virtual bool is_on_cpu() override
+    {
+        return on_cpu;
+    }
+    virtual bool is_on_gpu() override
+    {
+        return on_gpu;
+    }
+    virtual size_t get_align() override
+    {
+        return align_B;
+    }
 };
 
 

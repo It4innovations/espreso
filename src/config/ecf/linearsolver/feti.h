@@ -27,6 +27,7 @@ struct FETIConfiguration: public ECFDescription {
         IMPLICIT_GPU,
         EXPLICIT_SC,
         EXPLICIT_SC_GPUAPPLY,
+        EXPLICIT_GPU_SCTRIA
     };
 
     enum class PROJECTOR {

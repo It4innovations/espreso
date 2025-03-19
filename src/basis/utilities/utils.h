@@ -123,6 +123,13 @@ namespace utils {
         if constexpr(std::is_signed_v<I>) if(num == 0) return 0;
         return ((num - 1) / align + 1) * align;
     }
+    
+    template<typename I>
+    I round_down(I num, I align)
+    {
+        static_assert(std::is_integral_v<I>);
+        return (num / align) * align;
+    }
 }
 
 }

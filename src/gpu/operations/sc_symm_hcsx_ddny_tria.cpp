@@ -1,5 +1,5 @@
 
-#include "gpu/operations/auxiliary/sc_symm_hcsx_ddny_tria.h"
+#include "gpu/operations/sc_symm_hcsx_ddny_tria.h"
 
 
 
@@ -326,9 +326,6 @@ void sc_symm_hcsx_ddny_tria<T,I>::preprocess_submit(void * ws_tmp)
 
     op_d_trsm.set_ws_persistent(ator_ws_persistent->alloc(op_d_trsm.get_wss_persistent()));
     op_d_trsm.preprocess_submit(ator_ws_tmp_overlap->alloc(op_d_trsm->get_wss_tmp_perform()));
-    
-
-    // todo
 
     ator_ws_tmp_linear.unset();
     ator_ws_tmp_overlap.unset();
