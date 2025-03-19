@@ -88,6 +88,7 @@ void gpu_trsm_trirhs_chunk_splitfactor<T,I>::setup()
     if(!called_set_config) eslog::error("config is not set\n");
     if(!called_set_range) eslog::error("range is not set\n");
     if(!called_set_handles) eslog::error("handles are not set\n");
+    if(called_setup) eslog::error("setup has already been called\n");
     if(h_L == nullptr) eslog::error("matrix L is not set\n");
     if(d_X == nullptr) eslog::error("matrix X is not set\n");
     if(h_X_rowtrails == nullptr) eslog::error("X rowtrails are not set\n");

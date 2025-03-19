@@ -38,7 +38,6 @@ void herk_ddnx_ddny<T>::set_handles(gpu::mgm::queue q_, gpu::dnblas::handle dnbl
 template<typename T>
 void herk_ddnx_ddny<T>::set_matrix_A(MatrixDenseView_new<T,I> * A_)
 {
-    if(!called_set_handles) eslog::error("handles are not set\n");
     if(A != nullptr) eslog::error("matrix A is already set\n");
     if(A_ == nullptr) eslog::error("A cannot be nullptr\n");
 
@@ -50,7 +49,6 @@ void herk_ddnx_ddny<T>::set_matrix_A(MatrixDenseView_new<T,I> * A_)
 template<typename T>
 void herk_ddnx_ddny<T>::set_matrix_C(MatrixDenseView_new<T> * C_)
 {
-    if(!called_set_handles) eslog::error("handles are not set\n");
     if(C != nullptr) eslog::error("matrix C is already set\n");
     if(C_ == nullptr) eslog::error("C cannot be nullptr\n");
 
