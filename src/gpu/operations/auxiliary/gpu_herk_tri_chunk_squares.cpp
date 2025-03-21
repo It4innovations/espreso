@@ -25,12 +25,12 @@ void gpu_herk_tri_chunk_squares<T,I>::set_range(size_t k_start_, size_t k_end_)
 template<typename T, typename I>
 void gpu_herk_tri_chunk_squares<T,I>::set_handles(gpu::mgm::queue q_, gpu::dnblas::handle handle_dnblas_)
 {
-    if(called_set_handle) eslog::error("handles are already set\n");
+    if(called_set_handles) eslog::error("handles are already set\n");
 
     q = q_;
     handle_dnblas = handle_dnblas_;
 
-    called_set_handle = true;
+    called_set_handles = true;
 }
 
 
@@ -80,7 +80,7 @@ void gpu_herk_tri_chunk_squares<T,I>::set_h_A_trails(VectorDenseView_new<I> * h_
 
 
 template<typename T, typename I>
-void gpu_herk_tri_chunk_stairs<T,I>::set_coefficients(Treal alpha_)
+void gpu_herk_tri_chunk_squares<T,I>::set_coefficients(Treal alpha_)
 {
     alpha = alpha_;
 }
@@ -106,7 +106,7 @@ void gpu_herk_tri_chunk_squares<T,I>::setup()
     if(d_C->nrows != d_A_left->nrows) eslog::error("incompatible matrices\n");
 
     k_size = k_end - k_start;
-    n_end = h_A_trails[k_end - 1] + 1;
+    n_end = h_A_trails->vals[k_end - 1] + 1;
     n_size = n_end;
 
     d_sub_C.set_view(n_size, n_size, d_C->ld, d_C->order, nullptr);
@@ -121,13 +121,14 @@ void gpu_herk_tri_chunk_squares<T,I>::setup()
     op_sub_A_top.set_matrix_dst(&d_sub_A_top);
     op_sub_A_top.set_bounds(k_start, k_end, 0, n_end);
 
-    op_herk.set_handles(q, handle_dnblas);
-    op_herk.set_matrix_A(&d_sub_A_top);
-    op_herk.set_matrix_C(d_sub_C);
-    op_herk.set_coefficients(alpha, Treal{1});
-    op_herk.set_mode(math::herk_mode::AhA);
-    op_herk.setup();
-    wss_tmp_perform = std::max(wss_tmp_perform, op_herk.get_wss_tmp_perform());
+    op_herk = herk_ddnx_ddny<T>::make();
+    op_herk->set_handles(q, handle_dnblas);
+    op_herk->set_matrix_A(&d_sub_A_top);
+    op_herk->set_matrix_C(&d_sub_C);
+    op_herk->set_coefficients(alpha, Treal{1});
+    op_herk->set_mode(math::blas::herk_mode::AhA);
+    op_herk->setup();
+    wss_tmp_perform = std::max(wss_tmp_perform, op_herk->get_wss_tmp_perform());
 
     called_setup = true;
 }
@@ -153,7 +154,7 @@ void gpu_herk_tri_chunk_squares<T,I>::perform_submit(void * ws_tmp)
     op_sub_C.perform();
     op_sub_A_top.perform();
 
-    op_herk.perform_submit(ws_tmp);
+    op_herk->perform_submit(ws_tmp);
 }
 
 
@@ -169,7 +170,7 @@ template class gpu_herk_tri_chunk_squares<T,I>;
         /* INSTANTIATE_T(float) */ \
         INSTANTIATE_T(double) \
         /* INSTANTIATE_T(std::complex<float>) */ \
-        /* INSTANTIATE_T(std::complex<double>) */
+        INSTANTIATE_T(std::complex<double>)
 
             INSTANTIATE
 
@@ -182,5 +183,3 @@ template class gpu_herk_tri_chunk_squares<T,I>;
 }
 }
 }
-
-#endif /* SRC_GPU_OPERATIONS_AUXILIARY_GPU_HERK_TRI_CHUNK_STAIRS_H */

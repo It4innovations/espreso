@@ -106,9 +106,9 @@ void prune_csx_matx<T,I>::set_vector_pruned_cols(VectorDenseView_new<I> * pruned
 
 
 template<typename T, typename I>
-void prune_csx_matx<T,I>::preprocess()
+void prune_csx_matx<T,I>::preprocess2()
 {
-    if(!called_preprocess) eslog::error("setup was not called\n");
+    if(!called_preprocess2) eslog::error("setup was not called\n");
     if(M_src == nullptr) eslog::error("source matrix is not set\n");
     if(prune_rows && pruned_rows_vec == nullptr) eslog::error("vector for pruned rows is not set\n");
     if(prune_cols && pruned_cols_vec == nullptr) eslog::error("vector for pruned cols is not set\n");
@@ -316,7 +316,7 @@ template class prune_csx_matx<T,I>;
         /* INSTANTIATE_T(float) */ \
         INSTANTIATE_T(double) \
         /* INSTANTIATE_T(std::complex<float>) */ \
-        /* INSTANTIATE_T(std::complex<double>) */
+        INSTANTIATE_T(std::complex<double>)
 
             INSTANTIATE
 

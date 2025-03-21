@@ -50,7 +50,7 @@ void herk_dnx_dny_tri<T,I>::set_matrix_C(MatrixDenseView_new<T> * C_)
 
 
 template<typename T, typename I>
-void herk_dnx_dny_tri<T,I>::set_coefficients(T alpha_, T beta_)
+void herk_dnx_dny_tri<T,I>::set_coefficients(Treal alpha_, Treal beta_)
 {
     alpha = alpha_;
     beta = beta_;
@@ -173,7 +173,7 @@ template<typename T, typename I>
 void herk_dnx_dny_tri<T,I>::perform_AhA()
 {
     MatrixDenseView_new<T> sub_A_trivial = A->get_submatrix_view(0, 0, 0, n);
-    herk_dnx_dny<T>::do_all(&sub_A_trivial, C, blas::herk_mode::AhA, T{0}, beta);
+    herk_dnx_dny<T>::do_all(&sub_A_trivial, C, blas::herk_mode::AhA, Treal{0}, beta);
 
     for(size_t ch = 0; ch < num_chunks; ch++) {
         if(cfg.strategy == 'T') {
@@ -199,7 +199,7 @@ void herk_dnx_dny_tri<T,I>::perform_AhA()
                 MatrixDenseView_new<T> sub_A = A->get_submatrix_view(k_start, k, n_start, n_end);
                 MatrixDenseView_new<T> sub_C = C->get_submatrix_view(n_start, n_end, n_start, n_end);
                 sub_C.prop.uplo = C->prop.uplo;
-                herk_dnx_dny<T>::do_all(&sub_A, &sub_C, mode, alpha, T{1});
+                herk_dnx_dny<T>::do_all(&sub_A, &sub_C, mode, alpha, Treal{1});
             }
         }
         if(cfg.strategy == 'Q') {
@@ -210,7 +210,7 @@ void herk_dnx_dny_tri<T,I>::perform_AhA()
             MatrixDenseView_new<T> sub_A = A->get_submatrix_view(k_start, k_end, 0, n_end);
             MatrixDenseView_new<T> sub_C = C->get_submatrix_view(0, n_end, 0, n_end);
             sub_C.prop.uplo = C->prop.uplo;
-            herk_dnx_dny<T>::do_all(&sub_A, &sub_C, mode, alpha, T{1});
+            herk_dnx_dny<T>::do_all(&sub_A, &sub_C, mode, alpha, Treal{1});
         }
     }
 }
@@ -221,7 +221,7 @@ template<typename T, typename I>
 void herk_dnx_dny_tri<T,I>::perform_AAh()
 {
     MatrixDenseView_new<T> sub_A_trivial = A->get_submatrix_view(0, n, 0, 0);
-    herk_dnx_dny<T>::do_all(&sub_A_trivial, C, blas::herk_mode::AAh, T{0}, beta);
+    herk_dnx_dny<T>::do_all(&sub_A_trivial, C, blas::herk_mode::AAh, Treal{0}, beta);
 
     for(size_t ch = 0; ch < num_chunks; ch++) {
         if(cfg.strategy == 'T') {
@@ -247,7 +247,7 @@ void herk_dnx_dny_tri<T,I>::perform_AAh()
                 MatrixDenseView_new<T> sub_A = A->get_submatrix_view(n_start, n_end, k_start, k);
                 MatrixDenseView_new<T> sub_C = C->get_submatrix_view(n_start, n_end, n_start, n_end);
                 sub_C.prop.uplo = C->prop.uplo;
-                herk_dnx_dny<T>::do_all(&sub_A, &sub_C, mode, alpha, T{1});
+                herk_dnx_dny<T>::do_all(&sub_A, &sub_C, mode, alpha, Treal{1});
             }
         }
         if(cfg.strategy == 'Q') {
@@ -258,7 +258,7 @@ void herk_dnx_dny_tri<T,I>::perform_AAh()
             MatrixDenseView_new<T> sub_A = A->get_submatrix_view(0, n_end, k_start, k_end);
             MatrixDenseView_new<T> sub_C = C->get_submatrix_view(0, n_end, 0, n_end);
             sub_C.prop.uplo = C->prop.uplo;
-            herk_dnx_dny<T>::do_all(&sub_A, &sub_C, mode, alpha, T{1});
+            herk_dnx_dny<T>::do_all(&sub_A, &sub_C, mode, alpha, Treal{1});
         }
     }
 }
@@ -293,7 +293,7 @@ template class herk_dnx_dny_tri<T,I>; \
         /* INSTANTIATE_T(float) */ \
         INSTANTIATE_T(double) \
         /* INSTANTIATE_T(std::complex<float>) */ \
-        /* INSTANTIATE_T(std::complex<double>) */
+        INSTANTIATE_T(std::complex<double>)
 
             INSTANTIATE
 

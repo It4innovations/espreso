@@ -25,12 +25,12 @@ void gpu_herk_tri_chunk_stairs<T,I>::set_range(size_t n_start_, size_t n_end_)
 template<typename T, typename I>
 void gpu_herk_tri_chunk_stairs<T,I>::set_handles(gpu::mgm::queue q_, gpu::dnblas::handle handle_dnblas_)
 {
-    if(called_set_handle) eslog::error("handles are already set\n");
+    if(called_set_handles) eslog::error("handles are already set\n");
 
     q = q_;
     handle_dnblas = handle_dnblas_;
 
-    called_set_handle = true;
+    called_set_handles = true;
 }
 
 
@@ -107,7 +107,7 @@ void gpu_herk_tri_chunk_stairs<T,I>::setup()
     if(d_C->nrows != d_A_left->nrows) eslog::error("incompatible matrices\n");
 
     n_size = n_end - n_start;
-    k_start = h_A_pivots.vals[n_start];
+    k_start = h_A_pivots->vals[n_start];
     k_size = d_A_left->ncols - k_start;
 
     d_C_lower = d_C;
@@ -116,11 +116,11 @@ void gpu_herk_tri_chunk_stairs<T,I>::setup()
         d_C_lower = &d_C_reordered;
     }
 
-    d_sub_C_herk.set_view(n_size, n_size, d_C_lower->order, nullptr);
+    d_sub_C_herk.set_view(n_size, n_size, d_C_lower->ld, d_C_lower->order, nullptr);
     d_sub_C_herk.prop.uplo = d_C_lower->prop.uplo;
-    d_sub_C_gemm.set_view(n_size, n_start, d_C_lower->order, nullptr);
-    d_sub_A_left.set_view(n_size, k_size, d_A_left->order, nullptr);
-    d_sub_A_top.set_view(k_size, n_start, d_A_top->order, nullptr);
+    d_sub_C_gemm.set_view(n_size, n_start, d_C_lower->ld, d_C_lower->order, nullptr);
+    d_sub_A_left.set_view(n_size, k_size, d_A_left->ld, d_A_left->order, nullptr);
+    d_sub_A_top.set_view(k_size, n_start, d_A_top->ld, d_A_top->order, nullptr);
 
     op_sub_C_herk.set_matrix_src(d_C_lower);
     op_sub_C_herk.set_matrix_dst(&d_sub_C_herk);
@@ -135,25 +135,27 @@ void gpu_herk_tri_chunk_stairs<T,I>::setup()
     op_sub_A_left.set_bounds(n_start, n_end, k_start, d_A_left->ncols);
 
     op_sub_A_top.set_matrix_src(d_A_top);
-    op_sub_A_top.set_matrix_dst(d_sub_A_top);
-    op_sub_A_top.set_bounds(k_start, d_A_top_>nrows, 0, n_start);
+    op_sub_A_top.set_matrix_dst(&d_sub_A_top);
+    op_sub_A_top.set_bounds(k_start, d_A_top->nrows, 0, n_start);
 
-    op_herk.set_handles(q, handle_dnblas);
-    op_herk.set_matrix_A(d_sub_A_left);
-    op_herk.set_matrix_C(d_sub_C_herk);
-    op_herk.set_coefficients(alpha, beta);
-    op_herk.set_mode(math::herk_mode::AAh);
-    op_herk.setup();
-    wss_tmp_perform = std::max(wss_tmp_perform, op_herk.get_wss_tmp_perform());
+    op_herk = herk_ddnx_ddny<T>::make();
+    op_herk->set_handles(q, handle_dnblas);
+    op_herk->set_matrix_A(&d_sub_A_left);
+    op_herk->set_matrix_C(&d_sub_C_herk);
+    op_herk->set_coefficients(alpha, beta);
+    op_herk->set_mode(math::blas::herk_mode::AAh);
+    op_herk->setup();
+    wss_tmp_perform = std::max(wss_tmp_perform, op_herk->get_wss_tmp_perform());
 
     if(n_start > 0) {
-        op_gemm.set_handles(q, handle_dnblas);
-        op_gemm.set_matrix_A(d_sub_A_left);
-        op_gemm.set_matrix_B(d_sub_A_top);
-        op_gemm.set_matrix_C(d_sub_c_gemm);
-        op_gemm.set_coefficients(alpha, beta);
-        op_gemm.setup();
-        wss_tmp_perform = std::max(wss_tmp_perform, op_gemm.get_wss_tmp_perform());
+        op_gemm = gemm_ddnx_ddny_ddnz<T>::make();
+        op_gemm->set_handles(q, handle_dnblas);
+        op_gemm->set_matrix_A(&d_sub_A_left);
+        op_gemm->set_matrix_B(&d_sub_A_top);
+        op_gemm->set_matrix_C(&d_sub_C_gemm);
+        op_gemm->set_coefficients(alpha, beta);
+        op_gemm->setup();
+        wss_tmp_perform = std::max(wss_tmp_perform, op_gemm->get_wss_tmp_perform());
     }
 
     called_setup = true;
@@ -186,10 +188,10 @@ void gpu_herk_tri_chunk_stairs<T,I>::perform_submit(void * ws_tmp)
     op_sub_A_left.perform();
     op_sub_A_top.perform();
 
-    op_herk.perform_submit(ws_tmp);
+    op_herk->perform_submit(ws_tmp);
 
     if(n_start > 0) {
-        op_gemm.perform_submit(ws_tmp);
+        op_gemm->perform_submit(ws_tmp);
     }
 }
 
@@ -206,7 +208,7 @@ template class gpu_herk_tri_chunk_stairs<T,I>;
         /* INSTANTIATE_T(float) */ \
         INSTANTIATE_T(double) \
         /* INSTANTIATE_T(std::complex<float>) */ \
-        /* INSTANTIATE_T(std::complex<double>) */
+        INSTANTIATE_T(std::complex<double>)
 
             INSTANTIATE
 
@@ -219,5 +221,3 @@ template class gpu_herk_tri_chunk_stairs<T,I>;
 }
 }
 }
-
-#endif /* SRC_GPU_OPERATIONS_AUXILIARY_GPU_HERK_TRI_CHUNK_STAIRS_H */

@@ -220,7 +220,7 @@ void trsm_csx_dny_tri<T,I>::preprocess()
                     op_pruning_subset.set_matrix(&sub_L_bot_test);
                     char pm = cfg.splitfactor.gemm_factor_prune;
                     op_pruning_subset.set_pruning_mode(pm == 'R' || pm == 'A', pm == 'C' || pm == 'A');
-                    op_pruning_subset.preprocess();
+                    op_pruning_subset.setup();
                     size_t nvals = op_pruning_subset.get_pruned_nrows() * op_pruning_subset.get_pruned_ncols();
                     sub_L_bot_test.clear();
                     op_pruning_subset.finalize();
@@ -314,7 +314,7 @@ template class trsm_csx_dny_tri<T,I>;
         /* INSTANTIATE_T(float) */ \
         INSTANTIATE_T(double) \
         /* INSTANTIATE_T(std::complex<float>) */ \
-        /* INSTANTIATE_T(std::complex<double>) */
+        INSTANTIATE_T(std::complex<double>)
 
             INSTANTIATE
 

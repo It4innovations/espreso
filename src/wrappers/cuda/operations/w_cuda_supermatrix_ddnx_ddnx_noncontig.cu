@@ -1,7 +1,9 @@
 
 #ifdef HAVE_CUDA
 
-#include "wrappers/cuda/w_cuda_supermatrix_ddnx_ddnx_noncontig.h"
+#include "wrappers/cuda/operations/w_cuda_supermatrix_ddnx_ddnx_noncontig.h"
+
+#include "wrappers/cuda/common_cuda_mgm.h"
 
 
 
@@ -55,7 +57,7 @@ static void do_supermatrix_both(I size_src_primary, I size_src_secdary, T * src,
     T * dst_prim = dst + ipd * ld_dst;
     T * src_prim = src + ips * ld_src;
 
-    for(I iss = threadIdx.x; iss < size_dst_secdary; iss += blockDim.x) {
+    for(I iss = threadIdx.x; iss < size_src_secdary; iss += blockDim.x) {
         I isd = map_secdary[iss];
         dst_prim[isd] = src_prim[iss];
     }
@@ -66,11 +68,11 @@ static void do_supermatrix_both(I size_src_primary, I size_src_secdary, T * src,
 template<typename T, typename I>
 void w_cuda_supermatrix_ddnx_ddnx_noncontig<T,I>::internal_perform()
 {
-    VectorDenseView_new<I> * map_primary = ((d_M_src->order == 'R') ? d_map_rows : d_map_cols);
-    VectorDenseView_new<I> * map_secdary = ((d_M_src->order == 'R') ? d_map_cols : d_map_rows);
+    VectorDenseView_new<I> * map_primary = ((d_M_src->order == 'R') ? d_row_map : d_col_map);
+    VectorDenseView_new<I> * map_secdary = ((d_M_src->order == 'R') ? d_col_map : d_row_map);
 
     if(map_primary == nullptr && map_secdary == nullptr) {
-        CHECK(cudaMemcpy2DAsync(d_M_dst->vals, d_M_dst->ld * sizeof(T), d_M_src->vals, d_M_src->ld * sizeof(T), d_M_src->get_size_secdary() * sizoef(T), d_M_src->get_size_primary(), cudaMemcpyDefault, q->stream));
+        CHECK(cudaMemcpy2DAsync(d_M_dst->vals, d_M_dst->ld * sizeof(T), d_M_src->vals, d_M_src->ld * sizeof(T), d_M_src->get_size_secdary() * sizeof(T), d_M_src->get_size_primary(), cudaMemcpyDefault, q->stream));
     }
     if(map_primary != nullptr && map_secdary == nullptr) {
         int bpg = d_M_dst->get_size_primary();
@@ -105,7 +107,7 @@ template class w_cuda_supermatrix_ddnx_ddnx_noncontig<T,I>;
         /* INSTANTIATE_T(float) */ \
         INSTANTIATE_T(double) \
         /* INSTANTIATE_T(std::complex<float>) */ \
-        /* INSTANTIATE_T(std::complex<double>) */
+        INSTANTIATE_T(std::complex<double>)
 
             INSTANTIATE
 

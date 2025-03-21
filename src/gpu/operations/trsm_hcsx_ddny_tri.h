@@ -5,9 +5,12 @@
 #include "math/primitives_new/matrix_csx_view_new.h"
 #include "math/primitives_new/matrix_dense_view_new.h"
 #include "math/primitives_new/vector_dense_view_new.h"
+#include "math/primitives_new/allocator_new.h"
 #include "gpu/gpu_management.h"
 #include "gpu/gpu_spblas.h"
 #include "gpu/gpu_dnblas.h"
+#include "gpu/operations/auxiliary/trsm_hcsx_ddny_tri_splitrhs.h"
+#include "gpu/operations/auxiliary/trsm_hcsx_ddny_tri_splitfactor.h"
 
 
 
@@ -57,7 +60,7 @@ public:
     void set_handles(gpu::mgm::queue q_, gpu::spblas::handle spblas_handle_, gpu::dnblas::handle dnblas_handle_);
     void set_matrix_h_L(MatrixCsxView_new<T,I> * h_L_);
     void set_matrix_d_X(MatrixDenseView_new<T> * d_X_);
-    void set_X_pattern(MatrixCsxView<T,I> * h_X_pattern_);
+    void set_X_pattern(MatrixCsxView_new<T,I> * h_X_pattern_);
     void setup();
     size_t get_wss_internal();
     size_t get_wss_persistent();
@@ -73,7 +76,7 @@ private:
     gpu::dnblas::handle handle_dnblas;
     MatrixCsxView_new<T,I> * h_L = nullptr;
     MatrixDenseView_new<T> * d_X = nullptr;
-    MatrixCsxView<T,I> * h_X_pattern = nullptr;
+    MatrixCsxView_new<T,I> * h_X_pattern = nullptr;
     void * ws_persistent = nullptr;
     size_t wss_internal = 0;
     size_t wss_persistent = 0;
@@ -87,8 +90,8 @@ private:
 private:
     size_t wss_tmp_preprocess_linear = 0;
     size_t wss_tmp_preprocess_overlap = 0;
-    size_t wss_tmp_peform_linear = 0;
-    size_t wss_tmp_peform_overlap = 0;
+    size_t wss_tmp_perform_linear = 0;
+    size_t wss_tmp_perform_overlap = 0;
     std::unique_ptr<AllocatorArena_new> ator_ws_persistent;
     std::unique_ptr<AllocatorArena_new> ator_ws_tmp_linear;
     std::unique_ptr<AllocatorSinglePointer_new> ator_ws_tmp_overlap;

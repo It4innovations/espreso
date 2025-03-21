@@ -2,11 +2,26 @@
 #ifdef HAVE_CUDA
 #ifdef USE_CUSPARSE_LEGACY
 
-#include "wrappers/cuda/operations/trsm_dcsx_ddny_ddny.h"
+#include "wrappers/cuda/operations/w_cusparse_trsm_dcsx_ddny_ddny.h"
 
-#include <cusparse.h>
+#if defined(__GNUC__) && !defined(__clang__)
+#define MY_COMPILER_GCC
+#elif defined(__clang__)
+#define MY_COMPILER_CLANG
+#endif
+
+// The legacy cusparse API is deprecated. I know, no need to remind me.
+#ifdef MY_COMPILER_GCC
+#pragma GCC diagnostic push
+#pragma GCC diagnostic ignored "-Wdeprecated-declarations"
+#endif
+#ifdef MY_COMPILER_CLANG
+#pragma clang diagnostic push
+#pragma clang diagnostic ignored "-Wdeprecated-declarations"
+#endif
 
 #include "wrappers/cuda/common_cusparse.h"
+#include "wrappers/cuda/common_cuda_mgm.h"
 
 
 
@@ -38,7 +53,7 @@ w_cusparse_trsm_dcsx_ddny_ddny<T,I>::w_cusparse_trsm_dcsx_ddny_ddny()
 template<typename T, typename I>
 w_cusparse_trsm_dcsx_ddny_ddny<T,I>::~w_cusparse_trsm_dcsx_ddny_ddny()
 {
-    if(called_setup) {
+    if(this->called_setup) {
         CHECK(cusparseDestroyMatDescr(data->descr_A));
         CHECK(cusparseDestroyCsrsm2Info(data->info));
     }
@@ -74,14 +89,14 @@ void w_cusparse_trsm_dcsx_ddny_ddny<T,I>::internal_setup()
     CHECK(cusparseSetMatType(data->descr_A, CUSPARSE_MATRIX_TYPE_GENERAL));
 
     size_t buffersize;
-    using U = cpp_to_cusparse_type_t<T>;
+    using U = cpp_to_cuda_type_t<T>;
     U alpha = U{1};
     if constexpr(std::is_same_v<T,float>)                CHECK(cusparseScsrsm2_bufferSizeExt(spblas_handle->h, 1, data->op_A, data->op_X, X->nrows, X->ncols, A->nnz, &alpha, data->descr_A, (U*)A->vals, A->ptrs, A->idxs, (U*)X->vals, X->ld, data->info, data->policy, &buffersize));
     if constexpr(std::is_same_v<T,double>)               CHECK(cusparseDcsrsm2_bufferSizeExt(spblas_handle->h, 1, data->op_A, data->op_X, X->nrows, X->ncols, A->nnz, &alpha, data->descr_A, (U*)A->vals, A->ptrs, A->idxs, (U*)X->vals, X->ld, data->info, data->policy, &buffersize));
     if constexpr(std::is_same_v<T,std::complex<float>>)  CHECK(cusparseCcsrsm2_bufferSizeExt(spblas_handle->h, 1, data->op_A, data->op_X, X->nrows, X->ncols, A->nnz, &alpha, data->descr_A, (U*)A->vals, A->ptrs, A->idxs, (U*)X->vals, X->ld, data->info, data->policy, &buffersize));
     if constexpr(std::is_same_v<T,std::complex<double>>) CHECK(cusparseZcsrsm2_bufferSizeExt(spblas_handle->h, 1, data->op_A, data->op_X, X->nrows, X->ncols, A->nnz, &alpha, data->descr_A, (U*)A->vals, A->ptrs, A->idxs, (U*)X->vals, X->ld, data->info, data->policy, &buffersize));
 
-    wss_internal = ((A.order == 'R') ? 0 : 8 * A.nnz);
+    wss_internal = ((A->order == 'R') ? 0 : 8 * A->nnz);
     wss_persistent = 0;
     wss_tmp_preprocess = buffersize;
     wss_tmp_perform = buffersize;
@@ -92,7 +107,7 @@ void w_cusparse_trsm_dcsx_ddny_ddny<T,I>::internal_setup()
 template<typename T, typename I>
 void w_cusparse_trsm_dcsx_ddny_ddny<T,I>::internal_preprocess(void * ws_tmp)
 {
-    using U = cpp_to_cusparse_type_t<T>;
+    using U = cpp_to_cuda_type_t<T>;
     U alpha = U{1};
     if constexpr(std::is_same_v<T,float>)                CHECK(cusparseScsrsm2_analysis(spblas_handle->h, 1, data->op_A, data->op_X, X->nrows, X->ncols, A->nnz, &alpha, data->descr_A, (U*)A->vals, A->ptrs, A->idxs, (U*)X->vals, X->ld, data->info, data->policy, ws_tmp));
     if constexpr(std::is_same_v<T,double>)               CHECK(cusparseDcsrsm2_analysis(spblas_handle->h, 1, data->op_A, data->op_X, X->nrows, X->ncols, A->nnz, &alpha, data->descr_A, (U*)A->vals, A->ptrs, A->idxs, (U*)X->vals, X->ld, data->info, data->policy, ws_tmp));
@@ -103,21 +118,13 @@ void w_cusparse_trsm_dcsx_ddny_ddny<T,I>::internal_preprocess(void * ws_tmp)
 
 
 template<typename T, typename I>
-void w_cusparse_trsm_dcsx_ddny_ddny<T,I>::internal_update()
-{
-    // no-op
-}
-
-
-
-template<typename T, typename I>
 void w_cusparse_trsm_dcsx_ddny_ddny<T,I>::internal_perform(void * ws_tmp)
 {
     if(place == 'O') {
-        gpu::mgm::copy_submit(q, B, X);
+        gpu::mgm::copy_submit(q, *B, *X);
     }
 
-    using U = cpp_to_cusparse_type_t<T>;
+    using U = cpp_to_cuda_type_t<T>;
     U alpha = U{1};
     if constexpr(std::is_same_v<T,float>)                CHECK(cusparseScsrsm2_analysis(spblas_handle->h, 1, data->op_A, data->op_X, X->nrows, X->ncols, A->nnz, &alpha, data->descr_A, (U*)A->vals, A->ptrs, A->idxs, (U*)X->vals, X->ld, data->info, data->policy, ws_tmp));
     if constexpr(std::is_same_v<T,double>)               CHECK(cusparseDcsrsm2_analysis(spblas_handle->h, 1, data->op_A, data->op_X, X->nrows, X->ncols, A->nnz, &alpha, data->descr_A, (U*)A->vals, A->ptrs, A->idxs, (U*)X->vals, X->ld, data->info, data->policy, ws_tmp));
@@ -151,6 +158,13 @@ template class w_cusparse_trsm_dcsx_ddny_ddny<T,I>;
 }
 }
 }
+
+#ifdef MY_COMPILER_GCC
+#pragma GCC diagnostic pop
+#endif
+#ifdef MY_COMPILER_CLANG
+#pragma clang diagnostic pop
+#endif
 
 #endif
 #endif

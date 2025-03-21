@@ -21,9 +21,9 @@ class prune_csx_matx
 public:
     prune_csx_matx() = default;
     prune_csx_matx(const prune_csx_matx &) = delete;
-    prune_csx_matx(prune_csx_matx &&) = delete;
+    prune_csx_matx(prune_csx_matx &&) = default;
     prune_csx_matx & operator=(const prune_csx_matx &) = delete;
-    prune_csx_matx & operator=(prune_csx_matx &&) = delete;
+    prune_csx_matx & operator=(prune_csx_matx &&) = default;
     ~prune_csx_matx();
 public:
     void set_pruning_mode(bool prune_rows_, bool prune_cols_);

@@ -4,8 +4,6 @@
 
 #include "wrappers/cuda/operations/trsm_dcsx_ddny_ddny.h"
 
-#include <cusparse.h>
-
 #include "wrappers/cuda/common_cusparse.h"
 
 

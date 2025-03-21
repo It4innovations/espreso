@@ -32,12 +32,12 @@ std::unique_ptr<gemm_dcsx_ddny_ddnz<T,I>> gemm_dcsx_ddny_ddnz<T,I>::make()
 
 
 template<typename T, typename I>
-void gemm_dcsx_ddny_ddnz<T,I>::set_handle(gpu::mgm::queue q_, gpu::spblas::handle spblas_handle_)
+void gemm_dcsx_ddny_ddnz<T,I>::set_handles(gpu::mgm::queue q_, gpu::spblas::handle handle_spblas_)
 {
     if(called_set_handles) eslog::error("handles are already set\n");
 
     q = q_;
-    spblas_handle = spblas_handle_;
+    handle_spblas = handle_spblas_;
 
     called_set_handles = true;
 }
@@ -47,7 +47,6 @@ void gemm_dcsx_ddny_ddnz<T,I>::set_handle(gpu::mgm::queue q_, gpu::spblas::handl
 template<typename T, typename I>
 void gemm_dcsx_ddny_ddnz<T,I>::set_matrix_A(MatrixCsxView_new<T,I> * A_)
 {
-    if(!called_set_handles) eslog::error("handles are not set\n");
     if(A != nullptr) eslog::error("matrix A is already set\n");
     if(A_ == nullptr) eslog::error("A cannot be nullptr\n");
 
@@ -57,9 +56,8 @@ void gemm_dcsx_ddny_ddnz<T,I>::set_matrix_A(MatrixCsxView_new<T,I> * A_)
 
 
 template<typename T, typename I>
-void gemm_dcsx_ddny_ddnz<T,I>::set_matrix_B(MatrixDenseView_new<T> B_)
+void gemm_dcsx_ddny_ddnz<T,I>::set_matrix_B(MatrixDenseView_new<T> * B_)
 {
-    if(!called_set_handles) eslog::error("handles are not set\n");
     if(B != nullptr) eslog::error("matrix B is already set\n");
     if(B_ == nullptr) eslog::error("B cannot be nullptr\n");
 
@@ -69,9 +67,8 @@ void gemm_dcsx_ddny_ddnz<T,I>::set_matrix_B(MatrixDenseView_new<T> B_)
 
 
 template<typename T, typename I>
-void gemm_dcsx_ddny_ddnz<T,I>::set_matrix_C(MatrixDenseView_new<T> C_)
+void gemm_dcsx_ddny_ddnz<T,I>::set_matrix_C(MatrixDenseView_new<T> * C_)
 {
-    if(!called_set_handles) eslog::error("handles are not set\n");
     if(C != nullptr) eslog::error("matrix C is already set\n");
     if(C_ == nullptr) eslog::error("C cannot be nullptr\n");
 
@@ -178,33 +175,6 @@ void gemm_dcsx_ddny_ddnz<T,I>::perform_submit(void * ws_tmp)
     if(ws_tmp == nullptr && wss_tmp_perform > 0) eslog::error("temporary workspace is null\n");
 
     this->internal_perform(ws_tmp);
-}
-
-
-
-template<typename T, typename I>
-void gemm_dcsx_ddny_ddnz<T,I>::submit_all(gpu::mgm::queue q, gpu::spblas::handle handle_spblas, MatrixCsxView_new<T,I> * A, MatrixDenseView_new<T> * B, MatrixDenseView_new<T> * C, T alpha, T beta, Allocator_new * ator_gpu)
-{
-    gemm_dcsx_ddny_ddnz<T,I> instance;
-    instance.set_handles(q, handle_spblas);
-    instance.set_matrix_A(A);
-    instance.set_matrix_B(B);
-    instance.set_matrix_C(C);
-    instance.set_coefficients(alpha, beta);
-    instance.setup();
-    size_t wss_persistent = instance.get_wss_persistent();
-    size_t wss_tmp_preprocess = instance.get_wss_tmp_preprocess();
-    size_t wss_tmp_perform = instance.get_wss_tmp_perform();
-    size_t wss_tmp = std::max(wss_tmp_preprocess, wss_tmp_perform);
-    void * ws_persistent = ator_gpu->alloc(wss_persistent);
-    void * ws_tmp = ator_gpu->alloc(wss_tmp);
-    instance.set_ws_persistent(ws_persistent);
-    instance.preprocess_submit(ws_tmp);
-    instance.perform_submit(ws_tmp);
-    gpu::mgm::submit_host_function(q, [ator_gpu,ws_persistent,ws_tmp](){
-        ator_gpu->free(ws_persistent);
-        ator_gpu->free(ws_tmp);
-    });
 }
 
 

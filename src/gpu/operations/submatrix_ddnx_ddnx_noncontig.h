@@ -4,6 +4,7 @@
 
 #include "math/primitives_new/matrix_dense_view_new.h"
 #include "math/primitives_new/vector_dense_view_new.h"
+#include "gpu/gpu_management.h"
 
 
 
@@ -44,7 +45,7 @@ protected:
     bool called_set_row_map = false;
     bool called_set_col_map = false;
 protected:
-    virtual void internal_perform();
+    virtual void internal_perform() {}
 };
 
 

@@ -3,6 +3,8 @@
 
 #include "wrappers/cuda/operations/w_cuda_permute_ddnx_ddnx.h"
 
+#include "wrappers/cuda/common_cuda_mgm.h"
+
 
 
 namespace espreso {
@@ -27,7 +29,7 @@ static void permute_kernel(T * src, I ld_src, T * dst, I ld_dst, I size_secdary,
     for(I isd = threadIdx.x; isd < ipd; isd += blockDim.x) {
         I iss = isd;
         if constexpr(PERM_SECDARY) {
-            iss = perm_secdary_dst_to_src[ids];
+            iss = perm_secdary_dst_to_src[isd];
         }
         dstprim[isd] = srcprim[iss];
     }
@@ -39,12 +41,6 @@ template<typename T, typename I>
 void w_cuda_permute_ddnx_ddnx<T,I>::internal_setup()
 {
     wss_tmp_perform = 0;
-
-    perm_primary = perm_rows;
-    perm_secdary = perm_cols;
-    if(M_src->order == 'C') {
-        std::swap(perm_primary, perm_secdary);
-    }
 }
 
 
@@ -59,15 +55,15 @@ void w_cuda_permute_ddnx_ddnx<T,I>::internal_perform(void * ws_tmp)
         CHECK(cudaMemcpy2DAsync(M_dst->vals, M_dst->ld * sizeof(T), M_src->vals, M_src->ld * sizeof(T), M_src->get_size_secdary() * sizeof(T), M_src->get_size_primary(), cudaMemcpyDefault, q->stream));
     }
     if(perm_primary == nullptr && perm_secdary != nullptr) {
-        permute_kernel<T,I,false,true ><<<size_primary,256>>>(M_src->vals, M_src->ld, M_dst->vals, M_dst->ld, size_secdary, perm_primary->dst_to_src, perm_secdary->dst_to_src);
+        permute_kernel<T,I,false,true ><<<size_primary,256,0,this->q->stream>>>(M_src->vals, M_src->ld, M_dst->vals, M_dst->ld, size_secdary, perm_primary->dst_to_src, perm_secdary->dst_to_src);
         CHECK(cudaPeekAtLastError());
     }
     if(perm_primary != nullptr && perm_secdary == nullptr) {
-        permute_kernel<T,I,true, false><<<size_primary,256>>>(M_src->vals, M_src->ld, M_dst->vals, M_dst->ld, size_secdary, perm_primary->dst_to_src, perm_secdary->dst_to_src);
+        permute_kernel<T,I,true, false><<<size_primary,256,0,this->q->stream>>>(M_src->vals, M_src->ld, M_dst->vals, M_dst->ld, size_secdary, perm_primary->dst_to_src, perm_secdary->dst_to_src);
         CHECK(cudaPeekAtLastError());
     }
     if(perm_primary != nullptr && perm_secdary != nullptr) {
-        permute_kernel<T,I,true, true ><<<size_primary,256>>>(M_src->vals, M_src->ld, M_dst->vals, M_dst->ld, size_secdary, perm_primary->dst_to_src, perm_secdary->dst_to_src);
+        permute_kernel<T,I,true, true ><<<size_primary,256,0,this->q->stream>>>(M_src->vals, M_src->ld, M_dst->vals, M_dst->ld, size_secdary, perm_primary->dst_to_src, perm_secdary->dst_to_src);
         CHECK(cudaPeekAtLastError());
     }
 }

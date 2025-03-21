@@ -32,10 +32,12 @@ public:
     PermutationData_new & operator=(const PermutationData_new &) = delete;
     PermutationData_new & operator=(PermutationData_new && other)
     {
-        if(this == &other) return;
-        std::swap(*static_cast<PermutationView_new<T>*>(this), *static_cast<PermutationView_new<T>*>(&other));
-        std::swap(ator, other.ator);
-        other.free();
+        if(this != &other) {
+            std::swap(*static_cast<PermutationView_new<T>*>(this), *static_cast<PermutationView_new<T>*>(&other));
+            std::swap(ator, other.ator);
+            other.free();
+        }
+        return *this;
     }
     virtual ~PermutationData_new()
     {

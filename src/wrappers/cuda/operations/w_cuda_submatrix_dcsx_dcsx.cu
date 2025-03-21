@@ -3,6 +3,10 @@
 
 #include "wrappers/cuda/operations/w_cuda_submatrix_dcsx_dcsx.h"
 
+#include <cub/device/device_scan.cuh>
+
+#include "wrappers/cuda/common_cuda_mgm.h"
+
 
 
 namespace espreso {
@@ -15,8 +19,8 @@ template<typename T, typename I>
 __global__
 static void calc_start_end_ptrs_and_nnzperprim(I * src_ptrs, I * src_idxs, I * start_ptrs, I * end_ptrs, I * nnz_per_prim, size_t start_primary, size_t start_secdary, size_t end_secdary)
 {
-    I * prim_dst = gridDim.x - blockIdx.x - 1; // because my matrices are heavier towards the bottom, so assign the longest blocks with blockIdx.x=0, and hope that cuda executes them first
-    I * prim_src = prim_dst + start_primary;
+    I prim_dst = gridDim.x - blockIdx.x - 1; // because my matrices are heavier towards the bottom, so assign the longest blocks with blockIdx.x=0, and hope that cuda executes them first
+    I prim_src = prim_dst + start_primary;
 
     I start = src_ptrs[prim_src];
     I end = src_ptrs[prim_src+1];
@@ -50,8 +54,8 @@ template<typename T, typename I>
 __global__
 static void calc_dst_idxs_vals(I * src_start_ptrs, I * src_end_ptrs, I * src_idxs, T * src_vals, I * dst_ptrs, I * dst_idxs, T * dst_vals, I start_primary, I start_secdary)
 {
-    I * prim_dst = gridDim.x - blockIdx.x - 1; // because my matrices are heavier towards the bottom, so assign the longest blocks with blockIdx.x=0, and hope that cuda executes them first
-    I * prim_src = prim_dst + start_primary;
+    I prim_dst = gridDim.x - blockIdx.x - 1; // because my matrices are heavier towards the bottom, so assign the longest blocks with blockIdx.x=0, and hope that cuda executes them first
+    I prim_src = prim_dst + start_primary;
 
     I src_start = src_start_ptrs[prim_src];
     I src_end = src_end_ptrs[prim_src];
@@ -78,8 +82,7 @@ void w_cuda_submatrix_dcsx_dcsx<T,I>::internal_setup()
     wss_pers_endptrs = utils::round_up(dst_size_primary * sizeof(I), gpu::mgm::get_natural_pitch_align());
     wss_pers_outptrs = (dst_size_primary + 1) * sizeof(I);
 
-    size_t wss_scan;
-    CHECK(cub::ExclusiveSum(nullptr, wss_scan, nullptr, dst_size_primary + 1, q->stream));
+    CHECK(cub::DeviceScan::ExclusiveSum(nullptr, wss_scan, (I*)nullptr, (I*)nullptr, dst_size_primary + 1, q->stream));
 
     wss_internal = 0;
     wss_persistent = wss_pers_startptrs + wss_pers_endptrs + wss_pers_outptrs;
@@ -95,13 +98,13 @@ void w_cuda_submatrix_dcsx_dcsx<T,I>::internal_preprocess(void * ws_tmp)
     size_t dst_size_primary = M_dst->get_size_primary();
 
     src_start_ptrs = reinterpret_cast<I*>(ws_persistent);
-    src_end_ptrs = reinterpret_cast<I*>(ws_persistent + wss_pers_startptrs);
-    dst_ptrs = reinterpret_cast<I*>(ws_persistent + wss_pers_startptrs + wss_pers_endptrs);
+    src_end_ptrs = reinterpret_cast<I*>((char*)ws_persistent + wss_pers_startptrs);
+    dst_ptrs = reinterpret_cast<I*>((char*)ws_persistent + wss_pers_startptrs + wss_pers_endptrs);
 
-    calc_start_end_ptrs_and_nnzperprim<T,I><<<dst_size_primary,256>>>(M_src->vals, M_src->idxs, src_start_ptrs, src_end_ptrs, dst_ptrs, primary_start, secdary_start, secdary_end);
+    calc_start_end_ptrs_and_nnzperprim<T,I><<<dst_size_primary,256,0,q->stream>>>(M_src->ptrs, M_src->idxs, src_start_ptrs, src_end_ptrs, dst_ptrs, primary_start, secdary_start, secdary_end);
     CHECK(cudaPeekAtLastError());
 
-    CHECK(cub::ExclusiveSum(ws_tmp, wss_scan, dst_ptrs, dst_size_primary + 1, q->stream));
+    CHECK(cub::DeviceScan::ExclusiveSum(ws_tmp, wss_scan, dst_ptrs, dst_ptrs, dst_size_primary + 1, q->stream));
 }
 
 
@@ -111,9 +114,9 @@ void w_cuda_submatrix_dcsx_dcsx<T,I>::internal_perform(void * /*ws_tmp*/)
 {
     size_t dst_size_primary = M_dst->get_size_primary();
 
-    CHECK(cudaMemcpyAsync(M_dst->ptrs, dst_ptrs, (dst_size_primary + 1) * sizeof(I), cudaMemcyDefault, q->stream));
+    CHECK(cudaMemcpyAsync(M_dst->ptrs, dst_ptrs, (dst_size_primary + 1) * sizeof(I), cudaMemcpyDefault, q->stream));
 
-    calc_dst_idxs_vals<T,I><<<dst_size_primary,256>>>(src_start_ptrs, src_end_ptrs, M_src->idxs, M_src->vals, M_dst->ptrs, M_dst->idxs, M_dst->vals, primary_start, secdary_start);
+    calc_dst_idxs_vals<T,I><<<dst_size_primary,256,0,q->stream>>>(src_start_ptrs, src_end_ptrs, M_src->idxs, M_src->vals, M_dst->ptrs, M_dst->idxs, M_dst->vals, primary_start, secdary_start);
     CHECK(cudaPeekAtLastError());
 }
 

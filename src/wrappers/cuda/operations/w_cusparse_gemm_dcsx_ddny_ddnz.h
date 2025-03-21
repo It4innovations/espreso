@@ -26,6 +26,19 @@ public:
     w_cusparse_gemm_dcsx_ddny_ddnz();
     virtual ~w_cusparse_gemm_dcsx_ddny_ddnz();
 protected:
+    using gemm_dcsx_ddny_ddnz<T,I>::q;
+    using gemm_dcsx_ddny_ddnz<T,I>::handle_spblas;
+    using gemm_dcsx_ddny_ddnz<T,I>::A;
+    using gemm_dcsx_ddny_ddnz<T,I>::B;
+    using gemm_dcsx_ddny_ddnz<T,I>::C;
+    using gemm_dcsx_ddny_ddnz<T,I>::ws_persistent;
+    using gemm_dcsx_ddny_ddnz<T,I>::wss_internal;
+    using gemm_dcsx_ddny_ddnz<T,I>::wss_persistent;
+    using gemm_dcsx_ddny_ddnz<T,I>::wss_tmp_preprocess;
+    using gemm_dcsx_ddny_ddnz<T,I>::wss_tmp_perform;
+    using gemm_dcsx_ddny_ddnz<T,I>::alpha;
+    using gemm_dcsx_ddny_ddnz<T,I>::beta;
+protected:
     virtual void internal_setup() override;
     virtual void internal_preprocess(void * ws_tmp) override;
     virtual void internal_perform(void * ws_tmp) override;

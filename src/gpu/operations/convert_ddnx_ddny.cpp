@@ -11,8 +11,8 @@ namespace operations {
 
 
 
-template<typename T, typename I>
-std::unique_ptr<convert_ddnx_ddny<T,I>> convert_ddnx_ddny<T,I>::make()
+template<typename T>
+std::unique_ptr<convert_ddnx_ddny<T>> convert_ddnx_ddny<T>::make()
 {
     #ifdef ESPRESO_USE_WRAPPER_GPU_CUDA
         return std::make_unique<w_cuda_convert_ddnx_ddny<T>>();
@@ -22,8 +22,8 @@ std::unique_ptr<convert_ddnx_ddny<T,I>> convert_ddnx_ddny<T,I>::make()
 
 
 
-template<typename T, typename I>
-void convert_ddnx_ddny<T,I>::set_handles(gpu::mgm::queue q_, gpu::dnblas::handle handle_dnblas_)
+template<typename T>
+void convert_ddnx_ddny<T>::set_handles(gpu::mgm::queue q_, gpu::dnblas::handle handle_dnblas_)
 {
     if(called_set_handles) eslog::error("handles are already set\n");
 
@@ -35,8 +35,8 @@ void convert_ddnx_ddny<T,I>::set_handles(gpu::mgm::queue q_, gpu::dnblas::handle
 
 
 
-template<typename T, typename I>
-void convert_ddnx_ddny<T,I>::set_matrix_src(MatrixDenseView_new<T,I> * M_src_)
+template<typename T>
+void convert_ddnx_ddny<T>::set_matrix_src(MatrixDenseView_new<T> * M_src_)
 {
     if(M_src != nullptr) eslog::error("matrix M_src is already set\n");
     if(M_src_ == nullptr) eslog::error("M_src cannot be nullptr\n");
@@ -46,8 +46,8 @@ void convert_ddnx_ddny<T,I>::set_matrix_src(MatrixDenseView_new<T,I> * M_src_)
 
 
 
-template<typename T, typename I>
-void convert_ddnx_ddny<T,I>::set_matrix_dst(MatrixDenseView_new<T,I> * M_dst_)
+template<typename T>
+void convert_ddnx_ddny<T>::set_matrix_dst(MatrixDenseView_new<T> * M_dst_)
 {
     if(M_dst != nullptr) eslog::error("matrix M_dst is already set\n");
     if(M_dst_ == nullptr) eslog::error("M_dst cannot be nullptr\n");
@@ -57,8 +57,8 @@ void convert_ddnx_ddny<T,I>::set_matrix_dst(MatrixDenseView_new<T,I> * M_dst_)
 
 
 
-template<typename T, typename I>
-void convert_ddnx_ddny<T,I>::setup()
+template<typename T>
+void convert_ddnx_ddny<T>::setup()
 {
     if(!called_set_handles) eslog::error("handles are not set\n");
     if(M_src == nullptr) eslog::error("source matrix is not sen\n");
@@ -72,8 +72,8 @@ void convert_ddnx_ddny<T,I>::setup()
 
 
 
-template<typename T, typename I>
-size_t convert_ddnx_ddny<T,I>::get_wss_tmp_perform()
+template<typename T>
+size_t convert_ddnx_ddny<T>::get_wss_tmp_perform()
 {
     if(!called_setup) eslog::error("setup was not called\n");
 
@@ -82,8 +82,8 @@ size_t convert_ddnx_ddny<T,I>::get_wss_tmp_perform()
 
 
 
-template<typename T, typename I>
-void convert_ddnx_ddny<T,I>::perform_submit(void * ws_tmp)
+template<typename T>
+void convert_ddnx_ddny<T>::perform_submit(void * ws_tmp)
 {
     if(!called_setup) eslog::error("setup was not called\n");
     if(ws_tmp == nullptr && wss_tmp_perform > 0) eslog::error("temporary workspace is null\n");
@@ -95,13 +95,13 @@ void convert_ddnx_ddny<T,I>::perform_submit(void * ws_tmp)
 
 
 #define INSTANTIATE_T(T) \
-template class handle_dnblas<T>;
+template class convert_ddnx_ddny<T>;
 
     #define INSTANTIATE \
     /* INSTANTIATE_T(float) */ \
     INSTANTIATE_T(double) \
     /* INSTANTIATE_T(std::complex<float>) */ \
-    /* INSTANTIATE_T(std::complex<double>) */
+    INSTANTIATE_T(std::complex<double>)
 
         INSTANTIATE
 

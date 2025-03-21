@@ -3,7 +3,7 @@
 #ifdef ESPRESO_USE_WRAPPER_GPU_CUDA
 
 #include "gpu/gpu_kernels.h"
-#include "w.cuda.gpu_management.h"
+#include "common_cuda_mgm.h"
 #include "basis/utilities/utils.h"
 
 #include <complex>

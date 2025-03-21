@@ -3,7 +3,7 @@
 #ifdef ESPRESO_USE_WRAPPER_GPU_CUDA
 
 #include "w.cuda.gpu_spblas_common.h"
-#include "w.cuda.gpu_management.h"
+#include "common_cuda_mgm.h"
 
 #include <type_traits>
 #include <algorithm>

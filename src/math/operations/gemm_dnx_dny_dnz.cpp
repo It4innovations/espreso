@@ -93,7 +93,7 @@ template class gemm_dnx_dny_dnz<T>;
     /* INSTANTIATE_T(float) */ \
     INSTANTIATE_T(double) \
     /* INSTANTIATE_T(std::complex<float>) */ \
-    /* INSTANTIATE_T(std::complex<double>) */
+    INSTANTIATE_T(std::complex<double>)
 
         INSTANTIATE
 

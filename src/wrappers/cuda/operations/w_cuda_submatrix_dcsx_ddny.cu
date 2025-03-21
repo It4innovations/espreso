@@ -3,6 +3,8 @@
 
 #include "wrappers/cuda/operations/w_cuda_submatrix_dcsx_ddny.h"
 
+#include "wrappers/cuda/common_cuda_mgm.h"
+
 
 
 namespace espreso {
@@ -78,11 +80,11 @@ void w_cuda_submatrix_dcsx_ddny<T,I>::internal_perform(void * /*ws_tmp*/)
     CHECK(cudaMemset2D(M_dst->vals, M_dst->ld * sizeof(T), 0, M_dst->get_size_secdary() * sizeof(T), M_dst->get_size_primary()));
 
     if(M_src->order == M_dst->order) {
-        submatrix_csx_dnx_vals<T,I><<<M_dst->get_size_primary(),256>>>(M_src->ptrs, M_src->idxs, M_src->vals, M_dst->vals, M_dst->ld, primary_start, secdary_start, secdary_end);
+        submatrix_csx_dnx_vals<T,I><<<M_dst->get_size_primary(),256,0,q->stream>>>(M_src->ptrs, M_src->idxs, M_src->vals, M_dst->vals, M_dst->ld, primary_start, secdary_start, secdary_end);
         CHECK(cudaPeekAtLastError());
     }
     else {
-        submatrix_csx_dny_vals<T,I><<<M_dst->get_size_primary(),256>>>(M_src->ptrs, M_src->idxs, M_src->vals, M_dst->vals, M_dst->ld, primary_start, secdary_start, secdary_end);
+        submatrix_csx_dny_vals<T,I><<<M_dst->get_size_primary(),256,0,q->stream>>>(M_src->ptrs, M_src->idxs, M_src->vals, M_dst->vals, M_dst->ld, primary_start, secdary_start, secdary_end);
         CHECK(cudaPeekAtLastError());
     }
 }

@@ -16,6 +16,13 @@ template<typename T>
 class submatrix_dnx_dnx_view
 {
 public:
+    submatrix_dnx_dnx_view() = default;
+    submatrix_dnx_dnx_view(const submatrix_dnx_dnx_view &) = delete;
+    submatrix_dnx_dnx_view(submatrix_dnx_dnx_view &&) = default;
+    submatrix_dnx_dnx_view & operator=(const submatrix_dnx_dnx_view &) = delete;
+    submatrix_dnx_dnx_view & operator=(submatrix_dnx_dnx_view &&) = default;
+    ~submatrix_dnx_dnx_view() = default;
+public:
     void set_matrix_src(MatrixDenseView_new<T> * M_src_);
     void set_matrix_dst(MatrixDenseView_new<T> * M_dst_);
     void set_bounds(size_t row_start_, size_t row_end_, size_t col_start_, size_t col_end_);

@@ -110,7 +110,8 @@ protected:
     void swap(_Permutation<I> &p, _Permutation<I> &q)
     {
         _swap(p.size, q.size);
-        _swap(p.vals, q.vals);
+        _swap(p.dst_to_src, q.dst_to_src);
+        _swap(p.src_to_dst, q.src_to_dst);
     }
 
     void realloc(_Permutation<I> &p, I newsize)

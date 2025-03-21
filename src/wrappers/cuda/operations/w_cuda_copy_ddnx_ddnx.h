@@ -16,12 +16,18 @@ namespace operations {
 
 
 
-template<typename T, typename I>
-class w_cuda_copy_ddnx_ddnx : public copy_ddnx_ddnx<T,I>
+template<typename T>
+class w_cuda_copy_ddnx_ddnx : public copy_ddnx_ddnx<T>
 {
 public:
     w_cuda_copy_ddnx_ddnx() = default;
     virtual ~w_cuda_copy_ddnx_ddnx() = default;
+protected:
+    using copy_ddnx_ddnx<T>::q;
+    using copy_ddnx_ddnx<T>::M_src;
+    using copy_ddnx_ddnx<T>::M_dst;
+    using copy_ddnx_ddnx<T>::uplo;
+    using copy_ddnx_ddnx<T>::wss_tmp_perform;
 protected:
     virtual void internal_setup() override;
     virtual void internal_perform(void * ws_tmp) override;
@@ -33,8 +39,8 @@ protected:
 
 
 
-template<typename T, typename I>
-class w_cuda_copy_ddnx_ddnx : public submatrix_dcsx_dcsx<T,I>
+template<typename T>
+class w_cuda_copy_ddnx_ddnx : public submatrix_dcsx_dcsx<T>
 {
 public:
     w_cuda_copy_ddnx_ddnx() { eslog::error("cuda wrapper is not available\n"); }

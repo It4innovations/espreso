@@ -15,7 +15,7 @@ template<typename T, typename I>
 std::unique_ptr<supermatrix_ddnx_ddnx_noncontig<T,I>> supermatrix_ddnx_ddnx_noncontig<T,I>::make()
 {
     #ifdef ESPRESO_USE_WRAPPER_GPU_CUDA
-        return std::make_unique<w_cuda_supermatrix_ddnx_ddnx_noncontig<T>>();
+        return std::make_unique<w_cuda_supermatrix_ddnx_ddnx_noncontig<T,I>>();
     #endif
     eslog::error("wrapper for supermatrix_ddnx_ddnx_noncontig not available\n");
 }
@@ -102,8 +102,8 @@ void supermatrix_ddnx_ddnx_noncontig<T,I>::submit_all(gpu::mgm::queue q, MatrixD
     instance->set_handles(q);
     instance->set_matrix_src(d_M_src);
     instance->set_matrix_dst(d_M_dst);
-    instance->set_row_map(row_map);
-    instance->set_col_map(col_map);
+    instance->set_row_map(d_row_map);
+    instance->set_col_map(d_col_map);
     instance->perform_submit();
 }
 

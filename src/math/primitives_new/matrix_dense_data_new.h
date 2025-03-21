@@ -35,10 +35,12 @@ public:
     MatrixDenseData_new & operator=(const MatrixDenseData_new &) = delete;
     MatrixDenseData_new & operator=(MatrixDenseData_new && other)
     {
-        if(this == &other) return;
-        std::swap(*static_cast<MatrixDenseView_new<T>*>(this), *static_cast<MatrixDenseView_new<T>*>(&other));
-        std::swap(ator, other.ator);
-        other.free();
+        if(this != &other) {
+            std::swap(*static_cast<MatrixDenseView_new<T>*>(this), *static_cast<MatrixDenseView_new<T>*>(&other));
+            std::swap(ator, other.ator);
+            other.free();
+        }
+        return *this;
     }
     virtual ~MatrixDenseData_new()
     {
@@ -82,7 +84,7 @@ public:
         was_set = false;
     }
 public:
-    void get_memory_impact() const
+    size_t get_memory_impact() const
     {
         size_t mem_secdary = this->get_size_secdary() * sizeof(T);
         mem_secdary = ((mem_secdary - 1) / ator->get_align() + 1) * ator->get_align();

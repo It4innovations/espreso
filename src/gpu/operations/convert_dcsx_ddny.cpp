@@ -29,7 +29,7 @@ void convert_dcsx_ddny<T,I>::set_handles(gpu::mgm::queue q_, gpu::spblas::handle
     if(called_set_handles) eslog::error("handles are already set\n");
 
     q = q_;
-    spblas_handle = spblas_handle_;
+    handle_spblas = handle_spblas_;
 
     called_set_handles = true;
 }
@@ -152,35 +152,6 @@ void convert_dcsx_ddny<T,I>::perform_submit(void * ws_tmp)
 
 
 
-template<typename T, typename I>
-void convert_dcsx_ddny<T,I>::submit_all(gpu::mgm::queue q, gpu::spblas::handle handle_spblas, MatrixCsxView_new<T,I> * M_src, MatrixDenseView_new<T> * M_dst, Allocator_new * ator_gpu)
-{
-    auto instance = convert_dcsx_ddny<T,I>::make();
-    instance->set_handles(q, handle_spblas);
-    instance->set_matrix_src(M_src);
-    instance->set_matrix_dst(M_dst);
-    instance->setup();
-    size_t wss_persistent = instance->get_wss_persistent();
-    size_t wss_tmp_preprocess = instance->get_wss_tmp_preprocess();
-    size_t wss_tmp_perform = instance->get_wss_tmp_perform();
-    size_t wss_tmp = std::max(wss_tmp_preprocess, wss_tmp_perform);
-    void * ws_persistent = nullptr;
-    void * ws_tmp = nullptr;
-    if(wss_persistent > 0) ws_persistent = ator_gpu->alloc(wss_persistent);
-    if(wss_tmp > 0) ws_tmp = ator_gpu->alloc(wss_tmp);
-    instance->set_ws_persistent(ws_persistent);
-    insatnce->preprocess_submit(ws_tmp);
-    instance->perform_submit(ws_tmp);
-    if(ws_persistent != nullptr || ws_tmp != nullptr) {
-        gpu::mgm::submit_host_function(q, [ator_gpu,ws_persistent,ws_tmp](){
-            ator_gpu->free(ws_persistent);
-            ator_gpu->free(ws_tmp);
-        });
-    }
-}
-
-
-
 #define INSTANTIATE_T_I(T,I) \
 template class convert_dcsx_ddny<T,I>;
 
@@ -205,7 +176,3 @@ template class convert_dcsx_ddny<T,I>;
 }
 }
 }
-
-
-
-#endif /* SRC_GPU_OPERATIONS_CONVERT_CSX_DNY_H */

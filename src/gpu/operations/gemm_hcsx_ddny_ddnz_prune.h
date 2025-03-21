@@ -5,6 +5,12 @@
 #include "math/primitives_new/matrix_csx_data_new.h"
 #include "math/primitives_new/matrix_dense_data_new.h"
 #include "math/primitives_new/vector_dense_data_new.h"
+#include "math/operations/prune_csx_matx.h"
+#include "gpu/operations/submatrix_ddnx_ddnx_noncontig.h"
+#include "gpu/operations/supermatrix_ddnx_ddnx_noncontig.h"
+#include "gpu/operations/gemm_dcsx_ddny_ddnz.h"
+#include "gpu/operations/gemm_ddnx_ddny_ddnz.h"
+#include "gpu/operations/convert_dcsx_ddny.h"
 
 
 
@@ -20,10 +26,10 @@ class gemm_hcsx_ddny_ddnz_prune
 public:
     gemm_hcsx_ddny_ddnz_prune() = default;
     gemm_hcsx_ddny_ddnz_prune(const gemm_hcsx_ddny_ddnz_prune &) = delete;
-    gemm_hcsx_ddny_ddnz_prune(gemm_hcsx_ddny_ddnz_prune &&) = delete;
+    gemm_hcsx_ddny_ddnz_prune(gemm_hcsx_ddny_ddnz_prune &&) = default;
     gemm_hcsx_ddny_ddnz_prune & operator=(const gemm_hcsx_ddny_ddnz_prune &) = delete;
-    gemm_hcsx_ddny_ddnz_prune & operator=(gemm_hcsx_ddny_ddnz_prune &&) = delete;
-    ~gemm_hcsx_ddny_ddnz_prune();
+    gemm_hcsx_ddny_ddnz_prune & operator=(gemm_hcsx_ddny_ddnz_prune &&) = default;
+    ~gemm_hcsx_ddny_ddnz_prune() = default;
 public:
     void set_config(char spdn_A_, bool prune_rows_, bool prune_cols_);
     void set_handles(gpu::mgm::queue q_, gpu::spblas::handle handle_spblas_, gpu::dnblas::handle handle_dnblas_);
@@ -67,13 +73,13 @@ private:
     size_t m = 0;
     size_t n = 0;
     size_t k = 0;
-    prune_csx_matx<T,I> op_h_prune_A;
-    convert_dcsx_ddny<T,I> op_d_sp2dn_A;
-    submatrix_ddnx_ddnx_noncontig<T,I> op_d_sub_B;
-    submatrix_ddnx_ddnx_noncontig<T,I> op_d_sub_C;
-    supermatrix_ddnx_ddnx_noncontig<T,I> op_d_super_C;
-    gemm_dcsx_ddny_ddnz<T,I> op_gemm_sp;
-    gemm_ddnx_ddny_ddnz<T> op_gemm_dn;
+    math::operations::prune_csx_matx<T,I> op_h_prune_A;
+    std::unique_ptr<convert_dcsx_ddny<T,I>> op_d_sp2dn_A;
+    std::unique_ptr<submatrix_ddnx_ddnx_noncontig<T,I>> op_d_sub_B;
+    std::unique_ptr<submatrix_ddnx_ddnx_noncontig<T,I>> op_d_sub_C;
+    std::unique_ptr<supermatrix_ddnx_ddnx_noncontig<T,I>> op_d_super_C;
+    std::unique_ptr<gemm_dcsx_ddny_ddnz<T,I>> op_gemm_sp;
+    std::unique_ptr<gemm_ddnx_ddny_ddnz<T>> op_gemm_dn;
     VectorDenseData_new<I> h_pruned_rows;
     VectorDenseData_new<I> h_pruned_cols;
     VectorDenseData_new<I> d_pruned_rows;

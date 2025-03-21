@@ -5,6 +5,10 @@
 #include "math/primitives_new/matrix_csx_data_new.h"
 #include "math/primitives_new/matrix_dense_data_new.h"
 #include "math/primitives_new/vector_dense_view_new.h"
+#include "math/operations/submatrix_csx_csy_map.h"
+#include "math/operations/submatrix_dnx_dnx_view.h"
+#include "gpu/operations/trsm_hcsx_ddny_ddny.h"
+#include "gpu/operations/gemm_hcsx_ddny_ddnz_prune.h"
 
 
 
@@ -29,9 +33,9 @@ public:
 public:
     gpu_trsm_trirhs_chunk_splitfactor() = default;
     gpu_trsm_trirhs_chunk_splitfactor(const gpu_trsm_trirhs_chunk_splitfactor &) = delete;
-    gpu_trsm_trirhs_chunk_splitfactor(gpu_trsm_trirhs_chunk_splitfactor &&) = delete;
+    gpu_trsm_trirhs_chunk_splitfactor(gpu_trsm_trirhs_chunk_splitfactor &&) = default;
     gpu_trsm_trirhs_chunk_splitfactor & operator=(const gpu_trsm_trirhs_chunk_splitfactor &) = delete;
-    gpu_trsm_trirhs_chunk_splitfactor & operator=(gpu_trsm_trirhs_chunk_splitfactor &&) = delete;
+    gpu_trsm_trirhs_chunk_splitfactor & operator=(gpu_trsm_trirhs_chunk_splitfactor &&) = default;
     ~gpu_trsm_trirhs_chunk_splitfactor() = default;
 public:
     void set_config(config cfg_);
@@ -76,8 +80,8 @@ private:
     std::unique_ptr<AllocatorSinglePointer_new> ator_ws_tmp_overlap;
     size_t wss_tmp_preprocess_linear = 0;
     size_t wss_tmp_preprocess_overlap = 0;
-    size_t wss_tmp_peform_linear = 0;
-    size_t wss_tmp_peform_overlap = 0;
+    size_t wss_tmp_perform_linear = 0;
+    size_t wss_tmp_perform_overlap = 0;
     math::operations::submatrix_csx_csy_map<T,I> op_h_submatrix_L_top;
     math::operations::submatrix_csx_csy_map<T,I> op_h_submatrix_L_bot;
     math::operations::submatrix_dnx_dnx_view<T> op_submatrix_d_X_top;

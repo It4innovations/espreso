@@ -3,6 +3,8 @@
 
 #include "wrappers/cuda/operations/w_cuda_copy_ddnx_ddnx.h"
 
+#include "wrappers/cuda/common_cuda_mgm.h"
+
 
 
 namespace espreso {
@@ -34,7 +36,7 @@ static void copy_emptyfirst(T * src, size_t ld_src, T * dst, size_t ld_dst, size
     T * sub_dst = dst + ld_dst * ip;
     size_t start = (ip / warpSize) * warpSize;
     for(size_t is = start + threadIdx.x; is < size_secdary; is += blockDim.x) {
-        if(is >= sp) {
+        if(is >= ip) {
             sub_dst[is] = sub_src[is];
         }
     }
@@ -55,11 +57,11 @@ void w_cuda_copy_ddnx_ddnx<T>::internal_perform(void * ws_tmp)
 {
     if(uplo == 'L' || uplo == 'U') {
         if((uplo == 'L') == (M_src->order == 'R')) {
-            copy_popullatedfirst<T><<<M_src->get_size_primary(),256>>>(M_src->vals, M_src->ld, M_dst->vals, M_dst->ld);
+            copy_popullatedfirst<T><<<M_src->get_size_primary(),256,0,q->stream>>>(M_src->vals, M_src->ld, M_dst->vals, M_dst->ld);
             CHECK(cudaPeekAtLastError());
         }
         else {
-            copy_emptyfirst<T><<<M_src->get_size_primary(),256>>>(M_src->vals, M_src->ld, M_dst->vals, M_dst->ld, M_src->get_size_secdary());
+            copy_emptyfirst<T><<<M_src->get_size_primary(),256,0,q->stream>>>(M_src->vals, M_src->ld, M_dst->vals, M_dst->ld, M_src->get_size_secdary());
             CHECK(cudaPeekAtLastError());
         }
     }
@@ -77,7 +79,7 @@ template class w_cuda_copy_ddnx_ddnx<T>;
     /* INSTANTIATE_T(float) */ \
     INSTANTIATE_T(double) \
     /* INSTANTIATE_T(std::complex<float>) */ \
-    /* INSTANTIATE_T(std::complex<double>) */
+    INSTANTIATE_T(std::complex<double>)
 
         INSTANTIATE
 

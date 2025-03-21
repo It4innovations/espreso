@@ -31,10 +31,12 @@ public:
     VectorDenseData_new & operator=(const VectorDenseData_new &) = delete;
     VectorDenseData_new & operator=(VectorDenseData_new && other)
     {
-        if(this == &other) return;
-        std::swap(*static_cast<VectorDenseView_new<T>*>(this), *static_cast<VectorDenseView_new<T>*>(&other));
-        std::swap(ator, other.ator);
-        other.free();
+        if(this != &other) {
+            std::swap(*static_cast<VectorDenseView_new<T>*>(this), *static_cast<VectorDenseView_new<T>*>(&other));
+            std::swap(ator, other.ator);
+            other.free();
+        }
+        return *this;
     }
     virtual ~VectorDenseData_new()
     {

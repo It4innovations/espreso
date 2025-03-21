@@ -186,32 +186,6 @@ void trsm_dcsx_ddny_ddny<T,I>::perform_submit(void * ws_tmp)
 
 
 
-template<typename T, typename I>
-void trsm_dcsx_ddny_ddny<T,I>::submit_all(gpu::mgm::queue q, gpu::spblas::handle spblas_handle, MatrixCsxView_new<T,I> * A, MatrixDenseView_new<T> * X, MatrixDenseView_new<T> * B, Allocator_new * ator_gpu)
-{
-    trsm_dcsx_ddny_ddny<T,I> instance;
-    instance.set_handles(q, spblas_handle);
-    instance.set_matrix_A(A);
-    instance.set_matrix_X(X);
-    instance.set_matrix_B(B);
-    instance.setup();
-    size_t wss_persistent = instance.get_wss_persistent();
-    size_t wss_tmp_preprocess = instance.get_wss_tmp_preprocess();
-    size_t wss_tmp_perform = instance.get_wss_tmp_perform();
-    size_t wss_tmp = std::max(wss_tmp_preprocess, wss_tmp_perform);
-    void * ws_persistent = ator_gpu->alloc(wss_persistent);
-    void * ws_tmp = ator_gpu->alloc(wss_tmp);
-    instance.set_ws_persistent(ws_persistent);
-    instance.preprocess_submit(ws_tmp);
-    instance.perform_submit(ws_tmp);
-    gpu::mgm::submit_host_function(q, [ator_gpu,ws_persistent,ws_tmp](){
-        ator_gpu->free(ws_persistent);
-        ator_gpu->free(ws_tmp);
-    });
-}
-
-
-
 #define INSTANTIATE_T_I(T,I) \
 template class trsm_dcsx_ddny_ddny<T,I>;
 

@@ -8,6 +8,9 @@
 #include "gpu/gpu_management.h"
 #include "gpu/gpu_spblas.h"
 #include "gpu/gpu_dnblas.h"
+#include "gpu/operations/auxiliary/gpu_trsm_trirhs_chunk_splitrhs.h"
+#include "math/operations/convert_csx_csy_map.h"
+#include "gpu/operations/submatrix_dcsx_ddny.h"
 
 
 
@@ -36,16 +39,16 @@ public:
 public:
     trsm_hcsx_ddny_tri_splitrhs() = default;
     trsm_hcsx_ddny_tri_splitrhs(const trsm_hcsx_ddny_tri_splitrhs &) = delete;
-    trsm_hcsx_ddny_tri_splitrhs(trsm_hcsx_ddny_tri_splitrhs &&) = delete;
+    trsm_hcsx_ddny_tri_splitrhs(trsm_hcsx_ddny_tri_splitrhs &&) = default;
     trsm_hcsx_ddny_tri_splitrhs & operator=(const trsm_hcsx_ddny_tri_splitrhs &) = delete;
-    trsm_hcsx_ddny_tri_splitrhs & operator=(trsm_hcsx_ddny_tri_splitrhs &&) = delete;
+    trsm_hcsx_ddny_tri_splitrhs & operator=(trsm_hcsx_ddny_tri_splitrhs &&) = default;
     ~trsm_hcsx_ddny_tri_splitrhs() = default;
 public:
     void set_config(config cfg_);
     void set_handles(gpu::mgm::queue q_, gpu::spblas::handle spblas_handle_, gpu::dnblas::handle dnblas_handle_);
     void set_matrix_h_L(MatrixCsxView_new<T,I> * h_L_);
     void set_matrix_d_X(MatrixDenseView_new<T> * d_X_);
-    void calc_X_pattern(MatrixCsxView<T,I> & X_pattern_host);
+    void calc_X_pattern(MatrixCsxView_new<T,I> & X_pattern_host);
     void setup();
     size_t get_wss_internal();
     size_t get_wss_persistent();
@@ -74,24 +77,24 @@ private:
 private:
     size_t wss_tmp_preprocess_linear = 0;
     size_t wss_tmp_preprocess_overlap = 0;
-    size_t wss_tmp_peform_linear = 0;
-    size_t wss_tmp_peform_overlap = 0;
+    size_t wss_tmp_perform_linear = 0;
+    size_t wss_tmp_perform_overlap = 0;
     std::unique_ptr<AllocatorArena_new> ator_ws_persistent;
     std::unique_ptr<AllocatorArena_new> ator_ws_tmp_linear;
     std::unique_ptr<AllocatorSinglePointer_new> ator_ws_tmp_overlap;
-    VectorDenseView_new<I> h_X_colpivots;
-    VectorDenseView_new<I> h_X_rowtrails;
-    VectorDenseView_new<I> h_partition;
-    VectorDenseView_new<I> h_L_nnzinsubs_splitrhs;
+    VectorDenseData_new<I> h_X_colpivots;
+    VectorDenseData_new<I> h_X_rowtrails;
+    VectorDenseData_new<size_t> partition;
+    VectorDenseData_new<I> h_L_nnzinsubs_splitrhs;
     size_t num_chunks = 0;
     size_t first_dense_chunk;
     std::vector<gpu_trsm_trirhs_chunk_splitrhs<T,I>> ops_chunks;
     MatrixCsxData_new<T,I> h_L_reordered;
-    MatrixCsxData_new<T,I> * h_L_to_use = nullptr;
+    MatrixCsxView_new<T,I> * h_L_to_use = nullptr;
     MatrixCsxData_new<T,I> d_L_sp;
     MatrixDenseData_new<T> d_L_dn;
-    convert_csx_csy_map<T,I> op_h_L_reorder;
-    submatrix_dcsx_ddny<T,I> op_d_sub_L_sp2dn;
+    math::operations::convert_csx_csy_map<T,I> op_h_L_reorder;
+    std::unique_ptr<submatrix_dcsx_ddny<T,I>> op_d_sub_L_sp2dn;
 };
 
 

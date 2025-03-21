@@ -25,6 +25,15 @@ public:
     w_cublas_gemm_ddnx_ddny_ddnz();
     virtual ~w_cublas_gemm_ddnx_ddny_ddnz();
 protected:
+    using gemm_ddnx_ddny_ddnz<T>::q;
+    using gemm_ddnx_ddny_ddnz<T>::handle_dnblas;
+    using gemm_ddnx_ddny_ddnz<T>::A;
+    using gemm_ddnx_ddny_ddnz<T>::B;
+    using gemm_ddnx_ddny_ddnz<T>::C;
+    using gemm_ddnx_ddny_ddnz<T>::wss_tmp_perform;
+    using gemm_ddnx_ddny_ddnz<T>::alpha;
+    using gemm_ddnx_ddny_ddnz<T>::beta;
+protected:
     virtual void internal_setup() override;
     virtual void internal_perform(void * ws_tmp) override;
 private:

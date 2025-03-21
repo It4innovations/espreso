@@ -3,6 +3,9 @@
 
 #include "wrappers/cuda/operations/w_cublas_trsm_ddnx_ddny.h"
 
+#include "wrappers/cuda/common_cublas.h"
+#include "wrappers/cuda/common_cuda_mgm.h"
+
 
 
 namespace espreso {
@@ -61,7 +64,7 @@ void w_cublas_trsm_ddnx_ddny<T>::internal_setup()
 template<typename T>
 void w_cublas_trsm_ddnx_ddny<T>::internal_perform(void * ws_tmp)
 {
-    using U = cpp_to_cublas_type_t<T>;
+    using U = cpp_to_cuda_type_t<T>;
     U one = U{1};
     if constexpr(std::is_same_v<T,float>)                CHECK(cublasStrsm(handle_dnblas->h, data->side, data->uplo_A, data->op_A, data->diag_A, data->m, data->n, &one, (U*)A->vals, A->ld, (U*)X->vals, X->ld));
     if constexpr(std::is_same_v<T,double>)               CHECK(cublasDtrsm(handle_dnblas->h, data->side, data->uplo_A, data->op_A, data->diag_A, data->m, data->n, &one, (U*)A->vals, A->ld, (U*)X->vals, X->ld));

@@ -277,7 +277,7 @@ static void transpose_internal(size_t src_nrows, size_t src_ncols, const T * src
             size_t c_start = tile_col * tile_size;
             size_t c_end = std::min(c_start + tile_size, src_ncols);
             size_t curr_tile_ncols = c_end - c_start;
-            T * sub_src = src + r_start * src_ld + c_start;
+            const T * sub_src = src + r_start * src_ld + c_start;
             T * sub_dst = dst + c_start * dst_ld + r_start;
             for(size_t r = 0; r < curr_tile_nrows; r++) {
                 for(size_t c = 0; c < curr_tile_ncols; c++) {
@@ -301,8 +301,13 @@ void transpose(size_t src_nrows, size_t src_ncols, const T * src, size_t src_ld,
         return;
     }
 
-    if(utils::is_complex<T>() && conj) {
-        transpose_internal<T,true>(src_ncols, src_nrows, src, src_ld, dst, dst_ld);
+    if constexpr(utils::is_complex<T>()) {
+        if(conj) {
+            transpose_internal<T,true>(src_ncols, src_nrows, src, src_ld, dst, dst_ld);
+        }
+        else {
+            transpose_internal<T,false>(src_ncols, src_nrows, src, src_ld, dst, dst_ld);
+        }
     }
     else {
         transpose_internal<T,false>(src_ncols, src_nrows, src, src_ld, dst, dst_ld);

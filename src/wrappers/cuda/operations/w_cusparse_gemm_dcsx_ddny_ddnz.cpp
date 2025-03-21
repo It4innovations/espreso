@@ -3,8 +3,6 @@
 
 #include "wrappers/cuda/operations/w_cusparse_gemm_dcsx_ddny_ddnz.h"
 
-#include <cusparse.h>
-
 #include "wrappers/cuda/common_cusparse.h"
 
 
@@ -29,29 +27,29 @@ struct w_cusparse_gemm_dcsx_ddny_ddnz_data
 
 
 
-template<typename T, typaname I>
-w_cusparse_gemm_dcsx_ddny_ddnz<T,I>::~w_cusparse_gemm_dcsx_ddny_ddnz()
+template<typename T, typename I>
+w_cusparse_gemm_dcsx_ddny_ddnz<T,I>::w_cusparse_gemm_dcsx_ddny_ddnz()
 {
     data = std::make_unique<w_cusparse_gemm_dcsx_ddny_ddnz_data<T,I>>();
 }
 
 
 
-template<typename T, typaname I>
+template<typename T, typename I>
 w_cusparse_gemm_dcsx_ddny_ddnz<T,I>::~w_cusparse_gemm_dcsx_ddny_ddnz()
 {
-    if(called_setup) {
+    if(this->called_setup) {
         CHECK(cusparseDestroySpMat(data->descr_A));
         CHECK(cusparseDestroyDnMat(data->descr_B));
         CHECK(cusparseDestroyDnMat(data->descr_C));
     }
 
-    data->reset();
+    data.reset();
 }
 
 
 
-template<typename T, typaname I>
+template<typename T, typename I>
 void w_cusparse_gemm_dcsx_ddny_ddnz<T,I>::internal_setup()
 {
     data->op_A = CUSPARSE_OPERATION_NON_TRANSPOSE;
@@ -60,8 +58,8 @@ void w_cusparse_gemm_dcsx_ddny_ddnz<T,I>::internal_setup()
 
     data->handle_cusparse = handle_spblas->h;
 
-    if(A->order == 'R') CHECK(cusparseCreateCsr(data->descr_A, A->nrows, A->ncols, A->nnz, A->ptrs, A->idxs, A->vals, cusparse_index_type<I>(), cusparse_index_type<I>(), CUSPARSE_INDEX_BASE_ZERO, cusparse_data_type<T>()));
-    if(A->order == 'C') CHECK(cusparseCreateCsc(data->descr_A, A->nrows, A->ncols, A->nnz, A->ptrs, A->idxs, A->vals, cusparse_index_type<I>(), cusparse_index_type<I>(), CUSPARSE_INDEX_BASE_ZERO, cusparse_data_type<T>()));
+    if(A->order == 'R') CHECK(cusparseCreateCsr(&data->descr_A, A->nrows, A->ncols, A->nnz, A->ptrs, A->idxs, A->vals, cusparse_index_type<I>(), cusparse_index_type<I>(), CUSPARSE_INDEX_BASE_ZERO, cusparse_data_type<T>()));
+    if(A->order == 'C') CHECK(cusparseCreateCsc(&data->descr_A, A->nrows, A->ncols, A->nnz, A->ptrs, A->idxs, A->vals, cusparse_index_type<I>(), cusparse_index_type<I>(), CUSPARSE_INDEX_BASE_ZERO, cusparse_data_type<T>()));
     CHECK(cusparseCreateDnMat(&data->descr_B, B->nrows, B->ncols, B->ld, B->vals, cusparse_data_type<T>(), cusparse_order(B->order)));
     CHECK(cusparseCreateDnMat(&data->descr_C, C->nrows, C->ncols, C->ld, C->vals, cusparse_data_type<T>(), cusparse_order(C->order)));
 
@@ -73,22 +71,22 @@ void w_cusparse_gemm_dcsx_ddny_ddnz<T,I>::internal_setup()
 
 
 
-template<typename T, typaname I>
+template<typename T, typename I>
 void w_cusparse_gemm_dcsx_ddny_ddnz<T,I>::internal_preprocess(void * /*ws_tmp*/)
 {
-    if(A.order == 'R') CHECK(cusparseCsrSetPointers(data->descr_A, A->ptrs, A->idxs, A->vals));
-    if(A.order == 'C') CHECK(cusparseCscSetPointers(data->descr_A, A->ptrs, A->idxs, A->vals));
+    if(A->order == 'R') CHECK(cusparseCsrSetPointers(data->descr_A, A->ptrs, A->idxs, A->vals));
+    if(A->order == 'C') CHECK(cusparseCscSetPointers(data->descr_A, A->ptrs, A->idxs, A->vals));
 
     CHECK(cusparseSpMM_preprocess(data->handle_cusparse, data->op_A, data->op_B, &alpha, data->descr_A, data->descr_B, &beta, data->descr_C, cusparse_data_type<T>(), data->spmm_alg, ws_persistent));
 }
 
 
 
-template<typename T, typaname I>
+template<typename T, typename I>
 void w_cusparse_gemm_dcsx_ddny_ddnz<T,I>::internal_perform(void * /*ws_tmp*/)
 {
-    if(A.order == 'R') CHECK(cusparseCsrSetPointers(data->descr_A, A->ptrs, A->idxs, A->vals));
-    if(A.order == 'C') CHECK(cusparseCscSetPointers(data->descr_A, A->ptrs, A->idxs, A->vals));
+    if(A->order == 'R') CHECK(cusparseCsrSetPointers(data->descr_A, A->ptrs, A->idxs, A->vals));
+    if(A->order == 'C') CHECK(cusparseCscSetPointers(data->descr_A, A->ptrs, A->idxs, A->vals));
     CHECK(cusparseDnMatSetValues(data->descr_B, B->vals));
     CHECK(cusparseDnMatSetValues(data->descr_C, C->vals));
 

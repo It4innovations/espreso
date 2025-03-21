@@ -41,10 +41,9 @@ public:
     void set_ws_persistent(void * ws_persistent_);
     void preprocess_submit(void * ws_tmp);
     void perform_submit(void * ws_tmp);
-    static void submit_all(gpu::mgm::queue q, gpu::spblas::handle handle_spblas, MatrixCsxView_new<T,I> * M_src, MatrixDenseView_new<T> * M_dst, Allocator_new * ator_gpu);
 protected:
     gpu::mgm::queue q;
-    gpu::spblas::handle spblas_handle;
+    gpu::spblas::handle handle_spblas;
     MatrixCsxView_new<T,I> * M_src;
     MatrixDenseView_new<T> * M_dst;
     void * ws_persistent = nullptr;

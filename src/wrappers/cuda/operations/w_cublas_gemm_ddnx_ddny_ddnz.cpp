@@ -3,6 +3,9 @@
 
 #include "wrappers/cuda/operations/w_cublas_gemm_ddnx_ddny_ddnz.h"
 
+#include "wrappers/cuda/common_cublas.h"
+#include "wrappers/cuda/common_cuda_mgm.h"
+
 
 
 namespace espreso {
@@ -24,7 +27,7 @@ struct w_cublas_gemm_ddnx_ddny_ddnz_data
 
 
 template<typename T>
-w_cublas_gemm_ddnx_ddny_ddnz<T>::w_cusparse_gemm_ddnx_ddny_ddnz()
+w_cublas_gemm_ddnx_ddny_ddnz<T>::w_cublas_gemm_ddnx_ddny_ddnz()
 {
     data = std::make_unique<w_cublas_gemm_ddnx_ddny_ddnz_data>();
 }
@@ -32,7 +35,7 @@ w_cublas_gemm_ddnx_ddny_ddnz<T>::w_cusparse_gemm_ddnx_ddny_ddnz()
 
 
 template<typename T>
-w_cublas_gemm_ddnx_ddny_ddnz<T>::~w_cusparse_gemm_ddnx_ddny_ddnz()
+w_cublas_gemm_ddnx_ddny_ddnz<T>::~w_cublas_gemm_ddnx_ddny_ddnz()
 {
     data.reset();
 }
@@ -52,7 +55,7 @@ void w_cublas_gemm_ddnx_ddny_ddnz<T>::internal_setup()
     data->m = C->nrows;
     data->n = C->ncols;
     data->k = A->ncols;
-    if(swap_a_b) std::swap(data->m, data->n);
+    if(data->swap_a_b) std::swap(data->m, data->n);
 }
 
 
@@ -60,7 +63,7 @@ void w_cublas_gemm_ddnx_ddny_ddnz<T>::internal_setup()
 template<typename T>
 void w_cublas_gemm_ddnx_ddny_ddnz<T>::internal_perform(void * /*ws_tmp*/)
 {
-    using U = cpp_to_cublas_type_t<T>;
+    using U = cpp_to_cuda_type_t<T>;
     U * A_vals = (U*)A->vals;
     size_t A_ld = A->ld;
     U * B_vals = (U*)B->vals;
@@ -72,10 +75,10 @@ void w_cublas_gemm_ddnx_ddny_ddnz<T>::internal_perform(void * /*ws_tmp*/)
         std::swap(A_ld, B_ld);
     }
 
-    if constexpr(std::is_same_v<T,float>)                CHECK(cublasSgemm(handle_dnblas->h, data->op_A, data->op_B, data->m, data->n, data->k, &alpha, A_vals, A_ld, B_vals, B_ld, &beta, C_vals, C_ld));
-    if constexpr(std::is_same_v<T,double>)               CHECK(cublasDgemm(handle_dnblas->h, data->op_A, data->op_B, data->m, data->n, data->k, &alpha, A_vals, A_ld, B_vals, B_ld, &beta, C_vals, C_ld));
-    if constexpr(std::is_same_v<T,std::complex<float>>)  CHECK(cublasCgemm(handle_dnblas->h, data->op_A, data->op_B, data->m, data->n, data->k, &alpha, A_vals, A_ld, B_vals, B_ld, &beta, C_vals, C_ld));
-    if constexpr(std::is_same_v<T,std::complex<double>>) CHECK(cublasZgemm(handle_dnblas->h, data->op_A, data->op_B, data->m, data->n, data->k, &alpha, A_vals, A_ld, B_vals, B_ld, &beta, C_vals, C_ld));
+    if constexpr(std::is_same_v<T,float>)                CHECK(cublasSgemm(handle_dnblas->h, data->op_A, data->op_B, data->m, data->n, data->k, (U*)&alpha, A_vals, A_ld, B_vals, B_ld, (U*)&beta, C_vals, C_ld));
+    if constexpr(std::is_same_v<T,double>)               CHECK(cublasDgemm(handle_dnblas->h, data->op_A, data->op_B, data->m, data->n, data->k, (U*)&alpha, A_vals, A_ld, B_vals, B_ld, (U*)&beta, C_vals, C_ld));
+    if constexpr(std::is_same_v<T,std::complex<float>>)  CHECK(cublasCgemm(handle_dnblas->h, data->op_A, data->op_B, data->m, data->n, data->k, (U*)&alpha, A_vals, A_ld, B_vals, B_ld, (U*)&beta, C_vals, C_ld));
+    if constexpr(std::is_same_v<T,std::complex<double>>) CHECK(cublasZgemm(handle_dnblas->h, data->op_A, data->op_B, data->m, data->n, data->k, (U*)&alpha, A_vals, A_ld, B_vals, B_ld, (U*)&beta, C_vals, C_ld));
 }
 
 

@@ -30,12 +30,11 @@ public:
     static std::unique_ptr<trsm_ddnx_ddny<T>> make();
 public:
     void set_handles(gpu::mgm::queue q_, gpu::dnblas::handle dnblas_handle_);
-    void set_matrix_A(MatrixDenseView_new<T,I> * A_);
+    void set_matrix_A(MatrixDenseView_new<T> * A_);
     void set_matrix_X(MatrixDenseView_new<T> * X_);
     void setup();
     size_t get_wss_tmp_perform();
     void perform_submit(void * ws_tmp);
-    static void submit_all(gpu::mgm::queue q, gpu::dnblas::handle handle_dnblas, MatrixDenseView_new<T> A, MatrixDenseView_new<T> X, Allocator_new * ator_gpu);
 protected:
     gpu::mgm::queue q;
     gpu::dnblas::handle handle_dnblas;

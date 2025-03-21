@@ -16,6 +16,8 @@ namespace espreso {
 namespace math {
 namespace blas {
 
+    enum struct herk_mode { AhA, AAh };
+
     // x = y
     template <typename T>
     void copy(const int size, T *x, const int incX, const T *y, const int incY);

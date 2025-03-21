@@ -87,9 +87,7 @@ template class sorting_permutation<T,I>;
         /* INSTANTIATE_T(int64_t) */ \
         /* INSTANTIATE_T(size_t) */ \
         /* INSTANTIATE_T(float) */ \
-        INSTANTIATE_T(double) \
-        /* INSTANTIATE_T(std::complex<float>) */ \
-        /* INSTANTIATE_T(std::complex<double>) */
+        /* INSTANTIATE_T(double) */
 
             INSTANTIATE
 

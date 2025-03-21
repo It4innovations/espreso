@@ -16,12 +16,18 @@ namespace operations {
 
 
 
-template<typename T>
-class w_cuda_supermatrix_ddnx_ddnx_noncontig : public supermatrix_ddnx_ddnx_noncontig<T>
+template<typename T, typename I>
+class w_cuda_supermatrix_ddnx_ddnx_noncontig : public supermatrix_ddnx_ddnx_noncontig<T,I>
 {
 public:
     w_cuda_supermatrix_ddnx_ddnx_noncontig() = default;
     virtual ~w_cuda_supermatrix_ddnx_ddnx_noncontig() = default;
+protected:
+    using supermatrix_ddnx_ddnx_noncontig<T,I>::q;
+    using supermatrix_ddnx_ddnx_noncontig<T,I>::d_M_src;
+    using supermatrix_ddnx_ddnx_noncontig<T,I>::d_M_dst;
+    using supermatrix_ddnx_ddnx_noncontig<T,I>::d_row_map;
+    using supermatrix_ddnx_ddnx_noncontig<T,I>::d_col_map;
 protected:
     virtual void internal_perform() override;
 };
@@ -32,8 +38,8 @@ protected:
 
 
 
-template<typename T>
-class w_cuda_supermatrix_ddnx_ddnx_noncontig : public supermatrix_ddnx_ddnx_noncontig<T>
+template<typename T, typename I>
+class w_cuda_supermatrix_ddnx_ddnx_noncontig : public supermatrix_ddnx_ddnx_noncontig<T,I>
 {
 public:
     w_cuda_supermatrix_ddnx_ddnx_noncontig() { eslog::error("cuda wrapper is not available\n"); }

@@ -3,20 +3,12 @@
 #ifdef ESPRESO_USE_WRAPPER_GPU_CUDA
 
 #include "gpu/gpu_dnblas.h"
-#include "w.cuda.gpu_management.h"
+#include "common_cuda_mgm.h"
+#include "common_cublas.h"
 #include "basis/utilities/utils.h"
 
 #include <cublas_v2.h>
 #include <complex>
-
-
-
-inline void _check(cublasStatus_t status, const char *file, int line)
-{
-    if (status != CUBLAS_STATUS_SUCCESS) {
-        espreso::eslog::error("CUBLAS Error %d %s: %s. In file '%s' on line %d\n", status, cublasGetStatusName(status), cublasGetStatusString(status), file, line);
-    }
-}
 
 
 

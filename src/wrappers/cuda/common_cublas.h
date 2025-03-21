@@ -20,13 +20,6 @@ inline void _check(cublasStatus_t status, const char *file, int line)
 
 
 
-template<typename T> struct cpp_to_cublas_type { using type = T; };
-template<> struct cpp_to_cublas_type<std::complex<float>> { using type = cuComplex; };
-template<> struct cpp_to_cublas_type<std::complex<double>> { using type = cuDoubleComplex; };
-template<typename T> using cpp_to_cublas_type_t = typename cpp_to_cublas_type<T>::type;
-
-
-
 namespace espreso {
 namespace gpu {
 namespace dnblas {

@@ -19,11 +19,20 @@ namespace operations {
 struct w_cublas_herk_ddnx_ddny_data;
 
 template<typename T>
-class w_cublas_herk_ddnx_ddny
+class w_cublas_herk_ddnx_ddny : public herk_ddnx_ddny<T>
 {
 public:
     w_cublas_herk_ddnx_ddny();
     virtual ~w_cublas_herk_ddnx_ddny();
+protected:
+    using herk_ddnx_ddny<T>::q;
+    using herk_ddnx_ddny<T>::handle_dnblas;
+    using herk_ddnx_ddny<T>::A;
+    using herk_ddnx_ddny<T>::C;
+    using herk_ddnx_ddny<T>::alpha;
+    using herk_ddnx_ddny<T>::beta;
+    using herk_ddnx_ddny<T>::mode;
+    using herk_ddnx_ddny<T>::wss_tmp_perform;
 protected:
     virtual void internal_setup() override;
     virtual void internal_perform(void * /*ws_tmp*/) override;

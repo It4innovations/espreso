@@ -3,6 +3,10 @@
 #define SRC_GPU_OPERATIONS_AUXILIARY_GPU_HERK_TRI_CHUNK_SQUARES_H
 
 #include "math/primitives_new/matrix_dense_data_new.h"
+#include "math/operations/submatrix_dnx_dnx_view.h"
+#include "gpu/gpu_management.h"
+#include "gpu/gpu_dnblas.h"
+#include "gpu/operations/herk_ddnx_ddny.h"
 
 
 
@@ -20,9 +24,9 @@ public:
 public:
     gpu_herk_tri_chunk_squares() = default;
     gpu_herk_tri_chunk_squares(const gpu_herk_tri_chunk_squares &) = delete;
-    gpu_herk_tri_chunk_squares(gpu_herk_tri_chunk_squares &&) = delete;
+    gpu_herk_tri_chunk_squares(gpu_herk_tri_chunk_squares &&) = default;
     gpu_herk_tri_chunk_squares & operator=(const gpu_herk_tri_chunk_squares &) = delete;
-    gpu_herk_tri_chunk_squares & operator=(gpu_herk_tri_chunk_squares &&) = delete;
+    gpu_herk_tri_chunk_squares & operator=(gpu_herk_tri_chunk_squares &&) = default;
     ~gpu_herk_tri_chunk_squares() = default;
 public:
     void set_range(size_t k_start_, size_t k_end_);
@@ -39,7 +43,7 @@ private:
     size_t k_start = 0;
     size_t k_end = 0;
     gpu::mgm::queue q;
-    gpu::spblas::handle handle_spblas;
+    gpu::dnblas::handle handle_dnblas;
     MatrixDenseView_new<T> * d_A_left = nullptr;
     MatrixDenseView_new<T> * d_A_top = nullptr;
     MatrixDenseView_new<T> * d_C = nullptr;
@@ -47,7 +51,7 @@ private:
     Treal alpha = Treal{1};
     size_t wss_tmp_perform = 0;
     bool called_set_range = false;
-    bool called_set_handle = false;
+    bool called_set_handles = false;
     bool called_setup = false;
 private:
     size_t k_size = 0;
@@ -55,9 +59,9 @@ private:
     size_t n_size = 0;
     MatrixDenseView_new<T> d_sub_C;
     MatrixDenseView_new<T> d_sub_A_top;
-    submatrix_dnx_dnx_view<T> op_sub_C;
-    submatrix_dnx_dnx_view<T> op_sub_A_top;
-    herk_ddnx_ddny<T> op_herk;
+    math::operations::submatrix_dnx_dnx_view<T> op_sub_C;
+    math::operations::submatrix_dnx_dnx_view<T> op_sub_A_top;
+    std::unique_ptr<herk_ddnx_ddny<T>> op_herk;
 };
 
 

@@ -19,9 +19,9 @@ class submatrix_csx_csy_map
 public:
     submatrix_csx_csy_map() = default;
     submatrix_csx_csy_map(const submatrix_csx_csy_map &) = delete;
-    submatrix_csx_csy_map(submatrix_csx_csy_map &&) = delete;
+    submatrix_csx_csy_map(submatrix_csx_csy_map &&) = default;
     submatrix_csx_csy_map & operator=(const submatrix_csx_csy_map &) = delete;
-    submatrix_csx_csy_map & operator=(submatrix_csx_csy_map &&) = delete;
+    submatrix_csx_csy_map & operator=(submatrix_csx_csy_map &&) = default;
     ~submatrix_csx_csy_map();
 public:
     void set_matrix_src(MatrixCsxView_new<T,I> * M_src_);

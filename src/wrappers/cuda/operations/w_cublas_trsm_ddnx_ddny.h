@@ -25,6 +25,12 @@ public:
     w_cublas_trsm_ddnx_ddny();
     virtual ~w_cublas_trsm_ddnx_ddny();
 protected:
+    using trsm_ddnx_ddny<T>::q;
+    using trsm_ddnx_ddny<T>::handle_dnblas;
+    using trsm_ddnx_ddny<T>::A;
+    using trsm_ddnx_ddny<T>::X;
+    using trsm_ddnx_ddny<T>::wss_tmp_perform;
+protected:
     virtual void internal_setup() override;
     virtual void internal_perform(void * ws_tmp) override;
 private:

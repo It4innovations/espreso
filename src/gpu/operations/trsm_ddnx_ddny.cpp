@@ -12,7 +12,7 @@ namespace operations {
 
 
 template<typename T>
-static std::unique_ptr<trsm_ddnx_ddny<T>> trsm_ddnx_ddny<T>::make();
+std::unique_ptr<trsm_ddnx_ddny<T>> trsm_ddnx_ddny<T>::make()
 {
     #ifdef ESPRESO_USE_WRAPPER_GPU_CUDA
         return std::make_unique<w_cublas_trsm_ddnx_ddny<T>>();
@@ -23,12 +23,12 @@ static std::unique_ptr<trsm_ddnx_ddny<T>> trsm_ddnx_ddny<T>::make();
 
 
 template<typename T>
-void trsm_ddnx_ddny<T>::set_handles(gpu::mgm::queue q_, gpu::dnblas::handle dnblas_handle_);
+void trsm_ddnx_ddny<T>::set_handles(gpu::mgm::queue q_, gpu::dnblas::handle handle_dnblas_)
 {
     if(called_set_handles) eslog::error("handles are already set\n");
 
     q = q_;
-    dnblas_handle = dnblas_handle_;
+    handle_dnblas = handle_dnblas_;
 
     called_set_handles = true;
 }
@@ -36,7 +36,7 @@ void trsm_ddnx_ddny<T>::set_handles(gpu::mgm::queue q_, gpu::dnblas::handle dnbl
 
 
 template<typename T>
-void trsm_ddnx_ddny<T>::set_matrix_A(MatrixDenseView_new<T,I> * A_);
+void trsm_ddnx_ddny<T>::set_matrix_A(MatrixDenseView_new<T> * A_)
 {
     if(!called_set_handles) eslog::error("handles are not set\n");
     if(A != nullptr) eslog::error("matrix A is already set\n");
@@ -48,7 +48,7 @@ void trsm_ddnx_ddny<T>::set_matrix_A(MatrixDenseView_new<T,I> * A_);
 
 
 template<typename T>
-void trsm_ddnx_ddny<T>::set_matrix_X(MatrixDenseView_new<T> * X_);
+void trsm_ddnx_ddny<T>::set_matrix_X(MatrixDenseView_new<T> * X_)
 {
     if(!called_set_handles) eslog::error("handles are not set\n");
     if(X != nullptr) eslog::error("matrix X is already set\n");
@@ -60,7 +60,7 @@ void trsm_ddnx_ddny<T>::set_matrix_X(MatrixDenseView_new<T> * X_);
 
 
 template<typename T>
-void trsm_ddnx_ddny<T>::setup();
+void trsm_ddnx_ddny<T>::setup()
 {
     if(!called_set_handles) eslog::error("handles are not set\n");
     if(A == nullptr) eslog::error("matrix A is not set\n");
@@ -78,7 +78,7 @@ void trsm_ddnx_ddny<T>::setup();
 
 
 template<typename T>
-size_t trsm_ddnx_ddny<T>::get_wss_tmp_perform();
+size_t trsm_ddnx_ddny<T>::get_wss_tmp_perform()
 {
     if(!called_setup) eslog::error("setup was not called\n");
 
@@ -88,35 +88,12 @@ size_t trsm_ddnx_ddny<T>::get_wss_tmp_perform();
 
 
 template<typename T>
-void trsm_ddnx_ddny<T>::perform_submit(void * ws_tmp);
+void trsm_ddnx_ddny<T>::perform_submit(void * ws_tmp)
 {
     if(!called_setup) eslog::error("setup was not called\n");
     if(ws_tmp == nullptr && wss_tmp_perform > 0) eslog::error("temporary workspace is null\n");
 
     this->internal_perform(ws_tmp);
-}
-
-
-
-template<typename T>
-void trsm_ddnx_ddny<T>::submit_all(gpu::mgm::queue q, gpu::dnblas::handle handle_dnblas, MatrixDenseView_new<T> * A, MatrixDenseView_new<T> * X, Allocator_new * ator_gpu);
-{
-    trsm_ddnx_ddny<T> instance;
-    instance.set_handles(q, handle_dnblas);
-    instance.set_matrix_A(A);
-    instance.set_matrix_X(X);
-    instance.setup();
-    size_t wss_tmp = instance.get_wss_tmp_perform();
-    void * ws_tmp = nullptr;
-    if(wss_tmp > 0) {
-        ator_gpu->alloc(wss_tmp);
-    }
-    instance.perform_submit(ws_tmp);
-    if(wss_tmp > 0) {
-        gpu::mgm::submit_host_function(q, [ator_gpu,ws_tmp](){
-            ator_gpu->free(ws_tmp);
-        });
-    }
 }
 
 

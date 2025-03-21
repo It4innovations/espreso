@@ -1,5 +1,5 @@
 
-#include "totalfeti.explicit.sc.h"
+#include "totalfeti.explicit.gpusctria.h"
 #include "math/wrappers/math.blas.h"
 #include "feti/common/applyB.h"
 #include "basis/utilities/minmaxavg.h"
@@ -20,12 +20,23 @@ static void set_by_env(T & var, const char * env_var)
         if constexpr(std::is_same_v<T,char>) var = *str;
         if constexpr(std::is_same_v<T,int>) var = atoi(str);
         if constexpr(std::is_same_v<T,double>) var = atof(str);
+        if constexpr(std::is_same_v<T,bool>) {
+            var = (strcmp(str,"1") == 0
+                || strcmp(str,"Y") == 0
+                || strcmp(str,"Yes") == 0
+                || strcmp(str,"yes") == 0
+                || strcmp(str,"T") == 0
+                || strcmp(str,"True") == 0
+                || strcmp(str,"true") == 0
+                || strcmp(str,"On") == 0
+                || strcmp(str,"on") == 0);
+        }
     }
 }
 
-static void setup_sc_config(gpu::operations::sc_symm_hcsx_ddny_tria<T,I>::config & cfg, char & order_F)
+template<typename T, typename I>
+static void setup_sc_config(typename gpu::operations::sc_symm_hcsx_ddny_tria<T,I>::config & cfg)
 {
-    set_by_env(order_F,                                       "ESPRESO_DUALOPGPUSCTRIA_CONFIG_order_F");
     set_by_env(cfg.order_X,                                   "ESPRESO_DUALOPGPUSCTRIA_CONFIG_order_X");
     set_by_env(cfg.order_L,                                   "ESPRESO_DUALOPGPUSCTRIA_CONFIG_order_L");
     set_by_env(cfg.cfg_trsm.strategy,                         "ESPRESO_DUALOPGPUSCTRIA_CONFIG_trsm_strategy");
@@ -92,10 +103,14 @@ template<typename T, typename I>
 void TotalFETIExplicitGpuScTria<T,I>::set(const step::Step &step)
 {
     char order_F = '_';
-    gpu::operations::sc_symm_hcsx_ddny_tria<T,I>::config op_sc_config;
-    setup_sc_config(op_sc_config, order_F);
+    typename gpu::operations::sc_symm_hcsx_ddny_tria<T,I>::config op_sc_config;
+    setup_sc_config<T,I>(op_sc_config);
+    set_by_env(order_F, "ESPRESO_DUALOPGPUSCTRIA_CONFIG_order_F");
+    set_by_env(parallel_set, "ESPRESO_DUALOPGPUSCTRIA_CONFIG_parallel_set");
+    set_by_env(parallel_update, "ESPRESO_DUALOPGPUSCTRIA_CONFIG_parallel_update");
+    set_by_env(parallel_apply, "ESPRESO_DUALOPGPUSCTRIA_CONFIG_parallel_apply");
 
-    n_domains = feti.K.size;
+    n_domains = feti.K.size();
     n_queues = omp_get_max_threads();
     
     gpu::mgm::init_gpu(device);
@@ -132,20 +147,20 @@ void TotalFETIExplicitGpuScTria<T,I>::set(const step::Step &step)
             size_t di = domain_idxs_sorted_by_f_size_desc[i];
             size_t di_bigger = domain_idxs_sorted_by_f_size_desc[(i / 2) * 2];
             size_t allocated_F_index = i / 2;
-            MatrixDenseData_new<T,I> & d_F_allocd = d_Fs_allocated[allocated_F_index];
+            MatrixDenseData_new<T> & d_F_allocd = d_Fs_allocated[allocated_F_index];
             per_domain_stuff & data_bigger = domain_data[di_bigger];
             per_domain_stuff & data_di = domain_data[di];
             if(di == di_bigger) {
                 d_F_allocd.set(data_bigger.n_dofs_interface + 1, data_bigger.n_dofs_interface, order_F, AllocatorGPU_new::get_singleton());
                 d_F_allocd.alloc();
                 data_di.d_F = d_F_allocd.get_submatrix_view(1, data_di.n_dofs_interface + 1, 0, data_di.n_dofs_interface);
-                data_di.d_F.uplo = 'L';
+                data_di.d_F.prop.uplo = 'L';
             }
             else {
                 data_di.d_F = d_F_allocd.get_submatrix_view(0, data_di.n_dofs_interface , 0, data_di.n_dofs_interface);
-                data_di.d_F.uplo = 'U';
+                data_di.d_F.prop.uplo = 'U';
             }
-            data_di.d_F_old = MatrixDenseView_new<T>::to_old(data_di.d_F);
+            data_di.d_F_old = MatrixDenseView_new<T>::template to_old<I,gpu::mgm::Ad>(data_di.d_F);
         }
     }
 
@@ -181,15 +196,16 @@ void TotalFETIExplicitGpuScTria<T,I>::set(const step::Step &step)
         }
         // tm_fact_symbolic.stop();
 
-        data.h_Bt = MatrixCsxView_new<T,I>::from_old(feti.B[di]).get_transposed_reordered_view();
+        data.h_Bt = MatrixCsxView_new<T,I>::from_old(feti.B0[di]).get_transposed_reordered_view();
 
-        data.op_sc.set_config(op_sc_config);
-        data.op_sc.set_handles(q, hs, hd);
-        data.op_sc.set_coefficients(-1);
-        data.op_sc.set_h_A11_solver(&data.solver_Kreg);
-        data.op_sc.set_h_A12(&data.h_Bt);
-        data.op_sc.set_d_sc(&data.d_F);
-        data.op_sc.setup();
+        data.op_sc = std::make_unique<gpu::operations::sc_symm_hcsx_ddny_tria<T,I>>();
+        data.op_sc->set_config(op_sc_config);
+        data.op_sc->set_handles(q, hs, hd);
+        data.op_sc->set_coefficients(-1);
+        data.op_sc->set_h_A11_solver(&data.solver_Kreg);
+        data.op_sc->set_h_A12(&data.h_Bt);
+        data.op_sc->set_d_sc(&data.d_F);
+        data.op_sc->setup();
 
         data.d_apply_x.resize(data.n_dofs_interface);
         data.d_apply_y.resize(data.n_dofs_interface);
@@ -202,27 +218,27 @@ void TotalFETIExplicitGpuScTria<T,I>::set(const step::Step &step)
     total_wss_persistent = 0;
     for(size_t di = 0; di < n_domains; di++) {
         per_domain_stuff & data = domain_data[di];
-        total_wss_internal += data.op_sc.get_wss_internal();
-        total_wss_persistent += data.op_sc.get_wss_persistent();
+        total_wss_internal += data.op_sc->get_wss_internal();
+        total_wss_persistent += data.op_sc->get_wss_persistent();
     }
     total_wss_internal = utils::round_up((total_wss_internal * 105) / 100, gpu::mgm::get_natural_pitch_align());
 
     ws_persistent = gpu::mgm::memalloc_device(total_wss_persistent);
     ator_ws_persistent = std::make_unique<AllocatorArena_new>(false, true, gpu::mgm::get_natural_pitch_align());
-    ator_ws_persistent.set(ws_persistent, total_wss_persistent);
+    ator_ws_persistent->set(ws_persistent, total_wss_persistent);
     
     for(size_t di = 0; di < n_domains; di++) {
         per_domain_stuff & data = domain_data[di];
-        data.op_sc.set_ws_persistent(ator_ws_persistent->alloc(data.op_sc.get_wss_persistent()));
+        data.op_sc->set_ws_persistent(ator_ws_persistent->alloc(data.op_sc->get_wss_persistent()));
     }
 
     {
         d_applyg_x_cluster.resize(feti.lambdas.size);
         d_applyg_y_cluster.resize(feti.lambdas.size);
-        Vector_Dense<T*,I,Ah> h_applyg_xs_pointers;
-        Vector_Dense<T*,I,Ah> h_applyg_ys_pointers;
-        Vector_Dense<I,I,Ah> h_applyg_n_dofs_interfaces;
-        Vector_Dense<I*,I,Ah> h_applyg_D2Cs_pointers;
+        Vector_Dense<T*,I,gpu::mgm::Ah> h_applyg_xs_pointers;
+        Vector_Dense<T*,I,gpu::mgm::Ah> h_applyg_ys_pointers;
+        Vector_Dense<I,I,gpu::mgm::Ah> h_applyg_n_dofs_interfaces;
+        Vector_Dense<I*,I,gpu::mgm::Ah> h_applyg_D2Cs_pointers;
         h_applyg_xs_pointers.resize(n_domains);
         h_applyg_ys_pointers.resize(n_domains);
         h_applyg_n_dofs_interfaces.resize(n_domains);
@@ -255,14 +271,16 @@ void TotalFETIExplicitGpuScTria<T,I>::set(const step::Step &step)
 
     #pragma omp parallel for schedule(static,1) if(parallel_set)
     for(size_t di = 0; di < n_domains; di++) {
+        gpu::mgm::queue & q = queues[di % n_queues];
         per_domain_stuff & data = domain_data[di];
 
-        void * ws_tmp = ator_tmp_cbmba->alloc(data.op_sc.get_wss_tmp_preprocess());
+        void * ws_tmp = ator_tmp_cbmba->alloc(data.op_sc->get_wss_tmp_preprocess());
 
-        data.op_sc.preprocess_submit(ws_tmp);
+        data.op_sc->preprocess_submit(ws_tmp);
 
         gpu::mgm::submit_host_function(q, [&,ws_tmp](){
-            ator_tmp_cbmba->free(ws_tmp)
+            void * ws_tmp_ = ws_tmp;
+            ator_tmp_cbmba->free(ws_tmp_);
         });
     }
 
@@ -279,8 +297,6 @@ void TotalFETIExplicitGpuScTria<T,I>::update(const step::Step &step)
     #pragma omp parallel for schedule(static,1) if(parallel_update)
     for(size_t di = 0; di < n_domains; di++) {
         gpu::mgm::queue & q = queues[di % n_queues];
-        gpu::dnblas::handle & hd = handles_dense[di % n_queues];
-        gpu::spblas::handle & hs = handles_sparse[di % n_queues];
         per_domain_stuff & data = domain_data[di];
 
         // Kreg = K + RegMat numeric values
@@ -304,12 +320,13 @@ void TotalFETIExplicitGpuScTria<T,I>::update(const step::Step &step)
         }
         // tm_fact_numeric.stop();
 
-        void * ws_tmp = ator_tmp_cbmba->alloc(data.op_sc.get_wss_tmp_preprocess());
+        void * ws_tmp = ator_tmp_cbmba->alloc(data.op_sc->get_wss_tmp_preprocess());
 
-        data.op_sc.perform_submit(ws_tmp);
+        data.op_sc->perform_submit(ws_tmp);
 
         gpu::mgm::submit_host_function(q, [&,ws_tmp](){
-            ator_tmp_cbmba->free(ws_tmp)
+            void * ws_tmp_ = ws_tmp;
+            ator_tmp_cbmba->free(ws_tmp_);
         });
     }
 
@@ -322,18 +339,6 @@ template<typename T, typename I>
 void TotalFETIExplicitGpuScTria<T,I>::_apply(const Vector_Dual<T> &x_cluster, Vector_Dual<T> &y_cluster)
 {
     gpu::mgm::set_device(device);
-
-    // tm_bufferalloc.start();
-    std::vector<void*> buffers_tmp(n_queues);
-    for(size_t qi = 0; qi < n_queues; qi++) {
-        size_t tmp_buffer_needed_queue = 0;
-        for(size_t di = qi; di < n_domains; di += n_queues) {
-            tmp_buffer_needed_queue = std::max(tmp_buffer_needed_queue, domain_data[di].buffersize_tmp_max_apply);
-        }
-        buffers_tmp[qi] = cbmba_res_device->allocate(tmp_buffer_needed_queue, align_B);
-        gpu::dnblas::buffer_set(handles_dense[qi], buffers_tmp[qi], tmp_buffer_needed_queue);
-    }
-    // tm_bufferalloc.stop();
 
     // copy x_cluster to device
     // tm_copyin.start();
@@ -389,13 +394,6 @@ void TotalFETIExplicitGpuScTria<T,I>::_apply(const Vector_Dual<T> &x_cluster, Ve
     gpu::mgm::device_wait();
     // tm_wait.stop();
 
-    // tm_bufferfree.start();
-    for(size_t qi = 0; qi < n_queues; qi++) {
-        gpu::dnblas::buffer_unset(handles_dense[qi]);
-        cbmba_res_device->deallocate(buffers_tmp[qi]);
-    }
-    // tm_bufferfree.stop();
-
     // tm_total.stop();
 }
 
@@ -434,7 +432,7 @@ void TotalFETIExplicitGpuScTria<T,I>::toPrimal(const Vector_Dual<T> &x, std::vec
         z.resize(y[di]);
         applyBt(feti, di, x, z, T{-1});
         math::add(z, T{1}, feti.f[di]);
-        domain_data[di].sc_solver.solveA11(z, y[di]);
+        domain_data[di].solver_Kreg.solve(z, y[di]);
     }
 }
 
@@ -460,7 +458,7 @@ template class TotalFETIExplicitGpuScTria<T,I>;
         /* INSTANTIATE_T(float) */ \
         INSTANTIATE_T(double) \
         /* INSTANTIATE_T(std::complex<float>) */ \
-        /* INSTANTIATE_T(std::complex<double>) */
+        INSTANTIATE_T(std::complex<double>)
 
     #undef INSTANTIATE_T
 #undef INSTANTIATE_T_I

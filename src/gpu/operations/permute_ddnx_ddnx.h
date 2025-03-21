@@ -4,6 +4,7 @@
 
 #include "math/primitives_new/matrix_dense_view_new.h"
 #include "math/primitives_new/permutation_view_new.h"
+#include "gpu/gpu_management.h"
 
 
 
@@ -29,8 +30,8 @@ public:
     static std::unique_ptr<permute_ddnx_ddnx<T,I>> make();
 public:
     void set_handles(gpu::mgm::queue q_);
-    void set_matrix_src(MatrixDenseView_new<T,I> * M_src_);
-    void set_matrix_dst(MatrixDenseView_new<T,I> * M_dst_);
+    void set_matrix_src(MatrixDenseView_new<T> * M_src_);
+    void set_matrix_dst(MatrixDenseView_new<T> * M_dst_);
     void set_perm_rows(PermutationView_new<I> * perm_rows_);
     void set_perm_cols(PermutationView_new<I> * perm_cols_);
     void setup();

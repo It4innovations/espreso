@@ -46,10 +46,10 @@ void submatrix_csx_csy<T,I>::setup()
 
     stacktimer::push("submatrix_csx_csy::setup");
 
-    size_t start_prim = 0;
-    size_t end_prim = 0;
-    size_t start_sec = 0;
-    size_t end_sec = 0;
+    I start_prim = 0;
+    I end_prim = 0;
+    I start_sec = 0;
+    I end_sec = 0;
     if(M_src->order == 'R') {
         start_prim = row_start;
         end_prim = row_end;
@@ -67,7 +67,7 @@ void submatrix_csx_csy<T,I>::setup()
     I * src_idxs = M_src->idxs;
 
     nnz_output = 0;
-    for(size_t ip = start_prim; ip < end_prim; ip++)
+    for(I ip = start_prim; ip < end_prim; ip++)
     {
         I start = src_ptrs[ip];
         I end = src_ptrs[ip+1];
@@ -147,10 +147,10 @@ void submatrix_csx_csy<T,I>::perform_same_order()
 {
     if(M_src->order != M_dst->order) eslog::error("matrix orders dont match\n");
     
-    size_t start_prim = 0;
-    size_t end_prim = 0;
-    size_t start_sec = 0;
-    size_t end_sec = 0;
+    I start_prim = 0;
+    I end_prim = 0;
+    I start_sec = 0;
+    I end_sec = 0;
     if(M_src->order == 'R') {
         start_prim = row_start;
         end_prim = row_end;
@@ -172,7 +172,7 @@ void submatrix_csx_csy<T,I>::perform_same_order()
     T * dst_vals = M_dst->vals;
 
     size_t curr_nnz = 0;
-    for(size_t ips = start_prim; ips < end_prim; ips++)
+    for(I ips = start_prim; ips < end_prim; ips++)
     {
         I ipd = ips - start_prim;
         dst_ptrs[ipd] = curr_nnz;
@@ -211,10 +211,10 @@ void submatrix_csx_csy<T,I>::perform_diff_order()
 
     // actually more similar to convert_csx_csy than submatrix
     // ipd = index primary destination, ...
-    // size_t src_size_primary = M_src->get_size_primary();
-    // size_t src_size_secdary = M_src->get_size_secdary();
-    size_t dst_size_primary = M_dst->get_size_primary();
-    // size_t dst_size_secdary = M_dst->get_size_secdary();
+    // I src_size_primary = M_src->get_size_primary();
+    // I src_size_secdary = M_src->get_size_secdary();
+    I dst_size_primary = M_dst->get_size_primary();
+    // I dst_size_secdary = M_dst->get_size_secdary();
     // size_t nnz = M_src->nnz;
     I * src_ptrs = M_src->ptrs;
     I * src_idxs = M_src->idxs;
@@ -223,18 +223,18 @@ void submatrix_csx_csy<T,I>::perform_diff_order()
     I * dst_idxs = M_dst->idxs;
     T * dst_vals = M_dst->vals;
 
-    size_t src_primary_start = ((M_src->order == 'R') ? row_start : col_start);
-    size_t src_primary_end = ((M_src->order == 'R') ? row_end : col_end);
-    size_t src_secdary_start = ((M_src->order == 'R') ? col_start : row_start);
-    size_t src_secdary_end = ((M_src->order == 'R') ? col_end : row_end);
+    I src_primary_start = ((M_src->order == 'R') ? row_start : col_start);
+    I src_primary_end = ((M_src->order == 'R') ? row_end : col_end);
+    I src_secdary_start = ((M_src->order == 'R') ? col_start : row_start);
+    I src_secdary_end = ((M_src->order == 'R') ? col_end : row_end);
 
     // initialize nnz per dst primary to 0
-    for(size_t ipd = 0; ipd <= dst_size_primary; ipd++) {
+    for(I ipd = 0; ipd <= dst_size_primary; ipd++) {
         dst_ptrs[ipd] = 0;
     }
 
     // calculate dst nnz per primary
-    for(size_t ips = src_primary_start; ips < src_primary_end; ips++) {
+    for(I ips = src_primary_start; ips < src_primary_end; ips++) {
         I start = src_ptrs[ips];
         I end = src_ptrs[ips+1];
         I i = start;
@@ -251,7 +251,7 @@ void submatrix_csx_csy<T,I>::perform_diff_order()
 
     // exclusive cumulative sum
     I curr = 0;
-    for(size_t ipd = 0; ipd <= dst_size_primary; ipd++)
+    for(I ipd = 0; ipd <= dst_size_primary; ipd++)
     {
         I tmp = dst_ptrs[ipd];
         dst_ptrs[ipd] = curr;
@@ -259,7 +259,7 @@ void submatrix_csx_csy<T,I>::perform_diff_order()
     }
 
     // fill dst idxs and vals
-    for(size_t ips = src_primary_start; ips < src_primary_end; ips++)
+    for(I ips = src_primary_start; ips < src_primary_end; ips++)
     {
         I start = src_ptrs[ips];
         I end = src_ptrs[ips+1];
@@ -282,7 +282,7 @@ void submatrix_csx_csy<T,I>::perform_diff_order()
 
     // fix (shift) dst ptrs
     curr = 0;
-    for(size_t ipd = 0; ipd <= dst_size_primary; ipd++)
+    for(I ipd = 0; ipd <= dst_size_primary; ipd++)
     {
         I tmp = dst_ptrs[ipd];
         dst_ptrs[ipd] = curr;
@@ -303,7 +303,7 @@ template class submatrix_csx_csy<T,I>;
         /* INSTANTIATE_T(float) */ \
         INSTANTIATE_T(double) \
         /* INSTANTIATE_T(std::complex<float>) */ \
-        /* INSTANTIATE_T(std::complex<double>) */
+        INSTANTIATE_T(std::complex<double>)
 
             INSTANTIATE
 

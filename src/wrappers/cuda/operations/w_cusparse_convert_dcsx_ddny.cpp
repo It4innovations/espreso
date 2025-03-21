@@ -3,6 +3,8 @@
 
 #include "wrappers/cuda/operations/w_cusparse_convert_dcsx_ddny.h"
 
+#include "wrappers/cuda/common_cusparse.h"
+
 
 
 namespace espreso {
@@ -84,7 +86,7 @@ template class w_cusparse_convert_dcsx_ddny<T,I>;
         /* INSTANTIATE_T(float) */ \
         INSTANTIATE_T(double) \
         /* INSTANTIATE_T(std::complex<float>) */ \
-        /* INSTANTIATE_T(std::complex<double>) */
+        INSTANTIATE_T(std::complex<double>)
 
             INSTANTIATE
 

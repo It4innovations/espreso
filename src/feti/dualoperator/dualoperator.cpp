@@ -77,6 +77,7 @@ DualOperator<T>* DualOperator<T>::create(FETI<T> &feti, const step::Step &step)
         case FETIConfiguration::DUAL_OPERATOR::IMPLICIT_GPU:
         case FETIConfiguration::DUAL_OPERATOR::EXPLICIT_SC:
         case FETIConfiguration::DUAL_OPERATOR::EXPLICIT_SC_GPUAPPLY:
+        case FETIConfiguration::DUAL_OPERATOR::EXPLICIT_GPU_SCTRIA:
             eslog::error("not implemented dual operator\n");
             break;
         }

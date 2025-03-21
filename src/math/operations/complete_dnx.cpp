@@ -91,7 +91,7 @@ template class complete_dnx<T>;
     /* INSTANTIATE_T(float) */ \
     INSTANTIATE_T(double) \
     /* INSTANTIATE_T(std::complex<float>) */ \
-    /* INSTANTIATE_T(std::complex<double>) */
+    INSTANTIATE_T(std::complex<double>)
 
         INSTANTIATE
 

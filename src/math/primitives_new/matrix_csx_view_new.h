@@ -100,9 +100,9 @@ public:
         M_old.rows = M_new.ptrs;
         M_old.cols = M_new.idxs;
         M_old.vals = M_new.vals;
-        if(M_new.prop.uplo == 'U') M_old.shape == Matrix_Shape::UPPER;
-        else if(M_new.prop.uplo == 'L') M_old.shape == Matrix_Shape::LOWER;
-        else M_old.shape == Matrix_Shape::FULL;
+        if(M_new.prop.uplo == 'U') M_old.shape = Matrix_Shape::UPPER;
+        else if(M_new.prop.uplo == 'L') M_old.shape = Matrix_Shape::LOWER;
+        else M_old.shape = Matrix_Shape::FULL;
         return M_old;
     }
 

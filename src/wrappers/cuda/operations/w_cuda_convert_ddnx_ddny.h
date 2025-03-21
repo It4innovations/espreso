@@ -16,12 +16,18 @@ namespace operations {
 
 
 
-template<typename T, typename I>
-class w_cuda_convert_ddnx_ddny : public convert_ddnx_ddny<T,I>
+template<typename T>
+class w_cuda_convert_ddnx_ddny : public convert_ddnx_ddny<T>
 {
 public:
     w_cuda_convert_ddnx_ddny() = default;
     virtual ~w_cuda_convert_ddnx_ddny() = default;
+protected:
+    using convert_ddnx_ddny<T>::q;
+    using convert_ddnx_ddny<T>::handle_dnblas;
+    using convert_ddnx_ddny<T>::M_src;
+    using convert_ddnx_ddny<T>::M_dst;
+    using convert_ddnx_ddny<T>::wss_tmp_perform;
 protected:
     virtual void internal_setup() override;
     virtual void internal_perform(void * ws_tmp) override;
@@ -33,8 +39,8 @@ protected:
 
 
 
-template<typename T, typename I>
-class w_cuda_convert_ddnx_ddny : public submatrix_dcsx_dcsx<T,I>
+template<typename T>
+class w_cuda_convert_ddnx_ddny : public submatrix_dcsx_dcsx<T>
 {
 public:
     w_cuda_convert_ddnx_ddny() { eslog::error("cuda wrapper is not available\n"); }

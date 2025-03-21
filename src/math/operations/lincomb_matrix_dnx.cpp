@@ -49,21 +49,21 @@ template<typename T>
 void lincomb_matrix_dnx<T>::perform()
 {
     if(X == nullptr) eslog::error("result matrix X is not set\n");
-    if(alpha != 0 && A == nullptr) eslog::error("matrix A is not set\n");
-    if(beta != 0 && B == nullptr) eslog::error("matrix B is not set\n");
+    if(alpha != T{0} && A == nullptr) eslog::error("matrix A is not set\n");
+    if(beta != T{0} && B == nullptr) eslog::error("matrix B is not set\n");
 
     stacktimer::push("lincomb_matrix_dnx::perform");
 
-    if(alpha == 0 && beta == 0) {
+    if(alpha == T{0} && beta == T{0}) {
         lincomb_matrix_dnx<T>::perform_zero(*X);
     }
-    if(alpha != 0 && beta == 0) {
+    if(alpha != T{0} && beta == T{0}) {
         lincomb_matrix_dnx<T>::perform_one(*X, alpha, *A);
     }
-    if(alpha == 0 && beta != 0) {
+    if(alpha == T{0} && beta != T{0}) {
         lincomb_matrix_dnx<T>::perform_one(*X, beta, *B);
     }
-    if(alpha != 0 && beta != 0) {
+    if(alpha != T{0} && beta != T{0}) {
         lincomb_matrix_dnx<T>::perform_two(*X, alpha, *A, beta, *B);
     }
 
@@ -158,7 +158,7 @@ template class lincomb_matrix_dnx<T>;
     /* INSTANTIATE_T(float) */ \
     INSTANTIATE_T(double) \
     /* INSTANTIATE_T(std::complex<float>) */ \
-    /* INSTANTIATE_T(std::complex<double>) */
+    INSTANTIATE_T(std::complex<double>)
 
         INSTANTIATE
 

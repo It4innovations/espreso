@@ -200,21 +200,21 @@ public:
 class AllocatorArena_new : public Allocator_new
 {
 private:
-    void * start_ptr = nullptr;
+    bool on_cpu;
+    bool on_gpu;
+    char * start_ptr = nullptr;
     size_t capacity = 0;
     size_t curr_used = 0;
     size_t align_B = 1;
-    bool on_cpu;
-    bool on_gpu;
 public:
     AllocatorArena_new(bool on_cpu_, bool on_gpu_, size_t align_B_) : on_cpu(on_cpu_), on_gpu(on_gpu_), align_B(align_B_) { }
     virtual ~AllocatorArena_new() {}
     void set(void * ptr_, size_t capacity_)
     {
         if(start_ptr != nullptr) eslog::error("arena allocator has already been set\n");
-        if(start_ptr_ % align_B_ != 0) eslog::error("arena buffer pointer must be a multiple of align\n");
+        if((uintptr_t)ptr_ % align_B != 0) eslog::error("arena buffer pointer must be a multiple of align\n");
 
-        start_ptr = ptr_;
+        start_ptr = (char*)ptr_;
         capacity = capacity_;
         curr_used = 0;
     }
@@ -231,7 +231,7 @@ public:
         if(start_ptr == nullptr) eslog::error("arena allocator has not been set yet\n");
         if(num_bytes == 0) return nullptr;
 
-        void * ptr = start_ptr + curr_used;
+        char * ptr = start_ptr + curr_used;
         curr_used += num_bytes;
         if(curr_used > capacity) {
             eslog::error("arena allocator exceeded its capacity\n");
@@ -262,30 +262,29 @@ public:
 class AllocatorSinglePointer_new : public Allocator_new
 {
 private:
-    void * pointer = nullptr;
-    size_t capacity = 0;
-    size_t align_B = 1;
     bool on_cpu;
     bool on_gpu;
+    size_t align_B = 1;
+    void * pointer = nullptr;
+    size_t capacity = 0;
 public:
-    AllocatorArena_new(bool on_cpu_, bool on_gpu_, size_t align_B_) : on_cpu(on_cpu_), on_gpu(on_gpu_), align_B(align_B_) { }
-    virtual ~AllocatorArena_new() {}
+    AllocatorSinglePointer_new(bool on_cpu_, bool on_gpu_, size_t align_B_) : on_cpu(on_cpu_), on_gpu(on_gpu_), align_B(align_B_) { }
+    virtual ~AllocatorSinglePointer_new() {}
     void set(void * ptr_, size_t capacity_)
     {
-        if(start_ptr != nullptr) eslog::error("singlepointer allocator has already been set\n");
-        if(start_ptr_ % align_B_ != 0) eslog::error("singlepointer buffer pointer must be a multiple of align\n");
+        if(pointer != nullptr) eslog::error("singlepointer allocator has already been set\n");
+        if((uintptr_t)ptr_ % align_B != 0) eslog::error("singlepointer buffer pointer must be a multiple of align\n");
 
-        start_ptr = ptr_;
+        pointer = ptr_;
         capacity = capacity_;
-        curr_used = 0;
     }
     void unset()
     {
-        start_ptr = nullptr;
+        pointer = nullptr;
     }
     virtual void * alloc(size_t num_bytes) override
     {
-        if(start_ptr == nullptr) eslog::error("singlepointer allocator has not been set yet\n");
+        if(pointer == nullptr) eslog::error("singlepointer allocator has not been set yet\n");
         if(num_bytes > capacity) {
             eslog::error("singlepointer allocator exceeded its capacity\n");
         }
@@ -314,13 +313,12 @@ public:
 class AllocatorCBMB_new : public Allocator_new
 {
 private:
-    size_t align_B = 1;
     bool on_cpu;
     bool on_gpu;
+    size_t align_B = 1;
     cbmba_resource resource;
-    cbmba ator;
 public:
-    AllocatorCBMB_new(bool on_cpu_, bool on_gpu_, size_t align_B_, void * memory, size_t capacity) : on_cpu(on_cpu_), on_gpu(on_gpu_), align_B(align_B_), resource(memory, capacity), ator(resource, align_B_) {}
+    AllocatorCBMB_new(bool on_cpu_, bool on_gpu_, size_t align_B_, void * memory, size_t capacity) : on_cpu(on_cpu_), on_gpu(on_gpu_), align_B(align_B_), resource(memory, capacity) {}
     AllocatorCBMB_new(const AllocatorCBMB_new & other) = delete;
     AllocatorCBMB_new(AllocatorCBMB_new && other) = delete;
     AllocatorCBMB_new & operator=(const AllocatorCBMB_new & other) = delete;
@@ -328,11 +326,11 @@ public:
     virtual ~AllocatorCBMB_new() {}
     virtual void * alloc(size_t num_bytes) override
     {
-        ator.allocate(num_bytes);
+        return resource.allocate(num_bytes, align_B);
     }
     virtual void free(void * & ptr) override
     {
-        ator.deallocate(ptr);
+        resource.deallocate(ptr);
         ptr = nullptr;
     }
     virtual bool is_on_cpu() override

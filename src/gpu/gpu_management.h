@@ -9,6 +9,10 @@
 #include "math/primitives/vector_dense.h"
 #include "math/primitives/matrix_dense.h"
 #include "math/primitives/matrix_csr.h"
+#include "math/primitives_new/matrix_csx_view_new.h"
+#include "math/primitives_new/matrix_dense_view_new.h"
+#include "math/primitives_new/vector_dense_view_new.h"
+#include "math/primitives_new/permutation_view_new.h"
 
 namespace espreso {
 namespace gpu {
@@ -81,6 +85,9 @@ namespace mgm {
 
     template<typename T, typename I, typename Ao, typename Ai>
     void copy_submit(queue & q, Matrix_CSR<T,I,Ao> & output, const Matrix_CSR<T,I,Ai> & input, bool copy_pattern = true, bool copy_vals = true);
+
+    template<typename T>
+    void copy_submit(queue & q, PermutationView_new<T> & src, PermutationView_new<T> & dst);
 
     template<typename T>
     void copy_submit(queue & q, VectorDenseView_new<T> & src, VectorDenseView_new<T> & dst);

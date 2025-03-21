@@ -4,6 +4,10 @@
 
 #include "math/primitives_new/matrix_csx_data_new.h"
 #include "math/primitives_new/matrix_dense_data_new.h"
+#include "math/operations/submatrix_dnx_dnx_view.h"
+#include "gpu/operations/submatrix_dcsx_dcsx.h"
+#include "gpu/operations/trsm_dcsx_ddny_ddny.h"
+#include "gpu/operations/trsm_ddnx_ddny.h"
 
 
 
@@ -19,9 +23,9 @@ class gpu_trsm_trirhs_chunk_splitrhs
 public:
     gpu_trsm_trirhs_chunk_splitrhs() = default;
     gpu_trsm_trirhs_chunk_splitrhs(const gpu_trsm_trirhs_chunk_splitrhs &) = delete;
-    gpu_trsm_trirhs_chunk_splitrhs(gpu_trsm_trirhs_chunk_splitrhs &&) = delete;
+    gpu_trsm_trirhs_chunk_splitrhs(gpu_trsm_trirhs_chunk_splitrhs &&) = default;
     gpu_trsm_trirhs_chunk_splitrhs & operator=(const gpu_trsm_trirhs_chunk_splitrhs &) = delete;
-    gpu_trsm_trirhs_chunk_splitrhs & operator=(gpu_trsm_trirhs_chunk_splitrhs &&) = delete;
+    gpu_trsm_trirhs_chunk_splitrhs & operator=(gpu_trsm_trirhs_chunk_splitrhs &&) = default;
     ~gpu_trsm_trirhs_chunk_splitrhs() = default;
 public:
     void set_config(char factor_spdn_);
@@ -68,19 +72,19 @@ private:
 private:
     size_t wss_tmp_preprocess_linear = 0;
     size_t wss_tmp_preprocess_overlap = 0;
-    size_t wss_tmp_peform_linear = 0;
-    size_t wss_tmp_peform_overlap = 0;
+    size_t wss_tmp_perform_linear = 0;
+    size_t wss_tmp_perform_overlap = 0;
     std::unique_ptr<AllocatorArena_new> ator_ws_persistent;
     std::unique_ptr<AllocatorArena_new> ator_ws_tmp_linear;
     std::unique_ptr<AllocatorSinglePointer_new> ator_ws_tmp_overlap;
     MatrixCsxData_new<T,I> d_sub_L_sp;
     MatrixDenseView_new<T> d_sub_L_dn;
     MatrixDenseView_new<T> d_sub_X;
-    submatrix_dcsx_dcsx<T,I> op_d_sub_L_sp;
-    submatrix_dnx_dnx_view<T> op_sub_L_dn;
-    submatrix_dnx_dnx_view<T> op_sub_X;
-    trsm_dcsx_ddny_ddny<T,I> op_d_trsm_sp;
-    trsm_ddnx_ddny<T,I> op_d_trsm_dn;
+    std::unique_ptr<submatrix_dcsx_dcsx<T,I>> op_d_sub_L_sp;
+    math::operations::submatrix_dnx_dnx_view<T> op_sub_L_dn;
+    math::operations::submatrix_dnx_dnx_view<T> op_sub_X;
+    std::unique_ptr<trsm_dcsx_ddny_ddny<T,I>> op_d_trsm_sp;
+    std::unique_ptr<trsm_ddnx_ddny<T>> op_d_trsm_dn;
 };
 
 

@@ -37,7 +37,7 @@ void herk_dnx_dny<T>::set_mode(blas::herk_mode mode_)
 
 
 template<typename T>
-void herk_dnx_dny<T>::set_coefficients(T alpha_, T beta_)
+void herk_dnx_dny<T>::set_coefficients(Treal alpha_, Treal beta_)
 {
     alpha = alpha_;
     beta = beta_;
@@ -66,7 +66,7 @@ void herk_dnx_dny<T>::perform()
 
 
 template<typename T>
-void herk_dnx_dny<T>::do_all(MatrixDenseView_new<T> * A, MatrixDenseView_new<T> * C, blas::herk_mode mode, T alpha, T beta)
+void herk_dnx_dny<T>::do_all(MatrixDenseView_new<T> * A, MatrixDenseView_new<T> * C, blas::herk_mode mode, Treal alpha, Treal beta)
 {
     herk_dnx_dny<T> instance;
     instance.set_matrix_A(A);
@@ -85,7 +85,7 @@ template class herk_dnx_dny<T>;
     /* INSTANTIATE_T(float) */ \
     INSTANTIATE_T(double) \
     /* INSTANTIATE_T(std::complex<float>) */ \
-    /* INSTANTIATE_T(std::complex<double>) */
+    INSTANTIATE_T(std::complex<double>)
 
         INSTANTIATE
 

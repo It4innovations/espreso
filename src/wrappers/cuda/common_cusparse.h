@@ -40,15 +40,8 @@ inline cusparseOrder_t cusparse_order(char order)
 {
     if(order == 'R') return CUSPARSE_ORDER_ROW;
     if(order == 'C') return CUSPARSE_ORDER_COL;
-    eslog::error("wrong order\n");
+    espreso::eslog::error("wrong order\n");
 }
-
-
-
-template<typename T> struct cpp_to_cusparse_type { using type = T; };
-template<> struct cpp_to_cusparse_type<std::complex<float>> { using type = cuComplex; };
-template<> struct cpp_to_cusparse_type<std::complex<double>> { using type = cuDoubleComplex; };
-template<typename T> using cpp_to_cusparse_type_t = typename cpp_to_cusparse_type<T>::type;
 
 
 

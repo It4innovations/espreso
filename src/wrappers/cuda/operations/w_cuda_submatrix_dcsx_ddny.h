@@ -23,6 +23,19 @@ public:
     w_cuda_submatrix_dcsx_ddny() = default;
     virtual ~w_cuda_submatrix_dcsx_ddny() = default;
 protected:
+    using submatrix_dcsx_ddny<T,I>::q;
+    using submatrix_dcsx_ddny<T,I>::primary_start;
+    using submatrix_dcsx_ddny<T,I>::primary_end;
+    using submatrix_dcsx_ddny<T,I>::secdary_start;
+    using submatrix_dcsx_ddny<T,I>::secdary_end;
+    using submatrix_dcsx_ddny<T,I>::M_src;
+    using submatrix_dcsx_ddny<T,I>::M_dst;
+    using submatrix_dcsx_ddny<T,I>::ws_persistent;
+    using submatrix_dcsx_ddny<T,I>::wss_internal;
+    using submatrix_dcsx_ddny<T,I>::wss_persistent;
+    using submatrix_dcsx_ddny<T,I>::wss_tmp_preprocess;
+    using submatrix_dcsx_ddny<T,I>::wss_tmp_perform;
+protected:
     virtual void internal_setup() override;
     virtual void internal_preprocess(void * ws_tmp) override;
     virtual void internal_perform(void * ws_tmp) override;

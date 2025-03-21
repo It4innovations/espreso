@@ -25,6 +25,16 @@ public:
     w_cusparse_convert_dcsx_ddny();
     virtual ~w_cusparse_convert_dcsx_ddny();
 protected:
+    using convert_dcsx_ddny<T,I>::q;
+    using convert_dcsx_ddny<T,I>::handle_spblas;
+    using convert_dcsx_ddny<T,I>::M_src;
+    using convert_dcsx_ddny<T,I>::M_dst;
+    using convert_dcsx_ddny<T,I>::ws_persistent;
+    using convert_dcsx_ddny<T,I>::wss_internal;
+    using convert_dcsx_ddny<T,I>::wss_persistent;
+    using convert_dcsx_ddny<T,I>::wss_tmp_preprocess;
+    using convert_dcsx_ddny<T,I>::wss_tmp_perform;
+protected:
     virtual void internal_setup() override;
     virtual void internal_preprocess(void * ws_tmp) override;
     virtual void internal_perform(void * ws_tmp) override;

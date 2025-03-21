@@ -23,12 +23,12 @@ std::unique_ptr<herk_ddnx_ddny<T>> herk_ddnx_ddny<T>::make()
 
 
 template<typename T>
-void herk_ddnx_ddny<T>::set_handles(gpu::mgm::queue q_, gpu::dnblas::handle dnblas_handle_)
+void herk_ddnx_ddny<T>::set_handles(gpu::mgm::queue q_, gpu::dnblas::handle handle_dnblas_)
 {
     if(called_set_handles) eslog::error("handles are already set\n");
 
     q = q_;
-    dnblas_handle = dnblas_handle_;
+    handle_dnblas = handle_dnblas_;
 
     called_set_handles = true;
 }
@@ -36,7 +36,7 @@ void herk_ddnx_ddny<T>::set_handles(gpu::mgm::queue q_, gpu::dnblas::handle dnbl
 
 
 template<typename T>
-void herk_ddnx_ddny<T>::set_matrix_A(MatrixDenseView_new<T,I> * A_)
+void herk_ddnx_ddny<T>::set_matrix_A(MatrixDenseView_new<T> * A_)
 {
     if(A != nullptr) eslog::error("matrix A is already set\n");
     if(A_ == nullptr) eslog::error("A cannot be nullptr\n");
@@ -67,7 +67,7 @@ void herk_ddnx_ddny<T>::set_coefficients(Treal alpha_, Treal beta_)
 
 
 template<typename T>
-void herk_ddnx_ddny<T>::set_mode(herk_mode mode_)
+void herk_ddnx_ddny<T>::set_mode(math::blas::herk_mode mode_)
 {
     mode = mode_;
 
@@ -85,8 +85,8 @@ void herk_ddnx_ddny<T>::setup()
     if(!called_set_mode) eslog::error("mode is not set\n");
     if(called_setup) eslog::error("setup was already called\n");
     if(C->nrows != C->ncols) eslog::error("matrix C is not square\n");
-    if(mode == herk_mode::AhA && A->ncols != C->ncols) eslog::error("incompatible matrices\n");
-    if(mode == herk_mode::AAh && A->nrows != C->nrows) eslog::error("incompatible matrices\n");
+    if(mode == math::blas::herk_mode::AhA && A->ncols != C->ncols) eslog::error("incompatible matrices\n");
+    if(mode == math::blas::herk_mode::AAh && A->nrows != C->nrows) eslog::error("incompatible matrices\n");
     if(C->prop.uplo != 'L' && C->prop.uplo != 'U') eslog::error("invalid matrix C uplo\n");
 
     this->internal_setup();
@@ -113,31 +113,6 @@ void herk_ddnx_ddny<T>::perform_submit(void * ws_tmp)
     if(ws_tmp == nullptr && wss_tmp_perform > 0) eslog::error("temporary workspace is null\n");
 
     this->internal_perform(ws_tmp);
-}
-
-
-
-template<typename T>
-void herk_ddnx_ddny<T>::submit_all(gpu::mgm::queue q, gpu::dnblas::handle handle_dnblas, MatrixDenseView_new<T> * A, MatrixDenseView_new<T> * C, Treal alpha, Treal beta, herk_mode mode, Allocator_new * ator_gpu)
-{
-    trsm_ddnx_ddny<T> instance;
-    instance.set_handles(q, handle_dnblas);
-    instance.set_matrix_A(A);
-    instance.set_matrix_C(C);
-    instance.set_coefficients(alpha, beta);
-    instance.set_mode(mode);
-    instance.setup();
-    size_t wss_tmp = instance.get_wss_tmp_perform();
-    void * ws_tmp = nullptr;
-    if(wss_tmp > 0) {
-        ator_gpu->alloc(wss_tmp);
-    }
-    instance.perform_submit(ws_tmp);
-    if(wss_tmp > 0) {
-        gpu::mgm::submit_host_function(q, [ator_gpu,ws_tmp](){
-            ator_gpu->free(ws_tmp);
-        });
-    }
 }
 
 

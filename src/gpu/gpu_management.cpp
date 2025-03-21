@@ -68,6 +68,9 @@ namespace mgm {
     void copy_submit(queue & /*q*/, Matrix_CSR<T,I,Ao> & /*output*/, const Matrix_CSR<T,I,Ai> & /*input*/, bool /*copy_pattern*/, bool /*copy_vals*/) {}
 
     template<typename T>
+    void copy_submit(queue & /*q*/, PermutationView_new<T> & /*src*/, PermutationView_new<T> & /*dst*/) {}
+
+    template<typename T>
     void copy_submit(queue & /*q*/, VectorDenseView_new<T> & /*src*/, char /*src_mrm*/, VectorDenseView_new<T> & /*dst*/, char /*dst_mem*/) {}
 
     template<typename T>

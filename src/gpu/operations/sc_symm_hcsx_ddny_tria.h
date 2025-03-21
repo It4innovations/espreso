@@ -4,6 +4,13 @@
 
 #include "math/primitives_new/matrix_csx_view_new.h"
 #include "math/primitives_new/matrix_dense_view_new.h"
+#include "math/primitives_new/permutation_data_new.h"
+#include "gpu/operations/trsm_hcsx_ddny_tri.h"
+#include "gpu/operations/herk_ddnx_ddny_tri.h"
+#include "math/operations/convert_csx_csy_map.h"
+#include "gpu/operations/convert_ddnx_ddny.h"
+#include "gpu/operations/copy_ddnx_ddnx.h"
+#include "gpu/operations/permute_ddnx_ddnx.h"
 
 
 
@@ -22,7 +29,7 @@ class sc_symm_hcsx_ddny_tria
 public:
     struct config
     {
-        typename sc_symm_hcsx_ddny_tria<T,I>::config cfg_trsm;
+        typename trsm_hcsx_ddny_tri<T,I>::config cfg_trsm;
         typename herk_ddnx_ddny_tri<T,I>::config cfg_herk;
         char order_X = '_';
         char order_L = '_';
@@ -59,7 +66,7 @@ private:
     DirectSparseSolver<T,I> * h_A11_solver = nullptr;
     MatrixCsxView_new<T,I> * h_A12 = nullptr;
     MatrixDenseView_new<T> * d_sc = nullptr;
-    Treal alpha = T{1};
+    Treal alpha = Treal{1};
     void * ws_persistent = nullptr;
     size_t wss_internal = 0;
     size_t wss_persistent = 0;
@@ -75,11 +82,12 @@ private:
     std::unique_ptr<AllocatorSinglePointer_new> ator_ws_tmp_overlap;
     size_t wss_tmp_preprocess_linear = 0;
     size_t wss_tmp_preprocess_overlap = 0;
-    size_t wss_tmp_peform_linear = 0;
-    size_t wss_tmp_peform_overlap = 0;
+    size_t wss_tmp_perform_linear = 0;
+    size_t wss_tmp_perform_overlap = 0;
     size_t A11size = 0;
     bool need_reorder_factor_L2U = false;
     bool need_reorder_factor_U2L = false;
+    char solver_factor_uplo = '_';
     MatrixCsxData_new<T,I> h_factor_row_U;
     MatrixCsxData_new<T,I> h_factor_row_L;
     MatrixCsxView_new<T,I> h_L_row;
@@ -91,18 +99,18 @@ private:
     PermutationView_new<I> h_perm_fillreduce;
     MatrixCsxData_new<T,I> h_X_sp;
     MatrixCsxData_new<T,I> d_X_sp;
-    MatrixCsxData_new<T,I> d_X_dn;
+    MatrixDenseData_new<T> d_X_dn;
     MatrixDenseData_new<T> d_sc_tmp1;
     MatrixDenseData_new<T> d_sc_tmp2;
-    convert_dcsx_ddny<T,I> op_X_sp2dn;
-    convert_csx_csy<T,I> op_L2U;
-    convert_csx_csy<T,I> op_U2L;
+    std::unique_ptr<convert_dcsx_ddny<T,I>> op_X_sp2dn;
+    math::operations::convert_csx_csy_map<T,I> op_L2U;
+    math::operations::convert_csx_csy_map<T,I> op_U2L;
     trsm_hcsx_ddny_tri<T,I> op_d_trsm;
     herk_ddnx_ddny_tri<T,I> op_d_herk;
-    convert_ddnx_ddny<T> op_d_sc_trans;
-    copy_ddnx_ddnx<T> op_d_copy_sc_tmp;
-    permute_ddnx_ddnx<T,I> op_d_perm_sc;
-    copy_ddnx_ddnx<T> op_d_copy_sc_final;
+    std::unique_ptr<convert_ddnx_ddny<T>> op_d_sc_trans;
+    std::unique_ptr<copy_ddnx_ddnx<T>> op_d_copy_sc_tmp;
+    std::unique_ptr<permute_ddnx_ddnx<T,I>> op_d_perm_sc;
+    std::unique_ptr<copy_ddnx_ddnx<T>> op_d_copy_sc_final;
 };
 
 

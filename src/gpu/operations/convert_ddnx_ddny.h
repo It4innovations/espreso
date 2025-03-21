@@ -4,6 +4,7 @@
 
 #include "math/primitives_new/matrix_dense_view_new.h"
 #include "gpu/gpu_management.h"
+#include "gpu/gpu_dnblas.h"
 
 
 
@@ -26,11 +27,11 @@ public:
     convert_ddnx_ddny & operator=(convert_ddnx_ddny &&) = delete;
     virtual ~convert_ddnx_ddny() = default;
 public:
-    static std::unique_ptr<convert_ddnx_ddny<T,I>> make();
+    static std::unique_ptr<convert_ddnx_ddny<T>> make();
 public:
     void set_handles(gpu::mgm::queue q_, gpu::dnblas::handle handle_dnblas_);
-    void set_matrix_src(MatrixDenseView_new<T,I> * M_src_);
-    void set_matrix_dst(MatrixDenseView_new<T,I> * M_dst_);
+    void set_matrix_src(MatrixDenseView_new<T> * M_src_);
+    void set_matrix_dst(MatrixDenseView_new<T> * M_dst_);
     void setup();
     size_t get_wss_tmp_perform();
     void perform_submit(void * ws_tmp);

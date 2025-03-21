@@ -41,7 +41,7 @@ void trsm_hcsx_ddny_tri<T,I>::set_matrix_h_L(MatrixCsxView_new<T,I> * h_L_)
     if(h_L != nullptr) eslog::error("matrix h_L is already set\n");
     if(h_L_ == nullptr) eslog::error("h_L cannot be nullptr\n");
 
-    h_L = L_;
+    h_L = h_L_;
 }
 
 
@@ -58,7 +58,7 @@ void trsm_hcsx_ddny_tri<T,I>::set_matrix_d_X(MatrixDenseView_new<T> * d_X_)
 
 
 template<typename T, typename I>
-void trsm_hcsx_ddny_tri<T,I>::set_X_pattern(MatrixCsxView<T,I> * h_X_pattern_)
+void trsm_hcsx_ddny_tri<T,I>::set_X_pattern(MatrixCsxView_new<T,I> * h_X_pattern_)
 {
     if(h_X_pattern != nullptr) eslog::error("X pattern is already set\n");
     if(h_X_pattern_ == nullptr) eslog::error("X pattern cannot be nullptr\n");
@@ -85,7 +85,7 @@ void trsm_hcsx_ddny_tri<T,I>::setup()
     ator_ws_tmp_overlap = std::make_unique<AllocatorSinglePointer_new>(false, true, gpu::mgm::get_natural_pitch_align());
 
     if(cfg.strategy == 'R') {
-        trsm_hcsx_ddny_tri_splitrhs<T,I>::config op_config;
+        typename trsm_hcsx_ddny_tri_splitrhs<T,I>::config op_config;
         op_config.partition.algorithm = cfg.partition.algorithm;
         op_config.partition.parameter = cfg.partition.parameter;
         op_config.factor_order_sp = cfg.splitrhs.factor_order_sp;
@@ -97,15 +97,15 @@ void trsm_hcsx_ddny_tri<T,I>::setup()
         trsm_splitrhs->set_handles(q, handle_spblas, handle_dnblas);
         trsm_splitrhs->set_matrix_h_L(h_L);
         trsm_splitrhs->set_matrix_d_X(d_X);
-        trsm_splitrhs->calc_X_pattern(h_X_pattern);
+        trsm_splitrhs->calc_X_pattern(*h_X_pattern);
         trsm_splitrhs->setup();
         wss_internal += trsm_splitrhs->get_wss_internal();
         wss_persistent += trsm_splitrhs->get_wss_persistent();
         wss_tmp_preprocess_overlap = std::max(wss_tmp_preprocess_overlap, trsm_splitrhs->get_wss_tmp_preprocess());
-        wss_tmp_peform_overlap = std::max(wss_tmp_peform_overlap, trsm_splitrhs->get_wss_tmp_perform());
+        wss_tmp_perform_overlap = std::max(wss_tmp_perform_overlap, trsm_splitrhs->get_wss_tmp_perform());
     }
     if(cfg.strategy == 'F') {
-        trsm_hcsx_ddny_tri_splitfactor<T,I>::config op_config;
+        typename trsm_hcsx_ddny_tri_splitfactor<T,I>::config op_config;
         op_config.partition.algorithm = cfg.partition.algorithm;
         op_config.partition.parameter = cfg.partition.parameter;
         op_config.trsm_factor_spdn = cfg.splitfactor.trsm_factor_spdn;
@@ -120,16 +120,16 @@ void trsm_hcsx_ddny_tri<T,I>::setup()
         trsm_splitfactor->set_handles(q, handle_spblas, handle_dnblas);
         trsm_splitfactor->set_matrix_h_L(h_L);
         trsm_splitfactor->set_matrix_d_X(d_X);
-        trsm_splitfactor->calc_X_pattern(h_X_pattern);
+        trsm_splitfactor->calc_X_pattern(*h_X_pattern);
         trsm_splitfactor->setup();
         wss_internal += trsm_splitfactor->get_wss_internal();
         wss_persistent += trsm_splitfactor->get_wss_persistent();
         wss_tmp_preprocess_overlap = std::max(wss_tmp_preprocess_overlap, trsm_splitfactor->get_wss_tmp_preprocess());
-        wss_tmp_peform_overlap = std::max(wss_tmp_peform_overlap, trsm_splitfactor->get_wss_tmp_perform());
+        wss_tmp_perform_overlap = std::max(wss_tmp_perform_overlap, trsm_splitfactor->get_wss_tmp_perform());
     }
 
-    wss_tmp_preprocess_linear = ((wss_tmp_preprocess_linear - 1) / ator_ws_tmp_linear->get_align() + 1) * ator_ws_tmp_linear->get_align();
-    wss_tmp_perform_linear = ((wss_tmp_perform_linear - 1) / ator_ws_tmp_linear->get_align() + 1) * ator_ws_tmp_linear->get_align();
+    wss_tmp_preprocess_linear = utils::round_up(wss_tmp_preprocess_linear, ator_ws_tmp_linear->get_align());
+    wss_tmp_perform_linear = utils::round_up(wss_tmp_perform_linear, ator_ws_tmp_linear->get_align());
 
     wss_tmp_preprocess = wss_tmp_preprocess_linear + wss_tmp_preprocess_overlap;
     wss_tmp_perform = wss_tmp_perform_linear + wss_tmp_perform_overlap;
@@ -197,22 +197,22 @@ void trsm_hcsx_ddny_tri<T,I>::preprocess_submit(void * ws_tmp)
     if(called_preprocess) eslog::error("preprocess has already been called\n");
     if(ws_tmp == nullptr && wss_tmp_preprocess > 0) eslog::error("temporary workspace is null\n");
 
-    ator_ws_persistent.set(ws_persistent, wss_persistent);
+    ator_ws_persistent->set(ws_persistent, wss_persistent);
 
-    ator_ws_tmp_linear.set(ws_tmp, wss_tmp_preprocess_linear);
-    ator_ws_tmp_overlap.set(ws_tmp + wss_tmp_preprocess_linear, wss_tmp_preprocess_overlap);
+    ator_ws_tmp_linear->set(ws_tmp, wss_tmp_preprocess_linear);
+    ator_ws_tmp_overlap->set((char*)ws_tmp + wss_tmp_preprocess_linear, wss_tmp_preprocess_overlap);
 
     if(cfg.strategy == 'R') {
-        trsm_splitrhs->set_ws_persistent(ator_ws_persistent.alloc(trsm_splitrhs->get_wss_persistent()));
-        trsm_splitrhs->preprocess_submit(ator_ws_tmp_overlap.alloc(trsm_splitrhs->get_wss_tmp_preprocess()));
+        trsm_splitrhs->set_ws_persistent(ator_ws_persistent->alloc(trsm_splitrhs->get_wss_persistent()));
+        trsm_splitrhs->preprocess_submit(ator_ws_tmp_overlap->alloc(trsm_splitrhs->get_wss_tmp_preprocess()));
     }
     if(cfg.strategy == 'F') {
-        trsm_splitfactor->set_ws_persistent(ator_ws_persistent.alloc(trsm_splitfactor->get_wss_persistent()));
-        trsm_splitfactor->preprocess_submit(ator_ws_tmp_overlap.alloc(trsm_splitfactor->get_wss_tmp_preprocess()));
+        trsm_splitfactor->set_ws_persistent(ator_ws_persistent->alloc(trsm_splitfactor->get_wss_persistent()));
+        trsm_splitfactor->preprocess_submit(ator_ws_tmp_overlap->alloc(trsm_splitfactor->get_wss_tmp_preprocess()));
     }
     
-    ator_ws_tmp_linear.unset();
-    ator_ws_tmp_overlap.unset();
+    ator_ws_tmp_linear->unset();
+    ator_ws_tmp_overlap->unset();
 
     called_preprocess = true;
 }
@@ -225,18 +225,18 @@ void trsm_hcsx_ddny_tri<T,I>::perform_submit(void * ws_tmp)
     if(!called_preprocess) eslog::error("preprocess has not been called\n");
     if(ws_tmp == nullptr && wss_tmp_perform > 0) eslog::error("temporary workspace is null\n");
 
-    ator_ws_tmp_linear.set(ws_tmp, wss_tmp_perform_linear);
-    ator_ws_tmp_overlap.set(ws_tmp + wss_tmp_perform_linear, wss_tmp_perform_overlap);
+    ator_ws_tmp_linear->set(ws_tmp, wss_tmp_perform_linear);
+    ator_ws_tmp_overlap->set((char*)ws_tmp + wss_tmp_perform_linear, wss_tmp_perform_overlap);
 
     if(cfg.strategy == 'R') {
-        trsm_splitrhs->perform_submit(ator_ws_tmp_overlap.alloc(trsm_splitrhs->get_wss_tmp_perform()));
+        trsm_splitrhs->perform_submit(ator_ws_tmp_overlap->alloc(trsm_splitrhs->get_wss_tmp_perform()));
     }
     if(cfg.strategy == 'F') {
-        trsm_splitfactor->perform_submit(ator_ws_tmp_overlap.alloc(trsm_splitfactor->get_wss_tmp_perform()));
+        trsm_splitfactor->perform_submit(ator_ws_tmp_overlap->alloc(trsm_splitfactor->get_wss_tmp_perform()));
     }
 
-    ator_ws_tmp_linear.unset();
-    ator_ws_tmp_overlap.unset();
+    ator_ws_tmp_linear->unset();
+    ator_ws_tmp_overlap->unset();
 }
 
 

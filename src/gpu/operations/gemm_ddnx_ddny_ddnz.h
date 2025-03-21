@@ -37,7 +37,6 @@ public:
     void setup();
     size_t get_wss_tmp_perform();
     void perform_submit(void * ws_tmp);
-    static void submit_all(gpu::mgm::queue q, gpu::dnblas::handle handle_dnblas, MatrixDenseView_new<T> * A, MatrixDenseView_new<T> * B, MatrixDenseView_new<T> * C, T alpha, T beta, Allocator_new * ator_gpu);
 protected:
     gpu::mgm::queue q;
     gpu::dnblas::handle handle_dnblas;

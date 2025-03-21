@@ -3,6 +3,11 @@
 #define SRC_GPU_OPERATIONS_AUXILIARY_GPU_HERK_TRI_CHUNK_STAIRS_H
 
 #include "math/primitives_new/matrix_dense_data_new.h"
+#include "math/operations/submatrix_dnx_dnx_view.h"
+#include "gpu/operations/herk_ddnx_ddny.h"
+#include "gpu/operations/gemm_ddnx_ddny_ddnz.h"
+#include "gpu/gpu_management.h"
+#include "gpu/gpu_dnblas.h"
 
 
 
@@ -20,9 +25,9 @@ public:
 public:
     gpu_herk_tri_chunk_stairs() = default;
     gpu_herk_tri_chunk_stairs(const gpu_herk_tri_chunk_stairs &) = delete;
-    gpu_herk_tri_chunk_stairs(gpu_herk_tri_chunk_stairs &&) = delete;
+    gpu_herk_tri_chunk_stairs(gpu_herk_tri_chunk_stairs &&) = default;
     gpu_herk_tri_chunk_stairs & operator=(const gpu_herk_tri_chunk_stairs &) = delete;
-    gpu_herk_tri_chunk_stairs & operator=(gpu_herk_tri_chunk_stairs &&) = delete;
+    gpu_herk_tri_chunk_stairs & operator=(gpu_herk_tri_chunk_stairs &&) = default;
     ~gpu_herk_tri_chunk_stairs() = default;
 public:
     void set_range(size_t n_start_, size_t n_end_);
@@ -39,7 +44,7 @@ private:
     size_t n_start = 0;
     size_t n_end = 0;
     gpu::mgm::queue q;
-    gpu::spblas::handle handle_spblas;
+    gpu::dnblas::handle handle_dnblas;
     MatrixDenseView_new<T> * d_A_left = nullptr;
     MatrixDenseView_new<T> * d_A_top = nullptr;
     MatrixDenseView_new<T> * d_C = nullptr;
@@ -48,7 +53,7 @@ private:
     Treal beta = Treal{0};
     size_t wss_tmp_perform = 0;
     bool called_set_range = false;
-    bool called_set_handle = false;
+    bool called_set_handles = false;
     bool called_setup = false;
 private:
     size_t n_size = 0;
@@ -60,12 +65,12 @@ private:
     MatrixDenseView_new<T> d_sub_C_gemm;
     MatrixDenseView_new<T> d_sub_A_left;
     MatrixDenseView_new<T> d_sub_A_top;
-    submatrix_dnx_dnx_view<T> op_sub_C_herk;
-    submatrix_dnx_dnx_view<T> op_sub_C_gemm;
-    submatrix_dnx_dnx_view<T> op_sub_A_left;
-    submatrix_dnx_dnx_view<T> op_sub_A_top;
-    herk_ddnx_ddny<T> op_herk;
-    gemm_ddnx_ddny_ddnz<T> op_gemm;
+    math::operations::submatrix_dnx_dnx_view<T> op_sub_C_herk;
+    math::operations::submatrix_dnx_dnx_view<T> op_sub_C_gemm;
+    math::operations::submatrix_dnx_dnx_view<T> op_sub_A_left;
+    math::operations::submatrix_dnx_dnx_view<T> op_sub_A_top;
+    std::unique_ptr<herk_ddnx_ddny<T>> op_herk;
+    std::unique_ptr<gemm_ddnx_ddny_ddnz<T>> op_gemm;
 };
 
 

@@ -15,7 +15,7 @@ template<typename T, typename I>
 std::unique_ptr<permute_ddnx_ddnx<T,I>> permute_ddnx_ddnx<T,I>::make()
 {
     #ifdef ESPRESO_USE_WRAPPER_GPU_CUDA
-        return std::make_unique<w_cuda_permute_ddnx_ddnx<T>>();
+        return std::make_unique<w_cuda_permute_ddnx_ddnx<T,I>>();
     #endif
     eslog::error("wrapper for permute_ddnx_ddnx not available\n");
 }
@@ -35,7 +35,7 @@ void permute_ddnx_ddnx<T,I>::set_handles(gpu::mgm::queue q_)
 
 
 template<typename T, typename I>
-void permute_ddnx_ddnx<T,I>::set_matrix_src(MatrixDenseView_new<T,I> * M_src_)
+void permute_ddnx_ddnx<T,I>::set_matrix_src(MatrixDenseView_new<T> * M_src_)
 {
     if(M_src != nullptr) eslog::error("matrix M_src is already set\n");
     if(M_src_ == nullptr) eslog::error("M_src cannot be nullptr\n");
@@ -46,7 +46,7 @@ void permute_ddnx_ddnx<T,I>::set_matrix_src(MatrixDenseView_new<T,I> * M_src_)
 
 
 template<typename T, typename I>
-void permute_ddnx_ddnx<T,I>::set_matrix_dst(MatrixDenseView_new<T,I> * M_dst_)
+void permute_ddnx_ddnx<T,I>::set_matrix_dst(MatrixDenseView_new<T> * M_dst_)
 {
     if(M_dst != nullptr) eslog::error("matrix M_dst is already set\n");
     if(M_dst_ == nullptr) eslog::error("M_dst cannot be nullptr\n");
@@ -89,6 +89,12 @@ void permute_ddnx_ddnx<T,I>::setup()
     if(perm_rows != nullptr && perm_rows->size != M_src->nrows) eslog::error("wrong row perm size\n");
     if(perm_cols != nullptr && perm_cols->size != M_src->ncols) eslog::error("wrong col perm size\n");
 
+    perm_primary = perm_rows;
+    perm_secdary = perm_cols;
+    if(M_src->order == 'C') {
+        std::swap(perm_primary, perm_secdary);
+    }
+
     this->internal_setup();
 
     called_setup = true;
@@ -118,7 +124,7 @@ void permute_ddnx_ddnx<T,I>::perform_submit(void * ws_tmp)
 
 
 #define INSTANTIATE_T_I(T,I) \
-template class herk_ddnx_ddny_tri<T,I>;
+template class permute_ddnx_ddnx<T,I>;
 
     #define INSTANTIATE_T(T) \
     INSTANTIATE_T_I(T,int32_t) \
@@ -128,7 +134,7 @@ template class herk_ddnx_ddny_tri<T,I>;
         /* INSTANTIATE_T(float) */ \
         INSTANTIATE_T(double) \
         /* INSTANTIATE_T(std::complex<float>) */ \
-        /* INSTANTIATE_T(std::complex<double>) */
+        INSTANTIATE_T(std::complex<double>)
 
             INSTANTIATE
 

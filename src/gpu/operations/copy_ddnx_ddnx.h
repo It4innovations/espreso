@@ -26,11 +26,11 @@ public:
     copy_ddnx_ddnx & operator=(copy_ddnx_ddnx &&) = delete;
     virtual ~copy_ddnx_ddnx() = default;
 public:
-    static std::unique_ptr<copy_ddnx_ddnx<T,I>> make();
+    static std::unique_ptr<copy_ddnx_ddnx<T>> make();
 public:
     void set_handles(gpu::mgm::queue q_);
-    void set_matrix_src(MatrixDenseView_new<T,I> * M_src_);
-    void set_matrix_dst(MatrixDenseView_new<T,I> * M_dst_);
+    void set_matrix_src(MatrixDenseView_new<T> * M_src_);
+    void set_matrix_dst(MatrixDenseView_new<T> * M_dst_);
     void set_uplo(char uplo_);
     void setup();
     size_t get_wss_tmp_perform();

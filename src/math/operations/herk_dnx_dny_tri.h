@@ -19,6 +19,8 @@ template<typename T, typename I>
 class herk_dnx_dny_tri
 {
 public:
+    using Treal = utils::remove_complex_t<T>;
+public:
     struct config
     {
         char strategy = '_'; // sTairs, sQuares
@@ -36,7 +38,7 @@ public:
     void set_config(config cfg_);
     void set_matrix_A(MatrixDenseView_new<T> * A_);
     void set_matrix_C(MatrixDenseView_new<T> * C_);
-    void set_coefficients(T alpha_, T beta_);
+    void set_coefficients(Treal alpha_, Treal beta_);
     void set_mode(blas::herk_mode mode_);
     void calc_A_pattern(MatrixCsxView_new<T,I> & A_pattern);
     void preprocess();
@@ -52,8 +54,8 @@ private:
     VectorDenseData_new<I> A_trails;
     size_t n = 0;
     size_t k = 0;
-    T alpha = T{1};
-    T beta = T{0};
+    Treal alpha = Treal{1};
+    Treal beta = Treal{0};
     blas::herk_mode mode;
     bool config_set = false;
     bool mode_set = false;

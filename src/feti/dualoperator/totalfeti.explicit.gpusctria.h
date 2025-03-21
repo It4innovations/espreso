@@ -9,6 +9,8 @@
 
 #include "math/math.h"
 
+#include "gpu/operations/sc_symm_hcsx_ddny_tria.h"
+
 namespace espreso {
 
 template <typename T, typename I>
@@ -48,14 +50,15 @@ private:
         I n_nz_factor;
         MatrixCsxView_new<T,I> h_Bt;
         MatrixDenseView_new<T> d_F;
-        Matrix_Dense<T,I> d_F_old;
-        gpu::operations::sc_symm_hcsx_ddny_tria<T,I> op_sc;
+        Matrix_Dense<T,I,gpu::mgm::Ad> d_F_old;
+        std::unique_ptr<gpu::operations::sc_symm_hcsx_ddny_tria<T,I>> op_sc;
         Vector_Dense<T,I,gpu::mgm::Ad> d_apply_x;
         Vector_Dense<T,I,gpu::mgm::Ad> d_apply_y;
         Vector_Dense<T,I,gpu::mgm::Ad> d_apply_z;
         Vector_Dense<T,I,gpu::mgm::Ad> d_apply_w;
-        Vector_Dense<T,I,gpu::mgm::Ad> d_applyg_D2C;
+        Vector_Dense<I,I,gpu::mgm::Ad> d_applyg_D2C;
     };
+    gpu::mgm::device device;
     gpu::mgm::queue main_q;
     std::vector<gpu::mgm::queue> queues;
     std::vector<gpu::dnblas::handle> handles_dense;
@@ -63,7 +66,7 @@ private:
     std::vector<per_domain_stuff> domain_data;
     size_t n_domains = 0;
     size_t n_queues = 0;
-    std::vector<MatrixDenseData_new<T,I>> d_Fs_allocated;
+    std::vector<MatrixDenseData_new<T>> d_Fs_allocated;
     size_t total_wss_internal = 0;
     size_t total_wss_persistent = 0;
     void * ws_persistent = nullptr;
@@ -71,12 +74,15 @@ private:
     size_t wss_tmp_for_cbmba = 0;
     void * ws_tmp_for_cbmba = nullptr;
     std::unique_ptr<AllocatorCBMB_new> ator_tmp_cbmba;
-    Vector_Dense<T,I,Ad> d_applyg_x_cluster;
-    Vector_Dense<T,I,Ad> d_applyg_y_cluster;
-    Vector_Dense<T*,I,Ad> d_applyg_xs_pointers;
-    Vector_Dense<T*,I,Ad> d_applyg_ys_pointers;
-    Vector_Dense<I,I,Ad> d_applyg_n_dofs_interfaces;
-    Vector_Dense<I*,I,Ad> d_applyg_D2Cs_pointers;
+    Vector_Dense<T,I,gpu::mgm::Ad> d_applyg_x_cluster;
+    Vector_Dense<T,I,gpu::mgm::Ad> d_applyg_y_cluster;
+    Vector_Dense<T*,I,gpu::mgm::Ad> d_applyg_xs_pointers;
+    Vector_Dense<T*,I,gpu::mgm::Ad> d_applyg_ys_pointers;
+    Vector_Dense<I,I,gpu::mgm::Ad> d_applyg_n_dofs_interfaces;
+    Vector_Dense<I*,I,gpu::mgm::Ad> d_applyg_D2Cs_pointers;
+    bool parallel_set = false;
+    bool parallel_update = false;
+    bool parallel_apply = false;
 };
 
 }

@@ -80,10 +80,10 @@ void submatrix_csx_dny<T,I>::perform_copyvals()
 
     stacktimer::push("submatrix_csx_dny::perform_copyvals");
 
-    size_t start_prim = 0;
-    size_t end_prim = 0;
-    size_t start_sec = 0;
-    size_t end_sec = 0;
+    I start_prim = 0;
+    I end_prim = 0;
+    I start_sec = 0;
+    I end_sec = 0;
     if(M_src->order == 'R') {
         start_prim = row_start;
         end_prim = row_end;
@@ -105,7 +105,7 @@ void submatrix_csx_dny<T,I>::perform_copyvals()
     T * srcvals = M_src->vals;
     T * dstvals = M_dst->vals;
 
-    for(size_t ips = start_prim; ips < end_prim; ips++)
+    for(I ips = start_prim; ips < end_prim; ips++)
     {
         size_t ipd = ips - start_prim;
         I start = srcptrs[ips];
@@ -161,7 +161,7 @@ template class submatrix_csx_dny<T,I>;
         /* INSTANTIATE_T(float) */ \
         INSTANTIATE_T(double) \
         /* INSTANTIATE_T(std::complex<float>) */ \
-        /* INSTANTIATE_T(std::complex<double>) */
+        INSTANTIATE_T(std::complex<double>)
 
             INSTANTIATE
 
