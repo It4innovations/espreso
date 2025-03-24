@@ -5,6 +5,7 @@
 #include "basis/utilities/minmaxavg.h"
 #include "my_timer.h"
 #include "gpu/gpu_kernels.h"
+#include "basis/utilities/stacktimer.h"
 
 #include <algorithm>
 
@@ -110,6 +111,9 @@ void TotalFETIExplicitGpuScTria<T,I>::set(const step::Step &step)
     set_by_env(parallel_update, "ESPRESO_DUALOPGPUSCTRIA_CONFIG_parallel_update");
     set_by_env(parallel_apply, "ESPRESO_DUALOPGPUSCTRIA_CONFIG_parallel_apply");
 
+    stacktimer::enable();
+    stacktimer::push("TotalFETIExplicitGpuScTria::set");
+
     n_domains = feti.K.size();
     n_queues = omp_get_max_threads();
     
@@ -171,6 +175,8 @@ void TotalFETIExplicitGpuScTria<T,I>::set(const step::Step &step)
         gpu::dnblas::handle & hd = handles_dense[di % n_queues];
         per_domain_stuff & data = domain_data[di];
 
+        stacktimer::info("TotalFETIExplicitGpuScTria::set setup subdomain %zu", di);
+
         // Kreg = K + RegMat symbolic pattern
         // tm_Kreg_combine.start();
         {
@@ -196,7 +202,7 @@ void TotalFETIExplicitGpuScTria<T,I>::set(const step::Step &step)
         }
         // tm_fact_symbolic.stop();
 
-        data.h_Bt = MatrixCsxView_new<T,I>::from_old(feti.B0[di]).get_transposed_reordered_view();
+        data.h_Bt = MatrixCsxView_new<T,I>::from_old(feti.B1[di]).get_transposed_reordered_view();
 
         data.op_sc = std::make_unique<gpu::operations::sc_symm_hcsx_ddny_tria<T,I>>();
         data.op_sc->set_config(op_sc_config);
@@ -213,6 +219,9 @@ void TotalFETIExplicitGpuScTria<T,I>::set(const step::Step &step)
         data.d_apply_w.resize(data.n_dofs_domain);
         data.d_applyg_D2C.resize(data.n_dofs_interface);
     }
+
+    // clean up the mess from buggy openmp in clang
+    utils::run_dummy_parallel_region();
 
     total_wss_internal = 0;
     total_wss_persistent = 0;
@@ -274,6 +283,8 @@ void TotalFETIExplicitGpuScTria<T,I>::set(const step::Step &step)
         gpu::mgm::queue & q = queues[di % n_queues];
         per_domain_stuff & data = domain_data[di];
 
+        stacktimer::info("TotalFETIExplicitGpuScTria::set preprocess subdomain %zu", di);
+
         void * ws_tmp = ator_tmp_cbmba->alloc(data.op_sc->get_wss_tmp_preprocess());
 
         data.op_sc->preprocess_submit(ws_tmp);
@@ -285,6 +296,9 @@ void TotalFETIExplicitGpuScTria<T,I>::set(const step::Step &step)
     }
 
     gpu::mgm::device_wait();
+
+    stacktimer::pop();
+    stacktimer::disable();
 }
 
 
@@ -292,12 +306,17 @@ void TotalFETIExplicitGpuScTria<T,I>::set(const step::Step &step)
 template<typename T, typename I>
 void TotalFETIExplicitGpuScTria<T,I>::update(const step::Step &step)
 {
+    stacktimer::enable();
+    stacktimer::push("TotalFETIExplicitGpuScTria::update");
+
     gpu::mgm::set_device(device);
     
     #pragma omp parallel for schedule(static,1) if(parallel_update)
     for(size_t di = 0; di < n_domains; di++) {
         gpu::mgm::queue & q = queues[di % n_queues];
         per_domain_stuff & data = domain_data[di];
+
+        stacktimer::info("TotalFETIExplicitGpuScTria::update subdomain %zu", di);
 
         // Kreg = K + RegMat numeric values
         // tm_Kreg_combine.start();
@@ -330,7 +349,28 @@ void TotalFETIExplicitGpuScTria<T,I>::update(const step::Step &step)
         });
     }
 
+    // clean up the mess from buggy openmp in clang
+    utils::run_dummy_parallel_region();
+
+    {
+        if (feti.updated.B) {
+            d.resize();
+        }
+        // just use the cpu solver
+        std::vector<Vector_Dense<T,I>> Kplus_fs(n_domains);
+        #pragma omp parallel for schedule(static,1) if(parallel_update)
+        for(size_t di = 0; di < n_domains; di++) {
+            domain_data[di].solver_Kreg.solve(feti.f[di], Kplus_fs[di]);
+        }
+        applyB(feti, Kplus_fs, d);
+        d.synchronize();
+        math::add(d, T{-1}, feti.c);
+    }
+
     gpu::mgm::device_wait();
+
+    stacktimer::pop();
+    stacktimer::disable();
 }
 
 

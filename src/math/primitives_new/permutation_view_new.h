@@ -72,6 +72,22 @@ public:
             dst[src[i]] = i;
         }
     }
+
+    void print(const char * name = "")
+    {
+        eslog::info("Permutation %s, size %zu\n", name, size);
+        eslog::info("dst_to_src: ");
+        for(size_t i = 0; i < size; i++) {
+            eslog::info(" %+11lld", (long long)dst_to_src[i]);
+        }
+        eslog::info("\n");
+        eslog::info("src_to_dst: ");
+        for(size_t i = 0; i < size; i++) {
+            eslog::info(" %+11lld", (long long)src_to_dst[i]);
+        }
+        eslog::info("\n");
+        fflush(stdout);
+    }
 };
 
 

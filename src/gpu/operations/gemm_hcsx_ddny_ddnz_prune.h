@@ -57,15 +57,19 @@ private:
     char spdn_A = '_';
     bool prune_rows = false;
     bool prune_cols = false;
-private:
     void * ws_persistent = nullptr;
-    std::unique_ptr<AllocatorArena_new> ator_persistent;
-    std::unique_ptr<AllocatorArena_new> ator_tmp_linear;
-    std::unique_ptr<AllocatorSinglePointer_new> ator_tmp_overlap;
     size_t wss_internal = 0;
     size_t wss_persistent = 0;
     size_t wss_tmp_preprocess = 0;
     size_t wss_tmp_perform = 0;
+    bool called_set_config = false;
+    bool called_set_handles = false;
+    bool called_setup = false;
+    bool called_preprocess = false;
+private:
+    std::unique_ptr<AllocatorArena_new> ator_persistent;
+    std::unique_ptr<AllocatorArena_new> ator_tmp_linear;
+    std::unique_ptr<AllocatorSinglePointer_new> ator_tmp_overlap;
     size_t wss_tmp_preprocess_linear = 0;
     size_t wss_tmp_preprocess_overlap = 0;
     size_t wss_tmp_perform_linear = 0;
@@ -92,10 +96,6 @@ private:
     MatrixCsxView_new<T,I> * h_A_to_use = nullptr;
     MatrixDenseView_new<T> * d_B_to_use = nullptr;
     MatrixDenseView_new<T> * d_C_to_use = nullptr;
-    bool called_set_config = false;
-    bool called_set_handles = false;
-    bool called_setup = false;
-    bool called_preprocess = false;
 
 };
 

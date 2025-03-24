@@ -67,8 +67,10 @@ void w_cusparse_trsm_dcsx_ddny_ddny<T,I>::internal_setup()
 
     CHECK(cusparseSpSM_createDescr(&descr_spsm));
 
-    // only CSR is supported, CSC is not (but CSR+transpose is ok ...)
-    CHECK(cusparseCreateCsr(data->descr_A, A->nrows, A->ncols, A->nnz, A->ptrs, A->idxs, A->vals, cusparse_index_type<I>(), cusparse_index_type<I>(), CUSPARSE_INDEX_BASE_ZERO, cusparse_data_type<T>()));
+    T * dummyptr_T = (T*)(sizeof(T));
+    I * dummyptr_I = (I*)(sizeof(I));
+    // only CSR is supported, CSC is not (but CSR+transpose is ok ...) (should be supported in next releases)
+    CHECK(cusparseCreateCsr(data->descr_A, A->nrows, A->ncols, A->nnz, dummyptr_I, dummyptr_I, dummyptr_T, cusparse_index_type<I>(), cusparse_index_type<I>(), CUSPARSE_INDEX_BASE_ZERO, cusparse_data_type<T>()));
     auto nonunit = CUSPARSE_DIAG_TYPE_NON_UNIT;
     auto lower = CUSPARSE_FILL_MODE_LOWER;
     auto upper = CUSPARSE_FILL_MODE_UPPER;
@@ -76,13 +78,16 @@ void w_cusparse_trsm_dcsx_ddny_ddny<T,I>::internal_setup()
     if((A->prop.uplo == 'L') == (A->order == 'R')) CHECK(cusparseSpMatSetAttribute(data->descr_A, CUSPARSE_SPMAT_FILL_MODE, &lower, sizeof(lower)));
     if((A->prop.uplo == 'U') == (A->order == 'R')) CHECK(cusparseSpMatSetAttribute(data->descr_A, CUSPARSE_SPMAT_FILL_MODE, &upper, sizeof(upper)));
 
-    CHECK(cusparseCreateDnMat(&data->descr_X, X->nrows, X->ncols, X->ld, X->vals, cusparse_data_type<T>(), cusparse_order(X->order)));
-    CHECK(cusparseCreateDnMat(&data->descr_B, B->nrows, B->ncols, B->ld, B->vals, cusparse_data_type<T>(), cusparse_order(B->order)));
+    CHECK(cusparseCreateDnMat(&data->descr_X, X->nrows, X->ncols, X->ld, dummyptr_T, cusparse_data_type<T>(), cusparse_order(X->order)));
+    CHECK(cusparseCreateDnMat(&data->descr_B, B->nrows, B->ncols, B->ld, dummyptr_T, cusparse_data_type<T>(), cusparse_order(B->order)));
 
     T alpha = T{1};
 
+    size_t buffersize;
+    CHECK(cusparseSpSM_bufferSize(handle_spblas->h, data->op_A, data->op_B, &alpha, data->descr_A, data->descr_B, data->descr_C, cusparse_data_type<T>(), data->spsm_alg, data->descr_spsm, &buffersize));
+
     wss_internal = 0;
-    CHECK(cusparseSpSM_bufferSize(handle_spblas->h, data->op_A, data->op_B, &alpha, data->descr_A, data->descr_B, data->descr_C, cusparse_data_type<T>(), data->spsm_alg, data->descr_spsm, &wss_persistent));
+    wss_persistent = utils::round_up(wss_persistent, gpu::mgm::get_natural_pitch_align());
     wss_tmp_preprocess = 0;
     wss_tmp_perform = 0;
 }

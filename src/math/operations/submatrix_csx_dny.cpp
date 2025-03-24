@@ -49,13 +49,13 @@ void submatrix_csx_dny<T,I>::set_bounds(size_t row_start_, size_t row_end_, size
 template<typename T, typename I>
 void submatrix_csx_dny<T,I>::perform_zerofill()
 {
+    stacktimer::push("submatrix_csx_dny::perform_zerofill");
+    
     if(M_src == nullptr) eslog::error("source matrix is not set\n");
     if(M_dst == nullptr) eslog::error("destination matrix is not set\n");
     if(!bound_set) eslog::error("bounds are not set\n");
     if(M_dst->nrows != num_rows || M_dst->ncols != num_cols) eslog::error("wrong output matrix size\n");
 
-    stacktimer::push("submatrix_csx_dny::perform_zerofill");
-    
     size_t size_primary = M_dst->get_size_primary();
     size_t size_secdary = M_dst->get_size_secdary();
     for(size_t i = 0; i < size_primary; i++) {
@@ -72,13 +72,13 @@ void submatrix_csx_dny<T,I>::perform_zerofill()
 template<typename T, typename I>
 void submatrix_csx_dny<T,I>::perform_copyvals()
 {
+    stacktimer::push("submatrix_csx_dny::perform_copyvals");
+
     if(M_src == nullptr) eslog::error("source matrix is not set\n");
     if(M_dst == nullptr) eslog::error("destination matrix is not set\n");
     if(!bound_set) eslog::error("bounds are not set\n");
     if(!zerofill_called) eslog::error("zerofill was not called\n");
     if(M_dst->nrows != num_rows || M_dst->ncols != num_cols) eslog::error("wrong output matrix size\n");
-
-    stacktimer::push("submatrix_csx_dny::perform_copyvals");
 
     I start_prim = 0;
     I end_prim = 0;

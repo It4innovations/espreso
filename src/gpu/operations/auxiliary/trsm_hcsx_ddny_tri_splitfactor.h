@@ -49,7 +49,7 @@ public:
     void set_handles(gpu::mgm::queue q_, gpu::spblas::handle spblas_handle_, gpu::dnblas::handle dnblas_handle_);
     void set_matrix_h_L(MatrixCsxView_new<T,I> * h_L_);
     void set_matrix_d_X(MatrixDenseView_new<T> * d_X_);
-    void calc_X_pattern(MatrixCsxView_new<T,I> & X_pattern_host);
+    void set_h_X_pattern(MatrixCsxView_new<T,I> * h_X_pattern_);
     void setup();
     size_t get_wss_internal();
     size_t get_wss_persistent();
@@ -65,6 +65,7 @@ private:
     gpu::dnblas::handle handle_dnblas;
     MatrixCsxView_new<T,I> * h_L = nullptr;
     MatrixDenseView_new<T> * d_X = nullptr;
+    MatrixCsxView_new<T,I> * h_X_pattern = nullptr;
     void * ws_persistent = nullptr;
     size_t wss_internal = 0;
     size_t wss_persistent = 0;
@@ -72,17 +73,16 @@ private:
     size_t wss_tmp_perform = 0;
     bool called_set_config = false;
     bool called_set_handles = false;
-    bool called_calc_X_pattern = false;
     bool called_setup = false;
     bool called_preprocess = false;
 private:
+    std::unique_ptr<AllocatorArena_new> ator_ws_persistent;
+    std::unique_ptr<AllocatorArena_new> ator_ws_tmp_linear;
+    std::unique_ptr<AllocatorSinglePointer_new> ator_ws_tmp_overlap;
     size_t wss_tmp_preprocess_linear = 0;
     size_t wss_tmp_preprocess_overlap = 0;
     size_t wss_tmp_perform_linear = 0;
     size_t wss_tmp_perform_overlap = 0;
-    std::unique_ptr<AllocatorArena_new> ator_ws_persistent;
-    std::unique_ptr<AllocatorArena_new> ator_ws_tmp_linear;
-    std::unique_ptr<AllocatorSinglePointer_new> ator_ws_tmp_overlap;
     VectorDenseData_new<size_t> partition;
     VectorDenseData_new<I> h_X_colpivots;
     VectorDenseData_new<I> h_X_rowtrails;

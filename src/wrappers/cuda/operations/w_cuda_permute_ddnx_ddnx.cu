@@ -26,7 +26,7 @@ static void permute_kernel(T * src, I ld_src, T * dst, I ld_dst, I size_secdary,
     T * dstprim = dst + ipd * ld_dst;
     T * srcprim = src + ips * ld_src;
 
-    for(I isd = threadIdx.x; isd < ipd; isd += blockDim.x) {
+    for(I isd = threadIdx.x; isd < size_secdary; isd += blockDim.x) {
         I iss = isd;
         if constexpr(PERM_SECDARY) {
             iss = perm_secdary_dst_to_src[isd];

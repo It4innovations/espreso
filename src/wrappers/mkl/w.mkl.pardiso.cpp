@@ -264,7 +264,9 @@ void DirectSparseSolver<T, I>::getPermutation(Permutation<I> &perm)
 {
     if(ext->pp.phase < 11) eslog::error("getPermutation: invalid order of operations in spsolver\n");
 
-    perm.resize(ext->matrix->nrows);
+    if(perm.size != ext->matrix->nrows) {
+        perm.resize(ext->matrix->nrows);
+    }
 
     std::copy_n(ext->pp.perm, ext->matrix->nrows, perm.dst_to_src);
     perm.invert(perm.dst_to_src, perm.src_to_dst);
@@ -275,7 +277,10 @@ void DirectSparseSolver<T, I>::getPermutation(Vector_Dense<I> &perm)
 {
     if(ext->pp.phase < 11) eslog::error("getPermutation: invalid order of operations in spsolver\n");
 
-    perm.resize(ext->matrix->nrows);
+    if(perm.size != ext->matrix->nrows) {
+        perm.resize(ext->matrix->nrows);
+    }
+
     std::copy_n(ext->pp.perm, ext->matrix->nrows, perm.vals);
 }
 

@@ -32,12 +32,12 @@ void copy_csx<T,I>::set_matrix_dst(MatrixCsxView_new<T,I> * M_dst_)
 template<typename T, typename I>
 void copy_csx<T,I>::perform()
 {
+    stacktimer::push("copy_csx::perform");
+
     if(M_src == nullptr) eslog::error("source matrix is not set\n");
     if(M_dst == nullptr) eslog::error("destination matrix is not set\n");
     if(M_src->nrows != M_dst->nrows || M_src->ncols != M_dst->ncols || M_src->nnz != M_dst->nnz) eslog::error("matrix sizes dont match\n");
     if(M_src->order != M_dst->order) eslog::error("matrix orders dont match\n");
-
-    stacktimer::push("copy_csx::perform");
 
     std::copy_n(M_src->ptrs, M_src->get_size_primary() + 1, M_dst->ptrs);
     std::copy_n(M_src->idxs, M_src->nnz, M_dst->idxs);

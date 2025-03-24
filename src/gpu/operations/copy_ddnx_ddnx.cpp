@@ -1,6 +1,7 @@
 
 #include "gpu/operations/copy_ddnx_ddnx.h"
 
+#include "basis/utilities/stacktimer.h"
 #include "wrappers/cuda/operations/w_cuda_copy_ddnx_ddnx.h"
 
 
@@ -67,14 +68,17 @@ void copy_ddnx_ddnx<T>::set_uplo(char uplo_)
 template<typename T>
 void copy_ddnx_ddnx<T>::setup()
 {
+    stacktimer::push("copy_ddnx_ddnx::setup");
+
     if(!called_set_handles) eslog::error("handles are not set\n");
     if(M_src == nullptr) eslog::error("source matrix is not sen\n");
     if(M_dst == nullptr) eslog::error("destination matrix is not set\n");
     if(M_src->nrows != M_dst->nrows || M_src->ncols != M_dst->ncols) eslog::error("matrix sizes dont match\n");
     if(M_src->order != M_dst->order) eslog::error("matrix orders must match\n");
-    if(M_src->prop.uplo != M_dst->prop.uplo) eslog::error("matrix uplo must match\n");
 
     this->internal_setup();
+
+    stacktimer::pop();
 
     called_setup = true;
 }
@@ -94,10 +98,14 @@ size_t copy_ddnx_ddnx<T>::get_wss_tmp_perform()
 template<typename T>
 void copy_ddnx_ddnx<T>::perform_submit(void * ws_tmp)
 {
+    stacktimer::push("copy_ddnx_ddnx::perform_submit");
+
     if(!called_setup) eslog::error("setup was not called\n");
     if(ws_tmp == nullptr && wss_tmp_perform > 0) eslog::error("temporary workspace is null\n");
 
     this->internal_perform(ws_tmp);
+
+    stacktimer::pop();
 }
 
 

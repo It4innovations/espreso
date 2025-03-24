@@ -48,6 +48,8 @@ void herk_dnx_dny<T>::set_coefficients(Treal alpha_, Treal beta_)
 template<typename T>
 void herk_dnx_dny<T>::perform()
 {
+    stacktimer::push("herk_dnx_dny::perform");
+
     if(A == nullptr) eslog::error("matrix A is not set\n");
     if(C == nullptr) eslog::error("matrix C is not set\n");
     if(!mode_set) eslog::error("mode is not set");
@@ -55,8 +57,6 @@ void herk_dnx_dny<T>::perform()
     if(mode == blas::herk_mode::AAh && A->nrows != C->nrows) eslog::error("incompatible matrix sizes\n");
     if(mode == blas::herk_mode::AhA && A->ncols != C->ncols) eslog::error("incompatible matrix sizes\n");
     if(C->prop.uplo != 'U' && C->prop.uplo != 'L') eslog::error("C uplo is not set\n");
-
-    stacktimer::push("herk_dnx_dny::perform");
 
     blas::herk(*A, *C, mode, alpha, beta);
 

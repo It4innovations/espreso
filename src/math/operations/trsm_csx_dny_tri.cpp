@@ -52,9 +52,9 @@ void trsm_csx_dny_tri<T,I>::set_X(MatrixDenseView_new<T> * X_)
 template<typename T, typename I>
 void trsm_csx_dny_tri<T,I>::calc_X_pattern(MatrixCsxView_new<T,I> & X_pattern)
 {
-    if(called_set_pattern) eslog::error("X patern was already set\n");
-
     stacktimer::push("trsm_csx_dny_tri::calc_X_pattern");
+
+    if(called_set_pattern) eslog::error("X patern was already set\n");
 
     X_colpivots.set(X_pattern.ncols, AllocatorCPU_new::get_singleton());
     X_colpivots.alloc();
@@ -74,6 +74,8 @@ void trsm_csx_dny_tri<T,I>::calc_X_pattern(MatrixCsxView_new<T,I> & X_pattern)
 template<typename T, typename I>
 void trsm_csx_dny_tri<T,I>::preprocess()
 {
+    stacktimer::push("trsm_csx_dny_tri::preprocess");
+
     if(!called_set_config) eslog::error("set config was not called\n");
     if(!called_set_pattern) eslog::error("X pattern was not set\n");
     if(called_preprocess) eslog::error("preproces was already called\n");
@@ -84,8 +86,6 @@ void trsm_csx_dny_tri<T,I>::preprocess()
     if(X->nrows != L->nrows) eslog::error("incompatible matrices\n");
     if(X_colpivots.size != X->ncols) eslog::error("wrong colpivots size\n");
     if(X_rowtrails.size != X->nrows) eslog::error("wrong rowtrails size\n");
-
-    stacktimer::push("trsm_csx_dny_tri::preprocess");
 
     for(size_t i = 1; i < X_colpivots.size; i++) {
         if(X_colpivots.vals[i-1] > X_colpivots.vals[i]) {
@@ -257,9 +257,9 @@ void trsm_csx_dny_tri<T,I>::preprocess()
 template<typename T, typename I>
 void trsm_csx_dny_tri<T,I>::perform()
 {
-    if(!called_preprocess) eslog::error("preprocess was not called\n");
-
     stacktimer::push("trsm_csx_dny_tri::perform");
+
+    if(!called_preprocess) eslog::error("preprocess was not called\n");
 
     for(size_t ch = 0; ch < num_chunks; ch++) {
         if(cfg.strategy == 'R') {

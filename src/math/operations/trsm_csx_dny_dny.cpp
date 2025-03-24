@@ -39,6 +39,8 @@ void trsm_csx_dny_dny<T,I>::set_solution_matrix(MatrixDenseView_new<T> * X_)
 template<typename T, typename I>
 void trsm_csx_dny_dny<T,I>::perform()
 {
+    stacktimer::push("trsm_csx_dny_dny::perform");
+
     if(A == nullptr) eslog::error("system matrix is not set\n");
     if(X == nullptr) eslog::error("solution matrix is not set\n");
     if(B == nullptr) eslog::error("rhs matrix is not set\n");
@@ -46,8 +48,7 @@ void trsm_csx_dny_dny<T,I>::perform()
     if(X->nrows != B->nrows || X->ncols != B->ncols) eslog::error("rhs and sol matrix sizes dont match\n");
     if(X->order != B->order) eslog::error("rhs and sol orders dont match\n");
     if(A->nrows != X->nrows) eslog::error("incompatible matrices\n");
-
-    stacktimer::push("trsm_csx_dny_dny::perform");
+    if(A->prop.uplo != 'L' && A->prop.uplo != 'U') eslog::error("matrix A has wrong uplo\n");
 
     if(X == B) { // in-place
         MatrixDenseData_new<T> Y;

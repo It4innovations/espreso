@@ -1,6 +1,7 @@
 
 #include "gpu/operations/trsm_dcsx_ddny_ddny.h"
 
+#include "basis/utilities/stacktimer.h"
 #include "wrappers/cuda/operations/w_cusparse_trsm_dcsx_ddny_ddny.h"
 // #include "wrappers/rocm/operations/w_rocsparse_trsm_dcsx_ddny_ddny.h"
 // #include "wrappers/oneapi/operations/w_oneapisparse_trsm_dcsx_ddny_ddny.h"
@@ -91,6 +92,8 @@ void trsm_dcsx_ddny_ddny<T,I>::set_matrix_B(MatrixDenseView_new<T> * B_)
 template<typename T, typename I>
 void trsm_dcsx_ddny_ddny<T,I>::setup()
 {
+    stacktimer::push("trsm_dcsx_ddny_ddny::setup");
+
     if(!called_set_handles) eslog::error("handles are not set\n");
     if(A == nullptr) eslog::error("matrix A is not set\n");
     if(X == nullptr) eslog::error("matrix B is not set\n");
@@ -100,10 +103,13 @@ void trsm_dcsx_ddny_ddny<T,I>::setup()
     if(X->nrows != B->nrows || X->ncols != B->ncols) eslog::error("X and B matrix sizes dont match\n");
     if(X->order != B->order) eslog::error("X and B order does not match\n");
     if(A->nrows != B->nrows) eslog::error("incompatible matrices\n");
+    if(A->prop.uplo != 'L' && A->prop.uplo != 'U') eslog::error("matrix A has wrong uplo\n");
 
     place = ((X == B) ? 'I' : 'O');
 
     this->internal_setup();
+
+    stacktimer::pop();
 
     called_setup = true;
 }
@@ -164,11 +170,15 @@ void trsm_dcsx_ddny_ddny<T,I>::set_ws_persistent(void * ws_persistent_)
 template<typename T, typename I>
 void trsm_dcsx_ddny_ddny<T,I>::preprocess_submit(void * ws_tmp)
 {
+    stacktimer::push("trsm_dcsx_ddny_ddny::preprocess_submit");
+
     if(!called_setup) eslog::error("setup has not been called\n");
     if(called_preprocess) eslog::error("preprocess has already been called\n");
     if(ws_tmp == nullptr && wss_tmp_preprocess > 0) eslog::error("temporary workspace is null\n");
 
     this->internal_preprocess(ws_tmp);
+
+    stacktimer::pop();
 
     called_preprocess = true;
 }
@@ -178,10 +188,14 @@ void trsm_dcsx_ddny_ddny<T,I>::preprocess_submit(void * ws_tmp)
 template<typename T, typename I>
 void trsm_dcsx_ddny_ddny<T,I>::perform_submit(void * ws_tmp)
 {
+    stacktimer::push("trsm_dcsx_ddny_ddny::perform_submit");
+
     if(!called_preprocess) eslog::error("preprocess has not been called\n");
     if(ws_tmp == nullptr && wss_tmp_perform > 0) eslog::error("temporary workspace is null\n");
 
     this->internal_perform(ws_tmp);
+
+    stacktimer::pop();
 }
 
 

@@ -87,12 +87,12 @@ void tri_partition_herk::set_output_partition(VectorDenseView_new<size_t> * part
 
 void tri_partition_herk::perform()
 {
+    stacktimer::push("tri_partition_herk::perform");
+
     static_assert(sizeof(size_t) == sizeof(double), "incompatible types");
     if(!setup_called) eslog::error("setup was not called\n");
     if(partition == nullptr) eslog::error("partition is not set\n");
     if(partition->size != num_chunks + 1) eslog::error("wrong partition size\n");
-
-    stacktimer::push("tri_partition_herk::perform");
 
     size_t * partition_sizet = partition->vals;
     double * partition_double = reinterpret_cast<double*>(partition->vals);

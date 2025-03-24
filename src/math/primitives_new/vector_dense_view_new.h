@@ -4,6 +4,9 @@
 
 #include "math/primitives_new/vector_base_new.h"
 #include "math/primitives/vector_dense.h"
+#include "basis/utilities/utils.h"
+
+#include <cstring>
 
 
 
@@ -54,6 +57,34 @@ public:
         V_old.size = V_new.size;
         V_old.vals = V_new.vals;
         return V_old;
+    }
+
+    void print(const char * name = "")
+    {
+        if constexpr(utils::is_real<T>()) {
+            eslog::info("Dense vector %s, size %zu\n", name, size);
+            eslog::info("vals: ");
+            for(size_t i = 0; i < size; i++) {
+                if constexpr(std::is_floating_point_v<T>) {
+                    double v = (double)vals[i];
+                    char str[100];
+                    snprintf(str, sizeof(str), "%+11.3e", v);
+                    if(strstr(str, "nan") != nullptr) eslog::info("   nan      ");
+                    else if(strstr(str, "inf") != nullptr) eslog::info("  %cinf      ", v > 0 ? '+' : '-');
+                    else if(v == 0) eslog::info("   0        ");
+                    else eslog::info(" %+11.3e", v);
+                }
+                if constexpr(std::is_integral_v<T>) {
+                    long long v = (long long)vals[i];
+                    eslog::info(" %+11lld", v);
+                }
+            }
+            eslog::info("\n");
+            fflush(stdout);
+        }
+        if constexpr(utils::is_complex<T>()) {
+            eslog::error("vector print not yet supported for complex matrices\n");
+        }
     }
 };
 

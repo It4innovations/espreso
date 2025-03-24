@@ -1,6 +1,7 @@
 
 #include "gpu/operations/gemm_dcsx_ddny_ddnz.h"
 
+#include "basis/utilities/stacktimer.h"
 #include "wrappers/cuda/operations/w_cusparse_gemm_dcsx_ddny_ddnz.h"
 // #include "wrappers/rocm/operations/w_rocsparse_gemm_dcsx_ddny_ddnz.h"
 // #include "wrappers/oneapi/operations/w_oneapisparse_gemm_dcsx_ddny_ddnz.h"
@@ -89,6 +90,8 @@ void gemm_dcsx_ddny_ddnz<T,I>::set_coefficients(T alpha_, T beta_)
 template<typename T, typename I>
 void gemm_dcsx_ddny_ddnz<T,I>::setup()
 {
+    stacktimer::push("gemm_dcsx_ddny_ddnz::setup");
+
     if(!called_set_handles) eslog::error("handles are not set\n");
     if(A == nullptr) eslog::error("matrix A is not set\n");
     if(B == nullptr) eslog::error("matrix B is not set\n");
@@ -97,6 +100,8 @@ void gemm_dcsx_ddny_ddnz<T,I>::setup()
     if(A->nrows != C->nrows || B->ncols != C->ncols || A->ncols != B->nrows) eslog::error("incompatible matrices\n");
 
     this->internal_setup();
+
+    stacktimer::pop();
 
     called_setup = true;
 }
@@ -157,11 +162,15 @@ void gemm_dcsx_ddny_ddnz<T,I>::set_ws_persistent(void * ws_persistent_)
 template<typename T, typename I>
 void gemm_dcsx_ddny_ddnz<T,I>::preprocess_submit(void * ws_tmp)
 {
+    stacktimer::push("gemm_dcsx_ddny_ddnz::preprocess_submit");
+
     if(!called_setup) eslog::error("setup has not been called\n");
     if(called_preprocess) eslog::error("preprocess has already been called\n");
     if(ws_tmp == nullptr && wss_tmp_preprocess > 0) eslog::error("temporary workspace is null\n");
 
     this->internal_preprocess(ws_tmp);
+
+    stacktimer::pop();
 
     called_preprocess = true;
 }
@@ -171,10 +180,14 @@ void gemm_dcsx_ddny_ddnz<T,I>::preprocess_submit(void * ws_tmp)
 template<typename T, typename I>
 void gemm_dcsx_ddny_ddnz<T,I>::perform_submit(void * ws_tmp)
 {
+    stacktimer::push("gemm_dcsx_ddny_ddnz::perform_submit");
+
     if(!called_preprocess) eslog::error("preprocess has not been called\n");
     if(ws_tmp == nullptr && wss_tmp_perform > 0) eslog::error("temporary workspace is null\n");
 
     this->internal_perform(ws_tmp);
+
+    stacktimer::pop();
 }
 
 

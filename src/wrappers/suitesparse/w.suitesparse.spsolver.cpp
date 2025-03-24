@@ -636,7 +636,9 @@ void DirectSparseSolver<T, I>::getPermutation(Permutation<I> &perm)
     case Solver_External_Representation<T, I>::SOLVER::CHOLMOD: {
         if (ext->cholmod.stage < 3) eslog::error("getPermutation: invalid order of operations in spsolver\n");
 
-        perm.resize(ext->cholmod.cm_factor_super->n);
+        if((size_t)perm.size != ext->cholmod.cm_factor_super->n) {
+            perm.resize(ext->cholmod.cm_factor_super->n);
+        }
 
         std::copy_n(static_cast<I*>(ext->cholmod.cm_factor_super->Perm), ext->cholmod.cm_factor_super->n, perm.dst_to_src);
 
@@ -660,7 +662,9 @@ void DirectSparseSolver<T, I>::getPermutation(Vector_Dense<I> &perm)
     case Solver_External_Representation<T, I>::SOLVER::CHOLMOD: {
         if (ext->cholmod.stage < 3) eslog::error("getPermutation: invalid order of operations in spsolver\n");
 
-        perm.resize(ext->cholmod.cm_factor_super->n);
+        if((size_t)perm.size != ext->cholmod.cm_factor_super->n) {
+            perm.resize(ext->cholmod.cm_factor_super->n);
+        }
 
         std::copy_n(static_cast<I*>(ext->cholmod.cm_factor_super->Perm), ext->cholmod.cm_factor_super->n, perm.vals);
     } break;

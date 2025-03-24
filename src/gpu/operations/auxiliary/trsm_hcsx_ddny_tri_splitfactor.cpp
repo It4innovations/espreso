@@ -1,6 +1,7 @@
 
 #include "gpu/operations/auxiliary/trsm_hcsx_ddny_tri_splitfactor.h"
 
+#include "basis/utilities/stacktimer.h"
 #include "math/operations/pivots_trails_csx.h"
 #include "math/operations/auxiliary/tri_partition_trsm.h"
 #include "math/operations/submatrix_csx_csy.h"
@@ -61,17 +62,41 @@ void trsm_hcsx_ddny_tri_splitfactor<T,I>::set_matrix_d_X(MatrixDenseView_new<T> 
 
 
 template<typename T, typename I>
-void trsm_hcsx_ddny_tri_splitfactor<T,I>::calc_X_pattern(MatrixCsxView_new<T,I> & X_pattern_host)
+void trsm_hcsx_ddny_tri_splitfactor<T,I>::set_h_X_pattern(MatrixCsxView_new<T,I> * h_X_pattern_)
 {
-    if(called_calc_X_pattern) eslog::error("X patern was already calculated\n");
+    if(h_X_pattern != nullptr) eslog::error("matrix h_X_pattern is already set\n");
+    if(h_X_pattern_ == nullptr) eslog::error("h_X_pattern cannot be nullptr\n");
 
-    h_X_colpivots.set(X_pattern_host.ncols, AllocatorCPU_new::get_singleton());
+    h_X_pattern = h_X_pattern_;
+}
+
+
+
+template<typename T, typename I>
+void trsm_hcsx_ddny_tri_splitfactor<T,I>::setup()
+{
+    stacktimer::push("trsm_hcsx_ddny_tri_splitfactor::setup");
+
+    if(!called_set_handles) eslog::error("handles are not set\n");
+    if(h_L == nullptr) eslog::error("matrix L is not set\n");
+    if(d_X == nullptr) eslog::error("matrix X is not set\n");
+    if(h_X_pattern == nullptr) eslog::error("X pattern is not set\n");
+    if(called_setup) eslog::error("setup was already called\n");
+    if(h_L->nrows != h_L->ncols) eslog::error("matrix L is not square\n");
+    if(h_L->nrows != d_X->nrows) eslog::error("incompatible matrices\n");
+    if(h_L->prop.uplo != 'L') eslog::error("L has to have uplo=L\n");
+
+    ator_ws_persistent = std::make_unique<AllocatorArena_new>(false, true, gpu::mgm::get_natural_pitch_align());
+    ator_ws_tmp_linear = std::make_unique<AllocatorArena_new>(false, true, gpu::mgm::get_natural_pitch_align());
+    ator_ws_tmp_overlap = std::make_unique<AllocatorSinglePointer_new>(false, true, gpu::mgm::get_natural_pitch_align());
+
+    h_X_colpivots.set(h_X_pattern->ncols, AllocatorCPU_new::get_singleton());
     h_X_colpivots.alloc();
-    math::operations::pivots_trails_csx<T,I>::do_all(&X_pattern_host, &h_X_colpivots, 'C', 'P', 'B');
+    math::operations::pivots_trails_csx<T,I>::do_all(h_X_pattern, &h_X_colpivots, 'C', 'P', 'B');
 
-    h_X_rowtrails.set(X_pattern_host.nrows, AllocatorCPU_new::get_singleton());
+    h_X_rowtrails.set(h_X_pattern->nrows, AllocatorCPU_new::get_singleton());
     h_X_rowtrails.alloc();
-    math::operations::pivots_trails_csx<T,I>::do_all(&X_pattern_host, &h_X_rowtrails, 'R', 'T', 'F');
+    math::operations::pivots_trails_csx<T,I>::do_all(h_X_pattern, &h_X_rowtrails, 'R', 'T', 'F');
 
     for(size_t i = 1; i < h_X_colpivots.size; i++) {
         if(h_X_colpivots.vals[i-1] > h_X_colpivots.vals[i]) {
@@ -83,27 +108,6 @@ void trsm_hcsx_ddny_tri_splitfactor<T,I>::calc_X_pattern(MatrixCsxView_new<T,I> 
             eslog::error("X does not have lower triangular structure\n");
         }
     }
-
-    called_calc_X_pattern = true;
-}
-
-
-
-template<typename T, typename I>
-void trsm_hcsx_ddny_tri_splitfactor<T,I>::setup()
-{
-    if(!called_set_handles) eslog::error("handles are not set\n");
-    if(h_L == nullptr) eslog::error("matrix L is not set\n");
-    if(d_X == nullptr) eslog::error("matrix X is not set\n");
-    if(!called_calc_X_pattern) eslog::error("X pattern has not been calculated\n");
-    if(called_setup) eslog::error("setup was already called\n");
-    if(h_L->nrows != h_L->ncols) eslog::error("matrix L is not square\n");
-    if(h_L->nrows != d_X->nrows) eslog::error("incompatible matrices\n");
-    if(h_L->prop.uplo != 'L') eslog::error("L has to have uplo=L\n");
-
-    ator_ws_persistent = std::make_unique<AllocatorArena_new>(false, true, gpu::mgm::get_natural_pitch_align());
-    ator_ws_tmp_linear = std::make_unique<AllocatorArena_new>(false, true, gpu::mgm::get_natural_pitch_align());
-    ator_ws_tmp_overlap = std::make_unique<AllocatorSinglePointer_new>(false, true, gpu::mgm::get_natural_pitch_align());
 
     math::operations::tri_partition_trsm partitioner;
     partitioner.set_config(cfg.partition.algorithm, 'V', cfg.partition.parameter);
@@ -118,6 +122,8 @@ void trsm_hcsx_ddny_tri_splitfactor<T,I>::setup()
     ops_chunks.resize(num_chunks);
 
     for(size_t ch = 0; ch < num_chunks; ch++) {
+        stacktimer::info("trsm_hcsx_ddny_tri_splitfactor::setup chunk %zu", ch);
+
         size_t k_start = partition.vals[ch];
         size_t k_end = partition.vals[ch+1];
 
@@ -184,12 +190,13 @@ void trsm_hcsx_ddny_tri_splitfactor<T,I>::setup()
         gpu_trsm_trirhs_chunk_splitfactor<T,I> & op_chunk = ops_chunks[ch];
         op_chunk.set_config(op_config);
         op_chunk.set_range(k_start, k_end);
+        op_chunk.set_handles(q, handle_spblas, handle_dnblas);
         op_chunk.set_matrix_h_L(h_L);
         op_chunk.set_matrix_d_X(d_X);
         op_chunk.set_h_X_rowtrails(&h_X_rowtrails);
         op_chunk.setup();
         wss_internal += op_chunk.get_wss_internal();
-        wss_persistent += op_chunk.get_wss_persistent();
+        wss_persistent += utils::round_up(op_chunk.get_wss_persistent(), ator_ws_persistent->get_align());
         wss_tmp_preprocess_overlap = std::max(wss_tmp_preprocess_overlap, op_chunk.get_wss_tmp_preprocess());
         wss_tmp_perform_overlap = std::max(wss_tmp_perform_overlap, op_chunk.get_wss_tmp_perform());
     }
@@ -199,6 +206,8 @@ void trsm_hcsx_ddny_tri_splitfactor<T,I>::setup()
 
     wss_tmp_preprocess = wss_tmp_preprocess_linear + wss_tmp_preprocess_overlap;
     wss_tmp_perform = wss_tmp_perform_linear + wss_tmp_perform_overlap;
+
+    stacktimer::pop();
 
     called_setup = true;
 }
@@ -259,6 +268,8 @@ void trsm_hcsx_ddny_tri_splitfactor<T,I>::set_ws_persistent(void * ws_persistent
 template<typename T, typename I>
 void trsm_hcsx_ddny_tri_splitfactor<T,I>::preprocess_submit(void * ws_tmp)
 {
+    stacktimer::push("trsm_hcsx_ddny_tri_splitfactor::preprocess_submit");
+
     if(!called_setup) eslog::error("setup has not been called\n");
     if(called_preprocess) eslog::error("preprocess has already been called\n");
     if(ws_tmp == nullptr && wss_tmp_preprocess > 0) eslog::error("temporary workspace is null\n");
@@ -269,6 +280,8 @@ void trsm_hcsx_ddny_tri_splitfactor<T,I>::preprocess_submit(void * ws_tmp)
     ator_ws_tmp_overlap->set((char*)ws_tmp + wss_tmp_preprocess_linear, wss_tmp_preprocess_overlap);
 
     for(size_t ch = 0; ch < num_chunks; ch++) {
+        stacktimer::info("trsm_hcsx_ddny_tri_splitfactor::preprocess_submit chunk %zu", ch);
+
         gpu_trsm_trirhs_chunk_splitfactor<T,I> & op_chunk = ops_chunks[ch];
         op_chunk.set_ws_persistent(ator_ws_persistent->alloc(op_chunk.get_wss_persistent()));
         op_chunk.preprocess_submit(ator_ws_tmp_overlap->alloc(op_chunk.get_wss_tmp_preprocess()));
@@ -276,6 +289,8 @@ void trsm_hcsx_ddny_tri_splitfactor<T,I>::preprocess_submit(void * ws_tmp)
     
     ator_ws_tmp_linear->unset();
     ator_ws_tmp_overlap->unset();
+
+    stacktimer::pop();
 
     called_preprocess = true;
 }
@@ -285,6 +300,8 @@ void trsm_hcsx_ddny_tri_splitfactor<T,I>::preprocess_submit(void * ws_tmp)
 template<typename T, typename I>
 void trsm_hcsx_ddny_tri_splitfactor<T,I>::perform_submit(void * ws_tmp)
 {
+    stacktimer::push("trsm_hcsx_ddny_tri_splitfactor::perform_submit");
+
     if(!called_preprocess) eslog::error("preprocess has not been called\n");
     if(ws_tmp == nullptr && wss_tmp_perform > 0) eslog::error("temporary workspace is null\n");
 
@@ -292,12 +309,16 @@ void trsm_hcsx_ddny_tri_splitfactor<T,I>::perform_submit(void * ws_tmp)
     ator_ws_tmp_overlap->set((char*)ws_tmp + wss_tmp_perform_linear, wss_tmp_perform_overlap);
 
     for(size_t ch = 0; ch < num_chunks; ch++) {
+        stacktimer::info("trsm_hcsx_ddny_tri_splitfactor::perform_submit chunk %zu", ch);
+
         gpu_trsm_trirhs_chunk_splitfactor<T,I> & op_chunk = ops_chunks[ch];
         op_chunk.perform_submit(ator_ws_tmp_overlap->alloc(op_chunk.get_wss_tmp_perform()));
     }
 
     ator_ws_tmp_linear->unset();
     ator_ws_tmp_overlap->unset();
+
+    stacktimer::pop();
 }
 
 

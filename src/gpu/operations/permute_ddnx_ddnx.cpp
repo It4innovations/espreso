@@ -1,6 +1,7 @@
 
 #include "gpu/operations/permute_ddnx_ddnx.h"
 
+#include "basis/utilities/stacktimer.h"
 #include "wrappers/cuda/operations/w_cuda_permute_ddnx_ddnx.h"
 
 
@@ -81,6 +82,8 @@ void permute_ddnx_ddnx<T,I>::set_perm_cols(PermutationView_new<I> * perm_cols_)
 template<typename T, typename I>
 void permute_ddnx_ddnx<T,I>::setup()
 {
+    stacktimer::push("permute_ddnx_ddnx::setup");
+
     if(!called_set_handles) eslog::error("handles are not set\n");
     if(M_src == nullptr) eslog::error("source matrix is not sen\n");
     if(M_dst == nullptr) eslog::error("destination matrix is not set\n");
@@ -96,6 +99,8 @@ void permute_ddnx_ddnx<T,I>::setup()
     }
 
     this->internal_setup();
+
+    stacktimer::pop();
 
     called_setup = true;
 }
@@ -115,10 +120,14 @@ size_t permute_ddnx_ddnx<T,I>::get_wss_tmp_perform()
 template<typename T, typename I>
 void permute_ddnx_ddnx<T,I>::perform_submit(void * ws_tmp)
 {
+    stacktimer::push("permute_ddnx_ddnx::perform_submit");
+
     if(!called_setup) eslog::error("setup was not called\n");
     if(ws_tmp == nullptr && wss_tmp_perform > 0) eslog::error("temporary workspace is null\n");
 
     this->internal_perform(ws_tmp);
+
+    stacktimer::pop();
 }
 
 

@@ -51,7 +51,7 @@ void w_cublas_herk_ddnx_ddny<T>::internal_setup()
     data->trans_mode = (((mode == math::blas::herk_mode::AAh) == (A->order == 'C')) ? CUBLAS_OP_N : CUBLAS_OP_T);
     data->n = A->nrows;
     data->k = A->ncols;
-    if(mode == math::blas::herk_mode::AAh) {
+    if(mode == math::blas::herk_mode::AhA) {
         std::swap(data->n, data->k);
     }
 }

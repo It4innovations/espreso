@@ -31,14 +31,14 @@ void trsm_dnx_dny<T>::set_rhs_sol(MatrixDenseView_new<T> * X_)
 template<typename T>
 void trsm_dnx_dny<T>::perform()
 {
+    stacktimer::push("trsm_dnx_dny::perform");
+
     if(A == nullptr) eslog::error("system matrix is not set\n");
     if(X == nullptr) eslog::error("rhs/sol matrix is not set\n");
     if(A->nrows != A->ncols) eslog::error("system matrix has to be square\n");
     if(X->nrows != A->nrows) eslog::error("matrices are incompatible\n");
     if(A->prop.uplo != 'U' && A->prop.uplo != 'L') eslog::error("invalid A uplo\n");
     if(A->prop.diag != 'U' && A->prop.diag != 'N') eslog::error("invalid A diag\n");
-
-    stacktimer::push("trsm_dnx_dny::perform");
 
     math::blas::trsm(*A, *X);
 

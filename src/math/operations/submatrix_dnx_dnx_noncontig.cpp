@@ -49,14 +49,14 @@ void submatrix_dnx_dnx_noncontig<T,I>::set_col_map(VectorDenseView_new<I> * col_
 template<typename T, typename I>
 void submatrix_dnx_dnx_noncontig<T,I>::perform()
 {
+    stacktimer::push("submatrix_dnx_dnx_noncontig::perform");
+
     if(M_src == nullptr) eslog::error("source matrix is not set\n");
     if(M_dst == nullptr) eslog::error("destination matrix is not set\n");
     if(M_src->order != M_dst->order) eslog::error("matrix orders do not match\n");
     size_t nrows = ((row_map == nullptr) ? M_src->nrows : row_map->size);
     size_t ncols = ((col_map == nullptr) ? M_src->ncols : col_map->size);
     if(M_dst->nrows != nrows || M_dst->ncols != ncols) eslog::error("wrong destination matrix size\n");
-
-    stacktimer::push("submatrix_dnx_dnx_noncontig::perform");
 
     size_t dst_size_primary = M_dst->get_size_primary();
     size_t dst_size_secdary = M_dst->get_size_secdary();

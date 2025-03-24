@@ -55,14 +55,14 @@ void gemm_csx_dny_dny_staged<T,I>::set_coefficients(T alpha_, T beta_)
 template<typename T, typename I>
 void gemm_csx_dny_dny_staged<T,I>::preprocess()
 {
+    stacktimer::push("gemm_csx_dny_dny_staged::preprocess");
+
     if(preprocess_called) eslog::error("preproces has already been called\n");
     if(A == nullptr) eslog::error("matrix A is not set\n");
     if(B == nullptr) eslog::error("matrix B is not set\n");
     if(C == nullptr) eslog::error("matrix C is not set\n");
     if(A->nrows != C->nrows || B->ncols != C->ncols || A->ncols != B->nrows) eslog::error("incompatible matrix sizes\n");
     if(B->order != C->order) eslog::error("order of B and C must match\n");
-
-    stacktimer::push("gemm_csx_dny_dny_staged::preprocess");
 
     spblas::mm(*A, *B, *C, alpha, beta, handle_abc, 'P');
 
@@ -76,14 +76,14 @@ void gemm_csx_dny_dny_staged<T,I>::preprocess()
 template<typename T, typename I>
 void gemm_csx_dny_dny_staged<T,I>::perform()
 {
+    stacktimer::push("gemm_csx_dny_dny_staged::perform");
+
     if(!preprocess_called) eslog::error("preprocess has not been called\n");
     if(A == nullptr) eslog::error("matrix A is not set\n");
     if(B == nullptr) eslog::error("matrix B is not set\n");
     if(C == nullptr) eslog::error("matrix C is not set\n");
     if(A->nrows != C->nrows || B->ncols != C->ncols || A->ncols != B->nrows) eslog::error("incompatible matrix sizes\n");
     if(B->order != C->order) eslog::error("order of B and C must match\n");
-
-    stacktimer::push("gemm_csx_dny_dny_staged::perform");
 
     spblas::mm(*A, *B, *C, alpha, beta, handle_abc, 'C');
 

@@ -80,7 +80,7 @@ void w_cuda_submatrix_dcsx_dcsx<T,I>::internal_setup()
 
     wss_pers_startptrs = utils::round_up(dst_size_primary * sizeof(I), gpu::mgm::get_natural_pitch_align());
     wss_pers_endptrs = utils::round_up(dst_size_primary * sizeof(I), gpu::mgm::get_natural_pitch_align());
-    wss_pers_outptrs = (dst_size_primary + 1) * sizeof(I);
+    wss_pers_outptrs = utils::round_up((dst_size_primary + 1) * sizeof(I), gpu::mgm::get_natural_pitch_align());
 
     CHECK(cub::DeviceScan::ExclusiveSum(nullptr, wss_scan, (I*)nullptr, (I*)nullptr, dst_size_primary + 1, q->stream));
 

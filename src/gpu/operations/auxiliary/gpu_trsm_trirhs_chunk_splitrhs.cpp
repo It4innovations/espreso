@@ -1,6 +1,8 @@
 
 #include "gpu/operations/auxiliary/gpu_trsm_trirhs_chunk_splitrhs.h"
 
+#include "basis/utilities/stacktimer.h"
+
 
 
 namespace espreso {
@@ -107,6 +109,8 @@ void gpu_trsm_trirhs_chunk_splitrhs<T,I>::set_h_L_nnzinsubs(VectorDenseView_new<
 template<typename T, typename I>
 void gpu_trsm_trirhs_chunk_splitrhs<T,I>::setup()
 {
+    stacktimer::push("gpu_trsm_trirhs_chunk_splitrhs::setup");
+
     if(!called_set_config) eslog::error("config is not set\n");
     if(!called_set_range) eslog::error("range is not set\n");
     if(!called_set_handles) eslog::error("handles are not set\n");
@@ -147,7 +151,7 @@ void gpu_trsm_trirhs_chunk_splitrhs<T,I>::setup()
         op_d_sub_L_sp->set_matrix_dst(&d_sub_L_sp);
         op_d_sub_L_sp->setup();
         wss_internal += op_d_sub_L_sp->get_wss_internal();
-        wss_persistent += op_d_sub_L_sp->get_wss_persistent();
+        wss_persistent += utils::round_up(op_d_sub_L_sp->get_wss_persistent(), ator_ws_persistent->get_align());
         wss_tmp_preprocess_overlap = std::max(wss_tmp_preprocess_overlap, op_d_sub_L_sp->get_wss_tmp_preprocess());
         wss_tmp_perform_overlap = std::max(wss_tmp_perform_overlap, op_d_sub_L_sp->get_wss_tmp_perform());
     }
@@ -173,7 +177,7 @@ void gpu_trsm_trirhs_chunk_splitrhs<T,I>::setup()
         op_d_trsm_sp->set_matrix_B(&d_sub_X);
         op_d_trsm_sp->setup();
         wss_internal += op_d_trsm_sp->get_wss_internal();
-        wss_persistent += op_d_trsm_sp->get_wss_persistent();
+        wss_persistent += utils::round_up(op_d_trsm_sp->get_wss_persistent(), ator_ws_persistent->get_align());
         wss_tmp_preprocess_overlap = std::max(wss_tmp_preprocess_overlap, op_d_trsm_sp->get_wss_tmp_preprocess());
         wss_tmp_perform_overlap = std::max(wss_tmp_perform_overlap, op_d_trsm_sp->get_wss_tmp_perform());
     }
@@ -191,6 +195,8 @@ void gpu_trsm_trirhs_chunk_splitrhs<T,I>::setup()
 
     wss_tmp_preprocess = wss_tmp_preprocess_linear + wss_tmp_preprocess_overlap;
     wss_tmp_perform = wss_tmp_perform_linear + wss_tmp_perform_overlap;
+
+    stacktimer::pop();
 
     called_setup = true;
 }
@@ -251,6 +257,8 @@ void gpu_trsm_trirhs_chunk_splitrhs<T,I>::set_ws_persistent(void * ws_persistent
 template<typename T, typename I>
 void gpu_trsm_trirhs_chunk_splitrhs<T,I>::preprocess_submit(void * ws_tmp)
 {
+    stacktimer::push("gpu_trsm_trirhs_chunk_splitrhs::preprocess_submit");
+
     if(!called_setup) eslog::error("setup has not been called\n");
     if(called_preprocess) eslog::error("preprocess has already been called\n");
     if(ws_tmp == nullptr && wss_tmp_preprocess > 0) eslog::error("temporary workspace is null\n");
@@ -273,6 +281,8 @@ void gpu_trsm_trirhs_chunk_splitrhs<T,I>::preprocess_submit(void * ws_tmp)
     ator_ws_tmp_linear->unset();
     ator_ws_tmp_overlap->unset();
 
+    stacktimer::pop();
+
     called_preprocess = true;
 }
 
@@ -281,6 +291,8 @@ void gpu_trsm_trirhs_chunk_splitrhs<T,I>::preprocess_submit(void * ws_tmp)
 template<typename T, typename I>
 void gpu_trsm_trirhs_chunk_splitrhs<T,I>::perform_submit(void * ws_tmp)
 {
+    stacktimer::push("gpu_trsm_trirhs_chunk_splitrhs::perform_submit");
+
     if(!called_preprocess) eslog::error("preprocess has not been called\n");
     if(ws_tmp == nullptr && wss_tmp_perform > 0) eslog::error("temporary workspace is null\n");
 
@@ -313,6 +325,8 @@ void gpu_trsm_trirhs_chunk_splitrhs<T,I>::perform_submit(void * ws_tmp)
     
     ator_ws_tmp_linear->unset();
     ator_ws_tmp_overlap->unset();
+
+    stacktimer::pop();
 }
 
 

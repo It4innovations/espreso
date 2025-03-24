@@ -1,6 +1,7 @@
 
 #include "gpu/operations/submatrix_dcsx_dcsx.h"
 
+#include "basis/utilities/stacktimer.h"
 #include "wrappers/cuda/operations/w_cuda_submatrix_dcsx_dcsx.h"
 
 
@@ -75,6 +76,8 @@ void submatrix_dcsx_dcsx<T,I>::set_matrix_dst(MatrixCsxView_new<T,I> * M_dst_)
 template<typename T, typename I>
 void submatrix_dcsx_dcsx<T,I>::setup()
 {
+    stacktimer::push("submatrix_dcsx_dcsx::setup");
+
     if(!called_set_handles) eslog::error("handles are not set\n");
     if(!called_set_bounds) eslog::error("bounds are not set\n");
     if(M_src == nullptr) eslog::error("source matrix is not set\n");
@@ -90,6 +93,8 @@ void submatrix_dcsx_dcsx<T,I>::setup()
     secdary_end = ((M_src->order == 'R') ? col_end : row_end);
 
     this->internal_setup();
+
+    stacktimer::pop();
 
     called_setup = true;
 }
@@ -150,11 +155,15 @@ void submatrix_dcsx_dcsx<T,I>::set_ws_persistent(void * ws_persistent_)
 template<typename T, typename I>
 void submatrix_dcsx_dcsx<T,I>::preprocess_submit(void * ws_tmp)
 {
+    stacktimer::push("submatrix_dcsx_dcsx::preprocess_submit");
+
     if(!called_setup) eslog::error("setup has not been called\n");
     if(called_preprocess) eslog::error("preprocess has already been called\n");
     if(ws_tmp == nullptr && wss_tmp_preprocess > 0) eslog::error("temporary workspace is null\n");
 
     this->internal_preprocess(ws_tmp);
+
+    stacktimer::pop();
 
     called_preprocess = true;
 }
@@ -164,10 +173,14 @@ void submatrix_dcsx_dcsx<T,I>::preprocess_submit(void * ws_tmp)
 template<typename T, typename I>
 void submatrix_dcsx_dcsx<T,I>::perform_submit(void * ws_tmp)
 {
+    stacktimer::push("submatrix_dcsx_dcsx::perform_submit");
+
     if(!called_preprocess) eslog::error("preprocess has not been called\n");
     if(ws_tmp == nullptr && wss_tmp_perform > 0) eslog::error("temporary workspace is null\n");
 
     this->internal_perform(ws_tmp);
+
+    stacktimer::pop();
 }
 
 

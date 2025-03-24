@@ -42,10 +42,10 @@ void prune_csx_matx<T,I>::set_matrix_src(MatrixCsxView_new<T,I> * M_src_)
 template<typename T, typename I>
 void prune_csx_matx<T,I>::setup()
 {
+    stacktimer::push("prune_csx_matx::setup");
+
     if(!called_set_pruning_mode) eslog::error("pruning mode is not set\n");
     if(M_src == nullptr) eslog::error("source matrix is not set\n");
-
-    stacktimer::push("prune_csx_matx::setup");
 
     if(M_src->order == 'R') {
         prune_primary = prune_rows;
@@ -106,16 +106,16 @@ void prune_csx_matx<T,I>::set_vector_pruned_cols(VectorDenseView_new<I> * pruned
 
 
 template<typename T, typename I>
-void prune_csx_matx<T,I>::preprocess2()
+void prune_csx_matx<T,I>::preprocess()
 {
-    if(!called_preprocess2) eslog::error("setup was not called\n");
+    stacktimer::push("prune_csx_matx::preprocess");
+
+    if(!called_setup) eslog::error("setup was not called\n");
     if(M_src == nullptr) eslog::error("source matrix is not set\n");
     if(prune_rows && pruned_rows_vec == nullptr) eslog::error("vector for pruned rows is not set\n");
     if(prune_cols && pruned_cols_vec == nullptr) eslog::error("vector for pruned cols is not set\n");
     if(prune_rows && pruned_rows_vec->size != pruned_nrows) eslog::error("wrong size of pruned rows vector\n");
     if(prune_cols && pruned_cols_vec->size != pruned_ncols) eslog::error("wrong size of pruned cols vector\n");
-
-    stacktimer::push("prune_csx_matx::preprocess");
 
     if(prune_rows) {
         op_pruning_subset.set_vector_pruned_rows(pruned_rows_vec);
@@ -147,7 +147,7 @@ void prune_csx_matx<T,I>::preprocess2()
 
     stacktimer::pop();
 
-    called_preprocess2 = true;
+    called_preprocess = true;
 }
 
 
@@ -171,9 +171,9 @@ void prune_csx_matx<T,I>::set_matrix_dst_dn(MatrixDenseView_new<T> * M_dst_dn_)
 template<typename T, typename I>
 void prune_csx_matx<T,I>::perform()
 {
-    if(!called_preprocess2) eslog::error("preprocess was not called\n");
-
     stacktimer::push("prune_csx_matx::perform");
+
+    if(!called_preprocess) eslog::error("preprocess was not called\n");
 
     if(M_dst_sp != nullptr) {
         perform_sparse();

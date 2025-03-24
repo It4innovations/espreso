@@ -41,10 +41,10 @@ void submatrix_csx_csy<T,I>::set_bounds(size_t row_start_, size_t row_end_, size
 template<typename T, typename I>
 void submatrix_csx_csy<T,I>::setup()
 {
+    stacktimer::push("submatrix_csx_csy::setup");
+
     if(M_src == nullptr) eslog::error("source matrix has not been set\n");
     if(!bounds_set) eslog::error("bounds have not been set\n");
-
-    stacktimer::push("submatrix_csx_csy::setup");
 
     I start_prim = 0;
     I end_prim = 0;
@@ -109,13 +109,13 @@ void submatrix_csx_csy<T,I>::set_matrix_dst(MatrixCsxView_new<T,I> * M_dst_)
 template<typename T, typename I>
 void submatrix_csx_csy<T,I>::perform()
 {
+    stacktimer::push("submatrix_csx_csy::perform");
+
     if(M_src == nullptr) eslog::error("source matrix has not been set\n");
     if(M_dst == nullptr) eslog::error("destination matrix has not been set\n");
     if(!setup_called) eslog::error("setup has not been called\n");
     if(M_dst->nrows != num_rows || M_dst->ncols != num_cols) eslog::error("destination matrix size does not match bounds\n");
     if(M_dst->nnz != nnz_output) eslog::error("wrong nnz in output matrix\n");
-
-    stacktimer::push("submatrix_csx_csy::perform");
 
     if(M_src->order == M_dst->order) {
         perform_same_order();

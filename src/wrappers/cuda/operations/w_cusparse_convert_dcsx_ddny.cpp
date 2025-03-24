@@ -41,10 +41,12 @@ w_cusparse_convert_dcsx_ddny<T,I>::~w_cusparse_convert_dcsx_ddny()
 template<typename T, typename I>
 void w_cusparse_convert_dcsx_ddny<T,I>::internal_setup()
 {
-    if(M_src->order == 'R') CHECK(cusparseCreateCsr(&data->descr_M_src, M_src->nrows, M_src->ncols, M_src->nnz, M_src->ptrs, M_src->idxs, M_src->vals, cusparse_index_type<I>(), cusparse_index_type<I>(), CUSPARSE_INDEX_BASE_ZERO, cusparse_data_type<T>()));
-    if(M_src->order == 'C') CHECK(cusparseCreateCsc(&data->descr_M_src, M_src->nrows, M_src->ncols, M_src->nnz, M_src->ptrs, M_src->idxs, M_src->vals, cusparse_index_type<I>(), cusparse_index_type<I>(), CUSPARSE_INDEX_BASE_ZERO, cusparse_data_type<T>()));
+    T * dummyptr_T = (T*)(sizeof(T));
+    I * dummyptr_I = (I*)(sizeof(I));
+    if(M_src->order == 'R') CHECK(cusparseCreateCsr(&data->descr_M_src, M_src->nrows, M_src->ncols, M_src->nnz, dummyptr_I, dummyptr_I, dummyptr_T, cusparse_index_type<I>(), cusparse_index_type<I>(), CUSPARSE_INDEX_BASE_ZERO, cusparse_data_type<T>()));
+    if(M_src->order == 'C') CHECK(cusparseCreateCsc(&data->descr_M_src, M_src->nrows, M_src->ncols, M_src->nnz, dummyptr_I, dummyptr_I, dummyptr_T, cusparse_index_type<I>(), cusparse_index_type<I>(), CUSPARSE_INDEX_BASE_ZERO, cusparse_data_type<T>()));
 
-    CHECK(cusparseCreateDnMat(&data->descr_M_dst, M_dst->nrows, M_dst->ncols, M_dst->ld, M_dst->vals, cusparse_data_type<T>(), cusparse_order(M_dst->order)));
+    CHECK(cusparseCreateDnMat(&data->descr_M_dst, M_dst->nrows, M_dst->ncols, M_dst->ld, dummyptr_T, cusparse_data_type<T>(), cusparse_order(M_dst->order)));
 
     data->alg = CUSPARSE_SPARSETODENSE_ALG_DEFAULT;
 
@@ -67,7 +69,8 @@ void w_cusparse_convert_dcsx_ddny<T,I>::internal_preprocess(void * /*ws_tmp*/)
 template<typename T, typename I>
 void w_cusparse_convert_dcsx_ddny<T,I>::internal_perform(void * ws_tmp)
 {
-    CHECK(cusparseCsrSetPointers(data->descr_M_src, M_src->ptrs, M_src->idxs, M_src->vals));
+    if(M_src->order == 'R') CHECK(cusparseCsrSetPointers(data->descr_M_src, M_src->ptrs, M_src->idxs, M_src->vals));
+    if(M_src->order == 'C') CHECK(cusparseCscSetPointers(data->descr_M_src, M_src->ptrs, M_src->idxs, M_src->vals));
     CHECK(cusparseDnMatSetValues(data->descr_M_dst, M_dst->vals));
 
     CHECK(cusparseSparseToDense(handle_spblas->h, data->descr_M_src, data->descr_M_dst, data->alg, ws_tmp));

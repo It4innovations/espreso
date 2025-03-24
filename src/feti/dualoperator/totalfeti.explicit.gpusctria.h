@@ -66,14 +66,14 @@ private:
     std::vector<per_domain_stuff> domain_data;
     size_t n_domains = 0;
     size_t n_queues = 0;
-    std::vector<MatrixDenseData_new<T>> d_Fs_allocated;
     size_t total_wss_internal = 0;
     size_t total_wss_persistent = 0;
     void * ws_persistent = nullptr;
-    std::unique_ptr<AllocatorArena_new> ator_ws_persistent;
     size_t wss_tmp_for_cbmba = 0;
     void * ws_tmp_for_cbmba = nullptr;
+    std::unique_ptr<AllocatorArena_new> ator_ws_persistent;
     std::unique_ptr<AllocatorCBMB_new> ator_tmp_cbmba;
+    std::vector<MatrixDenseData_new<T>> d_Fs_allocated;
     Vector_Dense<T,I,gpu::mgm::Ad> d_applyg_x_cluster;
     Vector_Dense<T,I,gpu::mgm::Ad> d_applyg_y_cluster;
     Vector_Dense<T*,I,gpu::mgm::Ad> d_applyg_xs_pointers;

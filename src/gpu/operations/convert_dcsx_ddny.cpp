@@ -1,6 +1,7 @@
 
 #include "gpu/operations/convert_dcsx_ddny.h"
 
+#include "basis/utilities/stacktimer.h"
 #include "wrappers/cuda/operations/w_cusparse_convert_dcsx_ddny.h"
 
 
@@ -63,6 +64,8 @@ void convert_dcsx_ddny<T,I>::set_matrix_dst(MatrixDenseView_new<T> * M_dst_)
 template<typename T, typename I>
 void convert_dcsx_ddny<T,I>::setup()
 {
+    stacktimer::push("convert_dcsx_ddny::setup");
+
     if(!called_set_handles) eslog::error("handles are not set\n");
     if(M_src == nullptr) eslog::error("source matrix is not set\n");
     if(M_dst == nullptr) eslog::error("destination matrix is not set\n");
@@ -70,6 +73,8 @@ void convert_dcsx_ddny<T,I>::setup()
     if(M_src->nrows != M_dst->nrows || M_src->ncols != M_dst->ncols) eslog::error("matrix sizes dont match\n");
 
     this->internal_setup();
+
+    stacktimer::pop();
 
     called_setup = true;
 }
@@ -130,11 +135,15 @@ void convert_dcsx_ddny<T,I>::set_ws_persistent(void * ws_persistent_)
 template<typename T, typename I>
 void convert_dcsx_ddny<T,I>::preprocess_submit(void * ws_tmp)
 {
+    stacktimer::push("convert_dcsx_ddny::preprocess_submit");
+
     if(!called_setup) eslog::error("setup has not been called\n");
     if(called_preprocess) eslog::error("preprocess has already been called\n");
     if(ws_tmp == nullptr && wss_tmp_preprocess > 0) eslog::error("temporary workspace is null\n");
 
     this->internal_preprocess(ws_tmp);
+
+    stacktimer::pop();
 
     called_preprocess = true;
 }
@@ -144,10 +153,14 @@ void convert_dcsx_ddny<T,I>::preprocess_submit(void * ws_tmp)
 template<typename T, typename I>
 void convert_dcsx_ddny<T,I>::perform_submit(void * ws_tmp)
 {
+    stacktimer::push("convert_dcsx_ddny::perform_submit");
+
     if(!called_preprocess) eslog::error("preprocess has not been called\n");
     if(ws_tmp == nullptr && wss_tmp_perform > 0) eslog::error("temporary workspace is null\n");
 
     this->internal_perform(ws_tmp);
+
+    stacktimer::pop();
 }
 
 

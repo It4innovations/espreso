@@ -88,13 +88,13 @@ private:
     bool called_setup = false;
     bool called_preprocess = false;
 private:
+    std::unique_ptr<AllocatorArena_new> ator_ws_persistent;
+    std::unique_ptr<AllocatorArena_new> ator_ws_tmp_linear;
+    std::unique_ptr<AllocatorSinglePointer_new> ator_ws_tmp_overlap;
     size_t wss_tmp_preprocess_linear = 0;
     size_t wss_tmp_preprocess_overlap = 0;
     size_t wss_tmp_perform_linear = 0;
     size_t wss_tmp_perform_overlap = 0;
-    std::unique_ptr<AllocatorArena_new> ator_ws_persistent;
-    std::unique_ptr<AllocatorArena_new> ator_ws_tmp_linear;
-    std::unique_ptr<AllocatorSinglePointer_new> ator_ws_tmp_overlap;
     std::unique_ptr<trsm_hcsx_ddny_tri_splitrhs<T,I>> trsm_splitrhs;
     std::unique_ptr<trsm_hcsx_ddny_tri_splitfactor<T,I>> trsm_splitfactor;
 };

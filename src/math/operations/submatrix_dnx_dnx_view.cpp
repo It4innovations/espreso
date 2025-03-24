@@ -46,6 +46,8 @@ void submatrix_dnx_dnx_view<T>::set_bounds(size_t row_start_, size_t row_end_, s
 template<typename T>
 void submatrix_dnx_dnx_view<T>::perform()
 {
+    stacktimer::push("submatrix_dnx_dnx_view::perform");
+
     if(M_src == nullptr) eslog::error("source matrix has not been set\n");
     if(M_dst == nullptr) eslog::error("destination matrix has not been set\n");
     if(!called_set_bounds) eslog::error("bounds are not set\n");
@@ -53,8 +55,6 @@ void submatrix_dnx_dnx_view<T>::perform()
     if(M_src->order != M_dst->order) eslog::error("ordes must match\n");
     if(M_src->ld != M_dst->ld) eslog::error("leading dimensions must match\n");
     if(dynamic_cast<MatrixDenseData_new<T>*>(M_dst) != nullptr) eslog::error("cannot be used with data as destination\n");
-
-    stacktimer::push("submatrix_dnx_dnx_view::perform");
 
     M_dst->vals = M_src->vals + row_start * M_src->get_stride_row() + col_start * M_dst->get_stride_col();
 

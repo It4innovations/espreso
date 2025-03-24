@@ -68,14 +68,14 @@ void trsm_trirhs_chunk_splitfactor<T,I>::set_X_rowtrails(VectorDenseView_new<I> 
 template<typename T, typename I>
 void trsm_trirhs_chunk_splitfactor<T,I>::preprocess()
 {
+    stacktimer::push("trsm_trirhs_chunk_splitfactor::preprocess");
+
     if(preprocess_called) eslog::error("preprocess was already called\n");
     if(!set_config_called) eslog::error("config is not set\n");
     if(!set_range_called) eslog::error("range is not set\n");
     if(L == nullptr) eslog::error("matrix L is not set\n");
     if(X == nullptr) eslog::error("matrix X is not set\n");
     if(X_rowtrails == nullptr) eslog::error("B rowtrails is not set\n");
-
-    stacktimer::push("trsm_trirhs_chunk_splitfactor::preprocess");
 
     size_t rhs_start = 0;
     size_t rhs_end = X_rowtrails->vals[k_end - 1] + 1;
@@ -175,9 +175,9 @@ void trsm_trirhs_chunk_splitfactor<T,I>::preprocess()
 template<typename T, typename I>
 void trsm_trirhs_chunk_splitfactor<T,I>::perform()
 {
-    if(!preprocess_called) eslog::error("preprocess was not called\n");
-
     stacktimer::push("trsm_trirhs_chunk_splitfactor::perform");
+
+    if(!preprocess_called) eslog::error("preprocess was not called\n");
 
     op_submatrix_X_top.perform();
     op_submatrix_X_bot.perform();

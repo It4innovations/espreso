@@ -1,6 +1,7 @@
 
 #include "gpu/operations/submatrix_ddnx_ddnx_noncontig.h"
 
+#include "basis/utilities/stacktimer.h"
 #include "wrappers/cuda/operations/w_cuda_submatrix_ddnx_ddnx_noncontig.h"
 
 
@@ -83,14 +84,18 @@ void submatrix_ddnx_ddnx_noncontig<T,I>::set_col_map(VectorDenseView_new<I> * d_
 template<typename T, typename I>
 void submatrix_ddnx_ddnx_noncontig<T,I>::perform_submit()
 {
+    stacktimer::push("submatrix_ddnx_ddnx_noncontig::perform_submit");
+
     if(!called_set_handles) eslog::error("handles are not set\n");
-    if(d_M_src != nullptr) eslog::error("source matrix is not set\n");
-    if(d_M_dst != nullptr) eslog::error("destination matrix is not set\n");
+    if(d_M_src == nullptr) eslog::error("source matrix is not set\n");
+    if(d_M_dst == nullptr) eslog::error("destination matrix is not set\n");
     if(d_M_src->order != d_M_dst->order) eslog::error("matrix orders do no tmatch");
     if(d_row_map != nullptr && d_row_map->size != d_M_dst->nrows) eslog::error("incompatible row sizes\n");
     if(d_col_map != nullptr && d_col_map->size != d_M_dst->ncols) eslog::error("incompatible col sizes\n");
 
     this->internal_perform();
+
+    stacktimer::pop();
 }
 
 

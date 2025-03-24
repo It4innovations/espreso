@@ -71,10 +71,10 @@ void herk_dnx_dny_tri<T,I>::set_mode(blas::herk_mode mode_)
 template<typename T, typename I>
 void herk_dnx_dny_tri<T,I>::calc_A_pattern(MatrixCsxView_new<T,I> & A_pattern)
 {
+    stacktimer::push("herk_dnx_dny_tri::calc_A_pattern");
+
     if(!mode_set) eslog::error("mode is not set\n");
     if(pattern_set) eslog::error("A pattern was already set\n");
-
-    stacktimer::push("herk_dnx_dny_tri::calc_A_pattern");
 
     if(mode == blas::herk_mode::AhA) {
         A_pivots.set(A->ncols, AllocatorCPU_new::get_singleton());
@@ -105,11 +105,11 @@ void herk_dnx_dny_tri<T,I>::calc_A_pattern(MatrixCsxView_new<T,I> & A_pattern)
 template<typename T, typename I>
 void herk_dnx_dny_tri<T,I>::preprocess()
 {
+    stacktimer::push("herk_dnx_dny_tri::preprocess");
+
     if(!config_set) eslog::error("config is not set\n");
     if(!mode_set) eslog::error("mode is not set\n");
     if(!pattern_set) eslog::error("A pattern is not set\n");
-
-    stacktimer::push("herk_dnx_dny_tri::preprocess");
 
     for(size_t i = 1; i < A_pivots.size; i++) {
         if(A_pivots.vals[i-1] > A_pivots.vals[i]) {
@@ -148,14 +148,14 @@ void herk_dnx_dny_tri<T,I>::preprocess()
 template<typename T, typename I>
 void herk_dnx_dny_tri<T,I>::perform()
 {
+    stacktimer::push("herk_dnx_dny_tri::perform");
+
     if(!preproces_called) eslog::error("preprocess was not called\n");
     if(A == nullptr) eslog::error("matrix A is not set\n");
     if(C == nullptr) eslog::error("matrix C is not set\n");
     if(C->nrows != C->ncols) eslog::error("C must be square\n");
     if(C->prop.uplo != 'U' && C->prop.uplo != 'L') eslog::error("wrong C uplo\n");
     if(A->ncols != C->ncols) eslog::error("incompatible matrices\n");
-
-    stacktimer::push("herk_dnx_dny_tri::perform");
 
     if(mode == blas::herk_mode::AAh) {
         perform_AAh();

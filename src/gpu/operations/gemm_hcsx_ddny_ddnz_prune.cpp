@@ -1,6 +1,8 @@
 
 #include "gpu/operations/gemm_hcsx_ddny_ddnz_prune.h"
 
+#include "basis/utilities/stacktimer.h"
+
 
 
 namespace espreso {
@@ -82,6 +84,8 @@ void gemm_hcsx_ddny_ddnz_prune<T,I>::set_coefficients(T alpha_, T beta_)
 template<typename T, typename I>
 void gemm_hcsx_ddny_ddnz_prune<T,I>::setup()
 {
+    stacktimer::push("gemm_hcsx_ddny_ddnz_prune::setup");
+
     if(!called_set_config) eslog::error("config is not set\n");
     if(!called_set_handles) eslog::error("handles are not set\n");
     if(h_A == nullptr) eslog::error("matrix A is not set\n");
@@ -95,6 +99,8 @@ void gemm_hcsx_ddny_ddnz_prune<T,I>::setup()
     ator_tmp_overlap = std::make_unique<AllocatorSinglePointer_new>(false, true, gpu::mgm::get_natural_pitch_align());
 
     if(prune_rows || prune_cols) {
+        op_h_prune_A.set_matrix_src(h_A);
+        op_h_prune_A.set_matrix_dst_sp(&h_A_pruned);
         op_h_prune_A.set_pruning_mode(prune_rows, prune_cols);
         op_h_prune_A.setup();
 
@@ -113,8 +119,6 @@ void gemm_hcsx_ddny_ddnz_prune<T,I>::setup()
             op_h_prune_A.set_vector_pruned_cols(&h_pruned_cols);
         }
 
-        op_h_prune_A.set_matrix_dst_sp(&h_A_pruned);
-
         h_A_to_use = &h_A_pruned;
     }
     else {
@@ -127,14 +131,15 @@ void gemm_hcsx_ddny_ddnz_prune<T,I>::setup()
 
     if(prune_rows) {
         d_pruned_rows.set(h_pruned_rows.size, ator_persistent.get());
-        wss_persistent += d_pruned_rows.get_memory_impact();
+        wss_persistent += utils::round_up(d_pruned_rows.get_memory_impact(), ator_persistent->get_align());
     }
     if(prune_cols) {
         d_pruned_cols.set(h_pruned_cols.size, ator_persistent.get());
-        wss_persistent += d_pruned_cols.get_memory_impact();
+        wss_persistent += utils::round_up(d_pruned_cols.get_memory_impact(), ator_persistent->get_align());
     }
 
     d_A_pruned_sp.set(m, k, h_A_to_use->nnz, h_A_to_use->order, ator_tmp_linear.get());
+    wss_tmp_preprocess_linear += d_A_pruned_sp.get_memory_impact();
     wss_tmp_perform_linear += d_A_pruned_sp.get_memory_impact();
 
     if(spdn_A == 'D') {
@@ -167,13 +172,14 @@ void gemm_hcsx_ddny_ddnz_prune<T,I>::setup()
         op_d_sp2dn_A->set_matrix_dst(&d_A_pruned_dn);
         op_d_sp2dn_A->setup();
         wss_internal += op_d_sp2dn_A->get_wss_internal();
-        wss_persistent += op_d_sp2dn_A->get_wss_persistent();
+        wss_persistent += utils::round_up(op_d_sp2dn_A->get_wss_persistent(), ator_persistent->get_align());
         wss_tmp_preprocess_overlap = std::max(wss_tmp_preprocess_overlap, op_d_sp2dn_A->get_wss_tmp_preprocess());
         wss_tmp_perform_overlap = std::max(wss_tmp_perform_overlap, op_d_sp2dn_A->get_wss_tmp_perform());
     }
 
     if(prune_cols) {
         op_d_sub_B = submatrix_ddnx_ddnx_noncontig<T,I>::make();
+        op_d_sub_B->set_handles(q);
         op_d_sub_B->set_matrix_src(d_B);
         op_d_sub_B->set_matrix_dst(&d_B_pruned);
         op_d_sub_B->set_row_map(&d_pruned_cols);
@@ -181,12 +187,14 @@ void gemm_hcsx_ddny_ddnz_prune<T,I>::setup()
     }
     if(prune_rows) {
         op_d_sub_C = submatrix_ddnx_ddnx_noncontig<T,I>::make();
+        op_d_sub_C->set_handles(q);
         op_d_sub_C->set_matrix_src(d_C);
         op_d_sub_C->set_matrix_dst(&d_C_pruned);
         op_d_sub_C->set_row_map(&d_pruned_rows);
         op_d_sub_C->set_col_map(nullptr);
 
         op_d_super_C = supermatrix_ddnx_ddnx_noncontig<T,I>::make();
+        op_d_super_C->set_handles(q);
         op_d_super_C->set_matrix_src(&d_C_pruned);
         op_d_super_C->set_matrix_dst(d_C);
         op_d_super_C->set_row_map(&d_pruned_rows);
@@ -202,7 +210,7 @@ void gemm_hcsx_ddny_ddnz_prune<T,I>::setup()
         op_gemm_sp->set_coefficients(alpha, beta);
         op_gemm_sp->setup();
         wss_internal += op_gemm_sp->get_wss_internal();
-        wss_persistent += op_gemm_sp->get_wss_persistent();
+        wss_persistent += utils::round_up(op_gemm_sp->get_wss_persistent(), ator_persistent->get_align());
         wss_tmp_preprocess_overlap = std::max(wss_tmp_preprocess_overlap, op_gemm_sp->get_wss_tmp_preprocess());
         wss_tmp_perform_overlap = std::max(wss_tmp_perform_overlap, op_gemm_sp->get_wss_tmp_perform());
     }
@@ -222,6 +230,8 @@ void gemm_hcsx_ddny_ddnz_prune<T,I>::setup()
 
     wss_tmp_preprocess = wss_tmp_preprocess_linear + wss_tmp_preprocess_overlap;
     wss_tmp_perform = wss_tmp_perform_linear + wss_tmp_perform_overlap;
+
+    stacktimer::pop();
 
     called_setup = true;
 }
@@ -274,6 +284,8 @@ void gemm_hcsx_ddny_ddnz_prune<T,I>::set_ws_persistent(void * ws_persistent_)
 template<typename T, typename I>
 void gemm_hcsx_ddny_ddnz_prune<T,I>::preprocess_submit(void * ws_tmp)
 {
+    stacktimer::push("gemm_hcsx_ddny_ddnz_prune::preprocess_submit");
+
     if(!called_setup) eslog::error("setup has not been called\n");
     if(called_preprocess) eslog::error("preprocess has already been called\n");
     if(ws_tmp == nullptr && wss_tmp_preprocess > 0) eslog::error("temporary workspace is null\n");
@@ -292,7 +304,8 @@ void gemm_hcsx_ddny_ddnz_prune<T,I>::preprocess_submit(void * ws_tmp)
 
     if(prune_rows || prune_cols) {
         h_A_pruned.alloc();
-        op_h_prune_A.preprocess2();
+        op_h_prune_A.preprocess();
+        op_h_prune_A.perform();
     }
 
     if(prune_rows) {
@@ -304,6 +317,9 @@ void gemm_hcsx_ddny_ddnz_prune<T,I>::preprocess_submit(void * ws_tmp)
         gpu::mgm::copy_submit(q, h_pruned_cols, d_pruned_cols);
     }
 
+    d_A_pruned_sp.alloc();
+    gpu::mgm::copy_submit(q, *h_A_to_use, d_A_pruned_sp, true, false);
+
     if(spdn_A == 'D') {
         op_d_sp2dn_A->set_ws_persistent(ator_persistent->alloc(op_d_sp2dn_A->get_wss_persistent()));
         op_d_sp2dn_A->preprocess_submit(ator_tmp_overlap->alloc(op_d_sp2dn_A->get_wss_tmp_preprocess()));
@@ -314,8 +330,12 @@ void gemm_hcsx_ddny_ddnz_prune<T,I>::preprocess_submit(void * ws_tmp)
         op_gemm_sp->preprocess_submit(ator_tmp_overlap->alloc(op_gemm_sp->get_wss_tmp_preprocess()));
     }
 
+    d_A_pruned_sp.free();
+
     ator_tmp_linear->unset();
     ator_tmp_overlap->unset();
+
+    stacktimer::pop();
 
     called_preprocess = true;
 }
@@ -325,6 +345,8 @@ void gemm_hcsx_ddny_ddnz_prune<T,I>::preprocess_submit(void * ws_tmp)
 template<typename T, typename I>
 void gemm_hcsx_ddny_ddnz_prune<T,I>::perform_submit(void * ws_tmp)
 {
+    stacktimer::push("gemm_hcsx_ddny_ddnz_prune::perform_submit");
+
     if(!called_preprocess) eslog::error("preprocess has not been called\n");
     if(ws_tmp == nullptr && wss_tmp_perform > 0) eslog::error("temporary workspace is null\n");
 
@@ -371,6 +393,8 @@ void gemm_hcsx_ddny_ddnz_prune<T,I>::perform_submit(void * ws_tmp)
 
     ator_tmp_linear->unset();
     ator_tmp_overlap->unset();
+
+    stacktimer::pop();
 }
 
 

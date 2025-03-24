@@ -88,20 +88,24 @@ private:
     bool need_reorder_factor_L2U = false;
     bool need_reorder_factor_U2L = false;
     char solver_factor_uplo = '_';
-    MatrixCsxData_new<T,I> h_factor_row_U;
-    MatrixCsxData_new<T,I> h_factor_row_L;
+    MatrixCsxData_new<T,I> h_factor_L_row;
+    MatrixCsxData_new<T,I> h_factor_U_row;
     MatrixCsxView_new<T,I> h_L_row;
     MatrixCsxView_new<T,I> h_L_col;
-    MatrixCsxView_new<T,I> * h_L = nullptr;
+    MatrixCsxView_new<T,I> h_U_row;
+    MatrixCsxView_new<T,I> h_U_col;
+    MatrixCsxView_new<T,I> * h_L_to_use = nullptr;
     PermutationData_new<I> h_perm_to_sort_A12_cols;
-    PermutationData_new<I> d_perm_to_sort_A12_cols;
-    PermutationView_new<I> d_perm_to_sort_back_sc;
-    PermutationView_new<I> h_perm_fillreduce;
+    PermutationView_new<I> h_perm_to_sort_back_sc;
+    PermutationData_new<I> d_perm_to_sort_back_sc;
+    PermutationData_new<I> h_perm_fillreduce;
     MatrixCsxData_new<T,I> h_X_sp;
     MatrixCsxData_new<T,I> d_X_sp;
     MatrixDenseData_new<T> d_X_dn;
-    MatrixDenseData_new<T> d_sc_tmp1;
-    MatrixDenseData_new<T> d_sc_tmp2;
+    MatrixDenseData_new<T> d_sc_tmp1_x; // same order as sc
+    MatrixDenseData_new<T> d_sc_tmp2_x; // same order as sc
+    MatrixDenseView_new<T> d_sc_tmp1_y; // different order as sc
+    MatrixDenseView_new<T> d_sc_tmp2_y; // different order as sc
     std::unique_ptr<convert_dcsx_ddny<T,I>> op_X_sp2dn;
     math::operations::convert_csx_csy_map<T,I> op_L2U;
     math::operations::convert_csx_csy_map<T,I> op_U2L;

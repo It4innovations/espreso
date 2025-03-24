@@ -31,11 +31,11 @@ void sorting_permutation<T,I>::set_permutation(PermutationView_new<I> * perm_)
 template<typename T, typename I>
 void sorting_permutation<T,I>::perform()
 {
+    stacktimer::push("sorting_permutation::perform");
+
     if(vec == nullptr) eslog::error("vector is not set\n");
     if(perm == nullptr) eslog::error("permutation is not set\n");
     if(vec->size != perm->size) eslog::error("vector and permutation sizes dont match\n");
-
-    stacktimer::push("sorting_permutation::perform");
 
     struct idx_val { I idx; T val; };
 

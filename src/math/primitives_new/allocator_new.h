@@ -228,8 +228,8 @@ public:
     }
     virtual void * alloc(size_t num_bytes) override
     {
-        if(start_ptr == nullptr) eslog::error("arena allocator has not been set yet\n");
         if(num_bytes == 0) return nullptr;
+        if(start_ptr == nullptr) eslog::error("arena allocator has not been set yet\n");
 
         char * ptr = start_ptr + curr_used;
         curr_used += num_bytes;
@@ -284,9 +284,10 @@ public:
     }
     virtual void * alloc(size_t num_bytes) override
     {
+        if(num_bytes == 0) return nullptr;
         if(pointer == nullptr) eslog::error("singlepointer allocator has not been set yet\n");
         if(num_bytes > capacity) {
-            eslog::error("singlepointer allocator exceeded its capacity\n");
+            eslog::error("singlepointer allocator exceeded its capacity (%zu > %zu)\n", num_bytes, capacity);
         }
         return pointer;
     }

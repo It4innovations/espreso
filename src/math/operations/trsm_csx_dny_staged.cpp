@@ -39,13 +39,13 @@ void trsm_csx_dny_staged<T,I>::set_rhs_sol(MatrixDenseView_new<T> * X_)
 template<typename T, typename I>
 void trsm_csx_dny_staged<T,I>::preprocess()
 {
+    stacktimer::push("trsm_csx_dny_staged::preprocess");
+
     if(A == nullptr) eslog::error("matrix A is not set\n");
     if(X == nullptr) eslog::error("matrix X is not set\n");
     if(preprocess_called) eslog::error("preprocess has already been called\n");
     if(A->prop.uplo != 'U' && A->prop.uplo != 'L') eslog::error("invalid A uplo\n");
     if(A->prop.diag != 'U' && A->prop.diag != 'N') eslog::error("invalid A diag\n");
-
-    stacktimer::push("trsm_csx_dny_staged::preprocess");
 
     Y.set(X->nrows, X->ncols, X->order, AllocatorCPU_new::get_singleton());
 
@@ -61,13 +61,13 @@ void trsm_csx_dny_staged<T,I>::preprocess()
 template<typename T, typename I>
 void trsm_csx_dny_staged<T,I>::perform()
 {
+    stacktimer::push("trsm_csx_dny_staged::perform");
+
     if(A == nullptr) eslog::error("matrix A is not set\n");
     if(X == nullptr) eslog::error("matrix X is not set\n");
     if(!preprocess_called) eslog::error("preprocess has not been called\n");
     if(A->prop.uplo != 'U' && A->prop.uplo != 'L') eslog::error("invalid A uplo\n");
     if(A->prop.diag != 'U' && A->prop.diag != 'N') eslog::error("invalid A diag\n");
-
-    stacktimer::push("trsm_csx_dny_staged::perform");
 
     Y.alloc();
 

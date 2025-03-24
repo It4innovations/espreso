@@ -60,6 +60,8 @@ void trsm_trirhs_chunk_splitrhs<T,I>::set_X_colpivots(VectorDenseView_new<I> * X
 template<typename T, typename I>
 void trsm_trirhs_chunk_splitrhs<T,I>::preprocess()
 {
+    stacktimer::push("trsm_trirhs_chunk_splitrhs::preprocess");
+
     if(preprocess_called) eslog::error("preprocess was already called\n");
     if(!set_config_called) eslog::error("config is not set\n");
     if(!set_range_called) eslog::error("range is not set\n");
@@ -69,8 +71,6 @@ void trsm_trirhs_chunk_splitrhs<T,I>::preprocess()
     if(L->nrows != L->ncols) eslog::error("matrix L must be square\n");
     if(L->nrows != X->nrows) eslog::error("incompatible matrix sizes\n");
     if(L->prop.uplo != 'L') eslog::error("matrix L must have uplo=L\n");
-
-    stacktimer::push("trsm_trirhs_chunk_splitrhs::preprocess");
 
     k_start = X_colpivots->vals[rhs_start];
     k_end = L->nrows;
@@ -119,9 +119,9 @@ void trsm_trirhs_chunk_splitrhs<T,I>::preprocess()
 template<typename T, typename I>
 void trsm_trirhs_chunk_splitrhs<T,I>::perform()
 {
-    if(!preprocess_called) eslog::error("preprocess was not called\n");
-
     stacktimer::push("trsm_trirhs_chunk_splitrhs::perform");
+
+    if(!preprocess_called) eslog::error("preprocess was not called\n");
 
     op_submatrix_X.perform();
 

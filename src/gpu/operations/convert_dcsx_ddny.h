@@ -44,8 +44,8 @@ public:
 protected:
     gpu::mgm::queue q;
     gpu::spblas::handle handle_spblas;
-    MatrixCsxView_new<T,I> * M_src;
-    MatrixDenseView_new<T> * M_dst;
+    MatrixCsxView_new<T,I> * M_src = nullptr;
+    MatrixDenseView_new<T> * M_dst = nullptr;
     void * ws_persistent = nullptr;
     size_t wss_internal = 0;
     size_t wss_persistent = 0;

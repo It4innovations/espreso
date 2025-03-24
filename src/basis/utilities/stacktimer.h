@@ -16,24 +16,7 @@ namespace espreso {
 
 
 
-#ifdef ESPRESO_STACKTIMER_DISABLE
-
-class stacktimer
-{
-private:
-    static stacktimer instance;
-public:
-    static void init() {}
-    static void push(const char * name) {}
-    static void pop() {}
-    template<typename... Args>
-    static void info(const char * fmt, Args... args) {}
-    static void finish() {}
-    static void enable() {}
-    static void disable() {}
-};
-
-#else
+#ifdef ESPRESO_STACKTIMER_ENABLE
 
 static constexpr size_t get_padding_size(size_t struct_size, size_t align) {
     size_t size = ((struct_size - 1) / align + 1) * align;
@@ -79,7 +62,7 @@ private:
         std::stack<stackitem> & stk = data[thread].stk;
         stackitem & item = stk.top();
         double time_ms = (stop_time - item.start_time) * 1000;
-        int width = 100;
+        int width = 120;
         width -= (stk.size() - 1) * indent;
         width -= 8; // "rank 123"
         width -= 11; // " thread 123"
@@ -147,6 +130,23 @@ public:
     {
         instance.instance_disable();
     }
+};
+
+#else
+
+class stacktimer
+{
+private:
+    static stacktimer instance;
+public:
+    static void init() {}
+    static void push(const char * name) {}
+    static void pop() {}
+    template<typename... Args>
+    static void info(const char * fmt, Args... args) {}
+    static void finish() {}
+    static void enable() {}
+    static void disable() {}
 };
 
 #endif

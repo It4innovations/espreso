@@ -41,11 +41,11 @@ void pivots_trails_csx<T,I>::set_output_vector(VectorDenseView_new<I> * vec_)
 template<typename T, typename I>
 void pivots_trails_csx<T,I>::perform()
 {
+    stacktimer::push("pivots_trails_csx::perform");
+
     if(M == nullptr) eslog::error("matrix is not set\n");
     if(vec == nullptr) eslog::error("vector is not set\n");
     if(row_col == '_' || pivots_trails == '_') eslog::error("mode is not set\n");
-
-    stacktimer::push("pivots_trails_csx::perform");
 
     bool need_reorder = (M->order != row_col);
     if(need_reorder) {

@@ -112,32 +112,32 @@ public:
             eslog::info("CSX matrix %s, size %lldx%lld, nnz %lld, order '%c', uplo '%c', diag '%c'\n", name, nrows, ncols, nnz, order, prop.uplo, prop.diag);
             if(method == 'A') {
                 eslog::info("ptrs: ");
-                for(I ip = 0; ip <= get_size_primary(); ip++) eslog::info("%lld ", (long long)ptrs[ip]);
+                for(size_t ip = 0; ip <= get_size_primary(); ip++) eslog::info("%lld ", (long long)ptrs[ip]);
                 eslog::info("\n");
                 eslog::info("idxs: ");
-                for(I i = 0; i < nnz; i++) eslog::info("%lld ", (long long)idxs[i]);
+                for(size_t i = 0; i < nnz; i++) eslog::info("%lld ", (long long)idxs[i]);
                 eslog::info("\n");
                 eslog::info("vals: ");
-                for(I i = 0; i < nnz; i++) eslog::info("%+.3e ", (double)vals[i]);
+                for(size_t i = 0; i < nnz; i++) eslog::info("%+.3e ", (double)vals[i]);
                 eslog::info("\n");
             }
             if(method == 'D') {
                 struct rcv { I r; I c; T v; };
                 std::vector<rcv> rcvs;
-                for(I ip = 0; ip < get_size_primary(); ip++) {
+                for(size_t ip = 0; ip < get_size_primary(); ip++) {
                     I start = ptrs[ip];
                     I end = ptrs[ip+1];
                     for(I i = start; i < end; i++) {
                         I is = idxs[i];
                         T v = vals[i];
-                        if(order == 'R') rcvs.push_back(rcv{ip,is,v});
-                        if(order == 'C') rcvs.push_back(rcv{is,ip,v});
+                        if(order == 'R') rcvs.push_back(rcv{(I)ip,is,v});
+                        if(order == 'C') rcvs.push_back(rcv{is,(I)ip,v});
                     }
                 }
                 std::stable_sort(rcvs.begin(), rcvs.end(), [](const rcv & l, const rcv & r){ return l.c < r.c;});
                 std::stable_sort(rcvs.begin(), rcvs.end(), [](const rcv & l, const rcv & r){ return l.r < r.r;});
-                size_t curr_row = 0;
-                size_t curr_col = 0;
+                I curr_row = 0;
+                I curr_col = 0;
                 size_t curr_idx = 0;
                 while(true) {
                     if(curr_idx < rcvs.size()) {
@@ -156,12 +156,12 @@ public:
                         eslog::info("    .       ");
                     }
                     curr_col++;
-                    if(curr_col == ncols) {
+                    if(curr_col == (I)ncols) {
                         curr_col = 0;
                         curr_row++;
                         eslog::info("\n");
                     }
-                    if(curr_row == nrows) {
+                    if(curr_row == (I)nrows) {
                         break;
                     }
                 }

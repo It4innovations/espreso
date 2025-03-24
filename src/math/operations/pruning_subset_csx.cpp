@@ -33,11 +33,11 @@ void pruning_subset_csx<T,I>::set_pruning_mode(bool prune_rows_, bool prune_cols
 template<typename T, typename I>
 void pruning_subset_csx<T,I>::setup()
 {
+    stacktimer::push("pruning_subset_csx::setup");
+
     if(!called_set_pruning_mode) eslog::error("pruning mode is not set\n");
     if(called_setup) eslog::error("setup was already called\n");
     if(M == nullptr) eslog::error("matrix is not set\n");
-
-    stacktimer::push("pruning_subset_csx::setup");
 
     size_t size_primary = M->get_size_primary();
     size_t size_secdary = M->get_size_secdary();
@@ -131,11 +131,11 @@ void pruning_subset_csx<T,I>::set_vector_pruned_cols(VectorDenseView_new<I> * no
 template<typename T, typename I>
 void pruning_subset_csx<T,I>::perform()
 {
+    stacktimer::push("pruning_subset_csx::perform");
+
     if(!called_setup) eslog::error("setup was not called\n");
     if(prune_rows && nonempty_rows == nullptr) eslog::error("nonempty rows vector is not set\n");
     if(prune_cols && nonempty_cols == nullptr) eslog::error("nonempty cols vector is not set\n");
-
-    stacktimer::push("pruning_subset_csx::perform");
 
     size_t size_primary = M->get_size_primary();
     size_t size_secdary = M->get_size_secdary();

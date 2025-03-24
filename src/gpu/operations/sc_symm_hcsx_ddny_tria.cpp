@@ -1,6 +1,7 @@
 
 #include "gpu/operations/sc_symm_hcsx_ddny_tria.h"
 
+#include "basis/utilities/stacktimer.h"
 #include "math/operations/pivots_trails_csx.h"
 #include "math/operations/sorting_permutation.h"
 #include "math/operations/permute_csx_csx.h"
@@ -83,6 +84,8 @@ void sc_symm_hcsx_ddny_tria<T,I>::set_d_sc(MatrixDenseView_new<T> * d_sc_)
 template<typename T, typename I>
 void sc_symm_hcsx_ddny_tria<T,I>::setup()
 {
+    stacktimer::push("sc_symm_hcsx_ddny_tria::setup");
+
     if(!called_set_config) eslog::error("config is not set\n");
     if(!called_set_handles) eslog::error("handles are not set\n");
     if(called_setup) eslog::error("setup has already been called\n");
@@ -92,7 +95,7 @@ void sc_symm_hcsx_ddny_tria<T,I>::setup()
     if((size_t)h_A11_solver->getMatrixSize() != h_A12->nrows) eslog::error("incompatible matrices\n");
     if(d_sc->ncols != h_A12->ncols) eslog::error("incompatible matrices\n");
     if(d_sc->prop.uplo != 'L' && d_sc->prop.uplo != 'U') eslog::error("wrong sc uplo\n");
-    
+
     solver_factor_uplo = '_';
     if(DirectSparseSolver<T,I>::factorsSymmetry() == Solver_Factors::HERMITIAN_LOWER) solver_factor_uplo = 'L';
     if(DirectSparseSolver<T,I>::factorsSymmetry() == Solver_Factors::HERMITIAN_UPPER) solver_factor_uplo = 'U';
@@ -108,72 +111,89 @@ void sc_symm_hcsx_ddny_tria<T,I>::setup()
     I factor_nnz = h_A11_solver->getFactorNnz();
     A11size = h_A11_solver->getMatrixSize();
 
-    h_factor_row_U.set(A11size, A11size, factor_nnz, 'R', AllocatorHostPinned_new::get_singleton());
-    h_factor_row_U.prop.uplo = 'U';
-    h_factor_row_U.prop.diag = 'N';
+    h_factor_U_row.set(A11size, A11size, factor_nnz, 'R', AllocatorHostPinned_new::get_singleton());
+    h_factor_U_row.prop.uplo = 'U';
+    h_factor_U_row.prop.diag = 'N';
 
-    h_factor_row_L.set(A11size, A11size, factor_nnz, 'R', AllocatorHostPinned_new::get_singleton());
-    h_factor_row_L.prop.uplo = 'L';
-    h_factor_row_L.prop.diag = 'N';
-
-    if(solver_factor_uplo == 'U') {
-        h_factor_row_U.alloc();
-        Matrix_CSR<T,I,gpu::mgm::Ah> h_factor_old = MatrixCsxView_new<T,I>::template to_old<gpu::mgm::Ah>(h_factor_row_U);
-        h_A11_solver->getFactorU(h_factor_old, true, false);
-    }
-    if(solver_factor_uplo == 'L') {
-        h_factor_row_L.alloc();
-        Matrix_CSR<T,I,gpu::mgm::Ah> h_factor_old = MatrixCsxView_new<T,I>::template to_old<gpu::mgm::Ah>(h_factor_row_L);
-        h_A11_solver->getFactorL(h_factor_old, true, false);
-    }
+    h_factor_L_row.set(A11size, A11size, factor_nnz, 'R', AllocatorHostPinned_new::get_singleton());
+    h_factor_L_row.prop.uplo = 'L';
+    h_factor_L_row.prop.diag = 'N';
 
     need_reorder_factor_L2U = ((solver_factor_uplo == 'L') && (cfg.order_L == 'C'));
     need_reorder_factor_U2L = ((solver_factor_uplo == 'U') && (cfg.order_L == 'R'));
 
+    if(solver_factor_uplo == 'U' || need_reorder_factor_L2U) {
+        h_factor_U_row.alloc();
+    }
+    if(solver_factor_uplo == 'L' || need_reorder_factor_U2L) {
+        h_factor_L_row.alloc();
+    }
+
+    if(solver_factor_uplo == 'U') {
+        Matrix_CSR<T,I,gpu::mgm::Ah> h_factor_old_U = MatrixCsxView_new<T,I>::template to_old<gpu::mgm::Ah>(h_factor_U_row);
+        h_A11_solver->getFactorU(h_factor_old_U, true, false);
+    }
+    if(solver_factor_uplo == 'L') {
+        Matrix_CSR<T,I,gpu::mgm::Ah> h_factor_old_L = MatrixCsxView_new<T,I>::template to_old<gpu::mgm::Ah>(h_factor_L_row);
+        h_A11_solver->getFactorL(h_factor_old_L, true, false);
+    }
+
+    h_L_row = h_factor_L_row;
+    h_L_col = h_factor_U_row.get_transposed_reordered_view();
+    h_U_row = h_factor_U_row;
+    h_U_col = h_factor_L_row.get_transposed_reordered_view();
+
     if(need_reorder_factor_L2U) {
-        h_factor_row_U.alloc();
-        op_L2U.set_matrix_src(&h_factor_row_L);
-        op_L2U.set_matrix_dst(&h_factor_row_U);
+        op_L2U.set_matrix_src(&h_L_row);
+        op_L2U.set_matrix_dst(&h_L_col);
         op_L2U.perform_pattern();
     }
     if(need_reorder_factor_U2L) {
-        h_factor_row_L.alloc();
-        op_U2L.set_matrix_src(&h_factor_row_U);
-        op_U2L.set_matrix_dst(&h_factor_row_L);
+        op_U2L.set_matrix_src(&h_U_row);
+        op_U2L.set_matrix_dst(&h_U_col);
         op_U2L.perform_pattern();
     }
 
-    h_L_row = h_factor_row_L;
-    h_L_col = h_factor_row_U.get_transposed_reordered_view();
-
-    if(cfg.order_L == 'R') h_L = &h_L_row;
-    if(cfg.order_L == 'C') h_L = &h_L_col;
-
-    {
-        Permutation<I> h_perm_fillreduce_old = PermutationView_new<I>::template to_old<cpu_allocator>(h_perm_fillreduce);
-        h_A11_solver->getPermutation(h_perm_fillreduce_old);
-    }
-
-    {
-        VectorDenseData_new<I> A12_colpivots;
-        A12_colpivots.set(h_A12->ncols, AllocatorCPU_new::get_singleton());
-        A12_colpivots.alloc();
-
-        math::operations::pivots_trails_csx<T,I>::do_all(h_A12, &A12_colpivots, 'C', 'P', '_');
-
-        h_perm_to_sort_A12_cols.set(h_A12->ncols, AllocatorCPU_new::get_singleton());
-        h_perm_to_sort_A12_cols.alloc();
-
-        math::operations::sorting_permutation<I,I>::do_all(&A12_colpivots, &h_perm_to_sort_A12_cols);
-
-        d_perm_to_sort_A12_cols.set(h_perm_to_sort_A12_cols.size, ator_ws_persistent.get());
-        wss_persistent += d_perm_to_sort_A12_cols.get_memory_impact();
-    }
+    if(cfg.order_L == 'R') h_L_to_use = &h_L_row;
+    if(cfg.order_L == 'C') h_L_to_use = &h_L_col;
 
     h_X_sp.set(h_A12->nrows, h_A12->ncols, h_A12->nnz, h_A12->order, AllocatorHostPinned_new::get_singleton());
     h_X_sp.alloc();
 
-    math::operations::permute_csx_csx<T,I>::do_all(h_A12, &h_X_sp, &h_perm_fillreduce, &h_perm_to_sort_A12_cols);
+    {
+        MatrixCsxData_new<T,I> h_X_sp_tmp;
+        h_X_sp_tmp.set(h_X_sp.nrows, h_X_sp.ncols, h_X_sp.nnz, h_X_sp.order, AllocatorCPU_new::get_singleton());
+        h_X_sp_tmp.alloc();
+
+        {
+            h_perm_fillreduce.set(h_A12->nrows, AllocatorCPU_new::get_singleton());
+            h_perm_fillreduce.alloc();
+            Permutation<I> h_perm_fillreduce_old = PermutationView_new<I>::template to_old<cpu_allocator>(h_perm_fillreduce);
+            h_A11_solver->getPermutation(h_perm_fillreduce_old);
+
+            math::operations::permute_csx_csx<T,I>::do_all(h_A12, &h_X_sp_tmp, &h_perm_fillreduce, nullptr);
+        }
+
+        {
+            VectorDenseData_new<I> colpivots;
+            colpivots.set(h_A12->ncols, AllocatorCPU_new::get_singleton());
+            colpivots.alloc();
+
+            math::operations::pivots_trails_csx<T,I>::do_all(&h_X_sp_tmp, &colpivots, 'C', 'P', '_');
+
+            h_perm_to_sort_A12_cols.set(h_A12->ncols, AllocatorCPU_new::get_singleton());
+            h_perm_to_sort_A12_cols.alloc();
+
+            h_perm_to_sort_back_sc = h_perm_to_sort_A12_cols.get_inverse_view();
+
+            d_perm_to_sort_back_sc.set(h_perm_to_sort_back_sc.size, ator_ws_persistent.get());
+            wss_persistent += utils::round_up(d_perm_to_sort_back_sc.get_memory_impact(), ator_ws_persistent->get_align());
+
+            math::operations::sorting_permutation<I,I>::do_all(&colpivots, &h_perm_to_sort_A12_cols);
+        }
+
+        math::operations::permute_csx_csx<T,I>::do_all(&h_X_sp_tmp, &h_X_sp, nullptr, &h_perm_to_sort_A12_cols);
+    }
 
     d_X_sp.set(h_X_sp.nrows, h_X_sp.ncols, h_X_sp.nnz, h_X_sp.order, ator_ws_tmp_linear.get());
     wss_tmp_perform_linear += d_X_sp.get_memory_impact();
@@ -181,13 +201,15 @@ void sc_symm_hcsx_ddny_tria<T,I>::setup()
     d_X_dn.set(h_X_sp.nrows, h_X_sp.ncols, cfg.order_X, ator_ws_tmp_linear.get());
     wss_tmp_perform_linear += d_X_dn.get_memory_impact();
 
-    d_sc_tmp1.set(d_sc->nrows, d_sc->ncols, d_sc->order, ator_ws_tmp_linear.get());
-    d_sc_tmp1.prop.uplo = d_sc->prop.uplo;
-    wss_tmp_perform_linear += d_sc_tmp1.get_memory_impact();
+    d_sc_tmp1_x.set(d_sc->nrows, d_sc->ncols, d_sc->order, ator_ws_tmp_linear.get());
+    d_sc_tmp1_x.prop.uplo = d_sc->prop.uplo;
+    wss_tmp_perform_linear += d_sc_tmp1_x.get_memory_impact();
+    d_sc_tmp1_y = d_sc_tmp1_x.get_transposed_reordered_view();
 
-    d_sc_tmp2.set(d_sc->nrows, d_sc->ncols, d_sc->order, ator_ws_tmp_linear.get());
-    d_sc_tmp2.prop.uplo = change_uplo(d_sc->prop.uplo);
-    wss_tmp_perform_linear += d_sc_tmp2.get_memory_impact();
+    d_sc_tmp2_x.set(d_sc->nrows, d_sc->ncols, d_sc->order, ator_ws_tmp_linear.get());
+    d_sc_tmp2_x.prop.uplo = change_uplo(d_sc->prop.uplo);
+    wss_tmp_perform_linear += d_sc_tmp2_x.get_memory_impact();
+    d_sc_tmp2_y = d_sc_tmp2_x.get_transposed_reordered_view();
 
     op_X_sp2dn = convert_dcsx_ddny<T,I>::make();
     op_X_sp2dn->set_handles(q, handle_spblas);
@@ -195,25 +217,25 @@ void sc_symm_hcsx_ddny_tria<T,I>::setup()
     op_X_sp2dn->set_matrix_dst(&d_X_dn);
     op_X_sp2dn->setup();
     wss_internal += op_X_sp2dn->get_wss_internal();
-    wss_persistent += op_X_sp2dn->get_wss_persistent();
+    wss_persistent += utils::round_up(op_X_sp2dn->get_wss_persistent(), ator_ws_persistent->get_align());
     wss_tmp_preprocess_overlap = std::max(wss_tmp_preprocess_overlap, op_X_sp2dn->get_wss_tmp_preprocess());
     wss_tmp_perform_overlap = std::max(wss_tmp_perform_overlap, op_X_sp2dn->get_wss_tmp_perform());
 
     op_d_trsm.set_config(cfg.cfg_trsm);
     op_d_trsm.set_handles(q, handle_spblas, handle_dnblas);
-    op_d_trsm.set_matrix_h_L(h_L);
+    op_d_trsm.set_matrix_h_L(h_L_to_use);
     op_d_trsm.set_matrix_d_X(&d_X_dn);
     op_d_trsm.set_X_pattern(&h_X_sp);
     op_d_trsm.setup();
     wss_internal += op_d_trsm.get_wss_internal();
-    wss_persistent += op_d_trsm.get_wss_persistent();
+    wss_persistent += utils::round_up(op_d_trsm.get_wss_persistent(), ator_ws_persistent->get_align());
     wss_tmp_preprocess_overlap = std::max(wss_tmp_preprocess_overlap, op_d_trsm.get_wss_tmp_preprocess());
     wss_tmp_perform_overlap = std::max(wss_tmp_perform_overlap, op_d_trsm.get_wss_tmp_perform());
 
     op_d_herk.set_config(cfg.cfg_herk);
     op_d_herk.set_handles(q, handle_dnblas);
     op_d_herk.set_matrix_d_A(&d_X_dn);
-    op_d_herk.set_matrix_d_C(&d_sc_tmp1);
+    op_d_herk.set_matrix_d_C(&d_sc_tmp1_x);
     op_d_herk.set_h_A_pattern(&h_X_sp);
     op_d_herk.set_coefficients(-alpha, 0 * alpha); // beta=0, because I assume A22=0
     op_d_herk.set_mode(math::blas::herk_mode::AhA);
@@ -222,23 +244,23 @@ void sc_symm_hcsx_ddny_tria<T,I>::setup()
 
     op_d_sc_trans = convert_ddnx_ddny<T>::make();
     op_d_sc_trans->set_handles(q, handle_dnblas);
-    op_d_sc_trans->set_matrix_src(&d_sc_tmp1);
-    op_d_sc_trans->set_matrix_dst(&d_sc_tmp2);
+    op_d_sc_trans->set_matrix_src(&d_sc_tmp1_x);
+    op_d_sc_trans->set_matrix_dst(&d_sc_tmp2_y);
     op_d_sc_trans->setup();
     wss_tmp_perform_overlap = std::max(wss_tmp_perform_overlap, op_d_sc_trans->get_wss_tmp_perform());
 
     op_d_copy_sc_tmp = copy_ddnx_ddnx<T>::make();
     op_d_copy_sc_tmp->set_handles(q);
-    op_d_copy_sc_tmp->set_matrix_src(&d_sc_tmp2);
-    op_d_copy_sc_tmp->set_matrix_dst(&d_sc_tmp1);
+    op_d_copy_sc_tmp->set_matrix_src(&d_sc_tmp2_x);
+    op_d_copy_sc_tmp->set_matrix_dst(&d_sc_tmp1_x);
     op_d_copy_sc_tmp->set_uplo(change_uplo(d_sc->prop.uplo));
     op_d_copy_sc_tmp->setup();
     wss_tmp_perform_overlap = std::max(wss_tmp_perform_overlap, op_d_copy_sc_tmp->get_wss_tmp_perform());
 
     op_d_perm_sc = permute_ddnx_ddnx<T,I>::make();
     op_d_perm_sc->set_handles(q);
-    op_d_perm_sc->set_matrix_src(&d_sc_tmp1);
-    op_d_perm_sc->set_matrix_dst(&d_sc_tmp2);
+    op_d_perm_sc->set_matrix_src(&d_sc_tmp1_x);
+    op_d_perm_sc->set_matrix_dst(&d_sc_tmp2_x);
     op_d_perm_sc->set_perm_rows(&d_perm_to_sort_back_sc);
     op_d_perm_sc->set_perm_cols(&d_perm_to_sort_back_sc);
     op_d_perm_sc->setup();
@@ -246,7 +268,7 @@ void sc_symm_hcsx_ddny_tria<T,I>::setup()
 
     op_d_copy_sc_final = copy_ddnx_ddnx<T>::make();
     op_d_copy_sc_final->set_handles(q);
-    op_d_copy_sc_final->set_matrix_src(&d_sc_tmp2);
+    op_d_copy_sc_final->set_matrix_src(&d_sc_tmp2_x);
     op_d_copy_sc_final->set_matrix_dst(d_sc);
     op_d_copy_sc_final->set_uplo(d_sc->prop.uplo);
     op_d_copy_sc_final->setup();
@@ -257,6 +279,8 @@ void sc_symm_hcsx_ddny_tria<T,I>::setup()
 
     wss_tmp_preprocess = wss_tmp_preprocess_linear + wss_tmp_preprocess_overlap;
     wss_tmp_perform = wss_tmp_perform_linear + wss_tmp_perform_overlap;
+
+    stacktimer::pop();
 
     called_setup = true;
 }
@@ -317,6 +341,8 @@ void sc_symm_hcsx_ddny_tria<T,I>::set_ws_persistent(void * ws_persistent_)
 template<typename T, typename I>
 void sc_symm_hcsx_ddny_tria<T,I>::preprocess_submit(void * ws_tmp)
 {
+    stacktimer::push("sc_symm_hcsx_ddny_tria::preprocess_submit");
+
     if(!called_setup) eslog::error("setup has not been called\n");
     if(called_preprocess) eslog::error("preprocess has already been called\n");
     if(ws_tmp == nullptr && wss_tmp_preprocess > 0) eslog::error("temporary workspace is null\n");
@@ -326,18 +352,20 @@ void sc_symm_hcsx_ddny_tria<T,I>::preprocess_submit(void * ws_tmp)
     ator_ws_tmp_linear->set(ws_tmp, wss_tmp_preprocess_linear);
     ator_ws_tmp_overlap->set((char*)ws_tmp + wss_tmp_preprocess_linear, wss_tmp_preprocess_overlap);
 
-    d_perm_to_sort_A12_cols.alloc();
-    gpu::mgm::copy_submit(q, h_perm_to_sort_A12_cols, d_perm_to_sort_A12_cols);
-    d_perm_to_sort_back_sc = d_perm_to_sort_A12_cols.get_inverse_view();
+    d_perm_to_sort_back_sc.alloc();
+
+    gpu::mgm::copy_submit(q, h_perm_to_sort_back_sc, d_perm_to_sort_back_sc);
 
     op_X_sp2dn->set_ws_persistent(ator_ws_persistent->alloc(op_X_sp2dn->get_wss_persistent()));
-    op_X_sp2dn->preprocess_submit(ator_ws_tmp_overlap->alloc(op_X_sp2dn->get_wss_tmp_perform()));
+    op_X_sp2dn->preprocess_submit(ator_ws_tmp_overlap->alloc(op_X_sp2dn->get_wss_tmp_preprocess()));
 
     op_d_trsm.set_ws_persistent(ator_ws_persistent->alloc(op_d_trsm.get_wss_persistent()));
-    op_d_trsm.preprocess_submit(ator_ws_tmp_overlap->alloc(op_d_trsm.get_wss_tmp_perform()));
+    op_d_trsm.preprocess_submit(ator_ws_tmp_overlap->alloc(op_d_trsm.get_wss_tmp_preprocess()));
 
     ator_ws_tmp_linear->unset();
     ator_ws_tmp_overlap->unset();
+
+    stacktimer::pop();
 
     called_preprocess = true;
 }
@@ -347,6 +375,8 @@ void sc_symm_hcsx_ddny_tria<T,I>::preprocess_submit(void * ws_tmp)
 template<typename T, typename I>
 void sc_symm_hcsx_ddny_tria<T,I>::perform_submit(void * ws_tmp)
 {
+    stacktimer::push("sc_symm_hcsx_ddny_tria::perform_submit");
+
     if(!called_preprocess) eslog::error("preprocess has not been called\n");
     if(ws_tmp == nullptr && wss_tmp_perform > 0) eslog::error("temporary workspace is null\n");
 
@@ -354,11 +384,11 @@ void sc_symm_hcsx_ddny_tria<T,I>::perform_submit(void * ws_tmp)
     ator_ws_tmp_overlap->set((char*)ws_tmp + wss_tmp_perform_linear, wss_tmp_perform_overlap);
 
     if(solver_factor_uplo == 'U') {
-        Matrix_CSR<T,I,gpu::mgm::Ah> h_factor_old = MatrixCsxView_new<T,I>::template to_old<gpu::mgm::Ah>(h_factor_row_U);
+        Matrix_CSR<T,I,gpu::mgm::Ah> h_factor_old = MatrixCsxView_new<T,I>::template to_old<gpu::mgm::Ah>(h_factor_U_row);
         h_A11_solver->getFactorU(h_factor_old, false, true);
     }
     if(solver_factor_uplo == 'L') {
-        Matrix_CSR<T,I,gpu::mgm::Ah> h_factor_old = MatrixCsxView_new<T,I>::template to_old<gpu::mgm::Ah>(h_factor_row_L);
+        Matrix_CSR<T,I,gpu::mgm::Ah> h_factor_old = MatrixCsxView_new<T,I>::template to_old<gpu::mgm::Ah>(h_factor_L_row);
         h_A11_solver->getFactorL(h_factor_old, false, true);
     }
 
@@ -371,15 +401,37 @@ void sc_symm_hcsx_ddny_tria<T,I>::perform_submit(void * ws_tmp)
 
     d_X_sp.alloc();
     d_X_dn.alloc();
-    d_sc_tmp1.alloc();
-    d_sc_tmp2.alloc();
+    d_sc_tmp1_x.alloc();
+    d_sc_tmp2_x.alloc();
+    d_sc_tmp1_y = d_sc_tmp1_x.get_transposed_reordered_view();
+    d_sc_tmp2_y = d_sc_tmp2_x.get_transposed_reordered_view();
 
     gpu::mgm::copy_submit(q, h_X_sp, d_X_sp);
 
     op_X_sp2dn->perform_submit(ator_ws_tmp_overlap->alloc(op_X_sp2dn->get_wss_tmp_perform()));
 
+// {
+// MatrixDenseView_new<T> & dM = d_X_dn;
+// MatrixDenseData_new<T> M;
+// M.prop = dM.prop;
+// M.set(dM.nrows, dM.ncols, dM.order, AllocatorHostPinned_new::get_singleton());
+// M.alloc();
+// gpu::mgm::copy_submit(q, dM, M);
+// gpu::mgm::device_wait();
+// M.print("d_X_dn before trsm");
+// }
     op_d_trsm.perform_submit(ator_ws_tmp_overlap->alloc(op_d_trsm.get_wss_tmp_perform()));
-    
+// {
+// MatrixDenseView_new<T> & dM = d_X_dn;
+// MatrixDenseData_new<T> M;
+// M.prop = dM.prop;
+// M.set(dM.nrows, dM.ncols, dM.order, AllocatorHostPinned_new::get_singleton());
+// M.alloc();
+// gpu::mgm::copy_submit(q, dM, M);
+// gpu::mgm::device_wait();
+// M.print("d_X_dn after trsm");
+// }
+
     op_d_herk.perform_submit(ator_ws_tmp_overlap->alloc(op_d_herk.get_wss_tmp_perform()));
 
     op_d_sc_trans->perform_submit(ator_ws_tmp_overlap->alloc(op_d_sc_trans->get_wss_tmp_perform()));
@@ -389,14 +441,27 @@ void sc_symm_hcsx_ddny_tria<T,I>::perform_submit(void * ws_tmp)
     op_d_perm_sc->perform_submit(ator_ws_tmp_overlap->alloc(op_d_perm_sc->get_wss_tmp_perform()));
 
     op_d_copy_sc_final->perform_submit(ator_ws_tmp_overlap->alloc(op_d_copy_sc_final->get_wss_tmp_perform()));
+// {
+// MatrixDenseView_new<T> & dM = *d_sc;
+// MatrixDenseData_new<T> M;
+// M.prop = dM.prop;
+// M.set(dM.nrows, dM.ncols, dM.order, AllocatorHostPinned_new::get_singleton());
+// M.alloc();
+// gpu::mgm::copy_submit(q, dM, M);
+// gpu::mgm::device_wait();
+// M.print("d_sc after trsm");
+// }
+// throw std::runtime_error("the end");
 
     d_X_sp.free();
     d_X_dn.free();
-    d_sc_tmp1.free();
-    d_sc_tmp2.free();
+    d_sc_tmp1_x.free();
+    d_sc_tmp2_x.free();
 
     ator_ws_tmp_linear->unset();
     ator_ws_tmp_overlap->unset();
+
+    stacktimer::pop();
 }
 
 

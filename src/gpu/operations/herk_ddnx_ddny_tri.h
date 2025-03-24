@@ -65,15 +65,15 @@ private:
     bool called_set_mode = false;
     bool called_setup = false;
 private:
-    size_t wss_tmp_perform_linear = 0;
-    size_t wss_tmp_perform_overlap = 0;
     std::unique_ptr<AllocatorArena_new> ator_ws_tmp_linear;
     std::unique_ptr<AllocatorSinglePointer_new> ator_ws_tmp_overlap;
+    size_t wss_tmp_perform_linear = 0;
+    size_t wss_tmp_perform_overlap = 0;
     MatrixDenseView_new<T> d_A_reordered;
-    MatrixDenseView_new<T> * d_A_left;
-    MatrixDenseView_new<T> * d_A_top;
-    size_t n;
-    size_t k;
+    MatrixDenseView_new<T> * d_A_left = nullptr;
+    MatrixDenseView_new<T> * d_A_top = nullptr;
+    size_t n = 0;
+    size_t k = 0;
     VectorDenseData_new<I> h_A_pivots;
     VectorDenseData_new<I> h_A_trails;
     VectorDenseData_new<size_t> partition;

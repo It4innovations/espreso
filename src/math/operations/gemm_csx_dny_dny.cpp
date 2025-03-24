@@ -47,13 +47,13 @@ void gemm_csx_dny_dny<T,I>::set_coefficients(T alpha_, T beta_)
 template<typename T, typename I>
 void gemm_csx_dny_dny<T,I>::perform()
 {
+    stacktimer::push("gemm_csx_dny_dny::perform");
+
     if(A == nullptr) eslog::error("matrix A is not set\n");
     if(B == nullptr) eslog::error("matrix B is not set\n");
     if(C == nullptr) eslog::error("matrix C is not set\n");
     if(A->nrows != C->nrows || B->ncols != C->ncols || A->ncols != B->nrows) eslog::error("incompatible matrix sizes\n");
     if(B->order != C->order) eslog::error("order of B and C must match\n");
-
-    stacktimer::push("gemm_csx_dny_dny::perform");
 
     spblas::handle_mm handle_abc;
     spblas::mm(*A, *B, *C, alpha, beta, handle_abc, 'A');

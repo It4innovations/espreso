@@ -47,14 +47,14 @@ void permute_dnx_dnx<T,I>::set_perm_vector_cols(PermutationView_new<I> * perm_co
 template<typename T, typename I>
 void permute_dnx_dnx<T,I>::perform()
 {
+    stacktimer::push("permute_dnx_dnx::perform");
+
     if(M_src == nullptr) eslog::error("source matrix is not set\n");
     if(M_dst == nullptr) eslog::error("destination matrix is not set\n");
     if(M_src->order != M_dst->order) eslog::error("matrix orders dont match\n");
     if(M_src->nrows != M_dst->nrows || M_src->ncols != M_dst->ncols) eslog::error("matrix sizes dont match\n");
     if(perm_rows != nullptr && perm_rows->size != M_src->nrows) eslog::error("wrong row perm size\n");
     if(perm_cols != nullptr && perm_cols->size != M_src->ncols) eslog::error("wrong col perm size\n");
-
-    stacktimer::push("permute_dnx_dnx::perform");
 
     if(perm_rows == nullptr && perm_cols == nullptr) {
         copy_dnx<T>::do_all(M_src, M_dst);

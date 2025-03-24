@@ -1,6 +1,8 @@
 
 #include "gpu/operations/auxiliary/gpu_herk_tri_chunk_stairs.h"
 
+#include "basis/utilities/stacktimer.h"
+
 
 
 namespace espreso {
@@ -91,6 +93,8 @@ void gpu_herk_tri_chunk_stairs<T,I>::set_coefficients(Treal alpha_, Treal beta_)
 template<typename T, typename I>
 void gpu_herk_tri_chunk_stairs<T,I>::setup()
 {
+    stacktimer::push("gpu_herk_tri_chunk_stairs::setup");
+
     if(utils::is_complex<T>()) eslog::error("complex numbers not supported\n");
     if(!called_set_range) eslog::error("range is not set\n");
     if(!called_set_handles) eslog::error("handles are not set\n");
@@ -158,6 +162,8 @@ void gpu_herk_tri_chunk_stairs<T,I>::setup()
         wss_tmp_perform = std::max(wss_tmp_perform, op_gemm->get_wss_tmp_perform());
     }
 
+    stacktimer::pop();
+
     called_setup = true;
 }
 
@@ -176,6 +182,8 @@ size_t gpu_herk_tri_chunk_stairs<T,I>::get_wss_tmp_perform()
 template<typename T, typename I>
 void gpu_herk_tri_chunk_stairs<T,I>::perform_submit(void * ws_tmp)
 {
+    stacktimer::push("gpu_herk_tri_chunk_stairs::perform_submit");
+
     if(!called_setup) eslog::error("setup was not called\n");
     if(ws_tmp == nullptr && wss_tmp_perform > 0) eslog::error("temporary workspace is null\n");
 
@@ -193,6 +201,8 @@ void gpu_herk_tri_chunk_stairs<T,I>::perform_submit(void * ws_tmp)
     if(n_start > 0) {
         op_gemm->perform_submit(ws_tmp);
     }
+
+    stacktimer::pop();
 }
 
 

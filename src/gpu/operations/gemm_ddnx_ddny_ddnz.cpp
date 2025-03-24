@@ -1,6 +1,7 @@
 
 #include "gpu/operations/gemm_ddnx_ddny_ddnz.h"
 
+#include "basis/utilities/stacktimer.h"
 #include "wrappers/cuda/operations/w_cublas_gemm_ddnx_ddny_ddnz.h"
 
 
@@ -83,6 +84,8 @@ void gemm_ddnx_ddny_ddnz<T>::set_coefficients(T alpha_, T beta_)
 template<typename T>
 void gemm_ddnx_ddny_ddnz<T>::setup()
 {
+    stacktimer::push("gemm_ddnx_ddny_ddnz::setup");
+
     if(!called_set_handles) eslog::error("handles are not set\n");
     if(A == nullptr) eslog::error("matrix A is not set\n");
     if(B == nullptr) eslog::error("matrix B is not set\n");
@@ -91,6 +94,8 @@ void gemm_ddnx_ddny_ddnz<T>::setup()
     if(A->nrows != C->nrows || B->ncols != C->ncols || A->ncols != B->nrows) eslog::error("incompatible matrices\n");
 
     this->internal_setup();
+
+    stacktimer::pop();
 
     called_setup = true;
 }
@@ -110,10 +115,14 @@ size_t gemm_ddnx_ddny_ddnz<T>::get_wss_tmp_perform()
 template<typename T>
 void gemm_ddnx_ddny_ddnz<T>::perform_submit(void * ws_tmp)
 {
+    stacktimer::push("gemm_ddnx_ddny_ddnz::perform_submit");
+
     if(!called_setup) eslog::error("setup was not called\n");
     if(ws_tmp == nullptr && wss_tmp_perform > 0) eslog::error("temporary workspace is null\n");
 
     this->internal_perform(ws_tmp);
+
+    stacktimer::pop();
 }
 
 

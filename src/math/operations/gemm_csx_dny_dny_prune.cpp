@@ -69,14 +69,14 @@ void gemm_csx_dny_dny_prune<T,I>::set_coefficients(T alpha_, T beta_)
 template<typename T, typename I>
 void gemm_csx_dny_dny_prune<T,I>::preprocess()
 {
+    stacktimer::push("gemm_csx_dny_dny_prune::preprocess");
+
     if(!set_config_called) eslog::error("config is not set\n");
     if(A == nullptr) eslog::error("A is not set\n");
     if(B == nullptr) eslog::error("B is not set\n");
     if(C == nullptr) eslog::error("C is not set\n");
     if(A->nrows != C->nrows || B->ncols != C->ncols || A->ncols != B->nrows) eslog::error("incompatible matrices\n");
     if(B->order != C->order) eslog::error("B and C order must match\n");
-
-    stacktimer::push("gemm_csx_dny_dny_prune::preprocess");
 
     op_prune_A.set_matrix_src(A);
     op_prune_A.set_pruning_mode(prune_rows, prune_cols);
@@ -99,7 +99,7 @@ void gemm_csx_dny_dny_prune<T,I>::preprocess()
         op_prune_A.set_vector_pruned_cols(&pruned_cols);
     }
 
-    op_prune_A.preprocess2();
+    op_prune_A.preprocess();
 
     if(spdn_A == 'S') {
         A_pruned_sp.set(m, k, A->nnz, A->order, AllocatorCPU_new::get_singleton());
@@ -140,9 +140,10 @@ void gemm_csx_dny_dny_prune<T,I>::preprocess()
 template<typename T, typename I>
 void gemm_csx_dny_dny_prune<T,I>::perform()
 {
+    stacktimer::push("gemm_csx_dny_dny_prune::perform");
+
     if(!preprocess_called) eslog::error("preprocess was not called\n");
 
-    stacktimer::push("gemm_csx_dny_dny_prune::perform");
     stacktimer::info("m %zu n %zu k %zu orderA %c orderBC %c spdnA %c", m, n, k, A->order, B->order, spdn_A);
 
     if(spdn_A == 'S') {

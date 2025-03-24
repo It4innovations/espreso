@@ -1,6 +1,7 @@
 
 #include "gpu/operations/herk_ddnx_ddny_tri.h"
 
+#include "basis/utilities/stacktimer.h"
 #include "math/operations/pivots_trails_csx.h"
 #include "math/operations/auxiliary/tri_partition_herk.h"
 
@@ -94,6 +95,8 @@ void herk_ddnx_ddny_tri<T,I>::set_mode(math::blas::herk_mode mode_)
 template<typename T, typename I>
 void herk_ddnx_ddny_tri<T,I>::setup()
 {
+    stacktimer::push("herk_ddnx_ddny_tri::setup");
+
     if(!called_set_config) eslog::error("config is not set\n");
     if(!called_set_handles) eslog::error("handles are not set\n");
     if(d_A == nullptr) eslog::error("matrix A is not set\n");
@@ -159,6 +162,8 @@ void herk_ddnx_ddny_tri<T,I>::setup()
     if(cfg.strategy == 'T') {
         op_chunks_stairs.resize(num_chunks);
         for(size_t ch = 0; ch < num_chunks; ch++) {
+            stacktimer::info("herk_ddnx_ddny_tri::setup chunk %zu", ch);
+    
             I n_start = partition.vals[ch];
             I n_end = partition.vals[ch+1];
             gpu_herk_tri_chunk_stairs<T,I> & op_chunk = op_chunks_stairs[ch];
@@ -187,6 +192,8 @@ void herk_ddnx_ddny_tri<T,I>::setup()
 
         op_chunks_squares.resize(num_chunks);
         for(size_t ch = 0; ch < num_chunks; ch++) {
+            stacktimer::info("herk_ddnx_ddny_tri::setup chunk %zu", ch);
+    
             I k_start = partition.vals[ch];
             I k_end = partition.vals[ch+1];
             gpu_herk_tri_chunk_squares<T,I> & op_chunk = op_chunks_squares[ch];
@@ -204,6 +211,8 @@ void herk_ddnx_ddny_tri<T,I>::setup()
 
     wss_tmp_perform_linear = utils::round_up(wss_tmp_perform_linear, ator_ws_tmp_linear->get_align());
     wss_tmp_perform = wss_tmp_perform_linear + wss_tmp_perform_overlap;
+
+    stacktimer::pop();
 
     called_setup = true;
 }
@@ -223,6 +232,8 @@ size_t herk_ddnx_ddny_tri<T,I>::get_wss_tmp_perform()
 template<typename T, typename I>
 void herk_ddnx_ddny_tri<T,I>::perform_submit(void * ws_tmp)
 {
+    stacktimer::push("herk_ddnx_ddny_tri::perform_submit");
+
     if(!called_setup) eslog::error("setup has not been called\n");
     if(ws_tmp == nullptr && wss_tmp_perform > 0) eslog::error("temporary workspace is null\n");
 
@@ -233,6 +244,8 @@ void herk_ddnx_ddny_tri<T,I>::perform_submit(void * ws_tmp)
 
     if(cfg.strategy == 'T') {
         for(size_t ch = 0; ch < num_chunks; ch++) {
+            stacktimer::info("herk_ddnx_ddny_tri::perform_submit chunk %zu", ch);
+    
             op_chunks_stairs[ch].perform_submit(ws_tmp);
         }
     }
@@ -240,12 +253,16 @@ void herk_ddnx_ddny_tri<T,I>::perform_submit(void * ws_tmp)
         d_A_top_dummy = d_A_top->get_submatrix_view(0, 0, 0, d_A_top->ncols);
         op_scale_C->perform_submit(ws_tmp);
         for(size_t ch = 0; ch < num_chunks; ch++) {
+            stacktimer::info("herk_ddnx_ddny_tri::perform_submit chunk %zu", ch);
+
             op_chunks_squares[ch].perform_submit(ws_tmp);
         }
     }
 
     ator_ws_tmp_linear->unset();
     ator_ws_tmp_overlap->unset();
+
+    stacktimer::pop();
 }
 
 

@@ -57,13 +57,13 @@ void gemm_dnx_dny_dnz<T>::set_conj(bool conj_A_, bool conj_B_)
 template<typename T>
 void gemm_dnx_dny_dnz<T>::perform()
 {
+    stacktimer::push("gemm_dnx_dny_dnz::perform");
+
     if(A == nullptr) eslog::error("matrix A is not set\n");
     if(B == nullptr) eslog::error("matrix B is not set\n");
     if(C == nullptr) eslog::error("matrix C is not set\n");
     if(A->nrows != C->nrows || B->ncols != C->ncols || A->ncols != B->nrows) eslog::error("incompatible matrices");
     if(utils::is_complex<T>() && (conj_A || conj_B)) eslog::error("conjugation not supported yet\n");
-
-    stacktimer::push("gemm_dnx_dny_dnz::perform");
 
     math::blas::gemm(*A, *B, *C, alpha, beta);
 

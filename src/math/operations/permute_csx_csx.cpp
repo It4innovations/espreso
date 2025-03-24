@@ -48,14 +48,14 @@ void permute_csx_csx<T,I>::set_perm_cols(PermutationView_new<I> * perm_cols_)
 template<typename T, typename I>
 void permute_csx_csx<T,I>::perform()
 {
+    stacktimer::push("permute_csx_csx::perform");
+
     if(M_src == nullptr) eslog::error("source matrix is not set\n");
     if(M_dst == nullptr) eslog::error("destination matrix is not set\n");
     if(M_src->order != M_dst->order) eslog::error("matrix orders dont match\n");
     if(M_src->nrows != M_dst->nrows || M_src->ncols != M_dst->ncols || M_src->nnz != M_dst->nnz) eslog::error("matrix sizes dont match\n");
     if(perm_rows != nullptr && perm_rows->size != M_src->nrows) eslog::error("wrong row perm size\n");
     if(perm_cols != nullptr && perm_cols->size != M_src->ncols) eslog::error("wrong col perm size\n");
-
-    stacktimer::push("permute_csx_csx::perform");
 
     if(perm_rows == nullptr && perm_cols == nullptr) {
         copy_csx<T,I>::do_all(M_src, M_dst);
@@ -174,7 +174,7 @@ void permute_csx_csx<T,I>::perform_secdary(PermutationView_new<I> & perm)
         std::sort(ivs.vals, ivs.vals + end - start, [](const isd_val & l, const isd_val & r){return l.isd < r.isd;});
         for(I i = start; i < end; i++) {
             I isd = ivs.vals[i - start].isd;
-            T val = ivs.vals[i - start].isd;
+            T val = ivs.vals[i - start].val;
             dst_idxs[i] = isd;
             dst_vals[i] = val;
         }

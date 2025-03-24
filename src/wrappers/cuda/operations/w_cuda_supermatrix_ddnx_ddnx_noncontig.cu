@@ -75,21 +75,21 @@ void w_cuda_supermatrix_ddnx_ddnx_noncontig<T,I>::internal_perform()
         CHECK(cudaMemcpy2DAsync(d_M_dst->vals, d_M_dst->ld * sizeof(T), d_M_src->vals, d_M_src->ld * sizeof(T), d_M_src->get_size_secdary() * sizeof(T), d_M_src->get_size_primary(), cudaMemcpyDefault, q->stream));
     }
     if(map_primary != nullptr && map_secdary == nullptr) {
-        int bpg = d_M_dst->get_size_primary();
+        int bpg = d_M_src->get_size_primary();
         int tpb = 256;
-        do_supermatrix_primary<T,I><<<bpg,tpb,0,q->stream>>>(d_M_dst->get_size_primary(), d_M_dst->get_size_secdary(), d_M_src->vals, d_M_src->ld, d_M_dst->vals, d_M_dst->ld, map_primary->vals);
+        do_supermatrix_primary<T,I><<<bpg,tpb,0,q->stream>>>(d_M_src->get_size_primary(), d_M_src->get_size_secdary(), d_M_src->vals, d_M_src->ld, d_M_dst->vals, d_M_dst->ld, map_primary->vals);
         CHECK(cudaPeekAtLastError());
     }
     if(map_primary == nullptr && map_secdary != nullptr) {
-        int bpg = d_M_dst->get_size_primary();
+        int bpg = d_M_src->get_size_primary();
         int tpb = 256;
-        do_supermatrix_secdary<T,I><<<bpg,tpb,0,q->stream>>>(d_M_dst->get_size_primary(), d_M_dst->get_size_secdary(), d_M_src->vals, d_M_src->ld, d_M_dst->vals, d_M_dst->ld, map_secdary->vals);
+        do_supermatrix_secdary<T,I><<<bpg,tpb,0,q->stream>>>(d_M_src->get_size_primary(), d_M_src->get_size_secdary(), d_M_src->vals, d_M_src->ld, d_M_dst->vals, d_M_dst->ld, map_secdary->vals);
         CHECK(cudaPeekAtLastError());
     }
     if(map_primary != nullptr && map_secdary != nullptr) {
-        int bpg = d_M_dst->get_size_primary();
+        int bpg = d_M_src->get_size_primary();
         int tpb = 256;
-        do_supermatrix_both<T,I><<<bpg,tpb,0,q->stream>>>(d_M_dst->get_size_primary(), d_M_dst->get_size_secdary(), d_M_src->vals, d_M_src->ld, d_M_dst->vals, d_M_dst->ld, map_primary->vals, map_secdary->vals);
+        do_supermatrix_both<T,I><<<bpg,tpb,0,q->stream>>>(d_M_src->get_size_primary(), d_M_src->get_size_secdary(), d_M_src->vals, d_M_src->ld, d_M_dst->vals, d_M_dst->ld, map_primary->vals, map_secdary->vals);
         CHECK(cudaPeekAtLastError());
     }
 }

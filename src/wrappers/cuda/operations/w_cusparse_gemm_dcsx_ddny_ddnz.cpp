@@ -5,7 +5,9 @@
 
 #include "wrappers/cuda/common_cusparse.h"
 
-
+                #include "wrappers/cuda/common_cuda_mgm.h"
+                #include "math/primitives_new/matrix_csx_data_new.h"
+                #include "math/primitives_new/matrix_dense_data_new.h"
 
 namespace espreso {
 namespace gpu {
@@ -58,13 +60,18 @@ void w_cusparse_gemm_dcsx_ddny_ddnz<T,I>::internal_setup()
 
     data->handle_cusparse = handle_spblas->h;
 
-    if(A->order == 'R') CHECK(cusparseCreateCsr(&data->descr_A, A->nrows, A->ncols, A->nnz, A->ptrs, A->idxs, A->vals, cusparse_index_type<I>(), cusparse_index_type<I>(), CUSPARSE_INDEX_BASE_ZERO, cusparse_data_type<T>()));
-    if(A->order == 'C') CHECK(cusparseCreateCsc(&data->descr_A, A->nrows, A->ncols, A->nnz, A->ptrs, A->idxs, A->vals, cusparse_index_type<I>(), cusparse_index_type<I>(), CUSPARSE_INDEX_BASE_ZERO, cusparse_data_type<T>()));
-    CHECK(cusparseCreateDnMat(&data->descr_B, B->nrows, B->ncols, B->ld, B->vals, cusparse_data_type<T>(), cusparse_order(B->order)));
-    CHECK(cusparseCreateDnMat(&data->descr_C, C->nrows, C->ncols, C->ld, C->vals, cusparse_data_type<T>(), cusparse_order(C->order)));
+    T * dummyptr_T = (T*)(sizeof(T));
+    I * dummyptr_I = (I*)(sizeof(I));
+    if(A->order == 'R') CHECK(cusparseCreateCsr(&data->descr_A, A->nrows, A->ncols, A->nnz, dummyptr_I, dummyptr_I, dummyptr_T, cusparse_index_type<I>(), cusparse_index_type<I>(), CUSPARSE_INDEX_BASE_ZERO, cusparse_data_type<T>()));
+    if(A->order == 'C') CHECK(cusparseCreateCsc(&data->descr_A, A->nrows, A->ncols, A->nnz, dummyptr_I, dummyptr_I, dummyptr_T, cusparse_index_type<I>(), cusparse_index_type<I>(), CUSPARSE_INDEX_BASE_ZERO, cusparse_data_type<T>()));
+    CHECK(cusparseCreateDnMat(&data->descr_B, B->nrows, B->ncols, B->ld, dummyptr_T, cusparse_data_type<T>(), cusparse_order(B->order)));
+    CHECK(cusparseCreateDnMat(&data->descr_C, C->nrows, C->ncols, C->ld, dummyptr_T, cusparse_data_type<T>(), cusparse_order(C->order)));
+
+    size_t buffersize;
+    CHECK(cusparseSpMM_bufferSize(data->handle_cusparse, data->op_A, data->op_B, &alpha, data->descr_A, data->descr_B, &beta, data->descr_C, cusparse_data_type<T>(), data->spmm_alg, &buffersize));
 
     wss_internal = 0; // TODO: check
-    CHECK(cusparseSpMM_bufferSize(data->handle_cusparse, data->op_A, data->op_B, &alpha, data->descr_A, data->descr_B, &beta, data->descr_C, cusparse_data_type<T>(), data->spmm_alg, &wss_persistent));
+    wss_persistent = utils::round_up(buffersize, gpu::mgm::get_natural_pitch_align());
     wss_tmp_preprocess = 0;
     wss_tmp_perform = 0;
 }

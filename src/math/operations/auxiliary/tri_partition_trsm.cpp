@@ -87,12 +87,12 @@ void tri_partition_trsm::set_output_partition(VectorDenseView_new<size_t> * part
 
 void tri_partition_trsm::perform()
 {
+    stacktimer::push("tri_partition_trsm::perform");
+
     if(!setup_called) eslog::error("setup was not called\n");
     if(partition == nullptr) eslog::error("partition is not set\n");
     if(partition->size != num_chunks + 1) eslog::error("wrong partition size\n");
     if(sizeof(size_t) != sizeof(double)) eslog::error("incompatible types\n");
-
-    stacktimer::push("tri_partition_trsm::perform");
 
     size_t * partition_sizet = partition->vals;
     double * partition_double = reinterpret_cast<double*>(partition->vals);

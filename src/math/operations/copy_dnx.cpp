@@ -39,11 +39,11 @@ void copy_dnx<T>::set_conj(bool do_conj_)
 template<typename T>
 void copy_dnx<T>::perform()
 {
+    stacktimer::push("copy_dnx::perform");
+
     if(M_src->nrows != M_dst->nrows || M_src->ncols != M_dst->ncols) eslog::error("matrix sizes dont match\n");
     if(M_src->order != M_dst->order) eslog::error("matrix order does not match\n");
     if(M_src->prop.uplo != M_dst->prop.uplo) eslog::error("matrix uplo does not match\n");
-
-    stacktimer::push("copy_dnx::perform");
 
     size_t size_primary = M_dst->get_size_primary();
     size_t size_secdary = M_dst->get_size_secdary();

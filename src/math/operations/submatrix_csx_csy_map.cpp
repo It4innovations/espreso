@@ -49,10 +49,10 @@ void submatrix_csx_csy_map<T,I>::set_bounds(size_t row_start_, size_t row_end_, 
 template<typename T, typename I>
 void submatrix_csx_csy_map<T,I>::setup()
 {
+    stacktimer::push("submatrix_csx_csy_map::setup");
+
     if(M_src == nullptr) eslog::error("source matrix has not been set\n");
     if(!set_bounds_called) eslog::error("bounds have not been set\n");
-
-    stacktimer::push("submatrix_csx_csy_map::setup");
 
     I start_prim = 0;
     I end_prim = 0;
@@ -117,13 +117,13 @@ void submatrix_csx_csy_map<T,I>::set_matrix_dst(MatrixCsxView_new<T,I> * M_dst_)
 template<typename T, typename I>
 void submatrix_csx_csy_map<T,I>::perform_pattern()
 {
+    stacktimer::push("submatrix_csx_csy_map::perform_pattern");
+
     if(M_src == nullptr) eslog::error("source matrix has not been set\n");
     if(M_dst == nullptr) eslog::error("destination matrix has not been set\n");
     if(!setup_called) eslog::error("setup has not been called\n");
     if(M_dst->nrows != num_rows || M_dst->ncols != num_cols) eslog::error("matrix sizes dont match\n");
     if(M_dst->nnz != nnz_output) eslog::error("wrong nnz in output matrix\n");
-
-    stacktimer::push("submatrix_csx_csy_map::perform_pattern");
 
     map.set(nnz_output, AllocatorCPU_new::get_singleton());
     map.alloc();
@@ -145,9 +145,9 @@ void submatrix_csx_csy_map<T,I>::perform_pattern()
 template<typename T, typename I>
 void submatrix_csx_csy_map<T,I>::perform_values()
 {
-    if(!perform_pattern_called) eslog::error("perform pattern has not been called\n");
-
     stacktimer::push("submatrix_csx_csy_map::perform_values");
+
+    if(!perform_pattern_called) eslog::error("perform pattern has not been called\n");
 
     T * src_vals = M_src->vals;
     T * dst_vals = M_dst->vals;
@@ -263,7 +263,7 @@ void submatrix_csx_csy_map<T,I>::perform_pattern_diff_order()
 
     // actually more similar to convert_csx_csy than submatrix
     // ipd = index primary destination, ...
-    I src_size_primary = M_src->get_size_primary();
+    // I src_size_primary = M_src->get_size_primary();
     // size_t src_size_secdary = M_src->get_size_secdary();
     I dst_size_primary = M_dst->get_size_primary();
     // size_t dst_size_secdary = M_dst->get_size_secdary();
@@ -309,7 +309,7 @@ void submatrix_csx_csy_map<T,I>::perform_pattern_diff_order()
     }
 
     // fill dst idxs and map
-    for(I ips = 0; ips < src_size_primary; ips++)
+    for(I ips = src_primary_start; ips < src_primary_end; ips++)
     {
         I start = src_ptrs[ips];
         I end = src_ptrs[ips+1];

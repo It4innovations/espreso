@@ -60,7 +60,7 @@ private:
     size_t k_start = 0;
     size_t k_size;
     MatrixDenseView_new<T> d_C_reordered;
-    MatrixDenseView_new<T> * d_C_lower;
+    MatrixDenseView_new<T> * d_C_lower = nullptr;
     MatrixDenseView_new<T> d_sub_C_herk;
     MatrixDenseView_new<T> d_sub_C_gemm;
     MatrixDenseView_new<T> d_sub_A_left;

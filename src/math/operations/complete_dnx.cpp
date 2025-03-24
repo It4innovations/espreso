@@ -41,11 +41,11 @@ void complete_dnx<T>::set_conj(bool do_conj_)
 template<typename T>
 void complete_dnx<T>::perform()
 {
+    stacktimer::push("complete_dnx::perform");
+
     if(M == nullptr) eslog::error("matrix is not set\n");
     if(M->nrows != M->ncols) eslog::error("matrix must be square\n");
     if(orig_uplo != 'L' && orig_uplo != 'U') eslog::error("original uplo is not set\n");
-
-    stacktimer::push("complete_dnx::perform");
 
     size_t size = M->nrows;
 

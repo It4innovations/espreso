@@ -32,10 +32,10 @@ void w_cuda_convert_ddnx_ddny<T>::internal_perform(void * ws_tmp)
     else {
         T one = T{1};
         T zero = T{0};
-        if constexpr(std::is_same_v<T,float>)                CHECK(cublasSgeam(handle_dnblas->h, CUBLAS_OP_T, CUBLAS_OP_N, M_src->get_size_secdary(), M_src->get_size_primary(), (U*)&one, (U*)M_src->vals, M_src->ld, (U*)&zero, nullptr, 0, (U*)M_dst->vals, M_dst->ld));
-        if constexpr(std::is_same_v<T,double>)               CHECK(cublasDgeam(handle_dnblas->h, CUBLAS_OP_T, CUBLAS_OP_N, M_src->get_size_secdary(), M_src->get_size_primary(), (U*)&one, (U*)M_src->vals, M_src->ld, (U*)&zero, nullptr, 0, (U*)M_dst->vals, M_dst->ld));
-        if constexpr(std::is_same_v<T,std::complex<float>>)  CHECK(cublasCgeam(handle_dnblas->h, CUBLAS_OP_T, CUBLAS_OP_N, M_src->get_size_secdary(), M_src->get_size_primary(), (U*)&one, (U*)M_src->vals, M_src->ld, (U*)&zero, nullptr, 0, (U*)M_dst->vals, M_dst->ld));
-        if constexpr(std::is_same_v<T,std::complex<double>>) CHECK(cublasZgeam(handle_dnblas->h, CUBLAS_OP_T, CUBLAS_OP_N, M_src->get_size_secdary(), M_src->get_size_primary(), (U*)&one, (U*)M_src->vals, M_src->ld, (U*)&zero, nullptr, 0, (U*)M_dst->vals, M_dst->ld));
+        if constexpr(std::is_same_v<T,float>)                CHECK(cublasSgeam(handle_dnblas->h, CUBLAS_OP_T, CUBLAS_OP_N, M_src->get_size_secdary(), M_src->get_size_primary(), (U*)&one, (U*)M_src->vals, M_src->ld, (U*)&zero, nullptr, M_src->ld, (U*)M_dst->vals, M_dst->ld));
+        if constexpr(std::is_same_v<T,double>)               CHECK(cublasDgeam(handle_dnblas->h, CUBLAS_OP_T, CUBLAS_OP_N, M_src->get_size_secdary(), M_src->get_size_primary(), (U*)&one, (U*)M_src->vals, M_src->ld, (U*)&zero, nullptr, M_src->ld, (U*)M_dst->vals, M_dst->ld));
+        if constexpr(std::is_same_v<T,std::complex<float>>)  CHECK(cublasCgeam(handle_dnblas->h, CUBLAS_OP_T, CUBLAS_OP_N, M_src->get_size_secdary(), M_src->get_size_primary(), (U*)&one, (U*)M_src->vals, M_src->ld, (U*)&zero, nullptr, M_src->ld, (U*)M_dst->vals, M_dst->ld));
+        if constexpr(std::is_same_v<T,std::complex<double>>) CHECK(cublasZgeam(handle_dnblas->h, CUBLAS_OP_T, CUBLAS_OP_N, M_src->get_size_secdary(), M_src->get_size_primary(), (U*)&one, (U*)M_src->vals, M_src->ld, (U*)&zero, nullptr, M_src->ld, (U*)M_dst->vals, M_dst->ld));
     }
 }
 

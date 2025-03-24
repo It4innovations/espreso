@@ -51,11 +51,14 @@ void w_cublas_gemm_ddnx_ddny_ddnz<T>::internal_setup()
 
     data->swap_a_b = (C->order == 'R');
     data->op_A = (((A->order == 'C') == (C->order == 'C')) ? CUBLAS_OP_N : CUBLAS_OP_T);
-    data->op_B = (((A->order == 'C') == (C->order == 'C')) ? CUBLAS_OP_N : CUBLAS_OP_T);
+    data->op_B = (((B->order == 'C') == (C->order == 'C')) ? CUBLAS_OP_N : CUBLAS_OP_T);
     data->m = C->nrows;
     data->n = C->ncols;
     data->k = A->ncols;
-    if(data->swap_a_b) std::swap(data->m, data->n);
+    if(data->swap_a_b) {
+        std::swap(data->m, data->n);
+        std::swap(data->op_A, data->op_B);
+    }
 }
 
 

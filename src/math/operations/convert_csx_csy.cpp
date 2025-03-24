@@ -31,11 +31,11 @@ void convert_csx_csy<T,I>::set_matrix_dst(MatrixCsxView_new<T,I> * M_dst_)
 template<typename T, typename I>
 void convert_csx_csy<T,I>::perform()
 {
+    stacktimer::push("convert_csx_csy::perform");
+
     if(M_src == nullptr) eslog::error("source matrix is not set\n");
     if(M_dst == nullptr) eslog::error("destination matrix is not set\n");
     if(M_dst->nrows != M_src->nrows || M_dst->ncols != M_src->ncols || M_dst->nnz != M_src->nnz) eslog::error("matrix sizes dont match\n");
-
-    stacktimer::push("convert_csx_csy::perform");
 
     if(M_src->order == M_dst->order) {
         copy_csx<T,I>::do_all(M_src, M_dst);

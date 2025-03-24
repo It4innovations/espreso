@@ -52,16 +52,17 @@ private:
     MatrixCsxView_new<T,I> * h_A = nullptr;
     MatrixDenseView_new<T> * d_X = nullptr;
     MatrixDenseView_new<T> * d_B = nullptr;
-    std::unique_ptr<trsm_dcsx_ddny_ddny<T,I>> op_d_inner_trsm_sp;
-    std::unique_ptr<trsm_ddnx_ddny<T>> op_d_inner_trsm_dn;
-    std::unique_ptr<convert_dcsx_ddny<T,I>> op_d_sp2dn_A;
-    MatrixCsxData_new<T,I> d_A_sp;
-    MatrixDenseData_new<T> d_A_dn;
     void * ws_persistent = nullptr;
     size_t wss_internal = 0; // approximate number of bytes allocated internally
     size_t wss_persistent = 0;
     size_t wss_tmp_preprocess = 0;
     size_t wss_tmp_perform = 0;
+    char spdn_A = '_';
+    bool called_set_config = false;
+    bool called_set_handles = false;
+    bool called_setup = false;
+    bool called_preprocess = false;
+private:
     std::unique_ptr<AllocatorArena_new> ator_ws_persistent;
     std::unique_ptr<AllocatorArena_new> ator_ws_tmp_linear;
     std::unique_ptr<AllocatorSinglePointer_new> ator_ws_tmp_overlap;
@@ -69,11 +70,11 @@ private:
     size_t wss_tmp_preprocess_overlap = 0;
     size_t wss_tmp_perform_linear = 0;
     size_t wss_tmp_perform_overlap = 0;
-    char spdn_A = '_';
-    bool called_set_config = false;
-    bool called_set_handles = false;
-    bool called_setup = false;
-    bool called_preprocess = false;
+    MatrixCsxData_new<T,I> d_A_sp;
+    MatrixDenseData_new<T> d_A_dn;
+    std::unique_ptr<trsm_dcsx_ddny_ddny<T,I>> op_d_inner_trsm_sp;
+    std::unique_ptr<trsm_ddnx_ddny<T>> op_d_inner_trsm_dn;
+    std::unique_ptr<convert_dcsx_ddny<T,I>> op_d_sp2dn_A;
 };
 
 

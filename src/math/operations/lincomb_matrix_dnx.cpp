@@ -48,11 +48,11 @@ void lincomb_matrix_dnx<T>::set_coefficients(T alpha_, T beta_)
 template<typename T>
 void lincomb_matrix_dnx<T>::perform()
 {
+    stacktimer::push("lincomb_matrix_dnx::perform");
+
     if(X == nullptr) eslog::error("result matrix X is not set\n");
     if(alpha != T{0} && A == nullptr) eslog::error("matrix A is not set\n");
     if(beta != T{0} && B == nullptr) eslog::error("matrix B is not set\n");
-
-    stacktimer::push("lincomb_matrix_dnx::perform");
 
     if(alpha == T{0} && beta == T{0}) {
         lincomb_matrix_dnx<T>::perform_zero(*X);
