@@ -29,20 +29,22 @@ static void calc_start_end_ptrs_and_nnzperprim(I * src_ptrs, I * src_idxs, I * s
     for(I i = start + threadIdx.x; i < end-1; i += blockDim.x) {
         I secdary_curr = src_idxs[i];
         I secdary_next = src_idxs[i+1];
-        if(secdary_curr < start_secdary && secdary_next >= start_secdary) {
+        if(secdary_curr < start_secdary && start_secdary <= secdary_next) {
             start_ptrs[prim_dst] = i+1;
         }
-        if(secdary_curr < end_secdary && secdary_next >= end_secdary) {
+        if(secdary_curr < end_secdary && end_secdary <= secdary_next) {
             end_ptrs[prim_dst] = i+1;
         }
     }
-    __syncthreads();
     if(threadIdx.x == 0) {
-        if(end_secdary <= src_idxs[start]) {
-            start_ptrs[prim_dst] = end;
-        }
-        if(src_idxs[end] >= start_secdary) {
-            end_ptrs[prim_dst] = start;
+        __syncthreads();
+        if(start != end) {
+            if(end_secdary <= src_idxs[start]) {
+                end_ptrs[prim_dst] = start;
+            }
+            if(start_secdary > src_idxs[end-1]) {
+                start_ptrs[prim_dst] = end;
+            }
         }
         nnz_per_prim[prim_dst] = end_ptrs[prim_dst] - start_ptrs[prim_dst];
     }
@@ -55,13 +57,12 @@ __global__
 static void calc_dst_idxs_vals(I * src_start_ptrs, I * src_end_ptrs, I * src_idxs, T * src_vals, I * dst_ptrs, I * dst_idxs, T * dst_vals, I start_primary, I start_secdary)
 {
     I prim_dst = gridDim.x - blockIdx.x - 1; // because my matrices are heavier towards the bottom, so assign the longest blocks with blockIdx.x=0, and hope that cuda executes them first
-    I prim_src = prim_dst + start_primary;
 
-    I src_start = src_start_ptrs[prim_src];
-    I src_end = src_end_ptrs[prim_src];
+    I src_start = src_start_ptrs[prim_dst];
+    I src_end = src_end_ptrs[prim_dst];
     I dst_start = dst_ptrs[prim_dst];
-    for(I i_src = src_start + threadIdx.x; i_src < src_end-1; i_src += blockDim.x) {
-        I offset = src_start - i_src;
+    for(I i_src = src_start + threadIdx.x; i_src < src_end; i_src += blockDim.x) {
+        I offset = i_src - src_start;
         I i_dst = dst_start + offset;
         I iss = src_idxs[i_src];
         I isd = src_idxs[i_src] - start_secdary;

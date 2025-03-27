@@ -129,6 +129,7 @@ void sc_symm_hcsx_ddny_tria<T,I>::setup()
         h_factor_L_row.alloc();
     }
 
+    stacktimer::push("extract_factors");
     if(solver_factor_uplo == 'U') {
         Matrix_CSR<T,I,gpu::mgm::Ah> h_factor_old_U = MatrixCsxView_new<T,I>::template to_old<gpu::mgm::Ah>(h_factor_U_row);
         h_A11_solver->getFactorU(h_factor_old_U, true, false);
@@ -137,6 +138,7 @@ void sc_symm_hcsx_ddny_tria<T,I>::setup()
         Matrix_CSR<T,I,gpu::mgm::Ah> h_factor_old_L = MatrixCsxView_new<T,I>::template to_old<gpu::mgm::Ah>(h_factor_L_row);
         h_A11_solver->getFactorL(h_factor_old_L, true, false);
     }
+    stacktimer::pop();
 
     h_L_row = h_factor_L_row;
     h_L_col = h_factor_U_row.get_transposed_reordered_view();
@@ -383,6 +385,7 @@ void sc_symm_hcsx_ddny_tria<T,I>::perform_submit(void * ws_tmp)
     ator_ws_tmp_linear->set(ws_tmp, wss_tmp_perform_linear);
     ator_ws_tmp_overlap->set((char*)ws_tmp + wss_tmp_perform_linear, wss_tmp_perform_overlap);
 
+    stacktimer::push("extract_factors");
     if(solver_factor_uplo == 'U') {
         Matrix_CSR<T,I,gpu::mgm::Ah> h_factor_old = MatrixCsxView_new<T,I>::template to_old<gpu::mgm::Ah>(h_factor_U_row);
         h_A11_solver->getFactorU(h_factor_old, false, true);
@@ -391,6 +394,7 @@ void sc_symm_hcsx_ddny_tria<T,I>::perform_submit(void * ws_tmp)
         Matrix_CSR<T,I,gpu::mgm::Ah> h_factor_old = MatrixCsxView_new<T,I>::template to_old<gpu::mgm::Ah>(h_factor_L_row);
         h_A11_solver->getFactorL(h_factor_old, false, true);
     }
+    stacktimer::pop();
 
     if(need_reorder_factor_L2U) {
         op_L2U.perform_values();
@@ -410,27 +414,7 @@ void sc_symm_hcsx_ddny_tria<T,I>::perform_submit(void * ws_tmp)
 
     op_X_sp2dn->perform_submit(ator_ws_tmp_overlap->alloc(op_X_sp2dn->get_wss_tmp_perform()));
 
-// {
-// MatrixDenseView_new<T> & dM = d_X_dn;
-// MatrixDenseData_new<T> M;
-// M.prop = dM.prop;
-// M.set(dM.nrows, dM.ncols, dM.order, AllocatorHostPinned_new::get_singleton());
-// M.alloc();
-// gpu::mgm::copy_submit(q, dM, M);
-// gpu::mgm::device_wait();
-// M.print("d_X_dn before trsm");
-// }
     op_d_trsm.perform_submit(ator_ws_tmp_overlap->alloc(op_d_trsm.get_wss_tmp_perform()));
-// {
-// MatrixDenseView_new<T> & dM = d_X_dn;
-// MatrixDenseData_new<T> M;
-// M.prop = dM.prop;
-// M.set(dM.nrows, dM.ncols, dM.order, AllocatorHostPinned_new::get_singleton());
-// M.alloc();
-// gpu::mgm::copy_submit(q, dM, M);
-// gpu::mgm::device_wait();
-// M.print("d_X_dn after trsm");
-// }
 
     op_d_herk.perform_submit(ator_ws_tmp_overlap->alloc(op_d_herk.get_wss_tmp_perform()));
 
@@ -441,17 +425,6 @@ void sc_symm_hcsx_ddny_tria<T,I>::perform_submit(void * ws_tmp)
     op_d_perm_sc->perform_submit(ator_ws_tmp_overlap->alloc(op_d_perm_sc->get_wss_tmp_perform()));
 
     op_d_copy_sc_final->perform_submit(ator_ws_tmp_overlap->alloc(op_d_copy_sc_final->get_wss_tmp_perform()));
-// {
-// MatrixDenseView_new<T> & dM = *d_sc;
-// MatrixDenseData_new<T> M;
-// M.prop = dM.prop;
-// M.set(dM.nrows, dM.ncols, dM.order, AllocatorHostPinned_new::get_singleton());
-// M.alloc();
-// gpu::mgm::copy_submit(q, dM, M);
-// gpu::mgm::device_wait();
-// M.print("d_sc after trsm");
-// }
-// throw std::runtime_error("the end");
 
     d_X_sp.free();
     d_X_dn.free();

@@ -76,6 +76,9 @@ private:
     template<typename... Args>
     void instance_info(const char * fmt, Args... args)
     {
+        if(!enabled) {
+            return;
+        }
         char buffer[1024];
         int thread = omp_get_thread_num();
         std::stack<stackitem> & stk = data[thread].stk;

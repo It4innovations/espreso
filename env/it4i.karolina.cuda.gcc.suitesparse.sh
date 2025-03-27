@@ -15,7 +15,7 @@ ml OpenBLAS/0.3.20-GCC-11.3.0
 ml OpenMPI/4.1.4-GCC-11.3.0
 ml CMake/3.24.3-GCCcore-11.3.0
 if [ "${cusparse_version}" = "legacy" ]; then ml CUDA/11.7.0; fi
-if [ "${cusparse_version}" = "modern" ]; then ml CUDA/12.4.0; fi
+if [ "${cusparse_version}" = "modern" ]; then ml CUDA/12.8.0; fi
 
 
 
@@ -48,6 +48,8 @@ export ESPRESO_USE_WRAPPER_SPBLAS=suitesparse
 export ESPRESO_USE_WRAPPER_SPSOLVER=suitesparse
 export ESPRESO_USE_WRAPPER_SCSOLVER=suitesparse
 export ESPRESO_USE_WRAPPER_GPU=cuda
+
+# export CXXFLAGS+=" -DESPRESO_STACKTIMER_ENABLE"
 
 
 

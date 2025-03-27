@@ -2,11 +2,13 @@
 #ifdef HAVE_CUDA
 #ifndef USE_CUSPARSE_LEGACY
 
-#include "wrappers/cuda/operations/trsm_dcsx_ddny_ddny.h"
+#include "wrappers/cuda/operations/w_cusparse_trsm_dcsx_ddny_ddny.h"
 
 #include "wrappers/cuda/common_cusparse.h"
+#include "wrappers/cuda/common_cuda_mgm.h"
 
-
+        #include "math/primitives_new/matrix_csx_data_new.h"
+        #include "math/primitives_new/matrix_dense_data_new.h"
 
 namespace espreso {
 namespace gpu {
@@ -30,6 +32,16 @@ struct w_cusparse_trsm_dcsx_ddny_ddny_data
 template<typename T, typename I>
 w_cusparse_trsm_dcsx_ddny_ddny<T,I>::w_cusparse_trsm_dcsx_ddny_ddny()
 {
+    // cusparseSpSM_updateMatrix does not work
+    // Redoing analysis works fine
+    // Problems in both splitfactor and splitrhs, though different
+    // with splitfactor the result of solve is incorrect
+    // with splitrhs it encounters some bad memory access inside the updateMatrix function
+    // no time to investigate now ...
+    // will investigate more later
+    // tested on 2x2x2 subdomains, each 4x4x4 tetra4 elements
+    eslog::error("TODO: fix\n");
+
     data = std::make_unique<w_cusparse_trsm_dcsx_ddny_ddny_data>();
 }
 
@@ -38,7 +50,7 @@ w_cusparse_trsm_dcsx_ddny_ddny<T,I>::w_cusparse_trsm_dcsx_ddny_ddny()
 template<typename T, typename I>
 w_cusparse_trsm_dcsx_ddny_ddny<T,I>::~w_cusparse_trsm_dcsx_ddny_ddny()
 {
-    if(called_setup) {
+    if(this->called_setup) {
         CHECK(cusparseDestroySpMat(data->descr_A));
         CHECK(cusparseDestroyDnMat(data->descr_X));
         CHECK(cusparseDestroyDnMat(data->descr_B));
@@ -61,16 +73,16 @@ char w_cusparse_trsm_dcsx_ddny_ddny<T,I>::internal_get_native_place()
 template<typename T, typename I>
 void w_cusparse_trsm_dcsx_ddny_ddny<T,I>::internal_setup()
 {
-    data->op_A = ((A.order == 'R') ? CUSPARSE_OPERATION_NON_TRANSPOSE : CUSPARSE_OPERATION_TRANSPOSE);
+    data->op_A = ((A->order == 'R') ? CUSPARSE_OPERATION_NON_TRANSPOSE : CUSPARSE_OPERATION_TRANSPOSE);
     data->op_B = CUSPARSE_OPERATION_NON_TRANSPOSE;
     data->spsm_alg = CUSPARSE_SPSM_ALG_DEFAULT;
 
-    CHECK(cusparseSpSM_createDescr(&descr_spsm));
+    CHECK(cusparseSpSM_createDescr(&data->descr_spsm));
 
     T * dummyptr_T = (T*)(sizeof(T));
     I * dummyptr_I = (I*)(sizeof(I));
     // only CSR is supported, CSC is not (but CSR+transpose is ok ...) (should be supported in next releases)
-    CHECK(cusparseCreateCsr(data->descr_A, A->nrows, A->ncols, A->nnz, dummyptr_I, dummyptr_I, dummyptr_T, cusparse_index_type<I>(), cusparse_index_type<I>(), CUSPARSE_INDEX_BASE_ZERO, cusparse_data_type<T>()));
+    CHECK(cusparseCreateCsr(&data->descr_A, A->nrows, A->ncols, A->nnz, dummyptr_I, dummyptr_I, dummyptr_T, cusparse_index_type<I>(), cusparse_index_type<I>(), CUSPARSE_INDEX_BASE_ZERO, cusparse_data_type<T>()));
     auto nonunit = CUSPARSE_DIAG_TYPE_NON_UNIT;
     auto lower = CUSPARSE_FILL_MODE_LOWER;
     auto upper = CUSPARSE_FILL_MODE_UPPER;
@@ -84,10 +96,10 @@ void w_cusparse_trsm_dcsx_ddny_ddny<T,I>::internal_setup()
     T alpha = T{1};
 
     size_t buffersize;
-    CHECK(cusparseSpSM_bufferSize(handle_spblas->h, data->op_A, data->op_B, &alpha, data->descr_A, data->descr_B, data->descr_C, cusparse_data_type<T>(), data->spsm_alg, data->descr_spsm, &buffersize));
+    CHECK(cusparseSpSM_bufferSize(handle_spblas->h, data->op_A, data->op_B, &alpha, data->descr_A, data->descr_B, data->descr_X, cusparse_data_type<T>(), data->spsm_alg, data->descr_spsm, &buffersize));
 
     wss_internal = 0;
-    wss_persistent = utils::round_up(wss_persistent, gpu::mgm::get_natural_pitch_align());
+    wss_persistent = utils::round_up(buffersize, gpu::mgm::get_natural_pitch_align());
     wss_tmp_preprocess = 0;
     wss_tmp_perform = 0;
 }
@@ -102,7 +114,7 @@ void w_cusparse_trsm_dcsx_ddny_ddny<T,I>::internal_preprocess(void * /*ws_tmp*/)
     CHECK(cusparseDnMatSetValues(data->descr_B, B->vals));
 
     T alpha = T{1};
-    CHECK(cusparseSpSM_analysis(handle_spblas->h, data->op_A, data->op_B, &alpha, data->descr_A, data->descr_B, data->descr_C, cusparse_data_type<T>(), data->spsm_alg, data->descr_spsm, ws_persistent));
+    CHECK(cusparseSpSM_analysis(handle_spblas->h, data->op_A, data->op_B, &alpha, data->descr_A, data->descr_B, data->descr_X, cusparse_data_type<T>(), data->spsm_alg, data->descr_spsm, ws_persistent));
 }
 
 
@@ -120,10 +132,10 @@ void w_cusparse_trsm_dcsx_ddny_ddny<T,I>::internal_perform(void * /*ws_tmp*/)
     #if CUDART_VERSION >= 12040
         CHECK(cusparseSpSM_updateMatrix(handle_spblas->h, data->descr_spsm, A->vals, CUSPARSE_SPSM_UPDATE_GENERAL));
     #else
-        CHECK(cusparseSpSM_analysis(handle_spblas->h, data->op_A, data->op_B, &alpha, data->descr_A, data->descr_B, data->descr_C, cusparse_data_type<T>(), data->spsm_alg, data->descr_spsm, ws_persistent));
+        CHECK(cusparseSpSM_analysis(handle_spblas->h, data->op_A, data->op_B, &alpha, data->descr_A, data->descr_B, data->descr_X, cusparse_data_type<T>(), data->spsm_alg, data->descr_spsm, ws_persistent));
     #endif
 
-    CHECK(cusparseSpSM_solve(handle_spblas->h, data->op_A, data->op_B, &alpha, data->descr_A, data->descr_B, data->descr_C, cusparse_data_type<T>(), data->spsm_alg, data->descr_spsm));
+    CHECK(cusparseSpSM_solve(handle_spblas->h, data->op_A, data->op_B, &alpha, data->descr_A, data->descr_B, data->descr_X, cusparse_data_type<T>(), data->spsm_alg, data->descr_spsm));
 }
 
 

@@ -26,7 +26,7 @@ public:
     virtual ~w_cusparse_trsm_dcsx_ddny_ddny();
 protected:
     using trsm_dcsx_ddny_ddny<T,I>::q;
-    using trsm_dcsx_ddny_ddny<T,I>::spblas_handle;
+    using trsm_dcsx_ddny_ddny<T,I>::handle_spblas;
     using trsm_dcsx_ddny_ddny<T,I>::A;
     using trsm_dcsx_ddny_ddny<T,I>::X;
     using trsm_dcsx_ddny_ddny<T,I>::B;

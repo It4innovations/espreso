@@ -122,6 +122,8 @@ void trsm_hcsx_ddny_tri_splitrhs<T,I>::setup()
 
     if(cfg.factor_order_sp != h_L->order || cfg.factor_order_dn != h_L->order) {
         h_L_reordered.set(h_L->nrows, h_L->ncols, h_L->nnz, change_order(h_L->order), AllocatorCPU_new::get_singleton());
+        h_L_reordered.prop.uplo = h_L->prop.uplo;
+        h_L_reordered.prop.diag = h_L->prop.diag;
         h_L_reordered.alloc();
         op_h_L_reorder.set_matrix_src(h_L);
         op_h_L_reorder.set_matrix_dst(&h_L_reordered);
@@ -158,6 +160,8 @@ void trsm_hcsx_ddny_tri_splitrhs<T,I>::setup()
     }
 
     d_L_sp.set(h_L_to_use->nrows, h_L_to_use->ncols, h_L_to_use->nnz, h_L_to_use->order, ator_ws_tmp_linear.get());
+    d_L_sp.prop.uplo = h_L_to_use->prop.uplo;
+    d_L_sp.prop.diag = h_L_to_use->prop.diag;
     wss_tmp_preprocess_linear += d_L_sp.get_memory_impact();
     wss_tmp_perform_linear += d_L_sp.get_memory_impact();
 
@@ -202,9 +206,33 @@ void trsm_hcsx_ddny_tri_splitrhs<T,I>::setup()
             spdn_factor = ((curr_fraction < fraction_treshold) ? 'S' : 'D');
         }
 
+        if(spdn_factor == 'D' && first_dense_chunk == num_chunks) {
+            first_dense_chunk = ch;
+            
+            size_t dense_rhs_start = partition.vals[first_dense_chunk];
+            size_t dense_k_start = h_X_colpivots.vals[dense_rhs_start];
+            size_t dense_k_size = h_L_to_use->nrows - dense_k_start;
+            d_L_dn.set(dense_k_size, dense_k_size, cfg.factor_order_dn, ator_ws_tmp_linear.get());
+            d_L_dn.prop.uplo = d_L_sp.prop.uplo;
+            d_L_dn.prop.diag = d_L_sp.prop.diag;
+            wss_tmp_perform_linear += d_L_dn.get_memory_impact();
+
+            op_d_sub_L_sp2dn = submatrix_dcsx_ddny<T,I>::make();
+            op_d_sub_L_sp2dn->set_handles(q);
+            op_d_sub_L_sp2dn->set_bounds(dense_k_start, d_L_sp.nrows, dense_k_start, d_L_sp.ncols);
+            op_d_sub_L_sp2dn->set_matrix_src(&d_L_sp);
+            op_d_sub_L_sp2dn->set_matrix_dst(&d_L_dn);
+            op_d_sub_L_sp2dn->setup();
+            wss_internal += op_d_sub_L_sp2dn->get_wss_internal();
+            wss_persistent += utils::round_up(op_d_sub_L_sp2dn->get_wss_persistent(), ator_ws_persistent->get_align());
+            wss_tmp_preprocess_overlap = std::max(wss_tmp_preprocess_overlap, op_d_sub_L_sp2dn->get_wss_tmp_preprocess());
+            wss_tmp_perform_overlap = std::max(wss_tmp_perform_overlap, op_d_sub_L_sp2dn->get_wss_tmp_perform());
+        }
+
         gpu_trsm_trirhs_chunk_splitrhs<T,I> & op_chunk = ops_chunks[ch];
         op_chunk.set_config(spdn_factor);
         op_chunk.set_range(rhs_start, rhs_end);
+        op_chunk.set_handles(q, handle_spblas, handle_dnblas);
         op_chunk.set_matrix_d_L_sp(&d_L_sp);
         op_chunk.set_matrix_d_L_dn(&d_L_dn);
         op_chunk.set_matrix_d_X(d_X);
@@ -215,28 +243,6 @@ void trsm_hcsx_ddny_tri_splitrhs<T,I>::setup()
         wss_persistent += utils::round_up(op_chunk.get_wss_persistent(), ator_ws_persistent->get_align());
         wss_tmp_preprocess_overlap = std::max(wss_tmp_preprocess_overlap, op_chunk.get_wss_tmp_preprocess());
         wss_tmp_perform_overlap = std::max(wss_tmp_perform_overlap, op_chunk.get_wss_tmp_perform());
-
-        if(spdn_factor == 'D' && first_dense_chunk == num_chunks) {
-            first_dense_chunk = ch;
-        }
-    }
-
-    if(first_dense_chunk < num_chunks) {
-        size_t dense_k_start = partition.vals[first_dense_chunk];
-        size_t dense_k_size = h_L_to_use->nrows - dense_k_start;
-        d_L_dn.set(dense_k_size, dense_k_size, cfg.factor_order_dn, ator_ws_tmp_linear.get());
-        wss_tmp_perform_linear += d_L_dn.get_memory_impact();
-
-        op_d_sub_L_sp2dn = submatrix_dcsx_ddny<T,I>::make();
-        op_d_sub_L_sp2dn->set_handles(q);
-        op_d_sub_L_sp2dn->set_bounds(dense_k_start, d_L_sp.nrows, dense_k_start, d_L_sp.ncols);
-        op_d_sub_L_sp2dn->set_matrix_src(&d_L_sp);
-        op_d_sub_L_sp2dn->set_matrix_dst(&d_L_dn);
-        op_d_sub_L_sp2dn->setup();
-        wss_internal += op_d_sub_L_sp2dn->get_wss_internal();
-        wss_persistent += utils::round_up(op_d_sub_L_sp2dn->get_wss_persistent(), ator_ws_persistent->get_align());
-        wss_tmp_preprocess_overlap = std::max(wss_tmp_preprocess_overlap, op_d_sub_L_sp2dn->get_wss_tmp_preprocess());
-        wss_tmp_perform_overlap = std::max(wss_tmp_perform_overlap, op_d_sub_L_sp2dn->get_wss_tmp_perform());
     }
 
     wss_tmp_preprocess_linear = utils::round_up(wss_tmp_preprocess_linear, ator_ws_tmp_linear->get_align());

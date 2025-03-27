@@ -1,7 +1,7 @@
 
 #ifdef HAVE_CUDA
 
-#include "wrappers/cuda/operations/w_cuda_convert_ddnx_ddny.h"
+#include "wrappers/cuda/operations/w_cublas_convert_ddnx_ddny.h"
 
 #include "wrappers/cuda/common_cuda_mgm.h"
 #include "wrappers/cuda/common_cublas.h"
@@ -15,7 +15,7 @@ namespace operations {
 
 
 template<typename T>
-void w_cuda_convert_ddnx_ddny<T>::internal_setup()
+void w_cublas_convert_ddnx_ddny<T>::internal_setup()
 {
     wss_tmp_perform = 0;
 }
@@ -23,7 +23,7 @@ void w_cuda_convert_ddnx_ddny<T>::internal_setup()
 
 
 template<typename T>
-void w_cuda_convert_ddnx_ddny<T>::internal_perform(void * ws_tmp)
+void w_cublas_convert_ddnx_ddny<T>::internal_perform(void * ws_tmp)
 {
     using U = cpp_to_cuda_type_t<T>;
     if(M_src->order == M_dst->order) {
@@ -42,7 +42,7 @@ void w_cuda_convert_ddnx_ddny<T>::internal_perform(void * ws_tmp)
 
 
 #define INSTANTIATE_T(T) \
-template class w_cuda_convert_ddnx_ddny<T>;
+template class w_cublas_convert_ddnx_ddny<T>;
 
     #define INSTANTIATE \
     /* INSTANTIATE_T(float) */ \

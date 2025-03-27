@@ -52,6 +52,7 @@ void w_cublas_trsm_ddnx_ddny<T>::internal_setup()
     data->side = ((X->order == 'C') ? CUBLAS_SIDE_LEFT : CUBLAS_SIDE_RIGHT);
     data->op_A = ((X->order == A->order) ? CUBLAS_OP_N : CUBLAS_OP_T);
     data->uplo_A = (((A->prop.uplo == 'L') == (A->order == 'C')) ? CUBLAS_FILL_MODE_LOWER : CUBLAS_FILL_MODE_UPPER);
+    data->diag_A = ((A->prop.diag == 'U') ? CUBLAS_DIAG_UNIT : CUBLAS_DIAG_NON_UNIT);
     data->m = X->nrows;
     data->n = X->ncols;
     if(X->order == 'R') {

@@ -318,28 +318,17 @@ void TotalFETIExplicitGpuScTria<T,I>::update(const step::Step &step)
 
         stacktimer::info("TotalFETIExplicitGpuScTria::update subdomain %zu", di);
 
-        // Kreg = K + RegMat numeric values
-        // tm_Kreg_combine.start();
-        {
-            math::sumCombined(data.Kreg, T{1.0}, feti.K[di], feti.RegMat[di]);
-        }
-        // tm_Kreg_combine.stop();
+        math::sumCombined(data.Kreg, T{1.0}, feti.K[di], feti.RegMat[di]);
 
-        // commit Kreg to solver (with numeric values)
-        // tm_solver_commit.start();
-        {
-            data.solver_Kreg.commit(data.Kreg);
-        }
-        // tm_solver_commit.stop();
-        
-        // numeric factorization
-        // tm_fact_numeric.start();
-        {
-            data.solver_Kreg.numericalFactorization();
-        }
-        // tm_fact_numeric.stop();
+        stacktimer::push("commit_matrix_to_solver");
+        data.solver_Kreg.commit(data.Kreg);
+        stacktimer::pop();
 
-        void * ws_tmp = ator_tmp_cbmba->alloc(data.op_sc->get_wss_tmp_preprocess());
+        stacktimer::push("numerical_factorization");
+        data.solver_Kreg.numericalFactorization();
+        stacktimer::pop();
+
+        void * ws_tmp = ator_tmp_cbmba->alloc(data.op_sc->get_wss_tmp_perform());
 
         data.op_sc->perform_submit(ws_tmp);
 
@@ -352,6 +341,7 @@ void TotalFETIExplicitGpuScTria<T,I>::update(const step::Step &step)
     // clean up the mess from buggy openmp in clang
     utils::run_dummy_parallel_region();
 
+    stacktimer::push("compute_vector_d");
     {
         if (feti.updated.B) {
             d.resize();
@@ -366,8 +356,11 @@ void TotalFETIExplicitGpuScTria<T,I>::update(const step::Step &step)
         d.synchronize();
         math::add(d, T{-1}, feti.c);
     }
+    stacktimer::pop();
 
+    stacktimer::push("wait_to_finish");
     gpu::mgm::device_wait();
+    stacktimer::pop();
 
     stacktimer::pop();
     stacktimer::disable();

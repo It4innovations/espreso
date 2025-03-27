@@ -32,7 +32,7 @@ public:
     static std::unique_ptr<trsm_dcsx_ddny_ddny<T,I>> make();
 public:
     char get_native_place();
-    void set_handles(gpu::mgm::queue q_, gpu::spblas::handle spblas_handle_);
+    void set_handles(gpu::mgm::queue q_, gpu::spblas::handle handle_spblas_);
     void set_matrix_A(MatrixCsxView_new<T,I> * A_);
     void set_matrix_X(MatrixDenseView_new<T> * X_);
     void set_matrix_B(MatrixDenseView_new<T> * B_);
@@ -46,7 +46,7 @@ public:
     void perform_submit(void * ws_tmp);
 protected:
     gpu::mgm::queue q;
-    gpu::spblas::handle spblas_handle;
+    gpu::spblas::handle handle_spblas;
     MatrixCsxView_new<T,I> * A = nullptr;
     MatrixDenseView_new<T> * X = nullptr;
     MatrixDenseView_new<T> * B = nullptr;

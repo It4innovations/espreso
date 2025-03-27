@@ -76,7 +76,7 @@ public:
     size_t get_memory_impact()
     {
         size_t mem = size * sizeof(T);
-        mem = ((mem - 1) / ator->get_align() + 1) * ator->get_align();
+        mem = utils::round_up(mem, ator->get_align());
         return mem;
     }
 };

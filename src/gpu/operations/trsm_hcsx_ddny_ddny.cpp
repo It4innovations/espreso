@@ -105,7 +105,6 @@ void trsm_hcsx_ddny_ddny<T,I>::setup()
         d_A_dn.set(d_A_sp.nrows, d_A_sp.ncols, d_A_sp.order, ator_ws_tmp_linear.get());
         d_A_dn.prop.uplo = h_A->prop.uplo;
         d_A_dn.prop.diag = h_A->prop.diag;
-        wss_tmp_preprocess_linear += d_A_dn.get_memory_impact();
         wss_tmp_perform_linear += d_A_dn.get_memory_impact();
     }
 
@@ -221,9 +220,6 @@ void trsm_hcsx_ddny_ddny<T,I>::preprocess_submit(void * ws_tmp)
     ator_ws_tmp_overlap->set((char*)ws_tmp + wss_tmp_preprocess_linear, wss_tmp_preprocess_overlap);
 
     d_A_sp.alloc();
-    if(spdn_A == 'D') {
-        d_A_dn.alloc();
-    }
 
     gpu::mgm::copy_submit(q, *h_A, d_A_sp, true, false);
 
@@ -238,7 +234,6 @@ void trsm_hcsx_ddny_ddny<T,I>::preprocess_submit(void * ws_tmp)
     }
 
     d_A_sp.free();
-    d_A_dn.free();
 
     ator_ws_tmp_linear->unset();
     ator_ws_tmp_overlap->unset();

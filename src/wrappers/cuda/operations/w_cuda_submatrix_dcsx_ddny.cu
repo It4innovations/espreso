@@ -13,43 +13,30 @@ namespace operations {
 
 
 
-template<typename T, typename I>
-__global__
-static void submatrix_csx_dnx_vals(I * src_ptrs, I * src_idxs, T * src_vals, T * dst_vals, I dst_ld, I src_primary_start, I src_secdary_start, I src_secdary_end)
-{
-    I ips = blockIdx.x;
-    I ipd = ips - src_primary_start;
-    I start = src_ptrs[ips];
-    I end = src_ptrs[ips+1];
-    for(I i = start + threadIdx.x; i < end; i += blockDim.x) {
-        I iss = src_idxs[i];
-        if(iss >= src_secdary_end) {
-            break;
-        }
-        T val = src_vals[i];
-        I isd = iss - src_secdary_start;
-        dst_vals[ipd * dst_ld + isd] = val;
-    }
-}
-
-
-
-template<typename T, typename I>
+template<typename T, typename I, bool SAME_ORDER>
 __global__
 static void submatrix_csx_dny_vals(I * src_ptrs, I * src_idxs, T * src_vals, T * dst_vals, I dst_ld, I src_primary_start, I src_secdary_start, I src_secdary_end)
 {
-    I ips = blockIdx.x;
-    I isd = ips - src_primary_start;
+    I ipd = blockIdx.x;
+    I ips = ipd + src_primary_start;
     I start = src_ptrs[ips];
     I end = src_ptrs[ips+1];
     for(I i = start + threadIdx.x; i < end; i += blockDim.x) {
         I iss = src_idxs[i];
+        if(iss < src_secdary_start) {
+            continue;
+        }
         if(iss >= src_secdary_end) {
             break;
         }
+        I isd = iss - src_secdary_start;
         T val = src_vals[i];
-        I ipd = iss - src_secdary_start;
-        dst_vals[ipd * dst_ld + isd] = val;
+        if constexpr(SAME_ORDER) {
+            dst_vals[ipd * dst_ld + isd] = val;
+        }
+        else {
+            dst_vals[isd * dst_ld + ipd] = val;
+        }
     }
 }
 
@@ -80,11 +67,11 @@ void w_cuda_submatrix_dcsx_ddny<T,I>::internal_perform(void * /*ws_tmp*/)
     CHECK(cudaMemset2D(M_dst->vals, M_dst->ld * sizeof(T), 0, M_dst->get_size_secdary() * sizeof(T), M_dst->get_size_primary()));
 
     if(M_src->order == M_dst->order) {
-        submatrix_csx_dnx_vals<T,I><<<M_dst->get_size_primary(),256,0,q->stream>>>(M_src->ptrs, M_src->idxs, M_src->vals, M_dst->vals, M_dst->ld, primary_start, secdary_start, secdary_end);
+        submatrix_csx_dny_vals<T,I,true><<<M_dst->get_size_primary(),256,0,q->stream>>>(M_src->ptrs, M_src->idxs, M_src->vals, M_dst->vals, M_dst->ld, primary_start, secdary_start, secdary_end);
         CHECK(cudaPeekAtLastError());
     }
     else {
-        submatrix_csx_dny_vals<T,I><<<M_dst->get_size_primary(),256,0,q->stream>>>(M_src->ptrs, M_src->idxs, M_src->vals, M_dst->vals, M_dst->ld, primary_start, secdary_start, secdary_end);
+        submatrix_csx_dny_vals<T,I,false><<<M_dst->get_size_primary(),256,0,q->stream>>>(M_src->ptrs, M_src->idxs, M_src->vals, M_dst->vals, M_dst->ld, primary_start, secdary_start, secdary_end);
         CHECK(cudaPeekAtLastError());
     }
 }

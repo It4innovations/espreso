@@ -122,7 +122,7 @@ void gpu_trsm_trirhs_chunk_splitrhs<T,I>::setup()
     if(d_L_sp->nrows != d_L_sp->ncols) eslog::error("Lsp is not square\n");
     if(d_L_dn->nrows != d_L_dn->ncols) eslog::error("Ldn is not square\n");
     if(d_L_sp->nrows != d_X->nrows) eslog::error("incompatible matrices\n");
-    if(h_X_colpivots->size != d_X->nrows) eslog::error("wrong X rowtrails size\n");
+    if(h_X_colpivots->size != d_X->ncols) eslog::error("wrong X colpivots size\n");
     if(h_L_nnzinsubs->size != d_L_sp->ncols) eslog::error("wrong size of Lnnzinsubs\n");
     if(d_L_sp->prop.uplo != 'L') eslog::error("matrix L must have uplo=L\n");
 
@@ -137,10 +137,13 @@ void gpu_trsm_trirhs_chunk_splitrhs<T,I>::setup()
         d_sub_L_sp.set(k_size, k_size, h_L_nnzinsubs->vals[k_start], d_L_sp->order, ator_ws_tmp_linear.get());
         d_sub_L_sp.prop.uplo = d_L_sp->prop.uplo;
         d_sub_L_sp.prop.diag = d_L_sp->prop.diag;
+        wss_tmp_preprocess_linear += d_sub_L_sp.get_memory_impact();
         wss_tmp_perform_linear += d_sub_L_sp.get_memory_impact();
     }
     if(factor_spdn == 'D') {
         d_sub_L_dn.set_view(k_size, k_size, d_L_dn->ld, d_L_dn->order, nullptr);
+        d_sub_L_dn.prop.uplo = d_L_sp->prop.uplo;
+        d_sub_L_dn.prop.diag = d_L_sp->prop.diag;
     }
 
     if(factor_spdn == 'S') {
@@ -153,6 +156,7 @@ void gpu_trsm_trirhs_chunk_splitrhs<T,I>::setup()
         wss_internal += op_d_sub_L_sp->get_wss_internal();
         wss_persistent += utils::round_up(op_d_sub_L_sp->get_wss_persistent(), ator_ws_persistent->get_align());
         wss_tmp_preprocess_overlap = std::max(wss_tmp_preprocess_overlap, op_d_sub_L_sp->get_wss_tmp_preprocess());
+        wss_tmp_preprocess_overlap = std::max(wss_tmp_preprocess_overlap, op_d_sub_L_sp->get_wss_tmp_perform());
         wss_tmp_perform_overlap = std::max(wss_tmp_perform_overlap, op_d_sub_L_sp->get_wss_tmp_perform());
     }
     if(factor_spdn == 'D') {
@@ -269,13 +273,16 @@ void gpu_trsm_trirhs_chunk_splitrhs<T,I>::preprocess_submit(void * ws_tmp)
     ator_ws_tmp_overlap->set((char*)ws_tmp + wss_tmp_preprocess_linear, wss_tmp_preprocess_overlap);
 
     if(factor_spdn == 'S') {
+        d_sub_L_sp.alloc();
+
         op_d_sub_L_sp->set_ws_persistent(ator_ws_persistent->alloc(op_d_sub_L_sp->get_wss_persistent()));
         op_d_sub_L_sp->preprocess_submit(ator_ws_tmp_overlap->alloc(op_d_sub_L_sp->get_wss_tmp_preprocess()));
-    }
+        op_d_sub_L_sp->perform_submit(ator_ws_tmp_overlap->alloc(op_d_sub_L_sp->get_wss_tmp_perform()));
 
-    if(factor_spdn == 'S') {
         op_d_trsm_sp->set_ws_persistent(ator_ws_persistent->alloc(op_d_trsm_sp->get_wss_persistent()));
         op_d_trsm_sp->preprocess_submit(ator_ws_tmp_overlap->alloc(op_d_trsm_sp->get_wss_tmp_preprocess()));
+
+        d_sub_L_sp.free();
     }
 
     ator_ws_tmp_linear->unset();
@@ -306,7 +313,7 @@ void gpu_trsm_trirhs_chunk_splitrhs<T,I>::perform_submit(void * ws_tmp)
     if(factor_spdn == 'S') {
         op_d_sub_L_sp->perform_submit(ator_ws_tmp_overlap->alloc(op_d_sub_L_sp->get_wss_tmp_perform()));
     }
-    if(factor_spdn == 'S') {
+    if(factor_spdn == 'D') {
         op_sub_L_dn.perform();
     }
 

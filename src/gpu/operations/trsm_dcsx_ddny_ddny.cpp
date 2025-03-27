@@ -41,12 +41,12 @@ char trsm_dcsx_ddny_ddny<T,I>::get_native_place()
 
 
 template<typename T, typename I>
-void trsm_dcsx_ddny_ddny<T,I>::set_handles(gpu::mgm::queue q_, gpu::spblas::handle spblas_handle_)
+void trsm_dcsx_ddny_ddny<T,I>::set_handles(gpu::mgm::queue q_, gpu::spblas::handle handle_spblas_)
 {
     if(called_set_handles) eslog::error("handles are already set\n");
 
     q = q_;
-    spblas_handle = spblas_handle_;
+    handle_spblas = handle_spblas_;
 
     called_set_handles = true;
 }

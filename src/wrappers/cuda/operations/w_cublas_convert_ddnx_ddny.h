@@ -1,6 +1,6 @@
 
-#ifndef SRC_WRAPPERS_CUDA_OPERATIONSW_CUDA_COPY_DDNX_DDNX_H
-#define SRC_WRAPPERS_CUDA_OPERATIONSW_CUDA_COPY_DDNX_DDNX_H
+#ifndef SRC_WRAPPERS_CUDA_OPERATIONSW_CUBLAS_COPY_DDNX_DDNX_H
+#define SRC_WRAPPERS_CUDA_OPERATIONSW_CUBLAS_COPY_DDNX_DDNX_H
 
 #include "gpu/operations/convert_ddnx_ddny.h"
 
@@ -17,11 +17,11 @@ namespace operations {
 
 
 template<typename T>
-class w_cuda_convert_ddnx_ddny : public convert_ddnx_ddny<T>
+class w_cublas_convert_ddnx_ddny : public convert_ddnx_ddny<T>
 {
 public:
-    w_cuda_convert_ddnx_ddny() = default;
-    virtual ~w_cuda_convert_ddnx_ddny() = default;
+    w_cublas_convert_ddnx_ddny() = default;
+    virtual ~w_cublas_convert_ddnx_ddny() = default;
 protected:
     using convert_ddnx_ddny<T>::q;
     using convert_ddnx_ddny<T>::handle_dnblas;
@@ -40,11 +40,11 @@ protected:
 
 
 template<typename T>
-class w_cuda_convert_ddnx_ddny : public submatrix_dcsx_dcsx<T>
+class w_cublas_convert_ddnx_ddny : public submatrix_dcsx_dcsx<T>
 {
 public:
-    w_cuda_convert_ddnx_ddny() { eslog::error("cuda wrapper is not available\n"); }
-    virtual ~w_cuda_convert_ddnx_ddny() = default;
+    w_cublas_convert_ddnx_ddny() { eslog::error("cuda wrapper is not available\n"); }
+    virtual ~w_cublas_convert_ddnx_ddny() = default;
 };
 
 
@@ -57,4 +57,4 @@ public:
 }
 }
 
-#endif /* SRC_WRAPPERS_CUDA_OPERATIONSW_CUDA_COPY_DDNX_DDNX_H */
+#endif /* SRC_WRAPPERS_CUDA_OPERATIONSW_CUBLAS_COPY_DDNX_DDNX_H */

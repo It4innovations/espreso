@@ -91,10 +91,10 @@ void w_cusparse_trsm_dcsx_ddny_ddny<T,I>::internal_setup()
     size_t buffersize;
     using U = cpp_to_cuda_type_t<T>;
     U alpha = U{1};
-    if constexpr(std::is_same_v<T,float>)                CHECK(cusparseScsrsm2_bufferSizeExt(spblas_handle->h, 1, data->op_A, data->op_X, X->nrows, X->ncols, A->nnz, &alpha, data->descr_A, (U*)A->vals, A->ptrs, A->idxs, (U*)X->vals, X->ld, data->info, data->policy, &buffersize));
-    if constexpr(std::is_same_v<T,double>)               CHECK(cusparseDcsrsm2_bufferSizeExt(spblas_handle->h, 1, data->op_A, data->op_X, X->nrows, X->ncols, A->nnz, &alpha, data->descr_A, (U*)A->vals, A->ptrs, A->idxs, (U*)X->vals, X->ld, data->info, data->policy, &buffersize));
-    if constexpr(std::is_same_v<T,std::complex<float>>)  CHECK(cusparseCcsrsm2_bufferSizeExt(spblas_handle->h, 1, data->op_A, data->op_X, X->nrows, X->ncols, A->nnz, &alpha, data->descr_A, (U*)A->vals, A->ptrs, A->idxs, (U*)X->vals, X->ld, data->info, data->policy, &buffersize));
-    if constexpr(std::is_same_v<T,std::complex<double>>) CHECK(cusparseZcsrsm2_bufferSizeExt(spblas_handle->h, 1, data->op_A, data->op_X, X->nrows, X->ncols, A->nnz, &alpha, data->descr_A, (U*)A->vals, A->ptrs, A->idxs, (U*)X->vals, X->ld, data->info, data->policy, &buffersize));
+    if constexpr(std::is_same_v<T,float>)                CHECK(cusparseScsrsm2_bufferSizeExt(handle_spblas->h, 1, data->op_A, data->op_X, X->nrows, X->ncols, A->nnz, &alpha, data->descr_A, (U*)A->vals, A->ptrs, A->idxs, (U*)X->vals, X->ld, data->info, data->policy, &buffersize));
+    if constexpr(std::is_same_v<T,double>)               CHECK(cusparseDcsrsm2_bufferSizeExt(handle_spblas->h, 1, data->op_A, data->op_X, X->nrows, X->ncols, A->nnz, &alpha, data->descr_A, (U*)A->vals, A->ptrs, A->idxs, (U*)X->vals, X->ld, data->info, data->policy, &buffersize));
+    if constexpr(std::is_same_v<T,std::complex<float>>)  CHECK(cusparseCcsrsm2_bufferSizeExt(handle_spblas->h, 1, data->op_A, data->op_X, X->nrows, X->ncols, A->nnz, &alpha, data->descr_A, (U*)A->vals, A->ptrs, A->idxs, (U*)X->vals, X->ld, data->info, data->policy, &buffersize));
+    if constexpr(std::is_same_v<T,std::complex<double>>) CHECK(cusparseZcsrsm2_bufferSizeExt(handle_spblas->h, 1, data->op_A, data->op_X, X->nrows, X->ncols, A->nnz, &alpha, data->descr_A, (U*)A->vals, A->ptrs, A->idxs, (U*)X->vals, X->ld, data->info, data->policy, &buffersize));
 
     wss_internal = ((A->order == 'R') ? 0 : 8 * A->nnz);
     wss_persistent = 0;
@@ -109,10 +109,10 @@ void w_cusparse_trsm_dcsx_ddny_ddny<T,I>::internal_preprocess(void * ws_tmp)
 {
     using U = cpp_to_cuda_type_t<T>;
     U alpha = U{1};
-    if constexpr(std::is_same_v<T,float>)                CHECK(cusparseScsrsm2_analysis(spblas_handle->h, 1, data->op_A, data->op_X, X->nrows, X->ncols, A->nnz, &alpha, data->descr_A, (U*)A->vals, A->ptrs, A->idxs, (U*)X->vals, X->ld, data->info, data->policy, ws_tmp));
-    if constexpr(std::is_same_v<T,double>)               CHECK(cusparseDcsrsm2_analysis(spblas_handle->h, 1, data->op_A, data->op_X, X->nrows, X->ncols, A->nnz, &alpha, data->descr_A, (U*)A->vals, A->ptrs, A->idxs, (U*)X->vals, X->ld, data->info, data->policy, ws_tmp));
-    if constexpr(std::is_same_v<T,std::complex<float>>)  CHECK(cusparseCcsrsm2_analysis(spblas_handle->h, 1, data->op_A, data->op_X, X->nrows, X->ncols, A->nnz, &alpha, data->descr_A, (U*)A->vals, A->ptrs, A->idxs, (U*)X->vals, X->ld, data->info, data->policy, ws_tmp));
-    if constexpr(std::is_same_v<T,std::complex<double>>) CHECK(cusparseZcsrsm2_analysis(spblas_handle->h, 1, data->op_A, data->op_X, X->nrows, X->ncols, A->nnz, &alpha, data->descr_A, (U*)A->vals, A->ptrs, A->idxs, (U*)X->vals, X->ld, data->info, data->policy, ws_tmp));
+    if constexpr(std::is_same_v<T,float>)                CHECK(cusparseScsrsm2_analysis(handle_spblas->h, 1, data->op_A, data->op_X, X->nrows, X->ncols, A->nnz, &alpha, data->descr_A, (U*)A->vals, A->ptrs, A->idxs, (U*)X->vals, X->ld, data->info, data->policy, ws_tmp));
+    if constexpr(std::is_same_v<T,double>)               CHECK(cusparseDcsrsm2_analysis(handle_spblas->h, 1, data->op_A, data->op_X, X->nrows, X->ncols, A->nnz, &alpha, data->descr_A, (U*)A->vals, A->ptrs, A->idxs, (U*)X->vals, X->ld, data->info, data->policy, ws_tmp));
+    if constexpr(std::is_same_v<T,std::complex<float>>)  CHECK(cusparseCcsrsm2_analysis(handle_spblas->h, 1, data->op_A, data->op_X, X->nrows, X->ncols, A->nnz, &alpha, data->descr_A, (U*)A->vals, A->ptrs, A->idxs, (U*)X->vals, X->ld, data->info, data->policy, ws_tmp));
+    if constexpr(std::is_same_v<T,std::complex<double>>) CHECK(cusparseZcsrsm2_analysis(handle_spblas->h, 1, data->op_A, data->op_X, X->nrows, X->ncols, A->nnz, &alpha, data->descr_A, (U*)A->vals, A->ptrs, A->idxs, (U*)X->vals, X->ld, data->info, data->policy, ws_tmp));
 }
 
 
@@ -126,10 +126,10 @@ void w_cusparse_trsm_dcsx_ddny_ddny<T,I>::internal_perform(void * ws_tmp)
 
     using U = cpp_to_cuda_type_t<T>;
     U alpha = U{1};
-    if constexpr(std::is_same_v<T,float>)                CHECK(cusparseScsrsm2_solve(spblas_handle->h, 1, data->op_A, data->op_X, X->nrows, X->ncols, A->nnz, &alpha, data->descr_A, (U*)A->vals, A->ptrs, A->idxs, (U*)X->vals, X->ld, data->info, data->policy, ws_tmp));
-    if constexpr(std::is_same_v<T,double>)               CHECK(cusparseDcsrsm2_solve(spblas_handle->h, 1, data->op_A, data->op_X, X->nrows, X->ncols, A->nnz, &alpha, data->descr_A, (U*)A->vals, A->ptrs, A->idxs, (U*)X->vals, X->ld, data->info, data->policy, ws_tmp));
-    if constexpr(std::is_same_v<T,std::complex<float>>)  CHECK(cusparseCcsrsm2_solve(spblas_handle->h, 1, data->op_A, data->op_X, X->nrows, X->ncols, A->nnz, &alpha, data->descr_A, (U*)A->vals, A->ptrs, A->idxs, (U*)X->vals, X->ld, data->info, data->policy, ws_tmp));
-    if constexpr(std::is_same_v<T,std::complex<double>>) CHECK(cusparseZcsrsm2_solve(spblas_handle->h, 1, data->op_A, data->op_X, X->nrows, X->ncols, A->nnz, &alpha, data->descr_A, (U*)A->vals, A->ptrs, A->idxs, (U*)X->vals, X->ld, data->info, data->policy, ws_tmp));
+    if constexpr(std::is_same_v<T,float>)                CHECK(cusparseScsrsm2_solve(handle_spblas->h, 1, data->op_A, data->op_X, X->nrows, X->ncols, A->nnz, &alpha, data->descr_A, (U*)A->vals, A->ptrs, A->idxs, (U*)X->vals, X->ld, data->info, data->policy, ws_tmp));
+    if constexpr(std::is_same_v<T,double>)               CHECK(cusparseDcsrsm2_solve(handle_spblas->h, 1, data->op_A, data->op_X, X->nrows, X->ncols, A->nnz, &alpha, data->descr_A, (U*)A->vals, A->ptrs, A->idxs, (U*)X->vals, X->ld, data->info, data->policy, ws_tmp));
+    if constexpr(std::is_same_v<T,std::complex<float>>)  CHECK(cusparseCcsrsm2_solve(handle_spblas->h, 1, data->op_A, data->op_X, X->nrows, X->ncols, A->nnz, &alpha, data->descr_A, (U*)A->vals, A->ptrs, A->idxs, (U*)X->vals, X->ld, data->info, data->policy, ws_tmp));
+    if constexpr(std::is_same_v<T,std::complex<double>>) CHECK(cusparseZcsrsm2_solve(handle_spblas->h, 1, data->op_A, data->op_X, X->nrows, X->ncols, A->nnz, &alpha, data->descr_A, (U*)A->vals, A->ptrs, A->idxs, (U*)X->vals, X->ld, data->info, data->policy, ws_tmp));
 }
 
 

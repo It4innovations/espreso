@@ -92,9 +92,9 @@ public:
         size_t mem_ptrs = (this->get_size_primary() + 1) * sizeof(I);
         size_t mem_idxs = nnz * sizeof(I);
         size_t mem_vals = nnz * sizeof(T);
-        mem_ptrs = ((mem_ptrs - 1) / ator->get_align() + 1) * ator->get_align();
-        mem_idxs = ((mem_idxs - 1) / ator->get_align() + 1) * ator->get_align();
-        mem_vals = ((mem_vals - 1) / ator->get_align() + 1) * ator->get_align();
+        mem_ptrs = utils::round_up(mem_ptrs, ator->get_align());
+        mem_idxs = utils::round_up(mem_idxs, ator->get_align());
+        mem_vals = utils::round_up(mem_vals, ator->get_align());
         size_t mem_total = mem_ptrs + mem_idxs + mem_vals;
         return mem_total;
     }
