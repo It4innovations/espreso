@@ -43,7 +43,7 @@ private:
     }
     void instance_push(const char * name)
     {
-        if(!enabled) {
+        if(enabled <= 0) {
             return;
         }
         int thread = omp_get_thread_num();
@@ -54,7 +54,7 @@ private:
     }
     void instance_pop()
     {
-        if(!enabled) {
+        if(enabled <= 0) {
             return;
         }
         double stop_time = omp_get_wtime();
@@ -76,7 +76,7 @@ private:
     template<typename... Args>
     void instance_info(const char * fmt, Args... args)
     {
-        if(!enabled) {
+        if(enabled <= 0) {
             return;
         }
         char buffer[1024];
@@ -91,16 +91,18 @@ private:
     }
     void instance_enable()
     {
-        enabled = true;
+        #pragma omp atomic
+        enabled++;
     }
     void instance_disable()
     {
-        enabled = false;
+        #pragma omp atomic
+        enabled--;
     }
 private:
     std::vector<stackwrapper> data;
     int indent = 2;
-    bool enabled = false;
+    int enabled = 0;
 private:
     static stacktimer instance;
 public:

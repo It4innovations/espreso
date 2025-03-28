@@ -162,6 +162,8 @@ void gpu_herk_tri_chunk_stairs<T,I>::setup()
         wss_tmp_perform = std::max(wss_tmp_perform, op_gemm->get_wss_tmp_perform());
     }
 
+    stacktimer::info("wss_tmp_perform    %zu", wss_tmp_perform);
+
     stacktimer::pop();
 
     called_setup = true;

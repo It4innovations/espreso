@@ -212,6 +212,8 @@ void herk_ddnx_ddny_tri<T,I>::setup()
     wss_tmp_perform_linear = utils::round_up(wss_tmp_perform_linear, ator_ws_tmp_linear->get_align());
     wss_tmp_perform = wss_tmp_perform_linear + wss_tmp_perform_overlap;
 
+    stacktimer::info("wss_tmp_perform    %zu", wss_tmp_perform);
+
     stacktimer::pop();
 
     called_setup = true;

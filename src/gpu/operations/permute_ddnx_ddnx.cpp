@@ -100,6 +100,8 @@ void permute_ddnx_ddnx<T,I>::setup()
 
     this->internal_setup();
 
+    // stacktimer::info("wss_tmp_perform    %zu", wss_tmp_perform);
+
     stacktimer::pop();
 
     called_setup = true;

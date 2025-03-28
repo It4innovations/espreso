@@ -95,6 +95,8 @@ void gemm_ddnx_ddny_ddnz<T>::setup()
 
     this->internal_setup();
 
+    // stacktimer::info("wss_tmp_perform    %zu", wss_tmp_perform);
+
     stacktimer::pop();
 
     called_setup = true;

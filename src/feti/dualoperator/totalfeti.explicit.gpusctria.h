@@ -40,6 +40,18 @@ protected:
 
     void _apply(const Vector_Dual<T> &x, Vector_Dual<T> &y);
 
+public:
+    struct config
+    {
+        char order_F = '_';
+        bool parallel_set = false;
+        bool parallel_update = false;
+        bool parallel_apply = false;
+        char mainloop_update_split = '_'; // Combined, Separate
+        bool wait_after_mainloop_update = false;
+        bool outer_timers = false;
+        bool inner_timers = false;
+    };
 private:
     struct per_domain_stuff
     {
@@ -58,6 +70,7 @@ private:
         Vector_Dense<T,I,gpu::mgm::Ad> d_apply_w;
         Vector_Dense<I,I,gpu::mgm::Ad> d_applyg_D2C;
     };
+    config cfg;
     gpu::mgm::device device;
     gpu::mgm::queue main_q;
     std::vector<gpu::mgm::queue> queues;
@@ -80,9 +93,6 @@ private:
     Vector_Dense<T*,I,gpu::mgm::Ad> d_applyg_ys_pointers;
     Vector_Dense<I,I,gpu::mgm::Ad> d_applyg_n_dofs_interfaces;
     Vector_Dense<I*,I,gpu::mgm::Ad> d_applyg_D2Cs_pointers;
-    bool parallel_set = false;
-    bool parallel_update = false;
-    bool parallel_apply = false;
 };
 
 }

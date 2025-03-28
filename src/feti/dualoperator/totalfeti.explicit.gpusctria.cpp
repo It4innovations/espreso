@@ -36,27 +36,36 @@ static void set_by_env(T & var, const char * env_var)
 }
 
 template<typename T, typename I>
-static void setup_sc_config(typename gpu::operations::sc_symm_hcsx_ddny_tria<T,I>::config & cfg)
+static void setup_configs(typename gpu::operations::sc_symm_hcsx_ddny_tria<T,I>::config & cfg_sc, typename TotalFETIExplicitGpuScTria<T,I>::config & cfg_dualop)
 {
-    set_by_env(cfg.order_X,                                   "ESPRESO_DUALOPGPUSCTRIA_CONFIG_order_X");
-    set_by_env(cfg.order_L,                                   "ESPRESO_DUALOPGPUSCTRIA_CONFIG_order_L");
-    set_by_env(cfg.cfg_trsm.strategy,                         "ESPRESO_DUALOPGPUSCTRIA_CONFIG_trsm_strategy");
-    set_by_env(cfg.cfg_trsm.partition.algorithm,              "ESPRESO_DUALOPGPUSCTRIA_CONFIG_trsm_partition_algorithm");
-    set_by_env(cfg.cfg_trsm.partition.parameter,              "ESPRESO_DUALOPGPUSCTRIA_CONFIG_trsm_partition_parameter");
-    set_by_env(cfg.cfg_trsm.splitrhs.factor_order_sp,         "ESPRESO_DUALOPGPUSCTRIA_CONFIG_trsm_splitrhs_factor_order_sp");
-    set_by_env(cfg.cfg_trsm.splitrhs.factor_order_dn,         "ESPRESO_DUALOPGPUSCTRIA_CONFIG_trsm_splitrhs_factor_order_dn");
-    set_by_env(cfg.cfg_trsm.splitrhs.spdn_criteria,           "ESPRESO_DUALOPGPUSCTRIA_CONFIG_trsm_splitrhs_spdn_criteria");
-    set_by_env(cfg.cfg_trsm.splitrhs.spdn_param,              "ESPRESO_DUALOPGPUSCTRIA_CONFIG_trsm_splitrhs_spdn_param");
-    set_by_env(cfg.cfg_trsm.splitfactor.trsm_factor_spdn,     "ESPRESO_DUALOPGPUSCTRIA_CONFIG_trsm_splitfactor_trsm_factor_spdn");
-    set_by_env(cfg.cfg_trsm.splitfactor.trsm_factor_order,    "ESPRESO_DUALOPGPUSCTRIA_CONFIG_trsm_splitfactor_trsm_factor_order");
-    set_by_env(cfg.cfg_trsm.splitfactor.gemm_factor_order_sp, "ESPRESO_DUALOPGPUSCTRIA_CONFIG_trsm_splitfactor_gemm_factor_order_sp");
-    set_by_env(cfg.cfg_trsm.splitfactor.gemm_factor_order_dn, "ESPRESO_DUALOPGPUSCTRIA_CONFIG_trsm_splitfactor_gemm_factor_order_dn");
-    set_by_env(cfg.cfg_trsm.splitfactor.gemm_factor_prune,    "ESPRESO_DUALOPGPUSCTRIA_CONFIG_trsm_splitfactor_gemm_factor_prune");
-    set_by_env(cfg.cfg_trsm.splitfactor.gemm_spdn_criteria,   "ESPRESO_DUALOPGPUSCTRIA_CONFIG_trsm_splitfactor_gemm_spdn_criteria");
-    set_by_env(cfg.cfg_trsm.splitfactor.gemm_spdn_param,      "ESPRESO_DUALOPGPUSCTRIA_CONFIG_trsm_splitfactor_gemm_spdn_param");
-    set_by_env(cfg.cfg_herk.strategy,                         "ESPRESO_DUALOPGPUSCTRIA_CONFIG_herk_strategy");
-    set_by_env(cfg.cfg_herk.partition_algorithm,              "ESPRESO_DUALOPGPUSCTRIA_CONFIG_herk_partition_algorithm");
-    set_by_env(cfg.cfg_herk.partition_parameter,              "ESPRESO_DUALOPGPUSCTRIA_CONFIG_herk_partition_parameter");
+    set_by_env(cfg_sc.order_X,                                   "ESPRESO_DUALOPGPUSCTRIA_CONFIG_order_X");
+    set_by_env(cfg_sc.order_L,                                   "ESPRESO_DUALOPGPUSCTRIA_CONFIG_order_L");
+    set_by_env(cfg_sc.cfg_trsm.strategy,                         "ESPRESO_DUALOPGPUSCTRIA_CONFIG_trsm_strategy");
+    set_by_env(cfg_sc.cfg_trsm.partition.algorithm,              "ESPRESO_DUALOPGPUSCTRIA_CONFIG_trsm_partition_algorithm");
+    set_by_env(cfg_sc.cfg_trsm.partition.parameter,              "ESPRESO_DUALOPGPUSCTRIA_CONFIG_trsm_partition_parameter");
+    set_by_env(cfg_sc.cfg_trsm.splitrhs.factor_order_sp,         "ESPRESO_DUALOPGPUSCTRIA_CONFIG_trsm_splitrhs_factor_order_sp");
+    set_by_env(cfg_sc.cfg_trsm.splitrhs.factor_order_dn,         "ESPRESO_DUALOPGPUSCTRIA_CONFIG_trsm_splitrhs_factor_order_dn");
+    set_by_env(cfg_sc.cfg_trsm.splitrhs.spdn_criteria,           "ESPRESO_DUALOPGPUSCTRIA_CONFIG_trsm_splitrhs_spdn_criteria");
+    set_by_env(cfg_sc.cfg_trsm.splitrhs.spdn_param,              "ESPRESO_DUALOPGPUSCTRIA_CONFIG_trsm_splitrhs_spdn_param");
+    set_by_env(cfg_sc.cfg_trsm.splitfactor.trsm_factor_spdn,     "ESPRESO_DUALOPGPUSCTRIA_CONFIG_trsm_splitfactor_trsm_factor_spdn");
+    set_by_env(cfg_sc.cfg_trsm.splitfactor.trsm_factor_order,    "ESPRESO_DUALOPGPUSCTRIA_CONFIG_trsm_splitfactor_trsm_factor_order");
+    set_by_env(cfg_sc.cfg_trsm.splitfactor.gemm_factor_order_sp, "ESPRESO_DUALOPGPUSCTRIA_CONFIG_trsm_splitfactor_gemm_factor_order_sp");
+    set_by_env(cfg_sc.cfg_trsm.splitfactor.gemm_factor_order_dn, "ESPRESO_DUALOPGPUSCTRIA_CONFIG_trsm_splitfactor_gemm_factor_order_dn");
+    set_by_env(cfg_sc.cfg_trsm.splitfactor.gemm_factor_prune,    "ESPRESO_DUALOPGPUSCTRIA_CONFIG_trsm_splitfactor_gemm_factor_prune");
+    set_by_env(cfg_sc.cfg_trsm.splitfactor.gemm_spdn_criteria,   "ESPRESO_DUALOPGPUSCTRIA_CONFIG_trsm_splitfactor_gemm_spdn_criteria");
+    set_by_env(cfg_sc.cfg_trsm.splitfactor.gemm_spdn_param,      "ESPRESO_DUALOPGPUSCTRIA_CONFIG_trsm_splitfactor_gemm_spdn_param");
+    set_by_env(cfg_sc.cfg_herk.strategy,                         "ESPRESO_DUALOPGPUSCTRIA_CONFIG_herk_strategy");
+    set_by_env(cfg_sc.cfg_herk.partition_algorithm,              "ESPRESO_DUALOPGPUSCTRIA_CONFIG_herk_partition_algorithm");
+    set_by_env(cfg_sc.cfg_herk.partition_parameter,              "ESPRESO_DUALOPGPUSCTRIA_CONFIG_herk_partition_parameter");
+
+    set_by_env(cfg_dualop.order_F,                    "ESPRESO_DUALOPGPUSCTRIA_CONFIG_order_F");
+    set_by_env(cfg_dualop.parallel_set,               "ESPRESO_DUALOPGPUSCTRIA_CONFIG_parallel_set");
+    set_by_env(cfg_dualop.parallel_update,            "ESPRESO_DUALOPGPUSCTRIA_CONFIG_parallel_update");
+    set_by_env(cfg_dualop.parallel_apply,             "ESPRESO_DUALOPGPUSCTRIA_CONFIG_parallel_apply");
+    set_by_env(cfg_dualop.mainloop_update_split,      "ESPRESO_DUALOPGPUSCTRIA_CONFIG_mainloop_update_split");
+    set_by_env(cfg_dualop.wait_after_mainloop_update, "ESPRESO_DUALOPGPUSCTRIA_CONFIG_wait_after_mainloop_update");
+    set_by_env(cfg_dualop.inner_timers,               "ESPRESO_DUALOPGPUSCTRIA_CONFIG_inner_timers");
+    set_by_env(cfg_dualop.outer_timers,               "ESPRESO_DUALOPGPUSCTRIA_CONFIG_outer_timers");
 }
 
 template<typename T, typename I>
@@ -103,15 +112,10 @@ void TotalFETIExplicitGpuScTria<T,I>::info()
 template<typename T, typename I>
 void TotalFETIExplicitGpuScTria<T,I>::set(const step::Step &step)
 {
-    char order_F = '_';
     typename gpu::operations::sc_symm_hcsx_ddny_tria<T,I>::config op_sc_config;
-    setup_sc_config<T,I>(op_sc_config);
-    set_by_env(order_F, "ESPRESO_DUALOPGPUSCTRIA_CONFIG_order_F");
-    set_by_env(parallel_set, "ESPRESO_DUALOPGPUSCTRIA_CONFIG_parallel_set");
-    set_by_env(parallel_update, "ESPRESO_DUALOPGPUSCTRIA_CONFIG_parallel_update");
-    set_by_env(parallel_apply, "ESPRESO_DUALOPGPUSCTRIA_CONFIG_parallel_apply");
+    setup_configs<T,I>(op_sc_config, cfg);
 
-    stacktimer::enable();
+    if(cfg.outer_timers) stacktimer::enable();
     stacktimer::push("TotalFETIExplicitGpuScTria::set");
 
     n_domains = feti.K.size();
@@ -155,7 +159,7 @@ void TotalFETIExplicitGpuScTria<T,I>::set(const step::Step &step)
             per_domain_stuff & data_bigger = domain_data[di_bigger];
             per_domain_stuff & data_di = domain_data[di];
             if(di == di_bigger) {
-                d_F_allocd.set(data_bigger.n_dofs_interface + 1, data_bigger.n_dofs_interface, order_F, AllocatorGPU_new::get_singleton());
+                d_F_allocd.set(data_bigger.n_dofs_interface + 1, data_bigger.n_dofs_interface, cfg.order_F, AllocatorGPU_new::get_singleton());
                 d_F_allocd.alloc();
                 data_di.d_F = d_F_allocd.get_submatrix_view(1, data_di.n_dofs_interface + 1, 0, data_di.n_dofs_interface);
                 data_di.d_F.prop.uplo = 'L';
@@ -168,7 +172,9 @@ void TotalFETIExplicitGpuScTria<T,I>::set(const step::Step &step)
         }
     }
 
-    #pragma omp parallel for schedule(static,1) if(parallel_set)
+    if(!cfg.inner_timers) stacktimer::disable();
+
+    #pragma omp parallel for schedule(static,1) if(cfg.parallel_set)
     for(size_t di = 0; di < n_domains; di++) {
         gpu::mgm::queue & q = queues[di % n_queues];
         gpu::spblas::handle & hs = handles_sparse[di % n_queues];
@@ -177,30 +183,17 @@ void TotalFETIExplicitGpuScTria<T,I>::set(const step::Step &step)
 
         stacktimer::info("TotalFETIExplicitGpuScTria::set setup subdomain %zu", di);
 
-        // Kreg = K + RegMat symbolic pattern
-        // tm_Kreg_combine.start();
-        {
-            math::combine(data.Kreg, feti.K[di], feti.RegMat[di]);
-            if constexpr(utils::is_real<T>())    data.Kreg.type = Matrix_Type::REAL_SYMMETRIC_POSITIVE_DEFINITE;
-            if constexpr(utils::is_complex<T>()) data.Kreg.type = Matrix_Type::COMPLEX_HERMITIAN_POSITIVE_DEFINITE;
-            data.Kreg.shape = feti.K[di].shape;
-        }
-        // tm_Kreg_combine.stop();
+        math::combine(data.Kreg, feti.K[di], feti.RegMat[di]);
+        if constexpr(utils::is_real<T>())    data.Kreg.type = Matrix_Type::REAL_SYMMETRIC_POSITIVE_DEFINITE;
+        if constexpr(utils::is_complex<T>()) data.Kreg.type = Matrix_Type::COMPLEX_HERMITIAN_POSITIVE_DEFINITE;
+        data.Kreg.shape = feti.K[di].shape;
 
-        // commit Kreg to solver (just symbolic pattern present now)
-        // tm_solver_commit.start();
-        {
-            data.solver_Kreg.commit(data.Kreg);
-        }
-        // tm_solver_commit.stop();
-
-        // symbolic factorization
-        // tm_fact_symbolic.start();
-        {
-            data.solver_Kreg.symbolicFactorization();
-            data.n_nz_factor = data.solver_Kreg.getFactorNnz();
-        }
-        // tm_fact_symbolic.stop();
+        data.solver_Kreg.commit(data.Kreg);
+    
+        stacktimer::push("set_symbolic_factorization");
+        data.solver_Kreg.symbolicFactorization();
+        data.n_nz_factor = data.solver_Kreg.getFactorNnz();
+        stacktimer::pop();
 
         data.h_Bt = MatrixCsxView_new<T,I>::from_old(feti.B1[di]).get_transposed_reordered_view();
 
@@ -219,6 +212,8 @@ void TotalFETIExplicitGpuScTria<T,I>::set(const step::Step &step)
         data.d_apply_w.resize(data.n_dofs_domain);
         data.d_applyg_D2C.resize(data.n_dofs_interface);
     }
+
+    if(!cfg.inner_timers) stacktimer::enable();
 
     // clean up the mess from buggy openmp in clang
     utils::run_dummy_parallel_region();
@@ -278,7 +273,9 @@ void TotalFETIExplicitGpuScTria<T,I>::set(const step::Step &step)
     ws_tmp_for_cbmba = gpu::mgm::memalloc_device(wss_tmp_for_cbmba);
     ator_tmp_cbmba = std::make_unique<AllocatorCBMB_new>(false, true, gpu::mgm::get_natural_pitch_align(), ws_tmp_for_cbmba, wss_tmp_for_cbmba);
 
-    #pragma omp parallel for schedule(static,1) if(parallel_set)
+    if(!cfg.inner_timers) stacktimer::disable();
+
+    #pragma omp parallel for schedule(static,1) if(cfg.parallel_set)
     for(size_t di = 0; di < n_domains; di++) {
         gpu::mgm::queue & q = queues[di % n_queues];
         per_domain_stuff & data = domain_data[di];
@@ -294,11 +291,15 @@ void TotalFETIExplicitGpuScTria<T,I>::set(const step::Step &step)
             ator_tmp_cbmba->free(ws_tmp_);
         });
     }
+    
+    if(!cfg.inner_timers) stacktimer::enable();
 
+    stacktimer::push("set_final_wait");
     gpu::mgm::device_wait();
+    stacktimer::pop();
 
     stacktimer::pop();
-    stacktimer::disable();
+    if(cfg.outer_timers) stacktimer::disable();
 }
 
 
@@ -306,29 +307,33 @@ void TotalFETIExplicitGpuScTria<T,I>::set(const step::Step &step)
 template<typename T, typename I>
 void TotalFETIExplicitGpuScTria<T,I>::update(const step::Step &step)
 {
-    stacktimer::enable();
+    if(cfg.outer_timers) stacktimer::enable();
     stacktimer::push("TotalFETIExplicitGpuScTria::update");
 
     gpu::mgm::set_device(device);
-    
-    #pragma omp parallel for schedule(static,1) if(parallel_update)
-    for(size_t di = 0; di < n_domains; di++) {
-        gpu::mgm::queue & q = queues[di % n_queues];
+
+    auto loop_part_1_factorize = [this](size_t di) {
         per_domain_stuff & data = domain_data[di];
 
         stacktimer::info("TotalFETIExplicitGpuScTria::update subdomain %zu", di);
 
         math::sumCombined(data.Kreg, T{1.0}, feti.K[di], feti.RegMat[di]);
 
-        stacktimer::push("commit_matrix_to_solver");
+        stacktimer::push("update_commit_matrix_to_solver");
         data.solver_Kreg.commit(data.Kreg);
         stacktimer::pop();
 
-        stacktimer::push("numerical_factorization");
+        stacktimer::push("update_numerical_factorization");
         data.solver_Kreg.numericalFactorization();
         stacktimer::pop();
-
+    };
+    auto loop_part_2_assemble = [this](size_t di) {
+        gpu::mgm::queue & q = queues[di % n_queues];
+        per_domain_stuff & data = domain_data[di];
+        
+        stacktimer::push("update_cbmba_allocation");
         void * ws_tmp = ator_tmp_cbmba->alloc(data.op_sc->get_wss_tmp_perform());
+        stacktimer::pop();
 
         data.op_sc->perform_submit(ws_tmp);
 
@@ -336,19 +341,66 @@ void TotalFETIExplicitGpuScTria<T,I>::update(const step::Step &step)
             void * ws_tmp_ = ws_tmp;
             ator_tmp_cbmba->free(ws_tmp_);
         });
+    };
+
+    stacktimer::push("update_mainloop");
+    if(cfg.mainloop_update_split == 'C') {
+        stacktimer::push("update_mainloop_combined");
+        if(!cfg.inner_timers) stacktimer::disable();
+        #pragma omp parallel for schedule(static,1) if(cfg.parallel_update)
+        for(size_t di = 0; di < n_domains; di++) {
+            loop_part_1_factorize(di);
+            loop_part_2_assemble(di);
+        };
+        if(!cfg.inner_timers) stacktimer::enable();
+        stacktimer::pop();
+
+        if(cfg.wait_after_mainloop_update) {
+            stacktimer::push("update_wait_to_finish_after_mainloop");
+            gpu::mgm::device_wait();
+            stacktimer::pop();
+        }
     }
+    if(cfg.mainloop_update_split == 'S') {
+        stacktimer::push("update_mainloop_sepatare_factorize");
+        if(!cfg.inner_timers) stacktimer::disable();
+        #pragma omp parallel for schedule(static,1) if(cfg.parallel_update)
+        for(size_t di = 0; di < n_domains; di++) {
+            loop_part_1_factorize(di);
+        }
+        if(!cfg.inner_timers) stacktimer::enable();
+        stacktimer::pop();
+
+        stacktimer::push("update_mainloop_sepatare_assemble_total");
+        stacktimer::push("update_mainloop_sepatare_assemble_submit");
+        if(!cfg.inner_timers) stacktimer::disable();
+        #pragma omp parallel for schedule(static,1) if(cfg.parallel_update)
+        for(size_t di = 0; di < n_domains; di++) {
+            loop_part_2_assemble(di);
+        }
+        if(!cfg.inner_timers) stacktimer::enable();
+        stacktimer::pop();
+
+        if(cfg.wait_after_mainloop_update) {
+            stacktimer::push("update_mainloop_sepatare_assemble_wait");
+            gpu::mgm::device_wait();
+            stacktimer::pop();
+        }
+        stacktimer::pop();
+    }
+    stacktimer::pop();
 
     // clean up the mess from buggy openmp in clang
     utils::run_dummy_parallel_region();
 
-    stacktimer::push("compute_vector_d");
+    stacktimer::push("update_compute_vector_d");
     {
         if (feti.updated.B) {
             d.resize();
         }
         // just use the cpu solver
         std::vector<Vector_Dense<T,I>> Kplus_fs(n_domains);
-        #pragma omp parallel for schedule(static,1) if(parallel_update)
+        #pragma omp parallel for schedule(static,1) if(cfg.parallel_update)
         for(size_t di = 0; di < n_domains; di++) {
             domain_data[di].solver_Kreg.solve(feti.f[di], Kplus_fs[di]);
         }
@@ -358,12 +410,12 @@ void TotalFETIExplicitGpuScTria<T,I>::update(const step::Step &step)
     }
     stacktimer::pop();
 
-    stacktimer::push("wait_to_finish");
+    stacktimer::push("update_final_wait");
     gpu::mgm::device_wait();
     stacktimer::pop();
 
     stacktimer::pop();
-    stacktimer::disable();
+    if(cfg.outer_timers) stacktimer::disable();
 }
 
 
@@ -371,63 +423,44 @@ void TotalFETIExplicitGpuScTria<T,I>::update(const step::Step &step)
 template<typename T, typename I>
 void TotalFETIExplicitGpuScTria<T,I>::_apply(const Vector_Dual<T> &x_cluster, Vector_Dual<T> &y_cluster)
 {
+    if(cfg.outer_timers) stacktimer::enable();
+    stacktimer::push("TotalFETIExplicitGpuScTria::apply");
+
     gpu::mgm::set_device(device);
 
     // copy x_cluster to device
-    // tm_copyin.start();
     gpu::mgm::copy_submit(main_q, d_applyg_x_cluster, x_cluster);
-    // if(config->concurrency_apply == CONCURRENCY::SEQ_WAIT) gpu::mgm::queue_wait(main_q);
-    // tm_copyin.stop();
 
     // scatter
-    // tm_scatter.start();
     gpu::kernels::DCmap_scatter(main_q, d_applyg_xs_pointers, d_applyg_n_dofs_interfaces, d_applyg_x_cluster, d_applyg_D2Cs_pointers);
-    // if(config->concurrency_apply == CONCURRENCY::SEQ_WAIT) gpu::mgm::queue_wait(main_q);
-    // tm_scatter.stop();
 
     gpu::mgm::queue_async_barrier({main_q}, queues);
 
     // apply
-    // tm_mv_outer.start();
-    #pragma omp parallel for schedule(static,1) if(parallel_apply)
+    #pragma omp parallel for schedule(static,1) if(cfg.parallel_apply)
     for(size_t di = 0; di < n_domains; di++) {
-        // gpu::mgm::queue & q = queues[di % n_queues];
         gpu::dnblas::handle & hd = handles_dense[di % n_queues];
         per_domain_stuff & data = domain_data[di];
 
-        // tm_mv.start();
         gpu::dnblas::hemv<T,I>(hd, data.d_F.nrows, data.d_F.vals, data.d_F.ld, data.d_F.order, 'N', data.d_F.prop.uplo, data.d_apply_x.vals, data.d_apply_y.vals);
-        // if(config->concurrency_apply == CONCURRENCY::SEQ_WAIT) gpu::mgm::queue_wait(q);
-        // tm_mv.stop();
     }
-    // tm_mv_outer.stop();
 
     // zerofill y_cluster on device
-    // tm_zerofill.start();
     gpu::mgm::memset_submit(main_q, d_applyg_y_cluster.vals, d_applyg_y_cluster.size * sizeof(T), 0);
-    // if(config->concurrency_apply == CONCURRENCY::SEQ_WAIT) gpu::mgm::queue_wait(main_q);
-    // tm_zerofill.stop();
 
     gpu::mgm::queue_async_barrier(queues, {main_q});
 
     // gather
-    // tm_gather.start();
     gpu::kernels::DCmap_gather(main_q, d_applyg_ys_pointers, d_applyg_n_dofs_interfaces, d_applyg_y_cluster, d_applyg_D2Cs_pointers);
-    // if(config->concurrency_apply == CONCURRENCY::SEQ_WAIT) gpu::mgm::queue_wait(main_q);
-    // tm_gather.stop();
 
     // copy y_cluster from device
-    // tm_copyout.start();
     gpu::mgm::copy_submit(main_q, y_cluster, d_applyg_y_cluster);
-    // if(config->concurrency_apply == CONCURRENCY::SEQ_WAIT) gpu::mgm::queue_wait(main_q);
-    // tm_copyout.stop();
 
     // wait
-    // tm_wait.start();
     gpu::mgm::device_wait();
-    // tm_wait.stop();
 
-    // tm_total.stop();
+    stacktimer::pop();
+    if(cfg.outer_timers) stacktimer::disable();
 }
 
 

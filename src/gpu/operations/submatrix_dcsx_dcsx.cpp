@@ -94,6 +94,11 @@ void submatrix_dcsx_dcsx<T,I>::setup()
 
     this->internal_setup();
 
+    // stacktimer::info("wss_internal       %zu", wss_internal);
+    // stacktimer::info("wss_persistent     %zu", wss_persistent);
+    // stacktimer::info("wss_tmp_preprocess %zu", wss_tmp_preprocess);
+    // stacktimer::info("wss_tmp_perform    %zu", wss_tmp_perform);
+
     stacktimer::pop();
 
     called_setup = true;

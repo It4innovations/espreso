@@ -134,6 +134,8 @@ void gpu_herk_tri_chunk_squares<T,I>::setup()
     op_herk->setup();
     wss_tmp_perform = std::max(wss_tmp_perform, op_herk->get_wss_tmp_perform());
 
+    stacktimer::info("wss_tmp_perform    %zu", wss_tmp_perform);
+
     stacktimer::pop();
 
     called_setup = true;

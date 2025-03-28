@@ -147,6 +147,11 @@ void trsm_hcsx_ddny_ddny<T,I>::setup()
     wss_tmp_preprocess = wss_tmp_preprocess_linear + wss_tmp_preprocess_overlap;
     wss_tmp_perform = wss_tmp_perform_linear + wss_tmp_perform_overlap;
 
+    // stacktimer::info("wss_internal       %zu", wss_internal);
+    // stacktimer::info("wss_persistent     %zu", wss_persistent);
+    // stacktimer::info("wss_tmp_preprocess %zu", wss_tmp_preprocess);
+    // stacktimer::info("wss_tmp_perform    %zu", wss_tmp_perform);
+
     stacktimer::pop();
 
     called_setup = true;
