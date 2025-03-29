@@ -16,6 +16,13 @@ template<typename T>
 class copy_dnx
 {
 public:
+    copy_dnx() = default;
+    copy_dnx(const copy_dnx &) = delete;
+    copy_dnx(copy_dnx &&) = default;
+    copy_dnx & operator=(const copy_dnx &) = delete;
+    copy_dnx & operator=(copy_dnx &&) = default;
+    ~copy_dnx() = default;
+public:
     void set_matrix_src(MatrixDenseView_new<T> * M_src_);
     void set_matrix_dst(MatrixDenseView_new<T> * M_dst_);
     void set_conj(bool do_conj_);

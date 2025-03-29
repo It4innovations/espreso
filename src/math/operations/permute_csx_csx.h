@@ -17,6 +17,13 @@ template<typename T, typename I>
 class permute_csx_csx
 {
 public:
+    permute_csx_csx() = default;
+    permute_csx_csx(const permute_csx_csx &) = delete;
+    permute_csx_csx(permute_csx_csx &&) = default;
+    permute_csx_csx & operator=(const permute_csx_csx &) = delete;
+    permute_csx_csx & operator=(permute_csx_csx &&) = default;
+    ~permute_csx_csx() = default;
+public:
     void set_matrix_src(MatrixCsxView_new<T,I> * M_src_);
     void set_matrix_dst(MatrixCsxView_new<T,I> * M_dst_);
     void set_perm_rows(PermutationView_new<I> * perm_rows_);

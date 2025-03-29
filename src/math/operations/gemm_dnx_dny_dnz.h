@@ -16,6 +16,13 @@ template<typename T>
 class gemm_dnx_dny_dnz
 {
 public:
+    gemm_dnx_dny_dnz() = default;
+    gemm_dnx_dny_dnz(const gemm_dnx_dny_dnz &) = delete;
+    gemm_dnx_dny_dnz(gemm_dnx_dny_dnz &&) = default;
+    gemm_dnx_dny_dnz & operator=(const gemm_dnx_dny_dnz &) = delete;
+    gemm_dnx_dny_dnz & operator=(gemm_dnx_dny_dnz &&) = default;
+    ~gemm_dnx_dny_dnz() = default;
+public:
     void set_matrix_A(MatrixDenseView_new<T> * A_);
     void set_matrix_B(MatrixDenseView_new<T> * B_);
     void set_matrix_C(MatrixDenseView_new<T> * C_);

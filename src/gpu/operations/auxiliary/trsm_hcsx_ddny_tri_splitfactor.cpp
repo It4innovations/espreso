@@ -173,7 +173,6 @@ void trsm_hcsx_ddny_tri_splitfactor<T,I>::setup()
                 op_pruning_subset.setup();
                 size_t nvals = op_pruning_subset.get_pruned_nrows() * op_pruning_subset.get_pruned_ncols();
                 sub_L_bot_test.clear();
-                op_pruning_subset.finalize();
                 double fraction_treshold = cfg.gemm_spdn_param;
                 double curr_fraction = (double)nnz / nvals;
                 op_config.gemm_factor_spdn = ((curr_fraction < fraction_treshold) ? 'S' : 'D');

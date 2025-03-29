@@ -17,6 +17,13 @@ template<typename T, typename I>
 class convert_csx_dny
 {
 public:
+    convert_csx_dny() = default;
+    convert_csx_dny(const convert_csx_dny &) = delete;
+    convert_csx_dny(convert_csx_dny &&) = default;
+    convert_csx_dny & operator=(const convert_csx_dny &) = delete;
+    convert_csx_dny & operator=(convert_csx_dny &&) = default;
+    ~convert_csx_dny() = default;
+public:
     void set_matrix_src(MatrixCsxView_new<T,I> * M_src_);
     void set_matrix_dst(MatrixDenseView_new<T> * M_dst_);
     void perform_zerofill();

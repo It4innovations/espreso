@@ -17,6 +17,13 @@ template<typename T, typename I>
 class permute_dnx_dnx
 {
 public:
+    permute_dnx_dnx() = default;
+    permute_dnx_dnx(const permute_dnx_dnx &) = delete;
+    permute_dnx_dnx(permute_dnx_dnx &&) = default;
+    permute_dnx_dnx & operator=(const permute_dnx_dnx &) = delete;
+    permute_dnx_dnx & operator=(permute_dnx_dnx &&) = default;
+    ~permute_dnx_dnx() = default;
+public:
     void set_matrix_src(MatrixDenseView_new<T> * M_src_);
     void set_matrix_dst(MatrixDenseView_new<T> * M_dst_);
     void set_perm_vector_rows(PermutationView_new<I> * perm_rows_);

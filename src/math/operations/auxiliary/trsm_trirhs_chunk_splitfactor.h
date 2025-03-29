@@ -37,10 +37,10 @@ public:
 public:
     trsm_trirhs_chunk_splitfactor() = default;
     trsm_trirhs_chunk_splitfactor(const trsm_trirhs_chunk_splitfactor &) = delete;
-    trsm_trirhs_chunk_splitfactor(trsm_trirhs_chunk_splitfactor &&) = delete;
+    trsm_trirhs_chunk_splitfactor(trsm_trirhs_chunk_splitfactor &&) = default;
     trsm_trirhs_chunk_splitfactor & operator=(const trsm_trirhs_chunk_splitfactor &) = delete;
-    trsm_trirhs_chunk_splitfactor & operator=(trsm_trirhs_chunk_splitfactor &&) = delete;
-    ~trsm_trirhs_chunk_splitfactor();
+    trsm_trirhs_chunk_splitfactor & operator=(trsm_trirhs_chunk_splitfactor &&) = default;
+    ~trsm_trirhs_chunk_splitfactor() = default;
 public:
     void set_config(config cfg_);
     void set_range(size_t k_start_, size_t k_end_);
@@ -49,7 +49,6 @@ public:
     void set_X_rowtrails(VectorDenseView_new<I> * X_rowtrails_);
     void preprocess();
     void perform();
-    void finalize();
 private:
     size_t k_start = 0;
     size_t k_end = 0;

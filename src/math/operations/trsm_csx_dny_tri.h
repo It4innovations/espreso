@@ -8,6 +8,8 @@
 #include "math/operations/auxiliary/trsm_trirhs_chunk_splitrhs.h"
 #include "math/operations/auxiliary/trsm_trirhs_chunk_splitfactor.h"
 
+#include <vector>
+
 
 
 namespace espreso {
@@ -46,10 +48,10 @@ public:
 public:
     trsm_csx_dny_tri() = default;
     trsm_csx_dny_tri(const trsm_csx_dny_tri &) = delete;
-    trsm_csx_dny_tri(trsm_csx_dny_tri &&) = delete;
+    trsm_csx_dny_tri(trsm_csx_dny_tri &&) = default;
     trsm_csx_dny_tri & operator=(const trsm_csx_dny_tri &) = delete;
-    trsm_csx_dny_tri & operator=(trsm_csx_dny_tri &&) = delete;
-    ~trsm_csx_dny_tri();
+    trsm_csx_dny_tri & operator=(trsm_csx_dny_tri &&) = default;
+    ~trsm_csx_dny_tri() = default;
 public:
     void set_config(config cfg_);
     void set_L(MatrixCsxView_new<T,I> * L_);
@@ -57,7 +59,6 @@ public:
     void calc_X_pattern(MatrixCsxView_new<T,I> & X_pattern);
     void preprocess();
     void perform();
-    void finalize();
 private:
     config cfg;
     MatrixCsxView_new<T,I> * L = nullptr;
@@ -66,8 +67,8 @@ private:
     VectorDenseData_new<size_t> partition;
     VectorDenseData_new<I> X_colpivots;
     VectorDenseData_new<I> X_rowtrails;
-    VectorDenseData_new<trsm_trirhs_chunk_splitrhs<T,I>> ops_chunks_splitrhs;
-    VectorDenseData_new<trsm_trirhs_chunk_splitfactor<T,I>> ops_chunks_splifactor;
+    std::vector<trsm_trirhs_chunk_splitrhs<T,I>> ops_chunks_splitrhs;
+    std::vector<trsm_trirhs_chunk_splitfactor<T,I>> ops_chunks_splifactor;
     bool called_set_config = false;
     bool called_set_pattern = false;
     bool called_preprocess = false;

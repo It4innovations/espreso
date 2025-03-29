@@ -22,7 +22,8 @@ espreso::FETIConfiguration::FETIConfiguration()
             .addoption(ECFOption().setname("IMPLICIT_GPU").setdescription("Implicit F on GPU."))
             .addoption(ECFOption().setname("EXPLICIT_SC").setdescription("Excplicit F using Schur complement from SparseBLAS."))
             .addoption(ECFOption().setname("EXPLICIT_SC_GPUAPPLY").setdescription("Excplicit F using Schur complement from SparseBLAS. Assembly on CPU, apply on GPU."))
-            .addoption(ECFOption().setname("EXPLICIT_GPU_SCTRIA").setdescription("Excplicit F on GPU using triangular B.")));
+            .addoption(ECFOption().setname("EXPLICIT_SCTRIA").setdescription("Excplicit F using SC with triangular B."))
+            .addoption(ECFOption().setname("EXPLICIT_SCTRIA_GPU").setdescription("Excplicit F using SC with triangular B on GPU.")));
 
     projector = PROJECTOR::ORTHOGONAL;
     REGISTER(projector, ECFMetaData()

@@ -12,14 +12,6 @@ namespace operations {
 
 
 template<typename T, typename I>
-gemm_csx_dny_dny_staged<T,I>::~gemm_csx_dny_dny_staged()
-{
-    finalize();
-}
-
-
-
-template<typename T, typename I>
 void gemm_csx_dny_dny_staged<T,I>::set_matrix_A(MatrixCsxView_new<T,I> * A_)
 {
     A = A_;
@@ -88,17 +80,6 @@ void gemm_csx_dny_dny_staged<T,I>::perform()
     spblas::mm(*A, *B, *C, alpha, beta, handle_abc, 'C');
 
     stacktimer::pop();
-}
-
-
-
-template<typename T, typename I>
-void gemm_csx_dny_dny_staged<T,I>::finalize()
-{
-    if(preprocess_called) {
-        spblas::mm(*A, *B, *C, alpha, beta, handle_abc, 'F');
-    }
-    preprocess_called = false;
 }
 
 

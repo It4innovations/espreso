@@ -17,6 +17,13 @@ template<typename T, typename I>
 class pruning_subset_csx
 {
 public:
+    pruning_subset_csx() = default;
+    pruning_subset_csx(const pruning_subset_csx &) = delete;
+    pruning_subset_csx(pruning_subset_csx &&) = default;
+    pruning_subset_csx & operator=(const pruning_subset_csx &) = delete;
+    pruning_subset_csx & operator=(pruning_subset_csx &&) = default;
+    ~pruning_subset_csx() = default;
+public:
     void set_matrix(MatrixCsxView_new<T,I> * M_);
     void set_pruning_mode(bool prune_rows_, bool prune_cols_);
     void setup();
@@ -25,7 +32,6 @@ public:
     void set_vector_pruned_rows(VectorDenseView_new<I> * nonempty_rows_);
     void set_vector_pruned_cols(VectorDenseView_new<I> * nonempty_cols_);
     void perform();
-    void finalize();
 private:
     MatrixCsxView_new<T,I> * M = nullptr;
     VectorDenseView_new<I> * nonempty_rows = nullptr;

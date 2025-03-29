@@ -17,6 +17,13 @@ template<typename T, typename I>
 class submatrix_dnx_dnx_noncontig
 {
 public:
+    submatrix_dnx_dnx_noncontig() = default;
+    submatrix_dnx_dnx_noncontig(const submatrix_dnx_dnx_noncontig &) = delete;
+    submatrix_dnx_dnx_noncontig(submatrix_dnx_dnx_noncontig &&) = default;
+    submatrix_dnx_dnx_noncontig & operator=(const submatrix_dnx_dnx_noncontig &) = delete;
+    submatrix_dnx_dnx_noncontig & operator=(submatrix_dnx_dnx_noncontig &&) = default;
+    ~submatrix_dnx_dnx_noncontig() = default;
+public:
     void set_matrix_source(MatrixDenseView_new<T> * M_src_);
     void set_matrix_destination(MatrixDenseView_new<T> * M_dst_);
     void set_row_map(VectorDenseView_new<I> * row_map_);

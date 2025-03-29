@@ -13,14 +13,6 @@ namespace operations {
 
 
 template<typename T, typename I>
-prune_csx_matx<T,I>::~prune_csx_matx()
-{
-    finalize();
-}
-
-
-
-template<typename T, typename I>
 void prune_csx_matx<T,I>::set_pruning_mode(bool prune_rows_, bool prune_cols_)
 {
     prune_rows = prune_rows_;
@@ -124,7 +116,7 @@ void prune_csx_matx<T,I>::preprocess()
         op_pruning_subset.set_vector_pruned_cols(pruned_cols_vec);
     }
     op_pruning_subset.perform();
-    op_pruning_subset.finalize();
+    op_pruning_subset = std::move(pruning_subset_csx<T,I>());
 
     if(M_src->order == 'R') {
         pruned_idxs_primary = pruned_rows_vec;
@@ -289,18 +281,6 @@ void prune_csx_matx<T,I>::perform_dense()
             }
         }
     }
-
-}
-
-
-
-template<typename T, typename I>
-void prune_csx_matx<T,I>::finalize()
-{
-    pruned_idxs_secdary_inverse.clear();
-    op_pruning_subset.finalize();
-
-    called_setup = false;
 }
 
 

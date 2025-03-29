@@ -29,6 +29,13 @@ public:
         char factor_order = '_';
     };
 public:
+    trsm_trirhs_chunk_splitrhs() = default;
+    trsm_trirhs_chunk_splitrhs(const trsm_trirhs_chunk_splitrhs &) = delete;
+    trsm_trirhs_chunk_splitrhs(trsm_trirhs_chunk_splitrhs &&) = default;
+    trsm_trirhs_chunk_splitrhs & operator=(const trsm_trirhs_chunk_splitrhs &) = delete;
+    trsm_trirhs_chunk_splitrhs & operator=(trsm_trirhs_chunk_splitrhs &&) = default;
+    ~trsm_trirhs_chunk_splitrhs() = default;
+public:
     void set_config(config cfg_);
     void set_range(size_t rhs_start_, size_t rhs_end_);
     void set_L(MatrixCsxView_new<T,I> * L_);

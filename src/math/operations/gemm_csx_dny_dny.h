@@ -18,6 +18,13 @@ template<typename T, typename I>
 class gemm_csx_dny_dny
 {
 public:
+    gemm_csx_dny_dny() = default;
+    gemm_csx_dny_dny(const gemm_csx_dny_dny &) = delete;
+    gemm_csx_dny_dny(gemm_csx_dny_dny &&) = default;
+    gemm_csx_dny_dny & operator=(const gemm_csx_dny_dny &) = delete;
+    gemm_csx_dny_dny & operator=(gemm_csx_dny_dny &&) = default;
+    ~gemm_csx_dny_dny() = default;
+public:
     void set_matrix_A(MatrixCsxView_new<T,I> * A_);
     void set_matrix_B(MatrixDenseView_new<T> * B_);
     void set_matrix_C(MatrixDenseView_new<T> * C_);

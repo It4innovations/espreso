@@ -1,6 +1,0 @@
-
-def options(opt):
-    return
-
-def configure(ctx):
-    ctx.check_cxx(mandatory=False, msg="Checking for 'scsolvertriangular'", okmsg="yes", define_name="HAVE_SCSOLVERTRIANGULAR", uselib_store="SCSOLVERTRIANGULAR", global_define=0)

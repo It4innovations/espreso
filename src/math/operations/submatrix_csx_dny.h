@@ -17,6 +17,13 @@ template<typename T, typename I>
 class submatrix_csx_dny
 {
 public:
+    submatrix_csx_dny() = default;
+    submatrix_csx_dny(const submatrix_csx_dny &) = delete;
+    submatrix_csx_dny(submatrix_csx_dny &&) = default;
+    submatrix_csx_dny & operator=(const submatrix_csx_dny &) = delete;
+    submatrix_csx_dny & operator=(submatrix_csx_dny &&) = default;
+    ~submatrix_csx_dny() = default;
+public:
     void set_matrix_src(MatrixCsxView_new<T,I> * M_src_);
     void set_matrix_dst(MatrixDenseView_new<T> * M_dst_);
     void set_bounds(size_t row_start_, size_t row_end_, size_t col_start_, size_t col_end_);

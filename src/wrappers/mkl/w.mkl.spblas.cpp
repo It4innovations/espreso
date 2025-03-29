@@ -219,10 +219,30 @@ void SpBLAS<Matrix, T, I>::apply(Matrix_Dense<T, I> &y, const T &alpha, const T 
 namespace math {
 namespace spblas {
 
+class mkl_sparse_matrix_wrapper
+{
+public:
+    sparse_matrix_t mat;
+public:
+    template<typename T, typename I>
+    mkl_sparse_matrix_wrapper(MatrixCsxView_new<T,I> & A)
+    {
+        if(Indexing::CSR != 0) eslog::error("i dont support one-based csr indexing\n");
+        if constexpr(std::is_same_v<T,float>)                checkStatus(mkl_sparse_s_create_csr(&mat, SPARSE_INDEX_BASE_ZERO, A.get_size_primary(), A.get_size_secdary(), A.ptrs, A.ptrs+1, A.idxs, A.vals));
+        if constexpr(std::is_same_v<T,double>)               checkStatus(mkl_sparse_d_create_csr(&mat, SPARSE_INDEX_BASE_ZERO, A.get_size_primary(), A.get_size_secdary(), A.ptrs, A.ptrs+1, A.idxs, A.vals));
+        if constexpr(std::is_same_v<T,std::complex<float>>)  checkStatus(mkl_sparse_c_create_csr(&mat, SPARSE_INDEX_BASE_ZERO, A.get_size_primary(), A.get_size_secdary(), A.ptrs, A.ptrs+1, A.idxs, A.vals));
+        if constexpr(std::is_same_v<T,std::complex<double>>) checkStatus(mkl_sparse_z_create_csr(&mat, SPARSE_INDEX_BASE_ZERO, A.get_size_primary(), A.get_size_secdary(), A.ptrs, A.ptrs+1, A.idxs, A.vals));
+    }
+    ~mkl_sparse_matrix_wrapper()
+    {
+        checkStatus(mkl_sparse_destroy(mat));
+    }
+};
+
 struct _handle_trsm
 {
+    std::unique_ptr<mkl_sparse_matrix_wrapper> A_mkl;
     sparse_operation_t op;
-    sparse_matrix_t A_mkl;
     matrix_descr A_descr;
     sparse_layout_t dense_layout;
     void * A_vals;
@@ -249,15 +269,14 @@ void trsm(MatrixCsxView_new<T,I> & A, MatrixDenseView_new<T> & X, MatrixDenseVie
     if(stage == 'A') { // All at once
         trsm<T,I>(A, X, Y, handle, 'p'); // no need to optimize for a single call
         trsm<T,I>(A, X, Y, handle, 'C');
-        trsm<T,I>(A, X, Y, handle, 'F');
     }
     if(stage == 'P' || stage == 'p') { // Preprocess
         if(handle.get() != nullptr) eslog::error("preprocess was already called\n");
-        handle = std::make_unique<_handle_trsm>();
+        handle = std::make_shared<_handle_trsm>();
         handle->A_vals = A.vals;
+        handle->A_mkl = std::make_unique<mkl_sparse_matrix_wrapper>(A);
         if(A.order == 'R') handle->op = SPARSE_OPERATION_NON_TRANSPOSE;
         if(A.order == 'C') handle->op = SPARSE_OPERATION_TRANSPOSE;
-        create_mkl_csr_matrix(handle->A_mkl, A);
         handle->A_descr.type = SPARSE_MATRIX_TYPE_TRIANGULAR;
         if((A.prop.uplo == 'U') == (A.order == 'R')) handle->A_descr.mode = SPARSE_FILL_MODE_UPPER;
         if((A.prop.uplo == 'L') == (A.order == 'R')) handle->A_descr.mode = SPARSE_FILL_MODE_LOWER;
@@ -265,7 +284,7 @@ void trsm(MatrixCsxView_new<T,I> & A, MatrixDenseView_new<T> & X, MatrixDenseVie
         if(A.prop.diag == 'N') handle->A_descr.diag = SPARSE_DIAG_NON_UNIT;
         if(X.order == 'R') handle->dense_layout = SPARSE_LAYOUT_ROW_MAJOR;
         if(X.order == 'C') handle->dense_layout = SPARSE_LAYOUT_COLUMN_MAJOR;
-        if(stage == 'P') { // optimize only for capical P
+        if(stage == 'P') { // optimize only for capital P
             mkl_sparse_set_sm_hint(handle->A_mkl, handle->op, handle->A_descr, handle->dense_layout, X.ncols, 1000);
             checkStatus(mkl_sparse_optimize(handle->A_mkl));
         }
@@ -278,17 +297,12 @@ void trsm(MatrixCsxView_new<T,I> & A, MatrixDenseView_new<T> & X, MatrixDenseVie
         if constexpr(std::is_same_v<T,std::complex<float>>)  checkStatus(mkl_sparse_c_trsm(handle->op, 1.0, handle->A_mkl, handle->A_descr, handle->dense_layout, X.vals, X.ncols, X.ld, Y.vals, Y.ld));
         if constexpr(std::is_same_v<T,std::complex<double>>) checkStatus(mkl_sparse_z_trsm(handle->op, 1.0, handle->A_mkl, handle->A_descr, handle->dense_layout, X.vals, X.ncols, X.ld, Y.vals, Y.ld));
     }
-    if(stage == 'F') { // Finalize, Free
-        if(handle.get() == nullptr) eslog::error("preprocess has not been called\n");
-        checkStatus(mkl_sparse_destroy(handle->A_mkl));
-        handle.reset();
-    }
 }
 
 struct _handle_mm
 {
+    std::unique_ptr<mkl_sparse_matrix_wrapper> A_mkl;
     sparse_operation_t op;
-    sparse_matrix_t A_mkl;
     matrix_descr A_descr;
     sparse_layout_t dense_layout;
     void * A_vals;
@@ -303,18 +317,17 @@ void mm(MatrixCsxView_new<T,I> & A, MatrixDenseView_new<T> & B, MatrixDenseView_
     if(stage == 'A') { // All at once
         mm<T,I>(A, B, C, alpha, beta, handle, 'p'); // no need to optimize for a single call
         mm<T,I>(A, B, C, alpha, beta, handle, 'C');
-        mm<T,I>(A, B, C, alpha, beta, handle, 'F');
     }
     if(stage == 'P' || stage == 'p') { // Preprocess
         if(handle.get() != nullptr) eslog::error("preprocess was already called\n");
-        handle = std::make_unique<_handle_mm>();
+        handle = std::make_shared<_handle_mm>();
         handle->A_vals = A.vals;
+        handle->A_mkl = std::make_unique<mkl_sparse_matrix_wrapper>(A);
         handle->op = ((A.order == 'R') ? SPARSE_OPERATION_NON_TRANSPOSE : SPARSE_OPERATION_TRANSPOSE);
-        create_mkl_csr_matrix(handle->A_mkl, A);
         handle->A_descr.type = SPARSE_MATRIX_TYPE_GENERAL;
         handle->dense_layout = ((B.order == 'R') ? SPARSE_LAYOUT_ROW_MAJOR : SPARSE_LAYOUT_COLUMN_MAJOR);
         if(stage == 'P') { // optimize only for capical P
-            checkStatus(mkl_sparse_set_mm_hint(handle->A_mkl, handle->op, handle->A_descr, handle->dense_layout, B.ncols, 1000));
+            mkl_sparse_set_mm_hint(handle->A_mkl, handle->op, handle->A_descr, handle->dense_layout, B.ncols, 1000);
             checkStatus(mkl_sparse_optimize(handle->A_mkl));
         }
     }
@@ -325,11 +338,6 @@ void mm(MatrixCsxView_new<T,I> & A, MatrixDenseView_new<T> & B, MatrixDenseView_
         if constexpr(std::is_same_v<T,double>)               checkStatus(mkl_sparse_d_mm(handle->op, alpha, handle->A_mkl, handle->A_descr, handle->dense_layout, B.vals, B.ncols, B.ld, beta, C.vals, C.ld));
         if constexpr(std::is_same_v<T,std::complex<float>>)  checkStatus(mkl_sparse_c_mm(handle->op, alpha, handle->A_mkl, handle->A_descr, handle->dense_layout, B.vals, B.ncols, B.ld, beta, C.vals, C.ld));
         if constexpr(std::is_same_v<T,std::complex<double>>) checkStatus(mkl_sparse_z_mm(handle->op, alpha, handle->A_mkl, handle->A_descr, handle->dense_layout, B.vals, B.ncols, B.ld, beta, C.vals, C.ld));
-    }
-    if(stage == 'F') { // Finalize
-        if(handle.get() == nullptr) eslog::error("preprocess has not been called\n");
-        checkStatus(mkl_sparse_destroy(handle->A_mkl));
-        handle.reset();
     }
 }
 

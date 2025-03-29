@@ -19,6 +19,13 @@ class lincomb_matrix_dnx
 // inplace allowed (X=A, X=B)
 // respect uplo
 public:
+    lincomb_matrix_dnx() = default;
+    lincomb_matrix_dnx(const lincomb_matrix_dnx &) = delete;
+    lincomb_matrix_dnx(lincomb_matrix_dnx &&) = default;
+    lincomb_matrix_dnx & operator=(const lincomb_matrix_dnx &) = delete;
+    lincomb_matrix_dnx & operator=(lincomb_matrix_dnx &&) = default;
+    ~lincomb_matrix_dnx() = default;
+public:
     void set_matrix_X(MatrixDenseView_new<T> * X_);
     void set_matrix_A(MatrixDenseView_new<T> * A_);
     void set_matrix_B(MatrixDenseView_new<T> * B_);

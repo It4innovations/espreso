@@ -23,10 +23,10 @@ class gemm_csx_dny_dny_prune
 public:
     gemm_csx_dny_dny_prune() = default;
     gemm_csx_dny_dny_prune(const gemm_csx_dny_dny_prune &) = delete;
-    gemm_csx_dny_dny_prune(gemm_csx_dny_dny_prune &&) = delete;
+    gemm_csx_dny_dny_prune(gemm_csx_dny_dny_prune &&) = default;
     gemm_csx_dny_dny_prune & operator=(const gemm_csx_dny_dny_prune &) = delete;
-    gemm_csx_dny_dny_prune & operator=(gemm_csx_dny_dny_prune &&) = delete;
-    ~gemm_csx_dny_dny_prune();
+    gemm_csx_dny_dny_prune & operator=(gemm_csx_dny_dny_prune &&) = default;
+    ~gemm_csx_dny_dny_prune() = default;
 public:
     void set_config(char spdn_A_, bool prune_rows_, bool prune_cols_);
     void set_matrix_A(MatrixCsxView_new<T,I> * A_);
@@ -35,7 +35,6 @@ public:
     void set_coefficients(T alpha_, T beta_);
     void preprocess();
     void perform();
-    void finalize();
 private:
     MatrixCsxView_new<T,I> * A = nullptr;
     MatrixDenseView_new<T> * B = nullptr;

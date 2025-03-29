@@ -12,14 +12,6 @@ namespace operations {
 
 
 template<typename T, typename I>
-trsm_trirhs_chunk_splitfactor<T,I>::~trsm_trirhs_chunk_splitfactor()
-{
-    finalize();
-}
-
-
-
-template<typename T, typename I>
 void trsm_trirhs_chunk_splitfactor<T,I>::set_config(config cfg_)
 {
     cfg = cfg_;
@@ -217,21 +209,6 @@ void trsm_trirhs_chunk_splitfactor<T,I>::perform()
     }
 
     stacktimer::pop();
-}
-
-
-
-template<typename T, typename I>
-void trsm_trirhs_chunk_splitfactor<T,I>::finalize()
-{
-    if(preprocess_called) {
-        if(sub_X_bot.nrows > 0) {
-            if(cfg.gemm_factor_prune != 'N') {
-                op_gemm_prune.finalize();
-            }
-        }
-    }
-    preprocess_called = false;
 }
 
 

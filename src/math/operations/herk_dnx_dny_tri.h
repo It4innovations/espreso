@@ -30,10 +30,10 @@ public:
 public:
     herk_dnx_dny_tri() = default;
     herk_dnx_dny_tri(const herk_dnx_dny_tri &) = delete;
-    herk_dnx_dny_tri(herk_dnx_dny_tri &&) = delete;
+    herk_dnx_dny_tri(herk_dnx_dny_tri &&) = default;
     herk_dnx_dny_tri & operator=(const herk_dnx_dny_tri &) = delete;
-    herk_dnx_dny_tri & operator=(herk_dnx_dny_tri &&) = delete;
-    ~herk_dnx_dny_tri();
+    herk_dnx_dny_tri & operator=(herk_dnx_dny_tri &&) = default;
+    ~herk_dnx_dny_tri() = default;
 public:
     void set_config(config cfg_);
     void set_matrix_A(MatrixDenseView_new<T> * A_);
@@ -43,7 +43,6 @@ public:
     void calc_A_pattern(MatrixCsxView_new<T,I> & A_pattern);
     void preprocess();
     void perform();
-    void finalize();
 private:
     config cfg;
     MatrixDenseView_new<T> * A = nullptr;

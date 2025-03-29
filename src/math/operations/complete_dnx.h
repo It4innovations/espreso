@@ -16,6 +16,13 @@ template<typename T>
 class complete_dnx
 {
 public:
+    complete_dnx() = default;
+    complete_dnx(const complete_dnx &) = delete;
+    complete_dnx(complete_dnx &&) = default;
+    complete_dnx & operator=(const complete_dnx &) = delete;
+    complete_dnx & operator=(complete_dnx &&) = default;
+    ~complete_dnx() = default;
+public:
     void set_matrix(MatrixDenseView_new<T> * M_);
     void set_orig_uplo(char orig_uplo_);
     void set_conj(bool do_conj_);

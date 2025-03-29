@@ -15,6 +15,13 @@ namespace operations {
 class tri_partition_herk
 {
 public:
+    tri_partition_herk() = default;
+    tri_partition_herk(const tri_partition_herk &) = delete;
+    tri_partition_herk(tri_partition_herk &&) = default;
+    tri_partition_herk & operator=(const tri_partition_herk &) = delete;
+    tri_partition_herk & operator=(tri_partition_herk &&) = default;
+    ~tri_partition_herk() = default;
+public:
     void set_config(char algorithm_, char direction_, int parameter_, char herk_strategy_);
     void set_system(size_t size_n_, size_t size_k_);
     void setup();

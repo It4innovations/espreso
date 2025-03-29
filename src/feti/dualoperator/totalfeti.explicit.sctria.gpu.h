@@ -1,6 +1,6 @@
 
-#ifndef SRC_FETI_DUALOPERATOR_TOTALFETI_EXPLICIT_GPU_SCTRIA_H_
-#define SRC_FETI_DUALOPERATOR_TOTALFETI_EXPLICIT_GPU_SCTRIA_H_
+#ifndef SRC_FETI_DUALOPERATOR_TOTALFETI_EXPLICIT_SCTRIA_GPU_H_
+#define SRC_FETI_DUALOPERATOR_TOTALFETI_EXPLICIT_SCTRIA_GPU_H_
 
 #include "dualoperator.h"
 #include "math/wrappers/math.sc_solver.h"
@@ -14,10 +14,10 @@
 namespace espreso {
 
 template <typename T, typename I>
-class TotalFETIExplicitGpuScTria: public DualOperator<T> {
+class TotalFETIExplicitScTriaGpu: public DualOperator<T> {
 public:
-    TotalFETIExplicitGpuScTria(FETI<T> &feti);
-    ~TotalFETIExplicitGpuScTria();
+    TotalFETIExplicitScTriaGpu(FETI<T> &feti);
+    ~TotalFETIExplicitScTriaGpu();
 
     void info();
     void set(const step::Step &step);
@@ -35,9 +35,6 @@ protected:
     using DualOperator<T>::feti;
     using DualOperator<T>::d;
 
-    void _apply_cpu(const Vector_Dual<T> &x, Vector_Dual<T> &y);
-    void _apply_gpu(const Vector_Dual<T> &x, Vector_Dual<T> &y);
-
     void _apply(const Vector_Dual<T> &x, Vector_Dual<T> &y);
 
 public:
@@ -48,7 +45,7 @@ public:
         bool parallel_update = false;
         bool parallel_apply = false;
         char mainloop_update_split = '_'; // Combined, Separate
-        bool wait_after_mainloop_update = false;
+        bool gpu_wait_after_mainloop_update = false;
         bool outer_timers = false;
         bool inner_timers = false;
     };
@@ -97,4 +94,4 @@ private:
 
 }
 
-#endif /* SRC_FETI_DUALOPERATOR_TOTALFETI_EXPLICIT_GPU_SCTRIA_H_ */
+#endif /* SRC_FETI_DUALOPERATOR_TOTALFETI_EXPLICIT_SCTRIA_GPU_H_ */

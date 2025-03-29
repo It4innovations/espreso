@@ -1,5 +1,5 @@
 
-#include "totalfeti.explicit.gpusctria.h"
+#include "totalfeti.explicit.sctria.gpu.h"
 #include "math/wrappers/math.blas.h"
 #include "feti/common/applyB.h"
 #include "basis/utilities/minmaxavg.h"
@@ -36,44 +36,44 @@ static void set_by_env(T & var, const char * env_var)
 }
 
 template<typename T, typename I>
-static void setup_configs(typename gpu::operations::sc_symm_hcsx_ddny_tria<T,I>::config & cfg_sc, typename TotalFETIExplicitGpuScTria<T,I>::config & cfg_dualop)
+static void setup_configs(typename gpu::operations::sc_symm_hcsx_ddny_tria<T,I>::config & cfg_sc, typename TotalFETIExplicitScTriaGpu<T,I>::config & cfg_dualop)
 {
-    set_by_env(cfg_sc.order_X,                                   "ESPRESO_DUALOPGPUSCTRIA_CONFIG_order_X");
-    set_by_env(cfg_sc.order_L,                                   "ESPRESO_DUALOPGPUSCTRIA_CONFIG_order_L");
-    set_by_env(cfg_sc.cfg_trsm.strategy,                         "ESPRESO_DUALOPGPUSCTRIA_CONFIG_trsm_strategy");
-    set_by_env(cfg_sc.cfg_trsm.partition.algorithm,              "ESPRESO_DUALOPGPUSCTRIA_CONFIG_trsm_partition_algorithm");
-    set_by_env(cfg_sc.cfg_trsm.partition.parameter,              "ESPRESO_DUALOPGPUSCTRIA_CONFIG_trsm_partition_parameter");
-    set_by_env(cfg_sc.cfg_trsm.splitrhs.factor_order_sp,         "ESPRESO_DUALOPGPUSCTRIA_CONFIG_trsm_splitrhs_factor_order_sp");
-    set_by_env(cfg_sc.cfg_trsm.splitrhs.factor_order_dn,         "ESPRESO_DUALOPGPUSCTRIA_CONFIG_trsm_splitrhs_factor_order_dn");
-    set_by_env(cfg_sc.cfg_trsm.splitrhs.spdn_criteria,           "ESPRESO_DUALOPGPUSCTRIA_CONFIG_trsm_splitrhs_spdn_criteria");
-    set_by_env(cfg_sc.cfg_trsm.splitrhs.spdn_param,              "ESPRESO_DUALOPGPUSCTRIA_CONFIG_trsm_splitrhs_spdn_param");
-    set_by_env(cfg_sc.cfg_trsm.splitfactor.trsm_factor_spdn,     "ESPRESO_DUALOPGPUSCTRIA_CONFIG_trsm_splitfactor_trsm_factor_spdn");
-    set_by_env(cfg_sc.cfg_trsm.splitfactor.trsm_factor_order,    "ESPRESO_DUALOPGPUSCTRIA_CONFIG_trsm_splitfactor_trsm_factor_order");
-    set_by_env(cfg_sc.cfg_trsm.splitfactor.gemm_factor_order_sp, "ESPRESO_DUALOPGPUSCTRIA_CONFIG_trsm_splitfactor_gemm_factor_order_sp");
-    set_by_env(cfg_sc.cfg_trsm.splitfactor.gemm_factor_order_dn, "ESPRESO_DUALOPGPUSCTRIA_CONFIG_trsm_splitfactor_gemm_factor_order_dn");
-    set_by_env(cfg_sc.cfg_trsm.splitfactor.gemm_factor_prune,    "ESPRESO_DUALOPGPUSCTRIA_CONFIG_trsm_splitfactor_gemm_factor_prune");
-    set_by_env(cfg_sc.cfg_trsm.splitfactor.gemm_spdn_criteria,   "ESPRESO_DUALOPGPUSCTRIA_CONFIG_trsm_splitfactor_gemm_spdn_criteria");
-    set_by_env(cfg_sc.cfg_trsm.splitfactor.gemm_spdn_param,      "ESPRESO_DUALOPGPUSCTRIA_CONFIG_trsm_splitfactor_gemm_spdn_param");
-    set_by_env(cfg_sc.cfg_herk.strategy,                         "ESPRESO_DUALOPGPUSCTRIA_CONFIG_herk_strategy");
-    set_by_env(cfg_sc.cfg_herk.partition_algorithm,              "ESPRESO_DUALOPGPUSCTRIA_CONFIG_herk_partition_algorithm");
-    set_by_env(cfg_sc.cfg_herk.partition_parameter,              "ESPRESO_DUALOPGPUSCTRIA_CONFIG_herk_partition_parameter");
+    set_by_env(cfg_sc.order_X,                                   "ESPRESO_DUALOPSCTRIA_CONFIG_order_X");
+    set_by_env(cfg_sc.order_L,                                   "ESPRESO_DUALOPSCTRIA_CONFIG_order_L");
+    set_by_env(cfg_sc.cfg_trsm.strategy,                         "ESPRESO_DUALOPSCTRIA_CONFIG_trsm_strategy");
+    set_by_env(cfg_sc.cfg_trsm.partition.algorithm,              "ESPRESO_DUALOPSCTRIA_CONFIG_trsm_partition_algorithm");
+    set_by_env(cfg_sc.cfg_trsm.partition.parameter,              "ESPRESO_DUALOPSCTRIA_CONFIG_trsm_partition_parameter");
+    set_by_env(cfg_sc.cfg_trsm.splitrhs.factor_order_sp,         "ESPRESO_DUALOPSCTRIA_CONFIG_trsm_splitrhs_factor_order_sp");
+    set_by_env(cfg_sc.cfg_trsm.splitrhs.factor_order_dn,         "ESPRESO_DUALOPSCTRIA_CONFIG_trsm_splitrhs_factor_order_dn");
+    set_by_env(cfg_sc.cfg_trsm.splitrhs.spdn_criteria,           "ESPRESO_DUALOPSCTRIA_CONFIG_trsm_splitrhs_spdn_criteria");
+    set_by_env(cfg_sc.cfg_trsm.splitrhs.spdn_param,              "ESPRESO_DUALOPSCTRIA_CONFIG_trsm_splitrhs_spdn_param");
+    set_by_env(cfg_sc.cfg_trsm.splitfactor.trsm_factor_spdn,     "ESPRESO_DUALOPSCTRIA_CONFIG_trsm_splitfactor_trsm_factor_spdn");
+    set_by_env(cfg_sc.cfg_trsm.splitfactor.trsm_factor_order,    "ESPRESO_DUALOPSCTRIA_CONFIG_trsm_splitfactor_trsm_factor_order");
+    set_by_env(cfg_sc.cfg_trsm.splitfactor.gemm_factor_order_sp, "ESPRESO_DUALOPSCTRIA_CONFIG_trsm_splitfactor_gemm_factor_order_sp");
+    set_by_env(cfg_sc.cfg_trsm.splitfactor.gemm_factor_order_dn, "ESPRESO_DUALOPSCTRIA_CONFIG_trsm_splitfactor_gemm_factor_order_dn");
+    set_by_env(cfg_sc.cfg_trsm.splitfactor.gemm_factor_prune,    "ESPRESO_DUALOPSCTRIA_CONFIG_trsm_splitfactor_gemm_factor_prune");
+    set_by_env(cfg_sc.cfg_trsm.splitfactor.gemm_spdn_criteria,   "ESPRESO_DUALOPSCTRIA_CONFIG_trsm_splitfactor_gemm_spdn_criteria");
+    set_by_env(cfg_sc.cfg_trsm.splitfactor.gemm_spdn_param,      "ESPRESO_DUALOPSCTRIA_CONFIG_trsm_splitfactor_gemm_spdn_param");
+    set_by_env(cfg_sc.cfg_herk.strategy,                         "ESPRESO_DUALOPSCTRIA_CONFIG_herk_strategy");
+    set_by_env(cfg_sc.cfg_herk.partition_algorithm,              "ESPRESO_DUALOPSCTRIA_CONFIG_herk_partition_algorithm");
+    set_by_env(cfg_sc.cfg_herk.partition_parameter,              "ESPRESO_DUALOPSCTRIA_CONFIG_herk_partition_parameter");
 
-    set_by_env(cfg_dualop.order_F,                    "ESPRESO_DUALOPGPUSCTRIA_CONFIG_order_F");
-    set_by_env(cfg_dualop.parallel_set,               "ESPRESO_DUALOPGPUSCTRIA_CONFIG_parallel_set");
-    set_by_env(cfg_dualop.parallel_update,            "ESPRESO_DUALOPGPUSCTRIA_CONFIG_parallel_update");
-    set_by_env(cfg_dualop.parallel_apply,             "ESPRESO_DUALOPGPUSCTRIA_CONFIG_parallel_apply");
-    set_by_env(cfg_dualop.mainloop_update_split,      "ESPRESO_DUALOPGPUSCTRIA_CONFIG_mainloop_update_split");
-    set_by_env(cfg_dualop.wait_after_mainloop_update, "ESPRESO_DUALOPGPUSCTRIA_CONFIG_wait_after_mainloop_update");
-    set_by_env(cfg_dualop.inner_timers,               "ESPRESO_DUALOPGPUSCTRIA_CONFIG_inner_timers");
-    set_by_env(cfg_dualop.outer_timers,               "ESPRESO_DUALOPGPUSCTRIA_CONFIG_outer_timers");
+    set_by_env(cfg_dualop.order_F,                        "ESPRESO_DUALOPSCTRIA_CONFIG_order_F");
+    set_by_env(cfg_dualop.parallel_set,                   "ESPRESO_DUALOPSCTRIA_CONFIG_parallel_set");
+    set_by_env(cfg_dualop.parallel_update,                "ESPRESO_DUALOPSCTRIA_CONFIG_parallel_update");
+    set_by_env(cfg_dualop.parallel_apply,                 "ESPRESO_DUALOPSCTRIA_CONFIG_parallel_apply");
+    set_by_env(cfg_dualop.mainloop_update_split,          "ESPRESO_DUALOPSCTRIA_CONFIG_mainloop_update_split");
+    set_by_env(cfg_dualop.gpu_wait_after_mainloop_update, "ESPRESO_DUALOPSCTRIA_CONFIG_gpu_wait_after_mainloop_update");
+    set_by_env(cfg_dualop.inner_timers,                   "ESPRESO_DUALOPSCTRIA_CONFIG_inner_timers");
+    set_by_env(cfg_dualop.outer_timers,                   "ESPRESO_DUALOPSCTRIA_CONFIG_outer_timers");
 }
 
 template<typename T, typename I>
-TotalFETIExplicitGpuScTria<T,I>::TotalFETIExplicitGpuScTria(FETI<T> &feti)
+TotalFETIExplicitScTriaGpu<T,I>::TotalFETIExplicitScTriaGpu(FETI<T> &feti)
 : DualOperator<T>(feti)
 {
     if(!gpu::mgm::is_linked()) {
-        eslog::error("TotalFETIExplicitGpuScTria: not supported, espreso compiled without GPU support\n");
+        eslog::error("TotalFETIExplicitScTriaGpu: not supported, espreso compiled without GPU support\n");
     }
     
     device = gpu::mgm::get_device_by_mpi(info::mpi::rank, info::mpi::size);
@@ -82,7 +82,7 @@ TotalFETIExplicitGpuScTria<T,I>::TotalFETIExplicitGpuScTria(FETI<T> &feti)
 
 
 template<typename T, typename I>
-TotalFETIExplicitGpuScTria<T,I>::~TotalFETIExplicitGpuScTria()
+TotalFETIExplicitScTriaGpu<T,I>::~TotalFETIExplicitScTriaGpu()
 {
     gpu::mgm::memfree_device(ws_persistent);
     gpu::mgm::memfree_device(ws_tmp_for_cbmba);
@@ -96,27 +96,27 @@ TotalFETIExplicitGpuScTria<T,I>::~TotalFETIExplicitGpuScTria()
 
 
 template<typename T, typename I>
-void TotalFETIExplicitGpuScTria<T,I>::info()
+void TotalFETIExplicitScTriaGpu<T,I>::info()
 {
-    eslog::info(" = EXPLICIT TOTAL FETI OPERATOR ON GPU USING TRIANGULAR SC                                   = \n");
+    eslog::info(" = EXPLICIT TOTAL FETI OPERATOR USING TRIANGULAR SC ON GPU                                   = \n");
     eslog::info(" =   EXTERNAL SPARSE SOLVER               %50s = \n", DirectSparseSolver<T>::name());
     // eslog::info(" =   %-50s       %+30s = \n", "APPLY_WHERE", apply_on_gpu ? "GPU" : "CPU");
     // eslog::info(minmaxavg<double>::compute_from_allranks(domain_data.begin(), domain_data.end(), [](const per_domain_stuff & data){ return data.F.nrows * data.F.get_ld() * sizeof(T) / (1024.0 * 1024.0); }).to_string("  F MEMORY [MB]").c_str());
-    // eslog::info(minmaxavg<size_t>::compute_from_allranks(domain_data.begin(), domain_data.end(), [](const per_domain_stuff & data){ return data.n_dofs_domain; }).to_string("  Domain volume [dofs]").c_str());
-    // eslog::info(minmaxavg<size_t>::compute_from_allranks(domain_data.begin(), domain_data.end(), [](const per_domain_stuff & data){ return data.n_dofs_interface; }).to_string("  Domain surface [dofs]").c_str());
-    // eslog::info(" = ----------------------------------------------------------------------------------------- = \n");
+    eslog::info(minmaxavg<size_t>::compute_from_allranks(domain_data.begin(), domain_data.end(), [](const per_domain_stuff & data){ return data.n_dofs_domain; }).to_string("  Domain volume [dofs]").c_str());
+    eslog::info(minmaxavg<size_t>::compute_from_allranks(domain_data.begin(), domain_data.end(), [](const per_domain_stuff & data){ return data.n_dofs_interface; }).to_string("  Domain surface [dofs]").c_str());
+    eslog::info(" = ----------------------------------------------------------------------------------------- = \n");
 }
 
 
 
 template<typename T, typename I>
-void TotalFETIExplicitGpuScTria<T,I>::set(const step::Step &step)
+void TotalFETIExplicitScTriaGpu<T,I>::set(const step::Step &step)
 {
     typename gpu::operations::sc_symm_hcsx_ddny_tria<T,I>::config op_sc_config;
     setup_configs<T,I>(op_sc_config, cfg);
 
     if(cfg.outer_timers) stacktimer::enable();
-    stacktimer::push("TotalFETIExplicitGpuScTria::set");
+    stacktimer::push("TotalFETIExplicitScTriaGpu::set");
 
     n_domains = feti.K.size();
     n_queues = omp_get_max_threads();
@@ -181,7 +181,7 @@ void TotalFETIExplicitGpuScTria<T,I>::set(const step::Step &step)
         gpu::dnblas::handle & hd = handles_dense[di % n_queues];
         per_domain_stuff & data = domain_data[di];
 
-        stacktimer::info("TotalFETIExplicitGpuScTria::set setup subdomain %zu", di);
+        stacktimer::info("TotalFETIExplicitScTriaGpu::set setup subdomain %zu", di);
 
         math::combine(data.Kreg, feti.K[di], feti.RegMat[di]);
         if constexpr(utils::is_real<T>())    data.Kreg.type = Matrix_Type::REAL_SYMMETRIC_POSITIVE_DEFINITE;
@@ -280,7 +280,7 @@ void TotalFETIExplicitGpuScTria<T,I>::set(const step::Step &step)
         gpu::mgm::queue & q = queues[di % n_queues];
         per_domain_stuff & data = domain_data[di];
 
-        stacktimer::info("TotalFETIExplicitGpuScTria::set preprocess subdomain %zu", di);
+        stacktimer::info("TotalFETIExplicitScTriaGpu::set preprocess subdomain %zu", di);
 
         void * ws_tmp = ator_tmp_cbmba->alloc(data.op_sc->get_wss_tmp_preprocess());
 
@@ -305,17 +305,17 @@ void TotalFETIExplicitGpuScTria<T,I>::set(const step::Step &step)
 
 
 template<typename T, typename I>
-void TotalFETIExplicitGpuScTria<T,I>::update(const step::Step &step)
+void TotalFETIExplicitScTriaGpu<T,I>::update(const step::Step &step)
 {
     if(cfg.outer_timers) stacktimer::enable();
-    stacktimer::push("TotalFETIExplicitGpuScTria::update");
+    stacktimer::push("TotalFETIExplicitScTriaGpu::update");
 
     gpu::mgm::set_device(device);
 
     auto loop_part_1_factorize = [this](size_t di) {
         per_domain_stuff & data = domain_data[di];
 
-        stacktimer::info("TotalFETIExplicitGpuScTria::update subdomain %zu", di);
+        stacktimer::info("TotalFETIExplicitScTriaGpu::update subdomain %zu", di);
 
         math::sumCombined(data.Kreg, T{1.0}, feti.K[di], feti.RegMat[di]);
 
@@ -355,7 +355,10 @@ void TotalFETIExplicitGpuScTria<T,I>::update(const step::Step &step)
         if(!cfg.inner_timers) stacktimer::enable();
         stacktimer::pop();
 
-        if(cfg.wait_after_mainloop_update) {
+        // clean up the mess from buggy openmp in clang
+        utils::run_dummy_parallel_region();
+
+        if(cfg.gpu_wait_after_mainloop_update) {
             stacktimer::push("update_wait_to_finish_after_mainloop");
             gpu::mgm::device_wait();
             stacktimer::pop();
@@ -371,7 +374,10 @@ void TotalFETIExplicitGpuScTria<T,I>::update(const step::Step &step)
         if(!cfg.inner_timers) stacktimer::enable();
         stacktimer::pop();
 
-        stacktimer::push("update_mainloop_sepatare_assemble_total");
+        // clean up the mess from buggy openmp in clang
+        utils::run_dummy_parallel_region();
+
+        stacktimer::push("update_mainloop_sepatare_assemble");
         stacktimer::push("update_mainloop_sepatare_assemble_submit");
         if(!cfg.inner_timers) stacktimer::disable();
         #pragma omp parallel for schedule(static,1) if(cfg.parallel_update)
@@ -381,7 +387,7 @@ void TotalFETIExplicitGpuScTria<T,I>::update(const step::Step &step)
         if(!cfg.inner_timers) stacktimer::enable();
         stacktimer::pop();
 
-        if(cfg.wait_after_mainloop_update) {
+        if(cfg.gpu_wait_after_mainloop_update) {
             stacktimer::push("update_mainloop_sepatare_assemble_wait");
             gpu::mgm::device_wait();
             stacktimer::pop();
@@ -421,10 +427,10 @@ void TotalFETIExplicitGpuScTria<T,I>::update(const step::Step &step)
 
 
 template<typename T, typename I>
-void TotalFETIExplicitGpuScTria<T,I>::_apply(const Vector_Dual<T> &x_cluster, Vector_Dual<T> &y_cluster)
+void TotalFETIExplicitScTriaGpu<T,I>::_apply(const Vector_Dual<T> &x_cluster, Vector_Dual<T> &y_cluster)
 {
     if(cfg.outer_timers) stacktimer::enable();
-    stacktimer::push("TotalFETIExplicitGpuScTria::apply");
+    stacktimer::push("TotalFETIExplicitScTriaGpu::apply");
 
     gpu::mgm::set_device(device);
 
@@ -466,7 +472,7 @@ void TotalFETIExplicitGpuScTria<T,I>::_apply(const Vector_Dual<T> &x_cluster, Ve
 
 
 template <typename T, typename I>
-void TotalFETIExplicitGpuScTria<T,I>::apply(const Vector_Dual<T> &x, Vector_Dual<T> &y)
+void TotalFETIExplicitScTriaGpu<T,I>::apply(const Vector_Dual<T> &x, Vector_Dual<T> &y)
 {
     _apply(x, y);
     y.synchronize();
@@ -475,7 +481,7 @@ void TotalFETIExplicitGpuScTria<T,I>::apply(const Vector_Dual<T> &x, Vector_Dual
 
 
 template <typename T, typename I>
-void TotalFETIExplicitGpuScTria<T,I>::apply(const Matrix_Dual<T> &x, Matrix_Dual<T> &y)
+void TotalFETIExplicitScTriaGpu<T,I>::apply(const Matrix_Dual<T> &x, Matrix_Dual<T> &y)
 {
     Vector_Dual<T> _x, _y;
     _x.size = _y.size = x.ncols;
@@ -490,7 +496,7 @@ void TotalFETIExplicitGpuScTria<T,I>::apply(const Matrix_Dual<T> &x, Matrix_Dual
 
 
 template<typename T, typename I>
-void TotalFETIExplicitGpuScTria<T,I>::toPrimal(const Vector_Dual<T> &x, std::vector<Vector_Dense<T> > &y)
+void TotalFETIExplicitScTriaGpu<T,I>::toPrimal(const Vector_Dual<T> &x, std::vector<Vector_Dense<T> > &y)
 {
     #pragma omp parallel for schedule(static,1)
     for (size_t di = 0; di < n_domains; ++di) {
@@ -505,9 +511,9 @@ void TotalFETIExplicitGpuScTria<T,I>::toPrimal(const Vector_Dual<T> &x, std::vec
 
 
 template<typename T, typename I>
-void TotalFETIExplicitGpuScTria<T,I>::print(const step::Step &step)
+void TotalFETIExplicitScTriaGpu<T,I>::print(const step::Step &step)
 {
-    eslog::error("TotalFETIExplicitGpuScTria::print not implemented");
+    eslog::error("TotalFETIExplicitScTriaGpu::print not implemented");
 }
 
 
@@ -515,7 +521,7 @@ void TotalFETIExplicitGpuScTria<T,I>::print(const step::Step &step)
 
 
 #define INSTANTIATE_T_I(T,I) \
-template class TotalFETIExplicitGpuScTria<T,I>;
+template class TotalFETIExplicitScTriaGpu<T,I>;
 
     #define INSTANTIATE_T(T) \
     INSTANTIATE_T_I(T, int32_t) \

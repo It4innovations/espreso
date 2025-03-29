@@ -15,6 +15,13 @@ namespace operations {
 class tri_partition_trsm
 {
 public:
+    tri_partition_trsm() = default;
+    tri_partition_trsm(const tri_partition_trsm &) = delete;
+    tri_partition_trsm(tri_partition_trsm &&) = default;
+    tri_partition_trsm & operator=(const tri_partition_trsm &) = delete;
+    tri_partition_trsm & operator=(tri_partition_trsm &&) = default;
+    ~tri_partition_trsm() = default;
+public:
     void set_config(char algorithm_, char direction_, int parameter_);
     void set_system(size_t sys_size_, size_t sys_nrhs_);
     void setup();

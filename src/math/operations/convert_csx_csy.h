@@ -16,6 +16,13 @@ template<typename T, typename I>
 class convert_csx_csy
 {
 public:
+    convert_csx_csy() = default;
+    convert_csx_csy(const convert_csx_csy &) = delete;
+    convert_csx_csy(convert_csx_csy &&) = default;
+    convert_csx_csy & operator=(const convert_csx_csy &) = delete;
+    convert_csx_csy & operator=(convert_csx_csy &&) = default;
+    ~convert_csx_csy() = default;
+public:
     void set_matrix_src(MatrixCsxView_new<T,I> * M_src_);
     void set_matrix_dst(MatrixCsxView_new<T,I> * M_dst_);
     void perform();

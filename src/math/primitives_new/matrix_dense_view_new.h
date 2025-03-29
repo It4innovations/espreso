@@ -111,6 +111,7 @@ public:
     template<typename I, typename A>
     static Matrix_Dense<T,I,A> to_old(MatrixDenseView_new<T> & M_new)
     {
+        if(M_new.order != 'R') eslog::error("can only convert to old row-major matrices\n");
         Matrix_Dense<T,I,A> M_old;
         M_old.nrows = M_new.nrows;
         M_old.ncols = M_new.ncols;

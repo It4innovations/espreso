@@ -18,6 +18,13 @@ class trsm_csx_dny_dny
 {
 // supports in-place (X == B)
 public:
+    trsm_csx_dny_dny() = default;
+    trsm_csx_dny_dny(const trsm_csx_dny_dny &) = delete;
+    trsm_csx_dny_dny(trsm_csx_dny_dny &&) = default;
+    trsm_csx_dny_dny & operator=(const trsm_csx_dny_dny &) = delete;
+    trsm_csx_dny_dny & operator=(trsm_csx_dny_dny &&) = default;
+    ~trsm_csx_dny_dny() = default;
+public:
     void set_system_matrix(MatrixCsxView_new<T,I> * A_);
     void set_rhs_matrix(MatrixDenseView_new<T> * B_);
     void set_solution_matrix(MatrixDenseView_new<T> * X_);

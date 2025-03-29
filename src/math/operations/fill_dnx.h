@@ -17,6 +17,13 @@ class fill_dnx
 {
 // respect uplo
 public:
+    fill_dnx() = default;
+    fill_dnx(const fill_dnx &) = delete;
+    fill_dnx(fill_dnx &&) = default;
+    fill_dnx & operator=(const fill_dnx &) = delete;
+    fill_dnx & operator=(fill_dnx &&) = default;
+    ~fill_dnx() = default;
+public:
     void set_matrix(MatrixDenseView_new<T> * M_);
     void set_value(T val_);
     void perform();

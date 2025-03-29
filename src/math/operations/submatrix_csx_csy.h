@@ -16,6 +16,13 @@ template<typename T, typename I>
 class submatrix_csx_csy
 {
 public:
+    submatrix_csx_csy() = default;
+    submatrix_csx_csy(const submatrix_csx_csy &) = delete;
+    submatrix_csx_csy(submatrix_csx_csy &&) = default;
+    submatrix_csx_csy & operator=(const submatrix_csx_csy &) = delete;
+    submatrix_csx_csy & operator=(submatrix_csx_csy &&) = default;
+    ~submatrix_csx_csy() = default;
+public:
     void set_matrix_src(MatrixCsxView_new<T,I> * M_src_);
     void set_bounds(size_t row_start_, size_t row_end_, size_t col_start_, size_t col_end_);
     void setup();

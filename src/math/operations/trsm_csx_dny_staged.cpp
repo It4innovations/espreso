@@ -13,14 +13,6 @@ namespace operations {
 
 
 template<typename T, typename I>
-trsm_csx_dny_staged<T,I>::~trsm_csx_dny_staged()
-{
-    finalize();
-}
-
-
-
-template<typename T, typename I>
 void trsm_csx_dny_staged<T,I>::set_system_matrix(MatrixCsxView_new<T,I> * A_)
 {
     A = A_;
@@ -78,17 +70,6 @@ void trsm_csx_dny_staged<T,I>::perform()
     Y.free();
 
     stacktimer::pop();
-}
-
-
-
-template<typename T, typename I>
-void trsm_csx_dny_staged<T,I>::finalize()
-{
-    if(preprocess_called) {
-        math::spblas::trsm(*A, *X, Y, handle, 'F');
-    }
-    preprocess_called = false;
 }
 
 

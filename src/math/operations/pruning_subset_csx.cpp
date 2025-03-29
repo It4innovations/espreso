@@ -188,17 +188,6 @@ void pruning_subset_csx<T,I>::perform()
 
 
 
-template<typename T, typename I>
-void pruning_subset_csx<T,I>::finalize()
-{
-    if(called_setup) {
-        nnz_per_secdary.clear();
-    }
-    called_setup = false;
-}
-
-
-
 #define INSTANTIATE_T_I(T,I) \
 template class pruning_subset_csx<T,I>;
 

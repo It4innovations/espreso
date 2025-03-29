@@ -14,14 +14,6 @@ namespace operations {
 
 
 template<typename T, typename I>
-gemm_csx_dny_dny_prune<T,I>::~gemm_csx_dny_dny_prune()
-{
-    finalize();
-}
-
-
-
-template<typename T, typename I>
 void gemm_csx_dny_dny_prune<T,I>::set_config(char spdn_A_, bool prune_rows_, bool prune_cols_)
 {
     spdn_A = spdn_A_;
@@ -186,21 +178,6 @@ void gemm_csx_dny_dny_prune<T,I>::perform()
     }
 
     stacktimer::pop();
-}
-
-
-
-template<typename T, typename I>
-void gemm_csx_dny_dny_prune<T,I>::finalize()
-{
-    if(preprocess_called) {
-        pruned_rows.clear();
-        pruned_cols.clear();
-        if(spdn_A == 'S') {
-            A_pruned_sp.clear();
-        }
-    }
-    preprocess_called = false;
 }
 
 

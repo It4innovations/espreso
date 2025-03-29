@@ -16,14 +16,6 @@ namespace operations {
 
 
 template<typename T, typename I>
-herk_dnx_dny_tri<T,I>::~herk_dnx_dny_tri()
-{
-    finalize();
-}
-
-
-
-template<typename T, typename I>
 void herk_dnx_dny_tri<T,I>::set_config(config cfg_)
 {
     cfg = cfg_;
@@ -261,23 +253,6 @@ void herk_dnx_dny_tri<T,I>::perform_AAh()
             herk_dnx_dny<T>::do_all(&sub_A, &sub_C, mode, alpha, Treal{1});
         }
     }
-}
-
-
-
-template<typename T, typename I>
-void herk_dnx_dny_tri<T,I>::finalize()
-{
-    if(preproces_called) {
-        partition.clear();
-    }
-    preproces_called = false;
-
-    if(pattern_set) {
-        A_pivots.clear();
-        A_trails.clear();
-    }
-    pattern_set = false;
 }
 
 

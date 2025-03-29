@@ -102,8 +102,6 @@ void sc_symm_hcsx_ddny_tria<T,I>::setup()
     if(solver_factor_uplo == '_') eslog::error("wrong sparse solver, must be symmetric\n");
     if(!DirectSparseSolver<T,I>::provideFactors()) eslog::error("wrong sparse solver, must provide factors\n");
 
-    if(solver_factor_uplo == 'L') eslog::error("todo implement for L factors\n");
-
     ator_ws_persistent = std::make_unique<AllocatorArena_new>(false, true, gpu::mgm::get_natural_pitch_align());
     ator_ws_tmp_linear = std::make_unique<AllocatorArena_new>(false, true, gpu::mgm::get_natural_pitch_align());
     ator_ws_tmp_overlap = std::make_unique<AllocatorSinglePointer_new>(false, true, gpu::mgm::get_natural_pitch_align());
@@ -209,7 +207,7 @@ void sc_symm_hcsx_ddny_tria<T,I>::setup()
     d_sc_tmp1_y = d_sc_tmp1_x.get_transposed_reordered_view();
 
     d_sc_tmp2_x.set(d_sc->nrows, d_sc->ncols, d_sc->order, ator_ws_tmp_linear.get());
-    d_sc_tmp2_x.prop.uplo = change_uplo(d_sc->prop.uplo);
+    d_sc_tmp2_x.prop.uplo = d_sc->prop.uplo;
     wss_tmp_perform_linear += d_sc_tmp2_x.get_memory_impact();
     d_sc_tmp2_y = d_sc_tmp2_x.get_transposed_reordered_view();
 

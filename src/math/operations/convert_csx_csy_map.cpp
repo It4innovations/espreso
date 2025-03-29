@@ -14,14 +14,6 @@ namespace operations {
 
 
 template<typename T, typename I>
-convert_csx_csy_map<T,I>::~convert_csx_csy_map()
-{
-    finalize();
-}
-
-
-
-template<typename T, typename I>
 void convert_csx_csy_map<T,I>::set_matrix_src(MatrixCsxView_new<T,I> * M_src_)
 {
     M_src = M_src_;
@@ -162,14 +154,6 @@ void convert_csx_csy_map<T,I>::perform_all()
 
 
 template<typename T, typename I>
-void convert_csx_csy_map<T,I>::finalize()
-{
-    map.clear();
-}
-
-
-
-template<typename T, typename I>
 void convert_csx_csy_map<T,I>::do_all(MatrixCsxView_new<T,I> * M_src, MatrixCsxView_new<T,I> * M_dst)
 {
     convert_csx_csy_map<T,I> instance;
@@ -177,7 +161,6 @@ void convert_csx_csy_map<T,I>::do_all(MatrixCsxView_new<T,I> * M_src, MatrixCsxV
     instance.set_matrix_dst(M_dst);
     instance.perform_pattern();
     instance.perform_values();
-    instance.finalize();
 }
 
 

@@ -16,6 +16,13 @@ template<typename T>
 class convert_dnx_dny
 {
 public:
+    convert_dnx_dny() = default;
+    convert_dnx_dny(const convert_dnx_dny &) = delete;
+    convert_dnx_dny(convert_dnx_dny &&) = default;
+    convert_dnx_dny & operator=(const convert_dnx_dny &) = delete;
+    convert_dnx_dny & operator=(convert_dnx_dny &&) = default;
+    ~convert_dnx_dny() = default;
+public:
     void set_matrix_src(MatrixDenseView_new<T> * M_src_);
     void set_matrix_dst(MatrixDenseView_new<T> * M_dst_);
     void set_conj(bool do_conj_);

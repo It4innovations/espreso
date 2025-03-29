@@ -16,6 +16,13 @@ template<typename T, typename I>
 class copy_csx
 {
 public:
+    copy_csx() = default;
+    copy_csx(const copy_csx &) = delete;
+    copy_csx(copy_csx &&) = default;
+    copy_csx & operator=(const copy_csx &) = delete;
+    copy_csx & operator=(copy_csx &&) = default;
+    ~copy_csx() = default;
+public:
     void set_matrix_src(MatrixCsxView_new<T,I> * M_src_);
     void set_matrix_dst(MatrixCsxView_new<T,I> * M_dst_);
     void perform();

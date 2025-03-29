@@ -24,7 +24,7 @@ public:
     prune_csx_matx(prune_csx_matx &&) = default;
     prune_csx_matx & operator=(const prune_csx_matx &) = delete;
     prune_csx_matx & operator=(prune_csx_matx &&) = default;
-    ~prune_csx_matx();
+    ~prune_csx_matx() = default;
 public:
     void set_pruning_mode(bool prune_rows_, bool prune_cols_);
     void set_matrix_src(MatrixCsxView_new<T,I> * M_src_);
@@ -37,7 +37,6 @@ public:
     void set_matrix_dst_sp(MatrixCsxView_new<T,I> * M_dst_sp_);
     void set_matrix_dst_dn(MatrixDenseView_new<T> * M_dst_dn_);
     void perform();
-    void finalize();
 private:
     MatrixCsxView_new<T,I> * M_src = nullptr;
     MatrixCsxView_new<T,I> * M_dst_sp = nullptr;

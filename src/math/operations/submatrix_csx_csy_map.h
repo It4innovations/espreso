@@ -22,7 +22,7 @@ public:
     submatrix_csx_csy_map(submatrix_csx_csy_map &&) = default;
     submatrix_csx_csy_map & operator=(const submatrix_csx_csy_map &) = delete;
     submatrix_csx_csy_map & operator=(submatrix_csx_csy_map &&) = default;
-    ~submatrix_csx_csy_map();
+    ~submatrix_csx_csy_map() = default;
 public:
     void set_matrix_src(MatrixCsxView_new<T,I> * M_src_);
     void set_bounds(size_t row_start_, size_t row_end_, size_t col_start_, size_t col_end_);
@@ -32,7 +32,6 @@ public:
     void perform_pattern();
     void perform_values();
     void perform_all();
-    void finalize();
     static void do_all(MatrixCsxView_new<T,I> * M_src, MatrixCsxView_new<T,I> * M_dst, size_t row_start, size_t row_end, size_t col_start, size_t col_end);
 private:
     MatrixCsxView_new<T,I> * M_src = nullptr;

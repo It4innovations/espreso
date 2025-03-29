@@ -17,6 +17,13 @@ template<typename T, typename I>
 class sorting_permutation
 {
 public:
+    sorting_permutation() = default;
+    sorting_permutation(const sorting_permutation &) = delete;
+    sorting_permutation(sorting_permutation &&) = default;
+    sorting_permutation & operator=(const sorting_permutation &) = delete;
+    sorting_permutation & operator=(sorting_permutation &&) = default;
+    ~sorting_permutation() = default;
+public:
     void set_vector(VectorDenseView_new<T> * vec_);
     void set_permutation(PermutationView_new<I> * perm_);
     void perform();

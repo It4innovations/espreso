@@ -16,6 +16,13 @@ template<typename T>
 class trsm_dnx_dny
 {
 public:
+    trsm_dnx_dny() = default;
+    trsm_dnx_dny(const trsm_dnx_dny &) = delete;
+    trsm_dnx_dny(trsm_dnx_dny &&) = default;
+    trsm_dnx_dny & operator=(const trsm_dnx_dny &) = delete;
+    trsm_dnx_dny & operator=(trsm_dnx_dny &&) = default;
+    ~trsm_dnx_dny() = default;
+public:
     void set_system_matrix(MatrixDenseView_new<T> * A_);
     void set_rhs_sol(MatrixDenseView_new<T> * X_);
     void perform();

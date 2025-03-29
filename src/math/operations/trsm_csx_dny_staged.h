@@ -19,16 +19,15 @@ class trsm_csx_dny_staged
 public:
     trsm_csx_dny_staged() = default;
     trsm_csx_dny_staged(const trsm_csx_dny_staged &) = delete;
-    trsm_csx_dny_staged(trsm_csx_dny_staged &&) = delete;
+    trsm_csx_dny_staged(trsm_csx_dny_staged &&) = default;
     trsm_csx_dny_staged & operator=(const trsm_csx_dny_staged &) = delete;
-    trsm_csx_dny_staged & operator=(trsm_csx_dny_staged &&) = delete;
-    ~trsm_csx_dny_staged();
+    trsm_csx_dny_staged & operator=(trsm_csx_dny_staged &&) = default;
+    ~trsm_csx_dny_staged() = default;
 public:
     void set_system_matrix(MatrixCsxView_new<T,I> * A_);
     void set_rhs_sol(MatrixDenseView_new<T> * X_);
     void preprocess();
     void perform();
-    void finalize();
 private:
     MatrixCsxView_new<T,I> * A = nullptr;
     MatrixDenseView_new<T> * X = nullptr;

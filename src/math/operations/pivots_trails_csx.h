@@ -18,6 +18,13 @@ template<typename T, typename I>
 class pivots_trails_csx
 {
 public:
+    pivots_trails_csx() = default;
+    pivots_trails_csx(const pivots_trails_csx &) = delete;
+    pivots_trails_csx(pivots_trails_csx &&) = default;
+    pivots_trails_csx & operator=(const pivots_trails_csx &) = delete;
+    pivots_trails_csx & operator=(pivots_trails_csx &&) = default;
+    ~pivots_trails_csx() = default;
+public:
     void set_mode(char row_col_, char pivots_trails_, char completion_);
     void set_matrix(MatrixCsxView_new<T,I> * M_);
     void set_output_vector(VectorDenseView_new<I> * vec_);

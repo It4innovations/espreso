@@ -4,7 +4,8 @@
 #include "totalfeti.explicit.h"
 #include "totalfeti.explicit.sc.h"
 #include "totalfeti.gpu.h"
-#include "totalfeti.explicit.gpusctria.h"
+#include "totalfeti.explicit.sctria.gpu.h"
+#include "totalfeti.explicit.sctria.cpu.h"
 #include "hybridfeti.implicit.h"
 #include "feti/projector/projector.h"
 
@@ -59,9 +60,13 @@ DualOperator<T>* DualOperator<T>::create(FETI<T> &feti, const step::Step &step)
             eslog::info(" = DUAL OPERATOR         EXPLICIT TOTAL FETI USING SCHUR COMPLEMENT, ASSEMBLE CPU, APPLY GPU = \n");
             dual = new TotalFETIExplicitSc<T,int>(feti, true);
             break;
-        case FETIConfiguration::DUAL_OPERATOR::EXPLICIT_GPU_SCTRIA:
-            eslog::info(" = DUAL OPERATOR                               EXPLICIT TOTAL FETI ON GPU USING TRIANGULAR B = \n");
-            dual = new TotalFETIExplicitGpuScTria<T,int>(feti);
+        case FETIConfiguration::DUAL_OPERATOR::EXPLICIT_SCTRIA:
+            eslog::info(" = DUAL OPERATOR                              EXPLICIT TOTAL FETI USING SC WITH TRIANGULAR B = \n");
+            dual = new TotalFETIExplicitScTria<T,int>(feti);
+            break;
+        case FETIConfiguration::DUAL_OPERATOR::EXPLICIT_SCTRIA_GPU:
+            eslog::info(" = DUAL OPERATOR                       EXPLICIT TOTAL FETI USING SC WITH TRIANGULAR B ON GPU = \n");
+            dual = new TotalFETIExplicitScTriaGpu<T,int>(feti);
             break;
         }
         break;
@@ -77,7 +82,8 @@ DualOperator<T>* DualOperator<T>::create(FETI<T> &feti, const step::Step &step)
         case FETIConfiguration::DUAL_OPERATOR::IMPLICIT_GPU:
         case FETIConfiguration::DUAL_OPERATOR::EXPLICIT_SC:
         case FETIConfiguration::DUAL_OPERATOR::EXPLICIT_SC_GPUAPPLY:
-        case FETIConfiguration::DUAL_OPERATOR::EXPLICIT_GPU_SCTRIA:
+        case FETIConfiguration::DUAL_OPERATOR::EXPLICIT_SCTRIA:
+        case FETIConfiguration::DUAL_OPERATOR::EXPLICIT_SCTRIA_GPU:
             eslog::error("not implemented dual operator\n");
             break;
         }

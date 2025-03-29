@@ -19,6 +19,13 @@ class herk_dnx_dny
 public:
     using Treal = utils::remove_complex_t<T>;
 public:
+    herk_dnx_dny() = default;
+    herk_dnx_dny(const herk_dnx_dny &) = delete;
+    herk_dnx_dny(herk_dnx_dny &&) = default;
+    herk_dnx_dny & operator=(const herk_dnx_dny &) = delete;
+    herk_dnx_dny & operator=(herk_dnx_dny &&) = default;
+    ~herk_dnx_dny() = default;
+public:
     void set_matrix_A(MatrixDenseView_new<T> * A_);
     void set_matrix_C(MatrixDenseView_new<T> * C_);
     void set_mode(blas::herk_mode mode_);

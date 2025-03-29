@@ -20,10 +20,10 @@ class gemm_csx_dny_dny_staged
 public:
     gemm_csx_dny_dny_staged() = default;
     gemm_csx_dny_dny_staged(const gemm_csx_dny_dny_staged &) = delete;
-    gemm_csx_dny_dny_staged(gemm_csx_dny_dny_staged &&) = delete;
+    gemm_csx_dny_dny_staged(gemm_csx_dny_dny_staged &&) = default;
     gemm_csx_dny_dny_staged & operator=(const gemm_csx_dny_dny_staged &) = delete;
-    gemm_csx_dny_dny_staged & operator=(gemm_csx_dny_dny_staged &&) = delete;
-    ~gemm_csx_dny_dny_staged();
+    gemm_csx_dny_dny_staged & operator=(gemm_csx_dny_dny_staged &&) = default;
+    ~gemm_csx_dny_dny_staged() = default;
 public:
     void set_matrix_A(MatrixCsxView_new<T,I> * A_);
     void set_matrix_B(MatrixDenseView_new<T> * B_);
@@ -31,7 +31,6 @@ public:
     void set_coefficients(T alpha_, T beta_);
     void preprocess();
     void perform();
-    void finalize();
 private:
     spblas::handle_mm handle_abc;
     MatrixCsxView_new<T,I> * A = nullptr;
