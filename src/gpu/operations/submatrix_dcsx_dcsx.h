@@ -22,7 +22,7 @@ public:
     submatrix_dcsx_dcsx(submatrix_dcsx_dcsx &&) = delete;
     submatrix_dcsx_dcsx & operator=(const submatrix_dcsx_dcsx &) = delete;
     submatrix_dcsx_dcsx & operator=(submatrix_dcsx_dcsx &&) = delete;
-    ~submatrix_dcsx_dcsx() = default;
+    virtual ~submatrix_dcsx_dcsx() = default;
 public:
     static std::unique_ptr<submatrix_dcsx_dcsx<T,I>> make();
 public:

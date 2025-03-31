@@ -30,7 +30,7 @@ public:
     trsm_hcsx_ddny_ddny(trsm_hcsx_ddny_ddny &&) = default;
     trsm_hcsx_ddny_ddny & operator=(const trsm_hcsx_ddny_ddny &) = delete;
     trsm_hcsx_ddny_ddny & operator=(trsm_hcsx_ddny_ddny &&) = default;
-    virtual ~trsm_hcsx_ddny_ddny() = default;
+    ~trsm_hcsx_ddny_ddny() = default;
 public:
     void set_config(char spdn_A);
     void set_handles(gpu::mgm::queue q_, gpu::spblas::handle handle_spblas_, gpu::dnblas::handle handle_dnblas_);

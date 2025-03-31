@@ -285,17 +285,17 @@ void trsm(MatrixCsxView_new<T,I> & A, MatrixDenseView_new<T> & X, MatrixDenseVie
         if(X.order == 'R') handle->dense_layout = SPARSE_LAYOUT_ROW_MAJOR;
         if(X.order == 'C') handle->dense_layout = SPARSE_LAYOUT_COLUMN_MAJOR;
         if(stage == 'P') { // optimize only for capital P
-            mkl_sparse_set_sm_hint(handle->A_mkl, handle->op, handle->A_descr, handle->dense_layout, X.ncols, 1000);
-            checkStatus(mkl_sparse_optimize(handle->A_mkl));
+            mkl_sparse_set_sm_hint(handle->A_mkl->mat, handle->op, handle->A_descr, handle->dense_layout, X.ncols, 1000);
+            checkStatus(mkl_sparse_optimize(handle->A_mkl->mat));
         }
     }
     if(stage == 'C') { // Compute
         if(handle.get() == nullptr) eslog::error("preprocess has not been called\n");
         if(handle->A_vals != A.vals) eslog::error("matrix reallocation is not supported\n");
-        if constexpr(std::is_same_v<T,float>)                checkStatus(mkl_sparse_s_trsm(handle->op, 1.0, handle->A_mkl, handle->A_descr, handle->dense_layout, X.vals, X.ncols, X.ld, Y.vals, Y.ld));
-        if constexpr(std::is_same_v<T,double>)               checkStatus(mkl_sparse_d_trsm(handle->op, 1.0, handle->A_mkl, handle->A_descr, handle->dense_layout, X.vals, X.ncols, X.ld, Y.vals, Y.ld));
-        if constexpr(std::is_same_v<T,std::complex<float>>)  checkStatus(mkl_sparse_c_trsm(handle->op, 1.0, handle->A_mkl, handle->A_descr, handle->dense_layout, X.vals, X.ncols, X.ld, Y.vals, Y.ld));
-        if constexpr(std::is_same_v<T,std::complex<double>>) checkStatus(mkl_sparse_z_trsm(handle->op, 1.0, handle->A_mkl, handle->A_descr, handle->dense_layout, X.vals, X.ncols, X.ld, Y.vals, Y.ld));
+        if constexpr(std::is_same_v<T,float>)                checkStatus(mkl_sparse_s_trsm(handle->op, 1.0, handle->A_mkl->mat, handle->A_descr, handle->dense_layout, X.vals, X.ncols, X.ld, Y.vals, Y.ld));
+        if constexpr(std::is_same_v<T,double>)               checkStatus(mkl_sparse_d_trsm(handle->op, 1.0, handle->A_mkl->mat, handle->A_descr, handle->dense_layout, X.vals, X.ncols, X.ld, Y.vals, Y.ld));
+        if constexpr(std::is_same_v<T,std::complex<float>>)  checkStatus(mkl_sparse_c_trsm(handle->op, 1.0, handle->A_mkl->mat, handle->A_descr, handle->dense_layout, X.vals, X.ncols, X.ld, Y.vals, Y.ld));
+        if constexpr(std::is_same_v<T,std::complex<double>>) checkStatus(mkl_sparse_z_trsm(handle->op, 1.0, handle->A_mkl->mat, handle->A_descr, handle->dense_layout, X.vals, X.ncols, X.ld, Y.vals, Y.ld));
     }
 }
 
@@ -327,17 +327,17 @@ void mm(MatrixCsxView_new<T,I> & A, MatrixDenseView_new<T> & B, MatrixDenseView_
         handle->A_descr.type = SPARSE_MATRIX_TYPE_GENERAL;
         handle->dense_layout = ((B.order == 'R') ? SPARSE_LAYOUT_ROW_MAJOR : SPARSE_LAYOUT_COLUMN_MAJOR);
         if(stage == 'P') { // optimize only for capical P
-            mkl_sparse_set_mm_hint(handle->A_mkl, handle->op, handle->A_descr, handle->dense_layout, B.ncols, 1000);
-            checkStatus(mkl_sparse_optimize(handle->A_mkl));
+            mkl_sparse_set_mm_hint(handle->A_mkl->mat, handle->op, handle->A_descr, handle->dense_layout, B.ncols, 1000);
+            checkStatus(mkl_sparse_optimize(handle->A_mkl->mat));
         }
     }
     if(stage == 'C') { // Compute
         if(handle.get() == nullptr) eslog::error("preprocess has not been called\n");
         if(handle->A_vals != A.vals) eslog::error("matrix reallocation is not supported\n");
-        if constexpr(std::is_same_v<T,float>)                checkStatus(mkl_sparse_s_mm(handle->op, alpha, handle->A_mkl, handle->A_descr, handle->dense_layout, B.vals, B.ncols, B.ld, beta, C.vals, C.ld));
-        if constexpr(std::is_same_v<T,double>)               checkStatus(mkl_sparse_d_mm(handle->op, alpha, handle->A_mkl, handle->A_descr, handle->dense_layout, B.vals, B.ncols, B.ld, beta, C.vals, C.ld));
-        if constexpr(std::is_same_v<T,std::complex<float>>)  checkStatus(mkl_sparse_c_mm(handle->op, alpha, handle->A_mkl, handle->A_descr, handle->dense_layout, B.vals, B.ncols, B.ld, beta, C.vals, C.ld));
-        if constexpr(std::is_same_v<T,std::complex<double>>) checkStatus(mkl_sparse_z_mm(handle->op, alpha, handle->A_mkl, handle->A_descr, handle->dense_layout, B.vals, B.ncols, B.ld, beta, C.vals, C.ld));
+        if constexpr(std::is_same_v<T,float>)                checkStatus(mkl_sparse_s_mm(handle->op, alpha, handle->A_mkl->mat, handle->A_descr, handle->dense_layout, B.vals, B.ncols, B.ld, beta, C.vals, C.ld));
+        if constexpr(std::is_same_v<T,double>)               checkStatus(mkl_sparse_d_mm(handle->op, alpha, handle->A_mkl->mat, handle->A_descr, handle->dense_layout, B.vals, B.ncols, B.ld, beta, C.vals, C.ld));
+        if constexpr(std::is_same_v<T,std::complex<float>>)  checkStatus(mkl_sparse_c_mm(handle->op, alpha, handle->A_mkl->mat, handle->A_descr, handle->dense_layout, B.vals, B.ncols, B.ld, beta, C.vals, C.ld));
+        if constexpr(std::is_same_v<T,std::complex<double>>) checkStatus(mkl_sparse_z_mm(handle->op, alpha, handle->A_mkl->mat, handle->A_descr, handle->dense_layout, B.vals, B.ncols, B.ld, beta, C.vals, C.ld));
     }
 }
 

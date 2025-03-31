@@ -1,0 +1,132 @@
+# ESPRESO Configuration File
+
+DEFAULT_ARGS {
+}
+
+INPUT_TYPE            GENERATOR;
+PHYSICS        HEAT_TRANSFER;
+
+GENERATOR {
+  SHAPE   GRID;
+
+  UNIFORM_CLUSTERS        [ARG1];
+  UNIFORM_DOMAINS         [ARG1];
+
+  GRID {
+    LENGTH_X                   1;
+    LENGTH_Y                   1;
+    LENGTH_Z                   1;
+
+    NODES {
+      BOTTOM   <1 , 1> <0 , 1> <0 , 0>;
+      TOP      <0 , 0> <0 , 1> <0 , 0>;
+    }
+
+    ELEMENT_TYPE          [ARG2];
+
+    BLOCKS_X                   1;
+    BLOCKS_Y                   1;
+    BLOCKS_Z                   1;
+
+    CLUSTERS_X                 1;
+    CLUSTERS_Y                 1;
+    CLUSTERS_Z                 1;
+
+    DOMAINS_X             [ARG3];
+    DOMAINS_Y             [ARG4];
+    DOMAINS_Z             [ARG5];
+
+    ELEMENTS_X            [ARG6];
+    ELEMENTS_Y            [ARG7];
+    ELEMENTS_Z            [ARG8];
+  }
+}
+
+HEAT_TRANSFER {
+  LOAD_STEPS        1;
+
+  MATERIALS {
+    1 {
+      COORDINATE_SYSTEM {
+        TYPE       CARTESIAN;
+        ROTATION    { Z 35; }
+      }
+
+      THERMAL_CONDUCTIVITY {
+        MODEL   DIAGONAL;
+
+        KXX           50;
+        KYY          100;
+      }
+    }
+  }
+
+  MATERIAL_SET {
+    ALL_ELEMENTS   1;
+  }
+
+  INITIAL_TEMPERATURE {
+    ALL_ELEMENTS   200;
+  }
+
+  THICKNESS {
+    ALL_ELEMENTS  1;
+  }
+
+  LOAD_STEPS_SETTINGS {
+    1 {
+      DURATION_TIME     1;
+      TYPE   STEADY_STATE;
+      MODE         LINEAR;
+      SOLVER         FETI;
+
+      FETI {
+        METHOD          TOTAL_FETI;
+        DUAL_OPERATOR       [ARG9];
+        PRECONDITIONER        NONE;
+        PRECISION            1E-09;
+        ITERATIVE_SOLVER       PCG;
+        REGULARIZATION    ANALYTIC;
+        MAX_ITERATIONS          12;
+        EXIT_ON_NONCONVERGENCE FALSE;
+
+        DUAL_OPERATOR_GPU_CONFIG {
+          SYNCHRONIZE_UPDATE                TRUE;
+          TIMERS                             ALL;
+          MEMORY_INFO                        ALL;
+        }
+      }
+
+      TEMPERATURE {
+        TOP       100;
+        BOTTOM    300;
+      }
+    }
+  }
+}
+
+OUTPUT {
+  PATH                       [ARG0];
+  RESULTS_STORE_FREQUENCY    NEVER;
+  MONITORS_STORE_FREQUENCY   EVERY_SUBSTEP;
+
+  MONITORING {
+    1 {
+      REGION            TOP;
+      STATISTICS        MAX;
+      PROPERTY  TEMPERATURE;
+    }
+
+    2 {
+      REGION         BOTTOM;
+      STATISTICS        MIN;
+      PROPERTY  TEMPERATURE;
+    }
+
+    3 {
+      REGION   ALL_ELEMENTS;
+      STATISTICS        AVG;
+      PROPERTY  TEMPERATURE;
+    }
+  }
+}

@@ -144,6 +144,7 @@ void TotalFETIExplicitScTriaGpu<T,I>::set(const step::Step &step)
         data.n_dofs_interface = feti.B1[di].nrows;
     }
 
+    ssize_t free_mem_before_Falloc = gpu::mgm::get_device_memory_free();
     d_Fs_allocated.resize((n_domains - 1) / 2 + 1);
     {
         std::vector<size_t> domain_idxs_sorted_by_f_size_desc(n_domains);
@@ -171,6 +172,9 @@ void TotalFETIExplicitScTriaGpu<T,I>::set(const step::Step &step)
             data_di.d_F_old = MatrixDenseView_new<T>::template to_old<I,gpu::mgm::Ad>(data_di.d_F);
         }
     }
+    ssize_t free_mem_after_Falloc = gpu::mgm::get_device_memory_free();
+    ssize_t allocd_in_Falloc = free_mem_before_Falloc - free_mem_after_Falloc;
+    stacktimer::info("TotalFETIExplicitScTriaGpu::set allocd_in_Falloc %zd", allocd_in_Falloc);
 
     if(!cfg.inner_timers) stacktimer::disable();
 
@@ -227,6 +231,11 @@ void TotalFETIExplicitScTriaGpu<T,I>::set(const step::Step &step)
     }
     total_wss_internal = utils::round_up((total_wss_internal * 105) / 100, gpu::mgm::get_natural_pitch_align());
 
+    stacktimer::info("TotalFETIExplicitScTriaGpu::set total_wss_internal %zu", total_wss_internal);
+    stacktimer::info("TotalFETIExplicitScTriaGpu::set total_wss_persistent %zu", total_wss_persistent);
+    stacktimer::info("TotalFETIExplicitScTriaGpu::set max_wss_tmp_preprocess %zu", std::max_element(domain_data.begin(), domain_data.end(), [](const per_domain_stuff & l, const per_domain_stuff & r){ return l.op_sc->get_wss_tmp_preprocess() < r.op_sc->get_wss_tmp_preprocess(); })->op_sc->get_wss_tmp_preprocess());
+    stacktimer::info("TotalFETIExplicitScTriaGpu::set max_wss_tmp_perform %zu", std::max_element(domain_data.begin(), domain_data.end(), [](const per_domain_stuff & l, const per_domain_stuff & r){ return l.op_sc->get_wss_tmp_perform() < r.op_sc->get_wss_tmp_perform(); })->op_sc->get_wss_tmp_perform());
+
     ws_persistent = gpu::mgm::memalloc_device(total_wss_persistent);
     ator_ws_persistent = std::make_unique<AllocatorArena_new>(false, true, gpu::mgm::get_natural_pitch_align());
     ator_ws_persistent->set(ws_persistent, total_wss_persistent);
@@ -273,6 +282,10 @@ void TotalFETIExplicitScTriaGpu<T,I>::set(const step::Step &step)
     ws_tmp_for_cbmba = gpu::mgm::memalloc_device(wss_tmp_for_cbmba);
     ator_tmp_cbmba = std::make_unique<AllocatorCBMB_new>(false, true, gpu::mgm::get_natural_pitch_align(), ws_tmp_for_cbmba, wss_tmp_for_cbmba);
 
+    stacktimer::info("TotalFETIExplicitScTriaGpu::set cbmba_capacity %zu", wss_tmp_for_cbmba);
+
+    ssize_t free_mem_before_preprocess = gpu::mgm::get_device_memory_free();
+
     if(!cfg.inner_timers) stacktimer::disable();
 
     #pragma omp parallel for schedule(static,1) if(cfg.parallel_set)
@@ -297,6 +310,10 @@ void TotalFETIExplicitScTriaGpu<T,I>::set(const step::Step &step)
     stacktimer::push("set_final_wait");
     gpu::mgm::device_wait();
     stacktimer::pop();
+
+    ssize_t free_mem_after_preprocess = gpu::mgm::get_device_memory_free();
+    ssize_t allocd_in_preprocess = free_mem_before_preprocess - free_mem_after_preprocess;
+    stacktimer::info("TotalFETIExplicitScTriaGpu::set allocd_in_preprocess %zd", allocd_in_preprocess);
 
     stacktimer::pop();
     if(cfg.outer_timers) stacktimer::disable();

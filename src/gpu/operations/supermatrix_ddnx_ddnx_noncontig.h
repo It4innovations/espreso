@@ -24,7 +24,7 @@ public:
     supermatrix_ddnx_ddnx_noncontig(supermatrix_ddnx_ddnx_noncontig &&) = delete;
     supermatrix_ddnx_ddnx_noncontig & operator=(const supermatrix_ddnx_ddnx_noncontig &) = delete;
     supermatrix_ddnx_ddnx_noncontig & operator=(supermatrix_ddnx_ddnx_noncontig &&) = delete;
-    ~supermatrix_ddnx_ddnx_noncontig() = default;
+    virtual ~supermatrix_ddnx_ddnx_noncontig() = default;
 public:
     static std::unique_ptr<supermatrix_ddnx_ddnx_noncontig<T,I>> make();
 public:

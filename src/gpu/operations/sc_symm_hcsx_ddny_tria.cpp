@@ -120,12 +120,14 @@ void sc_symm_hcsx_ddny_tria<T,I>::setup()
     need_reorder_factor_L2U = ((solver_factor_uplo == 'L') && (cfg.order_L == 'C'));
     need_reorder_factor_U2L = ((solver_factor_uplo == 'U') && (cfg.order_L == 'R'));
 
+    stacktimer::push("alloc_host_factors");
     if(solver_factor_uplo == 'U' || need_reorder_factor_L2U) {
         h_factor_U_row.alloc();
     }
     if(solver_factor_uplo == 'L' || need_reorder_factor_U2L) {
         h_factor_L_row.alloc();
     }
+    stacktimer::pop();
 
     stacktimer::push("extract_factors");
     if(solver_factor_uplo == 'U') {

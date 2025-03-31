@@ -24,7 +24,7 @@ public:
     submatrix_ddnx_ddnx_noncontig(submatrix_ddnx_ddnx_noncontig &&) = delete;
     submatrix_ddnx_ddnx_noncontig & operator=(const submatrix_ddnx_ddnx_noncontig &) = delete;
     submatrix_ddnx_ddnx_noncontig & operator=(submatrix_ddnx_ddnx_noncontig &&) = delete;
-    ~submatrix_ddnx_ddnx_noncontig() = default;
+    virtual ~submatrix_ddnx_ddnx_noncontig() = default;
 public:
     static std::unique_ptr<submatrix_ddnx_ddnx_noncontig<T,I>> make();
 public:

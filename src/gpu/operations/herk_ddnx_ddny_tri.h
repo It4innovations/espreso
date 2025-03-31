@@ -37,7 +37,7 @@ public:
     herk_ddnx_ddny_tri(herk_ddnx_ddny_tri &&) = delete;
     herk_ddnx_ddny_tri & operator=(const herk_ddnx_ddny_tri &) = delete;
     herk_ddnx_ddny_tri & operator=(herk_ddnx_ddny_tri &&) = delete;
-    virtual ~herk_ddnx_ddny_tri() = default;
+    ~herk_ddnx_ddny_tri() = default;
 public:
     void set_config(config cfg_);
     void set_handles(gpu::mgm::queue q_, gpu::dnblas::handle dnblas_handle_);
