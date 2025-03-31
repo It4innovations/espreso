@@ -56,8 +56,7 @@ namespace espreso {
         {
             return reinterpret_cast<T*>(allocate(count * sizeof(T)));
         }
-        template<typename T>
-        void deallocate(T * & ptr)
+        void deallocate(void * & ptr)
         {
             if(ptr == nullptr) return;
 
@@ -65,6 +64,11 @@ namespace espreso {
 
             num_allocations--;
             ptr = nullptr;
+        }
+        template<typename T>
+        void deallocate(T * & ptr)
+        {
+            deallocate((void*&)ptr);
         }
         void reset_arena()
         {
