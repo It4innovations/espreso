@@ -154,8 +154,8 @@ void TotalFETIExplicitScTria<T,I>::set(const step::Step &step)
         }
     }
 
+    stacktimer::push("TotalFETIExplicitScTria::set preprocess");
     if(!cfg.inner_timers) stacktimer::disable();
-
     #pragma omp parallel for schedule(static,1) if(cfg.parallel_set)
     for(size_t di = 0; di < n_domains; di++) {
         per_domain_stuff & data = domain_data[di];
@@ -186,8 +186,8 @@ void TotalFETIExplicitScTria<T,I>::set(const step::Step &step)
         data.x.resize(data.n_dofs_interface);
         data.y.resize(data.n_dofs_interface);
     }
-
     if(!cfg.inner_timers) stacktimer::enable();
+    stacktimer::pop();
 
     // clean up the mess from buggy openmp in clang
     utils::run_dummy_parallel_region();

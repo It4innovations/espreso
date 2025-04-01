@@ -16,17 +16,17 @@ then
     return
 fi
 
+ml gcc/11.4.0
 ml cmake/3.30.5
-ml intel/2024.2
-ml impi/2021.13
+ml openmpi/4.1.5-gcc
 ml mkl/2024.2
 
-. env/dependencies/install.gklib.sh cudamkl icx
-. env/dependencies/install.metis32.sh cudamkl icx
-. env/dependencies/install.parmetis32.sh cudamkl mpiicx
-. env/dependencies/install.suitesparse.sh cudamkl icx ifx
+. env/dependencies/install.gklib.sh gcccudamklss gcc
+. env/dependencies/install.metis32.sh gcccudamklss gcc
+. env/dependencies/install.parmetis32.sh gcccudamklss mpicc
+. env/dependencies/install.suitesparse.sh gcccudamklss gcc gfortran
 
-export CUDA_ROOT="dependencies/cuda-${cudaversion}/install"
+export CUDA_ROOT="${PWD}/dependencies/cuda-${cudaversion}/install"
 if [ ! -d "${CUDA_ROOT}" ]
 then
     echo "please download and install cuda-${cudaversion}"
@@ -43,7 +43,7 @@ export LD_LIBRARY_PATH="${CUDA_ROOT}/lib64:${LD_LIBRARY_PATH}"
 
 
 
-export CXX=mpiicpx
+export CXX=mpic++
 export ES_INT_WIDTH=32
 export CXXFLAGS+=" -fmax-errors=1"
 export CXXFLAGS+=" -DESPRESO_STACKTIMER_ENABLE"
@@ -51,8 +51,6 @@ export CXXFLAGS+=" -DESPRESO_STACKTIMER_ENABLE"
 if [ "${cudaversionname}" = "legacy" ]; then
     export ESPRESO_USE_CUSPARSE_LEGACY="true"
 fi
-
-export ESPRESO_CUDA_ALLOW_UNSUPPORTED_COMPILER=1
 
 export OMP_PLACES=cores
 export OMP_PROC_BIND=close
@@ -67,3 +65,7 @@ export ESPRESO_USE_WRAPPER_SPBLAS=mkl
 export ESPRESO_USE_WRAPPER_SPSOLVER=suitesparse
 export ESPRESO_USE_WRAPPER_SCSOLVER=mkl
 export ESPRESO_USE_WRAPPER_GPU=cuda
+
+
+
+# mpirun -n 1 --bind-to numa ...

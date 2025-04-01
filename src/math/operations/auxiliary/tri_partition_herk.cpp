@@ -64,6 +64,10 @@ void tri_partition_herk::setup()
         }
     }
 
+    if(num_chunks > partition_range) {
+        num_chunks = partition_range;
+    }
+
     setup_called = true;
 }
 

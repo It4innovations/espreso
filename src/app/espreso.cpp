@@ -29,7 +29,6 @@ int main(int argc, char **argv)
     profiler::syncstart("espreso");
 
     profiler::syncstart("initialization");
-    stacktimer::init();
     info::system::setSignals();
     info::env::set();
     profiler::synccheckpoint("set_signals_and_env");
@@ -41,6 +40,8 @@ int main(int argc, char **argv)
     eslog::init(new Logger<TimeLogger, ProgressTerminalLogger, ProgressFileLogger, PAPICounters>);
     profiler::synccheckpoint("init_loggers");
     eslog::startln("ESPRESO: STARTED", "ESPRESO");
+
+    stacktimer::init();
 
     ECF::init(&argc, &argv, "espreso");
     profiler::synccheckpoint("init_configuration");

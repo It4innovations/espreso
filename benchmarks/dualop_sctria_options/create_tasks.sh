@@ -5,6 +5,9 @@ machine="mn5"
 # machine="lumi"
 # machine="tiber"
 
+# env_command="source env/it4i.karolina.cuda.mkl.ss.sh legacy"
+env_command="source env/bsc.mn5.gcc.cuda.mkl.ss.sh legacy"
+
 phase=1
 
 
@@ -16,14 +19,19 @@ taskid=0
 function create_task {
 
     tasknum=$(printf "%06d" ${taskid})
-    taskdir="${tasksdir}/tasks/task_${tasknum}"
+    taskdir="${tasksdir}/task_${tasknum}"
     mkdir -p "${taskdir}"
     configfile="${taskdir}/config.sh"
     taskid=$((taskid+1))
 
     (
+        echo "#!/bin/bash"
+        echo
+        echo "${env_command}"
+        echo
         echo "export ESPRESO_BENCHMARK_phase=\"${phase}\""
         echo "export ESPRESO_BENCHMARK_machine=\"${machine}\""
+        echo "export ESPRESO_BENCHMARK_ecf_file=\"${ecf_file}\""
         echo "export ESPRESO_BENCHMARK_dual_operator=\"${dual_operator}\""
         echo "export ESPRESO_BENCHMARK_element_type=\"${element_type}\""
         echo "export ESPRESO_BENCHMARK_domains_x=\"${domains_x}\""
@@ -32,7 +40,7 @@ function create_task {
         echo "export ESPRESO_BENCHMARK_elements_x=\"${elements_x}\""
         echo "export ESPRESO_BENCHMARK_elements_y=\"${elements_y}\""
         echo "export ESPRESO_BENCHMARK_elements_z=\"${elements_z}\""
-
+        echo
         echo "export ESPRESO_DUALOPSCTRIA_CONFIG_outer_timers=\"${outer_timers}\""
         echo "export ESPRESO_DUALOPSCTRIA_CONFIG_inner_timers=\"${inner_timers}\""
         echo "export ESPRESO_DUALOPSCTRIA_CONFIG_mainloop_update_split=\"${mainloop_update_split}\""
@@ -69,6 +77,12 @@ function create_task {
 
 
 basedir="benchmarks/dualop_sctria_options"
+
+if [ ! -d "${basedir}" ]
+then
+    echo "must be run from espreso root directory"
+    exit 7
+fi
 
 datestr="$(date +%Y%m%d_%H%M%S)"
 
@@ -130,50 +144,6 @@ array_domains_z=()
 
 
 
-# options_dual_operator="EXPLICIT_SCTRIA EXPLICIT_SCTRIA_GPU"
-
-# options_order_X="R C"
-
-# options_trsm_strategy="R F"
-# options_trsm_partition_algorithm="U"
-# # options_trsm_partition_parameter="-2000 -1000 -500 -200 -100 -50 -20 1 2 5 10 20 50 100"
-# options_trsm_partition_parameter="20"
-
-# options_trsm_splitrhs_factor_order_sp="_"
-# options_trsm_splitrhs_factor_order_dn="R C"
-# options_trsm_splitrhs_spdn_criteria="D"
-# options_trsm_splitrhs_spdn_param="0"
-
-# options_trsm_splitfactor_trsm_factor_spdn="D"
-# options_trsm_splitfactor_trsm_factor_order="R C"
-
-# options_trsm_splitfactor_gemm_factor_order_sp="R C"
-# options_trsm_splitfactor_gemm_factor_order_dn="R C"
-# options_trsm_splitfactor_gemm_factor_prune="N R"
-# options_trsm_splitfactor_gemm_spdn_criteria="S D"
-# # options_trsm_splitfactor_gemm_spdn_param="0 0.01 0.02 0.04 0.08 0.15 0.25 0.5 1"
-# options_trsm_splitfactor_gemm_spdn_param="0"
-
-# options_herk_strategy="Q T"
-# options_herk_partition_algorithm="U"
-# options_herk_partition_parameter="-2000 -1000 -500 -200 -100 -50 -20 1 2 5 10 20 50 100"
-
-# dual_operator
-# order_X
-# trsm_strategy
-# trsm_partition_parameter
-# trsm_splitrhs_factor_order_dn
-# trsm_splitfactor_trsm_factor_order
-# trsm_splitfactor_gemm_factor_order_sp
-# trsm_splitfactor_gemm_factor_order_dn
-# trsm_splitfactor_gemm_factor_prune
-# trsm_splitfactor_gemm_spdn_criteria
-# trsm_splitfactor_gemm_spdn_param
-# herk_strategy
-# herk_partition_parameter
-
-
-
 
 
 outer_timers="1"
@@ -187,15 +157,10 @@ order_F="R"
 order_L="C"
 
 trsm_partition_algorithm="U"
-trsm_splitrhs_factor_order_sp="_"
-trsm_splitrhs_spdn_criteria="D"
-trsm_splitrhs_spdn_param="0"
-trsm_splitfactor_trsm_factor_spdn="D"
 herk_partition_algorithm="U"
 
 
 
-uniform_clusters_domains="TRUE"
 for dim in 2 3
 do
     if [ "${dim}" == "2" ]; then array_ecf_file=("${array_ecf_file_2d[@]}"); else array_ecf_file=("${array_ecf_file_3d[@]}"); fi
@@ -241,82 +206,127 @@ do
                 domains_y="${array_domains_y[$array_domains_index]}"
                 domains_z="${array_domains_z[$array_domains_index]}"
 
-                if [ "${phase}" == "1" ];
+                if [ "${phase}" == "1" ]
                 then
                     #################################################################
                     ### phase 1, select discrete parameters (mainly matrix order) ###
                     #################################################################
+                    # numer of tasks: 27x144 = 3888, at most 81 node-hours
                     # fix:
                     #   trsm_partition_parameter
                     #   herk_partition_parameter
+                    #   trsm_splitrhs_spdn_param
                     #   trsm_splitfactor_gemm_spdn_param
+                    #   herk_strategy (only influence is order_X, and I assume there is none or trsm has greater impact)
                     # for each:
                     #   dual_operator
                     #   trsm_strategy
-                    #   trsm_splitfactor_gemm_factor_prune
+                    #   trsm_splitrhs_spdn_criteria
+                    #   trsm_splitfactor_trsm_factor_spdn
                     #   trsm_splitfactor_gemm_spdn_criteria
-                    #   herk_strategy
+                    #   trsm_splitfactor_gemm_factor_prune
                     # find the best combination of:
                     #   order_X
+                    #   trsm_splitrhs_factor_order_sp
                     #   trsm_splitrhs_factor_order_dn
                     #   trsm_splitfactor_trsm_factor_order
                     #   trsm_splitfactor_gemm_factor_order_sp
                     #   trsm_splitfactor_gemm_factor_order_dn
-                    # parameters which dont influence each other (e.g. herk strategy and trsm gemm factor order) serve as repetitions to smooth out measurement inaccuracies
-                    # fix:
-                    trsm_partition_parameter="20"
-                    herk_partition_parameter="10"
+                    trsm_partition_parameter="10"
+                    herk_partition_parameter="5"
+                    herk_strategy="T"
+                    trsm_splitrhs_spdn_param="0"
                     trsm_splitfactor_gemm_spdn_param="0"
-                    # for each:
                     for dual_operator in EXPLICIT_SCTRIA EXPLICIT_SCTRIA_GPU
                     do
-                        for trsm_strategy in R F
+                        for order_X in R C
                         do
-                            for trsm_splitfactor_gemm_factor_prune in N R
+                            for trsm_strategy in R F
                             do
-                                for trsm_splitfactor_gemm_spdn_criteria in S D
-                                do
-                                    for herk_strategy in Q T
+                                if [ "${trsm_strategy}" == "R" ]
+                                then
+                                    trsm_splitfactor_trsm_factor_spdn="_"
+                                    trsm_splitfactor_gemm_spdn_criteria="_"
+                                    trsm_splitfactor_gemm_factor_prune="_"
+                                    trsm_splitfactor_trsm_factor_order="_"
+                                    trsm_splitfactor_gemm_factor_order_sp="_"
+                                    trsm_splitfactor_gemm_factor_order_dn="_"
+                                    for trsm_splitrhs_spdn_criteria in S D
                                     do
-                                        # find the best combination of:
-                                        for order_X in R C
-                                        do
+                                        if [ "${trsm_splitrhs_spdn_criteria}" == "S" ]
+                                        then
+                                            trsm_splitrhs_factor_order_dn="_"
+                                            for trsm_splitrhs_factor_order_sp in R C
+                                            do
+                                                create_task
+                                            done
+                                        fi
+                                        if [ "${trsm_splitrhs_spdn_criteria}" == "D" ]
+                                        then
+                                            trsm_splitrhs_factor_order_sp="_"
                                             for trsm_splitrhs_factor_order_dn in R C
                                             do
-                                                for trsm_splitfactor_trsm_factor_order in R C
+                                                create_task
+                                            done
+                                        fi
+                                    done
+                                fi
+                                if [ "${trsm_strategy}" == "F" ]
+                                then
+                                    trsm_splitrhs_spdn_criteria="_"
+                                    trsm_splitrhs_factor_order_sp="_"
+                                    trsm_splitrhs_factor_order_dn="_"
+                                    for trsm_splitfactor_trsm_factor_spdn in S D
+                                    do
+                                        for trsm_splitfactor_trsm_factor_order in R C
+                                        do
+                                            for trsm_splitfactor_gemm_factor_prune in N R
+                                            do
+                                                for trsm_splitfactor_gemm_spdn_criteria in S D
                                                 do
-                                                    for trsm_splitfactor_gemm_factor_order_sp in R C
-                                                    do
+                                                    if [ "${trsm_splitfactor_gemm_spdn_criteria}" == "S" ]
+                                                    then
+                                                        trsm_splitfactor_gemm_factor_order_dn="_"
+                                                        for trsm_splitfactor_gemm_factor_order_sp in R C
+                                                        do
+                                                            create_task
+                                                        done
+                                                    fi
+                                                    if [ "${trsm_splitfactor_gemm_spdn_criteria}" == "D" ]
+                                                    then
+                                                        trsm_splitfactor_gemm_factor_order_sp="_"
                                                         for trsm_splitfactor_gemm_factor_order_dn in R C
                                                         do
                                                             create_task
                                                         done
-                                                    done
+                                                    fi
                                                 done
                                             done
                                         done
                                     done
-                                done
+                                fi
                             done
                         done
                     done
                 fi
 
 
-                if [ "${phase}" == "2" ];
+                if [ "${phase}" == "2" ]
                 then
                     ########################################################################
                     ### phase 2, select splitfactor_gemm_spdn_param for densiTy criteria ###
                     ########################################################################
+                    echo 222
                 fi
 
 
 
-                if [ "${phase}" == "3" ];
+                if [ "${phase}" == "3" ]
                 then
                     ######################################################
                     ### phase 3, partition parameter for trsm and herk ###
                     ######################################################
+                    echo 333
                 fi
 
 

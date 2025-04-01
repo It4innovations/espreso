@@ -176,8 +176,8 @@ void TotalFETIExplicitScTriaGpu<T,I>::set(const step::Step &step)
     ssize_t allocd_in_Falloc = free_mem_before_Falloc - free_mem_after_Falloc;
     stacktimer::info("TotalFETIExplicitScTriaGpu::set allocd_in_Falloc %zd", allocd_in_Falloc);
 
+    stacktimer::push("TotalFETIExplicitScTriaGpu::set setup");
     if(!cfg.inner_timers) stacktimer::disable();
-
     #pragma omp parallel for schedule(static,1) if(cfg.parallel_set)
     for(size_t di = 0; di < n_domains; di++) {
         gpu::mgm::queue & q = queues[di % n_queues];
@@ -216,8 +216,8 @@ void TotalFETIExplicitScTriaGpu<T,I>::set(const step::Step &step)
         data.d_apply_w.resize(data.n_dofs_domain);
         data.d_applyg_D2C.resize(data.n_dofs_interface);
     }
-
     if(!cfg.inner_timers) stacktimer::enable();
+    stacktimer::pop();
 
     // clean up the mess from buggy openmp in clang
     utils::run_dummy_parallel_region();
@@ -286,8 +286,8 @@ void TotalFETIExplicitScTriaGpu<T,I>::set(const step::Step &step)
 
     ssize_t free_mem_before_preprocess = gpu::mgm::get_device_memory_free();
 
+    stacktimer::push("TotalFETIExplicitScTriaGpu::set preprocess");
     if(!cfg.inner_timers) stacktimer::disable();
-
     #pragma omp parallel for schedule(static,1) if(cfg.parallel_set)
     for(size_t di = 0; di < n_domains; di++) {
         gpu::mgm::queue & q = queues[di % n_queues];
@@ -299,16 +299,13 @@ void TotalFETIExplicitScTriaGpu<T,I>::set(const step::Step &step)
 
         data.op_sc->preprocess_submit(ws_tmp);
 
-        gpu::mgm::submit_host_function(q, [&,ws_tmp](){
+        gpu::mgm::submit_host_function(q, [&,ws_tmp,di](){
             void * ws_tmp_ = ws_tmp;
             ator_tmp_cbmba->free(ws_tmp_);
         });
     }
-    
-    if(!cfg.inner_timers) stacktimer::enable();
-
-    stacktimer::push("set_final_wait");
     gpu::mgm::device_wait();
+    if(!cfg.inner_timers) stacktimer::enable();
     stacktimer::pop();
 
     ssize_t free_mem_after_preprocess = gpu::mgm::get_device_memory_free();

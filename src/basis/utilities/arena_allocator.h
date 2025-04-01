@@ -3,10 +3,7 @@
 #define SRC_BASIS_UTILITIES_ARENA_ALLOCATOR_H_
 
 #include <mutex>
-
-#include "esinfo/eslog.hpp"
-
-
+#include <memory>
 
 
 
@@ -25,70 +22,26 @@ namespace espreso {
         arena_allocator_resource() = delete;
         arena_allocator_resource(arena_allocator_resource const &) = delete;
         arena_allocator_resource(arena_allocator_resource &&) = delete;
-        ~arena_allocator_resource() = default;
+        ~arena_allocator_resource();
         arena_allocator_resource & operator=(arena_allocator_resource const &) = delete;
         arena_allocator_resource & operator=(arena_allocator_resource &&) = delete;
     public:
-        arena_allocator_resource(void * mem_, size_t capacity_, size_t align_B_) : mem((char*)mem_), capacity(capacity_), align_B(align_B_)
-        {
-            if(reinterpret_cast<std::uintptr_t>(mem) % align_B != 0) {
-                eslog::error("arena_allocator: wrong pointer alignment\n");
-            }
-        }
-        void * allocate(size_t num_bytes)
-        {
-            if(num_bytes == 0) return nullptr;
-
-            std::lock_guard lock(mtx);
-
-            void * ptr = mem + curr_offset;
-            curr_offset += num_bytes;
-            if(curr_offset > capacity) {
-                eslog::error("arena_allocator: capacity is full\n");
-            }
-            curr_offset = ((curr_offset + 1) / align_B + 1) * align_B;
-
-            num_allocations++;
-            return ptr;
-        }
+        arena_allocator_resource(void * mem_, size_t capacity_, size_t align_B_);
+        void * allocate(size_t num_bytes);
         template<typename T>
         T * allocate(size_t count)
         {
             return reinterpret_cast<T*>(allocate(count * sizeof(T)));
         }
-        void deallocate(void * & ptr)
-        {
-            if(ptr == nullptr) return;
-
-            std::lock_guard lock(mtx);
-
-            num_allocations--;
-            ptr = nullptr;
-        }
+        void deallocate(void * & ptr);
         template<typename T>
         void deallocate(T * & ptr)
         {
             deallocate((void*&)ptr);
         }
-        void reset_arena()
-        {
-            std::lock_guard lock(mtx);
-
-            if(num_allocations != 0) {
-                eslog::error("arena_allocator: mismatch between allocations and deallocations, %zu allocations not deallocated\n", num_allocations);
-            }
-
-            num_allocations = 0;
-            curr_offset = 0;
-        }
-        size_t get_free_size()
-        {
-            return capacity - curr_offset;
-        }
-        size_t get_capacity()
-        {
-            return capacity;
-        }
+        void reset_arena();
+        size_t get_free_size();
+        size_t get_capacity();
     };
 
     template<bool ad, bool ah>
