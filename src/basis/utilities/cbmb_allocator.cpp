@@ -3,7 +3,6 @@
 
 #include "esinfo/eslog.hpp"
 
-
 #include <omp.h>
 
 

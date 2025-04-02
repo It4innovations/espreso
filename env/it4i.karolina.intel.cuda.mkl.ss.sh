@@ -1,16 +1,32 @@
 #!/bin/bash
 
+cudaversionname="${1}"
+cudaversion=""
+if [ "${cudaversionname}" == "legacy" ]
+then
+    cudaversion="11.7.0"
+fi
+if [ "${cudaversionname}" == "modern" ]
+then
+    cudaversion="12.8.0"
+fi
+if [ "${cudaversion}" == "" ]
+then
+    echo "mising argument - cuda version name - legacy/modern"
+    return
+fi
+
 
 
 ml CMake/3.29.3-GCCcore-13.3.0
 ml intel/2024a
 
-. env/dependencies/install.gklib.sh cudamkl icx
-. env/dependencies/install.metis32.sh cudamkl icx
-. env/dependencies/install.parmetis32.sh cudamkl mpiicx
-. env/dependencies/install.suitesparse.sh cudamkl icx ifx
+. env/dependencies/install.gklib.sh intelcudamklss icx
+. env/dependencies/install.metis32.sh intelcudamklss icx
+. env/dependencies/install.parmetis32.sh intelcudamklss mpiicx
+. env/dependencies/install.suitesparse.sh intelcudamklss icx ifx
 
-ml CUDA/12.8.0
+ml "CUDA/${cudaversion}"
 
 
 

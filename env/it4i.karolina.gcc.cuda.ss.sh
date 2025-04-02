@@ -1,10 +1,19 @@
 #!/bin/bash
 
-cusparse_version="legacy"
-# cusparse_version="modern"
-if [ "$#" -ge 1 ]
+cudaversionname="${1}"
+cudaversion=""
+if [ "${cudaversionname}" == "legacy" ]
 then
-    cusparse_version="$1"
+    cudaversion="11.7.0"
+fi
+if [ "${cudaversionname}" == "modern" ]
+then
+    cudaversion="12.8.0"
+fi
+if [ "${cudaversion}" == "" ]
+then
+    echo "mising argument - cuda version name - legacy/modern"
+    return
 fi
 
 
@@ -14,15 +23,14 @@ ml GCC/11.3.0
 ml OpenBLAS/0.3.20-GCC-11.3.0
 ml OpenMPI/4.1.4-GCC-11.3.0
 ml CMake/3.24.3-GCCcore-11.3.0
-if [ "${cusparse_version}" = "legacy" ]; then ml CUDA/11.7.0; fi
-if [ "${cusparse_version}" = "modern" ]; then ml CUDA/12.8.0; fi
+ml "CUDA/${cudaversion}"
 
 
 
-. env/dependencies/install.suitesparse.sh cuda gcc gfortran
-. env/dependencies/install.gklib.sh cuda gcc
-. env/dependencies/install.metis32.sh cuda gcc
-. env/dependencies/install.parmetis32.sh cuda mpicc
+. env/dependencies/install.suitesparse.sh gcccudass gcc gfortran
+. env/dependencies/install.gklib.sh gcccudass gcc
+. env/dependencies/install.metis32.sh gcccudass gcc
+. env/dependencies/install.parmetis32.sh gcccudass mpicc
 
 
 
@@ -37,7 +45,7 @@ export OMP_NUM_THREADS=16,1
 
 export ESPRESO_RANK_TO_GPU_MAP="2,3,0,1,6,7,4,5"
 
-if [ "${cusparse_version}" = "legacy" ]; then
+if [ "${cudaversionname}" = "legacy" ]; then
     export ESPRESO_USE_CUSPARSE_LEGACY="true"
 fi
 
