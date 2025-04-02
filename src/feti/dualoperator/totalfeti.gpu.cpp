@@ -1120,6 +1120,8 @@ void TotalFETIGpu<T,I>::destroy_dual_things()
 
     tm_total.start();
 
+    gpu::mgm::device_wait();
+
     for(size_t di = 0; di < n_domains; di++) {
         per_domain_stuff & data = domain_data[di];
         gpu::spblas::handle & hs = handles_sparse[di % n_queues];
