@@ -24,6 +24,7 @@ if [ ! -f "${hqbin}" ]
 then
     echo "HyperQueue is not installed in dependencies"
     # just wget and extract it from github
+    # or symlink to actual install dir
     exit 2
 fi
 
@@ -40,8 +41,10 @@ mkdir -p "${hq_outdir}"
 slurm_outdir="${rundir}/slurm_outerr"
 mkdir -p "${slurm_outdir}"
 
+machine=$(cat "${rundir}/machine.txt")
+
 num_cores_for_job="1"
-machine="$(echo ${rundir} | rev | cut -d/ -f1 | rev | cut -d_ -f1)"
+if [ "${machine}" == "karolina" ]; then num_cores_for_job="16"; fi
 if [ "${machine}" == "mn5" ]; then num_cores_for_job="20"; fi
 
 
@@ -64,7 +67,7 @@ ${hqbin} submit \
 
 echo
 echo "run slurm job using:"
-if [ "${machine}" == "mn5" ]; then
+if [ "${machine}" == "karolina" ] || [ "${machine}" == "mn5" ]; then
     echo "    sbatch --array=1-10 -o ${slurm_outdir}/slurm-%j.out -e ${slurm_outdir}/slurm-%j.err ${basedir}/slurmjob_${machine}.sh"
 fi
 echo

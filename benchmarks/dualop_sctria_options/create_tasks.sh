@@ -1,12 +1,12 @@
 #!/bin/bash
 
-# machine="karolina"
-machine="mn5"
+machine="karolina"
+# machine="mn5"
 # machine="lumi"
 # machine="tiber"
 
-# env_command="source env/it4i.karolina.cuda.mkl.ss.sh legacy"
-env_command="source env/bsc.mn5.gcc.cuda.mkl.ss.sh legacy"
+env_command="source env/it4i.karolina.gcc.cuda.mkl.ss.sh legacy"
+# env_command="source env/bsc.mn5.gcc.cuda.mkl.ss.sh legacy"
 
 phase=1
 
@@ -92,6 +92,7 @@ mkdir -p "${rundir}"
 tasksdir="${rundir}/tasks"
 mkdir -p "${tasksdir}"
 
+echo "${machine}" > "${rundir}/machine.txt"
 
 
 

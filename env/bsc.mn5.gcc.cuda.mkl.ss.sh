@@ -12,7 +12,7 @@ then
 fi
 if [ "${cudaversion}" == "" ]
 then
-    echo "mising argument - cuda version name - legacy/modern"
+    echo "wrong argument - cuda version name - legacy/modern"
     return
 fi
 

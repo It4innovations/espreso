@@ -12,13 +12,22 @@ then
 fi
 if [ "${cudaversion}" == "" ]
 then
-    echo "mising argument - cuda version name - legacy/modern"
+    echo "wrong argument - cuda version name - legacy/modern"
     return
 fi
 
-ml CMake/3.29.3-GCCcore-13.3.0
-ml OpenMPI/5.0.3-GCC-13.3.0
+
+
 ml intel/2024a
+if [ "${cudaversionname}" = "legacy" ]; then
+    ml GCC/11.3.0
+    ml CMake/3.24.3-GCCcore-11.3.0
+    ml OpenMPI/4.1.4-GCC-11.3.0
+fi
+if [ "${cudaversionname}" = "modern" ]; then
+    ml CMake/3.29.3-GCCcore-13.3.0
+    ml OpenMPI/5.0.3-GCC-13.3.0
+fi
 
 . env/dependencies/install.gklib.sh gcccudamklss gcc
 . env/dependencies/install.metis32.sh gcccudamklss gcc
