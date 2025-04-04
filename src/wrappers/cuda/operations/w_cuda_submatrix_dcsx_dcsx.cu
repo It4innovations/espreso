@@ -24,8 +24,11 @@ static void calc_start_end_ptrs_and_nnzperprim(I * src_ptrs, I * src_idxs, I * s
 
     I start = src_ptrs[prim_src];
     I end = src_ptrs[prim_src+1];
-    start_ptrs[prim_dst] = start;
-    end_ptrs[prim_dst] = end;
+    if(threadIdx.x == 0) {
+        start_ptrs[prim_dst] = start;
+        end_ptrs[prim_dst] = end;
+    }
+    __syncthreads();
     for(I i = start + threadIdx.x; i < end-1; i += blockDim.x) {
         I secdary_curr = src_idxs[i];
         I secdary_next = src_idxs[i+1];
@@ -65,7 +68,7 @@ static void calc_dst_idxs_vals(I * src_start_ptrs, I * src_end_ptrs, I * src_idx
         I offset = i_src - src_start;
         I i_dst = dst_start + offset;
         I iss = src_idxs[i_src];
-        I isd = src_idxs[i_src] - start_secdary;
+        I isd = iss - start_secdary;
         T val = src_vals[i_src];
         dst_idxs[i_dst] = isd;
         dst_vals[i_dst] = val;
