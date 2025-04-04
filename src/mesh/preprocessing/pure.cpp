@@ -705,7 +705,7 @@ void computeElementsClusterization(const ElementStore *elements, BodyStore *bodi
         parts = bodies->totalSize;
     }
 
-    std::vector<esint> psize(parts);
+    std::vector<size_t> psize(parts);
     std::vector<std::vector<esint> > dist(parts, { 0 });
     std::vector<std::vector<esint> > data(parts);
     std::vector<std::vector<esint> > part(parts);
@@ -726,17 +726,17 @@ void computeElementsClusterization(const ElementStore *elements, BodyStore *bodi
 
     int rest = info::mpi::size;
     if (parts > 1) {
-        std::vector<esint> poffset(parts);
+        std::vector<size_t> poffset(parts);
         for (int p = 0; p < parts; ++p) {
             poffset[p] = part[p].size();
         }
         Communication::exscan(psize, poffset);
-        esint totalsize = 0;
+        size_t totalsize = 0;
         for (int p = 0; p < parts; ++p) {
             totalsize += psize[p];
         }
         for (int p = 0; p < parts; ++p) {
-            psize[p] = std::max((esint)1, info::mpi::size * psize[p] / totalsize);
+            psize[p] = std::max(1UL, psize[p] * info::mpi::size / totalsize);
             rest -= psize[p];
         }
 
