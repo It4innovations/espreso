@@ -48,6 +48,7 @@ public:
         bool gpu_wait_after_mainloop_update = false;
         bool outer_timers = false;
         bool inner_timers = false;
+        bool print_parameters = false;
     };
 private:
     struct per_domain_stuff
@@ -68,6 +69,7 @@ private:
         Vector_Dense<I,I,gpu::mgm::Ad> d_applyg_D2C;
     };
     config cfg;
+    typename gpu::operations::sc_symm_hcsx_ddny_tria<T,I>::config op_sc_config;
     gpu::mgm::device device;
     gpu::mgm::queue main_q;
     std::vector<gpu::mgm::queue> queues;

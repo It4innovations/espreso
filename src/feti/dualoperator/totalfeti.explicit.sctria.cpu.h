@@ -47,6 +47,7 @@ public:
         char mainloop_update_split = '_'; // Combined, Separate
         bool outer_timers = false;
         bool inner_timers = false;
+        bool print_parameters = false;
     };
 private:
     struct per_domain_stuff
@@ -65,6 +66,7 @@ private:
         char actual_F_uplo = '_';
     };
     config cfg;
+    typename math::operations::sc_symm_csx_dny_tria<T,I>::config op_sc_config;
     size_t n_domains = 0;
     std::vector<per_domain_stuff> domain_data;
     std::vector<MatrixDenseData_new<T>> Fs_allocated;

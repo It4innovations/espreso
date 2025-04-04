@@ -41,6 +41,7 @@ function create_task {
         echo "export ESPRESO_BENCHMARK_elements_y=\"${elements_y}\""
         echo "export ESPRESO_BENCHMARK_elements_z=\"${elements_z}\""
         echo
+        echo "export ESPRESO_DUALOPSCTRIA_CONFIG_print_parameters=\"${print_parameters}\""
         echo "export ESPRESO_DUALOPSCTRIA_CONFIG_outer_timers=\"${outer_timers}\""
         echo "export ESPRESO_DUALOPSCTRIA_CONFIG_inner_timers=\"${inner_timers}\""
         echo "export ESPRESO_DUALOPSCTRIA_CONFIG_mainloop_update_split=\"${mainloop_update_split}\""
@@ -86,13 +87,15 @@ fi
 
 datestr="$(date +%Y%m%d_%H%M%S)"
 
-rundir="${basedir}/runs/phase${phase}/${machine}_${datestr}"
+rundir="${basedir}/runs/${machine}_${datestr}"
 mkdir -p "${rundir}"
 
 tasksdir="${rundir}/tasks"
 mkdir -p "${tasksdir}"
 
 echo "${machine}" > "${rundir}/machine.txt"
+
+echo "${phase}" > "${rundir}/phase.txt"
 
 
 
@@ -147,6 +150,7 @@ array_domains_z=()
 
 
 
+print_parameters="1"
 outer_timers="1"
 inner_timers="0"
 mainloop_update_split="S"

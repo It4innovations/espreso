@@ -35,7 +35,8 @@ then
     exit 3
 fi
 
-hq_outdir="${rundir}/hq_outerr"
+datestr="$(date +%Y%m%d_%H%M%S)"
+hq_outdir="${rundir}/hq_outerr/${datestr}"
 mkdir -p "${hq_outdir}"
 
 slurm_outdir="${rundir}/slurm_outerr"
@@ -58,8 +59,8 @@ ${hqbin} submit \
     --time-request=6m \
     --each-line "${taskdirsfile}" \
     --cpus="${num_cores_for_job} compact" \
-    --stdout="${hq_outdir}/job-%{JOB_ID}-%{TASK_ID}.o.txt" \
-    --stderr="${hq_outdir}/job-%{JOB_ID}-%{TASK_ID}.e.txt" \
+    --stdout="${hq_outdir}/hqtask-%{JOB_ID}-%{TASK_ID}.o.txt" \
+    --stderr="${hq_outdir}/hqtask-%{JOB_ID}-%{TASK_ID}.e.txt" \
     -- \
     "${basedir}/hqtask.sh"
 

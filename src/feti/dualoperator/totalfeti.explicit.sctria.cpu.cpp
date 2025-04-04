@@ -4,6 +4,7 @@
 #include "feti/common/applyB.h"
 #include "basis/utilities/minmaxavg.h"
 #include "basis/utilities/stacktimer.h"
+#include "esinfo/meshinfo.h"
 
 #include <algorithm>
 
@@ -33,6 +34,29 @@ static void set_by_env(T & var, const char * env_var)
                 || strcmp(str,"on") == 0);
         }
     }
+}
+
+static void replace_if_default(char & param, char deflt)
+{
+    if(param == '_') {
+        param = deflt;
+    }
+}
+
+template<typename T, typename I>
+static void replace_unset_configs(typename math::operations::sc_symm_csx_dny_tria<T,I>::config & cfg_sc, typename TotalFETIExplicitScTria<T,I>::config & cfg_dualop)
+{
+    replace_if_default(cfg_sc.order_X, (info::mesh->dimension == 2) ? 'C' : 'R');
+    replace_if_default(cfg_sc.cfg_trsm.splitrhs.factor_order_sp, 'R');
+    replace_if_default(cfg_sc.cfg_trsm.splitrhs.factor_order_dn, 'C');
+    replace_if_default(cfg_sc.cfg_trsm.splitfactor.trsm_factor_order, 'R');
+    replace_if_default(cfg_sc.cfg_trsm.splitfactor.gemm_factor_order_sp, 'R');
+    replace_if_default(cfg_sc.cfg_trsm.splitfactor.gemm_factor_order_dn, 'R');
+
+    replace_if_default(cfg_sc.order_L, 'C');
+
+    replace_if_default(cfg_dualop.order_F, 'R');
+    replace_if_default(cfg_dualop.mainloop_update_split, 'C');
 }
 
 template<typename T, typename I>
@@ -66,6 +90,9 @@ static void setup_configs(typename math::operations::sc_symm_csx_dny_tria<T,I>::
     // set_by_env(cfg_dualop.gpu_wait_after_mainloop_update, "ESPRESO_DUALOPSCTRIA_CONFIG_gpu_wait_after_mainloop_update");
     set_by_env(cfg_dualop.inner_timers,                   "ESPRESO_DUALOPSCTRIA_CONFIG_inner_timers");
     set_by_env(cfg_dualop.outer_timers,                   "ESPRESO_DUALOPSCTRIA_CONFIG_outer_timers");
+    set_by_env(cfg_dualop.print_parameters,               "ESPRESO_DUALOPSCTRIA_CONFIG_print_parameters");
+
+    replace_unset_configs<T,I>(cfg_sc, cfg_dualop);
 }
 
 
@@ -73,6 +100,7 @@ static void setup_configs(typename math::operations::sc_symm_csx_dny_tria<T,I>::
 template<typename T, typename I>
 TotalFETIExplicitScTria<T,I>::TotalFETIExplicitScTria(FETI<T> &feti) : DualOperator<T>(feti)
 {
+    setup_configs<T,I>(op_sc_config, cfg);
 }
 
 
@@ -90,6 +118,44 @@ void TotalFETIExplicitScTria<T,I>::info()
 {
     eslog::info(" = EXPLICIT TOTAL FETI OPERATOR USING TRIANGULAR SC                                   = \n");
     eslog::info(" =   EXTERNAL SPARSE SOLVER               %50s = \n", DirectSparseSolver<T>::name());
+
+    if(cfg.print_parameters) {
+        auto order_to_string = [](char order){ switch(order){ case 'R': return "ROW_MAJOR"; case 'C': return "COL_MAJOR"; default: return "UNDEFINED"; }};
+        auto bool_to_string = [](bool val){ return val ? "TRUE" : "FALSE";};
+        auto loop_split_to_string = [](char val){ switch(val){ case 'C': return "COMBINED"; case 'S': return "SEPARATE"; default: return "UNDEFINED"; }};
+        auto trsm_strategy_to_string = [](char val){ switch(val){ case 'R': return "SPLIT RHS TO BLOCK COLUMNS"; case 'F': return "SPLIT FACTOR TO BLOCKS"; default: return "UNDEFINED"; } };
+        auto partalg_to_string = [](char alg){ switch(alg){ case 'U': return "UNIFORM"; case 'M': return "MINIMAL WORK"; default: return "UNDEFINED"; } };
+        auto spdncrit_to_string = [](char val){ switch(val){ case 'S': return "SPARSE ONLY"; case 'D': return "DENSE ONLY"; case 'C': return "FRACTION OF CHUNKS IS SPARSE"; case 'Z': return "FRACTION ON SIZE IS SPARSE"; case 'T': return "DECIDE BASED ON DENSITY"; default: return "UNDEFINED"; } };
+        auto spdn_to_string = [](char val){ switch(val){ case 'S': return "SPARSE"; case 'D': return "DENSE"; default: return "UNDEFINED"; } };
+        auto prune_to_string = [](char val){ switch(val){ case 'N': return "NOTHING"; case 'R': return "PRUNE ROWS"; case 'C': return "PRUNE COLS"; case 'A': return "PRUNE_ALL"; default: return "UNDEFINED"; } };
+        auto herk_strategy_to_string = [](char val){ switch(val){ case 'T': return "STAIRS"; case 'Q': return "SQUARES"; default: return "UNDEFINED"; } };
+
+        eslog::info(" =   %-50s       %+30s = \n", "parallel_set", bool_to_string(cfg.parallel_set));
+        eslog::info(" =   %-50s       %+30s = \n", "parallel_set", bool_to_string(cfg.parallel_update));
+        eslog::info(" =   %-50s       %+30s = \n", "parallel_set", bool_to_string(cfg.parallel_apply));
+        eslog::info(" =   %-50s       %+30s = \n", "mainloop_update_split", loop_split_to_string(cfg.mainloop_update_split));
+        eslog::info(" =   %-50s       %+30s = \n", "order_F", order_to_string(cfg.order_F));
+        eslog::info(" =   %-50s       %+30s = \n", "order_X", order_to_string(op_sc_config.order_X));
+        eslog::info(" =   %-50s       %+30s = \n", "order_L", order_to_string(op_sc_config.order_L));
+        eslog::info(" =   %-50s       %+30s = \n", "trsm.strategy", trsm_strategy_to_string(op_sc_config.cfg_trsm.strategy));
+        eslog::info(" =   %-50s       %+30s = \n", "trsm.partition.algorithm", partalg_to_string(op_sc_config.cfg_trsm.partition.algorithm));
+        eslog::info(" =   %-50s       %+30d = \n", "trsm.partition.parameter", op_sc_config.cfg_trsm.partition.parameter);
+        eslog::info(" =   %-50s       %+30s = \n", "trsm.splitrhs.factor_order_sp", order_to_string(op_sc_config.cfg_trsm.splitrhs.factor_order_sp));
+        eslog::info(" =   %-50s       %+30s = \n", "trsm.splitrhs.factor_order_dn", order_to_string(op_sc_config.cfg_trsm.splitrhs.factor_order_dn));
+        eslog::info(" =   %-50s       %+30s = \n", "trsm.splitrhs.spdn_criteria", spdncrit_to_string(op_sc_config.cfg_trsm.splitrhs.spdn_criteria));
+        eslog::info(" =   %-50s       %30.3f = \n", "trsm.splitrhs.spdn_param", op_sc_config.cfg_trsm.splitrhs.spdn_param);
+        eslog::info(" =   %-50s       %+30s = \n", "trsm.splitfactor.trsm_factor_spdn", spdn_to_string(op_sc_config.cfg_trsm.splitfactor.trsm_factor_spdn));
+        eslog::info(" =   %-50s       %+30s = \n", "trsm.splitfactor.trsm_factor_order", order_to_string(op_sc_config.cfg_trsm.splitfactor.trsm_factor_order));
+        eslog::info(" =   %-50s       %+30s = \n", "trsm.splitfactor.gemm_factor_order_sp", order_to_string(op_sc_config.cfg_trsm.splitfactor.gemm_factor_order_sp));
+        eslog::info(" =   %-50s       %+30s = \n", "trsm.splitfactor.gemm_factor_order_dn", order_to_string(op_sc_config.cfg_trsm.splitfactor.gemm_factor_order_dn));
+        eslog::info(" =   %-50s       %+30s = \n", "trsm.splitfactor.gemm_factor_prune", prune_to_string(op_sc_config.cfg_trsm.splitfactor.gemm_factor_prune));
+        eslog::info(" =   %-50s       %+30s = \n", "trsm.splitfactor.gemm_spdn_criteria", spdncrit_to_string(op_sc_config.cfg_trsm.splitfactor.gemm_spdn_criteria));
+        eslog::info(" =   %-50s       %30.3f = \n", "trsm.splitfactor.gemm_spdn_param", op_sc_config.cfg_trsm.splitfactor.gemm_spdn_param);
+        eslog::info(" =   %-50s       %+30s = \n", "herk.strategy", herk_strategy_to_string(op_sc_config.cfg_herk.strategy));
+        eslog::info(" =   %-50s       %+30s = \n", "herk.partition_algorithm", partalg_to_string(op_sc_config.cfg_herk.partition_algorithm));
+        eslog::info(" =   %-50s       %+30d = \n", "herk.partition_parameter", op_sc_config.cfg_herk.partition_parameter);
+    }
+
     eslog::info(minmaxavg<size_t>::compute_from_allranks(domain_data.begin(), domain_data.end(), [](const per_domain_stuff & data){ return data.n_dofs_domain; }).to_string("  Domain volume [dofs]").c_str());
     eslog::info(minmaxavg<size_t>::compute_from_allranks(domain_data.begin(), domain_data.end(), [](const per_domain_stuff & data){ return data.n_dofs_interface; }).to_string("  Domain surface [dofs]").c_str());
     eslog::info(" = ----------------------------------------------------------------------------------------- = \n");
@@ -100,9 +166,6 @@ void TotalFETIExplicitScTria<T,I>::info()
 template<typename T, typename I>
 void TotalFETIExplicitScTria<T,I>::set(const step::Step &step)
 {
-    typename math::operations::sc_symm_csx_dny_tria<T,I>::config op_sc_config;
-    setup_configs<T,I>(op_sc_config, cfg);
-
     if(cfg.outer_timers) stacktimer::enable();
     stacktimer::push("TotalFETIExplicitScTria::set");
 
