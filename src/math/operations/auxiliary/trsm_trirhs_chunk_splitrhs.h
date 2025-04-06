@@ -26,7 +26,7 @@ public:
     struct config
     {
         char factor_spdn = '_';
-        char factor_order = '_';
+        char factor_order_sp = '_';
     };
 public:
     trsm_trirhs_chunk_splitrhs() = default;
@@ -38,7 +38,8 @@ public:
 public:
     void set_config(config cfg_);
     void set_range(size_t rhs_start_, size_t rhs_end_);
-    void set_L(MatrixCsxView_new<T,I> * L_);
+    void set_L_sp(MatrixCsxView_new<T,I> * L_sp_);
+    void set_L_dn(MatrixDenseView_new<T> * L_dn_);
     void set_X(MatrixDenseView_new<T> * X_);
     void set_X_colpivots(VectorDenseView_new<I> * X_colpivots_);
     void preprocess();
@@ -50,7 +51,8 @@ private:
     size_t k_start = 0;
     size_t k_end = 0;
     size_t k_size = 0;
-    MatrixCsxView_new<T,I> * L = nullptr;
+    MatrixCsxView_new<T,I> * L_sp = nullptr;
+    MatrixDenseView_new<T> * L_dn = nullptr;
     MatrixDenseView_new<T> * X = nullptr;
     VectorDenseView_new<I> * X_colpivots = nullptr;
     config cfg;
@@ -58,10 +60,10 @@ private:
     bool set_range_called = false;
     bool preprocess_called = false;
     MatrixCsxData_new<T,I> sub_L_sp;
-    MatrixDenseData_new<T> sub_L_dn;
+    MatrixDenseView_new<T> sub_L_dn;
     MatrixDenseView_new<T> sub_X;
     submatrix_csx_csy<T,I> op_submatrix_L_sp;
-    submatrix_csx_dny<T,I> op_submatrix_L_dn;
+    submatrix_dnx_dnx_view<T> op_submatrix_L_dn;
     submatrix_dnx_dnx_view<T> op_submatrix_X;
     trsm_csx_dny_dny<T,I> op_trsm_sp;
     trsm_dnx_dny<T> op_trsm_dn;

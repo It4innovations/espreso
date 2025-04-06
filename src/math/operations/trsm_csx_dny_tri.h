@@ -5,6 +5,7 @@
 #include "math/primitives_new/matrix_csx_view_new.h"
 #include "math/primitives_new/matrix_dense_view_new.h"
 #include "math/primitives_new/vector_dense_data_new.h"
+#include "math/operations/convert_csx_dny.h"
 #include "math/operations/auxiliary/trsm_trirhs_chunk_splitrhs.h"
 #include "math/operations/auxiliary/trsm_trirhs_chunk_splitfactor.h"
 
@@ -67,6 +68,9 @@ private:
     VectorDenseData_new<size_t> partition;
     VectorDenseData_new<I> X_colpivots;
     VectorDenseData_new<I> X_rowtrails;
+    size_t splitrhs_first_dense_chunk = 0;
+    MatrixDenseData_new<T> L_dn;
+    convert_csx_dny<T,I> op_L_sp2dn;
     std::vector<trsm_trirhs_chunk_splitrhs<T,I>> ops_chunks_splitrhs;
     std::vector<trsm_trirhs_chunk_splitfactor<T,I>> ops_chunks_splifactor;
     bool called_set_config = false;

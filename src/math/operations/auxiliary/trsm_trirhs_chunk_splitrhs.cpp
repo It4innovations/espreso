@@ -34,9 +34,17 @@ void trsm_trirhs_chunk_splitrhs<T,I>::set_range(size_t rhs_start_, size_t rhs_en
 
 
 template<typename T, typename I>
-void trsm_trirhs_chunk_splitrhs<T,I>::set_L(MatrixCsxView_new<T,I> * L_)
+void trsm_trirhs_chunk_splitrhs<T,I>::set_L_sp(MatrixCsxView_new<T,I> * L_sp_)
 {
-    L = L_;
+    L_sp = L_sp_;
+}
+
+
+
+template<typename T, typename I>
+void trsm_trirhs_chunk_splitrhs<T,I>::set_L_dn(MatrixDenseView_new<T> * L_dn_)
+{
+    L_dn = L_dn_;
 }
 
 
@@ -65,15 +73,18 @@ void trsm_trirhs_chunk_splitrhs<T,I>::preprocess()
     if(preprocess_called) eslog::error("preprocess was already called\n");
     if(!set_config_called) eslog::error("config is not set\n");
     if(!set_range_called) eslog::error("range is not set\n");
-    if(L == nullptr) eslog::error("matrix L is not set\n");
+    if(L_sp == nullptr) eslog::error("matrix L_sp is not set\n");
+    if(L_dn == nullptr) eslog::error("matrix L_dn is not set\n");
     if(X == nullptr) eslog::error("matrix X is not set\n");
     if(X_colpivots == nullptr) eslog::error("B colpivots is not set\n");
-    if(L->nrows != L->ncols) eslog::error("matrix L must be square\n");
-    if(L->nrows != X->nrows) eslog::error("incompatible matrix sizes\n");
-    if(L->prop.uplo != 'L') eslog::error("matrix L must have uplo=L\n");
+    if(L_sp->nrows != L_sp->ncols) eslog::error("matrix L_sp must be square\n");
+    if(L_dn->nrows != L_dn->ncols) eslog::error("matrix L_dn must be square\n");
+    if(L_sp->nrows != X->nrows) eslog::error("incompatible matrix sizes\n");
+    if(L_sp->prop.uplo != 'L') eslog::error("matrix L_sp must have uplo=L\n");
+    if(L_dn->prop.uplo != 'L') eslog::error("matrix L_dn must have uplo=L\n");
 
     k_start = X_colpivots->vals[rhs_start];
-    k_end = L->nrows;
+    k_end = L_sp->nrows;
     k_size = k_end - k_start;
 
     sub_X.set_view(k_size, rhs_size, X->ld, X->order, nullptr);
@@ -82,28 +93,29 @@ void trsm_trirhs_chunk_splitrhs<T,I>::preprocess()
     op_submatrix_X.set_bounds(k_start, k_end, rhs_start, rhs_end);
 
     if(cfg.factor_spdn == 'S') {
-        op_submatrix_L_sp.set_matrix_src(L);
+        op_submatrix_L_sp.set_matrix_src(L_sp);
         op_submatrix_L_sp.set_matrix_dst(&sub_L_sp);
         op_submatrix_L_sp.set_bounds(k_start, k_end, k_start, k_end);
         op_submatrix_L_sp.setup();
         size_t nnz = op_submatrix_L_sp.get_output_matrix_nnz();
 
-        sub_L_sp.set(k_size, k_size, nnz, cfg.factor_order, AllocatorCPU_new::get_singleton());
-        sub_L_sp.prop.diag = L->prop.diag;
-        sub_L_sp.prop.uplo = L->prop.uplo;
+        sub_L_sp.set(k_size, k_size, nnz, cfg.factor_order_sp, AllocatorCPU_new::get_singleton());
+        sub_L_sp.prop.diag = L_sp->prop.diag;
+        sub_L_sp.prop.uplo = L_sp->prop.uplo;
 
         op_trsm_sp.set_system_matrix(&sub_L_sp);
         op_trsm_sp.set_rhs_matrix(&sub_X);
         op_trsm_sp.set_solution_matrix(&sub_X);
     }
     if(cfg.factor_spdn == 'D') {
-        op_submatrix_L_dn.set_matrix_src(L);
-        op_submatrix_L_dn.set_matrix_dst(&sub_L_dn);
-        op_submatrix_L_dn.set_bounds(k_start, k_end, k_start, k_end);
+        sub_L_dn.set_view(k_size, k_size, L_dn->ld, L_dn->order, nullptr);
+        sub_L_dn.prop.diag = L_dn->prop.diag;
+        sub_L_dn.prop.uplo = L_dn->prop.uplo;
 
-        sub_L_dn.set(k_size, k_size, cfg.factor_order, AllocatorCPU_new::get_singleton());
-        sub_L_dn.prop.diag = L->prop.diag;
-        sub_L_dn.prop.uplo = L->prop.uplo;
+        op_submatrix_L_dn.set_matrix_src(L_dn);
+        op_submatrix_L_dn.set_matrix_dst(&sub_L_dn);
+        size_t dense_k_start = L_dn->nrows - k_size;
+        op_submatrix_L_dn.set_bounds(dense_k_start, k_end, dense_k_start, k_end);
 
         op_trsm_dn.set_system_matrix(&sub_L_dn);
         op_trsm_dn.set_rhs_sol(&sub_X);
@@ -132,10 +144,8 @@ void trsm_trirhs_chunk_splitrhs<T,I>::perform()
         sub_L_sp.free();
     }
     if(cfg.factor_spdn == 'D') {
-        sub_L_dn.alloc();
-        op_submatrix_L_dn.perform_all();
+        op_submatrix_L_dn.perform();
         op_trsm_dn.perform();
-        sub_L_dn.free();
     }
 
     stacktimer::pop();
