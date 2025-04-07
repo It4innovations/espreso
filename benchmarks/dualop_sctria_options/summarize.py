@@ -58,7 +58,7 @@ summstring = io.StringIO()
 
 
 header_1 = ["my_id", "run_name", "machine", "task_id", "physics", "dimension"]
-header_2 = ["element_type", "domains_x", "domains_y", "domains_z", "domains_total", "elements_x", "elements_y", "elements_z", "elements_total", "n_dofs", "dual_operator"]
+header_2 = ["element_type", "domains_x", "domains_y", "domains_z", "domains_total", "elements_x", "elements_y", "elements_z", "elements_total", "n_dofs", "n_dofs_domain_actual", "n_dofs_interface_actual", "dual_operator"]
 header_3 = ["trsm_partition_parameter", "herk_partition_parameter", "trsm_splitrhs_spdn_param", "trsm_splitfactor_gemm_spdn_param", "herk_strategy", "", "trsm_strategy", "trsm_splitrhs_spdn_criteria", "trsm_splitfactor_trsm_factor_spdn", "trsm_splitfactor_gemm_spdn_criteria", "trsm_splitfactor_gemm_factor_prune", "", "order_X", "trsm_splitrhs_factor_order_sp", "trsm_splitrhs_factor_order_dn", "trsm_splitfactor_trsm_factor_order", "trsm_splitfactor_gemm_factor_order_sp", "trsm_splitfactor_gemm_factor_order_dn"]
 header_4 = ["exitcode", "errfile", "timeoutfile"]
 header_5 = ["assemble_time", "time_per_subdomain"]
@@ -104,8 +104,11 @@ for run_dir_name in os.listdir(runs_to_summarize_dir):
         summstring.write(physics + ";")
         summstring.write(dimension + ";")
         summstring.write(";")
+        
+        out_file = task_dir + "/out.txt"
+        out_file_lines = read_file_to_string(out_file).split("\n")
 
-        easily_extractable_fields_benchmark = ["element_type", "domains_x", "domains_y", "domains_z", "domains_total", "elements_x", "elements_y", "elements_z", "elements_total", "n_dofs", "dual_operator"]
+        easily_extractable_fields_benchmark = ["element_type", "domains_x", "domains_y", "domains_z", "domains_total", "elements_x", "elements_y", "elements_z", "elements_total", "n_dofs", "n_dofs_domain_actual", "n_dofs_interface_actual", "dual_operator"]
         domains_total = 1
         elements_total = 1
         n_dofs = 1
@@ -119,6 +122,22 @@ for run_dir_name in os.listdir(runs_to_summarize_dir):
                 summstring.write(str(elements_total) + ";")
             elif field == "n_dofs":
                 summstring.write(str(n_dofs) + ";")
+            elif field == "n_dofs_domain_actual":
+                lines = [l for l in out_file_lines if (" =   Domain volume [dofs]" in l)]
+                if len(lines) == 0:
+                    summstring.write(";")
+                else:
+                    line = lines[0]
+                    ndofs = line.split("[dofs]")[1].split("<")[0].replace(" ", "")
+                    summstring.write(ndofs + ";")
+            elif field == "n_dofs_interface_actual":
+                lines = [l for l in out_file_lines if (" =   Domain surface [dofs]" in l)]
+                if len(lines) == 0:
+                    summstring.write(";")
+                else:
+                    line = lines[0]
+                    ndofs = line.split("[dofs]")[1].split("<")[0].replace(" ", "")
+                    summstring.write(ndofs + ";")
             else:
                 line = [line for line in config_file_lines if (("ESPRESO_BENCHMARK_" + field) in line)][0]
                 value = line.split("\"")[1]
@@ -156,8 +175,6 @@ for run_dir_name in os.listdir(runs_to_summarize_dir):
 
         summstring.write(";")
 
-        out_file = task_dir + "/out.txt"
-        out_file_lines = read_file_to_string(out_file).split("\n")
         measured_lines = [line for line in out_file_lines if ("finishd 'update_mainloop_sepatare_assemble'" in line)]
         if len(measured_lines) > 0:
             measured_line = measured_lines[-1]

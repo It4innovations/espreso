@@ -43,9 +43,28 @@ static void replace_if_default(char & param, char deflt)
     }
 }
 
+static void replace_if_zero(int & param, int deflt)
+{
+    if(param == 0) {
+        param = deflt;
+    }
+}
+
 template<typename T, typename I>
 static void replace_unset_configs(typename math::operations::sc_symm_csx_dny_tria<T,I>::config & cfg_sc, typename TotalFETIExplicitScTria<T,I>::config & cfg_dualop)
 {
+    if(info::mesh->dimension == 2 && cfg_sc.cfg_herk.strategy == 'Q') replace_if_zero(cfg_sc.cfg_herk.partition_parameter, -200);
+    if(info::mesh->dimension == 2 && cfg_sc.cfg_herk.strategy == 'T') replace_if_zero(cfg_sc.cfg_herk.partition_parameter, -200);
+    if(info::mesh->dimension == 3 && cfg_sc.cfg_herk.strategy == 'Q') replace_if_zero(cfg_sc.cfg_herk.partition_parameter, 50);
+    if(info::mesh->dimension == 3 && cfg_sc.cfg_herk.strategy == 'T') replace_if_zero(cfg_sc.cfg_herk.partition_parameter, 10);
+    replace_if_default(cfg_sc.cfg_herk.partition_algorithm, 'U');
+
+    if(info::mesh->dimension == 2 && cfg_sc.cfg_trsm.strategy == 'F') replace_if_zero(cfg_sc.cfg_trsm.partition.parameter, -200);
+    if(info::mesh->dimension == 2 && cfg_sc.cfg_trsm.strategy == 'R') replace_if_zero(cfg_sc.cfg_trsm.partition.parameter, -100);
+    if(info::mesh->dimension == 3 && cfg_sc.cfg_trsm.strategy == 'F') replace_if_zero(cfg_sc.cfg_trsm.partition.parameter, -200);
+    if(info::mesh->dimension == 3 && cfg_sc.cfg_trsm.strategy == 'R') replace_if_zero(cfg_sc.cfg_trsm.partition.parameter, -100);
+    replace_if_default(cfg_sc.cfg_trsm.partition.algorithm, 'U');
+
     replace_if_default(cfg_sc.cfg_trsm.splitrhs.spdn_criteria, 'S');
     replace_if_default(cfg_sc.cfg_trsm.splitfactor.trsm_factor_spdn, (info::mesh->dimension == 2) ? 'S' : 'D');
     replace_if_default(cfg_sc.cfg_trsm.splitfactor.gemm_factor_prune, 'R');
@@ -66,16 +85,15 @@ static void replace_unset_configs(typename math::operations::sc_symm_csx_dny_tri
 
 
     // replace_if_default(cfg_sc.cfg_trsm.strategy, '_');
-    // replace_if_default(cfg_sc.cfg_trsm.partition.algorithm, '_');
-    // replace_if_default(cfg_sc.cfg_trsm.partition.parameter, '_');
     // replace_if_default(cfg_sc.cfg_herk.strategy, '_');
-    // replace_if_default(cfg_sc.cfg_herk.partition_algorithm, '_');
-    // replace_if_default(cfg_sc.cfg_herk.partition_parameter, '_');
 }
 
 template<typename T, typename I>
 static void setup_configs(typename math::operations::sc_symm_csx_dny_tria<T,I>::config & cfg_sc, typename TotalFETIExplicitScTria<T,I>::config & cfg_dualop)
 {
+    cfg_sc.cfg_trsm.partition.parameter = 0;
+    cfg_sc.cfg_herk.partition_parameter = 0;
+
     set_by_env(cfg_sc.order_X,                                   "ESPRESO_DUALOPSCTRIA_CONFIG_order_X");
     set_by_env(cfg_sc.order_L,                                   "ESPRESO_DUALOPSCTRIA_CONFIG_order_L");
     set_by_env(cfg_sc.cfg_trsm.strategy,                         "ESPRESO_DUALOPSCTRIA_CONFIG_trsm_strategy");

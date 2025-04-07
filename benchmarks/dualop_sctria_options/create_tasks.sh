@@ -8,7 +8,7 @@ machine="karolina"
 env_command="source env/it4i.karolina.gcc.cuda.mkl.ss.sh legacy"
 # env_command="source env/bsc.mn5.gcc.cuda.mkl.ss.sh legacy"
 
-phase=2
+phase=4
 
 
 
@@ -401,10 +401,128 @@ do
 
                 if [ "${phase}" == "3" ]
                 then
-                    ######################################################
-                    ### phase 3, partition parameter for trsm and herk ###
-                    ######################################################
-                    echo 333
+                    #########################################
+                    ### phase 3, trsm partition parameter ###
+                    #########################################
+                    # numer of tasks: 2244 = at most 187 gpu-hours
+                    # auto-select what we have already determined:
+                    #   order_X
+                    #   trsm_splitrhs_factor_order_sp
+                    #   trsm_splitrhs_factor_order_dn
+                    #   trsm_splitfactor_trsm_factor_order
+                    #   trsm_splitfactor_gemm_factor_order_sp
+                    #   trsm_splitfactor_gemm_factor_order_dn
+                    #   trsm_splitrhs_spdn_criteria
+                    #   trsm_splitfactor_trsm_factor_spdn
+                    #   trsm_splitfactor_gemm_spdn_criteria
+                    #   trsm_splitfactor_gemm_factor_prune
+                    # fix:
+                    #   trsm_splitrhs_spdn_param
+                    #   trsm_splitfactor_gemm_spdn_param
+                    #   herk_strategy
+                    #   herk_partition_parameter
+                    # for each:
+                    #   dual_operator
+                    #   trsm_strategy
+                    # select the best:
+                    #   trsm_partition_parameter
+                    order_X="_"
+                    trsm_splitrhs_factor_order_sp="_"
+                    trsm_splitrhs_factor_order_dn="_"
+                    trsm_splitfactor_trsm_factor_order="_"
+                    trsm_splitfactor_gemm_factor_order_sp="_"
+                    trsm_splitfactor_gemm_factor_order_dn="_"
+                    trsm_splitrhs_spdn_criteria="_"
+                    trsm_splitfactor_trsm_factor_spdn="_"
+                    trsm_splitfactor_gemm_spdn_criteria="_"
+                    trsm_splitfactor_gemm_factor_prune="_"
+                    trsm_splitrhs_spdn_param="0"
+                    trsm_splitfactor_gemm_spdn_param="0"
+                    herk_strategy="T"
+                    herk_partition_parameter="5"
+                    partition_parameters=()
+                    partition_parameters_2d_splitfactor=(-100000 -50000 -20000 -10000 -5000 -2000 -1000 -500 -200 -100 -50 -20 -10 1 2 5 10 20 50 100 200 500 1000)
+                    partition_parameters_3d_splitfactor=(-50000 -20000 -10000 -5000 -2000 -1000 -500 -200 -100 -50 -20 -10 1 2 5 10 20 50 100 200 500 1000)
+                    partition_parameters_2d_splitrhs=(-5000 -2000 -1000 -500 -200 -100 -50 -20 -10 1 2 5 10 20 50 100 200 500 1000)
+                    partition_parameters_3d_splitrhs=(-5000 -2000 -1000 -500 -200 -100 -50 -20 -10 1 2 5 10 20 50 100 200 500 1000)
+                    for dual_operator in EXPLICIT_SCTRIA EXPLICIT_SCTRIA_GPU
+                    do
+                        for trsm_strategy in R F
+                        do
+                            if [ "${dim}" == "2" ] && [ "${trsm_strategy}" == "R" ]; then partition_parameters=("${partition_parameters_2d_splitrhs[@]}"); fi
+                            if [ "${dim}" == "3" ] && [ "${trsm_strategy}" == "R" ]; then partition_parameters=("${partition_parameters_3d_splitrhs[@]}"); fi
+                            if [ "${dim}" == "2" ] && [ "${trsm_strategy}" == "F" ]; then partition_parameters=("${partition_parameters_2d_splitfactor[@]}"); fi
+                            if [ "${dim}" == "3" ] && [ "${trsm_strategy}" == "F" ]; then partition_parameters=("${partition_parameters_3d_splitfactor[@]}"); fi
+                            for trsm_partition_parameter in "${partition_parameters[@]}"
+                            do
+                                create_task
+                            done
+                        done
+                    done
+                fi
+
+
+
+                if [ "${phase}" == "4" ]
+                then
+                    #########################################
+                    ### phase 4, herk partition parameter ###
+                    #########################################
+                    # numer of tasks: 2244 = at most 187 gpu-hours
+                    # auto-select what we have already determined:
+                    #   order_X
+                    #   trsm_splitrhs_factor_order_sp
+                    #   trsm_splitrhs_factor_order_dn
+                    #   trsm_splitfactor_trsm_factor_order
+                    #   trsm_splitfactor_gemm_factor_order_sp
+                    #   trsm_splitfactor_gemm_factor_order_dn
+                    #   trsm_splitrhs_spdn_criteria
+                    #   trsm_splitfactor_trsm_factor_spdn
+                    #   trsm_splitfactor_gemm_spdn_criteria
+                    #   trsm_splitfactor_gemm_factor_prune
+                    #   trsm_partition_parameter
+                    # fix:
+                    #   trsm_splitrhs_spdn_param
+                    #   trsm_splitfactor_gemm_spdn_param
+                    #   trsm_strategy
+                    # for each:
+                    #   dual_operator
+                    #   herk_strategy
+                    # select the best:
+                    #   herk_partition_parameter
+                    order_X="_"
+                    trsm_splitrhs_factor_order_sp="_"
+                    trsm_splitrhs_factor_order_dn="_"
+                    trsm_splitfactor_trsm_factor_order="_"
+                    trsm_splitfactor_gemm_factor_order_sp="_"
+                    trsm_splitfactor_gemm_factor_order_dn="_"
+                    trsm_splitrhs_spdn_criteria="_"
+                    trsm_splitfactor_trsm_factor_spdn="_"
+                    trsm_splitfactor_gemm_spdn_criteria="_"
+                    trsm_splitfactor_gemm_factor_prune="_"
+                    trsm_partition_parameter="0"
+                    trsm_splitrhs_spdn_param="0"
+                    trsm_splitfactor_gemm_spdn_param="0"
+                    trsm_strategy="F"
+                    partition_parameters=()
+                    partition_parameters_2d_squares=(-100000 -50000 -20000 -10000 -5000 -2000 -1000 -500 -200 -100 -50 -20 -10 1 2 5 10 20 50 100 200 500 1000)
+                    partition_parameters_3d_squares=(-50000 -20000 -10000 -5000 -2000 -1000 -500 -200 -100 -50 -20 -10 1 2 5 10 20 50 100 200 500 1000)
+                    partition_parameters_2d_stairs=(-5000 -2000 -1000 -500 -200 -100 -50 -20 -10 1 2 5 10 20 50 100 200 500 1000)
+                    partition_parameters_3d_stairs=(-5000 -2000 -1000 -500 -200 -100 -50 -20 -10 1 2 5 10 20 50 100 200 500 1000)
+                    for dual_operator in EXPLICIT_SCTRIA EXPLICIT_SCTRIA_GPU
+                    do
+                        for herk_strategy in T Q
+                        do
+                            if [ "${dim}" == "2" ] && [ "${herk_strategy}" == "T" ]; then partition_parameters=("${partition_parameters_2d_stairs[@]}"); fi
+                            if [ "${dim}" == "3" ] && [ "${herk_strategy}" == "T" ]; then partition_parameters=("${partition_parameters_3d_stairs[@]}"); fi
+                            if [ "${dim}" == "2" ] && [ "${herk_strategy}" == "Q" ]; then partition_parameters=("${partition_parameters_2d_squares[@]}"); fi
+                            if [ "${dim}" == "3" ] && [ "${herk_strategy}" == "Q" ]; then partition_parameters=("${partition_parameters_3d_squares[@]}"); fi
+                            for herk_partition_parameter in "${partition_parameters[@]}"
+                            do
+                                create_task
+                            done
+                        done
+                    done
                 fi
 
 
@@ -416,7 +534,7 @@ done
 
 
 
-
+echo "created ${taskid} tasks"
 
 echo "submit tasks to HQ using:"
 echo "    ./benchmarks/dualop_sctria_options/submit_tasks.sh ${rundir}"

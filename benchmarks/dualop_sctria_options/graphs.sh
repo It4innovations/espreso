@@ -1,0 +1,36 @@
+#!/bin/bash
+
+# assuming Karolina
+
+if [ "$#" -lt 2 ]
+then
+    echo "not enough arguments"
+    exit 1
+fi
+
+phase="${1}"
+datestr="${2}"
+
+ml mpi4py
+ml matplotlib
+
+if [ "${phase}" == "1" ]
+then
+    mpirun -n 40 python3 benchmarks/dualop_sctria_options/graphs_phase1.py "${datestr}"
+    # mpirun -n 1 python3 benchmarks/dualop_sctria_options/graphs_phase1.py "${datestr}"
+fi
+if [ "${phase}" == "2" ]
+then
+    mpirun -n 8 python3 benchmarks/dualop_sctria_options/graphs_phase2.py "${datestr}"
+    # mpirun -n 1 python3 benchmarks/dualop_sctria_options/graphs_phase2.py "${datestr}"
+fi
+if [ "${phase}" == "3" ]
+then
+    mpirun -n 8 python3 benchmarks/dualop_sctria_options/graphs_phase3.py "${datestr}"
+    # mpirun -n 1 python3 benchmarks/dualop_sctria_options/graphs_phase3.py "${datestr}"
+fi
+if [ "${phase}" == "4" ]
+then
+    mpirun -n 8 python3 benchmarks/dualop_sctria_options/graphs_phase4.py "${datestr}"
+    # mpirun -n 1 python3 benchmarks/dualop_sctria_options/graphs_phase4.py "${datestr}"
+fi
