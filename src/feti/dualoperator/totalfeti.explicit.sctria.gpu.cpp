@@ -6,6 +6,7 @@
 #include "my_timer.h"
 #include "gpu/gpu_kernels.h"
 #include "basis/utilities/stacktimer.h"
+#include "esinfo/meshinfo.h"
 
 #include <algorithm>
 
@@ -45,6 +46,11 @@ static void replace_if_default(char & param, char deflt)
 template<typename T, typename I>
 static void replace_unset_configs(typename gpu::operations::sc_symm_hcsx_ddny_tria<T,I>::config & cfg_sc, typename TotalFETIExplicitScTriaGpu<T,I>::config & cfg_dualop)
 {
+    replace_if_default(cfg_sc.cfg_trsm.splitrhs.spdn_criteria, 'S');
+    replace_if_default(cfg_sc.cfg_trsm.splitfactor.trsm_factor_spdn, (info::mesh->dimension == 2) ? 'S' : 'D');
+    replace_if_default(cfg_sc.cfg_trsm.splitfactor.gemm_factor_prune, 'R');
+    replace_if_default(cfg_sc.cfg_trsm.splitfactor.gemm_spdn_criteria, (info::mesh->dimension == 2) ? 'S' : 'D');
+
     replace_if_default(cfg_sc.order_X, 'R');
     replace_if_default(cfg_sc.cfg_trsm.splitrhs.factor_order_sp, 'R');
     replace_if_default(cfg_sc.cfg_trsm.splitrhs.factor_order_dn, 'R');
@@ -56,6 +62,15 @@ static void replace_unset_configs(typename gpu::operations::sc_symm_hcsx_ddny_tr
 
     replace_if_default(cfg_dualop.order_F, 'R');
     replace_if_default(cfg_dualop.mainloop_update_split, 'C');
+
+
+
+    // replace_if_default(cfg_sc.cfg_trsm.strategy, '_');
+    // replace_if_default(cfg_sc.cfg_trsm.partition.algorithm, '_');
+    // replace_if_default(cfg_sc.cfg_trsm.partition.parameter, '_');
+    // replace_if_default(cfg_sc.cfg_herk.strategy, '_');
+    // replace_if_default(cfg_sc.cfg_herk.partition_algorithm, '_');
+    // replace_if_default(cfg_sc.cfg_herk.partition_parameter, '_');
 }
 
 template<typename T, typename I>

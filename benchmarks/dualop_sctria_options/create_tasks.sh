@@ -8,7 +8,7 @@ machine="karolina"
 env_command="source env/it4i.karolina.gcc.cuda.mkl.ss.sh legacy"
 # env_command="source env/bsc.mn5.gcc.cuda.mkl.ss.sh legacy"
 
-phase=1
+phase=2
 
 
 
@@ -216,7 +216,7 @@ do
                     #################################################################
                     ### phase 1, select discrete parameters (mainly matrix order) ###
                     #################################################################
-                    # numer of tasks: 27x144 = 3888, at most 81 node-hours
+                    # numer of tasks: 27x144 = 3888 = at most 324 gpu-hours
                     # fix:
                     #   trsm_partition_parameter
                     #   herk_partition_parameter
@@ -318,10 +318,83 @@ do
 
                 if [ "${phase}" == "2" ]
                 then
-                    ########################################################################
-                    ### phase 2, select splitfactor_gemm_spdn_param for densiTy criteria ###
-                    ########################################################################
-                    echo 222
+                    ###########################################
+                    ### phase 2, select trsm spdn and prune ###
+                    ###########################################
+                    # numer of tasks: 27x80 = 2160 = at most 180 gpu-hours
+                    # auto-select what we have already determined:
+                    #   order_X
+                    #   trsm_splitrhs_factor_order_sp
+                    #   trsm_splitrhs_factor_order_dn
+                    #   trsm_splitfactor_trsm_factor_order
+                    #   trsm_splitfactor_gemm_factor_order_sp
+                    #   trsm_splitfactor_gemm_factor_order_dn
+                    # fix:
+                    #   trsm_splitrhs_spdn_param
+                    #   trsm_splitfactor_gemm_spdn_param
+                    #   herk_strategy
+                    #   herk_partition_parameter
+                    # for each:
+                    #   dual_operator
+                    #   trsm_strategy
+                    #   trsm_partition_parameter
+                    # select the best combination of:
+                    #   trsm_splitrhs_spdn_criteria
+                    #   trsm_splitfactor_trsm_factor_spdn
+                    #   trsm_splitfactor_gemm_spdn_criteria
+                    #   trsm_splitfactor_gemm_factor_prune
+                    order_X="_"
+                    trsm_splitrhs_factor_order_sp="_"
+                    trsm_splitrhs_factor_order_dn="_"
+                    trsm_splitfactor_trsm_factor_order="_"
+                    trsm_splitfactor_gemm_factor_order_sp="_"
+                    trsm_splitfactor_gemm_factor_order_dn="_"
+                    trsm_splitrhs_spdn_param="0"
+                    trsm_splitfactor_gemm_spdn_param="0"
+                    herk_strategy="T"
+                    herk_partition_parameter="5"
+                    partition_parameters=()
+                    partition_parameters_2d_domain=(-20000 -2000 10 100)
+                    partition_parameters_3d_domain=(-2000 -200 10 100)
+                    partition_parameters_2d_interface=(-500 -50 10 100)
+                    partition_parameters_3d_interface=(-1000 -100 10 100)
+                    for dual_operator in EXPLICIT_SCTRIA EXPLICIT_SCTRIA_GPU
+                    do
+                        for trsm_strategy in R F
+                        do
+                            if [ "${dim}" == "2" ] && [ "${trsm_strategy}" == "R" ]; then partition_parameters=("${partition_parameters_2d_interface[@]}"); fi
+                            if [ "${dim}" == "3" ] && [ "${trsm_strategy}" == "R" ]; then partition_parameters=("${partition_parameters_3d_interface[@]}"); fi
+                            if [ "${dim}" == "2" ] && [ "${trsm_strategy}" == "F" ]; then partition_parameters=("${partition_parameters_2d_domain[@]}"); fi
+                            if [ "${dim}" == "3" ] && [ "${trsm_strategy}" == "F" ]; then partition_parameters=("${partition_parameters_3d_domain[@]}"); fi
+                            for trsm_partition_parameter in "${partition_parameters[@]}"
+                            do
+                                if [ "${trsm_strategy}" == "R" ]
+                                then
+                                    trsm_splitfactor_trsm_factor_spdn="_"
+                                    trsm_splitfactor_gemm_spdn_criteria="_"
+                                    trsm_splitfactor_gemm_factor_prune="_"
+                                    for trsm_splitrhs_spdn_criteria in S D
+                                    do
+                                        create_task
+                                    done
+                                fi
+                                if [ "${trsm_strategy}" == "F" ]
+                                then
+                                    trsm_splitrhs_spdn_criteria="_"
+                                    for trsm_splitfactor_trsm_factor_spdn in S D
+                                    do
+                                        for trsm_splitfactor_gemm_spdn_criteria in S D
+                                        do
+                                            for trsm_splitfactor_gemm_factor_prune in N R
+                                            do
+                                                create_task
+                                            done
+                                        done 
+                                    done
+                                fi
+                            done
+                        done
+                    done
                 fi
 
 

@@ -1,6 +1,7 @@
 #!/usr/bin/env python3
 
 import os
+import sys
 import io
 from datetime import datetime
 
@@ -35,6 +36,11 @@ def get_nnodes_per_side(nelems, element_type):
 
 
 
+if len(sys.argv) <= 1:
+    print("not enough arguments")
+    exit(1)
+phase_argument = int(sys.argv[1])
+
 basedir = "benchmarks/dualop_sctria_options"
 runs_to_summarize_dir = basedir + "/runs_to_summarize"
 
@@ -43,7 +49,7 @@ datestr = datetime.now().strftime("%Y%m%d_%H%M%S")
 summdir = basedir + "/summary/" + datestr
 os.makedirs(summdir, exist_ok=True)
 
-summfile = summdir + "/summary_phase1.csv"
+summfile = summdir + "/summary_phase" + str(phase_argument) + ".csv"
 
 summstring = io.StringIO()
 
@@ -74,7 +80,7 @@ for run_dir_name in os.listdir(runs_to_summarize_dir):
     phase_file = run_dir + "/phase.txt"
     phase_str = read_file_to_string(phase_file).replace("\n", "")
     phase_int = int(phase_str)
-    if phase_int != 1:
+    if phase_int != phase_argument:
         continue
     tasks_dir = run_dir + "/tasks"
     machine_file = run_dir + "/machine.txt"

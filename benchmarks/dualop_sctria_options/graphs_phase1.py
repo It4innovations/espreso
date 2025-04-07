@@ -186,11 +186,7 @@ for dualop_idx in range(len(dualoperator_list_espreso)):
                                     ylim_max = 0
                                     for a in axs.flat:
                                         a.grid(True)
-                                        # a.set_xlabel('n_dofs')
-                                        # a.set_ylabel('update time [ms]')
                                         if a.lines:
-                                            # a.loglog(best_x_vals, best_y_vals, base=2, color="red", linestyle="--", label="optimal")
-                                            # a.loglog(auto_x_vals, auto_y_vals, base=2, color="green", linestyle=":", label="auto", linewidth=5)
                                             a.legend(loc="upper left")
                                             xlim_min = min(xlim_min, a.get_xlim()[0])
                                             xlim_max = max(xlim_max, a.get_xlim()[1])

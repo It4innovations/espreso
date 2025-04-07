@@ -41,9 +41,9 @@ public:
     struct config
     {
         char order_F = '_';
-        bool parallel_set = false;
-        bool parallel_update = false;
-        bool parallel_apply = false;
+        bool parallel_set = true;
+        bool parallel_update = true;
+        bool parallel_apply = true;
         char mainloop_update_split = '_'; // Combined, Separate
         bool outer_timers = false;
         bool inner_timers = false;
