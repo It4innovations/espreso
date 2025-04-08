@@ -51,8 +51,11 @@ static void replace_if_zero(int & param, int deflt)
 }
 
 template<typename T, typename I>
-static void replace_unset_configs(typename gpu::operations::sc_symm_hcsx_ddny_tria<T,I>::config & cfg_sc, typename TotalFETIExplicitScTriaGpu<T,I>::config & cfg_dualop)
+static void replace_unset_configs(typename gpu::operations::sc_symm_hcsx_ddny_tria<T,I>::config & cfg_sc, typename TotalFETIExplicitScTriaGpu<T,I>::config & cfg_dualop, size_t /*avg_ndofs_domain*/)
 {
+    replace_if_default(cfg_sc.cfg_trsm.strategy, 'F');
+    replace_if_default(cfg_sc.cfg_herk.strategy, 'Q');
+
     if(info::mesh->dimension == 2 && cfg_sc.cfg_herk.strategy == 'Q') replace_if_zero(cfg_sc.cfg_herk.partition_parameter, -500);
     if(info::mesh->dimension == 2 && cfg_sc.cfg_herk.strategy == 'T') replace_if_zero(cfg_sc.cfg_herk.partition_parameter, -200);
     if(info::mesh->dimension == 3 && cfg_sc.cfg_herk.strategy == 'Q') replace_if_zero(cfg_sc.cfg_herk.partition_parameter, -1000);
@@ -81,11 +84,6 @@ static void replace_unset_configs(typename gpu::operations::sc_symm_hcsx_ddny_tr
 
     replace_if_default(cfg_dualop.order_F, 'R');
     replace_if_default(cfg_dualop.mainloop_update_split, 'C');
-
-
-
-    // replace_if_default(cfg_sc.cfg_trsm.strategy, '_');
-    // replace_if_default(cfg_sc.cfg_herk.strategy, '_');
 }
 
 template<typename T, typename I>
@@ -123,8 +121,6 @@ static void setup_configs(typename gpu::operations::sc_symm_hcsx_ddny_tria<T,I>:
     set_by_env(cfg_dualop.inner_timers,                   "ESPRESO_DUALOPSCTRIA_CONFIG_inner_timers");
     set_by_env(cfg_dualop.outer_timers,                   "ESPRESO_DUALOPSCTRIA_CONFIG_outer_timers");
     set_by_env(cfg_dualop.print_parameters,               "ESPRESO_DUALOPSCTRIA_CONFIG_print_parameters");
-
-    replace_unset_configs<T,I>(cfg_sc, cfg_dualop);
 }
 
 template<typename T, typename I>
@@ -215,15 +211,26 @@ void TotalFETIExplicitScTriaGpu<T,I>::set(const step::Step &step)
 
     n_domains = feti.K.size();
     n_queues = omp_get_max_threads();
-    
+
+    domain_data.resize(n_domains);
+
+    size_t avg_ndofs_domain = 0;
+    for(size_t di = 0; di < n_domains; di++) {
+        per_domain_stuff & data = domain_data[di];
+        data.n_dofs_domain = feti.B1[di].ncols;
+        data.n_dofs_interface = feti.B1[di].nrows;
+        avg_ndofs_domain += data.n_dofs_domain;
+    }
+    avg_ndofs_domain /= n_domains;
+
+    replace_unset_configs<T,I>(op_sc_config, cfg, avg_ndofs_domain);
+
     gpu::mgm::init_gpu(device);
     gpu::mgm::set_device(device);
 
     queues.resize(n_queues);
     handles_dense.resize(n_queues);
     handles_sparse.resize(n_queues);
-
-    domain_data.resize(n_domains);
     
     gpu::mgm::queue_create(main_q);
     for(gpu::mgm::queue & q : queues) gpu::mgm::queue_create(q);
@@ -232,12 +239,6 @@ void TotalFETIExplicitScTriaGpu<T,I>::set(const step::Step &step)
 
     gpu::dnblas::init_library(main_q);
     gpu::mgm::queue_wait(main_q);
-
-    for(size_t di = 0; di < n_domains; di++) {
-        per_domain_stuff & data = domain_data[di];
-        data.n_dofs_domain = feti.B1[di].ncols;
-        data.n_dofs_interface = feti.B1[di].nrows;
-    }
 
     ssize_t free_mem_before_Falloc = gpu::mgm::get_device_memory_free();
     d_Fs_allocated.resize((n_domains - 1) / 2 + 1);

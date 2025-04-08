@@ -51,8 +51,12 @@ static void replace_if_zero(int & param, int deflt)
 }
 
 template<typename T, typename I>
-static void replace_unset_configs(typename math::operations::sc_symm_csx_dny_tria<T,I>::config & cfg_sc, typename TotalFETIExplicitScTria<T,I>::config & cfg_dualop)
+static void replace_unset_configs(typename math::operations::sc_symm_csx_dny_tria<T,I>::config & cfg_sc, typename TotalFETIExplicitScTria<T,I>::config & cfg_dualop, size_t avg_ndofs_domain)
 {
+    replace_if_default(cfg_sc.cfg_trsm.strategy, 'F');
+    bool is_in_between = ((avg_ndofs_domain > 1000) && (avg_ndofs_domain < 16000));
+    replace_if_default(cfg_sc.cfg_herk.strategy, is_in_between ? 'Q' : 'T');
+
     if(info::mesh->dimension == 2 && cfg_sc.cfg_herk.strategy == 'Q') replace_if_zero(cfg_sc.cfg_herk.partition_parameter, -200);
     if(info::mesh->dimension == 2 && cfg_sc.cfg_herk.strategy == 'T') replace_if_zero(cfg_sc.cfg_herk.partition_parameter, -200);
     if(info::mesh->dimension == 3 && cfg_sc.cfg_herk.strategy == 'Q') replace_if_zero(cfg_sc.cfg_herk.partition_parameter, 50);
@@ -81,11 +85,6 @@ static void replace_unset_configs(typename math::operations::sc_symm_csx_dny_tri
 
     replace_if_default(cfg_dualop.order_F, 'R');
     replace_if_default(cfg_dualop.mainloop_update_split, 'C');
-
-
-
-    // replace_if_default(cfg_sc.cfg_trsm.strategy, '_');
-    // replace_if_default(cfg_sc.cfg_herk.strategy, '_');
 }
 
 template<typename T, typename I>
@@ -123,8 +122,6 @@ static void setup_configs(typename math::operations::sc_symm_csx_dny_tria<T,I>::
     set_by_env(cfg_dualop.inner_timers,                   "ESPRESO_DUALOPSCTRIA_CONFIG_inner_timers");
     set_by_env(cfg_dualop.outer_timers,                   "ESPRESO_DUALOPSCTRIA_CONFIG_outer_timers");
     set_by_env(cfg_dualop.print_parameters,               "ESPRESO_DUALOPSCTRIA_CONFIG_print_parameters");
-
-    replace_unset_configs<T,I>(cfg_sc, cfg_dualop);
 }
 
 
@@ -205,11 +202,16 @@ void TotalFETIExplicitScTria<T,I>::set(const step::Step &step)
 
     domain_data.resize(n_domains);
 
+    size_t avg_ndofs_domain = 0;
     for(size_t di = 0; di < n_domains; di++) {
         per_domain_stuff & data = domain_data[di];
         data.n_dofs_domain = feti.B1[di].ncols;
         data.n_dofs_interface = feti.B1[di].nrows;
+        avg_ndofs_domain += data.n_dofs_domain;
     }
+    avg_ndofs_domain /= n_domains;
+
+    replace_unset_configs<T,I>(op_sc_config, cfg, avg_ndofs_domain);
 
     Fs_allocated.resize((n_domains - 1) / 2 + 1);
     {

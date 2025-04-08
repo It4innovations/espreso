@@ -8,7 +8,7 @@ machine="karolina"
 env_command="source env/it4i.karolina.gcc.cuda.mkl.ss.sh legacy"
 # env_command="source env/bsc.mn5.gcc.cuda.mkl.ss.sh legacy"
 
-phase=4
+phase=5
 
 
 
@@ -518,6 +518,61 @@ do
                             if [ "${dim}" == "2" ] && [ "${herk_strategy}" == "Q" ]; then partition_parameters=("${partition_parameters_2d_squares[@]}"); fi
                             if [ "${dim}" == "3" ] && [ "${herk_strategy}" == "Q" ]; then partition_parameters=("${partition_parameters_3d_squares[@]}"); fi
                             for herk_partition_parameter in "${partition_parameters[@]}"
+                            do
+                                create_task
+                            done
+                        done
+                    done
+                fi
+
+
+
+                if [ "${phase}" == "5" ]
+                then
+                    #######################################
+                    ### phase 5, trsm and herk strategy ###
+                    #######################################
+                    # numer of tasks: 27x8 = 216 = at most 18 gpu-hours
+                    # auto-select what we have already determined:
+                    #   order_X
+                    #   trsm_splitrhs_factor_order_sp
+                    #   trsm_splitrhs_factor_order_dn
+                    #   trsm_splitfactor_trsm_factor_order
+                    #   trsm_splitfactor_gemm_factor_order_sp
+                    #   trsm_splitfactor_gemm_factor_order_dn
+                    #   trsm_splitrhs_spdn_criteria
+                    #   trsm_splitfactor_trsm_factor_spdn
+                    #   trsm_splitfactor_gemm_spdn_criteria
+                    #   trsm_splitfactor_gemm_factor_prune
+                    #   trsm_partition_parameter
+                    #   herk_partition_parameter
+                    # fix:
+                    #   trsm_splitrhs_spdn_param
+                    #   trsm_splitfactor_gemm_spdn_param
+                    # for each:
+                    #   dual_operator
+                    # select the best:
+                    #   herk_strategy
+                    #   trsm_strategy
+                    order_X="_"
+                    trsm_splitrhs_factor_order_sp="_"
+                    trsm_splitrhs_factor_order_dn="_"
+                    trsm_splitfactor_trsm_factor_order="_"
+                    trsm_splitfactor_gemm_factor_order_sp="_"
+                    trsm_splitfactor_gemm_factor_order_dn="_"
+                    trsm_splitrhs_spdn_criteria="_"
+                    trsm_splitfactor_trsm_factor_spdn="_"
+                    trsm_splitfactor_gemm_spdn_criteria="_"
+                    trsm_splitfactor_gemm_factor_prune="_"
+                    trsm_partition_parameter="0"
+                    herk_partition_parameter="0"
+                    trsm_splitrhs_spdn_param="0"
+                    trsm_splitfactor_gemm_spdn_param="0"
+                    for dual_operator in EXPLICIT_SCTRIA EXPLICIT_SCTRIA_GPU
+                    do
+                        for trsm_strategy in R F
+                        do
+                            for herk_strategy in T Q
                             do
                                 create_task
                             done
