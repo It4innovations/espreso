@@ -61,7 +61,7 @@ col_trsm_splitfactor_trsm_factor_order = csv_header.index("trsm_splitfactor_trsm
 col_trsm_splitfactor_gemm_factor_order_sp = csv_header.index("trsm_splitfactor_gemm_factor_order_sp")
 col_trsm_splitfactor_gemm_factor_order_dn = csv_header.index("trsm_splitfactor_gemm_factor_order_dn")
 col_n_dofs = csv_header.index("n_dofs")
-col_time_per_subdomain = csv_header.index("time_per_subdomain")
+col_time_per_subdomain = csv_header.index("assemble_time_per_subdomain")
 
 
 

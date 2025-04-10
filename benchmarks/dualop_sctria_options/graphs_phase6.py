@@ -26,7 +26,7 @@ summary_dir_timestamp = sys.argv[1]
 
 basedir = "benchmarks/dualop_sctria_options"
 
-summary_file = basedir + "/summary/" + summary_dir_timestamp + "/summary_phase5.csv"
+summary_file = basedir + "/summary/" + summary_dir_timestamp + "/summary_phase6.csv"
 
 if not os.path.isfile(summary_file):
     print("summary file/directory does not exit")
@@ -61,11 +61,11 @@ col_trsm_splitfactor_trsm_factor_order = csv_header.index("trsm_splitfactor_trsm
 col_trsm_splitfactor_gemm_factor_order_sp = csv_header.index("trsm_splitfactor_gemm_factor_order_sp")
 col_trsm_splitfactor_gemm_factor_order_dn = csv_header.index("trsm_splitfactor_gemm_factor_order_dn")
 col_n_dofs = csv_header.index("n_dofs")
-col_time_per_subdomain = csv_header.index("assemble_time_per_subdomain")
+col_assemble_time_per_subdomain = csv_header.index("assemble_time_per_subdomain")
+col_update_time_per_subdomain = csv_header.index("update_time_per_subdomain")
 col_herk_strategy = csv_header.index("herk_strategy")
 col_herk_partition_parameter = csv_header.index("herk_partition_parameter")
-col_trsm_partition_algorithm = csv_header.index("trsm_partition_algorithm")
-col_herk_partition_algorithm = csv_header.index("herk_partition_algorithm")
+col_mainloop_update_split = csv_header.index("mainloop_update_split")
 
 
 
@@ -86,12 +86,11 @@ trsm_splitfactor_trsm_spdn_list = ["D", "S", "_"]
 trsm_splitfactor_gemm_spdn_list = ["D", "S", "_"]
 trsm_splitfactor_gemm_prune_list = ["N", "R", "_"]
 herk_strategy_list = ["T", "Q"]
-trsm_partition_algorithm_list = ["U", "M"]
-herk_partition_algorithm_list = ["U", "M"]
+mainloop_update_split_list = ["S", "C"]
 
-subplots_counts = [4,4]
-my_figsize_x = 3000
-my_figsize_y = 2000
+subplots_counts = [2,2]
+my_figsize_x = 1500
+my_figsize_y = 1000
 
 image_index = -1
 
@@ -119,63 +118,60 @@ for dualop_idx in range(len(dualoperator_list_espreso)):
                 plt.figure()
                 fig, axs = plt.subplots(subplots_counts[0], subplots_counts[1], figsize=(my_figsize_x/100.0, my_figsize_y/100.0))
 
-                for trsm_partition_algorithm_idx in range(len(trsm_partition_algorithm_list)):
-                    trsm_partition_algorithm = trsm_partition_algorithm_list[trsm_partition_algorithm_idx]
-                    csv_data_05 = [row for row in csv_data_04 if (row[col_trsm_partition_algorithm] == trsm_partition_algorithm)]
-                    for herk_partition_algorithm_idx in range(len(herk_partition_algorithm_list)):
-                        herk_partition_algorithm = herk_partition_algorithm_list[herk_partition_algorithm_idx]
-                        csv_data_06 = [row for row in csv_data_05 if (row[col_herk_partition_algorithm] == herk_partition_algorithm)]
-                        for trsm_strategy_idx in range(len(trsm_strategy_list)):
-                            trsm_strategy = trsm_strategy_list[trsm_strategy_idx]
-                            csv_data_07 = [row for row in csv_data_06 if (row[col_trsm_strategy] == trsm_strategy)]
-                            for herk_strategy_idx in range(len(herk_strategy_list)):
-                                herk_strategy = herk_strategy_list[herk_strategy_idx]
-                                csv_data_08 = [row for row in csv_data_07 if (row[col_herk_strategy] == herk_strategy)]
-                                if(len(csv_data_08) == 0):
-                                    continue
+                for mainloop_update_split_idx in range(len(mainloop_update_split_list)):
+                    mainloop_update_split = mainloop_update_split_list[mainloop_update_split_idx]
+                    csv_data_05 = [row for row in csv_data_04 if (row[col_mainloop_update_split] == mainloop_update_split)]
+                    csv_data_06 = sorted(csv_data_05, key=lambda row: int(row[col_n_dofs]))
 
-                                csv_data_09 = sorted(csv_data_08, key=lambda row: int(row[col_n_dofs]))
-                                vals_x_str = [row[col_n_dofs] for row in csv_data_09]
-                                vals_y_str = [row[col_time_per_subdomain] for row in csv_data_09]
-                                vals_x = [float(x) for x in vals_x_str]
-                                vals_y = [(float(y) if y != "" else float("nan")) for y in vals_y_str]
+                    csv_data_baseline = [row for row in csv_data_06 if (row[col_trsm_partition_parameter] == "1")]
+                    csv_data_optimal = [row for row in csv_data_06 if (row[col_trsm_partition_parameter] == "0")]
 
-                                graph_row = 2 * trsm_partition_algorithm_idx + trsm_strategy_idx
-                                graph_col = 2 * 0 + herk_strategy_idx
+                    vals_x_str = [row[col_n_dofs] for row in csv_data_baseline]
+                    vals_x = [float(x) for x in vals_x_str]
 
-                                color = "black"
-                                linestyle = ":"
-                                if herk_partition_algorithm == "U":
-                                    color = "blue"
-                                    linestyle = "-"
-                                if herk_partition_algorithm == "M":
-                                    color = "red"
-                                    linestyle = "--"
-                                # label = "this one"
-                                label = herk_partition_algorithm
-                                label = label.replace("_", "-")
-                                title = "trsm" + trsm_partition_algorithm + trsm_strategy + "-herk" + "*" + herk_strategy
-                                myaxs = axs[graph_row,graph_col]
-                                myaxs.loglog(vals_x, vals_y, base=2, color=color, linestyle=linestyle, label=label)
-                                if title != None: myaxs.set_title(title, fontsize="medium")
+                    if mainloop_update_split == "S": use_col = col_assemble_time_per_subdomain
+                    if mainloop_update_split == "C": use_col = col_update_time_per_subdomain
+
+                    vals_y_time_baseline_str = [row[use_col] for row in csv_data_baseline]
+                    vals_y_time_baseline = [(float(y) if y != "" else float("nan")) for y in vals_y_time_baseline_str]
+                    
+                    vals_y_time_optimal_str = [row[use_col] for row in csv_data_optimal]
+                    vals_y_time_optimal = [(float(y) if y != "" else float("nan")) for y in vals_y_time_optimal_str]
+
+                    vals_y_speedup = [float("nan")] * len(vals_y_time_baseline)
+                    for i in range(len(vals_y_speedup)):
+                        vals_y_speedup[i] = vals_y_time_baseline[i] / vals_y_time_optimal[i]
+
+                    graph_col = mainloop_update_split_idx
+
+                    axs[0,graph_col].loglog(vals_x, vals_y_time_baseline, color="blue", linestyle="-", label="baseline time")
+                    axs[0,graph_col].loglog(vals_x, vals_y_time_optimal, color="red", linestyle="--", label="optimized time")
+                    axs[1,graph_col].semilogx(vals_x, vals_y_speedup, color="green", linestyle="-", label="speedup")
+
+                    axs[0,graph_col].set_title("mainloopsplit" + mainloop_update_split, fontsize="medium")
+                    axs[1,graph_col].set_title("mainloopsplit" + mainloop_update_split, fontsize="medium")
+
 
                 xlim_min = (1 << 30)
                 xlim_max = 0
-                ylim_min = (1 << 30)
-                ylim_max = 0
-                for a in axs.flat:
-                    a.grid(True)
-                    if a.lines:
-                        a.legend(loc="upper left")
-                        xlim_min = min(xlim_min, a.get_xlim()[0])
-                        xlim_max = max(xlim_max, a.get_xlim()[1])
-                        ylim_min = min(ylim_min, a.get_ylim()[0])
-                        ylim_max = max(ylim_max, a.get_ylim()[1])
-                    a.set_xscale("log", base=2)
-                    a.set_yscale("log", base=2)
-                plt.setp(axs, xlim=[xlim_min,xlim_max], ylim=[ylim_min,ylim_max])
-                title = imgname
-                # plt.title(title)
+                for graph_row in range(2):
+                    ylim_min = (1 << 30)
+                    ylim_max = 0
+                    for graph_col in range(2):
+                        a = axs[graph_row, graph_col]
+                        a.grid(True)
+                        if a.lines:
+                            a.legend(loc="upper left")
+                            xlim_min = min(xlim_min, a.get_xlim()[0])
+                            xlim_max = max(xlim_max, a.get_xlim()[1])
+                            ylim_min = min(ylim_min, a.get_ylim()[0])
+                            ylim_max = max(ylim_max, a.get_ylim()[1])
+                        a.set_xscale("log", base=2)
+                        if graph_row == 0: a.set_yscale("log", base=2)
+                    for graph_col in range(2):
+                        a = axs[graph_row, graph_col]
+                        a.set_ylim([ylim_min,ylim_max])
+                plt.setp(axs, xlim=[xlim_min,xlim_max])
                 fig.tight_layout()
                 plt.savefig(imgpath)
                 plt.close()

@@ -8,7 +8,14 @@ machine="karolina"
 env_command="source env/it4i.karolina.gcc.cuda.mkl.ss.sh legacy"
 # env_command="source env/bsc.mn5.gcc.cuda.mkl.ss.sh legacy"
 
-phase=5
+
+
+if [ "$#" -lt 1 ]
+then
+    echo "not enough arguments"
+    exit 2
+fi
+phase="${1}"
 
 
 
@@ -161,9 +168,6 @@ parallel_apply="1"
 order_F="R"
 order_L="C"
 
-trsm_partition_algorithm="U"
-herk_partition_algorithm="U"
-
 
 
 for dim in 2 3
@@ -218,6 +222,8 @@ do
                     #################################################################
                     # numer of tasks: 27x144 = 3888 = at most 324 gpu-hours
                     # fix:
+                    #   trsm_partition_algorithm
+                    #   herk_partition_algorithm
                     #   trsm_partition_parameter
                     #   herk_partition_parameter
                     #   trsm_splitrhs_spdn_param
@@ -237,6 +243,8 @@ do
                     #   trsm_splitfactor_trsm_factor_order
                     #   trsm_splitfactor_gemm_factor_order_sp
                     #   trsm_splitfactor_gemm_factor_order_dn
+                    trsm_partition_algorithm="U"
+                    herk_partition_algorithm="U"
                     trsm_partition_parameter="10"
                     herk_partition_parameter="5"
                     herk_strategy="T"
@@ -330,6 +338,8 @@ do
                     #   trsm_splitfactor_gemm_factor_order_sp
                     #   trsm_splitfactor_gemm_factor_order_dn
                     # fix:
+                    #   trsm_partition_algorithm
+                    #   herk_partition_algorithm
                     #   trsm_splitrhs_spdn_param
                     #   trsm_splitfactor_gemm_spdn_param
                     #   herk_strategy
@@ -349,6 +359,8 @@ do
                     trsm_splitfactor_trsm_factor_order="_"
                     trsm_splitfactor_gemm_factor_order_sp="_"
                     trsm_splitfactor_gemm_factor_order_dn="_"
+                    trsm_partition_algorithm="U"
+                    herk_partition_algorithm="U"
                     trsm_splitrhs_spdn_param="0"
                     trsm_splitfactor_gemm_spdn_param="0"
                     herk_strategy="T"
@@ -417,6 +429,8 @@ do
                     #   trsm_splitfactor_gemm_spdn_criteria
                     #   trsm_splitfactor_gemm_factor_prune
                     # fix:
+                    #   trsm_partition_algorithm
+                    #   herk_partition_algorithm
                     #   trsm_splitrhs_spdn_param
                     #   trsm_splitfactor_gemm_spdn_param
                     #   herk_strategy
@@ -436,6 +450,8 @@ do
                     trsm_splitfactor_trsm_factor_spdn="_"
                     trsm_splitfactor_gemm_spdn_criteria="_"
                     trsm_splitfactor_gemm_factor_prune="_"
+                    trsm_partition_algorithm="U"
+                    herk_partition_algorithm="U"
                     trsm_splitrhs_spdn_param="0"
                     trsm_splitfactor_gemm_spdn_param="0"
                     herk_strategy="T"
@@ -482,6 +498,8 @@ do
                     #   trsm_splitfactor_gemm_factor_prune
                     #   trsm_partition_parameter
                     # fix:
+                    #   trsm_partition_algorithm
+                    #   herk_partition_algorithm
                     #   trsm_splitrhs_spdn_param
                     #   trsm_splitfactor_gemm_spdn_param
                     #   trsm_strategy
@@ -501,6 +519,8 @@ do
                     trsm_splitfactor_gemm_spdn_criteria="_"
                     trsm_splitfactor_gemm_factor_prune="_"
                     trsm_partition_parameter="0"
+                    trsm_partition_algorithm="U"
+                    herk_partition_algorithm="U"
                     trsm_splitrhs_spdn_param="0"
                     trsm_splitfactor_gemm_spdn_param="0"
                     trsm_strategy="F"
@@ -532,7 +552,7 @@ do
                     #######################################
                     ### phase 5, trsm and herk strategy ###
                     #######################################
-                    # numer of tasks: 27x8 = 216 = at most 18 gpu-hours
+                    # numer of tasks: 27x32 = 864 = at most 72 gpu-hours
                     # auto-select what we have already determined:
                     #   order_X
                     #   trsm_splitrhs_factor_order_sp
@@ -552,6 +572,8 @@ do
                     # for each:
                     #   dual_operator
                     # select the best:
+                    #   trsm_partition_algorithm
+                    #   herk_partition_algorithm
                     #   herk_strategy
                     #   trsm_strategy
                     order_X="_"
@@ -570,12 +592,171 @@ do
                     trsm_splitfactor_gemm_spdn_param="0"
                     for dual_operator in EXPLICIT_SCTRIA EXPLICIT_SCTRIA_GPU
                     do
-                        for trsm_strategy in R F
+                        for trsm_partition_algorithm in U M
                         do
-                            for herk_strategy in T Q
+                            for herk_partition_algorithm in U M
                             do
+                                for trsm_strategy in R F
+                                do
+                                    for herk_strategy in T Q
+                                    do
+                                        create_task
+                                    done
+                                done
+                            done
+                        done
+                    done
+                fi
+
+
+
+                if [ "${phase}" == "6" ]
+                then
+                    ###################################################################
+                    ### phase 6, compare with original algorithm (set only 1 chunk) ###
+                    ###################################################################
+                    # numer of tasks: 27x8 = 216 = at most 18 gpu-hours
+                    # auto-select what we have already determined (almost everything):
+                    #   order_X
+                    #   trsm_splitrhs_factor_order_sp
+                    #   trsm_splitrhs_factor_order_dn
+                    #   trsm_splitfactor_trsm_factor_order
+                    #   trsm_splitfactor_gemm_factor_order_sp
+                    #   trsm_splitfactor_gemm_factor_order_dn
+                    #   trsm_splitrhs_spdn_criteria
+                    #   trsm_splitfactor_trsm_factor_spdn
+                    #   trsm_splitfactor_gemm_spdn_criteria
+                    #   trsm_splitfactor_gemm_factor_prune
+                    #   herk_strategy
+                    #   trsm_strategy
+                    #   trsm_splitrhs_spdn_param
+                    #   trsm_splitfactor_gemm_spdn_param
+                    #   trsm_partition_algorithm
+                    #   herk_partition_algorithm
+                    # for each:
+                    #   dual_operator
+                    #   mainloop_update_split
+                    # observe the difference between:
+                    #   trsm_partition_parameter=1 and autoselect
+                    #   herk_partition_parameter=1 and autoselect
+                    order_X="_"
+                    trsm_splitrhs_factor_order_sp="_"
+                    trsm_splitrhs_factor_order_dn="_"
+                    trsm_splitfactor_trsm_factor_order="_"
+                    trsm_splitfactor_gemm_factor_order_sp="_"
+                    trsm_splitfactor_gemm_factor_order_dn="_"
+                    trsm_splitfactor_gemm_spdn_criteria="_"
+                    trsm_splitfactor_gemm_factor_prune="_"
+                    herk_strategy="_"
+                    trsm_strategy="_"
+                    trsm_splitrhs_spdn_param="0"
+                    trsm_splitfactor_gemm_spdn_param="0"
+                    trsm_partition_algorithm="U"
+                    herk_partition_algorithm="U"
+                    total_elements=$((${elements_x} * ${elements_y} * ${elements_z}))
+                    for dual_operator in EXPLICIT_SCTRIA EXPLICIT_SCTRIA_GPU
+                    do
+                        for mainloop_update_split in S C
+                        do
+                            for pp in 0 1
+                            do
+                                if [ "${pp}" == 1 ] && [ "${dual_operator}" == "EXPLICIT_SCTRIA_GPU" ]
+                                then
+                                    trsm_splitrhs_spdn_criteria="S"
+                                    trsm_splitfactor_trsm_factor_spdn="S"
+                                    if [ "${dim}" == "3" ] && [ "${total_elements}" -lt "12000" ]
+                                    then
+                                        trsm_splitrhs_spdn_criteria="D"
+                                        trsm_splitfactor_trsm_factor_spdn="D"
+                                    fi
+                                else
+                                    trsm_splitrhs_spdn_criteria="_"
+                                    trsm_splitfactor_trsm_factor_spdn="_"
+                                fi
+
+                                trsm_partition_parameter="${pp}"
+                                herk_partition_parameter="${pp}"
+
                                 create_task
                             done
+                        done
+                    done
+                fi
+
+
+
+                if [ "${phase}" == "7" ]
+                then
+                    #########################################################################
+                    ### phase 7, compare only trsm and herk kernel times with numchunks=1 ###
+                    #########################################################################
+                    # numer of tasks: 27x4 = 108 = at most 9 gpu-hours
+                    # auto-select what we have already determined (almost everything):
+                    #   order_X
+                    #   trsm_splitrhs_factor_order_sp
+                    #   trsm_splitrhs_factor_order_dn
+                    #   trsm_splitfactor_trsm_factor_order
+                    #   trsm_splitfactor_gemm_factor_order_sp
+                    #   trsm_splitfactor_gemm_factor_order_dn
+                    #   trsm_splitrhs_spdn_criteria
+                    #   trsm_splitfactor_trsm_factor_spdn
+                    #   trsm_splitfactor_gemm_spdn_criteria
+                    #   trsm_splitfactor_gemm_factor_prune
+                    #   herk_strategy
+                    #   trsm_strategy
+                    #   trsm_splitrhs_spdn_param
+                    #   trsm_splitfactor_gemm_spdn_param
+                    #   trsm_partition_algorithm
+                    #   herk_partition_algorithm
+                    # fix because I need to measure some things:
+                    #   parallel_set
+                    #   parallel_update
+                    #   parallel_apply
+                    # for each:
+                    #   dual_operator
+                    # observe the difference between:
+                    #   trsm_partition_parameter=1 and autoselect
+                    #   herk_partition_parameter=1 and autoselect
+                    order_X="_"
+                    trsm_splitrhs_factor_order_sp="_"
+                    trsm_splitrhs_factor_order_dn="_"
+                    trsm_splitfactor_trsm_factor_order="_"
+                    trsm_splitfactor_gemm_factor_order_sp="_"
+                    trsm_splitfactor_gemm_factor_order_dn="_"
+                    trsm_splitfactor_gemm_spdn_criteria="_"
+                    trsm_splitfactor_gemm_factor_prune="_"
+                    herk_strategy="_"
+                    trsm_strategy="_"
+                    trsm_splitrhs_spdn_param="0"
+                    trsm_splitfactor_gemm_spdn_param="0"
+                    trsm_partition_algorithm="U"
+                    herk_partition_algorithm="U"
+                    parallel_set="0"
+                    parallel_update="0"
+                    parallel_apply="0"
+                    total_elements=$((${elements_x} * ${elements_y} * ${elements_z}))
+                    for dual_operator in EXPLICIT_SCTRIA EXPLICIT_SCTRIA_GPU
+                    do
+                        for pp in 0 1
+                        do
+                            if [ "${pp}" == 1 ] && [ "${dual_operator}" == "EXPLICIT_SCTRIA_GPU" ]
+                            then
+                                trsm_splitrhs_spdn_criteria="S"
+                                trsm_splitfactor_trsm_factor_spdn="S"
+                                if [ "${dim}" == "3" ] && [ "${total_elements}" -lt "12000" ]
+                                then
+                                    trsm_splitrhs_spdn_criteria="D"
+                                    trsm_splitfactor_trsm_factor_spdn="D"
+                                fi
+                            else
+                                trsm_splitrhs_spdn_criteria="_"
+                                trsm_splitfactor_trsm_factor_spdn="_"
+                            fi
+
+                            trsm_partition_parameter="${pp}"
+                            herk_partition_parameter="${pp}"
+
+                            create_task
                         done
                     done
                 fi

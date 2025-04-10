@@ -234,7 +234,10 @@ size_t herk_ddnx_ddny_tri<T,I>::get_wss_tmp_perform()
 template<typename T, typename I>
 void herk_ddnx_ddny_tri<T,I>::perform_submit(void * ws_tmp)
 {
+stacktimer::enable();
+gpu::mgm::device_wait();
     stacktimer::push("herk_ddnx_ddny_tri::perform_submit");
+stacktimer::disable();
 
     if(!called_setup) eslog::error("setup has not been called\n");
     if(ws_tmp == nullptr && wss_tmp_perform > 0) eslog::error("temporary workspace is null\n");
@@ -264,7 +267,10 @@ void herk_ddnx_ddny_tri<T,I>::perform_submit(void * ws_tmp)
     ator_ws_tmp_linear->unset();
     ator_ws_tmp_overlap->unset();
 
+stacktimer::enable();
+gpu::mgm::device_wait();
     stacktimer::pop();
+stacktimer::disable();
 }
 
 

@@ -59,9 +59,9 @@ summstring = io.StringIO()
 
 header_1 = ["my_id", "run_name", "machine", "task_id", "physics", "dimension"]
 header_2 = ["element_type", "domains_x", "domains_y", "domains_z", "domains_total", "elements_x", "elements_y", "elements_z", "elements_total", "n_dofs", "n_dofs_domain_actual", "n_dofs_interface_actual", "dual_operator"]
-header_3 = ["trsm_partition_parameter", "herk_partition_parameter", "trsm_splitrhs_spdn_param", "trsm_splitfactor_gemm_spdn_param", "herk_strategy", "", "trsm_strategy", "trsm_splitrhs_spdn_criteria", "trsm_splitfactor_trsm_factor_spdn", "trsm_splitfactor_gemm_spdn_criteria", "trsm_splitfactor_gemm_factor_prune", "", "order_X", "trsm_splitrhs_factor_order_sp", "trsm_splitrhs_factor_order_dn", "trsm_splitfactor_trsm_factor_order", "trsm_splitfactor_gemm_factor_order_sp", "trsm_splitfactor_gemm_factor_order_dn"]
+header_3 = ["mainloop_update_split", "trsm_partition_algorithm", "trsm_partition_parameter", "herk_partition_algorithm", "herk_partition_parameter", "trsm_splitrhs_spdn_param", "trsm_splitfactor_gemm_spdn_param", "herk_strategy", "", "trsm_strategy", "trsm_splitrhs_spdn_criteria", "trsm_splitfactor_trsm_factor_spdn", "trsm_splitfactor_gemm_spdn_criteria", "trsm_splitfactor_gemm_factor_prune", "", "order_X", "trsm_splitrhs_factor_order_sp", "trsm_splitrhs_factor_order_dn", "trsm_splitfactor_trsm_factor_order", "trsm_splitfactor_gemm_factor_order_sp", "trsm_splitfactor_gemm_factor_order_dn"]
 header_4 = ["exitcode", "errfile", "timeoutfile"]
-header_5 = ["assemble_time", "time_per_subdomain"]
+header_5 = ["update_time", "update_time_per_subdomain", "assemble_time", "assemble_time_per_subdomain", "avg_time_trsmperform", "avg_time_herkperform"]
 summstring.write(";".join(header_1))
 summstring.write(";;")
 summstring.write(";".join(header_2))
@@ -151,7 +151,7 @@ for run_dir_name in os.listdir(runs_to_summarize_dir):
                     if not (dimension == "2" and field == "elements_z"):
                         n_dofs *= get_nnodes_per_side(int(value), element_type)
         summstring.write(";")
-        easily_extractable_fields_config = ["trsm_partition_parameter", "herk_partition_parameter", "trsm_splitrhs_spdn_param", "trsm_splitfactor_gemm_spdn_param", "herk_strategy", "", "trsm_strategy", "trsm_splitrhs_spdn_criteria", "trsm_splitfactor_trsm_factor_spdn", "trsm_splitfactor_gemm_spdn_criteria", "trsm_splitfactor_gemm_factor_prune", "", "order_X", "trsm_splitrhs_factor_order_sp", "trsm_splitrhs_factor_order_dn", "trsm_splitfactor_trsm_factor_order", "trsm_splitfactor_gemm_factor_order_sp", "trsm_splitfactor_gemm_factor_order_dn"]
+        easily_extractable_fields_config = ["mainloop_update_split", "trsm_partition_algorithm", "trsm_partition_parameter", "herk_partition_algorithm", "herk_partition_parameter", "trsm_splitrhs_spdn_param", "trsm_splitfactor_gemm_spdn_param", "herk_strategy", "", "trsm_strategy", "trsm_splitrhs_spdn_criteria", "trsm_splitfactor_trsm_factor_spdn", "trsm_splitfactor_gemm_spdn_criteria", "trsm_splitfactor_gemm_factor_prune", "", "order_X", "trsm_splitrhs_factor_order_sp", "trsm_splitrhs_factor_order_dn", "trsm_splitfactor_trsm_factor_order", "trsm_splitfactor_gemm_factor_order_sp", "trsm_splitfactor_gemm_factor_order_dn"]
         for field in easily_extractable_fields_config:
             if field == "":
                 summstring.write(";")
@@ -175,9 +175,11 @@ for run_dir_name in os.listdir(runs_to_summarize_dir):
 
         summstring.write(";")
 
-        measured_lines = [line for line in out_file_lines if ("finishd 'update_mainloop_sepatare_assemble'" in line)]
-        if len(measured_lines) > 0:
-            measured_line = measured_lines[-1]
+        measured_lines_wholeupdate = [line for line in out_file_lines if ("finishd 'update_mainloop'" in line)]
+        measured_lines_assembleonly = [line for line in out_file_lines if ("finishd 'update_mainloop_sepatare_assemble'" in line)]
+
+        if len(measured_lines_wholeupdate) > 0:
+            measured_line = measured_lines_wholeupdate[-1]
             measured_time = measured_line[100:-3].replace(" ", "")
             summstring.write(measured_time + ";")
             time_per_subdomain = float(measured_time) / domains_total
@@ -185,6 +187,35 @@ for run_dir_name in os.listdir(runs_to_summarize_dir):
         else:
             summstring.write(";")
             summstring.write(";")
+
+        if len(measured_lines_assembleonly) > 0:
+            measured_line = measured_lines_assembleonly[-1]
+            measured_time = measured_line[100:-3].replace(" ", "")
+            summstring.write(measured_time + ";")
+            time_per_subdomain = float(measured_time) / domains_total
+            summstring.write(str(time_per_subdomain) + ";")
+        else:
+            summstring.write(";")
+            summstring.write(";")
+
+        measured_lines_trsmperform_cpu = [line for line in out_file_lines if ("finishd 'trsm_csx_dny_tri::perform'" in line)]
+        measured_lines_herkperform_cpu = [line for line in out_file_lines if ("finishd 'herk_dnx_dny_tri::perform'" in line)]
+        measured_lines_trsmperform_gpu = [line for line in out_file_lines if ("finishd 'trsm_hcsx_ddny_tri::perform_submit'" in line)]
+        measured_lines_herkperform_gpu = [line for line in out_file_lines if ("finishd 'herk_ddnx_ddny_tri::perform_submit'" in line)]
+        measured_lines_trsmperform = measured_lines_trsmperform_cpu + measured_lines_trsmperform_gpu
+        measured_lines_herkperform = measured_lines_herkperform_cpu + measured_lines_herkperform_gpu
+        if len(measured_lines_trsmperform) == 0 or len(measured_lines_herkperform) == 0:
+            summstring.write(";")
+            summstring.write(";")
+        else:
+            measured_lines_trsmperform = measured_lines_trsmperform[len(measured_lines_trsmperform)//2:]
+            measured_lines_herkperform = measured_lines_herkperform[len(measured_lines_herkperform)//2:]
+            times_trsmperform = [float(row[100:-3]) for row in measured_lines_trsmperform]
+            times_herkperform = [float(row[100:-3]) for row in measured_lines_herkperform]
+            avg_time_trsmperform = sum(times_trsmperform) / len(times_trsmperform)
+            avg_time_herkperform = sum(times_herkperform) / len(times_herkperform)
+            summstring.write(str(avg_time_trsmperform) + ";")
+            summstring.write(str(avg_time_herkperform) + ";")
 
         summstring.write("\n")
 

@@ -56,7 +56,7 @@ static void replace_unset_configs(typename gpu::operations::sc_symm_hcsx_ddny_tr
     replace_if_default(cfg_sc.cfg_trsm.strategy, 'F');
     replace_if_default(cfg_sc.cfg_herk.strategy, 'Q');
 
-    if(info::mesh->dimension == 2 && cfg_sc.cfg_herk.strategy == 'Q') replace_if_zero(cfg_sc.cfg_herk.partition_parameter, -500);
+    if(info::mesh->dimension == 2 && cfg_sc.cfg_herk.strategy == 'Q') replace_if_zero(cfg_sc.cfg_herk.partition_parameter, -2000);
     if(info::mesh->dimension == 2 && cfg_sc.cfg_herk.strategy == 'T') replace_if_zero(cfg_sc.cfg_herk.partition_parameter, -200);
     if(info::mesh->dimension == 3 && cfg_sc.cfg_herk.strategy == 'Q') replace_if_zero(cfg_sc.cfg_herk.partition_parameter, -1000);
     if(info::mesh->dimension == 3 && cfg_sc.cfg_herk.strategy == 'T') replace_if_zero(cfg_sc.cfg_herk.partition_parameter, -1000);

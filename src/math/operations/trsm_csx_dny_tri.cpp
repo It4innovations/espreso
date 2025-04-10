@@ -262,7 +262,9 @@ void trsm_csx_dny_tri<T,I>::preprocess()
 template<typename T, typename I>
 void trsm_csx_dny_tri<T,I>::perform()
 {
+stacktimer::enable();
     stacktimer::push("trsm_csx_dny_tri::perform");
+stacktimer::disable();
 
     if(!called_preprocess) eslog::error("preprocess was not called\n");
 
@@ -282,7 +284,9 @@ void trsm_csx_dny_tri<T,I>::perform()
 
     L_dn.free();
 
+stacktimer::enable();
     stacktimer::pop();
+stacktimer::disable();
 }
 
 

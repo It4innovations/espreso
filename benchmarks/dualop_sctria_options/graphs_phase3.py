@@ -61,7 +61,7 @@ col_trsm_splitfactor_trsm_factor_order = csv_header.index("trsm_splitfactor_trsm
 col_trsm_splitfactor_gemm_factor_order_sp = csv_header.index("trsm_splitfactor_gemm_factor_order_sp")
 col_trsm_splitfactor_gemm_factor_order_dn = csv_header.index("trsm_splitfactor_gemm_factor_order_dn")
 col_n_dofs = csv_header.index("n_dofs")
-col_time_per_subdomain = csv_header.index("time_per_subdomain")
+col_time_per_subdomain = csv_header.index("assemble_time_per_subdomain")
 
 
 
@@ -110,9 +110,9 @@ for dualop_idx in range(len(dualoperator_list_espreso)):
                     
                     all_ndofs_unique = sorted(list(set([int(row[col_n_dofs]) for row in csv_data_05])))
                     ngraphs_x = len(all_ndofs_unique)
-                    subplots_counts = [2,ngraphs_x]
+                    subplots_counts = [1,ngraphs_x]
                     my_figsize_x = 700 * ngraphs_x
-                    my_figsize_y = 1000
+                    my_figsize_y = 500
 
                     plt.figure()
                     fig, axs = plt.subplots(subplots_counts[0], subplots_counts[1], figsize=(my_figsize_x/100.0, my_figsize_y/100.0))
@@ -133,16 +133,18 @@ for dualop_idx in range(len(dualoperator_list_espreso)):
                             vals_x = [sign * float(x) for x in vals_x_str]
                             vals_y = [(float(y) if y != "" else float("nan")) for y in vals_y_str]
 
-                            graph_row = sign_idx
                             graph_col = all_ndofs_unique_idx
 
-                            color = "red"
-                            linestyle = "-"
-                            label = None
-                            title = str(ndofs) + "dofs" + "-"
-                            if sign < 0: title += "chunksize"
-                            if sign > 0: title += "chunkcount"
-                            myaxs = axs[graph_row,graph_col]
+                            if sign > 0:
+                                label = "chunkcount"
+                                color = "blue"
+                                linestyle = "-"
+                            if sign < 0:
+                                label = "chunksize"
+                                color = "red"
+                                linestyle = "--"
+                            title = str(ndofs) + " dofs"
+                            myaxs = axs[graph_col]
                             myaxs.loglog(vals_x, vals_y, base=2, color=color, linestyle=linestyle, label=label)
                             if title != None: myaxs.set_title(title, fontsize="medium")
 
@@ -154,7 +156,7 @@ for dualop_idx in range(len(dualoperator_list_espreso)):
                     for a in axs.flat:
                         a.grid(True)
                         if a.lines:
-                            # a.legend(loc="upper left")
+                            a.legend(loc="upper left")
                             xlim_min = min(xlim_min, a.get_xlim()[0])
                             xlim_max = max(xlim_max, a.get_xlim()[1])
                             ylim_min = min(ylim_min, a.get_ylim()[0])
