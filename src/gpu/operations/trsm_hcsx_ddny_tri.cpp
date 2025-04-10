@@ -236,10 +236,7 @@ void trsm_hcsx_ddny_tri<T,I>::preprocess_submit(void * ws_tmp)
 template<typename T, typename I>
 void trsm_hcsx_ddny_tri<T,I>::perform_submit(void * ws_tmp)
 {
-stacktimer::enable();
-gpu::mgm::device_wait();
     stacktimer::push("trsm_hcsx_ddny_tri::perform_submit");
-stacktimer::disable();
 
     if(!called_preprocess) eslog::error("preprocess has not been called\n");
     if(ws_tmp == nullptr && wss_tmp_perform > 0) eslog::error("temporary workspace is null\n");
@@ -257,10 +254,7 @@ stacktimer::disable();
     ator_ws_tmp_linear->unset();
     ator_ws_tmp_overlap->unset();
 
-stacktimer::enable();
-gpu::mgm::device_wait();
     stacktimer::pop();
-stacktimer::disable();
 }
 
 

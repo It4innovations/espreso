@@ -140,9 +140,7 @@ void herk_dnx_dny_tri<T,I>::preprocess()
 template<typename T, typename I>
 void herk_dnx_dny_tri<T,I>::perform()
 {
-stacktimer::enable();
     stacktimer::push("herk_dnx_dny_tri::perform");
-stacktimer::disable();
 
     if(!preproces_called) eslog::error("preprocess was not called\n");
     if(A == nullptr) eslog::error("matrix A is not set\n");
@@ -158,9 +156,7 @@ stacktimer::disable();
         perform_AhA();
     }
 
-stacktimer::enable();
     stacktimer::pop();
-stacktimer::disable();
 }
 
 
