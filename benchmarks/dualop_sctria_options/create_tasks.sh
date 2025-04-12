@@ -768,6 +768,10 @@ do
                             create_task
                         done
                     done
+
+                    # dual_operator="EXPLICIT_PARDISO"
+                    # dual_operator="EXPLICIT_SC_CHOLMOD"
+                    # create_task
                 fi
 
 

@@ -71,7 +71,7 @@ col_avg_time_herkperform = csv_header.index("avg_time_herkperform")
 
 
 
-dualoperator_list_espreso = ["EXPLICIT_SCTRIA", "EXPLICIT_SCTRIA_GPU"]
+dualoperator_list_espreso = ["EXPLICIT_SCTRIA", "EXPLICIT_SCTRIA_GPU", "EXPLICIT_SC_CHOLMOD", "EXPLICIT_PARDISO"]
 dualoperator_list_cpugpu = ["CPU", "GPU"]
 physics_list = ["heat_transfer", "linear_elasticity"]
 dimensions_list = ["2", "3"]
@@ -97,10 +97,9 @@ my_figsize_y = 1000
 image_index = -1
 
 csv_data_00 = csv_data
-for dualop_idx in range(len(dualoperator_list_espreso)):
-    dualop = dualoperator_list_espreso[dualop_idx]
-    dualop_cpugpu = dualoperator_list_cpugpu[dualop_idx]
-    csv_data_01 = [row for row in csv_data_00 if (row[col_dualop] == dualop)]
+for cpugpu_idx in range(len(dualoperator_list_cpugpu)):
+    dualop_cpugpu = dualoperator_list_cpugpu[cpugpu_idx]
+    csv_data_01 = [row for row in csv_data_00 if (("GPU" in row[col_dualop]) == ("GPU" in dualop_cpugpu))]
     for physics in physics_list:
         csv_data_02 = [row for row in csv_data_01 if (row[col_physics] == physics)]
         for dimension in dimensions_list:
@@ -123,40 +122,62 @@ for dualop_idx in range(len(dualoperator_list_espreso)):
                 csv_data_05 = csv_data_04
                 csv_data_06 = sorted(csv_data_05, key=lambda row: int(row[col_n_dofs]))
 
-                csv_data_baseline = [row for row in csv_data_06 if (row[col_trsm_partition_parameter] == "1")]
-                csv_data_optimal = [row for row in csv_data_06 if (row[col_trsm_partition_parameter] == "0")]
+                csv_data_orig = [row for row in csv_data_06 if (row[col_trsm_partition_parameter] == "1")]
+                csv_data_sctria = [row for row in csv_data_06 if (row[col_trsm_partition_parameter] == "0")]
+                csv_data_cholmod = [row for row in csv_data_06 if (row[col_dualop] == "EXPLICIT_SC_CHOLMOD")]
+                csv_data_pardiso = [row for row in csv_data_06 if (row[col_dualop] == "EXPLICIT_PARDISO")]
 
-                vals_x_str = [row[col_n_dofs] for row in csv_data_baseline]
+                vals_x_str = [row[col_n_dofs] for row in csv_data_orig]
                 vals_x = [float(x) for x in vals_x_str]
 
-                vals_y_trsm_baseline_str = [row[col_avg_time_trsmperform] for row in csv_data_baseline]
-                vals_y_trsm_optimal_str = [row[col_avg_time_trsmperform] for row in csv_data_optimal]
-                vals_y_trsm_baseline = [(float(y) if y != "" else float("nan")) for y in vals_y_trsm_baseline_str]
-                vals_y_trsm_optimal = [(float(y) if y != "" else float("nan")) for y in vals_y_trsm_optimal_str]
-                vals_y_speedup_trsm = [float("nan")] * len(vals_y_trsm_baseline)
-                for i in range(len(vals_y_speedup_trsm)):
-                    vals_y_speedup_trsm[i] = vals_y_trsm_baseline[i] / vals_y_trsm_optimal[i]
+                vals_y_trsm_orig_str = [row[col_avg_time_trsmperform] for row in csv_data_orig]
+                vals_y_trsm_sctria_str = [row[col_avg_time_trsmperform] for row in csv_data_sctria]
+                vals_y_trsm_orig = [(float(y) if y != "" else float("nan")) for y in vals_y_trsm_orig_str]
+    
+                vals_y_trsm_sctria = [(float(y) if y != "" else float("nan")) for y in vals_y_trsm_sctria_str]
+                vals_y_speedup_sctria = [float("nan")] * len(vals_y_trsm_orig)
+                for i in range(len(vals_y_speedup_sctria)):
+                    vals_y_speedup_sctria[i] = vals_y_trsm_orig[i] / vals_y_trsm_sctria[i]
+                
+                if len(csv_data_cholmod) > 0:
+                    vals_y_trsm_cholmod_str = [row[col_avg_time_trsmperform] for row in csv_data_cholmod]
+                    vals_y_trsm_cholmod = [(float(y) if y != "" else float("nan")) for y in vals_y_trsm_cholmod_str]
+                    vals_y_speedup_cholmod = [float("nan")] * len(vals_y_trsm_orig)
+                    for i in range(len(vals_y_speedup_cholmod)):
+                        vals_y_speedup_cholmod[i] = vals_y_trsm_cholmod[i] / vals_y_trsm_sctria[i]
+                if len(csv_data_pardiso) > 0:
+                    vals_y_trsm_pardiso_str = [row[col_avg_time_trsmperform] for row in csv_data_pardiso]
+                    vals_y_trsm_pardiso = [(float(y) if y != "" else float("nan")) for y in vals_y_trsm_pardiso_str]
+                    vals_y_speedup_pardiso = [float("nan")] * len(vals_y_trsm_orig)
+                    for i in range(len(vals_y_speedup_pardiso)):
+                        vals_y_speedup_pardiso[i] = vals_y_trsm_pardiso[i] / vals_y_trsm_sctria[i]
 
-                vals_y_herk_baseline_str = [row[col_avg_time_herkperform] for row in csv_data_baseline]
-                vals_y_herk_optimal_str = [row[col_avg_time_herkperform] for row in csv_data_optimal]
-                vals_y_herk_baseline = [(float(y) if y != "" else float("nan")) for y in vals_y_herk_baseline_str]
-                vals_y_herk_optimal = [(float(y) if y != "" else float("nan")) for y in vals_y_herk_optimal_str]
-                vals_y_speedup_herk = [float("nan")] * len(vals_y_herk_baseline)
+                vals_y_herk_orig_str = [row[col_avg_time_herkperform] for row in csv_data_orig]
+                vals_y_herk_sctria_str = [row[col_avg_time_herkperform] for row in csv_data_sctria]
+                vals_y_herk_orig = [(float(y) if y != "" else float("nan")) for y in vals_y_herk_orig_str]
+                vals_y_herk_sctria = [(float(y) if y != "" else float("nan")) for y in vals_y_herk_sctria_str]
+                vals_y_speedup_herk = [float("nan")] * len(vals_y_herk_orig)
                 for i in range(len(vals_y_speedup_herk)):
-                    vals_y_speedup_herk[i] = vals_y_herk_baseline[i] / vals_y_herk_optimal[i]
+                    vals_y_speedup_herk[i] = vals_y_herk_orig[i] / vals_y_herk_sctria[i]
 
-                axs[0,0].loglog(vals_x, vals_y_trsm_baseline, color="blue", linestyle="-", label="baseline time")
-                axs[0,0].loglog(vals_x, vals_y_trsm_optimal, color="red", linestyle="--", label="optimized time")
-                axs[1,0].semilogx(vals_x, vals_y_speedup_trsm, color="green", linestyle="-", label="speedup")
+                axs[0,0].loglog(vals_x, vals_y_trsm_orig, color="green", linestyle="-", label="orig time")
+                axs[0,0].loglog(vals_x, vals_y_trsm_sctria, color="lawngreen", linestyle="-", label="sctria time")
+                axs[1,0].loglog(vals_x, vals_y_speedup_sctria, color="green", linestyle="-", label="speedup over orig")
+                if len(csv_data_cholmod) > 0:
+                    axs[0,0].loglog(vals_x, vals_y_trsm_cholmod, color="magenta", linestyle="-", label="cholmod time")
+                    axs[1,0].loglog(vals_x, vals_y_speedup_cholmod, color="magenta", linestyle="-", label="speedup over cholmod")
+                if len(csv_data_pardiso) > 0:
+                    axs[0,0].loglog(vals_x, vals_y_trsm_pardiso, color="cyan", linestyle="-", label="pardiso time")
+                    axs[1,0].loglog(vals_x, vals_y_speedup_pardiso, color="cyan", linestyle="-", label="speedup over pardiso")
 
-                axs[0,1].loglog(vals_x, vals_y_herk_baseline, color="blue", linestyle="-", label="baseline time")
-                axs[0,1].loglog(vals_x, vals_y_herk_optimal, color="red", linestyle="--", label="optimized time")
-                axs[1,1].semilogx(vals_x, vals_y_speedup_herk, color="green", linestyle="-", label="speedup")
+                axs[0,1].loglog(vals_x, vals_y_herk_orig, color="green", linestyle="-", label="basorigeline time")
+                axs[0,1].loglog(vals_x, vals_y_herk_sctria, color="lawngreen", linestyle="-", label="sctria time")
+                axs[1,1].loglog(vals_x, vals_y_speedup_herk, color="green", linestyle="-", label="speedup over orig")
 
-                axs[0,0].set_title("individual trsm kernel", fontsize="medium")
-                axs[1,0].set_title("individual trsm kernel", fontsize="medium")
-                axs[0,1].set_title("individual herk kernel", fontsize="medium")
-                axs[1,1].set_title("individual herk kernel", fontsize="medium")
+                axs[0,0].set_title("individual trsm kernel, time", fontsize="medium")
+                axs[1,0].set_title("individual trsm kernel, speedup of sctria over X", fontsize="medium")
+                axs[0,1].set_title("individual herk kernel, time", fontsize="medium")
+                axs[1,1].set_title("individual herk kernel, speedup of sctria over X", fontsize="medium")
 
 
                 xlim_min = (1 << 30)
@@ -174,7 +195,8 @@ for dualop_idx in range(len(dualoperator_list_espreso)):
                             ylim_min = min(ylim_min, a.get_ylim()[0])
                             ylim_max = max(ylim_max, a.get_ylim()[1])
                         a.set_xscale("log", base=2)
-                        if graph_row == 0: a.set_yscale("log", base=2)
+                        if graph_row == 0: a.set_yscale("log", base=10)
+                        if graph_row == 1: a.set_yscale("log", base=10)
                     if graph_row == 0:
                         for graph_col in range(2):
                             a = axs[graph_row, graph_col]

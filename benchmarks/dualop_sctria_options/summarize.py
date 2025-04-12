@@ -198,23 +198,25 @@ for run_dir_name in os.listdir(runs_to_summarize_dir):
             summstring.write(";")
             summstring.write(";")
 
-        measured_lines_trsmperform_cpu = [line for line in out_file_lines if ("finishd 'trsm_csx_dny_tri::perform'" in line)]
-        measured_lines_herkperform_cpu = [line for line in out_file_lines if ("finishd 'herk_dnx_dny_tri::perform'" in line)]
-        measured_lines_trsmperform_gpu = [line for line in out_file_lines if ("finishd 'trsm_hcsx_ddny_tri::perform_submit'" in line)]
-        measured_lines_herkperform_gpu = [line for line in out_file_lines if ("finishd 'herk_ddnx_ddny_tri::perform_submit'" in line)]
-        measured_lines_trsmperform = measured_lines_trsmperform_cpu + measured_lines_trsmperform_gpu
-        measured_lines_herkperform = measured_lines_herkperform_cpu + measured_lines_herkperform_gpu
-        if len(measured_lines_trsmperform) == 0 or len(measured_lines_herkperform) == 0:
-            summstring.write(";")
+        times_trsmperform_cpu = [float(line[100:-3]) for line in out_file_lines if ("finishd 'trsm_csx_dny_tri::perform'" in line)]
+        times_herkperform_cpu = [float(line[100:-3]) for line in out_file_lines if ("finishd 'herk_dnx_dny_tri::perform'" in line)]
+        times_trsmperform_gpu = [float(line[100:-3]) for line in out_file_lines if ("finishd 'trsm_hcsx_ddny_tri::perform_submit'" in line)]
+        times_herkperform_gpu = [float(line[100:-3]) for line in out_file_lines if ("finishd 'herk_ddnx_ddny_tri::perform_submit'" in line)]
+        times_trsmperform_cholmod = [float(line[-12:]) for line in out_file_lines if ("tmp_trsm_cholmod_time" in line)]
+        times_trsmperform_pardiso = [float(line[-15:-3]) for line in out_file_lines if ("tmp_trsm_pardiso_time" in line)]
+        times_trsmperform = times_trsmperform_cpu + times_trsmperform_gpu + times_trsmperform_cholmod + times_trsmperform_pardiso
+        times_herkperform = times_herkperform_cpu + times_herkperform_gpu
+        if len(times_trsmperform) == 0:
             summstring.write(";")
         else:
-            measured_lines_trsmperform = measured_lines_trsmperform[len(measured_lines_trsmperform)//2:]
-            measured_lines_herkperform = measured_lines_herkperform[len(measured_lines_herkperform)//2:]
-            times_trsmperform = [float(row[100:-3]) for row in measured_lines_trsmperform]
-            times_herkperform = [float(row[100:-3]) for row in measured_lines_herkperform]
+            times_trsmperform = times_trsmperform[len(times_trsmperform)//2:]
             avg_time_trsmperform = sum(times_trsmperform) / len(times_trsmperform)
-            avg_time_herkperform = sum(times_herkperform) / len(times_herkperform)
             summstring.write(str(avg_time_trsmperform) + ";")
+        if len(times_herkperform) == 0:
+            summstring.write(";")
+        else:
+            times_herkperform = times_herkperform[len(times_herkperform)//2:]
+            avg_time_herkperform = sum(times_herkperform) / len(times_herkperform)
             summstring.write(str(avg_time_herkperform) + ";")
 
         summstring.write("\n")
