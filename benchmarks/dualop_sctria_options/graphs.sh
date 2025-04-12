@@ -36,7 +36,7 @@ then
 fi
 if [ "${phase}" == "5" ]
 then
-    mpirun -n 4 python3 benchmarks/dualop_sctria_options/graphs_phase5.py "${datestr}"
+    mpirun -n 8 python3 benchmarks/dualop_sctria_options/graphs_phase5.py "${datestr}"
     # mpirun -n 1 python3 benchmarks/dualop_sctria_options/graphs_phase5.py "${datestr}"
 fi
 if [ "${phase}" == "6" ]

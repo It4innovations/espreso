@@ -94,7 +94,7 @@ fi
 
 datestr="$(date +%Y%m%d_%H%M%S)"
 
-rundir="${basedir}/runs/${machine}_${datestr}"
+rundir="${basedir}/runs/${machine}_phase${phase}_${datestr}"
 mkdir -p "${rundir}"
 
 tasksdir="${rundir}/tasks"
@@ -552,7 +552,7 @@ do
                     #######################################
                     ### phase 5, trsm and herk strategy ###
                     #######################################
-                    # numer of tasks: 27x32 = 864 = at most 72 gpu-hours
+                    # numer of tasks: 27x24 = 648 = at most 54 gpu-hours
                     # auto-select what we have already determined:
                     #   order_X
                     #   trsm_splitrhs_factor_order_sp
@@ -563,7 +563,6 @@ do
                     #   trsm_splitrhs_spdn_criteria
                     #   trsm_splitfactor_trsm_factor_spdn
                     #   trsm_splitfactor_gemm_spdn_criteria
-                    #   trsm_splitfactor_gemm_factor_prune
                     #   trsm_partition_parameter
                     #   herk_partition_parameter
                     # fix:
@@ -571,6 +570,7 @@ do
                     #   trsm_splitfactor_gemm_spdn_param
                     # for each:
                     #   dual_operator
+                    #   trsm_splitfactor_gemm_factor_prune
                     # select the best:
                     #   trsm_partition_algorithm
                     #   herk_partition_algorithm
@@ -585,24 +585,33 @@ do
                     trsm_splitrhs_spdn_criteria="_"
                     trsm_splitfactor_trsm_factor_spdn="_"
                     trsm_splitfactor_gemm_spdn_criteria="_"
-                    trsm_splitfactor_gemm_factor_prune="_"
                     trsm_partition_parameter="0"
                     herk_partition_parameter="0"
                     trsm_splitrhs_spdn_param="0"
                     trsm_splitfactor_gemm_spdn_param="0"
                     for dual_operator in EXPLICIT_SCTRIA EXPLICIT_SCTRIA_GPU
                     do
+                        herk_partition_algorithm="_"
+                        herk_strategy="_"
                         for trsm_partition_algorithm in U M
                         do
-                            for herk_partition_algorithm in U M
+                            for trsm_strategy in R F
                             do
-                                for trsm_strategy in R F
+                                for trsm_splitfactor_gemm_factor_prune in N R
                                 do
-                                    for herk_strategy in T Q
-                                    do
-                                        create_task
-                                    done
+                                    create_task
                                 done
+                            done
+                        done
+
+                        trsm_partition_algorithm="_"
+                        trsm_strategy="_"
+                        trsm_splitfactor_gemm_factor_prune="_"
+                        for herk_partition_algorithm in U M
+                        do
+                            for herk_strategy in T Q
+                            do
+                                create_task
                             done
                         done
                     done
@@ -688,7 +697,7 @@ do
                 if [ "${phase}" == "7" ]
                 then
                     #########################################################################
-                    ### phase 7, compare only trsm and herk kernel times with numchunks=1 ###
+                    ### phase 7, compare pure trsm and herk kernel times with numchunks=1 ###
                     #########################################################################
                     # numer of tasks: 27x4 = 108 = at most 9 gpu-hours
                     # auto-select what we have already determined (almost everything):

@@ -89,11 +89,15 @@ herk_strategy_list = ["T", "Q"]
 trsm_partition_algorithm_list = ["U", "M"]
 herk_partition_algorithm_list = ["U", "M"]
 
-subplots_counts = [4,4]
-my_figsize_x = 3000
-my_figsize_y = 2000
-
 image_index = -1
+
+
+
+
+
+subplots_counts = [2,4]
+my_figsize_x = 3000
+my_figsize_y = 1000
 
 csv_data_00 = csv_data
 for dualop_idx in range(len(dualoperator_list_espreso)):
@@ -111,10 +115,10 @@ for dualop_idx in range(len(dualoperator_list_espreso)):
                 if(len(csv_data_04) == 0):
                     continue
                 image_index += 1
-                if MPI.COMM_WORLD.Get_rank() != image_index:
-                    continue
+                # if MPI.COMM_WORLD.Get_rank() != image_index:
+                #     continue
 
-                imgname = dualop_cpugpu + "-" + physics + "-" + dimension + "D-" + element_type
+                imgname = dualop_cpugpu + "-" + physics + "-" + dimension + "D-" + element_type + "-trsm"
                 imgpath = graphs_dir + "/" + imgname + ".png"
                 plt.figure()
                 fig, axs = plt.subplots(subplots_counts[0], subplots_counts[1], figsize=(my_figsize_x/100.0, my_figsize_y/100.0))
@@ -122,42 +126,45 @@ for dualop_idx in range(len(dualoperator_list_espreso)):
                 for trsm_partition_algorithm_idx in range(len(trsm_partition_algorithm_list)):
                     trsm_partition_algorithm = trsm_partition_algorithm_list[trsm_partition_algorithm_idx]
                     csv_data_05 = [row for row in csv_data_04 if (row[col_trsm_partition_algorithm] == trsm_partition_algorithm)]
-                    for herk_partition_algorithm_idx in range(len(herk_partition_algorithm_list)):
-                        herk_partition_algorithm = herk_partition_algorithm_list[herk_partition_algorithm_idx]
-                        csv_data_06 = [row for row in csv_data_05 if (row[col_herk_partition_algorithm] == herk_partition_algorithm)]
-                        for trsm_strategy_idx in range(len(trsm_strategy_list)):
-                            trsm_strategy = trsm_strategy_list[trsm_strategy_idx]
-                            csv_data_07 = [row for row in csv_data_06 if (row[col_trsm_strategy] == trsm_strategy)]
-                            for herk_strategy_idx in range(len(herk_strategy_list)):
-                                herk_strategy = herk_strategy_list[herk_strategy_idx]
-                                csv_data_08 = [row for row in csv_data_07 if (row[col_herk_strategy] == herk_strategy)]
-                                if(len(csv_data_08) == 0):
-                                    continue
+                    herk_partition_algorithm = "_"
+                    csv_data_06 = [row for row in csv_data_05 if (row[col_herk_partition_algorithm] == herk_partition_algorithm)]
+                    for trsm_strategy_idx in range(len(trsm_strategy_list)):
+                        trsm_strategy = trsm_strategy_list[trsm_strategy_idx]
+                        csv_data_07 = [row for row in csv_data_06 if (row[col_trsm_strategy] == trsm_strategy)]
+                        herk_strategy = "_"
+                        csv_data_08 = [row for row in csv_data_07 if (row[col_herk_strategy] == herk_strategy)]
+                        for trsm_splitfactor_gemm_prune_idx in range(len(trsm_splitfactor_gemm_prune_list)):
+                            trsm_splitfactor_gemm_prune = trsm_splitfactor_gemm_prune_list[trsm_splitfactor_gemm_prune_idx]
+                            csv_data_09 = [row for row in csv_data_08 if (row[col_trsm_splitfactor_gemm_prune] == trsm_splitfactor_gemm_prune)]
+                            if(len(csv_data_09) == 0):
+                                continue
 
-                                csv_data_09 = sorted(csv_data_08, key=lambda row: int(row[col_n_dofs]))
-                                vals_x_str = [row[col_n_dofs] for row in csv_data_09]
-                                vals_y_str = [row[col_time_per_subdomain] for row in csv_data_09]
-                                vals_x = [float(x) for x in vals_x_str]
-                                vals_y = [(float(y) if y != "" else float("nan")) for y in vals_y_str]
+                            csv_data_10 = sorted(csv_data_09, key=lambda row: int(row[col_n_dofs]))
+                            vals_x_str = [row[col_n_dofs] for row in csv_data_10]
+                            vals_y_str = [row[col_time_per_subdomain] for row in csv_data_10]
+                            vals_x = [float(x) for x in vals_x_str]
+                            vals_y = [(float(y) if y != "" else float("nan")) for y in vals_y_str]
 
-                                graph_row = 2 * trsm_partition_algorithm_idx + trsm_strategy_idx
-                                graph_col = 2 * 0 + herk_strategy_idx
+                            graph_row = trsm_splitfactor_gemm_prune_idx
+                            graph_col = 2 * trsm_partition_algorithm_idx + trsm_strategy_idx
 
-                                color = "black"
-                                linestyle = ":"
-                                if herk_partition_algorithm == "U":
-                                    color = "blue"
-                                    linestyle = "-"
-                                if herk_partition_algorithm == "M":
-                                    color = "red"
-                                    linestyle = "--"
-                                # label = "this one"
-                                label = herk_partition_algorithm
-                                label = label.replace("_", "-")
-                                title = "trsm" + trsm_partition_algorithm + trsm_strategy + "-herk" + "*" + herk_strategy
-                                myaxs = axs[graph_row,graph_col]
-                                myaxs.loglog(vals_x, vals_y, base=2, color=color, linestyle=linestyle, label=label)
-                                if title != None: myaxs.set_title(title, fontsize="medium")
+                            color = "black"
+                            linestyle = ":"
+                            # color = "blue" if trsm_strategy == "R" else "red"
+                            # linestyle = "--" if trsm_splitfactor_gemm_prune == "R" else "-"
+                            # if trsm_strategy == "R":
+                            #     color = "blue"
+                            #     linestyle = "-"
+                            # if trsm_strategy == "F":
+                            #     color = "red"
+                            #     linestyle = "--"
+                            label = "this one"
+                            # label = trsm_strategy + "-" + trsm_splitfactor_gemm_prune
+                            label = label.replace("_", "-")
+                            title = "partalg" + trsm_partition_algorithm + "-strategy" + trsm_strategy + "-prune" + trsm_splitfactor_gemm_prune
+                            myaxs = axs[graph_row,graph_col]
+                            myaxs.loglog(vals_x, vals_y, base=2, color=color, linestyle=linestyle, label=label)
+                            if title != None: myaxs.set_title(title, fontsize="medium")
 
                 xlim_min = (1 << 30)
                 xlim_max = 0
@@ -184,6 +191,95 @@ for dualop_idx in range(len(dualoperator_list_espreso)):
 
 
 
+
+subplots_counts = [2,2]
+my_figsize_x = 1500
+my_figsize_y = 1000
+
+csv_data_00 = csv_data
+for dualop_idx in range(len(dualoperator_list_espreso)):
+    dualop = dualoperator_list_espreso[dualop_idx]
+    dualop_cpugpu = dualoperator_list_cpugpu[dualop_idx]
+    csv_data_01 = [row for row in csv_data_00 if (row[col_dualop] == dualop)]
+    for physics in physics_list:
+        csv_data_02 = [row for row in csv_data_01 if (row[col_physics] == physics)]
+        for dimension in dimensions_list:
+            csv_data_03 = [row for row in csv_data_02 if (row[col_dimension] == dimension)]
+            if dimension == "2": element_types_list = element_types_2d_list
+            if dimension == "3": element_types_list = element_types_3d_list
+            for element_type in element_types_list:
+                csv_data_04 = [row for row in csv_data_03 if (row[col_element_type] == element_type)]
+                if(len(csv_data_04) == 0):
+                    continue
+                image_index += 1
+                if MPI.COMM_WORLD.Get_rank() != image_index:
+                    continue
+
+                imgname = dualop_cpugpu + "-" + physics + "-" + dimension + "D-" + element_type + "-herk"
+                imgpath = graphs_dir + "/" + imgname + ".png"
+                plt.figure()
+                fig, axs = plt.subplots(subplots_counts[0], subplots_counts[1], figsize=(my_figsize_x/100.0, my_figsize_y/100.0))
+
+                trsm_partition_algorithm = "_"
+                csv_data_05 = [row for row in csv_data_04 if (row[col_trsm_partition_algorithm] == trsm_partition_algorithm)]
+                for herk_partition_algorithm_idx in range(len(herk_partition_algorithm_list)):
+                    herk_partition_algorithm = herk_partition_algorithm_list[herk_partition_algorithm_idx]
+                    csv_data_06 = [row for row in csv_data_05 if (row[col_herk_partition_algorithm] == herk_partition_algorithm)]
+                    trsm_strategy = "_"
+                    csv_data_07 = [row for row in csv_data_06 if (row[col_trsm_strategy] == trsm_strategy)]
+                    for herk_strategy_idx in range(len(herk_strategy_list)):
+                        herk_strategy = herk_strategy_list[herk_strategy_idx]
+                        csv_data_08 = [row for row in csv_data_07 if (row[col_herk_strategy] == herk_strategy)]
+                        trsm_splitfactor_gemm_prune = "_"
+                        csv_data_09 = [row for row in csv_data_08 if (row[col_trsm_splitfactor_gemm_prune] == trsm_splitfactor_gemm_prune)]
+                        if(len(csv_data_09) == 0):
+                            continue
+
+                        csv_data_10 = sorted(csv_data_09, key=lambda row: int(row[col_n_dofs]))
+                        vals_x_str = [row[col_n_dofs] for row in csv_data_10]
+                        vals_y_str = [row[col_time_per_subdomain] for row in csv_data_10]
+                        vals_x = [float(x) for x in vals_x_str]
+                        vals_y = [(float(y) if y != "" else float("nan")) for y in vals_y_str]
+
+                        graph_row = herk_partition_algorithm_idx
+                        graph_col = herk_strategy_idx
+
+                        color = "black"
+                        linestyle = ":"
+                        # if herk_partition_algorithm == "U":
+                        #     color = "blue"
+                        #     linestyle = "-"
+                        # if herk_partition_algorithm == "M":
+                        #     color = "red"
+                        #     linestyle = "--"
+                        label = "this one"
+                        # label = herk_partition_algorithm
+                        label = label.replace("_", "-")
+                        title = "partalg" + herk_partition_algorithm + "-strategy" + herk_strategy
+                        myaxs = axs[graph_row,graph_col]
+                        myaxs.loglog(vals_x, vals_y, base=2, color=color, linestyle=linestyle, label=label)
+                        if title != None: myaxs.set_title(title, fontsize="medium")
+
+                xlim_min = (1 << 30)
+                xlim_max = 0
+                ylim_min = (1 << 30)
+                ylim_max = 0
+                for a in axs.flat:
+                    a.grid(True)
+                    if a.lines:
+                        a.legend(loc="upper left")
+                        xlim_min = min(xlim_min, a.get_xlim()[0])
+                        xlim_max = max(xlim_max, a.get_xlim()[1])
+                        ylim_min = min(ylim_min, a.get_ylim()[0])
+                        ylim_max = max(ylim_max, a.get_ylim()[1])
+                    a.set_xscale("log", base=2)
+                    a.set_yscale("log", base=2)
+                plt.setp(axs, xlim=[xlim_min,xlim_max], ylim=[ylim_min,ylim_max])
+                title = imgname
+                # plt.title(title)
+                fig.tight_layout()
+                plt.savefig(imgpath)
+                plt.close()
 
 
 

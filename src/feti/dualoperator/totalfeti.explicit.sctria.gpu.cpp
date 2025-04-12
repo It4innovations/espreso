@@ -71,7 +71,7 @@ static void replace_unset_configs(typename gpu::operations::sc_symm_hcsx_ddny_tr
     replace_if_default(cfg_sc.cfg_trsm.splitrhs.spdn_criteria, 'S');
     replace_if_default(cfg_sc.cfg_trsm.splitfactor.trsm_factor_spdn, (info::mesh->dimension == 2) ? 'S' : 'D');
     replace_if_default(cfg_sc.cfg_trsm.splitfactor.gemm_factor_prune, 'R');
-    replace_if_default(cfg_sc.cfg_trsm.splitfactor.gemm_spdn_criteria, (info::mesh->dimension == 2) ? 'S' : 'D');
+    replace_if_default(cfg_sc.cfg_trsm.splitfactor.gemm_spdn_criteria, (info::mesh->dimension == 3 && cfg_sc.cfg_trsm.splitfactor.gemm_factor_prune == 'R') ? 'D' : 'S');
 
     replace_if_default(cfg_sc.order_X, 'R');
     replace_if_default(cfg_sc.cfg_trsm.splitrhs.factor_order_sp, 'R');
