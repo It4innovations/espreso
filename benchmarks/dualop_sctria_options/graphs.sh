@@ -49,3 +49,8 @@ then
     mpirun -n 4 python3 benchmarks/dualop_sctria_options/graphs_phase7.py "${datestr}"
     # mpirun -n 1 python3 benchmarks/dualop_sctria_options/graphs_phase7.py "${datestr}"
 fi
+if [ "${phase}" == "8" ]
+then
+    mpirun -n 4 python3 benchmarks/dualop_sctria_options/graphs_phase8.py "${datestr}"
+    # mpirun -n 1 python3 benchmarks/dualop_sctria_options/graphs_phase8.py "${datestr}"
+fi

@@ -763,6 +763,65 @@ do
 
 
 
+                if [ "${phase}" == "8" ]
+                then
+                    ######################################################################
+                    ### phase 8, compare pruning and non-pruning and sparse/dense gemm ###
+                    ######################################################################
+                    # numer of tasks: 27x8 = 216 = atmost 18 gpu-hours
+                    # auto-select what we have already determined (almost everything):
+                    #   order_X
+                    #   trsm_splitrhs_factor_order_sp
+                    #   trsm_splitrhs_factor_order_dn
+                    #   trsm_splitfactor_trsm_factor_order
+                    #   trsm_splitfactor_gemm_factor_order_sp
+                    #   trsm_splitfactor_gemm_factor_order_dn
+                    #   trsm_splitrhs_spdn_criteria
+                    #   trsm_splitfactor_trsm_factor_spdn
+                    #   herk_strategy
+                    #   trsm_splitrhs_spdn_param
+                    #   trsm_splitfactor_gemm_spdn_param
+                    #   trsm_partition_algorithm
+                    #   herk_partition_algorithm
+                    #   trsm_partition_parameter
+                    #   herk_partition_parameter
+                    # fix:
+                    #   trsm_strategy
+                    # for each:
+                    #   dual_operator
+                    # observe the difference between:
+                    #   trsm_splitfactor_gemm_factor_prune
+                    #   trsm_splitfactor_gemm_spdn_criteria
+                    order_X="_"
+                    trsm_splitrhs_factor_order_sp="_"
+                    trsm_splitrhs_factor_order_dn="_"
+                    trsm_splitfactor_trsm_factor_order="_"
+                    trsm_splitfactor_gemm_factor_order_sp="_"
+                    trsm_splitfactor_gemm_factor_order_dn="_"
+                    trsm_splitrhs_spdn_criteria="_"
+                    trsm_splitfactor_trsm_factor_spdn="_"
+                    herk_strategy="_"
+                    trsm_splitrhs_spdn_param="0"
+                    trsm_splitfactor_gemm_spdn_param="0"
+                    trsm_partition_algorithm="U"
+                    herk_partition_algorithm="U"
+                    trsm_partition_parameter="0"
+                    herk_partition_parameter="0"
+                    trsm_strategy="F"
+                    for dual_operator in EXPLICIT_SCTRIA EXPLICIT_SCTRIA_GPU
+                    do
+                        for trsm_splitfactor_gemm_spdn_criteria in S D
+                        do
+                            for trsm_splitfactor_gemm_factor_prune in N R
+                            do
+                                create_task
+                            done
+                        done
+                    done
+                fi
+
+
+
             done
         done
     done
