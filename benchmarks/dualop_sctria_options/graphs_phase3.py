@@ -7,6 +7,7 @@ from datetime import datetime
 import matplotlib.pyplot as plt
 import matplotlib
 from mpi4py import MPI
+import numpy as np
 
 
 
@@ -106,7 +107,7 @@ for dualop_idx in range(len(dualoperator_list_espreso)):
                         continue
 
                     imgname = dualop_cpugpu + "-" + physics + "-" + dimension + "D-" + element_type + "-" + trsm_strategy
-                    imgpath = graphs_dir + "/" + imgname + ".png"
+                    imgpath = graphs_dir + "/times-" + imgname + ".png"
                     
                     all_ndofs_unique = sorted(list(set([int(row[col_n_dofs]) for row in csv_data_05])))
                     ngraphs_x = len(all_ndofs_unique)
@@ -116,6 +117,9 @@ for dualop_idx in range(len(dualoperator_list_espreso)):
 
                     plt.figure()
                     fig, axs = plt.subplots(subplots_counts[0], subplots_counts[1], figsize=(my_figsize_x/100.0, my_figsize_y/100.0))
+
+                    params_goodenough_chunkcount = []
+                    params_goodenough_chunksize = []
 
                     for all_ndofs_unique_idx in range(len(all_ndofs_unique)):
                         ndofs = all_ndofs_unique[all_ndofs_unique_idx]
@@ -148,6 +152,23 @@ for dualop_idx in range(len(dualoperator_list_espreso)):
                             myaxs.loglog(vals_x, vals_y, base=2, color=color, linestyle=linestyle, label=label)
                             if title != None: myaxs.set_title(title, fontsize="medium")
 
+                            # if all_ndofs_unique_idx <= len(all_ndofs_unique) // 2:
+                            #     continue
+                            tuples = list(zip(vals_x, vals_y))
+                            tuples_sorted = sorted(tuples, key=lambda a: a[1])
+                            best_y = tuples_sorted[0][1]
+                            idx = -1
+                            if sign > 0: xs_to_use = params_goodenough_chunkcount
+                            if sign < 0: xs_to_use = params_goodenough_chunksize
+                            # xs_to_use.append(tuples_sorted[0][0])
+                            for t in tuples_sorted:
+                                idx += 1
+                                if t[1] < 1.1 * best_y:
+                                    xs_to_use.append(t[0])
+                                    continue
+                                if idx < 3:
+                                    xs_to_use.append(t[0])
+                                    continue
 
                     xlim_min = (1 << 30)
                     xlim_max = 0
@@ -170,6 +191,23 @@ for dualop_idx in range(len(dualoperator_list_espreso)):
                     plt.savefig(imgpath)
                     plt.close()
 
+                    bins = [1, 2, 5, 10, 20, 50, 100, 200, 500, 1000, 2000, 5000, 10000, 20000, 50000, 100000, 200000]
+                    bins_str = [None] * len(bins)
+                    for i in range(len(bins)):
+                        bins_str[i] = str(bins[i])
+
+                    hist_counts_chunkcount = np.histogram(params_goodenough_chunkcount, bins)[0]
+                    hist_counts_chunksize = np.histogram(params_goodenough_chunksize, bins)[0]
+
+                    plt.figure()
+                    plt.bar(bins_str[:-1], hist_counts_chunkcount)
+                    plt.savefig(graphs_dir + "/hist_chunkcount-" + imgname + ".png")
+                    plt.close()
+
+                    plt.figure()
+                    plt.bar(bins_str[:-1], hist_counts_chunksize)
+                    plt.savefig(graphs_dir + "/hist_chunksize-" + imgname + ".png")
+                    plt.close()
 
 
 

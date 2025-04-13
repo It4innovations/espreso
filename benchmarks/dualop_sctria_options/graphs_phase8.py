@@ -7,6 +7,7 @@ from datetime import datetime
 import matplotlib.pyplot as plt
 import matplotlib
 from mpi4py import MPI
+import mytikzplot
 
 
 
@@ -36,7 +37,7 @@ datestr = datetime.now().strftime("%Y%m%d_%H%M%S")
 
 graphs_dir = basedir + "/graphs/" + datestr
 os.makedirs(graphs_dir, exist_ok=True)
-
+os.makedirs(graphs_dir + "/tikz", exist_ok=True)
 
 
 
@@ -117,8 +118,11 @@ for dualop_idx in range(len(dualoperator_list_espreso)):
 
                 imgname = dualop_cpugpu + "-" + physics + "-" + dimension + "D-" + element_type
                 imgpath = graphs_dir + "/" + imgname + ".png"
+                tikzpath = graphs_dir + "/tikz/" + imgname + ".tex"
                 plt.figure()
                 fig, axs = plt.subplots(subplots_counts[0], subplots_counts[1], figsize=(my_figsize_x/100.0, my_figsize_y/100.0))
+
+                tp = mytikzplot.tikzplotter()
 
                 for trsm_splitfactor_gemm_spdn in trsm_splitfactor_gemm_spdn_list:
                     csv_data_05 = [row for row in csv_data_04 if (row[col_trsm_splitfactor_gemm_spdn] == trsm_splitfactor_gemm_spdn)]
@@ -139,14 +143,25 @@ for dualop_idx in range(len(dualoperator_list_espreso)):
                         label = "spdn" + trsm_splitfactor_gemm_spdn + "-prune" + trsm_splitfactor_gemm_prune
                         title = None
                         axs.loglog(vals_x, vals_y, base=2, color=color, linestyle=linestyle, label=label)
+                        tp.add_line(mytikzplot.line(vals_x, vals_y, color, linestyle, None, label))
                         if title != None: myaxs.set_title(title, fontsize="medium")
 
 
 
+                xlim_min = axs.get_xlim()[0]
+                xlim_max = axs.get_xlim()[1]
+                ylim_min = axs.get_ylim()[0]
+                ylim_max = axs.get_ylim()[1]
                 axs.legend()
                 axs.grid(True)
                 fig.tight_layout()
                 plt.savefig(imgpath)
                 plt.close()
+                tp.set_bounds(xlim_min, xlim_max, ylim_min, ylim_max)
+                tp.logx = 2
+                tp.logy = 10
+                tp.xlabel = "Number of DOFs per subdomain"
+                tp.ylabel = "SC assembly time per subdomain [ms]"
+                tp.save(tikzpath)
 
 

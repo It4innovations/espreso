@@ -7,6 +7,7 @@ from datetime import datetime
 import matplotlib.pyplot as plt
 import matplotlib
 from mpi4py import MPI
+import mytikzplot
 
 
 
@@ -36,6 +37,7 @@ datestr = datetime.now().strftime("%Y%m%d_%H%M%S")
 
 graphs_dir = basedir + "/graphs/" + datestr
 os.makedirs(graphs_dir, exist_ok=True)
+os.makedirs(graphs_dir + "/tikz", exist_ok=True)
 
 
 
@@ -115,13 +117,15 @@ for dualop_idx in range(len(dualoperator_list_espreso)):
                 if(len(csv_data_04) == 0):
                     continue
                 image_index += 1
-                # if MPI.COMM_WORLD.Get_rank() != image_index:
-                #     continue
+                if MPI.COMM_WORLD.Get_rank() != image_index:
+                    continue
 
                 imgname = dualop_cpugpu + "-" + physics + "-" + dimension + "D-" + element_type + "-trsm"
                 imgpath = graphs_dir + "/" + imgname + ".png"
                 plt.figure()
                 fig, axs = plt.subplots(subplots_counts[0], subplots_counts[1], figsize=(my_figsize_x/100.0, my_figsize_y/100.0))
+
+                tps = mytikzplot.tikzplotter.create_table_of_plotters(subplots_counts[0], subplots_counts[1])
 
                 for trsm_partition_algorithm_idx in range(len(trsm_partition_algorithm_list)):
                     trsm_partition_algorithm = trsm_partition_algorithm_list[trsm_partition_algorithm_idx]
@@ -164,6 +168,8 @@ for dualop_idx in range(len(dualoperator_list_espreso)):
                             title = "partalg" + trsm_partition_algorithm + "-strategy" + trsm_strategy + "-prune" + trsm_splitfactor_gemm_prune
                             myaxs = axs[graph_row,graph_col]
                             myaxs.loglog(vals_x, vals_y, base=2, color=color, linestyle=linestyle, label=label)
+                            tps[graph_row][graph_col].add_line(mytikzplot.line(vals_x, vals_y, color, linestyle, None, label))
+                            # tps[graph_row][graph_col].add_line(mytikzplot.line(vals_x, vals_y, color, linestyle, None, label))
                             if title != None: myaxs.set_title(title, fontsize="medium")
 
                 xlim_min = (1 << 30)
@@ -186,6 +192,25 @@ for dualop_idx in range(len(dualoperator_list_espreso)):
                 fig.tight_layout()
                 plt.savefig(imgpath)
                 plt.close()
+
+                for trsm_partition_algorithm_idx in range(len(trsm_partition_algorithm_list)):
+                    trsm_partition_algorithm = trsm_partition_algorithm_list[trsm_partition_algorithm_idx]
+                    for trsm_strategy_idx in range(len(trsm_strategy_list)):
+                        trsm_strategy = trsm_strategy_list[trsm_strategy_idx]
+                        for trsm_splitfactor_gemm_prune_idx in range(len(trsm_splitfactor_gemm_prune_list)):
+                            trsm_splitfactor_gemm_prune = trsm_splitfactor_gemm_prune_list[trsm_splitfactor_gemm_prune_idx]
+                            if trsm_splitfactor_gemm_prune == "_": continue
+                            graph_row = trsm_splitfactor_gemm_prune_idx
+                            graph_col = 2 * trsm_partition_algorithm_idx + trsm_strategy_idx
+                            tp = tps[graph_row][graph_col]
+                            tp.set_bounds(xlim_min, xlim_max, ylim_min, ylim_max)
+                            tp.logx = 2
+                            tp.logy = 10
+                            tp.xlabel = "Number of DOFs per subdomain"
+                            tp.ylabel = "SC assembly time per subdomain [ms]"
+                            title = "partalg" + trsm_partition_algorithm + "-strategy" + trsm_strategy + "-prune" + trsm_splitfactor_gemm_prune
+                            tikzpath = graphs_dir + "/tikz/" + imgname + "-" + title + ".tex"
+                            tp.save(tikzpath)
 
 
 
@@ -220,6 +245,8 @@ for dualop_idx in range(len(dualoperator_list_espreso)):
                 plt.figure()
                 fig, axs = plt.subplots(subplots_counts[0], subplots_counts[1], figsize=(my_figsize_x/100.0, my_figsize_y/100.0))
 
+                tps = mytikzplot.tikzplotter.create_table_of_plotters(subplots_counts[0], subplots_counts[1])
+
                 trsm_partition_algorithm = "_"
                 csv_data_05 = [row for row in csv_data_04 if (row[col_trsm_partition_algorithm] == trsm_partition_algorithm)]
                 for herk_partition_algorithm_idx in range(len(herk_partition_algorithm_list)):
@@ -246,18 +273,19 @@ for dualop_idx in range(len(dualoperator_list_espreso)):
 
                         color = "black"
                         linestyle = ":"
-                        # if herk_partition_algorithm == "U":
+                        # if herk_strategy == "T":
                         #     color = "blue"
                         #     linestyle = "-"
-                        # if herk_partition_algorithm == "M":
+                        # if herk_strategy == "Q":
                         #     color = "red"
                         #     linestyle = "--"
                         label = "this one"
-                        # label = herk_partition_algorithm
+                        # label = herk_strategy
                         label = label.replace("_", "-")
                         title = "partalg" + herk_partition_algorithm + "-strategy" + herk_strategy
                         myaxs = axs[graph_row,graph_col]
                         myaxs.loglog(vals_x, vals_y, base=2, color=color, linestyle=linestyle, label=label)
+                        tps[graph_row][graph_col].add_line(mytikzplot.line(vals_x, vals_y, color, linestyle, None, label))
                         if title != None: myaxs.set_title(title, fontsize="medium")
 
                 xlim_min = (1 << 30)
@@ -280,6 +308,22 @@ for dualop_idx in range(len(dualoperator_list_espreso)):
                 fig.tight_layout()
                 plt.savefig(imgpath)
                 plt.close()
+
+                for herk_partition_algorithm_idx in range(len(herk_partition_algorithm_list)):
+                    herk_partition_algorithm = herk_partition_algorithm_list[herk_partition_algorithm_idx]
+                    for herk_strategy_idx in range(len(herk_strategy_list)):
+                        herk_strategy = herk_strategy_list[herk_strategy_idx]
+                        graph_row = herk_partition_algorithm_idx
+                        graph_col = herk_strategy_idx
+                        tp = tps[graph_row][graph_col]
+                        tp.set_bounds(xlim_min, xlim_max, ylim_min, ylim_max)
+                        tp.logx = 2
+                        tp.logy = 10
+                        tp.xlabel = "Number of DOFs per subdomain"
+                        tp.ylabel = "SC assembly time per subdomain [ms]"
+                        title = "partalg" + herk_partition_algorithm + "-strategy" + herk_strategy
+                        tikzpath = graphs_dir + "/tikz/" + imgname + "-" + title + ".tex"
+                        tp.save(tikzpath)
 
 
 

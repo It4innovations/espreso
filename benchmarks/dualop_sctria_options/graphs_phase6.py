@@ -7,6 +7,7 @@ from datetime import datetime
 import matplotlib.pyplot as plt
 import matplotlib
 from mpi4py import MPI
+import mytikzplot
 
 
 
@@ -36,6 +37,7 @@ datestr = datetime.now().strftime("%Y%m%d_%H%M%S")
 
 graphs_dir = basedir + "/graphs/" + datestr
 os.makedirs(graphs_dir, exist_ok=True)
+os.makedirs(graphs_dir + "/tikz", exist_ok=True)
 
 
 
@@ -118,6 +120,8 @@ for dualop_idx in range(len(dualoperator_list_espreso)):
                 plt.figure()
                 fig, axs = plt.subplots(subplots_counts[0], subplots_counts[1], figsize=(my_figsize_x/100.0, my_figsize_y/100.0))
 
+                tps = mytikzplot.tikzplotter.create_table_of_plotters(subplots_counts[0], subplots_counts[1])
+
                 for mainloop_update_split_idx in range(len(mainloop_update_split_list)):
                     mainloop_update_split = mainloop_update_split_list[mainloop_update_split_idx]
                     csv_data_05 = [row for row in csv_data_04 if (row[col_mainloop_update_split] == mainloop_update_split)]
@@ -144,9 +148,12 @@ for dualop_idx in range(len(dualoperator_list_espreso)):
 
                     graph_col = mainloop_update_split_idx
 
-                    axs[0,graph_col].loglog(vals_x, vals_y_time_baseline, color="blue", linestyle="-", label="baseline time")
-                    axs[0,graph_col].loglog(vals_x, vals_y_time_optimal, color="red", linestyle="--", label="optimized time")
+                    axs[0,graph_col].loglog(vals_x, vals_y_time_baseline, color="blue", linestyle="-", label="original time")
+                    axs[0,graph_col].loglog(vals_x, vals_y_time_optimal, color="red", linestyle="--", label="sctria time")
                     axs[1,graph_col].semilogx(vals_x, vals_y_speedup, color="green", linestyle="-", label="speedup")
+                    tps[0][graph_col].add_line(mytikzplot.line(vals_x, vals_y_time_baseline, "blue", "-", None, "original time"))
+                    tps[0][graph_col].add_line(mytikzplot.line(vals_x, vals_y_time_optimal, "red", "--", None, "sctria time"))
+                    tps[1][graph_col].add_line(mytikzplot.line(vals_x, vals_y_speedup, "green", "-", None, "speedup"))
 
                     axs[0,graph_col].set_title("mainloopsplit" + mainloop_update_split, fontsize="medium")
                     axs[1,graph_col].set_title("mainloopsplit" + mainloop_update_split, fontsize="medium")
@@ -158,6 +165,7 @@ for dualop_idx in range(len(dualoperator_list_espreso)):
                     ylim_min = (1 << 30)
                     ylim_max = 0
                     for graph_col in range(2):
+                        tp = tps[graph_row][graph_col]
                         a = axs[graph_row, graph_col]
                         a.grid(True)
                         if a.lines:
@@ -167,7 +175,13 @@ for dualop_idx in range(len(dualoperator_list_espreso)):
                             ylim_min = min(ylim_min, a.get_ylim()[0])
                             ylim_max = max(ylim_max, a.get_ylim()[1])
                         a.set_xscale("log", base=2)
-                        if graph_row == 0: a.set_yscale("log", base=2)
+                        a.set_yscale("log", base=10)
+                        tp.set_bounds(xlim_min, xlim_max, ylim_min, ylim_max)
+                        tp.logx = 2
+                        tp.logy = 10
+                        tp.xlabel = "Number of DOFs per subdomain"
+                        if graph_row == 0: tp.ylabel = "SC assembly time per subdomain [ms]"
+                        if graph_row == 1: tp.ylabel = "Speedup"
                     for graph_col in range(2):
                         a = axs[graph_row, graph_col]
                         a.set_ylim([ylim_min,ylim_max])
@@ -175,6 +189,11 @@ for dualop_idx in range(len(dualoperator_list_espreso)):
                 fig.tight_layout()
                 plt.savefig(imgpath)
                 plt.close()
+
+                tps[0][0].save(graphs_dir + "/tikz/" + imgname + "-time-assemble.tex")
+                tps[0][1].save(graphs_dir + "/tikz/" + imgname + "-time-update.tex")
+                tps[1][0].save(graphs_dir + "/tikz/" + imgname + "-spdp-assemble.tex")
+                tps[1][1].save(graphs_dir + "/tikz/" + imgname + "-spdp-update.tex")
 
 
 

@@ -7,6 +7,7 @@ from datetime import datetime
 import matplotlib.pyplot as plt
 import matplotlib
 from mpi4py import MPI
+import mytikzplot
 
 
 
@@ -36,6 +37,7 @@ datestr = datetime.now().strftime("%Y%m%d_%H%M%S")
 
 graphs_dir = basedir + "/graphs/" + datestr
 os.makedirs(graphs_dir, exist_ok=True)
+os.makedirs(graphs_dir + "/tikz", exist_ok=True)
 
 
 
@@ -119,6 +121,8 @@ for cpugpu_idx in range(len(dualoperator_list_cpugpu)):
                 plt.figure()
                 fig, axs = plt.subplots(subplots_counts[0], subplots_counts[1], figsize=(my_figsize_x/100.0, my_figsize_y/100.0))
 
+                tps = mytikzplot.tikzplotter.create_table_of_plotters(subplots_counts[0], subplots_counts[1])
+
                 csv_data_05 = csv_data_04
                 csv_data_06 = sorted(csv_data_05, key=lambda row: int(row[col_n_dofs]))
 
@@ -163,16 +167,26 @@ for cpugpu_idx in range(len(dualoperator_list_cpugpu)):
                 axs[0,0].loglog(vals_x, vals_y_trsm_orig, color="green", linestyle="-", label="orig time")
                 axs[0,0].loglog(vals_x, vals_y_trsm_sctria, color="lawngreen", linestyle="-", label="sctria time")
                 axs[1,0].loglog(vals_x, vals_y_speedup_sctria, color="green", linestyle="-", label="speedup over orig")
+                tps[0][0].add_line(mytikzplot.line(vals_x, vals_y_trsm_orig, "green", "-", None, "orig time"))
+                tps[0][0].add_line(mytikzplot.line(vals_x, vals_y_trsm_sctria, "lawngreen", "-", None, "sctria time"))
+                tps[1][0].add_line(mytikzplot.line(vals_x, vals_y_speedup_sctria, "green", "-", None, "speedup over orig"))
                 if len(csv_data_cholmod) > 0:
                     axs[0,0].loglog(vals_x, vals_y_trsm_cholmod, color="magenta", linestyle="-", label="cholmod time")
                     axs[1,0].loglog(vals_x, vals_y_speedup_cholmod, color="magenta", linestyle="-", label="speedup over cholmod")
+                    tps[0][0].add_line(mytikzplot.line(vals_x, vals_y_trsm_cholmod, "magenta", "-", None, "cholmod time"))
+                    tps[1][0].add_line(mytikzplot.line(vals_x, vals_y_speedup_cholmod, "magenta", "-", None, "speedup over cholmod"))
                 if len(csv_data_pardiso) > 0:
                     axs[0,0].loglog(vals_x, vals_y_trsm_pardiso, color="cyan", linestyle="-", label="pardiso time")
                     axs[1,0].loglog(vals_x, vals_y_speedup_pardiso, color="cyan", linestyle="-", label="speedup over pardiso")
+                    tps[0][0].add_line(mytikzplot.line(vals_x, vals_y_trsm_pardiso, "cyan", "-", None, "pardiso time"))
+                    tps[1][0].add_line(mytikzplot.line(vals_x, vals_y_speedup_pardiso, "cyan", "-", None, "speedup over pardiso"))
 
-                axs[0,1].loglog(vals_x, vals_y_herk_orig, color="green", linestyle="-", label="basorigeline time")
+                axs[0,1].loglog(vals_x, vals_y_herk_orig, color="green", linestyle="-", label="orig time")
                 axs[0,1].loglog(vals_x, vals_y_herk_sctria, color="lawngreen", linestyle="-", label="sctria time")
                 axs[1,1].loglog(vals_x, vals_y_speedup_herk, color="green", linestyle="-", label="speedup over orig")
+                tps[0][1].add_line(mytikzplot.line(vals_x, vals_y_herk_orig, "green", "-", None, "orig time"))
+                tps[0][1].add_line(mytikzplot.line(vals_x, vals_y_herk_sctria, "lawngreen", "-", None, "sctria time"))
+                tps[1][1].add_line(mytikzplot.line(vals_x, vals_y_speedup_herk, "green", "-", None, "speedup over orig"))
 
                 axs[0,0].set_title("individual trsm kernel, time", fontsize="medium")
                 axs[1,0].set_title("individual trsm kernel, speedup of sctria over X", fontsize="medium")
@@ -186,6 +200,7 @@ for cpugpu_idx in range(len(dualoperator_list_cpugpu)):
                     ylim_min = (1 << 30)
                     ylim_max = 0
                     for graph_col in range(2):
+                        tp = tps[graph_row][graph_col]
                         a = axs[graph_row, graph_col]
                         a.grid(True)
                         if a.lines:
@@ -197,6 +212,12 @@ for cpugpu_idx in range(len(dualoperator_list_cpugpu)):
                         a.set_xscale("log", base=2)
                         if graph_row == 0: a.set_yscale("log", base=10)
                         if graph_row == 1: a.set_yscale("log", base=10)
+                        tp.set_bounds(xlim_min, xlim_max, ylim_min, ylim_max)
+                        tp.logx = 2
+                        tp.logy = 10
+                        tp.xlabel = "Number of DOFs per subdomain"
+                        if graph_col == 0: tp.ylabel = "Time [ms]"
+                        if graph_col == 1: tp.ylabel = "Speedup"
                     if graph_row == 0:
                         for graph_col in range(2):
                             a = axs[graph_row, graph_col]
@@ -205,6 +226,11 @@ for cpugpu_idx in range(len(dualoperator_list_cpugpu)):
                 fig.tight_layout()
                 plt.savefig(imgpath)
                 plt.close()
+
+                tps[0][0].save(graphs_dir + "/tikz/" + imgname + "-trsm-time.tex")
+                tps[0][1].save(graphs_dir + "/tikz/" + imgname + "-herk-time.tex")
+                tps[1][0].save(graphs_dir + "/tikz/" + imgname + "-trsm-spdp.tex")
+                tps[1][1].save(graphs_dir + "/tikz/" + imgname + "-herk-spdp.tex")
 
 
 
