@@ -89,8 +89,6 @@ bool FETI<T>::update(const step::Step &step)
 
     projector->orthonormalizeKernels(step);
     dualOperator->update(step);
-#warning "TODO remove before production, only for testing"
-dualOperator->update(step);
     projector->update(step);
     preconditioner->update(step);
     iterativeSolver->update(step);
