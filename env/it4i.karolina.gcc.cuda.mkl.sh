@@ -1,5 +1,10 @@
 #!/bin/bash
 
+buildname="build-it4i-karolina-gcc-cuda-mkl"
+export WAFLOCK=".lock-waf_linux_${buildname}"
+rm -rf build
+ln -s "${buildname}" build
+
 
 
 ml CMake/3.29.3-GCCcore-13.3.0

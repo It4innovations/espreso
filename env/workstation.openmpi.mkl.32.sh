@@ -1,4 +1,11 @@
 
+buildname="build-workstation-openmpi-mkl-32"
+export WAFLOCK=".lock-waf_linux_${buildname}"
+rm -rf build
+ln -s "${buildname}" build
+
+
+
 . env/dependencies/install.suitesparse.sh mkl gcc gfortran
 . env/dependencies/install.gklib.sh mkl gcc
 . env/dependencies/install.metis32.sh mkl gcc

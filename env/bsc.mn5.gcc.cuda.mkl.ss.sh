@@ -16,6 +16,15 @@ then
     return
 fi
 
+
+
+buildname="build-bsc-mn5-gcc-cuda${cudaversionname}-mkl-ss"
+export WAFLOCK=".lock-waf_linux_${buildname}"
+rm -rf build
+ln -s "${buildname}" build
+
+
+
 ml gcc/11.4.0
 ml cmake/3.30.5
 ml openmpi/4.1.5-gcc

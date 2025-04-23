@@ -1,4 +1,9 @@
 
+buildname="build-it4i-cs-p03-amd-mi100-32"
+export WAFLOCK=".lock-waf_linux_${buildname}"
+rm -rf build
+ln -s "${buildname}" build
+
 ml Python/3.10.4-GCCcore-11.3.0
 ml OpenMPI/4.1.4-GCC-11.3.0
 ml OpenBLAS/0.3.20-GCC-11.3.0

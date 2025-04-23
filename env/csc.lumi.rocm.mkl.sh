@@ -1,5 +1,10 @@
 #!/bin/bash
 
+buildname="build-csc-lumi-rocm-mkl"
+export WAFLOCK=".lock-waf_linux_${buildname}"
+rm -rf build
+ln -s "${buildname}" build
+
 
 
 module load LUMI/24.03

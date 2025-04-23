@@ -1,4 +1,9 @@
 
+buildname="build-it4i-karolina-openmpi-mkl-32"
+export WAFLOCK=".lock-waf_linux_${buildname}"
+rm -rf build
+ln -s "${buildname}" build
+
 ml OpenMPI/4.1.6-GCC-13.2.0
 ml OpenBLAS/0.3.24-GCC-13.2.0
 ml imkl/2024.2.0

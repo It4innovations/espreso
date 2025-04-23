@@ -1,5 +1,12 @@
 #!/bin/bash
 
+buildname="build-csc-lumi-cray-suitesparse-32"
+export WAFLOCK=".lock-waf_linux_${buildname}"
+rm -rf build
+ln -s "${buildname}" build
+
+
+
 ml LUMI/24.03
 ml buildtools/24.03
 ml Boost/1.83.0-cpeCray-24.03

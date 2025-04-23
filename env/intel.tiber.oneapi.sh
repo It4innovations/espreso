@@ -16,6 +16,13 @@ fi
 
 
 
+buildname="build-intel-tiber-oneapi-${cpu_spsolver}"
+export WAFLOCK=".lock-waf_linux_${buildname}"
+rm -rf build
+ln -s "${buildname}" build
+
+
+
 if [ ! -d "dependencies/oneAPI-2024.2.0/install" ]
 then
     echo "intel toolkit not installed in dependencies, please install it manually"

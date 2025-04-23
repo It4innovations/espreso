@@ -18,6 +18,13 @@ fi
 
 
 
+buildname="build-it4i-karolina-gcc-cuda${cudaversionname}-mkl-ss"
+export WAFLOCK=".lock-waf_linux_${buildname}"
+rm -rf build
+ln -s "${buildname}" build
+
+
+
 ml intel/2024a
 if [ "${cudaversionname}" = "legacy" ]; then
     ml GCC/11.3.0

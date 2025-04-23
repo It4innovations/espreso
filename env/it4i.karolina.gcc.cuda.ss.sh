@@ -18,6 +18,13 @@ fi
 
 
 
+buildname="build-it4i-karolina-gcc-cuda${cudaversionname}-ss"
+export WAFLOCK=".lock-waf_linux_${buildname}"
+rm -rf build
+ln -s "${buildname}" build
+
+
+
 ml LAPACK/3.10.0-GCC-12.2.0
 ml GCC/11.3.0
 ml OpenBLAS/0.3.20-GCC-11.3.0
