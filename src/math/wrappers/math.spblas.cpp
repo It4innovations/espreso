@@ -49,6 +49,11 @@ void SpBLAS<Matrix, T, I>::apply(Matrix_Dense<T, I> &y, const T &alpha, const T 
     eslog::error("call empty SpBLAS wrapper\n");
 }
 
+
+
+namespace math {
+namespace spblas {
+
 struct _handle_trsm {};
 
 template<typename T, typename I>
@@ -65,6 +70,8 @@ void mm(MatrixCsxView_new<T,I> & /*A*/, MatrixDenseView_new<T> & /*B*/, MatrixDe
     eslog::error("call empty SpBLAS wrapper\n");
 }
 
+}
+}
 
 }
 

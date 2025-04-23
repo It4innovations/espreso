@@ -40,7 +40,7 @@ protected:
 
 
 template<typename T>
-class w_cuda_copy_ddnx_ddnx : public submatrix_dcsx_dcsx<T>
+class w_cuda_copy_ddnx_ddnx : public copy_ddnx_ddnx<T>
 {
 public:
     w_cuda_copy_ddnx_ddnx() { eslog::error("cuda wrapper is not available\n"); }

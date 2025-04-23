@@ -40,7 +40,7 @@ protected:
 
 
 template<typename T>
-class w_cublas_convert_ddnx_ddny : public submatrix_dcsx_dcsx<T>
+class w_cublas_convert_ddnx_ddny : public convert_ddnx_ddny<T>
 {
 public:
     w_cublas_convert_ddnx_ddny() { eslog::error("cuda wrapper is not available\n"); }

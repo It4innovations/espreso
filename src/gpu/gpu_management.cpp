@@ -71,13 +71,13 @@ namespace mgm {
     void copy_submit(queue & /*q*/, PermutationView_new<T> & /*src*/, PermutationView_new<T> & /*dst*/) {}
 
     template<typename T>
-    void copy_submit(queue & /*q*/, VectorDenseView_new<T> & /*src*/, char /*src_mrm*/, VectorDenseView_new<T> & /*dst*/, char /*dst_mem*/) {}
+    void copy_submit(queue & /*q*/, VectorDenseView_new<T> & /*src*/, VectorDenseView_new<T> & /*dst*/) {}
 
     template<typename T>
-    void copy_submit(queue & /*q*/, MatrixDenseView_new<T> & /*src*/, char /*src_mrm*/, MatrixDenseView_new<T> & /*dst*/, char /*dst_mem*/) {}
+    void copy_submit(queue & /*q*/, MatrixDenseView_new<T> & /*src*/, MatrixDenseView_new<T> & /*dst*/) {}
 
     template<typename T, typename I>
-    void copy_submit(queue & /*q*/, MatrixCsxView_new<T,I> & /*src*/, char /*src_mrm*/, MatrixCsxView_new<T,I> & /*dst*/, char /*dst_mem*/, bool /*copy_pattern*/, bool /*copy_vals*/) {}
+    void copy_submit(queue & /*q*/, MatrixCsxView_new<T,I> & /*src*/, MatrixCsxView_new<T,I> & /*dst*/, bool /*copy_pattern*/, bool /*copy_vals*/) {}
 
     void memset_submit(queue & /*q*/, void * /*ptr*/, size_t /*num_bytes*/, char /*val*/) {}
 

@@ -137,6 +137,12 @@ void herk(MatrixDenseView_new<T> & A, MatrixDenseView_new<T> & C, herk_mode mode
     eslog::error("calling of empty BLAS wrapper.\n");
 }
 
+template<typename T>
+void transpose(size_t src_nrows, size_t src_ncols, const T * src, size_t src_ld, T * dst, size_t dst_ld, char order, bool conj)
+{
+    eslog::error("calling of empty BLAS wrapper.\n");
+}
+
 }
 }
 }

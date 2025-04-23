@@ -41,7 +41,7 @@ protected:
 
 
 template<typename T, typename I>
-class w_cuda_permute_ddnx_ddnx : public submatrix_dcsx_dcsx<T,I>
+class w_cuda_permute_ddnx_ddnx : public permute_ddnx_ddnx<T,I>
 {
 public:
     w_cuda_permute_ddnx_ddnx() { eslog::error("cuda wrapper is not available\n"); }
