@@ -32,7 +32,7 @@ D4W_INSTALL:
     key: deps-dummy-32
     paths:
       - dependencies
-      - build
+      - build*
   before_script:
     - . env/workstation.foss.32.sh
   script:
@@ -46,7 +46,7 @@ D8W_INSTALL:
     key: deps-dummy-64
     paths:
       - dependencies
-      - build
+      - build*
   before_script:
     - . env/workstation.foss.64.sh
   script:
@@ -64,7 +64,7 @@ I4W_INSTALL:
     key: deps-intel-32
     paths:
       - dependencies
-      - build
+      - build*
   before_script:
     - . env/workstation.intel.32.sh
 
@@ -99,7 +99,7 @@ I8W_INSTALL:
     key: deps-intel-64
     paths:
       - dependencies
-      - build
+      - build*
   before_script:
     - . env/workstation.intel.64.sh
 
@@ -138,7 +138,7 @@ F4W_INSTALL:
     key: deps-foss-32
     paths:
       - dependencies
-      - build
+      - build*
   before_script:
     - . env/workstation.foss.32.sh
 
@@ -173,7 +173,7 @@ F8W_INSTALL:
     key: deps-foss-64
     paths:
       - dependencies
-      - build
+      - build*
   before_script:
     - . env/workstation.foss.64.sh
 
@@ -212,7 +212,7 @@ M4W_INSTALL:
     key: deps-mkl-32
     paths:
       - dependencies
-      - build
+      - build*
   before_script:
     - . env/workstation.openmpi.mkl.32.sh
 
@@ -247,7 +247,7 @@ M8W_INSTALL:
     key: deps-mkl-64
     paths:
       - dependencies
-      - build
+      - build*
   before_script:
     - . env/workstation.openmpi.mkl.64.sh
 
@@ -304,7 +304,7 @@ CS01_INSTALL:
     key: deps-cs01
     paths:
       - dependencies
-      - build
+      - build*
   before_script:
     - . env/it4i.cs.p01.a64fx.32.sh
 
@@ -324,7 +324,7 @@ CS03_INSTALL:
     key: deps-cs03
     paths:
       - dependencies
-      - build
+      - build*
   before_script:
     - . env/it4i.cs.p03.amd.mi100.32.sh
 
@@ -344,7 +344,7 @@ CS08_INSTALL:
     key: deps-cs08
     paths:
       - dependencies
-      - build
+      - build*
   before_script:
     - . env/it4i.cs.p08.amd.l3.32.sh
 
@@ -364,7 +364,7 @@ CS08_BASIC:
     key: deps-cs10
     paths:
       - dependencies
-      - build
+      - build*
   before_script:
     - . env/it4i.cs.p10.spr.hbm.32.sh
 
@@ -384,7 +384,7 @@ CS08_BASIC:
     key: deps-cs11
     paths:
       - dependencies
-      - build
+      - build*
   before_script:
     - . env/it4i.cs.p11.nvidia.grace.32.sh
 
