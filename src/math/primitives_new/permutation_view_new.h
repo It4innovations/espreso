@@ -60,6 +60,7 @@ public:
     static Permutation<I,A> to_old(PermutationView_new<I> & P_new)
     {
         Permutation<I,A> P_old;
+        P_old._allocated.size = P_new.size;
         P_old.size = P_new.size;
         P_old.dst_to_src = P_new.dst_to_src;
         P_old.src_to_dst = P_new.src_to_dst;

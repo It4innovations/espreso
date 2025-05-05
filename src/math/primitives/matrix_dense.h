@@ -199,6 +199,7 @@ protected:
         m.maxnnz = 0;
     }
 
+public:
     _Matrix_Dense<T, I> _allocated;
     A ator;
 };

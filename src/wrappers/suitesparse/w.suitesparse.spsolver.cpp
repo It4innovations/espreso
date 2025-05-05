@@ -374,7 +374,9 @@ void DirectSparseSolver<T, I>::numericalFactorization()
 template <typename T, typename I>
 static void DSSsolve(std::unique_ptr<Solver_External_Representation<T,I>> &ext, const Vector_Dense<T, I> &rhs, Vector_Dense<T, I> &solution, int sys)
 {
-    if (rhs.size == 0 || rhs.size == 0) return;
+    if (rhs.size == 0 || solution.size == 0) return;
+    if(rhs.size != ext->cholmod.matrix->nrows) eslog::error("wrong rhs size\n");
+    if(solution.size != ext->cholmod.matrix->nrows) eslog::error("wrong solution size\n");
 
     switch (ext->solver) {
     case Solver_External_Representation<T, I>::SOLVER::CHOLMOD: {
@@ -392,7 +394,6 @@ static void DSSsolve(std::unique_ptr<Solver_External_Representation<T,I>> &ext, 
 
         cholmod_dense * cm_sol = _solve<I>(sys, ext->cholmod.cm_factor_super, &cm_rhs, ext->cholmod.cm_common);
 
-        solution.resize(cm_sol->nrow);
         std::copy_n(reinterpret_cast<T*>(cm_sol->x), cm_sol->nrow, solution.vals);
 
         _free<I>(cm_sol, ext->cholmod.cm_common);

@@ -69,15 +69,15 @@ public:
 //        return *this;
 //    }
 
-    Matrix_CSR& operator=(Matrix_CSR &&other) = delete;
-//    {
-//        type = other.type;
-//        shape = other.shape;
-//        swap(_external, other._external);
-//        swap(*this, other);
-//        swap(_allocated, other._allocated);
-//        return *this;
-//    }
+    Matrix_CSR& operator=(Matrix_CSR &&other)
+    {
+        type = other.type;
+        shape = other.shape;
+        swap(_allocated, other._allocated);
+        std::swap(this->ator, other.ator);
+        swap(*static_cast<_Matrix_CSR<T, I>*>(this), *static_cast<_Matrix_CSR<T, I>*>(&other));
+        return *this;
+    }
 
     ~Matrix_CSR()
     {

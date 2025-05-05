@@ -85,9 +85,10 @@ public:
     {
         MatrixCsxView_new<T,I> M_new;
         M_new.set_view(M_old.nrows, M_old.ncols, M_old.nnz, 'R', M_old.rows, M_old.cols, M_old.vals);
-        if(M_old.shape == Matrix_Shape::LOWER) M_new.prop.uplo = 'L';
-        if(M_old.shape == Matrix_Shape::UPPER) M_new.prop.uplo = 'U';
-        if(M_old.shape == Matrix_Shape::FULL) M_new.prop.uplo = 'F';
+        M_new.prop.uplo = get_new_matrix_uplo(M_old.shape);
+        M_new.prop.diag = '_';
+        M_new.prop.symm = get_new_matrix_symmetry(M_old.type);
+        M_new.prop.dfnt = get_new_matrix_definitness(M_old.type);
         return M_new;
     }
     template<typename A>
@@ -95,15 +96,17 @@ public:
     {
         if(M_new.order != 'R') eslog::error("can only convert to old row-major matrices\n");
         Matrix_CSR<T,I,A> M_old;
+        M_old._allocated.nrows = M_new.nrows;
+        M_old._allocated.ncols = M_new.ncols;
+        M_old._allocated.nnz = M_new.nnz;
         M_old.nrows = M_new.nrows;
         M_old.ncols = M_new.ncols;
         M_old.nnz = M_new.nnz;
         M_old.rows = M_new.ptrs;
         M_old.cols = M_new.idxs;
         M_old.vals = M_new.vals;
-        if(M_new.prop.uplo == 'U') M_old.shape = Matrix_Shape::UPPER;
-        else if(M_new.prop.uplo == 'L') M_old.shape = Matrix_Shape::LOWER;
-        else M_old.shape = Matrix_Shape::FULL;
+        M_old.shape = get_old_matrix_shape(M_new);
+        M_old.type = get_old_matrix_type<T>(M_new);
         return M_old;
     }
 

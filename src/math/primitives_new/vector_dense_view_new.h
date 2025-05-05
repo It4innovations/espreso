@@ -54,6 +54,7 @@ public:
     static Vector_Dense<T,I,A> to_old(VectorDenseView_new<T> & V_new)
     {
         Vector_Dense<T,I,A> V_old;
+        V_old._allocated.size = V_new.size;
         V_old.size = V_new.size;
         V_old.vals = V_new.vals;
         return V_old;
