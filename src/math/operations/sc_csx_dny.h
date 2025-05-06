@@ -19,6 +19,12 @@ class sc_csx_dny
 {
 public:
     using Treal = utils::remove_complex_t<T>;
+    enum struct implementation_selector
+    {
+        autoselect,
+        triangular,
+        mklpardiso
+    };
 protected:
     sc_csx_dny() = default;
 public:
@@ -28,7 +34,7 @@ public:
     sc_csx_dny & operator=(sc_csx_dny &&) = default;
     virtual ~sc_csx_dny() = default;
 public:
-    static std::unique_ptr<sc_csx_dny<T,I>> make();
+    static std::unique_ptr<sc_csx_dny<T,I>> make(implementation_selector is = implementation_selector::autoselect);
 public:
     void set_coefficients(Treal alpha_);
     void set_matrix(MatrixCsxView_new<T,I> * A11_, MatrixCsxView_new<T,I> * A12_, MatrixCsxView_new<T,I> * A21_, MatrixCsxView_new<T,I> * A22_);
@@ -61,10 +67,10 @@ protected:
     size_t size_A11 = 0;
     bool is_matrix_hermitian = false;
 protected:
-    virtual void internal_preprocess() = 0;
-    virtual void internal_perform_1() = 0;
-    virtual void internal_perform_2() = 0;
-    virtual void internal_solve_A11(VectorDenseView_new<T> & rhs, VectorDenseView_new<T> & sol) = 0;
+    virtual void internal_preprocess() {};
+    virtual void internal_perform_1() {};
+    virtual void internal_perform_2() {};
+    virtual void internal_solve_A11(VectorDenseView_new<T> & rhs, VectorDenseView_new<T> & sol) {};
 };
 
 

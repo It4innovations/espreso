@@ -35,6 +35,7 @@ protected:
     void _apply(const Vector_Dual<T> &x, Vector_Dual<T> &y);
 
 public:
+    using sc_is_t = typename math::operations::sc_csx_dny<T,I>::implementation_selector;
     struct config
     {
         char order_F = '_';
@@ -45,6 +46,7 @@ public:
         bool outer_timers = false;
         bool inner_timers = false;
         bool print_parameters = false;
+        sc_is_t sc_is = sc_is_t::autoselect;
     };
 private:
     struct per_domain_stuff

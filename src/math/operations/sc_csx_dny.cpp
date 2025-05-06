@@ -2,6 +2,8 @@
 #include "math/operations/sc_csx_dny.h"
 
 #include "math/operations/sc_csx_dny.tria.h"
+#include "wrappers/mkl/operations/sc_csx_dny.mklpardiso.h"
+#include "basis/utilities/stacktimer.h"
 
 
 
@@ -12,10 +14,25 @@ namespace operations {
 
 
 template<typename T, typename I>
-std::unique_ptr<sc_csx_dny<T,I>> sc_csx_dny<T,I>::make()
+std::unique_ptr<sc_csx_dny<T,I>> sc_csx_dny<T,I>::make(implementation_selector is)
 {
-    // todo if based on config or env
-    return std::make_unique<sc_csx_dny_tria<T,I>>();
+    auto autoselect_implementation = [](){
+        #ifdef HAVE_MKL
+            return implementation_selector::mklpardiso;
+        #endif
+        return implementation_selector::triangular;
+    };
+
+    switch(is) {
+        case implementation_selector::autoselect:
+            return sc_csx_dny<T,I>::make(autoselect_implementation());
+        case implementation_selector::triangular:
+            return std::make_unique<sc_csx_dny_tria<T,I>>();
+        case implementation_selector::mklpardiso:
+            return std::make_unique<sc_csx_dny_mklpardiso<T,I>>();
+        default:
+            eslog::error("invalid implementation selector\n");
+    }
 }
 
 
@@ -80,6 +97,8 @@ void sc_csx_dny<T,I>::set_need_solve_A11(bool need_solve_A11_)
 template<typename T, typename I>
 void sc_csx_dny<T,I>::preprocess()
 {
+    stacktimer::push("sc_csx_dny::preprocess");
+
     if(called_preprocess) eslog::error("preprocess was already called\n");
     if(called_set_matrix == '_') eslog::error("matrix is not set\n");
     if(sc == nullptr) eslog::error("sc is not set\n");
@@ -124,9 +143,11 @@ void sc_csx_dny<T,I>::preprocess()
         if(is_matrix_hermitian && sc->prop.uplo != 'U' && sc->prop.uplo != 'L') eslog::error("wrong sc uplo\n");
     }
 
-    internal_preprocess();
+    this->internal_preprocess();
 
     called_preprocess = true;
+
+    stacktimer::pop();
 }
 
 
@@ -134,9 +155,13 @@ void sc_csx_dny<T,I>::preprocess()
 template<typename T, typename I>
 void sc_csx_dny<T,I>::perform_1()
 {
+    stacktimer::push("sc_csx_dny::perform_1");
+
     if(!called_preprocess) eslog::error("preprocess has not been called\n");
 
-    internal_perform_1();
+    this->internal_perform_1();
+
+    stacktimer::pop();
 }
 
 
@@ -144,11 +169,15 @@ void sc_csx_dny<T,I>::perform_1()
 template<typename T, typename I>
 void sc_csx_dny<T,I>::perform_2()
 {
+    stacktimer::push("sc_csx_dny::perform_2");
+
     if(!called_preprocess) eslog::error("preprocess has not been called\n");
 
-    internal_perform_2();
+    this->internal_perform_2();
 
     called_perform = true;
+
+    stacktimer::pop();
 }
 
 
@@ -167,12 +196,16 @@ void sc_csx_dny<T,I>::perform()
 template<typename T, typename I>
 void sc_csx_dny<T,I>::solve_A11(VectorDenseView_new<T> & rhs, VectorDenseView_new<T> & sol)
 {
+    stacktimer::push("sc_csx_dny::solve_A11");
+
     if(!called_preprocess) eslog::error("preprocess has not been called\n");
     if(!need_solve_A11) eslog::error("need_solve_A11 is not set, so cannot solve A11\n");
     if(rhs.size != size_A11) eslog::error("wrong rhs size\n");
     if(sol.size != size_A11) eslog::error("wrong sol size\n");
 
-    internal_solve_A11(rhs, sol);
+    this->internal_solve_A11(rhs, sol);
+
+    stacktimer::pop();
 }
 
 

@@ -62,6 +62,7 @@ static void setup_configs(typename TotalFETIExplicitGeneralScCpu<T,I>::config & 
     set_by_env(cfg_dualop.inner_timers,                   "ESPRESO_CONFIG_DUALOP_GENERALSC_inner_timers");
     set_by_env(cfg_dualop.outer_timers,                   "ESPRESO_CONFIG_DUALOP_GENERALSC_outer_timers");
     set_by_env(cfg_dualop.print_parameters,               "ESPRESO_CONFIG_DUALOP_GENERALSC_print_parameters");
+    cfg_dualop.sc_is = TotalFETIExplicitGeneralScCpu<T,I>::sc_is_t::autoselect;
 }
 
 
@@ -179,7 +180,7 @@ void TotalFETIExplicitGeneralScCpu<T,I>::set(const step::Step &step)
         data.Kreg = MatrixCsxView_new<T,I>::from_old(data.Kreg_old);
         if constexpr(utils::is_real<T>()) if(is_symmetric<T>(data.Kreg.prop.symm)) data.Kreg.prop.symm = MatrixSymmetry_new::hermitian;
 
-        data.op_sc = math::operations::sc_csx_dny<T,I>::make();
+        data.op_sc = math::operations::sc_csx_dny<T,I>::make(cfg.sc_is);
         data.op_sc->set_coefficients(-1);
         data.op_sc->set_matrix(&data.Kreg, &data.Bt, nullptr, nullptr);
         data.op_sc->set_sc(&data.F);
@@ -250,6 +251,7 @@ void TotalFETIExplicitGeneralScCpu<T,I>::update(const step::Step &step)
     stacktimer::pop();
 
     stacktimer::push("update_compute_vector_d");
+    if(!cfg.inner_timers) stacktimer::disable();
     {
         if (feti.updated.B) {
             d.resize();
@@ -266,6 +268,7 @@ void TotalFETIExplicitGeneralScCpu<T,I>::update(const step::Step &step)
         d.synchronize();
         math::add(d, T{-1}, feti.c);
     }
+    if(!cfg.inner_timers) stacktimer::enable();
     stacktimer::pop();
 
     stacktimer::pop();
@@ -343,6 +346,10 @@ void TotalFETIExplicitGeneralScCpu<T,I>::apply(const Matrix_Dual<T> &x, Matrix_D
 template<typename T, typename I>
 void TotalFETIExplicitGeneralScCpu<T,I>::toPrimal(const Vector_Dual<T> &x, std::vector<Vector_Dense<T> > &y)
 {
+    if(cfg.outer_timers) stacktimer::enable();
+    stacktimer::push("TotalFETIExplicitGeneralScCpu::toPrimal");
+    if(!cfg.inner_timers) stacktimer::disable();
+
     #pragma omp parallel for schedule(static,1)
     for (size_t di = 0; di < n_domains; ++di) {
         Vector_Dense<T,I> z;
@@ -353,6 +360,10 @@ void TotalFETIExplicitGeneralScCpu<T,I>::toPrimal(const Vector_Dual<T> &x, std::
         VectorDenseView_new<T> y_new = VectorDenseView_new<T>::from_old(y[di]);
         domain_data[di].op_sc->solve_A11(z_new, y_new);
     }
+
+    if(!cfg.inner_timers) stacktimer::enable();
+    stacktimer::pop();
+    if(cfg.outer_timers) stacktimer::disable();
 }
 
 
