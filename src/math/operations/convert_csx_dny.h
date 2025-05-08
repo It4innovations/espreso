@@ -16,6 +16,7 @@ namespace operations {
 template<typename T, typename I>
 class convert_csx_dny
 {
+// respect uplo
 public:
     convert_csx_dny() = default;
     convert_csx_dny(const convert_csx_dny &) = delete;

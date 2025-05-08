@@ -15,6 +15,7 @@ namespace operations {
 template<typename T>
 class copy_dnx
 {
+// respect uplo
 public:
     copy_dnx() = default;
     copy_dnx(const copy_dnx &) = delete;

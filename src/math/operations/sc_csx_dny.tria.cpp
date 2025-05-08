@@ -183,8 +183,6 @@ sc_csx_dny_tria<T,I>::~sc_csx_dny_tria() = default;
 template<typename T, typename I>
 void sc_csx_dny_tria<T,I>::internal_preprocess()
 {
-    stacktimer::push("sc_csx_dny_tria::preprocess");
-
     if(!is_matrix_hermitian) eslog::error("dont support non-hermitian systems yet\n");
     if(A12 == nullptr) eslog::error("A12 has to be set for now\n");
 
@@ -323,8 +321,6 @@ void sc_csx_dny_tria<T,I>::internal_preprocess()
     data->op_herk.set_mode(blas::herk_mode::AhA);
     data->op_herk.calc_A_pattern(data->X_sp);
     data->op_herk.preprocess();
-
-    stacktimer::pop();
 }
 
 
@@ -332,12 +328,8 @@ void sc_csx_dny_tria<T,I>::internal_preprocess()
 template<typename T, typename I>
 void sc_csx_dny_tria<T,I>::internal_perform_1()
 {
-    stacktimer::push("sc_csx_dny_tria::perform_1");
-
     stacktimer::push("numerical_factorization");
     data->A11_solver.numericalFactorization();
-    stacktimer::pop();
-
     stacktimer::pop();
 }
 
@@ -346,8 +338,6 @@ void sc_csx_dny_tria<T,I>::internal_perform_1()
 template<typename T, typename I>
 void sc_csx_dny_tria<T,I>::internal_perform_2()
 {
-    stacktimer::push("sc_csx_dny_tria::perform_2");
-
     stacktimer::push("extract_factors");
     if(data->solver_factor_uplo == 'U') {
         Matrix_CSR<T,I,gpu::mgm::Ah> factor_old = MatrixCsxView_new<T,I>::template to_old<gpu::mgm::Ah>(data->factor_U_row);
@@ -385,8 +375,6 @@ void sc_csx_dny_tria<T,I>::internal_perform_2()
     data->X_dn.free();
     data->sc_tmp1.free();
     data->sc_tmp2.free();
-
-    stacktimer::pop();
 }
 
 

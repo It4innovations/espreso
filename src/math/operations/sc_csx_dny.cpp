@@ -2,6 +2,7 @@
 #include "math/operations/sc_csx_dny.h"
 
 #include "math/operations/sc_csx_dny.tria.h"
+#include "math/operations/sc_csx_dny.spsolver.h"
 #include "wrappers/mkl/operations/sc_csx_dny.mklpardiso.h"
 #include "basis/utilities/stacktimer.h"
 
@@ -30,6 +31,8 @@ std::unique_ptr<sc_csx_dny<T,I>> sc_csx_dny<T,I>::make(implementation_selector i
             return std::make_unique<sc_csx_dny_tria<T,I>>();
         case implementation_selector::mklpardiso:
             return std::make_unique<sc_csx_dny_mklpardiso<T,I>>();
+        case implementation_selector::spsolver:
+            return std::make_unique<sc_csx_dny_spsolver<T,I>>();
         default:
             eslog::error("invalid implementation selector\n");
     }

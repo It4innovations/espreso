@@ -15,6 +15,7 @@ namespace operations {
 template<typename T>
 class convert_dnx_dny
 {
+// does NOT respect uplo
 public:
     convert_dnx_dny() = default;
     convert_dnx_dny(const convert_dnx_dny &) = delete;

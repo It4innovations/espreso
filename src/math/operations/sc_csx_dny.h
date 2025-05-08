@@ -23,7 +23,8 @@ public:
     {
         autoselect,
         triangular,
-        mklpardiso
+        mklpardiso,
+        spsolver
     };
 protected:
     sc_csx_dny() = default;
