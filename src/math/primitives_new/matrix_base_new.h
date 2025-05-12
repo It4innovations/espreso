@@ -113,6 +113,13 @@ inline bool is_hermitian(MatrixSymmetry_new symm)
     return false;
 }
 
+template<typename T>
+inline bool is_symmetry_equal(MatrixSymmetry_new s1, MatrixSymmetry_new s2)
+{
+    if constexpr(utils::is_real<T>()) return is_symmetric<T>(s1) == is_symmetric<T>(s2);
+    return s1 == s2;
+}
+
 inline Matrix_Shape get_old_matrix_shape(const MatrixBase_new & A)
 {
     if(A.prop.uplo == 'U') return Matrix_Shape::UPPER;

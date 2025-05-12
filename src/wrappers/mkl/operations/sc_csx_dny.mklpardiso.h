@@ -46,7 +46,6 @@ protected:
     using sc_csx_dny<T,I>::alpha;
     using sc_csx_dny<T,I>::need_solve_A11;
     using sc_csx_dny<T,I>::called_set_matrix;
-    using sc_csx_dny<T,I>::called_set_config;
     using sc_csx_dny<T,I>::called_preprocess;
     using sc_csx_dny<T,I>::called_perform;
     using sc_csx_dny<T,I>::size_matrix;

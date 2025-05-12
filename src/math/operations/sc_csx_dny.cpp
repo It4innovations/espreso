@@ -80,11 +80,8 @@ template<typename T, typename I>
 void sc_csx_dny<T,I>::set_sc(MatrixDenseView_new<T> * sc_)
 {
     if(sc != nullptr) eslog::error("matrix sc is already set\n");
-    if(sc_ == nullptr) eslog::error("sc cannot be nullptr\n");
 
     sc = sc_;
-
-    if(sc->nrows != sc->ncols) eslog::error("sc has to be square\n");
 }
 
 
@@ -92,6 +89,8 @@ void sc_csx_dny<T,I>::set_sc(MatrixDenseView_new<T> * sc_)
 template<typename T, typename I>
 void sc_csx_dny<T,I>::set_need_solve_A11(bool need_solve_A11_)
 {
+    if(called_preprocess) eslog::error("cannot re-set need_solve_A11 after preprocess was called\n");
+
     need_solve_A11 = need_solve_A11_;
 }
 
@@ -105,6 +104,7 @@ void sc_csx_dny<T,I>::preprocess()
     if(called_preprocess) eslog::error("preprocess was already called\n");
     if(called_set_matrix == '_') eslog::error("matrix is not set\n");
     if(sc == nullptr) eslog::error("sc is not set\n");
+    if(sc->nrows != sc->ncols) eslog::error("sc has to be square\n");
 
     if(called_set_matrix == '4') {
         if(A11 == nullptr) eslog::error("A11 cannot be nullptr\n");
@@ -115,8 +115,8 @@ void sc_csx_dny<T,I>::preprocess()
         if(A22 != nullptr && A22->nrows != A22->ncols) eslog::error("A22 has to be square\n");
         if(A22 != nullptr && A22->prop.symm != A11->prop.symm) eslog::error("A11 and A22 must have equal symmetry\n");
         if(A11->prop.symm != sc->prop.symm) eslog::error("A11 and sc must have equal symmetry\n");
-        if(A12 != nullptr && A12->nrows != A11->nrows) eslog::error("wrong matrix A12 size (does not natch A11)\n");
-        if(A21 != nullptr && A21->ncols != A11->ncols) eslog::error("wrong matrix A21 size (does not natch A11)\n");
+        if(A12 != nullptr && A12->nrows != A11->nrows) eslog::error("wrong matrix A12 size (does not match A11)\n");
+        if(A21 != nullptr && A21->ncols != A11->ncols) eslog::error("wrong matrix A21 size (does not match A11)\n");
         if(A12 != nullptr && A22 != nullptr && A12->ncols != A22->ncols) eslog::error("wrong matrix A12 size (does not natch A22)\n");
         if(A21 != nullptr && A22 != nullptr && A21->nrows != A22->nrows) eslog::error("wrong matrix A21 size (does not natch A22)\n");
         // if only one of A12 or A21 is set and the system is hermitian, it is assumed the other is its conjugate transpose
@@ -140,11 +140,13 @@ void sc_csx_dny<T,I>::preprocess()
 
         if(A->prop.symm != sc->prop.symm) eslog::error("A and sc must have equal symmetry\n");
 
-        is_matrix_hermitian = is_hermitian<T>(A11->prop.symm);
+        is_matrix_hermitian = is_hermitian<T>(A->prop.symm);
         
         if(is_matrix_hermitian && A->prop.uplo != 'U' && A->prop.uplo != 'L') eslog::error("wrong A uplo\n");
         if(is_matrix_hermitian && sc->prop.uplo != 'U' && sc->prop.uplo != 'L') eslog::error("wrong sc uplo\n");
     }
+
+    if(sc->nrows != size_sc) eslog::error("mismatch between provided size_sc and SC matrix size\n");
 
     this->internal_preprocess();
 

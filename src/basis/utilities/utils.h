@@ -130,6 +130,12 @@ namespace utils {
         static_assert(std::is_integral_v<I>);
         return (num / align) * align;
     }
+
+    template<typename T>
+    T * pointer_advance(T * ptr, size_t offset_B)
+    {
+        return (T*)((char*)ptr + offset_B);
+    }
 }
 
 }

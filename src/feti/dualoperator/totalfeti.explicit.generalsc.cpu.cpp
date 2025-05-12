@@ -82,12 +82,10 @@ TotalFETIExplicitGeneralScCpu<T,I>::~TotalFETIExplicitGeneralScCpu()
 
 
 
-
 template<typename T, typename I>
 void TotalFETIExplicitGeneralScCpu<T,I>::info()
 {
-    eslog::info(" = EXPLICIT TOTAL FETI OPERATOR USING TRIANGULAR SC                                   = \n");
-    eslog::info(" =   EXTERNAL SPARSE SOLVER               %50s = \n", DirectSparseSolver<T>::name());
+    eslog::info(" = EXPLICIT TOTAL FETI OPERATOR USING GENERAL SC ON CPU                               = \n");
 
     if(cfg.print_parameters) {
         auto order_to_string = [](char order){ switch(order){ case 'R': return "ROW_MAJOR"; case 'C': return "COL_MAJOR"; default: return "UNDEFINED"; }};
@@ -147,7 +145,7 @@ void TotalFETIExplicitGeneralScCpu<T,I>::set(const step::Step &step)
                 data_di.F.prop.uplo = 'L';
             }
             else {
-                data_di.F = F_allocd.get_submatrix_view(0, data_di.n_dofs_interface , 0, data_di.n_dofs_interface);
+                data_di.F = F_allocd.get_submatrix_view(0, data_di.n_dofs_interface, 0, data_di.n_dofs_interface);
                 data_di.F.prop.uplo = 'U';
             }
             data_di.F.prop.symm = MatrixSymmetry_new::hermitian;

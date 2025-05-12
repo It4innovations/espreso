@@ -59,7 +59,6 @@ protected:
     Treal alpha = Treal{1};
     bool need_solve_A11 = false;
     char called_set_matrix = '_';
-    bool called_set_config = false;
     bool called_preprocess = false;
     bool called_perform = false;
 protected:
