@@ -34,6 +34,7 @@ public:
     enum class Token {
         STRING,
         LINK,
+        ENV,
         DELIMITER,
         ASSIGN,
         OBJECT_OPEN,

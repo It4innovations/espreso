@@ -89,6 +89,11 @@ static bool isLinkEnd(char c)
     return c == ']';
 }
 
+static bool isEnv(char c)
+{
+    return c == '$';
+}
+
 static bool isStringStart(char c)
 {
     return c == '"' || c == '\'';
@@ -229,6 +234,22 @@ Tokenizer::Token Tokenizer::_next()
             }
             _file.get();
             return Token::LINK;
+        }
+        if (isEnv(_file.peek())) {
+            _file.get();
+            if (isObjectOpen(_file.peek())) {
+                _file.get();
+                while (!isObjectClose(_file.peek())) {
+                    if (isLineEnd(_file.peek())) {
+                        eslog::globalerror("Configuration file error: use ${...} to read environment parameter.\n");
+                    }
+                    _buffer.push_back(_file.get());
+                }
+                _file.get();
+            } else {
+                eslog::globalerror("Configuration file error: use ${...} to read environment parameter.\n");
+            }
+            return Token::ENV;
         }
         if (isStringStart(_file.peek())) {
             size_t stacked = 0, bsize = _buffer.size();

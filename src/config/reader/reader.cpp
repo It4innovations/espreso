@@ -3,6 +3,7 @@
 #include "tokenizer.h"
 #include "esinfo/mpiinfo.h"
 #include "esinfo/ecfinfo.h"
+#include "esinfo/envinfo.h"
 #include "esinfo/eslog.hpp"
 #include "config/ecf/output.h"
 #include "config/configuration.h"
@@ -16,6 +17,7 @@
 
 #include <getopt.h>
 #include <stack>
+#include <cstdlib>
 #include <functional>
 #include <unistd.h>
 #include <fstream>
@@ -297,6 +299,11 @@ void ECFReader::_read(
             } else {
                 values.push_back(value);
             }
+            break;
+        }
+        case Tokenizer::Token::ENV:
+        {
+            values.push_back(std::getenv(tokenStack.top()->value().c_str()));
             break;
         }
         case Tokenizer::Token::OBJECT_OPEN:
