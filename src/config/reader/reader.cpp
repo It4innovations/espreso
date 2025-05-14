@@ -303,7 +303,12 @@ void ECFReader::_read(
         }
         case Tokenizer::Token::ENV:
         {
-            values.push_back(std::getenv(tokenStack.top()->value().c_str()));
+            char* env = std::getenv(tokenStack.top()->value().c_str());
+            if (env) {
+                values.push_back(env);
+            } else {
+                values.push_back("");
+            }
             break;
         }
         case Tokenizer::Token::OBJECT_OPEN:
