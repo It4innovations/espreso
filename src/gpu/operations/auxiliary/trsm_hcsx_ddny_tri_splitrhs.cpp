@@ -85,9 +85,9 @@ void trsm_hcsx_ddny_tri_splitrhs<T,I>::setup()
     if(h_L->nrows != d_X->nrows) eslog::error("incompatible matrices\n");
     if(h_L->prop.uplo != 'L') eslog::error("L has to have uplo=L\n");
 
-    ator_ws_persistent = std::make_unique<AllocatorArena_new>(false, true, gpu::mgm::get_natural_pitch_align());
-    ator_ws_tmp_linear = std::make_unique<AllocatorArena_new>(false, true, gpu::mgm::get_natural_pitch_align());
-    ator_ws_tmp_overlap = std::make_unique<AllocatorSinglePointer_new>(false, true, gpu::mgm::get_natural_pitch_align());
+    ator_ws_persistent = std::make_unique<AllocatorArena_new>(AllocatorGPU_new::get_singleton());
+    ator_ws_tmp_linear = std::make_unique<AllocatorArena_new>(AllocatorGPU_new::get_singleton());
+    ator_ws_tmp_overlap = std::make_unique<AllocatorSinglePointer_new>(AllocatorGPU_new::get_singleton());
 
     h_X_colpivots.set(h_X_pattern->ncols, AllocatorCPU_new::get_singleton());
     h_X_colpivots.alloc();

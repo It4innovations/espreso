@@ -98,6 +98,9 @@ void trsm_dcsx_ddny_ddny<T,I>::setup()
     if(A == nullptr) eslog::error("matrix A is not set\n");
     if(X == nullptr) eslog::error("matrix B is not set\n");
     if(B == nullptr) eslog::error("matrix C is not set\n");
+    if(!A->ator->is_data_accessible_gpu()) eslog::error("matrix A must be gpu-accessible\n");
+    if(!X->ator->is_data_accessible_gpu()) eslog::error("matrix X must be gpu-accessible\n");
+    if(!B->ator->is_data_accessible_gpu()) eslog::error("matrix B must be gpu-accessible\n");
     if(called_setup) eslog::error("setup was already called\n");
     if(A->nrows != A->ncols) eslog::error("matrix A is not square\n");
     if(X->nrows != B->nrows || X->ncols != B->ncols) eslog::error("X and B matrix sizes dont match\n");

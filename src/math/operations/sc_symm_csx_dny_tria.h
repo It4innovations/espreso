@@ -8,6 +8,7 @@
 #include "math/operations/convert_csx_csy_map.h"
 #include "math/operations/trsm_csx_dny_tri.h"
 #include "math/operations/herk_dnx_dny_tri.h"
+#include "math/wrappers/math.spsolver.h"
 
 
 

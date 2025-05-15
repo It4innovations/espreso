@@ -15,6 +15,8 @@ namespace operations {
 template<typename T, typename I>
 void convert_csx_dny<T,I>::set_matrix_src(MatrixCsxView_new<T,I> * M_src_)
 {
+    if(M_src != nullptr) eslog::error("matrix M_src is already set\n");
+
     M_src = M_src_;
 }
 
@@ -23,6 +25,8 @@ void convert_csx_dny<T,I>::set_matrix_src(MatrixCsxView_new<T,I> * M_src_)
 template<typename T, typename I>
 void convert_csx_dny<T,I>::set_matrix_dst(MatrixDenseView_new<T> * M_dst_)
 {
+    if(M_dst != nullptr) eslog::error("matrix M_dst is already set\n");
+
     M_dst = M_dst_;
 }
 
@@ -33,6 +37,8 @@ void convert_csx_dny<T,I>::perform_zerofill()
 {
     stacktimer::push("convert_csx_dny::perform_zerofill");
 
+    if(!M_src->ator->is_data_accessible_cpu()) eslog::error("source matrix must be cpu-accessible\n");
+    if(!M_dst->ator->is_data_accessible_cpu()) eslog::error("destination matrix must be cpu-accessible\n");
     if(M_src->nrows != M_dst->nrows || M_src->ncols != M_dst->ncols) eslog::error("matrix dimensions don't match\n");
     if(M_src->prop.uplo != M_dst->prop.uplo) eslog::error("uplo of matrices does not match\n");
     if((M_dst->prop.uplo == 'L' || M_dst->prop.uplo == 'U') && M_dst->nrows != M_dst->ncols) eslog::error("upper of lower matrix must be square\n");
@@ -49,6 +55,8 @@ void convert_csx_dny<T,I>::perform_copyvals()
 {
     stacktimer::push("convert_csx_dny::perform_copyvals");
 
+    if(!M_src->ator->is_data_accessible_cpu()) eslog::error("source matrix must be cpu-accessible\n");
+    if(!M_dst->ator->is_data_accessible_cpu()) eslog::error("destination matrix must be cpu-accessible\n");
     if(M_src->nrows != M_dst->nrows || M_src->ncols != M_dst->ncols) eslog::error("matrix dimensions don't match\n");
     if(M_src->prop.uplo != M_dst->prop.uplo) eslog::error("uplo of matrices does not match\n");
     if((M_dst->prop.uplo == 'L' || M_dst->prop.uplo == 'U') && M_dst->nrows != M_dst->ncols) eslog::error("upper of lower matrix must be square\n");

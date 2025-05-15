@@ -2,6 +2,7 @@
 #ifndef SRC_GPU_OPERATIONS_TRSM_HCSX_DDNY_DDNY_H
 #define SRC_GPU_OPERATIONS_TRSM_HCSX_DDNY_DDNY_H
 
+#include "math/primitives_new/allocator_new.h"
 #include "math/primitives_new/matrix_csx_data_new.h"
 #include "math/primitives_new/matrix_dense_data_new.h"
 #include "gpu/gpu_management.h"

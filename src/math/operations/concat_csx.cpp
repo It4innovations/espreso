@@ -1,6 +1,7 @@
 
 #include "math/operations/concat_csx.h"
 
+#include "math/primitives_new/allocator_new.h"
 #include "math/primitives_new/matrix_csx_data_new.h"
 #include "math/operations/convert_csx_csy.h"
 #include "basis/utilities/stacktimer.h"
@@ -16,6 +17,8 @@ namespace operations {
 template<typename T, typename I>
 void concat_csx<T,I>::set_matrices_src(MatrixCsxView_new<T,I> * A11_, MatrixCsxView_new<T,I> * A12_, MatrixCsxView_new<T,I> * A21_, MatrixCsxView_new<T,I> * A22_)
 {
+    if(A11 != nullptr || A12 != nullptr || A21 != nullptr || A22 != nullptr) eslog::error("source matrices are already set\n");
+
     A11 = A11_;
     A12 = A12_;
     A21 = A21_;
@@ -27,6 +30,8 @@ void concat_csx<T,I>::set_matrices_src(MatrixCsxView_new<T,I> * A11_, MatrixCsxV
 template<typename T, typename I>
 void concat_csx<T,I>::set_matrix_dst(MatrixCsxView_new<T,I> * A_)
 {
+    if(A != nullptr) eslog::error("matrix A is already set\n");
+
     A = A_;
 }
 
@@ -38,6 +43,11 @@ void concat_csx<T,I>::perform()
     stacktimer::push("concat_csx::perform");
 
     if(A == nullptr) eslog::error("destination matrix is not set\n");
+    if(A11 != nullptr && !A11->ator->is_data_accessible_cpu()) eslog::error("matrix A11 must be cpu-accessible\n");
+    if(A12 != nullptr && !A12->ator->is_data_accessible_cpu()) eslog::error("matrix A12 must be cpu-accessible\n");
+    if(A21 != nullptr && !A21->ator->is_data_accessible_cpu()) eslog::error("matrix A21 must be cpu-accessible\n");
+    if(A22 != nullptr && !A22->ator->is_data_accessible_cpu()) eslog::error("matrix A22 must be cpu-accessible\n");
+    if(!A->ator->is_data_accessible_cpu()) eslog::error("matrix A must be cpu-accessible\n");
     size_t total_nnz = 0;
     if(A11 != nullptr) total_nnz += A11->nnz;
     if(A12 != nullptr) total_nnz += A12->nnz;

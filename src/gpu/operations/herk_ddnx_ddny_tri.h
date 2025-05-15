@@ -2,6 +2,7 @@
 #ifndef SRC_GPU_OPERATIONS_HERK_DDNX_DDNY_TRI_H
 #define SRC_GPU_OPERATIONS_HERK_DDNX_DDNY_TRI_H
 
+#include "math/primitives_new/allocator_new.h"
 #include "math/primitives_new/matrix_dense_view_new.h"
 #include "math/primitives_new/vector_dense_data_new.h"
 #include "gpu/gpu_management.h"

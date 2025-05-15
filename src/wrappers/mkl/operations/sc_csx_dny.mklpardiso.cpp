@@ -5,6 +5,7 @@
 
 #include <mkl.h>
 
+#include "math/primitives_new/allocator_new.h"
 #include "math/primitives_new/matrix_csx_data_new.h"
 #include "math/primitives_new/matrix_dense_data_new.h"
 #include "math/primitives_new/vector_dense_data_new.h"
@@ -146,7 +147,7 @@ void sc_csx_dny_mklpardiso<T,I>::internal_perform_1()
 
     T * sc_tmp_vals = new T[size_sc * size_sc];
     MatrixDenseView_new<T> sc_tmp;
-    sc_tmp.set_view(size_sc, size_sc, size_sc, sc->order, sc_tmp_vals);
+    sc_tmp.set_view(size_sc, size_sc, size_sc, sc->order, sc_tmp_vals, AllocatorGPU_new::get_singleton());
 
     MKL_INT phase = 22;
     MKL_INT one = 1;

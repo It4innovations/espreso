@@ -1,6 +1,7 @@
 
 #include "math/operations/permute_csx_csx.h"
 
+#include "math/primitives_new/allocator_new.h"
 #include "math/operations/copy_csx.h"
 #include "math/primitives_new/vector_dense_data_new.h"
 #include "basis/utilities/stacktimer.h"
@@ -16,6 +17,8 @@ namespace operations {
 template<typename T, typename I>
 void permute_csx_csx<T,I>::set_matrix_src(MatrixCsxView_new<T,I> * M_src_)
 {
+    if(M_src != nullptr) eslog::error("matrix M_src is already set\n");
+
     M_src = M_src_;
 }
 
@@ -24,6 +27,8 @@ void permute_csx_csx<T,I>::set_matrix_src(MatrixCsxView_new<T,I> * M_src_)
 template<typename T, typename I>
 void permute_csx_csx<T,I>::set_matrix_dst(MatrixCsxView_new<T,I> * M_dst_)
 {
+    if(M_dst != nullptr) eslog::error("matrix M_dst is already set\n");
+
     M_dst = M_dst_;
 }
 
@@ -32,6 +37,8 @@ void permute_csx_csx<T,I>::set_matrix_dst(MatrixCsxView_new<T,I> * M_dst_)
 template<typename T, typename I>
 void permute_csx_csx<T,I>::set_perm_rows(PermutationView_new<I> * perm_rows_)
 {
+    if(perm_rows != nullptr) eslog::error("perm_rows is already set\n");
+
     perm_rows = perm_rows_;
 }
 
@@ -40,6 +47,8 @@ void permute_csx_csx<T,I>::set_perm_rows(PermutationView_new<I> * perm_rows_)
 template<typename T, typename I>
 void permute_csx_csx<T,I>::set_perm_cols(PermutationView_new<I> * perm_cols_)
 {
+    if(perm_cols != nullptr) eslog::error("perm_cols is already set\n");
+
     perm_cols = perm_cols_;
 }
 
@@ -52,6 +61,8 @@ void permute_csx_csx<T,I>::perform()
 
     if(M_src == nullptr) eslog::error("source matrix is not set\n");
     if(M_dst == nullptr) eslog::error("destination matrix is not set\n");
+    if(!M_src->ator->is_data_accessible_cpu()) eslog::error("source matrix must be cpu-accessible\n");
+    if(!M_dst->ator->is_data_accessible_cpu()) eslog::error("destination matrix must be cpu-accessible\n");
     if(M_src->order != M_dst->order) eslog::error("matrix orders dont match\n");
     if(M_src->nrows != M_dst->nrows || M_src->ncols != M_dst->ncols || M_src->nnz != M_dst->nnz) eslog::error("matrix sizes dont match\n");
     if(perm_rows != nullptr && perm_rows->size != M_src->nrows) eslog::error("wrong row perm size\n");

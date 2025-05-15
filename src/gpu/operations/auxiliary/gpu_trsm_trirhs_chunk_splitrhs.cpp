@@ -126,9 +126,9 @@ void gpu_trsm_trirhs_chunk_splitrhs<T,I>::setup()
     if(h_L_nnzinsubs->size != d_L_sp->ncols) eslog::error("wrong size of Lnnzinsubs\n");
     if(d_L_sp->prop.uplo != 'L') eslog::error("matrix L must have uplo=L\n");
 
-    ator_ws_persistent = std::make_unique<AllocatorArena_new>(false, true, gpu::mgm::get_natural_pitch_align());
-    ator_ws_tmp_linear = std::make_unique<AllocatorArena_new>(false, true, gpu::mgm::get_natural_pitch_align());
-    ator_ws_tmp_overlap = std::make_unique<AllocatorSinglePointer_new>(false, true, gpu::mgm::get_natural_pitch_align());
+    ator_ws_persistent = std::make_unique<AllocatorArena_new>(AllocatorGPU_new::get_singleton());
+    ator_ws_tmp_linear = std::make_unique<AllocatorArena_new>(AllocatorGPU_new::get_singleton());
+    ator_ws_tmp_overlap = std::make_unique<AllocatorSinglePointer_new>(AllocatorGPU_new::get_singleton());
 
     k_start = h_X_colpivots->vals[rhs_start];
     k_size = d_X->nrows - k_start;
@@ -141,7 +141,7 @@ void gpu_trsm_trirhs_chunk_splitrhs<T,I>::setup()
         wss_tmp_perform_linear += d_sub_L_sp.get_memory_impact();
     }
     if(factor_spdn == 'D') {
-        d_sub_L_dn.set_view(k_size, k_size, d_L_dn->ld, d_L_dn->order, nullptr);
+        d_sub_L_dn.set_view(k_size, k_size, d_L_dn->ld, d_L_dn->order, nullptr, AllocatorGPU_new::get_singleton());
         d_sub_L_dn.prop.uplo = d_L_sp->prop.uplo;
         d_sub_L_dn.prop.diag = d_L_sp->prop.diag;
     }
@@ -167,7 +167,7 @@ void gpu_trsm_trirhs_chunk_splitrhs<T,I>::setup()
         op_sub_L_dn.set_bounds(dense_start, d_L_dn->nrows, dense_start, d_L_dn->ncols);
     }
 
-    d_sub_X.set_view(k_size, rhs_size, d_X->ld, d_X->order, nullptr);
+    d_sub_X.set_view(k_size, rhs_size, d_X->ld, d_X->order, nullptr, AllocatorGPU_new::get_singleton());
 
     op_sub_X.set_matrix_src(d_X);
     op_sub_X.set_matrix_dst(&d_sub_X);

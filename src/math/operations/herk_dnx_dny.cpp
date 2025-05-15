@@ -14,6 +14,8 @@ namespace operations {
 template<typename T>
 void herk_dnx_dny<T>::set_matrix_A(MatrixDenseView_new<T> * A_)
 {
+    if(A != nullptr) eslog::error("matrix A is already set\n");
+
     A = A_;
 }
 
@@ -22,6 +24,8 @@ void herk_dnx_dny<T>::set_matrix_A(MatrixDenseView_new<T> * A_)
 template<typename T>
 void herk_dnx_dny<T>::set_matrix_C(MatrixDenseView_new<T> * C_)
 {
+    if(C != nullptr) eslog::error("matrix C is already set\n");
+
     C = C_;
 }
 
@@ -52,6 +56,8 @@ void herk_dnx_dny<T>::perform()
 
     if(A == nullptr) eslog::error("matrix A is not set\n");
     if(C == nullptr) eslog::error("matrix C is not set\n");
+    if(!A->ator->is_data_accessible_cpu()) eslog::error("matrix A must be cpu-accessible\n");
+    if(!C->ator->is_data_accessible_cpu()) eslog::error("matrix C must be cpu-accessible\n");
     if(!mode_set) eslog::error("mode is not set");
     if(C->nrows != C->ncols) eslog::error("C must be square\n");
     if(mode == blas::herk_mode::AAh && A->nrows != C->nrows) eslog::error("incompatible matrix sizes\n");

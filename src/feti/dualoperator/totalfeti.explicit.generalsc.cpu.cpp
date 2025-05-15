@@ -1,6 +1,7 @@
 
 #include "feti/dualoperator/totalfeti.explicit.generalsc.cpu.h"
 
+#include "math/primitives_new/allocator_new.h"
 #include "feti/common/applyB.h"
 #include "basis/utilities/minmaxavg.h"
 #include "basis/utilities/stacktimer.h"

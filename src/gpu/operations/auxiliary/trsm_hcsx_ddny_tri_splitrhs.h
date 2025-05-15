@@ -2,6 +2,7 @@
 #ifndef SRC_GPU_OPERATIONS_AUXILIARY_TRSM_HCSX_DDNY_DDNY_TRI_SPLITRHS_H
 #define SRC_GPU_OPERATIONS_AUXILIARY_TRSM_HCSX_DDNY_DDNY_TRI_SPLITRHS_H
 
+#include "math/primitives_new/allocator_new.h"
 #include "math/primitives_new/matrix_csx_view_new.h"
 #include "math/primitives_new/matrix_dense_view_new.h"
 #include "math/primitives_new/vector_dense_view_new.h"

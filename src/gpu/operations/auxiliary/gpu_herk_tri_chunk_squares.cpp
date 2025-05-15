@@ -113,9 +113,9 @@ void gpu_herk_tri_chunk_squares<T,I>::setup()
     n_end = h_A_trails->vals[k_end - 1] + 1;
     n_size = n_end;
 
-    d_sub_C.set_view(n_size, n_size, d_C->ld, d_C->order, nullptr);
+    d_sub_C.set_view(n_size, n_size, d_C->ld, d_C->order, nullptr, AllocatorGPU_new::get_singleton());
     d_sub_C.prop.uplo = d_C->prop.uplo;
-    d_sub_A_top.set_view(k_size, n_size, d_A_top->ld, d_A_top->order, nullptr);
+    d_sub_A_top.set_view(k_size, n_size, d_A_top->ld, d_A_top->order, nullptr, AllocatorGPU_new::get_singleton());
 
     op_sub_C.set_matrix_src(d_C);
     op_sub_C.set_matrix_dst(&d_sub_C);

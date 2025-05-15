@@ -1,6 +1,7 @@
 
 #include "math/operations/sorting_permutation.h"
 
+#include "math/primitives_new/allocator_new.h"
 #include "math/primitives_new/vector_dense_data_new.h"
 #include "basis/utilities/stacktimer.h"
 
@@ -15,6 +16,8 @@ namespace operations {
 template<typename T, typename I>
 void sorting_permutation<T,I>::set_vector(VectorDenseView_new<T> * vec_)
 {
+    if(vec != nullptr) eslog::error("vector is already set\n");
+
     vec = vec_;
 }
 
@@ -23,6 +26,8 @@ void sorting_permutation<T,I>::set_vector(VectorDenseView_new<T> * vec_)
 template<typename T, typename I>
 void sorting_permutation<T,I>::set_permutation(PermutationView_new<I> * perm_)
 {
+    if(perm != nullptr) eslog::error("permutation is already set\n");
+
     perm = perm_;
 }
 
@@ -35,6 +40,8 @@ void sorting_permutation<T,I>::perform()
 
     if(vec == nullptr) eslog::error("vector is not set\n");
     if(perm == nullptr) eslog::error("permutation is not set\n");
+    if(!vec->ator->is_data_accessible_cpu()) eslog::error("vector must be cpu-accessible\n");
+    if(!perm->ator->is_data_accessible_cpu()) eslog::error("permutation must be cpu-accessible\n");
     if(vec->size != perm->size) eslog::error("vector and permutation sizes dont match\n");
 
     struct idx_val { I idx; T val; };

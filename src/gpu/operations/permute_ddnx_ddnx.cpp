@@ -87,6 +87,10 @@ void permute_ddnx_ddnx<T,I>::setup()
     if(!called_set_handles) eslog::error("handles are not set\n");
     if(M_src == nullptr) eslog::error("source matrix is not sen\n");
     if(M_dst == nullptr) eslog::error("destination matrix is not set\n");
+    if(!M_src->ator->is_data_accessible_gpu()) eslog::error("source matrix must be gpu-accessible\n");
+    if(!M_dst->ator->is_data_accessible_gpu()) eslog::error("destination matrix must be gpu-accessible\n");
+    if(perm_rows != nullptr && !perm_rows->ator->is_data_accessible_gpu()) eslog::error("perm_rows must be gpu-accessible\n");
+    if(perm_cols != nullptr && !perm_cols->ator->is_data_accessible_gpu()) eslog::error("perm_cols must be gpu-accessible\n");
     if(M_src->nrows != M_dst->nrows || M_src->ncols != M_dst->ncols) eslog::error("matrix sizes dont match\n");
     if(M_src->order != M_dst->order) eslog::error("matrix orders must match\n");
     if(perm_rows != nullptr && perm_rows->size != M_src->nrows) eslog::error("wrong row perm size\n");

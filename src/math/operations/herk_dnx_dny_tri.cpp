@@ -1,6 +1,7 @@
 
 #include "math/operations/herk_dnx_dny_tri.h"
 
+#include "math/primitives_new/allocator_new.h"
 #include "math/operations/pivots_trails_csx.h"
 #include "math/operations/auxiliary/tri_partition_herk.h"
 #include "math/operations/herk_dnx_dny.h"
@@ -28,6 +29,8 @@ void herk_dnx_dny_tri<T,I>::set_config(config cfg_)
 template<typename T, typename I>
 void herk_dnx_dny_tri<T,I>::set_matrix_A(MatrixDenseView_new<T> * A_)
 {
+    if(A != nullptr) eslog::error("matrix A is already set\n");
+
     A = A_;
 }
 
@@ -36,6 +39,8 @@ void herk_dnx_dny_tri<T,I>::set_matrix_A(MatrixDenseView_new<T> * A_)
 template<typename T, typename I>
 void herk_dnx_dny_tri<T,I>::set_matrix_C(MatrixDenseView_new<T> * C_)
 {
+    if(C != nullptr) eslog::error("matrix C is already set\n");
+
     C = C_;
 }
 
@@ -67,6 +72,7 @@ void herk_dnx_dny_tri<T,I>::calc_A_pattern(MatrixCsxView_new<T,I> & A_pattern)
 
     if(!mode_set) eslog::error("mode is not set\n");
     if(pattern_set) eslog::error("A pattern was already set\n");
+    if(!A_pattern.ator->is_data_accessible_cpu()) eslog::error("matrix A_pattern must be cpu-accessible\n");
 
     if(mode == blas::herk_mode::AhA) {
         A_pivots.set(A->ncols, AllocatorCPU_new::get_singleton());
@@ -145,6 +151,8 @@ void herk_dnx_dny_tri<T,I>::perform()
     if(!preproces_called) eslog::error("preprocess was not called\n");
     if(A == nullptr) eslog::error("matrix A is not set\n");
     if(C == nullptr) eslog::error("matrix C is not set\n");
+    if(!A->ator->is_data_accessible_cpu()) eslog::error("matrix A must be cpu-accessible\n");
+    if(!C->ator->is_data_accessible_cpu()) eslog::error("matrix C must be cpu-accessible\n");
     if(C->nrows != C->ncols) eslog::error("C must be square\n");
     if(C->prop.uplo != 'U' && C->prop.uplo != 'L') eslog::error("wrong C uplo\n");
     if(A->ncols != C->ncols) eslog::error("incompatible matrices\n");

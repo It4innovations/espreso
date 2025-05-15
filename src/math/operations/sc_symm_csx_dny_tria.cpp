@@ -1,6 +1,7 @@
 
 #include "math/operations/sc_symm_csx_dny_tria.h"
 
+#include "math/primitives_new/allocator_new.h"
 #include "math/operations/permute_csx_csx.h"
 #include "math/operations/pivots_trails_csx.h"
 #include "math/operations/sorting_permutation.h"
@@ -41,6 +42,8 @@ void sc_symm_csx_dny_tria<T,I>::set_coefficients(Treal alpha_)
 template<typename T, typename I>
 void sc_symm_csx_dny_tria<T,I>::set_A11_solver(DirectSparseSolver<T,I> * A11_solver_)
 {
+    if(A11_solver != nullptr) eslog::error("A11_solver is already set\n");
+
     A11_solver = A11_solver_;
 }
 
@@ -49,6 +52,8 @@ void sc_symm_csx_dny_tria<T,I>::set_A11_solver(DirectSparseSolver<T,I> * A11_sol
 template<typename T, typename I>
 void sc_symm_csx_dny_tria<T,I>::set_A12(MatrixCsxView_new<T,I> * A12_)
 {
+    if(A12 != nullptr) eslog::error("matrix A12 is already set\n");
+
     A12 = A12_;
 }
 
@@ -57,6 +62,8 @@ void sc_symm_csx_dny_tria<T,I>::set_A12(MatrixCsxView_new<T,I> * A12_)
 template<typename T, typename I>
 void sc_symm_csx_dny_tria<T,I>::set_sc(MatrixDenseView_new<T> * sc_)
 {
+    if(sc != nullptr) eslog::error("matrix sc is already set\n");
+
     sc = sc_;
 }
 
@@ -71,6 +78,8 @@ void sc_symm_csx_dny_tria<T,I>::preprocess()
     if(A11_solver == nullptr) eslog::error("A11 solver is not set\n");
     if(A12 == nullptr) eslog::error("matrix A12 is not set\n");
     if(sc == nullptr) eslog::error("sc matrix is not set\n");
+    if(!A12->ator->is_data_accessible_cpu()) eslog::error("matrix A12 must be cpu-accessible\n");
+    if(!sc->ator->is_data_accessible_cpu()) eslog::error("matrix sc must be cpu-accessible\n");
     if((size_t)A11_solver->getMatrixSize() != A12->nrows) eslog::error("incompatible matrices\n");
     if(sc->ncols != A12->ncols) eslog::error("incompatible matrices\n");
     if(sc->prop.uplo != 'L' && sc->prop.uplo != 'U') eslog::error("wrong sc uplo\n");

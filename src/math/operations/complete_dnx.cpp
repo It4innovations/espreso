@@ -1,6 +1,7 @@
 
 #include "math/operations/complete_dnx.h"
 
+#include "math/primitives_new/allocator_new.h"
 #include "math/primitives_new/matrix_dense_data_new.h"
 #include "math/operations/convert_dnx_dny.h"
 #include "math/operations/copy_dnx.h"
@@ -17,6 +18,8 @@ namespace operations {
 template<typename T>
 void complete_dnx<T>::set_matrix(MatrixDenseView_new<T> * M_)
 {
+    if(M != nullptr) eslog::error("matrix M is already set\n");
+
     M = M_;
 }
 
@@ -44,6 +47,7 @@ void complete_dnx<T>::perform()
     stacktimer::push("complete_dnx::perform");
 
     if(M == nullptr) eslog::error("matrix is not set\n");
+    if(!M->ator->is_data_accessible_cpu()) eslog::error("matrix must be cpu-accessible\n");
     if(M->nrows != M->ncols) eslog::error("matrix must be square\n");
     if(orig_uplo != 'L' && orig_uplo != 'U') eslog::error("original uplo is not set\n");
 

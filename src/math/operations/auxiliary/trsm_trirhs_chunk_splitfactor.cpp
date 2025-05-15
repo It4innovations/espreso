@@ -1,6 +1,7 @@
 
 #include "math/operations/auxiliary/trsm_trirhs_chunk_splitfactor.h"
 
+#include "math/primitives_new/allocator_new.h"
 #include "basis/utilities/stacktimer.h"
 
 
@@ -36,6 +37,8 @@ void trsm_trirhs_chunk_splitfactor<T,I>::set_range(size_t k_start_, size_t k_end
 template<typename T, typename I>
 void trsm_trirhs_chunk_splitfactor<T,I>::set_L(MatrixCsxView_new<T,I> * L_)
 {
+    if(L != nullptr) eslog::error("matrix L is already set\n");
+
     L = L_;
 }
 
@@ -44,6 +47,8 @@ void trsm_trirhs_chunk_splitfactor<T,I>::set_L(MatrixCsxView_new<T,I> * L_)
 template<typename T, typename I>
 void trsm_trirhs_chunk_splitfactor<T,I>::set_X(MatrixDenseView_new<T> * X_)
 {
+    if(X != nullptr) eslog::error("matrix X is already set\n");
+
     X = X_;
 }
 
@@ -52,6 +57,8 @@ void trsm_trirhs_chunk_splitfactor<T,I>::set_X(MatrixDenseView_new<T> * X_)
 template<typename T, typename I>
 void trsm_trirhs_chunk_splitfactor<T,I>::set_X_rowtrails(VectorDenseView_new<I> * X_rowtrails_)
 {
+    if(X_rowtrails != nullptr) eslog::error("matrix X_rowtrails is already set\n");
+
     X_rowtrails = X_rowtrails_;
 }
 
@@ -68,17 +75,20 @@ void trsm_trirhs_chunk_splitfactor<T,I>::preprocess()
     if(L == nullptr) eslog::error("matrix L is not set\n");
     if(X == nullptr) eslog::error("matrix X is not set\n");
     if(X_rowtrails == nullptr) eslog::error("B rowtrails is not set\n");
+    if(!L->ator->is_data_accessible_cpu()) eslog::error("matrix L must be cpu-accessible\n");
+    if(!X->ator->is_data_accessible_cpu()) eslog::error("matrix X must be cpu-accessible\n");
+    if(!X_rowtrails->ator->is_data_accessible_cpu()) eslog::error("matrix X_rowtrails must be cpu-accessible\n");
 
     size_t rhs_start = 0;
     size_t rhs_end = X_rowtrails->vals[k_end - 1] + 1;
     size_t rhs_size = rhs_end - rhs_start;
 
-    sub_X_top.set_view(k_size, rhs_size, X->ld, X->order, nullptr);
+    sub_X_top.set_view(k_size, rhs_size, X->ld, X->order, nullptr, AllocatorCPU_new::get_singleton());
     op_submatrix_X_top.set_matrix_src(X);
     op_submatrix_X_top.set_matrix_dst(&sub_X_top);
     op_submatrix_X_top.set_bounds(k_start, k_end, rhs_start, rhs_end);
 
-    sub_X_bot.set_view(X->nrows - k_end, rhs_size, X->ld, X->order, nullptr);
+    sub_X_bot.set_view(X->nrows - k_end, rhs_size, X->ld, X->order, nullptr, AllocatorCPU_new::get_singleton());
     op_submatrix_X_bot.set_matrix_src(X);
     op_submatrix_X_bot.set_matrix_dst(&sub_X_bot);
     op_submatrix_X_bot.set_bounds(k_end, X->nrows, rhs_start, rhs_end);

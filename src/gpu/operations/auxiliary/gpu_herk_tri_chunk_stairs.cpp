@@ -120,11 +120,11 @@ void gpu_herk_tri_chunk_stairs<T,I>::setup()
         d_C_lower = &d_C_reordered;
     }
 
-    d_sub_C_herk.set_view(n_size, n_size, d_C_lower->ld, d_C_lower->order, nullptr);
+    d_sub_C_herk.set_view(n_size, n_size, d_C_lower->ld, d_C_lower->order, nullptr, AllocatorGPU_new::get_singleton());
     d_sub_C_herk.prop.uplo = d_C_lower->prop.uplo;
-    d_sub_C_gemm.set_view(n_size, n_start, d_C_lower->ld, d_C_lower->order, nullptr);
-    d_sub_A_left.set_view(n_size, k_size, d_A_left->ld, d_A_left->order, nullptr);
-    d_sub_A_top.set_view(k_size, n_start, d_A_top->ld, d_A_top->order, nullptr);
+    d_sub_C_gemm.set_view(n_size, n_start, d_C_lower->ld, d_C_lower->order, nullptr, AllocatorGPU_new::get_singleton());
+    d_sub_A_left.set_view(n_size, k_size, d_A_left->ld, d_A_left->order, nullptr, AllocatorGPU_new::get_singleton());
+    d_sub_A_top.set_view(k_size, n_start, d_A_top->ld, d_A_top->order, nullptr, AllocatorGPU_new::get_singleton());
 
     op_sub_C_herk.set_matrix_src(d_C_lower);
     op_sub_C_herk.set_matrix_dst(&d_sub_C_herk);

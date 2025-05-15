@@ -96,6 +96,9 @@ void gemm_dcsx_ddny_ddnz<T,I>::setup()
     if(A == nullptr) eslog::error("matrix A is not set\n");
     if(B == nullptr) eslog::error("matrix B is not set\n");
     if(C == nullptr) eslog::error("matrix C is not set\n");
+    if(!A->ator->is_data_accessible_gpu()) eslog::error("matrix A must be gpu-accessible\n");
+    if(!B->ator->is_data_accessible_gpu()) eslog::error("matrix B must be gpu-accessible\n");
+    if(!C->ator->is_data_accessible_gpu()) eslog::error("matrix C must be gpu-accessible\n");
     if(called_setup) eslog::error("setup was already called\n");
     if(A->nrows != C->nrows || B->ncols != C->ncols || A->ncols != B->nrows) eslog::error("incompatible matrices\n");
 

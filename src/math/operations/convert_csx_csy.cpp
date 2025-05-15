@@ -15,6 +15,8 @@ namespace operations {
 template<typename T, typename I>
 void convert_csx_csy<T,I>::set_matrix_src(MatrixCsxView_new<T,I> * M_src_)
 {
+    if(M_src != nullptr) eslog::error("matrix M_src is already set\n");
+
     M_src = M_src_;
 }
 
@@ -23,6 +25,8 @@ void convert_csx_csy<T,I>::set_matrix_src(MatrixCsxView_new<T,I> * M_src_)
 template<typename T, typename I>
 void convert_csx_csy<T,I>::set_matrix_dst(MatrixCsxView_new<T,I> * M_dst_)
 {
+    if(M_dst != nullptr) eslog::error("matrix M_dst is already set\n");
+
     M_dst = M_dst_;
 }
 
@@ -35,6 +39,8 @@ void convert_csx_csy<T,I>::perform()
 
     if(M_src == nullptr) eslog::error("source matrix is not set\n");
     if(M_dst == nullptr) eslog::error("destination matrix is not set\n");
+    if(!M_src->ator->is_data_accessible_cpu()) eslog::error("source matrix must be cpu-accessible\n");
+    if(!M_dst->ator->is_data_accessible_cpu()) eslog::error("destination matrix must be cpu-accessible\n");
     if(M_dst->nrows != M_src->nrows || M_dst->ncols != M_src->ncols || M_dst->nnz != M_src->nnz) eslog::error("matrix sizes dont match\n");
 
     if(M_src->order == M_dst->order) {

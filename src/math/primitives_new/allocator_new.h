@@ -11,84 +11,10 @@ namespace espreso {
 
 
 
-class Allocator_new
-{
-public:
-    Allocator_new() {}
-    virtual ~Allocator_new() {}
-    virtual void * alloc(size_t num_bytes) = 0;
-    virtual void free(void * & ptr) = 0; // must set ptr to nullptr
-    virtual bool is_on_cpu() = 0;
-    virtual bool is_on_gpu() = 0;
-public:
-    virtual size_t get_align()
-    {
-        return 1;
-    }
-    template<typename T>
-    void free(T * & ptr)
-    {
-        free((void*&)ptr);
-    }
-    virtual void * alloc_2d(size_t num_chunks, size_t bytes_per_chunk, size_t & pitch)
-    {
-        pitch = bytes_per_chunk;
-        return alloc(num_chunks * pitch);
-    }
-    template<typename T>
-    T * alloc(size_t num_elements)
-    {
-        return reinterpret_cast<T*>(alloc(num_elements * sizeof(T)));
-    }
-};
-
-
-
-class AllocatorDummy_new : public Allocator_new
-{
-private:
-    bool on_cpu = false;
-    bool on_gpu = false;
-    static AllocatorDummy_new singleton_ff;
-    static AllocatorDummy_new singleton_ft;
-    static AllocatorDummy_new singleton_tf;
-    static AllocatorDummy_new singleton_tt;
-public:
-    AllocatorDummy_new(bool cpu, bool gpu) : on_cpu(cpu), on_gpu(gpu) {}
-    virtual ~AllocatorDummy_new() {}
-    virtual void * alloc(size_t num_bytes) override
-    {
-        eslog::error("dummy allocator cannot alloc\n");
-    }
-    virtual void free(void * & ptr) override
-    {
-        eslog::error("dummy allocator cannot free\n");
-    }
-    virtual bool is_on_cpu() override
-    {
-        return on_cpu;
-    }
-    virtual bool is_on_gpu() override
-    {
-        return on_gpu;
-    }
-public:
-    AllocatorDummy_new & get_singleton(bool cpu, bool gpu)
-    {
-        if(!cpu && !gpu) return singleton_ff;
-        if(!cpu &&  gpu) return singleton_ft;
-        if( cpu && !gpu) return singleton_tf;
-        if( cpu &&  gpu) return singleton_tt;
-        eslog::error("unreachable code\n");
-    }
-};
-
-
-
 class AllocatorCPU_new : public Allocator_new
 {
 private:
-    static constexpr size_t align = 64;
+    static constexpr size_t align = 64; // cache line alignment
     static AllocatorCPU_new singleton;
 public:
     AllocatorCPU_new() {}
@@ -102,11 +28,11 @@ public:
         ::free(ptr);
         ptr = nullptr;
     }
-    virtual bool is_on_cpu() override
+    virtual bool is_data_accessible_cpu() override
     {
         return true;
     }
-    virtual bool is_on_gpu() override
+    virtual bool is_data_accessible_gpu() override
     {
         return false;
     }
@@ -139,11 +65,11 @@ public:
         gpu::mgm::memfree_device(ptr);
         ptr = nullptr;
     }
-    virtual bool is_on_cpu() override
+    virtual bool is_data_accessible_cpu() override
     {
         return false;
     }
-    virtual bool is_on_gpu() override
+    virtual bool is_data_accessible_gpu() override
     {
         return true;
     }
@@ -176,11 +102,11 @@ public:
         gpu::mgm::memfree_hostpinned(ptr);
         ptr = nullptr;
     }
-    virtual bool is_on_cpu() override
+    virtual bool is_data_accessible_cpu() override
     {
         return true;
     }
-    virtual bool is_on_gpu() override
+    virtual bool is_data_accessible_gpu() override
     {
         return false;
     }
@@ -200,14 +126,16 @@ public:
 class AllocatorArena_new : public Allocator_new
 {
 private:
-    bool on_cpu;
-    bool on_gpu;
+    Allocator_new * origin_ator;
     char * start_ptr = nullptr;
     size_t capacity = 0;
     size_t curr_used = 0;
-    size_t align_B = 1;
+    size_t align_B;
 public:
-    AllocatorArena_new(bool on_cpu_, bool on_gpu_, size_t align_B_) : on_cpu(on_cpu_), on_gpu(on_gpu_), align_B(align_B_) { }
+    AllocatorArena_new(Allocator_new * origin_ator_) : origin_ator(origin_ator_)
+    {
+        align_B = origin_ator->get_align();
+    }
     virtual ~AllocatorArena_new() {}
     void set(void * ptr_, size_t capacity_)
     {
@@ -236,20 +164,20 @@ public:
         if(curr_used > capacity) {
             eslog::error("arena allocator exceeded its capacity\n");
         }
-        curr_used = ((curr_used - 1) / align_B + 1) * align_B;
+        curr_used = utils::round_up(curr_used, align_B);
         return ptr;
     }
     virtual void free(void * & ptr) override
     {
         ptr = nullptr;
     }
-    virtual bool is_on_cpu() override
+    virtual bool is_data_accessible_cpu() override
     {
-        return on_cpu;
+        return origin_ator->is_data_accessible_cpu();
     }
-    virtual bool is_on_gpu() override
+    virtual bool is_data_accessible_gpu() override
     {
-        return on_gpu;
+        return origin_ator->is_data_accessible_gpu();
     }
     virtual size_t get_align() override
     {
@@ -262,13 +190,15 @@ public:
 class AllocatorSinglePointer_new : public Allocator_new
 {
 private:
-    bool on_cpu;
-    bool on_gpu;
-    size_t align_B = 1;
+    Allocator_new * origin_ator;
     void * pointer = nullptr;
     size_t capacity = 0;
+    size_t align_B;
 public:
-    AllocatorSinglePointer_new(bool on_cpu_, bool on_gpu_, size_t align_B_) : on_cpu(on_cpu_), on_gpu(on_gpu_), align_B(align_B_) { }
+    AllocatorSinglePointer_new(Allocator_new * origin_ator_) : origin_ator(origin_ator_)
+    {
+        align_B = origin_ator->get_align();
+    }
     virtual ~AllocatorSinglePointer_new() {}
     void set(void * ptr_, size_t capacity_)
     {
@@ -295,13 +225,13 @@ public:
     {
         ptr = nullptr;
     }
-    virtual bool is_on_cpu() override
+    virtual bool is_data_accessible_cpu() override
     {
-        return on_cpu;
+        return origin_ator->is_data_accessible_cpu();
     }
-    virtual bool is_on_gpu() override
+    virtual bool is_data_accessible_gpu() override
     {
-        return on_gpu;
+        return origin_ator->is_data_accessible_gpu();
     }
     virtual size_t get_align() override
     {
@@ -314,12 +244,14 @@ public:
 class AllocatorCBMB_new : public Allocator_new
 {
 private:
-    bool on_cpu;
-    bool on_gpu;
-    size_t align_B = 1;
+    Allocator_new * origin_ator;
+    size_t align_B;
     cbmba_resource resource;
 public:
-    AllocatorCBMB_new(bool on_cpu_, bool on_gpu_, size_t align_B_, void * memory, size_t capacity) : on_cpu(on_cpu_), on_gpu(on_gpu_), align_B(align_B_), resource(memory, capacity) {}
+    AllocatorCBMB_new(Allocator_new * origin_ator_, void * memory, size_t capacity) :  origin_ator(origin_ator_), resource(memory, capacity)
+    {
+        align_B = origin_ator->get_align();
+    }
     AllocatorCBMB_new(const AllocatorCBMB_new & other) = delete;
     AllocatorCBMB_new(AllocatorCBMB_new && other) = delete;
     AllocatorCBMB_new & operator=(const AllocatorCBMB_new & other) = delete;
@@ -334,13 +266,13 @@ public:
         resource.deallocate(ptr);
         ptr = nullptr;
     }
-    virtual bool is_on_cpu() override
+    virtual bool is_data_accessible_cpu() override
     {
-        return on_cpu;
+        return origin_ator->is_data_accessible_cpu();
     }
-    virtual bool is_on_gpu() override
+    virtual bool is_data_accessible_gpu() override
     {
-        return on_gpu;
+        return origin_ator->is_data_accessible_gpu();
     }
     virtual size_t get_align() override
     {

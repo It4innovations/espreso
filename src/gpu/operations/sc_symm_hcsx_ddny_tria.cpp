@@ -92,6 +92,8 @@ void sc_symm_hcsx_ddny_tria<T,I>::setup()
     if(h_A11_solver == nullptr) eslog::error("A11 solver is not set\n");
     if(h_A12 == nullptr) eslog::error("matrix A12 is not set\n");
     if(d_sc == nullptr) eslog::error("sc matrix is not set\n");
+    if(!h_A12->ator->is_data_accessible_cpu()) eslog::error("matrix h_A12 must be cpu-accessible\n");
+    if(!d_sc->ator->is_data_accessible_gpu()) eslog::error("matrix d_sc must be gpu-accessible\n");
     if((size_t)h_A11_solver->getMatrixSize() != h_A12->nrows) eslog::error("incompatible matrices\n");
     if(d_sc->ncols != h_A12->ncols) eslog::error("incompatible matrices\n");
     if(d_sc->prop.uplo != 'L' && d_sc->prop.uplo != 'U') eslog::error("wrong sc uplo\n");
@@ -102,9 +104,9 @@ void sc_symm_hcsx_ddny_tria<T,I>::setup()
     if(solver_factor_uplo == '_') eslog::error("wrong sparse solver, must be symmetric\n");
     if(!DirectSparseSolver<T,I>::provideFactors()) eslog::error("wrong sparse solver, must provide factors\n");
 
-    ator_ws_persistent = std::make_unique<AllocatorArena_new>(false, true, gpu::mgm::get_natural_pitch_align());
-    ator_ws_tmp_linear = std::make_unique<AllocatorArena_new>(false, true, gpu::mgm::get_natural_pitch_align());
-    ator_ws_tmp_overlap = std::make_unique<AllocatorSinglePointer_new>(false, true, gpu::mgm::get_natural_pitch_align());
+    ator_ws_persistent = std::make_unique<AllocatorArena_new>(AllocatorGPU_new::get_singleton());
+    ator_ws_tmp_linear = std::make_unique<AllocatorArena_new>(AllocatorGPU_new::get_singleton());
+    ator_ws_tmp_overlap = std::make_unique<AllocatorSinglePointer_new>(AllocatorGPU_new::get_singleton());
 
     I factor_nnz = h_A11_solver->getFactorNnz();
     A11size = h_A11_solver->getMatrixSize();

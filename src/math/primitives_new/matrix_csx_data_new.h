@@ -3,7 +3,6 @@
 #define SRC_MATH_PRIMITIVES_NEW_MATRIX_CSX_DATA_NEW_H_
 
 #include "math/primitives_new/matrix_csx_view_new.h"
-#include "math/primitives_new/allocator_new.h"
 
 
 
@@ -14,9 +13,8 @@ namespace espreso {
 template<typename T, typename I>
 struct MatrixCsxData_new : public MatrixCsxView_new<T,I>
 {
-public: // the user promises not to modify these values (I don't want to implement getters everywhere)
-    Allocator_new * ator = nullptr;
 public:
+    using MatrixCsxView_new<T,I>::ator;
     using MatrixCsxView_new<T,I>::ptrs;
     using MatrixCsxView_new<T,I>::idxs;
     using MatrixCsxView_new<T,I>::vals;
@@ -32,14 +30,12 @@ public:
     MatrixCsxData_new(MatrixCsxData_new && other)
     {
         std::swap(*static_cast<MatrixCsxView_new<T,I>*>(this), *static_cast<MatrixCsxView_new<T,I>*>(&other));
-        std::swap(ator, other.ator);
     }
     MatrixCsxData_new & operator=(const MatrixCsxData_new &) = delete;
     MatrixCsxData_new & operator=(MatrixCsxData_new && other)
     {
         if(this != &other) {
             std::swap(*static_cast<MatrixCsxView_new<T,I>*>(this), *static_cast<MatrixCsxView_new<T,I>*>(&other));
-            std::swap(ator, other.ator);
             other.free();
         }
         return *this;
@@ -64,10 +60,10 @@ public:
         if(!was_set) eslog::error("matrix has not been set\n");
         if(ator == nullptr) eslog::error("matrix data has not been set\n");
         if(vals != nullptr) eslog::error("matrix is already allocated\n");
-        ptrs = ator->alloc<I>(this->get_size_primary() + 1);
+        ptrs = ator->template alloc<I>(this->get_size_primary() + 1);
         if(nnz > 0) {
-            idxs = ator->alloc<I>(nnz);
-            vals = ator->alloc<T>(nnz);
+            idxs = ator->template alloc<I>(nnz);
+            vals = ator->template alloc<T>(nnz);
         }
     }
     void free()

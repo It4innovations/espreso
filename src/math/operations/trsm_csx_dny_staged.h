@@ -4,6 +4,7 @@
 
 #include "math/primitives_new/matrix_csx_view_new.h"
 #include "math/primitives_new/matrix_dense_data_new.h"
+#include "math/wrappers/math.spblas.h"
 
 
 

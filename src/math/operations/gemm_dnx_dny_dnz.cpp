@@ -15,6 +15,8 @@ namespace operations {
 template<typename T>
 void gemm_dnx_dny_dnz<T>::set_matrix_A(MatrixDenseView_new<T> * A_)
 {
+    if(A != nullptr) eslog::error("matrix A is already set\n");
+
     A = A_;
 }
 
@@ -23,6 +25,8 @@ void gemm_dnx_dny_dnz<T>::set_matrix_A(MatrixDenseView_new<T> * A_)
 template<typename T>
 void gemm_dnx_dny_dnz<T>::set_matrix_B(MatrixDenseView_new<T> * B_)
 {
+    if(B != nullptr) eslog::error("matrix B is already set\n");
+
     B = B_;
 }
 
@@ -31,6 +35,8 @@ void gemm_dnx_dny_dnz<T>::set_matrix_B(MatrixDenseView_new<T> * B_)
 template<typename T>
 void gemm_dnx_dny_dnz<T>::set_matrix_C(MatrixDenseView_new<T> * C_)
 {
+    if(C != nullptr) eslog::error("matrix C is already set\n");
+
     C = C_;
 }
 
@@ -62,6 +68,9 @@ void gemm_dnx_dny_dnz<T>::perform()
     if(A == nullptr) eslog::error("matrix A is not set\n");
     if(B == nullptr) eslog::error("matrix B is not set\n");
     if(C == nullptr) eslog::error("matrix C is not set\n");
+    if(!A->ator->is_data_accessible_cpu()) eslog::error("matrix A must be cpu-accessible\n");
+    if(!B->ator->is_data_accessible_cpu()) eslog::error("matrix B must be cpu-accessible\n");
+    if(!C->ator->is_data_accessible_cpu()) eslog::error("matrix C must be cpu-accessible\n");
     if(A->nrows != C->nrows || B->ncols != C->ncols || A->ncols != B->nrows) eslog::error("incompatible matrices");
     if(utils::is_complex<T>() && (conj_A || conj_B)) eslog::error("conjugation not supported yet\n");
 

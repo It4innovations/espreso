@@ -68,6 +68,8 @@ void trsm_ddnx_ddny<T>::setup()
     if(!called_set_handles) eslog::error("handles are not set\n");
     if(A == nullptr) eslog::error("matrix A is not set\n");
     if(X == nullptr) eslog::error("matrix X is not set\n");
+    if(!A->ator->is_data_accessible_gpu()) eslog::error("matrix A must be gpu-accessible\n");
+    if(!X->ator->is_data_accessible_gpu()) eslog::error("matrix X must be gpu-accessible\n");
     if(called_setup) eslog::error("setup was already called\n");
     if(A->nrows != A->ncols) eslog::error("matrix A is not square\n");
     if(A->nrows != X->nrows) eslog::error("incompatible matrices\n");

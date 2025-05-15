@@ -1,6 +1,7 @@
 
 #include "math/operations/auxiliary/trsm_trirhs_chunk_splitrhs.h"
 
+#include "math/primitives_new/allocator_new.h"
 #include "basis/utilities/stacktimer.h"
 
 
@@ -36,6 +37,8 @@ void trsm_trirhs_chunk_splitrhs<T,I>::set_range(size_t rhs_start_, size_t rhs_en
 template<typename T, typename I>
 void trsm_trirhs_chunk_splitrhs<T,I>::set_L_sp(MatrixCsxView_new<T,I> * L_sp_)
 {
+    if(L_sp != nullptr) eslog::error("matrix L_sp is already set\n");
+
     L_sp = L_sp_;
 }
 
@@ -44,6 +47,8 @@ void trsm_trirhs_chunk_splitrhs<T,I>::set_L_sp(MatrixCsxView_new<T,I> * L_sp_)
 template<typename T, typename I>
 void trsm_trirhs_chunk_splitrhs<T,I>::set_L_dn(MatrixDenseView_new<T> * L_dn_)
 {
+    if(L_dn != nullptr) eslog::error("matrix L_dn is already set\n");
+
     L_dn = L_dn_;
 }
 
@@ -52,6 +57,8 @@ void trsm_trirhs_chunk_splitrhs<T,I>::set_L_dn(MatrixDenseView_new<T> * L_dn_)
 template<typename T, typename I>
 void trsm_trirhs_chunk_splitrhs<T,I>::set_X(MatrixDenseView_new<T> * X_)
 {
+    if(X != nullptr) eslog::error("matrix X is already set\n");
+
     X = X_;
 }
 
@@ -60,6 +67,8 @@ void trsm_trirhs_chunk_splitrhs<T,I>::set_X(MatrixDenseView_new<T> * X_)
 template<typename T, typename I>
 void trsm_trirhs_chunk_splitrhs<T,I>::set_X_colpivots(VectorDenseView_new<I> * X_colpivots_)
 {
+    if(X_colpivots != nullptr) eslog::error("matrix X_colpivots is already set\n");
+
     X_colpivots = X_colpivots_;
 }
 
@@ -77,6 +86,10 @@ void trsm_trirhs_chunk_splitrhs<T,I>::preprocess()
     if(L_dn == nullptr) eslog::error("matrix L_dn is not set\n");
     if(X == nullptr) eslog::error("matrix X is not set\n");
     if(X_colpivots == nullptr) eslog::error("B colpivots is not set\n");
+    if(!L_sp->ator->is_data_accessible_cpu()) eslog::error("matrix L_sp must be cpu-accessible\n");
+    if(!L_dn->ator->is_data_accessible_cpu()) eslog::error("matrix L_dn must be cpu-accessible\n");
+    if(!X->ator->is_data_accessible_cpu()) eslog::error("matrix X must be cpu-accessible\n");
+    if(!X_colpivots->ator->is_data_accessible_cpu()) eslog::error("matrix X_colpivots must be cpu-accessible\n");
     if(L_sp->nrows != L_sp->ncols) eslog::error("matrix L_sp must be square\n");
     if(L_dn->nrows != L_dn->ncols) eslog::error("matrix L_dn must be square\n");
     if(L_sp->nrows != X->nrows) eslog::error("incompatible matrix sizes\n");
@@ -87,7 +100,7 @@ void trsm_trirhs_chunk_splitrhs<T,I>::preprocess()
     k_end = L_sp->nrows;
     k_size = k_end - k_start;
 
-    sub_X.set_view(k_size, rhs_size, X->ld, X->order, nullptr);
+    sub_X.set_view(k_size, rhs_size, X->ld, X->order, nullptr, AllocatorCPU_new::get_singleton());
     op_submatrix_X.set_matrix_src(X);
     op_submatrix_X.set_matrix_dst(&sub_X);
     op_submatrix_X.set_bounds(k_start, k_end, rhs_start, rhs_end);
@@ -108,7 +121,7 @@ void trsm_trirhs_chunk_splitrhs<T,I>::preprocess()
         op_trsm_sp.set_solution_matrix(&sub_X);
     }
     if(cfg.factor_spdn == 'D') {
-        sub_L_dn.set_view(k_size, k_size, L_dn->ld, L_dn->order, nullptr);
+        sub_L_dn.set_view(k_size, k_size, L_dn->ld, L_dn->order, nullptr, AllocatorCPU_new::get_singleton());
         sub_L_dn.prop.diag = L_dn->prop.diag;
         sub_L_dn.prop.uplo = L_dn->prop.uplo;
 

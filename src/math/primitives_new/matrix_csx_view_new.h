@@ -5,6 +5,7 @@
 #include <vector>
 
 #include "math/primitives_new/matrix_base_new.h"
+#include "math/primitives_new/allocator_new_base.h"
 #include "math/primitives/matrix_csr.h"
 #include "basis/utilities/utils.h"
 
@@ -18,6 +19,7 @@ template<typename T, typename I>
 struct MatrixCsxView_new : public MatrixBase_new
 {
 public: // the user promises not to modify these values (I don't want to implement getters everywhere)
+    Allocator_new * ator = nullptr;
     I * ptrs = nullptr;
     I * idxs = nullptr;
     T * vals = nullptr;
@@ -36,7 +38,7 @@ public:
     MatrixCsxView_new & operator=(MatrixCsxView_new &&) = default;
     virtual ~MatrixCsxView_new() = default;
 public:
-    void set_view(size_t nrows_, size_t ncols_, size_t nnz_, char order_, I * ptrs_, I * idxs_, T * vals_)
+    void set_view(size_t nrows_, size_t ncols_, size_t nnz_, char order_, I * ptrs_, I * idxs_, T * vals_, Allocator_new * ator_)
     {
         if(was_set) eslog::error("can only set yet-uninitialized matrix view\n");
         nrows = nrows_;
@@ -46,6 +48,7 @@ public:
         ptrs = ptrs_;
         idxs = idxs_;
         vals = vals_;
+        ator = ator_;
         was_set = true;
     }
 public:
@@ -75,16 +78,11 @@ public:
         prop.uplo = change_uplo(prop.uplo);
     }
 
-    static bool are_interchangable(const MatrixCsxView_new & A, const MatrixCsxView_new & B)
-    {
-        return (A.nrows == B.nrows) && (A.ncols == B.ncols) && (A.nnz == B.nnz) && (A.order == B.order) && (A.prop.uplo == B.prop.uplo) && (A.prop.diag == B.prop.diag);
-    }
-
     template<typename A>
     static MatrixCsxView_new<T,I> from_old(const Matrix_CSR<T,I,A> & M_old)
     {
         MatrixCsxView_new<T,I> M_new;
-        M_new.set_view(M_old.nrows, M_old.ncols, M_old.nnz, 'R', M_old.rows, M_old.cols, M_old.vals);
+        M_new.set_view(M_old.nrows, M_old.ncols, M_old.nnz, 'R', M_old.rows, M_old.cols, M_old.vals, AllocatorDummy_new::get_singleton(A::is_data_host_accessible, A::is_data_device_accessible));
         M_new.prop.uplo = get_new_matrix_uplo(M_old.shape);
         M_new.prop.diag = '_';
         M_new.prop.symm = get_new_matrix_symmetry(M_old.type);
@@ -95,6 +93,8 @@ public:
     static Matrix_CSR<T,I,A> to_old(MatrixCsxView_new<T,I> & M_new)
     {
         if(M_new.order != 'R') eslog::error("can only convert to old row-major matrices\n");
+        if(A::is_data_host_accessible != M_new.ator->is_data_accessible_cpu()) eslog::error("allocator access mismatch on cpu\n");
+        if(A::is_data_device_accessible != M_new.ator->is_data_accessible_gpu()) eslog::error("allocator access mismatch on gpu\n");
         Matrix_CSR<T,I,A> M_old;
         M_old._allocated.nrows = M_new.nrows;
         M_old._allocated.ncols = M_new.ncols;
@@ -112,6 +112,7 @@ public:
 
     void print(const char * name = "", char method = 'A')
     {
+        if(!ator->is_data_accessible_cpu()) eslog::error("print is supported only for cpu-accessible matrices\n");
         if constexpr(utils::is_real<T>()) {
             eslog::info("CSX matrix %s, size %lldx%lld, nnz %lld, order '%c', uplo '%c', diag '%c'\n", name, nrows, ncols, nnz, order, prop.uplo, prop.diag);
             if(method == 'A') {

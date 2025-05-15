@@ -15,6 +15,8 @@ namespace operations {
 template<typename T, typename I>
 void permute_dnx_dnx<T,I>::set_matrix_src(MatrixDenseView_new<T> * M_src_)
 {
+    if(M_src != nullptr) eslog::error("matrix M_src is already set\n");
+
     M_src = M_src_;
 }
 
@@ -23,6 +25,8 @@ void permute_dnx_dnx<T,I>::set_matrix_src(MatrixDenseView_new<T> * M_src_)
 template<typename T, typename I>
 void permute_dnx_dnx<T,I>::set_matrix_dst(MatrixDenseView_new<T> * M_dst_)
 {
+    if(M_dst != nullptr) eslog::error("matrix M_dst is already set\n");
+
     M_dst = M_dst_;
 }
 
@@ -31,6 +35,8 @@ void permute_dnx_dnx<T,I>::set_matrix_dst(MatrixDenseView_new<T> * M_dst_)
 template<typename T, typename I>
 void permute_dnx_dnx<T,I>::set_perm_vector_rows(PermutationView_new<I> * perm_rows_)
 {
+    if(perm_rows != nullptr) eslog::error("perm_rows is already set\n");
+
     perm_rows = perm_rows_;
 }
 
@@ -39,6 +45,8 @@ void permute_dnx_dnx<T,I>::set_perm_vector_rows(PermutationView_new<I> * perm_ro
 template<typename T, typename I>
 void permute_dnx_dnx<T,I>::set_perm_vector_cols(PermutationView_new<I> * perm_cols_)
 {
+    if(perm_cols != nullptr) eslog::error("perm_cols is already set\n");
+
     perm_cols = perm_cols_;
 }
 
@@ -51,6 +59,8 @@ void permute_dnx_dnx<T,I>::perform()
 
     if(M_src == nullptr) eslog::error("source matrix is not set\n");
     if(M_dst == nullptr) eslog::error("destination matrix is not set\n");
+    if(!M_src->ator->is_data_accessible_cpu()) eslog::error("source matrix must be cpu-accessible\n");
+    if(!M_dst->ator->is_data_accessible_cpu()) eslog::error("destination matrix must be cpu-accessible\n");
     if(M_src->order != M_dst->order) eslog::error("matrix orders dont match\n");
     if(M_src->nrows != M_dst->nrows || M_src->ncols != M_dst->ncols) eslog::error("matrix sizes dont match\n");
     if(perm_rows != nullptr && perm_rows->size != M_src->nrows) eslog::error("wrong row perm size\n");

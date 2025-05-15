@@ -15,6 +15,8 @@ namespace operations {
 template<typename T>
 void lincomb_matrix_dnx<T>::set_matrix_X(MatrixDenseView_new<T> * X_)
 {
+    if(X != nullptr) eslog::error("matrix X is already set\n");
+
     X = X_;
 }
 
@@ -23,6 +25,8 @@ void lincomb_matrix_dnx<T>::set_matrix_X(MatrixDenseView_new<T> * X_)
 template<typename T>
 void lincomb_matrix_dnx<T>::set_matrix_A(MatrixDenseView_new<T> * A_)
 {
+    if(A != nullptr) eslog::error("matrix A is already set\n");
+
     A = A_;
 }
 
@@ -31,6 +35,8 @@ void lincomb_matrix_dnx<T>::set_matrix_A(MatrixDenseView_new<T> * A_)
 template<typename T>
 void lincomb_matrix_dnx<T>::set_matrix_B(MatrixDenseView_new<T> * B_)
 {
+    if(B != nullptr) eslog::error("matrix B is already set\n");
+
     B = B_;
 }
 
@@ -53,6 +59,9 @@ void lincomb_matrix_dnx<T>::perform()
     if(X == nullptr) eslog::error("result matrix X is not set\n");
     if(alpha != T{0} && A == nullptr) eslog::error("matrix A is not set\n");
     if(beta != T{0} && B == nullptr) eslog::error("matrix B is not set\n");
+    if(!X->ator->is_data_accessible_cpu()) eslog::error("matrix X must be cpu-accessible\n");
+    if(A != nullptr && !A->ator->is_data_accessible_cpu()) eslog::error("matrix A must be cpu-accessible\n");
+    if(A != nullptr && !B->ator->is_data_accessible_cpu()) eslog::error("matrix B must be cpu-accessible\n");
 
     if(alpha == T{0} && beta == T{0}) {
         lincomb_matrix_dnx<T>::perform_zero(*X);

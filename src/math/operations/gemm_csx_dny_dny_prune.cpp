@@ -1,6 +1,7 @@
 
 #include "math/operations/gemm_csx_dny_dny_prune.h"
 
+#include "math/primitives_new/allocator_new.h"
 #include "math/operations/submatrix_dnx_dnx_noncontig.h"
 #include "math/operations/supermatrix_dnx_dnx_noncontig.h"
 #include "basis/utilities/stacktimer.h"
@@ -28,6 +29,8 @@ void gemm_csx_dny_dny_prune<T,I>::set_config(char spdn_A_, bool prune_rows_, boo
 template<typename T, typename I>
 void gemm_csx_dny_dny_prune<T,I>::set_matrix_A(MatrixCsxView_new<T,I> * A_)
 {
+    if(A != nullptr) eslog::error("matrix A is already set\n");
+
     A = A_;
 }
 
@@ -36,6 +39,8 @@ void gemm_csx_dny_dny_prune<T,I>::set_matrix_A(MatrixCsxView_new<T,I> * A_)
 template<typename T, typename I>
 void gemm_csx_dny_dny_prune<T,I>::set_matrix_B(MatrixDenseView_new<T> * B_)
 {
+    if(B != nullptr) eslog::error("matrix B is already set\n");
+
     B = B_;
 }
 
@@ -44,6 +49,8 @@ void gemm_csx_dny_dny_prune<T,I>::set_matrix_B(MatrixDenseView_new<T> * B_)
 template<typename T, typename I>
 void gemm_csx_dny_dny_prune<T,I>::set_matrix_C(MatrixDenseView_new<T> * C_)
 {
+    if(C != nullptr) eslog::error("matrix C is already set\n");
+
     C = C_;
 }
 
@@ -67,6 +74,9 @@ void gemm_csx_dny_dny_prune<T,I>::preprocess()
     if(A == nullptr) eslog::error("A is not set\n");
     if(B == nullptr) eslog::error("B is not set\n");
     if(C == nullptr) eslog::error("C is not set\n");
+    if(!A->ator->is_data_accessible_cpu()) eslog::error("matrix A must be cpu-accessible\n");
+    if(!B->ator->is_data_accessible_cpu()) eslog::error("matrix B must be cpu-accessible\n");
+    if(!C->ator->is_data_accessible_cpu()) eslog::error("matrix C must be cpu-accessible\n");
     if(A->nrows != C->nrows || B->ncols != C->ncols || A->ncols != B->nrows) eslog::error("incompatible matrices\n");
     if(B->order != C->order) eslog::error("B and C order must match\n");
 

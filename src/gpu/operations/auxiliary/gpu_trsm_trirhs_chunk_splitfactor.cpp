@@ -101,9 +101,9 @@ void gpu_trsm_trirhs_chunk_splitfactor<T,I>::setup()
     if(h_X_rowtrails->size != d_X->nrows) eslog::error("wrong X rowtrails size\n");
     if(h_L->prop.uplo != 'L') eslog::error("matrix L must have uplo=L\n");
 
-    ator_ws_persistent = std::make_unique<AllocatorArena_new>(false, true, gpu::mgm::get_natural_pitch_align());
-    ator_ws_tmp_linear = std::make_unique<AllocatorArena_new>(false, true, gpu::mgm::get_natural_pitch_align());
-    ator_ws_tmp_overlap = std::make_unique<AllocatorSinglePointer_new>(false, true, gpu::mgm::get_natural_pitch_align());
+    ator_ws_persistent = std::make_unique<AllocatorArena_new>(AllocatorGPU_new::get_singleton());
+    ator_ws_tmp_linear = std::make_unique<AllocatorArena_new>(AllocatorGPU_new::get_singleton());
+    ator_ws_tmp_overlap = std::make_unique<AllocatorSinglePointer_new>(AllocatorGPU_new::get_singleton());
 
     rhs_end = h_X_rowtrails->vals[k_end - 1] + 1;
 
@@ -127,12 +127,12 @@ void gpu_trsm_trirhs_chunk_splitfactor<T,I>::setup()
     h_sub_L_bot_sp.alloc();
     op_h_submatrix_L_bot.perform_pattern();
 
-    d_sub_X_top.set_view(k_size, rhs_end, d_X->ld, d_X->order, nullptr);
+    d_sub_X_top.set_view(k_size, rhs_end, d_X->ld, d_X->order, nullptr, AllocatorGPU_new::get_singleton());
     op_submatrix_d_X_top.set_matrix_src(d_X);
     op_submatrix_d_X_top.set_matrix_dst(&d_sub_X_top);
     op_submatrix_d_X_top.set_bounds(k_start, k_end, 0, rhs_end);
 
-    d_sub_X_bot.set_view(d_X->nrows - k_end, rhs_end, d_X->ld, d_X->order, nullptr);
+    d_sub_X_bot.set_view(d_X->nrows - k_end, rhs_end, d_X->ld, d_X->order, nullptr, AllocatorGPU_new::get_singleton());
     op_submatrix_d_X_bot.set_matrix_src(d_X);
     op_submatrix_d_X_bot.set_matrix_dst(&d_sub_X_bot);
     op_submatrix_d_X_bot.set_bounds(k_end, d_X->nrows, 0, rhs_end);

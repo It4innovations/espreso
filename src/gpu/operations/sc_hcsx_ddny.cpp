@@ -109,9 +109,14 @@ void sc_hcsx_ddny<T,I>::setup()
     if(called_setup) eslog::error("setup was already called\n");
     if(called_set_matrix == '_') eslog::error("matrix is not set\n");
     if(d_sc == nullptr) eslog::error("d_sc is not set\n");
+    if(!d_sc->ator->is_data_accessible_gpu()) eslog::error("matrix sc must be gpu-accessible\n");
     if(d_sc->nrows != d_sc->ncols) eslog::error("d_sc has to be square\n");
 
     if(called_set_matrix == '4') {
+        if(h_A11 != nullptr && !h_A11->ator->is_data_accessible_cpu()) eslog::error("matrix h_A11 must be cpu-accessible\n");
+        if(h_A12 != nullptr && !h_A12->ator->is_data_accessible_cpu()) eslog::error("matrix h_A12 must be cpu-accessible\n");
+        if(h_A21 != nullptr && !h_A21->ator->is_data_accessible_cpu()) eslog::error("matrix h_A21 must be cpu-accessible\n");
+        if(h_A22 != nullptr && !h_A22->ator->is_data_accessible_cpu()) eslog::error("matrix h_A22 must be cpu-accessible\n");
         if(h_A11 == nullptr) eslog::error("h_A11 cannot be nullptr\n");
         int num_sides_set = (int)(h_A12 != nullptr) + (int)(h_A21 != nullptr);
         if(is_hermitian<T>(h_A11->prop.symm) && num_sides_set == 0) eslog::error("at least one of h_A12 and h_A21 has to be set\n");
@@ -140,6 +145,8 @@ void sc_hcsx_ddny<T,I>::setup()
     }
 
     if(called_set_matrix == '1') {
+        if(!h_A->ator->is_data_accessible_cpu()) eslog::error("matrix h_A must be cpu-accessible\n");
+
         size_matrix = h_A->nrows;
         size_A11 = size_matrix - size_sc;
 
@@ -153,9 +160,9 @@ void sc_hcsx_ddny<T,I>::setup()
 
     if(d_sc->nrows != size_sc) eslog::error("mismatch between provided size_sc and SC matrix size\n");
 
-    ator_ws_persistent = std::make_unique<AllocatorArena_new>(false, true, gpu::mgm::get_natural_pitch_align());
-    ator_ws_tmp_linear = std::make_unique<AllocatorArena_new>(false, true, gpu::mgm::get_natural_pitch_align());
-    ator_ws_tmp_overlap = std::make_unique<AllocatorSinglePointer_new>(false, true, gpu::mgm::get_natural_pitch_align());
+    ator_ws_persistent = std::make_unique<AllocatorArena_new>(AllocatorGPU_new::get_singleton());
+    ator_ws_tmp_linear = std::make_unique<AllocatorArena_new>(AllocatorGPU_new::get_singleton());
+    ator_ws_tmp_overlap = std::make_unique<AllocatorSinglePointer_new>(AllocatorGPU_new::get_singleton());
 
     this->internal_setup();
 

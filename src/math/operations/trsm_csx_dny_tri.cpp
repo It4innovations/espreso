@@ -3,6 +3,7 @@
 
 #include <memory>
 
+#include "math/primitives_new/allocator_new.h"
 #include "math/operations/pivots_trails_csx.h"
 #include "math/operations/auxiliary/tri_partition_trsm.h"
 #include "basis/utilities/stacktimer.h"
@@ -28,6 +29,8 @@ void trsm_csx_dny_tri<T,I>::set_config(config cfg_)
 template<typename T, typename I>
 void trsm_csx_dny_tri<T,I>::set_L(MatrixCsxView_new<T,I> * L_)
 {
+    if(L != nullptr) eslog::error("matrix L is already set\n");
+
     L = L_;
 }
 
@@ -36,6 +39,8 @@ void trsm_csx_dny_tri<T,I>::set_L(MatrixCsxView_new<T,I> * L_)
 template<typename T, typename I>
 void trsm_csx_dny_tri<T,I>::set_X(MatrixDenseView_new<T> * X_)
 {
+    if(X != nullptr) eslog::error("matrix X is already set\n");
+
     X = X_;
 }
 
@@ -47,6 +52,7 @@ void trsm_csx_dny_tri<T,I>::calc_X_pattern(MatrixCsxView_new<T,I> & X_pattern)
     stacktimer::push("trsm_csx_dny_tri::calc_X_pattern");
 
     if(called_set_pattern) eslog::error("X patern was already set\n");
+    if(!X_pattern.ator->is_data_accessible_cpu()) eslog::error("matrix X_pattern must be cpu-accessible\n");
 
     X_colpivots.set(X_pattern.ncols, AllocatorCPU_new::get_singleton());
     X_colpivots.alloc();
@@ -73,6 +79,8 @@ void trsm_csx_dny_tri<T,I>::preprocess()
     if(called_preprocess) eslog::error("preproces was already called\n");
     if(L == nullptr) eslog::error("matrix L is not set\n");
     if(X == nullptr) eslog::error("matrix X is not set\n");
+    if(!L->ator->is_data_accessible_cpu()) eslog::error("matrix L must be cpu-accessible\n");
+    if(!X->ator->is_data_accessible_cpu()) eslog::error("matrix X must be cpu-accessible\n");
     if(L->nrows != L->ncols) eslog::error("L has to be square\n");
     if(L->prop.uplo != 'L') eslog::error("matrix L has to have uplo=L\n");
     if(X->nrows != L->nrows) eslog::error("incompatible matrices\n");

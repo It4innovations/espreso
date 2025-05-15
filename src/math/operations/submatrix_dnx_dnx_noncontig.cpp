@@ -17,6 +17,8 @@ namespace operations {
 template<typename T, typename I>
 void submatrix_dnx_dnx_noncontig<T,I>::set_matrix_source(MatrixDenseView_new<T> * M_src_)
 {
+    if(M_src != nullptr) eslog::error("matrix M_src is already set\n");
+
     M_src = M_src_;
 }
 
@@ -25,6 +27,8 @@ void submatrix_dnx_dnx_noncontig<T,I>::set_matrix_source(MatrixDenseView_new<T> 
 template<typename T, typename I>
 void submatrix_dnx_dnx_noncontig<T,I>::set_matrix_destination(MatrixDenseView_new<T> * M_dst_)
 {
+    if(M_dst != nullptr) eslog::error("matrix M_dst is already set\n");
+
     M_dst = M_dst_;
 }
 
@@ -33,6 +37,8 @@ void submatrix_dnx_dnx_noncontig<T,I>::set_matrix_destination(MatrixDenseView_ne
 template<typename T, typename I>
 void submatrix_dnx_dnx_noncontig<T,I>::set_row_map(VectorDenseView_new<I> * row_map_)
 {
+    if(row_map != nullptr) eslog::error("row_map is already set\n");
+
     row_map = row_map_;
 }
 
@@ -41,6 +47,8 @@ void submatrix_dnx_dnx_noncontig<T,I>::set_row_map(VectorDenseView_new<I> * row_
 template<typename T, typename I>
 void submatrix_dnx_dnx_noncontig<T,I>::set_col_map(VectorDenseView_new<I> * col_map_)
 {
+    if(col_map != nullptr) eslog::error("col_map is already set\n");
+
     col_map = col_map_;
 }
 
@@ -53,6 +61,10 @@ void submatrix_dnx_dnx_noncontig<T,I>::perform()
 
     if(M_src == nullptr) eslog::error("source matrix is not set\n");
     if(M_dst == nullptr) eslog::error("destination matrix is not set\n");
+    if(!M_src->ator->is_data_accessible_cpu()) eslog::error("source matrix must be cpu-accessible\n");
+    if(!M_dst->ator->is_data_accessible_cpu()) eslog::error("destination matrix must be cpu-accessible\n");
+    if(row_map != nullptr && !row_map->ator->is_data_accessible_cpu()) eslog::error("row_map must be cpu-accessible\n");
+    if(col_map != nullptr && !col_map->ator->is_data_accessible_cpu()) eslog::error("col_map must be cpu-accessible\n");
     if(M_src->order != M_dst->order) eslog::error("matrix orders do not match\n");
     size_t nrows = ((row_map == nullptr) ? M_src->nrows : row_map->size);
     size_t ncols = ((col_map == nullptr) ? M_src->ncols : col_map->size);

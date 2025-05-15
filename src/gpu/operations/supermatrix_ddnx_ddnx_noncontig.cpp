@@ -89,6 +89,10 @@ void supermatrix_ddnx_ddnx_noncontig<T,I>::perform_submit()
     if(!called_set_handles) eslog::error("handles are not set\n");
     if(d_M_src == nullptr) eslog::error("source matrix is not set\n");
     if(d_M_dst == nullptr) eslog::error("destination matrix is not set\n");
+    if(!d_M_src->ator->is_data_accessible_gpu()) eslog::error("source matrix must be gpu-accessible\n");
+    if(!d_M_dst->ator->is_data_accessible_gpu()) eslog::error("destination matrix must be gpu-accessible\n");
+    if(d_row_map != nullptr && !d_row_map->ator->is_data_accessible_gpu()) eslog::error("d_row_map must be gpu-accessible\n");
+    if(d_col_map != nullptr && !d_col_map->ator->is_data_accessible_gpu()) eslog::error("d_col_map must be gpu-accessible\n");
     if(d_M_src->order != d_M_dst->order) eslog::error("matrix orders do no tmatch");
     if(d_row_map != nullptr && d_row_map->size != d_M_src->nrows) eslog::error("incompatible row sizes\n");
     if(d_col_map != nullptr && d_col_map->size != d_M_src->ncols) eslog::error("incompatible col sizes\n");

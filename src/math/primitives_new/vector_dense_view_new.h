@@ -3,6 +3,7 @@
 #define SRC_MATH_PRIMITIVES_NEW_VECTOR_DENSE_VIEW_NEW_H_
 
 #include "math/primitives_new/vector_base_new.h"
+#include "math/primitives_new/allocator_new_base.h"
 #include "math/primitives/vector_dense.h"
 #include "basis/utilities/utils.h"
 
@@ -18,6 +19,7 @@ template<typename T>
 struct VectorDenseView_new : public VectorBase_new
 {
 public: // the user promises not to modify these values (I don't want to implement getters everywhere)
+    Allocator_new * ator = nullptr;
     T * vals = nullptr;
     bool was_set = false;
 public:
@@ -30,29 +32,27 @@ public:
     VectorDenseView_new & operator=(VectorDenseView_new &&) = default;
     virtual ~VectorDenseView_new() = default;
 public:
-    void set_view(size_t size_, T * vals_)
+    void set_view(size_t size_, T * vals_, Allocator_new * ator_)
     {
         if(was_set) eslog::error("can only set yet-uninitialized vector view\n");
         size = size_;
         vals = vals_;
+        ator = ator_;
         was_set = true;
     }
 public:
-    static bool are_interchangable(VectorDenseView_new & A, VectorDenseView_new & B)
-    {
-        return (A.size == B.size);
-    }
-
     template<typename I, typename A>
     static VectorDenseView_new<T> from_old(const Vector_Dense<T,I,A> & V_old)
     {
         VectorDenseView_new<T> V_new;
-        V_new.set_view(V_old.size, V_old.vals);
+        V_new.set_view(V_old.size, V_old.vals, AllocatorDummy_new::get_singleton(A::is_data_host_accessible, A::is_data_device_accessible));
         return V_new;
     }
     template<typename I, typename A>
     static Vector_Dense<T,I,A> to_old(VectorDenseView_new<T> & V_new)
     {
+        if(A::is_data_host_accessible != V_new.ator->is_data_accessible_cpu()) eslog::error("allocator access mismatch on cpu\n");
+        if(A::is_data_device_accessible != V_new.ator->is_data_accessible_gpu()) eslog::error("allocator access mismatch on gpu\n");
         Vector_Dense<T,I,A> V_old;
         V_old._allocated.size = V_new.size;
         V_old.size = V_new.size;
@@ -62,6 +62,7 @@ public:
 
     void print(const char * name = "")
     {
+        if(!ator->is_data_accessible_cpu()) eslog::error("print is supported only for cpu-accessible matrices\n");
         if constexpr(utils::is_real<T>()) {
             eslog::info("Dense vector %s, size %zu\n", name, size);
             eslog::info("vals: ");

@@ -14,6 +14,8 @@ namespace operations {
 template<typename T, typename I>
 void submatrix_csx_csy<T,I>::set_matrix_src(MatrixCsxView_new<T,I> * M_src_)
 {
+    if(M_src != nullptr) eslog::error("matrix M_src is already set\n");
+
     M_src = M_src_;
 }
 
@@ -22,16 +24,12 @@ void submatrix_csx_csy<T,I>::set_matrix_src(MatrixCsxView_new<T,I> * M_src_)
 template<typename T, typename I>
 void submatrix_csx_csy<T,I>::set_bounds(size_t row_start_, size_t row_end_, size_t col_start_, size_t col_end_)
 {
-    if(M_src == nullptr) eslog::error("source matrix has not been set\n");
-
     row_start = row_start_;
     row_end = row_end_;
     col_start = col_start_;
     col_end = col_end_;
     num_rows = row_end - row_start;
     num_cols = col_end - col_start;
-
-    if(row_start > row_end || row_end > M_src->nrows || col_start > col_end || col_end > M_src->ncols) eslog::error("wrong bounds\n");
 
     bounds_set = true;
 }
@@ -44,7 +42,9 @@ void submatrix_csx_csy<T,I>::setup()
     stacktimer::push("submatrix_csx_csy::setup");
 
     if(M_src == nullptr) eslog::error("source matrix has not been set\n");
+    if(!M_src->ator->is_data_accessible_cpu()) eslog::error("source matrix must be cpu-accessible\n");
     if(!bounds_set) eslog::error("bounds have not been set\n");
+    if(row_start > row_end || row_end > M_src->nrows || col_start > col_end || col_end > M_src->ncols) eslog::error("wrong bounds\n");
 
     I start_prim = 0;
     I end_prim = 0;
@@ -101,6 +101,8 @@ size_t submatrix_csx_csy<T,I>::get_output_matrix_nnz()
 template<typename T, typename I>
 void submatrix_csx_csy<T,I>::set_matrix_dst(MatrixCsxView_new<T,I> * M_dst_)
 {
+    if(M_dst != nullptr) eslog::error("matrix M_dst is already set\n");
+
     M_dst = M_dst_;
 }
 
@@ -111,9 +113,9 @@ void submatrix_csx_csy<T,I>::perform()
 {
     stacktimer::push("submatrix_csx_csy::perform");
 
-    if(M_src == nullptr) eslog::error("source matrix has not been set\n");
-    if(M_dst == nullptr) eslog::error("destination matrix has not been set\n");
     if(!setup_called) eslog::error("setup has not been called\n");
+    if(M_dst == nullptr) eslog::error("destination matrix has not been set\n");
+    if(!M_dst->ator->is_data_accessible_cpu()) eslog::error("destination matrix must be cpu-accessible\n");
     if(M_dst->nrows != num_rows || M_dst->ncols != num_cols) eslog::error("destination matrix size does not match bounds\n");
     if(M_dst->nnz != nnz_output) eslog::error("wrong nnz in output matrix\n");
 

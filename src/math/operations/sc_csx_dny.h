@@ -4,6 +4,7 @@
 
 #include "math/primitives_new/matrix_csx_view_new.h"
 #include "math/primitives_new/matrix_dense_view_new.h"
+#include "math/primitives_new/vector_dense_view_new.h"
 #include "math/primitives_new/permutation_data_new.h"
 
 

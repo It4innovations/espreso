@@ -14,6 +14,8 @@ namespace operations {
 template<typename T, typename I>
 void submatrix_csx_dny<T,I>::set_matrix_src(MatrixCsxView_new<T,I> * M_src_)
 {
+    if(M_src != nullptr) eslog::error("matrix M_src is already set\n");
+
     M_src = M_src_;
 }
 
@@ -22,6 +24,8 @@ void submatrix_csx_dny<T,I>::set_matrix_src(MatrixCsxView_new<T,I> * M_src_)
 template<typename T, typename I>
 void submatrix_csx_dny<T,I>::set_matrix_dst(MatrixDenseView_new<T> * M_dst_)
 {
+    if(M_dst != nullptr) eslog::error("matrix M_dst is already set\n");
+
     M_dst = M_dst_;
 }
 
@@ -30,16 +34,12 @@ void submatrix_csx_dny<T,I>::set_matrix_dst(MatrixDenseView_new<T> * M_dst_)
 template<typename T, typename I>
 void submatrix_csx_dny<T,I>::set_bounds(size_t row_start_, size_t row_end_, size_t col_start_, size_t col_end_)
 {
-    if(M_src == nullptr) eslog::error("source matrix is not set\n");
-
     row_start = row_start_;
     row_end = row_end_;
     col_start = col_start_;
     col_end = col_end_;
     num_rows = row_end - row_start;
     num_cols = col_end - col_start;
-
-    if(row_start > row_end || row_end > M_src->nrows || col_start > col_end || col_end > M_src->ncols) eslog::error("wrong bounds\n");
 
     bound_set = true;
 }
@@ -51,9 +51,12 @@ void submatrix_csx_dny<T,I>::perform_zerofill()
 {
     stacktimer::push("submatrix_csx_dny::perform_zerofill");
     
+    if(!bound_set) eslog::error("bounds are not set\n");
     if(M_src == nullptr) eslog::error("source matrix is not set\n");
     if(M_dst == nullptr) eslog::error("destination matrix is not set\n");
-    if(!bound_set) eslog::error("bounds are not set\n");
+    if(!M_src->ator->is_data_accessible_cpu()) eslog::error("source matrix must be cpu-accessible\n");
+    if(!M_dst->ator->is_data_accessible_cpu()) eslog::error("destination matrix must be cpu-accessible\n");
+    if(row_start > row_end || row_end > M_src->nrows || col_start > col_end || col_end > M_src->ncols) eslog::error("wrong bounds\n");
     if(M_dst->nrows != num_rows || M_dst->ncols != num_cols) eslog::error("wrong output matrix size\n");
 
     size_t size_primary = M_dst->get_size_primary();
@@ -74,8 +77,6 @@ void submatrix_csx_dny<T,I>::perform_copyvals()
 {
     stacktimer::push("submatrix_csx_dny::perform_copyvals");
 
-    if(M_src == nullptr) eslog::error("source matrix is not set\n");
-    if(M_dst == nullptr) eslog::error("destination matrix is not set\n");
     if(!bound_set) eslog::error("bounds are not set\n");
     if(!zerofill_called) eslog::error("zerofill was not called\n");
     if(M_dst->nrows != num_rows || M_dst->ncols != num_cols) eslog::error("wrong output matrix size\n");

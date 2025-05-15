@@ -14,6 +14,8 @@ namespace operations {
 template<typename T>
 void fill_dnx<T>::set_matrix(MatrixDenseView_new<T> * M_)
 {
+    if(M != nullptr) eslog::error("matrix is already set\n");
+
     M = M_;
 }
 
@@ -33,6 +35,7 @@ void fill_dnx<T>::perform()
     stacktimer::push("fill_dnx::perform");
 
     if(M == nullptr) eslog::error("matrix is not set\n");
+    if(!M->ator->is_data_accessible_cpu()) eslog::error("matrix must be cpu-accessible\n");
     if((M->prop.uplo == 'U' || M->prop.uplo == 'L') && M->nrows != M->ncols) eslog::error("uplo matrix must be square\n");
 
     size_t size_primary = M->get_size_primary();

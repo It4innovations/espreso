@@ -102,14 +102,17 @@ void herk_ddnx_ddny_tri<T,I>::setup()
     if(d_A == nullptr) eslog::error("matrix A is not set\n");
     if(d_C == nullptr) eslog::error("matrix C is not set\n");
     if(h_A_pattern == nullptr) eslog::error("A pattern is not set\n");
+    if(!d_A->ator->is_data_accessible_gpu()) eslog::error("matrix d_A must be gpu-accessible\n");
+    if(!d_C->ator->is_data_accessible_gpu()) eslog::error("matrix d_C must be gpu-accessible\n");
+    if(!h_A_pattern->ator->is_data_accessible_cpu()) eslog::error("h_A_pattern must be cpu-accessible\n");
     if(called_setup) eslog::error("setup was already called\n");
     if(d_C->nrows != d_C->ncols) eslog::error("matrix C is not square\n");
     if(mode == math::blas::herk_mode::AhA && d_A->ncols != d_C->ncols) eslog::error("incompatible matrices\n");
     if(mode == math::blas::herk_mode::AAh && d_A->nrows != d_C->nrows) eslog::error("incompatible matrices\n");
     if(d_C->prop.uplo != 'L' && d_C->prop.uplo != 'U') eslog::error("invalid matrix C uplo\n");
 
-    ator_ws_tmp_linear = std::make_unique<AllocatorArena_new>(false, true, gpu::mgm::get_natural_pitch_align());
-    ator_ws_tmp_overlap = std::make_unique<AllocatorSinglePointer_new>(false, true, gpu::mgm::get_natural_pitch_align());
+    ator_ws_tmp_linear = std::make_unique<AllocatorArena_new>(AllocatorGPU_new::get_singleton());
+    ator_ws_tmp_overlap = std::make_unique<AllocatorSinglePointer_new>(AllocatorGPU_new::get_singleton());
 
     d_A_reordered = d_A->get_transposed_reordered_view();
 

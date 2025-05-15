@@ -82,6 +82,8 @@ void submatrix_dcsx_ddny<T,I>::setup()
     if(!called_set_bounds) eslog::error("bounds are not set\n");
     if(M_src == nullptr) eslog::error("source matrix is not set\n");
     if(M_dst == nullptr) eslog::error("destination matrix is not set\n");
+    if(!M_src->ator->is_data_accessible_gpu()) eslog::error("source matrix must be gpu-accessible\n");
+    if(!M_dst->ator->is_data_accessible_gpu()) eslog::error("destination matrix must be gpu-accessible\n");
     if(called_setup) eslog::error("setup was already called\n");
     if(row_start > row_end || row_end > M_src->nrows || col_start > col_end || col_end > M_src->ncols) eslog::error("wrong bounds\n");
     if((row_end - row_start) != M_dst->nrows || (col_end - col_start) != M_dst->ncols) eslog::error("wrong output matrix size\n");

@@ -1,6 +1,7 @@
 
 #include "math/operations/prune_csx_matx.h"
 
+#include "math/primitives_new/allocator_new.h"
 #include "math/operations/fill_dnx.h"
 #include "basis/utilities/stacktimer.h"
 
@@ -26,6 +27,8 @@ void prune_csx_matx<T,I>::set_pruning_mode(bool prune_rows_, bool prune_cols_)
 template<typename T, typename I>
 void prune_csx_matx<T,I>::set_matrix_src(MatrixCsxView_new<T,I> * M_src_)
 {
+    if(M_src != nullptr) eslog::error("matrix M_src is already set\n");
+
     M_src = M_src_;
 }
 
@@ -38,6 +41,7 @@ void prune_csx_matx<T,I>::setup()
 
     if(!called_set_pruning_mode) eslog::error("pruning mode is not set\n");
     if(M_src == nullptr) eslog::error("source matrix is not set\n");
+    if(!M_src->ator->is_data_accessible_cpu()) eslog::error("source matrix must be cpu-accessible\n");
 
     if(M_src->order == 'R') {
         prune_primary = prune_rows;
@@ -84,6 +88,8 @@ size_t prune_csx_matx<T,I>::get_dst_matrix_ncols()
 template<typename T, typename I>
 void prune_csx_matx<T,I>::set_vector_pruned_rows(VectorDenseView_new<I> * pruned_rows_)
 {
+    if(pruned_rows_vec != nullptr) eslog::error("pruned_rows is already set\n");
+
     pruned_rows_vec = pruned_rows_;
 }
 
@@ -92,6 +98,8 @@ void prune_csx_matx<T,I>::set_vector_pruned_rows(VectorDenseView_new<I> * pruned
 template<typename T, typename I>
 void prune_csx_matx<T,I>::set_vector_pruned_cols(VectorDenseView_new<I> * pruned_cols_)
 {
+    if(pruned_cols_vec != nullptr) eslog::error("pruned_cols is already set\n");
+
     pruned_cols_vec = pruned_cols_;
 }
 
@@ -103,9 +111,10 @@ void prune_csx_matx<T,I>::preprocess()
     stacktimer::push("prune_csx_matx::preprocess");
 
     if(!called_setup) eslog::error("setup was not called\n");
-    if(M_src == nullptr) eslog::error("source matrix is not set\n");
     if(prune_rows && pruned_rows_vec == nullptr) eslog::error("vector for pruned rows is not set\n");
     if(prune_cols && pruned_cols_vec == nullptr) eslog::error("vector for pruned cols is not set\n");
+    if(pruned_rows_vec != nullptr && !pruned_rows_vec->ator->is_data_accessible_cpu()) eslog::error("pruned_rows_vec must be cpu-accessible\n");
+    if(pruned_cols_vec != nullptr && !pruned_cols_vec->ator->is_data_accessible_cpu()) eslog::error("pruned_cols_vec must be cpu-accessible\n");
     if(prune_rows && pruned_rows_vec->size != pruned_nrows) eslog::error("wrong size of pruned rows vector\n");
     if(prune_cols && pruned_cols_vec->size != pruned_ncols) eslog::error("wrong size of pruned cols vector\n");
 
@@ -147,6 +156,8 @@ void prune_csx_matx<T,I>::preprocess()
 template<typename T, typename I>
 void prune_csx_matx<T,I>::set_matrix_dst_sp(MatrixCsxView_new<T,I> * M_dst_sp_)
 {
+    if(M_dst_sp != nullptr) eslog::error("matrix M_dst_sp is already set\n");
+
     M_dst_sp = M_dst_sp_;
 }
 
@@ -155,6 +166,8 @@ void prune_csx_matx<T,I>::set_matrix_dst_sp(MatrixCsxView_new<T,I> * M_dst_sp_)
 template<typename T, typename I>
 void prune_csx_matx<T,I>::set_matrix_dst_dn(MatrixDenseView_new<T> * M_dst_dn_)
 {
+    if(M_dst_sp != nullptr) eslog::error("matrix M_dst_sp is already set\n");
+
     M_dst_dn = M_dst_dn_;
 }
 
@@ -183,6 +196,7 @@ template<typename T, typename I>
 void prune_csx_matx<T,I>::perform_sparse()
 {
     if(M_dst_sp->order != M_src->order) eslog::error("matrix orders dont match\n");
+    if(!M_dst_sp->ator->is_data_accessible_cpu()) eslog::error("matrix M_dst_sp must be cpu-accessible\n");
     if(M_dst_sp->nrows != pruned_nrows || M_dst_sp->ncols != pruned_ncols || M_dst_sp->nnz != M_src->nnz) eslog::error("wrong destination matrix size\n");
 
     if(prune_primary) {
@@ -225,6 +239,7 @@ template<typename T, typename I>
 void prune_csx_matx<T,I>::perform_dense()
 {
     if(M_dst_dn->order != M_src->order) eslog::error("matrix orders dont match\n");
+    if(!M_dst_dn->ator->is_data_accessible_cpu()) eslog::error("matrix M_dst_dn must be cpu-accessible\n");
     if(M_dst_dn->nrows != pruned_nrows || M_dst_dn->ncols != pruned_ncols) eslog::error("wrong destination matrix size\n");
 
     size_t src_size_primary = M_src->get_size_primary();

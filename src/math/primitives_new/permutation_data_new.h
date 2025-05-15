@@ -3,7 +3,6 @@
 #define SRC_MATH_PRIMITIVES_NEW_PERMUTATION_DATA_NEW_H_
 
 #include "math/primitives_new/permutation_view_new.h"
-#include "math/primitives_new/allocator_new.h"
 
 
 
@@ -14,9 +13,8 @@ namespace espreso {
 template<typename T>
 struct PermutationData_new : public PermutationView_new<T>
 {
-public: // the user promises not to modify these values (I don't want to implement getters everywhere)
-    Allocator_new * ator = nullptr;
 public:
+    using PermutationView_new<T>::ator;
     using PermutationView_new<T>::dst_to_src;
     using PermutationView_new<T>::src_to_dst;
     using PermutationView_new<T>::was_set;
@@ -27,14 +25,12 @@ public:
     PermutationData_new(PermutationData_new && other)
     {
         std::swap(*static_cast<PermutationView_new<T>*>(this), *static_cast<PermutationView_new<T>*>(&other));
-        std::swap(ator, other.ator);
     }
     PermutationData_new & operator=(const PermutationData_new &) = delete;
     PermutationData_new & operator=(PermutationData_new && other)
     {
         if(this != &other) {
             std::swap(*static_cast<PermutationView_new<T>*>(this), *static_cast<PermutationView_new<T>*>(&other));
-            std::swap(ator, other.ator);
             other.free();
         }
         return *this;
@@ -57,8 +53,8 @@ public:
         if(ator == nullptr) eslog::error("permutation has not been set\n");
         if(dst_to_src != nullptr || src_to_dst != nullptr) eslog::error("permutation already contains data\n");
         if(size > 0) {
-            dst_to_src = ator->alloc<T>(size);
-            src_to_dst = ator->alloc<T>(size);
+            dst_to_src = ator->template alloc<T>(size);
+            src_to_dst = ator->template alloc<T>(size);
         }
     }
     void free()

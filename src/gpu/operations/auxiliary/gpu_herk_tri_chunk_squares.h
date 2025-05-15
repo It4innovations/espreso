@@ -2,6 +2,7 @@
 #ifndef SRC_GPU_OPERATIONS_AUXILIARY_GPU_HERK_TRI_CHUNK_SQUARES_H
 #define SRC_GPU_OPERATIONS_AUXILIARY_GPU_HERK_TRI_CHUNK_SQUARES_H
 
+#include "math/primitives_new/allocator_new.h"
 #include "math/primitives_new/matrix_dense_data_new.h"
 #include "math/operations/submatrix_dnx_dnx_view.h"
 #include "gpu/gpu_management.h"

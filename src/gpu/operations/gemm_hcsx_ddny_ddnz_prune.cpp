@@ -91,12 +91,15 @@ void gemm_hcsx_ddny_ddnz_prune<T,I>::setup()
     if(h_A == nullptr) eslog::error("matrix A is not set\n");
     if(d_B == nullptr) eslog::error("matrix B is not set\n");
     if(d_C == nullptr) eslog::error("matrix C is not set\n");
+    if(!h_A->ator->is_data_accessible_cpu()) eslog::error("matrix h_A must be cpu-accessible\n");
+    if(!d_B->ator->is_data_accessible_gpu()) eslog::error("matrix d_B must be gpu-accessible\n");
+    if(!d_C->ator->is_data_accessible_gpu()) eslog::error("matrix d_C must be gpu-accessible\n");
     if(called_setup) eslog::error("setup has already been called\n");
     if(h_A->nrows != d_C->nrows || d_B->ncols != d_C->ncols || h_A->ncols != d_B->nrows) eslog::error("incompatible matrices\n");
 
-    ator_persistent = std::make_unique<AllocatorArena_new>(false, true, gpu::mgm::get_natural_pitch_align());
-    ator_tmp_linear = std::make_unique<AllocatorArena_new>(false, true, gpu::mgm::get_natural_pitch_align());
-    ator_tmp_overlap = std::make_unique<AllocatorSinglePointer_new>(false, true, gpu::mgm::get_natural_pitch_align());
+    ator_persistent = std::make_unique<AllocatorArena_new>(AllocatorGPU_new::get_singleton());
+    ator_tmp_linear = std::make_unique<AllocatorArena_new>(AllocatorGPU_new::get_singleton());
+    ator_tmp_overlap = std::make_unique<AllocatorSinglePointer_new>(AllocatorGPU_new::get_singleton());
 
     if(prune_rows || prune_cols) {
         op_h_prune_A.set_matrix_src(h_A);

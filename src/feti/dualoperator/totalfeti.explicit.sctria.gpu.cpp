@@ -333,7 +333,7 @@ void TotalFETIExplicitScTriaGpu<T,I>::set(const step::Step &step)
     stacktimer::info("TotalFETIExplicitScTriaGpu::set max_wss_tmp_perform %zu", std::max_element(domain_data.begin(), domain_data.end(), [](const per_domain_stuff & l, const per_domain_stuff & r){ return l.op_sc->get_wss_tmp_perform() < r.op_sc->get_wss_tmp_perform(); })->op_sc->get_wss_tmp_perform());
 
     ws_persistent = gpu::mgm::memalloc_device(total_wss_persistent);
-    ator_ws_persistent = std::make_unique<AllocatorArena_new>(false, true, gpu::mgm::get_natural_pitch_align());
+    ator_ws_persistent = std::make_unique<AllocatorArena_new>(AllocatorGPU_new::get_singleton());
     ator_ws_persistent->set(ws_persistent, total_wss_persistent);
     
     for(size_t di = 0; di < n_domains; di++) {
@@ -376,7 +376,7 @@ void TotalFETIExplicitScTriaGpu<T,I>::set(const step::Step &step)
     size_t reserve = (mem_capacity * 5) / 100;
     wss_tmp_for_cbmba = utils::round_down(free_mem - reserve - total_wss_internal, gpu::mgm::get_natural_pitch_align());
     ws_tmp_for_cbmba = gpu::mgm::memalloc_device(wss_tmp_for_cbmba);
-    ator_tmp_cbmba = std::make_unique<AllocatorCBMB_new>(false, true, gpu::mgm::get_natural_pitch_align(), ws_tmp_for_cbmba, wss_tmp_for_cbmba);
+    ator_tmp_cbmba = std::make_unique<AllocatorCBMB_new>(AllocatorGPU_new::get_singleton(), ws_tmp_for_cbmba, wss_tmp_for_cbmba);
 
     stacktimer::info("TotalFETIExplicitScTriaGpu::set cbmba_capacity %zu", wss_tmp_for_cbmba);
 

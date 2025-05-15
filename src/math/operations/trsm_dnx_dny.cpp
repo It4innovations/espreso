@@ -15,6 +15,8 @@ namespace operations {
 template<typename T>
 void trsm_dnx_dny<T>::set_system_matrix(MatrixDenseView_new<T> * A_)
 {
+    if(A != nullptr) eslog::error("matrix A is already set\n");
+
     A = A_;
 }
 
@@ -23,6 +25,8 @@ void trsm_dnx_dny<T>::set_system_matrix(MatrixDenseView_new<T> * A_)
 template<typename T>
 void trsm_dnx_dny<T>::set_rhs_sol(MatrixDenseView_new<T> * X_)
 {
+    if(X != nullptr) eslog::error("matrix X is already set\n");
+
     X = X_;
 }
 
@@ -35,6 +39,8 @@ void trsm_dnx_dny<T>::perform()
 
     if(A == nullptr) eslog::error("system matrix is not set\n");
     if(X == nullptr) eslog::error("rhs/sol matrix is not set\n");
+    if(!A->ator->is_data_accessible_cpu()) eslog::error("matrix A must be cpu-accessible\n");
+    if(!X->ator->is_data_accessible_cpu()) eslog::error("matrix X must be cpu-accessible\n");
     if(A->nrows != A->ncols) eslog::error("system matrix has to be square\n");
     if(X->nrows != A->nrows) eslog::error("matrices are incompatible\n");
     if(A->prop.uplo != 'U' && A->prop.uplo != 'L') eslog::error("invalid A uplo\n");

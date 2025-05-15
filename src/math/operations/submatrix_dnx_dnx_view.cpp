@@ -15,6 +15,8 @@ namespace operations {
 template<typename T>
 void submatrix_dnx_dnx_view<T>::set_matrix_src(MatrixDenseView_new<T> * M_src_)
 {
+    if(M_src != nullptr) eslog::error("matrix M_src is already set\n");
+
     M_src = M_src_;
 }
 
@@ -23,6 +25,8 @@ void submatrix_dnx_dnx_view<T>::set_matrix_src(MatrixDenseView_new<T> * M_src_)
 template<typename T>
 void submatrix_dnx_dnx_view<T>::set_matrix_dst(MatrixDenseView_new<T> * M_dst_)
 {
+    if(M_dst != nullptr) eslog::error("matrix M_dst is already set\n");
+
     M_dst = M_dst_;
 }
 
@@ -50,8 +54,9 @@ void submatrix_dnx_dnx_view<T>::perform()
 
     if(M_src == nullptr) eslog::error("source matrix has not been set\n");
     if(M_dst == nullptr) eslog::error("destination matrix has not been set\n");
-    if(!called_set_bounds) eslog::error("bounds are not set\n");
     if(M_dst->nrows != num_rows || M_dst->ncols != num_cols) eslog::error("destination matrix size does not match bounds\n");
+    if(!called_set_bounds) eslog::error("bounds are not set\n");
+    if(row_start > row_end || row_end > M_src->nrows || col_start > col_end || col_end > M_src->ncols) eslog::error("wrong bounds\n");
     if(M_src->order != M_dst->order) eslog::error("ordes must match\n");
     if(M_src->ld != M_dst->ld) eslog::error("leading dimensions must match\n");
     if(dynamic_cast<MatrixDenseData_new<T>*>(M_dst) != nullptr) eslog::error("cannot be used with data as destination\n");

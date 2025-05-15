@@ -1,6 +1,7 @@
 
 #include "math/operations/pivots_trails_csx.h"
 
+#include "math/primitives_new/allocator_new.h"
 #include "math/operations/convert_csx_csy.h"
 #include "basis/utilities/stacktimer.h"
 
@@ -25,6 +26,8 @@ void pivots_trails_csx<T,I>::set_mode(char row_col_, char pivots_trails_, char c
 template<typename T, typename I>
 void pivots_trails_csx<T,I>::set_matrix(MatrixCsxView_new<T,I> * M_)
 {
+    if(M != nullptr) eslog::error("matrix is already set\n");
+
     M = M_;
 }
 
@@ -33,6 +36,8 @@ void pivots_trails_csx<T,I>::set_matrix(MatrixCsxView_new<T,I> * M_)
 template<typename T, typename I>
 void pivots_trails_csx<T,I>::set_output_vector(VectorDenseView_new<I> * vec_)
 {
+    if(vec != nullptr) eslog::error("vector is already set\n");
+
     vec = vec_;
 }
 
@@ -45,6 +50,8 @@ void pivots_trails_csx<T,I>::perform()
 
     if(M == nullptr) eslog::error("matrix is not set\n");
     if(vec == nullptr) eslog::error("vector is not set\n");
+    if(!M->ator->is_data_accessible_cpu()) eslog::error("matrix must be cpu-accessible\n");
+    if(!vec->ator->is_data_accessible_cpu()) eslog::error("vector must be cpu-accessible\n");
     if(row_col == '_' || pivots_trails == '_') eslog::error("mode is not set\n");
 
     bool need_reorder = (M->order != row_col);

@@ -5,6 +5,7 @@
 #include "basis/containers/allocators.h"
 #include "math/primitives/matrix_csr.h"
 
+#include "math/primitives_new/allocator_new.h"
 #include "math/operations/trsm_csx_dny_tri.h"
 #include "math/operations/herk_dnx_dny_tri.h"
 #include "math/operations/convert_csx_csy_map.h"
@@ -15,6 +16,7 @@
 #include "math/operations/permute_dnx_dnx.h"
 #include "math/operations/permute_csx_csx.h"
 #include "math/operations/copy_dnx.h"
+#include "math/wrappers/math.spsolver.h"
 #include "basis/utilities/stacktimer.h"
 
 

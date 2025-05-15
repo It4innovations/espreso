@@ -2,6 +2,7 @@
 #ifndef SRC_GPU_OPERATIONS_AUXILIARY_GPU_TRSM_TRIRHS_CHUNK_SPITRHS_H
 #define SRC_GPU_OPERATIONS_AUXILIARY_GPU_TRSM_TRIRHS_CHUNK_SPITRHS_H
 
+#include "math/primitives_new/allocator_new.h"
 #include "math/primitives_new/matrix_csx_data_new.h"
 #include "math/primitives_new/matrix_dense_data_new.h"
 #include "math/operations/submatrix_dnx_dnx_view.h"

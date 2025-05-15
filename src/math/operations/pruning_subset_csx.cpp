@@ -1,6 +1,7 @@
 
 #include "math/operations/pruning_subset_csx.h"
 
+#include "math/primitives_new/allocator_new.h"
 #include "basis/utilities/stacktimer.h"
 
 
@@ -14,6 +15,8 @@ namespace operations {
 template<typename T, typename I>
 void pruning_subset_csx<T,I>::set_matrix(MatrixCsxView_new<T,I> * M_)
 {
+    if(M != nullptr) eslog::error("matrix M is already set\n");
+
     M = M_;
 }
 
@@ -38,6 +41,7 @@ void pruning_subset_csx<T,I>::setup()
     if(!called_set_pruning_mode) eslog::error("pruning mode is not set\n");
     if(called_setup) eslog::error("setup was already called\n");
     if(M == nullptr) eslog::error("matrix is not set\n");
+    if(!M->ator->is_data_accessible_cpu()) eslog::error("matrix must be cpu-accessible\n");
 
     size_t size_primary = M->get_size_primary();
     size_t size_secdary = M->get_size_secdary();
@@ -115,6 +119,8 @@ size_t pruning_subset_csx<T,I>::get_pruned_ncols()
 template<typename T, typename I>
 void pruning_subset_csx<T,I>::set_vector_pruned_rows(VectorDenseView_new<I> * nonempty_rows_)
 {
+    if(nonempty_rows != nullptr) eslog::error("nonempty_rows is already set\n");
+
     nonempty_rows = nonempty_rows_;
 }
 
@@ -123,6 +129,8 @@ void pruning_subset_csx<T,I>::set_vector_pruned_rows(VectorDenseView_new<I> * no
 template<typename T, typename I>
 void pruning_subset_csx<T,I>::set_vector_pruned_cols(VectorDenseView_new<I> * nonempty_cols_)
 {
+    if(nonempty_cols != nullptr) eslog::error("nonempty_cols is already set\n");
+
     nonempty_cols = nonempty_cols_;
 }
 
@@ -136,6 +144,8 @@ void pruning_subset_csx<T,I>::perform()
     if(!called_setup) eslog::error("setup was not called\n");
     if(prune_rows && nonempty_rows == nullptr) eslog::error("nonempty rows vector is not set\n");
     if(prune_cols && nonempty_cols == nullptr) eslog::error("nonempty cols vector is not set\n");
+    if(nonempty_rows != nullptr && !nonempty_rows->ator->is_data_accessible_cpu()) eslog::error("nonempty_rows must be cpu-accessible\n");
+    if(nonempty_cols != nullptr && !nonempty_cols->ator->is_data_accessible_cpu()) eslog::error("nonempty_cols must be cpu-accessible\n");
 
     size_t size_primary = M->get_size_primary();
     size_t size_secdary = M->get_size_secdary();

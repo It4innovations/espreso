@@ -83,6 +83,9 @@ void trsm_hcsx_ddny_ddny<T,I>::setup()
     if(h_A == nullptr) eslog::error("matrix h_A is not set\n");
     if(d_X == nullptr) eslog::error("matrix d_B is not set\n");
     if(d_B == nullptr) eslog::error("matrix d_C is not set\n");
+    if(!h_A->ator->is_data_accessible_cpu()) eslog::error("matrix h_A must be cpu-accessible\n");
+    if(!d_X->ator->is_data_accessible_gpu()) eslog::error("matrix d_X must be gpu-accessible\n");
+    if(!d_B->ator->is_data_accessible_gpu()) eslog::error("matrix d_B must be gpu-accessible\n");
     if(called_setup) eslog::error("setup was already called\n");
     if(h_A->nrows != h_A->ncols) eslog::error("matrix A is not square\n");
     if(d_X->nrows != d_B->nrows || d_X->ncols != d_B->ncols) eslog::error("X and B matrix sizes dont match\n");
@@ -90,10 +93,10 @@ void trsm_hcsx_ddny_ddny<T,I>::setup()
     if(h_A->nrows != d_B->nrows) eslog::error("incompatible matrices\n");
     if(h_A->prop.uplo != 'L' && h_A->prop.uplo != 'U') eslog::error("matrix h_A has wrong uplo\n");
 
-    ator_ws_persistent = std::make_unique<AllocatorArena_new>(false, true, gpu::mgm::get_natural_pitch_align());
+    ator_ws_persistent = std::make_unique<AllocatorArena_new>(AllocatorGPU_new::get_singleton());
 
-    ator_ws_tmp_linear = std::make_unique<AllocatorArena_new>(false, true, gpu::mgm::get_natural_pitch_align());
-    ator_ws_tmp_overlap = std::make_unique<AllocatorSinglePointer_new>(false, true, gpu::mgm::get_natural_pitch_align());
+    ator_ws_tmp_linear = std::make_unique<AllocatorArena_new>(AllocatorGPU_new::get_singleton());
+    ator_ws_tmp_overlap = std::make_unique<AllocatorSinglePointer_new>(AllocatorGPU_new::get_singleton());
 
     d_A_sp.set(h_A->nrows, h_A->ncols, h_A->nnz, h_A->order, ator_ws_tmp_linear.get());
     d_A_sp.prop.uplo = h_A->prop.uplo;

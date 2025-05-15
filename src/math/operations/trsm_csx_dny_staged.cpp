@@ -1,6 +1,7 @@
 
 #include "math/operations/trsm_csx_dny_staged.h"
 
+#include "math/primitives_new/allocator_new.h"
 #include "math/operations/copy_dnx.h"
 #include "basis/utilities/stacktimer.h"
 
@@ -15,6 +16,8 @@ namespace operations {
 template<typename T, typename I>
 void trsm_csx_dny_staged<T,I>::set_system_matrix(MatrixCsxView_new<T,I> * A_)
 {
+    if(A != nullptr) eslog::error("matrix A is already set\n");
+
     A = A_;
 }
 
@@ -23,6 +26,8 @@ void trsm_csx_dny_staged<T,I>::set_system_matrix(MatrixCsxView_new<T,I> * A_)
 template<typename T, typename I>
 void trsm_csx_dny_staged<T,I>::set_rhs_sol(MatrixDenseView_new<T> * X_)
 {
+    if(X != nullptr) eslog::error("matrix X is already set\n");
+
     X = X_;
 }
 
@@ -35,6 +40,8 @@ void trsm_csx_dny_staged<T,I>::preprocess()
 
     if(A == nullptr) eslog::error("matrix A is not set\n");
     if(X == nullptr) eslog::error("matrix X is not set\n");
+    if(!A->ator->is_data_accessible_cpu()) eslog::error("matrix A must be cpu-accessible\n");
+    if(!X->ator->is_data_accessible_cpu()) eslog::error("matrix X must be cpu-accessible\n");
     if(preprocess_called) eslog::error("preprocess has already been called\n");
     if(A->prop.uplo != 'U' && A->prop.uplo != 'L') eslog::error("invalid A uplo\n");
     if(A->prop.diag != 'U' && A->prop.diag != 'N') eslog::error("invalid A diag\n");

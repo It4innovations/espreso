@@ -1,6 +1,7 @@
 
 #include "math/operations/trsm_csx_dny_dny.h"
 
+#include "math/primitives_new/allocator_new.h"
 #include "math/operations/copy_dnx.h"
 #include "basis/utilities/stacktimer.h"
 
@@ -15,6 +16,8 @@ namespace operations {
 template<typename T, typename I>
 void trsm_csx_dny_dny<T,I>::set_system_matrix(MatrixCsxView_new<T,I> * A_)
 {
+    if(A != nullptr) eslog::error("matrix A is already set\n");
+
     A = A_;
 }
 
@@ -23,6 +26,8 @@ void trsm_csx_dny_dny<T,I>::set_system_matrix(MatrixCsxView_new<T,I> * A_)
 template<typename T, typename I>
 void trsm_csx_dny_dny<T,I>::set_rhs_matrix(MatrixDenseView_new<T> * B_)
 {
+    if(B != nullptr) eslog::error("matrix B is already set\n");
+
     B = B_;
 }
 
@@ -31,6 +36,8 @@ void trsm_csx_dny_dny<T,I>::set_rhs_matrix(MatrixDenseView_new<T> * B_)
 template<typename T, typename I>
 void trsm_csx_dny_dny<T,I>::set_solution_matrix(MatrixDenseView_new<T> * X_)
 {
+    if(X != nullptr) eslog::error("matrix X is already set\n");
+
     X = X_;
 }
 
@@ -44,6 +51,9 @@ void trsm_csx_dny_dny<T,I>::perform()
     if(A == nullptr) eslog::error("system matrix is not set\n");
     if(X == nullptr) eslog::error("solution matrix is not set\n");
     if(B == nullptr) eslog::error("rhs matrix is not set\n");
+    if(!A->ator->is_data_accessible_cpu()) eslog::error("matrix A must be cpu-accessible\n");
+    if(!B->ator->is_data_accessible_cpu()) eslog::error("matrix B must be cpu-accessible\n");
+    if(!X->ator->is_data_accessible_cpu()) eslog::error("matrix X must be cpu-accessible\n");
     if(A->nrows != A->ncols) eslog::error("system matrix must be square\n");
     if(X->nrows != B->nrows || X->ncols != B->ncols) eslog::error("rhs and sol matrix sizes dont match\n");
     if(X->order != B->order) eslog::error("rhs and sol orders dont match\n");

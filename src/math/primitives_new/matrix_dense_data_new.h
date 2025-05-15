@@ -3,7 +3,6 @@
 #define SRC_MATH_PRIMITIVES_NEW_MATRIX_DENSE_DATA_NEW_H_
 
 #include "math/primitives_new/matrix_dense_view_new.h"
-#include "math/primitives_new/allocator_new.h"
 
 
 
@@ -14,9 +13,8 @@ namespace espreso {
 template<typename T>
 class MatrixDenseData_new : public MatrixDenseView_new<T>
 {
-public: // the user promises not to modify these values (I don't want to implement getters everywhere)
-    Allocator_new * ator = nullptr;
 public:
+    using MatrixDenseView_new<T>::ator;
     using MatrixDenseView_new<T>::vals;
     using MatrixDenseView_new<T>::ld;
     using MatrixDenseView_new<T>::order;
@@ -30,14 +28,12 @@ public:
     MatrixDenseData_new(MatrixDenseData_new && other)
     {
         std::swap(*static_cast<MatrixDenseView_new<T>*>(this), *static_cast<MatrixDenseView_new<T>*>(&other));
-        std::swap(ator, other.ator);
     }
     MatrixDenseData_new & operator=(const MatrixDenseData_new &) = delete;
     MatrixDenseData_new & operator=(MatrixDenseData_new && other)
     {
         if(this != &other) {
             std::swap(*static_cast<MatrixDenseView_new<T>*>(this), *static_cast<MatrixDenseView_new<T>*>(&other));
-            std::swap(ator, other.ator);
             other.free();
         }
         return *this;
@@ -66,7 +62,7 @@ public:
         if(ator == nullptr) eslog::error("matrix data has not been set\n");
         if(vals != nullptr) eslog::error("matrix is already allocated\n");
         if(nrows > 0 && ncols > 0) {
-            vals = ator->alloc<T>(this->get_size_primary() * ld);
+            vals = ator->template alloc<T>(this->get_size_primary() * ld);
         }
     }
     void free()

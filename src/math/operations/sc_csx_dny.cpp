@@ -104,9 +104,14 @@ void sc_csx_dny<T,I>::preprocess()
     if(called_preprocess) eslog::error("preprocess was already called\n");
     if(called_set_matrix == '_') eslog::error("matrix is not set\n");
     if(sc == nullptr) eslog::error("sc is not set\n");
+    if(!sc->ator->is_data_accessible_cpu()) eslog::error("matrix sc must be cpu-accessible\n");
     if(sc->nrows != sc->ncols) eslog::error("sc has to be square\n");
 
     if(called_set_matrix == '4') {
+        if(A11 != nullptr && !A11->ator->is_data_accessible_cpu()) eslog::error("matrix A11 must be cpu-accessible\n");
+        if(A12 != nullptr && !A12->ator->is_data_accessible_cpu()) eslog::error("matrix A12 must be cpu-accessible\n");
+        if(A21 != nullptr && !A21->ator->is_data_accessible_cpu()) eslog::error("matrix A21 must be cpu-accessible\n");
+        if(A22 != nullptr && !A22->ator->is_data_accessible_cpu()) eslog::error("matrix A22 must be cpu-accessible\n");
         if(A11 == nullptr) eslog::error("A11 cannot be nullptr\n");
         int num_sides_set = (int)(A12 != nullptr) + (int)(A21 != nullptr);
         if(is_hermitian<T>(A11->prop.symm) && num_sides_set == 0) eslog::error("at least one of A12 and A21 has to be set\n");
@@ -135,6 +140,8 @@ void sc_csx_dny<T,I>::preprocess()
     }
 
     if(called_set_matrix == '1') {
+        if(!A->ator->is_data_accessible_cpu()) eslog::error("matrix A must be cpu-accessible\n");
+
         size_matrix = A->nrows;
         size_A11 = size_matrix - size_sc;
 

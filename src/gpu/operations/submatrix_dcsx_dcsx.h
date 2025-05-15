@@ -3,6 +3,7 @@
 #define SRC_GPU_OPERATIONS_SUBMATRIX_DCSX_DCSX_H
 
 #include "math/primitives_new/matrix_csx_data_new.h"
+#include "gpu/gpu_management.h"
 
 
 

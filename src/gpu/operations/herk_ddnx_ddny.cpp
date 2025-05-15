@@ -85,6 +85,8 @@ void herk_ddnx_ddny<T>::setup()
     if(!called_set_handles) eslog::error("handles are not set\n");
     if(A == nullptr) eslog::error("matrix A is not set\n");
     if(C == nullptr) eslog::error("matrix C is not set\n");
+    if(!A->ator->is_data_accessible_gpu()) eslog::error("matrix A must be gpu-accessible\n");
+    if(!C->ator->is_data_accessible_gpu()) eslog::error("matrix C must be gpu-accessible\n");
     if(!called_set_mode) eslog::error("mode is not set\n");
     if(called_setup) eslog::error("setup was already called\n");
     if(C->nrows != C->ncols) eslog::error("matrix C is not square\n");
