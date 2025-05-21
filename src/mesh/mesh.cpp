@@ -572,6 +572,7 @@ void Mesh::partitiate(int ndomains)
             eslog::checkpointln("MESH: DOMAIN SURFACE COMPUTED");
         }
     }
+    DebugOutput::mesh();
 }
 
 void Mesh::preprocess()

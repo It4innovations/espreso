@@ -96,7 +96,10 @@ void DebugOutput::pointsInDomains(esint nother, esint &noffset, esint &nsize)
     auto c = _mesh.nodes->coordinates->datatarray().begin();
     for (auto n = _mesh.nodes->domains->begin(); n != _mesh.nodes->domains->end(); ++n, ++c) {
         for (auto d = n->begin(); d != n->end(); ++d) {
-            Point p = Visualization::shrink(*c, _ccenter, _dcenters[*d - _mesh.domains->offset], _clusterShrinkRatio, _domainShrinkRatio);
+            Point p;
+            if (_mesh.domains->offset <= *d && *d < _mesh.domains->next) {
+                p = Visualization::shrink(*c, _ccenter, _dcenters[*d - _mesh.domains->offset], _clusterShrinkRatio, _domainShrinkRatio);
+            }
             _writer.point(p.x, p.y, p.z);
         }
     }
@@ -133,12 +136,24 @@ esint DebugOutput::elementsInDomains(esint noffset, esint nother, esint notherno
         _writer.cells(gesize, gesize + gensize);
     }
 
-    for (auto e = _mesh.domains->nodes->begin(); e != _mesh.domains->nodes->end(); ++e) {
-        _writer.cell(e->size(), e->data(), noffset);
+    std::vector<esint> enodes;
+    for (size_t d = 1; d < _mesh.domains->elements.size(); ++d) {
+        for (auto e = _mesh.elements->nodes->begin() + _mesh.domains->elements[d - 1]; e != _mesh.elements->nodes->begin() + _mesh.domains->elements[d]; ++e) {
+            enodes.clear();
+            for (auto n = e->begin(); n != e->end(); ++n) {
+                for (esint nd = _mesh.nodes->domains->boundarytarray()[*n]; nd < _mesh.nodes->domains->boundarytarray()[*n + 1]; ++nd) {
+                    if (_mesh.nodes->domains->datatarray()[nd] == _mesh.domains->offset + (esint)d - 1) {
+                        enodes.push_back(nd);
+                        break;
+                    }
+                }
+            }
+            _writer.cell(enodes.size(), enodes.data(), noffset);
+        }
     }
     _writer.groupData();
 
-    return esize;
+    return gesize;
 }
 
 void DebugOutput::data(const std::string &name, const std::vector<Point> &points, const std::vector<std::vector<esint> > &cells, const std::vector<esint> &celltypes, const std::vector<std::vector<double> > &celldata)
@@ -208,16 +223,39 @@ void DebugOutput::mesh(double clusterShrinkRatio, double domainShrinkRatio)
         return;
     }
 
-    DebugOutput output(clusterShrinkRatio, 1, false);
+    DebugOutput output(clusterShrinkRatio, domainShrinkRatio, true);
 
     esint noffset, nsize;
-    output.points(0, noffset, nsize);
+    output.pointsInDomains(0, noffset, nsize);
     output._writer.groupData();
 
-    esint esize = output.elements(noffset, 0, 0);
+    esint esize = output.elementsInDomains(noffset, 0, 0);
     output._writer.groupData();
 
     output.etypes(esize, 0);
+    output._writer.groupData();
+
+    if (Visualization::isRoot()) {
+        output._writer.celldata(esize);
+        output._writer.description("SCALARS DOMAIN float 1\n");
+        output._writer.description("LOOKUP_TABLE default\n");
+    }
+    for (size_t d = 1; d < output._mesh.domains->elements.size(); ++d) {
+        for (esint e = output._mesh.domains->elements[d - 1]; e < output._mesh.domains->elements[d]; ++e) {
+            output._writer.int32ln(d - 1);
+        }
+    }
+    output._writer.groupData();
+
+    if (Visualization::isRoot()) {
+        output._writer.description("SCALARS CLUSTER float 1\n");
+        output._writer.description("LOOKUP_TABLE default\n");
+    }
+    for (size_t d = 1; d < output._mesh.domains->elements.size(); ++d) {
+        for (esint e = output._mesh.domains->elements[d - 1]; e < output._mesh.domains->elements[d]; ++e) {
+            output._writer.int32ln(info::mpi::rank);
+        }
+    }
     output._writer.groupData();
 
     output._writer.commitFile(output._path + "mesh.vtk");
