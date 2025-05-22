@@ -35,23 +35,24 @@ namespace kernels {
     template void DCmap_scatter<T,I,A>(mgm::queue & q, Vector_Dense<T*,I,A> & domain_vector_pointers, const Vector_Dense<I,I,A> & n_dofs_interfaces, const Vector_Dense<T,I,A> & cluster_vector, const Vector_Dense<I*,I,A> & D2Cs); \
     template void DCmap_gather<T,I,A>(mgm::queue & q, const Vector_Dense<T*,I,A> & domain_vector_pointers, const Vector_Dense<I,I,A> & n_dofs_interfaces, Vector_Dense<T,I,A> & cluster_vector, const Vector_Dense<I*,I,A> & D2Cs);
 
-            #define INSTANTIATE_T_I(T,I) \
-            INSTANTIATE_T_I_A(T, I, arena_d) \
-            INSTANTIATE_T_I_A(T, I, mgm::Ad)
+        #define INSTANTIATE_T_I(T,I) \
+        template void DCmap_scatter_new(mgm::queue & q, const VectorDenseView_new<T> & vec_cluster, MultiVectorDenseView_new<T,I> & vecs_subdomains, const MultiVectorDenseView_new<I,I> & D2C); \
+        template void DCmap_gather_new(mgm::queue & q, VectorDenseView_new<T> & vec_cluster, const MultiVectorDenseView_new<T,I> & vecs_subdomains, const MultiVectorDenseView_new<I,I> & D2C); \
+        INSTANTIATE_T_I_A(T, I, arena_d) \
+        INSTANTIATE_T_I_A(T, I, mgm::Ad)
 
-                #define INSTANTIATE_T(T) \
-                INSTANTIATE_T_I(T, int32_t) \
-                /* INSTANTIATE_T_I(T, int64_t) */
+            #define INSTANTIATE_T(T) \
+            INSTANTIATE_T_I(T, int32_t) \
+            /* INSTANTIATE_T_I(T, int64_t) */
 
-                    // INSTANTIATE_T(float)
-                    INSTANTIATE_T(double)
-                    // INSTANTIATE_T(std::complex<float>)
-                    INSTANTIATE_T(std::complex<double>)
+                // INSTANTIATE_T(float)
+                INSTANTIATE_T(double)
+                // INSTANTIATE_T(std::complex<float>)
+                INSTANTIATE_T(std::complex<double>)
 
-                #undef INSTANTIATE_T
-            #undef INSTANTIATE_T_I
-        #undef INSTANTIATE_T_I_AO
-    #undef INSTANTIATE_T_I_AO_AI
+            #undef INSTANTIATE_T
+        #undef INSTANTIATE_T_I
+    #undef INSTANTIATE_T_I_A
 
 }
 }

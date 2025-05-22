@@ -7,6 +7,7 @@
 #include "math/primitives_new/matrix_dense_data_new.h"
 #include "math/primitives_new/matrix_csx_view_new.h"
 #include "math/operations/sc_csx_dny.h"
+#include "feti/dualoperator/dualop_explicit_applicator.h"
 
 namespace espreso {
 
@@ -67,6 +68,7 @@ private:
     size_t n_domains = 0;
     std::vector<per_domain_stuff> domain_data;
     std::vector<MatrixDenseData_new<T>> Fs_allocated;
+    dualop_explicit_applicator<T,I> applicator;
 };
 
 }

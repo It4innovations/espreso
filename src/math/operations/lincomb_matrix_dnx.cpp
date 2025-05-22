@@ -61,7 +61,7 @@ void lincomb_matrix_dnx<T>::perform()
     if(beta != T{0} && B == nullptr) eslog::error("matrix B is not set\n");
     if(!X->ator->is_data_accessible_cpu()) eslog::error("matrix X must be cpu-accessible\n");
     if(A != nullptr && !A->ator->is_data_accessible_cpu()) eslog::error("matrix A must be cpu-accessible\n");
-    if(A != nullptr && !B->ator->is_data_accessible_cpu()) eslog::error("matrix B must be cpu-accessible\n");
+    if(B != nullptr && !B->ator->is_data_accessible_cpu()) eslog::error("matrix B must be cpu-accessible\n");
 
     if(alpha == T{0} && beta == T{0}) {
         lincomb_matrix_dnx<T>::perform_zero(*X);

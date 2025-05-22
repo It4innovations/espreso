@@ -171,18 +171,32 @@ void TotalFETIExplicitGeneralScGpu<T,I>::set(const step::Step &step)
             data_di.d_F.prop.symm = MatrixSymmetry_new::hermitian;
             if(data_di.d_F.order == 'R') {
                 data_di.d_F_old = MatrixDenseView_new<T>::template to_old<I,gpu::mgm::Ad>(data_di.d_F);
-                data_di.F_uplo_in_rowmajor = data_di.d_F.prop.uplo;
             }
             if(data_di.d_F.order == 'C') {
                 MatrixDenseView_new<T> F_reordered = data_di.d_F.get_transposed_reordered_view();
                 data_di.d_F_old = MatrixDenseView_new<T>::template to_old<I,gpu::mgm::Ad>(F_reordered);
-                data_di.F_uplo_in_rowmajor = change_uplo(data_di.d_F.prop.uplo);
             }
         }
     }
     ssize_t free_mem_after_Falloc = gpu::mgm::get_device_memory_free();
     ssize_t allocd_in_Falloc = free_mem_before_Falloc - free_mem_after_Falloc;
     stacktimer::info("TotalFETIExplicitGeneralScGpu::set allocd_in_Falloc %zd", allocd_in_Falloc);
+
+    {
+        std::vector<MatrixDenseView_new<T>*> Fs_vector(n_domains);
+        for(size_t di = 0; di < n_domains; di++) {
+            Fs_vector[di] = &domain_data[di].d_F;
+        }
+
+        applicator.set_handles(&main_q, &queues, &handles_dense);
+        applicator.set_dimensions(feti);
+        applicator.set_vector_memory('C');
+        applicator.set_D2C_map(&feti.D2C);
+        applicator.set_Fs(Fs_vector);
+        applicator.set_apply_target('G');
+        applicator.setup();
+        applicator.preprocess();
+    }
 
     stacktimer::push("TotalFETIExplicitGeneralScGpu::set setup");
     if(!cfg.inner_timers) stacktimer::disable();
@@ -210,12 +224,6 @@ void TotalFETIExplicitGeneralScGpu<T,I>::set(const step::Step &step)
         data.op_sc->set_sc(&data.d_F);
         data.op_sc->set_need_solve_A11(true);
         data.op_sc->setup();
-
-        data.d_apply_x.resize(data.n_dofs_interface);
-        data.d_apply_y.resize(data.n_dofs_interface);
-        data.d_apply_z.resize(data.n_dofs_domain);
-        data.d_apply_w.resize(data.n_dofs_domain);
-        data.d_applyg_D2C.resize(data.n_dofs_interface);
     }
     if(!cfg.inner_timers) stacktimer::enable();
     stacktimer::pop();
@@ -244,36 +252,6 @@ void TotalFETIExplicitGeneralScGpu<T,I>::set(const step::Step &step)
     for(size_t di = 0; di < n_domains; di++) {
         per_domain_stuff & data = domain_data[di];
         data.op_sc->set_ws_persistent(ator_ws_persistent->alloc(data.op_sc->get_wss_persistent()));
-    }
-
-    {
-        d_applyg_x_cluster.resize(feti.lambdas.size);
-        d_applyg_y_cluster.resize(feti.lambdas.size);
-        Vector_Dense<T*,I,gpu::mgm::Ah> h_applyg_xs_pointers;
-        Vector_Dense<T*,I,gpu::mgm::Ah> h_applyg_ys_pointers;
-        Vector_Dense<I,I,gpu::mgm::Ah> h_applyg_n_dofs_interfaces;
-        Vector_Dense<I*,I,gpu::mgm::Ah> h_applyg_D2Cs_pointers;
-        h_applyg_xs_pointers.resize(n_domains);
-        h_applyg_ys_pointers.resize(n_domains);
-        h_applyg_n_dofs_interfaces.resize(n_domains);
-        h_applyg_D2Cs_pointers.resize(n_domains);
-        d_applyg_xs_pointers.resize(n_domains);
-        d_applyg_ys_pointers.resize(n_domains);
-        d_applyg_n_dofs_interfaces.resize(n_domains);
-        d_applyg_D2Cs_pointers.resize(n_domains);
-        for(size_t di = 0; di < n_domains; di++) {
-            h_applyg_xs_pointers.vals[di] = domain_data[di].d_apply_x.vals;
-            h_applyg_ys_pointers.vals[di] = domain_data[di].d_apply_y.vals;
-            h_applyg_n_dofs_interfaces.vals[di] = domain_data[di].n_dofs_interface;
-            h_applyg_D2Cs_pointers.vals[di] = domain_data[di].d_applyg_D2C.vals;
-        }
-        gpu::mgm::copy_submit(main_q, d_applyg_xs_pointers,       h_applyg_xs_pointers);
-        gpu::mgm::copy_submit(main_q, d_applyg_ys_pointers,       h_applyg_ys_pointers);
-        gpu::mgm::copy_submit(main_q, d_applyg_n_dofs_interfaces, h_applyg_n_dofs_interfaces);
-        gpu::mgm::copy_submit(main_q, d_applyg_D2Cs_pointers,     h_applyg_D2Cs_pointers);
-        for(size_t di = 0; di < n_domains; di++) {
-            gpu::mgm::copy_submit(main_q, domain_data[di].d_applyg_D2C.vals, feti.D2C[di].data(), feti.D2C[di].size());
-        }
     }
 
     size_t free_mem = gpu::mgm::get_device_memory_free();
@@ -349,6 +327,8 @@ void TotalFETIExplicitGeneralScGpu<T,I>::update(const step::Step &step)
                 void * ws_tmp_ = ws_tmp;
                 ator_tmp_cbmba->free(ws_tmp_);
             });
+
+            applicator.update_F(di);
         };
         if(!cfg.inner_timers) stacktimer::enable();
         stacktimer::pop();
@@ -397,6 +377,8 @@ void TotalFETIExplicitGeneralScGpu<T,I>::update(const step::Step &step)
                 void * ws_tmp_ = ws_tmp;
                 ator_tmp_cbmba->free(ws_tmp_);
             });
+
+            applicator.update_F(di);
         }
         if(!cfg.inner_timers) stacktimer::enable();
         stacktimer::pop();
@@ -446,44 +428,10 @@ void TotalFETIExplicitGeneralScGpu<T,I>::update(const step::Step &step)
 template<typename T, typename I>
 void TotalFETIExplicitGeneralScGpu<T,I>::_apply(const Vector_Dual<T> &x_cluster, Vector_Dual<T> &y_cluster)
 {
-    if(cfg.outer_timers) stacktimer::enable();
-    stacktimer::push("TotalFETIExplicitScTriaGpu::apply");
+    VectorDenseView_new<T> x_cluster_new = VectorDenseView_new<T>::from_old(x_cluster);
+    VectorDenseView_new<T> y_cluster_new = VectorDenseView_new<T>::from_old(y_cluster);
 
-    gpu::mgm::set_device(device);
-
-    // copy x_cluster to device
-    gpu::mgm::copy_submit(main_q, d_applyg_x_cluster, x_cluster);
-
-    // scatter
-    gpu::kernels::DCmap_scatter(main_q, d_applyg_xs_pointers, d_applyg_n_dofs_interfaces, d_applyg_x_cluster, d_applyg_D2Cs_pointers);
-
-    gpu::mgm::queue_async_barrier({main_q}, queues);
-
-    // apply
-    #pragma omp parallel for schedule(static,1) if(cfg.parallel_apply)
-    for(size_t di = 0; di < n_domains; di++) {
-        gpu::dnblas::handle & hd = handles_dense[di % n_queues];
-        per_domain_stuff & data = domain_data[di];
-
-        gpu::dnblas::hemv<T,I>(hd, data.d_F.nrows, data.d_F.vals, data.d_F.ld, data.d_F.order, 'N', data.d_F.prop.uplo, data.d_apply_x.vals, data.d_apply_y.vals);
-    }
-
-    // zerofill y_cluster on device
-    gpu::mgm::memset_submit(main_q, d_applyg_y_cluster.vals, d_applyg_y_cluster.size * sizeof(T), 0);
-
-    gpu::mgm::queue_async_barrier(queues, {main_q});
-
-    // gather
-    gpu::kernels::DCmap_gather(main_q, d_applyg_ys_pointers, d_applyg_n_dofs_interfaces, d_applyg_y_cluster, d_applyg_D2Cs_pointers);
-
-    // copy y_cluster from device
-    gpu::mgm::copy_submit(main_q, y_cluster, d_applyg_y_cluster);
-
-    // wait
-    gpu::mgm::device_wait();
-
-    stacktimer::pop();
-    if(cfg.outer_timers) stacktimer::disable();
+    applicator.apply(x_cluster_new, y_cluster_new);
 }
 
 

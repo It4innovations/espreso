@@ -73,6 +73,9 @@ namespace mgm {
     template<typename T>
     void copy_submit(queue & /*q*/, VectorDenseView_new<T> & /*src*/, VectorDenseView_new<T> & /*dst*/) {}
 
+    template<typename T, typename I>
+    void copy_submit(queue & /*q*/, MultiVectorDenseView_new<T,I> & /*src*/, MultiVectorDenseView_new<T,I> & /*dst*/, bool /*copy_pattern*/, bool /*copy_vals*/) {}
+
     template<typename T>
     void copy_submit(queue & /*q*/, MatrixDenseView_new<T> & /*src*/, MatrixDenseView_new<T> & /*dst*/) {}
 

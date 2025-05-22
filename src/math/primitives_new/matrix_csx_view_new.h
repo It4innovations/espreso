@@ -65,19 +65,20 @@ public:
         return 0;
     }
 
-    MatrixCsxView_new<T,I> get_transposed_reordered_view() const
+    MatrixCsxView_new<T,I> get_transposed_reordered_view(bool do_conj = false) const
     {
         MatrixCsxView_new M = *this;
-        M.transpose_reorder_inplace();
+        M.transpose_reorder_inplace(do_conj);
         return M;
     }
-    void transpose_reorder_inplace()
+    void transpose_reorder_inplace(bool do_conj = false)
     {
         std::swap(nrows, ncols);
         order = change_order(order);
+        conj = (conj != do_conj);
         prop.uplo = change_uplo(prop.uplo);
     }
-
+public:
     template<typename A>
     static MatrixCsxView_new<T,I> from_old(const Matrix_CSR<T,I,A> & M_old)
     {
@@ -90,7 +91,7 @@ public:
         return M_new;
     }
     template<typename A>
-    static Matrix_CSR<T,I,A> to_old(MatrixCsxView_new<T,I> & M_new)
+    static Matrix_CSR<T,I,A> to_old(const MatrixCsxView_new<T,I> & M_new)
     {
         if(M_new.order != 'R') eslog::error("can only convert to old row-major matrices\n");
         if(A::is_data_host_accessible != M_new.ator->is_data_accessible_cpu()) eslog::error("allocator access mismatch on cpu\n");
@@ -109,7 +110,7 @@ public:
         M_old.type = get_old_matrix_type<T>(M_new);
         return M_old;
     }
-
+public:
     void print(const char * name = "", char method = 'A')
     {
         if(!ator->is_data_accessible_cpu()) eslog::error("print is supported only for cpu-accessible matrices\n");

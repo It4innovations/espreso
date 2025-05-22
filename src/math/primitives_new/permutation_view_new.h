@@ -46,7 +46,13 @@ public:
         ret.set_view(size, src_to_dst, dst_to_src, ator);
         return ret;
     }
-
+    static void invert(I * src, I * dst, size_t size)
+    {
+        for(size_t i = 0; i < size; i++) {
+            dst[src[i]] = i;
+        }
+    }
+public:
     template<typename A>
     static PermutationView_new<I> from_old(const Permutation<I,A> & P_old)
     {
@@ -55,7 +61,7 @@ public:
         return P_new;
     }
     template<typename A>
-    static Permutation<I,A> to_old(PermutationView_new<I> & P_new)
+    static Permutation<I,A> to_old(const PermutationView_new<I> & P_new)
     {
         if(A::is_data_host_accessible != P_new.ator->is_data_accessible_cpu()) eslog::error("allocator access mismatch on cpu\n");
         if(A::is_data_device_accessible != P_new.ator->is_data_accessible_gpu()) eslog::error("allocator access mismatch on gpu\n");
@@ -66,14 +72,7 @@ public:
         P_old.src_to_dst = P_new.src_to_dst;
         return P_old;
     }
-
-    static void invert(I * src, I * dst, size_t size)
-    {
-        for(size_t i = 0; i < size; i++) {
-            dst[src[i]] = i;
-        }
-    }
-
+public:
     void print(const char * name = "")
     {
         if(!ator->is_data_accessible_cpu()) eslog::error("print is supported only for cpu-accessible matrices\n");

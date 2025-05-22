@@ -8,6 +8,7 @@
 #include "math/primitives/matrix_csr.h"
 #include "math/primitives/matrix_ijv.h"
 #include "basis/utilities/utils.h"
+#include "math/primitives_new/vector_dense_view_new.h"
 #include "math/primitives_new/matrix_dense_view_new.h"
 
 #include <complex>
@@ -88,6 +89,49 @@ namespace blas {
 
     template<typename T>
     void transpose(size_t src_nrows, size_t src_ncols, const T * src, size_t src_ld, T * dst, size_t dst_ld, char order, bool conj);
+
+    template <typename T, typename I>
+    void apply(VectorDenseView_new<T> &y, const T &alpha, const MatrixDenseView_new<T> &a, const T &beta, const VectorDenseView_new<T> &x)
+    {
+        if constexpr(utils::is_complex<T>()) if(a.conj) eslog::error("conj is not supported yet\n");
+
+        Vector_Dense<T,I> y_old = VectorDenseView_new<T>::template to_old<I,cpu_allocator>(y);
+        Vector_Dense<T,I> x_old = VectorDenseView_new<T>::template to_old<I,cpu_allocator>(x);
+
+        if(a.order == 'C') {
+            MatrixDenseView_new<T> At = a.get_transposed_reordered_view(false);
+            Matrix_Dense<T,I> At_old = MatrixDenseView_new<T>::template to_old<I,cpu_allocator>(At);
+
+            applyT<T,I>(y_old, alpha, At_old, beta, x_old);
+        }
+        if(a.order == 'R') {
+            Matrix_Dense<T,I> A_old = MatrixDenseView_new<T>::template to_old<I,cpu_allocator>(a);
+
+            apply<T,I>(y_old, alpha, A_old, beta, x_old);
+        }
+    }
+
+    template <typename T, typename I>
+    void apply_hermitian(VectorDenseView_new<T> &y, const T &alpha, const MatrixDenseView_new<T> &a, const T &beta, const VectorDenseView_new<T> &x)
+    {
+        if(!is_hermitian<T>(a.prop.symm)) eslog::error("matrix has to be hermitian\n");
+        if(a.prop.uplo != 'U' && a.prop.uplo != 'L') eslog::error("unset uplo\n");
+
+        if(a.order != 'R') {
+            MatrixDenseView_new<T> At = a.get_transposed_reordered_view(true);
+            apply_hermitian<T,I>(y, alpha, At, beta, x);
+            return;
+        }
+
+        if constexpr(utils::is_complex<T>()) if(a.conj) eslog::error("conj is not supported yet\n");
+
+        Vector_Dense<T,I> y_old = VectorDenseView_new<T>::template to_old<I,cpu_allocator>(y);
+        Vector_Dense<T,I> x_old = VectorDenseView_new<T>::template to_old<I,cpu_allocator>(x);
+        Matrix_Dense<T,I> A_old = MatrixDenseView_new<T>::template to_old<I,cpu_allocator>(a);
+        char uplo = a.prop.uplo;
+
+        apply_hermitian<T,I>(y_old, alpha, A_old, uplo, beta, x_old);
+    }
 
 }
 }

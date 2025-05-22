@@ -49,7 +49,7 @@ public:
         return V_new;
     }
     template<typename I, typename A>
-    static Vector_Dense<T,I,A> to_old(VectorDenseView_new<T> & V_new)
+    static Vector_Dense<T,I,A> to_old(const VectorDenseView_new<T> & V_new)
     {
         if(A::is_data_host_accessible != V_new.ator->is_data_accessible_cpu()) eslog::error("allocator access mismatch on cpu\n");
         if(A::is_data_device_accessible != V_new.ator->is_data_accessible_gpu()) eslog::error("allocator access mismatch on gpu\n");
@@ -59,7 +59,7 @@ public:
         V_old.vals = V_new.vals;
         return V_old;
     }
-
+public:
     void print(const char * name = "")
     {
         if(!ator->is_data_accessible_cpu()) eslog::error("print is supported only for cpu-accessible matrices\n");

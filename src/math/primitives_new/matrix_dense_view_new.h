@@ -83,21 +83,22 @@ public:
         M.vals = M.vals + row_start * M.get_stride_row() + col_start * M.get_stride_col();
         return M;
     }
-    MatrixDenseView_new<T> get_transposed_reordered_view() const
+    MatrixDenseView_new<T> get_transposed_reordered_view(bool do_conj = false) const
     {
         MatrixDenseView_new<T> M = *this;
-        M.transpose_reorder_inplace();
+        M.transpose_reorder_inplace(do_conj);
         return M;
     }
-    void transpose_reorder_inplace()
+    void transpose_reorder_inplace(bool do_conj = false)
     {
         std::swap(nrows, ncols);
         order = change_order(order);
+        conj = (conj != do_conj);
         prop.uplo = change_uplo(prop.uplo);
     }
-
+public:
     template<typename I, typename A>
-    static MatrixDenseView_new<T> from_old(const Matrix_Dense<T,I,A> & M_old, Allocator_new * ator, char order = 'R')
+    static MatrixDenseView_new<T> from_old(const Matrix_Dense<T,I,A> & M_old, char order = 'R')
     {
         MatrixDenseView_new<T> M_new;
         M_new.set_view(M_old.nrows, M_old.ncols, M_old.get_ld(), order, M_old.vals, AllocatorDummy_new::get_singleton(A::is_data_host_accessible, A::is_data_device_accessible));
@@ -108,7 +109,7 @@ public:
         return M_new;
     }
     template<typename I, typename A>
-    static Matrix_Dense<T,I,A> to_old(MatrixDenseView_new<T> & M_new)
+    static Matrix_Dense<T,I,A> to_old(const MatrixDenseView_new<T> & M_new)
     {
         if(M_new.order != 'R') eslog::error("can only convert to old row-major matrices\n");
         if(A::is_data_host_accessible != M_new.ator->is_data_accessible_cpu()) eslog::error("allocator access mismatch on cpu\n");
@@ -126,7 +127,7 @@ public:
         M_old.type = get_old_matrix_type<T>(M_new);
         return M_old;
     }
-
+public:
     void print(const char * name = "")
     {
         if(!ator->is_data_accessible_cpu()) eslog::error("print is supported only for cpu-accessible matrices\n");

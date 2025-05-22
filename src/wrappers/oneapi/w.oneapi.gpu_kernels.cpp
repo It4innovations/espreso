@@ -52,6 +52,37 @@ namespace kernels {
         );
     }
 
+    template<typename T, typename I>
+    void DCmap_scatter_new(mgm::queue & q, const VectorDenseView_new<T> & vec_cluster, MultiVectorDenseView_new<T,I> & vecs_subdomains, const MultiVectorDenseView_new<I,I> & D2C)
+    {
+        if(!vec_cluster.ator->is_data_accessible_gpu()) eslog::error("wrong allocator\n");
+        if(!vecs_subdomains.ator->is_data_accessible_gpu()) eslog::error("wrong allocator\n");
+        if(!D2C.ator->is_data_accessible_gpu()) eslog::error("wrong allocator\n");
+        int wpw = 256;
+        I n_domains = vecs_subdomains.num_vectors;
+        sycl::nd_range<1> range(sycl::range<1>(n_domains * wpw), sycl::range<1>(wpw));
+        const T * cluster_vector_vals = cluster_vector.vals;
+        T * domain_vectors_vals = vecs_subdomains.vals;
+        const I * domain_vectors_offsets = vecs_subdomains.offsets;
+        const I * D2Cs_vals = D2Cs.vals;
+        const I * D2Cs_offsets = D2Cs.offsets;
+        q->q.parallel_for(
+            range,
+            [=](sycl::nd_item<1> item) {
+                sycl::group g = item.get_group();
+                I di = g.get_group_linear_id();
+                I start = domain_vectors_offsets[di];
+                I end = domain_vectors_offsets[di+1];
+                I size = end - start;
+                T * vec = domain_vectors_vals + start;
+                I * D2C_domain = D2Cs_vals + D2C_offsets[di];
+                for(I i = g.get_local_linear_id(); i < size; i += g.get_local_linear_range()) {
+                    vec[i] = cluster_vector_vals[D2C_domain[i]];
+                }
+            }
+        );
+    }
+
     template<typename T, typename I, typename A>
     void DCmap_gather(mgm::queue & q, const Vector_Dense<T*,I,A> & domain_vector_pointers, const Vector_Dense<I,I,A> & n_dofs_interfaces, Vector_Dense<T,I,A> & cluster_vector, const Vector_Dense<I*,I,A> & D2Cs)
     {
@@ -73,6 +104,37 @@ namespace kernels {
                 I * D2C = D2Cs_vals[di];
                 for(I i = g.get_local_linear_id(); i < n_dofs_interface; i += g.get_local_linear_range()) {
                     my_atomicadd(&cluster_vector_vals[D2C[i]], domain_vector[i]);
+                }
+            }
+        );
+    }
+
+    template<typename T, typename I>
+    void DCmap_gather_new(mgm::queue & q, VectorDenseView_new<T> & vec_cluster, const MultiVectorDenseView_new<T,I> & vecs_subdomains, const MultiVectorDenseView_new<I,I> & D2C)
+    {
+        if(!vec_cluster.ator->is_data_accessible_gpu()) eslog::error("wrong allocator\n");
+        if(!vecs_subdomains.ator->is_data_accessible_gpu()) eslog::error("wrong allocator\n");
+        if(!D2C.ator->is_data_accessible_gpu()) eslog::error("wrong allocator\n");
+        int wpw = 256;
+        I n_domains = vecs_subdomains.num_vectors;
+        sycl::nd_range<1> range(sycl::range<1>(n_domains * wpw), sycl::range<1>(wpw));
+        T * cluster_vector_vals = cluster_vector.vals;
+        const T * domain_vectors_vals = vecs_subdomains.vals;
+        const I * domain_vectors_offsets = vecs_subdomains.offsets;
+        const I * D2Cs_vals = D2Cs.vals;
+        const I * D2Cs_offsets = D2Cs.offsets;
+        q->q.parallel_for(
+            range,
+            [=](sycl::nd_item<1> item) {
+                sycl::group g = item.get_group();
+                I di = g.get_group_linear_id();
+                I start = domain_vectors_offsets[di];
+                I end = domain_vectors_offsets[di+1];
+                I size = end - start;
+                T * vec = domain_vectors_vals + start;
+                I * D2C_domain = D2Cs_vals + D2C_offsets[di];
+                for(I i = g.get_local_linear_id(); i < size; i += g.get_local_linear_range()) {
+                    my_atomicadd(&cluster_vector_vals[D2C_domain[i]], vec[i]);
                 }
             }
         );

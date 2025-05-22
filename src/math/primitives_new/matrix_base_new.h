@@ -55,6 +55,7 @@ class MatrixBase_new
 public: // the user promises not to modify these values (I don't want to implement getters everywhere)
     size_t nrows = 0;
     size_t ncols = 0;
+    bool conj = false; // if complex, interpret the matrix values as conjugated. Not widely supported in operations yet, todo
 public: // ok to modify
     struct matrix_properties
     {

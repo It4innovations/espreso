@@ -224,6 +224,14 @@ namespace mgm {
         eslog::error("not supported yet\n");
     }
 
+    template<typename T, typename I>
+    void copy_submit(queue & q, MultiVectorDenseView_new<T,I> & src, MultiVectorDenseView_new<T,I> & dst, bool copy_pattern, bool copy_values)
+    {
+        if(src.num_vectors != dst.num_vectors || src.size != dst.size) eslog::error("copy submit: incompatible dimensions\n");
+        if(copy_pattern) copy_submit(q, src.offsets, dst.offsets, src.num_vectors + 1);
+        if(copy_values) copy_submit(q, src.vals, dst.vals, src.size);
+    }
+
     template<typename T>
     void copy_submit(queue & /*q*/, MatrixDenseView_new<T> & /*src*/, MatrixDenseView_new<T> & /*dst*/)
     {

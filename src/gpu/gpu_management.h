@@ -11,6 +11,7 @@
 #include "math/primitives/matrix_csr.h"
 #include "math/primitives_new/matrix_csx_view_new.h"
 #include "math/primitives_new/matrix_dense_view_new.h"
+#include "math/primitives_new/multi_vector_dense_view_new.h"
 #include "math/primitives_new/vector_dense_view_new.h"
 #include "math/primitives_new/permutation_view_new.h"
 
@@ -91,6 +92,9 @@ namespace mgm {
 
     template<typename T>
     void copy_submit(queue & q, VectorDenseView_new<T> & src, VectorDenseView_new<T> & dst);
+
+    template<typename T, typename I>
+    void copy_submit(queue & q, MultiVectorDenseView_new<T,I> & src, MultiVectorDenseView_new<T,I> & dst, bool copy_pattern = true, bool copy_values = true);
 
     template<typename T>
     void copy_submit(queue & q, MatrixDenseView_new<T> & src, MatrixDenseView_new<T> & dst);

@@ -7,6 +7,7 @@
 #include "math/primitives_new/matrix_dense_data_new.h"
 #include "math/primitives_new/matrix_csx_view_new.h"
 #include "gpu/operations/sc_hcsx_ddny.h"
+#include "feti/dualoperator/dualop_explicit_applicator.h"
 
 namespace espreso {
 
@@ -60,12 +61,6 @@ private:
         MatrixDenseView_new<T> d_F;
         Matrix_Dense<T,I,gpu::mgm::Ad> d_F_old;
         std::unique_ptr<gpu::operations::sc_hcsx_ddny<T,I>> op_sc;
-        Vector_Dense<T,I,gpu::mgm::Ad> d_apply_x;
-        Vector_Dense<T,I,gpu::mgm::Ad> d_apply_y;
-        Vector_Dense<T,I,gpu::mgm::Ad> d_apply_z;
-        Vector_Dense<T,I,gpu::mgm::Ad> d_apply_w;
-        Vector_Dense<I,I,gpu::mgm::Ad> d_applyg_D2C;
-        char F_uplo_in_rowmajor = '_';
     };
     config cfg;
     size_t n_domains = 0;
@@ -84,12 +79,7 @@ private:
     std::vector<gpu::spblas::handle> handles_sparse;
     std::vector<per_domain_stuff> domain_data;
     std::vector<MatrixDenseData_new<T>> d_Fs_allocated;
-    Vector_Dense<T,I,gpu::mgm::Ad> d_applyg_x_cluster;
-    Vector_Dense<T,I,gpu::mgm::Ad> d_applyg_y_cluster;
-    Vector_Dense<T*,I,gpu::mgm::Ad> d_applyg_xs_pointers;
-    Vector_Dense<T*,I,gpu::mgm::Ad> d_applyg_ys_pointers;
-    Vector_Dense<I,I,gpu::mgm::Ad> d_applyg_n_dofs_interfaces;
-    Vector_Dense<I*,I,gpu::mgm::Ad> d_applyg_D2Cs_pointers;
+    dualop_explicit_applicator<T,I> applicator;
 };
 
 }

@@ -162,6 +162,21 @@ void TotalFETIExplicitGeneralScCpu<T,I>::set(const step::Step &step)
         }
     }
 
+    {
+        std::vector<MatrixDenseView_new<T>*> Fs_vector(n_domains);
+        for(size_t di = 0; di < n_domains; di++) {
+            Fs_vector[di] = &domain_data[di].F;
+        }
+
+        applicator.set_dimensions(feti);
+        applicator.set_vector_memory('C');
+        applicator.set_D2C_map(&feti.D2C);
+        applicator.set_Fs(Fs_vector);
+        applicator.set_apply_target('C');
+        applicator.setup();
+        applicator.preprocess();
+    }
+
     stacktimer::push("TotalFETIExplicitGeneralScCpu::set preprocess");
     if(!cfg.inner_timers) stacktimer::disable();
     #pragma omp parallel for schedule(static,1) if(cfg.parallel_set)
@@ -216,6 +231,7 @@ void TotalFETIExplicitGeneralScCpu<T,I>::update(const step::Step &step)
             per_domain_stuff & data = domain_data[di];
             math::sumCombined(data.Kreg_old, T{1.0}, feti.K[di], feti.RegMat[di]);
             data.op_sc->perform();
+            applicator.update_F(di);
         };
         if(!cfg.inner_timers) stacktimer::enable();
         stacktimer::pop();
@@ -243,6 +259,7 @@ void TotalFETIExplicitGeneralScCpu<T,I>::update(const step::Step &step)
         #pragma omp parallel for schedule(static,1) if(cfg.parallel_update)
         for(size_t di = 0; di < n_domains; di++) {
             domain_data[di].op_sc->perform_2();
+            applicator.update_F(di);
         }
         if(!cfg.inner_timers) stacktimer::enable();
         stacktimer::pop();
@@ -279,41 +296,10 @@ void TotalFETIExplicitGeneralScCpu<T,I>::update(const step::Step &step)
 template<typename T, typename I>
 void TotalFETIExplicitGeneralScCpu<T,I>::_apply(const Vector_Dual<T> &x_cluster, Vector_Dual<T> &y_cluster)
 {
-    if(cfg.outer_timers) stacktimer::enable();
-    stacktimer::push("TotalFETIExplicitGeneralScCpu::apply");
+    VectorDenseView_new<T> x_cluster_new = VectorDenseView_new<T>::from_old(x_cluster);
+    VectorDenseView_new<T> y_cluster_new = VectorDenseView_new<T>::from_old(y_cluster);
 
-    std::fill_n(y_cluster.vals, y_cluster.size, T{0});
-
-    #pragma omp parallel for schedule(static,1) if(cfg.parallel_apply)
-    for(size_t di = 0; di < n_domains; di++) {
-        auto & data = domain_data[di];
-
-        std::vector<I> & D2C = feti.D2C[di];
-
-        for(size_t i = 0; i < data.n_dofs_interface; i++) {
-            data.x.vals[i] = x_cluster.vals[D2C[i]];
-        }
-
-        math::blas::apply_hermitian(data.y, T{1}, data.F_old, data.F_uplo_in_rowmajor, T{0}, data.x);
-
-        for(size_t i = 0; i < data.n_dofs_interface; i++) {
-            T val = data.y.vals[i];
-            T & dst = y_cluster.vals[D2C[i]];
-            if constexpr(utils::is_complex<T>()) {
-                #pragma omp atomic
-                utils::real_ref(dst) += utils::real_ref(val);
-                #pragma omp atomic
-                utils::imag_ref(dst) += utils::imag_ref(val);
-            }
-            else {
-                #pragma omp atomic
-                dst += val;
-            }
-        }
-    }
-
-    stacktimer::pop();
-    if(cfg.outer_timers) stacktimer::disable();
+    applicator.apply(x_cluster_new, y_cluster_new);
 }
 
 

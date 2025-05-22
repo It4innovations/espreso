@@ -44,6 +44,23 @@ namespace kernels {
         }
 
         template<typename T, typename I>
+        static __global__ void _do_DCmap_scatter_new(const T * vec_cluster, const I * vec_subdomains_offsets, T * vec_subdomains_data, const I * D2C_offsets, const I * D2C_data)
+        {
+            // one block per domain
+        
+            I di = blockIdx.x;
+            I start = vec_subdomains_offsets[di];
+            I end = vec_subdomains_offsets[di+1];
+            I size = end - start;
+            T * vec = vec_subdomains_data + start;
+            const I * D2C = D2C_data + D2C_offsets[di];
+        
+            for(I i = threadIdx.x; i < size; i += blockDim.x) {
+                vec[i] = vec_cluster[D2C[i]];
+            }
+        }
+
+        template<typename T, typename I>
         static __global__ void _do_DCmap_gather(T const * const * domain_vectors, const I * n_dofs_interfaces, T * cluster_vector, I const * const * D2Cs)
         {
             // launch with one block per domain
@@ -77,6 +94,48 @@ namespace kernels {
             
                 for(I dof = threadIdx.x; dof < n_dofs_interface; dof += blockDim.x) {
                     myAtomicAdd(&cluster_vector[D2C[dof]], domain_vector[dof]);
+                }
+            }
+        }
+
+        template<typename T, typename I>
+        static __global__ void _do_DCmap_gather_new(T * vec_cluster, const I * vec_subdomains_offsets, const T * vec_subdomains_data, const I * D2C_offsets, const I * D2C_data)
+        {
+            // launch with one block per domain
+
+            #if defined(__CUDA_ARCH__) && __CUDA_ARCH__ >= 600
+            #define MY_DOUBLE_ATOMIC_AVAILABLE true
+            #else
+            #define MY_DOUBLE_ATOMIC_AVAILABLE false
+            #endif
+
+            if constexpr(std::is_same_v<utils::remove_complex_t<T>,double> && !MY_DOUBLE_ATOMIC_AVAILABLE) {
+                // must iterate sequentially through the domains
+                I n_domains = blockDim.x;
+                if(blockIdx.x > 0) return;
+
+                for(I di = 0; di < n_domains; di++) {
+                    I start = vec_subdomains_offsets[di];
+                    I end = vec_subdomains_offsets[di+1];
+                    I size = end - start;
+                    const T * vec = vec_subdomains_data + start;
+                    const I * D2C = D2C_data + D2C_offsets[di];
+                
+                    for(I i = threadIdx.x; i < size; i += blockDim.x) {
+                        vec_cluster[D2C[i]] += vec[i];
+                    }
+                }
+            }
+            else {
+                int di = blockIdx.x;
+                I start = vec_subdomains_offsets[di];
+                I end = vec_subdomains_offsets[di+1];
+                I size = end - start;
+                const T * vec = vec_subdomains_data + start;
+                const I * D2C = D2C_data + D2C_offsets[di];
+            
+                for(I i = threadIdx.x; i < size; i += blockDim.x) {
+                    myAtomicAdd(&vec_cluster[D2C[i]], vec[i]);
                 }
             }
         }
@@ -121,12 +180,34 @@ namespace kernels {
         CHECK(cudaPeekAtLastError());
     }
 
+    template<typename T, typename I>
+    void DCmap_scatter_new(mgm::queue & q, const VectorDenseView_new<T> & vec_cluster, MultiVectorDenseView_new<T,I> & vecs_subdomains, const MultiVectorDenseView_new<I,I> & D2C)
+    {
+        if(!vec_cluster.ator->is_data_accessible_gpu()) eslog::error("wrong allocator\n");
+        if(!vecs_subdomains.ator->is_data_accessible_gpu()) eslog::error("wrong allocator\n");
+        if(!D2C.ator->is_data_accessible_gpu()) eslog::error("wrong allocator\n");
+        I n_domains = vecs_subdomains.num_vectors;
+        _do_DCmap_scatter_new<T,I><<< n_domains, 256, 0, q->stream >>>(vec_cluster.vals, vecs_subdomains.offsets, vecs_subdomains.vals, D2C.offsets, D2C.vals);
+        CHECK(cudaPeekAtLastError());
+    }
+
     template<typename T, typename I, typename A>
     void DCmap_gather(mgm::queue & q, const Vector_Dense<T*,I,A> & domain_vector_pointers, const Vector_Dense<I,I,A> & n_dofs_interfaces, Vector_Dense<T,I,A> & cluster_vector, const Vector_Dense<I*,I,A> & D2Cs)
     {
         static_assert(A::is_data_device_accessible, "data has to be device accessible");
         I n_domains = domain_vector_pointers.size;
         _do_DCmap_gather<T,I><<< n_domains, 256, 0, q->stream >>>(domain_vector_pointers.vals, n_dofs_interfaces.vals, cluster_vector.vals, D2Cs.vals);
+        CHECK(cudaPeekAtLastError());
+    }
+
+    template<typename T, typename I>
+    void DCmap_gather_new(mgm::queue & q, VectorDenseView_new<T> & vec_cluster, const MultiVectorDenseView_new<T,I> & vecs_subdomains, const MultiVectorDenseView_new<I,I> & D2C)
+    {
+        if(!vec_cluster.ator->is_data_accessible_gpu()) eslog::error("wrong allocator\n");
+        if(!vecs_subdomains.ator->is_data_accessible_gpu()) eslog::error("wrong allocator\n");
+        if(!D2C.ator->is_data_accessible_gpu()) eslog::error("wrong allocator\n");
+        I n_domains = vecs_subdomains.num_vectors;
+        _do_DCmap_gather_new<T,I><<< n_domains, 256, 0, q->stream >>>(vec_cluster.vals, vecs_subdomains.offsets, vecs_subdomains.vals, D2C.offsets, D2C.vals);
         CHECK(cudaPeekAtLastError());
     }
 

@@ -19,6 +19,7 @@ namespace mgm {
 
             #define INSTANTIATE_T_I(T,I) \
             template void copy_submit<T,I>(queue & q, MatrixCsxView_new<T,I> & src, MatrixCsxView_new<T,I> & dst, bool copy_pattern, bool copy_vals); \
+            template void copy_submit<T,I>(queue & q, MultiVectorDenseView_new<T,I> & src, MultiVectorDenseView_new<T,I> & dst, bool copy_pattern, bool copy_vals); \
             INSTANTIATE_T_I_A1_A2(T, I, mgm::Ah,       mgm::Ad) \
             INSTANTIATE_T_I_A1_A2(T, I, mgm::Ah,       arena_d) \
             INSTANTIATE_T_I_A1_A2(T, I, mgm::Ah,       cbmba_d) \

@@ -91,11 +91,11 @@ void sc_csx_dny_spsolver<T,I>::internal_perform_2()
     // Matrix_Dense<T,I> Y_old = MatrixDenseView_new<T>::template to_old<I,cpu_allocator>(Y);
 
     Matrix_Dense<T,I> X_old(size_sc, size_A11);
-    MatrixDenseView_new<T> X = MatrixDenseView_new<T>::from_old(X_old, AllocatorCPU_new::get_singleton(), 'R').get_transposed_reordered_view();
+    MatrixDenseView_new<T> X = MatrixDenseView_new<T>::from_old(X_old, 'R').get_transposed_reordered_view();
     X.prop.uplo = 'F';
 
     Matrix_Dense<T,I> Y_old(size_sc, size_A11);
-    MatrixDenseView_new<T> Y = MatrixDenseView_new<T>::from_old(Y_old, AllocatorCPU_new::get_singleton(), 'R').get_transposed_reordered_view();
+    MatrixDenseView_new<T> Y = MatrixDenseView_new<T>::from_old(Y_old, 'R').get_transposed_reordered_view();
     Y.prop.uplo = 'F';
 
     math::operations::convert_csx_dny<T,I>::do_all(A12_to_use, &X);
