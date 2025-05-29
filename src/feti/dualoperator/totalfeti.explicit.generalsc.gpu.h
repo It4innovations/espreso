@@ -72,11 +72,10 @@ private:
     void * ws_tmp_for_cbmba = nullptr;
     std::unique_ptr<AllocatorArena_new> ator_ws_persistent;
     std::unique_ptr<AllocatorCBMB_new> ator_tmp_cbmba;
-    gpu::mgm::device device;
-    gpu::mgm::queue main_q;
-    std::vector<gpu::mgm::queue> queues;
-    std::vector<gpu::dnblas::handle> handles_dense;
-    std::vector<gpu::spblas::handle> handles_sparse;
+    gpu::mgm::queue & main_q;
+    std::vector<gpu::mgm::queue> & queues;
+    std::vector<gpu::dnblas::handle> & handles_dense;
+    std::vector<gpu::spblas::handle> & handles_sparse;
     std::vector<per_domain_stuff> domain_data;
     std::vector<MatrixDenseData_new<T>> d_Fs_allocated;
     dualop_explicit_applicator<T,I> applicator;

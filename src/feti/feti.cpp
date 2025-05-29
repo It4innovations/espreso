@@ -15,7 +15,26 @@ template <typename T>
 FETI<T>::FETI(FETIConfiguration &configuration)
 : configuration(configuration), decomposition(nullptr)
 {
+    if(gpu::mgm::is_linked()) {
+        device = gpu::mgm::get_device_by_mpi(info::mpi::rank, info::mpi::size);
 
+        gpu::mgm::init_gpu(device);
+        gpu::mgm::set_device(device);
+
+        size_t n_queues = omp_get_max_threads();
+
+        queues.resize(n_queues);
+        handles_dense.resize(n_queues);
+        handles_sparse.resize(n_queues);
+
+        gpu::mgm::queue_create(main_q);
+        for(gpu::mgm::queue & q : queues) gpu::mgm::queue_create(q);
+        for(size_t i = 0; i < n_queues; i++) gpu::dnblas::handle_create(handles_dense[i], queues[i]);
+        for(size_t i = 0; i < n_queues; i++) gpu::spblas::handle_create(handles_sparse[i], queues[i]);
+
+        gpu::dnblas::init_library(main_q);
+        gpu::mgm::queue_wait(main_q);
+    }
 }
 
 template <typename T>

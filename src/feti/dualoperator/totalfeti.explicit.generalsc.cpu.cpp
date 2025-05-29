@@ -168,6 +168,7 @@ void TotalFETIExplicitGeneralScCpu<T,I>::set(const step::Step &step)
             Fs_vector[di] = &domain_data[di].F;
         }
 
+        applicator.set_handles(&feti.main_q, &feti.queues, &feti.handles_dense);
         applicator.set_dimensions(feti);
         applicator.set_vector_memory('C');
         applicator.set_D2C_map(&feti.D2C);
@@ -200,9 +201,6 @@ void TotalFETIExplicitGeneralScCpu<T,I>::set(const step::Step &step)
         data.op_sc->set_sc(&data.F);
         data.op_sc->set_need_solve_A11(true);
         data.op_sc->preprocess();
-
-        data.x.resize(data.n_dofs_interface);
-        data.y.resize(data.n_dofs_interface);
     }
     if(!cfg.inner_timers) stacktimer::enable();
     stacktimer::pop();

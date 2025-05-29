@@ -70,10 +70,12 @@ static void setup_configs(typename TotalFETIExplicitGeneralScGpu<T,I>::config & 
 
 template<typename T, typename I>
 TotalFETIExplicitGeneralScGpu<T,I>::TotalFETIExplicitGeneralScGpu(FETI<T> &feti) : DualOperator<T>(feti)
+    , main_q(feti.main_q)
+    , queues(feti.queues)
+    , handles_dense(feti.handles_dense)
+    , handles_sparse(feti.handles_sparse)
 {
     setup_configs<T,I>(cfg);
-
-    device = gpu::mgm::get_device_by_mpi(info::mpi::rank, info::mpi::size);
 }
 
 
@@ -116,7 +118,7 @@ void TotalFETIExplicitGeneralScGpu<T,I>::set(const step::Step &step)
     stacktimer::push("TotalFETIExplicitGeneralScGpu::set");
 
     n_domains = feti.K.size();
-    n_queues = omp_get_max_threads();
+    n_queues = queues.size();
 
     domain_data.resize(n_domains);
 
@@ -127,21 +129,6 @@ void TotalFETIExplicitGeneralScGpu<T,I>::set(const step::Step &step)
     }
 
     replace_unset_configs<T,I>(cfg);
-
-    gpu::mgm::init_gpu(device);
-    gpu::mgm::set_device(device);
-
-    queues.resize(n_queues);
-    handles_dense.resize(n_queues);
-    handles_sparse.resize(n_queues);
-    
-    gpu::mgm::queue_create(main_q);
-    for(gpu::mgm::queue & q : queues) gpu::mgm::queue_create(q);
-    for(size_t i = 0; i < n_queues; i++) gpu::dnblas::handle_create(handles_dense[i], queues[i]);
-    for(size_t i = 0; i < n_queues; i++) gpu::spblas::handle_create(handles_sparse[i], queues[i]);
-
-    gpu::dnblas::init_library(main_q);
-    gpu::mgm::queue_wait(main_q);
 
     ssize_t free_mem_before_Falloc = gpu::mgm::get_device_memory_free();
     d_Fs_allocated.resize((n_domains - 1) / 2 + 1);
@@ -302,8 +289,6 @@ void TotalFETIExplicitGeneralScGpu<T,I>::update(const step::Step &step)
 {
     if(cfg.outer_timers) stacktimer::enable();
     stacktimer::push("TotalFETIExplicitGeneralScGpu::update");
-
-    gpu::mgm::set_device(device);
 
     stacktimer::push("update_mainloop");
     if(cfg.mainloop_update_split == 'C') {

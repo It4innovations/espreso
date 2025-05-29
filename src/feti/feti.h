@@ -8,6 +8,9 @@
 #include "math/primitives/vector_dense.h"
 #include "math/primitives/matrix_dense.h"
 #include "math/primitives/matrix_csr.h"
+#include "gpu/gpu_management.h"
+#include "gpu/gpu_dnblas.h"
+#include "gpu/gpu_spblas.h"
 
 #include <complex>
 
@@ -69,6 +72,12 @@ struct FETI {
     Preconditioner<T> *preconditioner = nullptr;
     Projector<T> *projector = nullptr;
     DualOperator<T> *dualOperator = nullptr;
+
+    gpu::mgm::device device;
+    gpu::mgm::queue main_q;
+    std::vector<gpu::mgm::queue> queues;
+    std::vector<gpu::dnblas::handle> handles_dense;
+    std::vector<gpu::spblas::handle> handles_sparse;
 };
 
 }
