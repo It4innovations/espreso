@@ -6,7 +6,7 @@
 #include "math/operations/pivots_trails_csx.h"
 #include "math/operations/sorting_permutation.h"
 #include "math/operations/convert_csx_dny.h"
-#include "math/operations/complete_dnx.h"
+#include "math/operations/complete_dnx_dnx.h"
 #include "math/operations/permute_dnx_dnx.h"
 #include "math/operations/copy_dnx.h"
 #include "basis/utilities/stacktimer.h"
@@ -178,12 +178,6 @@ void sc_symm_csx_dny_tria<T,I>::preprocess()
 
     X_dn.set(X_sp.nrows, X_sp.ncols, cfg.order_X, AllocatorCPU_new::get_singleton());
 
-    sc_tmp1.set(sc->nrows, sc->ncols, sc->order, AllocatorCPU_new::get_singleton());
-    sc_tmp1.prop.uplo = sc->prop.uplo;
-
-    sc_tmp2.set(sc->nrows, sc->ncols, sc->order, AllocatorCPU_new::get_singleton());
-    sc_tmp2.prop.uplo = sc->prop.uplo;
-
     op_trsm.set_config(cfg.cfg_trsm);
     op_trsm.set_L(L_to_use);
     op_trsm.set_X(&X_dn);
@@ -192,7 +186,7 @@ void sc_symm_csx_dny_tria<T,I>::preprocess()
 
     op_herk.set_config(cfg.cfg_herk);
     op_herk.set_matrix_A(&X_dn);
-    op_herk.set_matrix_C(&sc_tmp1);
+    op_herk.set_matrix_C(sc);
     op_herk.set_coefficients(-alpha, 0 * alpha);  // beta=0, because I assume A22=0
     op_herk.set_mode(blas::herk_mode::AhA);
     op_herk.calc_A_pattern(X_sp);
@@ -229,8 +223,6 @@ void sc_symm_csx_dny_tria<T,I>::perform()
     }
 
     X_dn.alloc();
-    sc_tmp1.alloc();
-    sc_tmp2.alloc();
 
     convert_csx_dny<T,I>::do_all(&X_sp, &X_dn);
 
@@ -238,15 +230,9 @@ void sc_symm_csx_dny_tria<T,I>::perform()
 
     op_herk.perform();
 
-    complete_dnx<T>::do_all(&sc_tmp1, sc->prop.uplo, true);
-
-    permute_dnx_dnx<T,I>::do_all(&sc_tmp1, &sc_tmp2, &perm_to_sort_back_sc, &perm_to_sort_back_sc);
-
-    copy_dnx<T>::do_all(&sc_tmp2, sc, false);
+    permute_dnx_dnx<T,I>::do_all(sc, sc, &perm_to_sort_back_sc, &perm_to_sort_back_sc);
 
     X_dn.free();
-    sc_tmp1.free();
-    sc_tmp2.free();
 
     stacktimer::pop();
 }

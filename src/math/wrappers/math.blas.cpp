@@ -143,6 +143,12 @@ void transpose(size_t src_nrows, size_t src_ncols, const T * src, size_t src_ld,
     eslog::error("calling of empty BLAS wrapper.\n");
 }
 
+template<typename T>
+void transpose_inplace(size_t size, T * matrix, size_t ld, char order, bool conj)
+{
+    eslog::error("calling of empty BLAS wrapper.\n");
+}
+
 }
 }
 }

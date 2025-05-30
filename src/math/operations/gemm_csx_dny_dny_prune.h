@@ -5,7 +5,7 @@
 #include "math/primitives_new/matrix_csx_data_new.h"
 #include "math/primitives_new/matrix_dense_data_new.h"
 #include "math/primitives_new/vector_dense_data_new.h"
-#include "math/operations/gemm_csx_dny_dny.h"
+#include "math/operations/gemm_csx_dny_dnz.h"
 #include "math/operations/gemm_dnx_dny_dnz.h"
 #include "math/operations/prune_csx_matx.h"
 
@@ -47,7 +47,7 @@ private:
     MatrixDenseData_new<T> C_pruned;
     MatrixDenseView_new<T> * B_to_use;
     MatrixDenseView_new<T> * C_to_use;
-    gemm_csx_dny_dny<T,I> op_gemm_sp;
+    gemm_csx_dny_dnz<T,I> op_gemm_sp;
     gemm_dnx_dny_dnz<T> op_gemm_dn;
     prune_csx_matx<T,I> op_prune_A;
     T alpha = T{1};

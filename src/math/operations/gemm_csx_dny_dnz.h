@@ -1,6 +1,6 @@
 
-#ifndef SRC_MATH_OPERATIONS_GEMM_CSX_DNY_DNY_H
-#define SRC_MATH_OPERATIONS_GEMM_CSX_DNY_DNY_H
+#ifndef SRC_MATH_OPERATIONS_GEMM_CSX_DNY_DNZ_H
+#define SRC_MATH_OPERATIONS_GEMM_CSX_DNY_DNZ_H
 
 #include "math/primitives_new/matrix_csx_view_new.h"
 #include "math/primitives_new/matrix_dense_view_new.h"
@@ -15,15 +15,15 @@ namespace operations {
 
 
 template<typename T, typename I>
-class gemm_csx_dny_dny
+class gemm_csx_dny_dnz
 {
 public:
-    gemm_csx_dny_dny() = default;
-    gemm_csx_dny_dny(const gemm_csx_dny_dny &) = delete;
-    gemm_csx_dny_dny(gemm_csx_dny_dny &&) = default;
-    gemm_csx_dny_dny & operator=(const gemm_csx_dny_dny &) = delete;
-    gemm_csx_dny_dny & operator=(gemm_csx_dny_dny &&) = default;
-    ~gemm_csx_dny_dny() = default;
+    gemm_csx_dny_dnz() = default;
+    gemm_csx_dny_dnz(const gemm_csx_dny_dnz &) = delete;
+    gemm_csx_dny_dnz(gemm_csx_dny_dnz &&) = default;
+    gemm_csx_dny_dnz & operator=(const gemm_csx_dny_dnz &) = delete;
+    gemm_csx_dny_dnz & operator=(gemm_csx_dny_dnz &&) = default;
+    ~gemm_csx_dny_dnz() = default;
 public:
     void set_matrix_A(MatrixCsxView_new<T,I> * A_);
     void set_matrix_B(MatrixDenseView_new<T> * B_);
@@ -45,4 +45,4 @@ private:
 }
 }
 
-#endif /* SRC_MATH_OPERATIONS_GEMM_CSX_DNY_DNY_H */
+#endif /* SRC_MATH_OPERATIONS_GEMM_CSX_DNY_DNZ_H */

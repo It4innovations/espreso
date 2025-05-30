@@ -16,6 +16,8 @@ namespace operations {
 template<typename T, typename I>
 class permute_dnx_dnx
 {
+    // respects uplo
+    // supports in-place (allocates internal tmp matrix)
 public:
     permute_dnx_dnx() = default;
     permute_dnx_dnx(const permute_dnx_dnx &) = delete;

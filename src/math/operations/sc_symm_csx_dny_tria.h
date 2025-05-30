@@ -68,8 +68,6 @@ private:
     MatrixCsxView_new<T,I> * L_to_use = nullptr;
     MatrixCsxData_new<T,I> X_sp;
     MatrixDenseData_new<T> X_dn;
-    MatrixDenseData_new<T> sc_tmp1;
-    MatrixDenseData_new<T> sc_tmp2;
     PermutationData_new<I> perm_to_sort_A12_cols;
     PermutationView_new<I> perm_to_sort_back_sc;
     PermutationData_new<I> perm_fillreduce;

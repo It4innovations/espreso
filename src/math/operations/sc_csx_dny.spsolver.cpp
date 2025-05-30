@@ -4,10 +4,13 @@
 #include "math/primitives_new/allocator_new.h"
 #include "math/wrappers/math.spsolver.h"
 #include "math/primitives_new/matrix_dense_data_new.h"
+#include "math/primitives_new/matrix_csx_data_new.h"
 #include "math/operations/convert_csx_dny.h"
 #include "math/operations/convert_dnx_dny.h"
 #include "math/operations/copy_dnx.h"
 #include "math/operations/fill_dnx.h"
+#include "math/operations/quadrisect_csx_csy.h"
+#include "math/operations/gemm_csx_dny_dnz.h"
 
 
 
@@ -22,6 +25,11 @@ struct sc_csx_dny_spsolver_data
 {
     DirectSparseSolver<T,I> A11_solver;
     Matrix_CSR<T,I> A11_old;
+    quadrisect_csx_csy<T,I> op_split;
+    MatrixCsxData_new<T,I> sub_A11;
+    MatrixCsxData_new<T,I> sub_A12;
+    MatrixCsxData_new<T,I> sub_A21;
+    MatrixCsxData_new<T,I> sub_A22;
 };
 
 
@@ -39,9 +47,34 @@ sc_csx_dny_spsolver<T,I>::~sc_csx_dny_spsolver() = default;
 template<typename T, typename I>
 void sc_csx_dny_spsolver<T,I>::internal_preprocess()
 {
-    if(called_set_matrix == '1') eslog::error("dont yet support single large input matrix\n");
-
     data = std::make_unique<sc_csx_dny_spsolver_data<T,I>>();
+
+    if(called_set_matrix == '1') {
+        data->op_split.set_matrix_src(A);
+        data->op_split.set_matrices_dst(&data->sub_A11, &data->sub_A12, &data->sub_A21, &data->sub_A22);
+        data->op_split.set_bounds(size_A11, size_A11);
+        data->op_split.setup();
+
+        data->sub_A11.set(size_A11, size_A11, data->op_split.get_output_matrix_11_nnz(), A->order, AllocatorCPU_new::get_singleton());
+        data->sub_A12.set(size_A11, size_sc,  data->op_split.get_output_matrix_12_nnz(), A->order, AllocatorCPU_new::get_singleton());
+        data->sub_A21.set(size_sc,  size_A11, data->op_split.get_output_matrix_21_nnz(), A->order, AllocatorCPU_new::get_singleton());
+        data->sub_A22.set(size_sc,  size_sc,  data->op_split.get_output_matrix_22_nnz(), A->order, AllocatorCPU_new::get_singleton());
+
+        data->sub_A11.prop = A->prop;
+        data->sub_A22.prop = A->prop;
+
+        data->sub_A11.alloc();
+        data->sub_A12.alloc();
+        data->sub_A21.alloc();
+        data->sub_A22.alloc();
+
+        data->op_split.perform();
+
+        A11 = &data->sub_A11;
+        if(A->prop.uplo != 'L') A12 = &data->sub_A12;
+        if(A->prop.uplo != 'U') A21 = &data->sub_A21;
+        A22 = &data->sub_A22;
+    }
 
     data->A11_old = MatrixCsxView_new<T,I>::template to_old<cpu_allocator>(*A11);
 
@@ -54,6 +87,10 @@ void sc_csx_dny_spsolver<T,I>::internal_preprocess()
 template<typename T, typename I>
 void sc_csx_dny_spsolver<T,I>::internal_perform_1()
 {
+    if(called_set_matrix == '1') {
+        data->op_split.perform();
+    }
+
     data->A11_old = MatrixCsxView_new<T,I>::template to_old<cpu_allocator>(*A11);
 
     data->A11_solver.numericalFactorization();
@@ -78,18 +115,6 @@ void sc_csx_dny_spsolver<T,I>::internal_perform_2()
         A21_to_use = &A12_transposed_reordered;
     }
 
-    // MatrixDenseData_new<T> X;
-    // X.set(size_A11, size_sc, 'C', AllocatorCPU_new::get_singleton());
-    // X.alloc();
-    // X.prop.uplo = 'F';
-    // Matrix_Dense<T,I> X_old = MatrixDenseView_new<T>::template to_old<I,cpu_allocator>(X);
-    
-    // MatrixDenseData_new<T> Y;
-    // Y.set(size_A11, size_sc, 'C', AllocatorCPU_new::get_singleton());
-    // Y.alloc();
-    // Y.prop.uplo = 'F';
-    // Matrix_Dense<T,I> Y_old = MatrixDenseView_new<T>::template to_old<I,cpu_allocator>(Y);
-
     Matrix_Dense<T,I> X_old(size_sc, size_A11);
     MatrixDenseView_new<T> X = MatrixDenseView_new<T>::from_old(X_old, 'R').get_transposed_reordered_view();
     X.prop.uplo = 'F';
@@ -102,34 +127,27 @@ void sc_csx_dny_spsolver<T,I>::internal_perform_2()
 
     data->A11_solver.solve(X_old, Y_old);
 
-    MatrixDenseData_new<T> sc_tmp;
-    sc_tmp.set(size_sc, size_sc, sc->order, AllocatorCPU_new::get_singleton());
-    sc_tmp.alloc();
-    sc_tmp.prop.uplo = sc->prop.uplo;
+    if(is_matrix_hermitian) {
+        // carefull not to touch the other triangle of sc
 
-    if(Y.order == sc_tmp.order) {
+        MatrixDenseData_new<T> sc_tmp;
+        sc_tmp.set(size_sc, size_sc, sc->order, AllocatorCPU_new::get_singleton());
+        sc_tmp.alloc();
+        sc_tmp.prop.uplo = sc->prop.uplo;
+
         if(A22 == nullptr) math::operations::fill_dnx<T>::do_all(&sc_tmp, T{0});
         if(A22 != nullptr) math::operations::convert_csx_dny<T,I>::do_all(A22, &sc_tmp);
 
-        math::spblas::handle_mm handlemm;
-        math::spblas::mm<T,I>(*A21_to_use, Y, sc_tmp, T{-1}, T{1}, handlemm, 'A');
+        math::operations::gemm_csx_dny_dnz<T,I>::do_all(A21_to_use, &Y, &sc_tmp, T{-1} * alpha, T{1} * alpha);
+
+        math::operations::copy_dnx<T>::do_all(&sc_tmp, sc);
     }
     else {
-        MatrixDenseData_new<T> sc_tmp2;
-        sc_tmp2.set(size_sc, size_sc, Y.order, AllocatorCPU_new::get_singleton());
-        sc_tmp2.alloc();
-        sc_tmp2.prop.uplo = sc->prop.uplo;
-        
-        if(A22 == nullptr) math::operations::fill_dnx<T>::do_all(&sc_tmp2, T{0});
-        if(A22 != nullptr) math::operations::convert_csx_dny<T,I>::do_all(A22, &sc_tmp2);
+        if(A22 == nullptr) math::operations::fill_dnx<T>::do_all(sc, T{0});
+        if(A22 != nullptr) math::operations::convert_csx_dny<T,I>::do_all(A22, sc);
 
-        math::spblas::handle_mm handlemm;
-        math::spblas::mm<T,I>(*A21_to_use, Y, sc_tmp2, T{-1}, T{1}, handlemm, 'A');
-
-        convert_dnx_dny<T>::do_all(&sc_tmp2, &sc_tmp, false);
+        math::operations::gemm_csx_dny_dnz<T,I>::do_all(A21_to_use, &Y, sc, T{-1} * alpha, T{1} * alpha);
     }
-
-    math::operations::copy_dnx<T>::do_all(&sc_tmp, sc);
 }
 
 

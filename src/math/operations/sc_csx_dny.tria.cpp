@@ -12,11 +12,12 @@
 #include "math/operations/pivots_trails_csx.h"
 #include "math/operations/sorting_permutation.h"
 #include "math/operations/convert_csx_dny.h"
-#include "math/operations/complete_dnx.h"
+#include "math/operations/complete_dnx_dnx.h"
 #include "math/operations/permute_dnx_dnx.h"
 #include "math/operations/permute_csx_csx.h"
 #include "math/operations/copy_dnx.h"
 #include "math/wrappers/math.spsolver.h"
+#include "math/operations/quadrisect_csx_csy.h"
 #include "basis/utilities/stacktimer.h"
 
 
@@ -52,8 +53,6 @@ struct sc_csx_dny_tria_data
     MatrixCsxView_new<T,I> * L_to_use = nullptr;
     MatrixCsxData_new<T,I> X_sp;
     MatrixDenseData_new<T> X_dn;
-    MatrixDenseData_new<T> sc_tmp1;
-    MatrixDenseData_new<T> sc_tmp2;
     PermutationData_new<I> perm_to_sort_A12_cols;
     PermutationView_new<I> perm_to_sort_back_sc;
     PermutationData_new<I> perm_fillreduce;
@@ -61,6 +60,12 @@ struct sc_csx_dny_tria_data
     convert_csx_csy_map<T,I> op_U2L;
     trsm_csx_dny_tri<T,I> op_trsm;
     herk_dnx_dny_tri<T,I> op_herk;
+    permute_dnx_dnx<T,I> op_permute_sc;
+    quadrisect_csx_csy<T,I> op_split;
+    MatrixCsxData_new<T,I> sub_A11;
+    MatrixCsxData_new<T,I> sub_A12;
+    MatrixCsxData_new<T,I> sub_A21;
+    MatrixCsxData_new<T,I> sub_A22;
 };
 
 
@@ -196,19 +201,37 @@ void sc_csx_dny_tria<T,I>::internal_preprocess()
     data->solver_factor_uplo = '_';
     if(DirectSparseSolver<T,I>::factorsSymmetry() == Solver_Factors::HERMITIAN_LOWER) data->solver_factor_uplo = 'L';
     if(DirectSparseSolver<T,I>::factorsSymmetry() == Solver_Factors::HERMITIAN_UPPER) data->solver_factor_uplo = 'U';
-    if(data->solver_factor_uplo == '_') eslog::error("wrong sparse solver, must be symmetric\n");
+    if(data->solver_factor_uplo == '_') eslog::error("wrong sparse solver, must be symmetric for now\n");
 
     if(called_set_matrix == '1') {
-        eslog::error("currrently dont support single large matrix on input\n");
-        // if hermitian then be carefull about A12 A21 which of them is full
+        data->op_split.set_matrix_src(A);
+        data->op_split.set_matrices_dst(&data->sub_A11, &data->sub_A12, &data->sub_A21, &data->sub_A22);
+        data->op_split.set_bounds(size_A11, size_A11);
+        data->op_split.setup();
+
+        data->sub_A11.set(size_A11, size_A11, data->op_split.get_output_matrix_11_nnz(), A->order, AllocatorCPU_new::get_singleton());
+        data->sub_A12.set(size_A11, size_sc,  data->op_split.get_output_matrix_12_nnz(), A->order, AllocatorCPU_new::get_singleton());
+        data->sub_A21.set(size_sc,  size_A11, data->op_split.get_output_matrix_21_nnz(), A->order, AllocatorCPU_new::get_singleton());
+        data->sub_A22.set(size_sc,  size_sc,  data->op_split.get_output_matrix_22_nnz(), A->order, AllocatorCPU_new::get_singleton());
+
+        data->sub_A11.prop = A->prop;
+        data->sub_A22.prop = A->prop;
+
+        data->sub_A11.alloc();
+        data->sub_A12.alloc();
+        data->sub_A21.alloc();
+        data->sub_A22.alloc();
+
+        data->op_split.perform();
+
+        A11 = &data->sub_A11;
+        if(A->prop.uplo != 'L') A12 = &data->sub_A12;
+        if(A->prop.uplo != 'U') A21 = &data->sub_A21;
+        A22 = &data->sub_A22;
     }
 
     if(A11->order != 'R') {
         eslog::error("only support csr matrices now\n");
-    }
-
-    if(A22 != nullptr) {
-        eslog::error("for now I assume A22=O\n");
     }
 
     stacktimer::push("symbolic_factorization");
@@ -217,7 +240,7 @@ void sc_csx_dny_tria<T,I>::internal_preprocess()
     data->A11_solver.symbolicFactorization();
     stacktimer::pop();
 
-    I factor_nnz = data->A11_solver.getFactorNnz();
+    size_t factor_nnz = data->A11_solver.getFactorNnz();
 
     data->factor_U_row.set(size_A11, size_A11, factor_nnz, 'R', AllocatorCPU_new::get_singleton());
     data->factor_U_row.prop.uplo = 'U';
@@ -304,12 +327,6 @@ void sc_csx_dny_tria<T,I>::internal_preprocess()
 
     data->X_dn.set(data->X_sp.nrows, data->X_sp.ncols, data->cfg.order_X, AllocatorCPU_new::get_singleton());
 
-    data->sc_tmp1.set(sc->nrows, sc->ncols, sc->order, AllocatorCPU_new::get_singleton());
-    data->sc_tmp1.prop.uplo = sc->prop.uplo;
-
-    data->sc_tmp2.set(sc->nrows, sc->ncols, sc->order, AllocatorCPU_new::get_singleton());
-    data->sc_tmp2.prop.uplo = sc->prop.uplo;
-
     data->op_trsm.set_config(data->cfg.cfg_trsm);
     data->op_trsm.set_L(data->L_to_use);
     data->op_trsm.set_X(&data->X_dn);
@@ -318,11 +335,16 @@ void sc_csx_dny_tria<T,I>::internal_preprocess()
 
     data->op_herk.set_config(data->cfg.cfg_herk);
     data->op_herk.set_matrix_A(&data->X_dn);
-    data->op_herk.set_matrix_C(&data->sc_tmp1);
+    data->op_herk.set_matrix_C(sc);
     data->op_herk.set_coefficients(-alpha, 0 * alpha);  // beta=0, because I assume A22=0
     data->op_herk.set_mode(blas::herk_mode::AhA);
     data->op_herk.calc_A_pattern(data->X_sp);
     data->op_herk.preprocess();
+
+    data->op_permute_sc.set_matrix_src(sc);
+    data->op_permute_sc.set_matrix_dst(sc);
+    data->op_permute_sc.set_perm_vector_rows(&data->perm_to_sort_back_sc);
+    data->op_permute_sc.set_perm_vector_cols(&data->perm_to_sort_back_sc);
 }
 
 
@@ -330,6 +352,10 @@ void sc_csx_dny_tria<T,I>::internal_preprocess()
 template<typename T, typename I>
 void sc_csx_dny_tria<T,I>::internal_perform_1()
 {
+    if(called_set_matrix == '1') {
+        data->op_split.perform();
+    }
+
     stacktimer::push("numerical_factorization");
     data->A11_solver.numericalFactorization();
     stacktimer::pop();
@@ -359,24 +385,18 @@ void sc_csx_dny_tria<T,I>::internal_perform_2()
     }
 
     data->X_dn.alloc();
-    data->sc_tmp1.alloc();
-    data->sc_tmp2.alloc();
 
     convert_csx_dny<T,I>::do_all(&data->X_sp, &data->X_dn);
+
+    convert_csx_dny<T,I>::do_all(A22, sc);
 
     data->op_trsm.perform();
 
     data->op_herk.perform();
 
-    complete_dnx<T>::do_all(&data->sc_tmp1, sc->prop.uplo, true);
-
-    permute_dnx_dnx<T,I>::do_all(&data->sc_tmp1, &data->sc_tmp2, &data->perm_to_sort_back_sc, &data->perm_to_sort_back_sc);
-
-    copy_dnx<T>::do_all(&data->sc_tmp2, sc, false);
+    data->op_permute_sc.perform();
 
     data->X_dn.free();
-    data->sc_tmp1.free();
-    data->sc_tmp2.free();
 }
 
 

@@ -90,6 +90,9 @@ namespace blas {
     template<typename T>
     void transpose(size_t src_nrows, size_t src_ncols, const T * src, size_t src_ld, T * dst, size_t dst_ld, char order, bool conj);
 
+    template<typename T>
+    void transpose_inplace(size_t size, T * matrix, size_t ld, char order, bool conj);
+
     template <typename T, typename I>
     void apply(VectorDenseView_new<T> &y, const T &alpha, const MatrixDenseView_new<T> &a, const T &beta, const VectorDenseView_new<T> &x)
     {

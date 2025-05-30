@@ -6,6 +6,7 @@
 #include "math/operations/permute_csx_csx.h"
 #include "math/operations/pivots_trails_csx.h"
 #include "math/operations/sorting_permutation.h"
+#include "math/operations/quadrisect_csx_csy.h"
 #include "gpu/operations/trsm_hcsx_ddny_tri.h"
 #include "gpu/operations/herk_ddnx_ddny_tri.h"
 #include "gpu/operations/convert_ddnx_ddny.h"
@@ -62,6 +63,11 @@ struct sc_hcsx_ddny_tria_data
     std::unique_ptr<copy_ddnx_ddnx<T>> op_d_copy_sc_tmp;
     std::unique_ptr<permute_ddnx_ddnx<T,I>> op_d_perm_sc;
     std::unique_ptr<copy_ddnx_ddnx<T>> op_d_copy_sc_final;
+    math::operations::quadrisect_csx_csy<T,I> op_split;
+    MatrixCsxData_new<T,I> sub_h_A11;
+    MatrixCsxData_new<T,I> sub_h_A12;
+    MatrixCsxData_new<T,I> sub_h_A21;
+    MatrixCsxData_new<T,I> sub_h_A22;
     char solver_factor_uplo = '_';
     bool need_reorder_factor_L2U = false;
     bool need_reorder_factor_U2L = false;
@@ -188,7 +194,6 @@ sc_hcsx_ddny_tria<T,I>::~sc_hcsx_ddny_tria() = default;
 template<typename T, typename I>
 void sc_hcsx_ddny_tria<T,I>::internal_setup()
 {
-    if(called_set_matrix != '4') eslog::error("support only 4 small matrices on input for now\n");
     if(!is_matrix_hermitian) eslog::error("for now only hermitian matrices are supported\n");
     if(h_A12 == nullptr) eslog::error("the upper part of matrix must be stored\n");
     if(h_A11->prop.uplo != 'U') eslog::error("the upper part of A11 must be stored\n");
@@ -203,6 +208,33 @@ void sc_hcsx_ddny_tria<T,I>::internal_setup()
     if(DirectSparseSolver<T,I>::factorsSymmetry() == Solver_Factors::HERMITIAN_UPPER) data->solver_factor_uplo = 'U';
     if(data->solver_factor_uplo == '_') eslog::error("wrong sparse solver, must be symmetric\n");
     if(!DirectSparseSolver<T,I>::provideFactors()) eslog::error("wrong sparse solver, must provide factors\n");
+
+    if(called_set_matrix == '1') {
+        data->op_split.set_matrix_src(h_A);
+        data->op_split.set_matrices_dst(&data->sub_h_A11, &data->sub_h_A12, &data->sub_h_A21, &data->sub_h_A22);
+        data->op_split.set_bounds(size_A11, size_A11);
+        data->op_split.setup();
+
+        data->sub_h_A11.set(size_A11, size_A11, data->op_split.get_output_matrix_11_nnz(), h_A->order, AllocatorHostPinned_new::get_singleton());
+        data->sub_h_A12.set(size_A11, size_sc,  data->op_split.get_output_matrix_12_nnz(), h_A->order, AllocatorHostPinned_new::get_singleton());
+        data->sub_h_A21.set(size_sc,  size_A11, data->op_split.get_output_matrix_21_nnz(), h_A->order, AllocatorHostPinned_new::get_singleton());
+        data->sub_h_A22.set(size_sc,  size_sc,  data->op_split.get_output_matrix_22_nnz(), h_A->order, AllocatorHostPinned_new::get_singleton());
+
+        data->sub_h_A11.prop = h_A->prop;
+        data->sub_h_A22.prop = h_A->prop;
+
+        data->sub_h_A11.alloc();
+        data->sub_h_A12.alloc();
+        data->sub_h_A21.alloc();
+        data->sub_h_A22.alloc();
+
+        data->op_split.perform();
+
+        h_A11 = &data->sub_h_A11;
+        if(h_A->prop.uplo != 'L') h_A12 = &data->sub_h_A12;
+        if(h_A->prop.uplo != 'U') h_A21 = &data->sub_h_A21;
+        h_A22 = &data->sub_h_A22;
+    }
 
     stacktimer::push("symbolic_factorization");
     data->h_A11_old = MatrixCsxView_new<T,I>::template to_old<cpu_allocator>(*h_A11);
@@ -414,6 +446,10 @@ void sc_hcsx_ddny_tria<T,I>::internal_preprocess_submit()
 template<typename T, typename I>
 void sc_hcsx_ddny_tria<T,I>::internal_perform_1_submit()
 {
+    if(called_set_matrix == '1') {
+        data->op_split.perform();
+    }
+
     stacktimer::push("numerical_factorization");
     data->h_A11_solver.numericalFactorization();
     stacktimer::pop();

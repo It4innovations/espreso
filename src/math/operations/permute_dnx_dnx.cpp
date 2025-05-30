@@ -1,6 +1,9 @@
 
 #include "math/operations/permute_dnx_dnx.h"
 
+#include "math/primitives_new/allocator_new.h"
+#include "math/primitives_new/matrix_dense_data_new.h"
+#include "math/operations/complete_dnx_dnx.h"
 #include "math/operations/copy_dnx.h"
 #include "basis/utilities/stacktimer.h"
 
@@ -62,9 +65,40 @@ void permute_dnx_dnx<T,I>::perform()
     if(!M_src->ator->is_data_accessible_cpu()) eslog::error("source matrix must be cpu-accessible\n");
     if(!M_dst->ator->is_data_accessible_cpu()) eslog::error("destination matrix must be cpu-accessible\n");
     if(M_src->order != M_dst->order) eslog::error("matrix orders dont match\n");
+    if(M_src->prop.uplo != M_dst->prop.uplo) eslog::error("matrix uplo does not match\n");
     if(M_src->nrows != M_dst->nrows || M_src->ncols != M_dst->ncols) eslog::error("matrix sizes dont match\n");
     if(perm_rows != nullptr && perm_rows->size != M_src->nrows) eslog::error("wrong row perm size\n");
     if(perm_cols != nullptr && perm_cols->size != M_src->ncols) eslog::error("wrong col perm size\n");
+
+    if(M_dst->prop.uplo == 'U' || M_dst->prop.uplo == 'L') {
+        if(M_src->nrows != M_src->ncols) eslog::error("uplo can be set only for square matrices\n");
+
+        MatrixDenseData_new<T> tmp1;
+        tmp1.set(M_src->nrows, M_src->ncols, M_src->order, AllocatorCPU_new::get_singleton());
+        tmp1.alloc();
+
+        MatrixDenseData_new<T> tmp2;
+        tmp2.set(M_src->nrows, M_src->ncols, M_src->order, AllocatorCPU_new::get_singleton());
+        tmp2.alloc();
+
+        complete_dnx_dnx<T>::do_all(M_src, &tmp1, is_hermitian<T>(M_src->prop.symm));
+        permute_dnx_dnx<T,I>::do_all(&tmp1, &tmp2, perm_rows, perm_cols);
+        tmp2.prop.uplo = M_dst->prop.uplo;
+        copy_dnx<T>::do_all(&tmp2, M_dst, false);
+
+        return;
+    }
+
+    if(M_src == M_dst) {
+        MatrixDenseData_new<T> tmp;
+        tmp.set(M_src->nrows, M_src->ncols, M_src->order, AllocatorCPU_new::get_singleton());
+        tmp.alloc();
+
+        permute_dnx_dnx<T,I>::do_all(M_src, &tmp, perm_rows, perm_cols);
+        copy_dnx<T>::do_all(&tmp, M_dst, false);
+
+        return;
+    }
 
     if(perm_rows == nullptr && perm_cols == nullptr) {
         copy_dnx<T>::do_all(M_src, M_dst);

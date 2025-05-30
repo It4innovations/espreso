@@ -314,6 +314,24 @@ void transpose(size_t src_nrows, size_t src_ncols, const T * src, size_t src_ld,
     }
 }
 
+template<typename T>
+void transpose_inplace(size_t size, T * matrix, size_t ld, char order, bool conj)
+{
+    // just do it out-of-place and copy. todo better.
+
+    constexpr size_t align = 64 / sizeof(T);
+    size_t tmp_ld = ((size - 1) / align + 1) * align;
+
+    T * tmp = new T[size * tmp_ld];
+
+    transpose(size, size, matrix, ld, tmp, tmp_ld, order, conj);
+    for(size_t i = 0; i < size; i++) {
+        std::copy_n(tmp + i * tmp_ld, size, matrix + i * ld);
+    }
+
+    delete[] tmp;
+}
+
 }
 }
 }

@@ -5,7 +5,7 @@
 #include "math/primitives_new/matrix_csx_data_new.h"
 #include "math/primitives_new/matrix_dense_data_new.h"
 #include "math/primitives_new/vector_dense_view_new.h"
-#include "math/operations/gemm_csx_dny_dny.h"
+#include "math/operations/gemm_csx_dny_dnz.h"
 #include "math/operations/gemm_csx_dny_dny_prune.h"
 #include "math/operations/submatrix_csx_csy.h"
 #include "math/operations/submatrix_csx_dny.h"
@@ -74,7 +74,7 @@ private:
     submatrix_dnx_dnx_view<T> op_submatrix_X_bot;
     trsm_csx_dny_dny<T,I> op_trsm_sp;
     trsm_dnx_dny<T> op_trsm_dn;
-    gemm_csx_dny_dny<T,I> op_gemm_normal_sp;
+    gemm_csx_dny_dnz<T,I> op_gemm_normal_sp;
     gemm_dnx_dny_dnz<T> op_gemm_normal_dn;
     gemm_csx_dny_dny_prune<T,I> op_gemm_prune;
 };

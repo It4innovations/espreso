@@ -1,6 +1,9 @@
 
-#include "math/operations/gemm_csx_dny_dny.h"
+#include "math/operations/gemm_csx_dny_dnz.h"
 
+#include "math/primitives_new/allocator_new.h"
+#include "math/primitives_new/matrix_dense_data_new.h"
+#include "math/operations/convert_dnx_dny.h"
 #include "basis/utilities/stacktimer.h"
 
 
@@ -12,7 +15,7 @@ namespace operations {
 
 
 template<typename T, typename I>
-void gemm_csx_dny_dny<T,I>::set_matrix_A(MatrixCsxView_new<T,I> * A_)
+void gemm_csx_dny_dnz<T,I>::set_matrix_A(MatrixCsxView_new<T,I> * A_)
 {
     if(A != nullptr) eslog::error("matrix A is already set\n");
 
@@ -22,7 +25,7 @@ void gemm_csx_dny_dny<T,I>::set_matrix_A(MatrixCsxView_new<T,I> * A_)
 
 
 template<typename T, typename I>
-void gemm_csx_dny_dny<T,I>::set_matrix_B(MatrixDenseView_new<T> * B_)
+void gemm_csx_dny_dnz<T,I>::set_matrix_B(MatrixDenseView_new<T> * B_)
 {
     if(B != nullptr) eslog::error("matrix B is already set\n");
 
@@ -32,7 +35,7 @@ void gemm_csx_dny_dny<T,I>::set_matrix_B(MatrixDenseView_new<T> * B_)
 
 
 template<typename T, typename I>
-void gemm_csx_dny_dny<T,I>::set_matrix_C(MatrixDenseView_new<T> * C_)
+void gemm_csx_dny_dnz<T,I>::set_matrix_C(MatrixDenseView_new<T> * C_)
 {
     if(C != nullptr) eslog::error("matrix C is already set\n");
 
@@ -42,7 +45,7 @@ void gemm_csx_dny_dny<T,I>::set_matrix_C(MatrixDenseView_new<T> * C_)
 
 
 template<typename T, typename I>
-void gemm_csx_dny_dny<T,I>::set_coefficients(T alpha_, T beta_)
+void gemm_csx_dny_dnz<T,I>::set_coefficients(T alpha_, T beta_)
 {
     alpha = alpha_;
     beta = beta_;
@@ -51,9 +54,9 @@ void gemm_csx_dny_dny<T,I>::set_coefficients(T alpha_, T beta_)
 
 
 template<typename T, typename I>
-void gemm_csx_dny_dny<T,I>::perform()
+void gemm_csx_dny_dnz<T,I>::perform()
 {
-    stacktimer::push("gemm_csx_dny_dny::perform");
+    stacktimer::push("gemm_csx_dny_dnz::perform");
 
     if(A == nullptr) eslog::error("matrix A is not set\n");
     if(B == nullptr) eslog::error("matrix B is not set\n");
@@ -62,10 +65,22 @@ void gemm_csx_dny_dny<T,I>::perform()
     if(!B->ator->is_data_accessible_cpu()) eslog::error("matrix B must be cpu-accessible\n");
     if(!C->ator->is_data_accessible_cpu()) eslog::error("matrix C must be cpu-accessible\n");
     if(A->nrows != C->nrows || B->ncols != C->ncols || A->ncols != B->nrows) eslog::error("incompatible matrix sizes\n");
-    if(B->order != C->order) eslog::error("order of B and C must match\n");
 
-    spblas::handle_mm handle_abc;
-    spblas::mm(*A, *B, *C, alpha, beta, handle_abc, 'A');
+    // spblas::mm requires B and C to have same order
+    if(B->order == C->order) {
+        spblas::handle_mm handle_abc;
+        spblas::mm(*A, *B, *C, alpha, beta, handle_abc, 'A');
+    }
+    else {
+        MatrixDenseData_new<T> C_tmp;
+        C_tmp.set(C->nrows, C->ncols, change_order(C->order), AllocatorCPU_new::get_singleton());
+        C_tmp.alloc();
+
+        spblas::handle_mm handle_abc;
+        spblas::mm(*A, *B, C_tmp, alpha, beta, handle_abc, 'A');
+
+        convert_dnx_dny<T>::do_all(&C_tmp, C, false);
+    }
 
     stacktimer::pop();
 }
@@ -73,9 +88,9 @@ void gemm_csx_dny_dny<T,I>::perform()
 
 
 template<typename T, typename I>
-void gemm_csx_dny_dny<T,I>::do_all(MatrixCsxView_new<T,I> * A, MatrixDenseView_new<T> * B, MatrixDenseView_new<T> * C, T alpha, T beta)
+void gemm_csx_dny_dnz<T,I>::do_all(MatrixCsxView_new<T,I> * A, MatrixDenseView_new<T> * B, MatrixDenseView_new<T> * C, T alpha, T beta)
 {
-    gemm_csx_dny_dny<T,I> instance;
+    gemm_csx_dny_dnz<T,I> instance;
     instance.set_matrix_A(A);
     instance.set_matrix_B(B);
     instance.set_matrix_C(C);
@@ -86,7 +101,7 @@ void gemm_csx_dny_dny<T,I>::do_all(MatrixCsxView_new<T,I> * A, MatrixDenseView_n
 
 
 #define INSTANTIATE_T_I(T,I) \
-template class gemm_csx_dny_dny<T,I>;
+template class gemm_csx_dny_dnz<T,I>;
 
     #define INSTANTIATE_T(T) \
     INSTANTIATE_T_I(T,int32_t) \
