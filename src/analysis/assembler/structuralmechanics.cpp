@@ -54,6 +54,7 @@ NodeData* StructuralMechanics::Results::accelerationAmplitude = nullptr;
 
 NodeData* StructuralMechanics::Results::force = nullptr;
 NodeData* StructuralMechanics::Results::reactionForce = nullptr;
+NodeData* StructuralMechanics::Results::contact_force = nullptr;
 
 std::vector<double> MaterialStructuralMechanics::invCp;
 std::vector<double> MaterialStructuralMechanics::alpha;
@@ -180,6 +181,9 @@ bool StructuralMechanics::analyze(const step::Step &step)
         }
         if (Results::force == nullptr) {
             Results::force = info::mesh->nodes->appendData(info::mesh->dimension, NamedData::DataType::VECTOR, "FORCE", step::TYPE::TIME, info::ecf->output.results_selection.force);
+        }
+        if (Results::contact_force == nullptr) {
+            Results::contact_force = info::mesh->nodes->appendData(info::mesh->dimension, NamedData::DataType::VECTOR, "CONTACT_FORCE");
         }
 
 //        for (size_t i = 0; i < info::mesh->materials.size(); ++i) {

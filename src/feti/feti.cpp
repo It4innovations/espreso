@@ -36,14 +36,12 @@ bool FETI<T>::set(const step::Step &step)
         configuration.method = FETIConfiguration::METHOD::TOTAL_FETI;
     }
 
-    BtL.resize(K.size());
     for (size_t d = 0; d < K.size(); ++d) {
         if (K[d].nrows < x[d].size) { // it is possible when the solver is called with BEM
             math::set(x[d], 0.); // set inner DOFs to zero and resize 'f' to correct size
             f[d].size = K[d].nrows;
             x[d].size = K[d].nrows;
         }
-        BtL[d].resize(K[d].nrows);
     }
 
     int size = K.size();

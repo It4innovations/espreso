@@ -61,7 +61,7 @@ public:
         static NodeData *phase, *velocity, *velocityAmplitude, *acceleration, *accelerationAmplitude;
         static NodeData *principalStressAvg, *principalStrainAvg, *componentStressAvg, *componentStrainAvg, *vonMisesStressAvg, *vonMisesStrainAvg;
 
-        static NodeData *force, *reactionForce;
+        static NodeData *force, *reactionForce, *contact_force;
     };
 
 protected:

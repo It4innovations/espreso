@@ -64,18 +64,28 @@ void FETILinearSystemSolver<T>::set(step::Step &step)
     feti.assembledK.resize(A.domains.size());
     feti.x.resize(A.domains.size());
     feti.f.resize(A.domains.size());
+    feti.BtL.resize(A.domains.size());
+    feti.ineqBtL.resize(A.domains.size());
 
-    b.feti.decomposition = x.feti.decomposition = A.decomposition;
+    b.feti.decomposition = x.feti.decomposition = BtL.feti.decomposition = ineqBtL.feti.decomposition = A.decomposition;
     b.feti.domains.resize(A.domains.size());
     x.feti.domains.resize(A.domains.size());
+    BtL.feti.domains.resize(A.domains.size());
+    ineqBtL.feti.domains.resize(A.domains.size());
     for (size_t di = 0; di < A.domains.size(); ++di) {
         b.feti.domains[di].resize(A.decomposition->dsize[di]);
         x.feti.domains[di].resize(A.decomposition->dsize[di]);
+        BtL.feti.domains[di].resize(A.decomposition->dsize[di]);
+        ineqBtL.feti.domains[di].resize(A.decomposition->dsize[di]);
         feti.K[di].shallowCopy(A.domains[di]);
         feti.assembledK[di].shallowCopy(dynamic_cast<Matrix_FETI<T>* >(LinearSystemSolver<T>::assembledA)->domains[di]);
         feti.f[di].shallowCopy(b.feti.domains[di]);
         feti.x[di].shallowCopy(x.feti.domains[di]);
+        feti.BtL[di].shallowCopy(BtL.feti.domains[di]);
+        feti.ineqBtL[di].shallowCopy(ineqBtL.feti.domains[di]);
     }
+    BtL.physics.copyPattern(x.physics);
+    ineqBtL.physics.copyPattern(x.physics);
     feti.decomposition = A.decomposition;
     regularization.set(step, feti);
     eslog::checkpointln("FETI: SET KERNELS");
@@ -83,6 +93,7 @@ void FETILinearSystemSolver<T>::set(step::Step &step)
     eslog::checkpointln("FETI: SET B1");
     eslog::info(" = ----------------------------------------------------------------------------------------- = \n");
     feti.set(step);
+
     eslog::endln("FETI: LINEAR SYSTEM SET");
 }
 
@@ -196,7 +207,11 @@ bool FETILinearSystemSolver<T>::solve(step::Step &step)
         }
     }
 
-    this->x.feti.averageTo(&this->x.physics);
+    x.feti.averageTo(&x.physics);
+    if (StructuralMechanics::Results::contact_force) {
+        ineqBtL.feti.sumTo(&ineqBtL.physics);
+        std::copy(ineqBtL.physics.cluster.vals, ineqBtL.physics.cluster.vals + ineqBtL.physics.cluster.size, StructuralMechanics::Results::contact_force->data.data());
+    }
 
     if (info::ecf->output.print_matrices) {
         eslog::storedata(" STORE: system/{x}\n");

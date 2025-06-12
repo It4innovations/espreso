@@ -32,10 +32,15 @@ public:
     Vector_Distributed<Vector, T>* copyPattern()
     {
         Vector_Distributed<Vector, T> *v = new Vector_Distributed<Vector, T>();
-        v->cluster.pattern(cluster);
-        v->decomposition = this->decomposition;
-        v->sync = this->sync;
+        v->copyPattern(*this);
         return v;
+    }
+
+    void copyPattern(const Vector_Distributed<Vector, T> &other)
+    {
+        cluster.pattern(other.cluster);
+        decomposition = other.decomposition;
+        sync = other.sync;
     }
 
     void store(const char *file)
