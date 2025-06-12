@@ -295,7 +295,7 @@ M8W_FETI:
     - ./waf configure
     - ./waf -j8
 
-CS01_INSTALL:
+.CS01_INSTALL:
   extends: .cs
   stage: CS01_A64FX
   variables:
@@ -308,14 +308,14 @@ CS01_INSTALL:
   before_script:
     - . env/it4i.cs.p01.a64fx.32.sh
 
-CS01_BASIC:
-  extends: CS01_INSTALL
-  needs: ["CS01_INSTALL"]
+.CS01_BASIC:
+  extends: .CS01_INSTALL
+  needs: [".CS01_INSTALL"]
   script:
     - sh tests/run.basic.sh
 
 
-CS03_INSTALL:
+.CS03_INSTALL:
   extends: .cs
   stage: CS03_AMD_MI100
   variables:
@@ -328,14 +328,14 @@ CS03_INSTALL:
   before_script:
     - . env/it4i.cs.p03.amd.mi100.32.sh
 
-CS03_BASIC:
-  extends: CS03_INSTALL
-  needs: ["CS03_INSTALL"]
+.CS03_BASIC:
+  extends: .CS03_INSTALL
+  needs: [".CS03_INSTALL"]
   script:
     - sh tests/run.basic.sh
 
 
-CS08_INSTALL:
+.CS08_INSTALL:
   extends: .cs
   stage: CS08_AMD_L3
   variables:
@@ -348,9 +348,9 @@ CS08_INSTALL:
   before_script:
     - . env/it4i.cs.p08.amd.l3.32.sh
 
-CS08_BASIC:
-  extends: CS08_INSTALL
-  needs: ["CS08_INSTALL"]
+.CS08_BASIC:
+  extends: .CS08_INSTALL
+  needs: [".CS08_INSTALL"]
   script:
     - sh tests/run.basic.sh
 
