@@ -167,6 +167,9 @@ template <> void SMALBE<double>::solve(const step::Step &step, IterativeSolverIn
     double Lag0 = -std::numeric_limits<double>::infinity();
     P->apply_invLG(mprgp.x, Gx);
     mprgp_info.iterations = 1;
+
+    eslog::checkpointln("FETI: SMALBE INITIALIZATION");
+    eslog::startln("SMALBE: ITERATIONS STARTED", "smalbe");
     for (int i = 0; mprgp_info.iterations <= feti.configuration.max_iterations; ++i) {
 
         math::copy(mprgp.b, bCtmu);
@@ -174,6 +177,7 @@ template <> void SMALBE<double>::solve(const step::Step &step, IterativeSolverIn
         math::copy(mprgp.x0, mprgp.x);
         mprgp.updateStoppingGradient(mprgp.g_stop, mprgp.g, mprgp.x, alpha);
         P->apply_invLG(mprgp.x, Gx);
+        eslog::accumulatedln("smalbe: invLG");
 
         math::copy(gbCtmu, mprgp.g);
         math::add(gbCtmu, -1., bCtmu);
@@ -183,6 +187,7 @@ template <> void SMALBE<double>::solve(const step::Step &step, IterativeSolverIn
         eslog::info("   -  %3d  %7d %7d    %6d %6d %6d %7.3f        %9.4e    %9.4e - \n", i, mprgp.active.dot(), 0, mprgp_info.n_cg, mprgp_info.n_mixed, mprgp_info.n_gproj, M_const, norm_stop / norm_b, norm_Gx * maxEIG_H / norm_b);
         info.time.current = eslog::time();
 
+        eslog::accumulatedln("smalbe: norm");
         if (norm_stop <= feti.configuration.precision * norm_b && norm_Gx <= feti.configuration.precision * norm_b / maxEIG_H) {
             info.converged = true;
             break;
@@ -191,11 +196,13 @@ template <> void SMALBE<double>::solve(const step::Step &step, IterativeSolverIn
         // 2. Update mu and M
         math::add(mu, rho, Gx); // mu = mu + rho*Gx;
         math::copy(bCtmu_prev, bCtmu);
+        eslog::accumulatedln("smalbe: update mu and M");
 
         // bCtmu = b - Ct*(Uc\mu);
         P->apply_GtinvU(mu, bCtmu);
         math::scale(-1., bCtmu);
         math::add(bCtmu, 1., b);
+        eslog::accumulatedln("smalbe: update bCtmu");
 
         // g = g - bCtmu + bCtmu_prev;
         math::add(mprgp.g, -1., bCtmu);
@@ -205,7 +212,10 @@ template <> void SMALBE<double>::solve(const step::Step &step, IterativeSolverIn
             M_const = feti.configuration.beta * M_const;
         }
         Lag0 = Lag1;
+        eslog::accumulatedln("smalbe: update g");
     }
+    eslog::endln("smalbe: finished");
+    eslog::checkpointln("FETI: SMALBE ITERATIONS");
     eslog::info("   - ------------------------------------------------------------------------------------- - \n");
 
     math::add(mprgp.x, 1., x_im);
@@ -222,6 +232,7 @@ template <> void SMALBE<double>::solve(const step::Step &step, IterativeSolverIn
 
     reconstructSolution(mprgp.x, mu, step);
     info = mprgp_info;
+    eslog::checkpointln("FETI: SOLUTION RECONSTRUCTION");
 
     eslog::info("   - HESSIANS TO EIGEN VALUE                                                     %9d - \n", nIt);
     eslog::info("   - HESSIANS IN ITERATIONS                                                      %9d - \n", mprgp_info.n_hess);

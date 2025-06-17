@@ -159,6 +159,7 @@ template <> void MPRGP<double>::run(const step::Step &step, MPRGPSolverInfo &inf
     Hprec(g_free, z);
     multByFree(z, free);
     math::copy(p, z);
+    eslog::accumulatedln("mprgp: pre-processing");
 
     while (!stop(x, g_stop) && info.iterations++ < feti.configuration.max_iterations) {
         info.time.current = eslog::time();
@@ -171,6 +172,7 @@ template <> void MPRGP<double>::run(const step::Step &step, MPRGPSolverInfo &inf
             double pFp = p.dot(Fp);
             double alpha_cg = z.dot(g) / pFp;
             double alpha_f = getFeasibleStepLength(x, p);
+            eslog::accumulatedln("mprgp: apply H");
             if (alpha_cg <= alpha_f) { // Conjugate gradient step
                 ++info.n_cg;
                 math::add(x, -alpha_cg, p);
@@ -183,6 +185,7 @@ template <> void MPRGP<double>::run(const step::Step &step, MPRGPSolverInfo &inf
                 double gamma_cg = z.dot(Fp) / pFp;
                 math::add(z, -gamma_cg, p);
                 math::copy(p, z);
+                eslog::accumulatedln("mprgp: cg step");
             } else { // Mixed step
                 ++info.n_mixed;
                 math::copy(gg0, g0); math::add(gg0, 1., g);
@@ -218,6 +221,7 @@ template <> void MPRGP<double>::run(const step::Step &step, MPRGPSolverInfo &inf
                 Hprec(g_free, z);
                 multByFree(z, free);
                 math::copy(p, z);
+                eslog::accumulatedln("mprgp: mixed step");
             }
         } else {
             ++info.n_gproj;
@@ -236,8 +240,10 @@ template <> void MPRGP<double>::run(const step::Step &step, MPRGPSolverInfo &inf
             Hprec(g_free, z);
             multByFree(z, free);
             math::copy(p, z);
+            eslog::accumulatedln("mprgp: g-proj step");
         }
         updateStoppingGradient(g_stop, g, x, alpha);
+        eslog::accumulatedln("mprgp: update stop. grad.");
     }
 }
 
@@ -302,7 +308,6 @@ template <> void MPRGP<double>::solve(const step::Step &step, IterativeSolverInf
 
     eslog::checkpointln("FETI: MPRGP INITIALIZATION");
     eslog::startln("MPRGP: ITERATIONS STARTED", "mprgp");
-
     run(step, mprgp_info, alpha, F_apply, Fprec_apply, stop);
     info = mprgp_info;
 
