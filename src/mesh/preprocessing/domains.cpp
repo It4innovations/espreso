@@ -494,12 +494,37 @@ void computeDomainsSurface(NodeStore *nodes, ElementStore *elements, DomainStore
 
                 for (size_t n = 0; n < neighbors->size(); ++n, ++faces, ++facepointer) {
                     if (neighbors->at(n) < dbegin + elements->distribution.process.offset || dend + elements->distribution.process.offset <= neighbors->at(n)) {
-                        for (auto f = faces->begin(); f != faces->end(); ++f) {
-                            tfaces.push_back(enodes->at(*f));
+                        switch ((*facepointer)->code) {
+                        case Element::CODE::TRIANGLE3: {
+                            for (auto f = faces->begin(); f != faces->end(); ++f) {
+                                tfaces.push_back(enodes->at(*f));
+                            }
+                            tfacesDistribution.push_back(tfaces.size());
+                            tfpointer.push_back(*facepointer);
+                            ++tecounter[(int)(*facepointer)->code];
+                        } break;
+                        case Element::CODE::SQUARE4: {
+                            std::vector<esint> square, triangles;
+                            for (auto f = faces->begin(); f != faces->end(); ++f) {
+                                square.push_back(info::mesh->nodes->IDs->datatarray()[enodes->at(*f)]);
+                                triangles.push_back(enodes->at(*f));
+                            }
+                            size_t mi = std::min_element(square.begin(), square.end()) - square.begin();
+                            tfaces.push_back(triangles[(mi + 0) % 4]);
+                            tfaces.push_back(triangles[(mi + 1) % 4]);
+                            tfaces.push_back(triangles[(mi + 2) % 4]);
+                            tfacesDistribution.push_back(tfaces.size());
+                            tfpointer.push_back(&Mesh::edata[static_cast<int>(Element::CODE::TRIANGLE3)]);
+                            ++tecounter[(int)tfpointer.back()->code];
+                            tfaces.push_back(triangles[(mi + 0) % 4]);
+                            tfaces.push_back(triangles[(mi + 2) % 4]);
+                            tfaces.push_back(triangles[(mi + 3) % 4]);
+                            tfacesDistribution.push_back(tfaces.size());
+                            tfpointer.push_back(&Mesh::edata[static_cast<int>(Element::CODE::TRIANGLE3)]);
+                            ++tecounter[(int)tfpointer.back()->code];
+                        } break;
+                        default: eslog::error("unsupported face element\n");
                         }
-                        tfacesDistribution.push_back(tfaces.size());
-                        tfpointer.push_back(*facepointer);
-                        ++tecounter[(int)(*facepointer)->code];
                     }
                 }
             }
