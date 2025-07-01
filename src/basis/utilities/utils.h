@@ -116,6 +116,19 @@ namespace utils {
     template<typename T> struct remove_complex { using type = decltype(std::real(T{})); };
     template<typename T> using remove_complex_t = typename remove_complex<T>::type;
 
+    template<typename T>
+    inline void atomic_add(T & dst, T val)
+    {
+        if constexpr(is_complex<T>()) {
+            atomic_add(real_ref(dst), real_ref(val));
+            atomic_add(imag_ref(dst), imag_ref(val));
+        }
+        else {
+            #pragma omp atomic
+            dst += val;
+        }
+    }
+
     template<typename I>
     I round_up(I num, I align)
     {

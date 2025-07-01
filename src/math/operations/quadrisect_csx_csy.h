@@ -45,6 +45,7 @@ private:
     bool called_set_bounds = false;
     bool called_setup = false;
     bool called_set_dst = false;
+    bool checked = false;
 private:
     submatrix_csx_csy<T,I> op_sub_11;
     submatrix_csx_csy<T,I> op_sub_12;

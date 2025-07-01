@@ -48,7 +48,8 @@ espreso::FETIConfiguration::FETIConfiguration()
             .setdatatype({ ECFDataType::OPTION })
             .addoption(ECFOption().setname("NONE").setdescription("Without precodition."))
             .addoption(ECFOption().setname("LUMPED").setdescription("Lumped precodition."))
-            .addoption(ECFOption().setname("DIRICHLET").setdescription("Dirichler precodition.")));
+            .addoption(ECFOption().setname("DIRICHLET").setdescription("Dirichlet precodition."))
+            .addoption(ECFOption().setname("DIRICHLET_GENERALSC_CPU").setdescription("Dirichlet precodition, generalized SC on CPU.")));
 
     precision = 1e-5;
     REGISTER(precision, ECFMetaData()

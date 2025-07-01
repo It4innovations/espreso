@@ -56,7 +56,8 @@ struct FETIConfiguration: public ECFDescription {
     enum class PRECONDITIONER {
         NONE,
         LUMPED,
-        DIRICHLET
+        DIRICHLET,
+        DIRICHLET_GENERALSC_CPU
     };
 
     enum class STOPPING_CRITERION {

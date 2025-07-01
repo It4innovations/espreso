@@ -145,7 +145,7 @@ void sc_csx_dny<T,I>::preprocess()
         size_matrix = A->nrows;
         size_A11 = size_matrix - size_sc;
 
-        if(A->prop.symm != sc->prop.symm) eslog::error("A and sc must have equal symmetry\n");
+        if(is_symmetric<T>(A->prop.symm) != is_symmetric<T>(sc->prop.symm) || is_hermitian<T>(A->prop.symm) != is_hermitian<T>(sc->prop.symm)) eslog::error("A and sc must have equivalent symmetry\n");
 
         is_matrix_hermitian = is_hermitian<T>(A->prop.symm);
         

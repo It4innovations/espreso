@@ -64,6 +64,7 @@ void permute_csx_csx<T,I>::perform()
     if(!M_src->ator->is_data_accessible_cpu()) eslog::error("source matrix must be cpu-accessible\n");
     if(!M_dst->ator->is_data_accessible_cpu()) eslog::error("destination matrix must be cpu-accessible\n");
     if(M_src->order != M_dst->order) eslog::error("matrix orders dont match\n");
+    if(M_src->prop.uplo == 'L' || M_src->prop.uplo == 'U' || M_dst->prop.uplo == 'L' || M_dst->prop.uplo == 'U') eslog::error("support for uplo not implemented\n");
     if(M_src->nrows != M_dst->nrows || M_src->ncols != M_dst->ncols || M_src->nnz != M_dst->nnz) eslog::error("matrix sizes dont match\n");
     if(perm_rows != nullptr && perm_rows->size != M_src->nrows) eslog::error("wrong row perm size\n");
     if(perm_cols != nullptr && perm_cols->size != M_src->ncols) eslog::error("wrong col perm size\n");

@@ -98,11 +98,11 @@ void sc_symm_hcsx_ddny_tria<T,I>::setup()
     if(d_sc->ncols != h_A12->ncols) eslog::error("incompatible matrices\n");
     if(d_sc->prop.uplo != 'L' && d_sc->prop.uplo != 'U') eslog::error("wrong sc uplo\n");
 
+    if(!DirectSparseSolver<T,I>::provideFactors()) eslog::error("wrong sparse solver, must provide factors\n");
     solver_factor_uplo = '_';
     if(DirectSparseSolver<T,I>::factorsSymmetry() == Solver_Factors::HERMITIAN_LOWER) solver_factor_uplo = 'L';
     if(DirectSparseSolver<T,I>::factorsSymmetry() == Solver_Factors::HERMITIAN_UPPER) solver_factor_uplo = 'U';
     if(solver_factor_uplo == '_') eslog::error("wrong sparse solver, must be symmetric\n");
-    if(!DirectSparseSolver<T,I>::provideFactors()) eslog::error("wrong sparse solver, must provide factors\n");
 
     ator_ws_persistent = std::make_unique<AllocatorArena_new>(AllocatorGPU_new::get_singleton());
     ator_ws_tmp_linear = std::make_unique<AllocatorArena_new>(AllocatorGPU_new::get_singleton());

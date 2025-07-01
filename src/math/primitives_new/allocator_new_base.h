@@ -2,6 +2,7 @@
 #ifndef SRC_MATH_PRIMITIVES_NEW_ALLOCATOR_NEW_BASE_H_
 #define SRC_MATH_PRIMITIVES_NEW_ALLOCATOR_NEW_BASE_H_
 
+#include <cstddef>
 #include "esinfo/eslog.h"
 
 

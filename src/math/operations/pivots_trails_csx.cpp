@@ -151,9 +151,9 @@ void pivots_trails_csx<T,I>::complete_forward(VectorDenseView_new<I> & vec, I en
     size_t size = vec.size;
     I * pivtrl = vec.vals;
 
-    I curr = 0;
+    I curr = 0; // TODO: this places pivtrl at the first row/col instead of indicating empty row/col
     for(size_t ip = 0; ip < size; ip++) {
-        if(pivtrl[ip] == end_val) {
+        if(pivtrl[ip] == end_val || (ip > 0 && pivtrl[ip] < pivtrl[ip-1])) {
             pivtrl[ip] = curr;
         }
         curr = pivtrl[ip];
@@ -168,9 +168,9 @@ void pivots_trails_csx<T,I>::complete_backward(VectorDenseView_new<I> & vec, I e
     size_t size = vec.size;
     I * pivtrl = vec.vals;
 
-    I curr = end_val - 1;
+    I curr = end_val - 1; // TODO: this places pivtrl at the last row/col instead of indicating empty row/col
     for(size_t ip = size - 1; ip < size; ip--) {
-        if(pivtrl[ip] == end_val) {
+        if(pivtrl[ip] == end_val || (ip < size-1 && pivtrl[ip] > pivtrl[ip+1])) {
             pivtrl[ip] = curr;
         }
         curr = pivtrl[ip];

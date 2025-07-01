@@ -127,7 +127,7 @@ public:
                 for(size_t i = 0; i < nnz; i++) eslog::info("%+.3e ", (double)vals[i]);
                 eslog::info("\n");
             }
-            if(method == 'D') {
+            if(method == 'D' || method == 'P') {
                 struct rcv { I r; I c; T v; };
                 std::vector<rcv> rcvs;
                 for(size_t ip = 0; ip < get_size_primary(); ip++) {
@@ -150,16 +150,23 @@ public:
                         rcv & x = rcvs[curr_idx];
                         if(x.r == curr_row && x.c == curr_col) {
                             T v = x.v;
-                            if(v == 0) eslog::info("    0       ");
-                            else eslog::info(" %+11.3e", v);
+                            if(method == 'D') {
+                                if(v == 0) eslog::info("    0       ");
+                                else eslog::info(" %+11.3e", v);
+                            }
+                            else {
+                                eslog::info("X");
+                            }
                             curr_idx++;
                         }
                         else {
-                            eslog::info("    .       ");
+                            if(method == 'D') eslog::info("    .       ");
+                            if(method == 'P') eslog::info(".");
                         }
                     }
                     else {
-                        eslog::info("    .       ");
+                        if(method == 'D') eslog::info("    .       ");
+                            if(method == 'P') eslog::info(".");
                     }
                     curr_col++;
                     if(curr_col == (I)ncols) {

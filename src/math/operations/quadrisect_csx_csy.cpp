@@ -118,11 +118,6 @@ void quadrisect_csx_csy<T,I>::set_matrices_dst(MatrixCsxView_new<T,I> * M_dst_11
     M_dst_21 = M_dst_21_;
     M_dst_22 = M_dst_22_;
 
-    if(M_dst_11 != nullptr && (M_dst_11->nrows != row_cut || M_dst_11->ncols != col_cut || M_dst_11->nnz != op_sub_11.get_output_matrix_nnz())) eslog::error("wrong dst 11 matrix size\n");
-    if(M_dst_12 != nullptr && (M_dst_12->nrows != row_cut || M_dst_12->ncols != M_src->ncols - col_cut || M_dst_12->nnz != op_sub_12.get_output_matrix_nnz())) eslog::error("wrong dst 12 matrix size\n");
-    if(M_dst_21 != nullptr && (M_dst_21->nrows != M_src->nrows - row_cut || M_dst_21->ncols != col_cut || M_dst_21->nnz != op_sub_21.get_output_matrix_nnz())) eslog::error("wrong dst 21 matrix size\n");
-    if(M_dst_22 != nullptr && (M_dst_22->nrows != M_src->nrows - row_cut || M_dst_22->ncols != M_src->ncols - col_cut || M_dst_22->nnz != op_sub_22.get_output_matrix_nnz())) eslog::error("wrong dst 22 matrix size\n");
-
     op_sub_11.set_matrix_dst(M_dst_11);
     op_sub_12.set_matrix_dst(M_dst_12);
     op_sub_21.set_matrix_dst(M_dst_21);
@@ -140,6 +135,13 @@ void quadrisect_csx_csy<T,I>::perform()
 
     if(!called_setup) eslog::error("setup was not called\n");
     if(!called_set_dst) eslog::error("destination matrices are not set\n");
+    if(!checked) {
+        if(M_dst_11 != nullptr && (M_dst_11->nrows != row_cut || M_dst_11->ncols != col_cut || M_dst_11->nnz != op_sub_11.get_output_matrix_nnz())) eslog::error("wrong dst 11 matrix size\n");
+        if(M_dst_12 != nullptr && (M_dst_12->nrows != row_cut || M_dst_12->ncols != M_src->ncols - col_cut || M_dst_12->nnz != op_sub_12.get_output_matrix_nnz())) eslog::error("wrong dst 12 matrix size\n");
+        if(M_dst_21 != nullptr && (M_dst_21->nrows != M_src->nrows - row_cut || M_dst_21->ncols != col_cut || M_dst_21->nnz != op_sub_21.get_output_matrix_nnz())) eslog::error("wrong dst 21 matrix size\n");
+        if(M_dst_22 != nullptr && (M_dst_22->nrows != M_src->nrows - row_cut || M_dst_22->ncols != M_src->ncols - col_cut || M_dst_22->nnz != op_sub_22.get_output_matrix_nnz())) eslog::error("wrong dst 22 matrix size\n");
+        checked = true;
+    }
 
     if(M_dst_11 != nullptr) op_sub_11.perform();
     if(M_dst_12 != nullptr) op_sub_12.perform();

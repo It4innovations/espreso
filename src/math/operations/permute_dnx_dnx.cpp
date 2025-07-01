@@ -85,46 +85,44 @@ void permute_dnx_dnx<T,I>::perform()
         permute_dnx_dnx<T,I>::do_all(&tmp1, &tmp2, perm_rows, perm_cols);
         tmp2.prop.uplo = M_dst->prop.uplo;
         copy_dnx<T>::do_all(&tmp2, M_dst, false);
-
-        return;
     }
+    else {
+        if(M_src == M_dst) {
+            MatrixDenseData_new<T> tmp;
+            tmp.set(M_src->nrows, M_src->ncols, M_src->order, AllocatorCPU_new::get_singleton());
+            tmp.alloc();
 
-    if(M_src == M_dst) {
-        MatrixDenseData_new<T> tmp;
-        tmp.set(M_src->nrows, M_src->ncols, M_src->order, AllocatorCPU_new::get_singleton());
-        tmp.alloc();
-
-        permute_dnx_dnx<T,I>::do_all(M_src, &tmp, perm_rows, perm_cols);
-        copy_dnx<T>::do_all(&tmp, M_dst, false);
-
-        return;
-    }
-
-    if(perm_rows == nullptr && perm_cols == nullptr) {
-        copy_dnx<T>::do_all(M_src, M_dst);
-    }
-    if(perm_rows != nullptr && perm_cols == nullptr) {
-        if(M_src->order == 'R') {
-            perform_primary(*perm_rows);
+            permute_dnx_dnx<T,I>::do_all(M_src, &tmp, perm_rows, perm_cols);
+            copy_dnx<T>::do_all(&tmp, M_dst, false);
         }
-        if(M_src->order == 'C') {
-            perform_secdary(*perm_rows);
-        }
-    }
-    if(perm_rows == nullptr && perm_cols != nullptr) {
-        if(M_src->order == 'R') {
-            perform_secdary(*perm_cols);
-        }
-        if(M_src->order == 'C') {
-            perform_primary(*perm_cols);
-        }
-    }
-    if(perm_rows != nullptr && perm_cols != nullptr) {
-        if(M_src->order == 'R') {
-            perform_both(*perm_rows, *perm_cols);
-        }
-        if(M_src->order == 'C') {
-            perform_both(*perm_cols, *perm_rows);
+        else {
+            if(perm_rows == nullptr && perm_cols == nullptr) {
+                copy_dnx<T>::do_all(M_src, M_dst);
+            }
+            if(perm_rows != nullptr && perm_cols == nullptr) {
+                if(M_src->order == 'R') {
+                    perform_primary(*perm_rows);
+                }
+                if(M_src->order == 'C') {
+                    perform_secdary(*perm_rows);
+                }
+            }
+            if(perm_rows == nullptr && perm_cols != nullptr) {
+                if(M_src->order == 'R') {
+                    perform_secdary(*perm_cols);
+                }
+                if(M_src->order == 'C') {
+                    perform_primary(*perm_cols);
+                }
+            }
+            if(perm_rows != nullptr && perm_cols != nullptr) {
+                if(M_src->order == 'R') {
+                    perform_both(*perm_rows, *perm_cols);
+                }
+                if(M_src->order == 'C') {
+                    perform_both(*perm_cols, *perm_rows);
+                }
+            }
         }
     }
 

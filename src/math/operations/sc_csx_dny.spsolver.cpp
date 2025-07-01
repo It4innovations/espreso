@@ -117,11 +117,11 @@ void sc_csx_dny_spsolver<T,I>::internal_perform_2()
 
     Matrix_Dense<T,I> X_old(size_sc, size_A11);
     MatrixDenseView_new<T> X = MatrixDenseView_new<T>::from_old(X_old, 'R').get_transposed_reordered_view();
-    X.prop.uplo = 'F';
+    X.prop.uplo = '_';
 
     Matrix_Dense<T,I> Y_old(size_sc, size_A11);
     MatrixDenseView_new<T> Y = MatrixDenseView_new<T>::from_old(Y_old, 'R').get_transposed_reordered_view();
-    Y.prop.uplo = 'F';
+    Y.prop.uplo = '_';
 
     math::operations::convert_csx_dny<T,I>::do_all(A12_to_use, &X);
 
@@ -136,7 +136,11 @@ void sc_csx_dny_spsolver<T,I>::internal_perform_2()
         sc_tmp.prop.uplo = sc->prop.uplo;
 
         if(A22 == nullptr) math::operations::fill_dnx<T>::do_all(&sc_tmp, T{0});
-        if(A22 != nullptr) math::operations::convert_csx_dny<T,I>::do_all(A22, &sc_tmp);
+        if(A22 != nullptr) {
+            MatrixCsxView_new<T,I> A22_rt = A22->get_transposed_reordered_view();
+            MatrixCsxView_new<T,I> * A22_to_use = (A22->prop.uplo == sc_tmp.prop.uplo) ? A22 : &A22_rt;
+            math::operations::convert_csx_dny<T,I>::do_all(A22_to_use, &sc_tmp);
+        }
 
         math::operations::gemm_csx_dny_dnz<T,I>::do_all(A21_to_use, &Y, &sc_tmp, T{-1} * alpha, T{1} * alpha);
 

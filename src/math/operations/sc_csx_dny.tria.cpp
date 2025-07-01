@@ -18,6 +18,7 @@
 #include "math/operations/copy_dnx.h"
 #include "math/wrappers/math.spsolver.h"
 #include "math/operations/quadrisect_csx_csy.h"
+#include "math/operations/lincomb_dnx_csy.h"
 #include "basis/utilities/stacktimer.h"
 
 
@@ -61,6 +62,8 @@ struct sc_csx_dny_tria_data
     trsm_csx_dny_tri<T,I> op_trsm;
     herk_dnx_dny_tri<T,I> op_herk;
     permute_dnx_dnx<T,I> op_permute_sc;
+    lincomb_dnx_csy<T,I> op_lincomb_final;
+    MatrixCsxView_new<T,I> A22_rt;
     quadrisect_csx_csy<T,I> op_split;
     MatrixCsxData_new<T,I> sub_A11;
     MatrixCsxData_new<T,I> sub_A12;
@@ -191,7 +194,6 @@ template<typename T, typename I>
 void sc_csx_dny_tria<T,I>::internal_preprocess()
 {
     if(!is_matrix_hermitian) eslog::error("dont support non-hermitian systems yet\n");
-    if(A12 == nullptr) eslog::error("A12 has to be set for now\n");
 
     data = std::make_unique<sc_csx_dny_tria_data<T,I>>();
 
@@ -229,6 +231,8 @@ void sc_csx_dny_tria<T,I>::internal_preprocess()
         if(A->prop.uplo != 'U') A21 = &data->sub_A21;
         A22 = &data->sub_A22;
     }
+
+    if(A12 == nullptr) eslog::error("A12 has to be set for now\n");
 
     if(A11->order != 'R') {
         eslog::error("only support csr matrices now\n");
@@ -336,7 +340,7 @@ void sc_csx_dny_tria<T,I>::internal_preprocess()
     data->op_herk.set_config(data->cfg.cfg_herk);
     data->op_herk.set_matrix_A(&data->X_dn);
     data->op_herk.set_matrix_C(sc);
-    data->op_herk.set_coefficients(-alpha, 0 * alpha);  // beta=0, because I assume A22=0
+    data->op_herk.set_coefficients(-alpha, 0);
     data->op_herk.set_mode(blas::herk_mode::AhA);
     data->op_herk.calc_A_pattern(data->X_sp);
     data->op_herk.preprocess();
@@ -345,6 +349,16 @@ void sc_csx_dny_tria<T,I>::internal_preprocess()
     data->op_permute_sc.set_matrix_dst(sc);
     data->op_permute_sc.set_perm_vector_rows(&data->perm_to_sort_back_sc);
     data->op_permute_sc.set_perm_vector_cols(&data->perm_to_sort_back_sc);
+
+    if(A22 != nullptr) {
+        data->A22_rt = A22->get_transposed_reordered_view();
+
+        data->op_lincomb_final.set_matrix_X(sc);
+        data->op_lincomb_final.set_matrix_A(sc);
+        if(A22->prop.uplo == sc->prop.uplo) data->op_lincomb_final.set_matrix_B(A22);
+        else data->op_lincomb_final.set_matrix_B(&data->A22_rt);
+        data->op_lincomb_final.set_coefficients(T{1}, alpha);
+    }
 }
 
 
@@ -386,9 +400,9 @@ void sc_csx_dny_tria<T,I>::internal_perform_2()
 
     data->X_dn.alloc();
 
-    convert_csx_dny<T,I>::do_all(&data->X_sp, &data->X_dn);
+    permute_csx_csx<T,I>::do_all(A12, &data->X_sp, &data->perm_fillreduce, &data->perm_to_sort_A12_cols);
 
-    convert_csx_dny<T,I>::do_all(A22, sc);
+    convert_csx_dny<T,I>::do_all(&data->X_sp, &data->X_dn);
 
     data->op_trsm.perform();
 
@@ -397,6 +411,12 @@ void sc_csx_dny_tria<T,I>::internal_perform_2()
     data->op_permute_sc.perform();
 
     data->X_dn.free();
+
+    if(A22 != nullptr) {
+        data->A22_rt = A22->get_transposed_reordered_view();
+
+        data->op_lincomb_final.perform();
+    }
 }
 
 
