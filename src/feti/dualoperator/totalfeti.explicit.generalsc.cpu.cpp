@@ -140,14 +140,14 @@ void TotalFETIExplicitGeneralScCpu<T,I>::set(const step::Step &step)
             per_domain_stuff & data_bigger = domain_data[di_bigger];
             per_domain_stuff & data_di = domain_data[di];
             if(di == di_bigger) {
-                F_allocd.set(data_bigger.n_dofs_interface + 1, data_bigger.n_dofs_interface, cfg.order_F, AllocatorCPU_new::get_singleton());
+                F_allocd.set(data_bigger.n_dofs_interface + (cfg.order_F == 'R'), data_bigger.n_dofs_interface + (cfg.order_F == 'C'), cfg.order_F, AllocatorCPU_new::get_singleton());
                 F_allocd.alloc();
-                data_di.F = F_allocd.get_submatrix_view(1, data_di.n_dofs_interface + 1, 0, data_di.n_dofs_interface);
-                data_di.F.prop.uplo = 'L';
+                data_di.F.set_view(data_di.n_dofs_interface, data_di.n_dofs_interface, F_allocd.ld, F_allocd.order, F_allocd.vals + F_allocd.ld, F_allocd.ator);
+                data_di.F.prop.uplo = (F_allocd.order == 'R') ? 'L' : 'U';
             }
             else {
                 data_di.F = F_allocd.get_submatrix_view(0, data_di.n_dofs_interface, 0, data_di.n_dofs_interface);
-                data_di.F.prop.uplo = 'U';
+                data_di.F.prop.uplo = (F_allocd.order == 'R') ? 'U' : 'L';
             }
             data_di.F.prop.symm = MatrixSymmetry_new::hermitian;
             if(data_di.F.order == 'R') {

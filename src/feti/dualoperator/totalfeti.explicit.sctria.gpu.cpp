@@ -395,7 +395,7 @@ void TotalFETIExplicitScTriaGpu<T,I>::set(const step::Step &step)
 
         data.op_sc->preprocess_submit(ws_tmp);
 
-        gpu::mgm::submit_host_function(q, [&,ws_tmp,di](){
+        gpu::mgm::submit_host_function(q, [&,ws_tmp](){
             void * ws_tmp_ = ws_tmp;
             ator_tmp_cbmba->free(ws_tmp_);
         });

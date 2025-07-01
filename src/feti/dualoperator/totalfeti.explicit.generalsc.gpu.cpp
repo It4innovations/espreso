@@ -146,14 +146,14 @@ void TotalFETIExplicitGeneralScGpu<T,I>::set(const step::Step &step)
             per_domain_stuff & data_bigger = domain_data[di_bigger];
             per_domain_stuff & data_di = domain_data[di];
             if(di == di_bigger) {
-                d_F_allocd.set(data_bigger.n_dofs_interface + 1, data_bigger.n_dofs_interface, cfg.order_F, AllocatorGPU_new::get_singleton());
+                d_F_allocd.set(data_bigger.n_dofs_interface + (cfg.order_F == 'R'), data_bigger.n_dofs_interface + (cfg.order_F == 'C'), cfg.order_F, AllocatorGPU_new::get_singleton());
                 d_F_allocd.alloc();
-                data_di.d_F = d_F_allocd.get_submatrix_view(1, data_di.n_dofs_interface + 1, 0, data_di.n_dofs_interface);
-                data_di.d_F.prop.uplo = 'L';
+                data_di.d_F.set_view(data_di.n_dofs_interface, data_di.n_dofs_interface, d_F_allocd.ld, d_F_allocd.order, d_F_allocd.vals + d_F_allocd.ld, d_F_allocd.ator);
+                data_di.d_F.prop.uplo = (d_F_allocd.order == 'R') ? 'L' : 'U';
             }
             else {
                 data_di.d_F = d_F_allocd.get_submatrix_view(0, data_di.n_dofs_interface, 0, data_di.n_dofs_interface);
-                data_di.d_F.prop.uplo = 'U';
+                data_di.d_F.prop.uplo = (d_F_allocd.order == 'R') ? 'U' : 'L';
             }
             data_di.d_F.prop.symm = MatrixSymmetry_new::hermitian;
             if(data_di.d_F.order == 'R') {
