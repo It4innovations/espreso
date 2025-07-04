@@ -101,6 +101,16 @@ constexpr int _getCholmodStype(Matrix_Shape shape)
     }
 }
 
+constexpr int _getCholmodStype(char uplo)
+{
+    switch(uplo)
+    {
+        case 'L': return -1;
+        case 'U': return 1;
+        default: return 0;
+    }
+}
+
 template <typename T, typename I>
 static inline void setSymmetric(cholmod_sparse* &A, const Matrix_CSR<T, I> &M, bool trans)
 {
