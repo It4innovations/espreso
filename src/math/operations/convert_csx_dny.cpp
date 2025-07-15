@@ -40,7 +40,7 @@ void convert_csx_dny<T,I>::perform_zerofill()
     if(!M_src->ator->is_data_accessible_cpu()) eslog::error("source matrix must be cpu-accessible\n");
     if(!M_dst->ator->is_data_accessible_cpu()) eslog::error("destination matrix must be cpu-accessible\n");
     if(M_src->nrows != M_dst->nrows || M_src->ncols != M_dst->ncols) eslog::error("matrix dimensions don't match\n");
-    if(M_src->prop.uplo != M_dst->prop.uplo) eslog::error("uplo of matrices does not match\n");
+    if(!is_uplo_equal(M_src->prop.uplo, M_dst->prop.uplo)) eslog::error("uplo of matrices does not match\n");
     if((M_dst->prop.uplo == 'L' || M_dst->prop.uplo == 'U') && M_dst->nrows != M_dst->ncols) eslog::error("upper of lower matrix must be square\n");
 
     fill_dnx<T>::do_all(M_dst, T{0});
@@ -58,7 +58,7 @@ void convert_csx_dny<T,I>::perform_copyvals()
     if(!M_src->ator->is_data_accessible_cpu()) eslog::error("source matrix must be cpu-accessible\n");
     if(!M_dst->ator->is_data_accessible_cpu()) eslog::error("destination matrix must be cpu-accessible\n");
     if(M_src->nrows != M_dst->nrows || M_src->ncols != M_dst->ncols) eslog::error("matrix dimensions don't match\n");
-    if(M_src->prop.uplo != M_dst->prop.uplo) eslog::error("uplo of matrices does not match\n");
+    if(!is_uplo_equal(M_src->prop.uplo, M_dst->prop.uplo)) eslog::error("uplo of matrices does not match\n");
     if((M_dst->prop.uplo == 'L' || M_dst->prop.uplo == 'U') && M_dst->nrows != M_dst->ncols) eslog::error("upper of lower matrix must be square\n");
 
     size_t primary_size = M_src->get_size_primary();

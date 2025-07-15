@@ -121,6 +121,14 @@ inline bool is_symmetry_equal(MatrixSymmetry_new s1, MatrixSymmetry_new s2)
     return s1 == s2;
 }
 
+inline bool is_uplo_equal(char uplo1, char uplo2)
+{
+    if(uplo1 == uplo2) return true;
+    if(uplo1 == '_' && uplo2 == 'F') return true;
+    if(uplo1 == 'F' && uplo2 == '_') return true;
+    return false;
+}
+
 inline Matrix_Shape get_old_matrix_shape(const MatrixBase_new & A)
 {
     if(A.prop.uplo == 'U') return Matrix_Shape::UPPER;

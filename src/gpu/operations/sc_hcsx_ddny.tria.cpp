@@ -2,7 +2,7 @@
 #include "gpu/operations/sc_hcsx_ddny.tria.h"
 
 #include "math/wrappers/math.spsolver.h"
-#include "math/primitives_new/permutation_data_new.h"
+#include "math/operations/solver_csx.h"
 #include "math/operations/permute_csx_csx.h"
 #include "math/operations/pivots_trails_csx.h"
 #include "math/operations/sorting_permutation.h"
@@ -32,12 +32,11 @@ struct sc_hcsx_ddny_tria_data
         typename herk_ddnx_ddny_tri<T,I>::config cfg_herk;
         char order_X = '_';
         char order_L = '_';
+        typename math::operations::solver_csx<T,I>::implementation_selector op_a11solver_is = math::operations::solver_csx<T,I>::implementation_selector::autoselect;
     };
     config cfg;
-    DirectSparseSolver<T,I> h_A11_solver;
-    Matrix_CSR<T,I> h_A11_old;
-    MatrixCsxData_new<T,I> h_factor_U_row;
-    MatrixCsxData_new<T,I> h_factor_L_row;
+    MatrixCsxData_new<T,I> h_U_data;
+    MatrixCsxData_new<T,I> h_L_data;
     MatrixCsxView_new<T,I> h_L_row;
     MatrixCsxView_new<T,I> h_L_col;
     MatrixCsxView_new<T,I> h_U_row;
@@ -54,6 +53,7 @@ struct sc_hcsx_ddny_tria_data
     MatrixDenseData_new<T> d_sc_tmp2_x; // same order as sc
     MatrixDenseView_new<T> d_sc_tmp1_y; // different order as sc
     MatrixDenseView_new<T> d_sc_tmp2_y; // different order as sc
+    std::unique_ptr<math::operations::solver_csx<T,I>> op_h_A11_solver;
     std::unique_ptr<convert_dcsx_ddny<T,I>> op_X_sp2dn;
     math::operations::convert_csx_csy_map<T,I> op_L2U;
     math::operations::convert_csx_csy_map<T,I> op_U2L;
@@ -203,11 +203,7 @@ void sc_hcsx_ddny_tria<T,I>::internal_setup()
 
     populate_config<T,I>(data->cfg);
 
-    data->solver_factor_uplo = '_';
-    if(DirectSparseSolver<T,I>::factorsSymmetry() == Solver_Factors::HERMITIAN_LOWER) data->solver_factor_uplo = 'L';
-    if(DirectSparseSolver<T,I>::factorsSymmetry() == Solver_Factors::HERMITIAN_UPPER) data->solver_factor_uplo = 'U';
-    if(data->solver_factor_uplo == '_') eslog::error("wrong sparse solver, must be symmetric\n");
-    if(!DirectSparseSolver<T,I>::provideFactors()) eslog::error("wrong sparse solver, must provide factors\n");
+    data->solver_factor_uplo = h_A11->prop.uplo;
 
     if(called_set_matrix == '1') {
         data->op_split.set_matrix_src(h_A);
@@ -236,49 +232,50 @@ void sc_hcsx_ddny_tria<T,I>::internal_setup()
         h_A22 = &data->sub_h_A22;
     }
 
-    stacktimer::push("symbolic_factorization");
-    data->h_A11_old = MatrixCsxView_new<T,I>::template to_old<cpu_allocator>(*h_A11);
-    data->h_A11_solver.commit(data->h_A11_old);
-    data->h_A11_solver.symbolicFactorization();
-    stacktimer::pop();
+    data->op_h_A11_solver = math::operations::solver_csx<T,I>::make(data->cfg.op_a11solver_is, h_A11, true, need_solve_A11);
+    data->op_h_A11_solver->set_matrix_A(h_A11);
+    data->op_h_A11_solver->set_needs(true, need_solve_A11);
+    data->op_h_A11_solver->factorize_symbolic();
 
-    I factor_nnz = data->h_A11_solver.getFactorNnz();
+    size_t factor_nnz = data->op_h_A11_solver->get_factor_nnz();
 
-    data->h_factor_U_row.set(size_A11, size_A11, factor_nnz, 'R', AllocatorHostPinned_new::get_singleton());
-    data->h_factor_U_row.prop.uplo = 'U';
-    data->h_factor_U_row.prop.diag = 'N';
+    data->h_U_data.set(size_A11, size_A11, factor_nnz, h_A11->order, AllocatorHostPinned_new::get_singleton());
+    data->h_U_data.prop.uplo = 'U';
+    data->h_U_data.prop.diag = 'N';
 
-    data->h_factor_L_row.set(size_A11, size_A11, factor_nnz, 'R', AllocatorHostPinned_new::get_singleton());
-    data->h_factor_L_row.prop.uplo = 'L';
-    data->h_factor_L_row.prop.diag = 'N';
+    data->h_L_data.set(size_A11, size_A11, factor_nnz, h_A11->order, AllocatorHostPinned_new::get_singleton());
+    data->h_L_data.prop.uplo = 'L';
+    data->h_L_data.prop.diag = 'N';
 
     data->need_reorder_factor_L2U = ((data->solver_factor_uplo == 'L') && (data->cfg.order_L == 'C'));
     data->need_reorder_factor_U2L = ((data->solver_factor_uplo == 'U') && (data->cfg.order_L == 'R'));
 
-    stacktimer::push("alloc_host_factors");
     if(data->solver_factor_uplo == 'U' || data->need_reorder_factor_L2U) {
-        data->h_factor_U_row.alloc();
+        data->h_U_data.alloc();
     }
     if(data->solver_factor_uplo == 'L' || data->need_reorder_factor_U2L) {
-        data->h_factor_L_row.alloc();
+        data->h_L_data.alloc();
     }
-    stacktimer::pop();
 
-    stacktimer::push("extract_factors");
-    if(data->solver_factor_uplo == 'U') {
-        Matrix_CSR<T,I,gpu::mgm::Ah> h_factor_old_U = MatrixCsxView_new<T,I>::template to_old<gpu::mgm::Ah>(data->h_factor_U_row);
-        data->h_A11_solver.getFactorU(h_factor_old_U, true, false);
+    if(h_A11->prop.uplo == 'L') {
+        data->op_h_A11_solver->get_factor_L(data->h_L_data, true, false);
     }
-    if(data->solver_factor_uplo == 'L') {
-        Matrix_CSR<T,I,gpu::mgm::Ah> h_factor_old_L = MatrixCsxView_new<T,I>::template to_old<gpu::mgm::Ah>(data->h_factor_L_row);
-        data->h_A11_solver.getFactorL(h_factor_old_L, true, false);
+    if(h_A11->prop.uplo == 'U') {
+        data->op_h_A11_solver->get_factor_U(data->h_U_data, true, false);
     }
-    stacktimer::pop();
 
-    data->h_L_row = data->h_factor_L_row;
-    data->h_L_col = data->h_factor_U_row.get_transposed_reordered_view();
-    data->h_U_row = data->h_factor_U_row;
-    data->h_U_col = data->h_factor_L_row.get_transposed_reordered_view();
+    if(h_A11->order == 'R') {
+        data->h_L_row = data->h_L_data;
+        data->h_U_row = data->h_U_data;
+        data->h_L_col = data->h_U_row.get_transposed_reordered_view();
+        data->h_U_col = data->h_L_row.get_transposed_reordered_view();
+    }
+    if(h_A11->order == 'C') {
+        data->h_L_col = data->h_L_data;
+        data->h_U_col = data->h_U_data;
+        data->h_L_row = data->h_U_col.get_transposed_reordered_view();
+        data->h_U_row = data->h_L_col.get_transposed_reordered_view();
+    }
 
     if(data->need_reorder_factor_L2U) {
         data->op_L2U.set_matrix_src(&data->h_L_row);
@@ -305,8 +302,7 @@ void sc_hcsx_ddny_tria<T,I>::internal_setup()
         {
             data->h_perm_fillreduce.set(h_A12->nrows, AllocatorCPU_new::get_singleton());
             data->h_perm_fillreduce.alloc();
-            Permutation<I> h_perm_fillreduce_old = PermutationView_new<I>::template to_old<cpu_allocator>(data->h_perm_fillreduce);
-            data->h_A11_solver.getPermutation(h_perm_fillreduce_old);
+            data->op_h_A11_solver->get_permutation(data->h_perm_fillreduce);
 
             math::operations::permute_csx_csx<T,I>::do_all(h_A12, &h_X_sp_tmp, &data->h_perm_fillreduce, nullptr);
         }
@@ -451,7 +447,7 @@ void sc_hcsx_ddny_tria<T,I>::internal_perform_1_submit()
     }
 
     stacktimer::push("numerical_factorization");
-    data->h_A11_solver.numericalFactorization();
+    data->op_h_A11_solver->factorize_numeric();
     stacktimer::pop();
 }
 
@@ -462,12 +458,10 @@ void sc_hcsx_ddny_tria<T,I>::internal_perform_2_submit()
 {
     stacktimer::push("extract_factors");
     if(data->solver_factor_uplo == 'U') {
-        Matrix_CSR<T,I,gpu::mgm::Ah> h_factor_old = MatrixCsxView_new<T,I>::template to_old<gpu::mgm::Ah>(data->h_factor_U_row);
-        data->h_A11_solver.getFactorU(h_factor_old, false, true);
+        data->op_h_A11_solver->get_factor_U(data->h_U_data, false, true);
     }
     if(data->solver_factor_uplo == 'L') {
-        Matrix_CSR<T,I,gpu::mgm::Ah> h_factor_old = MatrixCsxView_new<T,I>::template to_old<gpu::mgm::Ah>(data->h_factor_L_row);
-        data->h_A11_solver.getFactorL(h_factor_old, false, true);
+        data->op_h_A11_solver->get_factor_L(data->h_L_data, false, true);
     }
     stacktimer::pop();
 
@@ -512,10 +506,7 @@ void sc_hcsx_ddny_tria<T,I>::internal_perform_2_submit()
 template<typename T, typename I>
 void sc_hcsx_ddny_tria<T,I>::internal_solve_A11(VectorDenseView_new<T> & rhs, VectorDenseView_new<T> & sol)
 {
-    Vector_Dense<T,I> rhs_old = VectorDenseView_new<T>::template to_old<I,cpu_allocator>(rhs);
-    Vector_Dense<T,I> sol_old = VectorDenseView_new<T>::template to_old<I,cpu_allocator>(sol);
-
-    data->h_A11_solver.solve(rhs_old, sol_old);
+    data->op_h_A11_solver->solve(rhs, sol);
 }
 
 

@@ -152,12 +152,10 @@ void TotalFETIExplicitGeneralScCpu<T,I>::set(const step::Step &step)
             data_di.F.prop.symm = MatrixSymmetry_new::hermitian;
             if(data_di.F.order == 'R') {
                 data_di.F_old = MatrixDenseView_new<T>::template to_old<I,cpu_allocator>(data_di.F);
-                data_di.F_uplo_in_rowmajor = data_di.F.prop.uplo;
             }
             if(data_di.F.order == 'C') {
                 MatrixDenseView_new<T> F_reordered = data_di.F.get_transposed_reordered_view();
                 data_di.F_old = MatrixDenseView_new<T>::template to_old<I,cpu_allocator>(F_reordered);
-                data_di.F_uplo_in_rowmajor = change_uplo(data_di.F.prop.uplo);
             }
         }
     }

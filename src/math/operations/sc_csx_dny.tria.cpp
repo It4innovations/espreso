@@ -16,9 +16,9 @@
 #include "math/operations/permute_dnx_dnx.h"
 #include "math/operations/permute_csx_csx.h"
 #include "math/operations/copy_dnx.h"
-#include "math/wrappers/math.spsolver.h"
 #include "math/operations/quadrisect_csx_csy.h"
 #include "math/operations/lincomb_dnx_csy.h"
+#include "math/operations/solver_csx.h"
 #include "basis/utilities/stacktimer.h"
 
 
@@ -38,15 +38,14 @@ struct sc_csx_dny_tria_data
         typename herk_dnx_dny_tri<T,I>::config cfg_herk;
         char order_X = '_';
         char order_L = '_';
+        typename solver_csx<T,I>::implementation_selector op_a11solver_is = solver_csx<T,I>::implementation_selector::autoselect;
     };
     config cfg;
-    Matrix_CSR<T,I> A11_old;
-    DirectSparseSolver<T,I> A11_solver;
     bool need_reorder_factor_L2U = false;
     bool need_reorder_factor_U2L = false;
     char solver_factor_uplo = '_';
-    MatrixCsxData_new<T,I> factor_L_row;
-    MatrixCsxData_new<T,I> factor_U_row;
+    MatrixCsxData_new<T,I> L_data;
+    MatrixCsxData_new<T,I> U_data;
     MatrixCsxView_new<T,I> L_row;
     MatrixCsxView_new<T,I> L_col;
     MatrixCsxView_new<T,I> U_row;
@@ -57,6 +56,7 @@ struct sc_csx_dny_tria_data
     PermutationData_new<I> perm_to_sort_A12_cols;
     PermutationView_new<I> perm_to_sort_back_sc;
     PermutationData_new<I> perm_fillreduce;
+    std::unique_ptr<solver_csx<T,I>> op_A11_solver;
     convert_csx_csy_map<T,I> op_L2U;
     convert_csx_csy_map<T,I> op_U2L;
     trsm_csx_dny_tri<T,I> op_trsm;
@@ -199,12 +199,6 @@ void sc_csx_dny_tria<T,I>::internal_preprocess()
 
     populate_config<T,I>(data->cfg, size_A11);
 
-    if(!DirectSparseSolver<T,I>::provideFactors()) eslog::error("wrong sparse solver, must provide factors\n");
-    data->solver_factor_uplo = '_';
-    if(DirectSparseSolver<T,I>::factorsSymmetry() == Solver_Factors::HERMITIAN_LOWER) data->solver_factor_uplo = 'L';
-    if(DirectSparseSolver<T,I>::factorsSymmetry() == Solver_Factors::HERMITIAN_UPPER) data->solver_factor_uplo = 'U';
-    if(data->solver_factor_uplo == '_') eslog::error("wrong sparse solver, must be symmetric for now\n");
-
     if(called_set_matrix == '1') {
         data->op_split.set_matrix_src(A);
         data->op_split.set_matrices_dst(&data->sub_A11, &data->sub_A12, &data->sub_A21, &data->sub_A22);
@@ -232,53 +226,58 @@ void sc_csx_dny_tria<T,I>::internal_preprocess()
         A22 = &data->sub_A22;
     }
 
+    data->solver_factor_uplo = A11->prop.uplo;
+
     if(A12 == nullptr) eslog::error("A12 has to be set for now\n");
 
     if(A11->order != 'R') {
         eslog::error("only support csr matrices now\n");
     }
 
-    stacktimer::push("symbolic_factorization");
-    data->A11_old = MatrixCsxView_new<T,I>::template to_old<cpu_allocator>(*A11);
-    data->A11_solver.commit(data->A11_old);
-    data->A11_solver.symbolicFactorization();
-    stacktimer::pop();
+    data->op_A11_solver = solver_csx<T,I>::make(data->cfg.op_a11solver_is, A11, true, need_solve_A11);
+    data->op_A11_solver->set_matrix_A(A11);
+    data->op_A11_solver->set_needs(true, need_solve_A11);
+    data->op_A11_solver->factorize_symbolic();
 
-    size_t factor_nnz = data->A11_solver.getFactorNnz();
+    size_t factor_nnz = data->op_A11_solver->get_factor_nnz();
 
-    data->factor_U_row.set(size_A11, size_A11, factor_nnz, 'R', AllocatorCPU_new::get_singleton());
-    data->factor_U_row.prop.uplo = 'U';
-    data->factor_U_row.prop.diag = 'N';
+    data->U_data.set(size_A11, size_A11, factor_nnz, A11->order, AllocatorCPU_new::get_singleton());
+    data->U_data.prop.uplo = 'U';
+    data->U_data.prop.diag = 'N';
 
-    data->factor_L_row.set(size_A11, size_A11, factor_nnz, 'R', AllocatorCPU_new::get_singleton());
-    data->factor_L_row.prop.uplo = 'L';
-    data->factor_L_row.prop.diag = 'N';
+    data->L_data.set(size_A11, size_A11, factor_nnz, A11->order, AllocatorCPU_new::get_singleton());
+    data->L_data.prop.uplo = 'L';
+    data->L_data.prop.diag = 'N';
 
     data->need_reorder_factor_L2U = ((data->solver_factor_uplo == 'L') && (data->cfg.order_L == 'C'));
     data->need_reorder_factor_U2L = ((data->solver_factor_uplo == 'U') && (data->cfg.order_L == 'R'));
 
     if(data->solver_factor_uplo == 'U' || data->need_reorder_factor_L2U) {
-        data->factor_U_row.alloc();
+        data->U_data.alloc();
     }
     if(data->solver_factor_uplo == 'L' || data->need_reorder_factor_U2L) {
-        data->factor_L_row.alloc();
+        data->L_data.alloc();
     }
 
-    stacktimer::push("extract_factors");
-    if(data->solver_factor_uplo == 'U') {
-        Matrix_CSR<T,I> factor_old_U = MatrixCsxView_new<T,I>::template to_old<cpu_allocator>(data->factor_U_row);
-        data->A11_solver.getFactorU(factor_old_U, true, false);
+    if(A11->prop.uplo == 'L') {
+        data->op_A11_solver->get_factor_L(data->L_data, true, false);
     }
-    if(data->solver_factor_uplo == 'L') {
-        Matrix_CSR<T,I> factor_old_L = MatrixCsxView_new<T,I>::template to_old<cpu_allocator>(data->factor_L_row);
-        data->A11_solver.getFactorL(factor_old_L, true, false);
+    if(A11->prop.uplo == 'U') {
+        data->op_A11_solver->get_factor_U(data->U_data, true, false);
     }
-    stacktimer::pop();
 
-    data->L_row = data->factor_L_row;
-    data->L_col = data->factor_U_row.get_transposed_reordered_view();
-    data->U_row = data->factor_U_row;
-    data->U_col = data->factor_L_row.get_transposed_reordered_view();
+    if(A11->order == 'R') {
+        data->L_row = data->L_data;
+        data->U_row = data->U_data;
+        data->L_col = data->U_row.get_transposed_reordered_view();
+        data->U_col = data->L_row.get_transposed_reordered_view();
+    }
+    if(A11->order == 'C') {
+        data->L_col = data->L_data;
+        data->U_col = data->U_data;
+        data->L_row = data->U_col.get_transposed_reordered_view();
+        data->U_row = data->L_col.get_transposed_reordered_view();
+    }
 
     if(data->need_reorder_factor_L2U) {
         data->op_L2U.set_matrix_src(&data->L_row);
@@ -305,8 +304,7 @@ void sc_csx_dny_tria<T,I>::internal_preprocess()
         {
             data->perm_fillreduce.set(A12->nrows, AllocatorCPU_new::get_singleton());
             data->perm_fillreduce.alloc();
-            Permutation<I> perm_fillreduce_old = PermutationView_new<I>::template to_old<cpu_allocator>(data->perm_fillreduce);
-            data->A11_solver.getPermutation(perm_fillreduce_old);
+            data->op_A11_solver->get_permutation(data->perm_fillreduce);
 
             math::operations::permute_csx_csx<T,I>::do_all(A12, &X_sp_tmp, &data->perm_fillreduce, nullptr);
         }
@@ -370,9 +368,7 @@ void sc_csx_dny_tria<T,I>::internal_perform_1()
         data->op_split.perform();
     }
 
-    stacktimer::push("numerical_factorization");
-    data->A11_solver.numericalFactorization();
-    stacktimer::pop();
+    data->op_A11_solver->factorize_numeric();
 }
 
 
@@ -380,16 +376,12 @@ void sc_csx_dny_tria<T,I>::internal_perform_1()
 template<typename T, typename I>
 void sc_csx_dny_tria<T,I>::internal_perform_2()
 {
-    stacktimer::push("extract_factors");
     if(data->solver_factor_uplo == 'U') {
-        Matrix_CSR<T,I,gpu::mgm::Ah> factor_old = MatrixCsxView_new<T,I>::template to_old<gpu::mgm::Ah>(data->factor_U_row);
-        data->A11_solver.getFactorU(factor_old, false, true);
+        data->op_A11_solver->get_factor_U(data->U_data, false, true);
     }
     if(data->solver_factor_uplo == 'L') {
-        Matrix_CSR<T,I,gpu::mgm::Ah> factor_old = MatrixCsxView_new<T,I>::template to_old<gpu::mgm::Ah>(data->factor_L_row);
-        data->A11_solver.getFactorL(factor_old, false, true);
+        data->op_A11_solver->get_factor_L(data->L_data, false, true);
     }
-    stacktimer::pop();
 
     if(data->need_reorder_factor_L2U) {
         data->op_L2U.perform_values();
@@ -424,10 +416,7 @@ void sc_csx_dny_tria<T,I>::internal_perform_2()
 template<typename T, typename I>
 void sc_csx_dny_tria<T,I>::internal_solve_A11(VectorDenseView_new<T> & rhs, VectorDenseView_new<T> & sol)
 {
-    Vector_Dense<T,I> rhs_old = VectorDenseView_new<T>::template to_old<I,cpu_allocator>(rhs);
-    Vector_Dense<T,I> sol_old = VectorDenseView_new<T>::template to_old<I,cpu_allocator>(sol);
-
-    data->A11_solver.solve(rhs_old, sol_old);
+    data->op_A11_solver->solve(rhs, sol);
 }
 
 

@@ -28,7 +28,7 @@ private:
         bool parallel_set = true;
         bool parallel_update = true;
         bool parallel_apply = true;
-        bool outer_timers = true;
+        bool outer_timers = false;
         bool inner_timers = false;
         char order_sc = 'C';
         sc_is_t sc_is = sc_is_t::autoselect;

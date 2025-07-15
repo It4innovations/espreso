@@ -76,6 +76,10 @@ void gemm_csx_dny_dnz<T,I>::perform()
         C_tmp.set(C->nrows, C->ncols, change_order(C->order), AllocatorCPU_new::get_singleton());
         C_tmp.alloc();
 
+        if(beta != T{0}) {
+            convert_dnx_dny<T>::do_all(C, &C_tmp, false);
+        }
+
         spblas::handle_mm handle_abc;
         spblas::mm(*A, *B, C_tmp, alpha, beta, handle_abc, 'A');
 

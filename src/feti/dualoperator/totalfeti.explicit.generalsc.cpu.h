@@ -60,7 +60,6 @@ private:
         MatrixDenseView_new<T> F;
         Matrix_Dense<T,I> F_old;
         std::unique_ptr<math::operations::sc_csx_dny<T,I>> op_sc;
-        char F_uplo_in_rowmajor = '_';
     };
     config cfg;
     size_t n_domains = 0;

@@ -11,6 +11,11 @@ namespace espreso {
 
 
 
+// TODO idea about cpu-gpu location
+// have separate "ability to access data" and "efficient access to data"
+// e.g. GPU can access cudaMallocHost-allocated data, but it is not efficient
+// also I should solve multi-gpu environments
+
 class Allocator_new
 {
 public:

@@ -31,7 +31,7 @@ struct solver_csx_mklpardiso_data
 template<typename T, typename I>
 solver_csx_mklpardiso<T,I>::solver_csx_mklpardiso()
 {
-    if constexpr(std::is_same_v<I,MKL_INT>) eslog::error("I and MKL_INT types dont match\n");
+    if constexpr(!std::is_same_v<I,MKL_INT>) eslog::error("I and MKL_INT types dont match\n");
 
     data = std::make_unique<solver_csx_mklpardiso_data<T,I>>();
 }

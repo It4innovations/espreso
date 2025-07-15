@@ -2,9 +2,7 @@
 #include "math/operations/sc_csx_dny.spsolver.h"
 
 #include "math/primitives_new/allocator_new.h"
-#include "math/wrappers/math.spsolver.h"
-#include "math/primitives_new/matrix_dense_data_new.h"
-#include "math/primitives_new/matrix_csx_data_new.h"
+#include "math/operations/solver_csx.h"
 #include "math/operations/convert_csx_dny.h"
 #include "math/operations/convert_dnx_dny.h"
 #include "math/operations/copy_dnx.h"
@@ -23,8 +21,12 @@ namespace operations {
 template<typename T, typename I>
 struct sc_csx_dny_spsolver_data
 {
-    DirectSparseSolver<T,I> A11_solver;
-    Matrix_CSR<T,I> A11_old;
+    struct config
+    {
+        typename solver_csx<T,I>::implementation_selector op_a11solver_is = solver_csx<T,I>::implementation_selector::autoselect;
+        char X_order = 'C';
+    } cfg;
+    std::unique_ptr<solver_csx<T,I>> op_A11_solver;
     quadrisect_csx_csy<T,I> op_split;
     MatrixCsxData_new<T,I> sub_A11;
     MatrixCsxData_new<T,I> sub_A12;
@@ -76,10 +78,10 @@ void sc_csx_dny_spsolver<T,I>::internal_preprocess()
         A22 = &data->sub_A22;
     }
 
-    data->A11_old = MatrixCsxView_new<T,I>::template to_old<cpu_allocator>(*A11);
-
-    data->A11_solver.commit(data->A11_old);
-    data->A11_solver.symbolicFactorization();
+    data->op_A11_solver = solver_csx<T,I>::make(data->cfg.op_a11solver_is, A11, false, true);
+    data->op_A11_solver->set_matrix_A(A11);
+    data->op_A11_solver->set_needs(false, true);
+    data->op_A11_solver->factorize_symbolic();
 }
 
 
@@ -91,9 +93,7 @@ void sc_csx_dny_spsolver<T,I>::internal_perform_1()
         data->op_split.perform();
     }
 
-    data->A11_old = MatrixCsxView_new<T,I>::template to_old<cpu_allocator>(*A11);
-
-    data->A11_solver.numericalFactorization();
+    data->op_A11_solver->factorize_numeric();
 }
 
 
@@ -115,17 +115,17 @@ void sc_csx_dny_spsolver<T,I>::internal_perform_2()
         A21_to_use = &A12_transposed_reordered;
     }
 
-    Matrix_Dense<T,I> X_old(size_sc, size_A11);
-    MatrixDenseView_new<T> X = MatrixDenseView_new<T>::from_old(X_old, 'R').get_transposed_reordered_view();
-    X.prop.uplo = '_';
+    MatrixDenseData_new<T> X;
+    X.set(size_A11, size_sc, data->cfg.X_order, AllocatorCPU_new::get_singleton());
+    X.alloc();
 
-    Matrix_Dense<T,I> Y_old(size_sc, size_A11);
-    MatrixDenseView_new<T> Y = MatrixDenseView_new<T>::from_old(Y_old, 'R').get_transposed_reordered_view();
-    Y.prop.uplo = '_';
+    MatrixDenseData_new<T> Y;
+    Y.set(size_A11, size_sc, data->cfg.X_order, AllocatorCPU_new::get_singleton());
+    Y.alloc();
 
     math::operations::convert_csx_dny<T,I>::do_all(A12_to_use, &X);
 
-    data->A11_solver.solve(X_old, Y_old);
+    data->op_A11_solver->solve(X, Y);
 
     if(is_matrix_hermitian) {
         // carefull not to touch the other triangle of sc
@@ -135,7 +135,9 @@ void sc_csx_dny_spsolver<T,I>::internal_perform_2()
         sc_tmp.alloc();
         sc_tmp.prop.uplo = sc->prop.uplo;
 
-        if(A22 == nullptr) math::operations::fill_dnx<T>::do_all(&sc_tmp, T{0});
+        if(A22 == nullptr) {
+            math::operations::fill_dnx<T>::do_all(&sc_tmp, T{0});
+        }
         if(A22 != nullptr) {
             MatrixCsxView_new<T,I> A22_rt = A22->get_transposed_reordered_view();
             MatrixCsxView_new<T,I> * A22_to_use = (A22->prop.uplo == sc_tmp.prop.uplo) ? A22 : &A22_rt;
@@ -159,10 +161,7 @@ void sc_csx_dny_spsolver<T,I>::internal_perform_2()
 template<typename T, typename I>
 void sc_csx_dny_spsolver<T,I>::internal_solve_A11(VectorDenseView_new<T> & rhs, VectorDenseView_new<T> & sol)
 {
-    Vector_Dense<T,I> rhs_old = VectorDenseView_new<T>::template to_old<I,cpu_allocator>(rhs);
-    Vector_Dense<T,I> sol_old = VectorDenseView_new<T>::template to_old<I,cpu_allocator>(sol);
-
-    data->A11_solver.solve(rhs_old, sol_old);
+    data->op_A11_solver->solve(rhs, sol);
 }
 
 
