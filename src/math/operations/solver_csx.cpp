@@ -197,11 +197,17 @@ void solver_csx<T,I>::get_factor_U(MatrixCsxView_new<T,I> & U, bool pattern, boo
 
 
 template<typename T, typename I>
-void solver_csx<T,I>::get_factor(MatrixCsxView_new<T,I> & factor)
+void solver_csx<T,I>::get_factor(MatrixCsxView_new<T,I> & factor, bool pattern, bool values)
 {
-    if(factor.prop.uplo == 'L') get_factor_L(factor);
-    else if(factor.prop.uplo == 'U') get_factor_U(factor);
-    else eslog::error("unset factor uplo\n");
+    if(factor.prop.uplo == 'L') {
+        get_factor_L(factor, pattern, values);
+    }
+    else if(factor.prop.uplo == 'U') {
+        get_factor_U(factor, pattern, values);
+    }
+    else {
+        eslog::error("unset factor uplo\n");
+    }
 }
 
 

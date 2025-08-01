@@ -42,7 +42,7 @@ public:
     void get_permutation(PermutationView_new<I> & perm);
     void get_factor_L(MatrixCsxView_new<T,I> & L, bool pattern = true, bool values = true);
     void get_factor_U(MatrixCsxView_new<T,I> & U, bool pattern = true, bool values = true);
-    void get_factor(MatrixCsxView_new<T,I> & factor); // recognizes based on uplo
+    void get_factor(MatrixCsxView_new<T,I> & factor, bool pattern = true, bool values = true); // recognizes based on uplo
     void solve(VectorDenseView_new<T> & rhs, VectorDenseView_new<T> & sol);
     void solve(MatrixDenseView_new<T> & rhs, MatrixDenseView_new<T> & sol);
 protected:

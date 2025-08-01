@@ -155,7 +155,7 @@ void solver_csx_cholmod<T,I>::internal_get_permutation(PermutationView_new<I> & 
 
 
 template<typename T, typename I>
-void solver_csx_cholmod<T,I>::get_factor(MatrixCsxView_new<T,I> & factor, bool pattern, bool values)
+void solver_csx_cholmod<T,I>::get_factor_impl(MatrixCsxView_new<T,I> & factor, bool pattern, bool values)
 {
     // correct order/uplo/size/nnz is handled in base class, here I will just copy the data
 
@@ -175,7 +175,7 @@ void solver_csx_cholmod<T,I>::get_factor(MatrixCsxView_new<T,I> & factor, bool p
 template<typename T, typename I>
 void solver_csx_cholmod<T,I>::internal_get_factor_L(MatrixCsxView_new<T,I> & L, bool pattern, bool values)
 {
-    get_factor(L, pattern, values);
+    get_factor_impl(L, pattern, values);
 }
 
 
@@ -183,7 +183,7 @@ void solver_csx_cholmod<T,I>::internal_get_factor_L(MatrixCsxView_new<T,I> & L, 
 template<typename T, typename I>
 void solver_csx_cholmod<T,I>::internal_get_factor_U(MatrixCsxView_new<T,I> & U, bool pattern, bool values)
 {
-    get_factor(U, pattern, values);
+    get_factor_impl(U, pattern, values);
 }
 
 

@@ -37,7 +37,7 @@ protected:
     void internal_solve(VectorDenseView_new<T> & rhs, VectorDenseView_new<T> & sol) override;
     void internal_solve(MatrixDenseView_new<T> & rhs, MatrixDenseView_new<T> & sol) override;
 private:
-    void get_factor(MatrixCsxView_new<T,I> & factor, bool pattern, bool values);
+    void get_factor_impl(MatrixCsxView_new<T,I> & factor, bool pattern, bool values);
 private:
     std::unique_ptr<solver_csx_cholmod_data<T,I>> data;
 protected:
