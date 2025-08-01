@@ -1,9 +1,9 @@
 
-#include "math/operations/sc_csx_dny.h"
+#include "math/operations/schur_csx_dny.h"
 
-#include "math/operations/sc_csx_dny.tria.h"
-#include "math/operations/sc_csx_dny.spsolver.h"
-#include "wrappers/mkl/operations/sc_csx_dny.mklpardiso.h"
+#include "math/operations/schur_csx_dny.tria.h"
+#include "math/operations/schur_csx_dny.spsolver.h"
+#include "wrappers/mkl/operations/schur_csx_dny.mklpardiso.h"
 #include "basis/utilities/stacktimer.h"
 
 
@@ -15,7 +15,7 @@ namespace operations {
 
 
 template<typename T, typename I>
-std::unique_ptr<sc_csx_dny<T,I>> sc_csx_dny<T,I>::make(implementation_selector is)
+std::unique_ptr<schur_csx_dny<T,I>> schur_csx_dny<T,I>::make(implementation_selector is)
 {
     auto autoselect_implementation = [](){
         #ifdef HAVE_MKL
@@ -26,13 +26,13 @@ std::unique_ptr<sc_csx_dny<T,I>> sc_csx_dny<T,I>::make(implementation_selector i
 
     switch(is) {
         case implementation_selector::autoselect:
-            return sc_csx_dny<T,I>::make(autoselect_implementation());
+            return schur_csx_dny<T,I>::make(autoselect_implementation());
         case implementation_selector::triangular:
-            return std::make_unique<sc_csx_dny_tria<T,I>>();
+            return std::make_unique<schur_csx_dny_tria<T,I>>();
         case implementation_selector::mklpardiso:
-            return std::make_unique<sc_csx_dny_mklpardiso<T,I>>();
+            return std::make_unique<schur_csx_dny_mklpardiso<T,I>>();
         case implementation_selector::spsolver:
-            return std::make_unique<sc_csx_dny_spsolver<T,I>>();
+            return std::make_unique<schur_csx_dny_spsolver<T,I>>();
         default:
             eslog::error("invalid implementation selector\n");
     }
@@ -41,7 +41,7 @@ std::unique_ptr<sc_csx_dny<T,I>> sc_csx_dny<T,I>::make(implementation_selector i
 
 
 template<typename T, typename I>
-void sc_csx_dny<T,I>::set_coefficients(Treal alpha_)
+void schur_csx_dny<T,I>::set_coefficients(Treal alpha_)
 {
     alpha = alpha_;
 }
@@ -49,7 +49,7 @@ void sc_csx_dny<T,I>::set_coefficients(Treal alpha_)
 
 
 template<typename T, typename I>
-void sc_csx_dny<T,I>::set_matrix(MatrixCsxView_new<T,I> * A11_, MatrixCsxView_new<T,I> * A12_, MatrixCsxView_new<T,I> * A21_, MatrixCsxView_new<T,I> * A22_)
+void schur_csx_dny<T,I>::set_matrix(MatrixCsxView_new<T,I> * A11_, MatrixCsxView_new<T,I> * A12_, MatrixCsxView_new<T,I> * A21_, MatrixCsxView_new<T,I> * A22_)
 {
     if(called_set_matrix != '_') eslog::error("matrix is already set\n");
 
@@ -64,7 +64,7 @@ void sc_csx_dny<T,I>::set_matrix(MatrixCsxView_new<T,I> * A11_, MatrixCsxView_ne
 
 
 template<typename T, typename I>
-void sc_csx_dny<T,I>::set_matrix(MatrixCsxView_new<T,I> * A_, size_t size_sc_)
+void schur_csx_dny<T,I>::set_matrix(MatrixCsxView_new<T,I> * A_, size_t size_sc_)
 {
     if(called_set_matrix != '_') eslog::error("matrix is already set\n");
 
@@ -77,7 +77,7 @@ void sc_csx_dny<T,I>::set_matrix(MatrixCsxView_new<T,I> * A_, size_t size_sc_)
 
 
 template<typename T, typename I>
-void sc_csx_dny<T,I>::set_sc(MatrixDenseView_new<T> * sc_)
+void schur_csx_dny<T,I>::set_sc(MatrixDenseView_new<T> * sc_)
 {
     if(sc != nullptr) eslog::error("matrix sc is already set\n");
 
@@ -87,7 +87,7 @@ void sc_csx_dny<T,I>::set_sc(MatrixDenseView_new<T> * sc_)
 
 
 template<typename T, typename I>
-void sc_csx_dny<T,I>::set_need_solve_A11(bool need_solve_A11_)
+void schur_csx_dny<T,I>::set_need_solve_A11(bool need_solve_A11_)
 {
     if(called_preprocess) eslog::error("cannot re-set need_solve_A11 after preprocess was called\n");
 
@@ -97,9 +97,9 @@ void sc_csx_dny<T,I>::set_need_solve_A11(bool need_solve_A11_)
 
 
 template<typename T, typename I>
-void sc_csx_dny<T,I>::preprocess()
+void schur_csx_dny<T,I>::preprocess()
 {
-    stacktimer::push("sc_csx_dny::preprocess");
+    stacktimer::push("schur_csx_dny::preprocess");
 
     if(called_preprocess) eslog::error("preprocess was already called\n");
     if(called_set_matrix == '_') eslog::error("matrix is not set\n");
@@ -165,9 +165,9 @@ void sc_csx_dny<T,I>::preprocess()
 
 
 template<typename T, typename I>
-void sc_csx_dny<T,I>::perform_1()
+void schur_csx_dny<T,I>::perform_1()
 {
-    stacktimer::push("sc_csx_dny::perform_1");
+    stacktimer::push("schur_csx_dny::perform_1");
 
     if(!called_preprocess) eslog::error("preprocess has not been called\n");
 
@@ -179,9 +179,9 @@ void sc_csx_dny<T,I>::perform_1()
 
 
 template<typename T, typename I>
-void sc_csx_dny<T,I>::perform_2()
+void schur_csx_dny<T,I>::perform_2()
 {
-    stacktimer::push("sc_csx_dny::perform_2");
+    stacktimer::push("schur_csx_dny::perform_2");
 
     if(!called_preprocess) eslog::error("preprocess has not been called\n");
 
@@ -195,7 +195,7 @@ void sc_csx_dny<T,I>::perform_2()
 
 
 template<typename T, typename I>
-void sc_csx_dny<T,I>::perform()
+void schur_csx_dny<T,I>::perform()
 {
     if(!called_preprocess) eslog::error("preprocess has not been called\n");
 
@@ -206,9 +206,9 @@ void sc_csx_dny<T,I>::perform()
 
 
 template<typename T, typename I>
-void sc_csx_dny<T,I>::solve_A11(VectorDenseView_new<T> & rhs, VectorDenseView_new<T> & sol)
+void schur_csx_dny<T,I>::solve_A11(VectorDenseView_new<T> & rhs, VectorDenseView_new<T> & sol)
 {
-    stacktimer::push("sc_csx_dny::solve_A11");
+    stacktimer::push("schur_csx_dny::solve_A11");
 
     if(!called_preprocess) eslog::error("preprocess has not been called\n");
     if(!need_solve_A11) eslog::error("need_solve_A11 is not set, so cannot solve A11\n");
@@ -223,7 +223,7 @@ void sc_csx_dny<T,I>::solve_A11(VectorDenseView_new<T> & rhs, VectorDenseView_ne
 
 
 #define INSTANTIATE_T_I(T,I) \
-template class sc_csx_dny<T,I>;
+template class schur_csx_dny<T,I>;
 
     #define INSTANTIATE_T(T) \
     INSTANTIATE_T_I(T,int32_t) \

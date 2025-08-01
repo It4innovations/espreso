@@ -6,7 +6,7 @@
 #include "math/math.h"
 #include "math/primitives_new/matrix_dense_data_new.h"
 #include "math/primitives_new/matrix_csx_view_new.h"
-#include "gpu/operations/sc_hcsx_ddny.h"
+#include "gpu/operations/schur_hcsx_ddny.h"
 #include "feti/dualoperator/dualop_explicit_applicator.h"
 
 namespace espreso {
@@ -36,7 +36,7 @@ protected:
     void _apply(const Vector_Dual<T> &x, Vector_Dual<T> &y);
 
 public:
-    using sc_is_t = typename gpu::operations::sc_hcsx_ddny<T,I>::implementation_selector;
+    using sc_is_t = typename gpu::operations::schur_hcsx_ddny<T,I>::implementation_selector;
     struct config
     {
         char order_F = '_';
@@ -60,7 +60,7 @@ private:
         MatrixCsxView_new<T,I> Bt;
         MatrixDenseView_new<T> d_F;
         Matrix_Dense<T,I,gpu::mgm::Ad> d_F_old;
-        std::unique_ptr<gpu::operations::sc_hcsx_ddny<T,I>> op_sc;
+        std::unique_ptr<gpu::operations::schur_hcsx_ddny<T,I>> op_sc;
     };
     config cfg;
     size_t n_domains = 0;

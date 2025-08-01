@@ -1,7 +1,7 @@
 
-#include "gpu/operations/sc_hcsx_ddny.h"
+#include "gpu/operations/schur_hcsx_ddny.h"
 
-#include "gpu/operations/sc_hcsx_ddny.tria.h"
+#include "gpu/operations/schur_hcsx_ddny.tria.h"
 #include "basis/utilities/stacktimer.h"
 
 
@@ -13,7 +13,7 @@ namespace operations {
 
 
 template<typename T, typename I>
-std::unique_ptr<sc_hcsx_ddny<T,I>> sc_hcsx_ddny<T,I>::make(implementation_selector is)
+std::unique_ptr<schur_hcsx_ddny<T,I>> schur_hcsx_ddny<T,I>::make(implementation_selector is)
 {
     auto autoselect_implementation = [](){
         return implementation_selector::triangular;
@@ -21,9 +21,9 @@ std::unique_ptr<sc_hcsx_ddny<T,I>> sc_hcsx_ddny<T,I>::make(implementation_select
 
     switch(is) {
         case implementation_selector::autoselect:
-            return sc_hcsx_ddny<T,I>::make(autoselect_implementation());
+            return schur_hcsx_ddny<T,I>::make(autoselect_implementation());
         case implementation_selector::triangular:
-            return std::make_unique<sc_hcsx_ddny_tria<T,I>>();
+            return std::make_unique<schur_hcsx_ddny_tria<T,I>>();
         default:
             eslog::error("invalid implementation selector\n");
     }
@@ -32,7 +32,7 @@ std::unique_ptr<sc_hcsx_ddny<T,I>> sc_hcsx_ddny<T,I>::make(implementation_select
 
 
 template<typename T, typename I>
-void sc_hcsx_ddny<T,I>::set_handles(gpu::mgm::queue q_, gpu::spblas::handle handle_spblas_, gpu::dnblas::handle handle_dnblas_)
+void schur_hcsx_ddny<T,I>::set_handles(gpu::mgm::queue q_, gpu::spblas::handle handle_spblas_, gpu::dnblas::handle handle_dnblas_)
 {
     if(called_set_handles) eslog::error("handles are already set\n");
 
@@ -46,7 +46,7 @@ void sc_hcsx_ddny<T,I>::set_handles(gpu::mgm::queue q_, gpu::spblas::handle hand
 
 
 template<typename T, typename I>
-void sc_hcsx_ddny<T,I>::set_coefficients(Treal alpha_)
+void schur_hcsx_ddny<T,I>::set_coefficients(Treal alpha_)
 {
     alpha = alpha_;
 }
@@ -54,7 +54,7 @@ void sc_hcsx_ddny<T,I>::set_coefficients(Treal alpha_)
 
 
 template<typename T, typename I>
-void sc_hcsx_ddny<T,I>::set_matrix(MatrixCsxView_new<T,I> * h_A11_, MatrixCsxView_new<T,I> * h_A12_, MatrixCsxView_new<T,I> * h_A21_, MatrixCsxView_new<T,I> * h_A22_)
+void schur_hcsx_ddny<T,I>::set_matrix(MatrixCsxView_new<T,I> * h_A11_, MatrixCsxView_new<T,I> * h_A12_, MatrixCsxView_new<T,I> * h_A21_, MatrixCsxView_new<T,I> * h_A22_)
 {
     if(called_set_matrix != '_') eslog::error("matrix is already set\n");
 
@@ -69,7 +69,7 @@ void sc_hcsx_ddny<T,I>::set_matrix(MatrixCsxView_new<T,I> * h_A11_, MatrixCsxVie
 
 
 template<typename T, typename I>
-void sc_hcsx_ddny<T,I>::set_matrix(MatrixCsxView_new<T,I> * h_A_, size_t size_sc_)
+void schur_hcsx_ddny<T,I>::set_matrix(MatrixCsxView_new<T,I> * h_A_, size_t size_sc_)
 {
     if(called_set_matrix != '_') eslog::error("matrix is already set\n");
 
@@ -82,7 +82,7 @@ void sc_hcsx_ddny<T,I>::set_matrix(MatrixCsxView_new<T,I> * h_A_, size_t size_sc
 
 
 template<typename T, typename I>
-void sc_hcsx_ddny<T,I>::set_sc(MatrixDenseView_new<T> * d_sc_)
+void schur_hcsx_ddny<T,I>::set_sc(MatrixDenseView_new<T> * d_sc_)
 {
     if(d_sc != nullptr) eslog::error("matrix d_sc is already set\n");
 
@@ -92,7 +92,7 @@ void sc_hcsx_ddny<T,I>::set_sc(MatrixDenseView_new<T> * d_sc_)
 
 
 template<typename T, typename I>
-void sc_hcsx_ddny<T,I>::set_need_solve_A11(bool need_solve_A11_)
+void schur_hcsx_ddny<T,I>::set_need_solve_A11(bool need_solve_A11_)
 {
     if(called_setup) eslog::error("cannot re-set need_solve_A11 after setup was called\n");
 
@@ -102,9 +102,9 @@ void sc_hcsx_ddny<T,I>::set_need_solve_A11(bool need_solve_A11_)
 
 
 template<typename T, typename I>
-void sc_hcsx_ddny<T,I>::setup()
+void schur_hcsx_ddny<T,I>::setup()
 {
-    stacktimer::push("sc_csx_dny::setup");
+    stacktimer::push("schur_hcsx_ddny::setup");
 
     if(called_setup) eslog::error("setup was already called\n");
     if(called_set_matrix == '_') eslog::error("matrix is not set\n");
@@ -174,7 +174,7 @@ void sc_hcsx_ddny<T,I>::setup()
 
 
 template<typename T, typename I>
-size_t sc_hcsx_ddny<T,I>::get_wss_internal()
+size_t schur_hcsx_ddny<T,I>::get_wss_internal()
 {
     return wss_internal;
 }
@@ -182,7 +182,7 @@ size_t sc_hcsx_ddny<T,I>::get_wss_internal()
 
 
 template<typename T, typename I>
-size_t sc_hcsx_ddny<T,I>::get_wss_persistent()
+size_t schur_hcsx_ddny<T,I>::get_wss_persistent()
 {
     return wss_persistent;
 }
@@ -190,7 +190,7 @@ size_t sc_hcsx_ddny<T,I>::get_wss_persistent()
 
 
 template<typename T, typename I>
-size_t sc_hcsx_ddny<T,I>::get_wss_tmp_preprocess()
+size_t schur_hcsx_ddny<T,I>::get_wss_tmp_preprocess()
 {
     return wss_tmp_preprocess;
 }
@@ -198,7 +198,7 @@ size_t sc_hcsx_ddny<T,I>::get_wss_tmp_preprocess()
 
 
 template<typename T, typename I>
-size_t sc_hcsx_ddny<T,I>::get_wss_tmp_perform()
+size_t schur_hcsx_ddny<T,I>::get_wss_tmp_perform()
 {
     return wss_tmp_perform;
 }
@@ -206,7 +206,7 @@ size_t sc_hcsx_ddny<T,I>::get_wss_tmp_perform()
 
 
 template<typename T, typename I>
-void sc_hcsx_ddny<T,I>::set_ws_persistent(void * ws_persistent_)
+void schur_hcsx_ddny<T,I>::set_ws_persistent(void * ws_persistent_)
 {
     if(ws_persistent_ == nullptr && wss_persistent > 0) eslog::error("persistent workspace is null\n");
     if(ws_persistent != nullptr) eslog::error("cannot re-set persistent workspace\n");
@@ -217,9 +217,9 @@ void sc_hcsx_ddny<T,I>::set_ws_persistent(void * ws_persistent_)
 
 
 template<typename T, typename I>
-void sc_hcsx_ddny<T,I>::preprocess_submit(void * ws_tmp)
+void schur_hcsx_ddny<T,I>::preprocess_submit(void * ws_tmp)
 {
-    stacktimer::push("sc_hcsx_ddny::preprocess_submit");
+    stacktimer::push("schur_hcsx_ddny::preprocess_submit");
 
     if(!called_setup) eslog::error("setup has not been called\n");
     if(called_preprocess) eslog::error("preprocess has already been called\n");
@@ -244,9 +244,9 @@ void sc_hcsx_ddny<T,I>::preprocess_submit(void * ws_tmp)
 
 
 template<typename T, typename I>
-void sc_hcsx_ddny<T,I>::perform_1_submit()
+void schur_hcsx_ddny<T,I>::perform_1_submit()
 {
-    stacktimer::push("sc_hcsx_ddny::perform_1_submit");
+    stacktimer::push("schur_hcsx_ddny::perform_1_submit");
 
     if(!called_preprocess) eslog::error("preprocess has not been called\n");
 
@@ -258,9 +258,9 @@ void sc_hcsx_ddny<T,I>::perform_1_submit()
 
 
 template<typename T, typename I>
-void sc_hcsx_ddny<T,I>::perform_2_submit(void * ws_tmp)
+void schur_hcsx_ddny<T,I>::perform_2_submit(void * ws_tmp)
 {
-    stacktimer::push("sc_hcsx_ddny::perform_2_submit");
+    stacktimer::push("schur_hcsx_ddny::perform_2_submit");
 
     if(!called_preprocess) eslog::error("preprocess has not been called\n");
     if(ws_tmp == nullptr && wss_tmp_perform > 0) eslog::error("temporary workspace is null\n");
@@ -282,9 +282,9 @@ void sc_hcsx_ddny<T,I>::perform_2_submit(void * ws_tmp)
 
 
 template<typename T, typename I>
-void sc_hcsx_ddny<T,I>::solve_A11(VectorDenseView_new<T> & rhs, VectorDenseView_new<T> & sol)
+void schur_hcsx_ddny<T,I>::solve_A11(VectorDenseView_new<T> & rhs, VectorDenseView_new<T> & sol)
 {
-    stacktimer::push("sc_hcsx_ddny::solve_A11");
+    stacktimer::push("schur_hcsx_ddny::solve_A11");
 
     if(!called_preprocess) eslog::error("preprocess has not been called\n");
     if(!need_solve_A11) eslog::error("need_solve_A11 is not set, so cannot solve A11\n");
@@ -299,7 +299,7 @@ void sc_hcsx_ddny<T,I>::solve_A11(VectorDenseView_new<T> & rhs, VectorDenseView_
 
 
 #define INSTANTIATE_T_I(T,I) \
-template class sc_hcsx_ddny<T,I>;
+template class schur_hcsx_ddny<T,I>;
 
     #define INSTANTIATE_T(T) \
     INSTANTIATE_T_I(T,int32_t) \

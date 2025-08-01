@@ -93,7 +93,7 @@ void DirichletGeneralScCpu<T,I>::set(const step::Step &/*step*/)
         my.op_perm_K.set_perm_rows(&my.perm_surface_to_botright);
         my.op_perm_K.set_perm_cols(&my.perm_surface_to_botright);
 
-        my.op_sc = math::operations::sc_csx_dny<T,I>::make(cfg.sc_is);
+        my.op_sc = math::operations::schur_csx_dny<T,I>::make(cfg.sc_is);
         my.op_sc->set_coefficients(utils::remove_complex_t<T>{1});
         my.op_sc->set_matrix(&my.Kperm, my.n_dofs_surface);
         my.op_sc->set_sc(&my.sc);

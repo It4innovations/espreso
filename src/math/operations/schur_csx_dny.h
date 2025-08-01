@@ -13,7 +13,7 @@ namespace operations {
 
 
 template<typename T, typename I>
-class sc_csx_dny
+class schur_csx_dny
 {
 public:
     using Treal = utils::remove_complex_t<T>;
@@ -25,15 +25,15 @@ public:
         spsolver
     };
 protected:
-    sc_csx_dny() = default;
+    schur_csx_dny() = default;
 public:
-    sc_csx_dny(const sc_csx_dny &) = delete;
-    sc_csx_dny(sc_csx_dny &&) = default;
-    sc_csx_dny & operator=(const sc_csx_dny &) = delete;
-    sc_csx_dny & operator=(sc_csx_dny &&) = default;
-    virtual ~sc_csx_dny() = default;
+    schur_csx_dny(const schur_csx_dny &) = delete;
+    schur_csx_dny(schur_csx_dny &&) = default;
+    schur_csx_dny & operator=(const schur_csx_dny &) = delete;
+    schur_csx_dny & operator=(schur_csx_dny &&) = default;
+    virtual ~schur_csx_dny() = default;
 public:
-    static std::unique_ptr<sc_csx_dny<T,I>> make(implementation_selector is = implementation_selector::autoselect);
+    static std::unique_ptr<schur_csx_dny<T,I>> make(implementation_selector is = implementation_selector::autoselect);
 public:
     void set_coefficients(Treal alpha_);
     void set_matrix(MatrixCsxView_new<T,I> * A11_, MatrixCsxView_new<T,I> * A12_, MatrixCsxView_new<T,I> * A21_, MatrixCsxView_new<T,I> * A22_);

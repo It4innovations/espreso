@@ -16,7 +16,7 @@ namespace operations {
 
 
 template<typename T, typename I>
-class sc_hcsx_ddny
+class schur_hcsx_ddny
 {
 public:
     using Treal = utils::remove_complex_t<T>;
@@ -26,15 +26,15 @@ public:
         triangular
     };
 protected:
-    sc_hcsx_ddny() = default;
+    schur_hcsx_ddny() = default;
 public:
-    sc_hcsx_ddny(const sc_hcsx_ddny &) = delete;
-    sc_hcsx_ddny(sc_hcsx_ddny &&) = default;
-    sc_hcsx_ddny & operator=(const sc_hcsx_ddny &) = delete;
-    sc_hcsx_ddny & operator=(sc_hcsx_ddny &&) = default;
-    virtual ~sc_hcsx_ddny() = default;
+    schur_hcsx_ddny(const schur_hcsx_ddny &) = delete;
+    schur_hcsx_ddny(schur_hcsx_ddny &&) = default;
+    schur_hcsx_ddny & operator=(const schur_hcsx_ddny &) = delete;
+    schur_hcsx_ddny & operator=(schur_hcsx_ddny &&) = default;
+    virtual ~schur_hcsx_ddny() = default;
 public:
-    static std::unique_ptr<sc_hcsx_ddny<T,I>> make(implementation_selector is = implementation_selector::autoselect);
+    static std::unique_ptr<schur_hcsx_ddny<T,I>> make(implementation_selector is = implementation_selector::autoselect);
 public:
     void set_handles(gpu::mgm::queue q_, gpu::spblas::handle spblas_handle_, gpu::dnblas::handle dnblas_handle_);
     void set_coefficients(Treal alpha_);

@@ -1,5 +1,5 @@
 
-#include "math/operations/sc_csx_dny.tria.h"
+#include "math/operations/schur_csx_dny.tria.h"
 
 #include "esinfo/meshinfo.h"
 #include "basis/containers/allocators.h"
@@ -30,7 +30,7 @@ namespace operations {
 
 
 template<typename T, typename I>
-struct sc_csx_dny_tria_data
+struct schur_csx_dny_tria_data
 {
     struct config
     {
@@ -110,7 +110,7 @@ static void replace_if_zero(int & param, int deflt)
 }
 
 template<typename T, typename I>
-static void populate_config_from_env(typename sc_csx_dny_tria_data<T,I>::config & cfg)
+static void populate_config_from_env(typename schur_csx_dny_tria_data<T,I>::config & cfg)
 {
     cfg.cfg_trsm.partition.parameter = 0;
     cfg.cfg_herk.partition_parameter = 0;
@@ -137,7 +137,7 @@ static void populate_config_from_env(typename sc_csx_dny_tria_data<T,I>::config 
 }
 
 template<typename T, typename I>
-static void populate_config_replace_defaults(typename sc_csx_dny_tria_data<T,I>::config & cfg, size_t ndofs_domain)
+static void populate_config_replace_defaults(typename schur_csx_dny_tria_data<T,I>::config & cfg, size_t ndofs_domain)
 {
     replace_if_default(cfg.cfg_trsm.strategy, 'F');
     bool is_in_between = ((ndofs_domain > 1000) && (ndofs_domain < 16000));
@@ -171,7 +171,7 @@ static void populate_config_replace_defaults(typename sc_csx_dny_tria_data<T,I>:
 }
 
 template<typename T, typename I>
-static void populate_config(typename sc_csx_dny_tria_data<T,I>::config & cfg, size_t ndofs_domain)
+static void populate_config(typename schur_csx_dny_tria_data<T,I>::config & cfg, size_t ndofs_domain)
 {
     populate_config_from_env<T,I>(cfg);
 
@@ -181,21 +181,21 @@ static void populate_config(typename sc_csx_dny_tria_data<T,I>::config & cfg, si
 
 
 template<typename T, typename I>
-sc_csx_dny_tria<T,I>::sc_csx_dny_tria() = default;
+schur_csx_dny_tria<T,I>::schur_csx_dny_tria() = default;
 
 
 
 template<typename T, typename I>
-sc_csx_dny_tria<T,I>::~sc_csx_dny_tria() = default;
+schur_csx_dny_tria<T,I>::~schur_csx_dny_tria() = default;
 
 
 
 template<typename T, typename I>
-void sc_csx_dny_tria<T,I>::internal_preprocess()
+void schur_csx_dny_tria<T,I>::internal_preprocess()
 {
     if(!is_matrix_hermitian) eslog::error("dont support non-hermitian systems yet\n");
 
-    data = std::make_unique<sc_csx_dny_tria_data<T,I>>();
+    data = std::make_unique<schur_csx_dny_tria_data<T,I>>();
 
     populate_config<T,I>(data->cfg, size_A11);
 
@@ -362,7 +362,7 @@ void sc_csx_dny_tria<T,I>::internal_preprocess()
 
 
 template<typename T, typename I>
-void sc_csx_dny_tria<T,I>::internal_perform_1()
+void schur_csx_dny_tria<T,I>::internal_perform_1()
 {
     if(called_set_matrix == '1') {
         data->op_split.perform();
@@ -374,7 +374,7 @@ void sc_csx_dny_tria<T,I>::internal_perform_1()
 
 
 template<typename T, typename I>
-void sc_csx_dny_tria<T,I>::internal_perform_2()
+void schur_csx_dny_tria<T,I>::internal_perform_2()
 {
     if(data->solver_factor_uplo == 'U') {
         data->op_A11_solver->get_factor_U(data->U_data, false, true);
@@ -414,7 +414,7 @@ void sc_csx_dny_tria<T,I>::internal_perform_2()
 
 
 template<typename T, typename I>
-void sc_csx_dny_tria<T,I>::internal_solve_A11(VectorDenseView_new<T> & rhs, VectorDenseView_new<T> & sol)
+void schur_csx_dny_tria<T,I>::internal_solve_A11(VectorDenseView_new<T> & rhs, VectorDenseView_new<T> & sol)
 {
     data->op_A11_solver->solve(rhs, sol);
 }
@@ -422,7 +422,7 @@ void sc_csx_dny_tria<T,I>::internal_solve_A11(VectorDenseView_new<T> & rhs, Vect
 
 
 #define INSTANTIATE_T_I(T,I) \
-template class sc_csx_dny_tria<T,I>;
+template class schur_csx_dny_tria<T,I>;
 
     #define INSTANTIATE_T(T) \
     INSTANTIATE_T_I(T, int32_t) \

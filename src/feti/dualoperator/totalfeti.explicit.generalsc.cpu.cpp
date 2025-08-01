@@ -193,7 +193,7 @@ void TotalFETIExplicitGeneralScCpu<T,I>::set(const step::Step &step)
         data.Kreg = MatrixCsxView_new<T,I>::from_old(data.Kreg_old);
         if constexpr(utils::is_real<T>()) if(is_symmetric<T>(data.Kreg.prop.symm)) data.Kreg.prop.symm = MatrixSymmetry_new::hermitian;
 
-        data.op_sc = math::operations::sc_csx_dny<T,I>::make(cfg.sc_is);
+        data.op_sc = math::operations::schur_csx_dny<T,I>::make(cfg.sc_is);
         data.op_sc->set_coefficients(-1);
         data.op_sc->set_matrix(&data.Kreg, &data.Bt, nullptr, nullptr);
         data.op_sc->set_sc(&data.F);

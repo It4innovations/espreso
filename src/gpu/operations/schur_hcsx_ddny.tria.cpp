@@ -1,5 +1,5 @@
 
-#include "gpu/operations/sc_hcsx_ddny.tria.h"
+#include "gpu/operations/schur_hcsx_ddny.tria.h"
 
 #include "math/wrappers/math.spsolver.h"
 #include "math/operations/solver_csx.h"
@@ -24,7 +24,7 @@ namespace operations {
 
 
 template<typename T, typename I>
-struct sc_hcsx_ddny_tria_data
+struct schur_hcsx_ddny_tria_data
 {
     struct config
     {
@@ -112,7 +112,7 @@ static void replace_if_zero(int & param, int deflt)
 }
 
 template<typename T, typename I>
-static void populate_config_from_env(typename sc_hcsx_ddny_tria_data<T,I>::config & cfg)
+static void populate_config_from_env(typename schur_hcsx_ddny_tria_data<T,I>::config & cfg)
 {
     cfg.cfg_trsm.partition.parameter = 0;
     cfg.cfg_herk.partition_parameter = 0;
@@ -139,7 +139,7 @@ static void populate_config_from_env(typename sc_hcsx_ddny_tria_data<T,I>::confi
 }
 
 template<typename T, typename I>
-static void populate_config_replace_defaults(typename sc_hcsx_ddny_tria_data<T,I>::config & cfg)
+static void populate_config_replace_defaults(typename schur_hcsx_ddny_tria_data<T,I>::config & cfg)
 {
     replace_if_default(cfg.cfg_trsm.strategy, 'F');
     replace_if_default(cfg.cfg_herk.strategy, 'Q');
@@ -172,7 +172,7 @@ static void populate_config_replace_defaults(typename sc_hcsx_ddny_tria_data<T,I
 }
 
 template<typename T, typename I>
-static void populate_config(typename sc_hcsx_ddny_tria_data<T,I>::config & cfg)
+static void populate_config(typename schur_hcsx_ddny_tria_data<T,I>::config & cfg)
 {
     populate_config_from_env<T,I>(cfg);
 
@@ -182,24 +182,24 @@ static void populate_config(typename sc_hcsx_ddny_tria_data<T,I>::config & cfg)
 
 
 template<typename T, typename I>
-sc_hcsx_ddny_tria<T,I>::sc_hcsx_ddny_tria() = default;
+schur_hcsx_ddny_tria<T,I>::schur_hcsx_ddny_tria() = default;
 
 
 
 template<typename T, typename I>
-sc_hcsx_ddny_tria<T,I>::~sc_hcsx_ddny_tria() = default;
+schur_hcsx_ddny_tria<T,I>::~schur_hcsx_ddny_tria() = default;
 
 
 
 template<typename T, typename I>
-void sc_hcsx_ddny_tria<T,I>::internal_setup()
+void schur_hcsx_ddny_tria<T,I>::internal_setup()
 {
     if(!is_matrix_hermitian) eslog::error("for now only hermitian matrices are supported\n");
     if(h_A12 == nullptr) eslog::error("the upper part of matrix must be stored\n");
     if(h_A11->prop.uplo != 'U') eslog::error("the upper part of A11 must be stored\n");
     if(h_A22 != nullptr) eslog::error("for now I assume A22=O\n");
 
-    data = std::make_unique<sc_hcsx_ddny_tria_data<T,I>>();
+    data = std::make_unique<schur_hcsx_ddny_tria_data<T,I>>();
 
     populate_config<T,I>(data->cfg);
 
@@ -424,7 +424,7 @@ void sc_hcsx_ddny_tria<T,I>::internal_setup()
 
 
 template<typename T, typename I>
-void sc_hcsx_ddny_tria<T,I>::internal_preprocess_submit()
+void schur_hcsx_ddny_tria<T,I>::internal_preprocess_submit()
 {
     data->d_perm_to_sort_back_sc.alloc();
 
@@ -440,7 +440,7 @@ void sc_hcsx_ddny_tria<T,I>::internal_preprocess_submit()
 
 
 template<typename T, typename I>
-void sc_hcsx_ddny_tria<T,I>::internal_perform_1_submit()
+void schur_hcsx_ddny_tria<T,I>::internal_perform_1_submit()
 {
     if(called_set_matrix == '1') {
         data->op_split.perform();
@@ -454,7 +454,7 @@ void sc_hcsx_ddny_tria<T,I>::internal_perform_1_submit()
 
 
 template<typename T, typename I>
-void sc_hcsx_ddny_tria<T,I>::internal_perform_2_submit()
+void schur_hcsx_ddny_tria<T,I>::internal_perform_2_submit()
 {
     stacktimer::push("extract_factors");
     if(data->solver_factor_uplo == 'U') {
@@ -504,7 +504,7 @@ void sc_hcsx_ddny_tria<T,I>::internal_perform_2_submit()
 
 
 template<typename T, typename I>
-void sc_hcsx_ddny_tria<T,I>::internal_solve_A11(VectorDenseView_new<T> & rhs, VectorDenseView_new<T> & sol)
+void schur_hcsx_ddny_tria<T,I>::internal_solve_A11(VectorDenseView_new<T> & rhs, VectorDenseView_new<T> & sol)
 {
     data->op_h_A11_solver->solve(rhs, sol);
 }
@@ -512,7 +512,7 @@ void sc_hcsx_ddny_tria<T,I>::internal_solve_A11(VectorDenseView_new<T> & rhs, Ve
 
 
 #define INSTANTIATE_T_I(T,I) \
-template class sc_hcsx_ddny_tria<T,I>;
+template class schur_hcsx_ddny_tria<T,I>;
 
     #define INSTANTIATE_T(T) \
     INSTANTIATE_T_I(T,int32_t) \

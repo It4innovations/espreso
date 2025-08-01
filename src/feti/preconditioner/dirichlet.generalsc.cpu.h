@@ -5,7 +5,7 @@
 #include "preconditioner.h"
 #include "math/primitives_new.h"
 #include "math/wrappers/math.spsolver.h"
-#include "math/operations/sc_csx_dny.h"
+#include "math/operations/schur_csx_dny.h"
 #include "math/operations/permute_csx_csx_map.h"
 
 namespace espreso {
@@ -23,7 +23,7 @@ struct DirichletGeneralScCpu: public Preconditioner<T> {
 protected:
     using Preconditioner<T>::feti;
 private:
-    using sc_is_t = typename math::operations::sc_csx_dny<T,I>::implementation_selector;
+    using sc_is_t = typename math::operations::schur_csx_dny<T,I>::implementation_selector;
     struct config {
         bool parallel_set = true;
         bool parallel_update = true;
@@ -44,7 +44,7 @@ private:
         PermutationData_new<I> perm_surface_to_botright;
         VectorDenseData_new<I> map_domain_to_surface;
         math::operations::permute_csx_csx_map<T,I> op_perm_K;
-        std::unique_ptr<math::operations::sc_csx_dny<T,I>> op_sc;
+        std::unique_ptr<math::operations::schur_csx_dny<T,I>> op_sc;
         VectorDenseData_new<T> apply_w;
         VectorDenseData_new<T> apply_z;
     };

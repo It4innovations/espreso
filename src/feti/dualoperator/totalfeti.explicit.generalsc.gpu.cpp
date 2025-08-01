@@ -204,7 +204,7 @@ void TotalFETIExplicitGeneralScGpu<T,I>::set(const step::Step &step)
         data.Bt = MatrixCsxView_new<T,I>::from_old(feti.B1[di]).get_transposed_reordered_view();
         data.Kreg = MatrixCsxView_new<T,I>::from_old(data.Kreg_old);
 
-        data.op_sc = gpu::operations::sc_hcsx_ddny<T,I>::make(cfg.sc_is);
+        data.op_sc = gpu::operations::schur_hcsx_ddny<T,I>::make(cfg.sc_is);
         data.op_sc->set_handles(q, hs, hd);
         data.op_sc->set_coefficients(-1);
         data.op_sc->set_matrix(&data.Kreg, &data.Bt, nullptr, nullptr);

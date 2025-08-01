@@ -1,5 +1,5 @@
 
-#include "math/operations/sc_csx_dny.spsolver.h"
+#include "math/operations/schur_csx_dny.spsolver.h"
 
 #include "math/primitives_new/allocator_new.h"
 #include "math/operations/solver_csx.h"
@@ -19,7 +19,7 @@ namespace operations {
 
 
 template<typename T, typename I>
-struct sc_csx_dny_spsolver_data
+struct schur_csx_dny_spsolver_data
 {
     struct config
     {
@@ -37,19 +37,19 @@ struct sc_csx_dny_spsolver_data
 
 
 template<typename T, typename I>
-sc_csx_dny_spsolver<T,I>::sc_csx_dny_spsolver() = default;
+schur_csx_dny_spsolver<T,I>::schur_csx_dny_spsolver() = default;
 
 
 
 template<typename T, typename I>
-sc_csx_dny_spsolver<T,I>::~sc_csx_dny_spsolver() = default;
+schur_csx_dny_spsolver<T,I>::~schur_csx_dny_spsolver() = default;
 
 
 
 template<typename T, typename I>
-void sc_csx_dny_spsolver<T,I>::internal_preprocess()
+void schur_csx_dny_spsolver<T,I>::internal_preprocess()
 {
-    data = std::make_unique<sc_csx_dny_spsolver_data<T,I>>();
+    data = std::make_unique<schur_csx_dny_spsolver_data<T,I>>();
 
     if(called_set_matrix == '1') {
         data->op_split.set_matrix_src(A);
@@ -87,7 +87,7 @@ void sc_csx_dny_spsolver<T,I>::internal_preprocess()
 
 
 template<typename T, typename I>
-void sc_csx_dny_spsolver<T,I>::internal_perform_1()
+void schur_csx_dny_spsolver<T,I>::internal_perform_1()
 {
     if(called_set_matrix == '1') {
         data->op_split.perform();
@@ -99,7 +99,7 @@ void sc_csx_dny_spsolver<T,I>::internal_perform_1()
 
 
 template<typename T, typename I>
-void sc_csx_dny_spsolver<T,I>::internal_perform_2()
+void schur_csx_dny_spsolver<T,I>::internal_perform_2()
 {
     MatrixCsxView_new<T,I> * A12_to_use = A12;
     MatrixCsxView_new<T,I> A21_transposed_reordered;
@@ -159,7 +159,7 @@ void sc_csx_dny_spsolver<T,I>::internal_perform_2()
 
 
 template<typename T, typename I>
-void sc_csx_dny_spsolver<T,I>::internal_solve_A11(VectorDenseView_new<T> & rhs, VectorDenseView_new<T> & sol)
+void schur_csx_dny_spsolver<T,I>::internal_solve_A11(VectorDenseView_new<T> & rhs, VectorDenseView_new<T> & sol)
 {
     data->op_A11_solver->solve(rhs, sol);
 }
@@ -167,7 +167,7 @@ void sc_csx_dny_spsolver<T,I>::internal_solve_A11(VectorDenseView_new<T> & rhs, 
 
 
 #define INSTANTIATE_T_I(T,I) \
-template class sc_csx_dny_spsolver<T,I>;
+template class schur_csx_dny_spsolver<T,I>;
 
     #define INSTANTIATE_T(T) \
     INSTANTIATE_T_I(T,int32_t) \

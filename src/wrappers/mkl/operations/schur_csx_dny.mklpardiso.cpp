@@ -1,7 +1,7 @@
 
 #ifdef HAVE_MKL
 
-#include "wrappers/mkl/operations/sc_csx_dny.mklpardiso.h"
+#include "wrappers/mkl/operations/schur_csx_dny.mklpardiso.h"
 
 #include <mkl.h>
 
@@ -21,7 +21,7 @@ namespace operations {
 
 
 template<typename T, typename I>
-struct sc_csx_dny_mklpardiso_data
+struct schur_csx_dny_mklpardiso_data
 {
     MatrixCsxData_new<T,I> A_whole;
     VectorDenseData_new<MKL_INT> perm;
@@ -59,21 +59,21 @@ static int get_pardisoType(const MatrixCsxView_new<T,I> & M)
 
 
 template<typename T, typename I>
-sc_csx_dny_mklpardiso<T,I>::sc_csx_dny_mklpardiso() = default;
+schur_csx_dny_mklpardiso<T,I>::schur_csx_dny_mklpardiso() = default;
 
 
 
 template<typename T, typename I>
-sc_csx_dny_mklpardiso<T,I>::~sc_csx_dny_mklpardiso() = default;
+schur_csx_dny_mklpardiso<T,I>::~schur_csx_dny_mklpardiso() = default;
 
 
 
 template<typename T, typename I>
-void sc_csx_dny_mklpardiso<T,I>::internal_preprocess()
+void schur_csx_dny_mklpardiso<T,I>::internal_preprocess()
 {
     if(called_set_matrix == '1' && A->order != 'R') eslog::error("single input matrix needs to be rowmajor\n");
 
-    data = std::make_unique<sc_csx_dny_mklpardiso_data<T,I>>();
+    data = std::make_unique<schur_csx_dny_mklpardiso_data<T,I>>();
 
     if(size_matrix > (size_t)std::numeric_limits<MKL_INT>::max()) eslog::error("size_matrix too large for MKL_INT\n");
     data->size_matrix_mklint = (MKL_INT)size_matrix;
@@ -139,7 +139,7 @@ void sc_csx_dny_mklpardiso<T,I>::internal_preprocess()
 
 
 template<typename T, typename I>
-void sc_csx_dny_mklpardiso<T,I>::internal_perform_1()
+void schur_csx_dny_mklpardiso<T,I>::internal_perform_1()
 {
     if(called_set_matrix == '4') {
         concat_csx<T,I>::do_all(A11, A12, A21, A22, A);
@@ -164,14 +164,14 @@ void sc_csx_dny_mklpardiso<T,I>::internal_perform_1()
 
 
 template<typename T, typename I>
-void sc_csx_dny_mklpardiso<T,I>::internal_perform_2()
+void schur_csx_dny_mklpardiso<T,I>::internal_perform_2()
 {
 }
 
 
 
 template<typename T, typename I>
-void sc_csx_dny_mklpardiso<T,I>::internal_solve_A11(VectorDenseView_new<T> & rhs, VectorDenseView_new<T> & sol)
+void schur_csx_dny_mklpardiso<T,I>::internal_solve_A11(VectorDenseView_new<T> & rhs, VectorDenseView_new<T> & sol)
 {
     MKL_INT phase;
     MKL_INT one = 1;
@@ -198,7 +198,7 @@ void sc_csx_dny_mklpardiso<T,I>::internal_solve_A11(VectorDenseView_new<T> & rhs
 
 
 #define INSTANTIATE_T_I(T,I) \
-template class sc_csx_dny_mklpardiso<T,I>;
+template class schur_csx_dny_mklpardiso<T,I>;
 
     #define INSTANTIATE_T(T) \
     INSTANTIATE_T_I(T, int32_t) \
