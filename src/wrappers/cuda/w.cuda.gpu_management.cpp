@@ -20,6 +20,13 @@ namespace mgm {
         return gpu_wrapper_impl::CUDA;
     }
 
+    bool is_available()
+    {
+        int device_count;
+        cudaError_t err = cudaGetDeviceCount(&device_count);
+        return (err == cudaSuccess) && (device_count > 0);
+    }
+
     device get_device_by_mpi(int mpi_rank, int mpi_size)
     {
 #ifndef ESPRESO_RANK_TO_GPU_MAP

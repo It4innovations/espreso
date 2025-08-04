@@ -45,6 +45,9 @@ DualOperator<T>* DualOperator<T>::create(FETI<T> &feti, const step::Step &step)
             if (!gpu::mgm::is_linked()) {
                 eslog::globalerror("GPU acceleration is not supported: GPU support is not built.\n");
             }
+            if (!gpu::mgm::is_available()) {
+                eslog::globalerror("GPU acceleration is not available. No GPUs detected or other error occured. Are you on GPU-accelerated node?\n");
+            }
             if (!DirectSparseSolver<T>::provideFactors()) {
                 eslog::globalerror("GPU acceleration is not supported: Third party sparse solver does not provide factors.\n");
             }
@@ -54,6 +57,9 @@ DualOperator<T>* DualOperator<T>::create(FETI<T> &feti, const step::Step &step)
         case FETIConfiguration::DUAL_OPERATOR::IMPLICIT_GPU:
             if (!gpu::mgm::is_linked()) {
                 eslog::globalerror("GPU acceleration is not supported: GPU support is not built.\n");
+            }
+            if (!gpu::mgm::is_available()) {
+                eslog::globalerror("GPU acceleration is not available. No GPUs detected or other error occured. Are you on GPU-accelerated node?\n");
             }
             if (!DirectSparseSolver<T>::provideFactors()) {
                 eslog::globalerror("GPU acceleration is not supported: Third party sparse solver does not provide factors.\n");
@@ -66,6 +72,12 @@ DualOperator<T>* DualOperator<T>::create(FETI<T> &feti, const step::Step &step)
             dual = new TotalFETIExplicitSc<T,int>(feti, false);
             break;
         case FETIConfiguration::DUAL_OPERATOR::EXPLICIT_SC_GPUAPPLY:
+            if (!gpu::mgm::is_linked()) {
+                eslog::globalerror("GPU acceleration is not supported: GPU support is not built.\n");
+            }
+            if (!gpu::mgm::is_available()) {
+                eslog::globalerror("GPU acceleration is not available. No GPUs detected or other error occured. Are you on GPU-accelerated node?\n");
+            }
             eslog::info(" = DUAL OPERATOR         EXPLICIT TOTAL FETI USING SCHUR COMPLEMENT, ASSEMBLE CPU, APPLY GPU = \n");
             dual = new TotalFETIExplicitSc<T,int>(feti, true);
             break;
@@ -74,6 +86,12 @@ DualOperator<T>* DualOperator<T>::create(FETI<T> &feti, const step::Step &step)
             dual = new TotalFETIExplicitScTria<T,int>(feti);
             break;
         case FETIConfiguration::DUAL_OPERATOR::EXPLICIT_SCTRIA_GPU:
+            if (!gpu::mgm::is_linked()) {
+                eslog::globalerror("GPU acceleration is not supported: GPU support is not built.\n");
+            }
+            if (!gpu::mgm::is_available()) {
+                eslog::globalerror("GPU acceleration is not available. No GPUs detected or other error occured. Are you on GPU-accelerated node?\n");
+            }
             eslog::info(" = DUAL OPERATOR                       EXPLICIT TOTAL FETI USING SC WITH TRIANGULAR B ON GPU = \n");
             dual = new TotalFETIExplicitScTriaGpu<T,int>(feti);
             break;
@@ -82,6 +100,12 @@ DualOperator<T>* DualOperator<T>::create(FETI<T> &feti, const step::Step &step)
             dual = new TotalFETIExplicitGeneralScCpu<T,int>(feti);
             break;
         case FETIConfiguration::DUAL_OPERATOR::EXPLICIT_GENERALSC_GPU:
+            if (!gpu::mgm::is_linked()) {
+                eslog::globalerror("GPU acceleration is not supported: GPU support is not built.\n");
+            }
+            if (!gpu::mgm::is_available()) {
+                eslog::globalerror("GPU acceleration is not available. No GPUs detected or other error occured. Are you on GPU-accelerated node?\n");
+            }
             eslog::info(" = DUAL OPERATOR                       EXPLICIT TOTAL FETI USING GENERAL SC OPERATION ON GPU = \n");
             dual = new TotalFETIExplicitGeneralScGpu<T,int>(feti);
             break;

@@ -24,6 +24,18 @@ namespace mgm {
         return gpu_wrapper_impl::ONEAPI;
     }
 
+    bool is_available()
+    {
+        std::vector<sycl::device> all_gpus = sycl::device::get_devices(sycl::info::device_type::gpu);
+        std::vector<sycl::device> gpus_levelzero;
+        for(sycl::device & gpu : all_gpus) {
+            if(gpu.get_backend() == sycl::backend::ext_oneapi_level_zero) {
+                gpus_levelzero.push_back(gpu);
+            }
+        }
+        return (gpus_levelzero.size() > 0);
+    }
+
     device get_device_by_mpi(int mpi_rank, int mpi_size)
     {
         // assuming espreso is launched with as many processes per node as there are gpus (stacks) per node

@@ -15,6 +15,8 @@ namespace mgm {
         return gpu_wrapper_impl::NONE;
     }
 
+    bool is_available() { return false; }
+
     struct _device {};
 
     struct _queue {};

@@ -20,6 +20,13 @@ namespace mgm {
         return gpu_wrapper_impl::ROCM;
     }
 
+    bool is_available()
+    {
+        int device_count;
+        hipError_t err = hipGetDeviceCount(&device_count);
+        return (err == hipSuccess) && (device_count > 0);
+    }
+
     device get_device_by_mpi(int mpi_rank, int mpi_size)
     {
 #ifndef ESPRESO_RANK_TO_GPU_MAP

@@ -33,6 +33,8 @@ namespace mgm {
         return (get_implementation() != gpu_wrapper_impl::NONE);
     }
 
+    bool is_available();
+
     struct _device;
     using device = std::shared_ptr<_device>;
 

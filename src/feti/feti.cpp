@@ -15,7 +15,7 @@ template <typename T>
 FETI<T>::FETI(FETIConfiguration &configuration)
 : configuration(configuration), decomposition(nullptr)
 {
-    if(gpu::mgm::is_linked()) {
+    if(gpu::mgm::is_linked() && gpu::mgm::is_available()) {
         device = gpu::mgm::get_device_by_mpi(info::mpi::rank, info::mpi::size);
 
         gpu::mgm::init_gpu(device);
