@@ -4,6 +4,7 @@
 #include "wrappers/suitesparse/operations/solver_csx.cholmod.h"
 #include "wrappers/suitesparse/operations/solver_csx.umfpack.h"
 #include "wrappers/mkl/operations/solver_csx.mklpardiso.h"
+#include "wrappers/mumps/operations/solver_csx.mumps.h"
 #include "basis/utilities/stacktimer.h"
 
 
@@ -22,6 +23,9 @@ std::unique_ptr<solver_csx<T,I>> solver_csx<T,I>::make(implementation_selector i
         #ifdef HAVE_MKL
             implementations.push_back(implementation_selector::mklpardiso);
         #endif
+        #ifdef HAVE_MUMPS
+            implementations.push_back(implementation_selector::mumps);
+        #endif
         #ifdef HAVE_SUITESPARSE
             implementations.push_back(implementation_selector::suitesparse);
         #endif
@@ -39,15 +43,18 @@ std::unique_ptr<solver_csx<T,I>> solver_csx<T,I>::make(implementation_selector i
                 if(matrix != nullptr && is_hermitian<T>(matrix->prop.symm)) return std::make_unique<solver_csx_cholmod<T,I>>();
                 else return std::make_unique<solver_csx_umfpack<T,I>>();
                 break;
+            case implementation_selector::mumps:
+                if(!need_factors) return std::make_unique<solver_csx_mumps<T,I>>();
+                break;
             default:
                 eslog::error("invalid solver_csx implementation selector\n");
         }
     }
 
     if(is == implementation_selector::autoselect) {
-        eslog::error("requested implementation does not support requested matrix and needs\n");
+        eslog::error("no valid solver_csx implementation available\n");
     }
-    eslog::error("no valid solver_csx implementation available\n");
+    eslog::error("requested implementation does not support requested matrix and needs\n");
 }
 
 
@@ -215,7 +222,7 @@ void solver_csx<T,I>::get_factor(MatrixCsxView_new<T,I> & factor, bool pattern, 
 template<typename T, typename I>
 void solver_csx<T,I>::solve(VectorDenseView_new<T> & rhs, VectorDenseView_new<T> & sol)
 {
-    stacktimer::push("solver_csx::solve");
+    stacktimer::push("solver_csx::solve (vector)");
 
     if(!need_solve) eslog::error("need solve was not set\n");
     if(!called_factorize_numeric) eslog::error("numeric factorization has not been called\n");
@@ -232,7 +239,7 @@ void solver_csx<T,I>::solve(VectorDenseView_new<T> & rhs, VectorDenseView_new<T>
 template<typename T, typename I>
 void solver_csx<T,I>::solve(MatrixDenseView_new<T> & rhs, MatrixDenseView_new<T> & sol)
 {
-    stacktimer::push("solver_csx::solve");
+    stacktimer::push("solver_csx::solve (matrix dense)");
 
     if(!need_solve) eslog::error("need solve was not set\n");
     if(!called_factorize_numeric) eslog::error("numeric factorization has not been called\n");
@@ -240,6 +247,24 @@ void solver_csx<T,I>::solve(MatrixDenseView_new<T> & rhs, MatrixDenseView_new<T>
     if(sol.nrows != A->nrows) eslog::error("wrong sol nrows\n");
     if(rhs.ncols != sol.ncols) eslog::error("rhs and sol ncols does not match\n");
     if(rhs.order != sol.order) eslog::error("rhs and sol orders dont match\n");
+
+    this->internal_solve(rhs, sol);
+
+    stacktimer::pop();
+}
+
+
+
+template<typename T, typename I>
+void solver_csx<T,I>::solve(MatrixCsxView_new<T,I> & rhs, MatrixDenseView_new<T> & sol)
+{
+    stacktimer::push("solver_csx::solve (matrix sparse)");
+
+    if(!need_solve) eslog::error("need solve was not set\n");
+    if(!called_factorize_numeric) eslog::error("numeric factorization has not been called\n");
+    if(rhs.nrows != A->nrows) eslog::error("wrong rhs nrows\n");
+    if(sol.nrows != A->nrows) eslog::error("wrong sol nrows\n");
+    if(rhs.ncols != sol.ncols) eslog::error("rhs and sol ncols does not match\n");
 
     this->internal_solve(rhs, sol);
 

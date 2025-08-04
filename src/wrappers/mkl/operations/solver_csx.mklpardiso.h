@@ -36,6 +36,7 @@ protected:
     void internal_get_factor_U(MatrixCsxView_new<T,I> & U, bool pattern, bool values) override;
     void internal_solve(VectorDenseView_new<T> & rhs, VectorDenseView_new<T> & sol) override;
     void internal_solve(MatrixDenseView_new<T> & rhs, MatrixDenseView_new<T> & sol) override;
+    void internal_solve(MatrixCsxView_new<T,I> & rhs, MatrixDenseView_new<T> & sol) override;
 private:
     std::unique_ptr<solver_csx_mklpardiso_data<T,I>> data;
 protected:

@@ -31,6 +31,12 @@ namespace mpi {
     void finish();
 
     void print();
+
+    [[maybe_unused]] static auto comm_c2f(MPI_Comm comm)
+    {
+        // convert C communicator to Fortran communicator
+        return MPI_Comm_c2f(comm);
+    }
 }
 }
 }

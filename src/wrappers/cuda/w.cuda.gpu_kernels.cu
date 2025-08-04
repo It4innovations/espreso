@@ -17,6 +17,13 @@ namespace kernels {
     namespace
     {
         template<typename T>
+        static __device__ void complexAdd(std::complex<T> * dst, std::complex<T> val)
+        {
+            reinterpret_cast<T*>(dst)[0] += reinterpret_cast<T*>(&val)[0];
+            reinterpret_cast<T*>(dst)[1] += reinterpret_cast<T*>(&val)[1];
+        }
+
+        template<typename T>
         static __device__ void complexAtomicAdd(std::complex<T> * dst, std::complex<T> val)
         {
             atomicAdd(&reinterpret_cast<T*>(dst)[0], reinterpret_cast<T*>(&val)[0]);
@@ -82,7 +89,12 @@ namespace kernels {
                     const I * D2C = D2Cs[d];
                 
                     for(I dof = threadIdx.x; dof < n_dofs_interface; dof += blockDim.x) {
-                        cluster_vector[D2C[dof]] += domain_vector[dof];
+                        if constexpr(!std::is_same_v<T,utils::remove_complex_t<T>>) {
+                            complexAdd(cluster_vector + D2C[dof], domain_vector[dof]);
+                        }
+                        else {
+                            cluster_vector[D2C[dof]] += domain_vector[dof];
+                        }
                     }
                 }
             }
@@ -110,7 +122,7 @@ namespace kernels {
             #endif
 
             if constexpr(std::is_same_v<utils::remove_complex_t<T>,double> && !MY_DOUBLE_ATOMIC_AVAILABLE) {
-                // must iterate sequentially through the domains
+                // iterate sequentially through the domains
                 I n_domains = blockDim.x;
                 if(blockIdx.x > 0) return;
 
@@ -122,7 +134,12 @@ namespace kernels {
                     const I * D2C = D2C_data + D2C_offsets[di];
                 
                     for(I i = threadIdx.x; i < size; i += blockDim.x) {
-                        vec_cluster[D2C[i]] += vec[i];
+                        if constexpr(!std::is_same_v<T,utils::remove_complex_t<T>>) {
+                            complexAdd(vec_cluster + D2C[i], vec[i]);
+                        }
+                        else {
+                            vec_cluster[D2C[i]] += vec[i];
+                        }
                     }
                 }
             }

@@ -119,13 +119,7 @@ void schur_csx_dny_spsolver<T,I>::internal_perform_2()
     X.set(size_A11, size_sc, data->cfg.X_order, AllocatorCPU_new::get_singleton());
     X.alloc();
 
-    MatrixDenseData_new<T> Y;
-    Y.set(size_A11, size_sc, data->cfg.X_order, AllocatorCPU_new::get_singleton());
-    Y.alloc();
-
-    math::operations::convert_csx_dny<T,I>::do_all(A12_to_use, &X);
-
-    data->op_A11_solver->solve(X, Y);
+    data->op_A11_solver->solve(*A12_to_use, X);
 
     if(is_matrix_hermitian) {
         // carefull not to touch the other triangle of sc
@@ -144,7 +138,7 @@ void schur_csx_dny_spsolver<T,I>::internal_perform_2()
             math::operations::convert_csx_dny<T,I>::do_all(A22_to_use, &sc_tmp);
         }
 
-        math::operations::gemm_csx_dny_dnz<T,I>::do_all(A21_to_use, &Y, &sc_tmp, T{-1} * alpha, T{1} * alpha);
+        math::operations::gemm_csx_dny_dnz<T,I>::do_all(A21_to_use, &X, &sc_tmp, T{-1} * alpha, T{1} * alpha);
 
         math::operations::copy_dnx<T>::do_all(&sc_tmp, sc);
     }
@@ -152,7 +146,7 @@ void schur_csx_dny_spsolver<T,I>::internal_perform_2()
         if(A22 == nullptr) math::operations::fill_dnx<T>::do_all(sc, T{0});
         if(A22 != nullptr) math::operations::convert_csx_dny<T,I>::do_all(A22, sc);
 
-        math::operations::gemm_csx_dny_dnz<T,I>::do_all(A21_to_use, &Y, sc, T{-1} * alpha, T{1} * alpha);
+        math::operations::gemm_csx_dny_dnz<T,I>::do_all(A21_to_use, &X, sc, T{-1} * alpha, T{1} * alpha);
     }
 }
 

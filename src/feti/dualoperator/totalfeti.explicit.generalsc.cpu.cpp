@@ -59,7 +59,6 @@ static void setup_configs(typename TotalFETIExplicitGeneralScCpu<T,I>::config & 
     set_by_env(cfg_dualop.parallel_update,                "ESPRESO_CONFIG_DUALOP_GENERALSC_parallel_update");
     set_by_env(cfg_dualop.parallel_apply,                 "ESPRESO_CONFIG_DUALOP_GENERALSC_parallel_apply");
     set_by_env(cfg_dualop.mainloop_update_split,          "ESPRESO_CONFIG_DUALOP_GENERALSC_mainloop_update_split");
-    // set_by_env(cfg_dualop.gpu_wait_after_mainloop_update, "ESPRESO_CONFIG_DUALOP_GENERALSC_gpu_wait_after_mainloop_update");
     set_by_env(cfg_dualop.inner_timers,                   "ESPRESO_CONFIG_DUALOP_GENERALSC_inner_timers");
     set_by_env(cfg_dualop.outer_timers,                   "ESPRESO_CONFIG_DUALOP_GENERALSC_outer_timers");
     set_by_env(cfg_dualop.print_parameters,               "ESPRESO_CONFIG_DUALOP_GENERALSC_print_parameters");

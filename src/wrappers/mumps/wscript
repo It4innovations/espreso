@@ -1,0 +1,8 @@
+
+def options(opt):
+    pass
+
+def configure(ctx):
+    headers = "smumps_c.h dmumps_c.h cmumps_c.h zmumps_c.h"
+    libs = ["mumps_common", "smumps", "dmumps", "cmumps", "zmumps"]
+    ctx.check_cxx(mandatory=False, msg="Checking for 'mumps'", okmsg=" ".join(libs), define_name="HAVE_MUMPS", header_name=headers, lib=libs, uselib_store="MUMPS", global_define=0)

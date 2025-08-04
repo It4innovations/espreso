@@ -129,6 +129,13 @@ inline bool is_uplo_equal(char uplo1, char uplo2)
     return false;
 }
 
+inline bool is_uplo(char uplo)
+{
+    // returns true if only the upper or lower part of the matrix is stored
+    // regardless of whether the matrix is symmetric/hermitian or it is actually just a triangle
+    return uplo == 'U' || uplo == 'L';
+}
+
 inline Matrix_Shape get_old_matrix_shape(const MatrixBase_new & A)
 {
     if(A.prop.uplo == 'U') return Matrix_Shape::UPPER;

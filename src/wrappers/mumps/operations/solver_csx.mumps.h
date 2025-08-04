@@ -1,6 +1,6 @@
 
-#ifndef SRC_WRAPPERS_SUITESPARSE_OPERATIONS_SOLVER_CSX_CHOLMOD_H
-#define SRC_WRAPPERS_SUITESPARSE_OPERATIONS_SOLVER_CSX_CHOLMOD_H
+#ifndef SRC_WRAPPERS_MUMPS_OPERATIONS_SOLVER_CSX_MUMPS_H
+#define SRC_WRAPPERS_MUMPS_OPERATIONS_SOLVER_CSX_MUMPS_H
 
 #include "math/operations/solver_csx.h"
 
@@ -12,22 +12,22 @@ namespace operations {
 
 
 
-#ifdef HAVE_SUITESPARSE
+#ifdef HAVE_MUMPS
 
 
 template<typename T, typename I>
-struct solver_csx_cholmod_data;
+struct solver_csx_mumps_data;
 
 template<typename T, typename I>
-class solver_csx_cholmod : public solver_csx<T,I>
+class solver_csx_mumps : public solver_csx<T,I>
 {
 public:
-    solver_csx_cholmod();
-    solver_csx_cholmod(const solver_csx_cholmod &) = delete;
-    solver_csx_cholmod(solver_csx_cholmod &&) = default;
-    solver_csx_cholmod & operator=(const solver_csx_cholmod &) = delete;
-    solver_csx_cholmod & operator=(solver_csx_cholmod &&) = default;
-    virtual ~solver_csx_cholmod();
+    solver_csx_mumps();
+    solver_csx_mumps(const solver_csx_mumps &) = delete;
+    solver_csx_mumps(solver_csx_mumps &&) = default;
+    solver_csx_mumps & operator=(const solver_csx_mumps &) = delete;
+    solver_csx_mumps & operator=(solver_csx_mumps &&) = default;
+    virtual ~solver_csx_mumps();
 protected:
     void internal_factorize_symbolic() override;
     void internal_factorize_numeric() override;
@@ -38,9 +38,7 @@ protected:
     void internal_solve(MatrixDenseView_new<T> & rhs, MatrixDenseView_new<T> & sol) override;
     void internal_solve(MatrixCsxView_new<T,I> & rhs, MatrixDenseView_new<T> & sol) override;
 private:
-    void get_factor_impl(MatrixCsxView_new<T,I> & factor, bool pattern, bool values);
-private:
-    std::unique_ptr<solver_csx_cholmod_data<T,I>> data;
+    std::unique_ptr<solver_csx_mumps_data<T,I>> data;
 protected:
     using solver_csx<T,I>::A;
     using solver_csx<T,I>::nnz_L;
@@ -58,11 +56,11 @@ protected:
 
 
 template<typename T, typename I>
-class solver_csx_cholmod : public solver_csx<T,I>
+class solver_csx_mumps : public solver_csx<T,I>
 {
 public:
-    solver_csx_cholmod() { eslog::error("suitesparse/cholmod wrapper is not available\n"); }
-    virtual ~solver_csx_cholmod() = default;
+    solver_csx_mumps() { eslog::error("mumps wrapper is not available\n"); }
+    virtual ~solver_csx_mumps() = default;
 };
 
 
@@ -75,4 +73,4 @@ public:
 }
 }
 
-#endif /* SRC_WRAPPERS_SUITESPARSE_OPERATIONS_SOLVER_CSX_CHOLMOD_H */
+#endif /* SRC_WRAPPERS_MUMPS_OPERATIONS_SOLVER_CSX_MUMPS_H */

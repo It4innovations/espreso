@@ -6,6 +6,7 @@
 #include <vector>
 #include <limits>
 #include <complex>
+#include <algorithm>
 
 namespace espreso {
 namespace utils {
@@ -148,6 +149,12 @@ namespace utils {
     T * pointer_advance(T * ptr, size_t offset_B)
     {
         return (T*)((char*)ptr + offset_B);
+    }
+
+    template<typename ITER_IN, typename ITER_OUT, typename OP>
+    inline void transform_n(ITER_IN begin, size_t n, ITER_OUT end, OP op)
+    {
+        std::transform(begin, begin + n, end, op);
     }
 }
 

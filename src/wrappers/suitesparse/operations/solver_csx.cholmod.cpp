@@ -6,6 +6,7 @@
 #include "wrappers/suitesparse/w.suitesparse.cholmod.h"
 #include "math/primitives_new/allocator_new.h"
 #include "math/operations/copy_dnx.h"
+#include "math/operations/convert_csx_dny.h"
 
 
 
@@ -227,6 +228,22 @@ void solver_csx_cholmod<T,I>::internal_solve(MatrixDenseView_new<T> & rhs, Matri
     }
 
     _free<I>(cm_sol, data->cm_common);
+}
+
+
+
+template<typename T, typename I>
+void solver_csx_cholmod<T,I>::internal_solve(MatrixCsxView_new<T,I> & rhs, MatrixDenseView_new<T> & sol)
+{
+    if(sol.order != 'C') eslog::error("only support colmajor sol for now\n");
+
+    MatrixDenseData_new<T> rhs_dn;
+    rhs_dn.set(rhs.nrows, rhs.ncols, 'C', AllocatorCPU_new::get_singleton());
+    rhs_dn.alloc();
+
+    convert_csx_dny<T,I>::do_all(&rhs, &rhs_dn);
+
+    this->internal_solve(rhs_dn, sol);
 }
 
 

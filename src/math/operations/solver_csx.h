@@ -19,7 +19,8 @@ public:
     {
         autoselect,
         mklpardiso,
-        suitesparse
+        suitesparse,
+        mumps
     };
 protected:
     solver_csx() = default;
@@ -45,6 +46,7 @@ public:
     void get_factor(MatrixCsxView_new<T,I> & factor, bool pattern = true, bool values = true); // recognizes based on uplo
     void solve(VectorDenseView_new<T> & rhs, VectorDenseView_new<T> & sol);
     void solve(MatrixDenseView_new<T> & rhs, MatrixDenseView_new<T> & sol);
+    void solve(MatrixCsxView_new<T,I> & rhs, MatrixDenseView_new<T> & sol);
 protected:
     virtual void internal_factorize_symbolic() {};
     virtual void internal_factorize_numeric() {};
@@ -53,6 +55,7 @@ protected:
     virtual void internal_get_factor_U(MatrixCsxView_new<T,I> & U, bool pattern, bool values) {};
     virtual void internal_solve(VectorDenseView_new<T> & rhs, VectorDenseView_new<T> & sol) {};
     virtual void internal_solve(MatrixDenseView_new<T> & rhs, MatrixDenseView_new<T> & sol) {};
+    virtual void internal_solve(MatrixCsxView_new<T,I> & rhs, MatrixDenseView_new<T> & sol) {};
 protected:
     MatrixCsxView_new<T,I> * A = nullptr;
     size_t nnz_L = 0;
