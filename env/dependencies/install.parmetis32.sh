@@ -12,7 +12,7 @@ then
     sh env/dependencies/clone.parmetis.sh
 fi
 
-INSTALL_DIR="${PARMETIS_ROOT}/install_${COMPILER_C}_32"
+INSTALL_DIR="${PARMETIS_ROOT}/install_${PREFIX}_${COMPILER_C}_32"
 if [ ! -d "${INSTALL_DIR}" ]
 then
     (

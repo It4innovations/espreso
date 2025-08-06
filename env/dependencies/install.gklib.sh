@@ -17,9 +17,10 @@ if [ ! -d "${INSTALL_DIR}" ]
 then
     (
         cd "${GKLIB_ROOT}"
-        sed -i 's/option(BUILD_SHARED_LIBS \"Build shared libraries (.dll\/.so) instead of static ones (.lib\/.a)\" OFF)/option(BUILD_SHARED_LIBS \"Turn on due to intel\" ON)/'g CMakeLists.txt
+        # fix the bug in the compilation script
+        sed -i 's/BUILD_SHARED_LIBS/SHARED/'g CMakeLists.txt
         make clean
-        make config cc=${COMPILER_C} prefix="${INSTALL_DIR}"
+        make config shared=1 cc=${COMPILER_C} prefix="${INSTALL_DIR}"
         make -j$(nproc)
         make install
     )
