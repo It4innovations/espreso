@@ -39,6 +39,9 @@ void get_eig_sym(Matrix_Dense<double> &A, Vector_Dense<double> &values)
     case Matrix_Shape::UPPER: ret = LAPACKE_dspev(LAPACK_ROW_MAJOR, 'N', 'U', A.nrows, A.vals, values.vals, nullptr, A.ncols); break;
     case Matrix_Shape::LOWER: ret = LAPACKE_dspev(LAPACK_ROW_MAJOR, 'N', 'L', A.nrows, A.vals, values.vals, nullptr, A.ncols); break;
     }
+    if (ret) {
+        eslog::error("error in 'get_eig_sym'\n");
+    }
 }
 
 template <>
@@ -50,6 +53,9 @@ void get_eig_sym(Matrix_Dense<double> &A, Vector_Dense<double> &values, Matrix_D
     case Matrix_Shape::FULL: math::copy(vectors, A); ret = LAPACKE_dsyev(LAPACK_ROW_MAJOR, 'V', 'U', A.nrows, vectors.vals, A.ncols, values.vals); break;
     case Matrix_Shape::UPPER: ret = LAPACKE_dspev(LAPACK_ROW_MAJOR, 'V', 'U', A.nrows, A.vals, values.vals, vectors.vals, A.ncols); break;
     case Matrix_Shape::LOWER: ret = LAPACKE_dspev(LAPACK_ROW_MAJOR, 'V', 'L', A.nrows, A.vals, values.vals, vectors.vals, A.ncols); break;
+    }
+    if (ret) {
+        eslog::error("error in 'get_eig_sym'\n");
     }
 }
 
@@ -63,6 +69,9 @@ void get_eig_sym(Matrix_Dense<double> &A, Vector_Dense<double> &values, int begi
     case Matrix_Shape::UPPER: ret = LAPACKE_dspevx(LAPACK_ROW_MAJOR, 'N', 'I', 'U', A.nrows, A.vals, 0, 0, begin, end, 2 * LAPACKE_dlamch('S'), &m, values.vals, nullptr, A.ncols, fail.vals); break;
     case Matrix_Shape::LOWER: ret = LAPACKE_dspevx(LAPACK_ROW_MAJOR, 'N', 'I', 'L', A.nrows, A.vals, 0, 0, begin, end, 2 * LAPACKE_dlamch('S'), &m, values.vals, nullptr, A.ncols, fail.vals); break;
     }
+    if (ret) {
+        eslog::error("error in 'get_eig_sym'\n");
+    }
 }
 
 template <>
@@ -74,6 +83,23 @@ void get_eig_sym(Matrix_Dense<double> &A, Vector_Dense<double> &values, Matrix_D
     case Matrix_Shape::FULL:  ret = LAPACKE_dsyevr(LAPACK_ROW_MAJOR, 'V', 'I', 'U', A.nrows, A.vals, A.ncols, 0, 0, begin, end, LAPACKE_dlamch('S'), &m, values.vals, vectors.vals, vectors.ncols, fail.vals); break;
     case Matrix_Shape::UPPER: ret = LAPACKE_dspevx(LAPACK_ROW_MAJOR, 'V', 'I', 'U', A.nrows, A.vals, 0, 0, begin, end, 2 * LAPACKE_dlamch('S'), &m, values.vals, vectors.vals, A.ncols, fail.vals); break;
     case Matrix_Shape::LOWER: ret = LAPACKE_dspevx(LAPACK_ROW_MAJOR, 'V', 'I', 'L', A.nrows, A.vals, 0, 0, begin, end, 2 * LAPACKE_dlamch('S'), &m, values.vals, vectors.vals, A.ncols, fail.vals); break;
+    }
+    if (ret) {
+        eslog::error("error in 'get_eig_sym'\n");
+    }
+}
+
+template <>
+void get_svd(Matrix_Dense<double> &A, Vector_Dense<double> &s, Matrix_Dense<double> &U, Matrix_Dense<double> &V)
+{
+    int ret = 0;
+    s.resize(std::min(A.nrows, A.ncols)); math::set(s, 0.0);
+    U.resize(A.nrows, A.nrows); math::set(U, 0.0);
+    V.resize(A.ncols, A.ncols); math::set(V, 0.0);
+    Vector_Dense<double> superb; superb.resize(s.size);
+    ret = LAPACKE_dgesvd(LAPACK_ROW_MAJOR, 'A', 'A', A.nrows, A.ncols, A.vals, A.ncols, s.vals, U.vals, U.ncols, V.vals, V.nrows, superb.vals);
+    if (ret) {
+        eslog::error("error in 'get_svd'\n");
     }
 }
 

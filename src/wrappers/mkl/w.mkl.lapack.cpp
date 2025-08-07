@@ -80,6 +80,18 @@ void get_eig_sym(Matrix_Dense<double> &A, Vector_Dense<double> &values, Matrix_D
 }
 
 template <>
+void get_svd(Matrix_Dense<double> &A, Vector_Dense<double> &s, Matrix_Dense<double> &U, Matrix_Dense<double> &V)
+{
+    int ret = 0;
+    s.resize(std::min(A.nrows, A.ncols)); math::set(s, 0.0);
+    U.resize(A.nrows, A.nrows); math::set(U, 0.0);
+    V.resize(A.ncols, A.ncols); math::set(V, 0.0);
+    Vector_Dense<double> superb; superb.resize(s.size);
+    ret = LAPACKE_dgesvd(LAPACK_ROW_MAJOR, 'A', 'A', A.nrows, A.ncols, A.vals, A.ncols, s.vals, U.vals, U.ncols, V.vals, V.nrows, superb.vals);
+    if (ret) eslog::error("error in 'get_svd'\n");
+}
+
+template <>
 void submatrix(const Matrix_Dense<double, int> &input, Matrix_Dense<double, int> &output, int start_row, int end_row, int start_col, int end_col)
 {
     if (input.shape != Matrix_Shape::FULL) eslog::error("Cannot copy triangular matrix.\n");

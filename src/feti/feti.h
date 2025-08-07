@@ -27,7 +27,7 @@ struct FETI {
     FETI(FETIConfiguration &configuration);
     ~FETI();
 
-    void info() const;
+    void check();
 
     bool set(const step::Step &step);
     bool update(const step::Step &step);

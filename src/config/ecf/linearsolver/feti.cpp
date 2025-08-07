@@ -73,6 +73,11 @@ espreso::FETIConfiguration::FETIConfiguration()
             .setdescription({ "Finish when FETI solver does not converge." })
             .setdatatype({ ECFDataType::BOOL }));
 
+    check_input_matrices = true;
+    REGISTER(check_input_matrices, ECFMetaData()
+            .setdescription({ "Check input matrices with eigenvalues and SVD decomposition." })
+            .setdatatype({ ECFDataType::BOOL }));
+
     iterative_solver = ITERATIVE_SOLVER::PCG;
     REGISTER(iterative_solver, ECFMetaData()
             .setdescription({ "Iterative solver" })

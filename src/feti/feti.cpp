@@ -85,6 +85,10 @@ bool FETI<T>::update(const step::Step &step)
         Vector_Dual<T>::initBuffers();
     }
 
+    if (configuration.check_input_matrices) {
+        check();
+    }
+
     projector->orthonormalizeKernels(step);
     dualOperator->update(step);
     projector->update(step);
@@ -138,6 +142,152 @@ bool FETI<T>::solve(const step::Step &step)
         eslog::warning(error.c_str());
     }
     return false;
+}
+
+template <typename T>
+void FETI<T>::check()
+{
+    T eps = std::numeric_limits<T>::epsilon();
+
+    std::vector<int> zero_s(K.size()), zero_s_reg(K.size());
+    std::vector<T> maxK(K.size()), normK(K.size());
+    std::vector<std::vector<T> > normKN(K.size());
+    std::vector<Vector_Dense<T> > eig(K.size());
+    std::vector<Vector_Dense<T> > eig_reg(K.size());
+    std::vector<Vector_Dense<T> > s(K.size());
+    std::vector<Vector_Dense<T> > s_reg(K.size());
+    std::vector<Matrix_Dense<T> > U(K.size()), V(K.size());
+    std::vector<Matrix_Dense<T> > U_reg(K.size()), V_reg(K.size());
+
+    #pragma omp parallel for
+    for (size_t di = 0; di < K.size(); ++di) {
+        T tol = std::max(K[di].nrows, K[di].ncols) * eps;
+        maxK[di] = *std::max_element(K[di].vals, K[di].vals + K[di].nnz);
+
+        // K * N
+        SpBLAS<Matrix_CSR, T> spblas(K[di]);
+        for (int r = 0; r < K[di].nrows; ++r) {
+            normK[di] += K[di].vals[K[di].rows[r] - Indexing::CSR] * K[di].vals[K[di].rows[r] - Indexing::CSR];
+        }
+        normK[di] = std::sqrt(normK[di]);
+        Vector_Dense<T> R, KR; KR.resize(R1[di].ncols);
+        for (int r = 0; r < R1[di].nrows; ++r) {
+            R.size = R1[di].ncols; R.vals = R1[di].vals + R1[di].ncols * r;
+            spblas.apply(KR, T{1}, T{0}, R);
+            normKN[di].push_back(math::norm(KR));
+        }
+
+        // eigenvalues
+        Matrix_Dense<T> m; m.resize(K[di].nrows, K[di].ncols); math::set(m, T{0});
+        Matrix_Dense<T> m_reg; m_reg.resize(K[di].nrows, K[di].ncols); math::set(m_reg, T{0});
+        eig[di].resize(K[di].nrows);
+        eig_reg[di].resize(K[di].nrows);
+
+        for (esint r = 0; r < K[di].nrows; ++r) {
+            for (esint c = K[di].rows[r]; c < K[di].rows[r + 1]; ++c) {
+                m.vals[r * K[di].ncols + K[di].cols[c - Indexing::CSR] - Indexing::CSR] = K[di].vals[c - Indexing::CSR];
+                m_reg.vals[r * K[di].ncols + K[di].cols[c - Indexing::CSR] - Indexing::CSR] = K[di].vals[c - Indexing::CSR];
+            }
+        }
+        for (esint r = 0; r < RegMat[di].nrows; ++r) {
+            for (esint c = RegMat[di].rows[r]; c < RegMat[di].rows[r + 1]; ++c) {
+                m_reg.vals[r * RegMat[di].ncols + RegMat[di].cols[c - Indexing::CSR] - Indexing::CSR] = RegMat[di].vals[c - Indexing::CSR];
+            }
+        }
+        if (K[di].shape == Matrix_Shape::UPPER) {
+            for (esint r = 0; r < m.nrows; ++r) {
+                for (esint c = r; c < m.ncols; ++c) {
+                    m.vals[c * m.ncols + r] = m.vals[r * m.ncols + c];
+                    m_reg.vals[c * m.ncols + r] = m_reg.vals[r * m.ncols + c];
+                }
+            }
+        }
+        if (K[di].shape == Matrix_Shape::LOWER) {
+            for (esint r = 0; r < m.nrows; ++r) {
+                for (esint c = r; c < m.ncols; ++c) {
+                    m.vals[r * m.ncols + c] = m.vals[c * m.ncols + r];
+                    m_reg.vals[r * m.ncols + c] = m_reg.vals[c * m.ncols + r];
+                }
+            }
+        }
+
+        math::lapack::get_svd(m, s[di], U[di], V[di]);
+        math::lapack::get_svd(m_reg, s_reg[di], U_reg[di], V_reg[di]);
+        math::lapack::get_eig_sym(m, eig[di]);
+        math::lapack::get_eig_sym(m_reg, eig_reg[di]);
+
+        T s_max = *std::max_element(s[di].vals, s[di].vals + s[di].size);
+        T s_reg_max = *std::max_element(s_reg[di].vals, s_reg[di].vals + s_reg[di].size);
+        for (int i = 0; i < s[di].size; ++i) {
+            if (s[di].vals[i] <= tol * s_max) {
+                zero_s[di] += 1;
+            }
+        }
+        for (int i = 0; i < s_reg[di].size; ++i) {
+            if (s_reg[di].vals[i] <= tol * s_reg_max) {
+                zero_s_reg[di] += 1;
+            }
+        }
+    }
+
+    Communication::serialize([&] () {
+        printf(" !! CHECK \n");
+        printf(" !! ================\n");
+        for (size_t di = 0; di < K.size(); ++di) {
+
+            printf(" !! DOMAIN          : %d \n", (int)di);
+            printf(" !! norm(K)         : %+e\n", normK[di]);
+            printf(" !! norm(KN)        :");
+            for (size_t v = 0; v < normKN[di].size(); ++v) {
+                printf(" %+.2e", normKN[di][v]);
+            }
+            printf("\n");
+            printf(" !! norm(KN)/norm(K):");
+            for (size_t v = 0; v < normKN[di].size(); ++v) {
+                printf(" %+.2e", normKN[di][v] / normK[di]);
+            }
+            printf("\n");
+            printf(" !! eig(K)          :");
+            for (int v = 0; v < 8 && v < eig[di].size; ++v) {
+                printf(" %+.2e", eig[di].vals[v]);
+            }
+            if (8 < eig[di].size) {
+                printf(" ... %+.2e", eig[di].vals[eig[di].size - 1]);
+            }
+            printf("\n");
+            printf(" !! eig(K+RegMat)   :");
+            for (int v = 0; v < 8 && v < eig_reg[di].size; ++v) {
+                printf(" %+.2e", eig_reg[di].vals[v]);
+            }
+            if (8 < eig_reg[di].size) {
+                printf(" ... %+.2e", eig_reg[di].vals[eig_reg[di].size - 1]);
+            }
+            printf("\n");
+            printf(" !! SVD(K)        S :");
+            printf(" %+.2e ...", s[di].vals[0]);
+            for (int v = std::max(1, s[di].size - 8); v < s[di].size; ++v) {
+                printf(" %+.2e", s[di].vals[v]);
+            }
+            printf("\n");
+            printf(" !! SVD(K+RegMat) S :");
+            printf(" %+.2e ...", s_reg[di].vals[0]);
+            for (int v = std::max(1, s_reg[di].size - 8); v < s_reg[di].size; ++v) {
+                printf(" %+.2e", s_reg[di].vals[v]);
+            }
+            printf("\n");
+            printf(" !! S[0] / S[-1]    : %e\n", s_reg[di].vals[0] / s_reg[di].vals[s_reg[di].size - 1]);
+            printf(" !! R.cols          : %d\n", R1[di].nrows);
+            printf(" !! zero in S       : %d\n", zero_s[di]);
+            printf(" !! zero in S_REG   : %d\n", zero_s_reg[di]);
+            if (zero_s[di] != R1[di].nrows) {
+                printf(" !! INVALID NUMBER OF KERNELS\n");
+            }
+            if (zero_s_reg[di]) {
+                printf(" !! INVALID REGULARIZATION\n");
+            }
+            printf(" !! ----------------\n");
+        }
+    });
 }
 
 template struct FETI<double>;
