@@ -4,6 +4,7 @@
 
 #include "basis/containers/point.h"
 #include "contactinfo.h"
+#include "mesh/store/nodestore.h"
 
 #include <cstddef>
 #include <vector>
@@ -20,10 +21,10 @@ struct SurfaceStore {
     serializededata<esint, ContactInfo>* contact;
     serializededata<esint, esint>* body;
     serializededata<esint, esint>* triangles;
-    serializededata<esint, esint>* nodes;
+    serializededata<esint, esint>* enodes;
+
     serializededata<esint, esint>* nIDs;
     serializededata<esint, Point>* coordinates;
-    serializededata<esint, esint>* enodes;
 
     // from coarse nodes + warping in the case of squares
     // base + normal -> normal implicit definition
@@ -37,6 +38,8 @@ struct SurfaceStore {
     serializededata<esint, esint>* neighbors;
 
     std::vector<size_t> tdistribution, edistribution;
+
+    static NodeData *nodeNormals, *nodeMultiplicity;
 
     esint offset;
     esint size;

@@ -12,6 +12,8 @@ namespace espreso {
 class Mesh;
 
 class DebugOutput {
+    static int iteration;
+
 public:
     static void data(
             const std::string &name,
@@ -29,7 +31,7 @@ public:
     static void closeElements(double clusterShrinkRatio = .9, double domainShrinkRatio = .95);
     static void contact(double clusterShrinkRatio = .9, double domainShrinkRatio = .95);
     static void surface(const char* name, double clusterShrinkRatio = .9, double domainShrinkRatio = .95);
-    static void warpedNormals(const char* name, double clusterShrinkRatio = .9, double domainShrinkRatio = .95);
+    static void warpedNormals(const char* name, const double *displacement = nullptr, double clusterShrinkRatio = .9, double domainShrinkRatio = .95);
 
 protected:
     DebugOutput(double clusterShrinkRatio, double domainShrinkRatio, bool withDomains);

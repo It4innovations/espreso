@@ -94,11 +94,12 @@ void computeRegionsBoundaryDistribution(NodeStore *nodes, std::vector<BoundaryRe
 void computeRegionsBoundaryParents(const NodeStore *nodes, const ElementStore *elements, std::vector<BoundaryRegionStore*> &boundaryRegions, std::vector<ContactInterfaceStore*> &contactInterfaces);
 
 void computeBodiesSurface(NodeStore *nodes, ElementStore *elements, std::vector<ElementsRegionStore*> &elementsRegions, std::vector<BoundaryRegionStore*> &boundaryRegions, SurfaceStore *surface, std::vector<int> &neighbors);
-void computeWarpedNormals(SurfaceStore * surface);
-void exchangeContactHalo(SurfaceStore * surface, ContactStore *contact);
-void findCloseElements(ContactStore *contact);
-void computeContactInterface(SurfaceStore* surface, ContactStore* contact);
-void arrangeContactInterfaces(ContactStore* contact, BodyStore *bodies, std::vector<ElementsRegionStore*> &elementsRegions, std::vector<ContactInterfaceStore*> &contactInterfaces);
+void computeSurfaceNodeNormals(NodeStore *nodes, SurfaceStore * surface, const std::vector<int> &neighbors, const double* displacement = nullptr);
+void computeWarpedNormals(SurfaceStore * surface, const double* displacement = nullptr);
+void exchangeContactHalo(SurfaceStore * surface, ContactStore *contact, const double* displacement = nullptr);
+void findCloseElements(ContactStore *contact, const double* displacement = nullptr);
+void computeContactInterface(SurfaceStore* surface, ContactStore* contact, const double *displacement = nullptr);
+void arrangeContactInterfaces(NodeStore *nodes, ContactStore* contact, BodyStore *bodies, std::vector<ElementsRegionStore*> &elementsRegions, std::vector<ContactInterfaceStore*> &contactInterfaces, const double* displacement = nullptr);
 
 void triangularizeSurface(SurfaceStore *surface);
 void triangularizeBoundary(BoundaryRegionStore *boundary);

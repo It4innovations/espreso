@@ -338,7 +338,7 @@ void MortarContact<T>::assembleMortarInterface(std::vector<Mortar> &B)
 }
 
 template <typename T>
-void MortarContact<T>::synchronize(FETI<T> &feti, std::vector<Mortar> &B)
+void MortarContact<T>::synchronize(FETI<T> &feti, std::vector<Mortar> &B, std::vector<Mortar> &mortar, std::map<int, MortarInfo> &mInfo)
 {
     std::vector<esint> idPerm(info::mesh->nodes->size);
     std::iota(idPerm.begin(), idPerm.end(), 0);
@@ -633,12 +633,10 @@ void MortarContact<T>::synchronize(FETI<T> &feti, std::vector<Mortar> &B)
             auto it = std::lower_bound(ids.begin() + info::mesh->nodes->uniqInfo.nhalo, ids.end(), m->first);
             if (it != ids.end() && *it == m->first) {
                 info.push_back(__mInfo__(m->first));
-                if (StructuralMechanics::Results::normal) {
-                    info.back().normal.x = StructuralMechanics::Results::normal->data[info::mesh->dimension * (it - ids.begin()) + 0];
-                    info.back().normal.y = StructuralMechanics::Results::normal->data[info::mesh->dimension * (it - ids.begin()) + 1];
-                    if (info::mesh->dimension == 3) {
-                        info.back().normal.z = StructuralMechanics::Results::normal->data[info::mesh->dimension * (it - ids.begin()) + 2];
-                    }
+                info.back().normal.x = info::mesh->contact->nodeNormals->data[info::mesh->dimension * (it - ids.begin()) + 0];
+                info.back().normal.y = info::mesh->contact->nodeNormals->data[info::mesh->dimension * (it - ids.begin()) + 1];
+                if (info::mesh->dimension == 3) {
+                    info.back().normal.z = info::mesh->contact->nodeNormals->data[info::mesh->dimension * (it - ids.begin()) + 2];
                 }
             }
         }
@@ -674,11 +672,51 @@ void MortarContact<T>::set(const step::Step &step, FETI<T> &feti)
         return;
     }
 
+    interval = feti.lambdas.intervals.size();
+    cmapsize = feti.lambdas.cmap.size();
+    feti.lambdas.intervals.push_back({ 0, 0 });
+
+    dsize.resize(feti.D2C.size());
+    for (size_t i = 0; i < dsize.size(); ++i) {
+        dsize[i] = feti.D2C[i].size();
+    }
+}
+
+template <typename T>
+void MortarContact<T>::update(const step::Step &step, FETI<T> &feti)
+{
+    bool run = false;
+    for (auto ci = info::ecf->input.contact_interfaces.cbegin(); ci != info::ecf->input.contact_interfaces.cend(); ++ci) {
+        if (ci->second.criterion != ContactInterfaceConfiguration::CRITERION::SKIP) {
+            run = true;
+        }
+    }
+    if (!run) {
+        return;
+    }
+    feti.updated.B = true;
+
+    // we need to reset due to different number of equalities
+    feti.lambdas.size = feti.lambdas.equalities;
+    for (size_t i = 0; i < dsize.size(); ++i) {
+        feti.D2C[i].resize(dsize[i]);
+        feti.B1[i].resize(dsize[i], feti.B1[i].ncols, feti.B1[i].rows[dsize[i]]);
+    }
+    feti.c.resize(feti.lambdas.size);
+    feti.lb.clear();
+    feti.ub.clear();
+    feti.lambdas.intervals[interval] = { 0, 0 };
+    feti.lambdas.cmap.resize(cmapsize);
+
+    // pair, from, to, value -> normalized
+    std::vector<Mortar> mortar;
+    std::map<int, MortarInfo> mInfo;
+
     std::vector<Mortar> B;
     if (info::mesh->contact->sparseSide != NULL) {
         assembleMortarInterface(B);
     }
-    synchronize(feti, B);
+    synchronize(feti, B, mortar, mInfo);
 
 //    Communication::serialize([&] () {
 //        printf("%2d ::\n", info::mpi::rank);
@@ -733,9 +771,8 @@ void MortarContact<T>::set(const step::Step &step, FETI<T> &feti)
     }
 
     // process mortars according to ID
-    feti.lambdas.intervals.push_back({ 0, 0 });
     size_t prevmap = feti.lambdas.cmap.size();
-    ineq_begin = feti.lambdas.size;
+    esint ineq_begin = feti.lambdas.size;
     for (auto id = ids.cbegin(); id != ids.cend(); ++id) {
         MortarInfo &info = mInfo[id->second];
 
@@ -812,7 +849,6 @@ void MortarContact<T>::set(const step::Step &step, FETI<T> &feti)
     feti.ub.resize(feti.lambdas.size - feti.lambdas.equalities);
     math::set(feti.lb, T{0});
     math::set(feti.ub, std::numeric_limits<T>::max());
-    ineq_end = feti.lambdas.size;
 
     std::vector<Matrix_CSR<T> > B1(feti.B1.size());
     #pragma omp parallel for
@@ -832,46 +868,17 @@ void MortarContact<T>::set(const step::Step &step, FETI<T> &feti)
 
     swap(B1, feti.B1);
     feti.c.resize(feti.lambdas.size);
-}
-
-template <typename T>
-void MortarContact<T>::update(const step::Step &step, FETI<T> &feti)
-{
-    bool run = false;
-    for (auto ci = info::ecf->input.contact_interfaces.cbegin(); ci != info::ecf->input.contact_interfaces.cend(); ++ci) {
-        if (ci->second.criterion != ContactInterfaceConfiguration::CRITERION::SKIP) {
-            run = true;
-        }
-    }
-    if (!run) {
-        return;
-    }
 
     if (info::ecf->physics != PhysicsConfiguration::TYPE::STRUCTURAL_MECHANICS) {
         return;
-    }
-
-    std::vector<int> gap;
-    for (auto it = info::ecf->input.contact_interfaces.begin(); it != info::ecf->input.contact_interfaces.end(); ++it) {
-        switch (it->second.criterion) {
-        case ContactInterfaceConfiguration::CRITERION::GAP:
-            gap.insert(gap.end(), it->second.found_interfaces.begin(), it->second.found_interfaces.end()); break;
-        default: break;
-        }
     }
 
     if (gap.size() == 0) {
         return;
     }
 
-    int dofs = info::mesh->dimension;
     std::vector<double> disp = StructuralMechanics::Results::displacement->data;
     std::map<esint, double> c;
-
-    std::map<int, int> ids;
-    for (auto info = mInfo.cbegin(); info != mInfo.cend(); ++info) {
-        ids[info->second.id] = info->first;
-    }
 
     for (auto id = ids.cbegin(); id != ids.cend(); ++id) {
         MortarInfo &info = mInfo[id->second];

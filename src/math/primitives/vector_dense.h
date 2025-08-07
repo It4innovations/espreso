@@ -122,8 +122,10 @@ protected:
     void realloc(_Vector_Dense<T, I> &v, I size)
     {
         if (v.size < size) {
+            T* vals = ator.template allocate<T>(size);
+            std::copy(v.vals, v.vals + v.size, vals);
             clear(v);
-            v.vals = ator.template allocate<T>(size);
+            v.vals = vals;
         }
         v.size = size;
     }

@@ -105,6 +105,8 @@ struct ContactStore {
     std::vector<int> neighbors, neighborsWithMe;
     std::vector<SurfaceStore*> surfaces; // the last surface is the local surface
 
+    static NodeData *nodeNormals, *nodeMultiplicity;
+
     serializededata<esint, esint> *pairs;
 
     serializededata<esint, Triangle>* intersections;

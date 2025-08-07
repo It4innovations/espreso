@@ -4,6 +4,7 @@
 
 #include "esinfo/ecfinfo.h"
 #include "feti/feti.h"
+#include "analysis/linearsystem/linearsystem.h"
 
 namespace espreso {
 
@@ -11,7 +12,7 @@ template <typename T>
 struct Regularization {
 
     void set(const step::Step &step, FETI<T> &feti);
-    void update(const step::Step &step, FETI<T> &feti);
+    void update(const step::Step &step, FETI<T> &feti, Vector_Distributed<Vector_Dense, T> *solution);
 
 protected:
     template <typename Settings, typename Configuration>
@@ -24,11 +25,11 @@ protected:
     void update (FETI<T> &feti, HeatTransferLoadStepConfiguration &configuration);
 
     void set    (FETI<T> &feti, StructuralMechanicsLoadStepConfiguration &configuration);
-    void update (FETI<T> &feti, StructuralMechanicsLoadStepConfiguration &configuration);
+    void update (FETI<T> &feti, StructuralMechanicsLoadStepConfiguration &configuration, Vector_Distributed<Vector_Dense, T> *solution);
 
     bool regMat, R1, R2, onSurface;
 
-    std::vector<Matrix_Dense<T> > NtNNtN;
+    std::vector<std::vector<esint> > fixPoints, fixCols, permutation;
 };
 
 }

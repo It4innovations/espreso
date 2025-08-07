@@ -53,7 +53,7 @@ CM& CM::parse(const char* begin)
         }
         if (StringCompare::caseInsensitiveEq("NODE", command[2])) {
             entity = Entity::NODES;
-            eslog::error("ESPRESO Workbench parser error: implement cm, Entity='%s'\n", command[2].c_str());
+//            eslog::error("ESPRESO Workbench parser error: implement cm, Entity='%s'\n", command[2].c_str());
         }
     case 2:
         memcpy(name, command[1].data(), command[1].size() < MAX_NAME_SIZE ? command[1].size() : MAX_NAME_SIZE);

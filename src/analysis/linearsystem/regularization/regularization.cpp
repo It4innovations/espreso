@@ -86,14 +86,14 @@ void Regularization<T>::set(const step::Step &step, FETI<T> &feti)
 }
 
 template <typename T>
-void Regularization<T>::update(const step::Step &step, FETI<T> &feti)
+void Regularization<T>::update(const step::Step &step, FETI<T> &feti, Vector_Distributed<Vector_Dense, T> *solution)
 {
     switch (info::ecf->physics) {
     case PhysicsConfiguration::TYPE::HEAT_TRANSFER:
         update(feti, info::ecf->heat_transfer.load_steps_settings.at(step.loadstep + 1));
         break;
     case PhysicsConfiguration::TYPE::STRUCTURAL_MECHANICS:
-        update(feti, info::ecf->structural_mechanics.load_steps_settings.at(step.loadstep + 1));
+        update(feti, info::ecf->structural_mechanics.load_steps_settings.at(step.loadstep + 1), solution);
         break;
     }
 }

@@ -10,16 +10,18 @@
 
 using namespace espreso;
 
+NodeData* SurfaceStore::nodeNormals = nullptr;
+NodeData* SurfaceStore::nodeMultiplicity = nullptr;
+
 SurfaceStore::SurfaceStore()
 : parents(NULL),
   fID(NULL),
   contact(NULL),
   body(NULL),
   triangles(NULL),
-  nodes(NULL),
+  enodes(NULL),
   nIDs(NULL),
   coordinates(NULL),
-  enodes(NULL),
   base(NULL),
   normal(NULL),
   parameters(NULL),
@@ -41,10 +43,9 @@ SurfaceStore::~SurfaceStore()
     if (contact != NULL) { delete contact; }
     if (body != NULL) { delete body; }
     if (triangles != NULL && triangles != enodes) { delete triangles; }
-    if (nodes != NULL) { delete nodes; }
+    if (enodes != NULL) { delete enodes; }
     if (nIDs != NULL) { delete nIDs; }
     if (coordinates != NULL) { delete coordinates; }
-    if (enodes != NULL) { delete enodes; }
     if (base != NULL) { delete base; }
     if (normal != NULL) { delete normal; }
     if (parameters != NULL) { delete parameters; }
@@ -63,10 +64,9 @@ size_t SurfaceStore::packedFullSize() const
     packedSize += utils::packedSize(contact);
     packedSize += utils::packedSize(body);
     packedSize += utils::packedSize(triangles);
-    packedSize += utils::packedSize(nodes);
+    packedSize += utils::packedSize(enodes);
     packedSize += utils::packedSize(nIDs);
     packedSize += utils::packedSize(coordinates);
-    packedSize += utils::packedSize(enodes);
     packedSize += utils::packedSize(base);
     packedSize += utils::packedSize(normal);
     packedSize += utils::packedSize(parameters);
@@ -96,10 +96,9 @@ void SurfaceStore::packFull(char* &p) const
     utils::pack(contact, p);
     utils::pack(body, p);
     utils::pack(triangles, p);
-    utils::pack(nodes, p);
+    utils::pack(enodes, p);
     utils::pack(nIDs, p);
     utils::pack(coordinates, p);
-    utils::pack(enodes, p);
     utils::pack(base, p);
     utils::pack(normal, p);
     utils::pack(parameters, p);
@@ -132,10 +131,9 @@ void SurfaceStore::unpackFull(const char* &p)
     utils::unpack(contact, p);
     utils::unpack(body, p);
     utils::unpack(triangles, p);
-    utils::unpack(nodes, p);
+    utils::unpack(enodes, p);
     utils::unpack(nIDs, p);
     utils::unpack(coordinates, p);
-    utils::unpack(enodes, p);
     utils::unpack(base, p);
     utils::unpack(normal, p);
     utils::unpack(parameters, p);

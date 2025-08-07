@@ -358,9 +358,9 @@ void EnSightGold::geometry()
         boundary(info::mesh->boundaryRegions[r]);
     }
 
-    for (size_t r = 0; r < info::mesh->contactInterfaces.size(); ++r) {
-        boundary(info::mesh->contactInterfaces[r]);
-    }
+//    for (size_t r = 0; r < info::mesh->contactInterfaces.size(); ++r) {
+//        boundary(info::mesh->contactInterfaces[r]);
+//    }
 
     _writer.commitFile(_path + _geometry);
 }
@@ -449,9 +449,9 @@ int EnSightGold::ndata(const NamedData *data, const step::Step &step)
         for (size_t r = 1; r < info::mesh->boundaryRegions.size(); ++r, ++part) {
             boundary(info::mesh->boundaryRegions[r]);
         }
-        for (size_t r = 0; r < info::mesh->contactInterfaces.size(); ++r, ++part) {
-            boundary(info::mesh->contactInterfaces[r]);
-        }
+//        for (size_t r = 0; r < info::mesh->contactInterfaces.size(); ++r, ++part) {
+//            boundary(info::mesh->contactInterfaces[r]);
+//        }
         _writer.commitFile(file.str());
     } else {
         for (int d = 0; d < data->dimension; ++d) {
@@ -491,9 +491,9 @@ int EnSightGold::ndata(const NamedData *data, const step::Step &step)
             for (size_t r = 1; r < info::mesh->boundaryRegions.size(); ++r, ++part) {
                 boundary(info::mesh->boundaryRegions[r]);
             }
-            for (size_t r = 0; r < info::mesh->contactInterfaces.size(); ++r, ++part) {
-                boundary(info::mesh->contactInterfaces[r]);
-            }
+//            for (size_t r = 0; r < info::mesh->contactInterfaces.size(); ++r, ++part) {
+//                boundary(info::mesh->contactInterfaces[r]);
+//            }
             _writer.commitFile(file.str());
         }
     }

@@ -7,6 +7,9 @@
 
 using namespace espreso;
 
+NodeData* ContactStore::nodeNormals = nullptr;
+NodeData* ContactStore::nodeMultiplicity = nullptr;
+
 ContactStore::ContactStore()
 : pairs(NULL),
   intersections(NULL),

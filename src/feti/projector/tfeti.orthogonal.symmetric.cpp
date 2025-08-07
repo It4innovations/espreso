@@ -56,6 +56,7 @@ void TFETIOrthogonalSymmetric<T>::update(const step::Step &step)
         Gx.resize(Projector<T>::Kernel::total);
         e.resize(Projector<T>::Kernel::total);
 
+        dual.clear();
         for (size_t d = 0; d < feti.R1.size(); ++d) {
             dual.pushVertex(feti.decomposition->dbegin + d, feti.R1[d].nrows);
         }

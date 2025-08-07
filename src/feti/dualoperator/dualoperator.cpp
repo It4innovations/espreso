@@ -156,11 +156,13 @@ void DualOperator<T>::printInfo(std::vector<DirectSparseSolver<T> > &KSolver, Du
 //        eslog::info(" =   K+ FACTORIZATION                                                        RESPECT SURFACE = \n");
 //    }
     if (feti.configuration.exhaustive_info) {
-        T min = T{1e9}, max = T{0}, sum = T{0}, normK = T{0};
+        T min = T{1e9}, max = T{0}, sum = T{0};
+        std::vector<T> norms, normsK;
         for (size_t di = 0; di < feti.K.size(); ++di) {
             SpBLAS<Matrix_CSR, T> spblas(feti.K[di]);
+            T normK = T{0};
             for (int r = 0; r < feti.K[di].nrows; ++r) {
-                normK += feti.K[di].vals[feti.K[di].rows[r - Indexing::CSR]] * feti.K[di].vals[feti.K[di].rows[r - Indexing::CSR]];
+                normK += feti.K[di].vals[feti.K[di].rows[r] - Indexing::CSR] * feti.K[di].vals[feti.K[di].rows[r] - Indexing::CSR];
             }
             normK = std::sqrt(normK);
             Vector_Dense<T> R, KR; KR.resize(feti.R1[di].ncols);
@@ -168,9 +170,10 @@ void DualOperator<T>::printInfo(std::vector<DirectSparseSolver<T> > &KSolver, Du
             for (int r = 0; r < feti.R1[di].nrows; ++r) {
                 R.size = feti.R1[di].ncols; R.vals = feti.R1[di].vals + feti.R1[di].ncols * r;
                 spblas.apply(KR, T{1}, T{0}, R);
-                norm += math::norm(KR);
+                norms.push_back(math::norm(KR) / normK);
+                normsK.push_back(normK);
+                norm += norms.back();
             }
-            norm /= normK;
             min = std::min(min, norm);
             max = std::max(max, norm);
             sum += norm;

@@ -52,6 +52,7 @@ public:
         _withGUI = true;
         preprocess();
     }
+    void updateMeshCoordinates(const double *displacement);
     void partitiate(int ndomains);
     void duplicate();
     void toBuffer();

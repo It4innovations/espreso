@@ -1,6 +1,7 @@
 
 #include "meshpreprocessing.h"
 
+#include "analysis/assembler/general/basefunctions.h"
 #include "mesh/element.h"
 #include "mesh/store/elementstore.h"
 #include "mesh/store/nodestore.h"
@@ -152,28 +153,22 @@ void computeBodiesSurface(NodeStore *nodes, ElementStore *elements, std::vector<
     serializededata<esint, esint>::balance(1, body, &surface->edistribution);
     surface->body = new serializededata<esint, esint>(1, body);
 
+    surface->nIDs = new serializededata<esint, esint>(*nodes->IDs);
+    surface->coordinates = new serializededata<esint, Point>(*nodes->coordinates);
+
     std::vector<esint> snodes(surface->enodes->datatarray().begin(), surface->enodes->datatarray().end());
     utils::sortAndRemoveDuplicates(snodes);
-    surface->nodes = new serializededata<esint, esint>(1, tarray<esint>(threads, snodes));
-    surface->nIDs = new serializededata<esint, esint>(1, tarray<esint>(threads, snodes));
 
     boundaryRegions.push_back(new BoundaryRegionStore("SURFACE"));
     boundaryRegions.back()->originalDimension = boundaryRegions.back()->dimension = info::mesh->dimension - 1;
     boundaryRegions.back()->distribution.threads = surface->edistribution;
     boundaryRegions.back()->epointers = new serializededata<esint, Element*>(*surface->epointers);
     boundaryRegions.back()->elements = new serializededata<esint, esint>(*surface->enodes);
-    boundaryRegions.back()->nodes = new serializededata<esint, esint>(*surface->nIDs);
 
     std::vector<std::vector<ContactInfo> > contact(threads);
 
     #pragma omp parallel for
     for (size_t t = 0; t < threads; t++) {
-        for (auto n = surface->enodes->datatarray().begin(t); n != surface->enodes->datatarray().end(t); ++n) {
-            *n = std::lower_bound(surface->nodes->datatarray().begin(), surface->nodes->datatarray().end(), *n) - surface->nodes->datatarray().begin();
-        }
-        for (auto n = surface->nIDs->datatarray().begin(t); n != surface->nIDs->datatarray().end(t); ++n) {
-            *n = nodes->IDs->datatarray()[*n];
-        }
         std::vector<ContactInfo> tcontact;
         tcontact.reserve(surface->parents->datatarray().size(t));
         for (auto e = surface->parents->datatarray().begin(t); e != surface->parents->datatarray().end(t); ++e) {
@@ -182,13 +177,6 @@ void computeBodiesSurface(NodeStore *nodes, ElementStore *elements, std::vector<
         contact[t].swap(tcontact);
     }
     surface->contact = new serializededata<esint, ContactInfo>(1, contact);
-
-    std::vector<Point> coordinates;
-    coordinates.reserve(snodes.size());
-    for (size_t n = 0; n < snodes.size(); ++n) {
-        coordinates.push_back(nodes->coordinates->datatarray()[snodes[n]]);
-    }
-    surface->coordinates = new serializededata<esint, Point>(1, tarray<Point>(surface->nodes->datatarray().distribution(), coordinates));
 
     surface->size = surface->edistribution.back();
     surface->offset = surface->edistribution.back();
@@ -199,10 +187,86 @@ void computeBodiesSurface(NodeStore *nodes, ElementStore *elements, std::vector<
     eslog::checkpointln("MESH: BODY SURFACE COMPUTED");
 }
 
-void computeWarpedNormals(SurfaceStore * surface)
+template <size_t nodes, size_t edim> struct SurfaceElementBasis {
+    double w[1], N[1][nodes], dN[1][nodes][edim], NN[nodes][nodes], dNN[nodes][nodes][edim];
+};
+
+template<Element::CODE code, size_t nodes>
+static void surfaceNormal2D(SurfaceStore * surface, size_t e, const double* displacement)
+{
+    SurfaceElementBasis<nodes, 1> basis;
+    BaseFunctions<code, 1>::simd(basis);
+}
+
+template<Element::CODE code, size_t nodes>
+static void surfaceNormal3D(SurfaceStore * surface, size_t e, const double* displacement)
+{
+    SurfaceElementBasis<nodes, 2> basis;
+    BaseFunctions<code, 1>::simd(basis);
+
+    auto enodes = surface->enodes->begin() + e;
+    double dND[6] = { 0, 0, 0, 0, 0, 0 };
+    for (size_t n = 0; n < enodes->size(); ++n) {
+        for (size_t m = 0; m < enodes->size(); ++m) {
+            Point disp;
+            if (displacement) {
+                int dim = info::mesh->dimension;
+                disp.x = displacement[enodes->at(m) * dim + 0]; disp.y = displacement[enodes->at(m) * dim + 1]; if (dim == 3) disp.z = displacement[enodes->at(m) * dim + 2];
+            }
+            Point c = surface->coordinates->datatarray()[enodes->at(m)] + disp;
+            dND[0] += basis.dNN[n][m][0] * c.x; dND[1] += basis.dNN[n][m][0] * c.y; dND[2] += basis.dNN[n][m][0] * c.z;
+            dND[3] += basis.dNN[n][m][1] * c.x; dND[4] += basis.dNN[n][m][1] * c.y; dND[5] += basis.dNN[n][m][1] * c.z;
+        }
+        Point normal(
+                dND[1] * dND[5] - dND[2] * dND[4],
+                dND[2] * dND[3] - dND[0] * dND[5],
+                dND[0] * dND[4] - dND[1] * dND[3]);
+        normal.normalize();
+        normal /= surface->nodeMultiplicity->data[enodes->at(n)];
+        surface->nodeNormals->data[3 * enodes->at(n) + 0] += normal.x;
+        surface->nodeNormals->data[3 * enodes->at(n) + 1] += normal.y;
+        surface->nodeNormals->data[3 * enodes->at(n) + 2] += normal.z;
+    }
+}
+
+void computeSurfaceNodeNormals(NodeStore *nodes, SurfaceStore * surface, const std::vector<int> &neighbors, const double* displacement)
+{
+    if (surface->nodeNormals == NULL) {
+        surface->nodeNormals = nodes->appendData(info::mesh->dimension, NamedData::DataType::VECTOR, "SURFACE_NORMAL");
+        surface->nodeMultiplicity = nodes->appendData(1, NamedData::DataType::SCALAR);
+
+        for (auto enodes = surface->enodes->begin(); enodes != surface->enodes->end(); ++enodes) {
+            for (auto n = enodes->begin(); n != enodes->end(); ++n) {
+                surface->nodeMultiplicity->data[*n] += 1;
+            }
+        }
+        surface->nodeMultiplicity->synchronize();
+    }
+    std::fill(surface->nodeNormals->data.begin(), surface->nodeNormals->data.end(), 0);
+
+    for (size_t e = 0; e < surface->enodes->structures(); ++e) {
+        switch (surface->epointers->datatarray()[e]->code) {
+        case Element::CODE::LINE2    : surfaceNormal2D<Element::CODE::LINE2    , 2>(surface, e, displacement); break;
+        case Element::CODE::LINE3    : surfaceNormal2D<Element::CODE::LINE3    , 3>(surface, e, displacement); break;
+        case Element::CODE::TRIANGLE3: surfaceNormal3D<Element::CODE::TRIANGLE3, 3>(surface, e, displacement); break;
+        case Element::CODE::TRIANGLE6: surfaceNormal3D<Element::CODE::TRIANGLE6, 6>(surface, e, displacement); break;
+        case Element::CODE::SQUARE4  : surfaceNormal3D<Element::CODE::SQUARE4  , 4>(surface, e, displacement); break;
+        case Element::CODE::SQUARE8  : surfaceNormal3D<Element::CODE::SQUARE8  , 8>(surface, e, displacement); break;
+        default:
+            eslog::internalFailure("unknown or not implemented surface element.\n");
+        }
+    }
+
+    surface->nodeNormals->synchronize();
+}
+
+void computeWarpedNormals(SurfaceStore * surface, const double* displacement)
 {
     if (surface->normal != NULL) {
         delete surface->normal;
+    }
+    if (surface->parameters != NULL) {
+        delete surface->parameters;
     }
     if (surface->base != NULL) {
         delete surface->base;
@@ -234,9 +298,16 @@ void computeWarpedNormals(SurfaceStore * surface)
             case Element::CODE::TRIANGLE3:
 //            case Element::CODE::TRIANGLE6:
             {
-                const Point &a = surface->coordinates->datatarray()[enodes->at(0)];
-                const Point &b = surface->coordinates->datatarray()[enodes->at(1)];
-                const Point &c = surface->coordinates->datatarray()[enodes->at(2)];
+                Point da, db, dc;
+                if (displacement) {
+                    int dim = info::mesh->dimension;
+                    da.x = displacement[dim * enodes->at(0) + 0]; da.y = displacement[dim * enodes->at(0) + 1]; if (dim == 3) da.z = displacement[dim * enodes->at(0) + 2];
+                    db.x = displacement[dim * enodes->at(1) + 0]; db.y = displacement[dim * enodes->at(1) + 1]; if (dim == 3) db.z = displacement[dim * enodes->at(1) + 2];
+                    dc.x = displacement[dim * enodes->at(2) + 0]; dc.y = displacement[dim * enodes->at(2) + 1]; if (dim == 3) dc.z = displacement[dim * enodes->at(2) + 2];
+                }
+                Point a = surface->coordinates->datatarray()[enodes->at(0)] + da;
+                Point b = surface->coordinates->datatarray()[enodes->at(1)] + db;
+                Point c = surface->coordinates->datatarray()[enodes->at(2)] + dc;
                 tbase[i] = a;
                 tparamters[2 * i] = b - a;
                 tparamters[2 * i + 1] = c - a;
@@ -245,10 +316,18 @@ void computeWarpedNormals(SurfaceStore * surface)
             case Element::CODE::SQUARE4:
 //            case Element::CODE::SQUARE8:
             {
-                const Point &a = surface->coordinates->datatarray()[enodes->at(0)];
-                const Point &b = surface->coordinates->datatarray()[enodes->at(1)];
-                const Point &c = surface->coordinates->datatarray()[enodes->at(2)];
-                const Point &d = surface->coordinates->datatarray()[enodes->at(3)];
+                Point da, db, dc, dd;
+                if (displacement) {
+                    int dim = info::mesh->dimension;
+                    da.x = displacement[dim * enodes->at(0) + 0]; da.y = displacement[dim * enodes->at(0) + 1]; if (dim == 3) da.z = displacement[dim * enodes->at(0) + 2];
+                    db.x = displacement[dim * enodes->at(1) + 0]; db.y = displacement[dim * enodes->at(1) + 1]; if (dim == 3) db.z = displacement[dim * enodes->at(1) + 2];
+                    dc.x = displacement[dim * enodes->at(2) + 0]; dc.y = displacement[dim * enodes->at(2) + 1]; if (dim == 3) dc.z = displacement[dim * enodes->at(2) + 2];
+                    dd.x = displacement[dim * enodes->at(3) + 0]; dd.y = displacement[dim * enodes->at(3) + 1]; if (dim == 3) dd.z = displacement[dim * enodes->at(3) + 2];
+                }
+                Point a = surface->coordinates->datatarray()[enodes->at(0)] + da;
+                Point b = surface->coordinates->datatarray()[enodes->at(1)] + db;
+                Point c = surface->coordinates->datatarray()[enodes->at(2)] + dc;
+                Point d = surface->coordinates->datatarray()[enodes->at(3)] + dd;
                 Point center = (a + b + c + d) / 4;
                 tnormal[i] = Point::cross(c - a, d - b).normalize();
                 Point plane[4] = {
@@ -290,12 +369,12 @@ void computeWarpedNormals(SurfaceStore * surface)
     surface->parameters = new serializededata<esint, Point>(2, parameters);
     surface->base = new serializededata<esint, Point>(1, base);
 
-    DebugOutput::warpedNormals("surface.planes", 1, 1);
+    DebugOutput::warpedNormals("surface.planes", displacement, 1, 1);
     profiler::syncend("compute_warped_surface_normals");
     eslog::checkpointln("MESH: WARPED SURFACE NORMALS COMMPUTED");
 }
 
-void exchangeContactHalo(SurfaceStore * surface, ContactStore *contact)
+void exchangeContactHalo(SurfaceStore * surface, ContactStore *contact, const double* displacement)
 {
     profiler::syncstart("exchange_contact_halo");
     _Point<float> box[2] = {
@@ -306,7 +385,12 @@ void exchangeContactHalo(SurfaceStore * surface, ContactStore *contact)
     for (esint e = 0; e < surface->size; ++e, ++enodes) {
         if (surface->contact->datatarray()[e].gap > 0) {
             for (auto n = enodes->begin(); n != enodes->end(); ++n) {
-                const Point &p = surface->coordinates->datatarray()[*n];
+                Point disp;
+                if (displacement) {
+                    int dim = info::mesh->dimension;
+                    disp.x = displacement[*n * dim + 0]; disp.y = displacement[*n * dim + 1]; if (dim == 3) disp.z = displacement[*n * dim + 2];
+                }
+                Point p = surface->coordinates->datatarray()[*n] + disp;
                 box[0].x = std::min((float)p.x - surface->contact->datatarray()[e].gap, box[0].x);
                 box[0].y = std::min((float)p.y - surface->contact->datatarray()[e].gap, box[0].y);
                 box[0].z = std::min((float)p.z - surface->contact->datatarray()[e].gap, box[0].z);
@@ -345,10 +429,15 @@ void exchangeContactHalo(SurfaceStore * surface, ContactStore *contact)
         auto enodes = surface->enodes->begin();
         for (size_t e = 0; e < surface->enodes->structures(); ++e, ++enodes) {
             for (auto ec = enodes->begin(); ec != enodes->end(); ++ec) {
+                Point disp;
+                if (displacement) {
+                    int dim = info::mesh->dimension;
+                    disp.x = displacement[*ec * dim + 0]; disp.y = displacement[*ec * dim + 1]; if (dim == 3) disp.z = displacement[*ec * dim + 2];
+                }
                 if (
-                        (min.x <= coordinates[*ec].x && coordinates[*ec].x <= max.x) &&
-                        (min.y <= coordinates[*ec].y && coordinates[*ec].y <= max.y) &&
-                        (min.z <= coordinates[*ec].z && coordinates[*ec].z <= max.z)) {
+                        (min.x <= coordinates[*ec].x + disp.x && coordinates[*ec].x + disp.x <= max.x) &&
+                        (min.y <= coordinates[*ec].y + disp.y && coordinates[*ec].y + disp.y <= max.y) &&
+                        (min.z <= coordinates[*ec].z + disp.z && coordinates[*ec].z + disp.z <= max.z)) {
 
                     esend.push_back(e);
                     for (auto c = enodes->begin(); c != enodes->end(); ++c) {
@@ -413,7 +502,12 @@ void exchangeContactHalo(SurfaceStore * surface, ContactStore *contact)
 
         // send coordinates
         for (size_t c = 0; c < nsend.size(); ++c) {
-            const auto &p = surface->coordinates->datatarray()[nsend[c]];
+            Point disp;
+            if (displacement) {
+                int dim = info::mesh->dimension;
+                disp.x = displacement[nsend[c] * dim + 0]; disp.y = displacement[nsend[c] * dim + 1]; if (dim == 3) disp.z = displacement[nsend[c] * dim + 2];
+            }
+            Point p = surface->coordinates->datatarray()[nsend[c]] + disp;
             sBuffer[n].insert(sBuffer[n].end(), reinterpret_cast<const esint*>(&p), reinterpret_cast<const esint*>(&p) + sizeof(p) / sizeof(esint));
         }
     }
@@ -483,12 +577,23 @@ void exchangeContactHalo(SurfaceStore * surface, ContactStore *contact)
     eslog::checkpointln("MESH: CLOSE BOUNDARY EXCHANGED");
 }
 
-void findCloseElements(ContactStore *contact)
+void findCloseElements(ContactStore *contact, const double* displacement)
 {
     profiler::syncstart("find_close_elements");
     // checking
     // 1. distance to plane defined by normal and center
     // 2. test if any point is in coarse element defined by: base + s * parameter.u + t * parameter.v
+
+    auto getCoords = [&] (size_t neigh, size_t n) {
+        Point p = contact->surfaces[neigh]->coordinates->datatarray()[n];
+        if (displacement && neigh + 1 == contact->surfaces.size()) {
+            int dim = info::mesh->dimension;
+            p.x += displacement[n * dim + 0];
+            p.y += displacement[n * dim + 1];
+            if (dim == 3) p.z += displacement[n * dim + 2];
+        }
+        return p;
+    };
 
     // neighbors, local
     std::vector<Point> nstart, nend, lstart, lend;
@@ -503,22 +608,23 @@ void findCloseElements(ContactStore *contact)
     neigh.reserve(offset.back());
     for (size_t r = 0, offset = 0; r < contact->neighborsWithMe.size() - 1; ++r) {
         for (auto e = contact->surfaces[r]->enodes->begin(); e != contact->surfaces[r]->enodes->end(); ++e, ++offset) {
-            nstart.push_back(contact->surfaces[r]->coordinates->datatarray()[e->front()]);
+            nstart.push_back(getCoords(r, e->front()));
             nend.push_back(nstart.back());
             for (auto n = e->begin() + 1; n != e->end(); ++n) {
-                contact->surfaces[r]->coordinates->datatarray()[*n].minmax(nstart.back(), nend.back());
+                getCoords(r, *n).minmax(nstart.back(), nend.back());
             }
         }
         neigh.insert(neigh.end(), contact->surfaces[r]->enodes->structures(), r);
     }
     // push local
+    size_t local_n = contact->surfaces.size() - 1;
     lstart.reserve(contact->surfaces.back()->enodes->structures());
     lend.reserve(contact->surfaces.back()->enodes->structures());
     for (auto e = contact->surfaces.back()->enodes->begin(); e != contact->surfaces.back()->enodes->end(); ++e) {
-        lstart.push_back(contact->surfaces.back()->coordinates->datatarray()[e->front()]);
+        lstart.push_back(getCoords(local_n, e->front()));
         lend.push_back(lstart.back());
         for (auto n = e->begin() + 1; n != e->end(); ++n) {
-            contact->surfaces.back()->coordinates->datatarray()[*n].minmax(lstart.back(), lend.back());
+            getCoords(local_n, *n).minmax(lstart.back(), lend.back());
         }
     }
 
@@ -564,7 +670,7 @@ void findCloseElements(ContactStore *contact)
             int code = 63;
             auto nodes = contact->surfaces[n]->enodes->begin() + index;
             for (auto nn = nodes->begin(); nn != nodes->end(); ++nn) {
-                Point p = contact->surfaces[n]->coordinates->datatarray()[*nn];
+                Point p = getCoords(n, *nn);
                 double s, t, d = normal * (p - base);
                 p -= normal * d;
                 p.getBarycentric(base, u, v, s, t);
@@ -599,7 +705,7 @@ void findCloseElements(ContactStore *contact)
             for (auto pp = ltree.permutation.cbegin() + ltree.begin(lintervals[i]); pp != ltree.permutation.cbegin() + ltree.end(lintervals[i]); ++pp) {
                 int nbody = contact->surfaces.back()->body->datatarray()[*pp];
                 const Point &nnormal = contact->surfaces.back()->normal->datatarray()[*pp];
-                if ((self_contact || nbody != body) && nnormal * normal <= angle && cohen_sutherland(contact->surfaces.size() - 1, *pp)) {
+                if ((self_contact || nbody != body) && nnormal * normal <= angle && cohen_sutherland(local_n, *pp)) {
                     bodyPairs[std::min(body, nbody)].insert(std::max(body, nbody));
                     data.push_back(contact->surfaces.size() - 1);
                     data.push_back(*pp);
@@ -786,11 +892,21 @@ static void clip(const Point &base, const std::vector<Triangle> &triangles, cons
     }
 }
 
-void computeContactInterface(SurfaceStore* surface, ContactStore* contact)
+void computeContactInterface(SurfaceStore* surface, ContactStore* contact, const double *displacement)
 {
     profiler::syncstart("compute_contact_interface");
 
     const std::vector<SurfaceStore*> &surfaces = contact->surfaces;
+    auto getCoords = [&] (size_t neigh, size_t n) {
+        Point p = surfaces[neigh]->coordinates->datatarray()[n];
+        if (displacement && neigh + 1 == contact->surfaces.size()) {
+            int dim = info::mesh->dimension;
+            p.x += displacement[n * dim + 0];
+            p.y += displacement[n * dim + 1];
+            if (dim == 3) p.z += displacement[n * dim + 2];
+        }
+        return p;
+    };
 
     Point axis;
     double cos, sin;
@@ -818,7 +934,7 @@ void computeContactInterface(SurfaceStore* surface, ContactStore* contact)
         auto nodes = surfaces[neigh]->enodes->cbegin() + offset;
         const auto &epointer = surfaces[neigh]->epointers->datatarray();
         for (auto n = epointer[offset]->polygon->begin(); n != epointer[offset]->polygon->end(); ++n) {
-            polygon.push_back(surfaces[neigh]->coordinates->datatarray()[nodes->at(*n)]);
+            polygon.push_back(getCoords(neigh, nodes->at(*n)));
             polygon.back().rodrigues(axis, cos, sin);
         }
     };
@@ -903,9 +1019,56 @@ void computeContactInterface(SurfaceStore* surface, ContactStore* contact)
     eslog::checkpointln("MESH: CONTACT INTERFACE COMPUTED");
 }
 
-void arrangeContactInterfaces(ContactStore* contact, BodyStore *bodies, std::vector<ElementsRegionStore*> &elementsRegions, std::vector<ContactInterfaceStore*> &contactInterfaces)
+template<Element::CODE code, size_t nodes>
+static void contactNormal2D(ContactStore *contact, serializededata<esint, Point> *coordinates, BoundaryRegionStore *region, size_t e, const double* displacement)
+{
+    SurfaceElementBasis<nodes, 1> basis;
+    BaseFunctions<code, 1>::simd(basis);
+}
+
+template<Element::CODE code, size_t nodes>
+static void contactNormal3D(ContactStore *contact, serializededata<esint, Point> *coordinates, BoundaryRegionStore *region, size_t e, const double* displacement)
+{
+    SurfaceElementBasis<nodes, 2> basis;
+    BaseFunctions<code, 1>::simd(basis);
+
+    auto enodes = region->elements->begin() + e;
+    double dND[6] = { 0, 0, 0, 0, 0, 0 };
+    for (size_t n = 0; n < enodes->size(); ++n) {
+        for (size_t m = 0; m < enodes->size(); ++m) {
+            Point disp;
+            if (displacement) {
+                int dim = info::mesh->dimension;
+                disp.x = displacement[enodes->at(m) * dim + 0]; disp.y = displacement[enodes->at(m) * dim + 1]; if (dim == 3) disp.z = displacement[enodes->at(m) * dim + 2];
+            }
+            Point c = coordinates->datatarray()[enodes->at(m)] + disp;
+            dND[0] += basis.dNN[n][m][0] * c.x; dND[1] += basis.dNN[n][m][0] * c.y; dND[2] += basis.dNN[n][m][0] * c.z;
+            dND[3] += basis.dNN[n][m][1] * c.x; dND[4] += basis.dNN[n][m][1] * c.y; dND[5] += basis.dNN[n][m][1] * c.z;
+        }
+        Point normal(
+                dND[1] * dND[5] - dND[2] * dND[4],
+                dND[2] * dND[3] - dND[0] * dND[5],
+                dND[0] * dND[4] - dND[1] * dND[3]);
+        normal.normalize();
+        normal /= contact->nodeMultiplicity->data[enodes->at(n)];
+        contact->nodeNormals->data[3 * enodes->at(n) + 0] += normal.x;
+        contact->nodeNormals->data[3 * enodes->at(n) + 1] += normal.y;
+        contact->nodeNormals->data[3 * enodes->at(n) + 2] += normal.z;
+    }
+}
+
+void arrangeContactInterfaces(NodeStore *nodes, ContactStore* contact, BodyStore *bodies, std::vector<ElementsRegionStore*> &elementsRegions, std::vector<ContactInterfaceStore*> &contactInterfaces, const double* displacement)
 {
     profiler::syncstart("arrange_contact_interface");
+
+    if (contact->nodeMultiplicity == NULL) {
+        contact->nodeMultiplicity = nodes->appendData(1, NamedData::DataType::SCALAR);
+    }
+    if (contact->nodeNormals == NULL) {
+        contact->nodeNormals = nodes->appendData(info::mesh->dimension, NamedData::DataType::VECTOR, "CONTACT_NORMAL");
+    }
+    std::fill(contact->nodeMultiplicity->data.begin(), contact->nodeMultiplicity->data.end(), 0);
+    std::fill(contact->nodeNormals->data.begin(), contact->nodeNormals->data.end(), 0);
 
     auto eregion = [elementsRegions] (const std::string &name) -> ElementsRegionStore* {
         for (size_t r = 0; r < elementsRegions.size(); r++) {
@@ -1035,7 +1198,8 @@ void arrangeContactInterfaces(ContactStore* contact, BodyStore *bodies, std::vec
             auto face = surfaces.back()->enodes->begin() + e;
             epointer.push_back(surfaces.back()->epointers->datatarray()[e]);
             for (auto n = face->begin(); n != face->end(); ++n) {
-                data.push_back(surfaces.back()->nodes->datatarray()[*n]);
+                data.push_back(*n);
+                contact->nodeMultiplicity->data[*n] += 1;
             }
             dist.push_back(data.size());
         };
@@ -1135,6 +1299,22 @@ void arrangeContactInterfaces(ContactStore* contact, BodyStore *bodies, std::vec
     for (auto s = sside->datatarray().begin(); s != sside->datatarray().end(); ++s) {
         for (auto d = dside->datatarray().begin() + s->denseSegmentBegin; d != dside->datatarray().begin() + s->denseSegmentEnd; ++d) {
             d->skip = d->skip | istats[surfaces.back()->body->datatarray()[s->element]][surfaces[d->neigh]->body->datatarray()[d->element]].skip;
+        }
+    }
+
+    contact->nodeMultiplicity->synchronize();
+    for (size_t i = 0; i < contactInterfaces.size(); ++i) {
+        for (size_t e = 0; e < contactInterfaces[i]->elements->structures(); ++e) {
+            switch (contactInterfaces[i]->epointers->datatarray()[e]->code) {
+            case Element::CODE::LINE2    : contactNormal2D<Element::CODE::LINE2    , 2>(contact, nodes->coordinates, contactInterfaces[i], e, displacement); break;
+            case Element::CODE::LINE3    : contactNormal2D<Element::CODE::LINE3    , 3>(contact, nodes->coordinates, contactInterfaces[i], e, displacement); break;
+            case Element::CODE::TRIANGLE3: contactNormal3D<Element::CODE::TRIANGLE3, 3>(contact, nodes->coordinates, contactInterfaces[i], e, displacement); break;
+            case Element::CODE::TRIANGLE6: contactNormal3D<Element::CODE::TRIANGLE6, 6>(contact, nodes->coordinates, contactInterfaces[i], e, displacement); break;
+            case Element::CODE::SQUARE4  : contactNormal3D<Element::CODE::SQUARE4  , 4>(contact, nodes->coordinates, contactInterfaces[i], e, displacement); break;
+            case Element::CODE::SQUARE8  : contactNormal3D<Element::CODE::SQUARE8  , 8>(contact, nodes->coordinates, contactInterfaces[i], e, displacement); break;
+            default:
+                eslog::internalFailure("unknown or not implemented surface element.\n");
+            }
         }
     }
 

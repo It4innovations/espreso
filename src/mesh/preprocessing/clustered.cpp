@@ -664,7 +664,9 @@ void computeRegionsBoundaryNodes(const std::vector<int> &neighbors, NodeStore *n
     synchronizeRegionNodes(nodes, neighbors, regions);
 
     computeNodeInfo(nodes, neighbors, regions);
-    nodes->uniqInfo = allRegions[0]->nodeInfo;
+    if (boundaryRegions.size()) { // if the function is called for the first time, there is always some boundaryRegion
+        nodes->uniqInfo = boundaryRegions[0]->nodeInfo;
+    }
     profiler::syncend("compute_regions_boundary_nodes");
     eslog::checkpointln("MESH: BOUNDARY REGIONS NODES COMPUTED");
 }

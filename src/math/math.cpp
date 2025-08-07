@@ -174,7 +174,7 @@ template <typename T, typename I> void _getKernel(Matrix_CSR<T, I> &A, Matrix_De
 
 //    6) jump_in_eigenvalues_alerting_singularity
 // if d[i]/d[i+1]< jump_in_eigenvalues_alerting_singularity, d[i] is last nonzero eigenvalue
-    double jump_in_eigenvalues_alerting_singularity     = 1.0e-5;
+    double jump_in_eigenvalues_alerting_singularity     = 1.0e-8;
 
 ///////////////////////////////////////////////////////////////////////////////////////////////////////
 ///////////////////////////////////////////////////////////////////////////////////////////////////////

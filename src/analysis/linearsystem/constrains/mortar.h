@@ -43,13 +43,11 @@ protected:
     };
 
     void assembleMortarInterface(std::vector<Mortar> &B);
-    void synchronize(FETI<T> &feti, std::vector<Mortar> &B);
+    void synchronize(FETI<T> &feti, std::vector<Mortar> &B, std::vector<Mortar> &mortar, std::map<int, MortarInfo> &mInfo);
 
-    esint ineq_begin, ineq_end;
-
-    // pair, from, to, value -> normalized
-    std::vector<Mortar> mortar;
-    std::map<int, MortarInfo> mInfo;
+    std::vector<std::vector<esint> > cindex;
+    std::vector<size_t> dsize;
+    size_t interval, cmapsize;
 };
 
 }

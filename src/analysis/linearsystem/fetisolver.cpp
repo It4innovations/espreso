@@ -101,9 +101,12 @@ template <typename T>
 void FETILinearSystemSolver<T>::update(step::Step &step)
 {
     eslog::startln("FETI: UPDATING LINEAR SYSTEM", "FETI[UPDATE]");
+    feti.updated.K = A.updated;
+    feti.updated.B |= step.substep == 0;
+
     this->b.physics.spliteTo(&this->b.feti);
 
-    regularization.update(step, feti);
+    regularization.update(step, feti, this->solution);
     eslog::checkpointln("FETI: UPDATE KERNELS");
 
     constrains.update(step, feti, dirichlet);
@@ -179,8 +182,6 @@ void FETILinearSystemSolver<T>::update(step::Step &step)
     if (info::ecf->output.print_eigen_values) {
         A.printEigenValues("A[SOL]", 8);
     }
-    feti.updated.K = A.updated;
-    feti.updated.B |= step.substep == 0;
     feti.update(step);
     A.updated = b.physics.updated = b.feti.updated = dirichlet.updated = false;
     feti.updated.K = feti.updated.B = false;

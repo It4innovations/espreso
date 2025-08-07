@@ -480,11 +480,12 @@ void Mesh::computePersistentParameters()
     }
 
     if (info::ecf->input.contact_interfaces.size()) {
+        mesh::computeSurfaceNodeNormals(nodes, surface, neighbors);
         mesh::computeWarpedNormals(surface);
         mesh::exchangeContactHalo(surface, contact);
         mesh::findCloseElements(contact);
         mesh::computeContactInterface(surface, contact);
-        mesh::arrangeContactInterfaces(contact, bodies, elementsRegions, contactInterfaces);
+        mesh::arrangeContactInterfaces(nodes, contact, bodies, elementsRegions, contactInterfaces);
 
         neighbors.insert(neighbors.end(), contact->neighbors.begin(), contact->neighbors.end());
         utils::sortAndRemoveDuplicates(neighbors);
@@ -512,6 +513,35 @@ void Mesh::computePersistentParameters()
 
     eslog::checkpointln("MESH: BODIES COMPUTED");
     eslog::checkpointln("MESH: BOUNDARY REGIONS COMPOSED");
+}
+
+void Mesh::updateMeshCoordinates(const double *displacement)
+{
+    if (info::ecf->input.contact_interfaces.size()) {
+        delete contact; contact = new ContactStore();
+        contactInterfaces.clear();
+        mesh::computeSurfaceNodeNormals(nodes, surface, neighbors, displacement);
+        mesh::computeWarpedNormals(surface, displacement);
+        mesh::exchangeContactHalo(surface, contact, displacement);
+        mesh::findCloseElements(contact, displacement);
+        mesh::computeContactInterface(surface, contact, displacement);
+        mesh::arrangeContactInterfaces(nodes, contact, bodies, elementsRegions, contactInterfaces, displacement);
+
+        neighbors.insert(neighbors.end(), contact->neighbors.begin(), contact->neighbors.end());
+        utils::sortAndRemoveDuplicates(neighbors);
+        neighborsWithMe.insert(neighborsWithMe.end(), contact->neighborsWithMe.begin(), contact->neighborsWithMe.end());
+        utils::sortAndRemoveDuplicates(neighborsWithMe);
+
+        boundary.clear();
+        boundary.insert(boundary.end(), boundaryRegions.begin(), boundaryRegions.end());
+        boundary.insert(boundary.end(), contactInterfaces.begin(), contactInterfaces.end());
+
+        std::vector<BoundaryRegionStore*> empty;
+        mesh::computeRegionsBoundaryDistribution(nodes, empty, contactInterfaces);
+        mesh::computeRegionsBoundaryNodes(neighbors, nodes, empty, contactInterfaces);
+        mesh::computeRegionsBoundaryParents(nodes, elements, empty, contactInterfaces);
+        mesh::computeRegionsBoundaryIntervals(elements, domains, empty, contactInterfaces);
+    }
 }
 
 void Mesh::partitiate(int ndomains)

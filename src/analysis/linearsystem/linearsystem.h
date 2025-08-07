@@ -34,6 +34,8 @@ struct LinearSystemSolver {
     Vector_Distributed<Matrix_Dense, T> *X, *B;
     Vector_Distributed<Vector_Sparse, T> *dirichlet;
 
+    Vector_Distributed<Vector_Dense, T> *solution;
+
     virtual T rhs_without_dirichlet_norm() =0;
 };
 

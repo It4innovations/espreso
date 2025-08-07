@@ -25,6 +25,8 @@
 
 using namespace espreso;
 
+int DebugOutput::iteration = 0;
+
 DebugOutput::DebugOutput(double clusterShrinkRatio, double domainShrinkRatio, bool withDomains)
 : _mesh(*info::mesh), _ccenter(Point()), _dcenters(NULL),
   _clusterShrinkRatio(clusterShrinkRatio), _domainShrinkRatio(domainShrinkRatio)
@@ -487,7 +489,7 @@ void DebugOutput::contact(double clusterShrinkRatio, double domainShrinkRatio)
     }
     output._writer.groupData();
 
-    output._writer.commitFile(output._path + "contact.vtk");
+    output._writer.commitFile(output._path + "contact." + std::to_string(iteration++) + ".vtk");
     output._writer.reorder();
     output._writer.write();
 }
@@ -516,7 +518,7 @@ void DebugOutput::surface(const char* name, double clusterShrinkRatio, double do
     }
 
     for (auto e = output._mesh.surface->enodes->begin(); e != output._mesh.surface->enodes->end(); ++e) {
-        output._writer.cell(e->size(), e->data(), output._mesh.surface->nodes->datatarray().data(), noffset);
+        output._writer.cell(e->size(), e->data(), noffset);
     }
     output._writer.groupData();
 
@@ -532,7 +534,7 @@ void DebugOutput::surface(const char* name, double clusterShrinkRatio, double do
     output._writer.write();
 }
 
-void DebugOutput::warpedNormals(const char* name, double clusterShrinkRatio, double domainShrinkRatio)
+void DebugOutput::warpedNormals(const char* name, const double *displacement, double clusterShrinkRatio, double domainShrinkRatio)
 {
     if (!info::ecf->output.debug) {
         return;
@@ -558,6 +560,11 @@ void DebugOutput::warpedNormals(const char* name, double clusterShrinkRatio, dou
         output._writer.point(p.x + scale * n.x, p.y + scale * n.y, p.z + scale * n.z);
         for (auto nn = enodes->begin(); nn != enodes->end(); ++nn) {
             Point pn = surf->coordinates->datatarray()[*nn];
+            if (displacement) {
+                pn.x += displacement[*nn * info::mesh->dimension + 0];
+                pn.y += displacement[*nn * info::mesh->dimension + 1];
+                if (info::mesh->dimension == 3 ) pn.z += displacement[*nn * info::mesh->dimension + 2];
+            }
             double distance = (pn - p) * n;
             pn = pn - n * distance;
             output._writer.point(pn.x, pn.y, pn.z);
@@ -598,7 +605,7 @@ void DebugOutput::warpedNormals(const char* name, double clusterShrinkRatio, dou
     }
     output._writer.groupData();
 
-    output._writer.commitFile(output._path + std::string(name) + ".vtk");
+    output._writer.commitFile(output._path + std::string(name) + "." + std::to_string(iteration) + ".vtk");
     output._writer.reorder();
     output._writer.write();
 }

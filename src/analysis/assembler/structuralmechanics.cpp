@@ -64,11 +64,11 @@ StructuralMechanics::StructuralMechanics(StructuralMechanicsConfiguration &setti
 {
     threaded = configuration.solver == StructuralMechanicsLoadStepConfiguration::SOLVER::FETI;
     elementKernels.resize(info::mesh->elements->eintervals.size());
-    faceKernels.resize(info::mesh->boundary.size());
-    nodeKernels.resize(info::mesh->boundary.size());
-    for (size_t r = 1; r < info::mesh->boundary.size(); ++r) {
-        if (info::mesh->boundary[r]->dimension) {
-            faceKernels[r].resize(info::mesh->boundary[r]->eintervals.size());
+    faceKernels.resize(info::mesh->boundaryRegions.size());
+    nodeKernels.resize(info::mesh->boundaryRegions.size());
+    for (size_t r = 1; r < info::mesh->boundaryRegions.size(); ++r) {
+        if (info::mesh->boundaryRegions[r]->dimension) {
+            faceKernels[r].resize(info::mesh->boundaryRegions[r]->eintervals.size());
         }
         nodeKernels[r].resize(info::env::threads);
     }
@@ -81,19 +81,19 @@ StructuralMechanics::StructuralMechanics(StructuralMechanicsConfiguration &setti
                 elementKernels[i].chunks = elementKernels[i].elements / SIMD::size + (elementKernels[i].elements % SIMD::size ? 1 : 0);
             }
 
-            for (size_t r = 1; r < info::mesh->boundary.size(); ++r) {
-                if (info::mesh->boundary[r]->dimension) {
-                    for (esint i = info::mesh->boundary[r]->eintervalsDistribution[d]; i < info::mesh->boundary[r]->eintervalsDistribution[d + 1]; ++i) {
-                        faceKernels[r][i].code = info::mesh->boundary[r]->eintervals[i].code;
-                        faceKernels[r][i].elements = info::mesh->boundary[r]->eintervals[i].end - info::mesh->boundary[r]->eintervals[i].begin;
+            for (size_t r = 1; r < info::mesh->boundaryRegions.size(); ++r) {
+                if (info::mesh->boundaryRegions[r]->dimension) {
+                    for (esint i = info::mesh->boundaryRegions[r]->eintervalsDistribution[d]; i < info::mesh->boundaryRegions[r]->eintervalsDistribution[d + 1]; ++i) {
+                        faceKernels[r][i].code = info::mesh->boundaryRegions[r]->eintervals[i].code;
+                        faceKernels[r][i].elements = info::mesh->boundaryRegions[r]->eintervals[i].end - info::mesh->boundaryRegions[r]->eintervals[i].begin;
                         faceKernels[r][i].chunks = faceKernels[r][i].elements / SIMD::size + (faceKernels[r][i].elements % SIMD::size ? 1 : 0);
                     }
                 }
             }
         }
-        for (size_t r = 1; r < info::mesh->boundary.size(); ++r) {
+        for (size_t r = 1; r < info::mesh->boundaryRegions.size(); ++r) {
             nodeKernels[r][t].code = static_cast<int>(Element::CODE::POINT1);
-            nodeKernels[r][t].elements = info::mesh->boundary[r]->nodes->datatarray().size(t);
+            nodeKernels[r][t].elements = info::mesh->boundaryRegions[r]->nodes->datatarray().size(t);
             nodeKernels[r][t].chunks = nodeKernels[r][t].elements / SIMD::size + (nodeKernels[r][t].elements % SIMD::size ? 1 : 0);
         }
     }
@@ -193,37 +193,6 @@ bool StructuralMechanics::analyze(const step::Step &step)
 //                }
 //            }
 //        }
-    }
-
-    bool withNormals = false;
-    for(size_t r = 1; r < info::mesh->boundary.size(); ++r) {
-        const BoundaryRegionStore *region = info::mesh->boundary[r];
-        if (StringCompare::caseInsensitivePreffix("CONTACT", region->name)) {
-            withNormals = true;
-        }
-    }
-
-    if (withNormals) {
-        if (Results::normal == nullptr) {
-            Results::normal = info::mesh->nodes->appendData(info::mesh->dimension, NamedData::DataType::VECTOR, "NORMAL", step::TYPE::TIME, info::ecf->output.results_selection.normal);
-        }
-        faceMultiplicity.resize(info::mesh->nodes->size);
-        for(size_t r = 1; r < info::mesh->boundary.size(); ++r) {
-            const BoundaryRegionStore *region = info::mesh->boundary[r];
-            if (StringCompare::caseInsensitivePreffix("CONTACT", region->name)) {
-                for (auto face = region->elements->cbegin(); face != region->elements->cend(); ++face) {
-                    for (auto n = face->begin(); n != face->end(); ++n) {
-                        faceMultiplicity[*n] += 1;
-                    }
-                }
-            }
-        }
-        NodeData::synchronize(faceMultiplicity, 1);
-        for (size_t i = 0; i < faceMultiplicity.size(); ++i) {
-            if (faceMultiplicity[i] != 0) {
-                faceMultiplicity[i] = 1 / faceMultiplicity[i];
-            }
-        }
     }
 
     if (info::ecf->output.results_selection.stress) {
@@ -400,8 +369,8 @@ bool StructuralMechanics::analyze(const step::Step &step)
         }
     }
 
-    for (size_t r = 1; r < info::mesh->boundary.size(); ++r) {
-        const BoundaryRegionStore *region = info::mesh->boundary[r];
+    for (size_t r = 1; r < info::mesh->boundaryRegions.size(); ++r) {
+        const BoundaryRegionStore *region = info::mesh->boundaryRegions[r];
         for (size_t i = 0; i < region->data.size(); ++i) {
             if (StringCompare::caseInsensitiveEq(region->data[i]->name, "FORCE")) {
                 eslog::info("  %s%*s \n", region->name.c_str(), 91 - region->name.size(), "");
@@ -475,22 +444,19 @@ bool StructuralMechanics::analyze(const step::Step &step)
         correct &= checkExpression("NORMAL", wall->second.normal);
     }
 
-    for(size_t r = 1; r < info::mesh->boundary.size(); ++r) {
-        const BoundaryRegionStore *region = info::mesh->boundary[r];
+    for(size_t r = 1; r < info::mesh->boundaryRegions.size(); ++r) {
+        const BoundaryRegionStore *region = info::mesh->boundaryRegions[r];
         BoundaryElementData *force = nullptr;
         for (size_t i = 0; i < region->data.size(); ++i) {
             if (StringCompare::caseInsensitiveEq(region->data[i]->name, "FORCE")) {
                 force = region->data[i];
             }
         }
-        if (info::mesh->boundary[r]->dimension) {
-            for (size_t i = 0; i < info::mesh->boundary[r]->eintervals.size(); ++i) {
+        if (info::mesh->boundaryRegions[r]->dimension) {
+            for (size_t i = 0; i < info::mesh->boundaryRegions[r]->eintervals.size(); ++i) {
                 faceKernels[r][i].coordinates.activate(region->elements->cbegin() + region->eintervals[i].begin, region->elements->cbegin() + region->eintervals[i].end, settings.element_behaviour == StructuralMechanicsGlobalSettings::ELEMENT_BEHAVIOUR::AXISYMMETRIC);
                 faceKernels[r][i].normalPressure.activate(getExpression(region->name, configuration.normal_pressure), settings.element_behaviour);
                 faceKernels[r][i].displacement.activate(region->elements->cbegin() + region->eintervals[i].begin, region->elements->cbegin() + region->eintervals[i].end, Results::displacement->data.data());
-                if (StringCompare::caseInsensitivePreffix("CONTACT", region->name)) {
-                    faceKernels[r][i].normal.activate(region->elements->cbegin() + region->eintervals[i].begin, region->elements->cbegin() + region->eintervals[i].end, Results::normal->data.data(), faceMultiplicity.data());
-                }
                 auto pressure = configuration.pressure.find(region->name);
                 if (pressure != configuration.pressure.end()) {
                     faceKernels[r][i].pressure.activate(pressure->second.pressure, pressure->second.direction, settings.element_behaviour);
@@ -595,7 +561,7 @@ void StructuralMechanics::connect(Matrix_Base<double> *K, Matrix_Base<double> *M
     }
     for (auto it = configuration.displacement.begin(); it != configuration.displacement.end(); ++it) {
         size_t r = info::mesh->bregionIndex(it->first);
-        for (size_t t = 0; t < info::mesh->boundary[r]->nodes->threads(); ++t) {
+        for (size_t t = 0; t < info::mesh->boundaryRegions[r]->nodes->threads(); ++t) {
             nodeKernels[r][t].reDirichlet.activate(r, t, info::mesh->dimension, nodeKernels[r][t].elements, dirichlet);
         }
     }

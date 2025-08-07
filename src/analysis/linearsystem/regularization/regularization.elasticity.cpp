@@ -1,6 +1,7 @@
 
 #include "regularization.h"
 
+#include "analysis/math/vector_distributed.h"
 #include "basis/utilities/utils.h"
 #include "esinfo/ecfinfo.h"
 #include "esinfo/meshinfo.h"
@@ -12,8 +13,10 @@
 #include "math/wrappers/math.spblas.h"
 #include "math/wrappers/math.lapack.h"
 #include "wrappers/metis/w.metis.h"
+#include "wrappers/mpi/communication.h"
 
 #include "math/math.h"
+#include "math/primitives/vector_dense.h"
 
 #include <algorithm>
 #include <numeric>
@@ -87,7 +90,7 @@ static void getFixPoints(std::vector<esint> &fixPoints, int domain, bool onSurfa
         epointer = &info::mesh->domainsSurface->epointers->datatarray();
     }
 
-    size_t FIX_POINTS_SIZE = 8;
+    size_t FIX_POINTS_SIZE = 16;
 
     auto neighs = [] (std::vector<esint> &neighs, Element::CODE code, int node, const esint* nodes) {
         switch (code) {
@@ -268,75 +271,44 @@ static void getNtNNtN(Matrix_Dense<T> &N, Matrix_Dense<T> &NtNNtN)
 }
 
 template <typename T>
-static void setRegMat(Matrix_CSR<T> &K, Matrix_CSR<T> &RegMat, Matrix_Dense<T> &NtNNtN, DecompositionFETI *decomposition, int domain, bool onSurface)
+static void setRegMat(Matrix_CSR<T> &K, Matrix_CSR<T> &RegMat, DecompositionFETI *decomposition, int domain, std::vector<esint> &fixPoints, std::vector<esint> &fixCols, std::vector<esint> &permutation)
 {
-    std::vector<esint> fixPoints;
-    getFixPoints(fixPoints, domain, onSurface);
-
-    std::vector<int> fixCols, permutation;
-    std::vector<double> fixVals;
     if (info::mesh->dimension == 2) {
         fixCols.resize(2 * fixPoints.size());
-        fixVals.resize(2 * fixPoints.size() * 3);
         for (size_t i = 0; i < fixPoints.size(); ++i) {
             auto dmap0 = decomposition->dmap->begin() + (2 * fixPoints[i] + 0);
             auto dmap1 = decomposition->dmap->begin() + (2 * fixPoints[i] + 1);
             for (auto di = dmap0->begin(); di != dmap0->end(); ++di) {
                 if (di->domain == domain + decomposition->dbegin) {
-                    fixCols[ 2 * i + 0         ] = di->index;
-                    fixVals[(2 * i + 0) * 3 + 0] = 1;
-                    fixVals[(2 * i + 0) * 3 + 1] = 0;
-                    fixVals[(2 * i + 0) * 3 + 2] = -info::mesh->nodes->coordinates->datatarray()[fixPoints[i]].y;
+                    fixCols[ 2 * i + 0] = di->index;
                 }
             }
             for (auto di = dmap1->begin(); di != dmap1->end(); ++di) {
                 if (di->domain == domain + decomposition->dbegin) {
-                    fixCols[ 2 * i + 1         ] = di->index;
-                    fixVals[(2 * i + 1) * 3 + 0] = 0;
-                    fixVals[(2 * i + 1) * 3 + 1] = 1;
-                    fixVals[(2 * i + 1) * 3 + 2] = info::mesh->nodes->coordinates->datatarray()[fixPoints[i]].x;
+                    fixCols[ 2 * i + 1] = di->index;
                 }
             }
         }
     }
     if (info::mesh->dimension == 3) {
         fixCols.resize(3 * fixPoints.size());
-        fixVals.resize(3 * fixPoints.size() * 6);
         for (size_t i = 0; i < fixPoints.size(); ++i) {
             auto dmap0 = decomposition->dmap->begin() + (3 * fixPoints[i] + 0);
             auto dmap1 = decomposition->dmap->begin() + (3 * fixPoints[i] + 1);
             auto dmap2 = decomposition->dmap->begin() + (3 * fixPoints[i] + 2);
             for (auto di = dmap0->begin(); di != dmap0->end(); ++di) {
                 if (di->domain == domain + decomposition->dbegin) {
-                    fixCols[ 3 * i + 0         ] = di->index;
-                    fixVals[(3 * i + 0) * 6 + 0] = 1;
-                    fixVals[(3 * i + 0) * 6 + 1] = 0;
-                    fixVals[(3 * i + 0) * 6 + 2] = 0;
-                    fixVals[(3 * i + 0) * 6 + 3] = -info::mesh->nodes->coordinates->datatarray()[fixPoints[i]].y;
-                    fixVals[(3 * i + 0) * 6 + 4] = -info::mesh->nodes->coordinates->datatarray()[fixPoints[i]].z;
-                    fixVals[(3 * i + 0) * 6 + 5] = 0;
+                    fixCols[ 3 * i + 0] = di->index;
                 }
             }
             for (auto di = dmap1->begin(); di != dmap1->end(); ++di) {
                 if (di->domain == domain + decomposition->dbegin) {
-                    fixCols[ 3 * i + 1         ] = di->index;
-                    fixVals[(3 * i + 1) * 6 + 0] = 0;
-                    fixVals[(3 * i + 1) * 6 + 1] = 1;
-                    fixVals[(3 * i + 1) * 6 + 2] = 0;
-                    fixVals[(3 * i + 1) * 6 + 3] =  info::mesh->nodes->coordinates->datatarray()[fixPoints[i]].x;
-                    fixVals[(3 * i + 1) * 6 + 4] = 0;
-                    fixVals[(3 * i + 1) * 6 + 5] = -info::mesh->nodes->coordinates->datatarray()[fixPoints[i]].z;
+                    fixCols[ 3 * i + 1] = di->index;
                 }
             }
             for (auto di = dmap2->begin(); di != dmap2->end(); ++di) {
                 if (di->domain == domain + decomposition->dbegin) {
-                    fixCols[ 3 * i + 2         ] = di->index;
-                    fixVals[(3 * i + 2) * 6 + 0] = 0;
-                    fixVals[(3 * i + 2) * 6 + 1] = 0;
-                    fixVals[(3 * i + 2) * 6 + 2] = 1;
-                    fixVals[(3 * i + 2) * 6 + 3] = 0;
-                    fixVals[(3 * i + 2) * 6 + 4] =  info::mesh->nodes->coordinates->datatarray()[fixPoints[i]].x;
-                    fixVals[(3 * i + 2) * 6 + 5] =  info::mesh->nodes->coordinates->datatarray()[fixPoints[i]].y;
+                    fixCols[ 3 * i + 2] = di->index;
                 }
             }
         }
@@ -366,6 +338,72 @@ static void setRegMat(Matrix_CSR<T> &K, Matrix_CSR<T> &RegMat, Matrix_Dense<T> &
         RegMat.rows[r + 1] = RegMat.rows[r];
         ++r;
     }
+}
+
+template <typename T>
+static void updateRegMat(Matrix_CSR<T> &K, Matrix_CSR<T> &RegMat, DecompositionFETI *decomposition, int domain, std::vector<esint> &fixPoints, std::vector<esint> &fixCols, std::vector<esint> &permutation, Vector_Distributed<Vector_Dense, T> *solution)
+{
+    std::vector<double> fixVals;
+    if (info::mesh->dimension == 2) {
+        fixVals.resize(2 * fixPoints.size() * 3);
+        for (size_t i = 0; i < fixPoints.size(); ++i) {
+            auto dmap0 = decomposition->dmap->begin() + (2 * fixPoints[i] + 0);
+            auto dmap1 = decomposition->dmap->begin() + (2 * fixPoints[i] + 1);
+            for (auto di = dmap0->begin(); di != dmap0->end(); ++di) {
+                if (di->domain == domain + decomposition->dbegin) {
+                    fixVals[(2 * i + 0) * 3 + 0] = 1;
+                    fixVals[(2 * i + 0) * 3 + 1] = 0;
+                    fixVals[(2 * i + 0) * 3 + 2] = -info::mesh->nodes->coordinates->datatarray()[fixPoints[i]].y - solution->cluster.vals[2 * fixPoints[i] + 1];
+                }
+            }
+            for (auto di = dmap1->begin(); di != dmap1->end(); ++di) {
+                if (di->domain == domain + decomposition->dbegin) {
+                    fixVals[(2 * i + 1) * 3 + 0] = 0;
+                    fixVals[(2 * i + 1) * 3 + 1] = 1;
+                    fixVals[(2 * i + 1) * 3 + 2] =  info::mesh->nodes->coordinates->datatarray()[fixPoints[i]].x + solution->cluster.vals[2 * fixPoints[i] + 0];
+                }
+            }
+        }
+    }
+    if (info::mesh->dimension == 3) {
+        fixVals.resize(3 * fixPoints.size() * 6);
+        for (size_t i = 0; i < fixPoints.size(); ++i) {
+            auto dmap0 = decomposition->dmap->begin() + (3 * fixPoints[i] + 0);
+            auto dmap1 = decomposition->dmap->begin() + (3 * fixPoints[i] + 1);
+            auto dmap2 = decomposition->dmap->begin() + (3 * fixPoints[i] + 2);
+            for (auto di = dmap0->begin(); di != dmap0->end(); ++di) {
+                if (di->domain == domain + decomposition->dbegin) {
+                    fixVals[(3 * i + 0) * 6 + 0] = 1;
+                    fixVals[(3 * i + 0) * 6 + 1] = 0;
+                    fixVals[(3 * i + 0) * 6 + 2] = 0;
+                    fixVals[(3 * i + 0) * 6 + 3] = -info::mesh->nodes->coordinates->datatarray()[fixPoints[i]].y - solution->cluster.vals[3 * fixPoints[i] + 1];
+                    fixVals[(3 * i + 0) * 6 + 4] = -info::mesh->nodes->coordinates->datatarray()[fixPoints[i]].z - solution->cluster.vals[3 * fixPoints[i] + 2];
+                    fixVals[(3 * i + 0) * 6 + 5] = 0;
+                }
+            }
+            for (auto di = dmap1->begin(); di != dmap1->end(); ++di) {
+                if (di->domain == domain + decomposition->dbegin) {
+                    fixVals[(3 * i + 1) * 6 + 0] = 0;
+                    fixVals[(3 * i + 1) * 6 + 1] = 1;
+                    fixVals[(3 * i + 1) * 6 + 2] = 0;
+                    fixVals[(3 * i + 1) * 6 + 3] =  info::mesh->nodes->coordinates->datatarray()[fixPoints[i]].x + solution->cluster.vals[3 * fixPoints[i] + 0];
+                    fixVals[(3 * i + 1) * 6 + 4] = 0;
+                    fixVals[(3 * i + 1) * 6 + 5] = -info::mesh->nodes->coordinates->datatarray()[fixPoints[i]].z - solution->cluster.vals[3 * fixPoints[i] + 2];
+                }
+            }
+            for (auto di = dmap2->begin(); di != dmap2->end(); ++di) {
+                if (di->domain == domain + decomposition->dbegin) {
+                    fixVals[(3 * i + 2) * 6 + 0] = 0;
+                    fixVals[(3 * i + 2) * 6 + 1] = 0;
+                    fixVals[(3 * i + 2) * 6 + 2] = 1;
+                    fixVals[(3 * i + 2) * 6 + 3] = 0;
+                    fixVals[(3 * i + 2) * 6 + 4] =  info::mesh->nodes->coordinates->datatarray()[fixPoints[i]].x + solution->cluster.vals[3 * fixPoints[i] + 0];
+                    fixVals[(3 * i + 2) * 6 + 5] =  info::mesh->nodes->coordinates->datatarray()[fixPoints[i]].y + solution->cluster.vals[3 * fixPoints[i] + 1];
+                }
+            }
+        }
+    }
+
     Matrix_Dense<T> N;
     if (info::mesh->dimension == 2) {
         N.resize(3, fixCols.size());
@@ -386,12 +424,9 @@ static void setRegMat(Matrix_CSR<T> &K, Matrix_CSR<T> &RegMat, Matrix_Dense<T> &
             N.vals[5 * N.ncols + i] = fixVals[6 * permutation[i] + 5];
         }
     }
+    Matrix_Dense<T> NtNNtN;
     getNtNNtN(N, NtNNtN);
-}
 
-template <typename T>
-static void updateRegMat(Matrix_CSR<T> &K, Matrix_CSR<T> &RegMat, Matrix_Dense<T> &NtNNtN)
-{
     double max = 0;
     for (esint r = 0; r < K.nrows; ++r) {
         max = std::max(max, K.vals[K.rows[r] - Indexing::CSR]);
@@ -409,6 +444,17 @@ static void setR1(Matrix_CSR<T> &K, Matrix_Dense<T> &R1, DecompositionFETI *deco
 {
     if (info::mesh->dimension == 2) {
         R1.resize(3, K.nrows);
+    }
+    if (info::mesh->dimension == 3) {
+        R1.resize(6, K.nrows);
+    }
+}
+
+template <typename T>
+static void updateR1(Matrix_CSR<T> &K, Matrix_Dense<T> &R1, DecompositionFETI *decomposition, int domain, Vector_Distributed<Vector_Dense, T> *solution)
+{
+    if (info::mesh->dimension == 2) {
+        R1.resize(3, K.nrows);
         int i = 0;
         for (auto dmap = decomposition->dmap->cbegin(); dmap != decomposition->dmap->cend(); ++dmap, ++i) {
             for (auto di = dmap->begin(); di != dmap->end(); ++di) {
@@ -417,12 +463,12 @@ static void setR1(Matrix_CSR<T> &K, Matrix_Dense<T> &R1, DecompositionFETI *deco
                     case 0:
                         R1.vals[0 * R1.ncols + di->index] = 1;
                         R1.vals[1 * R1.ncols + di->index] = 0;
-                        R1.vals[2 * R1.ncols + di->index] = -info::mesh->nodes->coordinates->datatarray()[i / 2].y;
+                        R1.vals[2 * R1.ncols + di->index] = -info::mesh->nodes->coordinates->datatarray()[i / 2].y - solution->cluster.vals[i + 1];
                         break;
                     case 1:
                         R1.vals[0 * R1.ncols + di->index] = 0;
                         R1.vals[1 * R1.ncols + di->index] = 1;
-                        R1.vals[2 * R1.ncols + di->index] =  info::mesh->nodes->coordinates->datatarray()[i / 2].x;
+                        R1.vals[2 * R1.ncols + di->index] =  info::mesh->nodes->coordinates->datatarray()[i / 2].x + solution->cluster.vals[i + 0];
                         break;
                     }
                 }
@@ -440,53 +486,83 @@ static void setR1(Matrix_CSR<T> &K, Matrix_Dense<T> &R1, DecompositionFETI *deco
                         R1.vals[0 * R1.ncols + di->index] = 1;
                         R1.vals[1 * R1.ncols + di->index] = 0;
                         R1.vals[2 * R1.ncols + di->index] = 0;
-                        R1.vals[3 * R1.ncols + di->index] = -info::mesh->nodes->coordinates->datatarray()[i / 3].y;
-                        R1.vals[4 * R1.ncols + di->index] = -info::mesh->nodes->coordinates->datatarray()[i / 3].z;
+                        R1.vals[3 * R1.ncols + di->index] = -info::mesh->nodes->coordinates->datatarray()[i / 3].y - solution->cluster.vals[i + 1];
+                        R1.vals[4 * R1.ncols + di->index] = -info::mesh->nodes->coordinates->datatarray()[i / 3].z - solution->cluster.vals[i + 2];
                         R1.vals[5 * R1.ncols + di->index] = 0;
                         break;
                     case 1:
                         R1.vals[0 * R1.ncols + di->index] = 0;
                         R1.vals[1 * R1.ncols + di->index] = 1;
                         R1.vals[2 * R1.ncols + di->index] = 0;
-                        R1.vals[3 * R1.ncols + di->index] =  info::mesh->nodes->coordinates->datatarray()[i / 3].x;
+                        R1.vals[3 * R1.ncols + di->index] =  info::mesh->nodes->coordinates->datatarray()[i / 3].x + solution->cluster.vals[i + 0];
                         R1.vals[4 * R1.ncols + di->index] = 0;
-                        R1.vals[5 * R1.ncols + di->index] = -info::mesh->nodes->coordinates->datatarray()[i / 3].z;
+                        R1.vals[5 * R1.ncols + di->index] = -info::mesh->nodes->coordinates->datatarray()[i / 3].z - solution->cluster.vals[i + 2];
                         break;
                     case 2:
                         R1.vals[0 * R1.ncols + di->index] = 0;
                         R1.vals[1 * R1.ncols + di->index] = 0;
                         R1.vals[2 * R1.ncols + di->index] = 1;
                         R1.vals[3 * R1.ncols + di->index] = 0;
-                        R1.vals[4 * R1.ncols + di->index] =  info::mesh->nodes->coordinates->datatarray()[i / 3].x;
-                        R1.vals[5 * R1.ncols + di->index] =  info::mesh->nodes->coordinates->datatarray()[i / 3].y;
+                        R1.vals[4 * R1.ncols + di->index] =  info::mesh->nodes->coordinates->datatarray()[i / 3].x + solution->cluster.vals[i + 0];
+                        R1.vals[5 * R1.ncols + di->index] =  info::mesh->nodes->coordinates->datatarray()[i / 3].y + solution->cluster.vals[i + 1];
                         break;
                     }
                 }
             }
         }
     }
+
+    T normK = 0;
+    for (int r = 0; r < K.nrows; ++r) { // assume symmetric K
+        normK += K.vals[K.rows[r] - Indexing::CSR] * K.vals[K.rows[r] - Indexing::CSR];
+    }
+    normK = std::sqrt(normK);
+
+    std::vector<T> norm;
+    SpBLAS<Matrix_CSR, T> spblas(K);
+    Vector_Dense<T> R, KR; KR.resize(R1.ncols);
+    for (esint r = 0; r < R1.nrows; ++r) {
+        R.size = R1.ncols; R.vals = R1.vals + R1.ncols * r;
+        spblas.apply(KR, T{1}, T{0}, R);
+        norm.push_back(math::norm(KR) / normK);
+    }
+    esint kernels = 0;
+    for (esint i = 0; i < R1.nrows; ++i) {
+        if (norm[i] < 1e-8) {
+            std::copy(R1.vals + R1.ncols * i, R1.vals + R1.ncols * (i + 1), R1.vals + R1.ncols * kernels++);
+        }
+    }
+    R1.resize(kernels, R1.ncols);
 }
 
 template <typename T>
 void Regularization<T>::set(FETI<T> &feti, StructuralMechanicsLoadStepConfiguration &configuration)
 {
-    NtNNtN.resize(feti.K.size());
     if (feti.configuration.regularization == FETIConfiguration::REGULARIZATION::ANALYTIC) {
+        fixPoints.resize(feti.K.size());
+        fixCols.resize(feti.K.size());
+        permutation.resize(feti.K.size());
         #pragma omp parallel for
         for (size_t d = 0; d < feti.K.size(); ++d) {
-            if (R1)     setR1    (feti.K[d], feti.R1[d], feti.decomposition, d);
-            if (regMat) setRegMat(feti.K[d], feti.RegMat[d], NtNNtN[d], feti.decomposition, d, onSurface);
+            if (R1) {
+                setR1(feti.K[d], feti.R1[d], feti.decomposition, d);
+            }
+            if (regMat) {
+                getFixPoints(fixPoints[d], d, onSurface);
+                setRegMat(feti.K[d], feti.RegMat[d], feti.decomposition, d, fixPoints[d], fixCols[d], permutation[d]);
+            }
         }
     }
 }
 
 template <typename T>
-void Regularization<T>::update(FETI<T> &feti, StructuralMechanicsLoadStepConfiguration &configuration)
+void Regularization<T>::update(FETI<T> &feti, StructuralMechanicsLoadStepConfiguration &configuration, Vector_Distributed<Vector_Dense, T> *solution)
 {
     if (feti.configuration.regularization == FETIConfiguration::REGULARIZATION::ANALYTIC) {
         #pragma omp parallel for
         for (size_t d = 0; d < feti.K.size(); ++d) {
-            if (regMat && feti.updated.K) updateRegMat(feti.K[d], feti.RegMat[d], NtNNtN[d]);
+            if (feti.updated.K && R1)     updateR1    (feti.K[d], feti.R1[d], feti.decomposition, d, solution);
+            if (feti.updated.K && regMat) updateRegMat(feti.K[d], feti.RegMat[d], feti.decomposition, d, fixPoints[d], fixCols[d], permutation[d], solution);
         }
     } else {
         algebraic(feti, 3 * (info::mesh->dimension - 1), feti.configuration.sc_size);
@@ -494,7 +570,7 @@ void Regularization<T>::update(FETI<T> &feti, StructuralMechanicsLoadStepConfigu
 }
 
 template void Regularization<double>::set    (FETI<double> &feti, StructuralMechanicsLoadStepConfiguration &configuration);
-template void Regularization<double>::update (FETI<double> &feti, StructuralMechanicsLoadStepConfiguration &configuration);
+template void Regularization<double>::update (FETI<double> &feti, StructuralMechanicsLoadStepConfiguration &configuration, Vector_Distributed<Vector_Dense, double> *solution);
 
 
 }

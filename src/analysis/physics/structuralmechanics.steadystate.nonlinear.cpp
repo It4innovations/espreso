@@ -64,6 +64,7 @@ bool StructuralMechanicsSteadyStateNonLinear::analyze(step::Step &step)
     f = solver->b->copyPattern();
     dirichlet = solver->dirichlet->copyPattern();
     solver->assembledA = K;
+    solver->solution = U;
 
     pattern->map(K);
     pattern->map(f);
@@ -205,6 +206,7 @@ bool StructuralMechanicsSteadyStateNonLinear::run(step::Step &step, Physics *pre
         U->copy(solver->x);
         storeSolution(step);
         assembler.nextIteration(step, U);
+        info::mesh->updateMeshCoordinates(U->cluster.vals);
         eslog::info("      == PROCESS SOLUTION                                                   %8.3f s == \n", eslog::time() - solution);
         eslog::info("      == ----------------------------------------------------------------------------- == \n");
 
@@ -237,6 +239,7 @@ bool StructuralMechanicsSteadyStateNonLinear::run(step::Step &step, Physics *pre
             if (converged) {
                 eslog::info("      =================================================================================== \n\n");
                 storeSolution(step);
+                info::mesh->updateMeshCoordinates(U->cluster.vals);
                 assembler.updateSolution(step, U, postM, postB);
                 if (postSize) {
                     storePostSystem(step);
@@ -250,6 +253,7 @@ bool StructuralMechanicsSteadyStateNonLinear::run(step::Step &step, Physics *pre
             } else {
                 eslog::info("       = ----------------------------------------------------------------------------- = \n");
                 storeSolution(step);
+                info::mesh->updateMeshCoordinates(U->cluster.vals);
                 assembler.nextIteration(step, U);
             }
         }
