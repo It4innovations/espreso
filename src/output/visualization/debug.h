@@ -26,8 +26,7 @@ public:
     static void faceNeighbors();
     static void meshDual(std::vector<esint> &frames, std::vector<esint> &neighbors);
     static void corners(double clusterShrinkRatio = .9, double domainShrinkRatio = .95);
-    static void innerFixPoints(double clusterShrinkRatio = .9, double domainShrinkRatio = .95);
-    static void surfaceFixPoints(double clusterShrinkRatio = .9, double domainShrinkRatio = .95);
+    static void fixPoints(const std::vector<esint> &fixPoints, double *solution = nullptr);
     static void closeElements(double clusterShrinkRatio = .9, double domainShrinkRatio = .95);
     static void contact(double clusterShrinkRatio = .9, double domainShrinkRatio = .95);
     static void surface(const char* name, double clusterShrinkRatio = .9, double domainShrinkRatio = .95);

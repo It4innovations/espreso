@@ -12,6 +12,7 @@
 #include "math/wrappers/math.blas.h"
 #include "math/wrappers/math.spblas.h"
 #include "math/wrappers/math.lapack.h"
+#include "output/visualization/debug.h"
 #include "wrappers/metis/w.metis.h"
 #include "wrappers/mpi/communication.h"
 
@@ -21,6 +22,7 @@
 #include <algorithm>
 #include <numeric>
 #include <random>
+#include <set>
 
 namespace espreso {
 
@@ -69,7 +71,7 @@ static void getCorners(std::vector<esint> &fixPoints, int domain)
     std::sort(fixPoints.begin(), fixPoints.end());
 }
 
-static void getFixPoints(std::vector<esint> &fixPoints, int domain, bool onSurface)
+static void getFixPointsMetis(std::vector<esint> &fixPoints, int domain, bool onSurface)
 {
     if (
             info::ecf->input_type == ECF::INPUT_TYPE::GENERATOR &&
@@ -260,6 +262,42 @@ static void getFixPoints(std::vector<esint> &fixPoints, int domain, bool onSurfa
     utils::sortAndRemoveDuplicates(fixPoints);
 }
 
+static void getFixPointsRandom(std::vector<esint> &fixPoints, int domain, bool onSurface)
+{
+    if (onSurface) {
+        eslog::globalerror("implement random fix points on surface\n");
+    }
+
+    esint begin = info::mesh->domains->elements[domain];
+    esint end = info::mesh->domains->elements[domain + 1];
+    auto element = info::mesh->elements->nodes->begin() + begin;
+    auto *epointer = &info::mesh->elements->epointers->datatarray();
+    if (onSurface) {
+        begin = info::mesh->domainsSurface->edistribution[domain];
+        end = info::mesh->domainsSurface->edistribution[domain + 1];
+        element = info::mesh->domainsSurface->enodes->begin() + begin;
+        epointer = &info::mesh->domainsSurface->epointers->datatarray();
+    }
+
+    std::vector<esint> nodes;
+    for (esint e = 0; e < end - begin; ++e, ++element) {
+        for (int n = 0; n < (*epointer)[begin + e]->nodes; ++n) {
+            nodes.push_back(element->at(n));
+        }
+    }
+    std::sort(nodes.begin(), nodes.end());
+    nodes.erase(std::unique(nodes.begin(), nodes.end()), nodes.end());
+    std::random_device rd;
+    std::mt19937 g(rd());
+    std::shuffle(nodes.begin(), nodes.end(), g);
+    fixPoints.assign(nodes.begin(), nodes.begin() + std::min(32UL, nodes.size()));
+}
+
+static void getFixPointsSpherical(std::vector<esint> &fixPoints, int domain, bool onSurface)
+{
+    eslog::globalerror("implement spherical fix points\n");
+}
+
 template <typename T>
 static void getNtNNtN(Matrix_Dense<T> &N, Matrix_Dense<T> &NtNNtN)
 {
@@ -341,7 +379,7 @@ static void setRegMat(Matrix_CSR<T> &K, Matrix_CSR<T> &RegMat, DecompositionFETI
 }
 
 template <typename T>
-static void updateRegMat(Matrix_CSR<T> &K, Matrix_CSR<T> &RegMat, DecompositionFETI *decomposition, int domain, std::vector<esint> &fixPoints, std::vector<esint> &fixCols, std::vector<esint> &permutation, Vector_Distributed<Vector_Dense, T> *solution)
+static void updateRegMat(Matrix_CSR<T> &K, Matrix_CSR<T> &RegMat, DecompositionFETI *decomposition, int domain, std::vector<esint> &fixPoints, std::vector<esint> &fixCols, std::vector<esint> &permutation, Vector_Distributed<Vector_Dense, T> *solution = nullptr)
 {
     std::vector<double> fixVals;
     if (info::mesh->dimension == 2) {
@@ -353,14 +391,16 @@ static void updateRegMat(Matrix_CSR<T> &K, Matrix_CSR<T> &RegMat, DecompositionF
                 if (di->domain == domain + decomposition->dbegin) {
                     fixVals[(2 * i + 0) * 3 + 0] = 1;
                     fixVals[(2 * i + 0) * 3 + 1] = 0;
-                    fixVals[(2 * i + 0) * 3 + 2] = -info::mesh->nodes->coordinates->datatarray()[fixPoints[i]].y - solution->cluster.vals[2 * fixPoints[i] + 1];
+                    fixVals[(2 * i + 0) * 3 + 2] = -info::mesh->nodes->coordinates->datatarray()[fixPoints[i]].y;
+                    if (solution) fixVals[(2 * i + 0) * 3 + 2] = -info::mesh->nodes->coordinates->datatarray()[fixPoints[i]].y - solution->cluster.vals[2 * fixPoints[i] + 1];
                 }
             }
             for (auto di = dmap1->begin(); di != dmap1->end(); ++di) {
                 if (di->domain == domain + decomposition->dbegin) {
                     fixVals[(2 * i + 1) * 3 + 0] = 0;
                     fixVals[(2 * i + 1) * 3 + 1] = 1;
-                    fixVals[(2 * i + 1) * 3 + 2] =  info::mesh->nodes->coordinates->datatarray()[fixPoints[i]].x + solution->cluster.vals[2 * fixPoints[i] + 0];
+                    fixVals[(2 * i + 1) * 3 + 2] =  info::mesh->nodes->coordinates->datatarray()[fixPoints[i]].x;
+                    if (solution) fixVals[(2 * i + 1) * 3 + 2] =  info::mesh->nodes->coordinates->datatarray()[fixPoints[i]].x + solution->cluster.vals[2 * fixPoints[i] + 0];
                 }
             }
         }
@@ -376,8 +416,10 @@ static void updateRegMat(Matrix_CSR<T> &K, Matrix_CSR<T> &RegMat, DecompositionF
                     fixVals[(3 * i + 0) * 6 + 0] = 1;
                     fixVals[(3 * i + 0) * 6 + 1] = 0;
                     fixVals[(3 * i + 0) * 6 + 2] = 0;
-                    fixVals[(3 * i + 0) * 6 + 3] = -info::mesh->nodes->coordinates->datatarray()[fixPoints[i]].y - solution->cluster.vals[3 * fixPoints[i] + 1];
-                    fixVals[(3 * i + 0) * 6 + 4] = -info::mesh->nodes->coordinates->datatarray()[fixPoints[i]].z - solution->cluster.vals[3 * fixPoints[i] + 2];
+                    fixVals[(3 * i + 0) * 6 + 3] = -info::mesh->nodes->coordinates->datatarray()[fixPoints[i]].y;
+                    if (solution) fixVals[(3 * i + 0) * 6 + 3] = -info::mesh->nodes->coordinates->datatarray()[fixPoints[i]].y - solution->cluster.vals[3 * fixPoints[i] + 1];
+                    fixVals[(3 * i + 0) * 6 + 4] = -info::mesh->nodes->coordinates->datatarray()[fixPoints[i]].z;
+                    if (solution) fixVals[(3 * i + 0) * 6 + 4] = -info::mesh->nodes->coordinates->datatarray()[fixPoints[i]].z - solution->cluster.vals[3 * fixPoints[i] + 2];
                     fixVals[(3 * i + 0) * 6 + 5] = 0;
                 }
             }
@@ -386,9 +428,11 @@ static void updateRegMat(Matrix_CSR<T> &K, Matrix_CSR<T> &RegMat, DecompositionF
                     fixVals[(3 * i + 1) * 6 + 0] = 0;
                     fixVals[(3 * i + 1) * 6 + 1] = 1;
                     fixVals[(3 * i + 1) * 6 + 2] = 0;
-                    fixVals[(3 * i + 1) * 6 + 3] =  info::mesh->nodes->coordinates->datatarray()[fixPoints[i]].x + solution->cluster.vals[3 * fixPoints[i] + 0];
+                    fixVals[(3 * i + 1) * 6 + 3] =  info::mesh->nodes->coordinates->datatarray()[fixPoints[i]].x;
+                    if (solution) fixVals[(3 * i + 1) * 6 + 3] =  info::mesh->nodes->coordinates->datatarray()[fixPoints[i]].x + solution->cluster.vals[3 * fixPoints[i] + 0];
                     fixVals[(3 * i + 1) * 6 + 4] = 0;
-                    fixVals[(3 * i + 1) * 6 + 5] = -info::mesh->nodes->coordinates->datatarray()[fixPoints[i]].z - solution->cluster.vals[3 * fixPoints[i] + 2];
+                    fixVals[(3 * i + 1) * 6 + 5] = -info::mesh->nodes->coordinates->datatarray()[fixPoints[i]].z;
+                    if (solution) fixVals[(3 * i + 1) * 6 + 5] = -info::mesh->nodes->coordinates->datatarray()[fixPoints[i]].z - solution->cluster.vals[3 * fixPoints[i] + 2];
                 }
             }
             for (auto di = dmap2->begin(); di != dmap2->end(); ++di) {
@@ -397,8 +441,10 @@ static void updateRegMat(Matrix_CSR<T> &K, Matrix_CSR<T> &RegMat, DecompositionF
                     fixVals[(3 * i + 2) * 6 + 1] = 0;
                     fixVals[(3 * i + 2) * 6 + 2] = 1;
                     fixVals[(3 * i + 2) * 6 + 3] = 0;
-                    fixVals[(3 * i + 2) * 6 + 4] =  info::mesh->nodes->coordinates->datatarray()[fixPoints[i]].x + solution->cluster.vals[3 * fixPoints[i] + 0];
-                    fixVals[(3 * i + 2) * 6 + 5] =  info::mesh->nodes->coordinates->datatarray()[fixPoints[i]].y + solution->cluster.vals[3 * fixPoints[i] + 1];
+                    fixVals[(3 * i + 2) * 6 + 4] =  info::mesh->nodes->coordinates->datatarray()[fixPoints[i]].x;
+                    if (solution) fixVals[(3 * i + 2) * 6 + 4] =  info::mesh->nodes->coordinates->datatarray()[fixPoints[i]].x + solution->cluster.vals[3 * fixPoints[i] + 0];
+                    fixVals[(3 * i + 2) * 6 + 5] =  info::mesh->nodes->coordinates->datatarray()[fixPoints[i]].y;
+                    if (solution) fixVals[(3 * i + 2) * 6 + 5] =  info::mesh->nodes->coordinates->datatarray()[fixPoints[i]].y + solution->cluster.vals[3 * fixPoints[i] + 1];
                 }
             }
         }
@@ -437,6 +483,13 @@ static void updateRegMat(Matrix_CSR<T> &K, Matrix_CSR<T> &RegMat, DecompositionF
             RegMat.vals[i] = max * NtNNtN.vals[r * NtNNtN.ncols + c];
         }
     }
+
+
+    if (solution) {
+        DebugOutput::fixPoints(fixPoints, solution->cluster.vals);
+    } else {
+        DebugOutput::fixPoints(fixPoints);
+    }
 }
 
 template <typename T>
@@ -451,7 +504,7 @@ static void setR1(Matrix_CSR<T> &K, Matrix_Dense<T> &R1, DecompositionFETI *deco
 }
 
 template <typename T>
-static void updateR1(Matrix_CSR<T> &K, Matrix_Dense<T> &R1, DecompositionFETI *decomposition, int domain, Vector_Distributed<Vector_Dense, T> *solution)
+static void updateR1(Matrix_CSR<T> &K, Matrix_Dense<T> &R1, DecompositionFETI *decomposition, int domain, Vector_Distributed<Vector_Dense, T> *solution = nullptr)
 {
     if (info::mesh->dimension == 2) {
         R1.resize(3, K.nrows);
@@ -459,16 +512,19 @@ static void updateR1(Matrix_CSR<T> &K, Matrix_Dense<T> &R1, DecompositionFETI *d
         for (auto dmap = decomposition->dmap->cbegin(); dmap != decomposition->dmap->cend(); ++dmap, ++i) {
             for (auto di = dmap->begin(); di != dmap->end(); ++di) {
                 if (di->domain == domain + decomposition->dbegin) {
+                    int n = i / 2;
                     switch (i % 2) {
                     case 0:
                         R1.vals[0 * R1.ncols + di->index] = 1;
                         R1.vals[1 * R1.ncols + di->index] = 0;
-                        R1.vals[2 * R1.ncols + di->index] = -info::mesh->nodes->coordinates->datatarray()[i / 2].y - solution->cluster.vals[i + 1];
+                        R1.vals[2 * R1.ncols + di->index] = -info::mesh->nodes->coordinates->datatarray()[n].y;
+                        if (solution) R1.vals[2 * R1.ncols + di->index] = -info::mesh->nodes->coordinates->datatarray()[n].y - solution->cluster.vals[2 * n + 1];
                         break;
                     case 1:
                         R1.vals[0 * R1.ncols + di->index] = 0;
                         R1.vals[1 * R1.ncols + di->index] = 1;
-                        R1.vals[2 * R1.ncols + di->index] =  info::mesh->nodes->coordinates->datatarray()[i / 2].x + solution->cluster.vals[i + 0];
+                        R1.vals[2 * R1.ncols + di->index] =  info::mesh->nodes->coordinates->datatarray()[n].x;
+                        if (solution) R1.vals[2 * R1.ncols + di->index] =  info::mesh->nodes->coordinates->datatarray()[n].x + solution->cluster.vals[2 * n + 0];
                         break;
                     }
                 }
@@ -481,30 +537,37 @@ static void updateR1(Matrix_CSR<T> &K, Matrix_Dense<T> &R1, DecompositionFETI *d
         for (auto dmap = decomposition->dmap->cbegin(); dmap != decomposition->dmap->cend(); ++dmap, ++i) {
             for (auto di = dmap->begin(); di != dmap->end(); ++di) {
                 if (di->domain == domain + decomposition->dbegin && di->index < K.nrows) {
+                    int n = i / 3;
                     switch (i % 3) {
                     case 0:
                         R1.vals[0 * R1.ncols + di->index] = 1;
                         R1.vals[1 * R1.ncols + di->index] = 0;
                         R1.vals[2 * R1.ncols + di->index] = 0;
-                        R1.vals[3 * R1.ncols + di->index] = -info::mesh->nodes->coordinates->datatarray()[i / 3].y - solution->cluster.vals[i + 1];
-                        R1.vals[4 * R1.ncols + di->index] = -info::mesh->nodes->coordinates->datatarray()[i / 3].z - solution->cluster.vals[i + 2];
+                        R1.vals[3 * R1.ncols + di->index] = -info::mesh->nodes->coordinates->datatarray()[n].y;
+                        if (solution) R1.vals[3 * R1.ncols + di->index] = -info::mesh->nodes->coordinates->datatarray()[n].y - solution->cluster.vals[3 * n + 1];
+                        R1.vals[4 * R1.ncols + di->index] = -info::mesh->nodes->coordinates->datatarray()[n].z;
+                        if (solution) R1.vals[4 * R1.ncols + di->index] = -info::mesh->nodes->coordinates->datatarray()[n].z - solution->cluster.vals[3 * n + 2];
                         R1.vals[5 * R1.ncols + di->index] = 0;
                         break;
                     case 1:
                         R1.vals[0 * R1.ncols + di->index] = 0;
                         R1.vals[1 * R1.ncols + di->index] = 1;
                         R1.vals[2 * R1.ncols + di->index] = 0;
-                        R1.vals[3 * R1.ncols + di->index] =  info::mesh->nodes->coordinates->datatarray()[i / 3].x + solution->cluster.vals[i + 0];
+                        R1.vals[3 * R1.ncols + di->index] =  info::mesh->nodes->coordinates->datatarray()[n].x;
+                        if (solution) R1.vals[3 * R1.ncols + di->index] =  info::mesh->nodes->coordinates->datatarray()[n].x + solution->cluster.vals[3 * n + 0];
                         R1.vals[4 * R1.ncols + di->index] = 0;
-                        R1.vals[5 * R1.ncols + di->index] = -info::mesh->nodes->coordinates->datatarray()[i / 3].z - solution->cluster.vals[i + 2];
+                        R1.vals[5 * R1.ncols + di->index] = -info::mesh->nodes->coordinates->datatarray()[n].z;
+                        if (solution) R1.vals[5 * R1.ncols + di->index] = -info::mesh->nodes->coordinates->datatarray()[n].z - solution->cluster.vals[3 * n + 2];
                         break;
                     case 2:
                         R1.vals[0 * R1.ncols + di->index] = 0;
                         R1.vals[1 * R1.ncols + di->index] = 0;
                         R1.vals[2 * R1.ncols + di->index] = 1;
                         R1.vals[3 * R1.ncols + di->index] = 0;
-                        R1.vals[4 * R1.ncols + di->index] =  info::mesh->nodes->coordinates->datatarray()[i / 3].x + solution->cluster.vals[i + 0];
-                        R1.vals[5 * R1.ncols + di->index] =  info::mesh->nodes->coordinates->datatarray()[i / 3].y + solution->cluster.vals[i + 1];
+                        R1.vals[4 * R1.ncols + di->index] =  info::mesh->nodes->coordinates->datatarray()[n].x;
+                        if (solution) R1.vals[4 * R1.ncols + di->index] =  info::mesh->nodes->coordinates->datatarray()[n].x + solution->cluster.vals[3 * n + 0];
+                        R1.vals[5 * R1.ncols + di->index] =  info::mesh->nodes->coordinates->datatarray()[n].y;
+                        if (solution) R1.vals[5 * R1.ncols + di->index] =  info::mesh->nodes->coordinates->datatarray()[n].y + solution->cluster.vals[3 * n + 1];
                         break;
                     }
                 }
@@ -548,7 +611,11 @@ void Regularization<T>::set(FETI<T> &feti, StructuralMechanicsLoadStepConfigurat
                 setR1(feti.K[d], feti.R1[d], feti.decomposition, d);
             }
             if (regMat) {
-                getFixPoints(fixPoints[d], d, onSurface);
+                switch (feti.configuration.fix_points) {
+                case FETIConfiguration::FIX_POINTS::METIS_CENTERS: getFixPointsMetis(fixPoints[d], d, onSurface); break;
+                case FETIConfiguration::FIX_POINTS::RANDOM       : getFixPointsRandom(fixPoints[d], d, onSurface); break;
+                case FETIConfiguration::FIX_POINTS::SPHERICAL    : getFixPointsSpherical(fixPoints[d], d, onSurface); break;
+                }
                 setRegMat(feti.K[d], feti.RegMat[d], feti.decomposition, d, fixPoints[d], fixCols[d], permutation[d]);
             }
         }

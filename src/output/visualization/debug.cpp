@@ -406,18 +406,53 @@ void DebugOutput::corners(double clusterShrinkRatio, double domainShrinkRatio)
     }
 }
 
-void DebugOutput::innerFixPoints(double clusterShrinkRatio, double domainShrinkRatio)
+void DebugOutput::fixPoints(const std::vector<esint> &fixPoints, double *solution)
 {
     if (!info::ecf->output.debug) {
         return;
     }
-}
 
-void DebugOutput::surfaceFixPoints(double clusterShrinkRatio, double domainShrinkRatio)
-{
-    if (!info::ecf->output.debug) {
-        return;
+    DebugOutput output(1, 1, false);
+
+    esint noffset = fixPoints.size();
+    esint nsize = Communication::exscan(noffset);
+
+    if (Visualization::isRoot()) {
+        output._writer.points(nsize);
     }
+    for (size_t n = 0; n < fixPoints.size(); ++n) {
+        Point p = output._mesh.nodes->coordinates->datatarray()[fixPoints[n]];
+        if (solution) {
+            p.x += solution[fixPoints[n] * output._mesh.dimension + 0];
+            p.y += solution[fixPoints[n] * output._mesh.dimension + 1];
+            if (output._mesh.dimension == 3) {
+                p.z += solution[fixPoints[n] * output._mesh.dimension + 2];
+            }
+        }
+        output._writer.point(p.x, p.y, p.z);
+    }
+    output._writer.groupData();
+
+    if (Visualization::isRoot()) {
+        output._writer.cells(nsize, nsize + nsize);
+    }
+
+    for (size_t n = 0; n < fixPoints.size(); ++n) {
+        output._writer.int32s(1);
+        output._writer.int32ln(n + noffset);
+    }
+    output._writer.groupData();
+
+    if (Visualization::isRoot()) {
+        output._writer.celltypes(nsize);
+    }
+    for (size_t n = 0; n < fixPoints.size(); ++n) {
+        output._writer.type(Element::CODE::POINT1);
+    }
+    output._writer.groupData();
+    output._writer.commitFile(output._path + "fix_points.vtk");
+    output._writer.reorder();
+    output._writer.write();
 }
 
 void DebugOutput::contact(double clusterShrinkRatio, double domainShrinkRatio)

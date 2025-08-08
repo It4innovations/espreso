@@ -73,7 +73,7 @@ espreso::FETIConfiguration::FETIConfiguration()
             .setdescription({ "Finish when FETI solver does not converge." })
             .setdatatype({ ECFDataType::BOOL }));
 
-    check_input_matrices = true;
+    check_input_matrices = false;
     REGISTER(check_input_matrices, ECFMetaData()
             .setdescription({ "Check input matrices with eigenvalues and SVD decomposition." })
             .setdatatype({ ECFDataType::BOOL }));
@@ -96,6 +96,14 @@ espreso::FETIConfiguration::FETIConfiguration()
             .setdatatype({ ECFDataType::OPTION })
             .addoption(ECFOption().setname("ANALYTIC").setdescription("Analytic regularization provided by a particular physics."))
             .addoption(ECFOption().setname("ALGEBRAIC").setdescription("Regularization based on NULL PIVOTS.")));
+
+    fix_points = FIX_POINTS::METIS_CENTERS;
+    REGISTER(fix_points, ECFMetaData()
+            .setdescription({ "Fix point computation" })
+            .setdatatype({ ECFDataType::OPTION })
+            .addoption(ECFOption().setname("METIS_CENTERS").setdescription("Centers of domains computed by METIS."))
+            .addoption(ECFOption().setname("RANDOM").setdescription("Random points."))
+            .addoption(ECFOption().setname("SPHERICAL").setdescription("Random points in the sphere surface.")));
 
     stopping_criterion = STOPPING_CRITERION::RELATIVE;
     REGISTER(stopping_criterion, ECFMetaData()

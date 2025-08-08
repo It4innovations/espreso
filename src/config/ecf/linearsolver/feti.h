@@ -68,6 +68,12 @@ struct FETIConfiguration: public ECFDescription {
         ALGEBRAIC = 1,
     };
 
+    enum class FIX_POINTS {
+        METIS_CENTERS,
+        RANDOM,
+        SPHERICAL
+    };
+
     double precision;
     size_t print_iteration;
     size_t max_iterations;
@@ -82,6 +88,7 @@ struct FETIConfiguration: public ECFDescription {
     ITERATIVE_SOLVER iterative_solver;
     PRECONDITIONER preconditioner;
     REGULARIZATION regularization;
+    FIX_POINTS fix_points;
     STOPPING_CRITERION stopping_criterion;
 
     int exhaustive_info;
