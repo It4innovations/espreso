@@ -191,7 +191,7 @@ void FETI<T>::check()
         }
         for (esint r = 0; r < RegMat[di].nrows; ++r) {
             for (esint c = RegMat[di].rows[r]; c < RegMat[di].rows[r + 1]; ++c) {
-                m_reg.vals[r * RegMat[di].ncols + RegMat[di].cols[c - Indexing::CSR] - Indexing::CSR] = RegMat[di].vals[c - Indexing::CSR];
+                m_reg.vals[r * RegMat[di].ncols + RegMat[di].cols[c - Indexing::CSR] - Indexing::CSR] += RegMat[di].vals[c - Indexing::CSR];
             }
         }
         if (K[di].shape == Matrix_Shape::UPPER) {
@@ -211,10 +211,11 @@ void FETI<T>::check()
             }
         }
 
-        math::lapack::get_svd(m, s[di], U[di], V[di]);
-        math::lapack::get_svd(m_reg, s_reg[di], U_reg[di], V_reg[di]);
+        Matrix_Dense<T> n(m), n_reg(m_reg);
         math::lapack::get_eig_sym(m, eig[di]);
         math::lapack::get_eig_sym(m_reg, eig_reg[di]);
+        math::lapack::get_svd(n, s[di], U[di], V[di]);
+        math::lapack::get_svd(n_reg, s_reg[di], U_reg[di], V_reg[di]);
 
         T s_max = *std::max_element(s[di].vals, s[di].vals + s[di].size);
         T s_reg_max = *std::max_element(s_reg[di].vals, s_reg[di].vals + s_reg[di].size);
