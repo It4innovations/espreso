@@ -1,0 +1,8 @@
+
+def options(opt):
+    pass
+
+def configure(ctx):
+    headers = "StrumpackSparseSolver.hpp"
+    libs = ["strumpack"]
+    ctx.check_cxx(mandatory=False, msg="Checking for 'strumpack'", okmsg=" ".join(libs), define_name="HAVE_STRUMPACK", header_name=headers, lib=libs, uselib_store="STRUMPACK", global_define=0)

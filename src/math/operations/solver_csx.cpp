@@ -5,6 +5,7 @@
 #include "wrappers/suitesparse/operations/solver_csx.umfpack.h"
 #include "wrappers/mkl/operations/solver_csx.mklpardiso.h"
 #include "wrappers/mumps/operations/solver_csx.mumps.h"
+#include "wrappers/strumpack/operations/solver_csx.strumpack.h"
 #include "basis/utilities/stacktimer.h"
 
 
@@ -23,11 +24,14 @@ std::unique_ptr<solver_csx<T,I>> solver_csx<T,I>::make(implementation_selector i
         #ifdef HAVE_MKL
             implementations.push_back(implementation_selector::mklpardiso);
         #endif
-        #ifdef HAVE_MUMPS
-            implementations.push_back(implementation_selector::mumps);
-        #endif
         #ifdef HAVE_SUITESPARSE
             implementations.push_back(implementation_selector::suitesparse);
+        #endif
+        #ifdef HAVE_STRUMPACK
+            implementations.push_back(implementation_selector::strumpack);
+        #endif
+        #ifdef HAVE_MUMPS
+            implementations.push_back(implementation_selector::mumps);
         #endif
     }
     else {
@@ -45,6 +49,9 @@ std::unique_ptr<solver_csx<T,I>> solver_csx<T,I>::make(implementation_selector i
                 break;
             case implementation_selector::mumps:
                 if(!need_factors) return std::make_unique<solver_csx_mumps<T,I>>();
+                break;
+            case implementation_selector::strumpack:
+                if(!need_factors) return std::make_unique<solver_csx_strumpack<T,I>>();
                 break;
             default:
                 eslog::error("invalid solver_csx implementation selector\n");

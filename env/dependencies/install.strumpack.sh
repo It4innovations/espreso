@@ -1,0 +1,43 @@
+#!/bin/bash
+
+DEPENDENCIES_DIR="${PWD}/dependencies"
+mkdir -p "${DEPENDENCIES_DIR}"
+
+VERSION_STRUMPACK=v8.0.0
+
+PREFIX="${1}"
+COMPILER_CXX="${2}"
+COMPILER_C="${3}"
+COMPILER_F="${4}"
+MY_STRUMPACK_BLAS_LINK="${5}"
+MY_STRUMPACK_LAPACK_LINK="${6}"
+
+STRUMPACK_DIR="Strumpack_${VERSION_STRUMPACK}"
+STRUMPACK_ROOT="${DEPENDENCIES_DIR}/${STRUMPACK_DIR}"
+if [ ! -d "${STRUMPACK_ROOT}" ]
+then
+  sh env/dependencies/clone.strumpack.sh
+fi
+
+INSTALL_DIR="${STRUMPACK_ROOT}/install_${PREFIX}_${COMPILER_C}"
+if [ ! -d "${INSTALL_DIR}" ]
+then
+    (
+        cd "${STRUMPACK_ROOT}"
+        mkdir -p "build_${PREFIX}_${COMPILER_C}"
+        cd "build_${PREFIX}_${COMPILER_C}"
+        cmake -DTPL_BLAS_LIBRARIES="${MY_STRUMPACK_BLAS_LINK}" -DTPL_LAPACK_LIBRARIES="${MY_STRUMPACK_LAPACK_LINK}" -DBUILD_SHARED_LIBS=ON -DSTRUMPACK_USE_MPI=OFF -DSTRUMPACK_USE_OPENMP=OFF -DSTRUMPACK_USE_CUDA=OFF -DCMAKE_CXX_STANDARD_LIBRARIES="-lGKlib" -DCMAKE_BUILD_TYPE=RelWithDebInfo -DCMAKE_INSTALL_PREFIX="${INSTALL_DIR}" -DCMAKE_CXX_COMPILER="${COMPILER_CXX}" -DCMAKE_C_COMPILER="${COMPILER_C}" -DCMAKE_Fortran_COMPILER="${COMPILER_F}" ..
+        make -j$(nproc)
+        make install
+    )
+fi
+
+prepend_to_CPATH="${INSTALL_DIR}/include"
+prepend_to_LIBRARY_PATH="${INSTALL_DIR}/lib:${INSTALL_DIR}/lib64"
+prepend_to_LD_LIBRARY_PATH="${INSTALL_DIR}/lib:${INSTALL_DIR}/lib64"
+export CPATH="${prepend_to_CPATH}:${CPATH}"
+export LIBRARY_PATH="${prepend_to_LIBRARY_PATH}:${LIBRARY_PATH}"
+export LD_LIBRARY_PATH="${prepend_to_LD_LIBRARY_PATH}:${LD_LIBRARY_PATH}"
+echo "          CPATH+=${prepend_to_CPATH}"
+echo "   LIBRARY_PATH+=${prepend_to_LIBRARY_PATH}"
+echo "LD_LIBRARY_PATH+=${prepend_to_LD_LIBRARY_PATH}"

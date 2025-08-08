@@ -20,7 +20,8 @@ public:
         autoselect,
         mklpardiso,
         suitesparse,
-        mumps
+        mumps,
+        strumpack
     };
 protected:
     solver_csx() = default;

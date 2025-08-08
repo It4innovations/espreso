@@ -1,0 +1,15 @@
+// added manually: mt and mti state variables threadprivate
+// credit: Tim Davis from SuiteSparse/CHOLMOD
+// see https://github.com/DrTimothyAldenDavis/SuiteSparse/issues/375
+// and https://github.com/DrTimothyAldenDavis/SuiteSparse/commit/f3ac3eafa6531569f03768af7def36d487c494db
+#if defined ( _OPENMP )
+    // OpenMP threadprivate is preferred
+    static uint64_t mt[NN];
+    static int mti=NN+1;
+    #pragma omp threadprivate (mt,mti)
+#else
+    // gcc and many other compilers support the __thread keyword
+    static __thread uint64_t mt[NN];
+    static __thread int mti=NN+1;
+#endif
+

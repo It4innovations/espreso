@@ -96,6 +96,18 @@ inline char change_order(char order)
     }
 }
 
+inline bool is_structurally_symmetric(MatrixSymmetry_new symm)
+{
+    switch(symm) {
+        case MatrixSymmetry_new::structurally_symmetric:
+        case MatrixSymmetry_new::symmetric:
+        case MatrixSymmetry_new::hermitian:
+            return true;
+        default:
+            return false;
+    }
+}
+
 template<typename T>
 inline bool is_symmetric(MatrixSymmetry_new symm)
 {

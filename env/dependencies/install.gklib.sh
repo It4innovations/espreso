@@ -23,6 +23,8 @@ then
         make config shared=1 cc=${COMPILER_C} prefix="${INSTALL_DIR}"
         make -j$(nproc)
         make install
+        cd "${INSTALL_DIR}/lib64"
+        ln -s "libGKlib.so.0" "libGKlib.so"
     )
 fi
 
