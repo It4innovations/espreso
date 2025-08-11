@@ -79,31 +79,7 @@ void schur_csx_dny_mklpardiso<T,I>::internal_preprocess()
     data->size_matrix_mklint = (MKL_INT)size_matrix;
 
     if(called_set_matrix == '4') {
-        if(is_matrix_hermitian) {
-            if(A11->prop.uplo != 'U') eslog::error("only uplo=U is supported\n");
-            if(A22 != nullptr && A22->prop.uplo != 'U') eslog::error("only uplo=U is supported\n");
-            if(A21 != nullptr) eslog::error("A21 should be empty\n");
-            if(A11->prop.dfnt != MatrixDefinitness_new::positive_definite) eslog::error("A11 should be positive definite\n");
-        }
-        size_t total_nnz = 0;
-        if(A11 != nullptr) total_nnz += A11->nnz;
-        if(A12 != nullptr) total_nnz += A12->nnz;
-        if(A21 != nullptr) total_nnz += A21->nnz;
-        if(A22 != nullptr) total_nnz += A22->nnz;
-        data->A_whole.set(size_matrix, size_matrix, total_nnz, 'R', AllocatorCPU_new::get_singleton());
-        data->A_whole.alloc();
-        if(is_matrix_hermitian) {
-            data->A_whole.prop.uplo = 'U';
-            data->A_whole.prop.symm = MatrixSymmetry_new::hermitian;
-            data->A_whole.prop.dfnt = MatrixDefinitness_new::positive_semidefinite;
-        }
-        else {
-            data->A_whole.prop.uplo = 'F';
-            data->A_whole.prop.symm = MatrixSymmetry_new::general;
-            data->A_whole.prop.dfnt = MatrixDefinitness_new::indefinite;
-        }
-        A = &data->A_whole;
-        concat_csx<T,I>::do_all(A11, A12, A21, A22, A);
+        this->helper_concat(data->A_whole, 'P');
     }
 
     std::fill_n(data->pt, 64, nullptr);
@@ -142,7 +118,7 @@ template<typename T, typename I>
 void schur_csx_dny_mklpardiso<T,I>::internal_perform_1()
 {
     if(called_set_matrix == '4') {
-        concat_csx<T,I>::do_all(A11, A12, A21, A22, A);
+        this->helper_concat(data->A_whole, 'F');
     }
 
     T * sc_tmp_vals = new T[size_sc * size_sc];

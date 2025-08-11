@@ -4,6 +4,9 @@
 #include "math/operations/schur_csx_dny.tria.h"
 #include "math/operations/schur_csx_dny.spsolver.h"
 #include "wrappers/mkl/operations/schur_csx_dny.mklpardiso.h"
+#include "wrappers/mumps/operations/schur_csx_dny.mumps.h"
+#include "math/primitives_new/allocator_new.h"
+#include "math/operations/concat_csx.h"
 #include "basis/utilities/stacktimer.h"
 
 
@@ -33,6 +36,8 @@ std::unique_ptr<schur_csx_dny<T,I>> schur_csx_dny<T,I>::make(implementation_sele
             return std::make_unique<schur_csx_dny_mklpardiso<T,I>>();
         case implementation_selector::spsolver:
             return std::make_unique<schur_csx_dny_spsolver<T,I>>();
+        case implementation_selector::mumps:
+            return std::make_unique<schur_csx_dny_mumps<T,I>>();
         default:
             eslog::error("invalid implementation selector\n");
     }
@@ -218,6 +223,49 @@ void schur_csx_dny<T,I>::solve_A11(VectorDenseView_new<T> & rhs, VectorDenseView
     this->internal_solve_A11(rhs, sol);
 
     stacktimer::pop();
+}
+
+
+
+template<typename T, typename I>
+void schur_csx_dny<T,I>::helper_concat(MatrixCsxData_new<T,I> & A_whole, char stage)
+{
+    if(called_set_matrix != '4') eslog::error("it does not make sense to concat\n");
+
+    if(stage == 'P') {
+        if(A != nullptr) eslog::error("helper_concat preprocess already caller, or other error\n");
+
+        if(is_matrix_hermitian) {
+            if(A11->prop.uplo != 'U') eslog::error("only uplo=U is supported\n");
+            if(A22 != nullptr && A22->prop.uplo != 'U') eslog::error("only uplo=U is supported\n");
+            if(A21 != nullptr) eslog::error("A21 should be empty\n");
+            if(A11->prop.dfnt != MatrixDefinitness_new::positive_definite) eslog::error("A11 should be positive definite\n");
+        }
+        size_t total_nnz = 0;
+        if(A11 != nullptr) total_nnz += A11->nnz;
+        if(A12 != nullptr) total_nnz += A12->nnz;
+        if(A21 != nullptr) total_nnz += A21->nnz;
+        if(A22 != nullptr) total_nnz += A22->nnz;
+        A_whole.set(size_matrix, size_matrix, total_nnz, 'R', AllocatorCPU_new::get_singleton());
+        A_whole.alloc();
+        if(is_matrix_hermitian) {
+            A_whole.prop.uplo = 'U';
+            A_whole.prop.symm = MatrixSymmetry_new::hermitian;
+            A_whole.prop.dfnt = MatrixDefinitness_new::positive_semidefinite;
+        }
+        else {
+            A_whole.prop.uplo = 'F';
+            A_whole.prop.symm = MatrixSymmetry_new::general;
+            A_whole.prop.dfnt = MatrixDefinitness_new::indefinite;
+        }
+        A = &A_whole;
+        concat_csx<T,I>::do_all(A11, A12, A21, A22, A);
+    }
+
+    if(stage == 'F') {
+        if(A == nullptr) eslog::error("helper_concat preprocess not called\n");
+        concat_csx<T,I>::do_all(A11, A12, A21, A22, A);
+    }
 }
 
 

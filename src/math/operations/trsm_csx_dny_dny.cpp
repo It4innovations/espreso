@@ -1,6 +1,7 @@
 
 #include "math/operations/trsm_csx_dny_dny.h"
 
+#include "math/wrappers/math.spblas.h"
 #include "math/primitives_new/allocator_new.h"
 #include "math/operations/copy_dnx.h"
 #include "basis/utilities/stacktimer.h"

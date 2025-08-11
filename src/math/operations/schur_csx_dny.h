@@ -22,7 +22,8 @@ public:
         autoselect,
         triangular,
         mklpardiso,
-        spsolver
+        spsolver,
+        mumps
     };
 protected:
     schur_csx_dny() = default;
@@ -69,6 +70,8 @@ protected:
     virtual void internal_perform_1() {};
     virtual void internal_perform_2() {};
     virtual void internal_solve_A11(VectorDenseView_new<T> & rhs, VectorDenseView_new<T> & sol) {};
+protected:
+    void helper_concat(MatrixCsxData_new<T,I> & A_whole, char stage);
 };
 
 

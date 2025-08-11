@@ -15,6 +15,7 @@ namespace operations {
 template<typename T>
 class transpose_dnx_dnx
 {
+    // does NOT respect uplo
     // supports in-place for square matrices
 public:
     transpose_dnx_dnx() = default;
