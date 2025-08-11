@@ -2,6 +2,7 @@
 #include "dualop_explicit_applicator.h"
 #include "math/primitives_new/allocator_new.h"
 #include "gpu/gpu_kernels.h"
+#include "math/wrappers/math.blas.h"
 #include "basis/utilities/stacktimer.h"
 
 #include <numeric>
@@ -132,7 +133,6 @@ void dualop_explicit_applicator<T,I>::setup()
             auto & F = *Fs[di];
             Fs_2[di].set(F.nrows, F.ncols, F.order, ator_2);
             Fs_2[di].prop = F.prop;
-            Fs_2[di].conj = F.conj;
         }
     }
     

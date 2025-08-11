@@ -5,7 +5,7 @@
 #include <vector>
 #include <functional>
 
-#include "math/math.h"
+#include "math/primitives/print.h"
 #include "math/primitives/vector_dense.h"
 #include "math/primitives/matrix_dense.h"
 #include "math/primitives/matrix_csr.h"

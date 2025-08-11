@@ -65,17 +65,16 @@ public:
         return 0;
     }
 
-    MatrixCsxView_new<T,I> get_transposed_reordered_view(bool do_conj = false) const
+    MatrixCsxView_new<T,I> get_transposed_reordered_view() const
     {
         MatrixCsxView_new M = *this;
-        M.transpose_reorder_inplace(do_conj);
+        M.transpose_reorder_inplace();
         return M;
     }
-    void transpose_reorder_inplace(bool do_conj = false)
+    void transpose_reorder_inplace()
     {
         std::swap(nrows, ncols);
         order = change_order(order);
-        conj = (conj != do_conj);
         prop.uplo = change_uplo(prop.uplo);
     }
 public:

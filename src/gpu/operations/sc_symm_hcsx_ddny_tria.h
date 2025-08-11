@@ -2,6 +2,7 @@
 #ifndef SRC_GPU_OPERATIONS_SC_SYMM_HCSX_DDNY_TRIA_H
 #define SRC_GPU_OPERATIONS_SC_SYMM_HCSX_DDNY_TRIA_H
 
+#include "math/wrappers/math.spsolver.h"
 #include "math/primitives_new/matrix_csx_view_new.h"
 #include "math/primitives_new/matrix_dense_view_new.h"
 #include "math/primitives_new/permutation_data_new.h"

@@ -83,17 +83,16 @@ public:
         M.vals = M.vals + row_start * M.get_stride_row() + col_start * M.get_stride_col();
         return M;
     }
-    MatrixDenseView_new<T> get_transposed_reordered_view(bool do_conj = false) const
+    MatrixDenseView_new<T> get_transposed_reordered_view() const
     {
         MatrixDenseView_new<T> M = *this;
-        M.transpose_reorder_inplace(do_conj);
+        M.transpose_reorder_inplace();
         return M;
     }
-    void transpose_reorder_inplace(bool do_conj = false)
+    void transpose_reorder_inplace()
     {
         std::swap(nrows, ncols);
         order = change_order(order);
-        conj = (conj != do_conj);
         prop.uplo = change_uplo(prop.uplo);
     }
 public:

@@ -8,8 +8,8 @@
 #include "math/primitives/matrix_csr.h"
 #include "math/primitives/matrix_ijv.h"
 #include "basis/utilities/utils.h"
-#include "math/primitives_new/vector_dense_view_new.h"
-#include "math/primitives_new/matrix_dense_view_new.h"
+#include "math/primitives_new.h"
+#include "math/primitives_new/allocator_new.h"
 
 #include <complex>
 
@@ -96,13 +96,11 @@ namespace blas {
     template <typename T, typename I>
     void apply(VectorDenseView_new<T> &y, const T &alpha, const MatrixDenseView_new<T> &a, const T &beta, const VectorDenseView_new<T> &x)
     {
-        if constexpr(utils::is_complex<T>()) if(a.conj) eslog::error("conj is not supported yet\n");
-
         Vector_Dense<T,I> y_old = VectorDenseView_new<T>::template to_old<I,cpu_allocator>(y);
         Vector_Dense<T,I> x_old = VectorDenseView_new<T>::template to_old<I,cpu_allocator>(x);
 
         if(a.order == 'C') {
-            MatrixDenseView_new<T> At = a.get_transposed_reordered_view(false);
+            MatrixDenseView_new<T> At = a.get_transposed_reordered_view();
             Matrix_Dense<T,I> At_old = MatrixDenseView_new<T>::template to_old<I,cpu_allocator>(At);
 
             applyT<T,I>(y_old, alpha, At_old, beta, x_old);
@@ -121,12 +119,20 @@ namespace blas {
         if(a.prop.uplo != 'U' && a.prop.uplo != 'L') eslog::error("unset uplo\n");
 
         if(a.order != 'R') {
-            MatrixDenseView_new<T> At = a.get_transposed_reordered_view(true);
-            apply_hermitian<T,I>(y, alpha, At, beta, x);
+            MatrixDenseView_new<T> At = a.get_transposed_reordered_view();
+            if constexpr(utils::is_complex<T>()) {
+                VectorDenseData_new<T> x_conj;
+                x_conj.set(x.size, AllocatorCPU_new::get_singleton());
+                x_conj.alloc();
+                utils::transform_n(x.vals, x.size, x_conj.vals, [](const T & x){return std::conj(x);});
+                apply_hermitian<T,I>(y, alpha, At, beta, x);
+                utils::transform_n(y.vals, y.size, y.vals, [](const T & x){return std::conj(x);});
+            }
+            else {
+                apply_hermitian<T,I>(y, alpha, At, beta, x);
+            }
             return;
         }
-
-        if constexpr(utils::is_complex<T>()) if(a.conj) eslog::error("conj is not supported yet\n");
 
         Vector_Dense<T,I> y_old = VectorDenseView_new<T>::template to_old<I,cpu_allocator>(y);
         Vector_Dense<T,I> x_old = VectorDenseView_new<T>::template to_old<I,cpu_allocator>(x);
