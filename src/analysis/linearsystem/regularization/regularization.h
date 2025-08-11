@@ -20,6 +20,7 @@ protected:
 
     void empty(FETI<T> &feti);
     void algebraic(FETI<T> &feti, int defect, int sc_size);
+    void svd(FETI<T> &feti);
 
     void set    (FETI<T> &feti, HeatTransferLoadStepConfiguration &configuration);
     void update (FETI<T> &feti, HeatTransferLoadStepConfiguration &configuration);

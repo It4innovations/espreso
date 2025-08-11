@@ -149,6 +149,7 @@ void FETI<T>::check()
 {
     T eps = std::numeric_limits<T>::epsilon();
 
+    int invalid = false;
     std::vector<int> zero_s(K.size()), zero_s_reg(K.size());
     std::vector<T> maxK(K.size()), normK(K.size());
     std::vector<std::vector<T> > normKN(K.size());
@@ -281,14 +282,20 @@ void FETI<T>::check()
             printf(" !! zero in S       : %d\n", zero_s[di]);
             printf(" !! zero in S_REG   : %d\n", zero_s_reg[di]);
             if (zero_s[di] != R1[di].nrows) {
+                invalid = 1;
                 printf(" !! INVALID NUMBER OF KERNELS\n");
             }
-            if (zero_s_reg[di]) {
+            if (zero_s_reg[di] && MoorePenroseInv[di].nrows == 0) {
+                invalid = 1;
                 printf(" !! INVALID REGULARIZATION\n");
             }
             printf(" !! ----------------\n");
         }
     });
+    Communication::allReduce(&invalid, nullptr, 1, MPITools::getType(invalid).mpitype, MPI_SUM);
+    if (invalid) {
+        eslog::globalerror("invalid input matrices for FETI solver.\n");
+    }
 }
 
 template struct FETI<double>;

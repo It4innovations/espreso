@@ -126,7 +126,7 @@ template <typename T, typename I> void _getKernel(Matrix_CSR<T, I> &A, Matrix_De
 //  regularization only on diagonal elements (big advantage: patern of K and A_regular is the same !!!)
 //  size of set 's' = defect(K)
 //  It's is active, only if and only if 'use_null_pivots_or_s_set = true'
-    bool diagonalRegularization                         = true;
+//    bool diagonalRegularization                         = true;
 
 //    5) get_n_first_and_n_last_eigenvals_from_dense_A
 // get and print 2*n K eigenvalues (K is temporarily converted to dense);
@@ -178,11 +178,6 @@ template <typename T, typename I> void _getKernel(Matrix_CSR<T, I> &A, Matrix_De
 
 ///////////////////////////////////////////////////////////////////////////////////////////////////////
 ///////////////////////////////////////////////////////////////////////////////////////////////////////
-
-    double rho = A.vals[0]; // max value on diagonal
-    for (I r = 0; r < A.nrows; ++r) {
-        rho = std::max(rho, A.vals[A.rows[r] - Indexing::CSR]);
-    }
 
     Matrix_CSR<T, I> _A(A);
 
@@ -296,10 +291,25 @@ template <typename T, typename I> void _getKernel(Matrix_CSR<T, I> &A, Matrix_De
             R.vals[r * R.ncols + permVec[c + R_r.ncols]] = -R_s.vals[r * R_s.ncols + c] / sqrt(di);
         }
     }
+    getRegMat(A, R, regMat);
+}
+
+template <typename T, typename I> void _getRegMat(Matrix_CSR<T, I> &A, Matrix_Dense<T, I> &R, Matrix_CSR<T, I> &regMat)
+{
+//    4) diagonalRegularization
+//  regularization only on diagonal elements (big advantage: patern of K and A_regular is the same !!!)
+//  size of set 's' = defect(K)
+//  It's is active, only if and only if 'use_null_pivots_or_s_set = true'
+    bool diagonalRegularization                         = true;
 
     math::orthonormalize(R);
     std::vector<I> pivots;
     _getNullPivots(R, pivots);
+
+    double rho = A.vals[0]; // max value on diagonal
+    for (I r = 0; r < A.nrows; ++r) {
+        rho = std::max(rho, A.vals[A.rows[r] - Indexing::CSR]);
+    }
 
     if (diagonalRegularization) {
         regMat.resize(A.nrows, A.ncols, pivots.size());
@@ -322,39 +332,7 @@ template <typename T, typename I> void _getKernel(Matrix_CSR<T, I> &A, Matrix_De
             ++row;
         }
     } else {
-//        SparseMatrix N;
-//        if (use_null_pivots_or_s_set){
-//            N.CreateMatFromRowsFromMatrix( Kplus_R, null_pivots);
-//        }
-//        else
-//        {
-//            N.CreateMatFromRowsFromMatrix( Kplus_R, fix_dofs);
-//        }
-//        //null_pivots
-//        SparseMatrix Nt;
-//        N.MatTranspose( Nt );
-//        SparseMatrix NtN_Mat;
-//        NtN_Mat.MatMat( Nt,'N',N );
-//        NtN_Mat.MatTranspose();
-//        NtN_Mat.RemoveLower();
-//        SparseSolverCPU NtN;
-//        NtN.ImportMatrix(NtN_Mat);
-//        NtN_Mat.Clear();
-//        std::stringstream sss;
-//        sss << "get kernel from K -> rank: " << info::mpi::rank;
-//        NtN.Factorization(sss.str());
-//        NtN.SolveMat_Sparse(Nt);
-//        NtN.Clear();
-//        NtN_Mat.MatMat(N,'N',Nt);
-//        NtN_Mat.MatScale(rho);
-//        NtN_Mat.RemoveLower();
-//        K.MatAddInPlace (NtN_Mat,'N', 1);
-//        // IF d_sub == -1, it is GGt0 of cluster and regMat is no need
-//        if (d_sub!=-1)
-//        {
-//            regMat=NtN_Mat;
-//            regMat.ConvertToCOO(1);
-//        }
+        // TODO
     }
 }
 
@@ -362,16 +340,11 @@ template <typename T, typename I> void _getKernel(Matrix_Dense<T, I> &A, Matrix_
 {
     bool diagonalScaling                              = true;
     int permutVectorActive                            = 1;
-    bool diagonalRegularization                       = true;
+//    bool diagonalRegularization                       = true;
     double jump_in_eigenvalues_alerting_singularity   = 1.0e-5;
 
     if (A.shape != Matrix_Shape::FULL) {
         eslog::error("implement _getKernel for non-full dense matrix.\n");
-    }
-
-    double rho = A.vals[0]; // max value on diagonal
-    for (I r = 0; r < A.nrows; ++r) {
-        rho = std::max(rho, A.vals[r * A.ncols + r]);
     }
 
     Matrix_Dense<T, I> _A; _A.resize(A.nrows, A.ncols);
@@ -484,10 +457,21 @@ template <typename T, typename I> void _getKernel(Matrix_Dense<T, I> &A, Matrix_
             R.vals[r * R.ncols + permVec[c + R_r.nrows]] = -R_s.vals[r * R_s.ncols + c] / sqrt(scale);
         }
     }
+    getRegMat(A, R, regMat);
+}
+
+template <typename T, typename I> void _getRegMat(Matrix_Dense<T, I> &A, Matrix_Dense<T, I> &R, Matrix_IJV<T, I> &regMat)
+{
+    bool diagonalRegularization                       = true;
 
     math::orthonormalize(R);
     std::vector<I> pivots;
     _getNullPivots(R, pivots);
+
+    double rho = A.vals[0]; // max value on diagonal
+    for (I r = 0; r < A.nrows; ++r) {
+        rho = std::max(rho, A.vals[r * A.ncols + r]);
+    }
 
     if (diagonalRegularization) {
         regMat.resize(A.nrows, A.ncols, pivots.size());
@@ -508,8 +492,10 @@ template <> void orthonormalize(Matrix_Dense<double, int> &A) { _orthonormalize(
 template <> void orthonormalize(Matrix_Dense<std::complex<double>, int> &A) { _orthonormalize(A); }
 template <> void permute(Matrix_CSR<double, int> &A, const std::vector<int> &perm) { _permute(A, perm); }
 template <> void permute(Matrix_Dense<double, int> &A, const std::vector<int> &perm) { _permute(A, perm); }
-template <> void getKernel<double, int>(Matrix_CSR<double, int> &A, Matrix_Dense<double, int> &R, Matrix_CSR<double, int> &regMat, int maxDefect, int scSize) { _getKernel<double, int>(A, R, regMat, maxDefect, scSize); };
+template <> void getKernel<double, int>(Matrix_CSR<double, int> &A, Matrix_Dense<double, int> &R, Matrix_CSR<double, int> &regMat, int maxDefect, int scSize) { _getKernel<double, int>(A, R, regMat, maxDefect, scSize); }
 template <> void getKernel<double, int>(Matrix_Dense<double, int> &A, Matrix_Dense<double, int> &R, Matrix_IJV<double, int> &regMat, int maxDefect, int scSize) { _getKernel<double, int>(A, R, regMat, maxDefect, scSize); }
+template <> void getRegMat<double, int>(Matrix_CSR<double, int> &A, Matrix_Dense<double, int> &R, Matrix_CSR<double, int> &regMat) { _getRegMat<double, int>(A, R, regMat); }
+template <> void getRegMat<double, int>(Matrix_Dense<double, int> &A, Matrix_Dense<double, int> &R, Matrix_IJV<double, int> &regMat) { _getRegMat<double, int>(A, R, regMat); }
 
 template <> void permute(Matrix_CSR<std::complex<double>, int> &A, const std::vector<int> &perm) { _permute(A, perm); }
 template <> void permute(Matrix_Dense<std::complex<double>, int> &A, const std::vector<int> &perm) { _permute(A, perm); }

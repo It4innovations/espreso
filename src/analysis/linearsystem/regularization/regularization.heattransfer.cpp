@@ -54,14 +54,20 @@ void Regularization<T>::set(FETI<T> &feti, HeatTransferLoadStepConfiguration &co
 template <typename T>
 void Regularization<T>::update(FETI<T> &feti, HeatTransferLoadStepConfiguration &configuration)
 {
-    if (feti.configuration.regularization == FETIConfiguration::REGULARIZATION::ANALYTIC) {
+    switch (feti.configuration.regularization) {
+    case FETIConfiguration::REGULARIZATION::ANALYTIC:
         #pragma omp parallel for
         for (size_t d = 0; d < feti.K.size(); ++d) {
             if (R1     && feti.updated.K) updateR1    (feti.K[d], feti.R1[d]);
             if (regMat && feti.updated.K) updateRegMat(feti.K[d], feti.RegMat[d]);
         }
-    } else {
+        break;
+    case FETIConfiguration::REGULARIZATION::ALGEBRAIC:
         algebraic(feti, 1, feti.configuration.sc_size);
+        break;
+    case FETIConfiguration::REGULARIZATION::SVD:
+        if (feti.updated.K && (R1 || regMat)) svd(feti);
+        break;
     }
 }
 

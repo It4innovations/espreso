@@ -46,6 +46,55 @@ void Regularization<T>::algebraic(FETI<T> &feti, int defect, int sc_size)
 }
 
 template <typename T>
+static void get_svd(Matrix_CSR<T> &K, Matrix_Dense<T> &R1, Matrix_Dense<T> &MoorePenroseInv)
+{
+    T eps = std::numeric_limits<T>::epsilon();
+    T tol = std::max(K.nrows, K.ncols) * eps;
+
+    Matrix_Dense<T> dK; dK.resize(K.nrows, K.ncols);
+    math::copy(dK, K);
+
+    Vector_Dense<T> s;
+    Matrix_Dense<T> U, VT;
+    math::lapack::get_svd(dK, s, U, VT);
+    T s_max = *std::max_element(s.vals, s.vals + s.size);
+    R1.nrows = 0;
+    for (int i = 0; i < s.size; ++i) {
+        if (s.vals[i] <= tol * s_max) {
+            R1.nrows += 1;
+        }
+    }
+    R1.resize(R1.nrows, K.ncols);
+    std::copy(VT.vals + (VT.nrows - R1.nrows) * VT.ncols, VT.vals + VT.nnz, R1.vals);
+    for (int r = 0; r < U.nrows; ++r) {
+        for (int c = 0; c < U.ncols - R1.nrows; ++c) {
+            U.vals[r * U.ncols + c] *= 1 / s.vals[c];
+        }
+        for (int c = U.ncols - R1.nrows; c < U.ncols; ++c) {
+            U.vals[r * U.ncols + c] = 0;
+        }
+    }
+    MoorePenroseInv.resize(dK.nrows, dK.ncols);
+    math::blas::multiply(T{1}, U, VT, T{0}, MoorePenroseInv);
+}
+
+template <typename T>
+void Regularization<T>::svd(FETI<T> &feti)
+{
+    if (feti.configuration.projector == FETIConfiguration::PROJECTOR::CONJUGATE) {
+        #pragma omp parallel for
+        for (size_t d = 0; d < feti.assembledK.size(); ++d) {
+            get_svd(feti.assembledK[d], feti.R1[d], feti.MoorePenroseInv[d]);
+        }
+    } else {
+        #pragma omp parallel for
+        for (size_t d = 0; d < feti.K.size(); ++d) {
+            get_svd(feti.K[d], feti.R1[d], feti.MoorePenroseInv[d]);
+        }
+    }
+}
+
+template <typename T>
 template <typename Settings, typename Configuration>
 void Regularization<T>::analyze(FETI<T> &feti, Settings &settings, Configuration &configuration)
 {
@@ -71,6 +120,7 @@ void Regularization<T>::set(const step::Step &step, FETI<T> &feti)
     feti.R1.resize(feti.K.size());
     feti.R2.resize(feti.K.size());
     feti.RegMat.resize(feti.K.size());
+    feti.MoorePenroseInv.resize(feti.K.size());
     empty(feti);
 
     switch (info::ecf->physics) {

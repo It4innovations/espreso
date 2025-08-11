@@ -95,7 +95,8 @@ espreso::FETIConfiguration::FETIConfiguration()
             .setdescription({ "Regularization" })
             .setdatatype({ ECFDataType::OPTION })
             .addoption(ECFOption().setname("ANALYTIC").setdescription("Analytic regularization provided by a particular physics."))
-            .addoption(ECFOption().setname("ALGEBRAIC").setdescription("Regularization based on NULL PIVOTS.")));
+            .addoption(ECFOption().setname("ALGEBRAIC").setdescription("Regularization based on NULL PIVOTS."))
+            .addoption(ECFOption().setname("SVD").setdescription("SVD decomposition.")));
 
     fix_points = FIX_POINTS::METIS_CENTERS;
     REGISTER(fix_points, ECFMetaData()

@@ -6,6 +6,7 @@
 #include "totalfeti.gpu.h"
 #include "totalfeti.explicit.sctria.gpu.h"
 #include "totalfeti.explicit.sctria.cpu.h"
+#include "totalfeti.moore.penrose.h"
 #include "hybridfeti.implicit.h"
 #include "feti/projector/projector.h"
 
@@ -21,6 +22,12 @@ template<typename T>
 DualOperator<T>* DualOperator<T>::create(FETI<T> &feti, const step::Step &step)
 {
     DualOperator<T>* dual = nullptr;
+    if (feti.configuration.regularization == FETIConfiguration::REGULARIZATION::SVD) {
+        eslog::info(" = DUAL OPERATOR                                       TOTAL FETI WITH MOORE-PENROSE INVERSE = \n");
+        dual = new TotalFETIMoorePenrose<T>(feti);
+        return dual;
+    }
+
     switch (feti.configuration.method) {
     case FETIConfiguration::METHOD::TOTAL_FETI:
         switch (feti.configuration.dual_operator) {

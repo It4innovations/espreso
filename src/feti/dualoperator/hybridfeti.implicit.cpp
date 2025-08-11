@@ -266,7 +266,8 @@ void HybridFETIImplicit<T>::update(const step::Step &step)
             }
         }
     } break;
-    case FETIConfiguration::REGULARIZATION::ALGEBRAIC: {
+    case FETIConfiguration::REGULARIZATION::ALGEBRAIC:
+    case FETIConfiguration::REGULARIZATION::SVD: {
         int maxDefect = 0;
         for (size_t di = 0; di < feti.K.size(); ++di) {
             maxDefect = std::max(maxDefect, feti.R1[di].nrows);

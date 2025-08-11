@@ -193,6 +193,8 @@ bool StructuralMechanicsSteadyStateNonLinear::run(step::Step &step, Physics *pre
         solver->A->copy(K);
         solver->A->updated = true;
         solver->b->copy(f);
+        solver->b->add(-1, R);
+        solver->b->updated = true;
         solver->dirichlet->copy(dirichlet);
         solver->dirichlet->add(-1, U);
         solver->dirichlet->updated = true;
@@ -203,7 +205,7 @@ bool StructuralMechanicsSteadyStateNonLinear::run(step::Step &step, Physics *pre
         solver->solve(step);
 
         double solution = eslog::time();
-        U->copy(solver->x);
+        U->add(1., solver->x);
         storeSolution(step);
         assembler.nextIteration(step, U);
         info::mesh->updateMeshCoordinates(U->cluster.vals);
@@ -223,8 +225,10 @@ bool StructuralMechanicsSteadyStateNonLinear::run(step::Step &step, Physics *pre
             solver->A->updated = true;
             solver->b->copy(f);
             solver->b->add(-1, R);
+            solver->b->updated = true;
             solver->dirichlet->copy(dirichlet);
             solver->dirichlet->add(-1, U);
+            solver->dirichlet->updated = true;
 
             eslog::info("      == ----------------------------------------------------------------------------- == \n");
             eslog::info("      == SYSTEM ASSEMBLY                                                    %8.3f s == \n", eslog::time() - start);

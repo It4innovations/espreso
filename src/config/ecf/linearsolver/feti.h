@@ -66,6 +66,7 @@ struct FETIConfiguration: public ECFDescription {
     enum class REGULARIZATION {
         ANALYTIC = 0,
         ALGEBRAIC = 1,
+        SVD
     };
 
     enum class FIX_POINTS {

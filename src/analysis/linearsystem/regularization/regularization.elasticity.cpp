@@ -625,14 +625,20 @@ void Regularization<T>::set(FETI<T> &feti, StructuralMechanicsLoadStepConfigurat
 template <typename T>
 void Regularization<T>::update(FETI<T> &feti, StructuralMechanicsLoadStepConfiguration &configuration, Vector_Distributed<Vector_Dense, T> *solution)
 {
-    if (feti.configuration.regularization == FETIConfiguration::REGULARIZATION::ANALYTIC) {
+    switch (feti.configuration.regularization) {
+    case FETIConfiguration::REGULARIZATION::ANALYTIC:
         #pragma omp parallel for
         for (size_t d = 0; d < feti.K.size(); ++d) {
             if (feti.updated.K && R1)     updateR1    (feti.K[d], feti.R1[d], feti.decomposition, d, solution);
             if (feti.updated.K && regMat) updateRegMat(feti.K[d], feti.RegMat[d], feti.decomposition, d, fixPoints[d], fixCols[d], permutation[d], solution);
         }
-    } else {
+        break;
+    case FETIConfiguration::REGULARIZATION::ALGEBRAIC:
         algebraic(feti, 3 * (info::mesh->dimension - 1), feti.configuration.sc_size);
+        break;
+    case FETIConfiguration::REGULARIZATION::SVD:
+        if (feti.updated.K && (R1 || regMat)) svd(feti);
+        break;
     }
 }
 
