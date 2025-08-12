@@ -21,7 +21,8 @@ public:
         mklpardiso,
         suitesparse,
         mumps,
-        strumpack
+        strumpack,
+        pastix
     };
 protected:
     solver_csx() = default;

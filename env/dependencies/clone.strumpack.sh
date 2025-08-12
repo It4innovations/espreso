@@ -7,7 +7,7 @@ VERSION_STRUMPACK=v8.0.0
 
 STRUMPACK_DIR="Strumpack_${VERSION_STRUMPACK}"
 STRUMPACK_ROOT="${DEPENDENCIES_DIR}/${STRUMPACK_DIR}"
-if [ ! -d "${SUITESPARSE_ROOT}" ]
+if [ ! -d "${STRUMPACK_ROOT}" ]
 then
     (
         echo "Strumpack ${VERSION_STRUMPACK} not found, cloning..."

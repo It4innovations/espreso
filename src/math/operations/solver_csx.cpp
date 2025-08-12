@@ -6,6 +6,7 @@
 #include "wrappers/mkl/operations/solver_csx.mklpardiso.h"
 #include "wrappers/mumps/operations/solver_csx.mumps.h"
 #include "wrappers/strumpack/operations/solver_csx.strumpack.h"
+#include "wrappers/pastix/operations/solver_csx.pastix.h"
 #include "basis/utilities/stacktimer.h"
 
 
@@ -33,6 +34,9 @@ std::unique_ptr<solver_csx<T,I>> solver_csx<T,I>::make(implementation_selector i
         #ifdef HAVE_MUMPS
             implementations.push_back(implementation_selector::mumps);
         #endif
+        #ifdef HAVE_PASTIX
+            implementations.push_back(implementation_selector::pastix);
+        #endif
     }
     else {
         implementations.push_back(is);
@@ -52,6 +56,9 @@ std::unique_ptr<solver_csx<T,I>> solver_csx<T,I>::make(implementation_selector i
                 break;
             case implementation_selector::strumpack:
                 if(!need_factors) return std::make_unique<solver_csx_strumpack<T,I>>();
+                break;
+            case implementation_selector::pastix:
+                if(!need_factors) return std::make_unique<solver_csx_pastix<T,I>>();
                 break;
             default:
                 eslog::error("invalid solver_csx implementation selector\n");

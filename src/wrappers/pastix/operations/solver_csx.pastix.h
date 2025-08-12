@@ -1,6 +1,8 @@
 
-#ifndef SRC_WRAPPERS_STRUMPACK_OPERATIONS_SOLVER_CSX_STRUMPACK_H
-#define SRC_WRAPPERS_STRUMPACK_OPERATIONS_SOLVER_CSX_STRUMPACK_H
+#ifndef SRC_WRAPPERS_PASTIX_OPERATIONS_SOLVER_CSX_PASTIX_H
+#define SRC_WRAPPERS_PASTIX_OPERATIONS_SOLVER_CSX_PASTIX_H
+
+
 
 #include "math/operations/solver_csx.h"
 
@@ -12,22 +14,23 @@ namespace operations {
 
 
 
-#ifdef HAVE_STRUMPACK
+#ifdef HAVE_PASTIX
 
 
-template<typename T, typename I>
-struct solver_csx_strumpack_data;
 
 template<typename T, typename I>
-class solver_csx_strumpack : public solver_csx<T,I>
+struct solver_csx_pastix_data;
+
+template<typename T, typename I>
+class solver_csx_pastix : public solver_csx<T,I>
 {
 public:
-    solver_csx_strumpack();
-    solver_csx_strumpack(const solver_csx_strumpack &) = delete;
-    solver_csx_strumpack(solver_csx_strumpack &&) = default;
-    solver_csx_strumpack & operator=(const solver_csx_strumpack &) = delete;
-    solver_csx_strumpack & operator=(solver_csx_strumpack &&) = default;
-    virtual ~solver_csx_strumpack();
+    solver_csx_pastix();
+    solver_csx_pastix(const solver_csx_pastix &) = delete;
+    solver_csx_pastix(solver_csx_pastix &&) = default;
+    solver_csx_pastix & operator=(const solver_csx_pastix &) = delete;
+    solver_csx_pastix & operator=(solver_csx_pastix &&) = default;
+    virtual ~solver_csx_pastix();
 protected:
     void internal_factorize_symbolic() override;
     void internal_factorize_numeric() override;
@@ -38,7 +41,7 @@ protected:
     void internal_solve(MatrixDenseView_new<T> & rhs, MatrixDenseView_new<T> & sol) override;
     void internal_solve(MatrixCsxView_new<T,I> & rhs, MatrixDenseView_new<T> & sol) override;
 private:
-    std::unique_ptr<solver_csx_strumpack_data<T,I>> data;
+    std::unique_ptr<solver_csx_pastix_data<T,I>> data;
 protected:
     using solver_csx<T,I>::A;
     using solver_csx<T,I>::nnz_L;
@@ -56,11 +59,11 @@ protected:
 
 
 template<typename T, typename I>
-class solver_csx_strumpack : public solver_csx<T,I>
+class solver_csx_pastix : public solver_csx<T,I>
 {
 public:
-    solver_csx_strumpack() { eslog::error("strumpack wrapper is not available\n"); }
-    virtual ~solver_csx_strumpack() = default;
+    solver_csx_pastix() { eslog::error("pastix wrapper is not available\n"); }
+    virtual ~solver_csx_pastix() = default;
 };
 
 
@@ -73,4 +76,6 @@ public:
 }
 }
 
-#endif /* SRC_WRAPPERS_STRUMPACK_OPERATIONS_SOLVER_CSX_STRUMPACK_H */
+
+
+#endif /* SRC_WRAPPERS_PASTIX_OPERATIONS_SOLVER_CSX_PASTIX_H */

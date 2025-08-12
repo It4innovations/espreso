@@ -155,7 +155,7 @@ def build(ctx):
 
     ctx.build_espreso(ctx.path.ant_glob('src/analysis/**/*.cpp'), "analysis")
     ctx.build_espreso(ctx.path.ant_glob('src/morphing/**/*.cpp'), "devel")
-    ctx.build_espreso(ctx.path.ant_glob('src/math/**/*.cpp'), "math", [ "WRAPPERS", "BLAS", "LAPACK", "MKL", "SUITESPARSE", "MUMPS", "STRUMPACK" ])
+    ctx.build_espreso(ctx.path.ant_glob('src/math/**/*.cpp'), "math", [ "WRAPPERS", "BLAS", "LAPACK", "MKL", "SUITESPARSE", "MUMPS", "STRUMPACK", "PASTIX" ])
     ctx.build_espreso(ctx.path.ant_glob('src/autoopt/**/*.cpp'), "autoopt")
     ctx.build_espreso(ctx.path.ant_glob('src/feti/**/*.cpp'), "feti")
     ctx.build_espreso(ctx.path.ant_glob('src/gpu/**/*.cpp'), "gpu", [ "WRAPPERS", "CUDA", "ROCM", "ONEAPI" ])
@@ -174,6 +174,7 @@ def build(ctx):
 #     ctx.build_espreso(ctx.path.ant_glob('src/wrappers/wsmp/**/*.cpp'), "wwsmp", [ "WSMP" ])
     ctx.build_espreso(ctx.path.ant_glob('src/wrappers/suitesparse/**/*.cpp'), "wsuitesparse", [ "WRAPPERS", "SUITESPARSE", "MKL" ])
     ctx.build_espreso(ctx.path.ant_glob('src/wrappers/mumps/**/*.cpp'), "wmumps", [ "WRAPPERS", "MUMPS" ])
+    ctx.build_espreso(ctx.path.ant_glob('src/wrappers/pastix/**/*.cpp'), "wpastix", [ "WRAPPERS", "PASTIX" ])
     ctx.build_espreso(ctx.path.ant_glob('src/wrappers/strumpack/**/*.cpp'), "wstrumpack", [ "WRAPPERS", "STRUMPACK" ])
     ctx.build_espreso(ctx.path.ant_glob('src/wrappers/openlb/**/*.cpp'), "wopenlb", [ "OPENLB" ])
     ctx.build_espreso(ctx.path.ant_glob('src/wrappers/bem/**/*.cpp'), "wbem",)
@@ -393,6 +394,7 @@ def recurse(ctx):
     ctx.recurse("src/wrappers/suitesparse")
     ctx.recurse("src/wrappers/mumps")
     ctx.recurse("src/wrappers/strumpack")
+    ctx.recurse("src/wrappers/pastix")
 
     """ Solvers """
     ctx.recurse("src/wrappers/mklpdss")

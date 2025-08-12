@@ -36,14 +36,15 @@ if [ "${cudaversionname}" = "modern" ]; then
     ml OpenMPI/5.0.3-GCC-13.3.0
 fi
 
+ml "CUDA/${cudaversion}"
+
 . env/dependencies/install.gklib.sh gcccudamklss gcc
 . env/dependencies/install.metis32.sh gcccudamklss gcc
 . env/dependencies/install.parmetis32.sh gcccudamklss mpicc
 . env/dependencies/install.suitesparse.sh gcccudamklss gcc gfortran
 . env/dependencies/install.mumps.sh gcccudamklss mpicc mpifort "-lmkl_intel_lp64 -lmkl_sequential -lmkl_core" "-lmkl_scalapack_lp64 -lmkl_blacs_openmpi_lp64 -lmkl_intel_lp64 -lmkl_sequential -lmkl_core" "-lmkl_intel_lp64 -lmkl_sequential -lmkl_core"
 . env/dependencies/install.strumpack.sh gcccudamklss g++ gcc gfortran "-lmkl_intel_lp64 -lmkl_sequential -lmkl_core" "-lmkl_intel_lp64 -lmkl_sequential -lmkl_core"
-
-ml "CUDA/${cudaversion}"
+. env/dependencies/install.pastix.sh gcccudamklss g++ gcc
 
 
 

@@ -1,0 +1,8 @@
+
+def options(opt):
+    pass
+
+def configure(ctx):
+    headers = "pastix.h"
+    libs = ["pastix", "spm", "cudart"]
+    ctx.check_cxx(mandatory=False, msg="Checking for 'pastix'", okmsg=" ".join(libs), define_name="HAVE_PASTIX", header_name=headers, lib=libs, uselib_store="PASTIX", global_define=0)
