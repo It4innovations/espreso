@@ -48,7 +48,6 @@ public:
 
     struct Results {
         static NodeData *thickness;
-        static NodeData *normal;
         static NodeData *initialVelocity;
 
         // steady state, transient

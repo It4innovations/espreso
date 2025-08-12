@@ -475,12 +475,9 @@ void Mesh::computePersistentParameters()
     }
 
     mesh::computeBodies(elements, bodies, elementsRegions, neighbors);
-    if (withSurface) {
-        mesh::computeBodiesSurface(nodes, elements, elementsRegions, boundaryRegions, surface, neighbors);
-    }
-
+    mesh::computeBodiesSurface(nodes, elements, elementsRegions, boundaryRegions, surface, neighbors);
+    mesh::computeSurfaceNodeNormals(nodes, surface, neighbors);
     if (info::ecf->input.contact_interfaces.size()) {
-        mesh::computeSurfaceNodeNormals(nodes, surface, neighbors);
         mesh::computeWarpedNormals(surface);
         mesh::exchangeContactHalo(surface, contact);
         mesh::findCloseElements(contact);

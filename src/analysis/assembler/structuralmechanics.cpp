@@ -23,7 +23,6 @@
 namespace espreso {
 
 NodeData* StructuralMechanics::Results::thickness = nullptr;
-NodeData* StructuralMechanics::Results::normal = nullptr;
 NodeData* StructuralMechanics::Results::initialVelocity = nullptr;
 
 ElementData* StructuralMechanics::Results::principalStress = nullptr;
@@ -484,9 +483,6 @@ bool StructuralMechanics::analyze(const step::Step &step)
     }
 
     assemble(SubKernel::PREPROCESS, step);
-    if (Results::normal) {
-        Results::normal->synchronize();
-    }
     size_t esize = 0;
     std::vector<double> volume(elementKernels.size()), surface(faceKernels.size());
     for (size_t i = 0; i < elementKernels.size(); ++i) {
@@ -680,15 +676,9 @@ void StructuralMechanics::evaluate(const step::Step &step, const step::Time &tim
         sphere->second.center.z.evaluator->getTime() = time.current;
     }
 
-    if (Results::normal) {
-        std::fill(Results::normal->data.begin(), Results::normal->data.end(), 0);
-    }
     reset(K, M, f, nf, dirichlet);
     assemble(SubKernel::ASSEMBLE, step);
     update(K, M, f, nf, dirichlet);
-    if (Results::normal) {
-        Results::normal->synchronize();
-    }
     if (Results::reactionForce && nf) {
         nf->storeTo(Results::reactionForce->data);
     }
@@ -762,14 +752,8 @@ void StructuralMechanics::evaluate(const step::Step &step, const step::Frequency
         }
     }
 
-    if (Results::normal) {
-        std::fill(Results::normal->data.begin(), Results::normal->data.end(), 0);
-    }
     reset(K, M, C, ref, imf, renf, imnf, reDirichlet, imDirichlet);
     assemble(SubKernel::ASSEMBLE, step);
-    if (Results::normal) {
-        Results::normal->synchronize();
-    }
     update(K, M, C, ref, imf, renf, imnf, reDirichlet, imDirichlet);
 }
 

@@ -4,6 +4,7 @@
 #include "analysis/assembler/structuralmechanics.h"
 #include "esinfo/ecfinfo.h"
 #include "esinfo/meshinfo.h"
+#include "mesh/store/surfacestore.h"
 #include "mesh/store/boundaryregionstore.h"
 #include "mesh/store/elementsregionstore.h"
 #include "math/math.h"
@@ -41,7 +42,7 @@ template <typename T>
 void FixedWall<T>::update(const step::Step &step, FETI<T> &feti, const Vector_Distributed<Vector_Sparse, T> &dirichlet)
 {
     StructuralMechanicsLoadStepConfiguration &loadstep = info::ecf->structural_mechanics.load_steps_settings.at(step.loadstep + 1);
-    const std::vector<double> &normal = StructuralMechanics::Results::normal->data;
+    const std::vector<double> &normal = SurfaceStore::nodeNormals->data;
     const std::vector<double> &disp = StructuralMechanics::Results::displacement->data;
 
     if (loadstep.fixed_wall.empty()) {
@@ -73,6 +74,12 @@ void FixedWall<T>::update(const step::Step &step, FETI<T> &feti, const Vector_Di
     int cc = 0;
     for (auto wall = loadstep.fixed_wall.begin(); wall != loadstep.fixed_wall.end(); ++wall) {
         Point pn, pp;
+        wall->second.normal.x.evaluator->getSubstep() = step.substep;
+        wall->second.normal.y.evaluator->getSubstep() = step.substep;
+        wall->second.normal.z.evaluator->getSubstep() = step.substep;
+        wall->second.point.x.evaluator->getSubstep() = step.substep;
+        wall->second.point.y.evaluator->getSubstep() = step.substep;
+        wall->second.point.z.evaluator->getSubstep() = step.substep;
         pn.x = wall->second.normal.x.evaluator->evaluate();
         pn.y = wall->second.normal.y.evaluator->evaluate();
         pn.z = wall->second.normal.z.evaluator->evaluate();
