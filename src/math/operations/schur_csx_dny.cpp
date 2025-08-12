@@ -5,6 +5,7 @@
 #include "math/operations/schur_csx_dny.spsolver.h"
 #include "wrappers/mkl/operations/schur_csx_dny.mklpardiso.h"
 #include "wrappers/mumps/operations/schur_csx_dny.mumps.h"
+#include "wrappers/pastix/operations/schur_csx_dny.pastix.h"
 #include "math/primitives_new/allocator_new.h"
 #include "math/operations/concat_csx.h"
 #include "basis/utilities/stacktimer.h"
@@ -38,6 +39,8 @@ std::unique_ptr<schur_csx_dny<T,I>> schur_csx_dny<T,I>::make(implementation_sele
             return std::make_unique<schur_csx_dny_spsolver<T,I>>();
         case implementation_selector::mumps:
             return std::make_unique<schur_csx_dny_mumps<T,I>>();
+        case implementation_selector::pastix:
+            return std::make_unique<schur_csx_dny_pastix<T,I>>();
         default:
             eslog::error("invalid implementation selector\n");
     }

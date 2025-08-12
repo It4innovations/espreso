@@ -23,7 +23,8 @@ public:
         triangular,
         mklpardiso,
         spsolver,
-        mumps
+        mumps,
+        pastix
     };
 protected:
     schur_csx_dny() = default;

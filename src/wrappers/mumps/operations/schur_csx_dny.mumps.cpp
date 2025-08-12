@@ -9,6 +9,7 @@
 #include "math/operations/copy_dnx.h"
 #include "math/operations/transpose_dnx_dnx.h"
 #include "math/operations/convert_dnx.h"
+#include "math/operations/lincomb_matrix_dnx.h"
 #include "basis/utilities/stacktimer.h"
 
 
@@ -131,6 +132,8 @@ void schur_csx_dny_mumps<T,I>::internal_perform_1()
     call_mumps<T>(data->handle);
 
     convert_dnx<T>::do_all(&sc_tmp, sc);
+
+    lincomb_matrix_dnx<T>::do_all(sc, alpha, sc, 0, nullptr);
 }
 
 

@@ -17,7 +17,7 @@ namespace operations {
 
 
 template<typename T>
-spm_mtxtype_t symm_to_pastix(MatrixSymmetry_new symm)
+static inline spm_mtxtype_t symm_to_pastix(MatrixSymmetry_new symm)
 {
     // I have to set hermitian only if I use complex numbers, for real I have to use symmetric
     if(utils::is_complex<T>() && is_hermitian<T>(symm)) {
@@ -34,7 +34,7 @@ spm_mtxtype_t symm_to_pastix(MatrixSymmetry_new symm)
 
 
 template<typename T>
-spm_coeftype_t type_to_pastix()
+static inline spm_coeftype_t type_to_pastix()
 {
     if constexpr(std::is_same_v<T,float>) return SpmFloat;
     if constexpr(std::is_same_v<T,double>) return SpmDouble;
@@ -44,7 +44,7 @@ spm_coeftype_t type_to_pastix()
 
 
 
-spm_fmttype_e order_to_pastix(char order)
+static inline spm_fmttype_e order_to_pastix(char order)
 {
     if(order == 'R') return SpmCSR;
     if(order == 'C') return SpmCSC;
