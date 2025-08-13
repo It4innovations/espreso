@@ -25,6 +25,12 @@ stages:
 #                        DUMMY INSTALATION WITHOUT ANY THIRD-PARTY LIBRARY                        #
 # ----------------------------------------------------------------------------------------------- #
 
+D4W_DEPENDENCIES:
+  extends: .ws
+  stage: DUMMY
+  before_script:
+    - . env/workstation.foss.32.sh
+
 D4W_INSTALL:
   extends: .ws
   stage: DUMMY
