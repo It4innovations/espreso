@@ -574,28 +574,6 @@ static void updateR1(Matrix_CSR<T> &K, Matrix_Dense<T> &R1, DecompositionFETI *d
             }
         }
     }
-
-    T normK = 0;
-    for (int r = 0; r < K.nrows; ++r) { // assume symmetric K
-        normK += K.vals[K.rows[r] - Indexing::CSR] * K.vals[K.rows[r] - Indexing::CSR];
-    }
-    normK = std::sqrt(normK);
-
-    std::vector<T> norm;
-    SpBLAS<Matrix_CSR, T> spblas(K);
-    Vector_Dense<T> R, KR; KR.resize(R1.ncols);
-    for (esint r = 0; r < R1.nrows; ++r) {
-        R.size = R1.ncols; R.vals = R1.vals + R1.ncols * r;
-        spblas.apply(KR, T{1}, T{0}, R);
-        norm.push_back(math::norm(KR) / normK);
-    }
-    esint kernels = 0;
-    for (esint i = 0; i < R1.nrows; ++i) {
-        if (norm[i] < 1e-8) {
-            std::copy(R1.vals + R1.ncols * i, R1.vals + R1.ncols * (i + 1), R1.vals + R1.ncols * kernels++);
-        }
-    }
-    R1.resize(kernels, R1.ncols);
 }
 
 template <typename T>
@@ -608,7 +586,8 @@ void Regularization<T>::set(FETI<T> &feti, StructuralMechanicsLoadStepConfigurat
         #pragma omp parallel for
         for (size_t d = 0; d < feti.K.size(); ++d) {
             if (R1) {
-                setR1(feti.K[d], feti.R1[d], feti.decomposition, d);
+                setR1   (feti.K[d], feti.R1[d], feti.decomposition, d);
+                updateR1(feti.K[d], feti.R1[d], feti.decomposition, d);
             }
             if (regMat) {
                 switch (feti.configuration.fix_points) {
@@ -629,7 +608,7 @@ void Regularization<T>::update(FETI<T> &feti, StructuralMechanicsLoadStepConfigu
     case FETIConfiguration::REGULARIZATION::ANALYTIC:
         #pragma omp parallel for
         for (size_t d = 0; d < feti.K.size(); ++d) {
-            if (feti.updated.K && R1)     updateR1    (feti.K[d], feti.R1[d], feti.decomposition, d, solution);
+//            if (feti.updated.K && R1)     updateR1    (feti.K[d], feti.R1[d], feti.decomposition, d, solution); // it is not correct, comment out to fix problem with conjugate projector
             if (feti.updated.K && regMat) updateRegMat(feti.K[d], feti.RegMat[d], feti.decomposition, d, fixPoints[d], fixCols[d], permutation[d], solution);
         }
         break;
