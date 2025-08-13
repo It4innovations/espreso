@@ -477,6 +477,7 @@ void Mesh::computePersistentParameters()
     mesh::computeBodies(elements, bodies, elementsRegions, neighbors);
     mesh::computeBodiesSurface(nodes, elements, elementsRegions, boundaryRegions, surface, neighbors);
     mesh::computeSurfaceNodeNormals(nodes, surface, neighbors);
+    mesh::computeBoundaryRegionNormals(nodes, boundaryRegions, neighbors);
     if (info::ecf->input.contact_interfaces.size()) {
         mesh::computeWarpedNormals(surface);
         mesh::exchangeContactHalo(surface, contact);
@@ -518,6 +519,7 @@ void Mesh::updateMeshCoordinates(const double *displacement)
         delete contact; contact = new ContactStore();
         contactInterfaces.clear();
         mesh::computeSurfaceNodeNormals(nodes, surface, neighbors, displacement);
+        mesh::computeBoundaryRegionNormals(nodes, boundaryRegions, neighbors, displacement);
         mesh::computeWarpedNormals(surface, displacement);
         mesh::exchangeContactHalo(surface, contact, displacement);
         mesh::findCloseElements(contact, displacement);

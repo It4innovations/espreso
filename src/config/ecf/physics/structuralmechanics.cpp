@@ -162,6 +162,15 @@ FixedSphereConfiguration::FixedSphereConfiguration(): radius(1)
     REGISTER(gap, ECFMetaData().setdescription({ "Gap over the sphere that is considered in contacts." }).setdatatype({ ECFDataType::FLOAT }));
 }
 
+FixedTubeConfiguration::FixedTubeConfiguration()
+{
+    REGISTER(center, ECFMetaData().setdescription({ "Center of the tube." }));
+    REGISTER(direction, ECFMetaData().setdescription({ "direction of the tube." }));
+    REGISTER(radius, ECFMetaData().setdescription({ "Radius of the tube." }).setdatatype({ ECFDataType::FLOAT }));
+    REGISTER(gap, ECFMetaData().setdescription({ "Gap over the sphere that is considered in contacts." }).setdatatype({ ECFDataType::FLOAT }));
+}
+
+
 PressureConfiguration::PressureConfiguration()
 {
     REGISTER(direction, ECFMetaData().setdescription({ "Pressure direction." }));
@@ -205,6 +214,11 @@ StructuralMechanicsLoadStepConfiguration::StructuralMechanicsLoadStepConfigurati
 
     REGISTER(fixed_sphere, ECFMetaData()
             .setdescription({ "The name of a region.", "Fixed sphere settings." })
+            .setdatatype({ ECFDataType::BOUNDARY_REGION })
+            .setpattern({ "MY_REGION", }));
+
+    REGISTER(fixed_tube, ECFMetaData()
+            .setdescription({ "The name of a region.", "Fixed tube settings." })
             .setdatatype({ ECFDataType::BOUNDARY_REGION })
             .setpattern({ "MY_REGION", }));
 

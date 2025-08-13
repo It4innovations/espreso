@@ -1020,14 +1020,14 @@ void computeContactInterface(SurfaceStore* surface, ContactStore* contact, const
 }
 
 template<Element::CODE code, size_t nodes>
-static void contactNormal2D(ContactStore *contact, serializededata<esint, Point> *coordinates, BoundaryRegionStore *region, size_t e, const double* displacement)
+static void normal2D(NodeData *nodeMultiplicity, NodeData *nodeNormals, serializededata<esint, Point> *coordinates, BoundaryRegionStore *region, size_t e, const double* displacement)
 {
     SurfaceElementBasis<nodes, 1> basis;
     BaseFunctions<code, 1>::simd(basis);
 }
 
 template<Element::CODE code, size_t nodes>
-static void contactNormal3D(ContactStore *contact, serializededata<esint, Point> *coordinates, BoundaryRegionStore *region, size_t e, const double* displacement)
+static void normal3D(NodeData *nodeMultiplicity, NodeData *nodeNormals, serializededata<esint, Point> *coordinates, BoundaryRegionStore *region, size_t e, const double* displacement)
 {
     SurfaceElementBasis<nodes, 2> basis;
     BaseFunctions<code, 1>::simd(basis);
@@ -1050,10 +1050,42 @@ static void contactNormal3D(ContactStore *contact, serializededata<esint, Point>
                 dND[2] * dND[3] - dND[0] * dND[5],
                 dND[0] * dND[4] - dND[1] * dND[3]);
         normal.normalize();
-        normal /= contact->nodeMultiplicity->data[enodes->at(n)];
-        contact->nodeNormals->data[3 * enodes->at(n) + 0] += normal.x;
-        contact->nodeNormals->data[3 * enodes->at(n) + 1] += normal.y;
-        contact->nodeNormals->data[3 * enodes->at(n) + 2] += normal.z;
+        normal /= nodeMultiplicity->data[enodes->at(n)];
+        nodeNormals->data[3 * enodes->at(n) + 0] += normal.x;
+        nodeNormals->data[3 * enodes->at(n) + 1] += normal.y;
+        nodeNormals->data[3 * enodes->at(n) + 2] += normal.z;
+    }
+}
+
+void computeBoundaryRegionNormals(NodeStore *nodes, std::vector<BoundaryRegionStore*> &boundaryRegions, const std::vector<int> &neighbors, const double* displacement)
+{
+    for (size_t r = 1; r < boundaryRegions.size(); ++r) {
+        if (boundaryRegions[r]->dimension) {
+            if (boundaryRegions[r]->nodeNormals == nullptr) {
+                boundaryRegions[r]->nodeNormals = nodes->appendData(info::mesh->dimension, NamedData::DataType::VECTOR);
+                boundaryRegions[r]->nodeMultiplicity = nodes->appendData(1, NamedData::DataType::SCALAR);
+                for (auto enodes = boundaryRegions[r]->elements->begin(); enodes != boundaryRegions[r]->elements->end(); ++enodes) {
+                    for (auto n = enodes->begin(); n != enodes->end(); ++n) {
+                        boundaryRegions[r]->nodeMultiplicity->data[*n] += 1;
+                    }
+                }
+                boundaryRegions[r]->nodeMultiplicity->synchronize();
+            }
+            std::fill(boundaryRegions[r]->nodeNormals->data.begin(), boundaryRegions[r]->nodeNormals->data.end(), 0);
+
+            for (size_t e = 0; e < boundaryRegions[r]->elements->structures(); ++e) {
+                switch (boundaryRegions[r]->epointers->datatarray()[e]->code) {
+                case Element::CODE::LINE2    : normal2D<Element::CODE::LINE2    , 2>(boundaryRegions[r]->nodeMultiplicity, boundaryRegions[r]->nodeNormals, nodes->coordinates, boundaryRegions[r], e, displacement); break;
+                case Element::CODE::LINE3    : normal2D<Element::CODE::LINE3    , 3>(boundaryRegions[r]->nodeMultiplicity, boundaryRegions[r]->nodeNormals, nodes->coordinates, boundaryRegions[r], e, displacement); break;
+                case Element::CODE::TRIANGLE3: normal3D<Element::CODE::TRIANGLE3, 3>(boundaryRegions[r]->nodeMultiplicity, boundaryRegions[r]->nodeNormals, nodes->coordinates, boundaryRegions[r], e, displacement); break;
+                case Element::CODE::TRIANGLE6: normal3D<Element::CODE::TRIANGLE6, 6>(boundaryRegions[r]->nodeMultiplicity, boundaryRegions[r]->nodeNormals, nodes->coordinates, boundaryRegions[r], e, displacement); break;
+                case Element::CODE::SQUARE4  : normal3D<Element::CODE::SQUARE4  , 4>(boundaryRegions[r]->nodeMultiplicity, boundaryRegions[r]->nodeNormals, nodes->coordinates, boundaryRegions[r], e, displacement); break;
+                case Element::CODE::SQUARE8  : normal3D<Element::CODE::SQUARE8  , 8>(boundaryRegions[r]->nodeMultiplicity, boundaryRegions[r]->nodeNormals, nodes->coordinates, boundaryRegions[r], e, displacement); break;
+                default:
+                    eslog::internalFailure("unknown or not implemented surface element.\n");
+                }
+            }
+        }
     }
 }
 
@@ -1306,12 +1338,12 @@ void arrangeContactInterfaces(NodeStore *nodes, ContactStore* contact, BodyStore
     for (size_t i = 0; i < contactInterfaces.size(); ++i) {
         for (size_t e = 0; e < contactInterfaces[i]->elements->structures(); ++e) {
             switch (contactInterfaces[i]->epointers->datatarray()[e]->code) {
-            case Element::CODE::LINE2    : contactNormal2D<Element::CODE::LINE2    , 2>(contact, nodes->coordinates, contactInterfaces[i], e, displacement); break;
-            case Element::CODE::LINE3    : contactNormal2D<Element::CODE::LINE3    , 3>(contact, nodes->coordinates, contactInterfaces[i], e, displacement); break;
-            case Element::CODE::TRIANGLE3: contactNormal3D<Element::CODE::TRIANGLE3, 3>(contact, nodes->coordinates, contactInterfaces[i], e, displacement); break;
-            case Element::CODE::TRIANGLE6: contactNormal3D<Element::CODE::TRIANGLE6, 6>(contact, nodes->coordinates, contactInterfaces[i], e, displacement); break;
-            case Element::CODE::SQUARE4  : contactNormal3D<Element::CODE::SQUARE4  , 4>(contact, nodes->coordinates, contactInterfaces[i], e, displacement); break;
-            case Element::CODE::SQUARE8  : contactNormal3D<Element::CODE::SQUARE8  , 8>(contact, nodes->coordinates, contactInterfaces[i], e, displacement); break;
+            case Element::CODE::LINE2    : normal2D<Element::CODE::LINE2    , 2>(contact->nodeMultiplicity, contact->nodeNormals, nodes->coordinates, contactInterfaces[i], e, displacement); break;
+            case Element::CODE::LINE3    : normal2D<Element::CODE::LINE3    , 3>(contact->nodeMultiplicity, contact->nodeNormals, nodes->coordinates, contactInterfaces[i], e, displacement); break;
+            case Element::CODE::TRIANGLE3: normal3D<Element::CODE::TRIANGLE3, 3>(contact->nodeMultiplicity, contact->nodeNormals, nodes->coordinates, contactInterfaces[i], e, displacement); break;
+            case Element::CODE::TRIANGLE6: normal3D<Element::CODE::TRIANGLE6, 6>(contact->nodeMultiplicity, contact->nodeNormals, nodes->coordinates, contactInterfaces[i], e, displacement); break;
+            case Element::CODE::SQUARE4  : normal3D<Element::CODE::SQUARE4  , 4>(contact->nodeMultiplicity, contact->nodeNormals, nodes->coordinates, contactInterfaces[i], e, displacement); break;
+            case Element::CODE::SQUARE8  : normal3D<Element::CODE::SQUARE8  , 8>(contact->nodeMultiplicity, contact->nodeNormals, nodes->coordinates, contactInterfaces[i], e, displacement); break;
             default:
                 eslog::internalFailure("unknown or not implemented surface element.\n");
             }

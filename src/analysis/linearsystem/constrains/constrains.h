@@ -8,6 +8,7 @@
 #include "mortar.h"
 #include "fixedwall.h"
 #include "fixedsphere.h"
+#include "fixedtube.h"
 
 namespace espreso {
 
@@ -21,6 +22,7 @@ struct Constrains {
     MortarContact<T> mortar;
     FixedWall<T> fw;
     FixedSphere<T> fs;
+    FixedTube<T> ft;
 };
 
 }

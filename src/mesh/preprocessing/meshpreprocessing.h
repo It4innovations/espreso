@@ -95,6 +95,7 @@ void computeRegionsBoundaryParents(const NodeStore *nodes, const ElementStore *e
 
 void computeBodiesSurface(NodeStore *nodes, ElementStore *elements, std::vector<ElementsRegionStore*> &elementsRegions, std::vector<BoundaryRegionStore*> &boundaryRegions, SurfaceStore *surface, std::vector<int> &neighbors);
 void computeSurfaceNodeNormals(NodeStore *nodes, SurfaceStore * surface, const std::vector<int> &neighbors, const double* displacement = nullptr);
+void computeBoundaryRegionNormals(NodeStore *nodes, std::vector<BoundaryRegionStore*> &boundaryRegions, const std::vector<int> &neighbors, const double* displacement = nullptr);
 void computeWarpedNormals(SurfaceStore * surface, const double* displacement = nullptr);
 void exchangeContactHalo(SurfaceStore * surface, ContactStore *contact, const double* displacement = nullptr);
 void findCloseElements(ContactStore *contact, const double* displacement = nullptr);

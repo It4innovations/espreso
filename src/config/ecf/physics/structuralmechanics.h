@@ -109,6 +109,13 @@ struct FixedSphereConfiguration: public ECFDescription {
     FixedSphereConfiguration();
 };
 
+struct FixedTubeConfiguration: public ECFDescription {
+    ECFExpressionVector center, direction;
+    double radius, gap;
+
+    FixedTubeConfiguration();
+};
+
 
 struct PressureConfiguration: public ECFDescription {
     ECFExpression pressure;
@@ -142,6 +149,7 @@ struct StructuralMechanicsLoadStepConfiguration: public StructuralMechanicsLoadS
     std::map<std::string, ECFExpressionVector> force, angular_velocity, acceleration;
     std::map<std::string, FixedWallConfiguration> fixed_wall;
     std::map<std::string, FixedSphereConfiguration> fixed_sphere;
+    std::map<std::string, FixedTubeConfiguration> fixed_tube;
     std::map<std::string, ECFHarmonicExpressionVector> harmonic_force, harmonic_acceleration;
     std::map<std::string, ECFExpressionOptionalVector> displacement;
     std::map<std::string, RotatingForceConfiguration> rotating_force;

@@ -4,6 +4,7 @@
 
 #include "regionstore.h"
 #include "nameddata.h"
+#include "nodestore.h"
 
 #include <cstddef>
 #include <vector>
@@ -26,6 +27,8 @@ struct BoundaryElementData: public NamedData {
 struct BoundaryRegionStore: public RegionStore {
     int originalDimension, dimension;
     double area;
+
+    NodeData *nodeNormals, *nodeMultiplicity;
 
     BoundaryElementData* appendData(int dimension, BoundaryElementData::Type type, NamedData::DataType datatype, const std::string &name = "", step::TYPE restriction = step::TYPE::TIME, bool toOutput = true);
 

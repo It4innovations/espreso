@@ -14,6 +14,8 @@ BoundaryRegionStore::BoundaryRegionStore(const std::string &name)
   originalDimension(0),
   dimension(0),
   area(0),
+  nodeNormals(NULL),
+  nodeMultiplicity(NULL),
   elements(NULL),
   triangles(NULL),
   epointers(NULL),
