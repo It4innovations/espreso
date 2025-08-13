@@ -122,15 +122,13 @@ bool FETI<T>::solve(const step::Step &step)
     }
     Communication::allReduce(kkt, nullptr, 2, MPITools::getType<T>().mpitype, MPI_SUM);
 
+    eslog::info("       = ITERATIONS TOTAL                                                    %9d = \n", info.iterations);
+    eslog::info("       = NORM(K * U - F + BT * LAMBDA) / NORM(F - BT * LAMBDA)               %.3e = \n", std::sqrt(kkt[0]) / std::sqrt(kkt[1]));
+    eslog::info("       = FETI SOLVER TIME                                                   %8.3f s = \n", eslog::time() - start);
+
     std::string error;
     switch (info.error) {
-    case IterativeSolverInfo::ERROR::OK:{
-        eslog::info("       = ITERATIONS TOTAL                                                    %9d = \n", info.iterations);
-        eslog::info("       = NORM(K * U - F + BT * LAMBDA) / NORM(F - BT * LAMBDA)               %.3e = \n", std::sqrt(kkt[0]) / std::sqrt(kkt[1]));
-        eslog::info("       = FETI SOLVER TIME                                                   %8.3f s = \n", eslog::time() - start);
-        eslog::info("       = ----------------------------------------------------------------------------- = \n");
-        return true;
-    }
+    case IterativeSolverInfo::ERROR::OK:                 eslog::info("       = ----------------------------------------------------------------------------- = \n"); return true;
     case IterativeSolverInfo::ERROR::STAGNATION:             error = "       = FETI SOLVER ERROR                                   NONDECREASING CONVERGENCE = \n"; break;
     case IterativeSolverInfo::ERROR::MAX_ITERATIONS_REACHED: error = "       = FETI SOLVER ERROR                                  MAXIMUM ITERATIONS REACHED = \n"; break;
     case IterativeSolverInfo::ERROR::INVALID_DATA:           error = "       = FETI SOLVER ERROR                                          INVALID INPUT DATA = \n"; break;
@@ -141,6 +139,7 @@ bool FETI<T>::solve(const step::Step &step)
     } else {
         eslog::warning(error.c_str());
     }
+    eslog::info("       = ----------------------------------------------------------------------------- = \n");
     return false;
 }
 
