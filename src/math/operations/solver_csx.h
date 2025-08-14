@@ -22,7 +22,8 @@ public:
         suitesparse,
         mumps,
         strumpack,
-        pastix
+        pastix,
+        superlu_dist
     };
 protected:
     solver_csx() = default;

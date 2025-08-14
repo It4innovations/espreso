@@ -16,6 +16,10 @@ namespace operations {
 
 
 
+extern int total_pastix_gpu_instances;
+
+
+
 template<typename T>
 static inline spm_mtxtype_t symm_to_pastix(MatrixSymmetry_new symm)
 {

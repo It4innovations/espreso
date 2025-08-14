@@ -1,5 +1,5 @@
 
-#include "math/operations/complete_csx_csx_map.h"
+#include "math/operations/complete_csx_csy_map.h"
 
 #include "math/primitives_new/allocator_new.h"
 #include "basis/utilities/stacktimer.h"
@@ -13,7 +13,7 @@ namespace operations {
 
 
 template<typename T, typename I>
-void complete_csx_csx_map<T,I>::set_matrix_src(MatrixCsxView_new<T,I> * M_src_)
+void complete_csx_csy_map<T,I>::set_matrix_src(MatrixCsxView_new<T,I> * M_src_)
 {
     if(M_src != nullptr) eslog::error("source matrix is already set\n");
 
@@ -23,7 +23,7 @@ void complete_csx_csx_map<T,I>::set_matrix_src(MatrixCsxView_new<T,I> * M_src_)
 
 
 template<typename T, typename I>
-void complete_csx_csx_map<T,I>::set_matrix_dst(MatrixCsxView_new<T,I> * M_dst_)
+void complete_csx_csy_map<T,I>::set_matrix_dst(MatrixCsxView_new<T,I> * M_dst_)
 {
     if(M_dst != nullptr) eslog::error("destination matrix is already set\n");
 
@@ -33,7 +33,7 @@ void complete_csx_csx_map<T,I>::set_matrix_dst(MatrixCsxView_new<T,I> * M_dst_)
 
 
 template<typename T, typename I>
-void complete_csx_csx_map<T,I>::set_conj(bool do_conj_)
+void complete_csx_csy_map<T,I>::set_conj(bool do_conj_)
 {
     do_conj = do_conj_;
 }
@@ -41,9 +41,9 @@ void complete_csx_csx_map<T,I>::set_conj(bool do_conj_)
 
 
 template<typename T, typename I>
-size_t complete_csx_csx_map<T,I>::get_dst_nnz()
+size_t complete_csx_csy_map<T,I>::get_dst_nnz()
 {
-    stacktimer::push("complete_csx_csx_map::get_dst_nnz");
+    stacktimer::push("complete_csx_csy_map::get_dst_nnz");
 
     if(M_src == nullptr) eslog::error("source matrix is not set\n");
     if(!M_src->ator->is_data_accessible_cpu()) eslog::error("source matrix must be cpu-accessible\n");
@@ -71,22 +71,23 @@ size_t complete_csx_csx_map<T,I>::get_dst_nnz()
 
 
 template<typename T, typename I>
-void complete_csx_csx_map<T,I>::perform_pattern()
+void complete_csx_csy_map<T,I>::perform_pattern()
 {
-    stacktimer::push("complete_csx_csx_map::perform_pattern");
+    stacktimer::push("complete_csx_csy_map::perform_pattern");
 
     if(M_src == nullptr) eslog::error("source matrix is not set\n");
     if(M_dst == nullptr) eslog::error("destination matrix is not set\n");
     if(M_src == M_dst) eslog::error("in-place is not supported\n");
     if(!M_src->ator->is_data_accessible_cpu()) eslog::error("source matrix must be cpu-accessible\n");
     if(!M_dst->ator->is_data_accessible_cpu()) eslog::error("destination matrix must be cpu-accessible\n");
-    if(M_src->nrows != M_dst->nrows || M_src->ncols != M_dst->ncols) eslog::error("matrix sizes dont match\n");
-    if(M_src->nrows != M_src->ncols) eslog::error("matrices must be square\n");
-    if(M_src->order != M_dst->order) eslog::error("matrix order does not match\n");
+    if(M_src->nrows != M_src->ncols || M_dst->nrows != M_dst->ncols) eslog::error("matrices must be square\n");
+    if(M_src->nrows != M_dst->nrows) eslog::error("matrix sizes dont match\n");
     if(!is_uplo(M_src->prop.uplo)) eslog::error("source matrix must have set uplo\n");
     if(is_uplo(M_dst->prop.uplo)) eslog::error("source matrix must not be uplo\n");
 
     // using terminology for csr, for csc it is equivalent
+    // destination order does not really matter, it will be symmetric anyway
+    // only be carefull about conjugation later
 
     struct rci { I r; I c; I i; };
     std::vector<rci> all_entries;
@@ -130,9 +131,9 @@ void complete_csx_csx_map<T,I>::perform_pattern()
 
 
 template<typename T, typename I>
-void complete_csx_csx_map<T,I>::perform_values()
+void complete_csx_csy_map<T,I>::perform_values()
 {
-    stacktimer::push("complete_csx_csx_map::perform_values");
+    stacktimer::push("complete_csx_csy_map::perform_values");
 
     if(!called_perform_pattern) eslog::error("perform pattern was not called\n");
 
@@ -141,7 +142,7 @@ void complete_csx_csx_map<T,I>::perform_values()
     }
 
     if constexpr(utils::is_complex<T>()) if(do_conj) {
-        bool toggle = (M_dst->order == 'R') == (M_src->prop.uplo == 'L');
+        bool toggle = ((M_src->order == M_dst->order) == (M_dst->order == 'R')) == (M_src->prop.uplo == 'L');
         I size_dst_primary = M_dst->get_size_primary();
         for(I ip = 0; ip < size_dst_primary; ip++) {
             I start = M_dst->ptrs[ip];
@@ -162,7 +163,7 @@ void complete_csx_csx_map<T,I>::perform_values()
 
 
 #define INSTANTIATE_T_I(T,I) \
-template class complete_csx_csx_map<T,I>;
+template class complete_csx_csy_map<T,I>;
 
     #define INSTANTIATE_T(T) \
     INSTANTIATE_T_I(T,int32_t) \

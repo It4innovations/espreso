@@ -21,13 +21,13 @@ namespace operations {
 template<typename T, typename I>
 struct solver_csx_pastix_data
 {
-    struct config {
-        bool use_gpu = false;
-    } cfg;
     pastix_int_t iparm[IPARM_SIZE];
     double dparm[DPARM_SIZE];
     pastix_data_t * pastix_data = nullptr;
     spmatrix_t pastix_A;
+    struct config {
+        bool use_gpu = false;
+    } cfg;
     bool cholesky;
 };
 
@@ -37,6 +37,16 @@ template<typename T, typename I>
 solver_csx_pastix<T,I>::solver_csx_pastix()
 {
     data = std::make_unique<solver_csx_pastix_data<T,I>>();
+
+    if(data->cfg.use_gpu) {
+        #pragma omp critical(pastix_gpu_instances)
+        {
+            total_pastix_gpu_instances++;
+            if(total_pastix_gpu_instances > 1) {
+                eslog::error("only one gpu pastix instance can be created in a program\n");
+            }
+        }
+    }
 }
 
 

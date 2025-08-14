@@ -7,7 +7,7 @@
 
 #include "math/primitives_new/allocator_new.h"
 #include "math/operations/convert_csx_dny.h"
-#include "math/operations/complete_csx_csx_map.h"
+#include "math/operations/complete_csx_csy_map.h"
 
 
 
@@ -21,7 +21,7 @@ template<typename T, typename I>
 struct solver_csx_strumpack_data
 {
     strumpack::SparseSolver<T,I> solver = strumpack::SparseSolver<T,I>(false);
-    complete_csx_csx_map<T,I> op_A_complete;
+    complete_csx_csy_map<T,I> op_A_complete;
     MatrixCsxData_new<T,I> A_full;
     MatrixCsxView_new<T,I> * A_to_use;
     bool need_complete = false;

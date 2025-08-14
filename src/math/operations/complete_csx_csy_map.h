@@ -13,15 +13,15 @@ namespace operations {
 
 
 template<typename T, typename I>
-class complete_csx_csx_map
+class complete_csx_csy_map
 {
 public:
-    complete_csx_csx_map() = default;
-    complete_csx_csx_map(const complete_csx_csx_map &) = delete;
-    complete_csx_csx_map(complete_csx_csx_map &&) = default;
-    complete_csx_csx_map & operator=(const complete_csx_csx_map &) = delete;
-    complete_csx_csx_map & operator=(complete_csx_csx_map &&) = default;
-    ~complete_csx_csx_map() = default;
+    complete_csx_csy_map() = default;
+    complete_csx_csy_map(const complete_csx_csy_map &) = delete;
+    complete_csx_csy_map(complete_csx_csy_map &&) = default;
+    complete_csx_csy_map & operator=(const complete_csx_csy_map &) = delete;
+    complete_csx_csy_map & operator=(complete_csx_csy_map &&) = default;
+    ~complete_csx_csy_map() = default;
 public:
     void set_matrix_src(MatrixCsxView_new<T,I> * M_src_);
     void set_matrix_dst(MatrixCsxView_new<T,I> * M_dst_);

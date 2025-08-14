@@ -1,0 +1,8 @@
+
+def options(opt):
+    pass
+
+def configure(ctx):
+    headers = "superlu_ddefs.h"
+    libs = ["superlu_dist"]
+    ctx.check_cxx(mandatory=False, msg="Checking for 'superlu_dist'", okmsg=" ".join(libs), define_name="HAVE_SUPERLU_DIST", header_name=headers, lib=libs, uselib_store="SUPERLU_DIST", global_define=0)

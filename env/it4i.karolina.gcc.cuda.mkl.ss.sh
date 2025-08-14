@@ -45,6 +45,7 @@ ml "CUDA/${cudaversion}"
 . env/dependencies/install.mumps.sh gcccudamklss mpicc mpifort "-lmkl_intel_lp64 -lmkl_sequential -lmkl_core" "-lmkl_scalapack_lp64 -lmkl_blacs_openmpi_lp64 -lmkl_intel_lp64 -lmkl_sequential -lmkl_core" "-lmkl_intel_lp64 -lmkl_sequential -lmkl_core"
 . env/dependencies/install.strumpack.sh gcccudamklss g++ gcc gfortran "-lmkl_intel_lp64 -lmkl_sequential -lmkl_core" "-lmkl_intel_lp64 -lmkl_sequential -lmkl_core"
 . env/dependencies/install.pastix.sh gcccudamklss g++ gcc
+. env/dependencies/install.superlu_dist.sh gcccudamklss g++ gcc "-lmkl_intel_lp64 -lmkl_sequential -lmkl_core"
 
 
 

@@ -7,6 +7,7 @@
 #include "wrappers/mumps/operations/solver_csx.mumps.h"
 #include "wrappers/strumpack/operations/solver_csx.strumpack.h"
 #include "wrappers/pastix/operations/solver_csx.pastix.h"
+#include "wrappers/superlu_dist/operations/solver_csx.superlu_dist.h"
 #include "basis/utilities/stacktimer.h"
 
 
@@ -37,6 +38,9 @@ std::unique_ptr<solver_csx<T,I>> solver_csx<T,I>::make(implementation_selector i
         #ifdef HAVE_PASTIX
             implementations.push_back(implementation_selector::pastix);
         #endif
+        #ifdef HAVE_SUPERLU_DIST
+            implementations.push_back(implementation_selector::superlu_dist);
+        #endif
     }
     else {
         implementations.push_back(is);
@@ -59,6 +63,9 @@ std::unique_ptr<solver_csx<T,I>> solver_csx<T,I>::make(implementation_selector i
                 break;
             case implementation_selector::pastix:
                 if(!need_factors) return std::make_unique<solver_csx_pastix<T,I>>();
+                break;
+            case implementation_selector::superlu_dist:
+                if(!need_factors) return std::make_unique<solver_csx_superlu_dist<T,I>>();
                 break;
             default:
                 eslog::error("invalid solver_csx implementation selector\n");
