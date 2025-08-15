@@ -198,7 +198,12 @@ void solver_csx_cholmod<T,I>::internal_solve(VectorDenseView_new<T> & rhs, Vecto
     MatrixDenseView_new<T> sol_mat;
     sol_mat.set_view(sol.size, 1, sol.size, 'C', sol.vals, sol.ator);
 
-    this->internal_solve(rhs_mat, sol_mat);
+    if(&rhs == &sol) {
+        this->internal_solve(sol_mat, sol_mat);
+    }
+    else {
+        this->internal_solve(rhs_mat, sol_mat);
+    }
 }
 
 
@@ -220,12 +225,10 @@ void solver_csx_cholmod<T,I>::internal_solve(MatrixDenseView_new<T> & rhs, Matri
 
     cholmod_dense * cm_sol = _solve<I>(CHOLMOD_A, data->cm_factor_super, &cm_rhs, data->cm_common);
 
-    {
-        MatrixDenseView_new<T> sol_from_cm;
-        sol_from_cm.set_view(cm_sol->nrow, cm_sol->ncol, cm_sol->d, 'C', reinterpret_cast<T*>(cm_sol->x), AllocatorDummy_new::get_singleton(true, false));
+    MatrixDenseView_new<T> sol_from_cm;
+    sol_from_cm.set_view(cm_sol->nrow, cm_sol->ncol, cm_sol->d, 'C', reinterpret_cast<T*>(cm_sol->x), AllocatorDummy_new::get_singleton(true, false));
 
-        copy_dnx<T>::do_all(&sol_from_cm, &sol);
-    }
+    copy_dnx<T>::do_all(&sol_from_cm, &sol);
 
     _free<I>(cm_sol, data->cm_common);
 }
@@ -237,13 +240,9 @@ void solver_csx_cholmod<T,I>::internal_solve(MatrixCsxView_new<T,I> & rhs, Matri
 {
     if(sol.order != 'C') eslog::error("only support colmajor sol for now\n");
 
-    MatrixDenseData_new<T> rhs_dn;
-    rhs_dn.set(rhs.nrows, rhs.ncols, 'C', AllocatorCPU_new::get_singleton());
-    rhs_dn.alloc();
+    convert_csx_dny<T,I>::do_all(&rhs, &sol);
 
-    convert_csx_dny<T,I>::do_all(&rhs, &rhs_dn);
-
-    this->internal_solve(rhs_dn, sol);
+    this->internal_solve(sol, sol);
 }
 
 

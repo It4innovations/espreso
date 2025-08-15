@@ -218,7 +218,12 @@ void solver_csx_superlu_dist<T,I>::internal_solve(VectorDenseView_new<T> & rhs, 
     MatrixDenseView_new<T> sol_mat;
     sol_mat.set_view(sol.size, 1, sol.size, 'C', sol.vals, sol.ator);
 
-    this->internal_solve(rhs_mat, sol_mat);
+    if(&rhs == &sol) {
+        this->internal_solve(sol_mat, sol_mat);
+    }
+    else {
+        this->internal_solve(rhs_mat, sol_mat);
+    }
 }
 
 
@@ -233,6 +238,7 @@ void solver_csx_superlu_dist<T,I>::internal_solve(MatrixDenseView_new<T> & rhs, 
         convert_dnx_dny<T>::do_all(&rhs, &tmp, false);
         this->internal_solve(tmp, tmp);
         convert_dnx_dny<T>::do_all(&tmp, &sol, false);
+        return;
     }
 
     if(&rhs != &sol) {
@@ -253,15 +259,18 @@ void solver_csx_superlu_dist<T,I>::internal_solve(MatrixDenseView_new<T> & rhs, 
 template<typename T, typename I>
 void solver_csx_superlu_dist<T,I>::internal_solve(MatrixCsxView_new<T,I> & rhs, MatrixDenseView_new<T> & sol)
 {
-    if(sol.order != 'C') eslog::error("only support colmajor sol for now\n");
-
-    MatrixDenseData_new<T> rhs_dn;
-    rhs_dn.set(rhs.nrows, rhs.ncols, 'C', AllocatorCPU_new::get_singleton());
-    rhs_dn.alloc();
-
-    convert_csx_dny<T,I>::do_all(&rhs, &rhs_dn);
-
-    this->internal_solve(rhs_dn, sol);
+    if(sol.order == 'R') {
+        MatrixDenseData_new<T> tmp;
+        tmp.set(rhs.nrows, rhs.ncols, 'C', AllocatorCPU_new::get_singleton());
+        tmp.alloc();
+        convert_csx_dny<T,I>::do_all(&rhs, &tmp);
+        this->internal_solve(tmp, tmp);
+        convert_dnx_dny<T>::do_all(&tmp, &sol, false);
+    }
+    else {
+        convert_csx_dny<T,I>::do_all(&rhs, &sol);
+        this->internal_solve(sol, sol);
+    }
 }
 
 

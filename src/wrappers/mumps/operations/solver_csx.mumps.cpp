@@ -142,7 +142,12 @@ void solver_csx_mumps<T,I>::internal_solve(VectorDenseView_new<T> & rhs, VectorD
     MatrixDenseView_new<T> sol_mat;
     sol_mat.set_view(sol.size, 1, sol.size, 'C', sol.vals, sol.ator);
 
-    this->internal_solve(rhs_mat, sol_mat);
+    if(&rhs == &sol) {
+        this->internal_solve(sol_mat, sol_mat);
+    }
+    else {
+        this->internal_solve(rhs_mat, sol_mat);
+    }
 }
 
 
@@ -155,12 +160,12 @@ void solver_csx_mumps<T,I>::internal_solve(MatrixDenseView_new<T> & rhs, MatrixD
     }
 
     if(sol.order != 'C') {
-        MatrixDenseData_new<T> sol_2;
-        sol_2.set(sol.ncols, sol.nrows, 'C', AllocatorCPU_new::get_singleton());
-        sol_2.alloc();
-        convert_dnx_dny<T>::do_all(&sol, &sol_2, false);
-        this->internal_solve(sol_2, sol_2);
-        convert_dnx_dny<T>::do_all(&sol_2, &sol, false);
+        MatrixDenseData_new<T> tmp;
+        tmp.set(sol.ncols, sol.nrows, 'C', AllocatorCPU_new::get_singleton());
+        tmp.alloc();
+        convert_dnx_dny<T>::do_all(&sol, &tmp, false);
+        this->internal_solve(tmp, tmp);
+        convert_dnx_dny<T>::do_all(&tmp, &sol, false);
         return;
     }
     

@@ -7,6 +7,8 @@
 
 #include "math/primitives_new/allocator_new.h"
 #include "math/operations/convert_csx_dny.h"
+#include "math/operations/convert_dnx_dny.h"
+#include "math/operations/copy_dnx.h"
 #include "math/operations/complete_csx_csy_map.h"
 
 
@@ -141,7 +143,12 @@ void solver_csx_strumpack<T,I>::internal_solve(VectorDenseView_new<T> & rhs, Vec
     MatrixDenseView_new<T> sol_mat;
     sol_mat.set_view(sol.size, 1, sol.size, 'C', sol.vals, sol.ator);
 
-    this->internal_solve(rhs_mat, sol_mat);
+    if(&rhs == &sol) {
+        this->internal_solve(sol_mat, sol_mat);
+    }
+    else {
+        this->internal_solve(rhs_mat, sol_mat);
+    }
 }
 
 
@@ -149,7 +156,30 @@ void solver_csx_strumpack<T,I>::internal_solve(VectorDenseView_new<T> & rhs, Vec
 template<typename T, typename I>
 void solver_csx_strumpack<T,I>::internal_solve(MatrixDenseView_new<T> & rhs, MatrixDenseView_new<T> & sol)
 {
-    if(rhs.order != 'C' || sol.order != 'C') eslog::error("only support colmajor rhs/sol for now\n");
+    if(rhs.order == 'R') { // both must have equal order
+        MatrixDenseData_new<T> rhs_colmajor;
+        rhs_colmajor.set(rhs.nrows, rhs.ncols, 'C', AllocatorCPU_new::get_singleton());
+        rhs_colmajor.alloc();
+
+        MatrixDenseData_new<T> sol_colmajor;
+        sol_colmajor.set(sol.nrows, sol.ncols, 'C', AllocatorCPU_new::get_singleton());
+        sol_colmajor.alloc();
+
+        convert_dnx_dny<T>::do_all(&rhs, &rhs_colmajor, false);
+        this->internal_solve(rhs_colmajor, sol_colmajor);
+        convert_dnx_dny<T>::do_all(&sol_colmajor, &sol, false);
+        return;
+    }
+
+    if(&rhs == &sol) {
+        // not sure how in-place is supported, better make a copy
+        MatrixDenseData_new<T> tmp;
+        tmp.set(rhs.nrows, rhs.ncols, rhs.order, AllocatorCPU_new::get_singleton());
+        tmp.alloc();
+        copy_dnx<T>::do_all(&rhs, &tmp, false);
+        this->internal_solve(tmp, sol);
+        return;
+    }
 
     data->solver.solve(rhs.ncols, rhs.vals, rhs.ld, sol.vals, sol.ld);
 }
@@ -159,15 +189,18 @@ void solver_csx_strumpack<T,I>::internal_solve(MatrixDenseView_new<T> & rhs, Mat
 template<typename T, typename I>
 void solver_csx_strumpack<T,I>::internal_solve(MatrixCsxView_new<T,I> & rhs, MatrixDenseView_new<T> & sol)
 {
-    if(sol.order != 'C') eslog::error("only support colmajor sol for now\n");
-
-    MatrixDenseData_new<T> rhs_dn;
-    rhs_dn.set(rhs.nrows, rhs.ncols, 'C', AllocatorCPU_new::get_singleton());
-    rhs_dn.alloc();
-
-    convert_csx_dny<T,I>::do_all(&rhs, &rhs_dn);
-
-    this->internal_solve(rhs_dn, sol);
+    if(sol.order == 'R') {
+        MatrixDenseData_new<T> tmp;
+        tmp.set(rhs.nrows, rhs.ncols, 'C', AllocatorCPU_new::get_singleton());
+        tmp.alloc();
+        convert_csx_dny<T,I>::do_all(&rhs, &tmp);
+        this->internal_solve(tmp, tmp);
+        convert_dnx_dny<T>::do_all(&tmp, &sol, false);
+    }
+    else {
+        convert_csx_dny<T,I>::do_all(&rhs, &sol);
+        this->internal_solve(sol, sol);
+    }
 }
 
 

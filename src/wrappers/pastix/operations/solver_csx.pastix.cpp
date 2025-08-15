@@ -38,15 +38,7 @@ solver_csx_pastix<T,I>::solver_csx_pastix()
 {
     data = std::make_unique<solver_csx_pastix_data<T,I>>();
 
-    if(data->cfg.use_gpu) {
-        #pragma omp critical(pastix_gpu_instances)
-        {
-            total_pastix_gpu_instances++;
-            if(total_pastix_gpu_instances > 1) {
-                eslog::error("only one gpu pastix instance can be created in a program\n");
-            }
-        }
-    }
+    check_pastix_instances(data->cfg.use_gpu, true);
 }
 
 
@@ -54,6 +46,7 @@ solver_csx_pastix<T,I>::solver_csx_pastix()
 template<typename T, typename I>
 solver_csx_pastix<T,I>::~solver_csx_pastix()
 {
+    check_pastix_instances(data->cfg.use_gpu, false);
 }
 
 
@@ -78,7 +71,7 @@ void solver_csx_pastix<T,I>::internal_factorize_symbolic()
     }
 
     pastixInit(&data->pastix_data, 0, data->iparm, data->dparm);
-    
+
     spmInit(&data->pastix_A);
     data->pastix_A.mtxtype = symm_to_pastix<T>(A->prop.symm);
     data->pastix_A.flttype = type_to_pastix<T>();
@@ -143,7 +136,12 @@ void solver_csx_pastix<T,I>::internal_solve(VectorDenseView_new<T> & rhs, Vector
     MatrixDenseView_new<T> sol_mat;
     sol_mat.set_view(sol.size, 1, sol.size, 'C', sol.vals, sol.ator);
 
-    this->internal_solve(rhs_mat, sol_mat);
+    if(&rhs == &sol) {
+        this->internal_solve(sol_mat, sol_mat);
+    }
+    else {
+        this->internal_solve(rhs_mat, sol_mat);
+    }
 }
 
 
@@ -158,6 +156,7 @@ void solver_csx_pastix<T,I>::internal_solve(MatrixDenseView_new<T> & rhs, Matrix
         convert_dnx_dny<T>::do_all(&rhs, &tmp, false);
         this->internal_solve(tmp, tmp);
         convert_dnx_dny<T>::do_all(&tmp, &sol, false);
+        return;
     }
 
     if(&rhs != &sol) {
@@ -172,15 +171,18 @@ void solver_csx_pastix<T,I>::internal_solve(MatrixDenseView_new<T> & rhs, Matrix
 template<typename T, typename I>
 void solver_csx_pastix<T,I>::internal_solve(MatrixCsxView_new<T,I> & rhs, MatrixDenseView_new<T> & sol)
 {
-    if(sol.order != 'C') eslog::error("only support colmajor sol for now\n");
-
-    MatrixDenseData_new<T> rhs_dn;
-    rhs_dn.set(rhs.nrows, rhs.ncols, 'C', AllocatorCPU_new::get_singleton());
-    rhs_dn.alloc();
-
-    convert_csx_dny<T,I>::do_all(&rhs, &rhs_dn);
-
-    this->internal_solve(rhs_dn, sol);
+    if(sol.order == 'R') {
+        MatrixDenseData_new<T> tmp;
+        tmp.set(rhs.nrows, rhs.ncols, 'C', AllocatorCPU_new::get_singleton());
+        tmp.alloc();
+        convert_csx_dny<T,I>::do_all(&rhs, &tmp);
+        this->internal_solve(tmp, tmp);
+        convert_dnx_dny<T>::do_all(&tmp, &sol, false);
+    }
+    else {
+        convert_csx_dny<T,I>::do_all(&rhs, &sol);
+        this->internal_solve(sol, sol);
+    }
 }
 
 

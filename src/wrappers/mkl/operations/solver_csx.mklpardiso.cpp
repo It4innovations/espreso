@@ -57,6 +57,7 @@ void solver_csx_mklpardiso<T,I>::internal_factorize_symbolic()
     std::fill_n(data->iparm, 64, 0);
     data->iparm[0] = 1; // I did popullate iparm
     data->iparm[1] = 2; // metis fill reduction
+    data->iparm[5] = 0; // out-of-place solve
     data->iparm[7] = 0; // Max number of refinement iterations (default changed between 2024.2 and 2025.0)
     data->iparm[34] = 1; // zero-based indexing
 
@@ -114,6 +115,15 @@ void solver_csx_mklpardiso<T,I>::internal_get_factor_U(MatrixCsxView_new<T,I> & 
 template<typename T, typename I>
 void solver_csx_mklpardiso<T,I>::internal_solve(VectorDenseView_new<T> & rhs, VectorDenseView_new<T> & sol)
 {
+    if(&rhs == &sol) {
+        VectorDenseData_new<T> tmp;
+        tmp.set(rhs.size, AllocatorCPU_new::get_singleton());
+        tmp.alloc();
+        std::copy_n(rhs.vals, rhs.size, tmp.vals);
+        this->internal_solve(tmp, sol);
+        return;
+    }
+
     MKL_INT phase = 33;
     MKL_INT one = 1;
     MKL_INT nrhs = 1;

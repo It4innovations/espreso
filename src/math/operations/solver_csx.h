@@ -14,6 +14,7 @@ namespace operations {
 template<typename T, typename I>
 class solver_csx
 {
+// in-place solve supported
 public:
     enum struct implementation_selector
     {

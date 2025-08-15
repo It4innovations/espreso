@@ -38,15 +38,7 @@ schur_csx_dny_pastix<T,I>::schur_csx_dny_pastix()
 {
     data = std::make_unique<schur_csx_dny_pastix_data<T,I>>();
 
-    if(data->cfg.use_gpu) {
-        #pragma omp critical(pastix_gpu_instances)
-        {
-            total_pastix_gpu_instances++;
-            if(total_pastix_gpu_instances > 1) {
-                eslog::error("only one gpu pastix instance can be created in a program\n");
-            }
-        }
-    }
+    check_pastix_instances(data->cfg.use_gpu, true);
 }
 
 
@@ -54,6 +46,7 @@ schur_csx_dny_pastix<T,I>::schur_csx_dny_pastix()
 template<typename T, typename I>
 schur_csx_dny_pastix<T,I>::~schur_csx_dny_pastix()
 {
+    check_pastix_instances(data->cfg.use_gpu, false);
 }
 
 

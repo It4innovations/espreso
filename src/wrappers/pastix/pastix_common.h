@@ -16,10 +16,6 @@ namespace operations {
 
 
 
-extern int total_pastix_gpu_instances;
-
-
-
 template<typename T>
 static inline spm_mtxtype_t symm_to_pastix(MatrixSymmetry_new symm)
 {
@@ -54,6 +50,10 @@ static inline spm_fmttype_e order_to_pastix(char order)
     if(order == 'C') return SpmCSC;
     eslog::error("wrong order\n");
 }
+
+
+
+void check_pastix_instances(bool use_gpu, bool created);
 
 
 
