@@ -25,6 +25,8 @@ public:
     schur_csx_dny_spsolver & operator=(const schur_csx_dny_spsolver &) = delete;
     schur_csx_dny_spsolver & operator=(schur_csx_dny_spsolver &&) = default;
     virtual ~schur_csx_dny_spsolver();
+public:
+    virtual const char * get_name() override { return "schur_csx_dny_spsolver"; }
 protected:
     virtual void internal_preprocess() override;
     virtual void internal_perform_1() override;

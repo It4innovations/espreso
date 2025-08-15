@@ -28,6 +28,8 @@ namespace operations {
 //     solver_csx_umfpack & operator=(const solver_csx_umfpack &) = delete;
 //     solver_csx_umfpack & operator=(solver_csx_umfpack &&) = default;
 //     virtual ~solver_csx_umfpack();
+// public:
+//     virtual const char * get_name() override { return "solver_csx_umfpack"; }
 // protected:
 //     void internal_factorize_symbolic() override;
 //     void internal_factorize_numeric() override;

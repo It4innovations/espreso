@@ -1,5 +1,5 @@
 
-#include "config/ecf/linearsolver/dual_operator_gpu_config.h"
+#include "config/ecf/linearsolver/dualoperator/dual_operator_gpu_config.h"
 
 #include "config/configuration.hpp"
 

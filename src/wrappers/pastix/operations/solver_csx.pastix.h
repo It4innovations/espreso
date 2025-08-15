@@ -31,6 +31,8 @@ public:
     solver_csx_pastix & operator=(const solver_csx_pastix &) = delete;
     solver_csx_pastix & operator=(solver_csx_pastix &&) = default;
     virtual ~solver_csx_pastix();
+public:
+    virtual const char * get_name() override { return "solver_csx_pastix"; }
 protected:
     void internal_factorize_symbolic() override;
     void internal_factorize_numeric() override;

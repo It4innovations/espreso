@@ -12,10 +12,10 @@
 namespace espreso {
 
 template <typename T, typename I>
-class TotalFETIExplicitGeneralScCpu: public DualOperator<T> {
+class TotalFETIExplicitGeneralSchurCpu: public DualOperator<T> {
 public:
-    TotalFETIExplicitGeneralScCpu(FETI<T> &feti);
-    ~TotalFETIExplicitGeneralScCpu();
+    TotalFETIExplicitGeneralSchurCpu(FETI<T> &feti);
+    ~TotalFETIExplicitGeneralSchurCpu();
 
     void info();
     void set(const step::Step &step);
@@ -35,20 +35,22 @@ protected:
 
     void _apply(const Vector_Dual<T> &x, Vector_Dual<T> &y);
 
-public:
-    using sc_is_t = typename math::operations::schur_csx_dny<T,I>::implementation_selector;
+private:
+    using schur_impl_t = typename math::operations::schur_csx_dny<T,I>::implementation_selector;
     struct config
     {
-        char order_F = '_';
+        char order_F = 'R';
         bool parallel_set = true;
         bool parallel_update = true;
         bool parallel_apply = true;
-        char mainloop_update_split = '_'; // Combined, Separate
+        char mainloop_update_split = 'C'; // Combined, Separate
         bool outer_timers = false;
         bool inner_timers = false;
-        bool print_parameters = false;
-        sc_is_t sc_is = sc_is_t::autoselect;
+        bool print_config = false;
+        schur_impl_t schur_impl = schur_impl_t::autoselect;
     };
+    void setup_config(config & cfg, const FETIConfiguration & feti_ecf_config);
+
 private:
     struct per_domain_stuff
     {

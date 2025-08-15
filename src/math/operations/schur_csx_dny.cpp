@@ -35,7 +35,7 @@ std::unique_ptr<schur_csx_dny<T,I>> schur_csx_dny<T,I>::make(implementation_sele
             return std::make_unique<schur_csx_dny_tria<T,I>>();
         case implementation_selector::mklpardiso:
             return std::make_unique<schur_csx_dny_mklpardiso<T,I>>();
-        case implementation_selector::spsolver:
+        case implementation_selector::sparse_solver:
             return std::make_unique<schur_csx_dny_spsolver<T,I>>();
         case implementation_selector::mumps:
             return std::make_unique<schur_csx_dny_mumps<T,I>>();

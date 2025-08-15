@@ -1,5 +1,5 @@
 
-#include "feti/dualoperator/totalfeti.implicit.generalspsolver.cpu.h"
+#include "feti/dualoperator/totalfeti.implicit.generalsparsesolver.cpu.h"
 
 #include "math/primitives_new/allocator_new.h"
 #include "feti/common/applyB.h"
@@ -16,31 +16,43 @@ namespace espreso {
 
 
 template<typename T, typename I>
-TotalFETIImplicitGeneralSpSolverCpu<T,I>::TotalFETIImplicitGeneralSpSolverCpu(FETI<T> &feti) : DualOperator<T>(feti)
+TotalFETIImplicitGeneralSparseSolverCpu<T,I>::TotalFETIImplicitGeneralSparseSolverCpu(FETI<T> &feti) : DualOperator<T>(feti)
 {
-    
+    setup_config(cfg, feti.configuration);
 }
 
 
 
 template<typename T, typename I>
-TotalFETIImplicitGeneralSpSolverCpu<T,I>::~TotalFETIImplicitGeneralSpSolverCpu()
+TotalFETIImplicitGeneralSparseSolverCpu<T,I>::~TotalFETIImplicitGeneralSparseSolverCpu()
 {
 }
 
 
 
 template<typename T, typename I>
-void TotalFETIImplicitGeneralSpSolverCpu<T,I>::info()
+void TotalFETIImplicitGeneralSparseSolverCpu<T,I>::info()
 {
-    eslog::info(" = IMPLICIT TOTAL FETI OPERATOR USING GENERAL SPARSE SOLVER ON CPU                    = \n");
+    eslog::info(" = IMPLICIT TOTAL FETI OPERATOR USING GENERAL SPARSE SOLVER ON CPU                           = \n");
 
-    if(cfg.print_parameters) {
+    if(cfg.print_config) {
         auto bool_to_string = [](bool val){ return val ? "TRUE" : "FALSE";};
+        auto solver_impl_to_string = [](solver_impl_t solver_impl){ switch(solver_impl) { case solver_impl_t::autoselect: return "autoselect"; case solver_impl_t::mklpardiso: return "mklpardiso"; case solver_impl_t::suitesparse: return "suitesparse"; case solver_impl_t::mumps: return "mumps"; case solver_impl_t::strumpack: return "strumpack"; case solver_impl_t::pastix: return "pastix"; case solver_impl_t::superlu_dist: return "superlu_dist"; default: return "UNDEFINED"; } };
+        auto solver_impl_to_string_actual = [&](solver_impl_t solver_impl){
+            if(feti.K.size() == 0) return "UNDEFINED";
+            MatrixBase_new::matrix_properties prop;
+            prop.symm = get_new_matrix_symmetry(feti.K[0].type);
+            prop.dfnt = get_new_matrix_definitness(feti.K[0].type);
+            return math::operations::solver_csx<T,I>::make(solver_impl, &prop, false, true)->get_name();
+        };
 
         eslog::info(" =   %-50s       %+30s = \n", "parallel_set", bool_to_string(cfg.parallel_set));
         eslog::info(" =   %-50s       %+30s = \n", "parallel_update", bool_to_string(cfg.parallel_update));
         eslog::info(" =   %-50s       %+30s = \n", "parallel_apply", bool_to_string(cfg.parallel_apply));
+        eslog::info(" =   %-50s       %+30s = \n", "inner_timers", bool_to_string(cfg.inner_timers));
+        eslog::info(" =   %-50s       %+30s = \n", "outer_timers", bool_to_string(cfg.outer_timers));
+        eslog::info(" =   %-50s       %+30s = \n", "solver_impl", solver_impl_to_string(cfg.solver_impl));
+        eslog::info(" =   %-50s       %+30s = \n", "solver_impl_actual", solver_impl_to_string_actual(cfg.solver_impl));
     }
 
     eslog::info(minmaxavg<size_t>::compute_from_allranks(domain_data.begin(), domain_data.end(), [](const per_domain_stuff & data){ return data.n_dofs_domain; }).to_string("  Domain volume [dofs]").c_str());
@@ -51,10 +63,10 @@ void TotalFETIImplicitGeneralSpSolverCpu<T,I>::info()
 
 
 template<typename T, typename I>
-void TotalFETIImplicitGeneralSpSolverCpu<T,I>::set(const step::Step &step)
+void TotalFETIImplicitGeneralSparseSolverCpu<T,I>::set(const step::Step &step)
 {
     if(cfg.outer_timers) stacktimer::enable();
-    stacktimer::push("TotalFETIImplicitGeneralSpSolverCpu::set");
+    stacktimer::push("TotalFETIImplicitGeneralSparseSolverCpu::set");
 
     n_domains = feti.K.size();
 
@@ -80,7 +92,7 @@ void TotalFETIImplicitGeneralSpSolverCpu<T,I>::set(const step::Step &step)
 
         my.Kreg = MatrixCsxView_new<T,I>::from_old(my.Kreg_old);
 
-        my.op_solver = math::operations::solver_csx<T,I>::make(cfg.solver_is, &my.Kreg, false, true);
+        my.op_solver = math::operations::solver_csx<T,I>::make(cfg.solver_impl, &my.Kreg.prop, false, true);
         my.op_solver->set_matrix_A(&my.Kreg);
         my.op_solver->set_needs(false, true);
         my.op_solver->factorize_symbolic();
@@ -97,10 +109,10 @@ void TotalFETIImplicitGeneralSpSolverCpu<T,I>::set(const step::Step &step)
 
 
 template<typename T, typename I>
-void TotalFETIImplicitGeneralSpSolverCpu<T,I>::update(const step::Step &step)
+void TotalFETIImplicitGeneralSparseSolverCpu<T,I>::update(const step::Step &step)
 {
     if(cfg.outer_timers) stacktimer::enable();
-    stacktimer::push("TotalFETIImplicitGeneralSpSolverCpu::update");
+    stacktimer::push("TotalFETIImplicitGeneralSparseSolverCpu::update");
 
     stacktimer::push("update_factorize_numeric");
     if(!cfg.inner_timers) stacktimer::disable();
@@ -142,13 +154,16 @@ void TotalFETIImplicitGeneralSpSolverCpu<T,I>::update(const step::Step &step)
 
 
 template<typename T, typename I>
-void TotalFETIImplicitGeneralSpSolverCpu<T,I>::apply(const Vector_Dual<T> &x, Vector_Dual<T> &y)
+void TotalFETIImplicitGeneralSparseSolverCpu<T,I>::apply(const Vector_Dual<T> &x, Vector_Dual<T> &y)
 {
     if(cfg.outer_timers) stacktimer::enable();
-    stacktimer::push("TotalFETIImplicitGeneralSpSolverCpu::apply");
+    stacktimer::push("TotalFETIImplicitGeneralSparseSolverCpu::apply");
+
+    stacktimer::push("cpu_implicit_apply_compute");
 
     std::fill_n(y.vals, y.size, T{0});
 
+    if(!cfg.inner_timers) stacktimer::disable();
     #pragma omp parallel for schedule(static,1) if(cfg.parallel_apply)
     for(size_t di = 0; di < n_domains; di++) {
         per_domain_stuff & my = domain_data[di];
@@ -179,6 +194,8 @@ void TotalFETIImplicitGeneralSpSolverCpu<T,I>::apply(const Vector_Dual<T> &x, Ve
             utils::atomic_add(y.vals[D2C[i]], z.vals[i]);
         }
     }
+    if(!cfg.inner_timers) stacktimer::enable();
+    stacktimer::pop();
 
     y.synchronize();
 
@@ -189,7 +206,7 @@ void TotalFETIImplicitGeneralSpSolverCpu<T,I>::apply(const Vector_Dual<T> &x, Ve
 
 
 template<typename T, typename I>
-void TotalFETIImplicitGeneralSpSolverCpu<T,I>::apply(const Matrix_Dual<T> &x, Matrix_Dual<T> &y)
+void TotalFETIImplicitGeneralSparseSolverCpu<T,I>::apply(const Matrix_Dual<T> &x, Matrix_Dual<T> &y)
 {
     eslog::error("not implemented yet\n");
     // Vector_Dual<T> _x, _y;
@@ -205,10 +222,10 @@ void TotalFETIImplicitGeneralSpSolverCpu<T,I>::apply(const Matrix_Dual<T> &x, Ma
 
 
 template<typename T, typename I>
-void TotalFETIImplicitGeneralSpSolverCpu<T,I>::toPrimal(const Vector_Dual<T> &x, std::vector<Vector_Dense<T> > &y)
+void TotalFETIImplicitGeneralSparseSolverCpu<T,I>::toPrimal(const Vector_Dual<T> &x, std::vector<Vector_Dense<T> > &y)
 {
     if(cfg.outer_timers) stacktimer::enable();
-    stacktimer::push("TotalFETIImplicitGeneralSpSolverCpu::toPrimal");
+    stacktimer::push("TotalFETIImplicitGeneralSparseSolverCpu::toPrimal");
     if(!cfg.inner_timers) stacktimer::disable();
 
     #pragma omp parallel for schedule(static,1)
@@ -230,15 +247,52 @@ void TotalFETIImplicitGeneralSpSolverCpu<T,I>::toPrimal(const Vector_Dual<T> &x,
 
 
 template<typename T, typename I>
-void TotalFETIImplicitGeneralSpSolverCpu<T,I>::print(const step::Step &step)
+void TotalFETIImplicitGeneralSparseSolverCpu<T,I>::print(const step::Step &step)
 {
-    eslog::error("TotalFETIImplicitGeneralSpSolverCpu::print not implemented");
+    eslog::error("TotalFETIImplicitGeneralSparseSolverCpu::print not implemented");
+}
+
+
+
+template<typename T, typename I>
+void TotalFETIImplicitGeneralSparseSolverCpu<T,I>::setup_config(config & cfg, const FETIConfiguration & feti_ecf_config)
+{
+    // defaults are set in config definition
+    // if ecf value is auto, cfg value is not changed
+
+    using ecf_config = DualopTotalfetiImplicitGeneralSparseSolverCpuConfig;
+    const ecf_config & ecf = feti_ecf_config.dualop_totalfeti_implicit_generalsparsesolver_cpu_config;
+
+    if(ecf.parallel_set == ecf_config::AUTOBOOL::TRUE)  cfg.parallel_set = true;
+    if(ecf.parallel_set == ecf_config::AUTOBOOL::FALSE) cfg.parallel_set = false;
+
+    if(ecf.parallel_update == ecf_config::AUTOBOOL::TRUE)  cfg.parallel_update = true;
+    if(ecf.parallel_update == ecf_config::AUTOBOOL::FALSE) cfg.parallel_update = false;
+
+    if(ecf.parallel_apply == ecf_config::AUTOBOOL::TRUE)  cfg.parallel_apply = true;
+    if(ecf.parallel_apply == ecf_config::AUTOBOOL::FALSE) cfg.parallel_apply = false;
+
+    if(ecf.timers_outer == ecf_config::AUTOBOOL::TRUE)  cfg.outer_timers = true;
+    if(ecf.timers_outer == ecf_config::AUTOBOOL::FALSE) cfg.outer_timers = false;
+
+    if(ecf.timers_inner == ecf_config::AUTOBOOL::TRUE)  cfg.inner_timers = true;
+    if(ecf.timers_inner == ecf_config::AUTOBOOL::FALSE) cfg.inner_timers = false;
+
+    if(ecf.print_config == ecf_config::AUTOBOOL::TRUE)  cfg.print_config = true;
+    if(ecf.print_config == ecf_config::AUTOBOOL::FALSE) cfg.print_config = false;
+
+    if(ecf.sparse_solver_impl == ecf_config::SPARSE_SOLVER_IMPL::MKLPARDISO)   cfg.solver_impl = solver_impl_t::mklpardiso;
+    if(ecf.sparse_solver_impl == ecf_config::SPARSE_SOLVER_IMPL::SUITESPARSE)  cfg.solver_impl = solver_impl_t::suitesparse;
+    if(ecf.sparse_solver_impl == ecf_config::SPARSE_SOLVER_IMPL::MUMPS)        cfg.solver_impl = solver_impl_t::mumps;
+    if(ecf.sparse_solver_impl == ecf_config::SPARSE_SOLVER_IMPL::STRUMPACK)    cfg.solver_impl = solver_impl_t::strumpack;
+    if(ecf.sparse_solver_impl == ecf_config::SPARSE_SOLVER_IMPL::PASTIX)       cfg.solver_impl = solver_impl_t::pastix;
+    if(ecf.sparse_solver_impl == ecf_config::SPARSE_SOLVER_IMPL::SUPERLU_DIST) cfg.solver_impl = solver_impl_t::superlu_dist;
 }
 
 
 
 #define INSTANTIATE_T_I(T,I) \
-template class TotalFETIImplicitGeneralSpSolverCpu<T,I>;
+template class TotalFETIImplicitGeneralSparseSolverCpu<T,I>;
 
     #define INSTANTIATE_T(T) \
     INSTANTIATE_T_I(T, int32_t) \

@@ -35,7 +35,8 @@ public:
     solver_csx & operator=(solver_csx &&) = default;
     virtual ~solver_csx() = default;
 public:
-    static std::unique_ptr<solver_csx<T,I>> make(implementation_selector is = implementation_selector::autoselect, MatrixCsxView_new<T,I> * matrix = nullptr, bool need_factors = false, bool need_solve = false);
+    static std::unique_ptr<solver_csx<T,I>> make(implementation_selector is = implementation_selector::autoselect, MatrixBase_new::matrix_properties * matrix_prop = nullptr, bool need_factors = false, bool need_solve = false);
+    virtual const char * get_name() { return "UNDEFINED"; }
 public:
     void set_matrix_A(MatrixCsxView_new<T,I> * A_);
     void set_needs(bool need_factors_, bool need_solve_);

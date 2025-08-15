@@ -232,7 +232,7 @@ void schur_hcsx_ddny_tria<T,I>::internal_setup()
         h_A22 = &data->sub_h_A22;
     }
 
-    data->op_h_A11_solver = math::operations::solver_csx<T,I>::make(data->cfg.op_a11solver_is, h_A11, true, need_solve_A11);
+    data->op_h_A11_solver = math::operations::solver_csx<T,I>::make(data->cfg.op_a11solver_is, &h_A11->prop, true, need_solve_A11);
     data->op_h_A11_solver->set_matrix_A(h_A11);
     data->op_h_A11_solver->set_needs(true, need_solve_A11);
     data->op_h_A11_solver->factorize_symbolic();

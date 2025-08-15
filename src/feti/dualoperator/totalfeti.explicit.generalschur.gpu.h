@@ -12,10 +12,10 @@
 namespace espreso {
 
 template <typename T, typename I>
-class TotalFETIExplicitGeneralScGpu: public DualOperator<T> {
+class TotalFETIExplicitGeneralSchurGpu: public DualOperator<T> {
 public:
-    TotalFETIExplicitGeneralScGpu(FETI<T> &feti);
-    ~TotalFETIExplicitGeneralScGpu();
+    TotalFETIExplicitGeneralSchurGpu(FETI<T> &feti);
+    ~TotalFETIExplicitGeneralSchurGpu();
 
     void info();
     void set(const step::Step &step);
@@ -35,21 +35,23 @@ protected:
 
     void _apply(const Vector_Dual<T> &x, Vector_Dual<T> &y);
 
-public:
-    using sc_is_t = typename gpu::operations::schur_hcsx_ddny<T,I>::implementation_selector;
+private:
+    using schur_impl_t = typename gpu::operations::schur_hcsx_ddny<T,I>::implementation_selector;
     struct config
     {
-        char order_F = '_';
+        char order_F = 'R';
         bool parallel_set = true;
         bool parallel_update = true;
         bool parallel_apply = true;
-        char mainloop_update_split = '_'; // Combined, Separate
+        char mainloop_update_split = 'C'; // Combined, Separate
         bool gpu_wait_after_mainloop_update = false;
         bool outer_timers = false;
         bool inner_timers = false;
-        bool print_parameters = false;
-        sc_is_t sc_is = sc_is_t::autoselect;
+        bool print_config = false;
+        schur_impl_t schur_impl = schur_impl_t::autoselect;
     };
+    void setup_config(config & cfg, const FETIConfiguration & feti_ecf_config);
+
 private:
     struct per_domain_stuff
     {

@@ -22,7 +22,7 @@ public:
         autoselect,
         triangular,
         mklpardiso,
-        spsolver,
+        sparse_solver,
         mumps,
         pastix
     };
@@ -36,6 +36,7 @@ public:
     virtual ~schur_csx_dny() = default;
 public:
     static std::unique_ptr<schur_csx_dny<T,I>> make(implementation_selector is = implementation_selector::autoselect);
+    virtual const char * get_name() { return "UNDEFINED"; }
 public:
     void set_coefficients(Treal alpha_);
     void set_matrix(MatrixCsxView_new<T,I> * A11_, MatrixCsxView_new<T,I> * A12_, MatrixCsxView_new<T,I> * A21_, MatrixCsxView_new<T,I> * A22_);

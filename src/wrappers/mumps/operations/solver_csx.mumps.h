@@ -28,6 +28,8 @@ public:
     solver_csx_mumps & operator=(const solver_csx_mumps &) = delete;
     solver_csx_mumps & operator=(solver_csx_mumps &&) = default;
     virtual ~solver_csx_mumps();
+public:
+    virtual const char * get_name() override { return "solver_csx_mumps"; }
 protected:
     void internal_factorize_symbolic() override;
     void internal_factorize_numeric() override;

@@ -31,6 +31,8 @@ public:
     solver_csx_superlu_dist & operator=(const solver_csx_superlu_dist &) = delete;
     solver_csx_superlu_dist & operator=(solver_csx_superlu_dist &&) = default;
     virtual ~solver_csx_superlu_dist();
+public:
+    virtual const char * get_name() override { return "solver_csx_superlu_dist"; }
 protected:
     void internal_factorize_symbolic() override;
     void internal_factorize_numeric() override;

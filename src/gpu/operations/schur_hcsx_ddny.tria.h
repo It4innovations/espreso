@@ -25,6 +25,8 @@ public:
     schur_hcsx_ddny_tria & operator=(const schur_hcsx_ddny_tria &) = delete;
     schur_hcsx_ddny_tria & operator=(schur_hcsx_ddny_tria &&) = default;
     virtual ~schur_hcsx_ddny_tria();
+public:
+    virtual const char * get_name() override { return "schur_hcsx_ddny_tria"; }
 protected:
     virtual void internal_setup();
     virtual void internal_preprocess_submit();

@@ -1,5 +1,5 @@
 
-#include "feti/dualoperator/totalfeti.explicit.generalsc.cpu.h"
+#include "feti/dualoperator/totalfeti.explicit.generalschur.cpu.h"
 
 #include "math/primitives_new/allocator_new.h"
 #include "feti/common/applyB.h"
@@ -15,88 +15,42 @@ namespace espreso {
 
 
 
-template<typename T>
-static void set_by_env(T & var, const char * env_var)
-{
-    const char * str = std::getenv(env_var);
-    if(str != nullptr) {
-        if constexpr(std::is_same_v<T,char>) var = *str;
-        if constexpr(std::is_same_v<T,int>) var = atoi(str);
-        if constexpr(std::is_same_v<T,double>) var = atof(str);
-        if constexpr(std::is_same_v<T,bool>) {
-            var = (strcmp(str,"1") == 0
-                || strcmp(str,"Y") == 0
-                || strcmp(str,"Yes") == 0
-                || strcmp(str,"yes") == 0
-                || strcmp(str,"T") == 0
-                || strcmp(str,"True") == 0
-                || strcmp(str,"true") == 0
-                || strcmp(str,"On") == 0
-                || strcmp(str,"on") == 0);
-        }
-    }
-}
-
-static void replace_if_default(char & param, char deflt)
-{
-    if(param == '_') {
-        param = deflt;
-    }
-}
-
 template<typename T, typename I>
-static void replace_unset_configs(typename TotalFETIExplicitGeneralScCpu<T,I>::config & cfg_dualop)
+TotalFETIExplicitGeneralSchurCpu<T,I>::TotalFETIExplicitGeneralSchurCpu(FETI<T> &feti) : DualOperator<T>(feti)
 {
-    replace_if_default(cfg_dualop.order_F, 'R');
-    replace_if_default(cfg_dualop.mainloop_update_split, 'C');
-}
-
-template<typename T, typename I>
-static void setup_configs(typename TotalFETIExplicitGeneralScCpu<T,I>::config & cfg_dualop)
-{
-    set_by_env(cfg_dualop.order_F,                        "ESPRESO_CONFIG_DUALOP_GENERALSC_order_F");
-    set_by_env(cfg_dualop.parallel_set,                   "ESPRESO_CONFIG_DUALOP_GENERALSC_parallel_set");
-    set_by_env(cfg_dualop.parallel_update,                "ESPRESO_CONFIG_DUALOP_GENERALSC_parallel_update");
-    set_by_env(cfg_dualop.parallel_apply,                 "ESPRESO_CONFIG_DUALOP_GENERALSC_parallel_apply");
-    set_by_env(cfg_dualop.mainloop_update_split,          "ESPRESO_CONFIG_DUALOP_GENERALSC_mainloop_update_split");
-    set_by_env(cfg_dualop.inner_timers,                   "ESPRESO_CONFIG_DUALOP_GENERALSC_inner_timers");
-    set_by_env(cfg_dualop.outer_timers,                   "ESPRESO_CONFIG_DUALOP_GENERALSC_outer_timers");
-    set_by_env(cfg_dualop.print_parameters,               "ESPRESO_CONFIG_DUALOP_GENERALSC_print_parameters");
-    cfg_dualop.sc_is = TotalFETIExplicitGeneralScCpu<T,I>::sc_is_t::autoselect;
+    setup_config(cfg, feti.configuration);
 }
 
 
 
 template<typename T, typename I>
-TotalFETIExplicitGeneralScCpu<T,I>::TotalFETIExplicitGeneralScCpu(FETI<T> &feti) : DualOperator<T>(feti)
-{
-    setup_configs<T,I>(cfg);
-}
-
-
-
-template<typename T, typename I>
-TotalFETIExplicitGeneralScCpu<T,I>::~TotalFETIExplicitGeneralScCpu()
+TotalFETIExplicitGeneralSchurCpu<T,I>::~TotalFETIExplicitGeneralSchurCpu()
 {
 }
 
 
 
 template<typename T, typename I>
-void TotalFETIExplicitGeneralScCpu<T,I>::info()
+void TotalFETIExplicitGeneralSchurCpu<T,I>::info()
 {
-    eslog::info(" = EXPLICIT TOTAL FETI OPERATOR USING GENERAL SC ON CPU                               = \n");
+    eslog::info(" = EXPLICIT TOTAL FETI OPERATOR USING GENERAL SCHUR ON CPU                                   = \n");
 
-    if(cfg.print_parameters) {
+    if(cfg.print_config) {
         auto order_to_string = [](char order){ switch(order){ case 'R': return "ROW_MAJOR"; case 'C': return "COL_MAJOR"; default: return "UNDEFINED"; }};
         auto bool_to_string = [](bool val){ return val ? "TRUE" : "FALSE";};
         auto loop_split_to_string = [](char val){ switch(val){ case 'C': return "COMBINED"; case 'S': return "SEPARATE"; default: return "UNDEFINED"; }};
+        auto schur_impl_to_string = [](schur_impl_t schur_impl){ switch(schur_impl) { case schur_impl_t::autoselect: return "autoselect"; case schur_impl_t::triangular: return "triangular"; case schur_impl_t::mklpardiso: return "mklpardiso"; case schur_impl_t::sparse_solver: return "sparse_solver"; case schur_impl_t::mumps: return "mumps"; case schur_impl_t::pastix: return "pastix"; default: return "UNDEFINED"; }};
+        auto schur_impl_to_string_actual = [](schur_impl_t schur_impl){ return math::operations::schur_csx_dny<T,I>::make(schur_impl)->get_name(); };
 
         eslog::info(" =   %-50s       %+30s = \n", "parallel_set", bool_to_string(cfg.parallel_set));
         eslog::info(" =   %-50s       %+30s = \n", "parallel_update", bool_to_string(cfg.parallel_update));
         eslog::info(" =   %-50s       %+30s = \n", "parallel_apply", bool_to_string(cfg.parallel_apply));
         eslog::info(" =   %-50s       %+30s = \n", "mainloop_update_split", loop_split_to_string(cfg.mainloop_update_split));
+        eslog::info(" =   %-50s       %+30s = \n", "inner_timers", bool_to_string(cfg.inner_timers));
+        eslog::info(" =   %-50s       %+30s = \n", "outer_timers", bool_to_string(cfg.outer_timers));
         eslog::info(" =   %-50s       %+30s = \n", "order_F", order_to_string(cfg.order_F));
+        eslog::info(" =   %-50s       %+30s = \n", "schur implementation", schur_impl_to_string(cfg.schur_impl));
+        eslog::info(" =   %-50s       %+30s = \n", "schur implementation actual", schur_impl_to_string_actual(cfg.schur_impl));
     }
 
     eslog::info(minmaxavg<size_t>::compute_from_allranks(domain_data.begin(), domain_data.end(), [](const per_domain_stuff & data){ return data.n_dofs_domain; }).to_string("  Domain volume [dofs]").c_str());
@@ -107,10 +61,10 @@ void TotalFETIExplicitGeneralScCpu<T,I>::info()
 
 
 template<typename T, typename I>
-void TotalFETIExplicitGeneralScCpu<T,I>::set(const step::Step &step)
+void TotalFETIExplicitGeneralSchurCpu<T,I>::set(const step::Step &step)
 {
     if(cfg.outer_timers) stacktimer::enable();
-    stacktimer::push("TotalFETIExplicitGeneralScCpu::set");
+    stacktimer::push("TotalFETIExplicitGeneralSchurCpu::set");
 
     n_domains = feti.K.size();
 
@@ -121,8 +75,6 @@ void TotalFETIExplicitGeneralScCpu<T,I>::set(const step::Step &step)
         data.n_dofs_domain = feti.B1[di].ncols;
         data.n_dofs_interface = feti.B1[di].nrows;
     }
-
-    replace_unset_configs<T,I>(cfg);
 
     Fs_allocated.resize((n_domains - 1) / 2 + 1);
     {
@@ -175,13 +127,13 @@ void TotalFETIExplicitGeneralScCpu<T,I>::set(const step::Step &step)
         applicator.preprocess();
     }
 
-    stacktimer::push("TotalFETIExplicitGeneralScCpu::set preprocess");
+    stacktimer::push("TotalFETIExplicitGeneralSchurCpu::set preprocess");
     if(!cfg.inner_timers) stacktimer::disable();
     #pragma omp parallel for schedule(static,1) if(cfg.parallel_set)
     for(size_t di = 0; di < n_domains; di++) {
         per_domain_stuff & data = domain_data[di];
 
-        stacktimer::info("TotalFETIExplicitGeneralScCpu::set preprocess subdomain %zu", di);
+        stacktimer::info("TotalFETIExplicitGeneralSchurCpu::set preprocess subdomain %zu", di);
 
         math::combine(data.Kreg_old, feti.K[di], feti.RegMat[di]);
         if constexpr(utils::is_real<T>())    data.Kreg_old.type = Matrix_Type::REAL_SYMMETRIC_POSITIVE_DEFINITE;
@@ -192,7 +144,7 @@ void TotalFETIExplicitGeneralScCpu<T,I>::set(const step::Step &step)
         data.Kreg = MatrixCsxView_new<T,I>::from_old(data.Kreg_old);
         if constexpr(utils::is_real<T>()) if(is_symmetric<T>(data.Kreg.prop.symm)) data.Kreg.prop.symm = MatrixSymmetry_new::hermitian;
 
-        data.op_sc = math::operations::schur_csx_dny<T,I>::make(cfg.sc_is);
+        data.op_sc = math::operations::schur_csx_dny<T,I>::make(cfg.schur_impl);
         data.op_sc->set_coefficients(-1);
         data.op_sc->set_matrix(&data.Kreg, &data.Bt, nullptr, nullptr);
         data.op_sc->set_sc(&data.F);
@@ -212,10 +164,10 @@ void TotalFETIExplicitGeneralScCpu<T,I>::set(const step::Step &step)
 
 
 template<typename T, typename I>
-void TotalFETIExplicitGeneralScCpu<T,I>::update(const step::Step &step)
+void TotalFETIExplicitGeneralSchurCpu<T,I>::update(const step::Step &step)
 {
     if(cfg.outer_timers) stacktimer::enable();
-    stacktimer::push("TotalFETIExplicitGeneralScCpu::update");
+    stacktimer::push("TotalFETIExplicitGeneralSchurCpu::update");
 
     stacktimer::push("update_mainloop");
     if(cfg.mainloop_update_split == 'C') {
@@ -289,7 +241,7 @@ void TotalFETIExplicitGeneralScCpu<T,I>::update(const step::Step &step)
 
 
 template<typename T, typename I>
-void TotalFETIExplicitGeneralScCpu<T,I>::_apply(const Vector_Dual<T> &x_cluster, Vector_Dual<T> &y_cluster)
+void TotalFETIExplicitGeneralSchurCpu<T,I>::_apply(const Vector_Dual<T> &x_cluster, Vector_Dual<T> &y_cluster)
 {
     VectorDenseView_new<T> x_cluster_new = VectorDenseView_new<T>::from_old(x_cluster);
     VectorDenseView_new<T> y_cluster_new = VectorDenseView_new<T>::from_old(y_cluster);
@@ -300,17 +252,26 @@ void TotalFETIExplicitGeneralScCpu<T,I>::_apply(const Vector_Dual<T> &x_cluster,
 
 
 template<typename T, typename I>
-void TotalFETIExplicitGeneralScCpu<T,I>::apply(const Vector_Dual<T> &x, Vector_Dual<T> &y)
+void TotalFETIExplicitGeneralSchurCpu<T,I>::apply(const Vector_Dual<T> &x, Vector_Dual<T> &y)
 {
+    if(cfg.outer_timers) stacktimer::enable();
+    stacktimer::push("TotalFETIExplicitGeneralSchurCpu::apply");
+
     _apply(x, y);
     y.synchronize();
+
+    stacktimer::pop();
+    if(cfg.outer_timers) stacktimer::disable();
 }
 
 
 
 template<typename T, typename I>
-void TotalFETIExplicitGeneralScCpu<T,I>::apply(const Matrix_Dual<T> &x, Matrix_Dual<T> &y)
+void TotalFETIExplicitGeneralSchurCpu<T,I>::apply(const Matrix_Dual<T> &x, Matrix_Dual<T> &y)
 {
+    if(cfg.outer_timers) stacktimer::enable();
+    stacktimer::push("TotalFETIExplicitGeneralSchurCpu::apply");
+
     Vector_Dual<T> _x, _y;
     _x.size = _y.size = x.ncols;
     for (int r = 0; r < x.nrows; ++r) {
@@ -319,15 +280,18 @@ void TotalFETIExplicitGeneralScCpu<T,I>::apply(const Matrix_Dual<T> &x, Matrix_D
         _apply(_x, _y);
     }
     y.synchronize();
+
+    stacktimer::pop();
+    if(cfg.outer_timers) stacktimer::disable();
 }
 
 
 
 template<typename T, typename I>
-void TotalFETIExplicitGeneralScCpu<T,I>::toPrimal(const Vector_Dual<T> &x, std::vector<Vector_Dense<T> > &y)
+void TotalFETIExplicitGeneralSchurCpu<T,I>::toPrimal(const Vector_Dual<T> &x, std::vector<Vector_Dense<T> > &y)
 {
     if(cfg.outer_timers) stacktimer::enable();
-    stacktimer::push("TotalFETIExplicitGeneralScCpu::toPrimal");
+    stacktimer::push("TotalFETIExplicitGeneralSchurCpu::toPrimal");
     if(!cfg.inner_timers) stacktimer::disable();
 
     #pragma omp parallel for schedule(static,1)
@@ -349,15 +313,57 @@ void TotalFETIExplicitGeneralScCpu<T,I>::toPrimal(const Vector_Dual<T> &x, std::
 
 
 template<typename T, typename I>
-void TotalFETIExplicitGeneralScCpu<T,I>::print(const step::Step &step)
+void TotalFETIExplicitGeneralSchurCpu<T,I>::print(const step::Step &step)
 {
-    eslog::error("TotalFETIExplicitGeneralScCpu::print not implemented");
+    eslog::error("TotalFETIExplicitGeneralSchurCpu::print not implemented");
+}
+
+
+
+template<typename T, typename I>
+void TotalFETIExplicitGeneralSchurCpu<T,I>::setup_config(config & cfg, const FETIConfiguration & feti_ecf_config)
+{
+    // defaults are set in config definition
+    // if ecf value is auto, cfg value is not changed
+
+    using ecf_config = DualopTotalfetiExplicitGeneralSchurCpuConfig;
+    const ecf_config & ecf = feti_ecf_config.dualop_totalfeti_explicit_generalschur_cpu_config;
+
+    if(ecf.parallel_set == ecf_config::AUTOBOOL::TRUE)  cfg.parallel_set = true;
+    if(ecf.parallel_set == ecf_config::AUTOBOOL::FALSE) cfg.parallel_set = false;
+
+    if(ecf.parallel_update == ecf_config::AUTOBOOL::TRUE)  cfg.parallel_update = true;
+    if(ecf.parallel_update == ecf_config::AUTOBOOL::FALSE) cfg.parallel_update = false;
+
+    if(ecf.parallel_apply == ecf_config::AUTOBOOL::TRUE)  cfg.parallel_apply = true;
+    if(ecf.parallel_apply == ecf_config::AUTOBOOL::FALSE) cfg.parallel_apply = false;
+
+    if(ecf.mainloop_update_split == ecf_config::MAINLOOP_UPDATE_SPLIT::COMBINED) cfg.mainloop_update_split = 'C';
+    if(ecf.mainloop_update_split == ecf_config::MAINLOOP_UPDATE_SPLIT::SEPARATE) cfg.mainloop_update_split = 'S';
+
+    if(ecf.timers_outer == ecf_config::AUTOBOOL::TRUE)  cfg.outer_timers = true;
+    if(ecf.timers_outer == ecf_config::AUTOBOOL::FALSE) cfg.outer_timers = false;
+
+    if(ecf.timers_inner == ecf_config::AUTOBOOL::TRUE)  cfg.inner_timers = true;
+    if(ecf.timers_inner == ecf_config::AUTOBOOL::FALSE) cfg.inner_timers = false;
+
+    if(ecf.print_config == ecf_config::AUTOBOOL::TRUE)  cfg.print_config = true;
+    if(ecf.print_config == ecf_config::AUTOBOOL::FALSE) cfg.print_config = false;
+
+    if(ecf.order_F == ecf_config::MATRIX_ORDER::ROW_MAJOR) cfg.order_F = 'R';
+    if(ecf.order_F == ecf_config::MATRIX_ORDER::COL_MAJOR) cfg.order_F = 'C';
+
+    if(ecf.schur_impl == ecf_config::SCHUR_IMPL::TRIANGULAR)    cfg.schur_impl = schur_impl_t::triangular;
+    if(ecf.schur_impl == ecf_config::SCHUR_IMPL::MKLPARDISO)    cfg.schur_impl = schur_impl_t::mklpardiso;
+    if(ecf.schur_impl == ecf_config::SCHUR_IMPL::SPARSE_SOLVER) cfg.schur_impl = schur_impl_t::sparse_solver;
+    if(ecf.schur_impl == ecf_config::SCHUR_IMPL::MUMPS)         cfg.schur_impl = schur_impl_t::mumps;
+    if(ecf.schur_impl == ecf_config::SCHUR_IMPL::PASTIX)        cfg.schur_impl = schur_impl_t::pastix;
 }
 
 
 
 #define INSTANTIATE_T_I(T,I) \
-template class TotalFETIExplicitGeneralScCpu<T,I>;
+template class TotalFETIExplicitGeneralSchurCpu<T,I>;
 
     #define INSTANTIATE_T(T) \
     INSTANTIATE_T_I(T, int32_t) \

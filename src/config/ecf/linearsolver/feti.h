@@ -4,7 +4,10 @@
 
 #include "config/description.h"
 #include "autoopt.h"
-#include "config/ecf/linearsolver/dual_operator_gpu_config.h"
+#include "config/ecf/linearsolver/dualoperator/dual_operator_gpu_config.h"
+#include "config/ecf/linearsolver/dualoperator/totalfeti_explicit_generalschur_cpu_config.h"
+#include "config/ecf/linearsolver/dualoperator/totalfeti_explicit_generalschur_gpu_config.h"
+#include "config/ecf/linearsolver/dualoperator/totalfeti_implicit_generalsparsesolver_cpu_config.h"
 
 #include <cstddef>
 
@@ -29,9 +32,9 @@ struct FETIConfiguration: public ECFDescription {
         EXPLICIT_SC_GPUAPPLY,
         EXPLICIT_SCTRIA,
         EXPLICIT_SCTRIA_GPU,
-        EXPLICIT_GENERALSC_CPU,
-        EXPLICIT_GENERALSC_GPU,
-        IMPLICIT_GENERALSPSOLVER_CPU
+        EXPLICIT_GENERALSCHUR_CPU,
+        EXPLICIT_GENERALSCHUR_GPU,
+        IMPLICIT_GENERALSPARSESOLVER_CPU
     };
 
     enum class PROJECTOR {
@@ -114,6 +117,10 @@ struct FETIConfiguration: public ECFDescription {
     AutoOptimizationConfiguration auto_optimization;
 
     DualOperatorGpuConfig dual_operator_gpu_config;
+
+    DualopTotalfetiExplicitGeneralSchurCpuConfig dualop_totalfeti_explicit_generalschur_cpu_config;
+    DualopTotalfetiExplicitGeneralSchurGpuConfig dualop_totalfeti_explicit_generalschur_gpu_config;
+    DualopTotalfetiImplicitGeneralSparseSolverCpuConfig dualop_totalfeti_implicit_generalsparsesolver_cpu_config;
 
     FETIConfiguration();
 };

@@ -35,6 +35,7 @@ public:
     virtual ~schur_hcsx_ddny() = default;
 public:
     static std::unique_ptr<schur_hcsx_ddny<T,I>> make(implementation_selector is = implementation_selector::autoselect);
+    virtual const char * get_name() { return "UNDEFINED"; }
 public:
     void set_handles(gpu::mgm::queue q_, gpu::spblas::handle spblas_handle_, gpu::dnblas::handle dnblas_handle_);
     void set_coefficients(Treal alpha_);

@@ -78,7 +78,7 @@ void schur_csx_dny_spsolver<T,I>::internal_preprocess()
         A22 = &data->sub_A22;
     }
 
-    data->op_A11_solver = solver_csx<T,I>::make(data->cfg.op_a11solver_is, A11, false, true);
+    data->op_A11_solver = solver_csx<T,I>::make(data->cfg.op_a11solver_is, &A11->prop, false, true);
     data->op_A11_solver->set_matrix_A(A11);
     data->op_A11_solver->set_needs(false, true);
     data->op_A11_solver->factorize_symbolic();

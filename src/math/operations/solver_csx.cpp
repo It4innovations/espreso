@@ -19,7 +19,7 @@ namespace operations {
 
 
 template<typename T, typename I>
-std::unique_ptr<solver_csx<T,I>> solver_csx<T,I>::make(implementation_selector is, MatrixCsxView_new<T,I> * matrix, bool need_factors, bool need_solve)
+std::unique_ptr<solver_csx<T,I>> solver_csx<T,I>::make(implementation_selector is, MatrixBase_new::matrix_properties * matrix_prop, bool need_factors, bool need_solve)
 {
     std::vector<implementation_selector> implementations;
     if(is == implementation_selector::autoselect) {
@@ -52,7 +52,7 @@ std::unique_ptr<solver_csx<T,I>> solver_csx<T,I>::make(implementation_selector i
                 if(!need_factors) return std::make_unique<solver_csx_mklpardiso<T,I>>();
                 break;
             case implementation_selector::suitesparse:
-                if(matrix != nullptr && is_hermitian<T>(matrix->prop.symm)) return std::make_unique<solver_csx_cholmod<T,I>>();
+                if(matrix_prop != nullptr && is_hermitian<T>(matrix_prop->symm) && matrix_prop->dfnt == MatrixDefinitness_new::positive_definite) return std::make_unique<solver_csx_cholmod<T,I>>();
                 else return std::make_unique<solver_csx_umfpack<T,I>>();
                 break;
             case implementation_selector::mumps:

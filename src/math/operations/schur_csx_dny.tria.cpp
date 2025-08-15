@@ -234,7 +234,7 @@ void schur_csx_dny_tria<T,I>::internal_preprocess()
         eslog::error("only support csr matrices now\n");
     }
 
-    data->op_A11_solver = solver_csx<T,I>::make(data->cfg.op_a11solver_is, A11, true, need_solve_A11);
+    data->op_A11_solver = solver_csx<T,I>::make(data->cfg.op_a11solver_is, &A11->prop, true, need_solve_A11);
     data->op_A11_solver->set_matrix_A(A11);
     data->op_A11_solver->set_needs(true, need_solve_A11);
     data->op_A11_solver->factorize_symbolic();

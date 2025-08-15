@@ -8,10 +8,10 @@
 namespace espreso {
 
 template <typename T, typename I>
-class TotalFETIImplicitGeneralSpSolverCpu: public DualOperator<T> {
+class TotalFETIImplicitGeneralSparseSolverCpu: public DualOperator<T> {
 public:
-    TotalFETIImplicitGeneralSpSolverCpu(FETI<T> &feti);
-    ~TotalFETIImplicitGeneralSpSolverCpu();
+    TotalFETIImplicitGeneralSparseSolverCpu(FETI<T> &feti);
+    ~TotalFETIImplicitGeneralSparseSolverCpu();
 
     void info();
     void set(const step::Step &step);
@@ -24,14 +24,8 @@ public:
     // y = K+(f - Bt * x)
     void toPrimal(const Vector_Dual<T> &x, std::vector<Vector_Dense<T> > &y);
 
-protected:
-    void print(const step::Step &step);
-
-    using DualOperator<T>::feti;
-    using DualOperator<T>::d;
-
-public:
-    using solver_is_t = typename math::operations::solver_csx<T,I>::implementation_selector;
+private:
+    using solver_impl_t = typename math::operations::solver_csx<T,I>::implementation_selector;
     struct config
     {
         bool parallel_set = true;
@@ -39,9 +33,16 @@ public:
         bool parallel_apply = true;
         bool outer_timers = false;
         bool inner_timers = false;
-        bool print_parameters = false;
-        solver_is_t solver_is = solver_is_t::autoselect;
+        bool print_config = false;
+        solver_impl_t solver_impl = solver_impl_t::autoselect;
     };
+    void setup_config(config & cfg, const FETIConfiguration & feti_ecf_config);
+
+protected:
+    void print(const step::Step &step);
+
+    using DualOperator<T>::feti;
+    using DualOperator<T>::d;
 private:
     struct per_domain_stuff
     {

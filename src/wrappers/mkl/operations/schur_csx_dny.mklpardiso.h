@@ -29,6 +29,8 @@ public:
     schur_csx_dny_mklpardiso & operator=(const schur_csx_dny_mklpardiso &) = delete;
     schur_csx_dny_mklpardiso & operator=(schur_csx_dny_mklpardiso &&) = default;
     virtual ~schur_csx_dny_mklpardiso();
+public:
+    virtual const char * get_name() override { return "schur_csx_dny_mklpardiso"; }
 protected:
     virtual void internal_preprocess() override;
     virtual void internal_perform_1() override;

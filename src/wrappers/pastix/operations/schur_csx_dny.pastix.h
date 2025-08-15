@@ -29,6 +29,8 @@ public:
     schur_csx_dny_pastix & operator=(const schur_csx_dny_pastix &) = delete;
     schur_csx_dny_pastix & operator=(schur_csx_dny_pastix &&) = default;
     virtual ~schur_csx_dny_pastix();
+public:
+    virtual const char * get_name() override { return "schur_csx_dny_pastix"; }
 protected:
     virtual void internal_preprocess() override;
     virtual void internal_perform_1() override;

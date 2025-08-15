@@ -24,9 +24,9 @@ espreso::FETIConfiguration::FETIConfiguration()
             .addoption(ECFOption().setname("EXPLICIT_SC_GPUAPPLY").setdescription("Excplicit F using Schur complement from SparseBLAS. Assembly on CPU, apply on GPU."))
             .addoption(ECFOption().setname("EXPLICIT_SCTRIA").setdescription("Excplicit F using SC with triangular B."))
             .addoption(ECFOption().setname("EXPLICIT_SCTRIA_GPU").setdescription("Excplicit F using SC with triangular B on GPU."))
-            .addoption(ECFOption().setname("EXPLICIT_GENERALSC_CPU").setdescription("Excplicit F using general SC operation on CPU."))
-            .addoption(ECFOption().setname("EXPLICIT_GENERALSC_GPU").setdescription("Excplicit F using general SC operation on GPU."))
-            .addoption(ECFOption().setname("IMPLICIT_GENERALSPSOLVER_CPU").setdescription("Excplicit F using general sparse solver operation on CPU.")));
+            .addoption(ECFOption().setname("EXPLICIT_GENERALSCHUR_CPU").setdescription("Excplicit F using general SC operation on CPU."))
+            .addoption(ECFOption().setname("EXPLICIT_GENERALSCHUR_GPU").setdescription("Excplicit F using general SC operation on GPU."))
+            .addoption(ECFOption().setname("IMPLICIT_GENERALSPARSESOLVER_CPU").setdescription("Excplicit F using general sparse solver operation on CPU.")));
 
     projector = PROJECTOR::ORTHOGONAL;
     REGISTER(projector, ECFMetaData()
@@ -226,6 +226,18 @@ espreso::FETIConfiguration::FETIConfiguration()
 
     REGISTER(dual_operator_gpu_config, ECFMetaData()
         .setdescription({ "Dual operator on GPU configuration." })
+        .setcollapsed());
+
+    REGISTER(dualop_totalfeti_explicit_generalschur_cpu_config, ECFMetaData()
+        .setdescription({ "Dual operator total feti explicit general schur on CPU configuration." })
+        .setcollapsed());
+
+    REGISTER(dualop_totalfeti_explicit_generalschur_gpu_config, ECFMetaData()
+        .setdescription({ "Dual operator total feti explicit general schur on GPU configuration." })
+        .setcollapsed());
+
+    REGISTER(dualop_totalfeti_implicit_generalsparsesolver_cpu_config, ECFMetaData()
+        .setdescription({ "Dual operator total feti implicit general sparse solver on CPU configuration." })
         .setcollapsed());
 }
 

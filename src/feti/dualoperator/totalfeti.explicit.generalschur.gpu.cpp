@@ -1,5 +1,5 @@
 
-#include "feti/dualoperator/totalfeti.explicit.generalsc.gpu.h"
+#include "feti/dualoperator/totalfeti.explicit.generalschur.gpu.h"
 
 #include "feti/common/applyB.h"
 #include "basis/utilities/minmaxavg.h"
@@ -15,93 +15,47 @@ namespace espreso {
 
 
 
-template<typename T>
-static void set_by_env(T & var, const char * env_var)
-{
-    const char * str = std::getenv(env_var);
-    if(str != nullptr) {
-        if constexpr(std::is_same_v<T,char>) var = *str;
-        if constexpr(std::is_same_v<T,int>) var = atoi(str);
-        if constexpr(std::is_same_v<T,double>) var = atof(str);
-        if constexpr(std::is_same_v<T,bool>) {
-            var = (strcmp(str,"1") == 0
-                || strcmp(str,"Y") == 0
-                || strcmp(str,"Yes") == 0
-                || strcmp(str,"yes") == 0
-                || strcmp(str,"T") == 0
-                || strcmp(str,"True") == 0
-                || strcmp(str,"true") == 0
-                || strcmp(str,"On") == 0
-                || strcmp(str,"on") == 0);
-        }
-    }
-}
-
-static void replace_if_default(char & param, char deflt)
-{
-    if(param == '_') {
-        param = deflt;
-    }
-}
-
 template<typename T, typename I>
-static void replace_unset_configs(typename TotalFETIExplicitGeneralScGpu<T,I>::config & cfg_dualop)
-{
-    replace_if_default(cfg_dualop.order_F, 'R');
-    replace_if_default(cfg_dualop.mainloop_update_split, 'C');
-}
-
-template<typename T, typename I>
-static void setup_configs(typename TotalFETIExplicitGeneralScGpu<T,I>::config & cfg_dualop)
-{
-    set_by_env(cfg_dualop.order_F,                        "ESPRESO_CONFIG_DUALOP_GENERALSC_order_F");
-    set_by_env(cfg_dualop.parallel_set,                   "ESPRESO_CONFIG_DUALOP_GENERALSC_parallel_set");
-    set_by_env(cfg_dualop.parallel_update,                "ESPRESO_CONFIG_DUALOP_GENERALSC_parallel_update");
-    set_by_env(cfg_dualop.parallel_apply,                 "ESPRESO_CONFIG_DUALOP_GENERALSC_parallel_apply");
-    set_by_env(cfg_dualop.mainloop_update_split,          "ESPRESO_CONFIG_DUALOP_GENERALSC_mainloop_update_split");
-    set_by_env(cfg_dualop.gpu_wait_after_mainloop_update, "ESPRESO_CONFIG_DUALOP_GENERALSC_gpu_wait_after_mainloop_update");
-    set_by_env(cfg_dualop.inner_timers,                   "ESPRESO_CONFIG_DUALOP_GENERALSC_inner_timers");
-    set_by_env(cfg_dualop.outer_timers,                   "ESPRESO_CONFIG_DUALOP_GENERALSC_outer_timers");
-    set_by_env(cfg_dualop.print_parameters,               "ESPRESO_CONFIG_DUALOP_GENERALSC_print_parameters");
-    cfg_dualop.sc_is = TotalFETIExplicitGeneralScGpu<T,I>::sc_is_t::autoselect;
-}
-
-
-
-template<typename T, typename I>
-TotalFETIExplicitGeneralScGpu<T,I>::TotalFETIExplicitGeneralScGpu(FETI<T> &feti) : DualOperator<T>(feti)
+TotalFETIExplicitGeneralSchurGpu<T,I>::TotalFETIExplicitGeneralSchurGpu(FETI<T> &feti) : DualOperator<T>(feti)
     , main_q(feti.main_q)
     , queues(feti.queues)
     , handles_dense(feti.handles_dense)
     , handles_sparse(feti.handles_sparse)
 {
-    setup_configs<T,I>(cfg);
+    setup_config(cfg, feti.configuration);
 }
 
 
 
 template<typename T, typename I>
-TotalFETIExplicitGeneralScGpu<T,I>::~TotalFETIExplicitGeneralScGpu()
+TotalFETIExplicitGeneralSchurGpu<T,I>::~TotalFETIExplicitGeneralSchurGpu()
 {
 }
 
 
 
 template<typename T, typename I>
-void TotalFETIExplicitGeneralScGpu<T,I>::info()
+void TotalFETIExplicitGeneralSchurGpu<T,I>::info()
 {
-    eslog::info(" = EXPLICIT TOTAL FETI OPERATOR USING GENERAL SC ON GPU                               = \n");
+    eslog::info(" = EXPLICIT TOTAL FETI OPERATOR USING GENERAL SCHUR ON GPU                                   = \n");
 
-    if(cfg.print_parameters) {
+    if(cfg.print_config) {
         auto order_to_string = [](char order){ switch(order){ case 'R': return "ROW_MAJOR"; case 'C': return "COL_MAJOR"; default: return "UNDEFINED"; }};
         auto bool_to_string = [](bool val){ return val ? "TRUE" : "FALSE";};
         auto loop_split_to_string = [](char val){ switch(val){ case 'C': return "COMBINED"; case 'S': return "SEPARATE"; default: return "UNDEFINED"; }};
+        auto schur_impl_to_string = [](schur_impl_t schur_impl){ switch(schur_impl) { case schur_impl_t::autoselect: return "autoselect"; case schur_impl_t::triangular: return "triangular"; default: return "UNDEFINED"; } };
+        auto schur_impl_to_string_actual = [](schur_impl_t schur_impl){ return gpu::operations::schur_hcsx_ddny<T,I>::make(schur_impl)->get_name(); };
 
         eslog::info(" =   %-50s       %+30s = \n", "parallel_set", bool_to_string(cfg.parallel_set));
         eslog::info(" =   %-50s       %+30s = \n", "parallel_set", bool_to_string(cfg.parallel_update));
         eslog::info(" =   %-50s       %+30s = \n", "parallel_set", bool_to_string(cfg.parallel_apply));
         eslog::info(" =   %-50s       %+30s = \n", "mainloop_update_split", loop_split_to_string(cfg.mainloop_update_split));
+        eslog::info(" =   %-50s       %+30s = \n", "synchronize_after_update_mainloops", loop_split_to_string(cfg.gpu_wait_after_mainloop_update));
+        eslog::info(" =   %-50s       %+30s = \n", "inner_timers", bool_to_string(cfg.inner_timers));
+        eslog::info(" =   %-50s       %+30s = \n", "outer_timers", bool_to_string(cfg.outer_timers));
         eslog::info(" =   %-50s       %+30s = \n", "order_F", order_to_string(cfg.order_F));
+        eslog::info(" =   %-50s       %+30s = \n", "schur implementation", schur_impl_to_string(cfg.schur_impl));
+        eslog::info(" =   %-50s       %+30s = \n", "schur implementation actual", schur_impl_to_string_actual(cfg.schur_impl));
     }
 
     eslog::info(minmaxavg<size_t>::compute_from_allranks(domain_data.begin(), domain_data.end(), [](const per_domain_stuff & data){ return data.n_dofs_domain; }).to_string("  Domain volume [dofs]").c_str());
@@ -112,10 +66,10 @@ void TotalFETIExplicitGeneralScGpu<T,I>::info()
 
 
 template<typename T, typename I>
-void TotalFETIExplicitGeneralScGpu<T,I>::set(const step::Step &step)
+void TotalFETIExplicitGeneralSchurGpu<T,I>::set(const step::Step &step)
 {
     if(cfg.outer_timers) stacktimer::enable();
-    stacktimer::push("TotalFETIExplicitGeneralScGpu::set");
+    stacktimer::push("TotalFETIExplicitGeneralSchurGpu::set");
 
     n_domains = feti.K.size();
     n_queues = queues.size();
@@ -127,8 +81,6 @@ void TotalFETIExplicitGeneralScGpu<T,I>::set(const step::Step &step)
         data.n_dofs_domain = feti.B1[di].ncols;
         data.n_dofs_interface = feti.B1[di].nrows;
     }
-
-    replace_unset_configs<T,I>(cfg);
 
     ssize_t free_mem_before_Falloc = gpu::mgm::get_device_memory_free();
     d_Fs_allocated.resize((n_domains - 1) / 2 + 1);
@@ -167,7 +119,7 @@ void TotalFETIExplicitGeneralScGpu<T,I>::set(const step::Step &step)
     }
     ssize_t free_mem_after_Falloc = gpu::mgm::get_device_memory_free();
     ssize_t allocd_in_Falloc = free_mem_before_Falloc - free_mem_after_Falloc;
-    stacktimer::info("TotalFETIExplicitGeneralScGpu::set allocd_in_Falloc %zd", allocd_in_Falloc);
+    stacktimer::info("TotalFETIExplicitGeneralSchurGpu::set allocd_in_Falloc %zd", allocd_in_Falloc);
 
     {
         std::vector<MatrixDenseView_new<T>*> Fs_vector(n_domains);
@@ -185,7 +137,7 @@ void TotalFETIExplicitGeneralScGpu<T,I>::set(const step::Step &step)
         applicator.preprocess();
     }
 
-    stacktimer::push("TotalFETIExplicitGeneralScGpu::set setup");
+    stacktimer::push("TotalFETIExplicitGeneralSchurGpu::set setup");
     if(!cfg.inner_timers) stacktimer::disable();
     #pragma omp parallel for schedule(static,1) if(cfg.parallel_set)
     for(size_t di = 0; di < n_domains; di++) {
@@ -194,7 +146,7 @@ void TotalFETIExplicitGeneralScGpu<T,I>::set(const step::Step &step)
         gpu::dnblas::handle & hd = handles_dense[di % n_queues];
         per_domain_stuff & data = domain_data[di];
 
-        stacktimer::info("TotalFETIExplicitGeneralScGpu::set setup subdomain %zu", di);
+        stacktimer::info("TotalFETIExplicitGeneralSchurGpu::set setup subdomain %zu", di);
 
         math::combine(data.Kreg_old, feti.K[di], feti.RegMat[di]);
         if constexpr(utils::is_real<T>())    data.Kreg_old.type = Matrix_Type::REAL_SYMMETRIC_POSITIVE_DEFINITE;
@@ -204,7 +156,7 @@ void TotalFETIExplicitGeneralScGpu<T,I>::set(const step::Step &step)
         data.Bt = MatrixCsxView_new<T,I>::from_old(feti.B1[di]).get_transposed_reordered_view();
         data.Kreg = MatrixCsxView_new<T,I>::from_old(data.Kreg_old);
 
-        data.op_sc = gpu::operations::schur_hcsx_ddny<T,I>::make(cfg.sc_is);
+        data.op_sc = gpu::operations::schur_hcsx_ddny<T,I>::make(cfg.schur_impl);
         data.op_sc->set_handles(q, hs, hd);
         data.op_sc->set_coefficients(-1);
         data.op_sc->set_matrix(&data.Kreg, &data.Bt, nullptr, nullptr);
@@ -227,10 +179,10 @@ void TotalFETIExplicitGeneralScGpu<T,I>::set(const step::Step &step)
     }
     total_wss_internal = utils::round_up((total_wss_internal * 105) / 100, gpu::mgm::get_natural_pitch_align());
 
-    stacktimer::info("TotalFETIExplicitGeneralScGpu::set total_wss_internal %zu", total_wss_internal);
-    stacktimer::info("TotalFETIExplicitGeneralScGpu::set total_wss_persistent %zu", total_wss_persistent);
-    stacktimer::info("TotalFETIExplicitGeneralScGpu::set max_wss_tmp_preprocess %zu", std::max_element(domain_data.begin(), domain_data.end(), [](const per_domain_stuff & l, const per_domain_stuff & r){ return l.op_sc->get_wss_tmp_preprocess() < r.op_sc->get_wss_tmp_preprocess(); })->op_sc->get_wss_tmp_preprocess());
-    stacktimer::info("TotalFETIExplicitGeneralScGpu::set max_wss_tmp_perform %zu", std::max_element(domain_data.begin(), domain_data.end(), [](const per_domain_stuff & l, const per_domain_stuff & r){ return l.op_sc->get_wss_tmp_perform() < r.op_sc->get_wss_tmp_perform(); })->op_sc->get_wss_tmp_perform());
+    stacktimer::info("TotalFETIExplicitGeneralSchurGpu::set total_wss_internal %zu", total_wss_internal);
+    stacktimer::info("TotalFETIExplicitGeneralSchurGpu::set total_wss_persistent %zu", total_wss_persistent);
+    stacktimer::info("TotalFETIExplicitGeneralSchurGpu::set max_wss_tmp_preprocess %zu", std::max_element(domain_data.begin(), domain_data.end(), [](const per_domain_stuff & l, const per_domain_stuff & r){ return l.op_sc->get_wss_tmp_preprocess() < r.op_sc->get_wss_tmp_preprocess(); })->op_sc->get_wss_tmp_preprocess());
+    stacktimer::info("TotalFETIExplicitGeneralSchurGpu::set max_wss_tmp_perform %zu", std::max_element(domain_data.begin(), domain_data.end(), [](const per_domain_stuff & l, const per_domain_stuff & r){ return l.op_sc->get_wss_tmp_perform() < r.op_sc->get_wss_tmp_perform(); })->op_sc->get_wss_tmp_perform());
 
     ws_persistent = gpu::mgm::memalloc_device(total_wss_persistent);
     ator_ws_persistent = std::make_unique<AllocatorArena_new>(AllocatorGPU_new::get_singleton());
@@ -248,18 +200,18 @@ void TotalFETIExplicitGeneralScGpu<T,I>::set(const step::Step &step)
     ws_tmp_for_cbmba = gpu::mgm::memalloc_device(wss_tmp_for_cbmba);
     ator_tmp_cbmba = std::make_unique<AllocatorCBMB_new>(AllocatorGPU_new::get_singleton(), ws_tmp_for_cbmba, wss_tmp_for_cbmba);
 
-    stacktimer::info("TotalFETIExplicitGeneralScGpu::set cbmba_capacity %zu", wss_tmp_for_cbmba);
+    stacktimer::info("TotalFETIExplicitGeneralSchurGpu::set cbmba_capacity %zu", wss_tmp_for_cbmba);
 
     ssize_t free_mem_before_preprocess = gpu::mgm::get_device_memory_free();
 
-    stacktimer::push("TotalFETIExplicitGeneralScGpu::set preprocess");
+    stacktimer::push("TotalFETIExplicitGeneralSchurGpu::set preprocess");
     if(!cfg.inner_timers) stacktimer::disable();
     #pragma omp parallel for schedule(static,1) if(cfg.parallel_set)
     for(size_t di = 0; di < n_domains; di++) {
         gpu::mgm::queue & q = queues[di % n_queues];
         per_domain_stuff & data = domain_data[di];
 
-        stacktimer::info("TotalFETIExplicitGeneralScGpu::set preprocess subdomain %zu", di);
+        stacktimer::info("TotalFETIExplicitGeneralSchurGpu::set preprocess subdomain %zu", di);
 
         void * ws_tmp = ator_tmp_cbmba->alloc(data.op_sc->get_wss_tmp_preprocess());
 
@@ -285,10 +237,10 @@ void TotalFETIExplicitGeneralScGpu<T,I>::set(const step::Step &step)
 
 
 template<typename T, typename I>
-void TotalFETIExplicitGeneralScGpu<T,I>::update(const step::Step &step)
+void TotalFETIExplicitGeneralSchurGpu<T,I>::update(const step::Step &step)
 {
     if(cfg.outer_timers) stacktimer::enable();
-    stacktimer::push("TotalFETIExplicitGeneralScGpu::update");
+    stacktimer::push("TotalFETIExplicitGeneralSchurGpu::update");
 
     stacktimer::push("update_mainloop");
     if(cfg.mainloop_update_split == 'C') {
@@ -411,7 +363,7 @@ void TotalFETIExplicitGeneralScGpu<T,I>::update(const step::Step &step)
 
 
 template<typename T, typename I>
-void TotalFETIExplicitGeneralScGpu<T,I>::_apply(const Vector_Dual<T> &x_cluster, Vector_Dual<T> &y_cluster)
+void TotalFETIExplicitGeneralSchurGpu<T,I>::_apply(const Vector_Dual<T> &x_cluster, Vector_Dual<T> &y_cluster)
 {
     VectorDenseView_new<T> x_cluster_new = VectorDenseView_new<T>::from_old(x_cluster);
     VectorDenseView_new<T> y_cluster_new = VectorDenseView_new<T>::from_old(y_cluster);
@@ -422,17 +374,26 @@ void TotalFETIExplicitGeneralScGpu<T,I>::_apply(const Vector_Dual<T> &x_cluster,
 
 
 template<typename T, typename I>
-void TotalFETIExplicitGeneralScGpu<T,I>::apply(const Vector_Dual<T> &x, Vector_Dual<T> &y)
+void TotalFETIExplicitGeneralSchurGpu<T,I>::apply(const Vector_Dual<T> &x, Vector_Dual<T> &y)
 {
+    if(cfg.outer_timers) stacktimer::enable();
+    stacktimer::push("TotalFETIExplicitGeneralSchurGpu::apply");
+
     _apply(x, y);
     y.synchronize();
+
+    stacktimer::pop();
+    if(cfg.outer_timers) stacktimer::disable();
 }
 
 
 
 template<typename T, typename I>
-void TotalFETIExplicitGeneralScGpu<T,I>::apply(const Matrix_Dual<T> &x, Matrix_Dual<T> &y)
+void TotalFETIExplicitGeneralSchurGpu<T,I>::apply(const Matrix_Dual<T> &x, Matrix_Dual<T> &y)
 {
+    if(cfg.outer_timers) stacktimer::enable();
+    stacktimer::push("TotalFETIExplicitGeneralSchurGpu::apply");
+
     Vector_Dual<T> _x, _y;
     _x.size = _y.size = x.ncols;
     for (int r = 0; r < x.nrows; ++r) {
@@ -441,15 +402,18 @@ void TotalFETIExplicitGeneralScGpu<T,I>::apply(const Matrix_Dual<T> &x, Matrix_D
         _apply(_x, _y);
     }
     y.synchronize();
+
+    stacktimer::pop();
+    if(cfg.outer_timers) stacktimer::disable();
 }
 
 
 
 template<typename T, typename I>
-void TotalFETIExplicitGeneralScGpu<T,I>::toPrimal(const Vector_Dual<T> &x, std::vector<Vector_Dense<T> > &y)
+void TotalFETIExplicitGeneralSchurGpu<T,I>::toPrimal(const Vector_Dual<T> &x, std::vector<Vector_Dense<T> > &y)
 {
     if(cfg.outer_timers) stacktimer::enable();
-    stacktimer::push("TotalFETIExplicitGeneralScGpu::toPrimal");
+    stacktimer::push("TotalFETIExplicitGeneralSchurGpu::toPrimal");
     if(!cfg.inner_timers) stacktimer::disable();
 
     #pragma omp parallel for schedule(static,1)
@@ -471,15 +435,56 @@ void TotalFETIExplicitGeneralScGpu<T,I>::toPrimal(const Vector_Dual<T> &x, std::
 
 
 template<typename T, typename I>
-void TotalFETIExplicitGeneralScGpu<T,I>::print(const step::Step &step)
+void TotalFETIExplicitGeneralSchurGpu<T,I>::print(const step::Step &step)
 {
-    eslog::error("TotalFETIExplicitGeneralScGpu::print not implemented");
+    eslog::error("TotalFETIExplicitGeneralSchurGpu::print not implemented");
+}
+
+
+
+template<typename T, typename I>
+void TotalFETIExplicitGeneralSchurGpu<T,I>::setup_config(config & cfg, const FETIConfiguration & feti_ecf_config)
+{
+    // defaults are set in config definition
+    // if ecf value is auto, cfg value is not changed
+
+    using ecf_config = DualopTotalfetiExplicitGeneralSchurGpuConfig;
+    const ecf_config & ecf = feti_ecf_config.dualop_totalfeti_explicit_generalschur_gpu_config;
+
+    if(ecf.parallel_set == ecf_config::AUTOBOOL::TRUE)  cfg.parallel_set = true;
+    if(ecf.parallel_set == ecf_config::AUTOBOOL::FALSE) cfg.parallel_set = false;
+
+    if(ecf.parallel_update == ecf_config::AUTOBOOL::TRUE)  cfg.parallel_update = true;
+    if(ecf.parallel_update == ecf_config::AUTOBOOL::FALSE) cfg.parallel_update = false;
+
+    if(ecf.parallel_apply == ecf_config::AUTOBOOL::TRUE)  cfg.parallel_apply = true;
+    if(ecf.parallel_apply == ecf_config::AUTOBOOL::FALSE) cfg.parallel_apply = false;
+
+    if(ecf.mainloop_update_split == ecf_config::MAINLOOP_UPDATE_SPLIT::COMBINED) cfg.mainloop_update_split = 'C';
+    if(ecf.mainloop_update_split == ecf_config::MAINLOOP_UPDATE_SPLIT::SEPARATE) cfg.mainloop_update_split = 'S';
+
+    if(ecf.synchronize_after_update_mainloop == ecf_config::AUTOBOOL::TRUE)  cfg.gpu_wait_after_mainloop_update = true;
+    if(ecf.synchronize_after_update_mainloop == ecf_config::AUTOBOOL::FALSE) cfg.gpu_wait_after_mainloop_update = false;
+
+    if(ecf.timers_outer == ecf_config::AUTOBOOL::TRUE)  cfg.outer_timers = true;
+    if(ecf.timers_outer == ecf_config::AUTOBOOL::FALSE) cfg.outer_timers = false;
+
+    if(ecf.timers_inner == ecf_config::AUTOBOOL::TRUE)  cfg.inner_timers = true;
+    if(ecf.timers_inner == ecf_config::AUTOBOOL::FALSE) cfg.inner_timers = false;
+
+    if(ecf.print_config == ecf_config::AUTOBOOL::TRUE)  cfg.print_config = true;
+    if(ecf.print_config == ecf_config::AUTOBOOL::FALSE) cfg.print_config = false;
+
+    if(ecf.order_F == ecf_config::MATRIX_ORDER::ROW_MAJOR) cfg.order_F = 'R';
+    if(ecf.order_F == ecf_config::MATRIX_ORDER::COL_MAJOR) cfg.order_F = 'C';
+
+    if(ecf.schur_impl == ecf_config::SCHUR_IMPL::TRIANGULAR) cfg.schur_impl = schur_impl_t::triangular;
 }
 
 
 
 #define INSTANTIATE_T_I(T,I) \
-template class TotalFETIExplicitGeneralScGpu<T,I>;
+template class TotalFETIExplicitGeneralSchurGpu<T,I>;
 
     #define INSTANTIATE_T(T) \
     INSTANTIATE_T_I(T, int32_t) \
