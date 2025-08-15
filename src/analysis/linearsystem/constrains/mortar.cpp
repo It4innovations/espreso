@@ -627,16 +627,17 @@ void MortarContact<T>::synchronize(FETI<T> &feti, std::vector<Mortar> &B, std::v
             __mInfo__(int from): from(from) {}
         };
 
+        NodeData *normals = info::mesh->contact->nodeNormals;
         std::vector<__mInfo__> info;
         auto &ids = info::mesh->nodes->IDs->datatarray();
         for (auto m = mInfo.cbegin(); m != mInfo.cend(); ++m) {
             auto it = std::lower_bound(ids.begin() + info::mesh->nodes->uniqInfo.nhalo, ids.end(), m->first);
             if (it != ids.end() && *it == m->first) {
                 info.push_back(__mInfo__(m->first));
-                info.back().normal.x = info::mesh->contact->nodeNormals->data[info::mesh->dimension * (it - ids.begin()) + 0];
-                info.back().normal.y = info::mesh->contact->nodeNormals->data[info::mesh->dimension * (it - ids.begin()) + 1];
+                info.back().normal.x = normals->data[info::mesh->dimension * (it - ids.begin()) + 0];
+                info.back().normal.y = normals->data[info::mesh->dimension * (it - ids.begin()) + 1];
                 if (info::mesh->dimension == 3) {
-                    info.back().normal.z = info::mesh->contact->nodeNormals->data[info::mesh->dimension * (it - ids.begin()) + 2];
+                    info.back().normal.z = normals->data[info::mesh->dimension * (it - ids.begin()) + 2];
                 }
             }
         }
@@ -874,6 +875,7 @@ void MortarContact<T>::update(const step::Step &step, FETI<T> &feti)
     }
 
     if (gap.size() == 0) {
+        math::set(feti.c.size - ineq_begin, feti.c.vals + ineq_begin, 1, 0.0);
         return;
     }
 
