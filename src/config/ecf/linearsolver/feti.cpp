@@ -25,7 +25,8 @@ espreso::FETIConfiguration::FETIConfiguration()
             .addoption(ECFOption().setname("EXPLICIT_SCTRIA").setdescription("Excplicit F using SC with triangular B."))
             .addoption(ECFOption().setname("EXPLICIT_SCTRIA_GPU").setdescription("Excplicit F using SC with triangular B on GPU."))
             .addoption(ECFOption().setname("EXPLICIT_GENERALSC_CPU").setdescription("Excplicit F using general SC operation on CPU."))
-            .addoption(ECFOption().setname("EXPLICIT_GENERALSC_GPU").setdescription("Excplicit F using general SC operation on GPU.")));
+            .addoption(ECFOption().setname("EXPLICIT_GENERALSC_GPU").setdescription("Excplicit F using general SC operation on GPU."))
+            .addoption(ECFOption().setname("IMPLICIT_GENERALSPSOLVER_CPU").setdescription("Excplicit F using general sparse solver operation on CPU.")));
 
     projector = PROJECTOR::ORTHOGONAL;
     REGISTER(projector, ECFMetaData()

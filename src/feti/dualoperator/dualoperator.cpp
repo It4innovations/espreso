@@ -9,6 +9,7 @@
 #include "totalfeti.moore.penrose.h"
 #include "totalfeti.explicit.generalsc.cpu.h"
 #include "totalfeti.explicit.generalsc.gpu.h"
+#include "totalfeti.implicit.generalspsolver.cpu.h"
 #include "hybridfeti.implicit.h"
 #include "feti/projector/projector.h"
 
@@ -109,6 +110,10 @@ DualOperator<T>* DualOperator<T>::create(FETI<T> &feti, const step::Step &step)
             eslog::info(" = DUAL OPERATOR                       EXPLICIT TOTAL FETI USING GENERAL SC OPERATION ON GPU = \n");
             dual = new TotalFETIExplicitGeneralScGpu<T,int>(feti);
             break;
+        case FETIConfiguration::DUAL_OPERATOR::IMPLICIT_GENERALSPSOLVER_CPU:
+            eslog::info(" = DUAL OPERATOR            EXPLICIT TOTAL FETI USING GENERAL SPARSE SOLVER OPERATION ON CPU = \n");
+            dual = new TotalFETIImplicitGeneralSpSolverCpu<T,int>(feti);
+            break;
         }
         break;
 
@@ -127,6 +132,7 @@ DualOperator<T>* DualOperator<T>::create(FETI<T> &feti, const step::Step &step)
         case FETIConfiguration::DUAL_OPERATOR::EXPLICIT_SCTRIA_GPU:
         case FETIConfiguration::DUAL_OPERATOR::EXPLICIT_GENERALSC_CPU:
         case FETIConfiguration::DUAL_OPERATOR::EXPLICIT_GENERALSC_GPU:
+        case FETIConfiguration::DUAL_OPERATOR::IMPLICIT_GENERALSPSOLVER_CPU:
             eslog::error("not implemented dual operator\n");
             break;
         }
