@@ -187,8 +187,8 @@ void computeBodiesSurface(NodeStore *nodes, ElementStore *elements, std::vector<
     eslog::checkpointln("MESH: BODY SURFACE COMPUTED");
 }
 
-template <size_t nodes, size_t edim> struct SurfaceElementBasis {
-    double w[1], N[1][nodes], dN[1][nodes][edim], NN[nodes][nodes], dNN[nodes][nodes][edim];
+template <size_t nodes, size_t edim, size_t gps=1> struct SurfaceElementBasis {
+    double w[gps], N[gps][nodes], dN[gps][nodes][edim], NN[nodes][nodes], dNN[nodes][nodes][edim];
 };
 
 template<Element::CODE code, size_t nodes>
@@ -198,11 +198,11 @@ static void surfaceNormal2D(SurfaceStore * surface, size_t e, const double* disp
     BaseFunctions<code, 1>::simd(basis);
 }
 
-template<Element::CODE code, size_t nodes>
+template<Element::CODE code, size_t nodes, size_t gps>
 static void surfaceNormal3D(SurfaceStore * surface, size_t e, const double* displacement)
 {
-    SurfaceElementBasis<nodes, 2> basis;
-    BaseFunctions<code, 1>::simd(basis);
+    SurfaceElementBasis<nodes, 2, gps> basis;
+    BaseFunctions<code, gps>::simd(basis);
 
     auto enodes = surface->enodes->begin() + e;
     for (size_t n = 0; n < enodes->size(); ++n) {
@@ -248,10 +248,10 @@ void computeSurfaceNodeNormals(NodeStore *nodes, SurfaceStore * surface, const s
         switch (surface->epointers->datatarray()[e]->code) {
         case Element::CODE::LINE2    : surfaceNormal2D<Element::CODE::LINE2    , 2>(surface, e, displacement); break;
         case Element::CODE::LINE3    : surfaceNormal2D<Element::CODE::LINE3    , 3>(surface, e, displacement); break;
-        case Element::CODE::TRIANGLE3: surfaceNormal3D<Element::CODE::TRIANGLE3, 3>(surface, e, displacement); break;
-        case Element::CODE::TRIANGLE6: surfaceNormal3D<Element::CODE::TRIANGLE6, 6>(surface, e, displacement); break;
-        case Element::CODE::SQUARE4  : surfaceNormal3D<Element::CODE::SQUARE4  , 4>(surface, e, displacement); break;
-        case Element::CODE::SQUARE8  : surfaceNormal3D<Element::CODE::SQUARE8  , 8>(surface, e, displacement); break;
+        case Element::CODE::TRIANGLE3: surfaceNormal3D<Element::CODE::TRIANGLE3, 3, 6>(surface, e, displacement); break;
+        case Element::CODE::TRIANGLE6: surfaceNormal3D<Element::CODE::TRIANGLE6, 6, 6>(surface, e, displacement); break;
+        case Element::CODE::SQUARE4  : surfaceNormal3D<Element::CODE::SQUARE4  , 4, 1>(surface, e, displacement); break;
+        case Element::CODE::SQUARE8  : surfaceNormal3D<Element::CODE::SQUARE8  , 8, 1>(surface, e, displacement); break;
         default:
             eslog::internalFailure("unknown or not implemented surface element.\n");
         }
@@ -1026,11 +1026,11 @@ static void normal2D(NodeData *nodeMultiplicity, NodeData *nodeNormals, serializ
     BaseFunctions<code, 1>::simd(basis);
 }
 
-template<Element::CODE code, size_t nodes>
+template<Element::CODE code, size_t nodes, size_t gps>
 static void normal3D(NodeData *nodeMultiplicity, NodeData *nodeNormals, serializededata<esint, Point> *coordinates, BoundaryRegionStore *region, size_t e, const double* displacement)
 {
-    SurfaceElementBasis<nodes, 2> basis;
-    BaseFunctions<code, 1>::simd(basis);
+    SurfaceElementBasis<nodes, 2, gps> basis;
+    BaseFunctions<code, gps>::simd(basis);
 
     auto enodes = region->elements->begin() + e;
     for (size_t n = 0; n < enodes->size(); ++n) {
@@ -1077,10 +1077,10 @@ void computeBoundaryRegionNormals(NodeStore *nodes, std::vector<BoundaryRegionSt
                 switch (boundaryRegions[r]->epointers->datatarray()[e]->code) {
                 case Element::CODE::LINE2    : normal2D<Element::CODE::LINE2    , 2>(boundaryRegions[r]->nodeMultiplicity, boundaryRegions[r]->nodeNormals, nodes->coordinates, boundaryRegions[r], e, displacement); break;
                 case Element::CODE::LINE3    : normal2D<Element::CODE::LINE3    , 3>(boundaryRegions[r]->nodeMultiplicity, boundaryRegions[r]->nodeNormals, nodes->coordinates, boundaryRegions[r], e, displacement); break;
-                case Element::CODE::TRIANGLE3: normal3D<Element::CODE::TRIANGLE3, 3>(boundaryRegions[r]->nodeMultiplicity, boundaryRegions[r]->nodeNormals, nodes->coordinates, boundaryRegions[r], e, displacement); break;
-                case Element::CODE::TRIANGLE6: normal3D<Element::CODE::TRIANGLE6, 6>(boundaryRegions[r]->nodeMultiplicity, boundaryRegions[r]->nodeNormals, nodes->coordinates, boundaryRegions[r], e, displacement); break;
-                case Element::CODE::SQUARE4  : normal3D<Element::CODE::SQUARE4  , 4>(boundaryRegions[r]->nodeMultiplicity, boundaryRegions[r]->nodeNormals, nodes->coordinates, boundaryRegions[r], e, displacement); break;
-                case Element::CODE::SQUARE8  : normal3D<Element::CODE::SQUARE8  , 8>(boundaryRegions[r]->nodeMultiplicity, boundaryRegions[r]->nodeNormals, nodes->coordinates, boundaryRegions[r], e, displacement); break;
+                case Element::CODE::TRIANGLE3: normal3D<Element::CODE::TRIANGLE3, 3, 6>(boundaryRegions[r]->nodeMultiplicity, boundaryRegions[r]->nodeNormals, nodes->coordinates, boundaryRegions[r], e, displacement); break;
+                case Element::CODE::TRIANGLE6: normal3D<Element::CODE::TRIANGLE6, 6, 6>(boundaryRegions[r]->nodeMultiplicity, boundaryRegions[r]->nodeNormals, nodes->coordinates, boundaryRegions[r], e, displacement); break;
+                case Element::CODE::SQUARE4  : normal3D<Element::CODE::SQUARE4  , 4, 1>(boundaryRegions[r]->nodeMultiplicity, boundaryRegions[r]->nodeNormals, nodes->coordinates, boundaryRegions[r], e, displacement); break;
+                case Element::CODE::SQUARE8  : normal3D<Element::CODE::SQUARE8  , 8, 1>(boundaryRegions[r]->nodeMultiplicity, boundaryRegions[r]->nodeNormals, nodes->coordinates, boundaryRegions[r], e, displacement); break;
                 default:
                     eslog::internalFailure("unknown or not implemented surface element.\n");
                 }
@@ -1341,10 +1341,10 @@ void arrangeContactInterfaces(NodeStore *nodes, ContactStore* contact, BodyStore
             switch (contactInterfaces[i]->epointers->datatarray()[e]->code) {
             case Element::CODE::LINE2    : normal2D<Element::CODE::LINE2    , 2>(contact->nodeMultiplicity, contact->nodeNormals, nodes->coordinates, contactInterfaces[i], e, displacement); break;
             case Element::CODE::LINE3    : normal2D<Element::CODE::LINE3    , 3>(contact->nodeMultiplicity, contact->nodeNormals, nodes->coordinates, contactInterfaces[i], e, displacement); break;
-            case Element::CODE::TRIANGLE3: normal3D<Element::CODE::TRIANGLE3, 3>(contact->nodeMultiplicity, contact->nodeNormals, nodes->coordinates, contactInterfaces[i], e, displacement); break;
-            case Element::CODE::TRIANGLE6: normal3D<Element::CODE::TRIANGLE6, 6>(contact->nodeMultiplicity, contact->nodeNormals, nodes->coordinates, contactInterfaces[i], e, displacement); break;
-            case Element::CODE::SQUARE4  : normal3D<Element::CODE::SQUARE4  , 4>(contact->nodeMultiplicity, contact->nodeNormals, nodes->coordinates, contactInterfaces[i], e, displacement); break;
-            case Element::CODE::SQUARE8  : normal3D<Element::CODE::SQUARE8  , 8>(contact->nodeMultiplicity, contact->nodeNormals, nodes->coordinates, contactInterfaces[i], e, displacement); break;
+            case Element::CODE::TRIANGLE3: normal3D<Element::CODE::TRIANGLE3, 3, 6>(contact->nodeMultiplicity, contact->nodeNormals, nodes->coordinates, contactInterfaces[i], e, displacement); break;
+            case Element::CODE::TRIANGLE6: normal3D<Element::CODE::TRIANGLE6, 6, 6>(contact->nodeMultiplicity, contact->nodeNormals, nodes->coordinates, contactInterfaces[i], e, displacement); break;
+            case Element::CODE::SQUARE4  : normal3D<Element::CODE::SQUARE4  , 4, 1>(contact->nodeMultiplicity, contact->nodeNormals, nodes->coordinates, contactInterfaces[i], e, displacement); break;
+            case Element::CODE::SQUARE8  : normal3D<Element::CODE::SQUARE8  , 8, 1>(contact->nodeMultiplicity, contact->nodeNormals, nodes->coordinates, contactInterfaces[i], e, displacement); break;
             default:
                 eslog::internalFailure("unknown or not implemented surface element.\n");
             }
