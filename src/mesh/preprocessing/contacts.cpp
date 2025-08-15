@@ -205,8 +205,8 @@ static void surfaceNormal3D(SurfaceStore * surface, size_t e, const double* disp
     BaseFunctions<code, 1>::simd(basis);
 
     auto enodes = surface->enodes->begin() + e;
-    double dND[6] = { 0, 0, 0, 0, 0, 0 };
     for (size_t n = 0; n < enodes->size(); ++n) {
+        double dND[6] = { 0, 0, 0, 0, 0, 0 };
         for (size_t m = 0; m < enodes->size(); ++m) {
             Point disp;
             if (displacement) {
@@ -1033,8 +1033,8 @@ static void normal3D(NodeData *nodeMultiplicity, NodeData *nodeNormals, serializ
     BaseFunctions<code, 1>::simd(basis);
 
     auto enodes = region->elements->begin() + e;
-    double dND[6] = { 0, 0, 0, 0, 0, 0 };
     for (size_t n = 0; n < enodes->size(); ++n) {
+        double dND[6] = { 0, 0, 0, 0, 0, 0 };
         for (size_t m = 0; m < enodes->size(); ++m) {
             Point disp;
             if (displacement) {
@@ -1085,6 +1085,7 @@ void computeBoundaryRegionNormals(NodeStore *nodes, std::vector<BoundaryRegionSt
                     eslog::internalFailure("unknown or not implemented surface element.\n");
                 }
             }
+            DebugOutput::regionNormals(boundaryRegions[r], displacement);
         }
     }
 }

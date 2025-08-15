@@ -10,6 +10,7 @@
 namespace espreso {
 
 class Mesh;
+class BoundaryRegionStore;
 
 class DebugOutput {
     static int iteration;
@@ -31,6 +32,7 @@ public:
     static void contact(double clusterShrinkRatio = .9, double domainShrinkRatio = .95);
     static void surface(const char* name, double clusterShrinkRatio = .9, double domainShrinkRatio = .95);
     static void warpedNormals(const char* name, const double *displacement = nullptr, double clusterShrinkRatio = .9, double domainShrinkRatio = .95);
+    static void regionNormals(const BoundaryRegionStore *region, const double *displacement = nullptr);
 
 protected:
     DebugOutput(double clusterShrinkRatio, double domainShrinkRatio, bool withDomains);

@@ -16,6 +16,7 @@
 #include "mesh/store/nodestore.h"
 #include "mesh/store/domainstore.h"
 #include "mesh/store/elementsregionstore.h"
+#include "mesh/store/boundaryregionstore.h"
 #include "mesh/store/surfacestore.h"
 #include "mesh/store/contactstore.h"
 
@@ -641,6 +642,62 @@ void DebugOutput::warpedNormals(const char* name, const double *displacement, do
     output._writer.groupData();
 
     output._writer.commitFile(output._path + std::string(name) + "." + std::to_string(iteration) + ".vtk");
+    output._writer.reorder();
+    output._writer.write();
+}
+
+void DebugOutput::regionNormals(const BoundaryRegionStore *region, const double *displacement)
+{
+    if (!info::ecf->output.debug) {
+        return;
+    }
+    // print all nodes since the region node info was not computed yet
+
+    DebugOutput output(1, 1, false);
+    esint noffset = 2 * output._mesh.nodes->size;
+    esint nsize = Communication::exscan(noffset);
+
+    if (Visualization::isRoot()) {
+        output._writer.points(nsize);
+    }
+    for (esint n = 0; n < output._mesh.nodes->size; ++n) {
+        Point p = output._mesh.nodes->coordinates->datatarray()[n];
+        if (displacement) {
+            p.x += displacement[n * output._mesh.dimension + 0];
+            p.y += displacement[n * output._mesh.dimension + 1];
+            if (output._mesh.dimension == 3) {
+                p.z += displacement[n * output._mesh.dimension + 2];
+            }
+        }
+        output._writer.point(p.x, p.y, p.z);
+        p.x += region->nodeNormals->data[n * output._mesh.dimension + 0];
+        p.y += region->nodeNormals->data[n * output._mesh.dimension + 1];
+        if (output._mesh.dimension == 3) {
+            p.z += region->nodeNormals->data[n * output._mesh.dimension + 2];
+        }
+        output._writer.point(p.x, p.y, p.z);
+    }
+    output._writer.groupData();
+
+    if (Visualization::isRoot()) {
+        output._writer.cells(nsize / 2, 3 * nsize / 2);
+    }
+
+    for (esint n = 0; n < output._mesh.nodes->size; ++n) {
+        output._writer.int32s(2);
+        output._writer.int32s(2 * n + noffset + 0);
+        output._writer.int32ln(2 * n + noffset + 1);
+    }
+    output._writer.groupData();
+
+    if (Visualization::isRoot()) {
+        output._writer.celltypes(nsize / 2);
+    }
+    for (esint n = 0; n < output._mesh.nodes->size; ++n) {
+        output._writer.type(Element::CODE::LINE2);
+    }
+    output._writer.groupData();
+    output._writer.commitFile(output._path + "normals." + region->name + ".vtk");
     output._writer.reorder();
     output._writer.write();
 }
