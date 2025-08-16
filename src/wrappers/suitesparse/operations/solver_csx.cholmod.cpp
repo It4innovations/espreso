@@ -7,6 +7,7 @@
 #include "math/primitives_new/allocator_new.h"
 #include "math/operations/copy_dnx.h"
 #include "math/operations/convert_csx_dny.h"
+#include "math/operations/convert_dnx_dny.h"
 
 
 
@@ -211,8 +212,17 @@ void solver_csx_cholmod<T,I>::internal_solve(VectorDenseView_new<T> & rhs, Vecto
 template<typename T, typename I>
 void solver_csx_cholmod<T,I>::internal_solve(MatrixDenseView_new<T> & rhs, MatrixDenseView_new<T> & sol)
 {
-    if(rhs.order != 'C') eslog::error("only support colmajor rhs/sol for now\n");
     if (data->cm_A_view.nrow == 0 || data->cm_A_view.ncol == 0) return;
+
+    if(rhs.order != 'C') { // sol.order is equal
+        MatrixDenseData_new<T> tmp;
+        tmp.set(rhs.nrows, rhs.ncols, 'C', AllocatorCPU_new::get_singleton());
+        tmp.alloc();
+        convert_dnx_dny<T>::do_all(&rhs, &tmp, false);
+        this->internal_solve(tmp, tmp);
+        convert_dnx_dny<T>::do_all(&tmp, &sol, false);
+        return;
+    }
 
     cholmod_dense cm_rhs;
     cm_rhs.nrow = rhs.nrows;
@@ -238,7 +248,14 @@ void solver_csx_cholmod<T,I>::internal_solve(MatrixDenseView_new<T> & rhs, Matri
 template<typename T, typename I>
 void solver_csx_cholmod<T,I>::internal_solve(MatrixCsxView_new<T,I> & rhs, MatrixDenseView_new<T> & sol)
 {
-    if(sol.order != 'C') eslog::error("only support colmajor sol for now\n");
+    if(sol.order != 'C') {
+        MatrixDenseData_new<T> tmp;
+        tmp.set(sol.nrows, sol.ncols, 'C', AllocatorCPU_new::get_singleton());
+        tmp.alloc();
+        this->internal_solve(rhs, tmp);
+        convert_dnx_dny<T>::do_all(&tmp, &sol, false);
+        return;
+    }
 
     convert_csx_dny<T,I>::do_all(&rhs, &sol);
 
