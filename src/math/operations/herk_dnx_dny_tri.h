@@ -34,8 +34,9 @@ public:
     herk_dnx_dny_tri & operator=(const herk_dnx_dny_tri &) = delete;
     herk_dnx_dny_tri & operator=(herk_dnx_dny_tri &&) = default;
     ~herk_dnx_dny_tri() = default;
+private:
+    void setup_config();
 public:
-    void set_config(config cfg_);
     void set_matrix_A(MatrixDenseView_new<T> * A_);
     void set_matrix_C(MatrixDenseView_new<T> * C_);
     void set_coefficients(Treal alpha_, Treal beta_);
@@ -56,7 +57,6 @@ private:
     Treal alpha = Treal{1};
     Treal beta = Treal{0};
     blas::herk_mode mode;
-    bool config_set = false;
     bool mode_set = false;
     bool pattern_set = false;
     bool preproces_called = false;

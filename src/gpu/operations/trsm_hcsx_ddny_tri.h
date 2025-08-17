@@ -55,8 +55,9 @@ public:
     trsm_hcsx_ddny_tri & operator=(const trsm_hcsx_ddny_tri &) = delete;
     trsm_hcsx_ddny_tri & operator=(trsm_hcsx_ddny_tri &&) = delete;
     ~trsm_hcsx_ddny_tri() = default;
+private:
+    void setup_config();
 public:
-    void set_config(config cfg_);
     void set_handles(gpu::mgm::queue q_, gpu::spblas::handle spblas_handle_, gpu::dnblas::handle dnblas_handle_);
     void set_matrix_h_L(MatrixCsxView_new<T,I> * h_L_);
     void set_matrix_d_X(MatrixDenseView_new<T> * d_X_);
@@ -82,7 +83,6 @@ private:
     size_t wss_persistent = 0;
     size_t wss_tmp_preprocess = 0;
     size_t wss_tmp_perform = 0;
-    bool called_set_config = false;
     bool called_set_handles = false;
     bool called_calc_X_pattern = false;
     bool called_setup = false;

@@ -3,6 +3,9 @@
 
 #include <memory>
 
+#include "config/ecf/operations/trsm_csx_dny_tria.h"
+#include "esinfo/ecfinfo.h"
+#include "esinfo/meshinfo.h"
 #include "math/primitives_new/allocator_new.h"
 #include "math/operations/pivots_trails_csx.h"
 #include "math/operations/auxiliary/tri_partition_trsm.h"
@@ -13,16 +16,6 @@
 namespace espreso {
 namespace math {
 namespace operations {
-
-
-
-template<typename T, typename I>
-void trsm_csx_dny_tri<T,I>::set_config(config cfg_)
-{
-    cfg = cfg_;
-
-    called_set_config = true;
-}
 
 
 
@@ -74,7 +67,6 @@ void trsm_csx_dny_tri<T,I>::preprocess()
 {
     stacktimer::push("trsm_csx_dny_tri::preprocess");
 
-    if(!called_set_config) eslog::error("set config was not called\n");
     if(!called_set_pattern) eslog::error("X pattern was not set\n");
     if(called_preprocess) eslog::error("preproces was already called\n");
     if(L == nullptr) eslog::error("matrix L is not set\n");
@@ -86,6 +78,8 @@ void trsm_csx_dny_tri<T,I>::preprocess()
     if(X->nrows != L->nrows) eslog::error("incompatible matrices\n");
     if(X_colpivots.size != X->ncols) eslog::error("wrong colpivots size\n");
     if(X_rowtrails.size != X->nrows) eslog::error("wrong rowtrails size\n");
+
+    setup_config();
 
     for(size_t i = 1; i < X_colpivots.size; i++) {
         if(X_colpivots.vals[i-1] > X_colpivots.vals[i]) {
@@ -291,6 +285,137 @@ void trsm_csx_dny_tri<T,I>::perform()
     L_dn.free();
 
     stacktimer::pop();
+}
+
+
+
+template<typename T, typename I>
+void trsm_csx_dny_tri<T,I>::setup_config()
+{
+    using ecf_config = TrsmCsxDnyTriaConfig;
+    const ecf_config & ecf = info::ecf->operations.trsm_csx_dny_tria;
+
+    switch(ecf.strategy) {
+        case ecf_config::TRSM_TRIA_STRATEGY::AUTO:         cfg.strategy = 'F'; break;
+        case ecf_config::TRSM_TRIA_STRATEGY::SPLIT_RHS:    cfg.strategy = 'R'; break;
+        case ecf_config::TRSM_TRIA_STRATEGY::SPLIT_FACTOR: cfg.strategy = 'F'; break;
+    }
+
+    {
+        switch(ecf.partition.algorithm) {
+            case ecf_config::PARTITION_ALGORITHM::AUTO:         cfg.partition.algorithm = 'U'; break;
+            case ecf_config::PARTITION_ALGORITHM::UNIFORM:      cfg.partition.algorithm = 'U'; break;
+            case ecf_config::PARTITION_ALGORITHM::MINIMUM_WORK: cfg.partition.algorithm = 'M'; break;
+        }
+
+        char partition_strategy = '_';
+        switch(ecf.partition.strategy) {
+            case ecf_config::PARTITION_STRATEGY::AUTO:        partition_strategy = 'S'; break;
+            case ecf_config::PARTITION_STRATEGY::CHUNK_SIZE:  partition_strategy = 'S'; break;
+            case ecf_config::PARTITION_STRATEGY::CHUNK_COUNT: partition_strategy = 'C'; break;
+        }
+
+        int chunk_size = ecf.partition.chunk_size;
+        if(chunk_size == 0) {
+            if(info::mesh->dimension == 2 && cfg.strategy == 'F') chunk_size = 200;
+            if(info::mesh->dimension == 2 && cfg.strategy == 'R') chunk_size = 100;
+            if(info::mesh->dimension == 3 && cfg.strategy == 'F') chunk_size = 200;
+            if(info::mesh->dimension == 3 && cfg.strategy == 'R') chunk_size = 100;
+        }
+
+        int chunk_count = utils::replace_if_zero(ecf.partition.chunk_count, 20); // not tested
+
+        if(partition_strategy == 'S') cfg.partition.parameter = -chunk_size;
+        if(partition_strategy == 'C') cfg.partition.parameter = chunk_count;
+    }
+
+    {
+        switch(ecf.split_rhs_config.factor_order_sp) {
+            case ecf_config::MATRIX_ORDER::AUTO:      cfg.splitrhs.factor_order_sp = 'R'; break;
+            case ecf_config::MATRIX_ORDER::ROW_MAJOR: cfg.splitrhs.factor_order_sp = 'R'; break;
+            case ecf_config::MATRIX_ORDER::COL_MAJOR: cfg.splitrhs.factor_order_sp = 'C'; break;
+        }
+
+        switch(ecf.split_rhs_config.factor_order_dn) {
+            case ecf_config::MATRIX_ORDER::AUTO:      cfg.splitrhs.factor_order_dn = 'C'; break;
+            case ecf_config::MATRIX_ORDER::ROW_MAJOR: cfg.splitrhs.factor_order_dn = 'R'; break;
+            case ecf_config::MATRIX_ORDER::COL_MAJOR: cfg.splitrhs.factor_order_dn = 'C'; break;
+        }
+
+        switch(ecf.split_rhs_config.spdn_criteria) {
+            case ecf_config::SPDN_CRITERIA::AUTO:                    cfg.splitrhs.spdn_criteria = 'S'; break;
+            case ecf_config::SPDN_CRITERIA::SPARSE_ONLY:             cfg.splitrhs.spdn_criteria = 'S'; break;
+            case ecf_config::SPDN_CRITERIA::DENSE_ONLY:              cfg.splitrhs.spdn_criteria = 'D'; break;
+            case ecf_config::SPDN_CRITERIA::FRACTION_OF_NUM_CHUNKS:  cfg.splitrhs.spdn_criteria = 'C'; break;
+            case ecf_config::SPDN_CRITERIA::FRACTION_OF_FACTOR_SIZE: cfg.splitrhs.spdn_criteria = 'Z'; break;
+            case ecf_config::SPDN_CRITERIA::FACTOR_DENSITY:          cfg.splitrhs.spdn_criteria = 'T'; break;
+        }
+        
+        double spdn_param_frac_of_num_chunks = utils::replace_if_zero(ecf.split_rhs_config.spdn_param_frac_of_num_chunks, 0.7); // not tested
+        double spdn_param_frac_of_factor_size = utils::replace_if_zero(ecf.split_rhs_config.spdn_param_frac_of_factor_size, 0.7); // not tested
+        double spdn_param_factor_density = utils::replace_if_zero(ecf.split_rhs_config.spdn_param_factor_density, 0.1); // not tested
+
+        cfg.splitrhs.spdn_param = 0;
+        if(cfg.splitrhs.spdn_criteria == 'C') cfg.splitrhs.spdn_param = spdn_param_frac_of_num_chunks;
+        if(cfg.splitrhs.spdn_criteria == 'Z') cfg.splitrhs.spdn_param = spdn_param_frac_of_factor_size;
+        if(cfg.splitrhs.spdn_criteria == 'T') cfg.splitrhs.spdn_param = spdn_param_factor_density;
+    }
+
+    {
+        switch(ecf.split_factor_config.trsm_factor_spdn) {
+            case ecf_config::SPDN::AUTO:
+                cfg.splitfactor.trsm_factor_spdn = ((info::mesh->dimension == 2) ? 'S' : 'D');
+                break;
+            case ecf_config::SPDN::SPARSE: cfg.splitfactor.trsm_factor_spdn = 'S'; break;
+            case ecf_config::SPDN::DENSE:  cfg.splitfactor.trsm_factor_spdn = 'D'; break;
+        }
+
+        switch(ecf.split_factor_config.trsm_factor_order) {
+            case ecf_config::MATRIX_ORDER::AUTO:      cfg.splitfactor.trsm_factor_order = 'R'; break;
+            case ecf_config::MATRIX_ORDER::ROW_MAJOR: cfg.splitfactor.trsm_factor_order = 'R'; break;
+            case ecf_config::MATRIX_ORDER::COL_MAJOR: cfg.splitfactor.trsm_factor_order = 'C'; break;
+        }
+
+        switch(ecf.split_factor_config.gemm_factor_pruning) {
+            case ecf_config::PRUNING_STRATEGY::AUTO:          cfg.splitfactor.gemm_factor_prune = 'R'; break;
+            case ecf_config::PRUNING_STRATEGY::NO_PRUNING:    cfg.splitfactor.gemm_factor_prune = 'N'; break;
+            case ecf_config::PRUNING_STRATEGY::ROWS_ONLY:     cfg.splitfactor.gemm_factor_prune = 'R'; break;
+            case ecf_config::PRUNING_STRATEGY::COLS_ONLY:     cfg.splitfactor.gemm_factor_prune = 'C'; break;
+            case ecf_config::PRUNING_STRATEGY::ROWS_AND_COLS: cfg.splitfactor.gemm_factor_prune = 'A'; break;
+        }
+
+        switch(ecf.split_factor_config.gemm_factor_order_sp) {
+            case ecf_config::MATRIX_ORDER::AUTO:      cfg.splitfactor.gemm_factor_order_sp = 'R'; break;
+            case ecf_config::MATRIX_ORDER::ROW_MAJOR: cfg.splitfactor.gemm_factor_order_sp = 'R'; break;
+            case ecf_config::MATRIX_ORDER::COL_MAJOR: cfg.splitfactor.gemm_factor_order_sp = 'C'; break;
+        }
+
+        switch(ecf.split_factor_config.gemm_factor_order_dn) {
+            case ecf_config::MATRIX_ORDER::AUTO:      cfg.splitfactor.gemm_factor_order_dn = 'R'; break;
+            case ecf_config::MATRIX_ORDER::ROW_MAJOR: cfg.splitfactor.gemm_factor_order_dn = 'R'; break;
+            case ecf_config::MATRIX_ORDER::COL_MAJOR: cfg.splitfactor.gemm_factor_order_dn = 'C'; break;
+        }
+
+        switch(ecf.split_factor_config.gemm_spdn_criteria) {
+            case ecf_config::SPDN_CRITERIA::AUTO:
+                cfg.splitfactor.gemm_spdn_criteria = ((info::mesh->dimension == 3 && cfg.splitfactor.gemm_factor_prune == 'R') ? 'D' : 'S');
+                break;
+            case ecf_config::SPDN_CRITERIA::SPARSE_ONLY:             cfg.splitfactor.gemm_spdn_criteria = 'S'; break;
+            case ecf_config::SPDN_CRITERIA::DENSE_ONLY:              cfg.splitfactor.gemm_spdn_criteria = 'D'; break;
+            case ecf_config::SPDN_CRITERIA::FRACTION_OF_NUM_CHUNKS:  cfg.splitfactor.gemm_spdn_criteria = 'C'; break;
+            case ecf_config::SPDN_CRITERIA::FRACTION_OF_FACTOR_SIZE: cfg.splitfactor.gemm_spdn_criteria = 'Z'; break;
+            case ecf_config::SPDN_CRITERIA::FACTOR_DENSITY:          cfg.splitfactor.gemm_spdn_criteria = 'T'; break;
+        }
+        
+        double spdn_param_frac_of_num_chunks = utils::replace_if_zero(ecf.split_factor_config.spdn_param_frac_of_num_chunks, 0.7); // not tested
+        double spdn_param_frac_of_factor_size = utils::replace_if_zero(ecf.split_factor_config.spdn_param_frac_of_factor_size, 0.7); // not tested
+        double spdn_param_factor_density = utils::replace_if_zero(ecf.split_factor_config.spdn_param_factor_density, 0.1); // not tested
+
+        cfg.splitfactor.gemm_spdn_param = 0;
+        if(cfg.splitfactor.gemm_spdn_criteria == 'C') cfg.splitfactor.gemm_spdn_param = spdn_param_frac_of_num_chunks;
+        if(cfg.splitfactor.gemm_spdn_criteria == 'Z') cfg.splitfactor.gemm_spdn_param = spdn_param_frac_of_factor_size;
+        if(cfg.splitfactor.gemm_spdn_criteria == 'T') cfg.splitfactor.gemm_spdn_param = spdn_param_factor_density;
+    }
 }
 
 

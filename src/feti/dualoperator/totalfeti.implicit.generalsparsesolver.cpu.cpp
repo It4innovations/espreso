@@ -263,30 +263,51 @@ void TotalFETIImplicitGeneralSparseSolverCpu<T,I>::setup_config(config & cfg, co
     using ecf_config = DualopTotalfetiImplicitGeneralSparseSolverCpuConfig;
     const ecf_config & ecf = feti_ecf_config.dualop_totalfeti_implicit_generalsparsesolver_cpu_config;
 
-    if(ecf.parallel_set == ecf_config::AUTOBOOL::TRUE)  cfg.parallel_set = true;
-    if(ecf.parallel_set == ecf_config::AUTOBOOL::FALSE) cfg.parallel_set = false;
+    switch(ecf.parallel_set) {
+        case ecf_config::AUTOBOOL::AUTO: break;
+        case ecf_config::AUTOBOOL::TRUE:  cfg.parallel_set = true;  break;
+        case ecf_config::AUTOBOOL::FALSE: cfg.parallel_set = false; break;
+    }
 
-    if(ecf.parallel_update == ecf_config::AUTOBOOL::TRUE)  cfg.parallel_update = true;
-    if(ecf.parallel_update == ecf_config::AUTOBOOL::FALSE) cfg.parallel_update = false;
+    switch(ecf.parallel_update) {
+        case ecf_config::AUTOBOOL::AUTO: break;
+        case ecf_config::AUTOBOOL::TRUE:  cfg.parallel_update = true;  break;
+        case ecf_config::AUTOBOOL::FALSE: cfg.parallel_update = false; break;
+    }
 
-    if(ecf.parallel_apply == ecf_config::AUTOBOOL::TRUE)  cfg.parallel_apply = true;
-    if(ecf.parallel_apply == ecf_config::AUTOBOOL::FALSE) cfg.parallel_apply = false;
+    switch(ecf.parallel_apply) {
+        case ecf_config::AUTOBOOL::AUTO: break;
+        case ecf_config::AUTOBOOL::TRUE:  cfg.parallel_apply = true;  break;
+        case ecf_config::AUTOBOOL::FALSE: cfg.parallel_apply = false; break;
+    }
 
-    if(ecf.timers_outer == ecf_config::AUTOBOOL::TRUE)  cfg.outer_timers = true;
-    if(ecf.timers_outer == ecf_config::AUTOBOOL::FALSE) cfg.outer_timers = false;
+    switch(ecf.timers_outer) {
+        case ecf_config::AUTOBOOL::AUTO: break;
+        case ecf_config::AUTOBOOL::TRUE:  cfg.outer_timers = true;  break;
+        case ecf_config::AUTOBOOL::FALSE: cfg.outer_timers = false; break;
+    }
 
-    if(ecf.timers_inner == ecf_config::AUTOBOOL::TRUE)  cfg.inner_timers = true;
-    if(ecf.timers_inner == ecf_config::AUTOBOOL::FALSE) cfg.inner_timers = false;
+    switch(ecf.timers_inner) {
+        case ecf_config::AUTOBOOL::AUTO: break;
+        case ecf_config::AUTOBOOL::TRUE:  cfg.inner_timers = true;  break;
+        case ecf_config::AUTOBOOL::FALSE: cfg.inner_timers = false; break;
+    }
 
-    if(ecf.print_config == ecf_config::AUTOBOOL::TRUE)  cfg.print_config = true;
-    if(ecf.print_config == ecf_config::AUTOBOOL::FALSE) cfg.print_config = false;
+    switch(ecf.print_config) {
+        case ecf_config::AUTOBOOL::AUTO: break;
+        case ecf_config::AUTOBOOL::TRUE:  cfg.print_config = true;  break;
+        case ecf_config::AUTOBOOL::FALSE: cfg.print_config = false; break;
+    }
 
-    if(ecf.sparse_solver_impl == ecf_config::SPARSE_SOLVER_IMPL::MKLPARDISO)   cfg.solver_impl = solver_impl_t::mklpardiso;
-    if(ecf.sparse_solver_impl == ecf_config::SPARSE_SOLVER_IMPL::SUITESPARSE)  cfg.solver_impl = solver_impl_t::suitesparse;
-    if(ecf.sparse_solver_impl == ecf_config::SPARSE_SOLVER_IMPL::MUMPS)        cfg.solver_impl = solver_impl_t::mumps;
-    if(ecf.sparse_solver_impl == ecf_config::SPARSE_SOLVER_IMPL::STRUMPACK)    cfg.solver_impl = solver_impl_t::strumpack;
-    if(ecf.sparse_solver_impl == ecf_config::SPARSE_SOLVER_IMPL::PASTIX)       cfg.solver_impl = solver_impl_t::pastix;
-    if(ecf.sparse_solver_impl == ecf_config::SPARSE_SOLVER_IMPL::SUPERLU_DIST) cfg.solver_impl = solver_impl_t::superlu_dist;
+    switch(ecf.sparse_solver_impl) {
+        case ecf_config::SPARSE_SOLVER_IMPL::AUTO: break;
+        case ecf_config::SPARSE_SOLVER_IMPL::MKLPARDISO:   cfg.solver_impl = solver_impl_t::mklpardiso;   break;
+        case ecf_config::SPARSE_SOLVER_IMPL::SUITESPARSE:  cfg.solver_impl = solver_impl_t::suitesparse;  break;
+        case ecf_config::SPARSE_SOLVER_IMPL::MUMPS:        cfg.solver_impl = solver_impl_t::mumps;        break;
+        case ecf_config::SPARSE_SOLVER_IMPL::STRUMPACK:    cfg.solver_impl = solver_impl_t::strumpack;    break;
+        case ecf_config::SPARSE_SOLVER_IMPL::PASTIX:       cfg.solver_impl = solver_impl_t::pastix;       break;
+        case ecf_config::SPARSE_SOLVER_IMPL::SUPERLU_DIST: cfg.solver_impl = solver_impl_t::superlu_dist; break;
+    }
 }
 
 

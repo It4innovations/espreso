@@ -31,6 +31,12 @@ struct DualopTotalfetiExplicitGeneralSchurGpuConfig: public ECFDescription {
         TRIANGULAR
     };
 
+    enum struct CPU_GPU {
+        AUTO,
+        CPU,
+        GPU
+    };
+
     AUTOBOOL parallel_set;
     AUTOBOOL parallel_update;
     AUTOBOOL parallel_apply;
@@ -41,6 +47,7 @@ struct DualopTotalfetiExplicitGeneralSchurGpuConfig: public ECFDescription {
     AUTOBOOL print_config;
     MATRIX_ORDER order_F;
     SCHUR_IMPL schur_impl;
+    CPU_GPU apply_where;
 
     DualopTotalfetiExplicitGeneralSchurGpuConfig();
 

@@ -1,6 +1,9 @@
 
 #include "gpu/operations/herk_ddnx_ddny_tri.h"
 
+#include "config/ecf/operations/gpu_herk_ddnx_ddny_tria.h"
+#include "esinfo/ecfinfo.h"
+#include "esinfo/meshinfo.h"
 #include "basis/utilities/stacktimer.h"
 #include "math/operations/pivots_trails_csx.h"
 #include "math/operations/auxiliary/tri_partition_herk.h"
@@ -10,18 +13,6 @@
 namespace espreso {
 namespace gpu {
 namespace operations {
-
-
-
-template<typename T, typename I>
-void herk_ddnx_ddny_tri<T,I>::set_config(config cfg_)
-{
-    if(called_set_config) eslog::error("config is already set\n");
-
-    cfg = cfg_;
-
-    called_set_config = true;
-}
 
 
 
@@ -97,7 +88,6 @@ void herk_ddnx_ddny_tri<T,I>::setup()
 {
     stacktimer::push("herk_ddnx_ddny_tri::setup");
 
-    if(!called_set_config) eslog::error("config is not set\n");
     if(!called_set_handles) eslog::error("handles are not set\n");
     if(d_A == nullptr) eslog::error("matrix A is not set\n");
     if(d_C == nullptr) eslog::error("matrix C is not set\n");
@@ -110,6 +100,8 @@ void herk_ddnx_ddny_tri<T,I>::setup()
     if(mode == math::blas::herk_mode::AhA && d_A->ncols != d_C->ncols) eslog::error("incompatible matrices\n");
     if(mode == math::blas::herk_mode::AAh && d_A->nrows != d_C->nrows) eslog::error("incompatible matrices\n");
     if(d_C->prop.uplo != 'L' && d_C->prop.uplo != 'U') eslog::error("invalid matrix C uplo\n");
+
+    setup_config();
 
     ator_ws_tmp_linear = std::make_unique<AllocatorArena_new>(AllocatorGPU_new::get_singleton());
     ator_ws_tmp_overlap = std::make_unique<AllocatorSinglePointer_new>(AllocatorGPU_new::get_singleton());
@@ -268,6 +260,52 @@ void herk_ddnx_ddny_tri<T,I>::perform_submit(void * ws_tmp)
     ator_ws_tmp_overlap->unset();
 
     stacktimer::pop();
+}
+
+
+
+template<typename T, typename I>
+void herk_ddnx_ddny_tri<T,I>::setup_config()
+{
+    using ecf_config = GpuHerkDdnxDdnyTriaConfig;
+    const ecf_config & ecf = info::ecf->operations.gpu_herk_ddnx_ddny_tria;
+
+    switch(ecf.strategy) {
+        case ecf_config::HERK_TRIA_STRATEGY::AUTO:    cfg.strategy = 'Q'; break;
+        case ecf_config::HERK_TRIA_STRATEGY::STAIRS:  cfg.strategy = 'T'; break;
+        case ecf_config::HERK_TRIA_STRATEGY::SQUARES: cfg.strategy = 'Q'; break;
+    }
+
+    {
+        switch(ecf.partition.algorithm) {
+            case ecf_config::PARTITION_ALGORITHM::AUTO:         cfg.partition_algorithm = 'U'; break;
+            case ecf_config::PARTITION_ALGORITHM::UNIFORM:      cfg.partition_algorithm = 'U'; break;
+            case ecf_config::PARTITION_ALGORITHM::MINIMUM_WORK: cfg.partition_algorithm = 'M'; break;
+        }
+
+        char partition_strategy = '_';
+        switch(ecf.partition.strategy) {
+            case ecf_config::PARTITION_STRATEGY::AUTO:        partition_strategy = 'S'; break;
+            case ecf_config::PARTITION_STRATEGY::CHUNK_SIZE:  partition_strategy = 'S'; break;
+            case ecf_config::PARTITION_STRATEGY::CHUNK_COUNT: partition_strategy = 'C'; break;
+        }
+
+        int chunk_size = ecf.partition.chunk_size;
+        if(chunk_size == 0) {
+            if(info::mesh->dimension == 2 && cfg.strategy == 'Q') chunk_size = 2000;
+            if(info::mesh->dimension == 2 && cfg.strategy == 'T') chunk_size =  200;
+            if(info::mesh->dimension == 3 && cfg.strategy == 'Q') chunk_size = 1000;
+            if(info::mesh->dimension == 3 && cfg.strategy == 'T') chunk_size = 1000;
+        }
+
+        int chunk_count = ecf.partition.chunk_count;
+        if(chunk_count == 0) { // not properly tested
+            chunk_count = 10;
+        }
+
+        if(partition_strategy == 'S') cfg.partition_parameter = -chunk_size;
+        if(partition_strategy == 'C') cfg.partition_parameter = chunk_count;
+    }
 }
 
 

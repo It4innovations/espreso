@@ -19,6 +19,8 @@
 #include "physics/structuralmechanics.h"
 #include "physics/acoustic.h"
 
+#include "operations.h"
+
 #include "config/holders/range.h"
 
 namespace espreso {
@@ -84,6 +86,8 @@ struct ECF: public ECFDescription {
 //    AcousticConfiguration acoustics;
 
     OutputConfiguration output;
+
+    Operations operations;
 
     std::string ecffile;
     std::string exe;

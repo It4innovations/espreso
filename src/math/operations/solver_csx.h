@@ -16,6 +16,7 @@ class solver_csx
 {
 // in-place solve supported
 public:
+    // used in: schur_csx_dny_spsolver, schur_csx_dny_tria, gpu/schur_hcsx_ddny_tria, TotalFETIImplicitGeneralSparseSolverCpu
     enum struct implementation_selector
     {
         autoselect,

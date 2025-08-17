@@ -178,6 +178,9 @@ void ECF::_init()
 
     REGISTER(output, ECFMetaData()
             .setdescription({ "Output configurations." }));
+
+    REGISTER(operations, ECFMetaData()
+            .setdescription({ "Configuration of math and gpu operations" }));
 }
 
 ECF::ECF()

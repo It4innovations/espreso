@@ -2,10 +2,7 @@
 #include "dualoperator.h"
 #include "totalfeti.implicit.h"
 #include "totalfeti.explicit.h"
-#include "totalfeti.explicit.sc.h"
 #include "totalfeti.gpu.h"
-#include "totalfeti.explicit.sctria.gpu.h"
-#include "totalfeti.explicit.sctria.cpu.h"
 #include "totalfeti.moore.penrose.h"
 #include "totalfeti.explicit.generalschur.cpu.h"
 #include "totalfeti.explicit.generalschur.gpu.h"
@@ -68,34 +65,6 @@ DualOperator<T>* DualOperator<T>::create(FETI<T> &feti, const step::Step &step)
             eslog::info(" = DUAL OPERATOR                                                  IMPLICIT TOTAL FETI ON GPU = \n");
             dual = new TotalFETIGpu<T,int>(feti, DualOperatorStrategy::IMPLICIT);
             break;
-        case FETIConfiguration::DUAL_OPERATOR::EXPLICIT_SC:
-            eslog::info(" = DUAL OPERATOR                                  EXPLICIT TOTAL FETI USING SCHUR COMPLEMENT = \n");
-            dual = new TotalFETIExplicitSc<T,int>(feti, false);
-            break;
-        case FETIConfiguration::DUAL_OPERATOR::EXPLICIT_SC_GPUAPPLY:
-            if (!gpu::mgm::is_linked()) {
-                eslog::globalerror("GPU acceleration is not supported: GPU support is not built.\n");
-            }
-            if (!gpu::mgm::is_available()) {
-                eslog::globalerror("GPU acceleration is not available. No GPUs detected or other error occured. Are you on GPU-accelerated node?\n");
-            }
-            eslog::info(" = DUAL OPERATOR         EXPLICIT TOTAL FETI USING SCHUR COMPLEMENT, ASSEMBLE CPU, APPLY GPU = \n");
-            dual = new TotalFETIExplicitSc<T,int>(feti, true);
-            break;
-        case FETIConfiguration::DUAL_OPERATOR::EXPLICIT_SCTRIA:
-            eslog::info(" = DUAL OPERATOR                              EXPLICIT TOTAL FETI USING SC WITH TRIANGULAR B = \n");
-            dual = new TotalFETIExplicitScTria<T,int>(feti);
-            break;
-        case FETIConfiguration::DUAL_OPERATOR::EXPLICIT_SCTRIA_GPU:
-            if (!gpu::mgm::is_linked()) {
-                eslog::globalerror("GPU acceleration is not supported: GPU support is not built.\n");
-            }
-            if (!gpu::mgm::is_available()) {
-                eslog::globalerror("GPU acceleration is not available. No GPUs detected or other error occured. Are you on GPU-accelerated node?\n");
-            }
-            eslog::info(" = DUAL OPERATOR                       EXPLICIT TOTAL FETI USING SC WITH TRIANGULAR B ON GPU = \n");
-            dual = new TotalFETIExplicitScTriaGpu<T,int>(feti);
-            break;
         case FETIConfiguration::DUAL_OPERATOR::EXPLICIT_GENERALSCHUR_CPU:
             eslog::info(" = DUAL OPERATOR                       EXPLICIT TOTAL FETI USING GENERAL SC OPERATION ON CPU = \n");
             dual = new TotalFETIExplicitGeneralSchurCpu<T,int>(feti);
@@ -126,10 +95,6 @@ DualOperator<T>* DualOperator<T>::create(FETI<T> &feti, const step::Step &step)
         case FETIConfiguration::DUAL_OPERATOR::EXPLICIT:
         case FETIConfiguration::DUAL_OPERATOR::EXPLICIT_GPU:
         case FETIConfiguration::DUAL_OPERATOR::IMPLICIT_GPU:
-        case FETIConfiguration::DUAL_OPERATOR::EXPLICIT_SC:
-        case FETIConfiguration::DUAL_OPERATOR::EXPLICIT_SC_GPUAPPLY:
-        case FETIConfiguration::DUAL_OPERATOR::EXPLICIT_SCTRIA:
-        case FETIConfiguration::DUAL_OPERATOR::EXPLICIT_SCTRIA_GPU:
         case FETIConfiguration::DUAL_OPERATOR::EXPLICIT_GENERALSCHUR_CPU:
         case FETIConfiguration::DUAL_OPERATOR::EXPLICIT_GENERALSCHUR_GPU:
         case FETIConfiguration::DUAL_OPERATOR::IMPLICIT_GENERALSPARSESOLVER_CPU:

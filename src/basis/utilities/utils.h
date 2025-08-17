@@ -156,6 +156,12 @@ namespace utils {
     {
         std::transform(begin, begin + n, end, op);
     }
+
+    template<typename T>
+    inline T replace_if_zero(T curr_val, T new_val)
+    {
+        return (curr_val == T{0}) ? new_val : curr_val;
+    }
 }
 
 }

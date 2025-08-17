@@ -1,6 +1,8 @@
 
 #include "gpu/operations/schur_hcsx_ddny.tria.h"
 
+#include "config/ecf/operations/gpu_schur_hcsx_ddny.tria.h"
+#include "esinfo/ecfinfo.h"
 #include "math/wrappers/math.spsolver.h"
 #include "math/operations/solver_csx.h"
 #include "math/operations/permute_csx_csx.h"
@@ -28,11 +30,9 @@ struct schur_hcsx_ddny_tria_data
 {
     struct config
     {
-        typename trsm_hcsx_ddny_tri<T,I>::config cfg_trsm;
-        typename herk_ddnx_ddny_tri<T,I>::config cfg_herk;
         char order_X = '_';
         char order_L = '_';
-        typename math::operations::solver_csx<T,I>::implementation_selector op_a11solver_is = math::operations::solver_csx<T,I>::implementation_selector::autoselect;
+        typename math::operations::solver_csx<T,I>::implementation_selector a11_solver_impl = math::operations::solver_csx<T,I>::implementation_selector::autoselect;
     };
     config cfg;
     MatrixCsxData_new<T,I> h_U_data;
@@ -75,108 +75,34 @@ struct schur_hcsx_ddny_tria_data
 
 
 
-template<typename T>
-static void set_by_env(T & var, const char * env_var)
-{
-    const char * str = std::getenv(env_var);
-    if(str != nullptr) {
-        if constexpr(std::is_same_v<T,char>) var = *str;
-        if constexpr(std::is_same_v<T,int>) var = atoi(str);
-        if constexpr(std::is_same_v<T,double>) var = atof(str);
-        if constexpr(std::is_same_v<T,bool>) {
-            var = (strcmp(str,"1") == 0
-                || strcmp(str,"Y") == 0
-                || strcmp(str,"Yes") == 0
-                || strcmp(str,"yes") == 0
-                || strcmp(str,"T") == 0
-                || strcmp(str,"True") == 0
-                || strcmp(str,"true") == 0
-                || strcmp(str,"On") == 0
-                || strcmp(str,"on") == 0);
-        }
-    }
-}
-
-static void replace_if_default(char & param, char deflt)
-{
-    if(param == '_') {
-        param = deflt;
-    }
-}
-
-static void replace_if_zero(int & param, int deflt)
-{
-    if(param == 0) {
-        param = deflt;
-    }
-}
-
 template<typename T, typename I>
-static void populate_config_from_env(typename schur_hcsx_ddny_tria_data<T,I>::config & cfg)
+void setup_config(typename schur_hcsx_ddny_tria_data<T,I>::config & cfg)
 {
-    cfg.cfg_trsm.partition.parameter = 0;
-    cfg.cfg_herk.partition_parameter = 0;
+    using solver_impl_t = typename math::operations::solver_csx<T,I>::implementation_selector;
+    using ecf_config = GpuSchurHcsxDdnyTriaConfig;
+    const ecf_config & ecf = info::ecf->operations.gpu_schur_hcsx_ddny_tria;
 
-    set_by_env(cfg.order_X,                                   "ESPRESO_CONFIG_OP_SC_HCSX_DDNY_TRIA_order_X");
-    set_by_env(cfg.order_L,                                   "ESPRESO_CONFIG_OP_SC_HCSX_DDNY_TRIA_order_L");
-    set_by_env(cfg.cfg_trsm.strategy,                         "ESPRESO_CONFIG_OP_SC_HCSX_DDNY_TRIA_trsm_strategy");
-    set_by_env(cfg.cfg_trsm.partition.algorithm,              "ESPRESO_CONFIG_OP_SC_HCSX_DDNY_TRIA_trsm_partition_algorithm");
-    set_by_env(cfg.cfg_trsm.partition.parameter,              "ESPRESO_CONFIG_OP_SC_HCSX_DDNY_TRIA_trsm_partition_parameter");
-    set_by_env(cfg.cfg_trsm.splitrhs.factor_order_sp,         "ESPRESO_CONFIG_OP_SC_HCSX_DDNY_TRIA_trsm_splitrhs_factor_order_sp");
-    set_by_env(cfg.cfg_trsm.splitrhs.factor_order_dn,         "ESPRESO_CONFIG_OP_SC_HCSX_DDNY_TRIA_trsm_splitrhs_factor_order_dn");
-    set_by_env(cfg.cfg_trsm.splitrhs.spdn_criteria,           "ESPRESO_CONFIG_OP_SC_HCSX_DDNY_TRIA_trsm_splitrhs_spdn_criteria");
-    set_by_env(cfg.cfg_trsm.splitrhs.spdn_param,              "ESPRESO_CONFIG_OP_SC_HCSX_DDNY_TRIA_trsm_splitrhs_spdn_param");
-    set_by_env(cfg.cfg_trsm.splitfactor.trsm_factor_spdn,     "ESPRESO_CONFIG_OP_SC_HCSX_DDNY_TRIA_trsm_splitfactor_trsm_factor_spdn");
-    set_by_env(cfg.cfg_trsm.splitfactor.trsm_factor_order,    "ESPRESO_CONFIG_OP_SC_HCSX_DDNY_TRIA_trsm_splitfactor_trsm_factor_order");
-    set_by_env(cfg.cfg_trsm.splitfactor.gemm_factor_order_sp, "ESPRESO_CONFIG_OP_SC_HCSX_DDNY_TRIA_trsm_splitfactor_gemm_factor_order_sp");
-    set_by_env(cfg.cfg_trsm.splitfactor.gemm_factor_order_dn, "ESPRESO_CONFIG_OP_SC_HCSX_DDNY_TRIA_trsm_splitfactor_gemm_factor_order_dn");
-    set_by_env(cfg.cfg_trsm.splitfactor.gemm_factor_prune,    "ESPRESO_CONFIG_OP_SC_HCSX_DDNY_TRIA_trsm_splitfactor_gemm_factor_prune");
-    set_by_env(cfg.cfg_trsm.splitfactor.gemm_spdn_criteria,   "ESPRESO_CONFIG_OP_SC_HCSX_DDNY_TRIA_trsm_splitfactor_gemm_spdn_criteria");
-    set_by_env(cfg.cfg_trsm.splitfactor.gemm_spdn_param,      "ESPRESO_CONFIG_OP_SC_HCSX_DDNY_TRIA_trsm_splitfactor_gemm_spdn_param");
-    set_by_env(cfg.cfg_herk.strategy,                         "ESPRESO_CONFIG_OP_SC_HCSX_DDNY_TRIA_herk_strategy");
-    set_by_env(cfg.cfg_herk.partition_algorithm,              "ESPRESO_CONFIG_OP_SC_HCSX_DDNY_TRIA_herk_partition_algorithm");
-    set_by_env(cfg.cfg_herk.partition_parameter,              "ESPRESO_CONFIG_OP_SC_HCSX_DDNY_TRIA_herk_partition_parameter");
-}
+    switch(ecf.order_X) {
+        case ecf_config::MATRIX_ORDER::AUTO:      cfg.order_X = 'R'; break;
+        case ecf_config::MATRIX_ORDER::ROW_MAJOR: cfg.order_X = 'R'; break;
+        case ecf_config::MATRIX_ORDER::COL_MAJOR: cfg.order_X = 'C'; break;
+    }
 
-template<typename T, typename I>
-static void populate_config_replace_defaults(typename schur_hcsx_ddny_tria_data<T,I>::config & cfg)
-{
-    replace_if_default(cfg.cfg_trsm.strategy, 'F');
-    replace_if_default(cfg.cfg_herk.strategy, 'Q');
+    switch(ecf.order_L) {
+        case ecf_config::MATRIX_ORDER::AUTO:      cfg.order_L = 'C'; break;
+        case ecf_config::MATRIX_ORDER::ROW_MAJOR: cfg.order_L = 'R'; break;
+        case ecf_config::MATRIX_ORDER::COL_MAJOR: cfg.order_L = 'C'; break;
+    }
 
-    if(info::mesh->dimension == 2 && cfg.cfg_herk.strategy == 'Q') replace_if_zero(cfg.cfg_herk.partition_parameter, -2000);
-    if(info::mesh->dimension == 2 && cfg.cfg_herk.strategy == 'T') replace_if_zero(cfg.cfg_herk.partition_parameter, -200);
-    if(info::mesh->dimension == 3 && cfg.cfg_herk.strategy == 'Q') replace_if_zero(cfg.cfg_herk.partition_parameter, -1000);
-    if(info::mesh->dimension == 3 && cfg.cfg_herk.strategy == 'T') replace_if_zero(cfg.cfg_herk.partition_parameter, -1000);
-    replace_if_default(cfg.cfg_herk.partition_algorithm, 'U');
-
-    if(info::mesh->dimension == 2 && cfg.cfg_trsm.strategy == 'F') replace_if_zero(cfg.cfg_trsm.partition.parameter, -1000);
-    if(info::mesh->dimension == 2 && cfg.cfg_trsm.strategy == 'R') replace_if_zero(cfg.cfg_trsm.partition.parameter, 1);
-    if(info::mesh->dimension == 3 && cfg.cfg_trsm.strategy == 'F') replace_if_zero(cfg.cfg_trsm.partition.parameter, -500);
-    if(info::mesh->dimension == 3 && cfg.cfg_trsm.strategy == 'R') replace_if_zero(cfg.cfg_trsm.partition.parameter, -1000);
-    replace_if_default(cfg.cfg_trsm.partition.algorithm, 'U');
-
-    replace_if_default(cfg.cfg_trsm.splitrhs.spdn_criteria, 'S');
-    replace_if_default(cfg.cfg_trsm.splitfactor.trsm_factor_spdn, (info::mesh->dimension == 2) ? 'S' : 'D');
-    replace_if_default(cfg.cfg_trsm.splitfactor.gemm_factor_prune, 'R');
-    replace_if_default(cfg.cfg_trsm.splitfactor.gemm_spdn_criteria, (info::mesh->dimension == 3 && cfg.cfg_trsm.splitfactor.gemm_factor_prune == 'R') ? 'D' : 'S');
-
-    replace_if_default(cfg.order_X, 'R');
-    replace_if_default(cfg.cfg_trsm.splitrhs.factor_order_sp, 'R');
-    replace_if_default(cfg.cfg_trsm.splitrhs.factor_order_dn, 'R');
-    replace_if_default(cfg.cfg_trsm.splitfactor.trsm_factor_order, 'R');
-    replace_if_default(cfg.cfg_trsm.splitfactor.gemm_factor_order_sp, 'R');
-    replace_if_default(cfg.cfg_trsm.splitfactor.gemm_factor_order_dn, 'R');
-
-    replace_if_default(cfg.order_L, 'C');
-}
-
-template<typename T, typename I>
-static void populate_config(typename schur_hcsx_ddny_tria_data<T,I>::config & cfg)
-{
-    populate_config_from_env<T,I>(cfg);
-
-    populate_config_replace_defaults<T,I>(cfg);
+    switch(ecf.sparse_solver_impl) {
+        case ecf_config::SPARSE_SOLVER_IMPL::AUTO:         cfg.a11_solver_impl = solver_impl_t::autoselect;   break;
+        case ecf_config::SPARSE_SOLVER_IMPL::MKLPARDISO:   cfg.a11_solver_impl = solver_impl_t::mklpardiso;   break;
+        case ecf_config::SPARSE_SOLVER_IMPL::SUITESPARSE:  cfg.a11_solver_impl = solver_impl_t::suitesparse;  break;
+        case ecf_config::SPARSE_SOLVER_IMPL::MUMPS:        cfg.a11_solver_impl = solver_impl_t::mumps;        break;
+        case ecf_config::SPARSE_SOLVER_IMPL::STRUMPACK:    cfg.a11_solver_impl = solver_impl_t::strumpack;    break;
+        case ecf_config::SPARSE_SOLVER_IMPL::PASTIX:       cfg.a11_solver_impl = solver_impl_t::pastix;       break;
+        case ecf_config::SPARSE_SOLVER_IMPL::SUPERLU_DIST: cfg.a11_solver_impl = solver_impl_t::superlu_dist; break;
+    }
 }
 
 
@@ -200,8 +126,7 @@ void schur_hcsx_ddny_tria<T,I>::internal_setup()
     if(h_A22 != nullptr) eslog::error("for now I assume A22=O\n");
 
     data = std::make_unique<schur_hcsx_ddny_tria_data<T,I>>();
-
-    populate_config<T,I>(data->cfg);
+    setup_config<T,I>(data->cfg);
 
     data->solver_factor_uplo = h_A11->prop.uplo;
 
@@ -232,7 +157,7 @@ void schur_hcsx_ddny_tria<T,I>::internal_setup()
         h_A22 = &data->sub_h_A22;
     }
 
-    data->op_h_A11_solver = math::operations::solver_csx<T,I>::make(data->cfg.op_a11solver_is, &h_A11->prop, true, need_solve_A11);
+    data->op_h_A11_solver = math::operations::solver_csx<T,I>::make(data->cfg.a11_solver_impl, &h_A11->prop, true, need_solve_A11);
     data->op_h_A11_solver->set_matrix_A(h_A11);
     data->op_h_A11_solver->set_needs(true, need_solve_A11);
     data->op_h_A11_solver->factorize_symbolic();
@@ -354,7 +279,6 @@ void schur_hcsx_ddny_tria<T,I>::internal_setup()
     wss_tmp_preprocess_overlap = std::max(wss_tmp_preprocess_overlap, data->op_X_sp2dn->get_wss_tmp_preprocess());
     wss_tmp_perform_overlap = std::max(wss_tmp_perform_overlap, data->op_X_sp2dn->get_wss_tmp_perform());
 
-    data->op_d_trsm.set_config(data->cfg.cfg_trsm);
     data->op_d_trsm.set_handles(q, handle_spblas, handle_dnblas);
     data->op_d_trsm.set_matrix_h_L(data->h_L_to_use);
     data->op_d_trsm.set_matrix_d_X(&data->d_X_dn);
@@ -365,7 +289,6 @@ void schur_hcsx_ddny_tria<T,I>::internal_setup()
     wss_tmp_preprocess_overlap = std::max(wss_tmp_preprocess_overlap, data->op_d_trsm.get_wss_tmp_preprocess());
     wss_tmp_perform_overlap = std::max(wss_tmp_perform_overlap, data->op_d_trsm.get_wss_tmp_perform());
 
-    data->op_d_herk.set_config(data->cfg.cfg_herk);
     data->op_d_herk.set_handles(q, handle_dnblas);
     data->op_d_herk.set_matrix_d_A(&data->d_X_dn);
     data->op_d_herk.set_matrix_d_C(&data->d_sc_tmp1_x);

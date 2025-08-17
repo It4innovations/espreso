@@ -54,12 +54,13 @@ public:
     trsm_csx_dny_tri & operator=(trsm_csx_dny_tri &&) = default;
     ~trsm_csx_dny_tri() = default;
 public:
-    void set_config(config cfg_);
     void set_L(MatrixCsxView_new<T,I> * L_);
     void set_X(MatrixDenseView_new<T> * X_);
     void calc_X_pattern(MatrixCsxView_new<T,I> & X_pattern);
     void preprocess();
     void perform();
+private:
+    void setup_config();
 private:
     config cfg;
     MatrixCsxView_new<T,I> * L = nullptr;
@@ -73,7 +74,6 @@ private:
     convert_csx_dny<T,I> op_L_sp2dn;
     std::vector<trsm_trirhs_chunk_splitrhs<T,I>> ops_chunks_splitrhs;
     std::vector<trsm_trirhs_chunk_splitfactor<T,I>> ops_chunks_splifactor;
-    bool called_set_config = false;
     bool called_set_pattern = false;
     bool called_preprocess = false;
 };

@@ -1,6 +1,9 @@
 
 #include "math/operations/herk_dnx_dny_tri.h"
 
+#include "config/ecf/operations/herk_dnx_dny_tria.h"
+#include "esinfo/ecfinfo.h"
+#include "esinfo/meshinfo.h"
 #include "math/primitives_new/allocator_new.h"
 #include "math/operations/pivots_trails_csx.h"
 #include "math/operations/auxiliary/tri_partition_herk.h"
@@ -13,16 +16,6 @@
 namespace espreso {
 namespace math {
 namespace operations {
-
-
-
-template<typename T, typename I>
-void herk_dnx_dny_tri<T,I>::set_config(config cfg_)
-{
-    cfg = cfg_;
-
-    config_set = true;
-}
 
 
 
@@ -105,9 +98,10 @@ void herk_dnx_dny_tri<T,I>::preprocess()
 {
     stacktimer::push("herk_dnx_dny_tri::preprocess");
 
-    if(!config_set) eslog::error("config is not set\n");
     if(!mode_set) eslog::error("mode is not set\n");
     if(!pattern_set) eslog::error("A pattern is not set\n");
+
+    setup_config();
 
     for(size_t i = 1; i < A_pivots.size; i++) {
         if(A_pivots.vals[i-1] > A_pivots.vals[i]) {
@@ -260,6 +254,56 @@ void herk_dnx_dny_tri<T,I>::perform_AAh()
             sub_C.prop.uplo = C->prop.uplo;
             herk_dnx_dny<T>::do_all(&sub_A, &sub_C, mode, alpha, Treal{1});
         }
+    }
+}
+
+
+
+template<typename T, typename I>
+void herk_dnx_dny_tri<T,I>::setup_config()
+{
+    using ecf_config = HerkDnxDnyTriaConfig;
+    const ecf_config & ecf = info::ecf->operations.herk_dnx_dny_tria;
+
+    switch(ecf.strategy) {
+        case ecf_config::HERK_TRIA_STRATEGY::AUTO: {
+            bool is_in_between = ((A->nrows > 1000) && (A->nrows < 16000));
+            cfg.strategy = (is_in_between ? 'Q' : 'T');
+            break;
+        }
+        case ecf_config::HERK_TRIA_STRATEGY::STAIRS:  cfg.strategy = 'T'; break;
+        case ecf_config::HERK_TRIA_STRATEGY::SQUARES: cfg.strategy = 'Q'; break;
+    }
+
+    {
+        switch(ecf.partition.algorithm) {
+            case ecf_config::PARTITION_ALGORITHM::AUTO:         cfg.partition_algorithm = 'U'; break;
+            case ecf_config::PARTITION_ALGORITHM::UNIFORM:      cfg.partition_algorithm = 'U'; break;
+            case ecf_config::PARTITION_ALGORITHM::MINIMUM_WORK: cfg.partition_algorithm = 'M'; break;
+        }
+
+        char partition_strategy = '_';
+        switch(ecf.partition.strategy) {
+            case ecf_config::PARTITION_STRATEGY::AUTO:
+                partition_strategy = (info::mesh->dimension == 2) ? 'S' : 'C';
+                break;
+            case ecf_config::PARTITION_STRATEGY::CHUNK_SIZE:  partition_strategy = 'S'; break;
+            case ecf_config::PARTITION_STRATEGY::CHUNK_COUNT: partition_strategy = 'C'; break;
+        }
+
+        int chunk_size = ecf.partition.chunk_size;
+        if(chunk_size == 0) { // not properly tested
+            chunk_size = 200;
+        }
+
+        int chunk_count = ecf.partition.chunk_count;
+        if(chunk_count == 0) { // not properly tested
+            if(cfg.strategy == 'Q') chunk_count = 50;
+            if(cfg.strategy == 'T') chunk_count = 10;
+        }
+
+        if(partition_strategy == 'S') cfg.partition_parameter = -chunk_size;
+        if(partition_strategy == 'C') cfg.partition_parameter = chunk_count;
     }
 }
 

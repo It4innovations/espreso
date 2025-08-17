@@ -5,6 +5,8 @@
 #include "basis/containers/allocators.h"
 #include "math/primitives/matrix_csr.h"
 
+#include "config/ecf/operations/schur_csx_dny.tria.h"
+#include "esinfo/ecfinfo.h"
 #include "math/primitives_new/allocator_new.h"
 #include "math/operations/trsm_csx_dny_tri.h"
 #include "math/operations/herk_dnx_dny_tri.h"
@@ -36,9 +38,9 @@ struct schur_csx_dny_tria_data
     {
         typename trsm_csx_dny_tri<T,I>::config cfg_trsm;
         typename herk_dnx_dny_tri<T,I>::config cfg_herk;
-        char order_X = '_';
-        char order_L = '_';
-        typename solver_csx<T,I>::implementation_selector op_a11solver_is = solver_csx<T,I>::implementation_selector::autoselect;
+        char order_X;
+        char order_L;
+        typename solver_csx<T,I>::implementation_selector a11_solver_impl;
     };
     config cfg;
     bool need_reorder_factor_L2U = false;
@@ -73,109 +75,36 @@ struct schur_csx_dny_tria_data
 
 
 
-template<typename T>
-static void set_by_env(T & var, const char * env_var)
-{
-    const char * str = std::getenv(env_var);
-    if(str != nullptr) {
-        if constexpr(std::is_same_v<T,char>) var = *str;
-        if constexpr(std::is_same_v<T,int>) var = atoi(str);
-        if constexpr(std::is_same_v<T,double>) var = atof(str);
-        if constexpr(std::is_same_v<T,bool>) {
-            var = (strcmp(str,"1") == 0
-                || strcmp(str,"Y") == 0
-                || strcmp(str,"Yes") == 0
-                || strcmp(str,"yes") == 0
-                || strcmp(str,"T") == 0
-                || strcmp(str,"True") == 0
-                || strcmp(str,"true") == 0
-                || strcmp(str,"On") == 0
-                || strcmp(str,"on") == 0);
-        }
-    }
-}
-
-static void replace_if_default(char & param, char deflt)
-{
-    if(param == '_') {
-        param = deflt;
-    }
-}
-
-static void replace_if_zero(int & param, int deflt)
-{
-    if(param == 0) {
-        param = deflt;
-    }
-}
-
 template<typename T, typename I>
-static void populate_config_from_env(typename schur_csx_dny_tria_data<T,I>::config & cfg)
+static void setup_config(typename schur_csx_dny_tria_data<T,I>::config & cfg)
 {
-    cfg.cfg_trsm.partition.parameter = 0;
-    cfg.cfg_herk.partition_parameter = 0;
+    using solver_impl_t = typename solver_csx<T,I>::implementation_selector;
+    using ecf_config = SchurCsxDnyTriaConfig;
+    const ecf_config & ecf = info::ecf->operations.schur_csx_dny_tria;
 
-    set_by_env(cfg.order_X,                                   "ESPRESO_CONFIG_OP_SC_CSX_DNY_TRIA_order_X");
-    set_by_env(cfg.order_L,                                   "ESPRESO_CONFIG_OP_SC_CSX_DNY_TRIA_order_L");
-    set_by_env(cfg.cfg_trsm.strategy,                         "ESPRESO_CONFIG_OP_SC_CSX_DNY_TRIA_trsm_strategy");
-    set_by_env(cfg.cfg_trsm.partition.algorithm,              "ESPRESO_CONFIG_OP_SC_CSX_DNY_TRIA_trsm_partition_algorithm");
-    set_by_env(cfg.cfg_trsm.partition.parameter,              "ESPRESO_CONFIG_OP_SC_CSX_DNY_TRIA_trsm_partition_parameter");
-    set_by_env(cfg.cfg_trsm.splitrhs.factor_order_sp,         "ESPRESO_CONFIG_OP_SC_CSX_DNY_TRIA_trsm_splitrhs_factor_order_sp");
-    set_by_env(cfg.cfg_trsm.splitrhs.factor_order_dn,         "ESPRESO_CONFIG_OP_SC_CSX_DNY_TRIA_trsm_splitrhs_factor_order_dn");
-    set_by_env(cfg.cfg_trsm.splitrhs.spdn_criteria,           "ESPRESO_CONFIG_OP_SC_CSX_DNY_TRIA_trsm_splitrhs_spdn_criteria");
-    set_by_env(cfg.cfg_trsm.splitrhs.spdn_param,              "ESPRESO_CONFIG_OP_SC_CSX_DNY_TRIA_trsm_splitrhs_spdn_param");
-    set_by_env(cfg.cfg_trsm.splitfactor.trsm_factor_spdn,     "ESPRESO_CONFIG_OP_SC_CSX_DNY_TRIA_trsm_splitfactor_trsm_factor_spdn");
-    set_by_env(cfg.cfg_trsm.splitfactor.trsm_factor_order,    "ESPRESO_CONFIG_OP_SC_CSX_DNY_TRIA_trsm_splitfactor_trsm_factor_order");
-    set_by_env(cfg.cfg_trsm.splitfactor.gemm_factor_order_sp, "ESPRESO_CONFIG_OP_SC_CSX_DNY_TRIA_trsm_splitfactor_gemm_factor_order_sp");
-    set_by_env(cfg.cfg_trsm.splitfactor.gemm_factor_order_dn, "ESPRESO_CONFIG_OP_SC_CSX_DNY_TRIA_trsm_splitfactor_gemm_factor_order_dn");
-    set_by_env(cfg.cfg_trsm.splitfactor.gemm_factor_prune,    "ESPRESO_CONFIG_OP_SC_CSX_DNY_TRIA_trsm_splitfactor_gemm_factor_prune");
-    set_by_env(cfg.cfg_trsm.splitfactor.gemm_spdn_criteria,   "ESPRESO_CONFIG_OP_SC_CSX_DNY_TRIA_trsm_splitfactor_gemm_spdn_criteria");
-    set_by_env(cfg.cfg_trsm.splitfactor.gemm_spdn_param,      "ESPRESO_CONFIG_OP_SC_CSX_DNY_TRIA_trsm_splitfactor_gemm_spdn_param");
-    set_by_env(cfg.cfg_herk.strategy,                         "ESPRESO_CONFIG_OP_SC_CSX_DNY_TRIA_herk_strategy");
-    set_by_env(cfg.cfg_herk.partition_algorithm,              "ESPRESO_CONFIG_OP_SC_CSX_DNY_TRIA_herk_partition_algorithm");
-    set_by_env(cfg.cfg_herk.partition_parameter,              "ESPRESO_CONFIG_OP_SC_CSX_DNY_TRIA_herk_partition_parameter");
-}
+    switch(ecf.order_X) {
+        case ecf_config::MATRIX_ORDER::AUTO:
+            cfg.order_X = ((info::mesh->dimension == 2) ? 'C' : 'R');
+            break;
+        case ecf_config::MATRIX_ORDER::ROW_MAJOR: cfg.order_X = 'R'; break;
+        case ecf_config::MATRIX_ORDER::COL_MAJOR: cfg.order_X = 'C'; break;
+    }
 
-template<typename T, typename I>
-static void populate_config_replace_defaults(typename schur_csx_dny_tria_data<T,I>::config & cfg, size_t ndofs_domain)
-{
-    replace_if_default(cfg.cfg_trsm.strategy, 'F');
-    bool is_in_between = ((ndofs_domain > 1000) && (ndofs_domain < 16000));
-    replace_if_default(cfg.cfg_herk.strategy, is_in_between ? 'Q' : 'T');
+    switch(ecf.order_L) {
+        case ecf_config::MATRIX_ORDER::AUTO:      cfg.order_L = 'C'; break;
+        case ecf_config::MATRIX_ORDER::ROW_MAJOR: cfg.order_L = 'R'; break;
+        case ecf_config::MATRIX_ORDER::COL_MAJOR: cfg.order_L = 'C'; break;
+    }
 
-    if(info::mesh->dimension == 2 && cfg.cfg_herk.strategy == 'Q') replace_if_zero(cfg.cfg_herk.partition_parameter, -200);
-    if(info::mesh->dimension == 2 && cfg.cfg_herk.strategy == 'T') replace_if_zero(cfg.cfg_herk.partition_parameter, -200);
-    if(info::mesh->dimension == 3 && cfg.cfg_herk.strategy == 'Q') replace_if_zero(cfg.cfg_herk.partition_parameter, 50);
-    if(info::mesh->dimension == 3 && cfg.cfg_herk.strategy == 'T') replace_if_zero(cfg.cfg_herk.partition_parameter, 10);
-    replace_if_default(cfg.cfg_herk.partition_algorithm, 'U');
-
-    if(info::mesh->dimension == 2 && cfg.cfg_trsm.strategy == 'F') replace_if_zero(cfg.cfg_trsm.partition.parameter, -200);
-    if(info::mesh->dimension == 2 && cfg.cfg_trsm.strategy == 'R') replace_if_zero(cfg.cfg_trsm.partition.parameter, -100);
-    if(info::mesh->dimension == 3 && cfg.cfg_trsm.strategy == 'F') replace_if_zero(cfg.cfg_trsm.partition.parameter, -200);
-    if(info::mesh->dimension == 3 && cfg.cfg_trsm.strategy == 'R') replace_if_zero(cfg.cfg_trsm.partition.parameter, -100);
-    replace_if_default(cfg.cfg_trsm.partition.algorithm, 'U');
-
-    replace_if_default(cfg.cfg_trsm.splitrhs.spdn_criteria, 'S');
-    replace_if_default(cfg.cfg_trsm.splitfactor.trsm_factor_spdn, (info::mesh->dimension == 2) ? 'S' : 'D');
-    replace_if_default(cfg.cfg_trsm.splitfactor.gemm_factor_prune, 'R');
-    replace_if_default(cfg.cfg_trsm.splitfactor.gemm_spdn_criteria, (info::mesh->dimension == 3 && cfg.cfg_trsm.splitfactor.gemm_factor_prune == 'R') ? 'D' : 'S');
-
-    replace_if_default(cfg.order_X, (info::mesh->dimension == 2) ? 'C' : 'R');
-    replace_if_default(cfg.cfg_trsm.splitrhs.factor_order_sp, 'R');
-    replace_if_default(cfg.cfg_trsm.splitrhs.factor_order_dn, 'C');
-    replace_if_default(cfg.cfg_trsm.splitfactor.trsm_factor_order, 'R');
-    replace_if_default(cfg.cfg_trsm.splitfactor.gemm_factor_order_sp, 'R');
-    replace_if_default(cfg.cfg_trsm.splitfactor.gemm_factor_order_dn, 'R');
-
-    replace_if_default(cfg.order_L, 'C');
-}
-
-template<typename T, typename I>
-static void populate_config(typename schur_csx_dny_tria_data<T,I>::config & cfg, size_t ndofs_domain)
-{
-    populate_config_from_env<T,I>(cfg);
-
-    populate_config_replace_defaults<T,I>(cfg, ndofs_domain);
+    switch(ecf.sparse_solver_impl) {
+        case ecf_config::SPARSE_SOLVER_IMPL::AUTO:         cfg.a11_solver_impl = solver_impl_t::autoselect;   break;
+        case ecf_config::SPARSE_SOLVER_IMPL::MKLPARDISO:   cfg.a11_solver_impl = solver_impl_t::mklpardiso;   break;
+        case ecf_config::SPARSE_SOLVER_IMPL::SUITESPARSE:  cfg.a11_solver_impl = solver_impl_t::suitesparse;  break;
+        case ecf_config::SPARSE_SOLVER_IMPL::MUMPS:        cfg.a11_solver_impl = solver_impl_t::mumps;        break;
+        case ecf_config::SPARSE_SOLVER_IMPL::STRUMPACK:    cfg.a11_solver_impl = solver_impl_t::strumpack;    break;
+        case ecf_config::SPARSE_SOLVER_IMPL::PASTIX:       cfg.a11_solver_impl = solver_impl_t::pastix;       break;
+        case ecf_config::SPARSE_SOLVER_IMPL::SUPERLU_DIST: cfg.a11_solver_impl = solver_impl_t::superlu_dist; break;
+    }
 }
 
 
@@ -196,8 +125,7 @@ void schur_csx_dny_tria<T,I>::internal_preprocess()
     if(!is_matrix_hermitian) eslog::error("dont support non-hermitian systems yet\n");
 
     data = std::make_unique<schur_csx_dny_tria_data<T,I>>();
-
-    populate_config<T,I>(data->cfg, size_A11);
+    setup_config<T,I>(data->cfg);
 
     if(called_set_matrix == '1') {
         data->op_split.set_matrix_src(A);
@@ -234,7 +162,7 @@ void schur_csx_dny_tria<T,I>::internal_preprocess()
         eslog::error("only support csr matrices now\n");
     }
 
-    data->op_A11_solver = solver_csx<T,I>::make(data->cfg.op_a11solver_is, &A11->prop, true, need_solve_A11);
+    data->op_A11_solver = solver_csx<T,I>::make(data->cfg.a11_solver_impl, &A11->prop, true, need_solve_A11);
     data->op_A11_solver->set_matrix_A(A11);
     data->op_A11_solver->set_needs(true, need_solve_A11);
     data->op_A11_solver->factorize_symbolic();
@@ -329,13 +257,11 @@ void schur_csx_dny_tria<T,I>::internal_preprocess()
 
     data->X_dn.set(data->X_sp.nrows, data->X_sp.ncols, data->cfg.order_X, AllocatorCPU_new::get_singleton());
 
-    data->op_trsm.set_config(data->cfg.cfg_trsm);
     data->op_trsm.set_L(data->L_to_use);
     data->op_trsm.set_X(&data->X_dn);
     data->op_trsm.calc_X_pattern(data->X_sp);
     data->op_trsm.preprocess();
 
-    data->op_herk.set_config(data->cfg.cfg_herk);
     data->op_herk.set_matrix_A(&data->X_dn);
     data->op_herk.set_matrix_C(sc);
     data->op_herk.set_coefficients(-alpha, 0);

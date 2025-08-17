@@ -1,6 +1,8 @@
 
 #include "math/operations/schur_csx_dny.spsolver.h"
 
+#include "config/ecf/operations/schur_csx_dny.spsolver.h"
+#include "esinfo/ecfinfo.h"
 #include "math/primitives_new/allocator_new.h"
 #include "math/operations/solver_csx.h"
 #include "math/operations/convert_csx_dny.h"
@@ -23,7 +25,7 @@ struct schur_csx_dny_spsolver_data
 {
     struct config
     {
-        typename solver_csx<T,I>::implementation_selector op_a11solver_is = solver_csx<T,I>::implementation_selector::autoselect;
+        typename solver_csx<T,I>::implementation_selector a11_solver_impl = solver_csx<T,I>::implementation_selector::autoselect;
         char X_order = 'C';
     } cfg;
     std::unique_ptr<solver_csx<T,I>> op_A11_solver;
@@ -33,6 +35,32 @@ struct schur_csx_dny_spsolver_data
     MatrixCsxData_new<T,I> sub_A21;
     MatrixCsxData_new<T,I> sub_A22;
 };
+
+
+
+template<typename T, typename I>
+void setup_config(typename schur_csx_dny_spsolver_data<T,I>::config & cfg)
+{
+    using solver_impl_t = typename solver_csx<T,I>::implementation_selector;
+    using ecf_config = SchurCsxDnySpsolverConfig;
+    const ecf_config & ecf = info::ecf->operations.schur_csx_dny_spsolver;
+
+    switch(ecf.order_X) {
+        case ecf_config::MATRIX_ORDER::AUTO: break;
+        case ecf_config::MATRIX_ORDER::ROW_MAJOR: cfg.X_order = 'R'; break;
+        case ecf_config::MATRIX_ORDER::COL_MAJOR: cfg.X_order = 'C'; break;
+    }
+
+    switch(ecf.sparse_solver_impl) {
+        case ecf_config::SPARSE_SOLVER_IMPL::AUTO: break;
+        case ecf_config::SPARSE_SOLVER_IMPL::MKLPARDISO:   cfg.a11_solver_impl = solver_impl_t::mklpardiso;   break;
+        case ecf_config::SPARSE_SOLVER_IMPL::SUITESPARSE:  cfg.a11_solver_impl = solver_impl_t::suitesparse;  break;
+        case ecf_config::SPARSE_SOLVER_IMPL::MUMPS:        cfg.a11_solver_impl = solver_impl_t::mumps;        break;
+        case ecf_config::SPARSE_SOLVER_IMPL::STRUMPACK:    cfg.a11_solver_impl = solver_impl_t::strumpack;    break;
+        case ecf_config::SPARSE_SOLVER_IMPL::PASTIX:       cfg.a11_solver_impl = solver_impl_t::pastix;       break;
+        case ecf_config::SPARSE_SOLVER_IMPL::SUPERLU_DIST: cfg.a11_solver_impl = solver_impl_t::superlu_dist; break;
+    }
+}
 
 
 
@@ -50,6 +78,7 @@ template<typename T, typename I>
 void schur_csx_dny_spsolver<T,I>::internal_preprocess()
 {
     data = std::make_unique<schur_csx_dny_spsolver_data<T,I>>();
+    setup_config<T,I>(data->cfg);
 
     if(called_set_matrix == '1') {
         data->op_split.set_matrix_src(A);
@@ -78,7 +107,7 @@ void schur_csx_dny_spsolver<T,I>::internal_preprocess()
         A22 = &data->sub_A22;
     }
 
-    data->op_A11_solver = solver_csx<T,I>::make(data->cfg.op_a11solver_is, &A11->prop, false, true);
+    data->op_A11_solver = solver_csx<T,I>::make(data->cfg.a11_solver_impl, &A11->prop, false, true);
     data->op_A11_solver->set_matrix_A(A11);
     data->op_A11_solver->set_needs(false, true);
     data->op_A11_solver->factorize_symbolic();

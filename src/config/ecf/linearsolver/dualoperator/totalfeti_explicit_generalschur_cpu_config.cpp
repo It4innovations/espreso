@@ -90,4 +90,13 @@ DualopTotalfetiExplicitGeneralSchurCpuConfig::DualopTotalfetiExplicitGeneralSchu
         .addoption(ECFOption().setname("MUMPS").setdescription("MUMPS"))
         .addoption(ECFOption().setname("PASTIX").setdescription("PaStiX"))
     );
+
+    apply_where = CPU_GPU::AUTO;
+    REGISTER(apply_where, ECFMetaData()
+        .setdescription({ "Where does the explicit apply occur" })
+        .setdatatype({ ECFDataType::OPTION })
+        .addoption(ECFOption().setname("AUTO").setdescription("Automatic selection"))
+        .addoption(ECFOption().setname("CPU").setdescription("On the CPU"))
+        .addoption(ECFOption().setname("GPU").setdescription("On the GPU"))
+    );
 }

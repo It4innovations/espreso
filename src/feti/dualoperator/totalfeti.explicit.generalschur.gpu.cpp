@@ -132,7 +132,7 @@ void TotalFETIExplicitGeneralSchurGpu<T,I>::set(const step::Step &step)
         applicator.set_vector_memory('C');
         applicator.set_D2C_map(&feti.D2C);
         applicator.set_Fs(Fs_vector);
-        applicator.set_apply_target('G');
+        applicator.set_apply_target(cfg.apply_where);
         applicator.setup();
         applicator.preprocess();
     }
@@ -451,34 +451,70 @@ void TotalFETIExplicitGeneralSchurGpu<T,I>::setup_config(config & cfg, const FET
     using ecf_config = DualopTotalfetiExplicitGeneralSchurGpuConfig;
     const ecf_config & ecf = feti_ecf_config.dualop_totalfeti_explicit_generalschur_gpu_config;
 
-    if(ecf.parallel_set == ecf_config::AUTOBOOL::TRUE)  cfg.parallel_set = true;
-    if(ecf.parallel_set == ecf_config::AUTOBOOL::FALSE) cfg.parallel_set = false;
+    switch(ecf.parallel_set) {
+        case ecf_config::AUTOBOOL::AUTO: break;
+        case ecf_config::AUTOBOOL::TRUE:  cfg.parallel_set = true;  break;
+        case ecf_config::AUTOBOOL::FALSE: cfg.parallel_set = false; break;
+    }
 
-    if(ecf.parallel_update == ecf_config::AUTOBOOL::TRUE)  cfg.parallel_update = true;
-    if(ecf.parallel_update == ecf_config::AUTOBOOL::FALSE) cfg.parallel_update = false;
+    switch(ecf.parallel_update) {
+        case ecf_config::AUTOBOOL::AUTO: break;
+        case ecf_config::AUTOBOOL::TRUE:  cfg.parallel_update = true;  break;
+        case ecf_config::AUTOBOOL::FALSE: cfg.parallel_update = false; break;
+    }
 
-    if(ecf.parallel_apply == ecf_config::AUTOBOOL::TRUE)  cfg.parallel_apply = true;
-    if(ecf.parallel_apply == ecf_config::AUTOBOOL::FALSE) cfg.parallel_apply = false;
+    switch(ecf.parallel_apply) {
+        case ecf_config::AUTOBOOL::AUTO: break;
+        case ecf_config::AUTOBOOL::TRUE:  cfg.parallel_apply = true;  break;
+        case ecf_config::AUTOBOOL::FALSE: cfg.parallel_apply = false; break;
+    }
 
-    if(ecf.mainloop_update_split == ecf_config::MAINLOOP_UPDATE_SPLIT::COMBINED) cfg.mainloop_update_split = 'C';
-    if(ecf.mainloop_update_split == ecf_config::MAINLOOP_UPDATE_SPLIT::SEPARATE) cfg.mainloop_update_split = 'S';
+    switch(ecf.mainloop_update_split) {
+        case ecf_config::MAINLOOP_UPDATE_SPLIT::AUTO: break;
+        case ecf_config::MAINLOOP_UPDATE_SPLIT::COMBINED: cfg.mainloop_update_split = 'C'; break;
+        case ecf_config::MAINLOOP_UPDATE_SPLIT::SEPARATE: cfg.mainloop_update_split = 'S'; break;
+    }
 
-    if(ecf.synchronize_after_update_mainloop == ecf_config::AUTOBOOL::TRUE)  cfg.gpu_wait_after_mainloop_update = true;
-    if(ecf.synchronize_after_update_mainloop == ecf_config::AUTOBOOL::FALSE) cfg.gpu_wait_after_mainloop_update = false;
+    switch(ecf.synchronize_after_update_mainloop) {
+        case ecf_config::AUTOBOOL::AUTO: break;
+        case ecf_config::AUTOBOOL::TRUE:  cfg.gpu_wait_after_mainloop_update = true;  break;
+        case ecf_config::AUTOBOOL::FALSE: cfg.gpu_wait_after_mainloop_update = false; break;
+    }
 
-    if(ecf.timers_outer == ecf_config::AUTOBOOL::TRUE)  cfg.outer_timers = true;
-    if(ecf.timers_outer == ecf_config::AUTOBOOL::FALSE) cfg.outer_timers = false;
+    switch(ecf.timers_outer) {
+        case ecf_config::AUTOBOOL::AUTO: break;
+        case ecf_config::AUTOBOOL::TRUE:  cfg.outer_timers = true;  break;
+        case ecf_config::AUTOBOOL::FALSE: cfg.outer_timers = false; break;
+    }
 
-    if(ecf.timers_inner == ecf_config::AUTOBOOL::TRUE)  cfg.inner_timers = true;
-    if(ecf.timers_inner == ecf_config::AUTOBOOL::FALSE) cfg.inner_timers = false;
+    switch(ecf.timers_inner) {
+        case ecf_config::AUTOBOOL::AUTO: break;
+        case ecf_config::AUTOBOOL::TRUE:  cfg.inner_timers = true;  break;
+        case ecf_config::AUTOBOOL::FALSE: cfg.inner_timers = false; break;
+    }
 
-    if(ecf.print_config == ecf_config::AUTOBOOL::TRUE)  cfg.print_config = true;
-    if(ecf.print_config == ecf_config::AUTOBOOL::FALSE) cfg.print_config = false;
+    switch(ecf.print_config) {
+        case ecf_config::AUTOBOOL::AUTO: break;
+        case ecf_config::AUTOBOOL::TRUE:  cfg.print_config = true;  break;
+        case ecf_config::AUTOBOOL::FALSE: cfg.print_config = false; break;
+    }
 
-    if(ecf.order_F == ecf_config::MATRIX_ORDER::ROW_MAJOR) cfg.order_F = 'R';
-    if(ecf.order_F == ecf_config::MATRIX_ORDER::COL_MAJOR) cfg.order_F = 'C';
+    switch(ecf.order_F) {
+        case ecf_config::MATRIX_ORDER::AUTO: break;
+        case ecf_config::MATRIX_ORDER::ROW_MAJOR: cfg.order_F = 'R'; break;
+        case ecf_config::MATRIX_ORDER::COL_MAJOR: cfg.order_F = 'C'; break;
+    }
 
-    if(ecf.schur_impl == ecf_config::SCHUR_IMPL::TRIANGULAR) cfg.schur_impl = schur_impl_t::triangular;
+    switch(ecf.schur_impl) {
+        case ecf_config::SCHUR_IMPL::AUTO: break;
+        case ecf_config::SCHUR_IMPL::TRIANGULAR: cfg.schur_impl = schur_impl_t::triangular; break;
+    }
+
+    switch(ecf.apply_where) {
+        case ecf_config::CPU_GPU::AUTO: cfg.apply_where = 'G'; break;
+        case ecf_config::CPU_GPU::CPU:  cfg.apply_where = 'C'; break;
+        case ecf_config::CPU_GPU::GPU:  cfg.apply_where = 'G'; break;
+    }
 }
 
 

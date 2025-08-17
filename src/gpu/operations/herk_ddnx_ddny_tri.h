@@ -39,8 +39,9 @@ public:
     herk_ddnx_ddny_tri & operator=(const herk_ddnx_ddny_tri &) = delete;
     herk_ddnx_ddny_tri & operator=(herk_ddnx_ddny_tri &&) = delete;
     ~herk_ddnx_ddny_tri() = default;
+private:
+    void setup_config();
 public:
-    void set_config(config cfg_);
     void set_handles(gpu::mgm::queue q_, gpu::dnblas::handle dnblas_handle_);
     void set_matrix_d_A(MatrixDenseView_new<T> * d_A_);
     void set_matrix_d_C(MatrixDenseView_new<T> * d_C_);
@@ -61,7 +62,6 @@ private:
     Treal beta = Treal{0};
     math::blas::herk_mode mode;
     size_t wss_tmp_perform = 0;
-    bool called_set_config = false;
     bool called_set_handles = false;
     bool called_set_mode = false;
     bool called_setup = false;
