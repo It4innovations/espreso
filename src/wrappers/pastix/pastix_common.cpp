@@ -1,4 +1,6 @@
 
+#ifdef HAVE_PASTIX
+
 #include "wrappers/pastix/pastix_common.h"
 
 static int total_pastix_gpu_instances = 0;
@@ -32,3 +34,5 @@ void espreso::math::operations::check_pastix_instances(bool use_gpu, bool create
         }
     }
 }
+
+#endif
