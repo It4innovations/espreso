@@ -15,6 +15,7 @@ namespace operations {
 template<typename T, typename I>
 class gemv_csx
 {
+    // ignores uplo and symmetry
     // y = alpha * A * x + beta * y
 public:
     gemv_csx() = default;

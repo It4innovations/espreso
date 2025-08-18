@@ -1,4 +1,6 @@
 
+#ifdef HAVE_MUMPS
+
 #include "wrappers/mumps/mumps_common.h"
 
 #include "math/primitives_new/allocator_new.h"
@@ -66,3 +68,4 @@ template void mumps_helper_csx_to_ijv<T,I>(MatrixCsxView_new<T,I> & M, VectorDen
 
 }
 
+#endif
