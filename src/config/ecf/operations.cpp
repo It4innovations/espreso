@@ -27,4 +27,13 @@ Operations::Operations()
 
     REGISTER(gpu_herk_ddnx_ddny_tria, ECFMetaData()
             .setdescription({ "gpu_herk_ddnx_ddny_tria config" }));
+
+    REGISTER(schur_csx_dny_pastix, ECFMetaData()
+            .setdescription({ "schur_csx_dny_pastix config" }));
+
+    REGISTER(solver_csx_pastix, ECFMetaData()
+            .setdescription({ "solver_csx_pastix config" }));
+
+    REGISTER(solver_csx_superlu_dist, ECFMetaData()
+            .setdescription({ "solver_csx_superlu_dist config" }));
 }

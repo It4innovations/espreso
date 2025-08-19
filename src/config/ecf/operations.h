@@ -10,6 +10,9 @@
 #include "operations/gpu_schur_hcsx_ddny.tria.h"
 #include "operations/gpu_trsm_hcsx_ddny_tria.h"
 #include "operations/gpu_herk_ddnx_ddny_tria.h"
+#include "operations/schur_csx_dny.pastix.h"
+#include "operations/solver_csx.pastix.h"
+#include "operations/solver_csx.superlu_dist.h"
 
 namespace espreso {
 
@@ -23,6 +26,10 @@ struct Operations: public ECFDescription {
     GpuSchurHcsxDdnyTriaConfig gpu_schur_hcsx_ddny_tria;
     GpuTrsmHcsxDdnyTriaConfig gpu_trsm_hcsx_ddny_tria;
     GpuHerkDdnxDdnyTriaConfig gpu_herk_ddnx_ddny_tria;
+
+    SchurCsxDnyPastixConfig schur_csx_dny_pastix;
+    SolverCsxPastixConfig solver_csx_pastix;
+    SolverCsxSuperludistConfig solver_csx_superlu_dist;
 
     Operations();
 

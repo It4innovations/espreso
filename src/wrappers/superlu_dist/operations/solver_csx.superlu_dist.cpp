@@ -4,7 +4,10 @@
 #include "wrappers/superlu_dist/operations/solver_csx.superlu_dist.h"
 
 #include "wrappers/superlu_dist/superlu_dist_common.h"
+#undef TRUE
+#undef FALSE
 
+#include "esinfo/ecfinfo.h"
 #include "math/primitives_new/allocator_new.h"
 #include "math/operations/copy_csx.h"
 #include "math/operations/complete_csx_csy_map.h"
@@ -187,10 +190,6 @@ namespace copied_code {
 
 
 
-static int num_active_intances = 0;
-
-
-
 template<typename T, typename I>
 struct solver_csx_superlu_dist_data
 {
@@ -218,19 +217,27 @@ struct solver_csx_superlu_dist_data
 
 
 template<typename T, typename I>
+static void setup_config(typename solver_csx_superlu_dist_data<T,I>::config & cfg)
+{
+    using ecf_config = SolverCsxSuperludistConfig;
+    const ecf_config & ecf = info::ecf->operations.solver_csx_superlu_dist;
+
+    switch(ecf.use_gpu) {
+        case ecf_config::AUTOBOOL::AUTO:  cfg.use_gpu = false; break;
+        case ecf_config::AUTOBOOL::TRUE:  cfg.use_gpu = true;  break;
+        case ecf_config::AUTOBOOL::FALSE: cfg.use_gpu = false; break;
+    }
+}
+
+
+
+template<typename T, typename I>
 solver_csx_superlu_dist<T,I>::solver_csx_superlu_dist()
 {
     if(!std::is_same_v<T,double>) eslog::error("only T=double is supported\n");
 
-    #pragma omp critical(solver_csx_superlu_dist)
-    {
-        num_active_intances++;
-        if(num_active_intances > 1) {
-            eslog::error("only one instance of solver_csx_superlu_dist can be active at once\n");
-        }
-    }
-
     data = std::make_unique<solver_csx_superlu_dist_data<T,I>>();
+    setup_config<T,I>(data->cfg);
 }
 
 
@@ -238,14 +245,12 @@ solver_csx_superlu_dist<T,I>::solver_csx_superlu_dist()
 template<typename T, typename I>
 solver_csx_superlu_dist<T,I>::~solver_csx_superlu_dist()
 {
-    dScalePermstructFree(&data->scale_permstruct);
-    dLUstructFree(&data->lu_struct);
-    PStatFree(&data->stat);
-    superlu_gridexit(&data->grid);
-
-    #pragma omp critical(solver_csx_superlu_dist)
+    #pragma omp critical(espreso_solver_csx_superlu_dist_call)
     {
-        num_active_intances--;
+        dScalePermstructFree(&data->scale_permstruct);
+        dLUstructFree(&data->lu_struct);
+        PStatFree(&data->stat);
+        superlu_gridexit(&data->grid);
     }
 }
 
@@ -254,6 +259,9 @@ solver_csx_superlu_dist<T,I>::~solver_csx_superlu_dist()
 template<typename T, typename I>
 void solver_csx_superlu_dist<T,I>::internal_factorize_symbolic()
 {
+    int orig_max_threads = omp_get_max_threads();
+    omp_set_num_threads(1);
+
     data->need_complete = is_uplo(A->prop.uplo);
     data->need_reorder = !data->need_complete && (A->order != 'C');
 
@@ -294,6 +302,7 @@ void solver_csx_superlu_dist<T,I>::internal_factorize_symbolic()
     data->op_A_copy.set_matrix_dst(&data->A_into_slu);
 
     // superlu_gridinit(MPI_COMM_SELF, 1, 1, &data->grid);
+    #pragma omp critical(espreso_solver_csx_superlu_dist_call)
     copied_code::my_superlu_gridinit(MPI_COMM_SELF, 1, 1, &data->grid);
 
     data->slu_A_store.nnz = data->A_into_slu.nnz;
@@ -308,12 +317,16 @@ void solver_csx_superlu_dist<T,I>::internal_factorize_symbolic()
     data->slu_A.ncol = A->ncols;
     data->slu_A.Store = &data->slu_A_store;
 
+    #pragma omp critical(espreso_solver_csx_superlu_dist_call)
     dScalePermstructInit(A->nrows, A->ncols, &data->scale_permstruct);
 
+    #pragma omp critical(espreso_solver_csx_superlu_dist_call)
     dLUstructInit(A->nrows, &data->lu_struct);
 
+    #pragma omp critical(espreso_solver_csx_superlu_dist_call)
     PStatInit(&data->stat);
 
+    #pragma omp critical(espreso_solver_csx_superlu_dist_call)
     set_default_options_dist(&data->options);
     data->options.Equil = NO;
     data->options.ParSymbFact = NO;
@@ -328,6 +341,8 @@ void solver_csx_superlu_dist<T,I>::internal_factorize_symbolic()
     data->options.superlu_num_gpu_streams = 1;
 
     // symbolic factorization is done lazily in numeric factorization
+
+    omp_set_num_threads(orig_max_threads);
 }
 
 
@@ -335,6 +350,9 @@ void solver_csx_superlu_dist<T,I>::internal_factorize_symbolic()
 template<typename T, typename I>
 void solver_csx_superlu_dist<T,I>::internal_factorize_numeric()
 {
+    int orig_max_threads = omp_get_max_threads();
+    omp_set_num_threads(1);
+
     if(data->need_complete) {
         data->op_A_complete.perform_values();
     }
@@ -348,8 +366,11 @@ void solver_csx_superlu_dist<T,I>::internal_factorize_numeric()
     int info;
 printf("GGG %p %d\n", &data->grid, data->grid.npcol);
 // now it crashes here
+    #pragma omp critical(espreso_solver_csx_superlu_dist_call)
     pdgssvx_ABglobal(&data->options, &data->slu_A, &data->scale_permstruct, nullptr, A->nrows, 0, &data->grid, &data->lu_struct, nullptr, &data->stat, &info);
     if(info != 0) eslog::error("superlu error, info = %d\n", info);
+
+    omp_set_num_threads(orig_max_threads);
 
     data->called_factorize_numeric = true;
 }
@@ -412,6 +433,9 @@ void solver_csx_superlu_dist<T,I>::internal_solve(MatrixDenseView_new<T> & rhs, 
         return;
     }
 
+    int orig_max_threads = omp_get_max_threads();
+    omp_set_num_threads(1);
+
     if(&rhs != &sol) {
         copy_dnx<T>::do_all(&rhs, &sol, false);
     }
@@ -421,8 +445,11 @@ void solver_csx_superlu_dist<T,I>::internal_solve(MatrixDenseView_new<T> & rhs, 
     data->options.Fact = FACTORED;
 
     int info;
+    #pragma omp critical(espreso_solver_csx_superlu_dist_call)
     pdgssvx_ABglobal(&data->options, &data->slu_A, &data->scale_permstruct, nullptr, A->nrows, 0, &data->grid, &data->lu_struct, data->berr.data(), &data->stat, &info);
     if(info != 0) eslog::error("superlu error, info = %d\n", info);
+
+    omp_set_num_threads(orig_max_threads);
 }
 
 

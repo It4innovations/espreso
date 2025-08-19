@@ -3,6 +3,7 @@
 
 #include "wrappers/pastix/operations/solver_csx.pastix.h"
 
+#include "esinfo/ecfinfo.h"
 #include "wrappers/pastix/pastix_common.h"
 #include "math/primitives_new/allocator_new.h"
 #include "math/operations/convert_dnx_dny.h"
@@ -34,9 +35,25 @@ struct solver_csx_pastix_data
 
 
 template<typename T, typename I>
+static void setup_config(typename solver_csx_pastix_data<T,I>::config & cfg)
+{
+    using ecf_config = SolverCsxPastixConfig;
+    const ecf_config & ecf = info::ecf->operations.solver_csx_pastix;
+
+    switch(ecf.use_gpu) {
+        case ecf_config::AUTOBOOL::AUTO:  cfg.use_gpu = false; break;
+        case ecf_config::AUTOBOOL::TRUE:  cfg.use_gpu = true;  break;
+        case ecf_config::AUTOBOOL::FALSE: cfg.use_gpu = false; break;
+    }
+}
+
+
+
+template<typename T, typename I>
 solver_csx_pastix<T,I>::solver_csx_pastix()
 {
     data = std::make_unique<solver_csx_pastix_data<T,I>>();
+    setup_config<T,I>(data->cfg);
 
     check_pastix_instances(data->cfg.use_gpu, true);
 }

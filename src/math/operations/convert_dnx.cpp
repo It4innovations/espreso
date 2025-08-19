@@ -69,7 +69,7 @@ void convert_dnx<T>::perform()
                 // we need to complete the matrix
                 complete_dnx_dnx<T>::do_all(M_src, M_dst, herm);
             }
-            else if(!is_uplo(src_uplo) && !is_uplo(dst_uplo)) {
+            else if(!is_uplo(src_uplo) && is_uplo(dst_uplo)) {
                 // F->L, F->U
                 // extract just a single triangle
                 MatrixDenseView_new<T> M_tmp = *M_src;
@@ -125,11 +125,12 @@ void convert_dnx<T>::perform()
                     }
                 }
             }
-            else if(!is_uplo(src_uplo) && !is_uplo(dst_uplo)) {
+            else if(!is_uplo(src_uplo) && is_uplo(dst_uplo)) {
                 // F->L, F->U
-                // make a same-order view of dst, then just copy the triangle
-                MatrixDenseView_new<T> M_dst_rt = M_dst->get_transposed_reordered_view();
-                copy_dnx<T>::do_all(M_src, &M_dst_rt, herm);
+                // make a same-order view of src, then just copy the triangle
+                MatrixDenseView_new<T> M_src_rt = M_src->get_transposed_reordered_view();
+                M_src_rt.prop.uplo = M_dst->prop.uplo;
+                copy_dnx<T>::do_all(&M_src_rt, M_dst, herm);
             }
             else {
                 // L->U, U->L

@@ -52,6 +52,9 @@ void solver_csx_strumpack<T,I>::internal_factorize_symbolic()
 {
     if(A->order != 'R') eslog::error("support only CSR matrices for now\n");
 
+    int orig_max_threads = omp_get_max_threads();
+    omp_set_num_threads(1);
+
     data->need_complete = is_uplo(A->prop.uplo);
     if(data->need_complete) {
         data->A_full.set(A->ncols, A->nrows, 2 * A->nnz - A->nrows, A->order, AllocatorCPU_new::get_singleton());
@@ -82,6 +85,8 @@ void solver_csx_strumpack<T,I>::internal_factorize_symbolic()
     data->solver.options().set_matching(strumpack::MatchingJob::NONE);
     data->solver.options().disable_replace_tiny_pivots();
     data->solver.options().disable_gpu();
+
+    omp_set_num_threads(orig_max_threads);
 }
 
 
@@ -89,6 +94,9 @@ void solver_csx_strumpack<T,I>::internal_factorize_symbolic()
 template<typename T, typename I>
 void solver_csx_strumpack<T,I>::internal_factorize_numeric()
 {
+    int orig_max_threads = omp_get_max_threads();
+    omp_set_num_threads(1);
+
     if(data->need_complete) {
         data->op_A_complete.perform_values();
     }
@@ -104,6 +112,8 @@ void solver_csx_strumpack<T,I>::internal_factorize_numeric()
         data->solver.reorder();
         data->solver.factor();
     }
+
+    omp_set_num_threads(orig_max_threads);
 
     data->called_factorize_numeric = true;
 }
@@ -181,7 +191,12 @@ void solver_csx_strumpack<T,I>::internal_solve(MatrixDenseView_new<T> & rhs, Mat
         return;
     }
 
+    int orig_max_threads = omp_get_max_threads();
+    omp_set_num_threads(1);
+
     data->solver.solve(rhs.ncols, rhs.vals, rhs.ld, sol.vals, sol.ld);
+
+    omp_set_num_threads(orig_max_threads);
 }
 
 

@@ -3,6 +3,7 @@
 
 #include "wrappers/pastix/operations/schur_csx_dny.pastix.h"
 
+#include "esinfo/ecfinfo.h"
 #include "wrappers/pastix/pastix_common.h"
 #include "math/primitives_new/allocator_new.h"
 #include "math/operations/convert_dnx.h"
@@ -34,9 +35,27 @@ struct schur_csx_dny_pastix_data
 
 
 template<typename T, typename I>
+static void setup_config(typename schur_csx_dny_pastix_data<T,I>::config & cfg)
+{
+    using ecf_config = SchurCsxDnyPastixConfig;
+    const ecf_config & ecf = info::ecf->operations.schur_csx_dny_pastix;
+
+    switch(ecf.use_gpu) {
+        case ecf_config::AUTOBOOL::AUTO:  cfg.use_gpu = false; break;
+        case ecf_config::AUTOBOOL::TRUE:  cfg.use_gpu = true;  break;
+        case ecf_config::AUTOBOOL::FALSE: cfg.use_gpu = false; break;
+    }
+}
+
+
+
+template<typename T, typename I>
 schur_csx_dny_pastix<T,I>::schur_csx_dny_pastix()
 {
+    eslog::error("schur_csx_dny_pastix produces wrong results and should not be used. Feel free to comment out this error to test it\n");
+
     data = std::make_unique<schur_csx_dny_pastix_data<T,I>>();
+    setup_config<T,I>(data->cfg);
 
     check_pastix_instances(data->cfg.use_gpu, true);
 }
@@ -132,7 +151,9 @@ void schur_csx_dny_pastix<T,I>::internal_perform_2()
 
     convert_dnx<T>::do_all(&sc_tmp, sc);
 
-    lincomb_matrix_dnx<T>::do_all(sc, alpha, sc, 0, nullptr);
+    if(alpha != T{1}) {
+        lincomb_matrix_dnx<T>::do_all(sc, alpha, sc, 0, nullptr);
+    }
 }
 
 
@@ -140,14 +161,11 @@ void schur_csx_dny_pastix<T,I>::internal_perform_2()
 template<typename T, typename I>
 void schur_csx_dny_pastix<T,I>::internal_solve_A11(VectorDenseView_new<T> & rhs, VectorDenseView_new<T> & sol)
 {
-    VectorDenseData_new<T> tmp;
-    tmp.set(size_A11, AllocatorCPU_new::get_singleton());
-    tmp.alloc();
-    std::copy_n(rhs.vals, size_A11, tmp.vals);
+    if(&rhs != &sol) {
+        std::copy_n(rhs.vals, rhs.size, sol.vals);
+    }
 
-    pastix_task_solve(data->pastix_data, data->pastix_A.gNexp, 1, tmp.vals, size_A11);
-
-    std::copy_n(tmp.vals, size_A11, sol.vals);
+    pastix_task_solve(data->pastix_data, data->pastix_A.gNexp, 1, sol.vals, size_A11);
 }
 
 
