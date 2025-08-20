@@ -25,6 +25,7 @@ struct schur_csx_dny_pastix_data
     pastix_int_t iparm[IPARM_SIZE];
     double dparm[DPARM_SIZE];
     pastix_data_t * pastix_data = nullptr;
+    MatrixCsxView_new<T,I> A_to_use;
     spmatrix_t pastix_A;
     struct config {
         bool use_gpu = false;
@@ -96,18 +97,25 @@ void schur_csx_dny_pastix<T,I>::internal_preprocess()
     data->iparm[IPARM_SCHUR_SOLV_MODE] = PastixSolvModeLocal;
 
     pastixInit(&data->pastix_data, 0, data->iparm, data->dparm);
+
+    if(A->order == 'C') {
+        data->A_to_use = *A;
+    }
+    else {
+        data->A_to_use = A->get_transposed_reordered_view();
+    }
     
     spmInit(&data->pastix_A);
-    data->pastix_A.mtxtype = symm_to_pastix<T>(A->prop.symm);
+    data->pastix_A.mtxtype = symm_to_pastix<T>(data->A_to_use.prop.symm);
     data->pastix_A.flttype = type_to_pastix<T>();
-    data->pastix_A.fmttype = order_to_pastix(A->order);
+    data->pastix_A.fmttype = order_to_pastix(data->A_to_use.order);
     data->pastix_A.baseval = 0;
-    data->pastix_A.n = A->nrows;
-    data->pastix_A.nnz = A->nnz;
+    data->pastix_A.n = data->A_to_use.nrows;
+    data->pastix_A.nnz = data->A_to_use.nnz;
     data->pastix_A.dof = 1;
-    data->pastix_A.rowptr = ((A->order == 'R') ? A->ptrs : A->idxs);
-    data->pastix_A.colptr = ((A->order == 'R') ? A->idxs : A->ptrs);
-    data->pastix_A.values = A->vals;
+    data->pastix_A.colptr = data->A_to_use.ptrs; // csc
+    data->pastix_A.rowptr = data->A_to_use.idxs; // csc
+    data->pastix_A.values = data->A_to_use.vals;
     data->pastix_A.replicated = -1; // neither distrubuted nor replicated, just one matrix
     spmUpdateComputedFields(&data->pastix_A);
 
@@ -130,9 +138,16 @@ void schur_csx_dny_pastix<T,I>::internal_perform_1()
         this->helper_concat(data->A_whole, 'F');
     }
 
-    data->pastix_A.colptr = A->ptrs;
-    data->pastix_A.rowptr = A->idxs;
-    data->pastix_A.values = A->vals;
+    if(A->order == 'C') {
+        data->A_to_use = *A;
+    }
+    else {
+        data->A_to_use = A->get_transposed_reordered_view();
+    }
+
+    data->pastix_A.colptr = data->A_to_use.ptrs; // csc
+    data->pastix_A.rowptr = data->A_to_use.idxs; // csc
+    data->pastix_A.values = data->A_to_use.vals;
 
     pastix_task_numfact(data->pastix_data, &data->pastix_A);
 }
