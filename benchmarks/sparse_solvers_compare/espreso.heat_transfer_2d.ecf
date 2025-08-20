@@ -1,0 +1,156 @@
+# ESPRESO Configuration File
+
+DEFAULT_ARGS {
+}
+
+INPUT_TYPE            GENERATOR;
+PHYSICS        HEAT_TRANSFER;
+
+OPERATIONS {
+  SCHUR_CSX_DNY_SPSOLVER {
+    ORDER_X             AUTO;
+    SPARSE_SOLVER_IMPL  ${ECF_SPARSE_SOLVER_IMPL};
+  }
+}
+
+GENERATOR {
+  SHAPE   GRID;
+
+  UNIFORM_CLUSTERS        TRUE;
+  UNIFORM_DOMAINS         TRUE;
+
+  GRID {
+    LENGTH_X                   1;
+    LENGTH_Y                   1;
+    LENGTH_Z                   1;
+
+    NODES {
+      BOTTOM   <1 , 1> <0 , 1> <0 , 0>;
+      TOP      <0 , 0> <0 , 1> <0 , 0>;
+    }
+
+    ELEMENT_TYPE          ${ECF_ELEMENT_TYPE};
+
+    BLOCKS_X                   1;
+    BLOCKS_Y                   1;
+    BLOCKS_Z                   1;
+
+    CLUSTERS_X                 1;
+    CLUSTERS_Y                 1;
+    CLUSTERS_Z                 1;
+
+    DOMAINS_X             ${ECF_DOMAINS_X};
+    DOMAINS_Y             ${ECF_DOMAINS_Y};
+    DOMAINS_Z             ${ECF_DOMAINS_Z};
+
+    ELEMENTS_X            ${ECF_ELEMENTS_X};
+    ELEMENTS_Y            ${ECF_ELEMENTS_Y};
+    ELEMENTS_Z            ${ECF_ELEMENTS_Z};
+  }
+}
+
+HEAT_TRANSFER {
+  LOAD_STEPS        1;
+
+  MATERIALS {
+    1 {
+      COORDINATE_SYSTEM {
+        TYPE       CARTESIAN;
+        ROTATION    { Z 35; }
+      }
+
+      THERMAL_CONDUCTIVITY {
+        MODEL   DIAGONAL;
+
+        KXX           50;
+        KYY          100;
+      }
+    }
+  }
+
+  MATERIAL_SET {
+    ALL_ELEMENTS   1;
+  }
+
+  INITIAL_TEMPERATURE {
+    ALL_ELEMENTS   200;
+  }
+
+  THICKNESS {
+    ALL_ELEMENTS  1;
+  }
+
+  LOAD_STEPS_SETTINGS {
+    1 {
+      DURATION_TIME     1;
+      TYPE   STEADY_STATE;
+      MODE         LINEAR;
+      SOLVER         FETI;
+
+      FETI {
+        METHOD          TOTAL_FETI;
+        DUAL_OPERATOR       ${ECF_DUALOPERATOR};
+        PRECONDITIONER        NONE;
+        PRECISION            1E-09;
+        ITERATIVE_SOLVER       PCG;
+        REGULARIZATION    ANALYTIC;
+        MAX_ITERATIONS          12;
+        EXIT_ON_NONCONVERGENCE FALSE;
+
+        DUALOP_TOTALFETI_IMPLICIT_GENERALSPARSESOLVER_CPU_CONFIG {
+          PARALLEL_SET        FALSE;
+          PARALLEL_UPDATE     FALSE;
+          PARALLEL_APPLY      FALSE;
+          TIMERS_OUTER        TRUE;
+          TIMERS_INNER        FALSE;
+          PRINT_CONFIG        FALSE;
+          SPARSE_SOLVER_IMPL  ${ECF_SPARSE_SOLVER_IMPL};
+        }
+
+        DUALOP_TOTALFETI_EXPLICIT_GENERALSCHUR_CPU_CONFIG {
+          PARALLEL_SET           FALSE;
+          PARALLEL_UPDATE        FALSE;
+          PARALLEL_APPLY         FALSE;
+          MAINLOOP_UPDATE_SPLIT  COMBINED;
+          TIMERS_OUTER           TRUE;
+          TIMERS_INNER           FALSE;
+          PRINT_CONFIG           FALSE;
+          ORDER_F                AUTO;
+          SCHUR_IMPL             ${ECF_SCHUR_IMPL};
+          APPLY_WHERE            ${ECF_EXPLICIT_APPLY_WHERE};
+        }
+      }
+
+      TEMPERATURE {
+        TOP       100;
+        BOTTOM    300;
+      }
+    }
+  }
+}
+
+OUTPUT {
+  PATH                       ${ECF_OUTPUT_PATH};
+  RESULTS_STORE_FREQUENCY    NEVER;
+  MONITORS_STORE_FREQUENCY   EVERY_SUBSTEP;
+
+  MONITORING {
+    1 {
+      REGION            TOP;
+      STATISTICS        MAX;
+      PROPERTY  TEMPERATURE;
+    }
+
+    2 {
+      REGION         BOTTOM;
+      STATISTICS        MIN;
+      PROPERTY  TEMPERATURE;
+    }
+
+    3 {
+      REGION   ALL_ELEMENTS;
+      STATISTICS        AVG;
+      PROPERTY  TEMPERATURE;
+    }
+  }
+}
