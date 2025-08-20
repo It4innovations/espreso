@@ -2,8 +2,12 @@
 
 buildname="build-csc-lumi-rocm-mpich"
 export WAFLOCK=".lock-waf_linux_${buildname}"
-rm -rf build
-ln -s "${buildname}" build
+curr_buildname="$(readlink build)"
+if [ "${curr_buildname}" != "${buildname}" ]
+then
+    rm -rf build
+    ln -s "${buildname}" build
+fi
 
 
 

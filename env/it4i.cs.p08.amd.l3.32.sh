@@ -1,8 +1,12 @@
 
 buildname="build-it4i-cs-p08-amd-l3-32"
 export WAFLOCK=".lock-waf_linux_${buildname}"
-rm -rf build
-ln -s "${buildname}" build
+curr_buildname="$(readlink build)"
+if [ "${curr_buildname}" != "${buildname}" ]
+then
+    rm -rf build
+    ln -s "${buildname}" build
+fi
 
 ml Python/3.10.4-GCCcore-11.3.0
 ml OpenMPI/4.1.4-GCC-11.3.0
