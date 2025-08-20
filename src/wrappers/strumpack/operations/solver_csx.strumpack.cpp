@@ -102,8 +102,8 @@ void solver_csx_strumpack<T,I>::internal_factorize_numeric()
     }
 
     if(data->called_factorize_numeric) {
-        // docs: "The numerical factorization will automatically be redone."
         data->solver.update_matrix_values(data->A_to_use->nrows, data->A_to_use->ptrs, data->A_to_use->idxs, data->A_to_use->vals, is_structurally_symmetric(data->A_to_use->prop.symm));
+        data->solver.factor();
     }
     else {
         // for some reason I can call reorder only when I have numerical values
