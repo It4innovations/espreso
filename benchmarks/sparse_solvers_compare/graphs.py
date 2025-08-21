@@ -104,7 +104,7 @@ for physics in physics_list:
                 plt.figure(figsize=(15, 10), dpi=100)
 
                 tp = mytikzplot.tikzplotter()
-                tppath = graphs_dir + "/" + imgname + ".tikz"
+                tppath = graphs_dir + "/" + imgname + ".tex"
 
                 for tupleval in tuples:
                     dualop = tupleval[0]
@@ -130,11 +130,15 @@ for physics in physics_list:
                     plt.loglog(vals_x, vals_y, base=2, color=line_color, linestyle=line_style, label=tuple_name)
                     tp.add_line(mytikzplot.line(vals_x, vals_y, line_color, line_style, None, tuple_name))
 
+                tp.set_bounds(plt.gca().get_xlim()[0], plt.gca().get_xlim()[1], plt.gca().get_ylim()[0], plt.gca().get_ylim()[1])
+                tp.logx = 2
+                tp.logy = 10
+                tp.xlabel = "Number of DOFs per subdomain"
+                tp.ylabel = "Time per subdomain [ms]"
+                tp.save(tppath)
+
                 plt.title(imgname, fontsize="medium")
                 plt.legend(loc="upper left")
                 plt.grid(True)
                 plt.savefig(imgpath)
                 plt.close()
-
-                tp.save(tppath)
-
