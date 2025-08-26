@@ -110,8 +110,6 @@ bool FETI<T>::update(const step::Step &step)
 
     projector->orthonormalizeKernels(step);
     dualOperator->update(step);
-#warning "only for benchmarking"
-dualOperator->update(step);
     projector->update(step);
     preconditioner->update(step);
     iterativeSolver->update(step);
