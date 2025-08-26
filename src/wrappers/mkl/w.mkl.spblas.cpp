@@ -42,6 +42,7 @@ SpBLAS<Matrix, T, I>::~SpBLAS()
 {
     if (_spblas) {
         checkStatus(mkl_sparse_destroy(_spblas->inspector));
+        delete _spblas;
     }
 }
 
@@ -116,6 +117,7 @@ void SpBLAS<Matrix, T, I>::insert(MatrixType &a, bool trans)
     matrix = &a;
     if (_spblas) {
         checkStatus(mkl_sparse_destroy(_spblas->inspector));
+        delete _spblas;
     }
     _spblas = new Matrix_SpBLAS_External_Representation();
     create<Matrix, T, I>(matrix, _spblas, trans);

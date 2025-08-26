@@ -44,6 +44,7 @@ inline ECFValueHolder<ECFExpression>::ECFValueHolder(ECFExpression &value)
 : value(value)
 {
     if (value.value.size()) {
+        delete value.evaluator;
         value.evaluator = Evaluator::create(value.value);
         value.isset = true;
     }
@@ -78,6 +79,7 @@ template <>
 inline bool ECFValueHolder<ECFExpression>::_setValue(const std::string &value)
 {
     this->value.value = Parser::uppercase(value);
+    delete this->value.evaluator;
     this->value.evaluator = Evaluator::create(value);
     this->value.isset = true;
     // expression validity is checked later

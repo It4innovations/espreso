@@ -304,6 +304,7 @@ void DirectSparseSolver<T, I>::symbolicFactorization()
         if (ext->umfpack.full.nrows == 0 || ext->umfpack.full.ncols == 0) return;
         if (ext->umfpack.symbolic != nullptr) eslog::error("symbolicFactorization: invalid order of operations in spsolver\n");
 
+        if (ext->umfpack.symbolic != nullptr) umfpack_di_free_symbolic(&ext->umfpack.symbolic);
         _symbolic<T, I>(ext->umfpack.full, &ext->umfpack.symbolic, ext->umfpack.control, ext->umfpack.info);
         check(ext->umfpack.info);
     } break;
@@ -365,6 +366,7 @@ void DirectSparseSolver<T, I>::numericalFactorization()
         } break;
         }
 
+        if (ext->umfpack.numeric != nullptr) umfpack_di_free_numeric(&ext->umfpack.numeric);
         _numeric<T, I>(ext->umfpack.full, ext->umfpack.symbolic, &ext->umfpack.numeric, ext->umfpack.control, ext->umfpack.info);
         check(ext->umfpack.info);
     } break;
