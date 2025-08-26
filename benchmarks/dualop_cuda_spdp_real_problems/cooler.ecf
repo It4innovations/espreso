@@ -1,0 +1,98 @@
+
+DEFAULT_ARGS {
+}
+
+OPERATIONS {
+  GPU_TRSM_HCSX_DDNY_TRIA {
+    STRATEGY      ${ECF_GPU_TRSM_TRIA_STRATEGY};
+    PARTITION {
+      STRATEGY       ${ECF_PARTITION_STRATEGY};
+      CHUNK_COUNT    ${ECF_CHUNK_COUNT};
+    }
+  }
+  GPU_HERK_DDNX_DDNY_TRIA {
+    PARTITION {
+      STRATEGY       ${ECF_PARTITION_STRATEGY};
+      CHUNK_COUNT    ${ECF_CHUNK_COUNT};
+    }
+  }
+}
+
+INPUT {
+  FORMAT    ANSYS_CDB;
+  PATH     benchmarks/dualop_cuda_spdp_real_problems/cooler.dat;
+
+  KEEP_MATERIAL_SETS     FALSE;
+  CONVERT_DATABASE       FALSE;
+
+  DECOMPOSITION {
+    PARALLEL_DECOMPOSER   METIS;
+
+    DOMAINS               ${ECF_NUM_DOMAINS};
+  }
+}
+
+PHYSICS    HEAT_TRANSFER;
+
+HEAT_TRANSFER {
+  LOAD_STEPS   1;
+
+  MATERIALS {
+    1 {
+      THERMAL_CONDUCTIVITY {
+        MODEL   ISOTROPIC;
+
+        KXX            5;
+      }
+    }
+  }
+
+  MATERIAL_SET {
+    ALL_ELEMENTS    1;
+  }
+
+  LOAD_STEPS_SETTINGS {
+    1 {
+      DURATION_TIME     1;
+      TYPE   STEADY_STATE;
+      MODE         LINEAR;
+      SOLVER         FETI;
+
+      FETI {
+        METHOD          TOTAL_FETI;
+        DUAL_OPERATOR     EXPLICIT_GENERALSCHUR_GPU;
+        PRECONDITIONER        NONE;
+        ITERATIVE_SOLVER       PCG;
+        REGULARIZATION    ANALYTIC;
+        MAX_ITERATIONS        12;
+        PRECISION             1e-8;
+        EXIT_ON_NONCONVERGENCE FALSE;
+        
+        DUALOP_TOTALFETI_EXPLICIT_GENERALSCHUR_GPU_CONFIG {
+          PARALLEL_SET                       TRUE;
+          PARALLEL_UPDATE                    TRUE;
+          PARALLEL_APPLY                     TRUE;
+          MAINLOOP_UPDATE_SPLIT              COMBINED;
+          SYNCHRONIZE_AFTER_UPDATE_MAINLOOP  AUTO;
+          TIMERS_OUTER                       true;
+          TIMERS_INNER                       FALSE;
+          PRINT_CONFIG                       FALSE;
+          ORDER_F                            AUTO;
+          SCHUR_IMPL                         TRIANGULAR;
+          APPLY_WHERE                        GPU;
+        }
+      }
+
+      TEMPERATURE {
+        BOTTOM_NODE_SET  100;
+        FACE_SET_01      300;
+      }
+    }
+  }
+}
+
+OUTPUT {
+  PATH                       ${ECF_OUTPUT_PATH};
+  RESULTS_STORE_FREQUENCY     NEVER;
+}
+
