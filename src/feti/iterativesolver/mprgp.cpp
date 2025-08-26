@@ -142,6 +142,7 @@ double MPRGP<double>::getFeasibleStepLength(Vector_Dual<double> &x, Vector_Dual<
 
 template <> void MPRGP<double>::run(const step::Step &step, MPRGPSolverInfo &info, double alpha, std::function<void(Vector_Dual<double> &in, Vector_Dual<double> &out)> H, std::function<void(Vector_Dual<double> &in, Vector_Dual<double> &out)> Hprec, std::function<bool(Vector_Dual<double> &x, Vector_Dual<double> &g_stop)> stop)
 {
+    info.time.current = eslog::time();
     info.n_cg = info.n_mixed = info.n_gproj = 0;
 
     _print("x0", step, x0);
