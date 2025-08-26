@@ -249,7 +249,7 @@ void FixedTube<T>::_store(const Point &center, const Point &direction, double ra
 
     for (int i = 0; i < layers; ++i) {
         for (int s = 0; s < steps; ++s) {
-            Point p = center + direction * (i - 1) + n1 * std::cos(2 * M_PI * s / steps) * radius + n2 * std::sin(2 * M_PI * s / steps) * radius;
+            Point p = center + direction * (i - 1) * 0.01 + n1 * std::cos(2 * M_PI * s / steps) * radius + n2 * std::sin(2 * M_PI * s / steps) * radius;
             os << p.x << " " << p.y << " " << p.z << "\n";
         }
     }
