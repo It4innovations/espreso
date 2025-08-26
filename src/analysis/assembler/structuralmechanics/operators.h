@@ -60,6 +60,16 @@ struct StructuralMechanicsElementOperators {
         std::vector<ExternalEvaluator*> node;
         std::vector<ExternalEvaluator*> gp;
     } expressions;
+
+    ~StructuralMechanicsElementOperators()
+    {
+        for (size_t i = 0; i < expressions.node.size(); ++i) {
+            delete expressions.node[i];
+        }
+        for (size_t i = 0; i < expressions.gp.size(); ++i) {
+            delete expressions.gp[i];
+        }
+    }
 };
 
 struct StructuralMechanicsFaceOperators {
@@ -85,6 +95,16 @@ struct StructuralMechanicsFaceOperators {
         std::vector<ExternalEvaluator*> node;
         std::vector<ExternalEvaluator*> gp;
     } expressions;
+
+    ~StructuralMechanicsFaceOperators()
+    {
+        for (size_t i = 0; i < expressions.node.size(); ++i) {
+            delete expressions.node[i];
+        }
+        for (size_t i = 0; i < expressions.gp.size(); ++i) {
+            delete expressions.gp[i];
+        }
+    }
 };
 
 struct StructuralMechanicsNodeOperators {
@@ -106,6 +126,14 @@ struct StructuralMechanicsNodeOperators {
     struct {
         std::vector<ExternalEvaluator*> node;
     } expressions;
+
+    ~StructuralMechanicsNodeOperators()
+    {
+        for (size_t i = 0; i < expressions.node.size(); ++i) {
+            delete expressions.node[i];
+        }
+    }
+
 };
 
 }

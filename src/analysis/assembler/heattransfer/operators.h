@@ -54,6 +54,16 @@ struct HeatTransferElementOperators {
         std::vector<ExternalEvaluator*> node;
         std::vector<ExternalEvaluator*> gp;
     } expressions;
+
+    ~HeatTransferElementOperators()
+    {
+        for (size_t i = 0; i < expressions.node.size(); ++i) {
+            delete expressions.node[i];
+        }
+        for (size_t i = 0; i < expressions.gp.size(); ++i) {
+            delete expressions.gp[i];
+        }
+    }
 };
 
 struct HeatTransferBoundaryOperators {
@@ -78,6 +88,16 @@ struct HeatTransferBoundaryOperators {
         std::vector<ExternalEvaluator*> node;
         std::vector<ExternalEvaluator*> gp;
     } expressions;
+
+    ~HeatTransferBoundaryOperators()
+    {
+        for (size_t i = 0; i < expressions.node.size(); ++i) {
+            delete expressions.node[i];
+        }
+        for (size_t i = 0; i < expressions.gp.size(); ++i) {
+            delete expressions.gp[i];
+        }
+    }
 };
 
 struct HeatTransferNodeOperators {
@@ -98,6 +118,13 @@ struct HeatTransferNodeOperators {
     struct {
         std::vector<ExternalEvaluator*> node;
     } expressions;
+
+    ~HeatTransferNodeOperators()
+    {
+        for (size_t i = 0; i < expressions.node.size(); ++i) {
+            delete expressions.node[i];
+        }
+    }
 };
 
 
