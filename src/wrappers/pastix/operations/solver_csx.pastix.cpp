@@ -64,6 +64,10 @@ solver_csx_pastix<T,I>::solver_csx_pastix()
 template<typename T, typename I>
 solver_csx_pastix<T,I>::~solver_csx_pastix()
 {
+    if(data->pastix_data != nullptr) {
+        pastixFinalize(&data->pastix_data);
+    }
+
     check_pastix_instances(data->cfg.use_gpu, false);
 }
 

@@ -66,6 +66,10 @@ schur_csx_dny_pastix<T,I>::schur_csx_dny_pastix()
 template<typename T, typename I>
 schur_csx_dny_pastix<T,I>::~schur_csx_dny_pastix()
 {
+    if(data->pastix_data != nullptr) {
+        pastixFinalize(&data->pastix_data);
+    }
+
     check_pastix_instances(data->cfg.use_gpu, false);
 }
 
