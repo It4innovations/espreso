@@ -30,7 +30,7 @@ struct schur_csx_dny_mklpardiso_data
     void * pt[64];
     MKL_INT iparm[64];
     MKL_INT mtype;
-    MKL_INT msglvl;
+    MKL_INT msglvl = 0;
     MKL_INT error;
     MKL_INT size_matrix_mklint;
 };
@@ -64,7 +64,14 @@ schur_csx_dny_mklpardiso<T,I>::schur_csx_dny_mklpardiso() = default;
 
 
 template<typename T, typename I>
-schur_csx_dny_mklpardiso<T,I>::~schur_csx_dny_mklpardiso() = default;
+schur_csx_dny_mklpardiso<T,I>::~schur_csx_dny_mklpardiso()
+{
+    MKL_INT phase = -1;
+    pardiso(data->pt, nullptr, nullptr, &data->mtype, &phase, &data->size_matrix_mklint, nullptr, nullptr, nullptr, nullptr, nullptr, data->iparm, &data->msglvl, nullptr, nullptr, &data->error);
+    if(data->error != 0) {
+        eslog::error("pardiso error %d\n", (int)data->error);
+    }
+}
 
 
 
