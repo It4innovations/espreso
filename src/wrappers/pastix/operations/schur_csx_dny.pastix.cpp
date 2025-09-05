@@ -53,8 +53,6 @@ static void setup_config(typename schur_csx_dny_pastix_data<T,I>::config & cfg)
 template<typename T, typename I>
 schur_csx_dny_pastix<T,I>::schur_csx_dny_pastix()
 {
-    eslog::error("schur_csx_dny_pastix produces wrong results and should not be used. Feel free to comment out this error to test it\n");
-
     data = std::make_unique<schur_csx_dny_pastix_data<T,I>>();
     setup_config<T,I>(data->cfg);
 
@@ -164,6 +162,7 @@ void schur_csx_dny_pastix<T,I>::internal_perform_2()
     MatrixDenseData_new<T> sc_tmp;
     sc_tmp.set(size_sc, size_sc, 'C', AllocatorCPU_new::get_singleton());
     sc_tmp.prop.symm = sc->prop.symm;
+    sc_tmp.prop.uplo = data->A_to_use.prop.uplo;
     sc_tmp.alloc();
 
     pastixGetSchur(data->pastix_data, sc_tmp.vals, sc_tmp.ld);
