@@ -22,6 +22,9 @@ template<typename T, typename I>
 std::unique_ptr<schur_csx_dny<T,I>> schur_csx_dny<T,I>::make(implementation_selector is)
 {
     auto autoselect_implementation = [](){
+        #ifdef HAVE_PASTIX
+            return implementation_selector::pastix;
+        #endif
         #ifdef HAVE_MKL
             return implementation_selector::mklpardiso;
         #endif
