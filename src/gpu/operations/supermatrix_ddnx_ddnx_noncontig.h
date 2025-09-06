@@ -17,6 +17,13 @@ namespace operations {
 template<typename T, typename I>
 class supermatrix_ddnx_ddnx_noncontig
 {
+    // ignores uplo
+public:
+    enum struct mode {
+        assign,
+        accumulate,
+        accumulate_atomic,
+    };
 protected:
     supermatrix_ddnx_ddnx_noncontig() = default;
 public:
@@ -33,14 +40,16 @@ public:
     void set_matrix_dst(MatrixDenseView_new<T> * d_M_dst_);
     void set_row_map(VectorDenseView_new<I> * d_row_map_);
     void set_col_map(VectorDenseView_new<I> * d_col_map_);
+    void set_mode(mode mode_val_);
     void perform_submit();
-    static void submit_all(gpu::mgm::queue q, MatrixDenseView_new<T> * d_M_src, MatrixDenseView_new<T> * d_M_dst, VectorDenseView_new<I> * d_row_map, VectorDenseView_new<I> * d_col_map);
+    static void submit_all(gpu::mgm::queue q, MatrixDenseView_new<T> * d_M_src, MatrixDenseView_new<T> * d_M_dst, VectorDenseView_new<I> * d_row_map, VectorDenseView_new<I> * d_col_map, mode mode_val = mode::assign);
 protected:
     gpu::mgm::queue q;
     MatrixDenseView_new<T> * d_M_src = nullptr;
     MatrixDenseView_new<T> * d_M_dst = nullptr;
     VectorDenseView_new<I> * d_row_map = nullptr;
     VectorDenseView_new<I> * d_col_map = nullptr;
+    mode mode_val = mode::assign;
     bool called_set_handles = false;
     bool called_set_row_map = false;
     bool called_set_col_map = false;

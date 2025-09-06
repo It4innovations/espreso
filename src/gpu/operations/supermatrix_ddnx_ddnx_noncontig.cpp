@@ -82,6 +82,14 @@ void supermatrix_ddnx_ddnx_noncontig<T,I>::set_col_map(VectorDenseView_new<I> * 
 
 
 template<typename T, typename I>
+void supermatrix_ddnx_ddnx_noncontig<T,I>::set_mode(mode mode_val_)
+{
+    mode_val = mode_val_;
+}
+
+
+
+template<typename T, typename I>
 void supermatrix_ddnx_ddnx_noncontig<T,I>::perform_submit()
 {
     stacktimer::push("supermatrix_ddnx_ddnx_noncontig::perform_submit");
@@ -105,7 +113,7 @@ void supermatrix_ddnx_ddnx_noncontig<T,I>::perform_submit()
 
 
 template<typename T, typename I>
-void supermatrix_ddnx_ddnx_noncontig<T,I>::submit_all(gpu::mgm::queue q, MatrixDenseView_new<T> * d_M_src, MatrixDenseView_new<T> * d_M_dst, VectorDenseView_new<I> * d_row_map, VectorDenseView_new<I> * d_col_map)
+void supermatrix_ddnx_ddnx_noncontig<T,I>::submit_all(gpu::mgm::queue q, MatrixDenseView_new<T> * d_M_src, MatrixDenseView_new<T> * d_M_dst, VectorDenseView_new<I> * d_row_map, VectorDenseView_new<I> * d_col_map, mode mode_val)
 {
     auto instance = supermatrix_ddnx_ddnx_noncontig<T,I>::make();
     instance->set_handles(q);
@@ -113,6 +121,7 @@ void supermatrix_ddnx_ddnx_noncontig<T,I>::submit_all(gpu::mgm::queue q, MatrixD
     instance->set_matrix_dst(d_M_dst);
     instance->set_row_map(d_row_map);
     instance->set_col_map(d_col_map);
+    instance->set_mode(mode_val);
     instance->perform_submit();
 }
 

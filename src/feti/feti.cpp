@@ -15,7 +15,8 @@ template <typename T>
 FETI<T>::FETI(FETIConfiguration &configuration)
 : configuration(configuration), decomposition(nullptr)
 {
-    if(gpu::mgm::is_linked() && gpu::mgm::is_available()) {
+    use_gpu = gpu::mgm::is_linked() && gpu::mgm::is_available();
+    if(use_gpu) {
         device = gpu::mgm::get_device_by_mpi(info::mpi::rank, info::mpi::size);
 
         gpu::mgm::init_gpu(device);
@@ -44,6 +45,10 @@ FETI<T>::~FETI()
     delete projector;
     delete dualOperator;
     delete preconditioner;
+
+    if(use_gpu) {
+        gpu::mgm::memfree_device(gpu_mem_allocd);
+    }
 }
 
 template <typename T>
@@ -72,6 +77,26 @@ bool FETI<T>::set(const step::Step &step)
     projector = Projector<T>::create(*this, step);
     preconditioner = Preconditioner<T>::create(*this, step);
     iterativeSolver = IterativeSolver<T>::create(*this, step);
+
+    dualOperator->setup();
+
+    if(use_gpu) {
+        size_t total_wss_internal = 0;
+        total_wss_internal += dualOperator->get_wss_gpu_internal();
+        
+        size_t free_mem = gpu::mgm::get_device_memory_free();
+        size_t mem_capacity = gpu::mgm::get_device_memory_capacity();
+        size_t reserve = (mem_capacity * 5) / 100;
+        size_t to_alloc = utils::round_down(free_mem - reserve - total_wss_internal, gpu::mgm::get_natural_pitch_align());
+        gpu_mem_allocd = gpu::mgm::memalloc_device(to_alloc);
+        ator_gpu_arena = std::make_unique<AllocatorArena_new>(AllocatorGPU_new::get_singleton());
+        ator_gpu_arena->set(gpu_mem_allocd, to_alloc);
+
+        dualOperator->set_ws_gpu_persistent(ator_gpu_arena->alloc(dualOperator->get_wss_gpu_persistent()));
+
+        gpu_tmp_size = ator_gpu_arena->get_remaining_capacity();
+        gpu_tmp_mem = ator_gpu_arena->alloc(gpu_tmp_size);
+    }
 
     dualOperator->set(step);
     projector->set(step);

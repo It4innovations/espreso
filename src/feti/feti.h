@@ -11,6 +11,7 @@
 #include "gpu/gpu_management.h"
 #include "gpu/gpu_dnblas.h"
 #include "gpu/gpu_spblas.h"
+#include "math/primitives_new/allocator_new.h"
 
 #include <complex>
 
@@ -73,11 +74,16 @@ struct FETI {
     Projector<T> *projector = nullptr;
     DualOperator<T> *dualOperator = nullptr;
 
+    bool use_gpu = false;
     gpu::mgm::device device;
     gpu::mgm::queue main_q;
     std::vector<gpu::mgm::queue> queues;
     std::vector<gpu::dnblas::handle> handles_dense;
     std::vector<gpu::spblas::handle> handles_sparse;
+    void * gpu_mem_allocd = nullptr;
+    std::unique_ptr<AllocatorArena_new> ator_gpu_arena;
+    void * gpu_tmp_mem = nullptr;
+    size_t gpu_tmp_size = 0;
 };
 
 }

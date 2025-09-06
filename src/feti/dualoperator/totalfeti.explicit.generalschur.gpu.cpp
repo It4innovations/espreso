@@ -66,23 +66,27 @@ void TotalFETIExplicitGeneralSchurGpu<T,I>::info()
 
 
 template<typename T, typename I>
-void TotalFETIExplicitGeneralSchurGpu<T,I>::set(const step::Step &step)
+void TotalFETIExplicitGeneralSchurGpu<T,I>::setup()
 {
     if(cfg.outer_timers) stacktimer::enable();
-    stacktimer::push("TotalFETIExplicitGeneralSchurGpu::set");
+    stacktimer::push("TotalFETIExplicitGeneralSchurGpu::setup");
+
+    total_wss_gpu_persistent = 0;
+    total_wss_gpu_internal = 0;
+
+    ator_ws_gpu_persistent = std::make_unique<AllocatorArena_new>(AllocatorGPU_new::get_singleton());
 
     n_domains = feti.K.size();
     n_queues = queues.size();
 
     domain_data.resize(n_domains);
-
+    
     for(size_t di = 0; di < n_domains; di++) {
         per_domain_stuff & data = domain_data[di];
         data.n_dofs_domain = feti.B1[di].ncols;
         data.n_dofs_interface = feti.B1[di].nrows;
     }
 
-    ssize_t free_mem_before_Falloc = gpu::mgm::get_device_memory_free();
     d_Fs_allocated.resize((n_domains - 1) / 2 + 1);
     {
         std::vector<size_t> domain_idxs_sorted_by_f_size_desc(n_domains);
@@ -98,28 +102,28 @@ void TotalFETIExplicitGeneralSchurGpu<T,I>::set(const step::Step &step)
             per_domain_stuff & data_bigger = domain_data[di_bigger];
             per_domain_stuff & data_di = domain_data[di];
             if(di == di_bigger) {
-                d_F_allocd.set(data_bigger.n_dofs_interface + (cfg.order_F == 'R'), data_bigger.n_dofs_interface + (cfg.order_F == 'C'), cfg.order_F, AllocatorGPU_new::get_singleton());
-                d_F_allocd.alloc();
-                data_di.d_F.set_view(data_di.n_dofs_interface, data_di.n_dofs_interface, d_F_allocd.ld, d_F_allocd.order, d_F_allocd.vals + d_F_allocd.ld, d_F_allocd.ator);
-                data_di.d_F.prop.uplo = (d_F_allocd.order == 'R') ? 'L' : 'U';
+                d_F_allocd.set(data_bigger.n_dofs_interface + (cfg.order_F == 'R'), data_bigger.n_dofs_interface + (cfg.order_F == 'C'), cfg.order_F, ator_ws_gpu_persistent.get());
             }
-            else {
-                data_di.d_F = d_F_allocd.get_submatrix_view(0, data_di.n_dofs_interface, 0, data_di.n_dofs_interface);
+            data_di.d_F.set_view(data_di.n_dofs_interface, data_di.n_dofs_interface, d_F_allocd.ld, d_F_allocd.order, nullptr, d_F_allocd.ator);
+            data_di.op_sub_F_from_allocd.set_matrix_src(&d_F_allocd);
+            data_di.op_sub_F_from_allocd.set_matrix_dst(&data_di.d_F);
+            if(di == di_bigger) {
+                data_di.op_sub_F_from_allocd.set_bounds(0, data_di.d_F.nrows, 0, data_di.d_F.ncols);
                 data_di.d_F.prop.uplo = (d_F_allocd.order == 'R') ? 'U' : 'L';
             }
+            else {
+                data_di.op_sub_F_from_allocd.set_bounds((int)(cfg.order_F == 'R'), data_di.d_F.nrows + (int)(cfg.order_F == 'R'), (int)(cfg.order_F == 'C'), data_di.d_F.ncols + (int)(cfg.order_F == 'C'));
+                data_di.d_F.prop.uplo = (d_F_allocd.order == 'R') ? 'L' : 'U';
+            }
             data_di.d_F.prop.symm = MatrixSymmetry_new::hermitian;
-            if(data_di.d_F.order == 'R') {
-                data_di.d_F_old = MatrixDenseView_new<T>::template to_old<I,gpu::mgm::Ad>(data_di.d_F);
-            }
-            if(data_di.d_F.order == 'C') {
-                MatrixDenseView_new<T> F_reordered = data_di.d_F.get_transposed_reordered_view();
-                data_di.d_F_old = MatrixDenseView_new<T>::template to_old<I,gpu::mgm::Ad>(F_reordered);
-            }
         }
     }
-    ssize_t free_mem_after_Falloc = gpu::mgm::get_device_memory_free();
-    ssize_t allocd_in_Falloc = free_mem_before_Falloc - free_mem_after_Falloc;
-    stacktimer::info("TotalFETIExplicitGeneralSchurGpu::set allocd_in_Falloc %zd", allocd_in_Falloc);
+
+    size_t wss_pers_Fs = 0;
+    for(const auto & d_F : d_Fs_allocated) {
+        wss_pers_Fs += d_F.get_memory_impact();
+    }
+    total_wss_gpu_persistent += wss_pers_Fs;
 
     {
         std::vector<MatrixDenseView_new<T>*> Fs_vector(n_domains);
@@ -127,17 +131,18 @@ void TotalFETIExplicitGeneralSchurGpu<T,I>::set(const step::Step &step)
             Fs_vector[di] = &domain_data[di].d_F;
         }
 
+        applicator.set_config(cfg.parallel_apply, cfg.inner_timers);
         applicator.set_handles(&main_q, &queues, &handles_dense);
         applicator.set_dimensions(feti);
-        applicator.set_vector_memory('C');
+        applicator.set_memory('C', 'G');
         applicator.set_D2C_map(&feti.D2C);
         applicator.set_Fs(Fs_vector);
         applicator.set_apply_target(cfg.apply_where);
         applicator.setup();
-        applicator.preprocess();
     }
+    total_wss_gpu_persistent += applicator.get_wss_gpu_persistent();
 
-    stacktimer::push("TotalFETIExplicitGeneralSchurGpu::set setup");
+    stacktimer::push("TotalFETIExplicitGeneralSchurGpu::setup op_sc");
     if(!cfg.inner_timers) stacktimer::disable();
     #pragma omp parallel for schedule(static,1) if(cfg.parallel_set)
     for(size_t di = 0; di < n_domains; di++) {
@@ -146,7 +151,7 @@ void TotalFETIExplicitGeneralSchurGpu<T,I>::set(const step::Step &step)
         gpu::dnblas::handle & hd = handles_dense[di % n_queues];
         per_domain_stuff & data = domain_data[di];
 
-        stacktimer::info("TotalFETIExplicitGeneralSchurGpu::set setup subdomain %zu", di);
+        stacktimer::info("TotalFETIExplicitGeneralSchurGpu::setup op_sc subdomain %zu", di);
 
         math::combine(data.Kreg_old, feti.K[di], feti.RegMat[di]);
         if constexpr(utils::is_real<T>())    data.Kreg_old.type = Matrix_Type::REAL_SYMMETRIC_POSITIVE_DEFINITE;
@@ -170,37 +175,56 @@ void TotalFETIExplicitGeneralSchurGpu<T,I>::set(const step::Step &step)
     // clean up the mess from buggy openmp in clang
     utils::run_dummy_parallel_region();
 
-    total_wss_internal = 0;
-    total_wss_persistent = 0;
+    size_t op_sc_wss_gpu_internal = 0;
+    size_t op_sc_wss_gpu_persistent = 0;
     for(size_t di = 0; di < n_domains; di++) {
         per_domain_stuff & data = domain_data[di];
-        total_wss_internal += data.op_sc->get_wss_internal();
-        total_wss_persistent += data.op_sc->get_wss_persistent();
+        op_sc_wss_gpu_internal += data.op_sc->get_wss_internal();
+        op_sc_wss_gpu_persistent += data.op_sc->get_wss_persistent();
     }
-    total_wss_internal = utils::round_up((total_wss_internal * 105) / 100, gpu::mgm::get_natural_pitch_align());
+    op_sc_wss_gpu_internal += utils::round_up((op_sc_wss_gpu_internal * 105) / 100, gpu::mgm::get_natural_pitch_align());
+    total_wss_gpu_internal += op_sc_wss_gpu_internal;
+    total_wss_gpu_persistent += op_sc_wss_gpu_persistent;
 
-    stacktimer::info("TotalFETIExplicitGeneralSchurGpu::set total_wss_internal %zu", total_wss_internal);
-    stacktimer::info("TotalFETIExplicitGeneralSchurGpu::set total_wss_persistent %zu", total_wss_persistent);
-    stacktimer::info("TotalFETIExplicitGeneralSchurGpu::set max_wss_tmp_preprocess %zu", std::max_element(domain_data.begin(), domain_data.end(), [](const per_domain_stuff & l, const per_domain_stuff & r){ return l.op_sc->get_wss_tmp_preprocess() < r.op_sc->get_wss_tmp_preprocess(); })->op_sc->get_wss_tmp_preprocess());
-    stacktimer::info("TotalFETIExplicitGeneralSchurGpu::set max_wss_tmp_perform %zu", std::max_element(domain_data.begin(), domain_data.end(), [](const per_domain_stuff & l, const per_domain_stuff & r){ return l.op_sc->get_wss_tmp_perform() < r.op_sc->get_wss_tmp_perform(); })->op_sc->get_wss_tmp_perform());
+    stacktimer::info("TotalFETIExplicitGeneralSchurGpu::setup wss_gpu_persistent_Fs %zd", wss_pers_Fs);
+    stacktimer::info("TotalFETIExplicitGeneralSchurGpu::setup wss_gpu_persistent_applicator %zd", applicator.get_wss_gpu_persistent());
+    stacktimer::info("TotalFETIExplicitGeneralSchurGpu::setup wss_gpu_persistent_op_sc %zu", op_sc_wss_gpu_persistent);
+    stacktimer::info("TotalFETIExplicitGeneralSchurGpu::setup wss_gpu_internal_op_sc %zu", op_sc_wss_gpu_internal);
+    stacktimer::info("TotalFETIExplicitGeneralSchurGpu::setup max_wss_tmp_preprocess_op_sc %zu", std::max_element(domain_data.begin(), domain_data.end(), [](const per_domain_stuff & l, const per_domain_stuff & r){ return l.op_sc->get_wss_tmp_preprocess() < r.op_sc->get_wss_tmp_preprocess(); })->op_sc->get_wss_tmp_preprocess());
+    stacktimer::info("TotalFETIExplicitGeneralSchurGpu::setup max_wss_tmp_perform_op_sc %zu", std::max_element(domain_data.begin(), domain_data.end(), [](const per_domain_stuff & l, const per_domain_stuff & r){ return l.op_sc->get_wss_tmp_perform() < r.op_sc->get_wss_tmp_perform(); })->op_sc->get_wss_tmp_perform());
 
-    ws_persistent = gpu::mgm::memalloc_device(total_wss_persistent);
-    ator_ws_persistent = std::make_unique<AllocatorArena_new>(AllocatorGPU_new::get_singleton());
-    ator_ws_persistent->set(ws_persistent, total_wss_persistent);
+    stacktimer::pop();
+    if(cfg.outer_timers) stacktimer::disable();
+}
+
+
+
+template<typename T, typename I>
+void TotalFETIExplicitGeneralSchurGpu<T,I>::set(const step::Step &step)
+{
+    if(cfg.outer_timers) stacktimer::enable();
+    stacktimer::push("TotalFETIExplicitGeneralSchurGpu::set");
+
+    if(ws_gpu_persistent == nullptr) eslog::error("persistent gpu workspace is not set\n");
+
+    ator_ws_gpu_persistent->set(ws_gpu_persistent, total_wss_gpu_persistent);
+
+    for(auto & d_F : d_Fs_allocated) d_F.alloc();
+
+    for(size_t di = 0; di < n_domains; di++) {
+        per_domain_stuff & my = domain_data[di];
+        my.op_sub_F_from_allocd.perform();
+    }
+
+    applicator.set_ws_gpu_persistent(ator_ws_gpu_persistent->alloc(applicator.get_wss_gpu_persistent()));
+    applicator.preprocess();
 
     for(size_t di = 0; di < n_domains; di++) {
         per_domain_stuff & data = domain_data[di];
-        data.op_sc->set_ws_persistent(ator_ws_persistent->alloc(data.op_sc->get_wss_persistent()));
+        data.op_sc->set_ws_persistent(ator_ws_gpu_persistent->alloc(data.op_sc->get_wss_persistent()));
     }
 
-    size_t free_mem = gpu::mgm::get_device_memory_free();
-    size_t mem_capacity = gpu::mgm::get_device_memory_capacity();
-    size_t reserve = (mem_capacity * 5) / 100;
-    wss_tmp_for_cbmba = utils::round_down(free_mem - reserve - total_wss_internal, gpu::mgm::get_natural_pitch_align());
-    ws_tmp_for_cbmba = gpu::mgm::memalloc_device(wss_tmp_for_cbmba);
-    ator_tmp_cbmba = std::make_unique<AllocatorCBMB_new>(AllocatorGPU_new::get_singleton(), ws_tmp_for_cbmba, wss_tmp_for_cbmba);
-
-    stacktimer::info("TotalFETIExplicitGeneralSchurGpu::set cbmba_capacity %zu", wss_tmp_for_cbmba);
+    AllocatorCBMB_new ator_tmp_cbmba(AllocatorGPU_new::get_singleton(), feti.gpu_tmp_mem, feti.gpu_tmp_size);
 
     ssize_t free_mem_before_preprocess = gpu::mgm::get_device_memory_free();
 
@@ -213,13 +237,13 @@ void TotalFETIExplicitGeneralSchurGpu<T,I>::set(const step::Step &step)
 
         stacktimer::info("TotalFETIExplicitGeneralSchurGpu::set preprocess subdomain %zu", di);
 
-        void * ws_tmp = ator_tmp_cbmba->alloc(data.op_sc->get_wss_tmp_preprocess());
+        void * ws_tmp = ator_tmp_cbmba.alloc(data.op_sc->get_wss_tmp_preprocess());
 
         data.op_sc->preprocess_submit(ws_tmp);
 
-        gpu::mgm::submit_host_function(q, [&,ws_tmp,di](){
+        gpu::mgm::submit_host_function(q, [&,ws_tmp](){
             void * ws_tmp_ = ws_tmp;
-            ator_tmp_cbmba->free(ws_tmp_);
+            ator_tmp_cbmba.free(ws_tmp_);
         });
     }
     gpu::mgm::device_wait();
@@ -242,6 +266,8 @@ void TotalFETIExplicitGeneralSchurGpu<T,I>::update(const step::Step &step)
     if(cfg.outer_timers) stacktimer::enable();
     stacktimer::push("TotalFETIExplicitGeneralSchurGpu::update");
 
+    AllocatorCBMB_new ator_tmp_cbmba(AllocatorGPU_new::get_singleton(), feti.gpu_tmp_mem, feti.gpu_tmp_size);
+
     stacktimer::push("update_mainloop");
     if(cfg.mainloop_update_split == 'C') {
         stacktimer::push("update_mainloop_combined");
@@ -254,7 +280,7 @@ void TotalFETIExplicitGeneralSchurGpu<T,I>::update(const step::Step &step)
             math::sumCombined(data.Kreg_old, T{1.0}, feti.K[di], feti.RegMat[di]);
 
             stacktimer::push("update_cbmba_allocation");
-            void * ws_tmp = ator_tmp_cbmba->alloc(data.op_sc->get_wss_tmp_perform());
+            void * ws_tmp = ator_tmp_cbmba.alloc(data.op_sc->get_wss_tmp_perform());
             stacktimer::pop();
 
             data.op_sc->perform_1_submit();
@@ -262,7 +288,7 @@ void TotalFETIExplicitGeneralSchurGpu<T,I>::update(const step::Step &step)
 
             gpu::mgm::submit_host_function(q, [&,ws_tmp](){
                 void * ws_tmp_ = ws_tmp;
-                ator_tmp_cbmba->free(ws_tmp_);
+                ator_tmp_cbmba.free(ws_tmp_);
             });
 
             applicator.update_F(di);
@@ -305,14 +331,14 @@ void TotalFETIExplicitGeneralSchurGpu<T,I>::update(const step::Step &step)
             gpu::mgm::queue & q = queues[di % n_queues];
 
             stacktimer::push("update_cbmba_allocation");
-            void * ws_tmp = ator_tmp_cbmba->alloc(data.op_sc->get_wss_tmp_perform());
+            void * ws_tmp = ator_tmp_cbmba.alloc(data.op_sc->get_wss_tmp_perform());
             stacktimer::pop();
 
             domain_data[di].op_sc->perform_2_submit(ws_tmp);
 
             gpu::mgm::submit_host_function(q, [&,ws_tmp](){
                 void * ws_tmp_ = ws_tmp;
-                ator_tmp_cbmba->free(ws_tmp_);
+                ator_tmp_cbmba.free(ws_tmp_);
             });
 
             applicator.update_F(di);
@@ -363,24 +389,17 @@ void TotalFETIExplicitGeneralSchurGpu<T,I>::update(const step::Step &step)
 
 
 template<typename T, typename I>
-void TotalFETIExplicitGeneralSchurGpu<T,I>::_apply(const Vector_Dual<T> &x_cluster, Vector_Dual<T> &y_cluster)
+void TotalFETIExplicitGeneralSchurGpu<T,I>::apply(const Vector_Dual<T> &x_cluster, Vector_Dual<T> &y_cluster)
 {
+    if(cfg.outer_timers) stacktimer::enable();
+    stacktimer::push("TotalFETIExplicitGeneralSchurGpu::apply (vector)");
+
     VectorDenseView_new<T> x_cluster_new = VectorDenseView_new<T>::from_old(x_cluster);
     VectorDenseView_new<T> y_cluster_new = VectorDenseView_new<T>::from_old(y_cluster);
 
-    applicator.apply(x_cluster_new, y_cluster_new);
-}
+    applicator.apply(x_cluster_new, y_cluster_new, feti.gpu_tmp_mem, feti.gpu_tmp_size);
 
-
-
-template<typename T, typename I>
-void TotalFETIExplicitGeneralSchurGpu<T,I>::apply(const Vector_Dual<T> &x, Vector_Dual<T> &y)
-{
-    if(cfg.outer_timers) stacktimer::enable();
-    stacktimer::push("TotalFETIExplicitGeneralSchurGpu::apply");
-
-    _apply(x, y);
-    y.synchronize();
+    y_cluster.synchronize();
 
     stacktimer::pop();
     if(cfg.outer_timers) stacktimer::disable();
@@ -389,19 +408,19 @@ void TotalFETIExplicitGeneralSchurGpu<T,I>::apply(const Vector_Dual<T> &x, Vecto
 
 
 template<typename T, typename I>
-void TotalFETIExplicitGeneralSchurGpu<T,I>::apply(const Matrix_Dual<T> &x, Matrix_Dual<T> &y)
+void TotalFETIExplicitGeneralSchurGpu<T,I>::apply(const Matrix_Dual<T> &X_cluster, Matrix_Dual<T> &Y_cluster)
 {
     if(cfg.outer_timers) stacktimer::enable();
-    stacktimer::push("TotalFETIExplicitGeneralSchurGpu::apply");
+    stacktimer::push("TotalFETIExplicitGeneralSchurGpu::apply (matrix)");
 
-    Vector_Dual<T> _x, _y;
-    _x.size = _y.size = x.ncols;
-    for (int r = 0; r < x.nrows; ++r) {
-        _x.vals = x.vals + x.ncols * r;
-        _y.vals = y.vals + y.ncols * r;
-        _apply(_x, _y);
-    }
-    y.synchronize();
+    // X_cluster and Y_cluster have the indivudual dual vectors contiguously in rows, but applicator assumes they are contiguously in columns
+
+    MatrixDenseView_new<T> X_cluster_new = MatrixDenseView_new<T>::from_old(X_cluster).get_transposed_reordered_view();
+    MatrixDenseView_new<T> Y_cluster_new = MatrixDenseView_new<T>::from_old(Y_cluster).get_transposed_reordered_view();
+
+    applicator.apply(X_cluster_new, Y_cluster_new, feti.gpu_tmp_mem, feti.gpu_tmp_size);
+    
+    Y_cluster.synchronize();
 
     stacktimer::pop();
     if(cfg.outer_timers) stacktimer::disable();

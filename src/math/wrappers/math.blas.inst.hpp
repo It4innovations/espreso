@@ -24,7 +24,8 @@ namespace blas {
         template void gemm(MatrixDenseView_new<T> & A, MatrixDenseView_new<T> & B, MatrixDenseView_new<T> & C, T alpha, T beta); \
         template void herk(MatrixDenseView_new<T> & A, MatrixDenseView_new<T> & C, herk_mode mode, utils::remove_complex_t<T> alpha, utils::remove_complex_t<T> beta); \
         template void transpose(size_t src_nrows, size_t src_ncols, const T * src, size_t src_ld, T * dst, size_t dst_ld, char order, bool conj); \
-        template void transpose_inplace(size_t size, T * matrix, size_t ld, char order, bool conj);
+        template void transpose_inplace(size_t size, T * matrix, size_t ld, char order, bool conj); \
+        template void hemm(size_t m, size_t n, T alpha, T * A, char order_A, size_t lda, char uplo_A, T * B, char order_B, size_t ldb, T beta, T * C, char order_C, size_t ldc);
 
             INSTANTIATE_T(float)
             INSTANTIATE_T(double)

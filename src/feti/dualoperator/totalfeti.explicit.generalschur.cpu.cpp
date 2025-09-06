@@ -61,10 +61,10 @@ void TotalFETIExplicitGeneralSchurCpu<T,I>::info()
 
 
 template<typename T, typename I>
-void TotalFETIExplicitGeneralSchurCpu<T,I>::set(const step::Step &step)
+void TotalFETIExplicitGeneralSchurCpu<T,I>::setup()
 {
     if(cfg.outer_timers) stacktimer::enable();
-    stacktimer::push("TotalFETIExplicitGeneralSchurCpu::set");
+    stacktimer::push("TotalFETIExplicitGeneralSchurCpu::setup");
 
     n_domains = feti.K.size();
 
@@ -117,15 +117,31 @@ void TotalFETIExplicitGeneralSchurCpu<T,I>::set(const step::Step &step)
             Fs_vector[di] = &domain_data[di].F;
         }
 
+        applicator.set_config(cfg.parallel_apply, cfg.inner_timers);
         applicator.set_handles(&feti.main_q, &feti.queues, &feti.handles_dense);
         applicator.set_dimensions(feti);
-        applicator.set_vector_memory('C');
+        applicator.set_memory('C', 'C');
         applicator.set_D2C_map(&feti.D2C);
         applicator.set_Fs(Fs_vector);
         applicator.set_apply_target(cfg.apply_where);
         applicator.setup();
-        applicator.preprocess();
+        total_wss_gpu_persistent += applicator.get_wss_gpu_persistent();
     }
+
+    stacktimer::pop();
+    if(cfg.outer_timers) stacktimer::disable();
+}
+
+
+
+template<typename T, typename I>
+void TotalFETIExplicitGeneralSchurCpu<T,I>::set(const step::Step &step)
+{
+    if(cfg.outer_timers) stacktimer::enable();
+    stacktimer::push("TotalFETIExplicitGeneralSchurCpu::set");
+
+    applicator.set_ws_gpu_persistent(ws_gpu_persistent);
+    applicator.preprocess();
 
     stacktimer::push("TotalFETIExplicitGeneralSchurCpu::set preprocess");
     if(!cfg.inner_timers) stacktimer::disable();
@@ -241,24 +257,17 @@ void TotalFETIExplicitGeneralSchurCpu<T,I>::update(const step::Step &step)
 
 
 template<typename T, typename I>
-void TotalFETIExplicitGeneralSchurCpu<T,I>::_apply(const Vector_Dual<T> &x_cluster, Vector_Dual<T> &y_cluster)
+void TotalFETIExplicitGeneralSchurCpu<T,I>::apply(const Vector_Dual<T> &x_cluster, Vector_Dual<T> &y_cluster)
 {
+    if(cfg.outer_timers) stacktimer::enable();
+    stacktimer::push("TotalFETIExplicitGeneralSchurCpu::apply (vector)");
+
     VectorDenseView_new<T> x_cluster_new = VectorDenseView_new<T>::from_old(x_cluster);
     VectorDenseView_new<T> y_cluster_new = VectorDenseView_new<T>::from_old(y_cluster);
 
-    applicator.apply(x_cluster_new, y_cluster_new);
-}
+    applicator.apply(x_cluster_new, y_cluster_new, feti.gpu_tmp_mem, feti.gpu_tmp_size);
 
-
-
-template<typename T, typename I>
-void TotalFETIExplicitGeneralSchurCpu<T,I>::apply(const Vector_Dual<T> &x, Vector_Dual<T> &y)
-{
-    if(cfg.outer_timers) stacktimer::enable();
-    stacktimer::push("TotalFETIExplicitGeneralSchurCpu::apply");
-
-    _apply(x, y);
-    y.synchronize();
+    y_cluster.synchronize();
 
     stacktimer::pop();
     if(cfg.outer_timers) stacktimer::disable();
@@ -267,19 +276,17 @@ void TotalFETIExplicitGeneralSchurCpu<T,I>::apply(const Vector_Dual<T> &x, Vecto
 
 
 template<typename T, typename I>
-void TotalFETIExplicitGeneralSchurCpu<T,I>::apply(const Matrix_Dual<T> &x, Matrix_Dual<T> &y)
+void TotalFETIExplicitGeneralSchurCpu<T,I>::apply(const Matrix_Dual<T> &X_cluster, Matrix_Dual<T> &Y_cluster)
 {
     if(cfg.outer_timers) stacktimer::enable();
-    stacktimer::push("TotalFETIExplicitGeneralSchurCpu::apply");
+    stacktimer::push("TotalFETIExplicitGeneralSchurCpu::apply (matrix)");
 
-    Vector_Dual<T> _x, _y;
-    _x.size = _y.size = x.ncols;
-    for (int r = 0; r < x.nrows; ++r) {
-        _x.vals = x.vals + x.ncols * r;
-        _y.vals = y.vals + y.ncols * r;
-        _apply(_x, _y);
-    }
-    y.synchronize();
+    MatrixDenseView_new<T> X_cluster_new = MatrixDenseView_new<T>::from_old(X_cluster).get_transposed_reordered_view();
+    MatrixDenseView_new<T> Y_cluster_new = MatrixDenseView_new<T>::from_old(Y_cluster).get_transposed_reordered_view();
+
+    applicator.apply(X_cluster_new, Y_cluster_new, feti.gpu_tmp_mem, feti.gpu_tmp_size);
+
+    Y_cluster.synchronize();
 
     stacktimer::pop();
     if(cfg.outer_timers) stacktimer::disable();

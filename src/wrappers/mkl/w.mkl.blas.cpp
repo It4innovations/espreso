@@ -283,6 +283,27 @@ void transpose_inplace(size_t size, T * matrix, size_t ld, char order, bool conj
     if constexpr(std::is_same_v<T, std::complex<double>>) mkl_zimatcopy(order, trans, size, size, T{1}, matrix, ld, ld);
 }
 
+template<typename T>
+void hemm(size_t m, size_t n, T alpha, T * A, char order_A, size_t lda, char uplo_A, T * B, char order_B, size_t ldb, T beta, T * C, char order_C, size_t ldc)
+{
+    if(order_B != order_C) eslog::error("orders of B and C must match\n");
+
+    if(order_A != order_C) {
+        if constexpr(utils::is_complex<T>()) eslog::error("for complex matrices, all orders must match\n"); // todo do some copies and conjugations
+        order_A = order_C;
+        uplo_A = ((uplo_A == 'L') ? 'U' : 'L');
+    }
+
+    auto layout = ((order_C == 'R') ? CblasRowMajor : CblasColMajor);
+    auto side = CblasLeft;
+    auto uplo = ((uplo_A == 'U') ? CblasUpper : CblasLower);
+
+    if constexpr(std::is_same_v<T,float>)                cblas_ssymm(layout, side, uplo, m, n,  alpha, A, lda, B, ldb,  beta, C, ldc);
+    if constexpr(std::is_same_v<T,double>)               cblas_dsymm(layout, side, uplo, m, n,  alpha, A, lda, B, ldb,  beta, C, ldc);
+    if constexpr(std::is_same_v<T,std::complex<float>>)  cblas_chemm(layout, side, uplo, m, n, &alpha, A, lda, B, ldb, &beta, C, ldc);
+    if constexpr(std::is_same_v<T,std::complex<double>>) cblas_zhemm(layout, side, uplo, m, n, &alpha, A, lda, B, ldb, &beta, C, ldc);
+}
+
 }
 }
 }

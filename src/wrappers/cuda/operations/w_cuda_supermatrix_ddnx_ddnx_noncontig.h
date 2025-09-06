@@ -23,11 +23,13 @@ public:
     w_cuda_supermatrix_ddnx_ddnx_noncontig() = default;
     virtual ~w_cuda_supermatrix_ddnx_ddnx_noncontig() = default;
 protected:
+    using mode = typename supermatrix_ddnx_ddnx_noncontig<T,I>::mode;
     using supermatrix_ddnx_ddnx_noncontig<T,I>::q;
     using supermatrix_ddnx_ddnx_noncontig<T,I>::d_M_src;
     using supermatrix_ddnx_ddnx_noncontig<T,I>::d_M_dst;
     using supermatrix_ddnx_ddnx_noncontig<T,I>::d_row_map;
     using supermatrix_ddnx_ddnx_noncontig<T,I>::d_col_map;
+    using supermatrix_ddnx_ddnx_noncontig<T,I>::mode_val;
 protected:
     virtual void internal_perform() override;
 };

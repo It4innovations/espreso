@@ -149,6 +149,12 @@ void transpose_inplace(size_t size, T * matrix, size_t ld, char order, bool conj
     eslog::error("calling of empty BLAS wrapper.\n");
 }
 
+template<typename T>
+void hemm(size_t m, size_t n, T alpha, T * A, char order_A, size_t lda, char uplo_A, T * B, char order_B, size_t ldb, T beta, T * C, char order_C, size_t ldc)
+{
+    eslog::error("calling of empty BLAS wrapper.\n"); 
+}
+
 }
 }
 }

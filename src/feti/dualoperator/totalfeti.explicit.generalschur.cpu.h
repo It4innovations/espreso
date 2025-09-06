@@ -17,6 +17,11 @@ public:
     TotalFETIExplicitGeneralSchurCpu(FETI<T> &feti);
     ~TotalFETIExplicitGeneralSchurCpu();
 
+    void setup() override;
+    size_t get_wss_gpu_persistent() override { return total_wss_gpu_persistent; }
+    size_t get_wss_gpu_internal() override { return 0; }
+    void set_ws_gpu_persistent(void * ws_gpu_persistent_) override { ws_gpu_persistent = ws_gpu_persistent_; }
+
     void info();
     void set(const step::Step &step);
     void update(const step::Step &step);
@@ -32,8 +37,6 @@ protected:
 
     using DualOperator<T>::feti;
     using DualOperator<T>::d;
-
-    void _apply(const Vector_Dual<T> &x, Vector_Dual<T> &y);
 
 private:
     using schur_impl_t = typename math::operations::schur_csx_dny<T,I>::implementation_selector;
@@ -69,6 +72,8 @@ private:
     std::vector<per_domain_stuff> domain_data;
     std::vector<MatrixDenseData_new<T>> Fs_allocated;
     dualop_explicit_applicator<T,I> applicator;
+    size_t total_wss_gpu_persistent = 0;
+    void * ws_gpu_persistent = nullptr;
 };
 
 }

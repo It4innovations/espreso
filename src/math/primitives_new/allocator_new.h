@@ -183,6 +183,10 @@ public:
     {
         return align_B;
     }
+    size_t get_remaining_capacity()
+    {
+        return utils::round_down(capacity - curr_used, align_B);
+    }
 };
 
 
@@ -246,6 +250,7 @@ class AllocatorCBMB_new : public Allocator_new
 private:
     Allocator_new * origin_ator;
     size_t align_B;
+public:
     cbmba_resource resource;
 public:
     AllocatorCBMB_new(Allocator_new * origin_ator_, void * memory, size_t capacity) :  origin_ator(origin_ator_), resource(memory, capacity)

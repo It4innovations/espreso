@@ -55,6 +55,61 @@ void supermatrix_dnx_dnx_noncontig<T,I>::set_col_map(VectorDenseView_new<I> * co
 
 
 template<typename T, typename I>
+void supermatrix_dnx_dnx_noncontig<T,I>::set_mode(mode mode_val_)
+{
+    mode_val = mode_val_;
+}
+
+
+
+template<typename T, typename I, typename OPERATION>
+static void perform_worker(size_t size_primary, size_t size_secdary, const T * __restrict__ src_vals, T * __restrict__ dst_vals, size_t src_ld, size_t dst_ld, const I * primary_map, const I * secdary_map, const OPERATION & op)
+{
+    if(primary_map == nullptr && secdary_map == nullptr) {
+        for(size_t ip = 0; ip < size_primary; ip++) {
+            const T * src_ptr = src_vals + ip * src_ld;
+            T * dst_ptr = dst_vals + ip * dst_ld;
+            for(size_t is = 0; is < size_secdary; is++) {
+                op(dst_ptr[is], src_ptr[is]);
+            }
+        }
+    }
+    if(primary_map != nullptr && secdary_map == nullptr) {
+        for(size_t ips = 0; ips < size_primary; ips++) {
+            size_t ipd = primary_map[ips];
+            const T * src_ptr = src_vals + ips * src_ld;
+            T * dst_ptr = dst_vals + ipd * dst_ld;
+            for(size_t is = 0; is < size_secdary; is++) {
+                op(dst_ptr[is], src_ptr[is]);
+            }
+        }
+    }
+    if(primary_map == nullptr && secdary_map != nullptr) {
+        for(size_t ip = 0; ip < size_primary; ip++) {
+            const T * src_ptr = src_vals + ip * src_ld;
+            T * dst_ptr = dst_vals + ip * dst_ld;
+            for(size_t iss = 0; iss < size_secdary; iss++) {
+                size_t isd = secdary_map[iss];
+                op(dst_ptr[isd], src_ptr[iss]);
+            }
+        }
+    }
+    if(primary_map != nullptr && secdary_map != nullptr) {
+        for(size_t ips = 0; ips < size_primary; ips++) {
+            size_t ipd = primary_map[ips];
+            const T * src_ptr = src_vals + ips * src_ld;
+            T * dst_ptr = dst_vals + ipd * dst_ld;
+            for(size_t iss = 0; iss < size_secdary; iss++) {
+                size_t isd = secdary_map[iss];
+                op(dst_ptr[isd], src_ptr[iss]);
+            }
+        }
+    }
+}
+
+
+
+template<typename T, typename I>
 void supermatrix_dnx_dnx_noncontig<T,I>::perform()
 {
     stacktimer::push("supermatrix_dnx_dnx_noncontig::perform");
@@ -70,46 +125,23 @@ void supermatrix_dnx_dnx_noncontig<T,I>::perform()
     size_t ncols = ((col_map == nullptr) ? M_dst->ncols : col_map->size);
     if(M_src->nrows != nrows || M_src->ncols != ncols) eslog::error("wrong source matrix size\n");
 
-    size_t src_size_primary = M_src->get_size_primary();
-    size_t src_size_secdary = M_src->get_size_secdary();
-
-    T * src_vals = M_src->vals;
-    T * dst_vals = M_dst->vals;
-    size_t src_ld = M_src->ld;
-    size_t dst_ld = M_dst->ld;
-
     VectorDenseView_new<I> * primary_map = ((M_dst->order == 'R') ? row_map : col_map);
     VectorDenseView_new<I> * secdary_map = ((M_dst->order == 'R') ? col_map : row_map);
+    I * primary_map_vals = ((primary_map != nullptr) ? primary_map->vals : nullptr);
+    I * secdary_map_vals = ((secdary_map != nullptr) ? secdary_map->vals : nullptr);
 
-    if(primary_map == nullptr && secdary_map == nullptr) {
-        copy_dnx<T>::do_all(M_src, M_dst);
-    }
-    if(primary_map != nullptr && secdary_map == nullptr) {
-        I * subset_primary = primary_map->vals;
-        for(size_t ips = 0; ips < src_size_primary; ips++) {
-            size_t ipd = subset_primary[ips];
-            std::copy_n(src_vals + ips * src_ld, src_size_secdary, dst_vals + ipd * dst_ld);
-        }
-    }
-    if(primary_map == nullptr && secdary_map != nullptr) {
-        I * subset_secdary = secdary_map->vals;
-        for(size_t ip = 0; ip < src_size_primary; ip++) {
-            for(size_t iss = 0; iss < src_size_secdary; iss++) {
-                size_t isd = subset_secdary[iss];
-                dst_vals[ip * dst_ld + isd] = src_vals[ip * src_ld + iss];
-            }
-        }
-    }
-    if(primary_map != nullptr && secdary_map != nullptr) {
-        I * subset_primary = primary_map->vals;
-        I * subset_secdary = secdary_map->vals;
-        for(size_t ips = 0; ips < src_size_primary; ips++) {
-            size_t ipd = subset_primary[ips];
-            for(size_t iss = 0; iss < src_size_secdary; iss++) {
-                size_t isd = subset_secdary[iss];
-                dst_vals[ipd * dst_ld + isd] = src_vals[ips * src_ld + iss];
-            }
-        }
+    switch(mode_val) {
+        case mode::assign:
+            perform_worker(M_src->get_size_primary(), M_src->get_size_secdary(), M_src->vals, M_dst->vals, M_src->ld, M_dst->ld, primary_map_vals, secdary_map_vals, [](T & dst, T src) { dst = src; });
+            break;
+        case mode::accumulate:
+            perform_worker(M_src->get_size_primary(), M_src->get_size_secdary(), M_src->vals, M_dst->vals, M_src->ld, M_dst->ld, primary_map_vals, secdary_map_vals, [](T & dst, T src) { dst += src; });
+            break;
+        case mode::accumulate_atomic:
+            perform_worker(M_src->get_size_primary(), M_src->get_size_secdary(), M_src->vals, M_dst->vals, M_src->ld, M_dst->ld, primary_map_vals, secdary_map_vals, [](T & dst, T src) { utils::atomic_add(dst, src); });
+            break;
+        default:
+            eslog::error("wrong mode\n");
     }
 
     stacktimer::pop();
@@ -118,13 +150,14 @@ void supermatrix_dnx_dnx_noncontig<T,I>::perform()
 
 
 template<typename T, typename I>
-void supermatrix_dnx_dnx_noncontig<T,I>::do_all(MatrixDenseView_new<T> * M_src, MatrixDenseView_new<T> * M_dst, VectorDenseView_new<I> * row_map, VectorDenseView_new<I> * col_map)
+void supermatrix_dnx_dnx_noncontig<T,I>::do_all(MatrixDenseView_new<T> * M_src, MatrixDenseView_new<T> * M_dst, VectorDenseView_new<I> * row_map, VectorDenseView_new<I> * col_map, mode mode_val)
 {
     supermatrix_dnx_dnx_noncontig<T,I> instance;
     instance.set_matrix_source(M_src);
     instance.set_matrix_destination(M_dst);
     instance.set_row_map(row_map);
     instance.set_col_map(col_map);
+    instance.set_mode(mode_val);
     instance.perform();
 }
 

@@ -6,6 +6,7 @@
 #include "math/math.h"
 #include "math/primitives_new/matrix_dense_data_new.h"
 #include "math/primitives_new/matrix_csx_view_new.h"
+#include "math/operations/submatrix_dnx_dnx_view.h"
 #include "gpu/operations/schur_hcsx_ddny.h"
 #include "feti/dualoperator/dualop_explicit_applicator.h"
 
@@ -16,6 +17,11 @@ class TotalFETIExplicitGeneralSchurGpu: public DualOperator<T> {
 public:
     TotalFETIExplicitGeneralSchurGpu(FETI<T> &feti);
     ~TotalFETIExplicitGeneralSchurGpu();
+
+    void setup() override;
+    size_t get_wss_gpu_persistent() override { return total_wss_gpu_persistent; }
+    size_t get_wss_gpu_internal() override { return total_wss_gpu_internal; }
+    void set_ws_gpu_persistent(void * ws_gpu_persistent_) override { ws_gpu_persistent = ws_gpu_persistent_; }
 
     void info();
     void set(const step::Step &step);
@@ -32,8 +38,6 @@ protected:
 
     using DualOperator<T>::feti;
     using DualOperator<T>::d;
-
-    void _apply(const Vector_Dual<T> &x, Vector_Dual<T> &y);
 
 private:
     using schur_impl_t = typename gpu::operations::schur_hcsx_ddny<T,I>::implementation_selector;
@@ -64,17 +68,15 @@ private:
         MatrixDenseView_new<T> d_F;
         Matrix_Dense<T,I,gpu::mgm::Ad> d_F_old;
         std::unique_ptr<gpu::operations::schur_hcsx_ddny<T,I>> op_sc;
+        math::operations::submatrix_dnx_dnx_view<T> op_sub_F_from_allocd;
     };
     config cfg;
     size_t n_domains = 0;
     size_t n_queues = 0;
-    size_t total_wss_internal = 0;
-    size_t total_wss_persistent = 0;
-    void * ws_persistent = nullptr;
-    size_t wss_tmp_for_cbmba = 0;
-    void * ws_tmp_for_cbmba = nullptr;
-    std::unique_ptr<AllocatorArena_new> ator_ws_persistent;
-    std::unique_ptr<AllocatorCBMB_new> ator_tmp_cbmba;
+    size_t total_wss_gpu_internal = 0;
+    size_t total_wss_gpu_persistent = 0;
+    void * ws_gpu_persistent = nullptr;
+    std::unique_ptr<AllocatorArena_new> ator_ws_gpu_persistent;
     gpu::mgm::queue & main_q;
     std::vector<gpu::mgm::queue> & queues;
     std::vector<gpu::dnblas::handle> & handles_dense;

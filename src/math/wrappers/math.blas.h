@@ -142,6 +142,15 @@ namespace blas {
         apply_hermitian<T,I>(y_old, alpha, A_old, uplo, beta, x_old);
     }
 
+    template<typename T>
+    void hemm(size_t m, size_t n, T alpha, T * A, char order_A, size_t lda, char uplo_A, T * B, char order_B, size_t ldb, T beta, T * C, char order_C, size_t ldc);
+
+    template<typename T>
+    void hemm(MatrixDenseView_new<T> & A, MatrixDenseView_new<T> & B, MatrixDenseView_new<T> & C, T alpha = T{1}, T beta = T{0})
+    {
+        hemm(C.nrows, C.ncols, alpha, A.vals, A.order, A.ld, A.prop.uplo, B.vals, B.order, B.ld, beta, C.vals, C.order, C.ld);
+    }
+
 }
 }
 }

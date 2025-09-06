@@ -30,6 +30,11 @@ public:
     DualOperator(FETI<T> &feti): feti(feti), infoPrinted(false) {}
     virtual ~DualOperator() {}
 
+    virtual void setup() {}
+    virtual size_t get_wss_gpu_persistent() { return 0; }
+    virtual size_t get_wss_gpu_internal() { return 0; }
+    virtual void set_ws_gpu_persistent(void * ws_gpu_persistent_) {}
+
     virtual void info() =0;
     virtual void set(const step::Step &step) =0;
     virtual void update(const step::Step &step) =0;

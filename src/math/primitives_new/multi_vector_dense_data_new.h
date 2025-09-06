@@ -4,6 +4,8 @@
 
 #include "math/primitives_new/multi_vector_dense_view_new.h"
 
+#include "basis/utilities/utils.h"
+
 
 
 namespace espreso {
@@ -103,8 +105,9 @@ public:
     {
         size_t mem_offsets = (num_vectors+1) * sizeof(I);
         size_t mem_vals = size * sizeof(T);
+        mem_offsets = utils::round_up(mem_offsets, ator->get_align());
+        mem_vals = utils::round_up(mem_vals, ator->get_align());
         size_t mem = mem_offsets + mem_vals;
-        mem = utils::round_up(mem, ator->get_align());
         return mem;
     }
 };
