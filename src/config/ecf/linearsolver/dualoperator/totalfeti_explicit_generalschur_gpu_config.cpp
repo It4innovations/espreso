@@ -93,6 +93,7 @@ DualopTotalfetiExplicitGeneralSchurGpuConfig::DualopTotalfetiExplicitGeneralSchu
         .setdescription({ "Schur GPU wrapper to be used" })
         .setdatatype({ ECFDataType::OPTION })
         .addoption(ECFOption().setname("AUTO").setdescription("Automatic selection"))
+        .addoption(ECFOption().setname("MANUAL_SIMPLE").setdescription("Simple manual assembly"))
         .addoption(ECFOption().setname("TRIANGULAR").setdescription("Triangular"))
     );
 

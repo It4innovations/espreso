@@ -1,6 +1,7 @@
 
 #include "math/operations/schur_csx_dny.h"
 
+#include "math/operations/schur_csx_dny.manual_simple.h"
 #include "math/operations/schur_csx_dny.tria.h"
 #include "math/operations/schur_csx_dny.spsolver.h"
 #include "wrappers/mkl/operations/schur_csx_dny.mklpardiso.h"
@@ -34,6 +35,8 @@ std::unique_ptr<schur_csx_dny<T,I>> schur_csx_dny<T,I>::make(implementation_sele
     switch(is) {
         case implementation_selector::autoselect:
             return schur_csx_dny<T,I>::make(autoselect_implementation());
+        case implementation_selector::manual_simple:
+            return std::make_unique<schur_csx_dny_manual_simple<T,I>>();
         case implementation_selector::triangular:
             return std::make_unique<schur_csx_dny_tria<T,I>>();
         case implementation_selector::mklpardiso:

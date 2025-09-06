@@ -20,11 +20,12 @@ public:
     enum struct implementation_selector
     {
         autoselect,
+        manual_simple,
         triangular,
         mklpardiso,
         sparse_solver,
         mumps,
-        pastix
+        pastix,
     };
 protected:
     schur_csx_dny() = default;

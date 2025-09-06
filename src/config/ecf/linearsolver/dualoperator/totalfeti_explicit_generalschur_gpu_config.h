@@ -28,6 +28,7 @@ struct DualopTotalfetiExplicitGeneralSchurGpuConfig: public ECFDescription {
 
     enum struct SCHUR_IMPL {
         AUTO,
+        MANUAL_SIMPLE,
         TRIANGULAR
     };
 

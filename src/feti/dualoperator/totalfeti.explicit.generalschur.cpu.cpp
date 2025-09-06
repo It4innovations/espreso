@@ -39,7 +39,7 @@ void TotalFETIExplicitGeneralSchurCpu<T,I>::info()
         auto order_to_string = [](char order){ switch(order){ case 'R': return "ROW_MAJOR"; case 'C': return "COL_MAJOR"; default: return "UNDEFINED"; }};
         auto bool_to_string = [](bool val){ return val ? "TRUE" : "FALSE";};
         auto loop_split_to_string = [](char val){ switch(val){ case 'C': return "COMBINED"; case 'S': return "SEPARATE"; default: return "UNDEFINED"; }};
-        auto schur_impl_to_string = [](schur_impl_t schur_impl){ switch(schur_impl) { case schur_impl_t::autoselect: return "autoselect"; case schur_impl_t::triangular: return "triangular"; case schur_impl_t::mklpardiso: return "mklpardiso"; case schur_impl_t::sparse_solver: return "sparse_solver"; case schur_impl_t::mumps: return "mumps"; case schur_impl_t::pastix: return "pastix"; default: return "UNDEFINED"; }};
+        auto schur_impl_to_string = [](schur_impl_t schur_impl){ switch(schur_impl) { case schur_impl_t::autoselect: return "autoselect"; case schur_impl_t::manual_simple: return "manual_simple"; case schur_impl_t::triangular: return "triangular"; case schur_impl_t::mklpardiso: return "mklpardiso"; case schur_impl_t::sparse_solver: return "sparse_solver"; case schur_impl_t::mumps: return "mumps"; case schur_impl_t::pastix: return "pastix"; default: return "UNDEFINED"; }};
         auto schur_impl_to_string_actual = [](schur_impl_t schur_impl){ return math::operations::schur_csx_dny<T,I>::make(schur_impl)->get_name(); };
 
         eslog::info(" =   %-50s       %+30s = \n", "parallel_set", bool_to_string(cfg.parallel_set));
@@ -386,6 +386,7 @@ void TotalFETIExplicitGeneralSchurCpu<T,I>::setup_config(config & cfg, const FET
 
     switch(ecf.schur_impl) {
         case ecf_config::SCHUR_IMPL::AUTO: break;
+        case ecf_config::SCHUR_IMPL::MANUAL_SIMPLE: cfg.schur_impl = schur_impl_t::manual_simple; break;
         case ecf_config::SCHUR_IMPL::TRIANGULAR:    cfg.schur_impl = schur_impl_t::triangular;    break;
         case ecf_config::SCHUR_IMPL::MKLPARDISO:    cfg.schur_impl = schur_impl_t::mklpardiso;    break;
         case ecf_config::SCHUR_IMPL::SPARSE_SOLVER: cfg.schur_impl = schur_impl_t::sparse_solver; break;

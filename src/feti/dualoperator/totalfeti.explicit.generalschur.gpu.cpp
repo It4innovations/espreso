@@ -43,7 +43,7 @@ void TotalFETIExplicitGeneralSchurGpu<T,I>::info()
         auto order_to_string = [](char order){ switch(order){ case 'R': return "ROW_MAJOR"; case 'C': return "COL_MAJOR"; default: return "UNDEFINED"; }};
         auto bool_to_string = [](bool val){ return val ? "TRUE" : "FALSE";};
         auto loop_split_to_string = [](char val){ switch(val){ case 'C': return "COMBINED"; case 'S': return "SEPARATE"; default: return "UNDEFINED"; }};
-        auto schur_impl_to_string = [](schur_impl_t schur_impl){ switch(schur_impl) { case schur_impl_t::autoselect: return "autoselect"; case schur_impl_t::triangular: return "triangular"; default: return "UNDEFINED"; } };
+        auto schur_impl_to_string = [](schur_impl_t schur_impl){ switch(schur_impl) { case schur_impl_t::autoselect: return "autoselect"; case schur_impl_t::manual_simple: return "manual_simple"; case schur_impl_t::triangular: return "triangular"; default: return "UNDEFINED"; } };
         auto schur_impl_to_string_actual = [](schur_impl_t schur_impl){ return gpu::operations::schur_hcsx_ddny<T,I>::make(schur_impl)->get_name(); };
 
         eslog::info(" =   %-50s       %+30s = \n", "parallel_set", bool_to_string(cfg.parallel_set));
@@ -211,10 +211,12 @@ void TotalFETIExplicitGeneralSchurGpu<T,I>::set(const step::Step &step)
 
     for(auto & d_F : d_Fs_allocated) d_F.alloc();
 
+    if(!cfg.inner_timers) stacktimer::disable();
     for(size_t di = 0; di < n_domains; di++) {
         per_domain_stuff & my = domain_data[di];
         my.op_sub_F_from_allocd.perform();
     }
+    if(!cfg.inner_timers) stacktimer::enable();
 
     applicator.set_ws_gpu_persistent(ator_ws_gpu_persistent->alloc(applicator.get_wss_gpu_persistent()));
     applicator.preprocess();
@@ -526,7 +528,8 @@ void TotalFETIExplicitGeneralSchurGpu<T,I>::setup_config(config & cfg, const FET
 
     switch(ecf.schur_impl) {
         case ecf_config::SCHUR_IMPL::AUTO: break;
-        case ecf_config::SCHUR_IMPL::TRIANGULAR: cfg.schur_impl = schur_impl_t::triangular; break;
+        case ecf_config::SCHUR_IMPL::MANUAL_SIMPLE: cfg.schur_impl = schur_impl_t::manual_simple; break;
+        case ecf_config::SCHUR_IMPL::TRIANGULAR:    cfg.schur_impl = schur_impl_t::triangular;    break;
     }
 
     switch(ecf.apply_where) {

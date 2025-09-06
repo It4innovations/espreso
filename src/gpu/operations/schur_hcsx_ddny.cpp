@@ -1,6 +1,7 @@
 
 #include "gpu/operations/schur_hcsx_ddny.h"
 
+#include "gpu/operations/schur_hcsx_ddny.manual_simple.h"
 #include "gpu/operations/schur_hcsx_ddny.tria.h"
 #include "basis/utilities/stacktimer.h"
 
@@ -22,6 +23,8 @@ std::unique_ptr<schur_hcsx_ddny<T,I>> schur_hcsx_ddny<T,I>::make(implementation_
     switch(is) {
         case implementation_selector::autoselect:
             return schur_hcsx_ddny<T,I>::make(autoselect_implementation());
+        case implementation_selector::manual_simple:
+            return std::make_unique<schur_hcsx_ddny_manual_simple<T,I>>();
         case implementation_selector::triangular:
             return std::make_unique<schur_hcsx_ddny_tria<T,I>>();
         default:

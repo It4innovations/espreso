@@ -5,8 +5,10 @@
 #include "config/description.h"
 #include "operations/schur_csx_dny.spsolver.h"
 #include "operations/schur_csx_dny.tria.h"
+#include "operations/schur_csx_dny.manual_simple.h"
 #include "operations/trsm_csx_dny_tria.h"
 #include "operations/herk_dnx_dny_tria.h"
+#include "operations/gpu_schur_hcsx_ddny.manual_simple.h"
 #include "operations/gpu_schur_hcsx_ddny.tria.h"
 #include "operations/gpu_trsm_hcsx_ddny_tria.h"
 #include "operations/gpu_herk_ddnx_ddny_tria.h"
@@ -18,11 +20,13 @@ namespace espreso {
 
 struct Operations: public ECFDescription {
 
+    SchurCsxDnyManualSimpleConfig schur_csx_dny_manual_simple;
     SchurCsxDnySpsolverConfig schur_csx_dny_spsolver;
     SchurCsxDnyTriaConfig schur_csx_dny_tria;
     TrsmCsxDnyTriaConfig trsm_csx_dny_tria;
     HerkDnxDnyTriaConfig herk_dnx_dny_tria;
 
+    GpuSchurHcsxDdnyManualSimpleConfig gpu_schur_hcsx_ddny_manual_simple;
     GpuSchurHcsxDdnyTriaConfig gpu_schur_hcsx_ddny_tria;
     GpuTrsmHcsxDdnyTriaConfig gpu_trsm_hcsx_ddny_tria;
     GpuHerkDdnxDdnyTriaConfig gpu_herk_ddnx_ddny_tria;

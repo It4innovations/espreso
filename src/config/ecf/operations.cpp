@@ -7,6 +7,9 @@ using namespace espreso;
 
 Operations::Operations()
 {
+    REGISTER(schur_csx_dny_manual_simple, ECFMetaData()
+            .setdescription({ "schur_csx_dny_manual_simple config" }));
+
     REGISTER(schur_csx_dny_spsolver, ECFMetaData()
             .setdescription({ "schur_csx_dny_spsolver config" }));
 
@@ -18,6 +21,9 @@ Operations::Operations()
 
     REGISTER(herk_dnx_dny_tria, ECFMetaData()
             .setdescription({ "herk_dnx_dny_tria config" }));
+
+    REGISTER(gpu_schur_hcsx_ddny_manual_simple, ECFMetaData()
+            .setdescription({ "gpu_schur_hcsx_ddny_manual_simple config" }));
 
     REGISTER(gpu_schur_hcsx_ddny_tria, ECFMetaData()
             .setdescription({ "gpu_schur_hcsx_ddny_tria config" }));

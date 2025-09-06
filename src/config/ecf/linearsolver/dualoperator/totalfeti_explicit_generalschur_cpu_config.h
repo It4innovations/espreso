@@ -28,6 +28,7 @@ struct DualopTotalfetiExplicitGeneralSchurCpuConfig: public ECFDescription {
 
     enum struct SCHUR_IMPL {
         AUTO,
+        MANUAL_SIMPLE,
         TRIANGULAR,
         MKLPARDISO,
         SPARSE_SOLVER,

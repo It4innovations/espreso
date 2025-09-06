@@ -23,6 +23,7 @@ public:
     enum struct implementation_selector
     {
         autoselect,
+        manual_simple,
         triangular
     };
 protected:

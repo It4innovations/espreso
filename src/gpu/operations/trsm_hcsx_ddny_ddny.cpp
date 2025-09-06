@@ -81,8 +81,8 @@ void trsm_hcsx_ddny_ddny<T,I>::setup()
     if(!called_set_config) eslog::error("config is not set\n");
     if(!called_set_handles) eslog::error("handles are not set\n");
     if(h_A == nullptr) eslog::error("matrix h_A is not set\n");
-    if(d_X == nullptr) eslog::error("matrix d_B is not set\n");
-    if(d_B == nullptr) eslog::error("matrix d_C is not set\n");
+    if(d_X == nullptr) eslog::error("matrix d_X is not set\n");
+    if(d_B == nullptr) eslog::error("matrix d_B is not set\n");
     if(!h_A->ator->is_data_accessible_cpu()) eslog::error("matrix h_A must be cpu-accessible\n");
     if(!d_X->ator->is_data_accessible_gpu()) eslog::error("matrix d_X must be gpu-accessible\n");
     if(!d_B->ator->is_data_accessible_gpu()) eslog::error("matrix d_B must be gpu-accessible\n");

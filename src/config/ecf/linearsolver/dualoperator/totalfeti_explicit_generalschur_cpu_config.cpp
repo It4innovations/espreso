@@ -84,6 +84,7 @@ DualopTotalfetiExplicitGeneralSchurCpuConfig::DualopTotalfetiExplicitGeneralSchu
         .setdescription({ "Schur wrapper to be used" })
         .setdatatype({ ECFDataType::OPTION })
         .addoption(ECFOption().setname("AUTO").setdescription("Automatic selection"))
+        .addoption(ECFOption().setname("MANUAL_SIMPLE").setdescription("Simple manual assembly"))
         .addoption(ECFOption().setname("TRIANGULAR").setdescription("Triangular"))
         .addoption(ECFOption().setname("MKLPARDISO").setdescription("MKL Pardiso"))
         .addoption(ECFOption().setname("SPARSE_SOLVER").setdescription("Manual using sparse solver wrapper"))
