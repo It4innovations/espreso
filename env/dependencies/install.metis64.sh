@@ -25,8 +25,6 @@ then
     )
 fi
 
-export METIS_DIR="${INSTALL_DIR}"
-
 prepend_to_CPATH="${INSTALL_DIR}/include"
 prepend_to_LIBRARY_PATH="${INSTALL_DIR}/lib:${INSTALL_DIR}/lib64"
 prepend_to_LD_LIBRARY_PATH="${INSTALL_DIR}/lib:${INSTALL_DIR}/lib64"

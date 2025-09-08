@@ -10,7 +10,5 @@ then
         echo "METIS not installed, cloning..."
         cd "${DEPENDENCIES_DIR}"
         git clone https://github.com/KarypisLab/METIS.git metis
-        cd metis
-        git checkout e0f1b88b8efcb24ffa0ec55eabb78fbe61e58ae7
     )
 fi
