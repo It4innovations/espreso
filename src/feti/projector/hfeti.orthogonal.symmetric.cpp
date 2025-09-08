@@ -1,7 +1,6 @@
 
 #include "hfeti.orthogonal.symmetric.h"
 #include "basis/containers/serializededata.h"
-#include "esinfo/ecfinfo.h"
 #include "esinfo/envinfo.h"
 #include "esinfo/eslog.hpp"
 #include "math/math.h"
@@ -13,7 +12,7 @@ namespace espreso {
 
 template<typename T>
 HFETIOrthogonalSymmetric<T>::HFETIOrthogonalSymmetric(FETI<T> &feti)
-: Projector<T>(feti), domainOffset(0), GGtDataOffset(0), GGtDataSize(0), GGtNnz(0)
+: Projector<T>(feti), GGtDataOffset(0), GGtDataSize(0)
 {
 
 }
@@ -33,21 +32,20 @@ void HFETIOrthogonalSymmetric<T>::set(const step::Step &step)
 template<typename T>
 void HFETIOrthogonalSymmetric<T>::update(const step::Step &step)
 {
-    int reset = kernel.size() != feti.R1.size();
+    int reset = kernel.size() != feti.R1.size() || Gt.ncols != feti.lambdas.size;
     for (size_t i = 0; !reset && i < feti.R1.size(); ++i) {
         reset |= kernel[i].size != feti.R1[i].nrows;
     }
-    Communication::allReduce(&reset, nullptr, 1, MPITools::getType(reset).mpitype, MPI_SUM);
+    Communication::allReduce(&reset, nullptr, 1, MPITools::getType(reset).mpitype, MPI_MAX);
 
-    if (reset) {
+    if (reset) { // only different number of kernels
         Projector<T>::reset();
-        domainOffset = GGtDataOffset = GGtDataSize = GGtNnz = 0;
+        GGtDataOffset = GGtDataSize = 0;
         kernel.clear();
         kernel.resize(feti.R1.size());
         for (size_t d = 0; d < feti.R1.size(); ++d) {
             kernel[d].offset = 0;
-            kernel[d].size = feti.R1[d].nrows;
-            Projector<T>::Kernel::total = std::max(feti.R1[d].nrows, Projector<T>::Kernel::total);
+            Projector<T>::Kernel::total = std::max(Projector<T>::Kernel::total, feti.R1[d].nrows);
         }
         Projector<T>::Kernel::roffset = Projector<T>::Kernel::rsize = Projector<T>::Kernel::total;
         Projector<T>::Kernel::total = Communication::exscan(Projector<T>::Kernel::roffset);
@@ -57,11 +55,12 @@ void HFETIOrthogonalSymmetric<T>::update(const step::Step &step)
         Gx.resize(Projector<T>::Kernel::total);
         e.resize(Projector<T>::Kernel::total);
 
-        cinfo.clear();
-        cinfo.reserve(1);
-        cinfo.push_back(ClusterInfo(info::mpi::rank, Projector<T>::Kernel::roffset, Projector<T>::Kernel::rsize));
+        dual.clear();
+        for (size_t d = 0; d < feti.R1.size(); ++d) {
+            dual.pushVertex(d, feti.decomposition->dbegin + d, feti.R1[d].nrows);
+        }
+        dual.set(feti.decomposition, feti.lambdas.cmap);
 
-        _computeDualGraph();
         _setG();
         _setGGt();
     }
@@ -81,96 +80,6 @@ void HFETIOrthogonalSymmetric<T>::update(const step::Step &step)
         _updateGGt();
     }
     Projector<T>::_print(step);
-}
-
-
-template<typename T>
-void HFETIOrthogonalSymmetric<T>::_computeDualGraph()
-{
-    std::vector<std::vector<ClusterInfo> > sBuffer(feti.decomposition->neighbors.size()), rBuffer(feti.decomposition->neighbors.size());
-    for (size_t n = 0; n < feti.decomposition->neighbors.size(); ++n) {
-        sBuffer[n].push_back(cinfo.front());
-    }
-
-    if (!Communication::exchangeUnknownSize(sBuffer, rBuffer, feti.decomposition->neighbors)) {
-        eslog::error("cannot exchange dual graph info\n");
-    }
-
-    dualGraph.clear();
-    dualGraph.resize(1);
-    neighInfo.clear();
-    neighInfo.resize(feti.decomposition->neighbors.size());
-    size_t n = 0;
-    for (; n < feti.decomposition->neighbors.size() && feti.decomposition->neighbors[n] < info::mpi::rank; ++n) {
-        dualGraph[0].push_back(ClusterInfo(feti.decomposition->neighbors[n], rBuffer[n][0].koffset, rBuffer[n][0].kernels));
-        neighInfo[n] = dualGraph[0].back();
-    }
-    dualGraph[0].push_back(ClusterInfo(info::mpi::rank, Projector<T>::Kernel::roffset, Projector<T>::Kernel::rsize));
-    for (; n < feti.decomposition->neighbors.size(); ++n) {
-        dualGraph[0].push_back(ClusterInfo(feti.decomposition->neighbors[n], rBuffer[n][0].koffset, rBuffer[n][0].kernels));
-        neighInfo[n] = dualGraph[0].back();
-    }
-
-    for (size_t i = 0, offset = 0; i < feti.lambdas.cmap.size(); ) {
-        int lsize = feti.lambdas.cmap[i];
-        int domains = feti.lambdas.cmap[i + 1];
-        for (int d = 0, last = -1; d < domains; ++d) {
-            int n = feti.decomposition->noffset(feti.lambdas.cmap[i + 2 + d]);
-            if (!feti.decomposition->ismy(feti.lambdas.cmap[i + 2 + d]) && last < n) {
-                if (feti.lambdas.cmap[i + 2 + d] < feti.decomposition->dbegin) {
-                    neighInfo[n].cindices.push_back({ (int)offset, lsize });
-                    neighInfo[n].ncols += lsize;
-                }
-                if (feti.decomposition->dend <= feti.lambdas.cmap[i + 2 + d]) {
-                    neighInfo[n].cindices.push_back({ (int)offset, lsize });
-                    neighInfo[n].ncols += lsize;
-                }
-                last = n;
-            }
-        }
-        i += feti.lambdas.cmap[i + 1] + 2;
-        offset += lsize;
-    }
-}
-
-template<typename T>
-void HFETIOrthogonalSymmetric<T>::_setG()
-{
-    int Gtrows = Projector<T>::Kernel::rsize, Gtnnz = Projector<T>::Kernel::rsize * feti.lambdas.size;
-    for (size_t n = 0; n < feti.decomposition->neighbors.size(); ++n) {
-        if (info::mpi::rank < feti.decomposition->neighbors[n]) {
-            Gtrows += neighInfo[n].kernels;
-            Gtnnz  += neighInfo[n].kernels * neighInfo[n].ncols;
-        }
-    }
-
-    Gt.resize(Gtrows, feti.lambdas.size, Gtnnz);
-    Gt.rows[0] = 0;
-    int ri = 0;
-    for (int kr = 0; kr < Projector<T>::Kernel::rsize; ++kr, ++ri) {
-        Gt.rows[ri + 1] = Gt.rows[ri] + feti.lambdas.size;
-        for (int c = 0; c < feti.lambdas.size; ++c) {
-            Gt.cols[Gt.rows[ri] + c] = c;
-        }
-    }
-    for (size_t n = 0; n < feti.decomposition->neighbors.size(); ++n) {
-        if (info::mpi::rank < feti.decomposition->neighbors[n]) {
-            neighInfo[n].koffset = ri;
-            for (int kr = 0; kr < neighInfo[n].kernels; ++kr, ++ri) {
-                Gt.rows[ri + 1] = Gt.rows[ri] + neighInfo[n].ncols;
-                for (size_t ci = 0, c = 0; ci < neighInfo[n].cindices.size(); ++ci) {
-                    for (int cc = 0; cc < neighInfo[n].cindices[ci].count; ++cc, ++c) {
-                        Gt.cols[Gt.rows[ri] + c] = neighInfo[n].cindices[ci].offset + cc;
-                    }
-                }
-            }
-        }
-    }
-
-    G.shallowCopy(Gt);
-    G.nrows = Projector<T>::Kernel::rsize;
-    G.nnz = Projector<T>::Kernel::rsize * feti.lambdas.size;
-    eslog::checkpointln("FETI: SET G");
 }
 
 template<typename T>
@@ -198,14 +107,58 @@ void HFETIOrthogonalSymmetric<T>::orthonormalizeKernels(const step::Step &step)
 }
 
 template<typename T>
+void HFETIOrthogonalSymmetric<T>::_setG()
+{
+    // G is stored with 0-based in indexing
+    auto vbegin = dual.clusters.vertices.find(info::mpi::rank);
+
+    int Grows = 0, Gnnz = 0;
+    int Gtrows = 0, Gtnnz = 0;
+    for (auto v = vbegin; v != dual.clusters.vertices.cend(); ++v) {
+        v->second.kernel.loffset = Gtrows;
+        Gtrows += v->second.kernel.size;
+        Gtnnz += v->second.kernel.size * v->second.lambdas.total;
+        if (v->second.rank == info::mpi::rank) {
+            Grows += v->second.kernel.size;
+            Gnnz += v->second.kernel.size * v->second.lambdas.total;
+        }
+    }
+
+    Gt.resize(Gtrows, feti.lambdas.size, Gtnnz);
+    Gt.rows[0] = 0;
+    int ri = 0;
+    for (auto v = vbegin; v != dual.clusters.vertices.cend(); ++v) {
+        for (int kr = 0; kr < v->second.kernel.size; ++kr, ++ri) {
+            Gt.rows[ri + 1] = Gt.rows[ri] + v->second.lambdas.total;
+            for (size_t ci = 0, c = Gt.rows[ri]; ci < v->second.lambdas.indices.size(); ++ci) {
+                for (int cc = 0; cc < v->second.lambdas.indices[ci].size; ++c, ++cc) {
+                    Gt.cols[c] = v->second.lambdas.indices[ci].offset + cc;
+                }
+            }
+        }
+    }
+
+    G.shallowCopy(Gt);
+    G.nrows = Grows;
+    G.nnz = Gnnz;
+    eslog::checkpointln("FETI: SET G");
+}
+
+template<typename T>
 void HFETIOrthogonalSymmetric<T>::_updateG()
 {
+    auto vbegin = dual.clusters.vertices.find(info::mpi::rank);
+    auto vend   = dual.clusters.vertices.find(info::mpi::rank + 1);
+
     math::set(G, T{0});
-    for (size_t d = 0; d < feti.K.size(); ++d) {
-        for (int kr = 0; kr < feti.R1[d].nrows; ++kr) {
-            for (int c = 0; c < feti.B1[d].nrows; ++c) {
-                for (int i = feti.B1[d].rows[c]; i < feti.B1[d].rows[c + 1]; ++i) {
-                    G.vals[G.rows[kr] + feti.D2C[d][c]] -= feti.R1[d].vals[feti.R1[d].ncols * kr + feti.B1[d].cols[i]] * feti.B1[d].vals[i];
+    for (auto v = vbegin; v != vend; ++v) {
+        for (int kr = 0; kr < v->second.kernel.size; ++kr) {
+            for (size_t di = 0; di < v->second.offset.size(); ++di) {
+                int d = v->second.offset[di];
+                for (int c = 0; c < feti.B1[d].nrows; ++c) {
+                    for (int i = feti.B1[d].rows[c]; i < feti.B1[d].rows[c + 1]; ++i) {
+                        G.vals[G.rows[kr] + feti.D2C[d][c]] -= feti.R1[d].vals[feti.R1[d].ncols * kr + feti.B1[d].cols[i]] * feti.B1[d].vals[i];
+                    }
                 }
             }
         }
@@ -213,14 +166,17 @@ void HFETIOrthogonalSymmetric<T>::_updateG()
 
     const DecompositionFETI *decomposition = feti.decomposition;
     std::vector<std::vector<T> > sBuffer(decomposition->neighbors.size()), rBuffer(decomposition->neighbors.size());
-    for (size_t n = 0; n < decomposition->neighbors.size(); ++n) {
-        if (feti.decomposition->neighbors[n] < info::mpi::rank) {
-            for (int kr = 0; kr < neighInfo[n].kernels; ++kr) {
-                for (size_t cc = 0; cc < neighInfo[n].cindices.size(); ++cc) {
-                    for (int c = 0; c < neighInfo[n].cindices[cc].count; ++c) {
-                        sBuffer[n].push_back(G.vals[G.rows[kr] + neighInfo[n].cindices[cc].offset + c]);
+
+    for (auto v = vbegin; v != vend; ++v) {
+        for (int kr = 0; kr < v->second.kernel.size; ++kr) {
+            auto ci = Gt.rows[v->second.kernel.goffset + kr - Projector<T>::Kernel::roffset];
+            for (size_t i = 0; i < v->second.lambdas.indices.size(); ++i) {
+                for (size_t n = 0; n < v->second.lambdas.indices[i].lower_neighs.size(); ++n) {
+                    for (int c = 0; c < v->second.lambdas.indices[i].size; ++c) {
+                        sBuffer[v->second.lambdas.indices[i].lower_neighs[n]].push_back(Gt.vals[ci + c]);
                     }
                 }
+                ci += v->second.lambdas.indices[i].size;
             }
         }
     }
@@ -229,10 +185,11 @@ void HFETIOrthogonalSymmetric<T>::_updateG()
         eslog::error("cannot exchange neighbor's G\n");
     }
 
-    for (size_t n = 0, offset = Gt.rows[Projector<T>::Kernel::rsize]; n < rBuffer.size(); ++n) {
+    for (size_t n = 0, offset = G.rows[G.nrows]; n < rBuffer.size(); ++n) {
         std::copy(rBuffer[n].begin(), rBuffer[n].end(), Gt.vals + offset);
         offset += rBuffer[n].size();
     }
+
     eslog::checkpointln("FETI: UPDATE G");
 }
 
@@ -240,32 +197,39 @@ template<typename T>
 void HFETIOrthogonalSymmetric<T>::_setGGt()
 {
     const int IDX = Indexing::CSR;
+    auto vbegin = dual.clusters.vertices.find(info::mpi::rank);
+    auto vend   = dual.clusters.vertices.lower_bound(info::mpi::rank + 1);
+
     GGtDataOffset = 0;
-    for (size_t i = 0; i < dualGraph[0].size(); ++i) {
-        for (int kr = 0; kr < cinfo[0].kernels; ++kr) {
-            for (int kc = 0; kc < dualGraph[0][i].kernels; ++kc) {
-                if (cinfo[0].koffset + kr <= dualGraph[0][i].koffset + kc) {
-                    ++GGtDataOffset;
+    for (auto v = vbegin; v != vend; ++v) {
+        for (int kr = 0; kr < v->second.kernel.size; ++kr) {
+            for (auto e = dual.clusters.edges[v->first].cbegin(); e != dual.clusters.edges[v->first].cend(); ++e) {
+                for (int kc = 0; kc < dual.clusters.vertices[*e].kernel.size; ++kc) {
+                    if (v->second.kernel.goffset + kr <= dual.clusters.vertices[*e].kernel.goffset + kc) {
+                        ++GGtDataOffset;
+                    }
                 }
             }
         }
     }
     GGtDataSize = GGtDataOffset;
-    GGtNnz = Communication::exscan(GGtDataOffset);
+    size_t GGtNnz = Communication::exscan(GGtDataOffset);
 
     GGt.resize(Projector<T>::Kernel::total, Projector<T>::Kernel::total, GGtNnz);
     GGt.shape = Matrix_Shape::UPPER;
     GGt.type = Matrix_Type::REAL_SYMMETRIC_POSITIVE_DEFINITE;
     GGt.rows[0] = IDX;
     GGt.rows[Projector<T>::Kernel::roffset] = GGtDataOffset + IDX;
-
-    for (int kr = 0; kr < Projector<T>::Kernel::rsize; ++kr) {
-        GGt.rows[Projector<T>::Kernel::roffset + kr + 1] = GGt.rows[Projector<T>::Kernel::roffset + kr];
-        for (size_t i = 0, c = GGt.rows[Projector<T>::Kernel::roffset + kr] - IDX; i < dualGraph[0].size(); ++i) {
-            for (int kc = 0; kc < dualGraph[0][i].kernels; ++kc) {
-                if (Projector<T>::Kernel::roffset + kr <= dualGraph[0][i].koffset + kc) {
-                    GGt.cols[c++] = dualGraph[0][i].koffset + kc + IDX;
-                    ++GGt.rows[Projector<T>::Kernel::roffset + kr + 1];
+    for (auto v = vbegin; v != vend; ++v) {
+        for (int kr = 0; kr < v->second.kernel.size; ++kr) {
+            GGt.rows[v->second.kernel.goffset + kr + 1] = GGt.rows[v->second.kernel.goffset + kr];
+            int c = GGt.rows[v->second.kernel.goffset + kr] - IDX;
+            for (auto e = dual.clusters.edges[v->first].cbegin(); e != dual.clusters.edges[v->first].cend(); ++e) {
+                for (int kc = 0; kc < dual.clusters.vertices[*e].kernel.size; ++kc) {
+                    if (v->second.kernel.goffset + kr <= dual.clusters.vertices[*e].kernel.goffset + kc) {
+                        GGt.cols[c++] = dual.clusters.vertices[*e].kernel.goffset + kc + IDX;
+                        ++GGt.rows[v->second.kernel.goffset + kr + 1];
+                    }
                 }
             }
         }
@@ -295,30 +259,29 @@ template<typename T>
 void HFETIOrthogonalSymmetric<T>::_updateGGt()
 {
     const int IDX = Indexing::CSR;
-    for (int kr = 0; kr < Projector<T>::Kernel::rsize; ++kr) {
-        for (size_t i = 0, c = GGt.rows[cinfo[0].koffset + kr] - IDX; i < dualGraph[0].size(); ++i) {
-            for (int kc = 0; kc < dualGraph[0][i].kernels; ++kc) {
-                if (Projector<T>::Kernel::roffset + kr <= dualGraph[0][i].koffset + kc) {
-                    GGt.vals[c] = 0;
-                    int k1, k2, ke1, ke2;
-                    k1  = G.rows[kr];
-                    ke1 = G.rows[kr + 1];
-                    if (dualGraph[0][i].koffset - Projector<T>::Kernel::roffset < G.nrows) {
-                        k2  = G.rows[kc];
-                        ke2 = G.rows[kc + 1];
-                    } else {
-                        int koffset = neighInfo[i - 1].koffset; // (i - i) since there is local cluster in dualGraph
-                        k2  = Gt.rows[koffset + kc];
-                        ke2 = Gt.rows[koffset + kc + 1];
-                    }
-                    while (k1 < ke1 && k2 < ke2) {
-                        while (k1 < ke1 && Gt.cols[k1] < Gt.cols[k2]) { ++k1; };
-                        while (k2 < ke2 && Gt.cols[k2] < Gt.cols[k1]) { ++k2; };
-                        if (k1 < ke1 && k2 < ke2 && Gt.cols[k1] == Gt.cols[k2]) {
-                            GGt.vals[c] += Gt.vals[k1++] * Gt.vals[k2++];
+    auto vbegin = dual.clusters.vertices.find(info::mpi::rank);
+    auto vend   = dual.clusters.vertices.lower_bound(info::mpi::rank + 1);
+
+    for (auto v = vbegin; v != vend; ++v) {
+        for (int kr = 0; kr < v->second.kernel.size; ++kr) {
+            int c = GGt.rows[v->second.kernel.goffset + kr] - IDX;
+            for (auto e = dual.clusters.edges[v->first].cbegin(); e != dual.clusters.edges[v->first].cend(); ++e) {
+                for (int kc = 0; kc < dual.clusters.vertices[*e].kernel.size; ++kc) {
+                    if (v->second.kernel.goffset + kr <= dual.clusters.vertices[*e].kernel.goffset + kc) {
+                        int r1 = v->second.kernel.loffset + kr;
+                        int r2 = dual.clusters.vertices[*e].kernel.loffset + kc;
+                        GGt.vals[c] = 0;
+                        int k1 = Gt.rows[r1], ke1 = Gt.rows[r1 + 1];
+                        int k2 = Gt.rows[r2], ke2 = Gt.rows[r2 + 1];
+                        while (k1 < ke1 && k2 < ke2) {
+                            while (k1 < ke1 && Gt.cols[k1] < Gt.cols[k2]) { ++k1; };
+                            while (k2 < ke2 && Gt.cols[k2] < Gt.cols[k1]) { ++k2; };
+                            if (k1 < ke1 && k2 < ke2 && Gt.cols[k1] == Gt.cols[k2]) {
+                                GGt.vals[c] += Gt.vals[k1++] * Gt.vals[k2++];
+                            }
                         }
+                        ++c;
                     }
-                    ++c;
                 }
             }
         }

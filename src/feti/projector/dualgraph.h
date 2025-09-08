@@ -12,17 +12,15 @@ namespace espreso {
 struct DualGraph {
 
     void clear();
-    void pushVertex(int index, int size);
-    void initVertices();
+    void pushVertex(int offset, int index, int size);
 
-    void setFromDomains(const DecompositionFETI *decomposition, const std::vector<int> &lMap);
-    void setFromClusters(const DecompositionFETI *decomposition, const std::vector<int> &lMap);
-
+    void set(const DecompositionFETI *decomposition, const std::vector<int> &lMap);
     void spread(const DecompositionFETI *decomposition);
 
     void print();
 
-    struct VertexInfo {
+    struct DomainVertexInfo {
+        int offset; // offset to local K
         int rank;
 
         struct {
@@ -36,8 +34,19 @@ struct DualGraph {
         } lambdas;
     };
 
-    std::map<int, VertexInfo> vertices;
-    std::map<int, std::vector<int> > edges;
+    struct ClusterVertexInfo: DomainVertexInfo {
+        std::vector<int> offset;
+    };
+
+    struct {
+        std::map<int, DomainVertexInfo> vertices;
+        std::map<int, std::vector<int> > edges;
+    } domains;
+
+    struct {
+        std::map<int, ClusterVertexInfo> vertices;
+        std::map<int, std::vector<int> > edges;
+    } clusters;
 };
 
 }

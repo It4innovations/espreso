@@ -58,24 +58,23 @@ void TFETIConjugateSymmetric<T>::update(const step::Step &step)
 
         dual.clear();
         for (size_t d = 0; d < feti.R1.size(); ++d) {
-            dual.pushVertex(feti.decomposition->dbegin + d, feti.R1[d].nrows);
+            dual.pushVertex(d, feti.decomposition->dbegin + d, feti.R1[d].nrows);
         }
-        dual.initVertices();
-        dual.setFromDomains(feti.decomposition, feti.lambdas.cmap);
+        dual.set(feti.decomposition, feti.lambdas.cmap);
         dual.spread(feti.decomposition);
 
-        auto vbegin = dual.vertices.find(feti.decomposition->dbegin);
-        auto vend   = dual.vertices.lower_bound(feti.decomposition->dend);
+        auto vbegin = dual.domains.vertices.find(feti.decomposition->dbegin);
+        auto vend   = dual.domains.vertices.lower_bound(feti.decomposition->dend);
         for (auto v = vbegin; v != vend; ++v) {
             for (int k = 0; k < v->second.kernel.size; ++k) {
                 nonzeros.push_back(v->second.kernel.goffset + k);
             }
             bool dist = false;
-            for (auto e = dual.edges[v->first].cbegin(); e != dual.edges[v->first].cend(); ++e) {
-                if (dual.vertices.at(*e).rank != info::mpi::rank) {
-                    for (int k = 0; k < dual.vertices.at(*e).kernel.size; ++k) {
-                        nonzeros.push_back(dual.vertices.at(*e).kernel.goffset + k);
-                        distributed.push_back(dual.vertices.at(*e).kernel.goffset + k);
+            for (auto e = dual.domains.edges[v->first].cbegin(); e != dual.domains.edges[v->first].cend(); ++e) {
+                if (dual.domains.vertices.at(*e).rank != info::mpi::rank) {
+                    for (int k = 0; k < dual.domains.vertices.at(*e).kernel.size; ++k) {
+                        nonzeros.push_back(dual.domains.vertices.at(*e).kernel.goffset + k);
+                        distributed.push_back(dual.domains.vertices.at(*e).kernel.goffset + k);
                     }
                     dist = true;
                 }
@@ -104,8 +103,8 @@ template<typename T>
 void TFETIConjugateSymmetric<T>::_setG()
 {
     // G is stored with 0-based in indexing
-    auto vbegin = dual.vertices.find(feti.decomposition->dbegin);
-    auto vend   = dual.vertices.lower_bound(feti.decomposition->dend);
+    auto vbegin = dual.domains.vertices.find(feti.decomposition->dbegin);
+    auto vend   = dual.domains.vertices.lower_bound(feti.decomposition->dend);
 
     int rows = 0, nnz = 0;
     for (auto v = vbegin; v != vend; ++v) {
@@ -142,8 +141,8 @@ void TFETIConjugateSymmetric<T>::orthonormalizeKernels(const step::Step &step)
 template<typename T>
 void TFETIConjugateSymmetric<T>::_updateG()
 {
-    auto vbegin = dual.vertices.find(feti.decomposition->dbegin);
-    auto vend   = dual.vertices.lower_bound(feti.decomposition->dend);
+    auto vbegin = dual.domains.vertices.find(feti.decomposition->dbegin);
+    auto vend   = dual.domains.vertices.lower_bound(feti.decomposition->dend);
 
     int ri = 0, d = 0;
     for (auto v = vbegin; v != vend; ++v, ++d) {
@@ -163,15 +162,15 @@ void TFETIConjugateSymmetric<T>::_updateG()
 template<typename T>
 void TFETIConjugateSymmetric<T>::_setGGt()
 {
-    auto vbegin = dual.vertices.find(feti.decomposition->dbegin);
-    auto vend   = dual.vertices.lower_bound(feti.decomposition->dend);
+    auto vbegin = dual.domains.vertices.find(feti.decomposition->dbegin);
+    auto vend   = dual.domains.vertices.lower_bound(feti.decomposition->dend);
 
     GGtDataOffset = 0;
     for (auto v = vbegin; v != vend; ++v) {
         for (int kr = 0; kr < v->second.kernel.size; ++kr) {
-            for (auto e = dual.edges[v->first].cbegin(); e != dual.edges[v->first].cend(); ++e) {
-                for (int kc = 0; kc < dual.vertices[*e].kernel.size; ++kc) {
-                    if (v->second.kernel.goffset + kr <= dual.vertices[*e].kernel.goffset + kc) {
+            for (auto e = dual.domains.edges[v->first].cbegin(); e != dual.domains.edges[v->first].cend(); ++e) {
+                for (int kc = 0; kc < dual.domains.vertices[*e].kernel.size; ++kc) {
+                    if (v->second.kernel.goffset + kr <= dual.domains.vertices[*e].kernel.goffset + kc) {
                         ++GGtDataOffset;
                     }
                 }
@@ -191,10 +190,10 @@ void TFETIConjugateSymmetric<T>::_setGGt()
         for (int kr = 0; kr < v->second.kernel.size; ++kr) {
             GGt.rows[v->second.kernel.goffset + kr + 1] = GGt.rows[v->second.kernel.goffset + kr];
             int c = GGt.rows[v->second.kernel.goffset + kr] - IDX;
-            for (auto e = dual.edges[v->first].cbegin(); e != dual.edges[v->first].cend(); ++e) {
-                for (int kc = 0; kc < dual.vertices[*e].kernel.size; ++kc) {
-                    if (v->second.kernel.goffset + kr <= dual.vertices[*e].kernel.goffset + kc) {
-                        GGt.cols[c++] = dual.vertices[*e].kernel.goffset + kc + IDX;
+            for (auto e = dual.domains.edges[v->first].cbegin(); e != dual.domains.edges[v->first].cend(); ++e) {
+                for (int kc = 0; kc < dual.domains.vertices[*e].kernel.size; ++kc) {
+                    if (v->second.kernel.goffset + kr <= dual.domains.vertices[*e].kernel.goffset + kc) {
+                        GGt.cols[c++] = dual.domains.vertices[*e].kernel.goffset + kc + IDX;
                         ++GGt.rows[v->second.kernel.goffset + kr + 1];
                     }
                 }
@@ -225,8 +224,8 @@ void TFETIConjugateSymmetric<T>::_setGGt()
 template<typename T>
 void TFETIConjugateSymmetric<T>::_updateGGt()
 {
-    auto vbegin = dual.vertices.find(feti.decomposition->dbegin);
-    auto vend   = dual.vertices.lower_bound(feti.decomposition->dend);
+    auto vbegin = dual.domains.vertices.find(feti.decomposition->dbegin);
+    auto vend   = dual.domains.vertices.lower_bound(feti.decomposition->dend);
 
     Matrix_Dual_Sparse<T> dG(nonzeros, distributed), dFG(nonzeros, distributed);
     Vector_Dense<T> vG; vG.size = dG.ncols;
@@ -251,10 +250,10 @@ void TFETIConjugateSymmetric<T>::_updateGGt()
         for (int kr = 0; kr < v->second.kernel.size; ++kr, ++r1) {
             int c = GGt.rows[v->second.kernel.goffset + kr] - Indexing::CSR;
             int r2 = 0;
-            for (auto e = dual.edges[v->first].cbegin(); e != dual.edges[v->first].cend(); ++e) {
-                for (int kc = 0; kc < dual.vertices[*e].kernel.size; ++kc) {
-                    if (v->second.kernel.goffset + kr <= dual.vertices[*e].kernel.goffset + kc) {
-                        while (nonzeros[r2] < dual.vertices[*e].kernel.goffset + kc) { ++r2; }
+            for (auto e = dual.domains.edges[v->first].cbegin(); e != dual.domains.edges[v->first].cend(); ++e) {
+                for (int kc = 0; kc < dual.domains.vertices[*e].kernel.size; ++kc) {
+                    if (v->second.kernel.goffset + kr <= dual.domains.vertices[*e].kernel.goffset + kc) {
+                        while (nonzeros[r2] < dual.domains.vertices[*e].kernel.goffset + kc) { ++r2; }
                         GGt.vals[c] = 0;
                         for (int k = G.rows[r1]; k < G.rows[r1 + 1]; ++k) {
                             GGt.vals[c] += G.vals[k] * dFG.vals[r2 * dFG.ncols + G.cols[k]];

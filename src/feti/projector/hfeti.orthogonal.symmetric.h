@@ -3,8 +3,7 @@
 #define SRC_FETI_PROJECTOR_HFETI_ORTHOGONAL_SYMMETRIC_H_
 
 #include "projector.h"
-
-#include <map>
+#include "dualgraph.h"
 
 namespace espreso {
 
@@ -52,36 +51,9 @@ protected:
     using Projector<T>::Gx;
     using Projector<T>::iGGtGx;
 
-    size_t domainOffset;
-    size_t GGtDataOffset, GGtDataSize, GGtNnz;
+    size_t GGtDataOffset, GGtDataSize;
 
-    struct ClusterInfo {
-        int cluster, koffset, kernels;
-
-        ClusterInfo() = default;
-        ClusterInfo(int cluster, int koffset, int kernels): cluster(cluster), koffset(koffset), kernels(kernels) {}
-
-        bool operator< (const ClusterInfo &other) const { return cluster <  other.cluster; }
-        bool operator<=(const ClusterInfo &other) const { return cluster <= other.cluster; }
-        bool operator!=(const ClusterInfo &other) const { return cluster != other.cluster; }
-    };
-    struct NeighborClusterInfoInfo: ClusterInfo {
-        struct CIndices { int offset, count; };
-        std::vector<CIndices> cindices;
-        int ncols;
-
-        NeighborClusterInfoInfo() = default;
-
-        NeighborClusterInfoInfo& operator=(const ClusterInfo &other) {
-            this->cluster = other.cluster;
-            this->koffset = other.koffset;
-            this->kernels = other.kernels;
-            return *this;
-        }
-    };
-    std::vector<ClusterInfo> cinfo;
-    std::vector<std::vector<ClusterInfo> > dualGraph;
-    std::vector<NeighborClusterInfoInfo> neighInfo;
+    DualGraph dual;
 };
 
 }

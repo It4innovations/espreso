@@ -5,8 +5,6 @@
 #include "projector.h"
 #include "dualgraph.h"
 
-#include <map>
-
 namespace espreso {
 
 /*

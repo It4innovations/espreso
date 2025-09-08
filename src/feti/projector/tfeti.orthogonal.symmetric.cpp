@@ -58,10 +58,9 @@ void TFETIOrthogonalSymmetric<T>::update(const step::Step &step)
 
         dual.clear();
         for (size_t d = 0; d < feti.R1.size(); ++d) {
-            dual.pushVertex(feti.decomposition->dbegin + d, feti.R1[d].nrows);
+            dual.pushVertex(d, feti.decomposition->dbegin + d, feti.R1[d].nrows);
         }
-        dual.initVertices();
-        dual.setFromDomains(feti.decomposition, feti.lambdas.cmap);
+        dual.set(feti.decomposition, feti.lambdas.cmap);
 
         _setG();
         _setGGt();
@@ -71,7 +70,7 @@ void TFETIOrthogonalSymmetric<T>::update(const step::Step &step)
     for (size_t d = 0; d < feti.R1.size(); ++d) {
         Vector_Dense<T> _e;
         _e.size = feti.R1[d].nrows;
-        _e.vals = e.vals + dual.vertices.at(feti.decomposition->dbegin + d).kernel.goffset;
+        _e.vals = e.vals + dual.domains.vertices.at(feti.decomposition->dbegin + d).kernel.goffset;
         math::blas::apply(_e, T{-1}, feti.R1[d], T{0}, feti.f[d]);
     }
     e.synchronize();
@@ -85,14 +84,23 @@ void TFETIOrthogonalSymmetric<T>::update(const step::Step &step)
 }
 
 template<typename T>
+void TFETIOrthogonalSymmetric<T>::orthonormalizeKernels(const step::Step &step)
+{
+    #pragma omp parallel for
+    for (size_t d = 0; d < feti.R1.size(); ++d) {
+        math::orthonormalize(feti.R1[d]);
+    }
+}
+
+template<typename T>
 void TFETIOrthogonalSymmetric<T>::_setG()
 {
     // G is stored with 0-based in indexing
-    auto vbegin = dual.vertices.find(feti.decomposition->dbegin);
+    auto vbegin = dual.domains.vertices.find(feti.decomposition->dbegin);
 
     int Grows = 0, Gnnz = 0;
     int Gtrows = 0, Gtnnz = 0;
-    for (auto v = vbegin; v != dual.vertices.cend(); ++v) {
+    for (auto v = vbegin; v != dual.domains.vertices.cend(); ++v) {
         v->second.kernel.loffset = Gtrows;
         Gtrows += v->second.kernel.size;
         Gtnnz += v->second.kernel.size * v->second.lambdas.total;
@@ -105,7 +113,7 @@ void TFETIOrthogonalSymmetric<T>::_setG()
     Gt.resize(Gtrows, feti.lambdas.size, Gtnnz);
     Gt.rows[0] = 0;
     int ri = 0;
-    for (auto v = vbegin; v != dual.vertices.cend(); ++v) {
+    for (auto v = vbegin; v != dual.domains.vertices.cend(); ++v) {
         for (int kr = 0; kr < v->second.kernel.size; ++kr, ++ri) {
             Gt.rows[ri + 1] = Gt.rows[ri] + v->second.lambdas.total;
             for (size_t ci = 0, c = Gt.rows[ri]; ci < v->second.lambdas.indices.size(); ++ci) {
@@ -123,25 +131,17 @@ void TFETIOrthogonalSymmetric<T>::_setG()
 }
 
 template<typename T>
-void TFETIOrthogonalSymmetric<T>::orthonormalizeKernels(const step::Step &step)
-{
-    #pragma omp parallel for
-    for (size_t d = 0; d < feti.R1.size(); ++d) {
-        math::orthonormalize(feti.R1[d]);
-    }
-}
-
-template<typename T>
 void TFETIOrthogonalSymmetric<T>::_updateG()
 {
-    auto vbegin = dual.vertices.find(feti.decomposition->dbegin);
-    auto vend   = dual.vertices.lower_bound(feti.decomposition->dend);
+    auto vbegin = dual.domains.vertices.find(feti.decomposition->dbegin);
+    auto vend   = dual.domains.vertices.lower_bound(feti.decomposition->dend);
 
-    int ri = 0, d = 0;
-    for (auto v = vbegin; v != vend; ++v, ++d) {
+    int ri = 0;
+    math::set(G, T{0});
+    for (auto v = vbegin; v != vend; ++v) {
         for (int kr = 0; kr < v->second.kernel.size; ++kr, ++ri) {
+            int d = v->second.offset;
             for (int c = 0; c < feti.B1[d].nrows; ++c) {
-                G.vals[G.rows[ri] + c] = 0;
                 for (int i = feti.B1[d].rows[c]; i < feti.B1[d].rows[c + 1]; ++i) {
                     G.vals[G.rows[ri] + c] -= feti.R1[d].vals[feti.R1[d].ncols * kr + feti.B1[d].cols[i]] * feti.B1[d].vals[i];
                 }
@@ -182,15 +182,15 @@ template<typename T>
 void TFETIOrthogonalSymmetric<T>::_setGGt()
 {
     const int IDX = Indexing::CSR;
-    auto vbegin = dual.vertices.find(feti.decomposition->dbegin);
-    auto vend   = dual.vertices.lower_bound(feti.decomposition->dend);
+    auto vbegin = dual.domains.vertices.find(feti.decomposition->dbegin);
+    auto vend   = dual.domains.vertices.lower_bound(feti.decomposition->dend);
 
     GGtDataOffset = 0;
     for (auto v = vbegin; v != vend; ++v) {
         for (int kr = 0; kr < v->second.kernel.size; ++kr) {
-            for (auto e = dual.edges[v->first].cbegin(); e != dual.edges[v->first].cend(); ++e) {
-                for (int kc = 0; kc < dual.vertices[*e].kernel.size; ++kc) {
-                    if (v->second.kernel.goffset + kr <= dual.vertices[*e].kernel.goffset + kc) {
+            for (auto e = dual.domains.edges[v->first].cbegin(); e != dual.domains.edges[v->first].cend(); ++e) {
+                for (int kc = 0; kc < dual.domains.vertices[*e].kernel.size; ++kc) {
+                    if (v->second.kernel.goffset + kr <= dual.domains.vertices[*e].kernel.goffset + kc) {
                         ++GGtDataOffset;
                     }
                 }
@@ -209,10 +209,10 @@ void TFETIOrthogonalSymmetric<T>::_setGGt()
         for (int kr = 0; kr < v->second.kernel.size; ++kr) {
             GGt.rows[v->second.kernel.goffset + kr + 1] = GGt.rows[v->second.kernel.goffset + kr];
             int c = GGt.rows[v->second.kernel.goffset + kr] - IDX;
-            for (auto e = dual.edges[v->first].cbegin(); e != dual.edges[v->first].cend(); ++e) {
-                for (int kc = 0; kc < dual.vertices[*e].kernel.size; ++kc) {
-                    if (v->second.kernel.goffset + kr <= dual.vertices[*e].kernel.goffset + kc) {
-                        GGt.cols[c++] = dual.vertices[*e].kernel.goffset + kc + IDX;
+            for (auto e = dual.domains.edges[v->first].cbegin(); e != dual.domains.edges[v->first].cend(); ++e) {
+                for (int kc = 0; kc < dual.domains.vertices[*e].kernel.size; ++kc) {
+                    if (v->second.kernel.goffset + kr <= dual.domains.vertices[*e].kernel.goffset + kc) {
+                        GGt.cols[c++] = dual.domains.vertices[*e].kernel.goffset + kc + IDX;
                         ++GGt.rows[v->second.kernel.goffset + kr + 1];
                     }
                 }
@@ -244,17 +244,17 @@ template<typename T>
 void TFETIOrthogonalSymmetric<T>::_updateGGt()
 {
     const int IDX = Indexing::CSR;
-    auto vbegin = dual.vertices.find(feti.decomposition->dbegin);
-    auto vend   = dual.vertices.lower_bound(feti.decomposition->dend);
+    auto vbegin = dual.domains.vertices.find(feti.decomposition->dbegin);
+    auto vend   = dual.domains.vertices.lower_bound(feti.decomposition->dend);
 
     for (auto v = vbegin; v != vend; ++v) {
         for (int kr = 0; kr < v->second.kernel.size; ++kr) {
             int c = GGt.rows[v->second.kernel.goffset + kr] - IDX;
-            for (auto e = dual.edges[v->first].cbegin(); e != dual.edges[v->first].cend(); ++e) {
-                for (int kc = 0; kc < dual.vertices[*e].kernel.size; ++kc) {
-                    if (v->second.kernel.goffset + kr <= dual.vertices[*e].kernel.goffset + kc) {
+            for (auto e = dual.domains.edges[v->first].cbegin(); e != dual.domains.edges[v->first].cend(); ++e) {
+                for (int kc = 0; kc < dual.domains.vertices[*e].kernel.size; ++kc) {
+                    if (v->second.kernel.goffset + kr <= dual.domains.vertices[*e].kernel.goffset + kc) {
                         int r1 = v->second.kernel.loffset + kr;
-                        int r2 = dual.vertices[*e].kernel.loffset + kc;
+                        int r2 = dual.domains.vertices[*e].kernel.loffset + kc;
                         GGt.vals[c] = 0;
                         int k1 = Gt.rows[r1], ke1 = Gt.rows[r1 + 1];
                         int k2 = Gt.rows[r2], ke2 = Gt.rows[r2 + 1];
