@@ -63,8 +63,9 @@ bool StructuralMechanicsSteadyStateNonLinear::analyze(step::Step &step)
     U = solver->b->copyPattern();
     f = solver->b->copyPattern();
     dirichlet = solver->dirichlet->copyPattern();
-    solver->assembledA = K;
+
     math::set(U->cluster, 0.0);
+    solver->assembledA = K;
     solver->solution = U;
 
     pattern->map(K);
