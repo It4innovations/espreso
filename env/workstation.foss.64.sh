@@ -1,7 +1,9 @@
 
 buildname="build-workstation-foss-64"
 export WAFLOCK=".lock-waf_linux_${buildname}"
-curr_buildname="$(readlink build)"
+if [ -d build ]; then
+  curr_buildname="$(readlink -f build)"
+fi
 if [ "${curr_buildname}" != "${buildname}" ]
 then
     rm -rf build
