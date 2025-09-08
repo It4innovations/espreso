@@ -79,6 +79,7 @@ bool StructuralMechanicsTransientNonLinear::analyze(step::Step &step)
     f_old = solver->b->copyPattern();
     dirichlet = solver->dirichlet->copyPattern();
     solver->assembledA = K;
+    math::set(U->cluster, 0.0);
     solver->solution = U;
 
     R = solver->b->copyPattern();
