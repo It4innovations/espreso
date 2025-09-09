@@ -36,6 +36,7 @@ void Regularization<T>::algebraic(FETI<T> &feti, int defect, int sc_size)
         for (size_t d = 0; d < feti.assembledK.size(); ++d) {
             math::getKernel(feti.assembledK[d], feti.R1[d], feti.RegMat[d], defect, sc_size);
             feti.RegMat[d].resize(feti.K[d].nrows, feti.K[d].nrows, 0);
+            math::set(feti.RegMat[d].nrows + 1, feti.RegMat[d].rows, 1, feti.RegMat[d].rows[0]);
         }
     } else {
         #pragma omp parallel for
