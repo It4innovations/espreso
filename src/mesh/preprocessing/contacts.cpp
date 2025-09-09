@@ -232,7 +232,7 @@ static void surfaceNormal3D(SurfaceStore * surface, size_t e, const double* disp
 void computeSurfaceNodeNormals(NodeStore *nodes, SurfaceStore * surface, const std::vector<int> &neighbors, const double* displacement)
 {
     if (surface->nodeNormals == NULL) {
-        surface->nodeNormals = nodes->appendData(info::mesh->dimension, NamedData::DataType::VECTOR, "SURFACE_NORMAL");
+        surface->nodeNormals = nodes->appendData(info::mesh->dimension, NamedData::DataType::VECTOR, "SURFACE_NORMAL", step::TYPE::TIME, false);
         surface->nodeMultiplicity = nodes->appendData(1, NamedData::DataType::SCALAR);
 
         for (auto enodes = surface->enodes->begin(); enodes != surface->enodes->end(); ++enodes) {

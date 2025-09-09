@@ -182,7 +182,7 @@ bool StructuralMechanics::analyze(const step::Step &step)
             Results::force = info::mesh->nodes->appendData(info::mesh->dimension, NamedData::DataType::VECTOR, "FORCE", step::TYPE::TIME, info::ecf->output.results_selection.force);
         }
         if (Results::contact_force == nullptr) {
-            Results::contact_force = info::mesh->nodes->appendData(info::mesh->dimension, NamedData::DataType::VECTOR, "CONTACT_FORCE");
+            Results::contact_force = info::mesh->nodes->appendData(info::mesh->dimension, NamedData::DataType::VECTOR, "CONTACT_FORCE", step::TYPE::TIME, info::ecf->output.results_selection.force);
         }
 
 //        for (size_t i = 0; i < info::mesh->materials.size(); ++i) {
