@@ -148,7 +148,7 @@ template<typename T>
 void HFETIOrthogonalSymmetric<T>::_updateG()
 {
     auto vbegin = dual.clusters.vertices.find(info::mpi::rank);
-    auto vend   = dual.clusters.vertices.find(info::mpi::rank + 1);
+    auto vend   = dual.clusters.vertices.lower_bound(info::mpi::rank + 1);
 
     math::set(G, T{0});
     for (auto v = vbegin; v != vend; ++v) {
