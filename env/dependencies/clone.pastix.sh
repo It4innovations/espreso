@@ -3,7 +3,7 @@
 DEPENDENCIES_DIR="${PWD}/dependencies"
 mkdir -p "${DEPENDENCIES_DIR}"
 
-VERSION_PASTIX=release-6.4.0
+VERSION_PASTIX=v6.4.0
 
 PASTIX_DIR="pastix_${VERSION_PASTIX}"
 PASTIX_ROOT="${DEPENDENCIES_DIR}/${PASTIX_DIR}"
@@ -16,5 +16,6 @@ then
         cd "${PASTIX_ROOT}"
         git submodule init
         git submodule update
+        mv .git .git_ # so that git submodule update is not executed again in install cmake. good for offline compilation.
     )
 fi

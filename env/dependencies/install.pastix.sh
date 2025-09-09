@@ -3,7 +3,7 @@
 DEPENDENCIES_DIR="${PWD}/dependencies"
 mkdir -p "${DEPENDENCIES_DIR}"
 
-VERSION_PASTIX=release-6.4.0
+VERSION_PASTIX=v6.4.0
 
 PREFIX="${1}"
 COMPILER_CXX="${2}"
