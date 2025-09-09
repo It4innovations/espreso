@@ -41,6 +41,7 @@ protected:
     using DualOperator<T>::d;
 
     void _apply(const Vector_Dual<T> &x, Vector_Dual<T> &y);
+    void _applyK(std::vector<Vector_Dense<T> > &x, std::vector<Vector_Dense<T> > &y);
 
     std::vector<Matrix_CSR<T> > Kplus;
     std::vector<Vector_Dense<T> > Btx, KplusBtx;

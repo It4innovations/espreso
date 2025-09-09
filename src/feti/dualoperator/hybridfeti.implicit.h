@@ -43,25 +43,25 @@ public:
     void toPrimal(const Vector_Dual<T> &x, std::vector<Vector_Dense<T> > &y);
 
 protected:
-    void reduceInfo(DualOperatorInfo &sum, DualOperatorInfo &min, DualOperatorInfo &max);
-    void printInfo(DualOperatorInfo &sum, DualOperatorInfo &min, DualOperatorInfo &max);
-
-    void _computeB0();
+    using DualOperator<T>::feti;
+    using DualOperator<T>::d;
 
     void _apply(const Vector_Dual<T> &x, Vector_Dual<T> &y);
     void _applyK(std::vector<Vector_Dense<T> > &x, std::vector<Vector_Dense<T> > &y);
-
-    using DualOperator<T>::feti;
-    using DualOperator<T>::d;
 
     std::vector<Matrix_CSR<T> > Kplus;
     std::vector<Vector_Dense<T> > Btx, KplusBtx;
     std::vector<DirectSparseSolver<T> > KSolver;
 
-    std::vector<std::vector<int> > permutation;
-    std::vector<Matrix_Dense<T> > dB0, dKB0, dF0, origR1;
+    void _computeB0();
+    void _computeF0();
+    void _computeG0();
+    void _computeS0();
+
+    std::vector<Matrix_Dense<T> > dKB0, origR1;
     std::vector<int> G0offset;
     Matrix_CSR<T> F0, G0;
+    Matrix_Dense<T> S0;
     DirectSparseSolver<T> F0Solver;
     DenseSolver<T> Splus;
     Vector_Dense<T> g, beta, mu;

@@ -37,6 +37,7 @@ DenseSolver<T, I>::~DenseSolver()
 template <typename T, typename I>
 void DenseSolver<T, I>::commit(const Matrix_Dense<T,I> &a)
 {
+    this->a.resize(a.nrows, a.ncols);
     math::copy(this->a, a);
 }
 
