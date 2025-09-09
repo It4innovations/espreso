@@ -4,35 +4,13 @@
 #include "wrappers/cuda/operations/w_cuda_supermatrix_ddnx_ddnx_noncontig.h"
 
 #include "wrappers/cuda/common_cuda_mgm.h"
+#include "wrappers/cuda/common_internal.cuh"
 
 
 
 namespace espreso {
 namespace gpu {
 namespace operations {
-
-
-
-template<typename T>
-static __device__ void myGenericAdd(T * dst, T val) { *dst += val; }
-template<typename T>
-static __device__ void myGenericAdd(std::complex<T> * dst, std::complex<T> val)
-{
-    myGenericAdd(&reinterpret_cast<T*>(dst)[0], reinterpret_cast<T*>(&val)[0]);
-    myGenericAdd(&reinterpret_cast<T*>(dst)[1], reinterpret_cast<T*>(&val)[1]);
-}
-
-template<typename T>
-static __device__ void complexAtomicAdd(std::complex<T> * dst, std::complex<T> val)
-{
-    atomicAdd(&reinterpret_cast<T*>(dst)[0], reinterpret_cast<T*>(&val)[0]);
-    atomicAdd(&reinterpret_cast<T*>(dst)[1], reinterpret_cast<T*>(&val)[1]);
-}
-
-template<typename T>
-static __device__ void myAtomicAdd(T * dst, T val) { atomicAdd(dst, val); }
-template<typename T>
-static __device__ void myAtomicAdd(std::complex<T> * dst, std::complex<T> val) { complexAtomicAdd(dst, val); }
 
 
 

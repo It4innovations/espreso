@@ -15,6 +15,7 @@
 #include "gpu/operations/convert_ddnx_ddny.h"
 #include "gpu/operations/copy_ddnx_ddnx.h"
 #include "gpu/operations/permute_ddnx_ddnx.h"
+#include "gpu/operations/lincomb_ddnx_dcsy.h"
 #include "esinfo/meshinfo.h"
 #include "basis/utilities/stacktimer.h"
 
@@ -48,6 +49,8 @@ struct schur_hcsx_ddny_manual_simple_data
     MatrixCsxData_new<T,I> h_X_sp;
     MatrixCsxData_new<T,I> d_X_sp;
     MatrixDenseData_new<T> d_X_dn;
+    MatrixCsxView_new<T,I> h_A22_to_use;
+    MatrixCsxData_new<T,I> d_A22_sp;
     std::unique_ptr<math::operations::solver_csx<T,I>> op_h_A11_solver;
     std::unique_ptr<convert_dcsx_ddny<T,I>> op_X_sp2dn;
     math::operations::convert_csx_csy_map<T,I> op_L2U;
@@ -55,6 +58,7 @@ struct schur_hcsx_ddny_manual_simple_data
     trsm_hcsx_ddny_ddny<T,I> op_d_trsm;
     std::unique_ptr<herk_ddnx_ddny<T>> op_d_herk;
     math::operations::quadrisect_csx_csy<T,I> op_split;
+    std::unique_ptr<lincomb_ddnx_dcsy<T,I>> op_d_sc_plus_A22;
     MatrixCsxData_new<T,I> sub_h_A11;
     MatrixCsxData_new<T,I> sub_h_A12;
     MatrixCsxData_new<T,I> sub_h_A21;
@@ -140,14 +144,9 @@ template<typename T, typename I>
 void schur_hcsx_ddny_manual_simple<T,I>::internal_setup()
 {
     if(!is_matrix_hermitian) eslog::error("for now only hermitian matrices are supported\n");
-    if(h_A12 == nullptr) eslog::error("the upper part of matrix must be stored\n");
-    if(h_A11->prop.uplo != 'U') eslog::error("the upper part of A11 must be stored\n");
-    if(h_A22 != nullptr) eslog::error("for now I assume A22=O\n");
 
     data = std::make_unique<schur_hcsx_ddny_manual_simple_data<T,I>>();
     setup_config<T,I>(data->cfg, size_A11);
-
-    data->solver_factor_uplo = h_A11->prop.uplo;
 
     if(called_set_matrix == '1') {
         data->op_split.set_matrix_src(h_A);
@@ -175,6 +174,11 @@ void schur_hcsx_ddny_manual_simple<T,I>::internal_setup()
         if(h_A->prop.uplo != 'U') h_A21 = &data->sub_h_A21;
         h_A22 = &data->sub_h_A22;
     }
+    if(called_set_matrix == '4') {
+        if(h_A12 == nullptr) eslog::error("the upper part of matrix must be stored\n");
+    }
+
+    data->solver_factor_uplo = h_A11->prop.uplo;
 
     data->op_h_A11_solver = math::operations::solver_csx<T,I>::make(data->cfg.a11_solver_impl, &h_A11->prop, true, need_solve_A11);
     data->op_h_A11_solver->set_matrix_A(h_A11);
@@ -275,10 +279,36 @@ void schur_hcsx_ddny_manual_simple<T,I>::internal_setup()
     data->op_d_herk->set_handles(q, handle_dnblas);
     data->op_d_herk->set_matrix_A(&data->d_X_dn);
     data->op_d_herk->set_matrix_C(d_sc);
-    data->op_d_herk->set_coefficients(-alpha, 0 * alpha); // beta=0, because I assume A22=0
+    data->op_d_herk->set_coefficients(-alpha, (h_A22 == nullptr) ? 0 : alpha);
     data->op_d_herk->set_mode(math::blas::herk_mode::AhA);
     data->op_d_herk->setup();
     wss_tmp_perform_overlap = std::max(wss_tmp_perform_overlap, data->op_d_herk->get_wss_tmp_perform());
+
+    if(h_A22 != nullptr) {
+        if(h_A22->prop.uplo == d_sc->prop.uplo) {
+            data->h_A22_to_use = *h_A22;
+        }
+        else {
+            data->h_A22_to_use = h_A22->get_transposed_reordered_view();
+        }
+    }
+
+    if(h_A22 != nullptr) {
+        data->d_A22_sp.set(data->h_A22_to_use.nrows, data->h_A22_to_use.ncols, data->h_A22_to_use.nnz, data->h_A22_to_use.order, ator_ws_tmp_linear.get());
+        data->d_A22_sp.prop = data->h_A22_to_use.prop;
+        wss_tmp_perform_linear += data->d_A22_sp.get_memory_impact();
+    }
+
+    if(h_A22 != nullptr) {
+        data->op_d_sc_plus_A22 = lincomb_ddnx_dcsy<T,I>::make();
+        data->op_d_sc_plus_A22->set_handles(q);
+        data->op_d_sc_plus_A22->set_matrix_X(d_sc);
+        data->op_d_sc_plus_A22->set_matrix_A(d_sc);
+        data->op_d_sc_plus_A22->set_matrix_B(&data->d_A22_sp);
+        data->op_d_sc_plus_A22->set_coefficients(1, alpha);
+        data->op_d_sc_plus_A22->setup();
+        wss_tmp_perform_overlap = std::max(wss_tmp_perform_overlap, data->op_d_sc_plus_A22->get_wss_tmp_perform());
+    }
 
     wss_tmp_preprocess_linear = ((wss_tmp_preprocess_linear - 1) / ator_ws_tmp_linear->get_align() + 1) * ator_ws_tmp_linear->get_align();
     wss_tmp_perform_linear = ((wss_tmp_perform_linear - 1) / ator_ws_tmp_linear->get_align() + 1) * ator_ws_tmp_linear->get_align();
@@ -290,8 +320,6 @@ void schur_hcsx_ddny_manual_simple<T,I>::internal_setup()
     stacktimer::info("wss_persistent     %zu", wss_persistent);
     stacktimer::info("wss_tmp_preprocess %zu", wss_tmp_preprocess);
     stacktimer::info("wss_tmp_perform    %zu", wss_tmp_perform);
-
-    called_setup = true;
 }
 
 
@@ -304,6 +332,7 @@ void schur_hcsx_ddny_manual_simple<T,I>::internal_preprocess_submit()
 
     data->op_d_trsm.set_ws_persistent(ator_ws_persistent->alloc(data->op_d_trsm.get_wss_persistent()));
     data->op_d_trsm.preprocess_submit(ator_ws_tmp_overlap->alloc(data->op_d_trsm.get_wss_tmp_preprocess()));
+
 }
 
 
@@ -344,6 +373,8 @@ void schur_hcsx_ddny_manual_simple<T,I>::internal_perform_2_submit()
     data->d_X_sp.alloc();
     data->d_X_dn.alloc();
 
+    math::operations::permute_csx_csx<T,I>::do_all(h_A12, &data->h_X_sp, &data->h_perm_fillreduce, nullptr);
+
     gpu::mgm::copy_submit(q, data->h_X_sp, data->d_X_sp);
 
     data->op_X_sp2dn->perform_submit(ator_ws_tmp_overlap->alloc(data->op_X_sp2dn->get_wss_tmp_perform()));
@@ -351,6 +382,13 @@ void schur_hcsx_ddny_manual_simple<T,I>::internal_perform_2_submit()
     data->op_d_trsm.perform_submit(ator_ws_tmp_overlap->alloc(data->op_d_trsm.get_wss_tmp_perform()));
 
     data->op_d_herk->perform_submit(ator_ws_tmp_overlap->alloc(data->op_d_herk->get_wss_tmp_perform()));
+
+    if(h_A22 != nullptr) {
+        data->d_A22_sp.alloc();
+        gpu::mgm::copy_submit(q, data->h_A22_to_use, data->d_A22_sp);
+        data->op_d_sc_plus_A22->perform_submit(ator_ws_tmp_overlap->alloc(data->op_d_sc_plus_A22->get_wss_tmp_perform()));
+        data->d_A22_sp.free();
+    }
 
     data->d_X_sp.free();
     data->d_X_dn.free();

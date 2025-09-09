@@ -159,12 +159,16 @@ public:
         if(num_bytes == 0) return nullptr;
         if(start_ptr == nullptr) eslog::error("arena allocator has not been set yet\n");
 
-        char * ptr = start_ptr + curr_used;
-        curr_used += num_bytes;
-        if(curr_used > capacity) {
-            eslog::error("arena allocator exceeded its capacity\n");
+        char * ptr = nullptr;
+        #pragma omp critical(espreso_AllocatorArena_new_alloc)
+        {
+            ptr = start_ptr + curr_used;
+            curr_used += num_bytes;
+            if(curr_used > capacity) {
+                eslog::error("arena allocator exceeded its capacity\n");
+            }
+            curr_used = utils::round_up(curr_used, align_B);
         }
-        curr_used = utils::round_up(curr_used, align_B);
         return ptr;
     }
     virtual void free(void * & ptr) override

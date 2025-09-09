@@ -46,7 +46,8 @@ espreso::FETIConfiguration::FETIConfiguration()
             .addoption(ECFOption().setname("NONE").setdescription("Without precodition."))
             .addoption(ECFOption().setname("LUMPED").setdescription("Lumped precodition."))
             .addoption(ECFOption().setname("DIRICHLET").setdescription("Dirichlet precodition."))
-            .addoption(ECFOption().setname("DIRICHLET_GENERALSC_CPU").setdescription("Dirichlet precodition, generalized SC on CPU.")));
+            .addoption(ECFOption().setname("DIRICHLET_GENERALSCHUR_CPU").setdescription("Dirichlet precodition, generalized SC on CPU."))
+            .addoption(ECFOption().setname("DIRICHLET_GENERALSCHUR_GPU").setdescription("Dirichlet precodition, generalized SC on GPU.")));
 
     precision = 1e-5;
     REGISTER(precision, ECFMetaData()
@@ -234,6 +235,10 @@ espreso::FETIConfiguration::FETIConfiguration()
 
     REGISTER(dualop_totalfeti_implicit_generalsparsesolver_cpu_config, ECFMetaData()
         .setdescription({ "Dual operator total feti implicit general sparse solver on CPU configuration." })
+        .setcollapsed());
+
+    REGISTER(dirichlet_generalschur_config, ECFMetaData()
+        .setdescription({ "Dirichlet preconnditioner using general schur configuration." })
         .setcollapsed());
 }
 

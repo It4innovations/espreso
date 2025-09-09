@@ -87,10 +87,8 @@ void permute_csx_csx_map<T,I>::perform_pattern()
         }
     }
 
-    if(is_uplo) {
-        for(size_t ipd = 0; ipd < M_dst->get_size_primary(); ipd++) {
-            std::sort(out_data[ipd].begin(), out_data[ipd].end(), [](const isd_idx & l, const isd_idx & r){return l.isd < r.isd;});
-        }
+    for(size_t ipd = 0; ipd < M_dst->get_size_primary(); ipd++) {
+        std::sort(out_data[ipd].begin(), out_data[ipd].end(), [](const isd_idx & l, const isd_idx & r){return l.isd < r.isd;});
     }
 
     map_dst_to_src.set(M_src->nnz, AllocatorCPU_new::get_singleton());

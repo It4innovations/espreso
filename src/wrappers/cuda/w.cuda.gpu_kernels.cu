@@ -4,6 +4,7 @@
 
 #include "gpu/gpu_kernels.h"
 #include "common_cuda_mgm.h"
+#include "common_internal.cuh"
 #include "basis/utilities/utils.h"
 
 #include <complex>
@@ -16,25 +17,6 @@ namespace kernels {
 
     namespace
     {
-        template<typename T>
-        static __device__ void complexAdd(std::complex<T> * dst, std::complex<T> val)
-        {
-            reinterpret_cast<T*>(dst)[0] += reinterpret_cast<T*>(&val)[0];
-            reinterpret_cast<T*>(dst)[1] += reinterpret_cast<T*>(&val)[1];
-        }
-
-        template<typename T>
-        static __device__ void complexAtomicAdd(std::complex<T> * dst, std::complex<T> val)
-        {
-            atomicAdd(&reinterpret_cast<T*>(dst)[0], reinterpret_cast<T*>(&val)[0]);
-            atomicAdd(&reinterpret_cast<T*>(dst)[1], reinterpret_cast<T*>(&val)[1]);
-        }
-
-        template<typename T>
-        static __device__ void myAtomicAdd(T * dst, T val) { atomicAdd(dst, val); }
-        template<typename T>
-        static __device__ void myAtomicAdd(std::complex<T> * dst, std::complex<T> val) { complexAtomicAdd(dst, val); }
-
         template<typename T, typename I>
         static __global__ void _do_DCmap_scatter(T ** domain_vectors, const I * n_dofs_interfaces, const T * cluster_vector, I const * const * D2Cs)
         {
@@ -89,12 +71,7 @@ namespace kernels {
                     const I * D2C = D2Cs[d];
                 
                     for(I dof = threadIdx.x; dof < n_dofs_interface; dof += blockDim.x) {
-                        if constexpr(!std::is_same_v<T,utils::remove_complex_t<T>>) {
-                            complexAdd(cluster_vector + D2C[dof], domain_vector[dof]);
-                        }
-                        else {
-                            cluster_vector[D2C[dof]] += domain_vector[dof];
-                        }
+                        myGenericAdd(cluster_vector + D2C[dof], domain_vector[dof]);
                     }
                 }
             }
@@ -134,12 +111,7 @@ namespace kernels {
                     const I * D2C = D2C_data + D2C_offsets[di];
                 
                     for(I i = threadIdx.x; i < size; i += blockDim.x) {
-                        if constexpr(!std::is_same_v<T,utils::remove_complex_t<T>>) {
-                            complexAdd(vec_cluster + D2C[i], vec[i]);
-                        }
-                        else {
-                            vec_cluster[D2C[i]] += vec[i];
-                        }
+                        myGenericAdd(vec_cluster + D2C[i], vec[i]);
                     }
                 }
             }

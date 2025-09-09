@@ -79,10 +79,12 @@ bool FETI<T>::set(const step::Step &step)
     iterativeSolver = IterativeSolver<T>::create(*this, step);
 
     dualOperator->setup();
+    preconditioner->setup();
 
     if(use_gpu) {
         size_t total_wss_internal = 0;
         total_wss_internal += dualOperator->get_wss_gpu_internal();
+        total_wss_internal += preconditioner->get_wss_gpu_internal();
         
         size_t free_mem = gpu::mgm::get_device_memory_free();
         size_t mem_capacity = gpu::mgm::get_device_memory_capacity();
@@ -93,6 +95,7 @@ bool FETI<T>::set(const step::Step &step)
         ator_gpu_arena->set(gpu_mem_allocd, to_alloc);
 
         dualOperator->set_ws_gpu_persistent(ator_gpu_arena->alloc(dualOperator->get_wss_gpu_persistent()));
+        preconditioner->set_ws_gpu_persistent(ator_gpu_arena->alloc(preconditioner->get_wss_gpu_persistent()));
 
         gpu_tmp_size = ator_gpu_arena->get_remaining_capacity();
         gpu_tmp_mem = ator_gpu_arena->alloc(gpu_tmp_size);

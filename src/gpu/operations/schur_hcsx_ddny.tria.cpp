@@ -6,6 +6,7 @@
 #include "math/wrappers/math.spsolver.h"
 #include "math/operations/solver_csx.h"
 #include "math/operations/permute_csx_csx.h"
+#include "math/operations/permute_csx_csx_map.h"
 #include "math/operations/pivots_trails_csx.h"
 #include "math/operations/sorting_permutation.h"
 #include "math/operations/quadrisect_csx_csy.h"
@@ -14,6 +15,7 @@
 #include "gpu/operations/convert_ddnx_ddny.h"
 #include "gpu/operations/copy_ddnx_ddnx.h"
 #include "gpu/operations/permute_ddnx_ddnx.h"
+#include "gpu/operations/lincomb_ddnx_dcsy.h"
 #include "esinfo/meshinfo.h"
 #include "basis/utilities/stacktimer.h"
 
@@ -53,7 +55,10 @@ struct schur_hcsx_ddny_tria_data
     MatrixDenseData_new<T> d_sc_tmp2_x; // same order as sc
     MatrixDenseView_new<T> d_sc_tmp1_y; // different order as sc
     MatrixDenseView_new<T> d_sc_tmp2_y; // different order as sc
+    MatrixCsxView_new<T,I> h_A22_to_use;
+    MatrixCsxData_new<T,I> d_A22_sp;
     std::unique_ptr<math::operations::solver_csx<T,I>> op_h_A11_solver;
+    math::operations::permute_csx_csx_map<T,I> op_perm_A12_X;
     std::unique_ptr<convert_dcsx_ddny<T,I>> op_X_sp2dn;
     math::operations::convert_csx_csy_map<T,I> op_L2U;
     math::operations::convert_csx_csy_map<T,I> op_U2L;
@@ -63,6 +68,7 @@ struct schur_hcsx_ddny_tria_data
     std::unique_ptr<copy_ddnx_ddnx<T>> op_d_copy_sc_tmp;
     std::unique_ptr<permute_ddnx_ddnx<T,I>> op_d_perm_sc;
     std::unique_ptr<copy_ddnx_ddnx<T>> op_d_copy_sc_final;
+    std::unique_ptr<lincomb_ddnx_dcsy<T,I>> op_d_sc_plus_A22;
     math::operations::quadrisect_csx_csy<T,I> op_split;
     MatrixCsxData_new<T,I> sub_h_A11;
     MatrixCsxData_new<T,I> sub_h_A12;
@@ -121,14 +127,9 @@ template<typename T, typename I>
 void schur_hcsx_ddny_tria<T,I>::internal_setup()
 {
     if(!is_matrix_hermitian) eslog::error("for now only hermitian matrices are supported\n");
-    if(h_A12 == nullptr) eslog::error("the upper part of matrix must be stored\n");
-    if(h_A11->prop.uplo != 'U') eslog::error("the upper part of A11 must be stored\n");
-    if(h_A22 != nullptr) eslog::error("for now I assume A22=O\n");
 
     data = std::make_unique<schur_hcsx_ddny_tria_data<T,I>>();
     setup_config<T,I>(data->cfg);
-
-    data->solver_factor_uplo = h_A11->prop.uplo;
 
     if(called_set_matrix == '1') {
         data->op_split.set_matrix_src(h_A);
@@ -156,6 +157,11 @@ void schur_hcsx_ddny_tria<T,I>::internal_setup()
         if(h_A->prop.uplo != 'U') h_A21 = &data->sub_h_A21;
         h_A22 = &data->sub_h_A22;
     }
+    if(called_set_matrix == '4') {
+        if(h_A12 == nullptr) eslog::error("the upper part of matrix must be stored\n");
+    }
+
+    data->solver_factor_uplo = h_A11->prop.uplo;
 
     data->op_h_A11_solver = math::operations::solver_csx<T,I>::make(data->cfg.a11_solver_impl, &h_A11->prop, true, need_solve_A11);
     data->op_h_A11_solver->set_matrix_A(h_A11);
@@ -249,9 +255,13 @@ void schur_hcsx_ddny_tria<T,I>::internal_setup()
 
             math::operations::sorting_permutation<I,I>::do_all(&colpivots, &data->h_perm_to_sort_A12_cols);
         }
-
-        math::operations::permute_csx_csx<T,I>::do_all(&h_X_sp_tmp, &data->h_X_sp, nullptr, &data->h_perm_to_sort_A12_cols);
     }
+
+    data->op_perm_A12_X.set_matrix_src(h_A12);
+    data->op_perm_A12_X.set_matrix_dst(&data->h_X_sp);
+    data->op_perm_A12_X.set_perm_rows(&data->h_perm_fillreduce);
+    data->op_perm_A12_X.set_perm_cols(&data->h_perm_to_sort_A12_cols);
+    data->op_perm_A12_X.perform_pattern();
 
     data->d_X_sp.set(data->h_X_sp.nrows, data->h_X_sp.ncols, data->h_X_sp.nnz, data->h_X_sp.order, ator_ws_tmp_linear.get());
     wss_tmp_perform_linear += data->d_X_sp.get_memory_impact();
@@ -293,7 +303,7 @@ void schur_hcsx_ddny_tria<T,I>::internal_setup()
     data->op_d_herk.set_matrix_d_A(&data->d_X_dn);
     data->op_d_herk.set_matrix_d_C(&data->d_sc_tmp1_x);
     data->op_d_herk.set_h_A_pattern(&data->h_X_sp);
-    data->op_d_herk.set_coefficients(-alpha, 0 * alpha); // beta=0, because I assume A22=0
+    data->op_d_herk.set_coefficients(-alpha, 0);
     data->op_d_herk.set_mode(math::blas::herk_mode::AhA);
     data->op_d_herk.setup();
     wss_tmp_perform_overlap = std::max(wss_tmp_perform_overlap, data->op_d_herk.get_wss_tmp_perform());
@@ -330,6 +340,32 @@ void schur_hcsx_ddny_tria<T,I>::internal_setup()
     data->op_d_copy_sc_final->setup();
     wss_tmp_perform_overlap = std::max(wss_tmp_perform_overlap, data->op_d_copy_sc_final->get_wss_tmp_perform());
 
+    if(h_A22 != nullptr) {
+        if(h_A22->prop.uplo == d_sc->prop.uplo) {
+            data->h_A22_to_use = *h_A22;
+        }
+        else {
+            data->h_A22_to_use = h_A22->get_transposed_reordered_view();
+        }
+    }
+
+    if(h_A22 != nullptr) {
+        data->d_A22_sp.set(data->h_A22_to_use.nrows, data->h_A22_to_use.ncols, data->h_A22_to_use.nnz, data->h_A22_to_use.order, ator_ws_tmp_linear.get());
+        data->d_A22_sp.prop = data->h_A22_to_use.prop;
+        wss_tmp_perform_linear += data->d_A22_sp.get_memory_impact();
+    }
+
+    if(h_A22 != nullptr) {
+        data->op_d_sc_plus_A22 = lincomb_ddnx_dcsy<T,I>::make();
+        data->op_d_sc_plus_A22->set_handles(q);
+        data->op_d_sc_plus_A22->set_matrix_X(d_sc);
+        data->op_d_sc_plus_A22->set_matrix_A(d_sc);
+        data->op_d_sc_plus_A22->set_matrix_B(&data->d_A22_sp);
+        data->op_d_sc_plus_A22->set_coefficients(1, alpha);
+        data->op_d_sc_plus_A22->setup();
+        wss_tmp_perform_overlap = std::max(wss_tmp_perform_overlap, data->op_d_sc_plus_A22->get_wss_tmp_perform());
+    }
+
     wss_tmp_preprocess_linear = ((wss_tmp_preprocess_linear - 1) / ator_ws_tmp_linear->get_align() + 1) * ator_ws_tmp_linear->get_align();
     wss_tmp_perform_linear = ((wss_tmp_perform_linear - 1) / ator_ws_tmp_linear->get_align() + 1) * ator_ws_tmp_linear->get_align();
 
@@ -340,8 +376,6 @@ void schur_hcsx_ddny_tria<T,I>::internal_setup()
     stacktimer::info("wss_persistent     %zu", wss_persistent);
     stacktimer::info("wss_tmp_preprocess %zu", wss_tmp_preprocess);
     stacktimer::info("wss_tmp_perform    %zu", wss_tmp_perform);
-
-    called_setup = true;
 }
 
 
@@ -402,6 +436,8 @@ void schur_hcsx_ddny_tria<T,I>::internal_perform_2_submit()
     data->d_sc_tmp1_y = data->d_sc_tmp1_x.get_transposed_reordered_view();
     data->d_sc_tmp2_y = data->d_sc_tmp2_x.get_transposed_reordered_view();
 
+    data->op_perm_A12_X.perform_values();
+
     gpu::mgm::copy_submit(q, data->h_X_sp, data->d_X_sp);
 
     data->op_X_sp2dn->perform_submit(ator_ws_tmp_overlap->alloc(data->op_X_sp2dn->get_wss_tmp_perform()));
@@ -417,6 +453,13 @@ void schur_hcsx_ddny_tria<T,I>::internal_perform_2_submit()
     data->op_d_perm_sc->perform_submit(ator_ws_tmp_overlap->alloc(data->op_d_perm_sc->get_wss_tmp_perform()));
 
     data->op_d_copy_sc_final->perform_submit(ator_ws_tmp_overlap->alloc(data->op_d_copy_sc_final->get_wss_tmp_perform()));
+
+    if(h_A22 != nullptr) {
+        data->d_A22_sp.alloc();
+        gpu::mgm::copy_submit(q, data->h_A22_to_use, data->d_A22_sp);
+        data->op_d_sc_plus_A22->perform_submit(ator_ws_tmp_overlap->alloc(data->op_d_sc_plus_A22->get_wss_tmp_perform()));
+        data->d_A22_sp.free();
+    }
 
     data->d_X_sp.free();
     data->d_X_dn.free();

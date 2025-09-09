@@ -8,6 +8,7 @@
 #include "config/ecf/linearsolver/dualoperator/totalfeti_explicit_generalschur_cpu_config.h"
 #include "config/ecf/linearsolver/dualoperator/totalfeti_explicit_generalschur_gpu_config.h"
 #include "config/ecf/linearsolver/dualoperator/totalfeti_implicit_generalsparsesolver_cpu_config.h"
+#include "config/ecf/linearsolver/dirichlet_generalschur_config.h"
 
 #include <cstddef>
 
@@ -57,7 +58,8 @@ struct FETIConfiguration: public ECFDescription {
         NONE,
         LUMPED,
         DIRICHLET,
-        DIRICHLET_GENERALSC_CPU
+        DIRICHLET_GENERALSCHUR_CPU,
+        DIRICHLET_GENERALSCHUR_GPU,
     };
 
     enum class STOPPING_CRITERION {
@@ -117,6 +119,8 @@ struct FETIConfiguration: public ECFDescription {
     DualopTotalfetiExplicitGeneralSchurCpuConfig dualop_totalfeti_explicit_generalschur_cpu_config;
     DualopTotalfetiExplicitGeneralSchurGpuConfig dualop_totalfeti_explicit_generalschur_gpu_config;
     DualopTotalfetiImplicitGeneralSparseSolverCpuConfig dualop_totalfeti_implicit_generalsparsesolver_cpu_config;
+
+    DirichletGeneralSchurConfig dirichlet_generalschur_config;
 
     FETIConfiguration();
 };

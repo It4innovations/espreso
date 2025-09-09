@@ -153,7 +153,7 @@ void schur_hcsx_ddny<T,I>::setup()
         size_matrix = h_A->nrows;
         size_A11 = size_matrix - size_sc;
 
-        if(h_A->prop.symm != d_sc->prop.symm) eslog::error("h_A and d_sc must have equal symmetry\n");
+        if(!is_symmetry_equal<T>(h_A->prop.symm, d_sc->prop.symm)) eslog::error("h_A and d_sc must have equal symmetry\n");
 
         is_matrix_hermitian = is_hermitian<T>(h_A->prop.symm);
         
