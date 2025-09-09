@@ -18,15 +18,3 @@ then
         git submodule update
     )
 fi
-
-# pastix requires this specific branch of parsec
-PARSEC_DIR="pastix_parsec"
-PARSEC_ROOT="${PASTIX_ROOT}/${PARSEC_DIR}"
-if [ ! -d "${PARSEC_ROOT}" ]
-then
-    (
-        cd "${PASTIX_ROOT}"
-        git clone -b pastix-6.0.2 https://bitbucket.org/mfaverge/parsec "${PARSEC_DIR}"
-        cd "${PARSEC_ROOT}"
-    )
-fi

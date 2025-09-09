@@ -18,7 +18,8 @@ fi
 
 
 
-buildname="build-it4i-karolina-gcc-cuda${cudaversionname}-mkl-ss"
+# build-institution-machine-compiler-mpi-blas-specialname
+buildname="build-it4i-karolina-gcc-ompi-mkl-cuda${cudaversionname}"
 export WAFLOCK=".lock-waf_linux_${buildname}"
 curr_buildname="$(readlink build)"
 if [ "${curr_buildname}" != "${buildname}" ]
@@ -42,14 +43,14 @@ fi
 
 ml "CUDA/${cudaversion}"
 
-. env/dependencies/install.gklib.sh gcccudamklss gcc
-. env/dependencies/install.metis32.sh gcccudamklss gcc
-. env/dependencies/install.parmetis32.sh gcccudamklss mpicc
-. env/dependencies/install.suitesparse.sh gcccudamklss gcc gfortran
-. env/dependencies/install.mumps.sh gcccudamklss mpicc mpifort "-lmkl_intel_lp64 -lmkl_sequential -lmkl_core" "-lmkl_scalapack_lp64 -lmkl_blacs_openmpi_lp64 -lmkl_intel_lp64 -lmkl_sequential -lmkl_core" "-lmkl_intel_lp64 -lmkl_sequential -lmkl_core"
-. env/dependencies/install.strumpack.sh gcccudamklss g++ gcc gfortran "-lmkl_intel_lp64 -lmkl_sequential -lmkl_core" "-lmkl_intel_lp64 -lmkl_sequential -lmkl_core"
-. env/dependencies/install.pastix.sh gcccudamklss g++ gcc
-. env/dependencies/install.superlu_dist.sh gcccudamklss g++ gcc "-lmkl_intel_lp64 -lmkl_sequential -lmkl_core"
+. env/dependencies/install.gklib.sh gcc_ompi_mkl_cuda gcc
+. env/dependencies/install.metis32.sh gcc_ompi_mkl_cuda gcc
+. env/dependencies/install.parmetis32.sh gcc_ompi_mkl_cuda mpicc
+. env/dependencies/install.suitesparse.sh gcc_ompi_mkl_cuda gcc gfortran
+# . env/dependencies/install.mumps.sh gcc_ompi_mkl_cuda mpicc mpifort "-lmkl_intel_lp64 -lmkl_sequential -lmkl_core" "-lmkl_scalapack_lp64 -lmkl_blacs_openmpi_lp64 -lmkl_intel_lp64 -lmkl_sequential -lmkl_core" "-lmkl_intel_lp64 -lmkl_sequential -lmkl_core"
+# . env/dependencies/install.strumpack.sh gcc_ompi_mkl_cuda g++ gcc gfortran "-lmkl_intel_lp64 -lmkl_sequential -lmkl_core" "-lmkl_intel_lp64 -lmkl_sequential -lmkl_core"
+. env/dependencies/install.pastix.sh gcc_ompi_mkl_cuda g++ gcc
+# . env/dependencies/install.superlu_dist.sh gcc_ompi_mkl_cuda g++ gcc "-lmkl_intel_lp64 -lmkl_sequential -lmkl_core"
 
 
 
@@ -72,7 +73,7 @@ export ESPRESO_USE_WRAPPER_DNBLAS=mkl
 export ESPRESO_USE_WRAPPER_DNSOLVER=mkl
 export ESPRESO_USE_WRAPPER_LAPACK=mkl
 export ESPRESO_USE_WRAPPER_SPBLAS=mkl
-export ESPRESO_USE_WRAPPER_SPSOLVER=suitesparse
+export ESPRESO_USE_WRAPPER_SPSOLVER=mkl
 export ESPRESO_USE_WRAPPER_SCSOLVER=mkl
 export ESPRESO_USE_WRAPPER_GPU=cuda
 
