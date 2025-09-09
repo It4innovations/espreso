@@ -18,7 +18,8 @@ fi
 
 
 
-buildname="build-bsc-mn5-gcc-cuda${cudaversionname}-mkl-ss"
+# build-institution-machine-compiler-mpi-blas-specialname
+buildname="build-bsc-mn5-gcc-ompi-mkl-cuda${cudaversionname}"
 export WAFLOCK=".lock-waf_linux_${buildname}"
 curr_buildname="$(readlink build)"
 if [ "${curr_buildname}" != "${buildname}" ]
@@ -34,12 +35,13 @@ ml cmake/3.30.5
 ml openmpi/4.1.5-gcc
 ml mkl/2024.2
 
-. env/dependencies/install.gklib.sh gcccudamklss gcc
-. env/dependencies/install.metis32.sh gcccudamklss gcc
-. env/dependencies/install.parmetis32.sh gcccudamklss mpicc
-. env/dependencies/install.suitesparse.sh gcccudamklss gcc gfortran
+. env/dependencies/install.gklib.sh gcc_ompi_mkl_cuda gcc
+. env/dependencies/install.metis32.sh gcc_ompi_mkl_cuda gcc
+. env/dependencies/install.parmetis32.sh gcc_ompi_mkl_cuda mpicc
+. env/dependencies/install.suitesparse.sh gcc_ompi_mkl_cuda gcc gfortran
+. env/dependencies/install.pastix.sh gcc_ompi_mkl_cuda g++ gcc
 
-export CUDA_ROOT="${PWD}/dependencies/cuda-${cudaversion}/install"
+export CUDA_ROOT="${PWD}/dependencies/cuda-${cudaversion}"
 if [ ! -d "${CUDA_ROOT}" ]
 then
     echo "please download and install cuda-${cudaversion}"
@@ -69,6 +71,8 @@ export OMP_PLACES=cores
 export OMP_PROC_BIND=close
 export OMP_NUM_THREADS=20,1
 
+export SRUN_CPUS_PER_TASK=20
+
 export ESPRESO_RANK_TO_GPU_MAP="0,1,2,3"
 
 export ESPRESO_USE_WRAPPER_DNBLAS=mkl
@@ -81,4 +85,5 @@ export ESPRESO_USE_WRAPPER_GPU=cuda
 
 
 
-# mpirun -n 1 --bind-to numa ...
+# salloc -A ... -q acc_ehpc -N 1 --ntasks-per-node 4 -c 20 --gres=gpu:4 --threads-per-core 1 -t 1:00:00
+# srun -n 1 -- ...
