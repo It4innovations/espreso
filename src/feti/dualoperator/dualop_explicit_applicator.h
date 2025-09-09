@@ -29,7 +29,7 @@ public:
 public:
     void set_config(bool parallel_apply_, bool timers_inner_);
     void set_handles(gpu::mgm::queue * main_q_, std::vector<gpu::mgm::queue> * queues_, std::vector<gpu::dnblas::handle> * handles_dense_);
-    void set_dimensions(FETI<T> & feti);
+    void set_feti(FETI<T> * feti);
     void set_memory(char vector_mem_, char Fs_mem_);
     void set_D2C_map(std::vector<std::vector<I>> * D2C_old_);
     void set_Fs(std::vector<MatrixDenseView_new<T>*> Fs_);
@@ -62,6 +62,7 @@ private:
     std::vector<MatrixDenseData_new<T>> Fs_2;
     MultiVectorDenseData_new<T,I> xs_vec;
     MultiVectorDenseData_new<T,I> ys_vec;
+    bool use_gpu = false;
     bool parallel_apply = false;
     bool timers_inner = false;
     char apply_target = '_';

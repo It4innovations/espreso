@@ -119,7 +119,7 @@ void TotalFETIExplicitGeneralSchurCpu<T,I>::setup()
 
         applicator.set_config(cfg.parallel_apply, cfg.inner_timers);
         applicator.set_handles(&feti.main_q, &feti.queues, &feti.handles_dense);
-        applicator.set_dimensions(feti);
+        applicator.set_feti(&feti);
         applicator.set_memory('C', 'C');
         applicator.set_D2C_map(&feti.D2C);
         applicator.set_Fs(Fs_vector);

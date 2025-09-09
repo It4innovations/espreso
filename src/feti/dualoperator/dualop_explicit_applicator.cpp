@@ -46,9 +46,10 @@ void dualop_explicit_applicator<T,I>::set_handles(gpu::mgm::queue * main_q_, std
 
 
 template<typename T, typename I>
-void dualop_explicit_applicator<T,I>::set_dimensions(FETI<T> & feti)
+void dualop_explicit_applicator<T,I>::set_feti(FETI<T> * feti)
 {
-    n_dofs_cluster_interface = feti.lambdas.size;
+    n_dofs_cluster_interface = feti->lambdas.size;
+    use_gpu = feti->use_gpu;
 }
 
 
@@ -114,6 +115,8 @@ void dualop_explicit_applicator<T,I>::setup()
     if(omp_get_max_threads() > 1 && n_queues > 0 && omp_get_max_threads() != (int)n_queues) eslog::error("mismatch between num threads and num queues\n");
     if(Fs_mem == 'C' && std::any_of(Fs.begin(), Fs.end(), [](auto F){return !F->ator->is_data_accessible_cpu();}));
     if(Fs_mem == 'G' && std::any_of(Fs.begin(), Fs.end(), [](auto F){return !F->ator->is_data_accessible_gpu();}));
+    if(!use_gpu && (Fs_mem == 'G' || vector_mem == 'G')) eslog::error("wrong memory, gpu is not used\n");
+    if(!use_gpu && apply_target == 'G') eslog::error("cannot perform dual_operator application on GPU. GPU support not built or no GPU available.\n");
 
     wss_gpu_persistent = 0;
 
@@ -134,8 +137,8 @@ void dualop_explicit_applicator<T,I>::setup()
     if(apply_target == 'C') ator_host = AllocatorCPU_new::get_singleton();
     if(apply_target == 'G') ator_host = AllocatorHostPinned_new::get_singleton();
 
-    Allocator_new * ator_target;
-    if(apply_target == 'C') ator_target = AllocatorHostPinned_new::get_singleton();
+    Allocator_new * ator_target = nullptr;
+    if(apply_target == 'C') ator_target = (use_gpu ? (Allocator_new*)AllocatorHostPinned_new::get_singleton() : (Allocator_new*)AllocatorCPU_new::get_singleton());
     if(apply_target == 'G') ator_target = ator_ws_gpu_persistent.get();
 
     D2C = MultiVectorDenseData_new<I,I>::convert_from(*D2C_old, ator_host);

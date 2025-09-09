@@ -29,6 +29,12 @@ Preconditioner<T>* Preconditioner<T>::create(FETI<T> &feti, const step::Step &st
         return new DirichletGeneralSchur<T,int>(feti, 'C');
     case FETIConfiguration::PRECONDITIONER::DIRICHLET_GENERALSCHUR_GPU:
         eslog::info(" = PRECONDITIONER                          DIRICHLET GENERALIZED SCHUR IMPLEMENTATION ON GPU = \n");
+        if (!gpu::mgm::is_linked()) {
+            eslog::globalerror("PRECONDITIONER::DIRICHLET_GENERALSCHUR_GPU cannot be created. GPU support is not built.\n");
+        }
+        if (!gpu::mgm::is_available()) {
+            eslog::globalerror("PRECONDITIONER::DIRICHLET_GENERALSCHUR_GPU cannot be created. No GPUs detected or other error occured.\n");
+        }
         return new DirichletGeneralSchur<T,int>(feti, 'G');
     default: return nullptr;
     }

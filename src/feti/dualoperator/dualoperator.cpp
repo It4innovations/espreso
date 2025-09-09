@@ -70,13 +70,13 @@ DualOperator<T>* DualOperator<T>::create(FETI<T> &feti, const step::Step &step)
             dual = new TotalFETIExplicitGeneralSchurCpu<T,int>(feti);
             break;
         case FETIConfiguration::DUAL_OPERATOR::EXPLICIT_GENERALSCHUR_GPU:
+            eslog::info(" = DUAL OPERATOR                       EXPLICIT TOTAL FETI USING GENERAL SC OPERATION ON GPU = \n");
             if (!gpu::mgm::is_linked()) {
-                eslog::globalerror("GPU acceleration is not supported: GPU support is not built.\n");
+                eslog::globalerror("DUAL_OPERATOR::EXPLICIT_GENERALSCHUR_GPU cannot be created. GPU support is not built.\n");
             }
             if (!gpu::mgm::is_available()) {
-                eslog::globalerror("GPU acceleration is not available. No GPUs detected or other error occured. Are you on GPU-accelerated node?\n");
+                eslog::globalerror("DUAL_OPERATOR::EXPLICIT_GENERALSCHUR_GPU cannot be created. No GPUs detected or other error occured.\n");
             }
-            eslog::info(" = DUAL OPERATOR                       EXPLICIT TOTAL FETI USING GENERAL SC OPERATION ON GPU = \n");
             dual = new TotalFETIExplicitGeneralSchurGpu<T,int>(feti);
             break;
         case FETIConfiguration::DUAL_OPERATOR::IMPLICIT_GENERALSPARSESOLVER_CPU:
