@@ -170,14 +170,6 @@ void FETILinearSystemSolver<T>::update(step::Step &step)
             os << "\n";
             i += feti.lambdas.cmap[i + 1] + 2;
         }
-
-        if (feti.B0.size()) {
-            eslog::storedata(" STORE: system/{B0, D2C0}\n");
-            for (size_t d = 0; d < feti.B0.size(); ++d) {
-                math::store(feti.B0[d], utils::filename(utils::debugDirectory(step) + "/system", "B0" + std::to_string(d)).c_str());
-                math::store(feti.D2C0[d], utils::filename(utils::debugDirectory(step) + "/system", "D2C0" + std::to_string(d)).c_str());
-            }
-        }
     }
     if (info::ecf->output.print_eigen_values) {
         A.printEigenValues("A[SOL]", 8);

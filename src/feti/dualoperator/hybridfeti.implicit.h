@@ -25,6 +25,8 @@ namespace espreso {
  *
  */
 
+// https://dl.acm.org/doi/pdf/10.1145/2929908.2929909
+
 template <typename T>
 class HybridFETIImplicit: public DualOperator<T> {
 public:
@@ -41,13 +43,14 @@ public:
 
     // y = K+(f - Bt * x)
     void toPrimal(const Vector_Dual<T> &x, std::vector<Vector_Dense<T> > &y);
+    void BtL(const Vector_Dual<T> &x, std::vector<Vector_Dense<T> > &y);
 
 protected:
     using DualOperator<T>::feti;
     using DualOperator<T>::d;
 
     void _apply(const Vector_Dual<T> &x, Vector_Dual<T> &y);
-    void _applyK(std::vector<Vector_Dense<T> > &x, std::vector<Vector_Dense<T> > &y);
+    void _applyK(std::vector<Vector_Dense<T> > &b, std::vector<Vector_Dense<T> > &x);
 
     std::vector<Matrix_CSR<T> > Kplus;
     std::vector<Vector_Dense<T> > Btx, KplusBtx;
@@ -58,6 +61,10 @@ protected:
     void _computeG0();
     void _computeS0();
 
+    void _compute_beta_mu(std::vector<Vector_Dense<T> > &b);
+
+    std::vector<Matrix_CSR<T> > B0;
+    std::vector<std::vector<int> > D2C, D2C0;
     std::vector<Matrix_Dense<T> > dKB0, origR1;
     std::vector<int> G0offset;
     Matrix_CSR<T> F0, G0;

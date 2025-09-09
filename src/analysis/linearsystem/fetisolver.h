@@ -38,7 +38,7 @@ private:
     struct {
         Vector_FETI<Vector_Dense, T> feti;
         Vector_Distributed<Vector_Dense, T> physics;
-    } x, b, BtL, ineqBtL;;
+    } x, b, BtL, ineqBtL;
     Vector_Distributed<Vector_Sparse, T> dirichlet;
 
     Constrains<T> constrains;

@@ -47,8 +47,8 @@ struct FETI {
     std::vector<Matrix_Dense<T> > R1, R2;
     std::vector<Matrix_CSR<T> > RegMat;
 
-    std::vector<Matrix_CSR<T> > B1, B0;
-    std::vector<std::vector<int> > D2C, D2C0;
+    std::vector<Matrix_CSR<T> > B1;
+    std::vector<std::vector<int> > D2C;
     Vector_Dense<T> c, lb, ub;
     struct Lambdas {
         struct interval { int halo, size; };

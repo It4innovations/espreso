@@ -40,6 +40,10 @@ public:
 
     // y = K+(f - Bt * x)
     virtual void toPrimal(const Vector_Dual<T> &x, std::vector<Vector_Dense<T> > &y) =0;
+    virtual void BtL(const Vector_Dual<T> &x, std::vector<Vector_Dense<T> > &y)
+    {
+        eslog::warning("NOT-IMPLEMENTED BT * LAMBDA\n");
+    }
 
     void estimateMaxEigenValue(double &lambda, int &iterations, double epsilon, int maxIterations);
     void estimateMaxProjectedEigenValue(double &lambda, int &iterations, double epsilon, int maxIterations, double rho = 1, double normPFP = 1);

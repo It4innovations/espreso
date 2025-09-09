@@ -157,6 +157,16 @@ void TotalFETIImplicit<T>::toPrimal(const Vector_Dual<T> &x, std::vector<Vector_
 }
 
 template <typename T>
+void TotalFETIImplicit<T>::BtL(const Vector_Dual<T> &x, std::vector<Vector_Dense<T> > &y)
+{
+    #pragma omp parallel for
+    for (size_t d = 0; d < feti.K.size(); ++d) {
+        math::set(y[d], T{0});
+        math::spblas::applyT(y[d], T{1}, feti.B1[d], feti.D2C[d].data(), x);
+    }
+}
+
+template <typename T>
 void TotalFETIImplicit<T>::_applyK(std::vector<Vector_Dense<T> > &x, std::vector<Vector_Dense<T> > &y)
 {
     #pragma omp parallel for
