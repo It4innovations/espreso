@@ -21,4 +21,6 @@ then
   sh env/dependencies/clone.cmake.sh "${arch}"
 fi
 
-export PATH="${CMAKE_ROOT}/bin:${PATH}"
+prepend_to_PATH="${CMAKE_ROOT}/bin"
+export PATH="${prepend_to_PATH}:${PATH}"
+echo "           PATH+=${prepend_to_PATH}"

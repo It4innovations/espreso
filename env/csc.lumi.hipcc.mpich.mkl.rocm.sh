@@ -1,6 +1,6 @@
 #!/bin/bash
 
-buildname="build-csc-lumi-rocm-mkl"
+buildname="build-csc-lumi-hipcc-mpich-mkl-rocm"
 export WAFLOCK=".lock-waf_linux_${buildname}"
 curr_buildname="$(readlink build)"
 if [ "${curr_buildname}" != "${buildname}" ]
@@ -24,9 +24,13 @@ source dependencies/oneAPI-2024.2.0/install/setvars.sh
 
 
 
-. env/dependencies/install.gklib.sh rocm hipcc
-. env/dependencies/install.metis32.sh rocm hipcc
-. env/dependencies/install.parmetis32.sh rocm mpicc
+. env/dependencies/install.cmake.sh hipcc_mpich_mkl_rocm x86_64
+. env/dependencies/install.hwloc.sh hipcc_mpich_mkl_rocm hipcc
+. env/dependencies/install.gklib.sh hipcc_mpich_mkl_rocm hipcc
+. env/dependencies/install.metis32.sh hipcc_mpich_mkl_rocm hipcc
+. env/dependencies/install.parmetis32.sh hipcc_mpich_mkl_rocm mpicc
+. env/dependencies/install.suitesparse.sh hipcc_mpich_mkl_rocm hipcc hipfc
+. env/dependencies/install.pastix.sh hipcc_mpich_mkl_rocm hipcc hipcc hipfc Intel10_64lp_seq
 
 
 
@@ -53,7 +57,7 @@ export ESPRESO_USE_WRAPPER_DNBLAS=mkl
 export ESPRESO_USE_WRAPPER_DNSOLVER=mkl
 export ESPRESO_USE_WRAPPER_LAPACK=mkl
 export ESPRESO_USE_WRAPPER_SPBLAS=mkl
-export ESPRESO_USE_WRAPPER_SPSOLVER=mkl
+export ESPRESO_USE_WRAPPER_SPSOLVER=suitesparse
 export ESPRESO_USE_WRAPPER_SCSOLVER=mkl
 export ESPRESO_USE_WRAPPER_GPU=rocm
 

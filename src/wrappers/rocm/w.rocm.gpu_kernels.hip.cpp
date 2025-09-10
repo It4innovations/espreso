@@ -141,7 +141,7 @@ namespace kernels {
         if(!D2C.ator->is_data_accessible_gpu()) eslog::error("wrong allocator\n");
         I n_domains = vecs_subdomains.num_vectors;
         _do_DCmap_scatter_new<T,I><<< n_domains, 256, 0, q->stream >>>(vec_cluster.vals, vecs_subdomains.offsets, vecs_subdomains.vals, D2C.offsets, D2C.vals);
-        CHECK(chipPeekAtLastError());
+        CHECK(hipPeekAtLastError());
     }
 
     template<typename T, typename I, typename A>

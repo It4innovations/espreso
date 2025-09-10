@@ -49,7 +49,7 @@ ml "CUDA/${cudaversion}"
 . env/dependencies/install.suitesparse.sh gcc_ompi_mkl_cuda gcc gfortran
 # . env/dependencies/install.mumps.sh gcc_ompi_mkl_cuda mpicc mpifort "-lmkl_intel_lp64 -lmkl_sequential -lmkl_core" "-lmkl_scalapack_lp64 -lmkl_blacs_openmpi_lp64 -lmkl_intel_lp64 -lmkl_sequential -lmkl_core" "-lmkl_intel_lp64 -lmkl_sequential -lmkl_core"
 # . env/dependencies/install.strumpack.sh gcc_ompi_mkl_cuda g++ gcc gfortran "-lmkl_intel_lp64 -lmkl_sequential -lmkl_core" "-lmkl_intel_lp64 -lmkl_sequential -lmkl_core"
-. env/dependencies/install.pastix.sh gcc_ompi_mkl_cuda g++ gcc
+. env/dependencies/install.pastix.sh gcc_ompi_mkl_cuda g++ gcc gfortran Intel10_64lp_seq
 # . env/dependencies/install.superlu_dist.sh gcc_ompi_mkl_cuda g++ gcc "-lmkl_intel_lp64 -lmkl_sequential -lmkl_core"
 
 

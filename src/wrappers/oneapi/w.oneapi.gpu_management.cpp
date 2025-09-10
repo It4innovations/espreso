@@ -260,8 +260,8 @@ namespace mgm {
     void copy_submit(queue & q, PermutationView_new<T> & src, PermutationView_new<T> & dst)
     {
         if(src.size != dst.size) eslog::error("copy submit: output permutation has wrong dimensions\n");
-        copy_submit(q, dst.src_to_dst, dst.src_to_dst, input.size);
-        copy_submit(q, dst.dst_to_src, dst.dst_to_src, input.size);
+        copy_submit(q, dst.src_to_dst, src.src_to_dst, src.size);
+        copy_submit(q, dst.dst_to_src, src.dst_to_src, src.size);
     }
 
     template<typename T>

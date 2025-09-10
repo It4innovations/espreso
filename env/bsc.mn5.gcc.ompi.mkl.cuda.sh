@@ -39,7 +39,7 @@ ml mkl/2024.2
 . env/dependencies/install.metis32.sh gcc_ompi_mkl_cuda gcc
 . env/dependencies/install.parmetis32.sh gcc_ompi_mkl_cuda mpicc
 . env/dependencies/install.suitesparse.sh gcc_ompi_mkl_cuda gcc gfortran
-. env/dependencies/install.pastix.sh gcc_ompi_mkl_cuda g++ gcc
+. env/dependencies/install.pastix.sh gcc_ompi_mkl_cuda g++ gcc gfortran Intel10_64lp_seq
 
 export CUDA_ROOT="${PWD}/dependencies/cuda-${cudaversion}"
 if [ ! -d "${CUDA_ROOT}" ]
