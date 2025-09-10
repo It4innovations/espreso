@@ -63,10 +63,12 @@ protected:
 
     void _compute_beta_mu(std::vector<Vector_Dense<T> > &b);
 
+    bool isRegularK;
     std::vector<Matrix_CSR<T> > B0;
-    std::vector<std::vector<int> > D2C, D2C0;
+    std::vector<std::vector<int> > D2C0;
     std::vector<Matrix_Dense<T> > dKB0, origR1;
     std::vector<int> G0offset;
+    std::vector<std::vector<int> > permutationF0;
     Matrix_CSR<T> F0, G0;
     Matrix_Dense<T> S0;
     DirectSparseSolver<T> F0Solver;

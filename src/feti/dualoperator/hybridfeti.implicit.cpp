@@ -15,7 +15,7 @@ namespace espreso {
 
 template <typename T>
 HybridFETIImplicit<T>::HybridFETIImplicit(FETI<T> &feti)
-: DualOperator<T>(feti)
+: DualOperator<T>(feti), isRegularK(false)
 {
 
 }
@@ -103,6 +103,16 @@ void HybridFETIImplicit<T>::update(const step::Step &step)
         }
         eslog::checkpointln("FETI: TFETI NUMERICAL FACTORIZATION");
     }
+
+    int nR1 = 0, nKR1 = 0;
+    for (size_t di = 0; di < feti.K.size(); ++di) {
+        nR1 += feti.R1[di].nrows;
+        nKR1 += feti.KR1[di].nrows;
+    }
+    if (nR1 == 0 && nKR1 == 0) {
+        eslog::error("HYBRID FETI: provide kernels for B0 gluing.\n");
+    }
+    isRegularK = nR1 == 0;
 
     _computeB0();
     _computeF0();
@@ -212,13 +222,15 @@ void HybridFETIImplicit<T>::_applyK(std::vector<Vector_Dense<T> > &b, std::vecto
         KSolver[di].solve(b[di], x[di]);
     }
 
-    // x += R * beta
-    #pragma omp parallel for
-    for (size_t di = 0; di < feti.K.size(); ++di) {
-        Vector_Dense<T> _beta;
-        _beta.size = origR1[di].nrows;
-        _beta.vals = beta.vals + G0offset[di];
-        math::blas::multiply(T{1}, origR1[di], _beta, T{1}, x[di], true);
+    if (!isRegularK) {
+        // x += R * beta
+        #pragma omp parallel for
+        for (size_t di = 0; di < feti.K.size(); ++di) {
+            Vector_Dense<T> _beta;
+            _beta.size = origR1[di].nrows;
+            _beta.vals = beta.vals + G0offset[di];
+            math::blas::multiply(T{1}, origR1[di], _beta, T{1}, x[di], true);
+        }
     }
 }
 
@@ -234,21 +246,25 @@ void HybridFETIImplicit<T>::_compute_beta_mu(std::vector<Vector_Dense<T> > &b)
             g.vals[D2C0[di][i]] += KB0b.vals[i];
         }
 
-        // e = Rt * b
-        Vector_Dense<T> _e;
-        _e.size = origR1[di].nrows;
-        _e.vals = beta.vals + G0offset[di];
-        math::blas::multiply(T{1}, origR1[di], b[di], T{0}, _e); // assemble -e
+        if (!isRegularK) {
+            // e = Rt * b
+            Vector_Dense<T> _e;
+            _e.size = origR1[di].nrows;
+            _e.vals = beta.vals + G0offset[di];
+            math::blas::multiply(T{1}, origR1[di], b[di], T{0}, _e); // assemble -e
+        }
     }
 
-    auto &F0g = mu; // mu is tmp variable that can be used here
-    F0Solver.solve(g, F0g);
-    // e = G0 * F^-1 * g - e
-    math::spblas::apply(beta, T{1}, G0, F0g);
-    // beta = (S+)^-1 * (G0 * F0^-1 * g - e)
-    Splus.solve(beta);
-    // g = g - G0t * beta
-    math::spblas::applyT(g, T{-1}, G0, beta);
+    if (!isRegularK) {
+        auto &F0g = mu; // mu is tmp variable that can be used here
+        F0Solver.solve(g, F0g);
+        // e = G0 * F^-1 * g - e
+        math::spblas::apply(beta, T{1}, G0, F0g);
+        // beta = (S+)^-1 * (G0 * F0^-1 * g - e)
+        Splus.solve(beta);
+        // g = g - G0t * beta
+        math::spblas::applyT(g, T{-1}, G0, beta);
+    }
     // mu = F0^-1 * (g - G0t * beta)
     F0Solver.solve(g, mu);
 }
@@ -256,10 +272,10 @@ void HybridFETIImplicit<T>::_compute_beta_mu(std::vector<Vector_Dense<T> > &b)
 template <typename T>
 void HybridFETIImplicit<T>::_computeB0()
 {
+    std::vector<Matrix_Dense<T> > &R = isRegularK ? feti.KR1 : feti.R1;
+
     B0.clear();
     B0.resize(feti.K.size());
-    D2C.clear();
-    D2C.resize(feti.K.size());
     D2C0.clear();
     D2C0.resize(feti.K.size());
 
@@ -284,10 +300,10 @@ void HybridFETIImplicit<T>::_computeB0()
         for (auto dit = dual->begin(); dit != dual->end(); ++dit) {
             if (d1 < *dit) {
                 rindex.push_back(rows[cluster]);
-                if (feti.R1[d1].nrows < feti.R1[*dit].nrows) {
-                    rows[cluster] += feti.R1[*dit].nrows;
+                if (R[d1].nrows < R[*dit].nrows) {
+                    rows[cluster] += R[*dit].nrows;
                 } else {
-                    rows[cluster] += feti.R1[d1].nrows ? feti.R1[d1].nrows : 1;
+                    rows[cluster] += R[d1].nrows ? R[d1].nrows : 1;
                 }
             } else {
                 auto dualbegin = info::mesh->domains->localDual->begin();
@@ -321,10 +337,10 @@ void HybridFETIImplicit<T>::_computeB0()
                             d1index = di2->index;
                             d2index = di1->index;
                         }
-                        if (feti.R1[d1].nrows) {
-                            for (int r = 0; r < feti.R1[d1].nrows; ++r) {
-                                iB0[d1].push_back({rindex[it - dual->begin()] + r, d1index,  feti.R1[d1].vals[feti.R1[d1].ncols * r + d1index]});
-                                iB0[d2].push_back({rindex[it - dual->begin()] + r, d2index, -feti.R1[d1].vals[feti.R1[d1].ncols * r + d1index]});
+                        if (R[d1].nrows) {
+                            for (int r = 0; r < R[d1].nrows; ++r) {
+                                iB0[d1].push_back({rindex[it - dual->begin()] + r, d1index,  R[d1].vals[R[d1].ncols * r + d1index]});
+                                iB0[d2].push_back({rindex[it - dual->begin()] + r, d2index, -R[d1].vals[R[d1].ncols * r + d1index]});
                             }
                         } else {
                             iB0[d1].push_back({rindex[it - dual->begin()], d1index,  (double)(d1 + 1) / info::mesh->domains->size});
@@ -365,43 +381,50 @@ void HybridFETIImplicit<T>::_computeB0()
 template <typename T>
 void HybridFETIImplicit<T>::_computeF0()
 {
-    std::vector<std::vector<int> > csr(feti.cluster.gl_size);
-    for (size_t di = 0; di < feti.K.size(); ++di) {
-        for (size_t i = 0; i < D2C0[di].size(); ++i) {
-            for (size_t j = i; j < D2C0[di].size(); ++j) {
-                csr[D2C0[di][i]].push_back(D2C0[di][j]);
+    if (F0.type == Matrix_Type::UNSET_INVALID_NONE) {
+        std::vector<std::vector<int> > csr(feti.cluster.gl_size);
+        for (size_t di = 0; di < feti.K.size(); ++di) {
+            for (size_t i = 0; i < D2C0[di].size(); ++i) {
+                for (size_t j = i; j < D2C0[di].size(); ++j) {
+                    csr[D2C0[di][i]].push_back(D2C0[di][j]);
+                }
+            }
+            dKB0[di].resize(B0[di].nrows, B0[di].ncols);
+        }
+
+        #pragma omp parallel for
+        for (size_t i = 0; i < csr.size(); ++i) {
+            utils::sortAndRemoveDuplicates(csr[i]);
+        }
+        int F0nnz = 0;
+        for (size_t i = 0; i < csr.size(); ++i) {
+            F0nnz += csr[i].size();
+        }
+        F0.type = Matrix_Type::REAL_SYMMETRIC_POSITIVE_DEFINITE;
+        F0.shape = Matrix_Shape::UPPER;
+        F0.resize(feti.cluster.gl_size, feti.cluster.gl_size, F0nnz);
+        F0.rows[0] = Indexing::CSR;
+        for (size_t i = 0; i < csr.size(); ++i) {
+            F0.rows[i + 1] = F0.rows[i] + std::max(csr[i].size(), 1UL);
+            for (size_t j = 0; j < csr[i].size(); ++j) {
+                F0.cols[F0.rows[i] - Indexing::CSR + j] = csr[i][j] + Indexing::CSR;
             }
         }
-        dKB0[di].resize(B0[di].nrows, B0[di].ncols);
-    }
 
-    #pragma omp parallel for
-    for (size_t i = 0; i < csr.size(); ++i) {
-        utils::sortAndRemoveDuplicates(csr[i]);
-    }
-    int F0nnz = 0;
-    for (size_t i = 0; i < csr.size(); ++i) {
-        F0nnz += csr[i].size();
-    }
-    F0.type = Matrix_Type::REAL_SYMMETRIC_POSITIVE_DEFINITE;
-    F0.shape = Matrix_Shape::UPPER;
-    F0.resize(feti.cluster.gl_size, feti.cluster.gl_size, F0nnz);
-    F0.rows[0] = Indexing::CSR;
-    for (size_t i = 0; i < csr.size(); ++i) {
-        F0.rows[i + 1] = F0.rows[i] + std::max(csr[i].size(), 1UL);
-        for (size_t j = 0; j < csr[i].size(); ++j) {
-            F0.cols[F0.rows[i] - Indexing::CSR + j] = csr[i][j] + Indexing::CSR;
-        }
-    }
-
-    std::vector<std::vector<int> > permutation(feti.K.size());
-    for (size_t di = 0, ri = feti.cluster.gl_size; di < feti.K.size(); ++di, ++ri) {
-        for (size_t i = 0; i < D2C0[di].size(); ++i) {
-            for (size_t j = i; j < D2C0[di].size(); ++j) {
-                int c = std::lower_bound(csr[D2C0[di][i]].begin(), csr[D2C0[di][i]].end(), D2C0[di][j]) - csr[D2C0[di][i]].begin();
-                permutation[di].push_back(F0.rows[D2C0[di][i]] + c - Indexing::CSR);
+        permutationF0.resize(feti.K.size());
+        for (size_t di = 0, ri = feti.cluster.gl_size; di < feti.K.size(); ++di, ++ri) {
+            for (size_t i = 0; i < D2C0[di].size(); ++i) {
+                for (size_t j = i; j < D2C0[di].size(); ++j) {
+                    int c = std::lower_bound(csr[D2C0[di][i]].begin(), csr[D2C0[di][i]].end(), D2C0[di][j]) - csr[D2C0[di][i]].begin();
+                    permutationF0[di].push_back(F0.rows[D2C0[di][i]] + c - Indexing::CSR);
+                }
             }
         }
+
+        eslog::checkpointln("FETI: SET F0");
+        F0Solver.commit(F0);
+        F0Solver.symbolicFactorization();
+        eslog::checkpointln("FETI: F0 SYMBOLIC FACTORIZATION");
     }
 
     math::set(F0, T{0});
@@ -423,21 +446,24 @@ void HybridFETIImplicit<T>::_computeF0()
         for (size_t i = 0, k = 0; i < D2C0[di].size(); k += ++i) {
             for (size_t j = i; j < D2C0[di].size(); ++j, ++k) {
                 #pragma omp atomic
-                F0.vals[permutation[di][pi[di]++]] += dF0.vals[k];
+                F0.vals[permutationF0[di][pi[di]++]] += dF0.vals[k];
             }
         }
     }
     eslog::checkpointln("FETI: UPDATE F0");
-
-    F0Solver.commit(F0);
-    F0Solver.symbolicFactorization();
     F0Solver.numericalFactorization();
-    eslog::checkpointln("FETI: F0 FACTORIZATION");
+    eslog::checkpointln("FETI: F0 NUMERIC FACTORIZATION");
 }
 
 template <typename T>
 void HybridFETIImplicit<T>::_computeG0()
 {
+    if (isRegularK) {
+        G0.resize(0, feti.cluster.gl_size, 0);
+        G0.rows[0] = 0;
+        return;
+    }
+
     int G0nnz = 0, G0rows = 0;
     for (size_t di = 0; di < feti.K.size(); ++di) {
         G0nnz += feti.R1[di].nrows * D2C0[di].size();
@@ -475,6 +501,13 @@ void HybridFETIImplicit<T>::_computeG0()
 template <typename T>
 void HybridFETIImplicit<T>::_computeS0()
 {
+    if (isRegularK) {
+        S0.resize(0, 0);
+        Splus.commit(S0);
+        Splus.factorization();
+        return;
+    }
+
     Matrix_Dense<T> dG0, dF0G0;
     math::copy(dG0, G0);
     F0Solver.solve(dG0, dF0G0);
