@@ -868,7 +868,9 @@ void MortarContact<T>::update(const step::Step &step, FETI<T> &feti)
     feti.lambdas.intervals.back().size -= feti.lambdas.intervals.back().halo;
 
     swap(B1, feti.B1);
+    int prevsize = feti.c.size;
     feti.c.resize(feti.lambdas.size);
+    math::set(feti.lambdas.size - prevsize, feti.c.vals + prevsize, 1, T{0});
 
     if (info::ecf->physics != PhysicsConfiguration::TYPE::STRUCTURAL_MECHANICS) {
         return;
