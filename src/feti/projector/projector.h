@@ -42,6 +42,7 @@ protected:
 
     struct Kernel {
         static int roffset, rsize, total;
+        static bool fromK;
         int offset, size;
     };
 

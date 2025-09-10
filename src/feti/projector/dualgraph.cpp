@@ -173,64 +173,127 @@ void DualGraph::set(const DecompositionFETI *decomposition, const std::vector<in
 
 void DualGraph::spread(const DecompositionFETI *decomposition)
 {
-    std::map<int, std::vector<int> > next = domains.edges;
+    { // domains
+        std::map<int, std::vector<int> > next = domains.edges;
 
-    for (auto e = domains.edges.begin(); e != domains.edges.end(); ++e) {
-        for (size_t ve = 0; ve < e->second.size(); ++ve) {
-            for (size_t vt = 0; vt < domains.edges[e->second[ve]].size(); ++vt) {
-                next[e->first].push_back(domains.edges[e->second[ve]][vt]);
-            }
-        }
-    }
-
-    for (auto e = next.begin(); e != next.end(); ++e) {
-        utils::sortAndRemoveDuplicates(e->second);
-    }
-
-    std::vector<std::vector<int> > sBuffer(decomposition->neighbors.size()), rBuffer(decomposition->neighbors.size());
-    if (decomposition->neighbors.size()) {
-        sBuffer[0].push_back(domains.vertices.size());
-        for (auto v = domains.vertices.begin(); v != domains.vertices.end(); ++v) {
-            sBuffer[0].push_back(v->first);
-            sBuffer[0].push_back(v->second.rank);
-            sBuffer[0].push_back(v->second.kernel.goffset);
-            sBuffer[0].push_back(v->second.kernel.size);
-        }
-        for (auto e = next.begin(); e != next.end(); ++e) {
-            sBuffer[0].push_back(e->first);
-            sBuffer[0].push_back(e->second.size());
+        for (auto e = domains.edges.begin(); e != domains.edges.end(); ++e) {
             for (size_t ve = 0; ve < e->second.size(); ++ve) {
-                sBuffer[0].push_back(e->second[ve]);
+                for (size_t vt = 0; vt < domains.edges[e->second[ve]].size(); ++vt) {
+                    next[e->first].push_back(domains.edges[e->second[ve]][vt]);
+                }
             }
         }
-        for (size_t n = 1; n < sBuffer.size(); ++n) {
-            sBuffer[n] = sBuffer[0];
-        }
-    }
 
-    if (!Communication::exchangeUnknownSize(sBuffer, rBuffer, decomposition->neighbors)) {
-        eslog::error("cannot spread domain dual graph.\n");
-    }
-
-    for (size_t n = 0; n < rBuffer.size(); ++n) {
-        size_t i = 1;
-        for (int v = 0; v < rBuffer[n][0]; ++v, i += 4) {
-            domains.vertices[rBuffer[n][i]].rank = rBuffer[n][i + 1];
-            domains.vertices[rBuffer[n][i]].kernel.goffset = rBuffer[n][i + 2];
-            domains.vertices[rBuffer[n][i]].kernel.size    = rBuffer[n][i + 3];
+        for (auto e = next.begin(); e != next.end(); ++e) {
+            utils::sortAndRemoveDuplicates(e->second);
         }
-        while (i < rBuffer[n].size()) {
-            for (int e = 0; e < rBuffer[n][i + 1]; ++e) {
-                next[rBuffer[n][i]].push_back(rBuffer[n][i + 2 + e]);
+
+        std::vector<std::vector<int> > sBuffer(decomposition->neighbors.size()), rBuffer(decomposition->neighbors.size());
+        if (decomposition->neighbors.size()) {
+            sBuffer[0].push_back(domains.vertices.size());
+            for (auto v = domains.vertices.begin(); v != domains.vertices.end(); ++v) {
+                sBuffer[0].push_back(v->first);
+                sBuffer[0].push_back(v->second.rank);
+                sBuffer[0].push_back(v->second.kernel.goffset);
+                sBuffer[0].push_back(v->second.kernel.size);
             }
-            i += rBuffer[n][i + 1] + 2;
+            for (auto e = next.begin(); e != next.end(); ++e) {
+                sBuffer[0].push_back(e->first);
+                sBuffer[0].push_back(e->second.size());
+                for (size_t ve = 0; ve < e->second.size(); ++ve) {
+                    sBuffer[0].push_back(e->second[ve]);
+                }
+            }
+            for (size_t n = 1; n < sBuffer.size(); ++n) {
+                sBuffer[n] = sBuffer[0];
+            }
         }
+
+        if (!Communication::exchangeUnknownSize(sBuffer, rBuffer, decomposition->neighbors)) {
+            eslog::error("cannot spread domain dual graph.\n");
+        }
+
+        for (size_t n = 0; n < rBuffer.size(); ++n) {
+            size_t i = 1;
+            for (int v = 0; v < rBuffer[n][0]; ++v, i += 4) {
+                domains.vertices[rBuffer[n][i]].rank = rBuffer[n][i + 1];
+                domains.vertices[rBuffer[n][i]].kernel.goffset = rBuffer[n][i + 2];
+                domains.vertices[rBuffer[n][i]].kernel.size    = rBuffer[n][i + 3];
+            }
+            while (i < rBuffer[n].size()) {
+                for (int e = 0; e < rBuffer[n][i + 1]; ++e) {
+                    next[rBuffer[n][i]].push_back(rBuffer[n][i + 2 + e]);
+                }
+                i += rBuffer[n][i + 1] + 2;
+            }
+        }
+
+        for (auto e = next.begin(); e != next.end(); ++e) {
+            utils::sortAndRemoveDuplicates(e->second);
+        }
+        domains.edges.swap(next);
     }
 
-    for (auto e = next.begin(); e != next.end(); ++e) {
-        utils::sortAndRemoveDuplicates(e->second);
+    { // clusters
+        std::map<int, std::vector<int> > next = clusters.edges;
+
+        for (auto e = clusters.edges.begin(); e != clusters.edges.end(); ++e) {
+            for (size_t ve = 0; ve < e->second.size(); ++ve) {
+                for (size_t vt = 0; vt < clusters.edges[e->second[ve]].size(); ++vt) {
+                    next[e->first].push_back(clusters.edges[e->second[ve]][vt]);
+                }
+            }
+        }
+
+        for (auto e = next.begin(); e != next.end(); ++e) {
+            utils::sortAndRemoveDuplicates(e->second);
+        }
+
+        std::vector<std::vector<int> > sBuffer(decomposition->neighbors.size()), rBuffer(decomposition->neighbors.size());
+        if (decomposition->neighbors.size()) {
+            sBuffer[0].push_back(clusters.vertices.size());
+            for (auto v = clusters.vertices.begin(); v != clusters.vertices.end(); ++v) {
+                sBuffer[0].push_back(v->first);
+                sBuffer[0].push_back(v->second.rank);
+                sBuffer[0].push_back(v->second.kernel.goffset);
+                sBuffer[0].push_back(v->second.kernel.size);
+            }
+            for (auto e = next.begin(); e != next.end(); ++e) {
+                sBuffer[0].push_back(e->first);
+                sBuffer[0].push_back(e->second.size());
+                for (size_t ve = 0; ve < e->second.size(); ++ve) {
+                    sBuffer[0].push_back(e->second[ve]);
+                }
+            }
+            for (size_t n = 1; n < sBuffer.size(); ++n) {
+                sBuffer[n] = sBuffer[0];
+            }
+        }
+
+        if (!Communication::exchangeUnknownSize(sBuffer, rBuffer, decomposition->neighbors)) {
+            eslog::error("cannot spread cluster dual graph.\n");
+        }
+
+        for (size_t n = 0; n < rBuffer.size(); ++n) {
+            size_t i = 1;
+            for (int v = 0; v < rBuffer[n][0]; ++v, i += 4) {
+                clusters.vertices[rBuffer[n][i]].rank = rBuffer[n][i + 1];
+                clusters.vertices[rBuffer[n][i]].kernel.goffset = rBuffer[n][i + 2];
+                clusters.vertices[rBuffer[n][i]].kernel.size    = rBuffer[n][i + 3];
+            }
+            while (i < rBuffer[n].size()) {
+                for (int e = 0; e < rBuffer[n][i + 1]; ++e) {
+                    next[rBuffer[n][i]].push_back(rBuffer[n][i + 2 + e]);
+                }
+                i += rBuffer[n][i + 1] + 2;
+            }
+        }
+
+        for (auto e = next.begin(); e != next.end(); ++e) {
+            utils::sortAndRemoveDuplicates(e->second);
+        }
+        clusters.edges.swap(next);
     }
-    domains.edges.swap(next);
 }
 
 void DualGraph::print()

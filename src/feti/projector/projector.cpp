@@ -2,6 +2,7 @@
 #include "projector.h"
 #include "hfeti.orthogonal.symmetric.h"
 #include "tfeti.orthogonal.symmetric.h"
+#include "hfeti.conjugate.symmetric.h"
 #include "tfeti.conjugate.symmetric.h"
 
 #include "feti/dualoperator/dualoperator.h"
@@ -16,6 +17,7 @@ namespace espreso {
 template <typename T> int Projector<T>::Kernel::roffset = 0;
 template <typename T> int Projector<T>::Kernel::rsize   = 0;
 template <typename T> int Projector<T>::Kernel::total   = 0;
+template <typename T> bool Projector<T>::Kernel::fromK  = false;
 
 template <typename T>
 Projector<T>* Projector<T>::create(FETI<T> &feti, const step::Step &step)
@@ -46,6 +48,9 @@ Projector<T>* Projector<T>::create(FETI<T> &feti, const step::Step &step)
             if (feti.configuration.projector_opt & FETIConfiguration::PROJECTOR_OPT::FULL) {
                 eslog::info(" = PROJECTOR                                                         FULL EXPLICIT CONJUGATE = \n");
                 return new TFETIConjugateSymmetric<T>(feti);
+            } else {
+                eslog::info(" = PROJECTOR                                                       HYBRID EXPLICIT CONJUGATE = \n");
+                return new HFETIConjugateSymmetric<T>(feti);
             }
         default: return nullptr;
         }
@@ -335,10 +340,10 @@ void Projector<T>::_apply_R(const Vector_Dense<T> &in, std::vector<Vector_Dense<
     #pragma omp parallel for
     for (size_t d = 0; d < out.size(); ++d) {
         Vector_Dense<T> y;
-        y.size = feti.R1[d].nrows;
+        y.size = Kernel::fromK ? feti.KR1[d].nrows : feti.R1[d].nrows;
         y.vals = in.vals + kernel[d].offset;
 
-        math::blas::applyT(out[d], T{1}, feti.R1[d], T{0}, y);
+        math::blas::applyT(out[d], T{1}, Kernel::fromK ? feti.KR1[d] : feti.R1[d], T{0}, y);
     }
 }
 
@@ -348,7 +353,7 @@ void Projector<T>::_print(const step::Step &step)
     if (info::ecf->output.print_matrices) {
         eslog::storedata(" STORE: feti/projector/{R_orth, G, e, GGt, invGGt}\n");
         for (size_t d = 0; d < feti.K.size(); ++d) {
-            math::store(feti.R1[d], utils::filename(utils::debugDirectory(step) + "/feti/projector", "R_orth" + std::to_string(d)).c_str());
+            math::store(Kernel::fromK ? feti.KR1[d] : feti.R1[d], utils::filename(utils::debugDirectory(step) + "/feti/projector", "R_orth" + std::to_string(d)).c_str());
         }
 
         math::store(G, utils::filename(utils::debugDirectory(step) + "/feti/projector", "G").c_str());
