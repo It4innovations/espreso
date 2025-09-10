@@ -45,7 +45,7 @@ void Regularization<T>::set(FETI<T> &feti, HeatTransferLoadStepConfiguration &co
     if (feti.configuration.regularization == FETIConfiguration::REGULARIZATION::ANALYTIC) {
         #pragma omp parallel for
         for (size_t d = 0; d < feti.K.size(); ++d) {
-            if (R1)     setR1    (feti.K[d], feti.R1[d]);
+            if (R1)     setR1    (feti.K[d], fromAssemblerK ? feti.KR1[d] : feti.R1[d]);
             if (regMat) setRegMat(feti.K[d], feti.RegMat[d]);
         }
     }
@@ -58,7 +58,7 @@ void Regularization<T>::update(FETI<T> &feti, HeatTransferLoadStepConfiguration 
     case FETIConfiguration::REGULARIZATION::ANALYTIC:
         #pragma omp parallel for
         for (size_t d = 0; d < feti.K.size(); ++d) {
-            if (R1     && feti.updated.K) updateR1    (feti.K[d], feti.R1[d]);
+            if (R1     && feti.updated.K) updateR1    (feti.K[d], fromAssemblerK ? feti.KR1[d] : feti.R1[d]);
             if (regMat && feti.updated.K) updateRegMat(feti.K[d], feti.RegMat[d]);
         }
         break;

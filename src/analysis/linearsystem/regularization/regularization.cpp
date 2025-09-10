@@ -19,6 +19,14 @@ void Regularization<T>::empty(FETI<T> &feti)
         feti.R2[d].type = Matrix_Type::REAL_NONSYMMETRIC;
         feti.R2[d].shape = Matrix_Shape::FULL;
 
+        feti.KR1[d].resize(0, feti.K[d].nrows);
+        feti.KR1[d].type = Matrix_Type::REAL_NONSYMMETRIC;
+        feti.KR1[d].shape = Matrix_Shape::FULL;
+
+        feti.KR2[d].resize(0, feti.K[d].nrows);
+        feti.KR2[d].type = Matrix_Type::REAL_NONSYMMETRIC;
+        feti.KR2[d].shape = Matrix_Shape::FULL;
+
         feti.RegMat[d].resize(feti.K[d].nrows, feti.K[d].ncols, 0);
         feti.RegMat[d].type = feti.K[d].type;
         feti.RegMat[d].shape = feti.K[d].shape;
@@ -31,16 +39,13 @@ void Regularization<T>::empty(FETI<T> &feti)
 template <typename T>
 void Regularization<T>::algebraic(FETI<T> &feti, int defect, int sc_size)
 {
-    if (feti.configuration.projector == FETIConfiguration::PROJECTOR::CONJUGATE) {
-        #pragma omp parallel for
-        for (size_t d = 0; d < feti.assembledK.size(); ++d) {
-            math::getKernel(feti.assembledK[d], feti.R1[d], feti.RegMat[d], defect, sc_size);
+    #pragma omp parallel for
+    for (size_t d = 0; d < feti.K.size(); ++d) {
+        if (fromAssemblerK) {
+            math::getKernel(feti.assembledK[d], fromAssemblerK ? feti.KR1[d] : feti.R1[d], feti.RegMat[d], defect, sc_size);
             feti.RegMat[d].resize(feti.K[d].nrows, feti.K[d].nrows, 0);
             math::set(feti.RegMat[d].nrows + 1, feti.RegMat[d].rows, 1, feti.RegMat[d].rows[0]);
-        }
-    } else {
-        #pragma omp parallel for
-        for (size_t d = 0; d < feti.K.size(); ++d) {
+        } else {
             math::getKernel(feti.K[d], feti.R1[d], feti.RegMat[d], defect, sc_size);
         }
     }
@@ -82,35 +87,50 @@ static void get_svd(Matrix_CSR<T> &K, Matrix_Dense<T> &R1, Matrix_Dense<T> &Moor
 template <typename T>
 void Regularization<T>::svd(FETI<T> &feti)
 {
-    if (feti.configuration.projector == FETIConfiguration::PROJECTOR::CONJUGATE) {
-        #pragma omp parallel for
-        for (size_t d = 0; d < feti.assembledK.size(); ++d) {
-            get_svd(feti.assembledK[d], feti.R1[d], feti.MoorePenroseInv[d]);
-        }
-    } else {
-        #pragma omp parallel for
-        for (size_t d = 0; d < feti.K.size(); ++d) {
-            get_svd(feti.K[d], feti.R1[d], feti.MoorePenroseInv[d]);
-        }
+    #pragma omp parallel for
+    for (size_t d = 0; d < feti.K.size(); ++d) {
+        get_svd(fromAssemblerK ? feti.assembledK[d] : feti.K[d], feti.R1[d], feti.MoorePenroseInv[d]);
     }
 }
 
 template <typename T>
-template <typename Settings, typename Configuration>
-void Regularization<T>::analyze(FETI<T> &feti, Settings &settings, Configuration &configuration)
+void Regularization<T>::analyze(const step::Step &step, FETI<T> &feti)
 {
-    regMat = R1 = R2 = onSurface = false;
-    if (configuration.type == LoadStepSolverConfiguration::TYPE::STEADY_STATE) {
-        regMat = R1 = true;
-    }
-    if (configuration.type == LoadStepSolverConfiguration::TYPE::TRANSIENT && feti.configuration.projector == FETIConfiguration::PROJECTOR::CONJUGATE) {
-        R1 = true;
+    regMat = R1 = R2 = onSurface = fromAssemblerK = false;
+    std::map<std::string, PhysicsConfiguration::DISCRETIZATION> discretization;
+    LoadStepSolverConfiguration::TYPE type;
+    switch (info::ecf->physics) {
+    case PhysicsConfiguration::TYPE::HEAT_TRANSFER:
+        type = info::ecf->heat_transfer.load_steps_settings.at(step.loadstep + 1).type;
+        discretization = info::ecf->heat_transfer.discretization;
+        break;
+    case PhysicsConfiguration::TYPE::STRUCTURAL_MECHANICS:
+        type = info::ecf->structural_mechanics.load_steps_settings.at(step.loadstep + 1).type;
+        discretization = info::ecf->structural_mechanics.discretization;
+        break;
     }
 
-    for (auto disc = settings.discretization.cbegin(); disc != settings.discretization.cend(); ++disc) {
+    switch (type) {
+    case LoadStepSolverConfiguration::TYPE::STEADY_STATE:
+        regMat = R1 = R2 = true;
+        break;
+    case LoadStepSolverConfiguration::TYPE::TRANSIENT:
+        if (feti.configuration.projector == FETIConfiguration::PROJECTOR::CONJUGATE) {
+            R1 = R2 = true;
+            fromAssemblerK = true;
+        }
+        if (feti.configuration.method == FETIConfiguration::METHOD::HYBRID_FETI) {
+            R1 = R2 = true;
+            fromAssemblerK = true;
+        }
+        break;
+    case LoadStepSolverConfiguration::TYPE::HARMONIC:
+        break;
+    }
+
+    for (auto disc = discretization.cbegin(); disc != discretization.cend(); ++disc) {
         if (disc->second == PhysicsConfiguration::DISCRETIZATION::BEM) {
             onSurface = true;
-            break;
         }
     }
 }
@@ -120,17 +140,18 @@ void Regularization<T>::set(const step::Step &step, FETI<T> &feti)
 {
     feti.R1.resize(feti.K.size());
     feti.R2.resize(feti.K.size());
+    feti.KR1.resize(feti.K.size());
+    feti.KR2.resize(feti.K.size());
     feti.RegMat.resize(feti.K.size());
     feti.MoorePenroseInv.resize(feti.K.size());
     empty(feti);
 
+    analyze(step, feti);
     switch (info::ecf->physics) {
     case PhysicsConfiguration::TYPE::HEAT_TRANSFER:
-        analyze(feti, info::ecf->heat_transfer, info::ecf->heat_transfer.load_steps_settings.at(step.loadstep + 1));
         set(feti, info::ecf->heat_transfer.load_steps_settings.at(step.loadstep + 1));
         break;
     case PhysicsConfiguration::TYPE::STRUCTURAL_MECHANICS:
-        analyze(feti, info::ecf->structural_mechanics, info::ecf->structural_mechanics.load_steps_settings.at(step.loadstep + 1));
         set(feti, info::ecf->structural_mechanics.load_steps_settings.at(step.loadstep + 1));
         break;
     }

@@ -34,9 +34,9 @@ void TFETIConjugateSymmetric<T>::set(const step::Step &step)
 template<typename T>
 void TFETIConjugateSymmetric<T>::update(const step::Step &step)
 {
-    int reset = kernel.size() != feti.R1.size() || G.ncols != feti.lambdas.size;
-    for (size_t i = 0; !reset && i < feti.R1.size(); ++i) {
-        reset |= kernel[i].size != feti.R1[i].nrows;
+    int reset = kernel.size() != feti.KR1.size() || G.ncols != feti.lambdas.size;
+    for (size_t i = 0; !reset && i < feti.KR1.size(); ++i) {
+        reset |= kernel[i].size != feti.KR1[i].nrows;
     }
     Communication::allReduce(&reset, nullptr, 1, MPITools::getType(reset).mpitype, MPI_MAX);
 
@@ -44,10 +44,10 @@ void TFETIConjugateSymmetric<T>::update(const step::Step &step)
         Projector<T>::reset();
         GGtDataOffset = GGtDataSize = 0;
         kernel.clear();
-        kernel.resize(feti.R1.size());
-        for (size_t d = 0, offset = 0; d < feti.R1.size(); ++d) {
-            offset += kernel[d].size = feti.R1[d].nrows;
-            Projector<T>::Kernel::total += feti.R1[d].nrows;
+        kernel.resize(feti.KR1.size());
+        for (size_t d = 0, offset = 0; d < feti.KR1.size(); ++d) {
+            offset += kernel[d].size = feti.KR1[d].nrows;
+            Projector<T>::Kernel::total += feti.KR1[d].nrows;
         }
         Projector<T>::Kernel::roffset = Projector<T>::Kernel::rsize = Projector<T>::Kernel::total;
         Projector<T>::Kernel::total = Communication::exscan(Projector<T>::Kernel::roffset);
@@ -57,8 +57,8 @@ void TFETIConjugateSymmetric<T>::update(const step::Step &step)
         Gx.resize(Projector<T>::Kernel::total);
 
         dual.clear();
-        for (size_t d = 0; d < feti.R1.size(); ++d) {
-            dual.pushVertex(d, feti.decomposition->dbegin + d, feti.R1[d].nrows);
+        for (size_t d = 0; d < feti.KR1.size(); ++d) {
+            dual.pushVertex(d, feti.decomposition->dbegin + d, feti.KR1[d].nrows);
         }
         dual.set(feti.decomposition, feti.lambdas.cmap);
         dual.spread(feti.decomposition);
@@ -100,6 +100,15 @@ void TFETIConjugateSymmetric<T>::update(const step::Step &step)
 }
 
 template<typename T>
+void TFETIConjugateSymmetric<T>::orthonormalizeKernels(const step::Step &step)
+{
+    #pragma omp parallel for
+    for (size_t d = 0; d < feti.KR1.size(); ++d) {
+        math::orthonormalize(feti.KR1[d]);
+    }
+}
+
+template<typename T>
 void TFETIConjugateSymmetric<T>::_setG()
 {
     // G is stored with 0-based in indexing
@@ -130,15 +139,6 @@ void TFETIConjugateSymmetric<T>::_setG()
 }
 
 template<typename T>
-void TFETIConjugateSymmetric<T>::orthonormalizeKernels(const step::Step &step)
-{
-    #pragma omp parallel for
-    for (size_t d = 0; d < feti.R1.size(); ++d) {
-        math::orthonormalize(feti.R1[d]);
-    }
-}
-
-template<typename T>
 void TFETIConjugateSymmetric<T>::_updateG()
 {
     auto vbegin = dual.domains.vertices.find(feti.decomposition->dbegin);
@@ -150,7 +150,7 @@ void TFETIConjugateSymmetric<T>::_updateG()
             for (int c = 0; c < feti.B1[d].nrows; ++c) {
                 G.vals[G.rows[ri] + c] = 0;
                 for (int i = feti.B1[d].rows[c]; i < feti.B1[d].rows[c + 1]; ++i) {
-                    G.vals[G.rows[ri] + c] -= feti.R1[d].vals[feti.R1[d].ncols * kr + feti.B1[d].cols[i]] * feti.B1[d].vals[i];
+                    G.vals[G.rows[ri] + c] -= feti.KR1[d].vals[feti.KR1[d].ncols * kr + feti.B1[d].cols[i]] * feti.B1[d].vals[i];
                 }
             }
         }

@@ -7,6 +7,8 @@
 
 namespace espreso {
 
+// y = Q * x = Gt * inv(GFGt) * G * F * x
+
 template <typename T>
 struct TFETIConjugateSymmetric: public Projector<T> {
     TFETIConjugateSymmetric(FETI<T> &feti);

@@ -152,6 +152,7 @@ void FETILinearSystemSolver<T>::update(step::Step &step)
         }
         for (size_t d = 0; d < feti.K.size(); ++d) {
             math::store(feti.R1[d], utils::filename(utils::debugDirectory(step) + "/system", "R" + std::to_string(d)).c_str());
+            math::store(feti.KR1[d], utils::filename(utils::debugDirectory(step) + "/system", "KR" + std::to_string(d)).c_str());
             math::store(feti.RegMat[d], utils::filename(utils::debugDirectory(step) + "/system", "RegMat" + std::to_string(d)).c_str());
         }
 

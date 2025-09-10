@@ -586,8 +586,8 @@ void Regularization<T>::set(FETI<T> &feti, StructuralMechanicsLoadStepConfigurat
         #pragma omp parallel for
         for (size_t d = 0; d < feti.K.size(); ++d) {
             if (R1) {
-                setR1   (feti.K[d], feti.R1[d], feti.decomposition, d);
-                updateR1(feti.K[d], feti.R1[d], feti.decomposition, d);
+                setR1   (feti.K[d], fromAssemblerK ? feti.KR1[d] : feti.R1[d], feti.decomposition, d);
+                updateR1(feti.K[d], fromAssemblerK ? feti.KR1[d] : feti.R1[d], feti.decomposition, d);
             }
             if (regMat) {
                 switch (feti.configuration.fix_points) {

@@ -44,7 +44,7 @@ struct FETI {
     std::vector<Vector_Dense<T> > f, x, BtL, ineqBtL;
     std::vector<Matrix_Dense<T> > MoorePenroseInv;
 
-    std::vector<Matrix_Dense<T> > R1, R2;
+    std::vector<Matrix_Dense<T> > R1, R2, KR1, KR2;
     std::vector<Matrix_CSR<T> > RegMat;
 
     std::vector<Matrix_CSR<T> > B1;
