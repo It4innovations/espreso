@@ -53,7 +53,7 @@ protected:
     void _applyK(std::vector<Vector_Dense<T> > &b, std::vector<Vector_Dense<T> > &x);
 
     std::vector<Matrix_CSR<T> > Kplus;
-    std::vector<Vector_Dense<T> > Btx, KplusBtx;
+    std::vector<Vector_Dense<T> > Btx, KplusBtx, B0mu, hfetiBtx;
     std::vector<DirectSparseSolver<T> > KSolver;
 
     void _computeB0();

@@ -54,6 +54,8 @@ void HybridFETIImplicit<T>::set(const step::Step &step)
     KplusBtx.resize(feti.K.size());
     KSolver.resize(feti.K.size());
     dKB0.resize(feti.K.size());
+    B0mu.resize(feti.K.size());
+    hfetiBtx.resize(feti.K.size());
 
     #pragma omp parallel for
     for (size_t di = 0; di < feti.K.size(); ++di) {
@@ -62,6 +64,8 @@ void HybridFETIImplicit<T>::set(const step::Step &step)
         math::combine(Kplus[di], feti.K[di], feti.RegMat[di]);
         Btx[di].resize(feti.K[di].nrows);
         KplusBtx[di].resize(feti.K[di].nrows);
+        B0mu[di].resize(feti.K[di].nrows);
+        hfetiBtx[di].resize(feti.K[di].nrows);
         math::set(Btx[di], T{0});
     }
 
@@ -212,18 +216,28 @@ void HybridFETIImplicit<T>::BtL(const Vector_Dual<T> &x, std::vector<Vector_Dens
 template <typename T>
 void HybridFETIImplicit<T>::_applyK(std::vector<Vector_Dense<T> > &b, std::vector<Vector_Dense<T> > &x)
 {
-    _compute_beta_mu(b);
-
+    // x = (K+)^-1 * b
     #pragma omp parallel for
     for (size_t di = 0; di < feti.K.size(); ++di) {
-        // Btx = (b - B0t * mu)
-        math::spblas::applyT(b[di], T{-1}, B0[di], D2C0[di].data(), mu);
-        // x = (K+)^-1 * (b - B0t * mu)
         KSolver[di].solve(b[di], x[di]);
     }
 
+    _compute_beta_mu(b);
+
+    // x -= (K+)^-1 * (B0t * mu)
+    #pragma omp parallel for
+    for (size_t di = 0; di < feti.K.size(); ++di) {
+        Vector_Dense<T> mu_di; mu_di.resize(D2C0[di].size());
+        for (size_t i = 0; i < D2C0[di].size(); ++i) {
+            mu_di.vals[i] = mu.vals[D2C0[di][i]];
+        }
+
+        math::blas::multiply(T{1}, dKB0[di], mu_di, T{0}, hfetiBtx[di], true);
+        math::add(x[di], T{-1}, hfetiBtx[di]);
+    }
+
+    // x += R * beta
     if (!isRegularK) {
-        // x += R * beta
         #pragma omp parallel for
         for (size_t di = 0; di < feti.K.size(); ++di) {
             Vector_Dense<T> _beta;
