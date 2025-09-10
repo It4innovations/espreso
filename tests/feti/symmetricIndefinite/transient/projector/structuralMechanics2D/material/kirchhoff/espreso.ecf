@@ -84,6 +84,18 @@ STRUCTURAL_MECHANICS {
 
       TRANSIENT_SOLVER {
         TIME_STEP    1e-1;
+
+        NUMERICAL_DAMPING  0.1;
+
+        DAMPING {
+          RAYLEIGH {
+            TYPE   DIRECT;
+            DIRECT_DAMPING {
+              STIFFNESS    0;
+              MASS        10;
+            }
+          }
+        }
       }
 
       FETI {

@@ -16,6 +16,8 @@ class Solver(unittest.TestCase):
     def test_feti(self):
         yield run, " TOTAL_FETI", "ORTHOGONAL", "DEFAULT", 50
         yield run, " TOTAL_FETI", " CONJUGATE", "DEFAULT", 45
+        yield run, "HYBRID_FETI", "ORTHOGONAL", "DEFAULT", 40
+        yield run, "HYBRID_FETI", " CONJUGATE", "DEFAULT", 40
 
 def run(method, projector, opt, max_it):
     ESPRESOTest.args[10] = method

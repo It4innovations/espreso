@@ -14,8 +14,10 @@ class Assembler(unittest.TestCase):
         ESPRESOTest.clean()
 
     def test_feti(self):
-#        yield run, " TOTAL_FETI", "ORTHOGONAL", "DEFAULT", 50 # it does not work 
-        yield run, " TOTAL_FETI", " CONJUGATE", "DEFAULT", 500
+        yield run, " TOTAL_FETI", "ORTHOGONAL", "DEFAULT", 190
+        yield run, " TOTAL_FETI", " CONJUGATE", "DEFAULT",  60
+        yield run, "HYBRID_FETI", "ORTHOGONAL", "DEFAULT",  77
+        yield run, "HYBRID_FETI", " CONJUGATE", "DEFAULT",  55
 
 def run(method, projector, opt, max_it):
     ESPRESOTest.args[10] = method
