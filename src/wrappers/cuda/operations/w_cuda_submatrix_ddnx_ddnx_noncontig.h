@@ -29,7 +29,7 @@ protected:
     using submatrix_ddnx_ddnx_noncontig<T,I>::d_row_map;
     using submatrix_ddnx_ddnx_noncontig<T,I>::d_col_map;
 protected:
-    virtual void internal_perform() override;
+    void internal_perform() override;
 };
 
 

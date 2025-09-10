@@ -22,10 +22,10 @@ struct DirichletGeneralSchur: public Preconditioner<T> {
     size_t get_wss_gpu_internal() override { return wss_gpu_internal; }
     void set_ws_gpu_persistent(void * ws_gpu_persistent_) override { ws_gpu_persistent = ws_gpu_persistent_; }
 
-    virtual void info() override;
-    virtual void set(const step::Step &step) override;
-    virtual void update(const step::Step &step) override;
-    virtual void apply(const Vector_Dual<T> &x, Vector_Dual<T> &y) override;
+    void info() override;
+    void set(const step::Step &step) override;
+    void update(const step::Step &step) override;
+    void apply(const Vector_Dual<T> &x, Vector_Dual<T> &y) override;
 
 protected:
     using Preconditioner<T>::feti;

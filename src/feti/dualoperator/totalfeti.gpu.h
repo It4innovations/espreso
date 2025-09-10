@@ -35,16 +35,16 @@ public:
     TotalFETIGpu(FETI<T> &feti, DualOperatorStrategy strategy);
     virtual ~TotalFETIGpu();
 
-    virtual void info() override;
-    virtual void set(const step::Step &step) override;
-    virtual void update(const step::Step &step) override;
+    void info() override;
+    void set(const step::Step &step) override;
+    void update(const step::Step &step) override;
 
     // y = F * x
-    virtual void apply(const Vector_Dual<T> &x, Vector_Dual<T> &y) override;
-    virtual void apply(const Matrix_Dual<T> &x, Matrix_Dual<T> &y) override;
+    void apply(const Vector_Dual<T> &x, Vector_Dual<T> &y) override;
+    void apply(const Matrix_Dual<T> &x, Matrix_Dual<T> &y) override;
 
     // y = K+(f - Bt * x)
-    virtual void toPrimal(const Vector_Dual<T> &x, std::vector<Vector_Dense<T> > &y) override;
+    void toPrimal(const Vector_Dual<T> &x, std::vector<Vector_Dense<T> > &y) override;
 
 private:
     void create_dual_things();

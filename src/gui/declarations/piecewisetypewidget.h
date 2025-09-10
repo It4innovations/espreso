@@ -22,7 +22,7 @@ namespace espreso
         QString errorMessage() override;
         QString data() override;
 
-        virtual void addData(const QString&) override;
+        void addData(const QString&) override;
 
     private:
         std::vector<std::string> m_variables;

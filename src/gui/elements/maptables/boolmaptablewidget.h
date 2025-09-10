@@ -11,7 +11,7 @@ namespace espreso
 class BoolCleanRowFactory : public CleanRowFactory
 {
 public:
-    virtual QList<QStandardItem*> create(int columns) override;
+    QList<QStandardItem*> create(int columns) override;
 };
 
 class BoolMapTableWidget : public DefaultMapTableWidget

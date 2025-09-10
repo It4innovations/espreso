@@ -40,13 +40,13 @@ namespace espreso {
         void regionClicked(const QString& region);
 
     protected:
-        virtual void initializeGL() override;
-        virtual void paintGL() override;
-        virtual void resizeGL(int w, int h) override;
+        void initializeGL() override;
+        void paintGL() override;
+        void resizeGL(int w, int h) override;
 
-        virtual void mouseMoveEvent(QMouseEvent *event) override;
-        virtual void wheelEvent(QWheelEvent *event) override;
-        virtual void mousePressEvent(QMouseEvent *event) override;
+        void mouseMoveEvent(QMouseEvent *event) override;
+        void wheelEvent(QWheelEvent *event) override;
+        void mousePressEvent(QMouseEvent *event) override;
 
     private:
         MpiManager* m_manager;

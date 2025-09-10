@@ -47,8 +47,8 @@ namespace espreso
         QString errorMessage() override;
         void save() override;
 
-        virtual void setText(const QString& text) override;
-        virtual QString text() override;
+        void setText(const QString& text) override;
+        QString text() override;
 
         QString value();
 

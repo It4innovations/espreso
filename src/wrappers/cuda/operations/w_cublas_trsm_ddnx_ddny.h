@@ -31,8 +31,8 @@ protected:
     using trsm_ddnx_ddny<T>::X;
     using trsm_ddnx_ddny<T>::wss_tmp_perform;
 protected:
-    virtual void internal_setup() override;
-    virtual void internal_perform(void * ws_tmp) override;
+    void internal_setup() override;
+    void internal_perform(void * ws_tmp) override;
 private:
     std::unique_ptr<w_cublas_trsm_ddnx_ddny_data> data;
 };

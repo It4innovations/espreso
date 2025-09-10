@@ -35,9 +35,9 @@ protected:
     using convert_dcsx_ddny<T,I>::wss_tmp_preprocess;
     using convert_dcsx_ddny<T,I>::wss_tmp_perform;
 protected:
-    virtual void internal_setup() override;
-    virtual void internal_preprocess(void * ws_tmp) override;
-    virtual void internal_perform(void * ws_tmp) override;
+    void internal_setup() override;
+    void internal_preprocess(void * ws_tmp) override;
+    void internal_perform(void * ws_tmp) override;
 private:
     std::unique_ptr<w_cusparse_convert_dcsx_ddny_data> data;
 };

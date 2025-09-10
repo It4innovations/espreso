@@ -19,24 +19,24 @@ private:
 public:
     AllocatorCPU_new() {}
     virtual ~AllocatorCPU_new() {}
-    virtual void * alloc(size_t num_bytes) override
+    void * alloc(size_t num_bytes) override
     {
         return aligned_alloc(align, num_bytes);
     }
-    virtual void free(void * & ptr) override
+    void free(void * & ptr) override
     {
         ::free(ptr);
         ptr = nullptr;
     }
-    virtual bool is_data_accessible_cpu() override
+    bool is_data_accessible_cpu() override
     {
         return true;
     }
-    virtual bool is_data_accessible_gpu() override
+    bool is_data_accessible_gpu() override
     {
         return false;
     }
-    virtual size_t get_align() override
+    size_t get_align() override
     {
         return align;
     }
@@ -56,24 +56,24 @@ private:
 public:
     AllocatorGPU_new() {}
     virtual ~AllocatorGPU_new() {}
-    virtual void * alloc(size_t num_bytes) override
+    void * alloc(size_t num_bytes) override
     {
         return gpu::mgm::memalloc_device(num_bytes);
     }
-    virtual void free(void * & ptr) override
+    void free(void * & ptr) override
     {
         gpu::mgm::memfree_device(ptr);
         ptr = nullptr;
     }
-    virtual bool is_data_accessible_cpu() override
+    bool is_data_accessible_cpu() override
     {
         return false;
     }
-    virtual bool is_data_accessible_gpu() override
+    bool is_data_accessible_gpu() override
     {
         return true;
     }
-    virtual size_t get_align() override
+    size_t get_align() override
     {
         return gpu::mgm::get_natural_pitch_align();
     }
@@ -93,24 +93,24 @@ private:
 public:
     AllocatorHostPinned_new() {}
     virtual ~AllocatorHostPinned_new() {}
-    virtual void * alloc(size_t num_bytes) override
+    void * alloc(size_t num_bytes) override
     {
         return gpu::mgm::memalloc_hostpinned(num_bytes);
     }
-    virtual void free(void * & ptr) override
+    void free(void * & ptr) override
     {
         gpu::mgm::memfree_hostpinned(ptr);
         ptr = nullptr;
     }
-    virtual bool is_data_accessible_cpu() override
+    bool is_data_accessible_cpu() override
     {
         return true;
     }
-    virtual bool is_data_accessible_gpu() override
+    bool is_data_accessible_gpu() override
     {
         return false;
     }
-    virtual size_t get_align() override
+    size_t get_align() override
     {
         return 64;
     }
@@ -154,7 +154,7 @@ public:
     {
         start_ptr = nullptr;
     }
-    virtual void * alloc(size_t num_bytes) override
+    void * alloc(size_t num_bytes) override
     {
         if(num_bytes == 0) return nullptr;
         if(start_ptr == nullptr) eslog::error("arena allocator has not been set yet\n");
@@ -171,19 +171,19 @@ public:
         }
         return ptr;
     }
-    virtual void free(void * & ptr) override
+    void free(void * & ptr) override
     {
         ptr = nullptr;
     }
-    virtual bool is_data_accessible_cpu() override
+    bool is_data_accessible_cpu() override
     {
         return origin_ator->is_data_accessible_cpu();
     }
-    virtual bool is_data_accessible_gpu() override
+    bool is_data_accessible_gpu() override
     {
         return origin_ator->is_data_accessible_gpu();
     }
-    virtual size_t get_align() override
+    size_t get_align() override
     {
         return align_B;
     }
@@ -220,7 +220,7 @@ public:
     {
         pointer = nullptr;
     }
-    virtual void * alloc(size_t num_bytes) override
+    void * alloc(size_t num_bytes) override
     {
         if(num_bytes == 0) return nullptr;
         if(pointer == nullptr) eslog::error("singlepointer allocator has not been set yet\n");
@@ -229,19 +229,19 @@ public:
         }
         return pointer;
     }
-    virtual void free(void * & ptr) override
+    void free(void * & ptr) override
     {
         ptr = nullptr;
     }
-    virtual bool is_data_accessible_cpu() override
+    bool is_data_accessible_cpu() override
     {
         return origin_ator->is_data_accessible_cpu();
     }
-    virtual bool is_data_accessible_gpu() override
+    bool is_data_accessible_gpu() override
     {
         return origin_ator->is_data_accessible_gpu();
     }
-    virtual size_t get_align() override
+    size_t get_align() override
     {
         return align_B;
     }
@@ -266,24 +266,24 @@ public:
     AllocatorCBMB_new & operator=(const AllocatorCBMB_new & other) = delete;
     AllocatorCBMB_new & operator=(AllocatorCBMB_new && other) = delete;
     virtual ~AllocatorCBMB_new() {}
-    virtual void * alloc(size_t num_bytes) override
+    void * alloc(size_t num_bytes) override
     {
         return resource.allocate(num_bytes, align_B);
     }
-    virtual void free(void * & ptr) override
+    void free(void * & ptr) override
     {
         resource.deallocate(ptr);
         ptr = nullptr;
     }
-    virtual bool is_data_accessible_cpu() override
+    bool is_data_accessible_cpu() override
     {
         return origin_ator->is_data_accessible_cpu();
     }
-    virtual bool is_data_accessible_gpu() override
+    bool is_data_accessible_gpu() override
     {
         return origin_ator->is_data_accessible_gpu();
     }
-    virtual size_t get_align() override
+    size_t get_align() override
     {
         return align_B;
     }

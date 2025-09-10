@@ -26,13 +26,13 @@ public:
     schur_hcsx_ddny_manual_simple & operator=(schur_hcsx_ddny_manual_simple &&) = default;
     virtual ~schur_hcsx_ddny_manual_simple();
 public:
-    virtual const char * get_name() override { return "schur_hcsx_ddny_manual_simple"; }
+    const char * get_name() override { return "schur_hcsx_ddny_manual_simple"; }
 protected:
-    virtual void internal_setup();
-    virtual void internal_preprocess_submit();
-    virtual void internal_perform_1_submit();
-    virtual void internal_perform_2_submit();
-    virtual void internal_solve_A11(VectorDenseView_new<T> & rhs, VectorDenseView_new<T> & sol);
+    void internal_setup() override;
+    void internal_preprocess_submit() override;
+    void internal_perform_1_submit() override;
+    void internal_perform_2_submit() override;
+    void internal_solve_A11(VectorDenseView_new<T> & rhs, VectorDenseView_new<T> & sol) override;
 private:
     std::unique_ptr<schur_hcsx_ddny_manual_simple_data<T,I>> data;
 protected:

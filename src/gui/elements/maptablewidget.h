@@ -17,8 +17,8 @@ public:
     virtual QVector<QPair<QString, QString> > dataInRows() = 0;
 
     using TableWidget::addData;
-    virtual void addData(const QString& data) override;
-    virtual QString data() override;
+    void addData(const QString& data) override;
+    QString data() override;
 
 protected:
     MapTableWidget(const QStringList& headlines,

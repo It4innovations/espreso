@@ -14,7 +14,7 @@ namespace espreso
 
         TableTypeWidget(QWidget *parent = 0);
 
-        virtual void addData(const QString& data) override;
+        void addData(const QString& data) override;
 
         QString data() override;
     };

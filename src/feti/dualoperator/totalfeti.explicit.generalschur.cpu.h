@@ -22,15 +22,15 @@ public:
     size_t get_wss_gpu_internal() override { return 0; }
     void set_ws_gpu_persistent(void * ws_gpu_persistent_) override { ws_gpu_persistent = ws_gpu_persistent_; }
 
-    void info();
-    void set(const step::Step &step);
-    void update(const step::Step &step);
+    void info() override;
+    void set(const step::Step &step) override;
+    void update(const step::Step &step) override;
 
     // y = F * x
-    void apply(const Vector_Dual<T> &x, Vector_Dual<T> &y);
-    void apply(const Matrix_Dual<T> &x, Matrix_Dual<T> &y);
+    void apply(const Vector_Dual<T> &x, Vector_Dual<T> &y) override;
+    void apply(const Matrix_Dual<T> &x, Matrix_Dual<T> &y) override;
     // y = K+(f - Bt * x)
-    void toPrimal(const Vector_Dual<T> &x, std::vector<Vector_Dense<T> > &y);
+    void toPrimal(const Vector_Dual<T> &x, std::vector<Vector_Dense<T> > &y) override;
 
 protected:
     void print(const step::Step &step);

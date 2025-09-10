@@ -24,14 +24,14 @@ public:
     void addProperty(ECFObject* obj);
 
 protected:
-    virtual QDialog* createDialog(const QModelIndex& groupIndex, ECFParameter* param = nullptr) override;
-    virtual QString dialogResult(QDialog* dialog) override;
+    QDialog* createDialog(const QModelIndex& groupIndex, ECFParameter* param = nullptr) override;
+    QString dialogResult(QDialog* dialog) override;
 
-    virtual void newItemAccepted(int, QString) override {}
-    virtual void newItemRejected(int) override {}
-    virtual void editItemAccepted(const QModelIndex&, const QModelIndex&, ECFParameter*) override {}
-    virtual void editItemRejected(const QModelIndex &group, const QModelIndex &item, ECFParameter *param) override {}
-    virtual void deleteItemAccepted(const QModelIndex& group, int index, const QString& name) override {}
+    void newItemAccepted(int, QString) override {}
+    void newItemRejected(int) override {}
+    void editItemAccepted(const QModelIndex&, const QModelIndex&, ECFParameter*) override {}
+    void editItemRejected(const QModelIndex &group, const QModelIndex &item, ECFParameter *param) override {}
+    void deleteItemAccepted(const QModelIndex& group, int index, const QString& name) override {}
 };
 
 }

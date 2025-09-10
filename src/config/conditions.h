@@ -73,17 +73,17 @@ struct ECFFalseCondition : public ECFAbstractCondition
 {
 
 public:
-    virtual bool evaluate() const { return false; }
+    bool evaluate() const override { return false; }
 
-    virtual bool isset() const override { return true; }
-    virtual bool match(const void*) const override { return true; }
-    virtual void bind(
+    bool isset() const override { return true; }
+    bool match(const void*) const override { return true; }
+    void bind(
         const ECFParameter*,
         const std::string& = ""
     ) override {}
-    virtual std::string compose() const override { return "false"; }
+    std::string compose() const override { return "false"; }
 
-    virtual ECFAbstractCondition* copy() const { return new ECFFalseCondition(); }
+    ECFAbstractCondition* copy() const override { return new ECFFalseCondition(); }
 };
 
 struct ECFCondition : public ECFAbstractCondition
@@ -101,16 +101,16 @@ public:
     static const int NOT_EQUALS = 1;
 
 
-    virtual bool evaluate() const override;
+    bool evaluate() const override;
 
-    virtual bool isset() const override { return parameter; }
-    virtual bool match(const void* parameter) const override 
+    bool isset() const override { return parameter; }
+    bool match(const void* parameter) const override 
         { return this->parameter == parameter; }
-    virtual void bind(
+    void bind(
         const ECFParameter* parameter, 
         const std::string& prefix = ""
     ) override;
-    virtual std::string compose() const override;
+    std::string compose() const override;
 
     ECFCondition()
     : parameter(NULL), operation(EQUALS), value(new GeneralValue()),
@@ -139,7 +139,7 @@ public:
     value(other.value->copy()), prefix(other.prefix), bound(other.bound)
     { if (other.bound) this->ecfparameter = other.ecfparameter; }
 
-    virtual ECFCondition* copy() const { return new ECFCondition(*this); }
+    ECFCondition* copy() const override { return new ECFCondition(*this); }
 
     virtual ~ECFCondition() { delete value; }
 };
@@ -155,16 +155,16 @@ public:
     static const int AND = 0;
     static const int OR = 1;
 
-    virtual bool evaluate() const override;
+    bool evaluate() const override;
 
-    virtual bool isset() const override { return true; }
-    virtual bool match(const void* parameter) const override
+    bool isset() const override { return true; }
+    bool match(const void* parameter) const override
         {return this->left->match(parameter) || this->right->match(parameter);}
-    virtual void bind(
+    void bind(
         const ECFParameter* parameter, 
         const std::string& prefix = ""
     ) override;
-    virtual std::string compose() const override;
+    std::string compose() const override;
 
     ECFConditionPair(const ECFAbstractCondition& leftOperand,
         const int operation,
@@ -181,7 +181,7 @@ public:
         other.right = NULL;
     }
     
-    virtual ECFAbstractCondition* copy() const { return new ECFConditionPair(*this); };
+    ECFAbstractCondition* copy() const override { return new ECFConditionPair(*this); };
 
     virtual ~ECFConditionPair();
 };

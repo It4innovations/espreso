@@ -29,8 +29,8 @@ protected:
     using convert_ddnx_ddny<T>::M_dst;
     using convert_ddnx_ddny<T>::wss_tmp_perform;
 protected:
-    virtual void internal_setup() override;
-    virtual void internal_perform(void * ws_tmp) override;
+    void internal_setup() override;
+    void internal_perform(void * ws_tmp) override;
 };
 
 

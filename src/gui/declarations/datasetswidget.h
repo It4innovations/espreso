@@ -17,14 +17,14 @@ public:
     void setMaterials(ECFObject* materials);
 
 protected:
-    virtual QDialog* createDialog(const QModelIndex& groupIndex, ECFParameter* param = nullptr) override;
-    virtual QString dialogResult(QDialog* dialog) override;
-    virtual void newItemAccepted(int, QString) override {}
-    virtual void newItemRejected(int group) override;
-    virtual void editItemAccepted(const QModelIndex&, const QModelIndex&, ECFParameter*) override {}
-    virtual void editItemRejected(const QModelIndex &, const QModelIndex &, ECFParameter *) override {}
-    virtual void deleteItemAccepted(const QModelIndex& group, int index, const QString& name) override;
-    virtual std::string itemKeyInECFObject(QString nameInTree) override;
+    QDialog* createDialog(const QModelIndex& groupIndex, ECFParameter* param = nullptr) override;
+    QString dialogResult(QDialog* dialog) override;
+    void newItemAccepted(int, QString) override {}
+    void newItemRejected(int group) override;
+    void editItemAccepted(const QModelIndex&, const QModelIndex&, ECFParameter*) override {}
+    void editItemRejected(const QModelIndex &, const QModelIndex &, ECFParameter *) override {}
+    void deleteItemAccepted(const QModelIndex& group, int index, const QString& name) override;
+    std::string itemKeyInECFObject(QString nameInTree) override;
 
 private:
     ECFObject* m_materials;

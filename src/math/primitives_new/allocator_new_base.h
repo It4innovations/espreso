@@ -56,19 +56,19 @@ private:
 public:
     AllocatorDummy_new(bool cpu, bool gpu) : on_cpu(cpu), on_gpu(gpu) {}
     virtual ~AllocatorDummy_new() {}
-    virtual void * alloc(size_t num_bytes) override
+    void * alloc(size_t num_bytes) override
     {
         eslog::error("dummy allocator cannot alloc\n");
     }
-    virtual void free(void * & ptr) override
+    void free(void * & ptr) override
     {
         eslog::error("dummy allocator cannot free\n");
     }
-    virtual bool is_data_accessible_cpu() override
+    bool is_data_accessible_cpu() override
     {
         return on_cpu;
     }
-    virtual bool is_data_accessible_gpu() override
+    bool is_data_accessible_gpu() override
     {
         return on_gpu;
     }

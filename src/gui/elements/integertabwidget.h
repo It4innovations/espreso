@@ -21,9 +21,9 @@ class IntegerTabWidget : public QWidget, public ISavableObject, public IValidata
 public:
     IntegerTabWidget(ECFObject* map, std::unique_ptr<ECFObjectWidgetFactory> factory, QWidget* parent = 0);
 
-    virtual void save() override;
-    virtual bool isValid() override;
-    virtual QString errorMessage() override;
+    void save() override;
+    bool isValid() override;
+    QString errorMessage() override;
 
 private slots:
     void onTabClosed(int index);

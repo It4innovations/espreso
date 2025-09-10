@@ -44,11 +44,11 @@ public:
     void addWithWidget(ECFValue* value, QWidget *widget, int parent_id = 0);
     void resizeCellsToContent();
 
-    virtual bool isValid() override;
-    virtual QString errorMessage() override;
-    virtual void save() override;
-    virtual void saveState() override;
-    virtual void restoreState() override;
+    bool isValid() override;
+    QString errorMessage() override;
+    void save() override;
+    void saveState() override;
+    void restoreState() override;
 
 signals:
     void itemChanged();

@@ -15,8 +15,8 @@ public:
 
 protected:
     void drawObject(ECFObject*, int = 0) override;
-//    virtual ECFValueTableWidget* processString(ECFParameter*, ECFValueTableWidget*, QWidget*) override;
-    virtual ECFParameterTreeWidget* processString(ECFParameter*, ECFParameterTreeWidget*, QWidget*, int = 0) override;
+//    ECFValueTableWidget* processString(ECFParameter*, ECFValueTableWidget*, QWidget*) override;
+    ECFParameterTreeWidget* processString(ECFParameter*, ECFParameterTreeWidget*, QWidget*, int = 0) override;
 };
 
 }

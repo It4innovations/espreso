@@ -19,8 +19,8 @@ public:
     explicit FilepathWidget(QWidget *parent = 0);
     ~FilepathWidget();
 
-    virtual void setText(const QString& text) override;
-    virtual QString text() override;
+    void setText(const QString& text) override;
+    QString text() override;
 
 private slots:
     void onPressed();

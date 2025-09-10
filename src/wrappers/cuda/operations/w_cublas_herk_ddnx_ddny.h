@@ -34,8 +34,8 @@ protected:
     using herk_ddnx_ddny<T>::mode;
     using herk_ddnx_ddny<T>::wss_tmp_perform;
 protected:
-    virtual void internal_setup() override;
-    virtual void internal_perform(void * /*ws_tmp*/) override;
+    void internal_setup() override;
+    void internal_perform(void * /*ws_tmp*/) override;
 private:
     std::unique_ptr<w_cublas_herk_ddnx_ddny_data> data;
 };

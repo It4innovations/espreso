@@ -14,7 +14,7 @@ public:
     OutputConfigurationWidget(ECFObject* output, QWidget* parent = 0);
 
 protected:
-    virtual void drawObject(ECFObject*, int = 0) override;
+    void drawObject(ECFObject*, int = 0) override;
 };
 
 }

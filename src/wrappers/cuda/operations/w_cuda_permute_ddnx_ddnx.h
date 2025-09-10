@@ -30,8 +30,8 @@ protected:
     using permute_ddnx_ddnx<T,I>::perm_primary;
     using permute_ddnx_ddnx<T,I>::perm_secdary;
 protected:
-    virtual void internal_setup() override;
-    virtual void internal_perform(void * ws_tmp) override;
+    void internal_setup() override;
+    void internal_perform(void * ws_tmp) override;
 };
 
 

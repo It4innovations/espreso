@@ -31,7 +31,7 @@ protected:
     using supermatrix_ddnx_ddnx_noncontig<T,I>::d_col_map;
     using supermatrix_ddnx_ddnx_noncontig<T,I>::mode_val;
 protected:
-    virtual void internal_perform() override;
+    void internal_perform() override;
 };
 
 

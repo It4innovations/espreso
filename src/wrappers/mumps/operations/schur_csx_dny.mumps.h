@@ -30,12 +30,12 @@ public:
     schur_csx_dny_mumps & operator=(schur_csx_dny_mumps &&) = default;
     virtual ~schur_csx_dny_mumps();
 public:
-    virtual const char * get_name() override { return "schur_csx_dny_mumps"; }
+    const char * get_name() override { return "schur_csx_dny_mumps"; }
 protected:
-    virtual void internal_preprocess() override;
-    virtual void internal_perform_1() override;
-    virtual void internal_perform_2() override;
-    virtual void internal_solve_A11(VectorDenseView_new<T> & rhs, VectorDenseView_new<T> & sol) override;
+    void internal_preprocess() override;
+    void internal_perform_1() override;
+    void internal_perform_2() override;
+    void internal_solve_A11(VectorDenseView_new<T> & rhs, VectorDenseView_new<T> & sol) override;
 private:
     std::unique_ptr<schur_csx_dny_mumps_data<T,I>> data;
 protected:

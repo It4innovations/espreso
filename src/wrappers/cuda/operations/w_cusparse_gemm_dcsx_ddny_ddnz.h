@@ -39,9 +39,9 @@ protected:
     using gemm_dcsx_ddny_ddnz<T,I>::alpha;
     using gemm_dcsx_ddny_ddnz<T,I>::beta;
 protected:
-    virtual void internal_setup() override;
-    virtual void internal_preprocess(void * ws_tmp) override;
-    virtual void internal_perform(void * ws_tmp) override;
+    void internal_setup() override;
+    void internal_preprocess(void * ws_tmp) override;
+    void internal_perform(void * ws_tmp) override;
 private:
     std::unique_ptr<w_cusparse_gemm_dcsx_ddny_ddnz_data<T,I>> data;
 };

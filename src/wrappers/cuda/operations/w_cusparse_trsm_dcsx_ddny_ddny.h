@@ -37,10 +37,10 @@ protected:
     using trsm_dcsx_ddny_ddny<T,I>::wss_tmp_perform;
     using trsm_dcsx_ddny_ddny<T,I>::place;
 protected:
-    virtual char internal_get_native_place() override;
-    virtual void internal_setup() override;
-    virtual void internal_preprocess(void * ws_tmp) override;
-    virtual void internal_perform(void * ws_tmp) override;
+    char internal_get_native_place() override;
+    void internal_setup() override;
+    void internal_preprocess(void * ws_tmp) override;
+    void internal_perform(void * ws_tmp) override;
 private:
     std::unique_ptr<w_cusparse_trsm_dcsx_ddny_ddny_data> data;
 };

@@ -30,7 +30,7 @@ public:
 class FilepathWidgetFactory : public TextItemWidgetFactory
 {
 public:
-    virtual TextItemWidget* create(QWidget* parent = 0) override;
+    TextItemWidget* create(QWidget* parent = 0) override;
 };
 
 class OptionWidgetFactory : public TextItemWidgetFactory
@@ -38,7 +38,7 @@ class OptionWidgetFactory : public TextItemWidgetFactory
 public:
     OptionWidgetFactory(const QStringList& options);
 
-    virtual TextItemWidget* create(QWidget* parent = 0) override;
+    TextItemWidget* create(QWidget* parent = 0) override;
 
 private:
     QStringList m_options;
@@ -50,7 +50,7 @@ public:
     TextWidgetFactory(ValidatorFactory* validatorFactory = nullptr);
     virtual ~TextWidgetFactory();
 
-    virtual TextItemWidget* create(QWidget* parent = 0) override;
+    TextItemWidget* create(QWidget* parent = 0) override;
 
 private:
     ValidatorFactory* m_factory;
@@ -61,10 +61,10 @@ class DataTypeEditWidgetFactory : public TextItemWidgetFactory, public IValidata
 public:
     DataTypeEditWidgetFactory(ECFParameter* expression = nullptr);
 
-    virtual TextItemWidget* create(QWidget* parent = 0) override;
+    TextItemWidget* create(QWidget* parent = 0) override;
 
-    virtual bool isValid() override;
-    virtual QString errorMessage() override;
+    bool isValid() override;
+    QString errorMessage() override;
 
 private:
     DataTypeEditWidgetFactoryData m_data;

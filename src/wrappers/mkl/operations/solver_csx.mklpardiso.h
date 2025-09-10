@@ -29,7 +29,7 @@ public:
     solver_csx_mklpardiso & operator=(solver_csx_mklpardiso &&) = default;
     virtual ~solver_csx_mklpardiso();
 public:
-    virtual const char * get_name() override { return "solver_csx_mklpardiso"; }
+    const char * get_name() override { return "solver_csx_mklpardiso"; }
 protected:
     void internal_factorize_symbolic() override;
     void internal_factorize_numeric() override;

@@ -29,7 +29,7 @@ namespace espreso
     class DefaultCleanRowFactory : public CleanRowFactory
     {
     public:
-        virtual QList<QStandardItem*> create(int columns) override;
+        QList<QStandardItem*> create(int columns) override;
     };
 
     class TableWidget : public QWidget, public IValidatableObject
@@ -42,8 +42,8 @@ namespace espreso
         virtual void addRow(const QVector<QString>& rowData);
         virtual void addData(const QVector<QVector<QString> >& data);
         virtual void addData(const QString& data) = 0;
-        virtual bool isValid() override;
-        virtual QString errorMessage() override;
+                bool isValid() override;
+                QString errorMessage() override;
         virtual QString data() = 0;
 
     signals:

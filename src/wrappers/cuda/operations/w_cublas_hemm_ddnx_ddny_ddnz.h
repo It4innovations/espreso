@@ -34,8 +34,8 @@ protected:
     using hemm_ddnx_ddny_ddnz<T>::alpha;
     using hemm_ddnx_ddny_ddnz<T>::beta;
 protected:
-    virtual void internal_setup() override;
-    virtual void internal_perform(void * ws_tmp) override;
+    void internal_setup() override;
+    void internal_perform(void * ws_tmp) override;
 private:
     std::unique_ptr<w_cublas_hemm_ddnx_ddny_ddnz_data> data;
 };

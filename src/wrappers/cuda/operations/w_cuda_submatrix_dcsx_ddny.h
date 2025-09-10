@@ -36,9 +36,9 @@ protected:
     using submatrix_dcsx_ddny<T,I>::wss_tmp_preprocess;
     using submatrix_dcsx_ddny<T,I>::wss_tmp_perform;
 protected:
-    virtual void internal_setup() override;
-    virtual void internal_preprocess(void * ws_tmp) override;
-    virtual void internal_perform(void * ws_tmp) override;
+    void internal_setup() override;
+    void internal_preprocess(void * ws_tmp) override;
+    void internal_perform(void * ws_tmp) override;
 };
 
 

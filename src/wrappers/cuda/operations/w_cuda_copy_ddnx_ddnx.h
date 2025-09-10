@@ -29,8 +29,8 @@ protected:
     using copy_ddnx_ddnx<T>::uplo;
     using copy_ddnx_ddnx<T>::wss_tmp_perform;
 protected:
-    virtual void internal_setup() override;
-    virtual void internal_perform(void * ws_tmp) override;
+    void internal_setup() override;
+    void internal_perform(void * ws_tmp) override;
 };
 
 

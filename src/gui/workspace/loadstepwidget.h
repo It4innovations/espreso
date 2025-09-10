@@ -18,7 +18,7 @@ public:
 
 protected:
     void drawObject(ECFObject*, int = 0) override;
-    virtual void performBeforeRedraw() override;
+    void performBeforeRedraw() override;
 
 private:
     ECFParameter* m_loadstep;

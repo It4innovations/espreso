@@ -28,9 +28,9 @@ public:
     PhysicsConfiguration* activePhysics();
     ECFObject* input(int index);
 
-    virtual void save() override;
-    virtual bool isValid() override;
-    virtual QString errorMessage() override;
+    void save() override;
+    bool isValid() override;
+    QString errorMessage() override;
 
 signals:
     void inputChanged();

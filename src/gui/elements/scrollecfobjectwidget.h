@@ -15,8 +15,8 @@ public:
     ScrollECFObjectWidget(ECFObject* obj, QWidget* parent = 0);
 
 protected:
-    virtual QWidget* initContainer() override;
-    virtual void performBeforeRedraw() override {}
+    QWidget* initContainer() override;
+    void performBeforeRedraw() override {}
 };
 
 }

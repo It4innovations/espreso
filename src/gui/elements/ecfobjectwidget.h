@@ -34,10 +34,10 @@ public:
     virtual ~ECFObjectWidget();
     void init();
 
-    virtual bool isValid() override;
-    virtual QString errorMessage() override;
+    bool isValid() override;
+    QString errorMessage() override;
 
-    virtual void save() override;
+    void save() override;
 
     void setDrawHeadline(bool draw);
 

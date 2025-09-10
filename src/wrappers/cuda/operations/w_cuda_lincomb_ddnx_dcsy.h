@@ -31,8 +31,8 @@ protected:
     using lincomb_ddnx_dcsy<T,I>::beta;
     using lincomb_ddnx_dcsy<T,I>::wss_tmp_perform;
 protected:
-    virtual void internal_setup() override;
-    virtual void internal_perform(void * ws_tmp) override;
+    void internal_setup() override;
+    void internal_perform(void * ws_tmp) override;
 };
 
 

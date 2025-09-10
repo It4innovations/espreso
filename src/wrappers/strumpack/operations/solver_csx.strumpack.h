@@ -29,7 +29,7 @@ public:
     solver_csx_strumpack & operator=(solver_csx_strumpack &&) = default;
     virtual ~solver_csx_strumpack();
 public:
-    virtual const char * get_name() override { return "solver_csx_strumpack"; }
+    const char * get_name() override { return "solver_csx_strumpack"; }
 protected:
     void internal_factorize_symbolic() override;
     void internal_factorize_numeric() override;

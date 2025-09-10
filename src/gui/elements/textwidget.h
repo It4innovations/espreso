@@ -24,8 +24,8 @@ public:
 
     void setValidator(QValidator* validator);
 
-    virtual void setText(const QString& text) override;
-    virtual QString text() override;
+    void setText(const QString& text) override;
+    QString text() override;
 
 private:
     Ui::TextWidget *ui;
