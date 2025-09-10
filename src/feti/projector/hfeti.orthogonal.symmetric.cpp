@@ -45,6 +45,7 @@ void HFETIOrthogonalSymmetric<T>::update(const step::Step &step)
         kernel.resize(feti.R1.size());
         for (size_t d = 0; d < feti.R1.size(); ++d) {
             kernel[d].offset = 0;
+            kernel[d].size = feti.KR1[d].nrows;
             Projector<T>::Kernel::total = std::max(Projector<T>::Kernel::total, feti.R1[d].nrows);
         }
         Projector<T>::Kernel::roffset = Projector<T>::Kernel::rsize = Projector<T>::Kernel::total;

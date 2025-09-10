@@ -47,6 +47,7 @@ void HFETIConjugateSymmetric<T>::update(const step::Step &step)
         kernel.resize(feti.KR1.size());
         for (size_t d = 0; d < feti.KR1.size(); ++d) {
             kernel[d].offset = 0;
+            kernel[d].size = feti.KR1[d].nrows;
             Projector<T>::Kernel::total = std::max(Projector<T>::Kernel::total, feti.KR1[d].nrows);
         }
         Projector<T>::Kernel::roffset = Projector<T>::Kernel::rsize = Projector<T>::Kernel::total;
@@ -63,6 +64,8 @@ void HFETIConjugateSymmetric<T>::update(const step::Step &step)
         dual.set(feti.decomposition, feti.lambdas.cmap);
         dual.spread(feti.decomposition);
 
+        nonzeros.clear();
+        distributed.clear();
         auto vbegin = dual.clusters.vertices.find(info::mpi::rank);
         auto vend   = dual.clusters.vertices.lower_bound(info::mpi::rank + 1);
         for (auto v = vbegin; v != vend; ++v) {
@@ -157,7 +160,7 @@ template<typename T>
 void HFETIConjugateSymmetric<T>::_updateG()
 {
     auto vbegin = dual.clusters.vertices.find(info::mpi::rank);
-    auto vend   = dual.clusters.vertices.find(info::mpi::rank + 1);
+    auto vend   = dual.clusters.vertices.lower_bound(info::mpi::rank + 1);
 
     math::set(G, T{0});
     for (auto v = vbegin; v != vend; ++v) {

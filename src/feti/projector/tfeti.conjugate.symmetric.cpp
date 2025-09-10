@@ -46,6 +46,7 @@ void TFETIConjugateSymmetric<T>::update(const step::Step &step)
         kernel.clear();
         kernel.resize(feti.KR1.size());
         for (size_t d = 0, offset = 0; d < feti.KR1.size(); ++d) {
+            kernel[d].offset = offset;
             offset += kernel[d].size = feti.KR1[d].nrows;
             Projector<T>::Kernel::total += feti.KR1[d].nrows;
         }
