@@ -11,7 +11,7 @@ struct Matrix_Dual_Sparse: public Matrix_Dual<T> {
 
     Matrix_Dual_Sparse(const std::vector<int> &nonzeros, const std::vector<int> &distributed);
 
-    virtual void synchronize();
+    virtual void synchronize() override;
 
     using Matrix_Dense<T>::nrows;
     using Matrix_Dense<T>::ncols;

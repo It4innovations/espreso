@@ -40,7 +40,7 @@ protected:
     size_t GGtDataOffset, GGtDataSize;
 
     DualGraph dual;
-    std::vector<int> nonzeros, distributed;
+    std::vector<int> nonzeros, distributed, filter;
 };
 
 }

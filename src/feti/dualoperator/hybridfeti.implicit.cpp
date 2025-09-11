@@ -183,6 +183,21 @@ void HybridFETIImplicit<T>::apply(const Matrix_Dual<T> &x, Matrix_Dual<T> &y)
 }
 
 template <typename T>
+void HybridFETIImplicit<T>::apply(const Matrix_Dual<T> &x, Matrix_Dual<T> &y, const std::vector<int> &filter)
+{
+    Vector_Dual<T> _x, _y;
+    _x.size = _y.size = x.ncols;
+    for (int r = 0; r < x.nrows; ++r) {
+        if (filter[r]) {
+            _x.vals = x.vals + x.ncols * r;
+            _y.vals = y.vals + y.ncols * r;
+            _apply(_x, _y);
+        }
+    }
+    y.synchronize();
+}
+
+template <typename T>
 void HybridFETIImplicit<T>::toPrimal(const Vector_Dual<T> &x, std::vector<Vector_Dense<T> > &y)
 {
     #pragma omp parallel for
