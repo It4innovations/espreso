@@ -517,8 +517,6 @@ void HybridFETIImplicit<T>::_computeS0()
 {
     if (isRegularK) {
         S0.resize(0, 0);
-        Splus.commit(S0);
-        Splus.factorization();
         return;
     }
 
