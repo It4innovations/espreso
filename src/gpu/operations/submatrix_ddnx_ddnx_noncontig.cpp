@@ -3,6 +3,7 @@
 
 #include "basis/utilities/stacktimer.h"
 #include "wrappers/cuda/operations/w_cuda_submatrix_ddnx_ddnx_noncontig.h"
+#include "wrappers/rocm/operations/w_rocm_submatrix_ddnx_ddnx_noncontig.h"
 
 
 
@@ -17,6 +18,9 @@ std::unique_ptr<submatrix_ddnx_ddnx_noncontig<T,I>> submatrix_ddnx_ddnx_nonconti
 {
     #ifdef ESPRESO_USE_WRAPPER_GPU_CUDA
         return std::make_unique<w_cuda_submatrix_ddnx_ddnx_noncontig<T,I>>();
+    #endif
+    #ifdef ESPRESO_USE_WRAPPER_GPU_ROCM
+        return std::make_unique<w_rocm_submatrix_ddnx_ddnx_noncontig<T,I>>();
     #endif
     eslog::error("wrapper for submatrix_ddnx_ddnx_noncontig not available\n");
 }

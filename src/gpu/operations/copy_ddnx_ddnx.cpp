@@ -3,6 +3,7 @@
 
 #include "basis/utilities/stacktimer.h"
 #include "wrappers/cuda/operations/w_cuda_copy_ddnx_ddnx.h"
+#include "wrappers/rocm/operations/w_rocm_copy_ddnx_ddnx.h"
 
 
 
@@ -17,6 +18,9 @@ std::unique_ptr<copy_ddnx_ddnx<T>> copy_ddnx_ddnx<T>::make()
 {
     #ifdef ESPRESO_USE_WRAPPER_GPU_CUDA
         return std::make_unique<w_cuda_copy_ddnx_ddnx<T>>();
+    #endif
+    #ifdef ESPRESO_USE_WRAPPER_GPU_ROCM
+        return std::make_unique<w_rocm_copy_ddnx_ddnx<T>>();
     #endif
     eslog::error("wrapper for copy_ddnx_ddnx not available\n");
 }

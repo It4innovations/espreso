@@ -3,7 +3,8 @@
 #ifdef ESPRESO_USE_WRAPPER_GPU_ROCM
 
 #include "gpu/gpu_spblas.h"
-#include "w.rocm.gpu_management.h"
+#include "common_rocm_mgm.h"
+#include "wrappers/rocm/common_rocsparse.h"
 
 #include <rocsparse/rocsparse.h>
 #include <rocprim/rocprim.hpp>
@@ -15,15 +16,6 @@
 #else
     #define ROCSPARSE_SPMV_NEEDS_SEPARATE_MATRIX_DESCRIPTORS false
 #endif
-
-
-
-inline void _check(rocsparse_status status, const char *file, int line)
-{
-    if (status != rocsparse_status_success) {
-        espreso::eslog::error("ROCSPARSE Error %d. In file '%s' on line %d\n", status, file, line);
-    }
-}
 
 
 
@@ -182,17 +174,6 @@ namespace spblas {
             CHECK(hipPeekAtLastError());
         }
     }
-
-    struct _handle
-    {
-        rocsparse_handle h;
-        hipStream_t get_stream()
-        {
-            hipStream_t stream;
-            CHECK(rocsparse_get_stream(h, &stream));
-            return stream;
-        }
-    };
 
     struct _descr_matrix_csr
     {

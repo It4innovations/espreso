@@ -65,12 +65,12 @@ void setup_config(typename schur_csx_dny_spsolver_data<T,I>::config & cfg)
 
 
 template<typename T, typename I>
-schur_csx_dny_spsolver<T,I>::schur_csx_dny_spsolver() = default;
+schur_csx_dny_spsolver<T,I>::schur_csx_dny_spsolver() {}
 
 
 
 template<typename T, typename I>
-schur_csx_dny_spsolver<T,I>::~schur_csx_dny_spsolver() = default;
+schur_csx_dny_spsolver<T,I>::~schur_csx_dny_spsolver() {}
 
 
 

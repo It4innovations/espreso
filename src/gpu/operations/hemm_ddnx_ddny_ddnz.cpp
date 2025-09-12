@@ -3,6 +3,7 @@
 
 #include "basis/utilities/stacktimer.h"
 #include "wrappers/cuda/operations/w_cublas_hemm_ddnx_ddny_ddnz.h"
+#include "wrappers/rocm/operations/w_rocblas_hemm_ddnx_ddny_ddnz.h"
 
 
 
@@ -18,6 +19,9 @@ std::unique_ptr<hemm_ddnx_ddny_ddnz<T>> hemm_ddnx_ddny_ddnz<T>::make()
     // feel free to make this runtime ifs based on ecf or env
     #ifdef ESPRESO_USE_WRAPPER_GPU_CUDA
         return std::make_unique<w_cublas_hemm_ddnx_ddny_ddnz<T>>();
+    #endif
+    #ifdef ESPRESO_USE_WRAPPER_GPU_ROCM
+        return std::make_unique<w_rocblas_hemm_ddnx_ddny_ddnz<T>>();
     #endif
     eslog::error("wrapper for hemm_ddnx_ddny_ddnz not available\n");
 }

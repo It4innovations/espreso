@@ -99,12 +99,12 @@ static void setup_config(typename schur_csx_dny_manual_simple_data<T,I>::config 
 
 
 template<typename T, typename I>
-schur_csx_dny_manual_simple<T,I>::schur_csx_dny_manual_simple() = default;
+schur_csx_dny_manual_simple<T,I>::schur_csx_dny_manual_simple() {}
 
 
 
 template<typename T, typename I>
-schur_csx_dny_manual_simple<T,I>::~schur_csx_dny_manual_simple() = default;
+schur_csx_dny_manual_simple<T,I>::~schur_csx_dny_manual_simple() {}
 
 
 

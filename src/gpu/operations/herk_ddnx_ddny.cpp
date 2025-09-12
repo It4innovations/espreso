@@ -3,6 +3,7 @@
 
 #include "basis/utilities/stacktimer.h"
 #include "wrappers/cuda/operations/w_cublas_herk_ddnx_ddny.h"
+#include "wrappers/rocm/operations/w_rocblas_herk_ddnx_ddny.h"
 
 
 
@@ -17,6 +18,9 @@ std::unique_ptr<herk_ddnx_ddny<T>> herk_ddnx_ddny<T>::make()
 {
     #ifdef ESPRESO_USE_WRAPPER_GPU_CUDA
         return std::make_unique<w_cublas_herk_ddnx_ddny<T>>();
+    #endif
+    #ifdef ESPRESO_USE_WRAPPER_GPU_ROCM
+        return std::make_unique<w_rocblas_herk_ddnx_ddny<T>>();
     #endif
     eslog::error("wrapper for herk_ddnx_ddny not available\n");
 }

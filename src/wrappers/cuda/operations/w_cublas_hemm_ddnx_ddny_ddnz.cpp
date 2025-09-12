@@ -47,7 +47,7 @@ void w_cublas_hemm_ddnx_ddny_ddnz<T>::internal_setup()
     // no manual workspace needed if I use just a single stream with this handle, which I do
     wss_tmp_perform = 0;
 
-    if(B->order != C->order) eslog::error("order of all matrices must match\n");
+    if(B->order != C->order) eslog::error("order of matrices B and C must match\n");
     if(utils::is_complex<T>() && A->order != C->order) eslog::error("for complex, order of all matrices must match\n");
 
     data->side = ((C->order == 'C') ? CUBLAS_SIDE_LEFT : CUBLAS_SIDE_RIGHT);

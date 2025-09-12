@@ -114,12 +114,12 @@ void setup_config(typename schur_hcsx_ddny_tria_data<T,I>::config & cfg)
 
 
 template<typename T, typename I>
-schur_hcsx_ddny_tria<T,I>::schur_hcsx_ddny_tria() = default;
+schur_hcsx_ddny_tria<T,I>::schur_hcsx_ddny_tria() {}
 
 
 
 template<typename T, typename I>
-schur_hcsx_ddny_tria<T,I>::~schur_hcsx_ddny_tria() = default;
+schur_hcsx_ddny_tria<T,I>::~schur_hcsx_ddny_tria() {}
 
 
 

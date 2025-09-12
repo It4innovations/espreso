@@ -5,9 +5,7 @@
 
 #include "wrappers/cuda/common_cusparse.h"
 
-                #include "wrappers/cuda/common_cuda_mgm.h"
-                #include "math/primitives_new/matrix_csx_data_new.h"
-                #include "math/primitives_new/matrix_dense_data_new.h"
+
 
 namespace espreso {
 namespace gpu {

@@ -3,7 +3,7 @@
 #ifdef ESPRESO_USE_WRAPPER_GPU_ROCM
 
 #include "gpu/gpu_management.h"
-#include "w.rocm.gpu_management.h"
+#include "common_rocm_mgm.h"
 #include "basis/utilities/cbmb_allocator.h"
 
 #include <omp.h>

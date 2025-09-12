@@ -3,6 +3,7 @@
 
 #include "basis/utilities/stacktimer.h"
 #include "wrappers/cuda/operations/w_cublas_gemm_ddnx_ddny_ddnz.h"
+#include "wrappers/rocm/operations/w_rocblas_gemm_ddnx_ddny_ddnz.h"
 
 
 
@@ -17,6 +18,9 @@ std::unique_ptr<gemm_ddnx_ddny_ddnz<T>> gemm_ddnx_ddny_ddnz<T>::make()
 {
     #ifdef ESPRESO_USE_WRAPPER_GPU_CUDA
         return std::make_unique<w_cublas_gemm_ddnx_ddny_ddnz<T>>();
+    #endif
+    #ifdef ESPRESO_USE_WRAPPER_GPU_ROCM
+        return std::make_unique<w_rocblas_gemm_ddnx_ddny_ddnz<T>>();
     #endif
     eslog::error("wrapper for gemm_ddnx_ddny_ddnz not available\n");
 }

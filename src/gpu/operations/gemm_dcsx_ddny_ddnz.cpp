@@ -3,7 +3,7 @@
 
 #include "basis/utilities/stacktimer.h"
 #include "wrappers/cuda/operations/w_cusparse_gemm_dcsx_ddny_ddnz.h"
-// #include "wrappers/rocm/operations/w_rocsparse_gemm_dcsx_ddny_ddnz.h"
+#include "wrappers/rocm/operations/w_rocsparse_gemm_dcsx_ddny_ddnz.h"
 // #include "wrappers/oneapi/operations/w_oneapisparse_gemm_dcsx_ddny_ddnz.h"
 
 
@@ -21,9 +21,9 @@ std::unique_ptr<gemm_dcsx_ddny_ddnz<T,I>> gemm_dcsx_ddny_ddnz<T,I>::make()
     #ifdef ESPRESO_USE_WRAPPER_GPU_CUDA
         return std::make_unique<w_cusparse_gemm_dcsx_ddny_ddnz<T,I>>();
     #endif
-    // #ifdef ESPRESO_USE_WRAPPER_GPU_ROCM
-    //     return std::make_unique<w_rocsparse_gemm_dcsx_ddny_ddnz<T,I>>();
-    // #endif
+    #ifdef ESPRESO_USE_WRAPPER_GPU_ROCM
+        return std::make_unique<w_rocsparse_gemm_dcsx_ddny_ddnz<T,I>>();
+    #endif
     // #ifdef ESPRESO_USE_WRAPPER_GPU_ONEAPI
     //     return std::make_unique<w_oneapisparse_gemm_dcsx_ddny_ddnz<T,I>>();
     // #endif

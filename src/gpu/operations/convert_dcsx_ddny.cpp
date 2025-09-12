@@ -3,6 +3,7 @@
 
 #include "basis/utilities/stacktimer.h"
 #include "wrappers/cuda/operations/w_cusparse_convert_dcsx_ddny.h"
+#include "wrappers/rocm/operations/w_rocsparse_convert_dcsx_ddny.h"
 
 
 
@@ -18,6 +19,9 @@ std::unique_ptr<convert_dcsx_ddny<T,I>> convert_dcsx_ddny<T,I>::make()
     // feel free to make this runtime ifs based on ecf or env
     #ifdef ESPRESO_USE_WRAPPER_GPU_CUDA
         return std::make_unique<w_cusparse_convert_dcsx_ddny<T,I>>();
+    #endif
+    #ifdef ESPRESO_USE_WRAPPER_GPU_ROCM
+        return std::make_unique<w_rocsparse_convert_dcsx_ddny<T,I>>();
     #endif
     eslog::error("wrapper for convert_dcsx_ddny not available\n");
 }

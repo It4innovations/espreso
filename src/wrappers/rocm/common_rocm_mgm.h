@@ -1,17 +1,16 @@
 
-#ifndef SRC_WRAPPERS_ROCM_W_ROCM_GPU_MANAGEMENT_H_
-#define SRC_WRAPPERS_ROCM_W_ROCM_GPU_MANAGEMENT_H_
+#ifndef SRC_WRAPPERS_ROCM_COMMON_ROCM_MGM_H
+#define SRC_WRAPPERS_ROCM_COMMON_ROCM_MGM_H
 
 #include <hip/hip_runtime.h>
 
-#include "esinfo/eslog.h"
+#include "esinfo/eslog.hpp"
 
 
 
 #ifndef CHECK
 #define CHECK(status) do { _check((status), __FILE__, __LINE__); } while(false)
 #endif
-
 inline void _check(hipError_t error_code, const char *file, int line)
 {
     if (error_code != hipSuccess)
@@ -40,4 +39,6 @@ namespace mgm {
 }
 }
 
-#endif /* SRC_WRAPPERS_ROCM_W_ROCM_GPU_MANAGEMENT_H_ */
+
+
+#endif /* SRC_WRAPPERS_ROCM_COMMON_ROCM_MGM_H */

@@ -59,7 +59,7 @@ static int get_pardisoType(const MatrixCsxView_new<T,I> & M)
 
 
 template<typename T, typename I>
-schur_csx_dny_mklpardiso<T,I>::schur_csx_dny_mklpardiso() = default;
+schur_csx_dny_mklpardiso<T,I>::schur_csx_dny_mklpardiso() {}
 
 
 

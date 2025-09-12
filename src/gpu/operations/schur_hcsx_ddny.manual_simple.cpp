@@ -131,12 +131,12 @@ void setup_config(typename schur_hcsx_ddny_manual_simple_data<T,I>::config & cfg
 
 
 template<typename T, typename I>
-schur_hcsx_ddny_manual_simple<T,I>::schur_hcsx_ddny_manual_simple() = default;
+schur_hcsx_ddny_manual_simple<T,I>::schur_hcsx_ddny_manual_simple() {}
 
 
 
 template<typename T, typename I>
-schur_hcsx_ddny_manual_simple<T,I>::~schur_hcsx_ddny_manual_simple() = default;
+schur_hcsx_ddny_manual_simple<T,I>::~schur_hcsx_ddny_manual_simple() {}
 
 
 

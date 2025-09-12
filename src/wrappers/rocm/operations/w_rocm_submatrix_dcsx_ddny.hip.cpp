@@ -1,9 +1,9 @@
 
-#ifdef HAVE_CUDA
+#ifdef HAVE_ROCM
 
-#include "wrappers/cuda/operations/w_cuda_submatrix_dcsx_ddny.h"
+#include "wrappers/rocm/operations/w_rocm_submatrix_dcsx_ddny.h"
 
-#include "wrappers/cuda/common_cuda_mgm.h"
+#include "wrappers/rocm/common_rocm_mgm.h"
 
 
 
@@ -46,7 +46,7 @@ static void submatrix_csx_dny_vals(I * src_ptrs, I * src_idxs, T * src_vals, T *
 
 
 template<typename T, typename I>
-void w_cuda_submatrix_dcsx_ddny<T,I>::internal_setup()
+void w_rocm_submatrix_dcsx_ddny<T,I>::internal_setup()
 {
     wss_internal = 0;
     wss_persistent = 0;
@@ -57,7 +57,7 @@ void w_cuda_submatrix_dcsx_ddny<T,I>::internal_setup()
 
 
 template<typename T, typename I>
-void w_cuda_submatrix_dcsx_ddny<T,I>::internal_preprocess(void * /*ws_tmp*/)
+void w_rocm_submatrix_dcsx_ddny<T,I>::internal_preprocess(void * /*ws_tmp*/)
 {
     // no-op
 }
@@ -65,24 +65,24 @@ void w_cuda_submatrix_dcsx_ddny<T,I>::internal_preprocess(void * /*ws_tmp*/)
 
 
 template<typename T, typename I>
-void w_cuda_submatrix_dcsx_ddny<T,I>::internal_perform(void * /*ws_tmp*/)
+void w_rocm_submatrix_dcsx_ddny<T,I>::internal_perform(void * /*ws_tmp*/)
 {
-    CHECK(cudaMemset2D(M_dst->vals, M_dst->ld * sizeof(T), 0, M_dst->get_size_secdary() * sizeof(T), M_dst->get_size_primary()));
+    CHECK(hipMemset2D(M_dst->vals, M_dst->ld * sizeof(T), 0, M_dst->get_size_secdary() * sizeof(T), M_dst->get_size_primary()));
 
     if(M_src->order == M_dst->order) {
         submatrix_csx_dny_vals<T,I,true><<<M_dst->get_size_primary(),256,0,q->stream>>>(M_src->ptrs, M_src->idxs, M_src->vals, M_dst->vals, M_dst->ld, primary_start, secdary_start, secdary_end);
-        CHECK(cudaPeekAtLastError());
+        CHECK(hipPeekAtLastError());
     }
     else {
         submatrix_csx_dny_vals<T,I,false><<<M_dst->get_size_primary(),256,0,q->stream>>>(M_src->ptrs, M_src->idxs, M_src->vals, M_dst->vals, M_dst->ld, primary_start, secdary_start, secdary_end);
-        CHECK(cudaPeekAtLastError());
+        CHECK(hipPeekAtLastError());
     }
 }
 
 
 
 #define INSTANTIATE_T_I(T,I) \
-template class w_cuda_submatrix_dcsx_ddny<T,I>;
+template class w_rocm_submatrix_dcsx_ddny<T,I>;
 
     #define INSTANTIATE_T(T) \
     INSTANTIATE_T_I(T,int32_t) \

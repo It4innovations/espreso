@@ -3,6 +3,7 @@
 
 #include "basis/utilities/stacktimer.h"
 #include "wrappers/cuda/operations/w_cuda_permute_ddnx_ddnx.h"
+#include "wrappers/rocm/operations/w_rocm_permute_ddnx_ddnx.h"
 
 
 
@@ -17,6 +18,9 @@ std::unique_ptr<permute_ddnx_ddnx<T,I>> permute_ddnx_ddnx<T,I>::make()
 {
     #ifdef ESPRESO_USE_WRAPPER_GPU_CUDA
         return std::make_unique<w_cuda_permute_ddnx_ddnx<T,I>>();
+    #endif
+    #ifdef ESPRESO_USE_WRAPPER_GPU_ROCM
+        return std::make_unique<w_rocm_permute_ddnx_ddnx<T,I>>();
     #endif
     eslog::error("wrapper for permute_ddnx_ddnx not available\n");
 }

@@ -108,12 +108,12 @@ static void setup_config(typename schur_csx_dny_tria_data<T,I>::config & cfg)
 
 
 template<typename T, typename I>
-schur_csx_dny_tria<T,I>::schur_csx_dny_tria() = default;
+schur_csx_dny_tria<T,I>::schur_csx_dny_tria() {}
 
 
 
 template<typename T, typename I>
-schur_csx_dny_tria<T,I>::~schur_csx_dny_tria() = default;
+schur_csx_dny_tria<T,I>::~schur_csx_dny_tria() {}
 
 
 

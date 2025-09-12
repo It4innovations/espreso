@@ -1,0 +1,60 @@
+
+#ifndef SRC_WRAPPERS_ROCM_OPERATIONS_W_ROCM_COPY_DDNX_DDNX_H
+#define SRC_WRAPPERS_ROCM_OPERATIONS_W_ROCM_COPY_DDNX_DDNX_H
+
+#include "gpu/operations/copy_ddnx_ddnx.h"
+
+
+
+namespace espreso {
+namespace gpu {
+namespace operations {
+
+
+
+#ifdef HAVE_ROCM
+
+
+
+template<typename T>
+class w_rocm_copy_ddnx_ddnx : public copy_ddnx_ddnx<T>
+{
+public:
+    w_rocm_copy_ddnx_ddnx() = default;
+    virtual ~w_rocm_copy_ddnx_ddnx() = default;
+protected:
+    using copy_ddnx_ddnx<T>::q;
+    using copy_ddnx_ddnx<T>::M_src;
+    using copy_ddnx_ddnx<T>::M_dst;
+    using copy_ddnx_ddnx<T>::uplo;
+    using copy_ddnx_ddnx<T>::wss_tmp_perform;
+protected:
+    void internal_setup() override;
+    void internal_perform(void * ws_tmp) override;
+};
+
+
+
+#else
+
+
+
+template<typename T>
+class w_rocm_copy_ddnx_ddnx : public copy_ddnx_ddnx<T>
+{
+public:
+    w_rocm_copy_ddnx_ddnx() { eslog::error("rocm wrapper is not available\n"); }
+    virtual ~w_rocm_copy_ddnx_ddnx() = default;
+};
+
+
+
+#endif
+
+
+
+}
+}
+}
+
+#endif /* SRC_WRAPPERS_ROCM_OPERATIONS_W_ROCM_COPY_DDNX_DDNX_H */
