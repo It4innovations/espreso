@@ -11,7 +11,12 @@
 
 #include <iostream>
 #include <vector>
+
+#ifdef __clang__
+#include <experimental/filesystem>
+#else
 #include <filesystem>
+#endif
 
 #ifdef HAVE_PRECICE
 #include <precice/precice.hpp>

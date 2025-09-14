@@ -178,8 +178,8 @@ namespace dnblas {
         if(h->is_collecting_buffersize) return;
 
         if(order_C == order_A) {
-            T zero = 0.0;
-            T one = 1.0;
+            utils::remove_complex_t<T> zero = 0.0;
+            utils::remove_complex_t<T> one = 1.0;
             if constexpr(utils::is_real<T>()) {
                 op_A = mgm::operation_remove_conj(op_A);
             }

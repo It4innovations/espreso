@@ -486,7 +486,7 @@ void DirichletGeneralSchur<T,I>::setup_config()
 
 
 #define INSTANTIATE_T_I(T,I) \
-template class DirichletGeneralSchur<T,I>;
+template struct DirichletGeneralSchur<T,I>;
 
     #define INSTANTIATE_T(T) \
     INSTANTIATE_T_I(T, int32_t) \

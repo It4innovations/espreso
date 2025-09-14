@@ -6,10 +6,8 @@
 #include "w.oneapi.gpu_management.h"
 #include "basis/utilities/cbmb_allocator.h"
 #pragma clang diagnostic push
-#pragma clang diagnostic ignored "-Wunused-function"
-#pragma clang diagnostic ignored "-Wunneeded-internal-declaration"
-#pragma clang diagnostic ignored "-Wunused-parameter"
-#pragma clang diagnostic ignored "-Wsign-compare"
+#pragma clang diagnostic ignored "-Wall"
+#pragma clang diagnostic ignored "-Wdeprecated-declarations"
 #include <dpct/dpct.hpp>
 #pragma clang diagnostic pop
 
@@ -163,7 +161,7 @@ namespace mgm {
     void * memalloc_device_2d(size_t num_chunks, size_t bytes_per_chunk, size_t & pitch)
     {
         constexpr size_t align = 512;
-        size_t pitch = ((bytes_per_chunk - 1) / align + 1) * align;
+        pitch = ((bytes_per_chunk - 1) / align + 1) * align;
         size_t total_size = num_chunks * pitch;
         return memalloc_device(total_size);
     }

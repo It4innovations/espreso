@@ -2,7 +2,10 @@
 #ifndef SRC_WRAPPERS_ONEAPI_W_ONEAPI_GPU_MANAGEMENT_H_
 #define SRC_WRAPPERS_ONEAPI_W_ONEAPI_GPU_MANAGEMENT_H_
 
+#pragma clang diagnostic push
+#pragma clang diagnostic ignored "-Wdeprecated-declarations"
 #include <sycl/sycl.hpp>
+#pragma clang diagnostic pop
 #include <unordered_map>
 #include <mutex>
 

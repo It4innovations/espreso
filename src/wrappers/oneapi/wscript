@@ -28,6 +28,5 @@ def configure(ctx):
             ctx.env.append_unique("CXXFLAGS_ONEAPI", [ "-fsycl-targets=" + ctx.options.sycl_targets ])
             ctx.env.append_unique("LINKFLAGS_ONEAPI", [ "-fsycl-targets=" + ctx.options.sycl_targets ])
         if ctx.options.sycl_backend_options != None:
-            ctx.env.append_unique("CXXFLAGS_ONEAPI", [ "-Xs", ctx.options.sycl_backend_options ])
             ctx.env.append_unique("LINKFLAGS_ONEAPI", [ "-Xs", ctx.options.sycl_backend_options ])
         ctx.env.append_unique("CXXFLAGS_ONEAPI", [ "-DESPRESO_RANK_TO_GPU_MAP=" + ctx.options.rank_to_gpu_map ])

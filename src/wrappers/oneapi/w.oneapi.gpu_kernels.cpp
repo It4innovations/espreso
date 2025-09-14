@@ -61,11 +61,11 @@ namespace kernels {
         int wpw = 256;
         I n_domains = vecs_subdomains.num_vectors;
         sycl::nd_range<1> range(sycl::range<1>(n_domains * wpw), sycl::range<1>(wpw));
-        const T * cluster_vector_vals = cluster_vector.vals;
+        const T * cluster_vector_vals = vec_cluster.vals;
         T * domain_vectors_vals = vecs_subdomains.vals;
         const I * domain_vectors_offsets = vecs_subdomains.offsets;
-        const I * D2Cs_vals = D2Cs.vals;
-        const I * D2Cs_offsets = D2Cs.offsets;
+        const I * D2C_vals = D2C.vals;
+        const I * D2C_offsets = D2C.offsets;
         q->q.parallel_for(
             range,
             [=](sycl::nd_item<1> item) {
@@ -75,7 +75,7 @@ namespace kernels {
                 I end = domain_vectors_offsets[di+1];
                 I size = end - start;
                 T * vec = domain_vectors_vals + start;
-                I * D2C_domain = D2Cs_vals + D2C_offsets[di];
+                const I * D2C_domain = D2C_vals + D2C_offsets[di];
                 for(I i = g.get_local_linear_id(); i < size; i += g.get_local_linear_range()) {
                     vec[i] = cluster_vector_vals[D2C_domain[i]];
                 }
@@ -118,11 +118,11 @@ namespace kernels {
         int wpw = 256;
         I n_domains = vecs_subdomains.num_vectors;
         sycl::nd_range<1> range(sycl::range<1>(n_domains * wpw), sycl::range<1>(wpw));
-        T * cluster_vector_vals = cluster_vector.vals;
+        T * cluster_vector_vals = vec_cluster.vals;
         const T * domain_vectors_vals = vecs_subdomains.vals;
         const I * domain_vectors_offsets = vecs_subdomains.offsets;
-        const I * D2Cs_vals = D2Cs.vals;
-        const I * D2Cs_offsets = D2Cs.offsets;
+        const I * D2C_vals = D2C.vals;
+        const I * D2C_offsets = D2C.offsets;
         q->q.parallel_for(
             range,
             [=](sycl::nd_item<1> item) {
@@ -131,8 +131,8 @@ namespace kernels {
                 I start = domain_vectors_offsets[di];
                 I end = domain_vectors_offsets[di+1];
                 I size = end - start;
-                T * vec = domain_vectors_vals + start;
-                I * D2C_domain = D2Cs_vals + D2C_offsets[di];
+                const T * vec = domain_vectors_vals + start;
+                const I * D2C_domain = D2C_vals + D2C_offsets[di];
                 for(I i = g.get_local_linear_id(); i < size; i += g.get_local_linear_range()) {
                     my_atomicadd(&cluster_vector_vals[D2C_domain[i]], vec[i]);
                 }
