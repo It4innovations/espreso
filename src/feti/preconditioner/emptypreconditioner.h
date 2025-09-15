@@ -12,10 +12,10 @@ class EmptyPreconditioner: public Preconditioner<T> {
 public:
     EmptyPreconditioner(FETI<T> &feti): Preconditioner<T>(feti) {}
 
-    void info() {}
-    void update(const step::Step &step) {}
+    void info() override {}
+    void update(const step::Step &step) override {}
 
-    void apply(const Vector_Dual<T> &x, Vector_Dual<T> &y)
+    void apply(const Vector_Dual<T> &x, Vector_Dual<T> &y) override
     {
         math::copy(y, x);
     }

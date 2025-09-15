@@ -496,14 +496,6 @@ void TotalFETIExplicitGeneralSchurGpu<T,I>::toPrimal(const Vector_Dual<T> &x, st
 
 
 template<typename T, typename I>
-void TotalFETIExplicitGeneralSchurGpu<T,I>::print(const step::Step &step)
-{
-    eslog::error("TotalFETIExplicitGeneralSchurGpu::print not implemented");
-}
-
-
-
-template<typename T, typename I>
 void TotalFETIExplicitGeneralSchurGpu<T,I>::setup_config(config & cfg, const FETIConfiguration & feti_ecf_config)
 {
     // defaults are set in config definition

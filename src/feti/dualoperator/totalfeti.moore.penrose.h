@@ -12,18 +12,18 @@ template <typename T>
 class TotalFETIMoorePenrose: public DualOperator<T> {
 public:
     TotalFETIMoorePenrose(FETI<T> &feti);
-    ~TotalFETIMoorePenrose();
+    virtual ~TotalFETIMoorePenrose();
 
-    void info();
-    void set(const step::Step &step);
-    void update(const step::Step &step);
+    void info() override;
+    void set(const step::Step &step) override;
+    void update(const step::Step &step) override;
 
     // y = B * K+ * Bt * x
-    void apply(const Vector_Dual<T> &x, Vector_Dual<T> &y);
-    void apply(const Matrix_Dual<T> &x, Matrix_Dual<T> &y);
+    void apply(const Vector_Dual<T> &x, Vector_Dual<T> &y) override;
+    void apply(const Matrix_Dual<T> &x, Matrix_Dual<T> &y) override;
 
     // y = K+(f - Bt * x)
-    void toPrimal(const Vector_Dual<T> &x, std::vector<Vector_Dense<T> > &y);
+    void toPrimal(const Vector_Dual<T> &x, std::vector<Vector_Dense<T> > &y) override;
 
 protected:
     using DualOperator<T>::feti;

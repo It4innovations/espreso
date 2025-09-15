@@ -11,15 +11,15 @@ class PCPG: public IterativeSolver<T> {
 public:
     PCPG(FETI<T> &feti);
 
-    void info();
+    void info() override;
 
-    void update(const step::Step &step)
+    void update(const step::Step &step) override
     {
         IterativeSolver<T>::resize(l, r, w, y, z, p);
         IterativeSolver<T>::resize(x, Fp);
     }
 
-    void solve(const step::Step &step, IterativeSolverInfo &info);
+    void solve(const step::Step &step, IterativeSolverInfo &info) override;
 
     using IterativeSolver<T>::feti;
     Vector_Dual<T> l, r, w, y, z, p;

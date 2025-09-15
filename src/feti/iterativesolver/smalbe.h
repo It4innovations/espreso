@@ -16,9 +16,9 @@ class SMALBE: public IterativeSolver<T> {
 public:
     SMALBE(FETI<T> &feti);
 
-    void info();
+    void info() override;
 
-    void update(const step::Step &step)
+    void update(const step::Step &step) override
     {
         IterativeSolver<T>::resize(Pb, b, y, z, x_im, Fx_im, bCtmu, bCtmu_prev, gbCtmu);
         IterativeSolver<T>::resize(mu, invLce, Gx);
@@ -26,7 +26,7 @@ public:
         info();
     }
 
-    void solve(const step::Step &step, IterativeSolverInfo &info);
+    void solve(const step::Step &step, IterativeSolverInfo &info) override;
 
     using IterativeSolver<T>::feti;
 

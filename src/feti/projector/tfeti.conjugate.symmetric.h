@@ -12,12 +12,12 @@ namespace espreso {
 template <typename T>
 struct TFETIConjugateSymmetric: public Projector<T> {
     TFETIConjugateSymmetric(FETI<T> &feti);
-    ~TFETIConjugateSymmetric();
+    virtual ~TFETIConjugateSymmetric();
 
-    void set(const step::Step &step);
-    void update(const step::Step &step);
+    void set(const step::Step &step) override;
+    void update(const step::Step &step) override;
 
-    void orthonormalizeKernels(const step::Step &step);
+    void orthonormalizeKernels(const step::Step &step) override;
 
 protected:
     void _computeDualGraph();

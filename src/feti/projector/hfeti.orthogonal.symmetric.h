@@ -24,12 +24,12 @@ namespace espreso {
 template <typename T>
 struct HFETIOrthogonalSymmetric: public Projector<T> {
     HFETIOrthogonalSymmetric(FETI<T> &feti);
-    ~HFETIOrthogonalSymmetric();
+    virtual ~HFETIOrthogonalSymmetric();
 
-    void set(const step::Step &step);
-    void update(const step::Step &step);
+    void set(const step::Step &step) override;
+    void update(const step::Step &step) override;
 
-    void orthonormalizeKernels(const step::Step &step);
+    void orthonormalizeKernels(const step::Step &step) override;
 
 protected:
     void _computeDualGraph();

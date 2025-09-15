@@ -23,18 +23,18 @@ template <typename T>
 class TotalFETIExplicit: public DualOperator<T> {
 public:
     TotalFETIExplicit(FETI<T> &feti);
-    ~TotalFETIExplicit();
+    virtual ~TotalFETIExplicit();
 
-    void info();
-    void set(const step::Step &step);
-    void update(const step::Step &step);
+    void info() override;
+    void set(const step::Step &step) override;
+    void update(const step::Step &step) override;
 
     // y = F * x
-    void apply(const Vector_Dual<T> &x, Vector_Dual<T> &y);
-    void apply(const Matrix_Dual<T> &x, Matrix_Dual<T> &y);
+    void apply(const Vector_Dual<T> &x, Vector_Dual<T> &y) override;
+    void apply(const Matrix_Dual<T> &x, Matrix_Dual<T> &y) override;
 
     // y = K+(f - Bt * x)
-    void toPrimal(const Vector_Dual<T> &x, std::vector<Vector_Dense<T> > &y);
+    void toPrimal(const Vector_Dual<T> &x, std::vector<Vector_Dense<T> > &y) override;
 
 protected:
     void _apply(const Vector_Dual<T> &x, Vector_Dual<T> &y);

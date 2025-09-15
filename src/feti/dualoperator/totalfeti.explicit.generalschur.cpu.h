@@ -15,7 +15,7 @@ template <typename T, typename I>
 class TotalFETIExplicitGeneralSchurCpu: public DualOperator<T> {
 public:
     TotalFETIExplicitGeneralSchurCpu(FETI<T> &feti);
-    ~TotalFETIExplicitGeneralSchurCpu();
+    virtual ~TotalFETIExplicitGeneralSchurCpu();
 
     void setup() override;
     size_t get_wss_gpu_persistent() override { return total_wss_gpu_persistent; }
@@ -35,8 +35,6 @@ public:
     void toPrimal(const Vector_Dual<T> &x, std::vector<Vector_Dense<T> > &y) override;
 
 protected:
-    void print(const step::Step &step);
-
     using DualOperator<T>::feti;
     using DualOperator<T>::d;
 

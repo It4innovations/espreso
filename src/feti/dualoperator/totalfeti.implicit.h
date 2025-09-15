@@ -23,21 +23,21 @@ template <typename T>
 class TotalFETIImplicit: public DualOperator<T> {
 public:
     TotalFETIImplicit(FETI<T> &feti);
-    ~TotalFETIImplicit();
+    virtual ~TotalFETIImplicit();
 
-    void info();
-    void set(const step::Step &step);
-    void update(const step::Step &step);
+    void info() override;
+    void set(const step::Step &step) override;
+    void update(const step::Step &step) override;
 
     // y = B * K+ * Bt * x
-    void apply(const Vector_Dual<T> &x, Vector_Dual<T> &y);
-    void apply(const Matrix_Dual<T> &x, Matrix_Dual<T> &y);
+    void apply(const Vector_Dual<T> &x, Vector_Dual<T> &y) override;
+    void apply(const Matrix_Dual<T> &x, Matrix_Dual<T> &y) override;
     void apply(const Matrix_Dual<T> &x, Matrix_Dual<T> &y, const std::vector<int> &filter) override;
     void apply(const Matrix_Dual<T> &x, Matrix_Dual<T> &y, const std::vector<std::vector<int> > &filter) override;
 
     // y = K+(f - Bt * x)
-    void toPrimal(const Vector_Dual<T> &x, std::vector<Vector_Dense<T> > &y);
-    void BtL(const Vector_Dual<T> &x, std::vector<Vector_Dense<T> > &y);
+    void toPrimal(const Vector_Dual<T> &x, std::vector<Vector_Dense<T> > &y) override;
+    void BtL(const Vector_Dual<T> &x, std::vector<Vector_Dense<T> > &y) override;
 
 protected:
     using DualOperator<T>::feti;

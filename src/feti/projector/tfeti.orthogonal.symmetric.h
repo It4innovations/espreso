@@ -24,12 +24,12 @@ namespace espreso {
 template <typename T>
 struct TFETIOrthogonalSymmetric: public Projector<T> {
     TFETIOrthogonalSymmetric(FETI<T> &feti);
-    ~TFETIOrthogonalSymmetric();
+    virtual ~TFETIOrthogonalSymmetric();
 
-    void set(const step::Step &step);
-    void update(const step::Step &step);
+    void set(const step::Step &step) override;
+    void update(const step::Step &step) override;
 
-    void orthonormalizeKernels(const step::Step &step);
+    void orthonormalizeKernels(const step::Step &step) override;
 
 protected:
     void _setG();

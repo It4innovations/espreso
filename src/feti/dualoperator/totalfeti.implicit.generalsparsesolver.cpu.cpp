@@ -367,14 +367,6 @@ void TotalFETIImplicitGeneralSparseSolverCpu<T,I>::toPrimal(const Vector_Dual<T>
 
 
 template<typename T, typename I>
-void TotalFETIImplicitGeneralSparseSolverCpu<T,I>::print(const step::Step &step)
-{
-    eslog::error("TotalFETIImplicitGeneralSparseSolverCpu::print not implemented");
-}
-
-
-
-template<typename T, typename I>
 void TotalFETIImplicitGeneralSparseSolverCpu<T,I>::setup_config(config & cfg, const FETIConfiguration & feti_ecf_config)
 {
     // defaults are set in config definition

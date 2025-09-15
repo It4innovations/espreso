@@ -11,7 +11,7 @@ template <typename T, typename I>
 class TotalFETIImplicitGeneralSparseSolverCpu: public DualOperator<T> {
 public:
     TotalFETIImplicitGeneralSparseSolverCpu(FETI<T> &feti);
-    ~TotalFETIImplicitGeneralSparseSolverCpu();
+    virtual ~TotalFETIImplicitGeneralSparseSolverCpu();
 
     void info() override;
     void set(const step::Step &step) override;
@@ -40,8 +40,6 @@ private:
     void setup_config(config & cfg, const FETIConfiguration & feti_ecf_config);
 
 protected:
-    void print(const step::Step &step);
-
     using DualOperator<T>::feti;
     using DualOperator<T>::d;
 private:

@@ -10,12 +10,12 @@ namespace espreso {
 template <typename T>
 struct Lumped: public Preconditioner<T> {
     Lumped(FETI<T> &feti);
-    ~Lumped();
+    virtual ~Lumped();
 
-    void info();
-    void update(const step::Step &step);
+    void info() override;
+    void update(const step::Step &step) override;
 
-    void apply(const Vector_Dual<T> &x, Vector_Dual<T> &y);
+    void apply(const Vector_Dual<T> &x, Vector_Dual<T> &y) override;
 
 protected:
     using Preconditioner<T>::feti;

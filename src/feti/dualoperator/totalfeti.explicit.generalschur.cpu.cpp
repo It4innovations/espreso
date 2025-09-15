@@ -355,14 +355,6 @@ void TotalFETIExplicitGeneralSchurCpu<T,I>::toPrimal(const Vector_Dual<T> &x, st
 
 
 template<typename T, typename I>
-void TotalFETIExplicitGeneralSchurCpu<T,I>::print(const step::Step &step)
-{
-    eslog::error("TotalFETIExplicitGeneralSchurCpu::print not implemented");
-}
-
-
-
-template<typename T, typename I>
 void TotalFETIExplicitGeneralSchurCpu<T,I>::setup_config(config & cfg, const FETIConfiguration & feti_ecf_config)
 {
     // defaults are set in config definition
