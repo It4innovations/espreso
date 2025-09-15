@@ -94,7 +94,7 @@ void setup_config(typename schur_hcsx_ddny_manual_simple_data<T,I>::config & cfg
             int dimension = info::mesh->dimension;
             if(gpu::mgm::get_implementation() == gpu::mgm::gpu_wrapper_impl::CUDA) {
                 if(gpu::spblas::get_implementation() == gpu::spblas::spblas_wrapper_impl::CUSPARSE_LEGACY) {
-                    if(dimension == 2)                                  cfg.trsm_factor_spdn = 'S';
+                    if(dimension == 2)                      cfg.trsm_factor_spdn = 'S';
                     if(dimension == 3 && size_A11 <  12000) cfg.trsm_factor_spdn = 'D';
                     if(dimension == 3 && size_A11 >= 12000) cfg.trsm_factor_spdn = 'S';
                 }
@@ -103,12 +103,11 @@ void setup_config(typename schur_hcsx_ddny_manual_simple_data<T,I>::config & cfg
                 }
             }
             if(gpu::mgm::get_implementation() == gpu::mgm::gpu_wrapper_impl::ROCM) {
-                if(dimension == 2)                                  cfg.trsm_factor_spdn = 'S';
+                if(dimension == 2)                      cfg.trsm_factor_spdn = 'S';
                 if(dimension == 3 && size_A11 <  32000) cfg.trsm_factor_spdn = 'D';
                 if(dimension == 3 && size_A11 >= 32000) cfg.trsm_factor_spdn = 'S';
             }
             if(gpu::mgm::get_implementation() == gpu::mgm::gpu_wrapper_impl::ONEAPI) {
-                eslog::warning("not tested\n");
                 cfg.trsm_factor_spdn = 'D';
             }
             break;

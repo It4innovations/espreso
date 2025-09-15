@@ -39,8 +39,8 @@ static void calc_start_end_ptrs_and_nnzperprim(I * src_ptrs, I * src_idxs, I * s
             end_ptrs[prim_dst] = i+1;
         }
     }
+    __syncthreads();
     if(threadIdx.x == 0) {
-        __syncthreads();
         if(start != end) {
             if(end_secdary <= src_idxs[start]) {
                 end_ptrs[prim_dst] = start;

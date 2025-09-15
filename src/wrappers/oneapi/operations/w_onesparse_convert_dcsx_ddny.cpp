@@ -13,31 +13,31 @@ namespace operations {
 
 
 
-template<typename T, typename I, char order>
+template<typename T, typename I, bool SAME_ORDER>
 struct kernel_functor_sp2dn
 {
-    I * sparse_rowptrs;
-    I * sparse_colidxs;
+    I * sparse_ptrs;
+    I * sparse_idxs;
     T * sparse_vals;
     T * dense_vals;
     I dense_ld;
-    kernel_functor_sp2dn(I*sr, I*sc, T*sv, T*dv, I ld)
-        : sparse_rowptrs(sr)
-        , sparse_colidxs(sc)
+    kernel_functor_sp2dn(I*sp, I*si, T*sv, T*dv, I ld)
+        : sparse_ptrs(sp)
+        , sparse_idxs(si)
         , sparse_vals(sv)
         , dense_vals(dv)
         , dense_ld(ld)
     {}
     void operator()(sycl::nd_item<1> item) const {
         sycl::group g = item.get_group();
-        I row = g.get_group_linear_id();
-        I start = sparse_rowptrs[row];
-        I end = sparse_rowptrs[row+1];
+        I ip = g.get_group_linear_id();
+        I start = sparse_ptrs[ip];
+        I end = sparse_ptrs[ip+1];
         for(I i = start + g.get_local_linear_id(); i < end; i += g.get_local_linear_range()) {
-            I col = sparse_colidxs[i];
+            I is = sparse_idxs[i];
             T val = sparse_vals[i];
-            if constexpr(order == 'R') dense_vals[row * dense_ld + col] = val;
-            if constexpr(order == 'C') dense_vals[row + dense_ld * col] = val;
+            if constexpr( SAME_ORDER) dense_vals[ip * dense_ld + is] = val;
+            if constexpr(!SAME_ORDER) dense_vals[is * dense_ld + ip] = val;
         }
     }
 };
@@ -80,25 +80,9 @@ void w_onesparse_convert_dcsx_ddny<T,I>::internal_perform(void * ws_tmp)
 
     int workitems_in_workgroup = 64;
     sycl::nd_range<1> range(sycl::range<1>(M_src->get_size_primary() * workitems_in_workgroup), sycl::range<1>(workitems_in_workgroup));
-    {
-        const I * src_ptrs = M_src->ptrs;
-        const I * src_idxs = M_src->idxs;
-        const T * src_vals = M_src->vals;
-        T * dst_vals = M_dst->vals;
-        size_t dst_ld = M_dst->ld;
-        q->q.parallel_for(range, [=](sycl::nd_item<1> item) {
-            sycl::group g = item.get_group();
-            I ip = g.get_group_linear_id();
-            T * dst_ptr = dst_vals + ip * dst_ld;
-            I start = src_ptrs[ip];
-            I end = src_ptrs[ip+1];
-            for(I i = start + g.get_local_linear_id(); i < end; i += g.get_local_linear_range()) {
-                I is = src_idxs[i];
-                T val = src_vals[i];
-                dst_ptr[is] = val;
-            }
-        });
-    }
+
+    if(M_src->order == M_dst->order) q->q.parallel_for(range, kernel_functor_sp2dn<T,I,true>(M_src->ptrs, M_src->idxs, M_src->vals, M_dst->vals, M_dst->ld));
+    if(M_src->order != M_dst->order) q->q.parallel_for(range, kernel_functor_sp2dn<T,I,false>(M_src->ptrs, M_src->idxs, M_src->vals, M_dst->vals, M_dst->ld));
 }
 
 

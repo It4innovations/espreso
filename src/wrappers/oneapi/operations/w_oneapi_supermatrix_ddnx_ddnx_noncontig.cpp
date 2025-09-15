@@ -73,7 +73,9 @@ static void do_supermatrix_launch_kernel_2(sycl::queue & q, size_t size_src_prim
 {
     sycl::range local_range(8,32);
     sycl::range n(2,2);
-    sycl::range global_range(utils::divide_round_up(size_src_primary, n[0]), utils::divide_round_up(size_src_secdary, n[1]));
+    sycl::range global_range(
+        ((size_src_primary - 1) / (local_range[0] * n[0]) + 1) * local_range[0],
+        ((size_src_secdary - 1) / (local_range[1] * n[1]) + 1) * local_range[1]);
     sycl::nd_range range(global_range, local_range);
 
     if(map_primary == nullptr && map_secdary == nullptr) {

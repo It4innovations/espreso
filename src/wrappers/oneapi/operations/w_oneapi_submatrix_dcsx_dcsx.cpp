@@ -64,8 +64,8 @@ struct functor_calc_start_end_ptrs_and_nnzperprim
                 end_ptrs[prim_dst] = i+1;
             }
         }
+        group_barrier(g);
         if(g.get_local_linear_id() == 0) {
-            group_barrier(g);
             if(start != end) {
                 if(end_secdary <= src_idxs[start]) {
                     end_ptrs[prim_dst] = start;

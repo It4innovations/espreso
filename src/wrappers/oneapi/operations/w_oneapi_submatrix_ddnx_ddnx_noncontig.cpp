@@ -72,7 +72,9 @@ void w_oneapi_submatrix_ddnx_ddnx_noncontig<T,I>::internal_perform()
 
     sycl::range local_range(8,32);
     sycl::range n(2,2);
-    sycl::range global_range(utils::divide_round_up(d_M_dst->get_size_primary(), n[0]), utils::divide_round_up(d_M_dst->get_size_secdary(), n[1]));
+    sycl::range global_range(
+        ((d_M_dst->get_size_primary() - 1) / (local_range[0] * n[0]) + 1) * local_range[0],
+        ((d_M_dst->get_size_secdary() - 1) / (local_range[1] * n[1]) + 1) * local_range[1]);
     sycl::nd_range range(global_range, local_range);
 
     if(map_primary == nullptr && map_secdary == nullptr) {

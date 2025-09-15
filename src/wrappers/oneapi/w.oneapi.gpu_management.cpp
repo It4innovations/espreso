@@ -263,29 +263,40 @@ namespace mgm {
     }
 
     template<typename T>
-    void copy_submit(queue & /*q*/, VectorDenseView_new<T> & /*src*/, VectorDenseView_new<T> & /*dst*/)
+    void copy_submit(queue & q, VectorDenseView_new<T> & src, VectorDenseView_new<T> & dst)
     {
-        eslog::error("not supported yet\n");
+        if(src.size != dst.size) eslog::error("copy submit: incompatible sizes\n");
+
+        q->q.template copy<T>(src.vals, dst.vals, dst.size);
     }
 
     template<typename T, typename I>
     void copy_submit(queue & q, MultiVectorDenseView_new<T,I> & src, MultiVectorDenseView_new<T,I> & dst, bool copy_pattern, bool copy_values)
     {
         if(src.num_vectors != dst.num_vectors || src.size != dst.size) eslog::error("copy submit: incompatible dimensions\n");
-        if(copy_pattern) copy_submit(q, src.offsets, dst.offsets, src.num_vectors + 1);
-        if(copy_values) copy_submit(q, src.vals, dst.vals, src.size);
+
+        if(copy_pattern) q->q.template copy<I>(src.offsets, dst.offsets, src.num_vectors + 1);
+        if(copy_values) q->q.template copy<T>(src.vals, dst.vals, src.size);
     }
 
     template<typename T>
-    void copy_submit(queue & /*q*/, MatrixDenseView_new<T> & /*src*/, MatrixDenseView_new<T> & /*dst*/)
+    void copy_submit(queue & q, MatrixDenseView_new<T> & src, MatrixDenseView_new<T> & dst)
     {
-        eslog::error("not supported yet\n");
+        if(src.order != dst.order) eslog::error("copy submit: orders must match\n");
+        if(src.nrows != dst.nrows || src.ncols != dst.ncols) eslog::error("copy submit: incompatible matrix dimensions\n");
+
+        dpct::async_dpct_memcpy(dst.vals, dst.ld * sizeof(T), src.vals, src.ld * sizeof(T), dst.get_size_secdary() * sizeof(T), dst.get_size_primary(), dpct::memcpy_direction::automatic, q->q);
     }
 
     template<typename T, typename I>
-    void copy_submit(queue & /*q*/, MatrixCsxView_new<T,I> & /*src*/, MatrixCsxView_new<T,I> & /*dst*/, bool /*copy_pattern*/, bool /*copy_vals*/)
+    void copy_submit(queue & q, MatrixCsxView_new<T,I> & src, MatrixCsxView_new<T,I> & dst, bool copy_pattern, bool copy_vals)
     {
-        eslog::error("not supported yet\n");
+        if(src.order != dst.order) eslog::error("copy submit: orders must match\n");
+        if(src.nrows != dst.nrows || src.ncols != dst.ncols || src.nnz != dst.nnz) eslog::error("copy submit: incompatible matrix dimensions\n");
+
+        if(copy_pattern) q->q.template copy<I>(src.ptrs, dst.ptrs, dst.get_size_primary() + 1);
+        if(copy_pattern) q->q.template copy<I>(src.idxs, dst.idxs, dst.nnz);
+        if(copy_vals) q->q.template copy<T>(src.vals, dst.vals, dst.nnz);
     }
 
     void memset_submit(queue & q, void * ptr, size_t num_bytes, char val)
