@@ -14,29 +14,13 @@ namespace operations {
 
 
 
-struct w_cublas_hemm_ddnx_ddny_ddnz_data
-{
-    cublasSideMode_t side;
-    cublasFillMode_t uplo;
-    size_t m;
-    size_t n;
-};
+template<typename T>
+w_cublas_hemm_ddnx_ddny_ddnz<T>::w_cublas_hemm_ddnx_ddny_ddnz() = default;
 
 
 
 template<typename T>
-w_cublas_hemm_ddnx_ddny_ddnz<T>::w_cublas_hemm_ddnx_ddny_ddnz()
-{
-    data = std::make_unique<w_cublas_hemm_ddnx_ddny_ddnz_data>();
-}
-
-
-
-template<typename T>
-w_cublas_hemm_ddnx_ddny_ddnz<T>::~w_cublas_hemm_ddnx_ddny_ddnz()
-{
-    data.reset();
-}
+w_cublas_hemm_ddnx_ddny_ddnz<T>::~w_cublas_hemm_ddnx_ddny_ddnz() = default;
 
 
 
@@ -49,13 +33,6 @@ void w_cublas_hemm_ddnx_ddny_ddnz<T>::internal_setup()
 
     if(B->order != C->order) eslog::error("order of matrices B and C must match\n");
     if(utils::is_complex<T>() && A->order != C->order) eslog::error("for complex, order of all matrices must match\n");
-
-    data->side = ((C->order == 'C') ? CUBLAS_SIDE_LEFT : CUBLAS_SIDE_RIGHT);
-    data->uplo = ((((C->order == 'C') == (A->order == 'C')) == (A->prop.uplo == 'L')) ? CUBLAS_FILL_MODE_LOWER : CUBLAS_FILL_MODE_UPPER);
-
-    data->m = C->nrows;
-    data->n = C->ncols;
-    if(data->side == CUBLAS_SIDE_RIGHT) std::swap(data->m, data->n);
 }
 
 
@@ -63,11 +40,17 @@ void w_cublas_hemm_ddnx_ddny_ddnz<T>::internal_setup()
 template<typename T>
 void w_cublas_hemm_ddnx_ddny_ddnz<T>::internal_perform(void * /*ws_tmp*/)
 {
+    cublasSideMode_t side = ((C->order == 'C') ? CUBLAS_SIDE_LEFT : CUBLAS_SIDE_RIGHT);
+    cublasFillMode_t uplo = ((((C->order == 'C') == (A->order == 'C')) == (A->prop.uplo == 'L')) ? CUBLAS_FILL_MODE_LOWER : CUBLAS_FILL_MODE_UPPER);
+    size_t m = C->nrows;
+    size_t n = C->ncols;
+    if(side == CUBLAS_SIDE_RIGHT) std::swap(m, n);
+
     using U = cpp_to_cuda_type_t<T>;
-    if constexpr(std::is_same_v<T,float>)                CHECK(cublasSsymm(handle_dnblas->h, data->side, data->uplo, data->m, data->n, (U*)&alpha, (U*)A->vals, A->ld, (U*)B->vals, B->ld, (U*)&beta, (U*)C->vals, C->ld));
-    if constexpr(std::is_same_v<T,double>)               CHECK(cublasDsymm(handle_dnblas->h, data->side, data->uplo, data->m, data->n, (U*)&alpha, (U*)A->vals, A->ld, (U*)B->vals, B->ld, (U*)&beta, (U*)C->vals, C->ld));
-    if constexpr(std::is_same_v<T,std::complex<float>>)  CHECK(cublasChemm(handle_dnblas->h, data->side, data->uplo, data->m, data->n, (U*)&alpha, (U*)A->vals, A->ld, (U*)B->vals, B->ld, (U*)&beta, (U*)C->vals, C->ld));
-    if constexpr(std::is_same_v<T,std::complex<double>>) CHECK(cublasZhemm(handle_dnblas->h, data->side, data->uplo, data->m, data->n, (U*)&alpha, (U*)A->vals, A->ld, (U*)B->vals, B->ld, (U*)&beta, (U*)C->vals, C->ld));
+    if constexpr(std::is_same_v<T,float>)                CHECK(cublasSsymm(handle_dnblas->h, side, uplo, m, n, (U*)&alpha, (U*)A->vals, A->ld, (U*)B->vals, B->ld, (U*)&beta, (U*)C->vals, C->ld));
+    if constexpr(std::is_same_v<T,double>)               CHECK(cublasDsymm(handle_dnblas->h, side, uplo, m, n, (U*)&alpha, (U*)A->vals, A->ld, (U*)B->vals, B->ld, (U*)&beta, (U*)C->vals, C->ld));
+    if constexpr(std::is_same_v<T,std::complex<float>>)  CHECK(cublasChemm(handle_dnblas->h, side, uplo, m, n, (U*)&alpha, (U*)A->vals, A->ld, (U*)B->vals, B->ld, (U*)&beta, (U*)C->vals, C->ld));
+    if constexpr(std::is_same_v<T,std::complex<double>>) CHECK(cublasZhemm(handle_dnblas->h, side, uplo, m, n, (U*)&alpha, (U*)A->vals, A->ld, (U*)B->vals, B->ld, (U*)&beta, (U*)C->vals, C->ld));
 }
 
 

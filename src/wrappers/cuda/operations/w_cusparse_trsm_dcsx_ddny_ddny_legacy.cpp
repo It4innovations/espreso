@@ -43,10 +43,7 @@ struct w_cusparse_trsm_dcsx_ddny_ddny_data
 
 
 template<typename T, typename I>
-w_cusparse_trsm_dcsx_ddny_ddny<T,I>::w_cusparse_trsm_dcsx_ddny_ddny()
-{
-    data = std::make_unique<w_cusparse_trsm_dcsx_ddny_ddny_data>();
-}
+w_cusparse_trsm_dcsx_ddny_ddny<T,I>::w_cusparse_trsm_dcsx_ddny_ddny() = default;
 
 
 
@@ -57,8 +54,6 @@ w_cusparse_trsm_dcsx_ddny_ddny<T,I>::~w_cusparse_trsm_dcsx_ddny_ddny()
         CHECK(cusparseDestroyMatDescr(data->descr_A));
         CHECK(cusparseDestroyCsrsm2Info(data->info));
     }
-
-    data.reset();
 }
 
 
@@ -74,6 +69,8 @@ char w_cusparse_trsm_dcsx_ddny_ddny<T,I>::internal_get_native_place()
 template<typename T, typename I>
 void w_cusparse_trsm_dcsx_ddny_ddny<T,I>::internal_setup()
 {
+    data = std::make_unique<w_cusparse_trsm_dcsx_ddny_ddny_data>();
+
     CHECK(cusparseCreateCsrsm2Info(&data->info));
     data->policy = CUSPARSE_SOLVE_POLICY_USE_LEVEL;
     data->op_A = ((A->order == 'R') ? CUSPARSE_OPERATION_NON_TRANSPOSE : CUSPARSE_OPERATION_TRANSPOSE);

@@ -40,8 +40,6 @@ w_cusparse_trsm_dcsx_ddny_ddny<T,I>::w_cusparse_trsm_dcsx_ddny_ddny()
     // will investigate more later
     // tested on 2x2x2 subdomains, each 4x4x4 tetra4 elements
     eslog::error("TODO: fix\n");
-
-    data = std::make_unique<w_cusparse_trsm_dcsx_ddny_ddny_data>();
 }
 
 
@@ -55,8 +53,6 @@ w_cusparse_trsm_dcsx_ddny_ddny<T,I>::~w_cusparse_trsm_dcsx_ddny_ddny()
         CHECK(cusparseDestroyDnMat(data->descr_B));
         CHECK(cusparseSpSM_destroyDescr(data->descr_spsm));
     }
-
-    data.reset();
 }
 
 
@@ -72,6 +68,8 @@ char w_cusparse_trsm_dcsx_ddny_ddny<T,I>::internal_get_native_place()
 template<typename T, typename I>
 void w_cusparse_trsm_dcsx_ddny_ddny<T,I>::internal_setup()
 {
+    data = std::make_unique<w_cusparse_trsm_dcsx_ddny_ddny_data>();
+
     data->op_A = ((A->order == 'R') ? CUSPARSE_OPERATION_NON_TRANSPOSE : CUSPARSE_OPERATION_TRANSPOSE);
     data->op_B = CUSPARSE_OPERATION_NON_TRANSPOSE;
     data->spsm_alg = CUSPARSE_SPSM_ALG_DEFAULT;

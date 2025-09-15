@@ -28,10 +28,7 @@ struct w_cusparse_gemm_dcsx_ddny_ddnz_data
 
 
 template<typename T, typename I>
-w_cusparse_gemm_dcsx_ddny_ddnz<T,I>::w_cusparse_gemm_dcsx_ddny_ddnz()
-{
-    data = std::make_unique<w_cusparse_gemm_dcsx_ddny_ddnz_data<T,I>>();
-}
+w_cusparse_gemm_dcsx_ddny_ddnz<T,I>::w_cusparse_gemm_dcsx_ddny_ddnz() = default;
 
 
 
@@ -43,8 +40,6 @@ w_cusparse_gemm_dcsx_ddny_ddnz<T,I>::~w_cusparse_gemm_dcsx_ddny_ddnz()
         CHECK(cusparseDestroyDnMat(data->descr_B));
         CHECK(cusparseDestroyDnMat(data->descr_C));
     }
-
-    data.reset();
 }
 
 
@@ -52,6 +47,8 @@ w_cusparse_gemm_dcsx_ddny_ddnz<T,I>::~w_cusparse_gemm_dcsx_ddny_ddnz()
 template<typename T, typename I>
 void w_cusparse_gemm_dcsx_ddny_ddnz<T,I>::internal_setup()
 {
+    data = std::make_unique<w_cusparse_gemm_dcsx_ddny_ddnz_data<T,I>>();
+
     data->op_A = CUSPARSE_OPERATION_NON_TRANSPOSE;
     data->op_B = CUSPARSE_OPERATION_NON_TRANSPOSE;
     data->spmm_alg = CUSPARSE_SPMM_ALG_DEFAULT;

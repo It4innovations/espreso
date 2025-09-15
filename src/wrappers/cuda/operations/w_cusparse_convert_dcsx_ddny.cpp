@@ -23,17 +23,17 @@ struct w_cusparse_convert_dcsx_ddny_data
 
 
 template<typename T, typename I>
-w_cusparse_convert_dcsx_ddny<T,I>::w_cusparse_convert_dcsx_ddny()
-{
-    data = std::make_unique<w_cusparse_convert_dcsx_ddny_data>();
-}
+w_cusparse_convert_dcsx_ddny<T,I>::w_cusparse_convert_dcsx_ddny() = default;
 
 
 
 template<typename T, typename I>
 w_cusparse_convert_dcsx_ddny<T,I>::~w_cusparse_convert_dcsx_ddny()
 {
-    data.reset();
+    if(this->called_setup) {
+        CHECK(cusparseDestroySpMat(data->descr_M_src));
+        CHECK(cusparseDestroyDnMat(data->descr_M_dst));
+    }
 }
 
 
@@ -41,6 +41,8 @@ w_cusparse_convert_dcsx_ddny<T,I>::~w_cusparse_convert_dcsx_ddny()
 template<typename T, typename I>
 void w_cusparse_convert_dcsx_ddny<T,I>::internal_setup()
 {
+    data = std::make_unique<w_cusparse_convert_dcsx_ddny_data>();
+
     T * dummyptr_T = (T*)(sizeof(T));
     I * dummyptr_I = (I*)(sizeof(I));
     if(M_src->order == 'R') CHECK(cusparseCreateCsr(&data->descr_M_src, M_src->nrows, M_src->ncols, M_src->nnz, dummyptr_I, dummyptr_I, dummyptr_T, cusparse_index_type<I>(), cusparse_index_type<I>(), CUSPARSE_INDEX_BASE_ZERO, cusparse_data_type<T>()));

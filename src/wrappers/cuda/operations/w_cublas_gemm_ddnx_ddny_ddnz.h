@@ -16,8 +16,6 @@ namespace operations {
 
 
 
-struct w_cublas_gemm_ddnx_ddny_ddnz_data;
-
 template<typename T>
 class w_cublas_gemm_ddnx_ddny_ddnz : public gemm_ddnx_ddny_ddnz<T>
 {
@@ -36,8 +34,6 @@ protected:
 protected:
     void internal_setup() override;
     void internal_perform(void * ws_tmp) override;
-private:
-    std::unique_ptr<w_cublas_gemm_ddnx_ddny_ddnz_data> data;
 };
 
 

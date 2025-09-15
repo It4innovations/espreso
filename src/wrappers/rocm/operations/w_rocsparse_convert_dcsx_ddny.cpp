@@ -30,7 +30,7 @@ w_rocsparse_convert_dcsx_ddny<T,I>::w_rocsparse_convert_dcsx_ddny() {}
 template<typename T, typename I>
 w_rocsparse_convert_dcsx_ddny<T,I>::~w_rocsparse_convert_dcsx_ddny()
 {
-    if(data) {
+    if(this->called_setup) {
         CHECK(rocsparse_destroy_spmat_descr(data->descr_M_src));
         CHECK(rocsparse_destroy_dnmat_descr(data->descr_M_dst));
     }
