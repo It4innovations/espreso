@@ -3,7 +3,7 @@
 #ifdef ESPRESO_USE_WRAPPER_GPU_ONEAPI
 
 #include "gpu/gpu_management.h"
-#include "w.oneapi.gpu_management.h"
+#include "common_oneapi_mgm.h"
 #include "basis/utilities/cbmb_allocator.h"
 #pragma clang diagnostic push
 #pragma clang diagnostic ignored "-Wall"

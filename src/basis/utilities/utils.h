@@ -145,6 +145,12 @@ namespace utils {
         return (num / align) * align;
     }
 
+    template<typename I>
+    I divide_round_up(I numerator, I denominator)
+    {
+        return (numerator - 1) / denominator + 1;
+    }
+
     template<typename T>
     T * pointer_advance(T * ptr, size_t offset_B)
     {

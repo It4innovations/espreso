@@ -3,7 +3,7 @@
 #ifdef ESPRESO_USE_WRAPPER_GPU_ONEAPI
 
 #include "gpu/gpu_spblas.h"
-#include "w.oneapi.gpu_management.h"
+#include "common_oneapi_mgm.h"
 #include "basis/utilities/utils.h"
 #include <oneapi/mkl.hpp>
 #pragma clang diagnostic push

@@ -4,6 +4,7 @@
 #include "basis/utilities/stacktimer.h"
 #include "wrappers/cuda/operations/w_cusparse_convert_dcsx_ddny.h"
 #include "wrappers/rocm/operations/w_rocsparse_convert_dcsx_ddny.h"
+#include "wrappers/oneapi/operations/w_onesparse_convert_dcsx_ddny.h"
 
 
 
@@ -22,6 +23,9 @@ std::unique_ptr<convert_dcsx_ddny<T,I>> convert_dcsx_ddny<T,I>::make()
     #endif
     #ifdef ESPRESO_USE_WRAPPER_GPU_ROCM
         return std::make_unique<w_rocsparse_convert_dcsx_ddny<T,I>>();
+    #endif
+    #ifdef ESPRESO_USE_WRAPPER_GPU_ONEAPI
+        return std::make_unique<w_onesparse_convert_dcsx_ddny<T,I>>();
     #endif
     eslog::error("wrapper for convert_dcsx_ddny not available\n");
 }

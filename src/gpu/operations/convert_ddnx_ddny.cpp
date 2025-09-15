@@ -4,6 +4,7 @@
 #include "basis/utilities/stacktimer.h"
 #include "wrappers/cuda/operations/w_cublas_convert_ddnx_ddny.h"
 #include "wrappers/rocm/operations/w_rocblas_convert_ddnx_ddny.h"
+#include "wrappers/oneapi/operations/w_oneblas_convert_ddnx_ddny.h"
 
 
 
@@ -21,6 +22,9 @@ std::unique_ptr<convert_ddnx_ddny<T>> convert_ddnx_ddny<T>::make()
     #endif
     #ifdef ESPRESO_USE_WRAPPER_GPU_ROCM
         return std::make_unique<w_rocblas_convert_ddnx_ddny<T>>();
+    #endif
+    #ifdef ESPRESO_USE_WRAPPER_GPU_ONEAPI
+        return std::make_unique<w_oneblas_convert_ddnx_ddny<T>>();
     #endif
     eslog::error("wrapper for convert_ddnx_ddny not available\n");
 }

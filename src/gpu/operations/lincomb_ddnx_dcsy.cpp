@@ -3,6 +3,8 @@
 
 #include "basis/utilities/stacktimer.h"
 #include "wrappers/cuda/operations/w_cuda_lincomb_ddnx_dcsy.h"
+#include "wrappers/rocm/operations/w_rocm_lincomb_ddnx_dcsy.h"
+#include "wrappers/oneapi/operations/w_oneapi_lincomb_ddnx_dcsy.h"
 
 
 
@@ -18,6 +20,12 @@ std::unique_ptr<lincomb_ddnx_dcsy<T,I>> lincomb_ddnx_dcsy<T,I>::make()
     // feel free to make this runtime ifs based on ecf or env
     #ifdef ESPRESO_USE_WRAPPER_GPU_CUDA
         return std::make_unique<w_cuda_lincomb_ddnx_dcsy<T,I>>();
+    #endif
+    #ifdef ESPRESO_USE_WRAPPER_GPU_ROCM
+        return std::make_unique<w_rocm_lincomb_ddnx_dcsy<T,I>>();
+    #endif
+    #ifdef ESPRESO_USE_WRAPPER_GPU_ONEAPI
+        return std::make_unique<w_oneapi_lincomb_ddnx_dcsy<T,I>>();
     #endif
     eslog::error("wrapper for lincomb_ddnx_dcsy not available\n");
 }

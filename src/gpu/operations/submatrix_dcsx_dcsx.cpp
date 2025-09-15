@@ -4,6 +4,7 @@
 #include "basis/utilities/stacktimer.h"
 #include "wrappers/cuda/operations/w_cuda_submatrix_dcsx_dcsx.h"
 #include "wrappers/rocm/operations/w_rocm_submatrix_dcsx_dcsx.h"
+#include "wrappers/oneapi/operations/w_oneapi_submatrix_dcsx_dcsx.h"
 
 
 
@@ -22,6 +23,9 @@ std::unique_ptr<submatrix_dcsx_dcsx<T,I>> submatrix_dcsx_dcsx<T,I>::make()
     #endif
     #ifdef ESPRESO_USE_WRAPPER_GPU_ROCM
         return std::make_unique<w_rocm_submatrix_dcsx_dcsx<T,I>>();
+    #endif
+    #ifdef ESPRESO_USE_WRAPPER_GPU_ONEAPI
+        return std::make_unique<w_oneapi_submatrix_dcsx_dcsx<T,I>>();
     #endif
     eslog::error("wrapper for submatrix_dcsx_dcsx not available\n");
 }

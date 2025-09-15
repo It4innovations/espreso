@@ -3,7 +3,7 @@
 #ifdef ESPRESO_USE_WRAPPER_GPU_ONEAPI
 
 #include "gpu/gpu_kernels.h"
-#include "w.oneapi.gpu_management.h"
+#include "common_oneapi_mgm.h"
 #include "basis/utilities/utils.h"
 
 namespace espreso {
