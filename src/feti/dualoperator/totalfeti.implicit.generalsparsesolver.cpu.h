@@ -20,6 +20,7 @@ public:
     // y = B * K+ * Bt * x
     void apply(const Vector_Dual<T> &x, Vector_Dual<T> &y) override;
     void apply(const Matrix_Dual<T> &x, Matrix_Dual<T> &y) override;
+    void apply(const Matrix_Dual<T> &x, Matrix_Dual<T> &y, const std::vector<int> &filter) override;
 
     // y = K+(f - Bt * x)
     void toPrimal(const Vector_Dual<T> &x, std::vector<Vector_Dense<T> > &y) override;

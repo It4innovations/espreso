@@ -272,6 +272,76 @@ void TotalFETIImplicitGeneralSparseSolverCpu<T,I>::apply(const Matrix_Dual<T> &X
 
 
 template<typename T, typename I>
+void TotalFETIImplicitGeneralSparseSolverCpu<T,I>::apply(const Matrix_Dual<T> &X_cluster_old, Matrix_Dual<T> &Y_cluster_old, const std::vector<int> &filter)
+{
+    if(cfg.outer_timers) stacktimer::enable();
+    stacktimer::push("TotalFETIImplicitGeneralSparseSolverCpu::apply (matrix,filter)");
+
+    MatrixDenseView_new<T> X_cluster = MatrixDenseView_new<T>::from_old(X_cluster_old).get_transposed_reordered_view();
+    MatrixDenseView_new<T> Y_cluster = MatrixDenseView_new<T>::from_old(Y_cluster_old).get_transposed_reordered_view();
+
+    std::vector<I> filtered_idxs;
+    for(size_t i = 0; i < filter.size(); i++) {
+        if(filter[i]) {
+            filtered_idxs.push_back(i);
+        }
+    }
+    VectorDenseView_new<I> filter_map;
+    filter_map.set_view(filtered_idxs.size(), filtered_idxs.data(), AllocatorDummy_new::get_singleton(true,false));
+
+    size_t n_dofs_cluster_interface = feti.lambdas.size;
+    if(X_cluster.nrows != Y_cluster.nrows || X_cluster.ncols != Y_cluster.ncols) eslog::error("size of X_cluster and Y_cluster does not match\n");
+    if(X_cluster.order != Y_cluster.order) eslog::error("orders do not match\n");
+    if(X_cluster.nrows != n_dofs_cluster_interface) eslog::error("incompatible cluster matrix size\n");
+    char order = X_cluster.order;
+    size_t width = filter_map.size;
+
+    stacktimer::push("cpu_implicit_apply_matrix_compute");
+
+    math::operations::fill_dnx<T>::do_all(&Y_cluster, T{0});
+
+    if(!cfg.inner_timers) stacktimer::disable();
+    #pragma omp parallel for schedule(static,1) if(cfg.parallel_apply)
+    for(size_t di = 0; di < n_domains; di++) {
+        per_domain_stuff & my = domain_data[di];
+
+        VectorDenseView_new<I> my_D2C;
+        my_D2C.set_view(feti.D2C[di].size(), feti.D2C[di].data(), AllocatorDummy_new::get_singleton(true, false));
+
+        MatrixDenseData_new<T> Z;
+        Z.set(my.n_dofs_interface, width, order, AllocatorCPU_new::get_singleton());
+        Z.alloc();
+
+        MatrixDenseData_new<T> W;
+        W.set(my.n_dofs_domain, width, order, AllocatorCPU_new::get_singleton());
+        W.alloc();
+
+        math::operations::submatrix_dnx_dnx_noncontig<T,I>::do_all(&X_cluster, &Z, &my_D2C, &filter_map);
+
+        MatrixCsxView_new<T,I> B = MatrixCsxView_new<T,I>::from_old(feti.B1[di]);
+        MatrixCsxView_new<T,I> Bt = B.get_transposed_reordered_view();
+
+        math::operations::gemm_csx_dny_dnz<T,I>::do_all(&Bt, &Z, &W, T{1}, T{0});
+
+        my.op_solver->solve(W, W);
+
+        math::operations::gemm_csx_dny_dnz<T,I>::do_all(&B, &W, &Z, T{1}, T{0});
+
+        math::operations::supermatrix_dnx_dnx_noncontig<T,I>::do_all(&Z, &Y_cluster, &my_D2C, &filter_map, math::operations::supermatrix_dnx_dnx_noncontig<T,I>::mode::accumulate_atomic);
+    }
+    if(!cfg.inner_timers) stacktimer::enable();
+
+    stacktimer::pop();
+    
+    Y_cluster_old.synchronize();
+
+    stacktimer::pop();
+    if(cfg.outer_timers) stacktimer::disable();
+}
+
+
+
+template<typename T, typename I>
 void TotalFETIImplicitGeneralSparseSolverCpu<T,I>::toPrimal(const Vector_Dual<T> &x, std::vector<Vector_Dense<T> > &y)
 {
     if(cfg.outer_timers) stacktimer::enable();

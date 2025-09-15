@@ -29,6 +29,8 @@ public:
     // y = F * x
     void apply(const Vector_Dual<T> &x, Vector_Dual<T> &y) override;
     void apply(const Matrix_Dual<T> &x, Matrix_Dual<T> &y) override;
+    void apply(const Matrix_Dual<T> &x, Matrix_Dual<T> &y, const std::vector<int> &filter) override;
+
     // y = K+(f - Bt * x)
     void toPrimal(const Vector_Dual<T> &x, std::vector<Vector_Dense<T> > &y) override;
 
@@ -64,7 +66,6 @@ private:
         MatrixCsxView_new<T,I> Kreg;
         MatrixCsxView_new<T,I> Bt;
         MatrixDenseView_new<T> F;
-        Matrix_Dense<T,I> F_old;
         std::unique_ptr<math::operations::schur_csx_dny<T,I>> op_sc;
     };
     config cfg;

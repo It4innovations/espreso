@@ -2,6 +2,8 @@
 #include "feti/dualoperator/totalfeti.explicit.generalschur.cpu.h"
 
 #include "math/primitives_new/allocator_new.h"
+#include "math/operations/submatrix_dnx_dnx_noncontig.h"
+#include "math/operations/supermatrix_dnx_dnx_noncontig.h"
 #include "feti/common/applyB.h"
 #include "basis/utilities/minmaxavg.h"
 #include "basis/utilities/stacktimer.h"
@@ -101,13 +103,6 @@ void TotalFETIExplicitGeneralSchurCpu<T,I>::setup()
                 data_di.F.prop.uplo = (F_allocd.order == 'R') ? 'U' : 'L';
             }
             data_di.F.prop.symm = MatrixSymmetry_new::hermitian;
-            if(data_di.F.order == 'R') {
-                data_di.F_old = MatrixDenseView_new<T>::template to_old<I,cpu_allocator>(data_di.F);
-            }
-            if(data_di.F.order == 'C') {
-                MatrixDenseView_new<T> F_reordered = data_di.F.get_transposed_reordered_view();
-                data_di.F_old = MatrixDenseView_new<T>::template to_old<I,cpu_allocator>(F_reordered);
-            }
         }
     }
 
@@ -285,6 +280,46 @@ void TotalFETIExplicitGeneralSchurCpu<T,I>::apply(const Matrix_Dual<T> &X_cluste
     MatrixDenseView_new<T> Y_cluster_new = MatrixDenseView_new<T>::from_old(Y_cluster).get_transposed_reordered_view();
 
     applicator.apply(X_cluster_new, Y_cluster_new, feti.gpu_tmp_mem, feti.gpu_tmp_size);
+
+    Y_cluster.synchronize();
+
+    stacktimer::pop();
+    if(cfg.outer_timers) stacktimer::disable();
+}
+
+
+
+template<typename T, typename I>
+void TotalFETIExplicitGeneralSchurCpu<T,I>::apply(const Matrix_Dual<T> &X_cluster, Matrix_Dual<T> &Y_cluster, const std::vector<int> &filter)
+{
+    if(cfg.outer_timers) stacktimer::enable();
+    stacktimer::push("TotalFETIExplicitGeneralSchurCpu::apply (matrix,filter)");
+
+    std::vector<I> filtered_idxs;
+    for(size_t i = 0; i < filter.size(); i++) {
+        if(filter[i]) {
+            filtered_idxs.push_back(i);
+        }
+    }
+    VectorDenseView_new<I> filter_map;
+    filter_map.set_view(filtered_idxs.size(), filtered_idxs.data(), AllocatorDummy_new::get_singleton(true,false));
+
+    MatrixDenseView_new<T> X_cluster_new = MatrixDenseView_new<T>::from_old(X_cluster).get_transposed_reordered_view();
+    MatrixDenseView_new<T> Y_cluster_new = MatrixDenseView_new<T>::from_old(Y_cluster).get_transposed_reordered_view();
+
+    MatrixDenseData_new<T> X_cluster_filtered;
+    X_cluster_filtered.set(X_cluster_new.ncols, filter_map.size, X_cluster_new.order, AllocatorCPU_new::get_singleton());
+    X_cluster_filtered.alloc();
+    
+    MatrixDenseData_new<T> Y_cluster_filtered;
+    Y_cluster_filtered.set(Y_cluster_new.ncols, filter_map.size, Y_cluster_new.order, AllocatorCPU_new::get_singleton());
+    Y_cluster_filtered.alloc();
+
+    math::operations::submatrix_dnx_dnx_noncontig<T,I>::do_all(&X_cluster_new, &X_cluster_filtered, nullptr, &filter_map);
+
+    applicator.apply(X_cluster_filtered, Y_cluster_filtered, feti.gpu_tmp_mem, feti.gpu_tmp_size);
+    
+    math::operations::supermatrix_dnx_dnx_noncontig<T,I>::do_all(&Y_cluster_filtered, &Y_cluster_new, nullptr, &filter_map);
 
     Y_cluster.synchronize();
 
