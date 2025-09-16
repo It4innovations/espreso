@@ -306,6 +306,7 @@ void HFETIConjugateSymmetric<T>::_updateGGt()
     eslog::checkpointln("FETI: GATHER GGT VALUES");
 
     if (GGt.nrows) {
+//        DirectSparseSolver<T>::set_num_threads(info::env::threads);
         DirectSparseSolver<T> GGtSolver;
         GGtSolver.commit(GGt);
         GGtSolver.symbolicFactorization();
@@ -328,6 +329,7 @@ void HFETIConjugateSymmetric<T>::_updateGGt()
             break;
         default: break;
         }
+//        DirectSparseSolver<T>::set_num_threads(1);
     } else {
         Projector<T>::GGTtype = Projector<T>::GGT_TYPE::NONE;
     }

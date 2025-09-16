@@ -33,11 +33,11 @@ struct DirectSparseSolver {
 //        static const int SPARSE_RHS      = 1 << 0;
 //        static const int SPARSE_SOLUTION = 2 << 0;
 //    };
-
     static const char* name();
     static bool provideFactors();
     static bool provideSC();
     static Solver_Factors factorsSymmetry();
+    static void set_num_threads(int threads);
 
     DirectSparseSolver();
     DirectSparseSolver(const Matrix_CSR<T, I> &a);

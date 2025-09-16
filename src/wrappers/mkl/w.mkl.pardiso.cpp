@@ -11,6 +11,7 @@
 #include "wrappers/pardiso/w.pardiso.type.h"
 #include "wrappers/pardiso/w.pardiso.h"
 #include "mkl_pardiso.h"
+#include "mkl.h"
 
 namespace espreso {
 
@@ -136,6 +137,12 @@ void _init(std::unique_ptr<Solver_External_Representation<T, long> > & ext)
 {
     eslog::error("Implement MKL PARDISO 64bit interface.\n");
     // pardisoinit(ext->pp.pt, &ext->pp.mtype, ext->pp.iparm);
+}
+
+template <typename T, typename I>
+void DirectSparseSolver<T, I>::set_num_threads(int threads)
+{
+    mkl_set_num_threads(threads);
 }
 
 template <typename T, typename I>

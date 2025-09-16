@@ -65,6 +65,12 @@ DirectSparseSolver<T, I>::~DirectSparseSolver()
 }
 
 template <typename T, typename I>
+void DirectSparseSolver<T, I>::set_num_threads(int threads)
+{
+
+}
+
+template <typename T, typename I>
 void DirectSparseSolver<T, I>::commit(const Matrix_CSR<T,I> &a)
 {
 
