@@ -66,9 +66,9 @@ void DenseSolver<T, I>::solve(Matrix_Dense<T, I> &rhs)
     LAPACKE_dsytrs(LAPACK_ROW_MAJOR, 'U', a.nrows, rhs.ncols, a.vals, a.ncols, ipiv.data(), rhs.vals, rhs.ncols);
 }
 
-template struct DenseSolver<double, int>;
-
 }
+
+#include "math/wrappers/math.solver.inst.hpp"
 
 #endif
 #endif

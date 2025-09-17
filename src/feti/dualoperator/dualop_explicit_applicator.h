@@ -39,8 +39,8 @@ public:
     void set_ws_gpu_persistent(void * ws_gpu_persistent_);
     void preprocess();
     void update_F(size_t di);
-    void apply(VectorDenseView_new<T> & cluster_x, VectorDenseView_new<T> & cluster_y, void * ws_gpu_tmp, size_t wss_gpu_tmp);
-    void apply(MatrixDenseView_new<T> & cluster_X, MatrixDenseView_new<T> & cluster_Y, void * ws_gpu_tmp, size_t wss_gpu_tmp);
+    void apply(VectorDenseView_new<T> & cluster_x, VectorDenseView_new<T> & cluster_y, void * ws_gpu_tmp, size_t wss_gpu_tmp, const std::function<void(void)> & func_while_waiting = [](){});
+    void apply(MatrixDenseView_new<T> & cluster_X, MatrixDenseView_new<T> & cluster_Y, void * ws_gpu_tmp, size_t wss_gpu_tmp, const std::function<void(void)> & func_while_waiting = [](){});
 private:
     size_t n_domains = 0;
     size_t n_queues = 0;

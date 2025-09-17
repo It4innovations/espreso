@@ -345,6 +345,14 @@ void schur_csx_dny_tria<T,I>::internal_solve_A11(VectorDenseView_new<T> & rhs, V
 
 
 
+template<typename T, typename I>
+void schur_csx_dny_tria<T,I>::internal_solve_A11(MatrixDenseView_new<T> & rhs, MatrixDenseView_new<T> & sol)
+{
+    data->op_A11_solver->solve(rhs, sol);
+}
+
+
+
 #define INSTANTIATE_T_I(T,I) \
 template class schur_csx_dny_tria<T,I>;
 

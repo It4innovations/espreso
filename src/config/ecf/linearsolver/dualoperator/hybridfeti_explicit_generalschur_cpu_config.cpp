@@ -1,0 +1,103 @@
+
+#include "config/ecf/linearsolver/dualoperator/hybridfeti_explicit_generalschur_cpu_config.h"
+
+#include "config/configuration.hpp"
+
+using namespace espreso;
+
+DualopHybridfetiExplicitGeneralSchurCpuConfig::DualopHybridfetiExplicitGeneralSchurCpuConfig()
+{
+    parallel_set = AUTOBOOL::AUTO;
+    REGISTER(parallel_set, ECFMetaData()
+        .setdescription({ "Parallelism of the main loops in set" })
+        .setdatatype({ ECFDataType::OPTION })
+        .addoption(ECFOption().setname("AUTO").setdescription("Automatic selection"))
+        .addoption(ECFOption().setname("TRUE").setdescription("Main loops will be parallel"))
+        .addoption(ECFOption().setname("FALSE").setdescription("Main loops will be sequential"))
+    );
+
+    parallel_update = AUTOBOOL::AUTO;
+    REGISTER(parallel_update, ECFMetaData()
+        .setdescription({ "Parallelism of the main loops in update" })
+        .setdatatype({ ECFDataType::OPTION })
+        .addoption(ECFOption().setname("AUTO").setdescription("Automatic selection"))
+        .addoption(ECFOption().setname("TRUE").setdescription("Main loops will be parallel"))
+        .addoption(ECFOption().setname("FALSE").setdescription("Main loops will be sequential"))
+    );
+
+    parallel_apply = AUTOBOOL::AUTO;
+    REGISTER(parallel_apply, ECFMetaData()
+        .setdescription({ "Parallelism of the main loops in apply" })
+        .setdatatype({ ECFDataType::OPTION })
+        .addoption(ECFOption().setname("AUTO").setdescription("Automatic selection"))
+        .addoption(ECFOption().setname("TRUE").setdescription("Main loops will be parallel"))
+        .addoption(ECFOption().setname("FALSE").setdescription("Main loops will be sequential"))
+    );
+
+    mainloop_update_split = MAINLOOP_UPDATE_SPLIT::AUTO;
+    REGISTER(mainloop_update_split, ECFMetaData()
+        .setdescription({ "Numerical factorization and Schur computation in update" })
+        .setdatatype({ ECFDataType::OPTION })
+        .addoption(ECFOption().setname("AUTO").setdescription("Automatic selection"))
+        .addoption(ECFOption().setname("COMBINED").setdescription("Combined in a single loop"))
+        .addoption(ECFOption().setname("SEPARATE").setdescription("Separated into two loops"))
+    );
+
+    timers_outer = AUTOBOOL::AUTO;
+    REGISTER(timers_outer, ECFMetaData()
+        .setdescription({ "Verbosity of outer timers" })
+        .setdatatype({ ECFDataType::OPTION })
+        .addoption(ECFOption().setname("AUTO").setdescription("Automatic selection"))
+        .addoption(ECFOption().setname("TRUE").setdescription("Outer timers will be printed"))
+        .addoption(ECFOption().setname("FALSE").setdescription("Outer timers will not be printed"))
+    );
+
+    timers_inner = AUTOBOOL::AUTO;
+    REGISTER(timers_inner, ECFMetaData()
+        .setdescription({ "Verbosity of inner timers" })
+        .setdatatype({ ECFDataType::OPTION })
+        .addoption(ECFOption().setname("AUTO").setdescription("Automatic selection"))
+        .addoption(ECFOption().setname("TRUE").setdescription("Inner timers will be printed"))
+        .addoption(ECFOption().setname("FALSE").setdescription("Inner timers will not be printed"))
+    );
+
+    print_config = AUTOBOOL::AUTO;
+    REGISTER(print_config, ECFMetaData()
+        .setdescription({ "Verbosity of info method regarding config" })
+        .setdatatype({ ECFDataType::OPTION })
+        .addoption(ECFOption().setname("AUTO").setdescription("Automatic selection"))
+        .addoption(ECFOption().setname("TRUE").setdescription("Config parameters will be printed"))
+        .addoption(ECFOption().setname("FALSE").setdescription("Config parameters will not be printed"))
+    );
+
+    order_F = MATRIX_ORDER::AUTO;
+    REGISTER(order_F, ECFMetaData()
+        .setdescription({ "Memory order of the dense matrix F" })
+        .setdatatype({ ECFDataType::OPTION })
+        .addoption(ECFOption().setname("AUTO").setdescription("Automatic selection"))
+        .addoption(ECFOption().setname("ROW_MAJOR").setdescription("Row-major"))
+        .addoption(ECFOption().setname("COL_MAJOR").setdescription("Column-major"))
+    );
+
+    schur_impl = SCHUR_IMPL::AUTO;
+    REGISTER(schur_impl, ECFMetaData()
+        .setdescription({ "Schur wrapper to be used" })
+        .setdatatype({ ECFDataType::OPTION })
+        .addoption(ECFOption().setname("AUTO").setdescription("Automatic selection"))
+        .addoption(ECFOption().setname("MANUAL_SIMPLE").setdescription("Simple manual assembly"))
+        .addoption(ECFOption().setname("TRIANGULAR").setdescription("Triangular"))
+        .addoption(ECFOption().setname("MKLPARDISO").setdescription("MKL Pardiso"))
+        .addoption(ECFOption().setname("SPARSE_SOLVER").setdescription("Manual using sparse solver wrapper"))
+        .addoption(ECFOption().setname("MUMPS").setdescription("MUMPS"))
+        .addoption(ECFOption().setname("PASTIX").setdescription("PaStiX"))
+    );
+
+    apply_where = CPU_GPU::AUTO;
+    REGISTER(apply_where, ECFMetaData()
+        .setdescription({ "Where does the explicit apply occur" })
+        .setdatatype({ ECFDataType::OPTION })
+        .addoption(ECFOption().setname("AUTO").setdescription("Automatic selection"))
+        .addoption(ECFOption().setname("CPU").setdescription("On the CPU"))
+        .addoption(ECFOption().setname("GPU").setdescription("On the GPU"))
+    );
+}

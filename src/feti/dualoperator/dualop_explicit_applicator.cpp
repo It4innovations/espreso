@@ -248,7 +248,7 @@ void dualop_explicit_applicator<T,I>::update_F(size_t di)
 
 
 template<typename T, typename I>
-void dualop_explicit_applicator<T,I>::apply(VectorDenseView_new<T> & x_cluster, VectorDenseView_new<T> & y_cluster, void * ws_gpu_tmp, size_t wss_gpu_tmp)
+void dualop_explicit_applicator<T,I>::apply(VectorDenseView_new<T> & x_cluster, VectorDenseView_new<T> & y_cluster, void * ws_gpu_tmp, size_t wss_gpu_tmp, const std::function<void(void)> & func_while_waiting)
 {
     stacktimer::push("dualop_explicit_applicator::apply (vector)");
 
@@ -370,6 +370,8 @@ void dualop_explicit_applicator<T,I>::apply(VectorDenseView_new<T> & x_cluster, 
         gpu::mgm::copy_submit(*main_q, y_cluster_2, y_cluster);
     }
 
+    func_while_waiting();
+
     if(apply_target == 'G' || need_copy_vectors) {
         gpu::mgm::device_wait();
     }
@@ -382,7 +384,7 @@ void dualop_explicit_applicator<T,I>::apply(VectorDenseView_new<T> & x_cluster, 
 
 
 template<typename T, typename I>
-void dualop_explicit_applicator<T,I>::apply(MatrixDenseView_new<T> & X_cluster, MatrixDenseView_new<T> & Y_cluster, void * ws_gpu_tmp, size_t wss_gpu_tmp)
+void dualop_explicit_applicator<T,I>::apply(MatrixDenseView_new<T> & X_cluster, MatrixDenseView_new<T> & Y_cluster, void * ws_gpu_tmp, size_t wss_gpu_tmp, const std::function<void(void)> & func_while_waiting)
 {
     stacktimer::push("dualop_explicit_applicator::apply (matrix)");
 
@@ -542,6 +544,8 @@ void dualop_explicit_applicator<T,I>::apply(MatrixDenseView_new<T> & X_cluster, 
     if(need_copy_vectors) {
         gpu::mgm::copy_submit(*main_q, Y_cluster_2, Y_cluster);
     }
+
+    func_while_waiting();
 
     if(apply_target == 'G' || need_copy_vectors) {
         gpu::mgm::device_wait();

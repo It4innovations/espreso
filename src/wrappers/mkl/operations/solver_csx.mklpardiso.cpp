@@ -145,30 +145,32 @@ void solver_csx_mklpardiso<T,I>::internal_solve(MatrixDenseView_new<T> & rhs, Ma
 {
     // no support for leading dimension in pardiso. matrix has to be colmajor. so I have to reallocate and convert
     Allocator_new * ator = AllocatorCPU_new::get_singleton();
-    T * rhs_nold_vals = sol.vals; // I can just reuse the memory
-    T * sol_nold_vals = ator->template alloc<T>(sol.nrows * sol.ncols);
-
-    {
-        MatrixDenseView_new<T> rhs_nold;
-        rhs_nold.set_view(rhs.nrows, rhs.ncols, rhs.nrows, 'C', rhs_nold_vals, ator);
-
-        MatrixDenseView_new<T> sol_nold;
-        sol_nold.set_view(sol.nrows, sol.ncols, sol.nrows, 'C', sol_nold_vals, ator);
-
-        convert_dnx_dny<T>::do_all(&rhs, &rhs_nold, false);
-
-        MKL_INT phase = 33;
-        MKL_INT one = 1;
-        MKL_INT nrhs = rhs.ncols;
-        pardiso(data->pt, &one, &one, &data->mtype, &phase, &data->size_matrix_mklint, A->vals, A->ptrs, A->idxs, nullptr, &nrhs, data->iparm, &data->msglvl, rhs_nold.vals, sol_nold.vals, &data->error);
-        if(data->error != 0) {
-            eslog::error("pardiso error %d: %s\n", (int)data->error, get_pardiso_error_string(data->error));
-        }
-        
-        convert_dnx_dny<T>::do_all(&sol_nold, &sol, false);
+    if((rhs.order != 'C') || (rhs.ld != rhs.nrows)) {
+        T * rhs_2_mem = ator->template alloc<T>(rhs.nrows * rhs.ncols);
+        MatrixDenseView_new<T> rhs_2;
+        rhs_2.set_view(rhs.nrows, rhs.ncols, rhs.nrows, 'C', rhs_2_mem, ator);
+        math::operations::convert_dnx_dny<T>::do_all(&rhs, &rhs_2, false);
+        this->internal_solve(rhs_2, sol);
+        ator->free(rhs_2_mem);
+        return;
+    }
+    if((sol.order != 'C') || (sol.ld != sol.nrows) || (&rhs == &sol)) {
+        T * sol_2_mem = ator->template alloc<T>(sol.nrows * sol.ncols);
+        MatrixDenseView_new<T> sol_2;
+        sol_2.set_view(sol.nrows, sol.ncols, sol.nrows, 'C', sol_2_mem, ator);
+        this->internal_solve(rhs, sol_2);
+        math::operations::convert_dnx_dny<T>::do_all(&sol_2, &sol, false);
+        ator->free(sol_2_mem);
+        return;
     }
 
-    ator->free(sol_nold_vals);
+    MKL_INT phase = 33;
+    MKL_INT one = 1;
+    MKL_INT nrhs = rhs.ncols;
+    pardiso(data->pt, &one, &one, &data->mtype, &phase, &data->size_matrix_mklint, A->vals, A->ptrs, A->idxs, nullptr, &nrhs, data->iparm, &data->msglvl, rhs.vals, sol.vals, &data->error);
+    if(data->error != 0) {
+        eslog::error("pardiso error %d: %s\n", (int)data->error, get_pardiso_error_string(data->error));
+    }
 }
 
 
@@ -176,32 +178,16 @@ void solver_csx_mklpardiso<T,I>::internal_solve(MatrixDenseView_new<T> & rhs, Ma
 template<typename T, typename I>
 void solver_csx_mklpardiso<T,I>::internal_solve(MatrixCsxView_new<T,I> & rhs, MatrixDenseView_new<T> & sol)
 {
-    // no support for leading dimension in pardiso. matrix has to be colmajor. so I have to reallocate and convert
     Allocator_new * ator = AllocatorCPU_new::get_singleton();
-    T * rhs_nold_vals = sol.vals; // I can just reuse the memory
-    T * sol_nold_vals = ator->template alloc<T>(sol.nrows * sol.ncols);
+    T * rhs_2_mem = ator->template alloc<T>(rhs.nrows * rhs.ncols);
+    MatrixDenseView_new<T> rhs_2;
+    rhs_2.set_view(rhs.nrows, rhs.ncols, rhs.nrows, 'C', rhs_2_mem, ator);
 
-    {
-        MatrixDenseView_new<T> rhs_nold;
-        rhs_nold.set_view(rhs.nrows, rhs.ncols, rhs.nrows, 'C', rhs_nold_vals, ator);
+    convert_csx_dny<T,I>::do_all(&rhs, &rhs_2);
 
-        MatrixDenseView_new<T> sol_nold;
-        sol_nold.set_view(sol.nrows, sol.ncols, sol.nrows, 'C', sol_nold_vals, ator);
+    this->internal_solve(rhs_2, sol);
 
-        convert_csx_dny<T,I>::do_all(&rhs, &rhs_nold);
-
-        MKL_INT phase = 33;
-        MKL_INT one = 1;
-        MKL_INT nrhs = rhs.ncols;
-        pardiso(data->pt, &one, &one, &data->mtype, &phase, &data->size_matrix_mklint, A->vals, A->ptrs, A->idxs, nullptr, &nrhs, data->iparm, &data->msglvl, rhs_nold.vals, sol_nold.vals, &data->error);
-        if(data->error != 0) {
-            eslog::error("pardiso error %d: %s\n", (int)data->error, get_pardiso_error_string(data->error));
-        }
-        
-        convert_dnx_dny<T>::do_all(&sol_nold, &sol, false);
-    }
-
-    ator->free(sol_nold_vals);
+    ator->free(rhs_2_mem);
 }
 
 

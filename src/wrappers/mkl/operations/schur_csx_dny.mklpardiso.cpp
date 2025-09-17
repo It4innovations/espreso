@@ -11,6 +11,8 @@
 #include "math/primitives_new/vector_dense_data_new.h"
 #include "math/operations/concat_csx.h"
 #include "math/operations/lincomb_matrix_dnx.h"
+#include "math/operations/convert_dnx_dny.h"
+#include "math/operations/fill_dnx.h"
 
 
 
@@ -176,6 +178,70 @@ void schur_csx_dny_mklpardiso<T,I>::internal_solve_A11(VectorDenseView_new<T> & 
     }
 
     std::copy_n(data->x.vals, size_A11, sol.vals);
+}
+
+
+
+template<typename T, typename I>
+void schur_csx_dny_mklpardiso<T,I>::internal_solve_A11(MatrixDenseView_new<T> & rhs, MatrixDenseView_new<T> & sol)
+{
+    // no support for leading dimension in pardiso. matrix has to be colmajor. so I have to reallocate and convert
+    Allocator_new * ator = AllocatorCPU_new::get_singleton();
+    if((&rhs == &sol) && ((rhs.order != 'C') || (rhs.ld != rhs.nrows))) {
+        T * tmp_mem = ator->template alloc<T>(rhs.nrows * rhs.ncols);
+        MatrixDenseView_new<T> tmp;
+        tmp.set_view(rhs.nrows, rhs.ncols, rhs.nrows, 'C', tmp_mem, ator);
+        math::operations::convert_dnx_dny<T>::do_all(&rhs, &tmp, false);
+        this->internal_solve_A11(tmp, tmp);
+        math::operations::convert_dnx_dny<T>::do_all(&tmp, &sol, false);
+        ator->free(tmp_mem);
+        return;
+    }
+    if((rhs.order != 'C') || (rhs.ld != rhs.nrows)) {
+        T * rhs_2_mem = ator->template alloc<T>(rhs.nrows * rhs.ncols);
+        MatrixDenseView_new<T> rhs_2;
+        rhs_2.set_view(rhs.nrows, rhs.ncols, rhs.nrows, 'C', rhs_2_mem, ator);
+        math::operations::convert_dnx_dny<T>::do_all(&rhs, &rhs_2, false);
+        this->internal_solve_A11(rhs_2, sol);
+        ator->free(rhs_2_mem);
+        return;
+    }
+    if((sol.order != 'C') || (sol.ld != sol.nrows)) {
+        T * sol_2_mem = ator->template alloc<T>(sol.nrows * sol.ncols);
+        MatrixDenseView_new<T> sol_2;
+        sol_2.set_view(sol.nrows, sol.ncols, sol.nrows, 'C', sol_2_mem, ator);
+        this->internal_solve_A11(rhs, sol_2);
+        math::operations::convert_dnx_dny<T>::do_all(&sol_2, &sol, false);
+        ator->free(sol_2_mem);
+        return;
+    }
+
+    T * tmp_mem = ator->template alloc<T>(rhs.nrows * rhs.ncols);
+    MatrixDenseView_new<T> tmp;
+    tmp.set_view(rhs.nrows, rhs.ncols, rhs.nrows, 'C', tmp_mem, ator);
+
+    MKL_INT phase;
+    MKL_INT one = 1;
+    MKL_INT nrhs = rhs.ncols;
+
+    phase = 331;
+    pardiso(data->pt, &one, &one, &data->mtype, &phase, &data->size_matrix_mklint, A->vals, A->ptrs, A->idxs, nullptr, &nrhs, data->iparm, &data->msglvl, rhs.vals, tmp.vals, &data->error);
+    if(data->error != 0) {
+        eslog::error("pardiso error %d\n", (int)data->error);
+    }
+
+    {
+        MatrixDenseView_new<T> tmp_sub_bottom = tmp.get_submatrix_view(size_A11, size_matrix, 0, tmp.ncols);
+        math::operations::fill_dnx<T>::do_all(&tmp_sub_bottom, T{0});
+    }
+
+    phase = 333;
+    pardiso(data->pt, &one, &one, &data->mtype, &phase, &data->size_matrix_mklint, A->vals, A->ptrs, A->idxs, nullptr, &nrhs, data->iparm, &data->msglvl, tmp.vals, sol.vals, &data->error);
+    if(data->error != 0) {
+        eslog::error("pardiso error %d\n", (int)data->error);
+    }
+
+    ator->free(tmp_mem);
 }
 
 

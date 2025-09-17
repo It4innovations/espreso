@@ -60,9 +60,9 @@ void DenseSolver<T, I>::solve(Matrix_Dense<T, I> &rhs)
 
 }
 
-template struct DenseSolver<double, int>;
-
 }
+
+#include "math/wrappers/math.solver.inst.hpp"
 
 #endif
 #endif

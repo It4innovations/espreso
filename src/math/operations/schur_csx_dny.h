@@ -51,6 +51,7 @@ public:
     void perform();
     // some SC implementations already factorize A11, and sometimes the user of this class needs to solve with A11 matrix, so I provide this function
     void solve_A11(VectorDenseView_new<T> & rhs, VectorDenseView_new<T> & sol);
+    void solve_A11(MatrixDenseView_new<T> & rhs, MatrixDenseView_new<T> & sol);
 protected:
     MatrixCsxView_new<T,I> * A11 = nullptr;
     MatrixCsxView_new<T,I> * A12 = nullptr;
@@ -73,6 +74,7 @@ protected:
     virtual void internal_perform_1() {};
     virtual void internal_perform_2() {};
     virtual void internal_solve_A11(VectorDenseView_new<T> & rhs, VectorDenseView_new<T> & sol) {};
+    virtual void internal_solve_A11(MatrixDenseView_new<T> & rhs, MatrixDenseView_new<T> & sol) {};
 protected:
     void helper_concat(MatrixCsxData_new<T,I> & A_whole, char stage);
 };

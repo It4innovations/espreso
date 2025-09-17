@@ -7,6 +7,7 @@
 #include "wrappers/pastix/pastix_common.h"
 #include "math/primitives_new/allocator_new.h"
 #include "math/operations/convert_dnx.h"
+#include "math/operations/convert_dnx_dny.h"
 #include "math/operations/lincomb_matrix_dnx.h"
 
 
@@ -184,6 +185,27 @@ void schur_csx_dny_pastix<T,I>::internal_solve_A11(VectorDenseView_new<T> & rhs,
     }
 
     pastix_task_solve(data->pastix_data, data->pastix_A.gNexp, 1, sol.vals, size_A11);
+}
+
+
+
+template<typename T, typename I>
+void schur_csx_dny_pastix<T,I>::internal_solve_A11(MatrixDenseView_new<T> & rhs, MatrixDenseView_new<T> & sol)
+{
+    if(sol.order != 'C') {
+        MatrixDenseData_new<T> sol_2;
+        sol_2.set(sol.nrows, sol.ncols, 'C', AllocatorCPU_new::get_singleton());
+        sol_2.alloc();
+        this->internal_solve_A11(rhs, sol_2);
+        math::operations::convert_dnx_dny<T>::do_all(&sol_2, &sol, false);
+        return;
+    }
+
+    if(&rhs != &sol) {
+        math::operations::convert_dnx_dny<T>::do_all(&rhs, &sol, false);
+    }
+
+    pastix_task_solve(data->pastix_data, data->pastix_A.gNexp, sol.ncols, sol.vals, sol.ld);
 }
 
 

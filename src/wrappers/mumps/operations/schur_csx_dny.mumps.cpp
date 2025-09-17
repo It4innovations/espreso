@@ -9,6 +9,7 @@
 #include "math/operations/copy_dnx.h"
 #include "math/operations/transpose_dnx_dnx.h"
 #include "math/operations/convert_dnx.h"
+#include "math/operations/convert_dnx_dny.h"
 #include "math/operations/lincomb_matrix_dnx.h"
 #include "basis/utilities/stacktimer.h"
 
@@ -169,6 +170,39 @@ void schur_csx_dny_mumps<T,I>::internal_solve_A11(VectorDenseView_new<T> & rhs, 
     call_mumps<T>(data->handle);
 
     std::copy_n(x.vals, size_A11, sol.vals);
+}
+
+
+
+template<typename T, typename I>
+void schur_csx_dny_mumps<T,I>::internal_solve_A11(MatrixDenseView_new<T> & rhs, MatrixDenseView_new<T> & sol)
+{
+    // not tested
+
+    // mumps needs a rhs/sol matrix as tall as the whole system matrix
+    // and only considers the rows outside of the schur
+    MatrixDenseData_new<T> tmp;
+    tmp.set(size_matrix, rhs.ncols, 'C', AllocatorCPU_new::get_singleton());
+    tmp.alloc();
+
+    MatrixDenseView_new<T> tmp_my_sub = tmp.get_submatrix_view(0, size_A11, 0, tmp.ncols);
+
+    math::operations::convert_dnx_dny<T>::do_all(&rhs, &tmp_my_sub, false);
+
+    data->handle.icntl[20-1] = 0; // RHS matrix is dense, and centralized
+    data->handle.icntl[21-1] = 0; // solution matrix is centralized
+    data->handle.icntl[26-1] = 0; // solve only the internal problem A_11 * x = b;
+
+    // set rhs/sol matrix (col-major)
+    data->handle.rhs = reinterpret_cast<cpp_type_to_mumps_type_t<T>*>(tmp.vals);
+    data->handle.nrhs = tmp.ncols;
+    data->handle.lrhs = tmp.ld;
+
+    // solve phase
+    data->handle.job = 3;
+    call_mumps<T>(data->handle);
+
+    math::operations::convert_dnx_dny<T>::do_all(&tmp_my_sub, &sol, false);
 }
 
 
