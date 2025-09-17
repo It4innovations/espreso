@@ -143,6 +143,8 @@ void HybridFETIExplicitGeneralSchurCpu<T,I>::set(const step::Step &step)
     if(cfg.outer_timers) stacktimer::enable();
     stacktimer::push("HybridFETIExplicitGeneralSchurCpu::set");
 
+    Btx.resize(feti.K.size());
+    KplusBtx.resize(feti.K.size());
     dKB0.resize(feti.K.size());
     B0mu.resize(feti.K.size());
     hfetiBtx.resize(feti.K.size());
@@ -174,8 +176,11 @@ void HybridFETIExplicitGeneralSchurCpu<T,I>::set(const step::Step &step)
         data.op_sc->set_need_solve_A11(true);
         data.op_sc->preprocess();
 
+        Btx[di].resize(feti.K[di].nrows);
+        KplusBtx[di].resize(feti.K[di].nrows);
         B0mu[di].resize(feti.K[di].nrows);
         hfetiBtx[di].resize(feti.K[di].nrows);
+        math::set(Btx[di], T{0});
     }
     if(!cfg.inner_timers) stacktimer::enable();
     stacktimer::pop();
@@ -507,6 +512,7 @@ void HybridFETIExplicitGeneralSchurCpu<T,I>::_applyK(std::vector<Vector_Dense<T>
 {
     if(do_Kplus_solve) {
         // x = (K+)^-1 * b
+        // actually x = K+ * b = (Kreg)^-1 * b
         #pragma omp parallel for
         for (size_t di = 0; di < feti.K.size(); ++di) {
             // KSolver[di].solve(b[di], x[di]);
