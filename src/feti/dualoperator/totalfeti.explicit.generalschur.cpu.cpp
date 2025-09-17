@@ -44,9 +44,6 @@ void TotalFETIExplicitGeneralSchurCpu<T,I>::info()
         auto schur_impl_to_string = [](schur_impl_t schur_impl){ switch(schur_impl) { case schur_impl_t::autoselect: return "autoselect"; case schur_impl_t::manual_simple: return "manual_simple"; case schur_impl_t::triangular: return "triangular"; case schur_impl_t::mklpardiso: return "mklpardiso"; case schur_impl_t::sparse_solver: return "sparse_solver"; case schur_impl_t::mumps: return "mumps"; case schur_impl_t::pastix: return "pastix"; default: return "UNDEFINED"; }};
         auto schur_impl_to_string_actual = [](schur_impl_t schur_impl){ return math::operations::schur_csx_dny<T,I>::make(schur_impl)->get_name(); };
 
-        eslog::info(" =   %-50s       %+30s = \n", "parallel_set", bool_to_string(cfg.parallel_set));
-        eslog::info(" =   %-50s       %+30s = \n", "parallel_update", bool_to_string(cfg.parallel_update));
-        eslog::info(" =   %-50s       %+30s = \n", "parallel_apply", bool_to_string(cfg.parallel_apply));
         eslog::info(" =   %-50s       %+30s = \n", "mainloop_update_split", loop_split_to_string(cfg.mainloop_update_split));
         eslog::info(" =   %-50s       %+30s = \n", "inner_timers", bool_to_string(cfg.inner_timers));
         eslog::info(" =   %-50s       %+30s = \n", "outer_timers", bool_to_string(cfg.outer_timers));
@@ -112,7 +109,7 @@ void TotalFETIExplicitGeneralSchurCpu<T,I>::setup()
             Fs_vector[di] = &domain_data[di].F;
         }
 
-        applicator.set_config(cfg.parallel_apply, cfg.inner_timers);
+        applicator.set_config(cfg.inner_timers);
         applicator.set_handles(&feti.main_q, &feti.queues, &feti.handles_dense);
         applicator.set_feti(&feti);
         applicator.set_memory('C', 'C');
@@ -140,7 +137,7 @@ void TotalFETIExplicitGeneralSchurCpu<T,I>::set(const step::Step &step)
 
     stacktimer::push("TotalFETIExplicitGeneralSchurCpu::set preprocess");
     if(!cfg.inner_timers) stacktimer::disable();
-    #pragma omp parallel for schedule(static,1) if(cfg.parallel_set)
+    #pragma omp parallel for schedule(static,1)
     for(size_t di = 0; di < n_domains; di++) {
         per_domain_stuff & data = domain_data[di];
 
@@ -184,7 +181,7 @@ void TotalFETIExplicitGeneralSchurCpu<T,I>::update(const step::Step &step)
     if(cfg.mainloop_update_split == 'C') {
         stacktimer::push("update_mainloop_combined");
         if(!cfg.inner_timers) stacktimer::disable();
-        #pragma omp parallel for schedule(static,1) if(cfg.parallel_update)
+        #pragma omp parallel for schedule(static,1)
         for(size_t di = 0; di < n_domains; di++) {
             per_domain_stuff & data = domain_data[di];
             math::sumCombined(data.Kreg_old, T{1.0}, feti.K[di], feti.RegMat[di]);
@@ -200,7 +197,7 @@ void TotalFETIExplicitGeneralSchurCpu<T,I>::update(const step::Step &step)
     if(cfg.mainloop_update_split == 'S') {
         stacktimer::push("update_mainloop_separate_1");
         if(!cfg.inner_timers) stacktimer::disable();
-        #pragma omp parallel for schedule(static,1) if(cfg.parallel_update)
+        #pragma omp parallel for schedule(static,1)
         for(size_t di = 0; di < n_domains; di++) {
             per_domain_stuff & data = domain_data[di];
             math::sumCombined(data.Kreg_old, T{1.0}, feti.K[di], feti.RegMat[di]);
@@ -214,7 +211,7 @@ void TotalFETIExplicitGeneralSchurCpu<T,I>::update(const step::Step &step)
 
         stacktimer::push("update_mainloop_separate_2");
         if(!cfg.inner_timers) stacktimer::disable();
-        #pragma omp parallel for schedule(static,1) if(cfg.parallel_update)
+        #pragma omp parallel for schedule(static,1)
         for(size_t di = 0; di < n_domains; di++) {
             domain_data[di].op_sc->perform_2();
             applicator.update_F(di);
@@ -231,7 +228,7 @@ void TotalFETIExplicitGeneralSchurCpu<T,I>::update(const step::Step &step)
             d.resize();
         }
         std::vector<Vector_Dense<T,I>> Kplus_fs(n_domains);
-        #pragma omp parallel for schedule(static,1) if(cfg.parallel_update)
+        #pragma omp parallel for schedule(static,1)
         for(size_t di = 0; di < n_domains; di++) {
             Kplus_fs[di].resize(feti.f[di].size);
             VectorDenseView_new<T> f_new = VectorDenseView_new<T>::from_old(feti.f[di]);
@@ -362,24 +359,6 @@ void TotalFETIExplicitGeneralSchurCpu<T,I>::setup_config(config & cfg, const FET
 
     using ecf_config = DualopTotalfetiExplicitGeneralSchurCpuConfig;
     const ecf_config & ecf = feti_ecf_config.dualop_totalfeti_explicit_generalschur_cpu_config;
-
-    switch(ecf.parallel_set) {
-        case ecf_config::AUTOBOOL::AUTO: break;
-        case ecf_config::AUTOBOOL::TRUE:  cfg.parallel_set = true;  break;
-        case ecf_config::AUTOBOOL::FALSE: cfg.parallel_set = false; break;
-    }
-
-    switch(ecf.parallel_update) {
-        case ecf_config::AUTOBOOL::AUTO: break;
-        case ecf_config::AUTOBOOL::TRUE:  cfg.parallel_update = true;  break;
-        case ecf_config::AUTOBOOL::FALSE: cfg.parallel_update = false; break;
-    }
-
-    switch(ecf.parallel_apply) {
-        case ecf_config::AUTOBOOL::AUTO: break;
-        case ecf_config::AUTOBOOL::TRUE:  cfg.parallel_apply = true;  break;
-        case ecf_config::AUTOBOOL::FALSE: cfg.parallel_apply = false; break;
-    }
 
     switch(ecf.mainloop_update_split) {
         case ecf_config::MAINLOOP_UPDATE_SPLIT::AUTO: break;

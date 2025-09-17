@@ -24,9 +24,6 @@ struct DualopTotalfetiImplicitGeneralSparseSolverCpuConfig: public ECFDescriptio
         SUPERLU_DIST
     };
 
-    AUTOBOOL parallel_set;
-    AUTOBOOL parallel_update;
-    AUTOBOOL parallel_apply;
     AUTOBOOL timers_outer;
     AUTOBOOL timers_inner;
     AUTOBOOL print_config;

@@ -21,9 +21,8 @@ namespace espreso {
 
 
 template<typename T, typename I>
-void dualop_explicit_applicator<T,I>::set_config(bool parallel_apply_, bool timers_inner_)
+void dualop_explicit_applicator<T,I>::set_config(bool timers_inner_)
 {
-    parallel_apply = parallel_apply_;
     timers_inner = timers_inner_;
 }
 
@@ -289,7 +288,7 @@ void dualop_explicit_applicator<T,I>::apply(VectorDenseView_new<T> & x_cluster, 
             gpu::mgm::device_wait(); // it would be better to wait for an event for each individual F, but whatever
         }
 
-        #pragma omp parallel for schedule(static,1) if(parallel_apply)
+        #pragma omp parallel for schedule(static,1)
         for(size_t di = 0; di < n_domains; di++) {
             MatrixDenseView_new<T> * F_to_use = ((Fs_mem == 'C') ? Fs[di] : &Fs_2[di]);
             size_t n_dofs_interface = n_dofs_interfaces[di];
@@ -335,7 +334,7 @@ void dualop_explicit_applicator<T,I>::apply(VectorDenseView_new<T> & x_cluster, 
         gpu::mgm::queue_async_barrier({*main_q}, *queues);
 
         // apply
-        #pragma omp parallel for schedule(static,1) if(parallel_apply)
+        #pragma omp parallel for schedule(static,1)
         for(size_t di = 0; di < n_domains; di++) {
             gpu::dnblas::handle & hd = (*handles_dnblas)[di % n_queues];
 
@@ -433,7 +432,7 @@ void dualop_explicit_applicator<T,I>::apply(MatrixDenseView_new<T> & X_cluster, 
             gpu::mgm::device_wait(); // it would be better to wait for an event for each individual F, but whatever
         }
 
-        #pragma omp parallel for schedule(static,1) if(parallel_apply)
+        #pragma omp parallel for schedule(static,1)
         for(size_t di = 0; di < n_domains; di++) {
             MatrixDenseView_new<T> * F_to_use = ((Fs_mem == 'C') ? Fs[di] : &Fs_2[di]);
             size_t n_dofs_interface = n_dofs_interfaces[di];
@@ -468,7 +467,7 @@ void dualop_explicit_applicator<T,I>::apply(MatrixDenseView_new<T> & X_cluster, 
         Xs_gpu.resize(n_domains);
         Ys_gpu.resize(n_domains);
 
-        #pragma omp parallel for schedule(static,1) if(parallel_apply)
+        #pragma omp parallel for schedule(static,1)
         for(size_t di = 0; di < n_domains; di++) {
             gpu::mgm::queue & q = (*queues)[di % n_queues];
             gpu::dnblas::handle & hd = (*handles_dnblas)[di % n_queues];

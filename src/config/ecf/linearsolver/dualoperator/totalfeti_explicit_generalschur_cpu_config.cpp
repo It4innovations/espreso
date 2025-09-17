@@ -7,33 +7,6 @@ using namespace espreso;
 
 DualopTotalfetiExplicitGeneralSchurCpuConfig::DualopTotalfetiExplicitGeneralSchurCpuConfig()
 {
-    parallel_set = AUTOBOOL::AUTO;
-    REGISTER(parallel_set, ECFMetaData()
-        .setdescription({ "Parallelism of the main loops in set" })
-        .setdatatype({ ECFDataType::OPTION })
-        .addoption(ECFOption().setname("AUTO").setdescription("Automatic selection"))
-        .addoption(ECFOption().setname("TRUE").setdescription("Main loops will be parallel"))
-        .addoption(ECFOption().setname("FALSE").setdescription("Main loops will be sequential"))
-    );
-
-    parallel_update = AUTOBOOL::AUTO;
-    REGISTER(parallel_update, ECFMetaData()
-        .setdescription({ "Parallelism of the main loops in update" })
-        .setdatatype({ ECFDataType::OPTION })
-        .addoption(ECFOption().setname("AUTO").setdescription("Automatic selection"))
-        .addoption(ECFOption().setname("TRUE").setdescription("Main loops will be parallel"))
-        .addoption(ECFOption().setname("FALSE").setdescription("Main loops will be sequential"))
-    );
-
-    parallel_apply = AUTOBOOL::AUTO;
-    REGISTER(parallel_apply, ECFMetaData()
-        .setdescription({ "Parallelism of the main loops in apply" })
-        .setdatatype({ ECFDataType::OPTION })
-        .addoption(ECFOption().setname("AUTO").setdescription("Automatic selection"))
-        .addoption(ECFOption().setname("TRUE").setdescription("Main loops will be parallel"))
-        .addoption(ECFOption().setname("FALSE").setdescription("Main loops will be sequential"))
-    );
-
     mainloop_update_split = MAINLOOP_UPDATE_SPLIT::AUTO;
     REGISTER(mainloop_update_split, ECFMetaData()
         .setdescription({ "Numerical factorization and Schur computation in update" })

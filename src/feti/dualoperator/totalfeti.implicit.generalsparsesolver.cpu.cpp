@@ -50,9 +50,6 @@ void TotalFETIImplicitGeneralSparseSolverCpu<T,I>::info()
             return math::operations::solver_csx<T,I>::make(solver_impl, &prop, false, true)->get_name();
         };
 
-        eslog::info(" =   %-50s       %+30s = \n", "parallel_set", bool_to_string(cfg.parallel_set));
-        eslog::info(" =   %-50s       %+30s = \n", "parallel_update", bool_to_string(cfg.parallel_update));
-        eslog::info(" =   %-50s       %+30s = \n", "parallel_apply", bool_to_string(cfg.parallel_apply));
         eslog::info(" =   %-50s       %+30s = \n", "inner_timers", bool_to_string(cfg.inner_timers));
         eslog::info(" =   %-50s       %+30s = \n", "outer_timers", bool_to_string(cfg.outer_timers));
         eslog::info(" =   %-50s       %+30s = \n", "solver_impl", solver_impl_to_string(cfg.solver_impl));
@@ -83,7 +80,7 @@ void TotalFETIImplicitGeneralSparseSolverCpu<T,I>::set(const step::Step &step)
     }
 
     if(!cfg.inner_timers) stacktimer::disable();
-    #pragma omp parallel for schedule(static,1) if(cfg.parallel_set)
+    #pragma omp parallel for schedule(static,1)
     for(size_t di = 0; di < n_domains; di++) {
         per_domain_stuff & my = domain_data[di];
 
@@ -120,7 +117,7 @@ void TotalFETIImplicitGeneralSparseSolverCpu<T,I>::update(const step::Step &step
 
     stacktimer::push("update_factorize_numeric");
     if(!cfg.inner_timers) stacktimer::disable();
-    #pragma omp parallel for schedule(static,1) if(cfg.parallel_update)
+    #pragma omp parallel for schedule(static,1)
     for(size_t di = 0; di < n_domains; di++) {
         per_domain_stuff & my = domain_data[di];
 
@@ -137,7 +134,7 @@ void TotalFETIImplicitGeneralSparseSolverCpu<T,I>::update(const step::Step &step
             d.resize();
         }
         std::vector<Vector_Dense<T,I>> Kplus_fs(n_domains);
-        #pragma omp parallel for schedule(static,1) if(cfg.parallel_update)
+        #pragma omp parallel for schedule(static,1)
         for(size_t di = 0; di < n_domains; di++) {
             Kplus_fs[di].resize(feti.f[di].size);
             VectorDenseView_new<T> f_new = VectorDenseView_new<T>::from_old(feti.f[di]);
@@ -168,7 +165,7 @@ void TotalFETIImplicitGeneralSparseSolverCpu<T,I>::apply(const Vector_Dual<T> &x
     std::fill_n(y.vals, y.size, T{0});
 
     if(!cfg.inner_timers) stacktimer::disable();
-    #pragma omp parallel for schedule(static,1) if(cfg.parallel_apply)
+    #pragma omp parallel for schedule(static,1)
     for(size_t di = 0; di < n_domains; di++) {
         per_domain_stuff & my = domain_data[di];
         int * D2C = feti.D2C[di].data();
@@ -231,7 +228,7 @@ void TotalFETIImplicitGeneralSparseSolverCpu<T,I>::apply(const Matrix_Dual<T> &X
     math::operations::fill_dnx<T>::do_all(&Y_cluster, T{0});
 
     if(!cfg.inner_timers) stacktimer::disable();
-    #pragma omp parallel for schedule(static,1) if(cfg.parallel_apply)
+    #pragma omp parallel for schedule(static,1)
     for(size_t di = 0; di < n_domains; di++) {
         per_domain_stuff & my = domain_data[di];
 
@@ -301,7 +298,7 @@ void TotalFETIImplicitGeneralSparseSolverCpu<T,I>::apply(const Matrix_Dual<T> &X
     math::operations::fill_dnx<T>::do_all(&Y_cluster, T{0});
 
     if(!cfg.inner_timers) stacktimer::disable();
-    #pragma omp parallel for schedule(static,1) if(cfg.parallel_apply)
+    #pragma omp parallel for schedule(static,1)
     for(size_t di = 0; di < n_domains; di++) {
         per_domain_stuff & my = domain_data[di];
 
@@ -374,24 +371,6 @@ void TotalFETIImplicitGeneralSparseSolverCpu<T,I>::setup_config(config & cfg, co
 
     using ecf_config = DualopTotalfetiImplicitGeneralSparseSolverCpuConfig;
     const ecf_config & ecf = feti_ecf_config.dualop_totalfeti_implicit_generalsparsesolver_cpu_config;
-
-    switch(ecf.parallel_set) {
-        case ecf_config::AUTOBOOL::AUTO: break;
-        case ecf_config::AUTOBOOL::TRUE:  cfg.parallel_set = true;  break;
-        case ecf_config::AUTOBOOL::FALSE: cfg.parallel_set = false; break;
-    }
-
-    switch(ecf.parallel_update) {
-        case ecf_config::AUTOBOOL::AUTO: break;
-        case ecf_config::AUTOBOOL::TRUE:  cfg.parallel_update = true;  break;
-        case ecf_config::AUTOBOOL::FALSE: cfg.parallel_update = false; break;
-    }
-
-    switch(ecf.parallel_apply) {
-        case ecf_config::AUTOBOOL::AUTO: break;
-        case ecf_config::AUTOBOOL::TRUE:  cfg.parallel_apply = true;  break;
-        case ecf_config::AUTOBOOL::FALSE: cfg.parallel_apply = false; break;
-    }
 
     switch(ecf.timers_outer) {
         case ecf_config::AUTOBOOL::AUTO: break;

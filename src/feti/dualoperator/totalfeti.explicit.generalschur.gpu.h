@@ -44,9 +44,6 @@ private:
     struct config
     {
         char order_F = 'R';
-        bool parallel_set = true;
-        bool parallel_update = true;
-        bool parallel_apply = true;
         char mainloop_update_split = 'C'; // Combined, Separate
         bool gpu_wait_after_mainloop_update = false;
         bool outer_timers = false;
@@ -66,7 +63,6 @@ private:
         MatrixCsxView_new<T,I> Kreg;
         MatrixCsxView_new<T,I> Bt;
         MatrixDenseView_new<T> d_F;
-        Matrix_Dense<T,I,gpu::mgm::Ad> d_F_old;
         std::unique_ptr<gpu::operations::schur_hcsx_ddny<T,I>> op_sc;
         math::operations::submatrix_dnx_dnx_view<T> op_sub_F_from_allocd;
     };

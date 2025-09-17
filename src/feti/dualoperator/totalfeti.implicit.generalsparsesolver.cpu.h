@@ -29,9 +29,6 @@ private:
     using solver_impl_t = typename math::operations::solver_csx<T,I>::implementation_selector;
     struct config
     {
-        bool parallel_set = true;
-        bool parallel_update = true;
-        bool parallel_apply = true;
         bool outer_timers = false;
         bool inner_timers = false;
         bool print_config = false;

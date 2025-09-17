@@ -42,9 +42,6 @@ struct DualopTotalfetiExplicitGeneralSchurCpuConfig: public ECFDescription {
         GPU
     };
 
-    AUTOBOOL parallel_set;
-    AUTOBOOL parallel_update;
-    AUTOBOOL parallel_apply;
     MAINLOOP_UPDATE_SPLIT mainloop_update_split;
     AUTOBOOL timers_outer;
     AUTOBOOL timers_inner;
