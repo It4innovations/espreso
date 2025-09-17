@@ -388,9 +388,9 @@ void computeDomainDual(NodeStore *nodes, ElementStore *elements, DomainStore *do
             tdistFull.push_back(0);
         }
 
-        auto neighs = elements->faceNeighbors->cbegin(t);
         for (size_t d = domains->distribution[t]; d < domains->distribution[t + 1]; d++) {
             std::vector<esint> ndomains, ndomainsFull;
+            auto neighs = elements->faceNeighbors->cbegin() + domains->elements[d];
             for (esint e = domains->elements[d]; e < domains->elements[d + 1]; ++e, ++neighs) {
                 for (auto n = neighs->begin(); n != neighs->end(); ++n) {
                     if (*n != -1) {
