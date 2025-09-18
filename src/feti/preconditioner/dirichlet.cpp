@@ -6,6 +6,8 @@
 #include "esinfo/eslog.hpp"
 #include "basis/utilities/sysutils.h"
 
+#include "math/operations/schur_csx_dny.h"
+
 #include <algorithm>
 
 namespace espreso {
@@ -103,35 +105,58 @@ void Dirichlet<T>::_manual(Matrix_CSR<T> &K, Matrix_Dense<T> &sc, std::vector<in
     math::permute(pK, permutation);
 
     int size_sc = sc.nrows;
-    int size = K.nrows;
-    int size_A11 = size - size_sc;
 
-    Matrix_CSR<T> A11_sp;
-    Matrix_CSR<T> A21_sp; // = A12c_sp
-    Matrix_Dense<T> A22t_dn;
-    Matrix_Dense<T> A12t_dn;
-    Matrix_Dense<T> A11iA12_dn;
-    math::spblas::submatrix(pK, A11_sp ,        0, size_A11,        0, size_A11);
-    math::spblas::submatrix(pK, A21_sp,         0, size_A11, size_A11,     size, false,  true); // = A12c_sp
-    math::spblas::submatrix(pK, A22t_dn, size_A11,     size, size_A11,     size,  true, false, true);
-    math::spblas::submatrix(pK, A12t_dn,        0, size_A11, size_A11,     size,  true, false, true);
+    MatrixCsxView_new<T,int> pK_new = MatrixCsxView_new<T,int>::from_old(pK);
 
-    DirectSparseSolver<T, int> solver;
-    solver.commit(A11_sp);
-    solver.symbolicFactorization();
-    solver.numericalFactorization();
-    solver.solve(A12t_dn, A11iA12_dn);
+    MatrixDenseData_new<T> sc_new;
+    sc_new.set(sc.nrows, sc.ncols, 'R', AllocatorCPU_new::get_singleton());
+    sc_new.prop = pK_new.prop;
+    sc_new.alloc();
 
-    SpBLAS<Matrix_CSR, T> A21(A21_sp, true);
-    A21.apply(A22t_dn, T{-1}, T{1}, A11iA12_dn, true);
+    using op_sc_t = math::operations::schur_csx_dny<T,int>;
+    std::unique_ptr<op_sc_t> op_sc = op_sc_t::make(op_sc_t::implementation_selector::manual_simple);
+    op_sc->set_matrix(&pK_new, size_sc);
+    op_sc->set_sc(&sc_new);
+    op_sc->set_need_solve_A11(false);
+    op_sc->preprocess();
+    op_sc->perform();
 
-    sc.shape = K.shape;
-    sc.resize(A22t_dn);
-    for(int r = 0, i = 0; r < sc.nrows; ++r) {
-        for(int c = sc.shape == Matrix_Shape::FULL ? 0 : r; c < sc.ncols; ++c, ++i) {
-            sc.vals[i] = A22t_dn.vals[r * sc.ncols + c];
+    size_t idx = 0;
+    for(size_t r = 0; r < sc_new.nrows; r++) {
+        size_t start = ((sc.shape == Matrix_Shape::UPPER) ?            r :   0);
+        size_t end   = ((sc.shape == Matrix_Shape::UPPER) ? sc_new.ncols : r+1);
+        for(size_t c = start; c < end; c++) {
+            sc.vals[idx] = sc_new.vals[r * sc_new.ld + c];
+            idx++;
         }
     }
+
+    // Matrix_CSR<T> A11_sp;
+    // Matrix_CSR<T> A21_sp; // = A12c_sp
+    // Matrix_Dense<T> A22t_dn;
+    // Matrix_Dense<T> A12t_dn;
+    // Matrix_Dense<T> A11iA12_dn;
+    // math::spblas::submatrix(pK, A11_sp ,        0, size_A11,        0, size_A11);
+    // math::spblas::submatrix(pK, A21_sp,         0, size_A11, size_A11,     size, false,  true); // = A12c_sp
+    // math::spblas::submatrix(pK, A22t_dn, size_A11,     size, size_A11,     size,  true, false, true);
+    // math::spblas::submatrix(pK, A12t_dn,        0, size_A11, size_A11,     size,  true, false, true);
+
+    // DirectSparseSolver<T, int> solver;
+    // solver.commit(A11_sp);
+    // solver.symbolicFactorization();
+    // solver.numericalFactorization();
+    // solver.solve(A12t_dn, A11iA12_dn);
+
+    // SpBLAS<Matrix_CSR, T> A21(A21_sp, true);
+    // A21.apply(A22t_dn, T{-1}, T{1}, A11iA12_dn, true);
+
+    // sc.shape = K.shape;
+    // sc.resize(A22t_dn);
+    // for(int r = 0, i = 0; r < sc.nrows; ++r) {
+    //     for(int c = sc.shape == Matrix_Shape::FULL ? 0 : r; c < sc.ncols; ++c, ++i) {
+    //         sc.vals[i] = A22t_dn.vals[r * sc.ncols + c];
+    //     }
+    // }
 }
 
 template <typename T>
