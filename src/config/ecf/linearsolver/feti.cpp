@@ -241,6 +241,10 @@ espreso::FETIConfiguration::FETIConfiguration()
         .setdescription({ "Dual operator hybrid feti explicit general schur on CPU configuration." })
         .setcollapsed());
 
+    REGISTER(dualop_hybridfeti_explicit_generalschur_gpu_config, ECFMetaData()
+        .setdescription({ "Dual operator hybrid feti explicit general schur on GPU configuration." })
+        .setcollapsed());
+
     REGISTER(dirichlet_generalschur_config, ECFMetaData()
         .setdescription({ "Dirichlet preconnditioner using general schur configuration." })
         .setcollapsed());

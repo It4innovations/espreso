@@ -8,6 +8,7 @@
 #include "totalfeti.explicit.generalschur.gpu.h"
 #include "totalfeti.implicit.generalsparsesolver.cpu.h"
 #include "hybridfeti.explicit.generalschur.cpu.h"
+#include "hybridfeti.explicit.generalschur.gpu.h"
 #include "hybridfeti.implicit.h"
 #include "feti/projector/projector.h"
 
@@ -97,10 +98,13 @@ DualOperator<T>* DualOperator<T>::create(FETI<T> &feti, const step::Step &step)
             eslog::info(" = DUAL OPERATOR                                                 EXPLICIT HYBRID FETI ON CPU = \n");
             dual = new HybridFETIExplicitGeneralSchurCpu<T,int>(feti);
             break;
+        case FETIConfiguration::DUAL_OPERATOR::EXPLICIT_GENERALSCHUR_GPU:
+            eslog::info(" = DUAL OPERATOR                                                 EXPLICIT HYBRID FETI ON GPU = \n");
+            dual = new HybridFETIExplicitGeneralSchurGpu<T,int>(feti);
+            break;
         case FETIConfiguration::DUAL_OPERATOR::EXPLICIT:
         case FETIConfiguration::DUAL_OPERATOR::EXPLICIT_GPU:
         case FETIConfiguration::DUAL_OPERATOR::IMPLICIT_GPU:
-        case FETIConfiguration::DUAL_OPERATOR::EXPLICIT_GENERALSCHUR_GPU:
         case FETIConfiguration::DUAL_OPERATOR::IMPLICIT_GENERALSPARSESOLVER_CPU:
             eslog::error("not implemented dual operator\n");
             break;

@@ -287,12 +287,30 @@ void schur_hcsx_ddny<T,I>::perform_2_submit(void * ws_tmp)
 template<typename T, typename I>
 void schur_hcsx_ddny<T,I>::solve_A11(VectorDenseView_new<T> & rhs, VectorDenseView_new<T> & sol)
 {
-    stacktimer::push("schur_hcsx_ddny::solve_A11");
+    stacktimer::push("schur_hcsx_ddny::solve_A11 (vector)");
 
     if(!called_preprocess) eslog::error("preprocess has not been called\n");
     if(!need_solve_A11) eslog::error("need_solve_A11 is not set, so cannot solve A11\n");
     if(rhs.size != size_A11) eslog::error("wrong rhs size\n");
     if(sol.size != size_A11) eslog::error("wrong sol size\n");
+
+    this->internal_solve_A11(rhs, sol);
+
+    stacktimer::pop();
+}
+
+
+
+template<typename T, typename I>
+void schur_hcsx_ddny<T,I>::solve_A11(MatrixDenseView_new<T> & rhs, MatrixDenseView_new<T> & sol)
+{
+    stacktimer::push("schur_hcsx_ddny::solve_A11 (matrix)");
+
+    if(!called_preprocess) eslog::error("preprocess has not been called\n");
+    if(!need_solve_A11) eslog::error("need_solve_A11 is not set, so cannot solve A11\n");
+    if(rhs.nrows != size_A11) eslog::error("wrong rhs size\n");
+    if(sol.nrows != size_A11) eslog::error("wrong sol size\n");
+    if(rhs.ncols != sol.ncols) eslog::error("rhs and sol must have equal number of columns\n");
 
     this->internal_solve_A11(rhs, sol);
 

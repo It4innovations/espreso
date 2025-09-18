@@ -33,6 +33,7 @@ public:
 
     // y = K+(f - Bt * x)
     void toPrimal(const Vector_Dual<T> &x, std::vector<Vector_Dense<T> > &y) override;
+    void BtL(const Vector_Dual<T> &x, std::vector<Vector_Dense<T> > &y) override;
 
 protected:
     using DualOperator<T>::feti;

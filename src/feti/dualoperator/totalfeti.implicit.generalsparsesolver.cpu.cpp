@@ -363,6 +363,24 @@ void TotalFETIImplicitGeneralSparseSolverCpu<T,I>::toPrimal(const Vector_Dual<T>
 
 
 
+template <typename T, typename I>
+void TotalFETIImplicitGeneralSparseSolverCpu<T,I>::BtL(const Vector_Dual<T> &x, std::vector<Vector_Dense<T> > &y)
+{
+    if(cfg.outer_timers) stacktimer::enable();
+    stacktimer::push("TotalFETIImplicitGeneralSparseSolverCpu::BtL");
+
+    #pragma omp parallel for schedule(static,1)
+    for (size_t d = 0; d < feti.K.size(); ++d) {
+        math::set(y[d], T{0});
+        math::spblas::applyT(y[d], T{1}, feti.B1[d], feti.D2C[d].data(), x);
+    }
+
+    stacktimer::pop();
+    if(cfg.outer_timers) stacktimer::disable();
+}
+
+
+
 template<typename T, typename I>
 void TotalFETIImplicitGeneralSparseSolverCpu<T,I>::setup_config(config & cfg, const FETIConfiguration & feti_ecf_config)
 {

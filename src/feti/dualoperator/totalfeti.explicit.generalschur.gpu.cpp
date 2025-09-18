@@ -49,7 +49,7 @@ void TotalFETIExplicitGeneralSchurGpu<T,I>::info()
         auto schur_impl_to_string_actual = [](schur_impl_t schur_impl){ return gpu::operations::schur_hcsx_ddny<T,I>::make(schur_impl)->get_name(); };
 
         eslog::info(" =   %-50s       %+30s = \n", "mainloop_update_split", loop_split_to_string(cfg.mainloop_update_split));
-        eslog::info(" =   %-50s       %+30s = \n", "synchronize_after_update_mainloops", loop_split_to_string(cfg.gpu_wait_after_mainloop_update));
+        eslog::info(" =   %-50s       %+30s = \n", "synchronize_after_update_mainloops", bool_to_string(cfg.gpu_wait_after_mainloop_update));
         eslog::info(" =   %-50s       %+30s = \n", "inner_timers", bool_to_string(cfg.inner_timers));
         eslog::info(" =   %-50s       %+30s = \n", "outer_timers", bool_to_string(cfg.outer_timers));
         eslog::info(" =   %-50s       %+30s = \n", "order_F", order_to_string(cfg.order_F));
@@ -352,6 +352,7 @@ void TotalFETIExplicitGeneralSchurGpu<T,I>::update(const step::Step &step)
             gpu::mgm::device_wait();
             stacktimer::pop();
         }
+        stacktimer::pop();
     }
     stacktimer::pop();
 
@@ -486,6 +487,24 @@ void TotalFETIExplicitGeneralSchurGpu<T,I>::toPrimal(const Vector_Dual<T> &x, st
     }
 
     if(!cfg.inner_timers) stacktimer::enable();
+    stacktimer::pop();
+    if(cfg.outer_timers) stacktimer::disable();
+}
+
+
+
+template <typename T, typename I>
+void TotalFETIExplicitGeneralSchurGpu<T,I>::BtL(const Vector_Dual<T> &x, std::vector<Vector_Dense<T> > &y)
+{
+    if(cfg.outer_timers) stacktimer::enable();
+    stacktimer::push("TotalFETIExplicitGeneralSchurGpu::BtL");
+
+    #pragma omp parallel for schedule(static,1)
+    for (size_t d = 0; d < feti.K.size(); ++d) {
+        math::set(y[d], T{0});
+        math::spblas::applyT(y[d], T{1}, feti.B1[d], feti.D2C[d].data(), x);
+    }
+
     stacktimer::pop();
     if(cfg.outer_timers) stacktimer::disable();
 }

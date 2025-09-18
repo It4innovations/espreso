@@ -54,6 +54,7 @@ public:
     void perform_1_submit();
     void perform_2_submit(void * ws_tmp);
     void solve_A11(VectorDenseView_new<T> & rhs, VectorDenseView_new<T> & sol);
+    void solve_A11(MatrixDenseView_new<T> & rhs, MatrixDenseView_new<T> & sol);
 protected:
     gpu::mgm::queue q;
     gpu::spblas::handle handle_spblas;
@@ -95,6 +96,7 @@ protected:
     virtual void internal_perform_1_submit() {};
     virtual void internal_perform_2_submit() {};
     virtual void internal_solve_A11(VectorDenseView_new<T> & rhs, VectorDenseView_new<T> & sol) {};
+    virtual void internal_solve_A11(MatrixDenseView_new<T> & rhs, MatrixDenseView_new<T> & sol) {};
 };
 
 

@@ -33,6 +33,7 @@ protected:
     void internal_perform_1_submit() override;
     void internal_perform_2_submit() override;
     void internal_solve_A11(VectorDenseView_new<T> & rhs, VectorDenseView_new<T> & sol) override;
+    void internal_solve_A11(MatrixDenseView_new<T> & rhs, MatrixDenseView_new<T> & sol) override;
 private:
     std::unique_ptr<schur_hcsx_ddny_manual_simple_data<T,I>> data;
 protected:
