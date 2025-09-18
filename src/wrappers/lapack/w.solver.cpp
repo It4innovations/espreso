@@ -51,19 +51,22 @@ template <typename T, typename I>
 void DenseSolver<T, I>::factorization()
 {
     ipiv.resize(a.nrows);
-    LAPACKE_dsytrf(LAPACK_ROW_MAJOR, 'U', a.nrows, a.vals, a.ncols, ipiv.data());
+    if constexpr(std::is_same_v<T,double>) LAPACKE_dsytrf(LAPACK_ROW_MAJOR, 'U', a.nrows, a.vals, a.ncols, ipiv.data());
+    else eslog::error("not implemented\n");
 }
 
 template <typename T, typename I>
 void DenseSolver<T, I>::solve(Vector_Dense<T, I> &rhs)
 {
-    LAPACKE_dsytrs(LAPACK_ROW_MAJOR, 'U', a.nrows, 1, a.vals, a.ncols, ipiv.data(), rhs.vals, 1);
+    if constexpr(std::is_same_v<T,double>) LAPACKE_dsytrs(LAPACK_ROW_MAJOR, 'U', a.nrows, 1, a.vals, a.ncols, ipiv.data(), rhs.vals, 1);
+    else eslog::error("not implemented\n");
 }
 
 template <typename T, typename I>
 void DenseSolver<T, I>::solve(Matrix_Dense<T, I> &rhs)
 {
-    LAPACKE_dsytrs(LAPACK_ROW_MAJOR, 'U', a.nrows, rhs.ncols, a.vals, a.ncols, ipiv.data(), rhs.vals, rhs.ncols);
+    if constexpr(std::is_same_v<T,double>) LAPACKE_dsytrs(LAPACK_ROW_MAJOR, 'U', a.nrows, rhs.ncols, a.vals, a.ncols, ipiv.data(), rhs.vals, rhs.ncols);
+    else eslog::error("not implemented\n");
 }
 
 }
