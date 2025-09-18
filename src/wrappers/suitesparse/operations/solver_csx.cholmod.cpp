@@ -30,21 +30,20 @@ struct solver_csx_cholmod_data
 
 
 template<typename T, typename I>
-solver_csx_cholmod<T,I>::solver_csx_cholmod()
-{
-    data = std::make_unique<solver_csx_cholmod_data<T,I>>();
-}
+solver_csx_cholmod<T,I>::solver_csx_cholmod() {}
 
 
 
 template<typename T, typename I>
 solver_csx_cholmod<T,I>::~solver_csx_cholmod()
 {
-    if (data->cm_factor_super != nullptr) _free<I>(data->cm_factor_super, data->cm_common);
+    if(data) {
+        if (data->cm_factor_super != nullptr) _free<I>(data->cm_factor_super, data->cm_common);
 
-    if (data->cm_factor_simpl != nullptr) _free<I>(data->cm_factor_simpl, data->cm_common);
+        if (data->cm_factor_simpl != nullptr) _free<I>(data->cm_factor_simpl, data->cm_common);
 
-    _finish<I>(data->cm_common);
+        _finish<I>(data->cm_common);
+    }
 }
 
 
@@ -54,6 +53,10 @@ void solver_csx_cholmod<T,I>::internal_factorize_symbolic()
 {
     if(!is_hermitian<T>(A->prop.symm)) eslog::error("matrix has to be hermitian\n");
     if(A->prop.dfnt != MatrixDefinitness_new::positive_definite) eslog::error("matrix has to be positive definite\n");
+
+    if (A->nrows == 0) return;
+
+    data = std::make_unique<solver_csx_cholmod_data<T,I>>();
 
     _start<I>(data->cm_common);
     data->cm_common.final_ll = 1;
@@ -82,8 +85,6 @@ void solver_csx_cholmod<T,I>::internal_factorize_symbolic()
     data->cm_A_view.p = A->ptrs;
     data->cm_A_view.i = A->idxs;
     data->cm_A_view.x = A->vals;
-
-    if (data->cm_A_view.nrow == 0 || data->cm_A_view.ncol == 0) return;
 
     data->cm_factor_super = _analyze<I>(&data->cm_A_view, data->cm_common);
 
@@ -130,11 +131,11 @@ void solver_csx_cholmod<T,I>::internal_factorize_symbolic()
 template<typename T, typename I>
 void solver_csx_cholmod<T,I>::internal_factorize_numeric()
 {
+    if (!data) return;
+
     data->cm_A_view.p = A->ptrs;
     data->cm_A_view.i = A->idxs;
     data->cm_A_view.x = A->vals;
-
-    if (data->cm_A_view.nrow == 0 || data->cm_A_view.ncol == 0) return;
 
     _factorize<I>(data->cm_factor_super, &data->cm_A_view, data->cm_common);
 }
@@ -144,6 +145,8 @@ void solver_csx_cholmod<T,I>::internal_factorize_numeric()
 template<typename T, typename I>
 void solver_csx_cholmod<T,I>::internal_get_permutation(PermutationView_new<I> & perm)
 {
+    if (!data) return;
+
     std::copy_n(static_cast<I*>(data->cm_factor_super->Perm), data->cm_factor_super->n, perm.dst_to_src);
 
     if (data->cm_factor_super->IPerm != nullptr) {
@@ -160,6 +163,13 @@ template<typename T, typename I>
 void solver_csx_cholmod<T,I>::get_factor_impl(MatrixCsxView_new<T,I> & factor, bool pattern, bool values)
 {
     // correct order/uplo/size/nnz is handled in base class, here I will just copy the data
+
+    if (!data) {
+        if(pattern) {
+            factor.ptrs[0] = 0;
+        }
+        return;
+    }
 
     if (pattern) {
         std::copy_n(static_cast<I*>(data->cm_factor_simpl->p), data->cm_factor_simpl->n+1, factor.ptrs);
@@ -193,6 +203,8 @@ void solver_csx_cholmod<T,I>::internal_get_factor_U(MatrixCsxView_new<T,I> & U, 
 template<typename T, typename I>
 void solver_csx_cholmod<T,I>::internal_solve(VectorDenseView_new<T> & rhs, VectorDenseView_new<T> & sol)
 {
+    if (!data) return;
+
     MatrixDenseView_new<T> rhs_mat;
     rhs_mat.set_view(rhs.size, 1, rhs.size, 'C', rhs.vals, rhs.ator);
 
@@ -212,7 +224,7 @@ void solver_csx_cholmod<T,I>::internal_solve(VectorDenseView_new<T> & rhs, Vecto
 template<typename T, typename I>
 void solver_csx_cholmod<T,I>::internal_solve(MatrixDenseView_new<T> & rhs, MatrixDenseView_new<T> & sol)
 {
-    if (data->cm_A_view.nrow == 0 || data->cm_A_view.ncol == 0) return;
+    if (!data) return;
 
     if(rhs.order != 'C') { // sol.order is equal
         MatrixDenseData_new<T> tmp;
@@ -248,6 +260,8 @@ void solver_csx_cholmod<T,I>::internal_solve(MatrixDenseView_new<T> & rhs, Matri
 template<typename T, typename I>
 void solver_csx_cholmod<T,I>::internal_solve(MatrixCsxView_new<T,I> & rhs, MatrixDenseView_new<T> & sol)
 {
+    if (!data) return;
+
     if(sol.order != 'C') {
         MatrixDenseData_new<T> tmp;
         tmp.set(sol.nrows, sol.ncols, 'C', AllocatorCPU_new::get_singleton());

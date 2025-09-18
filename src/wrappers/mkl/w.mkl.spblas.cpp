@@ -4,6 +4,7 @@
 #include "math/wrappers/math.spblas.h"
 #include "esinfo/eslog.h"
 
+#include "esinfo/mpiinfo.h"
 #include <complex>
 
 #ifdef HAVE_MKL
@@ -23,7 +24,7 @@ static void checkStatus(sparse_status_t status)
     case SPARSE_STATUS_SUCCESS: break;
     case SPARSE_STATUS_NOT_INITIALIZED: eslog::error("MKL SPARSE_STATUS_NOT_INITIALIZED\n"); break;
     case SPARSE_STATUS_ALLOC_FAILED: eslog::error("MKL SPARSE_STATUS_ALLOC_FAILED\n"); break;
-    case SPARSE_STATUS_INVALID_VALUE: eslog::error("MKL SPARSE_STATUS_INVALID_VALUE\n"); break;
+    case SPARSE_STATUS_INVALID_VALUE: eslog::error("MKL SPARSE_STATUS_INVALID_VALUE %d\n", info::mpi::rank); break;
     case SPARSE_STATUS_EXECUTION_FAILED: eslog::error("MKL SPARSE_STATUS_EXECUTION_FAILED\n"); break;
     case SPARSE_STATUS_INTERNAL_ERROR: eslog::error("MKL SPARSE_STATUS_INTERNAL_ERROR\n"); break;
     case SPARSE_STATUS_NOT_SUPPORTED: eslog::error("MKL SPARSE_STATUS_NOT_SUPPORTED\n"); break;
@@ -230,10 +231,12 @@ public:
     mkl_sparse_matrix_wrapper(MatrixCsxView_new<T,I> & A)
     {
         if(Indexing::CSR != 0) eslog::error("i dont support one-based csr indexing\n");
-        if constexpr(std::is_same_v<T,float>)                checkStatus(mkl_sparse_s_create_csr(&mat, SPARSE_INDEX_BASE_ZERO, A.get_size_primary(), A.get_size_secdary(), A.ptrs, A.ptrs+1, A.idxs, A.vals));
-        if constexpr(std::is_same_v<T,double>)               checkStatus(mkl_sparse_d_create_csr(&mat, SPARSE_INDEX_BASE_ZERO, A.get_size_primary(), A.get_size_secdary(), A.ptrs, A.ptrs+1, A.idxs, A.vals));
-        if constexpr(std::is_same_v<T,std::complex<float>>)  checkStatus(mkl_sparse_c_create_csr(&mat, SPARSE_INDEX_BASE_ZERO, A.get_size_primary(), A.get_size_secdary(), A.ptrs, A.ptrs+1, A.idxs, A.vals));
-        if constexpr(std::is_same_v<T,std::complex<double>>) checkStatus(mkl_sparse_z_create_csr(&mat, SPARSE_INDEX_BASE_ZERO, A.get_size_primary(), A.get_size_secdary(), A.ptrs, A.ptrs+1, A.idxs, A.vals));
+        I * idxs = ((A.nnz == 0) ? (I*)(sizeof(I)) : A.idxs);
+        T * vals = ((A.nnz == 0) ? (T*)(sizeof(T)) : A.vals);
+        if constexpr(std::is_same_v<T,float>)                checkStatus(mkl_sparse_s_create_csr(&mat, SPARSE_INDEX_BASE_ZERO, A.get_size_primary(), A.get_size_secdary(), A.ptrs, A.ptrs+1, idxs, vals));
+        if constexpr(std::is_same_v<T,double>)               checkStatus(mkl_sparse_d_create_csr(&mat, SPARSE_INDEX_BASE_ZERO, A.get_size_primary(), A.get_size_secdary(), A.ptrs, A.ptrs+1, idxs, vals));
+        if constexpr(std::is_same_v<T,std::complex<float>>)  checkStatus(mkl_sparse_c_create_csr(&mat, SPARSE_INDEX_BASE_ZERO, A.get_size_primary(), A.get_size_secdary(), A.ptrs, A.ptrs+1, idxs, vals));
+        if constexpr(std::is_same_v<T,std::complex<double>>) checkStatus(mkl_sparse_z_create_csr(&mat, SPARSE_INDEX_BASE_ZERO, A.get_size_primary(), A.get_size_secdary(), A.ptrs, A.ptrs+1, idxs, vals));
     }
     ~mkl_sparse_matrix_wrapper()
     {
@@ -254,10 +257,12 @@ template<typename T, typename I>
 void create_mkl_csr_matrix(sparse_matrix_t & A_mkl, MatrixCsxView_new<T,I> & A)
 {
     if(Indexing::CSR != 0) eslog::error("i dont support one-based csr indexing\n");
-    if constexpr(std::is_same_v<T,float>)                checkStatus(mkl_sparse_s_create_csr(&A_mkl, SPARSE_INDEX_BASE_ZERO, A.get_size_primary(), A.get_size_secdary(), A.ptrs, A.ptrs+1, A.idxs, A.vals));
-    if constexpr(std::is_same_v<T,double>)               checkStatus(mkl_sparse_d_create_csr(&A_mkl, SPARSE_INDEX_BASE_ZERO, A.get_size_primary(), A.get_size_secdary(), A.ptrs, A.ptrs+1, A.idxs, A.vals));
-    if constexpr(std::is_same_v<T,std::complex<float>>)  checkStatus(mkl_sparse_c_create_csr(&A_mkl, SPARSE_INDEX_BASE_ZERO, A.get_size_primary(), A.get_size_secdary(), A.ptrs, A.ptrs+1, A.idxs, A.vals));
-    if constexpr(std::is_same_v<T,std::complex<double>>) checkStatus(mkl_sparse_z_create_csr(&A_mkl, SPARSE_INDEX_BASE_ZERO, A.get_size_primary(), A.get_size_secdary(), A.ptrs, A.ptrs+1, A.idxs, A.vals));
+    I * idxs = ((A.nnz == 0) ? (I*)(sizeof(I)) : A.idxs);
+    T * vals = ((A.nnz == 0) ? (T*)(sizeof(T)) : A.vals);
+    if constexpr(std::is_same_v<T,float>)                checkStatus(mkl_sparse_s_create_csr(&A_mkl, SPARSE_INDEX_BASE_ZERO, A.get_size_primary(), A.get_size_secdary(), A.ptrs, A.ptrs+1, idxs, vals));
+    if constexpr(std::is_same_v<T,double>)               checkStatus(mkl_sparse_d_create_csr(&A_mkl, SPARSE_INDEX_BASE_ZERO, A.get_size_primary(), A.get_size_secdary(), A.ptrs, A.ptrs+1, idxs, vals));
+    if constexpr(std::is_same_v<T,std::complex<float>>)  checkStatus(mkl_sparse_c_create_csr(&A_mkl, SPARSE_INDEX_BASE_ZERO, A.get_size_primary(), A.get_size_secdary(), A.ptrs, A.ptrs+1, idxs, vals));
+    if constexpr(std::is_same_v<T,std::complex<double>>) checkStatus(mkl_sparse_z_create_csr(&A_mkl, SPARSE_INDEX_BASE_ZERO, A.get_size_primary(), A.get_size_secdary(), A.ptrs, A.ptrs+1, idxs, vals));
 }
 
 template<typename T, typename I>
@@ -267,6 +272,8 @@ void trsm(MatrixCsxView_new<T,I> & A, MatrixDenseView_new<T> & X, MatrixDenseVie
     if(X.nrows != Y.nrows || X.ncols != Y.ncols) eslog::error("X and Y sizes dont match\n");
     if(X.order != Y.order) eslog::error("X and Y orders must match\n");
     if(A.nrows != X.nrows) eslog::error("incompatible matrix sizes\n");
+
+    if(A.nrows == 0 && A.ncols == 0 && A.nnz == 0) return;
 
     if(stage == 'A') { // All at once
         trsm<T,I>(A, X, Y, handle, 'p'); // no need to optimize for a single call
@@ -315,6 +322,8 @@ void mm(MatrixCsxView_new<T,I> & A, MatrixDenseView_new<T> & B, MatrixDenseView_
 {
     if(A.nrows != C.nrows || B.ncols != C.ncols || A.ncols != B.nrows) eslog::error("incompatible matrices\n");
     if(B.order != C.order) eslog::error("B and C order must match\n");
+
+    if(A.nrows == 0 && A.ncols == 0 && A.nnz == 0) return;
 
     if(stage == 'A') { // All at once
         mm<T,I>(A, B, C, alpha, beta, handle, 'p'); // no need to optimize for a single call
