@@ -280,17 +280,15 @@ void HybridFETIExplicitGeneralSchurCpu<T,I>::update(const step::Step &step)
         if (feti.updated.B) {
             d.resize();
         }
-        std::vector<Vector_Dense<T,I>> Kplus_fs(n_domains);
-        #pragma omp parallel for schedule(static,1)
-        for(size_t di = 0; di < n_domains; di++) {
-            Kplus_fs[di].resize(feti.f[di].size);
-            VectorDenseView_new<T> f_new = VectorDenseView_new<T>::from_old(feti.f[di]);
-            VectorDenseView_new<T> Kplus_f_new = VectorDenseView_new<T>::from_old(Kplus_fs[di]);
-            domain_data[di].op_sc->solve_A11(f_new, Kplus_f_new);
-        }
-        applyB(feti, Kplus_fs, d);
+        _applyK(feti.f, KplusBtx, true);
+        applyB(feti, KplusBtx, d);
         d.synchronize();
         math::add(d, T{-1}, feti.c);
+        eslog::checkpointln("FETI: COMPUTE DUAL RHS [d]");
+        if (info::ecf->output.print_matrices) {
+            eslog::storedata(" STORE: feti/dualop/{d}\n");
+            math::store(d, utils::filename(utils::debugDirectory(step) + "/feti/dualop", "d").c_str());
+        }
     }
     if(!cfg.inner_timers) stacktimer::enable();
     stacktimer::pop();
