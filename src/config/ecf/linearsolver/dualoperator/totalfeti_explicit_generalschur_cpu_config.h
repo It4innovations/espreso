@@ -49,6 +49,7 @@ struct DualopTotalfetiExplicitGeneralSchurCpuConfig: public ECFDescription {
     MATRIX_ORDER order_F;
     SCHUR_IMPL schur_impl;
     CPU_GPU apply_where;
+    AUTOBOOL apply_wait_intermediate;
 
     DualopTotalfetiExplicitGeneralSchurCpuConfig();
 

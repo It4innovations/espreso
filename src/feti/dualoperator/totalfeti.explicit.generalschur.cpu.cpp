@@ -109,7 +109,7 @@ void TotalFETIExplicitGeneralSchurCpu<T,I>::setup()
             Fs_vector[di] = &domain_data[di].F;
         }
 
-        applicator.set_config(cfg.inner_timers);
+        applicator.set_config(cfg.apply_wait_intermediate, cfg.inner_timers);
         applicator.set_handles(&feti.main_q, &feti.queues, &feti.handles_dense);
         applicator.set_feti(&feti);
         applicator.set_memory('C', 'C');
@@ -221,25 +221,29 @@ void TotalFETIExplicitGeneralSchurCpu<T,I>::update(const step::Step &step)
     }
     stacktimer::pop();
 
-    stacktimer::push("update_compute_vector_d");
-    if(!cfg.inner_timers) stacktimer::disable();
+    stacktimer::push("update_second_part");
     {
-        if (feti.updated.B) {
-            d.resize();
+        stacktimer::push("update_compute_vector_d");
+        if(!cfg.inner_timers) stacktimer::disable();
+        {
+            if (feti.updated.B) {
+                d.resize();
+            }
+            std::vector<Vector_Dense<T,I>> Kplus_fs(n_domains);
+            #pragma omp parallel for schedule(static,1)
+            for(size_t di = 0; di < n_domains; di++) {
+                Kplus_fs[di].resize(feti.f[di].size);
+                VectorDenseView_new<T> f_new = VectorDenseView_new<T>::from_old(feti.f[di]);
+                VectorDenseView_new<T> Kplus_f_new = VectorDenseView_new<T>::from_old(Kplus_fs[di]);
+                domain_data[di].op_sc->solve_A11(f_new, Kplus_f_new);
+            }
+            applyB(feti, Kplus_fs, d);
+            d.synchronize();
+            math::add(d, T{-1}, feti.c);
         }
-        std::vector<Vector_Dense<T,I>> Kplus_fs(n_domains);
-        #pragma omp parallel for schedule(static,1)
-        for(size_t di = 0; di < n_domains; di++) {
-            Kplus_fs[di].resize(feti.f[di].size);
-            VectorDenseView_new<T> f_new = VectorDenseView_new<T>::from_old(feti.f[di]);
-            VectorDenseView_new<T> Kplus_f_new = VectorDenseView_new<T>::from_old(Kplus_fs[di]);
-            domain_data[di].op_sc->solve_A11(f_new, Kplus_f_new);
-        }
-        applyB(feti, Kplus_fs, d);
-        d.synchronize();
-        math::add(d, T{-1}, feti.c);
+        if(!cfg.inner_timers) stacktimer::enable();
+        stacktimer::pop();
     }
-    if(!cfg.inner_timers) stacktimer::enable();
     stacktimer::pop();
 
     stacktimer::pop();
@@ -259,7 +263,9 @@ void TotalFETIExplicitGeneralSchurCpu<T,I>::apply(const Vector_Dual<T> &x_cluste
 
     applicator.apply(x_cluster_new, y_cluster_new, feti.gpu_tmp_mem, feti.gpu_tmp_size);
 
+    stacktimer::push("dual_synchronize");
     y_cluster.synchronize();
+    stacktimer::pop();
 
     stacktimer::pop();
     if(cfg.outer_timers) stacktimer::disable();
@@ -278,7 +284,9 @@ void TotalFETIExplicitGeneralSchurCpu<T,I>::apply(const Matrix_Dual<T> &X_cluste
 
     applicator.apply(X_cluster_new, Y_cluster_new, feti.gpu_tmp_mem, feti.gpu_tmp_size);
 
+    stacktimer::push("dual_synchronize");
     Y_cluster.synchronize();
+    stacktimer::pop();
 
     stacktimer::pop();
     if(cfg.outer_timers) stacktimer::disable();
@@ -318,7 +326,9 @@ void TotalFETIExplicitGeneralSchurCpu<T,I>::apply(const Matrix_Dual<T> &X_cluste
     
     math::operations::supermatrix_dnx_dnx_noncontig<T,I>::do_all(&Y_cluster_filtered, &Y_cluster_new, nullptr, &filter_map);
 
+    stacktimer::push("dual_synchronize");
     Y_cluster.synchronize();
+    stacktimer::pop();
 
     stacktimer::pop();
     if(cfg.outer_timers) stacktimer::disable();
@@ -422,6 +432,12 @@ void TotalFETIExplicitGeneralSchurCpu<T,I>::setup_config(config & cfg, const FET
         case ecf_config::CPU_GPU::AUTO: cfg.apply_where = 'C'; break;
         case ecf_config::CPU_GPU::CPU:  cfg.apply_where = 'C'; break;
         case ecf_config::CPU_GPU::GPU:  cfg.apply_where = 'G'; break;
+    }
+
+    switch(ecf.apply_wait_intermediate) {
+        case ecf_config::AUTOBOOL::AUTO:  cfg.apply_wait_intermediate = false; break;
+        case ecf_config::AUTOBOOL::TRUE:  cfg.apply_wait_intermediate = true;  break;
+        case ecf_config::AUTOBOOL::FALSE: cfg.apply_wait_intermediate = false; break;
     }
 }
 

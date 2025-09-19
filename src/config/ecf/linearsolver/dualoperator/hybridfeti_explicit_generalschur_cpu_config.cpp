@@ -73,4 +73,13 @@ DualopHybridfetiExplicitGeneralSchurCpuConfig::DualopHybridfetiExplicitGeneralSc
         .addoption(ECFOption().setname("CPU").setdescription("On the CPU"))
         .addoption(ECFOption().setname("GPU").setdescription("On the GPU"))
     );
+
+    apply_wait_intermediate = AUTOBOOL::AUTO;
+    REGISTER(apply_wait_intermediate, ECFMetaData()
+        .setdescription({ "Wait for GPU in apply also before the external function" })
+        .setdatatype({ ECFDataType::OPTION })
+        .addoption(ECFOption().setname("AUTO").setdescription("Automatic selection"))
+        .addoption(ECFOption().setname("TRUE").setdescription("Yes, wait"))
+        .addoption(ECFOption().setname("FALSE").setdescription("No, let GPU execute asynchronously"))
+    );
 }

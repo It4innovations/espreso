@@ -21,8 +21,9 @@ namespace espreso {
 
 
 template<typename T, typename I>
-void dualop_explicit_applicator<T,I>::set_config(bool timers_inner_)
+void dualop_explicit_applicator<T,I>::set_config(bool wait_intermediate_, bool timers_inner_)
 {
+    wait_intermediate = wait_intermediate_;
     timers_inner = timers_inner_;
 }
 
@@ -257,6 +258,8 @@ void dualop_explicit_applicator<T,I>::apply(VectorDenseView_new<T> & x_cluster, 
     if((x_cluster.ator->is_data_accessible_cpu() && vector_mem != 'C') || (x_cluster.ator->is_data_accessible_gpu() && vector_mem != 'G')) eslog::error("wrong x_cluster allocator\n");
     if((y_cluster.ator->is_data_accessible_cpu() && vector_mem != 'C') || (y_cluster.ator->is_data_accessible_gpu() && vector_mem != 'G')) eslog::error("wrong y_cluster allocator\n");
 
+    stacktimer::push("dualop_apply_submit");
+
     ator_ws_gpu_tmp->set(ws_gpu_tmp, wss_gpu_tmp);
 
     Allocator_new * ator_tmp_target = nullptr;
@@ -369,11 +372,23 @@ void dualop_explicit_applicator<T,I>::apply(VectorDenseView_new<T> & x_cluster, 
         gpu::mgm::copy_submit(*main_q, y_cluster_2, y_cluster);
     }
 
-    func_while_waiting();
+    stacktimer::pop();
 
+    stacktimer::push("dualop_apply_wait_intermediate");
+    if(wait_intermediate && (apply_target == 'G' || need_copy_vectors)) {
+        gpu::mgm::device_wait();
+    }
+    stacktimer::pop();
+
+    stacktimer::push("dualop_apply_external_func");
+    func_while_waiting();
+    stacktimer::pop();
+
+    stacktimer::push("dualop_apply_wait_final");
     if(apply_target == 'G' || need_copy_vectors) {
         gpu::mgm::device_wait();
     }
+    stacktimer::pop();
 
     ator_ws_gpu_tmp->unset();
 
@@ -393,6 +408,8 @@ void dualop_explicit_applicator<T,I>::apply(MatrixDenseView_new<T> & X_cluster, 
 
     if((X_cluster.ator->is_data_accessible_cpu() && vector_mem != 'C') || (X_cluster.ator->is_data_accessible_gpu() && vector_mem != 'G')) eslog::error("wrong X_cluster allocator\n");
     if((Y_cluster.ator->is_data_accessible_cpu() && vector_mem != 'C') || (Y_cluster.ator->is_data_accessible_gpu() && vector_mem != 'G')) eslog::error("wrong Y_cluster allocator\n");
+
+    stacktimer::push("dualop_apply_submit");
 
     ator_ws_gpu_tmp->set(ws_gpu_tmp, wss_gpu_tmp);
 
@@ -544,11 +561,23 @@ void dualop_explicit_applicator<T,I>::apply(MatrixDenseView_new<T> & X_cluster, 
         gpu::mgm::copy_submit(*main_q, Y_cluster_2, Y_cluster);
     }
 
-    func_while_waiting();
+    stacktimer::pop();
 
+    stacktimer::push("dualop_apply_wait_intermediate");
+    if(wait_intermediate && (apply_target == 'G' || need_copy_vectors)) {
+        gpu::mgm::device_wait();
+    }
+    stacktimer::pop();
+
+    stacktimer::push("dualop_apply_external_func");
+    func_while_waiting();
+    stacktimer::pop();
+
+    stacktimer::push("dualop_apply_wait_final");
     if(apply_target == 'G' || need_copy_vectors) {
         gpu::mgm::device_wait();
     }
+    stacktimer::pop();
 
     ator_ws_gpu_tmp->unset();
 

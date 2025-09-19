@@ -51,6 +51,7 @@ private:
         bool inner_timers = false;
         bool print_config = false;
         char apply_where = 'G';
+        bool apply_wait_intermediate = false;
         schur_impl_t schur_impl = schur_impl_t::autoselect;
     };
     void setup_config(config & cfg, const FETIConfiguration & feti_ecf_config);

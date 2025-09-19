@@ -117,7 +117,7 @@ void HybridFETIExplicitGeneralSchurCpu<T,I>::setup()
             Fs_vector[di] = &domain_data[di].F1;
         }
 
-        F1_applicator.set_config(cfg.inner_timers);
+        F1_applicator.set_config(cfg.apply_wait_intermediate, cfg.inner_timers);
         F1_applicator.set_handles(&feti.main_q, &feti.queues, &feti.handles_dense);
         F1_applicator.set_feti(&feti);
         F1_applicator.set_memory('C', 'C');
@@ -241,56 +241,62 @@ void HybridFETIExplicitGeneralSchurCpu<T,I>::update(const step::Step &step)
     }
     stacktimer::pop();
 
-    stacktimer::push("hybrid_feti_things");
+    stacktimer::push("update_second_part");
     {
-        int nR1 = 0, nKR1 = 0;
-        for (size_t di = 0; di < feti.K.size(); ++di) {
-            nR1 += feti.R1[di].nrows;
-            nKR1 += feti.KR1[di].nrows;
-        }
-        if (nR1 == 0 && nKR1 == 0) {
-            eslog::error("HYBRID FETI: provide kernels for B0 gluing.\n");
-        }
-        isRegularK = nR1 == 0;
-
-        _computeB0();
-        _computeF0();
-        _computeG0();
-        _computeS0();
-        g.resize(feti.cluster.gl_size);
-        beta.resize(G0.nrows);
-        mu.resize(feti.cluster.gl_size);
-
-        if (info::ecf->output.print_matrices) {
-            eslog::storedata(" STORE: feti/dualop/{B0, F0, G0, S0}\n");
-            for (size_t d = 0; d < feti.B1.size(); ++d) {
-                math::store(B0[d], utils::filename(utils::debugDirectory(step) + "/feti/dualop", "B0" + std::to_string(d)).c_str());
-                math::store(D2C0[d], utils::filename(utils::debugDirectory(step) + "/feti/dualop", "D2C0" + std::to_string(d)).c_str());
+        stacktimer::push("hybrid_feti_things");
+        if(!cfg.inner_timers) stacktimer::disable();
+        {
+            int nR1 = 0, nKR1 = 0;
+            for (size_t di = 0; di < feti.K.size(); ++di) {
+                nR1 += feti.R1[di].nrows;
+                nKR1 += feti.KR1[di].nrows;
             }
-            math::store(F0, utils::filename(utils::debugDirectory(step) + "/feti/dualop", "F0").c_str());
-            math::store(G0, utils::filename(utils::debugDirectory(step) + "/feti/dualop", "G0").c_str());
-            math::store(S0, utils::filename(utils::debugDirectory(step) + "/feti/dualop", "S0").c_str());
-        }
-    }
-    stacktimer::pop();
+            if (nR1 == 0 && nKR1 == 0) {
+                eslog::error("HYBRID FETI: provide kernels for B0 gluing.\n");
+            }
+            isRegularK = nR1 == 0;
 
-    stacktimer::push("update_compute_vector_d");
-    if(!cfg.inner_timers) stacktimer::disable();
-    {
-        if (feti.updated.B) {
-            d.resize();
+            _computeB0();
+            _computeF0();
+            _computeG0();
+            _computeS0();
+            g.resize(feti.cluster.gl_size);
+            beta.resize(G0.nrows);
+            mu.resize(feti.cluster.gl_size);
+
+            if (info::ecf->output.print_matrices) {
+                eslog::storedata(" STORE: feti/dualop/{B0, F0, G0, S0}\n");
+                for (size_t d = 0; d < feti.B1.size(); ++d) {
+                    math::store(B0[d], utils::filename(utils::debugDirectory(step) + "/feti/dualop", "B0" + std::to_string(d)).c_str());
+                    math::store(D2C0[d], utils::filename(utils::debugDirectory(step) + "/feti/dualop", "D2C0" + std::to_string(d)).c_str());
+                }
+                math::store(F0, utils::filename(utils::debugDirectory(step) + "/feti/dualop", "F0").c_str());
+                math::store(G0, utils::filename(utils::debugDirectory(step) + "/feti/dualop", "G0").c_str());
+                math::store(S0, utils::filename(utils::debugDirectory(step) + "/feti/dualop", "S0").c_str());
+            }
         }
-        _applyK(feti.f, KplusBtx, true);
-        applyB(feti, KplusBtx, d);
-        d.synchronize();
-        math::add(d, T{-1}, feti.c);
-        eslog::checkpointln("FETI: COMPUTE DUAL RHS [d]");
-        if (info::ecf->output.print_matrices) {
-            eslog::storedata(" STORE: feti/dualop/{d}\n");
-            math::store(d, utils::filename(utils::debugDirectory(step) + "/feti/dualop", "d").c_str());
+        if(!cfg.inner_timers) stacktimer::enable();
+        stacktimer::pop();
+
+        stacktimer::push("update_compute_vector_d");
+        if(!cfg.inner_timers) stacktimer::disable();
+        {
+            if (feti.updated.B) {
+                d.resize();
+            }
+            _applyK(feti.f, KplusBtx, true);
+            applyB(feti, KplusBtx, d);
+            d.synchronize();
+            math::add(d, T{-1}, feti.c);
+            eslog::checkpointln("FETI: COMPUTE DUAL RHS [d]");
+            if (info::ecf->output.print_matrices) {
+                eslog::storedata(" STORE: feti/dualop/{d}\n");
+                math::store(d, utils::filename(utils::debugDirectory(step) + "/feti/dualop", "d").c_str());
+            }
         }
+        if(!cfg.inner_timers) stacktimer::enable();
+        stacktimer::pop();
     }
-    if(!cfg.inner_timers) stacktimer::enable();
     stacktimer::pop();
 
     stacktimer::pop();
@@ -322,7 +328,9 @@ void HybridFETIExplicitGeneralSchurCpu<T,I>::apply(const Vector_Dual<T> &x_clust
 
     math::operations::lincomb_vector<T>::do_all(&y_cluster, T{1}, &y_cluster, T{1}, &y_cluster_2);
 
+    stacktimer::push("dual_synchronize");
     y_cluster_old.synchronize();
+    stacktimer::pop();
 
     stacktimer::pop();
     if(cfg.outer_timers) stacktimer::disable();
@@ -353,7 +361,9 @@ void HybridFETIExplicitGeneralSchurCpu<T,I>::apply(const Matrix_Dual<T> &X_clust
 
     math::operations::lincomb_matrix_dnx<T>::do_all(&Y_cluster, T{1}, &Y_cluster, T{1}, &Y_cluster_2);
 
+    stacktimer::push("dual_synchronize");
     Y_cluster_old.synchronize();
+    stacktimer::pop();
 
     stacktimer::pop();
     if(cfg.outer_timers) stacktimer::disable();
@@ -393,7 +403,9 @@ void HybridFETIExplicitGeneralSchurCpu<T,I>::apply(const Matrix_Dual<T> &X_clust
 
     math::operations::supermatrix_dnx_dnx_noncontig<T,I>::do_all(&Y_cluster_2, &Y_cluster, nullptr, &filter_map, math::operations::supermatrix_dnx_dnx_noncontig<T,I>::mode::accumulate);
 
+    stacktimer::push("dual_synchronize");
     Y_cluster_old.synchronize();
+    stacktimer::pop();
 
     stacktimer::pop();
     if(cfg.outer_timers) stacktimer::disable();
@@ -980,6 +992,12 @@ void HybridFETIExplicitGeneralSchurCpu<T,I>::setup_config(config & cfg, const FE
         case ecf_config::CPU_GPU::AUTO: cfg.apply_where = 'C'; break;
         case ecf_config::CPU_GPU::CPU:  cfg.apply_where = 'C'; break;
         case ecf_config::CPU_GPU::GPU:  cfg.apply_where = 'G'; break;
+    }
+
+    switch(ecf.apply_wait_intermediate) {
+        case ecf_config::AUTOBOOL::AUTO:  cfg.apply_wait_intermediate = false; break;
+        case ecf_config::AUTOBOOL::TRUE:  cfg.apply_wait_intermediate = true;  break;
+        case ecf_config::AUTOBOOL::FALSE: cfg.apply_wait_intermediate = false; break;
     }
 }
 
