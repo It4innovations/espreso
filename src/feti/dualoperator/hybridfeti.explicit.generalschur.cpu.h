@@ -82,7 +82,7 @@ private:
     void _computeS0();
     void _compute_beta_mu(std::vector<Vector_Dense<T> > &b);
 
-    std::vector<Vector_Dense<T>> Btx, KplusBtx, B0mu, hfetiBtx;
+    std::vector<Vector_Dense<T>> Btx, KplusBtx;
     bool isRegularK;
     std::vector<Matrix_CSR<T>> B0;
     std::vector<std::vector<int>> D2C0;

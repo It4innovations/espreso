@@ -57,6 +57,23 @@ static void applyB(FETI<T> &feti, const std::vector<Vector_Dense<T> > &in, Vecto
 }
 
 template <typename T>
+static void applyB_threaded(FETI<T> &feti, const std::vector<Vector_Dense<T> > &in, Vector_Dual<T> &out)
+{
+    math::set(out, T{0});
+    #pragma omp parallel for schedule(static,1)
+    for (size_t d = 0; d < feti.K.size(); ++d) {
+        for (int r = 0; r < feti.B1[d].nrows; ++r) {
+            for (int c = feti.B1[d].rows[r]; c < feti.B1[d].rows[r + 1]; ++c) {
+                T & dst = out.vals[feti.D2C[d][r]];
+                T val = feti.B1[d].vals[c] * in[d].vals[feti.B1[d].cols[c]];
+                #pragma omp atomic
+                dst += val;
+            }
+        }
+    }
+}
+
+template <typename T>
 static void insertDomains(FETI<T> &feti, const std::vector<Vector_Dense<T> > &in, Vector_Dual<T> &out)
 {
     math::set(out, T{0});

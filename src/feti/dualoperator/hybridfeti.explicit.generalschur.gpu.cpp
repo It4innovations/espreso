@@ -215,8 +215,6 @@ void HybridFETIExplicitGeneralSchurGpu<T,I>::set(const step::Step &step)
     Btx.resize(feti.K.size());
     KplusBtx.resize(feti.K.size());
     dKB0.resize(feti.K.size());
-    B0mu.resize(feti.K.size());
-    hfetiBtx.resize(feti.K.size());
 
     if(ws_gpu_persistent == nullptr) eslog::error("persistent gpu workspace is not set\n");
 
@@ -263,8 +261,6 @@ void HybridFETIExplicitGeneralSchurGpu<T,I>::set(const step::Step &step)
 
         Btx[di].resize(feti.K[di].nrows);
         KplusBtx[di].resize(feti.K[di].nrows);
-        B0mu[di].resize(feti.K[di].nrows);
-        hfetiBtx[di].resize(feti.K[di].nrows);
         math::set(Btx[di], T{0});
     }
     gpu::mgm::device_wait();
@@ -608,12 +604,14 @@ void HybridFETIExplicitGeneralSchurGpu<T,I>::BtL(const Vector_Dual<T> &x, std::v
 template <typename T, typename I>
 void HybridFETIExplicitGeneralSchurGpu<T,I>::_apply_hfeti_stuff(const Vector_Dual<T> &x, Vector_Dual<T> &y)
 {
+    #pragma omp parallel for schedule(static,1)
     for (size_t di = 0; di < feti.K.size(); ++di) {
         applyBt(feti, di, x, Btx[di]);
     }
 
     _applyK(Btx, KplusBtx, false);
-    applyB(feti, KplusBtx, y);
+
+    applyB_threaded(feti, KplusBtx, y);
 }
 
 
@@ -628,12 +626,14 @@ void HybridFETIExplicitGeneralSchurGpu<T,I>::_apply_hfeti_stuff(const Matrix_Dua
         _x.vals = x.vals + x.ncols * r;
         _y.vals = y.vals + y.ncols * r;
 
+        #pragma omp parallel for schedule(static,1)
         for (size_t di = 0; di < feti.K.size(); ++di) {
             applyBt(feti, di, _x, Btx[di]);
         }
 
         _applyK(Btx, KplusBtx, false);
-        applyB(feti, KplusBtx, _y);
+
+        applyB_threaded(feti, KplusBtx, _y);
     }
 }
 
@@ -650,12 +650,14 @@ void HybridFETIExplicitGeneralSchurGpu<T,I>::_apply_hfeti_stuff(const Matrix_Dua
             _x.vals = x.vals + x.ncols * r;
             _y.vals = y.vals + y.ncols * r;
 
+            #pragma omp parallel for schedule(static,1)
             for (size_t di = 0; di < feti.K.size(); ++di) {
                 applyBt(feti, di, _x, Btx[di]);
             }
 
             _applyK(Btx, KplusBtx, false);
-            applyB(feti, KplusBtx, _y);
+
+            applyB_threaded(feti, KplusBtx, _y);
         }
     }
 }
@@ -696,8 +698,7 @@ void HybridFETIExplicitGeneralSchurGpu<T,I>::_applyK(std::vector<Vector_Dense<T>
             mu_di.vals[i] = mu.vals[D2C0[di][i]];
         }
 
-        math::blas::multiply(T{1}, dKB0[di], mu_di, T{0}, hfetiBtx[di], true);
-        math::add(x[di], T{-1}, hfetiBtx[di]);
+        math::blas::multiply(T{-1}, dKB0[di], mu_di, T{1}, x[di], true);
     }
 
     // x += R * beta
@@ -719,10 +720,12 @@ void HybridFETIExplicitGeneralSchurGpu<T,I>::_compute_beta_mu(std::vector<Vector
 {
     // g = B0 * (K+)^-1 * b
     math::set(g, T{0});
+    #pragma omp parallel for schedule(static,1)
     for (size_t di = 0; di < feti.K.size(); ++di) {
         Vector_Dense<T> KB0b; KB0b.resize(dKB0[di].nrows);
         math::blas::apply(KB0b, T{1}, dKB0[di], T{0}, b[di]);
         for (size_t i = 0; i < D2C0[di].size(); ++i) {
+            #pragma omp atomic
             g.vals[D2C0[di][i]] += KB0b.vals[i];
         }
 
