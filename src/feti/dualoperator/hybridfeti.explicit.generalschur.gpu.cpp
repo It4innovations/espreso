@@ -92,6 +92,7 @@ void HybridFETIExplicitGeneralSchurGpu<T,I>::setup()
         data.n_dofs_domain = feti.B1[di].ncols;
         data.n_dofs_interface = feti.B1[di].nrows;
     }
+    n_dofs_cluster = feti.lambdas.size;
 
     d_F1s_allocated.resize((n_domains - 1) / 2 + 1);
     {
@@ -274,6 +275,12 @@ void HybridFETIExplicitGeneralSchurGpu<T,I>::set(const step::Step &step)
     ssize_t allocd_in_preprocess = free_mem_before_preprocess - free_mem_after_preprocess;
     stacktimer::info("TotalFETIExplicitScTriaGpu::set allocd_in_preprocess %zd", allocd_in_preprocess);
 
+    Allocator_new * ator_2 = ((cfg.apply_where == 'G') ? (Allocator_new*)AllocatorHostPinned_new::get_singleton() : (Allocator_new*)AllocatorCPU_new::get_singleton());
+    apply_x_cluster_2.set(n_dofs_cluster, ator_2);
+    apply_y_cluster_2.set(n_dofs_cluster, ator_2);
+    apply_x_cluster_2.alloc();
+    apply_y_cluster_2.alloc();
+
     stacktimer::pop();
     if(cfg.outer_timers) stacktimer::disable();
 }
@@ -455,19 +462,11 @@ void HybridFETIExplicitGeneralSchurGpu<T,I>::apply(const Vector_Dual<T> &x_clust
     VectorDenseView_new<T> x_cluster = VectorDenseView_new<T>::from_old(x_cluster_old);
     VectorDenseView_new<T> y_cluster = VectorDenseView_new<T>::from_old(y_cluster_old);
 
-    Allocator_new * ator_2 = ((cfg.apply_where == 'G') ? (Allocator_new*)AllocatorHostPinned_new::get_singleton() : (Allocator_new*)AllocatorCPU_new::get_singleton());
-    VectorDenseData_new<T> x_cluster_2;
-    VectorDenseData_new<T> y_cluster_2;
-    x_cluster_2.set(x_cluster.size, ator_2);
-    y_cluster_2.set(y_cluster.size, ator_2);
-    x_cluster_2.alloc();
-    y_cluster_2.alloc();
+    std::copy_n(x_cluster.vals, x_cluster.size, apply_x_cluster_2.vals);
 
-    std::copy_n(x_cluster.vals, x_cluster.size, x_cluster_2.vals);
+    F1_applicator.apply(apply_x_cluster_2, apply_y_cluster_2, feti.gpu_tmp_mem, feti.gpu_tmp_size, [&](){_apply_hfeti_stuff(x_cluster_old, y_cluster_old);});
 
-    F1_applicator.apply(x_cluster_2, y_cluster_2, feti.gpu_tmp_mem, feti.gpu_tmp_size, [&](){_apply_hfeti_stuff(x_cluster_old, y_cluster_old);});
-
-    math::operations::lincomb_vector<T>::do_all(&y_cluster, T{1}, &y_cluster, T{1}, &y_cluster_2);
+    math::operations::lincomb_vector<T>::do_all(&y_cluster, T{1}, &y_cluster, T{1}, &apply_y_cluster_2);
 
     stacktimer::push("dual_synchronize");
     y_cluster_old.synchronize();

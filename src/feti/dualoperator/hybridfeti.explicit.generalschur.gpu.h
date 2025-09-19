@@ -70,6 +70,7 @@ private:
     };
     config cfg;
     size_t n_domains = 0;
+    size_t n_dofs_cluster = 0;
     size_t n_queues = 0;
     size_t total_wss_gpu_internal = 0;
     size_t total_wss_gpu_persistent = 0;
@@ -82,6 +83,8 @@ private:
     std::vector<per_domain_stuff> domain_data;
     std::vector<MatrixDenseData_new<T>> d_F1s_allocated;
     dualop_explicit_applicator<T,I> F1_applicator;
+    VectorDenseData_new<T> apply_x_cluster_2;
+    VectorDenseData_new<T> apply_y_cluster_2;
 private:
     void _apply_hfeti_stuff(const Vector_Dual<T> &x, Vector_Dual<T> &y);
     void _apply_hfeti_stuff(const Matrix_Dual<T> &x, Matrix_Dual<T> &y);
