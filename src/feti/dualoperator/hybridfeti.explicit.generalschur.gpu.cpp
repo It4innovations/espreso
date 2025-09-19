@@ -150,7 +150,7 @@ void HybridFETIExplicitGeneralSchurGpu<T,I>::setup()
         total_wss_gpu_persistent += F1_applicator.get_wss_gpu_persistent();
     }
 
-    stacktimer::push("TotalFETIExplicitGeneralSchurGpu::setup op_sc");
+    stacktimer::push("HybridFETIExplicitGeneralSchurGpu::setup op_sc");
     if(!cfg.inner_timers) stacktimer::disable();
     #pragma omp parallel for schedule(static,1)
     for(size_t di = 0; di < n_domains; di++) {
@@ -159,7 +159,7 @@ void HybridFETIExplicitGeneralSchurGpu<T,I>::setup()
         gpu::dnblas::handle & hd = handles_dense[di % n_queues];
         per_domain_stuff & data = domain_data[di];
 
-        stacktimer::info("TotalFETIExplicitGeneralSchurGpu::setup op_sc subdomain %zu", di);
+        stacktimer::info("HybridFETIExplicitGeneralSchurGpu::setup op_sc subdomain %zu", di);
 
         math::combine(data.Kreg_old, feti.K[di], feti.RegMat[di]);
         if constexpr(utils::is_real<T>())    data.Kreg_old.type = Matrix_Type::REAL_SYMMETRIC_POSITIVE_DEFINITE;
@@ -194,12 +194,12 @@ void HybridFETIExplicitGeneralSchurGpu<T,I>::setup()
     total_wss_gpu_internal += op_sc_wss_gpu_internal;
     total_wss_gpu_persistent += op_sc_wss_gpu_persistent;
 
-    stacktimer::info("TotalFETIExplicitGeneralSchurGpu::setup wss_gpu_persistent_F1s %zd", wss_pers_F1s);
-    stacktimer::info("TotalFETIExplicitGeneralSchurGpu::setup wss_gpu_persistent_applicator %zd", F1_applicator.get_wss_gpu_persistent());
-    stacktimer::info("TotalFETIExplicitGeneralSchurGpu::setup wss_gpu_persistent_op_sc %zu", op_sc_wss_gpu_persistent);
-    stacktimer::info("TotalFETIExplicitGeneralSchurGpu::setup wss_gpu_internal_op_sc %zu", op_sc_wss_gpu_internal);
-    stacktimer::info("TotalFETIExplicitGeneralSchurGpu::setup max_wss_tmp_preprocess_op_sc %zu", std::max_element(domain_data.begin(), domain_data.end(), [](const per_domain_stuff & l, const per_domain_stuff & r){ return l.op_sc->get_wss_tmp_preprocess() < r.op_sc->get_wss_tmp_preprocess(); })->op_sc->get_wss_tmp_preprocess());
-    stacktimer::info("TotalFETIExplicitGeneralSchurGpu::setup max_wss_tmp_perform_op_sc %zu", std::max_element(domain_data.begin(), domain_data.end(), [](const per_domain_stuff & l, const per_domain_stuff & r){ return l.op_sc->get_wss_tmp_perform() < r.op_sc->get_wss_tmp_perform(); })->op_sc->get_wss_tmp_perform());
+    stacktimer::info("HybridFETIExplicitGeneralSchurGpu::setup wss_gpu_persistent_F1s %zd", wss_pers_F1s);
+    stacktimer::info("HybridFETIExplicitGeneralSchurGpu::setup wss_gpu_persistent_applicator %zd", F1_applicator.get_wss_gpu_persistent());
+    stacktimer::info("HybridFETIExplicitGeneralSchurGpu::setup wss_gpu_persistent_op_sc %zu", op_sc_wss_gpu_persistent);
+    stacktimer::info("HybridFETIExplicitGeneralSchurGpu::setup wss_gpu_internal_op_sc %zu", op_sc_wss_gpu_internal);
+    stacktimer::info("HybridFETIExplicitGeneralSchurGpu::setup max_wss_tmp_preprocess_op_sc %zu", std::max_element(domain_data.begin(), domain_data.end(), [](const per_domain_stuff & l, const per_domain_stuff & r){ return l.op_sc->get_wss_tmp_preprocess() < r.op_sc->get_wss_tmp_preprocess(); })->op_sc->get_wss_tmp_preprocess());
+    stacktimer::info("HybridFETIExplicitGeneralSchurGpu::setup max_wss_tmp_perform_op_sc %zu", std::max_element(domain_data.begin(), domain_data.end(), [](const per_domain_stuff & l, const per_domain_stuff & r){ return l.op_sc->get_wss_tmp_perform() < r.op_sc->get_wss_tmp_perform(); })->op_sc->get_wss_tmp_perform());
 
     stacktimer::pop();
     if(cfg.outer_timers) stacktimer::disable();
