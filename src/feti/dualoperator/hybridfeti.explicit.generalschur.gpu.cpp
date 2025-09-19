@@ -598,7 +598,6 @@ void HybridFETIExplicitGeneralSchurGpu<T,I>::BtL(const Vector_Dual<T> &x, std::v
 template <typename T, typename I>
 void HybridFETIExplicitGeneralSchurGpu<T,I>::_apply_hfeti_stuff(const Vector_Dual<T> &x, Vector_Dual<T> &y)
 {
-    #pragma omp parallel for schedule(static,1)
     for (size_t di = 0; di < feti.K.size(); ++di) {
         applyBt(feti, di, x, Btx[di]);
     }
@@ -614,7 +613,7 @@ void HybridFETIExplicitGeneralSchurGpu<T,I>::_apply_hfeti_stuff(const Matrix_Dua
 {
     Vector_Dual<T> _x, _y;
     _x.size = _y.size = x.ncols;
-    #pragma omp parallel for schedule(static,1)
+
     for (int r = 0; r < x.nrows; ++r) {
         _x.vals = x.vals + x.ncols * r;
         _y.vals = y.vals + y.ncols * r;
@@ -635,7 +634,7 @@ void HybridFETIExplicitGeneralSchurGpu<T,I>::_apply_hfeti_stuff(const Matrix_Dua
 {
     Vector_Dual<T> _x, _y;
     _x.size = _y.size = x.ncols;
-    #pragma omp parallel for schedule(dynamic,1)
+
     for (int r = 0; r < x.nrows; ++r) {
         if (filter[r]) {
             _x.vals = x.vals + x.ncols * r;
