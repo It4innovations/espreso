@@ -85,6 +85,10 @@ static void do_submatrix_both(I size_dst_primary, I size_dst_secdary, T * src, I
 template<typename T, typename I>
 void w_rocm_submatrix_ddnx_ddnx_noncontig<T,I>::internal_perform()
 {
+    if(d_M_dst->nrows == 0 || d_M_dst->ncols == 0) {
+        return;
+    }
+
     VectorDenseView_new<I> * map_primary = ((d_M_src->order == 'R') ? d_row_map : d_col_map);
     VectorDenseView_new<I> * map_secdary = ((d_M_src->order == 'R') ? d_col_map : d_row_map);
 

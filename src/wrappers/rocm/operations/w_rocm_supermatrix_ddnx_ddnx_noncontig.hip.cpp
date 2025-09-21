@@ -163,6 +163,10 @@ static void do_supermatrix_launch_kernel_1(hipStream_t stream, size_t size_src_p
 template<typename T, typename I>
 void w_rocm_supermatrix_ddnx_ddnx_noncontig<T,I>::internal_perform()
 {
+    if(d_M_src->nrows == 0 || d_M_src->ncols == 0) {
+        return;
+    }
+
     VectorDenseView_new<I> * map_primary = ((d_M_src->order == 'R') ? d_row_map : d_col_map);
     VectorDenseView_new<I> * map_secdary = ((d_M_src->order == 'R') ? d_col_map : d_row_map);
     I * map_primary_vals = ((map_primary != nullptr) ? map_primary->vals : nullptr);
