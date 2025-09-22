@@ -38,6 +38,7 @@ public:
     virtual void apply(const Vector_Dual<T> &x, Vector_Dual<T> &y) =0;
     virtual void apply(const Matrix_Dual<T> &x, Matrix_Dual<T> &y) =0;
     virtual void apply(const Matrix_Dual<T> &x, Matrix_Dual<T> &y, const std::vector<int> &filter) {}
+    virtual void apply(const Matrix_Dual<T> &x, Matrix_Dual<T> &y, const std::vector<std::vector<int> > &filter) {}
 
     // y = K+(f - Bt * x)
     virtual void toPrimal(const Vector_Dual<T> &x, std::vector<Vector_Dense<T> > &y) =0;

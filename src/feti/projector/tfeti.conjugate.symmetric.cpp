@@ -62,13 +62,19 @@ void TFETIConjugateSymmetric<T>::update(const step::Step &step)
             dual.pushVertex(d, feti.decomposition->dbegin + d, feti.KR1[d].nrows);
         }
         dual.set(feti.decomposition, feti.lambdas.cmap);
+        auto singleHop = dual.domains.edges;
         dual.spread(feti.decomposition);
 
+        nonzeros.clear();
+        distributed.clear();
+        std::vector<std::vector<int> > domainToRHS;
+        domainToRHS.resize(feti.K.size());
         auto vbegin = dual.domains.vertices.find(feti.decomposition->dbegin);
         auto vend   = dual.domains.vertices.lower_bound(feti.decomposition->dend);
         for (auto v = vbegin; v != vend; ++v) {
             for (int k = 0; k < v->second.kernel.size; ++k) {
                 nonzeros.push_back(v->second.kernel.goffset + k);
+                domainToRHS[v->second.offset].push_back(v->second.kernel.goffset + k);
             }
             bool dist = false;
             for (auto e = dual.domains.edges[v->first].cbegin(); e != dual.domains.edges[v->first].cend(); ++e) {
@@ -85,9 +91,23 @@ void TFETIConjugateSymmetric<T>::update(const step::Step &step)
                     distributed.push_back(v->second.kernel.goffset + k);
                 }
             }
+            for (auto e = singleHop[v->first].cbegin(); e != singleHop[v->first].cend(); ++e) {
+                for (int k = 0; k < dual.domains.vertices.at(*e).kernel.size; ++k) {
+                    domainToRHS[v->second.offset].push_back(dual.domains.vertices.at(*e).kernel.goffset + k);
+                }
+            }
         }
         utils::sortAndRemoveDuplicates(nonzeros);
         utils::sortAndRemoveDuplicates(distributed);
+        filter.clear();
+        filter.resize(nonzeros.size());
+        for (size_t i = 0; i < domainToRHS.size(); ++i) {
+            utils::sortAndRemoveDuplicates(domainToRHS[i]);
+            for (size_t j = 0; j < domainToRHS[i].size(); ++j) {
+                int index = std::lower_bound(nonzeros.begin(), nonzeros.end(), domainToRHS[i][j]) - nonzeros.begin();
+                filter[index].push_back(i);
+            }
+        }
 
         _setG();
         _setGGt();
@@ -241,7 +261,7 @@ void TFETIConjugateSymmetric<T>::_updateGGt()
         }
     }
     dG.synchronize();
-    feti.dualOperator->apply(dG, dFG);
+    feti.dualOperator->apply(dG, dFG, filter);
 
 //    math::store((Matrix_Dense<T>)dG , ("dG" + std::to_string(info::mpi::rank)).c_str());
 //    math::store((Matrix_Dense<T>)dFG, ("dFG" + std::to_string(info::mpi::rank)).c_str());

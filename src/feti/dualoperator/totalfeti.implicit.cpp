@@ -125,6 +125,18 @@ void TotalFETIImplicit<T>::_apply(const Vector_Dual<T> &x, Vector_Dual<T> &y)
 }
 
 template <typename T>
+void TotalFETIImplicit<T>::_apply(const Vector_Dual<T> &x, Vector_Dual<T> &y, const std::vector<int> &filter)
+{
+    #pragma omp parallel for
+    for (size_t di = 0; di < feti.K.size(); ++di) {
+        applyBt(feti, di, x, Btx[di]);
+    }
+
+    _applyK(Btx, KplusBtx, filter);
+    applyB(feti, KplusBtx, y, filter);
+}
+
+template <typename T>
 void TotalFETIImplicit<T>::apply(const Vector_Dual<T> &x, Vector_Dual<T> &y)
 {
     _apply(x, y);
@@ -160,6 +172,19 @@ void TotalFETIImplicit<T>::apply(const Matrix_Dual<T> &x, Matrix_Dual<T> &y, con
 }
 
 template <typename T>
+void TotalFETIImplicit<T>::apply(const Matrix_Dual<T> &x, Matrix_Dual<T> &y, const std::vector<std::vector<int> > &filter)
+{
+    Vector_Dual<T> _x, _y;
+    _x.size = _y.size = x.ncols;
+    for (int r = 0; r < x.nrows; ++r) {
+        _x.vals = x.vals + x.ncols * r;
+        _y.vals = y.vals + y.ncols * r;
+        _apply(_x, _y, filter[r]);
+    }
+    y.synchronize();
+}
+
+template <typename T>
 void TotalFETIImplicit<T>::toPrimal(const Vector_Dual<T> &x, std::vector<Vector_Dense<T> > &y)
 {
     #pragma omp parallel for
@@ -187,6 +212,15 @@ void TotalFETIImplicit<T>::_applyK(std::vector<Vector_Dense<T> > &x, std::vector
     #pragma omp parallel for
     for (size_t di = 0; di < feti.K.size(); ++di) {
         KSolver[di].solve(x[di], y[di]);
+    }
+}
+
+template <typename T>
+void TotalFETIImplicit<T>::_applyK(std::vector<Vector_Dense<T> > &x, std::vector<Vector_Dense<T> > &y, const std::vector<int> &filter)
+{
+    #pragma omp parallel for
+    for (size_t di = 0; di < filter.size(); ++di) {
+        KSolver[filter[di]].solve(x[filter[di]], y[filter[di]]);
     }
 }
 

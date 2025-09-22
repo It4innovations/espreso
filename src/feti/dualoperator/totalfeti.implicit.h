@@ -33,6 +33,7 @@ public:
     void apply(const Vector_Dual<T> &x, Vector_Dual<T> &y);
     void apply(const Matrix_Dual<T> &x, Matrix_Dual<T> &y);
     void apply(const Matrix_Dual<T> &x, Matrix_Dual<T> &y, const std::vector<int> &filter) override;
+    void apply(const Matrix_Dual<T> &x, Matrix_Dual<T> &y, const std::vector<std::vector<int> > &filter) override;
 
     // y = K+(f - Bt * x)
     void toPrimal(const Vector_Dual<T> &x, std::vector<Vector_Dense<T> > &y);
@@ -43,7 +44,9 @@ protected:
     using DualOperator<T>::d;
 
     void _apply(const Vector_Dual<T> &x, Vector_Dual<T> &y);
+    void _apply(const Vector_Dual<T> &x, Vector_Dual<T> &y, const std::vector<int> &filter);
     void _applyK(std::vector<Vector_Dense<T> > &x, std::vector<Vector_Dense<T> > &y);
+    void _applyK(std::vector<Vector_Dense<T> > &x, std::vector<Vector_Dense<T> > &y, const std::vector<int> &filter);
 
     std::vector<Matrix_CSR<T> > Kplus;
     std::vector<Vector_Dense<T> > Btx, KplusBtx;

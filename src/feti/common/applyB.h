@@ -44,6 +44,19 @@ static void applyB(FETI<T> &feti, const std::vector<Vector_Dense<T> > &in, Vecto
 }
 
 template <typename T>
+static void applyB(FETI<T> &feti, const std::vector<Vector_Dense<T> > &in, Vector_Dual<T> &out, const std::vector<int> &filter)
+{
+    math::set(out, T{0});
+    for (size_t di = 0; di < filter.size(); ++di) {
+        for (int r = 0; r < feti.B1[filter[di]].nrows; ++r) {
+            for (int c = feti.B1[filter[di]].rows[r]; c < feti.B1[filter[di]].rows[r + 1]; ++c) {
+                out.vals[feti.D2C[filter[di]][r]] += feti.B1[filter[di]].vals[c] * in[filter[di]].vals[feti.B1[filter[di]].cols[c]];
+            }
+        }
+    }
+}
+
+template <typename T>
 static void insertDomains(FETI<T> &feti, const std::vector<Vector_Dense<T> > &in, Vector_Dual<T> &out)
 {
     math::set(out, T{0});

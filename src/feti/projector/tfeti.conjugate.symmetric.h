@@ -43,6 +43,7 @@ protected:
 
     DualGraph dual;
     std::vector<int> nonzeros, distributed;
+    std::vector<std::vector<int> > filter;
 };
 
 }
