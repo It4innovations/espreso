@@ -142,7 +142,7 @@ void TotalFETIExplicitGeneralSchurCpu<T,I>::set(const step::Step &step)
     for(size_t di = 0; di < n_domains; di++) {
         per_domain_stuff & data = domain_data[di];
 
-        stacktimer::info("TotalFETIExplicitGeneralSchurCpu::set preprocess subdomain %zu", di);
+        stacktimer::info("preprocess subdomain %zu", di);
 
         math::combine(data.Kreg_old, feti.K[di], feti.RegMat[di]);
         if constexpr(utils::is_real<T>())    data.Kreg_old.type = Matrix_Type::REAL_SYMMETRIC_POSITIVE_DEFINITE;

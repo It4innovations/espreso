@@ -185,6 +185,8 @@ void schur_csx_dny_mklpardiso<T,I>::internal_solve_A11(VectorDenseView_new<T> & 
 template<typename T, typename I>
 void schur_csx_dny_mklpardiso<T,I>::internal_solve_A11(MatrixDenseView_new<T> & rhs, MatrixDenseView_new<T> & sol)
 {
+    if(rhs.ncols == 0) return;
+
     // no support for leading dimension in pardiso. matrix has to be colmajor. so I have to reallocate and convert
     Allocator_new * ator = AllocatorCPU_new::get_singleton();
     if((&rhs == &sol) && ((rhs.order != 'C') || (rhs.ld != rhs.nrows))) {

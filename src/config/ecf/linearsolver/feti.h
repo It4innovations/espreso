@@ -10,6 +10,7 @@
 #include "config/ecf/linearsolver/dualoperator/totalfeti_implicit_generalsparsesolver_cpu_config.h"
 #include "config/ecf/linearsolver/dualoperator/hybridfeti_explicit_generalschur_cpu_config.h"
 #include "config/ecf/linearsolver/dualoperator/hybridfeti_explicit_generalschur_gpu_config.h"
+#include "config/ecf/linearsolver/dualoperator/hybridfeti_implicit_generalsparsesolver_cpu_config.h"
 #include "config/ecf/linearsolver/dirichlet_generalschur_config.h"
 
 #include <cstddef>
@@ -124,6 +125,7 @@ struct FETIConfiguration: public ECFDescription {
 
     DualopHybridfetiExplicitGeneralSchurCpuConfig dualop_hybridfeti_explicit_generalschur_cpu_config;
     DualopHybridfetiExplicitGeneralSchurGpuConfig dualop_hybridfeti_explicit_generalschur_gpu_config;
+    DualopHybridfetiImplicitGeneralSparseSolverCpuConfig dualop_hybridfeti_implicit_generalsparsesolver_cpu_config;
 
     DirichletGeneralSchurConfig dirichlet_generalschur_config;
 

@@ -1,23 +1,22 @@
 
-#include "feti/dualoperator/hybridfeti.explicit.generalschur.cpu.h"
+#include "feti/dualoperator/hybridfeti.implicit.generalsparsesolver.cpu.h"
 
 #include "math/primitives_new/allocator_new.h"
 #include "feti/common/applyB.h"
-#include "basis/utilities/sysutils.h"
-#include "basis/utilities/minmaxavg.h"
-#include "basis/utilities/stacktimer.h"
+#include "math/math.h"
 #include "esinfo/ecfinfo.h"
-#include "esinfo/envinfo.h"
 #include "esinfo/meshinfo.h"
 #include "mesh/store/domainstore.h"
 #include "mesh/store/clusterstore.h"
-#include "math/operations/lincomb_vector.h"
-#include "math/operations/copy_dnx.h"
-#include "math/operations/lincomb_matrix_dnx.h"
+#include "basis/utilities/utils.h"
+#include "basis/utilities/sysutils.h"
+#include "basis/utilities/minmaxavg.h"
+#include "basis/utilities/stacktimer.h"
+#include "math/operations/gemv_csx.h"
+#include "math/operations/gemm_csx_dny_dnz.h"
+#include "math/operations/fill_dnx.h"
 #include "math/operations/submatrix_dnx_dnx_noncontig.h"
 #include "math/operations/supermatrix_dnx_dnx_noncontig.h"
-
-#include <algorithm>
 
 
 
@@ -26,7 +25,7 @@ namespace espreso {
 
 
 template<typename T, typename I>
-HybridFETIExplicitGeneralSchurCpu<T,I>::HybridFETIExplicitGeneralSchurCpu(FETI<T> &feti) : DualOperator<T>(feti)
+HybridFETIImplicitGeneralSparseSolverCpu<T,I>::HybridFETIImplicitGeneralSparseSolverCpu(FETI<T> &feti) : DualOperator<T>(feti)
 {
     setup_config(cfg, feti.configuration);
 }
@@ -34,30 +33,32 @@ HybridFETIExplicitGeneralSchurCpu<T,I>::HybridFETIExplicitGeneralSchurCpu(FETI<T
 
 
 template<typename T, typename I>
-HybridFETIExplicitGeneralSchurCpu<T,I>::~HybridFETIExplicitGeneralSchurCpu()
+HybridFETIImplicitGeneralSparseSolverCpu<T,I>::~HybridFETIImplicitGeneralSparseSolverCpu()
 {
 }
 
 
 
 template<typename T, typename I>
-void HybridFETIExplicitGeneralSchurCpu<T,I>::info()
+void HybridFETIImplicitGeneralSparseSolverCpu<T,I>::info()
 {
-    eslog::info(" = EXPLICIT HYBRID FETI OPERATOR ON CPU                                                      = \n");
+    eslog::info(" = IMPLICIT HYBRID FETI OPERATOR USING GENERAL SPARSE SOLVER ON CPU                          = \n");
 
     if(cfg.print_config) {
-        auto order_to_string = [](char order){ switch(order){ case 'R': return "ROW_MAJOR"; case 'C': return "COL_MAJOR"; default: return "UNDEFINED"; }};
         auto bool_to_string = [](bool val){ return val ? "TRUE" : "FALSE";};
-        auto loop_split_to_string = [](char val){ switch(val){ case 'C': return "COMBINED"; case 'S': return "SEPARATE"; default: return "UNDEFINED"; }};
-        auto schur_impl_to_string = [](schur_impl_t schur_impl){ switch(schur_impl) { case schur_impl_t::autoselect: return "autoselect"; case schur_impl_t::manual_simple: return "manual_simple"; case schur_impl_t::triangular: return "triangular"; case schur_impl_t::mklpardiso: return "mklpardiso"; case schur_impl_t::sparse_solver: return "sparse_solver"; case schur_impl_t::mumps: return "mumps"; case schur_impl_t::pastix: return "pastix"; default: return "UNDEFINED"; }};
-        auto schur_impl_to_string_actual = [](schur_impl_t schur_impl){ return math::operations::schur_csx_dny<T,I>::make(schur_impl)->get_name(); };
+        auto solver_impl_to_string = [](solver_impl_t solver_impl){ switch(solver_impl) { case solver_impl_t::autoselect: return "autoselect"; case solver_impl_t::mklpardiso: return "mklpardiso"; case solver_impl_t::suitesparse: return "suitesparse"; case solver_impl_t::mumps: return "mumps"; case solver_impl_t::strumpack: return "strumpack"; case solver_impl_t::pastix: return "pastix"; case solver_impl_t::superlu_dist: return "superlu_dist"; default: return "UNDEFINED"; } };
+        auto solver_impl_to_string_actual = [&](solver_impl_t solver_impl){
+            if(feti.K.size() == 0) return "UNDEFINED";
+            MatrixBase_new::matrix_properties prop;
+            prop.symm = get_new_matrix_symmetry(feti.K[0].type);
+            prop.dfnt = get_new_matrix_definitness(feti.K[0].type);
+            return math::operations::solver_csx<T,I>::make(solver_impl, &prop, false, true)->get_name();
+        };
 
-        eslog::info(" =   %-50s       %+30s = \n", "mainloop_update_split", loop_split_to_string(cfg.mainloop_update_split));
         eslog::info(" =   %-50s       %+30s = \n", "inner_timers", bool_to_string(cfg.inner_timers));
         eslog::info(" =   %-50s       %+30s = \n", "outer_timers", bool_to_string(cfg.outer_timers));
-        eslog::info(" =   %-50s       %+30s = \n", "order_F", order_to_string(cfg.order_F));
-        eslog::info(" =   %-50s       %+30s = \n", "schur implementation", schur_impl_to_string(cfg.schur_impl));
-        eslog::info(" =   %-50s       %+30s = \n", "schur implementation actual", schur_impl_to_string_actual(cfg.schur_impl));
+        eslog::info(" =   %-50s       %+30s = \n", "solver_impl", solver_impl_to_string(cfg.solver_impl));
+        eslog::info(" =   %-50s       %+30s = \n", "solver_impl_actual", solver_impl_to_string_actual(cfg.solver_impl));
     }
 
     eslog::info(minmaxavg<size_t>::compute_from_allranks(domain_data.begin(), domain_data.end(), [](const per_domain_stuff & data){ return data.n_dofs_domain; }).to_string("  Domain volume [dofs]").c_str());
@@ -68,125 +69,52 @@ void HybridFETIExplicitGeneralSchurCpu<T,I>::info()
 
 
 template<typename T, typename I>
-void HybridFETIExplicitGeneralSchurCpu<T,I>::setup()
+void HybridFETIImplicitGeneralSparseSolverCpu<T,I>::set(const step::Step &step)
 {
     if(cfg.outer_timers) stacktimer::enable();
-    stacktimer::push("HybridFETIExplicitGeneralSchurCpu::setup");
+    stacktimer::push("HybridFETIImplicitGeneralSparseSolverCpu::set");
 
     n_domains = feti.K.size();
-
-    domain_data.resize(n_domains);
-
-    for(size_t di = 0; di < n_domains; di++) {
-        per_domain_stuff & data = domain_data[di];
-        data.n_dofs_domain = feti.B1[di].ncols;
-        data.n_dofs_interface = feti.B1[di].nrows;
-    }
-    n_dofs_cluster = feti.lambdas.size;
-
-    F1s_allocated.resize((n_domains - 1) / 2 + 1);
-    {
-        std::vector<size_t> domain_idxs_sorted_by_f_size_desc(n_domains);
-        for(size_t di = 0; di < n_domains; di++) {
-            domain_idxs_sorted_by_f_size_desc[di] = di;
-        }
-        std::sort(domain_idxs_sorted_by_f_size_desc.rbegin(), domain_idxs_sorted_by_f_size_desc.rend(), [&](size_t dl, size_t dr){ return domain_data[dl].n_dofs_interface < domain_data[dr].n_dofs_interface; });
-        for(size_t i = 0; i < n_domains; i++) {
-            size_t di = domain_idxs_sorted_by_f_size_desc[i];
-            size_t di_bigger = domain_idxs_sorted_by_f_size_desc[(i / 2) * 2];
-            size_t allocated_F_index = i / 2;
-            MatrixDenseData_new<T> & F_allocd = F1s_allocated[allocated_F_index];
-            per_domain_stuff & data_bigger = domain_data[di_bigger];
-            per_domain_stuff & data_di = domain_data[di];
-            if(di == di_bigger) {
-                F_allocd.set(data_bigger.n_dofs_interface + (cfg.order_F == 'R'), data_bigger.n_dofs_interface + (cfg.order_F == 'C'), cfg.order_F, AllocatorCPU_new::get_singleton());
-                F_allocd.alloc();
-                data_di.F1.set_view(data_di.n_dofs_interface, data_di.n_dofs_interface, F_allocd.ld, F_allocd.order, F_allocd.vals + F_allocd.ld, F_allocd.ator);
-                data_di.F1.prop.uplo = (F_allocd.order == 'R') ? 'L' : 'U';
-            }
-            else {
-                data_di.F1 = F_allocd.get_submatrix_view(0, data_di.n_dofs_interface, 0, data_di.n_dofs_interface);
-                data_di.F1.prop.uplo = (F_allocd.order == 'R') ? 'U' : 'L';
-            }
-            data_di.F1.prop.symm = MatrixSymmetry_new::hermitian;
-        }
-    }
-
-    {
-        std::vector<MatrixDenseView_new<T>*> Fs_vector(n_domains);
-        for(size_t di = 0; di < n_domains; di++) {
-            Fs_vector[di] = &domain_data[di].F1;
-        }
-
-        F1_applicator.set_config(cfg.apply_wait_intermediate, cfg.inner_timers);
-        F1_applicator.set_handles(&feti.main_q, &feti.queues, &feti.handles_dense);
-        F1_applicator.set_feti(&feti);
-        F1_applicator.set_memory('C', 'C');
-        F1_applicator.set_D2C_map(&feti.D2C);
-        F1_applicator.set_Fs(Fs_vector);
-        F1_applicator.set_apply_target(cfg.apply_where);
-        F1_applicator.setup();
-        total_wss_gpu_persistent += F1_applicator.get_wss_gpu_persistent();
-    }
-
-    stacktimer::pop();
-    if(cfg.outer_timers) stacktimer::disable();
-}
-
-
-
-template<typename T, typename I>
-void HybridFETIExplicitGeneralSchurCpu<T,I>::set(const step::Step &step)
-{
-    if(cfg.outer_timers) stacktimer::enable();
-    stacktimer::push("HybridFETIExplicitGeneralSchurCpu::set");
 
     Btx.resize(feti.K.size());
     KplusBtx.resize(feti.K.size());
     dKB0.resize(feti.K.size());
 
-    F1_applicator.set_ws_gpu_persistent(ws_gpu_persistent);
-    F1_applicator.preprocess();
+    domain_data.resize(n_domains);
 
-    stacktimer::push("HybridFETIExplicitGeneralSchurCpu::set preprocess");
+    for(size_t di = 0; di < n_domains; di++) {
+        per_domain_stuff & my = domain_data[di];
+        my.n_dofs_domain = feti.B1[di].ncols;
+        my.n_dofs_interface = feti.B1[di].nrows;
+    }
+
     if(!cfg.inner_timers) stacktimer::disable();
     #pragma omp parallel for schedule(static,1)
     for(size_t di = 0; di < n_domains; di++) {
-        per_domain_stuff & data = domain_data[di];
+        per_domain_stuff & my = domain_data[di];
 
         stacktimer::info("preprocess subdomain %zu", di);
 
-        math::combine(data.Kreg_old, feti.K[di], feti.RegMat[di]);
-        if constexpr(utils::is_real<T>())    data.Kreg_old.type = Matrix_Type::REAL_SYMMETRIC_POSITIVE_DEFINITE;
-        if constexpr(utils::is_complex<T>()) data.Kreg_old.type = Matrix_Type::COMPLEX_HERMITIAN_POSITIVE_DEFINITE;
-        data.Kreg_old.shape = feti.K[di].shape;
+        math::combine(my.Kreg_old, feti.K[di], feti.RegMat[di]);
+        if constexpr(utils::is_real<T>())    my.Kreg_old.type = Matrix_Type::REAL_SYMMETRIC_POSITIVE_DEFINITE;
+        if constexpr(utils::is_complex<T>()) my.Kreg_old.type = Matrix_Type::COMPLEX_HERMITIAN_POSITIVE_DEFINITE;
+        my.Kreg_old.shape = feti.K[di].shape;
 
-        data.B1t = MatrixCsxView_new<T,I>::from_old(feti.B1[di]).get_transposed_reordered_view();
-        data.Kreg = MatrixCsxView_new<T,I>::from_old(data.Kreg_old);
-        if constexpr(utils::is_real<T>()) if(is_symmetric<T>(data.Kreg.prop.symm)) data.Kreg.prop.symm = MatrixSymmetry_new::hermitian;
+        my.Kreg = MatrixCsxView_new<T,I>::from_old(my.Kreg_old);
 
-        data.op_sc = math::operations::schur_csx_dny<T,I>::make(cfg.schur_impl);
-        data.op_sc->set_coefficients(-1);
-        data.op_sc->set_matrix(&data.Kreg, &data.B1t, nullptr, nullptr);
-        data.op_sc->set_sc(&data.F1);
-        data.op_sc->set_need_solve_A11(true);
-        data.op_sc->preprocess();
+        my.op_solver = math::operations::solver_csx<T,I>::make(cfg.solver_impl, &my.Kreg.prop, false, true);
+        my.op_solver->set_matrix_A(&my.Kreg);
+        my.op_solver->set_needs(false, true);
+        my.op_solver->factorize_symbolic();
 
         Btx[di].resize(feti.K[di].nrows);
         KplusBtx[di].resize(feti.K[di].nrows);
         math::set(Btx[di], T{0});
     }
     if(!cfg.inner_timers) stacktimer::enable();
-    stacktimer::pop();
 
     // clean up the mess from buggy openmp in clang
     utils::run_dummy_parallel_region();
-
-    Allocator_new * ator_2 = ((cfg.apply_where == 'G') ? (Allocator_new*)AllocatorHostPinned_new::get_singleton() : (Allocator_new*)AllocatorCPU_new::get_singleton());
-    apply_x_cluster_2.set(n_dofs_cluster, ator_2);
-    apply_y_cluster_2.set(n_dofs_cluster, ator_2);
-    apply_x_cluster_2.alloc();
-    apply_y_cluster_2.alloc();
 
     stacktimer::pop();
     if(cfg.outer_timers) stacktimer::disable();
@@ -195,53 +123,21 @@ void HybridFETIExplicitGeneralSchurCpu<T,I>::set(const step::Step &step)
 
 
 template<typename T, typename I>
-void HybridFETIExplicitGeneralSchurCpu<T,I>::update(const step::Step &step)
+void HybridFETIImplicitGeneralSparseSolverCpu<T,I>::update(const step::Step &step)
 {
     if(cfg.outer_timers) stacktimer::enable();
-    stacktimer::push("HybridFETIExplicitGeneralSchurCpu::update");
+    stacktimer::push("HybridFETIImplicitGeneralSparseSolverCpu::update");
 
-    stacktimer::push("update_mainloop");
-    if(cfg.mainloop_update_split == 'C') {
-        stacktimer::push("update_mainloop_combined");
-        if(!cfg.inner_timers) stacktimer::disable();
-        #pragma omp parallel for schedule(static,1)
-        for(size_t di = 0; di < n_domains; di++) {
-            per_domain_stuff & data = domain_data[di];
-            math::sumCombined(data.Kreg_old, T{1.0}, feti.K[di], feti.RegMat[di]);
-            data.op_sc->perform();
-            F1_applicator.update_F(di);
-        };
-        if(!cfg.inner_timers) stacktimer::enable();
-        stacktimer::pop();
+    stacktimer::push("update_factorize_numeric");
+    if(!cfg.inner_timers) stacktimer::disable();
+    #pragma omp parallel for schedule(static,1)
+    for(size_t di = 0; di < n_domains; di++) {
+        per_domain_stuff & my = domain_data[di];
 
-        // clean up the mess from buggy openmp in clang
-        utils::run_dummy_parallel_region();
-    }
-    if(cfg.mainloop_update_split == 'S') {
-        stacktimer::push("update_mainloop_separate_1");
-        if(!cfg.inner_timers) stacktimer::disable();
-        #pragma omp parallel for schedule(static,1)
-        for(size_t di = 0; di < n_domains; di++) {
-            per_domain_stuff & data = domain_data[di];
-            math::sumCombined(data.Kreg_old, T{1.0}, feti.K[di], feti.RegMat[di]);
-            data.op_sc->perform_1();
-        }
-        if(!cfg.inner_timers) stacktimer::enable();
-        stacktimer::pop();
-
-        // clean up the mess from buggy openmp in clang
-        utils::run_dummy_parallel_region();
-
-        stacktimer::push("update_mainloop_separate_2");
-        if(!cfg.inner_timers) stacktimer::disable();
-        #pragma omp parallel for schedule(static,1)
-        for(size_t di = 0; di < n_domains; di++) {
-            domain_data[di].op_sc->perform_2();
-            F1_applicator.update_F(di);
-        }
-        if(!cfg.inner_timers) stacktimer::enable();
-        stacktimer::pop();
-    }
+        math::sumCombined(my.Kreg_old, T{1.0}, feti.K[di], feti.RegMat[di]);
+        my.op_solver->factorize_numeric();
+    };
+    if(!cfg.inner_timers) stacktimer::enable();
     stacktimer::pop();
 
     stacktimer::push("update_second_part");
@@ -309,22 +205,54 @@ void HybridFETIExplicitGeneralSchurCpu<T,I>::update(const step::Step &step)
 
 
 template<typename T, typename I>
-void HybridFETIExplicitGeneralSchurCpu<T,I>::apply(const Vector_Dual<T> &x_cluster_old, Vector_Dual<T> &y_cluster_old)
+void HybridFETIImplicitGeneralSparseSolverCpu<T,I>::apply(const Vector_Dual<T> &x, Vector_Dual<T> &y)
 {
     if(cfg.outer_timers) stacktimer::enable();
-    stacktimer::push("HybridFETIExplicitGeneralSchurCpu::apply (vector)");
+    stacktimer::push("HybridFETIImplicitGeneralSparseSolverCpu::apply (vector)");
 
-    VectorDenseView_new<T> x_cluster = VectorDenseView_new<T>::from_old(x_cluster_old);
-    VectorDenseView_new<T> y_cluster = VectorDenseView_new<T>::from_old(y_cluster_old);
+    stacktimer::push("cpu_implicit_apply_vector_compute");
 
-    std::copy_n(x_cluster.vals, x_cluster.size, apply_x_cluster_2.vals);
+    std::fill_n(y.vals, y.size, T{0});
 
-    F1_applicator.apply(apply_x_cluster_2, apply_y_cluster_2, feti.gpu_tmp_mem, feti.gpu_tmp_size, [&](){_apply_hfeti_stuff(x_cluster_old, y_cluster_old);});
+    _apply_hfeti_stuff(x, y);
 
-    math::operations::lincomb_vector<T>::do_all(&y_cluster, T{1}, &y_cluster, T{1}, &apply_y_cluster_2);
+    if(!cfg.inner_timers) stacktimer::disable();
+    #pragma omp parallel for schedule(static,1)
+    for(size_t di = 0; di < n_domains; di++) {
+        per_domain_stuff & my = domain_data[di];
+        int * D2C = feti.D2C[di].data();
+
+        VectorDenseData_new<T> z;
+        z.set(my.n_dofs_interface, AllocatorCPU_new::get_singleton());
+        z.alloc();
+        
+        VectorDenseData_new<T> w;
+        w.set(my.n_dofs_domain, AllocatorCPU_new::get_singleton());
+        w.alloc();
+
+        for(size_t i = 0; i < my.n_dofs_interface; i++) {
+            z.vals[i] = x.vals[D2C[i]];
+        }
+
+        MatrixCsxView_new<T,I> B = MatrixCsxView_new<T,I>::from_old(feti.B1[di]);
+        MatrixCsxView_new<T,I> Bt = B.get_transposed_reordered_view();
+
+        math::operations::gemv_csx<T,I>::do_all(&Bt, &z, &w, T{1}, T{0});
+
+        my.op_solver->solve(w, w);
+
+        math::operations::gemv_csx<T,I>::do_all(&B, &w, &z, T{1}, T{0});
+
+        for(size_t i = 0; i < my.n_dofs_interface; i++) {
+            utils::atomic_add(y.vals[D2C[i]], z.vals[i]);
+        }
+    }
+    if(!cfg.inner_timers) stacktimer::enable();
+
+    stacktimer::pop();
 
     stacktimer::push("dual_synchronize");
-    y_cluster_old.synchronize();
+    y.synchronize();
     stacktimer::pop();
 
     stacktimer::pop();
@@ -334,28 +262,60 @@ void HybridFETIExplicitGeneralSchurCpu<T,I>::apply(const Vector_Dual<T> &x_clust
 
 
 template<typename T, typename I>
-void HybridFETIExplicitGeneralSchurCpu<T,I>::apply(const Matrix_Dual<T> &X_cluster_old, Matrix_Dual<T> &Y_cluster_old)
+void HybridFETIImplicitGeneralSparseSolverCpu<T,I>::apply(const Matrix_Dual<T> &X_cluster_old, Matrix_Dual<T> &Y_cluster_old)
 {
     if(cfg.outer_timers) stacktimer::enable();
-    stacktimer::push("HybridFETIExplicitGeneralSchurCpu::apply (matrix)");
+    stacktimer::push("HybridFETIImplicitGeneralSparseSolverCpu::apply (matrix)");
 
     MatrixDenseView_new<T> X_cluster = MatrixDenseView_new<T>::from_old(X_cluster_old).get_transposed_reordered_view();
     MatrixDenseView_new<T> Y_cluster = MatrixDenseView_new<T>::from_old(Y_cluster_old).get_transposed_reordered_view();
 
-    Allocator_new * ator_2 = ((cfg.apply_where == 'G') ? (Allocator_new*)AllocatorHostPinned_new::get_singleton() : (Allocator_new*)AllocatorCPU_new::get_singleton());
-    MatrixDenseData_new<T> X_cluster_2;
-    MatrixDenseData_new<T> Y_cluster_2;
-    X_cluster_2.set(X_cluster.nrows, X_cluster.ncols, X_cluster.order, ator_2);
-    Y_cluster_2.set(Y_cluster.nrows, Y_cluster.ncols, Y_cluster.order, ator_2);
-    X_cluster_2.alloc();
-    Y_cluster_2.alloc();
+    size_t n_dofs_cluster_interface = feti.lambdas.size;
+    if(X_cluster.nrows != Y_cluster.nrows || X_cluster.ncols != Y_cluster.ncols) eslog::error("size of X_cluster and Y_cluster does not match\n");
+    if(X_cluster.order != Y_cluster.order) eslog::error("orders do not match\n");
+    if(X_cluster.nrows != n_dofs_cluster_interface) eslog::error("incompatible cluster matrix size\n");
+    char order = X_cluster.order;
+    size_t width = X_cluster.ncols;
 
-    math::operations::copy_dnx<T>::do_all(&X_cluster, &X_cluster_2);
+    stacktimer::push("cpu_implicit_apply_matrix_compute");
 
-    F1_applicator.apply(X_cluster_2, Y_cluster_2, feti.gpu_tmp_mem, feti.gpu_tmp_size, [&](){_apply_hfeti_stuff(X_cluster_old, Y_cluster_old);});
+    math::operations::fill_dnx<T>::do_all(&Y_cluster, T{0});
 
-    math::operations::lincomb_matrix_dnx<T>::do_all(&Y_cluster, T{1}, &Y_cluster, T{1}, &Y_cluster_2);
+    _apply_hfeti_stuff(X_cluster_old, Y_cluster_old);
 
+    if(!cfg.inner_timers) stacktimer::disable();
+    #pragma omp parallel for schedule(static,1)
+    for(size_t di = 0; di < n_domains; di++) {
+        per_domain_stuff & my = domain_data[di];
+
+        VectorDenseView_new<I> my_D2C;
+        my_D2C.set_view(feti.D2C[di].size(), feti.D2C[di].data(), AllocatorDummy_new::get_singleton(true, false));
+
+        MatrixDenseData_new<T> Z;
+        Z.set(my.n_dofs_interface, width, order, AllocatorCPU_new::get_singleton());
+        Z.alloc();
+
+        MatrixDenseData_new<T> W;
+        W.set(my.n_dofs_domain, width, order, AllocatorCPU_new::get_singleton());
+        W.alloc();
+
+        math::operations::submatrix_dnx_dnx_noncontig<T,I>::do_all(&X_cluster, &Z, &my_D2C, nullptr);
+
+        MatrixCsxView_new<T,I> B = MatrixCsxView_new<T,I>::from_old(feti.B1[di]);
+        MatrixCsxView_new<T,I> Bt = B.get_transposed_reordered_view();
+
+        math::operations::gemm_csx_dny_dnz<T,I>::do_all(&Bt, &Z, &W, T{1}, T{0});
+
+        my.op_solver->solve(W, W);
+
+        math::operations::gemm_csx_dny_dnz<T,I>::do_all(&B, &W, &Z, T{1}, T{0});
+
+        math::operations::supermatrix_dnx_dnx_noncontig<T,I>::do_all(&Z, &Y_cluster, &my_D2C, nullptr, math::operations::supermatrix_dnx_dnx_noncontig<T,I>::mode::accumulate_atomic);
+    }
+    if(!cfg.inner_timers) stacktimer::enable();
+
+    stacktimer::pop();
+    
     stacktimer::push("dual_synchronize");
     Y_cluster_old.synchronize();
     stacktimer::pop();
@@ -367,10 +327,10 @@ void HybridFETIExplicitGeneralSchurCpu<T,I>::apply(const Matrix_Dual<T> &X_clust
 
 
 template<typename T, typename I>
-void HybridFETIExplicitGeneralSchurCpu<T,I>::apply(const Matrix_Dual<T> &X_cluster_old, Matrix_Dual<T> &Y_cluster_old, const std::vector<int> &filter)
+void HybridFETIImplicitGeneralSparseSolverCpu<T,I>::apply(const Matrix_Dual<T> &X_cluster_old, Matrix_Dual<T> &Y_cluster_old, const std::vector<int> &filter)
 {
     if(cfg.outer_timers) stacktimer::enable();
-    stacktimer::push("HybridFETIExplicitGeneralSchurCpu::apply (matrix,filter)");
+    stacktimer::push("HybridFETIImplicitGeneralSparseSolverCpu::apply (matrix,filter)");
 
     MatrixDenseView_new<T> X_cluster = MatrixDenseView_new<T>::from_old(X_cluster_old).get_transposed_reordered_view();
     MatrixDenseView_new<T> Y_cluster = MatrixDenseView_new<T>::from_old(Y_cluster_old).get_transposed_reordered_view();
@@ -384,20 +344,52 @@ void HybridFETIExplicitGeneralSchurCpu<T,I>::apply(const Matrix_Dual<T> &X_clust
     VectorDenseView_new<I> filter_map;
     filter_map.set_view(filtered_idxs.size(), filtered_idxs.data(), AllocatorDummy_new::get_singleton(true,false));
 
-    Allocator_new * ator_2 = ((cfg.apply_where == 'G') ? (Allocator_new*)AllocatorHostPinned_new::get_singleton() : (Allocator_new*)AllocatorCPU_new::get_singleton());
-    MatrixDenseData_new<T> X_cluster_2;
-    MatrixDenseData_new<T> Y_cluster_2;
-    X_cluster_2.set(X_cluster.nrows, X_cluster.ncols, X_cluster.order, ator_2);
-    Y_cluster_2.set(Y_cluster.nrows, Y_cluster.ncols, Y_cluster.order, ator_2);
-    X_cluster_2.alloc();
-    Y_cluster_2.alloc();
+    size_t n_dofs_cluster_interface = feti.lambdas.size;
+    if(X_cluster.nrows != Y_cluster.nrows || X_cluster.ncols != Y_cluster.ncols) eslog::error("size of X_cluster and Y_cluster does not match\n");
+    if(X_cluster.order != Y_cluster.order) eslog::error("orders do not match\n");
+    if(X_cluster.nrows != n_dofs_cluster_interface) eslog::error("incompatible cluster matrix size\n");
+    char order = X_cluster.order;
+    size_t width = filter_map.size;
 
-    math::operations::submatrix_dnx_dnx_noncontig<T,I>::do_all(&X_cluster, &X_cluster_2, nullptr, &filter_map);
+    stacktimer::push("cpu_implicit_apply_matrix_compute");
 
-    F1_applicator.apply(X_cluster_2, Y_cluster_2, feti.gpu_tmp_mem, feti.gpu_tmp_size, [&](){_apply_hfeti_stuff(X_cluster_old, Y_cluster_old, filter);});
+    math::operations::fill_dnx<T>::do_all(&Y_cluster, T{0});
 
-    math::operations::supermatrix_dnx_dnx_noncontig<T,I>::do_all(&Y_cluster_2, &Y_cluster, nullptr, &filter_map, math::operations::supermatrix_dnx_dnx_noncontig<T,I>::mode::accumulate);
+    _apply_hfeti_stuff(X_cluster_old, Y_cluster_old, filter);
 
+    if(!cfg.inner_timers) stacktimer::disable();
+    #pragma omp parallel for schedule(static,1)
+    for(size_t di = 0; di < n_domains; di++) {
+        per_domain_stuff & my = domain_data[di];
+
+        VectorDenseView_new<I> my_D2C;
+        my_D2C.set_view(feti.D2C[di].size(), feti.D2C[di].data(), AllocatorDummy_new::get_singleton(true, false));
+
+        MatrixDenseData_new<T> Z;
+        Z.set(my.n_dofs_interface, width, order, AllocatorCPU_new::get_singleton());
+        Z.alloc();
+
+        MatrixDenseData_new<T> W;
+        W.set(my.n_dofs_domain, width, order, AllocatorCPU_new::get_singleton());
+        W.alloc();
+
+        math::operations::submatrix_dnx_dnx_noncontig<T,I>::do_all(&X_cluster, &Z, &my_D2C, &filter_map);
+
+        MatrixCsxView_new<T,I> B = MatrixCsxView_new<T,I>::from_old(feti.B1[di]);
+        MatrixCsxView_new<T,I> Bt = B.get_transposed_reordered_view();
+
+        math::operations::gemm_csx_dny_dnz<T,I>::do_all(&Bt, &Z, &W, T{1}, T{0});
+
+        my.op_solver->solve(W, W);
+
+        math::operations::gemm_csx_dny_dnz<T,I>::do_all(&B, &W, &Z, T{1}, T{0});
+
+        math::operations::supermatrix_dnx_dnx_noncontig<T,I>::do_all(&Z, &Y_cluster, &my_D2C, &filter_map, math::operations::supermatrix_dnx_dnx_noncontig<T,I>::mode::accumulate_atomic);
+    }
+    if(!cfg.inner_timers) stacktimer::enable();
+
+    stacktimer::pop();
+    
     stacktimer::push("dual_synchronize");
     Y_cluster_old.synchronize();
     stacktimer::pop();
@@ -409,15 +401,13 @@ void HybridFETIExplicitGeneralSchurCpu<T,I>::apply(const Matrix_Dual<T> &X_clust
 
 
 template<typename T, typename I>
-void HybridFETIExplicitGeneralSchurCpu<T,I>::apply(const Matrix_Dual<T> &X_cluster_old, Matrix_Dual<T> &Y_cluster_old, const std::vector<std::vector<int>> &filter)
+void HybridFETIImplicitGeneralSparseSolverCpu<T,I>::apply(const Matrix_Dual<T> &X_cluster_old, Matrix_Dual<T> &Y_cluster_old, const std::vector<std::vector<int>> &filter)
 {
     if(cfg.outer_timers) stacktimer::enable();
-    stacktimer::push("HybridFETIExplicitGeneralSchurCpu::apply (matrix,filter2)");
+    stacktimer::push("HybridFETIImplicitGeneralSparseSolverCpu::apply (matrix,filter2)");
 
     MatrixDenseView_new<T> X_cluster = MatrixDenseView_new<T>::from_old(X_cluster_old).get_transposed_reordered_view();
     MatrixDenseView_new<T> Y_cluster = MatrixDenseView_new<T>::from_old(Y_cluster_old).get_transposed_reordered_view();
-
-    Allocator_new * ator_2 = ((cfg.apply_where == 'G') ? (Allocator_new*)AllocatorHostPinned_new::get_singleton() : (Allocator_new*)AllocatorCPU_new::get_singleton());
 
     // orig filter: i-th rhs is handled by onyl a subset of domains
     // transposed: i-th domain handles only a subset of rhs
@@ -427,16 +417,56 @@ void HybridFETIExplicitGeneralSchurCpu<T,I>::apply(const Matrix_Dual<T> &X_clust
             filter_transposed[di].push_back(idx_rhs);
         }
     }
-    MultiVectorDenseData_new<I,I> my_filter = MultiVectorDenseData_new<I,I>::convert_from(filter_transposed, ator_2);
 
-    MatrixDenseData_new<T> Y_cluster_2;
-    Y_cluster_2.set(Y_cluster.nrows, Y_cluster.ncols, Y_cluster.order, ator_2);
-    Y_cluster_2.alloc();
+    size_t n_dofs_cluster_interface = feti.lambdas.size;
+    if(X_cluster.nrows != Y_cluster.nrows || X_cluster.ncols != Y_cluster.ncols) eslog::error("size of X_cluster and Y_cluster does not match\n");
+    if(X_cluster.order != Y_cluster.order) eslog::error("orders do not match\n");
+    if(X_cluster.nrows != n_dofs_cluster_interface) eslog::error("incompatible cluster matrix size\n");
+    char order = X_cluster.order;
 
-    F1_applicator.apply(X_cluster, Y_cluster_2, &my_filter, feti.gpu_tmp_mem, feti.gpu_tmp_size, [&](){_apply_hfeti_stuff(X_cluster_old, Y_cluster_old, filter);});
+    stacktimer::push("cpu_implicit_apply_matrix_compute");
 
-    math::operations::lincomb_matrix_dnx<T>::do_all(&Y_cluster, T{1}, &Y_cluster, T{1}, &Y_cluster_2);
+    math::operations::fill_dnx<T>::do_all(&Y_cluster, T{0});
 
+    _apply_hfeti_stuff(X_cluster_old, Y_cluster_old, filter);
+
+    if(!cfg.inner_timers) stacktimer::disable();
+    #pragma omp parallel for schedule(static,1)
+    for(size_t di = 0; di < n_domains; di++) {
+        per_domain_stuff & my = domain_data[di];
+
+        VectorDenseView_new<I> my_D2C;
+        my_D2C.set_view(feti.D2C[di].size(), feti.D2C[di].data(), AllocatorDummy_new::get_singleton(true, false));
+
+        VectorDenseView_new<I> my_filter;
+        my_filter.set_view(filter_transposed[di].size(), filter_transposed[di].data(), AllocatorDummy_new::get_singleton(true,false));
+        size_t my_width = my_filter.size;
+
+        MatrixDenseData_new<T> Z;
+        Z.set(my.n_dofs_interface, my_width, order, AllocatorCPU_new::get_singleton());
+        Z.alloc();
+
+        MatrixDenseData_new<T> W;
+        W.set(my.n_dofs_domain, my_width, order, AllocatorCPU_new::get_singleton());
+        W.alloc();
+
+        math::operations::submatrix_dnx_dnx_noncontig<T,I>::do_all(&X_cluster, &Z, &my_D2C, &my_filter);
+
+        MatrixCsxView_new<T,I> B = MatrixCsxView_new<T,I>::from_old(feti.B1[di]);
+        MatrixCsxView_new<T,I> Bt = B.get_transposed_reordered_view();
+
+        math::operations::gemm_csx_dny_dnz<T,I>::do_all(&Bt, &Z, &W, T{1}, T{0});
+
+        my.op_solver->solve(W, W);
+
+        math::operations::gemm_csx_dny_dnz<T,I>::do_all(&B, &W, &Z, T{1}, T{0});
+
+        math::operations::supermatrix_dnx_dnx_noncontig<T,I>::do_all(&Z, &Y_cluster, &my_D2C, &my_filter, math::operations::supermatrix_dnx_dnx_noncontig<T,I>::mode::accumulate_atomic);
+    }
+    if(!cfg.inner_timers) stacktimer::enable();
+
+    stacktimer::pop();
+    
     stacktimer::push("dual_synchronize");
     Y_cluster_old.synchronize();
     stacktimer::pop();
@@ -448,10 +478,10 @@ void HybridFETIExplicitGeneralSchurCpu<T,I>::apply(const Matrix_Dual<T> &X_clust
 
 
 template<typename T, typename I>
-void HybridFETIExplicitGeneralSchurCpu<T,I>::toPrimal(const Vector_Dual<T> &x, std::vector<Vector_Dense<T> > &y)
+void HybridFETIImplicitGeneralSparseSolverCpu<T,I>::toPrimal(const Vector_Dual<T> &x, std::vector<Vector_Dense<T> > &y)
 {
     if(cfg.outer_timers) stacktimer::enable();
-    stacktimer::push("HybridFETIExplicitGeneralSchurCpu::toPrimal");
+    stacktimer::push("HybridFETIImplicitGeneralSparseSolverCpu::toPrimal");
     if(!cfg.inner_timers) stacktimer::disable();
 
     #pragma omp parallel for schedule(static,1)
@@ -470,10 +500,10 @@ void HybridFETIExplicitGeneralSchurCpu<T,I>::toPrimal(const Vector_Dual<T> &x, s
 
 
 template <typename T, typename I>
-void HybridFETIExplicitGeneralSchurCpu<T,I>::BtL(const Vector_Dual<T> &x, std::vector<Vector_Dense<T> > &y)
+void HybridFETIImplicitGeneralSparseSolverCpu<T,I>::BtL(const Vector_Dual<T> &x, std::vector<Vector_Dense<T> > &y)
 {
     if(cfg.outer_timers) stacktimer::enable();
-    stacktimer::push("HybridFETIExplicitGeneralSchurCpu::BtL");
+    stacktimer::push("HybridFETIImplicitGeneralSparseSolverCpu::BtL");
 
     #pragma omp parallel for schedule(static,1)
     for (size_t di = 0; di < feti.K.size(); ++di) {
@@ -495,7 +525,7 @@ void HybridFETIExplicitGeneralSchurCpu<T,I>::BtL(const Vector_Dual<T> &x, std::v
 
 
 template <typename T, typename I>
-void HybridFETIExplicitGeneralSchurCpu<T,I>::_apply_hfeti_stuff(const Vector_Dual<T> &x, Vector_Dual<T> &y)
+void HybridFETIImplicitGeneralSparseSolverCpu<T,I>::_apply_hfeti_stuff(const Vector_Dual<T> &x, Vector_Dual<T> &y)
 {
     #pragma omp parallel for schedule(static,1)
     for (size_t di = 0; di < feti.K.size(); ++di) {
@@ -510,7 +540,7 @@ void HybridFETIExplicitGeneralSchurCpu<T,I>::_apply_hfeti_stuff(const Vector_Dua
 
 
 template <typename T, typename I>
-void HybridFETIExplicitGeneralSchurCpu<T,I>::_apply_hfeti_stuff(const Matrix_Dual<T> &x, Matrix_Dual<T> &y)
+void HybridFETIImplicitGeneralSparseSolverCpu<T,I>::_apply_hfeti_stuff(const Matrix_Dual<T> &x, Matrix_Dual<T> &y)
 {
     Vector_Dual<T> _x, _y;
     _x.size = _y.size = x.ncols;
@@ -533,7 +563,7 @@ void HybridFETIExplicitGeneralSchurCpu<T,I>::_apply_hfeti_stuff(const Matrix_Dua
 
 
 template <typename T, typename I>
-void HybridFETIExplicitGeneralSchurCpu<T,I>::_apply_hfeti_stuff(const Matrix_Dual<T> &x, Matrix_Dual<T> &y, const std::vector<int> &filter)
+void HybridFETIImplicitGeneralSparseSolverCpu<T,I>::_apply_hfeti_stuff(const Matrix_Dual<T> &x, Matrix_Dual<T> &y, const std::vector<int> &filter)
 {
     Vector_Dual<T> _x, _y;
     _x.size = _y.size = x.ncols;
@@ -558,7 +588,7 @@ void HybridFETIExplicitGeneralSchurCpu<T,I>::_apply_hfeti_stuff(const Matrix_Dua
 
 
 template <typename T, typename I>
-void HybridFETIExplicitGeneralSchurCpu<T,I>::_apply_hfeti_stuff(const Matrix_Dual<T> &x, Matrix_Dual<T> &y, const std::vector<std::vector<int>> &filter)
+void HybridFETIImplicitGeneralSparseSolverCpu<T,I>::_apply_hfeti_stuff(const Matrix_Dual<T> &x, Matrix_Dual<T> &y, const std::vector<std::vector<int>> &filter)
 {
     eslog::error("not implemented\n");
 }
@@ -568,7 +598,7 @@ void HybridFETIExplicitGeneralSchurCpu<T,I>::_apply_hfeti_stuff(const Matrix_Dua
 // https://dl.acm.org/doi/pdf/10.1145/2929908.2929909
 
 template <typename T, typename I>
-void HybridFETIExplicitGeneralSchurCpu<T,I>::_applyK(std::vector<Vector_Dense<T> > &b, std::vector<Vector_Dense<T> > &x, bool do_Kplus_solve)
+void HybridFETIImplicitGeneralSparseSolverCpu<T,I>::_applyK(std::vector<Vector_Dense<T> > &b, std::vector<Vector_Dense<T> > &x, bool do_Kplus_solve)
 {
     if(do_Kplus_solve) {
         // x = (K+)^-1 * b
@@ -579,7 +609,7 @@ void HybridFETIExplicitGeneralSchurCpu<T,I>::_applyK(std::vector<Vector_Dense<T>
             x[di].resize(b[di].size);
             VectorDenseView_new<T> rhs = VectorDenseView_new<T>::from_old(b[di]);
             VectorDenseView_new<T> sol = VectorDenseView_new<T>::from_old(x[di]);
-            domain_data[di].op_sc->solve_A11(rhs, sol);
+            domain_data[di].op_solver->solve(rhs, sol);
         }
     }
     else {
@@ -617,7 +647,7 @@ void HybridFETIExplicitGeneralSchurCpu<T,I>::_applyK(std::vector<Vector_Dense<T>
 
 
 template <typename T, typename I>
-void HybridFETIExplicitGeneralSchurCpu<T,I>::_compute_beta_mu(std::vector<Vector_Dense<T> > &b)
+void HybridFETIImplicitGeneralSparseSolverCpu<T,I>::_compute_beta_mu(std::vector<Vector_Dense<T> > &b)
 {
     // g = B0 * (K+)^-1 * b
     math::set(g, T{0});
@@ -656,7 +686,7 @@ void HybridFETIExplicitGeneralSchurCpu<T,I>::_compute_beta_mu(std::vector<Vector
 
 
 template <typename T, typename I>
-void HybridFETIExplicitGeneralSchurCpu<T,I>::_computeB0()
+void HybridFETIImplicitGeneralSparseSolverCpu<T,I>::_computeB0()
 {
 if constexpr(utils::is_real<T>()) {
     std::vector<Matrix_Dense<T> > &R = isRegularK ? feti.KR1 : feti.R1;
@@ -771,7 +801,7 @@ if constexpr(utils::is_real<T>()) {
 
 
 template <typename T, typename I>
-void HybridFETIExplicitGeneralSchurCpu<T,I>::_computeF0()
+void HybridFETIImplicitGeneralSparseSolverCpu<T,I>::_computeF0()
 {
 if constexpr(utils::is_real<T>()) {
     if (F0.type == Matrix_Type::UNSET_INVALID_NONE) {
@@ -838,7 +868,7 @@ if constexpr(utils::is_real<T>()) {
             dKB0[di].resize(dB0.nrows, dB0.ncols);
             MatrixDenseView_new<T> rhs = MatrixDenseView_new<T>::from_old(dB0).get_transposed_reordered_view();
             MatrixDenseView_new<T> sol = MatrixDenseView_new<T>::from_old(dKB0[di]).get_transposed_reordered_view();
-            domain_data[di].op_sc->solve_A11(rhs, sol);
+            domain_data[di].op_solver->solve(rhs, sol);
         }
         math::blas::multiply(T{1}, dB0, dKB0[di], T{0}, dF0, false, true);
         // dF0 to F0
@@ -860,7 +890,7 @@ if constexpr(utils::is_real<T>()) {
 
 
 template <typename T, typename I>
-void HybridFETIExplicitGeneralSchurCpu<T,I>::_computeG0()
+void HybridFETIImplicitGeneralSparseSolverCpu<T,I>::_computeG0()
 {
     if (isRegularK) {
         G0.resize(0, feti.cluster.gl_size, 0);
@@ -905,7 +935,7 @@ void HybridFETIExplicitGeneralSchurCpu<T,I>::_computeG0()
 
 
 template <typename T, typename I>
-void HybridFETIExplicitGeneralSchurCpu<T,I>::_computeS0()
+void HybridFETIImplicitGeneralSparseSolverCpu<T,I>::_computeS0()
 {
     if (isRegularK) {
         S0.resize(0, 0);
@@ -989,19 +1019,13 @@ void HybridFETIExplicitGeneralSchurCpu<T,I>::_computeS0()
 
 
 template<typename T, typename I>
-void HybridFETIExplicitGeneralSchurCpu<T,I>::setup_config(config & cfg, const FETIConfiguration & feti_ecf_config)
+void HybridFETIImplicitGeneralSparseSolverCpu<T,I>::setup_config(config & cfg, const FETIConfiguration & feti_ecf_config)
 {
     // defaults are set in config definition
     // if ecf value is auto, cfg value is not changed
 
-    using ecf_config = DualopHybridfetiExplicitGeneralSchurCpuConfig;
-    const ecf_config & ecf = feti_ecf_config.dualop_hybridfeti_explicit_generalschur_cpu_config;
-
-    switch(ecf.mainloop_update_split) {
-        case ecf_config::MAINLOOP_UPDATE_SPLIT::AUTO: break;
-        case ecf_config::MAINLOOP_UPDATE_SPLIT::COMBINED: cfg.mainloop_update_split = 'C'; break;
-        case ecf_config::MAINLOOP_UPDATE_SPLIT::SEPARATE: cfg.mainloop_update_split = 'S'; break;
-    }
+    using ecf_config = DualopHybridfetiImplicitGeneralSparseSolverCpuConfig;
+    const ecf_config & ecf = feti_ecf_config.dualop_hybridfeti_implicit_generalsparsesolver_cpu_config;
 
     switch(ecf.timers_outer) {
         case ecf_config::AUTOBOOL::AUTO: break;
@@ -1021,51 +1045,37 @@ void HybridFETIExplicitGeneralSchurCpu<T,I>::setup_config(config & cfg, const FE
         case ecf_config::AUTOBOOL::FALSE: cfg.print_config = false; break;
     }
 
-    switch(ecf.order_F) {
-        case ecf_config::MATRIX_ORDER::AUTO: break;
-        case ecf_config::MATRIX_ORDER::ROW_MAJOR: cfg.order_F = 'R'; break;
-        case ecf_config::MATRIX_ORDER::COL_MAJOR: cfg.order_F = 'C'; break;
-    }
-
-    switch(ecf.schur_impl) {
-        case ecf_config::SCHUR_IMPL::AUTO: break;
-        case ecf_config::SCHUR_IMPL::MANUAL_SIMPLE: cfg.schur_impl = schur_impl_t::manual_simple; break;
-        case ecf_config::SCHUR_IMPL::TRIANGULAR:    cfg.schur_impl = schur_impl_t::triangular;    break;
-        case ecf_config::SCHUR_IMPL::MKLPARDISO:    cfg.schur_impl = schur_impl_t::mklpardiso;    break;
-        case ecf_config::SCHUR_IMPL::SPARSE_SOLVER: cfg.schur_impl = schur_impl_t::sparse_solver; break;
-        case ecf_config::SCHUR_IMPL::MUMPS:         cfg.schur_impl = schur_impl_t::mumps;         break;
-        case ecf_config::SCHUR_IMPL::PASTIX:        cfg.schur_impl = schur_impl_t::pastix;        break;
-    }
-
-    switch(ecf.apply_where) {
-        case ecf_config::CPU_GPU::AUTO: cfg.apply_where = 'C'; break;
-        case ecf_config::CPU_GPU::CPU:  cfg.apply_where = 'C'; break;
-        case ecf_config::CPU_GPU::GPU:  cfg.apply_where = 'G'; break;
-    }
-
-    switch(ecf.apply_wait_intermediate) {
-        case ecf_config::AUTOBOOL::AUTO:  cfg.apply_wait_intermediate = false; break;
-        case ecf_config::AUTOBOOL::TRUE:  cfg.apply_wait_intermediate = true;  break;
-        case ecf_config::AUTOBOOL::FALSE: cfg.apply_wait_intermediate = false; break;
+    switch(ecf.sparse_solver_impl) {
+        case ecf_config::SPARSE_SOLVER_IMPL::AUTO: break;
+        case ecf_config::SPARSE_SOLVER_IMPL::MKLPARDISO:   cfg.solver_impl = solver_impl_t::mklpardiso;   break;
+        case ecf_config::SPARSE_SOLVER_IMPL::SUITESPARSE:  cfg.solver_impl = solver_impl_t::suitesparse;  break;
+        case ecf_config::SPARSE_SOLVER_IMPL::MUMPS:        cfg.solver_impl = solver_impl_t::mumps;        break;
+        case ecf_config::SPARSE_SOLVER_IMPL::STRUMPACK:    cfg.solver_impl = solver_impl_t::strumpack;    break;
+        case ecf_config::SPARSE_SOLVER_IMPL::PASTIX:       cfg.solver_impl = solver_impl_t::pastix;       break;
+        case ecf_config::SPARSE_SOLVER_IMPL::SUPERLU_DIST: cfg.solver_impl = solver_impl_t::superlu_dist; break;
     }
 }
 
 
 
 #define INSTANTIATE_T_I(T,I) \
-template class HybridFETIExplicitGeneralSchurCpu<T,I>;
+template class HybridFETIImplicitGeneralSparseSolverCpu<T,I>;
 
     #define INSTANTIATE_T(T) \
     INSTANTIATE_T_I(T, int32_t) \
     /* INSTANTIATE_T_I(T, int64_t) */
 
+        #define INSTANTIATE \
         /* INSTANTIATE_T(float) */ \
         INSTANTIATE_T(double) \
         /* INSTANTIATE_T(std::complex<float>) */ \
-        /* INSTANTIATE_T(std::complex<double>) */
+        // INSTANTIATE_T(std::complex<double>)
+
+            INSTANTIATE
 
     #undef INSTANTIATE_T
 #undef INSTANTIATE_T_I
 
-}
 
+
+}

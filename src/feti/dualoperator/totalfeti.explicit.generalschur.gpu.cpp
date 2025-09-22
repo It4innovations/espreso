@@ -151,7 +151,7 @@ void TotalFETIExplicitGeneralSchurGpu<T,I>::setup()
         gpu::dnblas::handle & hd = handles_dense[di % n_queues];
         per_domain_stuff & data = domain_data[di];
 
-        stacktimer::info("TotalFETIExplicitGeneralSchurGpu::setup op_sc subdomain %zu", di);
+        stacktimer::info("setup subdomain %zu", di);
 
         math::combine(data.Kreg_old, feti.K[di], feti.RegMat[di]);
         if constexpr(utils::is_real<T>())    data.Kreg_old.type = Matrix_Type::REAL_SYMMETRIC_POSITIVE_DEFINITE;
@@ -237,7 +237,7 @@ void TotalFETIExplicitGeneralSchurGpu<T,I>::set(const step::Step &step)
         gpu::mgm::queue & q = queues[di % n_queues];
         per_domain_stuff & data = domain_data[di];
 
-        stacktimer::info("TotalFETIExplicitGeneralSchurGpu::set preprocess subdomain %zu", di);
+        stacktimer::info("preprocess subdomain %zu", di);
 
         void * ws_tmp = ator_tmp_cbmba.alloc(data.op_sc->get_wss_tmp_preprocess());
 

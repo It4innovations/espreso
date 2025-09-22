@@ -274,6 +274,7 @@ void trsm(MatrixCsxView_new<T,I> & A, MatrixDenseView_new<T> & X, MatrixDenseVie
     if(A.nrows != X.nrows) eslog::error("incompatible matrix sizes\n");
 
     if(A.nrows == 0 && A.ncols == 0 && A.nnz == 0) return;
+    if(X.ncols == 0) return;
 
     if(stage == 'A') { // All at once
         trsm<T,I>(A, X, Y, handle, 'p'); // no need to optimize for a single call
@@ -323,7 +324,8 @@ void mm(MatrixCsxView_new<T,I> & A, MatrixDenseView_new<T> & B, MatrixDenseView_
     if(A.nrows != C.nrows || B.ncols != C.ncols || A.ncols != B.nrows) eslog::error("incompatible matrices\n");
     if(B.order != C.order) eslog::error("B and C order must match\n");
 
-    if(A.nrows == 0 && A.ncols == 0 && A.nnz == 0) return;
+    if(A.nrows == 0) return;
+    if(B.ncols == 0) return;
 
     if(stage == 'A') { // All at once
         mm<T,I>(A, B, C, alpha, beta, handle, 'p'); // no need to optimize for a single call

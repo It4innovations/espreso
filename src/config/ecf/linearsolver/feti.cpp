@@ -245,6 +245,10 @@ espreso::FETIConfiguration::FETIConfiguration()
         .setdescription({ "Dual operator hybrid feti explicit general schur on GPU configuration." })
         .setcollapsed());
 
+    REGISTER(dualop_hybridfeti_implicit_generalsparsesolver_cpu_config, ECFMetaData()
+        .setdescription({ "Dual operator hybrid feti implicit general sparse solver on CPU configuration." })
+        .setcollapsed());
+
     REGISTER(dirichlet_generalschur_config, ECFMetaData()
         .setdescription({ "Dirichlet preconnditioner using general schur configuration." })
         .setcollapsed());

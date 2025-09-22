@@ -143,6 +143,8 @@ void solver_csx_mklpardiso<T,I>::internal_solve(VectorDenseView_new<T> & rhs, Ve
 template<typename T, typename I>
 void solver_csx_mklpardiso<T,I>::internal_solve(MatrixDenseView_new<T> & rhs, MatrixDenseView_new<T> & sol)
 {
+    if(rhs.ncols == 0) return;
+
     // no support for leading dimension in pardiso. matrix has to be colmajor. so I have to reallocate and convert
     Allocator_new * ator = AllocatorCPU_new::get_singleton();
     if((rhs.order != 'C') || (rhs.ld != rhs.nrows)) {
@@ -178,6 +180,8 @@ void solver_csx_mklpardiso<T,I>::internal_solve(MatrixDenseView_new<T> & rhs, Ma
 template<typename T, typename I>
 void solver_csx_mklpardiso<T,I>::internal_solve(MatrixCsxView_new<T,I> & rhs, MatrixDenseView_new<T> & sol)
 {
+    if(rhs.ncols == 0) return;
+
     Allocator_new * ator = AllocatorCPU_new::get_singleton();
     T * rhs_2_mem = ator->template alloc<T>(rhs.nrows * rhs.ncols);
     MatrixDenseView_new<T> rhs_2;
