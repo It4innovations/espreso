@@ -3,6 +3,7 @@
 
 #include "math/operations/submatrix_dnx_dnx_noncontig.h"
 #include "math/operations/supermatrix_dnx_dnx_noncontig.h"
+#include "math/operations/fill_dnx.h"
 #include "feti/common/applyB.h"
 #include "basis/utilities/minmaxavg.h"
 #include "basis/utilities/stacktimer.h"
@@ -457,7 +458,7 @@ void TotalFETIExplicitGeneralSchurGpu<T,I>::apply(const Matrix_Dual<T> &X_cluste
     MatrixDenseData_new<T> X_cluster_filtered;
     X_cluster_filtered.set(X_cluster_new.ncols, filter_map.size, X_cluster_new.order, AllocatorCPU_new::get_singleton());
     X_cluster_filtered.alloc();
-    
+
     MatrixDenseData_new<T> Y_cluster_filtered;
     Y_cluster_filtered.set(Y_cluster_new.ncols, filter_map.size, Y_cluster_new.order, AllocatorCPU_new::get_singleton());
     Y_cluster_filtered.alloc();
@@ -465,9 +466,43 @@ void TotalFETIExplicitGeneralSchurGpu<T,I>::apply(const Matrix_Dual<T> &X_cluste
     math::operations::submatrix_dnx_dnx_noncontig<T,I>::do_all(&X_cluster_new, &X_cluster_filtered, nullptr, &filter_map);
 
     applicator.apply(X_cluster_filtered, Y_cluster_filtered, feti.gpu_tmp_mem, feti.gpu_tmp_size);
-    
+
+    math::operations::fill_dnx<T>::do_all(&Y_cluster_new, T{0});
     math::operations::supermatrix_dnx_dnx_noncontig<T,I>::do_all(&Y_cluster_filtered, &Y_cluster_new, nullptr, &filter_map);
 
+    stacktimer::push("dual_synchronize");
+    Y_cluster.synchronize();
+    stacktimer::pop();
+
+    stacktimer::pop();
+    if(cfg.outer_timers) stacktimer::disable();
+}
+
+
+
+template<typename T, typename I>
+void TotalFETIExplicitGeneralSchurGpu<T,I>::apply(const Matrix_Dual<T> &X_cluster, Matrix_Dual<T> &Y_cluster, const std::vector<std::vector<int>> &filter)
+{
+    if(cfg.outer_timers) stacktimer::enable();
+    stacktimer::push("TotalFETIExplicitGeneralSchurGpu::apply (matrix,filter2)");
+
+    Allocator_new * ator_2 = ((cfg.apply_where == 'G') ? (Allocator_new*)AllocatorHostPinned_new::get_singleton() : (Allocator_new*)AllocatorCPU_new::get_singleton());
+
+    // orig filter: i-th rhs is handled by onyl a subset of domains
+    // transposed: i-th domain handles only a subset of rhs
+    std::vector<std::vector<I>> filter_transposed(n_domains);
+    for(size_t idx_rhs = 0; idx_rhs < filter.size(); idx_rhs++) {
+        for(int di : filter[idx_rhs]) {
+            filter_transposed[di].push_back(idx_rhs);
+        }
+    }
+    MultiVectorDenseData_new<I,I> my_filter = MultiVectorDenseData_new<I,I>::convert_from(filter_transposed, ator_2);
+
+    MatrixDenseView_new<T> X_cluster_new = MatrixDenseView_new<T>::from_old(X_cluster).get_transposed_reordered_view();
+    MatrixDenseView_new<T> Y_cluster_new = MatrixDenseView_new<T>::from_old(Y_cluster).get_transposed_reordered_view();
+
+    applicator.apply(X_cluster_new, Y_cluster_new, &my_filter, feti.gpu_tmp_mem, feti.gpu_tmp_size);
+    
     stacktimer::push("dual_synchronize");
     Y_cluster.synchronize();
     stacktimer::pop();

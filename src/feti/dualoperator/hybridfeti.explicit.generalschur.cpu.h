@@ -31,6 +31,7 @@ public:
     void apply(const Vector_Dual<T> &x, Vector_Dual<T> &y) override;
     void apply(const Matrix_Dual<T> &x, Matrix_Dual<T> &y) override;
     void apply(const Matrix_Dual<T> &x, Matrix_Dual<T> &y, const std::vector<int> &filter) override;
+    void apply(const Matrix_Dual<T> &x, Matrix_Dual<T> &y, const std::vector<std::vector<int>> &filter) override;
 
     // y = K+(f - Bt * x)
     void toPrimal(const Vector_Dual<T> &x, std::vector<Vector_Dense<T> > &y) override;
@@ -78,6 +79,7 @@ private:
     void _apply_hfeti_stuff(const Vector_Dual<T> &x, Vector_Dual<T> &y);
     void _apply_hfeti_stuff(const Matrix_Dual<T> &x, Matrix_Dual<T> &y);
     void _apply_hfeti_stuff(const Matrix_Dual<T> &x, Matrix_Dual<T> &y, const std::vector<int> &filter);
+    void _apply_hfeti_stuff(const Matrix_Dual<T> &x, Matrix_Dual<T> &y, const std::vector<std::vector<int>> &filter);
     void _applyK(std::vector<Vector_Dense<T> > &b, std::vector<Vector_Dense<T> > &x, bool do_Kplus_solve);
     void _computeB0();
     void _computeF0();

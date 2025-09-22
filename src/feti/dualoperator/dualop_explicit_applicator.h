@@ -41,6 +41,7 @@ public:
     void update_F(size_t di);
     void apply(VectorDenseView_new<T> & cluster_x, VectorDenseView_new<T> & cluster_y, void * ws_gpu_tmp, size_t wss_gpu_tmp, const std::function<void(void)> & func_while_waiting = [](){});
     void apply(MatrixDenseView_new<T> & cluster_X, MatrixDenseView_new<T> & cluster_Y, void * ws_gpu_tmp, size_t wss_gpu_tmp, const std::function<void(void)> & func_while_waiting = [](){});
+    void apply(MatrixDenseView_new<T> & cluster_X, MatrixDenseView_new<T> & cluster_Y, MultiVectorDenseView_new<I,I> * subdomain_rhs_filter, void * ws_gpu_tmp, size_t wss_gpu_tmp, const std::function<void(void)> & func_while_waiting = [](){});
 private:
     size_t n_domains = 0;
     size_t n_queues = 0;
@@ -52,7 +53,6 @@ private:
     size_t wss_gpu_persistent = 0;
     void * ws_gpu_persistent = nullptr;
     std::unique_ptr<AllocatorArena_new> ator_ws_gpu_persistent;
-    std::unique_ptr<AllocatorArena_new> ator_ws_gpu_tmp;
     std::vector<std::vector<I>> * D2C_old = nullptr;
     MultiVectorDenseData_new<I,I> D2C;
     MultiVectorDenseData_new<I,I> d_D2C;

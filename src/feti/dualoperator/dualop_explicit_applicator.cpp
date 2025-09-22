@@ -121,7 +121,6 @@ void dualop_explicit_applicator<T,I>::setup()
     wss_gpu_persistent = 0;
 
     ator_ws_gpu_persistent = std::make_unique<AllocatorArena_new>(AllocatorGPU_new::get_singleton());
-    ator_ws_gpu_tmp = std::make_unique<AllocatorArena_new>(AllocatorGPU_new::get_singleton());
 
     need_copy_vectors = (apply_target != vector_mem);
     need_copy_Fs = (apply_target != Fs_mem);
@@ -260,11 +259,12 @@ void dualop_explicit_applicator<T,I>::apply(VectorDenseView_new<T> & x_cluster, 
 
     stacktimer::push("dualop_apply_submit");
 
-    ator_ws_gpu_tmp->set(ws_gpu_tmp, wss_gpu_tmp);
+    AllocatorArena_new ator_ws_gpu_tmp(AllocatorGPU_new::get_singleton());
+    ator_ws_gpu_tmp.set(ws_gpu_tmp, wss_gpu_tmp);
 
     Allocator_new * ator_tmp_target = nullptr;
     if(apply_target == 'C') ator_tmp_target = AllocatorHostPinned_new::get_singleton();
-    if(apply_target == 'G') ator_tmp_target = ator_ws_gpu_tmp.get();
+    if(apply_target == 'G') ator_tmp_target = &ator_ws_gpu_tmp;
 
     VectorDenseData_new<T> x_cluster_2;
     VectorDenseData_new<T> y_cluster_2;
@@ -390,7 +390,7 @@ void dualop_explicit_applicator<T,I>::apply(VectorDenseView_new<T> & x_cluster, 
     }
     stacktimer::pop();
 
-    ator_ws_gpu_tmp->unset();
+    ator_ws_gpu_tmp.unset();
 
     stacktimer::pop();
 }
@@ -400,22 +400,32 @@ void dualop_explicit_applicator<T,I>::apply(VectorDenseView_new<T> & x_cluster, 
 template<typename T, typename I>
 void dualop_explicit_applicator<T,I>::apply(MatrixDenseView_new<T> & X_cluster, MatrixDenseView_new<T> & Y_cluster, void * ws_gpu_tmp, size_t wss_gpu_tmp, const std::function<void(void)> & func_while_waiting)
 {
+    this->apply(X_cluster, Y_cluster, nullptr, ws_gpu_tmp, wss_gpu_tmp, func_while_waiting);
+}
+
+
+
+template<typename T, typename I>
+void dualop_explicit_applicator<T,I>::apply(MatrixDenseView_new<T> & X_cluster, MatrixDenseView_new<T> & Y_cluster, MultiVectorDenseView_new<I,I> * subdomain_rhs_filter, void * ws_gpu_tmp, size_t wss_gpu_tmp, const std::function<void(void)> & func_while_waiting)
+{
     stacktimer::push("dualop_explicit_applicator::apply (matrix)");
 
     if(X_cluster.nrows != Y_cluster.nrows || X_cluster.ncols != Y_cluster.ncols) eslog::error("size of X_cluster and Y_cluster does not match\n");
     if(X_cluster.order != Y_cluster.order) eslog::error("orders do not match\n");
     if(X_cluster.nrows != n_dofs_cluster_interface) eslog::error("incompatible cluster matrix size\n");
+    if(subdomain_rhs_filter != nullptr && subdomain_rhs_filter->num_vectors != n_domains) eslog::error("wrong subdomain_rhs_filter size\n");
 
     if((X_cluster.ator->is_data_accessible_cpu() && vector_mem != 'C') || (X_cluster.ator->is_data_accessible_gpu() && vector_mem != 'G')) eslog::error("wrong X_cluster allocator\n");
     if((Y_cluster.ator->is_data_accessible_cpu() && vector_mem != 'C') || (Y_cluster.ator->is_data_accessible_gpu() && vector_mem != 'G')) eslog::error("wrong Y_cluster allocator\n");
 
     stacktimer::push("dualop_apply_submit");
 
-    ator_ws_gpu_tmp->set(ws_gpu_tmp, wss_gpu_tmp);
+    AllocatorArena_new ator_ws_gpu_tmp(AllocatorGPU_new::get_singleton());
+    ator_ws_gpu_tmp.set(ws_gpu_tmp, wss_gpu_tmp);
 
     Allocator_new * ator_tmp_target = nullptr;
     if(apply_target == 'C') ator_tmp_target = AllocatorHostPinned_new::get_singleton();
-    if(apply_target == 'G') ator_tmp_target = ator_ws_gpu_tmp.get();
+    if(apply_target == 'G') ator_tmp_target = &ator_ws_gpu_tmp;
 
     MatrixDenseData_new<T> X_cluster_2;
     MatrixDenseData_new<T> Y_cluster_2;
@@ -433,9 +443,16 @@ void dualop_explicit_applicator<T,I>::apply(MatrixDenseView_new<T> & X_cluster, 
         gpu::mgm::copy_submit(*main_q, X_cluster, X_cluster_2);
     }
 
-    size_t cbmb_size = ator_ws_gpu_tmp->get_remaining_capacity();
-    void * cbmb_mem = ator_ws_gpu_tmp->alloc(cbmb_size);
-    AllocatorCBMB_new ator_gpu_cbmb(ator_ws_gpu_tmp.get(), cbmb_mem, cbmb_size);
+    MultiVectorDenseData_new<I,I> d_subdomain_rhs_filter;
+    if(subdomain_rhs_filter != nullptr && apply_target == 'G') {
+        d_subdomain_rhs_filter.set(subdomain_rhs_filter->num_vectors, subdomain_rhs_filter->size, &ator_ws_gpu_tmp);
+        d_subdomain_rhs_filter.alloc();
+        gpu::mgm::copy_submit(*main_q, *subdomain_rhs_filter, d_subdomain_rhs_filter);
+    }
+
+    size_t cbmb_size = ator_ws_gpu_tmp.get_remaining_capacity();
+    void * cbmb_mem = ator_ws_gpu_tmp.alloc(cbmb_size);
+    AllocatorCBMB_new ator_gpu_cbmb(&ator_ws_gpu_tmp, cbmb_mem, cbmb_size);
 
     std::vector<MatrixDenseData_new<T>> Xs_gpu;
     std::vector<MatrixDenseData_new<T>> Ys_gpu;
@@ -454,18 +471,28 @@ void dualop_explicit_applicator<T,I>::apply(MatrixDenseView_new<T> & X_cluster, 
             MatrixDenseView_new<T> * F_to_use = ((Fs_mem == 'C') ? Fs[di] : &Fs_2[di]);
             size_t n_dofs_interface = n_dofs_interfaces[di];
 
+            size_t my_width = X_cluster_to_use->ncols;
+
+            VectorDenseView_new<I> my_rhs_filter;
+            VectorDenseView_new<I> * my_rhs_filter_ptr = nullptr;
+            if(subdomain_rhs_filter != nullptr) {
+                my_rhs_filter.set_view(subdomain_rhs_filter->offsets[di+1] - subdomain_rhs_filter->offsets[di], subdomain_rhs_filter->vals + subdomain_rhs_filter->offsets[di], subdomain_rhs_filter->ator);
+                my_rhs_filter_ptr = &my_rhs_filter;
+                my_width = my_rhs_filter.size;
+            }
+
             MatrixDenseData_new<T> X;
-            X.set(n_dofs_interface, X_cluster_to_use->ncols, X_cluster_to_use->order, AllocatorCPU_new::get_singleton());
+            X.set(n_dofs_interface, my_width, X_cluster_to_use->order, AllocatorCPU_new::get_singleton());
             X.alloc();
             
             MatrixDenseData_new<T> Y;
-            Y.set(n_dofs_interface, Y_cluster_to_use->ncols, Y_cluster_to_use->order, AllocatorCPU_new::get_singleton());
+            Y.set(n_dofs_interface, my_width, Y_cluster_to_use->order, AllocatorCPU_new::get_singleton());
             Y.alloc();
 
             VectorDenseView_new<I> my_D2C;
             my_D2C.set_view(n_dofs_interface, &D2C.at(di,0), D2C.ator);
 
-            math::operations::submatrix_dnx_dnx_noncontig<T,I>::do_all(X_cluster_to_use, &X, &my_D2C, nullptr);
+            math::operations::submatrix_dnx_dnx_noncontig<T,I>::do_all(X_cluster_to_use, &X, &my_D2C, my_rhs_filter_ptr);
 
             if(is_hermitian<T>(F_to_use->prop.symm)) {
                 math::blas::hemm<T>(*F_to_use, X, Y);
@@ -474,7 +501,7 @@ void dualop_explicit_applicator<T,I>::apply(MatrixDenseView_new<T> & X_cluster, 
                 math::blas::gemm<T>(*F_to_use, X, Y);
             }
 
-            math::operations::supermatrix_dnx_dnx_noncontig<T,I>::do_all(&Y, Y_cluster_to_use, &my_D2C, nullptr, math::operations::supermatrix_dnx_dnx_noncontig<T,I>::mode::accumulate_atomic);
+            math::operations::supermatrix_dnx_dnx_noncontig<T,I>::do_all(&Y, Y_cluster_to_use, &my_D2C, my_rhs_filter_ptr, math::operations::supermatrix_dnx_dnx_noncontig<T,I>::mode::accumulate_atomic);
         }
     }
     if(apply_target == 'G') {
@@ -492,11 +519,21 @@ void dualop_explicit_applicator<T,I>::apply(MatrixDenseView_new<T> & X_cluster, 
             MatrixDenseView_new<T> * F_to_use = ((Fs_mem == 'G') ? Fs[di] : &Fs_2[di]);
             size_t n_dofs_interface = n_dofs_interfaces[di];
 
+            size_t my_width = X_cluster_to_use->ncols;
+
+            VectorDenseView_new<I> my_rhs_filter;
+            VectorDenseView_new<I> * my_rhs_filter_ptr = nullptr;
+            if(subdomain_rhs_filter != nullptr) {
+                my_rhs_filter.set_view(subdomain_rhs_filter->offsets[di+1] - subdomain_rhs_filter->offsets[di], d_subdomain_rhs_filter.vals + subdomain_rhs_filter->offsets[di], d_subdomain_rhs_filter.ator);
+                my_rhs_filter_ptr = &my_rhs_filter;
+                my_width = my_rhs_filter.size;
+            }
+
             MatrixDenseData_new<T> & X = Xs_gpu[di];
             MatrixDenseData_new<T> & Y = Ys_gpu[di];
 
-            X.set(n_dofs_interface, X_cluster_to_use->ncols, X_cluster_to_use->order, &ator_gpu_cbmb);
-            Y.set(n_dofs_interface, Y_cluster_to_use->ncols, Y_cluster_to_use->order, &ator_gpu_cbmb);
+            X.set(n_dofs_interface, my_width, X_cluster_to_use->order, &ator_gpu_cbmb);
+            Y.set(n_dofs_interface, my_width, Y_cluster_to_use->order, &ator_gpu_cbmb);
 
             std::unique_ptr<gpu::operations::hemm_ddnx_ddny_ddnz<T>> op_hemm;
             std::unique_ptr<gpu::operations::gemm_ddnx_ddny_ddnz<T>> op_gemm;
@@ -533,7 +570,7 @@ void dualop_explicit_applicator<T,I>::apply(MatrixDenseView_new<T> & X_cluster, 
             VectorDenseView_new<I> d_my_D2C;
             d_my_D2C.set_view(n_dofs_interface, d_D2C.vals + offsets[di], d_D2C.ator);
 
-            gpu::operations::submatrix_ddnx_ddnx_noncontig<T,I>::submit_all(q, X_cluster_to_use, &X, &d_my_D2C, nullptr);
+            gpu::operations::submatrix_ddnx_ddnx_noncontig<T,I>::submit_all(q, X_cluster_to_use, &X, &d_my_D2C, my_rhs_filter_ptr);
 
             if(is_hermitian<T>(F_to_use->prop.symm)) {
                 op_hemm->perform_submit(ws_tmp_ghemm);
@@ -542,7 +579,7 @@ void dualop_explicit_applicator<T,I>::apply(MatrixDenseView_new<T> & X_cluster, 
                 op_gemm->perform_submit(ws_tmp_ghemm);
             }
 
-            gpu::operations::supermatrix_ddnx_ddnx_noncontig<T,I>::submit_all(q, &Y, Y_cluster_to_use, &d_my_D2C, nullptr, gpu::operations::supermatrix_ddnx_ddnx_noncontig<T,I>::mode::accumulate_atomic);
+            gpu::operations::supermatrix_ddnx_ddnx_noncontig<T,I>::submit_all(q, &Y, Y_cluster_to_use, &d_my_D2C, my_rhs_filter_ptr, gpu::operations::supermatrix_ddnx_ddnx_noncontig<T,I>::mode::accumulate_atomic);
 
             gpu::mgm::submit_host_function(q, [&,ws_tmp_ghemm,di](){
                 Xs_gpu[di].free();
@@ -579,7 +616,7 @@ void dualop_explicit_applicator<T,I>::apply(MatrixDenseView_new<T> & X_cluster, 
     }
     stacktimer::pop();
 
-    ator_ws_gpu_tmp->unset();
+    ator_ws_gpu_tmp.unset();
 
     stacktimer::pop();
 }

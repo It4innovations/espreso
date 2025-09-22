@@ -16,6 +16,7 @@
 #include "math/operations/lincomb_matrix_dnx.h"
 #include "math/operations/submatrix_dnx_dnx_noncontig.h"
 #include "math/operations/supermatrix_dnx_dnx_noncontig.h"
+#include "math/operations/fill_dnx.h"
 
 #include <algorithm>
 
@@ -554,6 +555,45 @@ void HybridFETIExplicitGeneralSchurGpu<T,I>::apply(const Matrix_Dual<T> &X_clust
 
 
 template<typename T, typename I>
+void HybridFETIExplicitGeneralSchurGpu<T,I>::apply(const Matrix_Dual<T> &X_cluster_old, Matrix_Dual<T> &Y_cluster_old, const std::vector<std::vector<int>> &filter)
+{
+    if(cfg.outer_timers) stacktimer::enable();
+    stacktimer::push("HybridFETIExplicitGeneralSchurGpu::apply (matrix,filter2)");
+
+    MatrixDenseView_new<T> X_cluster = MatrixDenseView_new<T>::from_old(X_cluster_old).get_transposed_reordered_view();
+    MatrixDenseView_new<T> Y_cluster = MatrixDenseView_new<T>::from_old(Y_cluster_old).get_transposed_reordered_view();
+
+    Allocator_new * ator_2 = ((cfg.apply_where == 'G') ? (Allocator_new*)AllocatorHostPinned_new::get_singleton() : (Allocator_new*)AllocatorCPU_new::get_singleton());
+
+    // orig filter: i-th rhs is handled by onyl a subset of domains
+    // transposed: i-th domain handles only a subset of rhs
+    std::vector<std::vector<I>> filter_transposed(n_domains);
+    for(size_t idx_rhs = 0; idx_rhs < filter.size(); idx_rhs++) {
+        for(int di : filter[idx_rhs]) {
+            filter_transposed[di].push_back(idx_rhs);
+        }
+    }
+    MultiVectorDenseData_new<I,I> my_filter = MultiVectorDenseData_new<I,I>::convert_from(filter_transposed, ator_2);
+
+    MatrixDenseData_new<T> Y_cluster_2;
+    Y_cluster_2.set(Y_cluster.nrows, Y_cluster.ncols, Y_cluster.order, ator_2);
+    Y_cluster_2.alloc();
+
+    F1_applicator.apply(X_cluster, Y_cluster_2, &my_filter, feti.gpu_tmp_mem, feti.gpu_tmp_size, [&](){_apply_hfeti_stuff(X_cluster_old, Y_cluster_old, filter);});
+
+    math::operations::lincomb_matrix_dnx<T>::do_all(&Y_cluster, T{1}, &Y_cluster, T{1}, &Y_cluster_2);
+
+    stacktimer::push("dual_synchronize");
+    Y_cluster_old.synchronize();
+    stacktimer::pop();
+
+    stacktimer::pop();
+    if(cfg.outer_timers) stacktimer::disable();
+}
+
+
+
+template<typename T, typename I>
 void HybridFETIExplicitGeneralSchurGpu<T,I>::toPrimal(const Vector_Dual<T> &x, std::vector<Vector_Dense<T> > &y)
 {
     if(cfg.outer_timers) stacktimer::enable();
@@ -659,6 +699,14 @@ void HybridFETIExplicitGeneralSchurGpu<T,I>::_apply_hfeti_stuff(const Matrix_Dua
             applyB_threaded(feti, KplusBtx, _y);
         }
     }
+}
+
+
+
+template <typename T, typename I>
+void HybridFETIExplicitGeneralSchurGpu<T,I>::_apply_hfeti_stuff(const Matrix_Dual<T> &x, Matrix_Dual<T> &y, const std::vector<std::vector<int>> &filter)
+{
+    eslog::error("not implemented\n");
 }
 
 
