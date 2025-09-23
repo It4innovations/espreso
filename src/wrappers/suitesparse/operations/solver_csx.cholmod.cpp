@@ -87,12 +87,10 @@ void solver_csx_cholmod<T,I>::internal_factorize_symbolic()
     data->cm_A_view.x = A->vals;
 
     data->cm_factor_super = _analyze<I>(&data->cm_A_view, data->cm_common);
+    if(data->cm_factor_super == nullptr) eslog::error("cholmod analysis failed\n");
 
-    if(data->cm_common.lnz > (double)std::numeric_limits<I>::max()) {
-        eslog::error("symbolicFactorization: factor nnz too large for the used integer type\n");
-    }
     // https://github.com/DrTimothyAldenDavis/SuiteSparse/issues/523
-    size_t factor_nnz = static_cast<I>(data->cm_common.lnz);
+    size_t factor_nnz = static_cast<size_t>(data->cm_common.lnz);
     nnz_L = factor_nnz;
     nnz_U = factor_nnz;
 

@@ -15,7 +15,7 @@ namespace operations {
 
 template<typename T, typename I>
 __global__
-static void do_submatrix_primary(I size_dst_primary, I size_secdary, T * src, I ld_src, T * dst, I ld_dst, I * map_primary)
+static void do_submatrix_primary(size_t size_dst_primary, size_t size_secdary, T * src, size_t ld_src, T * dst, size_t ld_dst, I * map_primary)
 {
     I ipd_start = blockIdx.y * blockDim.y + threadIdx.y;
     I ipd_stride = blockDim.y * gridDim.y;
@@ -38,7 +38,7 @@ static void do_submatrix_primary(I size_dst_primary, I size_secdary, T * src, I 
 
 template<typename T, typename I>
 __global__
-static void do_submatrix_secdary(I size_primary, I size_dst_secdary, T * src, I ld_src, T * dst, I ld_dst, I * map_secdary)
+static void do_submatrix_secdary(size_t size_primary, size_t size_dst_secdary, T * src, size_t ld_src, T * dst, size_t ld_dst, I * map_secdary)
 {
     I ip_start = blockIdx.y * blockDim.y + threadIdx.y;
     I ip_stride = blockDim.y * gridDim.y;
@@ -60,7 +60,7 @@ static void do_submatrix_secdary(I size_primary, I size_dst_secdary, T * src, I 
 
 template<typename T, typename I>
 __global__
-static void do_submatrix_both(I size_dst_primary, I size_dst_secdary, T * src, I ld_src, T * dst, I ld_dst, I * map_primary, I * map_secdary)
+static void do_submatrix_both(size_t size_dst_primary, size_t size_dst_secdary, T * src, size_t ld_src, T * dst, size_t ld_dst, I * map_primary, I * map_secdary)
 {
     I ipd_start = blockIdx.y * blockDim.y + threadIdx.y;
     I ipd_stride = blockDim.y * gridDim.y;

@@ -17,15 +17,15 @@ namespace operations {
 template<typename T, typename I, bool SUB_PRIMARY, bool SUB_SECDARY>
 struct functor_do_submatrix
 {
-    I size_dst_primary;
-    I size_dst_secdary;
+    size_t size_dst_primary;
+    size_t size_dst_secdary;
     T * src;
-    I ld_src;
+    size_t ld_src;
     T * dst;
-    I ld_dst;
+    size_t ld_dst;
     I * map_primary;
     I * map_secdary;
-    functor_do_submatrix(I size_dst_primary_, I size_dst_secdary_, T * src_, I ld_src_, T * dst_, I ld_dst_, I * map_primary_, I * map_secdary_)
+    functor_do_submatrix(size_t size_dst_primary_, size_t size_dst_secdary_, T * src_, size_t ld_src_, T * dst_, size_t ld_dst_, I * map_primary_, I * map_secdary_)
         : size_dst_primary(size_dst_primary_)
         , size_dst_secdary(size_dst_secdary_)
         , src(src_)
