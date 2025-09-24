@@ -1,0 +1,205 @@
+# ESPRESO Configuration File
+
+DEFAULT_ARGS {
+}
+
+INPUT_TYPE            GENERATOR;
+PHYSICS        HEAT_TRANSFER;
+
+GENERATOR {
+  SHAPE   GRID;
+
+  UNIFORM_CLUSTERS        ${ESP_UNIFORM_DECOMPOSITION};
+  UNIFORM_DOMAINS         ${ESP_UNIFORM_DECOMPOSITION};
+
+  GRID {
+    LENGTH_X                   1;
+    LENGTH_Y                   1;
+    LENGTH_Z                   1;
+
+    NODES {
+      BOTTOM   <1 , 1> <0 , 1> <0 , 0>;
+      TOP      <0 , 0> <0 , 1> <0 , 0>;
+    }
+
+    ELEMENT_TYPE          ${ESP_ELEMENT_TYPE};
+
+    BLOCKS_X                   1;
+    BLOCKS_Y                   1;
+    BLOCKS_Z                   1;
+
+    CLUSTERS_X                 1;
+    CLUSTERS_Y                 1;
+    CLUSTERS_Z                 1;
+
+    DOMAINS_X             ${ESP_DOMAINS_X};
+    DOMAINS_Y             ${ESP_DOMAINS_Y};
+    DOMAINS_Z             ${ESP_DOMAINS_Z};
+
+    ELEMENTS_X            ${ESP_ELEMENTS_X};
+    ELEMENTS_Y            ${ESP_ELEMENTS_Y};
+    ELEMENTS_Z            ${ESP_ELEMENTS_Z};
+  }
+}
+
+HEAT_TRANSFER {
+  LOAD_STEPS        1;
+
+  MATERIALS {
+    1 {
+      COORDINATE_SYSTEM {
+        TYPE       CARTESIAN;
+        ROTATION    { Z 35; }
+      }
+
+      THERMAL_CONDUCTIVITY {
+        MODEL   DIAGONAL;
+
+        KXX           50;
+        KYY          100;
+      }
+    }
+  }
+
+  MATERIAL_SET {
+    ALL_ELEMENTS   1;
+  }
+
+  INITIAL_TEMPERATURE {
+    ALL_ELEMENTS   200;
+  }
+
+  THICKNESS {
+    ALL_ELEMENTS  1;
+  }
+
+  LOAD_STEPS_SETTINGS {
+    1 {
+      DURATION_TIME     1;
+      TYPE   STEADY_STATE;
+      MODE         LINEAR;
+      SOLVER         FETI;
+
+      FETI {
+        METHOD             ${ESP_FETI_METHOD};
+        DUAL_OPERATOR      ${ESP_DUAL_OPERATOR};
+        PRECONDITIONER     ${ESP_PRECONDITIONER};
+        PROJECTOR          ${ESP_PROJECTOR};
+        PRECISION            1E-09;
+        ITERATIVE_SOLVER       PCG;
+        REGULARIZATION    ANALYTIC;
+        MAX_ITERATIONS          12;
+        EXIT_ON_NONCONVERGENCE FALSE;
+
+        DUALOP_TOTALFETI_IMPLICIT_GENERALSPARSESOLVER_CPU_CONFIG {
+          TIMERS_OUTER        true;
+          TIMERS_INNER        FALSE;
+          PRINT_CONFIG        FALSE;
+          SPARSE_SOLVER_IMPL  mklpardiso;
+        }
+
+        DUALOP_TOTALFETI_EXPLICIT_GENERALSCHUR_CPU_CONFIG {
+          MAINLOOP_UPDATE_SPLIT   AUTO;
+          TIMERS_OUTER            true;
+          TIMERS_INNER            false;
+          PRINT_CONFIG            false;
+          ORDER_F                 AUTO;
+          SCHUR_IMPL              pastix;
+          APPLY_WHERE             AUTO;
+          APPLY_WAIT_INTERMEDIATE AUTO;
+        }
+        
+        DUALOP_TOTALFETI_EXPLICIT_GENERALSCHUR_GPU_CONFIG {
+          MAINLOOP_UPDATE_SPLIT              AUTO;
+          SYNCHRONIZE_AFTER_UPDATE_MAINLOOP  AUTO;
+          TIMERS_OUTER                       true;
+          TIMERS_INNER                       FALSE;
+          PRINT_CONFIG                       FALSE;
+          ORDER_F                            AUTO;
+          SCHUR_IMPL                         triangular;
+          APPLY_WHERE                        AUTO;
+          APPLY_WAIT_INTERMEDIATE            AUTO;
+        }
+
+        DUALOP_HYBRIDFETI_IMPLICIT_GENERALSPARSESOLVER_CPU_CONFIG {
+          TIMERS_OUTER        true;
+          TIMERS_INNER        FALSE;
+          PRINT_CONFIG        FALSE;
+          SPARSE_SOLVER_IMPL  mklpardiso;
+        }
+
+        DUALOP_HYBRIDFETI_EXPLICIT_GENERALSCHUR_CPU_CONFIG {
+          MAINLOOP_UPDATE_SPLIT   AUTO;
+          TIMERS_OUTER            true;
+          TIMERS_INNER            false;
+          PRINT_CONFIG            false;
+          ORDER_F                 AUTO;
+          SCHUR_IMPL              pastix;
+          APPLY_WHERE             AUTO;
+          APPLY_WAIT_INTERMEDIATE AUTO;
+        }
+        
+        DUALOP_HYBRIDFETI_EXPLICIT_GENERALSCHUR_GPU_CONFIG {
+          MAINLOOP_UPDATE_SPLIT              AUTO;
+          SYNCHRONIZE_AFTER_UPDATE_MAINLOOP  AUTO;
+          TIMERS_OUTER                       true;
+          TIMERS_INNER                       false;
+          PRINT_CONFIG                       FALSE;
+          ORDER_F                            AUTO;
+          SCHUR_IMPL                         triangular;
+          APPLY_WHERE                        AUTO;
+          APPLY_WAIT_INTERMEDIATE            AUTO;
+        }
+
+        DIRICHLET_GENERALSCHUR_CONFIG {
+          TIMERS_OUTER                       true;
+          TIMERS_INNER                       false;
+          PRINT_CONFIG                       FALSE;
+          ORDER_SC                           AUTO;
+          SCHUR_IMPL_CPU                     AUTO;
+          SCHUR_IMPL_GPU                     AUTO;
+        }
+      }
+
+      TEMPERATURE {
+        TOP       100;
+        BOTTOM    300;
+      }
+    }
+  }
+}
+
+OUTPUT {
+  PATH                       ${ESP_OUTPUT_PATH};
+  RESULTS_STORE_FREQUENCY    NEVER;
+  MONITORS_STORE_FREQUENCY   EVERY_SUBSTEP;
+
+  MONITORING {
+    1 {
+      REGION            TOP;
+      STATISTICS        MAX;
+      PROPERTY  TEMPERATURE;
+    }
+
+    2 {
+      REGION         BOTTOM;
+      STATISTICS        MIN;
+      PROPERTY  TEMPERATURE;
+    }
+
+    3 {
+      REGION   ALL_ELEMENTS;
+      STATISTICS        AVG;
+      PROPERTY  TEMPERATURE;
+    }
+  }
+}
+
+OPERATIONS {
+  GPU_TRSM_HCSX_DDNY_TRIA {
+    STRATEGY         split_factor;
+    SPLIT_FACTOR_CONFIG {
+      TRSM_FACTOR_SPDN     dense;
+    }
+  }
+}
