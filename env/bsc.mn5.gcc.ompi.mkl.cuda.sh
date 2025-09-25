@@ -73,7 +73,7 @@ export OMP_NUM_THREADS=20,1
 
 export SRUN_CPUS_PER_TASK=20
 
-export ESPRESO_RANK_TO_GPU_MAP="0,1,2,3"
+export ESPRESO_RANK_TO_GPU_MAP="0"
 
 export ESPRESO_USE_WRAPPER_DNBLAS=mkl
 export ESPRESO_USE_WRAPPER_DNSOLVER=mkl
@@ -86,4 +86,4 @@ export ESPRESO_USE_WRAPPER_GPU=cuda
 
 
 # salloc -A ... -q acc_ehpc -N 1 --ntasks-per-node 4 -c 20 --gres=gpu:4 --threads-per-core 1 -t 1:00:00
-# srun -n 1 -- ...
+# srun -n 1 -c 20 --gpus-per-task 1 ...
