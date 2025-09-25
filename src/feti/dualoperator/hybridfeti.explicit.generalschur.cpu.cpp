@@ -387,8 +387,8 @@ void HybridFETIExplicitGeneralSchurCpu<T,I>::apply(const Matrix_Dual<T> &X_clust
     Allocator_new * ator_2 = ((cfg.apply_where == 'G') ? (Allocator_new*)AllocatorHostPinned_new::get_singleton() : (Allocator_new*)AllocatorCPU_new::get_singleton());
     MatrixDenseData_new<T> X_cluster_2;
     MatrixDenseData_new<T> Y_cluster_2;
-    X_cluster_2.set(X_cluster.nrows, X_cluster.ncols, X_cluster.order, ator_2);
-    Y_cluster_2.set(Y_cluster.nrows, Y_cluster.ncols, Y_cluster.order, ator_2);
+    X_cluster_2.set(X_cluster.nrows, filter_map.size, X_cluster.order, ator_2);
+    Y_cluster_2.set(Y_cluster.nrows, filter_map.size, Y_cluster.order, ator_2);
     X_cluster_2.alloc();
     Y_cluster_2.alloc();
 
