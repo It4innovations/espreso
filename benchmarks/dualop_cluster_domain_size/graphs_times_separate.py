@@ -35,8 +35,8 @@ if not os.path.isfile(summary_file):
 datestr = datetime.now().strftime("%Y%m%d_%H%M%S")
 
 graphs_dir = basedir + "/graphs/" + datestr
-graphs_dir_png = graphs_dir + "/png"
-graphs_dir_tikz = graphs_dir + "/tikz"
+graphs_dir_png = graphs_dir + "/png_times_separate"
+graphs_dir_tikz = graphs_dir + "/tikz_times_separate"
 os.makedirs(graphs_dir_png, exist_ok=True)
 os.makedirs(graphs_dir_tikz, exist_ok=True)
 
@@ -60,13 +60,15 @@ col_feti_method = csv_header.index("feti_method")
 
 
 
-# physics_list = ["heat_transfer", "linear_elasticity"]
-# element_types_2d_list = ["TRIANGLE3", "TRIANGLE6", "SQUARE4", "SQUARE4", "TETRA4", "TETRA10", "HEXA8", "HEXA20"]
+# physics_list = sorted(list(set([row[col_physics] for row in csv_data])))
+# element_types_list = sorted(list(set([row[col_element_type] for row in csv_data])))
+# dual_operator_list = sorted(list(set([row[col_dualop] for row in csv_data])))
+# feti_method_list = sorted(list(set([row[col_feti_method] for row in csv_data])))
+physics_list = ["heat_transfer", "linear_elasticity"]
+element_types_list = ["TRIANGLE3", "TRIANGLE6", "SQUARE4", "SQUARE8", "TETRA4", "TETRA10", "HEXA8", "HEXA20"]
+dual_operator_list = ["IMPLICIT_GENERALSPARSESOLVER_CPU", "EXPLICIT_GENERALSCHUR_CPU", "EXPLICIT_GENERALSCHUR_GPU"]
+feti_method_list = ["TOTAL_FETI", "HYBRID_FETI"]
 
-physics_list = sorted(list(set([row[col_physics] for row in csv_data])))
-element_types_list = sorted(list(set([row[col_element_type] for row in csv_data])))
-dual_operator_list = sorted(list(set([row[col_dualop] for row in csv_data])))
-feti_method_list = sorted(list(set([row[col_feti_method] for row in csv_data])))
 
 x_axis_variant_cols = [col_n_domains_per_cluster, col_n_dofs_per_domain]
 x_axis_variant_labels = ["Number of subdomains per cluster", "Number of DOFs per subdomain"]
@@ -91,14 +93,15 @@ for physics in physics_list:
             dimension = csv_data_03[0][col_dimension]
 
             n_dofs_cluster_list = sorted(list(set([row[col_n_dofs_cluster] for row in csv_data_03])), key=lambda x: int(x))
-            subplots_counts = [2,len(n_dofs_cluster_list)]
+            grafs_nrows = 2
+            grafs_ncols = len(n_dofs_cluster_list)
 
             imgname = physics + "-" + dimension + "D-" + element_type + "-" + dualop
             imgpath = graphs_dir_png + "/" + imgname + ".png"
             plt.figure()
-            fig, axs = plt.subplots(subplots_counts[0], subplots_counts[1], figsize=(my_figsize_x*subplots_counts[1]/100.0, my_figsize_y*subplots_counts[0]/100.0), sharex=True, sharey="row")
+            fig, axs = plt.subplots(grafs_nrows, grafs_ncols, figsize=(my_figsize_x*grafs_ncols/100.0, my_figsize_y*grafs_nrows/100.0), sharex=True, sharey="row")
 
-            tps = mytikzplot.tikzplotter.create_table_of_plotters(subplots_counts[0], subplots_counts[1])
+            tps = mytikzplot.tikzplotter.create_table_of_plotters(grafs_nrows, grafs_ncols)
 
             for n_dofs_cluster_idx in range(len(n_dofs_cluster_list)):
                 n_dofs_cluster = n_dofs_cluster_list[n_dofs_cluster_idx]
@@ -133,8 +136,8 @@ for physics in physics_list:
                             axs[graph_row,graph_col].plot(vals_x, vals_y, color=color, linestyle=linestyle, label=label)
                             tps[graph_row][graph_col].add_line(mytikzplot.line(vals_x, vals_y, color, linestyle, None, label))
 
-            for graph_row in range(subplots_counts[0]):
-                for graph_col in range(subplots_counts[1]):
+            for graph_row in range(grafs_nrows):
+                for graph_col in range(grafs_ncols):
                     tp = tps[graph_row][graph_col]
                     a = axs[graph_row, graph_col]
                     a.grid(True)
@@ -157,9 +160,7 @@ for physics in physics_list:
             plt.savefig(imgpath)
             plt.close()
 
-            for graph_row in range(subplots_counts[0]):
-                for graph_col in range(subplots_counts[1]):
+            for graph_row in range(grafs_nrows):
+                for graph_col in range(grafs_ncols):
                     path = graphs_dir_tikz + "/" + imgname + "-" + x_axis_variant_labels[graph_row] + "-" + n_dofs_cluster_list[graph_col] + ".tex"
                     tps[graph_row][graph_col].save(path)
-
-
