@@ -119,6 +119,10 @@ void w_cusparse_trsm_dcsx_ddny_ddny<T,I>::internal_preprocess(void * /*ws_tmp*/)
 template<typename T, typename I>
 void w_cusparse_trsm_dcsx_ddny_ddny<T,I>::internal_perform(void * /*ws_tmp*/)
 {
+    if(B->nrows == 0 || B->ncols == 0 || X->nrows == 0 || X->ncols == 0) {
+        return;
+    }
+
     CHECK(cusparseCsrSetPointers(data->descr_A, A->ptrs, A->idxs, A->vals));
     CHECK(cusparseDnMatSetValues(data->descr_X, X->vals));
     CHECK(cusparseDnMatSetValues(data->descr_B, B->vals));

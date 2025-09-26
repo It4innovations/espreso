@@ -87,6 +87,10 @@ void w_cusparse_gemm_dcsx_ddny_ddnz<T,I>::internal_preprocess(void * /*ws_tmp*/)
 template<typename T, typename I>
 void w_cusparse_gemm_dcsx_ddny_ddnz<T,I>::internal_perform(void * /*ws_tmp*/)
 {
+    if(B->nrows == 0 || B->ncols == 0 || C->nrows == 0 || C->ncols == 0) {
+        return;
+    }
+
     if(A->order == 'R') CHECK(cusparseCsrSetPointers(data->descr_A, A->ptrs, A->idxs, A->vals));
     if(A->order == 'C') CHECK(cusparseCscSetPointers(data->descr_A, A->ptrs, A->idxs, A->vals));
     CHECK(cusparseDnMatSetValues(data->descr_B, B->vals));

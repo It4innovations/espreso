@@ -30,7 +30,7 @@ w_cusparse_convert_dcsx_ddny<T,I>::w_cusparse_convert_dcsx_ddny() = default;
 template<typename T, typename I>
 w_cusparse_convert_dcsx_ddny<T,I>::~w_cusparse_convert_dcsx_ddny()
 {
-    if(this->called_setup) {
+    if(this->called_setup && data) {
         CHECK(cusparseDestroySpMat(data->descr_M_src));
         CHECK(cusparseDestroyDnMat(data->descr_M_dst));
     }
@@ -71,6 +71,10 @@ void w_cusparse_convert_dcsx_ddny<T,I>::internal_preprocess(void * /*ws_tmp*/)
 template<typename T, typename I>
 void w_cusparse_convert_dcsx_ddny<T,I>::internal_perform(void * ws_tmp)
 {
+    if(M_src->nrows == 0 || M_src->ncols == 0) {
+        return;
+    }
+
     if(M_src->order == 'R') CHECK(cusparseCsrSetPointers(data->descr_M_src, M_src->ptrs, M_src->idxs, M_src->vals));
     if(M_src->order == 'C') CHECK(cusparseCscSetPointers(data->descr_M_src, M_src->ptrs, M_src->idxs, M_src->vals));
     CHECK(cusparseDnMatSetValues(data->descr_M_dst, M_dst->vals));
