@@ -4,6 +4,7 @@
 #include "emptypreconditioner.h"
 #include "lumped.h"
 #include "dirichlet.h"
+#include "dirichlet.implicit.h"
 #include "dirichlet.generalschur.h"
 #include "esinfo/eslog.h"
 
@@ -24,6 +25,9 @@ Preconditioner<T>* Preconditioner<T>::create(FETI<T> &feti, const step::Step &st
     case FETIConfiguration::PRECONDITIONER::DIRICHLET:
         eslog::info(" = PRECONDITIONER                                                                  DIRICHLET = \n");
         return new Dirichlet<T>(feti);
+    case FETIConfiguration::PRECONDITIONER::DIRICHLET_IMPLICIT:
+        eslog::info(" = PRECONDITIONER                                                         IMPLICIT DIRICHLET = \n");
+        return new DirichletImplicit<T>(feti);
     case FETIConfiguration::PRECONDITIONER::DIRICHLET_GENERALSCHUR_CPU:
         eslog::info(" = PRECONDITIONER                          DIRICHLET GENERALIZED SCHUR IMPLEMENTATION ON CPU = \n");
         return new DirichletGeneralSchur<T,int>(feti, 'C');

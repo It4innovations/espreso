@@ -61,6 +61,7 @@ struct FETIConfiguration: public ECFDescription {
         NONE,
         LUMPED,
         DIRICHLET,
+        DIRICHLET_IMPLICIT,
         DIRICHLET_GENERALSCHUR_CPU,
         DIRICHLET_GENERALSCHUR_GPU,
     };

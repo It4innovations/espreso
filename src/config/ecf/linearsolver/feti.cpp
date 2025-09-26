@@ -46,6 +46,7 @@ espreso::FETIConfiguration::FETIConfiguration()
             .addoption(ECFOption().setname("NONE").setdescription("Without precodition."))
             .addoption(ECFOption().setname("LUMPED").setdescription("Lumped precodition."))
             .addoption(ECFOption().setname("DIRICHLET").setdescription("Dirichlet precodition."))
+            .addoption(ECFOption().setname("DIRICHLET_IMPLICIT").setdescription("Implicit Dirichlet precodition."))
             .addoption(ECFOption().setname("DIRICHLET_GENERALSCHUR_CPU").setdescription("Dirichlet precodition, generalized SC on CPU."))
             .addoption(ECFOption().setname("DIRICHLET_GENERALSCHUR_GPU").setdescription("Dirichlet precodition, generalized SC on GPU.")));
 
