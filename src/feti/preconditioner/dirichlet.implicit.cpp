@@ -5,6 +5,7 @@
 #include "esinfo/ecfinfo.h"
 #include "esinfo/eslog.hpp"
 #include "basis/utilities/sysutils.h"
+#include "basis/utilities/stacktimer.h"
 
 #include <algorithm>
 
@@ -50,6 +51,8 @@ void DirichletImplicit<T>::info()
 template <typename T>
 void DirichletImplicit<T>::set(const step::Step &step)
 {
+stacktimer::enable();
+stacktimer::push("DirichletImplicit::set");
     #pragma omp parallel for
     for (size_t d = 0; d < feti.K.size(); ++d) {
         permutation[d].resize(feti.B1[d].ncols);
@@ -78,11 +81,15 @@ void DirichletImplicit<T>::set(const step::Step &step)
         solver[d].commit(A11[d]);
         solver[d].symbolicFactorization();
     }
+stacktimer::pop();
+stacktimer::disable();
 }
 
 template <typename T>
 void DirichletImplicit<T>::update(const step::Step &step)
 {
+stacktimer::enable();
+stacktimer::push("DirichletImplicit::update");
     if (feti.updated.K || feti.updated.B) {
         #pragma omp parallel for
         for (size_t d = 0; d < feti.K.size(); ++d) {
@@ -99,6 +106,8 @@ void DirichletImplicit<T>::update(const step::Step &step)
             solver[d].numericalFactorization();
         }
     }
+stacktimer::pop();
+stacktimer::disable();
     _print(step);
     eslog::checkpointln("FETI: COMPUTE DIRICHLET PRECONDITIONER");
 }
@@ -106,6 +115,8 @@ void DirichletImplicit<T>::update(const step::Step &step)
 template <typename T>
 void DirichletImplicit<T>::apply(const Vector_Dual<T> &x, Vector_Dual<T> &y)
 {
+stacktimer::enable();
+stacktimer::push("DirichletImplicit::apply (vector)");
     #pragma omp parallel for
     for (size_t d = 0; d < feti.K.size(); ++d) {
         applyBt(feti, d, x, Btx[d]);
@@ -139,6 +150,8 @@ void DirichletImplicit<T>::apply(const Vector_Dual<T> &x, Vector_Dual<T> &y)
     }
     applyB(feti, KBtx, y);
     y.synchronize();
+stacktimer::pop();
+stacktimer::disable();
 }
 
 template <typename T>
