@@ -16,7 +16,6 @@ DirichletImplicit<T>::DirichletImplicit(FETI<T> &feti)
 {
     Btx.resize(feti.K.size());
     KBtx.resize(feti.K.size());
-    sc.resize(feti.K.size());
     indices.resize(feti.K.size());
     permutation.resize(feti.K.size());
     A11.resize(feti.K.size());
@@ -28,7 +27,6 @@ DirichletImplicit<T>::DirichletImplicit(FETI<T> &feti)
     for (size_t d = 0; d < feti.K.size(); ++d) {
         Btx[d].resize(feti.K[d].nrows);
         KBtx[d].resize(feti.K[d].nrows);
-        sc[d].shape = Matrix_Shape::UPPER;
     }
 
     eslog::checkpointln("FETI: SET DIRICHLET PRECONDITIONER");
@@ -67,14 +65,13 @@ void DirichletImplicit<T>::set(const step::Step &step)
         for (size_t i = 0, j = 0, k = feti.B1[d].ncols - indices[d].size(); i < permutation[d].size(); ++i) {
             permutation[d][i] = (permutation[d][i] == 1 ? k++ : j++);
         }
-        sc[d].resize(indices[d].size(), indices[d].size());
 
         Matrix_CSR<T> pK(feti.K[d]);
         math::permute(pK, permutation[d]);
 
-        int size_sc = sc[d].nrows;
+        int size_surface = indices[d].size();
         int size = feti.K[d].nrows;
-        int size_A11 = size - size_sc;
+        int size_A11 = size - size_surface;
 
         math::spblas::submatrix(pK, A11[d], 0, size_A11, 0, size_A11);
 
@@ -92,9 +89,9 @@ void DirichletImplicit<T>::update(const step::Step &step)
             Matrix_CSR<T> pK(feti.K[d]);
             math::permute(pK, permutation[d]);
 
-            int size_sc = sc[d].nrows;
+            int size_surface = indices[d].size();
             int size = feti.K[d].nrows;
-            int size_A11 = size - size_sc;
+            int size_A11 = size - size_surface;
 
             math::spblas::submatrix(pK, A11[d],        0, size_A11,        0, size_A11);
             math::spblas::submatrix(pK, A12[d],        0, size_A11, size_A11,     size);
@@ -149,9 +146,7 @@ void DirichletImplicit<T>::_print(const step::Step &step)
 {
     if (info::ecf->output.print_matrices) {
         eslog::storedata(" STORE: feti/preconditioner/{DirichletImplicit}\n");
-        for (size_t d = 0; d < feti.K.size(); ++d) {
-            math::store(sc[d], utils::filename(utils::debugDirectory(step) + "/feti/precondition", (std::string("dirichlet") + std::to_string(d)).c_str()).c_str());
-        }
+        // nothing to store
     }
 }
 
