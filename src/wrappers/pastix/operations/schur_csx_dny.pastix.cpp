@@ -8,6 +8,7 @@
 #include "math/primitives_new/allocator_new.h"
 #include "math/operations/convert_dnx.h"
 #include "math/operations/convert_dnx_dny.h"
+#include "math/operations/convert_csx_dny.h"
 #include "math/operations/lincomb_matrix_dnx.h"
 
 
@@ -83,6 +84,10 @@ void schur_csx_dny_pastix<T,I>::internal_preprocess()
 
     data->cholesky = is_hermitian<T>(A->prop.symm);
 
+    if(size_A11 == 0) { // pastix cannot deal with empty A11
+        return;
+    }
+
     pastixInitParam(data->iparm, data->dparm);
 
     data->iparm[IPARM_THREAD_NBR] = 1;
@@ -141,6 +146,10 @@ void schur_csx_dny_pastix<T,I>::internal_perform_1()
         this->helper_concat(data->A_whole, 'F');
     }
 
+    if(size_A11 == 0) { // pastix cannot deal with empty A11
+        return;
+    }
+
     if(A->order == 'C') {
         data->A_to_use = *A;
     }
@@ -160,13 +169,25 @@ void schur_csx_dny_pastix<T,I>::internal_perform_1()
 template<typename T, typename I>
 void schur_csx_dny_pastix<T,I>::internal_perform_2()
 {
+    if(A->order == 'C') {
+        data->A_to_use = *A;
+    }
+    else {
+        data->A_to_use = A->get_transposed_reordered_view();
+    }
+
     MatrixDenseData_new<T> sc_tmp;
     sc_tmp.set(size_sc, size_sc, 'C', AllocatorCPU_new::get_singleton());
     sc_tmp.prop.symm = sc->prop.symm;
     sc_tmp.prop.uplo = data->A_to_use.prop.uplo;
     sc_tmp.alloc();
 
-    pastixGetSchur(data->pastix_data, sc_tmp.vals, sc_tmp.ld);
+    if(size_A11 == 0) { // pastix cannot deal with empty A11
+        convert_csx_dny<T,I>::do_all(&data->A_to_use, &sc_tmp);
+    }
+    else {
+        pastixGetSchur(data->pastix_data, sc_tmp.vals, sc_tmp.ld);
+    }
 
     convert_dnx<T>::do_all(&sc_tmp, sc);
 
@@ -180,6 +201,10 @@ void schur_csx_dny_pastix<T,I>::internal_perform_2()
 template<typename T, typename I>
 void schur_csx_dny_pastix<T,I>::internal_solve_A11(VectorDenseView_new<T> & rhs, VectorDenseView_new<T> & sol)
 {
+    if(size_A11 == 0) { // pastix cannot deal with empty A11
+        return;
+    }
+
     if(&rhs != &sol) {
         std::copy_n(rhs.vals, rhs.size, sol.vals);
     }
@@ -192,6 +217,10 @@ void schur_csx_dny_pastix<T,I>::internal_solve_A11(VectorDenseView_new<T> & rhs,
 template<typename T, typename I>
 void schur_csx_dny_pastix<T,I>::internal_solve_A11(MatrixDenseView_new<T> & rhs, MatrixDenseView_new<T> & sol)
 {
+    if(size_A11 == 0) { // pastix cannot deal with empty A11
+        return;
+    }
+
     if(sol.order != 'C') {
         MatrixDenseData_new<T> sol_2;
         sol_2.set(sol.nrows, sol.ncols, 'C', AllocatorCPU_new::get_singleton());
