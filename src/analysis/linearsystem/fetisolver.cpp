@@ -176,6 +176,8 @@ void FETILinearSystemSolver<T>::update(step::Step &step)
         A.printEigenValues("A[SOL]", 8);
     }
     feti.update(step);
+#warning "only for benchmarking"
+feti.update(step);
     A.updated = b.physics.updated = b.feti.updated = dirichlet.updated = false;
     feti.updated.K = feti.updated.B = false;
     eslog::endln("FETI: LINEAR SYSTEM UPDATED");
