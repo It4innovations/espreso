@@ -35,8 +35,8 @@ if not os.path.isfile(summary_file):
 datestr = datetime.now().strftime("%Y%m%d_%H%M%S")
 
 graphs_dir = basedir + "/graphs/" + datestr
-graphs_dir_png = graphs_dir + "/png_optima_separate"
-graphs_dir_tikz = graphs_dir + "/tikz_optima_separate"
+graphs_dir_png = graphs_dir + "/png_optima_combined"
+graphs_dir_tikz = graphs_dir + "/tikz_optima_combined"
 os.makedirs(graphs_dir_png, exist_ok=True)
 os.makedirs(graphs_dir_tikz, exist_ok=True)
 
