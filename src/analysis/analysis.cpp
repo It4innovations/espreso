@@ -40,8 +40,7 @@ void Analysis::run()
         }
         eslog::checkpointln("SIMULATION: PHYSICS ANALYSED");
         if (!current->run(step, prev)) {
-#warning "only for testing"
-            // eslog::globalerror("physical solver failed\n");
+            eslog::globalerror("physical solver failed\n");
         }
         eslog::checkpointln("SIMULATION: PHYSICS SOLVED");
 
