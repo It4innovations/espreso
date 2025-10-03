@@ -113,8 +113,8 @@ void dualop_explicit_applicator<T,I>::setup()
     if(handles_dnblas != nullptr && handles_dnblas->size() != n_queues) eslog::error("wrong handles\n");
     if(n_domains == 0) eslog::error("no subdomains\n");
     if(omp_get_max_threads() > 1 && n_queues > 0 && omp_get_max_threads() != (int)n_queues) eslog::error("mismatch between num threads and num queues\n");
-    if(Fs_mem == 'C' && std::any_of(Fs.begin(), Fs.end(), [](auto F){return !F->ator->is_data_accessible_cpu();}));
-    if(Fs_mem == 'G' && std::any_of(Fs.begin(), Fs.end(), [](auto F){return !F->ator->is_data_accessible_gpu();}));
+    if(Fs_mem == 'C' && std::any_of(Fs.begin(), Fs.end(), [](auto F){return !F->ator->is_data_accessible_cpu();})) eslog::error("non-matching Fs memory\n");
+    if(Fs_mem == 'G' && std::any_of(Fs.begin(), Fs.end(), [](auto F){return !F->ator->is_data_accessible_gpu();})) eslog::error("non-matching Fs memory\n");
     if(!use_gpu && (Fs_mem == 'G' || vector_mem == 'G')) eslog::error("wrong memory, gpu is not used\n");
     if(!use_gpu && apply_target == 'G') eslog::error("cannot perform dual_operator application on GPU. GPU support not built or no GPU available.\n");
 

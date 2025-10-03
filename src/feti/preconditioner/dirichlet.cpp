@@ -113,8 +113,8 @@ void Dirichlet<T>::_manual(Matrix_CSR<T> &K, Matrix_Dense<T> &sc, std::vector<in
     sc_new.prop = pK_new.prop;
     sc_new.alloc();
 
-    using op_sc_t = math::operations::schur_csx_dny<T,int>;
-    std::unique_ptr<op_sc_t> op_sc = op_sc_t::make(op_sc_t::implementation_selector::manual_simple);
+    using op_schur_t = math::operations::schur_csx_dny<T,int>;
+    std::unique_ptr<op_schur_t> op_sc = op_schur_t::make(op_schur_t::implementation_selector::sparse_solver);
     op_sc->set_matrix(&pK_new, size_sc);
     op_sc->set_sc(&sc_new);
     op_sc->set_need_solve_A11(false);
