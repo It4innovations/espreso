@@ -30,9 +30,9 @@ template <typename I> inline cholmod_dense* _solve(int sys, cholmod_factor *L, c
 template <> inline cholmod_dense* _solve<int>(int sys, cholmod_factor *L, cholmod_dense *b, cholmod_common &common) { return cholmod_solve(sys, L, b, &common); }
 template <> inline cholmod_dense* _solve<long>(int sys, cholmod_factor *L, cholmod_dense *b, cholmod_common &common) { return cholmod_l_solve(sys, L, b, &common); }
 
-template <typename I> inline void _apply(cholmod_dense* Y, cholmod_sparse* A, cholmod_dense *X, double alpha[2], double beta[2], cholmod_common &common);
-template <> inline void _apply<int>(cholmod_dense* Y, cholmod_sparse* A, cholmod_dense *X, double alpha[2], double beta[2], cholmod_common &common) { cholmod_sdmult(A, 0, alpha, beta, X, Y, &common); }
-template <> inline void _apply<long>(cholmod_dense* Y, cholmod_sparse* A, cholmod_dense *X, double alpha[2], double beta[2], cholmod_common &common) { cholmod_l_sdmult(A, 0, alpha, beta, X, Y, &common); }
+template <typename I> inline void _apply(cholmod_dense* Y, cholmod_sparse* A, cholmod_dense *X, bool trans_A, double alpha[2], double beta[2], cholmod_common &common);
+template <> inline void _apply<int>(cholmod_dense* Y, cholmod_sparse* A, cholmod_dense *X, bool trans_A, double alpha[2], double beta[2], cholmod_common &common) { cholmod_sdmult(A, (int)trans_A, alpha, beta, X, Y, &common); }
+template <> inline void _apply<long>(cholmod_dense* Y, cholmod_sparse* A, cholmod_dense *X, bool trans_A, double alpha[2], double beta[2], cholmod_common &common) { cholmod_l_sdmult(A, (int)trans_A, alpha, beta, X, Y, &common); }
 
 template <typename I> inline cholmod_sparse* _transpose(cholmod_sparse* A, cholmod_common &common);
 template <> inline cholmod_sparse* _transpose<int>(cholmod_sparse* A, cholmod_common &common) { return cholmod_transpose(A, 1, &common); }
@@ -85,6 +85,19 @@ template <> constexpr int _getCholmodDtype<std::complex<double>>() { return CHOL
 template<typename I> constexpr int _getCholmodItype();
 template<> constexpr int _getCholmodItype<int32_t>() { return CHOLMOD_INT; }
 template<> constexpr int _getCholmodItype<int64_t>() { return CHOLMOD_LONG; }
+
+template<typename T>
+static void _getCholmodScalar(T in, double out[2])
+{
+    if constexpr(utils::is_complex<T>()) {
+        out[0] = in.real();
+        out[1] = in.imag();
+    }
+    else {
+        out[0] = in;
+        out[1] = 0.0;
+    }
+}
 
 constexpr int _getCholmodStype(Matrix_Shape shape)
 {
@@ -191,6 +204,75 @@ static void popullateCholmodDense(cholmod_dense & cm_A, const Matrix_Dense<T,I> 
 
 template<typename T, typename I>
 static void popullateCholmodDense(cholmod_dense & cm_x, const Vector_Dense<T,I> & x)
+{
+    cm_x.nrow = x.size;
+    cm_x.ncol = 1;
+    cm_x.d = x.size;
+    cm_x.x = x.vals;
+    cm_x.z = nullptr;
+    cm_x.xtype = _getCholmodXtype<T>();
+    cm_x.dtype = _getCholmodDtype<T>();
+}
+
+[[maybe_unused]] static int _getCholmodStype_new(const MatrixBase_new::matrix_properties & A_prop)
+{
+    if(is_structurally_symmetric(A_prop.symm)) {
+        if(A_prop.uplo == 'U') {
+            return 1;
+        }
+        else if(A_prop.uplo == 'L') {
+            return -1;
+        }
+        else {
+            return 0;
+        }
+    }
+    else {
+        return 0;
+    }
+}
+
+template<typename T, typename I>
+static void popullateCholmodSparse(cholmod_sparse & cm_A, const MatrixCsxView_new<T,I> & A)
+{
+    if(A.order != 'C') {
+        eslog::error("A must be CSC\n");
+    }
+
+    cm_A.nrow = A.nrows;
+    cm_A.ncol = A.ncols;
+    cm_A.nzmax = A.nnz;
+    cm_A.nz = nullptr;
+    cm_A.z = nullptr;
+    cm_A.stype = _getCholmodStype_new(A.prop);
+    cm_A.itype = _getCholmodItype<I>();
+    cm_A.xtype = _getCholmodXtype<T>();
+    cm_A.dtype = _getCholmodDtype<T>();
+    cm_A.sorted = 1;
+    cm_A.packed = 1;
+    cm_A.p = A.ptrs;
+    cm_A.i = A.idxs;
+    cm_A.x = A.vals;
+}
+
+template<typename T, typename I>
+static void popullateCholmodDense(cholmod_dense & cm_A, const MatrixDenseView_new<T> & A)
+{
+    if(A.order != 'C') {
+        eslog::error("A must be column-major\n");
+    }
+
+    cm_A.nrow = A.nrows;
+    cm_A.ncol = A.ncols;
+    cm_A.d = A.ld;
+    cm_A.x = A.vals;
+    cm_A.z = nullptr;
+    cm_A.xtype = _getCholmodXtype<T>();
+    cm_A.dtype = _getCholmodDtype<T>();
+}
+
+template<typename T, typename I>
+static void popullateCholmodDense(cholmod_dense & cm_x, const VectorDenseView_new<T> & x)
 {
     cm_x.nrow = x.size;
     cm_x.ncol = 1;
