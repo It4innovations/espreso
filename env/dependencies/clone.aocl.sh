@@ -1,5 +1,7 @@
 #!/bin/bash
 
+ORIG_DIR="${PWD}"
+
 DEPENDENCIES_DIR="${PWD}/dependencies"
 mkdir -p "${DEPENDENCIES_DIR}"
 
@@ -9,7 +11,7 @@ then
     (
         echo "AOCL 4.1.0 not found, downloading..."
         cd "${DEPENDENCIES_DIR}"
-        ../env/dependencies/download.sh https://download.amd.com/developer/eula/aocl/aocl-4-1/aocl-linux-aocc-4.1.0.tar.gz
+        "${ORIG_DIR}/env/dependencies/download.sh" https://download.amd.com/developer/eula/aocl/aocl-4-1/aocl-linux-aocc-4.1.0.tar.gz
         tar -xf aocl-linux-aocc-4.1.0.tar.gz
         rm aocl-linux-aocc-4.1.0.tar.gz
     )

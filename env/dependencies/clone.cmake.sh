@@ -7,6 +7,8 @@ then
 fi
 arch="${1}"
 
+ORIG_DIR="${PWD}"
+
 DEPENDENCIES_DIR="${PWD}/dependencies"
 mkdir -p "${DEPENDENCIES_DIR}"
 
@@ -21,7 +23,7 @@ then
     (
         echo "CMake ${VERSION_CMAKE} not found, downloading..."
         cd "${DEPENDENCIES_DIR}"
-        ../env/dependencies/download.sh "${tarball_url}"
+        "${ORIG_DIR}/env/dependencies/download.sh" "${tarball_url}"
         tar -xf "${version_name}.tar.gz"
         rm "${version_name}.tar.gz"
     )

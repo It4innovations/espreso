@@ -1,5 +1,7 @@
 #!/bin/bash
 
+ORIG_DIR="${PWD}"
+
 DEPENDENCIES_DIR="${PWD}/dependencies"
 mkdir -p "${DEPENDENCIES_DIR}"
 
@@ -12,7 +14,7 @@ then
     (
         echo "MUMPS ${VERSION_MUMPS} not found, cloning..."
         cd "${DEPENDENCIES_DIR}"
-        wget "https://mumps-solver.org/MUMPS_${VERSION_MUMPS}.tar.gz"
+        "${ORIG_DIR}/env/dependencies/download.sh" "https://mumps-solver.org/MUMPS_${VERSION_MUMPS}.tar.gz"
         tar -xf "MUMPS_${VERSION_MUMPS}.tar.gz"
         rm "MUMPS_${VERSION_MUMPS}.tar.gz"
     )

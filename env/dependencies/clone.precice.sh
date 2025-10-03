@@ -1,5 +1,7 @@
 #!/bin/bash
 
+ORIG_DIR="${PWD}"
+
 DEPENDENCIES_DIR="${PWD}/dependencies"
 mkdir -p "${DEPENDENCIES_DIR}"
 
@@ -9,7 +11,7 @@ then
     (
         echo "PreCICE not installed, cloning..."
         cd "${DEPENDENCIES_DIR}"
-        ../env/dependencies/download.sh https://github.com/precice/precice/archive/v3.1.2.tar.gz
+        "${ORIG_DIR}/env/dependencies/download.sh" https://github.com/precice/precice/archive/v3.1.2.tar.gz
         tar -xzvf v3.1.2.tar.gz
         rm v3.1.2.tar.gz
     )
