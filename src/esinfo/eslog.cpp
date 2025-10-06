@@ -1,5 +1,6 @@
 
 #include <mutex>
+#include <omp.h>
 #include "eslog.hpp"
 #include "basis/logging/logger.h"
 #include "basis/logging/timelogger.h"
@@ -303,7 +304,13 @@ void error(const char* msg)
     static std::mutex mtx;
     std::lock_guard<std::mutex> lock(mtx);
 
-    logger->error(msg);
+    char hostname[1024];
+    utils::getHostname(hostname, sizeof(hostname));
+
+    char buffer[3072];
+    snprintf(buffer, sizeof(buffer), "rank %4d, thread %4d, host %s: %s", info::mpi::rank, omp_get_thread_num(), hostname, msg);
+
+    logger->error(buffer);
     utils::printStack();
     fflush(stderr);
     exit(EXIT_FAILURE);

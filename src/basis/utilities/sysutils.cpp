@@ -168,6 +168,11 @@ std::string getStack()
     return message;
 }
 
+void getHostname(char * buffer, size_t buffer_size)
+{
+    gethostname(buffer, buffer_size);
+}
+
 
 }
 }
