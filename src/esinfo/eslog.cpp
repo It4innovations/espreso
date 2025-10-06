@@ -15,7 +15,6 @@
 namespace espreso {
 namespace eslog {
 
-char buffer[BUFFER_SIZE];
 LoggerBase *logger = NULL;
 
 double time()
