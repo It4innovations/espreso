@@ -36,14 +36,6 @@ namespace mgm {
 
     device get_device_by_mpi(int mpi_rank, int mpi_size)
     {
-        // assuming espreso is launched with as many processes per node as there are gpus (stacks) per node
-        // or with only a single process
-#ifndef ESPRESO_RANK_TO_GPU_MAP
-#error "Undefined macro ESPRESO_RANK_TO_GPU_MAP. It should be defined in some wscript"
-#endif
-        static constexpr int rank_gpu_map[] = {ESPRESO_RANK_TO_GPU_MAP};
-        static constexpr int n_gpus = sizeof(rank_gpu_map) / sizeof(*rank_gpu_map);
-
         std::vector<sycl::device> all_gpus = sycl::device::get_devices(sycl::info::device_type::gpu);
         std::vector<sycl::device> gpus_levelzero;
         for(sycl::device & gpu : all_gpus) {
@@ -52,15 +44,9 @@ namespace mgm {
             }
         }
 
-        if(n_gpus != gpus_levelzero.size()) {
-            eslog::error("Number of GPUs does not match\n");
-        }
+        int my_gpu_idx = gpu::mgm::_internal_get_local_gpu_idx(device_count);
 
-        int local_node_rank = mpi_rank % n_gpus;
-        int gpu_idx = rank_gpu_map[local_node_rank];
-
-        sycl::device & selected_dev = gpus_levelzero[gpu_idx];
-
+        sycl::device & selected_dev = gpus_levelzero[my_gpu_idx];
         sycl::device d = sycl::device(selected_dev);
         sycl::context c = sycl::context(d);
         device dev = std::make_shared<_device>(d, c);

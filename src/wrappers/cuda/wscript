@@ -16,8 +16,6 @@ def configure(ctx):
     if ctx.options.cuda_allow_unsupported_compiler:
         ctx.env.NVCCFLAGS.append("--allow-unsupported-compiler")
     ctx.env.append_unique("NVCCFLAGS", [ "-arch=" + ctx.options.cudaarch ])
-    ctx.env.append_unique("NVCCFLAGS", [ "-DESPRESO_RANK_TO_GPU_MAP=\"" + ctx.options.rank_to_gpu_map.replace(",", "\\,") + "\"" ])
-    ctx.env.append_unique("CXXFLAGS_CUDA", [ "-DESPRESO_RANK_TO_GPU_MAP=" + ctx.options.rank_to_gpu_map ])
 
     if ctx.options.use_cusparse_legacy:
         ctx.env.append_unique("DEFINES_CUDA", [ "USE_CUSPARSE_LEGACY" ])

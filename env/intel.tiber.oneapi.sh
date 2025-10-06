@@ -54,8 +54,8 @@ export OMP_PLACES=cores
 export OMP_PROC_BIND=close
 export OMP_NUM_THREADS=6,1
 
-# export ESPRESO_RANK_TO_GPU_MAP="$(seq -s, 0 15)"
-export ESPRESO_RANK_TO_GPU_MAP="0"
+# export ESPRESO_MAP_LOCALRANK_TO_GPU="$(seq -s' ' 0 15)"
+# export ESPRESO_MAP_LOCALRANK_TO_GPU="0"
 # in benchmarks I will set the visible devices to only one for each hq worker
 
 export ZE_FLAT_DEVICE_HIERARCHY="FLAT" # two stacks on a GPU card appear each as a single GPU device

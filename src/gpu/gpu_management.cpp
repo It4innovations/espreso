@@ -1,4 +1,72 @@
 
+#include "basis/utilities/sysutils.h"
+#include "esinfo/eslog.hpp"
+#include "esinfo/mpiinfo.h"
+#include <sstream>
+#include <numeric>
+#include <algorithm>
+
+namespace espreso {
+namespace gpu {
+namespace mgm {
+    int _internal_get_local_gpu_idx(int device_count)
+    {
+        MPI_Comm comm_shared;
+        MPI_Comm_split_type(info::mpi::comm, MPI_COMM_TYPE_SHARED, info::mpi::rank, MPI_INFO_NULL, &comm_shared);
+        int local_mpi_rank, local_mpi_size;
+        MPI_Comm_rank(comm_shared, &local_mpi_rank);
+        MPI_Comm_size(comm_shared, &local_mpi_size);
+        MPI_Comm_free(&comm_shared);
+
+        if(device_count != local_mpi_size) {
+            eslog::error("inconsistent mpi-gpu setting. ranks_per_node=%d != gpus_per_node=%d\n", local_mpi_size, device_count);
+        }
+
+        const char * env_map_localrank_gpu = utils::getEnv("ESPRESO_MAP_LOCALRANK_TO_GPU");
+        std::vector<int> map;
+        if(env_map_localrank_gpu) {
+            std::istringstream is(env_map_localrank_gpu);
+            while(true)
+            {
+                int gpu_idx;
+                is >> gpu_idx;
+                if(is.fail()) {
+                    break;
+                }
+                else {
+                    map.push_back(gpu_idx);
+                }
+            }
+
+            if((int)map.size() != local_mpi_size) {
+                eslog::error("incorrect ESPRESO_MAP_LOCALRANK_TO_GPU, contains %zu indices, but there are %d gpus on node\n", map.size(), device_count);
+            }
+            if(std::any_of(map.begin(), map.end(), [device_count](int idx){ return idx < 0 || idx >= device_count; })) {
+                eslog::error("incorrect ESPRESO_MAP_LOCALRANK_TO_GPU, out-of-range values\n");
+            }
+            int count = local_mpi_size;
+            // test if it contains all integers 0..(N-1)
+            if(std::accumulate(map.begin(), map.end(), 0) != count * (count-1) / 2) {
+                eslog::error("incorrect ESPRESO_MAP_LOCALRANK_TO_GPU, failed sum-of-elements test\n");
+            }
+            if(std::transform_reduce(map.begin(), map.end(), 0, std::plus<int>(), [](int a){return a*a;}) != (count-1) * count * (2*count-1) / 6) {
+                eslog::error("incorrect ESPRESO_MAP_LOCALRANK_TO_GPU, failed sum-of-squares test\n");
+            }
+        }
+        else {
+            for(int i = 0; i < local_mpi_size; i++) {
+                map.push_back(i);
+            }
+        }
+
+        return map[local_mpi_rank];
+    }
+}
+}
+}
+
+
+
 #ifndef ESPRESO_USE_WRAPPER_GPU_CUDA
 #ifndef ESPRESO_USE_WRAPPER_GPU_ROCM
 #ifndef ESPRESO_USE_WRAPPER_GPU_ONEAPI

@@ -59,7 +59,7 @@ export OMP_PROC_BIND=close
 export OMP_NUM_THREADS=8,1
 export CPU_BIND_SCHEME_12ppn="--cpu-bind=list:1-8:9-16:17-24:25-32:33-40:41-48:53-60:61-68:69-76:77-84:85-92:93-100"
 
-export ESPRESO_RANK_TO_GPU_MAP="$(seq -s, 0 11)"
+# export ESPRESO_MAP_LOCALRANK_TO_GPU="$(seq -s' ' 0 11)"
 
 export ZE_FLAT_DEVICE_HIERARCHY="FLAT" # two stacks on a GPU card appear each as a single GPU device
 export ZES_ENABLE_SYSMAN="1" # to make free_memory device info available, enabled by default since 2025.something

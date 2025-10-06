@@ -67,7 +67,16 @@ export OMP_PLACES=cores
 export OMP_PROC_BIND=close
 export OMP_NUM_THREADS=16,1
 
-export ESPRESO_RANK_TO_GPU_MAP="2,3,0,1,6,7,4,5"
+ngpus="$(nvidia-smi -L | wc -l)"
+if [ "${ngpus}" -eq 8 ]; then
+    export ESPRESO_MAP_LOCALRANK_TO_GPU="2 3 0 1 6 7 4 5"
+elif [ "${ngpus}" -ne 1 ]; then
+    echo
+    echo "WARNING: only support 1 or 8 GPUs per node"
+    echo "  defaulting to using linear mpi-gpu map"
+    echo "  set your own ESPRESO_MAP_LOCALRANK_TO_GPU env var to override"
+    echo
+fi
 
 export ESPRESO_USE_WRAPPER_DNBLAS=mkl
 export ESPRESO_USE_WRAPPER_DNSOLVER=mkl

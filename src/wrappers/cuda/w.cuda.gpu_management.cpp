@@ -29,26 +29,15 @@ namespace mgm {
 
     device get_device_by_mpi(int mpi_rank, int mpi_size)
     {
-#ifndef ESPRESO_RANK_TO_GPU_MAP
-#error "Undefined macro ESPRESO_RANK_TO_GPU_MAP. It should be defined in some wscript"
-#endif
-        static constexpr int rank_gpu_map[] = {ESPRESO_RANK_TO_GPU_MAP};
-        static constexpr int n_gpus = sizeof(rank_gpu_map) / sizeof(*rank_gpu_map);
+        int device_count;
+        CHECK(cudaGetDeviceCount(&device_count));
 
-        device d = std::make_shared<_device>();
-        if(mpi_size == 1) {
-            d->gpu_idx = 0;
-        }
-        else if(mpi_size % n_gpus == 0) {
-            // assuming that there are as many ranks on a node as gpus
-            int local_node_rank = mpi_rank % n_gpus;
-            d->gpu_idx = rank_gpu_map[local_node_rank];
-        }
-        else {
-            eslog::error("unsupported number of gpus and mpisize. Should be 1 or a multiple of n_gpus=%d\n", n_gpus);
-        }
+        int my_gpu_idx = gpu::mgm::_internal_get_local_gpu_idx(device_count);
 
-        return d;
+        device dev = std::make_shared<_device>();
+        dev->gpu_idx = my_gpu_idx;
+
+        return dev;
     }
 
     void init_gpu(device & d)

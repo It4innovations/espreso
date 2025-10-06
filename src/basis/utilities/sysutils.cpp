@@ -168,6 +168,11 @@ std::string getStack()
     return message;
 }
 
+const char * getEnv(const char * env_var_name)
+{
+    return std::getenv(env_var_name);
+}
+
 void getHostname(char * buffer, size_t buffer_size)
 {
     gethostname(buffer, buffer_size);

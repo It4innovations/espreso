@@ -26,6 +26,7 @@ void listDirectory(const std::string &dir, std::vector<std::string> &files);
 void printStack();
 std::string getStack();
 
+const char * getEnv(const char * env_var_name);
 void getHostname(char * buffer, size_t buffer_size);
 
 void callusleep(int usec);

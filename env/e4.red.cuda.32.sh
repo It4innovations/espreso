@@ -104,7 +104,7 @@ if [ "${cusparse_version}" == "legacy" ];
 then
     export ESPRESO_USE_CUSPARSE_LEGACY="1"
 fi
-export ESPRESO_RANK_TO_GPU_MAP="0"
+# export ESPRESO_MAP_LOCALRANK_TO_GPU="0"
 export ESPRESO_FORBID_CHECK_SIMD="1" # temporary workaround
 
 export ESPRESO_USE_WRAPPER_DNBLAS=blas

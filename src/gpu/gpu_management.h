@@ -43,6 +43,8 @@ namespace mgm {
 
     device get_device_by_mpi(int mpi_rank, int mpi_size);
 
+    int _internal_get_local_gpu_idx(int device_count);
+
     void init_gpu(device & d);
 
     void set_device(device & d); // global variable representing the device thas is being used
